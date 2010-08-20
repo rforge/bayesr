@@ -1,6 +1,6 @@
 Package: BayesR
 Title: Bayesian Estimation of Hierarchical Generalized Structured Additive Regression Models
-Version: 0.1-0
+Version: 0.1-1
 Date: 2010-08-20
 Author: Stefan Lang, Nikolaus Umlauf
 Maintainer: Nikolaus Umlauf <nikolaus.umlauf@uibk.ac.at>
