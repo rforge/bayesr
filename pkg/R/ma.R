@@ -198,8 +198,6 @@ ma <- function(x,z, by = NULL, knots=20, c=11.75, kappa=2, loc=NULL, lambda = NU
 			}
 		if(!is.null(knots) && is.null(loc))
 			{
-print(knots)
-print(n)
 			if(knots < 0 || knots >= n)
 				stop("Inappropriate number of knots selected!")
 			if(knots == n)

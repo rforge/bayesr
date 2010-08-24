@@ -7,35 +7,21 @@ predict.gibbs <- function(object, which = 1, newdata = NULL, ...)
 	call <- match.call()
 	if(!is.null(newdata))
 		{
-		ncall <- all.names(call)
-		nname <- ncall[length(ncall)]
+		if(!is.list(newdata) || !is.data.frame(newdata))
+			stop("Argument newdata must be a list or data.frame()!")
 		}
 	X <- object$fout[[which[1]]]
 	type <- attr(X,"term.type")
 	if(type == "smooth")
 		{
-		if(inherits(X,"ps.gibbs"))
+		if(!is.null(newdata))
 			{
-			if(!is.null(newdata))
-				pred <- pspredict(X,newdata,nname)
+			if(inherits(X[[1]],"sm.gibbs"))
+				pred <- sm.predict(X,newdata)
 			else
 				return(X)
 			}
-		if(inherits(X,"te.gibbs"))
-			{
-			if(!is.null(newdata))
-				pred <- tepredict(X,newdata,nname)
-			else
-				return(X)
-			}
-		if(inherits(X,"ma.gibbs"))
-			{
-			if(!is.null(newdata))
-				pred <- mapredict(X,newdata,nname)
-			else
-				return(X)
-			}
-		if(inherits(X,"mrf.gibbs"))
+		else
 			return(X)
 		}
 	if(type == "linear")
@@ -45,46 +31,36 @@ predict.gibbs <- function(object, which = 1, newdata = NULL, ...)
 		if(attr(X,"factorcheck") == "nonfactor")
 			{
 			if(!is.null(newdata))
-				pred <- linearpredict(X,newdata,nname)
+				pred <- lin.predict(X,newdata)
 			else
 				return(X)
 			}
 		else
 			return(X)
 		}
-	if(type == "mu")
+	if(type == "m")
 		{
 		if(!is.null(newdata))
 			{
 			nl <- length(X)
 			pred <- vector("list",nl)
 
-			if(inherits(X[[1]],"ps.gibbs"))
+			if(inherits(X[[1]],"sm.gibbs"))
 				{
 				for(j in 1:nl)
-					pred[[j]] <- pspredict(X[[j]],newdata,paste(nname,":",j,sep=""))
-				}
-			if(inherits(X[[1]],"te.gibbs"))
-				{
-				for(j in 1:nl)
-					pred[[j]] <- tepredict(X[[j]],newdata,paste(nname,":",j,sep=""))
-				}
-			if(inherits(X[[1]],"ma.gibbs"))
-				{
-				for(j in 1:nl)
-					pred[[j]] <- mapredict(X[[j]],newdata,paste(nname,":",j,sep=""))
+					pred[[j]] <- sm.predict(X[[j]],newdata,paste(nname,":",j,sep=""))
 				}
 			if(inherits(X[[1]],"mrf.gibbs"))
 				return(X)
 			if(inherits(X[[1]],"linear.gibbs"))
 				{
 				for(j in 1:nl)
-					pred[[j]] <- linearpredict(X[[j]],newdata,paste(nname,":",j,sep=""))
+					pred[[j]] <- lin.predict(X[[j]],newdata,paste(nname,":",j,sep=""))
 				}
-			attr(pred,"term.type") <- "mu"
+			attr(pred,"term.type") <- "m"
 			attr(pred,"par.mat") <- attr(X,"par.mat")
-			attr(pred,"mu.term") <- attr(X,"mu.term")
-		      class(pred) <- "gibbs"
+			attr(pred,"m.term") <- attr(X,"m.term")
+		        class(pred) <- "gibbs"
 			}
 		else
 			return(X)
@@ -108,24 +84,10 @@ predict.gibbs <- function(object, which = 1, newdata = NULL, ...)
 
 					if(attr(X,"term.type") == "smooth")
 						{
-						if(inherits(X,"ps.gibbs"))
+						if(inherits(X,"sm.gibbs"))
 							{
 							if(!is.null(newdata))
-								pred <- pspredict(X,newdata,nname)
-							else
-								return(X)
-							}
-						if(inherits(X,"te.gibbs"))
-							{
-							if(!is.null(newdata))
-								pred <- tepredict(X,newdata,nname)
-							else
-								return(X)
-							}
-						if(inherits(X,"ma.gibbs"))
-							{
-							if(!is.null(newdata))
-								pred <- mapredict(X,newdata,nname)
+								pred <- sm.predict(X,newdata)
 							else
 								return(X)
 							}
@@ -139,7 +101,7 @@ predict.gibbs <- function(object, which = 1, newdata = NULL, ...)
 						if(attr(X,"factorcheck") == "nonfactor")
 							{
 							if(!is.null(newdata))
-								pred <- linearpredict(X,newdata,nname)
+								pred <- lin.predict(X,newdata)
 							else
 								return(X)
 							}
@@ -164,24 +126,10 @@ predict.gibbs <- function(object, which = 1, newdata = NULL, ...)
 					X <- X[[which[3]]]
 					if(attr(X,"term.type") == "smooth")
 						{
-						if(inherits(X,"ps.gibbs"))
+						if(inherits(X,"sm.gibbs"))
 							{
 							if(!is.null(newdata))
-								pred <- pspredict(X,newdata,nname)
-							else
-								return(X)
-							}
-						if(inherits(X,"te.gibbs"))
-							{
-							if(!is.null(newdata))
-								pred <- tepredict(X,newdata,nname)
-							else
-								return(X)
-							}
-						if(inherits(X,"ma.gibbs"))
-							{
-							if(!is.null(newdata))
-								pred <- mapredict(X,newdata,nname)
+								pred <- sm.predict(X,newdata)
 							else
 								return(X)
 							}
@@ -195,7 +143,7 @@ predict.gibbs <- function(object, which = 1, newdata = NULL, ...)
 						if(attr(X,"factorcheck") == "nonfactor")
 							{
 							if(!is.null(newdata))
-								pred <- linearpredict(X,newdata,nname)
+								pred <- lin.predict(X,newdata)
 							else
 								return(X)
 							}
@@ -216,230 +164,57 @@ predict.gibbs <- function(object, which = 1, newdata = NULL, ...)
 	}
 
 
-pspredict <- function(x,newdata,name)
+sm.predict <- function(x,newdata,name)
 	{
 	specs <- attr(x,"smooth.specs")
-	coefs <- attr(x,"smooth.coef.draws")
-    	minx <- min(x[,1]) - 0.001
-    	maxx <- max(x[,1]) + 0.001
-    	step <- (maxx - minx)/(specs$knots - 1)
-    	k <- seq(minx - specs$degree * step, maxx + specs$degree * step, by = step)
+	object <- attr(specs,"smooth.construct")
 
-	bas <- spline.des(knots = k, newdata, 
-                        ord = (specs$degree + 1), 
-                        outer.ok = TRUE)$design
-	nd <- ncol(coefs)
-	nf <- matrix(0,length(newdata),nd)
-	rq <- attr(x,"rq")
-	for(i in 1:nd)
-		nf[,i] <- bas%*%(rq%*%coefs[,i])
-	pred <- matrix(0,length(newdata),10)
-	pred[,1] <- newdata
-	pred[,2] <- apply(nf,1,mean)
-	pred[,3] <- apply(nf,1,quantile,probs=0.025)
-	pred[,4] <- apply(nf,1,quantile,probs=0.1)
-	pred[,5] <- apply(nf,1,quantile,probs=0.5)
-	pred[,6] <- apply(nf,1,quantile,probs=0.9)
-	pred[,7] <- apply(nf,1,quantile,probs=0.975)
-      pred[,9] <- (pred[,4] < 0 & pred[,6] < 0) * (-1) + (pred[,4] <= 0 & pred[,6] >= 0) * 0 + (pred[,4] > 0 & pred[,6] > 0) * 1
-      pred[,10] <- (pred[,3] < 0 & pred[,7] < 0) * (-1) + (pred[,3] <= 0 & pred[,7] >= 0) * 0 + (pred[,3] > 0 & pred[,7] > 0) * 1
-	pred <- pred[order(pred[,1]),]
-	cnams <- colnames(x)
-	cnams[1] <- name
-	colnames(pred) <- cnams
+	X <- Predict.matrix(object,newdata)
+	coefs <- attr(x,"smooth.coef.draws.utr") 
 
-	attr(pred,"smooth.specs") <- attr(x,"smooth.specs")
-	attr(pred,"smooth.specs")$names <- name
-	attr(pred,"smooth.coef") <- attr(x,"smooth.coef")
-	attr(pred,"smooth.prediction") <- TRUE
-	attr(pred,"smooth.edf") <- attr(x,"smooth.edf")
-	attr(pred,"smooth.ceffect") <- attr(x,"smooth.ceffect")
-	attr(pred,"smooth.ceffect.draws") <- attr(x,"smooth.ceffect.draws")
-	attr(pred,"smooth.coef.draws") <- attr(x,"smooth.coef.draws")
-	attr(pred,"smooth.variance.draws") <- attr(x,"smooth.variance.draws")
-	attr(pred,"smooth.coef.mean") <- attr(x,"smooth.coef.mean")
+	fitted <- qhelp(coefs,X)
+	
+	fout <- NULL
+	for(i in 1:length(specs$term))
+	fout <- cbind(fout,newdata[specs$term[i]][[1]])
+	k <- ncol(fout)
+	fout <- cbind(fout,fitted$mean)
+	fout <- cbind(fout,fitted$q2)
+	fout <- cbind(fout,fitted$q21)
+	fout <- cbind(fout,fitted$median)
+	fout <- cbind(fout,fitted$q11)
+	fout <- cbind(fout,fitted$q1)
+	fout <- cbind(fout,0)
 
-	class(pred) <- "ps.gibbs"
-	return(pred)
+        fout <- cbind(fout, (fout[,k+3] < 0 & fout[,k+5] < 0) * (-1) + (fout[,k+3] <= 0 & fout[,k+5] >= 0) * 0 + (fout[,k+3] > 0 & fout[,k+5] > 0) * 1)
+        fout <- cbind(fout, (fout[,k+2] < 0 & fout[,k+6] < 0) * (-1) + (fout[,k+2] <= 0 & fout[,k+6] >= 0) * 0 + (fout[,k+2] > 0 & fout[,k+6] > 0) * 1)
+	fout <- fout[order(fout[,1]),]
+
+	colnames(fout) <- colnames(x)
+
+	attr(fout,"smooth.variance") <- attr(x,"smooth.variance")
+	attr(fout,"smooth.variance.draws") <- attr(x,"smooth.variance.draws")
+	attr(fout,"smooth.hyper") <- attr(x,"smooth.hyper")
+	attr(fout,"smooth.hyper.draws") <- attr(x,"smooth.hyper.draws")
+	attr(fout,"smooth.ceffect") <- attr(x,"smooth.ceffect")
+	attr(fout,"smooth.ceffect.draws") <- attr(x,"smooth.ceffect.draws")
+	attr(fout,"smooth.coef.draws") <- attr(x,"smooth.coef.draws")
+	attr(fout,"smooth.coef.mean") <- attr(x,"smooth.coef.mean")
+	attr(fout,"smooth.coef.draws.utr") <- attr(x,"smooth.coef.draws.utr")
+	attr(fout,"smooth.specs") <- attr(x,"smooth.specs")
+	attr(fout,"term.type") <- "smooth"
+	class(fout) <- "sm.gibbs"
+
+	return(fout)
 	}
 
-tepredict <- function(x,newdata,name)
+
+lin.predict <- function(x,newdata)
 	{
-	if(!is.matrix(newdata))
-		stop("Argument newdata is not a matrix!")
-	if(ncol(newdata) != 2)
-		stop("Wrong number of columns in newdata!")
-
-	specs <- attr(x,"smooth.specs")
-	coefs <- attr(x,"smooth.coef.draws")
-
-    	minx <- min(x[,1]) - 0.001
-    	maxx <- max(x[,1]) + 0.001
-    	step1 <- (maxx - minx)/(specs$knots[1] - 1)
-    	k1 <- seq(minx - specs$degree[1] * step1, maxx + specs$degree[1] * step1, by = step1)
-
-	bas1 <- spline.des(knots = k1, newdata[,1], 
-                         ord = (specs$degree[1] + 1), 
-                         outer.ok = TRUE)$design
-
-    	minz <- min(x[,2]) - 0.001
-    	maxz <- max(x[,2]) + 0.001
-    	step2 <- (maxz - minz)/(specs$knots[2] - 1)
-    	k2 <- seq(minz - specs$degree[2] * step2, maxz + specs$degree[2] * step2, by = step2)
-
-	bas2 <- spline.des(knots = k2, newdata[,2], 
-                         ord = (specs$degree[2] + 1), 
-                         outer.ok = TRUE)$design
-
-     	bas <- matrix(0, nrow(newdata), 0)
-     	for (k in 1:ncol(bas1)) 
-		bas <- cbind(bas, bas1[,k]*bas2)
-
-	nd <- ncol(coefs)
-	nf <- matrix(0,nrow(newdata),nd)
-	rq <- attr(x,"rq")
-
-	for(i in 1:nd)
-		nf[,i] <- bas%*%(rq%*%coefs[,i])
-
-	pred <- matrix(0,nrow(newdata),11)
-	pred[,1] <- newdata[,1]
-	pred[,2] <- newdata[,2]
-	pred[,3] <- apply(nf,1,mean)
-	pred[,4] <- apply(nf,1,quantile,probs=0.025)
-	pred[,5] <- apply(nf,1,quantile,probs=0.1)
-	pred[,6] <- apply(nf,1,quantile,probs=0.5)
-	pred[,7] <- apply(nf,1,quantile,probs=0.9)
-	pred[,8] <- apply(nf,1,quantile,probs=0.975)
-      pred[,10] <- (pred[,5] < 0 & pred[,7] < 0) * (-1) + (pred[,5] <= 0 & pred[,7] >= 0) * 0 + (pred[,5] > 0 & pred[,7] > 0) * 1
-      pred[,11] <- (pred[,4] < 0 & pred[,8] < 0) * (-1) + (pred[,4] <= 0 & pred[,8] >= 0) * 0 + (pred[,4] > 0 & pred[,8] > 0) * 1
-	pred <- pred[order(pred[,1]),]
-	cnams <- colnames(x)
-	if(is.null(colnames(newdata)))
-		{
-		cnams[1] <- paste(name,":",cnams[1],sep="")
-		cnams[2] <- paste(name,":",cnams[2],sep="")
-		}
-	else
-		{
-		cnams[1] <- colnames(newdata)[1]
-		cnams[2] <- colnames(newdata)[2]
-		}
-	colnames(pred) <- cnams
-	attr(pred,"smooth.specs") <- attr(x,"smooth.specs")
-	attr(pred,"smooth.specs")$names <- cnams[1:2]
-	attr(pred,"smooth.coef") <- attr(x,"smooth.coef")
-	attr(pred,"smooth.prediction") <- TRUE
-	attr(pred,"knots") <- list(k1,k2)
-	attr(pred,"smooth.edf") <- attr(x,"smooth.edf")
-	attr(pred,"smooth.ceffect") <- attr(x,"smooth.ceffect")
-	attr(pred,"smooth.ceffect.draws") <- attr(x,"smooth.ceffect.draws")
-	attr(pred,"smooth.coef.draws") <- attr(x,"smooth.coef.draws")
-	attr(pred,"smooth.variance.draws") <- attr(x,"smooth.variance.draws")
-	attr(pred,"smooth.coef.mean") <- attr(x,"smooth.coef.mean")
-
-	class(pred) <- "te.gibbs"
-	return(pred)
-	}
-
-mapredict <- function(x,newdata,name)
-	{
-	specs <- attr(x,"smooth.specs")
-	coefs <- attr(x,"smooth.coef.draws")
-	if(specs$dim == 1)
-		{		
-		bas <- ma(newdata,c=specs$c,kappa=specs$kappa,loc=specs$loc,dgts=FALSE)$basis
-            #matplot(x=newdata[order(newdata)],y=bas[order(newdata),],type="l")
-		nd <- ncol(coefs)
-		nf <- matrix(0,length(newdata),nd)
-		rq <- attr(x,"rq")
-		for(i in 1:nd)
-			nf[,i] <- bas%*%(rq%*%coefs[,i])
-		pred <- matrix(0,length(newdata),10)
-		pred[,1] <- newdata
-		pred[,2] <- apply(nf,1,mean)
-		pred[,3] <- apply(nf,1,quantile,probs=0.025)
-		pred[,4] <- apply(nf,1,quantile,probs=0.1)
-		pred[,5] <- apply(nf,1,quantile,probs=0.5)
-		pred[,6] <- apply(nf,1,quantile,probs=0.9)
-		pred[,7] <- apply(nf,1,quantile,probs=0.975)
-      	pred[,9] <- (pred[,4] < 0 & pred[,6] < 0) * (-1) + (pred[,4] <= 0 & pred[,6] >= 0) * 0 + (pred[,4] > 0 & pred[,6] > 0) * 1
-      	pred[,10] <- (pred[,3] < 0 & pred[,7] < 0) * (-1) + (pred[,3] <= 0 & pred[,7] >= 0) * 0 + (pred[,3] > 0 & pred[,7] > 0) * 1
-		pred <- pred[order(pred[,1]),]
-		cnams <- colnames(x)
-		cnams[1] <- name
-		colnames(pred) <- cnams
-		attr(pred,"smooth.specs") <- attr(x,"smooth.specs")
-		attr(pred,"smooth.specs")$names <- name
-		attr(pred,"smooth.specs")$dim <- 1
-		attr(pred,"smooth.coef") <- attr(x,"smooth.coef")
-		attr(pred,"smooth.prediction") <- TRUE
-		attr(pred,"smooth.edf") <- attr(x,"smooth.edf")
-		attr(pred,"smooth.ceffect") <- attr(x,"smooth.ceffect")
-		attr(pred,"smooth.ceffect.draws") <- attr(x,"smooth.ceffect.draws")
-		attr(pred,"smooth.coef.draws") <- attr(x,"smooth.coef.draws")
-		attr(pred,"smooth.variance.draws") <- attr(x,"smooth.variance.draws")
-		attr(pred,"smooth.coef.mean") <- attr(x,"smooth.coef.mean")
-
-		class(pred) <- "ma.gibbs"
-		}
-	else
-		{
-		if(!is.matrix(newdata))
-			stop("Argument newdata is not a matrix!")
-		if(ncol(newdata) != 2)
-			stop("Wrong number of columns in newdata!")
-		bas <- ma(newdata[,1],newdata[,2],c=specs$c,kappa=specs$kappa,loc=specs$loc,dgts=FALSE)$basis
-		nd <- ncol(coefs)
-		nf <- matrix(0,nrow(newdata),nd)
-		rq <- attr(x,"rq")
-
-		for(i in 1:nd)
-			nf[,i] <- bas%*%(rq%*%coefs[,i])
-
-		pred <- matrix(0,nrow(newdata),11)
-		pred[,1] <- newdata[,1]
-		pred[,2] <- newdata[,2]
-		pred[,3] <- apply(nf,1,mean)
-		pred[,4] <- apply(nf,1,quantile,probs=0.025)
-		pred[,5] <- apply(nf,1,quantile,probs=0.1)
-		pred[,6] <- apply(nf,1,quantile,probs=0.5)
-		pred[,7] <- apply(nf,1,quantile,probs=0.9)
-		pred[,8] <- apply(nf,1,quantile,probs=0.975)
-      	pred[,10] <- (pred[,5] < 0 & pred[,7] < 0) * (-1) + (pred[,5] <= 0 & pred[,7] >= 0) * 0 + (pred[,5] > 0 & pred[,7] > 0) * 1
-      	pred[,11] <- (pred[,4] < 0 & pred[,8] < 0) * (-1) + (pred[,4] <= 0 & pred[,8] >= 0) * 0 + (pred[,4] > 0 & pred[,8] > 0) * 1
-		pred <- pred[order(pred[,1]),]
-		cnams <- colnames(x)
-		if(is.null(colnames(newdata)))
-			{
-			cnams[1] <- paste(name,":",cnams[1],sep="")
-			cnams[2] <- paste(name,":",cnams[2],sep="")
-			}
-		else
-			{
-			cnams[1] <- colnames(newdata)[1]
-			cnams[2] <- colnames(newdata)[2]
-			}
-		colnames(pred) <- cnams
-		attr(pred,"smooth.specs") <- attr(x,"smooth.specs")
-		attr(pred,"smooth.specs")$names <- cnams[1:2]
-		attr(pred,"smooth.coef") <- attr(x,"smooth.coef")
-		attr(pred,"smooth.prediction") <- TRUE
-		attr(pred,"smooth.edf") <- attr(x,"smooth.edf")
-		attr(pred,"smooth.ceffect") <- attr(x,"smooth.ceffect")
-		attr(pred,"smooth.ceffect.draws") <- attr(x,"smooth.ceffect.draws")
-		attr(pred,"smooth.coef.draws") <- attr(x,"smooth.coef.draws")
-		attr(pred,"smooth.variance.draws") <- attr(x,"smooth.variance.draws")
-		attr(pred,"smooth.coef.mean") <- attr(x,"smooth.coef.mean")
-
-		class(pred) <- "ma.gibbs"
-		return(pred)
-		}
-	return(pred)
-	}
-
-linearpredict <- function(x,newdata,name)
-	{
+	name <- colnames(x)[1]
+	#if(name!%in%names(newdata))
+	#	stop("Cannot find right covariable for method predict.gibbs() in argument newdata, covariable name in newdata must be identical!")
+	newdata <- newdata[name]
 	coefs <- attr(x,"linear.coef")
 	pred <- matrix(0,length(newdata),10)
 	pred[,1] <- newdata
@@ -449,8 +224,8 @@ linearpredict <- function(x,newdata,name)
 	pred[,5] <- newdata*coefs[5]
 	pred[,6] <- newdata*coefs[6]
 	pred[,7] <- newdata*coefs[7]
-      pred[,9] <- (pred[,4] < 0 & pred[,6] < 0) * (-1) + (pred[,4] <= 0 & pred[,6] >= 0) * 0 + (pred[,4] > 0 & pred[,6] > 0) * 1
-      pred[,10] <- (pred[,3] < 0 & pred[,7] < 0) * (-1) + (pred[,3] <= 0 & pred[,7] >= 0) * 0 + (pred[,3] > 0 & pred[,7] > 0) * 1
+      	pred[,9] <- (pred[,4] < 0 & pred[,6] < 0) * (-1) + (pred[,4] <= 0 & pred[,6] >= 0) * 0 + (pred[,4] > 0 & pred[,6] > 0) * 1
+      	pred[,10] <- (pred[,3] < 0 & pred[,7] < 0) * (-1) + (pred[,3] <= 0 & pred[,7] >= 0) * 0 + (pred[,3] > 0 & pred[,7] > 0) * 1
 	pred <- pred[order(pred[,1]),]
 	cnams <- colnames(x)
 	cnams[1] <- name
@@ -465,4 +240,3 @@ linearpredict <- function(x,newdata,name)
 	class(pred) <- "linear.gibbs"
 	return(pred)
 	}
-
