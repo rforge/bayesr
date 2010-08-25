@@ -47,19 +47,19 @@ f1<-function(x){X<-0.2*x^11*(10*(1-x))^6+10*(10*x)^3*(1-x)^10
 y<-10+f1(x1)+rnorm(n,sd=1.2)
 
 # estimate model
-model<-gibbs(y~ps(x1))
-summary(model)
+b<-gibbs(y~s(x1))
+summary(b)
 
 # get predictions
-pred<-predict(model,which=1)
-plot(pred)
+p<-predict(b,which=1)
+plot(p)
 
 # create some new values for x1
-newx1 <- seq(0.1,0.8,length=30)
-pred<-predict(model,which=1,newdata=newx1)
-plot(pred)
+ndata<-list(x1=seq(0.1,0.8,length=30))
+p<-predict(b,which=1,newdata=ndata)
+plot(p)
 
-pred
+p
 }
 
 \keyword{models} 

@@ -881,3 +881,119 @@ SEXP cpoint(SEXP poly1, SEXP poly2)
     return out;
     }
     
+
+SEXP qhelp2(SEXP draws, SEXP basis, SEXP iter, SEXP n, SEXP k, 
+	    SEXP NP1, SEXP NP2, SEXP NP3, SEXP NP4, SEXP NP5,
+	    SEXP response, SEXP eta, SEXP ind)
+    {
+    int i,j,ii,jj,NC,ITER,N,nr,np1,np2,np3,np4,np5,nProtected = 0,np11,np12,np13,np14,np15;
+    SEXP out,TMP,fout;
+    
+    double tmp=0.0,sum=0.0;
+    
+    N = INTEGER(n)[0];
+    NC = INTEGER(k)[0];
+    ITER = INTEGER(iter)[0];
+    nr = length(ind);
+        
+    PROTECT(out = allocMatrix(REALSXP, N, 6));
+    ++nProtected;
+
+    PROTECT(fout = allocMatrix(REALSXP, N, 9));
+    ++nProtected;
+
+    PROTECT(TMP = allocVector(REALSXP, ITER));
+    ++nProtected;
+    
+    np11 = REAL(NP1)[0];
+    np12 = REAL(NP1)[0];
+    np13 = REAL(NP1)[0];
+    np14 = REAL(NP1)[0];
+    np15 = REAL(NP1)[0];
+    
+    PROTECT(NP1 = coerceVector(NP1, INTSXP));
+    ++nProtected;
+    PROTECT(NP2 = coerceVector(NP2, INTSXP));
+    ++nProtected;
+    PROTECT(NP3 = coerceVector(NP3, INTSXP));
+    ++nProtected;
+    PROTECT(NP4 = coerceVector(NP4, INTSXP));
+    ++nProtected;
+    PROTECT(NP5 = coerceVector(NP5, INTSXP));
+    ++nProtected;
+    
+    np1 = ITER - INTEGER(NP1)[0] - 1;
+    np2 = ITER - INTEGER(NP2)[0] - 1;
+    np3 = ITER - INTEGER(NP3)[0] - 1;
+    np4 = ITER - INTEGER(NP4)[0] - 1;
+    np5 = ITER - INTEGER(NP5)[0] - 1;
+    
+    double *bptr,*dptr,*tptr,*outptr,*responseptr,*etaptr,*foutptr;
+    int *indptr;
+    bptr = REAL(basis);
+    dptr = REAL(draws);
+    tptr = REAL(TMP);
+    outptr = REAL(out);
+    responseptr = REAL(response);
+    etaptr = REAL(eta);
+    foutptr = REAL(fout);
+    indptr = INTEGER(ind);
+
+    const int qcheck = (np11 - floor(np11));
+    
+    for(i=0;i<N;++i)
+        {
+        sum = 0.0;
+        for(ii=0;ii<ITER;++ii)
+            {
+            tmp = 0.0;
+            for(j=0;j<NC;++j)
+                {
+                tmp += bptr[j*N + i]*dptr[j + NC*ii];
+                }
+            tptr[ii] = tmp;
+            sum += tmp;
+            }
+            
+        quicksort(ITER,tptr);      
+        outptr[i] = sum/ITER;
+              
+        if((np11 - floor(np11)) == 0)    
+            outptr[i + 5*N] = (tptr[np1 - 1] + tptr[np1])/2;
+        else
+            outptr[i + 5*N] = tptr[np1 - 1];
+        if((np12 - floor(np12)) == 0)    
+            outptr[i + 3*N] = (tptr[np2 - 1] + tptr[np2])/2;
+        else
+            outptr[i + 3*N] = tptr[np2 - 1];
+        if((np13 - floor(np13)) == 0)    
+            outptr[i + 1*N] = (tptr[np3 - 1] + tptr[np3])/2;
+        else
+            outptr[i + 1*N] = tptr[np3 - 1];
+        if((np14 - floor(np14)) == 0)    
+            outptr[i + 4*N] = (tptr[np4 - 1] + tptr[np4])/2;
+        else
+            outptr[i + 4*N] = tptr[np4 - 1];
+        if((np15 - floor(np15)) == 0)    
+            outptr[i + 2*N] = (tptr[np5 - 1] + tptr[np5])/2;
+        else
+            outptr[i + 2*N] = tptr[np5 - 1];
+        }
+        
+    int get = 0;
+
+    for(i=0;i<nr;++i)
+        {
+	get = indptr[i] - 1;
+	for(j=0;j<6;++j)
+		{
+		foutptr[i + j*nr] = outptr[get + j*N];
+		}
+	foutptr[i + 7*N] = (foutptr[i + 1*N] < 0 && foutptr[i + 5*N] < 0)*(-1) + (foutptr[i + 1*N] <= 0 & foutptr[i + 5*N] >= 0)*0 + (foutptr[i + 1*N] > 0 && foutptr[i + 5*N] > 0)*1;
+	foutptr[i + 8*N] = (foutptr[i + 2*N] < 0 && foutptr[i + 4*N] < 0)*(-1) + (foutptr[i + 2*N] <= 0 && foutptr[i + 4*N] >= 0)*0 + (foutptr[i + 2*N] > 0 && foutptr[i + 4*N] > 0)*1; 
+	foutptr[i + 6*N] = responseptr[i] - etaptr[i] + foutptr[i]; 
+        }
+    
+    UNPROTECT(nProtected);
+    return fout;
+    }

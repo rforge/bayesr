@@ -23,10 +23,10 @@ smoothtwo <- function(X,grid,xlab,ylab,zlab,main,theta,phi,image,const,col,color
 	dat <- eval(parse(text=paste("data.frame(",specs$term[1],"=XN,",specs$term[2],"=ZN)")))
 	if(!is.null(specs$xt$geo))
 		specs$xt$geo <- NULL
-	t <- smooth.construct(specs,dat,NULL)
+	X <- Predict.matrix(attr(specs,"smooth.construct"),dat)
 	if(is.null(const))
 		const <- FALSE
-	fitted <- qhelp(draws,t$X)
+	fitted <- qhelp(draws,X)
 	fit01 <- fit02 <- NA
 	if(const)
 		{

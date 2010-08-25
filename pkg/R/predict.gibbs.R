@@ -5,18 +5,21 @@ predict.gibbs <- function(object, which = 1, newdata = NULL, ...)
 	if(length(object$terms) < which[1] || which[1] == 0)
 		stop("Argument which is specified wrong, nothing to predict!")
 	call <- match.call()
+	ok <- FALSE
 	if(!is.null(newdata))
 		{
-		if(!is.list(newdata) || !is.data.frame(newdata))
+		if((!is.list(newdata)) && (!is.data.frame(newdata)))
 			stop("Argument newdata must be a list or data.frame()!")
+		else
+			ok <- TRUE
 		}
 	X <- object$fout[[which[1]]]
 	type <- attr(X,"term.type")
 	if(type == "smooth")
 		{
-		if(!is.null(newdata))
+		if(ok)
 			{
-			if(inherits(X[[1]],"sm.gibbs"))
+			if(inherits(X,"sm.gibbs"))
 				pred <- sm.predict(X,newdata)
 			else
 				return(X)
@@ -30,7 +33,7 @@ predict.gibbs <- function(object, which = 1, newdata = NULL, ...)
 			attr(X,"factorcheck") <- "nonfactor"
 		if(attr(X,"factorcheck") == "nonfactor")
 			{
-			if(!is.null(newdata))
+			if(ok)
 				pred <- lin.predict(X,newdata)
 			else
 				return(X)
@@ -40,11 +43,10 @@ predict.gibbs <- function(object, which = 1, newdata = NULL, ...)
 		}
 	if(type == "m")
 		{
-		if(!is.null(newdata))
+		if(ok)
 			{
 			nl <- length(X)
 			pred <- vector("list",nl)
-
 			if(inherits(X[[1]],"sm.gibbs"))
 				{
 				for(j in 1:nl)
@@ -86,7 +88,7 @@ predict.gibbs <- function(object, which = 1, newdata = NULL, ...)
 						{
 						if(inherits(X,"sm.gibbs"))
 							{
-							if(!is.null(newdata))
+							if(ok)
 								pred <- sm.predict(X,newdata)
 							else
 								return(X)
@@ -100,7 +102,7 @@ predict.gibbs <- function(object, which = 1, newdata = NULL, ...)
 							attr(X,"factorcheck") <- "nonfactor"
 						if(attr(X,"factorcheck") == "nonfactor")
 							{
-							if(!is.null(newdata))
+							if(ok)
 								pred <- lin.predict(X,newdata)
 							else
 								return(X)
@@ -128,7 +130,7 @@ predict.gibbs <- function(object, which = 1, newdata = NULL, ...)
 						{
 						if(inherits(X,"sm.gibbs"))
 							{
-							if(!is.null(newdata))
+							if(ok)
 								pred <- sm.predict(X,newdata)
 							else
 								return(X)
@@ -142,7 +144,7 @@ predict.gibbs <- function(object, which = 1, newdata = NULL, ...)
 							attr(X,"factorcheck") <- "nonfactor"
 						if(attr(X,"factorcheck") == "nonfactor")
 							{
-							if(!is.null(newdata))
+							if(ok)
 								pred <- lin.predict(X,newdata)
 							else
 								return(X)
@@ -164,14 +166,13 @@ predict.gibbs <- function(object, which = 1, newdata = NULL, ...)
 	}
 
 
-sm.predict <- function(x,newdata,name)
+sm.predict <- function(x,newdata)
 	{
 	specs <- attr(x,"smooth.specs")
 	object <- attr(specs,"smooth.construct")
 
 	X <- Predict.matrix(object,newdata)
 	coefs <- attr(x,"smooth.coef.draws.utr") 
-
 	fitted <- qhelp(coefs,X)
 	
 	fout <- NULL
@@ -212,31 +213,27 @@ sm.predict <- function(x,newdata,name)
 lin.predict <- function(x,newdata)
 	{
 	name <- colnames(x)[1]
-	#if(name!%in%names(newdata))
-	#	stop("Cannot find right covariable for method predict.gibbs() in argument newdata, covariable name in newdata must be identical!")
-	newdata <- newdata[name]
+	if(!name%in%names(newdata))
+		stop("no data to predict at")
+	newdata <- newdata[name][[1]]
 	coefs <- attr(x,"linear.coef")
-	pred <- matrix(0,length(newdata),10)
-	pred[,1] <- newdata
-	pred[,2] <- newdata*coefs[1]
-	pred[,3] <- newdata*coefs[3]
-	pred[,4] <- newdata*coefs[4]
-	pred[,5] <- newdata*coefs[5]
-	pred[,6] <- newdata*coefs[6]
-	pred[,7] <- newdata*coefs[7]
-      	pred[,9] <- (pred[,4] < 0 & pred[,6] < 0) * (-1) + (pred[,4] <= 0 & pred[,6] >= 0) * 0 + (pred[,4] > 0 & pred[,6] > 0) * 1
-      	pred[,10] <- (pred[,3] < 0 & pred[,7] < 0) * (-1) + (pred[,3] <= 0 & pred[,7] >= 0) * 0 + (pred[,3] > 0 & pred[,7] > 0) * 1
-	pred <- pred[order(pred[,1]),]
-	cnams <- colnames(x)
-	cnams[1] <- name
-	colnames(pred) <- cnams
-	attr(pred,"smooth.specs") <- list(names=name)
-	attr(pred,"linear.coef.draws") <- attr(x,"linear.coef.draws")
-	attr(pred,"linear.ceffect") <- attr(x,"linear.ceffect") 
-	attr(pred,"linear.coef") <- attr(x,"linear.coef")
-	attr(pred,"linear.coef.mean") <- attr(pred,"linear.coef.mean")
-	attr(pred,"linear.prediction") <- TRUE
-
-	class(pred) <- "linear.gibbs"
-	return(pred)
+	fout <- matrix(0,length(newdata),10)
+	fout[,1] <- newdata
+	fout[,2] <- newdata*coefs[1]
+	fout[,3] <- newdata*coefs[3]
+	fout[,4] <- newdata*coefs[4]
+	fout[,5] <- newdata*coefs[5]
+	fout[,6] <- newdata*coefs[6]
+	fout[,7] <- newdata*coefs[7]
+      	fout[,9] <- (fout[,4] < 0 & fout[,6] < 0) * (-1) + (fout[,4] <= 0 & fout[,6] >= 0) * 0 + (fout[,4] > 0 & fout[,6] > 0) * 1
+      	fout[,10] <- (fout[,3] < 0 & fout[,7] < 0) * (-1) + (fout[,3] <= 0 & fout[,7] >= 0) * 0 + (fout[,3] > 0 & fout[,7] > 0) * 1
+	fout <- fout[order(fout[,1]),]
+	colnames(fout) <- colnames(x)
+	attr(fout,"smooth.specs") <- list(names=name)
+	attr(fout,"linear.coef.draws") <- attr(x,"linear.coef.draws")
+	attr(fout,"linear.ceffect") <- attr(x,"linear.ceffect") 
+	attr(fout,"linear.coef") <- attr(x,"linear.coef")
+	attr(fout,"linear.coef.mean") <- attr(fout,"linear.coef.mean")
+	class(fout) <- "linear.gibbs"
+	return(fout)
 	}

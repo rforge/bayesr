@@ -42,15 +42,7 @@ extract.random <- function(R,RR,RRl,RRs,RRi,fit,RA,lambda,Z,drawsc,mdrawsc,dPR,r
 				partial.resid[[j]] <- tmp[RA[[k]]$Z[,j]!=0]
 			}
 
-		s2pmean <- mean(S2R[k,])
-		s2psd <- sd(S2R[k,])
-		s2pqu97p5 <- quantile(S2R[k,], probs = 0.975)
-		s2pqu2p5 <- quantile(S2R[k,], probs = 0.025)
-		s2pqu10 <- quantile(S2R[k,], probs = 0.1)
-		s2pqu90 <- quantile(S2R[k,], probs = 0.9)
-		s2pmed <- median(S2R[k,])
-		var <- cbind(s2pmean,s2psd,s2pqu2p5,s2pqu10,s2pmed,s2pqu90,s2pqu97p5)
-		colnames(var) <- c("pmean","psd","pqu2p5","pqu10","pmed","pqu90","pqu97p5")
+		var <- sfout(S2R[k,])
 		rownames(var) <- RA[[k]]$facname
 		if(is.null(RA[[k]]$byfacid))
 			faclev <- as.integer(levels(as.factor(RA[[k]]$facorig)))
@@ -98,30 +90,25 @@ extract.random <- function(R,RR,RRl,RRs,RRi,fit,RA,lambda,Z,drawsc,mdrawsc,dPR,r
 						pqu90 <- tmp[7]*xtmp
 						pmean <- tmp[2]*xtmp
 						pmed <- tmp[6]*xtmp
+						by.partial <- response[check] - eta[check] + pmean
+						pcat80 <- (pqu10 < 0 & pqu90 < 0)*(-1) + (pqu10 <= 0 & pqu90 >= 0)*0 + (pqu10 > 0 & pqu90 > 0)*1
+						pcat95 <- (pqu2p5 < 0 & pqu97p5 < 0)*(-1) + (pqu2p5 <= 0 & pqu97p5 >= 0)*0 + (pqu2p5 > 0 & pqu97p5 > 0)*1
+						fitted <- cbind(pmean,pqu2p5,pqu10,pmed,pqu90,pqu97p5,by.partial,pcat95,pcat80)
+						byplots[[j]][[jj]] <- cbind(xtmp,fitted)[order(xtmp),]
 						}
 					else
 						{
-						fitted <- qhelp(drawb[[k]],ZRA[[k]]$tildeZ)
+						fitted <- qhelp2(drawb[[k]],ZRA[[k]]$tildeZ,response,eta)
 						if(class(specs[[jj]]) == "mrf.smooth")
 							xtmp <- specs[[jj]]$x[check]
 						else
 							xtmp <- specs[[jj]]$x[check,]
-						pqu2p5 <- fitted$q2[check]
-						pqu97p5 <- fitted$q1[check]
-						pqu10 <- fitted$q21[check]
-						pqu90 <- fitted$q11[check]
-						pmean <- fitted$mean[check]
-						pmed <- fitted$median[check]
+						byplots[[j]][[jj]] <- cbind(xtmp,fitted[check,])[order(xtmp),]
 						}
-					by.partial <- response[check] - eta[check] + pmean
 					if(nlby > 1)
-						tmpnam <- paste(specs[[jj]]$term,":",j,sep="")
+						tmpnam <- paste(specs[[jj]]$term,".",j,sep="")
 					else
 						tmpnam <- specs[[jj]]$term
-
-					pcat80 <- (pqu10 < 0 & pqu90 < 0)*(-1) + (pqu10 <= 0 & pqu90 >= 0)*0 + (pqu10 > 0 & pqu90 > 0)*1
-					pcat95 <- (pqu2p5 < 0 & pqu97p5 < 0)*(-1) + (pqu2p5 <= 0 & pqu97p5 >= 0)*0 + (pqu2p5 > 0 & pqu97p5 > 0)*1
-					byplots[[j]][[jj]] <- cbind(xtmp,pmean,pqu2p5,pqu10,pmed,pqu90,pqu97p5,by.partial,pcat95,pcat80)
 					colnames(byplots[[j]][[jj]]) <- c(tmpnam,"pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5","partial.resid","pcat95","pcat80")
 					gamma <- matrix(effects[ok,c(2,4,5,6,7,8)],ncol=6)
 					colnames(gamma) <- c("pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5")
@@ -225,20 +212,8 @@ extract.random <- function(R,RR,RRl,RRs,RRi,fit,RA,lambda,Z,drawsc,mdrawsc,dPR,r
 					jj <- tmpcheck[RA[[k]]$indspec[2,]==j]
 					if(is.null(RA[[k]][[jj]]$rwcheck))
 						{
-						fitted <- qhelp(drawsc[[k]][[j]],Z[[k]][[j]]$tildeZ)
-						pqu2p5 <- fitted$q2
-						pqu97p5 <- fitted$q1
-						pqu10 <- fitted$q21
-						pqu90 <- fitted$q11
-						pmean <- fitted$mean
-						pmed <- fitted$median
-
-						pqu2p5 <- pqu2p5[newR[[k]][[j]]][RA[[k]]$fac]
-						pqu97p5 <- pqu97p5[newR[[k]][[j]]][RA[[k]]$fac]
-						pqu10 <- pqu10[newR[[k]][[j]]][RA[[k]]$fac]
-						pqu90 <- pqu90[newR[[k]][[j]]][RA[[k]]$fac]
-						pmean <- pmean[newR[[k]][[j]]][RA[[k]]$fac]
-						pmed <- pmed[newR[[k]][[j]]][RA[[k]]$fac]
+						fout <- qhelp2(drawsc[[k]][[j]],Z[[k]][[j]]$tildeZ,response,eta,newR[[k]][[j]])
+						fout <- fout[RA[[k]]$fac,]
 						xtmp <- NULL
 						for(i in 1:RA[[k]][[jj]]$specs$dim)
 							xtmp <- cbind(xtmp,eval(parse(text=RA[[k]][[jj]]$specs$term[i]),envir=data))
@@ -247,37 +222,21 @@ extract.random <- function(R,RR,RRl,RRs,RRi,fit,RA,lambda,Z,drawsc,mdrawsc,dPR,r
 						}
 					else
 						{
-						fitted <- qhelp(drawsc[[k]][[j]],ZRA[[k]]$tildeZ)
-						pqu2p5 <- fitted$q2
-						pqu97p5 <- fitted$q1
-						pqu10 <- fitted$q21
-						pqu90 <- fitted$q11
-						pmean <- fitted$mean
-						pmed <- fitted$median
+						fout <- qhelp2(drawsc[[k]][[j]],ZRA[[k]]$tildeZ,response,eta)
 						xtmp <- RA[[k]][[jj]]$rwx
 						RA[[k]][[jj]]$names <- paste(RA[[k]][[jj]]$rwnames,":rw",sep="")
 						}
 
 					if(icheck)
 						{
-						pqu2p5 <- pqu2p5[iZ]
-						pqu97p5 <- pqu97p5[iZ] 
-						pqu10 <- pqu10[iZ]
-						pqu90 <- pqu90[iZ]
-						pmean <- pmean[iZ]
-						pmed <- pmed[iZ]
+						fout <- fout[iZ,]
 						if(is.matrix(xtmp))
 							xtmp <- xtmp[iZ,]
 						else
 							xtmp <- xtmp[iZ]
 						}
 
-					partial.resid <- response - eta + pmean
-
-					pcat80 <- (pqu10 < 0 & pqu90 < 0)*(-1) + (pqu10 <= 0 & pqu90 >= 0)*0 + (pqu10 > 0 & pqu90 > 0)*1
-					pcat95 <- (pqu2p5 < 0 & pqu97p5 < 0)*(-1) + (pqu2p5 <= 0 & pqu97p5 >= 0)*0 + (pqu2p5 > 0 & pqu97p5 > 0)*1
-
-					fout <- cbind(xtmp,pmean,pqu2p5,pqu10,pmed,pqu90,pqu97p5,partial.resid,pcat95,pcat80)
+					fout <- cbind(xtmp,fout)
 					fout <- fout[order(fout[,1]),]
 
 					if(class(RA[[k]][[jj]]) == "mrf.smooth")
@@ -288,13 +247,8 @@ extract.random <- function(R,RR,RRl,RRs,RRi,fit,RA,lambda,Z,drawsc,mdrawsc,dPR,r
 					matrownames[j] <- RA[[k]][[jj]]$term
 
 					redrawsc <- redraw(Z[[k]][[j]]$RQ,drawsc[[k]][[j]])
-					gmean <- apply(redrawsc, 1, mean)
-					gpqu2p5 <- apply(redrawsc, 1, quantile, probs=0.025)
-					gpqu10 <- apply(redrawsc, 1, quantile, probs=0.1)
-					gpmed<- apply(redrawsc, 1, quantile, probs=0.5)
-					gpqu90 <- apply(redrawsc, 1, quantile, probs=0.9)
-					gpqu97p5 <- apply(redrawsc, 1, quantile, probs=0.975)
-					gamma <- cbind(gmean,gpqu2p5,gpqu10,gpmed,gpqu90,gpqu97p5) 
+					gamma <- c(apply(redrawsc, 1, mean), apply(redrawsc, 1, quantile, probs=c(0.025,0.1,0.5,0.9,0.975)))
+					gamma <- cbind(gmean,gpqu) 
 					colnames(gamma) <- c("pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5")
 					gcn <- paste(RA[[k]][[jj]]$label,":",1:nrow(gamma),sep="")
 					rownames(gamma) <- gcn
