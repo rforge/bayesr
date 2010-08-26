@@ -5,13 +5,12 @@ r <- function(fac, method = NULL, by = NULL, xt = NULL)
 		stop("Level variable missing in ra()!")
 
 	call <- match.call(expand.dots=FALSE)
-
 	get <- collect(2)
 
 	allvars <- all.vars(call)
 	if(missing(fac))
 		{
-		fact <- 1
+		fact <- fac <- 1
 		only <- TRUE
 		}
 	else
@@ -19,7 +18,6 @@ r <- function(fac, method = NULL, by = NULL, xt = NULL)
 		fact <- allvars[1]
 		only <- FALSE
 		}
-
 	byvars <- ""
 	if(!is.null(by))
 		{
@@ -102,7 +100,6 @@ r <- function(fac, method = NULL, by = NULL, xt = NULL)
 			}
 		assign("usedata",usedata,envir=thisisitev)
 		}
-
 	data <- usedata
 	if(!is.factor(fac))
 		fac <- as.factor(round(fac))
@@ -123,7 +120,6 @@ r <- function(fac, method = NULL, by = NULL, xt = NULL)
 		rownames(termstruct) <- terms
 		colnames(termstruct) <- c("start","end")
 		tmpa <- specs <- vector("list",length=length(terms))
-
 		for(d in 1:length(terms))
 			{
 			tmpa[[d]] <- eval(parse(text = terms[d]))

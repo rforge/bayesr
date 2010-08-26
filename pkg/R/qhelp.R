@@ -69,7 +69,7 @@ qhelp2 <- function(draws,basis,response=NULL,eta=NULL,ind=NULL)
 	}
 
 
-sfout <- function(x)
+sfout <- function(x,type=1)
 	{
 	if(!is.matrix(x))
 		x <- matrix(x,nrow=1)
@@ -81,6 +81,11 @@ sfout <- function(x)
 	x <- cbind(apply(x,1,mean),apply(x,1,sd),t(apply(x,1,quantile,probs=c(0.025,0.1,0.5,0.9,0.975))))
 	colnames(x) <- c("pmean","psd","pqu2p5","pqu10","pmed","pqu90","pqu97p5")
 	rownames(x) <- NULL
+	if(type > 1)
+		{
+		x <- cbind(x[,1],x[,3:ncol(x)])
+		colnames(x) <- c("pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5")
+		}
 
 	return(x)
 	}

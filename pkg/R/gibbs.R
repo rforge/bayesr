@@ -1529,6 +1529,7 @@ gibbs <- function(formula, data, weights, family = "gaussian", iter = 1200, burn
         # End Sampler                                                                                                         #
 	#######################################################################################################################
 
+
 	# Only if data augmentation
 	response <- origresponse
 

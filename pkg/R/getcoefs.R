@@ -21,7 +21,6 @@ getcoefs <- function(fout,beta)
 		rownames(tmp) <- tmpn
 		coefs <- rbind(coefs,tmp)
 		}
-
 	if(length(fout) > 0)
 		{
 		ok <- TRUE

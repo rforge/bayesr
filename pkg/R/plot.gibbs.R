@@ -141,8 +141,8 @@ plot.gibbs <- function(x, which = 1, resid = FALSE, jit = TRUE, const = FALSE, d
 				for(j in start:end)
 					{
 					plot.linear.gibbs(X[[j]],resid,jit,const,diagnostics,acf,xlab[j],ylab[j], 
-                             	 			 main[j],colored,col,lwdc,lwdconf,range,
-                              			         cex,ask,...)
+                             	 			  main[j],colored,col,lwdc,lwdconf,range,
+                              			          cex,ask,...)
 					}
 				}
 			}
@@ -171,8 +171,8 @@ plot.gibbs <- function(x, which = 1, resid = FALSE, jit = TRUE, const = FALSE, d
 								}
 							if(inherits(X,"mrf.gibbs"))
 								{
-								plot.mrf.gibbs(X,resid,map,names,values,colored,col,lwdc,lwdconf,range,pal,legend, 
-			               	       				       scale,nrc,xlab,ylab,zlab,main,dgts,cex,lpos, 
+								plot.mrf.gibbs(X,resid,map,names,values,colored,col,lwdc,lwdconf,range,
+									       pal,legend,scale,nrc,xlab,ylab,zlab,main,dgts,cex,lpos, 
 				               				       const,diagnostics,acf,p3d,theta,phi,pcat,border,...)
 								}
 							}
@@ -182,7 +182,7 @@ plot.gibbs <- function(x, which = 1, resid = FALSE, jit = TRUE, const = FALSE, d
                               					          main,colored,col,lwdc,lwdconf,range,
                               					          cex,ask,...)
 							}	
-						if(attr(X,"term.type") == "random")
+						if(attr(X,"term.type") == "random" && !byplots)
 							{
 							X <- X$effects
 							plot.random.gibbs(X,resid,const,diagnostics,acf,xlab,ylab,zlab, 
@@ -224,7 +224,7 @@ plot.gibbs <- function(x, which = 1, resid = FALSE, jit = TRUE, const = FALSE, d
                               						  main,colored,col,lwdc,lwdconf,range,
                               						  cex,ask,...)
 							}
-						if(attr(X,"term.type") == "random")
+						if(attr(X,"term.type") == "random" && !byplots)
 							{
 							which <- which[3:length(which)]
 							plot.gibbs(X,which,resid,jit,const,diagnostics,acf,xlab,ylab,zlab,main, 
@@ -252,18 +252,43 @@ plot.gibbs <- function(x, which = 1, resid = FALSE, jit = TRUE, const = FALSE, d
 				else
 					effplot <- TRUE
 				}
-			if(length(which) == 1)
+			if(length(which)>=1 && byplots)
 				{
 				if(byplots)
 					{
-					if(!is.null(attr(X$effects,"byplots")))
+					byyes1 <- byyes2 <- FALSE
+					if(!is.null(attr(X,"byplots")))
+						byyes2 <- TRUE
+					if(!byyes2)
+						if(!is.null(attr(X$effects,"byplots")))
+							byyes1 <- TRUE
+					if(byyes1 || byyes2)
 						{
-						byp <- attr(X$effects,"byplots")
+						if(byyes1)
+							byp <- attr(X$effects,"byplots")
+						if(byyes2)
+							byp <- attr(X,"byplots")
 						lbyp <- length(byp)*length(byp[[1]])
 						mfrowpr <- as.integer(par()$mfrow)
-						if(mfrowpr[1] == 1 && mfrowpr[2] == 1)
-							setmfrow(lbyp,TRUE)
-						for(j in 1:length(byp))
+						if(mfrowpr[1] == 1 && mfrowpr[2] == 1 && (length(which)<2))
+							setmfrow(lbyp)
+						if(length(which)<2)
+							{
+							start <- 1
+							end <- length(byp)		
+							}
+						else
+							{
+							if(length(byp)<which[2])
+								start <- end <- 1
+							else
+								start <- end <- which[2]
+							}
+print(length(byp))
+print(which)
+print(start)
+print(end)
+						for(j in start:end)
 							{
 							for(jj in 1:length(byp[[j]]))
 								{
@@ -272,22 +297,22 @@ plot.gibbs <- function(x, which = 1, resid = FALSE, jit = TRUE, const = FALSE, d
 									if(inherits(byp[[j]][[jj]],"sm.gibbs"))
 										{
 										plot.sm.gibbs(byp[[j]][[jj]],resid,jit,const,diagnostics,acf,xlab,ylab,zlab,main, 
-			              	      						      colored,col,lwdc,lwdconf,grid,theta,phi,image, 
-				              						      cex,ask,border,nrc,pal,...)
+			              	      							colored,col,lwdc,lwdconf,grid,theta,phi,image, 
+				              							cex,ask,border,nrc,pal,...)
 										}
 									if(inherits(byp[[j]][[jj]],"mrf.gibbs"))
 										{
 										plot.mrf.gibbs(byp[[j]][[jj]],resid,map,names,values,colored,col,
-											       lwdc,lwdconf,range,pal,legend, 
-			               	       						       scale,nrc,xlab,ylab,zlab,main,dgts,cex,lpos, 
-				               						       const,diagnostics,acf,p3d,theta,phi,pcat,border,...)
+										       	lwdc,lwdconf,range,pal,legend, 
+			               	       					       	scale,nrc,xlab,ylab,zlab,main,dgts,cex,lpos, 
+				               					       	const,diagnostics,acf,p3d,theta,phi,pcat,border,...)
 										}
 									}
 								if(attr(byp[[j]][[jj]],"term.type") == "linear")
 									{
 									plot.linear.gibbs(byp[[j]][[jj]],resid,jit,const,diagnostics,acf,xlab,ylab, 
-                              							          main,colored,col,lwdc,lwdconf,range,
-                              							          cex,ask,...)
+                              						          	main,colored,col,lwdc,lwdconf,range,
+                              						          	cex,ask,...)
 									}
 								}
 							}
@@ -296,9 +321,9 @@ plot.gibbs <- function(x, which = 1, resid = FALSE, jit = TRUE, const = FALSE, d
 					else
 						effplot <- TRUE
 					}
-				else
-					effplot <- TRUE
 				}
+			if(length(which)==1 && !byplots)
+				effplot <- TRUE
 			if(effplot)
 				{
 				X <- X$effects

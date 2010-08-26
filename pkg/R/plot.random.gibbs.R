@@ -9,8 +9,8 @@ plot.random.gibbs <- function(x, resid = FALSE, const = FALSE, diagnostics = FAL
 			{
 			values <- x
 			plot.mrf.gibbs(x,resid,map,names,values,colored,col,lwdc,lwdconf,
-					   range,pal,legend,scale,nrc,xlab,ylab,zlab,main,dgts,
-					   cex,lpos,const,diagnostics,acf,p3d,theta,phi,pcat,border,...)					
+					range,pal,legend,scale,nrc,xlab,ylab,zlab,main,dgts,
+					cex,lpos,const,diagnostics,acf,p3d,theta,phi,pcat,border,...)					
 			}
 		else
 			{

@@ -245,44 +245,17 @@ extract.random <- function(R,RR,RRl,RRs,RRi,fit,RA,lambda,Z,drawsc,mdrawsc,dPR,r
 						tmpnam <- RA[[k]][[jj]]$names
 					colnames(fout) <- c(tmpnam,"pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5","partial.resid","pcat95","pcat80")
 					matrownames[j] <- RA[[k]][[jj]]$term
-
 					redrawsc <- redraw(Z[[k]][[j]]$RQ,drawsc[[k]][[j]])
-					gamma <- c(apply(redrawsc, 1, mean), apply(redrawsc, 1, quantile, probs=c(0.025,0.1,0.5,0.9,0.975)))
-					gamma <- cbind(gmean,gpqu) 
-					colnames(gamma) <- c("pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5")
+					gamma <- sfout(redrawsc,type=2)
 					gcn <- paste(RA[[k]][[jj]]$label,":",1:nrow(gamma),sep="")
 					rownames(gamma) <- gcn
 					attr(fout,"smooth.coef") <- gamma
 					attr(fout,"s") <- Z[[k]][[j]]$s
 					attr(fout,"rq") <- Z[[k]][[j]]$RQ
-
-					lamed <- median(lambda[[k]][[j]])
-					lamean <- mean(lambda[[k]][[j]])
-					lasd <- sd(as.vector(lambda[[k]][[j]]))
-					lapqu2p5 <- quantile(lambda[[k]][[j]], probs = 0.025)
-					lapqu97p5 <- quantile(lambda[[k]][[j]], probs = 0.975)
-					lapqu10 <- quantile(lambda[[k]][[j]], probs = 0.1)
-					lapqu90 <- quantile(lambda[[k]][[j]], probs = 0.9)
-					sm.obs <- length(RA[[k]][[jj]]$x)
-					la <- cbind(lamean,lasd,lapqu2p5,lapqu10,lamed,lapqu90,lapqu97p5)
-					colnames(la) <- c("pmean","psd","pqu2p5","pqu10","pmed","pqu90","pqu97p5")
-					rownames(la) <- NULL
-					attr(fout,"smooth.hyper") <- la
+					attr(fout,"smooth.hyper") <- sfout(lambda[[k]][[j]])
 					attr(fout,"smooth.hyper.draws") <- lambda[[k]][[j]]
-
-					taumed <- median(S2o/lambda[[k]][[j]])
-					taumean <- mean(S2o/lambda[[k]][[j]])
-					tausd <- sd(c(S2o/lambda[[k]][[j]]))
-					taupqu2p5 <- quantile(S2o/lambda[[k]][[j]], probs = 0.025)
-					taupqu97p5 <- quantile(S2o/lambda[[k]][[j]], probs = 0.975)
-					taupqu10 <- quantile(S2o/lambda[[k]][[j]], probs = 0.1)
-					taupqu90 <- quantile(S2o/lambda[[k]][[j]], probs = 0.9)
-					tau2 <- cbind(taumean,tausd,taupqu2p5,taupqu10,taumed,taupqu90,taupqu97p5)
-					colnames(tau2) <- c("pmean","psd","pqu2p5","pqu10","pmed","pqu90","pqu97p5")
-					rownames(tau2) <- NULL
-					attr(fout,"smooth.variance") <- tau2
+					attr(fout,"smooth.variance") <- sfout(S2o/lambda[[k]][[j]])
 					attr(fout,"smooth.variance.draws") <- S2o/lambda[[k]][[j]]
-
 					attr(fout,"smooth.ceffect") <- mean(cRSS[[k]][[j]])
 					attr(fout,"smooth.ceffect.draws") <- cRSS[[k]][[j]]
 					attr(fout,"smooth.coef.draws") <- drawsc[[k]][[j]]
@@ -305,7 +278,7 @@ extract.random <- function(R,RR,RRl,RRs,RRi,fit,RA,lambda,Z,drawsc,mdrawsc,dPR,r
 							class(fout) <- "mrf.gibbs"
 						}
 					ra.fout[[mapind[RA[[k]]$indspec[2,] == j]]] <- fout
-					smooth.mat[k,] <- la
+					smooth.mat[k,] <- attr(fout,"smooth.hyper")
 					}
 				rownames(smooth.mat) <- matrownames
 				colnames(smooth.mat) <- c("pmean","psd","pqu2p5","pqu10","pmed","pqu90","pqu97p5")
