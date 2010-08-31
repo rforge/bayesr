@@ -190,6 +190,70 @@ plot.gibbs <- function(x, which = 1, resid = FALSE, jit = TRUE, const = FALSE, d
                               					          range,pal,legend,scale,nrc,dgts,lpos,
                               					          cex,ask,p3d,theta,phi,pcat,border,...)
 							}
+						if(attr(X,"term.type") == "random" && byplots)
+							{
+							byyes1 <- byyes2 <- FALSE
+							if(!is.null(attr(X,"byplots")))
+								byyes2 <- TRUE
+							if(!byyes2)
+								if(!is.null(attr(X$effects,"byplots")))
+									byyes1 <- TRUE
+							if(byyes1 || byyes2)
+								{
+								if(byyes1)
+									byp <- attr(X$effects,"byplots")
+								if(byyes2)
+									byp <- attr(X,"byplots")
+								lbyp <- length(byp)*length(byp[[1]])
+								mfrowpr <- as.integer(par()$mfrow)
+								if(mfrowpr[1] == 1 && mfrowpr[2] == 1)
+									setmfrow(lbyp)
+								# needs to be checked!
+								#if(length(which)<2)
+								#	{
+									start <- 1
+									end <- length(byp)		
+								#	}
+								#else
+								#	{
+								#	if(length(byp)<which[2])
+								#		start <- end <- 1
+								#	else
+								#		start <- end <- which[2]
+								#	}
+								for(j in start:end)
+									{
+									for(jj in 1:length(byp[[j]]))
+										{
+										if(attr(byp[[j]][[jj]],"term.type") == "smooth")
+											{
+											if(inherits(byp[[j]][[jj]],"sm.gibbs"))
+												{
+												plot.sm.gibbs(byp[[j]][[jj]],resid,jit,const,diagnostics,acf,xlab,ylab,zlab,main, 
+			              	      									colored,col,lwdc,lwdconf,grid,theta,phi,image, 
+				              									cex,ask,border,nrc,pal,...)
+												}
+											if(inherits(byp[[j]][[jj]],"mrf.gibbs"))
+												{
+												plot.mrf.gibbs(byp[[j]][[jj]],resid,map,names,values,colored,col,
+										       				lwdc,lwdconf,range,pal,legend, 
+			               	       					       				scale,nrc,xlab,ylab,zlab,main,dgts,cex,lpos, 
+				               					       				const,diagnostics,acf,p3d,theta,phi,pcat,border,...)
+												}
+											}
+										if(attr(byp[[j]][[jj]],"term.type") == "linear")
+											{
+											plot.linear.gibbs(byp[[j]][[jj]],resid,jit,const,diagnostics,acf,xlab,ylab, 
+                              						          			main,colored,col,lwdc,lwdconf,range,
+                              						          			cex,ask,...)
+											}
+										}
+									}
+								effplot <- FALSE
+								}		
+							else
+								effplot <- TRUE
+							}
 						}
 					if(length(which) == 3)
 						{
@@ -231,6 +295,70 @@ plot.gibbs <- function(x, which = 1, resid = FALSE, jit = TRUE, const = FALSE, d
 			     					   colored,col,lwdc,lwdconf,grid,theta,phi,image,map,names,values,range,pal,legend, 
 								   scale,nrc,dgts,lpos,cex,ask,byplots,p3d,pcat,border, ...)
 							}
+						if(attr(X,"term.type") == "random" && byplots)
+							{
+							byyes1 <- byyes2 <- FALSE
+							if(!is.null(attr(X,"byplots")))
+								byyes2 <- TRUE
+							if(!byyes2)
+								if(!is.null(attr(X$effects,"byplots")))
+									byyes1 <- TRUE
+							if(byyes1 || byyes2)
+								{
+								if(byyes1)
+									byp <- attr(X$effects,"byplots")
+								if(byyes2)
+									byp <- attr(X,"byplots")
+								lbyp <- length(byp)*length(byp[[1]])
+								mfrowpr <- as.integer(par()$mfrow)
+								if(mfrowpr[1] == 1 && mfrowpr[2] == 1)
+									setmfrow(lbyp)
+								# needs to be checked!
+								#if(length(which)<2)
+								#	{
+									start <- 1
+									end <- length(byp)		
+								#	}
+								#else
+								#	{
+								#	if(length(byp)<which[2])
+								#		start <- end <- 1
+								#	else
+								#		start <- end <- which[2]
+								#	}
+								for(j in start:end)
+									{
+									for(jj in 1:length(byp[[j]]))
+										{
+										if(attr(byp[[j]][[jj]],"term.type") == "smooth")
+											{
+											if(inherits(byp[[j]][[jj]],"sm.gibbs"))
+												{
+												plot.sm.gibbs(byp[[j]][[jj]],resid,jit,const,diagnostics,acf,xlab,ylab,zlab,main, 
+			              	      									colored,col,lwdc,lwdconf,grid,theta,phi,image, 
+				              									cex,ask,border,nrc,pal,...)
+												}
+											if(inherits(byp[[j]][[jj]],"mrf.gibbs"))
+												{
+												plot.mrf.gibbs(byp[[j]][[jj]],resid,map,names,values,colored,col,
+										       				lwdc,lwdconf,range,pal,legend, 
+			               	       					       				scale,nrc,xlab,ylab,zlab,main,dgts,cex,lpos, 
+				               					       				const,diagnostics,acf,p3d,theta,phi,pcat,border,...)
+												}
+											}
+										if(attr(byp[[j]][[jj]],"term.type") == "linear")
+											{
+											plot.linear.gibbs(byp[[j]][[jj]],resid,jit,const,diagnostics,acf,xlab,ylab, 
+                              						          			main,colored,col,lwdc,lwdconf,range,
+                              						          			cex,ask,...)
+											}
+										}
+									}
+								effplot <- FALSE
+								}		
+							else
+								effplot <- TRUE
+							}
 						}
 					if(length(which) > 3)
 						{
@@ -251,76 +379,6 @@ plot.gibbs <- function(x, which = 1, resid = FALSE, jit = TRUE, const = FALSE, d
 					}
 				else
 					effplot <- TRUE
-				}
-			if(length(which)>=1 && byplots)
-				{
-				if(byplots)
-					{
-					byyes1 <- byyes2 <- FALSE
-					if(!is.null(attr(X,"byplots")))
-						byyes2 <- TRUE
-					if(!byyes2)
-						if(!is.null(attr(X$effects,"byplots")))
-							byyes1 <- TRUE
-					if(byyes1 || byyes2)
-						{
-						if(byyes1)
-							byp <- attr(X$effects,"byplots")
-						if(byyes2)
-							byp <- attr(X,"byplots")
-						lbyp <- length(byp)*length(byp[[1]])
-						mfrowpr <- as.integer(par()$mfrow)
-						if(mfrowpr[1] == 1 && mfrowpr[2] == 1 && (length(which)<2))
-							setmfrow(lbyp)
-						if(length(which)<2)
-							{
-							start <- 1
-							end <- length(byp)		
-							}
-						else
-							{
-							if(length(byp)<which[2])
-								start <- end <- 1
-							else
-								start <- end <- which[2]
-							}
-print(length(byp))
-print(which)
-print(start)
-print(end)
-						for(j in start:end)
-							{
-							for(jj in 1:length(byp[[j]]))
-								{
-								if(attr(byp[[j]][[jj]],"term.type") == "smooth")
-									{
-									if(inherits(byp[[j]][[jj]],"sm.gibbs"))
-										{
-										plot.sm.gibbs(byp[[j]][[jj]],resid,jit,const,diagnostics,acf,xlab,ylab,zlab,main, 
-			              	      							colored,col,lwdc,lwdconf,grid,theta,phi,image, 
-				              							cex,ask,border,nrc,pal,...)
-										}
-									if(inherits(byp[[j]][[jj]],"mrf.gibbs"))
-										{
-										plot.mrf.gibbs(byp[[j]][[jj]],resid,map,names,values,colored,col,
-										       	lwdc,lwdconf,range,pal,legend, 
-			               	       					       	scale,nrc,xlab,ylab,zlab,main,dgts,cex,lpos, 
-				               					       	const,diagnostics,acf,p3d,theta,phi,pcat,border,...)
-										}
-									}
-								if(attr(byp[[j]][[jj]],"term.type") == "linear")
-									{
-									plot.linear.gibbs(byp[[j]][[jj]],resid,jit,const,diagnostics,acf,xlab,ylab, 
-                              						          	main,colored,col,lwdc,lwdconf,range,
-                              						          	cex,ask,...)
-									}
-								}
-							}
-						effplot <- FALSE
-						}		
-					else
-						effplot <- TRUE
-					}
 				}
 			if(length(which)==1 && !byplots)
 				effplot <- TRUE
