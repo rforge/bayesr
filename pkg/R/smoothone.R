@@ -6,10 +6,12 @@ smoothone <- function(x, resid = FALSE, jit = TRUE, const = FALSE, diagnostics =
 	else
 		color <- rgb(0.01,0.01,0.01,0.2)
 	args <- as.list(substitute(list(...)))[-1]
-
 	by <- attr(x,"smooth.specs")$by
+	if(is.null(by))
+		by <- "NA"
 	name <- attr(x,"smooth.specs")$term
-
+	if(is.null(name))
+		name <- colnames(x)[1]
 	f <- x[,2]
 	f01 <- x[,3]
 	f011 <- x[,4]

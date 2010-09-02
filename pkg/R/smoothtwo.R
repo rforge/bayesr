@@ -6,10 +6,18 @@ smoothtwo <- function(X,grid,xlab,ylab,zlab,main,theta,phi,image,const,col,color
 	specs <- attr(X,"smooth.specs")
 	names <- specs$term
 	by <- specs$by
+	if(is.null(by))
+		by <- "NA"
 	call <- specs$call
 	draws <- attr(X,"smooth.coef.draws.utr")
 	secheck <- FALSE
 	args <- as.list(substitute(list(...)))[-1]
+	ipcheck <- FALSE
+	if(!is.null(args$ip))
+		{
+		args$ip <- NULL
+		ipcheck <- TRUE
+		}
 	if(!is.null(args$se))
 		{
 		secheck <- TRUE
@@ -18,15 +26,29 @@ smoothtwo <- function(X,grid,xlab,ylab,zlab,main,theta,phi,image,const,col,color
 	ceffect <- attr(X,"smooth.ceffect")
 	xn <- seq(min(x),max(x),length=grid)
 	zn <- seq(min(z),max(z),length=grid)
-	XN <- rep(xn,grid)
-	ZN <- rep(zn,rep(grid,grid))
-	dat <- eval(parse(text=paste("data.frame(",specs$term[1],"=XN,",specs$term[2],"=ZN)")))
-	if(!is.null(specs$xt$geo))
-		specs$xt$geo <- NULL
-	X <- Predict.matrix(attr(specs,"smooth.construct"),dat)
-	if(is.null(const))
-		const <- FALSE
-	fitted <- qhelp(draws,X)
+	if(ipcheck)
+		{
+		fitted <- list()
+		fitted$mean <- akima::interp(x,z,X[,3],xo=xn,yo=zn)$z
+		if(secheck)
+			{
+			fitted$q1 <- akima::interp(x,z,X[,4],xo=xn,yo=zn)$z
+			fitted$q2 <- akima::interp(x,z,X[,8],xo=xn,yo=zn)$z
+			}
+		names <- colnames(X)[1:2]
+		}
+	else
+		{
+		XN <- rep(xn,grid)
+		ZN <- rep(zn,rep(grid,grid))
+		dat <- eval(parse(text=paste("data.frame(",specs$term[1],"=XN,",specs$term[2],"=ZN)")))
+		if(!is.null(specs$xt$geo))
+			specs$xt$geo <- NULL
+		X <- Predict.matrix(attr(specs,"smooth.construct"),dat)
+		if(is.null(const))
+			const <- FALSE
+		fitted <- qhelp(draws,X)
+		}
 	fit01 <- fit02 <- NA
 	if(const)
 		{

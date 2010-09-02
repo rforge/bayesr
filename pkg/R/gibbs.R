@@ -25,11 +25,11 @@ gibbs <- function(formula, data, weights, family = "gaussian", iter = 1200, burn
 	if(missing(data))
 		{
 		dcheck <- FALSE
-		data <- .GlobalEnv
+		data <- pframe
 		}
 	else
 		dcheck <- TRUE
-	this <- .GlobalEnv
+	this <- pframe
 
 	response <- eval(parse(text = vars[1]), envir=data)
 
@@ -1528,6 +1528,7 @@ gibbs <- function(formula, data, weights, family = "gaussian", iter = 1200, burn
 	#######################################################################################################################
         # End Sampler                                                                                                         #
 	#######################################################################################################################
+
 
 
 	# Only if data augmentation
