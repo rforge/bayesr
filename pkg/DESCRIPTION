@@ -7,6 +7,6 @@ Maintainer: Nikolaus Umlauf <nikolaus.umlauf@uibk.ac.at>
 Depends: R (>= 2.10.1)
 Description: Routine for the estimation of Bayesian hierarchical generalized structured additive regression models 
 	     with MCMC Gibbs sampling, including optimal hyperparameter estimation.
-Depends: colorspace, fields, geometry, msm, mgcv
+Depends: colorspace, fields, geometry, msm, mgcv, akima
 LazyLoad: yes
 License: GPL-2 | GPL-3

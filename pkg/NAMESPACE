@@ -65,7 +65,8 @@ smooth.construct.sps.smooth.spec,
 Predict.matrix.sps.smooth,
 stewrap,
 ret.pal.colors,
-centroids
+centroids,
+gibbs2
 )
 
 importFrom("splines", "spline.des", "splineDesign")

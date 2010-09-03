@@ -49,9 +49,11 @@ summary.gibbs <- function(object, digits = 4,...)
 	S2 <- round(attr(fitted(object),"variance"),digits)
 	object$DIC$DIC <- round(object$DIC$DIC,digits)
 	object$DIC$pd <- round(object$DIC$pd,digits)
-
+	method <- "MCMC"
+	if(!is.null(attr(object,"method")))
+		method <- attr(object,"method")
 	res <- list(call=object$call,K=K,M=M,R=R,coeflin=coeflin,smoothhyp=smoothhyp,
-                    smoothmuhyp=smoothmuhyp,smoothrahyp=smoothrahyp,S2=S2,
+                    smoothmuhyp=smoothmuhyp,smoothrahyp=smoothrahyp,S2=S2,method=method,
                     DIC=object$DIC,burnin=object$burnin,thinning=object$thinning,iter=object$iterations,
                     coeflinmu=coeflinmu,N=object$N,ra=ra,digits=digits,samptime=object$samptime[3])
 	class(res) <- "summary.gibbs"

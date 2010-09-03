@@ -146,6 +146,11 @@ print.summary.gibbs <- function(x,...)
 	cat("Global variance estimation results:\n")
 	printCoefmat(x$S2)
 	cat(liner,"\n")
-	cat("DIC = ",x$DIC$DIC,"  pd = ",x$DIC$pd,"  n = ",x$N,"  samptime = ",x$samptime,"sec\n", sep="")
-	cat("Iterations =",x$iter," burnin =",x$burn," thinning =",x$thin,"\n")
+	if(x$method=="MCMC")
+		{
+		cat("DIC = ",x$DIC$DIC,"  pd = ",x$DIC$pd,"  n = ",x$N,"  samptime = ",x$samptime,"sec\n", sep="")
+		cat("Iterations =",x$iter," burnin =",x$burn," thinning =",x$thin,"\n")
+		}
+	else
+		cat("BIC = ",x$DIC$DIC,"  df = ",x$DIC$pd,"  n = ",x$N,"  estimtime = ",x$samptime,"sec\n", sep="")
 	}

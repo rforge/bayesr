@@ -296,6 +296,44 @@ summary(b2)
 par(mfrow=c(1,2))
 plot(b1,resid=TRUE)
 plot(b2,resid=TRUE)
+
+\dontrun{
+# compare BayesR with BayesX
+# note: command line version 
+#       of BayesX needs to be
+#       installed!
+
+# a 2d example
+set.seed(333)
+n<-500
+f2<-function(x,z){
+	sin(x)*cos(z)}
+
+# generate data and plot the true function
+x<-runif(n,-3,3)
+z<-runif(n,6,10)
+xs<-seq(-3,3,length=30)
+zs<-seq(6,10,length=30)
+
+pr<-data.frame(x=rep(xs,30),z=rep(zs,rep(30,30)))
+truth<-matrix(f2(pr$x,pr$z),30,30)
+
+y<-10+f2(x,z)+rnorm(n,sd=0.6)
+
+# estimate model with tensor product splines
+# and compare it with BayesX
+# note multiple penalties is not supported by gibbs()
+b1<-gibbs(y~te(x,z,mp=FALSE))
+summary(b1)
+
+# now compare with bayesx
+b2<-gibbs2(y~te(x,z,mp=FALSE))
+summary(b2)
+
+par(mfrow=c(1,3),mar=c(0,1,2,0))
+plot(b1,ip=TRUE,main="BayesR",ticktype="detailed")
+plot(b2,ip=TRUE,main="BayesX",ticktype="detailed")
+persp(xs,zs,truth,theta=40,phi=40);title("Truth")}
 }
 
 \keyword{models}

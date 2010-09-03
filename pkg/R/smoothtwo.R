@@ -13,7 +13,7 @@ smoothtwo <- function(X,grid,xlab,ylab,zlab,main,theta,phi,image,const,col,color
 	secheck <- FALSE
 	args <- as.list(substitute(list(...)))[-1]
 	ipcheck <- FALSE
-	if(!is.null(args$ip))
+	if(!is.null(args$ip) || is.null(draws))
 		{
 		args$ip <- NULL
 		ipcheck <- TRUE
