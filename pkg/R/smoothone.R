@@ -38,16 +38,18 @@ smoothone <- function(x, resid = FALSE, jit = TRUE, const = FALSE, diagnostics =
 			e <- e[ind]
 			x <- x[ind]
 			}
+		#else
+		#	{
+			#f <- f/by
+			#f01 <- f01/by
+			#f02 <- f02/by
+			#f011 <- f011/by
+			#f021 <- f021/by
+		#	}	
+		if(length(name)>1)	
+			byname <- name[length(name)]
 		else
-			{
-			f <- f/by
-			f01 <- f01/by
-			f02 <- f02/by
-			f011 <- f011/by
-			f021 <- f021/by
-			}
-				
-		byname <- name[2]
+			byname <- by
 		name <- name[1]
 		}
 	if(const)

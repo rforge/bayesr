@@ -137,7 +137,7 @@ plot.mrf.gibbs <- function(x, resid = FALSE, map = NULL, names = FALSE, values =
 			}
 		else
 			{
-			drawmap(map,names,x,colored,range,pal,legend,scale,nrc,xlab,ylab,zlab,main,dgts,cex,lpos,p3d,theta,phi,pcat,border,resid=resid,...)		
+			BayesR::drawmap(map,names,x,colored,range,pal,legend,scale,nrc,xlab,ylab,zlab,main,dgts,cex,lpos,p3d,theta,phi,pcat,border,resid=resid,...)		
 			if(inherits(x,"random.gibbs"))
 				cat("Estimated random effects:\n")
 			else

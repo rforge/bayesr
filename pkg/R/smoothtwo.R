@@ -8,6 +8,11 @@ smoothtwo <- function(X,grid,xlab,ylab,zlab,main,theta,phi,image,const,col,color
 	by <- specs$by
 	if(is.null(by))
 		by <- "NA"
+	else
+		{
+		if(length(specs$term)>2)
+			by <- specs$term[length(specs$term)]
+		}
 	call <- specs$call
 	draws <- attr(X,"smooth.coef.draws.utr")
 	secheck <- FALSE
@@ -82,7 +87,7 @@ smoothtwo <- function(X,grid,xlab,ylab,zlab,main,theta,phi,image,const,col,color
 		{
 		zlab <- "fitted"
 		if(by!="NA")
-			zlab <- paste(zlab,":",specs$by,sep="")
+			zlab <- paste(zlab,":",by,sep="")
 		}
 	if(secheck)	
 		myfit <- matrix(fit02, grid, grid)

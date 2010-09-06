@@ -469,7 +469,7 @@ plot.bnd <- function(map, names = FALSE, values = NULL, colored = FALSE, range =
 		     dgts = 4, cex = 1, lpos = c(0.2,0), p3d = FALSE, theta = 0, phi = 25, pcat = NULL, border = NULL, 
 		     density = NULL, resid = FALSE, ...)
 	{
-	drawmap(map,names,values,colored,range,pal,legend,scale,nrc,xlab,ylab,zlab,main,
+	BayesR::drawmap(map,names,values,colored,range,pal,legend,scale,nrc,xlab,ylab,zlab,main,
 		dgts,cex,lpos,p3d,theta,phi,pcat,border,density,resid,...)
 	return(invisible(NULL))
 	}

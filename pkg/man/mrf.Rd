@@ -63,22 +63,22 @@ f2<-function(x){X<-0.2*x^11*(10*(1-x))^6+10*(10*x)^3*(1-x)^10
 y<-10+f2(x1)+loc+rnorm(n,sd=1.2)	
 
 # estimate model
-model<-gibbs(y~s(x1)+s(ind,bs="mrf",xt=list(neighbor)))
-summary(model)
+b<-gibbs(y~s(x1)+s(ind,bs="mrf",xt=list(neighbor)))
+summary(b)
 
 par(mfrow=c(1,3))
-plot(model,which=1)
-plot(model,which=2,map=polyloc,main="Estimated regional effects",
+plot(b,which=1)
+plot(b,which=2,map=polyloc,main="Estimated regional effects",
      colored=TRUE,names=TRUE,pal="heat")
 # plot estimated spatial effects with a 3d map
-plot(model,which=2,map=polyloc,p3d=TRUE)
+plot(b,which=2,map=polyloc,p3d=TRUE)
 
 # true values
 truth
 
 # now estimate the spatial effect with a geospline
-model<-gibbs(y~s(x1)+s(ind,polyloc,bs="ste",xt=list(geo=TRUE)))
-plot(model,which=2,image=TRUE)
+b<-gibbs(y~s(x1)+s(ind,polyloc,bs="ste",xt=list(geo=TRUE)))
+plot(b,which=2,image=TRUE)
 
 # optional plot the map
 for(i in 1:length(polyloc))
@@ -105,7 +105,7 @@ f1<-sin(x1)
 
 y<-10+f1+f2[id]+rnorm(n,sd=1.2)
 
-# estimate model with geospline kriging
+# estimate model
 m<-gibbs(y~s(x1)+s(id,bs="mrf",xt=list(neighbor=neighbor)))
 summary(m)
 

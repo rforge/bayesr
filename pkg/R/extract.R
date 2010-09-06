@@ -65,7 +65,10 @@ extract <- function(cdraws,lambda,response,eta,Z,C,K,check,new,mcdraws,S2,sm.spe
 		gamma <- sfout(redraws,type=2)
 		gcn <- paste(sm.specs[[k]]$label,":",1:nrow(gamma),sep="")
 		rownames(gamma) <- gcn
-		matrownames[k] <- sm.specs[[k]]$label
+		if(is.null(sm.specs[[k]]$by) || sm.specs[[k]]$by == "NA")
+			matrownames[k] <- sm.specs[[k]]$label
+		else
+			matrownames[k] <- paste(sm.specs[[k]]$label,":",sm.specs[[k]]$term[length(sm.specs[[k]]$term)],sep="")
 		attr(fout,"smooth.coef") <- gamma
 		attr(fout,"s") <- Z[[k]]$s
 		attr(fout,"rq") <- Z[[k]]$RQ
