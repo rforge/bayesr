@@ -111,7 +111,7 @@ summary(m)
 
 par(mfrow=c(1,3))
 plot(m,2,pal="hcl",map=germany,main="Estimate",resid=T)
-drawmap(germany,values=cbind(1:N,f2),colored=TRUE,pal="hcl",main="Truth")
+plotmap(germany,values=cbind(1:N,f2),colored=TRUE,pal="hcl",main="Truth")
 plot(unique(fitted(m,type=2)[[2]][,2])~f2,xlab="True effects",ylab="Fitted")
 lines(c(f2)~f2,col=2)}
 }

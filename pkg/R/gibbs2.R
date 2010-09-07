@@ -15,6 +15,7 @@ gibbs2 <- function(formula,family="gaussian",data=NULL,
 	fake.formula <- gp$fake.formula
 	fake.labels <- attr(terms(fake.formula),"term.labels")
 	racheck <- FALSE
+	byra <- rep("NA",length(fake.labels))
 	for(k in 1:length(fake.labels))
 		{
 		splits <- strsplit(fake.labels[k],""," ")[[1]][1:2]
@@ -24,14 +25,20 @@ gibbs2 <- function(formula,family="gaussian",data=NULL,
 			if(splits=="r(")
 				{
 				terms[terms==fake.labels[k]] <- "9999999911"
-				fake.labels[k] <- eval(parse(text=fake.labels[k]),envir=data)$facname
-				terms[terms=="9999999911"] <- fake.labels[k]
+				raterm <- eval(parse(text=fake.labels[k]),envir=data)
+				if(!is.null(raterm$byterms))
+					byra[k] <- raterm$byterms
+				fake.labels[k] <- raterm$facname
+				terms[terms=="9999999911"] <- fake.labels[k]	
 				racheck <- TRUE
 				}
 			}
 		}
 	if(racheck)
 		{
+		for(k in 1:length(byra))
+			if(byra[k]!="NA")
+				fake.labels <- c(fake.labels,byra[k])
 		fake.formula <- as.character(fake.formula)
 		fake.formula <- as.formula(paste(fake.formula[2],"~",paste("+",fake.labels,collapse=""),collapse=""))
 		}
@@ -52,7 +59,23 @@ gibbs2 <- function(formula,family="gaussian",data=NULL,
 	colnames(dat) <- c(gp$response,vars)
 	if(is.null(path))	
 		path <- paste(.libPaths()[1],"/BayesR/bayesxtemp",sep="")
-	dir.create(path)
+	bayesxexists <- file.exists(paste(.libPaths()[1],"/BayesR/BAYESXINSTALLED",sep=""))
+	if(!bayesxexists)
+		{
+		install <- readline("BayesX command line version not installed yet, type yes/no for installation: ")
+		install <- substr(install,1,1)
+		if(install=="yes" || install=="y") 
+			{
+			where <- paste(.libPaths()[1],"/BayesR/bayesxsource.zip",sep="")
+			download.file("http://www.stat.uni-muenchen.de/~bayesx/install/bayesxsource.zip",where,method="auto")
+			unzip(where)
+			# system(paste("make --directory=",.libPaths()[1],"/BayesR/bayesxsource",sep=""))
+stop()
+			}
+		else
+			stop("Without the installed command line version of BayesX this function is useless!")
+		}
+	dir.create(path,showWarnings=FALSE)
 	patho <- getwd()
 	setwd(path)
 	write.table(dat,"data.raw",col.names=TRUE,row.names=FALSE,quote=FALSE)
@@ -93,8 +116,14 @@ gibbs2 <- function(formula,family="gaussian",data=NULL,
 			}
 		if(R>0)
 			{
-			addterm <- c(addterm,paste(terms[ran[k]],"(random)",sep=""))
-			T[[ran[K]]] <- list(term=terms[ran[k]],to=terms[ran[k]],dim=1,spec="ran.spec",label=terms[ran[k]])
+			for(k in 1:R)
+				{
+				if(byra[k]=="NA")
+					addterm <- c(addterm,paste(terms[ran[k]],"(random)",sep=""))
+				else
+					addterm <- c(addterm,paste(byra[k],"*",terms[ran[k]],"(random)",sep=""))
+				T[[ran[k]]] <- list(term=terms[ran[k]],to=terms[ran[k]],dim=1,spec="ran.spec",label=terms[ran[k]],byra=byra[k])
+				}
 			}
 		}
 	addterm <- paste(addterm,collapse=" + ")
@@ -195,15 +224,39 @@ bayesx.setup <- function(object,path,outfile)
 			}
 		nrknots <- object$bs.dim - object$p.order[1] + 1
 		termo <- object$term
-		if(object$by=="NA")
-			term <- paste(termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],")",sep="")
+		constr <- object$xt$constr
+		if(is.null(constr))
+			{
+			if(object$by=="NA")
+				term <- paste(termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],")",sep="")
+			else
+				term <- paste(object$by,"*",termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],")",sep="")
+			}
 		else
-			term <- paste(object$by,"*",termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],")",sep="")
+			{
+			if(constr<2)
+				{
+				if(object$by=="NA")
+					term <- paste(termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],",monotone=increasing)",sep="")
+				else
+					term <- paste(object$by,"*",termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],",monotone=increasing)",sep="")
+				}
+			else
+				{
+				if(object$by=="NA")
+					term <- paste(termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],",monotone=decreasing)",sep="")
+				else
+					term <- paste(object$by,"*",termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],",monotone=decreasing)",sep="")
+				}
+			}
 		}
 	if(class(object)=="mrf.smooth.spec")
 		{
 		termo <- object$term
-		term <- paste(object$term[1],"(spatial,map=bayesxmap)",sep="")	
+		if(object$by=="NA")
+			term <- paste(object$term[1],"(spatial,map=bayesxmap)",sep="")	
+		else
+			term <- paste(object$by,"*",object$term[1],"(spatial,map=bayesxmap)",sep="")	
 		class(object$xt$map) <- "bnd" 
 		BayesX::write.bnd(object$xt$map,paste(path,"/bayesxmap.bnd",sep=""),replace=TRUE)
 		cat("map bayesxmap\n",file=outfile,append=TRUE)
@@ -358,7 +411,10 @@ get.bayesx.output <- function(terms,path,response,data,method)
 				{
 				dat <- as.numeric(as.matrix(data[te$to]))
 				ind <- get.unique(dat)$ind[order(dat)]
-				what <- paste("estim_f_",te$to,"_random.res",sep="")
+				if(te$byra=="NA")
+					what <- paste("estim_f_",te$to,"_random.res",sep="")
+				else
+					what <- paste("estim_",te$byra,"_f_",te$to,"_random.res",sep="")
 				effects <- as.matrix(read.table(what,header=TRUE))
 				name <- colnames(effects)[2]
 				effects <- effects[,2:ncol(effects)]
@@ -370,17 +426,32 @@ get.bayesx.output <- function(terms,path,response,data,method)
 					colnames(effects) <- c(name,"pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5","partial.resid","pcat95","pcat80")
 				else
 					colnames(effects) <- c(name,"pmode","ci95lower","ci80lower","std","ci80upper","ci95upper","partial.resid","pcat95","pcat80")
-				what <- paste("estim_f_",te$to,"_random_var.res",sep="")
+				effid <- effects[,1]
+				efflev <- levels(as.factor(effid))
+				partial.resid <- vector("list",length=length(efflev))
+				for(j in 1:length(efflev))
+					{
+					check <- (effid==efflev[j])
+					tmp <- effects[check,2]
+					tmp <- response - eta + tmp
+					check <- check*1
+					partial.resid[[j]] <- tmp[check!=0]
+					}
+				if(te$byra=="NA")
+					what <- paste("estim_f_",te$to,"_random_var.res",sep="")
+				else
+					what <- paste("estim_",te$byra,"_f_",te$to,"_random_var.res",sep="")
 				label <- paste(te$label,sep="")
 				tmp <- as.matrix(read.table(what,header=TRUE))
 				if(method=="MCMC")
+					{
 					tmp <- matrix(tmp[,1:(ncol(tmp)-2)],nrow=1)
+					colnames(tmp) <- c("pmean","psd","pqu2p5","pqu10","pmed","pqu90","pqu97p5")
+					}
 				rownames(tmp) <- label
-				colnames(tmp) <- c("pmean","psd","pqu2p5","pqu10","pmed","pqu90","pqu97p5")
-print(tmp)
+				effects <- effects[!duplicated(effects[,1]),]
 				attr(effects,"random.variance") <- tmp
-				# attr(effects,"random.partial.resid") <- partial.resid
-				# attr(effects,"random.ceffect") <- mean(cRMS[k,])
+				attr(effects,"random.partial.resid") <- partial.resid
 				attr(effects,"random.term") <- te$to
 				class(effects) <- "random.gibbs"
 				fout[[k]] <- list(effects=effects)
@@ -432,10 +503,13 @@ print(tmp)
 				}
 			}
 		}
-	if(method=="MCMC")
-		colnames(smooth.mat) <- c("pmean","psd","pqu2p5","pqu10","pmed","pqu90","pqu97p5")
-	else
-		colnames(smooth.mat) <- c("variance","smoothpar","df","stopped") 
+	if(!is.null(smooth.mat))
+		{
+		if(method=="MCMC")
+			colnames(smooth.mat) <- c("pmean","psd","pqu2p5","pqu10","pmed","pqu90","pqu97p5")
+		else
+			colnames(smooth.mat) <- c("variance","smoothpar","df","stopped") 
+		}
 	attr(fout,"smooth.mat") <- smooth.mat
 	attr(fout,"lin.mat") <- lin.mat
 	attr(fout,"variance") <- as.matrix(read.table("estim_scale.res",header=TRUE))

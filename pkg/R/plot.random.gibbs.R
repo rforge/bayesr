@@ -51,9 +51,9 @@ plot.random.gibbs <- function(x, resid = FALSE, const = FALSE, diagnostics = FAL
 				limchecke <- c(limchecke,e[[j]]+cefo,coef1+cefo,coef2+cefo)
 				e[[j]] <- cbind(rep(j,length(e[[j]])),e[[j]]+cefo)
                  	 	xtmp[j,] <- c(j-dow,j,j+up)
-                  	xtmp2[j,] <- c(j+up,j,j-dow)
-                  	}
-            	if(resid!=F || resid != FALSE)
+                  		xtmp2[j,] <- c(j+up,j,j-dow)
+                  		}
+            		if(resid!=F || resid != FALSE)
 				y <- c(min(limchecke),max(limchecke))
 			else
 				y <- c(min(limcheck),max(limcheck))

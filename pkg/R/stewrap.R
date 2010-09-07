@@ -364,7 +364,7 @@ Predict.matrix.ste.smooth<-function(object,data)
 smooth.construct.mrf.smooth.spec<-function(object,data,knots)
 	{ 
 	by <- eval(parse(text=object$by),envir=data)
-	if(is.na(by))
+	if(is.na(by[1]))
 		by <- NULL
 	ind <- eval(parse(text=object$term),envir=data)
 	neighbor <- object$xt$neighbor
