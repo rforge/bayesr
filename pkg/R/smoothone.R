@@ -1,15 +1,15 @@
 smoothone <- function(x, resid = FALSE, jit = TRUE, const = FALSE, diagnostics = FALSE, acf = FALSE, xlab = NULL, ylab = NULL, main = NULL, 
-			    colored = TRUE, col = FALSE, lwdc = 1, lwdconf = 0, cex = 1, ...)
+                      colored = TRUE, col = FALSE, lwdc = 1, lwdconf = 0, cex = 1, ...)
 	{
 	if(col[1] != FALSE)
 		color <- col
 	else
 		color <- rgb(0.01,0.01,0.01,0.2)
 	args <- as.list(substitute(list(...)))[-1]
-	by <- attr(x,"smooth.specs")$by
+	by <- attr(x,"specs")$by
 	if(is.null(by))
 		by <- "NA"
-	name <- attr(x,"smooth.specs")$term
+	name <- attr(x,"specs")$term
 	if(is.null(name))
 		name <- colnames(x)[1]
 	f <- x[,2]
@@ -17,8 +17,8 @@ smoothone <- function(x, resid = FALSE, jit = TRUE, const = FALSE, diagnostics =
 	f011 <- x[,4]
 	f021 <- x[,6]
 	f02 <- x[,7]
-	e <- x[,8]
-	ceffect <- attr(x,"smooth.ceffect")
+	e <- x[,10]
+	ceffect <- attr(x,"ceffect")
         x <- x[,1]
 	icheck <- FALSE
 	if(by[1]!="NA")
@@ -54,12 +54,15 @@ smoothone <- function(x, resid = FALSE, jit = TRUE, const = FALSE, diagnostics =
 		}
 	if(const)
 		{
-		f <- f + ceffect
-		f01 <- f01 + ceffect
-		f02 <- f02 + ceffect
-		f011 <- f011 + ceffect
-		f021 <- f021 + ceffect
-		e <- e + ceffect
+		if(!is.null(ceffect))
+			{
+			f <- f + ceffect
+			f01 <- f01 + ceffect
+			f02 <- f02 + ceffect
+			f011 <- f011 + ceffect
+			f021 <- f021 + ceffect
+			e <- e + ceffect
+			}
 		}
 				
 	fmax <- max(f)

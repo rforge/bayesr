@@ -63,7 +63,7 @@ qhelp2 <- function(draws,basis,response=NULL,eta=NULL,ind=NULL)
 			as.numeric(response),
 			as.numeric(eta),
 			as.integer(ind))
-	colnames(out) <- c("pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5","partial.resid","pcat95","pcat80")
+	colnames(out) <- c("pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5","pcat95","pcat80","partial.resid")
 
 	return(out)
 	}

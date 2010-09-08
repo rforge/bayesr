@@ -35,14 +35,14 @@ extract.linear <- function(L,K,draws,mdraws,X,LIN,response,eta,cL,tnames,plus,in
 			e <- response - (eta - fpmed)
 			pcat80 <- (fpqu10 < 0 & fpqu90 < 0)*(-1) + (fpqu10 <= 0 & fpqu90 >= 0)*0 + (fpqu10 > 0 & fpqu90 > 0)*1
 			pcat95 <- (fpqu2p5 < 0 & fpqu97p5 < 0)*(-1) + (fpqu2p5 <= 0 & fpqu97p5 >= 0)*0 + (fpqu2p5 > 0 & fpqu97p5 > 0)*1
-			fout <- cbind(LIN[[k]],fpmean,fpqu2p5,fpqu10,fpmed,fpqu90,fpqu97p5,e,pcat95,pcat80)
+			fout <- cbind(LIN[[k]],fpmean,fpqu2p5,fpqu10,fpmed,fpqu90,fpqu97p5,pcat95,pcat80,e)
 			fout <- fout[order(fout[,1]),]
-			colnames(fout) <- c(tnames[k],"pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5","partial.resid","pcat95","pcat80")
-			attr(fout,"linear.coef") <- beta[k+plus,]
-			attr(fout,"linear.ceffect") <- tmpceffect[k]
-			attr(fout,"linear.coef.draws") <- draws[k+plus,]
-			attr(fout,"linear.coef.draws.utr") <- redraws[k+plus,]
-			attr(fout,"linear.coef.mean") <- mdraws[k+plus,]
+			colnames(fout) <- c(tnames[k],"pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5","pcat95","pcat80","partial.resid")
+			attr(fout,"coef") <- beta[k+plus,]
+			attr(fout,"ceffect") <- tmpceffect[k]
+			attr(fout,"coef.draws") <- draws[k+plus,]
+			attr(fout,"coef.draws.utr") <- redraws[k+plus,]
+			attr(fout,"coef.mean") <- mdraws[k+plus,]
 			class(fout) <- "linear.gibbs"
 			fits[[k]] <- fout
 			}
@@ -56,9 +56,9 @@ extract.linear <- function(L,K,draws,mdraws,X,LIN,response,eta,cL,tnames,plus,in
 		beta <- as.matrix(beta,1,7)
 		brownam <- c("(Intercept)",tnames)
 		}
-	attr(beta,"linear.coef.draws") <- draws
-	attr(beta,"linear.coef.draws.utr") <- redraws
-	attr(beta,"linear.coef.mean") <- mdraws
+	attr(beta,"coef.draws") <- draws
+	attr(beta,"coef.draws.utr") <- redraws
+	attr(beta,"coef.mean") <- mdraws
 	attr(beta,"dimnames") <- list(brownam,bcolnam)
 	class(beta) <- "gibbsfit"
 

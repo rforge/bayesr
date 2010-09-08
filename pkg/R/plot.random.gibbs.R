@@ -16,7 +16,7 @@ plot.random.gibbs <- function(x, resid = FALSE, const = FALSE, diagnostics = FAL
 			{
 			cefo <- 0
 			if(const)
-				cefo <- attr(x,"random.ceffect")
+				cefo <- attr(x,"ceffect")
 			if(is.null(range))
 				{
 				up <- 0.3
@@ -35,7 +35,7 @@ plot.random.gibbs <- function(x, resid = FALSE, const = FALSE, diagnostics = FAL
 			coef11 <- matrix(rep(x[,5]+cefo,3),nl,3)
 			coef21 <- matrix(rep(x[,7]+cefo,3),nl,3)
 			coef <- matrix(rep(x[,2]+cefo,3),nl,3)
-			e <- attr(x,"random.partial.resid")
+			e <- attr(x,"partial.resid")
 			fnames <- levels(as.factor(x[,1]))
 			yescheck <- FALSE
 			if(!is.null(attr(x,"byplots")))
@@ -119,8 +119,8 @@ plot.random.gibbs <- function(x, resid = FALSE, const = FALSE, diagnostics = FAL
 	else
 		{
 		if(diagnostics == 2)
-			coefplot(attr(x,"random.variance.draws"),xlab,ylab,main,attr(x,"random.term"),acf,TRUE,...)
+			coefplot(attr(x,"variance.draws"),xlab,ylab,main,attr(x,"term"),acf,TRUE,...)
 		else
-			coefplot(attr(x,"random.coefs.draws"),xlab,ylab,main,attr(x,"random.term"),acf,FALSE,...)
+			coefplot(attr(x,"coefs.draws"),xlab,ylab,main,attr(x,"term"),acf,FALSE,...)
 		}
 	}

@@ -8,14 +8,13 @@ plot.linear.gibbs <- function(x, resid = FALSE, jit = TRUE, const = FALSE, diagn
 		{
 		for(j in 2:ncol(x))
 			x[,j] <- x[,j] - mean(x[,j])
-		attr(x,"smooth.ceffect") <- attr(x,"linear.ceffect")
 		nams <- colnames(x)
-		attr(x,"smooth.specs") <- list(term=nams[1],by="NA")
+		attr(x,"specs") <- list(term=nams[1],by="NA")
 		if(diagnostics == FALSE)
 			smoothone(x,resid,jit,const,diagnostics,acf,xlab,ylab,main, 
 		    	    	    colored,col,lwdc,lwdconf,cex,...)
 		else
-			coefplot(attr(x,"linear.coef.draws.utr"),xlab,ylab,main,colnames(x)[1],acf,FALSE,...)
+			coefplot(attr(x,"coef.draws.utr"),xlab,ylab,main,colnames(x)[1],acf,FALSE,...)
 		}
 	else
 		{
@@ -129,10 +128,10 @@ plot.linear.gibbs <- function(x, resid = FALSE, jit = TRUE, const = FALSE, diagn
 			{
 			x <- x[[1]]
 			lx <- length(x)
-			nx  <- length(attr(x[[1]],"linear.coef.draws"))
+			nx  <- length(attr(x[[1]],"coef.draws"))
 			dmat <- matrix(0,lx,nx)
 			for(j in 1:lx)
-				dmat[j,] <- attr(x[[1]],"linear.coef.draws.utr")
+				dmat[j,] <- attr(x[[1]],"coef.draws.utr")
 			coefplot(dmat,xlab,ylab,main,strsplit(colnames(X)[1],":")[[1]][1],acf,FALSE,...)
 			}
 		}

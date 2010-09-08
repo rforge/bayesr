@@ -2,7 +2,7 @@ smoothtwo <- function(X,grid,xlab,ylab,zlab,main,theta,phi,image,const,col,color
 	{
 	x <- X[,1]
 	z <- X[,2]
-	e <- X[,9]
+	e <- X[,11]
 	specs <- attr(X,"smooth.specs")
 	names <- specs$term
 	by <- specs$by

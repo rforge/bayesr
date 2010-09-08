@@ -11,21 +11,13 @@ plot.mrf.gibbs <- function(x, resid = FALSE, map = NULL, names = FALSE, values =
 			}
 		else
 			{
-			values <- attr(x,"smooth.coef")
+			values <- attr(x,"coef")
 			region <- as.integer(levels(as.factor(x[,1])))
 			}
 		if(const)
 			{
-			if(inherits(x,"random.gibbs"))
-				{
-				values <- values + attr(x,"random.ceffect")
-				x[,2:7] <- x[,2:7] + attr(x,"random.ceffect")
-				}
-			else
-				{
-				values <- values + attr(x,"smooth.ceffect")
-				x[,2:7] <- x[,2:7] + attr(x,"smooth.ceffect")
-				}
+			values <- values + attr(x,"ceffect")
+			x[,2:7] <- x[,2:7] + attr(x,"ceffect")
 			}
 		if(is.null(map))
 			{
@@ -51,14 +43,14 @@ plot.mrf.gibbs <- function(x, resid = FALSE, map = NULL, names = FALSE, values =
 				e <- attr(x,"random.partial.resid")
 			else
 				{
-				res <- x[,8]
+				res <- x[,10]
 				flev <- as.integer(levels(as.factor(x[,1])))
 				e <- vector("list",length=nl)
 				for(j in 1:nl)
 					{
 					e[[j]] <- res[x[,1]==flev[j]]
 					if(const)
-						e[[j]] <- e[[j]] + attr(x,"smooth.ceffect")
+						e[[j]] <- e[[j]] + attr(x,"ceffect")
 					}
 				}
 
@@ -152,9 +144,9 @@ plot.mrf.gibbs <- function(x, resid = FALSE, map = NULL, names = FALSE, values =
 		if(!inherits(x,"random.gibbs"))
 			{
 			if(diagnostics == 2)
-				coefplot(attr(x,"smooth.variance.draws"),xlab,ylab,main,attr(x,"smooth.specs")$label,acf,TRUE,...)
+				coefplot(attr(x,"variance.draws"),xlab,ylab,main,attr(x,"specs")$label,acf,TRUE,...)
 			else
-				coefplot(attr(x,"smooth.coef.draws"),xlab,ylab,main,attr(x,"smooth.specs")$label,acf,FALSE,...)
+				coefplot(attr(x,"coef.draws.utr"),xlab,ylab,main,attr(x,"specs")$label,acf,FALSE,...)
 			}
 		}
 	return(invisible(NULL))

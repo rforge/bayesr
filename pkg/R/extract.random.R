@@ -93,7 +93,7 @@ extract.random <- function(R,RR,RRl,RRs,RRi,fit,RA,lambda,Z,drawsc,mdrawsc,dPR,r
 						by.partial <- response[check] - eta[check] + pmean
 						pcat80 <- (pqu10 < 0 & pqu90 < 0)*(-1) + (pqu10 <= 0 & pqu90 >= 0)*0 + (pqu10 > 0 & pqu90 > 0)*1
 						pcat95 <- (pqu2p5 < 0 & pqu97p5 < 0)*(-1) + (pqu2p5 <= 0 & pqu97p5 >= 0)*0 + (pqu2p5 > 0 & pqu97p5 > 0)*1
-						fitted <- cbind(pmean,pqu2p5,pqu10,pmed,pqu90,pqu97p5,by.partial,pcat95,pcat80)
+						fitted <- cbind(pmean,pqu2p5,pqu10,pmed,pqu90,pqu97p5,pcat95,pcat80,by.partial)
 						byplots[[j]][[jj]] <- cbind(xtmp,fitted)[order(xtmp),]
 						}
 					else
@@ -109,30 +109,30 @@ extract.random <- function(R,RR,RRl,RRs,RRi,fit,RA,lambda,Z,drawsc,mdrawsc,dPR,r
 						tmpnam <- paste(specs[[jj]]$term,".",j,sep="")
 					else
 						tmpnam <- specs[[jj]]$term
-					colnames(byplots[[j]][[jj]]) <- c(tmpnam,"pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5","partial.resid","pcat95","pcat80")
+					colnames(byplots[[j]][[jj]]) <- c(tmpnam,"pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5","pcat95","pcat80","partial.resid")
 					gamma <- matrix(effects[ok,c(2,4,5,6,7,8)],ncol=6)
 					colnames(gamma) <- c("pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5")
 					rownames(gamma) <- RA[[k]]$byfac[ok]
 					if(specs[[jj]]$bytype == "linear")
 						{
 						attr(byplots[[j]][[jj]],"term.type") <- "linear"
-						attr(byplots[[j]][[jj]],"linear.ceffect") <- mean(cRMS[k,])
-						attr(byplots[[j]][[jj]],"linear.coef.draws") <- dtmp
-						attr(byplots[[j]][[jj]],"linear.coef.draws.utr") <- redraws[ok,]
-						attr(byplots[[j]][[jj]],"linear.coef.mean") <- drawbm[[k]][ok,]
+						attr(byplots[[j]][[jj]],"ceffect") <- mean(cRMS[k,])
+						attr(byplots[[j]][[jj]],"coef.draws") <- dtmp
+						attr(byplots[[j]][[jj]],"coef.draws.utr") <- redraws[ok,]
+						attr(byplots[[j]][[jj]],"coef.mean") <- drawbm[[k]][ok,]
 						}
 					else
 						{
-						attr(byplots[[j]][[jj]],"smooth.specs") <- specs[[jj]]$specs
-						attr(byplots[[j]][[jj]],"smooth.specs")$term <- tmpnam
-						attr(byplots[[j]][[jj]],"smooth.specs")$label <- rownames(RA[[k]]$bywhat[[j]])[jj]
+						attr(byplots[[j]][[jj]],"specs") <- specs[[jj]]$specs
+						attr(byplots[[j]][[jj]],"specs")$term <- tmpnam
+						attr(byplots[[j]][[jj]],"specs")$label <- rownames(RA[[k]]$bywhat[[j]])[jj]
 						attr(byplots[[j]][[jj]],"term.type") <- "smooth"
-						attr(byplots[[j]][[jj]],"smooth.coef") <- gamma
-						attr(byplots[[j]][[jj]],"smooth.coef.draws") <- dtmp
-						attr(byplots[[j]][[jj]],"smooth.variance.draws") <- S2R[k,]
-						attr(byplots[[j]][[jj]],"smooth.ceffect") <- mean(cRMS[k,])
-						attr(byplots[[j]][[jj]],"smooth.coef.mean") <- drawbm[[k]][ok,]
-						attr(byplots[[j]][[jj]],"smooth.coef.draws.utr") <- redraws[ok,]
+						attr(byplots[[j]][[jj]],"coef") <- gamma
+						attr(byplots[[j]][[jj]],"coef.draws") <- dtmp
+						attr(byplots[[j]][[jj]],"variance.draws") <- S2R[k,]
+						attr(byplots[[j]][[jj]],"ceffect") <- mean(cRMS[k,])
+						attr(byplots[[j]][[jj]],"coef.mean") <- drawbm[[k]][ok,]
+						attr(byplots[[j]][[jj]],"coef.draws.utr") <- redraws[ok,]
 						}
 					if(class(specs[[jj]])!="mrf.smooth.spec")
 						class(byplots[[j]][[jj]]) <- "sm.gibbs"
@@ -142,13 +142,13 @@ extract.random <- function(R,RR,RRl,RRs,RRi,fit,RA,lambda,Z,drawsc,mdrawsc,dPR,r
 				}
 			attr(effects,"byplots") <- byplots
 			}
-		attr(effects,"random.variance") <- var
-		attr(effects,"random.variance.draws") <- S2R[k,]
-		attr(effects,"random.coefs.draws") <- drawb[[k]]
-		attr(effects,"random.coefs.mean") <- drawbm[[k]]
-		attr(effects,"random.partial.resid") <- partial.resid
-		attr(effects,"random.ceffect") <- mean(cRMS[k,])
-		attr(effects,"random.term") <- RA[[k]]$call
+		attr(effects,"variance") <- var
+		attr(effects,"variance.draws") <- S2R[k,]
+		attr(effects,"coefs.draws") <- drawb[[k]]
+		attr(effects,"coefs.mean") <- drawbm[[k]]
+		attr(effects,"partial.resid") <- partial.resid
+		attr(effects,"ceffect") <- mean(cRMS[k,])
+		attr(effects,"term") <- RA[[k]]$call
 		attr(effects,"s") <- 1/diag(crossprod(RA[[k]]$Z))
 		varmat <- rbind(varmat,var)
 		class(effects) <- "random.gibbs"
@@ -187,13 +187,13 @@ extract.random <- function(R,RR,RRl,RRs,RRi,fit,RA,lambda,Z,drawsc,mdrawsc,dPR,r
 			effects.i <- cbind(faclev,pmean,psd,pqu2p5,pqu10,pmed,pqu90,pqu97p5,pcat95,pcat80)
 			colnames(effects.i) <- c(RA[[k]]$facname,"pmean","psd","pqu2p5","pqu10","pmed","pqu90","pqu97p5","pcat95","pcat80")
 
-			attr(effects.i,"random.variance") <- var
-			attr(effects.i,"random.variance.draws") <- S2R[k,]
-			attr(effects.i,"random.coefs.draws") <- stetaR[[k]]
-			attr(effects.i,"random.coefs.mean") <- drawbm[[k]]
-			attr(effects.i,"random.partial.resid") <- partial.resid
-			attr(effects.i,"random.ceffect") <- mean(cRMS[k,])
-			attr(effects.i,"random.term") <- RA[[k]]$call
+			attr(effects.i,"variance") <- var
+			attr(effects.i,"variance.draws") <- S2R[k,]
+			attr(effects.i,"coefs.draws") <- stetaR[[k]]
+			attr(effects.i,"coefs.mean") <- drawbm[[k]]
+			attr(effects.i,"partial.resid") <- partial.resid
+			attr(effects.i,"ceffect") <- mean(cRMS[k,])
+			attr(effects.i,"term") <- RA[[k]]$call
 			attr(effects.i,"s") <- 1/diag(crossprod(RA[[k]]$Z))
 			class(effects.i) <- "random.gibbs"
 			attr(effects,"effects.nototal") <- effects.i
@@ -243,30 +243,30 @@ extract.random <- function(R,RR,RRl,RRs,RRi,fit,RA,lambda,Z,drawsc,mdrawsc,dPR,r
 						tmpnam <- RA[[k]][[jj]]$names[1]
 					else
 						tmpnam <- RA[[k]][[jj]]$names
-					colnames(fout) <- c(tmpnam,"pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5","partial.resid","pcat95","pcat80")
+					colnames(fout) <- c(tmpnam,"pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5","pcat95","pcat80","partial.resid")
 					matrownames[j] <- RA[[k]][[jj]]$term
 					redrawsc <- redraw(Z[[k]][[j]]$RQ,drawsc[[k]][[j]])
 					gamma <- sfout(redrawsc,type=2)
 					gcn <- paste(RA[[k]][[jj]]$label,":",1:nrow(gamma),sep="")
 					rownames(gamma) <- gcn
-					attr(fout,"smooth.coef") <- gamma
+					attr(fout,"coef") <- gamma
 					attr(fout,"s") <- Z[[k]][[j]]$s
 					attr(fout,"rq") <- Z[[k]][[j]]$RQ
-					attr(fout,"smooth.hyper") <- sfout(lambda[[k]][[j]])
-					attr(fout,"smooth.hyper.draws") <- lambda[[k]][[j]]
-					attr(fout,"smooth.variance") <- sfout(S2o/lambda[[k]][[j]])
-					attr(fout,"smooth.variance.draws") <- S2o/lambda[[k]][[j]]
-					attr(fout,"smooth.ceffect") <- mean(cRSS[[k]][[j]])
-					attr(fout,"smooth.ceffect.draws") <- cRSS[[k]][[j]]
-					attr(fout,"smooth.coef.draws") <- drawsc[[k]][[j]]
-					attr(fout,"smooth.coef.mean") <- mdrawsc[[k]][[j]]
-					attr(fout,"smooth.coef.draws.utr") <- redrawsc
+					attr(fout,"hyper") <- sfout(lambda[[k]][[j]])
+					attr(fout,"hyper.draws") <- lambda[[k]][[j]]
+					attr(fout,"variance") <- sfout(S2o/lambda[[k]][[j]])
+					attr(fout,"variance.draws") <- S2o/lambda[[k]][[j]]
+					attr(fout,"ceffect") <- mean(cRSS[[k]][[j]])
+					attr(fout,"ceffect.draws") <- cRSS[[k]][[j]]
+					attr(fout,"coef.draws") <- drawsc[[k]][[j]]
+					attr(fout,"coef.mean") <- mdrawsc[[k]][[j]]
+					attr(fout,"coef.draws.utr") <- redrawsc
 
 					if(!is.null(RA[[k]][[jj]]$rwcheck))
 						sm.specs <- RA[[k]][[jj]]$rwspecs
 					else
 						sm.specs <- RA[[k]][[jj]]$specs
-					attr(fout,"smooth.specs") <- sm.specs
+					attr(fout,"specs") <- sm.specs
 					attr(fout,"term.type") <- "smooth"
 					if(!is.null(RA[[k]][[jj]]$rwcheck))
 						class(fout) <- paste(RA[[k]][[jj]]$rwtype,".gibbs",sep="")
@@ -278,7 +278,7 @@ extract.random <- function(R,RR,RRl,RRs,RRi,fit,RA,lambda,Z,drawsc,mdrawsc,dPR,r
 							class(fout) <- "mrf.gibbs"
 						}
 					ra.fout[[mapind[RA[[k]]$indspec[2,] == j]]] <- fout
-					smooth.mat[k,] <- attr(fout,"smooth.hyper")
+					smooth.mat[k,] <- attr(fout,"hyper")
 					}
 				rownames(smooth.mat) <- matrownames
 				colnames(smooth.mat) <- c("pmean","psd","pqu2p5","pqu10","pmed","pqu90","pqu97p5")
@@ -303,8 +303,8 @@ extract.random <- function(R,RR,RRl,RRs,RRi,fit,RA,lambda,Z,drawsc,mdrawsc,dPR,r
 					xnam[j] <- RA[[k]][[lidok]]$term
 					}
 				betas <- cbind(pmean,psd,pqu2p5,pqu10,pmed,pqu90,pqu97p5)
-				attr(betas,"linear.coef.draws") <- drawTZRl[[k]]
-				attr(betas,"linear.coef.mean") <- drawTZRlM[[k]]
+				attr(betas,"coef.draws") <- drawTZRl[[k]]
+				attr(betas,"coef.mean") <- drawTZRlM[[k]]
 				attr(betas,"dimnames") <- list(xnam,c("pmean","psd","pqu2p5","pqu10","pmed","pqu90","pqu97p5"))
 
 				class(betas) <- "gibbsfit"
@@ -333,16 +333,16 @@ extract.random <- function(R,RR,RRl,RRs,RRi,fit,RA,lambda,Z,drawsc,mdrawsc,dPR,r
 					partial.resid <- response - (eta - fpmed)
 					pcat80 <- (fpqu10 < 0 & fpqu90 < 0)*(-1) + (fpqu10 <= 0 & fpqu90 >= 0)*0 + (fpqu10 > 0 & fpqu90 > 0)*1
 					pcat95 <- (fpqu2p5 < 0 & fpqu97p5 < 0)*(-1) + (fpqu2p5 <= 0 & fpqu97p5 >= 0)*0 + (fpqu2p5 > 0 & fpqu97p5 > 0)*1
-					fout <- cbind(xtmp,fpmean,fpqu2p5,fpqu10,fpmed,fpqu90,fpqu97p5,partial.resid,pcat95,pcat80)
+					fout <- cbind(xtmp,fpmean,fpqu2p5,fpqu10,fpmed,fpqu90,fpqu97p5,pcat95,pcat80,partial.resid)
 					fout <- fout[order(fout[,1]),]
 					colnames(fout) <- c(RA[[k]][[lidok]]$term,
-							    "pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5","partial.resid","pcat95","pcat80")
-					attr(fout,"linear.coef") <- betas[j,]
-					attr(fout,"linear.ceffect") <- mean(cRLL[[k]][j,])
+							    "pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5","pcat95","pcat80","partial.resid")
+					attr(fout,"coef") <- betas[j,]
+					attr(fout,"ceffect") <- mean(cRLL[[k]][j,])
 					attr(fout,"term.type") <- "linear"
-					attr(fout,"linear.coef.draws") <- drawTZRl[[k]][j,]
-					attr(fout,"linear.coef.draws.utr") <- redrawsl[j,]
-					attr(fout,"linear.coef.mean") <- drawTZRlM[[k]][j,]
+					attr(fout,"coef.draws") <- drawTZRl[[k]][j,]
+					attr(fout,"coef.draws.utr") <- redrawsl[j,]
+					attr(fout,"coef.mean") <- drawTZRlM[[k]][j,]
 					class(fout) <- "linear.gibbs"
 
 					ra.fout[[mapind[RA[[k]]$indspec[1,] == j]]] <- fout

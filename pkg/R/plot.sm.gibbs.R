@@ -4,7 +4,7 @@ plot.sm.gibbs <- function(x, resid = FALSE, jit = TRUE, const = FALSE, diagnosti
 	{
 	if(diagnostics == FALSE) 
 		{
-		if(attr(x,"smooth.specs")$dim == 1)
+		if(attr(x,"specs")$dim == 1)
 			smoothone(x,resid,jit,const,diagnostics,acf,xlab,ylab,main,colored,col,lwdc,lwdconf,cex,...)
 		else
 			smoothtwo(x,grid,xlab,ylab,zlab,main,theta,phi,image,const,col,colored,resid,cex,border,nrc,pal,...)
@@ -12,8 +12,8 @@ plot.sm.gibbs <- function(x, resid = FALSE, jit = TRUE, const = FALSE, diagnosti
 	else
 		{
 		if(diagnostics == 2)
-			coefplot(attr(x,"smooth.variance.draws"),xlab,ylab,main,attr(x,"smooth.specs")$label,acf,TRUE,...)
+			coefplot(attr(x,"variance.draws"),xlab,ylab,main,attr(x,"specs")$label,acf,TRUE,...)
 		else
-			coefplot(attr(x,"smooth.coef.draws.utr"),xlab,ylab,main,attr(x,"smooth.specs")$label,acf,FALSE,...)
+			coefplot(attr(x,"coef.draws.utr"),xlab,ylab,main,attr(x,"specs")$label,acf,FALSE,...)
 		}
 	}

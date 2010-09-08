@@ -60,7 +60,7 @@ extract <- function(cdraws,lambda,response,eta,Z,C,K,check,new,mcdraws,S2,sm.spe
 		if(!is.null(sm.specs[[k]]$data$byokcheck))
 			fout <- fout[sm.specs[[k]]$data$byokcheck,]
 		fout <- fout[order(fout[,1]),]
-		colnames(fout) <- c(tmp,"pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5","partial.resid","pcat95","pcat80")
+		colnames(fout) <- c(tmp,"pmean","pqu2p5","pqu10","pmed","pqu90","pqu97p5","pcat95","pcat80","partial.resid")
 
 		gamma <- sfout(redraws,type=2)
 		gcn <- paste(sm.specs[[k]]$label,":",1:nrow(gamma),sep="")
@@ -69,19 +69,19 @@ extract <- function(cdraws,lambda,response,eta,Z,C,K,check,new,mcdraws,S2,sm.spe
 			matrownames[k] <- sm.specs[[k]]$label
 		else
 			matrownames[k] <- paste(sm.specs[[k]]$label,":",sm.specs[[k]]$term[length(sm.specs[[k]]$term)],sep="")
-		attr(fout,"smooth.coef") <- gamma
+		attr(fout,"coef") <- gamma
 		attr(fout,"s") <- Z[[k]]$s
 		attr(fout,"rq") <- Z[[k]]$RQ
-		attr(fout,"smooth.hyper") <- sfout(lambda[k,])
-		attr(fout,"smooth.hyper.draws") <- lambda[k,]
-		attr(fout,"smooth.variance") <- sfout(S2/lambda[k,])
-		attr(fout,"smooth.variance.draws") <- S2/lambda[k,]
-		attr(fout,"smooth.ceffect") <- mean(C[k,])
-		attr(fout,"smooth.ceffect.draws") <- C[k,]
-		attr(fout,"smooth.coef.draws") <- cdraws[[k]]
-		attr(fout,"smooth.coef.mean") <- mcdraws[[k]]
-		attr(fout,"smooth.coef.draws.utr") <- redraws
-		attr(fout,"smooth.specs") <- sm.specs[[k]]
+		attr(fout,"hyper") <- sfout(lambda[k,])
+		attr(fout,"hyper.draws") <- lambda[k,]
+		attr(fout,"variance") <- sfout(S2/lambda[k,])
+		attr(fout,"variance.draws") <- S2/lambda[k,]
+		attr(fout,"ceffect") <- mean(C[k,])
+		attr(fout,"ceffect.draws") <- C[k,]
+		attr(fout,"coef.draws") <- cdraws[[k]]
+		attr(fout,"coef.mean") <- mcdraws[[k]]
+		attr(fout,"scoef.draws.utr") <- redraws
+		attr(fout,"specs") <- sm.specs[[k]]
 		attr(fout,"term.type") <- "smooth"
 		
 		if(class(sm.specs[[k]])!="mrf.smooth.spec")
@@ -89,7 +89,7 @@ extract <- function(cdraws,lambda,response,eta,Z,C,K,check,new,mcdraws,S2,sm.spe
 		else
 			class(fout) <- "mrf.gibbs"
 		smooth.out[[k]] <- fout
-		smooth.mat[k,] <- attr(fout,"smooth.hyper")
+		smooth.mat[k,] <- attr(fout,"hyper")
 		}
 	rownames(smooth.mat) <- matrownames
 	colnames(smooth.mat) <- c("pmean","psd","pqu2p5","pqu10","pmed","pqu90","pqu97p5")

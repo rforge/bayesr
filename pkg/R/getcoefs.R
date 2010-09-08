@@ -27,13 +27,13 @@ getcoefs <- function(fout,beta)
 		for(j in 1:length(fout))
 			{
 			if(attr(fout[[j]],"term.type") == "smooth")
-				coefs <- rbind(coefs,attr(fout[[j]],"smooth.coef"))
+				coefs <- rbind(coefs,attr(fout[[j]],"coef"))
 			if(attr(fout[[j]],"term.type") == "m")
 				{
 				lx <- length(fout[[j]])
 				if(!inherits(fout[[j]][[1]],"linear.gibbs"))
 					for(i in 1:lx)
-						coefs <- rbind(coefs,attr(fout[[j]][[i]],"smooth.coef"))
+						coefs <- rbind(coefs,attr(fout[[j]][[i]],"coef"))
 				}
 			if(attr(fout[[j]],"term.type") == "random")
 				{
@@ -61,7 +61,7 @@ getcoefs <- function(fout,beta)
 					for(i in 1:length(fout[[j]]$terms))
 						{
 						if(attr(fout[[j]]$terms[[i]],"term.type") == "smooth")
-							coefs <- rbind(coefs,attr(fout[[j]]$terms[[i]],"smooth.coef"))
+							coefs <- rbind(coefs,attr(fout[[j]]$terms[[i]],"coef"))
 						if(attr(fout[[j]]$terms[[i]],"term.type") == "random")
 							{
 							eff <- fout[[j]]$terms[[i]]$effects
@@ -88,7 +88,7 @@ getcoefs <- function(fout,beta)
 								for(jj in 1:length(fout[[j]]$terms[[i]]$terms))
 									{
 									if(attr(fout[[j]]$terms[[i]]$terms[[jj]],"term.type") == "smooth")
-										coefs <- rbind(coefs,attr(fout[[j]]$terms[[i]]$terms[[jj]],"smooth.coef"))
+										coefs <- rbind(coefs,attr(fout[[j]]$terms[[i]]$terms[[jj]],"coef"))
 									}
 								}
 							}
