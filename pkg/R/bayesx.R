@@ -205,6 +205,7 @@ bayesx <- function(formula, family="gaussian", data=NULL, method="MCMC",
 		res$iter <- res$bayesx.setup$iter
 		res$burnin <- res$bayesx.setup$burnin
 		res$thinning <- res$bayesx.setup$thinning
+		res$samptime <- res$bayesx.run$samptime
 		attr(res$fout,"DIC") <- NULL
 		}
 	class(res) <- "gibbs"
@@ -248,7 +249,7 @@ run.bayesx <- function(file, prg.name="bayesx.input.prg")
 	cat("Total run time was:",samptime[3],"sec\n")
 	setwd(fileo)
 
-	return(list(ok=ok,samptime=samptime[3]))
+	return(list(ok=ok,samptime=samptime))
 	}
 
 
