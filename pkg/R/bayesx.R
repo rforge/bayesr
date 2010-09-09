@@ -1,12 +1,17 @@
 write.bayesx.input <- function(formula, family="gaussian", data=NULL, method="MCMC",
-                               iter=1200, burnin=200, thinning=1, file=NULL)
+                               iter=1200, burnin=200, thinning=1, eps=0.0001, file=NULL)
 	{
 	specs <- list()
 	specs$family <- family
 	specs$method <- method
-	specs$iter <- iter
-	specs$burnin <- burnin
-	specs$thinning <- thinning
+	if(method=="MCMC")
+		{
+		specs$iter <- iter
+		specs$burnin <- burnin
+		specs$thinning <- thinning
+		}
+	else
+		specs$eps <- eps
 	data.file=NULL
 	if(is.null(data))
 		data <- parent.frame()
@@ -24,7 +29,7 @@ write.bayesx.input <- function(formula, family="gaussian", data=NULL, method="MC
 		file <- paste(tempdir(),"/bayesx",sep="")
 	dir.create(file,showWarnings=FALSE)
 	tf <- terms(formula, specials = c("s","te","m","r"))
-	terms <- attr(tf, "term.labels")
+	specs$term.labels <- terms <- attr(tf, "term.labels")
 	lt <- length(terms)
 	gp <- interpret.gam(formula)
 	fake.formula <- gp$fake.formula
@@ -171,20 +176,61 @@ write.bayesx.input <- function(formula, family="gaussian", data=NULL, method="MC
 
 
 bayesx <- function(formula, family="gaussian", data=NULL, method="MCMC",
-                   iter=1200, burnin=200, thinning=1, file=NULL)
+                   iter=1200, burnin=200, thinning=1, eps=0.001, file=NULL)
 	{
 	res <- list()
 	res$call <- match.call()
 	res$formula <- formula <- as.formula(formula)
+
+	# setup files for bayesx
 	res$bayesx.setup <- write.bayesx.input(formula,family,data,method,
-                                               iter,burnin,thinning,file)
+                                               iter,burnin,thinning,eps,file)
+
 	# now estimate with BayesX
 	res$bayesx.run <- run.bayesx(res$bayesx.setup$file)
-	res$fout <- read.bayesx.output(res$bayesx.setup$file,method)
+
+	# get the output
+	res$fout <- term.order(res$bayesx.setup$term.labels,
+                               read.bayesx.output(res$bayesx.setup$file,method))
+
+	res$terms <- res$bayesx.setup$term.labels
 	res$fitted <- attr(res$fout,"fitted")
 	attr(res$fout,"fitted") <- NULL
-	class(res) <- "bayesx"
+	res$residuals <- attr(res$fout,"residuals")
+	attr(res$fout,"residuals") <- NULL
+	if(method=="MCMC")
+		{
+		res$DIC<- attr(res$fout,"DIC")
+		res$N <- res$bayesx.setup$N
+		res$iter <- res$bayesx.setup$iter
+		res$burnin <- res$bayesx.setup$burnin
+		res$thinning <- res$bayesx.setup$thinning
+		attr(res$fout,"DIC") <- NULL
+		}
+	class(res) <- "gibbs"
 	return(res)
+	}
+
+
+term.order <- function(terms,fin)
+	{
+	k <- length(terms)
+	if(k==length(fin))
+		{
+		fattr <- attributes(fin)
+		id <- rep(0,k)
+		for(i in 1:k)
+			for(j in 1:k)
+				{
+				name <- colnames(fin[[j]])[1]
+				if(any(grep(name,terms[i])))
+					id[i] <- j
+				}
+		fin <- fin[id]
+		attributes(fin) <- fattr
+		}
+
+	return(fin)
 	}
 
 
@@ -194,8 +240,8 @@ run.bayesx <- function(file, prg.name="bayesx.input.prg")
 	setwd(file)
 	cat("Starting:\n")
 	ptm <- proc.time()
-	ok <- 0	
-	# ok <- try(system(paste("BayesX ",file,"/",prg.name,sep="")))
+	ok <- 0
+	ok <- try(system(paste("BayesX ",file,"/",prg.name,sep="")))
 	now <- proc.time()
 	samptime <- now - ptm
 	samptime <- samptime
@@ -235,16 +281,32 @@ read.bayesx.output <- function(file,method="MCMC")
 					eta <- read.table(files[i],header=TRUE)
 				}
 			}
+		else
+			{
+			if(n > 11)
+				{
+				get.eta <- paste(split[(n-10):n],collapse="")
+				if(get.eta=="predict.raw")
+					eta <- read.table(files[i],header=TRUE)
+				}
+			}
 		}
 	k <- 1
 	etacheck <- !is.null(eta)
 	smooth.mat <- var.mat <- s2mat <- NULL
 	if(etacheck)
 		{
-		eta.names <- names(eta)
-		response <- eta[eta.names[1]]
 		if(mcheck)
+			{
+			eta.names <- names(eta)
 			pred <- eta$linpred
+			response <- eta[eta.names[1]]
+			}
+		else
+			{
+			pred <- eta$eta
+			response <- 0
+			}
 		}
 	for(i in 1:length(usefiles))
 		{
@@ -259,8 +321,11 @@ read.bayesx.output <- function(file,method="MCMC")
 				attr(fout[[k]],"coef") <- unique(fout[[2]][,c(2,3,4,5,6,7)])
 				}
 			attr(fout[[k]],"term.type") <- "smooth"
-			smooth.mat <- rbind(smooth.mat,attr(fout[[k]],"variance"))
-			k <- k + 1
+			if(length(attr(fout[[k]],"variance"))>1)
+				{
+				smooth.mat <- rbind(smooth.mat,attr(fout[[k]],"variance"))
+				k <- k + 1
+				}
 			}
 		if(file.specs[i]=="_random.res")
 			{
@@ -294,11 +359,13 @@ read.bayesx.output <- function(file,method="MCMC")
 		lin.mat <- as.matrix(lin.mat)
 		cnames <- colnames(lin.mat)
 		lin.mat <- lin.mat[,1:(ncol(lin.mat)-2)]
+		if(!is.matrix(lin.mat))
+			lin.mat <- matrix(lin.mat,nrow=1)
 		colnames(lin.mat) <- cnames[1:(length(cnames)-2)]
 		rownames(lin.mat) <- varnames
 		attr(lin.mat,"coef.draws.utr") <- draws
 		attr(fout,"lin.mat") <- lin.mat
-		if(etacheck)
+		if(etacheck & mcheck)
 			{
 			for(i in 1:length(varnames))
 				{
@@ -322,15 +389,22 @@ read.bayesx.output <- function(file,method="MCMC")
 					attr(ftmp,"coef") <- coefso
 					if(!is.null(draws))
 						attr(ftmp,"coef.draws.utr") <- draws[xid,]
+					attr(ftmp,"term.type") <- "linear"
 					fout[[k]] <- ftmp
 					}
 				}
 			}
 		}
 	if(etacheck)
+		{
 		fitted <- as.numeric(unlist(pred))
+		residuals <- response - fitted
+		}
 	else
+		{		
 		fitted <- "NA"
+		residuals <- "NA"
+		}
 	if(any(grep("scale",files)))
 		{
 		which <- grep("scale",files)
@@ -341,7 +415,7 @@ read.bayesx.output <- function(file,method="MCMC")
 			{
 			s2mat <- read.table(files[which],header=TRUE)
 			s2nam <- names(s2mat)
-			s2mat <- matrix(s2mat,nrow=1)
+			s2mat <- matrix(unlist(s2mat),nrow=1)
 			colnames(s2mat) <- s2nam
 			rownames(s2mat) <- "Sigma2"
 			attr(fitted,"variance") <- s2mat
@@ -357,9 +431,19 @@ read.bayesx.output <- function(file,method="MCMC")
 				}
 			}
 		}
+	if(any(grep("deviance",files)))
+		{
+		which <- grep("deviance",files)
+		devi <- read.table(files[which],header=TRUE)
+		pd <- devi$unstandardized_deviance[length(devi$unstandardized_deviance)-1]
+		DIC <- devi$unstandardized_deviance[length(devi$unstandardized_deviance)]
+		attr(fout,"DIC") <- list(DIC=DIC,pd=pd)
+		}
 	attr(fout,"fitted") <- fitted
+	attr(fout,"residuals") <- unlist(residuals)
 	attr(fout,"lin.mat") <- lin.mat
 	attr(fout,"smooth.mat") <- smooth.mat
+	attr(fout,"var.mat") <- var.mat
 
 	setwd(fileo)
 	
@@ -377,7 +461,7 @@ read.bayesx.res <- function(file,etacheck,eta,response,pred,mcheck,racheck)
 	fout$intnr <- NULL
 	name <- colnames(fout)[1]
 	raoke <- FALSE
-	if(etacheck)
+	if(etacheck && mcheck)
 		{
 		dat <- as.numeric(as.matrix(eta[name]))
 		ind <- get.unique(dat)$ind[order(dat)]
@@ -387,9 +471,13 @@ read.bayesx.res <- function(file,etacheck,eta,response,pred,mcheck,racheck)
 			lev <- unlist(fout[name])
 			levels <- levels(as.factor(lev))
 			lev <- as.integer(lev[ind])
-			e <- unlist(response - pred + fout$pmean[ind]) 
+			if(mcheck)
+				e <- unlist(response - pred + fout$pmean[ind]) 
+			else
+				e <- unlist(response - pred + fout$pmode[ind]) 
 			for(j in 1:length(levels))
 				partial.resid[[j]] <- e[lev==levels[j]]
+
 			raoke <- TRUE
 			}
 		else
@@ -397,6 +485,8 @@ read.bayesx.res <- function(file,etacheck,eta,response,pred,mcheck,racheck)
 			fout <- fout[ind,]
 			if(mcheck)
 				partial.resid <- response - pred + fout$pmean
+			else
+				partial.resid <- response - pred + fout$pmode
 			fout <- cbind(fout,partial.resid)
 			names(fout)[length(names(fout))] <- "partial.resid"
 			}

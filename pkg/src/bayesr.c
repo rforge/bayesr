@@ -989,9 +989,9 @@ SEXP qhelp2(SEXP draws, SEXP basis, SEXP iter, SEXP n, SEXP k,
 		{
 		foutptr[i + j*nr] = outptr[get + j*N];
 		}
-	foutptr[i + 7*N] = (foutptr[i + 1*N] < 0 && foutptr[i + 5*N] < 0)*(-1) + (foutptr[i + 1*N] <= 0 & foutptr[i + 5*N] >= 0)*0 + (foutptr[i + 1*N] > 0 && foutptr[i + 5*N] > 0)*1;
-	foutptr[i + 8*N] = (foutptr[i + 2*N] < 0 && foutptr[i + 4*N] < 0)*(-1) + (foutptr[i + 2*N] <= 0 && foutptr[i + 4*N] >= 0)*0 + (foutptr[i + 2*N] > 0 && foutptr[i + 4*N] > 0)*1; 
-	foutptr[i + 6*N] = responseptr[i] - etaptr[i] + foutptr[i]; 
+	foutptr[i + 6*N] = (foutptr[i + 1*N] < 0 && foutptr[i + 5*N] < 0)*(-1) + (foutptr[i + 1*N] <= 0 & foutptr[i + 5*N] >= 0)*0 + (foutptr[i + 1*N] > 0 && foutptr[i + 5*N] > 0)*1;
+	foutptr[i + 7*N] = (foutptr[i + 2*N] < 0 && foutptr[i + 4*N] < 0)*(-1) + (foutptr[i + 2*N] <= 0 && foutptr[i + 4*N] >= 0)*0 + (foutptr[i + 2*N] > 0 && foutptr[i + 4*N] > 0)*1; 
+	foutptr[i + 8*N] = responseptr[i] - etaptr[i] + foutptr[i]; 
         }
     
     UNPROTECT(nProtected);

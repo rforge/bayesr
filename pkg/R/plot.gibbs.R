@@ -149,6 +149,8 @@ plot.gibbs <- function(x, which = 1, resid = FALSE, jit = TRUE, const = FALSE, d
 		if(type == "random")
 			{
 			effplot <- FALSE
+			if(!is.list(X))
+				X <- list(effects=X,terms=NULL)
 			if(!is.null(X$terms))
 				{
 				if(length(which) > 1)
@@ -255,6 +257,7 @@ plot.gibbs <- function(x, which = 1, resid = FALSE, jit = TRUE, const = FALSE, d
 								effplot <- TRUE
 							}
 						}
+
 					if(length(which) == 3)
 						{
 						if(which[2] == 0)

@@ -14,10 +14,10 @@ smoothtwo <- function(X,grid,xlab,ylab,zlab,main,theta,phi,image,const,col,color
 			by <- specs$term[length(specs$term)]
 		}
 	call <- specs$call
-	draws <- attr(X,"smooth.coef.draws.utr")
+	draws <- attr(X,"coef.draws.utr")
 	secheck <- FALSE
 	args <- as.list(substitute(list(...)))[-1]
-	ipcheck <- FALSE
+	ipcheck <- TRUE
 	if(!is.null(args$ip) || is.null(draws))
 		{
 		args$ip <- NULL
@@ -28,13 +28,13 @@ smoothtwo <- function(X,grid,xlab,ylab,zlab,main,theta,phi,image,const,col,color
 		secheck <- TRUE
 		args$se <- NULL
 		}
-	ceffect <- attr(X,"smooth.ceffect")
+	ceffect <- attr(X,"ceffect")
 	xn <- seq(min(x),max(x),length=grid)
 	zn <- seq(min(z),max(z),length=grid)
 	if(ipcheck)
 		{
 		fitted <- list()
-		fitted$mean <- akima::interp(x,z,X[,3],xo=xn,yo=zn)$z
+		fitted$mean <- akima::interp(x,z,X[,3],xo=xn,yo=zn,duplicat="strip")$z
 		if(secheck)
 			{
 			fitted$q1 <- akima::interp(x,z,X[,4],xo=xn,yo=zn)$z
