@@ -1,3 +1,14 @@
+parse.bayesx.input <- function(formula, family="gaussian", data=NULL, method="MCMC",
+                               iter=1200, burnin=200, thinning=1, eps=0.0001, file=NULL)
+	{
+	p <- list()
+	p$formula <- formula
+	p$call <- match.call()
+	p$terms <- terms(formula, specials = c("s","te","r"),keep.order=TRUE)
+	p$data <- data #????
+	list(formula, call, terms?, response?, data, family, method, burnin, ...)
+	}
+
 write.bayesx.input <- function(formula, family="gaussian", data=NULL, method="MCMC",
                                iter=1200, burnin=200, thinning=1, eps=0.0001, file=NULL)
 	{
