@@ -1,14 +1,22 @@
-parse.bayesx.input <- function(formula, family="gaussian", data=NULL, method="MCMC",
-                               iter=1200, burnin=200, maxint=NULL, step=1, aresp=1, bresp=0.005, 
-			       distopt="nb", reference=NULL, zipdistopt="NA", eps=0.0001, 
-                               file=NULL, outfile=NULL, ...)
+parse.bayesx.input <- function(formula, family = "gaussian", data = NULL, 
+                               weights = NULL, method = "MCMC", outfile = NULL, offset = NULL,
+                               iter = 1200, burnin = 200, maxint = NULL, step = 1, aresp = 1, bresp = 0.005, 
+			       distopt = "nb", reference = NULL, zipdistopt = "NA", 
+                               eps = 1e-05, lowerlim = 0.001, maxit = 400, maxchange = 1e+06,
+                               leftint = NULL, lefttrunc = NULL, state = NULL,...)
 	{
 	p <- list()
+	if(is.null(data))
+		data <- parent.frame()
 	p$formula <- formula
+	p$family <- family
 	p$call <- match.call()
 	p$terms <- terms(formula, specials = c("s","te","r"),keep.order=TRUE)
 	p$data <- data
+	p$weights <- weights
 	p$method <- method
+	p$outfile <- outfile
+	p$offset <- offset
 	p$iter <- iter
 	p$burnin <- burnin
 	p$maxint <- maxint
@@ -19,222 +27,383 @@ parse.bayesx.input <- function(formula, family="gaussian", data=NULL, method="MC
 	p$reference <- reference
 	p$zipdistopt <- zipdistopt
 	p$eps <- eps
-	p$file <- file
-	list(formula, call, terms?, response?, data, family, method, burnin, ...)
+	p$lowerlim <- lowerlim
+	p$maxit <- maxit
+	p$maxchange <- maxchange
+	p$leftint <- leftint
+	p$lefttrunc <- lefttrunc
+	p$state <- state
+
+	return(p)
 	}
 
-write.bayesx.input.2 <- function(formula, family="gaussian", data=NULL, method="MCMC",
-                               iter=1200, burnin=200, thinning=1, eps=0.0001, file=NULL)
+
+write.bayesx.input <- function(object = NULL)
 	{
-	specs <- list()
-	specs$family <- family
-	specs$method <- method
-	if(method=="MCMC")
-		{
-		specs$iter <- iter
-		specs$burnin <- burnin
-		specs$thinning <- thinning
-		}
-	else
-		specs$eps <- eps
+	if(is.null(object))
+		stop("nothing to do!")
+	
 	data.file=NULL
-	if(is.null(data))
-		data <- parent.frame()
+	if(is.null(object$data))
+		object$data <- parent.frame()
 	else
 		{
-		if(is.character(data))
-			{
-			data.file <- data
-			data <- read.table(data,header=TRUE)
-			}
-		if(!is.data.frame(data))
-			data <- as.data.frame(data)
+		if(is.character(object$data))
+			data.file <- object$data
 		}
-	if(is.null(file))
-		file <- paste(tempdir(),"/bayesx",sep="")
-	dir.create(file,showWarnings=FALSE)
-	tf <- terms(formula, specials = c("s","te","m","r"))
-	specs$term.labels <- terms <- attr(tf, "term.labels")
-	lt <- length(terms)
-	gp <- interpret.gam(formula)
-	fake.formula <- gp$fake.formula
-	fake.labels <- attr(terms(fake.formula),"term.labels")
-	racheck <- FALSE
-	byra <- rep("NA",length(fake.labels))
+	if(is.null(object$outfile))
+		object$outfile <- paste(tempdir(),"/bayesx",sep="")
+	dir.create(object$outfile,showWarnings=FALSE)
+
+	gp <- interpret.gam(object$formula)
+	fake.labels <- attr(terms(gp$fake.formula), "term.labels")
+	rafoo <- function(ra,data,outfile,k)
+		{
+		file.name.h <- NULL
+		if(!is.null(ra$ins))
+			{
+			file.name <- file.name.h <- paste(outfile,"/bayesx.ra.data",k,".raw",sep="")	
+			for(j in 1:length(ra$ins))
+				file.name.h <- c(file.name.h,rafoo(ra$ins[[j]],data,outfile,as.integer(paste(k,j,sep=""))))
+			fake.formula <- ra$fake.formula	
+			dat <- model.matrix(fake.formula,data)
+			dat.names <- colnames(dat)
+			dat <- as.data.frame(dat)
+			if(dat.names[1]=="(Intercept)")	
+				dat <- dat[dat.names[2:ncol(dat)]]	
+			write.table(dat,file.name,col.names=TRUE,row.names=FALSE,quote=FALSE)
+			}
+		return(file.name.h)
+		}
+	rah <- FALSE
+	ra.file.names.h <- list()
+	rk <- 1
 	for(k in 1:length(fake.labels))
 		{
-		splits <- strsplit(fake.labels[k],""," ")[[1]][1:2]
-		if(length(splits)>1)
+		st <- strsplit(fake.labels[k],""," ")[[1]]
+		if(length(st) > 1)
 			{
-			splits <- paste(splits[1:2],collapse="")
-			if(splits=="r(")
+			ft <- paste(st[1:2],collapse="")
+			if(ft=="r(")
 				{
-				terms[terms==fake.labels[k]] <- "99999999111"
-				raterm <- eval(parse(text=fake.labels[k]),envir=data)
-				if(!is.null(raterm$byterms))
-					byra[k] <- raterm$byterms
-				fake.labels[k] <- raterm$facname
-				terms[terms=="99999999111"] <- fake.labels[k]	
-				racheck <- TRUE
+				ra <- eval(parse(text=fake.labels[k]))
+				fake.labels[k] <- ra$term
+				if(!is.null(ra$ins))
+					{
+					rah <- TRUE
+					ra.file.names.h[[rk]] <- rafoo(ra,object$data,object$outfile,k)
+					rk <- rk + 1
+					}
 				}
 			}
 		}
-	if(racheck)
-		{
-		for(k in 1:length(byra))
-			if(byra[k]!="NA")
-				fake.labels <- c(fake.labels,byra[k])
-		fake.formula <- as.character(fake.formula)
-		fake.formula <- as.formula(paste(fake.formula[2],"~",paste("+",fake.labels,collapse=""),collapse=""))
-		}
-	specs$file <- file
-	fileo <- getwd()
-	setwd(file)
+	if(!rah)
+		ra.file.names.h <- NULL
 	if(is.null(data.file))
 		{
-		dat <- model.matrix(fake.formula,data)
-		if(attr(tf,"intercept")==1 || racheck)
-			{
-			vars <- colnames(dat)
-			vars <- vars[2:length(vars)]
-			if(ncol(dat)<3)
-				dat <- matrix(dat[,2:ncol(dat)],ncol=1)
-			else
-				dat <- dat[,2:ncol(dat)]
-			}
-		else
-			vars <- colnames(dat)
-		resp <- eval(parse(text=gp$response),envir=data)
+		if(length(fake.labels)>1)
+			for(k in 2:length(fake.labels))
+				fake.labels[k] <- paste("+",fake.labels[k],sep="")	
+		fake.formula <- paste("~-1+",paste(fake.labels,collapse=""),sep="",collapse="")
+		dat <- model.matrix(as.formula(fake.formula),object$data)
+		vars <- colnames(dat)
+		resp <- eval(parse(text=gp$response),envir=object$data)
 		dat <- cbind(resp,dat)
 		colnames(dat) <- c(gp$response,vars)
-		write.table(dat,"bayesx.data.raw",col.names=TRUE,row.names=FALSE,quote=FALSE)
-		specs$dat.file <- file
-		data.file.check <- FALSE
+		data.file <- paste(object$outfile,"/bayesx.data.raw",sep="")
+		write.table(dat,data.file,col.names=TRUE,row.names=FALSE,quote=FALSE)
 		}
-	else
+	add.terms <- attr(object$terms,"term.labels")
+	whatis <- rep("lin",length(add.terms))
+	bt <- NULL
+	sk <- attr(object$terms,"specials")$s
+	tk <- attr(object$terms,"specials")$te
+	rk <- attr(object$terms,"specials")$r
+	if(!is.null(sk))
+		sk <- sk - 1
+	if(!is.null(tk))
+		tk <- tk - 1
+	if(!is.null(rk))
+		rk <- rk - 1
+	whatis[sk] <- "s"
+	whatis[tk] <- "te"
+	whatis[rk] <- "r"
+	for(k in 1:length(add.terms))
 		{
-		data.file.check <- TRUE
-		specs$dat.file <- data.file
+		if(whatis[k]=="lin")
+			bt <- c(bt,add.terms[k])
+		else
+			{
+			st <- eval(parse(text=add.terms[k]))
+			bt <- c(bt,bayesx.construct(st))	
+			}	
 		}
-	outfile <- "bayesx.input.prg"
-	cat(paste("% usefile ",file,"/bayesx.input.prg\n",sep=""),file=outfile,append=FALSE)
-	specs$N <- nrow(dat)
-	addterm <- NULL
-	T <- list()
-	specs$L <- specs$K <- specs$M <- specs$R <- 0
-	L <- K <- M <- R <- 0
-	if(lt>0)
+	wd <- getwd()
+	setwd(object$outfile)
+	prg.file <- "bayesx.input.prg"
+	cat(paste("% usefile ",object$outfile,"/bayesx.input.prg\n",sep=""),file=prg.file,append=FALSE)
+
+	bt <- paste(bt,collapse=" + ")
+	if(object$method=="MCMC")
 		{
-		ind <- c(1:lt)
-		sm <- attr(tf,"specials")$s-1
-		te <- attr(tf,"specials")$te-1
-		ran <- attr(tf,"specials")$r-1
-		lin <- ind[!ind %in% c(sm,te,ran)]
-		smooth <- ind[!ind %in% c(lin,ran)]
-		specs$L <- L <- length(lin)
-		specs$K <- K <- length(sm)+length(te)
-		specs$R <- R <- length(ran)
-		if(K>0)
-			{
-			for(k in 1:K)
-				{
-				smtmp <- eval(parse(text = terms[smooth[k]]))
-				T[[smooth[k]]] <- bayesx.setup(smtmp,file,outfile)
-				addterm <- c(addterm,T[[smooth[k]]]$term)
-				}
-			}
-		if(L>0)
-			{
-			datlin <- NULL
-			for(k in 1:L)
-				{
-				addterm <- c(addterm,terms[lin[k]])
-				T[[lin[k]]] <- list(term=terms[lin[k]],dim=1,spec="lin.spec")
-				}
-			}
-		if(R>0)
-			{
-			for(k in 1:R)
-				{
-				if(byra[k]=="NA")
-					addterm <- c(addterm,paste(terms[ran[k]],"(random)",sep=""))
-				else
-					addterm <- c(addterm,paste(byra[k],"*",terms[ran[k]],"(random)",sep=""))
-				T[[ran[k]]] <- list(term=terms[ran[k]],name=terms[ran[k]],
-                                                    dim=1,class="random.spec",label=terms[ran[k]],byra=byra[k])
-				}
-			}
-		}
-	addterm <- paste(addterm,collapse=" + ")
-	if(method=="MCMC")
-		{
-		fullformula <- paste("b.regress ",gp$response,"=",addterm,
-                                     ", family=",family," iterations=",iter,
-                                     " burnin=",burnin," step=",thinning,
+		fullformula <- paste("b.regress ",gp$response," = ",bt,
+                                     ", family=",object$family," iterations=",object$iter,
+                                     " burnin=",object$burnin," step=",object$step,
                                      " predict using d",sep="")
 		}
 	else
 		{
-		fullformula <- paste("b.regress ",gp$response,"=",addterm,
-                                     ", family=",family," eps=",eps," using d",sep="")
+		fullformula <- paste("b.regress ",gp$response," = ",bt,
+                                     ", family=",object$family," eps=",object$eps," using d",sep="")
 		}
-	cat("dataset d\n",file=outfile,append=TRUE)
-	if(data.file.check)
-		cat(paste("d.infile using ",data.file,"\n",sep=""),file=outfile,append=TRUE)
-	else
-		cat(paste("d.infile using ",file,"/bayesx.data.raw\n",sep=""),file=outfile,append=TRUE)
-	if(method=="MCMC")
-		cat("bayesreg b\n",file=outfile,append=TRUE)
-	else
-		cat("remlreg b\n",file=outfile,append=TRUE)
-	cat(paste("b.outfile = ",file,"/model\n",sep=""),file=outfile,append=TRUE)
-	cat(fullformula,"\n",file=outfile,append=TRUE)
-	if(method=="MCMC")
-		cat("b.getsample\n",file=outfile,append=TRUE)
-	bayesx.prg <- paste(paste(readLines(paste(file,"/bayesx.input.prg",sep=""),n=-1),collapse=" \n")," \n",sep="")
-	specs$prg <- bayesx.prg
-	specs$terms <- T
-	setwd(fileo)
+	cat("dataset d\n",file=prg.file,append=TRUE)
+	cat(paste("d.infile using ",data.file,"\n",sep=""),file=prg.file,append=TRUE)
 
-	return(invisible(specs))
+	if(object$method=="MCMC")
+		cat("bayesreg b\n",file=prg.file,append=TRUE)
+	else
+		cat("remlreg b\n",file=prg.file,append=TRUE)
+	cat(paste("b.outfile = ",object$outfile,"/model\n",sep=""),file=prg.file,append=TRUE)
+	cat(fullformula,"\n",file=prg.file,append=TRUE)
+	if(object$method=="MCMC")
+		cat("b.getsample\n",file=prg.file,append=TRUE)
+	bayesx.prg <- paste(paste(readLines(paste(object$outfile,"/bayesx.input.prg",sep=""),n=-1),collapse=" \n")," \n",sep="")
+	setwd(wd)
+
+	return(invisible(list(prg=bayesx.prg,file.dir=object$outfile)))
 	}
 
 
-bayesx <- function(formula, family="gaussian", data=NULL, method="MCMC",
-                   iter=1200, burnin=200, thinning=1, eps=0.001, file=NULL)
+bayesx.construct <- function(object){ 
+	UseMethod("bayesx.construct")}
+
+
+bayesx.construct.ps.smooth.spec <- function(object)
+	{
+	if(is.na(object$p.order[1]))
+		object$p.order <- c(3,2)
+	if(object$bs.dim<0)
+		object$bs.dim <- 8
+	else
+		{
+		if(length(object$p.order)>1)
+			{
+			if(object$p.order[2] > 2)
+				{
+				warning("order of the difference penalty not supported by BayesX, set to 2!")
+				object$p.order <- c(object$p.order[1],2)
+				}
+			}
+		}
+	nrknots <- object$bs.dim - object$p.order[1] + 1
+	termo <- object$term
+	constr <- object$xt$constr
+	if(is.null(constr))
+		{
+		if(object$by=="NA")
+			term <- paste(termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],")",sep="")
+		else
+			term <- paste(object$by,"*",termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],")",sep="")
+		}
+	else
+		{
+		if(constr<2)
+			{
+			if(object$by=="NA")
+				term <- paste(termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],",monotone=increasing)",sep="")
+			else
+				term <- paste(object$by,"*",termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],",monotone=increasing)",sep="")
+			}
+		else
+			{
+			if(object$by=="NA")
+				term <- paste(termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],",monotone=decreasing)",sep="")
+			else
+				term <- paste(object$by,"*",termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],",monotone=decreasing)",sep="")
+			}
+		}
+
+	return(term)
+	}
+
+
+bayesx.construct.tensor.smooth.spec <- function(object)
+	{
+	termo <- object$term
+	object$p.order <- object$margin[[1]]$p.order
+	object$bs.dim <- (object$margin[[1]]$bs.dim*2) + 1
+	if(is.na(object$p.order[1]))
+		object$p.order <- c(3,2)
+	if(object$bs.dim<0)
+		object$bs.dim <- 8
+	else
+		{
+		if(length(object$p.order)>1)
+			{
+			if(object$p.order[2] > 2)
+				{
+				warning("order of the difference penalty not supported by BayesX, set to 2!")
+				object$p.order <- c(object$p.order[1],2)
+				}
+			}
+		}
+	nrknots <- object$bs.dim - object$p.order[1] + 1
+	if(object$by=="NA")
+		term <- paste(termo[1],"*",termo[2],"(pspline2dimrw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],")",sep="")
+	else
+		term <- paste(object$by,"*",termo[1],"*",termo[2],"(pspline2dimrw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],")",sep="")
+
+	return(term)
+	}
+
+
+bayesx.construct.ra.smooth.spec <- function(object)
+	{
+	term <- object$term
+	term <- paste(term,"(random)",sep="")
+
+	return(term)
+	}
+
+
+bayesx.construct.rw1.smooth.spec <- function(object)
+	{
+	term <- object$term
+	term <- paste(term,"(rw1)",sep="")
+
+	return(term)
+	}
+
+
+bayesx.construct.rw2.smooth.spec <- function(object)
+	{
+	term <- object$term
+	term <- paste(term,"(rw1)",sep="")
+
+	return(term)
+	}
+
+
+r <- function(id, method = NULL, by = NA, xt = NULL)
+	{
+    	term <- deparse(substitute(id), backtick = TRUE, width.cutoff = 500)
+    	by.var <- deparse(substitute(by), backtick = TRUE, width.cutoff = 500)
+	ins <- fake.formula <- intcpt <- NULL
+    	if(by.var == ".") 
+        	stop("by=. not allowed")
+    	if(term == ".") 
+        	stop("r(.) not yet supported.")
+	call <- match.call()
+    	label <- paste("r(",term)
+	if(is.null(method) && by.var=="NA")
+		label <- paste(label,")",collapse="")
+	if(!is.null(method) && by.var=="NA")
+		{
+		mlabel <- as.character(call[3])
+		split <- strsplit(mlabel,""," ")[[1]]
+		if(split[1]!="~")
+			{
+			label <- paste(label,",~",mlabel,")",collapse="")
+			mf <- terms.formula(as.formula(paste("~",mlabel,collapse="")),specials=c("s","te","r"))
+			}
+		else
+			{
+			label <- paste(label,",",mlabel,")",collapse="")
+			mf <- terms.formula(as.formula(mlabel),specials=c("s","te","r"))
+			}
+		intcpt <- attr(mf,"intercept")
+		mterms <- attr(mf, "term.labels")
+		for(k in 1:length(mterms))
+			{
+			ins[[k]] <- eval(parse(text=mterms[k]))
+			if(!is.list(ins[[k]]))
+				{
+				ins[[k]] <-list(term=mterms[k],label=mterms[k])
+				class(ins[[k]]) <- "lin.smooth.spec"
+				}
+			fake.formula <- c(fake.formula,ins[[k]]$term)
+			}
+		if(length(fake.formula)>1)
+			for(k in 2:length(fake.formula))
+				fake.formula[k] <- paste("+",fake.formula[k])
+		if(intcpt > 0)
+			fake.formula <- as.formula(paste("~",paste(fake.formula,collapse=""),collapse=""))
+		else
+			fake.formula <- as.formula(paste("~-1+",paste(fake.formula,collapse=""),collapse=""))
+		}
+	if(is.null(method) && by.var!="NA")
+		label <- paste(label,",by=",by.var,")",collapse="")
+	label <- paste(strsplit(paste(as.expression(label))," ","")[[1]],collapse="")
+	ret <- list(term=term,label=label,by=by.var,xt=xt,ins=ins,fake.formula=fake.formula,call=call)
+	class(ret) <- "ra.smooth.spec"
+
+	ret 
+	}
+
+
+bayesx <- function(formula, family = "gaussian", data = NULL, 
+                   weights = NULL, method = "MCMC", outfile = NULL, offset = NULL,
+                   iter = 1200, burnin = 200, maxint = NULL, step = 1, aresp = 1, bresp = 0.005, 
+		   distopt = "nb", reference = NULL, zipdistopt = "NA", 
+                   eps = 1e-05, lowerlim = 0.001, maxit = 400, maxchange = 1e+06,
+                   leftint = NULL, lefttrunc = NULL, state = NULL,...)
 	{
 	res <- list()
 	res$call <- match.call()
 	res$formula <- formula <- as.formula(formula)
 
 	# setup files for bayesx
-	res$bayesx.setup <- write.bayesx.input(formula,family,data,method,
-                                               iter,burnin,thinning,eps,file)
+	res$bayesx.setup <- parse.bayesx.input(formula,family,data, 
+                                               weights,method,outfile,offset,
+                                               iter,burnin,maxint,step,aresp,bresp, 
+		                               distopt,reference,zipdistopt, 
+                                               eps,lowerlim,maxit,maxchange,
+                                               leftint,lefttrunc,state,...)
+	res$bayesx.prg <- write.bayesx.input(res$bayesx.setup)
 
 	# now estimate with BayesX
-	res$bayesx.run <- run.bayesx(res$bayesx.setup$file)
+	res$bayesx.run <- run.bayesx(res$bayesx.prg$file.dir)
 
 	# get the output
-	res$fout <- term.order(res$bayesx.setup$term.labels,
-                               read.bayesx.output(res$bayesx.setup$file,method))
+	#res$fout <- term.order(res$bayesx.setup$term.labels,
+        #                       read.bayesx.output(res$bayesx.setup$file,method))
 
-	res$terms <- res$bayesx.setup$term.labels
-	res$fitted <- attr(res$fout,"fitted")
-	attr(res$fout,"fitted") <- NULL
-	res$residuals <- attr(res$fout,"residuals")
-	attr(res$fout,"residuals") <- NULL
-	if(method=="MCMC")
-		{
-		res$DIC<- attr(res$fout,"DIC")
-		res$N <- res$bayesx.setup$N
-		res$iter <- res$bayesx.setup$iter
-		res$burnin <- res$bayesx.setup$burnin
-		res$thinning <- res$bayesx.setup$thinning
-		res$samptime <- res$bayesx.run$samptime
-		attr(res$fout,"DIC") <- NULL
-		}
-	class(res) <- "gibbs"
+	#res$terms <- res$bayesx.setup$term.labels
+	#res$fitted <- attr(res$fout,"fitted")
+	#attr(res$fout,"fitted") <- NULL
+	#res$residuals <- attr(res$fout,"residuals")
+	#attr(res$fout,"residuals") <- NULL
+	#if(method=="MCMC")
+		#{
+		#res$DIC<- attr(res$fout,"DIC")
+		#res$N <- res$bayesx.setup$N
+		#res$iter <- res$bayesx.setup$iter
+		#res$burnin <- res$bayesx.setup$burnin
+		#res$thinning <- res$bayesx.setup$thinning
+		#res$samptime <- res$bayesx.run$samptime
+		#attr(res$fout,"DIC") <- NULL
+		#}
+
+	class(res) <- "bayesx"
 	return(res)
+	}
+
+
+run.bayesx <- function(file, prg.name="bayesx.input.prg")
+	{
+	fileo <- getwd()
+	setwd(file)
+	cat("Starting:\n")
+	ptm <- proc.time()
+	ok <- 0
+	ok <- try(system(paste("BayesX ",file,"/",prg.name,sep="")))
+	now <- proc.time()
+	samptime <- now - ptm
+	samptime <- samptime
+	cat("Total run time was:",samptime[3],"sec\n")
+	setwd(fileo)
+
+	return(list(ok=ok,samptime=samptime))
 	}
 
 
@@ -257,24 +426,6 @@ term.order <- function(terms,fin)
 		}
 
 	return(fin)
-	}
-
-
-run.bayesx <- function(file, prg.name="bayesx.input.prg")
-	{
-	fileo <- getwd()
-	setwd(file)
-	cat("Starting:\n")
-	ptm <- proc.time()
-	ok <- 0
-	ok <- try(system(paste("BayesX ",file,"/",prg.name,sep="")))
-	now <- proc.time()
-	samptime <- now - ptm
-	samptime <- samptime
-	cat("Total run time was:",samptime[3],"sec\n")
-	setwd(fileo)
-
-	return(list(ok=ok,samptime=samptime))
 	}
 
 
@@ -559,94 +710,3 @@ read.bayesx.res <- function(file,etacheck,eta,response,pred,mcheck,racheck)
 	return(fout)
 	}
 
-
-bayesx.setup <- function(object,path,outfile)
-	{
-	if(class(object)=="tp.smooth.spec")
-		stop("BayesX does not support smooths of class tp.smooth.spec!") 
-	if(class(object)=="tensor.smooth.spec")
-		{
-		termo <- object$term
-		object$p.order <- object$margin[[1]]$p.order
-		object$bs.dim <- (object$margin[[1]]$bs.dim*2) + 1
-		if(is.na(object$p.order[1]))
-			object$p.order <- c(3,2)
-		if(object$bs.dim<0)
-			object$bs.dim <- 8
-		else
-			{
-			if(length(object$p.order)>1)
-				{
-				if(object$p.order[2] > 2)
-					{
-					warning("Order of the difference penalty not supported by BayesX, set to 2!")
-					object$p.order <- c(object$p.order[1],2)
-					}
-				}
-			}
-		nrknots <- object$bs.dim - object$p.order[1] + 1
-		if(object$by=="NA")
-			term <- paste(termo[1],"*",termo[2],"(pspline2dimrw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],")",sep="")
-		else
-			term <- paste(object$by,"*",termo[1],"*",termo[2],"(pspline2dimrw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],")",sep="")
-		}
-	if(class(object)=="ps.smooth.spec" && object$dim<2)
-		{
-		if(is.na(object$p.order[1]))
-			object$p.order <- c(3,2)
-		if(object$bs.dim<0)
-			object$bs.dim <- 8
-		else
-			{
-			if(length(object$p.order)>1)
-				{
-				if(object$p.order[2] > 2)
-					{
-					warning("Order of the difference penalty not supported by BayesX, set to 2!")
-					object$p.order <- c(object$p.order[1],2)
-					}
-				}
-			}
-		nrknots <- object$bs.dim - object$p.order[1] + 1
-		termo <- object$term
-		constr <- object$xt$constr
-		if(is.null(constr))
-			{
-			if(object$by=="NA")
-				term <- paste(termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],")",sep="")
-			else
-				term <- paste(object$by,"*",termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],")",sep="")
-			}
-		else
-			{
-			if(constr<2)
-				{
-				if(object$by=="NA")
-					term <- paste(termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],",monotone=increasing)",sep="")
-				else
-					term <- paste(object$by,"*",termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],",monotone=increasing)",sep="")
-				}
-			else
-				{
-				if(object$by=="NA")
-					term <- paste(termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],",monotone=decreasing)",sep="")
-				else
-					term <- paste(object$by,"*",termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],",monotone=decreasing)",sep="")
-				}
-			}
-		}
-	if(class(object)=="mrf.smooth.spec")
-		{
-		termo <- object$term
-		if(object$by=="NA")
-			term <- paste(object$term[1],"(spatial,map=bayesxmap)",sep="")	
-		else
-			term <- paste(object$by,"*",object$term[1],"(spatial,map=bayesxmap)",sep="")	
-		class(object$xt$map) <- "bnd" 
-		BayesX::write.bnd(object$xt$map,paste(path,"/bayesxmap.bnd",sep=""),replace=TRUE)
-		cat("map bayesxmap\n",file=outfile,append=TRUE)
-		cat("bayesxmap.infile using",paste(path,"/bayesxmap.bnd\n",sep=""),file=outfile,append=TRUE)
-		}
-
-	return(list(term=term,dim=object$dim,class=class(object),name=termo,label=object$label,by=object$by))
-	}
