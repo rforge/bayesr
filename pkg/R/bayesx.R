@@ -1,15 +1,29 @@
 parse.bayesx.input <- function(formula, family="gaussian", data=NULL, method="MCMC",
-                               iter=1200, burnin=200, thinning=1, eps=0.0001, file=NULL)
+                               iter=1200, burnin=200, maxint=NULL, step=1, aresp=1, bresp=0.005, 
+			       distopt="nb", reference=NULL, zipdistopt="NA", eps=0.0001, 
+                               file=NULL, outfile=NULL, ...)
 	{
 	p <- list()
 	p$formula <- formula
 	p$call <- match.call()
 	p$terms <- terms(formula, specials = c("s","te","r"),keep.order=TRUE)
-	p$data <- data #????
+	p$data <- data
+	p$method <- method
+	p$iter <- iter
+	p$burnin <- burnin
+	p$maxint <- maxint
+	p$step <- step
+	p$aresp <- aresp
+	p$bresp <- bresp
+	p$distopt <- distopt
+	p$reference <- reference
+	p$zipdistopt <- zipdistopt
+	p$eps <- eps
+	p$file <- file
 	list(formula, call, terms?, response?, data, family, method, burnin, ...)
 	}
 
-write.bayesx.input <- function(formula, family="gaussian", data=NULL, method="MCMC",
+write.bayesx.input.2 <- function(formula, family="gaussian", data=NULL, method="MCMC",
                                iter=1200, burnin=200, thinning=1, eps=0.0001, file=NULL)
 	{
 	specs <- list()
