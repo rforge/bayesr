@@ -1,9 +1,10 @@
 parse.bayesx.input <- function(formula, family = "gaussian", data = NULL, 
                                weights = NULL, method = "MCMC", outfile = NULL, offset = NULL,
-                               iter = 1200, burnin = 200, maxint = NULL, step = 1, aresp = 1, bresp = 0.005, 
+                               iter = 1200, burnin = 200, maxint = 150, step = 1, aresp = 1, bresp = 0.005, 
 			       distopt = "nb", reference = NULL, zipdistopt = "NA", 
+                               begin = NULL, level1 = NULL, level2 = NULL,
                                eps = 1e-05, lowerlim = 0.001, maxit = 400, maxchange = 1e+06,
-                               leftint = NULL, lefttrunc = NULL, state = NULL,...)
+                               leftint = NULL, lefttrunc = NULL, state = NULL, ...)
 	{
 	p <- list()
 	if(is.null(data))
@@ -26,6 +27,9 @@ parse.bayesx.input <- function(formula, family = "gaussian", data = NULL,
 	p$distopt <- distopt
 	p$reference <- reference
 	p$zipdistopt <- zipdistopt
+	p$begin <- begin
+	p$level1 <- level1
+	p$level2 <- level2
 	p$eps <- eps
 	p$lowerlim <- lowerlim
 	p$maxit <- maxit
@@ -33,6 +37,7 @@ parse.bayesx.input <- function(formula, family = "gaussian", data = NULL,
 	p$leftint <- leftint
 	p$lefttrunc <- lefttrunc
 	p$state <- state
+	class(p) <- "bayesx.input"
 
 	return(p)
 	}
@@ -42,6 +47,8 @@ write.bayesx.input <- function(object = NULL)
 	{
 	if(is.null(object))
 		stop("nothing to do!")
+	if(class(object)!="bayesx.input")
+		stop("object must be of class bayesx.input")
 	
 	data.file=NULL
 	if(is.null(object$data))
@@ -107,6 +114,26 @@ write.bayesx.input <- function(object = NULL)
 		fake.formula <- paste("~-1+",paste(fake.labels,collapse=""),sep="",collapse="")
 		dat <- model.matrix(as.formula(fake.formula),object$data)
 		vars <- colnames(dat)
+		for(i in 1:length(vars))
+			{
+			if(any(grep(":",vars[i])))
+				{
+				split <- strsplit(vars[i],":","")[[1]]
+				vars[i] <- paste(split[1],"_",split[2],sep="")
+				}
+			}
+		if(!is.null(object$offset))
+			{
+			dat <- cbind(dat,object$offset)
+			off <- "offset"
+			vars <- c(vars,off)
+			}
+		if(!is.null(object$weights))
+			{
+			dat <- cbind(dat,object$weights)
+			wght <- "weights"
+			vars <- c(vars,wght)
+			}
 		resp <- eval(parse(text=gp$response),envir=object$data)
 		dat <- cbind(resp,dat)
 		colnames(dat) <- c(gp$response,vars)
@@ -131,7 +158,14 @@ write.bayesx.input <- function(object = NULL)
 	for(k in 1:length(add.terms))
 		{
 		if(whatis[k]=="lin")
+			{
+			if(any(grep(":",add.terms[k])))
+				{
+				split <- strsplit(add.terms[k],":","")[[1]]
+				add.terms[k] <- paste(split[1],"_",split[2],sep="")
+				}
 			bt <- c(bt,add.terms[k])
+			}
 		else
 			{
 			st <- eval(parse(text=add.terms[k]))
@@ -142,14 +176,33 @@ write.bayesx.input <- function(object = NULL)
 	setwd(object$outfile)
 	prg.file <- "bayesx.input.prg"
 	cat(paste("% usefile ",object$outfile,"/bayesx.input.prg\n",sep=""),file=prg.file,append=FALSE)
-
+	if(!is.null(object$offset))
+		bt <- c(bt,paste(off,"(offset)",sep=""))
 	bt <- paste(bt,collapse=" + ")
 	if(object$method=="MCMC")
 		{
 		fullformula <- paste("b.regress ",gp$response," = ",bt,
                                      ", family=",object$family," iterations=",object$iter,
-                                     " burnin=",object$burnin," step=",object$step,
-                                     " predict using d",sep="")
+                                     " burnin=",object$burnin," step=",object$step, 
+                                     " maxint=",object$maxint," aresp=",object$aresp,
+                                     " bresp=",object$bresp,sep="")
+		if(!is.null(object$weights))
+			fullformula <- paste(fullformula," weightvar=",wght,sep="")
+		if(object$family=="nbinomial")
+			fullformula <- paste(fullformula," distopt=",object$distopt,sep="")
+		if(object$family=="multinomial")
+			if(!is.null(object$reference))
+				fullformula <- paste(fullformula," reference=",object$reference,sep="")
+		if(object$family=="zip")
+			if(object$distopt!="NA")
+				fullformula <- paste(fullformula," distopt=",object$distopt,sep="")
+		if(!is.null(object$begin))
+			fullformula <- paste(fullformula," begin=",object$begin,sep="")
+		if(!is.null(object$level1))
+			fullformula <- paste(fullformula," level1=",object$level1,sep="")
+		if(!is.null(object$level2))
+			fullformula <- paste(fullformula," level2=",object$level2,sep="")
+                fullformula <- paste(fullformula,"predict using d")
 		}
 	else
 		{
@@ -197,31 +250,33 @@ bayesx.construct.ps.smooth.spec <- function(object)
 		}
 	nrknots <- object$bs.dim - object$p.order[1] + 1
 	termo <- object$term
-	constr <- object$xt$constr
-	if(is.null(constr))
+	xt <- object$xt
+	term <- paste(termo,"(psplinerw",object$p.order[2],",nrknots=",
+                      nrknots,",degree=",object$p.order[1],sep="")
+	if(object$by!="NA")
+		term <- paste(object$by,"*",term,sep="")
+	if(!is.null(xt$constr))
 		{
-		if(object$by=="NA")
-			term <- paste(termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],")",sep="")
+		if(xt$constr<2)
+			term <- paste(term,",monotone=increasing",sep="")
 		else
-			term <- paste(object$by,"*",termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],")",sep="")
+			term <- paste(term,",monotone=decreasing",sep="")
 		}
-	else
-		{
-		if(constr<2)
-			{
-			if(object$by=="NA")
-				term <- paste(termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],",monotone=increasing)",sep="")
-			else
-				term <- paste(object$by,"*",termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],",monotone=increasing)",sep="")
-			}
-		else
-			{
-			if(object$by=="NA")
-				term <- paste(termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],",monotone=decreasing)",sep="")
-			else
-				term <- paste(object$by,"*",termo,"(psplinerw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],",monotone=decreasing)",sep="")
-			}
-		}
+	if(!is.null(xt$a))
+		term <- paste(term,",a=",xt$a,sep="")
+	if(!is.null(xt$b))
+		term <- paste(term,",b=",xt$a,sep="")
+	if(!is.null(xt$contourprob))
+		term <- paste(term,",contourprob=",xt$contourprob,sep="")
+	if(!is.null(xt$derivative))
+		term <- paste(term,",derivative",sep="")
+	if(!is.null(xt$gridsize))
+		term <- paste(term,",gridsize=",xt$gridsize,sep="")
+	if(!is.null(xt$I))
+		term <- paste(term,",I=",xt$I,sep="")
+	if(!is.null(xt$lambda))
+		term <- paste(term,",lambda=",xt$lambda,sep="")
+	term <- paste(term,")",sep="")
 
 	return(term)
 	}
@@ -248,10 +303,26 @@ bayesx.construct.tensor.smooth.spec <- function(object)
 			}
 		}
 	nrknots <- object$bs.dim - object$p.order[1] + 1
-	if(object$by=="NA")
-		term <- paste(termo[1],"*",termo[2],"(pspline2dimrw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],")",sep="")
-	else
-		term <- paste(object$by,"*",termo[1],"*",termo[2],"(pspline2dimrw",object$p.order[2],",nrknots=",nrknots,",degree=",object$p.order[1],")",sep="")
+	xt <- object$xt
+	term <- paste(termo[1],"*",termo[2],"(pspline2dimrw",object$p.order[2],
+                      ",nrknots=",nrknots,",degree=",object$p.order[1],sep="")
+	if(object$by!="NA")
+		term <- paste(object$by,"*",term,sep="")
+	if(!is.null(xt$a))
+		term <- paste(term,",a=",xt$a,sep="")
+	if(!is.null(xt$b))
+		term <- paste(term,",b=",xt$a,sep="")
+	if(!is.null(xt$contourprob))
+		term <- paste(term,",contourprob=",xt$contourprob,sep="")
+	if(!is.null(xt$derivative))
+		term <- paste(term,",derivative",sep="")
+	if(!is.null(xt$gridsize))
+		term <- paste(term,",gridsize=",xt$gridsize,sep="")
+	if(!is.null(xt$I))
+		term <- paste(term,",I=",xt$I,sep="")
+	if(!is.null(xt$lambda))
+		term <- paste(term,",lambda=",xt$lambda,sep="")
+	term <- paste(term,")",sep="")
 
 	return(term)
 	}
@@ -343,10 +414,11 @@ r <- function(id, method = NULL, by = NA, xt = NULL)
 
 bayesx <- function(formula, family = "gaussian", data = NULL, 
                    weights = NULL, method = "MCMC", outfile = NULL, offset = NULL,
-                   iter = 1200, burnin = 200, maxint = NULL, step = 1, aresp = 1, bresp = 0.005, 
-		   distopt = "nb", reference = NULL, zipdistopt = "NA", 
+                   iter = 1200, burnin = 200, maxint = 150, step = 1, aresp = 1, bresp = 0.005, 
+                   distopt = "nb", reference = NULL, zipdistopt = "NA", 
+                   begin = NULL, level1 = NULL, level2 = NULL,
                    eps = 1e-05, lowerlim = 0.001, maxit = 400, maxchange = 1e+06,
-                   leftint = NULL, lefttrunc = NULL, state = NULL,...)
+                   leftint = NULL, lefttrunc = NULL, state = NULL, ...)
 	{
 	res <- list()
 	res$call <- match.call()
@@ -357,6 +429,7 @@ bayesx <- function(formula, family = "gaussian", data = NULL,
                                                weights,method,outfile,offset,
                                                iter,burnin,maxint,step,aresp,bresp, 
 		                               distopt,reference,zipdistopt, 
+					       begin,level1,level2,
                                                eps,lowerlim,maxit,maxchange,
                                                leftint,lefttrunc,state,...)
 	res$bayesx.prg <- write.bayesx.input(res$bayesx.setup)
@@ -365,26 +438,28 @@ bayesx <- function(formula, family = "gaussian", data = NULL,
 	res$bayesx.run <- run.bayesx(res$bayesx.prg$file.dir)
 
 	# get the output
-	#res$fout <- term.order(res$bayesx.setup$term.labels,
-        #                       read.bayesx.output(res$bayesx.setup$file,method))
+	res$fout <- term.order(attr(res$bayesx.setup$terms,"term.labels"),
+                               read.bayesx.output(res$bayesx.prg$file.dir,method))
 
-	#res$terms <- res$bayesx.setup$term.labels
-	#res$fitted <- attr(res$fout,"fitted")
-	#attr(res$fout,"fitted") <- NULL
-	#res$residuals <- attr(res$fout,"residuals")
-	#attr(res$fout,"residuals") <- NULL
-	#if(method=="MCMC")
-		#{
-		#res$DIC<- attr(res$fout,"DIC")
-		#res$N <- res$bayesx.setup$N
-		#res$iter <- res$bayesx.setup$iter
-		#res$burnin <- res$bayesx.setup$burnin
-		#res$thinning <- res$bayesx.setup$thinning
-		#res$samptime <- res$bayesx.run$samptime
-		#attr(res$fout,"DIC") <- NULL
-		#}
+	# maybe remove output folder
+	if(!is.character(data))
+		unlink(res$bayesx.prg$file.dir)
+
+	res$terms <- res$bayesx.setup$term.labels
+	res$fitted <- attr(res$fout,"fitted")
+	attr(res$fout,"fitted") <- NULL
+	res$residuals <- attr(res$fout,"residuals")
+	attr(res$fout,"residuals") <- NULL
+	if(method=="MCMC")
+		{
+		res$DIC<- attr(res$fout,"DIC")
+		res$N <- length(res$residuals)
+		res$samptime <- res$bayesx.run$samptime
+		attr(res$fout,"DIC") <- NULL
+		}
 
 	class(res) <- "bayesx"
+
 	return(res)
 	}
 
@@ -410,20 +485,10 @@ run.bayesx <- function(file, prg.name="bayesx.input.prg")
 term.order <- function(terms,fin)
 	{
 	k <- length(terms)
-	if(k==length(fin))
-		{
-		fattr <- attributes(fin)
-		id <- rep(0,k)
-		for(i in 1:k)
-			for(j in 1:k)
-				{
-				name <- colnames(fin[[j]])[1]
-				if(any(grep(name,terms[i])))
-					id[i] <- j
-				}
-		fin <- fin[id]
-		attributes(fin) <- fattr
-		}
+	m <- length(fin)
+	fattr <- attributes(fin)
+	id <- rep(0,k)
+	keep <- list()
 
 	return(fin)
 	}
@@ -491,13 +556,12 @@ read.bayesx.output <- function(file,method="MCMC")
 			{
 			fout[[k]] <- read.bayesx.res(usefiles[i],etacheck,eta,response,pred,mcheck,FALSE)
 			if(file.specs[i]=="pspline.res")
-				class(fout[[k]]) <- "sm.gibbs"
+				attr(fout[[k]],"type") <- "bayesx.pspline"
 			if(file.specs[i]=="spatial.res")
 				{
-				class(fout[[k]]) <- "mrf.gibbs"
+				attr(fout[[k]],"type") <- "bayesx.mrf"
 				attr(fout[[k]],"coef") <- unique(fout[[2]][,c(2,3,4,5,6,7)])
 				}
-			attr(fout[[k]],"term.type") <- "smooth"
 			if(length(attr(fout[[k]],"variance"))>1)
 				{
 				smooth.mat <- rbind(smooth.mat,attr(fout[[k]],"variance"))
@@ -507,9 +571,8 @@ read.bayesx.output <- function(file,method="MCMC")
 		if(file.specs[i]=="_random.res")
 			{
 			fout[[k]] <- read.bayesx.res(usefiles[i],etacheck,eta,response,pred,mcheck,TRUE)
-			attr(fout[[k]],"term.type") <- "random"
+			attr(fout[[k]],"type") <- "bayesx.random"
 			var.mat <- rbind(var.mat,attr(fout[[k]],"variance"))
-			class(fout[[k]]) <- "random.gibbs"
 			k <- k + 1
 			}
 		}
@@ -560,14 +623,20 @@ read.bayesx.output <- function(file,method="MCMC")
 					ftmp <- cbind(x,ftmp,pcat95,pcat80)
 					rownames(ftmp) <- NULL
 					partial.resid <- response - pred + ftmp[,2]
-					ftmp <- as.matrix(cbind(ftmp,partial.resid))
-					colnames(ftmp) <- c(varnames[i],colnames(lin.mat)[c(1,3,4,5,6,7)],"pcat95","pcat80","partial.resid")
-					class(ftmp) <- "linear.gibbs"
-					attr(ftmp,"coef") <- coefso
+					partial.resid <- cbind(x,partial.resid)
+					colnames(partial.resid) <- c(varnames[i],"partial.resid")
+					ftmp <- as.matrix(ftmp)
+					colnames(ftmp) <- c(varnames[i],colnames(lin.mat)[c(1,3,4,5,6,7)],"pcat95","pcat80")
+					ftmp <- ftmp[order(ftmp[,2]),]
+					intnr <- 1:nrow(ftmp)
+					ftmp <- cbind(intnr,ftmp)
+					fout[[k]] <- as.data.frame(ftmp)
+					attr(fout[[k]],"coef") <- coefso
 					if(!is.null(draws))
-						attr(ftmp,"coef.draws.utr") <- draws[xid,]
-					attr(ftmp,"term.type") <- "linear"
-					fout[[k]] <- ftmp
+						attr(fout[[k]],"coef.draws.utr") <- draws[xid,]
+					attr(fout[[k]],"type") <- "bayesx.linear"
+					attr(fout[[k]],"partial.resid") <- partial.resid
+					k <- k + 1
 					}
 				}
 			}
@@ -635,8 +704,7 @@ read.bayesx.res <- function(file,etacheck,eta,response,pred,mcheck,racheck)
 		dim <- 2
 	else
 		dim <- 1
-	fout$intnr <- NULL
-	name <- colnames(fout)[1]
+	name <- colnames(fout)[2]
 	raoke <- FALSE
 	if(etacheck && mcheck)
 		{
@@ -659,20 +727,28 @@ read.bayesx.res <- function(file,etacheck,eta,response,pred,mcheck,racheck)
 			}
 		else
 			{
-			fout <- fout[ind,]
 			if(mcheck)
-				partial.resid <- response - pred + fout$pmean
+				partial.resid <- response - pred + fout$pmean[ind]
 			else
-				partial.resid <- response - pred + fout$pmode
-			fout <- cbind(fout,partial.resid)
-			names(fout)[length(names(fout))] <- "partial.resid"
+				partial.resid <- response - pred + fout$pmode[ind]
+			if(ncol(fout)>10)	
+				{
+				partial.resid <- cbind(fout[ind,2],fout[ind,3],partial.resid)
+				colnames(partial.resid) <- c(colnames(fout)[2:3],"partial.resid")
+				}
+			else
+				{
+				partial.resid <- cbind(fout[ind,2],partial.resid)
+				colnames(partial.resid) <- c(colnames(fout)[2],"partial.resid")
+				}
 			}
 		}
 	fout <- as.matrix(fout)
+	fout <- fout[order(fout[,2]),]
 	rownames(fout) <- NULL
+	fout <- as.data.frame(fout)
 	attr(fout,"specs") <- list(dim=dim,term=name,label=name)
-	if(raoke)
-		attr(fout,"partial.resid") <- partial.resid
+	attr(fout,"partial.resid") <- partial.resid
 	if(mcheck)
 		{
 		filetmpl <- strsplit(file,""," ")[[1]]
@@ -709,4 +785,31 @@ read.bayesx.res <- function(file,etacheck,eta,response,pred,mcheck,racheck)
 
 	return(fout)
 	}
+
+
+plot.bayesx <- function(x, which = 1, xa = 2, y = c(3, 4, 5, 7, 8), z = 4, ylim = NULL, 
+                       lty = c(1, 2, 3, 2, 3), cols = rep(1, length(y)), month, year, step = 12, 
+                       xlab, ylab, mode = 1, ticktype = "detailed", expand = 1, 
+                       d = 1, theta = 40, phi = 40, ...)
+	{
+	if(class(x)!="bayesx")
+		stop("argument x must be a bayesx object")
+	X <- x$fout[[which]]
+	if(!is.null(attr(X,"type")))
+		{
+		if(attr(X,"type")=="bayesx.pspline")
+			{
+			if(ncol(X)>10)
+				plotsurf(X,xa,y[1],z,mode,ticktype,expand,d,theta,phi,...)
+			else
+				plotnonp(X,xa,y,ylim,lty,cols,month,year,step,xlab,ylab,...)
+			}
+		if(attr(X,"type")=="bayesx.linear")
+			plotnonp(X,xa,y,ylim,lty,cols,month,year,step,xlab,ylab,...)		
+		}
+	} 
+
+
+
+
 
