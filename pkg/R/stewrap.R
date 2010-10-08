@@ -419,6 +419,7 @@ smooth.construct.sps.smooth.spec<-function(object,data,knots)
   	return(object)
 	}
 
+
 Predict.matrix.sps.smooth<-function(object,data)
 	{ 
 	x <- eval(parse(text=object$term),envir=data)

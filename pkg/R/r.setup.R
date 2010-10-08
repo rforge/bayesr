@@ -21,7 +21,8 @@ r.setup <- function(R, terms, ra, this, pframe, N, wcheck,
 
     	for(k in 1:R) 
 		{
-		RA[[k]] <- eval(parse(text = terms[ra[k]]), envir=data)
+		RA[[k]] <- smooth.construct(eval(parse(text = terms[ran[k]])),data)
+		# RA[[k]] <- eval(parse(text = terms[ra[k]]), envir=data)
 
 		obsz <- nrow(RA[[k]]$Z)
         	#if(N != obsz) 

@@ -140,6 +140,12 @@ write.bayesx.input <- function(object = NULL)
 		data.file <- paste(object$outfile,"/bayesx.data.raw",sep="")
 		write.table(dat,data.file,col.names=TRUE,row.names=FALSE,quote=FALSE)
 		}
+
+	wd <- getwd()
+	setwd(object$outfile)
+	prg.file <- "bayesx.input.prg"
+	cat(paste("% usefile ",object$outfile,"/bayesx.input.prg\n",sep=""),file=prg.file,append=FALSE)
+
 	add.terms <- attr(object$terms,"term.labels")
 	whatis <- rep("lin",length(add.terms))
 	bt <- NULL
@@ -169,13 +175,9 @@ write.bayesx.input <- function(object = NULL)
 		else
 			{
 			st <- eval(parse(text=add.terms[k]))
-			bt <- c(bt,bayesx.construct(st))	
+			bt <- c(bt,bayesx.construct(st,object$outfile,prg.file,object$data))	
 			}	
 		}
-	wd <- getwd()
-	setwd(object$outfile)
-	prg.file <- "bayesx.input.prg"
-	cat(paste("% usefile ",object$outfile,"/bayesx.input.prg\n",sep=""),file=prg.file,append=FALSE)
 	if(!is.null(object$offset))
 		bt <- c(bt,paste(off,"(offset)",sep=""))
 	bt <- paste(bt,collapse=" + ")
@@ -227,11 +229,11 @@ write.bayesx.input <- function(object = NULL)
 	}
 
 
-bayesx.construct <- function(object){ 
+bayesx.construct <- function(object,file,prg,data){ 
 	UseMethod("bayesx.construct")}
 
 
-bayesx.construct.ps.smooth.spec <- function(object)
+bayesx.construct.ps.smooth.spec <- function(object,file,prg,data)
 	{
 	if(is.na(object$p.order[1]))
 		object$p.order <- c(3,2)
@@ -282,7 +284,7 @@ bayesx.construct.ps.smooth.spec <- function(object)
 	}
 
 
-bayesx.construct.tensor.smooth.spec <- function(object)
+bayesx.construct.tensor.smooth.spec <- function(object,file,prg,data)
 	{
 	termo <- object$term
 	object$p.order <- object$margin[[1]]$p.order
@@ -328,7 +330,7 @@ bayesx.construct.tensor.smooth.spec <- function(object)
 	}
 
 
-bayesx.construct.ra.smooth.spec <- function(object)
+bayesx.construct.ra.smooth.spec <- function(object,file,prg,data)
 	{
 	term <- object$term
 	term <- paste(term,"(random)",sep="")
@@ -337,7 +339,7 @@ bayesx.construct.ra.smooth.spec <- function(object)
 	}
 
 
-bayesx.construct.rw1.smooth.spec <- function(object)
+bayesx.construct.rw1.smooth.spec <- function(object,file,prg,data)
 	{
 	term <- object$term
 	term <- paste(term,"(rw1)",sep="")
@@ -346,7 +348,7 @@ bayesx.construct.rw1.smooth.spec <- function(object)
 	}
 
 
-bayesx.construct.rw2.smooth.spec <- function(object)
+bayesx.construct.rw2.smooth.spec <- function(object,file,prg,data)
 	{
 	term <- object$term
 	term <- paste(term,"(rw1)",sep="")
@@ -355,60 +357,34 @@ bayesx.construct.rw2.smooth.spec <- function(object)
 	}
 
 
-r <- function(id, method = NULL, by = NA, xt = NULL)
+bayesx.construct.mrf.smooth.spec <- function(object,file,prg,data)
 	{
-    	term <- deparse(substitute(id), backtick = TRUE, width.cutoff = 500)
-    	by.var <- deparse(substitute(by), backtick = TRUE, width.cutoff = 500)
-	ins <- fake.formula <- intcpt <- NULL
-    	if(by.var == ".") 
-        	stop("by=. not allowed")
-    	if(term == ".") 
-        	stop("r(.) not yet supported.")
-	call <- match.call()
-    	label <- paste("r(",term)
-	if(is.null(method) && by.var=="NA")
-		label <- paste(label,")",collapse="")
-	if(!is.null(method) && by.var=="NA")
+	map <- object$xt$map
+	if(is.null(map))
 		{
-		mlabel <- as.character(call[3])
-		split <- strsplit(mlabel,""," ")[[1]]
-		if(split[1]!="~")
+		map <- object$xt[[1]]
+		if(is.null(map))
 			{
-			label <- paste(label,",~",mlabel,")",collapse="")
-			mf <- terms.formula(as.formula(paste("~",mlabel,collapse="")),specials=c("s","te","r"))
+			map <- object$xt
+			if(is.null(map))
+				stop("need to supply a map object in argument xt!")
+			if(!is.list(map) && !inherits(map,"bnd"))
+				stop("need to supply a map object in argument xt!")
 			}
-		else
-			{
-			label <- paste(label,",",mlabel,")",collapse="")
-			mf <- terms.formula(as.formula(mlabel),specials=c("s","te","r"))
-			}
-		intcpt <- attr(mf,"intercept")
-		mterms <- attr(mf, "term.labels")
-		for(k in 1:length(mterms))
-			{
-			ins[[k]] <- eval(parse(text=mterms[k]))
-			if(!is.list(ins[[k]]))
-				{
-				ins[[k]] <-list(term=mterms[k],label=mterms[k])
-				class(ins[[k]]) <- "lin.smooth.spec"
-				}
-			fake.formula <- c(fake.formula,ins[[k]]$term)
-			}
-		if(length(fake.formula)>1)
-			for(k in 2:length(fake.formula))
-				fake.formula[k] <- paste("+",fake.formula[k])
-		if(intcpt > 0)
-			fake.formula <- as.formula(paste("~",paste(fake.formula,collapse=""),collapse=""))
-		else
-			fake.formula <- as.formula(paste("~-1+",paste(fake.formula,collapse=""),collapse=""))
 		}
-	if(is.null(method) && by.var!="NA")
-		label <- paste(label,",by=",by.var,")",collapse="")
-	label <- paste(strsplit(paste(as.expression(label))," ","")[[1]],collapse="")
-	ret <- list(term=term,label=label,by=by.var,xt=xt,ins=ins,fake.formula=fake.formula,call=call)
-	class(ret) <- "ra.smooth.spec"
+	if(!inherits(map,"bnd"))
+		if(is.list(map))
+			class(map) <- "bnd"
+	bndfile <- paste(file,"/bayesx.map.bnd",sep="")
+	prgfile <- paste(file,"/",prg,sep="")
+	write.bnd(map=map,file=bndfile,replace=TRUE)
+	cat("map bayesxmap\n",file=prgfile,append=TRUE)
+	txt <- paste("bayesxmap.infile using",paste(file,"/bayesx.map.bnd",sep=""),"\n")
+	cat(txt,file=prgfile,append=TRUE)
+	term <- object$term
+	term <- paste(term,"(spatial,map=bayesxmap)",sep="")
 
-	ret 
+	return(term)
 	}
 
 
@@ -435,7 +411,7 @@ bayesx <- function(formula, family = "gaussian", data = NULL,
 	res$bayesx.prg <- write.bayesx.input(res$bayesx.setup)
 
 	# now estimate with BayesX
-	res$bayesx.run <- run.bayesx(res$bayesx.prg$file.dir)
+	# res$bayesx.run <- run.bayesx(res$bayesx.prg$file.dir)
 
 	# get the output
 	res$fout <- term.order(attr(res$bayesx.setup$terms,"term.labels"),
@@ -488,7 +464,31 @@ term.order <- function(terms,fin)
 	m <- length(fin)
 	fattr <- attributes(fin)
 	id <- rep(0,k)
-	keep <- list()
+	for(i in 1:k)
+		{
+		tc <- eval(parse(text=terms[i]))
+		if(is.list(tc))
+			tc <- tc$term
+		else
+			tc <- terms[i]
+		for(j in 1:m)
+			{
+			if(length(tc)<2)
+				{
+				name <- colnames(fin[[j]])[2]
+				if(tc==name)
+					id[i] <- j
+				}
+			else
+				{
+				name <- colnames(fin[[j]])[2:3]
+				if(tc[1]==name[1] && tc[2]==name[2])
+					id[i] <- j
+				}
+			}
+		}
+	fin <- fin[id]
+	attributes(fin) <- fattr
 
 	return(fin)
 	}
@@ -560,7 +560,7 @@ read.bayesx.output <- function(file,method="MCMC")
 			if(file.specs[i]=="spatial.res")
 				{
 				attr(fout[[k]],"type") <- "bayesx.mrf"
-				attr(fout[[k]],"coef") <- unique(fout[[2]][,c(2,3,4,5,6,7)])
+				attr(fout[[k]],"coef") <- unique(fout[[k]][,c(2,3,4,5,6,7)])
 				}
 			if(length(attr(fout[[k]],"variance"))>1)
 				{
@@ -787,10 +787,13 @@ read.bayesx.res <- function(file,etacheck,eta,response,pred,mcheck,racheck)
 	}
 
 
-plot.bayesx <- function(x, which = 1, xa = 2, y = c(3, 4, 5, 7, 8), z = 4, ylim = NULL, 
-                       lty = c(1, 2, 3, 2, 3), cols = rep(1, length(y)), month, year, step = 12, 
-                       xlab, ylab, mode = 1, ticktype = "detailed", expand = 1, 
-                       d = 1, theta = 40, phi = 40, ...)
+plot.bayesx <- function(x, which = 1, resid = FALSE, map = NULL, xa = 2, y = c(3, 4, 5, 7, 8), z = 4, ylim = NULL, 
+                        lty = c(1, 2, 3, 2, 3), cols = rep(1, length(y)), month, year, step = 12, 
+                        xlab, ylab, mode = 1, ticktype = "detailed", expand = 1, d = 1, theta = 40, phi = 40, 
+		        regionvar=2, plotvar=3, limits, mcols="hcl", nrcolors=100, 
+                        swapcolors=FALSE, pcat=FALSE, hcl.par=list(h=c(130,25), c=100, l=c(90,70)), 
+                        hsv.par=list(s=1, v=1), legend=TRUE, drawnames=FALSE, cex.names=0.7, 
+                        cex.legend=0.7, mar.min=2, density=15, ...)
 	{
 	if(class(x)!="bayesx")
 		stop("argument x must be a bayesx object")
@@ -800,16 +803,69 @@ plot.bayesx <- function(x, which = 1, xa = 2, y = c(3, 4, 5, 7, 8), z = 4, ylim 
 		if(attr(X,"type")=="bayesx.pspline")
 			{
 			if(ncol(X)>10)
-				plotsurf(X,xa,y[1],z,mode,ticktype,expand,d,theta,phi,...)
+				BayesX::plotsurf(X,xa,y[1],z,mode,ticktype,expand,d,theta,phi,...)
 			else
-				plotnonp(X,xa,y,ylim,lty,cols,month,year,step,xlab,ylab,...)
+				{
+				if(resid)
+					{
+					resids <- attr(X,"partial.resid")
+					ylim <- range(resids[,2])
+					}
+				BayesX::plotnonp(X,xa,y,ylim,lty,cols,month,year,step,xlab,ylab,...)
+				if(resid)
+					points(x=resids[,1],y=resids[,2])
+				}
 			}
 		if(attr(X,"type")=="bayesx.linear")
-			plotnonp(X,xa,y,ylim,lty,cols,month,year,step,xlab,ylab,...)		
+			{
+			if(resid)
+				{
+				resids <- attr(X,"partial.resid")
+				ylim <- range(resids[,2])
+				}
+			BayesX::plotnonp(X,xa,y,ylim,lty,cols,month,year,step,xlab,ylab,...)	
+			if(resid)
+				points(x=resids[,1],y=resids[,2])	
+			}
+		if(attr(X,"type")=="bayesx.random")
+			{
+			if(x$bayesx.setup$method=="MCMC")
+				{
+				id <- X[,2]
+				eff <- as.matrix(cbind(X$pqu2p5,X$pqu10,X$pmed,X$pqu90,X$pqu97p5))
+				grp <- peff <- NULL
+				for(i in 1:length(id))
+					{
+					grp <- c(grp,rep(id[i],ncol(eff)))
+					peff <- c(peff,eff[i,])
+					}
+				if(missing(xlab))
+					xlab <- NULL
+				if(missing(ylab))
+					ylab <- NULL
+				boxplot(peff~grp,...)
+				if(!is.null(xlab))
+					mtext(text=xlab,side=1,line=3)
+				if(!is.null(ylab))
+					mtext(text=ylab,side=2,line=3)
+				}
+			}
+		if(attr(X,"type")=="bayesx.mrf")
+			{     
+			if(is.null(map))
+				stop("a map object should be supplied!")
+			if(!inherits(map,"bnd"))
+				{
+				class(map) <- "bnd"
+				attr(map,"height2width") <- 1
+				}
+			if(is.null(attr(map,"height2width")))
+				attr(map,"height2width") <- 1
+     			BayesX::drawmap(data=X,map=map,regionvar=regionvar,plotvar=plotvar,limits=limits,
+                                  cols=mcols,nrcolors=nrcolors,swapcolors=swapcolors,pcat=pcat,hcl.par=hcl.par,
+                                  hsv.par=hsv.par,legend=legend,drawnames=drawnames,cex.names=cex.names,
+                                  cex.legend=cex.legend,mar.min=mar.min,density=density,...)
+			}
 		}
 	} 
-
-
-
-
 

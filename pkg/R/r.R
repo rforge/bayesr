@@ -1,4 +1,61 @@
-r <- function(fac, method = NULL, by = NULL, xt = NULL)
+r <- function(fac, method = NULL, by = NA, xt = NULL)
+	{
+    	term <- deparse(substitute(id), backtick = TRUE, width.cutoff = 500)
+    	by.var <- deparse(substitute(by), backtick = TRUE, width.cutoff = 500)
+	ins <- fake.formula <- intcpt <- NULL
+    	if(by.var == ".") 
+        	stop("by=. not allowed")
+    	if(term == ".") 
+        	stop("r(.) not yet supported.")
+	call <- match.call()
+    	label <- paste("r(",term)
+	if(is.null(method) && by.var=="NA")
+		label <- paste(label,")",collapse="")
+	if(!is.null(method) && by.var=="NA")
+		{
+		mlabel <- as.character(call[3])
+		split <- strsplit(mlabel,""," ")[[1]]
+		if(split[1]!="~")
+			{
+			label <- paste(label,",~",mlabel,")",collapse="")
+			mf <- terms.formula(as.formula(paste("~",mlabel,collapse="")),specials=c("s","te","r"))
+			}
+		else
+			{
+			label <- paste(label,",",mlabel,")",collapse="")
+			mf <- terms.formula(as.formula(mlabel),specials=c("s","te","r"))
+			}
+		intcpt <- attr(mf,"intercept")
+		mterms <- attr(mf, "term.labels")
+		for(k in 1:length(mterms))
+			{
+			ins[[k]] <- eval(parse(text=mterms[k]))
+			if(!is.list(ins[[k]]))
+				{
+				ins[[k]] <-list(term=mterms[k],label=mterms[k])
+				class(ins[[k]]) <- "lin.smooth.spec"
+				}
+			fake.formula <- c(fake.formula,ins[[k]]$term)
+			}
+		if(length(fake.formula)>1)
+			for(k in 2:length(fake.formula))
+				fake.formula[k] <- paste("+",fake.formula[k])
+		if(intcpt > 0)
+			fake.formula <- as.formula(paste("~",paste(fake.formula,collapse=""),collapse=""))
+		else
+			fake.formula <- as.formula(paste("~-1+",paste(fake.formula,collapse=""),collapse=""))
+		}
+	if(is.null(method) && by.var!="NA")
+		label <- paste(label,",by=",by.var,")",collapse="")
+	label <- paste(strsplit(paste(as.expression(label))," ","")[[1]],collapse="")
+	ret <- list(term=term,label=label,by=by.var,xt=xt,ins=ins,fake.formula=fake.formula,call=call)
+	class(ret) <- "ra.smooth.spec"
+
+	return(ret) 
+	}
+
+
+ra <- function(fac, method = NULL, by = NULL, xt = NULL)
 	{
 	missme <- missing(fac)
 	if(missme && is.null(by))
@@ -604,6 +661,17 @@ r <- function(fac, method = NULL, by = NULL, xt = NULL)
 		RA$S2R <- as.numeric(rep(0,get$keepers))
 		RA$usedata <- usedata
 		}
+
+	return(RA)
+	}
+
+
+smooth.construct.ra.smooth.spec<-function(object,data)
+	{ 
+	cra <- deparse(object$call)
+	cra <- strsplit(cra,""," ")[[1]]
+	cra <- paste(cra[1],"a",paste(cra[2:length(cra)],sep="",collapse=""),sep="",collapse="")
+	RA <- eval(parse(text=cra),envir=data)
 
 	return(RA)
 	}

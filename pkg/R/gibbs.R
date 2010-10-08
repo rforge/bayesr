@@ -399,7 +399,8 @@ gibbs <- function(formula, data, weights, family = "gaussian", iter = 1200, burn
 			# random effects setup 
    			newR <- fRtmp <- OTzRa <- tildeZra <- ttildeZra <- RA <- ZZ <- Z <- indspec <- 
       			fr <- IR <- tau2R <- drawBetaR <- lambdaR <- drawTildeGammaR <- drawTildeGammaRM <- fitR <- 
-			drawB <- drawBM <- etaR <- metaR <- stetaR <- dPR <- tau2R <- hyperaTau2newR <- desRl <- IXRl <- tZRl <- ttZRl <- drawTZRl <- drawTZRlM <- 
+			drawB <- drawBM <- etaR <- metaR <- stetaR <- dPR <- tau2R <- hyperaTau2newR <- 
+                        desRl <- IXRl <- tZRl <- ttZRl <- drawTZRl <- drawTZRlM <- 
      		 	newBR <- Ni <- ins <- termsi <- check <- la <- center <- frl <- design <- rind <- 
 			cRM <- cRS <- cRMSS <- cRSS <- cRML <- cRLL <- rlm <- newRsm <- vector("list",R)
     			BR <- haRnew <- hbRnew <- RR <- hspec <- dPRl <- RRl <- RRs <- RRi <- cRL <- bcheck <- rcc <- rep(0, R)
@@ -414,7 +415,7 @@ gibbs <- function(formula, data, weights, family = "gaussian", iter = 1200, burn
 
     			for(k in 1:R) 
 				{
-				RA[[k]] <- eval(parse(text = terms[ran[k]]), envir=data)
+				RA[[k]] <- smooth.construct(eval(parse(text = terms[ran[k]])),data)
 				obsz <- nrow(RA[[k]]$Z)
         			if(N != obsz) 
 					{
