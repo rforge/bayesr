@@ -411,15 +411,23 @@ bayesx <- function(formula, family = "gaussian", data = NULL,
 	res$bayesx.prg <- write.bayesx.input(res$bayesx.setup)
 
 	# now estimate with BayesX
-	# res$bayesx.run <- run.bayesx(res$bayesx.prg$file.dir)
+	res$bayesx.run <- run.bayesx(res$bayesx.prg$file.dir)
 
 	# get the output
-	res$fout <- term.order(attr(res$bayesx.setup$terms,"term.labels"),
-                               read.bayesx.output(res$bayesx.prg$file.dir,method))
+	labels <- attr(res$bayesx.setup$terms,"term.labels")
+	res$fout <- term.order(labels,read.bayesx.output(res$bayesx.prg$file.dir,method,labels))
 
 	# maybe remove output folder
 	if(!is.character(data))
-		unlink(res$bayesx.prg$file.dir)
+		{
+		wd <- getwd()
+		setwd(res$bayesx.prg$file.dir)
+		files <- list.files()
+		for(k in 1:length(files))
+			file.remove(files[k])
+		setwd(wd)
+		file.remove(res$bayesx.prg$file.dir)
+		}
 
 	res$terms <- res$bayesx.setup$term.labels
 	res$fitted <- attr(res$fout,"fitted")
@@ -494,8 +502,30 @@ term.order <- function(terms,fin)
 	}
 
 
-read.bayesx.output <- function(file,method="MCMC")
+read.bayesx.output <- function(file,method="MCMC",labels=NULL)
 	{
+	if(!is.null(labels))
+		{
+		nl <- length(labels)
+		labs <- rep("",nl)
+		for(k in 1:nl)
+			{
+			labtmp <- strsplit(labels[k],""," ")[[1]]
+			if(length(labtmp)>3)
+				{
+				check <- paste(labtmp[1:2],sep="",collapse="")
+				if(check%in%c("s(","r("))
+					labtmp <- eval(parse(text=paste(labtmp,sep="",collapse="")))$label
+				else
+					{
+					check <- paste(labtmp[1:3],sep="",collapse="")
+					if(check=="te(")
+						labtmp <- eval(parse(text=paste(labtmp,sep="",collapse="")))$label
+					}
+				}
+			labels[k] <- paste(labtmp,sep="",collapse="")
+			}
+		}
 	mcheck <- FALSE
 	if(method=="MCMC")
 		mcheck <- TRUE
@@ -554,7 +584,7 @@ read.bayesx.output <- function(file,method="MCMC")
 		{
 		if(file.specs[i]=="pspline.res" || file.specs[i]=="spatial.res")
 			{
-			fout[[k]] <- read.bayesx.res(usefiles[i],etacheck,eta,response,pred,mcheck,FALSE)
+			fout[[k]] <- read.bayesx.res(usefiles[i],etacheck,eta,response,pred,mcheck,FALSE,labels)
 			if(file.specs[i]=="pspline.res")
 				attr(fout[[k]],"type") <- "bayesx.pspline"
 			if(file.specs[i]=="spatial.res")
@@ -570,7 +600,7 @@ read.bayesx.output <- function(file,method="MCMC")
 			}
 		if(file.specs[i]=="_random.res")
 			{
-			fout[[k]] <- read.bayesx.res(usefiles[i],etacheck,eta,response,pred,mcheck,TRUE)
+			fout[[k]] <- read.bayesx.res(usefiles[i],etacheck,eta,response,pred,mcheck,TRUE,labels)
 			attr(fout[[k]],"type") <- "bayesx.random"
 			var.mat <- rbind(var.mat,attr(fout[[k]],"variance"))
 			k <- k + 1
@@ -697,18 +727,23 @@ read.bayesx.output <- function(file,method="MCMC")
 	}
 
 
-read.bayesx.res <- function(file,etacheck,eta,response,pred,mcheck,racheck)
+read.bayesx.res <- function(file,etacheck,eta,response,pred,mcheck,racheck,labels)
 	{
 	fout <- read.table(file,header=TRUE)
 	if(ncol(fout)>10)
+		{
 		dim <- 2
+		name <- colnames(fout)[2:3]
+		}
 	else
+		{
 		dim <- 1
-	name <- colnames(fout)[2]
+		name <- colnames(fout)[2]
+		}
 	raoke <- FALSE
 	if(etacheck && mcheck)
 		{
-		dat <- as.numeric(as.matrix(eta[name]))
+		dat <- as.numeric(as.matrix(eta[name[1]]))
 		ind <- get.unique(dat)$ind[order(dat)]
 		if(racheck)
 			{
@@ -731,7 +766,7 @@ read.bayesx.res <- function(file,etacheck,eta,response,pred,mcheck,racheck)
 				partial.resid <- response - pred + fout$pmean[ind]
 			else
 				partial.resid <- response - pred + fout$pmode[ind]
-			if(ncol(fout)>10)	
+			if(dim>1)	
 				{
 				partial.resid <- cbind(fout[ind,2],fout[ind,3],partial.resid)
 				colnames(partial.resid) <- c(colnames(fout)[2:3],"partial.resid")
@@ -747,7 +782,25 @@ read.bayesx.res <- function(file,etacheck,eta,response,pred,mcheck,racheck)
 	fout <- fout[order(fout[,2]),]
 	rownames(fout) <- NULL
 	fout <- as.data.frame(fout)
-	attr(fout,"specs") <- list(dim=dim,term=name,label=name)
+	if(!is.null(labels))
+		{
+		for(k in 1:length(labels))
+			if(any(grep(name[1],labels[k])))
+				{
+				if(dim>1)
+					{
+					if(any(grep(name[2],labels[k])))
+						lname <- labels[k]
+					}
+				else
+					lname <- labels[k]
+				}
+		}
+	else
+		lname <- name
+	if(dim>1 && is.null(labels))
+		lname <- name <- paste(lname[1],"_",lname[2],sep="")
+	attr(fout,"specs") <- list(dim=dim,term=name,label=lname)
 	attr(fout,"partial.resid") <- partial.resid
 	if(mcheck)
 		{
@@ -775,7 +828,7 @@ read.bayesx.res <- function(file,etacheck,eta,response,pred,mcheck,racheck)
 					colnames(fget) <- dimnam
 					}
 				if(fsupspec[k]=="variance")
-					rownames(fget) <- name
+					rownames(fget) <- lname
 				attr(fout,fsupspec[k]) <- fget
 				}
 			else
@@ -850,6 +903,7 @@ plot.bayesx <- function(x, which = 1, resid = FALSE, map = NULL, xa = 2, y = c(3
 					mtext(text=ylab,side=2,line=3)
 				}
 			}
+
 		if(attr(X,"type")=="bayesx.mrf")
 			{     
 			if(is.null(map))
@@ -869,3 +923,157 @@ plot.bayesx <- function(x, which = 1, resid = FALSE, map = NULL, xa = 2, y = c(3
 		}
 	} 
 
+
+print.bayesx <- function(x,...)
+	{
+	cat("Call:\n")
+	print(x$call)
+	cat("-------------------------------------------------------------------\n")
+	cat("DIC =", x$DIC$DIC, " pd =", x$DIC$pd, " n =", x$N, " samptime =",paste(round(x$bayesx.run$samptime[3],2),"sec",sep=""), "\n")
+	cat("Iterations =", x$bayesx.setup$iter, " burnin =", x$bayesx.setup$burnin, " step =", x$bayesx.setup$step, "\n")
+	}
+
+
+summary.bayesx <- function(object, digits = 4,...)
+	{
+	res <- list()
+	res$call <- object$call
+	res$DIC <- object$DIC
+	res$setup <- object$bayesx.setup
+	if(!is.null(attr(object$fout,"lin.mat")))
+		res$lin.mat <- round(attr(object$fout,"lin.mat"),digits)
+	if(!is.null(attr(object$fout,"smooth.mat")))
+		res$smooth.mat <- round(attr(object$fout,"smooth.mat"),digits)
+	if(!is.null(attr(object$fout,"var.mat")))
+		res$var.mat <- round(attr(object$fout,"var.mat"),digits)
+	res$S2 <-  round(attr(b$fitted,"variance"),digits)
+	res$N <- object$N
+	res$DIC <- object$DIC
+	res$samptime <- round(object$bayesx.run$samptime[3],2)
+	res$iter <- object$bayesx.setup$iter
+	res$burn <- object$bayesx.setup$burn
+	res$step <- object$bayesx.setup$step
+	res$method <- object$bayesx.setup$method
+
+	class(res) <- "summary.bayesx"
+	res
+	}
+
+
+print.summary.bayesx <- function(x,...)
+	{
+	cat("Call:\n")
+	print(x$call)
+	tcheck <- rownames(x$lin.mat)
+	tcheck2 <- as.character(x$lin.mat)
+	if(!is.null(x$smooth.mat))
+		{
+		tcheck <- c(tcheck,rownames(x$smooth.mat))
+		tcheck2 <- c(tcheck2,as.character(x$smooth.mat))
+		}
+	if(is.null(x$smooth.mat) && is.null(x$lin.mat))
+		{
+		tcheck <- c(tcheck,rownames(x$S2))
+		tcheck2 <- c(tcheck2,as.character(x$S2))
+		}
+	ltcheck <- length(tcheck)
+	maxsize <- rep(0,ltcheck)
+	for(j in 1:ltcheck)
+		maxsize[j] <- length(strsplit(tcheck[j],"","")[[1]])
+	maxsize <- max(maxsize)
+
+	ltcheck2 <- length(tcheck2)
+	maxsize2 <- rep(0,ltcheck2)
+	for(j in 1:ltcheck2)
+		maxsize2[j] <- length(strsplit(tcheck2[j],"","")[[1]])
+	maxsize2 <- max(maxsize2)
+
+	if(maxsize2 > 7)
+		maxsize <- maxsize + maxsize2*7 + 7	
+	else
+		maxsize <- maxsize + maxsize2*7 + 7
+	liner <- paste(rep("-",maxsize),collapse="")
+
+	fc <- TRUE
+	if(nrow(x$lin.mat) < 2)
+		{
+		if(all(x$lin.mat[1,]==0))
+			fc <- FALSE
+		}
+	else
+		{
+		if(all(x$lin.mat[1,]==0))
+			{
+			m <- ncol(x$lin.mat)
+			nc <- colnames(x$lin.mat)
+			nr <- rownames(x$lin.mat)[2:nrow(x$lin.mat)]
+			x$lin.mat <- matrix(x$lin.mat[2:nrow(x$lin.mat),],ncol=m)
+			colnames(x$lin.mat) <- nc
+			rownames(x$lin.mat) <- nr
+			}
+		}
+	if(fc || (!is.null(smooth.mat)))
+		{
+		cat(liner,"\n")
+		cat("Fixed effects estimation results:\n")
+		cat("---\n")
+		}
+	if(fc)
+		{
+		cat("Parametric Coefficients:\n")
+		printCoefmat(x$lin.mat)
+		}
+	
+	if(!is.null(x$smooth.mat))
+		{
+		if(fc)
+			cat("-\n")
+		cat("Smooth terms variances:\n")
+		ls <- ncol(x$smooth.mat)
+		terms <- colnames(x$smooth.mat)	
+		rn <- rownames(x$smooth.mat)
+		#for(j in 1:ls)
+			#{
+			#cat(terms[j],"\n")
+			#newmat <- matrix(x$smoothhyp[j,],nrow=1,ncol=ncol(x$smoothhyp))
+			#rownames(newmat) <- ""
+			#colnames(newmat) <- rn
+			#printCoefmat(newmat)
+			#}
+		printCoefmat(x$smooth.mat)
+		}
+	cat(liner,"\n")
+
+	if(!is.null(x$var.mat))
+		{
+		cat("Random effects estimation results:\n")
+		cat("---\n")
+
+		if(!is.null(x$ra$coeflin))
+			{
+			cat("Parametric Coefficients:\n")
+			printCoefmat(x$ra$coeflin)
+			cat("---\n")
+			}
+		if(!is.null(x$ra$smoothhyp))
+			{
+			cat("Smooth terms variances:\n")
+			printCoefmat(x$ra$smoothhyp)
+			cat("---\n")
+			}
+		cat("Random variance estimation results:\n")
+		cat("---\n")
+		printCoefmat(x$var.mat)		
+		cat(liner,"\n")
+		}
+	cat("Global variance estimation results:\n")
+	printCoefmat(x$S2)
+	cat(liner,"\n")
+	if(x$method=="MCMC")
+		{
+		cat("DIC = ",x$DIC$DIC,"  pd = ",x$DIC$pd,"  n = ",x$N,"  samptime = ",x$samptime,"sec\n", sep="")
+		cat("Iterations =",x$iter," burnin =",x$burn," step =",x$step,"\n")
+		}
+	else
+		cat("BIC = ",x$DIC$DIC,"  df = ",x$DIC$pd,"  n = ",x$N,"  estimtime = ",x$samptime,"sec\n", sep="")
+	}
