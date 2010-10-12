@@ -606,9 +606,7 @@ gibbs <- function(formula, data, weights, family = "gaussian", iter = 1200, burn
 			kk <- 1
 			for(k in 1:L)
 				{
-				tmp <- eval(parse(text = paste("model.matrix(~",terms[lin[k]],")")), envir=data)[,2]
-				#tmp <- eval(parse(text = terms[lin[k]]), envir=data)
-
+				tmp <- eval(parse(text = terms[lin[k]]), envir=data)
 				if(N!=length(tmp))
 					stop("Variable lengths differing in linear terms!",call.=FALSE)
 				for(i in 1:lvn)
@@ -616,29 +614,14 @@ gibbs <- function(formula, data, weights, family = "gaussian", iter = 1200, burn
 						linNames[[k]] <- terms[lin[k]]
 				if(is.factor(tmp))
 					{
-					nt <- levels(tmp)
-					nlinlev <- nlevels(tmp)
-					tmp <- diag(nlinlev)[tmp,]
-					colnames(tmp) <- nt
-					cs <- colSums(tmp)
-					ind.l <- 1:length(cs)
-					which <- ind.l[cs==max(cs)]
-					if(length(which)>1)
-						which <- which[1]
-					ind.l <- ind.l[ind.l!=which]
-					tmp <- tmp[,ind.l]
-					if(is.matrix(tmp))
-						nt <- colnames(tmp)
-					else
-						nt <- nt[ind.l]
-					for(j in 1:length(nt))
-						nt[j] <- paste(linNames[[k]],":",nt[j],sep="")
+					tmp <- eval(parse(text=paste("model.matrix(~",terms[lin[k]],",envir=data)")))
+					nt <- colnames(tmp)[2:ncol(tmp)]
 					tnames <- c(tnames,nt)
 					types <- c(types,rep("factor",length(nt)))
-					LIN[[k]] <- tmp
-					linposition[[k]] <- c(1:length(ind.l))+kk-1
+					LIN[[k]] <- tmp[,2:ncol(tmp)]
+					linposition[[k]] <- c(1:ncol(LIN[[k]]))+kk-1
 					attr(linposition[[k]],"factorcheck") <- TRUE
-					kk <- kk + length(ind.l)
+					kk <- kk + ncol(LIN[[k]])-1
 					}
 				else
 					{
@@ -1583,6 +1566,7 @@ gibbs <- function(formula, data, weights, family = "gaussian", iter = 1200, burn
 				{
 				tmp <- list(linear.fout$fits[linposition[[k]]])
 				attr(tmp,"factorcheck") <- "factor"
+				attr(tmp,"factorname") <- linNames[[k]]
 				class(tmp) <- "linear.gibbs"
 				}
 			else

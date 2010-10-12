@@ -66,7 +66,21 @@ Predict.matrix.sps.smooth,
 stewrap,
 ret.pal.colors,
 centroids,
-bayesx
+bayesx,
+parse.bayesx.input,
+write.bayesx.input,
+bayesx.construct,
+bayesx.construct.ps.smooth.spec,
+bayesx.construct.tensor.smooth.spec,
+bayesx.construct.ra.smooth.spec,
+bayesx.construct.rw1.smooth.spec,
+bayesx.construct.rw2.smooth.spec,
+bayesx.construct.mrf.smooth.spec,
+fcheck,
+run.bayesx,
+term.order,
+read.bayesx.output,
+read.bayesx.res
 )
 
 importFrom("splines", "spline.des", "splineDesign")
@@ -87,5 +101,10 @@ S3method(print,random.gibbs)
 S3method(print,linear.gibbs)
 S3method(print,gibbsfit)
 S3method(fitted,gibbs)
+
+S3method(plot,bayesx)
+S3method(print,bayesx)
+S3method(summary,bayesx)
+S3method(print,summary.bayesx)
 
 useDynLib("BayesR")

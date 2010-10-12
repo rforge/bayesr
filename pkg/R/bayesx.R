@@ -165,12 +165,23 @@ write.bayesx.input <- function(object = NULL)
 		{
 		if(whatis[k]=="lin")
 			{
-			if(any(grep(":",add.terms[k])))
+			fcheck <- eval(parse(text=add.terms[k]),envir=object$data)
+			if(is.factor(fcheck))
 				{
-				split <- strsplit(add.terms[k],":","")[[1]]
-				add.terms[k] <- paste(split[1],"_",split[2],sep="")
+				fcheck <- as.formula(paste("~",add.terms[k]))
+				fcheck <- model.matrix(fcheck,data=object$data) 
+				fcheck <- colnames(fcheck)[2:ncol(fcheck)]
+				bt<-c(bt,fcheck)
 				}
-			bt <- c(bt,add.terms[k])
+			else
+				{
+				if(any(grep(":",add.terms[k])))
+					{
+					split <- strsplit(add.terms[k],":","")[[1]]
+					add.terms[k] <- paste(split[1],"_",split[2],sep="")
+					}
+				bt <- c(bt,add.terms[k])
+				}
 			}
 		else
 			{
@@ -388,6 +399,35 @@ bayesx.construct.mrf.smooth.spec <- function(object,file,prg,data)
 	}
 
 
+fcheck <- function(labels,data)
+	{
+	labels <- as.list(labels)
+	for(k in 1:length(labels))
+		{
+		tmp <- eval(parse(text=labels[[k]]),envir=data)
+		if(is.factor(tmp))
+			{
+			fnam <- labels[[k]]
+			tmp <- as.formula(paste("~",labels[[k]]))
+			tmp <- model.matrix(tmp,envir=data)
+			tmp <- colnames(tmp)[2:ncol(tmp)]
+			labels[[k]] <- tmp
+			attr(labels[[k]],"is.factor") <- TRUE
+			attr(labels[[k]],"term") <- fnam
+			}
+		else
+			{
+			attr(labels[[k]],"is.factor") <- FALSE
+			if(is.list(tmp))
+				attr(labels[[k]],"term") <- tmp$term
+			else
+				attr(labels[[k]],"term") <- labels[[k]]
+			}
+		}
+	return(labels)
+	}
+
+
 bayesx <- function(formula, family = "gaussian", data = NULL, 
                    weights = NULL, method = "MCMC", outfile = NULL, offset = NULL,
                    iter = 1200, burnin = 200, maxint = 150, step = 1, aresp = 1, bresp = 0.005, 
@@ -399,6 +439,8 @@ bayesx <- function(formula, family = "gaussian", data = NULL,
 	res <- list()
 	res$call <- match.call()
 	res$formula <- formula <- as.formula(formula)
+	if(is.character(data))
+		data <- read.table(data,header=TRUE)
 
 	# setup files for bayesx
 	res$bayesx.setup <- parse.bayesx.input(formula,family,data, 
@@ -410,12 +452,14 @@ bayesx <- function(formula, family = "gaussian", data = NULL,
                                                leftint,lefttrunc,state,...)
 	res$bayesx.prg <- write.bayesx.input(res$bayesx.setup)
 
+	labels <- attr(res$bayesx.setup$terms,"term.labels")
+	llabels <- fcheck(labels,data)
+
 	# now estimate with BayesX
 	res$bayesx.run <- run.bayesx(res$bayesx.prg$file.dir)
 
 	# get the output
-	labels <- attr(res$bayesx.setup$terms,"term.labels")
-	res$fout <- term.order(labels,read.bayesx.output(res$bayesx.prg$file.dir,method,labels))
+	res$fout <- term.order(llabels,read.bayesx.output(res$bayesx.prg$file.dir,method,labels))
 
 	# maybe remove output folder
 	if(!is.character(data))
@@ -474,24 +518,26 @@ term.order <- function(terms,fin)
 	id <- rep(0,k)
 	for(i in 1:k)
 		{
-		tc <- eval(parse(text=terms[i]))
-		if(is.list(tc))
-			tc <- tc$term
-		else
-			tc <- terms[i]
+		tc <- attr(terms[[i]],"term")
 		for(j in 1:m)
 			{
 			if(length(tc)<2)
 				{
-				name <- colnames(fin[[j]])[2]
-				if(tc==name)
-					id[i] <- j
+				if(ncol(fin[[j]])<11)
+					{
+					name <- colnames(fin[[j]])[2]
+					if(tc==name)
+						id[i] <- j
+					}
 				}
 			else
 				{
-				name <- colnames(fin[[j]])[2:3]
-				if(tc[1]==name[1] && tc[2]==name[2])
-					id[i] <- j
+				if(ncol(fin[[j]])>10)
+					{
+					name <- colnames(fin[[j]])[2:3]
+					if(tc[1]==name[1] && tc[2]==name[2])
+						id[i] <- j
+					}
 				}
 			}
 		}
@@ -576,6 +622,7 @@ read.bayesx.output <- function(file,method="MCMC",labels=NULL)
 			}
 		else
 			{
+
 			pred <- eta$eta
 			response <- 0
 			}
@@ -946,7 +993,7 @@ summary.bayesx <- function(object, digits = 4,...)
 		res$smooth.mat <- round(attr(object$fout,"smooth.mat"),digits)
 	if(!is.null(attr(object$fout,"var.mat")))
 		res$var.mat <- round(attr(object$fout,"var.mat"),digits)
-	res$S2 <-  round(attr(b$fitted,"variance"),digits)
+	res$S2 <-  round(attr(object$fitted,"variance"),digits)
 	res$N <- object$N
 	res$DIC <- object$DIC
 	res$samptime <- round(object$bayesx.run$samptime[3],2)

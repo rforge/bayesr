@@ -21,6 +21,7 @@ plot.linear.gibbs <- function(x, resid = FALSE, jit = TRUE, const = FALSE, diagn
 		if(diagnostics == FALSE)
 			{
 			colfill <- col
+			xnam <- attr(x,"factorname")
 			x <- x[[1]]
 			if(is.null(range))
 				{
@@ -52,7 +53,7 @@ plot.linear.gibbs <- function(x, resid = FALSE, jit = TRUE, const = FALSE, diagn
 				f011 <- rep(f011[1],3)
 				f021 <- X[,6][check]
 				f021 <- rep(f021[1],3)
-				e <- X[,8][check]
+				e <- X[,10][check]
 				limcheck <- c(limcheck,f02[1],f021[1],f01[1],f011[1])
 				limchecke <- c(limchecke,e)
 				xt[[j]] <- xtmp	
@@ -65,7 +66,6 @@ plot.linear.gibbs <- function(x, resid = FALSE, jit = TRUE, const = FALSE, diagn
 				tmpn <- colnames(X)[1]
 				fnames <- c(fnames,tmpn)
 				}
-
 			if(resid!=F || resid != FALSE)
 				y <- c(min(limchecke),max(limchecke))
 			else
@@ -87,7 +87,6 @@ plot.linear.gibbs <- function(x, resid = FALSE, jit = TRUE, const = FALSE, diagn
 			
 			if(is.null(args$ylim))
 				args$ylim <- substitute(y)
-			xnam <- strsplit(colnames(X)[1],":")[[1]][1]
 			if(is.null(xlab))
 				xlab <- xnam
 			if(is.null(ylab))
