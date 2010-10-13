@@ -26,8 +26,8 @@ The generic functions take fitted \code{\link{gibbs}} objects and plots a user s
 			                   
 \method{plot}{mrf.gibbs}(x, resid = FALSE, map = NULL, names = FALSE, values = NULL, 
                          colored = TRUE, col = FALSE, lwdc = 1, lwdconf = 0, range = NULL, 
-                         pal = "heat", legend = TRUE, scale = 0.2, nrc = 100, xlab = NULL, 
-                         ylab = NULL, zlab = NULL, main = NULL, dgts = 4, cex = 1, lpos = c(0.2,0), 
+                         pal = "heat", legend = TRUE, scale = 0, nrc = 100, xlab = NULL, 
+                         ylab = NULL, zlab = NULL, main = NULL, dgts = 4, cex = 1, lpos = c(0,0), 
                          const = FALSE, diagnostics = FALSE, acf = FALSE, p3d = FALSE, theta = 0, 
                          phi = 25, pcat, border = NULL, ...)                         
 			                   

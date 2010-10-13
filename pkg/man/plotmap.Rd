@@ -1,7 +1,7 @@
-\name{drawmap}
-\alias{drawmap}
+\name{plotmap}
+\alias{plotmap}
 
-\title{Draw Maps}
+\title{Plot Maps}
 
 \description{
   The function takes a \code{\link{list}} of \code{\link{polygon}}s and draws the corresponding map. Different colors for each polygon can be used.
@@ -9,7 +9,7 @@
 }
  
 \usage{
-drawmap(map, names = FALSE, values = NULL, colored = FALSE, range = NULL, 
+plotmap(map, names = FALSE, values = NULL, colored = FALSE, range = NULL, 
         pal = "rainbow", legend = TRUE, scale = 0.2, nrc = 100, xlab = NULL, ylab = NULL, 
 	zlab = NULL, main = NULL, dgts = 4, cex = 1, lpos = c(0.2,0), p3d = FALSE, theta = 0, 
 	phi = 25, pcat = NULL, border = NULL, density = NULL, resid = FALSE, ...)
@@ -56,47 +56,47 @@ drawmap(map, names = FALSE, values = NULL, colored = FALSE, range = NULL,
 data(polyloc)
 
 # plot the map 
-drawmap(polyloc,main="Example of a plain map")
+plotmap(polyloc,main="Example of a plain map")
 
 # add some values to the corresponding polygon areas
 # note that the first column in matrix val contains
 # the region identification index
 val<-cbind(as.integer(names(polyloc)),runif(length(polyloc),0,100))
-drawmap(polyloc,values=val, 
+plotmap(polyloc,values=val, 
         main="Example of a map with black and white shaded regions")
         
 # now only plot values for some certain regions
 samps<-sample(val[,1],4)
 nval<-val[samps,]
-drawmap(polyloc,values=nval)
+plotmap(polyloc,values=nval)
 
 # play with scale and legend position
-drawmap(polyloc,values=nval,scale=0,cex=1,dgts=2,lpos=c(0.6,0),density=15)
+plotmap(polyloc,values=nval,scale=0,cex=1,dgts=2,lpos=c(0.6,0),density=15)
 
 # choose a color palette and print region names
-drawmap(polyloc,values=val, 
+plotmap(polyloc,values=val, 
         main="Example of a map with color palette heat", 
         colored=TRUE,pal="heat",names=TRUE)
 
 # load and plot a map from germany
 data(germany)
-drawmap(germany,main="Map of Germany")
+plotmap(germany,main="Map of Germany")
 
 # draw the map in 3d
-drawmap(germany,main="Map of Germany",p3d=TRUE)
+plotmap(germany,main="Map of Germany",p3d=TRUE)
 
 # add some colors
 val<-cbind(as.integer(names(germany)),sort(runif(length(germany),0,100)))
-drawmap(germany,values=val,colored=TRUE)
+plotmap(germany,values=val,colored=TRUE)
 
 # remove polygon borders
-drawmap(germany,values=val,colored=TRUE,border=NA)
+plotmap(germany,values=val,colored=TRUE,border=NA)
 
 # use hcl colors
-drawmap(germany,values=val,colored=TRUE,border=NA,pal="hcl")
+plotmap(germany,values=val,colored=TRUE,border=NA,pal="hcl")
 
 # swap color
-drawmap(germany,values=val,colored=TRUE,border=NA,pal="hcl",swap=TRUE)
+plotmap(germany,values=val,colored=TRUE,border=NA,pal="hcl",swap=TRUE)
 }
 
 \keyword{aplot} 
