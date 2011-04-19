@@ -662,7 +662,7 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name)
       for(res in resfiles) {
         x <- df2m(read.table(paste(dir, "/", res, sep = ""), header = TRUE))
         dimx <- s4dim(x)
-        if(sum(x[,(dimx + 1L):ncol(x)]) != 0) {
+        if(sum(x[,(dimx + 1L):ncol(x)], na.rm = TRUE) != 0) {
           x <- x[order(x[,1L]),]
           cx <- s4class(res)
           dimx2 <- dimx

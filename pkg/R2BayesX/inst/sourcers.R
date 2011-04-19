@@ -1,9 +1,9 @@
-dir1 <- "/media/NikUSB/Rpkg/R2BayesX/R2BayesX/R"
+dir1 <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir1 <- "J:/c403/stat/R2BayesX/R"
 files <- list.files(dir1)
 for(i in 1:length(files))
   source(paste(dir1, "/", files[i], sep = "")) 
-plot(b)
+b <- read.bayesx.output("/tmp/RtmpjoTH9E/bayesx")
 
 
 
