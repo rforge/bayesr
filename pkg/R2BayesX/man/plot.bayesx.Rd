@@ -1,0 +1,188 @@
+\name{plot.bayesx}
+\alias{plot.bayesx}
+
+\title{
+  Default BayesX Plotting
+}
+
+\description{
+  Generic functions for plotting objects of class \code{"bayesx"} and model term classes 
+  \code{"geo.bayesx"}, \code{"linear.bayesx"}, \code{"mrf.bayesx"}, \code{"random.bayesx"} and
+  \code{"sm.bayesx"}.
+}
+ 
+\usage{
+\method{plot}{bayesx}(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
+}
+
+\arguments{
+  \item{x}{a fitted \code{\link{bayesx}} object.}
+  \item{model}{for which model the plot should be provided, either an integer or a character, e.g. 
+    \code{model = "mcmc.model"}.}
+  \item{term}{the term that should be plotted, either an integer or a character, eg 
+    \code{term = "s(x)"}.}
+  \item{which}{choose the type of plot that should be drawn, possible options are: \code{"effect"},
+    \code{"coef-samples"}, \code{"var-samples"}, \code{"intcpt-samples"}, \code{"hist-resid"}, 
+    \code{"qq-resid"}, \code{"scatter-resid"}, \code{"scale-resid"}. Argument which may also be
+    specified as integer, e.g. \code{which = 1}. The first three arguments are all model term 
+    specific. For the last four global model diagnostic plot options \code{which} may be set 
+    with \code{which = 4:7}.}
+  \item{ask}{\dots}
+  \item{\dots}{other graphical parameters passed to \code{\link{plotblock}}, \code{\link{plotmap}}, 
+    \code{\link{plot2d}} and \code{\link{plot3d}}.}
+}
+
+\details{
+  Depending on the class of the term that should be plotted, function \code{plot.bayesx} calls one 
+  of the following plotting functions in the end:
+  \itemize{
+    \item \code{\link{plotblock}},
+    \item \code{\link{plotsamples}},
+    \item \code{\link{plotmap}},
+    \item \code{\link{plot2d}},
+    \item \code{\link{plot3d}},
+  }
+  For details on argument specifications, please see the help sites for the corresponding function.
+  
+  If argument \code{x} contains of more than one model and e.g. \code{term = 2}, the second terms
+  of all models will be plotted
+}
+
+\note{
+  If a model is specified with a structured and an unstructured spatial effect, e.g. the model 
+  formula is something like \code{y ~ s(id, bs = "mrf", map = mymap) + r(id)}, the model output 
+  contains of one additional total spatial effect, named with \code{"s(id):total"}. Also see the 
+  last example
+}
+
+\author{
+  Thomas Kneib, Stefan Lang, Nikolaus Umlauf, Achim Zeileis.
+}
+
+\seealso{
+  \code{\link{plotblock}}, \code{\link{plotsamples}}, \code{\link{plotmap}}, \code{\link{plot2d}}, 
+  \code{\link{plot3d}}, \code{\link{bayesx}}, \code{\link{read.bayesx.output}}.
+}
+
+\examples{
+\dontrun{
+## generate some data
+set.seed(111)
+n <- 500
+
+## regressors
+dat <- data.frame(x = runif(n, -3, 3), z = runif(n, -3, 3),
+   w = runif(n, 0, 6), fac = factor(rep(1:10, n/10)))
+
+## response
+dat$y <- with(dat, 1.5 + sin(x) + cos(z) * sin(w) +
+   c(2.67, 5, 6, 3, 4, 2, 6, 7, 9, 7.5)[fac] + rnorm(n, sd = 0.6))
+
+## estimate model
+b1 <- bayesx(y ~ s(x, bs = "ps") + s(z, w, bs = "te") + fac,
+   data = dat, method = "MCMC", iter = 1200)
+
+## plot p-spline term
+plot(b1, term = 1)
+## same with
+plot(b1, term = "s(x)")
+
+## with residuals
+plot(b1, term = "s(x)", residuals = TRUE)
+
+## plot tensor term
+plot(b1, term = 2)
+
+## use other palette
+plot(b1, term = "s(z,w)", col.surface = heat.colors)
+
+## swap colors
+plot(b1, term = "s(z,w)", col.surface = heat.colors, swap = TRUE)
+
+## plot tensor term with residuals
+plot(b1, term = "s(z,w)", residuals = TRUE)
+
+## plot image and contour
+plot(b1, term = "s(z,w)", image = TRUE)
+plot(b1, term = "s(z,w)", image = TRUE, contour = TRUE)
+
+## increase the grid
+plot(b1, term = "s(z,w)", image = TRUE, contour = TRUE, grid = 100)
+
+## plot factor term
+plot(b1, term = "fac")
+
+## plot factor term with residuals
+plot(b1, term = "fac", resid = TRUE, cex = 0.5)
+
+## plot residual dignostics
+plot(b1, which = 5:8)
+
+## plot variance sampling path of term s(x)
+plot(b1, term = 1, which = "var-samples")
+
+## plot coefficients sampling paths of term s(x)
+plot(b1, term = 1, which = "coef-samples")
+
+## plot the sampling path of the intercept
+plot(b1, which = "intcpt-samples")
+
+## plot the correlation function of the sampled intercept
+plot(b1, which = "intcpt-samples", acf = TRUE)
+
+## increase lags
+plot(b1, which = "intcpt-samples", acf = TRUE, lag.max = 200)
+
+
+## now a spatial example
+set.seed(333)
+
+## simulate some geographical data
+data("MunichBnd")
+N <- length(MunichBnd); names(MunichBnd) <- 1:N
+n <- N*5
+
+## regressors
+dat <- data.frame(id = rep(1:N, n/N), x1 = runif(n, -3, 3))
+dat$sp <- with(dat, sort(runif(N, -2, 2), decreasing = TRUE)[id])
+dat$re <- with(dat, rnorm(N, sd = 0.6)[id])
+
+## response
+dat$y <- with(dat, 1.5 + sin(x1) + sp + re + rnorm(n, sd = 0.6))
+
+## estimate models with
+## bayesx MCMC and REML
+b2 <- bayesx(y ~ s(x1, bs = "ps") + s(id, bs = "mrf", xt = list(map = MunichBnd)) +
+  r(id), method = "MCMC", data = dat)
+
+## summary statistics
+summary(b2)
+
+## plot structured spatial effect
+plot(b2, term = "s(id)", map = MunichBnd)
+
+## plot unstructured spatial effect
+plot(b2, term = "r(id)", map = MunichBnd)
+
+## now without map
+plot(b2, term = "s(id)")
+plot(b2, term = "r(id)")
+
+## plot the total spatial effect
+plot(b2, term = "s(id):total")
+
+## combine model objects
+b <- c(b1, b2)
+
+## plot first term of second model
+plot(b, model = 2, term = 1)
+
+## plot secon term of both models
+plot(b, term = 2, map = MunichBnd)
+
+## plot everything
+plot(b)
+}
+}
+
+\keyword{regression}

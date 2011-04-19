@@ -1,0 +1,63 @@
+useDynLib("R2BayesX")
+
+export(
+  bayesx,               
+  bayesx.construct,     
+  bayesx.control,      
+  bayesx_logfile,       
+  bayesx_prgfile,       
+  bayesx.term.options, 
+  bxopts,               
+  check.install.bayesx, 
+  install.bayesx,       
+  colorlegend,          
+  parse.bayesx.input,  
+  plot2d,               
+  plot3d,              
+  plotblock,            
+  plotmap,              
+  plotsamples,         
+  r,                    
+  read.bayesx.output,   
+  run.bayesx,          
+  write.bayesx.input 
+)
+
+S3method(c, bayesx)
+S3method(fitted, bayesx)
+S3method(plot, bayesx)
+S3method(plot, geo.bayesx)
+S3method(plot, sm.bayesx)
+S3method(plot, mrf.bayesx)
+S3method(plot, random.bayesx)
+S3method(plot, linear.bayesx)
+S3method(plot, fit.bayesx)
+S3method(plot, bnd)
+S3method(print, bayesx)
+S3method(summary, bayesx)
+S3method(print, summary.bayesx)
+S3method(residuals, bayesx)
+
+S3method(bayesx.construct, gk.smooth.spec)
+S3method(bayesx.construct, gs.smooth.spec)
+S3method(bayesx.construct, mrf.smooth.spec)
+S3method(bayesx.construct, ps.smooth.spec)
+S3method(bayesx.construct, ra.smooth.spec)
+S3method(bayesx.construct, rw1.smooth.spec)
+S3method(bayesx.construct, rw2.smooth.spec)
+S3method(bayesx.construct, tensor.smooth.spec)
+S3method(bayesx.construct, kr.smooth.spec)
+S3method(bayesx.construct, bl.smooth.spec)
+S3method(bayesx.construct, lasso.smooth.spec)
+S3method(bayesx.construct, nigmix.smooth.spec)
+S3method(bayesx.construct, ridge.smooth.spec)
+S3method(bayesx.construct, te.smooth.spec)
+S3method(bayesx.construct, season.smooth.spec)
+
+S3method(AIC, bayesx)
+S3method(BIC, bayesx)
+S3method(DIC, bayesx)
+S3method(GCV, bayesx)
+S3method(logLik, bayesx)
+S3method(coef, bayesx)
+S3method(confint, bayesx)

@@ -1,0 +1,186 @@
+colorlegend <- function(color = NULL, ncol = NULL, x = NULL, breaks = NULL, 
+  pos = NULL, side.legend = 1L, side.ticks = 1L, range = NULL, lrange = NULL, 
+  width = 1L, height = 1L, scale = TRUE, xlim = NULL, ylim = NULL, plot = NULL, 
+  add = FALSE, col.border = "black", lty.border = 1L, lwd.border = 1L, ticks = TRUE, 
+  at = NULL, col.ticks = "black", lwd.ticks = 1L, lty.ticks = 1L, length.ticks = 1L, 
+  labels = NULL, distance.labels = 1L, col.labels = "black", cex.labels = 1L, 
+  digits = 2L, swap = FALSE, symmetric = TRUE, xpd = NULL, ...)
+{
+  op <- par(no.readonly = TRUE)
+  args <- list(...)
+  if(is.null(xlim))
+    xlim <- c(0L, 1L)
+  if(is.null(ylim))
+    ylim <- c(0L, 1L)
+  if(!side.legend %in% c(1L, 2L)) {
+    warning("argument side.legend is specified wrong, set to default!")
+    side.legend <- 1L
+  }
+  if(is.null(plot) || plot == TRUE) {
+    plot <- TRUE
+    graphics::plot.default(xlim, ylim, type = "n", xlab = "", ylab = "", axes = FALSE)
+  } else plot <- FALSE
+  if(is.null(xpd))
+    xpd <- FALSE
+  if(xpd)
+    par(xpd = xpd)
+  pos2 <- NULL
+  postxt <- c("bottomleft", "topleft", "topright", "bottomright")
+  poscheck <- pmatch(pos, postxt)
+  if(all(!is.na(poscheck)) && length(poscheck) > 0) {
+    pos2 <- postxt[pmatch(pos, postxt)]
+    pos <- c(0, 0)
+  }
+  if(is.null(pos)) {
+    pos <- c(0.35, 0.15)
+    if(side.legend < 2L)
+      pos <- rev(pos)   
+  }
+  limits <- list(xlim, ylim)
+  pos <- opos <- c(min(limits[[1L]], na.rm = TRUE) + pos[1L] * diff(limits[[1L]]), 
+    min(limits[[2L]], na.rm = TRUE) + pos[2L] * diff(limits[[2L]])) 
+  if(side.legend > 1L)
+    limits <- rev(limits)
+  if(scale) {
+    width <- width * diff(limits[[1L]]) * 0.7
+    height <- height * diff(limits[[2L]]) * 0.3
+  }
+  if(side.legend > 1L) {
+    wi <- width
+    width <- height
+    height <- wi
+  }
+  if(is.null(pos2)) {
+    xlim <- range(c(pos[1L], pos[1L] + width, pos[1L] + width, pos[1L]))
+    ylim <- range(c(pos[2L], pos[2L], pos[2L] + height, pos[2L] + height))
+  } else {
+    pos2 <- dopos(pos2, limits, width, height, side.legend)
+    xlim <- pos2$xlim
+    ylim <- pos2$ylim
+  }
+  if(!is.null(x)) 
+    x <- unique(na.omit(sort(x)))
+  else 
+    if(is.null(range))
+      range <- xlim
+  if(is.null(color))
+    color <- grDevices::gray.colors
+  args$col <- color
+  args$ncol <- ncol
+  args$data <- x
+  args$range <- range
+  args$breaks <- breaks
+  args$swap <- swap
+  args$symmetric <- symmetric
+  pal <- do.call(make_pal, delete.args(make_pal, args))
+  if(plot || add) {
+    if(is.null(lrange)) 
+      lrange <- range(pal$breaks)
+    else {
+      if(min(lrange) > min(pal$breaks)) 
+        pal$breaks[pal$breaks <= min(lrange)] <- min(lrange)
+      if(max(lrange) < max(pal$breaks))
+        pal$breaks[pal$breaks >= max(lrange)] <- max(lrange)
+    }
+    br <- c(min(pal$breaks, lrange), pal$breaks, max(pal$breaks, lrange))
+    cl <- c(head(pal$colors, 1L), pal$colors, tail(pal$colors, 1L))
+    obs2legend <- function(x, xr) ((x - lrange[1L]) / diff(lrange)) * diff(xr) + xr[1L]
+    if(side.legend < 2L) {
+      graphics::rect(obs2legend(head(br, -1L), xlim), ylim[1L], obs2legend(tail(br, -1L), xlim),
+        ylim[2L], col = cl, border = "transparent")
+    } else {
+      graphics::rect(xlim[1L], obs2legend(head(br, -1L), ylim), xlim[2L], 
+        obs2legend(tail(br, -1L), ylim), col = cl, border = "transparent")
+    }
+    graphics::rect(xlim[1L], ylim[1L], xlim[2L], ylim[2L], 
+      border = col.border, lwd = lwd.border, lty = lty.border)
+    dl <- TRUE
+    if(!is.null(labels) && labels == FALSE)
+      dl <- FALSE
+    if(ticks || dl) {
+      if(is.null(at)) {
+        at <- pal$breaks
+        if(diff(lrange) / length(at) < 0.2)
+          at <- seq(min(lrange), max(lrange), length.out = 3L)
+      }
+      if(is.null(labels))
+        labels <- round(at, digits = digits)
+      if(side.legend < 2L) {
+        at <- obs2legend(at, xlim)
+        length.ticks <- length.ticks * diff(ylim) * 0.1
+        if(any(at > max(xlim))) 
+          at[at > max(xlim)] <- max(xlim)
+        if(any(at < min(xlim)))
+          at[at < min(xlim)] <- min(xlim)
+      } else {
+        at <- obs2legend(at, ylim)
+        length.ticks <- length.ticks * diff(xlim) * 0.1
+        if(any(at > max(ylim))) 
+          at[at > max(ylim)] <- max(ylim)
+        if(any(at < min(ylim)))
+          at[at < min(ylim)] <- min(ylim)
+      }
+      at <- unique(at)
+      if(side.ticks > 1L)
+        length.ticks <- (-1) * length.ticks
+      nat <- length(at)
+      lwd.ticks <- rep(lwd.ticks, length.out = nat)
+      lty.ticks <- rep(lty.ticks, length.out = nat)
+      col.ticks <- rep(col.ticks, length.out = nat)
+      col.labels <- rep(col.labels, length.out = nat)
+      cex.labels <- rep(cex.labels, length.out = nat)
+      for(i in 1L:nat) {
+        if(side.legend < 2L) {
+          if(ticks) {
+            graphics::lines(c(at[i], at[i]), c(ylim[side.ticks], ylim[side.ticks] - length.ticks),
+              lwd = lwd.ticks[i], lty = lty.ticks[i], col = col.ticks[i])
+          }
+          if(dl) {
+            graphics::text(at[i], ylim[side.ticks] - length.ticks - (distance.labels * length.ticks * 1.8),
+              labels = labels[i], col = col.labels[i], cex = cex.labels[i], ...)
+          }
+        } else {
+          if(ticks) {
+            graphics::lines(c(xlim[side.ticks], xlim[side.ticks] - length.ticks), c(at[i], at[i]),
+              lwd = lwd.ticks[i], lty = lty.ticks[i], col = col.ticks[i]) 
+          }
+          if(dl) {
+            graphics::text(xlim[side.ticks] - length.ticks - (distance.labels * length.ticks * 1.8), at[i],
+              labels = labels[i], col = col.labels[i], cex = cex.labels[i], ...)
+          }
+        }
+      }
+    }
+  }
+  if(!add && plot)
+    par(op)
+  if(xpd)
+    par(xpd = op$xpd)
+
+  return(invisible(pal))
+}
+
+
+dopos <- function(pos, limits, width, height, side.legend)
+{
+  if(side.legend > 1L)
+    limits <- rev(limits)
+  if(pos == "bottomleft") {
+    xlim <- c(min(limits[[1L]], na.rm = TRUE), min(limits[[1L]], na.rm = TRUE) + width)
+    ylim <- c(min(limits[[2L]], na.rm = TRUE), min(limits[[2L]], na.rm = TRUE) + height)
+  }
+  if(pos == "topleft") {
+    xlim <- c(min(limits[[1L]], na.rm = TRUE), min(limits[[1L]], na.rm = TRUE) + width)
+    ylim <- c(max(limits[[2L]], na.rm = TRUE) - height, max(limits[[2L]], na.rm = TRUE))
+  }
+  if(pos == "topright") {
+    xlim <- c(max(limits[[1L]], na.rm = TRUE) - width, max(limits[[1L]], na.rm = TRUE))
+    ylim <- c(max(limits[[2L]], na.rm = TRUE) - height, max(limits[[2L]], na.rm = TRUE))
+  }
+  if(pos == "bottomright") {
+    xlim <- c(max(limits[[1L]], na.rm = TRUE) - width, max(limits[[1L]], na.rm = TRUE))
+    ylim <- c(min(limits[[2L]], na.rm = TRUE), min(limits[[2L]], na.rm = TRUE) + height)
+  }
+
+  return(list(xlim = xlim, ylim = ylim))
+}

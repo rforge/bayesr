@@ -1,0 +1,61 @@
+plotsamples <- function(x, selected = "NA", acf = FALSE, var = FALSE, ...)
+{
+  if(is.null(x))
+    return(invisible(NULL))
+  args <- list(...)
+  xlab <- args$xlab
+  ylab <- args$ylab
+  main <- args$main
+  if(!is.matrix(x))
+    x <- matrix(x, length(x), 1L)
+  nr <- ncol(x)
+  op <- par(no.readonly = TRUE)
+  args$xlab <- NA
+  args$ylab <- NA
+  args$main <- NA
+  if(!acf) {
+    args$type <- "l"
+    args$x <- 1L:nrow(x)
+  } else args$verbose <- FALSE
+  if(nr > 1L)
+    setmfrow(nr)
+  if(var) {
+    outer <- FALSE
+    line <- 2L
+  } else {
+    par(mar = c(2, 2, 2, 2))
+    outer <- TRUE
+    line <- 0L
+  }
+  for(k in 1L:nr) {
+    if(!acf) {
+      args$y <- x[,k]
+      do.call(graphics::plot.default, args)
+    } else {
+      args$x <- stats::ts(data = x[,k])
+      do.call(stats::acf, args)
+    }
+    if(!is.null(xlab))
+      mtext(xlab, side = 1L, line = line, outer = outer, font = 1L)
+    if(!is.null(ylab))
+      mtext(ylab, side = 2L,line = line, outer = outer, font = 1L)
+    if(!is.null(main))
+      mtext(main, side = 3L, line = line, outer = outer, font = 2L, cex = 1)
+    if(is.null(main)) {
+      if(var)
+        ptxt <- "Variance"
+      else
+        ptxt <- "Coeffiecient(s)"
+      if(acf)
+        ptxt <- paste(ptxt, "autocorrelation")
+      else
+        ptxt <- paste(ptxt, "sampling path(s)")
+      ptxt <- paste(ptxt, "of term", selected)
+      mtext(ptxt, side = 3L, line = line, outer = outer, font = 2L, cex = 1)
+    }
+  }
+  if(nr > 1L)
+    par(op)
+
+  return(invisible(NULL))
+}

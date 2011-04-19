@@ -1,0 +1,122 @@
+\documentclass[article]{jss}
+%\documentclass[nojss]{jss}
+\usepackage{amsmath,amssymb,amsfonts,thumbpdf}
+
+%% additional commands
+\newcommand{\squote}[1]{`{#1}'}
+\newcommand{\dquote}[1]{``{#1}''}
+\newcommand{\fct}[1]{{\texttt{#1()}\index{#1@\texttt{#1()}}}}
+\newcommand{\class}[1]{\dquote{\texttt{#1}}}
+%% for internal use
+\newcommand{\fixme}[1]{\emph{\marginpar{FIXME} (#1)}}
+\newcommand{\readme}[1]{\emph{\marginpar{README} (#1)}}
+
+\author{Nikolaus Umlauf\\Universit\"at Innsbruck \And
+        Thomas Kneib\\Universit\"at Oldenburg \And
+        Stefan Lang\\Universit\"at Innsbruck \And        
+        Achim Zeileis\\Universit\"at Innsbruck}
+\Plainauthor{Nikolaus Umlauf, Thomas Kneib, Stefan Lang, Achim Zeileis}
+
+\title{Structured Additive Regression Models: An \proglang{R} Interface to \pkg{BayesX}}
+\Plaintitle{Structured Additive Regression Models: An R Interface to BayesX}
+
+\Keywords{STAR models, MCMC, REML, stepwise, \proglang{R}}
+\Plainkeywords{STAR models, MCMC, REML, stepwise, R}
+
+%% \Volume{13}
+%% \Issue{9}
+%% \Month{September}
+%% \Year{2004}
+%% \Submitdate{2004-09-29}
+%% \Acceptdate{2004-09-29}
+
+\Abstract{
+  \dots
+}
+
+\Address{
+  Nikolaus Umlauf, Stefan Lang, Achim Zeileis\\
+  Department of Statistics\\
+  Universit\"at Innsbruck\\
+  Universit\"atsstr.~15\\
+  A-6020 Innsbruck, Austria\\
+  E-mail: \email{Nikolaus.Umlauf@uibk.ac.at},\\
+  \phantom{E-mail: }\email{Stefan.Lang@uibk.ac.at},\\
+  \phantom{E-mail: }\email{Achim.Zeileis@R-project.org}\\
+  URL: \url{http://www.uibk.ac.at/statistics/personal/umlauf/},\\
+  \phantom{URL: }\url{http://www.uibk.ac.at/statistics/personal/lang/},\\
+  \phantom{URL: }\url{http://eeecon.uibk.ac.at/~zeileis/}\\
+  
+  Thomas Kneib\\
+  Department of Mathematics\\
+  Universit\"at Oldenburg\\
+  D-26111 Oldenburg, Germany \\
+  E-mail: \email{Thomas.Kneib@uni-oldenburg.de}\\
+  URL: \url{http://www.staff.uni-oldenburg.de/thomas.kneib/}
+}
+
+%% Sweave/vignette information and metadata
+%% need no \usepackage{Sweave}
+\SweaveOpts{engine = R, eps = FALSE, keep.source = TRUE}
+%\VignetteIndexEntry{Structured Additive Regression Models: An R Interface to BayesX}
+%\VignetteDepends{colorspace,mgcv,BayesX,akima}
+%\VignetteKeywords{STAR models, MCMC, REML, stepwise, R}
+%\VignettePackage{R2BayesX}
+
+<<preliminaries, echo=FALSE, results=hide>>=
+options(width = 70, prompt = "R> ", continue = "+  ")
+library("R2BayesX")
+@
+
+
+\begin{document}
+
+
+\section{Introduction} \label{sec:intro}
+
+This is the intro
+
+\section{STAR models}\label{sec:model} 
+
+The intro section, package \pkg{R2BayesX} \cite{Kneib+Heinzl+Brezger:2011} that interfaces
+the \pkg{BayesX} \citep{Brezger+Kneib+Lang:2005} to \proglang{R} \citep{R}
+\dots
+
+
+\section[Implementation in R]{Implementation in \proglang{R}} \label{sec:implementation}
+
+\dots
+
+
+\section{STAR models in practice} \label{sec:illustrations}
+
+\dots
+
+\begin{figure}[t!]
+\begin{center}
+\setkeys{Gin}{width=0.6\textwidth}
+<<plot2d-example, echo=FALSE, fig=TRUE, width=6, height=3>>=
+set.seed(111)
+n <- 500
+x <- runif(n, -3, 3)
+y <- 10 + sin(x)
+plot2d(y ~ x)
+@
+\caption{\label{fig:plot2d-exmple} Some nice plot example.}
+\end{center}
+\end{figure}
+
+
+
+\section{Summary}\label{sec:conclusion}
+
+\dots
+
+
+\section*{Acknowledgments}
+
+
+\bibliography{R2BayesX}
+
+
+\end{document}
