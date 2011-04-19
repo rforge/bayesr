@@ -72,11 +72,11 @@ ste <- function(x,z, by = NULL, degree = c(3,3), knots = c(20,20), orderpenalty 
 				I1 <- diag(1, nrow(ps1$K), ncol(ps1$K))
 				I2 <- diag(1, nrow(ps2$K), ncol(ps2$K))
     
-     				B <- matrix(0, n, 0)
+     		B <- matrix(0, n, 0)
 				bmx <- ps1$basis[mx,]
 				bmz <- ps2$basis[mz,]
 				mxz <- matrix(0,1,0)
-      			for (k in 1:ncol(ps1$basis)) 
+        for (k in 1:ncol(ps1$basis)) 
 					{
 					B <- cbind(B, ps1$basis[,k]*ps2$basis)
 					mxz <- c(mxz,bmx[k]*bmz)
@@ -104,11 +104,11 @@ ste <- function(x,z, by = NULL, degree = c(3,3), knots = c(20,20), orderpenalty 
 				ps1 <- sps(x=x,degree=degree[1],knots=knots[1],orderpenalty=orderpenalty[1])
 				ps2 <- sps(x=z,degree=degree[2],knots=knots[2],orderpenalty=orderpenalty[2])
     
-     				B <- matrix(0, n, 0)
+     		B <- matrix(0, n, 0)
 				bmx <- ps1$basis[mx,]
 				bmz <- ps2$basis[mz,]
 				mxz <- matrix(0,1,0)
-      			for (k in 1:ncol(ps1$basis)) 
+        for (k in 1:ncol(ps1$basis)) 
 					{
 					B <- cbind(B, ps1$basis[,k]*ps2$basis)
 					mxz <- c(mxz,bmx[k]*bmz)

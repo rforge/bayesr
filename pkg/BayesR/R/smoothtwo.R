@@ -34,11 +34,11 @@ smoothtwo <- function(X,grid,xlab,ylab,zlab,main,theta,phi,image,const,col,color
 	if(ipcheck)
 		{
 		fitted <- list()
-		fitted$mean <- akima::interp(x,z,X[,3],xo=xn,yo=zn,duplicat="strip")$z
+		fitted$mean <- akima::interp(x,z,X[,3],xo=xn,yo=zn,duplicate="strip")$z
 		if(secheck)
 			{
-			fitted$q1 <- akima::interp(x,z,X[,4],xo=xn,yo=zn)$z
-			fitted$q2 <- akima::interp(x,z,X[,8],xo=xn,yo=zn)$z
+			fitted$q1 <- akima::interp(x,z,X[,4],xo=xn,yo=zn,duplicate="strip")$z
+			fitted$q2 <- akima::interp(x,z,X[,8],xo=xn,yo=zn,duplicate="strip")$z
 			}
 		names <- colnames(X)[1:2]
 		}

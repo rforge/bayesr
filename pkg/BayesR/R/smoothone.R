@@ -168,6 +168,6 @@ smoothone <- function(x, resid = FALSE, jit = TRUE, const = FALSE, diagnostics =
 			lines(f021[order(x)]~x[order(x)],lty=2,lwd=lwdconf)
 			}
 		if(jit)
-			rug(x,ticksize=0.02,lwd=0.1)
+			rug(jitter(x))
 		}
 	}

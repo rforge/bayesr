@@ -1,6 +1,6 @@
 plot.gibbs <- function(x, which = 1, resid = FALSE, jit = TRUE, const = FALSE, diagnostics = FALSE, acf = FALSE, xlab = NULL, ylab = NULL, zlab = NULL, main = NULL, 
 		       colored = TRUE, col = FALSE, lwdc = 1, lwdconf = 0, grid = 30, theta = 40, phi = 40, image = FALSE,
-		       map = NULL, names = FALSE, values = NULL, range = NULL, pal = "heat", legend = TRUE, scale = 0.2, nrc = 100, dgts = 2, lpos = c(0.2,0),
+		       map = NULL, names = FALSE, values = NULL, range = NULL, pal = "heat", legend = TRUE, scale = 0, nrc = 100, dgts = 2, lpos = c(0,0),
                        cex = 1, ask = FALSE, byplots = FALSE, p3d = FALSE, pcat = NULL, border = NULL, ...)
 	{
 	if(!inherits(x,"gibbs"))
@@ -253,6 +253,7 @@ plot.gibbs <- function(x, which = 1, resid = FALSE, jit = TRUE, const = FALSE, d
 									}
 								effplot <- FALSE
 								}		
+
 							else
 								effplot <- TRUE
 							}
