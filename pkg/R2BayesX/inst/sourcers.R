@@ -3,15 +3,7 @@ dir1 <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 files <- list.files(dir1)
 for(i in 1:length(files))
   source(paste(dir1, "/", files[i], sep = "")) 
-b <- read.bayesx.output("/tmp/RtmpjoTH9E/bayesx")
-
-
-
-
-
-
-colorlegend(side.legend = 2, pos = "topleft", xpd = TRUE)
-
+b <- bayesx(y ~ s(x, bs = "ps", by = id), data = dat, method = "REML")
 
 
 

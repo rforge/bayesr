@@ -410,10 +410,10 @@ plot(b)
 ## estimate varying coefficient models
 set.seed(333)
 n <- 1000
-dat <- data.frame(x = runif(n, -3, 3), id = factor(rep(1:5, n/5)))
+dat <- data.frame(x = runif(n, -3, 3), id = factor(rep(1:4, n/4)))
 
 ## response
-dat$y <- with(dat, 1.5 + sin(x) * c(-1, 0.2, 1, 3, -2)[id] + rnorm(n, sd = 0.6))
+dat$y <- with(dat, 1.5 + sin(x) * c(-1, 0.2, 1, 3)[id] + rnorm(n, sd = 0.6))
 
 # estimate model
 b <- bayesx(y ~ s(x, bs = "ps", by = id), data = dat)
