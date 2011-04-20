@@ -195,7 +195,7 @@ write.term.info <- function(file, terms, data, object = NULL, contrasts.arg = NU
         te <- eval(parse(text = terms[k]))
         fby <- FALSE
         if(te$by != "NA") {
-          by <- eval(parse(text = te$by), envir = data)
+          by <- data[[te$by]]
           if(is.factor(by)) {
             fby <- TRUE
             fnv <- paste("c(", paste("\'", te$by, levels(by), "\'", sep = "", collapse = ","), 
@@ -203,6 +203,7 @@ write.term.info <- function(file, terms, data, object = NULL, contrasts.arg = NU
           }
         }
         if(fby) {
+          te$label <- gsub(")", paste(",by=", te$by, ")", sep = ""), te$label)
           info <- paste("list(term=\'", te$label, "\',pos=", k, ",by=\'", te$by,
             "\',isFactor=FALSE", ",isFactorBy=", fby, ",isFactorByNames=", fnv, ")", sep = "")
         } else {
