@@ -31,7 +31,17 @@
 %% \Acceptdate{2004-09-29}
 
 \Abstract{
-  \dots
+  This article describes the \proglang{R} interface to \pkg{BayesX}, a standalone open-source 
+  software package for analyzing structured additive regression models (STAR). 
+  STAR models provide a flexible framework for modeling possible nonlinear effects of covariates: 
+  They contain the well established frameworks of generalized linear models (GLM) and generalized 
+  additive models (GAM) as special cases but also allow a wider class of effects, e.g., for 
+  geographical or spatio-temporal data. This allows for the specification of complex and realistic 
+  models that can typically be conveniently estimated using Bayesian inference based on modern 
+  Markov chain Monte Carlo (MCMC) simulation techniques or a mixed model representation. 
+  The presented \proglang{R} implementation is an extension of the already existing CRAN package 
+  \pkg{BayesX}, which previously provided only functions for exploring estimation results, with a 
+  complete interactive interface.
 }
 
 \Address{
@@ -76,6 +86,7 @@ library("R2BayesX")
 
 This is the intro
 
+
 \section{STAR models}\label{sec:model} 
 
 The intro section, package \pkg{R2BayesX} \cite{Kneib+Heinzl+Brezger:2011} that interfaces
@@ -85,27 +96,120 @@ the \pkg{BayesX} \citep{Brezger+Kneib+Lang:2005} to \proglang{R} \citep{R}
 
 \section[Implementation in R]{Implementation in \proglang{R}} \label{sec:implementation}
 
-\dots
+Model fitting function \fct{bayesx}
+%
+\begin{Sinput}
+bayesx(formula, data, weights = NULL, subset = NULL, 
+  offset = NULL, na.action = na.fail, contrasts = NULL, 
+  control = bayesx.control(...), ...)
+\end{Sinput}
+%
 
 
 \section{STAR models in practice} \label{sec:illustrations}
 
-\dots
+Section with two examples: Childhood malnutrition in Zambia and the forest health data.
+
+
+\subsection{Childhood malnutrition in Zambia} \label{subsec:zambia}
+
+\begin{table}[t!]
+\begin{center}
+\begin{tabular}{|l|p{10cm}|}
+\hline
+Variable           & Description \\ \hline
+\code{stunting}    & standardised Z-score for stunting. \\ \hline
+\code{bmi}         & body mass index of the mother. \\ \hline
+\code{agechild}    & age of the child in months. \\ \hline
+\code{district}    & district where the mother lives. \\ \hline
+\code{memployment} & mother's employment status with categories `working' and 
+                     `not working'. \\ \hline
+\code{education}   & mother's educational status with categories for complete primary but incomplete 
+                     secondary `no/incomplete', complete secondary or higher `minimum primary' and 
+                     no education or incomplete primary `minimum secondary'. \\ \hline
+\code{urban}       & locality of the domicile with categories `yes' and `no'. \\ \hline
+\code{gender}      & gender of the child with categories `male' and `female'. \\ hline
+\end{tabular}
+\caption{\label{tab:zambia} Variables in the data set on childhood malnutrition in Zambia.}
+\end{center}
+\end{table}
+
+\begin{Sinput}
+R> data("ZambiaNutrition", package = "R2BayesX")
+R> data("ZambiaBnd")
+R> b <- bayesx(stunting ~ memployment + education + urban + gender + 
++    s(bmi, bs = "ps") + s(agechild, bs = "ps") +
++    s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district),
++    iter = 12000, burnin = 2000, step = 10, data = ZambiaNutrition)
+R> summary(b)
+Call:
+bayesx(formula = stunting ~ memployment + education + urban + 
+    gender + s(bmi, bs = "ps") + s(agechild, bs = "ps") + s(district, 
+    bs = "mrf", xt = list(map = ZambiaBnd)) + r(district), data = ZambiaNutrition, 
+    iter = 12000, burnin = 2000, step = 10)
+--- 
+Fixed effects estimation results:
+-
+Parametric Coefficients:
+                              Mean      Sd    2.5%     50%   97.5%
+(Intercept)                 0.0026  0.0540 -0.1080  0.0029  0.1075
+memploymentworking          0.0163  0.0268 -0.0374  0.0174  0.0674
+educationminimum_secondary  0.2956  0.0736  0.1483  0.2977  0.4288
+educationno_incomplete     -0.1131  0.0296 -0.1694 -0.1133 -0.0538
+urbanyes                    0.1813  0.0438  0.0911  0.1819  0.2653
+gendermale                 -0.1168  0.0260 -0.1688 -0.1160 -0.0628
+-
+Smooth terms:
+              Mean     Sd   2.5%    50%  97.5%    Min    Max
+s(agechild) 0.0062 0.0068 0.0012 0.0043 0.0237 0.0007 0.0770
+s(bmi)      0.0021 0.0039 0.0003 0.0012 0.0093 0.0002 0.0701
+s(district) 0.0356 0.0182 0.0111 0.0316 0.0811 0.0035 0.1214
+--- 
+Random effects variances:
+              Mean     Sd   2.5%    50%  97.5%    Min   Max
+r(district) 0.0076 0.0057 0.0007 0.0061 0.0220 0.0002 0.039
+--- 
+Scale estimate:
+         Mean     Sd   2.5%    50%  97.5%
+Sigma2 0.8023 0.0164 0.7701 0.8018 0.8347
+--- 
+family = gaussian  method = MCMC  N = 4847  iterations = 12000  
+burnin = 2000  thinning = 10  DIC = 4900.192  pd = 50.69634
+R> plot(b1, term = c("s(agechild)", "s(bmi)"))
+\end{Sinput}
 
 \begin{figure}[t!]
 \begin{center}
-\setkeys{Gin}{width=0.6\textwidth}
-<<plot2d-example, echo=FALSE, fig=TRUE, width=6, height=3>>=
-set.seed(111)
-n <- 500
-x <- runif(n, -3, 3)
-y <- 10 + sin(x)
-plot2d(y ~ x)
-@
-\caption{\label{fig:plot2d-exmple} Some nice plot example.}
+\setkeys{Gin}{width=0.5\textwidth}
+%% pdf(file = "/home/c403129/svn/bayesr/pkg/R2BayesX/inst/JSS/zambia-agechild.pdf", width = 6, height = 5.5)
+%% plot(b, term = "s(agechild)")
+%% graphics.off()
+%% pdf(file = "/home/c403129/svn/bayesr/pkg/R2BayesX/inst/JSS/zambia-bmi.pdf", width = 6, height = 5.5)
+%% plot(b, term = "s(bmi)")
+%% graphics.off()
+\includegraphics{zambia-agechild.pdf}\includegraphics{zambia-bmi.pdf}
+\caption{\label{fig:zambia-agechild-bmi} Example on childhood undernutrition: Effect of the body 
+  mass index of the child's mother and of the age of the child together with pointwise 80\% and 95\% 
+  credible intervals.}
 \end{center}
 \end{figure}
 
+\begin{figure}[t!]
+\begin{center}
+\setkeys{Gin}{width=0.5\textwidth}
+%% pdf(file = "/home/c403129/svn/bayesr/pkg/R2BayesX/inst/JSS/zambia-district.pdf", 
+%%  width = 6, height = 5.5)
+%% par(mar = c(0, 0, 0, 0))
+%% plot(b, term = "s(district)", map = ZambiaBnd, pos = c(0, 1))
+%% graphics.off()
+\includegraphics{zambia-district.pdf}
+\caption{\label{fig:zambia-district} Example on childhood undernutrition: Structured spatial 
+  effect.}
+\end{center}
+\end{figure}
+
+
+\subsection{Forest health data set} \label{subsec:forest}
 
 
 \section{Summary}\label{sec:conclusion}

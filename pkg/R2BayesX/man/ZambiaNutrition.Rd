@@ -28,12 +28,12 @@ A data frame containing 4847 observations on 8 variables.
   \item{bmi:}{body mass index of the mother.}
   \item{agechild:}{age of the child in months.}
   \item{district:}{district where the mother lives.}
-  \item{memployment:}{mother's employment status with categories "working" and "not working".}
+  \item{memployment:}{mother's employment status with categories `working' and `not working'.}
   \item{education:}{mother's educational status with categories for complete primary but 
-    incomplete secondary "no/incomplete", complete secondary or higher "minimum primary" and no 
-    education or incomplete primary "minimum secondary".}
-  \item{urban:}{locality of the domicile with categories "yes" and "no".}
-  \item{gender:}{gender of the child with categories "male" and "female".}
+    incomplete secondary `no/incomplete', complete secondary or higher `minimum primary' and no 
+    education or incomplete primary `minimum secondary'.}
+  \item{urban:}{locality of the domicile with categories `yes' and `no'.}
+  \item{gender:}{gender of the child with categories `male' and `female'.}
 }
 }
 
