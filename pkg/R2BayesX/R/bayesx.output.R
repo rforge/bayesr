@@ -580,7 +580,7 @@ make.label <- function(cx, xnam, dimx, vx)
   if(is.null(vx))
     label <- paste(label, ")", sep = "")
   else
-    label <- paste(label, ",by=", vx, ")", sep = "")
+    label <- paste(label, "):", vx, sep = "")
 
   return(label)
 }

@@ -3,13 +3,12 @@ dir1 <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 files <- list.files(dir1)
 for(i in 1:length(files))
   source(paste(dir1, "/", files[i], sep = "")) 
-b <- bayesx(y ~ s(x, bs = "ps", by = id), data = dat, method = "REML")
+plot(b, map = MunichMap)
 
 
 
 
-
-b1 <- bayesx(y ~ s(x, bs = "ps"), method = "REML", data = dat, dir.rm = FALSE)
+b1 <- bayesx(y ~ s(x, bs = "ps", by = id), method = "REML", data = dat, dir.rm = FALSE)
 
  
 

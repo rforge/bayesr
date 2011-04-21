@@ -100,7 +100,7 @@ colorlegend <- function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
     if(ticks || dl) {
       if(is.null(at)) {
         at <- pal$breaks
-        if(diff(lrange) / length(at) < 0.2)
+        if(abs(diff(lrange / max(lrange))) / length(at) < 0.2)
           at <- seq(min(lrange), max(lrange), length.out = 3L)
       }
       if(is.null(labels))

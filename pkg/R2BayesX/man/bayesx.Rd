@@ -416,7 +416,9 @@ dat <- data.frame(x = runif(n, -3, 3), id = factor(rep(1:4, n/4)))
 dat$y <- with(dat, 1.5 + sin(x) * c(-1, 0.2, 1, 3)[id] + rnorm(n, sd = 0.6))
 
 # estimate model
-b <- bayesx(y ~ s(x, bs = "ps", by = id), data = dat)
+b <- bayesx(y ~ s(x, bs = "ps", by = id), method = "REML", data = dat)
+summary(b)
+plot(b)
 }
 }
 

@@ -45,7 +45,7 @@ term.reorder <- function(x, info)
         by <- list()
         xl <- names(x)
         for(k in 1L:length(term$isFactorByNames))
-          if(length(j <- grep(paste("by=", term$isFactorByNames[k], sep = ""), xl, fixed = TRUE))) {
+          if(length(j <- grep(paste("):", term$isFactorByNames[k], sep = ""), xl, fixed = TRUE))) {
             by[[xl[j]]] <- x[[j]]
             taken <- c(taken, j)
           }
