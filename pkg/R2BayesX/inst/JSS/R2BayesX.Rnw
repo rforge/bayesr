@@ -128,7 +128,7 @@ Variable           & Description \\ \hline
                      secondary `no/incomplete', complete secondary or higher `minimum primary' and 
                      no education or incomplete primary `minimum secondary'. \\ \hline
 \code{urban}       & locality of the domicile with categories `yes' and `no'. \\ \hline
-\code{gender}      & gender of the child with categories `male' and `female'. \\ hline
+\code{gender}      & gender of the child with categories `male' and `female'. \\ \hline
 \end{tabular}
 \caption{\label{tab:zambia} Variables in the data set on childhood malnutrition in Zambia.}
 \end{center}

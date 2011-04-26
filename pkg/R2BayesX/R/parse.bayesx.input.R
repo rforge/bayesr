@@ -5,6 +5,15 @@ parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, off
     data <- environment(formula)
   if(is.matrix(data))
     data <- as.data.frame(data)
+  if(!is.character(weights))
+    weights <- deparse(substitute(weights), backtick = TRUE, width.cutoff = 500L)
+  else if(weights == "NULL") weights <- NULL
+  if(!is.character(offset))
+    offset <- deparse(substitute(offset), backtick = TRUE, width.cutoff = 500L)
+  else if(offset == "NULL") offset <- NULL
+  if(!is.character(subset))
+    subset <- deparse(substitute(subset), backtick = TRUE, width.cutoff = 500L)
+  else if(subset == "NULL") subset <- NULL
   co.id <- attr(control, "co.id")
   outfile <- control$outfile
   control$oformula <- formula
@@ -45,6 +54,24 @@ parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, off
   } else environment(formula) <- parent.frame()
   control$formula <- formula
   if(!is.character(data)) {
+    if(!is.null(weights) && is.character(weights)) {
+      W <- data[[weights]]
+      if(is.null(W))
+        W <- eval(parse(text = weights), envir = .GlobalEnv)
+      weights <- W
+    }
+    if(!is.null(offset) && is.character(offset)) {
+      O <- data[[offset]]
+      if(is.null(O))
+        O <- eval(parse(text = offset), envir = .GlobalEnv)
+      offset <- O
+    }
+    if(!is.null(subset) && is.character(subset)) {
+      S <- data[[subset]]
+      if(is.null(S))
+        S <- eval(parse(text = subset), envir = .GlobalEnv)
+      subset <- S
+    }
     ff <- formula
     Yn <- as.character(ff[2L])
     Y <- eval(parse(text = Yn), envir = data)
@@ -63,9 +90,9 @@ parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, off
     } else {
       if(only || only2) {
         if(length(Y) > length(weights))
-          weights <- weights[get.unique(Y, 22)$ind]
+          weights <- weights[get.unique(Y, 22L)$ind]
         if(length(Y) > length(offset))
-          offset <- offset[get.unique(Y, 22)$ind]
+          offset <- offset[get.unique(Y, 22L)$ind]
       }
       ml <- list(formula = ff, data = data, weights = weights, subset = subset,
         offset = offset, na.action = na.action, contrasts = contrasts, drop.unused.levels = TRUE)

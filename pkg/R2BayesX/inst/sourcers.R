@@ -3,7 +3,43 @@ dir1 <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 files <- list.files(dir1)
 for(i in 1:length(files))
   source(paste(dir1, "/", files[i], sep = "")) 
-plot(b, map = MunichMap)
+e <- resid(c(b1, b2), term = "s(x)")
+
+
+b <- read.bayesx.output("/tmp/Rtmp4RFbJY/bayesx")
+
+
+b3 <- bayesx(y ~ s(x, bs = "ps"), weights = subs*1, data = dat, dir.rm = FALSE)
+
+
+
+## experiment with weights 
+set.seed(123)
+n <- 300
+dat <- data.frame(x = seq(-3, 3, length = n))
+dat$y <- with(dat, 1.5 + sin(x) + 
+  rnorm(n, sd = (0.1 + seq(0, 0.4, length = n))))
+
+b1 <- bayesx(y ~ s(x, bs = "ps"), data = dat)
+summary(b1)
+plot(b1, resid = TRUE)
+
+dat$ressqrt <- residuals(b1)[,1L]^2
+b2 <- bayesx(ressqrt ~ x, data = dat)
+plot(b2, resid = TRUE)
+
+dat$W <- exp(fitted(b2)[,1L])
+b3 <- bayesx(y ~ s(x, bs = "ps"), weights = W, data = dat)
+
+summary(c(b1, b3))
+plot(c(b1, b3), resid = TRUE)
+
+
+
+
+
+
+
 
 
 

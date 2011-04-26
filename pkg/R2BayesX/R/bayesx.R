@@ -9,10 +9,9 @@ bayesx <- function(formula, data, weights = NULL, subset = NULL,
 
   res <- list()
   res$formula <- formula
-  if(!missing(data) && is.character(data)) {
-    weights <- deparse(substitute(weights), backtick = TRUE, width.cutoff = 500L)
-    offset <- deparse(substitute(offset), backtick = TRUE, width.cutoff = 500L)
-  }
+  weights <- deparse(substitute(weights), backtick = TRUE, width.cutoff = 500L)
+  offset <- deparse(substitute(offset), backtick = TRUE, width.cutoff = 500L)
+  subset <- deparse(substitute(subset), backtick = TRUE, width.cutoff = 500L)
 
   ## setup files for bayesx
   res$bayesx.setup <- parse.bayesx.input(formula, data,

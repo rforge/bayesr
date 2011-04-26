@@ -401,6 +401,7 @@ read.bayesx.model.output <- function(dir, model.name)
     ## set response and predictor
     N <- NA
     response <- eta <- residuals <- NULL
+    data[data == "."] <- "NA"
     if(!is.null(data)) {
       data <- as.data.frame(data)
       data$intnr <- NULL
@@ -408,6 +409,8 @@ read.bayesx.model.output <- function(dir, model.name)
       data <- data[dn]
       if(is.null(response))
         response <- data[[1L]]
+      if(is.factor(response)) 
+        response <- as.numeric(as.character(response))
       N <- length(response)
       rval$fitted.values <- eta <- get.eta(data)
       rval$residuals <- response - eta
@@ -611,7 +614,9 @@ blow.up.resid <- function(data, x, xnam, response, eta, dimx, cx)
     for(k in 1L:length(xnam))
       eval(parse(text = paste("x$", xnam[k] , "<- NULL", sep = "")))
     x <- as.matrix(x)
-    x <- cbind(co[ind,], response - eta[,1L] + x[,1L], id[ind])
+    pres <- response - eta[,1L] + x[,1L]
+    pres <- pres - mean(x[,1L], na.rm = TRUE)
+    x <- cbind(co[ind,], pres, id[ind])
     if(ncol(x) < 3L)
       colnames(x) <- c("x.co", "partial.resids")
     else {
@@ -636,9 +641,10 @@ get.eta <- function(data)
   eta <- NULL
   for(e in etaspec)
     if(e %in% nd)
-      eta <- cbind(eta, as.matrix(data[e]))  
+      eta <- cbind(eta, as.matrix(data[e], mode = "numeric"))  
   if(!is.null(eta))
     rownames(eta) <- 1L:nrow(eta)
+  storage.mode(eta) <- "numeric"
 
   return(eta)
 }

@@ -81,7 +81,6 @@ write.bayesx.input <- function(object)
   if(!is.null(object$h.random))
     for(k in 1:length(object$h.random))
       write.bayesx.input(object$h.random[[k]])
-
   if(is.null(data.file)) {
     tf <- as.character(object$formula)
     if(grepl(tf[2L], tf[3L], fixed = TRUE))
@@ -175,12 +174,13 @@ write.bayesx.input <- function(object)
     if(!ok)
       warning("variable names in specified data file do not match with formula variable names!")
   }
+
+  st <- split.terms(attr(object$terms, "term.labels"), vars, object$data, dropvars)
   bayesx.prg <- write.prg.setup(object$Yn, object, prg.file, data.file,
-    thismodel, split.terms(attr(object$terms, "term.labels"), vars, object$data, dropvars))
+    thismodel, st)
   if(!is.h)
     cat("logclose \n", file = prg.file, append = TRUE)
   setwd(wd)
-
   return(invisible(list(prg = bayesx.prg, prg.name = prg.file,
     model.name = object$model.name, file.dir = object$outfile)))
 }
@@ -293,8 +293,14 @@ split.terms <- function(terms, vars, data, dropvars)
         linvars <- linvars[linvars != drop]
     }
   } else smt <- lv <- NULL
+  if(!is.null(smt))
+    smt <- na.omit(smt)
+  if(!is.null(linvars))
+    linvars <- na.omit(linvars)
+  if(!is.null(vars))
+    vars <- na.omit(vars)
 
-  return(list(terms = na.omit(smt), linvars = na.omit(linvars), vars = na.omit(vars)))
+  return(list(terms = smt, linvars = linvars, vars = vars))
 }
 
 
@@ -343,7 +349,7 @@ write.prg.setup <- function(response, object, prg.file, data.file, thismodel, te
       bt <- c(bt,"const")
   if(!is.null(add.terms)) {
     for(k in 1L:length(add.terms)) {
-      st <- eval(parse(text=add.terms[k]))
+      st <- eval(parse(text = add.terms[k]))
       stclass <- class(st)
       if(stclass %in% c("tp.smooth.spec", "cs.smooth.spec")) {
         txt <- paste("constructor class \"", stclass, 
