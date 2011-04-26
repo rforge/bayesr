@@ -141,7 +141,8 @@ data("ZambiaBnd")
 zm <- bayesx(stunting ~ memployment + education + urban + gender + 
   s(bmi, bs = "ps") + s(agechild, bs = "ps") +
   s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district),
-  iter = 12000, burnin = 2000, step = 10, data = ZambiaNutrition)
+  iter = 12000, burnin = 2000, step = 10, setseed = 123,
+  data = ZambiaNutrition)
 @
 
 <<cache-zambia-model, echo=FALSE, eval=TRUE>>=
@@ -160,7 +161,7 @@ summary(zm)
 \begin{figure}[t!]
 \begin{center}
 \setkeys{Gin}{width=1\textwidth}
-<<zambia-agechild-bmi, echo=FALSE, fig=TRUE, width=12, height=5>>=
+<<zambia-agechild-bmi, echo=FALSE, fig=TRUE, width=13, height=5.5>>=
 par(mfrow = c(1, 2))
 par(mar = c(4.1, 4.1, 0.1, 2.1))
 plot(zm, term = "s(agechild)")
