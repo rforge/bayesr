@@ -401,8 +401,9 @@ read.bayesx.model.output <- function(dir, model.name)
     ## set response and predictor
     N <- NA
     response <- eta <- residuals <- NULL
-    data[data == "."] <- "NA"
     if(!is.null(data)) {
+      data[data == "."] <- "NA"
+      mode(data) <- "numeric"
       data <- as.data.frame(data)
       data$intnr <- NULL
       dn <- unique(names(data))

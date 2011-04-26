@@ -181,6 +181,7 @@ write.bayesx.input <- function(object)
   if(!is.h)
     cat("logclose \n", file = prg.file, append = TRUE)
   setwd(wd)
+
   return(invisible(list(prg = bayesx.prg, prg.name = prg.file,
     model.name = object$model.name, file.dir = object$outfile)))
 }

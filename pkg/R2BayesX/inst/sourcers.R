@@ -3,10 +3,7 @@ dir1 <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 files <- list.files(dir1)
 for(i in 1:length(files))
   source(paste(dir1, "/", files[i], sep = "")) 
-e <- resid(c(b1, b2), term = "s(x)")
-
-
-b <- read.bayesx.output("/tmp/Rtmp4RFbJY/bayesx")
+b <- read.bayesx.output("/tmp/Rtmpz7Psnz/bayesx")
 
 
 b3 <- bayesx(y ~ s(x, bs = "ps"), weights = subs*1, data = dat, dir.rm = FALSE)

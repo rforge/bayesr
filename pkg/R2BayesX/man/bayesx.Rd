@@ -422,7 +422,7 @@ plot(b)
 
 
 ## experiment with weights 
-set.seed(123)
+set.seed(3)
 n <- 300
 dat <- data.frame(x = seq(-3, 3, length = n))
 dat$y <- with(dat, 1.5 + sin(x) + 
