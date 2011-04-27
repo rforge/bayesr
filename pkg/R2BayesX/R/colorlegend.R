@@ -87,10 +87,10 @@ colorlegend <- function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
     obs2legend <- function(x, xr) ((x - lrange[1L]) / diff(lrange)) * diff(xr) + xr[1L]
     if(side.legend < 2L) {
       graphics::rect(obs2legend(head(br, -1L), xlim), ylim[1L], obs2legend(tail(br, -1L), xlim),
-        ylim[2L], col = cl, border = "transparent")
+        ylim[2L], col = cl, border = cl)
     } else {
       graphics::rect(xlim[1L], obs2legend(head(br, -1L), ylim), xlim[2L], 
-        obs2legend(tail(br, -1L), ylim), col = cl, border = "transparent")
+        obs2legend(tail(br, -1L), ylim), col = cl, border = cl)
     }
     graphics::rect(xlim[1L], ylim[1L], xlim[2L], ylim[2L], 
       border = col.border, lwd = lwd.border, lty = lty.border)

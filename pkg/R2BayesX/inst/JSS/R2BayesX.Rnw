@@ -98,21 +98,66 @@ data("ZambiaBnd")
 The idea to embed the open source software package \pkg{BayesX} \citep{Brezger+Kneib+Lang:2005} in 
 \proglang{R} \citep{R}, provided with an even more interactive and intuitive way to estimate 
 complex regression models using the extensive possibilities of the \proglang{R} language, has been 
-around for quite a while. However, since the development status of the project is already very 
+in mind for quite a while. However, since the development status of the project is already very 
 advanced, and there has been more and more recent interest of an \proglang{R} version of 
 \pkg{BayesX}, the compromise of creating an interface was seen advantageous, not only because of
-a faster development time, but also to provide already familiar users with a toolset, that easily 
-allows to use existing code and model outputs within \proglang{R}. The implementation is therefore 
-structured in several independent functions that first set up the necessary model components, 
-send these to the \pkg{BayesX} binary for processing, read the output files back into \proglang{R} 
-and summarize/visualize the results in the end.
+a faster development time, but also to provide already familiar users with a toolset, that even 
+beside the possibility to formulate STAR models directly, easily allows to use and reanalyze 
+existing code and model output, within \proglang{R}. 
+
+The implementation is therefore structured in several independent operating functions that basically 
+set up the necessary model components at first, send these to the \pkg{BayesX} binary for 
+processing, read the returned output files back into \proglang{R} by conversion to objects of 
+suitable classes, which may then be printed, summarized and visualized.
+
+To present the capabilities of the software, the next section briefly discusses the methodological 
+background of regression models with a structured additive predictor, before an in detail 
+description of the implementation is provided in section~\ref{sec:implementation}. In 
+section~\ref{sec:illustrations}, the interface usability is demonstrated on a complex example with  
+data concerning childhood malnutrition in Zambia as well as on a dataset on forest health.
 
 
 \section{STAR models}\label{sec:model} 
 
-The intro section, package \pkg{R2BayesX} \cite{Kneib+Heinzl+Brezger:2011} that interfaces
-the \pkg{BayesX} \citep{Brezger+Kneib+Lang:2005} to \proglang{R} \citep{R}
-\dots
+The STAR model class supported by \pkg{BayesX} is based on the framework of (Bayesian) generalized 
+linear models (GLM) \citep{Nelder+Wedderburn:1972, Fahrmeir+Tutz:2001}. GLMs assume that, given 
+covariates $u$ and unknown parameters $\gamma$, the distribution of the response variable $y$ 
+belongs to an exponential family with mean $\mu = E(y | u, \gamma)$ linked to a linear predictor 
+$\eta$ by
+\begin{equation} \label{eqn:glm}
+\mu = h(\eta) \qquad \eta = u^{\prime}\gamma,
+\end{equation}
+where $h$ is a known link function and $\gamma$ are unknown regression parameters. For STAR models,
+the linear predictor is replaced by a more general and flexible, so called structured 
+additive predictor given by
+\begin{equation} \label{eqn:structadd}
+\eta = f_1(z_1) + \ldots + f_p(z_p),
+\end{equation}
+where covariates $z_j$, $j = 1,\ldots,p$, are of generic type and dimension, and $f_j$ are possibly 
+smooth functions comprising effects (and combination of effects) as e.g. presented in 
+table~\ref{tab:funtypes}.
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline 
+Function                      & Description \\ \hline
+$f_j(z_j) = u^{\prime}\gamma$ & linear effects, with or without regularization. \\ \hline
+$f_j(z_j) = f(x)$             & nonlinear effects of continuous covariate $x$. \\ \hline
+$f_j(z_j) = f(x_1,x_2)$       & two-dimensional surfaces. \\ \hline
+$f_j(z_j) = f_{spat}(s)$      & spatially correlated effects. \\ \hline
+$f_j(z_j) = x_1f(x_2)$        & varying coefficients. \\ \hline
+$f_j(z_j) = x_1f_{spat}(s)$ or $f_j(z_j) = x_1f(x_2, x_3)$ & spatially varying effects. \\ \hline
+$f_j(z_j) = b_c$              & random intercepts with cluster index $c$. \\ \hline
+$f_j(z_j) = x \, b_c$         & random slopes with cluster index $c$. \\ \hline
+\end{tabular} 
+\caption{\label{tab:funtypes} Examples of possible function types of a structured additive 
+predictor.}
+\end{center}
+\end{table}
+
+
+
+\citep{Brezger+Lang:2006} \citep{Belitz+Lang:2008} \citep{Fahrmeir+Kneib+Lang:2004}
 
 
 \section[Implementation in R]{Implementation in \proglang{R}} \label{sec:implementation}
@@ -200,7 +245,7 @@ credible intervals.}
 par(mar = c(0.1, 0.1, 0.1, 0.1))
 plot(zm, term = "s(district)", map = ZambiaBnd, 
   pos = "topleft", width = 0.6, height = 0.2, 
-  distance.labels = 2)
+  distance.labels = 2, swap = TRUE)
 @
 \end{center}
 \caption{\label{fig:zambia-district-structured} Example on childhood undernutrition: Structured 
@@ -213,12 +258,10 @@ spatial effect.}
 
 \section{Summary}\label{sec:conclusion}
 
-\dots
-
 
 \section*{Acknowledgments}
 
-
+\nocite{Kneib+Heinzl+Brezger:2011}
 \bibliography{R2BayesX}
 
 
