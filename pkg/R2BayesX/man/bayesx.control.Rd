@@ -15,7 +15,7 @@ bayesx.control(model.name = "bayesx.estim",
   family = "gaussian", method = "MCMC", verbose = FALSE, 
   dir.rm = TRUE, bin = getOption("bayesx.bin"), outfile = NULL, 
   iter = 1200L, burnin = 200L, maxint = 150L, step = 1L, 
-  predict = TRUE, setseed = NULL, hyp.prior = c(1, 0.005), 
+  predict = TRUE, seed = NULL, hyp.prior = c(1, 0.005), 
   distopt = NULL, reference = NULL, zipdistopt = NULL,  
   begin = NULL, level = NULL, eps = 1e-05, lowerlim = 0.001, 
   maxit = 400L, maxchange = 1e+06, leftint = NULL, lefttrunc = NULL, 
@@ -60,7 +60,7 @@ bayesx.control(model.name = "bayesx.estim",
   \item{predict}{option \code{predict} may be specified to compute samples of the deviance \code{D}, 
     the effective number of parameters \code{pD} and the deviance information criterion \code{DIC} 
     of the model.}
-  \item{setseed}{\code{integer}, set the seed of the random number generator in \pkg{BayesX}.}
+  \item{seed}{\code{integer}, set the seed of the random number generator in \pkg{BayesX}.}
   \item{hyp.prior}{defines the value of the hyper-parameters \code{a} and \code{b} for the inverse 
     gamma prior of the overall variance parameter \eqn{\sigma^2}, if the response distribution is 
     Gaussian. \code{numeric}, must be a positive real valued number.}

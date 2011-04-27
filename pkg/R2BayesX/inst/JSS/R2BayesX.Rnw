@@ -31,17 +31,27 @@
 %% \Acceptdate{2004-09-29}
 
 \Abstract{
-  This article describes the \proglang{R} interface to \pkg{BayesX}, a standalone open-source 
-  software package for analyzing structured additive regression models (STAR). 
+  This article describes the \proglang{R} interface to \pkg{BayesX}, a very comprehensive 
+  semiparametric regression toolbox based on open-source \proglang{C++} code for analyzing 
+  structured additive regression models (STAR). 
   STAR models provide a flexible framework for modeling possible nonlinear effects of covariates: 
   They contain the well established frameworks of generalized linear models (GLM) and generalized 
   additive models (GAM) as special cases but also allow a wider class of effects, e.g., for 
   geographical or spatio-temporal data. This allows for the specification of complex and realistic 
   models that can typically be conveniently estimated using Bayesian inference based on modern 
-  Markov chain Monte Carlo (MCMC) simulation techniques or a mixed model representation. 
-  The presented \proglang{R} implementation is an extension of the already existing CRAN package 
-  \pkg{BayesX}, which previously provided only functions for exploring estimation results, with a 
-  complete interactive interface.
+  Markov chain Monte Carlo (MCMC) simulation techniques or a mixed model representation.
+  Although there is already a quite extensive existing toolset in \proglang{R} supporting GLMs and 
+  GAMs, many of the more complex models from the STAR class, especially those utilizing Bayesian 
+  inference, are currently not easily available. They are, however, provided in BayesX, which not 
+  only covers models for responses from univariate exponential families, but also models from 
+  non-standard regression situations such as models for categorical responses with either ordered or 
+  unordered categories, continuous time survival data, or continuous time multi-state models.
+  Since there has been increasing interest in an \proglang{R} interface to BayesX, the already 
+  existing CRAN package \pkg{BayesX}, which previously provided only functions for exploring 
+  estimation results, is now extended to a full interactive interface. With the new version of the 
+  package, STAR models can be conveniently specified using \proglang{R}'s formula language (with 
+  some extended terms), fitted using the BayesX binary, represented in \proglang{R} with objects of 
+  suitable classes, and finally printed/summarized/plotted.
 }
 
 \Address{
@@ -85,7 +95,17 @@ data("ZambiaBnd")
 
 \section{Introduction} \label{sec:intro}
 
-This is the intro
+The idea to embed the open source software package \pkg{BayesX} \citep{Brezger+Kneib+Lang:2005} in 
+\proglang{R} \citep{R}, provided with an even more interactive and intuitive way to estimate 
+complex regression models using the extensive possibilities of the \proglang{R} language, has been 
+around for quite a while. However, since the development status of the project is already very 
+advanced, and there has been more and more recent interest of an \proglang{R} version of 
+\pkg{BayesX}, the compromise of creating an interface was seen advantageous, not only because of
+a faster development time, but also to provide already familiar users with a toolset, that easily 
+allows to use existing code and model outputs within \proglang{R}. The implementation is therefore 
+structured in several independent functions that first set up the necessary model components, 
+send these to the \pkg{BayesX} binary for processing, read the output files back into \proglang{R} 
+and summarize/visualize the results in the end.
 
 
 \section{STAR models}\label{sec:model} 
@@ -141,7 +161,7 @@ data("ZambiaBnd")
 zm <- bayesx(stunting ~ memployment + education + urban + gender + 
   s(bmi, bs = "ps") + s(agechild, bs = "ps") +
   s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district),
-  iter = 12000, burnin = 2000, step = 10, setseed = 123,
+  iter = 12000, burnin = 2000, step = 10, seed = 123,
   data = ZambiaNutrition)
 @
 

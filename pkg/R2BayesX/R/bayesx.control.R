@@ -1,6 +1,6 @@
 bayesx.control <- function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",  
   verbose = FALSE, dir.rm = TRUE, bin = getOption("bayesx.bin"), outfile = NULL, iter = 1200L, 
-  burnin = 200L, maxint = 150L, step = 1L, predict = TRUE, setseed = NULL, 
+  burnin = 200L, maxint = 150L, step = 1L, predict = TRUE, seed = NULL, 
   hyp.prior = c(1, 0.005), distopt = NULL, reference = NULL, zipdistopt = NULL,  
   begin = NULL, level = NULL, eps = 1e-05, lowerlim = 0.001, 
   maxit = 400L, maxchange = 1e+06, leftint = NULL, lefttrunc = NULL, state = NULL,
@@ -37,7 +37,7 @@ bayesx.control <- function(model.name = "bayesx.estim", family = "gaussian", met
     control$maxint <- maxint
     control$step <- step
     control$predict <- predict
-    control$setseed <- setseed
+    control$setseed <- seed
     control$aresp <- hyp.prior[1L]
     control$bresp <- hyp.prior[2L]
     control$begin <- begin
