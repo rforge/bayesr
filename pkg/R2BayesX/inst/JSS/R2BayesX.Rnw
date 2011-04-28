@@ -95,15 +95,15 @@ data("ZambiaBnd")
 
 \section{Introduction} \label{sec:intro}
 
-The idea to embed the open source software package \pkg{BayesX} \citep{Brezger+Kneib+Lang:2005} in 
+The idea to embed the open source software package BayesX \citep{Brezger+Kneib+Lang:2005} in 
 \proglang{R} \citep{R}, provided with an even more interactive and intuitive way to estimate 
 complex regression models using the extensive possibilities of the \proglang{R} language, has been 
 in mind for quite a while. However, since the development status of the project is already very 
-advanced, and there has been more and more recent interest of an \proglang{R} version of 
-\pkg{BayesX}, the compromise of creating an interface was seen advantageous, not only because of
-a faster development time, but also to provide already familiar users with a toolset, that even 
-beside the possibility to formulate STAR models directly, easily allows to use and reanalyze 
-existing code and model output, within \proglang{R}. 
+advanced, and there has been more and more recent interest of an \proglang{R} version of BayesX,
+the compromise of creating an interface was seen advantageous, not only because of a faster 
+development time, but also to provide already familiar users with a toolset, that even, beside the 
+possibility to formulate STAR models directly, easily allows to use and reanalyze existing code and 
+model output, within \proglang{R}. 
 
 The implementation is therefore structured in several independent operating functions that basically 
 set up the necessary model components at first, send these to the \pkg{BayesX} binary for 
@@ -129,7 +129,7 @@ $\eta$ by
 \end{equation}
 where $h$ is a known link function and $\gamma$ are unknown regression parameters. For STAR models,
 the linear predictor is replaced by a more general and flexible, so called structured 
-additive predictor given by
+additive predictor, given by
 \begin{equation} \label{eqn:structadd}
 \eta = f_1(z_1) + \ldots + f_p(z_p),
 \end{equation}
@@ -154,7 +154,11 @@ $f_j(z_j) = x \, b_c$         & random slopes with cluster index $c$. \\ \hline
 predictor.}
 \end{center}
 \end{table}
-
+Therefore STAR models cover a number of well known model classes as special cases, including
+generalized additive models (GAM) \citep{Hastie+Tibshirani:1990}, generalized additive mixed models
+(GAMM) \citep{Lin+Zhang:1999}, geoadditive models \citep{Kamman+Wand:2003}, varying coefficient 
+models \citep{Hastie+Tibshirani:1993}, and geographically weighted regression 
+\citep{Fotheringham+Brunsdon+Charlton:2002}.
 
 
 \citep{Brezger+Lang:2006} \citep{Belitz+Lang:2008} \citep{Fahrmeir+Kneib+Lang:2004}
@@ -179,7 +183,7 @@ Section with two examples: Childhood malnutrition in Zambia and the forest healt
 
 \subsection{Childhood malnutrition in Zambia} \label{subsec:zambia}
 
-\begin{table}[t!]
+\begin{table}[h]
 \begin{center}
 \begin{tabular}{|l|p{10cm}|}
 \hline
