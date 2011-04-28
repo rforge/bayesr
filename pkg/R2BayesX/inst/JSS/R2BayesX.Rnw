@@ -96,19 +96,23 @@ data("ZambiaBnd")
 \section{Introduction} \label{sec:intro}
 
 The idea to embed the open source software package BayesX \citep{Brezger+Kneib+Lang:2005} in 
-\proglang{R} \citep{R}, provided with an even more interactive and intuitive way to estimate 
-complex regression models using the extensive possibilities of the \proglang{R} language, has been 
-in mind for quite a while. However, since the development status of the project is already very 
-advanced, and there has been more and more recent interest of an \proglang{R} version of BayesX,
-the compromise of creating an interface was seen advantageous, not only because of a faster 
-development time, but also to provide already familiar users with a toolset, that even, beside the 
-possibility to formulate STAR models directly, easily allows to use and reanalyze existing code and 
-model output, within \proglang{R}. 
+\proglang{R} \citep{R} and utilize the possibilities of its programming language to provide an even 
+more interactive and intuitive way to estimate complex regression models, has been in mind for quite 
+a while. However, since the development status of the project is already very advanced, and there 
+has been more and more recent interest of an \proglang{R} version of BayesX, the compromise of 
+creating an interface was seen advantageous, not only because of a faster development time, but also 
+offering already familiar users a toolset, that even, beside the possibility to formulate STAR 
+models directly on the console, easily allows to use and reanalyze existing code and model output, 
+within \proglang{R}. 
 
 The implementation is therefore structured in several independent operating functions that basically 
-set up the necessary model components at first, send these to the \pkg{BayesX} binary for 
-processing, read the returned output files back into \proglang{R} by conversion to objects of 
-suitable classes, which may then be printed, summarized and visualized.
+set up the necessary model components at first, send these to the BayesX binary for processing, read 
+the returned output files back into \proglang{R} by conversion to objects of suitable classes, which 
+may then be printed, summarized and visualized.
+
+All the functions described in this paper have been added to the CRAN package \pkg{BayesX} 
+\citep{Kneib+Heinzl+Brezger:2011}, which previously provided only functions for exploring estimation 
+results. 
 
 To present the capabilities of the software, the next section briefly discusses the methodological 
 background of regression models with a structured additive predictor, before an in detail 
