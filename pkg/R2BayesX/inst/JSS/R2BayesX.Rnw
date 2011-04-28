@@ -47,7 +47,7 @@
   non-standard regression situations such as models for categorical responses with either ordered or 
   unordered categories, continuous time survival data, or continuous time multi-state models.
   Since there has been increasing interest in an \proglang{R} interface to BayesX, the already 
-  existing CRAN package \pkg{BayesX}, which previously provided only functions for exploring 
+  existing CRAN package \pkg{BayesX}, which previously provided mainly functions for exploring 
   estimation results, is now extended to a full interactive interface. With the new version of the 
   package, STAR models can be conveniently specified using \proglang{R}'s formula language (with 
   some extended terms), fitted using the BayesX binary, represented in \proglang{R} with objects of 
@@ -111,8 +111,8 @@ the returned output files back into \proglang{R} by conversion to objects of sui
 may then be printed, summarized and visualized.
 
 All the functions described in this paper have been added to the CRAN package \pkg{BayesX} 
-\citep{Kneib+Heinzl+Brezger:2011}, which previously provided only functions for exploring estimation 
-results. 
+\citep{Kneib+Heinzl+Brezger:2011}, which previously provided mainly functions for exploring 
+estimation results. 
 
 To present the capabilities of the software, the next section briefly discusses the methodological 
 background of regression models with a structured additive predictor, before an in detail 

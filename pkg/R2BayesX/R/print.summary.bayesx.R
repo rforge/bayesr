@@ -81,7 +81,7 @@ print.summary.bayesx <- function(x, digits = max(3, getOption("digits") - 3),
   if(!is.null(x$smooth.hyp)) {
     if(fc)
       cat("-\n")
-    cat("Smooth terms:\n")
+    cat("Smooth terms variances:\n")
     ls <- ncol(x$smooth.hyp)
     terms <- colnames(x$smooth.hyp)	
     rn <- rownames(x$smooth.hyp)

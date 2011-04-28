@@ -2,10 +2,10 @@ plot.bayesx <- function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, .
 {
   op <- par(no.readonly = TRUE)
   which.match <- c("effect", "coef-samples", "var-samples", "intcpt-samples", 
-    "hist-resid", "qq-resid", "scatter-resid", "scale-resid")
+    "hist-resid", "qq-resid", "scatter-resid", "scale-resid", "scale-samples")
   if(!is.character(which)) {
-    if(any(which > 8))
-      which <- which[which <= 8]
+    if(any(which > 9))
+      which <- which[which <= 9]
     which <- which.match[which]
   } else which <- which.match[pmatch(which, which.match)]
   if(length(which) > length(which.match) || !any(which %in% which.match))
@@ -181,6 +181,8 @@ which.plots <- function(x, which, ask, model.name, nx, ...)
         par(ask = ask) 
       ok <- TRUE
     }
+##!!! FIXME    if(ww == "scale-samples") {
+
   }
   if(nw > 1L && ask && nx > 1L && ok)
     mtext(main, side = 3L, line = 2L, outer = TRUE, font = 2, cex = 1)

@@ -1052,7 +1052,7 @@ recol <- function(x)
   if(ok)
     for(i in 1L:length(xattrn))
       if(xattrn[i] != "dim" && xattrn[i] != "dimnames")
-        attr(x, "xattrn[i]") <- xattr[[i]]
+        attr(x, xattrn[i]) <- xattr[[i]]
 
   return(x)
 }
