@@ -133,39 +133,51 @@ $\eta$ by
 \end{equation}
 where $h$ is a known link function and $\gamma$ are unknown regression parameters. For STAR models,
 the linear predictor is replaced by a more general and flexible, so called structured 
-additive predictor, given by
+additive predictor
 \begin{equation} \label{eqn:structadd}
-\eta = f_1(z_1) + \ldots + f_p(z_p),
+\eta = f_1(z_1) + \ldots + f_p(z_p) + u^{\prime}\gamma,
 \end{equation}
 where covariates $z_j$, $j = 1,\ldots,p$, are of generic type and dimension, and $f_j$ are possibly 
-smooth functions comprising effects (and combination of effects) as e.g. presented in 
-table~\ref{tab:funtypes}.
-\begin{table}[h]
-\begin{center}
-\begin{tabular}{|l|l|}
-\hline 
-Function                      & Description \\ \hline
-$f_j(z_j) = u^{\prime}\gamma$ & linear effects, with or without regularization. \\ \hline
-$f_j(z_j) = f(x)$             & nonlinear effects of continuous covariate $x$. \\ \hline
-$f_j(z_j) = f(x_1,x_2)$       & two-dimensional surfaces. \\ \hline
-$f_j(z_j) = f_{spat}(s)$      & spatially correlated effects. \\ \hline
-$f_j(z_j) = x_1f(x_2)$        & varying coefficients. \\ \hline
-$f_j(z_j) = x_1f_{spat}(s)$ or $f_j(z_j) = x_1f(x_2, x_3)$ & spatially varying effects. \\ \hline
-$f_j(z_j) = b_c$              & random intercepts with cluster index $c$. \\ \hline
-$f_j(z_j) = x \, b_c$         & random slopes with cluster index $c$. \\ \hline
-\end{tabular} 
-\caption{\label{tab:funtypes} Examples of possible function types of a structured additive 
-predictor.}
-\end{center}
-\end{table}
-Therefore STAR models cover a number of well known model classes as special cases, including
+smooth functions comprising effects (and combination of effects) as e.g. given by             
+\begin{itemize}
+\item nonlinear effects of continuous covariate $x$: $f_j(z_j) = f(x)$,
+\item two-dimensional surfaces: $f_j(z_j) = f(x_1,x_2)$,
+\item spatially correlated effects: $f_j(z_j) = f_{spat}(s)$, 
+\item varying coefficients: $f_j(z_j) = x_1f(x_2)$, 
+\item spatially varying effects: $f_j(z_j) = x_1f_{spat}(s)$ or $f_j(z_j) = x_1f(x_2, x_3)$, 
+\item random intercepts with cluster index $c$: $f_j(z_j) = b_c$, 
+\item random slopes with cluster index $c$: $f_j(z_j) = x \, b_c$. 
+\end{itemize}
+Therefore, STAR models cover a number of well known model classes as special cases, including
 generalized additive models (GAM) \citep{Hastie+Tibshirani:1990}, generalized additive mixed models
 (GAMM) \citep{Lin+Zhang:1999}, geoadditive models \citep{Kamman+Wand:2003}, varying coefficient 
 models \citep{Hastie+Tibshirani:1993}, and geographically weighted regression 
 \citep{Fotheringham+Brunsdon+Charlton:2002}.
 
+The unified representation of a STAR predictor captures the fact that all of the above mentioned 
+functional types may be specified by a basis function approach, where the vector of function 
+evaluations $f_j = (f_j(x_{1j}),\ldots,f_j(x_{nj}))$, with $i = 1,\ldots,n$ observations, can be
+written in matrix notation 
+\begin{equation} \label{eqn:matnot}
+f_j = X_j\beta_j,
+\end{equation}
+with $X_j$ as a design matrix, that only depends on the prior assumptions about smoothness of $f_j$, and $\beta_j$ are unknown regression coefficients which have to be estimated. Hence, the predictor 
+of (\ref{eqn:structadd}) may be rewritten by
+\begin{equation} \label{eqn:structaddmat}
+f_j = X_1\beta_1 + \ldots X_p\beta_p + U\gamma,
+\end{equation}
+where $U$ corresponds to the usual design matrix for the fixed effects.
 
-\citep{Brezger+Lang:2006} \citep{Belitz+Lang:2008} \citep{Fahrmeir+Kneib+Lang:2004}
+In BayesX, estimation of regression coefficients is based on two inferential concepts, Markov chain Monte Carlo simulation techniques corresponding to full Bayesian inference \citep{Brezger+Lang:2006}
+and mixed model methodology corresponding to penalized likelihood or empirical Bayes inference
+\citep{Fahrmeir+Kneib+Lang:2004}. As a third alternative BayesX provides a penalized least squares
+(respectively penalized likelihood) approach for estimating structured additive regression tools. In
+addition, a powerful variable and model selection tool is included. Model choice and estimation of
+the parameters is done simultaneously \citep{Belitz+Lang:2008}.
+
+
+
+ 
 
 
 \section[Implementation in R]{Implementation in \proglang{R}} \label{sec:implementation}
