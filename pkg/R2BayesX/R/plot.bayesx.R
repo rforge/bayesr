@@ -181,8 +181,17 @@ which.plots <- function(x, which, ask, model.name, nx, ...)
         par(ask = ask) 
       ok <- TRUE
     }
-##!!! FIXME    if(ww == "scale-samples") {
-
+    if(ww == "scale-samples") {
+      if(!is.null(attr(x$variance, "sample"))) {
+        args2 <- args
+        args2$x <- attr(x$variance, "sample")
+        args2$selected <- "scale"
+        args2$var <- TRUE
+        if(is.null(args2$main))
+          args2$main <- "Variance sampling path"
+        do.call("plotsamples", args2)	
+      }
+    }
   }
   if(nw > 1L && ask && nx > 1L && ok)
     mtext(main, side = 3L, line = 2L, outer = TRUE, font = 2, cex = 1)

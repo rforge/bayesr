@@ -43,7 +43,7 @@ print.summary.bayesx <- function(x, digits = max(3, getOption("digits") - 3),
       }
   if(!is.null(x$call)) {
     cat("Call:\n")
-    print(x$call)
+    cat(paste(deparse(x$call), sep = "\n", collapse = "\n"), "\n", sep = "")
   } else {
     if(!is.null(x$model.fit$formula)) {
       cat("Formula:\n")
@@ -81,7 +81,10 @@ print.summary.bayesx <- function(x, digits = max(3, getOption("digits") - 3),
   if(!is.null(x$smooth.hyp)) {
     if(fc)
       cat("-\n")
-    cat("Smooth terms variances:\n")
+    if(x$model.fit$method == "MCMC") 
+      cat("Smooth terms variances:\n")
+    else
+      cat("Smooth terms:\n")
     ls <- ncol(x$smooth.hyp)
     terms <- colnames(x$smooth.hyp)	
     rn <- rownames(x$smooth.hyp)

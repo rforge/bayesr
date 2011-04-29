@@ -1,11 +1,12 @@
-dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
+dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-b1 <- bayesx(y ~ s(x, bs = "ps"), data = dat)
+plot(b1, which = "scale-samples")
 
 
 
 
+    cat(paste(deparse(x$call), sep = "\n", collapse = "\n"), "\n\n", sep = "")
 
 
 
