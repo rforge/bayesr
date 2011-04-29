@@ -154,7 +154,7 @@ generalized additive models (GAM) \citep{Hastie+Tibshirani:1990}, generalized ad
 models \citep{Hastie+Tibshirani:1993}, and geographically weighted regression 
 \citep{Fotheringham+Brunsdon+Charlton:2002}.
 
-The unified representation of a STAR predictor captures the fact that all of the above mentioned 
+The unified representation of a STAR predictor arises from the fact that all of the above mentioned 
 functional types may be specified by a basis function approach, where the vector of function 
 evaluations $f_j = (f_j(x_{1j}),\ldots,f_j(x_{nj}))$, with $i = 1,\ldots,n$ observations, can be
 written in matrix notation 
