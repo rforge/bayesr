@@ -1,39 +1,35 @@
-\name{ZambiaNutrition}
-\alias{ZambiaNutrition}
-\alias{zambia}
+\name{ForestHealth}
+\alias{ForestHealth}
+\alias{forest}
 
-\title{Determinants of Childhood Malnutrition in Zambia}
+\title{Forest Health Data}
 
 \description{
-  Malnutrition among children is usually determined by assessing an anthropometric status of the
-  children relative to a reference standard. In our example, malnutrition is measured by stunting
-  or insufficient height for age, indicating chronic malnutrition. Stunting for a child \eqn{i} 
-  is determined using a \eqn{Z}-score defined as
-  \deqn{Z_i = \frac{AI_i - MAI}{\sigma}}{Z_i = (AI_i - MAI)/\sigma}
-  where \eqn{AI} refers to the child's anthropometric indicator (height at a certain age in our 
-  example), while \eqn{MAI} and \eqn{\sigma} correspond to the median and the standard deviation in 
-  the reference population, respectively. 
-
-  The main interest is on modeling the dependence of malnutrition on covariates including the
-  age of the child, the body mass index of the child's mother, the district the child lives in and 
-  some further categorial covariates. 
+  The data set consists of 16 variables and 1796 observations on forest health to identify potential
+  factors influencing the health status of trees and therefore the vital status of the forest. In 
+  addition to covariates characterizing a tree and its stand, the exact locations of the trees are
+  known. The interest is on detecting temporal and spatial trends while accounting for further 
+  covariate effects in a flexible manner.
 }
 
-\usage{data("ZambiaNutrition")}
+\usage{data("ForestHealth")}
 
 \format{
-A data frame containing 4847 observations on 8 variables.
+A data frame containing 1796 observations on 16 variables.
 \describe{
-  \item{stunting:}{standardised \eqn{Z}-score for stunting.}
-  \item{bmi:}{body mass index of the mother.}
-  \item{agechild:}{age of the child in months.}
-  \item{district:}{district where the mother lives.}
-  \item{memployment:}{mother's employment status with categories `working' and `not working'.}
-  \item{education:}{mother's educational status with categories for complete primary but 
-    incomplete secondary `no/incomplete', complete secondary or higher `minimum primary' and no 
-    education or incomplete primary `minimum secondary'.}
-  \item{urban:}{locality of the domicile with categories `yes' and `no'.}
-  \item{gender:}{gender of the child with categories `male' and `female'.}
+  \item{age:}{age of stands in years.}
+  \item{year:}{age of stands in years.}
+  \item{elevation:}{elevation (meters above sea level).}
+  \item{inclination:}{slope inclination in percent.}
+  \item{soil:}{soil layer depth in cm.}
+  \item{ph:}{soil pH at 0-2cm depth.}
+  \item{canopy:}{forest canopy density in percent.}
+  \item{stand:}{stand type with categories `deciduous' and `mixed'.}
+  \item{fertilized:}{fertilization applied with categories `male' and `female'.}
+  \item{humus:}{humus layer thickness with categories 1 == `low' to 9 == `high'.}
+  \item{moisture:}{soil moisture level with categories 1 == `moderately dry', 2 == `moderately
+     moits' and 3 == `moist or temporarily wet'.}
+  \item{saturation:}{base saturation with categories 1 == `low' to 4 == `high'.}
 }
 }
 

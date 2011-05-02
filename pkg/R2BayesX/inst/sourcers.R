@@ -49,7 +49,7 @@ ForestHealth$ph <- dat$ph
 ForestHealth$canopy <- dat$schirm 
 ForestHealth$stand <- as.factor(dat$artkat)
 levels(ForestHealth$stand) <- c("deciduous", "mixed")
-ForestHealth$fertilization <- as.factor(dat$dueng)
+ForestHealth$fertilized<- as.factor(dat$dueng)
 levels(ForestHealth$fertilization) <- c("yes", "no")
 ForestHealth$humus <- as.factor(dat$humus) 
 ForestHealth$moisture <- as.factor(dat$frische) 
