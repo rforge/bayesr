@@ -616,7 +616,7 @@ blow.up.resid <- function(data, x, xnam, response, eta, dimx, cx)
       eval(parse(text = paste("x$", xnam[k] , "<- NULL", sep = "")))
     x <- as.matrix(x)
     pres <- response - eta[,1L] + x[,1L]
-    pres <- pres - mean(x[,1L], na.rm = TRUE)
+    pres <- pres - mean(pres, na.rm = TRUE) ## mean(x[,1L], na.rm = TRUE)
     x <- cbind(co[ind,], pres, id[ind])
     if(ncol(x) < 3L)
       colnames(x) <- c("x.co", "partial.resids")
@@ -639,13 +639,18 @@ get.eta <- function(data)
     "pmed_pred","pqu90_pred","pqu97p5_pred","pmean_mu","pqu2p5_mu",
     "pqu10_mu","pmed_mu","pqu90_mu","pqu97p5_mu","mu")
   nd <- names(data)
-  eta <- NULL
-  for(e in etaspec)
-    if(e %in% nd)
-      eta <- cbind(eta, as.matrix(data[e], mode = "numeric"))  
-  if(!is.null(eta))
+  eta <- enam <- NULL
+  for(e in etaspec) 
+    for(n in nd)
+      if(!is.na(which <- pmatch(e, n))) {
+        eta <- cbind(eta, as.matrix(data[n], mode = "numeric")) 
+        enam <- c(enam, n)
+      }
+  if(!is.null(eta)) {
+    colnames(eta) <- enam
     rownames(eta) <- 1L:nrow(eta)
-  storage.mode(eta) <- "numeric"
+    storage.mode(eta) <- "numeric"
+  }
 
   return(eta)
 }
@@ -697,8 +702,13 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name)
           ## search and set additional attributes
           nx <- length(xnam2)
           if(nx > 1L) {
-            af1 <- grep(paste("_", xnam[1L], "_", xnam[2L],".res", sep = ""), files, value = TRUE)
-            af2 <- grep(paste("_", xnam2[1L], "_", xnam[2L], sep = ""), files, value = TRUE)
+            if(nx > 2L) {
+              af1 <- grep(paste("_", xnam[1L], ".res", sep = ""), files, value = TRUE)
+              af2 <- grep(paste("_", xnam2[1L], "_", sep = ""), files, value = TRUE)
+            } else {
+              af1 <- grep(paste("_", xnam[1L], "_", xnam[2L],".res", sep = ""), files, value = TRUE)
+              af2 <- grep(paste("_", xnam2[1L], "_", xnam[2L], sep = ""), files, value = TRUE)
+            }
           } else {
             af1 <- grep(paste("_", xnam[1L], ".res", sep = ""), files, value = TRUE)
             af2 <- grep(paste("_", xnam2[1L], "_", sep = ""), files, value = TRUE)
@@ -710,6 +720,8 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name)
             af <- grep("_random", af, fixed = TRUE, value = TRUE)
           if(any(grep("_spatial", res, fixed = TRUE)))
             af <- grep("_spatial", af, fixed = TRUE, value = TRUE)
+          if(any(grep("_geokriging", res, fixed = TRUE)))
+            af <- grep("_geokriging", af, fixed = TRUE, value = TRUE)
           if(length(af) > 0L) {
             if(length(varf <- grep("_var", af, value = TRUE))) {
               if(length(vf <- grep("_var.res", varf, value = TRUE))) {
@@ -842,7 +854,7 @@ find.fixed.effects <- function(dir, files, data, response, eta, model.name, rval
         for(tv in vars) {
           j <- j + 1L
           x <- unique(as.vector(unlist(data[tv])))
-          vc <- matrix(FixedEffects[vars == tv,], nrow = 1L)
+          vc <- matrix(FixedEffects[rownames(FixedEffects) == tv,], nrow = 1L)
           x <- cbind(x, x%*%vc)    
           x <- x[order(x[,1L]),]
           if(!is.matrix(x))

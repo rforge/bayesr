@@ -1,12 +1,7 @@
-dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
+dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-plot(b1, which = "scale-samples")
-
-
-
-
-    cat(paste(deparse(x$call), sep = "\n", collapse = "\n"), "\n\n", sep = "")
+b <- read.bayesx.output("/tmp/RtmpU15TSn/bayesx", "bayesx.estim")
 
 
 
@@ -39,11 +34,17 @@ summary(ZambiaNutrition)
 
 
 ## forest health data
-# dat <- read.table("http://www.stat.uni-muenchen.de/~kneib/regressionsbuch/download/buche.raw", header = TRUE)
+# dat <- as.matrix(read.table("http://www.stat.uni-muenchen.de/~kneib/regressionsbuch/download/buche.raw", header = TRUE))
+dat[dat == "."] <- NA
+storage.mode(dat) <- "numeric"
+dat <- as.data.frame(dat)
 ForestHealth <- list()
 ForestHealth$id <- dat$id 
 ForestHealth$year <- dat$jahr 
-ForestHealth$beech <- dat$buche
+buche3 <- rep(0, nrow(dat))
+buche3[dat$buche >= 12.5] <- 1 
+buche3[dat$buche >= 50] <- 2
+ForestHealth$defoliation <- buche3 # dat$buche
 ForestHealth$x <- dat$x
 ForestHealth$y <- dat$y
 ForestHealth$age <- dat$alter 
@@ -53,13 +54,18 @@ ForestHealth$elevation <- dat$hoehe
 ForestHealth$soil <- dat$grund 
 ForestHealth$ph <- dat$ph 
 ForestHealth$moisture <- as.factor(dat$frische) 
-ForestHealth$saturation <- as.factor(dat$alkali) 
-ForestHealth$humus <- dat$humus
+ForestHealth$alkali <- as.factor(dat$alkali) 
+H <- rep(0, nrow(dat))
+H[dat$humus == 0] <- 1
+H[dat$humus == 2] <- 2
+H[dat$humus == 3] <- 3
+H[dat$humus > 3] <- 4
+ForestHealth$humus <- as.factor(H)
 ForestHealth$stand <- as.factor(dat$artkat)
 levels(ForestHealth$stand) <- c("deciduous", "mixed")
 ForestHealth$fertilized <- as.factor(dat$dueng)
 levels(ForestHealth$fertilized) <- c("yes", "no")
-ForestHealth <- as.data.frame(ForestHealth)
+ForestHealth <- na.omit(as.data.frame(ForestHealth))
 ## save(ForestHealth, file = "/home/c403129/svn/bayesr/pkg/R2BayesX/data/ForestHealth.rda")
 
 

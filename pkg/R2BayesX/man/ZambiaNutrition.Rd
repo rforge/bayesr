@@ -56,15 +56,15 @@ data("ZambiaNutrition")
 data("ZambiaBnd")
 
 ## estimate model
-b <- bayesx(stunting ~ memployment + education + urban + gender + 
+zm <- bayesx(stunting ~ memployment + education + urban + gender + 
   s(bmi, bs = "ps") + s(agechild, bs = "ps") +
   s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district),
   iter = 12000, burnin = 2000, step = 10, data = ZambiaNutrition)
 
-summary(b)
+summary(zm)
 
 ## plot smooth effects
-plot(b, term = c("s(bmi)", "s(agechild)", "s(district)"), map = ZambiaBnd)
+plot(zm, term = c("s(bmi)", "s(agechild)", "s(district)"), map = ZambiaBnd)
 
 ## for more examples 
 demo("zambia")

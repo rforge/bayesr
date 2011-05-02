@@ -5,42 +5,48 @@
 \title{Forest Health Data}
 
 \description{
-  The data set consists of 16 variables and 1796 observations on forest health to identify potential
-  factors influencing the health status of trees and therefore the vital status of the forest. In 
-  addition to covariates characterizing a tree and its stand, the exact locations of the trees are
-  known. The interest is on detecting temporal and spatial trends while accounting for further 
-  covariate effects in a flexible manner.
+  The data set consists of 16 variables with 1796 observations on forest health to identify 
+  potential factors influencing the health status of trees and therefore the vital status of the 
+  forest. In addition to covariates characterizing a tree and its stand, the exact locations of the 
+  trees are known. The interest is on detecting temporal and spatial trends while accounting for 
+  further covariate effects in a flexible manner.
 }
 
 \usage{data("ForestHealth")}
 
 \format{
-A data frame containing 1796 observations on 16 variables.
+A data frame containing 1793 observations on 16 variables.
 \describe{
+  \item{id:}{tree location identification number.}
+  \item{year:}{year of census.}
+  \item{defoliation:}{percentage of tree defoliation in three ordinal categories, 
+    0 == `defoliation < 12.5\%', 1 == `12.5\% <= defoliation < 50\%' and  
+    3 == `defoliation >= 50\%'}
+  \item{x:}{x-coordinate of the tree location.}
+  \item{y:}{y-coordinate of the tree location.}
   \item{age:}{age of stands in years.}
-  \item{year:}{age of stands in years.}
-  \item{elevation:}{elevation (meters above sea level).}
+  \item{canopy:}{forest canopy density in percent.}
   \item{inclination:}{slope inclination in percent.}
+  \item{elevation:}{elevation (meters above sea level).}
   \item{soil:}{soil layer depth in cm.}
   \item{ph:}{soil pH at 0-2cm depth.}
-  \item{canopy:}{forest canopy density in percent.}
-  \item{stand:}{stand type with categories `deciduous' and `mixed'.}
-  \item{fertilized:}{fertilization applied with categories `male' and `female'.}
-  \item{humus:}{humus layer thickness with categories 1 == `low' to 9 == `high'.}
   \item{moisture:}{soil moisture level with categories 1 == `moderately dry', 2 == `moderately
-     moits' and 3 == `moist or temporarily wet'.}
-  \item{saturation:}{base saturation with categories 1 == `low' to 4 == `high'.}
+     moist' and 3 == `moist or temporarily wet'.}
+  \item{alkali:}{proportion of base alkali-ions with categories 1 == `low' to 4 == `high'.}
+  \item{humus:}{humus layer thickness in cm, categorical coded}
+  \item{stand:}{stand type with categories `deciduous' and `mixed'.}
+  \item{fertilized:}{fertilization applied with categories `yes' and `no'.}
 }
 }
 
 \source{
-  \url{http://www.stat.uni-muenchen.de/~bayesx/}.
+  \url{http://www.stat.uni-muenchen.de/~kneib/regressionsbuch/}.
 }
 
 \references{
-Kandala, N. B., Lang, S., Klasen, S., Fahrmeir, L. (2001): 
-Semiparametric Analysis of the Socio-Demographic and Spatial Determinants of Undernutrition
-in Two African Countries. Research in Official Statistics, \bold{1}, 81--100.
+Kneib, T. & Fahrmeir, L. (2010): A Space-Time Study on Forest Health.
+In: Chandler, R. E. \& Scott, M. (eds.): Statistical Methods for Trend
+Detection and Analysis in the Environmental Sciences, Wiley.
 }
 
 \seealso{\code{\link{bayesx}}}
@@ -48,22 +54,19 @@ in Two African Countries. Research in Official Statistics, \bold{1}, 81--100.
 \examples{
 \dontrun{
 ## load zambia data and map
-data("ZambiaNutrition")
-data("ZambiaBnd")
+data("ForestHealth")
+data("BeechBnd")
 
-## estimate model
-b <- bayesx(stunting ~ memployment + education + urban + gender + 
-  s(bmi, bs = "ps") + s(agechild, bs = "ps") +
-  s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district),
-  iter = 12000, burnin = 2000, step = 10, data = ZambiaNutrition)
+fm <- bayesx(defoliation ~  stand + fertilized + 
+  humus + moisture + alkali + ph + soil + 
+  s(age, bs = "ps") + s(inclination, bs = "ps") + 
+  s(canopy, bs = "ps") + s(year, bs = "ps") + 
+  s(elevation, bs = "ps"),
+  family = "cumlogit", method = "REML", data = ForestHealth)
 
-summary(b)
-
-## plot smooth effects
-plot(b, term = c("s(bmi)", "s(agechild)", "s(district)"), map = ZambiaBnd)
-
-## for more examples 
-demo("zambia")
+summary(fm)
+plot(fm, term = c("s(age)", "s(inclination)", 
+  "s(canopy)", "s(year)", "s(elevation)"))
 }
 }
 
