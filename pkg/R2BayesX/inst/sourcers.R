@@ -41,22 +41,24 @@ summary(ZambiaNutrition)
 ## forest health data
 # dat <- read.table("http://www.stat.uni-muenchen.de/~kneib/regressionsbuch/download/buche.raw", header = TRUE)
 ForestHealth <- list()
+ForestHealth$age <- dat$alter 
+ForestHealth$elevation <- dat$hoehe
+ForestHealth$inclination <- dat$hang 
+ForestHealth$soil <- dat$grund 
+ForestHealth$ph <- dat$ph 
+ForestHealth$canopy <- dat$schirm 
+ForestHealth$stand <- as.factor(dat$artkat)
+levels(ForestHealth$stand) <- c("deciduous", "mixed")
+ForestHealth$fertilization <- as.factor(dat$dueng)
+levels(ForestHealth$fertilization) <- c("yes", "no")
+ForestHealth$humus <- as.factor(dat$humus) 
+ForestHealth$moisture <- as.factor(dat$frische) 
+ForestHealth$saturation <- as.factor(dat$alkali) 
 ForestHealth$year <- dat$jahr 
 ForestHealth$x <- dat$x
 ForestHealth$y <- dat$y
-ForestHealth$slope <- dat$hang 
-ForestHealth$altitude <- dat$hoehe
-ForestHealth$base <- dat$grund 
-ForestHealth$fertilization <- dat$dueng
-ForestHealth$age <- dat$alter 
-ForestHealth$shield <- dat$schirm 
-ForestHealth$artkat <- dat$artkat
-ForestHealth$humus <- dat$humus 
 ForestHealth$beech <- dat$buche
 ForestHealth$id <- dat$id 
-ForestHealth$alkali <- dat$alkali 
-ForestHealth$ph <- dat$ph 
-ForestHealth$viridity <- dat$frische 
 ForestHealth <- as.data.frame(ForestHealth)
 ## save(ForestHealth, file = "/home/nikolaus/svn/bayesr/pkg/R2BayesX/data/ForestHealth.rda")
 
