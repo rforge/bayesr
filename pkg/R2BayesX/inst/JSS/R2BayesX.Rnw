@@ -87,6 +87,7 @@
 options(width = 70, prompt = "R> ", continue = "+  ")
 library("R2BayesX")
 data("ZambiaBnd")
+data("BeechBnd")
 @
 
 
@@ -97,12 +98,12 @@ data("ZambiaBnd")
 
 The idea to embed the open source software package BayesX \citep{Brezger+Kneib+Lang:2005} in 
 \proglang{R} \citep{R} and utilize the possibilities of its programming language to provide an even 
-more interactive and intuitive way to estimate complex regression models, has been in mind for quite 
-a while. However, since the development status of the project is already very advanced, and there 
-has been more and more recent interest of an \proglang{R} version of BayesX, the compromise of 
-creating an interface was seen advantageous, not only because of a faster development time, but also 
-offering already familiar users a toolset, that even, beside the possibility to formulate STAR 
-models directly on the console, easily allows to use and reanalyze existing code and model output, 
+more interactive and intuitive way to estimate and analyze complex regression models, has been in 
+mind for quite a while. However, since the development status of the project is already very 
+advanced, and there has been more and more recent interest of an \proglang{R} version of BayesX, the 
+compromise of creating an interface was seen advantageous, not only because of a faster development 
+time, but also offering already familiar users a toolset, that even, beside the possibility to 
+formulate STAR models directly on the console, easily allows to use existing code and model output, 
 within \proglang{R}. 
 
 The implementation is therefore structured in several independent operating functions that basically 
@@ -193,6 +194,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 
 
 \section{STAR models in practice} \label{sec:illustrations}
+\setkeys{Gin}{width=0.49\textwidth}
 
 Section with two examples: Childhood malnutrition in Zambia and the forest health data.
 
@@ -245,11 +247,12 @@ summary(zm)
 
 \begin{figure}[t!]
 \begin{center}
-\setkeys{Gin}{width=1\textwidth}
-<<zambia-agechild-bmi, echo=FALSE, fig=TRUE, width=13, height=5.5>>=
-par(mfrow = c(1, 2))
-par(mar = c(4.1, 4.1, 0.1, 2.1))
+<<zambia-agechild, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(zm, term = "s(agechild)")
+@
+<<zambia-bmi, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(zm, term = "s(bmi)")
 @
 \end{center}
@@ -260,9 +263,8 @@ credible intervals.}
 
 \begin{figure}[t!]
 \begin{center}
-\setkeys{Gin}{width=0.5\textwidth}
-<<zambia-district-structured, echo=FALSE, fig=TRUE, width=6, height=5.5>>=
-par(mar = c(0.1, 0.1, 0.1, 0.1))
+<<zambia-district-structured, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(0, 0, 0, 0))
 plot(zm, term = "s(district)", map = ZambiaBnd, 
   pos = "topleft", width = 0.6, height = 0.2, 
   distance.labels = 2, swap = TRUE)
@@ -275,6 +277,99 @@ spatial effect.}
 
 \subsection{Forest health data set} \label{subsec:forest}
 
+<<fit-forest-model, echo=TRUE, eval=FALSE>>=
+data("ForestHealth", package = "R2BayesX")
+data("BeechBnd")
+fm1 <- bayesx(defoliation ~  stand + fertilized + 
+  humus + moisture + alkali + ph + soil + 
+  s(age, bs = "ps") + s(inclination, bs = "ps") + 
+  s(canopy, bs = "ps") + s(year, bs = "ps") + 
+  s(elevation, bs = "ps"),
+  family = "cumlogit", method = "REML", data = ForestHealth)
+fm2 <- bayesx(defoliation ~  stand + fertilized + 
+  humus + moisture + alkali + ph + soil + 
+  s(age, bs = "ps") + s(inclination, bs = "ps") + 
+  s(canopy, bs = "ps") + s(year, bs = "ps") + 
+  s(elevation, bs = "ps") + 
+  s(id, bs = "gk", xt = list(map = BeechBnd, full = TRUE)),
+  family = "cumlogit", method = "REML", data = ForestHealth)
+@
+
+<<cache-forest-model, echo=FALSE, eval=TRUE>>=
+if(file.exists("forest-model.rda")) {
+load("forest-model.rda")
+} else {
+<<fit-forest-model>>
+save(fm1, fm2, file = "forest-model.rda")
+}
+@
+
+\begin{figure}[t!]
+\begin{center}
+<<forest-no-spatial-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 2.1))
+plot(fm1, term = "s(age)")
+@
+<<forest-no-spatial-inclination, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 2.1))
+plot(fm1, term = "s(inclination)")
+@ 
+\\[2ex]
+
+<<forest-no-spatial-canopy, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 2.1))
+plot(fm1, term = "s(canopy)")
+@
+<<forest-no-spatial-year, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 2.1))
+plot(fm1, term = "s(year)")
+@ 
+\\[2ex]
+
+<<forest-no-spatial-elevation, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 2.1))
+plot(fm1, term = "s(elevation)")
+@
+\end{center}
+\caption{\label{fig:forest-no-spatial} Forest damage: estimates of nonparametric effects including
+80\% and 95\% point-wise confidence intervals of the model without the spatial effect.}
+\end{figure}
+
+\begin{figure}[t!]
+\begin{center}
+\setkeys{Gin}{width=0.49\textwidth}
+<<forest-spatial-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 2.1))
+plot(fm2, term = "s(age)")
+@
+<<forest-spatial-inclination, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 2.1))
+plot(fm2, term = "s(inclination)")
+@
+\\[2ex]
+
+<<forest-spatial-elevation, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 2.1))
+plot(fm2, term = "s(elevation)")
+@
+\end{center}
+\caption{\label{fig:forest-spatial-nonpara} Forest damage: estimates of particular nonparametric 
+effects including 80\% and 95\% point-wise confidence intervals of the model including the spatial 
+effect.}
+\end{figure}
+
+\begin{figure}[t!]
+\begin{center}
+\setkeys{Gin}{width=0.7\textwidth}
+<<forest-spatial-id, echo=FALSE, fig=TRUE, width=7, height=4>>=
+par(mar = c(0, 0, 0, 0))
+plot(fm2, term = "s(id)", map = BeechBnd, 
+  pos = "topleft", width = 0.4, height = 0.2, 
+  distance.labels = 2, swap = TRUE)
+@
+\end{center}
+\caption{\label{fig:forest-spatial} Forest damage: estimate of the spatial effect.}
+\end{figure}
 
 \section{Summary}\label{sec:conclusion}
 
