@@ -48,6 +48,7 @@ bayesx <- function(formula, data, weights = NULL, subset = NULL,
       res <- c(res, read.bayesx.model.output(res$bayesx.prg$file.dir, tm))
       res$call <- match.call()
       res$terms <- res$bayesx.setup$term.labels
+      res$model.fit$family <- control$family
     }
   } else warning("an error occured during runtime of BayesX!")
 

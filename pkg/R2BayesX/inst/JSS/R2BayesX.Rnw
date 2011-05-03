@@ -106,14 +106,14 @@ time, but also offering already familiar users a toolset, that even, beside the 
 formulate STAR models directly on the console, easily allows to use existing code and model output, 
 within \proglang{R}. 
 
-The implementation is therefore structured in several independent operating functions that basically 
-set up the necessary model components at first, send these to the BayesX binary for processing, read 
-the returned output files back into \proglang{R} by conversion to objects of suitable classes, which 
-may then be printed, summarized and visualized.
+Therefore, the implementation is structured in several independent operating functions that 
+basically set up the necessary model components at first, send these to the BayesX binary for 
+processing, read the returned output files back into \proglang{R} by conversion to objects of 
+suitable classes, which may then be printed, summarized and visualized.
 
-All the functions described in this paper have been added to the CRAN package \pkg{BayesX} 
+The interface described in this paper has been added to the CRAN package \pkg{BayesX} 
 \citep{Kneib+Heinzl+Brezger:2011}, which previously provided mainly functions for exploring 
-estimation results. 
+estimation results.
 
 To present the capabilities of the software, the next section briefly discusses the methodological 
 background of regression models with a structured additive predictor, before an in detail 
@@ -155,30 +155,49 @@ generalized additive models (GAM) \citep{Hastie+Tibshirani:1990}, generalized ad
 models \citep{Hastie+Tibshirani:1993}, and geographically weighted regression 
 \citep{Fotheringham+Brunsdon+Charlton:2002}.
 
-The unified representation of a STAR predictor arises from the fact that all of the above mentioned 
-functional types may be specified by a basis function approach, where the vector of function 
-evaluations $f_j = (f_j(x_{1j}),\ldots,f_j(x_{nj}))$, with $i = 1,\ldots,n$ observations, can be
-written in matrix notation 
+The unified representation of a STAR predictor arises from the fact that all functions $f_j$ may be 
+specified by a basis function approach, where the vector of function  evaluations 
+$f_j = (f_j(x_{1j}),\ldots,f_j(x_{nj}))$, with $i = 1,\ldots,n$ observations, can be written in 
+matrix notation 
 \begin{equation} \label{eqn:matnot}
 f_j = X_j\beta_j,
 \end{equation}
-with $X_j$ as a design matrix, that only depends on the prior assumptions about smoothness of $f_j$, and $\beta_j$ are unknown regression coefficients which have to be estimated. Hence, the predictor 
+with $X_j$ as a design matrix, that only depends on the prior assumptions about smoothness of $f_j$, 
+and $\beta_j$ are unknown regression coefficients which have to be estimated. Hence, the predictor 
 of (\ref{eqn:structadd}) may be rewritten by
 \begin{equation} \label{eqn:structaddmat}
 f_j = X_1\beta_1 + \ldots X_p\beta_p + U\gamma,
 \end{equation}
 where $U$ corresponds to the usual design matrix for the fixed effects.
 
-In BayesX, estimation of regression coefficients is based on two inferential concepts, Markov chain Monte Carlo simulation techniques corresponding to full Bayesian inference \citep{Brezger+Lang:2006}
+In BayesX, estimation of regression coefficients is based on two inferential concepts, Markov chain 
+Monte Carlo simulation techniques corresponding to full Bayesian inference \citep{Brezger+Lang:2006}
 and mixed model methodology corresponding to penalized likelihood or empirical Bayes inference
 \citep{Fahrmeir+Kneib+Lang:2004}. As a third alternative BayesX provides a penalized least squares
 (respectively penalized likelihood) approach for estimating structured additive regression tools. In
 addition, a powerful variable and model selection tool is included. Model choice and estimation of
 the parameters is done simultaneously \citep{Belitz+Lang:2008}.
 
+For all inferential concepts, the prior for the functions $f_j$ depends on the design matrix $X_j$, 
+as e.g. determined by the functional types described above, and a prior for the vector $\beta_j$, 
+which may also be written in a general form given by
+\begin{equation} \label{eqn:prior}
+p(\beta_j | \tau_j^2) \propto exp \left(- \frac{1}{2\tau_j^2} \beta_j^{\prime}K_j\beta_j\right),
+\end{equation}
+with $K_j$ as a quadratic penalty matrix that shrinks parameters towards zero or penalizes too 
+abrupt jumps between neighboring parameters. In most cases $K_j$ will be rank deficient and the 
+prior for $\beta_j$ is partially improper.
 
+The variance parameter $\tau_j^2$ is equivalent to the inverse smoothing parameter in a frequentist
+approach and controls the trade off between flexibility and smoothness. For full Bayesian inference,
+weakly informative inverse Gamma hyperpriors $\tau_j^2 \sim IG(a_j, b_j)$ are assigned to 
+$\tau_j^2$, with $a_j = b_j = 0.001$ as a standard option. For empirical Bayes inference, $\tau_j^2$ 
+is considered an unknown constant which is determined as a restricted maximum likelihood estimate 
+(REML).
 
- 
+A thorough (and for most practical purposes sufficient) introduction into the regression models 
+supported by the program is provided in the BayesX methodology manual 
+\citep{Belitz+Brezger+Kneib+Lang:2011}.
 
 
 \section[Implementation in R]{Implementation in \proglang{R}} \label{sec:implementation}
@@ -302,6 +321,10 @@ load("forest-model.rda")
 <<fit-forest-model>>
 save(fm1, fm2, file = "forest-model.rda")
 }
+@
+
+<<summary-forest-model>>=
+summary(fm1)
 @
 
 \begin{figure}[t!]
