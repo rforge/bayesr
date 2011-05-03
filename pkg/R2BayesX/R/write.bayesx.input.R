@@ -222,8 +222,9 @@ write.term.info <- function(file, terms, data, object = NULL, contrasts.arg = NU
           fn <- colnames(m)[2L:ncol(m)]
           fnv <- "c("
           nf <- length(fn)
-          for(i in 1L:(nf - 1L))
-            fnv <- paste(fnv, "\'", fn[i], "\',", sep = "")
+          if(nf > 1L)
+            for(i in 1L:(nf - 1L))
+              fnv <- paste(fnv, "\'", fn[i], "\',", sep = "")
           fnv <- paste(fnv, "\'", fn[nf], "\')", sep = "")
           info <- paste("list(term=\'", terms[k], "\',pos=" , k, 
             ",isFactor=TRUE", ",names=",rmf(fnv), ")", sep = "")

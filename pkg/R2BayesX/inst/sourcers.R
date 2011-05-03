@@ -1,7 +1,14 @@
-dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
+dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-b <- read.bayesx.output("/tmp/RtmpU15TSn/bayesx", "bayesx.estim")
+data("ForestHealth", package = "R2BayesX")
+data("BeechBnd")
+fm <- bayesx(defoliation ~  elevation + soil + ph + stand +
+  fertilized + humus + moisture + alkali + 
+  s(age, bs = "ps") + s(year, bs = "ps") + s(inclination, bs = "ps") + 
+  s(canopy, bs = "ps") + s(age, year, bs = "te") +  r(id) +
+  s(id, bs = "gk", xt = list(map = BeechBnd, full = TRUE)),
+  family = "cumlogit", method = "REML", data = ForestHealth)
 
 
 

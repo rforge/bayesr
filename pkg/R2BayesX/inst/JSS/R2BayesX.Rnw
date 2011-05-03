@@ -296,20 +296,44 @@ spatial effect.}
 
 \subsection{Forest health data set} \label{subsec:forest}
 
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{|l|p{10cm}|}
+\hline
+Variable           & Description \\ \hline
+\code{id}          & tree location identification number. \\ \hline
+\code{year}        & year of census. \\ \hline
+\code{defoliation} & percentage of tree defoliation in three ordinal
+                     categories, 0 == `defoliation < 12.5\%', 1 == `12.5\% <=
+                     defoliation < 50\%' and 3 == `defoliation >= 50\%'. \\ \hline
+\code{x}           & x-coordinate of the tree location. \\ \hline
+\code{y}           & y-coordinate of the tree location. \\ \hline
+\code{age}         & age of stands in years. \\ \hline
+\code{canopy}      & forest canopy density in percent. \\ \hline
+\code{inclination} & slope inclination in percent. \\ \hline
+\code{elevation}   & elevation (meters above sea level). \\ \hline
+\code{soil}        & soil layer depth in cm. \\ \hline
+\code{ph}          & soil pH at 0-2cm depth. \\ \hline
+\code{moisture}    & soil moisture level with categories 1 == `moderately
+                     dry', 2 == `moderately moist' and 3 == `moist or temporarily
+                     wet'. \\ \hline
+\code{alkali}      & proportion of base alkali-ions with categories 1 == `low' 
+                     to 4 == `high'. \\ \hline
+\code{humus}       & humus layer thickness in cm. \\ \hline
+\code{stand}       & stand type with categories `deciduous' and `mixed'. \\ \hline
+\code{fertilized}  & fertilization applied with categories `yes' and `no'. \\ \hline
+\end{tabular}
+\caption{\label{tab:forest} Variables in the forest health data set.}
+\end{center}
+\end{table}
+
 <<fit-forest-model, echo=TRUE, eval=FALSE>>=
 data("ForestHealth", package = "R2BayesX")
 data("BeechBnd")
-fm1 <- bayesx(defoliation ~  stand + fertilized + 
-  humus + moisture + alkali + ph + soil + 
-  s(age, bs = "ps") + s(inclination, bs = "ps") + 
-  s(canopy, bs = "ps") + s(year, bs = "ps") + 
-  s(elevation, bs = "ps"),
-  family = "cumlogit", method = "REML", data = ForestHealth)
-fm2 <- bayesx(defoliation ~  stand + fertilized + 
-  humus + moisture + alkali + ph + soil + 
-  s(age, bs = "ps") + s(inclination, bs = "ps") + 
-  s(canopy, bs = "ps") + s(year, bs = "ps") + 
-  s(elevation, bs = "ps") + 
+fm <- bayesx(defoliation ~  elevation + soil + ph + stand +
+  fertilized + humus + moisture + alkali + 
+  s(age, bs = "ps") + s(year, bs = "ps") + s(inclination, bs = "ps") + 
+  s(canopy, bs = "ps") + s(age, year, bs = "te") +  r(id) +
   s(id, bs = "gk", xt = list(map = BeechBnd, full = TRUE)),
   family = "cumlogit", method = "REML", data = ForestHealth)
 @
@@ -319,87 +343,67 @@ if(file.exists("forest-model.rda")) {
 load("forest-model.rda")
 } else {
 <<fit-forest-model>>
-save(fm1, fm2, file = "forest-model.rda")
+save(fm, file = "forest-model.rda")
 }
 @
 
 <<summary-forest-model>>=
-summary(fm1)
+summary(fm)
 @
 
 \begin{figure}[t!]
 \begin{center}
-<<forest-no-spatial-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
+\setkeys{Gin}{width=0.49\textwidth}
+<<forest-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm1, term = "s(age)")
+plot(fm, term = "s(age)")
 @
-<<forest-no-spatial-inclination, echo=FALSE, fig=TRUE, width=5, height=4>>=
+<<forest-year, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm1, term = "s(inclination)")
-@ 
+plot(fm, term = "s(year)")
+@
 \\[2ex]
 
-<<forest-no-spatial-canopy, echo=FALSE, fig=TRUE, width=5, height=4>>=
+<<forest-inclination, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm1, term = "s(canopy)")
+plot(fm, term = "s(inclination)")
 @
-<<forest-no-spatial-year, echo=FALSE, fig=TRUE, width=5, height=4>>=
+<<forest-canopy, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm1, term = "s(year)")
-@ 
-\\[2ex]
-
-<<forest-no-spatial-elevation, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm1, term = "s(elevation)")
+plot(fm, term = "s(canopy)")
 @
 \end{center}
-\caption{\label{fig:forest-no-spatial} Forest damage: estimates of nonparametric effects including
-80\% and 95\% point-wise confidence intervals of the model without the spatial effect.}
+\caption{\label{fig:forest-spatial-nonpara} Forest damage: estimates of nonparametric 
+effects including 80\% and 95\% point-wise confidence intervals.}
 \end{figure}
 
 \begin{figure}[t!]
 \begin{center}
 \setkeys{Gin}{width=0.49\textwidth}
-<<forest-spatial-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm2, term = "s(age)")
-@
-<<forest-spatial-inclination, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm2, term = "s(inclination)")
-@
-\\[2ex]
-
-<<forest-spatial-elevation, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm2, term = "s(elevation)")
-@
-\end{center}
-\caption{\label{fig:forest-spatial-nonpara} Forest damage: estimates of particular nonparametric 
-effects including 80\% and 95\% point-wise confidence intervals of the model including the spatial 
-effect.}
-\end{figure}
-
-\begin{figure}[t!]
-\begin{center}
-\setkeys{Gin}{width=0.7\textwidth}
-<<forest-spatial-id, echo=FALSE, fig=TRUE, width=7, height=4>>=
+<<forest-id-structured, echo=FALSE, fig=TRUE, width=7, height=4>>=
 par(mar = c(0, 0, 0, 0))
-plot(fm2, term = "s(id)", map = BeechBnd, 
+plot(fm, term = "s(id)", map = BeechBnd, 
+  pos = "topleft", width = 0.4, height = 0.2, 
+  distance.labels = 2, swap = TRUE)
+@
+<<forest-id-unstructured, echo=FALSE, fig=TRUE, width=7, height=4>>=
+par(mar = c(0, 0, 0, 0))
+plot(fm, term = "s(id)", map = BeechBnd, 
   pos = "topleft", width = 0.4, height = 0.2, 
   distance.labels = 2, swap = TRUE)
 @
 \end{center}
-\caption{\label{fig:forest-spatial} Forest damage: estimate of the spatial effect.}
+\caption{\label{fig:forest-spatial} Forest damage: estimates of the structured, left panel, and 
+unstructured spatial effects, right panel respectively.}
 \end{figure}
+
 
 \section{Summary}\label{sec:conclusion}
 
 
 \section*{Acknowledgments}
 
-\nocite{Kneib+Heinzl+Brezger:2011}
+
 \bibliography{R2BayesX}
 
 

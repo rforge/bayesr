@@ -33,7 +33,7 @@ A data frame containing 1793 observations on 16 variables.
   \item{moisture:}{soil moisture level with categories 1 == `moderately dry', 2 == `moderately
      moist' and 3 == `moist or temporarily wet'.}
   \item{alkali:}{proportion of base alkali-ions with categories 1 == `low' to 4 == `high'.}
-  \item{humus:}{humus layer thickness in cm, categorical coded}
+  \item{humus:}{humus layer thickness in cm, categorical coded.}
   \item{stand:}{stand type with categories `deciduous' and `mixed'.}
   \item{fertilized:}{fertilization applied with categories `yes' and `no'.}
 }
