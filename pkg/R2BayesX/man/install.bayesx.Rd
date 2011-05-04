@@ -22,7 +22,7 @@ install.bayesx(inst.dir = NULL, source.dir = NULL)
 \details{
   On windows platforms function \code{install.bayesx} tries to install the file 
   \code{BayesX_windows.exe}, on unix platforms the \pkg{BayesX} sources in file 
-  \code{bayesxsource.zip} are tried to compiled with the gcc compiler. On all platforms, if 
+  \code{bayesxsource.zip} are tried to compiled with the GNU C++ compiler. On all platforms, if 
   \code{source.dir = NULL} it is tried to download the necessary installation files from 
   \url{http://www.stat.uni-muenchen.de/~bayesx/bayesx.html}, and if \code{inst.dir = NULL}, 
   function \code{install.bayesx} tries to install \pkg{BayesX} in the \code{\link{.libPaths}} 
