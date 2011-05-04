@@ -127,16 +127,16 @@ data concerning childhood malnutrition in Zambia as well as on a dataset on fore
 The STAR model class supported by \pkg{BayesX} is based on the framework of (Bayesian) generalized 
 linear models (GLM) \citep{Nelder+Wedderburn:1972, Fahrmeir+Tutz:2001}. GLMs assume that, given 
 covariates $u$ and unknown parameters $\gamma$, the distribution of the response variable $y$ 
-belongs to an exponential family with mean $\mu = E(y | u, \gamma)$ linked to a linear predictor 
-$\eta$ by
+belongs to an exponential family with mean $\mu = E(y | \mathbf{x}, \boldsymbol{\gamma})$ linked to 
+a linear predictor $\eta$ by
 \begin{equation} \label{eqn:glm}
-\mu = h(\eta) \qquad \eta = u^{\prime}\gamma,
+\mu = h(\eta) \qquad \eta = \mathbf{x}^{\prime}\boldsymbol{\gamma},
 \end{equation}
 where $h$ is a known link function and $\gamma$ are unknown regression parameters. For STAR models,
 the linear predictor is replaced by a more general and flexible, so called structured 
 additive predictor
 \begin{equation} \label{eqn:structadd}
-\eta = f_1(z_1) + \ldots + f_p(z_p) + u^{\prime}\gamma,
+\eta = f_1(z_1) + \ldots + f_p(z_p) + \mathbf{x}^{\prime}\boldsymbol{\gamma},
 \end{equation}
 where covariates $z_j$, $j = 1,\ldots,p$, are of generic type and dimension, and $f_j$ are possibly 
 smooth functions comprising effects (and combination of effects) as e.g. given by             
@@ -155,20 +155,21 @@ generalized additive models (GAM) \citep{Hastie+Tibshirani:1990}, generalized ad
 models \citep{Hastie+Tibshirani:1993}, and geographically weighted regression 
 \citep{Fotheringham+Brunsdon+Charlton:2002}.
 
-The unified representation of a STAR predictor arises from the fact that all functions $f_j$ may be 
-specified by a basis function approach, where the vector of function  evaluations 
-$f_j = (f_j(x_{1j}),\ldots,f_j(x_{nj}))$, with $i = 1,\ldots,n$ observations, can be written in 
-matrix notation 
+The unified representation of a STAR predictor arises from the fact that all functions $f_j$ in 
+(\ref{eqn:structadd}) may be specified by a basis function approach, where the vector of function  
+evaluations $\mathbf{f}_j = (f_j(z_{1j}),\ldots,f_j(z_{nj}))$, with $i = 1,\ldots,n$ observations, 
+can be written in matrix notation 
 \begin{equation} \label{eqn:matnot}
-f_j = X_j\beta_j,
+\mathbf{f}_j = \mathbf{Z}_j\boldsymbol{\beta}_j,
 \end{equation}
-with $X_j$ as a design matrix, that only depends on the prior assumptions about smoothness of $f_j$, 
-and $\beta_j$ are unknown regression coefficients which have to be estimated. Hence, the predictor 
-of (\ref{eqn:structadd}) may be rewritten by
+with $\mathbf{Z}_j$ as a design matrix, that only depends on the prior assumptions about smoothness 
+of $f_j$, and $\boldsymbol{\beta}_j$ are unknown regression coefficients which have to be estimated. 
+Hence, the predictor of (\ref{eqn:structadd}) may be rewritten by
 \begin{equation} \label{eqn:structaddmat}
-f_j = X_1\beta_1 + \ldots X_p\beta_p + U\gamma,
+\boldsymbol{\eta} = \mathbf{Z}_1\boldsymbol{\beta}_1 + \ldots \mathbf{Z}_p\boldsymbol{\beta}_p 
++ \mathbf{X}\boldsymbol{\gamma},
 \end{equation}
-where $U$ corresponds to the usual design matrix for the fixed effects.
+where $\mathbf{X}$ corresponds to the usual design matrix for the fixed effects.
 
 In BayesX, estimation of regression coefficients is based on two inferential concepts, Markov chain 
 Monte Carlo simulation techniques corresponding to full Bayesian inference \citep{Brezger+Lang:2006}
@@ -178,15 +179,16 @@ and mixed model methodology corresponding to penalized likelihood or empirical B
 addition, a powerful variable and model selection tool is included. Model choice and estimation of
 the parameters is done simultaneously \citep{Belitz+Lang:2008}.
 
-For all inferential concepts, the prior for the functions $f_j$ depends on the design matrix $X_j$, 
-as e.g. determined by the functional types described above, and a prior for the vector $\beta_j$, 
-which may also be written in a general form given by
+For all inferential concepts, the prior for the functions $f_j$ depends on the design matrix 
+$\mathbf{Z}_j$, as e.g. determined by the functional types described above, and a prior for the 
+vector $\boldsymbol{\beta}_j$, which may also be written in a general form given by
 \begin{equation} \label{eqn:prior}
-p(\beta_j | \tau_j^2) \propto exp \left(- \frac{1}{2\tau_j^2} \beta_j^{\prime}K_j\beta_j\right),
+p(\boldsymbol{\beta}_j | \tau_j^2) \propto exp \left(- \frac{1}{2\tau_j^2} 
+\boldsymbol{\beta_j}^{\prime}\mathbf{K}_j\boldsymbol{\beta}_j\right),
 \end{equation}
-with $K_j$ as a quadratic penalty matrix that shrinks parameters towards zero or penalizes too 
-abrupt jumps between neighboring parameters. In most cases $K_j$ will be rank deficient and the 
-prior for $\beta_j$ is partially improper.
+with $\mathbf{K}_j$ as a quadratic penalty matrix that shrinks parameters towards zero or penalizes 
+too abrupt jumps between neighboring parameters. In most cases $K_j$ will be rank deficient and the 
+prior for $\boldsymbol{\beta}_j$ is partially improper.
 
 The variance parameter $\tau_j^2$ is equivalent to the inverse smoothing parameter in a frequentist
 approach and controls the trade off between flexibility and smoothness. For full Bayesian inference,
@@ -304,8 +306,8 @@ Variable           & Description \\ \hline
 \code{id}          & tree location identification number. \\ \hline
 \code{year}        & year of census. \\ \hline
 \code{defoliation} & percentage of tree defoliation in three ordinal
-                     categories, 0 == `defoliation < 12.5\%', 1 == `12.5\% <=
-                     defoliation < 50\%' and 3 == `defoliation >= 50\%'. \\ \hline
+                     categories, 0 == `defoliation < 12.5\%', 1 == `12.5\% $\leq$
+                     defoliation < 50\%' and 3 == `defoliation $\geq$ 50\%'. \\ \hline
 \code{x}           & x-coordinate of the tree location. \\ \hline
 \code{y}           & y-coordinate of the tree location. \\ \hline
 \code{age}         & age of stands in years. \\ \hline
@@ -330,10 +332,17 @@ Variable           & Description \\ \hline
 <<fit-forest-model, echo=TRUE, eval=FALSE>>=
 data("ForestHealth", package = "R2BayesX")
 data("BeechBnd")
-fm <- bayesx(defoliation ~  elevation + soil + ph + stand +
-  fertilized + humus + moisture + alkali + 
-  s(age, bs = "ps") + s(year, bs = "ps") + s(inclination, bs = "ps") + 
-  s(canopy, bs = "ps") + s(age, year, bs = "te") +  r(id) +
+fm1 <- bayesx(defoliation ~  stand + fertilized + 
+  humus + moisture + alkali + ph + soil + 
+  s(age, bs = "ps") + s(inclination, bs = "ps") + 
+  s(canopy, bs = "ps") + s(year, bs = "ps") + 
+  s(elevation, bs = "ps"),
+  family = "cumlogit", method = "REML", data = ForestHealth)
+fm2 <- bayesx(defoliation ~  stand + fertilized + 
+  humus + moisture + alkali + ph + soil + 
+  s(age, bs = "ps") + s(inclination, bs = "ps") + 
+  s(canopy, bs = "ps") + s(year, bs = "ps") + 
+  s(elevation, bs = "ps") + 
   s(id, bs = "gk", xt = list(map = BeechBnd, full = TRUE)),
   family = "cumlogit", method = "REML", data = ForestHealth)
 @
@@ -343,67 +352,87 @@ if(file.exists("forest-model.rda")) {
 load("forest-model.rda")
 } else {
 <<fit-forest-model>>
-save(fm, file = "forest-model.rda")
+save(fm1, fm2, file = "forest-model.rda")
 }
 @
 
 <<summary-forest-model>>=
-summary(fm)
+summary(c(fm1, fm2))
 @
 
 \begin{figure}[t!]
 \begin{center}
-\setkeys{Gin}{width=0.49\textwidth}
-<<forest-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
+<<forest-no-spatial-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm, term = "s(age)")
+plot(fm1, term = "s(age)")
 @
-<<forest-year, echo=FALSE, fig=TRUE, width=5, height=4>>=
+<<forest-no-spatial-inclination, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm, term = "s(year)")
+plot(fm1, term = "s(inclination)")
+@ 
+\\[2ex]
+
+<<forest-no-spatial-canopy, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 2.1))
+plot(fm1, term = "s(canopy)")
+@
+<<forest-no-spatial-year, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 2.1))
+plot(fm1, term = "s(year)")
+@ 
+\\[2ex]
+
+<<forest-no-spatial-elevation, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 2.1))
+plot(fm1, term = "s(elevation)")
+@
+\end{center}
+\caption{\label{fig:forest-no-spatial} Forest damage: estimates of nonparametric effects including
+80\% and 95\% point-wise confidence intervals of the model without the spatial effect.}
+\end{figure}
+
+\begin{figure}[t!]
+\begin{center}
+\setkeys{Gin}{width=0.49\textwidth}
+<<forest-spatial-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 2.1))
+plot(fm2, term = "s(age)")
+@
+<<forest-spatial-inclination, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 2.1))
+plot(fm2, term = "s(inclination)")
 @
 \\[2ex]
 
-<<forest-inclination, echo=FALSE, fig=TRUE, width=5, height=4>>=
+<<forest-spatial-elevation, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm, term = "s(inclination)")
-@
-<<forest-canopy, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm, term = "s(canopy)")
+plot(fm2, term = "s(elevation)")
 @
 \end{center}
-\caption{\label{fig:forest-spatial-nonpara} Forest damage: estimates of nonparametric 
-effects including 80\% and 95\% point-wise confidence intervals.}
+\caption{\label{fig:forest-spatial-nonpara} Forest damage: estimates of particular nonparametric 
+effects including 80\% and 95\% point-wise confidence intervals of the model including the spatial 
+effect.}
 \end{figure}
 
 \begin{figure}[t!]
 \begin{center}
-\setkeys{Gin}{width=0.49\textwidth}
-<<forest-id-structured, echo=FALSE, fig=TRUE, width=7, height=4>>=
+\setkeys{Gin}{width=0.7\textwidth}
+<<forest-spatial-id, echo=FALSE, fig=TRUE, width=7, height=4>>=
 par(mar = c(0, 0, 0, 0))
-plot(fm, term = "s(id)", map = BeechBnd, 
-  pos = "topleft", width = 0.4, height = 0.2, 
-  distance.labels = 2, swap = TRUE)
-@
-<<forest-id-unstructured, echo=FALSE, fig=TRUE, width=7, height=4>>=
-par(mar = c(0, 0, 0, 0))
-plot(fm, term = "s(id)", map = BeechBnd, 
+plot(fm2, term = "s(id)", map = BeechBnd, 
   pos = "topleft", width = 0.4, height = 0.2, 
   distance.labels = 2, swap = TRUE)
 @
 \end{center}
-\caption{\label{fig:forest-spatial} Forest damage: estimates of the structured, left panel, and 
-unstructured spatial effects, right panel respectively.}
+\caption{\label{fig:forest-spatial} Forest damage: estimate of the spatial effect.}
 \end{figure}
-
 
 \section{Summary}\label{sec:conclusion}
 
 
 \section*{Acknowledgments}
 
-
+\nocite{Kneib+Heinzl+Brezger:2011}
 \bibliography{R2BayesX}
 
 

@@ -3,11 +3,12 @@ dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 data("ForestHealth", package = "R2BayesX")
 data("BeechBnd")
-fm <- bayesx(defoliation ~  elevation + soil + ph + stand +
-  fertilized + humus + moisture + alkali + 
-  s(age, bs = "ps") + s(year, bs = "ps") + s(inclination, bs = "ps") + 
-  s(canopy, bs = "ps") + s(age, year, bs = "te") +  r(id) +
-  s(id, bs = "gk", xt = list(map = BeechBnd, full = TRUE)),
+fm2 <- bayesx(defoliation ~  stand + fertilized + 
+  humus + moisture + alkali + ph + soil + 
+  s(age, bs = "ps") + s(inclination, bs = "ps") + 
+  s(canopy, bs = "ps") + s(year, bs = "ps") + 
+  s(elevation, bs = "ps") + 
+  s(x, y, bs = "te"),
   family = "cumlogit", method = "REML", data = ForestHealth)
 
 
@@ -63,17 +64,17 @@ ForestHealth$ph <- dat$ph
 ForestHealth$moisture <- as.factor(dat$frische) 
 ForestHealth$alkali <- as.factor(dat$alkali) 
 H <- rep(0, nrow(dat))
-H[dat$humus == 0] <- 1
+H[dat$humus == 1] <- 1
 H[dat$humus == 2] <- 2
 H[dat$humus == 3] <- 3
 H[dat$humus > 3] <- 4
 ForestHealth$humus <- as.factor(H)
 ForestHealth$stand <- as.factor(dat$artkat)
-levels(ForestHealth$stand) <- c("deciduous", "mixed")
+levels(ForestHealth$stand) <- c("mixed", "deciduous")
 ForestHealth$fertilized <- as.factor(dat$dueng)
-levels(ForestHealth$fertilized) <- c("yes", "no")
+levels(ForestHealth$fertilized) <- c("no", "yes")
 ForestHealth <- na.omit(as.data.frame(ForestHealth))
-## save(ForestHealth, file = "/home/c403129/svn/bayesr/pkg/R2BayesX/data/ForestHealth.rda")
+## save(ForestHealth, file = "/home/nikolaus/svn/bayesr/pkg/R2BayesX/data/ForestHealth.rda")
 
 
 
