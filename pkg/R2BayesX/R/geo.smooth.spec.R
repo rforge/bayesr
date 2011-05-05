@@ -6,6 +6,12 @@ geo.smooth.spec <- function(object, dir, prg, data, type)
     backtick = TRUE, width.cutoff = 500L))
   map <- object$xt$map
   if(is.null(map)) {
+    if(!is.null(xt$polys))
+      map <- xt$polys
+    if(!is.null(xt$penaltY))
+      map <- xt$penalty
+  }
+  if(is.null(map)) {
     if(!is.list(object$xt[[1L]]))
       map <- object$xt
     else {
@@ -64,7 +70,7 @@ geo.smooth.spec <- function(object, dir, prg, data, type)
       object$xt$full <- NULL
     } else term <- paste(term, "(", type, ",map=", map.name, ",nrknots=", nrknots, sep = "")
   } else term <- paste(term, "(", type, ",map=", map.name, ",nrknots=", nrknots, sep = "")
-  term <- paste(do.xt(term, object, "map"), ")", sep = "")
+  term <- paste(do.xt(term, object, c("map", "polys", "penalty")), ")", sep = "")
   if(object$by != "NA")
     term <- make_by(term, object, data)
 

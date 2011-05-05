@@ -1,16 +1,38 @@
-dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
+dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-data("ForestHealth", package = "R2BayesX")
-data("BeechBnd")
-fm2 <- bayesx(defoliation ~  stand + fertilized + 
-  humus + moisture + alkali + ph + soil + 
-  s(age, bs = "ps") + s(inclination, bs = "ps") + 
-  s(canopy, bs = "ps") + s(year, bs = "ps") + 
-  s(elevation, bs = "ps") + 
-  s(x, y, bs = "te"),
-  family = "cumlogit", method = "REML", data = ForestHealth)
 
+set.seed(333)
+     
+## simulate some geographical data
+data("MunichBnd")
+N <- length(MunichBnd); names(MunichBnd) <- 1:N
+n <- N*5
+     
+## regressors
+dat <- data.frame(id = rep(1:N, n/N), x1 = runif(n, -3, 3))
+dat$sp <- with(dat, sort(runif(N, -2, 2), decreasing = TRUE)[id])
+     
+## response
+dat$y <- with(dat, 1.5 + sin(x1) + sp + rnorm(n, sd = 0.6))
+     
+## estimate models with
+## BayesX MCMC and REML
+xt <- list(polys = MunichBnd)
+b1 <- bayesx(y ~ s(x1, bs = "ps", k = 10) + 
+  s(id, bs = "mrf", xt = xt), 
+  method = "MCMC", data = dat)
+b2 <- gam(y ~ s(x1, bs = "ps", k = 10) + 
+  s(id, bs = "mrf", xt = xt), 
+  method = "REML", data = dat)
+
+plot(b1, c.select = c("x1", "Mean", "2.5%", "97.5%"),
+  fill.select = c(0, 0, 1, 1))
+
+par(mfrow = c(2, 1))
+plot(b1, term = "s(id)", map = MunichBnd, col = heat.colors)
+plot(b2, scheme = "heat", select = 2)
+plotmap(MunichBnd, x = fitted(b2, type = "terms"), dat$id)
 
 
 

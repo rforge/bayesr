@@ -13,6 +13,12 @@ bayesx.construct.mrf.smooth.spec <- function(object, dir, prg, data)
   if(!is.list(object$xt))
     object$xt <- list(object$xt)
   map <- object$xt$map
+  if(is.null(map)) {
+    if(!is.null(xt$polys))
+      map <- xt$polys
+    if(!is.null(xt$penaltY))
+      map <- xt$penalty
+  }
   if(is.null(map))
     map <- object$xt$gra
   if(is.null(map)) {
@@ -69,7 +75,7 @@ bayesx.construct.mrf.smooth.spec <- function(object, dir, prg, data)
     cat(cmd, file = prgfile, append = TRUE)
   term <- object$term
   term <- paste(term, "(spatial,map=", map.name, sep = "")
-  term <- paste(do.xt(term, object, "map"), ")", sep = "")
+  term <- paste(do.xt(term, object, c("map", "polys", "penalty")), ")", sep = "")
   if(object$by != "NA")
     term <- make_by(term, object, data)
 

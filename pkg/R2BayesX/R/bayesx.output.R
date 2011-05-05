@@ -602,7 +602,11 @@ blow.up.resid <- function(data, x, xnam, response, eta, dimx, cx)
       id <- x[,1L]
     } else co <- matrix(x[,1L:dimx], ncol = dimx)
     xtmp <- data[[xnam[1L]]]
-    ind <- unique.id(xtmp)[order(xtmp)]
+    ox <- order(xtmp)
+    xtmp <- xtmp[ox]
+    response <- response[ox]
+    eta <- eta[ox,]
+    ind <- unique.id(xtmp)
     x <- as.data.frame(x[ind,])
     x$pcat80 <- NULL
     x$pcat95 <- NULL
@@ -616,7 +620,7 @@ blow.up.resid <- function(data, x, xnam, response, eta, dimx, cx)
       eval(parse(text = paste("x$", xnam[k] , "<- NULL", sep = "")))
     x <- as.matrix(x)
     pres <- response - eta[,1L] + x[,1L]
-    pres <- pres - mean(pres, na.rm = TRUE) ## mean(x[,1L], na.rm = TRUE)
+    ## pres <- pres - mean(pres, na.rm = TRUE) ## mean(x[,1L], na.rm = TRUE)
     x <- cbind(co[ind,], pres, id[ind])
     if(ncol(x) < 3L)
       colnames(x) <- c("x.co", "partial.resids")

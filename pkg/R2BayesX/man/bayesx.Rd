@@ -168,14 +168,14 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 set.seed(111)
 n <- 200
 
-## regressors
+## regressor
 dat <- data.frame(x = runif(n, -3, 3))
 
 ## response
 dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
 
 ## estimate models with
-## bayesx REML ans MCMC
+## bayesx REML and MCMC
 b1 <- bayesx(y ~ s(x, bs = "ps"), 
   method = "REML", data = dat)
 b2 <- bayesx(y ~ s(x, bs = "ps"), 

@@ -79,6 +79,8 @@ plot2d <- function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
     if(by[1L] != "NA")
       args$ylab <- paste(args$ylab, ":", byname, sep = "")
   }	
+  if(is.character(c.select)) 
+    c.select <- pmatch(c.select, colnames(x))
   x <- x[,c.select]
   if(residuals)
     attr(x, "partial.resids") <- pres

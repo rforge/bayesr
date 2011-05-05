@@ -109,11 +109,65 @@ existing code and model output, within \proglang{R}.
 Therefore, the implementation is structured in several independent operating functions that 
 basically set up the necessary model components at first, send these to the BayesX binary for 
 processing, read the returned output files back into \proglang{R} by conversion to objects of 
-suitable classes, which may then be printed, summarized and visualized.
+suitable classes, which may then be printed, summarized and visualized. All the functionality
+of the interface has been added to the CRAN package \pkg{BayesX} \citep{Kneib+Heinzl+Brezger:2011}, 
+which previously provided mainly functions for exploring estimation results.
 
-The interface described in this paper has been added to the CRAN package \pkg{BayesX} 
-\citep{Kneib+Heinzl+Brezger:2011}, which previously provided mainly functions for exploring 
-estimation results.
+One of the major problems designing the interface was to choose a comfortable translation method
+of \proglang{R} specific syntax for setting up STAR models in BayesX. For this reason, the package 
+layout is orientated and dependent on the recommended CRAN package \pkg{mgcv} \citep{Wood:2011}, 
+since \pkg{mgcv} already provides functionality, which easily allows to set up new model terms 
+within \proglang{R}'s formula language, and secondly, the package covers a number of the model terms 
+implemented in BayesX. This means, some of the model formulas specified for use within the 
+\pkg{mgcv} model fitting function \fct{gam}, may also be used in \pkg{BayesX} and vice versa. Hence, 
+the user may analyze models in both settings by changing the function call, only. This is 
+illustrated in the following, where some data is simulated and models are estimated with \fct{gam},
+using generalized cross validation (GCV) for estimation, and the \pkg{BayesX} interface main model 
+fitting function \fct{bayesx} applying MCMC: 
+<<fit-illustration-model, echo=TRUE, eval=FALSE>>=
+## generate some data
+set.seed(111)
+n <- 100
+     
+## regressor
+dat <- data.frame(x = runif(n, -3, 3))
+     
+## response
+dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
+     
+## estimate models with
+## mgcv GCV and BayesX MCMC
+b1 <- gam(y ~ s(x, bs = "ps", k = 10), method = "GCV.Cp", data = dat)
+b2 <- bayesx(y ~ s(x, bs = "ps", k = 10), method = "MCMC", data = dat)
+@
+<<cache-illustration-model, echo=FALSE, eval=TRUE>>=
+if(file.exists("illustration-model.rda")) {
+load("illustration-model.rda")
+} else {
+<<fit-illustration-model>>
+save(b1, b2, file = "illustration-model.rda")
+}
+@
+\begin{figure}[t!]
+\setkeys{Gin}{width=0.49\textwidth}
+\begin{center}
+<<illustration-BayesX, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1))
+plot(b1, residuals = TRUE, shade = TRUE, pch = 1)
+@
+<<illustration-mgcv, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1))
+plot(b2, term = "s(x)", residuals = TRUE, 
+  c.select = c("x", "Mean", "2.5%", "97.5%"), 
+  fill.select = c(0, 0, 1, 1), col.polygons = "grey")
+@
+\end{center}
+\caption{\label{fig:illustration} Illustration example: comparison of estimated effect estimated 
+with package \pkg{mgcv} model fitting function \fct{mgcv} using GCV, left panel, and , \pkg{BayesX} 
+model fitting function \fct{bayesx} using MCMC, right panel respectively.}
+\end{figure}
+A comparison plot of the estimated effects of the two models is given in 
+figure~\ref{fig:illustration}.
 
 To present the capabilities of the software, the next section briefly discusses the methodological 
 background of regression models with a structured additive predictor, before an in detail 
@@ -204,16 +258,7 @@ supported by the program is provided in the BayesX methodology manual
 
 \section[Implementation in R]{Implementation in \proglang{R}} \label{sec:implementation}
 
-One of the major problems designing the interface was to choose a comfortable translation method
-of \proglang{R} specific syntax for setting up STAR models in BayesX. For this reason, the package 
-layout is orientated and dependent on the recommended CRAN package \pkg{mgcv} \citep{Wood:2011}, 
-since \pkg{mgcv} already provides functionality, which easily allows to set up new model terms 
-within \proglang{R}'s formula language, and secondly, the package covers a number of the model terms 
-implemented in BayesX. This means, some of the model formulas specified for use within the 
-\pkg{mgcv} model fitting function \fct{gam}, may also be used in \pkg{BayesX} and vice versa. Hence, 
-the user may analyze models in both settings by changing the function call, only. 
-
-However, before STAR models can be fitted with BayesX, the binary command line version of the 
+Before STAR models can be fitted with BayesX, the binary command line version of the 
 program needs to be installed. This may be accomplished differently and system specific: one 
 opportunity is to download the \proglang{C++} source-code from 
 \begin{center}
@@ -276,7 +321,6 @@ where all arguments, except the last, are standard model frame specifications
 
 
 \section{STAR models in practice} \label{sec:illustrations}
-\setkeys{Gin}{width=0.49\textwidth}
 
 Section with two examples: Childhood malnutrition in Zambia and the forest health data.
 
@@ -328,6 +372,7 @@ summary(zm)
 @
 
 \begin{figure}[t!]
+\setkeys{Gin}{width=0.49\textwidth}
 \begin{center}
 <<zambia-agechild, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
@@ -344,8 +389,8 @@ credible intervals.}
 \end{figure}
 
 \begin{figure}[t!]
-\begin{center}
 \setkeys{Gin}{width=0.49\textwidth}
+\begin{center}
 <<zambia-district-structured, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(0, 0, 0, 0))
 plot(zm, term = "s(district)", map = ZambiaBnd, 
@@ -431,6 +476,7 @@ summary(c(fm1, fm2))
 @
 
 \begin{figure}[t!]
+\setkeys{Gin}{width=0.49\textwidth}
 \begin{center}
 <<forest-no-spatial-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
@@ -462,8 +508,8 @@ plot(fm1, term = "s(elevation)")
 \end{figure}
 
 \begin{figure}[t!]
-\begin{center}
 \setkeys{Gin}{width=0.49\textwidth}
+\begin{center}
 <<forest-spatial-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
 plot(fm2, term = "s(age)")
@@ -485,8 +531,8 @@ effect.}
 \end{figure}
 
 \begin{figure}[t!]
-\begin{center}
 \setkeys{Gin}{width=0.7\textwidth}
+\begin{center}
 <<forest-spatial-id, echo=FALSE, fig=TRUE, width=7, height=4>>=
 par(mar = c(0, 0, 0, 0))
 plot(fm2, term = "s(id)", map = BeechBnd, 
