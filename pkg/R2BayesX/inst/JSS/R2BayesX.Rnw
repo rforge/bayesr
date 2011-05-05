@@ -163,8 +163,8 @@ plot(b2, term = "s(x)", residuals = TRUE,
 @
 \end{center}
 \caption{\label{fig:illustration} Illustration example: comparison of estimated effect with the 
-package \pkg{mgcv} model fitting function \fct{gam} using GCV, left panel, and, \pkg{BayesX} model 
-fitting function \fct{bayesx} using MCMC, right panel respectively.}
+package \pkg{mgcv} model fitting function \fct{gam} using GCV, left panel, and the \pkg{BayesX} \
+model fitting function \fct{bayesx} using MCMC, right panel respectively.}
 \end{figure}
 A comparison plot of the estimated effects of the two models is given in 
 figure~\ref{fig:illustration}.
