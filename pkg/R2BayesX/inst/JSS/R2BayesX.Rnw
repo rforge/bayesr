@@ -162,9 +162,9 @@ plot(b2, term = "s(x)", residuals = TRUE,
   fill.select = c(0, 0, 1, 1), col.polygons = "grey")
 @
 \end{center}
-\caption{\label{fig:illustration} Illustration example: comparison of estimated effect estimated 
-with package \pkg{mgcv} model fitting function \fct{mgcv} using GCV, left panel, and , \pkg{BayesX} 
-model fitting function \fct{bayesx} using MCMC, right panel respectively.}
+\caption{\label{fig:illustration} Illustration example: comparison of estimated effect with the 
+package \pkg{mgcv} model fitting function \fct{gam} using GCV, left panel, and, \pkg{BayesX} model 
+fitting function \fct{bayesx} using MCMC, right panel respectively.}
 \end{figure}
 A comparison plot of the estimated effects of the two models is given in 
 figure~\ref{fig:illustration}.
