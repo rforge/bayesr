@@ -210,7 +210,7 @@ layout is orientated and dependent on the recommended CRAN package \pkg{mgcv} \c
 since \pkg{mgcv} already provides functionality, which easily allows to set up new model terms 
 within \proglang{R}'s formula language, and secondly, the package covers a number of the model terms 
 implemented in BayesX. This means, some of the model formulas specified for use within the 
-\pkg{mgcv} model fitting function \fct{gam} may also be used in \pkg{BayesX} and vice versa, hence, 
+\pkg{mgcv} model fitting function \fct{gam}, may also be used in \pkg{BayesX} and vice versa. Hence, 
 the user may analyze models in both settings by changing the function call, only. 
 
 However, before STAR models can be fitted with BayesX, the binary command line version of the 
@@ -491,7 +491,7 @@ effect.}
 par(mar = c(0, 0, 0, 0))
 plot(fm2, term = "s(id)", map = BeechBnd, 
   pos = "topleft", width = 0.4, height = 0.2, 
-  distance.labels = 2, swap = TRUE)
+  distance.labels = 2)
 @
 \end{center}
 \caption{\label{fig:forest-spatial} Forest damage: estimate of the spatial effect.}
