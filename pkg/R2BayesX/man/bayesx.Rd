@@ -254,18 +254,21 @@ plot(b)
 ## covariate and the map regionnames
 ## should be coded as integers
 set.seed(333)
-
+     
 ## simulate some geographical data
 data("MunichBnd")
-N <- length(MunichBnd); names(MunichBnd) <- 1:N
-n <- N*5
-
+N <- length(MunichBnd); n <- N*5
+     
 ## regressors
-dat <- data.frame(id = rep(1:N, n/N), x1 = runif(n, -3, 3))
-dat$sp <- with(dat, sort(runif(N, -2, 2), decreasing = TRUE)[id])
-
+dat <- data.frame(x1 = runif(n, -3, 3),
+  id = as.factor(rep(names(MunichBnd), length.out = n)))
+dat$sp <- with(dat, sort(runif(N, -2, 2))[id])
+     
 ## response
 dat$y <- with(dat, 1.5 + sin(x1) + sp + rnorm(n, sd = 0.6))
+
+## sort data according id
+dat <- dat[order(x2int(dat$id)),]
 
 ## estimate models with
 ## bayesx MCMC and REML
@@ -287,7 +290,7 @@ plot(b1, term = "s(id)", map = MunichBnd,
   main = "bayesx() MCMC estimate")
 plot(b2, term = "s(id)", map = MunichBnd, 
   main = "bayesx() REML estimate")
-plotmap(MunichBnd, x = unique(cbind(dat$id, dat$sp)), 
+plotmap(MunichBnd, x = unique(cbind(x2int(dat$id), dat$sp)), 
   main = "Truth")
 par(op)
 

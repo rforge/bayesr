@@ -1,38 +1,72 @@
-dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
+dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
+names(columb.polys) <- 1:length(columb.polys)
+plotmap(map = columb.polys, x = columb$crime, id = columb$district, values = T)
+cbind(columb$crime, f2int(columb$district))
+
+library("R2BayesX")
+## Load Columbus Ohio crime data 
+## and polygon shape file
+data("columb")     
+data("columb.polys")
+
+## need to adapt pylgon names
+## for comparison
+columb$district <- with(columb, x2int(district))
+names(columb.polys) <- x2int(names(columb.polys))
+
+## neighbourhood structure info for MRF
+xt <- list(polys = columb.polys) 
+
+## estimate models with
+## mgcv REML and BayesX MCMC 
+b1 <- gam(crime ~ s(district, bs = "mrf", xt = xt), data = columb, method = "REML")
+b2 <- bayesx(crime ~ s(district, bs = "mrf", xt = xt), data = columb, method = "REML")
+
+fit.b2 <- fitted(b2, term = "s(district)")[[1L]][,1L:2L] 
+fit.b2[,2L] <- fit.b2[,2L] + coef(b2)[1L, 1L]
+
+plotmap(map = columb.polys, x = predict(b1, terms = 1), symmetric = FALSE, values = TRUE)
+plotmap(map = columb.polys, x = fit.b2, symmetric = FALSE, values = TRUE)
+
 
 set.seed(333)
      
 ## simulate some geographical data
 data("MunichBnd")
-N <- length(MunichBnd); names(MunichBnd) <- 1:N
-n <- N*5
+N <- length(MunichBnd); n <- N*5
      
 ## regressors
-dat <- data.frame(id = rep(1:N, n/N), x1 = runif(n, -3, 3))
+dat <- data.frame(x1 = runif(n, -3, 3),
+  id = as.factor(rep(names(MunichBnd), length.out = n)))
 dat$sp <- with(dat, sort(runif(N, -2, 2), decreasing = TRUE)[id])
      
 ## response
 dat$y <- with(dat, 1.5 + sin(x1) + sp + rnorm(n, sd = 0.6))
-     
+
+## sort data according id
+dat <- dat[order(x2int(dat$id)),]
+
 ## estimate models with
-## BayesX MCMC and REML
+## BayesX MCMC and mgcv REML
 xt <- list(polys = MunichBnd)
 b1 <- bayesx(y ~ s(x1, bs = "ps", k = 10) + 
   s(id, bs = "mrf", xt = xt), 
-  method = "MCMC", data = dat)
+  method = "MCMC", data = dat, dir.rm = FALSE)
 b2 <- gam(y ~ s(x1, bs = "ps", k = 10) + 
   s(id, bs = "mrf", xt = xt), 
   method = "REML", data = dat)
 
-plot(b1, c.select = c("x1", "Mean", "2.5%", "97.5%"),
+plot(b1, term = "s(x1)", 
+  c.select = c("x1", "Mean", "2.5%", "97.5%"),
   fill.select = c(0, 0, 1, 1))
 
-par(mfrow = c(2, 1))
-plot(b1, term = "s(id)", map = MunichBnd, col = heat.colors)
-plot(b2, scheme = "heat", select = 2)
-plotmap(MunichBnd, x = fitted(b2, type = "terms"), dat$id)
+par(mfrow = c(1, 3))
+plot(b1, term = "s(id)", map = MunichBnd)
+plotmap(MunichBnd, x = predict(b2, terms = 2))
+plotmap(MunichBnd, x = unique(cbind(x2int(dat$id), dat$sp)), 
+  main = "Truth")
 
 
 

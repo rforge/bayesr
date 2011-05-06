@@ -20,7 +20,8 @@ export(
   r,                    
   read.bayesx.output,   
   run.bayesx,          
-  write.bayesx.input 
+  write.bayesx.input,
+  x2int 
 )
 
 S3method(c, bayesx)

@@ -16,11 +16,12 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     names(map) <- as.character(1L:n)
   if(is.null(x))
     legend <- FALSE
-  if(!any(is.na(poly.names <- as.integer(names(map))))) {
-    poly.names <- sort(poly.names)
-    poly.names <- as.character(poly.names)
+  if(!any(is.na(poly.names <- f2int(names(map))))) {
+      poly.names <- sort(poly.names)
+      poly.names <- as.character(poly.names)
   } else poly.names <- sort(names(map))
   map <- map[poly.names]
+  poly.names <- names(map)
   surrounding <- attr(map, "surrounding")
   inner.id <- which(sapply(surrounding, length) > 0L)
   if(length(inner.id)) {
@@ -156,6 +157,14 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
 
 compute.x.id <- function(x, id, c.select, range, symmetric)
 {
+  if(is.null(id) && (is.vector(x) || is.array(x))) {
+    if(!is.null(names(x))) {
+      id <- names(x)
+      x <- as.vector(x)
+    }
+  }
+  if(is.factor(id))
+    id <- f2int(id)
   if(is.vector(x) && is.vector(id)) {
     if(length(x) != length(id))
       stop("arguments x and id are differing!")

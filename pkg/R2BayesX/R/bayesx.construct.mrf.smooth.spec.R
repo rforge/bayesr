@@ -64,6 +64,12 @@ bayesx.construct.mrf.smooth.spec <- function(object, dir, prg, data)
     cat("map", map.name, "\n", file = prgfile, append = TRUE)
   if(dirok) {
     if(inherits(map, "bnd")) {
+      if(!any(is.na(poly.names <- f2int(names(map))))) {
+        poly.names <- sort(poly.names)
+        poly.names <- as.character(poly.names)
+      } else poly.names <- sort(names(map))
+      map <- map[poly.names]
+      class(map) <- "bnd"
       write.bnd(map = map, file = mapfile, replace = TRUE)
       cmd <- paste(map.name, ".infile using ", mapfile, "\n", sep = "")
     } else {

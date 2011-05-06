@@ -44,6 +44,12 @@ geo.smooth.spec <- function(object, dir, prg, data, type)
     mapfile <- paste(dir, "/", mapfile, sep = "")
     prgfile <- paste(dir, "/", prg, sep = "")
     cat("map", map.name, "\n", file = prgfile, append = TRUE)
+    if(!any(is.na(poly.names <- f2int(names(map))))) {
+      poly.names <- sort(poly.names)
+      poly.names <- as.character(poly.names)
+    } else poly.names <- sort(names(map))
+    map <- map[poly.names]
+    class(map) <- "bnd"
     write.bnd(map = map, file = mapfile, replace = TRUE)
     cmd <- paste(map.name, ".infile using ", mapfile, "\n", sep = "")
     cat(cmd, file = prgfile, append = TRUE)
