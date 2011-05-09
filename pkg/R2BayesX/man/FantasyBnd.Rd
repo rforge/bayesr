@@ -14,7 +14,7 @@
   x-coordinates in the first and y-coordinates in the second column each. 
 }
 
-\seealso{\code{\link{plotmap}}}
+\seealso{\code{\link{plotmap}}, \code{\link{read.bnd}}, \code{\link{write.bnd}}}
 
 \examples{
 ## load FantasyBnd and plot it

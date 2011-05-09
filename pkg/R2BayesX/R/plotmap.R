@@ -165,6 +165,8 @@ compute.x.id <- function(x, id, c.select, range, symmetric)
   }
   if(is.factor(id))
     id <- f2int(id)
+  if(is.array(x) && length(dim(x)) < 2L)
+    x <- as.vector(x)
   if(is.vector(x) && is.vector(id)) {
     if(length(x) != length(id))
       stop("arguments x and id are differing!")

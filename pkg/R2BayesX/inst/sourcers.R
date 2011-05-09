@@ -1,6 +1,9 @@
-dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
+dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
+plotmap(MunichBnd, x = p2, id = names(p2), symmetric = FALSE, range= c(-3, 3))
+
+
 names(columb.polys) <- 1:length(columb.polys)
 plotmap(map = columb.polys, x = columb$crime, id = columb$district, values = T)
 cbind(columb$crime, f2int(columb$district))
@@ -62,11 +65,12 @@ plot(b1, term = "s(x1)",
   c.select = c("x1", "Mean", "2.5%", "97.5%"),
   fill.select = c(0, 0, 1, 1))
 
+p2 <- predict(b2, terms = 2)
 par(mfrow = c(1, 3))
-plot(b1, term = "s(id)", map = MunichBnd)
-plotmap(MunichBnd, x = predict(b2, terms = 2))
+plot(b1, term = "s(id)", map = MunichBnd, symmetric = FALSE, range= c(-3, 3))
+plotmap(MunichBnd, x = p2, id = names(p2), symmetric = FALSE, range= c(-3, 3))
 plotmap(MunichBnd, x = unique(cbind(x2int(dat$id), dat$sp)), 
-  main = "Truth")
+  main = "Truth",  range= c(-3, 3))
 
 
 

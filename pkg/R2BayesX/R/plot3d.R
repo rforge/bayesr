@@ -183,33 +183,44 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
     args$y <- zn
     args$zlab <- NULL
     if(image) {
+      mar.orig <- (par.orig <- par(c("mar", "las", "mfrow")))$mar
+      mar <- mar.orig
+      on.exit(par(par.orig))
       if(legend) {
-        if(is.null(args$mar)) {
-          mar <- omar <- par()$mar
-          if(mar[4] < 6)
-            mar[4] <- 6
-        } else mar <- args$mar
+        mar[4L] <- 0.5
         par(mar = mar)
+        layout(matrix(c(1, 2), nrow = 1), widths = c(1, 0.35))
       }
       do.call(graphics::image.default, 
         delete.args(graphics::image.default, args, 
         c("xlab", "ylab", "main", "axes")))
+      if(contour) {
+        if(is.null(col.contour)) 
+          args$col <- "black"
+        else
+          args$col <- col.contour
+        args$add <- TRUE
+        do.call(graphics::contour.default, 
+          delete.args(graphics::contour.default, args, 
+          c("xlab", "ylab", "main", "axes")))
+        contour <- FALSE
+      }
       if(legend) {
+        mar <- mar.orig
+        mar[2L] <- 0.5
+        par(mar = mar)
         args2 <- args
-        args2$xlim <- args$xlim
-        args2$ylim <- args$ylim
+        args2$xlim <- args2$ylim <- c(0, 1)
         if(is.null(args$width))
-          args2$width <- (max(args$ylim, na.rm = TRUE) - min(args$ylim, na.rm = TRUE)) * 1
+          args2$width <- 1
         if(is.null(args$height))
-          args2$height <- (max(args$xlim, na.rm = TRUE) - min(args$xlim, na.rm = TRUE)) * 0.07
+          args2$height <- 0.5
         if(is.null(args$pos))
-          args2$pos <- c(1.05, 0)
-        if(is.null(args$distance.labels))
-          args2$distance.labels <- 3L
-        if(is.null(args$length.ticks))
-          args2$length.ticks <- 2L
+          args2$pos <- c(0, 0)
         if(is.null(args$side.legend))
           args2$side.legend <- 2L
+        if(is.null(args$distance.labels))
+          args2$distance.labels <- 3L
         if(is.null(args$side.ticks))
           args2$side.ticks <- 2L
         if(is.null(args$scale))
@@ -219,26 +230,21 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
         args2$x <- args$z
         args2$breaks <- breaks
         args2$swap <- swap
-        args2$plot <- FALSE
+        args2$plot <- TRUE
         args2$digits <- digits
         args2$cex <- cex.legend
-        args2$xpd <- TRUE
+        args2$xpd <- FALSE
         args2$scale <- FALSE
         args2$range <- range
-        args2$xpd <- TRUE
-        args2$add <- TRUE
+        args2$add <- FALSE
         do.call(colorlegend, delete.args(colorlegend, args2, c("font", "cex")))
       }
-      add <- TRUE
-    if(is.null(args$mar))
-      par(mar = omar)
     }
     if(contour) {
       if(is.null(col.contour)) 
         args$col <- "black"
       else
         args$col <- col.contour
-      args$add <- add
       do.call(graphics::contour.default, 
         delete.args(graphics::contour.default, args, 
         c("xlab", "ylab", "main", "axes")))

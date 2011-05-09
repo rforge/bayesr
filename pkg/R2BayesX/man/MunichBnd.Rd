@@ -18,7 +18,7 @@
   \url{http://www.stat.uni-muenchen.de/~bayesx/}.
 }
 
-\seealso{\code{\link{plotmap}}}
+\seealso{\code{\link{plotmap}}, \code{\link{read.bnd}}, \code{\link{write.bnd}}}
 
 \examples{
 ## load MunichBnd and plot it
