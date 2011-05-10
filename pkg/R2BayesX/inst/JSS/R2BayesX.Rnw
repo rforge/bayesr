@@ -325,7 +325,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 \end{Sinput}
 where most arguments are standard model frame specifications \citep[see][]{Chambers+Hastie:1992}. 
 The last argument specifies several parameters controlling the processing of the BayesX binary and 
-are arranged by function \fct{bayesx.control}, e.g. the choice between the three inferential 
+are arranged by function \fct{bayesx.control}, e.g. the choice between the inferential 
 concepts, set within argument \code{method}, which are Markov chain Monte Carlo simulation 
 techniques - \code{"MCMC"}, mixed model based estimation - \code{"REML"} and penalized least squares 
 including model selection - \code{"STEP"}, or the distribution assigned to the response, set with 
@@ -336,16 +336,16 @@ table~\ref{tab:familiy}.
 \begin{tabular}{|l|p{4cm}|p{2.5cm}|l|}
 \hline
 \code{family} & Response distribution & Link & \code{method} \\ \hline
-\code{"gaussian"} & Gaussian & identity & \code{"MCMC"}/\code{"REML"}/\code{"STEP"} \\ \hline
-\code{"gamma"} & gamma & log & \code{"MCMC"}/\code{"REML"}/\code{"STEP"} \\ \hline
-\code{"binomial"} & binomial & logit & \code{"MCMC"}/\code{"REML"}/\code{"STEP"} \\ \hline
-\code{"binomialprobit"} & binomial & probit  & \code{"MCMC"}/\code{"REML"}/\code{"STEP"} \\ \hline
-\code{"multinomial"} & unordered multinomial & logit & \code{"MCMC"}/\code{"REML"}/\code{"STEP"} \\ 
+\code{"gaussian"} & Gaussian & identity & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
+\code{"gamma"} & gamma & log & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
+\code{"binomial"} & binomial & logit & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
+\code{"binomialprobit"} & binomial & probit  & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
+\code{"multinomial"} & unordered multinomial & logit & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ 
   \hline
-\code{"poisson"} & Poisson & log-link & \code{"MCMC"}/\code{"REML"}/\code{"STEP"} \\ \hline
-\code{"cumprobit"} & cumulative threshold & probit & \code{"MCMC"}/\code{"REML"} \\ \hline
-\code{"cox"} & continuous-time survival data & -  & \code{"MCMC"}/\code{"REML"} \\ \hline
-\code{"multistate"} & continuous-time multi-state data & - & \code{"MCMC"}/\code{"REML"} \\ \hline
+\code{"poisson"} & Poisson & log-link & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
+\code{"cumprobit"} & cumulative threshold & probit & \code{"MCMC"} \code{"REML"} \\ \hline
+\code{"cox"} & continuous-time survival data & -  & \code{"MCMC"} \code{"REML"} \\ \hline
+\code{"multistate"} & continuous-time multi-state data & - & \code{"MCMC"} \code{"REML"} \\ \hline
 \code{"multinomialprobit"} & unordered multinomial & probit & \code{"MCMC"} \\ \hline
 \code{"nbinomial"} & negative binomial & log-link & \code{"MCMC"} \\ \hline
 \code{"zip"} & zero inflation & log-link & \code{"MCMC"} \\ \hline
@@ -365,8 +365,8 @@ As mentioned in the introduction, package \pkg{BayesX} utilizes function \fct{s}
 package to build the additive components of a STAR predictor within \proglang{R}'s formula language.
 In addition, unit- or cluster specific unstructured effects may be incorporated into the 
 \code{formula} using the random effects term constructor function \fct{r}. Then, a typical STAR 
-predictor with some response \code{y}, covariate \code{x1} with a possibly smooth effect modeled by 
-a P-spline, covariate \code{id} representing some cluster index modeled as random effect and 
+predictor with some response \code{y}, covariate \code{x1} with a possibly nonlinear effect modeled 
+by a P-spline, covariate \code{id} representing some cluster index modeled as random effect and 
 covariate \code{x2} entering linearly, is e.g. specified by
 \begin{Sinput}
 y ~ s(x1, bs = "ps") + r(id) + x2
@@ -418,6 +418,9 @@ provided in table~\ref{tab:terms}.
 \caption{\label{tab:terms} Possible BayesX model terms within function \fct{s}.}
 \end{center}
 \end{table}
+Specifying additional arguments for a model term is generally restricted to 
+argument \code{xt} within function \fct{s} and \fct{r}, i.e. \code{xt} must be a named \code{list}
+including the parameters. 
 
 
 \section{STAR models in practice} \label{sec:illustrations}
