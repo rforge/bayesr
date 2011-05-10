@@ -46,7 +46,7 @@ plot2d <- function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
   if(!is.bayesx && length(fill.select) < nc)
     fill.select <- NULL
   if(is.null(col.polygons))
-    args$col.polygons <- rep(c("grey70", "grey50"), round(nc/2))
+    args$col.polygons <- rep(c("grey80", "grey70"), round(nc/2))
   else
     args$col.polygons <- col.polygons
   if(residuals && !is.null(pres <- attr(x, "partial.resids")))

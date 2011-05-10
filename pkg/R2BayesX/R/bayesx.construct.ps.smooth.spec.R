@@ -5,7 +5,7 @@ bayesx.construct.ps.smooth.spec <- function(object, dir, prg, data)
   if(length(object$p.order) < 2L)
     object$p.order <- c(object$p.order, 2L)
   if(object$bs.dim < 0L)
-    object$bs.dim <- 22L
+    object$bs.dim <- 10L
   else {
     if(length(object$p.order) > 1L) {
       if(object$p.order[2L] > 2L) {

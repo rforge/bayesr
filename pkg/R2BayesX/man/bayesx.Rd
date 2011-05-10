@@ -179,7 +179,7 @@ dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
 b1 <- bayesx(y ~ s(x, bs = "ps"), 
   method = "REML", data = dat)
 b2 <- bayesx(y ~ s(x, bs = "ps"), 
-  method = "MCMC", iter = 1200, data = dat)
+  method = "MCMC", iter = 1200, burnin = 200, data = dat)
 
 ## compare reported output
 summary(c(b1, b2))

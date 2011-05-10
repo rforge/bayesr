@@ -1,7 +1,7 @@
 dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-plotmap(MunichBnd, x = p2, id = names(p2), symmetric = FALSE, range= c(-3, 3))
+bayesx.construct(s(x1, bs = "generic", xt = list(a = TRUE)))
 
 
 names(columb.polys) <- 1:length(columb.polys)

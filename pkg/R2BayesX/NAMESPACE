@@ -54,6 +54,7 @@ S3method(bayesx.construct, nigmix.smooth.spec)
 S3method(bayesx.construct, ridge.smooth.spec)
 S3method(bayesx.construct, te.smooth.spec)
 S3method(bayesx.construct, season.smooth.spec)
+S3method(bayesx.construct, generic.smooth.spec)
 
 S3method(AIC, bayesx)
 S3method(BIC, bayesx)

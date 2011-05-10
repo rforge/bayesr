@@ -102,6 +102,8 @@ bayesx.construct(object, dir, prg, data)
       \code{bs = "te"}, defines a two-dimensional P-spline based on the tensor product of 
       one-dimensional P-splines with a two-dimensional first order random walk penalty for the 
       parameters of the spline.
+
+    \item generic term: \code{bs = "generic"}, general purpose model term.
   }
 
   Within the \code{xt} argument in functions \code{\link[mgcv]{s}} and \code{\link{r}}, additional
@@ -183,6 +185,12 @@ bayesx.construct(s(id, bs = "gs", k = 15, xt = list(map = MunichBnd)))
 bayesx.construct(r(id))
 bayesx.construct(r(id, by = x1))
 bayesx.construct(r(id, by = x1, xt = list(nofixed=TRUE)))
+
+## generic
+## specifies some model term
+## and sets all additional arguments 
+## within argument xt
+bayesx.construct(s(x, bs = "generic", xt = list(dosomething = TRUE, a = 1, b = 2)))
 }
 
 \keyword{regression}
