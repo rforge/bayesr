@@ -381,10 +381,10 @@ provided in table~\ref{tab:terms}.
 \code{bs} & Description \\ \hline
 \code{"lasso"} \code{"nigmix"} \code{"ridge"} & shrinkage of fixed effects: defines a 
                                                 shrinkage-prior for the corresponding parameters 
-                                                $y_j$, $j = 1, \ldots, q$, $q \geq 1$ of the linear 
-                                                effects $X_1, \ldots, X_q$. There are three priors 
-                                                possible: ridge-, lasso- and Normal Mixture of 
-                                                inverse Gamma (NMIG)-prior. \\ \hline
+                                                $\gamma_j$, $j = 1, \ldots, q$, $q \geq 1$ of the 
+                                                linear effects $x_1, \ldots, x_q$. There are three 
+                                                priors possible: ridge-, lasso- and Normal Mixture 
+                                                of inverse Gamma (NMIG)-prior. \\ \hline
 \code{"bl"} & nonlinear baseline effect in hazard regression or multi-state models: defines a 
               P-spline with second order random walk penalty for the parameters of the spline for 
               the log-baseline effect $log(\lambda(time))$. \\ \hline
@@ -423,37 +423,47 @@ within function \fct{s} and \fct{r}, i.e. \code{xt} must be a named \fct{list} i
 parameters, where all possibilities for each \code{bs} type may be looked up calling function 
 \fct{bayesx.term.options}. As an example, using \code{bs = "mrf"} to estimate a spatially correlated
 effect with Markov random fields of some location identification covariate \code{id}, requires an 
-additional map boundary or graph file, which must be provided within \code{xt}, hence 
+additional map boundary or graph file, which must be provided within \code{xt}, then 
 \begin{Sinput}
 s(id, bs = "mrf", xt = list(map = SomeMap)) 
 \end{Sinput} 
-is the setup for this type of model term.
+constructs the setup for this type of model term.
 
-After execution of all computations with the BayesX binary, the model output files are written into 
+After the execution of computations with the BayesX binary, the model output files are written into 
 the declared output directory and are read back into \proglang{R} using function 
 \fct{read.bayesx.output}. The returned fitted-model object is a list of class \code{"bayesx"},
 wherefore a set of standard extractor functions, such as \fct{summary}, \fct{fitted}, \fct{plot} 
-and more, listed in table~\ref{tab:funmethods}, is available.
+and more, listed in table~\ref{tab:funmethods}, are available.
 \begin{table}[htbp]
 \begin{center}
 \begin{tabular}{|l|p{10cm}|}
 \hline
 Function & Description \\ \hline
-\fct{print} & simple printed display of the initial call and some additional information of the
-              fitted model. \\ \hline
-\fct{summary} & returns an object of class \code{"summary.bayesx"} containing the relevant summary 
-                statistics (which has a \fct{print} method). \\ \hline
+\fct{AIC}, \fct{BIC}, \fct{DIC}, \fct{GCV} & compute information criteria, availability is dependent 
+                                             on the \code{method} used. \\ \hline
+\fct{c} & combines several objects of class \code{"bayesx"}, all functions and methods may be 
+          applied on the returned object. \\ \hline
 \fct{coef} & extracts coefficients of linear modeled terms, for \code{"MCMC"} estimated models, 
              the samples of the coefficients are provided within the object attribute 
              \code{"sample"}. \\ \hline
+\fct{confint} & compute confidence interval of linear modeled terms if \code{method = "REML"}, for
+                \code{"MCMC"} the quantiles of the coefficient samples according to a specified 
+                level are computed. \\ \hline
 \fct{fitted} & fitted values of either the linear predictor, or a select model term. \\ \hline
+\fct{logLik} & extract fitted log-likelihood, only if \code{method = "REML"}. \\ \hline
+\fct{plot} & either model diagnostic plots or effect plots of particular terms. \\ \hline
+\fct{print} & simple printed display of the initial call and some additional information of the
+              fitted model. \\ \hline
 \fct{residuals} & extract model or partial residuals for a select term. \\ \hline
+\fct{summary} & returns an object of class \code{"summary.bayesx"} containing the relevant summary 
+                statistics (which has a \fct{print} method). \\ \hline
+\fct{terms} & extract terms of model components. \\ \hline
 \end{tabular}
 \caption{\label{tab:funmethods} Functions and methods for objects of class \code{"bayesx"}.}
 \end{center}
 \end{table}
 
-jzd7ttcm
+
 \section{STAR models in practice} \label{sec:illustrations}
 
 Section with two examples: Childhood malnutrition in Zambia and the forest health data.

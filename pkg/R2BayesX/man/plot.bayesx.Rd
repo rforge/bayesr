@@ -23,8 +23,8 @@
     \code{term = "s(x)"}.}
   \item{which}{choose the type of plot that should be drawn, possible options are: \code{"effect"},
     \code{"coef-samples"}, \code{"var-samples"}, \code{"intcpt-samples"}, \code{"hist-resid"}, 
-    \code{"qq-resid"}, \code{"scatter-resid"}, \code{"scale-resid"}. Argument which may also be
-    specified as integer, e.g. \code{which = 1}. The first three arguments are all model term 
+    \code{"qq-resid"}, \code{"scatter-resid"}, \code{"scale-resid"}. Argument \code{which} may also 
+    be specified as integer, e.g. \code{which = 1}. The first three arguments are all model term 
     specific. For the last four global model diagnostic plot options \code{which} may be set 
     with \code{which = 4:7}.}
   \item{ask}{\dots}
@@ -80,7 +80,7 @@ dat$y <- with(dat, 1.5 + sin(x) + cos(z) * sin(w) +
 
 ## estimate model
 b1 <- bayesx(y ~ s(x, bs = "ps") + s(z, w, bs = "te") + fac,
-   data = dat, method = "MCMC", iter = 1200)
+   data = dat, method = "MCMC", iter = 1200, burnin = 200)
 
 ## plot p-spline term
 plot(b1, term = 1)
@@ -177,7 +177,7 @@ b <- c(b1, b2)
 ## plot first term of second model
 plot(b, model = 2, term = 1)
 
-## plot secon term of both models
+## plot second term of both models
 plot(b, term = 2, map = MunichBnd)
 
 ## plot everything

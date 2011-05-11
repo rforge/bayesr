@@ -32,6 +32,8 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
   if(!is.null(level))
     if(length(level) < 2L)
       level <- c(level , level)
+  if(burnin > iter)
+    burnin <- 1L
   if(method == "MCMC") {
     control$iterations <- iter
     control$burnin <- burnin
