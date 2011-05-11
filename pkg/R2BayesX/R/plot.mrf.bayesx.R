@@ -1,5 +1,4 @@
-plot.mrf.bayesx <-
-function(x, diagnostics = FALSE, ...)
+plot.mrf.bayesx <- function(x, diagnostics = FALSE, ...)
 {
   if(!is.null(x)) {
 		args <- list(...)
@@ -36,4 +35,3 @@ function(x, diagnostics = FALSE, ...)
 
   return(invisible(NULL))
 }
-

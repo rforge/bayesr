@@ -1,5 +1,4 @@
-plot3d <-
-function(x, residuals = FALSE, col.surface = NULL, 
+plot3d <- function(x, residuals = FALSE, col.surface = NULL, 
   ncol = 99L, swap = FALSE, col.residuals = NULL, col.contour = NULL, 
   c.select = NULL, grid = 30L, image = FALSE, contour = FALSE, 
   legend = TRUE, cex.legend = 1, breaks = NULL, range = NULL, 
@@ -254,4 +253,3 @@ function(x, residuals = FALSE, col.surface = NULL,
 
   return(invisible(NULL))
 }
-

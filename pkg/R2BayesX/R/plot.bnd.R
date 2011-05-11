@@ -1,5 +1,4 @@
-plot.bnd <-
-function(x, ...)
+plot.bnd <- function(x, ...)
 {
   if(is.null(x))
     return(invisible(NULL))
@@ -9,4 +8,3 @@ function(x, ...)
 
   return(invisible(NULL))
 }
-

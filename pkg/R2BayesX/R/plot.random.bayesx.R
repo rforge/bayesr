@@ -1,5 +1,4 @@
-plot.random.bayesx <-
-function(x, diagnostics = FALSE, ...)
+plot.random.bayesx <- function(x, diagnostics = FALSE, ...)
 {	
   if(is.null(x))
     return(invisible(NULL))
@@ -10,4 +9,3 @@ function(x, diagnostics = FALSE, ...)
 
   return(invisible(NULL))
 }
-

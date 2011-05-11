@@ -1,5 +1,4 @@
-bayesx <-
-function(formula, data, weights = NULL, subset = NULL, 
+bayesx <- function(formula, data, weights = NULL, subset = NULL, 
   offset = NULL, na.action = na.fail, contrasts = NULL, 
   control = bayesx.control(...), ...)
 {
@@ -79,3 +78,21 @@ function(formula, data, weights = NULL, subset = NULL,
   }
 }
 
+
+## only intern fun
+BayesX <- function(...)
+{
+  system("BayesX")
+  return(invisible(NULL))	
+}
+
+
+s4hm <- function(dir, model.name)
+{
+  if(length(bm <- search.bayesx.models(dir)))
+    bm <- unique(grep(paste(model.name, "_hlevel", sep = ""), bm, fixed = TRUE, value = TRUE))
+  else
+    stop(paste("problems reading model results from directory:", dir))
+
+  return(bm)
+}

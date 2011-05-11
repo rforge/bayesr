@@ -1,5 +1,4 @@
-coeffun <-
-function(x, args, diagnostics)
+coeffun <- function(x, args, diagnostics)
 {
   if(is.null(x))
     return(invisible(NULL))			
@@ -15,4 +14,3 @@ function(x, args, diagnostics)
 
   return(invisible(NULL))
 }
-

@@ -1,5 +1,4 @@
-r <-
-function(id, method = NULL, by = NA, xt = NULL, 
+r <- function(id, method = NULL, by = NA, xt = NULL, 
   data = NULL, weights = NULL, subset = NULL, 
   offset = NULL, na.action = na.fail, contrasts = NULL, 
   control = bayesx.control(...), ...)
@@ -44,4 +43,3 @@ function(id, method = NULL, by = NA, xt = NULL,
 
   return(rval) 
 }
-

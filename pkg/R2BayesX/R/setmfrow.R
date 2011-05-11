@@ -1,5 +1,4 @@
-setmfrow <-
-function(np) 
+setmfrow <- function(np) 
 {
   if(np > 12L) {
     par(ask = TRUE)
@@ -8,4 +7,3 @@ function(np)
 
   return(invisible(NULL))
 }
-

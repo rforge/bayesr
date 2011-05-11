@@ -1,5 +1,4 @@
-geo.smooth.spec <-
-function(object, dir, prg, data, type)
+geo.smooth.spec <- function(object, dir, prg, data, type)
 {
   if(!is.list(object$xt))
     object$xt <- list(object$xt)
@@ -83,4 +82,3 @@ function(object, dir, prg, data, type)
 
   return(term)
 }
-

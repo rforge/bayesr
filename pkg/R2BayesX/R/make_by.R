@@ -1,5 +1,4 @@
-make_by <-
-function(term, object, data)
+make_by <- function(term, object, data)
 {
   if(!missing(data) && !is.character(data)) {
     by <- data[[object$by]]
@@ -16,4 +15,3 @@ function(term, object, data)
 
   return(term)
 }
-

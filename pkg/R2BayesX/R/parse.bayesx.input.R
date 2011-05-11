@@ -1,5 +1,4 @@
-parse.bayesx.input <-
-function(formula, data, weights = NULL, subset = NULL, offset = NULL, 
+parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, offset = NULL, 
   na.action = na.fail, contrasts = NULL, control = bayesx.control(...), ...)
 {
   if(missing(data))
@@ -146,3 +145,36 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
   return(control)
 }
 
+
+parse.random.bayesx <- function(term, data)
+{
+  ra <- eval(parse(text = term))
+  term <- ra$term
+  h.random <- NULL
+  if(!is.null(ra$ins)) {
+    if(is.null(ra$data))
+      ra$data <- data
+    h.random <- parse.bayesx.input(ra$formula, ra$data, 
+      ra$weights, ra$subset, ra$offset, 
+      ra$na.action, ra$contrasts, ra$control)
+    h.random$family <- "gaussian_re"
+  }    
+
+  return(list(h.random = h.random, term = term))
+}
+
+
+set.hlevel.stuff <- function(x, outfile)
+{
+  for(k in 1L:length(x)) {
+    if(is.null(x[[k]]$hlevel))
+      x[[k]]$hlevel <- 1L
+    x[[k]]$hlevel <- x[[k]]$hlevel + 1L
+    x[[k]]$first <- FALSE
+    x[[k]]$outfile <- outfile
+    if(!is.null(x[[k]]$h.random))
+      x[[k]]$h.random <- set.hlevel.stuff(x[[k]]$h.random, outfile)
+  }
+
+  return(x)
+}

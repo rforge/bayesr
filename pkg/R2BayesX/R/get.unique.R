@@ -1,5 +1,4 @@
-get.unique <-
-function(x, digits = 4L)
+get.unique <- function(x, digits = 4L)
 {
   check <- is.matrix(x)
   if(check)
@@ -23,4 +22,3 @@ function(x, digits = 4L)
 
   return(list(x = xr, xu = xu, ind = index, iind = iind))
 }
-

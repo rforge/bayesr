@@ -1,5 +1,4 @@
-bayesx.term.options <-
-function(bs = "ps")
+bayesx.term.options <- bxopts <- function(bs = "ps")
 {
   bterms <- c("lasso", "ridge", "bl", "kr", "gk", 
     "gs", "mrf", "ps", "rw1", "rw2", "random", "te", "season")
@@ -437,4 +436,3 @@ function(bs = "ps")
     }
   }
 }
-

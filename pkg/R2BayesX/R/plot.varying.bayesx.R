@@ -1,5 +1,4 @@
-plot.varying.bayesx <-
-function(x, ...)
+plot.varying.bayesx <- function(x, ...)
 {
   args <- list(...)
   if(is.null(args$ask))
@@ -18,4 +17,3 @@ function(x, ...)
 
   return(invisible(NULL))
 }
-

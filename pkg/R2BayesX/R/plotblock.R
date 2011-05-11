@@ -1,5 +1,4 @@
-plotblock <-
-function(x, residuals = FALSE, range = c(0.3, 0.3), 
+plotblock <- function(x, residuals = FALSE, range = c(0.3, 0.3), 
   col.residuals = "black", col.lines = "black", c.select = NULL, 
   fill.select = NULL , col.polygons = NULL, data = NULL, ...)
 {
@@ -157,4 +156,3 @@ function(x, residuals = FALSE, range = c(0.3, 0.3),
 
   return(invisible(NULL))
 }
-

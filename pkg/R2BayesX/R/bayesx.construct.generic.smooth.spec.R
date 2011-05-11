@@ -1,5 +1,4 @@
-bayesx.construct.generic.smooth.spec <-
-function(object, dir, prg, data) 
+bayesx.construct.generic.smooth.spec <- function(object, dir, prg, data) 
 {
   term <- paste(object$term, sep = "", collapse = "*")
   if(!is.null(object$xt)) {
@@ -11,4 +10,3 @@ function(object, dir, prg, data)
 
   return(term)
 }
-

@@ -1,5 +1,4 @@
-construct.shrw <-
-function(object, dir, prg, data, what)
+construct.shrw <- function(object, dir, prg, data, what)
 {
   term <- object$term
   term <- paste(term, "(", what, sep = "")
@@ -9,4 +8,3 @@ function(object, dir, prg, data, what)
 
   return(term)
 }
-

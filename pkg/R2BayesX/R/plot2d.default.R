@@ -1,5 +1,4 @@
-plot2d.default <-
-function(x, residuals, range, col.residuals = "black",
+plot2d.default <- function(x, residuals, range, col.residuals = "black",
   fill.select = NULL, col.polygons = NULL, col.rug = NULL, pb = FALSE, 
   x.co = NULL, rug = FALSE, jitter = FALSE, specs)
 {
@@ -92,4 +91,3 @@ function(x, residuals, range, col.residuals = "black",
 
   return(invisible(NULL))
 }
-

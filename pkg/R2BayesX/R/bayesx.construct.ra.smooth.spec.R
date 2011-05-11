@@ -1,5 +1,4 @@
-bayesx.construct.ra.smooth.spec <-
-function(object, dir, prg, data)
+bayesx.construct.ra.smooth.spec <- function(object, dir, prg, data)
 {
   term <- object$term
   if(is.null(object$ins))
@@ -12,4 +11,3 @@ function(object, dir, prg, data)
 
   return(term)
 }
-

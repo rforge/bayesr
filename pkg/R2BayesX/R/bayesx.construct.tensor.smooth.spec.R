@@ -1,5 +1,4 @@
-bayesx.construct.tensor.smooth.spec <-
-function(object, dir, prg, data)
+bayesx.construct.tensor.smooth.spec <- function(object, dir, prg, data)
 {
   termo <- object$term
   object$p.order <- object$margin[[1L]]$p.order
@@ -26,4 +25,3 @@ function(object, dir, prg, data)
 
   return(term)
 }
-

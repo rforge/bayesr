@@ -1,5 +1,4 @@
-bayesx.control <-
-function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",  
+bayesx.control <- function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",  
   verbose = FALSE, dir.rm = TRUE, bin = getOption("bayesx.bin"), outfile = NULL, iter = 12000L, 
   burnin = 2000L, maxint = 150L, step = 10L, predict = TRUE, seed = NULL, 
   hyp.prior = c(1, 0.005), distopt = NULL, reference = NULL, zipdistopt = NULL,  
@@ -90,4 +89,3 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
 
   return(control)
 }
-

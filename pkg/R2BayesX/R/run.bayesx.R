@@ -1,5 +1,4 @@
-run.bayesx <-
-function(dir, prg.name = "bayesx.estim.input.prg", 
+run.bayesx <- function(dir, prg.name = "bayesx.estim.input.prg", 
   verbose = FALSE, bin = getOption("bayesx.bin"))
 {
   ok <- check.install.bayesx(bin, verbose = FALSE) 
@@ -50,4 +49,3 @@ function(dir, prg.name = "bayesx.estim.input.prg",
 
   return(invisible(list(log = log, runtime = runtime)))
 }
-

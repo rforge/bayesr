@@ -1,5 +1,4 @@
-delete.args <-
-function(fun = NULL, args = NULL, not = NULL)
+delete.args <- function(fun = NULL, args = NULL, not = NULL)
 {
   nf <- names(formals(fun))
   na <- names(args)
@@ -13,4 +12,3 @@ function(fun = NULL, args = NULL, not = NULL)
 
   return(args)
 }
-

@@ -1,5 +1,4 @@
-get.model <-
-function(x, model)
+get.model <- function(x, model)
 {
   if(!is.null(model)) {
     if(is.character(model)) {
@@ -14,4 +13,3 @@ function(x, model)
 
   return(x)
 }
-

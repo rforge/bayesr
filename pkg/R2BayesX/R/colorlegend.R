@@ -1,5 +1,4 @@
-colorlegend <-
-function(color = NULL, ncol = NULL, x = NULL, breaks = NULL, 
+colorlegend <- function(color = NULL, ncol = NULL, x = NULL, breaks = NULL, 
   pos = NULL, side.legend = 1L, side.ticks = 1L, range = NULL, lrange = NULL, 
   width = 1L, height = 1L, scale = TRUE, xlim = NULL, ylim = NULL, plot = NULL, 
   add = FALSE, col.border = "black", lty.border = 1L, lwd.border = 1L, ticks = TRUE, 
@@ -161,3 +160,27 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
   return(invisible(pal))
 }
 
+
+dopos <- function(pos, limits, width, height, side.legend)
+{
+  if(side.legend > 1L)
+    limits <- rev(limits)
+  if(pos == "bottomleft") {
+    xlim <- c(min(limits[[1L]], na.rm = TRUE), min(limits[[1L]], na.rm = TRUE) + width)
+    ylim <- c(min(limits[[2L]], na.rm = TRUE), min(limits[[2L]], na.rm = TRUE) + height)
+  }
+  if(pos == "topleft") {
+    xlim <- c(min(limits[[1L]], na.rm = TRUE), min(limits[[1L]], na.rm = TRUE) + width)
+    ylim <- c(max(limits[[2L]], na.rm = TRUE) - height, max(limits[[2L]], na.rm = TRUE))
+  }
+  if(pos == "topright") {
+    xlim <- c(max(limits[[1L]], na.rm = TRUE) - width, max(limits[[1L]], na.rm = TRUE))
+    ylim <- c(max(limits[[2L]], na.rm = TRUE) - height, max(limits[[2L]], na.rm = TRUE))
+  }
+  if(pos == "bottomright") {
+    xlim <- c(max(limits[[1L]], na.rm = TRUE) - width, max(limits[[1L]], na.rm = TRUE))
+    ylim <- c(min(limits[[2L]], na.rm = TRUE), min(limits[[2L]], na.rm = TRUE) + height)
+  }
+
+  return(list(xlim = xlim, ylim = ylim))
+}

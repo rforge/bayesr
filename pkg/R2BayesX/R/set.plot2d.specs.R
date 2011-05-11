@@ -1,5 +1,4 @@
-set.plot2d.specs <-
-function(nc, args, col.lines, is.bayesx)
+set.plot2d.specs <- function(nc, args, col.lines, is.bayesx)
 {
   lwd <- args$lwd
   if(is.null(lwd) || any(is.na(lwd)))
@@ -23,4 +22,3 @@ function(nc, args, col.lines, is.bayesx)
 
   return(args)
 }
-

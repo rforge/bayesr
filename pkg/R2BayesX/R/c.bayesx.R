@@ -1,5 +1,4 @@
-c.bayesx <-
-function(...)
+c.bayesx <- function(...)
 {
   b <- list(...)
   x <- NULL
@@ -9,4 +8,3 @@ function(...)
 
   return(x)
 }
-

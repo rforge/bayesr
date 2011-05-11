@@ -1,5 +1,4 @@
-measure <-
-function(a, b, model = NULL, fixed = FALSE)
+measure <- function(a, b, model = NULL, fixed = FALSE)
 {
   err <- list()
   ## compare fixed effects
@@ -50,4 +49,3 @@ function(a, b, model = NULL, fixed = FALSE)
 
   return(err)
 }
-

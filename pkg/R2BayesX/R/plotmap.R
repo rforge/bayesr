@@ -1,5 +1,4 @@
-plotmap <-
-function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE, 
+plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE, 
   swap = FALSE, range = NULL, names = FALSE, values = FALSE, col = NULL, ncol = 100, 
   breaks = NULL, cex.legend = 1, cex.names = 1, cex.values = cex.names, digits = 2L,
   mar.min = 2, add = FALSE, ...)
@@ -155,3 +154,120 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   return(invisible(NULL))
 }
 
+
+compute.x.id <- function(x, id, c.select, range, symmetric)
+{
+  if(is.null(id) && (is.vector(x) || is.array(x))) {
+    if(!is.null(names(x))) {
+      id <- names(x)
+      x <- as.vector(x)
+    }
+  }
+  if(is.factor(id))
+    id <- f2int(id)
+  if(is.array(x) && length(dim(x)) < 2L)
+    x <- as.vector(x)
+  if(is.vector(x) && is.vector(id)) {
+    if(length(x) != length(id))
+      stop("arguments x and id are differing!")
+  } else {
+    x <- unclass(x)
+    if(is.list(x)) 
+      nx <- names(x)
+    if(is.matrix(x)) {
+      x <- as.list(as.data.frame(x))
+      nx <- names(x)  
+      if(all(nx %in% paste("V", 1L:length(nx), sep = ""))) {
+        nx[1L:2L] <- c("id", "x")
+        c.select <- "x"
+      }
+    }
+    if(is.data.frame(x)) {
+      x <- as.list(x)
+      nx <- names(x)
+    }
+    if(is.null(id))
+      id <- x[[1L]]
+    else {
+      if(is.character(id)) {
+        if(is.na(id <- pmatch(id, nx)))
+          stop("argument id is specified wrong!")
+      } else {
+        if(id > length(nx))
+          stop("argument id is specified wrong!")
+      }
+      id <- x[[id]]
+    }
+    if(is.null(c.select)) {
+      take <- c("mean", "Mean", "MEAN", "estimate", 
+        "Estimate", "ESTIMATE", "mean", "pmode", "pmean_tot")
+      for(k in take)
+        if(!is.na(pmatch(k, nx)))
+          x <- x[[k]]
+    } else {
+      if(is.character(c.select)) {
+        k <- pmatch(c.select, nx)
+      if(is.na(k))
+        stop("argument c.select is specified wrong!")
+      x <- x[[k]]
+      } else {
+        if(c.select > length(nx))
+          stop("argument c.select is specified wrong!")
+        x <- x[[c.select]]
+      }
+    }
+  }
+  if(symmetric) {
+    if(is.null(range)) {
+      if(min(x) < 0)
+        m <- (-1)
+      else
+        m <- 1
+      if(abs(min(x)) > abs(max(x)))
+        x <- c(x, abs(min(x)))
+      if(abs(max(x)) > abs(min(x)))
+        x <- c(x, m * abs(max(x)))
+      id <- c(as.character(id), "added")
+    } else {
+      if(max(range) > max(x)) {
+        x <- c(x, max(range))
+        id <- c(as.character(id), "added")
+      } else x[x > max(range)] <- max(range)
+      if(min(range) < min(x)) {
+        x <- c(x, min(range))
+        id <- c(as.character(id), "added")
+      } else x[x < min(range)] <- min(range)
+    }
+  }
+
+  return(list(id = as.character(id), x = x))
+}
+
+
+find.limits <- function(map, mar.min = 2, ...)
+{
+  if(!is.list(map))
+    stop("argument map must be a list() of matrix polygons!")
+  n <- length(map)
+  myrange <- function(x, c.select = 1L, ...) {
+    return(na.omit(x[,c.select], ...))
+  }
+  xlim <- range(unlist(lapply(map, myrange, c.select = 1L, ...)))
+  ylim <- range(unlist(lapply(map, myrange, c.select = 2L, ...)))
+  mar <- NULL
+  if(!is.null(height2width <- attr(map, "height2width"))) {
+    height2width <- height2width * 1.1
+    if(!is.null(mar.min)) {
+      if(height2width > 1) {
+        side <- 17.5*(1-1/height2width)+mar.min/height2width
+        mar <- c(mar.min, side, mar.min, side)
+      }
+      else {
+        top <- 17.5*(1-height2width)+mar.min*height2width
+        mar <- c(top, mar.min, top, mar.min)
+      }
+    }
+  }
+
+  return(list(ylim = ylim, xlim = xlim, mar = mar))
+}

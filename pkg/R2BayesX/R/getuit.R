@@ -1,5 +1,4 @@
-getuit <-
-function(x, xu, n, m)
+getuit <- function(x, xu, n, m)
 {
   check <- is.matrix(x)
   if(check)
@@ -15,4 +14,3 @@ function(x, xu, n, m)
 
   return(rval)
 }
-

@@ -1,5 +1,4 @@
-summary.bayesx <-
-function(object, model = NULL, 
+summary.bayesx <- function(object, model = NULL, 
   digits = max(3, getOption("digits") - 3), ...)
 {
   res <- get.model(object, model)
@@ -9,4 +8,3 @@ function(object, model = NULL,
 
   return(res)
 }
-

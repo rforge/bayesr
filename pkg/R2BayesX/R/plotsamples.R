@@ -1,5 +1,4 @@
-plotsamples <-
-function(x, selected = "NA", acf = FALSE, var = FALSE, ...)
+plotsamples <- function(x, selected = "NA", acf = FALSE, var = FALSE, ...)
 {
   if(is.null(x))
     return(invisible(NULL))
@@ -60,4 +59,3 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, ...)
 
   return(invisible(NULL))
 }
-

@@ -1,5 +1,4 @@
-centroidpos <-
-function(polygon) 
+centroidpos <- function(polygon) 
 {
   p <- polygon
   np <- (nrow(p) - 1L)
@@ -14,3 +13,13 @@ function(polygon)
   return(out)
 }
 
+
+centroids <- function(map) 
+{
+  n <- length(map)
+  cp <- matrix(0, n, 2L)
+  for(i in 1L:n)
+    cp[i,] <- centroidpos(map[[i]])
+
+  return(cp)
+}

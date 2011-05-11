@@ -1,5 +1,4 @@
-cpos <-
-function(p, np) 
+cpos <- function(p, np) 
 {
   rval <- .Call("cpos",
     as.numeric(p),
@@ -8,4 +7,3 @@ function(p, np)
 
   return(rval)
 }
-

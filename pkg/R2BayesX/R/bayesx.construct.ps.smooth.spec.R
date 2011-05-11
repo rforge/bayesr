@@ -1,5 +1,4 @@
-bayesx.construct.ps.smooth.spec <-
-function(object, dir, prg, data)
+bayesx.construct.ps.smooth.spec <- function(object, dir, prg, data)
 {
   if(is.na(object$p.order[1L]))
     object$p.order <- c(3L, 2L)
@@ -26,4 +25,3 @@ function(object, dir, prg, data)
 
   return(term)
 }
-

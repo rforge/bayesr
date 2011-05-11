@@ -1,5 +1,4 @@
-bayesx.construct.mrf.smooth.spec <-
-function(object, dir, prg, data)
+bayesx.construct.mrf.smooth.spec <- function(object, dir, prg, data)
 {
   if(missing(prg))
     prg <- " "
@@ -89,3 +88,44 @@ function(object, dir, prg, data)
   return(term)
 }
 
+
+sfoofun <- function(x, xt = NULL, ...)
+{
+  if(is.null(x) || is.null(xt))
+    return(NULL)
+  x <- rval <- deparse(substitute(xt), backtick = TRUE, width.cutoff = 500L)
+  if(is.list(xt) && length(xt)>1)
+    for(i in 1L:length(xt))
+      if(inherits(xt[[i]], "bnd") || inherits(xt[[i]], "gra") || inherits(xt[[i]], "list")) {
+        rval <- strsplit(x, ",", " ")[[1L]]
+        if(length(rval) > 1L)
+          rval <- rval[i]
+      }
+  rval <- splitme(rval)
+  if(length(rval) > 5L)
+    if(resplit(rval[1L:5L]) == "list(")
+      rval <- rval[6L:length(rval)]
+  if(rval[length(rval)] == ")")
+    rval <- rval[1L:(length(rval) - 1)]
+  if(any(grepl("=", rval)))
+    rval <- rval[(grep("=", rval) + 2L):length(rval)]
+  rval <- resplit(rval)
+   
+  return(rval)
+}
+
+
+help.map.name <- function(x)
+{
+  if(is.null(x))
+    return("")
+  x <- splitme(x)
+  if(resplit(x[1L:2L]) == "s(") {
+    x <- resplit(c("sfoofun", x[2L:length(x)]))
+    x <- eval(parse(text = x), envir = parent.frame())
+    if(is.null(x))
+      x <- "bayesxmap"
+  } else  x <- "bayesxmap"
+
+  return(x)
+}
