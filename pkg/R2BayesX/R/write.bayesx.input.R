@@ -1,0 +1,189 @@
+write.bayesx.input <-
+function(object)
+{
+  if(is.null(object) || missing(object))
+    stop("nothing to do!")
+  if(class(object) != "bayesx.input")
+    stop("object must be of class bayesx.input")
+  data.file <- NULL
+  if(is.null(object$data))
+    object$data <- environment(object$formula)
+  else {
+    if(is.character(object$data))
+      data.file <- object$data
+  }
+  if(is.null(object$outfile)) {
+    if(.Platform$OS.type == "windows") {
+      tmp <- splitme(tempdir())
+      for(i in 1L:length(tmp))
+        if(tmp[i] == "\\")
+          tmp[i] <- "/"
+      object$outfile <- paste(resplit(tmp), "/bayesx", sep = "")
+    } else object$outfile <- paste(tempdir(), "/bayesx", sep = "")
+  }
+  if(!is.character(object$outfile))
+    stop("argument outfile must be a character!")
+  if(is.null(object$hlevel))
+    is.h <- FALSE
+  else {
+    if(object$hlevel > 1L)
+      is.h <- TRUE
+    else
+      is.h <- FALSE
+  }
+  if(!file.exists(object$outfile))
+    dir.create(object$outfile, showWarnings = FALSE)
+  else {
+    if(!is.h && .Platform$OS.type == "unix") {
+      wok <- TRUE
+      count <- 0L
+      while(wok) {
+        count <- count + 1L
+        if(!file.exists(paste(object$outfile, count, sep = ""))) {
+          object$outfile <- paste(object$outfile, count, sep = "")
+          wok <- FALSE
+        }
+      }
+      dir.create(object$outfile, showWarnings = FALSE)
+    }
+  }
+  wd <- as.character(getwd())
+  setwd(object$outfile)
+  prg.file <- paste(object$model.name, ".input.prg", sep = "")
+  thismodel <- NULL
+  if(file.exists(prg.file) && !is.h) {
+    wok <- TRUE
+    thismodel <- 0L
+    while(wok) {
+      thismodel <- thismodel + 1L
+      prg.file <- paste(object$model.name, ".input", thismodel, ".prg", sep = "")
+      if(!file.exists(prg.file))
+        wok <- FALSE
+    }
+  }
+  if(!is.h) {
+    cat(paste("% usefile ", object$outfile, "/", prg.file, "\n", sep = ""), 
+      file = prg.file, append = FALSE)
+    cat(paste("logopen using ", object$outfile, "/", prg.file, ".log", "\n", sep = ""),
+      file = prg.file, append = TRUE)
+    if(object$method == "MCMC") {
+      if(is.null(object$mcmcreg) && object$first)
+        cat("bayesreg b\n", file = prg.file, append = TRUE)
+      if(!is.null(object$mcmcreg) && object$first)
+        cat("mcmcreg b\n", file = prg.file, append = TRUE)
+    }
+    if(object$method == "REML")
+      cat("remlreg b\n", file = prg.file, append = TRUE)
+    if(object$method == "STEP")
+      cat("stepwisereg b\n", file = prg.file, append = TRUE)    
+  }
+
+  ## hierarchical models set here 
+  if(!is.null(object$h.random))
+    for(k in 1:length(object$h.random))
+      write.bayesx.input(object$h.random[[k]])
+  dropvars <- NULL
+  if(is.null(data.file)) {
+    tf <- as.character(object$formula)
+    if(grepl(tf[2L], tf[3L], fixed = TRUE))
+      dat <- model.matrix(as.formula(paste(tf[1L], tf[3L])), object$data)
+    else
+      dat <- model.matrix(object$formula, object$data)
+    nd <- rmf(names(object$data))
+    names(object$data) <- nd
+    colnames(dat) <- rmf(colnames(dat))
+    for(sf in nd)
+      if(is.factor(ff <- object$data[[sf]])) {
+        lf <- paste(sf, rmf(levels(ff)), sep = "")
+        vars <- colnames(dat)
+        if(!all(lf %in% vars)) {
+          mf <- lf[!lf %in% vars]
+          lf <- strsplit(mf, sf)
+          dropvars <- c(dropvars, mf)
+          for(k in 1:length(lf)) {
+            dat <- cbind(dat, (lf[[k]][length(lf[[k]])] == ff) * 1)
+            colnames(dat)[ncol(dat)] <- mf[k]
+          }
+        }
+      }
+    nc <- ncol(dat)
+    if(!is.null(model.offset(object$data))) {
+      nc <- ncol(dat)
+      dat <- cbind(dat, model.offset(object$data))
+      colnames(dat)[nc + 1L] <- "ModelOffset"
+    }  
+    if(!is.null(model.weights(object$data))) {
+      nc <- ncol(dat)
+      dat <- cbind(dat, model.weights(object$data))
+      colnames(dat)[nc + 1L] <- "ModelWeights"
+    }  
+    dat <- cbind(as.vector(object$data[[object$Yn]]),dat)
+    colnames(dat)[1L] <- object$Yn
+    vars <- colnames(dat)
+    nc <- ncol(dat)
+    intcpt <- FALSE
+    if("(Intercept)" %in% vars && nc > 1L) {
+      dat <- matrix(dat[,!vars %in% "(Intercept)"], ncol = (nc - 1L))
+      colnames(dat) <- vars[!vars %in% "(Intercept)"]
+      intcpt <- TRUE
+    }
+    vars <- rmf(colnames(dat))
+    for(i in 1L:length(vars)) {
+      vars[i] <- gsub("(offset)", "ModelOffset", vars[i], fixed = TRUE)
+      vars[i] <- gsub("(weights)", "ModelWeights", vars[i], fixed = TRUE)
+    }
+    colnames(dat) <- vars
+    vars <- vars[vars!=object$Yn]
+    if(intcpt)
+      vars <- c("(Intercept)",vars)
+    if(!is.null(object$hlevel)) {
+      if(object$hlevel > 1L) {
+        object$model.name <- paste(object$model.name, "_hlevel", 
+          object$hlevel, "_RANDOM_EFFECTS", sep = "")
+      } else {
+        object$model.name <- paste(object$model.name, "_hlevel", 
+          object$hlevel, "_MAIN_REGRESSION", sep = "")
+      }
+    }
+    data.file <- paste(object$outfile, "/", object$model.name, ".data.raw", sep = "")
+    if(!file.exists(data.file))
+      write.table(dat, data.file, col.names = TRUE, row.names = FALSE, quote = FALSE)
+    else {
+      wok <- TRUE
+      i <- 1L
+      while(wok) {
+        data.file <- paste(object$outfile, "/", object$model.name, ".data", i, ".raw", sep = "")
+        i <- i + 1L
+        if(!file.exists(data.file)) {
+          write.table(dat, data.file, col.names = TRUE, row.names = FALSE, quote = FALSE)
+          wok <- FALSE
+        }
+      }
+    }
+    terms <- attr(object$terms, "term.labels")
+    infofile <- paste(object$outfile, "/", object$model.name, thismodel, sep = "")
+    infofile <- paste(infofile, ".terms.info", sep = "")
+    if(object$method != "STEP")
+      write.term.info(infofile, terms, object$data, object)
+  } else {
+    vdf <- sub(" +$", "", readLines(data.file, n = 1L))
+    vars <- strsplit(vdf, " ")[[1L]]
+    ok <- FALSE
+    if(length(vars) > 1L)
+      if(all(attr(terms(object$formula), "term.labels") %in% vars))
+        ok <- TRUE
+    if(!ok)
+      warning("variable names in specified data file do not match with formula variable names!")
+  }
+
+  st <- split.terms(attr(object$terms, "term.labels"), vars, object$data, dropvars)
+  bayesx.prg <- write.prg.setup(object$Yn, object, prg.file, data.file,
+    thismodel, st)
+  if(!is.h)
+    cat("logclose \n", file = prg.file, append = TRUE)
+  setwd(wd)
+
+  return(invisible(list(prg = bayesx.prg, prg.name = prg.file,
+    model.name = object$model.name, file.dir = object$outfile)))
+}
+

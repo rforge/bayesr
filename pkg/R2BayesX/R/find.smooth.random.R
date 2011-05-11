@@ -1,0 +1,121 @@
+find.smooth.random <-
+function(dir, files, data, response, eta, model.name)
+{
+  effects <- list()
+  SmoothHyp <- RandomHyp <- NULL
+  if(any((i <- grep(".res", files)))) {
+    resfiles <- files[i]
+    endings <- c("_predict.res", "FixedEffects", "LinearEffects", "scale.res", "_variance_", 
+      "_var.res", ".raw", "_param.res", "_interact.res", "_df.res", "_lambda.res", 
+      "_knots.raw", "_contour.res")
+    for(res in endings)
+      resfiles <- resfiles[!grepl(res, resfiles)]
+    resfiles <- resfiles[!grepl("_lasso", resfiles)]
+    resfiles <- resfiles[!grepl("_ridge", resfiles)]
+    resfiles <- resfiles[!grepl("_nigmix", resfiles)]
+    if(length(resfiles) > 0L)
+      for(res in resfiles) {
+        x <- df2m(read.table(paste(dir, "/", res, sep = ""), header = TRUE))
+        dimx <- s4dim(x)
+        if(sum(x[,(dimx + 1L):ncol(x)], na.rm = TRUE) != 0) {
+          x <- x[order(x[,1L]),]
+          cx <- s4class(res)
+          dimx2 <- dimx
+          if(cx == "geo.bayesx") {
+            dimx2 <- dimx + 1L
+            xnam <- colnames(x)[1L:dimx2]
+            xnam2 <- xnam[1L]
+          } else xnam <- xnam2 <- colnames(x)[1L:dimx2]
+          xnam <- unlist(strsplit(xnam, "_c"))
+          xnam2 <- xnam
+          vx <- NULL
+          if(grepl("_f_", res)) {
+            res2 <- gsub(paste(model.name, "_", sep = ""), "", strsplit(res, "_f_")[[1L]])[1L]
+            if(res2 != model.name)
+              vx <- res2
+          }
+          colnames(x)[1L:dimx2] <- xnam
+          rownames(x) <- 1L:nrow(x)
+          labelx <- make.label(cx, xnam, dimx, vx)
+          if(grepl("_spatialtotal.res", res))
+            labelx <- paste(labelx, ":total", sep = "")
+          if(!is.null(data))
+            attr(x, "partial.resids") <- blow.up.resid(data, x, xnam, response, eta, dimx, cx)
+          attr(x, "specs") <- list(dim = dimx, term = xnam, 
+            by = vx, label = labelx, is.factor = FALSE)
+          ## search and set additional attributes
+          nx <- length(xnam2)
+          if(nx > 1L) {
+            if(nx > 2L) {
+              af1 <- grep(paste("_", xnam[1L], ".res", sep = ""), files, value = TRUE)
+              af2 <- grep(paste("_", xnam2[1L], "_", sep = ""), files, value = TRUE)
+            } else {
+              af1 <- grep(paste("_", xnam[1L], "_", xnam[2L],".res", sep = ""), files, value = TRUE)
+              af2 <- grep(paste("_", xnam2[1L], "_", xnam[2L], sep = ""), files, value = TRUE)
+            }
+          } else {
+            af1 <- grep(paste("_", xnam[1L], ".res", sep = ""), files, value = TRUE)
+            af2 <- grep(paste("_", xnam2[1L], "_", sep = ""), files, value = TRUE)
+          }
+          af <- c(af1, af2)
+          if(!is.null(vx))
+            af <- af[grepl(paste(vx, "_", sep = ""), af)]
+          if(any(grep("_random", res, fixed = TRUE)))
+            af <- grep("_random", af, fixed = TRUE, value = TRUE)
+          if(any(grep("_spatial", res, fixed = TRUE)))
+            af <- grep("_spatial", af, fixed = TRUE, value = TRUE)
+          if(any(grep("_geokriging", res, fixed = TRUE)))
+            af <- grep("_geokriging", af, fixed = TRUE, value = TRUE)
+          if(length(af) > 0L) {
+            if(length(varf <- grep("_var", af, value = TRUE))) {
+              if(length(vf <- grep("_var.res", varf, value = TRUE))) {
+                attr(x, "variance") <- df2m(read.table(paste(dir, "/", vf, sep = ""), 
+                  header = TRUE))
+                rownames(attr(x, "variance"))[1] <- labelx
+                if(cx == "random.bayesx")
+                  RandomHyp <- rbind(RandomHyp, attr(x, "variance"))
+                else
+                  SmoothHyp <- rbind(SmoothHyp, attr(x, "variance"))
+              }
+              if(length(vf <- grep("_variance_", varf, value = TRUE))) {
+                if(length(vf2 <- vf[!grepl("sample", vf)])) {
+                  attr(x, "variance") <- df2m(read.table(paste(dir, "/", vf2, sep = ""), 
+                    header = TRUE))
+                  rownames(attr(x, "variance"))[1] <- labelx
+                  if(cx == "random.bayesx")
+                    RandomHyp <- rbind(RandomHyp, attr(x, "variance"))
+                  else
+                    SmoothHyp <- rbind(SmoothHyp, attr(x, "variance"))
+                }
+                if(length(vf2 <- vf[grepl("sample", vf)]))
+                  for(tf in vf2) {
+                    attr(x, "variance.sample") <- df2m(read.table(paste(dir, "/", tf, sep = ""), 
+                      header = TRUE))
+                  }
+              }
+            }
+            if(length(sf <- grep("_sample", af, value = TRUE)))
+              if(length(sf <- sf[!grepl("_variance_", sf)]))
+                for(tf in sf) {
+                  attr(x, "sample") <- df2m(read.table(paste(dir, "/", tf, sep = ""), 
+                    header = TRUE))
+                }
+            if(length(pf <- grep("_param", af, value = TRUE)))
+              for(tf in pf)
+                attr(x, "param") <- df2m(read.table(paste(dir, "/", tf, sep = ""), header = TRUE))
+            if(length(kf <- grep("_knots", af, value = TRUE)))
+              attr(x, "knots") <-  df2m(read.table(paste(dir, "/", kf, sep = ""), header = TRUE))
+            if(length(cf <- grep("_contour", af, value = TRUE))) {
+              attr(x, "contourprob") <-  df2m(read.table(paste(dir, "/", cf, sep = ""), 
+                header = TRUE))
+            }
+          }
+          class(x) <- cx
+          eval(parse(text = paste("effects$\'", labelx, "\' <- x", sep = "")))
+        }
+      }      
+  }
+
+  return(list(effects = effects, smooth.hyp = mum(SmoothHyp), random.hyp = mum(RandomHyp)))
+}
+
