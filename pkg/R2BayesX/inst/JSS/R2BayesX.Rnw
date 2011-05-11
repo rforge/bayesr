@@ -114,15 +114,15 @@ estimation results.
 
 Designing an user friendly setup requires a comfortable translation method of \proglang{R} specific 
 syntax to BayesX readable commands. For this reason, the package layout is orientated and dependent 
-on the recommended CRAN package \pkg{mgcv} \citep{Wood:2011}, since \pkg{mgcv} already features
-functionality, which easily allows to set up new model terms within \proglang{R}'s formula language, 
-and secondly, the package covers a number of the model terms implemented in BayesX. This means, some 
-of the model formulas specified for use within the \pkg{mgcv} model fitting-function \fct{gam}, may 
-also be used in \pkg{BayesX} and vice versa. Hence, users primarily familiar with \pkg{mgcv} and its 
-GAM formula definition may use the interface with little additional effort, only. This is 
-illustrated in the following, where some data is simulated and models are estimated with \fct{gam}, 
-using generalized cross validation (GCV) for estimation, and the \pkg{BayesX} interface main 
-model-fitting function \fct{bayesx} applying MCMC: 
+on the recommended CRAN package \pkg{mgcv} \citep{Wood:2011}, amongst others, since \pkg{mgcv} 
+already features functionality, which easily allows to set up new model terms within \proglang{R}'s 
+formula language, and secondly, the package covers a number of the model terms implemented in 
+BayesX. This means, some of the model formulas specified for use within the \pkg{mgcv} primary model 
+fitting-function \fct{gam}, may also be used in \pkg{BayesX} and vice versa. Hence, users primarily 
+familiar with \pkg{mgcv} and its GAM formula definition may use the interface with little additional 
+effort, only. This is illustrated in the following, where some data is simulated and models are 
+estimated with \fct{gam}, using generalized cross validation (GCV) for optimization, and the 
+\pkg{BayesX} interface main model-fitting function \fct{bayesx} applying MCMC: 
 <<fit-illustration-model, echo=TRUE, eval=FALSE>>=
 ## simulate some data
 set.seed(0) 
@@ -186,9 +186,9 @@ health.
 
 The STAR model class supported by \pkg{BayesX} is based on the framework of (Bayesian) generalized 
 linear models (GLM) \citep{Nelder+Wedderburn:1972, Fahrmeir+Tutz:2001}. GLMs assume that, given 
-covariates $u$ and unknown parameters $\gamma$, the distribution of the response variable $y$ 
-belongs to an exponential family with mean $\mu = E(y | \mathbf{x}, \boldsymbol{\gamma})$ linked to 
-a linear predictor $\eta$ by
+covariates $\mathbf{x}$ and unknown parameters $\gamma$, the distribution of the response variable 
+$y$ belongs to an exponential family with mean $\mu = E(y | \mathbf{x}, \boldsymbol{\gamma})$ linked 
+to a linear predictor $\eta$ by
 \begin{equation} \label{eqn:glm}
 \mu = h(\eta) \qquad \eta = \mathbf{x}^{\prime}\boldsymbol{\gamma},
 \end{equation}
@@ -326,7 +326,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 where most arguments are standard model frame specifications \citep[see][]{Chambers+Hastie:1992}. 
 The last argument specifies several parameters controlling the processing of the BayesX binary and 
 are arranged by function \fct{bayesx.control}, e.g. the choice between the inferential 
-concepts, set within argument \code{method}, which are Markov chain Monte Carlo simulation 
+concepts, set within argument \code{method}, which are currently Markov chain Monte Carlo simulation 
 techniques - \code{"MCMC"}, mixed model based estimation - \code{"REML"} and penalized least squares 
 including model selection - \code{"STEP"}, or the distribution assigned to the response, set with 
 argument \code{family}. An overview of all available distributions is given in 
@@ -367,7 +367,7 @@ In addition, unit- or cluster specific unstructured effects may be incorporated 
 \code{formula} using the random effects term constructor function \fct{r}. Then, a typical STAR 
 predictor with some response \code{y}, covariate \code{x1} with a possibly nonlinear effect modeled 
 by a P-spline, covariate \code{id} representing some cluster index modeled as random effect and 
-covariate \code{x2} entering linearly, is e.g. specified by
+covariate \code{x2} entering linearly, is e.g. formulated by
 \begin{Sinput}
 y ~ s(x1, bs = "ps") + r(id) + x2
 \end{Sinput} 
@@ -418,11 +418,42 @@ provided in table~\ref{tab:terms}.
 \caption{\label{tab:terms} Possible BayesX model terms within function \fct{s}.}
 \end{center}
 \end{table}
-Specifying additional arguments for a model term is generally restricted to 
-argument \code{xt} within function \fct{s} and \fct{r}, i.e. \code{xt} must be a named \code{list}
-including the parameters. 
+Setting additional arguments for a model term is generally restricted to argument \code{xt} 
+within function \fct{s} and \fct{r}, i.e. \code{xt} must be a named \fct{list} including the 
+parameters, where all possibilities for each \code{bs} type may be looked up calling function 
+\fct{bayesx.term.options}. As an example, using \code{bs = "mrf"} to estimate a spatially correlated
+effect with Markov random fields of some location identification covariate \code{id}, requires an 
+additional map boundary or graph file, which must be provided within \code{xt}, hence 
+\begin{Sinput}
+s(id, bs = "mrf", xt = list(map = SomeMap)) 
+\end{Sinput} 
+is the setup for this type of model term.
 
+After execution of all computations with the BayesX binary, the model output files are written into 
+the declared output directory and are read back into \proglang{R} using function 
+\fct{read.bayesx.output}. The returned fitted-model object is a list of class \code{"bayesx"},
+wherefore a set of standard extractor functions, such as \fct{summary}, \fct{fitted}, \fct{plot} 
+and more, listed in table~\ref{tab:funmethods}, is available.
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|p{10cm}|}
+\hline
+Function & Description \\ \hline
+\fct{print} & simple printed display of the initial call and some additional information of the
+              fitted model. \\ \hline
+\fct{summary} & returns an object of class \code{"summary.bayesx"} containing the relevant summary 
+                statistics (which has a \fct{print} method). \\ \hline
+\fct{coef} & extracts coefficients of linear modeled terms, for \code{"MCMC"} estimated models, 
+             the samples of the coefficients are provided within the object attribute 
+             \code{"sample"}. \\ \hline
+\fct{fitted} & fitted values of either the linear predictor, or a select model term. \\ \hline
+\fct{residuals} & extract model or partial residuals for a select term. \\ \hline
+\end{tabular}
+\caption{\label{tab:funmethods} Functions and methods for objects of class \code{"bayesx"}.}
+\end{center}
+\end{table}
 
+jzd7ttcm
 \section{STAR models in practice} \label{sec:illustrations}
 
 Section with two examples: Childhood malnutrition in Zambia and the forest health data.

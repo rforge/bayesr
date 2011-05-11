@@ -1,7 +1,6 @@
 dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-bayesx.construct(s(x1, bs = "generic", xt = list(a = TRUE)))
 
 
 names(columb.polys) <- 1:length(columb.polys)
@@ -137,10 +136,29 @@ ForestHealth <- na.omit(as.data.frame(ForestHealth))
 ## save(ForestHealth, file = "/home/nikolaus/svn/bayesr/pkg/R2BayesX/data/ForestHealth.rda")
 
 
+## large data example
+library("R2BayesX")
+n <- 100000
+file <- paste(tempdir(), "/ldata.raw", sep = "")
+write.table(matrix(c("x", "y"), nrow = 1), file = file, 
+  quote = FALSE, row.names = FALSE, col.names = FALSE)
+for(i in 1:10) {
+  dat <- data.frame(x = round(runif(n, -3, 3), 2L))
+  dat$y <- with(dat, sin(x) + rnorm(n, sd = 2))
+  write.table(dat, file = file, append = TRUE, 
+    quote = FALSE, row.names = FALSE, col.names = FALSE)
+}
+b <- bayesx(y ~ s(x, bs = "ps"), data = file, 
+  iter = 3000, burnin = 500, step = 2, predict = FALSE)
 
 
-
-
+## create a package skeleton
+dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
+path <- tempdir()
+invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
+Rfiles <- ls(all.names = TRUE)
+Rfiles <- Rfiles[!Rfiles %in% c("dir", "path", "Rfiles")]
+package.skeleton(name = "r2bayesx", Rfiles, path = path)
 
 
 

@@ -1,35 +1,41 @@
 \name{fitted.bayesx}
 \alias{fitted.bayesx}
+\alias{residuals.bayesx}
 
 \title{
-  Extract BayesX Fitted Values
+  Extract BayesX Fitted Values and Residuals
 }
 
 \description{
-  Extractor function to the fitted values of the estimated model with \code{\link{bayesx}} and 
-  fitted model term partial effects.
+  Extractor functions to the fitted values/model residuals of the estimated model with 
+  \code{\link{bayesx}} and fitted model term partial effects/residuals.
 }
  
 \usage{
 \method{fitted}{bayesx}(object, model = NULL, term = NULL, ...)
+
+\method{residuals}{bayesx}(object, model = NULL, term = NULL, ...)
 }
 
 \arguments{
   \item{object}{an object of class \code{"bayesx"}.}
-  \item{model}{for which model the fitted values should be provided, either an integer or a 
-    character, e.g. \code{model = "mcmc.model"}.}
-  \item{term}{if not \code{NULL}, the function will search for the term fitted values specified 
-    here, either an integer or a character, eg \code{term = "s(x)"}.}
+  \item{model}{for which model the fitted values/residuals should be provided, either an integer or 
+    a character, e.g. \code{model = "mcmc.model"}.}
+  \item{term}{if not \code{NULL}, the function will search for the term fitted values/residuals 
+    specified here, either an integer or a character, eg \code{term = "s(x)"}.}
   \item{\dots}{not used.}
 }
 
 \value{ 
-  Either the fitted linear predictor or if e.g. \code{term = "s(x)"}, an object with class 
-  \code{"xx.bayesx"}, where \code{"xx"} is depending of the type of the term. In principle the
-  returned term object is simply a matrix containing the covariate(s) and its effects, depending on 
-  the estimation method, e.g. for MCMC estimated models, mean or median fitted values and other 
-  quantities are returned. Several additional informations on the term are provided in the 
+  For \code{fitted.bayesx}, either the fitted linear predictor or if e.g. \code{term = "s(x)"}, an 
+  object with class \code{"xx.bayesx"}, where \code{"xx"} is depending of the type of the term. In 
+  principle the returned term object is simply a matrix containing the covariate(s) and its effects, 
+  depending on the estimation method, e.g. for MCMC estimated models, mean or median fitted values 
+  and other quantities are returned. Several additional informations on the term are provided in the 
   \code{\link{attributes}} of the object. For all types of terms plotting functions are provided.
+
+  Using \code{residuals.bayesx} will either return the model residuals or the partial residuals 
+  of a term specified in argument \code{term}.
 }
 
 \author{
@@ -64,6 +70,15 @@ hist(fit, freq = FALSE)
 ## and plot it
 fx <- fitted(b1, term = "s(x)")
 plot(fx)
+
+## extract model residuals
+res <- residuals(b1)
+hist(res[,1L])
+
+## extract partial residuals for s(x)
+pres <- residuals(b1, term = "s(x)")
+plot(fx, ylim = range(pres[,2L]))
+points(pres)
 }
 
 ## now another example with
