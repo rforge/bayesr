@@ -169,15 +169,16 @@ covariate \code{x2}, black lines, together with 95\% credible intervals shaded i
 package \pkg{mgcv} model-fitting function \fct{gam} using GCV, left panel, and the \pkg{BayesX} 
 model-fitting function \fct{bayesx} applying MCMC, right panel respectively.}
 \end{figure}
-Several standard extractor functions and methods, e.g. \fct{plot} and \fct{summary}, are available 
-for the returned fitted-model object \code{b2}, here, a comparison plot of the estimated effects for 
-covariate \code{x2} of the two models is given in figure~\ref{fig:illustration}. Consequently, 
-estimating models with more complex term structures, e.g. applying stationary Gaussian random 
-fields, is managed by function \fct{s}, which facilitates a consistent way of smooth terms 
-specifications in GAM and STAR formulas. In addition, BayesX supports non-standard regression 
-situations such as models for categorical responses with either ordered or unordered categories, 
-continuous time survival data, or continuous time multi-state models, also, which may be adopted in 
-the same manner (see section \ref{sec:implementation} for all available model terms and distributions). 
+Several standard base \proglang{R} extractor functions and methods, e.g. \fct{plot} and 
+\fct{summary}, are available for the returned fitted-model object \code{b2}, here, a comparison plot 
+of the estimated effects for covariate \code{x2} of the two models is shown in 
+figure~\ref{fig:illustration}. Consequently, estimating models with more complex term structures, 
+e.g. applying stationary Gaussian random fields, is managed by function \fct{s}, which facilitates a 
+consistent way of smooth terms specifications in GAM and STAR formulas. In addition, BayesX supports 
+non-standard regression situations such as models for categorical responses with either ordered or 
+unordered categories, continuous time survival data, or continuous time multi-state models, also, 
+which may be adopted in the same manner (see section \ref{sec:implementation} for all available 
+model terms and distributions). 
 
 To present the capabilities of the software in more detail, the next section briefly discusses the 
 methodological background of regression models with a structured additive predictor, before a
