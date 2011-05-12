@@ -117,13 +117,13 @@ syntax to BayesX readable commands. For this reason, the package layout is orien
 on the recommended CRAN package \pkg{mgcv} \citep{Wood:2011}, amongst others, since \pkg{mgcv} 
 already features functionality, which easily allows to set up new model terms within \proglang{R}'s 
 formula language, and secondly, the package covers a number of the model terms implemented in 
-BayesX. This means, some of the model formulas specified for use within the \pkg{mgcv} primary model 
+BayesX. This means, some of the model formulas specified for use within the \pkg{mgcv} main model 
 fitting-function \fct{gam}, may also be used in \pkg{BayesX} and vice versa. Hence, users primarily 
 familiar with \pkg{mgcv} and its GAM formula definition may use the interface with little additional 
 effort, only. This is illustrated in the following, where some data is simulated and models are 
 estimated with \fct{gam}, using generalized cross validation (GCV) for optimization, and the 
-\pkg{BayesX} interface main model-fitting function \fct{bayesx} applying MCMC: 
-<<fit-illustration-model, echo=TRUE, eval=FALSE>>=
+\pkg{BayesX} interface primary model-fitting function \fct{bayesx} applying MCMC: 
+<<fit-illustration-model, echo=TRUE, eval=FALSE, fig=FALSE>>=
 ## simulate some data
 set.seed(0) 
 dat <- gamSim(1, n = 400, dist = "normal", scale = 2)
@@ -136,8 +136,12 @@ mf <- y ~ s(x0, bs = "ps") + s(x1, bs = "ps") +
 ## mgcv GCV and BayesX MCMC
 b1 <- gam(mf, method = "GCV.Cp", data = dat)
 b2 <- bayesx(mf, method = "MCMC", data = dat)
+
+## plot estimated effects
+plot(b1)
+plot(b2)
 @
-<<cache-illustration-model, echo=FALSE, eval=TRUE>>=
+<<cache-illustration-model, echo=FALSE, eval=TRUE, fig=FALSE>>=
 if(file.exists("illustration-model.rda")) {
 load("illustration-model.rda")
 } else {
@@ -165,14 +169,15 @@ covariate \code{x2}, black lines, together with 95\% credible intervals shaded i
 package \pkg{mgcv} model-fitting function \fct{gam} using GCV, left panel, and the \pkg{BayesX} 
 model-fitting function \fct{bayesx} applying MCMC, right panel respectively.}
 \end{figure}
-A comparison plot of the estimated effects for covariate \code{x2} of the two models is given in 
-figure~\ref{fig:illustration}. Consequently, estimating models with more complex term structures, 
-e.g. applying stationary Gaussian random fields, is managed by function \fct{s}, which
-facilitates a consistent way of smooth terms specifications in GAM and STAR formulas. In addition, 
-BayesX supports non-standard regression situations such as models for categorical responses with 
-either ordered or unordered categories, continuous time survival data, or continuous time 
-multi-state models, also, which may be adopted in the same manner (see section 
-\ref{sec:implementation} for all available model terms and distributions). 
+Several standard extractor functions and methods, e.g. \fct{plot} and \fct{summary}, are available 
+for the returned fitted-model object \code{b2}, here, a comparison plot of the estimated effects for 
+covariate \code{x2} of the two models is given in figure~\ref{fig:illustration}. Consequently, 
+estimating models with more complex term structures, e.g. applying stationary Gaussian random 
+fields, is managed by function \fct{s}, which facilitates a consistent way of smooth terms 
+specifications in GAM and STAR formulas. In addition, BayesX supports non-standard regression 
+situations such as models for categorical responses with either ordered or unordered categories, 
+continuous time survival data, or continuous time multi-state models, also, which may be adopted in 
+the same manner (see section \ref{sec:implementation} for all available model terms and distributions). 
 
 To present the capabilities of the software in more detail, the next section briefly discusses the 
 methodological background of regression models with a structured additive predictor, before a
@@ -264,7 +269,7 @@ supported by the program is provided in the BayesX methodology manual
 
 \section[Implementation in R]{Implementation in \proglang{R}} \label{sec:implementation}
 
-Before STAR models can be fitted with BayesX, the binary command line version of the 
+Before STAR models can be fitted with \pkg{BayesX}, the binary command line version of the 
 program needs to be installed. This may be accomplished differently and system specific: one 
 opportunity is to download the \proglang{C++} source-code from 
 \begin{center}
@@ -280,7 +285,7 @@ and possible problems, please see the help sites on the BayesX web-page. Install
 <<install-bayesx, echo=TRUE, eval=FALSE>>=
 install.bayesx()
 @
-if the computer is connected to the world wide web and the user holds writing permissions for the
+if the computer is connected to the internet and the user holds writing permissions for the 
 \pkg{BayesX} package library folders, otherwise a valid installation directory must be supplied (in 
 the majority of cases) as well as the source-code directory, if the source-code is already stored 
 locally and does not need to be downloaded. After the successful installation, the full path to the 
@@ -323,8 +328,8 @@ bayesx(formula, data, weights = NULL, subset = NULL,
   offset = NULL, na.action = na.fail, contrasts = NULL, 
   control = bayesx.control(...), ...)
 \end{Sinput}
-where most arguments are standard model frame specifications \citep[see][]{Chambers+Hastie:1992}. 
-The last argument specifies several parameters controlling the processing of the BayesX binary and 
+and mostly represent the standard model frame specifications \citep[see][]{Chambers+Hastie:1992}. 
+The last argument specifies several parameters controlling the processing of the BayesX binary which 
 are arranged by function \fct{bayesx.control}, e.g. the choice between the inferential 
 concepts, set within argument \code{method}, which are currently Markov chain Monte Carlo simulation 
 techniques - \code{"MCMC"}, mixed model based estimation - \code{"REML"} and penalized least squares 
@@ -372,8 +377,8 @@ covariate \code{x2} entering linearly, is e.g. formulated by
 y ~ s(x1, bs = "ps") + r(id) + x2
 \end{Sinput} 
 where argument \code{bs} of function \fct{s} specifies the smooth bases, the type of term that 
-should enter the \code{formula}. An overview of the implemented model terms in \pkg{BayesX} is 
-provided in table~\ref{tab:terms}.
+should enter the \code{formula}. A list of the implemented model terms in \pkg{BayesX} is provided 
+in table~\ref{tab:terms}.
 \begin{table}[htbp]
 \begin{center}
 \begin{tabular}{|p{2cm}|p{10cm}|}
@@ -419,7 +424,7 @@ provided in table~\ref{tab:terms}.
 \end{center}
 \end{table}
 Setting additional arguments for a model term is generally restricted to argument \code{xt} 
-within function \fct{s} and \fct{r}, i.e. \code{xt} must be a named \fct{list} including the 
+within function \fct{s} and \fct{r}, i.e. \code{xt} must be a named \fct{list} including those 
 parameters, where all possibilities for each \code{bs} type may be looked up calling function 
 \fct{bayesx.term.options}. As an example, using \code{bs = "mrf"} to estimate a spatially correlated
 effect with Markov random fields of some location identification covariate \code{id}, requires an 
@@ -429,11 +434,11 @@ s(id, bs = "mrf", xt = list(map = SomeMap))
 \end{Sinput} 
 constructs the setup for this type of model term.
 
-After the execution of computations with the BayesX binary, the model output files are written into 
-the declared output directory and are read back into \proglang{R} using function 
+Past the execution of all computations with the BayesX binary, the model output files are written 
+into  the declared output directory and are read back into \proglang{R} using function 
 \fct{read.bayesx.output}. The returned fitted-model object is a list of class \code{"bayesx"},
 wherefore a set of standard extractor functions, such as \fct{summary}, \fct{fitted}, \fct{plot} 
-and more, listed in table~\ref{tab:funmethods}, are available.
+and more, listed in table~\ref{tab:funmethods}, is available.
 \begin{table}[htbp]
 \begin{center}
 \begin{tabular}{|l|p{10cm}|}
@@ -449,6 +454,9 @@ Function & Description \\ \hline
 \fct{confint} & compute confidence interval of linear modeled terms if \code{method = "REML"}, for
                 \code{"MCMC"} the quantiles of the coefficient samples according to a specified 
                 level are computed. \\ \hline
+\fct{cprob} & extract contour probabilities of a particular P-spline term, only meaningful if 
+              \code{method = "MCMC"} and e.g. argument \code{contourprob = 4} is specified within
+              argument \code{xt} in function \fct{s}. \\ \hline
 \fct{fitted} & fitted values of either the linear predictor, or a select model term. \\ \hline
 \fct{logLik} & extract fitted log-likelihood, only if \code{method = "REML"}. \\ \hline
 \fct{plot} & either model diagnostic plots or effect plots of particular terms. \\ \hline

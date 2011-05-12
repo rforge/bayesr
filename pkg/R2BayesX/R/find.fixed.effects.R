@@ -39,15 +39,21 @@ function(dir, files, data, response, eta, model.name, rval)
     if(length(FixedEffects <- FixedEffects[rF != "(Intercept)",]))
       if(length(vars <- rF[rF %in% names(data)])) {
         j <- 0L
-        if(is.vector(FixedEffects))
-          FixedEffects <- matrix(FixedEffects, nrow = 1L)
+        if(!is.matrix(FixedEffects)) {
+          FixedEffects <- matrix(FixedEffects, nrow = 1)
+          colnames(FixedEffects) <- cF
+          rownames(FixedEffects) <- rF[rF != "(Intercept)"]
+        }
         if("pstd" %in% cF) {
           id <- c(1L, 3L:ncol(FixedEffects))
           FixedEffects <- FixedEffects[,id]
           cF <- cF[id]
         }
-        if(is.vector(FixedEffects))
-          FixedEffects <- matrix(FixedEffects, nrow = 1L)
+        if(!is.matrix(FixedEffects)) {
+          FixedEffects <- matrix(FixedEffects, nrow = 1)
+          colnames(FixedEffects) <- cF
+          rownames(FixedEffects) <- rF[rF != "(Intercept)"]
+        }
         colnames(FixedEffects) <- cF
         FEattrn <- names(FEattr)
         for(i in 1L:length(FEattrn))
