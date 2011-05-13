@@ -96,33 +96,37 @@ data("BeechBnd")
 
 \section{Introduction} \label{sec:intro}
 
-The idea to embed the open source software package BayesX \citep{Brezger+Kneib+Lang:2005} in 
-\proglang{R} \citep{R} has been in mind for quite a while, however, since the development status of 
-the project is already very advanced, and there has been more and more recent interest of an 
-\proglang{R} version of BayesX, the compromise of creating an interface, compared to a full code 
-portation, was seen advantageous, not only because of a faster development time, but also offering 
-already familiar users a toolset, that even, beside the possibility to formulate STAR models 
-directly on the console, easily allows to use existing code and model output, within \proglang{R}. 
+The public domain software BayesX \citep{Brezger+Kneib+Lang:2005} is a standalone program which 
+comprises powerful tools for Bayesian and mixed model based inference for complex semiparametric 
+regression models. To gain improved estimation runtime performance, the algorithms implemented 
+utilize efficient (sparse) matrix computations and are written in a \proglang{C++} environment. The 
+idea to embed BayesX in \proglang{R} \citep{R}, and therefore make the project available to 
+\proglang{R}'s permanently growing community, has been in mind for quite a while. However, since the 
+development status of the software package is already very advanced, and there has been more and 
+more recent interest of an \proglang{R} version of BayesX, the compromise of creating an interface, 
+compared to a full code portation, was seen advantageous, not only because of a faster development 
+time, but also offering already familiar users a toolset, that even, beside the possibility to 
+formulate STAR models directly on the console, easily allows to use existing code and model output, 
+within \proglang{R}. 
 
-Therefore, the implementation is structured in several independent operating functions that 
-basically collect and configure the necessary model components at first, send these to the BayesX 
-binary for processing, read the returned output files back into \proglang{R} by conversion to 
-objects of suitable classes, which may then be printed, summarized and visualized. All interface 
-functions have been added to the CRAN package \pkg{BayesX} \citep{Kneib+Heinzl+Brezger:2011}, which 
-previously provided mainly functions for exploring 
-estimation results.
+Therefore, the implementation is structured in a few independent operating functions that basically 
+collect and configure the necessary model components at first, send these to the BayesX binary for 
+processing, read the returned output files back into \proglang{R} by conversion to objects of 
+suitable classes, which may then be printed, summarized and visualized. All interface functions have 
+been added to the CRAN package \pkg{BayesX} \citep{Kneib+Heinzl+Brezger:2011}, which previously 
+provided mainly functions for exploring estimation results.
 
 Designing an user friendly setup requires a comfortable translation method of \proglang{R} specific 
 syntax to BayesX readable commands. For this reason, the package layout is orientated and dependent 
 on the recommended CRAN package \pkg{mgcv} \citep{Wood:2011}, amongst others, since \pkg{mgcv} 
 already features functionality, which easily allows to set up new model terms within \proglang{R}'s 
 formula language, and secondly, the package covers a number of the model terms implemented in 
-BayesX. This means, some of the model formulas specified for use within the \pkg{mgcv} main model 
-fitting-function \fct{gam}, may also be used in \pkg{BayesX} and vice versa. Hence, users primarily 
-familiar with \pkg{mgcv} and its GAM formula definition may use the interface with little additional 
-effort, only. This is illustrated in the following, where some data is simulated and models are 
-estimated with \fct{gam}, using generalized cross validation (GCV) for optimization, and the 
-\pkg{BayesX} interface primary model-fitting function \fct{bayesx} applying MCMC: 
+BayesX. This means, some of the model formulas specified for applied within the \pkg{mgcv} main 
+model fitting-function \fct{gam}, may also be used in \pkg{BayesX} and vice versa. Hence, users 
+primarily familiar with \pkg{mgcv} and its GAM formula definition may use the interface with little 
+additional effort, only. This is illustrated in the following, where some data is simulated and 
+models are estimated with \fct{gam}, using generalized cross validation (GCV) for optimization, and 
+the \pkg{BayesX} interface primary model-fitting function \fct{bayesx} applying MCMC: 
 <<fit-illustration-model, echo=TRUE, eval=FALSE, fig=FALSE>>=
 ## simulate some data
 set.seed(0) 
