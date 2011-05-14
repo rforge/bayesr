@@ -129,19 +129,20 @@ function(x, digits = max(3L, getOption("digits") - 3L),
     }
     mfn <- names(x$model.fit)
     step <- 5L
+    mfn <- mfn[mfn != "model.name"]
+    mfn <- mfn[mfn != "formula"]
+    mfn <- mfn[mfn != "step.final.model"]
     for(i in 1L:length(mfn)) {
-      if(!mfn[i] %in% c("model.name", "formula", "step.final.model")) { 
-        if(!is.null(x$model.fit[[i]]) && x$model.fit[[i]] != "") {
+        if(!is.null(x$model.fit[[mfn[i]]]) && x$model.fit[[mfn[i]]] != "") {
           if(i < step)
-            cat(mfn[i], "=", x$model.fit[[i]], " ")
+            cat(mfn[i], "=", x$model.fit[[mfn[i]]], " ")
           if(i == step) {
             if(i != length(mfn))
               cat("\n")
-            cat(mfn[i], "=", x$model.fit[[i]], " ")
+            cat(mfn[i], "=", x$model.fit[[mfn[i]]], " ")
             step <- step + step
           }
         }
-      }
     }
     cat("\n")
   }

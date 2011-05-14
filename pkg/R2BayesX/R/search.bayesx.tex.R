@@ -98,7 +98,7 @@ function(x)
      if(i > j)
        thingrep <- c(thingrep, thin[i])
     }
-    rval$thinning <- as.integer(resplit(thingrep))
+    rval$step <- as.integer(resplit(thingrep))
   }
   dic <- any(grepl("DIC \\\\>", x))
   if(dic) {

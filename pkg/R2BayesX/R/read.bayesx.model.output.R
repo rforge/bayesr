@@ -41,7 +41,6 @@ function(dir, model.name)
       rval$residuals <- response - eta
       rval$response <- response
     }
-
     ## get smooth and random effects
     rval <- c(rval, find.smooth.random(dir, files, data, response, eta, model.name))
 

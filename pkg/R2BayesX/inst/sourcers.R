@@ -1,7 +1,30 @@
-dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
+dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-b <- bayesx(y ~ x)
+summary(b)
+
+
+b <- read.bayesx.output("/tmp/Rtmpt4egpQ/bayesx1")
+
+
+library("VGAM")
+library("R2BayesX")
+data("nzmarital")
+b2 <- bayesx(mstatus ~ s(age, bs = "ps", k = 20), family = "multinomialprobit", 
+  method = "MCMC", data = nzmarital, dir.rm = FALSE)
+
+mycol <- c("red", "darkgreen", "blue")
+ooo <- with(nzmarital, order(age))
+fp <- fitted(b)[,4:6]
+nzmarital <- nzmarital[order(nzmarital$mstatus),]
+ooo <- with(nzmarital, order(age))
+with(nzmarital, matplot(age[ooo], fp[ooo,],
+  type = "l", las = 1, lwd = 2, ylim = 0:1, ylab = "Fitted probabilities",
+  xlab = "Age", col = c(mycol[1], "black", mycol[-1])))
+legend(x = 52.5, y = 0.62, col = c(mycol[1], "black", mycol[-1]),
+  lty = 1:4, legend = levels(nzmarital$mstatus), lwd = 2)
+abline(v = seq(10, 90, by = 5), h = seq(0, 1, by = 0.1),
+  col = "gray", lty = "dashed")
 
 
 

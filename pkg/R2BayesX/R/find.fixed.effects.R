@@ -1,6 +1,42 @@
 find.fixed.effects <-
 function(dir, files, data, response, eta, model.name, rval)
 {
+  fixed2table <- function(file, tf) {
+    tb <- readLines(file)
+    tb <- gsub("   ", ",", tb)
+    con <- paste(tempdir(), "/temp.data.raw", sep = "")
+    tb[1] <- gsub(" ", ",", tb[1])
+    stb <- strsplit(tb, "")
+    for(i in 1:length(stb)) {
+      if(stb[[i]][k <-length(stb[[i]])] == ",") 
+        stb[[i]] <- stb[[i]][1:(k - 1)]
+      tb[i] <- paste(stb[[i]], sep = "", collapse = "")
+    }
+    tb <- gsub("const", "(Intercept)", tb, fixed = TRUE)
+    writeLines(tb, con)
+    x <- read.table(con, header = TRUE, sep = ",")
+    if(!is.null(vn <- as.character(x$varname))) {
+      if(any(id <- grepl(" (cat. ", vn, fixed = TRUE))) {
+        tmp <- strsplit(vn[id], "cat. ")
+        new <- NULL
+        for(split in tmp) {
+          one <- strsplit(split[1L], " ")[[1L]][1L]
+          two <- splitme(split[2L])
+          two <- resplit(two[1:(length(two) - 1)])
+          new <- c(new, paste(one, ":", two, sep = ""))
+        }
+        vn[id] <- new
+        x$varname <- vn
+      }
+    }
+    if(NROW(x) == 1L && length(split <- strsplit(tf, "_")[[1L]]) == 3L) {
+      if(!is.null(x$varname)) {
+        split <- gsub(".res", "", split[3L])
+        x$varname <- paste(x$varname, ":", split, sep = "", collapse = "")
+      }
+    }
+    return(x)
+  }
   FixedEffects <- NULL
   fefiles <- c(grep("LinearEffects", files, value = TRUE), 
     grep("FixedEffects", files, value = TRUE))
@@ -12,10 +48,8 @@ function(dir, files, data, response, eta, model.name, rval)
     fsample <- fdf <- NULL
     if(length(res <- grep(".res", fefiles, value = TRUE))) {
       if(length(res2 <- res[!grepl("_df.res", res)]))
-        for(tf in res2) {
-          FixedEffects <- rbind(FixedEffects, df2m2(read.table(paste(dir, "/", tf, sep = ""), 
-            header = TRUE)))
-        }
+        for(tf in res2)
+          FixedEffects <- rbind(FixedEffects, df2m2(fixed2table(paste(dir, "/", tf, sep = ""), tf)))
       if(length(res2 <- res[grepl("_df.res", res)])) {
         nres2 <- length(res2) 
         fdf <- vector("list", length = nres2)

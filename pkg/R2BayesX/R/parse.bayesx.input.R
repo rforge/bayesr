@@ -76,8 +76,10 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
     ff <- formula
     Yn <- as.character(ff[2L])
     Y <- eval(parse(text = Yn), envir = data)
-    if(is.factor(Y))
+    if(is.factor(Y)) {
+      control$YLevels <- levels(Y)
       Y <- f2int(Y)
+    }
     ff[2] <- NULL
     only <- only2 <- FALSE
     if(resplit(as.character(ff)) == "~1") {
@@ -135,10 +137,10 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
       data[,1L] <- data[order(data[,1L]), 1L]
     else
       data <- data[order(Y),]
-    control <- c(control,list(data = data, Yn = Yn))
+    control <- c(control, list(data = data, Yn = Yn))
   } else {
     Yn <- as.character(formula[2L])
-    control <- c(control,list(data = data, Y = Yn, Yn = Yn, weights = weights, offset = offset))
+    control <- c(control, list(data = data, Y = Yn, Yn = Yn, weights = weights, offset = offset))
   }
   attr(control, "co.id") <- co.id
   class(control) <- "bayesx.input"

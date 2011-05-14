@@ -444,7 +444,9 @@ into the declared output directory, which is per default the temporary directory
 session, and are read back into \proglang{R} using function \fct{read.bayesx.output}. The returned 
 fitted-model object is a list of class \code{"bayesx"}, wherefore a set of standard extractor 
 functions, such as \fct{summary}, \fct{fitted}, \fct{plot} and more, 
-listed in table~\ref{tab:funmethods}, is available. 
+listed in table~\ref{tab:funmethods}, is available. Function \fct{plot} either provides model 
+diagnostic plots or plots of estimated term effects, futhermore, for MCMC models, sampling paths of
+coefficients and variances may be drawn. 
 \setkeys{Gin}{width=0.49\textwidth}
 <<plot-illustration-model-samples-01, echo=TRUE, eval=FALSE, fig=FALSE, width=5, height=4>>=
 plot(b2, term = "s(x0)", which = "var-samples")

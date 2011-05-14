@@ -33,6 +33,15 @@ function(dir, files, data, response, eta, model.name)
             res2 <- gsub(paste(model.name, "_", sep = ""), "", strsplit(res, "_f_")[[1L]])[1L]
             if(res2 != model.name)
               vx <- res2
+            if(length(res3 <- strsplit(res, "_f_")[[1L]]) > 1L) {
+              res3 <- strsplit(res3[2L], "_")[[1L]]
+              if(length(res3) == 3) {
+                if(is.null(vx))
+                  vx <- res3[1L]
+                else
+                  vx <- paste(vx, res3[1L], sep = ":")
+              }
+            }
           }
           colnames(x)[1L:dimx2] <- xnam
           rownames(x) <- 1L:nrow(x)
@@ -69,7 +78,7 @@ function(dir, files, data, response, eta, model.name)
           if(length(af) > 0L) {
             if(length(varf <- grep("_var", af, value = TRUE))) {
               if(length(vf <- grep("_var.res", varf, value = TRUE))) {
-                attr(x, "variance") <- df2m(read.table(paste(dir, "/", vf, sep = ""), 
+                attr(x, "variance") <- df2m(read.table(paste(dir, "/", vf[length(vf)], sep = ""), 
                   header = TRUE))
                 rownames(attr(x, "variance"))[1] <- labelx
                 if(cx == "random.bayesx")

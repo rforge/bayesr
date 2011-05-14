@@ -54,7 +54,8 @@ function(x, info)
         rval[[term$pos]] <- by
       }
     }
-    names(rval) <- nt
+    if(length(rval) > 0L)
+      names(rval) <- nt
     if(length(taken) < nx) {
       nterms <- names(x)[!c(1L:nx) %in% taken]
       nrval <- list()
