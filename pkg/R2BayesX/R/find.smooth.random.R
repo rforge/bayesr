@@ -1,5 +1,5 @@
 find.smooth.random <-
-function(dir, files, data, response, eta, model.name)
+function(dir, files, data, response, eta, model.name, minfo)
 {
   effects <- list()
   SmoothHyp <- RandomHyp <- NULL
@@ -28,7 +28,7 @@ function(dir, files, data, response, eta, model.name)
           } else xnam <- xnam2 <- colnames(x)[1L:dimx2]
           xnam <- unlist(strsplit(xnam, "_c"))
           xnam2 <- xnam
-          vx <- NULL
+          vx <- vx2 <- vx3 <- NULL
           if(grepl("_f_", res)) {
             res2 <- gsub(paste(model.name, "_", sep = ""), "", strsplit(res, "_f_")[[1L]])[1L]
             if(res2 != model.name)
@@ -36,16 +36,21 @@ function(dir, files, data, response, eta, model.name)
             if(length(res3 <- strsplit(res, "_f_")[[1L]]) > 1L) {
               res3 <- strsplit(res3[2L], "_")[[1L]]
               if(length(res3) == 3) {
-                if(is.null(vx))
-                  vx <- res3[1L]
-                else
-                  vx <- paste(vx, res3[1L], sep = ":")
+                  vx2 <- vx3 <- res3[1L]
+                if(!is.null(minfo)) {
+                  if(!is.null(minfo$YLevels) && !is.null(minfo$nYLevels))
+                    oL <- eval(parse(text = minfo$YLevels))
+                    nL <- eval(parse(text = minfo$nYLevels))
+                    vx2 <- oL[nL == res3[1L]]
+                }
               }
             }
           }
           colnames(x)[1L:dimx2] <- xnam
           rownames(x) <- 1L:nrow(x)
           labelx <- make.label(cx, xnam, dimx, vx)
+          if(!is.null(vx2))
+            labelx <- paste(labelx, ":", vx2, sep = "")
           if(grepl("_spatialtotal.res", res))
             labelx <- paste(labelx, ":total", sep = "")
           if(!is.null(data))
@@ -78,9 +83,11 @@ function(dir, files, data, response, eta, model.name)
           if(length(af) > 0L) {
             if(length(varf <- grep("_var", af, value = TRUE))) {
               if(length(vf <- grep("_var.res", varf, value = TRUE))) {
+                if(!is.null(vx3))
+                  vf <- grep(vx3, vf, value = TRUE)
                 attr(x, "variance") <- df2m(read.table(paste(dir, "/", vf[length(vf)], sep = ""), 
                   header = TRUE))
-                rownames(attr(x, "variance"))[1] <- labelx
+                rownames(attr(x, "variance"))[1L] <- labelx
                 if(cx == "random.bayesx")
                   RandomHyp <- rbind(RandomHyp, attr(x, "variance"))
                 else
@@ -90,7 +97,7 @@ function(dir, files, data, response, eta, model.name)
                 if(length(vf2 <- vf[!grepl("sample", vf)])) {
                   attr(x, "variance") <- df2m(read.table(paste(dir, "/", vf2, sep = ""), 
                     header = TRUE))
-                  rownames(attr(x, "variance"))[1] <- labelx
+                  rownames(attr(x, "variance"))[1L] <- labelx
                   if(cx == "random.bayesx")
                     RandomHyp <- rbind(RandomHyp, attr(x, "variance"))
                   else

@@ -175,7 +175,6 @@ function(object)
     if(!ok)
       warning("variable names in specified data file do not match with formula variable names!")
   }
-
   st <- split.terms(attr(object$terms, "term.labels"), vars, object$data, dropvars)
   bayesx.prg <- write.prg.setup(object$Yn, object, prg.file, data.file,
     thismodel, st)

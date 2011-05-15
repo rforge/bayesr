@@ -2,6 +2,7 @@ mum <-
 function(x)
 {
   rn <- rownames(x)
+  cn <- colnames(x)
   a <- duplicated(x[,1L], fromLast = FALSE)
   b <- duplicated(x[,1L], fromLast = TRUE)
   a[a != b] <- TRUE
@@ -15,7 +16,12 @@ function(x)
     rmrn <- drn[nc < max(nc, na.rm = TRUE)]
     x <- x[!(rn %in% rmrn),]
   }
-    
+  if(!is.null(x) && !is.matrix(x)) {
+    x <- matrix(x, nrow = 1)
+    rownames(x) <- rn[!(rn %in% rmrn)]
+    colnames(x) <- cn
+  }
+
   return(x)
 }
 

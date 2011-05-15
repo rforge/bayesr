@@ -13,6 +13,12 @@ function(dir, model.name)
     files <- grep(model.name, files, value = TRUE, fixed = TRUE)
     filep <- grep(paste(model.name, ".", sep = ""), files, value = TRUE, fixed = TRUE)  
     files <- c(grep(paste(model.name, "_", sep = ""), files, value = TRUE, fixed = TRUE), filep)  
+    info <- paste(model.name, ".terms.info", sep = "")
+    minfo <- NULL
+    if(info %in% dir.files) {
+      minfo <- readLines(paste(dir, "/", info, sep = ""))
+      minfo <- eval(parse(text = minfo[2L]))
+    }
 
     ## search for data
     data <- NULL
@@ -32,20 +38,59 @@ function(dir, model.name)
       data$intnr <- NULL
       dn <- unique(names(data))
       data <- data[dn]
-      if(is.null(response))
-        response <- data[[1L]]
-      if(is.factor(response)) 
-        response <- as.numeric(as.character(response))
+      response <- data[[1L]]
       N <- length(response)
       rval$fitted.values <- eta <- get.eta(data)
-      rval$residuals <- response - eta
+      if(!is.null(minfo)) {
+        if(!is.null(minfo$order)) {
+          ooo <- order(eval(parse(text = minfo$order)))
+          data <- data[ooo,]
+          rownames(data) <- 1:NROW(data)
+          if(!is.null(response))
+            response <- response[ooo]
+          if(!is.null(eta)) {
+            if(is.matrix(eta) || is.data.farme(eta))
+              eta <- eta[ooo,]
+            else
+              eta <- eta[ooo]
+          }
+          if(is.matrix(eta))
+            rownames(eta) <- 1:NROW(data)
+        }
+        if(!is.null(minfo$YLevels)) {
+          response <- as.factor(response)
+          YLevels <- eval(parse(text = minfo$YLevels))
+          levels(response) <- YLevels
+          if(is.matrix(eta)) {
+            nYLevels <- eval(parse(text = minfo$nYLevels))
+            cne <- cne <- colnames(eta)
+            for(k in 1:length(cne)) {
+              tmp1 <- strsplit(cne[k], "eta")[[1L]]
+              tmp2 <- strsplit(cne[k], "mu")[[1L]]
+              if(length(tmp1) > 1) {
+                if(tmp1[2L] %in% nYLevels) {
+                  cne[k] <- paste("eta:", YLevels[nYLevels == tmp1[2L]], sep = "")
+                }
+              }
+              if(length(tmp2) > 1) {
+                if(tmp2[2L] %in% nYLevels)
+                  cne[k] <- paste("mu:", YLevels[nYLevels == tmp2[2L]], sep = "")
+              }
+            }
+          colnames(eta) <- cne
+          rval$fitted.values <- eta
+          }
+        }
+      } 
+      if(!is.factor(response))
+        rval$residuals <- response - eta
       rval$response <- response
     }
     ## get smooth and random effects
-    rval <- c(rval, find.smooth.random(dir, files, data, response, eta, model.name))
+    rval <- c(rval, find.smooth.random(dir, files, data, response, eta, model.name, minfo))
 
     ## get fixed effects
-    rval <- find.fixed.effects(dir, files, data, response, eta, model.name, rval)
+    rval <- find.fixed.effects(dir, files, data, response, eta, model.name, rval, minfo)
 
     ## get scale estimate
     rval$variance <- get.scale(files, dir)
@@ -87,7 +132,7 @@ function(dir, model.name)
     rval$model.fit <- mf
 
     ## reordering and naming
-    if((info <- paste(model.name, ".terms.info", sep = "")) %in% dir.files)
+    if(info %in% dir.files)
       rval$effects <- term.reorder(rval$effects, paste(dir, "/", info, sep = ""))
 
     ## search for additional info

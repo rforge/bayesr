@@ -110,9 +110,10 @@ function(x, residuals = FALSE, col.surface = NULL,
   if(is.null(args$ylab))
     args$ylab <- names[2L]
   if(is.null(args$zlab)) {
-    args$zlab <- "fitted"
-    if(by != "NA")
-      args$zlab <- paste(args$zlab, ":", by, sep = "")
+    if(is.null(attr(x, "specs")$label))
+      args$zlab <- "fitted"
+    else
+      args$zlab <- attr(x, "specs")$label
   }
   args$y <- substitute(zn)
   args$x <- substitute(xn)

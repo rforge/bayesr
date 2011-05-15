@@ -18,12 +18,12 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL, xlev = NULL)
           }
         }
         if(fby) {
-          te$label <- gsub(")", paste(",by=", te$by, ")", sep = ""), te$label)
+          te$label <- gsub(")", paste(",by=\'", te$by, "\')", sep = ""), te$label)
           info <- paste("list(term=\'", te$label, "\',pos=", k, ",by=\'", te$by,
             "\',isFactor=FALSE", ",isFactorBy=", fby, ",isFactorByNames=", fnv, ")", sep = "")
         } else {
-          info <- paste("list(term=\'", te$label, "\',pos=", k, ",by=", te$by,
-            ",isFactor=FALSE", ",isFactorBy=", fby, ")", sep = "")
+          info <- paste("list(term=\'", te$label, "\',pos=", k, ",by=\'", te$by,
+            "\',isFactor=FALSE", ",isFactorBy=", fby, ")", sep = "")
         }
       } else {
         sp <- FALSE
@@ -51,6 +51,18 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL, xlev = NULL)
         cat(info, file = file, append = TRUE)
     }
     if(!is.null(object)) {
+      if(!is.null(object$YLevels)) {
+        YLevels <- paste(object$YLevels, collapse = "\\',\\'")
+        YLevels <- paste("c(\\'", YLevels, "\\')", sep = "")
+      }
+      if(!is.null(object$nYLevels)) {
+        nYLevels <- paste(object$nYLevels, collapse = "\\',\\'")
+        nYLevels <- paste("c(\\'", nYLevels, "\\')", sep = "")
+      }
+      if(!is.null(object$order)) {
+        ooo <- paste(object$order, collapse = ",")
+        ooo <- paste("\'c(", ooo, ")\'", sep = "")
+      }
       f <- as.character(object$oformula)
       f <- paste(f[2L], f[1L], f[3L])
       info <- paste("list(formula=\'", f, "\',", sep = "")
@@ -58,6 +70,12 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL, xlev = NULL)
       info <- paste(info, "family=\'", object$family, "\',", sep = "")
       info <- paste(info, "iterations=\'", object$iterations, "\',", sep = "")
       info <- paste(info, "step=\'", object$step, "\',", sep = "")
+      if(!is.null(object$YLevels))
+        info <- paste(info, "YLevels=\'", YLevels, "\',", sep = "")
+      if(!is.null(object$nYLevels))
+        info <- paste(info, "nYLevels=\'", nYLevels, "\',", sep = "")
+      if(!is.null(object$order))
+        info <- paste(info, "order=", ooo, ",", sep = "")
       info <- paste(info, "model.name=\'", object$model.name, "\')\n", sep = "")
       cat(info, file = file, append = TRUE)
     }

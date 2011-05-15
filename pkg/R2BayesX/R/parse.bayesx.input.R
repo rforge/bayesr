@@ -79,6 +79,20 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
     if(is.factor(Y)) {
       control$YLevels <- levels(Y)
       Y <- f2int(Y)
+      control$nYLevels <- levels(as.factor(Y))
+      if(!is.null(control$reference)) {
+
+      }
+    }
+    if(!is.null(control$reference)) {
+      if(!is.null(control$YLevels)) {
+        if(!is.character(control$reference))
+          control$reference <- control$nYLevels[control$reference]
+        else
+          control$reference <- control$nYLevels[control$YLevels == control$reference]
+      }
+      if(!control$reference %in% control$nYLevels)
+        stop("argument reference is specified wrong, not in response!")
     }
     ff[2] <- NULL
     only <- only2 <- FALSE
@@ -133,10 +147,14 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
       names(Y) <- Yn
       data <- cbind(Y,data)
     } 
-    if(ncol(data) < 2L)
+    if(ncol(data) < 2L) {
+      control$order <- order(data[,1L])
       data[,1L] <- data[order(data[,1L]), 1L]
-    else
+
+    } else {
+      control$order <- order(Y)
       data <- data[order(Y),]
+    }
     control <- c(control, list(data = data, Yn = Yn))
   } else {
     Yn <- as.character(formula[2L])

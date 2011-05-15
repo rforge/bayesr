@@ -1,30 +1,13 @@
 dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-summary(b)
+b <- read.bayesx.output("/tmp/RtmpkC0grc/bayesx")
 
 
-b <- read.bayesx.output("/tmp/Rtmpt4egpQ/bayesx1")
+b <- bayesx(mstatus ~ s(age, by = myvar, bs = "ps", k = 20), method = "REML",
+  family = "multinomial", data = nzmarital, reference = 2)
 
 
-library("VGAM")
-library("R2BayesX")
-data("nzmarital")
-b2 <- bayesx(mstatus ~ s(age, bs = "ps", k = 20), family = "multinomialprobit", 
-  method = "MCMC", data = nzmarital, dir.rm = FALSE)
-
-mycol <- c("red", "darkgreen", "blue")
-ooo <- with(nzmarital, order(age))
-fp <- fitted(b)[,4:6]
-nzmarital <- nzmarital[order(nzmarital$mstatus),]
-ooo <- with(nzmarital, order(age))
-with(nzmarital, matplot(age[ooo], fp[ooo,],
-  type = "l", las = 1, lwd = 2, ylim = 0:1, ylab = "Fitted probabilities",
-  xlab = "Age", col = c(mycol[1], "black", mycol[-1])))
-legend(x = 52.5, y = 0.62, col = c(mycol[1], "black", mycol[-1]),
-  lty = 1:4, legend = levels(nzmarital$mstatus), lwd = 2)
-abline(v = seq(10, 90, by = 5), h = seq(0, 1, by = 0.1),
-  col = "gray", lty = "dashed")
 
 
 
@@ -186,8 +169,32 @@ Rfiles <- Rfiles[!Rfiles %in% c("dir", "path", "Rfiles")]
 package.skeleton(name = "r2bayesx", Rfiles, path = path)
 
 
+## multinomial example
+library("VGAM")
+library("R2BayesX")
+data("nzmarital")
+b <- bayesx(mstatus ~ s(age, bs = "ps", k = 20), method = "REML",
+  family = "multinomial", data = nzmarital, reference = "Married/Partnered", dir.rm = FALSE)
+fb <- fitted(b)[,4:6]
+cnfb <- c(colnames(fb), "Married/Partnered")
+fb <- cbind(fb, 1 - rowSums(fb))
+mycol <- c("red", "darkgreen", "blue")
+ooo <- with(nzmarital, order(age))
+with(nzmarital, matplot(age[ooo], fb[ooo,],
+  type = "l", las = 1, lwd = 2, ylim = 0:1, ylab = "Fitted probabilities",
+  xlab = "Age", col = c(mycol[1], "black", mycol[-1])))
+legend(x = 52.5, y = 0.62, col = c(mycol[1], "black", mycol[-1]),
+  lty = 1:4, legend = cnfb, lwd = 2)
+abline(v = seq(10, 90, by = 5), h = seq(0, 1, by = 0.1),
+  col = "gray", lty = "dashed")
 
 
+fit.ms <- vgam(mstatus ~ s(age, df = 3), multinomial(refLevel = 2), data = nzmarital)
+par(mfrow = c(3, 1))
+plotvgam(fit.ms, se = TRUE, which.term = 1)
+plotvgam(fit.ms, se = TRUE, which.term = 2)
+plotvgam(fit.ms, se = TRUE, which.term = 3)
+mu <- fitted(fit.ms)
 
 
 

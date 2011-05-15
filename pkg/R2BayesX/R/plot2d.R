@@ -76,9 +76,10 @@ function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
   if(is.null(args$xlab))
     args$xlab <- xnam
   if(is.null(args$ylab)) {
-    args$ylab <- paste("Effect of", args$xlab)
-    if(by[1L] != "NA")
-      args$ylab <- paste(args$ylab, ":", byname, sep = "")
+    if(is.null(attr(x, "specs")$label))
+      args$ylab <- paste("Effect of", args$xlab)
+    else
+      args$ylab <- attr(x, "specs")$label
   }	
   if(is.character(c.select)) 
     c.select <- pmatch(c.select, colnames(x))

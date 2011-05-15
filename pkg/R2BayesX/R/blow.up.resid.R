@@ -1,7 +1,7 @@
 blow.up.resid <-
 function(data, x, xnam, response, eta, dimx, cx)
 {
-  if(!is.null(data)) {
+  if(!is.null(data) && !is.factor(response)) {
     x <- x[order(x[,1L]),]
     if(!is.matrix(x))
       x <- matrix(x, nrow = 1)

@@ -1,5 +1,5 @@
 find.fixed.effects <-
-function(dir, files, data, response, eta, model.name, rval)
+function(dir, files, data, response, eta, model.name, rval, minfo)
 {
   fixed2table <- function(file, tf) {
     tb <- readLines(file)
@@ -23,6 +23,12 @@ function(dir, files, data, response, eta, model.name, rval)
           one <- strsplit(split[1L], " ")[[1L]][1L]
           two <- splitme(split[2L])
           two <- resplit(two[1:(length(two) - 1)])
+          if(!is.null(minfo)) {
+            if(!is.null(minfo$YLevels) && !is.null(minfo$nYLevels))
+              oL <- eval(parse(text = minfo$YLevels))
+              nL <- eval(parse(text = minfo$nYLevels))
+              two <- oL[nL == two]
+          }
           new <- c(new, paste(one, ":", two, sep = ""))
         }
         vn[id] <- new
@@ -32,6 +38,12 @@ function(dir, files, data, response, eta, model.name, rval)
     if(NROW(x) == 1L && length(split <- strsplit(tf, "_")[[1L]]) == 3L) {
       if(!is.null(x$varname)) {
         split <- gsub(".res", "", split[3L])
+        if(!is.null(minfo)) {
+          if(!is.null(minfo$YLevels) && !is.null(minfo$nYLevels))
+            oL <- eval(parse(text = minfo$YLevels))
+            nL <- eval(parse(text = minfo$nYLevels))
+            split <- oL[nL == split]
+        }
         x$varname <- paste(x$varname, ":", split, sep = "", collapse = "")
       }
     }

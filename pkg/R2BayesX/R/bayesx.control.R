@@ -46,7 +46,7 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
     control$begin <- begin
     control$level1 <- level[1L]
     control$level2 <- level[2L]
-    if(family == "multinomial")
+    if(family == "multinomial" || family == "multinomialprobit")
       control$reference <- reference
     if(family == "zip" || family == "nbinomial") {
       control$distopt <- distopt
@@ -61,6 +61,8 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
     control$leftint <- leftint
     control$lefttrunc <- lefttrunc
     control$state <- state
+    if(family == "multinomial" || family == "multinomialprobit")
+      control$reference <- reference
   }
   if(method == "STEP") {
     control$iterations <- iter
@@ -77,7 +79,7 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
     control$bootstrapsamples <- bootstrapsamples
     control$level1 <- level[1L]
     control$level2 <- level[2L]
-    if(family == "multinomial")
+    if(family == "multinomial" || family == "multinomialprobit")
       control$reference <- reference
     if(family == "zip" || family == "nbinomial") {
       control$distopt <- distopt
