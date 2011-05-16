@@ -17,7 +17,7 @@
         Achim Zeileis\\Universit\"at Innsbruck}
 \Plainauthor{Nikolaus Umlauf, Thomas Kneib, Stefan Lang, Achim Zeileis}
 
-\title{Structured Additive Regression Models: An \proglang{R} Interface to \pkg{BayesX}}
+\title{Structured Additive Regression Models: An \proglang{R} Interface to BayesX}
 \Plaintitle{Structured Additive Regression Models: An R Interface to BayesX}
 
 \Keywords{STAR models, MCMC, REML, stepwise, \proglang{R}}
@@ -31,21 +31,28 @@
 %% \Acceptdate{2004-09-29}
 
 \Abstract{
-  This article describes the \proglang{R} interface to \pkg{BayesX}, a very comprehensive 
-  semiparametric regression toolbox based on open-source \proglang{C++} code for analyzing 
-  structured additive regression models (STAR). 
-  STAR models provide a flexible framework for modeling possible nonlinear effects of covariates: 
-  They contain the well established frameworks of generalized linear models (GLM) and generalized 
-  additive models (GAM) as special cases but also allow a wider class of effects, e.g., for 
-  geographical or spatio-temporal data. This allows for the specification of complex and realistic 
-  models that can typically be conveniently estimated using Bayesian inference based on modern 
-  Markov chain Monte Carlo (MCMC) simulation techniques or a mixed model representation.
-  Although there is already a quite extensive existing toolset in \proglang{R} supporting GLMs and 
-  GAMs, many of the more complex models from the STAR class, especially those utilizing Bayesian 
-  inference, are currently not easily available. They are, however, provided in BayesX, which not 
-  only covers models for responses from univariate exponential families, but also models from 
-  non-standard regression situations such as models for categorical responses with either ordered or 
-  unordered categories, continuous time survival data, or continuous time multi-state models.
+  Structured additive regression models (STAR) provide a flexible framework for modeling possible 
+  nonlinear effects of covariates: They contain the well established frameworks of generalized 
+  linear models (GLM) and generalized additive models (GAM) as special cases but also allow a wider 
+  class of effects, e.g., for geographical or spatio-temporal data. This allows for the 
+  specification of complex and realistic models that can typically be conveniently estimated using 
+  Bayesian inference based on modern Markov chain Monte Carlo (MCMC) simulation techniques or a 
+  mixed model representation. 
+  Besides the quite extensive existing toolset in \proglang{R} supporting GLMs and GAMs, another 
+  standalone software package called BayesX, based on open-source \proglang{C++}, developed to a 
+  very comprehensive regression toolbox over last few years, especially for those models from the 
+  STAR class utilizing Bayesian inference, wherefore availability in \proglang{R} is currently 
+  difficult.
+%
+%  Although there is already a quite extensive existing toolset in 
+%  \proglang{R} supporting GLMs and GAMs, many of the more complex models from the STAR class, 
+%  especially those utilizing Bayesian inference, are currently not easily available. They are, 
+%  however, provided in BayesX, a very comprehensive semiparametric regression toolbox based on 
+%  open-source \proglang{C++}, which not only covers models for responses from univariate exponential 
+%  families, but also models from non-standard regression situations such as models for categorical 
+%  responses with either ordered or unordered categories, continuous time survival data, or 
+%  continuous time multi-state models. 
+%  
   Since there has been increasing interest in an \proglang{R} interface to BayesX, the already 
   existing CRAN package \pkg{BayesX}, which previously provided mainly functions for exploring 
   estimation results, is now extended to a full interactive interface. With the new version of the 
@@ -117,16 +124,16 @@ been added to the CRAN package \pkg{BayesX} \citep{Kneib+Heinzl+Brezger:2011}, w
 provided mainly functions for exploring estimation results.
 
 Designing an user friendly setup requires a comfortable translation method of \proglang{R} specific 
-syntax to BayesX readable commands. For this reason, the package layout is orientated and dependent 
-on the recommended CRAN package \pkg{mgcv} \citep{Wood:2011}, amongst others, since \pkg{mgcv} 
-already features functionality, which easily allows to set up new model terms within \proglang{R}'s 
-formula language, and secondly, the package covers a number of the model terms implemented in 
-BayesX. This means, some of the model formulas specified within the \pkg{mgcv} main model 
-fitting-function \fct{gam}, may also be used in \pkg{BayesX} and vice versa. Hence, users primarily 
-familiar with \pkg{mgcv} and its GAM formula definition may use the interface with little additional 
-effort, only. This is illustrated in the following, where some data is simulated and models are 
-estimated with \fct{gam}, using generalized cross validation (GCV) for optimization, and the 
-\pkg{BayesX} interface primary model-fitting function \fct{bayesx} applying MCMC: 
+syntax to BayesX interpretable commands. For this reason, the package layout is orientated and 
+dependent on the recommended CRAN package \pkg{mgcv} \citep{Wood:2011}, amongst others, since 
+\pkg{mgcv} already features functionality, which easily allows to set up new model terms within 
+\proglang{R}'s formula language, and secondly, the package covers a number of the model terms 
+implemented in BayesX. This means, some of the model formulas specified within the \pkg{mgcv} main 
+model fitting-function \fct{gam}, may also be used in \pkg{BayesX} and vice versa. Hence, users 
+primarily familiar with \pkg{mgcv} and its GAM formula definition may use the interface with little 
+additional effort, only. This is illustrated in the following, where some data is simulated and 
+models are estimated with \fct{gam}, using generalized cross validation (GCV) for optimization, and 
+the \pkg{BayesX} interface primary model-fitting function \fct{bayesx} applying MCMC: 
 <<fit-illustration-model, echo=TRUE, eval=FALSE, fig=FALSE>>=
 ## simulate some data
 set.seed(0) 
@@ -174,18 +181,18 @@ package \pkg{mgcv} model-fitting function \fct{gam} using GCV, left panel, and t
 model-fitting function \fct{bayesx} applying MCMC, right panel respectively.}
 \end{figure}
 Several standard base \proglang{R} extractor functions and methods, e.g. \fct{plot} and 
-\fct{summary}, are available for the returned fitted-model object \code{b2}, here, a comparison plot 
-of the estimated effect for covariate \code{x2} of the two models is shown in 
-figure~\ref{fig:illustration}. Consequently, estimating models with more complex term structures, 
-e.g. applying stationary Gaussian random fields, is managed by function \fct{s}, which facilitates a 
-consistent way of smooth terms specifications in GAM and STAR formulas. In addition, BayesX supports 
-non-standard regression situations such as models for categorical responses with either ordered or 
-unordered categories, continuous time survival data, or continuous time multi-state models, also, 
-which may be adopted in the same manner. 
+\fct{summary}, also, with similar behavior as in \pkg{mgcv}, are available for the returned 
+fitted-model object \code{b2}. Here, a comparison plot of the estimated effect for covariate 
+\code{x2} of the two models is shown in figure~\ref{fig:illustration}. Consequently, estimating 
+models with more complex term structures, e.g. applying stationary Gaussian random fields, is 
+managed by function \fct{s}, which facilitates a consistent way of smooth terms specifications in 
+GAM and STAR formulas. In addition, BayesX supports non-standard regression situations such as 
+models for categorical responses with either ordered or unordered categories, continuous time 
+survival data, or continuous time multi-state models, also, which may be adopted in the same manner. 
 
-To present the capabilities of the software in more detail, the next section briefly discusses the 
-methodological background of regression models with a structured additive predictor, before a
-description of the implementation is provided in section~\ref{sec:implementation}. In 
+To present the extensive capability of the software in more detail, the next section briefly 
+discusses the methodological background of regression models with a structured additive predictor, 
+before a description of the implementation is provided in section~\ref{sec:implementation}. In 
 section~\ref{sec:illustrations}, the interface usability is further demonstrated on a complex 
 example with data concerning childhood malnutrition in Zambia as well as on a dataset on forest 
 health.
@@ -240,7 +247,7 @@ Hence, the predictor of (\ref{eqn:structadd}) may be rewritten by
 \end{equation}
 where $\mathbf{X}$ corresponds to the usual design matrix for the fixed effects.
 
-In BayesX, estimation of regression coefficients is based on two inferential concepts, Markov chain 
+In BayesX, estimation of regression parameters is based on two inferential concepts, Markov chain 
 Monte Carlo simulation techniques corresponding to full Bayesian inference \citep{Brezger+Lang:2006}
 and mixed model methodology corresponding to penalized likelihood or empirical Bayes inference
 \citep{Fahrmeir+Kneib+Lang:2004}. As a third alternative BayesX provides a penalized least squares
@@ -282,12 +289,12 @@ opportunity is to download the \proglang{C++} source-code from
 and compile the sources with the GNU \proglang{C++} compiler, besides on Windows operating systems, 
 a pre-compiled computing kernel including a Java graphical interface may be installed, which 
 automatically installs the command line version of BayesX, also. Another, and the recommended option 
-on UNIX and Windows systems is to install the binary within \proglang{R} directly by calling the 
-function \fct{install.bayesx}, which basically executes the described above. For all other platforms 
-and possible problems, please see the help sites on the BayesX web-page. Installing BayesX from 
+on UNIX and Windows systems is to install the binary within \proglang{R} by calling the function 
+\fct{install.bayesx}, which basically executes the described above. For all other platforms and 
+possible problems, please see the help sites on the BayesX web-page. Installing BayesX from 
 \proglang{R} then ideally requires only e.g. running
 <<install-bayesx, echo=TRUE, eval=FALSE>>=
-install.bayesx()
+install.bayesx(inst.dir = NULL, source.dir = NULL)
 @
 if the computer is connected to the internet and the user holds writing permissions for the 
 \pkg{BayesX} package library folders, otherwise a valid installation directory must be supplied (in 
@@ -299,7 +306,7 @@ options(bayesx.bin = "/path/to/BayesX")
 @
 where \code{"/path/to/BayesX"} on Windows systems may be specified e.g. with \\
 \code{"C:/BayesX/commandline/bayesx.exe"}, or adding the installation directory of the binary to the 
-environment PATH variable. Afterwards, the function call
+environment PATH variable is sufficient. Afterwards, the function call
 <<install-bayesx, echo=TRUE, eval=FALSE>>=
 check.install.bayesx()
 @
@@ -313,13 +320,13 @@ another, and may also be used independently.
 \begin{tabular}{|l|p{10cm}|}
 \hline
 Function                 & Description \\ \hline
-\fct{parse.bayesx.input} & parses \fct{bayesx} input parameters which are then send to
+\fct{parse.bayesx.input} & parses \fct{bayesx} input parameters to be send to 
                            \fct{write.bayesx.input}. \\ \hline
 \fct{write.bayesx.input} & takes an object from \fct{parse.bayesx.input} and translates the input to 
-                           an executable program and data file, if necessary, which may be send 
-                           to BayesX. \\ \hline
+                           an executable program and, if necessary, a data file, which may be 
+                           processed with BayesX. \\ \hline
 \fct{run.bayesx}         & runs BayesX program files from \proglang{R}. \\ \hline
-\fct{read.bayesx.output} & automatically reads in BayesX estimation output which is stored in an 
+\fct{read.bayesx.output} & automatically reads in BayesX estimation output stored in a declared 
                            output directory by transforming objects to suitable classes, which may 
                            be printed, summarized and plotted. \\ \hline
 \end{tabular}
@@ -440,16 +447,18 @@ s(id, bs = "mrf", xt = list(map = SomeMap))
 constructs the setup for this type of model term.
 
 Past the execution of all computations with the BayesX binary, the model output files are written 
-into the declared output directory, which is per default the temporary directory of the running
+into the declared output directory, which per default is the temporary directory of the running
 session, and are read back into \proglang{R} using function \fct{read.bayesx.output}. The returned 
 fitted-model object is a list of class \code{"bayesx"}, wherefore a set of standard extractor 
 functions, such as \fct{summary}, \fct{fitted}, \fct{plot} and more, 
-listed in table~\ref{tab:funmethods}, is available. Function \fct{plot} either provides model 
-diagnostic plots or plots of estimated term effects, futhermore, for MCMC models, sampling paths of
-coefficients and variances may be drawn. 
+listed in table~\ref{tab:funmethods}, is available. 
+
+The quite flexible \code{S3} class function \fct{plot.bayesx}, called from the generic \fct{plot}, 
+is practical generating model diagnostic plots, term effects plots, applying 2d, 3d, image and map
+graphics, as well as sampling paths of coefficients and variances for MCMC estimated models, e.g.
 \setkeys{Gin}{width=0.49\textwidth}
 <<plot-illustration-model-samples-01, echo=TRUE, eval=FALSE, fig=FALSE, width=5, height=4>>=
-plot(b2, term = "s(x0)", which = "var-samples")
+plot(b2, term = "s(x0)", which = "coef-samples")
 @
 \begin{figure}[t!]
 \setkeys{Gin}{width=0.6\textwidth}
@@ -459,9 +468,11 @@ par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b2, term = "s(x2)", which = "coef-samples", main = "")
 @
 \end{center}
-\caption{\label{fig:illustration} Illustration example: plotting the sampling paths of the 
-coefficients of term \code{s(x2)} of model \code{b2}.}
+\caption{\label{fig:illustration-samples} Illustration example: plots of the sampling paths of the 
+coefficients of term \code{s(x2)} in model \code{b2}.}
 \end{figure}
+produces plots of coefficient sampling paths as shown in figure~\ref{fig:illustration-samples}.
+
 \begin{table}[htbp]
 \begin{center}
 \begin{tabular}{|l|p{10cm}|}
@@ -625,15 +636,15 @@ data("BeechBnd")
 data("BeechGra")
 fm1 <- bayesx(defoliation ~  stand + fertilized + 
   humus + moisture + alkali + ph + soil + 
-  s(age, bs = "ps") + s(inclination, bs = "ps") + 
-  s(canopy, bs = "ps") + s(year, bs = "ps") + 
-  s(elevation, bs = "ps"),
+  s(age, bs = "ps", k = 22) + s(inclination, bs = "ps", k = 22) + 
+  s(canopy, bs = "ps", k = 22) + s(year, bs = "ps", k = 22) + 
+  s(elevation, bs = "ps", k = 22),
   family = "cumlogit", method = "REML", data = ForestHealth)
 fm2 <- bayesx(defoliation ~  stand + fertilized + 
   humus + moisture + alkali + ph + soil + 
-  s(age, bs = "ps") + s(inclination, bs = "ps") + 
-  s(canopy, bs = "ps") + s(year, bs = "ps") + 
-  s(elevation, bs = "ps") + 
+  s(age, bs = "ps", k = 22) + s(inclination, bs = "ps", k = 22) + 
+  s(canopy, bs = "ps", k = 22) + s(year, bs = "ps", k = 22) + 
+  s(elevation, bs = "ps", k = 22) + 
   s(id, bs = "mrf", xt = list(map = BeechGra)),
   family = "cumlogit", method = "REML", data = ForestHealth)
 @

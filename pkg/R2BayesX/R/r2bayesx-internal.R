@@ -73,7 +73,7 @@ function(x, digits = max(3L, getOption("digits") - 3L),
       if(all(x$fixed.effects[1L,] == 0))
         fc <- FALSE
     } else {
-      if(all(x$fixed.effects[1L,] == 0)) {
+      if(!all(as.character(x$fixed.effects) == "NaN") && all(x$fixed.effects[1L,] == 0)) {
         m <- ncol(x$fixed.effects)
         nc <- colnames(x$fixed.effects)
         nr <- rownames(x$fixed.effects)[2L:nrow(x$fixed.effects)]

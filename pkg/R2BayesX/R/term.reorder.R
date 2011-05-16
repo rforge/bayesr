@@ -55,7 +55,7 @@ function(x, info)
       }
     }
     if(length(rval) > 0L)
-      names(rval) <- nt
+      try(names(rval) <- nt, silent = TRUE)
     if(length(taken) < nx) {
       nterms <- names(x)[!c(1L:nx) %in% taken]
       nrval <- list()
