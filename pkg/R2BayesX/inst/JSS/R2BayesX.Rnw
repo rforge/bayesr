@@ -190,7 +190,7 @@ GAM and STAR formulas. In addition, BayesX supports non-standard regression situ
 models for categorical responses with either ordered or unordered categories, continuous time 
 survival data, or continuous time multi-state models, also, which may be adopted in the same manner. 
 
-To present the extensive capability of the software in more detail, the next section briefly 
+To present the extensive capabilities of the software in more detail, the next section briefly 
 discusses the methodological background of regression models with a structured additive predictor, 
 before a description of the implementation is provided in section~\ref{sec:implementation}. In 
 section~\ref{sec:illustrations}, the interface usability is further demonstrated on a complex 
@@ -292,7 +292,7 @@ automatically installs the command line version of BayesX, also. Another, and th
 on UNIX and Windows systems is to install the binary within \proglang{R} by calling the function 
 \fct{install.bayesx}, which basically executes the described above. For all other platforms and 
 possible problems, please see the help sites on the BayesX web-page. Installing BayesX from 
-\proglang{R} then ideally requires only e.g. running
+\proglang{R} then ideally only requires running
 <<install-bayesx, echo=TRUE, eval=FALSE>>=
 install.bayesx(inst.dir = NULL, source.dir = NULL)
 @
@@ -372,8 +372,8 @@ table~\ref{tab:familiy}.
 \code{"multinomialcatsp"} & unordered multinomial (with category-specific covariates) & logit & 
   \code{"REML"} \\ \hline
 \end{tabular}
-\caption{\label{tab:familiy} Distributions implemented for the different inferential concepts within 
-the \pkg{BayesX} package.}
+\caption{\label{tab:familiy} Distributions implemented for \code{method}s \code{"MCMC"}, 
+\code{"REML"} and \code{"STEP"} within the \pkg{BayesX} package.}
 \end{center}
 \end{table}
 
@@ -405,15 +405,18 @@ in table~\ref{tab:terms}.
               P-spline with second order random walk penalty for the parameters of the spline for 
               the log-baseline effect $log(\lambda(time))$. \\ \hline
 \code{"kr"} & kriging with stationary Gaussian random fields. \\ \hline
-\code{"gk"} & geokriging with stationary Gaussian random fields:  estimates a stationary Gaussian 
-              random field based on the centroids of a map object\\ \hline
+\code{"gk"} & geokriging with stationary Gaussian random fields: estimates a stationary Gaussian 
+              random field based on the centroids of a map object provided in boundary format within
+              the \code{xt} argument of function \fct{s}. \\ \hline
 \code{"gs"} & geosplines based on two-dimensional P-splines with first order random walk penalty: 
               defines a two-dimensional P-spline for the spatial covariate region with a 
               two-dimensional first order random walk penalty for the parameters of the spline. 
               Estimation is based on the coordinates of the centroids of the regions provided by a 
-              map object.\\ \hline
+              map object in in boundary format within the \code{xt} argument of function \fct{s}.\\ 
+              \hline
 \code{"mrf"} & Markov random fields: defines a Markov random field prior for a spatial covariate, 
-               where geographical informations are provided by a map object .\\ \hline
+               where geographical informations are provided by a map object in boundary or graph 
+               file format within the \code{xt} argument of function \fct{s}.\\ \hline
 \code{"ps"} & P-spline with first or second order difference penalty. \\ \hline
 \code{"rw1"} \code{"rw2"} & zero degree P-splines: defines a zero degree P-spline with first or 
                             second order difference penalty. A zero degree P-spline typically 
@@ -435,12 +438,13 @@ in table~\ref{tab:terms}.
 \end{center}
 \end{table}
 Setting additional arguments for a model term is generally restricted to argument \code{xt} 
-within function \fct{s} and \fct{r}, i.e. \code{xt} must be a named \fct{list} including those 
+within function \fct{s} and \fct{r}, i.e. \code{xt} must be a named \fct{list} including these 
 parameters, where all possibilities for each \code{bs} type may be looked up calling function 
 \fct{bayesx.term.options}. As an example, using \code{bs = "mrf"} to estimate a spatially correlated
 effect with Markov random fields with some location identification covariate \code{id}, requires an 
-additional map boundary or graph file for the calculation of a neighborhood-matrix to guarantee  
-smooth estimates over adjacent regions, which must be provided within \code{xt}, then 
+additional map boundary (\fct{read.bnd}) or graph file (\fct{read.gra}) for the calculation of a 
+neighborhood-matrix to guarantee smooth estimates over adjacent regions, which must be provided 
+within \code{xt}, then 
 \begin{Sinput}
 s(id, bs = "mrf", xt = list(map = SomeMap)) 
 \end{Sinput} 
@@ -453,9 +457,10 @@ fitted-model object is a list of class \code{"bayesx"}, wherefore a set of stand
 functions, such as \fct{summary}, \fct{fitted}, \fct{plot} and more, 
 listed in table~\ref{tab:funmethods}, is available. 
 
-The quite flexible \code{S3} class function \fct{plot.bayesx}, called from the generic \fct{plot}, 
-is practical generating model diagnostic plots, term effects plots, applying 2d, 3d, image and map
-graphics, as well as sampling paths of coefficients and variances for MCMC estimated models, e.g.
+The quite flexible \code{S3} class function \fct{plot.bayesx}, usually called from the generic 
+\fct{plot}, is handy generating model diagnostic plots, term effects plots, applying 2d, 3d, 
+image and map graphics, as well as sampling paths of coefficients and variances for MCMC estimated 
+models, e.g.
 \setkeys{Gin}{width=0.49\textwidth}
 <<plot-illustration-model-samples-01, echo=TRUE, eval=FALSE, fig=FALSE, width=5, height=4>>=
 plot(b2, term = "s(x0)", which = "coef-samples")
@@ -509,11 +514,22 @@ Function & Description \\ \hline
 
 \section{STAR models in practice} \label{sec:illustrations}
 
-Section with two examples: Childhood malnutrition in Zambia and the forest health data.
+The focus of this section is on demonstrating the various features of the \pkg{BayesX} package, 
+therefore, the examples provided are replicate analysis taken from \citet{Brezger+Kneib+Lang:2005} 
+and \citet{Fahrmeir+Kneib+Lang:2009}, the \pkg{VGAM} package \citep{Yee:2009} and the \pkg{mgcv} 
+package, which ensure straightforward traceability of the code presented, since all datasets may be 
+loaded within the discussed CRAN packages. 
 
 
 \subsection{Childhood malnutrition in Zambia} \label{subsec:zambia}
 
+This analysis has already been conducted by \citet{Kandala+Lang+Klasen+Fahrmeir:2001} and has also 
+been used as a demonstrating example in \citet{Brezger+Kneib+Lang:2005}. Stunting is one of the 
+leading drivers of a number of problems development countries are faced with, for instance, a direct 
+consequence of stunting is a high mortality rate. Here, the primary interest is to model the 
+dependence of stunting of newborn children, with an age ranging from 0 to 5 years, on covariates 
+such as the body mass index of the mother, the age of the child and others presented in 
+table~\ref{tab:zambia}. 
 \begin{table}[htbp]
 \begin{center}
 \begin{tabular}{|l|p{10cm}|}
@@ -534,17 +550,61 @@ Variable           & Description \\ \hline
 \caption{\label{tab:zambia} Variables in the data set on childhood malnutrition in Zambia.}
 \end{center}
 \end{table}
+The response \code{stunting} is defined in terms of a reference 
+category, i.e in this dataset the stunting for child $i$ is represented by
+\begin{equation*}
+\texttt{stunting}_i = \frac{\texttt{AI}_i - \texttt{MAI}_i}{\sigma},
+\end{equation*}
+where \texttt{AI} refers to the child's anthropometric indicator (height at a certain age in our 
+example), while \texttt{MAI} and $\sigma$ correspond to the median and the standard deviation in the 
+reference population, respectively.
 
-<<fit-zambia-model, echo=TRUE, eval=FALSE>>=
+The data for this analysis is provided in the \pkg{BayesX} package and can be loaded with
+<<data-zambia, echo=TRUE, eval=TRUE>>=
 data("ZambiaNutrition", package = "R2BayesX")
-data("ZambiaBnd")
-zm <- bayesx(stunting ~ memployment + education + urban + gender + 
-  s(bmi, bs = "ps") + s(agechild, bs = "ps") +
-  s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district),
-  iter = 12000, burnin = 2000, step = 10, seed = 123,
-  data = ZambiaNutrition)
 @
-
+For the final model, incorporating a structured spatial effect for the districts in Zambia using a 
+Markov random fields term within the \code{formula} specifiaction, BayesX needs some information 
+about the district neighborhood structure, which is enclosed in 
+<<data-zambia-bnd, echo=TRUE, eval=TRUE>>=
+data("ZambiaBnd", package = "R2BayesX")
+@
+With the information of the boundary file an appropriate penalty is computed, allowing for a 
+smoothly varying effect of neighboring regions. The object \code{ZambiaBnd} has class \code{"bnd"} 
+and is basically a \fct{list} of polygon matrices, one matrix for each district, with $x$-, in the 
+first, and $y$-coordinates, in the second column respectively, of the boundary points. There is a 
+generic method implemented for objects of class \code{"bnd"}, which in principle calls function 
+\fct{plotmap}, e.g. a simple map, as shown in figure~\ref{fig:zambia-simple-map}, of the districts 
+in Zambia is drawn typing
+<<plot-zambia-map-01, echo=TRUE, eval=FALSE>>=
+plot(ZambiaBnd)
+@ 
+\begin{figure}[t!]
+\setkeys{Gin}{width=0.49\textwidth}
+\begin{center}
+<<plot-zambia-map-02, echo=FALSE, eval=TRUE, fig = TRUE, width=5, height=4>>=
+par(mar = c(0, 0, 0, 0))
+plot(ZambiaBnd)
+@ 
+\end{center}
+\caption{\label{fig:zambia-simple-map} Example on childhood malnutrition: a simple map of the 
+districts in Zambia.}
+\end{figure}
+Having loaded the necessary files, the model \code{formula} is then specified with
+<<formula-zambia, echo=TRUE, eval=TRUE>>=
+mf <- stunting ~ memployment + education + urban + gender + 
+  s(bmi, bs = "ps") + s(agechild, bs = "ps") +
+  s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district)
+@
+where the two continuous covariates \code{bmi} and \code{agechild} are assumed to have a possibly 
+nonlinear effect on \code{stunting} and are modeled with P-splines, \code{bs = "ps"}. Furthermore, 
+a decomposition of the spatial effect is achieved by specifying a Markov random field term with 
+\code{bs = "mrf"} for the structured and a random effects term, using function \fct{r}, for an
+unstructured spatial effect. Finally, the model is fitted using MCMC by calling
+<<fit-zambia-model, echo=TRUE, eval=FALSE>>=
+zm <- bayesx(mf, method = "MCMC", iter = 12000, 
+  burnin = 2000, step = 10, data = ZambiaNutrition)
+@
 <<cache-zambia-model, echo=FALSE, eval=TRUE>>=
 if(file.exists("zambia-model.rda")) {
 load("zambia-model.rda")
@@ -553,11 +613,17 @@ load("zambia-model.rda")
 save(zm, file = "zambia-model.rda")
 }
 @
+where argument \code{iter}, \code{burnin} and \code{step} set the number of iterations of the MCMC 
+simulation, the burnin period, which will be removed from the generated samples, and the step length 
+for which samples should be stored, i.e. \code{step = 10} forces saving of only every 10th sampled 
+parameter.
 
+After the model has been successfully fitted, the generic call  
 <<summary-zambia-model>>=
 summary(zm)
 @
-
+provides summary statistics of the fitted-model object, which typically include estimates of linear 
+effects, smooth terms variances and random effects variances, as well as goodness of fit criteria.
 \begin{figure}[t!]
 \setkeys{Gin}{width=0.49\textwidth}
 \begin{center}
