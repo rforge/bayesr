@@ -15,7 +15,6 @@ function(dir, files, data, response, eta, model.name, minfo)
     resfiles <- resfiles[!grepl("_nigmix", resfiles)]
     if(length(resfiles) > 0L)
       for(res in resfiles) {
-print(res)
         x <- df2m(read.table(paste(dir, "/", res, sep = ""), header = TRUE))
         dimx <- s4dim(x)
         if(sum(x[,(dimx + 1L):ncol(x)], na.rm = TRUE) != 0) {
@@ -36,14 +35,14 @@ print(res)
               vx <- res2
             if(length(res3 <- strsplit(res, "_f_")[[1L]]) > 1L) {
               res3 <- strsplit(res3[2L], "_")[[1L]]
-              if(length(res3) == 3) {
+              if(length(res3) >= 3) {
                   vx2 <- vx3 <- res3[1L]
                 if(!is.null(minfo)) {
-print(names(minfo))
-                  if(!is.null(minfo$YLevels) && !is.null(minfo$nYLevels))
+                  if(!is.null(minfo$YLevels) && !is.null(minfo$nYLevels)) {
                     oL <- eval(parse(text = minfo$YLevels))
                     nL <- eval(parse(text = minfo$nYLevels))
                     vx2 <- oL[nL == res3[1L]]
+                  } else vx2 <- vx3 <- NULL
                 }
               }
             }

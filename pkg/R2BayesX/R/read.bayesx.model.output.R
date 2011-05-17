@@ -124,6 +124,10 @@ function(dir, model.name)
             eval(parse(text = paste("model.results$", n1[i], "<- mf2[[i]]", sep = "")))
       }
       mf <- model.results
+      if(!is.null(mf$smooth.hyp.step)) {
+        rval$smooth.hyp <- mf$smooth.hyp.step
+        mf$smooth.hyp.step <- NULL
+      }
     } else mf <- c(list(method = method, N = N), mf)
     if(mf$method == " ")
       mf$method <- "NA"

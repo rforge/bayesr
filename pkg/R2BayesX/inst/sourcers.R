@@ -1,7 +1,12 @@
 dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-b <- read.bayesx.output("/tmp/RtmpggomWk/bayesx")
+plot(fm3, term = "s(x,y)", image = T, grid = 200)
+
+
+
+
+b <- read.bayesx.output("/home/c403129/tmp/bayesxSTEP")
 
 
 summary(b)
@@ -173,11 +178,10 @@ package.skeleton(name = "r2bayesx", Rfiles, path = path)
 
 
 ## multinomial example
-library("VGAM")
 library("R2BayesX")
-data("nzmarital")
-b <- bayesx(mstatus ~ s(age, bs = "ps", k = 20), method = "REML",
-  family = "multinomial", data = nzmarital, reference = "Married/Partnered", dir.rm = FALSE)
+data("nzmarital", package = "VGAM")
+b <- bayesx(mstatus ~ s(age, z, bs = "te"), method = "REML",
+  family = "multinomial", data = nzmarital, reference = "Married/Partnered")
 fb <- fitted(b)[,4:6]
 cnfb <- c(gsub("mu:", "", colnames(fb)), "Married/Partnered")
 fb <- cbind(fb, 1 - rowSums(fb))
@@ -199,8 +203,21 @@ mu <- fitted(fit.ms)
 
 
 ## stepwise example
-data("BostonHousing2", package = "mlbench")
-b <- bayesx(medv ~ s(lon, lat, bs = "te"), data = BostonHousing2)
+## an example of automatic model selection via null space penalization
+set.seed(3); n <- 200
+dat <- gamSim(1, n = n, scale = .15, dist = "poisson") ## simulate data
+dat$x4 <- runif(n, 0, 1); dat$x5 <- runif(n, 0, 1) ## spurious
+
+b <- gam(y ~ s(x0, bs = "ps") + s(x1, bs = "ps") + s(x2, bs = "ps") + 
+  s(x3, bs = "ps") + s(x4, bs = "ps") + s(x5, bs = "ps"),
+  data = dat, family = poisson, select = TRUE, method = "REML")
+
+summary(b)
+plot(b, pages = 1)
+
+b2 <- bayesx(y ~ s(x0, bs = "ps") + s(x1, bs = "ps") + s(x2, bs = "ps") + 
+  s(x3, bs = "ps") + s(x4, bs = "ps") + s(x5, bs = "ps"),
+  data = dat, family = "poisson", method = "STEP", dir.rm = FALSE)
 
 
 

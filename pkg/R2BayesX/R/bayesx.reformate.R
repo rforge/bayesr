@@ -32,14 +32,17 @@ function(x)
     rownames(e) <- rownames(x$fixed.effects)
     x$fixed.effects <- e
   }
-  if(!is.null(x$effects) && length(x$effects) > 0L)
+  if(!is.null(x$effects) && length(x$effects) > 0L) {
     for(i in 1L:length(x$effects)) {
-      if(is.list(x$effects[[i]])) {
-        if(length(x$effects[[i]]) > 0L)
-          for(j in 1L:length(x$effects[[i]]))
-            x$effects[[i]][[j]] <- chacol(x$effects[[i]][[j]])
-      } else x$effects[[i]] <- chacol(x$effects[[i]])
+      if(!is.null(x$effects[[i]])) {
+        if(is.list(x$effects[[i]])) {
+          if(length(x$effects[[i]]) > 0L)
+            for(j in 1L:length(x$effects[[i]]))
+              x$effects[[i]][[j]] <- chacol(x$effects[[i]][[j]])
+        } else x$effects[[i]] <- chacol(x$effects[[i]])
+      }
     }
+  }
   if(!is.null(x$smooth.hyp) && length(x$smooth.hyp) > 0L)
     x$smooth.hyp <- recol(chacol(x$smooth.hyp))
   if(!is.null(x$random.hyp) && length(x$random.hyp) > 0L)

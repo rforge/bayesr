@@ -24,10 +24,11 @@ function(dir, files, data, response, eta, model.name, rval, minfo)
           two <- splitme(split[2L])
           two <- resplit(two[1:(length(two) - 1)])
           if(!is.null(minfo)) {
-            if(!is.null(minfo$YLevels) && !is.null(minfo$nYLevels))
+            if(!is.null(minfo$YLevels) && !is.null(minfo$nYLevels)) {
               oL <- eval(parse(text = minfo$YLevels))
               nL <- eval(parse(text = minfo$nYLevels))
               two <- oL[nL == two]
+            }
           }
           new <- c(new, paste(one, ":", two, sep = ""))
         }
@@ -39,10 +40,11 @@ function(dir, files, data, response, eta, model.name, rval, minfo)
       if(!is.null(x$varname)) {
         split <- gsub(".res", "", split[3L])
         if(!is.null(minfo)) {
-          if(!is.null(minfo$YLevels) && !is.null(minfo$nYLevels))
+          if(!is.null(minfo$YLevels) && !is.null(minfo$nYLevels)) {
             oL <- eval(parse(text = minfo$YLevels))
             nL <- eval(parse(text = minfo$nYLevels))
             split <- oL[nL == split]
+          }
         }
         x$varname <- paste(x$varname, ":", split, sep = "", collapse = "")
       }

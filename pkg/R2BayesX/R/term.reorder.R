@@ -68,7 +68,7 @@ function(x, info)
       rval <- c(rval, nrval)
     }
     for(k in 1:length(rval)) {
-      if(!is.list(rval[[k]]) && nrow(rval[[k]]) < 2) 
+      if(!is.null(rval[[k]]) && !is.list(rval[[k]]) && nrow(rval[[k]]) < 2L) 
         attr(rval[[k]], "specs")$is.factor <- TRUE
     }
     return(rval)

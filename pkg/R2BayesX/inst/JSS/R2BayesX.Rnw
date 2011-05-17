@@ -471,7 +471,7 @@ plot(b2, term = "s(x2)", which = "coef-samples", main = "")
 \caption{\label{fig:illustration-samples} Illustration example: plots of the sampling paths of the 
 coefficients of term \code{s(x2)} in model \code{b2}.}
 \end{figure}
-produces plots of coefficient sampling paths as shown in figure~\ref{fig:illustration-samples}.
+produces plots of coefficient sampling paths as shown in figure~\ref{fig:illustration-samples}. 
 
 \begin{table}[htbp]
 \begin{center}

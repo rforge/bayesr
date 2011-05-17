@@ -209,7 +209,7 @@ function(x, residuals = FALSE, col.surface = NULL,
       }
       if(legend) {
         mar <- mar.orig
-        mar[2L] <- 0.5
+        mar[2L] <- 1
         par(mar = mar)
         args2 <- args
         args2$xlim <- args2$ylim <- c(0, 1)

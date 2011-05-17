@@ -254,9 +254,76 @@ function(x)
     fcn <- resplit(fcn)
     fcn <- sub(" ", "", fcn)
     eval(parse(text=paste("rval$", fcn, "<-", fc, sep = "")))
-    rval$step.final.model <- resplit(stepgrep)	
+    step.final.model <- gsub("f\\(", "s\\(", resplit(stepgrep))
+    step.final.model <- gsub("gamma0", "\\(Intercept\\)", step.final.model)
+    rval$step.final.model <- step.final.model
+  }
+  final.prop <- any(grepl("Final Properties:", x))
+  if(final.prop) {
+    final <- i <- grep("Final Properties:", x)
+    stepfiles <- NULL
+    run <- TRUE
+    while(run) {
+      i <- i + 1L
+      if(x[i] == "\\newpage ")
+        run <- FALSE
+      else
+        stepfiles <- c(stepfiles, x[i])
+      if(i == length(x))
+        run <- FALSE
+    }
+    if(length(id <- grep("\\$f_\\{", stepfiles))) {
+      SmoothHyp <- NULL; ok <- FALSE
+      for(i in 1:length(id)) {
+        term <- paste("s", collect(stepfiles[id[i]], start = "(", stop = ")"), sep = "")
+        nextpart <- strsplit(stepfiles[id[i] + 1], "=")[[1L]]
+        if(length(nextpart) == 4L) {
+          ok <- TRUE
+          lambda <- as.numeric(collect(nextpart[2L], start = " ", stop = " "))
+          df <- as.numeric(collect(nextpart[4L], start = " ", stop = " "))
+          tmp <- matrix(c(lambda, df), nrow = 1)
+          rownames(tmp) <- term
+          SmoothHyp <- rbind(SmoothHyp, tmp)
+        }
+      }
+      if(ok)
+        colnames(SmoothHyp) <- c("lambda", "df")
+      rval$smooth.hyp.step <- SmoothHyp
+    }
   }
 
   return(rval)
+}
+
+
+collect <- function(string, start, stop)
+{
+  split <- splitme(string)
+  take <- NULL; do <- FALSE
+  k <- 1
+  for(p in split) {
+    if(p == start)
+      do <- TRUE
+    if(do) {
+      take <- c(take, p)
+    }
+    if(k != 1 && p == stop)
+      do <- FALSE
+    k <- k + 1
+  }
+  take <- take[take != "$"]
+
+  return(resplit(take))
+}
+
+
+collect2 <- function(string, start, stop)
+{
+  string <- splitme(string)
+  start <- splitme(start)
+  stop <- splitme(stop)
+  string <- string[string != start & string != stop]
+
+  return(resplit(string))
 }
 
