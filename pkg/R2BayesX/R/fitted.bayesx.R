@@ -15,8 +15,8 @@ function(object, model = NULL, term = NULL, ...)
       for(i in 1L:length(object))
         rval[[i]] <- object[[i]]$effects[term]
       names(rval) <- names(object)
-    } else rval <- object[[1L]]$effects[term]
-    class(rval) <- "fit.bayesx"
+      class(rval) <- "fit.bayesx"
+    } else rval <- object[[1L]]$effects[[term]]
   }
   if(is.null(rval) || length(rval) < 1L)
     rval <- NA

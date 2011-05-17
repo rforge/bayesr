@@ -38,10 +38,10 @@
   specification of complex and realistic models that can typically be conveniently estimated using 
   Bayesian inference based on modern Markov chain Monte Carlo (MCMC) simulation techniques or a 
   mixed model representation. 
-  Besides the quite extensive existing toolset in \proglang{R} supporting GLMs and GAMs, another 
-  standalone software package called BayesX, based on open-source \proglang{C++}, developed to a 
-  very comprehensive regression toolbox over last few years, especially for those models from the 
-  STAR class utilizing Bayesian inference, wherefore availability in \proglang{R} is currently 
+  Besides the already quite extensive existing toolset in \proglang{R} supporting GLMs and GAMs, 
+  another standalone software package called BayesX, based on open-source \proglang{C++}, developed 
+  to a very comprehensive regression toolbox over last few years, especially for those models from 
+  the STAR class utilizing Bayesian inference, wherefore availability in \proglang{R} is currently 
   difficult.
 %
 %  Although there is already a quite extensive existing toolset in 
@@ -160,7 +160,7 @@ load("illustration-model.rda")
 save(b1, b2, file = "illustration-model.rda")
 }
 @
-\begin{figure}[t!]
+\begin{figure}[h!]
 \setkeys{Gin}{width=0.49\textwidth}
 \begin{center}
 <<plot-illustration-model-BayesX, echo=FALSE, fig=TRUE, width=5, height=4>>=
@@ -175,7 +175,7 @@ plot(b2, term = "s(x2)", ylim = c(-6.9, 6),
   fill.select = c(0, 0, 1, 1))
 @
 \end{center}
-\caption{\label{fig:illustration} Illustration example: comparison of estimated effects for 
+\caption{\label{fig:illustration} Illustration example: Comparison of estimated effects for 
 covariate \code{x2}, black lines, together with 95\% credible intervals shaded in gray, of the 
 package \pkg{mgcv} model-fitting function \fct{gam} using GCV, left panel, and the \pkg{BayesX} 
 model-fitting function \fct{bayesx} applying MCMC, right panel respectively.}
@@ -315,6 +315,75 @@ will check if BayesX may be called from \proglang{R}.
 The main model-fitting function in \pkg{BayesX} is called \fct{bayesx}, which is basically a 
 collection of functions described in table~\ref{tab:bayesxfun}, that are executed one after 
 another, and may also be used independently. 
+The arguments of \fct{bayesx} are
+\begin{Sinput}
+bayesx(formula, data, weights = NULL, subset = NULL, 
+  offset = NULL, na.action = na.fail, contrasts = NULL, 
+  control = bayesx.control(...), ...)
+\end{Sinput}
+and mostly represent the standard model frame specifications \citep[see][]{Chambers+Hastie:1992}. 
+The last argument specifies several parameters controlling the processing of the BayesX binary which 
+are arranged by function \fct{bayesx.control}, e.g. the choice between the inferential 
+concepts, set within argument \code{method}, which are currently Markov chain Monte Carlo simulation 
+techniques - \code{"MCMC"}, mixed model based estimation - \code{"REML"} and penalized least squares 
+including model selection - \code{"STEP"}, or the distribution assigned to the response, set with 
+argument \code{family}. An overview of all available distributions is given in 
+table~\ref{tab:familiy}.
+
+As mentioned in the introduction, package \pkg{BayesX} utilizes function \fct{s} from the \pkg{mgcv} 
+package to build the additive components of a STAR predictor within \proglang{R}'s formula language.
+In addition, unit- or cluster specific unstructured effects may be incorporated into the 
+\code{formula} using the random effects term constructor function \fct{r}. Then, a typical STAR 
+predictor with some response \code{y}, covariate \code{x1} with a possibly nonlinear effect modeled 
+by a P-spline, covariate \code{id} representing some cluster index modeled as random effect and 
+covariate \code{x2} entering linearly, is e.g. formulated by
+\begin{Sinput}
+y ~ s(x1, bs = "ps") + r(id) + x2
+\end{Sinput} 
+where argument \code{bs} of function \fct{s} specifies the smooth bases, the type of term that 
+should enter the \code{formula}. A list of the implemented model terms in \pkg{BayesX} is provided 
+in table~\ref{tab:terms}.
+Setting additional arguments for a model term is generally restricted to argument \code{xt} 
+within function \fct{s} and \fct{r}, i.e. \code{xt} must be a named \fct{list} including these 
+parameters, where all possibilities for each \code{bs} type may be looked up calling function 
+\fct{bayesx.term.options}. As an example, using \code{bs = "mrf"} to estimate a spatially correlated
+effect with Markov random fields with some location identification covariate \code{id}, requires an 
+additional map boundary (\fct{read.bnd}) or graph file (\fct{read.gra}) for the calculation of a 
+neighborhood-matrix to guarantee smooth estimates over adjacent regions, which must be provided 
+within \code{xt}, then 
+\begin{Sinput}
+s(id, bs = "mrf", xt = list(map = SomeMap)) 
+\end{Sinput} 
+constructs the setup for this type of model term.
+
+Past the execution of all computations with the BayesX binary, the model output files are written 
+into the declared output directory, which per default is the temporary directory of the running
+session, and are read back into \proglang{R} using function \fct{read.bayesx.output}. The returned 
+fitted-model object is a list of class \code{"bayesx"}, wherefore a set of standard extractor 
+functions, such as \fct{summary}, \fct{fitted}, \fct{plot} and more, listed in 
+table~\ref{tab:funmethods}, is available. 
+
+The quite flexible \code{S3} class function \fct{plot.bayesx}, usually called from the generic 
+\fct{plot}, is handy generating model diagnostic plots, term effects plots, applying 2d, 3d, 
+image and map graphics, as well as sampling paths of coefficients and variances for MCMC estimated 
+models, e.g.
+\setkeys{Gin}{width=0.49\textwidth}
+<<plot-illustration-model-samples-01, echo=TRUE, eval=FALSE, fig=FALSE, width=5, height=4>>=
+plot(b2, term = "s(x0)", which = "coef-samples")
+@
+\begin{figure}[t!]
+\setkeys{Gin}{width=0.6\textwidth}
+\begin{center}
+<<plot-illustration-model-samples-02, echo=FALSE, fig=TRUE, width=7, height=7>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1))
+plot(b2, term = "s(x2)", which = "coef-samples", main = "")
+@
+\end{center}
+\caption{\label{fig:illustration-samples} Illustration example: Plots of the sampling paths of the 
+coefficients of term \code{s(x2)} in model \code{b2}.}
+\end{figure}
+produces plots of coefficient sampling paths as shown in figure~\ref{fig:illustration-samples}. 
+
 \begin{table}[htbp]
 \begin{center}
 \begin{tabular}{|l|p{10cm}|}
@@ -333,20 +402,7 @@ Function                 & Description \\ \hline
 \caption{\label{tab:bayesxfun} Main functions of the interface.}
 \end{center}
 \end{table}
-The arguments of \fct{bayesx} are
-\begin{Sinput}
-bayesx(formula, data, weights = NULL, subset = NULL, 
-  offset = NULL, na.action = na.fail, contrasts = NULL, 
-  control = bayesx.control(...), ...)
-\end{Sinput}
-and mostly represent the standard model frame specifications \citep[see][]{Chambers+Hastie:1992}. 
-The last argument specifies several parameters controlling the processing of the BayesX binary which 
-are arranged by function \fct{bayesx.control}, e.g. the choice between the inferential 
-concepts, set within argument \code{method}, which are currently Markov chain Monte Carlo simulation 
-techniques - \code{"MCMC"}, mixed model based estimation - \code{"REML"} and penalized least squares 
-including model selection - \code{"STEP"}, or the distribution assigned to the response, set with 
-argument \code{family}. An overview of all available distributions is given in 
-table~\ref{tab:familiy}.
+
 \begin{table}[htbp]
 \begin{center}
 \begin{tabular}{|l|p{4cm}|p{2.5cm}|l|}
@@ -377,19 +433,6 @@ table~\ref{tab:familiy}.
 \end{center}
 \end{table}
 
-As mentioned in the introduction, package \pkg{BayesX} utilizes function \fct{s} from the \pkg{mgcv} 
-package to build the additive components of a STAR predictor within \proglang{R}'s formula language.
-In addition, unit- or cluster specific unstructured effects may be incorporated into the 
-\code{formula} using the random effects term constructor function \fct{r}. Then, a typical STAR 
-predictor with some response \code{y}, covariate \code{x1} with a possibly nonlinear effect modeled 
-by a P-spline, covariate \code{id} representing some cluster index modeled as random effect and 
-covariate \code{x2} entering linearly, is e.g. formulated by
-\begin{Sinput}
-y ~ s(x1, bs = "ps") + r(id) + x2
-\end{Sinput} 
-where argument \code{bs} of function \fct{s} specifies the smooth bases, the type of term that 
-should enter the \code{formula}. A list of the implemented model terms in \pkg{BayesX} is provided 
-in table~\ref{tab:terms}.
 \begin{table}[htbp]
 \begin{center}
 \begin{tabular}{|p{2cm}|p{10cm}|}
@@ -437,46 +480,6 @@ in table~\ref{tab:terms}.
 \caption{\label{tab:terms} Possible BayesX model terms within function \fct{s}.}
 \end{center}
 \end{table}
-Setting additional arguments for a model term is generally restricted to argument \code{xt} 
-within function \fct{s} and \fct{r}, i.e. \code{xt} must be a named \fct{list} including these 
-parameters, where all possibilities for each \code{bs} type may be looked up calling function 
-\fct{bayesx.term.options}. As an example, using \code{bs = "mrf"} to estimate a spatially correlated
-effect with Markov random fields with some location identification covariate \code{id}, requires an 
-additional map boundary (\fct{read.bnd}) or graph file (\fct{read.gra}) for the calculation of a 
-neighborhood-matrix to guarantee smooth estimates over adjacent regions, which must be provided 
-within \code{xt}, then 
-\begin{Sinput}
-s(id, bs = "mrf", xt = list(map = SomeMap)) 
-\end{Sinput} 
-constructs the setup for this type of model term.
-
-Past the execution of all computations with the BayesX binary, the model output files are written 
-into the declared output directory, which per default is the temporary directory of the running
-session, and are read back into \proglang{R} using function \fct{read.bayesx.output}. The returned 
-fitted-model object is a list of class \code{"bayesx"}, wherefore a set of standard extractor 
-functions, such as \fct{summary}, \fct{fitted}, \fct{plot} and more, 
-listed in table~\ref{tab:funmethods}, is available. 
-
-The quite flexible \code{S3} class function \fct{plot.bayesx}, usually called from the generic 
-\fct{plot}, is handy generating model diagnostic plots, term effects plots, applying 2d, 3d, 
-image and map graphics, as well as sampling paths of coefficients and variances for MCMC estimated 
-models, e.g.
-\setkeys{Gin}{width=0.49\textwidth}
-<<plot-illustration-model-samples-01, echo=TRUE, eval=FALSE, fig=FALSE, width=5, height=4>>=
-plot(b2, term = "s(x0)", which = "coef-samples")
-@
-\begin{figure}[t!]
-\setkeys{Gin}{width=0.6\textwidth}
-\begin{center}
-<<plot-illustration-model-samples-02, echo=FALSE, fig=TRUE, width=7, height=7>>=
-par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(b2, term = "s(x2)", which = "coef-samples", main = "")
-@
-\end{center}
-\caption{\label{fig:illustration-samples} Illustration example: plots of the sampling paths of the 
-coefficients of term \code{s(x2)} in model \code{b2}.}
-\end{figure}
-produces plots of coefficient sampling paths as shown in figure~\ref{fig:illustration-samples}. 
 
 \begin{table}[htbp]
 \begin{center}
@@ -510,6 +513,9 @@ Function & Description \\ \hline
 \caption{\label{tab:funmethods} Functions and methods for objects of class \code{"bayesx"}.}
 \end{center}
 \end{table}
+
+
+\newpage
 
 
 \section{STAR models in practice} \label{sec:illustrations}
@@ -565,7 +571,7 @@ data("ZambiaNutrition", package = "R2BayesX")
 @
 For the final model, incorporating a structured spatial effect for the districts in Zambia using a 
 Markov random fields term within the \code{formula} specifiaction, BayesX needs some information 
-about the district neighborhood structure, which is enclosed in 
+about the district neighborhood structure, which e.g. is enclosed in 
 <<data-zambia-bnd, echo=TRUE, eval=TRUE>>=
 data("ZambiaBnd", package = "R2BayesX")
 @
@@ -573,13 +579,12 @@ With the information of the boundary file an appropriate penalty is computed, al
 smoothly varying effect of neighboring regions. The object \code{ZambiaBnd} has class \code{"bnd"} 
 and is basically a \fct{list} of polygon matrices, one matrix for each district, with $x$-, in the 
 first, and $y$-coordinates, in the second column respectively, of the boundary points. There is a 
-generic method implemented for objects of class \code{"bnd"}, which in principle calls function 
-\fct{plotmap}, e.g. a simple map, as shown in figure~\ref{fig:zambia-simple-map}, of the districts 
-in Zambia is drawn typing
+generic plotting method implemented for objects of class \code{"bnd"}, which in principle calls 
+function \fct{plotmap}, e.g. a simple map, as shown in figure~\ref{fig:zambia-simple-map}, of the districts in Zambia is drawn typing
 <<plot-zambia-map-01, echo=TRUE, eval=FALSE>>=
 plot(ZambiaBnd)
 @ 
-\begin{figure}[t!]
+\begin{figure}[h!]
 \setkeys{Gin}{width=0.49\textwidth}
 \begin{center}
 <<plot-zambia-map-02, echo=FALSE, eval=TRUE, fig = TRUE, width=5, height=4>>=
@@ -587,7 +592,7 @@ par(mar = c(0, 0, 0, 0))
 plot(ZambiaBnd)
 @ 
 \end{center}
-\caption{\label{fig:zambia-simple-map} Example on childhood malnutrition: a simple map of the 
+\caption{\label{fig:zambia-simple-map} Example on childhood malnutrition: A simple map of the 
 districts in Zambia.}
 \end{figure}
 Having loaded the necessary files, the model \code{formula} is then specified with
@@ -622,9 +627,14 @@ After the model has been successfully fitted, the generic call
 <<summary-zambia-model>>=
 summary(zm)
 @
-provides summary statistics of the fitted-model object, which typically include estimates of linear 
-effects, smooth terms variances and random effects variances, as well as goodness of fit criteria.
-\begin{figure}[t!]
+provides summary statistics of the MCMC fitted-model object, which typically includes mean, standard 
+deviation and quantiles of sampled linear effects, smooth terms variances and random effects 
+variances, as well as goodness of fit criteria. The estimated effects for covariates 
+\code{agechild} and \code{bmi} may be visualized with
+<<zambia-agechild-bmi-plot, echo=TRUE, eval=FALSE>>=
+plot(zm, term = c("s(agechild)", "s(bmi)"))
+@
+\begin{figure}[h!]
 \setkeys{Gin}{width=0.49\textwidth}
 \begin{center}
 <<zambia-agechild, echo=FALSE, fig=TRUE, width=5, height=4>>=
@@ -640,8 +650,15 @@ plot(zm, term = "s(bmi)")
 mass index of the child's mother and of the age of the child together with pointwise 80\% and 95\% 
 credible intervals.}
 \end{figure}
-
-\begin{figure}[t!]
+and are show in figure~\ref{fig:zambia-agechild}. 
+Figure~\ref{fig:zambia-district-structured-unstructured} shows estimates of the structured and 
+unstructured spatial effect, generated with
+<<zambia-agechild-bmi-plot, echo=TRUE, eval=FALSE>>=
+plot(zm, term = c("s(district)", "r(district)"), 
+  map = ZambiaBnd, pos = "topleft", 
+  density = 20, angle = 90)
+@
+\begin{figure}[h!]
 \setkeys{Gin}{width=0.49\textwidth}
 \begin{center}
 <<zambia-district-structured, echo=FALSE, fig=TRUE, width=5, height=4>>=
@@ -658,14 +675,52 @@ plot(zm, term = "r(district)", map = ZambiaBnd,
   density = 20, angle = 90)
 @
 \end{center}
-\caption{\label{fig:zambia-district-structured} Example on childhood malnutrition: Structured, 
-left panel, and unstructured spatial effect, right panel respectively.}
+\caption{\label{fig:zambia-district-structured-unstructured} Example on childhood malnutrition:
+Structured, left panel, and unstructured spatial effect, right panel respectively.}
 \end{figure}
+noting that if argument \code{map} is not supplied, the effects will also be visualized using 
+function \fct{blockplot}. Besides plotting of sampling paths, as mentioned in 
+section~\ref{sec:implementation}, for any term in the model, the samples of the parameters are 
+stored as an attribute in the fitted term object and are e.g. extracted for term \code{s(bmi)} by 
+the following
+<<zambia-coef-extract, echo=TRUE, eval=TRUE, fig=FALSE>>=
+fit.bmi <- fitted(zm, term = "s(bmi)")
+head(attr(fit.bmi, "sample"), 4)
+head(attr(fit.bmi, "variance.sample"), 4)
+@
+where \code{"sample"} represents samples of regression coefficients and \code{"variance.sample"}
+samples of the variance parameter of the smooth. In addition, autocorrelation functions may be 
+drawn, for instance of the variance samples, as shown in figure~\ref{fig:zambia-autocorr}, by typing
+<<zambia-autocorr-01, echo=TRUE, eval=FALSE>>=
+plot(zm, term = "s(bmi)", which = "var-samples", 
+  acf = TRUE, lag.max = 250)
+@
+\begin{figure}[h!]
+\setkeys{Gin}{width=0.49\textwidth}
+\begin{center}
+<<zambia-autocorr-02, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(1.1, 1.1, 0.1, 0.1))
+plot(zm, term = "s(bmi)", which = "var-samples", 
+  acf = TRUE, lag.max = 250, main = NA)
+@
+\end{center}
+\caption{\label{fig:zambia-autocorr} Example on childhood undernutrition: Autocorrelation function
+of the samples of the variance parameter of term \code{s(bmi)}.}
+\end{figure}
+
+
+\newpage
 
 
 \subsection{Forest health data set} \label{subsec:forest}
 
-\begin{table}[htbp]
+The forest health dataset comprises information on the health status of beech trees, which serve as 
+an indicator of forest health here. The data was collected annually from 1980 to 1997 during a 
+project of visual inspection of trees around Rothenbuch, Germany, and is discussed in detail in 
+\citet{Fahrmeir+Kneib+Lang:2009}. The health status of a tree is measured in terms of the percentage
+of its defoliation, aggregated into three ordinal categories, also see table~\ref{tab:forest} for
+a description of all variables in the dataset. 
+\begin{table}[h!]
 \begin{center}
 \begin{tabular}{|l|p{10cm}|}
 \hline
@@ -756,7 +811,7 @@ par(mar = c(4.1, 4.1, 0.1, 2.1))
 plot(fm1, term = "s(elevation)")
 @
 \end{center}
-\caption{\label{fig:forest-no-spatial} Forest damage: estimates of nonparametric effects including
+\caption{\label{fig:forest-no-spatial} Forest damage: Estimates of nonparametric effects including
 80\% and 95\% point-wise confidence intervals of the model without the spatial effect.}
 \end{figure}
 
@@ -778,7 +833,7 @@ par(mar = c(4.1, 4.1, 0.1, 2.1))
 plot(fm2, term = "s(elevation)")
 @
 \end{center}
-\caption{\label{fig:forest-spatial-nonpara} Forest damage: estimates of particular nonparametric 
+\caption{\label{fig:forest-spatial-nonpara} Forest damage: Estimates of particular nonparametric 
 effects including 80\% and 95\% point-wise confidence intervals of the model including the spatial 
 effect.}
 \end{figure}
@@ -793,7 +848,7 @@ plot(fm2, term = "s(id)", map = BeechBnd,
   distance.labels = 2)
 @
 \end{center}
-\caption{\label{fig:forest-spatial} Forest damage: estimate of the spatial effect.}
+\caption{\label{fig:forest-spatial} Forest damage: Estimate of the spatial effect.}
 \end{figure}
 
 \section{Summary}\label{sec:conclusion}
