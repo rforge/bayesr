@@ -189,9 +189,9 @@ function(x, residuals = FALSE, col.surface = NULL,
       mar <- mar.orig
       on.exit(par(par.orig))
       if(legend) {
-        mar[4L] <- 0.5
+        mar[4L] <- 0
         par(mar = mar)
-        layout(matrix(c(1, 2), nrow = 1), widths = c(1, 0.35))
+        layout(matrix(c(1, 2), nrow = 1), widths = c(1, 0.25))
       }
       do.call(graphics::image.default, 
         delete.args(graphics::image.default, args, 
@@ -209,7 +209,7 @@ function(x, residuals = FALSE, col.surface = NULL,
       }
       if(legend) {
         mar <- mar.orig
-        mar[2L] <- 1
+        mar[2L] <- 0.5
         par(mar = mar)
         args2 <- args
         args2$xlim <- args2$ylim <- c(0, 1)
@@ -227,6 +227,8 @@ function(x, residuals = FALSE, col.surface = NULL,
           args2$side.ticks <- 2L
         if(is.null(args$scale))
           args2$scale <- FALSE
+        if(is.null(args$xpd))
+          args2$xpd <- FALSE
         args2$color <- col.surface
         args2$ncol <- ncol
         args2$x <- args$z
@@ -235,7 +237,6 @@ function(x, residuals = FALSE, col.surface = NULL,
         args2$plot <- TRUE
         args2$digits <- digits
         args2$cex <- cex.legend
-        args2$xpd <- FALSE
         args2$scale <- FALSE
         args2$range <- range
         args2$add <- FALSE

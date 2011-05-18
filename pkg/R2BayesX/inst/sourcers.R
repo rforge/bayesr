@@ -1,7 +1,7 @@
-dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
+dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-plot(fm3, term = "s(x,y)", image = T, grid = 200)
+plot(b3, term = "s(id)", image = TRUE, grid = 200)
 
 
 
@@ -154,11 +154,12 @@ ForestHealth <- na.omit(as.data.frame(ForestHealth))
 
 ## large data example
 library("R2BayesX")
+set.seed(123)
 n <- 100000
-file <- paste(tempdir(), "/ldata.raw", sep = "")
+file <- paste(tempdir(), "/data.raw", sep = "")
 write.table(matrix(c("x", "y"), nrow = 1), file = file, 
   quote = FALSE, row.names = FALSE, col.names = FALSE)
-for(i in 1:10) {
+for(i in 1:50) {
   dat <- data.frame(x = round(runif(n, -3, 3), 2L))
   dat$y <- with(dat, sin(x) + rnorm(n, sd = 2))
   write.table(dat, file = file, append = TRUE, 
@@ -167,6 +168,8 @@ for(i in 1:10) {
 b <- bayesx(y ~ s(x, bs = "ps"), data = file, 
   iter = 3000, burnin = 500, step = 2, predict = FALSE)
 
+dat <- read.table(file, header = TRUE)
+b <- gam(y ~ s(x, bs = "ps"), data = dat)
 
 ## create a package skeleton
 dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"

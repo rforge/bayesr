@@ -252,23 +252,21 @@ plot(b)
 ## now a mrf example
 ## note: the regional identification
 ## covariate and the map regionnames
-## should be coded as integers
+## should be coded as integer
 set.seed(333)
      
 ## simulate some geographical data
 data("MunichBnd")
 N <- length(MunichBnd); n <- N*5
+names(MunichBnd) <- 1:N
      
 ## regressors
 dat <- data.frame(x1 = runif(n, -3, 3),
   id = as.factor(rep(names(MunichBnd), length.out = n)))
-dat$sp <- with(dat, sort(runif(N, -2, 2))[id])
+dat$sp <- with(dat, sort(runif(N, -2, 2), decreasing = TRUE)[id])
      
 ## response
-dat$y <- with(dat, 1.5 + sin(x1) + sp + rnorm(n, sd = 0.6))
-
-## sort data according id
-dat <- dat[order(x2int(dat$id)),]
+dat$y <- with(dat, 1.5 + sin(x1) + sp + rnorm(n, sd = 1.2))
 
 ## estimate models with
 ## bayesx MCMC and REML
@@ -290,7 +288,7 @@ plot(b1, term = "s(id)", map = MunichBnd,
   main = "bayesx() MCMC estimate")
 plot(b2, term = "s(id)", map = MunichBnd, 
   main = "bayesx() REML estimate")
-plotmap(MunichBnd, x = unique(cbind(x2int(dat$id), dat$sp)), 
+plotmap(MunichBnd, x = dat$sp, id = dat$id, 
   main = "Truth")
 par(op)
 
@@ -302,7 +300,7 @@ plot(b, term = "s(id)", map = MunichBnd)
 
 ## geokriging
 b <- bayesx(y ~ s(id, bs = "gk", k = 20, xt = list(map = MunichBnd)) + 
-  s(x1, bs = "ps"), data = dat)
+  s(x1, bs = "ps"), method = "REML", data = dat)
 summary(b)
 plot(b, term = "s(id)", map = MunichBnd)
 

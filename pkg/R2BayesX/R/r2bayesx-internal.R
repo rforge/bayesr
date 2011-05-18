@@ -134,6 +134,7 @@ function(x, digits = max(3L, getOption("digits") - 3L),
     mfn <- mfn[mfn != "step.final.model"]
     mfn <- mfn[mfn != "YLevels"]
     mfn <- mfn[mfn != "nYLevels"]
+    mfn <- mfn[mfn != "order"]
     for(i in 1L:length(mfn)) {
         if(!is.null(x$model.fit[[mfn[i]]]) && x$model.fit[[mfn[i]]] != "") {
           if(i < step)

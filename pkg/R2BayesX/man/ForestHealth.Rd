@@ -21,7 +21,7 @@ A data frame containing 1793 observations on 16 variables.
   \item{year:}{year of census.}
   \item{defoliation:}{percentage of tree defoliation in three ordinal categories, 
     0 == `defoliation < 12.5\%', 1 == `12.5\% <= defoliation < 50\%' and  
-    3 == `defoliation >= 50\%'}
+    2 == `defoliation >= 50\%'}
   \item{x:}{x-coordinate of the tree location.}
   \item{y:}{y-coordinate of the tree location.}
   \item{age:}{age of stands in years.}

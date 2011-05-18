@@ -53,8 +53,8 @@
 %  responses with either ordered or unordered categories, continuous time survival data, or 
 %  continuous time multi-state models. 
 %  
-  Since there has been increasing interest in an \proglang{R} interface to BayesX, the already 
-  existing CRAN package \pkg{BayesX}, which previously provided mainly functions for exploring 
+  Since there has been increasing interest in an \proglang{R} interface to BayesX, the former 
+  implemented CRAN package \pkg{BayesX}, which previously provided mainly functions for exploring 
   estimation results, is now extended to a full interactive interface. With the new version of the 
   package, STAR models can be conveniently specified using \proglang{R}'s formula language (with 
   some extended terms), fitted using the BayesX binary, represented in \proglang{R} with objects of 
@@ -113,8 +113,8 @@ while. However, since the development status of the software package is already 
 there has been more and more recent interest of an \proglang{R} version of BayesX, the compromise of 
 creating an interface, compared to a full code portation, was seen advantageous, not only because of 
 a faster development time, but also offering already familiar users a toolset, that even, beside the 
-possibility to formulate STAR models directly on the console, easily allows to use existing code and 
-model output, within \proglang{R}. 
+possibility to formulate STAR models directly on the console, allows to use existing code and model 
+output, within \proglang{R}. 
 
 Therefore, the implementation is structured in a few independent operating functions that basically 
 collect and configure the necessary model components at first, send these to the BayesX binary for 
@@ -126,15 +126,16 @@ provided mainly functions for exploring estimation results.
 Designing an user friendly setup requires a comfortable translation method of \proglang{R} specific 
 syntax to BayesX interpretable commands. For this reason, the package layout is orientated and 
 dependent on the recommended CRAN package \pkg{mgcv} \citep{Wood:2011}, amongst others, since 
-\pkg{mgcv} already features functionality, which easily allows to set up new model terms within 
-\proglang{R}'s formula language, and secondly, the package covers a number of the model terms 
-implemented in BayesX. This means, some of the model formulas specified within the \pkg{mgcv} main 
-model fitting-function \fct{gam}, may also be used in \pkg{BayesX} and vice versa. Hence, users 
-primarily familiar with \pkg{mgcv} and its GAM formula definition may use the interface with little 
-additional effort, only. This is illustrated in the following, where some data is simulated and 
-models are estimated with \fct{gam}, using generalized cross validation (GCV) for optimization, and 
-the \pkg{BayesX} interface primary model-fitting function \fct{bayesx} applying MCMC: 
-<<fit-illustration-model, echo=TRUE, eval=FALSE, fig=FALSE>>=
+\pkg{mgcv} already features functionality, which allows to set up new model terms within 
+\proglang{R}'s formula language relatively easy, and secondly, the package covers a number of the 
+model terms implemented in BayesX. This means, some of the model formulas specified within the 
+\pkg{mgcv} main model fitting-function \fct{gam}, may also be used in \pkg{BayesX} and vice versa. 
+Hence, users primarily familiar with \pkg{mgcv} and its GAM formula definition may use the interface 
+with little additional effort, only. This is illustrated in the following, where some data is 
+simulated and models are estimated with \fct{gam}, using generalized cross validation (GCV) for 
+optimization, and the \pkg{BayesX} interface primary model-fitting function \fct{bayesx} applying 
+MCMC: 
+<<fit-illustration-pspline, echo=TRUE, eval=FALSE, fig=FALSE>>=
 ## simulate some data
 set.seed(0) 
 dat <- gamSim(1, n = 400, dist = "normal", scale = 2)
@@ -152,43 +153,85 @@ b2 <- bayesx(mf, method = "MCMC", data = dat)
 plot(b1)
 plot(b2)
 @
-<<cache-illustration-model, echo=FALSE, eval=TRUE, fig=FALSE>>=
-if(file.exists("illustration-model.rda")) {
-load("illustration-model.rda")
+<<fit-illustration-geo, echo=FALSE, eval=FALSE, fig=FALSE>>=
+set.seed(333)
+     
+## simulate some geographical data
+data("MunichBnd")
+N <- length(MunichBnd); n <- N*2
+names(MunichBnd) <- 1:N
+     
+## regressors
+dat <- data.frame(x1 = runif(n, -3, 3),
+  id = as.factor(rep(names(MunichBnd), length.out = n)))
+dat$sp <- with(dat, sort(runif(N, -1, 1), decreasing = TRUE)[id])
+     
+## response
+dat$y <- with(dat, 1.5 + sin(x1) + sp + rnorm(n, sd = 0.3))
+
+## geokriging
+b3 <- bayesx(y ~ s(id, bs = "gk", k = 20, xt = list(map = MunichBnd)) + 
+  s(x1, bs = "ps"), method = "REML", data = dat)
+@
+<<cache-illustration, echo=FALSE, eval=TRUE, fig=FALSE>>=
+if(file.exists("illustration-pspline.rda")) {
+load("illustration-pspline.rda")
 } else {
-<<fit-illustration-model>>
-save(b1, b2, file = "illustration-model.rda")
+<<fit-illustration-pspline>>
+save(b1, b2, file = "illustration-pspline.rda")
+}
+if(file.exists("illustration-geo.rda")) {
+load("illustration-geo.rda")
+} else {
+<<fit-illustration-geo>>
+save(b3, file = "illustration-geo.rda")
 }
 @
 \begin{figure}[h!]
 \setkeys{Gin}{width=0.49\textwidth}
 \begin{center}
-<<plot-illustration-model-BayesX, echo=FALSE, fig=TRUE, width=5, height=4>>=
+<<plot-illustration-pspline-BayesX, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b1, select = 3, ylim = c(-6.9, 6), 
   shade = TRUE)
 @
-<<plot-illustration-model-mgcv, echo=FALSE, fig=TRUE, width=5, height=4>>=
+<<plot-illustration-pspline-mgcv, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b2, term = "s(x2)", ylim = c(-6.9, 6),
   c.select = c("x", "Mean", "2.5%", "97.5%"), 
   fill.select = c(0, 0, 1, 1))
+@ 
+\\[2ex]
+<<plot-illustration-geo-image, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1))
+plot(b3, term = "s(id)", image = TRUE, grid = 200, 
+  xpd = TRUE, distance.labels = 5)
+@
+<<plot-illustration-geo-persp, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(0, 4.1, 0, 0))
+plot(b3, term = "s(id)", resid = TRUE, 
+  cex.resid = 0.3, theta = -40)
 @
 \end{center}
-\caption{\label{fig:illustration} Illustration example: Comparison of estimated effects for 
+\caption{\label{fig:illustration} Visualization examples: Comparison of estimated effects for 
 covariate \code{x2}, black lines, together with 95\% credible intervals shaded in gray, of the 
-package \pkg{mgcv} model-fitting function \fct{gam} using GCV, left panel, and the \pkg{BayesX} 
-model-fitting function \fct{bayesx} applying MCMC, right panel respectively.}
+package \pkg{mgcv} model-fitting function \fct{gam} using GCV, upper left panel, and the 
+\pkg{BayesX} model-fitting function \fct{bayesx} applying MCMC, upper right panel respectively.
+The lower left panel illustrates visualization of an estimated geoadditive model term using an image 
+plot with a color legend, the lower right panel shows the same effect with a perspective plot and 
+partial residuals.}
 \end{figure}
 Several standard base \proglang{R} extractor functions and methods, e.g. \fct{plot} and 
 \fct{summary}, also, with similar behavior as in \pkg{mgcv}, are available for the returned 
-fitted-model object \code{b2}. Here, a comparison plot of the estimated effect for covariate 
-\code{x2} of the two models is shown in figure~\ref{fig:illustration}. Consequently, estimating 
-models with more complex term structures, e.g. applying stationary Gaussian random fields, is 
-managed by function \fct{s}, which facilitates a consistent way of smooth terms specifications in 
-GAM and STAR formulas. In addition, BayesX supports non-standard regression situations such as 
-models for categorical responses with either ordered or unordered categories, continuous time 
-survival data, or continuous time multi-state models, also, which may be adopted in the same manner. 
+fitted-model objects of \fct{bayesx}. Here, the comparison plot of the estimated effect for covariate 
+\code{x2} of the two models, generated with the code above, is shown in 
+figure~\ref{fig:illustration}, together with examples of more sophisticated graphics supported by 
+the plotting method. Consequently, estimating models with more complex term structures, e.g. 
+applying stationary Gaussian random fields, is managed by function \fct{s}, which facilitates a 
+consistent way of smooth terms specifications in GAM and STAR formulas. In addition, BayesX supports 
+non-standard regression situations such as models for categorical responses with either ordered or 
+unordered categories, continuous time survival data, or continuous time multi-state models, which 
+may be adopted in the same manner. 
 
 To present the extensive capabilities of the software in more detail, the next section briefly 
 discusses the methodological background of regression models with a structured additive predictor, 
@@ -313,8 +356,26 @@ check.install.bayesx()
 will check if BayesX may be called from \proglang{R}. 
  
 The main model-fitting function in \pkg{BayesX} is called \fct{bayesx}, which is basically a 
-collection of functions described in table~\ref{tab:bayesxfun}, that are executed one after 
-another, and may also be used independently. 
+collection of functions described in table~\ref{tab:bayesxfun}, 
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{|l|p{10cm}|}
+\hline
+Function                 & Description \\ \hline
+\fct{parse.bayesx.input} & parses \fct{bayesx} input parameters to be send to 
+                           \fct{write.bayesx.input}. \\ \hline
+\fct{write.bayesx.input} & takes an object from \fct{parse.bayesx.input} and translates the input to 
+                           an executable program and, if necessary, a data file, which may be 
+                           processed with BayesX. \\ \hline
+\fct{run.bayesx}         & runs BayesX program files from \proglang{R}. \\ \hline
+\fct{read.bayesx.output} & automatically reads in BayesX estimation output stored in a declared 
+                           output directory by transforming objects to suitable classes, which may 
+                           be printed, summarized and plotted. \\ \hline
+\end{tabular}
+\caption{\label{tab:bayesxfun} Main functions of the interface.}
+\end{center}
+\end{table}
+that are executed one after another, and may also be used independently. 
 The arguments of \fct{bayesx} are
 \begin{Sinput}
 bayesx(formula, data, weights = NULL, subset = NULL, 
@@ -329,6 +390,35 @@ techniques - \code{"MCMC"}, mixed model based estimation - \code{"REML"} and pen
 including model selection - \code{"STEP"}, or the distribution assigned to the response, set with 
 argument \code{family}. An overview of all available distributions is given in 
 table~\ref{tab:familiy}.
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{|l|p{4cm}|p{2.5cm}|l|}
+\hline
+\code{family} & Response distribution & Link & \code{method} \\ \hline
+\code{"gaussian"} & Gaussian & identity & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
+\code{"gamma"} & gamma & log & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
+\code{"binomial"} & binomial & logit & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
+\code{"binomialprobit"} & binomial & probit  & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
+\code{"multinomial"} & unordered multinomial & logit & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ 
+  \hline
+\code{"poisson"} & Poisson & log-link & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
+\code{"cumprobit"} & cumulative threshold & probit & \code{"MCMC"} \code{"REML"} \\ \hline
+\code{"cox"} & continuous-time survival data & -  & \code{"MCMC"} \code{"REML"} \\ \hline
+\code{"multistate"} & continuous-time multi-state data & - & \code{"MCMC"} \code{"REML"} \\ \hline
+\code{"multinomialprobit"} & unordered multinomial & probit & \code{"MCMC"} \\ \hline
+\code{"nbinomial"} & negative binomial & log-link & \code{"MCMC"} \\ \hline
+\code{"zip"} & zero inflation & log-link & \code{"MCMC"} \\ \hline
+\code{"binomialcomploglog"} & binomial & complementary log-log & \code{"REML"} \\ \hline
+\code{"cumlogit"} & cumulative multinomial & logit & \code{"REML"} \\ \hline
+\code{"seqlogit"} & sequential multinomial & logit & \code{"REML"} \\ \hline
+\code{"seqprobit"} & sequential multinomial & probit & \code{"REML"}  \\ \hline
+\code{"multinomialcatsp"} & unordered multinomial (with category-specific covariates) & logit & 
+  \code{"REML"} \\ \hline
+\end{tabular}
+\caption{\label{tab:familiy} Distributions implemented for \code{method}s \code{"MCMC"}, 
+\code{"REML"} and \code{"STEP"} within the \pkg{BayesX} package.}
+\end{center}
+\end{table}
 
 As mentioned in the introduction, package \pkg{BayesX} utilizes function \fct{s} from the \pkg{mgcv} 
 package to build the additive components of a STAR predictor within \proglang{R}'s formula language.
@@ -360,8 +450,7 @@ Past the execution of all computations with the BayesX binary, the model output 
 into the declared output directory, which per default is the temporary directory of the running
 session, and are read back into \proglang{R} using function \fct{read.bayesx.output}. The returned 
 fitted-model object is a list of class \code{"bayesx"}, wherefore a set of standard extractor 
-functions, such as \fct{summary}, \fct{fitted}, \fct{plot} and more, listed in 
-table~\ref{tab:funmethods}, is available. 
+functions and methods, listed in table~\ref{tab:funmethods}, is available. 
 
 The quite flexible \code{S3} class function \fct{plot.bayesx}, usually called from the generic 
 \fct{plot}, is handy generating model diagnostic plots, term effects plots, applying 2d, 3d, 
@@ -384,54 +473,40 @@ coefficients of term \code{s(x2)} in model \code{b2}.}
 \end{figure}
 produces plots of coefficient sampling paths as shown in figure~\ref{fig:illustration-samples}. 
 
-\begin{table}[htbp]
-\begin{center}
-\begin{tabular}{|l|p{10cm}|}
-\hline
-Function                 & Description \\ \hline
-\fct{parse.bayesx.input} & parses \fct{bayesx} input parameters to be send to 
-                           \fct{write.bayesx.input}. \\ \hline
-\fct{write.bayesx.input} & takes an object from \fct{parse.bayesx.input} and translates the input to 
-                           an executable program and, if necessary, a data file, which may be 
-                           processed with BayesX. \\ \hline
-\fct{run.bayesx}         & runs BayesX program files from \proglang{R}. \\ \hline
-\fct{read.bayesx.output} & automatically reads in BayesX estimation output stored in a declared 
-                           output directory by transforming objects to suitable classes, which may 
-                           be printed, summarized and plotted. \\ \hline
-\end{tabular}
-\caption{\label{tab:bayesxfun} Main functions of the interface.}
-\end{center}
-\end{table}
-
-\begin{table}[htbp]
-\begin{center}
-\begin{tabular}{|l|p{4cm}|p{2.5cm}|l|}
-\hline
-\code{family} & Response distribution & Link & \code{method} \\ \hline
-\code{"gaussian"} & Gaussian & identity & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
-\code{"gamma"} & gamma & log & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
-\code{"binomial"} & binomial & logit & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
-\code{"binomialprobit"} & binomial & probit  & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
-\code{"multinomial"} & unordered multinomial & logit & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ 
-  \hline
-\code{"poisson"} & Poisson & log-link & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
-\code{"cumprobit"} & cumulative threshold & probit & \code{"MCMC"} \code{"REML"} \\ \hline
-\code{"cox"} & continuous-time survival data & -  & \code{"MCMC"} \code{"REML"} \\ \hline
-\code{"multistate"} & continuous-time multi-state data & - & \code{"MCMC"} \code{"REML"} \\ \hline
-\code{"multinomialprobit"} & unordered multinomial & probit & \code{"MCMC"} \\ \hline
-\code{"nbinomial"} & negative binomial & log-link & \code{"MCMC"} \\ \hline
-\code{"zip"} & zero inflation & log-link & \code{"MCMC"} \\ \hline
-\code{"binomialcomploglog"} & binomial & complementary log-log & \code{"REML"} \\ \hline
-\code{"cumlogit"} & cumulative multinomial & logit & \code{"REML"} \\ \hline
-\code{"seqlogit"} & sequential multinomial & logit & \code{"REML"} \\ \hline
-\code{"seqprobit"} & sequential multinomial & probit & \code{"REML"}  \\ \hline
-\code{"multinomialcatsp"} & unordered multinomial (with category-specific covariates) & logit & 
-  \code{"REML"} \\ \hline
-\end{tabular}
-\caption{\label{tab:familiy} Distributions implemented for \code{method}s \code{"MCMC"}, 
-\code{"REML"} and \code{"STEP"} within the \pkg{BayesX} package.}
-\end{center}
-\end{table}
+Another noteworthy feature of package \pkg{BayesX} is the internal handling of data. During MCMC
+simulation, BayesX only uses different observations of covariates, where the number of unique
+observations is typically much smaller than the total number of observations in the dataset. I.e.
+this primarily allows for a potential speedup of algorithm run-times, and secondly reduces the risk
+of possible storage problems in the computer memory. To exploit this within \proglang{R} using a
+large dataset, which might produce difficulties with \proglang{R}'s object memory allocation, the 
+user may specify the \code{data} argument in function \fct{bayesx} as the path to a dataset stored 
+in the respective directory. As a consequence, this dataset will not be loaded within \proglang{R} 
+and is only used internally by the BayesX binary, and as a result, the output files written will 
+typically have much less memory size and may be imported to \proglang{R} for further analysis. To 
+give an example we generate a large dataset and store it on disc in the temporary folder of the 
+running session with
+<<large-data-01, echo=TRUE, eval=FALSE>>=
+n <- 100000
+file <- paste(tempdir(), "/data.raw", sep = "")
+write.table(matrix(c("x", "y"), nrow = 1), file = file, 
+  quote = FALSE, row.names = FALSE, col.names = FALSE)
+for(i in 1:50) {
+  dat <- data.frame(x = round(runif(n, -3, 3), 2))
+  dat$y <- with(dat, sin(x) + rnorm(n, sd = 2))
+  write.table(dat, file = file, append = TRUE, 
+    quote = FALSE, row.names = FALSE, col.names = FALSE)
+}
+@ 
+This produces a dataset of approximately 110Mb with only 601 unique observations for covariate 
+\code{x}. The path to the dataset is stored in object \code{file}, which may then provided to the 
+function call
+<<large-data-01, echo=TRUE, eval=FALSE>>=
+b <- bayesx(y ~ s(x, bs = "ps"), data = file, 
+  iter = 3000, burnin = 500, step = 2, predict = FALSE)
+@ 
+to start BayesX. Argument \code{predict} is set to \code{FALSE}, i.e. only output files of estimated
+effects will be returned, otherwise an expanded dataset would be written in the output directory,
+also containing the data used for estimation. \fixme{Runtime\dots}
 
 \begin{table}[htbp]
 \begin{center}
@@ -605,7 +680,7 @@ where the two continuous covariates \code{bmi} and \code{agechild} are assumed t
 nonlinear effect on \code{stunting} and are modeled with P-splines, \code{bs = "ps"}. Furthermore, 
 a decomposition of the spatial effect is achieved by specifying a Markov random field term with 
 \code{bs = "mrf"} for the structured and a random effects term, using function \fct{r}, for an
-unstructured spatial effect. Finally, the model is fitted using MCMC by calling
+unstructured spatial effect. Finally, a gaussian model is fitted using MCMC by calling
 <<fit-zambia-model, echo=TRUE, eval=FALSE>>=
 zm <- bayesx(mf, method = "MCMC", iter = 12000, 
   burnin = 2000, step = 10, data = ZambiaNutrition)
@@ -714,12 +789,12 @@ of the samples of the variance parameter of term \code{s(bmi)}.}
 
 \subsection{Forest health data set} \label{subsec:forest}
 
-The forest health dataset comprises information on the health status of beech trees, which serve as 
-an indicator of forest health here. The data was collected annually from 1980 to 1997 during a 
-project of visual inspection of trees around Rothenbuch, Germany, and is discussed in detail in 
-\citet{Fahrmeir+Kneib+Lang:2009}. The health status of a tree is measured in terms of the percentage
-of its defoliation, aggregated into three ordinal categories, also see table~\ref{tab:forest} for
-a description of all variables in the dataset. 
+The forest health dataset comprises information on the defoliation of beech trees, which serves as 
+an indicator of overall forest health here. The data was collected annually from 1980 to 1997 during 
+a project of visual inspection of trees around Rothenbuch, Germany, and is discussed in detail in 
+\citet{Fahrmeir+Kneib+Lang:2009}, wherein the percentage rate of defoliation of each tree is 
+aggregated into three ordinal categories, also see table~\ref{tab:forest} for a description of all 
+variables in the dataset. 
 \begin{table}[h!]
 \begin{center}
 \begin{tabular}{|l|p{10cm}|}
@@ -729,7 +804,7 @@ Variable           & Description \\ \hline
 \code{year}        & year of census. \\ \hline
 \code{defoliation} & percentage of tree defoliation in three ordinal
                      categories, 0 == `defoliation < 12.5\%', 1 == `12.5\% $\leq$
-                     defoliation < 50\%' and 3 == `defoliation $\geq$ 50\%'. \\ \hline
+                     defoliation < 50\%' and 2 == `defoliation $\geq$ 50\%'. \\ \hline
 \code{x}           & x-coordinate of the tree location. \\ \hline
 \code{y}           & y-coordinate of the tree location. \\ \hline
 \code{age}         & age of stands in years. \\ \hline
@@ -751,16 +826,63 @@ Variable           & Description \\ \hline
 \end{center}
 \end{table}
 
-<<fit-forest-model, echo=TRUE, eval=FALSE>>=
+Following \citet{Fahrmeir+Kneib+Lang:2009}, we start with the following three categorical ordered 
+logit model, where $P(\texttt{defoliation}_{it} = r)$ of tree $i$ at time $t$, $r = 1,2$, is modeled
+in terms of a set of linearly and smooth entering covariates specified with
+<<forest-model-formula-01, echo=TRUE, eval=TRUE>>=
 data("ForestHealth", package = "R2BayesX")
-data("BeechBnd")
-data("BeechGra")
-fm1 <- bayesx(defoliation ~  stand + fertilized + 
+mf <- defoliation ~  stand + fertilized + 
   humus + moisture + alkali + ph + soil + 
   s(age, bs = "ps", k = 22) + s(inclination, bs = "ps", k = 22) + 
   s(canopy, bs = "ps", k = 22) + s(year, bs = "ps", k = 22) + 
-  s(elevation, bs = "ps", k = 22),
+  s(elevation, bs = "ps", k = 22)
+@
+fit this model using REML and a cumulative multinomial distribution for the response by
+<<fit-forest-model-01, echo=TRUE, eval=FALSE>>=
+fm1 <- bayesx(mf, family = "cumlogit", 
+  method = "REML", data = ForestHealth)
+@
+<<fit-forest-model-02, echo=FALSE, eval=FALSE>>=
+data("BeechBnd", "BeechGra", package = "R2BayesX")
+fm2 <- bayesx(defoliation ~  stand + fertilized + 
+  humus + moisture + alkali + ph + soil + 
+  s(age, bs = "ps", k = 22) + s(inclination, bs = "ps", k = 22) + 
+  s(canopy, bs = "ps", k = 22) + s(year, bs = "ps", k = 22) + 
+  s(elevation, bs = "ps", k = 22) + 
+  s(id, bs = "mrf", xt = list(map = BeechGra)),
   family = "cumlogit", method = "REML", data = ForestHealth)
+@
+<<cache-forest-model, echo=FALSE, eval=TRUE>>=
+if(file.exists("forest-model.rda")) {
+load("forest-model.rda")
+} else {
+<<fit-forest-model-01>>
+<<fit-forest-model-02>>
+save(fm1, fm2, file = "forest-model.rda")
+}
+@
+and finally visualize the estimated effects for the nonparametric modeled terms 
+<<fit-forest-model-01-plots, echo=TRUE, eval=FALSE>>=
+plot(fm2, term = c("s(age)","s(inclination)",
+  "s(canopy)","s(year)","s(elevation)"))
+@
+as shown in figure~\ref{fig:forest-no-spatial}. In this example some contradictory results occur. 
+The effect of covariate \code{age} on the \code{defoliation} seems to decline for both, younger and 
+older trees, which intuitively should be a monotone increasing effect, this also holds for the 
+effect of \code{elevation}. In addition, the extremely raw estimate of \code{inclination} is hardly
+interpretable. Therefore, the authors extend the model by a spatial effect, which we model with a
+Markov random field using a graph file including the neighborhood information of the adjacent trees.
+The graph file and a boundary file needed for producing a map plot of the effect, are loaded 
+<<forest-model-gra-bnd, echo=TRUE, eval=FALSE>>=
+data("BeechBnd", "BeechGra", package = "R2BayesX")
+@
+where \code{BeechGra} is a square matrix with the total number of neighbors of each tree on its 
+diagonal
+<<forest-model-gra-bnd, echo=TRUE, eval=FALSE>>=
+diag(BeechGra)
+@
+and otherwise entries \code{-1} if trees are neighbors, else \code{0}.
+<<fit-forest-model-02, echo=TRUE, eval=FALSE>>=
 fm2 <- bayesx(defoliation ~  stand + fertilized + 
   humus + moisture + alkali + ph + soil + 
   s(age, bs = "ps", k = 22) + s(inclination, bs = "ps", k = 22) + 
@@ -770,14 +892,6 @@ fm2 <- bayesx(defoliation ~  stand + fertilized +
   family = "cumlogit", method = "REML", data = ForestHealth)
 @
 
-<<cache-forest-model, echo=FALSE, eval=TRUE>>=
-if(file.exists("forest-model.rda")) {
-load("forest-model.rda")
-} else {
-<<fit-forest-model>>
-save(fm1, fm2, file = "forest-model.rda")
-}
-@
 
 <<summary-forest-model>>=
 summary(c(fm1, fm2))
