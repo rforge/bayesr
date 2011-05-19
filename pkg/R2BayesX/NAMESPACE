@@ -23,7 +23,8 @@ export(
   run.bayesx,          
   write.bayesx.input,
   x2int,
-  plot.bayesx 
+  plot.bayesx,
+  GCV 
 )
 
 S3method(c, bayesx)

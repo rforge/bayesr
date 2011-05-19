@@ -188,7 +188,7 @@ save(b3, file = "illustration-geo.rda")
 }
 @
 \begin{figure}[h!]
-\setkeys{Gin}{width=0.49\textwidth}
+\setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
 <<plot-illustration-pspline-BayesX, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
@@ -388,8 +388,8 @@ are arranged by function \fct{bayesx.control}, e.g. the choice between the infer
 concepts, set within argument \code{method}, which are currently Markov chain Monte Carlo simulation 
 techniques - \code{"MCMC"}, mixed model based estimation - \code{"REML"} and penalized least squares 
 including model selection - \code{"STEP"}, or the distribution assigned to the response, set with 
-argument \code{family}. An overview of all available distributions is given in 
-table~\ref{tab:familiy}.
+argument \code{family}, which per default is \code{family = "gaussian"}. An overview of all 
+available distributions is given in table~\ref{tab:familiy}.
 \begin{table}[h!]
 \begin{center}
 \begin{tabular}{|l|p{4cm}|p{2.5cm}|l|}
@@ -456,7 +456,7 @@ The quite flexible \code{S3} class function \fct{plot.bayesx}, usually called fr
 \fct{plot}, is handy generating model diagnostic plots, term effects plots, applying 2d, 3d, 
 image and map graphics, as well as sampling paths of coefficients and variances for MCMC estimated 
 models, e.g.
-\setkeys{Gin}{width=0.49\textwidth}
+\setkeys{Gin}{width=0.46\textwidth}
 <<plot-illustration-model-samples-01, echo=TRUE, eval=FALSE, fig=FALSE, width=5, height=4>>=
 plot(b2, term = "s(x0)", which = "coef-samples")
 @
@@ -482,10 +482,10 @@ large dataset, which might produce difficulties with \proglang{R}'s object memor
 user may specify the \code{data} argument in function \fct{bayesx} as the path to a dataset stored 
 in the respective directory. As a consequence, this dataset will not be loaded within \proglang{R} 
 and is only used internally by the BayesX binary, and as a result, the output files written will 
-typically have much less memory size and may be imported to \proglang{R} for further analysis. To 
+typically reserve much less disc space and may be imported to \proglang{R} for further analysis. To 
 give an example we generate a large dataset and store it on disc in the temporary folder of the 
 running session with
-<<large-data-01, echo=TRUE, eval=FALSE>>=
+<<large-data, echo=TRUE, eval=FALSE>>=
 n <- 100000
 file <- paste(tempdir(), "/data.raw", sep = "")
 write.table(matrix(c("x", "y"), nrow = 1), file = file, 
@@ -504,16 +504,30 @@ function call
 b <- bayesx(y ~ s(x, bs = "ps"), data = file, 
   iter = 3000, burnin = 500, step = 2, predict = FALSE)
 @ 
-to start BayesX. Argument \code{predict} is set to \code{FALSE}, i.e. only output files of estimated
-effects will be returned, otherwise an expanded dataset would be written in the output directory,
-also containing the data used for estimation. \fixme{Runtime\dots}
+to start BayesX. For illustration purposes, the number of iterations is only set to 3000. Argument 
+\code{predict} is set to \code{FALSE}, i.e. only output files of estimated effects will be returned, 
+otherwise an expanded dataset would be written in the output directory, also containing the data 
+used for estimation. This example runs about 4 1/2 hours 
+\begin{Sinput}
+R> bayesx_runtime(b)
+
+     user    system   elapsed 
+16686.130     5.812 16703.644 
+\end{Sinput}
+on a Linux system with an Intel 2.33GHz Dual Core processor, while the returned object \code{b} uses
+\begin{Sinput}
+R> print(object.size(b), units = "Mb")
+
+0.3 Mb
+\end{Sinput}
+of memory size.
 
 \begin{table}[htbp]
 \begin{center}
 \begin{tabular}{|p{2cm}|p{10cm}|}
 \hline
 \code{bs} & Description \\ \hline
-\code{"lasso"} \code{"nigmix"} \code{"ridge"} & shrinkage of fixed effects: defines a 
+\code{"lasso"}, \code{"nigmix"}, \code{"ridge"} & shrinkage of fixed effects: defines a 
                                                 shrinkage-prior for the corresponding parameters 
                                                 $\gamma_j$, $j = 1, \ldots, q$, $q \geq 1$ of the 
                                                 linear effects $x_1, \ldots, x_q$. There are three 
@@ -536,7 +550,7 @@ also containing the data used for estimation. \fixme{Runtime\dots}
                where geographical informations are provided by a map object in boundary or graph 
                file format within the \code{xt} argument of function \fct{s}.\\ \hline
 \code{"ps"} & P-spline with first or second order difference penalty. \\ \hline
-\code{"rw1"} \code{"rw2"} & zero degree P-splines: defines a zero degree P-spline with first or 
+\code{"rw1"}, \code{"rw2"} & zero degree P-splines: defines a zero degree P-spline with first or 
                             second order difference penalty. A zero degree P-spline typically 
                             estimates for every distinct covariate value in the data set a separate 
                             parameter. Usually there is no reason to prefer zero degree P-splines 
@@ -558,11 +572,14 @@ also containing the data used for estimation. \fixme{Runtime\dots}
 
 \begin{table}[htbp]
 \begin{center}
-\begin{tabular}{|l|p{10cm}|}
+\begin{tabular}{|p{4cm}|p{10cm}|}
 \hline
 Function & Description \\ \hline
-\fct{AIC}, \fct{BIC}, \fct{DIC}, \fct{GCV} & compute information criteria, availability is dependent 
+\fct{AIC}, \fct{BIC}, \fct{DIC}, \fct{GCV} & computes information criteria, availability is dependent 
                                              on the \code{method} used. \\ \hline
+\fct{bayesx\_logfile}, \fct{bayesx\_prgfile}, \fct{bayesx\_runtime} & extracts the internal BayesX 
+                                             log-file, the program file and the overall runtime of
+                                             the binary. \\ \hline
 \fct{c} & combines several objects of class \code{"bayesx"}, all functions and methods may be 
           applied on the returned object. \\ \hline
 \fct{coef} & extracts coefficients of linear modeled terms, for \code{"MCMC"} estimated models, 
@@ -660,7 +677,7 @@ function \fct{plotmap}, e.g. a simple map, as shown in figure~\ref{fig:zambia-si
 plot(ZambiaBnd)
 @ 
 \begin{figure}[h!]
-\setkeys{Gin}{width=0.49\textwidth}
+\setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
 <<plot-zambia-map-02, echo=FALSE, eval=TRUE, fig = TRUE, width=5, height=4>>=
 par(mar = c(0, 0, 0, 0))
@@ -710,7 +727,7 @@ variances, as well as goodness of fit criteria. The estimated effects for covari
 plot(zm, term = c("s(agechild)", "s(bmi)"))
 @
 \begin{figure}[h!]
-\setkeys{Gin}{width=0.49\textwidth}
+\setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
 <<zambia-agechild, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
@@ -734,7 +751,7 @@ plot(zm, term = c("s(district)", "r(district)"),
   density = 20, angle = 90)
 @
 \begin{figure}[h!]
-\setkeys{Gin}{width=0.49\textwidth}
+\setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
 <<zambia-district-structured, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(0, 0, 0, 0))
@@ -771,7 +788,7 @@ plot(zm, term = "s(bmi)", which = "var-samples",
   acf = TRUE, lag.max = 250)
 @
 \begin{figure}[h!]
-\setkeys{Gin}{width=0.49\textwidth}
+\setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
 <<zambia-autocorr-02, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(1.1, 1.1, 0.1, 0.1))
@@ -840,7 +857,7 @@ mf <- defoliation ~  stand + fertilized +
 fit this model using REML and a cumulative multinomial distribution for the response by
 <<fit-forest-model-01, echo=TRUE, eval=FALSE>>=
 fm1 <- bayesx(mf, family = "cumlogit", 
-  method = "REML", data = ForestHealth)
+  method = "REML", data = ForestHealth, dir.rm = FALSE)
 @
 <<fit-forest-model-02, echo=FALSE, eval=FALSE>>=
 data("BeechBnd", "BeechGra", package = "R2BayesX")
@@ -866,39 +883,9 @@ and finally visualize the estimated effects for the nonparametric modeled terms
 plot(fm2, term = c("s(age)","s(inclination)",
   "s(canopy)","s(year)","s(elevation)"))
 @
-as shown in figure~\ref{fig:forest-no-spatial}. In this example some contradictory results occur. 
-The effect of covariate \code{age} on the \code{defoliation} seems to decline for both, younger and 
-older trees, which intuitively should be a monotone increasing effect, this also holds for the 
-effect of \code{elevation}. In addition, the extremely raw estimate of \code{inclination} is hardly
-interpretable. Therefore, the authors extend the model by a spatial effect, which we model with a
-Markov random field using a graph file including the neighborhood information of the adjacent trees.
-The graph file and a boundary file needed for producing a map plot of the effect, are loaded 
-<<forest-model-gra-bnd, echo=TRUE, eval=FALSE>>=
-data("BeechBnd", "BeechGra", package = "R2BayesX")
-@
-where \code{BeechGra} is a square matrix with the total number of neighbors of each tree on its 
-diagonal
-<<forest-model-gra-bnd, echo=TRUE, eval=FALSE>>=
-diag(BeechGra)
-@
-and otherwise entries \code{-1} if trees are neighbors, else \code{0}.
-<<fit-forest-model-02, echo=TRUE, eval=FALSE>>=
-fm2 <- bayesx(defoliation ~  stand + fertilized + 
-  humus + moisture + alkali + ph + soil + 
-  s(age, bs = "ps", k = 22) + s(inclination, bs = "ps", k = 22) + 
-  s(canopy, bs = "ps", k = 22) + s(year, bs = "ps", k = 22) + 
-  s(elevation, bs = "ps", k = 22) + 
-  s(id, bs = "mrf", xt = list(map = BeechGra)),
-  family = "cumlogit", method = "REML", data = ForestHealth)
-@
-
-
-<<summary-forest-model>>=
-summary(c(fm1, fm2))
-@
-
-\begin{figure}[t!]
-\setkeys{Gin}{width=0.49\textwidth}
+as shown in figure~\ref{fig:forest-no-spatial}. 
+\begin{figure}[h!]
+\setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
 <<forest-no-spatial-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
@@ -928,9 +915,47 @@ plot(fm1, term = "s(elevation)")
 \caption{\label{fig:forest-no-spatial} Forest damage: Estimates of nonparametric effects including
 80\% and 95\% point-wise confidence intervals of the model without the spatial effect.}
 \end{figure}
-
-\begin{figure}[t!]
-\setkeys{Gin}{width=0.49\textwidth}
+In this example some contradictory results occur. 
+The effect of covariate \code{age} on the \code{defoliation} seems to decline for both, younger and 
+older trees, which intuitively should be a monotone increasing effect, this also holds for the 
+effect of \code{elevation}. In addition, the extremely raw estimate of \code{inclination} is hardly
+interpretable. Therefore, the authors extend the model by a spatial effect, which we model with a
+Markov random field using a graph file including the neighborhood information of the adjacent trees.
+The graph file and a boundary file needed for producing a map plot of the effect, are loaded 
+<<forest-model-gra-bnd, echo=TRUE, eval=TRUE>>=
+data("BeechBnd", "BeechGra", package = "R2BayesX")
+@
+where \code{BeechGra} is a square matrix with the total number of neighbors of each tree on its 
+diagonal
+<<forest-model-gra-bnd, echo=TRUE, eval=TRUE>>=
+diag(BeechGra)
+@
+and off diagonal elements have value \code{-1} if trees are neighbors, otherwise \code{0}. Involving
+the spatial effect term we now fit the following model
+<<fit-forest-model-02, echo=TRUE, eval=FALSE>>=
+fm2 <- bayesx(defoliation ~  stand + fertilized + 
+  humus + moisture + alkali + ph + soil + 
+  s(age, bs = "ps", k = 22) + s(inclination, bs = "ps", k = 22) + 
+  s(canopy, bs = "ps", k = 22) + s(year, bs = "ps", k = 22) + 
+  s(elevation, bs = "ps", k = 22) + 
+  s(id, bs = "mrf", xt = list(map = BeechGra)),
+  family = "cumlogit", method = "REML", data = ForestHealth)
+@
+and have a first look at model information criteria with
+<<summary-forest-model, echo=TRUE, eval=TRUE>>=
+BIC(c(fm1, fm2))
+GCV(c(fm1, fm2))
+@
+which clearly indicate a better fit by modeling the spatial effect of tree locations. The whole 
+summary statistics for both models give 
+<<summary-forest-model>>=
+summary(c(fm1, fm2))
+@
+where the linear modeled terms in the second model seem to have a less important effect on tree 
+defoliation, with similar findings for covariates \code{inclination} and \code{elevation} in 
+figure~\ref{fig:forest-spatial-nonpara}. 
+\begin{figure}[h!]
+\setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
 <<forest-spatial-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
@@ -951,8 +976,12 @@ plot(fm2, term = "s(elevation)")
 effects including 80\% and 95\% point-wise confidence intervals of the model including the spatial 
 effect.}
 \end{figure}
-
-\begin{figure}[t!]
+However, the estimate of the \code{age} effect seems to be improved in terms of monotonicity. The 
+estimated spatial effect is shown in figure~\ref{fig:forest-spatial}. Summarizing these results 
+identifies a strong influence of the spatial effect of the overall model fit, indicating that a 
+clear splitting of locational specific covariates and the spatial effect is hardly possible in this 
+example. 
+\begin{figure}[h!]
 \setkeys{Gin}{width=0.7\textwidth}
 \begin{center}
 <<forest-spatial-id, echo=FALSE, fig=TRUE, width=7, height=4>>=

@@ -167,6 +167,8 @@ for(i in 1:50) {
 }
 b <- bayesx(y ~ s(x, bs = "ps"), data = file, 
   iter = 3000, burnin = 500, step = 2, predict = FALSE)
+save(b, file = "/home/c403129/svn/bayesr/pkg/R2BayesX/inst/JSS/large-data.rda")
+
 
 dat <- read.table(file, header = TRUE)
 b <- gam(y ~ s(x, bs = "ps"), data = dat)
@@ -220,7 +222,7 @@ plot(b, pages = 1)
 
 b2 <- bayesx(y ~ s(x0, bs = "ps") + s(x1, bs = "ps") + s(x2, bs = "ps") + 
   s(x3, bs = "ps") + s(x4, bs = "ps") + s(x5, bs = "ps"),
-  data = dat, family = "poisson", method = "STEP", dir.rm = FALSE)
+  data = dat, family = "poisson", method = "STEP")
 
 
 
