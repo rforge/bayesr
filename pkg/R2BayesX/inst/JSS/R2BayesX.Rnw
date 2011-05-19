@@ -105,8 +105,8 @@ data("BeechBnd")
 
 The public domain software BayesX \citep{Brezger+Kneib+Lang:2005} is a standalone program which 
 comprises powerful tools for Bayesian and mixed model based inference for complex semiparametric 
-regression models. To gain improved estimation runtime performance of the supported models, the 
-algorithms implemented utilize efficient (sparse) matrix computations and are written in a 
+regression models. To gain improved computational performance of the supported models, the 
+algorithms implemented utilize efficient (sparse) matrix architectures and are written in a 
 \proglang{C++} environment. The idea to embed BayesX in \proglang{R} \citep{R}, and therefore make 
 the project available to \proglang{R}'s permanently growing community, has been in mind for quite a 
 while. However, since the development status of the software package is already very advanced, and 
@@ -131,8 +131,8 @@ dependent on the recommended CRAN package \pkg{mgcv} \citep{Wood:2011}, amongst 
 model terms implemented in BayesX. This means, some of the model formulas specified within the 
 \pkg{mgcv} main model fitting-function \fct{gam}, may also be used in \pkg{BayesX} and vice versa. 
 Hence, users primarily familiar with \pkg{mgcv} and its GAM formula definition may use the interface 
-with little additional effort, only. This is illustrated in the following, where some data is 
-simulated and models are estimated with \fct{gam}, using generalized cross validation (GCV) for 
+with little additional effort, only. This is illustrated in the following, where some gaussian data 
+is simulated and models are estimated with \fct{gam}, using generalized cross validation (GCV) for 
 optimization, and the \pkg{BayesX} interface primary model-fitting function \fct{bayesx} applying 
 MCMC: 
 <<fit-illustration-pspline, echo=TRUE, eval=FALSE, fig=FALSE>>=
@@ -228,7 +228,7 @@ fitted-model objects of \fct{bayesx}. Here, the comparison plot of the estimated
 figure~\ref{fig:illustration}, together with examples of more sophisticated graphics supported by 
 the plotting method. Consequently, estimating models with more complex term structures, e.g. 
 applying stationary Gaussian random fields, is managed by function \fct{s}, which facilitates a 
-consistent way of smooth terms specifications in GAM and STAR formulas. In addition, BayesX supports 
+consistent way of smooth terms specifications in GAM and STAR formulas. Furthermore, BayesX supports 
 non-standard regression situations such as models for categorical responses with either ordered or 
 unordered categories, continuous time survival data, or continuous time multi-state models, which 
 may be adopted in the same manner. 
@@ -474,7 +474,7 @@ coefficients of term \code{s(x2)} in model \code{b2}.}
 produces plots of coefficient sampling paths as shown in figure~\ref{fig:illustration-samples}. 
 
 Another noteworthy feature of package \pkg{BayesX} is the internal handling of data. During MCMC
-simulation, BayesX only uses different observations of covariates, where the number of unique
+simulation, BayesX only uses different observations of covariates, since the number of unique
 observations is typically much smaller than the total number of observations in the dataset. I.e.
 this primarily allows for a potential speedup of algorithm run-times, and secondly reduces the risk
 of possible storage problems in the computer memory. To exploit this within \proglang{R} using a
@@ -918,7 +918,7 @@ plot(fm1, term = "s(elevation)")
 In this example some contradictory results occur. 
 The effect of covariate \code{age} on the \code{defoliation} seems to decline for both, younger and 
 older trees, which intuitively should be a monotone increasing effect, this also holds for the 
-effect of \code{elevation}. In addition, the extremely raw estimate of \code{inclination} is hardly
+effect of \code{elevation}. Moreover, the extremely raw estimate of \code{inclination} is hardly
 interpretable. Therefore, the authors extend the model by a spatial effect, which we model with a
 Markov random field using a graph file including the neighborhood information of the adjacent trees.
 The graph file and a boundary file needed for producing a map plot of the effect, are loaded 

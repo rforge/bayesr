@@ -209,22 +209,23 @@ mu <- fitted(fit.ms)
 
 ## stepwise example
 ## an example of automatic model selection via null space penalization
-set.seed(3); n <- 200
-dat <- gamSim(1, n = n, scale = .15, dist = "poisson") ## simulate data
+set.seed(3); n <- 500
+dat <- gamSim(1, n = n, scale = 1.2) ## simulate data
 dat$x4 <- runif(n, 0, 1); dat$x5 <- runif(n, 0, 1) ## spurious
 
 b <- gam(y ~ s(x0, bs = "ps") + s(x1, bs = "ps") + s(x2, bs = "ps") + 
   s(x3, bs = "ps") + s(x4, bs = "ps") + s(x5, bs = "ps"),
-  data = dat, family = poisson, select = TRUE, method = "REML")
+  data = dat, select = TRUE, method = "REML")
 
 summary(b)
 plot(b, pages = 1)
 
 b2 <- bayesx(y ~ s(x0, bs = "ps") + s(x1, bs = "ps") + s(x2, bs = "ps") + 
   s(x3, bs = "ps") + s(x4, bs = "ps") + s(x5, bs = "ps"),
-  data = dat, family = "poisson", method = "STEP")
+  data = dat, family = "gaussian", method = "STEP", dir.rm = FALSE)
 
-
+b3 <- bayesx(y ~ s(x0, bs = "ps", k = 20) + s(x1, bs = "ps", k = 20) + s(x2, bs = "ps", k = 20),
+  data = dat, family = "gaussian", method = "REML")
 
 
 
