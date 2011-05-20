@@ -34,7 +34,7 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
       level <- c(level , level)
   if(burnin > iter)
     burnin <- 1L
-  if(method == "MCMC") {
+  if(method == "MCMC" || method == "HMCMC") {
     control$iterations <- iter
     control$burnin <- burnin
     control$maxint <- maxint

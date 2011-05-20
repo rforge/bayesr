@@ -1,7 +1,9 @@
 dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-plot(b3, term = "s(id)", image = TRUE, grid = 200)
+b1 <- bayesx(y ~ -1 + s(x1, bs = "ps") + 
+  r(id, ~ 1 + s(x2 , bs = "ps"), data = dat2), 
+  method = "MCMC", data = dat1)
 
 
 
