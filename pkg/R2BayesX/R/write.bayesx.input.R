@@ -67,15 +67,17 @@ function(object)
     cat(paste("logopen using ", object$outfile, "/", prg.file, ".log", "\n", sep = ""),
       file = prg.file, append = TRUE)
     if(object$method == "MCMC") {
-      if(is.null(object$mcmcreg) && object$first)
+      if(is.null(object$mcmcreg) && object$first && !object$hmcmc) {
         cat("bayesreg b\n", file = prg.file, append = TRUE)
-      if(!is.null(object$mcmcreg) && object$first)
+      }
+      if((!is.null(object$mcmcreg) && object$first) || object$hmcmc) {
         cat("mcmcreg b\n", file = prg.file, append = TRUE)
+      }
     }
     if(object$method == "REML")
       cat("remlreg b\n", file = prg.file, append = TRUE)
     if(object$method == "STEP")
-      cat("stepwisereg b\n", file = prg.file, append = TRUE)    
+      cat("stepwisereg b\n", file = prg.file, append = TRUE)   
   }
 
   ## hierarchical models set here 
@@ -85,10 +87,19 @@ function(object)
   dropvars <- NULL
   if(is.null(data.file)) {
     tf <- as.character(object$formula)
-    if(grepl(tf[2L], tf[3L], fixed = TRUE))
-      dat <- model.matrix(as.formula(paste(tf[1L], tf[3L])), object$data)
-    else
-      dat <- model.matrix(object$formula, object$data)
+    if(is.null(object$contrasts)) {
+      for(k in 1L:ncol(object$data)) {
+        if(is.factor(object$data[,k]))
+          contrasts(object$data[,k]) = contr.sum(nlevels(object$data[,k]))
+      }
+    }
+    if(grepl(tf[2L], tf[3L], fixed = TRUE)) {
+      dat <- model.matrix(as.formula(paste(tf[1L], tf[3L])), 
+        data = object$data, contrasts.arg = object$contrasts)
+    } else {
+      dat <- model.matrix(object$formula, data = object$data,
+        contrasts.arg = object$contrasts)
+    }
     nd <- rmf(names(object$data))
     names(object$data) <- nd
     colnames(dat) <- rmf(colnames(dat))

@@ -1,11 +1,11 @@
 bayesx.control <-
 function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",  
-  verbose = FALSE, dir.rm = TRUE, bin = getOption("bayesx.bin"), outfile = NULL, iter = 12000L, 
-  burnin = 2000L, maxint = 150L, step = 10L, predict = TRUE, seed = 123, 
-  hyp.prior = c(1, 0.005), distopt = NULL, reference = NULL, zipdistopt = NULL,  
-  begin = NULL, level = NULL, eps = 1e-05, lowerlim = 0.001, 
-  maxit = 400L, maxchange = 1e+06, leftint = NULL, lefttrunc = NULL, state = NULL,
-  algorithm = NULL, criterion = NULL, proportion = NULL,
+  verbose = FALSE, dir.rm = TRUE, bin = getOption("bayesx.bin"), 
+  outfile = NULL, iter = 12000L, burnin = 2000L, maxint = 150L, step = 10L, 
+  predict = TRUE, seed = 123, hyp.prior = c(1, 0.005), distopt = NULL, 
+  reference = NULL, zipdistopt = NULL,  begin = NULL, level = NULL, 
+  eps = 1e-05, lowerlim = 0.001, maxit = 400L, maxchange = 1e+06, leftint = NULL, 
+  lefttrunc = NULL, state = NULL, algorithm = NULL, criterion = NULL, proportion = NULL,
   startmodel = NULL, trace = NULL, steps = NULL, 
   CI = "MCMCbootstrap", bootstrapsamples = 99L, ...)
 {
@@ -14,6 +14,8 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
   control$model.name <- model.name 
   if(method == "mcmc")
     method <- "MCMC"
+  if(method == "hmcmc")
+    method <- "HMCMC"
   if(method == "reml")
     method <- "REML"
   if(method == "step")
@@ -52,6 +54,11 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
       control$distopt <- distopt
       control$zipdistopt <- zipdistopt
     }
+    if(method == "HMCMC") {
+      control$method <- "MCMC"
+      control$hmcmc <- TRUE
+      control$hlevel <- 1L
+    } else control$hmcmc <- FALSE
   }
   if(method == "REML") {
     control$eps <- eps
@@ -63,6 +70,7 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
     control$state <- state
     if(family == "multinomial" || family == "multinomialprobit")
       control$reference <- reference
+    control$hmcmc <- FALSE
   }
   if(method == "STEP") {
     control$iterations <- iter
@@ -85,6 +93,7 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
       control$distopt <- distopt
       control$zipdistopt <- zipdistopt
     }
+    control$hmcmc <- FALSE
   } 
   if(!is.null(bin))
     start <- start + 1L

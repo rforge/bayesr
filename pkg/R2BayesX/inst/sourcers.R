@@ -1,14 +1,34 @@
-dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
+dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-b1 <- bayesx(y ~ -1 + s(x1, bs = "ps") + 
-  r(id, ~ 1 + s(x2 , bs = "ps"), data = dat2), 
-  method = "MCMC", data = dat1)
+b3 <- bayesx(y ~ s(x, bs = "ps") + s(z, w, bs = "te") + fac,
+  data = dat, method = "MCMC") #, contrasts = list(fac = contr.sum))
+
+
+
+     
+## generate some data
+set.seed(111)
+n <- 200
+     
+## regressor
+dat <- data.frame(x = runif(n, -3, 3))
+     
+## response
+dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
+     
+## estimate models with
+## bayesx REML and MCMC
+b <- bayesx(y ~ s(x, bs = "ps"), 
+  method = "HMCMC", data = dat)
+
+bayesx_logfile(b)
 
 
 
 
-b <- read.bayesx.output("/home/c403129/tmp/bayesxSTEP")
+
+
 
 
 summary(b)
@@ -187,7 +207,7 @@ package.skeleton(name = "r2bayesx", Rfiles, path = path)
 ## multinomial example
 library("R2BayesX")
 data("nzmarital", package = "VGAM")
-b <- bayesx(mstatus ~ s(age, z, bs = "te"), method = "REML",
+b <- bayesx(mstatus ~ s(age, bs = "ps"), method = "REML",
   family = "multinomial", data = nzmarital, reference = "Married/Partnered")
 fb <- fitted(b)[,4:6]
 cnfb <- c(gsub("mu:", "", colnames(fb)), "Married/Partnered")
@@ -229,6 +249,25 @@ b2 <- bayesx(y ~ s(x0, bs = "ps") + s(x1, bs = "ps") + s(x2, bs = "ps") +
 b3 <- bayesx(y ~ s(x0, bs = "ps", k = 20) + s(x1, bs = "ps", k = 20) + s(x2, bs = "ps", k = 20),
   data = dat, family = "gaussian", method = "REML")
 
+
+## a dummy example
+## more examples
+set.seed(111)
+n <- 500
+     
+## regressors
+dat <- data.frame(x = runif(n, -3, 3), z = runif(n, -3, 3),
+  w = runif(n, 0, 6), fac = factor(rep(1:10, n/10)))
+     
+## response
+dat$y <- with(dat, 1.5 + sin(x) + cos(z) * sin(w) +
+  c(2.67, 5, 6, 3, 4, 2, 6, 7, 9, 7.5)[fac] + rnorm(n, sd = 0.6))
+
+b1 <- bayesx(y ~ s(x, bs = "ps") + s(z, w, bs = "te") + fac,
+  data = dat, method = "MCMC")
+
+b2 <- bayesx(y ~ s(x, bs = "ps") + s(z, w, bs = "te") + fac,
+  data = dat, method = "MCMC", contrasts = list(fac = contr.sum))
 
 
 

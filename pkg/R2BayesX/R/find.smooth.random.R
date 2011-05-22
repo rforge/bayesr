@@ -73,20 +73,22 @@ function(dir, files, data, response, eta, model.name, minfo)
             af2 <- grep(paste("_", xnam2[1L], "_", sep = ""), files, value = TRUE)
           }
           af <- c(af1, af2)
-          if(!is.null(vx))
-            af <- af[grepl(paste(vx, "_", sep = ""), af)]
           if(any(grep("_random", res, fixed = TRUE)))
             af <- grep("_random", af, fixed = TRUE, value = TRUE)
           if(any(grep("_spatial", res, fixed = TRUE)))
             af <- grep("_spatial", af, fixed = TRUE, value = TRUE)
           if(any(grep("_geokriging", res, fixed = TRUE)))
             af <- grep("_geokriging", af, fixed = TRUE, value = TRUE)
+          if(!is.null(vx))
+            af <- af[grepl(paste(vx, "_", sep = ""), af)]
           if(length(af) > 0L) {
             if(length(varf <- grep("_var", af, value = TRUE))) {
               if(length(vf <- grep("_var.res", varf, value = TRUE))) {
                 if(!is.null(vx3))
                   vf <- grep(vx3, vf, value = TRUE)
-                attr(x, "variance") <- df2m(read.table(paste(dir, "/", vf[length(vf)], sep = ""), 
+                if(!is.null(vx))
+                  vf <- grep(vx, vf, value = TRUE)
+                attr(x, "variance") <- df2m(read.table(paste(dir, "/", vf[1L], sep = ""), 
                   header = TRUE))
                 rownames(attr(x, "variance"))[1L] <- labelx
                 if(cx == "random.bayesx")

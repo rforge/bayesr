@@ -8,13 +8,16 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
     data <- as.data.frame(data)
   if(!is.character(weights))
     weights <- deparse(substitute(weights), backtick = TRUE, width.cutoff = 500L)
-  else if(weights == "NULL") weights <- NULL
   if(!is.character(offset))
     offset <- deparse(substitute(offset), backtick = TRUE, width.cutoff = 500L)
-  else if(offset == "NULL") offset <- NULL
   if(!is.character(subset))
     subset <- deparse(substitute(subset), backtick = TRUE, width.cutoff = 500L)
-  else if(subset == "NULL") subset <- NULL
+  if(!is.null(weights) && weights == "NULL") weights <- NULL
+  if(!is.null(weights) && weights == "ra$weights") weights <- NULL
+  if(!is.null(offset) && offset == "NULL") offset <- NULL
+  if(!is.null(offset) && offset == "ra$offset") offset <- NULL
+  if(!is.null(subset) && subset == "NULL") subset <- NULL
+  if(!is.null(subset) && subset == "ra$subset") subset <- NULL
   co.id <- attr(control, "co.id")
   outfile <- control$outfile
   control$oformula <- formula
@@ -112,7 +115,7 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
           offset <- offset[get.unique(Y, 22L)$ind]
       }
       ml <- list(formula = ff, data = data, weights = weights, subset = subset,
-        offset = offset, na.action = na.action, contrasts = contrasts, drop.unused.levels = TRUE)
+        offset = offset, na.action = na.action, drop.unused.levels = TRUE)
       data <- do.call("model.frame", ml)
       if(!is.null(h.variables)) {
         nd <- names(data)
@@ -160,6 +163,7 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
     Yn <- as.character(formula[2L])
     control <- c(control, list(data = data, Y = Yn, Yn = Yn, weights = weights, offset = offset))
   }
+  control$contrasts <- contrasts
   attr(control, "co.id") <- co.id
   class(control) <- "bayesx.input"
 

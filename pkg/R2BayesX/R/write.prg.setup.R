@@ -38,10 +38,12 @@ function(response, object, prg.file, data.file, thismodel, terms.specs)
   control.names <- names(control.values)
   if(is.null(object$hlevel))
     fullformula <- paste("b.regress ", response, " = ", bt, ",", sep = "")
-  else
+  if(!is.null(object$hlevel) || object$hmcmc)
     fullformula <- paste("b.hregress ", response, " = ", bt, ",", sep = "")
-  for(i in 1L:length(control.values))
-    fullformula <- paste(fullformula, " ", control.names[i], "=", control.values[[i]], sep = "")
+  for(i in 1L:length(control.values)) {
+    if(control.names[i] != "hmcmc")
+      fullformula <- paste(fullformula, " ", control.names[i], "=", control.values[[i]], sep = "")
+  }
   dset <- paste("d", object$hlevel, sep = "")
   if(!is.null(object$hlevel)) {
     hlevel <- object$hlevel
@@ -53,7 +55,7 @@ function(response, object, prg.file, data.file, thismodel, terms.specs)
     if(predict) {
       if(is.null(object$hlevel))
         fullformula <- paste(fullformula, "predict")
-      else
+      if(!is.null(object$hlevel) || object$hmcmc)
         fullformula <- paste(fullformula, "predict=full")
     }
   fullformula <- paste(fullformula, "using", dset)
@@ -68,7 +70,7 @@ function(response, object, prg.file, data.file, thismodel, terms.specs)
     collapse = " \n"), " \n", sep="")
 
   ## only for hierarchical
-  if(!is.null(object$hlevel)) {
+  if(!is.null(object$hlevel) || object$hmcmc) {
     bayesx.prg <- gsub("psplinerw1", "pspline", bayesx.prg, fixed = TRUE)
     bayesx.prg <- gsub("psplinerw2", "pspline", bayesx.prg, fixed = TRUE)
     bayesx.prg <- gsub("maxint=150", "", bayesx.prg, fixed = TRUE)

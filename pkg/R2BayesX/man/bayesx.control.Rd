@@ -30,8 +30,8 @@ bayesx.control(model.name = "bayesx.estim",
     \code{"gaussian"}, \code{"binomialprobit"}, \code{"binomial"}, \code{"multinomialprobit"}, 
     \code{"multinomial"}, \code{"cumprobit"}, \code{"poisson"}, \code{"nbinomial"},
     \code{"zip"}, \code{"cox"} and \code{"multistate"}.}  
-  \item{method}{which method should be used for estimation, options are \code{"MCMC"}, \code{"REML"} 
-    and \code{"STEP"}.}
+  \item{method}{which method should be used for estimation, options are \code{"MCMC"}, 
+    \code{"HMCMC"}, \code{"REML"} and \code{"STEP"}.}
   \item{verbose}{should output be printed to the \code{R} console during runtime of 
     \code{\link{bayesx}}.}
   \item{dir.rm}{should the the \code{output} files and directory removed after estimation?} 

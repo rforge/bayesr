@@ -782,9 +782,12 @@ head(attr(fit.bmi, "variance.sample"), 4)
 @
 where \code{"sample"} represents samples of regression coefficients and \code{"variance.sample"}
 samples of the variance parameter of the smooth. In addition, autocorrelation functions may be 
-drawn, for instance of the variance samples, as shown in figure~\ref{fig:zambia-autocorr}, by typing
+drawn, for instance of the variance samples and the intercept, as shown in 
+figure~\ref{fig:zambia-autocorr}, by typing
 <<zambia-autocorr-01, echo=TRUE, eval=FALSE>>=
 plot(zm, term = "s(bmi)", which = "var-samples", 
+  acf = TRUE, lag.max = 250)
+plot(zm, which = "intcpt-samples", 
   acf = TRUE, lag.max = 250)
 @
 \begin{figure}[h!]
