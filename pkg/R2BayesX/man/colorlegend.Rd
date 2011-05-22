@@ -15,7 +15,7 @@ colorlegend (color = NULL, ncol = NULL, x = NULL,
   breaks = NULL, pos = NULL, side.legend = 1L, 
   side.ticks = 1L, range = NULL, lrange = NULL, 
   width = 1L, height = 1L, scale = TRUE, xlim = NULL, 
-  ylim = NULL, plot = NULL, add = FALSE, 
+  ylim = NULL, plot = NULL, full = FALSE, add = FALSE, 
   col.border = "black", lty.border = 1L, lwd.border = 1L, 
   ticks = TRUE, at = NULL, col.ticks = "black", lwd.ticks = 1L, 
   lty.ticks = 1L, length.ticks = 1L, labels = NULL, 
@@ -50,6 +50,7 @@ colorlegend (color = NULL, ncol = NULL, x = NULL,
   \item{ylim}{the y-limits of the plotting window the legend should be added for, numeric vector 
     e.g. returned from function \code{\link[base]{range}}.}
   \item{plot}{if set to \code{TRUE}, the legend will be drawn in a separate plotting window.}
+  \item{full}{if set to \code{TRUE}, the legend will be drawn using the full window range.}
   \item{add}{if set to \code{TRUE}, the legend will be added to an existing plot.}
   \item{col.border}{the color of the surrounding border line of the legend.}
   \item{lty.border}{the line type of the surrounding border line of the legend.}

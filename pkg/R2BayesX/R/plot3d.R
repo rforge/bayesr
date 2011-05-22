@@ -88,11 +88,15 @@ function(x, residuals = FALSE, col.surface = NULL,
             take <- c(take, i)
     if(is.null(take))
       stop("argument c.select is specified wrong!")
-    for(k in 1:length(take))
-      fitted[[k]] <- akima::interp(X, z, x[,take[k]], xo = xn, yo = zn, duplicate = "strip")$z
+    for(k in 1:length(take)) {
+      fitted[[k]] <- akima::interp(X, z, x[,take[k]], xo = xn, yo = zn, 
+        duplicate = "strip")$z
+    }
   }
-  if(length(fitted[[1L]]) == 1L && is.na(fitted[[1L]][1L]))
-    fitted[[1L]] <- akima::interp(X, z, x[,3L], xo = xn, yo = zn, duplicate = "strip")$z
+  if(length(fitted[[1L]]) == 1L && is.na(fitted[[1L]][1L])) {
+    fitted[[1L]] <- akima::interp(X, z, x[,3L], xo = xn, yo = zn, 
+      duplicate = "strip")$z
+  }
   if(!is.null(range))
     for(k in 1L:length(fitted)) {
       if(min(range, na.rm = TRUE) > min(fitted[[k]], na.rm = TRUE))
@@ -191,11 +195,21 @@ function(x, residuals = FALSE, col.surface = NULL,
       if(legend) {
         mar[4L] <- 0
         par(mar = mar)
-        layout(matrix(c(1z, 2), nrow = 1), widths = c(1, 0.25))
+        layout(matrix(c(1, 2), nrow = 1), widths = c(1, 0.2))
       }
       do.call(graphics::image.default, 
         delete.args(graphics::image.default, args, 
         c("xlab", "ylab", "main", "axes")))
+      if(!is.null(args$image.map)) {
+          args2 <- args
+          args2$map <- args$image.map
+          args2$add <- TRUE
+          args2$legend <- FALSE
+          args2$x <- NULL
+          args2$id <- NULL
+          args2$col <- NULL
+          do.call(plotmap, delete.args(plotmap, args2))
+      }
       if(contour) {
         if(is.null(col.contour)) 
           args$col <- "black"
@@ -212,34 +226,25 @@ function(x, residuals = FALSE, col.surface = NULL,
         mar[2L] <- 0.5
         par(mar = mar)
         args2 <- args
-        args2$xlim <- args2$ylim <- c(0, 1)
-        if(is.null(args$width))
-          args2$width <- 1
-        if(is.null(args$height))
-          args2$height <- 0.5
-        if(is.null(args$pos))
-          args2$pos <- c(0, 0)
         if(is.null(args$side.legend))
           args2$side.legend <- 2L
         if(is.null(args$distance.labels))
           args2$distance.labels <- 3L
         if(is.null(args$side.ticks))
           args2$side.ticks <- 2L
-        if(is.null(args$scale))
-          args2$scale <- FALSE
-        if(is.null(args$xpd))
-          args2$xpd <- FALSE
         args2$color <- col.surface
         args2$ncol <- ncol
         args2$x <- args$z
+        args2$xlim <- range(xn)
+        args2$ylim <- range(zn)
         args2$breaks <- breaks
         args2$swap <- swap
         args2$plot <- TRUE
         args2$digits <- digits
         args2$cex <- cex.legend
-        args2$scale <- FALSE
         args2$range <- range
         args2$add <- FALSE
+        args2$full <- TRUE
         do.call(colorlegend, delete.args(colorlegend, args2, c("font", "cex")))
       }
     }

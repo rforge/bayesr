@@ -1,7 +1,7 @@
 colorlegend <-
 function(color = NULL, ncol = NULL, x = NULL, breaks = NULL, 
   pos = NULL, side.legend = 1L, side.ticks = 1L, range = NULL, lrange = NULL, 
-  width = 1L, height = 1L, scale = TRUE, xlim = NULL, ylim = NULL, plot = NULL, 
+  width = 1L, height = 1L, scale = TRUE, xlim = NULL, ylim = NULL, plot = NULL, full = FALSE,
   add = FALSE, col.border = "black", lty.border = 1L, lwd.border = 1L, ticks = TRUE, 
   at = NULL, col.ticks = "black", lwd.ticks = 1L, lty.ticks = 1L, length.ticks = 1L, 
   labels = NULL, distance.labels = 1L, col.labels = "black", cex.labels = 1L, 
@@ -17,9 +17,23 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
     warning("argument side.legend is specified wrong, set to default!")
     side.legend <- 1L
   }
+  if(full) {
+    scale <- FALSE
+    pos = c(0, 0)
+    par(xaxs = "i")
+    par(yaxs = "i")
+    if(side.legend < 2L) {
+      width <- diff(xlim)
+      height <- diff(ylim)
+    } else {
+      height <- diff(xlim)
+      width <- diff(ylim)
+    }
+  }
   if(is.null(plot) || plot == TRUE) {
     plot <- TRUE
-    graphics::plot.default(xlim, ylim, type = "n", xlab = "", ylab = "", axes = FALSE)
+    graphics::plot.default(xlim, ylim, type = "n", xlab = "", ylab = "", 
+      axes = FALSE, xlim = xlim, ylim = ylim)
   } else plot <- FALSE
   if(is.null(xpd))
     xpd <- FALSE
@@ -88,13 +102,13 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
     obs2legend <- function(x, xr) ((x - lrange[1L]) / diff(lrange)) * diff(xr) + xr[1L]
     if(side.legend < 2L) {
       graphics::rect(obs2legend(head(br, -1L), xlim), ylim[1L], obs2legend(tail(br, -1L), xlim),
-        ylim[2L], col = cl, border = cl)
+        ylim[2L], col = cl, border = cl, xpd = FALSE, lwd = 0.01)
     } else {
       graphics::rect(xlim[1L], obs2legend(head(br, -1L), ylim), xlim[2L], 
-        obs2legend(tail(br, -1L), ylim), col = cl, border = cl)
+        obs2legend(tail(br, -1L), ylim), col = cl, border = cl, xpd = FALSE, lwd = 0.01)
     }
     graphics::rect(xlim[1L], ylim[1L], xlim[2L], ylim[2L], 
-      border = col.border, lwd = lwd.border, lty = lty.border)
+      border = col.border, lwd = lwd.border, lty = lty.border, xpd = FALSE)
     dl <- TRUE
     if(!is.null(labels) && labels == FALSE)
       dl <- FALSE
@@ -130,33 +144,41 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
       col.ticks <- rep(col.ticks, length.out = nat)
       col.labels <- rep(col.labels, length.out = nat)
       cex.labels <- rep(cex.labels, length.out = nat)
-      for(i in 1L:nat) {
-        if(side.legend < 2L) {
-          if(ticks) {
-            graphics::lines(c(at[i], at[i]), c(ylim[side.ticks], ylim[side.ticks] - length.ticks),
-              lwd = lwd.ticks[i], lty = lty.ticks[i], col = col.ticks[i])
-          }
-          if(dl) {
-            graphics::text(at[i], ylim[side.ticks] - length.ticks - (distance.labels * length.ticks * 1.8),
-              labels = labels[i], col = col.labels[i], cex = cex.labels[i], ...)
-          }
-        } else {
-          if(ticks) {
-            graphics::lines(c(xlim[side.ticks], xlim[side.ticks] - length.ticks), c(at[i], at[i]),
-              lwd = lwd.ticks[i], lty = lty.ticks[i], col = col.ticks[i]) 
-          }
-          if(dl) {
-            graphics::text(xlim[side.ticks] - length.ticks - (distance.labels * length.ticks * 1.8), at[i],
-              labels = labels[i], col = col.labels[i], cex = cex.labels[i], ...)
+      labels <- rep(labels, length.out = nat)
+      if(!full) {
+        for(i in 1L:nat) {
+          if(side.legend < 2L) {
+            if(ticks) {
+              graphics::lines(c(at[i], at[i]), c(ylim[side.ticks], ylim[side.ticks] - length.ticks),
+                lwd = lwd.ticks[i], lty = lty.ticks[i], col = col.ticks[i])
+            }
+            if(dl) {
+              graphics::text(at[i], ylim[side.ticks] - length.ticks - (distance.labels * length.ticks * 1.8),
+                labels = labels[i], col = col.labels[i], cex = cex.labels[i], ...)
+            }
+          } else {
+            if(ticks) {
+              graphics::lines(c(xlim[side.ticks], xlim[side.ticks] - length.ticks), c(at[i], at[i]),
+                lwd = lwd.ticks[i], lty = lty.ticks[i], col = col.ticks[i]) 
+            }
+            if(dl) {
+              graphics::text(xlim[side.ticks] - length.ticks - (distance.labels * length.ticks * 1.8), 
+                at[i], labels = labels[i], col = col.labels[i], cex = cex.labels[i], ...)
+            }
           }
         }
+      } else {
+        if(side.legend < 2L) {
+          if(side.ticks < 2L) where <- 1L else where <- 3L
+        } else {
+          if(side.ticks < 2L) where <- 2L else where <- 4L
+        }
+      axis(where, at = at, labels = labels, col = col.labels, 
+        tick = ticks, lty = lty.ticks, col.ticks = col.ticks, 
+        lwd.ticks = lwd.ticks, cex = cex.labels)
       }
     }
   }
-  if(!add && plot)
-    par(op)
-  if(xpd)
-    par(xpd = op$xpd)
 
   return(invisible(pal))
 }

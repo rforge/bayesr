@@ -54,7 +54,7 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
       colors <- rep(colors, length.out = n)
     }
   }
-  if(!is.null(map.limits$mar) && is.null(args$asp))
+  if(!is.null(map.limits$mar) && is.null(args$asp) && !add)
     par(mar = map.limits$mar)
   args$x <- map.limits$x
   args$y <- map.limits$y

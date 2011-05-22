@@ -1,8 +1,18 @@
 dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
+plot(fm2, term = "s(id)", image = TRUE, grid = 100,
+  image.map = BeechBnd, xlim = c(0.3, 16.5), ylim = c(0, 9.3))
+plot(BeechBnd, add = TRUE)
 
-plot(fm2, term = "s(id)", image = TRUE, grid = 200)
+
+
+
+par(xaxs = "i", yaxs = "i")
+plot(0, 1, type = "n", xlim = c(0, 1), ylim = c(0, 1))
+rect(0:98/99, 0, 1:99/99, 1, border = NA, 
+  col = make_pal(col = diverge_hcl, ncol = 99, range = c(0, 1))$colors)
+
 
 
      
