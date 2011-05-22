@@ -1,9 +1,8 @@
 dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-b3 <- bayesx(y ~ s(x, bs = "ps") + s(z, w, bs = "te") + fac,
-  data = dat, method = "MCMC") #, contrasts = list(fac = contr.sum))
 
+plot(fm2, term = "s(id)", image = TRUE, grid = 200)
 
 
      
@@ -257,11 +256,11 @@ n <- 500
      
 ## regressors
 dat <- data.frame(x = runif(n, -3, 3), z = runif(n, -3, 3),
-  w = runif(n, 0, 6), fac = factor(rep(1:10, n/10)))
+  w = runif(n, 0, 6), fac = factor(rep(1:2, n/2)))
      
 ## response
 dat$y <- with(dat, 1.5 + sin(x) + cos(z) * sin(w) +
-  c(2.67, 5, 6, 3, 4, 2, 6, 7, 9, 7.5)[fac] + rnorm(n, sd = 0.6))
+  c(2.67, 3.33)[fac] + rnorm(n, sd = 0.6))
 
 b1 <- bayesx(y ~ s(x, bs = "ps") + s(z, w, bs = "te") + fac,
   data = dat, method = "MCMC")

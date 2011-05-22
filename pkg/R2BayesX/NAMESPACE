@@ -1,6 +1,7 @@
 useDynLib("R2BayesX")
 
 export(
+  BIC,
   bayesx,               
   bayesx.construct,     
   bayesx.control,      

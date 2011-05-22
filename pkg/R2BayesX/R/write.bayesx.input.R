@@ -103,9 +103,18 @@ function(object)
     nd <- rmf(names(object$data))
     names(object$data) <- nd
     colnames(dat) <- rmf(colnames(dat))
+    intcpt1 <- any(grepl("(Intercept)", colnames(dat)))
     for(sf in nd)
-      if(is.factor(ff <- object$data[[sf]])) {
-        lf <- paste(sf, rmf(levels(ff)), sep = "")
+      if(is.factor(object$data[[sf]])) {
+        if(intcpt1) {
+          ff <- eval(parse(text = paste("model.matrix(~ ", sf,")", sep = "")), 
+            envir = object$data)
+          lf <- colnames(ff)[2L:ncol(ff)]
+        } else {
+          ff <- eval(parse(text = paste("model.matrix(~ -1 + ", sf,")", sep = "")), 
+            envir = object$data)
+          lf <- colnames(ff)
+        }
         vars <- colnames(dat)
         if(!all(lf %in% vars)) {
           mf <- lf[!lf %in% vars]

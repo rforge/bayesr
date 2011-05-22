@@ -700,7 +700,7 @@ a decomposition of the spatial effect is achieved by specifying a Markov random 
 unstructured spatial effect. Finally, a gaussian model is fitted using MCMC by calling
 <<fit-zambia-model, echo=TRUE, eval=FALSE>>=
 zm <- bayesx(mf, method = "MCMC", iter = 12000, 
-  burnin = 2000, step = 10, data = ZambiaNutrition)
+  burnin = 2000, step = 10, data = ZambiaNutrition, dir.rm = FALSE)
 @
 <<cache-zambia-model, echo=FALSE, eval=TRUE>>=
 if(file.exists("zambia-model.rda")) {
@@ -863,13 +863,13 @@ fm1 <- bayesx(mf, family = "cumlogit",
   method = "REML", data = ForestHealth, dir.rm = FALSE)
 @
 <<fit-forest-model-02, echo=FALSE, eval=FALSE>>=
-data("BeechBnd", "BeechGra", package = "R2BayesX")
+data("BeechBnd", package = "R2BayesX")
 fm2 <- bayesx(defoliation ~  stand + fertilized + 
   humus + moisture + alkali + ph + soil + 
   s(age, bs = "ps", k = 22) + s(inclination, bs = "ps", k = 22) + 
   s(canopy, bs = "ps", k = 22) + s(year, bs = "ps", k = 22) + 
   s(elevation, bs = "ps", k = 22) + 
-  s(id, bs = "mrf", xt = list(map = BeechGra)),
+  s(id, bs = "gs", xt = list(map = BeechBnd), k = 22),
   family = "cumlogit", method = "REML", data = ForestHealth)
 @
 <<cache-forest-model, echo=FALSE, eval=TRUE>>=
@@ -987,11 +987,14 @@ example.
 \begin{figure}[h!]
 \setkeys{Gin}{width=0.7\textwidth}
 \begin{center}
-<<forest-spatial-id, echo=FALSE, fig=TRUE, width=7, height=4>>=
-par(mar = c(0, 0, 0, 0))
-plot(fm2, term = "s(id)", map = BeechBnd, 
-  pos = "topleft", width = 0.4, height = 0.2, 
-  distance.labels = 2)
+<<forest-spatial-id, echo=FALSE, fig=TRUE, width=7, height=5>>=
+par(mar = c(0.1, 0.1, 0, 0))
+#plot(fm2, term = "s(id)", map = BeechBnd, 
+#  pos = "topleft", width = 0.4, height = 0.2, 
+#  distance.labels = 2)
+# par(mar = c(4.1, 4.1, 0.1, 1.1))
+plot(fm2, term = "s(id)", image = TRUE, grid = 200,
+  xpd = TRUE, distance.labels = 2.9)
 @
 \end{center}
 \caption{\label{fig:forest-spatial} Forest damage: Estimate of the spatial effect.}

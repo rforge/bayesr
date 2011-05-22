@@ -191,7 +191,7 @@ function(x, residuals = FALSE, col.surface = NULL,
       if(legend) {
         mar[4L] <- 0
         par(mar = mar)
-        layout(matrix(c(1, 2), nrow = 1), widths = c(1, 0.25))
+        layout(matrix(c(1z, 2), nrow = 1), widths = c(1, 0.25))
       }
       do.call(graphics::image.default, 
         delete.args(graphics::image.default, args, 

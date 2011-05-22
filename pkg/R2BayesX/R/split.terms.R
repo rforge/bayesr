@@ -10,17 +10,25 @@ function(terms, vars, data, dropvars)
     if(length(lv) < 1L)
       lv <- NULL
     linvars <- NULL
+    intcpt <- any(grepl("(Intercept)", vars))
     for(i in 1L:length(lv)) {
       tmp <- gsub("(offset)", "ModelOffset", lv[i], fixed = TRUE)
       tmp <- gsub("(weights)", "ModelWeights", lv[i], fixed = TRUE)
       if(!is.character(data)) {
         tmp2 <- data[[tmp]]
         if(is.factor(tmp2)) {
-          lt <- rmf(levels(tmp2))
-          tmp <- paste(tmp, lt, sep = "") 
-          tmp <- tmp[tmp %in% vars]
+          if(intcpt) {
+            ff <- eval(parse(text = paste("model.matrix(~ ", tmp,")", sep = "")), 
+              envir = data)
+            tmp <- colnames(ff)[2L:ncol(ff)]
+          } else {
+            ff <- eval(parse(text = paste("model.matrix(~ -1 + ", tmp,")", sep = "")), 
+              envir = data)
+            tmp <- colnames(ff)[2L:ncol(ff)]
           }
+          tmp <- tmp[tmp %in% vars]
         }
+      }
       linvars <- c(linvars, tmp)
     }
     if(!is.null(linvars) && !is.null(dropvars)) {
