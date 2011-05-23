@@ -3,7 +3,8 @@ function(x, residuals = FALSE, col.surface = NULL,
   ncol = 99L, swap = FALSE, col.residuals = NULL, col.contour = NULL, 
   c.select = NULL, grid = 30L, image = FALSE, contour = FALSE, 
   legend = TRUE, cex.legend = 1, breaks = NULL, range = NULL, 
-  digits = 2L, d.persp = 1L, r.persp = sqrt(3), data = NULL, ...)
+  digits = 2L, d.persp = 1L, r.persp = sqrt(3), linear = TRUE, extrap = FALSE, 
+  outscale = 0, data = NULL, ...)
 {
   if(is.null(x))
     return(invisible(NULL))
@@ -48,8 +49,10 @@ function(x, residuals = FALSE, col.surface = NULL,
   x <- x[order(x[,1L]),]
   X <- x[,1L]
   z <- x[,2L]
-  xn <- seq(min(X), max(X), length = grid)
-  zn <- seq(min(z), max(z), length = grid)
+  xrd <- diff(range(X))
+  zrd <- diff(range(z))
+  xn <- seq(min(X) - outscale * xrd , max(X) + outscale * xrd, length = grid)
+  zn <- seq(min(z) - outscale * zrd, max(z) + outscale * zrd, length = grid)
   fitted <- list(NA)
   if(!is.null(c.select)) {
     take <- NULL
@@ -90,12 +93,12 @@ function(x, residuals = FALSE, col.surface = NULL,
       stop("argument c.select is specified wrong!")
     for(k in 1:length(take)) {
       fitted[[k]] <- akima::interp(X, z, x[,take[k]], xo = xn, yo = zn, 
-        duplicate = "strip")$z
+        duplicate = "strip", linear = linear, extrap = extrap)$z
     }
   }
   if(length(fitted[[1L]]) == 1L && is.na(fitted[[1L]][1L])) {
     fitted[[1L]] <- akima::interp(X, z, x[,3L], xo = xn, yo = zn, 
-      duplicate = "strip")$z
+      duplicate = "strip", linear = linear, extrap = extrap)$z
   }
   if(!is.null(range))
     for(k in 1L:length(fitted)) {
@@ -197,7 +200,7 @@ function(x, residuals = FALSE, col.surface = NULL,
         par(mar = mar)
         layout(matrix(c(1, 2), nrow = 1), widths = c(1, 0.2))
       }
-      do.call(graphics::image.default, 
+      do.call(graphics::image, 
         delete.args(graphics::image.default, args, 
         c("xlab", "ylab", "main", "axes")))
       if(!is.null(args$image.map)) {

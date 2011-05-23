@@ -13,13 +13,13 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   if(is.null(args$asp))
     args$asp <- attr(map, "asp")
   n <- length(map)
-  if(inherits(x, "geo.bayesx"))
-    names(map) <- as.character(1L:n)
+  #if(inherits(x, "geo.bayesx"))
+  #  names(map) <- as.character(1L:n)
   if(is.null(x))
     legend <- FALSE
-  if(!any(is.na(poly.names <- f2int(names(map))))) {
-      poly.names <- sort(poly.names)
-      poly.names <- as.character(poly.names)
+  if(!any(is.na(poly.names <- x2int(names(map))))) {
+    poly.names <- sort(poly.names)
+    poly.names <- as.character(poly.names)
   } else poly.names <- sort(names(map))
   map <- map[poly.names]
   poly.names <- names(map)

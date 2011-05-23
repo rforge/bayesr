@@ -1,9 +1,8 @@
-dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
+dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-plot(fm2, term = "s(id)", image = TRUE, grid = 100,
-  image.map = BeechBnd, xlim = c(0.3, 16.5), ylim = c(0, 9.3))
-plot(BeechBnd, add = TRUE)
+plot(b, term = "s(district)", map = ZambiaBnd)
+
 
 
 

@@ -16,7 +16,8 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
   ncol = 99L, swap = FALSE, col.residuals = NULL, col.contour = NULL, 
   c.select = NULL, grid = 30L, image = FALSE, contour = FALSE, 
   legend = TRUE, cex.legend = 1, breaks = NULL, range = NULL, 
-  digits = 2L, d.persp = 1L, r.persp = sqrt(3), data = NULL, ...)
+  digits = 2L, d.persp = 1L, r.persp = sqrt(3), linear = FALSE, 
+  extrap = TRUE, outscale = 0.05, data = NULL, ...)
 }
 
 \arguments{
@@ -53,6 +54,9 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
   \item{digits}{specifies the legend decimal places.}
   \item{d.persp}{see argument \code{d} in function \code{\link[graphics]{persp}}.}
   \item{r.persp}{see argument \code{r} in function \code{\link[graphics]{persp}}.}
+  \item{linear}{see function \code{\link[akima]{interp}}.}
+  \item{extrap}{see function \code{\link[akima]{interp}}.}
+  \item{outscale}{scales the outer ranges of \code{x} and \code{z} limits used for interpolation.}
   \item{data}{if \code{x} is a \code{formula}, a \code{data.frame} or \code{list}. By default the 
     variables are taken from \code{environment(x)}: typically the environment from which 
     \code{plot3d} is called.}
