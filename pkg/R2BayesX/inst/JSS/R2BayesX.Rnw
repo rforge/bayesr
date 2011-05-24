@@ -98,17 +98,17 @@ data("BeechBnd")
 The public domain software BayesX \citep{Brezger+Kneib+Lang:2005} is a standalone program comprising 
 powerful tools for Bayesian and mixed model based inference in complex semiparametric regression 
 models with structured additive predictor (STAR) (see section~\ref{sec:model}). To gain improved 
-computational performance of the supported models, the algorithms implemented utilize efficient 
-(sparse) matrix architectures and are written in a \proglang{C++} environment. 
+computational performance of the supported models, the algorithms implemented utilize numerically 
+efficient (sparse) matrix architectures and are written in a \proglang{C++} environment. 
 
 In this article, we describe the full interactive \proglang{R} \citep{R} interface to BayesX, which
 has recently been added to the existing Comprehensive \proglang{R} Archive Network (CRAN) package 
 \pkg{BayesX} \citep{Kneib+Heinzl+Brezger:2011}. Within the new functionality of the package, users 
 may now 
 \begin{itemize}
-\item specify and estimate STAR models directly from the \proglang{R} console, 
-\item apply a set of extractor functions and methods on fitted-model objects, e.g. producing high
-  level graphics of estimated effects and model diagnostic plots,
+\item specify and estimate STAR models with BayesX directly from the \proglang{R} console, 
+\item apply a set of extractor functions and methods on BayesX fitted-model objects, e.g. producing 
+  high level graphics of estimated effects and model diagnostic plots or summary statistics,
 \item additionally run already existing BayesX program files from \proglang{R},
 \item as well as automatically import BayesX output files into \proglang{R}.
 \end{itemize}
@@ -118,10 +118,17 @@ language definition, wherefore the special model term constructor functions \fct
 \citep{Wood:2011} and \fct{r} facilitate a consistent way to translate \proglang{R} syntax into 
 BayesX interpretable commands (see Section~\ref{sec:implementation}). 
 
-To give a first example of the various features of the interface, we demonstrate estimation of a 
-Bayesian normal geoadditive regression model with the childhood malnutrition dataset in Zambia 
-(see Section~\ref{subsec:zambia}) using Markov chain Monte Carlo (MCMC) simulation. Therefore, the 
-data together with a boundary map file of the districts in Zambia is loaded with    
+To give an introductory example of the various features of the interface, we estimate a Bayesian 
+normal geoadditive regression model with the childhood malnutrition dataset in Zambia
+(see Section~\ref{subsec:zambia}) using Markov chain Monte Carlo (MCMC) simulation. The 
+model is given by
+\begin{equation*}
+\texttt{stunting}_i = \gamma_0 + f_1(\texttt{agechild}_i) + f_2(\texttt{bmi}_i) + 
+  f_{geo}(\texttt{district}_i) + \varepsilon_i 
+\end{equation*} 
+with $\varepsilon_i \sim N(0, \sigma^2)$, where functions $f_1$ and $f_2$ are possibly nonlinear and 
+$f_{geo}$ represents a spatially correlated effect. Therefore, the data together with a boundary map 
+file of the districts in Zambia is loaded with    
 <<data-illustration, echo=TRUE, eval=TRUE, fig=FALSE>>=
 data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
 @
@@ -130,9 +137,10 @@ and the model formula specified by
 mf <- stunting ~ s(agechild, bs = "ps") + s(bmi, bs = "ps") + 
   s(district, bs = "gs", xt = list(map = ZambiaBnd))
 @
-where the possibly nonlinear effects of covariates \code{agechild} and \code{bmi} are modeled with
-P-splines and the spatial effect by a geospline term using the centroids of the district polygons in 
-object \code{ZambiaBnd}. The model is then fitted with the function call to 
+Here, the possibly nonlinear effects of covariates \code{agechild} and \code{bmi} on \code{stunting}
+are modeled with P-splines and the spatial effect by a geospline term using the centroid $x$- and 
+$y$-coordinates of the district polygons in object \code{ZambiaBnd}. The model is then fitted with 
+the function call 
 <<fit-illustration, echo=TRUE, eval=FALSE, fig=FALSE>>=
 b <- bayesx(mf, family = "gaussian", method = "MCMC", 
   data = ZambiaNutrition)
@@ -145,11 +153,10 @@ load("illustration-model.rda")
 save(b, file = "illustration-model.rda")
 }
 @
-Afterwards the estimated effects may be visualized e.g. typing
-<<plot-illustration, echo=TRUE, eval=FALSE, fig=FALSE>>=
-plot(b, map = ZambiaBnd)
-@
-which basically produces Figure~\ref{fig:illustration}.
+After BayesX successfully finished processing several base \proglang{R} functions and methods, such 
+as \fct{summary}, \fct{plot}, \fct{fitted} and more, may be applied on the fitted-model object 
+\code{b}. In Figure~\ref{fig:illustration}, some visualization examples of the estimated effects 
+produced by the versatile implemented plotting functions are shown.
 \begin{figure}[t!]
 \setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
@@ -159,7 +166,7 @@ plot(b, term = "s(bmi)")
 @ 
 <<plot-illustration-agechild, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(b, term = "s(agechild)", resid = TRUE, cex = 0.1)
+plot(b, term = "s(agechild)", resid = TRUE, cex = 0.1, rug = FALSE)
 @ 
 \\[2ex]
 \setkeys{Gin}{width=0.47\textwidth}
@@ -173,29 +180,30 @@ plot(b, term = "s(district)", image = T, grid = 100, at = c(-0.4, 0, 0.4),
 \setkeys{Gin}{width=0.46\textwidth}
 <<plot-illustration-district-persp, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(0, 1.1, 0, 0))
-plot(b, term = "s(district)", range = c(-0.5, 0.5), zlim = c(-1, 1), 
-  swap = TRUE, theta = 40, extrap = TRUE, linear = FALSE)
+plot(b, term = "s(district)", range = c(-0.5, 0.5), lrange = c(-0.6, 0.6), 
+  zlim = c(-1.1, 1.1), swap = TRUE, theta = 40, extrap = TRUE, linear = FALSE, 
+  ticktype = "detailed", zlab = "\ns(x,y)", xlab = "\nx", ylab = "\ny")
 @
 \end{center}
 \caption{\label{fig:illustration} Visualization examples: Estimated effect for covariate \code{bmi}, 
 black line, together with 95\% and 80\% credible intervals shaded in dark gray and light gray 
 respectively, upper left panel. The upper right panel shows the estimated effect of \code{agechild} 
 including partial residuals. The lower left panel illustrates visualization of the estimated spatial 
-effect for covariate \code{district} using an image plot with a color legend, the lower right panel 
-draws the same effect with a perspective plot in a slightly rotated angle.}
+effect for covariate \code{district} using an image plot with a map of the districts in Zambia 
+together with a color legend, the lower right panel draws the same effect with a perspective plot in 
+a slightly rotated angle.}
 \end{figure}
 
-Besides models for responses from univariate exponential families, BayesX also supports models from 
-non-standard regression situations such as models for categorical responses with either ordered or 
-unordered categories, continuous time survival data, or continuous time multi-state models, which 
-may be adopted in the same manner.
+Besides exponential family regression, BayesX also supports non-standard regression situations such 
+as regression for categorical responses, hazard regression for continuous survival times, and 
+continuous time multi-state models, which may be adopted in the same manner.
 
 To present the extensive capabilities of the software in more detail, the next section briefly 
 discusses the methodological background of regression models with a structured additive predictor, 
-before a description of the implementation is provided in Section~\ref{sec:implementation}. In 
-Section~\ref{sec:illustrations}, the interface usability is further demonstrated on the complex 
-example with data concerning childhood malnutrition in Zambia as well as on a dataset on forest 
-health.
+before a description of the necessary installation process and the implementation is provided in 
+Section~\ref{sec:installation} and \ref{sec:implementation} respectively. In 
+Section~\ref{sec:illustrations}, the interface usability is further illustrated with the childhood 
+malnutrition data of Zambia as well as on a dataset on forest health from Germany.
 
 
 \section{STAR models} \label{sec:model} 
@@ -217,13 +225,13 @@ by a more general and flexible, structured additive predictor
 where covariates $z$ are of generic type and dimension, and $f_j$ are possibly smooth functions 
 comprising effects (and combination of effects) as e.g. given by             
 \begin{itemize}
-\item nonlinear effects of continuous covariates: $f_j(z) = f(x)$,
-\item two-dimensional surfaces: $f_j(z) = f(x_1,x_2)$,
-\item spatially correlated effects: $f_j(z) = f_{spat}(s)$, 
-\item varying coefficients: $f_j(z) = x_1f(x_2)$, 
-\item spatially varying effects: $f_j(z) = x_1f_{spat}(s)$ or $f_j(z) = x_1f(x_2, x_3)$, 
-\item random intercepts with cluster index $c$: $f_j(z) = b_c$, 
-\item random slopes with cluster index $c$: $f_j(z) = x \, b_c$. 
+  \item nonlinear effects of continuous covariates: $f_j(z) = f(x)$,
+  \item two-dimensional surfaces: $f_j(z) = f(x_1,x_2)$,
+  \item spatially correlated effects: $f_j(z) = f_{spat}(s)$, 
+  \item varying coefficients: $f_j(z) = x_1f(x_2)$, 
+  \item spatially varying effects: $f_j(z) = x_1f_{spat}(s)$ or $f_j(z) = x_1f(x_2, x_3)$, 
+  \item random intercepts with cluster index $c$: $f_j(z) = b_c$, 
+  \item random slopes with cluster index $c$: $f_j(z) = x \, b_c$. 
 \end{itemize}
 Therefore, STAR models cover a number of well known model classes as special cases, including
 generalized additive models (GAM) \citep{Hastie+Tibshirani:1990}, generalized additive mixed models
@@ -233,7 +241,7 @@ models \citep{Hastie+Tibshirani:1993}, and geographically weighted regression
 
 The unified representation of a STAR predictor arises from the fact that all functions $f_j$ in 
 (\ref{eqn:structadd}) may be specified by a basis function approach, where the vector of function  
-evaluations $\mathbf{f}_j = (f_j(z_{1j}),\ldots,f_j(z_{nj}))$, with $i = 1,\ldots,n$, observations, 
+evaluations $\mathbf{f}_j = (f_j(z_{1}),\ldots,f_j(z_{n}))$, with $i = 1,\ldots,n$, observations, 
 can be written in matrix notation 
 \begin{equation} \label{eqn:matnot}
 \mathbf{f}_j = \mathbf{Z}_j\boldsymbol{\beta}_j,
@@ -247,9 +255,9 @@ Hence, the predictor of (\ref{eqn:structadd}) may be rewritten by
 \end{equation}
 where $\mathbf{X}$ corresponds to the usual design matrix for the fixed effects.
 
-A prior for a function $f_j$ is now defined by specifying a suitable design matrix $Z_j$ and a prior 
-distribution for the vector $\boldsymbol{\beta}_j$ of unknown parameters. The general form of the 
-prior for $\boldsymbol{\beta}_j$ is
+A prior for a function $f_j$ is now defined by specifying a suitable design matrix $\mathbf{Z}_j$ 
+and a prior distribution for the vector $\boldsymbol{\beta}_j$ of unknown parameters. The general 
+form of the prior for $\boldsymbol{\beta}_j$ is
 \begin{equation} \label{eqn:prior}
 p(\boldsymbol{\beta}_j | \tau_j^2) \propto exp \left(- \frac{1}{2\tau_j^2} 
 \boldsymbol{\beta_j}^{\prime}\mathbf{K}_j\boldsymbol{\beta}_j\right),
@@ -265,52 +273,146 @@ $\tau_j^2$, with $a_j = b_j = 0.001$ as a standard option. For empirical Bayes i
 is considered an unknown constant which is determined as a restricted maximum likelihood estimate 
 (REML).
 
-In BayesX, estimation of regression parameters is based on two inferential concepts, Markov chain 
-Monte Carlo simulation techniques corresponding to full Bayesian inference \citep{Brezger+Lang:2006}
-and mixed model methodology corresponding to penalized likelihood or empirical Bayes inference
-\citep{Fahrmeir+Kneib+Lang:2004}. As a third alternative BayesX provides a penalized least squares
-(respectively penalized likelihood) approach for estimating structured additive regression tools. In
-addition, a powerful variable and model selection tool is included. Model choice and estimation of
-the parameters is done simultaneously \citep{Belitz+Lang:2008}.
+In BayesX, estimation of regression parameters is based on two inferential concepts: A fully 
+Bayesian interpretation of structured additive regression models is obtained by specifying prior 
+distributions for all unknown parameters. Estimation can be facilitated using Markov chain Monte 
+Carlo simulation techniques, a general and versatile concept for Bayesian inference. BayesX provides 
+numerically efficient implementations of MCMC schemes for structured additive regression models. 
+Suitable proposal densities have been developed to obtain rapidly mixing, well-behaved sampling 
+schemes without the need for manual tuning. 
+
+The other concept used for estimation is based on mixed model methodology.
+Within BayesX this concept has been extended to structured additive regression models and several 
+types of non-standard regression situations. The general idea is to take advantage of the close 
+connection between penalty concepts and corresponding random effects distributions. The smoothing 
+parameters of the penalties then transform to variance components in the random effects (mixed) 
+model. While the selection of smoothing parameters has been a difficult task for a long time, 
+several estimation procedures for variance components in mixed models are already available since
+the 1970's. The most popular one is restricted maximum likelihood in Gaussian mixed models with 
+marginal likelihood as the non-Gaussian counterpart. While regression coefficients are estimated 
+based on penalized likelihood, restricted maximum likelihood or marginal likelihood estimation forms 
+the basis for the determination of smoothing parameters. From a Bayesian perspective, this yields 
+empirical Bayes/posterior mode estimates for the structured additive regression models. However, 
+estimates can also merely be interpreted as penalized likelihood estimates from a frequentist 
+perspective.
+
+As a third alternative BayesX provides a penalized least squares (respectively penalized likelihood) 
+approach for estimating structured additive regression tools. In addition, a powerful variable and 
+model selection tool is included. Model choice and estimation of the parameters is done 
+simultaneously \citep{Belitz+Lang:2008}. The algorithms are able to
+\begin{itemize}
+  \item decide whether a particular covariate enters the model,
+  \item decide whether a continuous covariate enters the model linearly or nonlinearly,
+  \item decide whether a spatial effect enters the model,
+  \item decide whether a unit- or cluster specific heterogeneity effect enters the model
+  \item select complex interaction effects (two dimensional surfaces, varying coefficient terms)
+  \item select the degree of smoothness of nonlinear covariate, spatial or cluster specific
+    heterogeneity effects.
+\end{itemize}
+Inference is based on penalized likelihood in combination with fast algorithms for selecting 
+relevant covariates and model terms. Different models are compared via various goodness of fit 
+criteria, e.g. AIC, BIC, GCV and 5 or 10 fold cross validation. 
+%\citep{Sakamoto+Ishiguro+Kitagawa:1986}
 
 A thorough (and for most practical purposes sufficient) introduction into the regression models 
 supported by the program is provided in the BayesX methodology manual 
 \citep{Belitz+Brezger+Kneib+Lang:2011}.
 
 
-\section[Implementation in R]{Implementation in \proglang{R}} \label{sec:implementation}
+\section[Installation of BayesX]{Installation of BayesX} \label{sec:installation}
 
 Before STAR models can be fitted with \pkg{BayesX}, the binary command line version of the 
-program needs to be installed. This may be accomplished differently and system specific: one 
-opportunity is to download the \proglang{C++} source-code from 
-\begin{center}
-\url{http://www.stat.uni-muenchen.de/~bayesx}, 
-\end{center}
-and compile the sources with the GNU \proglang{C++} compiler, besides on Windows operating systems, 
-a pre-compiled computing kernel including a Java graphical interface may be installed, which 
-automatically installs the command line version of BayesX, also. Another, and the recommended option 
-on UNIX and Windows systems is to install the binary within \proglang{R} by calling the function 
-\fct{install.bayesx}, which basically executes the described above. For all other platforms and 
-possible problems, please see the help sites on the BayesX web-page. Installing BayesX from 
+program needs to be installed and linked to \proglang{R}. This may be accomplished differently and 
+system specific: One possibility is to install BayesX "by hand", which is described in 
+Subsections~\ref{subsec:wininstall} and \ref{subsec:otherinstall}. Another alternative is the 
+installation from \proglang{R}, as explained in Subsection~\ref{subsec:Rinstall}. The last 
+Subsection~\ref{subsec:linking} describes how to essentially link the command line binary with 
+\proglang{R}. All the necessary files for installation may be found at 
+\url{http://www.stat.uni-muenchen.de/~bayesx}.
+
+
+\subsection[Windows systems]{Windows systems} \label{subsec:wininstall}
+The installation routine 
+\href{http://www.stat.uni-muenchen.de/~bayesx/install/BayesX_windows.exe}{BayesX\_windows.exe}
+may be downloaded from the BayesX homepage and executed. The routine will request all necessary 
+information during the installation process. It is recommended to install BayesX in a directory 
+without spaces in the path name. This will install a pre-compiled computing kernel including a Java 
+graphical interface, which automatically installs the necessary command line version of BayesX for 
+use within the \proglang{R} interface. The binary is named \code{bayesx.exe} and is stored in the 
+\code{commandline} directory of the BayesX installation folder.
+
+
+\subsection[Other systems]{Other systems} \label{subsec:otherinstall}
+The zip archive named 
+\href{http://www.stat.uni-muenchen.de/~bayesx/install/bayesxsource.zip}{\code{bayesxsource.zip}}, 
+containing the \proglang{C++} source code of BayesX, needs to be downloaded and unpacked. If the make 
+facility is available, one can simply type make BayesX in the shell and BayesX will be compiled. 
+Depending on the operating system, some minor modifications of the make file (for example relating 
+to the version of the installed GNU compiler or the location of the readline library) may be 
+necessary. For MAC OS, versions of an adjusted makefile and the main function that have been used
+for a sucessful compilation may be found at the
+\href{http://www.stat.uni-muenchen.de/~bayesx/bayesxfaq.html}{FAQ site}.
+
+
+\subsection[Installing from R - Windows/UNIX]{Installing from \proglang{R} - Windows/UNIX} 
+\label{subsec:Rinstall}
+The recommended option on UNIX and Windows systems is to install the BayesX command line binary 
+within \proglang{R} by calling the function \fct{install.bayesx}. Therefore package \pkg{BayesX}
+needs to be loaded
+<<load-bayesx, echo=TRUE, eval=FALSE>>=
+library("BayesX")
+@
+Installing BayesX from 
 \proglang{R} then ideally only requires running
 <<install-bayesx, echo=TRUE, eval=FALSE>>=
-install.bayesx(inst.dir = NULL, source.dir = NULL)
+install.bayesx(inst.dir = "path/to/installation/directory", 
+  source.dir = NULL)
 @
-if the computer is connected to the internet and the user holds writing permissions for the 
-\pkg{BayesX} package library folders, otherwise a valid installation directory must be supplied (in 
-the majority of cases) as well as the source-code directory, if the source-code is already stored 
-locally and does not need to be downloaded. After the successful installation, the full path to the 
-command line binary must be set either within \proglang{R} directly, using e.g.
-<<install-bayesx, echo=TRUE, eval=FALSE>>=
+where argument \code{inst.dir} must be a valid directory path. If \code{source.dir = NULL}, the BayesX 
+source code will automatically be downloaded from the BayesX homepage, otherwise \code{source.dir} 
+specifies the path where \fct{install.bayesx} may find the Windows installer 
+\href{http://www.stat.uni-muenchen.de/~bayesx/install/BayesX_windows.exe}{BayesX\_windows.exe} or 
+the packed sources 
+\href{http://www.stat.uni-muenchen.de/~bayesx/install/bayesxsource.zip}{\code{bayesxsource.zip}}. 
+Depending on the operating system, function \fct{install.bayesx} will then try to execute either the 
+Windows installation process from Subsection~\ref{subsec:wininstall}, or to compile the sources as 
+described in Subsection~\ref{subsec:otherinstall}.
+
+
+\subsection[Linking the BayesX binary with R]{Linking the BayesX binary with \proglang{R}} 
+\label{subsec:linking}
+After the successful installation/compilation, the full path to the 
+command line binary \textbf{must} be set at the beginning of every new \proglang{R} session by
+<<options-bayesx, echo=TRUE, eval=FALSE>>=
 options(bayesx.bin = "/path/to/BayesX")
-@\setkeys{Gin}{width=0.46\textwidth}
-where \code{"/path/to/BayesX"} on Windows systems may be specified e.g. with \\
-\code{"C:/BayesX/commandline/bayesx.exe"}, or adding the installation directory of the binary to the 
-environment PATH variable is sufficient. Afterwards, the function call
+@
+where \code{"/path/to/BayesX"} is e.g. the path provided to argument \code{inst.dir} of function
+\fct{install.bayesx} with the name of the BayesX binary at last. On Windows platforms the name of 
+the binary is \code{bayesx.exe}, on all other platforms usually \code{BayesX}. Hence, on Windows 
+systems the user may specify e.g.
+<<options-bayesx-windows, echo=TRUE, eval=FALSE>>=
+options(bayesx.bin = "C:/BayesX/commandline/bayesx.exe") 
+@
+However, it is recommended to add the code above in the \proglang{R} startup profile site once. In 
+the majority of cases this site is called \code{Rprofile.site} and is stored in the \code{etc} 
+directory of the running \proglang{R} installation. The path to this directory may be instantly 
+returned by
+<<Rhome-directory, echo=TRUE, eval=TRUE>>=
+R.home(component = "etc")
+@
+Another possibility is to add the installation directory of the binary to the environment PATH 
+variable of the operating system. Both options will automatically link the binary with \proglang{R} 
+for the upcoming sessions. Afterwards, the function call
 <<install-bayesx, echo=TRUE, eval=FALSE>>=
 check.install.bayesx()
 @
 will check if BayesX may be called from \proglang{R}. 
+
+
+\section[Implementation in R]{Implementation in \proglang{R}} \label{sec:implementation}
+
+
+\subsection[Interface functions]{Interface functions} \label{subsec:interface}
  
 The main model-fitting function in \pkg{BayesX} is called \fct{bayesx}, which is basically a 
 collection of functions described in table~\ref{tab:bayesxfun}, 
@@ -402,6 +504,9 @@ within \code{xt}, then
 s(id, bs = "mrf", xt = list(map = SomeMap)) 
 \end{Sinput} 
 constructs the setup for this type of model term.
+
+
+\subsection[Extractor functions and methods]{Extractor functions and methods} \label{subsec:extract}
 
 Past the execution of all computations with the BayesX binary, the model output files are written 
 into the declared output directory, which per default is the temporary directory of the running
