@@ -402,7 +402,7 @@ R.home(component = "etc")
 @
 Another possibility is to add the installation directory of the binary to the environment PATH 
 variable of the operating system. Both options will automatically link the binary with \proglang{R} 
-for the upcoming sessions. Afterwards, the function call
+for the upcoming sessions. Afterwards, if package \pkg{BayesX} is loaded, the function call
 <<install-bayesx, echo=TRUE, eval=FALSE>>=
 check.install.bayesx()
 @
