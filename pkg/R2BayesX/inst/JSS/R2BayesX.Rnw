@@ -97,7 +97,7 @@ data("BeechBnd")
 
 The public domain software BayesX \citep{Brezger+Kneib+Lang:2005} is a standalone program comprising 
 powerful tools for Bayesian and mixed model based inference in complex semiparametric regression 
-models with structured additive predictor (STAR) (see section~\ref{sec:model}). To gain improved 
+models with structured additive predictor (STAR) (see Section~\ref{sec:model}). To gain improved 
 computational performance of the supported models, the algorithms implemented utilize numerically 
 efficient (sparse) matrix architectures and are written in a \proglang{C++} environment. 
 
@@ -108,7 +108,7 @@ may now
 \begin{itemize}
 \item specify and estimate STAR models with BayesX directly from the \proglang{R} console, 
 \item apply a set of extractor functions and methods on BayesX fitted-model objects, e.g. producing 
-  high level graphics of estimated effects and model diagnostic plots or summary statistics,
+  high level graphics of estimated effects, model diagnostic plots, summary statistics and more,
 \item additionally run already existing BayesX program files from \proglang{R},
 \item as well as automatically import BayesX output files into \proglang{R}.
 \end{itemize}
@@ -124,11 +124,11 @@ normal geoadditive regression model with the childhood malnutrition dataset in Z
 model is given by
 \begin{equation*}
 \texttt{stunting}_i = \gamma_0 + f_1(\texttt{agechild}_i) + f_2(\texttt{bmi}_i) + 
-  f_{geo}(\texttt{district}_i) + \varepsilon_i 
+  f_{spat}(\texttt{district}_i) + \varepsilon_i \qquad \varepsilon_i \sim N(0, \sigma^2)
 \end{equation*} 
-with $\varepsilon_i \sim N(0, \sigma^2)$, where functions $f_1$ and $f_2$ are possibly nonlinear and 
-$f_{geo}$ represents a spatially correlated effect. Therefore, the data together with a boundary map 
-file of the districts in Zambia is loaded with    
+where functions $f_1$ and $f_2$ are possibly nonlinear and $f_{spat}$ represents a spatially 
+correlated effect. Therefore, the data together with a boundary map file of the districts in Zambia 
+is loaded with    
 <<data-illustration, echo=TRUE, eval=TRUE, fig=FALSE>>=
 data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
 @
@@ -174,8 +174,8 @@ plot(b, term = "s(agechild)", resid = TRUE, cex = 0.1, rug = FALSE)
 <<plot-illustration-district-image, echo=FALSE, fig=TRUE, width=5.3, height=4>>=
 par(mar = c(4.1, 4, 0.1, 1.8))
 plot(b, term = "s(district)", image = T, grid = 100, at = c(-0.4, 0, 0.4),
-  image.map = ZambiaBnd, outscale = 0.1, linear = FALSE, zlim = c(-1, 1),
-  extrap = TRUE, range = c(-0.5, 0.5), lrange = c(-0.6, 0.6), swap = TRUE)
+  image.map = ZambiaBnd, outscale = 0.1, linear = FALSE, extrap = TRUE,
+  zlim = c(-1, 1), range = c(-0.5, 0.5), lrange = c(-0.6, 0.6), swap = TRUE)
 @
 \setkeys{Gin}{width=0.46\textwidth}
 <<plot-illustration-district-persp, echo=FALSE, fig=TRUE, width=5, height=4>>=
@@ -322,10 +322,10 @@ supported by the program is provided in the BayesX methodology manual
 \section[Installation of BayesX]{Installation of BayesX} \label{sec:installation}
 
 Before STAR models can be fitted with \pkg{BayesX}, the binary command line version of the 
-program needs to be installed and linked to \proglang{R}. This may be accomplished differently and 
-system specific: One possibility is to install BayesX "by hand", which is described in 
-Subsections~\ref{subsec:wininstall} and \ref{subsec:otherinstall}. Another alternative is the 
-installation from \proglang{R}, as explained in Subsection~\ref{subsec:Rinstall}. The last 
+program needs to be installed and linked to \proglang{R}. The installation may be accomplished 
+differently and system specific: One possibility is to install BayesX "by hand", which is described 
+in Subsections~\ref{subsec:wininstall} and \ref{subsec:otherinstall}. Another alternative is the 
+installation directly from \proglang{R}, as explained in Subsection~\ref{subsec:Rinstall}. The last 
 Subsection~\ref{subsec:linking} describes how to essentially link the command line binary with 
 \proglang{R}. All the necessary files for installation may be found at 
 \url{http://www.stat.uni-muenchen.de/~bayesx}.
@@ -382,7 +382,8 @@ described in Subsection~\ref{subsec:otherinstall}.
 \subsection[Linking the BayesX binary with R]{Linking the BayesX binary with \proglang{R}} 
 \label{subsec:linking}
 After the successful installation/compilation, the full path to the 
-command line binary \textbf{must} be set at the beginning of every new \proglang{R} session by
+command line binary \textbf{must} be declared at the beginning of every new \proglang{R} session by 
+setting
 <<options-bayesx, echo=TRUE, eval=FALSE>>=
 options(bayesx.bin = "/path/to/BayesX")
 @
@@ -395,15 +396,16 @@ options(bayesx.bin = "C:/BayesX/commandline/bayesx.exe")
 @
 However, it is recommended to add the code above in the \proglang{R} startup profile site once. In 
 the majority of cases this site is called \code{Rprofile.site} and is stored in the \code{etc} 
-directory of the running \proglang{R} installation. The path to this directory may be instantly 
-returned by
+directory of the running \proglang{R} installation. The path to this directory with its files may be 
+instantly looked up typing
 <<Rhome-directory, echo=TRUE, eval=TRUE>>=
-R.home(component = "etc")
+(etc.dir <- R.home(component = "etc"))
+list.files(etc.dir)
 @
 Another possibility is to add the installation directory of the binary to the environment PATH 
 variable of the operating system. Both options will automatically link the binary with \proglang{R} 
-for the upcoming sessions. Afterwards, if package \pkg{BayesX} is loaded, the function call
-<<install-bayesx, echo=TRUE, eval=FALSE>>=
+for the upcoming sessions. Afterwards, the function call
+<<check-install-bayesx, echo=TRUE, eval=TRUE>>=
 check.install.bayesx()
 @
 will check if BayesX may be called from \proglang{R}. 
@@ -411,44 +413,36 @@ will check if BayesX may be called from \proglang{R}.
 
 \section[Implementation in R]{Implementation in \proglang{R}} \label{sec:implementation}
 
+The sequence of interface functions used during a typical \proglang{R} session may be illustrated 
+with the following: At first, models are specified and estimated with the main model-fitting 
+function, as described in the next subsection. Thereby, the model formulas used may involve a 
+number of special additive terms, which are presented in Subsection~\ref{subsec:addterms}. In 
+Subsection~\ref{subsec:extract}, the multiple extractor functions and methods used for post 
+estimation analysis are briefly explained, before an additional example for handling large datasets
+is given in Subsection~\ref{subsec:largedata}. Note that for all functions presented in this paper, 
+extensive examples of the usage are also provided in the function documentation of package 
+\pkg{BayesX}. 
 
-\subsection[Interface functions]{Interface functions} \label{subsec:interface}
+
+\subsection[Processing BayesX from R]{Processing BayesX from \proglang{R}} 
+\label{subsec:interface}
  
-The main model-fitting function in \pkg{BayesX} is called \fct{bayesx}, which is basically a 
-collection of functions described in table~\ref{tab:bayesxfun}, 
-\begin{table}[h!]
-\begin{center}
-\begin{tabular}{|l|p{10cm}|}
-\hline
-Function                 & Description \\ \hline
-\fct{parse.bayesx.input} & parses \fct{bayesx} input parameters to be send to 
-                           \fct{write.bayesx.input}. \\ \hline
-\fct{write.bayesx.input} & takes an object from \fct{parse.bayesx.input} and translates the input to 
-                           an executable program and, if necessary, a data file, which may be 
-                           processed with BayesX. \\ \hline
-\fct{run.bayesx}         & runs BayesX program files from \proglang{R}. \\ \hline
-\fct{read.bayesx.output} & automatically reads in BayesX estimation output stored in a declared 
-                           output directory by transforming objects to suitable classes, which may 
-                           be printed, summarized and plotted. \\ \hline
-\end{tabular}
-\caption{\label{tab:bayesxfun} Main functions of the interface.}
-\end{center}
-\end{table}
-that are executed one after another, and may also be used independently. 
-The arguments of \fct{bayesx} are
+The main model-fitting function in package \pkg{BayesX} is called \fct{bayesx}. The arguments of 
+\fct{bayesx} are
 \begin{Sinput}
 bayesx(formula, data, weights = NULL, subset = NULL, 
   offset = NULL, na.action = na.fail, contrasts = NULL, 
   control = bayesx.control(...), ...)
 \end{Sinput}
 and mostly represent the standard model frame specifications \citep[see][]{Chambers+Hastie:1992}. 
-The last argument specifies several parameters controlling the processing of the BayesX binary which 
-are arranged by function \fct{bayesx.control}, e.g. the choice between the inferential 
-concepts, set within argument \code{method}, which are currently Markov chain Monte Carlo simulation 
-techniques - \code{"MCMC"}, mixed model based estimation - \code{"REML"} and penalized least squares 
-including model selection - \code{"STEP"}, or the distribution assigned to the response, set with 
-argument \code{family}, which per default is \code{family = "gaussian"}. An overview of all 
-available distributions is given in table~\ref{tab:familiy}.
+The last argument specifies several parameters controlling the processing of the BayesX binary that 
+are arranged by function \fct{bayesx.control}. E.g. the choice of the inferential concept, set 
+within argument \code{method}. Options currently are: Markov chain Monte Carlo simulation - 
+\code{"MCMC"}, mixed model based estimation using restricted maximum likelihood/marginal likelihood 
+- \code{"REML"} and penalized likelihood including model selection - \code{"STEP"}. Moreover, the 
+distribution assigned to the response may be set with argument \code{family}. The default is 
+\code{family = "gaussian"}. An overview of all available distributions for the different methods is 
+given in table~\ref{tab:familiy}.
 \begin{table}[h!]
 \begin{center}
 \begin{tabular}{|l|p{4cm}|p{2.5cm}|l|}
@@ -478,14 +472,54 @@ available distributions is given in table~\ref{tab:familiy}.
 \code{"REML"} and \code{"STEP"} within the \pkg{BayesX} package.}
 \end{center}
 \end{table}
+The object returned with function \fct{bayesx} is of class \code{"bayesx"}, which is supported by
+several functions and methods, such as \fct{plot} or \fct{summary}, shown in 
+Subsection~\ref{subsec:extract}.
+
+For most practical purposes fitting models with function \fct{bayesx} may be sufficient. However, 
+the interfacing functions, that are basically called within \fct{bayesx}, may also be used 
+independently. This may be meaningful for two reason: First, users may want to use already existing
+BayesX program files wherefore a new setup within \proglang{R} is not required, and secondly, there
+might be a need for importing stored BayesX output files into \proglang{R} for further analysis. 
+Therefore, users may call function \fct{run.bayesx}, with arguments
+\begin{Sinput}
+run.bayesx(dir, prg.name = "bayesx.estim.input.prg", 
+  verbose = FALSE, bin = getOption("bayesx.bin"))
+\end{Sinput}
+to run a BayesX program file from a specified directory. Then, model output files may be imported 
+using function \fct{read.bayesx.output}:
+\begin{Sinput}
+read.bayesx.output(dir, model.name = NULL)
+\end{Sinput}
+Furthermore, the function will search for all different BayesX estimated models in the declared 
+directory \code{dir} if argument \code{model.name} is set to \code{NULL}. The returned object is 
+also of class \code{"bayesx"}, i.e. all the functions described in Subsection~\ref{subsec:extract} 
+may be applied.
+  
+
+\subsection[Available additive terms]{Available additive terms} 
+\label{subsec:addterms}
 
 As mentioned in the introduction, package \pkg{BayesX} utilizes function \fct{s} from the \pkg{mgcv} 
 package to build the additive components of a STAR predictor within \proglang{R}'s formula language.
-In addition, unit- or cluster specific unstructured effects may be incorporated into the 
-\code{formula} using the random effects term constructor function \fct{r}. Then, a typical STAR 
-predictor with some response \code{y}, covariate \code{x1} with a possibly nonlinear effect modeled 
-by a P-spline, covariate \code{id} representing some cluster index modeled as random effect and 
-covariate \code{x2} entering linearly, is e.g. formulated by
+The usage of function \fct{s} within \pkg{BayesX} is in principle similar to package \pkg{mgcv}. 
+However, only a reduced list of arguments and options may be used using the interface. The used 
+arguments are
+\begin{Sinput}
+s(..., k = -1, bs = "ps", m = NA, by = NA, xt = NULL)
+\end{Sinput}
+Within \fct{s}, the covariates used for the model term are set with argument \code{...}. \code{k}
+controls the dimension of the basis used for smooth terms. Within argument \code{bs}, the basis
+for the term is chosen, possible options are shown in Table~\ref{tab:terms}. Argument \code{m} is
+only meaningful if \code{bs = "ps"}, which sets the degree of the B-spline basis and the order of 
+the penalty, e.g. may be set to \code{m = c(3, 2)}.
+
+In addition, unit- or cluster specific unstructured effects may be incorporated into the model
+\code{formula} using the random effects term constructor function \fct{r}.
+
+Then, a typical STAR formula with some response \code{y}, covariate \code{x1} with a possibly 
+nonlinear effect modeled by a P-spline, covariate \code{id} representing some cluster index modeled 
+as random effect and covariate \code{x2} entering linearly, is e.g. formulated by
 \begin{Sinput}
 y ~ s(x1, bs = "ps") + r(id) + x2
 \end{Sinput} 
@@ -534,6 +568,9 @@ plot(b, term = "s(agechild)", which = "coef-samples", main = "")
 coefficients of term \code{s(agechild)} in model \code{b}.}
 \end{figure}
 produces plots of coefficient sampling paths as shown in Figure~\ref{fig:illustration-samples}. 
+
+
+\subsection[Large data example]{Large data example} \label{subsec:largedata}
 
 Another noteworthy feature of package \pkg{BayesX} is the internal handling of data. During MCMC
 simulation, BayesX only uses different observations of covariates, since the number of unique
