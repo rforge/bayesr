@@ -319,82 +319,52 @@ supported by the program is provided in the BayesX methodology manual
 \citep{Belitz+Brezger+Kneib+Lang:2011}.
 
 
-\section[Installation of BayesX]{Installation of BayesX} \label{sec:installation}
+\section[Implementation in R]{Implementation in \proglang{R}} \label{sec:implementation}
+
+\subsection[Installing BayesX from R]{Installing BayesX from \proglang{R}} 
 
 Before STAR models can be fitted with \pkg{BayesX}, the binary command line version of the 
 program needs to be installed and linked to \proglang{R}. The installation may be accomplished 
 differently and system specific: One possibility is to install BayesX "by hand", which is described 
-in Subsections~\ref{subsec:wininstall} and \ref{subsec:otherinstall}. Another alternative is the 
-installation directly from \proglang{R}, as explained in Subsection~\ref{subsec:Rinstall}. The last 
-Subsection~\ref{subsec:linking} describes how to essentially link the command line binary with 
-\proglang{R}. All the necessary files for installation may be found at 
-\url{http://www.stat.uni-muenchen.de/~bayesx}.
-
-
-\subsection[Windows systems]{Windows systems} \label{subsec:wininstall}
-The installation routine 
-\href{http://www.stat.uni-muenchen.de/~bayesx/install/BayesX_windows.exe}{BayesX\_windows.exe}
-may be downloaded from the BayesX homepage and executed. The routine will request all necessary 
-information during the installation process. It is recommended to install BayesX in a directory 
-without spaces in the path name. This will install a pre-compiled computing kernel including a Java 
-graphical interface, which automatically installs the necessary command line version of BayesX for 
-use within the \proglang{R} interface. The binary is named \code{bayesx.exe} and is stored in the 
-\code{commandline} directory of the BayesX installation folder.
-
-
-\subsection[Other systems]{Other systems} \label{subsec:otherinstall}
-The zip archive named 
-\href{http://www.stat.uni-muenchen.de/~bayesx/install/bayesxsource.zip}{\code{bayesxsource.zip}}, 
-containing the \proglang{C++} source code of BayesX, needs to be downloaded and unpacked. If the make 
-facility is available, one can simply type make BayesX in the shell and BayesX will be compiled. 
-Depending on the operating system, some minor modifications of the make file (for example relating 
-to the version of the installed GNU compiler or the location of the readline library) may be 
-necessary. For MAC OS, versions of an adjusted makefile and the main function that have been used
-for a sucessful compilation may be found at the
-\href{http://www.stat.uni-muenchen.de/~bayesx/bayesxfaq.html}{FAQ site}.
-
-
-\subsection[Installing from R - Windows/UNIX]{Installing from \proglang{R} - Windows/UNIX} 
-\label{subsec:Rinstall}
-The recommended option on UNIX and Windows systems is to install the BayesX command line binary 
-within \proglang{R} by calling the function \fct{install.bayesx}. Therefore package \pkg{BayesX}
-needs to be loaded
+in the Appendix~\ref{sec:installation}. However, the recommended option on UNIX and Windows systems 
+is to auto - compile/install the BayesX command line binary within \proglang{R} by calling the 
+function \fct{install.bayesx}. Therefore package \pkg{BayesX} needs to be loaded.
 <<load-bayesx, echo=TRUE, eval=FALSE>>=
 library("BayesX")
 @
-Installing BayesX from 
-\proglang{R} then ideally only requires running
+Installing BayesX from \proglang{R} then ideally only requires running
 <<install-bayesx, echo=TRUE, eval=FALSE>>=
 install.bayesx(inst.dir = "path/to/installation/directory", 
   source.dir = NULL)
 @
-where argument \code{inst.dir} must be a valid directory path. If \code{source.dir = NULL}, the BayesX 
-source code will automatically be downloaded from the BayesX homepage, otherwise \code{source.dir} 
-specifies the path where \fct{install.bayesx} may find the Windows installer 
-\href{http://www.stat.uni-muenchen.de/~bayesx/install/BayesX_windows.exe}{BayesX\_windows.exe} or 
-the packed sources 
-\href{http://www.stat.uni-muenchen.de/~bayesx/install/bayesxsource.zip}{\code{bayesxsource.zip}}. 
-Depending on the operating system, function \fct{install.bayesx} will then try to execute either the 
-Windows installation process from Subsection~\ref{subsec:wininstall}, or to compile the sources as 
-described in Subsection~\ref{subsec:otherinstall}.
+where argument \code{inst.dir} must be a path to a valid directory with user writing permissions. 
+If \code{source.dir = NULL}, the necessary installation files will automatically tried to be 
+downloaded from the BayesX homepage, otherwise \code{source.dir} specifies the path where 
+\fct{install.bayesx} may either find the packed sources 
+\href{http://www.stat.uni-muenchen.de/~bayesx/install/bayesxsource.zip}{\code{bayesxsource.zip}},
+or using Windows, the installer
+\href{http://www.stat.uni-muenchen.de/~bayesx/install/BayesX_windows.exe}{BayesX\_windows.exe}. If 
+the corresponding file is available, \fct{install.bayesx} will then attempt to execute the Windows 
+installation process as described in Subsection~\ref{subsec:wininstall}, or to compile the sources 
+as shown in Subsection~\ref{subsec:otherinstall}, respectively.
 
 
 \subsection[Linking the BayesX binary with R]{Linking the BayesX binary with \proglang{R}} 
 \label{subsec:linking}
-After the successful installation/compilation, the full path to the 
+After the successful compilation/installation, the full path to the 
 command line binary \textbf{must} be declared at the beginning of every new \proglang{R} session by 
 setting
 <<options-bayesx, echo=TRUE, eval=FALSE>>=
 options(bayesx.bin = "/path/to/BayesX")
 @
 where \code{"/path/to/BayesX"} is e.g. the path provided to argument \code{inst.dir} of function
-\fct{install.bayesx} with the name of the BayesX binary at last. On Windows platforms the name of 
+\fct{install.bayesx}, with the name of the BayesX binary at last. On Windows platforms the name of 
 the binary is \code{bayesx.exe}, on all other platforms usually \code{BayesX}. Hence, on Windows 
 systems the user may specify e.g.
 <<options-bayesx-windows, echo=TRUE, eval=FALSE>>=
 options(bayesx.bin = "C:/BayesX/commandline/bayesx.exe") 
 @
-However, it is recommended to add the code above in the \proglang{R} startup profile site once. In 
+However, it is suggested to add the code above in the \proglang{R} startup profile site once. In 
 the majority of cases this site is called \code{Rprofile.site} and is stored in the \code{etc} 
 directory of the running \proglang{R} installation. The path to this directory with its files may be 
 instantly looked up typing
@@ -405,23 +375,10 @@ list.files(etc.dir)
 Another possibility is to add the installation directory of the binary to the environment PATH 
 variable of the operating system. Both options will automatically link the binary with \proglang{R} 
 for the upcoming sessions. Afterwards, the function call
-<<check-install-bayesx, echo=TRUE, eval=TRUE>>=
+<<check-install-bayesx, echo=TRUE, eval=FALSE>>=
 check.install.bayesx()
 @
 will check if BayesX may be called from \proglang{R}. 
-
-
-\section[Implementation in R]{Implementation in \proglang{R}} \label{sec:implementation}
-
-The sequence of interface functions used during a typical \proglang{R} session may be illustrated 
-with the following: At first, models are specified and estimated with the main model-fitting 
-function, as described in the next subsection. Thereby, the model formulas used may involve a 
-number of special additive terms, which are presented in Subsection~\ref{subsec:addterms}. In 
-Subsection~\ref{subsec:extract}, the multiple extractor functions and methods used for post 
-estimation analysis are briefly explained, before an additional example for handling large datasets
-is given in Subsection~\ref{subsec:largedata}. Note that for all functions presented in this paper, 
-extensive examples of the usage are also provided in the function documentation of package 
-\pkg{BayesX}. 
 
 
 \subsection[Processing BayesX from R]{Processing BayesX from \proglang{R}} 
@@ -476,12 +433,12 @@ The object returned with function \fct{bayesx} is of class \code{"bayesx"}, whic
 several functions and methods, such as \fct{plot} or \fct{summary}, shown in 
 Subsection~\ref{subsec:extract}.
 
-For most practical purposes fitting models with function \fct{bayesx} may be sufficient. However, 
-the interfacing functions, that are basically called within \fct{bayesx}, may also be used 
-independently. This may be meaningful for two reason: First, users may want to use already existing
+For most practical purposes fitting models with \fct{bayesx} may be sufficient. However, the 
+interfacing functions, that are basically called within \fct{bayesx}, may also be used 
+independently. This may be meaningful for two reason: First, users may want to use already existing 
 BayesX program files wherefore a new setup within \proglang{R} is not required, and secondly, there
-might be a need for importing stored BayesX output files into \proglang{R} for further analysis. 
-Therefore, users may call function \fct{run.bayesx}, with arguments
+might be a need for automated importing of BayesX output files into \proglang{R} for further 
+analysis. Therefore, users may call function \fct{run.bayesx}, with arguments
 \begin{Sinput}
 run.bayesx(dir, prg.name = "bayesx.estim.input.prg", 
   verbose = FALSE, bin = getOption("bayesx.bin"))
@@ -502,7 +459,7 @@ may be applied.
 
 As mentioned in the introduction, package \pkg{BayesX} utilizes function \fct{s} from the \pkg{mgcv} 
 package to build the additive components of a STAR predictor within \proglang{R}'s formula language.
-The usage of function \fct{s} within \pkg{BayesX} is in principle similar to package \pkg{mgcv}. 
+The usage of function \fct{s} in \pkg{BayesX} is in principle similar to package \pkg{mgcv}. 
 However, only a reduced list of arguments and options may be used using the interface. The used 
 arguments are
 \begin{Sinput}
@@ -1104,6 +1061,34 @@ plot(fm2, term = "s(id)", image = TRUE, grid = 200,
 
 \nocite{Kneib+Heinzl+Brezger:2011}
 \bibliography{R2BayesX}
+
+
+\begin{appendix}
+
+
+\section[Installation of BayesX]{Installation of BayesX} \label{sec:installation}
+
+\subsection[Windows systems]{Windows systems} \label{subsec:wininstall}
+The installation routine 
+\href{http://www.stat.uni-muenchen.de/~bayesx/install/BayesX_windows.exe}{BayesX\_windows.exe}
+may be downloaded from the BayesX homepage and executed. The routine will request all necessary 
+information during the installation process. It is recommended to install BayesX in a directory 
+without spaces in the path name. This will install a pre-compiled computing kernel including a Java 
+graphical interface, which automatically installs the necessary command line version of BayesX for 
+use within the \proglang{R} interface. The binary is named \code{bayesx.exe} and is stored in the 
+\code{commandline} directory of the BayesX installation folder.
+
+\subsection[Other systems]{Other systems} \label{subsec:otherinstall}
+The zip archive named 
+\href{http://www.stat.uni-muenchen.de/~bayesx/install/bayesxsource.zip}{\code{bayesxsource.zip}}, 
+containing the \proglang{C++} source code of BayesX, needs to be downloaded and unpacked. If the make 
+facility is available, one can simply type make BayesX in the shell and BayesX will be compiled. 
+Depending on the operating system, some minor modifications of the make file (for example relating 
+to the version of the installed GNU compiler or the location of the readline library) may be 
+necessary. For MAC OS, versions of an adjusted makefile and the main function that have been used
+for a sucessful compilation may be found at the
+\href{http://www.stat.uni-muenchen.de/~bayesx/bayesxfaq.html}{FAQ site}.
+\end{appendix}
 
 
 \end{document}
