@@ -18,7 +18,7 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL, xlev = NULL)
           }
         }
         if(fby) {
-          te$label <- gsub(")", paste(",by=\'", te$by, "\')", sep = ""), te$label)
+          te$label <- gsub(")", paste(",by=", te$by, ")", sep = ""), te$label)
           info <- paste("list(term=\'", te$label, "\',pos=", k, ",by=\'", te$by,
             "\',isFactor=FALSE", ",isFactorBy=", fby, ",isFactorByNames=", fnv, ")", sep = "")
         } else {

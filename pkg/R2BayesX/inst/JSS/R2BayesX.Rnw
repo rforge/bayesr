@@ -351,8 +351,8 @@ as shown in Subsection~\ref{subsec:otherinstall}, respectively.
 \subsection[Linking the BayesX binary with R]{Linking the BayesX binary with \proglang{R}} 
 \label{subsec:linking}
 After the successful compilation/installation, the full path to the 
-command line binary \textbf{must} be declared at the beginning of every new \proglang{R} session by 
-setting
+command line binary \textbf{must} be declared to \proglang{R} at the beginning of every new session 
+by setting
 <<options-bayesx, echo=TRUE, eval=FALSE>>=
 options(bayesx.bin = "/path/to/BayesX")
 @
@@ -363,10 +363,10 @@ systems the user may specify e.g.
 <<options-bayesx-windows, echo=TRUE, eval=FALSE>>=
 options(bayesx.bin = "C:/BayesX/commandline/bayesx.exe") 
 @
-However, it is suggested to add the code above in the \proglang{R} startup profile site once. In 
-the majority of cases this site is called \code{Rprofile.site} and is stored in the \code{etc} 
-directory of the running \proglang{R} installation. The path to this directory with its files may be 
-instantly looked up typing
+To avoid setting the path to the binary each time \proglang{R} is starting, it is suggested to add 
+the code above to the \proglang{R} startup profile site once. In the majority of cases this site is 
+called \code{Rprofile.site} and is stored in the \code{etc} directory of the running \proglang{R} 
+installation. The path to this directory with its files may be instantly looked up typing
 <<Rhome-directory, echo=TRUE, eval=TRUE>>=
 (etc.dir <- R.home(component = "etc"))
 list.files(etc.dir)
@@ -430,10 +430,12 @@ given in table~\ref{tab:familiy}.
 \end{table}
 The returned fitted-model object is a list of class \code{"bayesx"}, which is supported by several 
 functions and methods, such as \fct{plot} or \fct{summary}, shown in 
-Subsection~\ref{subsec:extract}. 
+Subsection~\ref{subsec:extract}. Note that the default specification for argument \code{contrasts}
+using factors is function \fct{contr.sum}. This allows for effect coding of covariates. As a
+consequence, the sampling and estimation performance of BayesX is improved.
 
 For most practical purposes fitting models with \fct{bayesx} may be sufficient. However, the 
-interfacing functions, that are basically called within \fct{bayesx}, may also be used 
+interfacing functions that are basically called within \fct{bayesx}, may also be used 
 independently. This may be meaningful for two reason: First, users may want to use already existing 
 BayesX program files wherefore a new setup within \proglang{R} is not required, and secondly, there
 might be a need for automated importing of BayesX output files into \proglang{R} for further 
@@ -459,41 +461,31 @@ may be applied.
 As mentioned in the introduction, package \pkg{BayesX} utilizes function \fct{s} from the \pkg{mgcv} 
 package to build the additive components of a STAR predictor within \proglang{R}'s formula language.
 The usage of function \fct{s} in \pkg{BayesX} is in principle similar to package \pkg{mgcv}. 
-However, only a reduced list of arguments and options may be used using the interface. The used 
-arguments are
+However, only a reduced list of arguments and options is available using the interface. The 
+implemented arguments are
 \begin{Sinput}
 s(..., k = -1, bs = "ps", m = NA, by = NA, xt = NULL)
 \end{Sinput}
-Within \fct{s}, the covariates used for the model term are set with argument \code{...}. \code{k}
-controls the dimension of the basis used for smooth terms. Within argument \code{bs}, the basis
-for the term is chosen, possible options are shown in Table~\ref{tab:terms}. Argument \code{m} is
-only meaningful if \code{bs = "ps"}, which sets the degree of the B-spline basis and the order of 
-the penalty, e.g. may be set to \code{m = c(3, 2)}.
+Within \fct{s}, the covariates used for the model term are set with the dots \code{...} argument. 
+\code{k} controls the dimension of the basis used for smooth terms. Argument \code{bs} choses the 
+basis/type of the term, possible options are shown in Table~\ref{tab:terms}. Setting argument 
+\code{m} is only meaningful if \code{bs = "ps"}, which controls the degree of the B-spline basis 
+functions and the order of the difference penalty, e.g. \code{m} may be set to \code{m = c(3, 2)}. 
+A numeric or a factor variable may be provided to argument \code{by} to estimate varying effects of
+covariates. Argument \code{xt} is used to specify special controlling parameters or additional 
+geographical information for the model term. The argument must be a named list, e.g. to set the 
+hyperpriors $a$ and $b$ for the variance parameter for a P-spline term, the user may type 
+\code{xt = list(a = 0.0001, b = 0.0001)}. Information about all possible extra arguments for a 
+particular term can be looked up using function \fct{bayesx.term.options}. \
 
-In addition, unit- or cluster specific unstructured effects may be incorporated into the model
-\code{formula} using the random effects term constructor function \fct{r}.
-
-Then, a typical STAR formula with some response \code{y}, covariate \code{x1} with a possibly 
-nonlinear effect modeled by a P-spline, covariate \code{id} representing some cluster index modeled 
-as random effect and covariate \code{x2} entering linearly, is e.g. formulated by
+In addition to \fct{s}, unit- or cluster specific unstructured effects may be incorporated into the 
+model \code{formula} using the random effects term constructor function \fct{r}. The arguments of 
+\fct{r} are 
 \begin{Sinput}
-y ~ s(x1, bs = "ps") + r(id) + x2
-\end{Sinput} 
-where argument \code{bs} of function \fct{s} specifies the smooth bases, the type of term that 
-should enter the \code{formula}. A list of the implemented model terms in \pkg{BayesX} is provided 
-in table~\ref{tab:terms}.
-Setting additional arguments for a model term is generally restricted to argument \code{xt} 
-within function \fct{s} and \fct{r}, i.e. \code{xt} must be a named \fct{list} including these 
-parameters, where all possibilities for each \code{bs} type may be looked up calling function 
-\fct{bayesx.term.options}. As an example, using \code{bs = "mrf"} to estimate a spatially correlated
-effect with Markov random fields with some location identification covariate \code{id}, requires an 
-additional map boundary (\fct{read.bnd}) or graph file (\fct{read.gra}) for the calculation of a 
-neighborhood-matrix to guarantee smooth estimates over adjacent regions, which must be provided 
-within \code{xt}, then 
-\begin{Sinput}
-s(id, bs = "mrf", xt = list(map = SomeMap)) 
-\end{Sinput} 
-constructs the setup for this type of model term.
+r(id, by = NA, xt = NULL)
+\end{Sinput}
+and are used in the same fashion as described for function \fct{s}, where argument \code{id} is the 
+unit or cluster identification covariate the random effects should be estimated for.
 
 
 \subsection[Extractor functions and methods]{Extractor functions and methods} \label{subsec:extract}
@@ -594,16 +586,18 @@ of memory size.
 \code{"kr"} & kriging with stationary Gaussian random fields. \\ \hline
 \code{"gk"} & geokriging with stationary Gaussian random fields: estimates a stationary Gaussian 
               random field based on the centroids of a map object provided in boundary format within
-              the \code{xt} argument of function \fct{s}. \\ \hline
+              the \code{xt} argument of function \fct{s}, e.g. 
+              \code{xt = list(map = MapBnd)}. \\ \hline
 \code{"gs"} & geosplines based on two-dimensional P-splines with first order random walk penalty: 
               defines a two-dimensional P-spline for the spatial covariate region with a 
               two-dimensional first order random walk penalty for the parameters of the spline. 
               Estimation is based on the coordinates of the centroids of the regions provided by a 
-              map object in in boundary format within the \code{xt} argument of function \fct{s}.\\ 
-              \hline
+              map object in in boundary format within the \code{xt} argument of function \fct{s}, 
+              e.g. \code{xt = list(map = MapBnd)}. \\ \hline
 \code{"mrf"} & Markov random fields: defines a Markov random field prior for a spatial covariate, 
                where geographical informations are provided by a map object in boundary or graph 
-               file format within the \code{xt} argument of function \fct{s}.\\ \hline
+               file format within the \code{xt} argument of function \fct{s}, e.g. 
+               \code{xt = list(map = MapBndorGra)}. \\ \hline
 \code{"ps"} & P-spline with first or second order difference penalty. \\ \hline
 \code{"rw1"}, \code{"rw2"} & zero degree P-splines: defines a zero degree P-spline with first or 
                             second order difference penalty. A zero degree P-spline typically 
@@ -653,6 +647,7 @@ Function & Description \\ \hline
 \fct{print} & simple printed display of the initial call and some additional information of the
               fitted model. \\ \hline
 \fct{residuals} & extract model or partial residuals for a select term. \\ \hline
+\fct{samples} & extract samples of parameters from MCMC simulation. \\ \hline
 \fct{summary} & returns an object of class \code{"summary.bayesx"} containing the relevant summary 
                 statistics (which has a \fct{print} method). \\ \hline
 \fct{terms} & extract terms of model components. \\ \hline

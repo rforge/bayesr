@@ -97,33 +97,22 @@ function(object)
       dat <- model.matrix(as.formula(paste(tf[1L], tf[3L])), 
         data = object$data, contrasts.arg = object$contrasts)
     } else {
-      dat <- model.matrix(object$formula, data = object$data,
+      objterms <- terms(object$formula, keep.order = TRUE)
+      dat <- model.matrix(objterms, data = object$data,
         contrasts.arg = object$contrasts)
     }
     nd <- rmf(names(object$data))
     names(object$data) <- nd
     colnames(dat) <- rmf(colnames(dat))
-    intcpt1 <- any(grepl("(Intercept)", colnames(dat)))
     for(sf in nd)
       if(is.factor(object$data[[sf]])) {
-        if(intcpt1) {
-          ff <- eval(parse(text = paste("model.matrix(~ ", sf,")", sep = "")), 
-            envir = object$data)
-          lf <- colnames(ff)[2L:ncol(ff)]
-        } else {
-          ff <- eval(parse(text = paste("model.matrix(~ -1 + ", sf,")", sep = "")), 
-            envir = object$data)
-          lf <- colnames(ff)
-        }
+        ff <- as.data.frame(eval(parse(text = paste("model.matrix(~ -1 + ", sf,")", 
+          sep = "")), envir = object$data))
+        lf <- colnames(ff)[2L:ncol(ff)]
         vars <- colnames(dat)
         if(!all(lf %in% vars)) {
           mf <- lf[!lf %in% vars]
-          lf <- strsplit(mf, sf)
-          dropvars <- c(dropvars, mf)
-          for(k in 1:length(lf)) {
-            dat <- cbind(dat, (lf[[k]][length(lf[[k]])] == ff) * 1)
-            colnames(dat)[ncol(dat)] <- mf[k]
-          }
+          dat <- cbind(dat, as.matrix(ff[mf]))
         }
       }
     nc <- ncol(dat)

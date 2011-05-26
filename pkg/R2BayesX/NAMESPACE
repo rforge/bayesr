@@ -26,7 +26,8 @@ export(
   x2int,
   plot.bayesx,
   GCV,
-  DIC 
+  DIC,
+  samples 
 )
 
 S3method(c, bayesx)

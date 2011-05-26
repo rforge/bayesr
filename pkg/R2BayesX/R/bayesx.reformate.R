@@ -30,6 +30,9 @@ function(x)
       if(eattrn[i] != "dim" && eattrn[i] != "dimnames")
         attr(e, eattrn[i]) <- attr(x$fixed.effects, eattrn[i])
     rownames(e) <- rownames(x$fixed.effects)
+    if(!is.null(attr(e, "sample")))
+      if(ncol(attr(e, "sample")) == length(rownames(e)))
+        colnames(attr(e, "sample")) <- rownames(e)
     x$fixed.effects <- e
   }
   if(!is.null(x$effects) && length(x$effects) > 0L) {

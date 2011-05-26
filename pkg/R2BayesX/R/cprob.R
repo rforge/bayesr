@@ -1,6 +1,8 @@
 cprob <-
 function(object, model = NULL, term = NULL, ...)
 {
+  if(is.null(term))
+    term <- 1L
   object <- get.model(object, model)
   if(length(object) > 1L) {
     rval <- list()
