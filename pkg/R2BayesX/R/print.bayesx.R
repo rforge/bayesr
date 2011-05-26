@@ -1,9 +1,10 @@
 print.bayesx <-
-function(x, which = NULL, ...)
+function(x, model = NULL, ...)
 {
+  x <- get.model(x, model)
   n <- length(x)
-  if(!is.null(which)) {
-    start <- stop <- which
+  if(!is.null(model)) {
+    start <- stop <- model
     n <- 1L
   } else {
     start <- 1L

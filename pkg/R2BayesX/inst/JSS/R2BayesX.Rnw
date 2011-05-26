@@ -200,8 +200,7 @@ continuous time multi-state models, which may be adopted in the same manner.
 
 To present the extensive capabilities of the software in more detail, the next section briefly 
 discusses the methodological background of regression models with a structured additive predictor, 
-before a description of the necessary installation process and the implementation is provided in 
-Section~\ref{sec:installation} and \ref{sec:implementation} respectively. In 
+before a description of the implementation is given in Section~\ref{sec:implementation}. In 
 Section~\ref{sec:illustrations}, the interface usability is further illustrated with the childhood 
 malnutrition data of Zambia as well as on a dataset on forest health from Germany.
 
@@ -429,9 +428,9 @@ given in table~\ref{tab:familiy}.
 \code{"REML"} and \code{"STEP"} within the \pkg{BayesX} package.}
 \end{center}
 \end{table}
-The object returned with function \fct{bayesx} is of class \code{"bayesx"}, which is supported by
-several functions and methods, such as \fct{plot} or \fct{summary}, shown in 
-Subsection~\ref{subsec:extract}.
+The returned fitted-model object is a list of class \code{"bayesx"}, which is supported by several 
+functions and methods, such as \fct{plot} or \fct{summary}, shown in 
+Subsection~\ref{subsec:extract}. 
 
 For most practical purposes fitting models with \fct{bayesx} may be sufficient. However, the 
 interfacing functions, that are basically called within \fct{bayesx}, may also be used 

@@ -25,7 +25,8 @@ export(
   write.bayesx.input,
   x2int,
   plot.bayesx,
-  GCV 
+  GCV,
+  DIC 
 )
 
 S3method(c, bayesx)

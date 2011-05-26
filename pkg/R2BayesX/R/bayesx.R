@@ -73,7 +73,7 @@ function(formula, data, weights = NULL, subset = NULL,
   if(!is.null(res.h))
     return(res.h)
   else {
-    eval(parse(text=paste("res <- list(", res$bayesx.prg$model.name, "= res)")))
+    # eval(parse(text=paste("res <- list(", res$bayesx.prg$model.name, "= res)")))
     class(res) <- "bayesx"
     return(res)
   }
