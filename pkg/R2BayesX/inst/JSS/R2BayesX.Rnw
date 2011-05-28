@@ -36,14 +36,14 @@ nonlinear effects of covariates: They contain the well established frameworks of
 models (GLM) and generalized additive models (GAM) as special cases but also allow a wider class of 
 effects, e.g., for geographical or spatio-temporal data. This allows for the specification of 
 complex and realistic models that can typically be conveniently estimated using Bayesian inference 
-based on modern Markov chain Monte Carlo (MCMC) simulation techniques or a mixed model 
-representation. Although there is already a quite extensive existing toolset in \proglang{R} 
+based on modern Markov chain Monte Carlo (MCMC) simulation techniques or with an equivalent mixed 
+model representation. Although there is already a quite extensive existing toolset in \proglang{R} 
 supporting GLMs and GAMs, many of the more complex models from the STAR class, especially those 
 utilizing Bayesian inference, are currently not easily available. They are, however, provided in the 
 standalone software package BayesX: a very comprehensive simulation based regression toolbox
 written in open-source \proglang{C++} code. BayesX not only covers models for responses from 
 univariate exponential families, but also models from non-standard regression situations such as 
-models for categorical responses with either ordered or unordered categories, continuous time 
+models for multi-categorical responses with either ordered or unordered categories, continuous time 
 survival data, or continuous time multi-state models. Since there has been increasing interest in an 
 \proglang{R} interface to BayesX, the already existing CRAN package \pkg{BayesX}, which previously 
 provided only functions for exploring estimation results, is now extended to a full interactive
@@ -101,6 +101,10 @@ models with structured additive predictor (STAR) (see Section~\ref{sec:model}). 
 computational performance of the supported models, the algorithms implemented utilize numerically 
 efficient (sparse) matrix architectures and are written in a \proglang{C++} environment. 
 
+Besides exponential family regression, BayesX also supports non-standard regression situations such 
+as regression for multi-categorical responses, hazard regression for continuous survival times, and 
+continuous time multi-state models, which may be adopted in the same manner.
+
 In this article, we describe the full interactive \proglang{R} \citep{R} interface to BayesX, which
 has recently been added to the existing Comprehensive \proglang{R} Archive Network (CRAN) package 
 \pkg{BayesX} \citep{Kneib+Heinzl+Brezger:2011}. Within the new functionality of the package, users 
@@ -110,7 +114,7 @@ may now
 \item apply a set of extractor functions and methods on BayesX fitted-model objects, e.g. producing 
   high level graphics of estimated effects, model diagnostic plots, summary statistics and more,
 \item additionally run already existing BayesX program files from \proglang{R},
-\item as well as automatically import BayesX output files into \proglang{R}.
+\item automatically import BayesX output files into \proglang{R}.
 \end{itemize}
 
 Furthermore, the models supported by BayesX are conveniently specified using \proglang{R}'s formula 
@@ -120,27 +124,29 @@ BayesX interpretable commands (see Section~\ref{sec:implementation}).
 
 To give an introductory example of the various features of the interface, we estimate a Bayesian 
 normal geoadditive regression model with the childhood malnutrition dataset in Zambia
-(see Section~\ref{subsec:zambia}) using Markov chain Monte Carlo (MCMC) simulation. The 
-model is given by
+(see Section~\ref{subsec:zambia}) using Markov chain Monte Carlo (MCMC) simulation. In this 
+analysis, the main interest is on modeling the dependence of stunting of newborn children on 
+covariates including the age of the child, the body mass index of the mother and the district the 
+child lives in. The model is given by
 \begin{equation*}
 \texttt{stunting}_i = \gamma_0 + f_1(\texttt{agechild}_i) + f_2(\texttt{bmi}_i) + 
   f_{spat}(\texttt{district}_i) + \varepsilon_i \qquad \varepsilon_i \sim N(0, \sigma^2)
 \end{equation*} 
-where functions $f_1$ and $f_2$ are possibly nonlinear and $f_{spat}$ represents a spatially 
-correlated effect. Therefore, the data together with a boundary map file of the districts in Zambia 
-is loaded with    
+where functions $f_1$ and $f_2$ of continuous covariates \code{agechild} and \code{bmi} have 
+possible nonlinear effects on \code{stunting} and are therefore modeled nonparametrically using 
+P-splines. Here, the spatially correlated effect $f_{spat}$ of locational covariate \code{district} 
+is modeled by a two-dimensional P-spline based on centroid coordinates (geospline) of the districts 
+in Zambia. To estimate the model with BayesX from \proglang{R}, the data together with a boundary 
+map file of the districts in Zambia is loaded with    
 <<data-illustration, echo=TRUE, eval=TRUE, fig=FALSE>>=
 data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
 @
-and the model formula specified by
+and the model formula simply specified by
 <<formula-illustration, echo=TRUE, eval=TRUE, fig=FALSE>>=
 mf <- stunting ~ s(agechild, bs = "ps") + s(bmi, bs = "ps") + 
   s(district, bs = "gs", xt = list(map = ZambiaBnd))
 @
-Here, the possibly nonlinear effects of covariates \code{agechild} and \code{bmi} on \code{stunting}
-are modeled with P-splines and the spatial effect by a geospline term using the centroid $x$- and 
-$y$-coordinates of the district polygons in object \code{ZambiaBnd}. The model is then fitted with 
-the function call 
+Finally, the model is fitted with the main model-fitting function \fct{bayesx}
 <<fit-illustration, echo=TRUE, eval=FALSE, fig=FALSE>>=
 b <- bayesx(mf, family = "gaussian", method = "MCMC", 
   data = ZambiaNutrition)
@@ -153,10 +159,10 @@ load("illustration-model.rda")
 save(b, file = "illustration-model.rda")
 }
 @
-After BayesX successfully finished processing several base \proglang{R} functions and methods, such 
-as \fct{summary}, \fct{plot}, \fct{fitted} and more, may be applied on the fitted-model object 
-\code{b}. In Figure~\ref{fig:illustration}, some visualization examples of the estimated effects 
-produced by the versatile implemented plotting functions are shown.
+After successful processing, several base \proglang{R} functions and methods, such as \fct{summary}, 
+\fct{plot}, \fct{fitted}, may be applied on the fitted-model object \code{b}. In 
+Figure~\ref{fig:illustration}, some visualization examples of the estimated effects produced by the 
+versatile implemented plotting functions are shown.
 \begin{figure}[t!]
 \setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
@@ -194,15 +200,11 @@ together with a color legend, the lower right panel draws the same effect with a
 a slightly rotated angle.}
 \end{figure}
 
-Besides exponential family regression, BayesX also supports non-standard regression situations such 
-as regression for categorical responses, hazard regression for continuous survival times, and 
-continuous time multi-state models, which may be adopted in the same manner.
-
-To present the extensive capabilities of the software in more detail, the next section briefly 
-discusses the methodological background of regression models with a structured additive predictor, 
-before a description of the implementation is given in Section~\ref{sec:implementation}. In 
-Section~\ref{sec:illustrations}, the interface usability is further illustrated with the childhood 
-malnutrition data of Zambia as well as on a dataset on forest health from Germany.
+The reminder of this paper is as follows. The next section briefly discusses the methodological 
+background of regression models with a structured additive predictor, before a description of the 
+implementation is given in Section~\ref{sec:implementation}. In Section~\ref{sec:illustrations}, the 
+interface usability is further illustrated with the childhood malnutrition data of Zambia and a 
+dataset on forest health.
 
 
 \section{STAR models} \label{sec:model} 
@@ -215,13 +217,13 @@ $\mu = E(y | \mathbf{x}, \boldsymbol{\gamma})$ linked to a linear predictor $\et
 \begin{equation} \label{eqn:glm}
 \mu = h(\eta) \qquad \eta = \mathbf{x}^{\prime}\boldsymbol{\gamma},
 \end{equation}
-where $h$ is a known link function and $\boldsymbol{\gamma}$ are unknown regression parameters. For 
+where $h$ is a known link function and $\boldsymbol{\gamma}$ are unknown regression parameters. In 
 STAR models \citep{Fahrmeir+Kneib+Lang:2004, Brezger+Lang:2006}, the linear predictor is replaced 
 by a more general and flexible, structured additive predictor
 \begin{equation} \label{eqn:structadd}
 \eta = f_1(z) + \ldots + f_p(z) + \mathbf{x}^{\prime}\boldsymbol{\gamma},
 \end{equation}
-where covariates $z$ are of generic type and dimension, and $f_j$ are possibly smooth functions 
+where $z$ represents a generic vector of all covariates, and $f_j$ are possibly smooth functions 
 comprising effects (and combination of effects) as e.g. given by             
 \begin{itemize}
   \item nonlinear effects of continuous covariates: $f_j(z) = f(x)$,
@@ -229,8 +231,8 @@ comprising effects (and combination of effects) as e.g. given by
   \item spatially correlated effects: $f_j(z) = f_{spat}(s)$, 
   \item varying coefficients: $f_j(z) = x_1f(x_2)$, 
   \item spatially varying effects: $f_j(z) = x_1f_{spat}(s)$ or $f_j(z) = x_1f(x_2, x_3)$, 
-  \item random intercepts with cluster index $c$: $f_j(z) = b_c$, 
-  \item random slopes with cluster index $c$: $f_j(z) = x \, b_c$. 
+  \item random intercepts with cluster index $c$: $f_j(z) = \beta_c$, 
+  \item random slopes with cluster index $c$: $f_j(z) = x \, \beta_c$. 
 \end{itemize}
 Therefore, STAR models cover a number of well known model classes as special cases, including
 generalized additive models (GAM) \citep{Hastie+Tibshirani:1990}, generalized additive mixed models
@@ -252,16 +254,14 @@ Hence, the predictor of (\ref{eqn:structadd}) may be rewritten by
 \boldsymbol{\eta} = \mathbf{Z}_1\boldsymbol{\beta}_1 + \ldots \mathbf{Z}_p\boldsymbol{\beta}_p 
 + \mathbf{X}\boldsymbol{\gamma},
 \end{equation}
-where $\mathbf{X}$ corresponds to the usual design matrix for the fixed effects.
+where $\mathbf{X}$ corresponds to the usual design matrix for the linear effects.
 
-A prior for a function $f_j$ is now defined by specifying a suitable design matrix $\mathbf{Z}_j$ 
-and a prior distribution for the vector $\boldsymbol{\beta}_j$ of unknown parameters. The general 
-form of the prior for $\boldsymbol{\beta}_j$ is
+The general form of the prior for $\boldsymbol{\beta}_j$ is
 \begin{equation} \label{eqn:prior}
 p(\boldsymbol{\beta}_j | \tau_j^2) \propto exp \left(- \frac{1}{2\tau_j^2} 
 \boldsymbol{\beta_j}^{\prime}\mathbf{K}_j\boldsymbol{\beta}_j\right),
 \end{equation}
-with $\mathbf{K}_j$ as a quadratic penalty matrix that shrinks parameters towards zero or penalizes 
+where $\mathbf{K}_j$ is a quadratic penalty matrix that shrinks parameters towards zero or penalizes 
 too abrupt jumps between neighboring parameters. In most cases $K_j$ will be rank deficient and the 
 prior for $\boldsymbol{\beta}_j$ is partially improper.
 
@@ -269,8 +269,7 @@ The variance parameter $\tau_j^2$ is equivalent to the inverse smoothing paramet
 approach and controls the trade off between flexibility and smoothness. For full Bayesian inference,
 weakly informative inverse Gamma hyperpriors $\tau_j^2 \sim IG(a_j, b_j)$ are assigned to 
 $\tau_j^2$, with $a_j = b_j = 0.001$ as a standard option. For empirical Bayes inference, $\tau_j^2$ 
-is considered an unknown constant which is determined as a restricted maximum likelihood estimate 
-(REML).
+is considered an unknown constant which is determined via restricted maximum likelihood (REML).
 
 In BayesX, estimation of regression parameters is based on two inferential concepts: A fully 
 Bayesian interpretation of structured additive regression models is obtained by specifying prior 

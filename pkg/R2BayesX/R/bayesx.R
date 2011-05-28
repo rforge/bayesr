@@ -8,6 +8,12 @@ function(formula, data, weights = NULL, subset = NULL,
   if(is.null(ok))
     stop("please install BayesX or verify bin path, also see function install.bayesx()")
 
+  args <- list(...)
+  if(!is.null(args$family) || !is.null(args$method)) {
+    if(control$family != args$family || control$method != args$method)
+      control <- do.call("bayesx.control", args)
+  }    
+
   res <- list()
   res$formula <- formula
   weights <- deparse(substitute(weights), backtick = TRUE, width.cutoff = 500L)

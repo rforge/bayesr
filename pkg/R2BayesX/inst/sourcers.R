@@ -1,8 +1,8 @@
-dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
+dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-b <- bayesx(y ~ s(x1, bs = "ps", by = id), 
-  dir.rm = FALSE, iter = 1200, burnin = 200, step = 2)
+b <- bayesx(y ~ s(x, bs = "ps"), family = "poisson", 
+  control = bayesx.control(), data = dat)
 
 
 
