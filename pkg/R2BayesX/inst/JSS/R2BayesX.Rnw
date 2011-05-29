@@ -120,7 +120,7 @@ may now
 Furthermore, the models supported by BayesX are conveniently specified using \proglang{R}'s formula 
 language definition, wherefore the special model term constructor functions \fct{s} 
 \citep{Wood:2011} and \fct{r} facilitate a consistent way to translate \proglang{R} syntax into 
-BayesX interpretable commands (see Section~\ref{sec:implementation}). 
+BayesX interpretable commands (see Section~\ref{sec:overview}). 
 
 To give an introductory example of the various features of the interface, we estimate a Bayesian 
 normal geoadditive regression model with the childhood malnutrition dataset in Zambia
@@ -159,10 +159,8 @@ load("illustration-model.rda")
 save(b, file = "illustration-model.rda")
 }
 @
-After successful processing, several base \proglang{R} functions and methods, such as \fct{summary}, 
-\fct{plot}, \fct{fitted}, may be applied on the fitted-model object \code{b}. In 
-Figure~\ref{fig:illustration}, some visualization examples of the estimated effects produced by the 
-versatile implemented plotting functions are shown.
+In Figure~\ref{fig:illustration}, some visualization examples of the estimated effects produced by 
+the versatile implemented plotting functions are shown.
 \begin{figure}[t!]
 \setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
@@ -202,7 +200,7 @@ a slightly rotated angle.}
 
 The reminder of this paper is as follows. The next section briefly discusses the methodological 
 background of regression models with a structured additive predictor, before a description of the 
-implementation is given in Section~\ref{sec:implementation}. In Section~\ref{sec:illustrations}, the 
+implementation is given in Section~\ref{sec:overview}. In Section~\ref{sec:illustrations}, the 
 interface usability is further illustrated with the childhood malnutrition data of Zambia and a 
 dataset on forest health.
 
@@ -232,7 +230,7 @@ comprising effects (and combination of effects) as e.g. given by
   \item varying coefficients: $f_j(z) = x_1f(x_2)$, 
   \item spatially varying effects: $f_j(z) = x_1f_{spat}(s)$ or $f_j(z) = x_1f(x_2, x_3)$, 
   \item random intercepts with cluster index $c$: $f_j(z) = \beta_c$, 
-  \item random slopes with cluster index $c$: $f_j(z) = x \, \beta_c$. 
+  \item random slopes with cluster index $c$: $f_j(z) = x\beta_c$. 
 \end{itemize}
 Therefore, STAR models cover a number of well known model classes as special cases, including
 generalized additive models (GAM) \citep{Hastie+Tibshirani:1990}, generalized additive mixed models
@@ -271,14 +269,15 @@ weakly informative inverse Gamma hyperpriors $\tau_j^2 \sim IG(a_j, b_j)$ are as
 $\tau_j^2$, with $a_j = b_j = 0.001$ as a standard option. For empirical Bayes inference, $\tau_j^2$ 
 is considered an unknown constant which is determined via restricted maximum likelihood (REML).
 
-In BayesX, estimation of regression parameters is based on two inferential concepts: A fully 
-Bayesian interpretation of structured additive regression models is obtained by specifying prior 
-distributions for all unknown parameters. Estimation can be facilitated using Markov chain Monte 
-Carlo simulation techniques, a general and versatile concept for Bayesian inference. BayesX provides 
-numerically efficient implementations of MCMC schemes for structured additive regression models. 
-Suitable proposal densities have been developed to obtain rapidly mixing, well-behaved sampling 
-schemes without the need for manual tuning. 
-
+In BayesX, estimation of regression parameters is based on three inferential concepts: \bigskip \\
+\textit{Full Bayesian inference via MCMC} \medskip \\
+A fully Bayesian interpretation of structured additive regression models is obtained by specifying 
+prior distributions for all unknown parameters. Estimation can be facilitated using Markov chain 
+Monte Carlo simulation techniques. BayesX provides numerically efficient implementations of MCMC 
+schemes for structured additive regression models. Suitable proposal densities have been developed 
+to obtain rapidly mixing, well-behaved sampling schemes without the need for manual tuning. \bigskip 
+\\
+\textit{Inference via a mixed model representation} \medskip \\
 The other concept used for estimation is based on mixed model methodology.
 Within BayesX this concept has been extended to structured additive regression models and several 
 types of non-standard regression situations. The general idea is to take advantage of the close 
@@ -292,12 +291,12 @@ based on penalized likelihood, restricted maximum likelihood or marginal likelih
 the basis for the determination of smoothing parameters. From a Bayesian perspective, this yields 
 empirical Bayes/posterior mode estimates for the structured additive regression models. However, 
 estimates can also merely be interpreted as penalized likelihood estimates from a frequentist 
-perspective.
-
+perspective. \bigskip \\
+\textit{Penalized likelihood with variable selection} \medskip \\
 As a third alternative BayesX provides a penalized least squares (respectively penalized likelihood) 
 approach for estimating structured additive regression tools. In addition, a powerful variable and 
 model selection tool is included. Model choice and estimation of the parameters is done 
-simultaneously \citep{Belitz+Lang:2008}. The algorithms are able to
+simultaneously. The algorithms are able to
 \begin{itemize}
   \item decide whether a particular covariate enters the model,
   \item decide whether a continuous covariate enters the model linearly or nonlinearly,
@@ -312,21 +311,21 @@ relevant covariates and model terms. Different models are compared via various g
 criteria, e.g. AIC, BIC, GCV and 5 or 10 fold cross validation. 
 %\citep{Sakamoto+Ishiguro+Kitagawa:1986}
 
-A thorough (and for most practical purposes sufficient) introduction into the regression models 
-supported by the program is provided in the BayesX methodology manual 
-\citep{Belitz+Brezger+Kneib+Lang:2011}.
+The article covering MCMC methodology is \citet{Brezger+Lang:2006}, inference based on a mixed model
+representation is described in \citet{Fahrmeir+Kneib+Lang:2004}, estimation procedures including
+variable selection in \citet{Belitz+Lang:2008}. A thorough (and for most practical purposes 
+sufficient) introduction into the regression models supported by the program is provided in the 
+BayesX methodology manual \citep{Belitz+Brezger+Kneib+Lang:2011}. 
 
 
-\section[Implementation in R]{Implementation in \proglang{R}} \label{sec:implementation}
+\section[Package overview]{Package overview} \label{sec:overview}
 
 \subsection[Installing BayesX from R]{Installing BayesX from \proglang{R}} 
 
 Before STAR models can be fitted with \pkg{BayesX}, the binary command line version of the 
-program needs to be installed and linked to \proglang{R}. The installation may be accomplished 
-differently and system specific: One possibility is to install BayesX "by hand", which is described 
-in the Appendix~\ref{sec:installation}. However, the recommended option on UNIX and Windows systems 
-is to auto - compile/install the BayesX command line binary within \proglang{R} by calling the 
-function \fct{install.bayesx}. Therefore package \pkg{BayesX} needs to be loaded.
+program needs to be installed and linked to \proglang{R}. The recommended option on UNIX and Windows 
+systems is to auto - compile/install the BayesX command line binary within \proglang{R} by calling 
+the function \fct{install.bayesx}. Therefore package \pkg{BayesX} needs to be loaded.
 <<load-bayesx, echo=TRUE, eval=FALSE>>=
 library("BayesX")
 @
@@ -343,8 +342,8 @@ downloaded from the BayesX homepage, otherwise \code{source.dir} specifies the p
 or using Windows, the installer
 \href{http://www.stat.uni-muenchen.de/~bayesx/install/BayesX_windows.exe}{BayesX\_windows.exe}. If 
 the corresponding file is available, \fct{install.bayesx} will then attempt to execute the Windows 
-installation process as described in Subsection~\ref{subsec:wininstall}, or to compile the sources 
-as shown in Subsection~\ref{subsec:otherinstall}, respectively.
+installation process as described in the Appendix, see Subsection~\ref{appendix:wininstall}, or to 
+compile the sources as shown in Subsection~\ref{appendix:otherinstall}, respectively.
 
 
 \subsection[Linking the BayesX binary with R]{Linking the BayesX binary with \proglang{R}} 
@@ -363,16 +362,8 @@ systems the user may specify e.g.
 options(bayesx.bin = "C:/BayesX/commandline/bayesx.exe") 
 @
 To avoid setting the path to the binary each time \proglang{R} is starting, it is suggested to add 
-the code above to the \proglang{R} startup profile site once. In the majority of cases this site is 
-called \code{Rprofile.site} and is stored in the \code{etc} directory of the running \proglang{R} 
-installation. The path to this directory with its files may be instantly looked up typing
-<<Rhome-directory, echo=TRUE, eval=TRUE>>=
-(etc.dir <- R.home(component = "etc"))
-list.files(etc.dir)
-@
-Another possibility is to add the installation directory of the binary to the environment PATH 
-variable of the operating system. Both options will automatically link the binary with \proglang{R} 
-for the upcoming sessions. Afterwards, the function call
+the code above to the \proglang{R} startup profile site once, also see \ref{appendix:linking}. 
+Afterwards, the function call
 <<check-install-bayesx, echo=TRUE, eval=FALSE>>=
 check.install.bayesx()
 @
@@ -387,17 +378,16 @@ The main model-fitting function in package \pkg{BayesX} is called \fct{bayesx}. 
 \begin{Sinput}
 bayesx(formula, data, weights = NULL, subset = NULL, 
   offset = NULL, na.action = na.fail, contrasts = NULL, 
-  control = bayesx.control(...), ...)
+  family = "gaussian", method = "MCMC", control = bayesx.control(...), 
+  ...)
 \end{Sinput}
-and mostly represent the standard model frame specifications \citep[see][]{Chambers+Hastie:1992}. 
-The last argument specifies several parameters controlling the processing of the BayesX binary that 
-are arranged by function \fct{bayesx.control}. E.g. the choice of the inferential concept, set 
-within argument \code{method}. Options currently are: Markov chain Monte Carlo simulation - 
-\code{"MCMC"}, mixed model based estimation using restricted maximum likelihood/marginal likelihood 
-- \code{"REML"} and penalized likelihood including model selection - \code{"STEP"}. Moreover, the 
-distribution assigned to the response may be set with argument \code{family}. The default is 
-\code{family = "gaussian"}. An overview of all available distributions for the different methods is 
-given in table~\ref{tab:familiy}.
+where the first two lines basically represent the standard model frame specifications 
+\citep[see][]{Chambers+Hastie:1992}.  Note that the default specification for argument 
+\code{contrasts} using factors is function \fct{contr.sum}. This allows for deviation (effect) 
+coding of factor levels. As a consequence, the sampling and estimation performance of BayesX is 
+improved. The distribution assigned to the response may be set with argument \code{family}. The 
+default is \code{family = "gaussian"}. An overview of all available distributions for the different 
+inferential concepts is given in Table~\ref{tab:familiy}.
 \begin{table}[h!]
 \begin{center}
 \begin{tabular}{|l|p{4cm}|p{2.5cm}|l|}
@@ -427,11 +417,18 @@ given in table~\ref{tab:familiy}.
 \code{"REML"} and \code{"STEP"} within the \pkg{BayesX} package.}
 \end{center}
 \end{table}
+Argument \code{methods} determines the inferential method used for estimation. Options currently 
+are: Markov chain Monte Carlo simulation - \code{"MCMC"}, mixed model based estimation using 
+restricted maximum likelihood/marginal likelihood - \code{"REML"} and penalized likelihood including 
+model selection - \code{"STEP"}. The last argument specifies several parameters controlling the 
+processing of the BayesX binary that are arranged by function \fct{bayesx.control}. 
+
 The returned fitted-model object is a list of class \code{"bayesx"}, which is supported by several 
 functions and methods, such as \fct{plot} or \fct{summary}, shown in 
-Subsection~\ref{subsec:extract}. Note that the default specification for argument \code{contrasts}
-using factors is function \fct{contr.sum}. This allows for effect coding of covariates. As a
-consequence, the sampling and estimation performance of BayesX is improved.
+Subsection~\ref{subsec:extract}. 
+
+
+\subsubsection[Implementation details]{Implementation details} \label{ssec:implementation}
 
 For most practical purposes fitting models with \fct{bayesx} may be sufficient. However, the 
 interfacing functions that are basically called within \fct{bayesx}, may also be used 
@@ -443,7 +440,7 @@ analysis. Therefore, users may call function \fct{run.bayesx}, with arguments
 run.bayesx(dir, prg.name = "bayesx.estim.input.prg", 
   verbose = FALSE, bin = getOption("bayesx.bin"))
 \end{Sinput}
-to run a BayesX program file from a specified directory. Then, model output files may be imported 
+to run a BayesX program file from a specified directory. The model output files may be imported 
 using function \fct{read.bayesx.output}:
 \begin{Sinput}
 read.bayesx.output(dir, model.name = NULL)
@@ -493,7 +490,7 @@ Past the execution of all computations with the BayesX binary, the model output 
 into the declared output directory, which per default is the temporary directory of the running
 session, and are read back into \proglang{R} using function \fct{read.bayesx.output}. The returned 
 fitted-model object is a list of class \code{"bayesx"}, wherefore a set of standard extractor 
-functions and methods, listed in table~\ref{tab:funmethods}, is available. 
+functions and methods, listed in Table~\ref{tab:funmethods}, is available. 
 
 The quite flexible \code{S3} class function \fct{plot.bayesx}, usually called from the generic 
 \fct{plot}, is handy generating model diagnostic plots, term effects plots, applying 2d, 3d, 
@@ -676,7 +673,7 @@ leading drivers of a number of problems development countries are faced with, fo
 consequence of stunting is a high mortality rate. Here, the primary interest is to model the 
 dependence of stunting of newborn children, with an age ranging from 0 to 5 years, on covariates 
 such as the body mass index of the mother, the age of the child and others presented in 
-table~\ref{tab:zambia}. 
+Table~\ref{tab:zambia}. 
 \begin{table}[htbp]
 \begin{center}
 \begin{tabular}{|l|p{10cm}|}
@@ -821,7 +818,7 @@ Structured, left panel, and unstructured spatial effect, right panel respectivel
 \end{figure}
 noting that if argument \code{map} is not supplied, the effects will also be visualized using 
 function \fct{blockplot}. Besides plotting of sampling paths, as mentioned in 
-Section~\ref{sec:implementation}, for any term in the model, the samples of the parameters are 
+Section~\ref{sec:overview}, for any term in the model, the samples of the parameters are 
 stored as an attribute in the fitted term object and are e.g. extracted for term \code{s(bmi)} by 
 the following
 <<zambia-coef-extract, echo=TRUE, eval=TRUE, fig=FALSE>>=
@@ -862,7 +859,7 @@ The forest health dataset comprises information on the defoliation of beech tree
 an indicator of overall forest health here. The data was collected annually from 1980 to 1997 during 
 a project of visual inspection of trees around Rothenbuch, Germany, and is discussed in detail in 
 \citet{Fahrmeir+Kneib+Lang:2009}, wherein the percentage rate of defoliation of each tree is 
-aggregated into three ordinal categories, also see table~\ref{tab:forest} for a description of all 
+aggregated into three ordinal categories, also see Table~\ref{tab:forest} for a description of all 
 variables in the dataset. 
 \begin{table}[h!]
 \begin{center}
@@ -1059,9 +1056,9 @@ plot(fm2, term = "s(id)", image = TRUE, grid = 200,
 \begin{appendix}
 
 
-\section[Installation of BayesX]{Installation of BayesX} \label{sec:installation}
+\section[Manual installation of BayesX]{Manual installation of BayesX} \label{appendix:minstall}
 
-\subsection[Windows systems]{Windows systems} \label{subsec:wininstall}
+\subsection[Windows systems]{Windows systems} \label{appendix:wininstall}
 The installation routine 
 \href{http://www.stat.uni-muenchen.de/~bayesx/install/BayesX_windows.exe}{BayesX\_windows.exe}
 may be downloaded from the BayesX homepage and executed. The routine will request all necessary 
@@ -1071,7 +1068,7 @@ graphical interface, which automatically installs the necessary command line ver
 use within the \proglang{R} interface. The binary is named \code{bayesx.exe} and is stored in the 
 \code{commandline} directory of the BayesX installation folder.
 
-\subsection[Other systems]{Other systems} \label{subsec:otherinstall}
+\subsection[Other systems]{Other systems} \label{appendix:otherinstall}
 The zip archive named 
 \href{http://www.stat.uni-muenchen.de/~bayesx/install/bayesxsource.zip}{\code{bayesxsource.zip}}, 
 containing the \proglang{C++} source code of BayesX, needs to be downloaded and unpacked. If the make 
@@ -1082,6 +1079,29 @@ necessary. For MAC OS, versions of an adjusted makefile and the main function th
 for a sucessful compilation may be found at the
 \href{http://www.stat.uni-muenchen.de/~bayesx/bayesxfaq.html}{FAQ site}.
 \end{appendix}
+
+\subsection[Editing R's profile startup site]{Editing R's profile startup site} 
+\label{appendix:linking}
+To permanently link to the BayesX command line binary, \proglang{R}'s startup profile site may be 
+edited. In the majority of cases this site is called \code{Rprofile.site} and is stored in the 
+\code{etc} directory of the running \proglang{R} installation. The path to this directory with its 
+files may be instantly looked up typing
+<<Rhome-directory, echo=TRUE, eval=TRUE>>=
+(etc.dir <- R.home(component = "etc"))
+list.files(etc.dir)
+@
+Then, by adding the line 
+\begin{Sinput}
+options(bayesx.bin = "path/to/BayesX")
+\end{Sinput}
+to \code{Rprofile.site} will 
+tell \proglang{R} where to find the binary on startup. On Windows systems \code{"path/to/BayesX"}, 
+may be specified e.g. with \code{"C:/BayesX/commandline/bayesx.exe"}, depending on the location of
+the installation of the binary.  
+ 
+However, another possibility is to add the installation directory of the binary to the environment 
+PATH variable of the operating system. Both options will automatically link the binary with 
+\proglang{R} for the upcoming sessions.
 
 
 \end{document}
