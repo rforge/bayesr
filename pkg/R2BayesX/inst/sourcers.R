@@ -1,8 +1,10 @@
-dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
+dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-b <- bayesx(y ~ s(x, bs = "ps"), family = "poisson", 
-  control = bayesx.control(), data = dat)
+plot(b, term = 1, which = "coef-samples")
+
+
+zm <- bayesx(mf, method = "MCMC", iter = 12000, burnin = 2000, step = 10, data = ZambiaNutrition, dir.rm = FALSE)
 
 
 
@@ -252,6 +254,7 @@ summary(b)
 plot(b, pages = 1)
 
 b2 <- bayesx(y ~ s(x0, bs = "ps") + s(x1, bs = "ps") + s(x2, bs = "ps") + 
+
   s(x3, bs = "ps") + s(x4, bs = "ps") + s(x5, bs = "ps"),
   data = dat, family = "gaussian", method = "STEP", dir.rm = FALSE)
 

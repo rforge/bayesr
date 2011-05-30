@@ -97,6 +97,7 @@ function(dir, files, data, response, eta, model.name, minfo)
                   SmoothHyp <- rbind(SmoothHyp, attr(x, "variance"))
               }
               if(length(vf <- grep("_variance_", varf, value = TRUE))) {
+                vf <- unique(vf)
                 if(length(vf2 <- vf[!grepl("sample", vf)])) {
                   attr(x, "variance") <- df2m(read.table(paste(dir, "/", vf2, sep = ""), 
                     header = TRUE))

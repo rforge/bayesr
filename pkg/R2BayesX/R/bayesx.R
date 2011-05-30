@@ -10,7 +10,8 @@ function(formula, data, weights = NULL, subset = NULL,
 
   args <- list(...)
   if(!is.null(args$family) || !is.null(args$method)) {
-    if(control$family != args$family || control$method != args$method)
+    if((!is.null(args$family) && control$family != args$family) || 
+       (!is.null(args$method) && control$method != args$method))
       control <- do.call("bayesx.control", args)
   }    
 

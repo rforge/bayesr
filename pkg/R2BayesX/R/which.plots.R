@@ -109,6 +109,8 @@ function(x, which, ask, model.name, nx, ...)
     mtext(main, side = 3L, line = 2L, outer = TRUE, font = 2, cex = 1)
   if(k == 1L && nx > 1L)
     par(ask = ask) 
+  if(!ok)
+    warning("there is nothing to plot!")
 
   return(invisible(NULL))
 }

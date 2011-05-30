@@ -1,7 +1,7 @@
 blow.up.resid <-
 function(data, x, xnam, response, eta, dimx, cx)
 {
-  if(!is.null(data) && !is.factor(response)) {
+  if(!is.null(data) && !is.null(response) && !is.null(eta) && !is.factor(response)) {
     x <- x[order(x[,1L]),]
     if(!is.matrix(x))
       x <- matrix(x, nrow = 1)
@@ -29,6 +29,8 @@ function(data, x, xnam, response, eta, dimx, cx)
       for(k in 1L:length(xnam))
         eval(parse(text = paste("x$", xnam[k] , "<- NULL", sep = "")))
       x <- as.matrix(x)
+      if(!is.matrix(eta))
+        eta <- matrix(eta, ncol = 1L)
       pres <- response - eta[,1L] + x[,1L]
       ## pres <- pres - mean(pres, na.rm = TRUE) ## mean(x[,1L], na.rm = TRUE)
       x <- cbind(co[ind,], pres, id[ind])

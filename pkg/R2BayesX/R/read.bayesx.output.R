@@ -13,6 +13,8 @@ function(dir, model.name = NULL)
     cmd <- paste("rval$", bm[j], "<-read.bayesx.model.output('", dir, "','", bm[j], "')", sep = "")
     eval(parse(text = cmd))
   }
+  if(length(rval) < 2L)
+    rval <- rval[[1L]]
   class(rval) <- "bayesx"
 
   return(rval)

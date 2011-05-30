@@ -1,6 +1,5 @@
 \name{bayesx}
 \alias{bayesx}
-\alias{R2BayesX}
 
 \title{
   Estimate STAR Models with BayesX

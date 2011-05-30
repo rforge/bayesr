@@ -135,8 +135,12 @@ function(x, digits = max(3L, getOption("digits") - 3L),
     mfn <- mfn[mfn != "YLevels"]
     mfn <- mfn[mfn != "nYLevels"]
     mfn <- mfn[mfn != "order"]
+    if(is.na(x$model.fit$N))
+      x$model.fit$N <- "NA"
+    if(x$model.fit$method == "")
+      x$model.fit$method <- "NA"
     for(i in 1L:length(mfn)) {
-        if(!is.null(x$model.fit[[mfn[i]]]) && x$model.fit[[mfn[i]]] != "") {
+        if(!is.null(x$model.fit[[mfn[i]]]) && !is.na(x$model.fit[[mfn[i]]] != "")) {
           if(i < step)
             cat(mfn[i], "=", x$model.fit[[mfn[i]]], " ")
           if(i == step) {

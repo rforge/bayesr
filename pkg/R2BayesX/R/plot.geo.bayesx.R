@@ -24,7 +24,7 @@ function(x, diagnostics = FALSE, ...)
         }
       do.call(plottype, args)
     } else coeffun(x, args, diagnostics)
-  }
+  } else warning("there is nothing to plot!")
 
   return(invisible(NULL))
 }

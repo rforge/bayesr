@@ -11,7 +11,7 @@ function(x, diagnostics = FALSE, ...)
         plottype <- "plot3d"
       do.call(plottype,args)
     } else coeffun(x, args, diagnostics)
-  }
+  } else warning("there is nothing to plot!")
 
   return(invisible(NULL))
 }

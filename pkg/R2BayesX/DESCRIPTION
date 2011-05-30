@@ -1,7 +1,7 @@
 Package: R2BayesX
 Title: Estimate STAR Models with BayesX
 Version: 0.1-1
-Date: 2010-10-20
+Date: 2011-05-30
 Author: Nikolaus Umlauf
 Maintainer: Nikolaus Umlauf <nikolaus.umlauf@uibk.ac.at>
 Depends: R (>= 2.11.1)

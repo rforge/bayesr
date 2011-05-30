@@ -2,6 +2,7 @@ plot.bayesx <-
 function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
 {
   op <- par(no.readonly = TRUE)
+  pc <- FALSE
   which.match <- c("effect", "coef-samples", "var-samples", "intcpt-samples", 
     "hist-resid", "qq-resid", "scatter-resid", "scale-resid", "scale-samples")
   if(!is.character(which)) {
@@ -16,6 +17,7 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
   if((!"effect" %in% which) && (!"coef-samples" %in% which) 
     && (!"var-samples" %in% which) && (!"intcpt-samples" %in% which)) {
     model.names <- names(x)
+    pc <- TRUE
     for(i in 1L:nx)
       which.plots(x[[i]], which, ask, model.names[i], nx, ...)
     if(nx > 1L || length(which) > 1L)		
@@ -37,6 +39,7 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
     for(i in 1L:nx) {
       if("intcpt-samples" %in% which) {
         if(!is.null(attr(x[[i]]$fixed.effects, "sample"))) {
+          pc <- TRUE
           par(oma = c(1, 1, 2, 1))
           par(mfrow = c(1, 1))
           args$x <- attr(x[[i]]$fixed.effects, "sample")[,1L]
@@ -71,6 +74,7 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
             }
             if(!is.null(args$x)) {
               args$ask <- ask
+              pc <- TRUE
               do.call("plot", args)	
               if(j == 1L)
                 if(ask)
@@ -83,6 +87,8 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
     if(nt > 1L)		
       par(op)
   }
+  if(!pc)
+    warning("there is nothing to plot!")
 
   return(invisible(NULL))
 }

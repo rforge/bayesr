@@ -1,8 +1,10 @@
 plot.linear.bayesx <-
 function(x, diagnostics = FALSE, ...) 
 {
-  if(is.null(x))
+  if(is.null(x)) {
+    warning("there is nothing to plot!")
     return(invisible(NULL))
+  }
   args <- list(...)
   if(is.null(attr(x, "specs")$is.factor))
     attr(x, "specs")$is.factor <- FALSE

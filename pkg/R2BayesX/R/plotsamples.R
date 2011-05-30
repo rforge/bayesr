@@ -1,8 +1,10 @@
 plotsamples <-
 function(x, selected = "NA", acf = FALSE, var = FALSE, ...)
 {
-  if(is.null(x))
+  if(is.null(x)) {
+    warning("there is nothing to plot!")
     return(invisible(NULL))
+  }
   args <- list(...)
   xlab <- args$xlab
   ylab <- args$ylab

@@ -32,7 +32,7 @@ function(x, diagnostics = FALSE, ...)
         do.call("plotmap", args)
       }
     } else coeffun(x, args, diagnostics)
-  }
+  } else warning("there is nothing to plot!")
 
   return(invisible(NULL))
 }
