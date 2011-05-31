@@ -16,8 +16,8 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
   ncol = 99L, swap = FALSE, col.residuals = NULL, col.contour = NULL, 
   c.select = NULL, grid = 30L, image = FALSE, contour = FALSE, 
   legend = TRUE, cex.legend = 1, breaks = NULL, range = NULL, 
-  digits = 2L, d.persp = 1L, r.persp = sqrt(3), linear = FALSE, 
-  extrap = TRUE, outscale = 0, data = NULL, ...)
+  digits = 2L, d.persp = 1L, r.persp = sqrt(3), linear = TRUE, 
+  extrap = FALSE, outscale = 0, data = NULL, ...)
 }
 
 \arguments{

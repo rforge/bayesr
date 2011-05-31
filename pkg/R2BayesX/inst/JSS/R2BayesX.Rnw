@@ -108,11 +108,15 @@ In this article, we describe the full interactive \proglang{R} \citep{R} interfa
 has recently been added to the existing Comprehensive \proglang{R} Archive Network (CRAN) package 
 \pkg{BayesX} \citep{Kneib+Heinzl+Brezger:2011}. Within the new version of the package, users may now 
 \begin{itemize}
-\item specify and estimate STAR models with BayesX directly from the \proglang{R} console, 
+\item specify and estimate STAR models with BayesX directly from the \proglang{R} console (function 
+  \hyperlink{bayesx}{\fct{bayesx}}), 
 \item apply a set of extractor functions and methods on BayesX fitted model objects, e.g. producing 
-  high level graphics of estimated effects, model diagnostic plots, summary statistics and more,
-\item additionally run already existing BayesX program files from \proglang{R},
-\item automatically import BayesX output files into \proglang{R}.
+  high level graphics of estimated effects, model diagnostic plots, summary statistics and more 
+  (Table~\ref{tab:funmethods}), 
+\item additionally run already existing BayesX program files from \proglang{R} 
+  (function \hyperlink{run.bayesx}{\fct{run.bayesx}}),
+\item automatically import BayesX output files into \proglang{R} 
+  (function \hyperlink{read.bayesx.output}{\fct{read.bayesx.output}}).
 \end{itemize}
 
 Furthermore, the models supported by BayesX are conveniently specified using \proglang{R}'s formula 
@@ -121,16 +125,16 @@ language definition, wherefore the special model term constructor functions \fct
 BayesX interpretable commands (see Section~\ref{sec:overview}). 
 
 To give an introductory example of the various features of the interface, we estimate a Bayesian 
-normal geoadditive regression model with the childhood malnutrition dataset in Zambia
-(see Section~\ref{subsec:zambia}) using Markov chain Monte Carlo (MCMC) simulation. In this 
-analysis, the main interest is on modeling the dependence of stunting of newborn children on 
-covariates including the age of the child, the body mass index of the mother and the district the 
-child lives in. The model is given by
+geoadditive regression model for the childhood malnutrition dataset in Zambia (see 
+Section~\ref{subsec:zambia}) using Markov chain Monte Carlo (MCMC) simulation. In this analysis, the 
+main interest is on modeling the dependence of stunting of newborn children on covariates including 
+the age of the child, the body mass index of the mother and the district the child lives in. The 
+model is given by
 \begin{equation*}
 \texttt{stunting}_i = \gamma_0 + f_1(\texttt{agechild}_i) + f_2(\texttt{bmi}_i) + 
   f_{spat}(\texttt{district}_i) + \varepsilon_i \qquad \varepsilon_i \sim N(0, \sigma^2)
 \end{equation*} 
-where functions $f_1$ and $f_2$ of continuous covariates \code{agechild} and \code{bmi} have 
+where the functions $f_1$ and $f_2$ of continuous covariates \code{agechild} and \code{bmi} have 
 possible nonlinear effects on \code{stunting} and are therefore modeled nonparametrically using 
 P-splines. Here, the spatially correlated effect $f_{spat}$ of locational covariate \code{district} 
 is modeled by a stationary Gaussian random field based on centroid coordinates (geokriging) of the 
@@ -139,7 +143,7 @@ boundary map file of the districts in Zambia is loaded with
 <<data-illustration, echo=TRUE, eval=TRUE, fig=FALSE>>=
 data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
 @
-and the model formula is simply specified by
+and the model formula is specified by
 <<formula-illustration, echo=TRUE, eval=TRUE, fig=FALSE>>=
 mf <- stunting ~ s(agechild, bs = "ps") + s(bmi, bs = "ps") + 
   s(district, bs = "gk", xt = list(map = ZambiaBnd, full = TRUE))
@@ -214,7 +218,7 @@ $\mu = E(y | \mathbf{x}, \boldsymbol{\gamma})$ linked to a linear predictor $\et
 \begin{equation} \label{eqn:glm}
 \mu = h(\eta) \qquad \eta = \mathbf{x}^{\prime}\boldsymbol{\gamma},
 \end{equation}
-where $h$ is a known link function and $\boldsymbol{\gamma}$ are unknown regression parameters. In 
+where $h$ is a known link function and $\boldsymbol{\gamma}$ are unknown regression coefficients. In 
 STAR models \citep{Fahrmeir+Kneib+Lang:2004, Brezger+Lang:2006}, the linear predictor is replaced 
 by a more general and flexible, structured additive predictor
 \begin{equation} \label{eqn:structadd}
@@ -231,10 +235,10 @@ comprising effects (and combination of effects) as e.g. given by
   \item random intercepts with cluster index $c$: $f_j(z) = \beta_c$, 
   \item random slopes with cluster index $c$: $f_j(z) = x\beta_c$. 
 \end{itemize}
-Therefore, STAR models cover a number of well known model classes as special cases, including
-generalized additive models (GAM) \citep{Hastie+Tibshirani:1990}, generalized additive mixed models
-(GAMM) \citep{Lin+Zhang:1999}, geoadditive models \citep{Kamman+Wand:2003}, varying coefficient 
-models \citep{Hastie+Tibshirani:1993}, and geographically weighted regression 
+STAR models cover a number of well known model classes as special cases, including generalized 
+additive models (GAM) \citep{Hastie+Tibshirani:1990}, generalized additive mixed models (GAMM) 
+\citep{Lin+Zhang:1999}, geoadditive models \citep{Kamman+Wand:2003}, varying coefficient models 
+\citep{Hastie+Tibshirani:1993}, and geographically weighted regression 
 \citep{Fotheringham+Brunsdon+Charlton:2002}.
 
 The unified representation of a STAR predictor arises from the fact that all functions $f_j$ in 
@@ -244,9 +248,9 @@ can be written in matrix notation
 \begin{equation} \label{eqn:matnot}
 \mathbf{f}_j = \mathbf{Z}_j\boldsymbol{\beta}_j,
 \end{equation}
-with $\mathbf{Z}_j$ as a design matrix, that depends on the prior assumptions about smoothness of 
-$f_j$. $\boldsymbol{\beta}_j$ are unknown regression coefficients which have to be estimated. 
-Hence, the predictor of (\ref{eqn:structadd}) may be rewritten by
+where the design matrix $\mathbf{Z}_j$ depends on the prior assumptions about smoothness of $f_j$ 
+and $\boldsymbol{\beta}_j$ are unknown regression coefficients to be estimated. Hence, the predictor 
+of (\ref{eqn:structadd}) may be rewritten as
 \begin{equation} \label{eqn:structaddmat}
 \boldsymbol{\eta} = \mathbf{Z}_1\boldsymbol{\beta}_1 + \ldots \mathbf{Z}_p\boldsymbol{\beta}_p 
 + \mathbf{X}\boldsymbol{\gamma},
@@ -265,8 +269,10 @@ prior for $\boldsymbol{\beta}_j$ is partially improper.
 The variance parameter $\tau_j^2$ is equivalent to the inverse smoothing parameter in a frequentist
 approach and controls the trade off between flexibility and smoothness. For full Bayesian inference,
 weakly informative inverse Gamma hyperpriors $\tau_j^2 \sim IG(a_j, b_j)$ are assigned to 
-$\tau_j^2$, with $a_j = b_j = 0.001$ as a standard option. For empirical Bayes inference, $\tau_j^2$ 
-is considered an unknown constant which is determined via restricted maximum likelihood (REML).
+$\tau_j^2$, with $a_j = b_j = 0.001$ as a standard option. Small values for $a_j$ and $b_j$ 
+correspond to an approximate uniform distribution for $log \tau_j^2$. For empirical Bayes inference, 
+$\tau_j^2$ is considered an unknown constant which is determined via restricted maximum likelihood 
+(REML).
 
 In BayesX, estimation of regression parameters is based on three inferential concepts: 
 \begin{enumerate}
@@ -322,12 +328,13 @@ provided in the BayesX methodology manual \citep{Belitz+Brezger+Kneib+Lang:2011}
 
 \section[Package overview]{Package overview} \label{sec:overview}
 
-\subsection[Installing BayesX from R]{Installing BayesX from \proglang{R}} 
+\subsection[Installing the BayesX binary from R]{Installing the BayesX binary from \proglang{R}} 
 
-Before STAR models can be fitted with \pkg{BayesX}, the binary command line version of the 
-program needs to be installed and linked to \proglang{R}. The recommended option on UNIX and Windows 
-systems is to auto - compile/install the BayesX command line binary within \proglang{R} by calling 
-the function \fct{install.bayesx}. Therefore package \pkg{BayesX} needs to be loaded.
+Before STAR models can be fitted with package \pkg{BayesX} from \proglang{R}, the binary command 
+line version of the program BayesX needs to be installed and linked to \proglang{R}. The recommended 
+option on UNIX and Windows systems is to auto - compile/install the BayesX command line binary 
+within \proglang{R} by calling the function \fct{install.bayesx}. Therefore package \pkg{BayesX} 
+needs to be loaded.
 <<load-bayesx, echo=TRUE, eval=FALSE>>=
 library("R2BayesX")
 @
@@ -344,11 +351,11 @@ from the \href{http://www.stat.uni-muenchen.de/~bayesx}{BayesX homepage}, otherw
 or using Windows, the installer
 \href{http://www.stat.uni-muenchen.de/~bayesx/install/BayesX_windows.exe}{BayesX\_windows.exe}. If 
 the corresponding file is available, \fct{install.bayesx} will then attempt to execute the Windows 
-installation process as described in the Appendix, see Subsection~\ref{appendix:wininstall}, or to 
-compile the sources as shown in Subsection~\ref{appendix:otherinstall}, respectively.
+installation process as described in the Appendix~\ref{appendix:wininstall}, or to 
+compile the sources as shown in Appendix~\ref{appendix:otherinstall}, respectively.
 
 
-\subsection[Linking the BayesX binary with R]{Linking the BayesX binary with \proglang{R}} 
+\subsection[Linking the BayesX binary to R]{Linking the BayesX binary to \proglang{R}} 
 \label{subsec:linking}
 After the successful compilation/installation, the full path to the 
 command line binary \textbf{must} be declared to \proglang{R} at the beginning of every new session 
@@ -364,19 +371,19 @@ systems the user may specify e.g.
 options(bayesx.bin = "C:/BayesX/commandline/bayesx.exe") 
 @
 To avoid setting the path to the binary each time \proglang{R} is starting, it is suggested to add 
-the code above to the \proglang{R} startup profile site once, also see \ref{appendix:linking}. 
+the code above to the \proglang{R} startup profile site, also see Appendix~\ref{appendix:linking}. 
 Afterwards, the function call
 <<check-install-bayesx, echo=TRUE, eval=FALSE>>=
 check.install.bayesx()
 @
-will check if BayesX may be called from \proglang{R}. 
+will check if BayesX is available from \proglang{R}. 
 
 
 \subsection[Processing BayesX from R]{Processing BayesX from \proglang{R}} 
-\label{subsec:processing}
+\label{subsec:processing} 
  
-The main model-fitting function in package \pkg{BayesX} is called \fct{bayesx}. The arguments of 
-\fct{bayesx} are
+\hypertarget{bayesx}{The} main model-fitting function in the package \pkg{BayesX} is called 
+\fct{bayesx}. The arguments of \fct{bayesx} are
 \begin{Sinput}
 bayesx(formula, data, weights = NULL, subset = NULL, 
   offset = NULL, na.action = na.fail, contrasts = NULL, 
@@ -426,7 +433,20 @@ distributions for the different methods is given in Table~\ref{tab:family}.
 \end{center}
 \end{table}
 The last argument specifies several parameters controlling the processing of the BayesX binary that 
-are arranged by function \fct{bayesx.control}. 
+are arranged by function \fct{bayesx.control}. The most important parameters for the different
+methods are:
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{|l|p{4cm}|l|}
+\hline
+Parameter & Description & \code{method} \\ \hline
+\code{iter} & integer, sets the number of iterations for the sampler & \code{"MCMC"} \code{"STEP"} \\ \hline
+\end{tabular}
+\caption{\label{tab:control} Most important controlling parameters for the different methods using
+function \fct{bayesx}.}
+\end{center}
+\end{table}
+
 
 The returned fitted model object is a list of class \code{"bayesx"}, which is supported by several 
 standard extractor functions, such as \fct{plot} and \fct{summary}. The implemented S3 methods for 
@@ -580,8 +600,8 @@ BayesX program files wherefore a new setup within \proglang{R} is not required, 
 might be a need for automated importing of BayesX output files into \proglang{R} for further 
 analysis. 
 
-Function \fct{run.bayesx} is used to run a BayesX program file. The arguments of 
-\fct{run.bayesx} are
+\hypertarget{run.bayesx}{Function} \fct{run.bayesx} is used to run a BayesX program file. The 
+arguments of \fct{run.bayesx} are
 \begin{Sinput}
 run.bayesx(dir, prg.name = "bayesx.estim.input.prg", 
   verbose = FALSE, bin = getOption("bayesx.bin"))
@@ -593,7 +613,8 @@ informations will be printed to the \proglang{R} console if \code{verbose = TRUE
 Subsection~\ref{subsec:linking}. The function returns a list including the log file returned by 
 BayesX as well as information on the total runtime. 
 
-Model output files are imported using function \fct{read.bayesx.output}
+\hypertarget{read.bayesx.output}{Model} output files are imported using function 
+\fct{read.bayesx.output}
 \begin{Sinput}
 read.bayesx.output(dir, model.name = NULL)
 \end{Sinput}

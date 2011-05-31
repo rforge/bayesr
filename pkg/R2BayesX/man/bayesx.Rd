@@ -6,10 +6,11 @@
 }
 
 \description{
-  Fit structured additive regression models via Markov chain Monte Carlo simulation techniques
-  (MCMC), mixed model methodology (REML) and a penalized least squares (respectively penalized 
-  likelihood) approach for estimating structured additive regression models using model selection 
-  tools (STEP).
+  This is the documentation of the main model fitting function of the interface. Within function
+  \code{bayesx}, three inferential concepts are available for estimation: Markov chain Monte Carlo 
+  simulation (MCMC), restricted maximum likelihood (REML), and a penalized least squares 
+  (respectively penalized likelihood) approach for estimating models using model selection tools 
+  (STEP).
 }
 
 \usage{  
@@ -35,7 +36,8 @@ bayesx(formula, data, weights = NULL, subset = NULL,
     \code{\link[stats]{model.matrix.default}}.}
   \item{control}{specify several global control parameters for \code{bayesx}, see 
     \code{\link{bayesx.control}}.}
-  \item{\dots}{arguments passed to \code{\link{bayesx.control}}.}
+  \item{\dots}{arguments passed to \code{\link{bayesx.control}}, e.g. \code{family} and 
+    \code{method}, defaults are \code{family = "gaussian"}, \code{method = "MCMC"}.}
 }
 
 \details{  
@@ -117,12 +119,12 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 }
 
 \value{ 
-  See function \code{\link{read.bayesx.output}}.
+  A list of class \code{"bayesx"}, see function \code{\link{read.bayesx.output}}.
 }
 
 \note{
   If a model is specified with a structured and an unstructured spatial effect, e.g. the model 
-  formula is something like \code{y ~ s(id, bs = "mrf", map = mymap) + r(id)}, the model output 
+  formula is something like \code{y ~ s(id, bs = "mrf", map = MapBnd) + r(id)}, the model output 
   contains of one additional total spatial effect, named with \code{"s(id):total"}. Also see the 
   last example.
 }
@@ -133,15 +135,15 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 
 \section{WARNINGS}{
   Function \code{bayesx} or \code{\link{run.bayesx}} cannot be processed if the \code{bin} path to
-  the binary executable command-line version is not specified probably, i.e. before using 
+  the binary executable command-line version is not specified properly, i.e. before using 
   \code{bayesx} the binary has to be installed, see function \code{\link{install.bayesx}} for
   installation details. After installation the \code{bin} path can bet set with
 
   \code{options(bayesx.bin = "/path/to/BayesX")}
 
   or within function \code{\link{bayesx.control}}, where \code{"/path/to/BayesX"} represents the 
-  full path to the binary, e.g. on windows systems this may be something like 
-  \code{"C:/programs/BayesX/commandline/bayesx.exe"}. 
+  full path to the binary with the name of the binary at last, e.g. on Windows systems this may be 
+  something like \code{"C:/programs/BayesX/commandline/bayesx.exe"}. 
 
   For geographical effects, note that BayesX may crash if the region identification covariate is
   a \code{\link{factor}}, it is recommended to code these variables as \code{\link{integer}}, please
