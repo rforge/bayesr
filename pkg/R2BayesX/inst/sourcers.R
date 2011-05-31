@@ -1,7 +1,7 @@
 dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-plot(b, term = 1, which = "coef-samples")
+plot(b2, which = "coef-sa")
 
 
 zm <- bayesx(mf, method = "MCMC", iter = 12000, burnin = 2000, step = 10, data = ZambiaNutrition, dir.rm = FALSE)

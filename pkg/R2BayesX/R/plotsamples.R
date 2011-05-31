@@ -26,7 +26,10 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, ...)
     outer <- FALSE
     line <- 2L
   } else {
-    par(mar = c(2, 2, 2, 2))
+    if(nr < 2L)
+      par(mar = c(2, 2, 2, 2))
+    else
+      par(mar = c(2, 2, 3, 2))
     outer <- TRUE
     line <- 0L
   }
@@ -38,24 +41,26 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, ...)
       args$x <- stats::ts(data = x[,k])
       do.call(stats::acf, args)
     }
-    if(!is.null(xlab))
-      mtext(xlab, side = 1L, line = line, outer = outer, font = 1L)
-    if(!is.null(ylab))
-      mtext(ylab, side = 2L,line = line, outer = outer, font = 1L)
-    if(!is.null(main))
-      mtext(main, side = 3L, line = line, outer = outer, font = 2L, cex = 1)
-    if(is.null(main)) {
-      if(var)
-        ptxt <- "Variance"
-      else
-        ptxt <- "Coeffiecient(s)"
-      if(acf)
-        ptxt <- paste(ptxt, "autocorrelation")
-      else
-        ptxt <- paste(ptxt, "sampling path(s)")
-      ptxt <- paste(ptxt, "of term", selected)
-      mtext(ptxt, side = 3L, line = line, outer = outer, font = 2L, cex = 1)
-    }
+    if(nr > 1L)
+      mtext(paste("Coefficient", k), side = 3L, line = 0.5, cex = 0.8)
+  }
+  if(!is.null(xlab))
+    mtext(xlab, side = 1L, line = line, outer = outer, font = 1L)
+  if(!is.null(ylab))
+    mtext(ylab, side = 2L,line = line, outer = outer, font = 1L)
+  if(!is.null(main))
+    mtext(main, side = 3L, line = line, outer = outer, font = 2L, cex = 1)
+  if(is.null(main)) {
+    if(var)
+      ptxt <- "Variance"
+    else
+      ptxt <- "Coeffiecient(s)"
+    if(acf)
+      ptxt <- paste(ptxt, "autocorrelation")
+    else
+      ptxt <- paste(ptxt, "sampling path(s)")
+    ptxt <- paste(ptxt, "of term", selected)
+    mtext(ptxt, side = 3L, line = line, outer = outer, font = 2L, cex = 1)
   }
   if(nr > 1L)
     par(op)

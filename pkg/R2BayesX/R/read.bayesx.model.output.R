@@ -49,7 +49,7 @@ function(dir, model.name)
           if(!is.null(response))
             response <- response[ooo]
           if(!is.null(eta)) {
-            if(is.matrix(eta) || is.data.farme(eta))
+            if(is.matrix(eta) || is.data.frame(eta))
               eta <- eta[ooo,]
             else
               eta <- eta[ooo]

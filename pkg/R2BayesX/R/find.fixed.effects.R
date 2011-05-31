@@ -120,6 +120,10 @@ function(dir, files, data, response, eta, model.name, rval, minfo)
           attr(x,"specs") <- list(dim = 1L, term = tv, label = tv)
           attr(x, "partial.resids") <- blow.up.resid(data, x, tv, 
             response, eta, 1L, "linear.bayesx")
+          if(!is.null(attr(x, "partial.resids"))) {
+            attr(x, "partial.resids")[,2L] <- attr(x, "partial.resids")[,2L] - 
+              mean(attr(x, "partial.resids")[,2L])
+          }
           if(!is.null(attr(FixedEffects, "sample")))
             attr(x,"sample") <- attr(FixedEffects, "sample")[,j]
           class(x) <- "linear.bayesx"

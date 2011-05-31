@@ -27,15 +27,16 @@
 }
 
 \value{ 
-  For \code{fitted.bayesx}, either the fitted linear predictor or if e.g. \code{term = "s(x)"}, an 
-  object with class \code{"xx.bayesx"}, where \code{"xx"} is depending of the type of the term. In 
-  principle the returned term object is simply a matrix containing the covariate(s) and its effects, 
-  depending on the estimation method, e.g. for MCMC estimated models, mean or median fitted values 
-  and other quantities are returned. Several additional informations on the term are provided in the 
-  \code{\link{attributes}} of the object. For all types of terms plotting functions are provided.
+  For \code{fitted.bayesx}, either the fitted linear predictor and mean or if e.g. 
+  \code{term = "s(x)"}, an object with class \code{"xx.bayesx"}, where \code{"xx"} is depending of 
+  the type of the term. In principle the returned term object is simply a matrix containing the 
+  covariate(s) and its effects, depending on the estimation method, e.g. for MCMC estimated models, 
+  mean/median fitted values and other quantities are returned. Several additional informations on 
+  the term are provided in the \code{\link{attributes}} of the object. For all types of terms 
+  plotting functions are provided.
 
-  Using \code{residuals.bayesx} will either return the model residuals or the partial residuals 
-  of a term specified in argument \code{term}.
+  Using \code{residuals.bayesx} will either return the mean model residuals or the mean partial 
+  residuals of a term specified in argument \code{term}.
 }
 
 \author{
@@ -91,18 +92,13 @@ b2 <- read.bayesx.output(dir)
 
 ## extract fitted values
 fit <- fitted(b2)
-hist(fit)
+hist(fit[,1L])
 
 ## extract model term of x1
 ## and plot it
 fx <- fitted(b2, term = "s(x1)")
 plot(fx)
 
-
-## unlist and plot again
-fx <- fx[["s(x1)"]]
-fx[1:3,]
-plot(fx)
 
 ## have a look at the attributes
 names(attributes(fx))

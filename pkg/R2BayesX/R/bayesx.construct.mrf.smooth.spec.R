@@ -15,10 +15,10 @@ function(object, dir, prg, data)
     object$xt <- list(object$xt)
   map <- object$xt$map
   if(is.null(map)) {
-    if(!is.null(xt$polys))
-      map <- xt$polys
-    if(!is.null(xt$penaltY))
-      map <- xt$penalty
+    if(!is.null(object$xt$polys))
+      map <- object$xt$polys
+    if(!is.null(object$xt$penaltY))
+      map <- object$xt$penalty
   }
   if(is.null(map))
     map <- object$xt$gra
