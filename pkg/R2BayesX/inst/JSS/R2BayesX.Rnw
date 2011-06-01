@@ -1,6 +1,7 @@
 \documentclass[article]{jss}
 %\documentclass[nojss]{jss}
 \usepackage{amsmath,amssymb,amsfonts,thumbpdf}
+\usepackage{multirow}
 
 %% additional commands
 \newcommand{\squote}[1]{`{#1}'}
@@ -434,13 +435,44 @@ distributions for the different methods is given in Table~\ref{tab:family}.
 \end{table}
 The last argument specifies several parameters controlling the processing of the BayesX binary that 
 are arranged by function \fct{bayesx.control}. The most important parameters for the different
-methods are:
-\begin{table}[h!]
+methods are listed in Table~\ref{tab:control}.
+\begin{table}[!ht]
+\renewcommand\multirowsetup{\centering}
 \begin{center}
-\begin{tabular}{|l|p{4cm}|l|}
+\begin{tabular}{|l|p{11cm}|l|}
 \hline
 Parameter & Description & \code{method} \\ \hline
-\code{iter} & integer, sets the number of iterations for the sampler & \code{"MCMC"} \code{"STEP"} \\ \hline
+\code{iter} & integer, sets the number of iterations for the sampler. & 
+              \multirow{3}{*}[-0.8cm]{\code{"MCMC"}}  \\ \cline{1-2}
+\code{burnin} & integer, sets the burn-in period of the sampler. & \\ \cline{1-2}
+\code{step} & integer, defines the thinning parameter for MCMC simulation.  E.g., \code{step = 50} 
+              means, that only every 50th sampled parameter will be stored and used to compute 
+              characteristics of the posterior distribution as means, standard deviations or 
+              quantiles. & \\ \hline
+\code{eps} & numeric, defines the termination criterion of the estimation process. If both the 
+             relative changes in the regression coefficients and the variance parameters are less 
+             than \code{eps}, the estimation process is assumed to have converged. & 
+             \multirow{2}{*}[-1.5cm]{\code{"REML"}}  \\ \cline{1-2}
+\code{maxit} & integer, defines the maximum number of iterations to be used in estimation. Since the 
+               estimation process will not necessarily converge, it may be useful to define an upper 
+               bound for the number of iterations. & \\ \hline
+\code{algorithm} & character, specifies the selection algorithm. Possible values are 
+                   \code{"cdescent1"} (adaptive algorithms see subsection 6.3 in 
+                   \citet{Belitz+Brezger+Kneib+Lang:2011}), \code{"cdescent2"} (adaptive algorithms 
+                   1 and 2 with backfitting, see remarks 1 and 2 of section 3 in 
+                   \citet{Belitz+Lang:2008}), \code{"cdescent3"} (search according to cdescent1 
+                   followed by cdescent2 using the selected model in the first step as the start 
+                   model) and \code{"stepwise"} (stepwise algorithm implemented in the \code{gam} 
+                   routine of S-plus, see \citet{Chambers+Hastie:1992}). & 
+                   \multirow{3}{*}[-3.2cm]{\code{"STEP"}}  \\ \cline{1-2}
+\code{criterion} & character, specifies the goodness of fit criterion. If \code{criterion = "MSEP"} 
+                   is specified the data are randomly divided into a test- and validation data set. 
+                   The test data set is used to estimate the models and the validation data set is 
+                   used to estimate the mean squared prediction error (MSEP) which serves as the 
+                   goodness of fit criterion to compare different models. &  \\ \cline{1-2}
+\code{startmodel} & character, defines the start model for variable selection. Options are 
+                    \code{"linear"}, \code{"empty"}, \code{"full"} and \code{"userdefined"}. &
+                    \\ \hline
 \end{tabular}
 \caption{\label{tab:control} Most important controlling parameters for the different methods using
 function \fct{bayesx}.}
@@ -506,6 +538,7 @@ are
 \begin{Sinput}
 s(..., k = -1, bs = "ps", m = NA, by = NA, xt = NULL)
 \end{Sinput}
+
 Within \fct{s}, the list of covariates used for the model term is set with the dots \code{...} 
 argument. For instance, in the introductory example, a term for the body mass index of the mother is 
 included in the model formula by \code{s(bmi)}, a term with two covariates is then be specified 
@@ -756,7 +789,7 @@ function \fct{plotmap}, e.g. a simple map, as shown in Figure~\ref{fig:zambia-si
 <<plot-zambia-map-01, echo=TRUE, eval=FALSE>>=
 plot(ZambiaBnd)
 @ 
-\begin{figure}[h!]
+\begin{figure}[!ht]
 \setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
 <<plot-zambia-map-02, echo=FALSE, eval=TRUE, fig = TRUE, width=5, height=4>>=
@@ -806,7 +839,7 @@ variances, as well as goodness of fit criteria. The estimated effects for covari
 <<zambia-agechild-bmi-plot, echo=TRUE, eval=FALSE>>=
 plot(zm, term = c("s(agechild)", "s(bmi)"))
 @
-\begin{figure}[h!]
+\begin{figure}[!ht]
 \setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
 <<zambia-agechild, echo=FALSE, fig=TRUE, width=5, height=4>>=
@@ -830,7 +863,7 @@ plot(zm, term = c("s(district)", "r(district)"),
   map = ZambiaBnd, pos = "topleft", 
   density = 20, angle = 90)
 @
-\begin{figure}[h!]
+\begin{figure}[!ht]
 \setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
 <<zambia-district-structured, echo=FALSE, fig=TRUE, width=5, height=4>>=
@@ -870,7 +903,7 @@ plot(zm, term = "s(bmi)", which = "var-samples",
 plot(zm, which = "intcpt-samples", 
   acf = TRUE, lag.max = 250)
 @
-\begin{figure}[h!]
+\begin{figure}[!ht]
 \setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
 <<zambia-autocorr-02, echo=FALSE, fig=TRUE, width=5, height=4>>=
@@ -895,7 +928,7 @@ a project of visual inspection of trees around Rothenbuch, Germany, and is discu
 \citet{Fahrmeir+Kneib+Lang:2009}, wherein the percentage rate of defoliation of each tree is 
 aggregated into three ordinal categories, also see Table~\ref{tab:forest} for a description of all 
 variables in the dataset. 
-\begin{table}[h!]
+\begin{table}[!ht]
 \begin{center}
 \begin{tabular}{|l|p{10cm}|}
 \hline
@@ -967,7 +1000,7 @@ plot(fm2, term = c("s(age)","s(inclination)",
   "s(canopy)","s(year)","s(elevation)"))
 @
 as shown in Figure~\ref{fig:forest-no-spatial}. 
-\begin{figure}[h!]
+\begin{figure}[!ht]
 \setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
 <<forest-no-spatial-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
@@ -1037,7 +1070,7 @@ summary(c(fm1, fm2))
 where the linear modeled terms in the second model seem to have a less important effect on tree 
 defoliation, with similar findings for covariates \code{inclination} and \code{elevation} in 
 Figure~\ref{fig:forest-spatial-nonpara}. 
-\begin{figure}[h!]
+\begin{figure}[!ht]
 \setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
 <<forest-spatial-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
@@ -1064,7 +1097,7 @@ estimated spatial effect is shown in Figure~\ref{fig:forest-spatial}. Summarizin
 identifies a strong influence of the spatial effect of the overall model fit, indicating that a 
 clear splitting of locational specific covariates and the spatial effect is hardly possible in this 
 example. 
-\begin{figure}[h!]
+\begin{figure}[!ht]
 \setkeys{Gin}{width=0.64\textwidth}
 \begin{center}
 <<forest-spatial-id, echo=FALSE, fig=TRUE, width=7.3, height=4.5>>=
