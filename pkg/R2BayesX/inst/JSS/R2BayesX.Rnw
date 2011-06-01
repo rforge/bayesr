@@ -475,7 +475,8 @@ Parameter & Description & \code{method} \\ \hline
                     \\ \hline
 \end{tabular}
 \caption{\label{tab:control} Most important controlling parameters for the different methods using
-function \fct{bayesx}.}
+function \fct{bayesx}. (A detailed documentation is provided in the help site of function
+\fct{bayesx.control} of package \pkg{BayesX})}
 \end{center}
 \end{table}
 
@@ -522,7 +523,8 @@ Function & Description \\ \hline
                 statistics (which has a \fct{print} method). \\ \hline
 \fct{terms} & extract terms of model components. \\ \hline
 \end{tabular}
-\caption{\label{tab:funmethods} Functions and methods for objects of class \code{"bayesx"}.}
+\caption{\label{tab:funmethods} Functions and methods for objects of class \code{"bayesx"}. (A 
+detailed documentation is provided in the help sites of package \pkg{BayesX})}
 \end{center}
 \end{table}
 
@@ -538,11 +540,10 @@ are
 \begin{Sinput}
 s(..., k = -1, bs = "ps", m = NA, by = NA, xt = NULL)
 \end{Sinput}
-
 Within \fct{s}, the list of covariates used for the model term is set with the dots \code{...} 
 argument. For instance, in the introductory example, a term for the body mass index of the mother is 
-included in the model formula by \code{s(bmi)}, a term with two covariates is then be specified 
-e.g. with \code{s(bmi, district)}. \code{k} controls the dimension of the basis used for smooth 
+included in the model formula by \code{s(bmi)}, a term with two covariates is then specified e.g. 
+with \code{s(bmi, age)}. The parameter \code{k} controls the dimension of the basis used for smooth 
 terms. Argument \code{bs} choses the basis/type of the term, possible options are shown in 
 Table~\ref{tab:terms}. 
 \begin{table}[htbp]
@@ -594,21 +595,22 @@ Table~\ref{tab:terms}.
 \caption{\label{tab:terms} Possible BayesX model terms within function \fct{s}.}
 \end{center}
 \end{table}
-Setting argument \code{m} is only meaningful for P-splines, i.e. \code{bs = "ps"}, which controls 
+Setting argument \code{m} is only meaningful for P-splines, i.e. \code{bs = "ps"}, and controls 
 the degree of the B-spline basis functions and the order of the difference penalty. E.g. a B-spline 
 of degree 3 with a 2nd order difference penalty is set with \code{s(bmi, bs = "ps", m = c(3, 2))}. A 
-numeric or a factor variable can be provided to argument \code{by} to estimate varying effects of 
-covariates. Argument \code{xt} is used to specify special controlling parameters or additional 
-geographical information for the model term. The argument must be a named list, e.g. to set the 
-hyperpriors $a$ and $b$ for the variance parameter for the P-spline term for \code{bmi}, the user 
-may type \code{s(bmi, bs = "ps", xt = list(a = 0.0001, b = 0.0001))}. For supplying additional 
-boundary or graph files (see function \fct{read.bnd} and \fct{read.gra}), that are used to compute
-suitable neighborhood penalty matrices for terms using Markov random field priors, or to calculate 
-the centroids of particular regions for geosplines and geokriging terms, the name of the list 
-argument is \code{map}. I.e. the necessary boundary file \code{ZambiaBnd} for the geokriging term in 
-the introduction is provided with \code{s(district, bs = "gk", xt = list(map = ZambiaBnd))}. 
-Information about all possible extra arguments for a particular term basis can be looked up using 
-function \fct{bayesx.term.options}. 
+numeric or a factor variable can be provided using argument \code{by} to estimate varying 
+coefficient terms, where the effect of the variable provided to code{by} varies over the range of 
+covariate(s) specified for this term. Argument \code{xt} is used to specify specific control 
+parameters or additional geographical information for the model term. The argument must be a named 
+list. For example, to set the hyperpriors $a$ and $b$ for the variance parameter of the P-spline 
+term for \code{bmi}, the user may type \code{s(bmi, bs = "ps", xt = list(a = 0.0001, b = 0.0001))}. 
+For supplying additional boundary or graph files (see function \fct{read.bnd} and \fct{read.gra}), 
+that are used to compute suitable neighborhood penalty matrices for terms using Markov random field 
+priors, or to calculate the centroids of particular regions for geosplines and geokriging terms, the 
+name of the list argument is \code{map}. For instance, the necessary boundary file \code{ZambiaBnd} 
+for the geokriging term in the introduction is provided with 
+\code{s(district, bs = "gk", xt = list(map = ZambiaBnd))}. Information about all possible extra 
+arguments for a particular term basis can be looked up using function \fct{bayesx.term.options}. 
 
 In addition to \fct{s}, unit- or cluster specific unstructured effects may be incorporated into the 
 model \code{formula} using the random effects term constructor function \fct{r}. The arguments of 
@@ -618,10 +620,10 @@ r(id, by = NA, xt = NULL)
 \end{Sinput}
 where \code{id} is the unit or cluster identification covariate the random effects should be 
 estimated for. E.g. the model formula from the introduction could be extended by a random effects 
-term for the districts in Zambia with \code{r(district)}. Here, argument \code{by} takes continuous 
-covariates for which random slopes may be estimated. Argument \code{xt} is used in the same fashion 
-as described for function \fct{s}, i.e. similar to the above, hyperpriors $a$ and $b$ for the 
-variance parameter are set e.g. with \code{r(district, xt = list(a = 0.0001, b = 0.0001))}.
+term for the districts in Zambia with \code{r(district)}. Here, argument \code{by} takes covariates 
+for which random slopes may be estimated. Argument \code{xt} is used in the same fashion as 
+described for function \fct{s}, i.e. similar to the above, hyperpriors $a$ and $b$ for the variance 
+parameter are set e.g. with \code{r(district, xt = list(a = 0.0001, b = 0.0001))}.
 
 
 \subsection[Implementation details]{Implementation details} \label{sec:implementation}
