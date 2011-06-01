@@ -17,7 +17,7 @@ function(object, dir, prg, data)
   if(is.null(map)) {
     if(!is.null(object$xt$polys))
       map <- object$xt$polys
-    if(!is.null(object$xt$penaltY))
+    if(!is.null(object$xt$penalty))
       map <- object$xt$penalty
   }
   if(is.null(map))

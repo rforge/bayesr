@@ -30,11 +30,11 @@ function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
     stop("x must have at least 2 columns!")
   args <- list(...)
   nc <- ncol(x)
-  is.bayesx <- grepl(".bayesx", class(x))
+  is.bayesx <- grepl(".bayesx", class(x))[1L]
   if(is.null(c.select)) {
     if(is.bayesx)
       c.select <- c(1L, 2L, 3L, 4L, 6L, 7L) 
-    else
+    else 
       c.select <- 1L:nc
   }
   if(is.null(c.select))
@@ -44,8 +44,15 @@ function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
   if(is.null(fill.select))
     if(is.bayesx)
       fill.select <- c(0L, 0L, 1L, 2L, 2L, 1L) 
-  if(!is.bayesx && length(fill.select) < nc)
+  if(!is.bayesx && length(fill.select) < nc) {
     fill.select <- NULL
+    if(ncol(x) > 2L) {
+      if(any(rm <- grepl("pcat", colnames(x)))) {
+        x <- x[, !rm]
+        c.select <- 1:ncol(x)
+      }
+    }
+  }
   if(is.null(col.polygons))
     args$col.polygons <- rep(c("grey80", "grey70"), round(nc/2))
   else

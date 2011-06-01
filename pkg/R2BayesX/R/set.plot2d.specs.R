@@ -7,9 +7,9 @@ function(nc, args, col.lines, is.bayesx)
   else
     lwd <- rep(lwd, length.out = nc)
   lty <- args$lty
-  if((is.null(lty) || any(is.na(lty))) && !is.bayesx)
+  if((is.null(lty) || any(is.na(lty))) && !is.bayesx[1L])
     lty <- rep(1, nc)
-  if((is.null(lty) || any(is.na(lty))) && is.bayesx)
+  if((is.null(lty) || any(is.na(lty))) && is.bayesx[1L])
     lty <- c(1, 0, 0, 0, 0)
   if(length(lty) == 1L || length(lty) < nc)
     lty <- rep(lty, length.out = nc)

@@ -130,7 +130,7 @@ function(dir, files, data, response, eta, model.name, minfo)
                 header = TRUE))
             }
           }
-          class(x) <- cx
+          class(x) <- c(cx, "matrix")
           eval(parse(text = paste("effects$\'", labelx, "\' <- x", sep = "")))
         }
       }      

@@ -126,7 +126,7 @@ function(dir, files, data, response, eta, model.name, rval, minfo)
           }
           if(!is.null(attr(FixedEffects, "sample")))
             attr(x,"sample") <- attr(FixedEffects, "sample")[,j]
-          class(x) <- "linear.bayesx"
+          class(x) <- c("linear.bayesx", "matrix")
           eval(parse(text = paste("rval$effects$\'", tv, "\' <- x", sep = "")))
         }
       }

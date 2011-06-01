@@ -7,10 +7,10 @@ function(object, dir, prg, data, type)
     backtick = TRUE, width.cutoff = 500L))
   map <- object$xt$map
   if(is.null(map)) {
-    if(!is.null(xt$polys))
-      map <- xt$polys
-    if(!is.null(xt$penaltY))
-      map <- xt$penalty
+    if(!is.null(object$xt$polys))
+      map <- object$xt$polys
+    if(!is.null(object$xt$penalty))
+      map <- object$xt$penalty
   }
   if(is.null(map)) {
     if(!is.list(object$xt[[1L]]))

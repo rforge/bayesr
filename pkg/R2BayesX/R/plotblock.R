@@ -33,7 +33,7 @@ function(x, residuals = FALSE, range = c(0.3, 0.3),
     nc <- ncol(x)
   else
     nc <- ncol(x[[1L]])
-  is.bayesx <- grepl(".bayesx", class(x))
+  is.bayesx <- grepl(".bayesx", class(x))[1L]
   if(is.null(c.select)) {
     if(is.bayesx)
       c.select <- c(1L, 2L, 3L, 4L, 6L, 7L) 
@@ -90,7 +90,7 @@ function(x, residuals = FALSE, range = c(0.3, 0.3),
     n <- length(x)	
     for(i in 1L:n) {
       if(residuals && !is.null(pres <- attr(x[[i]], "partial.resids"))) {
-        pres <- pres[pres[,1L] != 0,]
+        pres <- pres[pres[,1L] != 0 & pres[,1L] != -1,]
         if(!is.matrix(pres))
           pres <- matrix(pres, nrow = 1L)
         pres[,1L] <- i
@@ -101,12 +101,15 @@ function(x, residuals = FALSE, range = c(0.3, 0.3),
       x[[i]] <- x[[i]][,c.select]
       if(!is.matrix(x[[i]]))
         x[[i]] <- matrix(x[[i]], nrow = 1L)
-      x[[i]] <- x[[i]][x[[i]][,1L] != 0,]
+      x[[i]] <- x[[i]][x[[i]][,1L] != 0 & x[[i]][,1L] != -1,]
       if(!is.matrix(x[[i]]))
         x[[i]] <- matrix(x[[i]], nrow = 1L)
+      if(nrow(x[[i]]) == 2L && x[[i]][1L, 1L] == -1)
+        x[[i]] <- matrix(x[[i]][2L,], nrow = 1L)
       colnames(x[[i]]) <- cn
-      if(residuals)
+      if(residuals) {
         attr(x[[i]], "partial.resids") <- pres
+      }
       ylim <- c(ylim, x[[i]][,2L:ncol(x[[i]])])
     }
   }

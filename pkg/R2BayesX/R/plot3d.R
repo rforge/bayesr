@@ -8,7 +8,6 @@ function(x, residuals = FALSE, col.surface = NULL,
 {
   if(is.null(x))
     return(invisible(NULL))
-  is.bayesx <- grepl(".bayesx", class(x))
   if(inherits(x,"formula")) {
     if(is.null(data))
       data <- environment(x)
