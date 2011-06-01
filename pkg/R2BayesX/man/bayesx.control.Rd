@@ -41,8 +41,8 @@ bayesx.control(model.name = "bayesx.estim",
     string.}
   \item{outfile}{specify a directory where \code{\link{bayesx}} should store all output files, all
     output files will be named with \code{model.name} as the base name.}
-  \item{iter}{\code{integer}, set the number of iterations for the sampler.}
-  \item{burnin}{\code{integer}, set the burn-in of the sampler.}
+  \item{iter}{\code{integer}, sets the number of iterations for the sampler.}
+  \item{burnin}{\code{integer}, sets the burn-in period of the sampler.}
   \item{maxint}{if first or second order random walk priors are specified, in some cases the data 
     will be slightly grouped: The range between the minimal and maximal observed covariate values 
     will be divided into (small) intervals, and for each interval one parameter will be estimated. 
@@ -52,11 +52,10 @@ bayesx.control(model.name = "bayesx.estim",
     \code{maxint = 150} for example, means that no grouping will be done as long as the number of 
     different observations is equal to or below 150. for non equidistant data some grouping may be 
     done even if the number of different observations is below 150.}
-  \item{step}{defines the thinning parameter for MCMC simulation. for example, \code{step = 50} 
-    means, that only every 50th sampled parameter will be stored and used to compute characteristics 
-    of the posterior distribution as means, standard deviations or quantiles. The aim of thinning
-    is to reach a considerable reduction of disk storing and autocorrelations between sampled
-    parameters.}
+  \item{step}{defines the thinning parameter for MCMC simulation.  E.g., \code{step = 50} means, 
+    that only every 50th sampled parameter will be stored and used to compute characteristics of the 
+    posterior distribution as means, standard deviations or quantiles. The aim of thinning is to 
+    reach a considerable reduction of disk storing and autocorrelations between sampled parameters.}
   \item{predict}{option \code{predict} may be specified to compute samples of the deviance \code{D}, 
     the effective number of parameters \code{pD} and the deviance information criterion \code{DIC} 
     of the model.}
@@ -95,7 +94,7 @@ bayesx.control(model.name = "bayesx.estim",
     changes in the regression coefficients and the variance parameters are less than \code{eps}, 
     the estimation process is assumed to have converged.}
   \item{lowerlim}{since small variances are close to the boundary of their parameter space, the 
-    usual fisher-scoring  algorithm for their determination has to be modified. If the fraction of 
+    usual fisher-scoring algorithm for their determination has to be modified. If the fraction of 
     the penalized part of an effect relative to the total effect is less than \code{lowerlim}, the 
     estimation of the corresponding variance is stopped and the estimator is defined to be the 
     current value of the variance (see section 6.2 of the methodology manual for details).}
