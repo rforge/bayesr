@@ -27,6 +27,8 @@ function(object, model = NULL, term = NULL, ...)
     rval <- rval[[1L]]
   if(is.null(rval) || length(rval) < 1L)
     rval <- NA
+  if(any(is.na(rval)))
+    warning("residuals are missing in object!")
 
   return(rval)
 }

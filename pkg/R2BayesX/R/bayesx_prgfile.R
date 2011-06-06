@@ -8,6 +8,8 @@ function(x, model = 1L)
       if(!is.null(bayesx.prg))
         cat(bayesx.prg)
   }
+  if(is.null(bayesx.prg))
+    warning("program file is not available!")
 
   return(invisible(bayesx.prg))
 }

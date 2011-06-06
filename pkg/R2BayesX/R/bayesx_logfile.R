@@ -12,6 +12,8 @@ function(x, model = 1L)
           writeLines(bayesx.log)
       }
   }
+  if(is.null(bayesx.log))
+    warning("logfile is not available!")
 
   return(invisible(bayesx.log))
 }

@@ -35,6 +35,8 @@ function(object, model = NULL, term = NULL, ...)
   }
   if(is.null(rval) || length(rval) < 1L)
     rval <- NA
+  if(any(is.na(rval)))
+    warning("fitted values are missing in object!")
 
   return(rval)
 }

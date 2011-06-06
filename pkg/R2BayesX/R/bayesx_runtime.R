@@ -8,6 +8,8 @@ function(x, model = 1L)
       if(!is.null(runtime))
         print(runtime)
   }
+  if(is.null(runtime))
+    warning("runtime information is not available!")
 
   return(invisible(runtime))
 }
