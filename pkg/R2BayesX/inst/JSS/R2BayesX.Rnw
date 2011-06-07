@@ -599,13 +599,13 @@ Setting argument \code{m} is only meaningful for P-splines, i.e. \code{bs = "ps"
 the degree of the B-spline basis functions and the order of the difference penalty. E.g. a B-spline 
 of degree 3 with a 2nd order difference penalty is set with \code{s(bmi, bs = "ps", m = c(3, 2))}. A 
 numeric or a factor variable can be provided using argument \code{by} to estimate varying 
-coefficient terms, where the effect of the variable provided to code{by} varies over the range of 
-covariate(s) specified for this term. Argument \code{xt} is used to specify specific control 
-parameters or additional geographical information for the model term. The argument must be a named 
-list. For example, to set the hyperpriors $a$ and $b$ for the variance parameter of the P-spline 
-term for \code{bmi}, the user may type \code{s(bmi, bs = "ps", xt = list(a = 0.0001, b = 0.0001))}. 
-For supplying additional boundary or graph files (see function \fct{read.bnd} and \fct{read.gra}), 
-that are used to compute suitable neighborhood penalty matrices for terms using Markov random field 
+coefficient terms, where the effect of the variable provided to \code{by} varies over the range of 
+the covariate(s) of this term. Argument \code{xt} is used to specify specific control parameters or 
+additional geographical information for the model term. The argument must be a named list. For 
+example, to set the hyperpriors $a$ and $b$ for the variance parameter of the P-spline term for 
+\code{bmi}, the user may type \code{s(bmi, bs = "ps", xt = list(a = 0.0001, b = 0.0001))}. For 
+supplying additional boundary or graph files (see function \fct{read.bnd} and \fct{read.gra}), that 
+are used to compute suitable neighborhood penalty matrices for terms using Markov random field 
 priors, or to calculate the centroids of particular regions for geosplines and geokriging terms, the 
 name of the list argument is \code{map}. For instance, the necessary boundary file \code{ZambiaBnd} 
 for the geokriging term in the introduction is provided with 
@@ -662,7 +662,7 @@ methods described in Table~\ref{tab:funmethods} may be applied.
 Another noteworthy feature of package \pkg{BayesX} is the internal handling of data. BayesX uses 
 numerically efficient algorithms including sparse matrix computations which in principle allow to 
 estimate models using large datasets. Moreover, the number of different observations for particular
-covariates is usually much smaller than the total number of observations. I.e., the output files 
+covariates is usually much smaller than the total number of observations. That is, the output files 
 returned by the binary only include estimates for unique covariate values. Since these files 
 typically reserve much less disc space, importing the fitted model objects into \proglang{R} is 
 straightforward in most cases. As mentioned in Subsection~\ref{subsec:processing}, users may exploit 
@@ -670,21 +670,16 @@ this within \proglang{R} by providing a character string to argument \code{data}
 \fct{bayesx}, which includes the path to a dataset instead of an \proglang{R} data object. As a 
 consequence, this dataset will not be loaded within \proglang{R} and is only used internally by the 
 BayesX binary. To give an example, we generate a large dataset that might produce problems with 
-\proglang{R}'s memory allocation. Therefore, we store the data on disc in the temporary folder of 
-the running session with
+\proglang{R}'s memory allocation using a model fitting function. Therefore, we store the data on 
+disc in the temporary folder of the running session with
 <<large-data, echo=TRUE, eval=FALSE>>=
-n <- 100000
 file <- paste(tempdir(), "/data.raw", sep = "")
-write.table(matrix(c("x", "y"), nrow = 1), file = file, 
-  quote = FALSE, row.names = FALSE, col.names = FALSE)
-for(i in 1:50) {
-  dat <- data.frame(x = round(runif(n, -3, 3), 2))
-  dat$y <- with(dat, sin(x) + rnorm(n, sd = 2))
-  write.table(dat, file = file, append = TRUE, 
-    quote = FALSE, row.names = FALSE, col.names = FALSE)
-}
+n <- 5e+06
+dat <- data.frame(x = rep(runif(1000, -3, 3), length.out = n))
+dat$y <- with(dat, sin(x) + rnorm(n, sd = 2))
+write.table(dat, file = file, quote = FALSE, row.names = FALSE)
 @ 
-This produces a dataset of approximately 110Mb with only 601 unique observations for covariate 
+This produces a dataset of approximately 170Mb with only 1000 unique observations for covariate 
 \code{x}. The path to the dataset is stored in object \code{file} and is provided to argument 
 \code{data} in the function call
 <<large-data-01, echo=TRUE, eval=FALSE>>=
@@ -708,9 +703,6 @@ R> print(object.size(b), units = "Mb")
 0.3 Mb
 \end{Sinput}
 of memory size.
-
-
-\newpage
 
 
 \section{STAR models in practice} \label{sec:illustrations}
@@ -763,31 +755,38 @@ where \texttt{AI} refers to the child's anthropometric indicator (height at a ce
 example), while \texttt{MAI} and $\sigma$ correspond to the median and the standard deviation in the 
 reference population, respectively.
 
-Following \citet{Kandala+Lang+Klasen+Fahrmeir:2001}, we estimate a Gaussian additive regression 
-model with predictor
+Following \citet{Kandala+Lang+Klasen+Fahrmeir:2001}, we estimate an additive regression model with 
+predictor
 \begin{eqnarray*}
-\eta &=& \gamma_0 + \gamma_1\texttt{memployment} + \gamma_2\texttt{education} + 
-         \gamma_3\texttt{urban} + \gamma_4\texttt{gender} + \\
+\eta &=& \gamma_0 + \gamma_1\texttt{memployment1} + \gamma_2\texttt{education1} + 
+         \gamma_3\texttt{education2} + \gamma_4\texttt{urban1} + \gamma_5\texttt{gender1} + \\
      & & f_1(\texttt{bmi}) + f_2(\texttt{agechild}) + f_{str}(\texttt{district}) + 
          f_{unstr}(\texttt{district})
 \end{eqnarray*}
+where \code{memployment1} represents the first level, `working', of covariate \code{memployment}, 
+likewise for covariates \code{education}, \code{urban} and \code{gender}. As mentioned in the 
+introduction, functions $f_1$ and $f_2$ of continuous covariates \code{agechild} and \code{bmi} are
+assumed to have a possibly nonlinear effect on \code{stunting} and are therefore modeled with 
+P-splines. Furthermore, the spatial effect is decomposed into a structured effect $f_{str}$, modeled 
+by a Gaussian Markov random field, and an unstructured effect $f_{unstr}$, using a random effects 
+term for the districts in Zambia.
 
 The data for this analysis is provided in the \pkg{BayesX} package and can be loaded with
 <<data-zambia, echo=TRUE, eval=TRUE>>=
 data("ZambiaNutrition", package = "R2BayesX")
 @
-For the final model, incorporating a structured spatial effect for the districts in Zambia using a 
-Markov random fields term within the \code{formula} specifiaction, BayesX needs some information 
-about the district neighborhood structure, which e.g. is enclosed in 
+Since function $f_{str}$ is modeled by a Markov random fields term, BayesX needs some information 
+about the district neighborhood structure, which e.g. is enclosed in the file
 <<data-zambia-bnd, echo=TRUE, eval=TRUE>>=
 data("ZambiaBnd", package = "R2BayesX")
 @
-With the information of the boundary file an appropriate penalty is computed, allowing for a 
-smoothly varying effect of neighboring regions. The object \code{ZambiaBnd} has class \code{"bnd"} 
-and is basically a \fct{list} of polygon matrices, one matrix for each district, with $x$-, in the 
-first, and $y$-coordinates, in the second column respectively, of the boundary points. There is a 
-generic plotting method implemented for objects of class \code{"bnd"}, which in principle calls 
-function \fct{plotmap}, e.g. a simple map, as shown in Figure~\ref{fig:zambia-simple-map}, of the districts in Zambia is drawn typing
+The object \code{ZambiaBnd} has class \code{"bnd"} and is basically a \fct{list} of polygon 
+matrices, with $x$- and $y$-coordinates of the boundary points in the first and second column 
+respectively. With the information of the boundary file BayesX may compute an appropriate penalty, 
+allowing for a smoothly varying effect of the neighboring regions. There is a generic plotting 
+method implemented for objects of class \code{"bnd"}, which in principle calls function 
+\fct{plotmap}, e.g. a simple map, as shown in Figure~\ref{fig:zambia-simple-map}, of the districts 
+in Zambia is drawn typing
 <<plot-zambia-map-01, echo=TRUE, eval=FALSE>>=
 plot(ZambiaBnd)
 @ 
@@ -808,13 +807,9 @@ mf <- stunting ~ memployment + education + urban + gender +
   s(bmi, bs = "ps") + s(agechild, bs = "ps") +
   s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district)
 @
-where the two continuous covariates \code{bmi} and \code{agechild} are assumed to have a possibly 
-nonlinear effect on \code{stunting} and are modeled with P-splines, \code{bs = "ps"}. Furthermore, 
-a decomposition of the spatial effect is achieved by specifying a Markov random field term with 
-\code{bs = "mrf"} for the structured and a random effects term, using function \fct{r}, for an
-unstructured spatial effect. Finally, a gaussian model is fitted using MCMC by calling
+and the model is fitted using MCMC by calling
 <<fit-zambia-model, echo=TRUE, eval=FALSE>>=
-zm <- bayesx(mf, method = "MCMC", iter = 12000, 
+zm <- bayesx(mf, method = "MCMC", iterations = 12000, 
   burnin = 2000, step = 10, data = ZambiaNutrition)
 @
 <<cache-zambia-model, echo=FALSE, eval=TRUE>>=
@@ -825,19 +820,20 @@ load("zambia-model.rda")
 save(zm, file = "zambia-model.rda")
 }
 @
-where argument \code{iter}, \code{burnin} and \code{step} set the number of iterations of the MCMC 
+Argument \code{iterations}, \code{burnin} and \code{step} set the number of iterations of the MCMC 
 simulation, the burnin period, which will be removed from the generated samples, and the step length 
-for which samples should be stored, i.e. \code{step = 10} forces saving of only every 10th sampled 
-parameter.
+for which samples should be stored, i.e. if \code{step = 10}, only every 10th sampled parameter will
+be saved.
 
-After the model has been successfully fitted, the generic call  
+After the model has been successfully fitted, summary statistics of the MCMC estimated model object 
+may be printed with 
 <<summary-zambia-model>>=
 summary(zm)
 @
-provides summary statistics of the MCMC fitted model object, which typically includes mean, standard 
-deviation and quantiles of sampled linear effects, smooth terms variances and random effects 
-variances, as well as goodness of fit criteria. The estimated effects for covariates 
-\code{agechild} and \code{bmi} may be visualized with
+which typically includes mean, standard deviation and quantiles of sampled linear effects, smooth 
+terms variances and random effects variances, as well as goodness of fit criteria and other 
+information about the model. The estimated effects for covariates \code{agechild} and \code{bmi} may 
+then be visualized with
 <<zambia-agechild-bmi-plot, echo=TRUE, eval=FALSE>>=
 plot(zm, term = c("s(agechild)", "s(bmi)"))
 @
@@ -885,24 +881,30 @@ plot(zm, term = "r(district)", map = ZambiaBnd,
 \caption{\label{fig:zambia-district-structured-unstructured} Example on childhood malnutrition:
 Structured, left panel, and unstructured spatial effect, right panel respectively.}
 \end{figure}
-noting that if argument \code{map} is not supplied, the effects will also be visualized using 
-function \fct{blockplot}. Besides plotting of sampling paths, as mentioned in 
-Section~\ref{sec:overview}, for any term in the model, the samples of the parameters are 
-stored as an attribute in the fitted term object and are e.g. extracted for term \code{s(bmi)} by 
-the following
-<<zambia-coef-extract, echo=TRUE, eval=TRUE, fig=FALSE>>=
-fit.bmi <- fitted(zm, term = "s(bmi)")
-head(attr(fit.bmi, "sample"), 4)
-head(attr(fit.bmi, "variance.sample"), 4)
+Note that for a map effect plot, the boundary file needs to be supplied to the plotting function, 
+otherwise the effect will also be visualized using function \fct{blockplot}. 
+
+For MCMC post estimation diagnosis, it is also possible to extract sampling paths of parameters with
+function \fct{samples}, or to plot the samples directly. For instance, coefficient sampling paths 
+for term \code{s(bmi)} are displayed with
+<<zambia-bmi-coef-samples, echo=TRUE, eval=FALSE, fig=FALSE>>=
+plot(zm, term = "s(bmi)", which = "coef-samples")
 @
-where \code{"sample"} represents samples of regression coefficients and \code{"variance.sample"}
-samples of the variance parameter of the smooth. In addition, autocorrelation functions may be 
-drawn, for instance of the variance samples and the intercept, as shown in 
-Figure~\ref{fig:zambia-autocorr}, by typing
+see Figure~\ref{fig:zambia-bmi-coef-samples}.
+\begin{figure}[!ht]
+\setkeys{Gin}{width=0.6\textwidth}
+\begin{center}
+<<zambia-bmi-coef-samples-do, echo=FALSE, fig=TRUE, width=7, height=7>>=
+plot(zm, term = "s(bmi)", which = "coef-samples", main = NA)
+@
+\end{center}
+\caption{\label{fig:zambia-bmi-coef-samples} Example on childhood undernutrition: Sampling paths of 
+the coefficients of term \code{s(bmi)}.}
+\end{figure}
+In addition, autocorrelation functions may be drawn, e.g. as shown in 
+Figure~\ref{fig:zambia-autocorr} for the variance samples of term \code{s(bmi)}, by typing
 <<zambia-autocorr-01, echo=TRUE, eval=FALSE>>=
 plot(zm, term = "s(bmi)", which = "var-samples", 
-  acf = TRUE, lag.max = 250)
-plot(zm, which = "intcpt-samples", 
   acf = TRUE, lag.max = 250)
 @
 \begin{figure}[!ht]
@@ -917,9 +919,6 @@ plot(zm, term = "s(bmi)", which = "var-samples",
 \caption{\label{fig:zambia-autocorr} Example on childhood undernutrition: Autocorrelation function
 of the samples of the variance parameter of term \code{s(bmi)}.}
 \end{figure}
-
-
-\newpage
 
 
 \subsection{Forest health data set} \label{subsec:forest}

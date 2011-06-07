@@ -5,11 +5,11 @@ function(dir)
     stop("directory is not existing!")
   files <- list.files(dir)
   if(length(files) < 1L || is.null(files))
-    stop(paste("no files in directory:",dir))
+    stop(paste("no files in directory:", dir))
   ok <- FALSE
   model.names <- NULL
   if(length(i <- grep("bayesx.log", files, fixed = TRUE))) {
-    logf <- readLines(paste(dir,"/",files[i],sep=""))
+    logf <- readLines(paste(dir, "/", files[i], sep = ""))
     outfiles <- grep("b.outfile = ", logf, value = TRUE)
     if(length(outfiles) > 0L)
       for(k in 1L:length(outfiles)) {
@@ -35,10 +35,10 @@ function(dir)
   }
 
   ## specifiy possible search endings here
-  search.endings <- c("_model_summary.tex","_graphics.prg","_stata.do",
-    "_r.R","_FixedEffects.res","_FixedEffects1.res","_FixedEffects2.res",
-    "_predict.raw","_modelfit.raw","_LinearEffects.res","_LinearEffects1.res",
-    "_LinearEffects2.res",".terms.info","_predict.res")
+  search.endings <- c("_model_summary.tex", "_graphics.prg", "_stata.do",
+    "_r.R", "_FixedEffects.res", "_FixedEffects1.res", "_FixedEffects2.res",
+    "_predict.raw", "_modelfit.raw", "_LinearEffects.res", "_LinearEffects1.res",
+    "_LinearEffects2.res", ".terms.info", "_predict.res")
 
   model.names2 <- list()
   n <- 0L
@@ -47,7 +47,7 @@ function(dir)
       n <- n + 1L
       fs <- files[ii]
       k <- length(fs)
-      model.names2[[n]] <- rep("NA",k)
+      model.names2[[n]] <- rep("NA", k)
       for(j in 1L:length(fs))
         model.names2[[n]][j] <- strsplit(fs[j], search.endings[i], "")[[1L]]
       ok <- TRUE
@@ -55,22 +55,22 @@ function(dir)
   }
   model.names <- c(model.names, unlist(model.names2))
   if(!ok)
-    stop(paste("no BayesX output files found in:",dir))
+    stop(paste("no BayesX output files found in:", dir))
   else {
     model.names <- unique(unlist(model.names))
     for(k in 1L:length(model.names)) {
       model.names[k] <- strsplit(model.names[k], "_MAIN_REGRESSION", "")[[1L]][1L]
       model.names[k] <- strsplit(model.names[k], "_RANDOM_EFFECTS", "")[[1L]][1L]
-      if(length(grep("hlevel",model.names[k]))) {
-        split <- strsplit(model.names[k],"_hlevel","")[[1L]]
+      if(length(grep("hlevel", model.names[k]))) {
+        split <- strsplit(model.names[k], "_hlevel")[[1L]]
         if(length(split) < 2L)
-          split <- strsplit(model.names[k],".hlevel","")[[1L]]
+          split <- strsplit(model.names[k], ".hlevel")[[1L]]
         mn <- split[1L]
         hlevel <- split[2L]
         if(hlevel < 2L)
-          model.names[k] <- paste(mn,"_hlevel",hlevel,"_MAIN_REGRESSION",sep="")
+          model.names[k] <- paste(mn, "_hlevel", hlevel, "_MAIN_REGRESSION", sep = "")
         else
-          model.names[k] <- paste(mn,"_hlevel",hlevel,"_RANDOM_EFFECTS",sep="")
+          model.names[k] <- paste(mn, "_hlevel", hlevel, "_RANDOM_EFFECTS", sep = "")
       }
     }
   }

@@ -1,29 +1,14 @@
 dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-b1 <- bayesx(y ~ s(x, bs = "ps"), family = gaussian, data = dat)
-
-
-b <- read.bayesx.output("/home/c403129/tmp/stefan/india_all_zscore_alt")
-
-
+zm <- bayesx(mf, method = "MCMC", iter = 12000, 
+  burnin = 2000, step = 10, data = ZambiaNutrition, 
+  dir.rm = FALSE, contrasts = list(memployment = "contr.treatment"))
 
 
 
+b <- read.bayesx.output("/tmp/RtmpvqFbDK/bayesx")
 
-
-bV <- read.bayesx.output("/home/c403129/tmp/bayesxVGAM")
-
-
-
-
-
-
-
-
-
-
-zm <- bayesx(mf, method = "MCMC", iter = 12000, burnin = 2000, step = 10, data = ZambiaNutrition, dir.rm = FALSE)
 
 
 

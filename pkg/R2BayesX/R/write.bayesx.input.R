@@ -87,9 +87,10 @@ function(object)
   dropvars <- NULL
   if(is.null(data.file)) {
     tf <- as.character(object$formula)
-    if(is.null(object$contrasts)) {
-      for(k in 1L:ncol(object$data)) {
-        if(is.factor(object$data[,k]))
+    cnd <- colnames(object$data)
+    for(k in 1L:ncol(object$data)) {
+      if(is.factor(object$data[,k])){
+        if(is.null(object$contrasts[[cnd[k]]]))
           contrasts(object$data[,k]) = contr.sum(nlevels(object$data[,k]))
       }
     }

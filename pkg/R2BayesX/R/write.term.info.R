@@ -32,7 +32,7 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL, xlev = NULL)
         if(!is.character(data) && !sp)
           x <- data[[terms[k]]]
         if(is.factor(x) && !sp) {
-          m <- model.matrix(as.formula(paste("~", terms[k])), data, contrasts.arg, xlev)
+          m <- model.matrix(as.formula(paste("~ -1 +", terms[k])), data, contrasts.arg, xlev)
           fn <- colnames(m)[2L:ncol(m)]
           fnv <- "c("
           nf <- length(fn)
@@ -40,8 +40,10 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL, xlev = NULL)
             for(i in 1L:(nf - 1L))
               fnv <- paste(fnv, "\'", fn[i], "\',", sep = "")
           fnv <- paste(fnv, "\'", fn[nf], "\')", sep = "")
+          xl <- paste(levels(x), collapse = "\',\'")
+          xl <- paste("c(\'", xl , "\')", sep = "")
           info <- paste("list(term=\'", terms[k], "\',pos=" , k, 
-            ",isFactor=TRUE", ",names=",rmf(fnv), ")", sep = "")
+            ",isFactor=TRUE", ",names=", rmf(fnv), ",levels=", xl, ")", sep = "")
         } else info <- paste("list(term=\'", terms[k], "\',pos=", k, ",isFactor=FALSE)", sep = "")
       }
       info <- paste(info,"\n")

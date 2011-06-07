@@ -40,8 +40,7 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
       if("intcpt-samples" %in% which) {
         if(!is.null(attr(x[[i]]$fixed.effects, "sample"))) {
           pc <- TRUE
-          par(oma = c(1, 1, 2, 1))
-          par(mfrow = c(1, 1))
+          par(oma = c(1L, 1L, 2L, 1L), mfrow = c(1L, 1L))
           args$x <- attr(x[[i]]$fixed.effects, "sample")[,1L]
           args$selected <- "(Intercept)"
           args$var <- FALSE
@@ -69,7 +68,7 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
               args$diagnostics <- 1L
             }
             if("var-samples" %in% which) {
-              par(oma = c(1, 1, 2, 1))
+              par(oma = c(1L, 1L, 2L, 1L))
               args$diagnostics <- 2L
             }
             if(!is.null(args$x)) {

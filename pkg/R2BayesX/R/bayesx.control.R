@@ -1,11 +1,11 @@
 bayesx.control <-
 function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",  
   verbose = FALSE, dir.rm = TRUE, bin = getOption("bayesx.bin"), 
-  outfile = NULL, iter = 12000L, burnin = 2000L, maxint = 150L, step = 10L, 
+  outfile = NULL, iterations = 12000L, burnin = 2000L, maxint = 150L, step = 10L, 
   predict = TRUE, seed = 123, hyp.prior = c(1, 0.005), distopt = NULL, 
   reference = NULL, zipdistopt = NULL,  begin = NULL, level = NULL, 
   eps = 1e-05, lowerlim = 0.001, maxit = 400L, maxchange = 1e+06, leftint = NULL, 
-  lefttrunc = NULL, state = NULL, algorithm = NULL, criterion = NULL, proportion = NULL,
+  lefttrunc = NULL, state = NULL, algorithm = NULL, criterationsion = NULL, proportion = NULL,
   startmodel = NULL, trace = NULL, steps = NULL, 
   CI = "MCMCbootstrap", bootstrapsamples = 99L, ...)
 {
@@ -36,10 +36,10 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
   if(!is.null(level))
     if(length(level) < 2L)
       level <- c(level , level)
-  if(burnin > iter)
+  if(burnin > iterations)
     burnin <- 1L
   if(method == "MCMC" || method == "HMCMC") {
-    control$iterations <- iter
+    control$iterationsations <- iterations
     control$burnin <- burnin
     control$maxint <- maxint
     control$step <- step
@@ -75,12 +75,12 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
     control$hmcmc <- FALSE
   }
   if(method == "STEP") {
-    control$iterations <- iter
+    control$iterationsations <- iterations
     control$burnin <- burnin
     control$step <- step
     control$predict <- predict
     control$algorithm <- algorithm 
-    control$criterion <- criterion
+    control$criterationsion <- criterationsion
     control$proportion <- proportion
     control$startmodel <- startmodel
     control$trace <- trace
