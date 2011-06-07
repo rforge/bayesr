@@ -344,9 +344,9 @@ Installing BayesX from \proglang{R} then ideally only requires running
 install.bayesx(inst.dir = "path/to/installation/directory", 
   source.dir = NULL)
 @
-where argument \code{inst.dir} is a path to a valid directory with user writing permissions. If 
-\code{source.dir = NULL}, the necessary installation files will automatically tried to be downloaded 
-from the \href{http://www.stat.uni-muenchen.de/~bayesx}{BayesX homepage}, otherwise 
+where argument \code{inst.dir} is a path to a valid installation directory with user writing 
+permissions. If \code{source.dir = NULL}, the necessary installation files will automatically tried 
+to be downloaded from the \href{http://www.stat.uni-muenchen.de/~bayesx}{BayesX homepage}, otherwise 
 \code{source.dir} specifies the path where \fct{install.bayesx} may either find the packed sources 
 \href{http://www.stat.uni-muenchen.de/~bayesx/install/bayesxsource.zip}{\code{bayesxsource.zip}},
 or using Windows, the installer

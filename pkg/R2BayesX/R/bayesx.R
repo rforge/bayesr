@@ -9,6 +9,8 @@ function(formula, data, weights = NULL, subset = NULL,
     stop("please install BayesX or verify bin path, also see function install.bayesx()")
 
   args <- list(...)
+  if(is.function(args$family))
+    args$family <- args$family()$family
   if(!is.null(args$family) || !is.null(args$method)) {
     if((!is.null(args$family) && control$family != args$family) || 
        (!is.null(args$method) && control$method != args$method))

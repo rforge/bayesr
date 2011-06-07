@@ -30,6 +30,8 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
   control$bin <- bin
   if(is.null(family))
     family <- "gaussian"
+  if(is.function(family))
+    family <- family()$family
   control$family <- family
   if(!is.null(level))
     if(length(level) < 2L)

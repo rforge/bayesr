@@ -18,7 +18,9 @@ function(dir, files, data, response, eta, model.name, minfo)
         x <- df2m(read.table(paste(dir, "/", res, sep = ""), header = TRUE))
         dimx <- s4dim(x)
         if(sum(x[,(dimx + 1L):ncol(x)], na.rm = TRUE) != 0) {
+          colnx <- colnames(x)
           x <- x[order(x[,1L]),]
+          colnames(x) <- colnx
           cx <- s4class(res)
           dimx2 <- dimx
           if(cx == "geo.bayesx") {
@@ -26,16 +28,18 @@ function(dir, files, data, response, eta, model.name, minfo)
             xnam <- colnames(x)[1L:dimx2]
             xnam2 <- xnam[1L]
           } else xnam <- xnam2 <- colnames(x)[1L:dimx2]
-          xnam <- unlist(strsplit(xnam, "_c"))
+          # xnam <- unlist(strsplit(xnam, "_c"))
           xnam2 <- xnam
           vx <- vx2 <- vx3 <- NULL
+
           if(grepl("_f_", res)) {
             res2 <- gsub(paste(model.name, "_", sep = ""), "", strsplit(res, "_f_")[[1L]])[1L]
             if(res2 != model.name)
               vx <- res2
             if(length(res3 <- strsplit(res, "_f_")[[1L]]) > 1L) {
-              res3 <- strsplit(res3[2L], "_")[[1L]]
-              if(length(res3) >= 3) {
+              res3 <- strsplit(res3[2L], xnam)[[1L]]
+              res3 <- strsplit(res3[1L], "_")[[1L]]
+              if(length(res3) >= 1L) {
                   vx2 <- vx3 <- res3[1L]
                 if(!is.null(minfo)) {
                   if(!is.null(minfo$YLevels) && !is.null(minfo$nYLevels)) {
@@ -47,6 +51,7 @@ function(dir, files, data, response, eta, model.name, minfo)
               }
             }
           }
+
           colnames(x)[1L:dimx2] <- xnam
           rownames(x) <- 1L:nrow(x)
           labelx <- make.label(cx, xnam, dimx, vx)
