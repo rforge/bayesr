@@ -911,12 +911,12 @@ plot(zm, term = "s(bmi)", which = "var-samples",
   acf = TRUE, lag.max = 250)
 @
 \begin{figure}[!ht]
-\setkeys{Gin}{width=0.46\textwidth}
+\setkeys{Gin}{width=0.5\textwidth}
 \begin{center}
-<<zambia-autocorr-02, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(1.1, 1.1, 0.1, 0.1))
+<<zambia-autocorr-02, echo=FALSE, fig=TRUE, width=6, height=5>>=
+par(mar = c(4, 4, 0.01, 0.01))
 plot(zm, term = "s(bmi)", which = "var-samples", 
-  acf = TRUE, lag.max = 250, main = NA)
+  acf = TRUE, lag.max = 250, main = "")
 @
 \end{center}
 \caption{\label{fig:zambia-autocorr} Example on childhood undernutrition: Autocorrelation function

@@ -39,7 +39,20 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, ...)
       do.call(graphics::plot.default, args)
     } else {
       args$x <- stats::ts(data = x[,k])
-      do.call(stats::acf, args)
+      args$plot <- FALSE
+      acfx <- do.call(stats::acf, args)
+      lx <- as.vector(acfx$lag)
+      ax <- as.vector(acfx$acf)
+      n <- length(lx)
+      lx <- lx[2L:n]
+      ax <- ax[2L:n]
+      acfx$lag <- array(lx, dim = c(n - 1L, 1L, 1L))
+      acfx$acf <- array(ax, dim = c(n - 1L, 1L, 1L))
+      stats:::plot.acf(acfx, axes = FALSE, main = NA)
+      at <- seq(1L, (n - 1L), by = round((n - 1L)/10) - 1L)
+      box()
+      axis(1L, at = at, labels = at)
+      axis(2L)
     }
     if(nr > 1L)
       mtext(paste("Coefficient", k), side = 3L, line = 0.5, cex = 0.8)
