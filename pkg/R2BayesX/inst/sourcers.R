@@ -1,7 +1,7 @@
 dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-plot(zm, term = "s(bmi)", which = "coef-samples")
+plot(zm, term = "s(bmi)", which = "var-samples", acf = T)
 
 
 BIC(c(fm1, fm2))
