@@ -20,11 +20,11 @@ function(terms, vars, data, dropvars)
           if(intcpt) {
             ff <- eval(parse(text = paste("model.matrix(~ ", tmp,")", sep = "")), 
               envir = data)
-            tmp <- colnames(ff)[2L:ncol(ff)]
+            tmp <- rmf(colnames(ff)[2L:ncol(ff)])
           } else {
             ff <- eval(parse(text = paste("model.matrix(~ -1 + ", tmp,")", sep = "")), 
               envir = data)
-            tmp <- colnames(ff)[2L:ncol(ff)]
+            tmp <- rmf(colnames(ff))
           }
           tmp <- tmp[tmp %in% vars]
         }

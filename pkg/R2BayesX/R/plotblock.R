@@ -81,6 +81,8 @@ function(x, residuals = FALSE, range = c(0.3, 0.3),
       colnames(effects[[i]]) <- rep(paste(xnam, xu[i], sep = ""), ncol(effects[[i]]))
       if(residuals) {
         pres <- e[e[,1L] == xu[i],]
+        if(!is.matrix(pres))
+          pres <- matrix(pres, nrow = 1)
         attr(effects[[i]], "partial.resids") <- pres
         ylim <- c(ylim, pres[,2L:ncol(pres)])
       }

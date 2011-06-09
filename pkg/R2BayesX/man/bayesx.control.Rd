@@ -14,7 +14,7 @@
 bayesx.control(model.name = "bayesx.estim", 
   family = "gaussian", method = "MCMC", verbose = FALSE, 
   dir.rm = TRUE, bin = getOption("bayesx.bin"), outfile = NULL, 
-  iter = 12000L, burnin = 2000L, maxint = 150L, step = 10L, 
+  iterations = 12000L, burnin = 2000L, maxint = 150L, step = 10L, 
   predict = TRUE, seed = 123, hyp.prior = c(1, 0.005), 
   distopt = NULL, reference = NULL, zipdistopt = NULL,  
   begin = NULL, level = NULL, eps = 1e-05, lowerlim = 0.001, 
@@ -41,7 +41,7 @@ bayesx.control(model.name = "bayesx.estim",
     string.}
   \item{outfile}{specify a directory where \code{\link{bayesx}} should store all output files, all
     output files will be named with \code{model.name} as the base name.}
-  \item{iter}{\code{integer}, sets the number of iterations for the sampler.}
+  \item{iterations}{\code{integer}, sets the number of iterations for the sampler.}
   \item{burnin}{\code{integer}, sets the burn-in period of the sampler.}
   \item{maxint}{if first or second order random walk priors are specified, in some cases the data 
     will be slightly grouped: The range between the minimal and maximal observed covariate values 

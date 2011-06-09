@@ -1,11 +1,16 @@
 dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-zm <- bayesx(mf, method = "MCMC", iter = 12000, 
-  burnin = 2000, step = 10, data = ZambiaNutrition, 
-  dir.rm = FALSE, contrasts = list(memployment = "contr.treatment"))
+BIC(c(fm1, fm2))
+
+b <-c(fm1, fm2)
 
 
+
+ff <- stunting ~ memployment + education + urban + gender
+m <- as.data.frame(model.matrix(ff, data = ZambiaNutrition, contrasts.arg = list(memployment = "contr.sum", 
+  education = "contr.sum", urban = "contr.sum", gender = "contr.sum")))
+cbind(m["memployment1"], ZambiaNutrition["memployment"])
 
 b <- read.bayesx.output("/tmp/RtmpvqFbDK/bayesx")
 

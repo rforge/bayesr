@@ -5,7 +5,7 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
   predict = TRUE, seed = 123, hyp.prior = c(1, 0.005), distopt = NULL, 
   reference = NULL, zipdistopt = NULL,  begin = NULL, level = NULL, 
   eps = 1e-05, lowerlim = 0.001, maxit = 400L, maxchange = 1e+06, leftint = NULL, 
-  lefttrunc = NULL, state = NULL, algorithm = NULL, criterationsion = NULL, proportion = NULL,
+  lefttrunc = NULL, state = NULL, algorithm = NULL, criterion = NULL, proportion = NULL,
   startmodel = NULL, trace = NULL, steps = NULL, 
   CI = "MCMCbootstrap", bootstrapsamples = 99L, ...)
 {
@@ -39,7 +39,7 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
   if(burnin > iterations)
     burnin <- 1L
   if(method == "MCMC" || method == "HMCMC") {
-    control$iterationsations <- iterations
+    control$iterations <- iterations
     control$burnin <- burnin
     control$maxint <- maxint
     control$step <- step

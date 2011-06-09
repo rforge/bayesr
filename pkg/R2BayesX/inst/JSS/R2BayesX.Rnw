@@ -683,8 +683,9 @@ This produces a dataset of approximately 170Mb with only 1000 unique observation
 \code{x}. The path to the dataset is stored in object \code{file} and is provided to argument 
 \code{data} in the function call
 <<large-data-01, echo=TRUE, eval=FALSE>>=
-b <- bayesx(y ~ s(x, bs = "ps"), data = file, 
-  iter = 3000, burnin = 500, step = 2, predict = FALSE)
+b <- bayesx(y ~ s(x, bs = "ps"), family = "gaussian",
+  method = "MCMC", iterations = 3000, burnin = 500, step = 2, 
+  predict = FALSE, data = file)
 @ 
 For illustration purposes, the number of iterations is only set to 3000. Note that argument 
 \code{predict} is set to \code{FALSE}, i.e. only output files of estimated effects will be returned, 
@@ -710,11 +711,11 @@ of memory size.
 The focus of this section is on demonstrating the various features of the \pkg{BayesX} package. 
 Therefore, the examples provided are replicate analysis taken from \citet{Brezger+Kneib+Lang:2005} 
 and \citet{Fahrmeir+Kneib+Lang:2009}. The presented datasets have been added to package 
-\pkg{BayesX}, ensuring straightforward traceability of the code presented. In the first example, a 
-Gaussian additive regression model is estimated using Markov chain Monte Carlo simulation. The 
-second example covers restricted maximum likelihood estimation, where a cumulative multinomial 
-distribution is assigned for the response variable. The last example illustrates the approach of the 
-stepwise algorithm for model and variable selection.
+\pkg{BayesX}, ensuring straightforward traceability of the following code. In the first example, a 
+Gaussian regression model is estimated using Markov chain Monte Carlo simulation. The second example 
+covers restricted maximum likelihood estimation, where a cumulative multinomial distribution is 
+assigned for the response variable. The last example illustrates the approach of the stepwise 
+algorithm for model and variable selection.
 
 
 \subsection{Childhood malnutrition in Zambia} \label{subsec:zambia}
@@ -763,13 +764,14 @@ predictor
      & & f_1(\texttt{bmi}) + f_2(\texttt{agechild}) + f_{str}(\texttt{district}) + 
          f_{unstr}(\texttt{district})
 \end{eqnarray*}
-where \code{memployment1} represents the first level, `working', of covariate \code{memployment}, 
-likewise for covariates \code{education}, \code{urban} and \code{gender}. As mentioned in the 
-introduction, functions $f_1$ and $f_2$ of continuous covariates \code{agechild} and \code{bmi} are
-assumed to have a possibly nonlinear effect on \code{stunting} and are therefore modeled with 
-P-splines. Furthermore, the spatial effect is decomposed into a structured effect $f_{str}$, modeled 
-by a Gaussian Markov random field, and an unstructured effect $f_{unstr}$, using a random effects 
-term for the districts in Zambia.
+where \code{memployment1} is the deviation (effect) coded version of covariate \code{memployment}, 
+i.e. \code{memployment1} contains of values -1, corresponding to `working', and 1, `not working' 
+respectively, likewise for covariates \code{education}, \code{urban} and \code{gender}. As mentioned 
+in the introduction, functions $f_1$ and $f_2$ of continuous covariates \code{agechild} and 
+\code{bmi} are assumed to have a possibly nonlinear effect on \code{stunting} and are therefore 
+modeled with P-splines. Furthermore, the spatial effect is decomposed into a structured effect 
+$f_{str}$, modeled by a Gaussian Markov random field, and an unstructured effect $f_{unstr}$, using 
+a random effects term for the districts in Zambia.
 
 The data for this analysis is provided in the \pkg{BayesX} package and can be loaded with
 <<data-zambia, echo=TRUE, eval=TRUE>>=
@@ -809,8 +811,9 @@ mf <- stunting ~ memployment + education + urban + gender +
 @
 and the model is fitted using MCMC by calling
 <<fit-zambia-model, echo=TRUE, eval=FALSE>>=
-zm <- bayesx(mf, method = "MCMC", iterations = 12000, 
-  burnin = 2000, step = 10, data = ZambiaNutrition)
+zm <- bayesx(mf, family = "gaussian", method = "MCMC", 
+  iterations = 12000, burnin = 2000, step = 10, 
+  data = ZambiaNutrition)
 @
 <<cache-zambia-model, echo=FALSE, eval=TRUE>>=
 if(file.exists("zambia-model.rda")) {
@@ -831,7 +834,7 @@ may be printed with
 summary(zm)
 @
 which typically includes mean, standard deviation and quantiles of sampled linear effects, smooth 
-terms variances and random effects variances, as well as goodness of fit criteria and other 
+terms variances and random effects variances, as well as goodness of fit criteria and some other 
 information about the model. The estimated effects for covariates \code{agechild} and \code{bmi} may 
 then be visualized with
 <<zambia-agechild-bmi-plot, echo=TRUE, eval=FALSE>>=
@@ -892,7 +895,7 @@ plot(zm, term = "s(bmi)", which = "coef-samples")
 @
 see Figure~\ref{fig:zambia-bmi-coef-samples}.
 \begin{figure}[!ht]
-\setkeys{Gin}{width=0.6\textwidth}
+\setkeys{Gin}{width=0.75\textwidth}
 \begin{center}
 <<zambia-bmi-coef-samples-do, echo=FALSE, fig=TRUE, width=7, height=7>>=
 plot(zm, term = "s(bmi)", which = "coef-samples", main = NA)
@@ -921,14 +924,18 @@ of the samples of the variance parameter of term \code{s(bmi)}.}
 \end{figure}
 
 
+\clearpage
+
+
 \subsection{Forest health data set} \label{subsec:forest}
 
 The forest health dataset comprises information on the defoliation of beech trees, which serves as 
 an indicator of overall forest health here. The data was collected annually from 1980 to 1997 during 
 a project of visual inspection of trees around Rothenbuch, Germany, and is discussed in detail in 
-\citet{Fahrmeir+Kneib+Lang:2009}, wherein the percentage rate of defoliation of each tree is 
-aggregated into three ordinal categories, also see Table~\ref{tab:forest} for a description of all 
-variables in the dataset. 
+\citet{Fahrmeir+Kneib+Lang:2009}. In this example, the percentage rate of defoliation of each tree 
+is aggregated into three ordinal categories, which are modeled in terms of covariates characterizing 
+the stand and site of a tree. In addition, temporal and spatial information is available, see also 
+Table~\ref{tab:forest}.
 \begin{table}[!ht]
 \begin{center}
 \begin{tabular}{|l|p{10cm}|}
@@ -939,8 +946,8 @@ Variable           & Description \\ \hline
 \code{defoliation} & percentage of tree defoliation in three ordinal
                      categories, 0 == `defoliation < 12.5\%', 1 == `12.5\% $\leq$
                      defoliation < 50\%' and 2 == `defoliation $\geq$ 50\%'. \\ \hline
-\code{x}           & x-coordinate of the tree location. \\ \hline
-\code{y}           & y-coordinate of the tree location. \\ \hline
+% \code{x}           & x-coordinate of the tree location. \\ \hline
+% \code{y}           & y-coordinate of the tree location. \\ \hline
 \code{age}         & age of stands in years. \\ \hline
 \code{canopy}      & forest canopy density in percent. \\ \hline
 \code{inclination} & slope inclination in percent. \\ \hline
@@ -960,9 +967,19 @@ Variable           & Description \\ \hline
 \end{center}
 \end{table}
 
-Following \citet{Fahrmeir+Kneib+Lang:2009}, we start with the following three categorical ordered 
-logit model, where $P(\texttt{defoliation}_{it} = r)$ of tree $i$ at time $t$, $r = 1,2$, is modeled
-in terms of a set of linearly and smooth entering covariates specified with
+Similar to \citet{Fahrmeir+Kneib+Lang:2009}, we start with a three categorical ordered logit model, 
+with $P(\texttt{defoliation}_{it} \leq r)$ of tree $i$ at time $t$, $r = 1,2$, and the 
+additive predictor
+\begin{eqnarray*}
+\eta_{it}^{(r)} &=& f_1(\texttt{age}_{it}) + f_2(\texttt{inclination}_{i}) + 
+  f_3(\texttt{canopy}_{it}) + f_4(\texttt{year}) + f_5(\texttt{elevation}_{i}) + 
+  \mathbf{x}_{it}^{\prime}\boldsymbol{\gamma}
+\end{eqnarray*}
+where functions $f_1, \dots, f_5$ of the continuous covariates are possibly nonlinear smooth 
+functions and $\mathbf{x}_{it}^{\prime}\boldsymbol{\gamma}$ comprises covariates with parametric 
+effects in an appropriate coding.
+
+To estimate the model within \proglang{R} the data is loaded and the model formula specified with
 <<forest-model-formula-01, echo=TRUE, eval=TRUE>>=
 data("ForestHealth", package = "R2BayesX")
 mf <- defoliation ~  stand + fertilized + 
@@ -971,7 +988,9 @@ mf <- defoliation ~  stand + fertilized +
   s(canopy, bs = "ps", k = 22) + s(year, bs = "ps", k = 22) + 
   s(elevation, bs = "ps", k = 22)
 @
-fit this model using REML and a cumulative multinomial distribution for the response by
+The covariates entering nonlinearly are again modeled by P-splines using 22 basis functions, 
+\code{k = 22}. The model is then fitted applying REML by assigning a cumulative multinomial 
+distribution to the response calling
 <<fit-forest-model-01, echo=TRUE, eval=FALSE>>=
 fm1 <- bayesx(mf, family = "cumlogit", 
   method = "REML", data = ForestHealth)
@@ -995,12 +1014,13 @@ load("forest-model.rda")
 save(fm1, fm2, file = "forest-model.rda")
 }
 @
-and finally visualize the estimated effects for the nonparametric modeled terms 
+After the estimation process has converged, the estimated effects of the nonparametric modeled terms 
+may be visualized by typing
 <<fit-forest-model-01-plots, echo=TRUE, eval=FALSE>>=
-plot(fm2, term = c("s(age)","s(inclination)",
-  "s(canopy)","s(year)","s(elevation)"))
+plot(fm2, term = c("s(age)", "s(inclination)",
+  "s(canopy)", "s(year)", "s(elevation)"))
 @
-as shown in Figure~\ref{fig:forest-no-spatial}. 
+and are shown in Figure~\ref{fig:forest-no-spatial}. 
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
@@ -1032,30 +1052,24 @@ plot(fm1, term = "s(elevation)")
 \caption{\label{fig:forest-no-spatial} Forest damage: Estimates of nonparametric effects including
 80\% and 95\% point-wise confidence intervals of the model without the spatial effect.}
 \end{figure}
-In this example some contradictory results occur. 
-The effect of covariate \code{age} on the \code{defoliation} seems to decline for both, younger and 
-older trees, which intuitively should be a monotone increasing effect, this also holds for the 
-effect of \code{elevation}. Moreover, the extremely raw estimate of \code{inclination} is hardly
-interpretable. Therefore, the authors extend the model by a spatial effect, which we model with a
-Markov random field using a graph file including the neighborhood information of the adjacent trees.
-The graph file and a boundary file needed for producing a map plot of the effect, are loaded 
+In this example some contradictory results occur. The effect of covariate \code{age} on the 
+\code{defoliation} seems to decline for both, younger and older trees, which intuitively should be a 
+monotone increasing effect, this also holds for the effect of \code{elevation}. Moreover, the 
+extremely raw estimate of \code{inclination} is hardly interpretable. Therefore, the authors extend 
+the model by a spatial effect, which is modeled by a two dimensional geospline term of the tree 
+locations. The tree $x$- and $y$ coordinates are calculated by the centroid positions of tree 
+polygons given by the boundary map file, which may be loaded with
 <<forest-model-gra-bnd, echo=TRUE, eval=TRUE>>=
-data("BeechBnd", "BeechGra", package = "R2BayesX")
+data("BeechBnd", package = "R2BayesX")
 @
-where \code{BeechGra} is a square matrix with the total number of neighbors of each tree on its 
-diagonal
-<<forest-model-gra-bnd, echo=TRUE, eval=TRUE>>=
-diag(BeechGra)
-@
-and off diagonal elements have value \code{-1} if trees are neighbors, otherwise \code{0}. Involving
-the spatial effect term we now fit the following model
+Involving the spatial effect term we now fit the following model
 <<fit-forest-model-02, echo=TRUE, eval=FALSE>>=
 fm2 <- bayesx(defoliation ~  stand + fertilized + 
   humus + moisture + alkali + ph + soil + 
   s(age, bs = "ps", k = 22) + s(inclination, bs = "ps", k = 22) + 
   s(canopy, bs = "ps", k = 22) + s(year, bs = "ps", k = 22) + 
   s(elevation, bs = "ps", k = 22) + 
-  s(id, bs = "mrf", xt = list(map = BeechGra)),
+  s(id, bs = "gs", xt = list(map = BeechBnd), k = 22),
   family = "cumlogit", method = "REML", data = ForestHealth)
 @
 and have a first look at model information criteria with
@@ -1063,12 +1077,12 @@ and have a first look at model information criteria with
 BIC(c(fm1, fm2))
 GCV(c(fm1, fm2))
 @
-which clearly indicate a better fit by modeling the spatial effect of tree locations. The whole 
-summary statistics for both models give 
+that clearly indicate a better fit by modeling the spatial effect of tree locations. The summary 
+statistics for both models give 
 <<summary-forest-model>>=
 summary(c(fm1, fm2))
 @
-where the linear modeled terms in the second model seem to have a less important effect on tree 
+where the parametric modeled terms in the second model seem to have a less important effect on tree 
 defoliation, with similar findings for covariates \code{inclination} and \code{elevation} in 
 Figure~\ref{fig:forest-spatial-nonpara}. 
 \begin{figure}[!ht]
@@ -1094,28 +1108,35 @@ effects including 80\% and 95\% point-wise confidence intervals of the model inc
 effect.}
 \end{figure}
 However, the estimate of the \code{age} effect seems to be improved in terms of monotonicity. The 
-estimated spatial effect is shown in Figure~\ref{fig:forest-spatial}. Summarizing these results 
-identifies a strong influence of the spatial effect of the overall model fit, indicating that a 
-clear splitting of locational specific covariates and the spatial effect is hardly possible in this 
-example. 
+estimated spatial effect may be plotted either using a 3d perspective plot, an image/contour plot or
+a map effect plot using the boundary file \code{BeechBnd} with
+<<forest-spatial-id, echo=TRUE, eval=FALSE>>=
+plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft")
+@
+as shown in Figure~\ref{fig:forest-spatial}. Summarizing these results identifies a strong influence 
+of the spatial effect of the overall model fit, indicating that a clear splitting of locational 
+specific covariates and the spatial effect is hardly possible in this example. 
 \begin{figure}[!ht]
-\setkeys{Gin}{width=0.64\textwidth}
+\setkeys{Gin}{width=0.65\textwidth}
 \begin{center}
 <<forest-spatial-id, echo=FALSE, fig=TRUE, width=7.3, height=4.5>>=
-par(mar = c(4.1, 4.1, 1, 3.8))
-plot(fm2, term = "s(id)", image = TRUE, grid = 200, 
-  range = c(-7, 7), lrange = c(-10, 10), 
-  image.map = BeechBnd, linear = FALSE, 
-  extrap = TRUE, outscale = 0.05)
+par(mar = c(0.1, 0.1, 0.1, 0.1))
+plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft",
+  height = 0.24, width = 0.41)
 @
 \end{center}
 \caption{\label{fig:forest-spatial} Forest damage: Estimate of the spatial effect.}
 \end{figure}
 
-\section{Summary}\label{sec:conclusion}
+
+\clearpage
+
+
+% \section{Summary}\label{sec:conclusion}
 
 
 \section*{Acknowledgments}
+
 
 \nocite{Kneib+Heinzl+Brezger:2011}
 \bibliography{R2BayesX}

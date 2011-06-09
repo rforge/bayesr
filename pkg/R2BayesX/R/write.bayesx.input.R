@@ -105,17 +105,23 @@ function(object)
     nd <- rmf(names(object$data))
     names(object$data) <- nd
     colnames(dat) <- rmf(colnames(dat))
-    for(sf in nd)
-      if(is.factor(object$data[[sf]])) {
-        ff <- as.data.frame(eval(parse(text = paste("model.matrix(~ -1 + ", sf,")", 
-          sep = "")), envir = object$data))
-        lf <- colnames(ff)[2L:ncol(ff)]
-        vars <- colnames(dat)
-        if(!all(lf %in% vars)) {
-          mf <- lf[!lf %in% vars]
-          dat <- cbind(dat, as.matrix(ff[mf]))
-        }
-      }
+#    intcpt <- any(grepl("(Intercept)", colnames(dat)))
+#    for(sf in nd)
+#      if(is.factor(object$data[[sf]])) {
+#        if(intcpt) {
+#          ff <- as.data.frame(eval(parse(text = paste("model.matrix(~", sf,")", 
+#            sep = "")), envir = object$data))
+#        } else {
+#          ff <- as.data.frame(eval(parse(text = paste("model.matrix(~ -1 + ", sf,")", 
+#            sep = "")), envir = object$data))
+#        }
+#        lf <- colnames(ff)[2L:ncol(ff)]
+#        vars <- colnames(dat)
+#        if(!all(lf %in% vars)) {
+#          mf <- lf[!lf %in% vars]
+#          dat <- cbind(dat, as.matrix(ff[mf]))
+#        }
+#      }
     nc <- ncol(dat)
     if(!is.null(model.offset(object$data))) {
       nc <- ncol(dat)
@@ -143,9 +149,9 @@ function(object)
       vars[i] <- gsub("(weights)", "ModelWeights", vars[i], fixed = TRUE)
     }
     colnames(dat) <- vars
-    vars <- vars[vars!=object$Yn]
+    vars <- vars[vars != object$Yn]
     if(intcpt)
-      vars <- c("(Intercept)",vars)
+      vars <- c("(Intercept)", vars)
     if(!is.null(object$hlevel)) {
       if(object$hlevel > 1L) {
         object$model.name <- paste(object$model.name, "_hlevel", 
