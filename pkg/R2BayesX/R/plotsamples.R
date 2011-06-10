@@ -6,6 +6,10 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, ...)
     return(invisible(NULL))
   }
   args <- list(...)
+  if(is.null(args$axes))
+    axes <- TRUE
+  else
+    axes <- args$axes
   xlab <- args$xlab
   ylab <- args$ylab
   main <- args$main
@@ -36,6 +40,7 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, ...)
   for(k in 1L:nr) {
     if(!acf) {
       args$y <- x[,k]
+      args$axes <- FALSE
       do.call(graphics::plot.default, args)
     } else {
       args$x <- stats::ts(data = x[,k])
@@ -48,7 +53,14 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, ...)
       ax <- ax[2L:n]
       acfx$lag <- array(lx, dim = c(n - 1L, 1L, 1L))
       acfx$acf <- array(ax, dim = c(n - 1L, 1L, 1L))
-      stats:::plot.acf(acfx, main = NA)
+      stats:::plot.acf(acfx, main = NA, axes = FALSE)
+    }
+    if(axes) {
+      box()
+      at <- axis(1L, tick = FALSE, labels = NA)
+      at[1L] <- 1L
+      axis(1L, at = at, labels = at)
+      axis(2L)
     }
     if(nr > 1L)
       mtext(paste("Coefficient", k), side = 3L, line = 0.5, cex = 0.8)
