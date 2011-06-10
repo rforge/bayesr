@@ -35,15 +35,15 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
     h.random <- list()
     nr <- 0
     for(k in 1L:length(tl))
-    if(is.rt(tl[k])) {
-      tmp <- parse.random.bayesx(tl[k], data)
-      tl[k] <- tmp$term
-      if(!is.null(tmp$h.random)) {
-        nr <- nr + 1L
-        h.random[[nr]] <- tmp$h.random
-        h.variables <- c(h.variables, tl[k])
+      if(is.rt(tl[k])) {
+        tmp <- parse.random.bayesx(tl[k], data)
+        tl[k] <- tmp$term
+        if(!is.null(tmp$h.random)) {
+          nr <- nr + 1L
+          h.random[[nr]] <- tmp$h.random
+          h.variables <- c(h.variables, tl[k])
+        }
       }
-    }
     if(length(h.random) < 1L)
       h.random <- NULL
     else {

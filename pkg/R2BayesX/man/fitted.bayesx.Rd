@@ -12,7 +12,8 @@
 }
  
 \usage{
-\method{fitted}{bayesx}(object, model = NULL, term = NULL, ...)
+\method{fitted}{bayesx}(object, model = NULL, term = NULL, 
+  fit.attributes = FALSE, ...)
 
 \method{residuals}{bayesx}(object, model = NULL, term = NULL, ...)
 }
@@ -23,6 +24,10 @@
     a character, e.g. \code{model = "mcmc.model"}.}
   \item{term}{if not \code{NULL}, the function will search for the term fitted values/residuals 
     specified here, either an integer or a character, eg \code{term = "s(x)"}.}
+  \item{fit.attributes}{if set to \code{TRUE}, depending on the smooth term type, additional term
+    parameters will be provided in the \code{\link{attributes}} of the returned object(s), e.g. the
+    samples of the parameters for MCMC estimated models, or partial residuals etc. These parameters
+    are also needed for the plotting methods of the different model term classes.}
   \item{\dots}{not used.}
 }
 
@@ -33,7 +38,7 @@
   covariate(s) and its effects, depending on the estimation method, e.g. for MCMC estimated models, 
   mean/median fitted values and other quantities are returned. Several additional informations on 
   the term are provided in the \code{\link{attributes}} of the object. For all types of terms 
-  plotting functions are provided.
+  plotting functions are provided, see function \code{\link{plot.bayesx}}.
 
   Using \code{residuals.bayesx} will either return the mean model residuals or the mean partial 
   residuals of a term specified in argument \code{term}.
@@ -69,8 +74,12 @@ hist(fit, freq = FALSE)
 
 ## now extract 1st model term
 ## and plot it
-fx <- fitted(b1, term = "s(x)")
+fx <- fitted(b1, term = "s(x)", fit.attributes = TRUE)
 plot(fx)
+
+## if fit.attributes = FALSE a simple
+## matrix of the fitted effect is returned
+print(fitted(b1, term = "s(x)", fit.attributes = FALSE))
 
 ## extract model residuals
 res <- residuals(b1)
@@ -96,7 +105,7 @@ hist(fit[,1L])
 
 ## extract model term of x1
 ## and plot it
-fx <- fitted(b2, term = "s(x1)")
+fx <- fitted(b2, term = "s(x1)", fit.attributes = TRUE)
 plot(fx)
 
 
@@ -113,9 +122,9 @@ plot(spv, type = "l")
 b <- c(b1, b2)
 
 ## extract fitted terms for second model
-fit <- fitted(b, model = 2, term = 1:3)
+fit <- fitted(b, model = 2, term = 1:3, fit.attributes = TRUE)
 names(fit)
-plot(fit[["s(district)"]])
+plot(fit["s(district)"])
 }
 }
 

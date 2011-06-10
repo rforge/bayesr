@@ -116,6 +116,12 @@ function(dir, files, data, response, eta, model.name, minfo)
                   for(tf in vf2) {
                     attr(x, "variance.sample") <- df2m(read.table(paste(dir, "/", tf, sep = ""), 
                       header = TRUE))
+                    if(is.matrix(attr(x, "variance.sample"))) {
+                      if(ncol(attr(x, "variance.sample")) < 2L)
+                        colnames(attr(x, "variance.sample")) <- "Variance"
+                      else
+                        colnames(attr(x, "variance.sample")) <- paste("Variance", 1:ncol(attr(x, "variance.sample")), sep = "")
+                    }
                   }
               }
             }
@@ -124,6 +130,7 @@ function(dir, files, data, response, eta, model.name, minfo)
                 for(tf in sf) {
                   attr(x, "sample") <- df2m(read.table(paste(dir, "/", tf, sep = ""), 
                     header = TRUE))
+                  colnames(attr(x, "sample")) <- paste("Coefficient", 1L:ncol(attr(x, "sample")), sep = "")
                 }
             if(length(pf <- grep("_param", af, value = TRUE)))
               for(tf in pf)

@@ -42,6 +42,7 @@ S3method(print, bayesx)
 S3method(summary, bayesx)
 S3method(print, summary.bayesx)
 S3method(residuals, bayesx)
+S3method("[", fit.bayesx)
 
 S3method(bayesx.construct, gk.smooth.spec)
 S3method(bayesx.construct, gs.smooth.spec)

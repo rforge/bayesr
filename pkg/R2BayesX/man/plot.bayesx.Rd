@@ -29,7 +29,7 @@
     with \code{which = 4:7}.}
   \item{ask}{\dots}
   \item{\dots}{other graphical parameters passed to \code{\link{plotblock}}, \code{\link{plotmap}}, 
-    \code{\link{plot2d}} and \code{\link{plot3d}}.}
+    \code{\link{plot2d}}, \code{\link{plot3d}} and \code{\link[stats]{acf}}.}
 }
 
 \details{
@@ -41,6 +41,7 @@
     \item \code{\link{plotmap}},
     \item \code{\link{plot2d}},
     \item \code{\link{plot3d}},
+    \item \code{\link[stats]{acf}},
   }
   For details on argument specifications, please see the help sites for the corresponding function.
   

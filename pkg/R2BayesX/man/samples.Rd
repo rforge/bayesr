@@ -10,7 +10,7 @@
 }
  
 \usage{
-samples(object, model = NULL, term = NULL, ...)
+samples(object, model = NULL, term = NULL, acf = FALSE, ...)
 }
 
 \arguments{
@@ -20,7 +20,10 @@ samples(object, model = NULL, term = NULL, ...)
   \item{term}{if not \code{NULL}, the function will search for the term fitted values/residuals 
     specified here, either an integer or a character, eg \code{term = "s(x)"}. If set to 
     \code{term = "fixed-samples"}, the samples of the fixed effects parameters are returned}
-  \item{\dots}{not used.}
+  \item{acf}{if set to \code{TRUE}, the autocorrelation function of the samples will be provided
+    additionally.}
+  \item{\dots}{further arguments passed to function \code{\link[stats]{acf}}, e.g. argument 
+    \code{lag.max} if \code{acf = TRUE}.}
 }
 
 \author{

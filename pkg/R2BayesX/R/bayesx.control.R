@@ -2,7 +2,7 @@ bayesx.control <-
 function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",  
   verbose = FALSE, dir.rm = TRUE, bin = getOption("bayesx.bin"), 
   outfile = NULL, iterations = 12000L, burnin = 2000L, maxint = 150L, step = 10L, 
-  predict = TRUE, seed = 123, hyp.prior = c(1, 0.005), distopt = NULL, 
+  predict = TRUE, seed = NULL, hyp.prior = c(1, 0.005), distopt = NULL, 
   reference = NULL, zipdistopt = NULL,  begin = NULL, level = NULL, 
   eps = 1e-05, lowerlim = 0.001, maxit = 400L, maxchange = 1e+06, leftint = NULL, 
   lefttrunc = NULL, state = NULL, algorithm = NULL, criterion = NULL, proportion = NULL,
@@ -75,12 +75,12 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
     control$hmcmc <- FALSE
   }
   if(method == "STEP") {
-    control$iterationsations <- iterations
+    control$iterations <- iterations
     control$burnin <- burnin
     control$step <- step
     control$predict <- predict
     control$algorithm <- algorithm 
-    control$criterationsion <- criterationsion
+    control$criterion <- criterion
     control$proportion <- proportion
     control$startmodel <- startmodel
     control$trace <- trace

@@ -1,5 +1,5 @@
 samples <-
-function(object, model = NULL, term = NULL, ...)
+function(object, model = NULL, term = NULL, acf = FALSE, ...)
 {
   if(is.null(term))
     term <- 1L
@@ -20,14 +20,36 @@ function(object, model = NULL, term = NULL, ...)
         for(j in 1:length(term)) {
           tmp <- list(coef.samples = attr(object[[i]]$effects[[term[j]]], "sample"),
             variance.samples = attr(object[[i]]$effects[[term[j]]], "variance.sample"))
+          if(acf) {
+            if(!is.null(tmp$coef.samples)) {              
+              tmp$coef.samples.acf <- samplesacf(tmp$coef.samples, ...)
+            }
+            if(!is.null(tmp$variance.samples)) {
+              tmp$variance.samples.acf <- samplesacf(tmp$variance.samples, ...)
+            }
+          }
           eval(parse(text = paste("rval[[i]]$'", tn[j], "' <- tmp", sep = "")))
         }
       } else {
         rval[[i]] <- list(coef.samples = attr(object[[i]]$effects[[term]], "sample"),
           variance.samples = attr(object[[i]]$effects[[term]], "variance.sample"))
+        if(acf) {
+          if(!is.null(rval[[i]]$coef.samples)) {
+            rval[[i]]$coef.samples.acf <- samplesacf(rval[[i]]$coef.samples, ...)
+          }
+          if(!is.null(rval[[i]]$variance.samples)) {
+            rval[[i]]$variance.samples.acf <- samplesacf(rval[[i]]$variance.samples, ...)
+          }
+        }
       }
     } else {
-      rval[[i]] <- attr(object[[i]]$fixed.effects, "sample")
+      if(acf) {
+        if(!is.null(attr(object[[i]]$fixed.effects, "sample"))) {
+          tmp <- list(coef.samples = attr(object[[i]]$fixed.effects, "sample"),
+            coef.samples.acf = samplesacf(attr(object[[i]]$fixed.effects, "sample"), ...))
+        } else tmp <- NULL
+      } else  tmp <- attr(object[[i]]$fixed.effects, "sample")
+      rval$'linear' <- tmp
     }
   if(!is.null(object[[i]]$bayesx.setup$model.name))
     mn[i] <- object[[i]]$bayesx.setup$model.name
@@ -40,6 +62,23 @@ function(object, model = NULL, term = NULL, ...)
     rval <- NA
   if(any(is.na(rval)))
     warning("samples are missing in object!")
+
+  return(rval)
+}
+
+
+samplesacf <- function(x, ...) 
+{
+  if(is.matrix(x)) {
+    rval <- NULL
+    for(j in 1L:ncol(x))
+      rval <- cbind(rval, stats::acf(stats::ts(x[,j]), plot = FALSE, ...)$acf)
+    colnames(rval) <- colnames(x)
+    rownames(rval) <- paste("lag-", 0L:(nrow(rval) - 1L), sep = "")
+  } else {
+    rval <- as.vector(stats::acf(stats::ts(x), plot = FALSE, ...)$acf)
+    names(rval) <- paste("lag-", 0L:(length(rval) - 1L), sep = "")
+  }
 
   return(rval)
 }

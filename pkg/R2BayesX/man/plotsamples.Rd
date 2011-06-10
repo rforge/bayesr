@@ -22,7 +22,7 @@ plotsamples(x, selected = "NA", acf = FALSE, var = FALSE, ...)
   \item{var}{indicates whether coefficient or variance sampling paths are displayed and simply 
     changes the main title.}
   \item{\dots}{other graphical parameters to be passed to \code{\link[graphics]{plot}} and
-    \code{\link[stats]{acf}}.}
+    \code{\link[stats]{acf}}, e.g. argument \code{lag.max} if \code{acf = TRUE}.}
 }
 
 \author{
