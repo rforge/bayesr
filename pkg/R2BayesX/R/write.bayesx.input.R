@@ -34,7 +34,7 @@ function(object)
   if(!file.exists(object$outfile))
     dir.create(object$outfile, showWarnings = FALSE)
   else {
-    if(!is.h && .Platform$OS.type == "unix") {
+    if(!is.h) {
       wok <- TRUE
       count <- 0L
       while(wok) {
@@ -45,10 +45,11 @@ function(object)
         }
       }
       dir.create(object$outfile, showWarnings = FALSE)
-    }
+    } else object$outfile <- object$houtfile
   }
   wd <- as.character(getwd())
-  setwd(object$outfile)
+  if(is.null(object$hlevel) || object$hlevel < 2L)
+    setwd(object$outfile)
   prg.file <- paste(object$model.name, ".input.prg", sep = "")
   thismodel <- NULL
   if(file.exists(prg.file) && !is.h) {
@@ -82,8 +83,10 @@ function(object)
 
   ## hierarchical models set here 
   if(!is.null(object$h.random))
-    for(k in 1:length(object$h.random))
+    for(k in 1:length(object$h.random)) {
+      object$h.random[[k]]$houtfile <- object$outfile
       write.bayesx.input(object$h.random[[k]])
+    }
   dropvars <- NULL
   if(is.null(data.file)) {
     tf <- as.character(object$formula)
@@ -196,7 +199,8 @@ function(object)
     thismodel, st)
   if(!is.h)
     cat("logclose \n", file = prg.file, append = TRUE)
-  setwd(wd)
+  if(is.null(object$hlevel) || object$hlevel < 2L)
+    setwd(wd)
 
   return(invisible(list(prg = bayesx.prg, prg.name = prg.file,
     model.name = object$model.name, file.dir = object$outfile)))

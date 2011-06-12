@@ -46,7 +46,7 @@ function(formula, data, weights = NULL, subset = NULL,
     if(length(tm) > 1L) {
       res.h <- read.bayesx.output(res$bayesx.prg$file.dir, tm)
       for(k in 1:length(res.h)) {
-        res.h[[k]]$model.fit$method = "MCMC"
+        res.h[[k]]$model.fit$method = "HMCMC"
         res.h[[k]]$model.fit$model.name <- tm[k] 
       }
       res.h <- res.h[length(res.h):1L]

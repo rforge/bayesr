@@ -144,7 +144,7 @@ function(dir, model.name)
     rval$effects <- delete.NULLs(rval$effects)
 
     ## search for additional info
-    rval$model.fit <- smi(info, rval$model.fit)
+    rval$model.fit <- smi(paste(dir, "/", info, sep = ""), rval$model.fit)
 
     ## reformate output
     rval <- bayesx.reformate(rval)

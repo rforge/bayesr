@@ -47,10 +47,12 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
     if(length(h.random) < 1L)
       h.random <- NULL
     else {
-      control$h.random <- set.hlevel.stuff(h.random, outfile)
+      control$h.random <- set.hlevel.stuff(h.random, outfile, control)
       control$h.variables <- h.variables
       control$mcmcreg <- TRUE
       control$hlevel <- 1L
+      control$max.hlevel <- get.max.hlevel(control$h.random)
+      control$h.random <- set.max.hlevel(control$h.random, control$max.hlevel)
     }
     if(!intcpt)
       tl <- c("-1", tl)
@@ -170,3 +172,30 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
   return(control)
 }
 
+
+get.max.hlevel <- function(x)
+{
+  hlevel <- NULL
+  for(k in 1L:length(x)) {
+    if(!is.null(x[[k]]$hlevel)) {
+      hlevel <- max(c(hlevel, x[[k]]$hlevel))
+    if(!is.null(x[[k]]$h.random))
+      hlevel <- max(c(hlevel, get.max.hlevel(x[[k]]$h.random)))
+    }
+  }
+
+  return(hlevel)
+}
+
+
+set.max.hlevel <- function(x, max.hlevel)
+{
+  for(k in 1L:length(x)) {
+    if(!is.null(x[[k]]$hlevel))
+      x[[k]]$max.hlevel <- max.hlevel
+    if(!is.null(x[[k]]$h.random))
+      x[[k]]$h.random <- set.max.hlevel(x[[k]]$h.random, max.hlevel)
+  }
+
+  return(x)
+}

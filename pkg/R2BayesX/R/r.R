@@ -1,25 +1,37 @@
 r <-
-function(id, method = NULL, by = NA, xt = NULL, 
+function(x, h = NULL, by = NA, xt = NULL, 
   data = NULL, weights = NULL, subset = NULL, 
   offset = NULL, na.action = na.fail, contrasts = NULL, 
   control = bayesx.control(...), ...)
 {
-  term <- deparse(substitute(id), backtick = TRUE, width.cutoff = 500L)
+  term <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500L)
+  call <- match.call()
+  is.formula <- FALSE
+  if(any(grepl("~", term))) {
+    tmp <- strsplit(term, "~")[[1L]]
+    call$h <- h <- term
+    term <- splitme(tmp[1L])
+    term <- resplit(term[term != " "])
+    call$x <- term
+    is.formula <- TRUE
+  }
   by.var <- deparse(substitute(by), backtick = TRUE, width.cutoff = 500L)
   ins <- formula <- NULL
   if(by.var == ".") 
     stop("by=. not allowed")
   if(term == ".") 
     stop("r(.) not yet supported.")
-  call <- match.call()
   label <- paste("r(", term)
-  if(!is.null(method)) {
+  if(!is.null(h)) {
     ins <- list()
-    mlabel <- as.character(call[3L])
+    mlabel <- paste(as.character(call$h), collapse = " ")
     split <- splitme(mlabel)
-    if(split[1L] != "~")
+    if(split[1L] != "~" && !is.formula)
       mlabel <- resplit(c("~", split))
-    formula <- as.formula(paste(term,mlabel))
+    if(!is.formula)
+      formula <- as.formula(paste(term, mlabel))
+    else
+      formula <- as.formula(mlabel)
     label <- paste(label, ",", mlabel, collapse="")
     mf <- terms.formula(formula, specials=c("s", "te", "r"))
     mterms <- attr(mf, "term.labels")

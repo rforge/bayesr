@@ -33,6 +33,13 @@ function(response, object, prg.file, data.file, thismodel, terms.specs)
   if("ModelWeights" %in% vars)
     bt <- paste(bt, "weight", "ModelWeights")
   control.values <- object[attr(object, "co.id")]
+  if(!is.null(object$hlevel) && object$hlevel != object$max.hlevel)
+    control.values[c("iterations", "burnin", "step", "level1", "level2", "hlevel", "maxint")] <- NULL
+  if(!is.null(object$hlevel) && object$hlevel != 1L) {
+    # control.values[c("iterations", "burnin", "step", "level1", "level2")] <- NULL
+    control.values[c("predict", "modeonly", "setseed", "aresp", "bresp", "pred_check", 
+      "mse", "mseparam", "centerlinear", "cv", "quantile", "hlevel", "maxint")] <- NULL
+  }
   predict <- control.values$predict
   control.values$predict <- NULL
   control.names <- names(control.values)
@@ -55,7 +62,7 @@ function(response, object, prg.file, data.file, thismodel, terms.specs)
     if(predict) {
       if(is.null(object$hlevel))
         fullformula <- paste(fullformula, "predict")
-      if(!is.null(object$hlevel) || object$hmcmc)
+      if((!is.null(object$hlevel) || object$hmcmc) && object$hlevel < 2L)
         fullformula <- paste(fullformula, "predict=full")
     }
   fullformula <- paste(fullformula, "using", dset)
@@ -73,9 +80,8 @@ function(response, object, prg.file, data.file, thismodel, terms.specs)
   if(!is.null(object$hlevel) || object$hmcmc) {
     bayesx.prg <- gsub("psplinerw1", "pspline", bayesx.prg, fixed = TRUE)
     bayesx.prg <- gsub("psplinerw2", "pspline", bayesx.prg, fixed = TRUE)
-    bayesx.prg <- gsub("maxint=150", "", bayesx.prg, fixed = TRUE)
-    bayesx.prg <- gsub("aresp=1", "", bayesx.prg, fixed = TRUE)
-    bayesx.prg <- gsub("bresp=0.005", "", bayesx.prg, fixed = TRUE)
+    bayesx.prg <- gsub("random", "hrandom", bayesx.prg, fixed = TRUE)
+    bayesx.prg <- gsub("hhrandom", "hrandom", bayesx.prg, fixed = TRUE)
     cat(bayesx.prg, file = prg.file)
   }
 

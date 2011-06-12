@@ -4,9 +4,9 @@ function(info.file, model.fit)
   info <- NULL
   if(file.exists(info.file))
     if(length(info <- readLines(info.file))) {
-      if(is.null(model.fit))
+      if(is.null(model.fit)) {
         model.fit <- eval(parse(text = info[length(info)]))
-      else {
+      } else {
         model.fit2 <- eval(parse(text = info[length(info)]))
         nmf2 <- names(model.fit2)
         nmf <- names(model.fit)

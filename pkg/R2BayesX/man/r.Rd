@@ -13,16 +13,19 @@
 }
 
 \usage{
-r(id, method = NULL, by = NA, xt = NULL, 
-  data = NULL, weights = NULL, subset = NULL, 
-  offset = NULL, na.action = na.fail, contrasts = NULL, 
+r(x, h = NULL, by = NA, xt = NULL, data = NULL, 
+  weights = NULL, subset = NULL, offset = NULL, 
+  na.action = na.fail, contrasts = NULL, 
   control = bayesx.control(...), ...)
 }
  
 \arguments{
-  \item{id}{the factor/cluster or group variable for which random effects should be estimated.}
-  \item{method}{optional, only if \code{method = "MCMC"} in \code{\link{bayesx}}, argument 
-    \code{method} may specify a second level equation that is used for hierarchical model 
+  \item{x}{the factor/cluster or group variable for which random effects should be estimated. If
+    \code{method = "HMCMC"} in \code{\link{bayesx}}, \code{x} may also be a 
+    \code{\link[stats]{formula}} if hierarchical covariates are available that are used for the 
+    model, please see argument \code{h} and the examples.}
+  \item{h}{optional, only if \code{method = "HMCMC"} in \code{\link{bayesx}}, argument 
+    \code{h} may specify a second level equation that is used for hierarchical model 
     estimation. I.e., in a hierarchical setting, certain variables are only measured on a cluster 
     or group level, hence, different observations are only given by the number of different clusters 
     or groups in the data. Utilizing this hierarchical structure will increase sampling 
@@ -62,6 +65,9 @@ r(id, method = NULL, by = NA, xt = NULL,
 }
 
 \examples{
+r(id1 ~ x1 + s(x2) + r(id2 ~ s(x3) + x4))
+
+## same with
 r(id1, ~ x1 + s(x2) + r(id2 ~ s(x3) + x4))
 
 \dontrun{
@@ -90,12 +96,13 @@ summary(b)
 ## against true random effects
 ## together with effect
 ## of x1
-re.fit <- fitted(b, term = "r(id)")[["r(id)"]][,2]
+re.fit <- fitted(b, term = "r(id)")[,2L]
 op <- par(no.readonly = TRUE)
 par(mfrow=c(1,2))
 ylim <- range(c(re.fit, dat$re))
 plot(re.fit ~ unique(dat$re), ylim = ylim, xlim = ylim,
      xlab = "True effects", ylab = "Fitted random effects")
+abline(a = 0, b = 1)
 plot(b, term = "s(x1)")
 par(op)
 
@@ -113,7 +120,6 @@ dat1 <- data.frame(id = sort(rep(1:N, n/N)),
 dat1$re <- with(dat1, rnorm(N, sd = 0.6)[id])
 
 ## 2nd stage
-N <- 100
 dat2 <- data.frame(id = unique(dat1$id), 
   x2 = runif(N, -3, 3))
 
@@ -124,8 +130,8 @@ dat1$y <- with(dat1, 1.5 + sin(x1) + re + cos(dat2$x2)[id] + rnorm(n, sd = 0.6))
 ## with the intercept in the 
 ## 2nd stage
 system.time(b1 <- bayesx(y ~ -1 + s(x1, bs = "ps") + 
-  r(id, ~ 1 + s(x2 , bs = "ps"), data = dat2), 
-  method = "MCMC", data = dat1))
+  r(id ~ 1 + s(x2 , bs = "ps"), data = dat2), 
+  method = "HMCMC", data = dat1))
 summary(b1)
 
 ## non hierarchical
@@ -166,8 +172,8 @@ dat1$y <- with(dat1, 1.5 + sin(x1) + dat2$sp[id] + dat2$re[id] + rnorm(n, sd = 0
 ## estimate models with
 ## bayesx MCMC and REML
 b <- bayesx(y ~ -1 + s(x1, bs = "ps") + 
-  r(id, ~ 1 + s(id, bs = "mrf", xt = list(map = MunichBnd)), data = dat2), 
-  method = "MCMC", data = dat1)
+  r(id ~ 1 + s(id, bs = "mrf", xt = list(map = MunichBnd)), data = dat2), 
+  method = "HMCMC", data = dat1)
 
 ## plot the spatial effects
 op <- par(no.readonly = TRUE)

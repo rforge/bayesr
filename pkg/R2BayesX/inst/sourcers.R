@@ -1,12 +1,81 @@
 dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-b <- read.bayesx.output("/tmp/RtmpwXJZ9g/bayesx")
+p <- parse.bayesx.input(y ~ -1 + s(x1, bs = "ps") + 
+  r(id ~ -1 + s(x2 , bs = "ps") + r(id2 ~ 1 + s(x3, bs = "ps"), data = dat3), data = dat2), 
+  method = "HMCMC", data = dat1)
 
 
-b1 <- bayesx(y ~ -1 + s(x1, bs = "ps") + 
-  r(id, ~ 1 + s(x2 , bs = "ps"), data = dat2), 
-  method = "MCMC", data = dat1)
+
+system.time(b1 <- bayesx(y ~ -1 + s(x1, bs = "ps") + 
+  r(id ~ -1 + s(x2 , bs = "ps") + r(id2 ~ 1 + s(x3, bs = "ps"), data = dat3), data = dat2), 
+  method = "HMCMC", data = dat1))
+
+## now estimate a random effects
+## model with a stage 2 covariate
+## effect
+set.seed(333)
+n <- 1000
+
+## 1st stage
+N <- 500
+dat1 <- data.frame(id = sort(rep(1:N, n/N)), 
+  x1 = runif(n, -3, 3))
+dat1$re <- with(dat1, rnorm(N, sd = 0.6)[id])
+
+## 2nd stage
+N2 <- 100
+dat2 <- data.frame(id = unique(dat1$id), 
+  x2 = runif(N, -3, 3), id2 = sort(rep(1:N2, N/N2)))
+dat2$re2 <- with(dat2, rnorm(N2, sd = 0.6)[id2])
+
+## 3rd stage
+dat3 <- data.frame(id2 = unique(dat2$id2), 
+  x3 = runif(N2, 0, 5))
+
+## response
+dat1$y <- with(dat1, 1.5 + sin(x1) + re + cos(dat2$x2)[id] + 
+  dat2$re2[id] + dat3$x3[dat2$id2][id] + rnorm(n, sd = 0.6))
+
+## estimate hierarchical model
+## with the intercept in the 
+## 2nd stage
+system.time(b1 <- bayesx(y ~ -1 + s(x1, bs = "ps") + 
+  r(id, ~ -1 + s(x2 , bs = "ps") + r(id2, ~ 1 + s(x3, bs = "ps"), data = dat3), data = dat2), 
+  method = "HMCMC", data = dat1, iter = 3000, burnin = 1000))
+
+
+
+B <- read.bayesx.output("/tmp/RtmpePekC5/bayesx")
+
+
+
+
+
+
+m1 <- bayesx(y ~ -1 + s(x1) + r(id1 ~ -1 + s(r1) + r(id2 ~ -1 + s(r2) + r(id3 ~1 + s(r3)))), dir.rm = FALSE)
+
+
+
+
+
+     system.time(b1 <- bayesx(y ~ -1 + s(x1, bs = "ps") + 
+       r(id ~ 1 + s(x2 , bs = "ps"), data = dat2), 
+       method = "HMCMC", data = dat1, iter = 3000, burnin = 1000, step = 2, dir.rm = FALSE))
+
+
+
+B <- read.bayesx.output("/tmp/RtmpQ9qdbE/bayesx")
+
+
+
+
+
+
+p <- parse.bayesx.input(y ~ -1 + s(x1, bs = "ps") + 
+  r(id, ~ 1 + s(x2 , bs = "ps") + r(id3, ~ s(x2)), data = dat2, seed = 333), 
+  method = "MCMC", data = dat1, seed = 111)
+write.bayesx.input(p)
 
 
 

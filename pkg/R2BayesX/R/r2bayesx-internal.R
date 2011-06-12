@@ -62,7 +62,7 @@ function(x, digits = max(3L, getOption("digits") - 3L),
   } else {
     if(!is.null(x$model.fit$formula)) {
       cat("Formula:\n")
-      print(as.formula(x$model.fit$formula))
+      print(as.formula(x$model.fit$formula), showEnv = FALSE)
     }
   }
   liner <- "---"

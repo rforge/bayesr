@@ -68,6 +68,8 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL, xlev = NULL)
       f <- as.character(object$oformula)
       f <- paste(f[2L], f[1L], f[3L])
       info <- paste("list(formula=\'", f, "\',", sep = "")
+      if(!is.null(object$hlevel))
+        object$method <- "HMCMC"
       info <- paste(info, "method=\'", object$method, "\',", sep = "")
       info <- paste(info, "family=\'", object$family, "\',", sep = "")
       info <- paste(info, "iterations=\'", object$iterations, "\',", sep = "")
