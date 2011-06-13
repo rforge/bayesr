@@ -2,11 +2,11 @@
 \alias{read.bayesx.output}
 
 \title{
-  Read BayesX Output form Directories
+  Read BayesX Output from Directories
 }
 
 \description{
-  This function automatically reads in \pkg{BayesX} estimation output which is stored in an output 
+  This function automatically reads in BayesX estimation output which is stored in an output 
   directory.
 }
 
@@ -15,7 +15,7 @@ read.bayesx.output(dir, model.name = NULL)
 }
 
 \arguments{
-  \item{dir}{a character string, specifies the directory file where \pkg{BayesX} output is stored.}
+  \item{dir}{a character string, specifies the directory file where BayesX output is stored.}
   \item{model.name}{a character string, specifies the base name of the model that should be read in,
     also see the examples. If not supplied \code{read.bayesx.output} tries to read in all existing
     model outputs in \code{dir}, every model is then stored as one element in the output 
@@ -44,7 +44,7 @@ read.bayesx.output(dir, model.name = NULL)
   \item{fitted.values}{the fitted values of the estimated model,}
   \item{residuals}{the residuals of the estimated model,}
   \item{effects}{a \code{list} containing fitted effects of model terms, also see 
-    \code{\link{fitted.bayesx}},}
+    \code{\link{fitted.bayesx}} and \code{\link{samples}},}
   \item{fixed.effects}{a \code{matrix} with estimation results for fixed effects,}
   \item{variance}{estimation results for the variance parameter of the model,}
   \item{smooth.hyp}{a \code{matrix} with estimation results smooth terms,}
@@ -57,7 +57,7 @@ read.bayesx.output(dir, model.name = NULL)
 }
 
 \seealso{
-  \code{\link{summary.bayesx}}, \code{\link{plot.bayesx}}.
+  \code{\link{summary.bayesx}}, \code{\link{plot.bayesx}}, \code{\link{samples}}.
 }
 
 \examples{
@@ -77,8 +77,9 @@ plot(b)
 ## 2nd example
 dir <- paste(searchpaths()[grep("R2BayesX",searchpaths())],
            "/examples/ex03", sep = "")
+list.files(dir)
 
-## contains of 2 different
+## dir contains of 2 different
 ## base names
 ## 01 only one nonparametric effect
 b <- read.bayesx.output(dir, model.name = "nonparametric")

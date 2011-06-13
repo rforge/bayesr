@@ -58,7 +58,7 @@ plot(b, term = "s(x)", which = "var-samples")
 plot(b, term = "s(x)", which = "coef-samples")
 
 ## extract fitted effects
-f <- fitted(b, term = "s(x)")[["s(x)"]]
+f <- fitted(b, term = "s(x)", fit.attributes = TRUE)
 
 ## now use plotsamples
 cs <- attr(f, "sample")

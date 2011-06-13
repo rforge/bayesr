@@ -6,9 +6,9 @@
 }
 
 \description{
-  Function to plot 3D graphics or image and/or contour plots for bivariate effects, typically used 
-  for objects of class \code{"sm.bayesx"} and \code{"geo.bayesx"} returned from function 
-  \code{\link{bayesx}} and \code{\link{read.bayesx.output}}.
+  Function to plot 3D graphics or image and/or contour plots for bivariate effects/functions, 
+  typically used for objects of class \code{"sm.bayesx"} and \code{"geo.bayesx"} returned from 
+  function \code{\link{bayesx}} and \code{\link{read.bayesx.output}}.
 }
  
 \usage{

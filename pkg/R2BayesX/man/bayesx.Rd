@@ -8,9 +8,9 @@
 \description{
   This is the documentation of the main model fitting function of the interface. Within function
   \code{bayesx}, three inferential concepts are available for estimation: Markov chain Monte Carlo 
-  simulation (MCMC), restricted maximum likelihood (REML), and a penalized least squares 
-  (respectively penalized likelihood) approach for estimating models using model selection tools 
-  (STEP).
+  simulation (MCMC), estimation based on mixed model technology and restricted maximum likelihood 
+  (REML), and a penalized least squares (respectively penalized likelihood) approach for 
+  estimating models using model selection tools (STEP).
 }
 
 \usage{  
@@ -20,7 +20,8 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 }
 
 \arguments{
-  \item{formula}{symbolic description of the model (of type \code{y ~ x}).}
+  \item{formula}{symbolic description of the model (of type \code{y ~ x}), also see 
+    \code{\link[mgcv]{formula.gam}}, \code{\link[mgcv]{s}} and \code{\link{r}}.}
   \item{data}{a \code{\link{data.frame}} or \code{\link{list}} containing the model response 
     variable and covariates required by the formula. By default the variables are taken from 
     \code{environment(formula)}: typically the environment from which \code{bayesx} is called. 
@@ -42,7 +43,6 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 }
 
 \details{  
-
   In BayesX, estimation of regression parameters is based on three inferential concepts: 
 
   \bold{Full Bayesian inference via MCMC}: 
@@ -101,12 +101,12 @@ bayesx(formula, data, weights = NULL, subset = NULL,
   \code{\link[mgcv]{mgcv}} (see \code{\link[mgcv]{formula.gam}}), i.e. models including smooth terms 
   may be specified using the smooth term constructor function \code{\link[mgcv]{s}}. In addition, 
   a random effect constructor function has been implemented, also see \code{\link{r}}, with 
-  possibilities to estimate hierarchical STAR models. For a detailed description of the syntax used 
-  within \code{bayesx} models see \code{\link{bayesx.construct}} and 
+  possibilities to estimate hierarchical STAR models. For a detailed description of the model 
+  formula syntax used within \code{bayesx} models see \code{\link{bayesx.construct}} and 
   \code{\link{bayesx.term.options}}.
 
   After the BayesX binary has successfully finished processing an object of class \code{"bayesx"} is
-  returned, wherefor a set of standard extractor functions and methods is available, including 
+  returned, wherefore a set of standard extractor functions and methods is available, including 
   methods to the generic functions \code{\link[base]{print}}, \code{\link[base]{summary}}, 
   \code{\link[graphics]{plot}}, \code{\link[stats]{residuals}} and \code{\link[stats]{fitted}}.
   
@@ -131,7 +131,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 
 \section{WARNINGS}{
   Function \code{bayesx} or \code{\link{run.bayesx}} cannot be processed if the \code{bin} path to
-  the binary executable command-line version is not specified properly, i.e. before using 
+  the BayesX binary executable command-line version is not specified properly, i.e. before using 
   \code{bayesx} the binary has to be installed, see function \code{\link{install.bayesx}} for
   installation details. After installation the \code{bin} path can bet set with
 
@@ -172,7 +172,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
   \code{\link{parse.bayesx.input}}, \code{\link{write.bayesx.input}}, \code{\link{run.bayesx}}, 
   \code{\link{read.bayesx.output}}, \code{\link{summary.bayesx}}, \code{\link{plot.bayesx}},
   \code{\link{fitted.bayesx}}, \code{\link{bayesx.construct}}, \code{\link{bayesx.term.options}},
-  \code{\link[mgcv]{formula.gam}}, \code{\link{r}}.
+  \code{\link[mgcv]{formula.gam}}, \code{\link[mgcv]{s}}, \code{\link{r}}.
 }
 
 \examples{

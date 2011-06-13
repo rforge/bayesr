@@ -141,7 +141,7 @@ plotblock(cbind(y - 0.1, y + 0.1) ~ fac, data = dat)
 plotblock(cbind(y - 0.1, y + 0.1) ~ fac, data = dat, 
   fill.select = c(0, 1, 1))
 plotblock(cbind(y - 0.1, y + 0.1) ~ fac, data = dat, 
-  fill.select = c(0, 1, 1), poly.lty = 2, lty = 0, 
+  fill.select = c(0, 1, 1), poly.lty = 2, lty = 1, 
   border = "grey5")
 }
 

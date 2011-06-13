@@ -6,7 +6,7 @@
 }
 
 \description{
-  Function to Install \pkg{BayesX}.
+  Function to Install the BayesX command-line binary.
 }
 
 \usage{
@@ -15,18 +15,18 @@ install.bayesx(inst.dir = NULL, source.dir = NULL)
 
 \arguments{
   \item{inst.dir}{a character string, specifies the directory \pkg{BayesX} should be installed in.}
-  \item{source.dir}{character string, the directory where on windows systems the installation file 
+  \item{source.dir}{character string, the directory where on Windows systems the installation file 
     \code{BayesX_windows.exe} lies in, else the file \code{bayesxsource.zip}.}
 }
 
 \details{
   On windows platforms function \code{install.bayesx} tries to install the file 
-  \code{BayesX_windows.exe}, on unix platforms the \pkg{BayesX} sources in file 
-  \code{bayesxsource.zip} are tried to compiled with the GNU C++ compiler. On all platforms, if 
-  \code{source.dir = NULL} it is tried to download the necessary installation files from 
-  \url{http://www.stat.uni-muenchen.de/~bayesx/bayesx.html}, and if \code{inst.dir = NULL}, 
-  function \code{install.bayesx} tries to install \pkg{BayesX} in the \code{\link{.libPaths}} 
-  directory this package lies in.
+  \code{BayesX_windows.exe}, on unix platforms the BayesX sources in file \code{bayesxsource.zip} 
+  are tried to compiled with the GNU C++ compiler. On all platforms, if \code{source.dir = NULL} it 
+  is tried to download the necessary installation files from 
+  \url{http://www.stat.uni-muenchen.de/~bayesx/bayesx.html}, and if \code{inst.dir = NULL}, function 
+  \code{install.bayesx} tries to install the BayesX binary in the \code{\link{.libPaths}} 
+  directory this package is saved.
 }
 
 \note{
@@ -35,7 +35,7 @@ install.bayesx(inst.dir = NULL, source.dir = NULL)
 }
 
 \value{
-  If \pkg{BayesX} is successfully installed, a character string of the installation path of the 
+  If the BayesX binary is successfully installed, a character string of the installation path of the 
   command-line version executable binary is returned.
 }
 

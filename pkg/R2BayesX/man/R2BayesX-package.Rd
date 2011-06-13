@@ -9,17 +9,26 @@
 }
 
 \description{
-  This package interfaces BayesX \dots
-}
+  This package interfaces the BayesX command-line binary from \R. The main model fitting function is 
+  called \code{\link{bayesx}}. 
 
-\details{
-  \tabular{ll}{
-    Package: \tab R2BayesX\cr
-    Type: \tab Package\cr
-    Version: \tab 0.1-1\cr
-    Date: \tab 2011-05-30\cr
-    License: \tab GPL-2 | GPL-3\cr
-  }
+  Before STAR models may be estimated, the command-line version of BayesX needs to be installed and 
+  linked to \R. Please see function \code{\link{install.bayesx}}, \code{\link{bayesx}} and 
+  \code{\link{bayesx.control}} for more details on installation, model fitting and controlling.
+
+  The package also provides functionality for high level graphics of estimated effects, see function
+  \code{\link{plot.bayesx}}, \code{\link{plot2d}}, \code{\link{plot3d}}, \code{\link{plotblock}},
+  \code{\link{plotmap}}, \code{\link{plotsamples}}, \code{\link{colorlegend}}.
+
+  More standard extractor functions and methods for the fitted model objects may be applied, e.g. 
+  see function \code{\link{summary.bayesx}}, \code{\link{fitted.bayesx}}, 
+  \code{\link{residuals.bayesx}}, \code{\link{samples}}, \code{\link{plot.bayesx}}, as well as
+  \code{\link[stats]{AIC}}, \code{\link[stats]{BIC}} etc., please see the examples of the help 
+  sites.
+
+  In addition, it is possible to run arbitrary BayesX program files using function 
+  \code{\link{run.bayesx}}. BayesX output files that are stored in a directory may be read into \R
+  calling function \code{\link{read.bayesx.output}}.
 }
 
 \author{

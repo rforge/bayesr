@@ -42,9 +42,9 @@ A data frame containing 4847 observations on 8 variables.
 }
 
 \references{
-Kandala, N. B., Lang, S., Klasen, S., Fahrmeir, L. (2001): 
-Semiparametric Analysis of the Socio-Demographic and Spatial Determinants of Undernutrition
-in Two African Countries. Research in Official Statistics, \bold{1}, 81--100.
+Kandala, N. B., Lang, S., Klasen, S., Fahrmeir, L. (2001): Semiparametric Analysis of the 
+  Socio-Demographic and Spatial Determinants of Undernutrition in Two African Countries. 
+  \emph{Research in Official Statistics}, \bold{1}, 81--100.
 }
 
 \seealso{\code{\link{bayesx}}}

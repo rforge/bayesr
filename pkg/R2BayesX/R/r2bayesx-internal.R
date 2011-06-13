@@ -153,12 +153,12 @@ function(x, digits = max(3L, getOption("digits") - 3L),
     }
     cat("\n")
   }
-  if(!is.null(x$model.fit$step.final.model)) {
-    cat(liner,"\n")
-    cat("Stepwise final predictor choosen:\n")
-    cat("-\n")
-    cat(x$model.fit$step.final.model, "\n")
-  }
+#  if(!is.null(x$model.fit$step.final.model)) {
+#    cat(liner,"\n")
+#    cat("Stepwise final predictor choosen:\n")
+#    cat("-\n")
+#    cat(x$model.fit$step.final.model, "\n")
+#  }
 
   return(invisible(NULL))
 }

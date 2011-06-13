@@ -591,7 +591,7 @@ Table~\ref{tab:terms}.
                             For ordinal covariates higher order P-splines are not meaningful while 
                             zero degree P-splines might be an alternative to modeling nonlinear 
                             relationships via a dummy approach with completely unrestricted 
-                            regression parameters\\ \hline
+                            regression parameters. \\ \hline
 \code{"season"} & seasonal effect of a time scale. \\ \hline
 \code{"te"} & defines a two-dimensional P-spline based on the tensor product of one-dimensional 
               P-splines with a two-dimensional first order random walk penalty for the parameters of 
@@ -1194,7 +1194,8 @@ hardly possible in this example.
 zms <- bayesx(stunting ~ memployment + education + urban + gender + 
   s(bmi, bs = "ps") + s(agechild, bs = "ps") +
   s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district), 
-  family = "gaussian", method = "STEP", predict = FALSE, data = ZambiaNutrition)
+  family = "gaussian", method = "STEP", predict = FALSE, 
+  data = ZambiaNutrition)
 @
 <<cache-zambia-model-step, echo=FALSE, eval=TRUE>>=
 if(file.exists("zambia-model-step.rda")) {

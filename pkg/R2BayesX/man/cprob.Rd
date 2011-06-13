@@ -7,7 +7,7 @@
 
 \description{
   Function to extract estimated contour probabilities of a particular effect estimated with 
-  P-splines using Markov chain Monte Carlo estimation techniques. 
+  P-splines using Markov chain Monte Carlo (MCMC) estimation techniques. 
 }
  
 \usage{
@@ -16,10 +16,10 @@ cprob(object, model = NULL, term = NULL, ...)
 
 \arguments{
   \item{object}{an object of class \code{"bayesx"}.}
-  \item{model}{for which model the fitted values/residuals should be provided, either an integer or 
-    a character, e.g. \code{model = "mcmc.model"}.}
-  \item{term}{if not \code{NULL}, the function will search for the term fitted values/residuals 
-    specified here, either an integer or a character, eg \code{term = "s(x)"}.}
+  \item{model}{for which model the contour probabilities should be provided, either an integer or a 
+    character, e.g. \code{model = "mcmc.model"}.}
+  \item{term}{if not \code{NULL}, the function will search for the term contour probabilities should
+    be extracted for, either an integer or a character, eg \code{term = "s(x)"}.}
   \item{\dots}{not used.}
 }
 

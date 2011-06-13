@@ -4,7 +4,7 @@
 \title{Run BayesX}
 
 \description{
-  Run \pkg{BayesX} program files from \R.
+  Run BayesX program files from \R.
 }
 
 \usage{
@@ -22,9 +22,11 @@ run.bayesx(dir, prg.name = "bayesx.estim.input.prg",
     \code{options(bayesx.bin="/path/to/BayesX")}, where \code{"/path/to/BayesX"} is the bin path 
     provided as character string.}
 }
+
 \details{
-  Function uses \code{\link[base]{system}} to run \pkg{BayesX} within a \R session.
+  Function uses \code{\link[base]{system}} to run BayesX within an \R session.
 }
+
 \value{
   Returns a \code{list} containg information if \pkg{BayesX} was succesfully launched and how long 
   the process was running.
@@ -32,6 +34,19 @@ run.bayesx(dir, prg.name = "bayesx.estim.input.prg",
 
 \author{
   Thomas Kneib, Stefan Lang, Nikolaus Umlauf, Achim Zeileis.
+}
+
+\section{WARNINGS}{
+  Function \code{\link{run.bayesx}} cannot be processed if the \code{bin} path to the BayesX binary 
+  executable command-line version is not specified properly, i.e. before using \code{run.bayesx} the 
+  binary has to be installed, see function \code{\link{install.bayesx}} for installation details. 
+  After installation the \code{bin} path can bet set with
+
+  \code{options(bayesx.bin = "/path/to/BayesX")}
+
+  where \code{"/path/to/BayesX"} represents the full path to the binary with the name of the binary 
+  at last, e.g. on Windows systems this may be something like 
+  \code{"C:/programs/BayesX/commandline/bayesx.exe"}. 
 }
 
 \examples{

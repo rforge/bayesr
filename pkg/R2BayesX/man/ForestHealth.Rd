@@ -44,9 +44,13 @@ A data frame containing 1793 observations on 16 variables.
 }
 
 \references{
-Kneib, T. & Fahrmeir, L. (2010): A Space-Time Study on Forest Health.
-In: Chandler, R. E. \& Scott, M. (eds.): Statistical Methods for Trend
-Detection and Analysis in the Environmental Sciences, Wiley.
+  Kneib, T. & Fahrmeir, L. (2010): A Space-Time Study on Forest Health. In: Chandler, R. E. \& 
+    Scott, M. (eds.): Statistical Methods for Trend Detection and Analysis in the Environmental 
+    Sciences, Wiley.
+
+  G\"ottlein A, Pruscha H (1996). Der Einfuss von Bestandskenngr\"ossen, Topographie, Standord und 
+    Witterung auf die Entwicklung des Kronenzustandes im Bereich des Forstamtes Rothenbuch. 
+    \emph{Forstwissens. Zent.}, \bold{114}, 146--162.
 }
 
 \seealso{\code{\link{bayesx}}}

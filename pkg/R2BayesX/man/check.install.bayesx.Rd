@@ -6,7 +6,7 @@
 }
 
 \description{
-  This function simply checks if \pkg{BayesX} is already installed and ready for use.
+  This function simply checks if BayesX command-line binary is already installed and ready for use.
 }
 
 \usage{
@@ -27,9 +27,10 @@ check.install.bayesx(bin = getOption("bayesx.bin"), verbose = FALSE)
 }
 
 \value{
-  If \pkg{BayesX} is successfully installed, a character string of the full installation path of the 
-  command-line version executable binary is returned, if \pkg{BayesX} is already set in the PATH 
-  variable, only the name of the binary is returned, in all other cases \code{NULL} is returned.
+  If the BayesX binary is successfully installed, a character string of the full installation path 
+  of the command-line version executable binary is returned, if the path to BayesX is already set in 
+  the environment PATH variable of the operating system, only the name of the binary is returned, in 
+  all other cases \code{NULL} is returned.
 }
 
 \author{

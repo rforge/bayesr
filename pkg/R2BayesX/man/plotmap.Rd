@@ -182,8 +182,8 @@ summary(b)
 ## plot spatial effect
 op <- par(no.readonly = TRUE)
 plot(b, map = MunichBnd)
-plot(b, map = MunichBnd, c.select = "97.5%")
-plot(b, map = MunichBnd, c.select = "2.5%")
+plot(b, map = MunichBnd, c.select = "97.5%", symmetric = FALSE)
+plot(b, map = MunichBnd, c.select = "2.5%", symmetric = FALSE)
 plot(b, map = MunichBnd, c.select = "50%")
 plot(b, map = MunichBnd, names = TRUE, 
   cex.names = 0.5, cex.legend = 0.8)

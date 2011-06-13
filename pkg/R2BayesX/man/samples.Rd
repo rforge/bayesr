@@ -30,11 +30,6 @@ samples(object, model = NULL, term = NULL, acf = FALSE, ...)
   Thomas Kneib, Stefan Lang, Nikolaus Umlauf, Achim Zeileis.
 }
 
-\references{
-Brezger, A., Lang, S. (2008): Simultaneous probability statements for Bayesian P-splines. 
-  \emph{Statistical Modeling}, \bold{8}, 141--186.
-}
-
 \seealso{
   \code{\link{bayesx}}.
 }

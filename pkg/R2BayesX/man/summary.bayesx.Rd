@@ -6,7 +6,7 @@
 }
 
 \description{
-  Takes an output object estimated with \pkg{BayesX} and displays summary statistics.
+  Takes an object of class \code{"bayesx"} and displays summary statistics.
 }
  
 \usage{

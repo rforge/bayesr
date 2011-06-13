@@ -187,7 +187,8 @@ bayesx.control(model.name = "bayesx.estim",
     structured additive regression models. \emph{Computational Statistics \& Data Analysis}, 
     \bold{53}, 61--81.
 
-  Chambers JM, Hastie TJ (eds.) (1992). Statistical Models in S. \emph{Chapman \& Hall}, London.
+  Chambers J. M., Hastie T. J. (eds.) (1992). Statistical Models in S. \emph{Chapman \& Hall}, 
+    London.
 }
 
 \seealso{

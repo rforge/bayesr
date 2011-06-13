@@ -6,9 +6,9 @@
 }
   
 \description{
-  Function to plot simple 2D graphics for univariate effects, typically used for objects of class 
-  \code{"linear.bayesx"} and \code{"sm.bayesx"} returned from function \code{\link{bayesx}} and 
-  \code{\link{read.bayesx.output}}.
+  Function to plot simple 2D graphics for univariate effects/functions, typically used for objects 
+  of class \code{"linear.bayesx"} and \code{"sm.bayesx"} returned from function \code{\link{bayesx}} 
+  and \code{\link{read.bayesx.output}}.
 }
  
 \usage{

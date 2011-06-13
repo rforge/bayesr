@@ -102,13 +102,13 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
     obs2legend <- function(x, xr) ((x - lrange[1L]) / diff(lrange)) * diff(xr) + xr[1L]
     if(side.legend < 2L) {
       graphics::rect(obs2legend(head(br, -1L), xlim), ylim[1L], obs2legend(tail(br, -1L), xlim),
-        ylim[2L], col = cl, border = cl, xpd = FALSE, lwd = 0.01)
+        ylim[2L], col = cl, border = cl, xpd = xpd, lwd = 0.01)
     } else {
       graphics::rect(xlim[1L], obs2legend(head(br, -1L), ylim), xlim[2L], 
-        obs2legend(tail(br, -1L), ylim), col = cl, border = cl, xpd = FALSE, lwd = 0.01)
+        obs2legend(tail(br, -1L), ylim), col = cl, border = cl, xpd = xpd, lwd = 0.01)
     }
     graphics::rect(xlim[1L], ylim[1L], xlim[2L], ylim[2L], 
-      border = col.border, lwd = lwd.border, lty = lty.border, xpd = FALSE)
+      border = col.border, lwd = lwd.border, lty = lty.border, xpd = xpd)
     dl <- TRUE
     if(!is.null(labels) && labels == FALSE)
       dl <- FALSE

@@ -23,7 +23,7 @@
 
 \description{
   The function \code{bayesx.construct} is used to provide a flexible framework to implement 
-  new model term objects in \code{\link{bayesx}} within the \pkg{BayesX} syntax. 
+  new model term objects in \code{\link{bayesx}} within the BayesX syntax. 
 }
 
 \usage{
@@ -51,59 +51,50 @@ bayesx.construct(object, dir, prg, data)
 \details{
   The main idea of these constructor functions is to provide a flexible framework to implement new 
   model term objects in the \pkg{BayesX} syntax within \code{\link{bayesx}}, i.e. for any smooth or 
-  random term in \pkg{BayesX} a constructor function like 
+  random term in \pkg{R2BayesX} a constructor function like 
   \code{bayesx.construct.ps.smooth.construct} may be provided to translate \R specific syntax into 
-  \pkg{BayesX} readable commands. During processing with \code{\link{write.bayesx.input}} each model
-  term is constructed with \code{bayesx.construct} after another, wrapped into a full formula, which 
-  may then be send to \pkg{BayesX} with \code{\link{run.bayesx}}.
+  BayesX readable commands. During processing with \code{\link{write.bayesx.input}} each model term 
+  is constructed with \code{bayesx.construct} after another, wrapped into a full formula, which 
+  may then be send to the BayesX binary with \code{\link{run.bayesx}}.
 
   At the moment the following model terms are implemented:
   \itemize{
-    \item shrinkage of fixed effects: \code{bs = "lasso"}, \code{bs = "nigmix"}, \code{bs = "ridge"},
-      defines a shrinkage-prior for the corresponding parameters \eqn{y_j}, \eqn{j = 1, \ldots, q},
-      \eqn{q >= 1} of the linear effects \eqn{X_1, \ldots, X_q}. There are three priors possible: 
-      ridge-, lasso- and Normal Mixture of inverse Gamma (NMIG)-prior,
-
-    \item nonlinear baseline effect in hazard regression or multi-state models: 
-      \code{bs = "bl"}, defines a P-spline with second order random walk penalty for the parameters
-      of the spline for the log-baseline effect \eqn{log(\lambda(time))},
-
-    \item kriging with stationary Gaussian random fields: \code{bs = "kr"},
-
-    \item geokriging with stationary Gaussian random fields: \code{bs = "gk"}, estimates a stationary
-      Gaussian random field based on the centroids of a map object,
-
-    \item geosplines based on two-dimensional P-splines with first order random walk penalty: 
-      \code{bs = "gs"}, defines a two-dimensional P-spline for the spatial covariate region with a 
-      two-dimensional first order random walk penalty for the parameters of the spline. Estimation is
-      based on the coordinates of the centroids of the regions provided by a map object. 
-
-    \item Markov random fields: \code{bs = "mrf"}, defines a Markov random field prior for a spatial
-      covariate, where geographical informations are provided by a map object,
-
-    \item P-spline with first or second order difference penalty: \code{bs = "ps"},
-
-    \item unit- or cluster specific unstructured effect: see \code{\link{r}}, defines an unstructured
-      (uncorrelated) random effect (ridge type penalty) with respect to a grouping variable. May
-      also include hierarchical modeled terms,
-
-    \item zero degree P-splines: \code{bs = "rw1"}, \code{bs = "rw2"}, defines a zero degree 
-      P-spline with first or second order difference penalty. A zero degree P-spline typically 
-      estimates for every distinct covariate value in the data set a separate parameter. Usually 
-      there is no reason to prefer zero degree P-splines over higher order P-splines. An exception 
-      are ordinal covariates or continuous covariates with only a small number of different values. 
-      For ordinal covariates higher order P-splines are not meaningful while zero degree P-splines 
-      might be an alternative to modeling nonlinear relationships via a dummy approach with 
-      completely unrestricted regression parameters,
-
-    \item seasonal effect of a time scale: \code{bs = "season"},
-
-    \item two-dimensional P-spline with first order random walk penalty: 
-      \code{bs = "te"}, defines a two-dimensional P-spline based on the tensor product of 
+    \item \code{"lasso"}, \code{"nigmix"}, \code{"ridge"}: & shrinkage of fixed effects, defines a 
+      shrinkage-prior for the corresponding parameters \eqn{\gamma_j}, \eqn{j = 1, \ldots, q}, 
+      \eqn{q \geq 1} of the linear effects \eqn{x_1, \ldots, x_q}. There are three priors possible: 
+      ridge-, lasso- and Normal Mixture of inverse Gamma (NMIG)-prior. 
+    \item \code{"bl"}: nonlinear baseline effect in hazard regression or multi-state models, defines 
+      a P-spline with second order random walk penalty for the parameters of the spline for the 
+      log-baseline effect \eqn{log(\lambda(time))}.
+    \item \code{"kr"}: kriging with stationary Gaussian random fields. 
+    \item \code{"gk"}: geokriging with stationary Gaussian random fields: estimates a stationary 
+      Gaussian random field based on the centroids of a map object provided in boundary format, see
+      function \code{\link[BayesX]{read.bnd}}, within the \code{xt} argument of function 
+      \code{\link[mgcv]{s}}, e.g. \code{xt = list(map = MapBnd)}. 
+    \item \code{"gs"}: geosplines based on two-dimensional P-splines with first order random walk 
+      penalty, defines a two-dimensional P-spline for the spatial covariate region with a 
+      two-dimensional first order random walk penalty for the parameters of the spline. Estimation 
+      is based on the coordinates of the centroids of the regions provided by a map object in in 
+      boundary format, see function \code{\link[BayesX]{read.bnd}}, within the \code{xt} argument of 
+      function \code{\link[mgcv]{s}}, e.g. \code{xt = list(map = MapBnd)}. 
+    \item \code{"mrf"}: Markov random fields: defines a Markov random field prior for a spatial 
+      covariate, where geographical informations are provided by a map object in boundary or graph 
+      file format, see function \code{\link[BayesX]{read.bnd}} and \code{\link[BayesX]{read.gra}}, 
+      within the \code{xt} argument of function \code{\link[mgcv]{s}}, e.g. 
+      \code{xt = list(map = MapBndorGra)}. 
+    \item \code{"ps"}: P-spline with first or second order difference penalty. 
+    \item \code{"rw1"}, \code{"rw2"}: zero degree P-splines, defines a zero degree P-spline with 
+      first or second order difference penalty. A zero degree P-spline typically estimates for every 
+      distinct covariate value in the data set a separate parameter. Usually there is no reason to 
+      prefer zero degree P-splines over higher order P-splines. An exception are ordinal covariates 
+      or continuous covariates with only a small number of different values. For ordinal covariates 
+      higher order P-splines are not meaningful while zero degree P-splines might be an alternative 
+      to modeling nonlinear relationships via a dummy approach with completely unrestricted 
+      regression parameters.
+    \item \code{"season"}: seasonal effect of a time scale. 
+    \item \code{"te"}: defines a two-dimensional P-spline based on the tensor product of 
       one-dimensional P-splines with a two-dimensional first order random walk penalty for the 
       parameters of the spline.
-
-    \item generic term: \code{bs = "generic"}, general purpose model term.
   }
 
   Within the \code{xt} argument in functions \code{\link[mgcv]{s}} and \code{\link{r}}, additional
@@ -122,9 +113,9 @@ bayesx.construct(object, dir, prg, data)
 
 \section{WARNINGS}{
   If new \code{bayesx.construct} functions are implemented in future work, there may occur problems 
-  with reading the corresponding \pkg{BayesX} output files with \code{\link{read.bayesx.output}}, 
-  e.g. if the new objects do not have the structure as implemented with \code{bs = "ps"} etc., i.e. 
-  function \code{\link{read.bayesx.output}} must also be adapted in such cases.
+  with reading the corresponding BayesX output files with \code{\link{read.bayesx.output}}, e.g. if 
+  the new objects do not have the structure as implemented with \code{bs = "ps"} etc., i.e. function 
+  \code{\link{read.bayesx.output}} must also be adapted in such cases.
 } 
 
 \seealso{
@@ -190,7 +181,9 @@ bayesx.construct(r(id, by = x1, xt = list(nofixed=TRUE)))
 ## specifies some model term
 ## and sets all additional arguments 
 ## within argument xt
-bayesx.construct(s(x, bs = "generic", xt = list(dosomething = TRUE, a = 1, b = 2)))
+## only for experimental use
+bayesx.construct(s(x, bs = "generic", 
+  xt = list(dosomething = TRUE, a = 1, b = 2)))
 }
 
 \keyword{regression}
