@@ -53,7 +53,12 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, ...)
       ax <- ax[2L:n]
       acfx$lag <- array(lx, dim = c(n - 1L, 1L, 1L))
       acfx$acf <- array(ax, dim = c(n - 1L, 1L, 1L))
-      stats:::plot.acf(acfx, main = NA, axes = FALSE)
+      ylim <- NULL
+      if(is.null(args$ylim) && !var)
+        ylim <- c(-0.3, 0.3)
+      else
+        ylim = args$ylim
+      stats:::plot.acf(acfx, main = NA, axes = FALSE, ylim = ylim)
     }
     if(axes) {
       box()

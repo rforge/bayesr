@@ -96,18 +96,19 @@ data("BeechBnd")
 
 \section{Introduction} \label{sec:intro}
 
-The public domain software BayesX \citep{Brezger+Kneib+Lang:2005} is a standalone program comprising 
-powerful tools for Bayesian and mixed model based inference in complex semiparametric regression 
-models with structured additive predictor (STAR) (see Section~\ref{sec:model}). To gain improved 
-computational performance of the supported models, the algorithms implemented utilize numerically 
-efficient (sparse) matrix architectures and are written in a \proglang{C++} environment. Besides 
-exponential family regression, BayesX also supports non-standard regression situations such as 
-regression for multi-categorical responses, hazard regression for continuous survival times, and 
+The public domain software BayesX \citep{R2BayesX:Brezger+Kneib+Lang:2005} is a standalone program 
+comprising powerful tools for Bayesian and mixed model based inference in complex semiparametric 
+regression models with structured additive predictor (STAR) (see Section~\ref{sec:model}). To gain 
+improved computational performance of the supported models, the algorithms implemented utilize 
+numerically efficient (sparse) matrix architectures and are written in a \proglang{C++} environment. 
+Besides exponential family regression, BayesX also supports non-standard regression situations such 
+as regression for multi-categorical responses, hazard regression for continuous survival times, and 
 continuous time multi-state models.
 
-In this article, we describe the full interactive \proglang{R} \citep{R} interface to BayesX, which
-has recently been added to the existing Comprehensive \proglang{R} Archive Network (CRAN) package 
-\pkg{BayesX} \citep{Kneib+Heinzl+Brezger:2011}. Within the new version of the package, users may now 
+In this article, we describe the full interactive \proglang{R} \citep{R2BayesX:R} interface to 
+BayesX, which has recently been added to the existing Comprehensive \proglang{R} Archive Network 
+(CRAN) package \pkg{BayesX} \citep{R2BayesX:Kneib+Heinzl+Brezger:2011}. Within the new version of 
+the package, users may now 
 \begin{itemize}
 \item specify and estimate STAR models with BayesX directly from the \proglang{R} console (function 
   \hyperlink{bayesx}{\fct{bayesx}}), 
@@ -122,8 +123,8 @@ has recently been added to the existing Comprehensive \proglang{R} Archive Netwo
 
 Furthermore, the models supported by BayesX are conveniently specified using \proglang{R}'s formula 
 language definition, wherefore the special model term constructor functions \fct{s} 
-\citep{Wood:2011} and \fct{r} facilitate a consistent way to translate \proglang{R} syntax into 
-BayesX interpretable commands (see Section~\ref{sec:overview}). 
+\citep{R2BayesX:Wood:2011} and \fct{r} facilitate a consistent way to translate \proglang{R} syntax 
+into BayesX interpretable commands (see Section~\ref{sec:overview}). 
 
 To give an introductory example of the various features of the interface, we estimate a Bayesian 
 geoadditive regression model for the childhood malnutrition dataset in Zambia (see 
@@ -212,16 +213,17 @@ dataset on forest health.
 \section{STAR models} \label{sec:model} 
 
 The STAR model class supported by \pkg{BayesX} is based on the framework of (Bayesian) generalized 
-linear models (GLM) (e.g. see \citet{Nelder+Wedderburn:1972} and \citet{Fahrmeir+Tutz:2001}). GLMs 
-assume that, given covariates $\mathbf{x}$ and unknown parameters $\boldsymbol{\gamma}$, the 
-distribution of the response variable $y$ belongs to an exponential family with mean 
+linear models (GLM) (e.g. see \citet{R2BayesX:Nelder+Wedderburn:1972} and 
+\citet{R2BayesX:Fahrmeir+Tutz:2001}). GLMs assume that, given covariates $\mathbf{x}$ and unknown 
+parameters $\boldsymbol{\gamma}$, the distribution of the response variable $y$ belongs to an 
+exponential family with mean 
 $\mu = E(y | \mathbf{x}, \boldsymbol{\gamma})$ linked to a linear predictor $\eta$ by
 \begin{equation} \label{eqn:glm}
 \mu = h(\eta) \qquad \eta = \mathbf{x}^{\prime}\boldsymbol{\gamma},
 \end{equation}
 where $h$ is a known link function and $\boldsymbol{\gamma}$ are unknown regression coefficients. In 
-STAR models \citep{Fahrmeir+Kneib+Lang:2004, Brezger+Lang:2006}, the linear predictor is replaced 
-by a more general and flexible, structured additive predictor
+STAR models \citep{R2BayesX:Fahrmeir+Kneib+Lang:2004, Brezger+Lang:2006}, the linear predictor is 
+replaced by a more general and flexible, structured additive predictor
 \begin{equation} \label{eqn:structadd}
 \eta = f_1(z) + \ldots + f_p(z) + \mathbf{x}^{\prime}\boldsymbol{\gamma},
 \end{equation}
@@ -237,10 +239,10 @@ comprising effects (and combination of effects) as e.g. given by
   \item random slopes with cluster index $c$: $f_j(z) = x\beta_c$. 
 \end{itemize}
 STAR models cover a number of well known model classes as special cases, including generalized 
-additive models (GAM) \citep{Hastie+Tibshirani:1990}, generalized additive mixed models (GAMM) 
-\citep{Lin+Zhang:1999}, geoadditive models \citep{Kamman+Wand:2003}, varying coefficient models 
-\citep{Hastie+Tibshirani:1993}, and geographically weighted regression 
-\citep{Fotheringham+Brunsdon+Charlton:2002}.
+additive models (GAM) \citep{R2BayesX:Hastie+Tibshirani:1990}, generalized additive mixed models 
+(GAMM) \citep{R2BayesX:Lin+Zhang:1999}, geoadditive models \citep{R2BayesX:Kamman+Wand:2003}, 
+varying coefficient models \citep{R2BayesX:Hastie+Tibshirani:1993}, and geographically weighted 
+regression \citep{R2BayesX:Fotheringham+Brunsdon+Charlton:2002}.
 
 The unified representation of a STAR predictor arises from the fact that all functions $f_j$ in 
 (\ref{eqn:structadd}) may be specified by a basis function approach, where the vector of function  
@@ -317,14 +319,15 @@ simultaneously. The algorithms are able to
 Inference is based on penalized likelihood in combination with fast algorithms for selecting 
 relevant covariates and model terms. Different models are compared via various goodness of fit 
 criteria, e.g. AIC, BIC, GCV and 5 or 10 fold cross validation. 
-%\citep{Sakamoto+Ishiguro+Kitagawa:1986}
+%\citep{R2BayesX:Sakamoto+Ishiguro+Kitagawa:1986}
 \end{enumerate}
 
-A detailed description of the MCMC methodology is given in \citet{Brezger+Lang:2006}, inference 
-based on a mixed model representation is covered by \citet{Fahrmeir+Kneib+Lang:2004}, estimation 
-procedures including variable selection in \citet{Belitz+Lang:2008}. A thorough (and for most 
-practical purposes sufficient) introduction into the regression models supported by the program is 
-provided in the BayesX methodology manual \citep{Belitz+Brezger+Kneib+Lang:2011}. 
+A detailed description of the MCMC methodology is given in \citet{R2BayesX:Brezger+Lang:2006}, 
+inference based on a mixed model representation is covered by 
+\citet{R2BayesX:Fahrmeir+Kneib+Lang:2004}, estimation procedures including variable selection in 
+\citet{R2BayesX:Belitz+Lang:2008}. A thorough (and for most practical purposes sufficient) 
+introduction into the regression models supported by the program is provided in the BayesX 
+methodology manual \citep{R2BayesX:Belitz+Brezger+Kneib+Lang:2011}. 
 
 
 \section[Package overview]{Package overview} \label{sec:overview}
@@ -458,12 +461,12 @@ Parameter & Description & \code{method} \\ \hline
                bound for the number of iterations. & \\ \hline
 \code{algorithm} & character, specifies the selection algorithm. Possible values are 
                    \code{"cdescent1"} (adaptive algorithms see subsection 6.3 in 
-                   \citet{Belitz+Brezger+Kneib+Lang:2011}), \code{"cdescent2"} (adaptive algorithms 
-                   1 and 2 with backfitting, see remarks 1 and 2 of section 3 in 
-                   \citet{Belitz+Lang:2008}), \code{"cdescent3"} (search according to cdescent1 
-                   followed by cdescent2 using the selected model in the first step as the start 
-                   model) and \code{"stepwise"} (stepwise algorithm implemented in the \code{gam} 
-                   routine of S-plus, see \citet{Chambers+Hastie:1992}). & 
+                   \citet{R2BayesX:Belitz+Brezger+Kneib+Lang:2011}), \code{"cdescent2"} (adaptive 
+                   algorithms 1 and 2 with backfitting, see remarks 1 and 2 of section 3 in 
+                   \citet{R2BayesX:Belitz+Lang:2008}), \code{"cdescent3"} (search according to 
+                   cdescent1 followed by cdescent2 using the selected model in the first step as the 
+                   start model) and \code{"stepwise"} (stepwise algorithm implemented in the 
+                   \code{gam} routine of S-plus, see \citet{R2BayesX:Chambers+Hastie:1992}). & 
                    \multirow{3}{*}[-3.2cm]{\code{"STEP"}}  \\ \cline{1-2}
 \code{criterion} & character, specifies the goodness of fit criterion. If \code{criterion = "MSEP"} 
                    is specified the data are randomly divided into a test- and validation data set. 
@@ -593,7 +596,6 @@ Table~\ref{tab:terms}.
 \code{"te"} & defines a two-dimensional P-spline based on the tensor product of one-dimensional 
               P-splines with a two-dimensional first order random walk penalty for the parameters of 
               the spline. \\ \hline
-\code{"generic"} & general purpose model term. \\ \hline
 \end{tabular}
 \caption{\label{tab:terms} Possible BayesX model terms within function \fct{s}.}
 \end{center}
@@ -633,10 +635,10 @@ parameter are set e.g. with \code{r(district, xt = list(a = 0.0001, b = 0.0001))
 
 For most practical purposes fitting models with function \fct{bayesx} may be sufficient. However, 
 the interfacing functions that are consecutively called within \fct{bayesx} can also be used 
-independently. This could be meaningful for two reasons: First, users may want to use already existing 
-BayesX program files wherefore a new setup within \proglang{R} is not required, and secondly, there
-might be a need for automated importing of BayesX output files into \proglang{R} for further 
-analysis. 
+independently. This could be meaningful for two reasons: First, users may want to use already 
+existing BayesX program files wherefore a new setup within \proglang{R} is not required, and 
+secondly, there might be a need for automated importing of BayesX output files into \proglang{R} for 
+further analysis. 
 
 \hypertarget{run.bayesx}{Function} \fct{run.bayesx} is used to run an arbitrary BayesX program file. 
 The arguments of \fct{run.bayesx} are
@@ -673,8 +675,9 @@ this within \proglang{R} by providing a character string to argument \code{data}
 \fct{bayesx}, which includes the path to a dataset instead of an \proglang{R} data object. As a 
 consequence, this dataset will not be loaded within \proglang{R} and is only used internally by the 
 BayesX binary. To give an example, we generate a large dataset that might produce problems with 
-\proglang{R}'s memory allocation using a model fitting function. Therefore, we store the data on 
-disc in the temporary folder of the running session with
+\proglang{R}'s memory allocation using a model fitting function, especially if the model contains of
+a large number of parameters. Therefore, we store the data on disc in the temporary folder of the 
+running session with
 <<large-data, echo=TRUE, eval=FALSE>>=
 file <- paste(tempdir(), "/data.raw", sep = "")
 n <- 5e+06
@@ -712,23 +715,24 @@ of memory size.
 \section{STAR models in practice} \label{sec:illustrations}
 
 The focus of this section is on demonstrating the various features of the \pkg{BayesX} package. 
-Therefore, the examples provided are replicate analysis taken from \citet{Brezger+Kneib+Lang:2005} 
-and \citet{Fahrmeir+Kneib+Lang:2009}. The presented datasets have been added to package 
-\pkg{BayesX}, ensuring straightforward traceability of the following code. In the first example, a 
-Gaussian regression model is estimated using Markov chain Monte Carlo simulation. The second example 
-covers restricted maximum likelihood estimation, where a cumulative multinomial distribution is 
-assigned for the response variable. The last example illustrates the approach of the stepwise 
-algorithm for model and variable selection.
+Therefore, the examples provided are replicate analysis taken from 
+\citet{R2BayesX:Brezger+Kneib+Lang:2005} and \citet{R2BayesX:Fahrmeir+Kneib+Lang:2009}. The 
+presented datasets have been added to package \pkg{BayesX}, ensuring straightforward traceability of 
+the following code. In the first example, a Gaussian regression model is estimated using Markov 
+chain Monte Carlo simulation. The second example covers estimation based on mixed model technology, 
+where a cumulative threshold model is assigned for the response variable (see 
+\citet{R2BayesX:Fahrmeir+Tutz:2001} and \citet{R2BayesX:Kneib+Fahrmeir:2004}). The last example 
+illustrates the approach of the stepwise algorithm for model and variable selection.
 
 
-\subsection{Childhood malnutrition in Zambia} \label{subsec:zambia}
+\subsection{Childhood malnutrition in Zambia - Analysis with MCMC} \label{subsec:zambia}
 
-This analysis has already been conducted by \citet{Kandala+Lang+Klasen+Fahrmeir:2001} and has also 
-been used as a demonstrating example in \citet{Brezger+Kneib+Lang:2005}. Stunting is one of the 
-leading drivers of a number of problems development countries are faced with, for instance, a direct 
-consequence of stunting is a high mortality rate. Here, the primary interest is to model the 
-dependence of stunting of newborn children, with an age ranging from 0 to 5 years, on covariates 
-such as the body mass index of the mother, the age of the child and others presented in 
+This analysis has already been conducted by \citet{R2BayesX:Kandala+Lang+Klasen+Fahrmeir:2001} and 
+has also been used as a demonstrating example in \citet{R2BayesX:Brezger+Kneib+Lang:2005}. Stunting 
+is one of the leading drivers of a number of problems development countries are faced with, for 
+instance, a direct consequence of stunting is a high mortality rate. Here, the primary interest is 
+to model the dependence of stunting of newborn children, with an age ranging from 0 to 5 years, on 
+covariates such as the body mass index of the mother, the age of the child and others presented in 
 Table~\ref{tab:zambia}. 
 \begin{table}[htbp]
 \begin{center}
@@ -751,7 +755,7 @@ Variable           & Description \\ \hline
 \end{center}
 \end{table}
 The response \code{stunting} is standardized in terms of a reference category, i.e in this dataset 
-the stunting for child $i$ is represented by
+stunting for child $i$ is represented by
 \begin{equation*}
 \texttt{stunting}_i = \frac{\texttt{AI}_i - \texttt{MAI}_i}{\sigma},
 \end{equation*}
@@ -759,8 +763,8 @@ where \texttt{AI} refers to the child's anthropometric indicator (height at a ce
 example), while \texttt{MAI} and $\sigma$ correspond to the median and the standard deviation in the 
 reference population, respectively.
 
-Following \citet{Kandala+Lang+Klasen+Fahrmeir:2001}, we estimate an additive regression model with 
-predictor
+Following \citet{R2BayesX:Kandala+Lang+Klasen+Fahrmeir:2001}, we estimate a structured additive 
+regression model with predictor
 \begin{eqnarray*}
 \eta &=& \gamma_0 + \gamma_1\texttt{memployment1} + \gamma_2\texttt{education1} + 
          \gamma_3\texttt{education2} + \gamma_4\texttt{urban1} + \gamma_5\texttt{gender1} + \\
@@ -770,7 +774,7 @@ predictor
 where \code{memployment1} is the deviation (effect) coded version of covariate \code{memployment}, 
 i.e. \code{memployment1} contains of values -1, corresponding to `working', and 1, `not working' 
 respectively, likewise for covariates \code{education}, \code{urban} and \code{gender}. As mentioned 
-in the introduction, functions $f_1$ and $f_2$ of continuous covariates \code{agechild} and 
+in the introduction, functions $f_1$ and $f_2$ of the continuous covariates \code{agechild} and 
 \code{bmi} are assumed to have a possibly nonlinear effect on \code{stunting} and are therefore 
 modeled with P-splines. Furthermore, the spatial effect is decomposed into a structured effect 
 $f_{str}$, modeled by a Gaussian Markov random field, and an unstructured effect $f_{unstr}$, using 
@@ -787,11 +791,12 @@ data("ZambiaBnd", package = "R2BayesX")
 @
 The object \code{ZambiaBnd} has class \code{"bnd"} and is basically a \fct{list} of polygon 
 matrices, with $x$- and $y$-coordinates of the boundary points in the first and second column 
-respectively. With the information of the boundary file BayesX may compute an appropriate penalty, 
+respectively. To read in an arbitrary boundary files into \proglang{R} function \fct{read.bnd} can 
+be used. With the information of the boundary file BayesX may compute an appropriate penalty, 
 allowing for a smoothly varying effect of the neighboring regions. There is a generic plotting 
 method implemented for objects of class \code{"bnd"}, which in principle calls function 
 \fct{plotmap}, e.g. a simple map, as shown in Figure~\ref{fig:zambia-simple-map}, of the districts 
-in Zambia is drawn typing
+in Zambia is drawn by typing
 <<plot-zambia-map-01, echo=TRUE, eval=FALSE>>=
 plot(ZambiaBnd)
 @ 
@@ -806,13 +811,15 @@ plot(ZambiaBnd)
 \caption{\label{fig:zambia-simple-map} Example on childhood malnutrition: A simple map of the 
 districts in Zambia.}
 \end{figure}
-Having loaded the necessary files, the model \code{formula} is then specified with
+Having loaded the necessary files, the model \code{formula} is specified with
 <<formula-zambia, echo=TRUE, eval=TRUE>>=
 mf <- stunting ~ memployment + education + urban + gender + 
   s(bmi, bs = "ps") + s(agechild, bs = "ps") +
   s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district)
 @
-and the model is fitted using MCMC by calling
+where deviation (effect) coding is automatically performed for the factor variables 
+\code{memployment}, \code{education}, \code{urban} and \code{gender}. The model is then fitted using 
+MCMC by calling
 <<fit-zambia-model, echo=TRUE, eval=FALSE>>=
 zm <- bayesx(mf, family = "gaussian", method = "MCMC", 
   iterations = 12000, burnin = 2000, step = 10, 
@@ -885,10 +892,11 @@ plot(zm, term = "r(district)", map = ZambiaBnd,
 @
 \end{center}
 \caption{\label{fig:zambia-district-structured-unstructured} Example on childhood malnutrition:
-Structured, left panel, and unstructured spatial effect, right panel respectively.}
+Estimated mean effect of the structured spatial effect, left panel, together with the estimated 
+mean effect of the unstructred spatial effect of the districts in Zambia.}
 \end{figure}
-Note that for a map effect plot, the boundary file needs to be supplied to the plotting function, 
-otherwise the effect will also be visualized using function \fct{blockplot}. 
+Note that for a map effect plot, the \proglang{R} boundary object needs to be supplied to the 
+plotting function, otherwise the effect will also be visualized using function \fct{blockplot}. 
 
 For MCMC post estimation diagnosis, it is also possible to extract sampling paths of parameters with
 function \fct{samples}, or to plot the samples directly. For instance, coefficient sampling paths 
@@ -926,19 +934,75 @@ plot(zm, term = "s(bmi)", which = "var-samples",
 of the samples of the variance parameter of term \code{s(bmi)}.}
 \end{figure}
 
+In some situations problems may occur during processing of the BayesX binary, that are not 
+automatically detected by the main model fitting function \fct{bayesx}. Therefore the user may 
+inspect the log-file generated by the binary in two ways: Setting the option \code{verbose = TRUE} 
+in \fct{bayesx.control} will print all information produced by BayesX simultaneously at runtime. 
+The option is especially helpful if BayesX crashes. Another way to obtain the log-file is to use 
+function \fct{bayesx\_logfile} if BayesX successfully finished processing. In this example the 
+log-file may be printed with
+\begin{Sinput}
+R> bayesx_logfile(zm)
 
-\clearpage
+NOTE: created directory /tmp/RtmpL9V3db/bayesx/temp
+NOTE: created directory /tmp/RtmpL9V3db/bayesx/output
+> logopen using /tmp/RtmpL9V3db/bayesx/bayesx.estim.input.prg.log
+> bayesreg b
+> map bayesxmap
+> bayesxmap.infile using /tmp/RtmpL9V3db/bayesx/bayesxmap.bnd
+NOTE: 57 regions read from file /tmp/RtmpL9V3db/bayesx/bayesxmap.bnd
+> dataset d
+> d.infile using /tmp/RtmpL9V3db/bayesx/bayesx.estim.data.raw
+NOTE: 9 variables with 4847 observations read from file
+/tmp/RtmpL9V3db/bayesx/bayesx.estim.data.raw
+
+> b.outfile = /tmp/RtmpL9V3db/bayesx/bayesx.estim
+> b.regress stunting = bmi(psplinerw2,nrknots=8,degree=3) + 
+    agechild(psplinerw2,nrknots=8,degree=3) + district(spatial,map=bayesxmap) + 
+    district(random) + memployment1 + education1 + education2 + urban1 + gender1, 
+    family=gaussian iterations=12000 burnin=2000 maxint=150 step=10 setseed=123 
+    aresp=1 bresp=0.005 predict using d
+NOTE: no observations for region 11
+NOTE: no observations for region 84
+NOTE: no observations for region 96
 
 
-\subsection{Forest health data set} \label{subsec:forest}
+BAYESREG OBJECT b: regression procedure
+
+GENERAL OPTIONS:
+
+  Number of iterations:  12000
+  Burn-in period:        2000
+  Thinning parameter:    10
+
+
+RESPONSE DISTRIBUTION:
+
+  Family: Gaussian
+  Number of observations: 4847
+  Number of observations with positive weights: 4847
+  Response function: identity
+  Hyperparameter a: 1
+  Hyperparameter b: 0.005
+
+.
+.
+.
+\end{Sinput}
+To simplify matters only a fragment of the log-file is shown in the above. The log-file typically 
+provides information on the used data, model specifications, algorithms and possible error 
+messages.
+
+\subsection{Forest health data set - Analysis with REML} \label{subsec:forest}
 
 The forest health dataset comprises information on the defoliation of beech trees, which serves as 
 an indicator of overall forest health here. The data was collected annually from 1980 to 1997 during 
-a project of visual inspection of trees around Rothenbuch, Germany, and is discussed in detail in 
-\citet{Fahrmeir+Kneib+Lang:2009}. In this example, the percentage rate of defoliation of each tree 
-is aggregated into three ordinal categories, which are modeled in terms of covariates characterizing 
-the stand and site of a tree. In addition, temporal and spatial information is available, see also 
-Table~\ref{tab:forest}.
+a project of visual inspection of trees around Rothenbuch, Germany, see 
+\citet{R2BayesX:Goettlein+Pruscha:1996}, and is discussed in detail in 
+\citet{R2BayesX:Fahrmeir+Kneib+Lang:2009}. In this example, the percentage rate of defoliation of 
+each tree is aggregated into three ordinal categories, which are modeled in terms of covariates 
+characterizing the stand and site of a tree. In addition, temporal and spatial information is 
+available, see also Table~\ref{tab:forest}.
 \begin{table}[!ht]
 \begin{center}
 \begin{tabular}{|l|p{10cm}|}
@@ -970,8 +1034,8 @@ Variable           & Description \\ \hline
 \end{center}
 \end{table}
 
-Similar to \citet{Fahrmeir+Kneib+Lang:2009}, we start with a three categorical ordered logit model, 
-with $P(\texttt{defoliation}_{it} \leq r)$ of tree $i$ at time $t$, $r = 1,2$, and the 
+Similar to \citet{R2BayesX:Fahrmeir+Kneib+Lang:2009}, we start with a three categorical ordered 
+logit model, with $P(\texttt{defoliation}_{it} \leq r)$ of tree $i$ at time $t$, $r = 1,2$, and the 
 additive predictor
 \begin{eqnarray*}
 \eta_{it}^{(r)} &=& f_1(\texttt{age}_{it}) + f_2(\texttt{inclination}_{i}) + 
@@ -992,8 +1056,8 @@ mf <- defoliation ~  stand + fertilized +
   s(elevation, bs = "ps", k = 22)
 @
 The covariates entering nonlinearly are again modeled by P-splines using 22 basis functions, 
-\code{k = 22}. The model is then fitted applying REML by assigning a cumulative multinomial 
-distribution to the response calling
+\code{k = 22}. The model is then fitted applying REML by assigning a cumulative logit model and 
+calling
 <<fit-forest-model-01, echo=TRUE, eval=FALSE>>=
 fm1 <- bayesx(mf, family = "cumlogit", 
   method = "REML", data = ForestHealth)
@@ -1058,9 +1122,9 @@ plot(fm1, term = "s(elevation)")
 In this example some contradictory results occur. The effect of covariate \code{age} on the 
 \code{defoliation} seems to decline for both, younger and older trees, which intuitively should be a 
 monotone increasing effect, this also holds for the effect of \code{elevation}. Moreover, the 
-extremely raw estimate of \code{inclination} is hardly interpretable. Therefore, the authors extend 
-the model by a spatial effect, which is modeled by a two dimensional geospline term of the tree 
-locations. The tree $x$- and $y$ coordinates are calculated by the centroid positions of tree 
+extremely wiggly estimate of \code{inclination} is hardly interpretable. Therefore, the authors 
+extend the model by a spatial effect, which is modeled by a two dimensional geospline term of the 
+tree locations. The tree $x$- and $y$ coordinates are calculated by the centroid positions of tree 
 polygons given by the boundary map file, which may be loaded with
 <<forest-model-gra-bnd, echo=TRUE, eval=TRUE>>=
 data("BeechBnd", package = "R2BayesX")
@@ -1086,7 +1150,8 @@ statistics for both models give
 summary(c(fm1, fm2))
 @
 where the parametric modeled terms in the second model seem to have a less important effect on tree 
-defoliation, with similar findings for covariates \code{inclination} and \code{elevation} in 
+defoliation, with similar findings for covariates \code{inclination} and \code{elevation}.
+However, the estimate of the \code{age} effect seems to be improved in terms of monotonicity, see 
 Figure~\ref{fig:forest-spatial-nonpara}. 
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.46\textwidth}
@@ -1095,30 +1160,16 @@ Figure~\ref{fig:forest-spatial-nonpara}.
 par(mar = c(4.1, 4.1, 0.1, 2.1))
 plot(fm2, term = "s(age)")
 @
-<<forest-spatial-inclination, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm2, term = "s(inclination)")
-@
-\\[2ex]
-
-<<forest-spatial-elevation, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm2, term = "s(elevation)")
-@
 \end{center}
-\caption{\label{fig:forest-spatial-nonpara} Forest damage: Estimates of particular nonparametric 
-effects including 80\% and 95\% point-wise confidence intervals of the model including the spatial 
-effect.}
+\caption{\label{fig:forest-spatial-nonpara} Forest damage: Estimated effect of covariate \code{age} 
+including 80\% and 95\% point-wise confidence intervals of the model including the spatial effect.}
 \end{figure}
-However, the estimate of the \code{age} effect seems to be improved in terms of monotonicity. The 
-estimated spatial effect may be plotted either using a 3d perspective plot, an image/contour plot or
-a map effect plot using the boundary file \code{BeechBnd} with
+
+The estimated spatial effect may be plotted either using a 3d perspective plot, an image/contour 
+plot or a map effect plot using the boundary file \code{BeechBnd} with
 <<forest-spatial-id, echo=TRUE, eval=FALSE>>=
 plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft")
 @
-as shown in Figure~\ref{fig:forest-spatial}. Summarizing these results identifies a strong influence 
-of the spatial effect of the overall model fit, indicating that a clear splitting of locational 
-specific covariates and the spatial effect is hardly possible in this example. 
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.65\textwidth}
 \begin{center}
@@ -1130,9 +1181,34 @@ plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft",
 \end{center}
 \caption{\label{fig:forest-spatial} Forest damage: Estimate of the spatial effect.}
 \end{figure}
+as shown in Figure~\ref{fig:forest-spatial}. 
+
+Summarizing these results identifies a strong influence of the spatial effect of the overall model 
+fit, indicating that a clear splitting of locational specific covariates and the spatial effect is 
+hardly possible in this example. 
 
 
-\clearpage
+\subsection{Childhood malnutrition in Zambia - Analysis with STEP} \label{subsec:zambia-step}
+
+<<fit-zambia-model-step, echo=TRUE, eval=FALSE>>=
+zms <- bayesx(stunting ~ memployment + education + urban + gender + 
+  s(bmi, bs = "ps") + s(agechild, bs = "ps") +
+  s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district), 
+  family = "gaussian", method = "STEP", predict = FALSE, data = ZambiaNutrition)
+@
+<<cache-zambia-model-step, echo=FALSE, eval=TRUE>>=
+if(file.exists("zambia-model-step.rda")) {
+load("zambia-model-step.rda")
+} else {
+data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
+<<fit-zambia-model-step>>
+save(zms, file = "zambia-model-step.rda")
+}
+@
+
+<<zambia-model-step-summary, echo=TRUE, eval=TRUE>>=
+summary(zms)
+@
 
 
 % \section{Summary}\label{sec:conclusion}
@@ -1163,11 +1239,11 @@ use within the \proglang{R} interface. The binary is named \code{bayesx.exe} and
 \subsection[Other systems]{Other systems} \label{appendix:otherinstall}
 The zip archive named 
 \href{http://www.stat.uni-muenchen.de/~bayesx/install/bayesxsource.zip}{\code{bayesxsource.zip}}, 
-containing the \proglang{C++} source code of BayesX, needs to be downloaded and unpacked. If the make 
-facility is available, one can simply type make BayesX in the shell and BayesX will be compiled. 
-Depending on the operating system, some minor modifications of the make file (for example relating 
-to the version of the installed GNU compiler or the location of the readline library) may be 
-necessary. For MAC OS, versions of an adjusted makefile and the main function that have been used
+containing the \proglang{C++} source code of BayesX, needs to be downloaded and unpacked. If the 
+make facility is available, one can simply type make BayesX in the shell and BayesX will be 
+compiled. Depending on the operating system, some minor modifications of the make file (for example 
+relating to the version of the installed GNU compiler or the location of the readline library) may 
+be necessary. For MAC OS, versions of an adjusted makefile and the main function that have been used
 for a sucessful compilation may be found at the
 \href{http://www.stat.uni-muenchen.de/~bayesx/bayesxfaq.html}{FAQ site}.
 \end{appendix}
@@ -1195,9 +1271,9 @@ options(bayesx.bin = "C:/BayesX/commandline/bayesx.exe")
 \end{Sinput}
 depending on the installation location of the binary.  
  
-Furthermore, another possibility is to add the installation directory of the binary to the environment 
-PATH variable of the operating system. Both options will automatically link the binary with 
-\proglang{R} for the upcoming sessions.
+Furthermore, another possibility is to add the installation directory of the binary to the 
+environment PATH variable of the operating system. Both options will automatically link the binary 
+with \proglang{R} for the upcoming sessions.
 
 
 \end{document}

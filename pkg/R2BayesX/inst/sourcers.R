@@ -1,9 +1,11 @@
 dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-p <- parse.bayesx.input(y ~ -1 + s(x1, bs = "ps") + 
-  r(id ~ -1 + s(x2 , bs = "ps") + r(id2 ~ 1 + s(x3, bs = "ps"), data = dat3), data = dat2), 
-  method = "HMCMC", data = dat1)
+
+zms <- bayesx(stunting ~ memployment + education + urban + gender + 
+  s(bmi, bs = "ps") + s(agechild, bs = "ps") +
+  s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district), 
+  family = "gaussian", method = "STEP", data = ZambiaNutrition)
 
 
 

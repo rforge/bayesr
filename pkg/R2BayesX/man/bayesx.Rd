@@ -26,7 +26,8 @@ bayesx(formula, data, weights = NULL, subset = NULL,
     \code{environment(formula)}: typically the environment from which \code{bayesx} is called. 
     Argument \code{data} may also be a character string defining the directory the data is stored, 
     where the first row in the data set must contain the variable names and columns should be tab
-    separated.}
+    separated. Using this option will avoid loading the complete data into \R, only the BayesX
+    output files will be imported, which might be helpful using large datasets.}
   \item{weights}{prior weights on the data.}
   \item{subset}{an optional vector specifying a subset of observations to be used in the fitting 
     process.}
@@ -41,41 +42,37 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 }
 
 \details{  
-  Estimation of regression models with \pkg{BayesX} is based on two different inferential concepts: 
-  Markov chain Monte Carlo simulation techniques corresponding to full Bayesian inference 
-  and mixed model methodology corresponding to penalized likelihood or empirical Bayes inference.
-  Both concepts have been implemented as follows:
-  
-  \bold{MCMC} simulation techniques: A fully Bayesian interpretation of structured additive 
-  regression models is obtained by specifying prior distributions for all unknown parameters. 
-  Estimation can be facilitated using Markov chain Monte Carlo simulation techniques, a general and 
-  versatile concept for Bayesian inference. Implementation of MCMC methodology thereby 
-  provides numerically efficient schemes for structured additive regression models. Suitable 
-  proposal densities have been developed to obtain rapidly mixing, well-behaved sampling schemes 
-  without the need for manual tuning.
 
-  \bold{REML}, mixed model based estimation: An increasingly popular way to estimate semi-parametric 
-  regression models is the representation of penalization approaches as mixed models. Within 
-  \pkg{BayesX} this concept has been extended to structured additive regression models and several 
-  types of non-standard regression situations. The general idea is to take advantage of the close 
-  connection between penalty concepts and corresponding random effects distributions. The smoothing 
-  parameters of the penalties then transform to variance components in the random effects (mixed) 
-  model. While the selection of smoothing parameters has been a difficult task for a long time, 
-  several estimation procedures for variance components in mixed models are already available since 
-  the 1970's. The most popular one is restricted maximum likelihood in Gaussian mixed models with 
-  marginal likelihood as the non-Gaussian counterpart. REML employs mixed model methodology for the 
-  estimation of structured additive regression models. While regression coefficients are estimated 
+  In BayesX, estimation of regression parameters is based on three inferential concepts: 
+
+  \bold{Full Bayesian inference via MCMC}: 
+  A fully Bayesian interpretation of structured additive regression models is obtained by specifying 
+  prior distributions for all unknown parameters. Estimation can be facilitated using Markov chain 
+  Monte Carlo simulation techniques. BayesX provides numerically efficient implementations of MCMC 
+  schemes for structured additive regression models. Suitable proposal densities have been developed 
+  to obtain rapidly mixing, well-behaved sampling schemes without the need for manual tuning. 
+
+  \bold{Inference via a mixed model representation}:
+  The other concept used for estimation is based on mixed model methodology. Within BayesX this 
+  concept has been extended to structured additive regression models and several types of 
+  non-standard regression situations. The general idea is to take advantage of the close connection 
+  between penalty concepts and corresponding random effects distributions. The smoothing parameters 
+  of the penalties then transform to variance components in the random effects (mixed) model. While 
+  the selection of smoothing parameters has been a difficult task for a long time, several 
+  estimation procedures for variance components in mixed models are already available since the 
+  1970's. The most popular one is restricted maximum likelihood in Gaussian mixed models with 
+  marginal likelihood as the non-Gaussian counterpart. While regression coefficients are estimated 
   based on penalized likelihood, restricted maximum likelihood or marginal likelihood estimation 
   forms the basis for the determination of smoothing parameters. From a Bayesian perspective, this 
   yields empirical Bayes/posterior mode estimates for the structured additive regression models. 
   However, estimates can also merely be interpreted as penalized likelihood estimates from a 
-  frequentist perspective.
-  
-  \bold{STEP}, penalized least squares including model selection: As a third alternative 
-  \pkg{BayesX} provides a penalized least squares (respectively penalized likelihood) approach for 
-  estimating structured additive regression models. In addition to the previously described 
-  estimation alternatives, a powerful variable and model selection tool is included. Model choice 
-  and estimation of the parameters is done simultaneously. The algorithms are able to
+  frequentist perspective. 
+
+  \bold{Penalized likelihood including variable selection}:
+  As a third alternative BayesX provides a penalized least squares (respectively penalized 
+  likelihood) approach for estimating structured additive regression models. In addition, a powerful 
+  variable and model selection tool is included. Model choice and estimation of the parameters is 
+  done simultaneously. The algorithms are able to
   \itemize{
     \item decide whether a particular covariate enters the model,
     \item decide whether a continuous covariate enters the model linearly or nonlinearly,
@@ -84,35 +81,34 @@ bayesx(formula, data, weights = NULL, subset = NULL,
     \item select complex interaction effects (two dimensional surfaces, varying coefficient terms)
     \item select the degree of smoothness of nonlinear covariate, spatial or cluster specific
       heterogeneity effects.
-    }
+  }
   Inference is based on penalized likelihood in combination with fast algorithms for selecting 
   relevant covariates and model terms. Different models are compared via various goodness of fit 
-  criteria, e.g. AIC, BIC, GCV and 5 or 10 fold cross validation.
+  criteria, e.g. AIC, BIC, GCV and 5 or 10 fold cross validation. 
+
+  Within the model fitting function \code{bayesx}, the different inferential concepts may be chosen 
+  by argument \code{method} of function \code{\link{bayesx.control}}. Options are \code{"MCMC"}, 
+  \code{"HMCMC"} (hierarchical MCMC), \code{"REML"} and \code{"STEP"}.
   
-  Now, to estimate STAR models, the wrapper function \code{bayesx} starts by simply translating
-  \R syntax into \pkg{BayesX} commands, that have originally been implemented, with function
-  \code{\link{parse.bayesx.input}} and \code{\link{write.bayesx.input}}. Afterwards the computed 
-  program file is send as a whole to the command-line binary executable version of \pkg{BayesX} with 
-  \code{\link{run.bayesx}}, which is processed fully externally. As a last step, function 
-  \code{\link{read.bayesx.output}} will read the estimated model object returned from \pkg{BayesX} 
-  back into \R. 
+  The wrapper function \code{bayesx} basically starts by setting up the necessary BayesX program 
+  file using function \code{\link{bayesx.construct}}, \code{\link{parse.bayesx.input}} and 
+  \code{\link{write.bayesx.input}}. Afterwards the generated program file is send to the 
+  command-line binary executable version of BayesX with \code{\link{run.bayesx}}. As a last step, 
+  function \code{\link{read.bayesx.output}} will read the estimated model object returned from 
+  BayesX back into \R. 
   
-  For estimation of STAR models, function \code{bayesx} thereby uses formula syntax as provided in 
-  package \code{\link[mgcv]{mgcv}} (see \code{\link[mgcv]{formula.gam}}), i.e. models including 
-  smooth terms may be specified using either
-  \itemize{
-    \item \code{\link[mgcv]{s}} type or
-    \item \code{\link[mgcv]{te}} type model terms.
-    }
-  In addition, another term type for random effects has been implemented, also see \code{\link{r}},
-  with possibilities to estimate hierarchical STAR models. For a detailed description of the syntax 
-  used within \code{bayesx} models see \code{\link{bayesx.construct}} and 
+  For estimation of STAR models, function \code{bayesx} uses formula syntax as provided in package 
+  \code{\link[mgcv]{mgcv}} (see \code{\link[mgcv]{formula.gam}}), i.e. models including smooth terms 
+  may be specified using the smooth term constructor function \code{\link[mgcv]{s}}. In addition, 
+  a random effect constructor function has been implemented, also see \code{\link{r}}, with 
+  possibilities to estimate hierarchical STAR models. For a detailed description of the syntax used 
+  within \code{bayesx} models see \code{\link{bayesx.construct}} and 
   \code{\link{bayesx.term.options}}.
 
-  A set of standard extractor functions for fitted model objects is available for
-  objects of class \code{"bayesx"}, including methods to the generic functions
-  \code{\link[base]{print}}, \code{\link[base]{summary}}, \code{\link[graphics]{plot}}, 
-  \code{\link[stats]{residuals}} and \code{\link[stats]{fitted}}.
+  After the BayesX binary has successfully finished processing an object of class \code{"bayesx"} is
+  returned, wherefor a set of standard extractor functions and methods is available, including 
+  methods to the generic functions \code{\link[base]{print}}, \code{\link[base]{summary}}, 
+  \code{\link[graphics]{plot}}, \code{\link[stats]{residuals}} and \code{\link[stats]{fitted}}.
   
   See \code{\link{fitted.bayesx}}, \code{\link{plot.bayesx}}, and \code{\link{summary.bayesx}} for 
   more details on these methods.
@@ -151,9 +147,25 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 }
 
 \references{
-  For methodological and reference details see the \pkg{BayesX} manuals available at:
+  For methodological and reference details see:
   
-  \url{http://www.stat.uni-muenchen.de/~bayesx/}.
+  Belitz C, Brezger A, Kneib T, Lang S (2011). BayesX - Software for Bayesian Inference in 
+    Structured Additive Regression Models. Version 2.0.1. 
+    URL \url{http://www.stat.uni-muenchen.de/~bayesx}.
+
+  Belitz C, Lang S (2008). Simultaneous selection of variables and smoothing parameters in 
+    structured additive regression models. \emph{Computational Statistics \& Data Analysis}, 
+    \bold{53}, 61--81.
+
+  Brezger A, Kneib T, Lang S (2005). BayesX: Analyzing Bayesian Structured Additive Regression 
+    Models. \emph{Journal of Statistical Software}, \bold{14}(11), 1--22. 
+    URL \url{http://www.jstatsoft.org/v14/i11/}.
+
+  Brezger A, Lang S (2006). Generalized Structured Additive Regression Based on Bayesian P-Splines.
+    \emph{Computational Statistics \& Data Analysis}, \bold{50}, 947--991.
+
+  Fahrmeir L, Kneib T, Lang S (2004). Penalized Structured Additive Regression for Space Time Data: 
+    A Bayesian Perspective. \emph{Statistica Sinica}, \bold{14}, 731--761.
 }
 
 \seealso{

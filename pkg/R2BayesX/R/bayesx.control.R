@@ -7,7 +7,7 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
   eps = 1e-05, lowerlim = 0.001, maxit = 400L, maxchange = 1e+06, leftint = NULL, 
   lefttrunc = NULL, state = NULL, algorithm = NULL, criterion = NULL, proportion = NULL,
   startmodel = NULL, trace = NULL, steps = NULL, 
-  CI = "MCMCbootstrap", bootstrapsamples = 99L, ...)
+  CI = NULL, bootstrapsamples = NULL, ...)
 {
   control <- list(...)
   start <- 5L + length(control)
@@ -75,9 +75,11 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
     control$hmcmc <- FALSE
   }
   if(method == "STEP") {
-    control$iterations <- iterations
-    control$burnin <- burnin
-    control$step <- step
+    if(!is.null(CI) && (CI == "MCMCselect" || CI == "MCMCbootstrap")) {
+      control$iterations <- iterations
+      control$burnin <- burnin
+      control$step <- step
+    }
     control$predict <- predict
     control$algorithm <- algorithm 
     control$criterion <- criterion
@@ -86,7 +88,8 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
     control$trace <- trace
     control$steps <- steps
     control$CI <- CI
-    control$bootstrapsamples <- bootstrapsamples
+    if(!is.null(CI) && CI == "MCMCbootstrap")
+      control$bootstrapsamples <- bootstrapsamples
     control$level1 <- level[1L]
     control$level2 <- level[2L]
     if(family == "multinomial" || family == "multinomialprobit")

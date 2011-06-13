@@ -28,8 +28,8 @@ cprob(object, model = NULL, term = NULL, ...)
 }
 
 \references{
-Brezger, A., Lang, S. (2008): Simultaneous probability statements for Bayesian P-splines. 
-  \emph{Statistical Modeling}, \bold{8}, 141--186.
+  Brezger, A., Lang, S. (2008): Simultaneous probability statements for Bayesian P-splines. 
+    \emph{Statistical Modeling}, \bold{8}, 141--186.
 }
 
 \seealso{
