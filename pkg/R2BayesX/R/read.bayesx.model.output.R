@@ -138,9 +138,6 @@ function(dir, model.name)
     ## reordering and naming
     if(info %in% dir.files)
       rval$effects <- term.reorder(rval$effects, paste(dir, "/", info, sep = ""))
-    delete.NULLs <- function(x.list) {
-      x.list[unlist(lapply(x.list, length) != 0)]
-    }
     rval$effects <- delete.NULLs(rval$effects)
 
     ## search for additional info

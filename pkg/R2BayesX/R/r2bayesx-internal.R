@@ -127,8 +127,10 @@ function(x, digits = max(3L, getOption("digits") - 3L),
         cat(liner, "\n")
       }
     }
+    x$model.fit <- delete.NULLs(x$model.fit)
     mfn <- names(x$model.fit)
     step <- 5L
+    mfn <- mfn[!is.null(x$model.fit)]
     mfn <- mfn[mfn != "model.name"]
     mfn <- mfn[mfn != "formula"]
     mfn <- mfn[mfn != "step.final.model"]
@@ -141,15 +143,17 @@ function(x, digits = max(3L, getOption("digits") - 3L),
       x$model.fit$method <- "NA"
     for(i in 1L:length(mfn)) {
         if(!is.null(x$model.fit[[mfn[i]]]) && !is.na(x$model.fit[[mfn[i]]] != "")) {
-          if(i < step)
-            cat(mfn[i], "=", x$model.fit[[mfn[i]]], " ")
-          if(i == step) {
-            if(i != length(mfn))
-              cat("\n")
-            cat(mfn[i], "=", x$model.fit[[mfn[i]]], " ")
-            step <- step + step
+          if(length(splitme(as.character(x$model.fit[[mfn[i]]])))) {
+            if(i < step)
+              cat(mfn[i], "=", x$model.fit[[mfn[i]]], " ")
+            if(i == step) {
+              if(i != length(mfn))
+                cat("\n")
+              cat(mfn[i], "=", x$model.fit[[mfn[i]]], " ")
+              step <- step + step
+            }
           }
-        }
+      }
     }
     cat("\n")
   }
