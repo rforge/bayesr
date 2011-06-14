@@ -765,12 +765,13 @@ reference population, respectively.
 
 Following \citet{R2BayesX:Kandala+Lang+Klasen+Fahrmeir:2001}, we estimate a structured additive 
 regression model with predictor
-\begin{eqnarray*}
+\begin{eqnarray} \label{eqn:zambia-eta}
 \eta &=& \gamma_0 + \gamma_1\texttt{memployment1} + \gamma_2\texttt{education1} + 
-         \gamma_3\texttt{education2} + \gamma_4\texttt{urban1} + \gamma_5\texttt{gender1} + \\
+         \gamma_3\texttt{education2} + \gamma_4\texttt{urban1} + \gamma_5\texttt{gender1} + 
+         \nonumber \\ 
      & & f_1(\texttt{bmi}) + f_2(\texttt{agechild}) + f_{str}(\texttt{district}) + 
          f_{unstr}(\texttt{district})
-\end{eqnarray*}
+\end{eqnarray}
 where \code{memployment1} is the deviation (effect) coded version of covariate \code{memployment}, 
 i.e. \code{memployment1} contains of values -1, corresponding to `working', and 1, `not working' 
 respectively, likewise for covariates \code{education}, \code{urban} and \code{gender}. As mentioned 
@@ -1190,12 +1191,19 @@ hardly possible in this example.
 
 \subsection{Childhood malnutrition in Zambia - Analysis with STEP} \label{subsec:zambia-step}
 
+To illustrate the implemented methodology for simultaneous selection of variables and smoothing
+parameters, we proceed with the dataset on malnutrition in Zambia of 
+Subsection~\ref{subsec:zambia}. The structured additive predictor~(\ref{eqn:zambia-eta}) contains
+two continuous covariates \code{bmi} and \code{agechild} that are assumed to have a possibly 
+nonlinear effect on the response \code{stunting} and are modeled with P-splines. However, a linear 
+effect could be more appropriate and, hence, the linear effect is also considered for model 
+selection. Additionally, for each variable and function, the selection procedure decides if a term 
+is included or removed from the model. 
 <<fit-zambia-model-step, echo=TRUE, eval=FALSE>>=
 zms <- bayesx(stunting ~ memployment + education + urban + gender + 
   s(bmi, bs = "ps") + s(agechild, bs = "ps") +
   s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district), 
-  family = "gaussian", method = "STEP", predict = FALSE, 
-  data = ZambiaNutrition)
+  family = "gaussian", method = "STEP", data = ZambiaNutrition)
 @
 <<cache-zambia-model-step, echo=FALSE, eval=TRUE>>=
 if(file.exists("zambia-model-step.rda")) {

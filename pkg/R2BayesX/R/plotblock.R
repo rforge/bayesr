@@ -86,11 +86,12 @@ function(x, residuals = FALSE, range = c(0.3, 0.3),
       ylim <- c(ylim, effects[[i]][,2L:ncol(effects[[i]])])
       colnames(effects[[i]]) <- rep(paste(xnam, xu[i], sep = ""), ncol(effects[[i]]))
       if(residuals) {
-        pres <- e[e[,1L] == xu[i],]
-        if(!is.matrix(pres))
-          pres <- matrix(pres, nrow = 1)
-        attr(effects[[i]], "partial.resids") <- pres
-        ylim <- c(ylim, pres[,2L:ncol(pres)])
+        if(length(pres <- e[e[,1L] == xu[i],])) {
+          if(!is.matrix(pres))
+            pres <- matrix(pres, nrow = 1)
+          attr(effects[[i]], "partial.resids") <- pres
+          ylim <- c(ylim, pres[,2L:ncol(pres)])
+        }
       }
     }
     x <- effects
@@ -147,6 +148,8 @@ function(x, residuals = FALSE, range = c(0.3, 0.3),
   for(i in 1L:n) {
     args$x.co <- i
     args$x <- x[[i]]
+    if(!is.null(attr(args$x, "partial.resids")))
+      attr(args$x, "partial.resids")[,1L] <- i
     do.call(plot2d.default, delete.args(plot2d.default, args))
     axn[i] <- colnames(x[[i]])[1L]
   }

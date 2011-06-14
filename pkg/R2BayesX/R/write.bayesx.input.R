@@ -182,8 +182,7 @@ function(object)
     terms <- attr(object$terms, "term.labels")
     infofile <- paste(object$outfile, "/", object$model.name, thismodel, sep = "")
     infofile <- paste(infofile, ".terms.info", sep = "")
-    if(object$method != "STEP")
-      write.term.info(infofile, terms, object$data, object)
+    write.term.info(infofile, terms, object$data, object)
   } else {
     vdf <- sub(" +$", "", readLines(data.file, n = 1L))
     vars <- strsplit(vdf, " ")[[1L]]
