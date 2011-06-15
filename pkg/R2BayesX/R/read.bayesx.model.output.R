@@ -126,6 +126,34 @@ function(dir, model.name)
       mf <- model.results
       if(!is.null(mf$smooth.hyp.step)) {
         rval$smooth.hyp <- mf$smooth.hyp.step
+        if(length(log <- grep(".log", files, fixed = TRUE, value = TRUE))) { 
+          log <- readLines(paste(dir, "/", log, sep = ""))
+          if(length(i <- grep("Final Model:", log))) {
+            i <- i[length(i)]
+            log <- log[i:length(log)][3]
+            if(length(splitme(log))) {
+              log <- strsplit(log, " + ", fixed = TRUE)[[1L]]
+              if(length(log <- grep("(random", log, fixed = TRUE, value = TRUE))) {
+                for(k in 1L:length(log)) {
+                  tmp <- strsplit(log[k], ",", fixed = TRUE)[[1L]]
+                  if(length(tmp <- grep("df=", tmp, fixed = TRUE, value = TRUE))) {
+                    tmp <- strsplit(tmp, "df=", fixed = TRUE)[[1L]][2L]
+                    if(length(splitme(tmp))) {
+                      tmp <- as.numeric(tmp)
+                      cn <- colnames(rval$smooth.hyp)
+                      if(any(cn == "df")) {
+                        tmpv <- rval$smooth.hyp[cn == "df"]
+                        rn <- rownames(rval$smooth.hyp)
+                        rn[tmpv == tmp] <- gsub("s(", "r(", rn[tmpv == tmp], fixed = TRUE)
+                        rownames(rval$smooth.hyp) <- rn
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
         mf$smooth.hyp.step <- NULL
       }
     } else mf <- c(list(method = method, N = N), mf)

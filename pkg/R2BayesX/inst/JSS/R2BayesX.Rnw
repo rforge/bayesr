@@ -1198,20 +1198,21 @@ predictor~(\ref{eqn:zambia-eta}) contains two continuous covariates \code{bmi} a
 that are assumed to have a possibly nonlinear effect on the response \code{stunting} and are modeled 
 with P-splines. However, a linear effect could be more appropriate and, hence, the linear effect is 
 also considered using the selection algorithm in BayesX. Additionally, for each variable and 
-function, the procedure decides if a term is included or removed from the model. To estimate the
-model using the stewise algorithm we use the same model formula of Subsection~\ref{subsec:zambia} 
-and call
+function, the implemented procedures decide if a term is included or removed from the model. To 
+estimate the model applying the option \code{method = "STEP"}, we use the same  model formula of 
+Subsection~\ref{subsec:zambia} and call
 <<fit-zambia-model-step-01, echo=TRUE, eval=FALSE>>=
 mf <- stunting ~ memployment + education + urban + gender + 
   s(bmi, bs = "ps") + s(agechild, bs = "ps") +
   s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district)
-
 zms <- bayesx(mf, family = "gaussian", method = "STEP", 
+  algorithm = "cdescent1", startmodel = "empty", 
   data = ZambiaNutrition)
 @
 <<fit-zambia-model-step-02, echo=FALSE, eval=FALSE>>=
-zmscb <- bayesx(mf, family = "gaussian", method = "STEP", 
-  CI = "MCMCselect", iterations = 10000, setp = 10,
+zmsccb <- bayesx(mf, family = "gaussian", method = "STEP", 
+  algorithm = "cdescent1", startmodel = "empty", 
+  CI = "MCMCselect", iterations = 10000, step = 10,
   data = ZambiaNutrition)
 @
 <<cache-zambia-model-step, echo=FALSE, eval=TRUE>>=
@@ -1221,30 +1222,35 @@ load("zambia-model-step.rda")
 data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
 <<fit-zambia-model-step-01>>
 <<fit-zambia-model-step-02>>
-save(zms, zmscb, file = "zambia-model-step.rda")
+save(zms, zmsccb, file = "zambia-model-step.rda")
 }
 @
-The summary statistics of the final selected model are then provided with
+where argument \code{algorithm} choses the selection algorithm and \code{startmodel}, the start 
+model for variable selection, see also Table ~\ref{tab:control} for all possible options. The 
+summary statistics of the final selected model are then provided with
 <<zambia-model-step-summary, echo=TRUE, eval=TRUE>>=
 summary(zms)
 @
 Note that variable \code{memployment} was removed from the model and variable \code{bmi} is modelled 
 by a linear effect. Moreover, the colums \code{sd}, \code{2.5\%}, \code{50\%} and \code{97.5\%} 
-contain no values. The posterior quantiles may be computed if argument \code{CI} in function 
-\fct{bayesx.control} is specified. E.g. conditional confidence bands can be calculated conditional 
-on the selected model, i.e. they are computed for selected variables and functions only. The 
-computation of conditional confidence bands is based on an MCMC-algorithm subsequent to the 
-selection procedure.  For the selection of a model with an adjacent computation of conditional 
-confidence bands the user may type
-<<fit-zambia-model-step-03, echo=TRUE, eval=FALSE>>=
-zmscb <- bayesx(mf, family = "gaussian", method = "STEP", 
+contain no values, likewise for the random and smooth effects. The posterior quantiles may be 
+computed if argument \code{CI} in function \fct{bayesx.control} is specified. E.g. conditional 
+confidence bands can be calculated conditional on the selected model, i.e. they are computed for 
+selected variables and functions only. The computation of conditional confidence bands is based on 
+an MCMC-algorithm subsequent to the selection procedure.  For the selection of a model with an 
+adjacent computation of conditional confidence bands the user may type
+<<fit-zambia-model-step-04, echo=TRUE, eval=FALSE>>=
+zmsccb <- bayesx(mf, family = "gaussian", method = "STEP", 
+  algorithm = "cdescent1", startmodel = "empty", 
   CI = "MCMCselect", iterations = 10000, step = 10,
   data = ZambiaNutrition)
 @
-Using conditional confidence bands for estimation the summary statistics give
+which gives the following summary statistics
 <<zambia-model-step-summary-2, echo=TRUE, eval=TRUE>>=
-summary(zmscb)
+summary(zmsccb)
 @
+It is also possible to obtain unconditional confidence bands by setting \code{CI = "MCMCbootstrap"},
+which consider the uncertainty due to model selection.
 
 % \section{Summary}\label{sec:conclusion}
 

@@ -1,14 +1,12 @@
 dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-summary(zms)
-
-plot(zms, term = "s(district)", resid = TRUE, cex.resid = 0.1)
+b <- read.bayesx.output("/tmp/Rtmp4acoEV/bayesx")
 
 zms <- bayesx(stunting ~ memployment + education + urban + gender + 
   s(bmi, bs = "ps") + s(agechild, bs = "ps") +
   s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district), 
-  family = "gaussian", method = "STEP", data = ZambiaNutrition)
+  family = "gaussian", method = "STEP", data = ZambiaNutrition, dir.rm = FALSE)
 
 
 

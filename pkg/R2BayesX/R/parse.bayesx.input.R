@@ -31,9 +31,10 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
   fc <- as.character(formula)
   tl <- attr(terms(formula), "term.labels")
   h.variables <- NULL
-  if(length(tl) > 0 && any(is.rt(tl))) {
+  ra.change <- list()
+  if(length(tl) > 0L && any(is.rt(tl))) {
     h.random <- list()
-    nr <- 0
+    nr <- 0L
     for(k in 1L:length(tl))
       if(is.rt(tl[k])) {
         tmp <- parse.random.bayesx(tl[k], data)
@@ -57,6 +58,7 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
     if(!intcpt)
       tl <- c("-1", tl)
     formula <- as.formula(paste(as.character(formula[2L]), "~", paste(tl, collapse = "+")))
+    control$ra.change <- ra.change
   } else environment(formula) <- parent.frame()
   control$formula <- formula
   if(!is.character(data)) {
