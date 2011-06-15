@@ -138,10 +138,10 @@ model is given by
 \end{equation*} 
 where the functions $f_1$ and $f_2$ of continuous covariates \code{agechild} and \code{bmi} have 
 possible nonlinear effects on \code{stunting} and are therefore modeled nonparametrically using 
-P-splines. Here, the spatially correlated effect $f_{spat}$ of locational covariate \code{district} 
-is modeled by a stationary Gaussian random field based on centroid coordinates (geokriging) of the 
-districts in Zambia. To estimate the model with BayesX from \proglang{R}, the data together with a 
-boundary map file of the districts in Zambia is loaded with    
+P(enalized)-splines. Here, the spatially correlated effect $f_{spat}$ of locational covariate 
+\code{district} is modeled by a stationary Gaussian random field based on centroid coordinates 
+(geokriging) of the districts in Zambia. To estimate the model with BayesX from \proglang{R}, the 
+data together with a boundary map file of the districts in Zambia is loaded with    
 <<data-illustration, echo=TRUE, eval=TRUE, fig=FALSE>>=
 data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
 @
@@ -1193,32 +1193,58 @@ hardly possible in this example.
 
 To illustrate the implemented methodology for simultaneous selection of variables and smoothing
 parameters, we proceed with the dataset on malnutrition in Zambia of 
-Subsection~\ref{subsec:zambia}. The structured additive predictor~(\ref{eqn:zambia-eta}) contains
-two continuous covariates \code{bmi} and \code{agechild} that are assumed to have a possibly 
-nonlinear effect on the response \code{stunting} and are modeled with P-splines. However, a linear 
-effect could be more appropriate and, hence, the linear effect is also considered for model 
-selection. Additionally, for each variable and function, the selection procedure decides if a term 
-is included or removed from the model. 
-<<fit-zambia-model-step, echo=TRUE, eval=FALSE>>=
-zms <- bayesx(stunting ~ memployment + education + urban + gender + 
+Subsection~\ref{subsec:zambia}. In this example, the structured additive 
+predictor~(\ref{eqn:zambia-eta}) contains two continuous covariates \code{bmi} and \code{agechild}, 
+that are assumed to have a possibly nonlinear effect on the response \code{stunting} and are modeled 
+with P-splines. However, a linear effect could be more appropriate and, hence, the linear effect is 
+also considered using the selection algorithm in BayesX. Additionally, for each variable and 
+function, the procedure decides if a term is included or removed from the model. To estimate the
+model using the stewise algorithm we use the same model formula of Subsection~\ref{subsec:zambia} 
+and call
+<<fit-zambia-model-step-01, echo=TRUE, eval=FALSE>>=
+mf <- stunting ~ memployment + education + urban + gender + 
   s(bmi, bs = "ps") + s(agechild, bs = "ps") +
-  s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district), 
-  family = "gaussian", method = "STEP", data = ZambiaNutrition)
+  s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district)
+
+zms <- bayesx(mf, family = "gaussian", method = "STEP", 
+  data = ZambiaNutrition)
+@
+<<fit-zambia-model-step-02, echo=FALSE, eval=FALSE>>=
+zmscb <- bayesx(mf, family = "gaussian", method = "STEP", 
+  CI = "MCMCselect", iterations = 10000, setp = 10,
+  data = ZambiaNutrition)
 @
 <<cache-zambia-model-step, echo=FALSE, eval=TRUE>>=
 if(file.exists("zambia-model-step.rda")) {
 load("zambia-model-step.rda")
 } else {
 data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
-<<fit-zambia-model-step>>
-save(zms, file = "zambia-model-step.rda")
+<<fit-zambia-model-step-01>>
+<<fit-zambia-model-step-02>>
+save(zms, zmscb, file = "zambia-model-step.rda")
 }
 @
-
+The summary statistics of the final selected model are then provided with
 <<zambia-model-step-summary, echo=TRUE, eval=TRUE>>=
 summary(zms)
 @
-
+Note that variable \code{memployment} was removed from the model and variable \code{bmi} is modelled 
+by a linear effect. Moreover, the colums \code{sd}, \code{2.5\%}, \code{50\%} and \code{97.5\%} 
+contain no values. The posterior quantiles may be computed if argument \code{CI} in function 
+\fct{bayesx.control} is specified. E.g. conditional confidence bands can be calculated conditional 
+on the selected model, i.e. they are computed for selected variables and functions only. The 
+computation of conditional confidence bands is based on an MCMC-algorithm subsequent to the 
+selection procedure.  For the selection of a model with an adjacent computation of conditional 
+confidence bands the user may type
+<<fit-zambia-model-step-03, echo=TRUE, eval=FALSE>>=
+zmscb <- bayesx(mf, family = "gaussian", method = "STEP", 
+  CI = "MCMCselect", iterations = 10000, step = 10,
+  data = ZambiaNutrition)
+@
+Using conditional confidence bands for estimation the summary statistics give
+<<zambia-model-step-summary-2, echo=TRUE, eval=TRUE>>=
+summary(zmscb)
+@
 
 % \section{Summary}\label{sec:conclusion}
 
