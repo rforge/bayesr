@@ -22,10 +22,8 @@ function(x, residuals = FALSE, col.surface = NULL,
     else
       x <- x[,c(2L, 3L, 1L)]
   }
-  if(is.data.frame(x)) {
-    x$intnr <- NULL
-    x <- as.matrix(x)
-  }
+  if(is.data.frame(x))
+    x <- df2m(x)
   if(!is.matrix(x))
     stop("x must be a matrix!")
   if(ncol(x) < 3)
@@ -147,7 +145,7 @@ function(x, residuals = FALSE, col.surface = NULL,
       nf <- length(fitted)
       if(is.null(args$border))
         args$border <- c("green", "black", "red")
-      if(is.null(args$col))
+      if(is.function(args$col) || is.null(args$col))
         args$col <- NA
       color <- rep(args$col, length.out = nf)
       bcol <- rep(args$border, length.out = nf)

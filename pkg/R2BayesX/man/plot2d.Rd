@@ -94,7 +94,7 @@ plot(b, which = 1)
 plot(b, which = 1, rug = FALSE)
 
 ## extract fitted effects
-f <- fitted(b, term = "s(x)")[["s(x)"]]
+f <- fitted(b, term = "s(x)")
 
 ## now use plot2d
 plot2d(f)

@@ -5,18 +5,8 @@ function(x)
     for(i in 1L:length(cn)) {
       if(cn[i] == "pmean")
         cn[i] <- "Mean"
-      if(cn[i] == "pqu2p5")
-        cn[i] <- "2.5%"
-      if(cn[i] == "pqu10")
-        cn[i] <- "10%"
       if(cn[i] == "pmed")
         cn[i] <- "50%"
-      if(cn[i] == "pqu50")
-        cn[i] <- "50%"
-      if(cn[i] == "pqu90")
-        cn[i] <- "90%"
-      if(cn[i] == "pqu97p5")
-        cn[i] <- "97.5%"
       if(cn[i] == "pstddev")
         cn[i] <- "Sd"
       if(cn[i] == "pmin")
@@ -51,6 +41,11 @@ function(x)
         cn[i] <- "GCV"
       if(cn[i] == "dic")
         cn[i] <- "DIC"
+      if(grepl("pqu", cn[i], fixed = TRUE)) {
+        cn[i] <- paste(gsub("pqu", "", cn[i], fixed = TRUE), "%", sep = "")
+        if(grepl("p", cn[i], fixed = TRUE))
+          cn[i] <- gsub("p", ".", cn[i], fixed = TRUE)
+      }
     }
     colnames(x) <- cn
   }

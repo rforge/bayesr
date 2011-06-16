@@ -105,7 +105,7 @@ summary(b)
 plot(b, term = "s(z,w)")
 
 ## extract fitted effects
-f <- fitted(b, term = "s(z,w)")[["s(z,w)"]]
+f <- fitted(b, term = "s(z,w)")
 
 ## now use plot3d
 plot3d(f)

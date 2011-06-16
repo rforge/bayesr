@@ -1233,19 +1233,19 @@ summary(zms)
 @
 Note that variable \code{memployment} was removed from the model and variable \code{bmi} is modelled 
 by a linear effect. Moreover, the colums \code{sd}, \code{2.5\%}, \code{50\%} and \code{97.5\%} 
-contain no values, likewise for the random and smooth effects. The posterior quantiles may be 
-computed if argument \code{CI} in function \fct{bayesx.control} is specified. E.g. conditional 
-confidence bands can be calculated conditional on the selected model, i.e. they are computed for 
-selected variables and functions only. The computation of conditional confidence bands is based on 
-an MCMC-algorithm subsequent to the selection procedure.  For the selection of a model with an 
-adjacent computation of conditional confidence bands the user may type
+contain no values, likewise for the estimated  random and smooth effects. The posterior quantiles 
+may be computed if argument \code{CI} in function \fct{bayesx.control} is specified. E.g. 
+conditional confidence bands can be calculated conditional on the selected model, i.e. they are 
+computed for selected variables and functions only. The computation of conditional confidence bands 
+is based on an MCMC-algorithm subsequent to the selection procedure.  For the selection of a model 
+with an adjacent computation of conditional confidence bands the user may type
 <<fit-zambia-model-step-04, echo=TRUE, eval=FALSE>>=
 zmsccb <- bayesx(mf, family = "gaussian", method = "STEP", 
   algorithm = "cdescent1", startmodel = "empty", 
   CI = "MCMCselect", iterations = 10000, step = 10,
   data = ZambiaNutrition)
 @
-which gives the following summary statistics
+which results in the following summary statistics
 <<zambia-model-step-summary-2, echo=TRUE, eval=TRUE>>=
 summary(zmsccb)
 @

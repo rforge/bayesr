@@ -1,5 +1,5 @@
 fitted.bayesx <-
-function(object, model = NULL, term = NULL, fit.attributes = FALSE, ...)
+function(object, model = NULL, term = NULL, ...)
 {    
   object <- get.model(object, model)
   k <- length(object)
@@ -20,14 +20,6 @@ function(object, model = NULL, term = NULL, fit.attributes = FALSE, ...)
       rval <- list()
       for(i in 1L:k) {
         rval[[i]] <- object[[i]]$effects[term]
-        if(!fit.attributes) {
-          attr(rval[[i]], "sample") <- NULL
-          attr(rval[[i]], "variance.sample") <- NULL
-          attr(rval[[i]], "specs") <- NULL
-          attr(rval[[i]], "variance") <- NULL
-          attr(rval[[i]], "partial.resids") <- NULL
-          class(rval[[i]]) <- "matrix"
-        }
         if(!is.null(object[[i]]$bayesx.setup$model.name))
           mn[i] <- object[[i]]$bayesx.setup$model.name
       }
@@ -36,26 +28,8 @@ function(object, model = NULL, term = NULL, fit.attributes = FALSE, ...)
     } else {
       if(length(term) > 1L) {
         rval <- object[[1L]]$effects[term]
-        if(!fit.attributes) {
-          for(i in 1L:length(rval)) {
-            attr(rval[[i]], "sample") <- NULL
-            attr(rval[[i]], "variance.sample") <- NULL
-            attr(rval[[i]], "specs") <- NULL
-            attr(rval[[i]], "variance") <- NULL
-            attr(rval[[i]], "partial.resids") <- NULL
-            class(rval[[i]]) <- "matrix"
-          }
-        }
       } else {
         rval <- object[[1L]]$effects[[term]]
-        if(!fit.attributes) {
-          attr(rval, "sample") <- attr(rval, "variance.sample") <- attr(rval, "specs") <- NULL
-          attr(rval, "variance") <- NULL
-          attr(rval, "specs") <- NULL
-          attr(rval, "variance") <- NULL
-          attr(rval, "partial.resids") <- NULL
-          class(rval) <- "matrix"
-        }
       }
     }
   }
@@ -68,14 +42,54 @@ function(object, model = NULL, term = NULL, fit.attributes = FALSE, ...)
   if(any(is.na(rval)))
     warning("fitted values are missing in object!")
 
-  return(rval)
+  return(x2df(rval))
 }
 
 
 "[.fit.bayesx" <- function(x, term)
 {
-  if(is.list(x))
+  if(is.list(x)) {
+    if(is.character(term))
+      if(any(is.na(term <- pmatch(term, names(x)))))
+        stop("element not existing!")
     return(x[[term]])
-  else return(x)
+  } else return(x)
+}
+
+
+x2df <- function(x)
+{
+  if(is.list(x)) {
+    for(i in 1L:length(x)) {
+      if(is.list(x[[i]])) {
+        x[[i]] <- x2df(x[[i]])
+      }
+      else {
+        xattr <- attributes(x[[i]])
+        nxa <- names(xattr)
+        cx <- class(x[[i]])
+        if(any(grepl("bayesx", cx, fixed = TRUE)))
+          cx <- grep("bayesx", cx, fixed = TRUE, value = TRUE)
+        x[[i]] <- as.data.frame(x[[i]])
+        class(x[[i]]) <- c(cx, class(x[[i]]))
+        for(k in 1L:length(nxa)) 
+          if(all(nxa[k] != c("dim", "dimnames", "class")))
+            attr(x[[i]], nxa[k]) <- xattr[[k]]
+      } 
+    }
+  } else {
+    xattr <- attributes(x)
+    nxa <- names(xattr)
+    cx <- class(x)
+    if(any(grepl("bayesx", cx, fixed = TRUE)))
+      cx <- grep("bayesx", cx, fixed = TRUE, value = TRUE)
+    x <- as.data.frame(x)
+    class(x) <- c(cx, class(x))
+    for(k in 1L:length(nxa)) 
+      if(all(nxa[k] != c("dim", "dimnames", "class")))
+        attr(x, nxa[k]) <- xattr[[k]]
+  }
+
+  return(x)
 }
 

@@ -51,7 +51,6 @@ function(dir, files, data, response, eta, model.name, minfo)
               }
             }
           }
-
           colnames(x)[1L:dimx2] <- xnam
           rownames(x) <- 1L:nrow(x)
           labelx <- make.label(cx, xnam, dimx, vx)
@@ -139,6 +138,10 @@ function(dir, files, data, response, eta, model.name, minfo)
               attr(x, "knots") <-  df2m(read.table(paste(dir, "/", kf, sep = ""), header = TRUE))
             if(length(cf <- grep("_contour", af, value = TRUE))) {
               attr(x, "contourprob") <-  df2m(read.table(paste(dir, "/", cf, sep = ""), 
+                header = TRUE))
+            }
+            if(length(df <- grep("_df.", af, value = TRUE))) {
+              attr(x, "df") <-  df2m(read.table(paste(dir, "/", df, sep = ""), 
                 header = TRUE))
             }
           }

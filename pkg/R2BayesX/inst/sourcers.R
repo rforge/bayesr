@@ -1,7 +1,16 @@
-dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
+dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-b <- read.bayesx.output("/tmp/Rtmp4acoEV/bayesx")
+plot(fit[1])
+
+
+
+
+f <- fitted(b2, term = 1)
+
+     b2 <- bayesx(y ~ s(x, bs = "ps"), 
+       method = "MCMC", iter = 1200, burnin = 200, level = c(97, 50), data = dat)
+
 
 zms <- bayesx(stunting ~ memployment + education + urban + gender + 
   s(bmi, bs = "ps") + s(agechild, bs = "ps") +

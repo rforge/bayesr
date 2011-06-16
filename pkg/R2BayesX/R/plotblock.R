@@ -19,11 +19,9 @@ function(x, residuals = FALSE, range = c(0.3, 0.3),
     if(ncol(x) < 2L)
       stop("formula is specified wrong!")
   }
-  if(is.data.frame(x)) {
-    x$intnr <- NULL
-    x <- as.matrix(x)
-    storage.mode(x) <- "numeric"
-  }
+  is.bayesx <- grepl(".bayesx", class(x))[1L]
+  if(is.data.frame(x))
+    x <- df2m(x)
   if(!is.list(x) && !is.matrix(x))
     stop("x must be a matrix!")
   if(!is.list(x) && ncol(x) < 2L)
@@ -39,7 +37,6 @@ function(x, residuals = FALSE, range = c(0.3, 0.3),
     nc <- ncol(x)
   else
     nc <- ncol(x[[1L]])
-  is.bayesx <- grepl(".bayesx", class(x))[1L]
   if(is.null(c.select)) {
     if(is.bayesx)
       c.select <- c(1L, 2L, 3L, 4L, 6L, 7L) 
@@ -105,6 +102,8 @@ function(x, residuals = FALSE, range = c(0.3, 0.3),
         pres[,1L] <- i
         ylim <- c(ylim, pres[,2L:ncol(pres)])
       }
+      if(is.data.frame(x[[i]]))
+        x[[i]] <- df2m(x[[i]])
       cn <- colnames(x[[i]])
       cn <- cn[c.select]
       x[[i]] <- x[[i]][,c.select]

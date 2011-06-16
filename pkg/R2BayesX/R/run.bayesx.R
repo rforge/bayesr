@@ -22,7 +22,7 @@ function(dir, prg.name = "bayesx.estim.input.prg",
     }
   } else log <- try(system(paste(ok, " ", dir, "/", prg.name, sep = ""), intern = FALSE))
 	if(log != 0 && !win)
-    stop("BayesX could not be processed (maybe verify bin path)!")
+    warning("problem processing BayesX (maybe verify bin path)!")
   if(!verbose && .Platform$OS.type == "unix")	
     log <- readLines(paste(dir, "/bayesx.log", sep = ""))
   now <- proc.time()

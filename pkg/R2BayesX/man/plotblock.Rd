@@ -99,7 +99,7 @@ summary(b)
 plot(b, term = "fac")
 
 ## extract fitted effects
-f <- fitted(b, term = "fac")[["fac"]]
+f <- fitted(b, term = "fac")
 
 ## now use plotblock
 plotblock(f)
