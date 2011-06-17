@@ -7,6 +7,9 @@ function(x, h = NULL, by = NA, xt = NULL,
   term <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500L)
   call <- match.call()
   is.formula <- FALSE
+  if(!any(grepl("~", term)) && is.null(h) && !is.null(data)) {
+    term <- paste(term, "~", 1)
+  } 
   if(any(grepl("~", term))) {
     tmp <- strsplit(term, "~")[[1L]]
     call$h <- h <- term

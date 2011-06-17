@@ -321,8 +321,8 @@ plot(b, term = "s(id)", map = MunichBnd)
 plot(b, term = "s(id)")
 
 ## image and contour plot 
-plot(b, term = "s(id)", 
-  image = TRUE, contour = TRUE, grid = 200)
+plot(b, term = "s(id)", image = TRUE, 
+  contour = TRUE, grid = 200)
 
 
 ## model with random effects
@@ -344,8 +344,7 @@ plot(b)
 
 ## extract estimated random effects
 ## and compare with true effects
-re.fit <- fitted(b, term = "r(id)")
-plot(unique(re.fit[["r(id)"]][, "Mean"]) ~ unique(dat$re))
+plot(fitted(b, term = "r(id)")$Mean ~ unique(dat$re))
 
 
 ## now a spatial example
@@ -402,7 +401,8 @@ dat$y <- with(dat, 1.5 + sin(x1) + 0.6 * x2 + rnorm(n, sd = 0.6))
 ## estimate model with STEP
 b <- bayesx(y ~ s(x1, bs = "ps") + s(x2, bs = "ps") + 
   s(x3, bs = "ps") +  s(x4, bs = "ps"), 
-  method = "STEP", iter = 10000, step = 10, data = dat)
+  method = "STEP", algorithm = "cdescent1", CI = "MCMCselect", 
+  iter = 10000, step = 10, data = dat)
 summary(b)
 plot(b)
 
@@ -429,8 +429,12 @@ dat <- data.frame(x = runif(n, -3, 3), id = factor(rep(1:4, n/4)))
 ## response
 dat$y <- with(dat, 1.5 + sin(x) * c(-1, 0.2, 1, 3)[id] + rnorm(n, sd = 0.6))
 
-# estimate model
-b <- bayesx(y ~ s(x, bs = "ps", by = id), method = "REML", data = dat)
+## estimate model
+## note that default contrasts for 
+## factors is contr.sum(), therefore
+## change to contr.treatment()
+b <- bayesx(y ~ s(x, bs = "ps", by = id), method = "REML", 
+  contrasts = list(id = "contr.treatment"), data = dat)
 summary(b)
 plot(b)
 
@@ -440,7 +444,7 @@ set.seed(3)
 n <- 300
 dat <- data.frame(x = seq(-3, 3, length = n))
 dat$y <- with(dat, 1.5 + sin(x) + 
-  rnorm(n, sd = (0.1 + seq(0, 0.4, length = n))))
+  rnorm(n, sd = (0.2 + seq(0, 0.4, length = n))))
 
 b1 <- bayesx(y ~ s(x, bs = "ps"), data = dat)
 summary(b1)

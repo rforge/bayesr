@@ -71,7 +71,7 @@ function(x, info)
       if(!is.null(rval[[k]]) && !is.list(rval[[k]]) && nrow(rval[[k]]) < 2L) 
         attr(rval[[k]], "specs")$is.factor <- TRUE
     }
-    return(rval)
-  } else return(x)  
+    return(x2df(rval, rn = TRUE))
+  } else return(x2df(x, rn = TRUE))  
 }
 

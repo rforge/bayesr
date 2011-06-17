@@ -21,7 +21,7 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
   co.id <- attr(control, "co.id")
   outfile <- control$outfile
   control$oformula <- formula
-  control$terms <- terms(formula, specials=c("s", "te", "r"), keep.order = TRUE)
+  control$terms <- terms(formula, specials = c("s", "te", "r"), keep.order = TRUE)
   intcpt <- TRUE
   if(grepl("-1", as.character(formula)[3L]))
     intcpt <- FALSE

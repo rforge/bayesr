@@ -11,7 +11,7 @@ function(x, diagnostics = FALSE, ...)
           id <- c(1L, grep("_tot", cx))
           x <- x[,id]
           for(na in names(xattr))
-            if(na != "dim" && na != "dimnames")
+            if(na != "dim" && na != "dimnames" && na != "names")
               attr(x, na) <- eval(parse(text = paste("xattr$", na, sep = "")))
           args$total <- NULL
         } else {
@@ -20,7 +20,7 @@ function(x, diagnostics = FALSE, ...)
           id <- id[!grepl("tot_sim", cx) & !grepl("_tot", cx) & !grepl("_sim", cx)]
           x <- x[,id]
           for(na in names(xattr))
-            if(na != "dim" && na != "dimnames")
+            if(na != "dim" && na != "dimnames" && na != "names")
               attr(x, na) <- eval(parse(text = paste("xattr$", na, sep = "")))
         }
       }

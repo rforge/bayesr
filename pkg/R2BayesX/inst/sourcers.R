@@ -1,15 +1,23 @@
 dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-plot(fit[1])
+plot(fit_z_new5, term = "r(distH)")
 
+
+b1 <- bayesx(y ~  s(x1, bs = "ps") + r(id, data = dat2), 
+  method = "HMCMC", data = dat1)
+
+b <- read.bayesx.output("/tmp/Rtmpu2ETJu/bayesx")
+
+
+plot(b, term = "s(id)", map = MunichBnd)
 
 
 
 f <- fitted(b2, term = 1)
 
      b2 <- bayesx(y ~ s(x, bs = "ps"), 
-       method = "MCMC", iter = 1200, burnin = 200, level = c(97, 50), data = dat)
+       method = "MCMC", iter = 1200, burnin = 200, data = dat)
 
 
 zms <- bayesx(stunting ~ memployment + education + urban + gender + 

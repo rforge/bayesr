@@ -8,7 +8,7 @@ function(x, diagnostics = FALSE, ...)
   args <- list(...)
   args$x <- x
   args$diagnostics <- diagnostics
-  do.call("plot.mrf.bayesx",args)
+  do.call("plot.mrf.bayesx", args)
 
   return(invisible(NULL))
 }

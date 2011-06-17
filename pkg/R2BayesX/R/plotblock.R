@@ -27,9 +27,11 @@ function(x, residuals = FALSE, range = c(0.3, 0.3),
   if(!is.list(x) && ncol(x) < 2L)
     stop("x must have at least 2 columns!")
   args <- list(...)
+  if(is.null(args$xlab))
+    args$xlab <- "x"
   if(is.null(args$ylab)) {
     if(is.null(attr(x, "specs")$label))
-      args$ylab <- paste("Effect of", args$xlab)
+      args$ylab <- paste("f(", args$xlab, ")", sep = "")
     else
       args$ylab <- attr(x, "specs")$label
   }

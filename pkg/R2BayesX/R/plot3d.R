@@ -39,7 +39,7 @@ function(x, residuals = FALSE, col.surface = NULL,
   if(is.null(by))
     by <- "NA"
   else {
-    if(length(specs$term) > 2L)
+    if(!is.null(specs)  && length(specs$term) > 2L)
       by <- specs$term[length(specs$term)]
   }
   nx <- colnames(x)
@@ -114,11 +114,13 @@ function(x, residuals = FALSE, col.surface = NULL,
   if(is.null(args$ylab))
     args$ylab <- names[2L]
   if(is.null(args$zlab)) {
-    if(is.null(attr(x, "specs")$label))
+    if(!is.null(specs) && is.null(specs$label))
       args$zlab <- "fitted"
     else
-      args$zlab <- attr(x, "specs")$label
+      args$zlab <- specs$label
   }
+  if(is.null(args$zlab))
+    args$zlab <- try(paste("f(", nx[1L], ",", nx[2L], ")", sep = ""))
   args$y <- substitute(zn)
   args$x <- substitute(xn)
   if(is.null(col.surface))

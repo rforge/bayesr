@@ -169,8 +169,7 @@ dat2 <- data.frame(re = rnorm(N, sd = 0.6),
 ## response
 dat1$y <- with(dat1, 1.5 + sin(x1) + dat2$sp[id] + dat2$re[id] + rnorm(n, sd = 0.6))
 
-## estimate models with
-## bayesx MCMC and REML
+## estimate model
 b <- bayesx(y ~ -1 + s(x1, bs = "ps") + 
   r(id ~ 1 + s(id, bs = "mrf", xt = list(map = MunichBnd)), data = dat2), 
   method = "HMCMC", data = dat1)

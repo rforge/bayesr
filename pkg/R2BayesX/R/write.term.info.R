@@ -1,5 +1,5 @@
 write.term.info <-
-function(file, terms, data, object = NULL, contrasts.arg = NULL, xlev = NULL)
+function(file, terms, data, object = NULL, contrasts.arg = NULL, xlev = NULL, intcpt = TRUE)
 {
   nt <- length(terms)
   if(nt > 0L) {
@@ -33,7 +33,7 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL, xlev = NULL)
           x <- data[[terms[k]]]
         if(is.factor(x) && !sp) {
           m <- model.matrix(as.formula(paste("~ -1 +", terms[k])), data, contrasts.arg, xlev)
-          fn <- colnames(m)[2L:ncol(m)]
+          fn <- colnames(m)
           fnv <- "c("
           nf <- length(fn)
           if(nf > 1L)
@@ -84,7 +84,7 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL, xlev = NULL)
       cat(info, file = file, append = TRUE)
     }
   }
-  
+
   return(invisible(NULL))
 }
 

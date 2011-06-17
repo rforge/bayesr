@@ -10,9 +10,10 @@ function(x, ...)
     for(i in 1L:length(mfn)) {
       if(i < step) {
         if(!is.null(x$model.fit[[i]]) && x$model.fit[[i]] != "") {
-          if(mfn[i] != "step.final.model")
-            cat(mfn[i], "=", x$model.fit[[i]]," ")
-          else {
+          if(mfn[i] != "step.final.model") {
+            if(mfn[i] != "order")
+              cat(mfn[i], "=", x$model.fit[[i]]," ")
+          } else {
             cat("\n---\n")
             cat("Stepwise final model:\n")
             cat("-\n")
@@ -96,7 +97,7 @@ function(x, digits = max(3L, getOption("digits") - 3L),
   if(!is.null(x$smooth.hyp)) {
     if(fc)
       cat("-\n")
-    if(x$model.fit$method == "MCMC") 
+    if(x$model.fit$method == "MCMC" || x$model.fit$method == "HMCMC") 
       cat("Smooth terms variances:\n")
     else
       cat("Smooth terms:\n")

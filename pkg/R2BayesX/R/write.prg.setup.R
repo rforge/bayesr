@@ -33,6 +33,11 @@ function(response, object, prg.file, data.file, thismodel, terms.specs)
   if("ModelWeights" %in% vars)
     bt <- paste(bt, "weight", "ModelWeights")
   control.values <- object[attr(object, "co.id")]
+  hp <- FALSE
+  if(!is.null(object$hlevel) && is.null(object$max.hlevel)) {
+    object$max.hlevel <- object$hlevel + 1L
+    hp <- TRUE
+  }
   if(!is.null(object$hlevel) && object$hlevel != object$max.hlevel)
     control.values[c("iterations", "burnin", "step", "level1", "level2", "hlevel", "maxint")] <- NULL
   if(!is.null(object$hlevel) && object$hlevel != 1L) {

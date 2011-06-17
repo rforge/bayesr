@@ -108,23 +108,23 @@ function(object)
     nd <- rmf(names(object$data))
     names(object$data) <- nd
     colnames(dat) <- rmf(colnames(dat))
-#    intcpt <- any(grepl("(Intercept)", colnames(dat)))
-#    for(sf in nd)
-#      if(is.factor(object$data[[sf]])) {
-#        if(intcpt) {
-#          ff <- as.data.frame(eval(parse(text = paste("model.matrix(~", sf,")", 
-#            sep = "")), envir = object$data))
-#        } else {
-#          ff <- as.data.frame(eval(parse(text = paste("model.matrix(~ -1 + ", sf,")", 
-#            sep = "")), envir = object$data))
-#        }
-#        lf <- colnames(ff)[2L:ncol(ff)]
-#        vars <- colnames(dat)
-#        if(!all(lf %in% vars)) {
-#          mf <- lf[!lf %in% vars]
-#          dat <- cbind(dat, as.matrix(ff[mf]))
-#        }
-#      }
+    intcpt <- attr(object$terms, "intercept") == 1L
+    for(sf in nd)
+      if(is.factor(object$data[[sf]])) {
+        if(intcpt) {
+          ff <- as.data.frame(eval(parse(text = paste("model.matrix(~ -1 +", sf,")", 
+            sep = "")), envir = object$data))
+        } else {
+          ff <- as.data.frame(eval(parse(text = paste("model.matrix(~ 1", sf,")", 
+            sep = "")), envir = object$data))
+        }
+        lf <- colnames(ff)
+        vars <- colnames(dat)
+        if(!all(lf %in% vars)) {
+          mf <- lf[!lf %in% vars]
+          dat <- cbind(dat, as.matrix(ff[mf]))
+        }
+      }
     nc <- ncol(dat)
     if(!is.null(model.offset(object$data))) {
       nc <- ncol(dat)
@@ -182,7 +182,7 @@ function(object)
     terms <- attr(object$terms, "term.labels")
     infofile <- paste(object$outfile, "/", object$model.name, thismodel, sep = "")
     infofile <- paste(infofile, ".terms.info", sep = "")
-    write.term.info(infofile, terms, object$data, object)
+    write.term.info(infofile, terms, object$data, object, contrasts.arg = object$contrasts)
   } else {
     vdf <- sub(" +$", "", readLines(data.file, n = 1L))
     vars <- strsplit(vdf, " ")[[1L]]

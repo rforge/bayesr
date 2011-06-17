@@ -54,10 +54,7 @@ dat <- data.frame(x = runif(n, -3, 3), z = runif(n, -3, 3),
 dat$y <- with(dat, 1.5 + sin(x) + cos(z) * sin(w) +
    c(2.67, 5, 6, 3, 4, 2, 6, 7, 9, 7.5)[fac] + rnorm(n, sd = 0.6))
 
-## estimate models with
-## bayesx MCMC and REML
-## and compare with
-## mgcv gam()
+## estimate model
 b <- bayesx(y ~ s(x, bs = "ps") + s(z, w, bs = "te") + fac,
    data = dat, method = "MCMC")
 

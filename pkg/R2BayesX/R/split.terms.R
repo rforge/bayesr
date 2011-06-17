@@ -35,7 +35,7 @@ function(terms, vars, data, dropvars)
       for(drop in dropvars)
         linvars <- linvars[linvars != drop]
     }
-  } else smt <- lv <- NULL
+  } else smt <- linvars <- NULL
   if(!is.null(smt))
     smt <- na.omit(smt)
   if(!is.null(linvars))

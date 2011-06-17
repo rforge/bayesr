@@ -57,37 +57,44 @@ function(object, model = NULL, term = NULL, ...)
 }
 
 
-x2df <- function(x)
+x2df <- function(x, rn = FALSE)
 {
-  if(is.list(x)) {
-    for(i in 1L:length(x)) {
-      if(is.list(x[[i]])) {
-        x[[i]] <- x2df(x[[i]])
+  if(!is.data.frame(x) && !is.null(x) && length(x)) {
+    if(is.list(x)) {
+      for(i in 1L:length(x)) {
+        if(is.list(x[[i]])) {
+          x[[i]] <- x2df(x[[i]])
+        } else {
+          if(!is.data.frame(x[[i]]) && !is.null(x[[i]])) {
+            xattr <- attributes(x[[i]])
+            nxa <- names(xattr)
+            cx <- class(x[[i]])
+            if(any(grepl("bayesx", cx, fixed = TRUE)))
+              cx <- grep("bayesx", cx, fixed = TRUE, value = TRUE)
+            if(rn)
+              x[[i]] <- chacol(x[[i]])
+            x[[i]] <- as.data.frame(x[[i]])
+            class(x[[i]]) <- c(cx, class(x[[i]]))
+            for(k in 1L:length(nxa)) 
+              if(all(nxa[k] != c("dim", "dimnames", "class", "names", "row.names")))
+                attr(x[[i]], nxa[k]) <- xattr[[k]]
+          }
+        } 
       }
-      else {
-        xattr <- attributes(x[[i]])
-        nxa <- names(xattr)
-        cx <- class(x[[i]])
-        if(any(grepl("bayesx", cx, fixed = TRUE)))
-          cx <- grep("bayesx", cx, fixed = TRUE, value = TRUE)
-        x[[i]] <- as.data.frame(x[[i]])
-        class(x[[i]]) <- c(cx, class(x[[i]]))
-        for(k in 1L:length(nxa)) 
-          if(all(nxa[k] != c("dim", "dimnames", "class")))
-            attr(x[[i]], nxa[k]) <- xattr[[k]]
-      } 
+    } else {
+      xattr <- attributes(x)
+      nxa <- names(xattr)
+      cx <- class(x)
+      if(any(grepl("bayesx", cx, fixed = TRUE)))
+        cx <- grep("bayesx", cx, fixed = TRUE, value = TRUE)
+      if(rn)
+        x <- chacol(x)
+      x <- as.data.frame(x)
+      class(x) <- c(cx, class(x))
+      for(k in 1L:length(nxa)) 
+        if(all(nxa[k] != c("dim", "dimnames", "class", "names", "row.names")))
+          attr(x, nxa[k]) <- xattr[[k]]
     }
-  } else {
-    xattr <- attributes(x)
-    nxa <- names(xattr)
-    cx <- class(x)
-    if(any(grepl("bayesx", cx, fixed = TRUE)))
-      cx <- grep("bayesx", cx, fixed = TRUE, value = TRUE)
-    x <- as.data.frame(x)
-    class(x) <- c(cx, class(x))
-    for(k in 1L:length(nxa)) 
-      if(all(nxa[k] != c("dim", "dimnames", "class")))
-        attr(x, nxa[k]) <- xattr[[k]]
   }
 
   return(x)

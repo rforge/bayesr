@@ -17,7 +17,9 @@ function(object, parm, level = 0.95, model = NULL, ...)
   } else {
     class(object) <- "bayesx"
     cf <- coef(object)
-    medf <- edf(object)
+    if(!grepl("MCMC", object[[1L]]$model.fit$method))
+      medf <- edf(object)
+    else medf <- NA
     if(!is.null(cf))
       rval <- confbayesx(cf, parm, level, medf, ...)
     else
