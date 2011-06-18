@@ -31,8 +31,15 @@ function(dir, files, data, response, eta, model.name, minfo)
           # xnam <- unlist(strsplit(xnam, "_c"))
           xnam2 <- xnam
           vx <- vx2 <- vx3 <- NULL
-
-          if(grepl("_f_", res)) {
+          if(grepl("_effect_of_", res, fixed = TRUE)) {
+            res2 <- strsplit(res, "_effect_of_")[[1L]]
+            res2 <- gsub(".res", "", res2[length(res2)], fixed = TRUE)
+            res2 <- gsub(xnam, "", res2, fixed = TRUE)
+            if(length(res2 <- splitme(res2))) {
+              vx <- resplit(res2[1L:(length(res2) - 1L)])
+            }
+          }
+          if(grepl("_f_", res, fixed = TRUE)) {
             res2 <- gsub(paste(model.name, "_", sep = ""), "", strsplit(res, "_f_")[[1L]])[1L]
             if(res2 != model.name)
               vx <- res2
@@ -51,7 +58,7 @@ function(dir, files, data, response, eta, model.name, minfo)
               }
             }
           }
-          colnames(x)[1L:dimx2] <- xnam
+          colnames(x)[1L:dimx2] <- rrmfs(xnam)
           rownames(x) <- 1L:nrow(x)
           labelx <- make.label(cx, xnam, dimx, vx)
           if(!is.null(vx2))
@@ -60,8 +67,8 @@ function(dir, files, data, response, eta, model.name, minfo)
             labelx <- paste(labelx, ":total", sep = "")
           if(!is.null(data))
             attr(x, "partial.resids") <- blow.up.resid(data, x, xnam, response, eta, dimx, cx)
-          attr(x, "specs") <- list(dim = dimx, term = xnam, 
-            by = vx, label = labelx, is.factor = FALSE)
+          attr(x, "specs") <- list(dim = dimx, term = rrmfs(xnam), 
+            by = rrmfs(vx), label = rrmfs(labelx), is.factor = FALSE)
           ## search and set additional attributes
           nx <- length(xnam2)
           if(nx > 1L) {
@@ -103,7 +110,7 @@ function(dir, files, data, response, eta, model.name, minfo)
               if(length(vf <- grep("_variance_", varf, value = TRUE))) {
                 vf <- unique(vf)
                 if(length(vf2 <- vf[!grepl("sample", vf)])) {
-                  attr(x, "variance") <- df2m(read.table(paste(dir, "/", vf2, sep = ""), 
+                  attr(x, "variance") <- df2m(read.table(paste(dir, "/", vf2[1L], sep = ""), 
                     header = TRUE))
                   rownames(attr(x, "variance"))[1L] <- labelx
                   if(cx == "random.bayesx")
@@ -113,7 +120,7 @@ function(dir, files, data, response, eta, model.name, minfo)
                 }
                 if(length(vf2 <- vf[grepl("sample", vf)]))
                   for(tf in vf2) {
-                    attr(x, "variance.sample") <- df2m(read.table(paste(dir, "/", tf, sep = ""), 
+                    attr(x, "variance.sample") <- df2m(read.table(paste(dir, "/", tf[1L], sep = ""), 
                       header = TRUE))
                     if(is.matrix(attr(x, "variance.sample"))) {
                       if(ncol(attr(x, "variance.sample")) < 2L)
@@ -127,21 +134,21 @@ function(dir, files, data, response, eta, model.name, minfo)
             if(length(sf <- grep("_sample", af, value = TRUE)))
               if(length(sf <- sf[!grepl("_variance_", sf)]))
                 for(tf in sf) {
-                  attr(x, "sample") <- df2m(read.table(paste(dir, "/", tf, sep = ""), 
+                  attr(x, "sample") <- df2m(read.table(paste(dir, "/", tf[1L], sep = ""), 
                     header = TRUE))
                   colnames(attr(x, "sample")) <- paste("Coefficient", 1L:ncol(attr(x, "sample")), sep = "")
                 }
             if(length(pf <- grep("_param", af, value = TRUE)))
               for(tf in pf)
-                attr(x, "param") <- df2m(read.table(paste(dir, "/", tf, sep = ""), header = TRUE))
+                attr(x, "param") <- df2m(read.table(paste(dir, "/", tf[1L], sep = ""), header = TRUE))
             if(length(kf <- grep("_knots", af, value = TRUE)))
-              attr(x, "knots") <-  df2m(read.table(paste(dir, "/", kf, sep = ""), header = TRUE))
+              attr(x, "knots") <-  df2m(read.table(paste(dir, "/", kf[1L], sep = ""), header = TRUE))
             if(length(cf <- grep("_contour", af, value = TRUE))) {
-              attr(x, "contourprob") <-  df2m(read.table(paste(dir, "/", cf, sep = ""), 
+              attr(x, "contourprob") <-  df2m(read.table(paste(dir, "/", cf[1L], sep = ""), 
                 header = TRUE))
             }
             if(length(df <- grep("_df.", af, value = TRUE))) {
-              attr(x, "df") <-  df2m(read.table(paste(dir, "/", df, sep = ""), 
+              attr(x, "df") <-  df2m(read.table(paste(dir, "/", df[1L], sep = ""), 
                 header = TRUE))
             }
           }

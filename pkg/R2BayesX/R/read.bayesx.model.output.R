@@ -14,6 +14,7 @@ function(dir, model.name)
     filep <- grep(paste(model.name, ".", sep = ""), files, value = TRUE, fixed = TRUE)  
     files <- c(grep(paste(model.name, "_", sep = ""), files, value = TRUE, fixed = TRUE), filep)  
     info <- paste(model.name, ".terms.info", sep = "")
+    mformula <- paste(model.name, ".formula.rda", sep = "")
     minfo <- NULL
     if(info %in% dir.files) {
       minfo <- readLines(paste(dir, "/", info, sep = ""))
@@ -173,6 +174,13 @@ function(dir, model.name)
 
     ## reformate output
     rval <- bayesx.reformate(rval)
+
+    ## get long formulas
+    if(mformula %in% files) {
+      load(paste(dir, "/", mformula, sep = ""))
+      rval$model.fit$formula <- f
+    }
+    
 
     return(rval)
   }

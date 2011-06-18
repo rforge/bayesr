@@ -4,17 +4,45 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
   op <- par(no.readonly = TRUE)
   pc <- FALSE
   which.match <- c("effect", "coef-samples", "var-samples", "intcpt-samples", 
-    "hist-resid", "qq-resid", "scatter-resid", "scale-resid", "scale-samples")
+    "hist-resid", "qq-resid", "scatter-resid", "scale-resid", "scale-samples", "max-samples")
   if(!is.character(which)) {
-    if(any(which > 9))
-      which <- which[which <= 9]
+    if(any(which > 10L))
+      which <- which[which <= 10L]
     which <- which.match[which]
   } else which <- which.match[pmatch(which, which.match)]
   if(length(which) > length(which.match) || !any(which %in% which.match))
     stop("argument which is specified wrong!")
   x <- get.model(x, model)
   nx <- length(x)
-  if((!"effect" %in% which) && (!"coef-samples" %in% which) 
+  if("max-samples" %in% which) {
+    samples <- NULL
+    for(i in 1L:nx) {
+      if(!is.null(x[[i]]$effects)) 
+        for(k in 1L:length(x[[i]]$effects))
+          if(!is.null(x[[i]]$effects[[k]])) {
+              if(is.list(x[[i]]$effects[[k]])) {
+                for(kk in 1L:length(x[[i]]$effects[[k]])) {
+                  samples <- cbind(samples, attr(x[[i]]$effects[[k]][[kk]], "sample"))
+                  samples <- cbind(samples, attr(x[[i]]$effects[[k]][[kk]], "variance.sample"))
+                }
+              } else {
+                samples <- cbind(samples, attr(x[[i]]$effects[[k]], "sample"))
+                samples <- cbind(samples, attr(x[[i]]$effects[[k]], "variance.sample"))
+              }
+          }
+      if(!is.null(x[[i]]$fixed.effects))
+        samples <- cbind(samples, attr(x[[i]]$fixed.effects, "sample"))
+      samples <- cbind(samples, attr(x[[i]]$variance, "sample"))
+    }
+  if(!is.null(samples)) {
+    args <- list(...)
+    args$x <- samples
+    args$max <- TRUE
+    do.call("plotsamples", args)
+  } else warning("nothing to plot!")
+  return(invisible(NULL))
+  }
+  if((!"effect" %in% which) && (!"coef-samples" %in% which) && (!"max-samples" %in% which)
     && (!"var-samples" %in% which) && (!"intcpt-samples" %in% which)) {
     model.names <- names(x)
     pc <- TRUE

@@ -23,10 +23,10 @@
     \code{term = "s(x)"}.}
   \item{which}{choose the type of plot that should be drawn, possible options are: \code{"effect"},
     \code{"coef-samples"}, \code{"var-samples"}, \code{"intcpt-samples"}, \code{"hist-resid"}, 
-    \code{"qq-resid"}, \code{"scatter-resid"}, \code{"scale-resid"}. Argument \code{which} may also 
-    be specified as integer, e.g. \code{which = 1}. The first three arguments are all model term 
-    specific. For the last four global model diagnostic plot options \code{which} may be set 
-    with \code{which = 4:7}.}
+    \code{"qq-resid"}, \code{"scatter-resid"}, \code{"scale-resid"}, \code{max-samples}. Argument 
+    \code{which} may also be specified as integer, e.g. \code{which = 1}. The first three arguments 
+    are all model term specific. For the residual model diagnostic plot options \code{which} 
+    may be set with \code{which = 5:8}.}
   \item{ask}{\dots}
   \item{\dots}{other graphical parameters passed to \code{\link{plotblock}}, \code{\link{plotmap}}, 
     \code{\link{plot2d}}, \code{\link{plot3d}} and \code{\link[stats]{acf}}.}
@@ -133,6 +133,19 @@ plot(b1, which = "intcpt-samples", acf = TRUE)
 
 ## increase lags
 plot(b1, which = "intcpt-samples", acf = TRUE, lag.max = 200)
+
+## plot maximum of samples of all parameters
+plot(b1, which = "max-samples")
+
+## maximum autocorrelation of all parameters
+plot(b1, which = "max-samples", acf = TRUE, lag.max = 200)
+
+## maximum of coefficient samples of term s(x)
+plot(b1, term = "s(x)", which = "coef-samples", max = TRUE)
+
+## maximum of coefficient autocorrelation of term s(x)
+plot(b1, term = "s(x)", which = "coef-samples", max = TRUE,
+  acf = TRUE, lag.max = 200)
 
 
 ## now a spatial example

@@ -77,6 +77,7 @@ function(dir, files, data, response, eta, model.name, rval, minfo)
     attr(FixedEffects, "sample") <- fsample
     attr(FixedEffects, "df") <- fdf
     rval$fixed.effects <- FixedEffects
+    rownames(rval$fixed.effects) <- rrmfs(rownames(rval$fixed.effects))
   }
 
   ## create effect output
@@ -117,7 +118,7 @@ function(dir, files, data, response, eta, model.name, rval, minfo)
             x <- matrix(x, nrow = 1L)
           colnames(x) <- c(tv, cF)
           rownames(x) <- 1L:nrow(x)
-          attr(x,"specs") <- list(dim = 1L, term = tv, label = tv)
+          attr(x,"specs") <- list(dim = 1L, term = rrmfs(tv), label = rrmfs(tv))
           attr(x, "partial.resids") <- blow.up.resid(data, x, tv, 
             response, eta, 1L, "linear.bayesx")
           if(!is.null(attr(x, "partial.resids"))) {
@@ -127,7 +128,7 @@ function(dir, files, data, response, eta, model.name, rval, minfo)
           if(!is.null(attr(FixedEffects, "sample")))
             attr(x,"sample") <- attr(FixedEffects, "sample")[,j]
           class(x) <- c("linear.bayesx", "matrix")
-          eval(parse(text = paste("rval$effects$\'", tv, "\' <- x", sep = "")))
+          eval(parse(text = paste("rval$effects$\'", rrmfs(tv), "\' <- x", sep = "")))
         }
       }
   }

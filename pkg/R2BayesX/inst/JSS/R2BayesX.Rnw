@@ -225,18 +225,19 @@ where $h$ is a known link function and $\boldsymbol{\gamma}$ are unknown regress
 STAR models \citep{R2BayesX:Fahrmeir+Kneib+Lang:2004, R2BayesX:Brezger+Lang:2006}, the linear 
 predictor is replaced by a more general and flexible, structured additive predictor
 \begin{equation} \label{eqn:structadd}
-\eta = f_1(z) + \ldots + f_p(z) + \mathbf{x}^{\prime}\boldsymbol{\gamma},
+\eta = f_1(\mathbf{z}) + \ldots + f_p(\mathbf{z}) + \mathbf{x}^{\prime}\boldsymbol{\gamma},
 \end{equation}
-where $z$ represents a generic vector of all covariates, and $f_j$ are possibly smooth functions 
-comprising effects (and combination of effects) as e.g. given by             
+where $\mathbf{z}$ represents a generic vector of all covariates, and $f_j$ are possibly smooth 
+functions comprising effects (and combination of effects) as e.g. given by             
 \begin{itemize}
-  \item nonlinear effects of continuous covariates: $f_j(z) = f(x)$,
-  \item two-dimensional surfaces: $f_j(z) = f(x_1,x_2)$,
-  \item spatially correlated effects: $f_j(z) = f_{spat}(s)$, 
-  \item varying coefficients: $f_j(z) = x_1f(x_2)$, 
-  \item spatially varying effects: $f_j(z) = x_1f_{spat}(s)$ or $f_j(z) = x_1f(x_2, x_3)$, 
-  \item random intercepts with cluster index $c$: $f_j(z) = \beta_c$, 
-  \item random slopes with cluster index $c$: $f_j(z) = x\beta_c$. 
+  \item nonlinear effects of continuous covariates: $f_j(\mathbf{z}) = f(x)$,
+  \item two-dimensional surfaces: $f_j(\mathbf{z}) = f(x_1,x_2)$,
+  \item spatially correlated effects: $f_j(\mathbf{z}) = f_{spat}(s)$, 
+  \item varying coefficients: $f_j(\mathbf{z}) = x_1f(x_2)$, 
+  \item spatially varying effects: $f_j(\mathbf{z}) = x_1f_{spat}(s)$ or 
+    $f_j(\mathbf{z}) = x_1f(x_2, x_3)$, 
+  \item random intercepts with cluster index $c$: $f_j(\mathbf{z}) = \beta_c$, 
+  \item random slopes with cluster index $c$: $f_j(\mathbf{z}) = x\beta_c$. 
 \end{itemize}
 STAR models cover a number of well known model classes as special cases, including generalized 
 additive models (GAM) \citep{R2BayesX:Hastie+Tibshirani:1990}, generalized additive mixed models 

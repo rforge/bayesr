@@ -1,5 +1,6 @@
 write.term.info <-
-function(file, terms, data, object = NULL, contrasts.arg = NULL, xlev = NULL, intcpt = TRUE)
+function(file, terms, data, object = NULL, contrasts.arg = NULL, 
+  xlev = NULL, intcpt = TRUE, rdafile)
 {
   nt <- length(terms)
   if(nt > 0L) {
@@ -65,9 +66,9 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL, xlev = NULL, in
         ooo <- paste(object$order, collapse = ",")
         ooo <- paste("\'c(", ooo, ")\'", sep = "")
       }
-      f <- as.character(object$oformula)
-      f <- paste(f[2L], f[1L], f[3L])
-      info <- paste("list(formula=\'", f, "\',", sep = "")
+      f <- object$oformula
+      save(f, file = rdafile)
+      info <- paste("list(formula=\'", as.expression(f), "\',", sep = "")
       if(!is.null(object$hlevel))
         object$method <- "HMCMC"
       info <- paste(info, "method=\'", object$method, "\',", sep = "")

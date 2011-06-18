@@ -180,9 +180,11 @@ function(object)
       }
     }
     terms <- attr(object$terms, "term.labels")
-    infofile <- paste(object$outfile, "/", object$model.name, thismodel, sep = "")
+    infofile <- rdafile <- paste(object$outfile, "/", object$model.name, thismodel, sep = "")
     infofile <- paste(infofile, ".terms.info", sep = "")
-    write.term.info(infofile, terms, object$data, object, contrasts.arg = object$contrasts)
+    rdafile <- paste(rdafile, ".formula.rda", sep = "")
+    write.term.info(infofile, terms, object$data, object, 
+      contrasts.arg = object$contrasts, rdafile = rdafile)
   } else {
     vdf <- sub(" +$", "", readLines(data.file, n = 1L))
     vars <- strsplit(vdf, " ")[[1L]]

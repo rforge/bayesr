@@ -10,6 +10,8 @@ function(response, object, prg.file, data.file, thismodel, terms.specs)
   if(!is.null(add.terms)) {
     for(k in 1L:length(add.terms)) {
       st <- eval(parse(text = add.terms[k]))
+      st$term <- rmf(st$term)
+      st$by <- rmf(st$by)
       stclass <- class(st)
       if(stclass %in% c("tp.smooth.spec", "cs.smooth.spec")) {
         txt <- paste("constructor class \"", stclass, 
@@ -18,7 +20,7 @@ function(response, object, prg.file, data.file, thismodel, terms.specs)
         warning(txt, call. = FALSE)
         class(st) <- "ps.smooth.spec"
       }
-      bttmp <- bayesx.construct(st,object$outfile, prg.file, object$data)
+      bttmp <- bayesx.construct(st, object$outfile, prg.file, object$data)
       if(!is.null(object$hvariables))
         for(k in 1L:length(object$hvariables))
           if(bttmp == paste(object$hvariables[k], "(random)", sep = ""))

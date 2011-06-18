@@ -366,8 +366,7 @@ dat$re <- with(dat, rnorm(N, sd = 0.6)[id])
 ## response
 dat$y <- with(dat, 1.5 + sin(x1) + sp + re + rnorm(n, sd = 0.6))
 
-## estimate models with
-## bayesx MCMC and REML
+## estimate model
 b <- bayesx(y ~ s(x1, bs = "ps") + 
   s(id, bs = "mrf", xt = list(map = MunichBnd)) +
   r(id), method = "MCMC", data = dat)
@@ -427,16 +426,13 @@ n <- 1000
 dat <- data.frame(x = runif(n, -3, 3), id = factor(rep(1:4, n/4)))
 
 ## response
-dat$y <- with(dat, 1.5 + sin(x) * c(-1, 0.2, 1, 3)[id] + rnorm(n, sd = 0.6))
+dat$y <- with(dat, 1.5 + sin(x) * c(-1, 0.2, 1, 5)[id] + rnorm(n, sd = 0.6))
 
 ## estimate model
-## note that default contrasts for 
-## factors is contr.sum(), therefore
-## change to contr.treatment()
-b <- bayesx(y ~ s(x, bs = "ps", by = id), method = "REML", 
-  contrasts = list(id = "contr.treatment"), data = dat)
+b <- bayesx(y ~ s(x, bs = "ps", by = id),
+  method = "REML", data = dat)
 summary(b)
-plot(b)
+plot(b, resid = TRUE, cex.resid = 0.1)
 
 
 ## experiment with weights 

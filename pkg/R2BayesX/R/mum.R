@@ -24,6 +24,7 @@ function(x)
     rownames(x) <- rn[!(rn %in% rmrn)]
     colnames(x) <- cn
   }
+  rownames(x) <- rrmfs(rownames(x))
 
   return(x)
 }

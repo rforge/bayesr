@@ -15,7 +15,10 @@ function(term, object, not = NULL, noco = FALSE)
       if(!name %in% not) {
         if(name %in% c("full", "catspecific", "center", "derivative", "nofixed") || 
           is.logical(object$xt[[name]])) {
-          term <- paste(term, co, name, sep = "")
+          if(is.logical(object$xt[[name]])) {
+            if(object$xt[[name]])
+              term <- paste(term, co, name, sep = "")
+          } else term <- paste(term, co, name, sep = "")
           count <- count + 1
         } else {
           term <- paste(term, co, name, "=", object$xt[name], sep = "")

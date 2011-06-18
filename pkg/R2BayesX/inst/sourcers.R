@@ -1,35 +1,42 @@
 dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-plot(fit_z_new5, term = "r(distH)")
+plot(b1, term = 1, which = "coef-samples", acf = F, lag.max = 1000, max = T)
 
 
-b1 <- bayesx(y ~  s(x1, bs = "ps") + r(id, data = dat2), 
-  method = "HMCMC", data = dat1)
-
-b <- read.bayesx.output("/tmp/Rtmpu2ETJu/bayesx")
+plot(b, which = "max-samples", acf = FALSE, lag.max = 200)
 
 
-plot(b, term = "s(id)", map = MunichBnd)
-
-
-
-f <- fitted(b2, term = 1)
-
-     b2 <- bayesx(y ~ s(x, bs = "ps"), 
-       method = "MCMC", iter = 1200, burnin = 200, data = dat)
-
-
-zms <- bayesx(stunting ~ memployment + education + urban + gender + 
-  s(bmi, bs = "ps") + s(agechild, bs = "ps") +
-  s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district), 
-  family = "gaussian", method = "STEP", data = ZambiaNutrition, dir.rm = FALSE)
+b <- bayesx(y ~ s(x, bs = "ps", by = id),
+  method = "MCMC", data = dat)
+bayesx_prgfile(b)
 
 
 
-system.time(b1 <- bayesx(y ~ -1 + s(x1, bs = "ps") + 
-  r(id ~ -1 + s(x2 , bs = "ps") + r(id2 ~ 1 + s(x3, bs = "ps"), data = dat3), data = dat2), 
-  method = "HMCMC", data = dat1))
+
+
+fit_z_new1<-bayesx(stunt ~ -1+c_sex + residence0 + residence1 + residence2 + precare +
+  bornhome + fhh +
+  s(age_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meansimple")) +
+  s(age_c,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meansimple")) +
+  s(bmi_mo_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meansimple")) +
+  s(biage_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meansimple")) +
+  s(vac_numb_c,k=8,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meansimple")) +
+  s(bi_pre_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meansimple")) +
+  s(ai_distdiff,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meansimple")) +
+  s(educm_y_distdiff,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meansimple")) +
+  s(hhs_c,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meansimple")) +
+  s(b_order_c,k=8,m=c(3,2),bs="ps",xt=list(lambda=1000,binning=50,centermethod="meansimple")) +
+  r(distH, ~ -1 +
+  s(dist_ai_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meansimple"))+
+  s(dist_eduyears_c,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meansimple")) +
+  r(region,~s(gdp_c,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meansimple")), 
+  data=dregion), data=ddist), data=d , verbose=FALSE, method="HMCMC", iter=3000, step=1, burnin=2000, 
+  family="binomial_logit", dir.rm=FALSE)
+
+
+
+
 
 ## now estimate a random effects
 ## model with a stage 2 covariate

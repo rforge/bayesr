@@ -11,7 +11,7 @@
 }
  
 \usage{
-plotsamples(x, selected = "NA", acf = FALSE, var = FALSE, ...)
+plotsamples(x, selected = "NA", acf = FALSE, var = FALSE, max = FALSE, ...)
 }
 
 \arguments{
@@ -21,6 +21,8 @@ plotsamples(x, selected = "NA", acf = FALSE, var = FALSE, ...)
   \item{acf}{if set to \code{TRUE}, the autocorrelation function for each sampling path is plotted.}
   \item{var}{indicates whether coefficient or variance sampling paths are displayed and simply 
     changes the main title.}
+  \item{max}{if set to \code{TRUE}, \code{plotsamples} will evaluate the maximum of each row in 
+     \code{x}, i.e. the maximum of all parameters for each iteration.}
   \item{\dots}{other graphical parameters to be passed to \code{\link[graphics]{plot}} and
     \code{\link[stats]{acf}}, e.g. argument \code{lag.max} if \code{acf = TRUE}.}
 }
