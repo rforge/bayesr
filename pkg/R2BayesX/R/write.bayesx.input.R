@@ -31,10 +31,13 @@ function(object)
     else
       is.h <- FALSE
   }
-  if(!file.exists(object$outfile))
-    dir.create(object$outfile, showWarnings = FALSE)
-  else {
-    if(!is.h) {
+  if(!file.exists(object$outfile) || object$replace) {
+    if(!is.null(object$outfile) && length(fdir <- list.files(object$outfile))) {
+      file.remove(paste(object$outfile, "/", fdir, sep = "")) 
+    }
+    dir.create(object$outfile, showWarnings = FALSE, recursive = TRUE)
+  } else {
+    if(!is.h && !object$replace) {
       wok <- TRUE
       count <- 0L
       while(wok) {
@@ -45,7 +48,11 @@ function(object)
         }
       }
       dir.create(object$outfile, showWarnings = FALSE)
-    } else object$outfile <- object$houtfile
+      cat("Note: created new output directory \'", object$outfile, "\'!\n", sep = "")
+    } else {
+      if(is.h)
+        object$outfile <- object$houtfile
+    }
   }
   wd <- as.character(getwd())
   if(is.null(object$hlevel) || object$hlevel < 2L)

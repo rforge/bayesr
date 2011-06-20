@@ -11,7 +11,8 @@ export(
   check.install.bayesx, 
   install.bayesx,       
   colorlegend, 
-  cprob,         
+  cprob,  
+  getscript,       
   parse.bayesx.input,  
   plot2d,               
   plot3d,              
@@ -39,6 +40,7 @@ S3method(plot, linear.bayesx)
 S3method(plot, fit.bayesx)
 S3method(plot, bnd)
 S3method(print, bayesx)
+S3method(print, bayesx.script)
 S3method(summary, bayesx)
 S3method(print, summary.bayesx)
 S3method(residuals, bayesx)

@@ -1,15 +1,9 @@
-dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
+dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-plot(b1, term = 1, which = "coef-samples", acf = F, lag.max = 1000, max = T)
+sc <- getscript(b2, file = "~/tmp/getscript.R")
 
-
-plot(b, which = "max-samples", acf = FALSE, lag.max = 200)
-
-
-b <- bayesx(y ~ s(x, bs = "ps", by = id),
-  method = "MCMC", data = dat)
-bayesx_prgfile(b)
+b <- read.bayesx.output("~/tmp/fit4")
 
 
 
@@ -69,7 +63,7 @@ dat1$y <- with(dat1, 1.5 + sin(x1) + re + cos(dat2$x2)[id] +
 ## 2nd stage
 system.time(b1 <- bayesx(y ~ -1 + s(x1, bs = "ps") + 
   r(id, ~ -1 + s(x2 , bs = "ps") + r(id2, ~ 1 + s(x3, bs = "ps"), data = dat3), data = dat2), 
-  method = "HMCMC", data = dat1, iter = 3000, burnin = 1000))
+  method = "HMCMC", data = dat1, iter = 3000, burnin = 1000, outfile = "~/tmp/bayesxH"))
 
 
 

@@ -1,8 +1,8 @@
 bayesx.control <-
 function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",  
   verbose = FALSE, dir.rm = TRUE, bin = getOption("bayesx.bin"), 
-  outfile = NULL, iterations = 12000L, burnin = 2000L, maxint = 150L, step = 10L, 
-  predict = TRUE, seed = NULL, hyp.prior = c(1, 0.005), distopt = NULL, 
+  outfile = NULL, replace = FALSE, iterations = 12000L, burnin = 2000L, maxint = NULL, 
+  step = 10L, predict = TRUE, seed = NULL, hyp.prior = NULL, distopt = NULL, 
   reference = NULL, zipdistopt = NULL,  begin = NULL, level = NULL, 
   eps = 1e-05, lowerlim = 0.001, maxit = 400L, maxchange = 1e+06, leftint = NULL, 
   lefttrunc = NULL, state = NULL, algorithm = NULL, criterion = NULL, proportion = NULL,
@@ -10,7 +10,7 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
   CI = NULL, bootstrapsamples = NULL, ...)
 {
   control <- list(...)
-  start <- 5L + length(control)
+  start <- 6L + length(control)
   control$model.name <- model.name 
   if(method == "mcmc")
     method <- "MCMC"
@@ -26,7 +26,11 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
     control$method <- method
   control$verbose <- verbose
   control$dir.rm <- dir.rm
-  control$outfile <- outfile
+  if(!is.null(outfile))
+    control$outfile <- path.expand(outfile)
+  else
+    control$outfile <- outfile
+  control$replace <- replace
   control$bin <- bin
   if(is.null(family))
     family <- "gaussian"

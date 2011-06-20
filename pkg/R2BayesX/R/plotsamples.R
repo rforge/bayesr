@@ -10,6 +10,8 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, max = FALSE, ...)
     axes <- TRUE
   else
     axes <- args$axes
+  if(!acf)
+    args$lag.max <- NULL
   xlab <- args$xlab
   ylab <- args$ylab
   main <- args$main
@@ -17,8 +19,18 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, max = FALSE, ...)
     x <- matrix(x, length(x), 1L)
   nr <- ncol(x)
   op <- par(no.readonly = TRUE)
-  args$xlab <- NA
-  args$ylab <- NA
+  if(is.null(args$xlab)) {
+    if(acf)
+      args$xlab <- "Lag"
+    else
+      args$xlab <- "Iteration"
+  }
+  if(is.null(args$ylab)) {
+    if(acf)
+      args$ylab <- "ACF"
+    else
+      args$ylab <- NA
+  }
   if(is.null(args$main))
     args$main <- NA
   if(!acf) {
@@ -53,6 +65,8 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, max = FALSE, ...)
     } else {
       args$x <- stats::ts(data = x[,k])
       args$plot <- FALSE
+      if(is.null(args$lag.max))
+        args$lag.max <- length(x[,k])
       acfx <- do.call(stats::acf, args)
       lx <- as.vector(acfx$lag)
       ax <- as.vector(acfx$acf)
@@ -65,13 +79,12 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, max = FALSE, ...)
         maxs <- cbind(maxs, acfx$acf)
       } else {
         ylim <- NULL
-        if(is.null(args$ylim) && !var)
+        if(is.null(args$ylim))
           ylim <- c(-0.2, 1)
         else
           ylim = args$ylim
-        if(is.null(args$main))
-          args$main <- NA
-        stats:::plot.acf(acfx, main = args$main, axes = FALSE, ylim = ylim)
+        stats:::plot.acf(acfx, main = args$main, axes = FALSE, ylim = ylim, xlab = args$xlab,
+          ylab = args$ylab)
       }
     }
     if(!max) {
@@ -82,13 +95,17 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, max = FALSE, ...)
         axis(1L, at = at, labels = at)
         axis(2L)
       }
-      if(nr > 1L)
-        mtext(paste("Coefficient", k), side = 3L, line = 0.5, cex = 0.8)
-      if(!is.null(xlab))
+      if(nr > 1L) {
+        if(var)
+          mtext(paste("Parameter", k), side = 3L, line = 0.5, cex = 0.8)
+        else
+          mtext(paste("Coefficient", k), side = 3L, line = 0.5, cex = 0.8)
+      }
+      if(!is.null(xlab) && !acf)
         mtext(xlab, side = 1L, line = line, outer = outer, font = 1L)
-      if(!is.null(ylab))
+      if(!is.null(ylab) && !acf)
         mtext(ylab, side = 2L,line = line, outer = outer, font = 1L)
-      if(!is.null(main))
+      if(!is.null(main) && !acf)
         mtext(main, side = 3L, line = line, outer = outer, font = 2L, cex = 1)
       if(is.null(main)) {
         if(var)
@@ -111,7 +128,7 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, max = FALSE, ...)
       acfx$lag <- array(lx, dim = c(n, 1L, 1L))
       acfx$acf <- array(maxs, dim = c(n, 1L, 1L))
       ylim <- NULL
-      if(is.null(args$ylim) && !var)
+      if(is.null(args$ylim))
         ylim <- c(-0.2, 1)
       else
         ylim = args$ylim
@@ -122,7 +139,8 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, max = FALSE, ...)
       }
       else
         acfx$main <- args$main
-      stats:::plot.acf(acfx, main = acfx$main, axes = FALSE, ylim = ylim)
+      stats:::plot.acf(acfx, main = acfx$main, axes = FALSE, ylim = ylim, xlab = args$xlab,
+        ylab = args$ylab)
     } else {
       args$y <- maxs
       if(is.null(args$main) || is.na(args$main)) {

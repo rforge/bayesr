@@ -122,6 +122,8 @@ function(dir, files, data, response, eta, model.name, minfo)
                   for(tf in vf2) {
                     attr(x, "variance.sample") <- df2m(read.table(paste(dir, "/", tf[1L], sep = ""), 
                       header = TRUE))
+                    if(is.matrix(attr(x, "variance.sample")))
+                      attr(x, "variance.sample") <- attr(x, "variance.sample")[,1L]
                     if(is.matrix(attr(x, "variance.sample"))) {
                       if(ncol(attr(x, "variance.sample")) < 2L)
                         colnames(attr(x, "variance.sample")) <- "Variance"
@@ -152,8 +154,8 @@ function(dir, files, data, response, eta, model.name, minfo)
                 header = TRUE))
             }
           }
-          class(x) <- c(cx, "matrix")
-          eval(parse(text = paste("effects$\'", labelx, "\' <- x", sep = "")))
+          class(x) <- c(cx, "matrix") 
+          eval(parse(text = paste("effects$\'", attr(x, "specs")$label, "\' <- x", sep = "")))
         }
       }      
   }

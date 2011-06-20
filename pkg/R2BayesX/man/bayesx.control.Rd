@@ -14,8 +14,8 @@
 bayesx.control(model.name = "bayesx.estim", 
   family = "gaussian", method = "MCMC", verbose = FALSE, 
   dir.rm = TRUE, bin = getOption("bayesx.bin"), outfile = NULL, 
-  iterations = 12000L, burnin = 2000L, maxint = 150L, step = 10L, 
-  predict = TRUE, seed = NULL, hyp.prior = c(1, 0.005), 
+  replace = FALSE, iterations = 12000L, burnin = 2000L, maxint = NULL, 
+  step = 10L, predict = TRUE, seed = NULL, hyp.prior = NULL, 
   distopt = NULL, reference = NULL, zipdistopt = NULL,  
   begin = NULL, level = NULL, eps = 1e-05, lowerlim = 0.001, 
   maxit = 400L, maxchange = 1e+06, leftint = NULL, lefttrunc = NULL, 
@@ -44,6 +44,8 @@ bayesx.control(model.name = "bayesx.estim",
   \item{outfile}{\code{\link[base]{character}}, specify a directory where \code{\link{bayesx}} 
     should store all output files, all output files will be named with \code{model.name} as the 
     base name.}
+  \item{replace}{if set to \code{TRUE}, the files in the output directory specified in argument
+    \code{outfile} will be replaced.}
   \item{iterations}{\code{\link[base]{integer}}, sets the number of iterations for the sampler.}
   \item{burnin}{\code{\link[base]{integer}}, sets the burn-in period of the sampler.}
   \item{maxint}{\code{\link[base]{integer}}, if first or second order random walk priors are 
@@ -52,9 +54,10 @@ bayesx.control(model.name = "bayesx.estim",
     one parameter will be estimated. The grouping has almost no effect on estimation results as long 
     as the number of intervals is large enough. With the \code{maxint} option the amount of grouping 
     can be determined by the user. integer is the maximum number of intervals allowed. for 
-    equidistant data, \code{maxint = 150} for example, means that no grouping will be done as long 
-    as the number of different observations is equal to or below 150. for non equidistant data some 
-    grouping may be done even if the number of different observations is below 150.}
+    equidistant data, the default \code{maxint = 150} for example, means that no grouping will be 
+    done as long as the number of different observations is equal to or below 150. for non 
+    equidistant data some grouping may be done even if the number of different observations is below 
+    150.}
   \item{step}{\code{\link[base]{integer}}, defines the thinning parameter for MCMC simulation.  
     E.g., \code{step = 50} means, that only every 50th sampled parameter will be stored and used to 
     compute characteristics of the posterior distribution as means, standard deviations or 
@@ -67,7 +70,8 @@ bayesx.control(model.name = "bayesx.estim",
     \pkg{BayesX}.}
   \item{hyp.prior}{\code{\link[base]{numeric}}, defines the value of the hyper-parameters \code{a} 
     and \code{b} for the inverse gamma prior of the overall variance parameter \eqn{\sigma^2}, if 
-    the response distribution is Gaussian. \code{numeric}, must be a positive real valued number.}
+    the response distribution is Gaussian. \code{numeric}, must be a positive real valued number.
+    The default is \code{hyp.prior = c(1, 0.005)}.}
   \item{distopt}{\code{\link[base]{character}}, defines the implemented formulation for the negative 
     binomial model if the response distribution is negative binomial. The two possibilities are to 
     work with a negative binomial likelihood (\code{distopt = "nb"}) or to work with the Poisson 
