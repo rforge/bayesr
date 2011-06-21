@@ -19,7 +19,7 @@ function(x, diagnostics = FALSE, ...)
       args$x <- x
       do.call("plotblock", args)
     } else {
-      if(!is.null(attr(x[[1]], "sample"))) {
+      if(!is.null(attr(x[[1]], "sample")) && diagnostics < 2L) {
         lx <- length(x)
         nx  <- length(attr(x[[1L]], "sample"))
         args$x <- matrix(0, nx, lx)
@@ -28,7 +28,7 @@ function(x, diagnostics = FALSE, ...)
         args$selected <- attr(x, "specs")$term
         args$var <- FALSE
         do.call("plotsamples", args)
-      }
+      } else warning("term with no variance samples to plot!")
     }
   }
 

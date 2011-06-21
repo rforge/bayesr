@@ -4,7 +4,8 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
   op <- par(no.readonly = TRUE)
   pc <- FALSE
   which.match <- c("effect", "coef-samples", "var-samples", "intcpt-samples", 
-    "hist-resid", "qq-resid", "scatter-resid", "scale-resid", "scale-samples", "max-samples")
+    "hist-resid", "qq-resid", "scatter-resid", "scale-resid", "scale-samples", 
+    "all-acf")
   if(!is.character(which)) {
     if(any(which > 10L))
       which <- which[which <= 10L]
@@ -14,7 +15,7 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
     stop("argument which is specified wrong!")
   x <- get.model(x, model)
   nx <- length(x)
-  if("max-samples" %in% which) {
+  if("all-acf" %in% which) {
     samples <- NULL
     for(i in 1L:nx) {
       if(!is.null(x[[i]]$effects)) 
@@ -37,12 +38,12 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
   if(!is.null(samples)) {
     args <- list(...)
     args$x <- samples
-    args$max <- TRUE
+    args$all.acf <- TRUE
     do.call("plotsamples", args)
   } else warning("nothing to plot!")
   return(invisible(NULL))
   }
-  if((!"effect" %in% which) && (!"coef-samples" %in% which) && (!"max-samples" %in% which)
+  if((!"effect" %in% which) && (!"coef-samples" %in% which) && (!"all-acf" %in% which)
     && (!"var-samples" %in% which) && (!"intcpt-samples" %in% which)) {
     model.names <- names(x)
     pc <- TRUE
@@ -55,23 +56,29 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
       nt <- 0L
       for(i in 1L:nx)
         nt <- nt + length(x[[i]]$effects)
-      if(nt > 1L)
+      if(nt > 1L && !("intcpt-samples" %in% which) && !ask)
         setmfrow(nt)
+      if(("intcpt-samples" %in% which) && nx > 1L && !ask)
+        setmfrow(nx)
     } else {
       nt <- neffects(x, term)
-      if(!ask)
-        if(nt > 1L) 
+      if(!ask) {
+        if(nt > 1L && !("intcpt-samples" %in% which) && !ask) 
           setmfrow(nt)
+        if(("intcpt-samples" %in% which) && nx > 1L && !ask)
+          setmfrow(nx)
+      }
     }
     args <- list(...)
     for(i in 1L:nx) {
       if("intcpt-samples" %in% which) {
         if(!is.null(attr(x[[i]]$fixed.effects, "sample"))) {
           pc <- TRUE
-          par(oma = c(1L, 1L, 2L, 1L), mfrow = c(1L, 1L))
           args$x <- attr(x[[i]]$fixed.effects, "sample")[,1L]
           args$selected <- "(Intercept)"
           args$var <- FALSE
+          if(ask && i == 1L)
+            par(ask = TRUE)
           do.call("plotsamples", args)	
         }
       } else {
@@ -83,6 +90,8 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
         if(is.null(ne) || !is.character(ts))
           ne <- 1L:length(x[[i]]$effects)
         for(j in 1L:length(ts)) {
+          if(ask && j == 1L)
+            par(ask = TRUE)
           if(is.character(ts[j])) {
             tmp <- splitme(ts[j])
             tmp <- resplit(tmp[tmp != " "])
@@ -92,20 +101,17 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
             args$x <- x[[i]]$effects[[take]]
             args$diagnostics <- FALSE
             if("coef-samples" %in% which) {
-              par(oma = c(1, 1, 2, 1))
               args$diagnostics <- 1L
+              if(length(ts) > 1L && (is.null(args$all.acf) || 
+                !is.null(args$all.acf) && !args$all.acf))
+                par(ask = TRUE)
             }
-            if("var-samples" %in% which) {
-              par(oma = c(1L, 1L, 2L, 1L))
+            if("var-samples" %in% which) 
               args$diagnostics <- 2L
-            }
             if(!is.null(args$x)) {
               args$ask <- ask
               pc <- TRUE
               do.call("plot", args)	
-              if(j == 1L)
-                if(ask)
-                  par(ask = TRUE)
             }
           }
         }

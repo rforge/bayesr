@@ -23,7 +23,7 @@
     \code{term = "s(x)"}.}
   \item{which}{choose the type of plot that should be drawn, possible options are: \code{"effect"},
     \code{"coef-samples"}, \code{"var-samples"}, \code{"intcpt-samples"}, \code{"hist-resid"}, 
-    \code{"qq-resid"}, \code{"scatter-resid"}, \code{"scale-resid"}, \code{max-samples}. Argument 
+    \code{"qq-resid"}, \code{"scatter-resid"}, \code{"scale-resid"}, \code{all-acf}. Argument 
     \code{which} may also be specified as integer, e.g. \code{which = 1}. The first three arguments 
     are all model term specific. For the residual model diagnostic plot options \code{which} 
     may be set with \code{which = 5:8}.}
@@ -128,24 +128,23 @@ plot(b1, term = 1, which = "coef-samples")
 ## plot the sampling path of the intercept
 plot(b1, which = "intcpt-samples")
 
-## plot the correlation function of the sampled intercept
-plot(b1, which = "intcpt-samples", acf = TRUE)
+## plot the correlation function of 
+## the sampled intercept
+plot(b1, which = "intcpt-samples", 
+  acf = TRUE, lag.max = 30)
 
 ## increase lags
-plot(b1, which = "intcpt-samples", acf = TRUE, lag.max = 200)
-
-## plot maximum of samples of all parameters
-plot(b1, which = "max-samples")
-
-## maximum autocorrelation of all parameters
-plot(b1, which = "max-samples", acf = TRUE, lag.max = 200)
-
-## maximum of coefficient samples of term s(x)
-plot(b1, term = "s(x)", which = "coef-samples", max = TRUE)
-
-## maximum of coefficient autocorrelation of term s(x)
-plot(b1, term = "s(x)", which = "coef-samples", max = TRUE,
+plot(b1, which = "intcpt-samples", 
   acf = TRUE, lag.max = 200)
+
+## plot greates upper/lower autocorrelation 
+## of all sampled parameters
+plot(b1, which = "all-acf")
+
+## plot greates upper/lower autocorrelation of 
+## all sampled coefficients of term s(x)
+plot(b1, term = "s(x)", which = "coef-samples", 
+  all.acf = TRUE, lag.max = 100)
 
 
 ## now a spatial example
@@ -164,8 +163,7 @@ dat$re <- with(dat, rnorm(N, sd = 0.6)[id])
 ## response
 dat$y <- with(dat, 1.5 + sin(x1) + sp + re + rnorm(n, sd = 0.6))
 
-## estimate models with
-## bayesx MCMC and REML
+## estimate model
 b2 <- bayesx(y ~ s(x1, bs = "ps") + s(id, bs = "mrf", xt = list(map = MunichBnd)) +
   r(id), method = "MCMC", data = dat)
 

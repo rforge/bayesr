@@ -1,7 +1,12 @@
-dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
+dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-sa <- samples(b2, acf = T)
+plot(b, which = "coef-samples", all.acf = TRUE)
+
+
+script <- getscript(b2)
+
+
 
 
 sc <- getscript(b2, file = "~/tmp/getscript.R")

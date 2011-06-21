@@ -416,6 +416,7 @@ distributions for the different methods is given in Table~\ref{tab:family}.
 \code{"gaussian"} & Gaussian & identity & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
 \code{"gamma"} & gamma & log & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
 \code{"binomial"} & binomial & logit & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
+
 \code{"binomialprobit"} & binomial & probit  & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ \hline
 \code{"multinomial"} & unordered multinomial & logit & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\ 
   \hline
@@ -522,6 +523,8 @@ Function & Description \\ \hline
               \code{s(bmi, bs = "ps", xt = list(contourprob = 4))}. \\ \hline
 \fct{fitted} & fitted values of either the mean and linear predictor, or a select model term. \\ 
                \hline
+\fct{getscript} & generate an \proglang{R} script for term effect, diagnostic plots and model
+                  summary statistics. \\ \hline
 \fct{logLik} & extract fitted log-likelihood, only if \code{method = "REML"}. \\ \hline
 \fct{plot} & either model diagnostic plots or effect plots of particular terms. \\ \hline
 \fct{print} & simple printed display of the initial call and some additional information of the
@@ -1260,7 +1263,7 @@ which consider the uncertainty due to model selection.
 \section*{Acknowledgments}
 
 
-\nocite{Kneib+Heinzl+Brezger:2011}
+\nocite{R2BayesX:Kneib+Heinzl+Brezger:2011}
 \bibliography{R2BayesX}
 
 
