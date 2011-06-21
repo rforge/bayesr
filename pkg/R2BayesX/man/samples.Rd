@@ -61,6 +61,11 @@ for(j in 1L:k)
 
 ## linear effects samples
 samples(b, term = "linear-samples")
+
+## for acf, increase lag
+sax <- samples(b, term = "s(x)", acf = TRUE, lag.max = 200)
+names(sax)
+print(sax$variance.samples.acf)
 }
 }
 

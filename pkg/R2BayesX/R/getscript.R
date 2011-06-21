@@ -1,5 +1,5 @@
 getscript <-
-function(object, file = NULL, verbose = FALSE)
+function(object, file = NULL)
 {
   if(!inherits(object, "bayesx"))
     stop("object must be of class \'bayesx\'")
@@ -56,8 +56,6 @@ function(object, file = NULL, verbose = FALSE)
   close(script)
   script <- rval <- readLines("script")
   unlink("script")
-  if(verbose)
-    writeLines(script)
   if(!is.null(file)) {
     file <- path.expand(file)
     cat("", file = file)    

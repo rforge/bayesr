@@ -2,22 +2,21 @@
 \alias{getscript}
 
 \title{
-  Generate an R model script  
+  Generate an executable R fitted model script  
 }
 
 \description{
   The function generates an executable \R script for obtaining summary statistics, visualization
-  of model diagnostics and term effect plots of a fitted model object. 
+  of model diagnostics and term effect plots of a fitted \code{\link{bayesx}} model object. 
 }
  
 \usage{
-getscript(object, file = NULL, verbose = FALSE)
+getscript(object, file = NULL)
 }
 
 \arguments{
   \item{object}{an object of class \code{"bayesx"}.}
   \item{file}{optional, an output file the script is written to.}
-  \item{verbose}{if set to \code{TRUE}, the script is printed to the \R console.}
 }
 
 \author{

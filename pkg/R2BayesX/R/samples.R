@@ -73,11 +73,13 @@ samplesacf <- function(x, ...)
     rval <- NULL
     for(j in 1L:ncol(x))
       rval <- cbind(rval, stats::acf(stats::ts(x[,j]), plot = FALSE, ...)$acf)
+    rval <- rval[2L:nrow(rval),]
     colnames(rval) <- colnames(x)
-    rownames(rval) <- paste("lag-", 0L:(nrow(rval) - 1L), sep = "")
+    rownames(rval) <- paste("lag-", 1L:nrow(rval), sep = "")
   } else {
     rval <- as.vector(stats::acf(stats::ts(x), plot = FALSE, ...)$acf)
-    names(rval) <- paste("lag-", 0L:(length(rval) - 1L), sep = "")
+    rval <- rval[2L:length(rval)]
+    names(rval) <- paste("lag-", 1L:length(rval), sep = "")
   }
 
   return(rval)
