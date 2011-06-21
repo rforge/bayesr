@@ -1,17 +1,29 @@
 dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-plot(b, which = "coef-samples", all.acf = TRUE)
+b <- read.bayesx.output("/tmp/RtmptxRHKG/bayesx")
 
 
-script <- getscript(b2)
+library("AER")
+data(Guns)
+b <- bayesx(log(violent) ~ law + I(density^2), data = Guns, 
+  contrasts = list(law = "contr.treatment"), dir.rm = FALSE)
+
+script <- getscript(b1)
+
+
+bayesx.construct(s(id, bs = "mrf", xt = list(map = MunichBnd)))
+
+b1 <- bayesx(y ~ s(x1, bs = "ps") + 
+  s(id, bs = "mrf", xt = list(map = MunichBnd)), 
+  method = "MCMC", data = dat)
 
 
 
 
 sc <- getscript(b2, file = "~/tmp/getscript.R")
 
-b <- read.bayesx.output("~/tmp/fit4")
+b <- read.bayesx.output("/home/c403129/tmp/bayesxTEVGAM")
 
 
 

@@ -34,7 +34,9 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL,
           x <- data[[terms[k]]]
         if(is.factor(x) && !sp) {
           m <- model.matrix(as.formula(paste("~ -1 +", terms[k])), data, contrasts.arg, xlev)
-          fn <- colnames(m)
+          realname <- colnames(m)
+          fn <- rmf(realname)
+          realname <- paste("c(\'", paste(realname, sep = "", collapse = "\', \'"), "\')", sep = "")
           fnv <- "c("
           nf <- length(fn)
           if(nf > 1L)
@@ -44,8 +46,11 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL,
           xl <- paste(levels(x), collapse = "\',\'")
           xl <- paste("c(\'", xl , "\')", sep = "")
           info <- paste("list(term=\'", terms[k], "\',pos=" , k, 
-            ",isFactor=TRUE", ",names=", rmf(fnv), ",levels=", xl, ")", sep = "")
-        } else info <- paste("list(term=\'", terms[k], "\',pos=", k, ",isFactor=FALSE)", sep = "")
+            ",isFactor=TRUE", ",names=", fnv, ",levels=", xl, ",realname=", realname, ")", sep = "")
+        } else { 
+          info <- paste("list(term=\'", rmf(terms[k]), "\',pos=", k, ",isFactor=FALSE, realname=", 
+            paste("\'", terms[k], "\'", sep = ""),")", sep = "")
+        }
       }
       info <- paste(info,"\n")
       if(k < 2L)

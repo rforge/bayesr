@@ -18,9 +18,8 @@ function(dir, model.name)
     minfo <- NULL
     if(info %in% dir.files) {
       minfo <- readLines(paste(dir, "/", info, sep = ""))
-      minfo <- eval(parse(text = minfo[2L]))
+      minfo <- eval(parse(text = minfo[length(minfo)]))
     }
-
     ## search for data
     data <- NULL
     if(length(i <- grep(paste(model.name, ".data.raw", sep = ""), files)))

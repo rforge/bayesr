@@ -108,14 +108,13 @@ function(object)
       dat <- model.matrix(as.formula(paste(tf[1L], tf[3L])), 
         data = object$data, contrasts.arg = object$contrasts)
     } else {
-      objterms <- terms(object$formula, keep.order = TRUE)
-      dat <- model.matrix(objterms, data = object$data,
+      dat <- model.matrix(object$formula, data = object$data,
         contrasts.arg = object$contrasts)
     }
     nd <- rmf(names(object$data))
     names(object$data) <- nd
     colnames(dat) <- rmf(colnames(dat))
-    intcpt <- attr(object$terms, "intercept") == 1L
+    intcptcheck <- intcpt <- attr(object$terms, "intercept") == 1L
     for(sf in nd)
       if(is.factor(object$data[[sf]])) {
         if(intcpt) {
@@ -143,6 +142,7 @@ function(object)
       dat <- cbind(dat, model.weights(object$data))
       colnames(dat)[nc + 1L] <- "ModelWeights"
     }  
+    object$Yn <- rmf(object$Yn)
     dat <- cbind(as.vector(object$data[[object$Yn]]),dat)
     colnames(dat)[1L] <- object$Yn
     vars <- colnames(dat)
@@ -172,6 +172,7 @@ function(object)
       }
     }
     data.file <- paste(object$outfile, "/", object$model.name, ".data.raw", sep = "")
+
     if(!file.exists(data.file))
       write.table(dat, data.file, col.names = TRUE, row.names = FALSE, quote = FALSE)
     else {
@@ -202,8 +203,8 @@ function(object)
     if(!ok)
       warning("variable names in specified data file do not match with formula variable names!")
   }
-  st <- split.terms(attr(object$terms, "term.labels"), vars, object$data, dropvars)
-  bayesx.prg <- write.prg.setup(object$Yn, object, prg.file, data.file,
+  st <- split.terms(attr(object$terms, "term.labels"), vars, object$data, dropvars, intcptcheck)
+  bayesx.prg <- write.prg.setup(rmf(object$Yn), object, prg.file, data.file,
     thismodel, st)
   if(!is.h)
     cat("logclose \n", file = prg.file, append = TRUE)

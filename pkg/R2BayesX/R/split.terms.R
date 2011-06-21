@@ -1,5 +1,5 @@
 split.terms <-
-function(terms, vars, data, dropvars)
+function(terms, vars, data, dropvars, intcpt)
 {
   if(length(terms) > 0L) {
     sm <- is.sm(terms)
@@ -10,7 +10,6 @@ function(terms, vars, data, dropvars)
     if(length(lv) < 1L)
       lv <- NULL
     linvars <- NULL
-    intcpt <- any(grepl("(Intercept)", vars))
     for(i in 1L:length(lv)) {
       tmp <- gsub("(offset)", "ModelOffset", lv[i], fixed = TRUE)
       tmp <- gsub("(weights)", "ModelWeights", lv[i], fixed = TRUE)

@@ -167,6 +167,7 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
     Yn <- as.character(formula[2L])
     control <- c(control, list(data = data, Y = Yn, Yn = Yn, weights = weights, offset = offset))
   }
+  attr(control$data, "terms") <- control$formula
   control$contrasts <- contrasts
   attr(control, "co.id") <- co.id
   class(control) <- "bayesx.input"
