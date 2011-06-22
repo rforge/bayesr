@@ -28,7 +28,7 @@ function(x, residuals = FALSE, range = c(0.3, 0.3),
     stop("x must have at least 2 columns!")
   args <- list(...)
   if(is.null(args$xlab))
-    args$xlab <- "x"
+    args$xlab <- attr(x, "specs")$term
   if(is.null(args$ylab)) {
     if(is.null(attr(x, "specs")$label))
       args$ylab <- paste("f(", args$xlab, ")", sep = "")

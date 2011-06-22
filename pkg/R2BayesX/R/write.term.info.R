@@ -2,6 +2,7 @@ write.term.info <-
 function(file, terms, data, object = NULL, contrasts.arg = NULL, 
   xlev = NULL, intcpt = TRUE, rdafile)
 {
+  options(warn = -1L)
   nt <- length(terms)
   if(nt > 0L) {
     for(k in 1L:nt) {
@@ -99,6 +100,7 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL,
       cat(info, file = file, append = TRUE)
     }
   }
+  options(warn = 0L)
 
   return(invisible(NULL))
 }

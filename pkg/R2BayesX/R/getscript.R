@@ -60,12 +60,20 @@ function(object, file = NULL, device = NULL, ...)
       } 
       ccheck <- vcheck <- FALSE
       for(k in 1L:length(tn)) {
+        specs <- attr(object[[i]]$effects[[k]], "specs")
+        xlab <- specs$term
+        ylab <- specs$label
         if(dode) {
-          cat(dcall, "file = \"", paste(dir, "/model-", i, "-term-", rmfscript(tn[k]),"\"", sep = ""), 
+          cat(dcall, "file = \"", paste(dir, "/model-", i, "-term-", tn[k],"\"", sep = ""), 
             ")\n", sep = "", file = script)
         }
-        cat("plot(", on, ", model = ", i, ", term = ", "\"", tn[k], "\")\n", sep = "", 
-          file = script)
+        if(inherits(object[[i]]$effects[[k]], c("sm.bayesx", "linear.bayesx")) && specs$dim < 2L) {
+          cat("plot(", on, ", model = ", i, ", term = ", "\"", tn[k], 
+            "\", xlab = \"", xlab, "\", ylab = \"", ylab,"\")\n", sep = "", file = script)
+        } else {
+          cat("plot(", on, ", model = ", i, ", term = ", "\"", tn[k], "\")\n", 
+            sep = "", file = script)
+        }
         if(dode)
           cat("graphics.off()\n", file = script)
         if(!is.null(attr(object[[i]]$effects[[k]], "sample")))
@@ -79,7 +87,7 @@ function(object, file = NULL, device = NULL, ...)
           if(!is.null(attr(object[[i]]$effects[[k]], "sample"))) {
             if(dode) {
               cat(dcall, "file = \"", paste(dir, "/model-", i, "-term-", 
-                rmfscript(tn[k]),"-coef.samples\"", sep = ""), ")\n", sep = "", file = script)
+                tn[k],"-coef.samples\"", sep = ""), ")\n", sep = "", file = script)
             }
             cat("plot(", on, ", model = ", i, ", term = ", "\"", tn[k], 
               "\", which = \"coef-samples\")\n", sep = "", file = script)
@@ -87,10 +95,18 @@ function(object, file = NULL, device = NULL, ...)
               cat("graphics.off()\n", file = script)
             if(dode) {
               cat(dcall, "file = \"", paste(dir, "/model-", i, "-term-", 
-                rmfscript(tn[k]),"-coef.acf\"", sep = ""), ")\n", sep = "", file = script)
+                tn[k],"-coef.acf\"", sep = ""), ")\n", sep = "", file = script)
             }
             cat("plot(", on, ", model = ", i, ", term = ", "\"", tn[k], 
               "\", which = \"coef-samples\", acf = TRUE)\n", sep = "", file = script)
+            if(dode)
+              cat("graphics.off()\n", file = script)
+            if(dode) {
+              cat(dcall, "file = \"", paste(dir, "/model-", i, "-term-", 
+                tn[k],"-coef.all.acf\"", sep = ""), ")\n", sep = "", file = script)
+            }
+            cat("plot(", on, ", model = ", i, ", term = ", "\"", tn[k], 
+              "\", which = \"coef-samples\", all.acf = TRUE)\n", sep = "", file = script)
             if(dode)
               cat("graphics.off()\n", file = script)
           }
@@ -102,7 +118,7 @@ function(object, file = NULL, device = NULL, ...)
           if(!is.null(attr(object[[i]]$effects[[k]], "variance.sample"))) {
             if(dode) {
               cat(dcall, "file = \"", paste(dir, "/model-", i, "-term-", 
-                rmfscript(tn[k]),"-variance.samples\"", sep = ""), ")\n", sep = "", file = script)
+                tn[k],"-variance.samples\"", sep = ""), ")\n", sep = "", file = script)
             }
             cat("plot(", on, ", model = ", i, ", term = ", "\"", tn[k], 
               "\", which = \"var-samples\")\n", sep = "", file = script)
@@ -110,7 +126,7 @@ function(object, file = NULL, device = NULL, ...)
               cat("graphics.off()\n", file = script)
             if(dode) {
               cat(dcall, "file = \"", paste(dir, "/model-", i, "-term-", 
-                rmfscript(tn[k]),"-variance.acf\"", sep = ""), ")\n", sep = "", file = script)
+                tn[k],"-variance.acf\"", sep = ""), ")\n", sep = "", file = script)
             }
             cat("plot(", on, ", model = ", i, ", term = ", "\"", tn[k], 
               "\", which = \"var-samples\", acf = TRUE)\n", sep = "", file = script)

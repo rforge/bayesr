@@ -28,7 +28,7 @@ function(data, x, xnam, response, eta, dimx, cx)
         x$pcat80tot_sim <- NULL
         x$pcat95tot_sim <- NULL
         for(k in 1L:length(xnam))
-          eval(parse(text = paste("x$", xnam[k] , "<- NULL", sep = "")))
+          eval(parse(text = paste("x$\'", xnam[k] , "\' <- NULL", sep = "")))
         x <- as.matrix(x)
         if(!is.matrix(eta))
           eta <- matrix(eta, ncol = 1L)

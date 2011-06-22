@@ -1,7 +1,10 @@
 dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-script <- getscript(b, device = png)
+b <- read.bayesx.output("/tmp/Rtmp20lGXx/bayesx1")
+
+
+script <- getscript(b1, device = postscript, width = 6, height = 6)
 script
 
 b <- read.bayesx.output("/tmp/Rtmpxmmo7W/bayesx")
@@ -23,8 +26,8 @@ model.frame.bayesx(y ~ s(x) + r(id ~ s(x2)), data = dat2)
 
 library("AER")
 data(Guns)
-b <- bayesx(log(violent) ~ law + I(density^2), data = Guns, 
-  contrasts = list(law = "contr.treatment"), dir.rm = FALSE)
+b <- bayesx(log(violent) ~ law + I(density^2) + state, data = Guns, 
+  contrasts = list(law = "contr.treatment", state = "contr.treatment"), dir.rm = FALSE)
 
 script <- getscript(b1)
 

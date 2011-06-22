@@ -90,7 +90,8 @@ function(dir, model.name)
     rval <- c(rval, find.smooth.random(dir, files, data, response, eta, model.name, minfo))
 
     ## get fixed effects
-    rval <- find.fixed.effects(dir, files, data, response, eta, model.name, rval, minfo)
+    rval <- find.fixed.effects(dir, files, data, response, eta, model.name, 
+      rval, minfo, paste(dir, "/", info, sep = ""))
 
     ## get scale estimate
     rval$variance <- get.scale(files, dir)

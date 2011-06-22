@@ -48,7 +48,8 @@ function(x, info)
             taken <- c(taken, j)
           }
         }
-        attr(fc, "specs") <- list(dim = 1L, term = term$term, label = term$term, is.factor = TRUE)
+        attr(fc, "specs") <- list(dim = 1L, term = term$term, 
+          label = paste("f(", term$term, ")", sep = ""), is.factor = TRUE)
         class(fc) <- "linear.bayesx"
         rval[[term$pos]] <- fc
       }

@@ -1,6 +1,8 @@
 find.fixed.effects <-
-function(dir, files, data, response, eta, model.name, rval, minfo)
+function(dir, files, data, response, eta, model.name, rval, minfo, info)
 {
+  info <- readLines(info)
+  info <- info[1L:(length(info) - 1L)]
   fixed2table <- function(file, tf) {
     tb <- readLines(file)
     tb <- gsub("   ", ",", tb)
@@ -76,6 +78,32 @@ function(dir, files, data, response, eta, model.name, rval, minfo)
         fsample <- cbind(fsample, df2m(read.table(paste(dir, "/", tf, sep = ""), header = TRUE)))
     attr(FixedEffects, "sample") <- fsample
     attr(FixedEffects, "df") <- fdf
+    if(!is.null(FixedEffects) && !is.null(info)) {
+      rn <- on <- rownames(FixedEffects)
+      for(k in 1L:length(info)) {
+        term <- eval(parse(text = info[k]))
+        if(!is.null(term$names) && !is.null(term$realname)) {
+          for(i in 1L:length(rn))
+            if(length(id <- grep(rn[i], term$names, fixed = TRUE)))
+              if(term$names[id] != term$realname[id])
+                rn[i] <- term$realname[id]
+          }
+        if(!is.null(term$term) && is.null(term$names) && !is.null(term$realname))
+          for(i in 1L:length(rn))
+            if(length(id <- grep(rn[i], term$term, fixed = TRUE)))
+              if(term$term[id] != term$realname[id])
+                rn[i] <- term$realname[id]
+      }
+      if(!is.null(data)) {
+        cnd <- colnames(data)
+        for(i in 1:length(on))
+          if(length(id <- grep(on[i], cnd, fixed = TRUE)))
+            if(on[i] != rn[i])
+              cnd[id] <- rn[i]
+        colnames(data) <- cnd
+      }
+      rownames(FixedEffects) <- rn
+    }
     rval$fixed.effects <- FixedEffects
     rownames(rval$fixed.effects) <- rrmfs(rownames(rval$fixed.effects))
   }
@@ -110,7 +138,7 @@ function(dir, files, data, response, eta, model.name, rval, minfo)
             attr(FixedEffects, FEattrn[i]) <- FEattr[[i]]
         for(tv in vars) {
           j <- j + 1L
-          x <- unique(as.vector(unlist(data[tv])))
+          x <- unique(as.vector(unlist(data[[tv]])))
           vc <- matrix(FixedEffects[rownames(FixedEffects) == tv,], nrow = 1L)
           x <- cbind(x, x%*%vc)    
           x <- x[order(x[,1L]),]
