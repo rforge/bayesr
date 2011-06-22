@@ -143,6 +143,16 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     if(is.null(args$xpd))
       args$xpd <- TRUE
     args$symmetric <- symmetric
+    if(is.null(range)) {
+      xkd <- sort(x$x)
+      xd <- stats::density.default(xkd)
+      xd <- cbind(xd$x, xd$y)
+      xd[(xd[, 1L] < min(xkd, na.rm = TRUE)) & (xd[, 1L] > max(xkd, na.rm = TRUE))] <- NA
+      xd <- na.omit(xd)
+      qd <- quantile(xd[, 2L], probs = c(0.025, 0.975), na.rm = TRUE, type = 1L)
+      xd <- xd[xd[, 2L] == qd,]
+      range <- range(xd[, 1L])
+    }
     args$range <- range
     args$add <- TRUE
     do.call(colorlegend, delete.args(colorlegend, args, c("font")))
