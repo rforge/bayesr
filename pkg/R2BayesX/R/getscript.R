@@ -147,7 +147,7 @@ function(object, file = NULL, device = NULL, ...)
   }
   class(rval) <- "bayesx.script"
 
-  return(invisible(rval))
+  return(rval)
 }
 
 

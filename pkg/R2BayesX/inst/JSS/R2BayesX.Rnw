@@ -36,23 +36,26 @@ Structured additive regression (STAR) models provide a flexible framework for mo
 nonlinear effects of covariates: They contain the well established frameworks of generalized linear 
 models (GLM) and generalized additive models (GAM) as special cases but also allow a wider class of 
 effects, e.g., for geographical or spatio-temporal data. This allows for the specification of 
-complex and realistic models that can typically be conveniently estimated using Bayesian inference 
+complex and realistic models that can be estimated using Bayesian inference 
 based on modern Markov chain Monte Carlo (MCMC) simulation techniques or with an equivalent mixed 
-model representation. Although there is already a quite extensive existing toolset in \proglang{R} 
-supporting GLMs and GAMs, many of the more complex models from the STAR class, especially those 
-utilizing Bayesian inference, are currently not easily available. They are, however, provided in the 
-standalone software package BayesX: a very comprehensive simulation based regression toolbox
+model representation.  Sofware for fitting STAR models is provided  in the 
+standalone software package BayesX: a  comprehensive  regression toolbox
 written in open-source \proglang{C++} code. BayesX not only covers models for responses from 
 univariate exponential families, but also models from non-standard regression situations such as 
 models for multi-categorical responses with either ordered or unordered categories, continuous time 
-survival data, or continuous time multi-state models. Since there has been increasing interest in an 
-\proglang{R} interface to BayesX, the already existing CRAN package \pkg{BayesX}, which previously 
-provided only functions for exploring estimation results, is now extended to a full interactive
-interface. With the new version of the package, STAR models can be conveniently specified using 
+survival data, or continuous time multi-state models. 
+This paper presents the full interactive \proglang{R} interface R2BayesX to BayesX.
+ With the new  package, STAR models can be conveniently specified using 
 \proglang{R}'s formula language (with some extended terms), fitted using the BayesX binary, 
 represented in \proglang{R} with objects of suitable classes, and finally 
-printed/summarized/plotted.
+printed/summarized/plotted. As a result of the superior graphics capabilities of  
+\proglang{R} package R2BayesX greatly enhances the usability of BayesX. On the other hand
+some of the more complex models from the STAR class, especially models for multivariate responses,
+extend the already impressive capabilities  for semiparametric regression in  \proglang{R}'s.
+Moreover, R2BayesX is the most comprehensive package for Bayesian semiparametric inference
+in \proglang{R}
 }
+
 
 \Address{
   Nikolaus Umlauf, Stefan Lang, Achim Zeileis\\
@@ -99,7 +102,7 @@ data("BeechBnd")
 The public domain software BayesX \citep{R2BayesX:Brezger+Kneib+Lang:2005} is a standalone program 
 comprising powerful tools for Bayesian and mixed model based inference in complex semiparametric 
 regression models with structured additive predictor (STAR) (see Section~\ref{sec:model}). To gain 
-improved computational performance of the supported models, the algorithms implemented utilize 
+improved computational performance, the algorithms implemented utilize 
 numerically efficient (sparse) matrix architectures and are written in a \proglang{C++} environment. 
 Besides exponential family regression, BayesX also supports non-standard regression situations such 
 as regression for multi-categorical responses, hazard regression for continuous survival times, and 
@@ -134,7 +137,7 @@ the age of the child, the body mass index of the mother and the district the chi
 model is given by
 \begin{equation*}
 \texttt{stunting}_i = \gamma_0 + f_1(\texttt{agechild}_i) + f_2(\texttt{bmi}_i) + 
-  f_{spat}(\texttt{district}_i) + \varepsilon_i \qquad \varepsilon_i \sim N(0, \sigma^2)
+  f_{spat}(\texttt{district}_i) + \varepsilon_i, \qquad \varepsilon_i \sim N(0, \sigma^2),
 \end{equation*} 
 where the functions $f_1$ and $f_2$ of continuous covariates \code{agechild} and \code{bmi} have 
 possible nonlinear effects on \code{stunting} and are therefore modeled nonparametrically using 
@@ -228,7 +231,7 @@ predictor is replaced by a more general and flexible, structured additive predic
 \eta = f_1(\mathbf{z}) + \ldots + f_p(\mathbf{z}) + \mathbf{x}^{\prime}\boldsymbol{\gamma},
 \end{equation}
 where $\mathbf{z}$ represents a generic vector of all covariates, and $f_j$ are possibly smooth 
-functions comprising effects (and combination of effects) as e.g. given by             
+functions comprising effects  as e.g. given by             
 \begin{itemize}
   \item nonlinear effects of continuous covariates: $f_j(\mathbf{z}) = f(x)$,
   \item two-dimensional surfaces: $f_j(\mathbf{z}) = f(x_1,x_2)$,
@@ -247,7 +250,8 @@ regression \citep{R2BayesX:Fotheringham+Brunsdon+Charlton:2002}.
 
 The unified representation of a STAR predictor arises from the fact that all functions $f_j$ in 
 (\ref{eqn:structadd}) may be specified by a basis function approach, where the vector of function  
-evaluations $\mathbf{f}_j = (f_j(z_{1}),\ldots,f_j(z_{n}))$, with $i = 1,\ldots,n$, observations, 
+evaluations $\mathbf{f}_j = (f_j(\mathbf{z}_{1}),\ldots,f_j(\mathbf{z}_{n}))$ of the $i = 1,\ldots,n$ 
+observations 
 can be written in matrix notation 
 \begin{equation} \label{eqn:matnot}
 \mathbf{f}_j = \mathbf{Z}_j\boldsymbol{\beta}_j,
@@ -274,7 +278,7 @@ The variance parameter $\tau_j^2$ is equivalent to the inverse smoothing paramet
 approach and controls the trade off between flexibility and smoothness. For full Bayesian inference,
 weakly informative inverse Gamma hyperpriors $\tau_j^2 \sim IG(a_j, b_j)$ are assigned to 
 $\tau_j^2$, with $a_j = b_j = 0.001$ as a standard option. Small values for $a_j$ and $b_j$ 
-correspond to an approximate uniform distribution for $log \tau_j^2$. For empirical Bayes inference, 
+correspond to an approximate uniform distribution for $\log \tau_j^2$. For empirical Bayes inference, 
 $\tau_j^2$ is considered an unknown constant which is determined via restricted maximum likelihood 
 (REML).
 
@@ -288,7 +292,7 @@ schemes for structured additive regression models. Suitable proposal densities h
 to obtain rapidly mixing, well-behaved sampling schemes without the need for manual tuning. 
 
 \item \textit{Inference via a mixed model representation} \\
-The other concept used for estimation is based on mixed model methodology.
+Another concept used for estimation is based on mixed model methodology.
 Within BayesX this concept has been extended to structured additive regression models and several 
 types of non-standard regression situations. The general idea is to take advantage of the close 
 connection between penalty concepts and corresponding random effects distributions. The smoothing 
@@ -376,7 +380,7 @@ systems the user may specify e.g.
 options(bayesx.bin = "C:/BayesX/commandline/bayesx.exe") 
 @
 To avoid setting the path to the binary each time \proglang{R} is starting, it is suggested to add 
-the code above to the \proglang{R} startup profile site, also see Appendix~\ref{appendix:linking}. 
+the code above to the \proglang{R} startup profile site, see also  Appendix~\ref{appendix:linking}. 
 Afterwards, the function call
 <<check-install-bayesx, echo=TRUE, eval=FALSE>>=
 check.install.bayesx()
@@ -396,13 +400,14 @@ bayesx(formula, data, weights = NULL, subset = NULL,
   ...)
 \end{Sinput}
 where the first two lines basically represent the standard model frame specifications 
-\citep[see][]{Chambers+Hastie:1992}. However, the object supplied to argument \code{data} is not 
-necessarily an \proglang{R} data object, it is also possible to provide a character string with a 
-path to a dataset stored on disc, which may be reasonable using large datasets. An example is given 
-in Subsection~\ref{sec:implementation}. Note that the default specification for argument 
-\code{contrasts} using factors is function \fct{contr.sum}. This allows for deviation (effect) 
-coding of factor levels. As a consequence, the sampling and estimation performance of BayesX is 
-improved. The distribution assigned to the response may be set with argument \code{family}. The 
+\citep[see][]{R2BayesX:Chambers+Hastie:1992}. However, the object supplied to argument \code{data} 
+is not necessarily an \proglang{R} data object, it is also possible to provide a character string 
+with a path to a dataset stored on disc, which may be reasonable using large datasets. An example is 
+given in Subsection~\ref{sec:implementation}. Note that the default specification for argument 
+\code{contrasts} using factors is function \fct{contr.sum} resulting in deviation (effect) 
+coding of factor levels. We recommend deviation or effect coding  rather than the usual 
+dummy coding of factors as it typically improves the convergence of estimation algorithms used in   
+BayesX. The distribution assigned to the response may be set with argument \code{family}. The 
 default is \code{family = "gaussian"}. Argument \code{method} determines the inferential concept 
 used for estimation. Options currently are: Markov chain Monte Carlo simulation - \code{"MCMC"}, 
 mixed model based estimation using restricted maximum likelihood/marginal likelihood - \code{"REML"} 
@@ -555,7 +560,7 @@ Within \fct{s}, the list of covariates used for the model term is set with the d
 argument. For instance, in the introductory example, a term for the body mass index of the mother is 
 included in the model formula by \code{s(bmi)}, a term with two covariates is then specified e.g. 
 with \code{s(bmi, age)}. The parameter \code{k} controls the dimension of the basis used for smooth 
-terms. Argument \code{bs} choses the basis/type of the term, possible options are shown in 
+terms. Argument \code{bs} chooses the basis/type of the term, possible options are shown in 
 Table~\ref{tab:terms}. 
 \begin{table}[htbp]
 \begin{center}
@@ -610,7 +615,17 @@ the degree of the B-spline basis functions and the order of the difference penal
 of degree 3 with a 2nd order difference penalty is set with \code{s(bmi, bs = "ps", m = c(3, 2))}. A 
 numeric or a factor variable can be provided using argument \code{by} to estimate varying 
 coefficient terms, where the effect of the variable provided to \code{by} varies over the range of 
-the covariate(s) of this term. Argument \code{xt} is used to specify specific control parameters or 
+the covariate(s) of this term. Some care has to be taken with the identifiability of 
+varying coefficients terms. The standard in BayesX is to center nonlinear main effects terms 
+around zero whereas varying coefficient terms are not centered. This makes sense since main 
+effects nonlinear terms are not identifiable  and varying coefficients terms are usually identifiable.
+However, there are situations where a varying coefficients term is not identifiable. Then the term must 
+be centered. Since centering is not automatically acomplished it has to be enfored by the user by adding 
+option ??. To give an example, the varying coefficient terms in 
+$\eta = \cdots+g1(z1)z+ g2(z2)z+\gamma_0 + \gamma_1 z + \cdots$ are not identified, 
+whereas in $\eta = \cdots +g1(z1)z+\gamma_0+ \cdots$,  the varying coefficient term is identifiable. 
+In the first case, centering is necessary, in the second case, it is not. 
+Argument \code{xt} is used to specify specific control parameters or 
 additional geographical information for the model term. The argument must be a named list. For 
 example, to set the hyperpriors $a$ and $b$ for the variance parameter of the P-spline term for 
 \code{bmi}, the user may type \code{s(bmi, bs = "ps", xt = list(a = 0.0001, b = 0.0001))}. For 
@@ -622,7 +637,7 @@ for the geokriging term in the introduction is provided with
 \code{s(district, bs = "gk", xt = list(map = ZambiaBnd))}. Information about all possible extra 
 arguments for a particular term basis can be looked up using function \fct{bayesx.term.options}. 
 
-In addition to \fct{s}, unit- or cluster specific unstructured effects may be incorporated into the 
+In addition to \fct{s}, unit- or cluster specific unstructured (random) effects may be incorporated into the 
 model \code{formula} using the random effects term constructor function \fct{r}. The arguments of 
 \fct{r} are 
 \begin{Sinput}
@@ -630,7 +645,7 @@ r(id, by = NA, xt = NULL)
 \end{Sinput}
 where \code{id} is the unit or cluster identification covariate the random effects should be 
 estimated for. E.g. the model formula from the introduction could be extended by a random effects 
-term for the districts in Zambia with \code{r(district)}. Here, argument \code{by} takes covariates 
+term for the districts in Zambia with \code{r(district)}.  Argument \code{by} takes covariates 
 for which random slopes may be estimated. Argument \code{xt} is used in the same fashion as 
 described for function \fct{s}, i.e. similar to the above, hyperpriors $a$ and $b$ for the variance 
 parameter are set e.g. with \code{r(district, xt = list(a = 0.0001, b = 0.0001))}.
@@ -654,7 +669,7 @@ run.bayesx(dir, prg.name = "bayesx.estim.input.prg",
 where \code{dir} is a character string with the directory the program file is stored in and
 \code{prg.name} is the name of the corresponding program file. During processing of BayesX several 
 informations will be printed to the \proglang{R} console if \code{verbose = TRUE}. Argument 
-\code{bin} specifies the location of the BayesX binary the program file is send to, also see 
+\code{bin} specifies the location of the BayesX binary the program file is sent to, also see 
 Subsection~\ref{subsec:linking}. The function returns a list including the log file returned by 
 BayesX as well as information on the total runtime. 
 
@@ -680,7 +695,7 @@ this within \proglang{R} by providing a character string to argument \code{data}
 \fct{bayesx}, which includes the path to a dataset instead of an \proglang{R} data object. As a 
 consequence, this dataset will not be loaded within \proglang{R} and is only used internally by the 
 BayesX binary. To give an example, we generate a large dataset that might produce problems with 
-\proglang{R}'s memory allocation using a model fitting function, especially if the model contains of
+\proglang{R}'s memory allocation using a model fitting function, especially if the model contains a
 a large number of parameters. Therefore, we store the data on disc in the temporary folder of the 
 running session with
 <<large-data, echo=TRUE, eval=FALSE>>=
@@ -726,7 +741,8 @@ presented datasets have been added to package \pkg{R2BayesX}, ensuring straightf
 of the following code. In the first example, a Gaussian regression model is estimated using Markov 
 chain Monte Carlo simulation. The second example covers estimation based on mixed model technology, 
 where a cumulative threshold model is assigned for the response variable (see 
-\citet{R2BayesX:Fahrmeir+Tutz:2001} and \citet{R2BayesX:Kneib+Fahrmeir:2004}). The last example 
+\citet{R2BayesX:Fahrmeir+Tutz:2001} and \citet{R2BayesX:Kneib+Fahrmeir:2004} for 
+cumulative threshold models). The last example 
 illustrates the approach of the stepwise algorithm for model and variable selection.
 
 
@@ -764,7 +780,7 @@ stunting for child $i$ is represented by
 \begin{equation*}
 \texttt{stunting}_i = \frac{\texttt{AI}_i - \texttt{MAI}_i}{\sigma},
 \end{equation*}
-where \texttt{AI} refers to the child's anthropometric indicator (height at a certain age in our 
+where \texttt{AI} refers to a child's anthropometric indicator (height at a certain age in our 
 example), while \texttt{MAI} and $\sigma$ correspond to the median and the standard deviation in the 
 reference population, respectively.
 
@@ -786,6 +802,10 @@ modeled with P-splines. Furthermore, the spatial effect is decomposed into a str
 $f_{str}$, modeled by a Gaussian Markov random field, and an unstructured effect $f_{unstr}$, using 
 a random effects term for the districts in Zambia.
 
+
+
+
+
 The data for this analysis is provided in the \pkg{R2BayesX} package and can be loaded with
 <<data-zambia, echo=TRUE, eval=TRUE>>=
 data("ZambiaNutrition", package = "R2BayesX")
@@ -801,7 +821,7 @@ respectively. To read in an arbitrary boundary files into \proglang{R} function 
 be used. With the information of the boundary file BayesX may compute an appropriate penalty, 
 allowing for a smoothly varying effect of the neighboring regions. There is a generic plotting 
 method implemented for objects of class \code{"bnd"}, which in principle calls function 
-\fct{plotmap}, e.g. a simple map, as shown in Figure~\ref{fig:zambia-simple-map}, of the districts 
+\fct{plotmap}. E.g. a simple map, as shown in Figure~\ref{fig:zambia-simple-map}, of the districts 
 in Zambia is drawn by typing
 <<plot-zambia-map-01, echo=TRUE, eval=FALSE>>=
 plot(ZambiaBnd)
@@ -841,8 +861,13 @@ save(zm, file = "zambia-model.rda")
 @
 Argument \code{iterations}, \code{burnin} and \code{step} set the number of iterations of the MCMC 
 simulation, the burnin period, which will be removed from the generated samples, and the step length 
-for which samples should be stored, i.e. if \code{step = 10}, only every 10th sampled parameter will
-be saved.
+for which samples should be stored, i.e. if \code{step = 10}, every 10th sampled parameter will
+be saved. In most applications 12000 iterations should be enough for a valid fit with sufficiently 
+small autocorrelations of stored parameters, at least in the model building stage.
+However, it is absolutely neccessary to take a look
+at sampled parameters and autocorrelation functions to check the mixing behavior (see below). 
+Moreover, it is generally advisable to specify a higher number of iterations for the final model 
+that appears in publications. 
 
 After the model has been successfully fitted, summary statistics of the MCMC estimated model object 
 may be printed with 
@@ -911,29 +936,32 @@ for term \code{s(bmi)} are displayed with
 plot(zm, term = "s(bmi)", which = "coef-samples")
 @
 see Figure~\ref{fig:zambia-bmi-coef-samples}.
+The plot of sampled parameters should ideally show white noise, i.e. more or less uncorrelated
+samples that show no particular pattern. In our case the samples are exactly as they should be.   
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.75\textwidth}
 \begin{center}
-<<zambia-bmi-coef-samples-do, echo=FALSE, fig=TRUE, width=7, height=7>>=
+<<zambia-bmi-coef-samples-do, echo=FALSE, fig=TRUE, width=7, height=8>>=
+par(oma = c(0.01, 0.01, 0.01, 0.01))
 plot(zm, term = "s(bmi)", which = "coef-samples", main = NA)
 @
 \end{center}
 \caption{\label{fig:zambia-bmi-coef-samples} Example on childhood undernutrition: Sampling paths of 
-the coefficients of term \code{s(bmi)}.}
+the first 10 coefficients of term \code{s(bmi)}.} Autocorrelations for all lags should be close to zero 
+as is the case in our example.
 \end{figure}
 In addition, autocorrelation functions may be drawn, e.g. as shown in 
 Figure~\ref{fig:zambia-autocorr} for the variance samples of term \code{s(bmi)}, by typing
 <<zambia-autocorr-01, echo=TRUE, eval=FALSE>>=
-plot(zm, term = "s(bmi)", which = "var-samples", 
-  acf = TRUE, lag.max = 250)
+plot(zm, term = "s(bmi)", which = "var-samples", acf = TRUE)
 @
 \begin{figure}[!ht]
-\setkeys{Gin}{width=0.5\textwidth}
+\setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
-<<zambia-autocorr-02, echo=FALSE, fig=TRUE, width=6, height=5>>=
-par(mar = c(4, 4, 0.01, 0.01))
+<<zambia-autocorr-02, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(zm, term = "s(bmi)", which = "var-samples", 
-  acf = TRUE, lag.max = 250, main = "")
+  acf = TRUE, main = "")
 @
 \end{center}
 \caption{\label{fig:zambia-autocorr} Example on childhood undernutrition: Autocorrelation function
@@ -1048,8 +1076,8 @@ additive predictor
   f_3(\texttt{canopy}_{it}) + f_4(\texttt{year}) + f_5(\texttt{elevation}_{i}) + 
   \mathbf{x}_{it}^{\prime}\boldsymbol{\gamma}
 \end{eqnarray*}
-where functions $f_1, \dots, f_5$ of the continuous covariates are possibly nonlinear smooth 
-functions and $\mathbf{x}_{it}^{\prime}\boldsymbol{\gamma}$ comprises covariates with parametric 
+where  $f_1, \dots, f_5$  are possibly nonlinear smooth of the continuous covariates
+and $\mathbf{x}_{it}^{\prime}\boldsymbol{\gamma}$ comprises covariates with parametric 
 effects in an appropriate coding.
 
 To estimate the model within \proglang{R} the data is loaded and the model formula specified with
@@ -1135,7 +1163,7 @@ polygons given by the boundary map file, which may be loaded with
 <<forest-model-gra-bnd, echo=TRUE, eval=TRUE>>=
 data("BeechBnd", package = "R2BayesX")
 @
-Involving the spatial effect term we now fit the following model
+We now fit the  model:
 <<fit-forest-model-02, echo=TRUE, eval=FALSE>>=
 fm2 <- bayesx(defoliation ~  stand + fertilized + 
   humus + moisture + alkali + ph + soil + 
@@ -1145,17 +1173,17 @@ fm2 <- bayesx(defoliation ~  stand + fertilized +
   s(id, bs = "gs", xt = list(map = BeechBnd), k = 22),
   family = "cumlogit", method = "REML", data = ForestHealth)
 @
-and have a first look at model information criteria with
+Taking a look at model information criteria with
 <<summary-forest-model, echo=TRUE, eval=TRUE>>=
 BIC(c(fm1, fm2))
 GCV(c(fm1, fm2))
 @
-that clearly indicate a better fit by modeling the spatial effect of tree locations. The summary 
-statistics for both models give 
+clearly indicates a better fit by modeling the spatial effect of tree locations. The summary 
+statistics for both models gives: 
 <<summary-forest-model>>=
 summary(c(fm1, fm2))
 @
-where the parametric modeled terms in the second model seem to have a less important effect on tree 
+The parametric modeled terms in the second model seem to have a less important effect on tree 
 defoliation, with similar findings for covariates \code{inclination} and \code{elevation}.
 However, the estimate of the \code{age} effect seems to be improved in terms of monotonicity, see 
 Figure~\ref{fig:forest-spatial-nonpara}. 
@@ -1189,7 +1217,7 @@ plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft",
 \end{figure}
 as shown in Figure~\ref{fig:forest-spatial}. 
 
-Summarizing these results identifies a strong influence of the spatial effect of the overall model 
+Summarizing these results identify a strong influence of the spatial effect of the overall model 
 fit, indicating that a clear splitting of locational specific covariates and the spatial effect is 
 hardly possible in this example. 
 
@@ -1230,7 +1258,7 @@ data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
 save(zms, zmsccb, file = "zambia-model-step.rda")
 }
 @
-where argument \code{algorithm} choses the selection algorithm and \code{startmodel}, the start 
+where argument \code{algorithm} chooses the selection algorithm and \code{startmodel} the start 
 model for variable selection, see also Table ~\ref{tab:control} for all possible options. The 
 summary statistics of the final selected model are then provided with
 <<zambia-model-step-summary, echo=TRUE, eval=TRUE>>=
@@ -1255,7 +1283,7 @@ which results in the following summary statistics
 summary(zmsccb)
 @
 It is also possible to obtain unconditional confidence bands by setting \code{CI = "MCMCbootstrap"},
-which consider the uncertainty due to model selection. 
+which additionally considers the uncertainty due to model selection. 
 
 % \section{Summary}\label{sec:conclusion}
 

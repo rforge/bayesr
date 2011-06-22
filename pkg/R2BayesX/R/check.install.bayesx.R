@@ -1,7 +1,8 @@
 check.install.bayesx <-
 function(bin = getOption("bayesx.bin"), verbose = FALSE)
 {
-  options(warn = -1)
+  warn <- getOption("warn")
+  options(warn = -1L)
   ## trivial test program
   temp.dir <- tempdir()
   bayesx.test.prg <- "exit\n"
@@ -49,7 +50,7 @@ function(bin = getOption("bayesx.bin"), verbose = FALSE)
     else
       warning("BayesX not found: please install BayesX or (if already installed) verify bin path!")
   }
-  options(warn = 0)
+  options(warn = warn)
 
   if(ok) 
     return(bin) 

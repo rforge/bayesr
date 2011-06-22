@@ -1,8 +1,10 @@
 find.fixed.effects <-
 function(dir, files, data, response, eta, model.name, rval, minfo, info)
 {
-  info <- readLines(info)
-  info <- info[1L:(length(info) - 1L)]
+  if(file.exists(info)) {
+    info <- readLines(info)
+    info <- info[1L:(length(info) - 1L)]
+  } else info <- NULL
   fixed2table <- function(file, tf) {
     tb <- readLines(file)
     tb <- gsub("   ", ",", tb)
@@ -85,14 +87,14 @@ function(dir, files, data, response, eta, model.name, rval, minfo, info)
         if(!is.null(term$names) && !is.null(term$realname)) {
           for(i in 1L:length(rn))
             if(length(id <- grep(rn[i], term$names, fixed = TRUE)))
-              if(term$names[id] != term$realname[id])
-                rn[i] <- term$realname[id[1L]]
+              if(any(term$names[id] != term$realname[id]))
+                rn[i] <- term$realname[id]
           }
         if(!is.null(term$term) && is.null(term$names) && !is.null(term$realname))
           for(i in 1L:length(rn))
             if(length(id <- grep(rn[i], term$term, fixed = TRUE)))
-              if(term$term[id] != term$realname[id])
-                rn[i] <- term$realname[id[1L]]
+              if(any(term$term[id] != term$realname[id]))
+                rn[i] <- term$realname[id]
       }
       if(!is.null(data)) {
         cnd <- colnames(data)

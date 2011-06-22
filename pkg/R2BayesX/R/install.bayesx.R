@@ -1,7 +1,8 @@
 install.bayesx <-
 function(inst.dir = NULL, source.dir = NULL)
 {
-  options(warn = -1)
+  warn <- getOption("warn")
+  options(warn = -1L)
   unixos <- .Platform$OS.type == "unix"
   base_name <- if(unixos) "BayesX" else "bayesx.exe"
   if(!is.null(inst.dir))
@@ -126,7 +127,7 @@ function(inst.dir = NULL, source.dir = NULL)
         textfun(paste("BayesX was successfully installed in: ", bin.dir, sep = ""))
     }
   }
-  options(warn = 0)
+  options(warn = warn)
 
   if(ok)
     return(bin.dir)

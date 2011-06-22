@@ -1,7 +1,10 @@
 dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-b <- read.bayesx.output("/tmp/RtmpH4UjVE/bayesx")
+     dir <- paste(searchpaths()[grep("R2BayesX",searchpaths())],
+                "/examples/ex02",sep="")
+     b <- read.bayesx.output(dir)
+
 
 
 script <- getscript(b1, device = postscript, width = 6, height = 6)
