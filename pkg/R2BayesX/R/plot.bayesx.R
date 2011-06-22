@@ -21,7 +21,7 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
       if(!is.null(x[[i]]$effects)) 
         for(k in 1L:length(x[[i]]$effects))
           if(!is.null(x[[i]]$effects[[k]])) {
-              if(is.list(x[[i]]$effects[[k]])) {
+              if(!"data.frame" %in% class(x[[i]]$effects[[k]])) {
                 for(kk in 1L:length(x[[i]]$effects[[k]])) {
                   samples <- cbind(samples, attr(x[[i]]$effects[[k]][[kk]], "sample"))
                   samples <- cbind(samples, attr(x[[i]]$effects[[k]][[kk]], "variance.sample"))
@@ -117,11 +117,10 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
         }
       }	
     }		
-    if(nt > 1L)		
-      par(op)
   }
   if(!pc)
     warning("there is nothing to plot!")
+  par(op)
 
   return(invisible(NULL))
 }

@@ -1,7 +1,24 @@
-dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
+dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-b <- read.bayesx.output("/tmp/RtmptxRHKG/bayesx")
+script <- getscript(b, device = png)
+script
+
+b <- read.bayesx.output("/tmp/Rtmpxmmo7W/bayesx")
+
+
+b1 <- bayesx(y ~ s(x1, bs = "ps") + 
+  s(id, bs = "mrf", xt = list(map = MunichBnd)), 
+  method = "MCMC", data = dat, dir.rm = FALSE)
+
+
+script <- getscript(b1)
+
+
+
+model.frame.bayesx(y ~ s(x) + r(id ~ s(x2)), data = dat2)
+
+
 
 
 library("AER")

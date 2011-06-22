@@ -24,6 +24,11 @@ function(x, diagnostics = FALSE, ...)
               attr(x, na) <- eval(parse(text = paste("xattr$", na, sep = "")))
         }
       }
+      if(!is.null(attr(x, "map.name"))) {
+        args$map <- try(eval(parse(text = attr(x, "map.name")), envir = globalenv()), silent = TRUE)
+        if(class(args$map) == "try-error")
+          args$map <- NULL
+      }
       if(is.null(args$map)) {
         args$x <- x
         do.call("plotblock", args)

@@ -1,7 +1,7 @@
 bayesx <-
 function(formula, data, weights = NULL, subset = NULL, 
   offset = NULL, na.action = na.fail, contrasts = NULL, 
-  control = bayesx.control(...), ...)
+  control = bayesx.control(...), model = TRUE, ...)
 {
   ## first check installation of bayesx
   ok <- check.install.bayesx(control$bin, verbose = FALSE)
@@ -29,6 +29,12 @@ function(formula, data, weights = NULL, subset = NULL,
 
   ## write prg file
   res$bayesx.prg <- write.bayesx.input(res$bayesx.setup)
+
+  ## model.frame
+  if(!model) {
+    res$bayesx.setup$data <- NULL
+    res$bayesx.setup <- rmbhmf(res$bayesx.setup)
+  }
 
   ## now estimate with BayesX
   res$bayesx.run <- run.bayesx(dir = res$bayesx.prg$file.dir, 
@@ -82,9 +88,19 @@ function(formula, data, weights = NULL, subset = NULL,
   if(!is.null(res.h))
     return(res.h)
   else {
-    # eval(parse(text=paste("res <- list(", res$bayesx.prg$model.name, "= res)")))
     class(res) <- "bayesx"
     return(res)
   }
 }
 
+
+rmbhmf <- function(x) 
+  {
+  if(!is.null(x$h.random)) {
+    for(k in 1L:length(x$h.random))
+      x$h.random[[k]]$data <- NULL
+      x$h.random[[k]] <- rmbhmf(x$h.random[[k]])
+    }
+
+  return(x)
+  }

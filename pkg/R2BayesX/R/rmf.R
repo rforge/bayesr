@@ -26,3 +26,14 @@ rrmfs <- function(x)
   return(x)
 }
 
+
+rmfscript <-
+function(x) 
+{
+  for(i in 1L:length(x)) {
+    for(char in c("+", "-", "*", ":", "^", "/", " ", "(", ")")) 
+      x[i] <- gsub(char, "", x[i], fixed = TRUE)
+  }
+
+  return(rmfs(x))
+}

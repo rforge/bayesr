@@ -11,12 +11,18 @@
 }
  
 \usage{
-getscript(object, file = NULL)
+getscript(object, file = NULL, device = NULL, ...)
 }
 
 \arguments{
   \item{object}{an object of class \code{"bayesx"}.}
   \item{file}{optional, an output file the script is written to.}
+  \item{device}{a graphical device function, e.g. \code{\link[grDevices]{pdf}}, see the examples
+    and the help site of \code{\link[grDevices]{Devices}} for all available devices. If set, the 
+    script will have extra calls to the specified devices that will generate graphics to the 
+    specified \code{file}. If \code{file = NULL}, the working directory is taken.}
+  \item{\dots}{arguments passed to \code{devices}, e.g. \code{height} and \code{width} of a graphical
+    device.}
 }
 
 \author{
@@ -45,6 +51,10 @@ b <- bayesx(y ~ s(x, bs = "ps"), data = dat)
 ## generate the R script
 ## and print it
 script <- getscript(b)
+script
+
+## with a pdf device
+script <- getscript(b, device = pdf, height = 5, width = 6)
 script
 }
 }

@@ -25,6 +25,10 @@ function(x, info)
           else
             label2 <- "not.in.labels"
           if(term$term == attr(x[[j]], "specs")$label || term$term == label2) {
+            if(!is.null(term$map)) {
+              if(grep(term$map, ls(envir = globalenv())))
+                attr(x[[j]], "map.name") <- term$map
+            }
             rval[[term$pos]] <- x[[j]]
             taken <- c(taken, j)
           }
@@ -35,6 +39,10 @@ function(x, info)
         idf <- 1L
         for(j in 1L:nx) {
           if(attr(x[[j]], "specs")$label %in% term$names) {
+            if(!is.null(term$map)) {
+              if(grep(term$map, ls(envir = globalenv())))
+                attr(x[[j]], "map.name") <- term$map
+            }
             fc[[idf]] <- x[[j]]
             idf <- idf + 1L
             taken <- c(taken, j)
@@ -49,6 +57,10 @@ function(x, info)
         xl <- names(x)
         for(k in 1L:length(term$isFactorByNames))
           if(length(j <- grep(paste("):", term$isFactorByNames[k], sep = ""), xl, fixed = TRUE))) {
+            if(!is.null(term$map)) {
+              if(grep(term$map, ls(envir = globalenv())))
+                attr(x[[j]], "map.name") <- term$map
+            }
             by[[xl[j]]] <- x[[j]]
             taken <- c(taken, j)
           }

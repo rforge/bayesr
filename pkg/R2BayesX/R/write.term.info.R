@@ -6,6 +6,15 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL,
   if(nt > 0L) {
     for(k in 1L:nt) {
       if(is.sm(terms[k])) {
+        a <- parse(text = terms[[k]])[[1L]]
+        a_has_xt <- "xt" %in% names(a)
+        map <- paste("NULL")
+        if(a_has_xt) {
+          if("map" %in% names(a$xt))
+            map <- paste("\'", a$xt$map, "\'", sep = "")
+          if("polys" %in% names(a$xt))
+            map <- paste("\'", a$xt$polys, "\'", sep = "")
+        }
         te <- eval(parse(text = terms[k]))
         fby <- FALSE
         if(te$by != "NA") {
@@ -21,10 +30,10 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL,
         if(fby) {
           te$label <- gsub(")", paste(",by=", te$by, ")", sep = ""), te$label)
           info <- paste("list(term=\'", te$label, "\',pos=", k, ",by=\'", te$by,
-            "\',isFactor=FALSE", ",isFactorBy=", fby, ",isFactorByNames=", fnv, ")", sep = "")
+            "\',isFactor=FALSE", ",isFactorBy=", fby, ",isFactorByNames=", fnv, ",map=", map, ")", sep = "")
         } else {
           info <- paste("list(term=\'", te$label, "\',pos=", k, ",by=\'", te$by,
-            "\',isFactor=FALSE", ",isFactorBy=", fby, ")", sep = "")
+            "\',isFactor=FALSE", ",isFactorBy=", fby, ",map=", map, ")", sep = "")
         }
       } else {
         sp <- FALSE

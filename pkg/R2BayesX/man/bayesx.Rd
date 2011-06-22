@@ -16,7 +16,7 @@
 \usage{  
 bayesx(formula, data, weights = NULL, subset = NULL, 
   offset = NULL, na.action = na.fail, contrasts = NULL, 
-  control = bayesx.control(\dots), \dots)
+  control = bayesx.control(\dots), model = TRUE, \dots)
 }
 
 \arguments{
@@ -38,6 +38,8 @@ bayesx(formula, data, weights = NULL, subset = NULL,
     \code{\link[stats]{model.matrix.default}}.}
   \item{control}{specify several global control parameters for \code{bayesx}, see 
     \code{\link{bayesx.control}}.}
+  \item{model}{a logical value indicating whether \code{\link[stats]{model.frame}} should be
+          included as a component of the returned value.}
   \item{\dots}{arguments passed to \code{\link{bayesx.control}}, e.g. \code{family} and 
     \code{method}, defaults are \code{family = "gaussian"}, \code{method = "MCMC"}.}
 }
