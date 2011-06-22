@@ -37,8 +37,12 @@ function(x, info)
       if(term$isFactor && !term$isFactorBy) {
         fc <- list()
         idf <- 1L
+        if(is.null(term$realname))
+          tnames <- rrmfs(term$names)
+        else
+          tnames <- term$realname
         for(j in 1L:nx) {
-          if(attr(x[[j]], "specs")$label %in% term$names) {
+          if(attr(x[[j]], "specs")$label %in% tnames) {
             if(!is.null(term$map)) {
               if(grep(term$map, ls(envir = globalenv())))
                 attr(x[[j]], "map.name") <- term$map

@@ -86,13 +86,13 @@ function(dir, files, data, response, eta, model.name, rval, minfo, info)
           for(i in 1L:length(rn))
             if(length(id <- grep(rn[i], term$names, fixed = TRUE)))
               if(term$names[id] != term$realname[id])
-                rn[i] <- term$realname[id]
+                rn[i] <- term$realname[id[1L]]
           }
         if(!is.null(term$term) && is.null(term$names) && !is.null(term$realname))
           for(i in 1L:length(rn))
             if(length(id <- grep(rn[i], term$term, fixed = TRUE)))
               if(term$term[id] != term$realname[id])
-                rn[i] <- term$realname[id]
+                rn[i] <- term$realname[id[1L]]
       }
       if(!is.null(data)) {
         cnd <- colnames(data)
