@@ -5,7 +5,7 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
   pc <- FALSE
   which.match <- c("effect", "coef-samples", "var-samples", "intcpt-samples", 
     "hist-resid", "qq-resid", "scatter-resid", "scale-resid", "scale-samples", 
-    "all-acf")
+    "max-acf")
   if(!is.character(which)) {
     if(any(which > 10L))
       which <- which[which <= 10L]
@@ -15,7 +15,7 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
     stop("argument which is specified wrong!")
   x <- get.model(x, model)
   nx <- length(x)
-  if("all-acf" %in% which) {
+  if("max-acf" %in% which) {
     samples <- NULL
     for(i in 1L:nx) {
       if(!is.null(x[[i]]$effects)) 
@@ -38,12 +38,12 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
   if(!is.null(samples)) {
     args <- list(...)
     args$x <- samples
-    args$all.acf <- TRUE
+    args$max.acf <- TRUE
     do.call("plotsamples", args)
   } else warning("nothing to plot!")
   return(invisible(NULL))
   }
-  if((!"effect" %in% which) && (!"coef-samples" %in% which) && (!"all-acf" %in% which)
+  if((!"effect" %in% which) && (!"coef-samples" %in% which) && (!"max-acf" %in% which)
     && (!"var-samples" %in% which) && (!"intcpt-samples" %in% which)) {
     model.names <- names(x)
     pc <- TRUE

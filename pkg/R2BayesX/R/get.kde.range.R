@@ -1,8 +1,8 @@
-get.kde.range <- function(x, n = 100L, probs = c(0.01, 0.99)) 
+get.kde.range <- function(x, ngrid = 100L, probs = c(0.05, 0.95)) 
 {
-  kde <- density(x, n = length(x), from = min(x), to = max(x))
-  f <- splinefun(x = kde$x, y = kde$y)
-  xgrid <- matrix(seq(min(x), max(x), length = n), ncol = 1L)
+  kde <- stats::density(x, n = length(x), from = min(x), to = max(x))
+  f <- stats::splinefun(x = kde$x, y = kde$y)
+  xgrid <- matrix(seq(min(x), max(x), length = ngrid), ncol = 1L)
   foo <- function(f, lower, x) integrate(f, lower = lower, upper = x)$value
   xgridint <- apply(xgrid, 1L, foo, f = f, lower = min(x))
   q01 <- xgrid[xgridint >= probs[1L]]

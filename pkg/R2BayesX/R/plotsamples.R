@@ -1,5 +1,5 @@
 plotsamples <-
-function(x, selected = "NA", acf = FALSE, var = FALSE, all.acf = FALSE, ...)
+function(x, selected = "NA", acf = FALSE, var = FALSE, max.acf = FALSE, ...)
 {
   if(is.null(x)) {
     warning("there is nothing to plot!")
@@ -10,7 +10,7 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, all.acf = FALSE, ...)
     axes <- TRUE
   else
     axes <- args$axes
-  if(!acf && !all.acf)
+  if(!acf && !max.acf)
     args$lag.max <- NULL
   xlab <- args$xlab
   ylab <- args$ylab
@@ -20,28 +20,28 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, all.acf = FALSE, ...)
   nr <- ncol(x)
   op <- par(no.readonly = TRUE)
   if(is.null(args$xlab)) {
-    if(acf || all.acf)
+    if(acf || max.acf)
       args$xlab <- "Lag"
     else
       args$xlab <- "Iteration"
   }
   if(is.null(args$ylab)) {
-    if(acf || all.acf)
+    if(acf || max.acf)
       args$ylab <- "ACF"
     else
       args$ylab <- "Sample"
   }
   if(is.null(args$main))
     args$main <- NA
-  if(!acf && !all.acf) {
+  if(!acf && !max.acf) {
     args$type <- "l"
     args$x <- 1L:nrow(x)
   } else args$verbose <- FALSE
-  if(nr > 1L && !all.acf)
+  if(nr > 1L && !max.acf)
     setmfrow(nr)
   line <- 2L
   sa <- TRUE
-  if(nr < 2L || all.acf)
+  if(nr < 2L || max.acf)
     outer <- FALSE
   else {
     if(is.null(args$oma) && nr > 2L && all(par()$oma == c(0, 0, 0, 0)))
@@ -50,10 +50,10 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, all.acf = FALSE, ...)
       par(mar = c(4.8, 4.1, 2.1, 1.5))
     outer <- TRUE
   }
-  if(all.acf)
+  if(max.acf)
     maxs <- NULL
   for(k in 1L:nr) {
-    if(!acf && !all.acf) {
+    if(!acf && !max.acf) {
       args$y <- x[,k]
       args$axes <- FALSE
       do.call(graphics::plot.default, args)
@@ -70,7 +70,7 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, all.acf = FALSE, ...)
       ax <- ax[2L:n]
       acfx$lag <- array(lx, dim = c(n - 1L, 1L, 1L))
       acfx$acf <- array(ax, dim = c(n - 1L, 1L, 1L))
-      if(all.acf) {
+      if(max.acf) {
         maxs <- cbind(maxs, acfx$acf)
       } else {
         ylim <- NULL
@@ -82,7 +82,7 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, all.acf = FALSE, ...)
           ylab = args$ylab)
       }
     }
-    if(!all.acf) {
+    if(!max.acf) {
       if(axes) {
         box()
         at <- axis(1L, tick = FALSE, labels = NA)
@@ -124,11 +124,8 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, all.acf = FALSE, ...)
       }
     }
   } 
-  if(all.acf) {
-    amax <- apply(maxs, 1L, max)
-    amin <- apply(maxs, 1L, min)
-    amax[abs(amin) > abs(amax)] <- amin[abs(amin) > abs(amax)]
-    maxs <- amax
+  if(max.acf) {
+    maxs <- apply(maxs, 1L, max)
     n <- length(maxs)
     acfx$lag <- array(lx, dim = c(n, 1L, 1L))
     acfx$acf <- array(maxs, dim = c(n, 1L, 1L))
@@ -138,7 +135,7 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, all.acf = FALSE, ...)
     else
       ylim = args$ylim
     if(is.null(args$main) || is.na(args$main)) {
-      acfx$main <- "Greatest upper/lower autocorrelation \nof sampled parameters"
+      acfx$main <- "Maximum autocorrelation \nof sampled parameters"
       if(selected != "NA" && !is.null(selected))
         acfx$main <- paste(acfx$main, "of term", selected)
       if(all(par()$mar == c(5.1, 4.1, 4.1, 2.1)))
@@ -154,7 +151,7 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, all.acf = FALSE, ...)
       axis(2L)
     }
   }
-  if(nr > 1L && !all.acf)
+  if(nr > 1L && !max.acf)
     par(op)
 
   return(invisible(NULL))

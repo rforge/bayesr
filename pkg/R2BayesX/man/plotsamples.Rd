@@ -11,7 +11,7 @@
 }
  
 \usage{
-plotsamples(x, selected = "NA", acf = FALSE, var = FALSE, all.acf = FALSE, ...)
+plotsamples(x, selected = "NA", acf = FALSE, var = FALSE, max.acf = FALSE, ...)
 }
 
 \arguments{
@@ -21,7 +21,7 @@ plotsamples(x, selected = "NA", acf = FALSE, var = FALSE, all.acf = FALSE, ...)
   \item{acf}{if set to \code{TRUE}, the autocorrelation function for each sampling path is plotted.}
   \item{var}{indicates whether coefficient or variance sampling paths are displayed and simply 
     changes the main title.}
-  \item{all.acf}{if set to \code{TRUE}, \code{plotsamples} will evaluate the greatest upper/lower
+  \item{max.acf}{if set to \code{TRUE}, \code{plotsamples} will evaluate the maximum
     autocorrelation over all parameters of each sample.}
   \item{\dots}{other graphical parameters to be passed to \code{\link[graphics]{plot}} and
     \code{\link[stats]{acf}}, e.g. argument \code{lag.max} if \code{acf = TRUE}.}
@@ -59,9 +59,9 @@ plot(b, term = "s(x)", which = "var-samples")
 ## coefficients
 plot(b, term = "s(x)", which = "coef-samples")
 
-## plot greatest upper/lower autocorrelation
-## of all sampled parameters of term s(x)
-plot(b, term = "s(x)", which = "coef-samples", all.acf = TRUE)
+## plot maximum autocorrelation of
+## all sampled parameters of term s(x)
+plot(b, term = "s(x)", which = "coef-samples", max.acf = TRUE)
 
 ## extract samples of term s(x)
 sax <- samples(b, term = "s(x)")
@@ -76,9 +76,9 @@ plotsamples(sax$coef.samples, selected = "s(x)", acf = TRUE, lag.max = 200)
 ## plot variance sampling path
 plotsamples(sax$variance.samples, selected = "s(x)", var = TRUE)
 
-## plot greatest upper/lower autocorrelation
-## of all sampled parameters of term s(x)
-plotsamples(sax$coef.samples, selected = "s(x)", all.acf = TRUE)
+## plot maximum autocorrelation of
+## all sampled parameters of term s(x)
+plotsamples(sax$coef.samples, selected = "s(x)", max.acf = TRUE)
 }
 }
 

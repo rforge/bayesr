@@ -1,7 +1,7 @@
 dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-plot(fm2, term = "s(id)", map = BeechBnd)
+plot(b2, term = 1, which = "var-samples", max.acf = TRUE)
 
 
 
