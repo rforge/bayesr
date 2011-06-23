@@ -169,15 +169,15 @@ save(b, file = "illustration-model.rda")
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b, term = "s(bmi)")
 @ 
-<<plot-illustration-agechild, echo=FALSE, fig=TRUE, width=5, height=4>>=
+<<plot-illustration-agechild, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b, term = "s(agechild)", resid = TRUE, cex = 0.1, rug = FALSE)
 @ 
 \\[2ex]
 \setkeys{Gin}{width=0.47\textwidth}
 \hspace*{0.3cm}
-<<plot-illustration-district-image, echo=FALSE, fig=TRUE, width=5.3, height=4>>=
-par(mar = c(4.1, 4, 0.1, 1.8))
+<<plot-illustration-district-image, echo=FALSE, fig=TRUE, width=5.3, height=4, pdf=FALSE, png=TRUE>>=
+par(mar = c(4.1, 4, 0.1, 2.1))
 plot(b, term = "s(district)", image = T, grid = 100, at = c(-0.5, 0, 0.5),
   image.map = ZambiaBnd, outscale = 0.1, linear = FALSE, extrap = TRUE,
   zlim = c(-1, 1), range = c(-0.5, 0.5), lrange = c(-0.6, 0.6), swap = TRUE)
@@ -840,7 +840,7 @@ MCMC by calling
 <<fit-zambia-model, echo=TRUE, eval=FALSE>>=
 zm <- bayesx(mf, family = "gaussian", method = "MCMC", 
   iterations = 12000, burnin = 2000, step = 10, 
-  data = ZambiaNutrition)
+  seed = 123, data = ZambiaNutrition)
 @
 <<cache-zambia-model, echo=FALSE, eval=TRUE>>=
 if(file.exists("zambia-model.rda")) {
@@ -857,7 +857,8 @@ be saved. In most applications 12000 iterations should be enough for a valid fit
 small autocorrelations of stored parameters, at least in the model building stage. However, it is 
 absolutely necessary to take a look at sampled parameters and autocorrelation functions to check the 
 mixing behavior (see below). Moreover, it is generally advisable to specify a higher number of 
-iterations for the final model that appears in publications. 
+iterations for the final model that appears in publications. Argument \code{seed} sets the state of
+the random number generator in BayesX, which is meaningful for exact replication of the examples.
 
 After the model has been successfully fitted, summary statistics of the MCMC estimated model object 
 may be printed with 
@@ -869,18 +870,18 @@ terms variances and random effects variances, as well as goodness of fit criteri
 information about the model. The estimated effects for covariates \code{agechild} and \code{bmi} may 
 then be visualized with
 <<zambia-agechild-bmi-plot, echo=TRUE, eval=FALSE>>=
-plot(zm, term = c("s(agechild)", "s(bmi)"))
+plot(zm, term = c("s(bmi)", "s(agechild)"))
 @
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.46\textwidth}
 \begin{center}
-<<zambia-agechild, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(zm, term = "s(agechild)")
-@
 <<zambia-bmi, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(zm, term = "s(bmi)")
+@
+<<zambia-agechild, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1))
+plot(zm, term = "s(agechild)")
 @
 \end{center}
 \caption{\label{fig:zambia-agechild} Example on childhood malnutrition: Effect of the body mass 
@@ -982,23 +983,23 @@ log-file may be printed with
 \begin{Sinput}
 R> bayesx_logfile(zm)
 
-NOTE: created directory /tmp/RtmpL9V3db/bayesx/temp
-NOTE: created directory /tmp/RtmpL9V3db/bayesx/output
-> logopen using /tmp/RtmpL9V3db/bayesx/bayesx.estim.input.prg.log
+NOTE: created directory /tmp/RtmpAWetBo/bayesx/temp
+NOTE: created directory /tmp/RtmpAWetBo/bayesx/output
+> logopen using /tmp/RtmpAWetBo/bayesx/bayesx.estim.input.prg.log
 > bayesreg b
 > map bayesxmap
-> bayesxmap.infile using /tmp/RtmpL9V3db/bayesx/bayesxmap.bnd
-NOTE: 57 regions read from file /tmp/RtmpL9V3db/bayesx/bayesxmap.bnd
+> bayesxmap.infile using /tmp/RtmpAWetBo/bayesx/bayesxmap.bnd
+NOTE: 57 regions read from file /tmp/RtmpAWetBo/bayesx/bayesxmap.bnd
 > dataset d
-> d.infile using /tmp/RtmpL9V3db/bayesx/bayesx.estim.data.raw
-NOTE: 9 variables with 4847 observations read from file
-/tmp/RtmpL9V3db/bayesx/bayesx.estim.data.raw
+> d.infile using /tmp/RtmpAWetBo/bayesx/bayesx.estim.data.raw
+NOTE: 19 variables with 4847 observations read from file
+/tmp/RtmpAWetBo/bayesx/bayesx.estim.data.raw
 
-> b.outfile = /tmp/RtmpL9V3db/bayesx/bayesx.estim
-> b.regress stunting = bmi(psplinerw2,nrknots=8,degree=3) + 
-    agechild(psplinerw2,nrknots=8,degree=3) + district(spatial,map=bayesxmap) + 
-    district(random) + memployment1 + education1 + education2 + urban1 + gender1, 
-    family=gaussian iterations=12000 burnin=2000 step=10 setseed=123 predict using d
+> b.outfile = /tmp/RtmpAWetBo/bayesx/bayesx.estim
+> b.regress stunting = memployment1 + education1 + education2 + urban1 + gender1 + 
+  bmi(psplinerw2,nrknots=8,degree=3) + agechild(psplinerw2,nrknots=8,degree=3) + 
+  district(spatial,map=bayesxmap) + district(random), 
+  family=gaussian iterations=12000 burnin=2000 step=10 predict using d
 NOTE: no observations for region 11
 NOTE: no observations for region 84
 NOTE: no observations for region 96
@@ -1019,6 +1020,8 @@ RESPONSE DISTRIBUTION:
   Number of observations: 4847
   Number of observations with positive weights: 4847
   Response function: identity
+  Hyperparameter a: 0.001
+  Hyperparameter b: 0.001
 .
 .
 .
@@ -1233,8 +1236,6 @@ Summarizing these results identify a strong influence of the spatial effect of t
 fit, indicating that a clear splitting of locational specific covariates and the spatial effect is 
 hardly possible in this example. 
 
-\clearpage
-
 \subsection{Childhood malnutrition in Zambia - Analysis with STEP} \label{subsec:zambia-step}
 
 To illustrate the implemented methodology for simultaneous selection of variables and smoothing
@@ -1253,13 +1254,13 @@ mf <- stunting ~ memployment + education + urban + gender +
   s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district)
 zms <- bayesx(mf, family = "gaussian", method = "STEP", 
   algorithm = "cdescent1", startmodel = "empty", 
-  data = ZambiaNutrition)
+  seed = 123, data = ZambiaNutrition)
 @
 <<fit-zambia-model-step-02, echo=FALSE, eval=FALSE>>=
 zmsccb <- bayesx(mf, family = "gaussian", method = "STEP", 
   algorithm = "cdescent1", startmodel = "empty", 
   CI = "MCMCselect", iterations = 10000, step = 10,
-  data = ZambiaNutrition)
+  seed = 123, data = ZambiaNutrition)
 @
 <<cache-zambia-model-step, echo=FALSE, eval=TRUE>>=
 if(file.exists("zambia-model-step.rda")) {
@@ -1289,7 +1290,7 @@ with an adjacent computation of conditional confidence bands the user may type
 zmsccb <- bayesx(mf, family = "gaussian", method = "STEP", 
   algorithm = "cdescent1", startmodel = "empty", 
   CI = "MCMCselect", iterations = 10000, step = 10,
-  data = ZambiaNutrition)
+  seed = 123, data = ZambiaNutrition)
 @
 which results in the following summary statistics
 <<zambia-model-step-summary-2, echo=TRUE, eval=TRUE>>=
