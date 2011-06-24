@@ -61,7 +61,7 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, max.acf = FALSE, ...)
       args$x <- stats::ts(data = x[,k])
       args$plot <- FALSE
       if(is.null(args$lag.max))
-        args$lag.max <- length(x[,k])
+        args$lag.max <- 50L
       acfx <- do.call(stats::acf, args)
       lx <- as.vector(acfx$lag)
       ax <- as.vector(acfx$acf)

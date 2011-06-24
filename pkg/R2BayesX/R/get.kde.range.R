@@ -13,3 +13,16 @@ get.kde.range <- function(x, ngrid = 100L, probs = c(0.05, 0.95))
   return(c(q01, q99))
 }
 
+
+get.kde.range2 <- function(x, ngrid = 100L, probs = c(0.05, 0.95)) 
+{
+  ex <- stats::ecdf(x)
+  F <- ex(x)
+  q01 <- x[F >= probs[1L]]
+  q01 <- q01[1L]
+  q02 <- x[F >= probs[2L]]
+  q02 <- q02[1L]
+
+  return(c(q01, q02))
+}
+

@@ -95,6 +95,9 @@ bayesx.construct(object, dir, prg, data)
     \item \code{"te"}: defines a two-dimensional P-spline based on the tensor product of 
       one-dimensional P-splines with a two-dimensional first order random walk penalty for the 
       parameters of the spline.
+    \item \code{"factor"}: special BayesX specifier for \code{\link[base]{factor}}s, especially 
+      meaningful if \code{method = "STEP"} in \code{\link{bayesx}}, since the factor term is then 
+      treated as a full term, which is either included or removed from the model.
   }
 
   Within the \code{xt} argument in functions \code{\link[mgcv]{s}} and \code{\link{r}}, additional
@@ -157,6 +160,9 @@ bayesx.construct(s(x, z, bs = "kr"))
 
 ## seasonal
 bayesx.construct(s(x, bs = "season"))
+
+## factors
+bayesx.construct(s(id, bs = "factor"))
 
 ## now with some geographical information
 ## note: maps must be either supplied in

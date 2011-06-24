@@ -1,27 +1,32 @@
 dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-plot(b2, term = 1, which = "var-samples", max.acf = TRUE)
+x <- sort(rnorm(1000))
+x <- c(x, rnorm(10, mean =10))
+get.kde.range2(x)
+qnorm(c(0.05, 0.95))
 
 
+load("/home/nikolaus/Rscripts/stefan/niki.RData")
 
-script <- getscript(b1, device = postscript, width = 6, height = 6)
-script
-
-b <- read.bayesx.output("/tmp/Rtmpxmmo7W/bayesx")
-
-
-b1 <- bayesx(y ~ s(x1, bs = "ps") + 
-  s(id, bs = "mrf", xt = list(map = MunichBnd)), 
-  method = "MCMC", data = dat, dir.rm = FALSE)
-
-
-script <- getscript(b1)
-
-
-
-model.frame.bayesx(y ~ s(x) + r(id ~ s(x2)), data = dat2)
-
+fit_s_probit1<-bayesx(stunt ~ -1+c_sex + residence0 + residence1 + residence2 + precare +
+bornhome + fhh +
+s(age_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(age_c,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(bmi_mo_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(biage_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(vac_numb_c,k=8,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(bi_pre_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(ai_distdiff,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(educm_y_distdiff,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(hhs_c,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(b_order_c,k=13,m=c(1,2),bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+r(distH, ~ -1 + s(distH,bs="mrf",xt=list(map=mapindia,lambda=1000,centermethod="meanf")) +
+s(dist_ai_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf"))+
+s(dist_eduyears_c,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf"))+
+r(region~s(gdpcap_c,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")),data=dregion)
+,data=ddist)
+,data=d , verbose=T,method="HMCMC", iter=53000, step=50, burnin=3000, seed=1234, family="binomial_probit")
 
 
 

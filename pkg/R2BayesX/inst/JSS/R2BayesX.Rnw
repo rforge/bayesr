@@ -164,7 +164,7 @@ save(b, file = "illustration-model.rda")
 @
 \begin{figure}[t!]
 \setkeys{Gin}{width=0.46\textwidth}
-\begin{center}
+\centering
 <<plot-illustration-bmi, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b, term = "s(bmi)")
@@ -189,7 +189,6 @@ plot(b, term = "s(district)", range = c(-0.5, 0.5), lrange = c(-0.6, 0.6),
   zlim = c(-1, 1), swap = TRUE, theta = 40, extrap = TRUE, linear = FALSE, 
   ticktype = "detailed", zlab = "\ns(x,y)", xlab = "\nx", ylab = "\ny")
 @
-\end{center}
 \caption{\label{fig:illustration} Visualization examples: Estimated effect for covariate \code{bmi}, 
 black line, together with 95\% and 80\% credible intervals shaded in dark gray and light gray 
 respectively, upper left panel. The upper right panel shows the estimated effect of \code{agechild} 
@@ -217,9 +216,9 @@ linear models (GLM) (e.g. see \citet{R2BayesX:Fahrmeir+Kneib+Lang:2009} and
 parameters $\boldsymbol{\gamma}$, the distribution of the response variable $y$ belongs to an 
 exponential family with mean 
 $\mu = E(y | \mathbf{x}, \boldsymbol{\gamma})$ linked to a linear predictor $\eta$ by
-\begin{equation} \label{eqn:glm}
+\begin{equation*} \label{eqn:glm}
 \mu = h(\eta) \qquad \eta = \mathbf{x}^{\prime}\boldsymbol{\gamma},
-\end{equation}
+\end{equation*}
 where $h$ is a known link function and $\boldsymbol{\gamma}$ are unknown regression coefficients. In 
 STAR models \citep{R2BayesX:Fahrmeir+Kneib+Lang:2004, R2BayesX:Brezger+Lang:2006}, the linear 
 predictor is replaced by a more general and flexible, structured additive predictor
@@ -248,23 +247,23 @@ The unified representation of a STAR predictor arises from the fact that all fun
 (\ref{eqn:structadd}) may be specified by a basis function approach, where the vector of function  
 evaluations $\mathbf{f}_j = (f_j(\mathbf{z}_{1}),\ldots,f_j(\mathbf{z}_{n}))$ of the 
 $i = 1,\ldots,n$ observations can be written in matrix notation 
-\begin{equation} \label{eqn:matnot}
+\begin{equation*} \label{eqn:matnot}
 \mathbf{f}_j = \mathbf{Z}_j\boldsymbol{\beta}_j,
-\end{equation}
+\end{equation*}
 where the design matrix $\mathbf{Z}_j$ depends on the prior assumptions about smoothness of $f_j$ 
 and $\boldsymbol{\beta}_j$ are unknown regression coefficients to be estimated. Hence, the predictor 
 of (\ref{eqn:structadd}) may be rewritten as
-\begin{equation} \label{eqn:structaddmat}
+\begin{equation*} \label{eqn:structaddmat}
 \boldsymbol{\eta} = \mathbf{Z}_1\boldsymbol{\beta}_1 + \ldots \mathbf{Z}_p\boldsymbol{\beta}_p 
 + \mathbf{X}\boldsymbol{\gamma},
-\end{equation}
+\end{equation*}
 where $\mathbf{X}$ corresponds to the usual design matrix for the linear effects.
 
 The general form of the prior for $\boldsymbol{\beta}_j$ is
-\begin{equation} \label{eqn:prior}
+\begin{equation*} \label{eqn:prior}
 p(\boldsymbol{\beta}_j | \tau_j^2) \propto exp \left(- \frac{1}{2\tau_j^2} 
 \boldsymbol{\beta_j}^{\prime}\mathbf{K}_j\boldsymbol{\beta}_j\right),
-\end{equation}
+\end{equation*}
 where $\mathbf{K}_j$ is a quadratic penalty matrix that shrinks parameters towards zero or penalizes 
 too abrupt jumps between neighboring parameters. In most cases $K_j$ will be rank deficient and the 
 prior for $\boldsymbol{\beta}_j$ is partially improper.
@@ -437,8 +436,11 @@ distributions for the different methods is given in Table~\ref{tab:family}.
 \end{center}
 \end{table}
 The last argument specifies several parameters controlling the processing of the BayesX binary that 
-are arranged by function \fct{bayesx.control}. The most important parameters for the different
-methods are listed in Table~\ref{tab:control}.
+are arranged by function \fct{bayesx.control}. Note that a call to \fct{bayesx.control} to set the
+additional options is not necessary in function \fct{bayesx}, i.e. all controlling parameters may be 
+directly declared in \fct{bayesx}, since any argument set within "\code{...}" is automatically send 
+to \fct{bayesx.control}. The most important parameters for the different methods are listed in 
+Table~\ref{tab:control}.
 \begin{table}[!ht]
 \renewcommand\multirowsetup{\centering}
 \begin{center}
@@ -487,12 +489,16 @@ The returned fitted model object is a list of class \code{"bayesx"}, which is su
 standard extractor functions, such as \fct{plot} and \fct{summary}. The implemented S3 methods for 
 plotting fitted term objects are quite flexible, i.e. depending on the term structure, the generic 
 function \fct{plot} calls one of the following functions: for 2d plots function \fct{plot2d} or 
-\fct{plotblock}, for perspective or image and contour plots function \fct{plot3d}, map effects plots 
-are produced by function \fct{plotmap}, with or without colorlegends drawn by function 
-\fct{colorlegend}, amongst others. Function \fct{summary} generates \code{"gam"} like summary 
-statistics for models estimated using method \code{"REML"}. For \code{"MCMC"} estimated models, the 
-mean, standard deviation and quantiles of parameter samples are provided. In some situations it may 
-be useful to inspect the log-file generated by the BayesX binary. The file can either be viewed 
+\fct{plotblock} (for factors, unit- or cluster specific plots, draws a block for every estimated 
+parameter including mean and credible intervals), for perspective or image and contour plots 
+function \fct{plot3d}, map effects plots are produced by function \fct{plotmap}, with or without 
+colorlegends drawn by function \fct{colorlegend}, amongst others. Function \fct{summary} generates 
+\code{"gam"} like summary statistics for models estimated using method \code{"REML"}. For 
+\code{"MCMC"} estimated models, the mean, standard deviation and quantiles of parameter samples are 
+provided. Using \code{"STEP"}, the parametric part of the summary statistics is represented like 
+\code{"MCMC"}, i.e. if computed, the confidence bands are based on an MCMC-algorithm subsequent to 
+the model selection, while the remaining summary is similar to \code{"REML"}. In some situations it 
+may be useful to inspect the log-file generated by the BayesX binary. The file can either be viewed 
 directly during processing if argument \code{verbose} is set to \code{TRUE} in function 
 \fct{bayesx.control}, or extracted from the fitted model object using function 
 \fct{bayesx\_logfile}. In addition, an \proglang{R} script for the estimated model, including 
@@ -552,7 +558,7 @@ formula language. The usage of \fct{s} in \pkg{R2BayesX} is in principle similar
 \begin{Sinput}
 s(..., k = -1, bs = "ps", m = NA, by = NA, xt = NULL)
 \end{Sinput}
-Within \fct{s}, the list of covariates used for the model term is set with the dots \code{...} 
+Within \fct{s}, the list of covariates used for the model term is set with the dots "\code{...}" 
 argument. For instance, in the introductory example, a term for the body mass index of the mother is 
 included in the model formula by \code{s(bmi)}, a term with two covariates is then specified e.g. 
 with \code{s(bmi, age)}. The parameter \code{k} controls the dimension of the basis used for smooth 
@@ -602,6 +608,9 @@ Table~\ref{tab:terms}.
 \code{"te"} & defines a two-dimensional P-spline based on the tensor product of one-dimensional 
               P-splines with a two-dimensional first order random walk penalty for the parameters of 
               the spline. \\ \hline
+\code{"factor"} & special BayesX specifier for factors, especially meaningful if 
+                  \code{method = "STEP"}, since the factor term is then treated as a full term, 
+                  which is either included or removed from the model. \\ \hline
 \end{tabular}
 \caption{\label{tab:terms} Possible BayesX model terms within function \fct{s}.}
 \end{center}
@@ -665,12 +674,11 @@ run.bayesx(dir, prg.name = "bayesx.estim.input.prg",
 where \code{dir} is a character string with the directory the program file is stored in and
 \code{prg.name} is the name of the corresponding program file. During processing of BayesX several 
 informations will be printed to the \proglang{R} console if \code{verbose = TRUE}. Argument 
-\code{bin} specifies the location of the BayesX \code{bin}ary the program file is sent to, also see 
+\code{bin} specifies the location of the BayesX \code{bin}ary the program file is sent to, see also 
 Subsection~\ref{subsec:linking}. The function returns a list including the log file returned by 
 BayesX as well as information on the total runtime. 
 
 \hypertarget{read.bayesx.output}{Model} output files are imported using function 
-\fct{read.bayesx.output}
 \begin{Sinput}
 read.bayesx.output(dir, model.name = NULL)
 \end{Sinput}
@@ -819,12 +827,11 @@ plot(ZambiaBnd)
 @ 
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.46\textwidth}
-\begin{center}
+\centering
 <<plot-zambia-map-02, echo=FALSE, eval=TRUE, fig = TRUE, width=5, height=4>>=
 par(mar = c(0, 0, 0, 0))
 plot(ZambiaBnd)
 @ 
-\end{center}
 \caption{\label{fig:zambia-simple-map} Example on childhood malnutrition: A simple map of the 
 districts in Zambia.}
 \end{figure}
@@ -874,7 +881,7 @@ plot(zm, term = c("s(bmi)", "s(agechild)"))
 @
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.46\textwidth}
-\begin{center}
+\centering
 <<zambia-bmi, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(zm, term = "s(bmi)")
@@ -883,7 +890,6 @@ plot(zm, term = "s(bmi)")
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(zm, term = "s(agechild)")
 @
-\end{center}
 \caption{\label{fig:zambia-agechild} Example on childhood malnutrition: Effect of the body mass 
 index of the child's mother and of the age of the child together with pointwise 80\% and 95\% 
 credible intervals.}
@@ -896,9 +902,9 @@ plot(zm, term = c("s(district)", "r(district)"),
   map = ZambiaBnd, pos = "topleft", 
   density = 20, angle = 90)
 @
-\begin{figure}[!ht]
+\begin{figure}[!t]
 \setkeys{Gin}{width=0.46\textwidth}
-\begin{center}
+\centering
 <<zambia-district-structured, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(0, 0, 0, 0))
 plot(zm, term = "s(district)", map = ZambiaBnd, 
@@ -912,10 +918,39 @@ plot(zm, term = "r(district)", map = ZambiaBnd,
   distance.labels = 2L, swap = TRUE, 
   density = 20, angle = 90)
 @
-\end{center}
+\\[2ex] 
+
+\hspace*{-6ex}
+<<zambia-district-structured-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.4, 1.1))
+f <- fitted(zm, term = "s(district)")$Mean
+plot(density(f, n = length(f), from = min(f), to = max(f)), main = "")
+abline(v = R2BayesX:::get.kde.range(f), lty = 2)
+@ 
+<<zambia-district-unstructured-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.4, 1.1))
+f <- fitted(zm, term = "r(district)")$Mean
+plot(density(f, n = length(f), from = min(f), to = max(f)), main = "")
+abline(v = R2BayesX:::get.kde.range(f), lty = 2)
+@ 
+\\[2ex] 
+<<zambia-district-unstructured-samescale, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(0, 0, 0, 0))
+f <- fitted(zm, term = "s(district)")$Mean
+frange <- c(-1 * max(abs(f)), max(abs(f)))
+plot(zm, term = "r(district)", map = ZambiaBnd, 
+  pos = "topleft", width = 0.6, height = 0.2, 
+  distance.labels = 2L, swap = TRUE, 
+  density = 20, angle = 90, lrange = frange, 
+  range = R2BayesX:::get.kde.range(f))
+@ %$
 \caption{\label{fig:zambia-district-structured-unstructured} Example on childhood malnutrition:
-Estimated mean effect of the structured spatial effect, left panel, together with the estimated 
-mean effect of the unstructred spatial effect of the districts in Zambia.}
+Estimated mean effect of the structured spatial effect, upper left panel, together with the 
+estimated mean effect of the unstructured spatial effect of the districts in Zambia, upper right 
+panel. Kernel density estimates of the mean of the structured effect are shown in the middle left 
+panel, of the unstructured spatial effect in the middle right panel respectively. The 5\% and 95\% 
+quantiles of the kernel density estimate are represented by the dashed lines. Lower panel, 
+unstructured spatial effect using the legend scaling of the structured effect.}
 \end{figure}
 Note that for a map effect plot, the \proglang{R} boundary object needs to be supplied to the 
 plotting function, otherwise the effect will also be visualized using function \fct{blockplot}. 
@@ -935,12 +970,11 @@ white noise, i.e. more or less uncorrelated samples that show no particular patt
 samples are exactly as they should be.   
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.75\textwidth}
-\begin{center}
+\centering
 <<zambia-bmi-coef-samples-do, echo=FALSE, fig=TRUE, width=7, height=8>>=
 par(oma = c(0.01, 0.01, 0.01, 0.01))
 plot(zm, term = "s(bmi)", which = "coef-samples", main = NA)
 @
-\end{center}
 \caption{\label{fig:zambia-bmi-coef-samples} Example on childhood malnutrition: Sampling paths of 
 the first 10 coefficients of term \code{s(bmi)}.} 
 \end{figure}
@@ -955,7 +989,7 @@ plot(zm, which = "max-acf", acf = TRUE)
 @
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.46\textwidth}
-\begin{center}
+\centering
 <<zambia-autocorr-03, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(zm, term = "s(bmi)", which = "var-samples", 
@@ -965,13 +999,12 @@ plot(zm, term = "s(bmi)", which = "var-samples",
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(zm, which = "max-acf", main = "")
 @
-\end{center}
 \caption{\label{fig:zambia-autocorr} Example on childhood malnutrition: Autocorrelation function
 of the samples of the variance parameter of term \code{s(bmi)}, left panel, maximum autocorrelation
-of all parameters of the model, right panel respectively. Autocorrelations for all lags should be 
-close to zero as is the case in our example.}
+of all parameters of the model, right panel respectively.}
 \end{figure}
-See Figure~\ref{fig:zambia-autocorr}, for the autocorrelation plots.
+Autocorrelations for all lags should be close to zero as is the case in our example. See 
+Figure~\ref{fig:zambia-autocorr}, for the autocorrelation plots.
 
 In some situations problems may occur during processing of the BayesX binary, that are not 
 automatically detected by the main model fitting function \fct{bayesx}. Therefore the user may 
@@ -1030,6 +1063,10 @@ To simplify matters only a fragment of the log-file is shown in the above. The l
 provides information on the used data, model specifications, algorithms and possible error 
 messages.
 
+
+\clearpage
+
+
 \subsection{Forest health data set - Analysis with REML} \label{subsec:forest}
 
 The forest health dataset comprises information on the defoliation of beech trees, which serves as 
@@ -1081,7 +1118,7 @@ additive predictor
 \end{eqnarray*}
 where  $f_1, \dots, f_5$  are possibly nonlinear smooth of the continuous covariates
 and $\mathbf{x}_{it}^{\prime}\boldsymbol{\gamma}$ comprises covariates with parametric 
-effects using deviation (effect) coding for factor covariates, also see 
+effects using deviation (effect) coding for factor covariates, see also 
 Subsection~\ref{subsec:processing}.
 
 To estimate the model within \proglang{R} the data is loaded and the model formula specified with
@@ -1128,7 +1165,7 @@ plot(fm2, term = c("s(age)", "s(inclination)",
 and are shown in Figure~\ref{fig:forest-no-spatial}. 
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.46\textwidth}
-\begin{center}
+\centering
 <<forest-no-spatial-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
 plot(fm1, term = "s(age)")
@@ -1153,7 +1190,6 @@ plot(fm1, term = "s(year)")
 par(mar = c(4.1, 4.1, 0.1, 2.1))
 plot(fm1, term = "s(elevation)")
 @
-\end{center}
 \caption{\label{fig:forest-no-spatial} Forest damage: Estimates of nonparametric effects including
 80\% and 95\% point-wise confidence intervals of the model without the spatial effect.}
 \end{figure}
@@ -1193,7 +1229,7 @@ the estimate of the \code{age} effect seems to be improved in terms of monotonic
 Figure~\ref{fig:forest-spatial-nonpara}. 
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.46\textwidth}
-\begin{center}
+\centering
 <<forest-spatial-inclination, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
 plot(fm2, term = "s(inclination)")
@@ -1208,7 +1244,6 @@ plot(fm2, term = "s(elevation)")
 par(mar = c(4.1, 4.1, 0.1, 2.1))
 plot(fm2, term = "s(age)")
 @
-\end{center}
 \caption{\label{fig:forest-spatial-nonpara} Forest damage: Estimated effects of covariates 
 \code{inclination}, \code{elevation} and \code{age}, including 80\% and 95\% point-wise confidence 
 intervals, of the model including the spatial effect.}
@@ -1221,14 +1256,22 @@ plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft")
 @
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.65\textwidth}
-\begin{center}
+\centering
 <<forest-spatial-id, echo=FALSE, fig=TRUE, width=7.3, height=4.5>>=
 par(mar = c(0.1, 0.1, 0.1, 0.1))
 plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft",
   height = 0.24, width = 0.41)
 @
-\end{center}
-\caption{\label{fig:forest-spatial} Forest damage: Estimate of the spatial effect.}
+\\[2ex] \setkeys{Gin}{width=0.46\textwidth}
+<<forest-spatial-id-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.4, 1.1))
+f <- fitted(fm2, term = "s(id)")$Estimate
+plot(density(f, n = length(f), from = min(f), to = max(f)), main = "")
+abline(v = R2BayesX:::get.kde.range(f), lty = 2)
+@ %$
+\caption{\label{fig:forest-spatial} Forest damage: Estimate of the spatial effect together with the
+kernel density estimate of the effect. The 5\% and 95\% quantiles of the kernel density estimate are 
+represented by the dashed lines.}
 \end{figure}
 as shown in Figure~\ref{fig:forest-spatial}. 
 
@@ -1249,8 +1292,8 @@ function, the implemented procedures decide if a term is included or removed fro
 estimate the model applying the option \code{method = "STEP"}, we use the same  model formula of 
 Subsection~\ref{subsec:zambia} and call
 <<fit-zambia-model-step-01, echo=TRUE, eval=FALSE>>=
-mf <- stunting ~ memployment + education + urban + gender + 
-  s(bmi, bs = "ps") + s(agechild, bs = "ps") +
+mf <- stunting ~ memployment + urban + gender + 
+  s(education, bs = "factor") + s(bmi, bs = "ps") + s(agechild, bs = "ps") +
   s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district)
 zms <- bayesx(mf, family = "gaussian", method = "STEP", 
   algorithm = "cdescent1", startmodel = "empty", 

@@ -4,9 +4,10 @@ function(response, object, prg.file, data.file, thismodel, terms.specs)
   add.terms <- terms.specs$terms
   bt <- NULL
   vars <- terms.specs$vars
-  if(!is.null(object$hlevel))
-    if("(Intercept)" %in% vars)
-      bt <- c(bt,"const")
+  if(!is.null(object$hlevel)) {
+    if(("(Intercept)" %in% vars) || ("Ii11iIInterceptIi11iI" %in% vars))
+      bt <- c(bt, "const")
+  }
   if(!is.null(add.terms)) {
     for(k in 1L:length(add.terms)) {
       st <- eval(parse(text = add.terms[k]))

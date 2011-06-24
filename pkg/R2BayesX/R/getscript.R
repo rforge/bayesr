@@ -43,10 +43,10 @@ function(object, file = NULL, device = NULL, ...)
       else
         cat("## MCMC model diagnostic plots:\n", file = script)
       if(dode) {
-        cat(dcall, "file = \"", paste(dir, "/model-", i, "-all-acf\"", sep = ""), 
+        cat(dcall, "file = \"", paste(dir, "/model-", i, "-max-acf\"", sep = ""), 
           ")\n", sep = "", file = script)
       }
-      cat("plot(", on, ", model = ", i, ", which = \"all-acf\")\n", sep = "", file = script)
+      cat("plot(", on, ", model = ", i, ", which = \"max-acf\")\n", sep = "", file = script)
       if(dode)
         cat("graphics.off()\n", file = script)
     }
@@ -83,6 +83,24 @@ function(object, file = NULL, device = NULL, ...)
       }
       if(ccheck) {
         cat("\n## Coefficient sampling diagnostics\n", file = script)
+        if(!is.null(attr(object[[i]]$fixed.effects, "sample"))) {
+          if(dode) {
+            cat(dcall, "file = \"", paste(dir, "/model-", i, "-intcpt-samples\"", sep = ""), ")\n", 
+              sep = "", file = script)
+          }
+          cat("plot(", on, ", model = ", i, ", which = \"intcpt-samples\")\n", sep = "", 
+            file = script)
+          if(dode)
+            cat("graphics.off()\n", file = script)
+          if(dode) {
+            cat(dcall, "file = \"", paste(dir, "/model-", i, "-intcpt-acf\"", sep = ""), ")\n", 
+              sep = "", file = script)
+          }
+          cat("plot(", on, ", model = ", i, ", which = \"intcpt-samples\", acf = TRUE)\n", sep = "", 
+            file = script)
+          if(dode)
+            cat("graphics.off()\n", file = script)
+        }
         for(k in 1L:length(tn)) {
           if(!is.null(attr(object[[i]]$effects[[k]], "sample"))) {
             if(dode) {
@@ -103,10 +121,10 @@ function(object, file = NULL, device = NULL, ...)
               cat("graphics.off()\n", file = script)
             if(dode) {
               cat(dcall, "file = \"", paste(dir, "/model-", i, "-term-", 
-                tn[k],"-coef.all.acf\"", sep = ""), ")\n", sep = "", file = script)
+                tn[k],"-coef.max.acf\"", sep = ""), ")\n", sep = "", file = script)
             }
             cat("plot(", on, ", model = ", i, ", term = ", "\"", tn[k], 
-              "\", which = \"coef-samples\", all.acf = TRUE)\n", sep = "", file = script)
+              "\", which = \"coef-samples\", max.acf = TRUE)\n", sep = "", file = script)
             if(dode)
               cat("graphics.off()\n", file = script)
           }
