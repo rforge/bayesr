@@ -24,14 +24,47 @@ function(x, diagnostics = FALSE, ...)
               attr(x, na) <- eval(parse(text = paste("xattr$", na, sep = "")))
         }
       }
-      if(!is.null(attr(x, "map.name"))) {
+      if(is.logical(args$map))
+        domap <- args$map
+      else {
+        if(is.null(args$map))
+          domap <- FALSE
+        else
+          domap <- TRUE
+      }
+      if(!is.null(attr(x, "map.name")) && domap) {          
         args$map <- try(eval(parse(text = attr(x, "map.name")), envir = globalenv()), silent = TRUE)
         if(class(args$map) == "try-error")
           args$map <- NULL
       }
-      if(is.null(args$map)) {
+      domap <- FALSE
+      if(!is.null(args$map)) {
+        if(is.logical(args$map))
+          domap <- args$map
+        else domap <- TRUE
+      } else domap <- FALSE
+      if(!domap) {
         args$x <- x
-        do.call("plotblock", args)
+        args$x <- do.call(R2BayesX:::compute.x.id, delete.args(R2BayesX:::compute.x.id, args))$x
+        if(is.null(args$from))
+          args$from <- min(args$x, na.rm = TRUE)
+        if(is.null(args$to))
+          args$to <- max(args$x, na.rm = TRUE)
+        if(is.null(args$main))
+          args$main <- paste("Kernel density estimate of term", attr(x, "specs")$label)
+        args2 <- args
+        args2$x <- do.call(stats:::density, delete.args(stats::density.default, args))
+        do.call(stats::plot.density, delete.args(stats::plot.density, args2))
+        if(!is.null(args$kde.quantiles))
+          if(args$kde.quantiles) {
+            if(is.null(args$lty))
+              args$lty <- 2L
+            if(is.null(args$col))
+              args$col <- "black"
+            abline(v = do.call(R2BayesX:::kde.quantiles, 
+              delete.args(R2BayesX:::kde.quantiles, args)), 
+              lty = args$lty, col = args$col)
+          }       
       } else {
         args$x <- x
         do.call("plotmap", args)

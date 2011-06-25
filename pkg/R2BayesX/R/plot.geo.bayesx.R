@@ -9,7 +9,7 @@ function(x, diagnostics = FALSE, ...)
         plottype <- "plot3d"
         args$x <- x[, 2L:ncol(x)]
       } else {
-        plottype <- "plotmap"
+        plottype <- "plot.mrf.bayesx"
         args$x <- x[,c(1L, 4L:ncol(x))]
         class(args$x) <- "mrf.bayesx"
       }

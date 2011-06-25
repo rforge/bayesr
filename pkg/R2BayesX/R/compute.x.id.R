@@ -1,6 +1,6 @@
 compute.x.id <-
-function(x, id, c.select, range, symmetric)
-{
+function(x, id = NULL, c.select = NULL, range = NULL, symmetric = TRUE)
+{ 
   if(is.null(id) && (is.vector(x) || is.array(x))) {
     if(!is.null(names(x))) {
       id <- names(x)
@@ -45,9 +45,14 @@ function(x, id, c.select, range, symmetric)
     if(is.null(c.select)) {
       take <- c("mean", "Mean", "MEAN", "estimate", 
         "Estimate", "ESTIMATE", "mean", "pmode", "pmean_tot")
+      did.take <- FALSE
       for(k in take)
-        if(!is.na(pmatch(k, nx)))
+        if(!is.na(pmatch(k, nx))) {
           x <- x[[k]]
+          did.take <- TRUE
+        }
+     if(!did.take && length(x) > 1L)
+       x <- x[[2L]]
     } else {
       if(is.character(c.select)) {
         k <- pmatch(c.select, nx)
@@ -61,7 +66,9 @@ function(x, id, c.select, range, symmetric)
       }
     }
   }
+  xrange <- range(x, na.rm = TRUE)
   if(symmetric) {
+    xrange <- c(-1 * max(abs(xrange)), max(abs(xrange))) 
     if(is.null(range)) {
       if(min(x) < 0)
         m <- (-1)
@@ -84,6 +91,6 @@ function(x, id, c.select, range, symmetric)
     }
   }
 
-  return(list(id = as.character(id), x = x))
+  return(list(id = as.character(id), x = x, range = xrange))
 }
 

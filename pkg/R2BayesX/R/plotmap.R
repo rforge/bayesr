@@ -41,19 +41,21 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     if(is.null(col))
       col <- colorspace::diverge_hcl
     x <- compute.x.id(x, id, c.select, range, symmetric)
-    if(is.null(range)) {
-      kdeargs <- list(...)
-      kdeargs$x <- x$x
-      range <- do.call("get.kde.range", delete.args(get.kde.range, kdeargs))
-      if(symmetric) {
-        range <- max(abs(range))
-        range <- c((-1) * range, range)
-      }
-      if(is.null(args$lrange)) {
-        args$lrange <- max(abs(range(x$x)))
-        args$lrange <- c(-1 * args$lrange, args$lrange)
-      }
-    }
+#    if(is.null(range)) {
+#      kdeargs <- list(...)
+#      kdeargs$x <- x$x
+#      range <- try(do.call("kde.quantiles", delete.args(kde.quantiles, kdeargs)), silent = TRUE)
+#      if(inherits(range, "try-error"))
+#        range <- NULL
+#      if(symmetric) {
+#        range <- max(abs(range))
+#        range <- c((-1) * range, range)
+#      }
+#      if(is.null(args$lrange)) {
+#        args$lrange <- max(abs(range(x$x)))
+#        args$lrange <- c(-1 * args$lrange, args$lrange)
+#      }
+#    }
     colors <- make_pal(col = col, ncol = ncol, data = x$x, 
       range = range, breaks = breaks, swap = swap, 
       symmetric = symmetric)$map(x$x)
@@ -157,6 +159,8 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
       args$xpd <- TRUE
     args$symmetric <- symmetric
     args$range <- range
+    if(is.null(args$lrange))
+      args$lrange <- x$range
     args$add <- TRUE
     do.call(colorlegend, delete.args(colorlegend, args, c("font")))
   }

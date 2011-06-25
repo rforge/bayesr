@@ -1,10 +1,50 @@
 dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-x <- sort(rnorm(1000))
-x <- c(x, rnorm(10, mean =10))
-get.kde.range2(x)
-qnorm(c(0.05, 0.95))
+colorlegend()
+
+range <- max(abs(range(fitted(zm, term = "s(district)")$Mean)))
+range <- c(-1 * range, range)
+plot(zm, term = "r(district)", map = ZambiaBnd, 
+  pos = "topleft", width = 0.6, height = 0.2, 
+  distance.labels = 2L, swap = TRUE, 
+  density = 20, angle = 90, range = range)
+
+
+
+data("MunichBnd")
+x <- 1:length(MunichBnd)
+id <- names(MunichBnd)
+plotmap(MunichBnd, x = x, id = id)
+
+
+library("R2BayesX")
+load("/home/nikolaus/svn/bayesr/pkg/R2BayesX/inst/JSS/zambia-model.rda")
+data("ZambiaBnd")
+plot(zm, term = "s(district)", map = ZambiaBnd, 
+  pos = "topleft", width = 0.6, height = 0.2, 
+  distance.labels = 2, swap = TRUE)
+
+
+x <- seq(-5, 5, length = 10000)
+y <- dnorm(x, sd = 1)
+plot(x, y, type = "l", ylim = c(0, 0.5))
+probs <- c(0.05, 0.73)
+myq <- approx.quantile(x, y, probs = probs)
+qu <- qnorm(probs)
+abline(v = myq)
+abline(v = qu, lty = 2, col = 2)
+xr <- rnorm(length(x))
+kdeq <- kde.quantiles(xr, probs)
+lines(density(xr), col = 3)
+abline(v = kdeq, lty = 2, col = 3)
+myq
+qu
+kdeq
+
+
+
+
 
 
 load("/home/nikolaus/Rscripts/stefan/niki.RData")

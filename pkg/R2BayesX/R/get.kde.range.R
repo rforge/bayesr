@@ -1,28 +1,40 @@
-get.kde.range <- function(x, ngrid = 100L, probs = c(0.05, 0.95)) 
+kde.quantiles <- function(x, probs = c(0.05, 0.95), ...) 
 {
-  kde <- stats::density(x, n = length(x), from = min(x), to = max(x))
-  f <- stats::splinefun(x = kde$x, y = kde$y)
-  xgrid <- matrix(seq(min(x), max(x), length = ngrid), ncol = 1L)
-  foo <- function(f, lower, x) integrate(f, lower = lower, upper = x)$value
-  xgridint <- apply(xgrid, 1L, foo, f = f, lower = min(x))
-  q01 <- xgrid[xgridint >= probs[1L]]
-  q01 <- q01[1L]
-  q99 <- xgrid[xgridint <= probs[2L]]
-  q99 <- q99[length(q99)]
+  if(is.null(x))
+    stop("nothing to do!")
+  if(is.null(probs))
+    probs <- c(0.05, 0.95)
+  args <- list(...)
+  if(is.null(args$from))
+    args$from <- min(x, na.rm = TRUE)
+  if(is.null(args$to))
+    args$to <- max(x, na.rm = TRUE)
+  args$x <- x
+  kde <- do.call(stats:::density.default, delete.args(stats::density.default, args))
+  quants <- approx.quantile(x = kde$x, y = kde$y, probs = probs)
 
-  return(c(q01, q99))
+  return(quants)
 }
 
 
-get.kde.range2 <- function(x, ngrid = 100L, probs = c(0.05, 0.95)) 
+approx.quantile <- function(x, y, probs = c(0.05, 0.95))
 {
-  ex <- stats::ecdf(x)
-  F <- ex(x)
-  q01 <- x[F >= probs[1L]]
-  q01 <- q01[1L]
-  q02 <- x[F >= probs[2L]]
-  q02 <- q02[1L]
+  afun <- stats::splinefun(x = x, y = y)
+  foo <- function(x, afun, minx, prob) {
+    if(x < minx)
+      x <- minx + 1
+    quant <- stats::integrate(f = afun, lower = minx, upper = x)$value
+    return((quant - prob)^2)
+  }
+  minx = min(x)
+  rangex <- range(x)
+  n <- length(probs)
+  rval <- rep(NA, length = n)
+  for(k in 1:n) {
+    rval[k] <- stats::optimize(f = foo, interval = rangex, afun = afun, 
+      minx = minx, prob = probs[k])$minimum
+  }
 
-  return(c(q01, q02))
+  return(rval)
 }
 

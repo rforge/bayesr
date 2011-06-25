@@ -35,7 +35,7 @@
 Structured additive regression (STAR) models provide a flexible framework for modeling possible 
 nonlinear effects of covariates: They contain the well established frameworks of generalized linear 
 models (GLM) and generalized additive models (GAM) as special cases but also allow a wider class of 
-effects, e.g., for geographical or spatio-temporal data. This allows for the specification of 
+effects, e.g., for geographical or spatio-temporal data. This allows to specify  
 complex and realistic models that can be estimated using Bayesian inference based on modern Markov 
 chain Monte Carlo (MCMC) simulation techniques or with an equivalent mixed model representation. 
 Software for fitting STAR models is provided in the standalone software package BayesX: a 
@@ -49,7 +49,7 @@ terms), fitted using the BayesX binary, represented in \proglang{R} with objects
 classes, and finally printed/summarized/plotted. As a result of the superior graphics capabilities 
 of \proglang{R} package R2BayesX greatly enhances the usability of BayesX. On the other hand some of 
 the more complex models from the STAR class, especially models for multivariate responses, extend 
-the already impressive capabilities  for semiparametric regression in  \proglang{R}'s. Moreover, 
+the already impressive capabilities  for semiparametric regression in  \proglang{R}. Moreover, 
 R2BayesX is the most comprehensive package for Bayesian semiparametric inference in \proglang{R}
 }
 
@@ -113,8 +113,8 @@ The \proglang{R} package is called \pkg{R2BayesX}. Within the new package, users
   \hyperlink{bayesx}{\fct{bayesx}}), 
 \item apply a set of extractor functions and methods on BayesX fitted model objects, e.g. producing 
   high level graphics of estimated effects, model diagnostic plots, summary statistics and more 
-  (Table~\ref{tab:funmethods}), 
-\item additionally run already existing BayesX program files from \proglang{R} 
+  (see Table~\ref{tab:funmethods}), 
+\item run already existing BayesX program files from \proglang{R} 
   (function \hyperlink{run.bayesx}{\fct{run.bayesx}}),
 \item automatically import BayesX output files into \proglang{R} 
   (function \hyperlink{read.bayesx.output}{\fct{read.bayesx.output}}).
@@ -136,7 +136,7 @@ model is given by
   f_{spat}(\texttt{district}_i) + \varepsilon_i, \qquad \varepsilon_i \sim N(0, \sigma^2),
 \end{equation*} 
 where the functions $f_1$ and $f_2$ of continuous covariates \code{agechild} and \code{bmi} have 
-possible nonlinear effects on \code{stunting} and are therefore modeled nonparametrically using 
+possible nonlinear effects on \code{stunting} and are  modeled nonparametrically using 
 P(enalized)-splines. Here, the spatially correlated effect $f_{spat}$ of locational covariate 
 \code{district} is modeled by a stationary Gaussian random field based on centroid coordinates 
 (geokriging) of the districts in Zambia. To estimate the model with BayesX from \proglang{R}, the 
@@ -149,6 +149,7 @@ and the model formula is specified by
 mf <- stunting ~ s(agechild, bs = "ps") + s(bmi, bs = "ps") + 
   s(district, bs = "gk", xt = list(map = ZambiaBnd, full = TRUE))
 @
+
 Finally, the model is fitted with the main model-fitting function \fct{bayesx}
 <<fit-illustration, echo=TRUE, eval=FALSE, fig=FALSE>>=
 b <- bayesx(mf, family = "gaussian", method = "MCMC", 
@@ -189,12 +190,11 @@ plot(b, term = "s(district)", range = c(-0.5, 0.5), lrange = c(-0.6, 0.6),
   zlim = c(-1, 1), swap = TRUE, theta = 40, extrap = TRUE, linear = FALSE, 
   ticktype = "detailed", zlab = "\ns(x,y)", xlab = "\nx", ylab = "\ny")
 @
-\caption{\label{fig:illustration} Visualization examples: Estimated effect for covariate \code{bmi}, 
-black line, together with 95\% and 80\% credible intervals shaded in dark gray and light gray 
-respectively, upper left panel. The upper right panel shows the estimated effect of \code{agechild} 
+\caption{\label{fig:illustration} Visualization examples: Estimated effect for covariate \code{bmi}
+(black line) together with 95\% and 80\% credible intervals (upper left panel). The upper right panel shows the estimated effect of \code{agechild} 
 including partial residuals. The lower left panel illustrates visualization of the estimated spatial 
 effect for covariate \code{district} using an image plot with a map of the districts in Zambia 
-together with a color legend, the lower right panel draws the same effect with a perspective plot in 
+together with a color legend. The lower right panel draws the same effect with a perspective plot in 
 a slightly rotated angle.}
 \end{figure}
 Thereafter, e.g. the base \proglang{R} functions \fct{summary} and \fct{plot} may be applied on the 
@@ -217,7 +217,7 @@ parameters $\boldsymbol{\gamma}$, the distribution of the response variable $y$ 
 exponential family with mean 
 $\mu = E(y | \mathbf{x}, \boldsymbol{\gamma})$ linked to a linear predictor $\eta$ by
 \begin{equation*} \label{eqn:glm}
-\mu = h(\eta) \qquad \eta = \mathbf{x}^{\prime}\boldsymbol{\gamma},
+\mu = h(\eta), \qquad \eta = \mathbf{x}^{\prime}\boldsymbol{\gamma},
 \end{equation*}
 where $h$ is a known link function and $\boldsymbol{\gamma}$ are unknown regression coefficients. In 
 STAR models \citep{R2BayesX:Fahrmeir+Kneib+Lang:2004, R2BayesX:Brezger+Lang:2006}, the linear 
@@ -252,7 +252,7 @@ $i = 1,\ldots,n$ observations can be written in matrix notation
 \end{equation*}
 where the design matrix $\mathbf{Z}_j$ depends on the prior assumptions about smoothness of $f_j$ 
 and $\boldsymbol{\beta}_j$ are unknown regression coefficients to be estimated. Hence, the predictor 
-of (\ref{eqn:structadd}) may be rewritten as
+ (\ref{eqn:structadd}) may be rewritten as
 \begin{equation*} \label{eqn:structaddmat}
 \boldsymbol{\eta} = \mathbf{Z}_1\boldsymbol{\beta}_1 + \ldots \mathbf{Z}_p\boldsymbol{\beta}_p 
 + \mathbf{X}\boldsymbol{\gamma},
@@ -265,7 +265,7 @@ p(\boldsymbol{\beta}_j | \tau_j^2) \propto exp \left(- \frac{1}{2\tau_j^2}
 \boldsymbol{\beta_j}^{\prime}\mathbf{K}_j\boldsymbol{\beta}_j\right),
 \end{equation*}
 where $\mathbf{K}_j$ is a quadratic penalty matrix that shrinks parameters towards zero or penalizes 
-too abrupt jumps between neighboring parameters. In most cases $K_j$ will be rank deficient and the 
+too abrupt jumps between neighboring parameters. In most cases $\mathbf{K}_j$ will be rank deficient and the 
 prior for $\boldsymbol{\beta}_j$ is partially improper.
 
 The variance parameter $\tau_j^2$ is equivalent to the inverse smoothing parameter in a frequentist
@@ -280,7 +280,7 @@ In BayesX, estimation of regression parameters is based on three inferential con
 \begin{enumerate}
 \item \textit{Full Bayesian inference via MCMC} \\
 A fully Bayesian interpretation of structured additive regression models is obtained by specifying 
-prior distributions for all unknown parameters. Estimation can be facilitated using Markov chain 
+prior distributions for all unknown parameters. Estimation is carried out using Markov chain 
 Monte Carlo simulation techniques. BayesX provides numerically efficient implementations of MCMC 
 schemes for structured additive regression models. Suitable proposal densities have been developed 
 to obtain rapidly mixing, well-behaved sampling schemes without the need for manual tuning. 
@@ -337,7 +337,7 @@ Before STAR models can be fitted with package \pkg{R2BayesX} from \proglang{R}, 
 line version of the program BayesX needs to be installed and linked to \proglang{R}. The recommended 
 option on UNIX and Windows systems is to auto - compile/install the BayesX command line binary 
 within \proglang{R} by calling the function \fct{install.bayesx}. Therefore package \pkg{R2BayesX} 
-needs to be loaded.
+needs to be loaded:
 <<load-bayesx, echo=TRUE, eval=FALSE>>=
 library("R2BayesX")
 @
@@ -348,7 +348,7 @@ install.bayesx(inst.dir = "path/to/installation/directory",
 @
 where argument \code{inst.dir} is a path to a valid installation directory with user writing 
 permissions. If \code{source.dir = NULL}, the necessary installation files will automatically tried 
-to be downloaded from the \href{http://www.stat.uni-muenchen.de/~bayesx}{BayesX homepage}, otherwise 
+to be downloaded from the \href{http://www.stat.uni-muenchen.de/~bayesx}{BayesX homepage}. Otherwise 
 \code{source.dir} specifies the path where \fct{install.bayesx} may either find the packed sources 
 \href{http://www.stat.uni-muenchen.de/~bayesx/install/bayesxsource.zip}{\code{bayesxsource.zip}},
 or using Windows, the installer
@@ -399,7 +399,7 @@ given in Subsection~\ref{sec:implementation}. Note that the default specificatio
 \code{contrasts} using factors is function \fct{contr.sum} resulting in deviation (effect) 
 coding of factor levels. We recommend deviation or effect coding  rather than the usual 
 dummy coding of factors as it typically improves the convergence of estimation algorithms used in   
-BayesX. The distribution assigned to the response may be set with argument \code{family}. The 
+BayesX. The distribution assigned to the response may be set with argument \code{family}, the 
 default is \code{family = "gaussian"}. Argument \code{method} determines the inferential concept 
 used for estimation. Options currently are: Markov chain Monte Carlo simulation - \code{"MCMC"}, 
 mixed model based estimation using restricted maximum likelihood/marginal likelihood - \code{"REML"} 
@@ -503,8 +503,11 @@ directly during processing if argument \code{verbose} is set to \code{TRUE} in f
 \fct{bayesx.control}, or extracted from the fitted model object using function 
 \fct{bayesx\_logfile}. In addition, an \proglang{R} script for the estimated model, including 
 function calls for saving, loading, plotting of term effects and diagnostic plots, may be generated 
-using function \fct{getscript}. See Table~\ref{tab:funmethods} for a list of all available functions 
-and methods.
+using function \fct{getscript}. The produced \proglang{R} may be useful for less experienced users
+of the package to get a quick overview of post estimation commands. Moreover, the script facilitates 
+the final preparation of plots and diagnostics to be included in publications.  
+A list of all available functions and methods of package \pkg{R2BayesX} can be found in  
+Table~\ref{tab:funmethods}. 
 \begin{table}[t!]
 \begin{center}
 \begin{tabular}{|p{4cm}|p{10cm}|}
@@ -560,7 +563,7 @@ s(..., k = -1, bs = "ps", m = NA, by = NA, xt = NULL)
 \end{Sinput}
 Within \fct{s}, the list of covariates used for the model term is set with the dots "\code{...}" 
 argument. For instance, in the introductory example, a term for the body mass index of the mother is 
-included in the model formula by \code{s(bmi)}, a term with two covariates is then specified e.g. 
+included in the model formula by \code{s(bmi)}, a term with two covariates is  specified e.g. 
 with \code{s(bmi, age)}. The parameter \code{k} controls the dimension of the basis used for smooth 
 terms. Argument \code{bs} chooses the basis/type of the term, possible options are shown in 
 Table~\ref{tab:terms}. 
@@ -654,7 +657,7 @@ estimated for. E.g. the model formula from the introduction could be extended by
 term for the districts in Zambia with \code{r(district)}.  Argument \code{by} takes covariates 
 for which random slopes may be estimated. Argument \code{xt} is used in the same fashion as 
 described for function \fct{s}, i.e. similar to the above, hyperpriors $a$ and $b$ for the variance 
-parameter are set e.g. with \code{r(district, xt = list(a = 0.0001, b = 0.0001))}.
+parameter are set  with \code{r(district, xt = list(a = 0.0001, b = 0.0001))}.
 
 \subsection[Implementation details]{Implementation details} \label{sec:implementation}
 
@@ -809,7 +812,7 @@ The data for this analysis is provided in the \pkg{R2BayesX} package and can be 
 <<data-zambia, echo=TRUE, eval=TRUE>>=
 data("ZambiaNutrition", package = "R2BayesX")
 @
-Since function $f_{str}$ is modeled by a Markov random fields term, BayesX needs some information 
+Since function $f_{str}$ is modeled by a Markov random fields term, BayesX needs  information 
 about the district neighborhood structure, which e.g. is enclosed in the file
 <<data-zambia-bnd, echo=TRUE, eval=TRUE>>=
 data("ZambiaBnd", package = "R2BayesX")
@@ -894,14 +897,40 @@ plot(zm, term = "s(agechild)")
 index of the child's mother and of the age of the child together with pointwise 80\% and 95\% 
 credible intervals.}
 \end{figure}
-and are show in Figure~\ref{fig:zambia-agechild}. 
-Figure~\ref{fig:zambia-district-structured-unstructured} shows estimates of the structured and 
-unstructured spatial effect, generated with
-<<zambia-agechild-bmi-plot, echo=TRUE, eval=FALSE>>=
+and are shown in Figure~\ref{fig:zambia-agechild}. 
+
+A visual representation of the structured and unstructured spatial effect can be obtained 
+in two ways. Using the plain plot function
+<<zambia-district-example-kde, echo=TRUE, eval=FALSE>>=
+plot(zm, term = c("s(district)", "r(district)"))
+@
+produces a kernel density estimator of the posterior mean of the effects, see Figure 
+\ref{fig:zambia-district-structured-unstructured-kde}. 
+\begin{figure}[!t]
+\setkeys{Gin}{width=0.46\textwidth}
+\centering
+<<zambia-district-structured-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.4, 1.1))
+plot(zm, term = "s(district)", map = FALSE, main = "")
+@ 
+<<zambia-district-unstructured-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.4, 1.1))
+plot(zm, term = "r(district)", map = FALSE, main = "")
+@ 
+\caption{\label{fig:zambia-district-structured-unstructured-kde} Example on childhood malnutrition:
+Kernel density estimates of the mean of the structured, left panel, and the unstructured spatial 
+effect, right panel respectively.}
+\end{figure}
+The kernel densities reveal the general form of the random effects distributions. To view the 
+spatial structure of the effects we have to use the plot function in combination with the 
+boundary object \code{ZambiaBnd}: 
+<<zambia-district-example, echo=TRUE, eval=FALSE>>=
 plot(zm, term = c("s(district)", "r(district)"), 
   map = ZambiaBnd, pos = "topleft", 
   density = 20, angle = 90)
 @
+The generated map effect plots are shown in 
+Figure~\ref{fig:zambia-district-structured-unstructured}. 
 \begin{figure}[!t]
 \setkeys{Gin}{width=0.46\textwidth}
 \centering
@@ -918,46 +947,45 @@ plot(zm, term = "r(district)", map = ZambiaBnd,
   distance.labels = 2L, swap = TRUE, 
   density = 20, angle = 90)
 @
-\\[2ex] 
+\\[2ex]
 
 \hspace*{-6ex}
-<<zambia-district-structured-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.4, 1.1))
-f <- fitted(zm, term = "s(district)")$Mean
-plot(density(f, n = length(f), from = min(f), to = max(f)), main = "")
-abline(v = R2BayesX:::get.kde.range(f), lty = 2)
-@ 
-<<zambia-district-unstructured-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.4, 1.1))
-f <- fitted(zm, term = "r(district)")$Mean
-plot(density(f, n = length(f), from = min(f), to = max(f)), main = "")
-abline(v = R2BayesX:::get.kde.range(f), lty = 2)
-@ 
-\\[2ex] 
 <<zambia-district-unstructured-samescale, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(0, 0, 0, 0))
-f <- fitted(zm, term = "s(district)")$Mean
-frange <- c(-1 * max(abs(f)), max(abs(f)))
+range <- max(abs(range(fitted(zm, term = "s(district)")$Mean)))
+range <- lrange <- c(-1 * range, range)
 plot(zm, term = "r(district)", map = ZambiaBnd, 
   pos = "topleft", width = 0.6, height = 0.2, 
   distance.labels = 2L, swap = TRUE, 
-  density = 20, angle = 90, lrange = frange, 
-  range = R2BayesX:::get.kde.range(f))
+  density = 20, angle = 90, 
+  range = range, lrange = lrange)
 @ %$
 \caption{\label{fig:zambia-district-structured-unstructured} Example on childhood malnutrition:
 Estimated mean effect of the structured spatial effect, upper left panel, together with the 
 estimated mean effect of the unstructured spatial effect of the districts in Zambia, upper right 
-panel. Kernel density estimates of the mean of the structured effect are shown in the middle left 
-panel, of the unstructured spatial effect in the middle right panel respectively. The 5\% and 95\% 
-quantiles of the kernel density estimate are represented by the dashed lines. Lower panel, 
-unstructured spatial effect using the legend scaling of the structured effect.}
+panel. Lower panel, unstructured spatial effect using the color and legend scaling of the structured 
+effect.}
 \end{figure}
-Note that for a map effect plot, the \proglang{R} boundary object needs to be supplied to the 
-plotting function, otherwise the effect will also be visualized using function \fct{blockplot}. 
-Furthermore, to avoid predominance of outliers in the image produced by function \fct{plotmap}, the 
-coloring of the map effect plot is based on a kernel density estimate of the effect, for which per 
-default 5\% and 95\% quantiles are computed, that are then taken as a basis for a suitable range for 
-the colors in the plot. 
+As a default the districts of Zambia are colored in a symmetrical range within 
+$+- max(|min(pmean)|,|max(pmean)|)$. In many situations the visual impression of the colored map is 
+problematic. This is primarily the case if there are some districts with extraordinarily high 
+posterior means compared to the rest of the districts. Then the map is dominated by the colors of 
+these outlying districts. A more informative map may be obtained by restricting the range of the 
+plotting area using the range option. For the Zambia data the corresponding random effects are 
+comparably symmetric and without outlying districts such that the plot function with default options 
+produced fairly informative maps. To demonstrate the range option we re-draw the unstructered random 
+effect within the same range as the structured random effect
+<<zambia-district-example-redraw, echo=TRUE, eval=FALSE>>=
+range <- max(abs(range(fitted(zm, term = "s(district)")$Mean)))
+range <- lrange <- c(-1 * range, range)
+plot(zm, term = "r(district)", map = ZambiaBnd, 
+  pos = "topleft", density = 20, angle = 90,
+  range = range, lrange = lrange)
+@ %$
+The resulting map is also shown in Figure~\ref{fig:zambia-district-structured-unstructured}. Using 
+for both the structured and the unstructered effect the same scale is useful for comparison. In most 
+cases one of the two effects clearly dominates the other. In our case the structured spatially 
+correlated effect clearly exceeds the unstructured effect. 
 
 For MCMC post estimation diagnosis, it is also possible to extract sampling paths of parameters with
 function \fct{samples}, or to plot the samples directly. For instance, coefficient sampling paths 
@@ -1062,9 +1090,6 @@ RESPONSE DISTRIBUTION:
 To simplify matters only a fragment of the log-file is shown in the above. The log-file typically 
 provides information on the used data, model specifications, algorithms and possible error 
 messages.
-
-
-\clearpage
 
 
 \subsection{Forest health data set - Analysis with REML} \label{subsec:forest}
@@ -1223,8 +1248,8 @@ statistics for both models gives:
 <<summary-forest-model>>=
 summary(c(fm1, fm2))
 @
-The parametric modeled terms in the second model seem to have a less important effect on tree 
-defoliation, with similar findings for covariates \code{inclination} and \code{elevation}, however, 
+Most of the parametric modeled terms in the second model now have an insignificant effect on tree 
+defoliation, with similar findings for covariates \code{inclination} and \code{elevation}. However, 
 the estimate of the \code{age} effect seems to be improved in terms of monotonicity, see 
 Figure~\ref{fig:forest-spatial-nonpara}. 
 \begin{figure}[!ht]
@@ -1259,21 +1284,46 @@ plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft")
 \centering
 <<forest-spatial-id, echo=FALSE, fig=TRUE, width=7.3, height=4.5>>=
 par(mar = c(0.1, 0.1, 0.1, 0.1))
+range <- c(-1 * max(abs(range)), max(abs(range)))
 plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft",
   height = 0.24, width = 0.41)
 @
-\\[2ex] \setkeys{Gin}{width=0.46\textwidth}
-<<forest-spatial-id-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.4, 1.1))
-f <- fitted(fm2, term = "s(id)")$Estimate
-plot(density(f, n = length(f), from = min(f), to = max(f)), main = "")
-abline(v = R2BayesX:::get.kde.range(f), lty = 2)
-@ %$
-\caption{\label{fig:forest-spatial} Forest damage: Estimate of the spatial effect together with the
-kernel density estimate of the effect. The 5\% and 95\% quantiles of the kernel density estimate are 
-represented by the dashed lines.}
+\caption{\label{fig:forest-spatial} Forest damage: Estimate of the spatial effect.}
 \end{figure}
-as shown in Figure~\ref{fig:forest-spatial}. 
+as shown in Figure~\ref{fig:forest-spatial}. In this example the coloring of the plot is strongly 
+influenced by a few very high values of the estimate. Therefore, it might be useful to restrict the 
+color range, e.g. according to the 5\% and 95\% quantiles of a kernel density estimate 
+of the effect by typing
+<<forest-spatial-id-restrict, echo=TRUE, eval=FALSE>>=
+plot(fm2, term = "s(id)", map = BeechBnd, 
+  pos = "topleft", range = c(-3.8, 3.8))
+@
+The resulting map and kernel density plot are shown in Figure~\ref{fig:forest-spatial-restrict}. 
+\begin{figure}[!ht]
+\setkeys{Gin}{width=0.65\textwidth}
+\centering
+<<forest-spatial-id-restrict, echo=FALSE, fig=TRUE, width=7.3, height=4.5>>=
+par(mar = c(0.1, 0.1, 0.1, 0.1))
+range <- R2BayesX:::kde.quantiles(fitted(fm2, term = "s(id)")$Estimate)
+range <- c(-1 * max(abs(range)), max(abs(range)))
+plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft",
+  height = 0.24, width = 0.41, 
+  range = range)
+@
+\\[2ex]
+
+\setkeys{Gin}{width=0.46\textwidth}
+<<forest-spatial-id-restrict-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.4, 1.1))
+plot(fm2, term = "s(id)", map = FALSE, main = "", 
+  kde.quantiles = TRUE, probs = c(0.05, 0.95))
+@ %$
+\caption{\label{fig:forest-spatial-restrict} Forest damage: Estimate of the spatial effect with 
+color scaling based on the 5\% and 95\% quantiles of the kernel density estimate of the effect. The 
+kernel density estimate together with the 5\% and 95\%, represented by the dashed lines, are shown
+in the lower panel.}
+\end{figure}
+Trimming the color range of the plot now leads to a more informative representation of the image.
 
 Summarizing these results identify a strong influence of the spatial effect of the overall model 
 fit, indicating that a clear splitting of locational specific covariates and the spatial effect is 
@@ -1328,14 +1378,14 @@ may be computed if argument \code{CI} in function \fct{bayesx.control} is specif
 conditional confidence bands can be calculated conditional on the selected model, i.e. they are 
 computed for selected variables and functions only. The computation of conditional confidence bands 
 is based on an MCMC-algorithm subsequent to the selection procedure.  For the selection of a model 
-with an adjacent computation of conditional confidence bands the user may type
+with an subsequent computation of conditional confidence bands the user may type
 <<fit-zambia-model-step-04, echo=TRUE, eval=FALSE>>=
 zmsccb <- bayesx(mf, family = "gaussian", method = "STEP", 
   algorithm = "cdescent1", startmodel = "empty", 
   CI = "MCMCselect", iterations = 10000, step = 10,
   seed = 123, data = ZambiaNutrition)
 @
-which results in the following summary statistics
+which results in the following summary 
 <<zambia-model-step-summary-2, echo=TRUE, eval=TRUE>>=
 summary(zmsccb)
 @

@@ -73,11 +73,21 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
     xlim <- pos2$xlim
     ylim <- pos2$ylim
   }
-  if(!is.null(x)) 
+  if(!is.null(x)) {
+    if(is.null(lrange)) {      
+      lrange <- range(x, na.rm = TRUE)
+      if(symmetric) {
+        mar <- max(abs(lrange))
+        lrange <- c(0 - mar, mar)
+      }
+    }
     x <- unique(na.omit(sort(x)))
-  else 
+  } else { 
     if(is.null(range))
       range <- xlim
+    if(is.null(lrange))
+      lrange <- range
+  }
   if(is.null(color))
     color <- grDevices::gray.colors
   args$col <- color
@@ -89,9 +99,7 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
   args$symmetric <- symmetric
   pal <- do.call(make_pal, delete.args(make_pal, args))
   if(plot || add) {
-    if(is.null(lrange)) 
-      lrange <- range(pal$breaks)
-    else {
+    if(!is.null(lrange)) {
       if(min(lrange) > min(pal$breaks)) 
         pal$breaks[pal$breaks <= min(lrange)] <- min(lrange)
       if(max(lrange) < max(pal$breaks))

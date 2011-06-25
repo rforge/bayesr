@@ -29,7 +29,8 @@
     may be set with \code{which = 5:8}.}
   \item{ask}{\dots}
   \item{\dots}{other graphical parameters passed to \code{\link{plotblock}}, \code{\link{plotmap}}, 
-    \code{\link{plot2d}}, \code{\link{plot3d}} and \code{\link[stats]{acf}}.}
+    \code{\link{plot2d}}, \code{\link{plot3d}}, \code{\link[stats]{acf}} and 
+    \code{\link[stats]{density}}.}
 }
 
 \details{
@@ -42,6 +43,7 @@
     \item \code{\link{plot2d}},
     \item \code{\link{plot3d}},
     \item \code{\link[stats]{acf}},
+    \item \code{\link[stats]{density}},
   }
   For details on argument specifications, please see the help sites for the corresponding function.
   
@@ -51,9 +53,9 @@
 
 \note{
   If a model is specified with a structured and an unstructured spatial effect, e.g. the model 
-  formula is something like \code{y ~ s(id, bs = "mrf", map = mymap) + r(id)}, the model output 
+  formula is something like \code{y ~ s(id, bs = "mrf", map = MyMapBnd) + r(id)}, the model output 
   contains of one additional total spatial effect, named with \code{"s(id):total"}. Also see the 
-  last example
+  last example. 
 }
 
 \author{
@@ -126,6 +128,7 @@ plot(b1, term = 1, which = "var-samples")
 plot(b1, term = 1, which = "coef-samples")
 
 ## plot the sampling path of the intercept
+par(mfrow = c(1, 1))
 plot(b1, which = "intcpt-samples")
 
 ## plot the autcorrelation function  
@@ -177,11 +180,19 @@ plot(b2, term = "s(id)", map = MunichBnd)
 plot(b2, term = "r(id)", map = MunichBnd)
 
 ## now without map
-plot(b2, term = "s(id)")
-plot(b2, term = "r(id)")
+## generates a kernel density plot
+## of the effects
+plot(b2, term = "s(id)", map = FALSE)
+plot(b2, term = "r(id)", map = FALSE)
+
+## with approximate quantiles of the  
+## kernel density estimate 
+plot(b2, term = "s(id)", map = FALSE, 
+  kde.quantiles = TRUE, probs = c(0.025, 0.5, 0.975))
 
 ## plot the total spatial effect
 plot(b2, term = "s(id):total")
+plot(b2, term = "s(id):total", map = MunichBnd)
 
 ## combine model objects
 b <- c(b1, b2)
