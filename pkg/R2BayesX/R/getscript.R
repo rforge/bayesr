@@ -52,26 +52,26 @@ function(object, file = NULL, device = NULL, ...)
     }
     cat("\n", file = script)
     if(!is.null(object[[i]]$effects)) {
-      tn <- names(object[[i]]$effects)
       if(n > 1L) {
         cat("## Plots of estimated effects of model: ", mn[i], "\n", sep = "", file = script) 
       } else {
         cat("## Plots of estimated effects\n", sep = "", file = script)
       } 
       ccheck <- vcheck <- FALSE
-      for(k in 1L:length(tn)) {
+      neff <- length(object[[i]]$effects)
+      for(k in 1L:neff) {
         specs <- attr(object[[i]]$effects[[k]], "specs")
         xlab <- specs$term
         ylab <- specs$label
         if(dode) {
-          cat(dcall, "file = \"", paste(dir, "/model-", i, "-term-", tn[k],"\"", sep = ""), 
+          cat(dcall, "file = \"", paste(dir, "/model-", i, "-term-", specs$label,"\"", sep = ""), 
             ")\n", sep = "", file = script)
         }
         if(inherits(object[[i]]$effects[[k]], c("sm.bayesx", "linear.bayesx")) && specs$dim < 2L) {
-          cat("plot(", on, ", model = ", i, ", term = ", "\"", tn[k], 
+          cat("plot(", on, ", model = ", i, ", term = ", "\"", specs$label, 
             "\", xlab = \"", xlab, "\", ylab = \"", ylab,"\")\n", sep = "", file = script)
         } else {
-          cat("plot(", on, ", model = ", i, ", term = ", "\"", tn[k], "\")\n", 
+          cat("plot(", on, ", model = ", i, ", term = ", "\"", specs$label, "\")\n", 
             sep = "", file = script)
         }
         if(dode)
@@ -101,29 +101,30 @@ function(object, file = NULL, device = NULL, ...)
           if(dode)
             cat("graphics.off()\n", file = script)
         }
-        for(k in 1L:length(tn)) {
+        for(k in 1L:neff) {
+          specs <- attr(object[[i]]$effects[[k]], "specs")
           if(!is.null(attr(object[[i]]$effects[[k]], "sample"))) {
             if(dode) {
               cat(dcall, "file = \"", paste(dir, "/model-", i, "-term-", 
-                tn[k],"-coef.samples\"", sep = ""), ")\n", sep = "", file = script)
+                specs$label,"-coef.samples\"", sep = ""), ")\n", sep = "", file = script)
             }
-            cat("plot(", on, ", model = ", i, ", term = ", "\"", tn[k], 
+            cat("plot(", on, ", model = ", i, ", term = ", "\"", specs$label, 
               "\", which = \"coef-samples\")\n", sep = "", file = script)
             if(dode)
               cat("graphics.off()\n", file = script)
             if(dode) {
               cat(dcall, "file = \"", paste(dir, "/model-", i, "-term-", 
-                tn[k],"-coef.acf\"", sep = ""), ")\n", sep = "", file = script)
+                specs$label,"-coef.acf\"", sep = ""), ")\n", sep = "", file = script)
             }
-            cat("plot(", on, ", model = ", i, ", term = ", "\"", tn[k], 
+            cat("plot(", on, ", model = ", i, ", term = ", "\"", specs$label, 
               "\", which = \"coef-samples\", acf = TRUE)\n", sep = "", file = script)
             if(dode)
               cat("graphics.off()\n", file = script)
             if(dode) {
               cat(dcall, "file = \"", paste(dir, "/model-", i, "-term-", 
-                tn[k],"-coef.max.acf\"", sep = ""), ")\n", sep = "", file = script)
+                specs$label,"-coef.max.acf\"", sep = ""), ")\n", sep = "", file = script)
             }
-            cat("plot(", on, ", model = ", i, ", term = ", "\"", tn[k], 
+            cat("plot(", on, ", model = ", i, ", term = ", "\"", specs$label, 
               "\", which = \"coef-samples\", max.acf = TRUE)\n", sep = "", file = script)
             if(dode)
               cat("graphics.off()\n", file = script)
@@ -132,21 +133,22 @@ function(object, file = NULL, device = NULL, ...)
       }
       if(vcheck) {
         cat("\n## Variance sampling diagnostics\n", file = script)
-        for(k in 1L:length(tn)) {
+        for(k in 1L:neff) {
+          specs <- attr(object[[i]]$effects[[k]], "specs")
           if(!is.null(attr(object[[i]]$effects[[k]], "variance.sample"))) {
             if(dode) {
               cat(dcall, "file = \"", paste(dir, "/model-", i, "-term-", 
-                tn[k],"-variance.samples\"", sep = ""), ")\n", sep = "", file = script)
+                specs$label,"-variance.samples\"", sep = ""), ")\n", sep = "", file = script)
             }
-            cat("plot(", on, ", model = ", i, ", term = ", "\"", tn[k], 
+            cat("plot(", on, ", model = ", i, ", term = ", "\"", specs$label, 
               "\", which = \"var-samples\")\n", sep = "", file = script)
             if(dode)
               cat("graphics.off()\n", file = script)
             if(dode) {
               cat(dcall, "file = \"", paste(dir, "/model-", i, "-term-", 
-                tn[k],"-variance.acf\"", sep = ""), ")\n", sep = "", file = script)
+                specs$label,"-variance.acf\"", sep = ""), ")\n", sep = "", file = script)
             }
-            cat("plot(", on, ", model = ", i, ", term = ", "\"", tn[k], 
+            cat("plot(", on, ", model = ", i, ", term = ", "\"", specs$label, 
               "\", which = \"var-samples\", acf = TRUE)\n", sep = "", file = script)
             if(dode)
               cat("graphics.off()\n", file = script)
