@@ -12,7 +12,7 @@ function(x, digits = max(3, getOption("digits") - 3),
   }
   if(ncheck) {
     cat("###\n")
-    cat("Object contains of", n, "models\n")
+    cat("Object consists of", n, "models\n")
   }
 
   return(invisible(NULL))

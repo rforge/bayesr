@@ -35,22 +35,24 @@
 Structured additive regression (STAR) models provide a flexible framework for modeling possible
 nonlinear effects of covariates: They contain the well established frameworks of generalized linear
 models (GLM) and generalized additive models (GAM) as special cases but also allow a wider class of
-effects, e.g., for geographical or spatio-temporal data. This allows to specify
-complex and realistic models that can be estimated using Bayesian inference based on modern Markov
-chain Monte Carlo (MCMC) simulation techniques, based on a mixed model representation of STAR models, or with stepwise regression techniques combining penalized least squares estimation with model selection.
+effects, e.g., for geographical or spatio-temporal data. This allows to specify complex and 
+realistic models that can be estimated using Bayesian inference based on modern Markov chain Monte 
+Carlo (MCMC) simulation techniques, based on a mixed model representation of STAR models, or with 
+stepwise regression techniques combining penalized least squares estimation with model selection.
 Software for fitting STAR models is provided in the standalone software package BayesX: a
 comprehensive regression toolbox written in open-source \proglang{C++} code. BayesX not only covers
 models for responses from univariate exponential families, but also models from non-standard
-regression situations such as models for multi-categorical responses with either ordered or
+regression situations such as models for multi-categorical responses with either ordered or 
 unordered categories, continuous time survival data, or continuous time multi-state models. This
-paper presents the full interactive \proglang{R} interface R2BayesX to BayesX. With the new package,
-STAR models can be conveniently specified using \proglang{R}'s formula language (with some extended
-terms), fitted using the BayesX binary, represented in \proglang{R} with objects of suitable
-classes, and finally printed/summarized/plotted. As a result of the superior graphics capabilities
-of \proglang{R} package R2BayesX greatly enhances the usability of BayesX. On the other hand some of
-the more complex models from the STAR class, especially models for multivariate responses, extend
-the already impressive capabilities  for semiparametric regression in  \proglang{R}. Moreover,
-R2BayesX is the most comprehensive package for Bayesian semiparametric inference in \proglang{R}
+paper presents the full interactive \proglang{R} interface \pkg{R2BayesX} to BayesX. With the new 
+package, STAR models can be conveniently specified using \proglang{R}'s formula language (with some 
+extended terms), fitted using the BayesX binary, represented in \proglang{R} with objects of 
+suitable classes, and finally printed/summarized/plotted. As a result of the superior graphics 
+capabilities of \proglang{R} package \pkg{R2BayesX} greatly enhances the usability of BayesX. On the 
+other hand some of the more complex models from the STAR class, especially models for multivariate 
+responses, extend the already impressive capabilities  for semiparametric regression in  
+\proglang{R}. Moreover, \pkg{R2BayesX} is the most comprehensive package for Bayesian semiparametric 
+inference in \proglang{R}.
 }
 
 \Address{
@@ -499,10 +501,10 @@ directly during processing if argument \code{verbose} is set to \code{TRUE} in f
 \fct{bayesx.control}, or extracted from the fitted model object using function
 \fct{bayesx\_logfile}. In addition, an \proglang{R} script for the estimated model, including
 function calls for saving, loading, plotting of term effects and diagnostic plots, may be generated
-using function \fct{getscript}. The produced \proglang{R} may be useful for less experienced users
-of the package to get a quick overview of post estimation commands. Moreover, the script facilitates
-the final preparation of plots and diagnostics to be included in publications.
-A list of all available functions and methods of package \pkg{R2BayesX} can be found in
+using function \fct{getscript}. The produced \proglang{R} script may be useful for less experienced 
+users of the package to get a quick overview of post estimation commands. Moreover, the script 
+facilitates the final preparation of plots and diagnostics to be included in publications. A list of 
+all available functions and methods of package \pkg{R2BayesX} can be found in 
 Table~\ref{tab:funmethods}.
 \begin{table}[t!]
 \begin{center}
@@ -978,10 +980,10 @@ plot(zm, term = "r(district)", map = ZambiaBnd,
   pos = "topleft", density = 20, angle = 90,
   range = range, lrange = lrange)
 @ %$
-The resulting map is also shown in Figure~\ref{fig:zambia-district-structured-unstructured}. Using
-for both the structured and the unstructered effect the same scale is useful for comparison. In most
-cases one of the two effects clearly dominates the other. In our case the structured spatially
-correlated effect clearly exceeds the unstructured effect.
+The resulting map is also shown in Figure~\ref{fig:zambia-district-structured-unstructured} (bottom 
+panel). Using for both the structured and the unstructered effect the same scale is useful for 
+comparison. In most cases one of the two effects clearly dominates the other. In our case the 
+structured spatially correlated effect clearly exceeds the unstructured effect.
 
 For MCMC post estimation diagnosis, it is also possible to extract sampling paths of parameters with
 function \fct{samples}, or to plot the samples directly. For instance, coefficient sampling paths
@@ -1270,12 +1272,20 @@ plot(fm2, term = "s(age)")
 intervals, of the model including the spatial effect.}
 \end{figure}
 
-The estimated spatial effect may be plotted either using a 3d perspective plot, an image/contour
-plot or a map effect plot using the boundary file \code{BeechBnd} with
+A kernel density plot of the estimated spatial effect is then obtained by 
 <<forest-spatial-id, echo=TRUE, eval=FALSE>>=
-plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft")
+plot(fm2, term = "s(id)", map = FALSE)
 @
 \begin{figure}[!ht]
+\setkeys{Gin}{width=0.65\textwidth}
+\centering
+\setkeys{Gin}{width=0.46\textwidth}
+<<forest-spatial-id-restrict-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.4, 1.1))
+plot(fm2, term = "s(id)", map = FALSE, main = "")
+@ 
+\\[2ex]
+
 \setkeys{Gin}{width=0.65\textwidth}
 \centering
 <<forest-spatial-id, echo=FALSE, fig=TRUE, width=7.3, height=4.5>>=
@@ -1284,17 +1294,23 @@ range <- c(-1 * max(abs(range)), max(abs(range)))
 plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft",
   height = 0.24, width = 0.41)
 @
-\caption{\label{fig:forest-spatial} Forest damage: Estimate of the spatial effect.}
+\caption{\label{fig:forest-spatial-kde} Forest damage: Kernel density estimate of the spatial 
+  effect, upper panel, together with a map effect plot, lower panel respectively.}
 \end{figure}
-as shown in Figure~\ref{fig:forest-spatial}. In this example the coloring of the plot is strongly
-influenced by a few very high values. Therefore, it might be useful to restrict the color range e.g.
-according to the 5\% and 95\% quantiles of the kernel density estimate of the effect, e.g. by typing
+The effect may also be visualized either using a 3d perspective plot, an image/contour plot or a map 
+effect plot using the boundary file \code{BeechBnd} with
+<<forest-spatial-id, echo=TRUE, eval=FALSE>>=
+plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft")
+@
+Both the kernel density and map effect plot are shown in Figure~\ref{fig:forest-spatial-kde}. In 
+this example the coloring of the plot is strongly influenced by a few very high and low values. 
+Therefore, it might be useful to restrict the color range e.g. according to the 5\% and 95\% 
+quantiles of the kernel density estimate of the effect, e.g. by typing
 <<forest-spatial-id-restrict, echo=TRUE, eval=FALSE>>=
 plot(fm2, term = "s(id)", map = BeechBnd,
   pos = "topleft", range = c(-4, 4))
 @
-the resulting map and kernel density plot of the effect are shown in
-Figure~\ref{fig:forest-spatial-restrict}.
+the resulting map is shown in Figure~\ref{fig:forest-spatial-restrict}.
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.65\textwidth}
 \centering
@@ -1306,18 +1322,8 @@ plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft",
   height = 0.24, width = 0.41,
   range = range)
 @
-\\[2ex]
-
-\setkeys{Gin}{width=0.46\textwidth}
-<<forest-spatial-id-restrict-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.4, 1.1))
-plot(fm2, term = "s(id)", map = FALSE, main = "",
-  kde.quantiles = TRUE, probs = c(0.05, 0.95))
-@ %$
 \caption{\label{fig:forest-spatial-restrict} Forest damage: Estimate of the spatial effect with
-color scaling based on the 5\% and 95\% quantiles of the kernel density estimate of the effect. The
-kernel density estimate together with the 5\% and 95\%, represented by the dashed lines, are shown
-in the lower panel.}
+color scaling based on the 5\% and 95\% quantiles of the kernel density estimate of the effect.}
 \end{figure}
 Trimming the color range of the plot now leads to a better representation of the effect.
 

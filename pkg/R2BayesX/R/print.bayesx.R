@@ -18,7 +18,7 @@ function(x, model = NULL, ...)
   }
   if(ncheck) {
     cat("###\n")
-    cat("Object contains of", n, "models\n")
+    cat("Object consists of", n, "models\n")
   }
 
   return(invisible(NULL))	
