@@ -130,9 +130,9 @@ into BayesX interpretable commands (see Section~\ref{sec:overview}).
 To give an introductory example of the various features of the interface, we estimate a Bayesian
 geoadditive regression model for the childhood malnutrition dataset in Zambia (see
 Section~\ref{subsec:zambia}) using Markov chain Monte Carlo (MCMC) simulation. In this analysis, the
-main interest is on modeling the dependence of stunting of newborn children on covariates including
-the age of the child, the body mass index of the mother and the district the child lives in. The
-model is given by
+main interest is on modeling the dependence of stunting, represented by anthropometric indicators of 
+newborn children, on covariates including the age of the child, the body mass index of the mother 
+and the district the child lives in. The model is given by
 \begin{equation*}
 \texttt{stunting}_i = \gamma_0 + f_1(\texttt{agechild}_i) + f_2(\texttt{bmi}_i) +
   f_{spat}(\texttt{district}_i) + \varepsilon_i, \qquad \varepsilon_i \sim N(0, \sigma^2),
@@ -618,20 +618,22 @@ Table~\ref{tab:terms}.
 \end{table}
 Setting argument \code{m} is only meaningful for P-splines, i.e. \code{bs = "ps"}, and controls
 the degree of the B-spline basis functions and the order of the difference penalty. E.g. a B-spline
-of degree 3 with a 2nd order difference penalty is set with \code{s(bmi, bs = "ps", m = c(3, 2))}. A
-numeric or a factor variable can be provided using argument \code{by} to estimate varying
-coefficient terms, where the effect of the variable provided to \code{by} varies over the range of
-the covariate(s) of this term. Argument \code{xt} is used to specify specific control parameters or
-additional geographical information for the model term. The argument must be a named list. For
-example, to set the hyperpriors $a$ and $b$ for the variance parameter of the P-spline term for
-\code{bmi}, the user may type \code{s(bmi, bs = "ps", xt = list(a = 0.0001, b = 0.0001))}. For
-supplying additional boundary or graph files (see function \fct{read.bnd} and \fct{read.gra}), that
-are used to compute suitable neighborhood penalty matrices for terms using Markov random field
-priors, or to calculate the centroids of particular regions for geosplines and geokriging terms, the
-name of the list argument is \code{map}. For instance, the necessary boundary file \code{ZambiaBnd}
-for the geokriging term in the introduction is provided with
-\code{s(district, bs = "gk", xt = list(map = ZambiaBnd))}. Information about all possible extra
-arguments for a particular term basis can be looked up using function \fct{bayesx.term.options}.
+of degree 3 with a 2nd order difference penalty is set with \code{s(bmi, bs = "ps", m = c(3, 2))}
+(note that this is slightly different to the \pkg{mgcv} implementation, where \code{m = c(3, 2)}
+results in a P-spline of degree 4 with a second order difference penalty). A numeric or a factor 
+variable can be provided using argument \code{by} to estimate varying coefficient terms, where the 
+effect of the variable provided to \code{by} varies over the range of the covariate(s) of this term. 
+Argument \code{xt} is used to specify specific control parameters or additional geographical 
+information for the model term. The argument must be a named list. For example, to set the 
+hyperpriors $a$ and $b$ for the variance parameter of the P-spline term for \code{bmi}, the user may 
+type \code{s(bmi, bs = "ps", xt = list(a = 0.0001, b = 0.0001))}. For supplying additional boundary 
+or graph files (see function \fct{read.bnd} and \fct{read.gra}), that are used to compute suitable 
+neighborhood penalty matrices for terms using Markov random field priors, or to calculate the 
+centroids of particular regions for geosplines and geokriging terms, the name of the list argument 
+is \code{map}. For instance, the necessary boundary file \code{ZambiaBnd} for the geokriging term in 
+the introduction is provided with \code{s(district, bs = "gk", xt = list(map = ZambiaBnd))}. 
+Information about all possible extra arguments for a particular term basis can be looked up using 
+function \fct{bayesx.term.options}.
 
 Some care has to be taken with the identifiability of varying coefficients terms. The standard in
 BayesX is to center nonlinear main effects terms around zero whereas varying coefficient terms are
@@ -694,15 +696,15 @@ numerically efficient algorithms including sparse matrix computations which in p
 estimate models using large datasets. Moreover, the number of different observations for particular
 covariates is usually much smaller than the total number of observations. That is, the output files
 returned by the binary only include estimates for unique covariate values. Since these files
-typically reserve much less disc space, importing the fitted model objects into \proglang{R} is
-straightforward in most cases. As mentioned in Subsection~\ref{subsec:processing}, users may exploit
-this within \proglang{R} by providing a character string to argument \code{data} in function
-\fct{bayesx}, which includes the path to a dataset instead of an \proglang{R} data object. As a
-consequence, this dataset will not be loaded within \proglang{R} and is only used internally by the
-BayesX binary. To give an example, we generate a large dataset that might produce problems with
-\proglang{R}'s memory allocation using a model fitting function, especially if the model contains a
-a large number of parameters. Therefore, we store the data on disc in the temporary folder of the
-running session with
+typically reserve much less disc space, importing the fitted model objects into \proglang{R} using 
+\fct{read.bayesx.output} is straightforward in most cases, whereas handling the complete dataset 
+within \proglang{R} may be problematic. As mentioned in Subsection~\ref{subsec:processing}, users 
+can exploit this by providing a character string to argument \code{data} in function \fct{bayesx}, 
+which includes the path to a dataset instead of an \proglang{R} data object. As a consequence, this 
+dataset will not be loaded within \proglang{R} and is only used internally by the BayesX binary. To 
+give an example, we generate a large dataset that might produce problems with \proglang{R}'s memory 
+allocation using a model fitting function, especially if the model contains a large number of 
+parameters. Therefore, we store the data on disc in the temporary folder of the running session with
 <<large-data, echo=TRUE, eval=FALSE>>=
 file <- paste(tempdir(), "/data.raw", sep = "")
 n <- 5e+06
@@ -715,7 +717,7 @@ This produces a dataset of approximately 170Mb with only 1000 unique observation
 \code{data} in the function call
 <<large-data-01, echo=TRUE, eval=FALSE>>=
 b <- bayesx(y ~ s(x, bs = "ps"), family = "gaussian",
-  method = "MCMC", iterations = 3000, burnin = 500, step = 2,
+  method = "MCMC", iterations = 12000, burnin = 2000, step = 10,
   predict = FALSE, data = file)
 @
 For illustration purposes, the number of iterations is only set to 3000. Note that argument
