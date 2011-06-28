@@ -21,7 +21,7 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
   co.id <- attr(control, "co.id")
   outfile <- control$outfile
   control$oformula <- formula
-  control$terms <- terms(formula, specials = c("s", "te", "r"), keep.order = TRUE)
+  control$terms <- terms(formula, specials = c("s", "te", "r", "f"), keep.order = TRUE)
   intcpt <- TRUE
   if(grepl("-1", as.character(formula)[3L]))
     intcpt <- FALSE
@@ -30,6 +30,16 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
   control$first <- TRUE
   fc <- as.character(formula)
   tl <- attr(terms(formula), "term.labels")
+  if(length(tl) > 0L && any(is.f(tl))) {
+    for(k in 1L:length(tl))
+      if(is.f(tl[k])) {
+        tmp <- eval(parse(text = tl[k]))
+        tl[k] <- tmp$term[1L]
+        if(length(tmp$term) > 1L)
+          tl <- c(tl, tmp$term[2L])
+      }
+    formula <- as.formula(paste(as.character(formula[2L]), "~", paste(tl, collapse = "+")))
+  }
   h.variables <- NULL
   ra.change <- list()
   if(length(tl) > 0L && any(is.rt(tl))) {

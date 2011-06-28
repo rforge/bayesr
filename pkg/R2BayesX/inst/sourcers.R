@@ -1,6 +1,34 @@
 dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
+     set.seed(333)
+          
+     ## simulate some geographical data
+     data("MunichBnd")
+     N <- length(MunichBnd); n <- N*5
+     names(MunichBnd) <- 1:N
+          
+     ## regressors
+     dat <- data.frame(x1 = runif(n, -3, 3),
+       id = as.factor(rep(names(MunichBnd), length.out = n)))
+     dat$sp <- with(dat, sort(runif(N, -2, 2), decreasing = TRUE)[id])
+          
+     ## response
+     dat$y <- with(dat, 1.5 + sin(x1) + sp + rnorm(n, sd = 1.2))
+     
+     ## estimate models with
+     ## bayesx MCMC and REML
+     b1 <- bayesx(y ~ f(x1) + 
+       f(id, bs = "mrf", map = MunichBnd), 
+       method = "MCMC", data = dat)
+
+
+
+b1 <- bayesx(y ~ f(x) + f(z, w, bs = "te") + fac,
+  data = dat, method = "MCMC", iter = 1200, burnin = 200)
+
+
+
 colorlegend()
 
 range <- max(abs(range(fitted(zm, term = "s(district)")$Mean)))
