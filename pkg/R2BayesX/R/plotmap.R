@@ -69,6 +69,15 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
       colors <- rep(colors, length.out = n)
     }
   }
+  if(legend && !is.null(args$pos) && args$pos == "right") {
+    mar.orig <- (par.orig <- par(c("mar", "las", "mfrow")))$mar
+    mar <- mar.orig
+    on.exit(par(par.orig))
+    if(args$pos == "right")
+    mar[4L] <- 0
+    par(mar = mar)
+    layout(matrix(c(1, 2), nrow = 1), widths = c(1, 0.2))
+  }
   if(!is.null(map.limits$mar) && is.null(args$asp) && !add)
     par(mar = map.limits$mar)
   args$x <- map.limits$x
@@ -137,6 +146,22 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   if(legend) {
     if(is.null(args$pos))
       args$pos <- "bottomleft"
+    if(args$pos == "right") {
+      args$full <- TRUE
+      args$side.legend <- 2L
+      args$side.ticks <- 2L
+      mar <- mar.orig
+      mar[2L] <- 0
+      mar[4L] <- 2.1
+      par(mar = mar, xaxs = "i", yaxs = "i")
+      args$plot <- TRUE
+      args$add <- FALSE
+    } else {
+      args$plot <- FALSE
+      if(is.null(args$xpd))
+        args$xpd <- TRUE
+      args$add <- TRUE
+    }
     if(is.null(args$width))
       args$width <- 0.4
     if(is.null(args$height))
@@ -152,16 +177,12 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     args$x <- x$x
     args$breaks <- breaks
     args$swap <- swap
-    args$plot <- FALSE
     args$digits <- digits
     args$cex.labels <- cex.legend
-    if(is.null(args$xpd))
-      args$xpd <- TRUE
     args$symmetric <- symmetric
     args$range <- range
     if(is.null(args$lrange))
       args$lrange <- x$range
-    args$add <- TRUE
     do.call(colorlegend, delete.args(colorlegend, args, c("font")))
   }
   if(!is.null(args$xlab))

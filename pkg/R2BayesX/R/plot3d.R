@@ -226,7 +226,7 @@ function(x, residuals = FALSE, col.surface = NULL,
       if(legend) {
         mar <- mar.orig
         mar[2L] <- 0.5
-        par(mar = mar)
+        par(mar = mar, xaxs = "i", yaxs = "i")
         args2 <- args
         if(is.null(args$side.legend))
           args2$side.legend <- 2L

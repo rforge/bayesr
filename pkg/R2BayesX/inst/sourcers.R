@@ -1,6 +1,9 @@
 dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
+plot(b1, term = "s(id)", map = MunichBnd, pos = "right")
+
+
      set.seed(333)
           
      ## simulate some geographical data
@@ -19,7 +22,7 @@ invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
      ## estimate models with
      ## bayesx MCMC and REML
      b1 <- bayesx(y ~ f(x1) + 
-       f(id, bs = "mrf", map = MunichBnd), 
+       f(id, bs = "gk", map = MunichBnd), 
        method = "MCMC", data = dat)
 
 

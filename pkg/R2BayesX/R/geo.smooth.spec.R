@@ -60,7 +60,8 @@ function(object, dir, prg, data, type)
     object$p.order <- c(3L, 1L)
   if(object$p.order[2L] > 1L) {
     object$p.order[2L] <- 1L
-    warning("only random walks of order 1 supported for geosplines, set to default!")
+    if(type == "geospline")
+      warning("only random walks of order 1 supported for geosplines, set to default!")
   }
   if(length(object$p.order) < 2L)
     object$p.order <- c(object$p.order, 1L)

@@ -138,6 +138,13 @@ plotmap(FantasyBnd, x = nx, values = TRUE,
   density = 20, symmetric = FALSE, 
   col = heat_hcl, swap = TRUE, 
   ncol = 4, breaks = seq(-2, 2, length = 5))
+
+## more position options
+plotmap(FantasyBnd, x = nx, density = 20, pos = "bottomleft")
+plotmap(FantasyBnd, x = nx, density = 20, pos = "topleft")
+plotmap(FantasyBnd, x = nx, density = 20, pos = "topright")
+plotmap(FantasyBnd, x = nx, density = 20, pos = "bottomright")
+plotmap(FantasyBnd, x = nx, density = 20, pos = "right")
 par(op)
 
 # load and plot a map from GermanyBnd
