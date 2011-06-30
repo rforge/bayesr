@@ -18,6 +18,8 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL,
             map <- paste("\'", a$xt$polys, "\'", sep = "")
         }
         te <- eval(parse(text = terms[k]))
+        if(!is.null(te$map.name))
+          map <- paste("\'", te$map.name, "\'", sep = "")
         fby <- FALSE
         if(te$by != "NA") {
           if(!is.character(data)) {
