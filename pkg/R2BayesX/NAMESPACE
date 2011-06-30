@@ -12,6 +12,7 @@ export(
   install.bayesx,       
   colorlegend, 
   cprob,  
+  f,
   getscript,       
   parse.bayesx.input,  
   plot2d,               
@@ -73,3 +74,5 @@ S3method(logLik, bayesx)
 S3method(coef, bayesx)
 S3method(confint, bayesx)
 S3method(terms, bayesx)
+
+importFrom("stats", "AIC", "BIC")
