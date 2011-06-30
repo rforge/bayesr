@@ -32,7 +32,7 @@ function(x, diagnostics = FALSE, ...)
         else
           domap <- TRUE
       }
-      if(!is.null(attr(x, "map.name")) && domap) {          
+      if(!is.null(attr(x, "map.name")) && domap) {        
         args$map <- try(eval(parse(text = attr(x, "map.name")), envir = globalenv()), silent = TRUE)
         if(class(args$map) == "try-error")
           args$map <- NULL
@@ -66,6 +66,8 @@ function(x, diagnostics = FALSE, ...)
               lty = args$lty, col = args$col)
           }       
       } else {
+        if(is.logical(args$map))
+          stop("could not find the corresponding map!")
         args$x <- x
         do.call("plotmap", args)
       }

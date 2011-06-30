@@ -12,6 +12,8 @@ function(x, z = NA, bs = "ps", by = NA, ...)
   rval$label <- paste("f(", paste(rval$term, sep = "", collapse = ","), ")", sep = "")
   rval$by <- deparse(substitute(by), backtick = TRUE, width.cutoff = 500)
   xt <- list(...)
+  if(!is.null(xt$map))
+    rval$map.name <- as.character(call$map)
   rval$p.order <- rep(0, 2L)
   if(is.null(xt$degree))
     rval$p.order[1L] <- 3L
@@ -21,11 +23,13 @@ function(x, z = NA, bs = "ps", by = NA, ...)
     rval$p.order[2L] <- 2L
   else
     rval$p.order[2L] <- xt$order
+  if(!is.null(xt$nrknots))
+    xt$knots <- xt$nrknots
   if(is.null(xt$knots))
     rval$bs.dim <- -1L
   else 
     rval$bs.dim <- xt$knots + 2 * rval$p.order[1L] - 1
-  xt[c("degree", "order", "knots", "nrknots")] <- NULL
+  xt[c("degree", "order", "knots", "nrknots", "map.name")] <- NULL
   if(!length(xt))
     rval$xt <- NULL
   else

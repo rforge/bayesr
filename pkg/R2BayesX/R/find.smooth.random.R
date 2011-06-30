@@ -1,6 +1,10 @@
 find.smooth.random <-
-function(dir, files, data, response, eta, model.name, minfo)
+function(dir, files, data, response, eta, model.name, minfo, info)
 {
+  if(file.exists(info)) {
+    info <- readLines(info)
+    info <- info[1L:(length(info) - 1L)]
+  } else info <- NULL
   effects <- list()
   SmoothHyp <- RandomHyp <- NULL
   if(any((i <- grep(".res", files)))) {
@@ -60,7 +64,21 @@ function(dir, files, data, response, eta, model.name, minfo)
           }
           colnames(x)[1L:dimx2] <- rrmfs(xnam)
           rownames(x) <- 1L:nrow(x)
-          labelx <- make.label(cx, xnam, dimx, vx)
+          if(is.null(info))
+            labelx <- make.label(cx, xnam, dimx, vx)
+          else {
+            for(k in 1L:length(info)) {
+              term <- eval(parse(text = info[k]))
+              if(!is.null(term$term)) {
+                term2 <- gsub("f(", "s(", term$term, fixed = TRUE)
+                if(term2 == make.label(cx, xnam, dimx, NULL)) {
+                  labelx <- term$term
+                  if(!is.null(vx))
+                    labelx <- paste(labelx, ":", vx, sep = "")
+                }
+              }
+            }
+          }
           if(!is.null(vx2))
             labelx <- paste(labelx, ":", vx2, sep = "")
           if(grepl("_spatialtotal.res", res))

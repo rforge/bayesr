@@ -87,7 +87,8 @@ function(dir, model.name)
       rval$response <- response
     }
     ## get smooth and random effects
-    rval <- c(rval, find.smooth.random(dir, files, data, response, eta, model.name, minfo))
+    rval <- c(rval, find.smooth.random(dir, files, data, response, eta, 
+      model.name, minfo, paste(dir, "/", info, sep = "")))
 
     ## get fixed effects
     rval <- find.fixed.effects(dir, files, data, response, eta, model.name, 

@@ -62,6 +62,7 @@ function(object, model = NULL, term = NULL, acf = FALSE, ...)
     rval <- NA
   if(any(is.na(rval)))
     warning("samples are missing in object!")
+  rval <- as.data.frame(rval)
 
   return(rval)
 }

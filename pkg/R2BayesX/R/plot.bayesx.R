@@ -120,7 +120,7 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
   }
   if(!pc)
     warning("there is nothing to plot!")
-  par(op)
+  # par(op)
 
   return(invisible(NULL))
 }
