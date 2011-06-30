@@ -12,7 +12,7 @@
 
 \usage{
 bayesx.control(model.name = "bayesx.estim", 
-  family = "gaussian", method = "MCMC", verbose = FALSE, 
+  family = "gaussian", method = "MCMC", verbose = TRUE, 
   dir.rm = TRUE, bin = getOption("bayesx.bin"), outfile = NULL, 
   replace = FALSE, iterations = 12000L, burnin = 2000L, maxint = NULL, 
   step = 10L, predict = TRUE, seed = NULL, hyp.prior = NULL, 

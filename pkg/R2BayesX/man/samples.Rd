@@ -54,10 +54,10 @@ sax <- samples(b, term = "s(x)")
 names(sax)
 
 ## plot coefficient samples
-k <- ncol(sax$coef.samples)
+k <- ncol(sax)
 par(mfrow = n2mfrow(k))
 for(j in 1L:k)
-  plot(sax$coef.samples[,j], type = "l")
+  plot(sax[,j], type = "l")
 
 ## linear effects samples
 samples(b, term = "linear-samples")
