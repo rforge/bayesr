@@ -1,4 +1,4 @@
-bayesx.construct.te.smooth.spec <-
+bayesx.construct.te.smooth.spec <- bayesx.construct.pspline2dimrw2.smooth.spec <- 
 function(object, dir, prg, data)
 {
   termo <- object$term

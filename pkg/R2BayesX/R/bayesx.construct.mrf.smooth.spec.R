@@ -1,4 +1,4 @@
-bayesx.construct.mrf.smooth.spec <-
+bayesx.construct.mrf.smooth.spec <- bayesx.construct.spatial.smooth.spec <-
 function(object, dir, prg, data)
 {
   if(missing(prg))

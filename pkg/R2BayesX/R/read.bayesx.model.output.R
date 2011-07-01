@@ -156,6 +156,8 @@ function(dir, model.name)
             }
           }
         }
+        if(!is.null(rval$smooth.hyp))
+          rownames(rval$smooth.hyp) <- gsub("s(", "f(", rownames(rval$smooth.hyp), fixed = TRUE)
         mf$smooth.hyp.step <- NULL
       }
     } else mf <- c(list(method = method, N = N), mf)

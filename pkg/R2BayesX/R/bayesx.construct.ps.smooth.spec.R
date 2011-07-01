@@ -1,10 +1,15 @@
-bayesx.construct.ps.smooth.spec <-
+bayesx.construct.ps.smooth.spec <- bayesx.construct.psplinerw1.smooth.spec <- 
+bayesx.construct.psplinerw2.smooth.spec <- bayesx.construct.pspline.smooth.spec <- 
 function(object, dir, prg, data)
 {
   if(is.na(object$p.order[1L]))
     object$p.order <- c(3L, 2L)
   if(length(object$p.order) < 2L)
     object$p.order <- c(object$p.order, 2L)
+  if(class(object) == "psplinerw1.smooth.spec")
+    object$p.order[2L] <- 1L
+  if(class(object) == "psplinerw2.smooth.spec")
+    object$p.order[2L] <- 2L
   if(object$bs.dim < 0L)
     object$bs.dim <- 10L
   else {

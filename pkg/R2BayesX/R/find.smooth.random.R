@@ -64,16 +64,15 @@ function(dir, files, data, response, eta, model.name, minfo, info)
           }
           colnames(x)[1L:dimx2] <- rrmfs(xnam)
           rownames(x) <- 1L:nrow(x)
-          if(is.null(info))
-            labelx <- make.label(cx, xnam, dimx, vx)
-          else {
+          labelx <- make.label(cx, xnam, dimx, vx)
+          if(!is.null(info)) {
             for(k in 1L:length(info)) {
               term <- eval(parse(text = info[k]))
               if(!is.null(term$term)) {
-                if(!is.null(term$israndom) && term$israndom)
+                if(!is.null(term$israndom) && term$israndom) {
                   term2 <- gsub("f(", "r(", term$term, fixed = TRUE)
-                else
-                  term2 <- gsub("f(", "s(", term$term, fixed = TRUE)
+                  term2 <- gsub("s(", "r(", term2, fixed = TRUE)
+                } else term2 <- gsub("f(", "s(", term$term, fixed = TRUE)
                 if(term2 == make.label(cx, xnam, dimx, NULL)) {
                   labelx <- term$term
                   if(!is.null(vx))

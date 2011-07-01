@@ -1,4 +1,4 @@
-f <-
+f <- fbx <- 
 function(x, z = NA, bs = "ps", by = NA, ...)
 {
   rval <- list()
@@ -12,32 +12,6 @@ function(x, z = NA, bs = "ps", by = NA, ...)
   rval$label <- paste("f(", paste(rval$term, sep = "", collapse = ","), ")", sep = "")
   rval$by <- deparse(substitute(by), backtick = TRUE, width.cutoff = 500)
   xt <- list(...)
-  if(bs == "psplinerw1") {
-    bs <- "ps"
-    xt$order <- 1L
-  }
-  if(bs == "psplinerw2" || bs == "pspline") {
-    bs <- "ps"
-    xt$order <- 2L
-  }
-  if(bs == "spatial")
-    bs <- "mrf"
-  if(bs == "geospline") {
-    bs <- "gs"
-    xt$order <- 1L
-  }
-  if(bs == "baseline")
-    bs <- "bl"
-  if(bs == "pspline2dimrw2")
-    bs <- "te"
-  if(bs == "kriging")
-    bs <- "kr"
-  if(bs == "geokriging")
-    bs <- "gk"
-  if(bs == "catspecific")
-    bs <- "cs"
-  if(bs == "random" || bs == "hrandom")
-    bs <- "ra"
   if(!is.null(xt$map))
     rval$map.name <- as.character(call$map)
   rval$p.order <- rep(0L, 2L)

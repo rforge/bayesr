@@ -39,18 +39,18 @@ effects, e.g., for geographical or spatio-temporal data. This allows to specify 
 realistic models that can be estimated using Bayesian inference based on modern Markov chain Monte 
 Carlo (MCMC) simulation techniques, based on a mixed model representation of STAR models, or with 
 stepwise regression techniques combining penalized least squares estimation with model selection.
-Software for fitting STAR models is provided in the standalone software package BayesX: a
-comprehensive regression toolbox written in open-source \proglang{C++} code. BayesX not only covers
-models for responses from univariate exponential families, but also models from non-standard
+Software for fitting STAR models is provided in the standalone software package \pkg{BayesX}: a
+comprehensive regression toolbox written in open-source \proglang{C++} code. \pkg{BayesX} not only 
+covers models for responses from univariate exponential families, but also models from non-standard
 regression situations such as models for multi-categorical responses with either ordered or 
 unordered categories, continuous time survival data, or continuous time multi-state models. This
-paper presents the full interactive \proglang{R} interface \pkg{R2BayesX} to BayesX. With the new 
-package, STAR models can be conveniently specified using \proglang{R}'s formula language (with some 
-extended terms), fitted using the BayesX binary, represented in \proglang{R} with objects of 
+paper presents the full interactive \proglang{R} interface \pkg{R2BayesX} to \pkg{BayesX}. With the 
+new package, STAR models can be conveniently specified using \proglang{R}'s formula language (with some 
+extended terms), fitted using the \pkg{BayesX} binary, represented in \proglang{R} with objects of 
 suitable classes, and finally printed/summarized/plotted. As a result of the superior graphics 
-capabilities of \proglang{R} package \pkg{R2BayesX} greatly enhances the usability of BayesX. On the 
-other hand some of the more complex models from the STAR class, especially models for multivariate 
-responses, extend the already impressive capabilities  for semiparametric regression in  
+capabilities of \proglang{R} package \pkg{R2BayesX} greatly enhances the usability of \pkg{BayesX}. 
+On the other hand some of the more complex models from the STAR class, especially models for 
+multivariate responses, extend the already impressive capabilities  for semiparametric regression in  
 \proglang{R}. Moreover, \pkg{R2BayesX} is the most comprehensive package for Bayesian semiparametric 
 inference in \proglang{R}.
 }
@@ -97,35 +97,35 @@ data("BeechBnd")
 
 \section{Introduction} \label{sec:intro}
 
-The public domain software BayesX \citep{R2BayesX:Brezger+Kneib+Lang:2005} is a standalone program
-comprising powerful tools for Bayesian and mixed model based inference in complex semiparametric
-regression models with structured additive predictor (STAR) (see Section~\ref{sec:model}). To gain
-improved computational performance, the algorithms implemented utilize
-numerically efficient (sparse) matrix architectures and are written in a \proglang{C++} environment.
-Besides exponential family regression, BayesX also supports non-standard regression situations such
-as regression for multi-categorical responses, hazard regression for continuous survival times, and
-continuous time multi-state models.
+The public domain software \pkg{BayesX} \citep{R2BayesX:Brezger+Kneib+Lang:2005} is a standalone 
+program comprising powerful tools for Bayesian and mixed model based inference in complex 
+semiparametric regression models with structured additive predictor (STAR) (see 
+Section~\ref{sec:model}). To gain improved computational performance, the algorithms implemented 
+utilize numerically efficient (sparse) matrix architectures and are written in a \proglang{C++} 
+environment. Besides exponential family regression, \pkg{BayesX} also supports non-standard 
+regression situations such as regression for multi-categorical responses, hazard regression for 
+continuous survival times, and continuous time multi-state models.
 
 In this article, we describe the full interactive \proglang{R} \citep{R2BayesX:R} interface to
-BayesX, which has recently been added to the Comprehensive \proglang{R} Archive Network (CRAN) and
-is an extension of the package \pkg{BayesX} \citep{R2BayesX:Kneib+Heinzl+Brezger:2011}.
-The \proglang{R} package is called \pkg{R2BayesX}. Within the new package, users may now
+\pkg{BayesX}, which has recently been added to the Comprehensive \proglang{R} Archive Network (CRAN) 
+and is an extension of the package \pkg{BayesX} \citep{R2BayesX:Kneib+Heinzl+Brezger:2011}. The 
+\proglang{R} package is called \pkg{R2BayesX}. Within the new package, users may now
 \begin{itemize}
-\item specify and estimate STAR models with BayesX directly from the \proglang{R} console (function
-  \hyperlink{bayesx}{\fct{bayesx}}),
-\item apply a set of extractor functions and methods on BayesX fitted model objects, e.g. producing
-  high level graphics of estimated effects, model diagnostic plots, summary statistics and more
-  (see Table~\ref{tab:funmethods}),
-\item run already existing BayesX program files from \proglang{R}
+\item specify and estimate STAR models with \pkg{BayesX} directly from the \proglang{R} console 
+  (function \hyperlink{bayesx}{\fct{bayesx}}),
+\item apply a set of extractor functions and methods on \pkg{BayesX} fitted model objects, e.g. 
+  producing high level graphics of estimated effects, model diagnostic plots, summary statistics and 
+  more (see Table~\ref{tab:funmethods}),
+\item run already existing \pkg{BayesX} program files from \proglang{R}
   (function \hyperlink{run.bayesx}{\fct{run.bayesx}}),
-\item automatically import BayesX output files into \proglang{R}
+\item automatically import \pkg{BayesX} output files into \proglang{R}
   (function \hyperlink{read.bayesx.output}{\fct{read.bayesx.output}}).
 \end{itemize}
 
-Furthermore, the models supported by BayesX are conveniently specified using \proglang{R}'s formula
-language definition, wherefore the special model term constructor functions \fct{s}
-\citep{R2BayesX:Wood:2011} and \fct{r} facilitate a consistent way to translate \proglang{R} syntax
-into BayesX interpretable commands (see Section~\ref{sec:overview}).
+Furthermore, the models supported by \pkg{BayesX} are conveniently specified using \proglang{R}'s 
+formula language definition, wherefore the special model term constructor functions \fct{f} and 
+\fct{r} facilitate a consistent way to translate \proglang{R} syntax into \pkg{BayesX} interpretable 
+commands (see Section~\ref{sec:overview}).
 
 To give an introductory example of the various features of the interface, we estimate a Bayesian
 geoadditive regression model for the childhood malnutrition dataset in Zambia (see
@@ -141,15 +141,15 @@ where the functions $f_1$ and $f_2$ of continuous covariates \code{agechild} and
 possible nonlinear effects on \code{stunting} and are  modeled nonparametrically using
 P(enalized)-splines. Here, the spatially correlated effect $f_{spat}$ of locational covariate
 \code{district} is modeled by a stationary Gaussian random field based on centroid coordinates
-(geokriging) of the districts in Zambia. To estimate the model with BayesX from \proglang{R}, the
-data together with a boundary map file of the districts in Zambia is loaded with
+(geokriging) of the districts in Zambia. To estimate the model with \pkg{BayesX} from \proglang{R}, 
+the data together with a boundary map file of the districts in Zambia is loaded with
 <<data-illustration, echo=TRUE, eval=TRUE, fig=FALSE>>=
 data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
 @
 and the model formula is specified by
 <<formula-illustration, echo=TRUE, eval=TRUE, fig=FALSE>>=
-mf <- stunting ~ s(agechild, bs = "ps") + s(bmi, bs = "ps") +
-  s(district, bs = "gk", xt = list(map = ZambiaBnd, full = TRUE))
+mf <- stunting ~ f(agechild) + f(bmi) +
+  f(district, bs = "gk", map = ZambiaBnd, full = TRUE)
 @
 
 Finally, the model is fitted with the main model-fitting function \fct{bayesx}
@@ -170,27 +170,27 @@ save(b, file = "illustration-model.rda")
 \centering
 <<plot-illustration-bmi, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(b, term = "s(bmi)")
+plot(b, term = "f(bmi)")
 @
 <<plot-illustration-agechild, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(b, term = "s(agechild)", resid = TRUE, cex = 0.1, rug = FALSE)
+plot(b, term = "f(agechild)", resid = TRUE, cex = 0.1, rug = FALSE)
 @
 \\[2ex]
 \setkeys{Gin}{width=0.47\textwidth}
 \hspace*{0.3cm}
 <<plot-illustration-district-image, echo=FALSE, fig=TRUE, width=5.3, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(4.1, 4, 0.1, 2.1))
-plot(b, term = "s(district)", image = T, grid = 100, at = c(-0.5, 0, 0.5),
+plot(b, term = "f(district)", image = T, grid = 100, at = c(-0.5, 0, 0.5),
   image.map = ZambiaBnd, outscale = 0.1, linear = FALSE, extrap = TRUE,
   zlim = c(-1, 1), range = c(-0.5, 0.5), lrange = c(-0.6, 0.6), swap = TRUE)
 @
 \setkeys{Gin}{width=0.46\textwidth}
 <<plot-illustration-district-persp, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(0, 1.1, 0, 0))
-plot(b, term = "s(district)", range = c(-0.5, 0.5), lrange = c(-0.6, 0.6),
+plot(b, term = "f(district)", range = c(-0.5, 0.5), lrange = c(-0.6, 0.6),
   zlim = c(-1, 1), swap = TRUE, theta = 40, extrap = TRUE, linear = FALSE,
-  ticktype = "detailed", zlab = "\ns(x,y)", xlab = "\nx", ylab = "\ny")
+  ticktype = "detailed", zlab = "\nf(x,y)", xlab = "\nx", ylab = "\ny")
 @
 \caption{\label{fig:illustration} Visualization examples: Estimated effect for covariate \code{bmi}
 (black line) together with 95\% and 80\% credible intervals (upper left panel). The upper right panel shows the estimated effect of \code{agechild}
@@ -278,14 +278,15 @@ correspond to an approximate uniform distribution for $\log \tau_j^2$. For empir
 $\tau_j^2$ is considered an unknown constant which is determined via restricted maximum likelihood
 (REML).
 
-In BayesX, estimation of regression parameters is based on three inferential concepts:
+In \pkg{BayesX}, estimation of regression parameters is based on three inferential concepts:
 \begin{enumerate}
 \item \textit{Full Bayesian inference via MCMC} \\
 A fully Bayesian interpretation of structured additive regression models is obtained by specifying
 prior distributions for all unknown parameters. Estimation is carried out using Markov chain
-Monte Carlo simulation techniques. BayesX provides numerically efficient implementations of MCMC
-schemes for structured additive regression models. Suitable proposal densities have been developed
-to obtain rapidly mixing, well-behaved sampling schemes without the need for manual tuning.
+Monte Carlo simulation techniques. \pkg{BayesX} provides numerically efficient implementations of 
+MCMC schemes for structured additive regression models. Suitable proposal densities have been 
+developed to obtain rapidly mixing, well-behaved sampling schemes without the need for manual 
+tuning.
 
 \item \textit{Inference via a mixed model representation} \\
 Another concept used for estimation is based on mixed model methodology.
@@ -300,7 +301,7 @@ estimates can also merely be interpreted as penalized likelihood estimates from 
 perspective.
 
 \item \textit{Penalized likelihood including variable selection} \\
-As a third alternative BayesX provides a penalized least squares (or penalized likelihood)
+As a third alternative \pkg{BayesX} provides a penalized least squares (or penalized likelihood)
 approach for estimating structured additive regression models. In addition, a powerful variable and
 model selection tool is included. Model choice and estimation of the parameters is done
 simultaneously. The algorithms are able to
@@ -323,19 +324,20 @@ A detailed description of the MCMC methodology is given in \citet{R2BayesX:Brezg
 inference based on a mixed model representation is covered by
 \citet{R2BayesX:Fahrmeir+Kneib+Lang:2004}, estimation procedures including variable selection in
 \citet{R2BayesX:Belitz+Lang:2008}. A thorough (and for most practical purposes sufficient)
-introduction into the regression models supported by the program is provided in the BayesX
+introduction into the regression models supported by the program is provided in the \pkg{BayesX}
 methodology manual \citep{R2BayesX:Belitz+Brezger+Kneib+Lang:2011}.
 
 
 \section[Package overview]{Package overview} \label{sec:overview}
 
-\subsection[Installing the BayesX binary from R]{Installing the BayesX binary from \proglang{R}}
+\subsection[Installing the BayesX binary from R]{Installing the \pkg{BayesX} binary from 
+  \proglang{R}}
 
 Before STAR models can be fitted with package \pkg{R2BayesX} from \proglang{R}, the binary command
-line version of the program BayesX needs to be installed and linked to \proglang{R}. The recommended
-option on UNIX and Windows systems is to auto - compile/install the BayesX command line binary
-within \proglang{R} by calling the function \fct{install.bayesx}. Therefore package \pkg{R2BayesX}
-needs to be loaded:
+line version of the program \pkg{BayesX} needs to be installed and linked to \proglang{R}. The 
+recommended option on UNIX and Windows systems is to auto - compile/install the \pkg{BayesX} command 
+line binary within \proglang{R} by calling the function \fct{install.bayesx}. Therefore package 
+\pkg{R2BayesX} needs to be loaded:
 <<load-bayesx, echo=TRUE, eval=FALSE>>=
 library("R2BayesX")
 @
@@ -346,8 +348,9 @@ install.bayesx(inst.dir = "path/to/installation/directory",
 @
 where argument \code{inst.dir} is a path to a valid installation directory with user writing
 permissions. If \code{source.dir = NULL}, the necessary installation files will automatically tried
-to be downloaded from the \href{http://www.stat.uni-muenchen.de/~bayesx}{BayesX homepage}. Otherwise
-\code{source.dir} specifies the path where \fct{install.bayesx} may either find the packed sources
+to be downloaded from the \href{http://www.stat.uni-muenchen.de/~bayesx}{\pkg{BayesX} homepage}. 
+Otherwise \code{source.dir} specifies the path where \fct{install.bayesx} may either find the packed 
+sources 
 \href{http://www.stat.uni-muenchen.de/~bayesx/install/bayesxsource.zip}{\code{bayesxsource.zip}},
 or using Windows, the installer
 \href{http://www.stat.uni-muenchen.de/~bayesx/install/BayesX_windows.exe}{BayesX\_windows.exe}. If
@@ -356,7 +359,7 @@ installation process as described in the Appendix~\ref{appendix:wininstall}, or 
 compile the sources as shown in Appendix~\ref{appendix:otherinstall}, respectively.
 
 
-\subsection[Linking the BayesX binary to R]{Linking the BayesX binary to \proglang{R}}
+\subsection[Linking the BayesX binary to R]{Linking the \pkg{BayesX} binary to \proglang{R}}
 \label{subsec:linking}
 After the successful compilation/installation, the full path to the command line binary
 \textbf{must} be declared to \proglang{R} at the beginning of every new session by setting
@@ -364,9 +367,9 @@ After the successful compilation/installation, the full path to the command line
 options(bayesx.bin = "/path/to/BayesX")
 @
 where \code{"/path/to/BayesX"} is e.g. the path provided to argument \code{inst.dir} of function
-\fct{install.bayesx}, with the name of the BayesX binary at last. On Windows platforms the name of
-the binary is \code{"bayesx.exe"}, on all other platforms usually \code{"BayesX"}. Hence, on Windows
-systems the user may specify e.g.
+\fct{install.bayesx}, with the name of the \pkg{BayesX} binary at last. On Windows platforms the 
+name of the binary is \code{"bayesx.exe"}, on all other platforms usually \code{"BayesX"}. Hence, on 
+Windows systems the user may specify e.g.
 <<options-bayesx-windows, echo=TRUE, eval=FALSE>>=
 options(bayesx.bin = "C:/BayesX/commandline/bayesx.exe")
 @
@@ -376,9 +379,9 @@ Afterwards, the function call
 <<check-install-bayesx, echo=TRUE, eval=FALSE>>=
 check.install.bayesx()
 @
-will check if BayesX is available from \proglang{R}.
+will check if \pkg{BayesX} is available from \proglang{R}.
 
-\subsection[Processing BayesX from R]{Processing BayesX from \proglang{R}}
+\subsection[Processing BayesX from R]{Processing \pkg{BayesX} from \proglang{R}}
 \label{subsec:processing}
 
 \hypertarget{bayesx}{The} main model-fitting function in the package \pkg{R2BayesX} is called
@@ -392,12 +395,12 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 where the first two lines basically represent the standard model frame specifications
 \citep[see][]{R2BayesX:Chambers+Hastie:1992}. However, the object supplied to argument \code{data}
 is not necessarily an \proglang{R} data object, it is also possible to provide a character string
-with a path to a dataset stored on disc, which may be reasonable when using large datasets. An example is
-given in Subsection~\ref{sec:implementation}. Note that the default specification for argument
-\code{contrasts} using factors is function \fct{contr.sum} resulting in deviation (effect)
+with a path to a dataset stored on disc, which may be reasonable when using large datasets. An 
+example is given in Subsection~\ref{sec:implementation}. Note that the default specification for 
+argument \code{contrasts} using factors is function \fct{contr.sum} resulting in deviation (effect)
 coding of factor levels. We recommend deviation or effect coding  rather than the usual
 dummy coding of factors as it typically improves the convergence of estimation algorithms used in
-BayesX. The distribution assigned to the response may be set with argument \code{family}, the
+\pkg{BayesX}. The distribution assigned to the response may be set with argument \code{family}, the
 default is \code{family = "gaussian"}. Argument \code{method} determines the inferential concept
 used for estimation. Options currently are: Markov chain Monte Carlo simulation - \code{"MCMC"},
 mixed model based estimation using restricted maximum likelihood/marginal likelihood - \code{"REML"}
@@ -433,12 +436,12 @@ distributions for the different methods is given in Table~\ref{tab:family}.
 \code{"REML"} and \code{"STEP"}.}
 \end{center}
 \end{table}
-The last argument specifies several parameters controlling the processing of the BayesX binary that
-are arranged by function \fct{bayesx.control}. Note that a call to \fct{bayesx.control} to set the
-additional options is not necessary in function \fct{bayesx}, i.e. all controlling parameters may be
-directly declared in \fct{bayesx}, since any argument set within "\code{...}" is automatically send
-to \fct{bayesx.control}. The most important parameters for the different methods are listed in
-Table~\ref{tab:control}.
+The last argument specifies several parameters controlling the processing of the \pkg{BayesX} binary 
+that are arranged by function \fct{bayesx.control}. Note that a call to \fct{bayesx.control} to set 
+the additional options is not necessary in function \fct{bayesx}, i.e. all controlling parameters 
+may be directly declared in \fct{bayesx}, since any argument set within "\code{...}" is 
+automatically send to \fct{bayesx.control}. The most important parameters for the different methods 
+are listed in Table~\ref{tab:control}.
 \begin{table}[!ht]
 \renewcommand\multirowsetup{\centering}
 \begin{center}
@@ -496,8 +499,8 @@ colorlegends drawn by function \fct{colorlegend}, amongst others. Function \fct{
 provided. Using \code{"STEP"}, the parametric part of the summary statistics is represented like
 \code{"MCMC"}, i.e. if computed, the confidence bands are based on an MCMC-algorithm subsequent to
 the model selection, while the remaining summary is similar to \code{"REML"}. In some situations it
-may be useful to inspect the log-file generated by the BayesX binary. The file can either be viewed
-directly during processing if argument \code{verbose} is set to \code{TRUE} in function
+may be useful to inspect the log-file generated by the \pkg{BayesX} binary. The file can either be 
+viewed directly during processing if argument \code{verbose} is set to \code{TRUE} in function
 \fct{bayesx.control}, or extracted from the fitted model object using function
 \fct{bayesx\_logfile}. In addition, an \proglang{R} script for the estimated model, including
 function calls for saving, loading, plotting of term effects and diagnostic plots, may be generated
@@ -513,9 +516,9 @@ Table~\ref{tab:funmethods}.
 Function & Description \\ \hline
 \fct{AIC}, \fct{BIC}, \fct{DIC}, \fct{GCV} & computes information criteria, availability is
                                              dependent on the \code{method} used. \\ \hline
-\fct{bayesx\_logfile}, \fct{bayesx\_prgfile}, \fct{bayesx\_runtime} & extracts the internal BayesX
-                                             log-file, the program file and the overall runtime of
-                                             the binary. \\ \hline
+\fct{bayesx\_logfile}, \fct{bayesx\_prgfile}, \fct{bayesx\_runtime} & extracts the internal 
+                                             \pkg{BayesX} log-file, the program file and the overall 
+                                             runtime of the binary. \\ \hline
 \fct{c} & combines several objects of class \code{"bayesx"}, all functions and methods may be
           applied on the returned object. \\ \hline
 \fct{coef} & extracts coefficients of linear modeled terms, for \code{"MCMC"} estimated models,
@@ -552,6 +555,17 @@ detailed documentation is provided in the help sites of package \pkg{R2BayesX})}
 \subsection[Available additive terms]{Available additive terms}
 \label{subsec:addterms}
 
+Using \proglang{R}'s formula language, additive terms may be incorporated into the model 
+\code{formula} by the main model term constructor function \fct{f}. The function has the following
+arguments:
+\begin{Sinput}
+f(x, z = NA, bs = "ps", by = NA, ...)
+\end{Sinput}
+Argument \code{x} specifies the covariate the model term is a function of. For bivariate terms, the
+second covariate is provided to argument \code{z}. The basis/type of the model term can be chosen 
+with argument \code{bs}, the default is a P-spline with \code{bs = "ps"}. A list of all available 
+term type options is given in Table~\ref{tab:terms}. 
+
 As mentioned in the introduction, package \pkg{R2BayesX} utilizes function \fct{s} from the
 \pkg{mgcv} package to build the additive components of a STAR predictor within \proglang{R}'s
 formula language. The usage of \fct{s} in \pkg{R2BayesX} is in principle similar to package
@@ -567,7 +581,7 @@ terms. Argument \code{bs} chooses the basis/type of the term, possible options a
 Table~\ref{tab:terms}.
 \begin{table}[htbp]
 \begin{center}
-\begin{tabular}{|p{2cm}|p{10cm}|}
+\begin{tabular}{|p{3.2cm}|p{11.2cm}|}
 \hline
 \code{bs} & Description \\ \hline
 \code{"lasso"}, \code{"nigmix"}, \code{"ridge"} & shrinkage of fixed effects: defines a
@@ -576,25 +590,27 @@ Table~\ref{tab:terms}.
                                                 linear effects $x_1, \ldots, x_q$. There are three
                                                 priors possible: ridge-, lasso- and Normal Mixture
                                                 of inverse Gamma (NMIG)-prior. \\ \hline
-\code{"bl"} & nonlinear baseline effect in hazard regression or multi-state models: defines a
-              P-spline with second order random walk penalty for the parameters of the spline for
-              the log-baseline effect $\log(\lambda(time))$. \\ \hline
-\code{"kr"} & kriging with stationary Gaussian random fields. \\ \hline
-\code{"gk"} & geokriging with stationary Gaussian random fields: estimates a stationary Gaussian
-              random field based on the centroids of a map object provided in boundary format, see
-              function \fct{read.bnd}, within the \code{xt} argument of function \fct{s}, e.g.
-              \code{xt = list(map = MapBnd)}. \\ \hline
-\code{"gs"} & geosplines based on two-dimensional P-splines with first order random walk penalty:
-              defines a two-dimensional P-spline for the spatial covariate region with a
-              two-dimensional first order random walk penalty for the parameters of the spline.
-              Estimation is based on the coordinates of the centroids of the regions provided by a
-              map object in boundary format, see function \fct{read.bnd}, within the \code{xt}
-              argument of function \fct{s}, e.g. \code{xt = list(map = MapBnd)}. \\ \hline
-\code{"mrf"} & Markov random fields: defines a Markov random field prior for a spatial covariate,
-               where geographical information is provided by a map object in boundary or graph
-               file format, see function \fct{read.bnd} and \fct{read.gra}, within the \code{xt}
-               argument of function \fct{s}, e.g. \code{xt = list(map = MapBndorGra)}. \\ \hline
-\code{"ps"} & P-spline with first or second order difference penalty. \\ \hline
+\code{"bl"}, \code{"baseline"} & nonlinear baseline effect in hazard regression or multi-state 
+              models: defines a P-spline with second order random walk penalty for the parameters of 
+              the spline for the log-baseline effect $\log(\lambda(time))$. \\ \hline
+\code{"kr"}, \code{"kriging"} & kriging with stationary Gaussian random fields. \\ \hline
+\code{"gk"}, \code{"geokriging"} & geokriging with stationary Gaussian random fields: estimates a 
+              stationary Gaussian random field based on the centroids of a map object provided in 
+              boundary format, see function \fct{read.bnd}, within the \code{xt} argument of 
+              function \fct{s}, e.g. \code{xt = list(map = MapBnd)}. \\ \hline
+\code{"gs"}, \code{"geospline"} & geosplines based on two-dimensional P-splines with first order 
+              random walk penalty: defines a two-dimensional P-spline for the spatial covariate 
+              region with a two-dimensional first order random walk penalty for the parameters of 
+              the spline. Estimation is based on the coordinates of the centroids of the regions 
+              provided by a map object in boundary format, see function \fct{read.bnd}, within the 
+              \code{xt} argument of function \fct{s}, e.g. \code{xt = list(map = MapBnd)}. \\ \hline
+\code{"mrf"}, \code{"spatial"} & Markov random fields: defines a Markov random field prior for a 
+               spatial covariate, where geographical information is provided by a map object in 
+               boundary or graph file format, see function \fct{read.bnd} and \fct{read.gra}, within 
+               the \code{xt} argument of function \fct{s}, e.g. 
+               \code{xt = list(map = MapBndorGra)}. \\ \hline
+\code{"ps"}, \code{"psplinerw1"}, \code{"psplinerw2"} & P-spline with first or second order 
+                                                        difference penalty. \\ \hline
 \code{"rw1"}, \code{"rw2"} & zero degree P-splines: defines a zero degree P-spline with first or
                             second order difference penalty. A zero degree P-spline typically
                             estimates for every distinct covariate value in the data set a separate
@@ -606,14 +622,14 @@ Table~\ref{tab:terms}.
                             relationships via a dummy approach with completely unrestricted
                             regression parameters. \\ \hline
 \code{"season"} & seasonal effect of a time scale. \\ \hline
-\code{"te"} & defines a two-dimensional P-spline based on the tensor product of one-dimensional
-              P-splines with a two-dimensional first order random walk penalty for the parameters of
-              the spline. \\ \hline
-\code{"factor"} & special BayesX specifier for factors, especially meaningful if
+\code{"te"}, \code{"pspline2dimrw2"} & defines a two-dimensional P-spline based on the tensor 
+              product of one-dimensional P-splines with a two-dimensional first order random walk 
+              penalty for the parameters of the spline. \\ \hline
+\code{"factor"} & special \pkg{BayesX} specifier for factors, especially meaningful if
                   \code{method = "STEP"}, since the factor term is then treated as a full term,
                   which is either included or removed from the model. \\ \hline
 \end{tabular}
-\caption{\label{tab:terms} Possible BayesX model terms within function \fct{s}.}
+\caption{\label{tab:terms} Possible \pkg{BayesX} model terms within function \fct{s}.}
 \end{center}
 \end{table}
 Setting argument \code{m} is only meaningful for P-splines, i.e. \code{bs = "ps"}, and controls
@@ -636,9 +652,9 @@ Information about all possible extra arguments for a particular term basis can b
 function \fct{bayesx.term.options}.
 
 Some care has to be taken with the identifiability of varying coefficients terms. The standard in
-BayesX is to center nonlinear main effects terms around zero whereas varying coefficient terms are
-not centered. This makes sense since main effects nonlinear terms are not identifiable and varying
-coefficients terms are usually identifiable. However, there are situations where a varying
+\pkg{BayesX} is to center nonlinear main effects terms around zero whereas varying coefficient terms 
+are not centered. This makes sense since main effects nonlinear terms are not identifiable and 
+varying coefficients terms are usually identifiable. However, there are situations where a varying
 coefficients term is not identifiable. Then the term must be centered. Since centering is not
 automatically accomplished it has to be enforced by the user by adding option
 \code{xt = list(center = TRUE)} in function \fct{s}. To give an example, the varying coefficient
@@ -664,22 +680,22 @@ parameter are set  with \code{r(district, xt = list(a = 0.0001, b = 0.0001))}.
 For most practical purposes fitting models with function \fct{bayesx} may be sufficient. However,
 the interfacing functions that are consecutively called within \fct{bayesx} can also be used
 independently. This could be meaningful for two reasons: First, users may want to use already
-existing BayesX program files wherefore a new setup within \proglang{R} is not required, and
-secondly, there might be a need for automated importing of BayesX output files into \proglang{R} for
-further analysis.
+existing \pkg{BayesX} program files wherefore a new setup within \proglang{R} is not required, and
+secondly, there might be a need for automated importing of \pkg{BayesX} output files into 
+\proglang{R} for further analysis.
 
-\hypertarget{run.bayesx}{Function} \fct{run.bayesx} is used to run an arbitrary BayesX program file.
-The arguments of \fct{run.bayesx} are
+\hypertarget{run.bayesx}{Function} \fct{run.bayesx} is used to run an arbitrary \pkg{BayesX} program 
+file. The arguments of \fct{run.bayesx} are
 \begin{Sinput}
 run.bayesx(dir, prg.name = "bayesx.estim.input.prg",
   verbose = FALSE, bin = getOption("bayesx.bin"))
 \end{Sinput}
 where \code{dir} is a character string with the directory the program file is stored in and
-\code{prg.name} is the name of the corresponding program file. During processing of BayesX several
-informations will be printed to the \proglang{R} console if \code{verbose = TRUE}. Argument
-\code{bin} specifies the location of the BayesX \code{bin}ary the program file is sent to, see also
-Subsection~\ref{subsec:linking}. The function returns a list including the log file returned by
-BayesX as well as information on the total runtime.
+\code{prg.name} is the name of the corresponding program file. During processing of \pkg{BayesX} 
+several informations will be printed to the \proglang{R} console if \code{verbose = TRUE}. Argument
+\code{bin} specifies the location of the \pkg{BayesX} \code{bin}ary the program file is sent to, see 
+also Subsection~\ref{subsec:linking}. The function returns a list including the log file returned by
+\pkg{BayesX} as well as information on the total runtime.
 
 \hypertarget{read.bayesx.output}{Model} output files are imported using function
 \begin{Sinput}
@@ -691,20 +707,21 @@ different BayesX estimated models in the declared directory if argument \code{mo
 \code{NULL}. The returned object is also of class \code{"bayesx"}, i.e. all the functions and
 methods described in Table~\ref{tab:funmethods} may be applied.
 
-Another noteworthy feature of package \pkg{R2BayesX} is the internal handling of data. BayesX uses
-numerically efficient algorithms including sparse matrix computations which in principle allow to
-estimate models using large datasets. Moreover, the number of different observations for particular
-covariates is usually much smaller than the total number of observations. That is, the output files
-returned by the binary only include estimates for unique covariate values. Since these files
-typically reserve much less disc space, importing the fitted model objects into \proglang{R} using 
-\fct{read.bayesx.output} is straightforward in most cases, whereas handling the complete dataset 
-within \proglang{R} may be problematic. As mentioned in Subsection~\ref{subsec:processing}, users 
-can exploit this by providing a character string to argument \code{data} in function \fct{bayesx}, 
-which includes the path to a dataset instead of an \proglang{R} data object. As a consequence, this 
-dataset will not be loaded within \proglang{R} and is only used internally by the BayesX binary. To 
-give an example, we generate a large dataset that might produce problems with \proglang{R}'s memory 
-allocation using a model fitting function, especially if the model contains a large number of 
-parameters. Therefore, we store the data on disc in the temporary folder of the running session with
+Another noteworthy feature of package \pkg{R2BayesX} is the internal handling of data. \pkg{BayesX} 
+uses numerically efficient algorithms including sparse matrix computations which in principle allow 
+to estimate models using large datasets. Moreover, the number of different observations for 
+particular covariates is usually much smaller than the total number of observations. That is, the 
+output files returned by the binary only include estimates for unique covariate values. Since these 
+files typically reserve much less disc space, importing the fitted model objects into \proglang{R} 
+using \fct{read.bayesx.output} is straightforward in most cases, whereas handling the complete 
+dataset within \proglang{R} may be problematic. As mentioned in Subsection~\ref{subsec:processing}, 
+users can exploit this by providing a character string to argument \code{data} in function 
+\fct{bayesx}, which includes the path to a dataset instead of an \proglang{R} data object. As a 
+consequence, this dataset will not be loaded within \proglang{R} and is only used internally by the 
+\pkg{BayesX} binary. To give an example, we generate a large dataset that might produce problems 
+with \proglang{R}'s memory allocation using a model fitting function, especially if the model 
+contains a large number of parameters. Therefore, we store the data on disc in the temporary folder 
+of the running session with
 <<large-data, echo=TRUE, eval=FALSE>>=
 file <- paste(tempdir(), "/data.raw", sep = "")
 n <- 5e+06
@@ -716,9 +733,9 @@ This produces a dataset of approximately 170Mb with only 1000 unique observation
 \code{x}. The path to the dataset is stored in object \code{file} and is provided to argument
 \code{data} in the function call
 <<large-data-01, echo=TRUE, eval=FALSE>>=
-b <- bayesx(y ~ s(x, bs = "ps"), family = "gaussian",
-  method = "MCMC", iterations = 12000, burnin = 2000, step = 10,
-  predict = FALSE, data = file)
+b <- bayesx(y ~ f(x), family = "gaussian", method = "MCMC", 
+  iterations = 3000, burnin = 1000, step = 2, predict = FALSE, 
+  data = file)
 @
 For illustration purposes, the number of iterations is only set to 3000. Note that argument
 \code{predict} is set to \code{FALSE}, i.e. only output files of estimated effects will be returned,
@@ -812,7 +829,7 @@ The data for this analysis is provided in the \pkg{R2BayesX} package and can be 
 <<data-zambia, echo=TRUE, eval=TRUE>>=
 data("ZambiaNutrition", package = "R2BayesX")
 @
-Since function $f_{str}$ is modeled by a Markov random fields term, BayesX needs  information
+Since function $f_{str}$ is modeled by a Markov random fields term, \pkg{BayesX} needs information
 about the district neighborhood structure, which e.g. is enclosed in the file
 <<data-zambia-bnd, echo=TRUE, eval=TRUE>>=
 data("ZambiaBnd", package = "R2BayesX")
@@ -820,9 +837,9 @@ data("ZambiaBnd", package = "R2BayesX")
 The object \code{ZambiaBnd} has class \code{"bnd"} and is basically a \fct{list} of polygon
 matrices, with $x$- and $y$-coordinates of the boundary points in the first and second column
 respectively. To read in an arbitrary boundary files into \proglang{R} function \fct{read.bnd} can
-be used. With the information of the boundary file BayesX may compute an appropriate adjacency matrix,
-allowing for a smoothly varying effect of the neighboring regions. There is a generic plotting
-method implemented for objects of class \code{"bnd"}, which in principle calls function
+be used. With the information of the boundary file \pkg{BayesX} may compute an appropriate adjacency 
+matrix, allowing for a smoothly varying effect of the neighboring regions. There is a generic 
+plotting method implemented for objects of class \code{"bnd"}, which in principle calls function
 \fct{plotmap}. E.g. a simple map, as shown in Figure~\ref{fig:zambia-simple-map}, of the districts
 in Zambia is drawn by typing
 <<plot-zambia-map-01, echo=TRUE, eval=FALSE>>=
@@ -841,8 +858,8 @@ districts in Zambia.}
 Having loaded the necessary files, the model \code{formula} is specified with
 <<formula-zambia, echo=TRUE, eval=TRUE>>=
 mf <- stunting ~ memployment + education + urban + gender +
-  s(bmi, bs = "ps") + s(agechild, bs = "ps") +
-  s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district)
+  f(bmi) + f(agechild) + f(district, bs = "mrf", map = ZambiaBnd) + 
+  r(district)
 @
 where deviation (effect) coding is automatically performed for the factor variables
 \code{memployment}, \code{education}, \code{urban} and \code{gender}. The model is then fitted using
@@ -868,7 +885,8 @@ small autocorrelations of stored parameters, at least in the model building stag
 absolutely necessary to take a look at sampled parameters and autocorrelation functions to check the
 mixing behavior (see below). Moreover, it is generally advisable to specify a higher number of
 iterations for the final model that appears in publications. Argument \code{seed} sets the state of
-the random number generator in BayesX, which is meaningful for exact replication of the examples.
+the random number generator in \pkg{BayesX}, which is meaningful for exact replication of the 
+examples.
 
 After the model has been successfully fitted, summary statistics of the MCMC estimated model object
 may be printed with
@@ -880,18 +898,18 @@ terms variances and random effects variances, as well as goodness of fit criteri
 information about the model. The estimated effects for covariates \code{agechild} and \code{bmi} may
 then be visualized with
 <<zambia-agechild-bmi-plot, echo=TRUE, eval=FALSE>>=
-plot(zm, term = c("s(bmi)", "s(agechild)"))
+plot(zm, term = c("f(bmi)", "f(agechild)"))
 @
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.46\textwidth}
 \centering
 <<zambia-bmi, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(zm, term = "s(bmi)")
+plot(zm, term = "f(bmi)")
 @
 <<zambia-agechild, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(zm, term = "s(agechild)")
+plot(zm, term = "f(agechild)")
 @
 \caption{\label{fig:zambia-agechild} Example on childhood malnutrition: Effect of the body mass
 index of the child's mother and of the age of the child together with pointwise 80\% and 95\%
@@ -902,7 +920,7 @@ and are shown in Figure~\ref{fig:zambia-agechild}.
 A visual representation of the structured and unstructured spatial effect can be obtained
 in two ways. Using the plain plot function
 <<zambia-district-example-kde, echo=TRUE, eval=FALSE>>=
-plot(zm, term = c("s(district)", "r(district)"))
+plot(zm, term = c("f(district)", "r(district)"))
 @
 produces a kernel density estimator of the posterior mean of the effects, see Figure
 \ref{fig:zambia-district-structured-unstructured-kde}.
@@ -911,7 +929,7 @@ produces a kernel density estimator of the posterior mean of the effects, see Fi
 \centering
 <<zambia-district-structured-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.4, 1.1))
-plot(zm, term = "s(district)", map = FALSE, main = "")
+plot(zm, term = "f(district)", map = FALSE, main = "")
 @
 <<zambia-district-unstructured-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.4, 1.1))
@@ -925,7 +943,7 @@ The kernel densities reveal the general form of the random effects distributions
 spatial structure of the effects we have to use the plot function in combination with the
 boundary object \code{ZambiaBnd}:
 <<zambia-district-example, echo=TRUE, eval=FALSE>>=
-plot(zm, term = c("s(district)", "r(district)"),
+plot(zm, term = c("f(district)", "r(district)"),
   map = ZambiaBnd, pos = "topleft",
   density = 20, angle = 90)
 @
@@ -936,7 +954,7 @@ Figure~\ref{fig:zambia-district-structured-unstructured}.
 \centering
 <<zambia-district-structured, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(0, 0, 0, 0))
-plot(zm, term = "s(district)", map = ZambiaBnd,
+plot(zm, term = "f(district)", map = ZambiaBnd,
   pos = "topleft", width = 0.6, height = 0.2,
   distance.labels = 2, swap = TRUE)
 @
@@ -952,7 +970,7 @@ plot(zm, term = "r(district)", map = ZambiaBnd,
 \hspace*{-6ex}
 <<zambia-district-unstructured-samescale, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(0, 0, 0, 0))
-range <- max(abs(range(fitted(zm, term = "s(district)")$Mean)))
+range <- max(abs(range(fitted(zm, term = "f(district)")$Mean)))
 range <- lrange <- c(-1 * range, range)
 plot(zm, term = "r(district)", map = ZambiaBnd,
   pos = "topleft", width = 0.6, height = 0.2,
@@ -976,7 +994,7 @@ comparably symmetric and without outlying districts such that the plot function 
 produced fairly informative maps. To demonstrate the range option we re-draw the unstructered random
 effect within the same range as the structured random effect
 <<zambia-district-example-redraw, echo=TRUE, eval=FALSE>>=
-range <- max(abs(range(fitted(zm, term = "s(district)")$Mean)))
+range <- max(abs(range(fitted(zm, term = "f(district)")$Mean)))
 range <- lrange <- c(-1 * range, range)
 plot(zm, term = "r(district)", map = ZambiaBnd,
   pos = "topleft", density = 20, angle = 90,
@@ -989,9 +1007,9 @@ structured spatially correlated effect clearly exceeds the unstructured effect.
 
 For MCMC post estimation diagnosis, it is also possible to extract sampling paths of parameters with
 function \fct{samples}, or to plot the samples directly. For instance, coefficient sampling paths
-for term \code{s(bmi)} are displayed with
+for term \code{f(bmi)} are displayed with
 <<zambia-bmi-coef-samples, echo=TRUE, eval=FALSE, fig=FALSE>>=
-plot(zm, term = "s(bmi)", which = "coef-samples")
+plot(zm, term = "f(bmi)", which = "coef-samples")
 @
 see Figure~\ref{fig:zambia-bmi-coef-samples}. The plot of sampled parameters should ideally show
 white noise, i.e. more or less uncorrelated samples that show no particular pattern. In our case the
@@ -1001,15 +1019,15 @@ samples are exactly as they should be.
 \centering
 <<zambia-bmi-coef-samples-do, echo=FALSE, fig=TRUE, width=7, height=8>>=
 par(oma = c(0.01, 0.01, 0.01, 0.01))
-plot(zm, term = "s(bmi)", which = "coef-samples", main = NA)
+plot(zm, term = "f(bmi)", which = "coef-samples", main = NA)
 @
 \caption{\label{fig:zambia-bmi-coef-samples} Example on childhood malnutrition: Sampling paths of
-the first 10 coefficients of term \code{s(bmi)}.}
+the first 10 coefficients of term \code{f(bmi)}.}
 \end{figure}
 In addition, autocorrelation functions may be drawn, e.g. for the variance samples of term
-\code{s(bmi)}, by typing
+\code{f(bmi)}, by typing
 <<zambia-autocorr-01, echo=TRUE, eval=FALSE>>=
-plot(zm, term = "s(bmi)", which = "var-samples", acf = TRUE)
+plot(zm, term = "f(bmi)", which = "var-samples", acf = TRUE)
 @
 The maximum autocorrelation of all sampled parameters in the model are displayed with
 <<zambia-autocorr-02, echo=TRUE, eval=FALSE>>=
@@ -1020,7 +1038,7 @@ plot(zm, which = "max-acf", acf = TRUE)
 \centering
 <<zambia-autocorr-03, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(zm, term = "s(bmi)", which = "var-samples",
+plot(zm, term = "f(bmi)", which = "var-samples",
   acf = TRUE, main = "")
 @
 <<zambia-autocorr-04, echo=FALSE, fig=TRUE, width=5, height=4>>=
@@ -1028,19 +1046,19 @@ par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(zm, which = "max-acf", main = "")
 @
 \caption{\label{fig:zambia-autocorr} Example on childhood malnutrition: Autocorrelation function
-of the samples of the variance parameter of term \code{s(bmi)}, left panel, maximum autocorrelation
+of the samples of the variance parameter of term \code{f(bmi)}, left panel, maximum autocorrelation
 of all parameters of the model, right panel respectively.}
 \end{figure}
 Autocorrelations for all lags should be close to zero as is the case in our example. See
 Figure~\ref{fig:zambia-autocorr}, for the autocorrelation plots.
 
-In some situations problems may occur during processing of the BayesX binary, that are not
+In some situations problems may occur during processing of the \pkg{BayesX} binary, that are not
 automatically detected by the main model fitting function \fct{bayesx}. Therefore the user may
 inspect the log-file generated by the binary in two ways: Setting the option \code{verbose = TRUE}
-in \fct{bayesx.control} will print all information produced by BayesX simultaneously at runtime.
-The option is especially helpful if BayesX crashes. Another way to obtain the log-file is to use
-function \fct{bayesx\_logfile} if BayesX successfully finished processing. In this example the
-log-file may be printed with
+in \fct{bayesx.control} will print all information produced by \pkg{BayesX} simultaneously at 
+runtime. The option is especially helpful if \pkg{BayesX} crashes. Another way to obtain the 
+log-file is to use function \fct{bayesx\_logfile} if \pkg{BayesX} successfully finished processing. 
+In this example the log-file may be printed with
 \begin{Sinput}
 R> bayesx_logfile(zm)
 
@@ -1149,11 +1167,10 @@ Subsection~\ref{subsec:processing}.
 To estimate the model within \proglang{R} the data is loaded and the model formula specified with
 <<forest-model-formula-01, echo=TRUE, eval=TRUE>>=
 data("ForestHealth", package = "R2BayesX")
-mf <- defoliation ~  stand + fertilized +
+mf <- defoliation ~  stand + fertilized + 
   humus + moisture + alkali + ph + soil +
-  s(age, bs = "ps", k = 22) + s(inclination, bs = "ps", k = 22) +
-  s(canopy, bs = "ps", k = 22) + s(year, bs = "ps", k = 22) +
-  s(elevation, bs = "ps", k = 22)
+  f(age) + f(inclination) + f(canopy) + 
+  f(year) + f(elevation)
 @
 The covariates entering nonlinearly are again modeled by P-splines using 22 basis functions,
 \code{k = 22}. The model is then fitted applying REML by assigning a cumulative logit model and
@@ -1166,11 +1183,10 @@ fm1 <- bayesx(mf, family = "cumlogit",
 data("BeechBnd", package = "R2BayesX")
 fm2 <- bayesx(defoliation ~  stand + fertilized +
   humus + moisture + alkali + ph + soil +
-  s(age, bs = "ps", k = 22) + s(inclination, bs = "ps", k = 22) +
-  s(canopy, bs = "ps", k = 22) + s(year, bs = "ps", k = 22) +
-  s(elevation, bs = "ps", k = 22) +
-  s(id, bs = "gs", xt = list(map = BeechBnd), k = 22),
-  family = "cumlogit", method = "REML", data = ForestHealth)
+  f(age) + f(inclination) + f(canopy) + f(year) +
+  f(elevation) + f(id, bs = "gs", map = BeechBnd),
+  family = "cumlogit", method = "REML", 
+  data = ForestHealth)
 @
 <<cache-forest-model, echo=FALSE, eval=TRUE>>=
 if(file.exists("forest-model.rda")) {
@@ -1184,8 +1200,8 @@ save(fm1, fm2, file = "forest-model.rda")
 After the estimation process has converged, the estimated effects of the nonparametric modeled terms
 may be visualized by typing
 <<fit-forest-model-01-plots, echo=TRUE, eval=FALSE>>=
-plot(fm2, term = c("s(age)", "s(inclination)",
-  "s(canopy)", "s(year)", "s(elevation)"))
+plot(fm2, term = c("f(age)", "f(inclination)",
+  "f(canopy)", "f(year)", "f(elevation)"))
 @
 and are shown in Figure~\ref{fig:forest-no-spatial}.
 \begin{figure}[!ht]
@@ -1193,27 +1209,27 @@ and are shown in Figure~\ref{fig:forest-no-spatial}.
 \centering
 <<forest-no-spatial-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm1, term = "s(age)")
+plot(fm1, term = "f(age)")
 @
 <<forest-no-spatial-inclination, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm1, term = "s(inclination)")
+plot(fm1, term = "f(inclination)")
 @
 \\[2ex]
 
 <<forest-no-spatial-canopy, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm1, term = "s(canopy)")
+plot(fm1, term = "f(canopy)")
 @
 <<forest-no-spatial-year, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm1, term = "s(year)")
+plot(fm1, term = "f(year)")
 @
 \\[2ex]
 
 <<forest-no-spatial-elevation, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm1, term = "s(elevation)")
+plot(fm1, term = "f(elevation)")
 @
 \caption{\label{fig:forest-no-spatial} Forest damage: Estimates of nonparametric effects including
 80\% and 95\% point-wise confidence intervals of the model without the spatial effect.}
@@ -1232,10 +1248,8 @@ We now fit the  model:
 <<fit-forest-model-02, echo=TRUE, eval=FALSE>>=
 fm2 <- bayesx(defoliation ~  stand + fertilized +
   humus + moisture + alkali + ph + soil +
-  s(age, bs = "ps", k = 22) + s(inclination, bs = "ps", k = 22) +
-  s(canopy, bs = "ps", k = 22) + s(year, bs = "ps", k = 22) +
-  s(elevation, bs = "ps", k = 22) +
-  s(id, bs = "gs", xt = list(map = BeechBnd), k = 22),
+  f(age) + f(inclination) + f(canopy) + f(year) +
+  f(elevation) + f(id, bs = "gs", map = BeechBnd),
   family = "cumlogit", method = "REML", data = ForestHealth)
 @
 Taking a look at model information criteria with
@@ -1257,17 +1271,17 @@ Figure~\ref{fig:forest-spatial-nonpara}.
 \centering
 <<forest-spatial-inclination, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm2, term = "s(inclination)")
+plot(fm2, term = "f(inclination)")
 @
 <<forest-spatial-elevation, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm2, term = "s(elevation)")
+plot(fm2, term = "f(elevation)")
 @
 \\[2ex]
 
 <<forest-spatial-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm2, term = "s(age)")
+plot(fm2, term = "f(age)")
 @
 \caption{\label{fig:forest-spatial-nonpara} Forest damage: Estimated effects of covariates
 \code{inclination}, \code{elevation} and \code{age}, including 80\% and 95\% point-wise confidence
@@ -1276,7 +1290,7 @@ intervals, of the model including the spatial effect.}
 
 A kernel density plot of the estimated spatial effect is then obtained by 
 <<forest-spatial-id, echo=TRUE, eval=FALSE>>=
-plot(fm2, term = "s(id)", map = FALSE)
+plot(fm2, term = "f(id)", map = FALSE)
 @
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.65\textwidth}
@@ -1284,7 +1298,7 @@ plot(fm2, term = "s(id)", map = FALSE)
 \setkeys{Gin}{width=0.46\textwidth}
 <<forest-spatial-id-restrict-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.4, 1.1))
-plot(fm2, term = "s(id)", map = FALSE, main = "")
+plot(fm2, term = "f(id)", map = FALSE, main = "")
 @ 
 \\[2ex]
 
@@ -1293,7 +1307,7 @@ plot(fm2, term = "s(id)", map = FALSE, main = "")
 <<forest-spatial-id, echo=FALSE, fig=TRUE, width=7.3, height=4.5>>=
 par(mar = c(0.1, 0.1, 0.1, 0.1))
 range <- c(-1 * max(abs(range)), max(abs(range)))
-plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft",
+plot(fm2, term = "f(id)", map = BeechBnd, pos = "topleft",
   height = 0.24, width = 0.41)
 @
 \caption{\label{fig:forest-spatial-kde} Forest damage: Kernel density estimate of the spatial 
@@ -1302,14 +1316,14 @@ plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft",
 The effect may also be visualized either using a 3d perspective plot, an image/contour plot or a map 
 effect plot using the boundary file \code{BeechBnd} with
 <<forest-spatial-id, echo=TRUE, eval=FALSE>>=
-plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft")
+plot(fm2, term = "f(id)", map = BeechBnd, pos = "topleft")
 @
 Both the kernel density and map effect plot are shown in Figure~\ref{fig:forest-spatial-kde}. In 
 this example the coloring of the plot is strongly influenced by a few very high and low values. 
 Therefore, it might be useful to restrict the color range e.g. according to the 5\% and 95\% 
 quantiles of the kernel density estimate of the effect, e.g. by typing
 <<forest-spatial-id-restrict, echo=TRUE, eval=FALSE>>=
-plot(fm2, term = "s(id)", map = BeechBnd,
+plot(fm2, term = "f(id)", map = BeechBnd,
   pos = "topleft", range = c(-4, 4))
 @
 the resulting map is shown in Figure~\ref{fig:forest-spatial-restrict}.
@@ -1318,9 +1332,9 @@ the resulting map is shown in Figure~\ref{fig:forest-spatial-restrict}.
 \centering
 <<forest-spatial-id-restrict, echo=FALSE, fig=TRUE, width=7.3, height=4.5>>=
 par(mar = c(0.1, 0.1, 0.1, 0.1))
-range <- R2BayesX:::kde.quantiles(fitted(fm2, term = "s(id)")$Estimate)
+range <- R2BayesX:::kde.quantiles(fitted(fm2, term = "f(id)")$Estimate)
 range <- c(-1 * max(abs(range)), max(abs(range)))
-plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft",
+plot(fm2, term = "f(id)", map = BeechBnd, pos = "topleft",
   height = 0.24, width = 0.41,
   range = range)
 @ %$
@@ -1341,14 +1355,14 @@ Subsection~\ref{subsec:zambia}. In this example, the structured additive
 predictor~(\ref{eqn:zambia-eta}) contains two continuous covariates \code{bmi} and \code{agechild},
 that are assumed to have a possibly nonlinear effect on the response \code{stunting} and are modeled
 with P-splines. However, a linear effect could be more appropriate and, hence, the linear effect is
-also considered using the selection algorithm in BayesX. Additionally, for each variable and
+also considered using the selection algorithm in \pkg{BayesX}. Additionally, for each variable and
 function, the implemented procedures decide if a term is included or removed from the model. To
 estimate the model applying the option \code{method = "STEP"}, we use the same  model formula of
 Subsection~\ref{subsec:zambia} and call
 <<fit-zambia-model-step-01, echo=TRUE, eval=FALSE>>=
 mf <- stunting ~ memployment + urban + gender +
-  s(education, bs = "factor") + s(bmi, bs = "ps") + s(agechild, bs = "ps") +
-  s(district, bs = "mrf", xt = list(map = ZambiaBnd)) + r(district)
+  f(education, bs = "factor") + f(bmi) + f(agechild) +
+  f(district, bs = "mrf", map = ZambiaBnd) + r(district)
 zms <- bayesx(mf, family = "gaussian", method = "STEP",
   algorithm = "cdescent1", startmodel = "empty",
   seed = 123, data = ZambiaNutrition)
@@ -1409,34 +1423,35 @@ which additionally considers the uncertainty due to model selection.
 \begin{appendix}
 
 
-\section[Details on installing BayesX]{Details on installing BayesX} \label{appendix:minstall}
+\section[Details on installing BayesX]{Details on installing \pkg{BayesX}} \label{appendix:minstall}
 
 \subsection[Windows systems]{Windows systems} \label{appendix:wininstall}
 The installation routine
 \href{http://www.stat.uni-muenchen.de/~bayesx/install/BayesX_windows.exe}{BayesX\_windows.exe}
-may be downloaded from the BayesX homepage and executed. The routine will request all necessary
-information during the installation process. It is recommended to install BayesX in a directory
-without spaces in the path name. This will install a pre-compiled computing kernel including a Java
-graphical interface, which automatically installs the necessary command line version of BayesX for
-use within the \proglang{R} interface. The binary is named \code{bayesx.exe} and is stored in the
-\code{commandline} directory of the BayesX installation folder.
+may be downloaded from the \pkg{BayesX} homepage and executed. The routine will request all 
+necessary information during the installation process. It is recommended to install \pkg{BayesX} in 
+a directory without spaces in the path name. This will install a pre-compiled computing kernel 
+including a Java graphical interface, which automatically installs the necessary command line 
+version of \pkg{BayesX} for use within the \proglang{R} interface. The binary is named 
+\code{bayesx.exe} and is stored in the \code{commandline} directory of the \pkg{BayesX} installation 
+folder.
 
 \subsection[Other systems]{Other systems} \label{appendix:otherinstall}
 The zip archive named
 \href{http://www.stat.uni-muenchen.de/~bayesx/install/bayesxsource.zip}{\code{bayesxsource.zip}},
-containing the \proglang{C++} source code of BayesX, needs to be downloaded and unpacked. If the
-make facility is available, one can simply type make BayesX in the shell and BayesX will be
-compiled. Depending on the operating system, some minor modifications of the make file (for example
-relating to the version of the installed GNU compiler or the location of the readline library) may
-be necessary. For MAC OS, versions of an adjusted makefile and the main function that have been used
-for a sucessful compilation may be found at the
+containing the \proglang{C++} source code of \pkg{BayesX}, needs to be downloaded and unpacked. If 
+the make facility is available, one can simply type make \pkg{BayesX} in the shell and \pkg{BayesX} 
+will be compiled. Depending on the operating system, some minor modifications of the make file (for 
+example relating to the version of the installed GNU compiler or the location of the readline 
+library) may be necessary. For MAC OS, versions of an adjusted makefile and the main function that 
+have been used for a sucessful compilation may be found at the
 \href{http://www.stat.uni-muenchen.de/~bayesx/bayesxfaq.html}{FAQ site}.
 \end{appendix}
 
 \subsection[Editing R's profile startup site]{Editing R's profile startup site}
 \label{appendix:linking}
-To permanently link to the BayesX command line binary, \proglang{R}'s startup profile site may be
-edited. In the majority of cases this site is called \code{Rprofile.site} and is stored in the
+To permanently link to the \pkg{BayesX} command line binary, \proglang{R}'s startup profile site may 
+be edited. In the majority of cases this site is called \code{Rprofile.site} and is stored in the
 \code{etc} directory of the running \proglang{R} installation. The path to this directory with its
 files may be instantly looked up typing
 <<Rhome-directory, echo=TRUE, eval=TRUE>>=
@@ -1448,8 +1463,8 @@ Then, by adding the line
 options(bayesx.bin = "path/to/BayesX")
 \end{Sinput}
 to the \code{Rprofile.site} will tell \proglang{R} where to find the binary on startup. The string
-\code{"path/to/BayesX"} is the full path to the BayesX binary with the name of the binary at last.
-On Windows systems the binary name is \code{"bayesx.exe"}, on all other systems usually
+\code{"path/to/BayesX"} is the full path to the \pkg{BayesX} binary with the name of the binary at 
+last. On Windows systems the binary name is \code{"bayesx.exe"}, on all other systems usually
 \code{"BayesX"}. Hence, for Windows platforms \code{bayesx.bin} may be specified e.g. with
 \begin{Sinput}
 options(bayesx.bin = "C:/BayesX/commandline/bayesx.exe")

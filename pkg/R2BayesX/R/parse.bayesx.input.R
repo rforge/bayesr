@@ -20,8 +20,12 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
   if(!is.null(subset) && subset == "ra$subset") subset <- NULL
   co.id <- attr(control, "co.id")
   outfile <- control$outfile
+#  formula <- as.character(formula)
+#  envf <- environment(formula)
+#  formula[3L] <- gsub("f(", "fbx(", formula[3L], fixed = TRUE)
+#  formula <- as.formula(paste(formula[2L], formula[1L], formula[3L]), env = envf)
   control$oformula <- formula
-  control$terms <- terms(formula, specials = c("s", "te", "r", "f"), keep.order = TRUE)
+  control$terms <- terms(formula, specials = c("s", "te", "r", "f", "fbx"), keep.order = TRUE)
   intcpt <- TRUE
   if(grepl("-1", as.character(formula)[3L]))
     intcpt <- FALSE
@@ -37,6 +41,8 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
         tl[k] <- tmp$term[1L]
         if(length(tmp$term) > 1L)
           tl <- c(tl, tmp$term[2L])
+        if(tmp$by != "NA")
+          tl <- c(tl, tmp$by)
       }
     formula <- as.formula(paste(as.character(formula[2L]), "~", paste(tl, collapse = "+")))
   }
