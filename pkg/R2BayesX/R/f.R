@@ -40,7 +40,7 @@ function(x, z = NA, bs = "ps", by = NA, ...)
     bs <- "ra"
   if(!is.null(xt$map))
     rval$map.name <- as.character(call$map)
-  rval$p.order <- rep(0, 2L)
+  rval$p.order <- rep(0L, 2L)
   if(is.null(xt$degree))
     rval$p.order[1L] <- 3L
   else 
@@ -52,9 +52,9 @@ function(x, z = NA, bs = "ps", by = NA, ...)
   if(!is.null(xt$nrknots))
     xt$knots <- xt$nrknots
   if(is.null(xt$knots))
-    rval$bs.dim <- -1L
+    rval$bs.dim <- 20L + rval$p.order[1L] - 1L
   else 
-    rval$bs.dim <- xt$knots + rval$p.order[1L] - 1
+    rval$bs.dim <- xt$knots + rval$p.order[1L] - 1L
   xt[c("degree", "order", "knots", "nrknots", "map.name")] <- NULL
   if(!length(xt))
     rval$xt <- NULL
