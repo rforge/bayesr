@@ -70,7 +70,10 @@ function(dir, files, data, response, eta, model.name, minfo, info)
             for(k in 1L:length(info)) {
               term <- eval(parse(text = info[k]))
               if(!is.null(term$term)) {
-                term2 <- gsub("f(", "s(", term$term, fixed = TRUE)
+                if(!is.null(term$israndom) && term$israndom)
+                  term2 <- gsub("f(", "r(", term$term, fixed = TRUE)
+                else
+                  term2 <- gsub("f(", "s(", term$term, fixed = TRUE)
                 if(term2 == make.label(cx, xnam, dimx, NULL)) {
                   labelx <- term$term
                   if(!is.null(vx))

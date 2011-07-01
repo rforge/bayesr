@@ -31,13 +31,18 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL,
             }
           }
         }
+        israndom <- FALSE
+        if(class(te) == "ra.smooth.spec")
+          israndom <- TRUE
         if(fby) {
           te$label <- gsub(")", paste(",by=", te$by, ")", sep = ""), te$label)
           info <- paste("list(term=\'", te$label, "\',pos=", k, ",by=\'", te$by,
-            "\',isFactor=FALSE", ",isFactorBy=", fby, ",isFactorByNames=", fnv, ",map=", map, ")", sep = "")
+            "\',isFactor=FALSE", ",isFactorBy=", fby, ",isFactorByNames=", fnv, 
+            ",map=", map, ", israndom=", israndom, ")", sep = "")
         } else {
           info <- paste("list(term=\'", te$label, "\',pos=", k, ",by=\'", te$by,
-            "\',isFactor=FALSE", ",isFactorBy=", fby, ",map=", map, ")", sep = "")
+            "\',isFactor=FALSE", ",isFactorBy=", fby, ",map=", map, 
+            ", israndom=", israndom, ")", sep = "")
         }
       } else {
         sp <- FALSE

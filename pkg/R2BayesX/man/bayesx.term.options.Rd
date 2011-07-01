@@ -26,7 +26,7 @@ bayesx.term.options(bs = "ps")
   At the moment the following model terms are implemented, for which additional controlling 
   parameters may be specified:
   \itemize{
-    \item \code{"lasso"}, \code{"nigmix"}, \code{"ridge"}: & shrinkage of fixed effects, defines a 
+    \item \code{"lasso"}, \code{"nigmix"}, \code{"ridge"}: shrinkage of fixed effects, defines a 
       shrinkage-prior for the corresponding parameters \eqn{\gamma_j}, \eqn{j = 1, \ldots, q}, 
       \eqn{q \geq 1} of the linear effects \eqn{x_1, \ldots, x_q}. There are three priors possible: 
       ridge-, lasso- and Normal Mixture of inverse Gamma (NMIG)-prior. 

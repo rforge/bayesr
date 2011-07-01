@@ -1,34 +1,29 @@
 dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-plot(b1, term = "s(id)", map = MunichBnd, pos = "right")
-
-
-     set.seed(333)
-          
-     ## simulate some geographical data
-     data("MunichBnd")
-     N <- length(MunichBnd); n <- N*5
-     names(MunichBnd) <- 1:N
-          
-     ## regressors
-     dat <- data.frame(x1 = runif(n, -3, 3),
-       id = as.factor(rep(names(MunichBnd), length.out = n)))
-     dat$sp <- with(dat, sort(runif(N, -2, 2), decreasing = TRUE)[id])
-          
-     ## response
-     dat$y <- with(dat, 1.5 + sin(x1) + sp + rnorm(n, sd = 1.2))
-     
-     ## estimate models with
-     ## bayesx MCMC and REML
-     b1 <- bayesx(y ~ f(x1) + 
-       f(id, bs = "gk", map = MunichBnd), 
-       method = "MCMC", data = dat)
+b <- read.bayesx.output("/tmp/Rtmp5wTsRM/bayesx")
 
 
 
-b1 <- bayesx(y ~ f(x) + f(z, w, bs = "te") + fac,
-  data = dat, method = "MCMC", iter = 1200, burnin = 200)
+class(f(id, bs = "ra"))
+
+set.seed(111)
+n <- 500
+
+## regressors
+dat <- data.frame(x = runif(n, -3, 3), z = runif(n, -3, 3),
+  w = runif(n, 0, 6), fac = factor(rep(1:10, n/10)))
+
+## response
+dat$y <- with(dat, 1.5 + sin(x) + cos(z) * sin(w) +
+  c(2.67, 5, 6, 3, 4, 2, 6, 7, 9, 7.5)[fac] + rnorm(n, sd = 0.6))
+
+## estimate models with
+## bayesx MCMC and REML
+## and compare with
+## mgcv gam()
+b1 <- bayesx(y ~ f(x, bs = "psplinerw2") + f(z, w, bs = "pspline2dimrw2") + fac,
+  data = dat, method = "MCMC")
 
 
 

@@ -1323,7 +1323,7 @@ range <- c(-1 * max(abs(range)), max(abs(range)))
 plot(fm2, term = "s(id)", map = BeechBnd, pos = "topleft",
   height = 0.24, width = 0.41,
   range = range)
-@
+@ %$
 \caption{\label{fig:forest-spatial-restrict} Forest damage: Estimate of the spatial effect with
 color scaling based on the 5\% and 95\% quantiles of the kernel density estimate of the effect.}
 \end{figure}

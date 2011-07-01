@@ -28,37 +28,41 @@ f(x, z = NA, bs = "ps", by = NA, ...)
     case the term is replicated for each \code{factor} level. Note that centering of the term may be 
     needed, please see the notes.}
   \item{\dots}{special controlling arguments or objects used for the model term, see also 
-    the examples and function \code{\link{bayesx.term.options}}.}
+    the examples and function \code{\link{bayesx.term.options}} for all possible optional 
+    parameters.}
 }
 
 \details{
   The following term types may be specified using argument \code{bs}:
   \itemize{
-    \item \code{"lasso"}, \code{"nigmix"}, \code{"ridge"}: & shrinkage of fixed effects, defines a 
+    \item \code{"lasso"}, \code{"nigmix"}, \code{"ridge"}: shrinkage of fixed effects, defines a 
       shrinkage-prior for the corresponding parameters \eqn{\gamma_j}, \eqn{j = 1, \ldots, q}, 
       \eqn{q \geq 1} of the linear effects \eqn{x_1, \ldots, x_q}. There are three priors possible: 
       ridge-, lasso- and Normal Mixture of inverse Gamma (NMIG)-prior. 
-    \item \code{"bl"}: nonlinear baseline effect in hazard regression or multi-state models, defines 
-      a P-spline with second order random walk penalty for the parameters of the spline for the 
-      log-baseline effect \eqn{log(\lambda(time))}.
-    \item \code{"kr"}: kriging with stationary Gaussian random fields. Covariate arguments \code{x} 
-      and \code{z} must be specified.
-    \item \code{"gk"}: geokriging with stationary Gaussian random fields: estimates a stationary 
-      Gaussian random field based on the centroids of a map object provided in boundary format, see
-      function \code{\link[BayesX]{read.bnd}}, within the \code{xt} argument of function 
-      \code{\link[mgcv]{s}}, e.g. \code{xt = list(map = MapBnd)}. 
-    \item \code{"gs"}: geosplines based on two-dimensional P-splines with first order random walk 
-      penalty, defines a two-dimensional P-spline for the spatial covariate region with a 
-      two-dimensional first order random walk penalty for the parameters of the spline. Estimation 
-      is based on the coordinates of the centroids of the regions provided by a map object in in 
-      boundary format, see function \code{\link[BayesX]{read.bnd}}, within the \code{xt} argument of 
-      function \code{\link[mgcv]{s}}, e.g. \code{xt = list(map = MapBnd)}. 
-    \item \code{"mrf"}: Markov random fields: defines a Markov random field prior for a spatial 
-      covariate, where geographical informations are provided by a map object in boundary or graph 
-      file format, see function \code{\link[BayesX]{read.bnd}} and \code{\link[BayesX]{read.gra}}, 
-      within the \code{xt} argument of function \code{\link[mgcv]{s}}, e.g. 
-      \code{xt = list(map = MapBndorGra)}. 
-    \item \code{"ps"}: P-spline with first or second order difference penalty. 
+    \item \code{"bl"}, \code{"baseline"}: nonlinear baseline effect in hazard regression or 
+      multi-state models, defines a P-spline with second order random walk penalty for the 
+      parameters of the spline for the log-baseline effect \eqn{log(\lambda(time))}.
+    \item \code{"kr"}, \code{kriging}: kriging with stationary Gaussian random fields. Covariate
+      arguments \code{x} and \code{z} must be specified.
+    \item \code{"gk"} or \code{"geokriging"}: geokriging with stationary Gaussian random fields: 
+      estimates a stationary Gaussian random field based on the centroids of a map object provided 
+      in boundary format, see function \code{\link[BayesX]{read.bnd}}, within the \code{xt} argument 
+      of function \code{\link[mgcv]{s}}, e.g. \code{xt = list(map = MapBnd)}. 
+    \item \code{"gs"}, \code{"geospline"}: geosplines based on two-dimensional P-splines with 
+      first order random walk penalty, defines a two-dimensional P-spline for the spatial covariate 
+      region with a two-dimensional first order random walk penalty for the parameters of the 
+      spline. Estimation is based on the coordinates of the centroids of the regions provided by a 
+      map object in in boundary format, see function \code{\link[BayesX]{read.bnd}}, within the 
+      \code{xt} argument of function \code{\link[mgcv]{s}}, e.g. \code{xt = list(map = MapBnd)}, or 
+      within argument \code{"..."} of function \code{f}, i.e. \code{f(id, bs = "gs", map = MapBnd)}. 
+    \item \code{"mrf"}, \code{"spatial"}: Markov random fields: defines a Markov random field 
+      prior for a spatial covariate, where geographical informations are provided by a map object in
+      boundary or graph file format, see function \code{\link[BayesX]{read.bnd}} and 
+      \code{\link[BayesX]{read.gra}}, within the \code{xt} argument of function 
+      \code{\link[mgcv]{s}}, e.g. \code{xt = list(map = MapBndorGra)}, or within argument 
+      \code{"..."} of function \code{f}, i.e. \code{f(id, bs = "mrf", map = MapBnd)}.
+    \item \code{"ps"}, \code{"psplinerw1"}, \code{"psplinerw2"}, \code{"pspline"}: P-spline with 
+      first or second order difference penalty. 
     \item \code{"rw1"}, \code{"rw2"}: zero degree P-splines, defines a zero degree P-spline with 
       first or second order difference penalty. A zero degree P-spline typically estimates for every 
       distinct covariate value in the data set a separate parameter. Usually there is no reason to 
@@ -68,12 +72,18 @@ f(x, z = NA, bs = "ps", by = NA, ...)
       to modeling nonlinear relationships via a dummy approach with completely unrestricted 
       regression parameters.
     \item \code{"season"}: seasonal effect of a time scale. 
-    \item \code{"te"}: defines a two-dimensional P-spline based on the tensor product of 
-      one-dimensional P-splines with a two-dimensional first order random walk penalty for the 
-      parameters of the spline. Covariate arguments \code{x} and \code{z} must be specified.
+    \item \code{"te"}, \code{"pspline2dimrw2"}: defines a two-dimensional P-spline based on the 
+      tensor product of one-dimensional P-splines with a two-dimensional first order random walk 
+      penalty for the parameters of the spline. Covariate arguments \code{x} and \code{z} must be 
+      specified.
+    \item \code{"offset"}: an offset term.
+    \item \code{"ra"}, \code{"random"}: i.i.d. Gaussian (random) effect of a group indicator 
+      covariate, e.g. the covariate may be an individual indicator when analyzing longitudinal data.
     \item \code{"factor"}: special BayesX specifier for \code{\link[base]{factor}}s, especially 
       meaningful if \code{method = "STEP"} in \code{\link{bayesx}}, since the factor term is then 
       treated as a full term, which is either included or removed from the model.
+    \item \code{"cs"}, \code{"catspecific"}: category-specific linear effect (in cumulative or 
+      sequential models only).
   } 
 }
 
@@ -106,20 +116,39 @@ f(x, z = NA, bs = "ps", by = NA, ...)
 }
 
 \examples{
+## funktion f() returns a list
+## which is then processed by function
+## bayesx.construct to build the
+## BayesX model term structure
 f(x)
-f(x, bs = "rw1")
-f(x, bs = "factor")
-f(x, z, bs = "te")
 
-## examples using optional controlling
-## parameters and objects
-f(x, bs = "ps", knots = 20)
-f(x, bs = "ps", knots = 20, nocenter = TRUE)
+bayesx.construct(f(x))
+bayesx.construct(f(x, bs = "rw1"))
+bayesx.construct(f(x, bs = "factor"))
+bayesx.construct(f(x, bs = "offset"))
+bayesx.construct(f(x, z, bs = "te"))
 
 ## using a map for markov random fields
 data("FantasyBnd")
 plot(FantasyBnd)
-f(id, bs = "mrf", map = FantasyBnd)
+bayesx.construct(f(id, bs = "mrf", map = FantasyBnd))
+
+## examples using optional controlling
+## parameters and objects
+bayesx.construct(f(x, bs = "ps", knots = 20))
+bayesx.construct(f(x, bs = "ps", nrknots = 20))
+bayesx.construct(f(x, bs = "ps", knots = 20, nocenter = TRUE))
+
+## use of bs with original 
+## BayesX syntax 
+bayesx.construct(f(x, bs = "psplinerw1"))
+bayesx.construct(f(x, bs = "psplinerw2"))
+bayesx.construct(f(x, z, bs = "pspline2dimrw2"))
+bayesx.construct(f(id, bs = "spatial", map = FantasyBnd))
+bayesx.construct(f(x, z, bs = "kriging"))
+bayesx.construct(f(id, bs = "geospline", map = FantasyBnd))
+bayesx.construct(f(x, bs = "catspecific"))
+
 
 \dontrun{
 ## generate some data
@@ -200,6 +229,28 @@ plot(b, term = "f(id)", map = MunichBnd,
 plotmap(MunichBnd, x = dat$sp, id = dat$id, 
   main = "Truth")
 par(op)
+
+
+## model with random effects
+set.seed(333)
+N <- 30
+n <- N*10
+
+## regressors
+dat <- data.frame(id = sort(rep(1:N, n/N)), x1 = runif(n, -3, 3))
+dat$re <- with(dat, rnorm(N, sd = 0.6)[id])
+
+## response
+dat$y <- with(dat, 1.5 + sin(x1) + re + rnorm(n, sd = 0.6))
+
+## estimate model
+b <- bayesx(y ~ f(x1, bs = "ps") + f(id, bs = "ra"), data = dat)
+summary(b)
+plot(b)
+
+## extract estimated random effects
+## and compare with true effects
+plot(fitted(b, term = "f(id)")$Mean ~ unique(dat$re))
 }
 }
 
