@@ -1,5 +1,4 @@
-f <- fbx <- 
-function(x, z = NA, bs = "ps", by = NA, ...)
+fbx <- function(x, z = NA, bs = "ps", by = NA, ...)
 {
   rval <- list()
   rval$call <- call <- match.call()
@@ -23,9 +22,11 @@ function(x, z = NA, bs = "ps", by = NA, ...)
     rval$p.order[2L] <- 2L
   else
     rval$p.order[2L] <- xt$order
+  if(bs == "gs" || bs == "geospline")
+    rval$p.order[2L] <- 1L
   if(!is.null(xt$nrknots))
     xt$knots <- xt$nrknots
-  if(is.null(xt$knots))
+  if(is.null(xt$knots)) 
     rval$bs.dim <- 20L + rval$p.order[1L] - 1L
   else 
     rval$bs.dim <- xt$knots + rval$p.order[1L] - 1L

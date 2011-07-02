@@ -12,7 +12,7 @@ export(
   install.bayesx,       
   colorlegend, 
   cprob,  
-  f,
+  fbx,
   getscript,       
   parse.bayesx.input,  
   plot2d,               
@@ -67,6 +67,18 @@ S3method(bayesx.construct, generic.smooth.spec)
 S3method(bayesx.construct, factor.smooth.spec)
 S3method(bayesx.construct, cs.smooth.spec)
 S3method(bayesx.construct, offset.smooth.spec)
+
+S3method(bayesx.construct, geokriging.smooth.spec)
+S3method(bayesx.construct, geospline.smooth.spec)
+S3method(bayesx.construct, spatial.smooth.spec)
+S3method(bayesx.construct, psplinerw1.smooth.spec)
+S3method(bayesx.construct, psplinerw2.smooth.spec)
+S3method(bayesx.construct, pspline.smooth.spec)
+S3method(bayesx.construct, random.smooth.spec)
+S3method(bayesx.construct, pspline2dimrw2.smooth.spec)
+S3method(bayesx.construct, kriging.smooth.spec)
+S3method(bayesx.construct, baseline.smooth.spec)
+S3method(bayesx.construct, catspecific.smooth.spec)
 
 S3method(AIC, bayesx)
 S3method(BIC, bayesx)

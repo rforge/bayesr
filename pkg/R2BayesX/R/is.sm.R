@@ -12,6 +12,9 @@ function(x)
         if(resplit(split[1L:2L]) %in% c("s(", "r(", "f("))
           issm[i] <- TRUE
       }
+      if(length(split) > 4L)
+        if(resplit(split[1L:4L]) == "fbx(")
+          issm[i] <- TRUE 
     }
   } else issm <- FALSE
 

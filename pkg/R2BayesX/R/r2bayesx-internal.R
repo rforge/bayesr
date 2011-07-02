@@ -8,16 +8,17 @@ function(x, ...)
     mfn <- names(x$model.fit)
     step <- 5L
     for(i in 1L:length(mfn)) {
+      txt <- deparse(x$model.fit[[i]])
       if(i < step) {
-        if(!is.null(x$model.fit[[i]]) && x$model.fit[[i]] != "") {
+        if(!is.null(txt) && txt != "") {
           if(mfn[i] != "step.final.model") {
             if(mfn[i] != "order")
-              cat(mfn[i], "=", x$model.fit[[i]]," ")
+              cat(mfn[i], "=", txt," ")
           } else {
             cat("\n---\n")
             cat("Stepwise final model:\n")
             cat("-\n")
-            cat(x$model.fit[[i]])
+            cat(txt)
           }
         }
       }

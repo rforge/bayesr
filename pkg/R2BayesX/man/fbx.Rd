@@ -1,12 +1,12 @@
-\name{f}
-\alias{f}
+\name{fbx}
+\alias{fbx}
 
 \title{
   Construct BayesX Model Terms in A Formula
 }
 
 \description{
-  Function \code{f} is a model term constructor function for terms used within the \code{formula}
+  Function \code{fbx} is a model term constructor function for terms used within the \code{formula}
   argument of function \code{\link{bayesx}}. The function does not evaluate matrices etc., the 
   behavior is similar to function \code{\link[mgcv]{s}} from package \code{\link[mgcv]{mgcv}}. It 
   purely exists to build a basic setup for the model term which can be processed by function 
@@ -14,7 +14,7 @@
 }
 
 \usage{
-f(x, z = NA, bs = "ps", by = NA, ...)
+fbx(x, z = NA, bs = "ps", by = NA, ...)
 }
  
 \arguments{
@@ -116,38 +116,38 @@ f(x, z = NA, bs = "ps", by = NA, ...)
 }
 
 \examples{
-## funktion f() returns a list
+## funktion fbx() returns a list
 ## which is then processed by function
 ## bayesx.construct to build the
 ## BayesX model term structure
-f(x)
+fbx(x)
 
-bayesx.construct(f(x))
-bayesx.construct(f(x, bs = "rw1"))
-bayesx.construct(f(x, bs = "factor"))
-bayesx.construct(f(x, bs = "offset"))
-bayesx.construct(f(x, z, bs = "te"))
+bayesx.construct(fbx(x))
+bayesx.construct(fbx(x, bs = "rw1"))
+bayesx.construct(fbx(x, bs = "factor"))
+bayesx.construct(fbx(x, bs = "offset"))
+bayesx.construct(fbx(x, z, bs = "te"))
 
 ## using a map for markov random fields
 data("FantasyBnd")
 plot(FantasyBnd)
-bayesx.construct(f(id, bs = "mrf", map = FantasyBnd))
+bayesx.construct(fbx(id, bs = "mrf", map = FantasyBnd))
 
 ## examples using optional controlling
 ## parameters and objects
-bayesx.construct(f(x, bs = "ps", knots = 20))
-bayesx.construct(f(x, bs = "ps", nrknots = 20))
-bayesx.construct(f(x, bs = "ps", knots = 20, nocenter = TRUE))
+bayesx.construct(fbx(x, bs = "ps", knots = 20))
+bayesx.construct(fbx(x, bs = "ps", nrknots = 20))
+bayesx.construct(fbx(x, bs = "ps", knots = 20, nocenter = TRUE))
 
 ## use of bs with original 
 ## BayesX syntax 
-bayesx.construct(f(x, bs = "psplinerw1"))
-bayesx.construct(f(x, bs = "psplinerw2"))
-bayesx.construct(f(x, z, bs = "pspline2dimrw2"))
-bayesx.construct(f(id, bs = "spatial", map = FantasyBnd))
-bayesx.construct(f(x, z, bs = "kriging"))
-bayesx.construct(f(id, bs = "geospline", map = FantasyBnd))
-bayesx.construct(f(x, bs = "catspecific"))
+bayesx.construct(fbx(x, bs = "psplinerw1"))
+bayesx.construct(fbx(x, bs = "psplinerw2"))
+bayesx.construct(fbx(x, z, bs = "pspline2dimrw2"))
+bayesx.construct(fbx(id, bs = "spatial", map = FantasyBnd))
+bayesx.construct(fbx(x, z, bs = "kriging"))
+bayesx.construct(fbx(id, bs = "geospline", map = FantasyBnd, nrknots = 5))
+bayesx.construct(fbx(x, bs = "catspecific"))
 
 
 \dontrun{
@@ -163,7 +163,14 @@ dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
 
 ## estimate models with
 ## bayesx REML and MCMC
+b1 <- bayesx(y ~ fbx(x), method = "REML", data = dat)
+
+## note that the shortcut f() instead of fbx()
+## is working within bayesx() 
 b1 <- bayesx(y ~ f(x), method = "REML", data = dat)
+
+## increase inner knots
+## decrease degree of the P-spline
 b2 <- bayesx(y ~ f(x, knots = 30, degree = 2), method = "REML", data = dat)
 
 
