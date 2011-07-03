@@ -17,7 +17,6 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL,
           if("polys" %in% names(a$xt))
             map <- paste("\'", a$xt$polys, "\'", sep = "")
         }
-print(terms[k])
         te <- eval(parse(text = terms[k]))
         if(!is.null(te$map.name))
           map <- paste("\'", te$map.name, "\'", sep = "")

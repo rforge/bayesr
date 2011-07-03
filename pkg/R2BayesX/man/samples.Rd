@@ -17,11 +17,11 @@ samples(object, model = NULL, term = NULL, acf = FALSE, ...)
   \item{object}{an object of class \code{"bayesx"}.}
   \item{model}{for which model the samples should be provided, either an integer or a character, 
     e.g. \code{model = "mcmc.model"}.}
-  \item{term}{if not \code{NULL}, the function will search for the term fitted values/residuals 
-    specified here, either an integer or a character, eg \code{term = "s(x)"}. If set to 
-    \code{term = "fixed-samples"}, the samples of the fixed effects parameters are returned}
-  \item{acf}{if set to \code{TRUE}, the autocorrelation function of the samples will be provided
-    additionally.}
+  \item{term}{\code{\link{character}} or \code{\link{integer}}, the term for which samples should be
+    extracted. Also samples of linear effects may be returned if available and
+    \code{term = "linear-samples"}, or of the variance if \code{term = "var-samples"}. If set to
+    \code{NULL}, the samples of the linear effects will be returned.}
+  \item{acf}{if set to \code{TRUE}, the autocorrelation function of the samples will be provided.}
   \item{\dots}{further arguments passed to function \code{\link[stats]{acf}}, e.g. argument 
     \code{lag.max} if \code{acf = TRUE}.}
 }
@@ -65,7 +65,14 @@ samples(b, term = "linear-samples")
 ## for acf, increase lag
 sax <- samples(b, term = "s(x)", acf = TRUE, lag.max = 200)
 names(sax)
-print(sax$variance.samples.acf)
+print(sax$x.Var)
+
+## plot maximum autocorrelation 
+## of all parameters
+sax <- samples(b, term = c("linear-samples", "var-samples", "s(x)"), 
+  acf = TRUE, lag.max = 50)
+matplot(y = apply(sax, 1, max), type = "h", 
+  ylab = "ACF", xlab = "lag")
 }
 }
 

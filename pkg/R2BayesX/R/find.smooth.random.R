@@ -148,7 +148,7 @@ function(dir, files, data, response, eta, model.name, minfo, info)
                       if(ncol(attr(x, "variance.sample")) < 2L)
                         colnames(attr(x, "variance.sample")) <- "Variance"
                       else
-                        colnames(attr(x, "variance.sample")) <- paste("Variance", 1:ncol(attr(x, "variance.sample")), sep = "")
+                        colnames(attr(x, "variance.sample")) <- paste("Var", 1:ncol(attr(x, "variance.sample")), sep = "")
                     }
                   }
               }
@@ -158,7 +158,7 @@ function(dir, files, data, response, eta, model.name, minfo, info)
                 for(tf in sf) {
                   attr(x, "sample") <- df2m(read.table(paste(dir, "/", tf[1L], sep = ""), 
                     header = TRUE))
-                  colnames(attr(x, "sample")) <- paste("Coefficient", 1L:ncol(attr(x, "sample")), sep = "")
+                  colnames(attr(x, "sample")) <- paste("C", 1L:ncol(attr(x, "sample")), sep = "")
                 }
             if(length(pf <- grep("_param", af, value = TRUE)))
               for(tf in pf)

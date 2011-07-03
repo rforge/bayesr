@@ -12,7 +12,6 @@ export(
   install.bayesx,       
   colorlegend, 
   cprob,  
-  fbx,
   getscript,       
   parse.bayesx.input,  
   plot2d,               
@@ -27,7 +26,8 @@ export(
   plot.bayesx,
   GCV,
   DIC,
-  samples 
+  samples,
+  sl
 )
 
 S3method(c, bayesx)

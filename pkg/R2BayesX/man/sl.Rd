@@ -1,5 +1,5 @@
-\name{fbx}
-\alias{fbx}
+\name{sl}
+\alias{sl}
 
 \title{
   Construct BayesX Model Terms in A Formula
@@ -14,7 +14,7 @@
 }
 
 \usage{
-fbx(x, z = NA, bs = "ps", by = NA, ...)
+sl(x, z = NA, bs = "ps", by = NA, ...)
 }
  
 \arguments{
@@ -116,38 +116,39 @@ fbx(x, z = NA, bs = "ps", by = NA, ...)
 }
 
 \examples{
-## funktion fbx() returns a list
+## funktion sl() returns a list
 ## which is then processed by function
 ## bayesx.construct to build the
 ## BayesX model term structure
-fbx(x)
+sl(x)
 
-bayesx.construct(fbx(x))
-bayesx.construct(fbx(x, bs = "rw1"))
-bayesx.construct(fbx(x, bs = "factor"))
-bayesx.construct(fbx(x, bs = "offset"))
-bayesx.construct(fbx(x, z, bs = "te"))
+bayesx.construct(sl(x))
+bayesx.construct(sl(x, bs = "rw1"))
+bayesx.construct(sl(x, bs = "factor"))
+bayesx.construct(sl(x, bs = "offset"))
+bayesx.construct(sl(x, z, bs = "te"))
 
 ## using a map for markov random fields
 data("FantasyBnd")
 plot(FantasyBnd)
-bayesx.construct(fbx(id, bs = "mrf", map = FantasyBnd))
+bayesx.construct(sl(id, bs = "mrf", map = FantasyBnd))
 
 ## examples using optional controlling
 ## parameters and objects
-bayesx.construct(fbx(x, bs = "ps", knots = 20))
-bayesx.construct(fbx(x, bs = "ps", nrknots = 20))
-bayesx.construct(fbx(x, bs = "ps", knots = 20, nocenter = TRUE))
+bayesx.construct(sl(x, bs = "ps", knots = 20))
+bayesx.construct(sl(x, bs = "ps", nrknots = 20))
+bayesx.construct(sl(x, bs = "ps", knots = 20, nocenter = TRUE))
 
 ## use of bs with original 
 ## BayesX syntax 
-bayesx.construct(fbx(x, bs = "psplinerw1"))
-bayesx.construct(fbx(x, bs = "psplinerw2"))
-bayesx.construct(fbx(x, z, bs = "pspline2dimrw2"))
-bayesx.construct(fbx(id, bs = "spatial", map = FantasyBnd))
-bayesx.construct(fbx(x, z, bs = "kriging"))
-bayesx.construct(fbx(id, bs = "geospline", map = FantasyBnd, nrknots = 5))
-bayesx.construct(fbx(x, bs = "catspecific"))
+bayesx.construct(sl(x, bs = "psplinerw1"))
+bayesx.construct(sl(x, bs = "psplinerw2"))
+bayesx.construct(sl(x, z, bs = "pspline2dimrw2"))
+
+bayesx.construct(sl(id, bs = "spatial", map = FantasyBnd))
+bayesx.construct(sl(x, z, bs = "kriging"))
+bayesx.construct(sl(id, bs = "geospline", map = FantasyBnd, nrknots = 5))
+bayesx.construct(sl(x, bs = "catspecific"))
 
 
 \dontrun{
@@ -163,9 +164,9 @@ dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
 
 ## estimate models with
 ## bayesx REML and MCMC
-b1 <- bayesx(y ~ fbx(x), method = "REML", data = dat)
+b1 <- bayesx(y ~ sl(x), method = "REML", data = dat)
 
-## note that the shortcut f() instead of fbx()
+## note that the shortcut f() instead of sl()
 ## is working within bayesx() 
 b1 <- bayesx(y ~ f(x), method = "REML", data = dat)
 

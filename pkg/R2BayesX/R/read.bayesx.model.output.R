@@ -180,8 +180,10 @@ function(dir, model.name)
 
     ## get long formulas
     if(mformula %in% files) {
-      load(paste(dir, "/", mformula, sep = ""))
-      rval$model.fit$formula <- f
+      nenv <- new.env()
+      load(paste(dir, "/", mformula, sep = ""), envir = nenv)
+      rval$model.fit$formula <- get("f", envir = nenv)
+      unlink(paste(dir, "/", mformula, sep = ""))
     }
     
 

@@ -1,4 +1,4 @@
-fbx <- function(x, z = NA, bs = "ps", by = NA, ...)
+sl <- function(x, z = NA, bs = "ps", by = NA, ...)
 {
   rval <- list()
   rval$call <- call <- match.call()

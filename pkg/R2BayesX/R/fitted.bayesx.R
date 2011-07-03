@@ -36,7 +36,8 @@ function(object, model = NULL, term = NULL, ...)
   if(is.null(rval) || length(rval) < 1L)
     rval <- NA
   else {
-    if(is.list(rval) && any(grepl("bayesx", class(rval[[1L]]))))
+    if(is.list(rval) && any(grepl("bayesx", class(rval[[1L]]))) || 
+      (is.list(rval) && is.list(rval[[1L]])))
       class(rval) <- "fit.bayesx"
   }
   if(any(is.na(rval)))
