@@ -1,7 +1,11 @@
 dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-b1 <- bayesx(y ~ sl(x), method = "REML", data = dat)
+samples(b1, term = c("s(x)", "linear-samples"), acf = T)
+
+
+
+samples(f)
 
 
 

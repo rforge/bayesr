@@ -193,11 +193,11 @@ plot(b, term = "f(district)", range = c(-0.5, 0.5), lrange = c(-0.6, 0.6),
   ticktype = "detailed", zlab = "\nf(x,y)", xlab = "\nx", ylab = "\ny")
 @
 \caption{\label{fig:illustration} Visualization examples: Estimated effect for covariate \code{bmi}
-(black line) together with 95\% and 80\% credible intervals (upper left panel). The upper right panel shows the estimated effect of \code{agechild}
-including partial residuals. The lower left panel illustrates visualization of the estimated spatial
-effect for covariate \code{district} using an image plot with a map of the districts in Zambia
-together with a color legend. The lower right panel draws the same effect with a perspective plot in
-a slightly rotated angle.}
+(black line) together with 95\% and 80\% credible intervals (upper left panel). The upper right
+panel shows the estimated effect of \code{agechild} including partial residuals. The lower left
+panel illustrates visualization of the estimated spatial effect for covariate \code{district} using
+an image plot with a map of the districts in Zambia together with a color legend. The lower right
+panel draws the same effect with a perspective plot in a slightly rotated angle.}
 \end{figure}
 Thereafter, e.g. the base \proglang{R} functions \fct{summary} and \fct{plot} may be applied on the
 fitted model object. In Figure~\ref{fig:illustration}, some visualization examples of the estimated

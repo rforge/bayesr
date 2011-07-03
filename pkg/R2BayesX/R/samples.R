@@ -10,11 +10,11 @@ function(object, model = NULL, term = NULL, acf = FALSE, ...)
     else xn <- names(object)[1L]
     object <- list(object)
     names(object) <- xn
-    object <- list(effects = object)
+    object <- list(list(effects = object))
     term <- 1L
     is.fit <- TRUE
   }
-  if(inherits(object, "fit.bayesx")) {
+  if(inherits(object, "fit.bayesx") && !is.fit) {
     is.fit <- TRUE
     if(any(grepl("bayesx", class(object[[1L]]))))
       object <- list(object)
@@ -81,7 +81,7 @@ function(object, model = NULL, term = NULL, acf = FALSE, ...)
     rval <- NA
   if(any(is.na(rval)))
     warning("samples are missing in object!")
-  rval <- as.data.frame(rval)
+  rval <- as.data.frame(delete.NULLs(rval))
 
   return(rval)
 }
