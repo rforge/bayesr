@@ -40,7 +40,7 @@ realistic models that can be estimated using Bayesian inference based on modern 
 Carlo (MCMC) simulation techniques, based on a mixed model representation of STAR models, or with 
 stepwise regression techniques combining penalized least squares estimation with model selection.
 Software for fitting STAR models is provided in the standalone software package \pkg{BayesX}: a
-comprehensive regression toolbox written in open-source \proglang{C++} code. \pkg{BayesX} not only 
+comprehensive open-source regression toolbox written in \proglang{C++} code. \pkg{BayesX} not only 
 covers models for responses from univariate exponential families, but also models from non-standard
 regression situations such as models for multi-categorical responses with either ordered or 
 unordered categories, continuous time survival data, or continuous time multi-state models. This
@@ -99,7 +99,7 @@ data("BeechBnd")
 
 The public domain software \pkg{BayesX} \citep{R2BayesX:Brezger+Kneib+Lang:2005} is a standalone 
 program comprising powerful tools for Bayesian and mixed model based inference in complex 
-semiparametric regression models with structured additive predictor (STAR) (see 
+semiparametric regression models with structured additive predictor (STAR, see 
 Section~\ref{sec:model}). To gain improved computational performance, the algorithms implemented 
 utilize numerically efficient (sparse) matrix architectures and are written in a \proglang{C++} 
 environment. Besides exponential family regression, \pkg{BayesX} also supports non-standard 
