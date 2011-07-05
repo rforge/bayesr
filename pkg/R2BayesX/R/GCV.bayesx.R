@@ -1,5 +1,5 @@
 GCV.bayesx <-
-function(object, ..., k)
+function(object, ...)
 {
   obj <- list(...)
   if(length(obj)) 

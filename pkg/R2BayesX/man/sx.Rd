@@ -14,7 +14,7 @@
 }
 
 \usage{
-sx(x, z = NA, bs = "ps", by = NA, ...)
+sx(x, z = NULL, bs = "ps", by = NULL, ...)
 }
  
 \arguments{
