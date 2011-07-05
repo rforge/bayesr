@@ -17,7 +17,7 @@ function(object, dir, prg, data)
   nrknots <- object$bs.dim - object$p.order[1L] + 1L
   xt <- object$xt
   term <- paste(termo[1L], "*", termo[2L], "(pspline2dimrw", object$p.order[2L],
-    ",nrknots=", nrknots, ",degree=", object$p.order[1L], sep = "")
+    ",nrknots=", nrknots, ",degree=", object$p.order[1L] + 2L, sep = "")
   term <- paste(do.xt(term, object, NULL), ")", sep = "")
   if(object$by != "NA")
     term <- make_by(term, object, data)

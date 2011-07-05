@@ -19,6 +19,7 @@ sx <- function(x, z = NULL, bs = "ps", by = NULL, ...)
       m <- c(3L, 2L)
     if(is.null(xt$order) && length(m) < 2L)
       m <- c(m, 2L)
+    m[1L] <- m[1L] - 2L
     if(!is.null(xt$nrknots))
       k <- xt$nrknots + m[1L] - 1L
     else {

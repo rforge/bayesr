@@ -1,6 +1,11 @@
-dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
+dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
+
+bayesx.construct(te(z, w))
+
+b1 <- bayesx(y ~ s(x) + te(z, w) + fac,
+  data = dat, method = "MCMC", iter = 1200, burnin = 200, step = 1)
 
 
 data("ZambiaNutrition")
@@ -265,6 +270,7 @@ dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
      
 ## estimate models with
 ## bayesx REML and MCMC
+
 b <- bayesx(y ~ s(x, bs = "ps"), 
   method = "HMCMC", data = dat)
 

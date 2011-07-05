@@ -25,7 +25,7 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
   formula[3L] <- gsub("f(", "sx(", formula[3L], fixed = TRUE)
   formula <- as.formula(paste(formula[2L], formula[1L], formula[3L]), env = envf)
   control$oformula <- formula
-  control$terms <- terms(formula, specials = c("s", "te", "r", "f", "sx"), keep.order = TRUE)
+  control$terms <- terms(formula, specials = c("s", "te", "r", "f", "sx", "t2"), keep.order = TRUE)
   intcpt <- TRUE
   if(grepl("-1", as.character(formula)[3L]))
     intcpt <- FALSE
@@ -35,7 +35,7 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
   fc <- as.character(formula)
   tl <- attr(terms(formula), "term.labels")
   if(length(tl) > 0L && any(is.f(tl))) {
-    for(k in 1L:length(tl))
+    for(k in 1L:length(tl)) {
       if(is.f(tl[k])) {
         tmp <- eval(parse(text = tl[k]))
         tl[k] <- tmp$term[1L]
@@ -44,6 +44,7 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
         if(tmp$by != "NA")
           tl <- c(tl, tmp$by)
       }
+    }
     formula <- as.formula(paste(as.character(formula[2L]), "~", paste(tl, collapse = "+")))
   }
   h.variables <- NULL
