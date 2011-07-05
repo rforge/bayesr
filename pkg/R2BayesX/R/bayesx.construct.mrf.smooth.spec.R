@@ -82,7 +82,7 @@ function(object, dir, prg, data)
     cat(cmd, file = prgfile, append = TRUE)
   term <- object$term
   term <- paste(term, "(spatial,map=", map.name, sep = "")
-  term <- paste(do.xt(term, object, c("map", "polys", "penalty")), ")", sep = "")
+  term <- paste(do.xt(term, object, c("map", "polys", "penalty", "map.name")), ")", sep = "")
   if(object$by != "NA")
     term <- make_by(term, object, data)
 

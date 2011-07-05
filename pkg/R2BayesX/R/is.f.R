@@ -11,7 +11,7 @@ function(x)
           issm[i] <- TRUE
       }
       if(length(split) > 3L) {
-        if(resplit(split[1L:3L]) %in% "sl(")
+        if(resplit(split[1L:3L]) %in% "sx(")
           issm[i] <- TRUE
       }
     }

@@ -78,7 +78,7 @@ function(object, dir, prg, data, type)
       object$xt$full <- NULL
     } else term <- paste(term, "(", type, ",map=", map.name, ",nrknots=", nrknots, sep = "")
   } else term <- paste(term, "(", type, ",map=", map.name, ",nrknots=", nrknots, sep = "")
-  term <- paste(do.xt(term, object, c("map", "polys", "penalty")), ")", sep = "")
+  term <- paste(do.xt(term, object, c("map", "polys", "penalty", "map.name")), ")", sep = "")
   if(object$by != "NA")
     term <- make_by(term, object, data)
 

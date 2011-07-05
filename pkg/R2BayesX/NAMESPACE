@@ -27,7 +27,7 @@ export(
   GCV,
   DIC,
   samples,
-  sl
+  sx
 )
 
 S3method(c, bayesx)

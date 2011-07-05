@@ -1,12 +1,12 @@
-\name{sl}
-\alias{sl}
+\name{sx}
+\alias{sx}
 
 \title{
   Construct BayesX Model Terms in A Formula
 }
 
 \description{
-  Function \code{fbx} is a model term constructor function for terms used within the \code{formula}
+  Function \code{sx} is a model term constructor function for terms used within the \code{formula}
   argument of function \code{\link{bayesx}}. The function does not evaluate matrices etc., the 
   behavior is similar to function \code{\link[mgcv]{s}} from package \code{\link[mgcv]{mgcv}}. It 
   purely exists to build a basic setup for the model term which can be processed by function 
@@ -14,7 +14,7 @@
 }
 
 \usage{
-sl(x, z = NA, bs = "ps", by = NA, ...)
+sx(x, z = NA, bs = "ps", by = NA, ...)
 }
  
 \arguments{
@@ -116,39 +116,39 @@ sl(x, z = NA, bs = "ps", by = NA, ...)
 }
 
 \examples{
-## funktion sl() returns a list
+## funktion sx() returns a list
 ## which is then processed by function
 ## bayesx.construct to build the
 ## BayesX model term structure
-sl(x)
+sx(x)
 
-bayesx.construct(sl(x))
-bayesx.construct(sl(x, bs = "rw1"))
-bayesx.construct(sl(x, bs = "factor"))
-bayesx.construct(sl(x, bs = "offset"))
-bayesx.construct(sl(x, z, bs = "te"))
+bayesx.construct(sx(x))
+bayesx.construct(sx(x, bs = "rw1"))
+bayesx.construct(sx(x, bs = "factor"))
+bayesx.construct(sx(x, bs = "offset"))
+bayesx.construct(sx(x, z, bs = "te"))
 
 ## using a map for markov random fields
 data("FantasyBnd")
 plot(FantasyBnd)
-bayesx.construct(sl(id, bs = "mrf", map = FantasyBnd))
+bayesx.construct(sx(id, bs = "mrf", map = FantasyBnd))
 
 ## examples using optional controlling
 ## parameters and objects
-bayesx.construct(sl(x, bs = "ps", knots = 20))
-bayesx.construct(sl(x, bs = "ps", nrknots = 20))
-bayesx.construct(sl(x, bs = "ps", knots = 20, nocenter = TRUE))
+bayesx.construct(sx(x, bs = "ps", knots = 20))
+bayesx.construct(sx(x, bs = "ps", nrknots = 20))
+bayesx.construct(sx(x, bs = "ps", knots = 20, nocenter = TRUE))
 
 ## use of bs with original 
 ## BayesX syntax 
-bayesx.construct(sl(x, bs = "psplinerw1"))
-bayesx.construct(sl(x, bs = "psplinerw2"))
-bayesx.construct(sl(x, z, bs = "pspline2dimrw2"))
+bayesx.construct(sx(x, bs = "psplinerw1"))
+bayesx.construct(sx(x, bs = "psplinerw2"))
+bayesx.construct(sx(x, z, bs = "pspline2dimrw2"))
 
-bayesx.construct(sl(id, bs = "spatial", map = FantasyBnd))
-bayesx.construct(sl(x, z, bs = "kriging"))
-bayesx.construct(sl(id, bs = "geospline", map = FantasyBnd, nrknots = 5))
-bayesx.construct(sl(x, bs = "catspecific"))
+bayesx.construct(sx(id, bs = "spatial", map = FantasyBnd))
+bayesx.construct(sx(x, z, bs = "kriging"))
+bayesx.construct(sx(id, bs = "geospline", map = FantasyBnd, nrknots = 5))
+bayesx.construct(sx(x, bs = "catspecific"))
 
 
 \dontrun{
@@ -164,15 +164,11 @@ dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
 
 ## estimate models with
 ## bayesx REML and MCMC
-b1 <- bayesx(y ~ sl(x), method = "REML", data = dat)
-
-## note that the shortcut f() instead of sl()
-## is working within bayesx() 
-b1 <- bayesx(y ~ f(x), method = "REML", data = dat)
+b1 <- bayesx(y ~ sx(x), method = "REML", data = dat)
 
 ## increase inner knots
 ## decrease degree of the P-spline
-b2 <- bayesx(y ~ f(x, knots = 30, degree = 2), method = "REML", data = dat)
+b2 <- bayesx(y ~ sx(x, knots = 30, degree = 2), method = "REML", data = dat)
 
 
 ## compare reported output
@@ -195,7 +191,7 @@ dat$y <- with(dat, 1.5 + sin(x) + cos(z) * sin(w) +
   c(2.67, 5, 6, 3, 4, 2, 6, 7, 9, 7.5)[fac] + rnorm(n, sd = 0.6))
 
 ## estimate model
-b <- bayesx(y ~ f(x) + f(z, w, bs = "te") + fac,
+b <- bayesx(y ~ sx(x) + sx(z, w, bs = "te") + fac,
   data = dat, method = "MCMC")
 
 summary(b)
@@ -223,7 +219,7 @@ dat$y <- with(dat, 1.5 + sin(x1) + sp + rnorm(n, sd = 1.2))
 
 ## estimate models with
 ## bayesx MCMC and REML
-b <- bayesx(y ~ f(x1) + f(id, bs = "mrf", map = MunichBnd), 
+b <- bayesx(y ~ sx(x1) + sx(id, bs = "mrf", map = MunichBnd), 
   method = "REML", data = dat)
 
 ## summary statistics
@@ -232,7 +228,7 @@ summary(b)
 ## plot the effects
 op <- par(no.readonly = TRUE)
 par(mfrow = c(1,2))
-plot(b, term = "f(id)", map = MunichBnd, 
+plot(b, term = "sx(id)", map = MunichBnd, 
   main = "bayesx() estimate")
 plotmap(MunichBnd, x = dat$sp, id = dat$id, 
   main = "Truth")
@@ -252,13 +248,13 @@ dat$re <- with(dat, rnorm(N, sd = 0.6)[id])
 dat$y <- with(dat, 1.5 + sin(x1) + re + rnorm(n, sd = 0.6))
 
 ## estimate model
-b <- bayesx(y ~ f(x1, bs = "ps") + f(id, bs = "ra"), data = dat)
+b <- bayesx(y ~ sx(x1, bs = "psplinerw1") + sx(id, bs = "ra"), data = dat)
 summary(b)
 plot(b)
 
 ## extract estimated random effects
 ## and compare with true effects
-plot(fitted(b, term = "f(id)")$Mean ~ unique(dat$re))
+plot(fitted(b, term = "sx(id)")$Mean ~ unique(dat$re))
 }
 }
 

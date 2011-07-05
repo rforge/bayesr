@@ -70,13 +70,12 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     }
   }
   if(legend && !is.null(args$pos) && args$pos == "right") {
-    mar.orig <- (par.orig <- par(c("mar", "las", "mfrow")))$mar
-    mar <- mar.orig
+    par.orig <- par(c("mar", "las", "mfrow"))
+    mar.orig <- mar <- par.orig$mar
+    mar[4L] <- 0.1
     on.exit(par(par.orig))
-    if(args$pos == "right")
-    mar[4L] <- 0
     par(mar = mar)
-    layout(matrix(c(1, 2), nrow = 1), widths = c(1, 0.2))
+    layout(matrix(c(1, 2), nrow = 1), widths = c(1, 0.18))
   }
   if(!is.null(map.limits$mar) && is.null(args$asp) && !add)
     par(mar = map.limits$mar)
@@ -152,7 +151,6 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
       args$side.ticks <- 2L
       mar <- mar.orig
       mar[2L] <- 0
-      mar[4L] <- 2.1
       par(mar = mar, xaxs = "i", yaxs = "i")
       args$plot <- TRUE
       args$add <- FALSE

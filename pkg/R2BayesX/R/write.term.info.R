@@ -20,6 +20,8 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL,
         te <- eval(parse(text = terms[k]))
         if(!is.null(te$map.name))
           map <- paste("\'", te$map.name, "\'", sep = "")
+        if(!is.null(te$xt$map.name))
+          map <- paste("\'", te$xt$map.name, "\'", sep = "")
         fby <- FALSE
         if(te$by != "NA") {
           if(!is.character(data)) {
@@ -38,11 +40,11 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL,
           te$label <- gsub(")", paste(",by=", te$by, ")", sep = ""), te$label)
           info <- paste("list(term=\'", te$label, "\',pos=", k, ",by=\'", te$by,
             "\',isFactor=FALSE", ",isFactorBy=", fby, ",isFactorByNames=", fnv, 
-            ",map=", map, ", israndom=", israndom, ")", sep = "")
+            ",map=", map, ",israndom=", israndom, ")", sep = "")
         } else {
           info <- paste("list(term=\'", te$label, "\',pos=", k, ",by=\'", te$by,
             "\',isFactor=FALSE", ",isFactorBy=", fby, ",map=", map, 
-            ", israndom=", israndom, ")", sep = "")
+            ",israndom=", israndom, ")", sep = "")
         }
       } else {
         sp <- FALSE

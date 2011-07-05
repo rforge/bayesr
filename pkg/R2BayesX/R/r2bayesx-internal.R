@@ -3,21 +3,21 @@ function(x, ...)
 {
   cat("Call:\n")
   print(x$call)
-  cat("---\n")
+  cat("\n")
   if(!is.null(x$model.fit)) {
     mfn <- names(x$model.fit)
+    mfn <- mfn[mfn != "formula" & mfn != "order"]
     step <- 5L
     for(i in 1L:length(mfn)) {
-      txt <- deparse(x$model.fit[[i]])
+      txt <- deparse(x$model.fit[[mfn[i]]])
       if(i < step) {
         if(!is.null(txt) && txt != "") {
-          if(mfn[i] != "step.final.model") {
-            if(mfn[i] != "order")
-              cat(mfn[i], "=", txt," ")
-          } else {
-            cat("\n---\n")
+          if(mfn[i] != "step.final.model")
+            cat(mfn[i], "=", txt," ")
+          else {
+            cat("\n\n")
             cat("Stepwise final model:\n")
-            cat("-\n")
+            cat("\n")
             cat(txt)
           }
         }
@@ -55,7 +55,7 @@ function(x, digits = max(3L, getOption("digits") - 3L),
           cat("Hierarchical random effects model results: stage", hlevel, "\n")
         else {
           cat("Main effects model results: stage", hlevel, "\n")
-          cat("---\n")
+          cat("\n")
         }
       }
   if(!is.null(x$call)) {
@@ -67,7 +67,7 @@ function(x, digits = max(3L, getOption("digits") - 3L),
       print(as.formula(x$model.fit$formula), showEnv = FALSE)
     }
   }
-  liner <- "---"
+  liner <- ""
   fc <- FALSE
   if(!is.null(x$fixed.effects)) {
     fc <- TRUE
@@ -89,7 +89,7 @@ function(x, digits = max(3L, getOption("digits") - 3L),
   if(fc || (!is.null(x$smooth.hyp))) {
     cat(liner, "\n")
     cat("Fixed effects estimation results:\n")
-    cat("-\n")
+    cat("\n")
   }
   if(fc) {
     cat("Parametric Coefficients:\n")
@@ -97,7 +97,7 @@ function(x, digits = max(3L, getOption("digits") - 3L),
   }
   if(!is.null(x$smooth.hyp)) {
     if(fc)
-      cat("-\n")
+      cat("\n")
     if(x$model.fit$method == "MCMC" || x$model.fit$method == "HMCMC") 
       cat("Smooth terms variances:\n")
     else
@@ -162,7 +162,7 @@ function(x, digits = max(3L, getOption("digits") - 3L),
 #  if(!is.null(x$model.fit$step.final.model)) {
 #    cat(liner,"\n")
 #    cat("Stepwise final predictor choosen:\n")
-#    cat("-\n")
+#    cat("\n")
 #    cat(x$model.fit$step.final.model, "\n")
 #  }
 

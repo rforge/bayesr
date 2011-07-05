@@ -98,12 +98,12 @@ function(object)
   if(is.null(data.file)) {
     tf <- as.character(object$formula)
     cnd <- colnames(object$data)
-    for(k in 1L:ncol(object$data)) {
-      if(is.factor(object$data[,k])){
-        if(is.null(object$contrasts[[cnd[k]]]))
-          contrasts(object$data[,k]) = contr.sum(nlevels(object$data[,k]))
-      }
-    }
+#    for(k in 1L:ncol(object$data)) {
+#      if(is.factor(object$data[,k])){
+#        if(is.null(object$contrasts[[cnd[k]]]))
+#          contrasts(object$data[,k]) = contr.sum(nlevels(object$data[,k]))
+#      }
+#    }
     if(grepl(tf[2L], tf[3L], fixed = TRUE)) {
       dat <- model.matrix(as.formula(paste(tf[1L], tf[3L])), 
         data = object$data, contrasts.arg = object$contrasts)

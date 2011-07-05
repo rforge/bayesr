@@ -1,35 +1,42 @@
-dir <- "/home/nikolaus/svn/bayesr/pkg/R2BayesX/R"
+dir <- "/home/c403129/svn/bayesr/pkg/R2BayesX/R"
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-samples(b1, term = c("s(x)", "linear-samples"), acf = T)
 
 
+data("ZambiaNutrition")
+ZambiaNutrition <- 
 
-samples(f)
+b1 <- bayesx(stunting ~ education, data = ZambiaNutrition, iter = 1200, burnin = 200, step = 1)
+b2 <- bayesx(stunting ~ education, data = Zambia2, iter = 1200, burnin = 200, step = 1)
 
 
-
-
-
-class(f(id, bs = "ra"))
-
+## more examples
 set.seed(111)
 n <- 500
 
 ## regressors
-dat <- data.frame(x = runif(n, -3, 3), z = runif(n, -3, 3),
-  w = runif(n, 0, 6), fac = factor(rep(1:10, n/10)))
+dat <- data.frame(fac = factor(rep(1:10, n/10)))
+
+coeff <- c(2.67, 5, 6, 3, 4, 2, 6, 7, 9, 7.5)
+coeff <- coeff - mean(coeff)
 
 ## response
-dat$y <- with(dat, 1.5 + sin(x) + cos(z) * sin(w) +
-  c(2.67, 5, 6, 3, 4, 2, 6, 7, 9, 7.5)[fac] + rnorm(n, sd = 0.6))
+dat$y <- with(dat, coeff[fac] + rnorm(n, sd = 0.6))
+
+levels(dat$fac) <- letters[1:nlevels(dat$fac)]
 
 ## estimate models with
 ## bayesx MCMC and REML
 ## and compare with
 ## mgcv gam()
-b1 <- bayesx(y ~ f(x, bs = "psplinerw2") + f(z, w, bs = "pspline2dimrw2") + fac,
-  data = dat, method = "MCMC")
+dat$fac2 <- C(dat$fac, contr.sum)
+contr <- attr(dat$fac2, "contrasts")
+colnames(contr) <- rownames(contr)[1:(nrow(contr) - 1)]
+attr(dat$fac2, "contrasts") <- contr
+
+# options(contrasts = c("contr.treatment", "contr.poly"))
+b1 <- bayesx(y ~ fac, data = dat, method = "REML")
+b2 <- bayesx(y ~ fac2, data = dat, method = "REML")
 
 
 
@@ -374,7 +381,8 @@ ZambiaNutrition$gender <- gender
 ZambiaNutrition <- as.data.frame(ZambiaNutrition)
 ZambiaNutrition <- ZambiaNutrition[order(ZambiaNutrition$district),]
 summary(ZambiaNutrition)
-## save(ZambiaNutrition, file = "/home/nikolaus/svn/bayesr/pkg/R2BayesX/data/ZambiaNutrition.rda")
+ZambiaNutrition <- R2BayesX:::d2contrsum(ZambiaNutrition)
+## save(ZambiaNutrition, file = "/home/c403129/svn/bayesr/pkg/R2BayesX/data/ZambiaNutrition.rda", compress = "xz")
 
 
 ## forest health data
@@ -385,9 +393,12 @@ dat <- as.data.frame(dat)
 ForestHealth <- list()
 ForestHealth$id <- dat$id 
 ForestHealth$year <- dat$jahr 
+buche3 <- dat$buche
 buche3 <- rep(0, nrow(dat))
 buche3[dat$buche >= 12.5] <- 1 
 buche3[dat$buche >= 50] <- 2
+buche3 <- as.factor(buche3)
+levels(buche3) <- c("[0, 12.5)", "[12.5, 50)", "[50, 75]")
 ForestHealth$defoliation <- buche3 # dat$buche
 ForestHealth$x <- dat$x
 ForestHealth$y <- dat$y
@@ -397,20 +408,27 @@ ForestHealth$inclination <- dat$hang
 ForestHealth$elevation <- dat$hoehe
 ForestHealth$soil <- dat$grund 
 ForestHealth$ph <- dat$ph 
-ForestHealth$moisture <- as.factor(dat$frische) 
-ForestHealth$alkali <- as.factor(dat$alkali) 
+moisture <- as.factor(dat$frische) 
+levels(moisture) <- c("moderately dry", "moderately moist", "moist or temporarily wet")
+ForestHealth$moisture <- moisture
+alkali <- as.factor(dat$alkali) 
+levels(alkali) <- c("very low", "low", "high", "very high")
+ForestHealth$alkali <- alkali
 H <- rep(0, nrow(dat))
 H[dat$humus == 1] <- 1
 H[dat$humus == 2] <- 2
 H[dat$humus == 3] <- 3
 H[dat$humus > 3] <- 4
-ForestHealth$humus <- as.factor(H)
+humus <- as.factor(H)
+levels(humus) <- c("0cm", "1cm", "2cm", "3cm", "4cm")
+ForestHealth$humus <- humus
 ForestHealth$stand <- as.factor(dat$artkat)
 levels(ForestHealth$stand) <- c("mixed", "deciduous")
 ForestHealth$fertilized <- as.factor(dat$dueng)
 levels(ForestHealth$fertilized) <- c("no", "yes")
 ForestHealth <- na.omit(as.data.frame(ForestHealth))
-## save(ForestHealth, file = "/home/nikolaus/svn/bayesr/pkg/R2BayesX/data/ForestHealth.rda")
+ForestHealth <- R2BayesX:::d2contrsum(ForestHealth)
+## save(ForestHealth, file = "/home/c403129/svn/bayesr/pkg/R2BayesX/data/ForestHealth.rda", compress = "xz")
 
 
 ## large data example
@@ -508,10 +526,5 @@ b1 <- bayesx(y ~ s(x, bs = "ps") + s(z, w, bs = "te") + fac,
 
 b2 <- bayesx(y ~ s(x, bs = "ps") + s(z, w, bs = "te") + fac,
   data = dat, method = "MCMC", contrasts = list(fac = contr.sum))
-
-
-
-
-
 
 

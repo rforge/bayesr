@@ -12,7 +12,7 @@ function(object, model, what, print.names = FALSE)
   if(!is.null(dg) && print.names)
     names(dg) <- names(object)
   if(any(is.na(dg)))
-    warning("information criterion is not available!")
+    warning(paste("information on", what,"is not available!"), call. = FALSE)
 
   return(dg)
 }

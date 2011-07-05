@@ -72,7 +72,10 @@ function(dir, files, data, response, eta, model.name, minfo, info)
                 if(!is.null(term$israndom) && term$israndom) {
                   term2 <- gsub("f(", "r(", term$term, fixed = TRUE)
                   term2 <- gsub("s(", "r(", term2, fixed = TRUE)
-                } else term2 <- gsub("f(", "s(", term$term, fixed = TRUE)
+                } else {
+                  term2 <- gsub("f(", "s(", term$term, fixed = TRUE)
+                  term2 <- gsub("sx(", "s(", term$term, fixed = TRUE)
+                }
                 if(term2 == make.label(cx, xnam, dimx, NULL)) {
                   labelx <- term$term
                   if(!is.null(vx))

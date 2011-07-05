@@ -1,12 +1,26 @@
 BIC.bayesx <-
-function(object, ...)
+function(object, ..., k)
 {
-  args <- list(...)
-  model <- args$model
-  if(!is.null(args$print.names))
-    print.names <- args$print.names
-  else
-    print.names <- FALSE 
-  return(extract.model.diagnostic(object, model, "BIC", print.names))
+  obj <- list(...)
+  if(length(obj)) 
+    for(k in 1L:length(obj))
+      if(inherits(obj[[k]], "bayesx"))
+        object <- c(object, obj[[k]])
+  val <- extract.model.diagnostic(object, 1L:length(object), "BIC", FALSE)
+  if(length(obj)) {
+    Call <- match.call()
+    Call$k <- NULL
+    val <- data.frame(df = extract.model.diagnostic(object, 1L:length(object), "df", FALSE), 
+      AIC = val)
+    row.names(val) <- as.character(Call[-1L])
+  } else {
+    if(length(val) > 1L) {
+      val <- data.frame(df = extract.model.diagnostic(object, 1L:length(object), "df", FALSE), 
+        AIC = val)
+      rownames(val) <- names(object)
+    }
+  }
+
+  return(val)
 }
 
