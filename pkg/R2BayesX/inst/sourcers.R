@@ -371,23 +371,22 @@ ZambiaNutrition$stunting <- dat$hazstd
 ZambiaNutrition$bmi <- dat$bmi
 ZambiaNutrition$agechild <- dat$agc
 ZambiaNutrition$district <- dat$district
-memployment <- rep("working", nrow(dat))
-memployment[dat$rcw == -1] <- "not working"
-ZambiaNutrition$memployment <- as.factor(memployment)
-education <- rep("no/incomplete", nrow(dat))
-education[dat$edu1 == 1] <- "minimum primary"
-education[dat$edu2 == 1] <- "minimum secondary"
-ZambiaNutrition$education <- as.factor(education)
-urban <- rep("no", nrow(dat))
-urban[dat$tpr == 1] <- "yes"
-ZambiaNutrition$urban <- as.factor(urban)
-gender <- rep("male", nrow(dat))
-gender[dat$sex == -1] <- "female"
+memployment <- as.factor(dat$rcw)
+levels(memployment) <- c("not working", "working")
+ZambiaNutrition$memployment <- memployment
+education <- as.factor(dat$edu)
+levels(education) <- c("no/incomplete", "minimum primary", "minimum secondary")
+ZambiaNutrition$education <- education
+urban <- as.factor(dat$tpr)
+levels(urban) <- c("no", "yes")
+ZambiaNutrition$urban <- urban
+gender <- as.factor(dat$sex)
+levels(gender) <- c("female", "male")
 ZambiaNutrition$gender <- gender
 ZambiaNutrition <- as.data.frame(ZambiaNutrition)
 ZambiaNutrition <- ZambiaNutrition[order(ZambiaNutrition$district),]
-summary(ZambiaNutrition)
 ZambiaNutrition <- R2BayesX:::d2contrsum(ZambiaNutrition)
+
 ## save(ZambiaNutrition, file = "/home/c403129/svn/bayesr/pkg/R2BayesX/data/ZambiaNutrition.rda", compress = "xz")
 
 
@@ -399,7 +398,6 @@ dat <- as.data.frame(dat)
 ForestHealth <- list()
 ForestHealth$id <- dat$id 
 ForestHealth$year <- dat$jahr 
-buche3 <- dat$buche
 buche3 <- rep(0, nrow(dat))
 buche3[dat$buche >= 12.5] <- 1 
 buche3[dat$buche >= 50] <- 2
@@ -420,13 +418,11 @@ ForestHealth$moisture <- moisture
 alkali <- as.factor(dat$alkali) 
 levels(alkali) <- c("very low", "low", "high", "very high")
 ForestHealth$alkali <- alkali
-H <- rep(0, nrow(dat))
-H[dat$humus == 1] <- 1
-H[dat$humus == 2] <- 2
-H[dat$humus == 3] <- 3
-H[dat$humus > 3] <- 4
-humus <- as.factor(H)
-levels(humus) <- c("0cm", "1cm", "2cm", "3cm", "4cm")
+humus <- dat$humus
+humus[humus > 4] <- 5
+humus[humus < 1] <- 1
+humus <- as.factor(humus)
+levels(humus) <- c("[0cm, 1cm]", "(1cm, 2cm]", "(2cm, 3cm]", "(3cm, 4cm]", "(4cm, 9cm]")
 ForestHealth$humus <- humus
 ForestHealth$stand <- as.factor(dat$artkat)
 levels(ForestHealth$stand) <- c("mixed", "deciduous")

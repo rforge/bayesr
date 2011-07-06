@@ -10,13 +10,15 @@
 }
 
 \usage{
-install.bayesx(inst.dir = NULL, source.dir = NULL)
+install.bayesx(inst.dir = NULL, source.dir = NULL, type = NULL)
 }
 
 \arguments{
   \item{inst.dir}{a character string, specifies the directory \pkg{BayesX} should be installed in.}
   \item{source.dir}{character string, the directory where on Windows systems the installation file 
     \code{BayesX_windows.exe} lies in, else the file \code{bayesxsource.zip}.}
+  \item{type}{to force downloading the BayesX sources \code{bayesxsource.zip} and compile with GNU
+    Compiler Collection (GCC) C compiler, set \code{type = "source"}.}
 }
 
 \details{

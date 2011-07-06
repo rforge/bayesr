@@ -15,6 +15,11 @@ function(object, dir, prg, data)
     }
   }
   nrknots <- object$bs.dim - object$p.order[1L] + 1L
+  if(nrknots < 5L) {
+    warning("number of inner knots smaller than 5 not supported by BayesX, set to 5!",
+      .call = FALSE)
+    nrknots <- 5L
+  }
   xt <- object$xt
   term <- paste(termo[1L], "*", termo[2L], "(pspline2dimrw", object$p.order[2L],
     ",nrknots=", nrknots, ",degree=", object$p.order[1L] + 2L, sep = "")

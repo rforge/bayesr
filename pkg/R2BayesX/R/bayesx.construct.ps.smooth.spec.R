@@ -22,6 +22,11 @@ function(object, dir, prg, data)
     }
   }
   nrknots <- object$bs.dim - object$p.order[1L] + 1L
+  if(nrknots < 5L) {
+    warning("number of inner knots smaller than 5 not supported by BayesX, set to 5!",
+      .call = FALSE)
+    nrknots <- 5L
+  }
   termo <- object$term
   xt <- object$xt
   term <- paste(termo, "(psplinerw", object$p.order[2L], ",nrknots=",

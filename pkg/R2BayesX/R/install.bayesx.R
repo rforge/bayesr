@@ -1,5 +1,5 @@
 install.bayesx <-
-function(inst.dir = NULL, source.dir = NULL)
+function(inst.dir = NULL, source.dir = NULL, type = NULL)
 {
   warn <- getOption("warn")
   options(warn = -1L)
@@ -35,8 +35,8 @@ function(inst.dir = NULL, source.dir = NULL)
     }
   }
 
-  ## installing on unix systems
-  if(ok && unixos) {
+  ## installing/compiling from source
+  if(ok && (unixos || (!is.null(type) && type != "binary"))) {
     ok <- file.exists(paste(bin.dir, "/bayesxsource.zip", sep = ""))
     if(is.null(source.dir) && !ok) {
       textfun("downloading BayesX sourcecode, may take some time!")
@@ -88,7 +88,7 @@ function(inst.dir = NULL, source.dir = NULL)
       stop("could not install BayesX (maybe see if folder bayesx already exists)!")
     }
   } else {
-    ## installing on windows systems
+    ## installing the binary on windows systems
     ok <- file.exists(paste(bin.dir, "/BayesX_windows.exe", sep = ""))
     if(is.null(source.dir) && !ok) {
       textfun("downloading BayesX windows installer, may take some time!")
@@ -124,7 +124,7 @@ function(inst.dir = NULL, source.dir = NULL)
         stop(paste("cannot find the executable bayesx.exe in:", cmd))
       }
       if(ok)
-        textfun(paste("BayesX was successfully installed in: ", bin.dir, sep = ""))
+        textfun(paste("BayesX was successfully installed in: \"", bin.dir, "\"", sep = ""))
     }
   }
   options(warn = warn)
