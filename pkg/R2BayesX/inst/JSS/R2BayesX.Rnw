@@ -18,7 +18,7 @@
         Achim Zeileis\\Universit\"at Innsbruck}
 \Plainauthor{Nikolaus Umlauf, Thomas Kneib, Stefan Lang, Achim Zeileis}
 
-\title{Structured Additive Regression Models: An \proglang{R} Interface to BayesX}
+\title{Structured Additive Regression Models: An \proglang{R} Interface to \pkg{BayesX}}
 \Plaintitle{Structured Additive Regression Models: An R Interface to BayesX}
 
 \Keywords{STAR models, MCMC, REML, stepwise, \proglang{R}}
@@ -97,42 +97,63 @@ data("BeechBnd")
 
 \section{Introduction} \label{sec:intro}
 
-The public domain software \pkg{BayesX} \citep{R2BayesX:Brezger+Kneib+Lang:2005} is a standalone 
-program comprising powerful tools for Bayesian and mixed model based inference in complex 
-semiparametric regression models with structured additive predictor (STAR, see 
-Section~\ref{sec:model}). To gain improved computational performance, the algorithms implemented 
-utilize numerically efficient (sparse) matrix architectures and are written in a \proglang{C++} 
-environment. Besides exponential family regression, \pkg{BayesX} also supports non-standard 
-regression situations such as regression for multi-categorical responses, hazard regression for 
-continuous survival times, and continuous time multi-state models.
+The free software \pkg{BayesX} \citep{R2BayesX:Brezger+Kneib+Lang:2005} is a standalone program
+comprising powerful tools for Bayesian and mixed model based inference in complex semiparametric
+regression models with structured additive predictor (STAR, see Section~\ref{sec:model}). To gain
+improved computational performance, the algorithms implemented utilize numerically efficient
+(sparse) matrix architectures and are written in a \proglang{C++} environment. Besides exponential
+family regression, \pkg{BayesX} also supports models for multi-categorical responses, hazard
+regression for continuous survival times, and continuous time multi-state models.
 
-In this article, we describe the full interactive \proglang{R} \citep{R2BayesX:R} interface to
-\pkg{BayesX}, which has recently been added to the Comprehensive \proglang{R} Archive Network (CRAN) 
-and is an extension of the package \pkg{BayesX} \citep{R2BayesX:Kneib+Heinzl+Brezger:2011}. The 
-\proglang{R} package is called \pkg{R2BayesX}. Within the new package, users may now
+In this article, we describe the full interactive \proglang{R} \citep{R2BayesX:R} interface to the
+command--line binary version of BayesX, which is an extension of package \pkg{BayesX}
+\citep{R2BayesX:Kneib+Heinzl+Brezger:2011}, that mainly provides functionality for exploring
+estimation results. The \proglang{R} package is called \pkg{R2BayesX} and has recently been added to
+the Comprehensive \proglang{R} Archive Network (CRAN,
+\url{http://CRAN.R-project.org/package=R2BayesX}). Within the new package, users are now provided
+with a typical \proglang{R} front end that may 
 \begin{itemize}
-\item specify and estimate STAR models with \pkg{BayesX} directly from the \proglang{R} console 
-  (function \hyperlink{bayesx}{\fct{bayesx}}),
+\item specify and estimate STAR models with \pkg{BayesX} directly from the console (function
+  \fct{bayesx}),
 \item apply a set of extractor functions and methods on \pkg{BayesX} fitted model objects, e.g. 
   producing high level graphics of estimated effects, model diagnostic plots, summary statistics and 
-  more (see Table~\ref{tab:funmethods}),
-\item run already existing \pkg{BayesX} program files from \proglang{R}
-  (function \hyperlink{run.bayesx}{\fct{run.bayesx}}),
-\item automatically import \pkg{BayesX} output files into \proglang{R}
-  (function \hyperlink{read.bayesx.output}{\fct{read.bayesx.output}}).
+  more (see Table~\ref{tab:funmethods}).
+\end{itemize}
+In addition, users can
+\begin{itemize}
+\item run already existing \pkg{BayesX} input program files from \proglang{R} (function
+  \fct{run.bayesx}),
+\item automatically import \pkg{BayesX} output files into \proglang{R} (function
+  \fct{read.bayesx.output}).
 \end{itemize}
 
 Furthermore, the models supported by \pkg{BayesX} are conveniently specified using \proglang{R}'s 
-formula language definition, wherefore the special model term constructor functions \fct{f} and 
-\fct{r} facilitate a consistent way to translate \proglang{R} syntax into \pkg{BayesX} interpretable 
-commands (see Section~\ref{sec:overview}).
+formula language definition, wherefore several special model term constructor functions, such as
+the main \pkg{R2BayesX} constructor functions \fct{sx} and \fct{r} for smooth and random effects
+respectively, as well as the functions \fct{s} and \fct{te} from the \pkg{mgcv} package
+\citep{R2BayesX:Wood:2011, R2BayesX:Wood:2006}, facilitate a consistent way to translate
+\proglang{R} syntax into \pkg{BayesX} interpretable commands (see Section~\ref{sec:overview}).
+
+The reminder of this paper is as follows. The next section gives a first example of a common 
+\proglang{R} session using \pkg{R2BayesX}. Section~\ref{sec:model} briefly discusses the
+methodological background of regression models with a structured additive predictor, before a
+description of the package functionality is given in Section~\ref{sec:overview}. In
+Section~\ref{sec:illustrations}, the interface usability is further illustrated with the childhood
+malnutrition data of Zambia and a dataset on forest health.
+
+
+\section{Motivating example}
 
 To give an introductory example of the various features of the interface, we estimate a Bayesian
-geoadditive regression model for the childhood malnutrition dataset in Zambia (see
-Section~\ref{subsec:zambia}) using Markov chain Monte Carlo (MCMC) simulation. In this analysis, the
-main interest is on modeling the dependence of stunting, represented by anthropometric indicators of 
-newborn children, on covariates including the age of the child, the body mass index of the mother 
-and the district the child lives in. The model is given by
+geoadditive regression model for the childhood malnutrition data set in Zambia (see
+Section~\ref{subsec:zambia}, \citealp{R2BayesX:Kandala+Lang+Klasen+Fahrmeir:2001}) using Markov
+chain Monte Carlo (MCMC) simulation. 
+
+The data consists of 4847 observations including 8 variables, both continuous and categorical. In
+this analysis, the main interest is on modeling the dependence of stunting (\code{stunting}),
+represented by anthropometric indicators of newborn children, on covariates including the age of the
+child (\code{age}), the body mass index of the mother (\code{bmi}) and the district the child lives
+in (\code{district}). The model is given by
 \begin{equation*}
 \texttt{stunting}_i = \gamma_0 + f_1(\texttt{agechild}_i) + f_2(\texttt{bmi}_i) +
   f_{spat}(\texttt{district}_i) + \varepsilon_i, \qquad \varepsilon_i \sim N(0, \sigma^2),
@@ -146,15 +167,18 @@ the data together with a boundary map file of the districts in Zambia is loaded 
 <<data-illustration, echo=TRUE, eval=TRUE, fig=FALSE>>=
 data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
 @
-and the model formula is specified by
+Boundary files are basically shapefiles (see also package \pkg{shapefiles},
+\citealp{R2BayesX:Stabler:2006}) that only include information on the polygons that form the map and
+may be constructed using function \fct{shp2bnd} or imported with \fct{read.bnd}. The model formula
+is specified by
 <<formula-illustration, echo=TRUE, eval=TRUE, fig=FALSE>>=
-mf <- stunting ~ f(agechild) + f(bmi) +
-  f(district, bs = "gk", map = ZambiaBnd, full = TRUE)
+f <- stunting ~ sx(agechild) + sx(bmi) +
+  sx(district, bs = "gk", map = ZambiaBnd, full = TRUE)
 @
 
 Finally, the model is fitted with the main model-fitting function \fct{bayesx}
 <<fit-illustration, echo=TRUE, eval=FALSE, fig=FALSE>>=
-b <- bayesx(mf, family = "gaussian", method = "MCMC",
+b <- bayesx(f, family = "gaussian", method = "MCMC",
   data = ZambiaNutrition)
 @
 <<cache-illustration, echo=FALSE, eval=TRUE>>=
@@ -165,61 +189,65 @@ load("illustration-model.rda")
 save(b, file = "illustration-model.rda")
 }
 @
+
+Thereafter, a model summary is displayed by calling
+<<summary-illustration, echo=TRUE, fig=FALSE, eval=TRUE>>=
+summary(b)
+@
+
 \begin{figure}[t!]
 \setkeys{Gin}{width=0.46\textwidth}
 \centering
 <<plot-illustration-bmi, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(b, term = "f(bmi)")
+plot(b, term = "sx(bmi)")
 @
 <<plot-illustration-agechild, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(b, term = "f(agechild)", resid = TRUE, cex = 0.1, rug = FALSE)
+plot(b, term = "sx(agechild)", residuals = TRUE, cex = 0.1, rug = FALSE)
 @
 \\[2ex]
-\setkeys{Gin}{width=0.47\textwidth}
-\hspace*{0.3cm}
-<<plot-illustration-district-image, echo=FALSE, fig=TRUE, width=5.3, height=4, pdf=FALSE, png=TRUE>>=
-par(mar = c(4.1, 4, 0.1, 2.1))
-plot(b, term = "f(district)", image = T, grid = 100, at = c(-0.5, 0, 0.5),
-  image.map = ZambiaBnd, outscale = 0.1, linear = FALSE, extrap = TRUE,
-  zlim = c(-1, 1), range = c(-0.5, 0.5), lrange = c(-0.6, 0.6), swap = TRUE)
-@
 \setkeys{Gin}{width=0.46\textwidth}
-<<plot-illustration-district-persp, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(0, 1.1, 0, 0))
-plot(b, term = "f(district)", range = c(-0.5, 0.5), lrange = c(-0.6, 0.6),
-  zlim = c(-1, 1), swap = TRUE, theta = 40, extrap = TRUE, linear = FALSE,
-  ticktype = "detailed", zlab = "\nf(x,y)", xlab = "\nx", ylab = "\ny")
+\hspace*{0.3cm}
+<<plot-illustration-district, echo=FALSE, fig=TRUE, width=5.3, height=4, pdf=FALSE, png=TRUE>>=
+par(mar = c(0, 0, 0, 0))
+plot(b, term = "sx(district)", map = ZambiaBnd,
+  pos = "topleft", width = 0.6, height = 0.2,
+  distance.labels = 2, swap = TRUE, density = 20,
+  angle = 90)
 @
 \caption{\label{fig:illustration} Visualization examples: Estimated effect for covariate \code{bmi}
 (black line) together with 95\% and 80\% credible intervals (upper left panel). The upper right
-panel shows the estimated effect of \code{agechild} including partial residuals. The lower left
-panel illustrates visualization of the estimated spatial effect for covariate \code{district} using
-an image plot with a map of the districts in Zambia together with a color legend. The lower right
-panel draws the same effect with a perspective plot in a slightly rotated angle.}
+panel shows the estimated effect of \code{agechild} including partial residuals. The lower panel
+illustrates visualization of the estimated spatial effect for covariate \code{district} using
+a map effect plot.}
 \end{figure}
-Thereafter, e.g. the base \proglang{R} functions \fct{summary} and \fct{plot} may be applied on the
-fitted model object. In Figure~\ref{fig:illustration}, some visualization examples of the estimated
-effects produced by the versatile implemented plotting functions are shown.
-
-The reminder of this paper is as follows. The next section briefly discusses the methodological
-background of regression models with a structured additive predictor, before a description of the
-package functionality is given in Section~\ref{sec:overview}. In Section~\ref{sec:illustrations},
-the interface usability is further illustrated with the childhood malnutrition data of Zambia and a
-dataset on forest health.
+A plot of the estimated effect for covariate \code{bmi} may then be produced by typing
+<<illustration-plot-bmi, echo=TRUE, fig=FALSE, eval=FALSE>>=
+plot(b, term = "sx(bmi)")
+@
+and for covariate \code{agechild} including partial residuals by
+<<illustration-plot-agechild, echo=TRUE, fig=FALSE, eval=FALSE>>=
+plot(b, term = "sx(agechild)", residuals = TRUE)
+@
+The estimated effect of the correlated spatial effect of the districts in Zambia may e.g.\
+visualized using a map effect plot generated by
+<<summary-illustration, echo=TRUE, fig=FALSE, eval=FALSE>>=
+plot(b, term = "sx(district)", map = ZambiaBnd, pos = "topleft")
+@
+The plots are shown in Figure~\ref{fig:illustration}. 
 
 
 \section{STAR models} \label{sec:model}
 
 The STAR model class supported by \pkg{R2BayesX} is based on the framework of (Bayesian) generalized
-linear models (GLM) (e.g. see \citet{R2BayesX:Fahrmeir+Kneib+Lang:2009} and
-\citet{R2BayesX:Fahrmeir+Tutz:2001}). GLMs assume that, given covariates $\mathbf{x}$ and unknown
+linear models (GLM) (e.g. see \citealp{R2BayesX:Fahrmeir+Kneib+Lang:2009} and
+\citealp{R2BayesX:Fahrmeir+Tutz:2001}). GLMs assume that, given covariates $\mathbf{x}$ and unknown
 parameters $\boldsymbol{\gamma}$, the distribution of the response variable $y$ belongs to an
 exponential family with mean
 $\mu = E(y | \mathbf{x}, \boldsymbol{\gamma})$ linked to a linear predictor $\eta$ by
 \begin{equation*} \label{eqn:glm}
-\mu = h(\eta), \qquad \eta = \mathbf{x}^{\prime}\boldsymbol{\gamma},
+\mu = h^{-1}(\eta), \qquad \eta = \mathbf{x}^{\prime}\boldsymbol{\gamma},
 \end{equation*}
 where $h$ is a known link function and $\boldsymbol{\gamma}$ are unknown regression coefficients. In
 STAR models \citep{R2BayesX:Fahrmeir+Kneib+Lang:2004, R2BayesX:Brezger+Lang:2006}, the linear
@@ -227,21 +255,22 @@ predictor is replaced by a more general and flexible, structured additive predic
 \begin{equation} \label{eqn:structadd}
 \eta = f_1(\mathbf{z}) + \ldots + f_p(\mathbf{z}) + \mathbf{x}^{\prime}\boldsymbol{\gamma},
 \end{equation}
-where $\mathbf{z}$ represents a generic vector of all covariates, and $f_j$ are possibly smooth
-functions comprising effects as e.g. given by
+with $\mu = E(y | \mathbf{x}, \mathbf{z}, \boldsymbol{\gamma}, \boldsymbol{\theta})$ and $\mathbf{z}$
+represents a generic vector of all nonlinear modeled covariates. The functions $f_j$ are possibly
+smooth functions comprising effects as e.g.\ given by
 \begin{itemize}
-  \item nonlinear effects of continuous covariates: $f_j(\mathbf{z}) = f(x)$,
-  \item two-dimensional surfaces: $f_j(\mathbf{z}) = f(x_1,x_2)$,
-  \item spatially correlated effects: $f_j(\mathbf{z}) = f_{spat}(s)$,
-  \item varying coefficients: $f_j(\mathbf{z}) = x_1f(x_2)$,
-  \item spatially varying effects: $f_j(\mathbf{z}) = x_1f_{spat}(s)$ or
-    $f_j(\mathbf{z}) = x_1f(x_2, x_3)$,
+  \item nonlinear effects of continuous covariates: $f_j(\mathbf{z}) = f(z_1)$,
+  \item two-dimensional surfaces: $f_j(\mathbf{z}) = f(z_1, z_2)$,
+  \item spatially correlated effects: $f_j(\mathbf{z}) = f_{spat}(z_s)$,
+  \item varying coefficients: $f_j(\mathbf{z}) = z_1f(z_2)$,
+  \item spatially varying effects: $f_j(\mathbf{z}) = z_1f_{spat}(z_s)$ or
+    $f_j(\mathbf{z}) = z_1f(z_2, z_3)$,
   \item random intercepts with cluster index $c$: $f_j(\mathbf{z}) = \beta_c$,
-  \item random slopes with cluster index $c$: $f_j(\mathbf{z}) = x\beta_c$.
+  \item random slopes with cluster index $c$: $f_j(\mathbf{z}) = z_1\beta_c$.
 \end{itemize}
 STAR models cover a number of well known model classes as special cases, including generalized
-additive models (GAM) \citep{R2BayesX:Hastie+Tibshirani:1990}, generalized additive mixed models
-(GAMM) \citep{R2BayesX:Lin+Zhang:1999}, geoadditive models \citep{R2BayesX:Kamman+Wand:2003},
+additive models (GAM, \citealp{R2BayesX:Hastie+Tibshirani:1990}), generalized additive mixed models
+(GAMM, \citealp{R2BayesX:Lin+Zhang:1999}), geoadditive models \citep{R2BayesX:Kamman+Wand:2003},
 varying coefficient models \citep{R2BayesX:Hastie+Tibshirani:1993}, and geographically weighted
 regression \citep{R2BayesX:Fotheringham+Brunsdon+Charlton:2002}.
 

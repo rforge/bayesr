@@ -96,7 +96,7 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   args$axes <- NULL
   lwd.p <- rep(args$lwd, length.out = n)
   if(is.null(lwd.p))
-    lwd.p <- rep(0.2, length.out = n)
+    lwd.p <- rep(1, length.out = n)
   lty.p <- rep(args$lty, length.out = n)
   if(is.null(lty.p))
     lty.p <- rep(1, length.out = n)
