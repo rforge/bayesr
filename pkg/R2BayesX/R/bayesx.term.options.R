@@ -1,6 +1,8 @@
 bayesx.term.options <-
 function(bs = "ps", method = "MCMC")
 {
+  bs <- tolower(deparse(substitute(bs), backtick = TRUE, width.cutoff = 500L))
+  method <- toupper(weights <- deparse(substitute(method), backtick = TRUE, width.cutoff = 500L))
   bterms <- c("lasso", "ridge", "bl", "kr", "gk", 
     "gs", "mrf", "ps", "rw1", "rw2", "random", "te", "season")
   if(!is.na(bs <- pmatch(bs, bterms))) {
@@ -180,13 +182,48 @@ function(bs = "ps", method = "MCMC")
             "            default, estimates are computed at every distinct covariate \n",
             "            value in the data set (indicated by \'gridsize = -1\'). This \n",
             "            may be relatively time consuming in situations where the number \n",
-            "            of distinct covariate values is large. If \'gridsize = \"nrpoints\"\' \n",
+            "            of distinct covariate values is large. If \'gridsize = 100\' \n",
             "            is specified, estimates are computed on an equidistant grid with \n", 
-            "            \"nrpoints\" knots. \n",
+            "            100 knots. \n",
             "            Default: integer, \'gridsize = -1\'. \n\n")
       }
       if(method == "STEP") {
-        return(NULL)
+        cat("      dfmin: minimum degree of freedom, numeric.\n\n")
+        cat("      dfmax: maximum degree of freedom, numeric.\n\n")
+        cat("    dfstart: degree of freedom used in the start model.\n",
+            "            Default: numeric, \'dfstart = 1\'.\n\n")
+        cat("   logscale: \'logscale = FALSE\' - equidistant degrees of freedom,\n",
+            "            \'logscale = TRUE\' - smoothing parameters on a logarithmic scale.\n",
+            "            Default: \'logscale = FALSE\'.\n\n")
+        cat("         sp: \'sp = \"automatic\"\' - list of smoothing parameters are \n",
+            "            automatically specified. \'sp = \"df\"\' - smoothing parameters \n",
+            "            are directly specified by the user in terms of degrees of freedom,\n",
+            "            use options dfmin, dfmax, number, dfstart, logscale for specification.\n",
+            "            \'sp = \"direct\"\' - smoothing parameters are directly by the user,\n",
+            "            use options spmin, spmax, number, spstart, logscale for specification.\n",
+            "            Default: character,\'sp = \"automatic\"\'.\n\n")
+        cat("      spmin: minimum smoothing parameter.\n",
+            "            Default: numeric, \'spmin = 1e-04\'.\n\n")
+        cat("      spmax: maximum smoothing parameter.\n",
+            "            Default: numeric, \'spmax = 1e+04\'.\n\n")
+        cat("    spstart: smoothing parameter for the start model, \'spstart = 0 excludes\n",
+            "            the term from the start model, \'spstart = -1\' includes a linear\n",
+            "            effect.\n\n")
+        cat("     number: number of different smoothing parameters.\n",
+            "            Default: integer, \'number = 0\'.\n\n")
+        cat("forced_into: \'forced_into = FALSE\' - term may be excluded from the model,\n",
+            "            \'forced_into = TRUE\' - term may not be excluded from the model.\n",
+            "            Default: boolean, \'forced_into = FALSE\'.\n\n")
+        cat("    nofixed: \'nofixed = FALSE\' - linear fit is allowed,\n",
+            "            \'nofixed = TRUE\' - linear fit is not allowed.\n",
+            "            Default: boolean, \'nofixed = FALSE\'.\n\n")
+        cat("   gridsize: may be used to restrict the number of points (on the x-axis) for \n",
+            "            which estimates are computed. By default, estimates are computed at\n",
+            "            every distinct covariate value in the data set - \'gridsize = -1\'.\n",
+            "            This may be relatively time consuming in situations where the number\n",
+            "            of distinct covariate values are large. If e.g. \'gridsize = 100\',\n",
+            "            estimates are computed on an equidistant grid with 100 knots.\n",
+            "            Default: integer,  \'gridsize = -1\'.\n\n")
       }   
     }
     if(bs == "gs") {
@@ -238,7 +275,36 @@ function(bs = "ps", method = "MCMC")
         cat("        map: a map provided as a list of matrix polygons. \n\n") 
       }
       if(method == "STEP") {
-        return(NULL)
+        cat("      dfmin: minimum degree of freedom, numeric.\n\n")
+        cat("      dfmax: maximum degree of freedom, numeric.\n\n")
+        cat("    dfstart: degree of freedom used in the start model.\n",
+            "            Default: numeric, \'dfstart = 1\'.\n\n")
+        cat("   logscale: \'logscale = FALSE\' - equidistant degrees of freedom,\n",
+            "            \'logscale = TRUE\' - smoothing parameters on a logarithmic scale.\n",
+            "            Default: \'logscale = FALSE\'.\n\n")
+        cat("         sp: \'sp = \"automatic\"\' - list of smoothing parameters are \n",
+            "            automatically specified. \'sp = \"df\"\' - smoothing parameters \n",
+            "            are directly specified by the user in terms of degrees of freedom,\n",
+            "            use options dfmin, dfmax, number, dfstart, logscale for specification.\n",
+            "            \'sp = \"direct\"\' - smoothing parameters are directly by the user,\n",
+            "            use options spmin, spmax, number, spstart, logscale for specification.\n",
+            "            Default: character,\'sp = \"automatic\"\'.\n\n")
+        cat("      spmin: minimum smoothing parameter.\n",
+            "            Default: numeric, \'spmin = 1e-04\'.\n\n")
+        cat("      spmax: maximum smoothing parameter.\n",
+            "            Default: numeric, \'spmax = 1e+04\'.\n\n")
+        cat("    spstart: smoothing parameter for the start model, \'spstart = 0 excludes\n",
+            "            the term from the start model, \'spstart = -1\' includes a linear\n",
+            "            effect.\n\n")
+        cat("     number: number of different smoothing parameters.\n",
+            "            Default: integer, \'number = 0\'.\n\n")
+        cat("forced_into: \'forced_into = FALSE\' - term may be excluded from the model,\n",
+            "            \'forced_into = TRUE\' - term may not be excluded from the model.\n",
+            "            Default: boolean, \'forced_into = FALSE\'.\n\n")
+        cat("    nofixed: \'nofixed = FALSE\' - linear fit is allowed,\n",
+            "            \'nofixed = TRUE\' - linear fit is not allowed.\n",
+            "            Default: boolean, \'nofixed = FALSE\'.\n\n")
+        cat("        map: a map provided as a list of matrix polygons. \n\n") 
       } 
     }
     if(bs == "random") {
@@ -270,7 +336,38 @@ function(bs = "ps", method = "MCMC")
             "            Default: boolean, \'nofixed = FALSE\'. \n\n")
       }
       if(method == "STEP") {
-        return(NULL)
+        cat("      dfmin: minimum degree of freedom, numeric.\n\n")
+        cat("      dfmax: maximum degree of freedom, numeric.\n\n")
+        cat("    dfstart: degree of freedom used in the start model.\n",
+            "            Default: numeric, \'dfstart = 1\'.\n\n")
+        cat("   logscale: \'logscale = FALSE\' - equidistant degrees of freedom,\n",
+            "            \'logscale = TRUE\' - smoothing parameters on a logarithmic scale.\n",
+            "            Default: \'logscale = FALSE\'.\n\n")
+        cat("         sp: \'sp = \"automatic\"\' - list of smoothing parameters are \n",
+            "            automatically specified. \'sp = \"df\"\' - smoothing parameters \n",
+            "            are directly specified by the user in terms of degrees of freedom,\n",
+            "            use options dfmin, dfmax, number, dfstart, logscale for specification.\n",
+            "            \'sp = \"direct\"\' - smoothing parameters are directly by the user,\n",
+            "            use options spmin, spmax, number, spstart, logscale for specification.\n",
+            "            Default: character,\'sp = \"automatic\"\'.\n\n")
+        cat("      spmin: minimum smoothing parameter.\n",
+            "            Default: numeric, \'spmin = 1e-04\'.\n\n")
+        cat("      spmax: maximum smoothing parameter.\n",
+            "            Default: numeric, \'spmax = 1e+04\'.\n\n")
+        cat("    spstart: smoothing parameter for the start model, \'spstart = 0 excludes\n",
+            "            the term from the start model, \'spstart = -1\' includes a linear\n",
+            "            effect.\n\n")
+        cat("     number: number of different smoothing parameters.\n",
+            "            Default: integer, \'number = 0\'.\n\n")
+        cat("forced_into: \'forced_into = FALSE\' - term may be excluded from the model,\n",
+            "            \'forced_into = TRUE\' - term may not be excluded from the model.\n",
+            "            Default: boolean, \'forced_into = FALSE\'.\n\n")
+        cat("    nofixed: \'nofixed = FALSE\' - linear fit is allowed,\n",
+            "            \'nofixed = TRUE\' - linear fit is not allowed.\n",
+            "            Default: boolean, \'nofixed = FALSE\'.\n\n")
+        cat("     center: \'center = FALSE\' - varying coefficient term is not centered,\n",
+            "            \'center = TRUE\' - varying coefficient term is centered.\n",
+            "            Default: boolean, \'center = FALSE\'.\n\n")
       } 
     }
     if(bs == "mrf") {
@@ -310,7 +407,39 @@ function(bs = "ps", method = "MCMC")
       cat("        map: a map provided as a list of matrix polygons. \n\n") 
       }
       if(method == "STEP") {
-        return(NULL)
+        cat("      dfmin: minimum degree of freedom, numeric.\n\n")
+        cat("      dfmax: maximum degree of freedom, numeric.\n\n")
+        cat("    dfstart: degree of freedom used in the start model.\n",
+            "            Default: numeric, \'dfstart = 1\'.\n\n")
+        cat("   logscale: \'logscale = FALSE\' - equidistant degrees of freedom,\n",
+            "            \'logscale = TRUE\' - smoothing parameters on a logarithmic scale.\n",
+            "            Default: \'logscale = FALSE\'.\n\n")
+        cat("         sp: \'sp = \"automatic\"\' - list of smoothing parameters are \n",
+            "            automatically specified. \'sp = \"df\"\' - smoothing parameters \n",
+            "            are directly specified by the user in terms of degrees of freedom,\n",
+            "            use options dfmin, dfmax, number, dfstart, logscale for specification.\n",
+            "            \'sp = \"direct\"\' - smoothing parameters are directly by the user,\n",
+            "            use options spmin, spmax, number, spstart, logscale for specification.\n",
+            "            Default: character,\'sp = \"automatic\"\'.\n\n")
+        cat("      spmin: minimum smoothing parameter.\n",
+            "            Default: numeric, \'spmin = 1e-04\'.\n\n")
+        cat("      spmax: maximum smoothing parameter.\n",
+            "            Default: numeric, \'spmax = 1e+04\'.\n\n")
+        cat("    spstart: smoothing parameter for the start model, \'spstart = 0 excludes\n",
+            "            the term from the start model, \'spstart = -1\' includes a linear\n",
+            "            effect.\n\n")
+        cat("     number: number of different smoothing parameters.\n",
+            "            Default: integer, \'number = 0\'.\n\n")
+        cat("forced_into: \'forced_into = FALSE\' - term may be excluded from the model,\n",
+            "            \'forced_into = TRUE\' - term may not be excluded from the model.\n",
+            "            Default: boolean, \'forced_into = FALSE\'.\n\n")
+        cat("    nofixed: \'nofixed = FALSE\' - linear fit is allowed,\n",
+            "            \'nofixed = TRUE\' - linear fit is not allowed.\n",
+            "            Default: boolean, \'nofixed = FALSE\'.\n\n")
+        cat("     center: \'center = FALSE\' - varying coefficient term is not centered,\n",
+            "            \'center = TRUE\' - varying coefficient term is centered.\n",
+            "            Default: boolean, \'center = FALSE\'.\n\n")
+      cat("        map: a map provided as a list of matrix polygons. \n\n") 
       } 
     }
     if(bs == "ps") {
@@ -363,9 +492,9 @@ function(bs = "ps", method = "MCMC")
             "            default, estimates are computed at every distinct covariate \n",
             "            value in the data set (indicated by \'gridsize = -1\'). This \n",
             "            may be relatively time consuming in situations where the number \n",
-            "            of distinct covariate values is large. If \'gridsize = \"nrpoints\"\' \n",
+            "            of distinct covariate values is large. If \'gridsize = 100\' \n",
             "            is specified, estimates are computed on an equidistant grid with \n", 
-            "            \"nrpoints\" knots. \n",
+            "            100 knots. \n",
             "            Default: integer, \'gridsize = -1\'. \n\n")
         cat(" derivative: if specified, first order derivatives of the function estimate \n",
             "            are computed. \n",
@@ -384,7 +513,52 @@ function(bs = "ps", method = "MCMC")
             "            Default: \'contourprob = 4\'. \n\n")
       }
       if(method == "STEP") {
-        return(NULL)
+        cat("      dfmin: minimum degree of freedom, numeric.\n\n")
+        cat("      dfmax: maximum degree of freedom, numeric.\n\n")
+        cat("    dfstart: degree of freedom used in the start model.\n",
+            "            Default: numeric, \'dfstart = 1\'.\n\n")
+        cat("   logscale: \'logscale = FALSE\' - equidistant degrees of freedom,\n",
+            "            \'logscale = TRUE\' - smoothing parameters on a logarithmic scale.\n",
+            "            Default: \'logscale = FALSE\'.\n\n")
+        cat("         sp: \'sp = \"automatic\"\' - list of smoothing parameters are \n",
+            "            automatically specified. \'sp = \"df\"\' - smoothing parameters \n",
+            "            are directly specified by the user in terms of degrees of freedom,\n",
+            "            use options dfmin, dfmax, number, dfstart, logscale for specification.\n",
+            "            \'sp = \"direct\"\' - smoothing parameters are directly by the user,\n",
+            "            use options spmin, spmax, number, spstart, logscale for specification.\n",
+            "            Default: character,\'sp = \"automatic\"\'.\n\n")
+        cat("      spmin: minimum smoothing parameter.\n",
+            "            Default: numeric, \'spmin = 1e-04\'.\n\n")
+        cat("      spmax: maximum smoothing parameter.\n",
+            "            Default: numeric, \'spmax = 1e+04\'.\n\n")
+        cat("    spstart: smoothing parameter for the start model, \'spstart = 0 excludes\n",
+            "            the term from the start model, \'spstart = -1\' includes a linear\n",
+            "            effect.\n\n")
+        cat("     number: number of different smoothing parameters.\n",
+            "            Default: integer, \'number = 0\'.\n\n")
+        cat("forced_into: \'forced_into = FALSE\' - term may be excluded from the model,\n",
+            "            \'forced_into = TRUE\' - term may not be excluded from the model.\n",
+            "            Default: boolean, \'forced_into = FALSE\'.\n\n")
+        cat("    nofixed: \'nofixed = FALSE\' - linear fit is allowed,\n",
+            "            \'nofixed = TRUE\' - linear fit is not allowed.\n",
+            "            Default: boolean, \'nofixed = FALSE\'.\n\n")
+        cat("     center: \'center = FALSE\' - varying coefficient term is not centered,\n",
+            "            \'center = TRUE\' - varying coefficient term is centered.\n",
+            "            Default: boolean, \'center = FALSE\'.\n\n")
+        cat("   monotone: \'monotone = \"unrestricted\"\' - no constraint on the spline function,\n",
+            "            \'monotone = \"increasing\"\' - monotonically increasing function,\n",
+            "            \'monotone = \"decrasing\"\' - monotonically decreasing function,\n",
+            "            \'monotone = \"convex\"\' - convex function, i.e. positive second\n",
+            "            derivative,\n",
+            "            \'monotone = \"concave\"\' - concave function\n",
+            "            Default: \'monotone = \"unrestricted\"\'.\n\n")
+        cat("   gridsize: may be used to restrict the number of points (on the x-axis) for \n",
+            "            which estimates are computed. By default, estimates are computed at\n",
+            "            every distinct covariate value in the data set - \'gridsize = -1\'.\n",
+            "            This may be relatively time consuming in situations where the number\n",
+            "            of distinct covariate values are large. If e.g. \'gridsize = 100\',\n",
+            "            estimates are computed on an equidistant grid with 100 knots.\n",
+            "            Default: integer,  \'gridsize = -1\'.\n\n")
       } 
     }
     if(bs == "season") {
@@ -440,7 +614,34 @@ function(bs = "ps", method = "MCMC")
           "            Default: integer, \'period = 12\'. \n\n")
       }
       if(method == "STEP") {
-        return(NULL)
+        cat("      dfmin: minimum degree of freedom, numeric.\n\n")
+        cat("      dfmax: maximum degree of freedom, numeric.\n\n")
+        cat("    dfstart: degree of freedom used in the start model.\n",
+            "            Default: numeric, \'dfstart = 1\'.\n\n")
+        cat("   logscale: \'logscale = FALSE\' - equidistant degrees of freedom,\n",
+            "            \'logscale = TRUE\' - smoothing parameters on a logarithmic scale.\n",
+            "            Default: \'logscale = FALSE\'.\n\n")
+        cat("         sp: \'sp = \"automatic\"\' - list of smoothing parameters are \n",
+            "            automatically specified. \'sp = \"df\"\' - smoothing parameters \n",
+            "            are directly specified by the user in terms of degrees of freedom,\n",
+            "            use options dfmin, dfmax, number, dfstart, logscale for specification.\n",
+            "            \'sp = \"direct\"\' - smoothing parameters are directly by the user,\n",
+            "            use options spmin, spmax, number, spstart, logscale for specification.\n",
+            "            Default: character,\'sp = \"automatic\"\'.\n\n")
+        cat("      spmin: minimum smoothing parameter.\n",
+            "            Default: numeric, \'spmin = 1e-04\'.\n\n")
+        cat("      spmax: maximum smoothing parameter.\n",
+            "            Default: numeric, \'spmax = 1e+04\'.\n\n")
+        cat("    spstart: smoothing parameter for the start model, \'spstart = 0 excludes\n",
+            "            the term from the start model, \'spstart = -1\' includes a linear\n",
+            "            effect.\n\n")
+        cat("     number: number of different smoothing parameters.\n",
+            "            Default: integer, \'number = 0\'.\n\n")
+        cat("forced_into: \'forced_into = FALSE\' - term may be excluded from the model,\n",
+            "            \'forced_into = TRUE\' - term may not be excluded from the model.\n",
+            "            Default: boolean, \'forced_into = FALSE\'.\n\n")
+        cat("     period: period for the seasonal effect.\n",
+            "            Default: numeric, \'period = 12\'.\n\n")
       } 
     }
     if(bs == "rw1" || bs == "rw2") {
@@ -490,92 +691,70 @@ function(bs = "ps", method = "MCMC")
             "            Default: integer, \'updateW = 1\'. \n\n")
       }
       if(method == "STEP") {
-        return(NULL)
+        cat("      dfmin: minimum degree of freedom, numeric.\n\n")
+        cat("      dfmax: maximum degree of freedom, numeric.\n\n")
+        cat("    dfstart: degree of freedom used in the start model.\n",
+            "            Default: numeric, \'dfstart = 1\'.\n\n")
+        cat("   logscale: \'logscale = FALSE\' - equidistant degrees of freedom,\n",
+            "            \'logscale = TRUE\' - smoothing parameters on a logarithmic scale.\n",
+            "            Default: \'logscale = FALSE\'.\n\n")
+        cat("         sp: \'sp = \"automatic\"\' - list of smoothing parameters are \n",
+            "            automatically specified. \'sp = \"df\"\' - smoothing parameters \n",
+            "            are directly specified by the user in terms of degrees of freedom,\n",
+            "            use options dfmin, dfmax, number, dfstart, logscale for specification.\n",
+            "            \'sp = \"direct\"\' - smoothing parameters are directly by the user,\n",
+            "            use options spmin, spmax, number, spstart, logscale for specification.\n",
+            "            Default: character,\'sp = \"automatic\"\'.\n\n")
+        cat("      spmin: minimum smoothing parameter.\n",
+            "            Default: numeric, \'spmin = 1e-04\'.\n\n")
+        cat("      spmax: maximum smoothing parameter.\n",
+            "            Default: numeric, \'spmax = 1e+04\'.\n\n")
+        cat("    spstart: smoothing parameter for the start model, \'spstart = 0 excludes\n",
+            "            the term from the start model, \'spstart = -1\' includes a linear\n",
+            "            effect.\n\n")
+        cat("     number: number of different smoothing parameters.\n",
+            "            Default: integer, \'number = 0\'.\n\n")
+        cat("forced_into: \'forced_into = FALSE\' - term may be excluded from the model,\n",
+            "            \'forced_into = TRUE\' - term may not be excluded from the model.\n",
+            "            Default: boolean, \'forced_into = FALSE\'.\n\n")
+        cat("    nofixed: \'nofixed = FALSE\' - linear fit is allowed,\n",
+            "            \'nofixed = TRUE\' - linear fit is not allowed.\n",
+            "            Default: boolean, \'nofixed = FALSE\'.\n\n")
+        cat("     center: \'center = FALSE\' - varying coefficient term is not centered,\n",
+            "            \'center = TRUE\' - varying coefficient term is centered.\n",
+            "            Default: boolean, \'center = FALSE\'.\n\n")
       } 
+    }
+    if(bs == "factor") {
+      if(method == "REML") {
+        return(NULL)
+      }
+      if(method == "MCMC") {
+        return(NULL)
+      }
+      if(method == "STEP") {
+        cat("    dfstart: degree of freedom used in the start model.\n",
+            "            Default: numeric, \'dfstart = 1\'.\n\n")
+        cat("         sp: \'sp = \"automatic\"\' - list of smoothing parameters are \n",
+            "            automatically specified. \'sp = \"df\"\' - smoothing parameters \n",
+            "            are directly specified by the user in terms of degrees of freedom,\n",
+            "            use options dfmin, dfmax, number, dfstart, logscale for specification.\n",
+            "            \'sp = \"direct\"\' - smoothing parameters are directly by the user,\n",
+            "            use options spmin, spmax, number, spstart, logscale for specification.\n",
+            "            Default: character,\'sp = \"automatic\"\'.\n\n")
+        cat("    spstart: smoothing parameter for the start model, \'spstart = 0 excludes\n",
+            "            the term from the start model, \'spstart = -1\' includes a linear\n",
+            "            effect.\n\n")
+        cat("forced_into: \'forced_into = FALSE\' - term may be excluded from the model,\n",
+            "            \'forced_into = TRUE\' - term may not be excluded from the model.\n",
+            "            Default: boolean, \'forced_into = FALSE\'.\n\n")
+        cat("     coding: \'center = \"dummy\"\' - dummy coding of categorial variables,\n",
+            "            \'center = effect\' - effect coding of categorial variables.\n",
+            "            Default: character, \'coding = \"dummy\"\'.\n\n")
+        cat("  reference: specifies the reference category for categorial covariates.\n",
+            "            Default: \'reference = 1\'.\n\n")
+      }
     }
   }
 }
-
-
-
-#        cat("         sp: \'sp = \"automatic\"\' - list of smoothing parameters are \n")
-#            "            automatically specified. \'sp = \"df\"\' - smoothing parameters \n",
-#            "            are directly specified by the user in terms of degrees of freedom,\n",
-#            "            use options dfmin, dfmax, number, dfstart, logscale for specification.\n",
-#            "            \'sp = \"direct\"\' - smoothing parameters are directly by the user,\n",
-#            "            use options spmin, spmax, number, spstart, logscale for specification.\n",
-#            "            Default: character,\'sp = \"automatic\"\'.\n\n")
-
-#        cat("      dfmin: minimum degree of freedom, numeric.\n\n")
-
-#        cat("      dfmax: maximum degree of freedom, numeric.\n\n")
-
-#        cat("    dfstart: degree of freedom used in the start model.\n",
-#            "            Default: numeric, \'dfstart = 1\'.\n\n")
-
-#        cat("   logscale: \'logscale = FALSE\' - equidistant degrees of freedom,\n",
-#            "            \'logscale = TRUE\' - smoothing parameters on a logarithmic scale.\n",
-#            "            Default: \'logscale = FALSE\'.\n\n")
-
-#        cat("      spmin: minimum smoothing parameter.\n",
-#            "            Default: numeric, \'spmin = 1e-04\'.\n\n")
-
-#        cat("      spmax: maximum smoothing parameter.\n",
-#            "            Default: numeric, \'spmax = 1e+04\'.\n\n")
-
-#        cat("    spstart: smoothing parameter for the start model, \'spstart = 0 excludes\n"'
-#            "            the term from the start model, \'spstart = -1\' includes a linear\n",
-#            "            effect.\n\n")
-
-#        cat("     number: number of different smoothing parameters.\n",
-#            "            Default: integer, \'number = 0\'.\n\n")
-
-#        cat("forced_into: \'forced_into = FALSE\' - term may be excluded from the model,\n",
-#            "            \'forced_into = TRUE\' - term may not be excluded from the model.\n",
-#            "            Default: boolean, \'forced_into = FALSE\'.\n\n")
-
-#        cat("    nofixed: \'nofixed = FALSE\' - linear fit is allowed,\n",
-#            "            \'nofixed = TRUE\' - linear fit is not allowed.\n",
-#            "            Default: boolean, \'nofixed = FALSE\'.\n\n")
-
-#        cat("     center: \'center = FALSE\' - varying coefficient term is not centered,\n",
-#            "            \'center = TRUE\' - varying coefficient term is centered.\n",
-#            "            Default: boolean, \'center = FALSE\'.\n\n")
-
-#        cat("     coding: \'center = \"dummy"\' - dummy coding of categorial variables,\n",
-#            "            \'center = effect\' - effect coding of categorial variables.\n",
-#            "            Default: character, \'coding = \"dummy\"\'.\n\n")
-
-#        cat("  reference: specifies the reference category for categorial covariates.\n",
-#            "            Default: \'reference = 1\'.\n\n")
-
-#        cat("   monotone: \'monotone = \"unrestricted\"\' - no constraint on the spline function,\n",
-#            "            \'monotone = \"increasing\"\' - monotonically increasing function,\n",
-#            "            \'monotone = \"decrasing\"\' - monotonically decreasing function,\n",
-#            "            \'monotone = \"convex\"\' - convex function, i.e. positive second\n",
-#            "            derivative,\n",
-#            "            \'monotone = \"concave\"\' - concave function\n",
-#            "            Default: \'monotone = \"unrestricted\"\'.\n\n")
-
-#        cat("   gridsize: may be used to restrict the number of points (on the x-axis) for \n",
-#            "            which estimates are computed. By default, estimates are computed at\n",
-#            "            every distinct covariate value in the data set - \'gridsize = -1\'.\n",
-#            "            This may be relatively time consuming in situations where the number\n",
-#            "            of distinct covariate values are large. If e.g. \'gridsize = 100\',\n",
-#            "            estimates are computed on an equidistant grid with 100 knots.\n",
-#            "            Default: integer,  \'gridsize = -1\'.\n\n")
-
-#        cat("     period: period for the seasonal effect.\n",
-#            "            Default: numeric, \'period = 12\'.\n\n")
-
-
-
-
-
-
-
-
-
-
-
 

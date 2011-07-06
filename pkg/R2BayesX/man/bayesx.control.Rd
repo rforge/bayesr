@@ -169,7 +169,7 @@ bayesx.control(model.name = "bayesx.estim",
   \item{bootstrapsamples}{\code{\link[base]{integer}}, defines the number of bootstrap samples used 
     for \code{"CI = MCMCbootstrap"}.}
   \item{\dots}{not used}
-%  \item{phi}{logical indicating whether the precision parameter
+%  \item{phi}{\code{\link[base]{logical}} indicating whether the precision parameter
 %    phi should be treated as a full model parameter (\code{TRUE}, default)
 %    or as a nuisance parameter.} 
 }

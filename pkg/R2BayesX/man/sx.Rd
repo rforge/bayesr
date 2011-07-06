@@ -14,7 +14,7 @@
 }
 
 \usage{
-sx(x, z = NULL, bs = "ps", by = NULL, ...)
+sx(x, z = NULL, bs = "ps", by = NA, ...)
 }
  
 \arguments{
@@ -39,30 +39,27 @@ sx(x, z = NULL, bs = "ps", by = NULL, ...)
       shrinkage-prior for the corresponding parameters \eqn{\gamma_j}, \eqn{j = 1, \ldots, q}, 
       \eqn{q \geq 1} of the linear effects \eqn{x_1, \ldots, x_q}. There are three priors possible: 
       ridge-, lasso- and Normal Mixture of inverse Gamma (NMIG)-prior. 
-    \item \code{"bl"}, \code{"baseline"}: nonlinear baseline effect in hazard regression or 
-      multi-state models, defines a P-spline with second order random walk penalty for the 
+    \item \code{"bl"}, \code{"baseline"}: nonlinear baseline effect in hazard regression or
+      multi-state models, defines a P-spline with second order random walk penalty for the
       parameters of the spline for the log-baseline effect \eqn{log(\lambda(time))}.
-    \item \code{"kr"}, \code{kriging}: kriging with stationary Gaussian random fields. Covariate
-      arguments \code{x} and \code{z} must be specified.
-    \item \code{"gk"} or \code{"geokriging"}: geokriging with stationary Gaussian random fields: 
-      estimates a stationary Gaussian random field based on the centroids of a map object provided 
-      in boundary format, see function \code{\link[BayesX]{read.bnd}}, within the \code{xt} argument 
+    \item \code{"kr"}, \code{"kriging"}: kriging with stationary Gaussian random fields. 
+    \item \code{"gk"}, \code{"geokriging"}: geokriging with stationary Gaussian random fields:
+      estimates a stationary Gaussian random field based on the centroids of a map object provided
+      in boundary format, see function \code{\link[BayesX]{read.bnd}}, within the \code{xt} argument
       of function \code{\link[mgcv]{s}}, e.g. \code{xt = list(map = MapBnd)}. 
-    \item \code{"gs"}, \code{"geospline"}: geosplines based on two-dimensional P-splines with 
-      first order random walk penalty, defines a two-dimensional P-spline for the spatial covariate 
-      region with a two-dimensional first order random walk penalty for the parameters of the 
-      spline. Estimation is based on the coordinates of the centroids of the regions provided by a 
-      map object in in boundary format, see function \code{\link[BayesX]{read.bnd}}, within the 
-      \code{xt} argument of function \code{\link[mgcv]{s}}, e.g. \code{xt = list(map = MapBnd)}, or 
-      within argument \code{"..."} of function \code{f}, i.e. \code{f(id, bs = "gs", map = MapBnd)}. 
-    \item \code{"mrf"}, \code{"spatial"}: Markov random fields: defines a Markov random field 
-      prior for a spatial covariate, where geographical informations are provided by a map object in
-      boundary or graph file format, see function \code{\link[BayesX]{read.bnd}} and 
-      \code{\link[BayesX]{read.gra}}, within the \code{xt} argument of function 
-      \code{\link[mgcv]{s}}, e.g. \code{xt = list(map = MapBndorGra)}, or within argument 
-      \code{"..."} of function \code{f}, i.e. \code{f(id, bs = "mrf", map = MapBnd)}.
-    \item \code{"ps"}, \code{"psplinerw1"}, \code{"psplinerw2"}, \code{"pspline"}: P-spline with 
-      first or second order difference penalty. 
+    \item \code{"gs"}, \code{"geosplines"}: geosplines based on two-dimensional P-splines with first
+      order random walk penalty, defines a two-dimensional P-spline for the spatial covariate region
+      with a two-dimensional first order random walk penalty for the parameters of the spline.
+      Estimation is based on the coordinates of the centroids of the regions provided by a map
+      object in in boundary format, see function \code{\link[BayesX]{read.bnd}}, within the
+      \code{xt} argument of function \code{\link[mgcv]{s}}, e.g. \code{xt = list(map = MapBnd)}. 
+    \item \code{"mrf"}, \code{"spatial"}: Markov random fields: defines a Markov random field prior
+      for a spatial covariate, where geographical informations are provided by a map object in
+      boundary or graph file format, see function \code{\link[BayesX]{read.bnd}} and
+      \code{\link[BayesX]{read.gra}}, within the \code{xt} argument of function
+      \code{\link[mgcv]{s}}, e.g. \code{xt = list(map = MapBndorGra)}. 
+    \item \code{"ps"}, \code{"psplinerw1"}, \code{"psplinerw2"}: P-spline with first or second order
+      difference penalty. 
     \item \code{"rw1"}, \code{"rw2"}: zero degree P-splines, defines a zero degree P-spline with 
       first or second order difference penalty. A zero degree P-spline typically estimates for every 
       distinct covariate value in the data set a separate parameter. Usually there is no reason to 
@@ -72,19 +69,13 @@ sx(x, z = NULL, bs = "ps", by = NULL, ...)
       to modeling nonlinear relationships via a dummy approach with completely unrestricted 
       regression parameters.
     \item \code{"season"}: seasonal effect of a time scale. 
-    \item \code{"te"}, \code{"pspline2dimrw2"}: defines a two-dimensional P-spline based on the 
-      tensor product of one-dimensional P-splines with a two-dimensional first order random walk 
-      penalty for the parameters of the spline. Covariate arguments \code{x} and \code{z} must be 
-      specified.
-    \item \code{"offset"}: an offset term.
-    \item \code{"ra"}, \code{"random"}: i.i.d. Gaussian (random) effect of a group indicator 
-      covariate, e.g. the covariate may be an individual indicator when analyzing longitudinal data.
+    \item \code{"te"}, \code{"pspline2dimrw1"}: defines a two-dimensional P-spline based on the
+      tensor product of one-dimensional P-splines with a two-dimensional first order random walk
+      penalty for the parameters of the spline.
     \item \code{"factor"}: special BayesX specifier for \code{\link[base]{factor}}s, especially 
       meaningful if \code{method = "STEP"} in \code{\link{bayesx}}, since the factor term is then 
       treated as a full term, which is either included or removed from the model.
-    \item \code{"cs"}, \code{"catspecific"}: category-specific linear effect (in cumulative or 
-      sequential models only).
-  } 
+  }
 }
 
 \note{
@@ -127,6 +118,10 @@ bayesx.construct(sx(x, bs = "rw1"))
 bayesx.construct(sx(x, bs = "factor"))
 bayesx.construct(sx(x, bs = "offset"))
 bayesx.construct(sx(x, z, bs = "te"))
+
+## varying coefficients
+bayesx.construct(sx(x1, by = x2))
+bayesx.construct(sx(x1, by = x2, center = TRUE))
 
 ## using a map for markov random fields
 data("FantasyBnd")

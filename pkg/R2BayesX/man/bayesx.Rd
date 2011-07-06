@@ -100,11 +100,11 @@ bayesx(formula, data, weights = NULL, subset = NULL,
   BayesX back into \R. 
   
   For estimation of STAR models, function \code{bayesx} uses formula syntax as provided in package 
-  \code{\link[mgcv]{mgcv}} (see \code{\link[mgcv]{formula.gam}}), i.e. models including smooth terms 
-  may be specified using the smooth term constructor function \code{\link[mgcv]{s}}. In addition, 
-  a random effect constructor function has been implemented, also see \code{\link{r}}, with 
-  possibilities to estimate hierarchical STAR models. For a detailed description of the model 
-  formula syntax used within \code{bayesx} models see \code{\link{bayesx.construct}} and 
+  \code{\link[mgcv]{mgcv}} (see \code{\link[mgcv]{formula.gam}}), i.e. models may be specified using
+  the \code{\link{R2BayesX}} main model term constructor functions \code{\link{sx}} and
+  \code{\link{r}}, or the \code{\link[mgcv]{mgcv}} constructor functions \code{\link[mgcv]{s}} and
+  \code{\link[mgcv]{te}}. For a detailed description of the model formula syntax used within
+  \code{bayesx} models see also \code{\link{bayesx.construct}} and
   \code{\link{bayesx.term.options}}.
 
   After the BayesX binary has successfully finished processing an object of class \code{"bayesx"} is
@@ -122,8 +122,8 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 
 \note{
   If a model is specified with a structured and an unstructured spatial effect, e.g. the model 
-  formula is something like \code{y ~ s(id, bs = "mrf", map = MapBnd) + r(id)}, the model output 
-  contains of one additional total spatial effect, named with \code{"s(id):total"}. Also see the 
+  formula is something like \code{y ~ sx(id, bs = "mrf", map = MapBnd) + r(id)}, the model output 
+  contains of one additional total spatial effect, named with \code{"sx(id):total"}. Also see the 
   last example.
 }
 
@@ -174,7 +174,8 @@ bayesx(formula, data, weights = NULL, subset = NULL,
   \code{\link{parse.bayesx.input}}, \code{\link{write.bayesx.input}}, \code{\link{run.bayesx}}, 
   \code{\link{read.bayesx.output}}, \code{\link{summary.bayesx}}, \code{\link{plot.bayesx}},
   \code{\link{fitted.bayesx}}, \code{\link{bayesx.construct}}, \code{\link{bayesx.term.options}},
-  \code{\link[mgcv]{formula.gam}}, \code{\link[mgcv]{s}}, \code{\link{r}}.
+  \code{\link{sx}}, \code{\link{r}}, \code{\link[mgcv]{formula.gam}}, \code{\link[mgcv]{s}}, 
+  \code{\link[mgcv]{te}}.
 }
 
 \examples{
@@ -191,10 +192,14 @@ dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
 
 ## estimate models with
 ## bayesx REML and MCMC
-b1 <- bayesx(y ~ s(x, bs = "ps"), 
-  method = "REML", data = dat)
-b2 <- bayesx(y ~ s(x, bs = "ps"), 
-  method = "MCMC", iter = 1200, burnin = 200, data = dat)
+b1 <- bayesx(y ~ sx(x), method = "REML", data = dat)
+
+## same using mgcv syntax
+b1 <- bayesx(y ~ s(x, bs = "ps", k = 20), method = "REML", data = dat)
+
+## now with MCMC
+b2 <- bayesx(y ~ sx(x), method = "MCMC", 
+  iter = 1200, burnin = 200, data = dat)
 
 ## compare reported output
 summary(c(b1, b2))
@@ -223,9 +228,9 @@ dat$y <- with(dat, 1.5 + sin(x) + cos(z) * sin(w) +
 ## bayesx MCMC and REML
 ## and compare with
 ## mgcv gam()
-b1 <- bayesx(y ~ s(x, bs = "ps") + s(z, w, bs = "te") + fac,
+b1 <- bayesx(y ~ sx(x) + sx(z, w, bs = "te") + fac,
   data = dat, method = "MCMC")
-b2 <- bayesx(y ~ s(x, bs = "ps") + s(z, w, bs = "te") + fac,
+b2 <- bayesx(y ~ sx(x) + sx(z, w, bs = "te") + fac,
   data = dat, method = "REML")
 b3 <- gam(y ~ s(x, bs = "ps") + te(z, w, bs = "ps") + fac, 
   data = dat)
@@ -238,10 +243,10 @@ summary(b3)
 ## plot the effects
 op <- par(no.readonly = TRUE)
 par(mfrow = c(3,2))
-plot(b1, term = "s(x)")
-plot(b1, term = "s(z,w)")
-plot(b2, term = "s(x)")
-plot(b2, term = "s(z,w)")
+plot(b1, term = "sx(x)")
+plot(b1, term = "sx(z,w)")
+plot(b2, term = "sx(x)")
+plot(b2, term = "sx(z,w)")
 plot(b3, select = 1)
 vis.gam(b3, c("z","w"), theta = 40, phi = 40)
 par(op)
@@ -253,13 +258,13 @@ b <- c(b1, b2)
 summary(b)
 
 ## only plot effect 2 of both models
-plot(b, term = "s(z,w)") 
+plot(b, term = "sx(z,w)") 
 
 ## with residuals
-plot(b, term = "s(z,w)", residuals = TRUE) 
+plot(b, term = "sx(z,w)", residuals = TRUE) 
 
 ## same model with kriging
-b <- bayesx(y ~ s(x, bs = "ps") + s(z, w, bs = "kr") + fac, 
+b <- bayesx(y ~ sx(x) + sx(z, w, bs = "kr") + fac, 
   method = "REML", data = dat)
 plot(b)
 
@@ -285,11 +290,9 @@ dat$y <- with(dat, 1.5 + sin(x1) + sp + rnorm(n, sd = 1.2))
 
 ## estimate models with
 ## bayesx MCMC and REML
-b1 <- bayesx(y ~ s(x1, bs = "ps") + 
-  s(id, bs = "mrf", xt = list(map = MunichBnd)), 
+b1 <- bayesx(y ~ sx(x1) + sx(id, bs = "mrf", map = MunichBnd), 
   method = "MCMC", data = dat)
-b2 <- bayesx(y ~ s(x1, bs = "ps") + 
-  s(id, bs = "mrf", xt = list(map = MunichBnd)), 
+b2 <- bayesx(y ~ sx(x1) + sx(id, bs = "mrf", map = MunichBnd), 
   method = "REML", data = dat)
 
 ## summary statistics
@@ -299,31 +302,31 @@ summary(b2)
 ## plot the effects
 op <- par(no.readonly = TRUE)
 par(mfrow = c(1,3))
-plot(b1, term = "s(id)", map = MunichBnd, 
+plot(b1, term = "sx(id)", map = MunichBnd, 
   main = "bayesx() MCMC estimate")
-plot(b2, term = "s(id)", map = MunichBnd, 
+plot(b2, term = "sx(id)", map = MunichBnd, 
   main = "bayesx() REML estimate")
 plotmap(MunichBnd, x = dat$sp, id = dat$id, 
   main = "Truth")
 par(op)
 
 ## try geosplines instead
-b <- bayesx(y ~ s(id, bs = "gs", k = 20, xt = list(map = MunichBnd)) + 
-  s(x1, bs = "ps"), data = dat)
+b <- bayesx(y ~ sx(id, bs = "gs", map = MunichBnd) + sx(x1), data = dat)
 summary(b)
-plot(b, term = "s(id)", map = MunichBnd)
+plot(b, term = "sx(id)", map = MunichBnd)
+plot(b, term = "sx(id)", map = MunichBnd, pos = "right")
 
 ## geokriging
-b <- bayesx(y ~ s(id, bs = "gk", k = 20, xt = list(map = MunichBnd)) + 
-  s(x1, bs = "ps"), method = "REML", data = dat)
+b <- bayesx(y ~ sx(id, bs = "gk", map = MunichBnd) + sx(x1), 
+  method = "REML", data = dat)
 summary(b)
-plot(b, term = "s(id)", map = MunichBnd)
+plot(b, term = "sx(id)", map = MunichBnd)
 
 ## perspective plot of the effect
-plot(b, term = "s(id)")
+plot(b, term = "sx(id)")
 
 ## image and contour plot 
-plot(b, term = "s(id)", image = TRUE, 
+plot(b, term = "sx(id)", image = TRUE, 
   contour = TRUE, grid = 200)
 
 
@@ -340,7 +343,7 @@ dat$re <- with(dat, rnorm(N, sd = 0.6)[id])
 dat$y <- with(dat, 1.5 + sin(x1) + re + rnorm(n, sd = 0.6))
 
 ## estimate model
-b <- bayesx(y ~ s(x1, bs = "ps") + r(id), data = dat)
+b <- bayesx(y ~ sx(x1) + r(id), data = dat)
 summary(b)
 plot(b)
 
@@ -369,19 +372,19 @@ dat$re <- with(dat, rnorm(N, sd = 0.6)[id])
 dat$y <- with(dat, 1.5 + sin(x1) + sp + re + rnorm(n, sd = 0.6))
 
 ## estimate model
-b <- bayesx(y ~ s(x1, bs = "ps") + 
-  s(id, bs = "mrf", xt = list(map = MunichBnd)) +
+b <- bayesx(y ~ sx(x1) + 
+  sx(id, bs = "mrf", map = MunichBnd) +
   r(id), method = "MCMC", data = dat)
 summary(b)
 
 ## plot all spatial effects
 op <- par(no.readonly = TRUE)
 par(mfrow = c(1, 3))
-plot(b, term = "s(id)", map = MunichBnd, 
+plot(b, term = "sx(id)", map = MunichBnd, 
   main = "Structured spatial effect")
 plot(b, term = "r(id)", map = MunichBnd, 
   main = "Unstructured spatial effect")
-plot(b, term = "s(id):total", map = MunichBnd, 
+plot(b, term = "sx(id):total", map = MunichBnd, 
   main = "Total spatial effect", digits = 4)
 par(mfrow = op)
 
@@ -394,14 +397,13 @@ n <- 1000
 
 ## regressors
 dat <- data.frame(x1 = runif(n, -3, 3), x2 = runif(n),
-  x3 = runif(n, 3, 6), x4 = runif(n, -3, -1))
+  x3 = runif(n, 3, 6), x4 = runif(n, 0, 1))
 
 ## response
 dat$y <- with(dat, 1.5 + sin(x1) + 0.6 * x2 + rnorm(n, sd = 0.6))
 
 ## estimate model with STEP
-b <- bayesx(y ~ s(x1, bs = "ps") + s(x2, bs = "ps") + 
-  s(x3, bs = "ps") +  s(x4, bs = "ps"), 
+b <- bayesx(y ~ sx(x1) + sx(x2) + sx(x3) + sx(x4), 
   method = "STEP", algorithm = "cdescent1", CI = "MCMCselect", 
   iter = 10000, step = 10, data = dat)
 summary(b)
@@ -417,7 +419,7 @@ dat$z <- with(dat, sin(x) + rnorm(n))
 dat$y <- rep(0, n)
 dat$y[dat$z > 0] <- 1
 
-b <- bayesx(y ~ s(x, bs = "ps"), family = "binomialprobit", data = dat)
+b <- bayesx(y ~ sx(x), family = "binomialprobit", data = dat)
 summary(b)
 plot(b)
 
@@ -431,7 +433,7 @@ dat <- data.frame(x = runif(n, -3, 3), id = factor(rep(1:4, n/4)))
 dat$y <- with(dat, 1.5 + sin(x) * c(-1, 0.2, 1, 5)[id] + rnorm(n, sd = 0.6))
 
 ## estimate model
-b <- bayesx(y ~ s(x, bs = "ps", by = id),
+b <- bayesx(y ~ sx(x, by = id, center = FALSE),
   method = "REML", data = dat)
 summary(b)
 plot(b, resid = TRUE, cex.resid = 0.1)
@@ -444,7 +446,7 @@ dat <- data.frame(x = seq(-3, 3, length = n))
 dat$y <- with(dat, 1.5 + sin(x) + 
   rnorm(n, sd = (0.2 + seq(0, 0.4, length = n))))
 
-b1 <- bayesx(y ~ s(x, bs = "ps"), data = dat)
+b1 <- bayesx(y ~ sx(x), data = dat)
 summary(b1)
 plot(b1, resid = TRUE)
 
@@ -453,7 +455,7 @@ b2 <- bayesx(ressqrt ~ x, data = dat)
 plot(b2, resid = TRUE)
 
 dat$W <- exp(fitted(b2)[,1L])
-b3 <- bayesx(y ~ s(x, bs = "ps"), weights = W, data = dat)
+b3 <- bayesx(y ~ sx(x), offset = W, data = dat)
 
 summary(c(b1, b3))
 plot(c(b1, b3), resid = TRUE)

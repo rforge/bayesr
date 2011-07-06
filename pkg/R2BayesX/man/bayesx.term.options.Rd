@@ -13,7 +13,7 @@
 }
 
 \usage{
-bayesx.term.options(bs = "ps")
+bayesx.term.options(bs = "ps", method = "MCMC")
 }
 
 \arguments{

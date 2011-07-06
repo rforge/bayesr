@@ -5,6 +5,8 @@ function(object, dir, prg, data, type)
     object$xt <- list(object$xt)
   map.name <- help.map.name(deparse(substitute(object, env = .GlobalEnv), 
     backtick = TRUE, width.cutoff = 500L))
+  if(!is.null(object$xt$map.name))
+    map.name <- object$xt$map.name
   map <- object$xt$map
   if(is.null(map)) {
     if(!is.null(object$xt$polys))
@@ -56,15 +58,19 @@ function(object, dir, prg, data, type)
     cat(cmd, file = prgfile, append = TRUE)
   }	  
   term <- object$term
-  if(is.na(object$p.order[1L]))
-    object$p.order <- c(3L, 1L)
+
+  if(length(object$p.order) == 1L) 
+    m <- rep(object$p.order, 2L)
+  else 
+    m <- object$p.order
+  m[is.na(m)] <- 2L
+  object$p.order <- m
+  object$p.order[1L] <- object$p.order[1L] + 2L
   if(object$p.order[2L] > 1L) {
     object$p.order[2L] <- 1L
     if(type == "geospline")
       warning("only random walks of order 1 supported for geosplines, set to default!")
   }
-  if(length(object$p.order) < 2L)
-    object$p.order <- c(object$p.order, 1L)
   if(object$bs.dim < 0L)
     object$bs.dim <- as.integer(length(map) / 2)
   else {
@@ -77,7 +83,10 @@ function(object, dir, prg, data, type)
       term <- paste(term, "(", type, ",map=", map.name, ",full", sep = "")
       object$xt$full <- NULL
     } else term <- paste(term, "(", type, ",map=", map.name, ",nrknots=", nrknots, sep = "")
-  } else term <- paste(term, "(", type, ",map=", map.name, ",nrknots=", nrknots, sep = "")
+  } else {
+    term <- paste(term, "(", type, ",map=", map.name,
+      ",nrknots=", nrknots, ",degree=", object$p.order[1L], sep = "")
+  }
   term <- paste(do.xt(term, object, c("map", "polys", "penalty", "map.name")), ")", sep = "")
   if(object$by != "NA")
     term <- make_by(term, object, data)

@@ -11,6 +11,8 @@ function(object, dir, prg, data)
     stop("need to supply a map object in argument xt!")  
   map.name <- help.map.name(deparse(substitute(object, env = .GlobalEnv), 
     backtick = TRUE, width.cutoff = 500L))
+  if(!is.null(object$xt$map.name))
+    map.name <- object$xt$map.name
   if(!is.list(object$xt))
     object$xt <- list(object$xt)
   map <- object$xt$map

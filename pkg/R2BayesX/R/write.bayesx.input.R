@@ -111,6 +111,17 @@ function(object)
       dat <- model.matrix(object$formula, data = object$data,
         contrasts.arg = object$contrasts)
     }
+    nc <- ncol(dat)
+    if(!is.null(model.offset(object$data))) {
+      nc <- ncol(dat)
+      dat <- cbind(dat, model.offset(object$data))
+      colnames(dat)[nc + 1L] <- "ModelOffset"
+    }  
+    if(!is.null(model.weights(object$data))) {
+      nc <- ncol(dat)
+      dat <- cbind(dat, model.weights(object$data))
+      colnames(dat)[nc + 1L] <- "ModelWeights"
+    }
     nd <- rmf(names(object$data))
     names(object$data) <- nd
     colnames(dat) <- rmf(colnames(dat))
@@ -130,18 +141,7 @@ function(object)
           mf <- lf[!lf %in% vars]
           dat <- cbind(dat, as.matrix(ff[mf]))
         }
-      }
-    nc <- ncol(dat)
-    if(!is.null(model.offset(object$data))) {
-      nc <- ncol(dat)
-      dat <- cbind(dat, model.offset(object$data))
-      colnames(dat)[nc + 1L] <- "ModelOffset"
-    }  
-    if(!is.null(model.weights(object$data))) {
-      nc <- ncol(dat)
-      dat <- cbind(dat, model.weights(object$data))
-      colnames(dat)[nc + 1L] <- "ModelWeights"
-    }  
+      }  
     object$Yn <- rmf(object$Yn)
     dat <- cbind(as.vector(object$data[[object$Yn]]),dat)
     colnames(dat)[1L] <- object$Yn
