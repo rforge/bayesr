@@ -588,7 +588,7 @@ Using \proglang{R}'s formula language, additive terms may be incorporated into t
 \code{formula} by the main model term constructor function \fct{f}. The function has the following
 arguments:
 \begin{Sinput}
-f(x, z = NA, bs = "ps", by = NA, ...)
+sx(x, z = NA, bs = "ps", by = NA, ...)
 \end{Sinput}
 Argument \code{x} specifies the covariate the model term is a function of. For bivariate terms, the
 second covariate is provided to argument \code{z}. The basis/type of the model term can be chosen 
@@ -762,7 +762,7 @@ This produces a dataset of approximately 170Mb with only 1000 unique observation
 \code{x}. The path to the dataset is stored in object \code{file} and is provided to argument
 \code{data} in the function call
 <<large-data-01, echo=TRUE, eval=FALSE>>=
-b <- bayesx(y ~ f(x), family = "gaussian", method = "MCMC", 
+b <- bayesx(y ~ sx(x), family = "gaussian", method = "MCMC", 
   iterations = 3000, burnin = 1000, step = 2, predict = FALSE, 
   data = file)
 @
@@ -830,7 +830,7 @@ Variable           & Description \\ \hline
 The response \code{stunting} is standardized in terms of a reference population, i.e in this dataset
 stunting for child $i$ is represented by
 \begin{equation*}
-\texttt{stunting}_i = \frac{\texttt{AI}_i - \texttt{MAI}_i}{\sigma},
+\texttt{stunting}_i = \frac{\texttt{AI}_i - \texttt{MAI}}{\sigma},
 \end{equation*}
 where \texttt{AI} refers to a child's anthropometric indicator (height at a certain age in our
 example), while \texttt{MAI} and $\sigma$ correspond to the median and the standard deviation in the
@@ -886,15 +886,15 @@ districts in Zambia.}
 \end{figure}
 Having loaded the necessary files, the model \code{formula} is specified with
 <<formula-zambia, echo=TRUE, eval=TRUE>>=
-mf <- stunting ~ memployment + education + urban + gender +
-  f(bmi) + f(agechild) + f(district, bs = "mrf", map = ZambiaBnd) + 
+f <- stunting ~ memployment + education + urban + gender +
+  sx(bmi) + sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) + 
   r(district)
 @
 where deviation (effect) coding is automatically performed for the factor variables
 \code{memployment}, \code{education}, \code{urban} and \code{gender}. The model is then fitted using
 MCMC by calling
 <<fit-zambia-model, echo=TRUE, eval=FALSE>>=
-zm <- bayesx(mf, family = "gaussian", method = "MCMC",
+zm <- bayesx(f, family = "gaussian", method = "MCMC",
   iterations = 12000, burnin = 2000, step = 10,
   seed = 123, data = ZambiaNutrition)
 @
@@ -927,18 +927,18 @@ terms variances and random effects variances, as well as goodness of fit criteri
 information about the model. The estimated effects for covariates \code{agechild} and \code{bmi} may
 then be visualized with
 <<zambia-agechild-bmi-plot, echo=TRUE, eval=FALSE>>=
-plot(zm, term = c("f(bmi)", "f(agechild)"))
+plot(zm, term = c("sx(bmi)", "sx(agechild)"))
 @
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.46\textwidth}
 \centering
 <<zambia-bmi, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(zm, term = "f(bmi)")
+plot(zm, term = "sx(bmi)")
 @
 <<zambia-agechild, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(zm, term = "f(agechild)")
+plot(zm, term = "sx(agechild)")
 @
 \caption{\label{fig:zambia-agechild} Example on childhood malnutrition: Effect of the body mass
 index of the child's mother and of the age of the child together with pointwise 80\% and 95\%
@@ -949,7 +949,7 @@ and are shown in Figure~\ref{fig:zambia-agechild}.
 A visual representation of the structured and unstructured spatial effect can be obtained
 in two ways. Using the plain plot function
 <<zambia-district-example-kde, echo=TRUE, eval=FALSE>>=
-plot(zm, term = c("f(district)", "r(district)"))
+plot(zm, term = c("sx(district)", "r(district)"))
 @
 produces a kernel density estimator of the posterior mean of the effects, see Figure
 \ref{fig:zambia-district-structured-unstructured-kde}.
@@ -958,7 +958,7 @@ produces a kernel density estimator of the posterior mean of the effects, see Fi
 \centering
 <<zambia-district-structured-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.4, 1.1))
-plot(zm, term = "f(district)", map = FALSE, main = "")
+plot(zm, term = "sx(district)", map = FALSE, main = "")
 @
 <<zambia-district-unstructured-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.4, 1.1))
@@ -972,7 +972,7 @@ The kernel densities reveal the general form of the random effects distributions
 spatial structure of the effects we have to use the plot function in combination with the
 boundary object \code{ZambiaBnd}:
 <<zambia-district-example, echo=TRUE, eval=FALSE>>=
-plot(zm, term = c("f(district)", "r(district)"),
+plot(zm, term = c("sx(district)", "r(district)"),
   map = ZambiaBnd, pos = "topleft",
   density = 20, angle = 90)
 @
@@ -983,7 +983,7 @@ Figure~\ref{fig:zambia-district-structured-unstructured}.
 \centering
 <<zambia-district-structured, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(0, 0, 0, 0))
-plot(zm, term = "f(district)", map = ZambiaBnd,
+plot(zm, term = "sx(district)", map = ZambiaBnd,
   pos = "topleft", width = 0.6, height = 0.2,
   distance.labels = 2, swap = TRUE)
 @
@@ -999,7 +999,7 @@ plot(zm, term = "r(district)", map = ZambiaBnd,
 \hspace*{-6ex}
 <<zambia-district-unstructured-samescale, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(0, 0, 0, 0))
-range <- max(abs(range(fitted(zm, term = "f(district)")$Mean)))
+range <- max(abs(range(fitted(zm, term = "sx(district)")$Mean)))
 range <- lrange <- c(-1 * range, range)
 plot(zm, term = "r(district)", map = ZambiaBnd,
   pos = "topleft", width = 0.6, height = 0.2,
@@ -1023,7 +1023,7 @@ comparably symmetric and without outlying districts such that the plot function 
 produced fairly informative maps. To demonstrate the range option we re-draw the unstructered random
 effect within the same range as the structured random effect
 <<zambia-district-example-redraw, echo=TRUE, eval=FALSE>>=
-range <- max(abs(range(fitted(zm, term = "f(district)")$Mean)))
+range <- max(abs(range(fitted(zm, term = "sx(district)")$Mean)))
 range <- lrange <- c(-1 * range, range)
 plot(zm, term = "r(district)", map = ZambiaBnd,
   pos = "topleft", density = 20, angle = 90,
@@ -1036,9 +1036,9 @@ structured spatially correlated effect clearly exceeds the unstructured effect.
 
 For MCMC post estimation diagnosis, it is also possible to extract sampling paths of parameters with
 function \fct{samples}, or to plot the samples directly. For instance, coefficient sampling paths
-for term \code{f(bmi)} are displayed with
+for term \code{sx(bmi)} are displayed with
 <<zambia-bmi-coef-samples, echo=TRUE, eval=FALSE, fig=FALSE>>=
-plot(zm, term = "f(bmi)", which = "coef-samples")
+plot(zm, term = "sx(bmi)", which = "coef-samples")
 @
 see Figure~\ref{fig:zambia-bmi-coef-samples}. The plot of sampled parameters should ideally show
 white noise, i.e. more or less uncorrelated samples that show no particular pattern. In our case the
@@ -1048,15 +1048,15 @@ samples are exactly as they should be.
 \centering
 <<zambia-bmi-coef-samples-do, echo=FALSE, fig=TRUE, width=7, height=8>>=
 par(oma = c(0.01, 0.01, 0.01, 0.01))
-plot(zm, term = "f(bmi)", which = "coef-samples", main = NA)
+plot(zm, term = "sx(bmi)", which = "coef-samples", main = NA)
 @
 \caption{\label{fig:zambia-bmi-coef-samples} Example on childhood malnutrition: Sampling paths of
-the first 10 coefficients of term \code{f(bmi)}.}
+the first 10 coefficients of term \code{sx(bmi)}.}
 \end{figure}
 In addition, autocorrelation functions may be drawn, e.g. for the variance samples of term
-\code{f(bmi)}, by typing
+\code{sx(bmi)}, by typing
 <<zambia-autocorr-01, echo=TRUE, eval=FALSE>>=
-plot(zm, term = "f(bmi)", which = "var-samples", acf = TRUE)
+plot(zm, term = "sx(bmi)", which = "var-samples", acf = TRUE)
 @
 The maximum autocorrelation of all sampled parameters in the model are displayed with
 <<zambia-autocorr-02, echo=TRUE, eval=FALSE>>=
@@ -1067,7 +1067,7 @@ plot(zm, which = "max-acf", acf = TRUE)
 \centering
 <<zambia-autocorr-03, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(zm, term = "f(bmi)", which = "var-samples",
+plot(zm, term = "sx(bmi)", which = "var-samples",
   acf = TRUE, main = "")
 @
 <<zambia-autocorr-04, echo=FALSE, fig=TRUE, width=5, height=4>>=
@@ -1075,7 +1075,7 @@ par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(zm, which = "max-acf", main = "")
 @
 \caption{\label{fig:zambia-autocorr} Example on childhood malnutrition: Autocorrelation function
-of the samples of the variance parameter of term \code{f(bmi)}, left panel, maximum autocorrelation
+of the samples of the variance parameter of term \code{sx(bmi)}, left panel, maximum autocorrelation
 of all parameters of the model, right panel respectively.}
 \end{figure}
 Autocorrelations for all lags should be close to zero as is the case in our example. See
@@ -1130,9 +1130,6 @@ RESPONSE DISTRIBUTION:
   Response function: identity
   Hyperparameter a: 0.001
   Hyperparameter b: 0.001
-.
-.
-.
 \end{Sinput}
 To simplify matters only a fragment of the log-file is shown in the above. The log-file typically
 provides information on the used data, model specifications, algorithms and possible error
@@ -1196,24 +1193,24 @@ Subsection~\ref{subsec:processing}.
 To estimate the model within \proglang{R} the data is loaded and the model formula specified with
 <<forest-model-formula-01, echo=TRUE, eval=TRUE>>=
 data("ForestHealth", package = "R2BayesX")
-mf <- defoliation ~  stand + fertilized + 
+f <- defoliation ~  stand + fertilized + 
   humus + moisture + alkali + ph + soil +
-  f(age) + f(inclination) + f(canopy) + 
-  f(year) + f(elevation)
+  sx(age) + sx(inclination) + sx(canopy) + 
+  sx(year) + sx(elevation)
 @
 The covariates entering nonlinearly are again modeled by P-splines using 22 basis functions,
 \code{k = 22}. The model is then fitted applying REML by assigning a cumulative logit model and
 calling
 <<fit-forest-model-01, echo=TRUE, eval=FALSE>>=
-fm1 <- bayesx(mf, family = "cumlogit",
+fm1 <- bayesx(f, family = "cumlogit",
   method = "REML", data = ForestHealth)
 @
 <<fit-forest-model-02, echo=FALSE, eval=FALSE>>=
 data("BeechBnd", package = "R2BayesX")
 fm2 <- bayesx(defoliation ~  stand + fertilized +
   humus + moisture + alkali + ph + soil +
-  f(age) + f(inclination) + f(canopy) + f(year) +
-  f(elevation) + f(id, bs = "gs", map = BeechBnd),
+  sx(age) + sx(inclination) + sx(canopy) + sx(year) +
+  sx(elevation) + sx(id, bs = "gs", map = BeechBnd),
   family = "cumlogit", method = "REML", 
   data = ForestHealth)
 @
@@ -1229,8 +1226,8 @@ save(fm1, fm2, file = "forest-model.rda")
 After the estimation process has converged, the estimated effects of the nonparametric modeled terms
 may be visualized by typing
 <<fit-forest-model-01-plots, echo=TRUE, eval=FALSE>>=
-plot(fm2, term = c("f(age)", "f(inclination)",
-  "f(canopy)", "f(year)", "f(elevation)"))
+plot(fm2, term = c("sx(age)", "sx(inclination)",
+  "sx(canopy)", "sx(year)", "sx(elevation)"))
 @
 and are shown in Figure~\ref{fig:forest-no-spatial}.
 \begin{figure}[!ht]
@@ -1277,19 +1274,20 @@ We now fit the  model:
 <<fit-forest-model-02, echo=TRUE, eval=FALSE>>=
 fm2 <- bayesx(defoliation ~  stand + fertilized +
   humus + moisture + alkali + ph + soil +
-  f(age) + f(inclination) + f(canopy) + f(year) +
-  f(elevation) + f(id, bs = "gs", map = BeechBnd),
+  sx(age) + sx(inclination) + sx(canopy) + sx(year) +
+  sx(elevation) + sx(id, bs = "gs", map = BeechBnd),
   family = "cumlogit", method = "REML", data = ForestHealth)
 @
 Taking a look at model information criteria with
 <<summary-forest-model, echo=TRUE, eval=TRUE>>=
-BIC(c(fm1, fm2))
-GCV(c(fm1, fm2))
+BIC(fm1, fm2)
+GCV(fm1, fm2)
 @
 clearly indicates a better fit by modeling the spatial effect of tree locations. The summary
 statistics for both models gives:
 <<summary-forest-model>>=
-summary(c(fm1, fm2))
+summary(fm1)
+summary(fm2)
 @
 Most of the parametric modeled terms in the second model now have an insignificant effect on tree
 defoliation, with similar findings for covariates \code{inclination} and \code{elevation}. However,
@@ -1319,7 +1317,7 @@ intervals, of the model including the spatial effect.}
 
 A kernel density plot of the estimated spatial effect is then obtained by 
 <<forest-spatial-id, echo=TRUE, eval=FALSE>>=
-plot(fm2, term = "f(id)", map = FALSE)
+plot(fm2, term = "sx(id)", map = FALSE)
 @
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.65\textwidth}
@@ -1345,14 +1343,14 @@ plot(fm2, term = "f(id)", map = BeechBnd, pos = "topleft",
 The effect may also be visualized either using a 3d perspective plot, an image/contour plot or a map 
 effect plot using the boundary file \code{BeechBnd} with
 <<forest-spatial-id, echo=TRUE, eval=FALSE>>=
-plot(fm2, term = "f(id)", map = BeechBnd, pos = "topleft")
+plot(fm2, term = "sx(id)", map = BeechBnd, pos = "topleft")
 @
 Both the kernel density and map effect plot are shown in Figure~\ref{fig:forest-spatial-kde}. In 
 this example the coloring of the plot is strongly influenced by a few very high and low values. 
 Therefore, it might be useful to restrict the color range e.g. according to the 5\% and 95\% 
 quantiles of the kernel density estimate of the effect, e.g. by typing
 <<forest-spatial-id-restrict, echo=TRUE, eval=FALSE>>=
-plot(fm2, term = "f(id)", map = BeechBnd,
+plot(fm2, term = "sx(id)", map = BeechBnd,
   pos = "topleft", range = c(-4, 4))
 @
 the resulting map is shown in Figure~\ref{fig:forest-spatial-restrict}.
@@ -1389,15 +1387,15 @@ function, the implemented procedures decide if a term is included or removed fro
 estimate the model applying the option \code{method = "STEP"}, we use the same  model formula of
 Subsection~\ref{subsec:zambia} and call
 <<fit-zambia-model-step-01, echo=TRUE, eval=FALSE>>=
-mf <- stunting ~ memployment + urban + gender +
-  f(education, bs = "factor") + f(bmi) + f(agechild) +
-  f(district, bs = "mrf", map = ZambiaBnd) + r(district)
-zms <- bayesx(mf, family = "gaussian", method = "STEP",
+f <- stunting ~ memployment + urban + gender +
+  sx(education, bs = "factor") + sx(bmi) + sx(agechild) +
+  sx(district, bs = "mrf", map = ZambiaBnd) + r(district)
+zms <- bayesx(f, family = "gaussian", method = "STEP",
   algorithm = "cdescent1", startmodel = "empty",
   seed = 123, data = ZambiaNutrition)
 @
 <<fit-zambia-model-step-02, echo=FALSE, eval=FALSE>>=
-zmsccb <- bayesx(mf, family = "gaussian", method = "STEP",
+zmsccb <- bayesx(f, family = "gaussian", method = "STEP",
   algorithm = "cdescent1", startmodel = "empty",
   CI = "MCMCselect", iterations = 10000, step = 10,
   seed = 123, data = ZambiaNutrition)
@@ -1427,7 +1425,7 @@ computed for selected variables and functions only. The computation of condition
 is based on an MCMC-algorithm subsequent to the selection procedure.  For the selection of a model
 with an subsequent computation of conditional confidence bands the user may type
 <<fit-zambia-model-step-04, echo=TRUE, eval=FALSE>>=
-zmsccb <- bayesx(mf, family = "gaussian", method = "STEP",
+zmsccb <- bayesx(f, family = "gaussian", method = "STEP",
   algorithm = "cdescent1", startmodel = "empty",
   CI = "MCMCselect", iterations = 10000, step = 10,
   seed = 123, data = ZambiaNutrition)
