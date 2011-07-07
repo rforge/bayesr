@@ -45,7 +45,7 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
     plotting.}
   \item{grid}{the grid size of the surface(s).}
   \item{image}{if set to \code{TRUE}, an \code{\link[fields]{image.plot}} is drawn.}
-  \item{contour}{if set to \code{TRUE}, an \code{\link[graphics]{contour}} plot is drawn.}
+  \item{contour}{if set to \code{TRUE}, a \code{\link[graphics]{contour}} plot is drawn.}
   \item{legend}{if \code{image = TRUE} an additional legend may be added to the plot.}
   \item{cex.legend}{the expansion factor for the legend text, see \code{\link[graphics]{text}}.}
   \item{breaks}{a set of breakpoints for the colors: must give one more breakpoint than 
