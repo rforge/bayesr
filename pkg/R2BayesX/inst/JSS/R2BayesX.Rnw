@@ -314,8 +314,8 @@ A fully Bayesian interpretation of STAR models is obtained by specifying prior d
 unknown parameters. Estimation is carried out using Markov chain Monte Carlo simulation techniques.
 \pkg{BayesX} provides numerically efficient implementations of MCMC schemes for structured additive
 regression models. Suitable proposal densities have been developed to obtain rapidly mixing,
-well--behaved sampling schemes without the need for manual tuning.
-\citep{R2BayesX:Brezger+Lang:2006}
+well--behaved sampling schemes without the need for manual tuning
+\citep{R2BayesX:Brezger+Lang:2006}.
 
 \item \textit{Inference via a mixed model representation} \\
 Another concept used for estimation is based on mixed model methodology. The general idea is to take
@@ -325,8 +325,8 @@ random effects (mixed) model. While regression coefficients are estimated based 
 likelihood, restricted maximum likelihood or marginal likelihood estimation forms the basis for the
 determination of smoothing parameters. From a Bayesian perspective, this yields empirical
 Bayes/posterior mode estimates for the STAR models. However, estimates can also merely be
-interpreted as penalized likelihood estimates from a frequentist perspective.
-\citep{R2BayesX:Fahrmeir+Kneib+Lang:2004}
+interpreted as penalized likelihood estimates from a frequentist perspective
+\citep{R2BayesX:Fahrmeir+Kneib+Lang:2004}.
 
 \item \textit{Penalized likelihood including variable selection} \\
 As a third alternative \pkg{BayesX} provides a penalized least squares (or penalized likelihood)
@@ -344,7 +344,7 @@ able to
 \end{itemize}
 Inference is based on penalized likelihood in combination with fast algorithms for selecting
 relevant covariates and model terms. Different models are compared via various goodness of fit
-criteria, e.g. AIC, BIC, GCV and 5 or 10 fold cross validation. \citep{R2BayesX:Belitz+Lang:2008}
+criteria, e.g. AIC, BIC, GCV and 5 or 10 fold cross validation \citep{R2BayesX:Belitz+Lang:2008}.
 \end{enumerate}
 
 A thorough introduction into the regression models supported by the program is also provided in the
@@ -433,7 +433,7 @@ likelihood/marginal likelihood -- \code{"REML"} and penalized likelihood includi
 Table~\ref{tab:family}.
 \begin{table}[t!]
 \begin{center}
-\begin{tabular}{lp{4cm}p{2.5cm}l}
+\begin{tabular}{|lp{4cm}p{2.5cm}l|}
 \hline
 \code{family} & Response distribution & Link & \code{method} \\ \hline
 \code{"binomial"} & binomial & logit & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\
@@ -446,8 +446,6 @@ Table~\ref{tab:family}.
 \code{"cumprobit"} & cumulative threshold & probit & \code{"MCMC"} \code{"REML"} \\
 \code{"multistate"} & continuous-time multi-state data & & \code{"MCMC"} \code{"REML"} \\ \hline
 \code{"binomialcomploglog"} & binomial & complementary log-log & \code{"REML"} \\
-% \code{"nbinomial"} & negative binomial & log-link & \code{"MCMC"} \\
-% \code{"zip"} & zero inflation & log-link & \code{"MCMC"} \\
 \code{"cumlogit"} & cumulative multinomial & logit & \code{"REML"} \\
 \code{"multinomialcatsp"} & unordered multinomial (with category-specific covariates) & logit &
   \code{"REML"} \\
@@ -467,12 +465,12 @@ listed in Table~\ref{tab:control}.
 \begin{table}[!ht]
 \renewcommand\multirowsetup{\centering}
 \begin{center}
-\begin{tabular}{llp{11cm}}
+\begin{tabular}{|llp{11cm}|}
 \hline
 \code{method} & Parameter & Description \\ \hline
 \multirow{3}{*}[-0.8cm]{\code{"MCMC"}} & \code{iterations} & integer, sets the number of iterations
-                                         for the sampler, default: 12000. \\ \cline{2-3}
- & \code{burnin} & integer, sets the burn-in period of the sampler, default: 2000. \\ \cline{2-3}
+                                         for the sampler, default: 12000. \\
+ & \code{burnin} & integer, sets the burn-in period of the sampler, default: 2000. \\
  & \code{step} & integer, defines the thinning parameter for MCMC simulation. E.g., \code{step = 50}
               means, that only every 50th sampled parameter will be stored and used to compute
               characteristics of the posterior distribution as means, standard deviations or
@@ -481,7 +479,7 @@ listed in Table~\ref{tab:control}.
                                          the estimation process. If both the relative changes in the
                                          regression coefficients and the variance parameters are
                                          less than \code{eps}, the estimation process is assumed to
-                                         have converged, default: 0.00001. \\ \cline{2-3}
+                                         have converged, default: 0.00001. \\
  & \code{maxit} & integer, defines the maximum number of iterations to be used in estimation. Since
                the estimation process will not necessarily converge, it may be useful to define an
                upper bound for the number of iterations. \\ \hline
@@ -494,7 +492,6 @@ listed in Table~\ref{tab:control}.
                    the first step as the start model) and \code{"stepwise"} (stepwise algorithm
                    implemented in the \code{gam} function of \proglang{S}-plus, see
                    \citealp{R2BayesX:Chambers+Hastie:1992}), default: \code{"cdescent1"}. \\
-\cline{2-3}
  & \code{criterion} & character, specifies the goodness of fit criterion. If
                    \code{criterion = "MSEP"} is specified the data are randomly divided into a
                    test- and validation data set. The test data set is used to estimate the models
@@ -502,7 +499,7 @@ listed in Table~\ref{tab:control}.
                    (MSEP) which serves as the goodness of fit criterion to compare different
                    models, possible criterions are: \code{"GCV"}, \code{"GCVrss"}, \code{"AIC"}, 
                    \code{"AIC\_imp"}, \code{"BIC"}, \code{"MSEP"}, \code{"CV5"}, \code{"CV10"} and
-                   \code{"AUC"}, default: \code{"AIC\_imp"}. \\ \cline{2-3}
+                   \code{"AUC"}, default: \code{"AIC\_imp"}. \\
  & \code{startmodel} & character, defines the start model for variable selection. Options are
                     \code{"linear"}, \code{"empty"}, \code{"full"} and \code{"userdefined"},
                     default: \code{"linear"}. \\
@@ -540,44 +537,43 @@ all available functions and methods of package \pkg{R2BayesX} can be found in
 Table~\ref{tab:funmethods}.
 \begin{table}[t!]
 \begin{center}
-\begin{tabular}{|p{4cm}|p{10cm}|}
+\begin{tabular}{|p{4cm}p{10cm}|}
 \hline
 Function & Description \\ \hline
-\fct{AIC}, \fct{BIC}, \fct{DIC}, \fct{GCV} & computes information criteria, availability is
-                                             dependent on the \code{method} used. \\ \hline
-\fct{bayesx\_logfile}, \fct{bayesx\_prgfile}, \fct{bayesx\_runtime} & extracts the internal 
-                                             \pkg{BayesX} log-file, the program file and the overall 
-                                             runtime of the binary. \\ \hline
-\fct{c} & combines several objects of class \code{"bayesx"}, all functions and methods may be
-          applied on the returned object. \\ \hline
+\fct{print} & simple printed display of the initial call and some additional information of the
+              fitted model. \\
+\fct{summary} & returns an object of class \code{"summary.bayesx"} containing the relevant summary
+                statistics (which has a \fct{print} method). \\ \hline
 \fct{coef} & extracts coefficients of linear modeled terms, for \code{"MCMC"} estimated models,
              the samples of the coefficients are provided within the object attribute
-             \code{"sample"}. \\ \hline
+             \code{"sample"}. \\
 \fct{confint} & compute confidence intervals of linear modeled terms if \code{method = "REML"}, for
                 \code{"MCMC"} the quantiles of the coefficient samples according to a specified
-                probability level are computed. \\ \hline
+                probability level are computed. \\
 \fct{cprob} & extract contour probabilities of a particular P-spline term, only meaningful if
               \code{method = "MCMC"} and e.g. argument \code{contourprob} is specified within
               argument \code{xt} in function \fct{s}. E.g. in the introductory example, contour
               probabilities for the term using covariate \code{bmi} are estimated with
-              \code{s(bmi, bs = "ps", xt = list(contourprob = 4))}. \\ \hline
+              \code{s(bmi, bs = "ps", xt = list(contourprob = 4))}. \\
 \fct{fitted} & fitted values of either the mean and linear predictor, or a selected model term. \\
-               \hline
+\fct{bayesx\_logfile}, \fct{bayesx\_prgfile}, \fct{bayesx\_runtime} & extracts the internal 
+                                             \pkg{BayesX} log file, the program file and the overall 
+                                             runtime of the binary. \\
+\fct{residuals} & extract model or partial residuals for a selected term. \\
+\fct{samples} & extract samples of parameters from MCMC simulation. \\ \hline
+\fct{terms} & extract terms of model components. \\
+\fct{model.frame} & extract/generate a model frame. \\
+\fct{logLik} & extract fitted log-likelihood, only if \code{method = "REML"}. \\ \hline
+\fct{plot} & either model diagnostic plots or effect plots of particular terms. \\
 \fct{getscript} & generate an \proglang{R} script for term effect, diagnostic plots and model
                   summary statistics. \\ \hline
-\fct{logLik} & extract fitted log-likelihood, only if \code{method = "REML"}. \\ \hline
-\fct{model.frame} & extract/generate a model frame. \\ \hline
-\fct{plot} & either model diagnostic plots or effect plots of particular terms. \\ \hline
-\fct{print} & simple printed display of the initial call and some additional information of the
-              fitted model. \\ \hline
-\fct{residuals} & extract model or partial residuals for a selected term. \\ \hline
-\fct{samples} & extract samples of parameters from MCMC simulation. \\ \hline
-\fct{summary} & returns an object of class \code{"summary.bayesx"} containing the relevant summary
-                statistics (which has a \fct{print} method). \\ \hline
-\fct{terms} & extract terms of model components. \\ \hline
+\fct{AIC}, \fct{BIC}, \fct{DIC}, \fct{GCV} & computes information criteria, availability is
+                                             dependent on the \code{method} used. \\
+\fct{c} & combines several objects of class \code{"bayesx"}, all functions and methods may be
+          applied on the returned object. \\ \hline
 \end{tabular}
 \caption{\label{tab:funmethods} Functions and methods for objects of class \code{"bayesx"}. (A
-detailed documentation is provided in the help sites of package \pkg{R2BayesX})}
+detailed documentation is provided in the manual of package \pkg{R2BayesX}.)}
 \end{center}
 \end{table}
 
@@ -610,36 +606,9 @@ terms. Argument \code{bs} chooses the basis/type of the term, possible options a
 Table~\ref{tab:terms}.
 \begin{table}[htbp]
 \begin{center}
-\begin{tabular}{|p{3.2cm}|p{11.2cm}|}
+\begin{tabular}{|p{3.2cm}p{11.2cm}|}
 \hline
 \code{bs} & Description \\ \hline
-\code{"lasso"}, \code{"nigmix"}, \code{"ridge"} & shrinkage of fixed effects: defines a
-                                                shrinkage-prior for the corresponding parameters
-                                                $\gamma_j$, $j = 1, \ldots, q$, $q \geq 1$ of the
-                                                linear effects $x_1, \ldots, x_q$. There are three
-                                                priors possible: ridge-, lasso- and Normal Mixture
-                                                of inverse Gamma (NMIG)-prior. \\ \hline
-\code{"bl"}, \code{"baseline"} & nonlinear baseline effect in hazard regression or multi-state 
-              models: defines a P-spline with second order random walk penalty for the parameters of 
-              the spline for the log-baseline effect $\log(\lambda(time))$. \\ \hline
-\code{"kr"}, \code{"kriging"} & kriging with stationary Gaussian random fields. \\ \hline
-\code{"gk"}, \code{"geokriging"} & geokriging with stationary Gaussian random fields: estimates a 
-              stationary Gaussian random field based on the centroids of a map object provided in 
-              boundary format, see function \fct{read.bnd}, within the \code{xt} argument of 
-              function \fct{s}, e.g. \code{xt = list(map = MapBnd)}. \\ \hline
-\code{"gs"}, \code{"geospline"} & geosplines based on two-dimensional P-splines with first order 
-              random walk penalty: defines a two-dimensional P-spline for the spatial covariate 
-              region with a two-dimensional first order random walk penalty for the parameters of 
-              the spline. Estimation is based on the coordinates of the centroids of the regions 
-              provided by a map object in boundary format, see function \fct{read.bnd}, within the 
-              \code{xt} argument of function \fct{s}, e.g. \code{xt = list(map = MapBnd)}. \\ \hline
-\code{"mrf"}, \code{"spatial"} & Markov random fields: defines a Markov random field prior for a 
-               spatial covariate, where geographical information is provided by a map object in 
-               boundary or graph file format, see function \fct{read.bnd} and \fct{read.gra}, within 
-               the \code{xt} argument of function \fct{s}, e.g. 
-               \code{xt = list(map = MapBndorGra)}. \\ \hline
-\code{"ps"}, \code{"psplinerw1"}, \code{"psplinerw2"} & P-spline with first or second order 
-                                                        difference penalty. \\ \hline
 \code{"rw1"}, \code{"rw2"} & zero degree P-splines: defines a zero degree P-spline with first or
                             second order difference penalty. A zero degree P-spline typically
                             estimates for every distinct covariate value in the data set a separate
@@ -649,14 +618,41 @@ Table~\ref{tab:terms}.
                             For ordinal covariates higher order P-splines are not meaningful while
                             zero degree P-splines might be an alternative to modeling nonlinear
                             relationships via a dummy approach with completely unrestricted
-                            regression parameters. \\ \hline
-\code{"season"} & seasonal effect of a time scale. \\ \hline
+                            regression parameters. \\
+\code{"season"} & seasonal effect of a time scale. \\
+\code{"ps"}, \code{"psplinerw1"}, \code{"psplinerw2"} & P-spline with first or second order 
+                                                        difference penalty. \\
 \code{"te"}, \code{"pspline2dimrw2"} & defines a two-dimensional P-spline based on the tensor 
               product of one-dimensional P-splines with a two-dimensional first order random walk 
-              penalty for the parameters of the spline. \\ \hline
+              penalty for the parameters of the spline. \\
+\code{"kr"}, \code{"kriging"} & kriging with stationary Gaussian random fields. \\ \hline
+\code{"gk"}, \code{"geokriging"} & geokriging with stationary Gaussian random fields: estimates a 
+              stationary Gaussian random field based on the centroids of a map object provided in 
+              boundary format, see function \fct{read.bnd}, within the \code{xt} argument of 
+              function \fct{s}, e.g. \code{xt = list(map = MapBnd)}. \\
+\code{"gs"}, \code{"geospline"} & geosplines based on two-dimensional P-splines with first order 
+              random walk penalty: defines a two-dimensional P-spline for the spatial covariate 
+              region with a two-dimensional first order random walk penalty for the parameters of 
+              the spline. Estimation is based on the coordinates of the centroids of the regions 
+              provided by a map object in boundary format, see function \fct{read.bnd}, within the 
+              \code{xt} argument of function \fct{s}, e.g. \code{xt = list(map = MapBnd)}. \\
+\code{"mrf"}, \code{"spatial"} & Markov random fields: defines a Markov random field prior for a 
+               spatial covariate, where geographical information is provided by a map object in 
+               boundary or graph file format, see function \fct{read.bnd} and \fct{read.gra}, within 
+               the \code{xt} argument of function \fct{s}, e.g. 
+               \code{xt = list(map = MapBndorGra)}. \\ \hline
+\code{"bl"}, \code{"baseline"} & nonlinear baseline effect in hazard regression or multi-state 
+              models: defines a P-spline with second order random walk penalty for the parameters of 
+              the spline for the log-baseline effect $\log(\lambda(time))$. \\
 \code{"factor"} & special \pkg{BayesX} specifier for factors, especially meaningful if
                   \code{method = "STEP"}, since the factor term is then treated as a full term,
-                  which is either included or removed from the model. \\ \hline
+                  which is either included or removed from the model. \\
+\code{"lasso"}, \code{"nigmix"}, \code{"ridge"} & shrinkage of fixed effects: defines a
+                                                shrinkage-prior for the corresponding parameters
+                                                $\gamma_j$, $j = 1, \ldots, q$, $q \geq 1$ of the
+                                                linear effects $x_1, \ldots, x_q$. There are three
+                                                priors possible: ridge-, lasso- and Normal Mixture
+                                                of inverse Gamma (NMIG)-prior. \\ \hline
 \end{tabular}
 \caption{\label{tab:terms} Possible \pkg{BayesX} model terms within function \fct{s}.}
 \end{center}
@@ -810,19 +806,19 @@ covariates such as the body mass index of the mother, the age of the child and o
 Table~\ref{tab:zambia}.
 \begin{table}[htbp]
 \begin{center}
-\begin{tabular}{|l|p{10cm}|}
+\begin{tabular}{|lp{10cm}|}
 \hline
 Variable           & Description \\ \hline
-\code{stunting}    & standardised Z-score for stunting. \\ \hline
-\code{bmi}         & body mass index of the mother. \\ \hline
-\code{agechild}    & age of the child in months. \\ \hline
-\code{district}    & district where the mother lives. \\ \hline
+\code{stunting}    & standardised Z-score for stunting. \\
+\code{bmi}         & body mass index of the mother. \\
+\code{agechild}    & age of the child in months. \\
+\code{district}    & district where the mother lives. \\
 \code{memployment} & mother's employment status with categories `working' and
-                     `not working'. \\ \hline
+                     `not working'. \\
 \code{education}   & mother's educational status with categories for complete primary but incomplete
                      secondary `no/incomplete', complete secondary or higher `minimum primary' and
-                     no education or incomplete primary `minimum secondary'. \\ \hline
-\code{urban}       & locality of the domicile with categories `yes' and `no'. \\ \hline
+                     no education or incomplete primary `minimum secondary'. \\
+\code{urban}       & locality of the domicile with categories `yes' and `no'. \\
 \code{gender}      & gender of the child with categories `male' and `female'. \\ \hline
 \end{tabular}
 \caption{\label{tab:zambia} Variables in the data set on childhood malnutrition in Zambia.}
@@ -1138,26 +1134,24 @@ available, see also Table~\ref{tab:forest}.
 \begin{tabular}{|l|p{10cm}|}
 \hline
 Variable           & Description \\ \hline
-\code{id}          & tree location identification number. \\ \hline
-\code{year}        & year of census. \\ \hline
+\code{id}          & tree location identification number. \\
+\code{year}        & year of census. \\
 \code{defoliation} & percentage of tree defoliation in three ordinal
                      categories, 0 == `defoliation < 12.5\%', 1 == `12.5\% $\leq$
-                     defoliation < 50\%' and 2 == `defoliation $\geq$ 50\%'. \\ \hline
-% \code{x}           & x-coordinate of the tree location. \\ \hline
-% \code{y}           & y-coordinate of the tree location. \\ \hline
-\code{age}         & age of stands in years. \\ \hline
-\code{canopy}      & forest canopy density in percent. \\ \hline
-\code{inclination} & slope inclination in percent. \\ \hline
-\code{elevation}   & elevation (meters above sea level). \\ \hline
-\code{soil}        & soil layer depth in cm. \\ \hline
-\code{ph}          & soil pH at 0-2cm depth. \\ \hline
+                     defoliation < 50\%' and 2 == `defoliation $\geq$ 50\%'. \\
+\code{age}         & age of stands in years. \\
+\code{canopy}      & forest canopy density in percent. \\
+\code{inclination} & slope inclination in percent. \\
+\code{elevation}   & elevation (meters above sea level). \\
+\code{soil}        & soil layer depth in cm. \\
+\code{ph}          & soil pH at 0-2cm depth. \\
 \code{moisture}    & soil moisture level with categories 1 == `moderately
                      dry', 2 == `moderately moist' and 3 == `moist or temporarily
-                     wet'. \\ \hline
+                     wet'. \\
 \code{alkali}      & proportion of base alkali-ions with categories 1 == `low'
-                     to 4 == `high'. \\ \hline
-\code{humus}       & humus layer thickness in cm. \\ \hline
-\code{stand}       & stand type with categories `deciduous' and `mixed'. \\ \hline
+                     to 4 == `high'. \\
+\code{humus}       & humus layer thickness in cm. \\
+\code{stand}       & stand type with categories `deciduous' and `mixed'. \\
 \code{fertilized}  & fertilization applied with categories `yes' and `no'. \\ \hline
 \end{tabular}
 \caption{\label{tab:forest} Variables in the forest health data set.}
@@ -1213,7 +1207,7 @@ save(fm1, fm2, file = "forest-model.rda")
 After the estimation process has converged, the estimated effects of the nonparametric modeled terms
 may be visualized by typing
 <<fit-forest-model-01-plots, echo=TRUE, eval=FALSE>>=
-plot(fm2, term = c("sx(age)", "sx(inclination)",
+plot(fm1, term = c("sx(age)", "sx(inclination)",
   "sx(canopy)", "sx(year)", "sx(elevation)"))
 @
 and are shown in Figure~\ref{fig:forest-no-spatial}.
@@ -1222,27 +1216,27 @@ and are shown in Figure~\ref{fig:forest-no-spatial}.
 \centering
 <<forest-no-spatial-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm1, term = "f(age)")
+plot(fm1, term = "sx(age)")
 @
 <<forest-no-spatial-inclination, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm1, term = "f(inclination)")
+plot(fm1, term = "sx(inclination)")
 @
 \\[2ex]
 
 <<forest-no-spatial-canopy, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm1, term = "f(canopy)")
+plot(fm1, term = "sx(canopy)")
 @
 <<forest-no-spatial-year, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm1, term = "f(year)")
+plot(fm1, term = "sx(year)")
 @
 \\[2ex]
 
 <<forest-no-spatial-elevation, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm1, term = "f(elevation)")
+plot(fm1, term = "sx(elevation)")
 @
 \caption{\label{fig:forest-no-spatial} Forest damage: Estimates of nonparametric effects including
 80\% and 95\% point-wise confidence intervals of the model without the spatial effect.}
@@ -1285,17 +1279,17 @@ Figure~\ref{fig:forest-spatial-nonpara}.
 \centering
 <<forest-spatial-inclination, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm2, term = "f(inclination)")
+plot(fm2, term = "sx(inclination)")
 @
 <<forest-spatial-elevation, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm2, term = "f(elevation)")
+plot(fm2, term = "sx(elevation)")
 @
 \\[2ex]
 
 <<forest-spatial-age, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 2.1))
-plot(fm2, term = "f(age)")
+plot(fm2, term = "sx(age)")
 @
 \caption{\label{fig:forest-spatial-nonpara} Forest damage: Estimated effects of covariates
 \code{inclination}, \code{elevation} and \code{age}, including 80\% and 95\% point-wise confidence
@@ -1312,7 +1306,7 @@ plot(fm2, term = "sx(id)", map = FALSE)
 \setkeys{Gin}{width=0.46\textwidth}
 <<forest-spatial-id-restrict-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.4, 1.1))
-plot(fm2, term = "f(id)", map = FALSE, main = "")
+plot(fm2, term = "sx(id)", map = FALSE, main = "")
 @ 
 \\[2ex]
 
@@ -1321,7 +1315,7 @@ plot(fm2, term = "f(id)", map = FALSE, main = "")
 <<forest-spatial-id, echo=FALSE, fig=TRUE, width=7.3, height=4.5>>=
 par(mar = c(0.1, 0.1, 0.1, 0.1))
 range <- c(-1 * max(abs(range)), max(abs(range)))
-plot(fm2, term = "f(id)", map = BeechBnd, pos = "topleft",
+plot(fm2, term = "sx(id)", map = BeechBnd, pos = "topleft",
   height = 0.24, width = 0.41)
 @
 \caption{\label{fig:forest-spatial-kde} Forest damage: Kernel density estimate of the spatial 
@@ -1346,9 +1340,9 @@ the resulting map is shown in Figure~\ref{fig:forest-spatial-restrict}.
 \centering
 <<forest-spatial-id-restrict, echo=FALSE, fig=TRUE, width=7.3, height=4.5>>=
 par(mar = c(0.1, 0.1, 0.1, 0.1))
-range <- R2BayesX:::kde.quantiles(fitted(fm2, term = "f(id)")$Estimate)
+range <- R2BayesX:::kde.quantiles(fitted(fm2, term = "sx(id)")$Estimate)
 range <- c(-1 * max(abs(range)), max(abs(range)))
-plot(fm2, term = "f(id)", map = BeechBnd, pos = "topleft",
+plot(fm2, term = "sx(id)", map = BeechBnd, pos = "topleft",
   height = 0.24, width = 0.41,
   range = range)
 @ %$

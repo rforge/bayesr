@@ -37,7 +37,7 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
       if(bs %in% c("ps", "psplinerw1", "psplinerw2", "pspline"))
         k <- 20L + m[1L] - 1L
       else
-        k <- 5L + m[1L] - 1L
+        k <- 20L + m[1L] - 1L
     } 
     m[1L] <- m[1L] - 2L
   }
