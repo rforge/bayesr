@@ -1,7 +1,7 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-b3 <- bayesx(y ~ sx(x), weights = W, data = dat)
+bayesx.term.options(bs = "ps", method = "MCMC")
 
 
 b1 <- bayesx(y ~ s(x) + te(z, w) + fac,

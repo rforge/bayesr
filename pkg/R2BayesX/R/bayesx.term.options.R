@@ -1,10 +1,11 @@
 bayesx.term.options <-
 function(bs = "ps", method = "MCMC")
 {
-  bs <- tolower(deparse(substitute(bs), backtick = TRUE, width.cutoff = 500L))
-  method <- toupper(weights <- deparse(substitute(method), backtick = TRUE, width.cutoff = 500L))
   bterms <- c("lasso", "ridge", "bl", "kr", "gk", 
-    "gs", "mrf", "ps", "rw1", "rw2", "random", "te", "season")
+    "gs", "mrf", "ps", "rw1", "rw2", "random", "te",
+    "season", "factor", "psplinerw1", "psplinerw2",
+    "geospline", "geokriging", "spatial", "kriging",
+    "baseline", "tensor")
   if(!is.na(bs <- pmatch(bs, bterms))) {
     bs <- bterms[bs]
     cat("\npossible options for \'bs = \"", bs, "\"\': \n\n", sep = "")
@@ -21,8 +22,12 @@ function(bs = "ps", method = "MCMC")
         return(NULL)
       } 
     }
-    if(bs == "bl") {
+    if(bs == "bl" || bs == "baseline") {
       if(method == "REML") {
+        cat("     degree: the degree of the B-spline basis functions.\n",
+            "           Default: integer, \'degree = 3\'.\n\n")
+        cat("      knots: number of inner knots.\n",
+            "           Default: integer, \'knots = 20\'.\n\n")
         cat("lambdastart: starting value for the smoothing parameter lambda. \n",
           "            Default: realvalue, positive, \'lambdastart = 10\'. \n\n")
         cat(" gridchoice: How to choose grid points for numerical integration \n",
@@ -57,8 +62,10 @@ function(bs = "ps", method = "MCMC")
         return(NULL)
       } 
     }
-    if(bs == "kr") {
+    if(bs == "kr" || bs == "kriging") {
       if(method == "REML") {
+        cat("      knots: number of inner knots.\n",
+            "           Default: integer, \'knots = 20\'.\n\n")
         cat("lambdastart: starting value for the smoothing parameter lambda. \n",
           "            Default: realvalue, positive, \'lambdastart = 10\'. \n\n")
         cat("   knotdata: a matrix with x and y coordinates for the knots. \n\n")
@@ -94,8 +101,10 @@ function(bs = "ps", method = "MCMC")
         return(NULL)
       }
     }
-    if(bs == "gk") {
+    if(bs == "gk" || bs == "geokriging") {
       if(method == "REML") {
+        cat("      knots: number of inner knots.\n",
+            "           Default: integer, \'knots = 20\'.\n\n")
         cat("lambdastart: starting value for the smoothing parameter lambda. \n",
           "            Default: realvalue, positive, \'lambdastart = 10\'. \n\n")
         cat("   knotdata: a matrix with x and y coordinates for the knots. \n\n")
@@ -136,8 +145,14 @@ function(bs = "ps", method = "MCMC")
         return(NULL)
       }
     }
-    if(bs == "te") {
+    if(bs == "te" || bs == "pspline2dimrw1" || bs == "tensor") {
       if(method == "REML") {
+        cat("     degree: the degree of the B-spline basis functions.\n",
+            "           Default: integer, \'degree = 3\'.\n\n")
+        cat("      knots: number of inner knots.\n",
+            "           Default: integer, \'knots = 20\'.\n\n")
+        cat("      order: only if \'bs = \"ps\"\', the order of the difference penalty.\n",
+            "           Default: integer, \'order = 2\'.\n\n")
         cat("lambdastart: starting value for the smoothing parameter lambda. \n",
           "            Default: realvalue, positive, \'lambdastart = 10\'. \n\n")
         cat("catspecific: requests that the corresponding effect should be modelled \n",
@@ -148,6 +163,12 @@ function(bs = "ps", method = "MCMC")
           "            Default: boolean, \'catspecific = FALSE\'. \n\n")  
         }
       if(method == "MCMC") {
+        cat("     degree: the degree of the B-spline basis functions.\n",
+            "           Default: integer, \'degree = 3\'.\n\n")
+        cat("      knots: number of inner knots.\n",
+            "           Default: integer, \'knots = 20\'.\n\n")
+        cat("      order: only if \'bs = \"ps\"\', the order of the difference penalty.\n",
+            "           Default: integer, \'order = 2\'.\n\n")
         cat("       a, b: the options a and b specify the hyperparameters of the \n",
             "            inverse Gamma prior for the variance tau2. \n",
             "            Default: realvalue, \'a = 0.001\', \'b = 0.001\'. \n\n")
@@ -188,6 +209,12 @@ function(bs = "ps", method = "MCMC")
             "            Default: integer, \'gridsize = -1\'. \n\n")
       }
       if(method == "STEP") {
+        cat("     degree: the degree of the B-spline basis functions.\n",
+            "           Default: integer, \'degree = 3\'.\n\n")
+        cat("      knots: number of inner knots.\n",
+            "           Default: integer, \'knots = 20\'.\n\n")
+        cat("      order: only if \'bs = \"ps\"\', the order of the difference penalty.\n",
+            "           Default: integer, \'order = 2\'.\n\n")
         cat("      dfmin: minimum degree of freedom, numeric.\n\n")
         cat("      dfmax: maximum degree of freedom, numeric.\n\n")
         cat("    dfstart: degree of freedom used in the start model.\n",
@@ -226,8 +253,12 @@ function(bs = "ps", method = "MCMC")
             "            Default: integer,  \'gridsize = -1\'.\n\n")
       }   
     }
-    if(bs == "gs") {
+    if(bs == "gs" || bs == "geospline") {
       if(method == "REML") {
+        cat("     degree: the degree of the B-spline basis functions.\n",
+            "           Default: integer, \'degree = 3\'.\n\n")
+        cat("      knots: number of inner knots.\n",
+            "           Default: integer, \'knots = 20\'.\n\n")
         cat("lambdastart: starting value for the smoothing parameter lambda. \n",
           "            Default: realvalue, positive, \'lambdastart = 10\'. \n\n")
         cat("        map: a map provided as a list of matrix polygons. \n\n") 
@@ -243,6 +274,10 @@ function(bs = "ps", method = "MCMC")
           "            Default: boolean, \'center = FALSE\'. \n\n") 
       }
       if(method == "MCMC") {
+        cat("     degree: the degree of the B-spline basis functions.\n",
+            "           Default: integer, \'degree = 3\'.\n\n")
+        cat("      knots: number of inner knots.\n",
+            "           Default: integer, \'knots = 20\'.\n\n")
         cat("       a, b: the options a and b specify the hyperparameters of the \n",
             "            inverse Gamma prior for the variance tau2. \n",
             "            Default: realvalue, \'a = 0.001\', \'b = 0.001\'. \n\n")
@@ -275,6 +310,10 @@ function(bs = "ps", method = "MCMC")
         cat("        map: a map provided as a list of matrix polygons. \n\n") 
       }
       if(method == "STEP") {
+        cat("     degree: the degree of the B-spline basis functions.\n",
+            "           Default: integer, \'degree = 3\'.\n\n")
+        cat("      knots: number of inner knots.\n",
+            "           Default: integer, \'knots = 20\'.\n\n")
         cat("      dfmin: minimum degree of freedom, numeric.\n\n")
         cat("      dfmax: maximum degree of freedom, numeric.\n\n")
         cat("    dfstart: degree of freedom used in the start model.\n",
@@ -370,7 +409,7 @@ function(bs = "ps", method = "MCMC")
             "            Default: boolean, \'center = FALSE\'.\n\n")
       } 
     }
-    if(bs == "mrf") {
+    if(bs == "mrf" || bs == "spatial") {
       if(method == "REML") {
         cat("lambdastart: starting value for the smoothing parameter lambda. \n",
           "            Default: realvalue, positive, \'lambdastart = 10\'. \n\n")
@@ -442,8 +481,14 @@ function(bs = "ps", method = "MCMC")
       cat("        map: a map provided as a list of matrix polygons. \n\n") 
       } 
     }
-    if(bs == "ps") {
+    if(bs == "ps" || bs == "psplinerw1"  || bs == "psplinerw2") {
       if(method == "REML") {
+        cat("     degree: the degree of the B-spline basis functions.\n",
+            "           Default: integer, \'degree = 3\'.\n\n")
+        cat("      knots: number of inner knots.\n",
+            "           Default: integer, \'knots = 20\'.\n\n")
+        cat("      order: only if \'bs = \"ps\"\', the order of the difference penalty.\n",
+            "           Default: integer, \'order = 2\'.\n\n")
         cat("lambdastart: starting value for the smoothing parameter lambda. \n",
           "            Default: realvalue, positive, \'lambdastart = 10\'. \n\n")
         cat("catspecific: requests that the corresponding effect should be modelled \n",
@@ -458,6 +503,12 @@ function(bs = "ps", method = "MCMC")
           "            Default: boolean, \'center = FALSE\'. \n\n") 
       }
       if(method == "MCMC") {
+        cat("     degree: the degree of the B-spline basis functions.\n",
+            "           Default: integer, \'degree = 3\'.\n\n")
+        cat("      knots: number of inner knots.\n",
+            "           Default: integer, \'knots = 20\'.\n\n")
+        cat("      order: only if \'bs = \"ps\"\', the order of the difference penalty.\n",
+            "           Default: integer, \'order = 2\'.\n\n")
         cat("       a, b: the options a and b specify the hyperparameters of the \n",
             "            inverse Gamma prior for the variance tau2. \n",
             "            Default: realvalue, \'a = 0.001\', \'b = 0.001\'. \n\n")
@@ -513,6 +564,12 @@ function(bs = "ps", method = "MCMC")
             "            Default: \'contourprob = 4\'. \n\n")
       }
       if(method == "STEP") {
+        cat("     degree: the degree of the B-spline basis functions.\n",
+            "           Default: integer, \'degree = 3\'.\n\n")
+        cat("      knots: number of inner knots.\n",
+            "           Default: integer, \'knots = 20\'.\n\n")
+        cat("      order: only if \'bs = \"ps\"\', the order of the difference penalty.\n",
+            "           Default: integer, \'order = 2\'.\n\n")
         cat("      dfmin: minimum degree of freedom, numeric.\n\n")
         cat("      dfmax: maximum degree of freedom, numeric.\n\n")
         cat("    dfstart: degree of freedom used in the start model.\n",

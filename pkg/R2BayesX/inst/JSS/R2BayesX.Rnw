@@ -132,7 +132,7 @@ formula language definition, wherefore several special model term constructor fu
 the main \pkg{R2BayesX} constructor functions \fct{sx} and \fct{r} for smooth and random effects
 respectively, as well as the functions \fct{s} and \fct{te} from the \pkg{mgcv} package
 \citep{R2BayesX:Wood:2011, R2BayesX:Wood:2006}, facilitate a consistent way to translate
-\proglang{R} syntax into \pkg{BayesX} interpretable commands (see Section~\ref{sec:overview}).
+\proglang{R} syntax into \pkg{BayesX} interpretable commands (see Section~\ref{subsec:addterms}).
 
 The reminder of this paper is as follows. The next section gives a first example of a common 
 \proglang{R} session using \pkg{R2BayesX}. Section~\ref{sec:model} briefly discusses the
@@ -142,7 +142,7 @@ Section~\ref{sec:illustrations}, the interface usability is further illustrated 
 malnutrition data of Zambia and a dataset on forest health.
 
 
-\section{Motivating example}
+\section{Motivating example} \label{sec:motivation}
 
 To give an introductory example of the various features of the interface, we estimate a Bayesian
 geoadditive regression model for the childhood malnutrition data set in Zambia (see
@@ -539,7 +539,7 @@ included in publications. A list of all available functions and methods of packa
 can be found in Table~\ref{tab:funmethods}.
 \begin{table}[t!]
 \begin{center}
-\begin{tabular}{|p{4cm}p{10cm}|}
+\begin{tabular}{|p{3.5cm}p{10.5cm}|}
 \hline
 Function & Description \\ \hline
 \fct{print} & simple printed display of the initial call and some additional information of the
@@ -570,44 +570,38 @@ Function & Description \\ \hline
 \fct{getscript} & generate an \proglang{R} script for term effect, diagnostic plots and model
                   summary statistics. \\ \hline
 \fct{AIC}, \fct{BIC}, \fct{DIC}, \fct{GCV} & computes information criteria, availability is
-                                             dependent on the \code{method} used. \\
-\fct{c} & combines several objects of class \code{"bayesx"}, all functions and methods may be
-          applied on the returned object. \\ \hline
+                                             dependent on the \code{method} used. \\ \hline
 \end{tabular}
 \caption{\label{tab:funmethods} Functions and methods for objects of class \code{"bayesx"}. (A
 detailed documentation is provided in the manual of package \pkg{R2BayesX}.)}
 \end{center}
 \end{table}
 
+\clearpage
+
 \subsection[Available additive terms]{Available additive terms}
 \label{subsec:addterms}
-Using \proglang{R}'s formula language, additive terms may be incorporated into the model 
-\code{formula} by the main model term constructor function \fct{f}. The function has the following
-arguments:
-\begin{Sinput}
-sx(x, z = NA, bs = "ps", by = NA, ...)
-\end{Sinput}
-Argument \code{x} specifies the covariate the model term is a function of. For bivariate terms, the
-second covariate is provided to argument \code{z}. The basis/type of the model term can be chosen 
-with argument \code{bs}, the default is a P-spline with \code{bs = "ps"}. A list of all available 
-term type options is given in Table~\ref{tab:terms}. 
+In package \pkg{R2BayesX}, the main constructor function for specifying additive terms in STAR
+formulas is called \fct{sx}. The function is basically an interface to the term constructor function
+\fct{s} of package \pkg{mgcv}, i.e.\ it is possible to either use \fct{sx} or \fct{s} for formulas
+within function \fct{bayesx}. Function \fct{s} is a very flexible function for implementing new
+terms for the model fitting function \fct{gam} and greatly supports the syntax translation methods
+implemented in \pkg{R2BayesX}. The major reason for interfacing function \fct{s} is to provide a
+similar adjustable, but more adaptive set up to the \pkg{BayesX} specific model terms,
+specifications and defaults. Furthermore, using MCMC estimation, the number of options that may be
+set for particular model terms is large, wherefore the representation of a function call to \fct{sx}
+is slightly more parsimonious. 
 
-As mentioned in the introduction, package \pkg{R2BayesX} utilizes function \fct{s} from the
-\pkg{mgcv} package to build the additive components of a STAR predictor within \proglang{R}'s
-formula language. The usage of \fct{s} in \pkg{R2BayesX} is in principle similar to package
-\pkg{mgcv}. The applicable arguments are
+The arguments of function \fct{sx} are
 \begin{Sinput}
-s(..., k = -1, bs = "ps", m = NA, by = NA, xt = NULL)
+sx(x, z = NULL, bs = "ps", by = NA, ...)
 \end{Sinput}
-Within \fct{s}, the list of covariates used for the model term is set with the dots "\code{...}"
-argument. For instance, in the introductory example, a term for the body mass index of the mother is
-included in the model formula by \code{s(bmi)}, a term with two covariates is  specified e.g.\
-with \code{s(bmi, age)}. The parameter \code{k} controls the dimension of the basis used for smooth
+where \code{x} represents the covariate that is used for univariate and \code{z} for bivariate model
 terms. Argument \code{bs} chooses the basis/type of the term, possible options are shown in
 Table~\ref{tab:terms}.
-\begin{table}[htbp]
+\begin{table}[t!]
 \begin{center}
-\begin{tabular}{|p{3.2cm}p{11.2cm}|}
+\begin{tabular}{|p{3.5cm}p{11.5cm}|}
 \hline
 \code{bs} & Description \\ \hline
 \code{"rw1"}, \code{"rw2"} & zero degree P-splines: defines a zero degree P-spline with first or
@@ -623,7 +617,7 @@ Table~\ref{tab:terms}.
 \code{"season"} & seasonal effect of a time scale. \\
 \code{"ps"}, \code{"psplinerw1"}, \code{"psplinerw2"} & P-spline with first or second order 
                                                         difference penalty. \\
-\code{"te"}, \code{"pspline2dimrw2"} & defines a two-dimensional P-spline based on the tensor 
+\code{"te"}, \code{"pspline2dimrw1"} & defines a two-dimensional P-spline based on the tensor 
               product of one-dimensional P-splines with a two-dimensional first order random walk 
               penalty for the parameters of the spline. \\
 \code{"kr"}, \code{"kriging"} & kriging with stationary Gaussian random fields. \\ \hline
@@ -655,42 +649,77 @@ Table~\ref{tab:terms}.
                                                 priors possible: ridge-, lasso- and Normal Mixture
                                                 of inverse Gamma (NMIG)-prior. \\ \hline
 \end{tabular}
-\caption{\label{tab:terms} Possible \pkg{BayesX} model terms within function \fct{s}.}
+\caption{\label{tab:terms} Possible \pkg{BayesX} model terms within function \fct{sx} and \fct{s}.}
 \end{center}
 \end{table}
-Setting argument \code{m} is only meaningful for P-splines, i.e. \code{bs = "ps"}, and controls
-the degree of the B-spline basis functions and the order of the difference penalty. E.g. a B-spline
-of degree 3 with a 2nd order difference penalty is set with \code{s(bmi, bs = "ps", m = c(3, 2))}
-(note that this is slightly different to the \pkg{mgcv} implementation, where \code{m = c(3, 2)}
-results in a P-spline of degree 4 with a second order difference penalty). A numeric or a factor 
-variable can be provided using argument \code{by} to estimate varying coefficient terms, where the 
-effect of the variable provided to \code{by} varies over the range of the covariate(s) of this term. 
-Argument \code{xt} is used to specify specific control parameters or additional geographical 
-information for the model term. The argument must be a named list. For example, to set the 
-hyperpriors $a$ and $b$ for the variance parameter of the P-spline term for \code{bmi}, the user may 
-type \code{s(bmi, bs = "ps", xt = list(a = 0.0001, b = 0.0001))}. For supplying additional boundary 
-or graph files (see function \fct{read.bnd} and \fct{read.gra}), that are used to compute suitable 
-neighborhood penalty matrices for terms using Markov random field priors, or to calculate the 
-centroids of particular regions for geosplines and geokriging terms, the name of the list argument 
-is \code{map}. For instance, the necessary boundary file \code{ZambiaBnd} for the geokriging term in 
-the introduction is provided with \code{s(district, bs = "gk", xt = list(map = ZambiaBnd))}. 
-Information about all possible extra arguments for a particular term basis can be looked up using 
-function \fct{bayesx.term.options}.
+Note that it is possible to specify all term type versions presented in the table, the short and
+the original ones that are used within \pkg{BayesX}, e.g.\
+\code{bs = "ps"} or \code{bs = "psplinerw2"} result in the same type of model term. A numeric or a
+factor variable can be provided to argument \code{by} to estimate varying coefficient terms, where
+the effect of the variable provided to \code{by} varies over the range of the covariate(s) of this
+term. The dot dot dot ``\code{...}'' argument is used to specify term specific control parameters
+or additional geographical information. In the example Section~\ref{sec:motivation}, to modify the
+degree and the inner knots for the P-spline term \code{sx(bmi)}, the user may e.g.\ type
+\code{sx(bmi, degree = 2, knots = 10)}. For supplying additional boundary or graph files (see
+function \fct{read.bnd}, \fct{read.gra}, \fct{shp2bnd} and \fct{bnd2gra} for importing and creation
+of spatial objects that may be send to \pkg{BayesX}), that are used to compute suitable neighborhood
+penalty matrices for terms using Markov random field priors, or to calculate the centroids of
+particular regions for geosplines and geokriging terms, an argument named \code{map} needs to be
+provided. For instance, the necessary boundary file \code{ZambiaBnd} for the geokriging term in the
+introduction is included with \code{sx(district, bs = "gk", map = ZambiaBnd)}. Information about
+all possible extra arguments for a particular term basis/type can be looked up using function
+\fct{bayesx.term.options}, e.g.\ possible options for P-splines using \code{"MCMC"} are printed to
+the console by 
+\begin{Sinput}
+R> bayesx.term.options(bs = "ps", method = "MCMC")
+
+possible options for 'bs = "ps"': 
+
+     degree: the degree of the B-spline basis functions.
+            Default: integer, 'degree = 3'.
+
+      knots: number of inner knots.
+            Default: integer, 'knots = 20'.
+
+\end{Sinput}
+Note that only the first two additional controlling arguments are shown.
 
 Some care has to be taken with the identifiability of varying coefficients terms. The standard in
 \pkg{BayesX} is to center nonlinear main effects terms around zero whereas varying coefficient terms 
 are not centered. This makes sense since main effects nonlinear terms are not identifiable and 
 varying coefficients terms are usually identifiable. However, there are situations where a varying
 coefficients term is not identifiable. Then the term must be centered. Since centering is not
-automatically accomplished it has to be enforced by the user by adding option
-\code{xt = list(center = TRUE)} in function \fct{s}. To give an example, the varying coefficient
-terms in $\eta = \ldots + g_1(z_1)z + g_2(z_2)z + \gamma_0 + \gamma_1 z + \ldots$ are not
-identified, whereas in $\eta = \ldots + g_1(z_1)z + \gamma_0 + \ldots$, the varying coefficient term
-is identifiable. In the first case, centering is necessary, in the second case, it is not.
+automatically accomplished it has to be enforced by the user by adding option \code{center = TRUE}
+in function \fct{sx}. To give an example, the varying coefficient terms in
+$\eta = \ldots + g_1(z_1)z + g_2(z_2)z + \gamma_0 + \gamma_1 z + \ldots$ are not identified, whereas
+in $\eta = \ldots + g_1(z_1)z + \gamma_0 + \ldots$, the varying coefficient term is identifiable. In
+the first case, centering is necessary, in the second case, it is not.
 
-In addition to \fct{s}, unit- or cluster specific unstructured (random) effects may be incorporated
-into the model \code{formula} using the random effects term constructor function \fct{r}. The
-arguments of \fct{r} are
+As mentioned before, users may optionally call the constructor function \fct{s} directly. The usage
+of \fct{s} in \pkg{R2BayesX} is in principle similar to package \pkg{mgcv}. The applicable arguments
+are
+\begin{Sinput}
+s(..., k = -1, bs = "ps", m = NA, by = NA, xt = NULL)
+\end{Sinput}
+Within \fct{s}, the list of covariates used for the model term is set with argument ``\code{...}''. 
+For instance, in the example of Section~\ref{sec:motivation}, the term for the body mass index of the
+mother may also be included in the model formula by \code{s(bmi)}, a term with two covariates is
+specified e.g.\ with \code{s(bmi, age)}. Here, the parameter \code{k} controls the dimension of the
+basis used for smooth terms. Setting argument \code{m} is only meaningful for P-splines, i.e.
+\code{bs = "ps"}, and controls the degree of the B-spline basis functions and the order of the
+difference penalty. E.g. a B-spline of degree 3 with a 2nd order difference penalty is set with
+\code{s(bmi, bs = "ps", m = c(1, 2))} (note that argument \code{m} is slightly different than
+argument \code{degree} in function \fct{sx} using P-splines, see also the manual of \fct{s}).
+Argument \code{by} is used in the same way as for \fct{sx}. Within argument \code{xt} the additional
+parameters that are specified in argument ``\code{...}'' of \fct{sx} may be set, e.g. similar to the
+example above, the boundary object \code{ZambiaBnd} is supplied with
+\code{s(district, bs = "gk", xt = list(map = ZambiaBnd))}. Besides \fct{s}, \pkg{R2BayesX} also
+supports calls to the tensor product constructor function \fct{te}, however, only a small set of the 
+features of this function is supported.
+
+In addition to \fct{sx}, \fct{s} and \fct{te}, unit- or cluster specific unstructured (random)
+effects may be incorporated into the model \code{formula} using the random effects term constructor
+function \fct{r}. The arguments of \fct{r} are
 \begin{Sinput}
 r(id, by = NA, xt = NULL)
 \end{Sinput}
@@ -698,8 +727,9 @@ where \code{id} is the unit or cluster identification covariate the random effec
 estimated for. E.g. the model formula from the introduction could be extended by a random effects
 term for the districts in Zambia with \code{r(district)}.  Argument \code{by} takes covariates
 for which random slopes may be estimated. Argument \code{xt} is used in the same fashion as
-described for function \fct{s}, i.e. similar to the above, hyperpriors $a$ and $b$ for the variance
-parameter are set  with \code{r(district, xt = list(a = 0.0001, b = 0.0001))}.
+described for function \fct{s}, i.e. similar to the above, e.g.\ hyperpriors $a$ and $b$ for the
+variance parameter are set  with \code{r(district, xt = list(a = 0.0001, b = 0.0001))}.
+
 
 \subsection[Implementation details]{Implementation details} \label{sec:implementation}
 
@@ -781,6 +811,9 @@ R> print(object.size(b), units = "Mb")
 0.4 Mb
 \end{Sinput}
 of memory size.
+
+
+\clearpage
 
 
 \section{STAR models in practice} \label{sec:illustrations}
@@ -1485,7 +1518,8 @@ environment PATH variable of the operating system. Both options will automatical
 with \proglang{R} for the upcoming sessions.
 
 
-\subsection[Most important plotting arguments]{Most important plotting arguments}
+\subsection[Most important arguments used for function plot.bayesx()]{Most important arguments used
+  for function \fct{plot.bayesx}}
 \label{appendix:plotting}
 \begin{table}[b!]
 \begin{center}
