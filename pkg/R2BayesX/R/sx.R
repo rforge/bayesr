@@ -41,12 +41,11 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
     } 
     m[1L] <- m[1L] - 2L
   }
-  if(bs %in% c("kr", "gk", "kriging")) {
+  if(bs %in% c("kr", "gk", "kriging", "geokriging")) {
     m <- c(1L, 1L)
-    if(!is.null(xt$nrknots))
-      k <- xt$nrknots + 2L
-    else
-      k <- 12L
+    if(!is.null(xt$nrknots)) {
+      k <- xt$nrknots
+    } else k <- 20
   }
   if(!is.null(xt$map))
     xt$map.name <- as.character(call$map)

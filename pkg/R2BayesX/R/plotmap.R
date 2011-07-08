@@ -13,8 +13,6 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   if(is.null(args$asp))
     args$asp <- attr(map, "asp")
   n <- length(map)
-  #if(inherits(x, "geo.bayesx"))
-  #  names(map) <- as.character(1L:n)
   if(is.null(x))
     legend <- FALSE
   if(!any(is.na(poly.names <- x2int(names(map))))) {
@@ -41,21 +39,6 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     if(is.null(col))
       col <- colorspace::diverge_hcl
     x <- compute.x.id(x, id, c.select, range, symmetric)
-#    if(is.null(range)) {
-#      kdeargs <- list(...)
-#      kdeargs$x <- x$x
-#      range <- try(do.call("kde.quantiles", delete.args(kde.quantiles, kdeargs)), silent = TRUE)
-#      if(inherits(range, "try-error"))
-#        range <- NULL
-#      if(symmetric) {
-#        range <- max(abs(range))
-#        range <- c((-1) * range, range)
-#      }
-#      if(is.null(args$lrange)) {
-#        args$lrange <- max(abs(range(x$x)))
-#        args$lrange <- c(-1 * args$lrange, args$lrange)
-#      }
-#    }
     colors <- make_pal(col = col, ncol = ncol, data = x$x, 
       range = range, breaks = breaks, swap = swap, 
       symmetric = symmetric)$map(x$x)
@@ -106,7 +89,7 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   density.p <- rep(args$density, length.out = n)
   angle.p <- rep(args$angle, length.out = n)
   if(is.null(angle.p))
-    angle.p <- rep(45, length.out = n)
+    angle.p <- rep(90, length.out = n)
   i <- 1L
   for(poly in poly.names) {
     args$x <- map[[poly]][,1L]
@@ -121,7 +104,11 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
       if(!is.na(k <- pmatch(poly, x$id))) {
         args$col <- colors[k]
         args$density <- NULL
-      } else args$col <- NULL
+      } else {
+        args$col <- NULL
+        if(is.null(args$density))
+          args$density <- 20L
+      }
     } else args$col <- colors[i]
     do.call(graphics::polygon, 
     delete.args(graphics::polygon, args, 
@@ -161,11 +148,11 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
       args$add <- TRUE
     }
     if(is.null(args$width))
-      args$width <- 0.4
+      args$width <- 0.6
     if(is.null(args$height))
-      args$height <- 0.12
+      args$height <- 0.2
     if(is.null(args$distance.labels))
-     args$distance.labels <- 1.5
+     args$distance.labels <- 2
     if(is.null(args$length.ticks))
       args$length.ticks <- 2L
     args$xlim <- map.limits$xlim

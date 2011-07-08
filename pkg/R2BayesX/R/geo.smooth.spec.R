@@ -58,7 +58,6 @@ function(object, dir, prg, data, type)
     cat(cmd, file = prgfile, append = TRUE)
   }	  
   term <- object$term
-
   if(length(object$p.order) == 1L) 
     m <- rep(object$p.order, 2L)
   else 
@@ -72,12 +71,15 @@ function(object, dir, prg, data, type)
       warning("only random walks of order 1 supported for geosplines, set to default!")
   }
   if(object$bs.dim < 0L)
-    object$bs.dim <- as.integer(length(map) / 2)
+    object$bs.dim <- as.integer(length(map)/2)
   else {
     if(object$bs.dim >= length(map))
       stop("basis dimension is larger than existing polygons in bnd object!")
   }
-  nrknots <- object$bs.dim - object$p.order[1L] + 1L
+  if(type != "geokriging")
+    nrknots <- object$bs.dim - object$p.order[1L] + 1L
+  else
+    nrknots <- object$bs.dim
   if(type == "geokriging") {
     if(!is.null(object$xt$full)) {
       term <- paste(term, "(", type, ",map=", map.name, ",full", sep = "")

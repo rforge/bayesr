@@ -1,7 +1,12 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-b <- read.bayesx.output("/tmp/RtmpzS8WZV/bayesx")
+
+
+mycol <- diverge_hcl(99, h = c(120, 0), c = 120, l = c(30, 90), power = 1.5, gamma = 2.4, fixup = TRUE)
+plot(zm, term = "r(district)", map = ZambiaBnd, pos = "topleft", col = mycol)
+
+
 
 
 

@@ -8,8 +8,7 @@ d2contrsum <- function(x)
       var <- x[[i]]
       var <- C(var, contr.sum)
       contr <- attr(var, "contrasts")
-      if(ncol(contr) > 1L)
-        colnames(contr) <- rownames(contr)[1:(nrow(contr) - 1)]
+      colnames(contr) <- rownames(contr)[1:(nrow(contr) - 1)]
       attr(var, "contrasts") <- contr
       x[[i]] <- var
     }

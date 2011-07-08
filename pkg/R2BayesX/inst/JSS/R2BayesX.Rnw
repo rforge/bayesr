@@ -1,7 +1,7 @@
 \documentclass[article]{jss}
 %\documentclass[nojss]{jss}
 \usepackage{amsmath,amssymb,amsfonts,thumbpdf}
-\usepackage{multirow}
+\usepackage{multirow,supertabular}
 
 %% additional commands
 \newcommand{\squote}[1]{`{#1}'}
@@ -136,11 +136,11 @@ respectively, as well as the functions \fct{s} and \fct{te} from the \pkg{mgcv} 
 \proglang{R} syntax into \pkg{BayesX} interpretable commands (see Section~\ref{subsec:addterms}).
 
 The reminder of this paper is as follows. The next section gives a first example of a common 
-\proglang{R} session using \pkg{R2BayesX}. Section~\ref{sec:model} briefly discusses the
-methodological background of regression models with a structured additive predictor, before a
-description of the package functionality is given in Section~\ref{sec:overview}. In
-Section~\ref{sec:illustrations}, the interface usability is further illustrated with the childhood
-malnutrition data of Zambia and a dataset on forest health.
+\proglang{R} session using \pkg{R2BayesX} on a dataset on childhood malnutrition in Zambia.
+Section~\ref{sec:model} briefly discusses the methodological background of regression models with a
+structured additive predictor, before a description of the package functionality is given in
+Section~\ref{sec:overview}. In Section~\ref{sec:illustrations}, the interface usability is further
+illustrated with the childhood malnutrition data and a dataset on forest health.
 
 
 \section{Motivating example} \label{sec:motivation}
@@ -213,9 +213,7 @@ plot(b, term = "sx(agechild)", residuals = TRUE, cex = 0.1, rug = FALSE)
 <<plot-illustration-district, echo=FALSE, fig=TRUE, width=5.3, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(0, 0, 0, 0))
 plot(b, term = "sx(district)", map = ZambiaBnd,
-  pos = "topleft", width = 0.6, height = 0.2,
-  distance.labels = 2, swap = TRUE, density = 20,
-  angle = 90)
+  pos = "topleft", swap = TRUE)
 @
 \caption{\label{fig:illustration} Visualization examples: Estimated effect for covariate \code{bmi}
 (black line) together with 95\% and 80\% credible intervals (upper left panel). The upper right
@@ -596,6 +594,23 @@ terms, specifications and defaults. Furthermore, using MCMC estimation, the numb
 may be set for particular model terms is large, wherefore the representation of a function call to
 \fct{sx} is slightly more parsimonious. 
 
+
+\begin{supertabular}{|p{4cm}p{11cm}|}
+\tablefirsthead{%
+  \code{bs} & Description \\ \hline
+}
+\tablehead{
+  nothing & special \\
+}
+\tabletail{
+  again & nothing special \\
+}
+\tablelasttail{\hline}
+\bottomcaption{This table is split across pages}
+\end{supertabular}
+
+
+
 The arguments of function \fct{sx} are
 \begin{Sinput}
 sx(x, z = NULL, bs = "ps", by = NA, ...)
@@ -604,8 +619,8 @@ where \code{x} represents the covariate that is used for univariate and \code{z}
 terms. Argument \code{bs} chooses the basis/type of the term, possible options are shown in
 Table~\ref{tab:terms}.
 \begin{table}[t!]
-\begin{center}
-\begin{tabular}{|p{3.5cm}p{11.5cm}|}
+\centering
+\begin{tabular}{|p{4cm}p{11cm}|}
 \hline
 \code{bs} & Description \\ \hline
 \code{"rw1"}, \code{"rw2"} & zero degree P-splines: defines a zero degree P-spline with first or
@@ -627,19 +642,30 @@ Table~\ref{tab:terms}.
 \code{"kr"}, \code{"kriging"} & kriging with stationary Gaussian random fields. \\ \hline
 \code{"gk"}, \code{"geokriging"} & geokriging with stationary Gaussian random fields: estimates a 
               stationary Gaussian random field based on the centroids of a map object provided in 
-              boundary format, see function \fct{read.bnd}, within the \code{xt} argument of 
-              function \fct{s}, e.g.\ \code{xt = list(map = MapBnd)}. \\
+              boundary format (see function \fct{read.bnd} and \fct{shp2bnd}) as an additional
+              argument named \code{map} within function \fct{sx}, or supplied within argument
+              \code{xt} when using function \fct{s}, e.g.\ \code{xt = list(map = MapBnd)}. \\
 \code{"gs"}, \code{"geospline"} & geosplines based on two-dimensional P-splines with first order 
               random walk penalty: defines a two-dimensional P-spline for the spatial covariate 
               region with a two-dimensional first order random walk penalty for the parameters of 
               the spline. Estimation is based on the coordinates of the centroids of the regions 
-              provided by a map object in boundary format, see function \fct{read.bnd}, within the 
-              \code{xt} argument of function \fct{s}, e.g.\ \code{xt = list(map = MapBnd)}. \\
+              of a map object provided in boundary format (see function \fct{read.bnd} and
+              \fct{shp2bnd}) as an additional argument named \code{map} within function \fct{sx}, or
+              supplied within argument \code{xt} when using function \fct{s}, e.g.\
+              \code{xt = list(map = MapBnd)}. \\
 \code{"mrf"}, \code{"spatial"} & Markov random fields: defines a Markov random field prior for a 
                spatial covariate, where geographical information is provided by a map object in 
-               boundary or graph file format, see function \fct{read.bnd} and \fct{read.gra}, within 
-               the \code{xt} argument of function \fct{s}, e.g.\ 
+               boundary or graph file format (see function \fct{read.bnd}, \fct{read.gra} and
+               \fct{shp2bnd}), as an additional argument named \code{map} within function \fct{sx},
+               or supplied within argument \code{xt} when using function \fct{s}, e.g.\
                \code{xt = list(map = MapBndorGra)}. \\ \hline
+\end{tabular}
+
+\newpage
+
+\begin{tabular}{|p{4cm}p{11cm}|}
+\hline
+\code{bs} & Description \\ \hline
 \code{"bl"}, \code{"baseline"} & nonlinear baseline effect in hazard regression or multi-state 
               models: defines a P-spline with second order random walk penalty for the parameters of 
               the spline for the log-baseline effect $\log(\lambda(time))$. \\
@@ -654,7 +680,6 @@ Table~\ref{tab:terms}.
                                                 of inverse Gamma prior. \\ \hline
 \end{tabular}
 \caption{\label{tab:terms} Possible \pkg{BayesX} model terms within function \fct{sx} and \fct{s}.}
-\end{center}
 \end{table}
 Note that it is possible to specify all term type versions presented in the table, the short and
 the original ones that are used within \pkg{BayesX}, e.g.\
@@ -1009,8 +1034,8 @@ The kernel densities reveal the general form of the random effects distributions
 spatial structure of the correlated effect we have to use the plot function in combination with the
 boundary object \code{ZambiaBnd}:
 <<zambia-district-example, echo=TRUE, eval=FALSE>>=
-plot(zm, term = "sx(district)", map = ZambiaBnd,
-  pos = "topleft", density = 20, angle = 90)
+plot(zm, term = "sx(district)", 
+  map = ZambiaBnd, pos = "topleft")
 @
 The generated map effect plot is shown in Figure~\ref{fig:zambia-district-structured-unstructured}.
 \begin{figure}[!t]
@@ -1019,17 +1044,14 @@ The generated map effect plot is shown in Figure~\ref{fig:zambia-district-struct
 <<zambia-district-structured, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(0, 0, 0, 0))
 plot(zm, term = "sx(district)", map = ZambiaBnd,
-  pos = "topleft", width = 0.6, height = 0.2,
-  distance.labels = 2, swap = TRUE)
+  pos = "topleft", swap = TRUE)
 @
 <<zambia-district-unstructured-samescale, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(0, 0, 0, 0))
 range <- max(abs(range(fitted(zm, term = "sx(district)")$Mean)))
 range <- lrange <- c(-1 * range, range)
 plot(zm, term = "r(district)", map = ZambiaBnd,
-  pos = "topleft", width = 0.6, height = 0.2,
-  distance.labels = 2L, swap = TRUE,
-  density = 20, angle = 90,
+  pos = "topleft", swap = TRUE,
   range = range, lrange = lrange)
 @
 \caption{\label{fig:zambia-district-structured-unstructured} Example on childhood malnutrition:
@@ -1048,9 +1070,8 @@ effect within the same range as the structured random effect
 <<zambia-district-example-redraw, echo=TRUE, eval=FALSE>>=
 range <- max(abs(range(fitted(zm, term = "sx(district)")$Mean)))
 range <- lrange <- c(-1 * range, range)
-plot(zm, term = "r(district)", map = ZambiaBnd,
-  pos = "topleft", density = 20, angle = 90,
-  range = range, lrange = lrange)
+plot(zm, term = "r(district)", map = ZambiaBnd, 
+  pos = "topleft", range = range, lrange = lrange)
 @ %$
 The resulting map is also shown in Figure~\ref{fig:zambia-district-structured-unstructured} (right 
 panel). Using for both the structured and the unstructered effect the same scale is useful for 
