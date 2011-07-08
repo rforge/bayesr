@@ -42,8 +42,9 @@ function(object, model = NULL, term = NULL, ...)
   }
   if(any(is.na(rval)))
     warning("fitted values are missing in object!")
+  rval <- x2df(rval)
 
-  return(x2df(rval))
+  return(rval)
 }
 
 
@@ -82,6 +83,8 @@ x2df <- function(x, rn = FALSE)
           }
         } 
       }
+    if(length(x) < 2L)
+      x <- x[[1L]]
     } else {
       xattr <- attributes(x)
       nxa <- names(xattr)

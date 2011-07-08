@@ -1,11 +1,17 @@
 Package: R2BayesX
-Title: Estimate STAR Models with BayesX
 Version: 0.1-1
-Date: 2011-05-30
-Author: Nikolaus Umlauf
+Date: 2011-07-08
+Title: Estimate STAR Models with BayesX
+Author@R: c(person(given = "Nikolaus", family = "Umlauf", role = c("aut", "cre"),
+        email = "nikolaus.umlauf@uibk.ac.at"),
+        person(given = "Stefan", family = "Lang", role = "aut"),
+        person(given = "Thomas", family = "Kneib", role = "aut"),
+        person(given = "Achim", family = "Zeileis", role = "aut"))
+Author: Nikolaus Umlauf [aut, cre], Stefan Lang [aut], Thomas Kneib [aut], Achim Zeileis [aut]
 Maintainer: Nikolaus Umlauf <nikolaus.umlauf@uibk.ac.at>
-Depends: R (>= 2.13.0)
 Description: An R Interface to Estimate STAR Models with BayesX
+Depends: R (>= 2.13.0)
 Depends: akima, BayesX, colorspace, mgcv
-LazyLoad: yes
+Suggests: coda
 License: GPL-2 | GPL-3
+LazyLoad: yes

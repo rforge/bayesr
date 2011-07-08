@@ -1,10 +1,11 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-bayesx.term.options(bs = "ps", method = "MCMC")
+b <- read.bayesx.output("/tmp/RtmpzS8WZV/bayesx")
 
 
-b1 <- bayesx(y ~ s(x) + te(z, w) + fac,
+
+b1 <- bayesx(hazstd ~ rcw + sx(district, bs = "mrf", map = ZambiaBnd) + r(district),
   data = dat, method = "MCMC", iter = 1200, burnin = 200, step = 1)
 
 
@@ -386,8 +387,10 @@ ZambiaNutrition$gender <- gender
 ZambiaNutrition <- as.data.frame(ZambiaNutrition)
 ZambiaNutrition <- ZambiaNutrition[order(ZambiaNutrition$district),]
 ZambiaNutrition <- R2BayesX:::d2contrsum(ZambiaNutrition)
-
-## save(ZambiaNutrition, file = "/home/c403129/svn/bayesr/pkg/R2BayesX/data/ZambiaNutrition.rda", compress = "xz")
+## save(ZambiaNutrition, file = "/home/nikolaus/svn/bayesr/pkg/R2BayesX/data/ZambiaNutrition.rda", compress = "xz")
+mm <- model.matrix(~ 1 + memployment, data = ZambiaNutrition)
+cbind(as.numeric(dat$rcw), mm[,2])
+data.frame(ZambiaNutrition$memployment, dat$rcw, mm[,2], as.integer(memployment))
 
 
 ## forest health data
@@ -430,7 +433,7 @@ ForestHealth$fertilized <- as.factor(dat$dueng)
 levels(ForestHealth$fertilized) <- c("no", "yes")
 ForestHealth <- na.omit(as.data.frame(ForestHealth))
 ForestHealth <- R2BayesX:::d2contrsum(ForestHealth)
-## save(ForestHealth, file = "/home/c403129/svn/bayesr/pkg/R2BayesX/data/ForestHealth.rda", compress = "xz")
+## save(ForestHealth, file = "/home/nikolaus/svn/bayesr/pkg/R2BayesX/data/ForestHealth.rda", compress = "xz")
 
 
 ## large data example

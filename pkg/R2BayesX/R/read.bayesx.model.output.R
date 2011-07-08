@@ -185,8 +185,11 @@ function(dir, model.name)
       rval$model.fit$formula <- get("f", envir = nenv)
       unlink(paste(dir, "/", mformula, sep = ""))
     }
-    
 
+    ## get log file
+    if(length(log <- grep(".log", files, fixed = TRUE, value = TRUE)))
+      rval$logfile <- readLines(paste(dir, "/", log, sep = ""))
+    
     return(rval)
   }
 }

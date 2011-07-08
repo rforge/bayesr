@@ -37,8 +37,21 @@ function(object, model = NULL, term = NULL, acf = FALSE, ...)
     rval[[i]] <- list()
     for(j in 1:length(term)) {
       if(is.na(match(term[j], "linear-samples")) && is.na(match(term[j], "var-samples"))) {
-        tmp <- list(Coef = attr(object[[i]]$effects[[term[j]]], "sample"),
-          Var = attr(object[[i]]$effects[[term[j]]], "variance.sample"))
+        if(!is.null(attr(object[[i]]$effects[[term[j]]], "specs")) &&
+          !is.null(attr(object[[i]]$effects[[term[j]]], "specs")$is.factor) && 
+          attr(object[[i]]$effects[[term[j]]], "specs")$is.factor) {
+          sattr <- NULL
+          for(jj in 1L:length(object[[i]]$effects[[term[j]]]))
+            sattr <- cbind(sattr, attr(object[[i]]$effects[[term[j]]][[jj]], "sample"))
+          if(!is.null(sattr) && ncol(sattr) > 1L)
+            colnames(sattr) <- paste("C", 1L:ncol(sattr), sep = "")
+          attr(object[[i]]$effects[[term[j]]], "sample") <- sattr
+        }
+        tmp <- list()
+        if(!is.null(attr(object[[i]]$effects[[term[j]]], "sample")))
+          tmp$Coef <- attr(object[[i]]$effects[[term[j]]], "sample")
+        if(!is.null(attr(object[[i]]$effects[[term[j]]], "variance.sample")))
+          tmp$Var <- attr(object[[i]]$effects[[term[j]]], "variance.sample")
         if(acf) {
           tmp2 <- list()
           if(!is.null(tmp$Coef))           
@@ -81,7 +94,10 @@ function(object, model = NULL, term = NULL, acf = FALSE, ...)
     rval <- NA
   if(any(is.na(rval)))
     warning("samples are missing in object!")
-  rval <- as.data.frame(delete.NULLs(rval))
+  rval <- delete.NULLs(rval)
+  if(length(rval) < 2L && length(rval[[1L]]) < 2L)
+    names(rval[[1L]]) <- names(rval)
+  rval <- as.data.frame(rval)
 
   return(rval)
 }
