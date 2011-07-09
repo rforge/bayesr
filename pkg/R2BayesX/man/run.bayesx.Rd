@@ -64,8 +64,8 @@ dat$y <- with(dat, 1.5 + sin(x) + cos(z) * sin(w) +
    c(2.67, 5, 6, 3, 4, 2, 6, 7, 9, 7.5)[fac] + rnorm(n, sd = 0.6))
 
 ## first create BayesX .prg file
-pars <- parse.bayesx.input(y ~ s(x, bs = "ps") + 
-  s(z, w, bs = "te") + fac, data = dat)
+pars <- parse.bayesx.input(y ~ sx(x) + 
+  sx(z, w, bs = "te") + fac, data = dat)
 prg <- write.bayesx.input(pars)
 
 ## now estimate model with BayesX

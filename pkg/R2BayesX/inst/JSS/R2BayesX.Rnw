@@ -1,7 +1,7 @@
 \documentclass[article]{jss}
 %\documentclass[nojss]{jss}
 \usepackage{amsmath,amssymb,amsfonts,thumbpdf}
-\usepackage{multirow,supertabular}
+\usepackage{multirow,longtable}
 
 %% additional commands
 \newcommand{\squote}[1]{`{#1}'}
@@ -123,14 +123,14 @@ with a typical \proglang{R} front end that may
 In addition, users can
 \begin{itemize}
 \item run already existing \pkg{BayesX} input program files from \proglang{R} \\
-  (function \fct{run.bayesx}, Section~\ref{sec:implementation}),
+  (function \fct{run.bayesx}, Section~\ref{sec:addoptions}),
 \item automatically import \pkg{BayesX} output files into \proglang{R} \\
-  (function \fct{read.bayesx.output}, Section~\ref{sec:implementation}).
+  (function \fct{read.bayesx.output}, Section~\ref{sec:addoptions}).
 \end{itemize}
 
 Furthermore, the models supported by \pkg{BayesX} are conveniently specified using \proglang{R}'s 
 formula language definition, wherefore several special model term constructor functions, such as
-the main \pkg{R2BayesX} constructor functions \fct{sx} and \fct{r} for smooth and random effects
+the main \pkg{R2BayesX} constructor functions \fct{sx} and \fct{r} for smooth and random effects,
 respectively, as well as the functions \fct{s} and \fct{te} from the \pkg{mgcv} package
 \citep{R2BayesX:Wood:2011, R2BayesX:Wood:2006}, facilitate a consistent way to translate
 \proglang{R} syntax into \pkg{BayesX} interpretable commands (see Section~\ref{subsec:addterms}).
@@ -146,20 +146,20 @@ illustrated with the childhood malnutrition data and a dataset on forest health.
 \section{Motivating example} \label{sec:motivation}
 
 To give an introductory example of the various features of the interface, we estimate a Bayesian
-geoadditive regression model for the childhood malnutrition data set in Zambia (see
+geoadditive regression model for the childhood malnutrition dataset in Zambia (see
 Section~\ref{subsec:zambia}, \citealp{R2BayesX:Kandala+Lang+Klasen+Fahrmeir:2001}) using Markov
 chain Monte Carlo (MCMC) simulation. 
 
 The data consists of 4847 observations including 8 variables, both continuous and categorical. In
 this analysis, the main interest is on modeling the dependence of stunting (\code{stunting}),
 represented by anthropometric indicators of newborn children, on covariates including the age of the
-child (\code{age}), the body mass index of the mother (\code{bmi}) and the district the child lives
+child (\code{age}), the body mass index of the mother (\code{mbmi}) and the district the child lives
 in (\code{district}). The model is given by
 \begin{equation*}
-\texttt{stunting}_i = \gamma_0 + f_1(\texttt{agechild}_i) + f_2(\texttt{bmi}_i) +
+\texttt{stunting}_i = \gamma_0 + f_1(\texttt{agechild}_i) + f_2(\texttt{mbmi}_i) +
   f_{spat}(\texttt{district}_i) + \varepsilon_i, \qquad \varepsilon_i \sim N(0, \sigma^2),
 \end{equation*}
-where the functions $f_1$ and $f_2$ of continuous covariates \code{agechild} and \code{bmi} have
+where the functions $f_1$ and $f_2$ of continuous covariates \code{agechild} and \code{mbmi} have
 possible nonlinear effects on \code{stunting} and are  modeled nonparametrically using
 P(enalized)-splines. Here, the spatially correlated effect $f_{spat}$ of locational covariate
 \code{district} is modeled using Kriging based on centroid coordinates (geokriging) of the districts
@@ -173,7 +173,7 @@ Boundary files are basically shapefiles (see also package \pkg{shapefiles},
 may be constructed using function \fct{shp2bnd} or imported with \fct{read.bnd}. The model formula
 is specified by
 <<formula-illustration, echo=TRUE, eval=TRUE, fig=FALSE>>=
-f <- stunting ~ sx(agechild) + sx(bmi) +
+f <- stunting ~ sx(agechild) + sx(mbmi) +
   sx(district, bs = "gk", map = ZambiaBnd, full = TRUE)
 @
 
@@ -199,9 +199,9 @@ summary(b)
 \begin{figure}[t!]
 \setkeys{Gin}{width=0.46\textwidth}
 \centering
-<<plot-illustration-bmi, echo=FALSE, fig=TRUE, width=5, height=4>>=
+<<plot-illustration-mbmi, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(b, term = "sx(bmi)")
+plot(b, term = "sx(mbmi)")
 @
 <<plot-illustration-agechild, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
@@ -212,18 +212,17 @@ plot(b, term = "sx(agechild)", residuals = TRUE, cex = 0.1, rug = FALSE)
 \hspace*{0.3cm}
 <<plot-illustration-district, echo=FALSE, fig=TRUE, width=5.3, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(0, 0, 0, 0))
-plot(b, term = "sx(district)", map = ZambiaBnd,
-  pos = "topleft", swap = TRUE)
+plot(b, term = "sx(district)", map = ZambiaBnd, swap = TRUE)
 @
-\caption{\label{fig:illustration} Visualization examples: Estimated effect for covariate \code{bmi}
+\caption{\label{fig:illustration} Visualization examples: Estimated effect for covariate \code{mbmi}
 (black line) together with 95\% and 80\% credible intervals (upper left panel). The upper right
 panel shows the estimated effect of \code{agechild} including partial residuals. The lower panel
 illustrates visualization of the estimated spatial effect for covariate \code{district} using
 a map effect plot.}
 \end{figure}
-A plot of the estimated effect for covariate \code{bmi} may then be produced by typing
-<<illustration-plot-bmi, echo=TRUE, fig=FALSE, eval=FALSE>>=
-plot(b, term = "sx(bmi)")
+A plot of the estimated effect for covariate \code{mbmi} may then be produced by typing
+<<illustration-plot-mbmi, echo=TRUE, fig=FALSE, eval=FALSE>>=
+plot(b, term = "sx(mbmi)")
 @
 and for covariate \code{agechild} including partial residuals by
 <<illustration-plot-agechild, echo=TRUE, fig=FALSE, eval=FALSE>>=
@@ -232,7 +231,7 @@ plot(b, term = "sx(agechild)", residuals = TRUE)
 The estimated effect of the correlated spatial effect of the districts in Zambia may e.g.\
 visualized using a map effect plot generated by
 <<summary-illustration, echo=TRUE, fig=FALSE, eval=FALSE>>=
-plot(b, term = "sx(district)", map = ZambiaBnd, pos = "topleft")
+plot(b, term = "sx(district)", map = ZambiaBnd)
 @
 The plots are shown in Figure~\ref{fig:illustration}. 
 
@@ -356,11 +355,11 @@ A thorough introduction into the regression models supported by the program is a
 \subsection[Installing the BayesX binary from R]{Installing the \pkg{BayesX} binary from 
   \proglang{R}}
 
-Before STAR models can be fitted with package \pkg{R2BayesX} from \proglang{R}, the binary command
-line version of the program \pkg{BayesX} needs to be installed and linked to \proglang{R}. The 
-recommended option on UNIX and Windows systems is to auto--compile/install the \pkg{BayesX} command 
-line binary within \proglang{R} by calling the function \fct{install.bayesx}. Therefore package 
-\pkg{R2BayesX} needs to be loaded:
+Before STAR models can be fitted with package \pkg{R2BayesX} from \proglang{R}, the binary
+command--line version of the program \pkg{BayesX} needs to be installed and linked to \proglang{R}.
+The recommended option on UNIX and Windows systems is to auto--compile/install the \pkg{BayesX}
+command--line binary within \proglang{R} by calling the function \fct{install.bayesx}. Therefore
+package \pkg{R2BayesX} needs to be loaded:
 <<load-bayesx, echo=TRUE, eval=FALSE>>=
 library("R2BayesX")
 @
@@ -386,7 +385,7 @@ compiler is forced on any platform.
 
 \subsection[Linking the BayesX binary to R]{Linking the \pkg{BayesX} binary to \proglang{R}}
 \label{subsec:linking}
-After the successful compilation/installation, usually the full path to the command line binary
+After the successful compilation/installation, usually the full path to the command--line binary
 needs to be declared to \proglang{R} at the beginning of every new session by setting
 <<options-bayesx, echo=TRUE, eval=FALSE>>=
 options(bayesx.bin = "/path/to/BayesX")
@@ -421,7 +420,7 @@ where the first two lines basically represent the standard model frame specifica
 \citep[see][]{R2BayesX:Chambers+Hastie:1992}. However, the object supplied to argument \code{data}
 is not necessarily an \proglang{R} data object, it is also possible to provide a character string
 with a path to a dataset stored on disc, which may be reasonable when using large datasets. An 
-example is given in Section~\ref{sec:implementation}. Additional contrast specifications for 
+example is given in Section~\ref{sec:addoptions}. Additional contrast specifications for 
 factor variables can be passed to argument \code{contrasts}. Using factors, we recommend deviation
 or effect coding (see function \fct{contr.sum}) rather than the usual dummy coding of factors as it
 typically improves the convergence of estimation algorithms used in \pkg{BayesX}. The distribution
@@ -495,8 +494,8 @@ listed in Table~\ref{tab:control}.
                    \citealp{R2BayesX:Chambers+Hastie:1992}), default: \code{"cdescent1"}. \\
  & \code{criterion} & character, specifies the goodness of fit criterion. If
                    \code{criterion = "MSEP"} is specified the data are randomly divided into a
-                   test- and validation data set. The test data set is used to estimate the models
-                   and the validation data set is used to estimate the mean squared prediction error
+                   test- and validation dataset. The test dataset is used to estimate the models
+                   and the validation dataset is used to estimate the mean squared prediction error
                    (MSEP) which serves as the goodness of fit criterion to compare different
                    models, possible criterions are: \code{"GCV"}, \code{"GCVrss"}, \code{"AIC"}, 
                    \code{"AIC\_imp"}, \code{"BIC"}, \code{"MSEP"}, \code{"CV5"}, \code{"CV10"} and
@@ -520,7 +519,7 @@ estimated models, the mean, standard deviation and quantiles of parameter sample
 Using \code{"STEP"}, the parametric part of the summary statistics is represented like
 \code{"MCMC"}, i.e.\ if computed, the confidence bands are based on an MCMC algorithm subsequent to
 the model selection, while the remaining summary is similar to \code{"REML"}. The implemented
-\proglang{S}3 methods for plotting fitted term objects are quite flexible, i.e.\, depending on the
+\proglang{S}3 methods for plotting fitted term objects are quite flexible, i.e., depending on the
 term structure, the generic function \fct{plot} calls one of the following functions: for 2d plots
 function \fct{plot2d} or \fct{plotblock} (for factors, unit- or cluster specific plots, draws a
 block for every estimated parameter including mean and credible intervals), for perspective or image
@@ -555,10 +554,12 @@ Function & Description \\ \hline
                 \code{"MCMC"} the quantiles of the coefficient samples according to a specified
                 probability level are computed. \\
 \fct{cprob} & extract contour probabilities of a particular P-spline term, only meaningful if
-              \code{method = "MCMC"} and e.g.\ argument \code{contourprob} is specified within
-              argument \code{xt} in function \fct{s}. E.g.\ in the introductory example, contour
-              probabilities for the term using covariate \code{bmi} are estimated with
-              \code{s(bmi, bs = "ps", xt = list(contourprob = 4))}. \\
+              \code{method = "MCMC"} and argument \code{contourprob} is specified as an additional
+              argument in the term constructor function \fct{sx}, or within argument \code{xt} in
+              function \fct{s}. E.g.\ in the introductory example, contour probabilities for the
+              term using covariate \code{mbmi} are estimated with
+              \code{s(mbmi, bs = "ps", xt = list(contourprob = 4))} (see also
+              Section~\ref{subsec:addterms}). \\
 \fct{fitted} & fitted values of either the mean and linear predictor, or a selected model term. \\
 \fct{bayesx\_logfile}, \fct{bayesx\_prgfile}, \fct{bayesx\_runtime} & extracts the internal 
                                              \pkg{BayesX} log file, the program file and the overall 
@@ -571,8 +572,9 @@ Function & Description \\ \hline
 \fct{plot} & either model diagnostic plots or effect plots of particular terms. \\
 \fct{getscript} & generate an \proglang{R} script for term effect, diagnostic plots and model
                   summary statistics. \\ \hline
-\fct{AIC}, \fct{BIC},\ \fct{DIC}, \fct{GCV} & computes information criteria, availability is
-                                             dependent on the \code{method} used. \\ \hline
+\fct{AIC},$\phantom{n}$\fct{BIC}, \fct{DIC},$\phantom{n}$\fct{GCV} & computes information criteria,
+                                             availability is dependent on the \code{method} used.
+                                             \\ \hline
 \end{tabular}
 \caption{\label{tab:funmethods} Functions and methods for objects of class \code{"bayesx"}. (A
 detailed documentation is provided in the manual of package \pkg{R2BayesX}.)}
@@ -587,29 +589,12 @@ In package \pkg{R2BayesX}, the main constructor function for specifying additive
 \code{formula}s is called \fct{sx}. The function is basically an interface to the term constructor
 function \fct{s} of package \pkg{mgcv}, i.e.\ it is possible to either use \fct{sx} or \fct{s} for
 \code{formula}s within function \fct{bayesx}. Function \fct{s} is a very flexible function for
-implementing new terms for the model fitting function \fct{gam} but also greatly supports the syntax
-translation methods implemented in \pkg{R2BayesX}. The major reason for interfacing function \fct{s}
-is to provide a similar adjustable, but more adaptive set up to the \pkg{BayesX} specific model
-terms, specifications and defaults. Furthermore, using MCMC estimation, the number of options that
-may be set for particular model terms is large, wherefore the representation of a function call to
-\fct{sx} is slightly more parsimonious. 
-
-
-\begin{supertabular}{|p{4cm}p{11cm}|}
-\tablefirsthead{%
-  \code{bs} & Description \\ \hline
-}
-\tablehead{
-  nothing & special \\
-}
-\tabletail{
-  again & nothing special \\
-}
-\tablelasttail{\hline}
-\bottomcaption{This table is split across pages}
-\end{supertabular}
-
-
+implementing new terms for the model fitting function \fct{gam}, but also greatly supports the
+syntax translation methods implemented in \pkg{R2BayesX}. The major reason for interfacing function
+\fct{s} is to provide a similar adjustable, but more adaptive set up to the \pkg{BayesX} specific
+model terms, specifications and defaults. Furthermore, using MCMC estimation, the number of options
+that may be set for particular model terms is large, wherefore the representation of a function call
+to \fct{sx} is slightly more parsimonious. 
 
 The arguments of function \fct{sx} are
 \begin{Sinput}
@@ -620,12 +605,12 @@ terms. Argument \code{bs} chooses the basis/type of the term, possible options a
 Table~\ref{tab:terms}.
 \begin{table}[t!]
 \centering
-\begin{tabular}{|p{4cm}p{11cm}|}
+\begin{tabular}{|p{3.2cm}p{10.2cm}|}
 \hline
 \code{bs} & Description \\ \hline
 \code{"rw1"}, \code{"rw2"} & zero degree P-splines: defines a zero degree P-spline with first or
                             second order difference penalty. A zero degree P-spline typically
-                            estimates for every distinct covariate value in the data set a separate
+                            estimates for every distinct covariate value in the dataset a separate
                             parameter. Usually there is no reason to prefer zero degree P-splines
                             over higher order P-splines. An exception are ordinal covariates or
                             continuous covariates with only a small number of different values.
@@ -659,13 +644,15 @@ Table~\ref{tab:terms}.
                \fct{shp2bnd}), as an additional argument named \code{map} within function \fct{sx},
                or supplied within argument \code{xt} when using function \fct{s}, e.g.\
                \code{xt = list(map = MapBndorGra)}. \\ \hline
+\multicolumn{2}{|r|}{continued on next page} \\ \hline
 \end{tabular}
+\end{table}
 
-\newpage
-
-\begin{tabular}{|p{4cm}p{11cm}|}
+\begin{table}[t!]
+\centering
+\begin{tabular}{|p{3.2cm}p{10.2cm}|}
 \hline
-\code{bs} & Description \\ \hline
+\multicolumn{2}{|l|}{continued from previous page} \\ \hline
 \code{"bl"}, \code{"baseline"} & nonlinear baseline effect in hazard regression or multi-state 
               models: defines a P-spline with second order random walk penalty for the parameters of 
               the spline for the log-baseline effect $\log(\lambda(time))$. \\
@@ -688,17 +675,17 @@ factor variable can be provided to argument \code{by} to estimate varying coeffi
 the effect of the variable provided to \code{by} varies over the range of the covariate(s) of this
 term. The dot dot dot ``\code{...}'' argument is used to specify term specific control parameters
 or additional geographical information. In the example Section~\ref{sec:motivation}, to modify the
-degree and the inner knots for the P-spline term \code{sx(bmi)}, the user may e.g.\ type
-\code{sx(bmi, degree = 2, knots = 10)}. For supplying additional boundary or graph files (see
+degree and the inner knots for the P-spline term \code{sx(mbmi)}, the user may e.g.\ type
+\code{sx(mbmi, degree = 2, knots = 10)}. For supplying additional boundary or graph files (see
 function \fct{read.bnd}, \fct{read.gra}, \fct{shp2bnd} and \fct{bnd2gra} for importing and creation
 of spatial objects that may be send to \pkg{BayesX}), that are used to compute suitable neighborhood
 penalty matrices for terms using Markov random field priors, or to calculate the centroids of
 particular regions for geosplines and geokriging terms, an argument named \code{map} needs to be
-provided. For instance, the necessary boundary file \code{ZambiaBnd} for the geokriging term in the
-introduction is included with \code{sx(district, bs = "gk", map = ZambiaBnd)}. Information about
-all possible extra arguments for a particular term basis/type can be looked up using function
-\fct{bayesx.term.options}, e.g.\ possible options for P-splines using \code{"MCMC"} are printed to
-the console by 
+provided. For instance, the necessary boundary file \code{ZambiaBnd} for the geokriging term in
+Section~\ref{sec:motivation} is included with \code{sx(district, bs = "gk", map = ZambiaBnd)}.
+Information about all possible extra arguments for a particular term basis/type can be looked up
+using function \fct{bayesx.term.options}, e.g.\ possible options for P-splines using \code{"MCMC"}
+are printed to the console by 
 \begin{Sinput}
 R> bayesx.term.options(bs = "ps", method = "MCMC")
 
@@ -711,7 +698,7 @@ possible options for 'bs = "ps"':
             Default: integer, 'knots = 20'.
 
 \end{Sinput}
-Note that only the first two additional controlling arguments are shown.
+For reasons of simplicity only the first two additional controlling arguments are shown.
 
 Some care has to be taken with the identifiability of varying coefficients terms. The standard in
 \pkg{BayesX} is to center nonlinear main effects terms around zero whereas varying coefficient terms 
@@ -724,7 +711,7 @@ $\eta = \ldots + g_1(z_1)z + g_2(z_2)z + \gamma_0 + \gamma_1 z + \ldots$ are not
 in $\eta = \ldots + g_1(z_1)z + \gamma_0 + \ldots$, the varying coefficient term is identifiable. In
 the first case, centering is necessary, in the second case, it is not.
 
-As mentioned before, users may optionally call the constructor function \fct{s} directly. The usage
+As mentioned above, users may optionally call the constructor function \fct{s} directly. The usage
 of \fct{s} in \pkg{R2BayesX} is in principle similar to package \pkg{mgcv}. The applicable arguments
 are
 \begin{Sinput}
@@ -732,12 +719,12 @@ s(..., k = -1, bs = "ps", m = NA, by = NA, xt = NULL)
 \end{Sinput}
 Within \fct{s}, the list of covariates used for the model term is set with argument ``\code{...}''. 
 For instance, in the example of Section~\ref{sec:motivation}, the term for the body mass index of the
-mother may also be included in the model formula by \code{s(bmi)}, a term with two covariates is
-specified e.g.\ with \code{s(bmi, age)}. Here, the parameter \code{k} controls the dimension of the
-basis used for smooth terms. Setting argument \code{m} is only meaningful for P-splines, i.e.\
-\code{bs = "ps"}, and controls the degree of the B-spline basis functions and the order of the
+mother may also be included in the model formula by \code{s(mbmi)}, a term with two covariates is
+specified e.g.\ with \code{s(mbmi, agechild)}. Here, the parameter \code{k} controls the dimension
+of the basis used for smooth terms. Setting argument \code{m} is only meaningful for P-splines,
+i.e.\ \code{bs = "ps"}, and controls the degree of the B-spline basis functions and the order of the
 difference penalty. E.g.\ a B-spline of degree 3 with a 2nd order difference penalty is set with
-\code{s(bmi, bs = "ps", m = c(1, 2))} (note that argument \code{m} is slightly different than
+\code{s(mbmi, bs = "ps", m = c(1, 2))} (note that argument \code{m} is slightly different than
 argument \code{degree} in function \fct{sx} using P-splines, see also the manual of \fct{s}).
 Argument \code{by} is used in the same way as for \fct{sx}. The additional parameters that are
 specified by argument ``\code{...}'' in function \fct{sx}, may be set in \fct{s} within argument
@@ -755,12 +742,12 @@ r(id, by = NA, xt = NULL)
 where \code{id} is the unit or cluster identification covariate the random effects should be
 estimated for. E.g.\ the model formula from the introduction could be extended by a random effects
 term for the districts in Zambia with \code{r(district)}.  Argument \code{by} takes covariates
-for which random slopes may be estimated. Argument \code{xt} is used in the same fashion as
+for which random slopes may be estimated. Argument \code{xt} is used in the same way as
 described for function \fct{s}, i.e.\ similar to the above, e.g.\ hyperpriors $a$ and $b$ for the
 variance parameter are set  with \code{r(district, xt = list(a = 0.0001, b = 0.0001))}.
 
 
-\subsection[Implementation details]{Implementation details} \label{sec:implementation}
+\subsection[Additional options]{Additional options} \label{sec:addoptions}
 
 For most practical purposes fitting models with function \fct{bayesx} may be sufficient. However,
 the interfacing functions that are consecutively called within \fct{bayesx} can also be used
@@ -872,19 +859,18 @@ Table~\ref{tab:zambia}.
 \begin{tabular}{|lp{10cm}|}
 \hline
 Variable           & Description \\ \hline
-\code{stunting}    & standardised Z-score for stunting. \\
-\code{bmi}         & body mass index of the mother. \\
+\code{stunting}    & standardized Z-score for stunting. \\
+\code{mbmi}        & body mass index of the mother. \\
 \code{agechild}    & age of the child in months. \\
 \code{district}    & district where the mother lives. \\
-\code{memployment} & mother's employment status with categories `working' and
-                     `not working'. \\
-\code{education}   & mother's educational status with categories for complete primary but incomplete
-                     secondary `no/incomplete', complete secondary or higher `minimum primary' and
-                     no education or incomplete primary `minimum secondary'. \\
+\code{memployment} & mother's employment status with categories `yes' and `no'. \\
+\code{meducation}  & mother's educational status with categories for no education or incomplete
+                     primary `no', complete primary but incomplete secondary `primary' and complete
+                     secondary or higher `secondary'. \\
 \code{urban}       & locality of the domicile with categories `yes' and `no'. \\
 \code{gender}      & gender of the child with categories `male' and `female'. \\ \hline
 \end{tabular}
-\caption{\label{tab:zambia} Variables in the data set on childhood malnutrition in Zambia.}
+\caption{\label{tab:zambia} Variables in the dataset on childhood malnutrition in Zambia.}
 \end{center}
 \end{table}
 The response \code{stunting} is standardized in terms of a reference population, i.e in this dataset
@@ -899,19 +885,19 @@ population, respectively.
 Following \citet{R2BayesX:Kandala+Lang+Klasen+Fahrmeir:2001}, we estimate a structured additive
 regression model with predictor
 \begin{eqnarray} \label{eqn:zambia-eta}
-\eta &=& \gamma_0 + \gamma_1\texttt{memployment1} + \gamma_2\texttt{urban1} +
-         \gamma_3\texttt{gender1} + \nonumber \\
-     & & \gamma_4\texttt{educationno/incomplete} + \gamma_5\texttt{educationminimum primary} + 
+\eta &=& \gamma_0 + \gamma_1\texttt{memploymentyes} + \gamma_2\texttt{urbanno} +
+         \gamma_3\texttt{genderfemale} + \nonumber \\
+     & & \gamma_4\texttt{meducationno} + \gamma_5\texttt{meducationprimary} + 
          \nonumber \\
-     & & f_1(\texttt{bmi}) + f_2(\texttt{agechild}) + f_{str}(\texttt{district}) +
+     & & f_1(\texttt{mbmi}) + f_2(\texttt{agechild}) + f_{str}(\texttt{district}) +
          f_{unstr}(\texttt{district})
 \end{eqnarray}
-where \code{memployment1} is the deviation (effect) coded version of covariate \code{memployment},
-generated with function \fct{contr.sum} by setting the contrasts argument of the factor variable.
-I.e.\ \code{memployment1} contains of values -1, corresponding to `working', and 1, `not working'
-respectively, likewise for covariates \code{gender1}, \code{urban1}, \code{educationno/incomplete}
-and \code{educationminimum primary}. As mentioned in the introduction, functions $f_1$ and $f_2$ of
-the continuous covariates \code{agechild} and \code{bmi} are assumed to have a possibly nonlinear
+where \code{memploymentyes} is the deviation (effect) coded version of covariate \code{memployment},
+generated with function \fct{contr.sum} by setting the contrasts argument of the factor variable,
+i.e.\ \code{memploymentyes} contains of values -1, corresponding to `yes', and 1, `no'
+respectively, likewise for covariates \code{genderfemale}, \code{urbanno}, \code{meducationno}
+and \code{meducationprimary}. As mentioned in the introduction, functions $f_1$ and $f_2$ of
+the continuous covariates \code{agechild} and \code{mbmi} are assumed to have a possibly nonlinear
 effect on \code{stunting} and are therefore modeled with P-splines. Furthermore, the spatial effect
 is decomposed into a structured effect $f_{str}$, modeled by a Gaussian Markov random field, and an
 unstructured effect $f_{unstr}$, using a random effects term for the districts in Zambia.
@@ -926,8 +912,8 @@ about the district neighborhood structure, which e.g.\ is enclosed in the file
 data("ZambiaBnd", package = "R2BayesX")
 @
 The object \code{ZambiaBnd} has class \code{"bnd"} and is basically a \fct{list} of polygon
-matrices, with $x$- and $y$-coordinates of the boundary points in the first and second column
-respectively. To read in an arbitrary boundary files into \proglang{R} function \fct{read.bnd} can
+matrices, with $x$-- and $y$--coordinates of the boundary points in the first and second column
+respectively. To read in an arbitrary boundary file into \proglang{R} function \fct{read.bnd} can
 be used. With the information of the boundary file \pkg{BayesX} may compute an appropriate adjacency 
 matrix, allowing for a smoothly varying effect of the neighboring regions. There is a generic 
 plotting method implemented for objects of class \code{"bnd"}, which in principle calls function
@@ -941,20 +927,18 @@ plot(ZambiaBnd)
 \centering
 <<plot-zambia-map-02, echo=FALSE, eval=TRUE, fig = TRUE, width=5, height=4>>=
 par(mar = c(0, 0, 0, 0))
-plot(ZambiaBnd)
+plot(ZambiaBnd, col = "lightgray")
 @
 \caption{\label{fig:zambia-simple-map} Example on childhood malnutrition: A simple map of the
 districts in Zambia.}
 \end{figure}
 Having loaded the necessary files, the model \code{formula} is specified with
 <<formula-zambia, echo=TRUE, eval=TRUE>>=
-f <- stunting ~ memployment + urban + gender + education +
-  sx(bmi) + sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) + 
+f <- stunting ~ memployment + urban + gender + meducation +
+  sx(mbmi) + sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) + 
   r(district)
 @
-where deviation (effect) coding is automatically performed for the factor variables
-\code{memployment}, \code{education}, \code{urban} and \code{gender}. The model is then fitted using
-MCMC by calling
+The model is then fitted using MCMC by calling
 <<fit-zambia-model, echo=TRUE, eval=FALSE>>=
 zm <- bayesx(f, family = "gaussian", method = "MCMC",
   iterations = 12000, burnin = 2000, step = 10,
@@ -986,17 +970,17 @@ summary(zm)
 @
 which typically includes mean, standard deviation and quantiles of sampled linear effects, smooth
 terms variances and random effects variances, as well as goodness of fit criteria and some other
-information about the model. The estimated effects for covariates \code{agechild} and \code{bmi} may
-then be visualized with
-<<zambia-agechild-bmi-plot, echo=TRUE, eval=FALSE>>=
-plot(zm, term = c("sx(bmi)", "sx(agechild)"))
+information about the model. The estimated effects for covariates \code{agechild} and \code{mbmi}
+may then be visualized with
+<<zambia-agechild-mbmi-plot, echo=TRUE, eval=FALSE>>=
+plot(zm, term = c("sx(mbmi)", "sx(agechild)"))
 @
-\begin{figure}[!ht]
+\begin{figure}[!t]
 \setkeys{Gin}{width=0.46\textwidth}
 \centering
-<<zambia-bmi, echo=FALSE, fig=TRUE, width=5, height=4>>=
+<<zambia-mbmi, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(zm, term = "sx(bmi)")
+plot(zm, term = "sx(mbmi)")
 @
 <<zambia-agechild, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
@@ -1034,8 +1018,7 @@ The kernel densities reveal the general form of the random effects distributions
 spatial structure of the correlated effect we have to use the plot function in combination with the
 boundary object \code{ZambiaBnd}:
 <<zambia-district-example, echo=TRUE, eval=FALSE>>=
-plot(zm, term = "sx(district)", 
-  map = ZambiaBnd, pos = "topleft")
+plot(zm, term = "sx(district)", map = ZambiaBnd)
 @
 The generated map effect plot is shown in Figure~\ref{fig:zambia-district-structured-unstructured}.
 \begin{figure}[!t]
@@ -1043,16 +1026,14 @@ The generated map effect plot is shown in Figure~\ref{fig:zambia-district-struct
 \centering
 <<zambia-district-structured, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(0, 0, 0, 0))
-plot(zm, term = "sx(district)", map = ZambiaBnd,
-  pos = "topleft", swap = TRUE)
+plot(zm, term = "sx(district)", map = ZambiaBnd, swap = TRUE)
 @
 <<zambia-district-unstructured-samescale, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(0, 0, 0, 0))
 range <- max(abs(range(fitted(zm, term = "sx(district)")$Mean)))
 range <- lrange <- c(-1 * range, range)
 plot(zm, term = "r(district)", map = ZambiaBnd,
-  pos = "topleft", swap = TRUE,
-  range = range, lrange = lrange)
+  swap = TRUE, range = range, lrange = lrange)
 @
 \caption{\label{fig:zambia-district-structured-unstructured} Example on childhood malnutrition:
 Estimated mean effect of the structured spatial effect (left panel), together with the unstructured
@@ -1071,7 +1052,7 @@ effect within the same range as the structured random effect
 range <- max(abs(range(fitted(zm, term = "sx(district)")$Mean)))
 range <- lrange <- c(-1 * range, range)
 plot(zm, term = "r(district)", map = ZambiaBnd, 
-  pos = "topleft", range = range, lrange = lrange)
+  range = range, lrange = lrange)
 @ %$
 The resulting map is also shown in Figure~\ref{fig:zambia-district-structured-unstructured} (right 
 panel). Using for both the structured and the unstructered effect the same scale is useful for 
@@ -1080,38 +1061,38 @@ structured spatially correlated effect clearly exceeds the unstructured effect.
 
 For MCMC post estimation diagnosis, it is also possible to extract sampling paths of parameters with
 function \fct{samples}, or to plot the samples directly. For instance, coefficient sampling paths
-for term \code{sx(bmi)} are displayed with
-<<zambia-bmi-coef-samples, echo=TRUE, eval=FALSE, fig=FALSE>>=
-plot(zm, term = "sx(bmi)", which = "coef-samples")
+for term \code{sx(mbmi)} are displayed with
+<<zambia-mbmi-coef-samples, echo=TRUE, eval=FALSE, fig=FALSE>>=
+plot(zm, term = "sx(mbmi)", which = "coef-samples")
 @
-see Figure~\ref{fig:zambia-bmi-coef-samples}. The plot of sampled parameters should ideally show
+see Figure~\ref{fig:zambia-mbmi-coef-samples}. The plot of sampled parameters should ideally show
 white noise, i.e.\ more or less uncorrelated samples that show no particular pattern. In our case the
 samples are exactly as they should be.
-\begin{figure}[!ht]
+\begin{figure}[!t]
 \setkeys{Gin}{width=0.75\textwidth}
 \centering
-<<zambia-bmi-coef-samples-do, echo=FALSE, fig=TRUE, width=7, height=8>>=
+<<zambia-mbmi-coef-samples-do, echo=FALSE, fig=TRUE, width=7, height=8>>=
 par(oma = c(0.01, 0.01, 0.01, 0.01))
-plot(zm, term = "sx(bmi)", which = "coef-samples", main = NA)
+plot(zm, term = "sx(mbmi)", which = "coef-samples", main = NA)
 @
-\caption{\label{fig:zambia-bmi-coef-samples} Example on childhood malnutrition: Sampling paths of
-the first 12 coefficients of term \code{sx(bmi)}.}
+\caption{\label{fig:zambia-mbmi-coef-samples} Example on childhood malnutrition: Sampling paths of
+the first 12 coefficients of term \code{sx(mbmi)}.}
 \end{figure}
 In addition, autocorrelation functions may be drawn, e.g.\ for the variance samples of term
-\code{sx(bmi)}, by typing
+\code{sx(mbmi)}, by typing
 <<zambia-autocorr-01, echo=TRUE, eval=FALSE>>=
-plot(zm, term = "sx(bmi)", which = "var-samples", acf = TRUE)
+plot(zm, term = "sx(mbmi)", which = "var-samples", acf = TRUE)
 @
 The maximum autocorrelation of all sampled parameters in the model are displayed with
 <<zambia-autocorr-02, echo=TRUE, eval=FALSE>>=
 plot(zm, which = "max-acf", acf = TRUE)
 @
-\begin{figure}[!ht]
+\begin{figure}[!t]
 \setkeys{Gin}{width=0.46\textwidth}
 \centering
 <<zambia-autocorr-03, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(zm, term = "sx(bmi)", which = "var-samples",
+plot(zm, term = "sx(mbmi)", which = "var-samples",
   acf = TRUE, main = "")
 @
 <<zambia-autocorr-04, echo=FALSE, fig=TRUE, width=5, height=4>>=
@@ -1119,7 +1100,7 @@ par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(zm, which = "max-acf", main = "")
 @
 \caption{\label{fig:zambia-autocorr} Example on childhood malnutrition: Autocorrelation function
-of the samples of the variance parameter of term \code{sx(bmi)}, left panel, maximum autocorrelation
+of the samples of the variance parameter of term \code{sx(mbmi)}, left panel, maximum autocorrelation
 of all parameters of the model, right panel respectively.}
 \end{figure}
 Autocorrelations for all lags should be close to zero as is the case in our example. See
@@ -1135,23 +1116,21 @@ In this example the log-file may be printed with
 \begin{Sinput}
 R> bayesx_logfile(zm)
 
-NOTE: created directory /tmp/RtmpAWetBo/bayesx/temp
-NOTE: created directory /tmp/RtmpAWetBo/bayesx/output
-> logopen using /tmp/RtmpAWetBo/bayesx/bayesx.estim.input.prg.log
 > bayesreg b
-> map bayesxmap
-> bayesxmap.infile using /tmp/RtmpAWetBo/bayesx/bayesxmap.bnd
-NOTE: 57 regions read from file /tmp/RtmpAWetBo/bayesx/bayesxmap.bnd
+> map ZambiaBnd
+> ZambiaBnd.infile using /tmp/Rtmpa3Z6WF/bayesx/ZambiaBnd.bnd
+NOTE: 57 regions read from file /tmp/Rtmpa3Z6WF/bayesx/ZambiaBnd.bnd
 > dataset d
-> d.infile using /tmp/RtmpAWetBo/bayesx/bayesx.estim.data.raw
-NOTE: 19 variables with 4847 observations read from file
-/tmp/RtmpAWetBo/bayesx/bayesx.estim.data.raw
+> d.infile using /tmp/Rtmpa3Z6WF/bayesx/bayesx.estim.data.raw
+NOTE: 14 variables with 4847 observations read from file
+/tmp/Rtmpa3Z6WF/bayesx/bayesx.estim.data.raw
 
-> b.outfile = /tmp/RtmpAWetBo/bayesx/bayesx.estim
-> b.regress stunting = memployment1 + education1 + education2 + urban1 + gender1 +
-  bmi(psplinerw2,nrknots=8,degree=3) + agechild(psplinerw2,nrknots=8,degree=3) +
-  district(spatial,map=bayesxmap) + district(random),
-  family=gaussian iterations=12000 burnin=2000 step=10 predict using d
+> b.outfile = /tmp/Rtmpa3Z6WF/bayesx/bayesx.estim
+> b.regress stunting = mbmi(psplinerw2,nrknots=20,degree=3) +
+    agechild(psplinerw2,nrknots=20,degree=3) + district(spatial,map=ZambiaBnd) +
+    district(random) + memploymentyes + urbanno + genderfemale + meducationno +
+    meducationprimary, family=gaussian iterations=12000 burnin=2000 step=10
+    setseed=123 predict using d
 NOTE: no observations for region 11
 NOTE: no observations for region 84
 NOTE: no observations for region 96
@@ -1180,9 +1159,9 @@ provides information on the used data, model specifications, algorithms and poss
 messages.
 
 
-\subsection{Forest health data set: Analysis with REML} \label{subsec:forest}
+\subsection{Forest health dataset: Analysis with REML} \label{subsec:forest}
 
-The data set on forest health comprises information on the defoliation of beech trees, which serves
+The dataset on forest health comprises information on the defoliation of beech trees, which serves
 as an indicator of overall forest health here. The data was collected annually from 1980 to 1997
 during a project of visual inspection of trees around Rothenbuch, Germany, see
 \citet{R2BayesX:Goettlein+Pruscha:1996}, and is discussed in detail in
@@ -1214,12 +1193,14 @@ Variable           & Description \\ \hline
 \code{stand}       & stand type with categories `deciduous' and `mixed'. \\
 \code{fertilized}  & fertilization applied with categories `yes' and `no'. \\ \hline
 \end{tabular}
-\caption{\label{tab:forest} Variables in the forest health data set.}
+\caption{\label{tab:forest} Variables in the forest health dataset.}
 \end{center}
 \end{table}
 
-Similar to \citet{R2BayesX:Fahrmeir+Kneib+Lang:2009}, we start with a three categorical ordered
-logit model, with $P(\texttt{defoliation}_{it} \leq r)$ of tree $i$ at time $t$, $r = 1,2$, and the
+cumulative threshold model is assigned for the response
+
+Similar to \citet{R2BayesX:Fahrmeir+Kneib+Lang:2009}, we start with a threshold model and cumulative
+logit link, with $P(\texttt{defoliation}_{it} \leq r)$ of tree $i$ at time $t$, $r = 1,2$, and the
 additive predictor
 \begin{eqnarray*}
 \eta_{it}^{(r)} &=& f_1(\texttt{age}_{it}) + f_2(\texttt{inclination}_{i}) +
@@ -1238,9 +1219,8 @@ f <- defoliation ~  stand + fertilized +
   sx(age) + sx(inclination) + sx(canopy) + 
   sx(year) + sx(elevation)
 @
-The covariates entering nonlinearly are again modeled by P-splines using 22 basis functions,
-\code{k = 22}. The model is then fitted applying REML by assigning a cumulative logit model and
-calling
+The covariates entering nonlinearly are again modeled by P-splines. The model is then fitted
+applying REML by assigning a cumulative logit model and calling
 <<fit-forest-model-01, echo=TRUE, eval=FALSE>>=
 fm1 <- bayesx(f, family = "cumlogit",
   method = "REML", data = ForestHealth)
@@ -1305,18 +1285,16 @@ In this example some contradictory results occur. The effect of covariate \code{
 monotone increasing effect, this also holds for the effect of \code{elevation}. Moreover, the
 extremely wiggly estimate of \code{inclination} is hardly interpretable. Therefore, the authors
 extend the model by a spatial effect, which is modeled by a two dimensional geospline term of the
-tree locations. The tree $x$- and $y$ coordinates are calculated by the centroid positions of tree
+tree locations. The tree $x$-- and $y$--coordinates are calculated by the centroid positions of tree
 polygons given by the boundary map file, which may be loaded with
 <<forest-model-gra-bnd, echo=TRUE, eval=TRUE>>=
 data("BeechBnd", package = "R2BayesX")
 @
 We now fit the  model:
 <<fit-forest-model-02, echo=TRUE, eval=FALSE>>=
-fm2 <- bayesx(defoliation ~  stand + fertilized +
-  humus + moisture + alkali + ph + soil +
-  sx(age) + sx(inclination) + sx(canopy) + sx(year) +
-  sx(elevation) + sx(id, bs = "gs", map = BeechBnd),
-  family = "cumlogit", method = "REML", data = ForestHealth)
+f <- update(f, ~ . + sx(id, bs = "gs", map = BeechBnd))
+fm2 <- bayesx(f, family = "cumlogit",
+  method = "REML", data = ForestHealth)
 @
 Taking a look at model information criteria with
 <<summary-forest-model, echo=TRUE, eval=TRUE>>=
@@ -1374,7 +1352,7 @@ plot(fm2, term = "sx(id)", map = FALSE, main = "")
 <<forest-spatial-id, echo=FALSE, fig=TRUE, width=7.3, height=4.5>>=
 par(mar = c(0.1, 0.1, 0.1, 0.1))
 range <- c(-1 * max(abs(range)), max(abs(range)))
-plot(fm2, term = "sx(id)", map = BeechBnd, pos = "topleft",
+plot(fm2, term = "sx(id)", map = BeechBnd,
   height = 0.24, width = 0.41)
 @
 \caption{\label{fig:forest-spatial-kde} Forest damage: Kernel density estimate of the spatial 
@@ -1383,15 +1361,14 @@ plot(fm2, term = "sx(id)", map = BeechBnd, pos = "topleft",
 The effect may also be visualized either using a 3d perspective plot, an image/contour plot or a map 
 effect plot using the boundary file \code{BeechBnd} with
 <<forest-spatial-id, echo=TRUE, eval=FALSE>>=
-plot(fm2, term = "sx(id)", map = BeechBnd, pos = "topleft")
+plot(fm2, term = "sx(id)", map = BeechBnd)
 @
 Both the kernel density and map effect plot are shown in Figure~\ref{fig:forest-spatial-kde}. In 
 this example the coloring of the plot is strongly influenced by a few very high and low values. 
 Therefore, it might be useful to restrict the color range e.g.\ according to the 5\% and 95\% 
 quantiles of the kernel density estimate of the effect, e.g.\ by typing
 <<forest-spatial-id-restrict, echo=TRUE, eval=FALSE>>=
-plot(fm2, term = "sx(id)", map = BeechBnd,
-  pos = "topleft", range = c(-4, 4))
+plot(fm2, term = "sx(id)", map = BeechBnd, range = c(-4, 4))
 @
 the resulting map is shown in Figure~\ref{fig:forest-spatial-restrict}.
 \begin{figure}[!ht]
@@ -1401,9 +1378,8 @@ the resulting map is shown in Figure~\ref{fig:forest-spatial-restrict}.
 par(mar = c(0.1, 0.1, 0.1, 0.1))
 range <- R2BayesX:::kde.quantiles(fitted(fm2, term = "sx(id)")$Estimate)
 range <- c(-1 * max(abs(range)), max(abs(range)))
-plot(fm2, term = "sx(id)", map = BeechBnd, pos = "topleft",
-  height = 0.24, width = 0.41,
-  range = range)
+plot(fm2, term = "sx(id)", map = BeechBnd,
+  height = 0.24, width = 0.41, range = range)
 @ %$
 \caption{\label{fig:forest-spatial-restrict} Forest damage: Estimate of the spatial effect with
 color scaling based on the 5\% and 95\% quantiles of the kernel density estimate of the effect.}
@@ -1419,7 +1395,7 @@ hardly possible in this example.
 To illustrate the implemented methodology for simultaneous selection of variables and smoothing
 parameters, we proceed with the dataset on malnutrition in Zambia of
 Section~\ref{subsec:zambia}. In this example, the structured additive
-predictor~(\ref{eqn:zambia-eta}) contains two continuous covariates \code{bmi} and \code{agechild},
+predictor~(\ref{eqn:zambia-eta}) contains two continuous covariates \code{mbmi} and \code{agechild},
 that are assumed to have a possibly nonlinear effect on the response \code{stunting} and are modeled
 with P-splines. However, a linear effect could be more appropriate and, hence, the linear effect is
 also considered using the selection algorithm in \pkg{BayesX}. Additionally, for each variable and
@@ -1428,7 +1404,7 @@ estimate the model applying the option \code{method = "STEP"}, we use the same  
 Section~\ref{subsec:zambia} and call
 <<fit-zambia-model-step-01, echo=TRUE, eval=FALSE>>=
 f <- stunting ~ memployment + urban + gender +
-  sx(education, bs = "factor") + sx(bmi) + sx(agechild) +
+  sx(meducation, bs = "factor") + sx(mbmi) + sx(agechild) +
   sx(district, bs = "mrf", map = ZambiaBnd) + r(district)
 zms <- bayesx(f, family = "gaussian", method = "STEP",
   algorithm = "cdescent1", startmodel = "empty",
@@ -1456,7 +1432,7 @@ summary statistics of the final selected model are then provided with
 <<zambia-model-step-summary, echo=TRUE, eval=TRUE>>=
 summary(zms)
 @
-Note that variable \code{memployment} was removed from the model and variable \code{bmi} is modeled
+Note that variable \code{memployment} was removed from the model and variable \code{mbmi} is modeled
 by a linear effect. Moreover, the columns \code{sd}, \code{2.5\%}, \code{50\%} and \code{97.5\%}
 contain no values, likewise for the estimated  random and smooth effects. The posterior quantiles
 may be computed if argument \code{CI} in function \fct{bayesx.control} is specified. E.g.\
@@ -1495,17 +1471,17 @@ which additionally considers the uncertainty due to model selection.
 
 \section[Details on installing BayesX]{Details on installing \pkg{BayesX}} \label{appendix:minstall}
 
-\subsection[Windows systems]{Windows systems} \label{appendix:wininstall}
+\subsection[Windows binary]{Windows binary} \label{appendix:wininstall}
 The installation routine \code{BayesX\_windows.exe} (url:
 \url{http://www.stat.uni-muenchen.de/~bayesx/install/BayesX_windows.exe}) may be downloaded from the
 \pkg{BayesX} homepage and executed. The routine will request all necessary information during the
 installation process. It is recommended to install \pkg{BayesX} in a directory without spaces in the
 path name. This will install a pre-compiled computing kernel including a Java graphical interface,
-which automatically installs the necessary command line version of \pkg{BayesX} for use within the
+which automatically installs the necessary command--line version of \pkg{BayesX} for use within the
 \proglang{R} interface. The binary is named \code{bayesx.exe} and is stored in the
 \code{commandline} directory of the \pkg{BayesX} installation folder.
 
-\subsection[Other systems]{Other systems} \label{appendix:otherinstall}
+\subsection[From source]{From source} \label{appendix:otherinstall}
 The zip archive named \code{bayesxsource.zip} (url:
 \url{http://www.stat.uni-muenchen.de/~bayesx/install/bayesxsource.zip}), containing the
 \proglang{C++} source code of \pkg{BayesX}, needs to be downloaded and unpacked. If the make
@@ -1543,16 +1519,14 @@ environment PATH variable of the operating system. Both options will automatical
 with \proglang{R} for the upcoming sessions.
 
 
-\subsection[Most important arguments used for function plot.bayesx()]{Most important arguments used
-  for function \fct{plot.bayesx}}
+\subsection[Most important arguments used within function plot.bayesx()]{Most important arguments
+  used within function \fct{plot.bayesx}}
 \label{appendix:plotting}
 \begin{table}[b!]
 \begin{center}
-\begin{tabular}{|p{2.5cm}p{11.5cm}|}
+\begin{tabular}{|p{2.5cm}p{10cm}|}
 \hline
 Argument & Description \\ \hline
-\code{model} & for which model the plot should be provided, either an \code{integer} or a
-               \code{character}, e.g.\ \code{model = "b1"}. \\
 \code{term} & the term that should be plotted, either an integer or a character, e.g.\
               \code{term = "sx(x)"}. \\
 \code{which} & choose the type of plot that should be drawn, possible options are: \code{"effect"},
@@ -1573,7 +1547,7 @@ Argument & Description \\ \hline
           indicating the $x$--coordinate and second column the $y$--coordinate each, see also
           function \fct{polygon}. \\
 \code{legend} & if set to \code{TRUE}, a legend will be shown. \\
-\code{range} & specify the range of values the plot should be generated with, e.g.\ only values
+\code{range} & specify the range of values the plot should be generated for, e.g.\ only values
            between -2 and 2 are of interest then \code{range = c(-2, 2)}. \\ \hline
 \code{color} & the colors for the legend, may also be a function, e.g.\
            \code{colors = heat.colors}. \\
@@ -1582,9 +1556,9 @@ Argument & Description \\ \hline
           $y$--direction of the plotting window, may also be negative, or one of the following:
           \code{"bottomleft"}, \code{"topleft"}, \code{"topright"} or \code{"bottomright"}. Using
           function \fct{plotmap} option \code{"right"} is also valid. \\
-\code{lrange} & specifies the range of legend. \\
+\code{lrange} & specifies the range of the legend. \\
 \code{symmetric} & if set to \code{TRUE}, a symmetric legend will be drawn corresponding to the
-          $+- max(abs(x))$ of values $x$ that are used for plotting. \\ \hline
+          $+- max(|x|)$ of values $x$ that are used for plotting. \\ \hline
 \end{tabular}
 \caption{\label{tab:plotting} Most important plotting parameters using the generic function 
 \fct{plot.bayesx}. The first block describes arguments of \fct{plot.bayesx}, subsequent blocks

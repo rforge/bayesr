@@ -35,8 +35,8 @@ r(x, h = NULL, by = NA, xt = NULL, data = NULL,
     number of different observations for \eqn{x_1} and \eqn{x_2} is \eqn{k}. Also suppose these 
     variables may have a smooth and a linear effect on the response \eqn{y} 
     (\eqn{y = (y_1,\ldots,y_n)}). Now, the hierarchical model is specified with 
-    \code{y ~ r(id, method = ~ s(x1) + x2)}. Note that within the second equation, 
-    \code{~ s(x1) + x2}, all model terms specified in \code{\link{bayesx.construct}} may be applied, 
+    \code{y ~ r(id, method = ~ sx(x1) + x2)}. Note that within the second equation, 
+    \code{~ sx(x1) + x2}, all model terms specified in \code{\link{bayesx.construct}} may be applied, 
     i.e. also random effects terms with higher levels may enter the second level equation. Please 
     see the examples for further illustrations.}
   \item{by}{specify a variable for which the slope estimator is modeled as random.}
@@ -65,10 +65,10 @@ r(x, h = NULL, by = NA, xt = NULL, data = NULL,
 }
 
 \examples{
-r(id1 ~ x1 + s(x2) + r(id2 ~ s(x3) + x4))
+r(id1 ~ x1 + sx(x2) + r(id2 ~ sx(x3) + x4))
 
 ## same with
-r(id1, ~ x1 + s(x2) + r(id2 ~ s(x3) + x4))
+r(id1, ~ x1 + sx(x2) + r(id2 ~ sx(x3) + x4))
 
 \dontrun{
 ## example for use within bayesx()
@@ -89,7 +89,7 @@ dat$re <- with(dat, rnorm(N, sd = 0.6)[id])
 dat$y <- with(dat, 1.5 + sin(x1) + re + rnorm(n, sd = 0.6))
      
 ## estimate model
-b <- bayesx(y ~ s(x1, bs = "ps") + r(id), data = dat)
+b <- bayesx(y ~ sx(x1) + r(id), data = dat)
 summary(b)
 
 ## extract effects and plot 
@@ -98,12 +98,12 @@ summary(b)
 ## of x1
 re.fit <- fitted(b, term = "r(id)")[,2L]
 op <- par(no.readonly = TRUE)
-par(mfrow=c(1,2))
+par(mfrow = c(1, 2))
 ylim <- range(c(re.fit, dat$re))
 plot(re.fit ~ unique(dat$re), ylim = ylim, xlim = ylim,
      xlab = "True effects", ylab = "Fitted random effects")
 abline(a = 0, b = 1)
-plot(b, term = "s(x1)")
+plot(b, term = "sx(x1)")
 par(op)
 
 
@@ -129,22 +129,21 @@ dat1$y <- with(dat1, 1.5 + sin(x1) + re + cos(dat2$x2)[id] + rnorm(n, sd = 0.6))
 ## estimate hierarchical model
 ## with the intercept in the 
 ## 2nd stage
-system.time(b1 <- bayesx(y ~ -1 + s(x1, bs = "ps") + 
-  r(id ~ 1 + s(x2 , bs = "ps"), data = dat2), 
-  method = "HMCMC", data = dat1))
+system.time(b1 <- bayesx(y ~ -1 + sx(x1) + r(id ~ 1 + sx(x2), data = dat2),
+  method = "HMCMC", data = dat1, dir.rm = FALSE))
 summary(b1)
 
 ## non hierarchical
 dat1$x2 <- with(dat1, dat2$x2[id])
-system.time(b2 <- bayesx(y ~ s(x1, bs = "ps") + s(x2, bs = "ps") + r(id),
+system.time(b2 <- bayesx(y ~ sx(x1) + sx(x2) + r(id),
   method = "MCMC", data = dat1))
 summary(b2)
 
 ## plot x2 effects
 op <- par(no.readonly = TRUE)
 par(mfrow = c(1, 2))
-plot(b1, term = "s(x2)", main = "Hierarchical")
-plot(b2, term = "s(x2)", main = "Non Hierarchical")
+plot(b1, term = "sx(x2)", main = "Hierarchical")
+plot(b2, term = "sx(x2)", main = "Non Hierarchical")
 par(op)
 
 
@@ -170,14 +169,13 @@ dat2 <- data.frame(re = rnorm(N, sd = 0.6),
 dat1$y <- with(dat1, 1.5 + sin(x1) + dat2$sp[id] + dat2$re[id] + rnorm(n, sd = 0.6))
 
 ## estimate model
-b <- bayesx(y ~ -1 + s(x1, bs = "ps") + 
-  r(id ~ 1 + s(id, bs = "mrf", xt = list(map = MunichBnd)), data = dat2), 
-  method = "HMCMC", data = dat1)
+b <- bayesx(y ~ -1 + sx(x1) + r(id ~ 1 + sx(id, bs = "mrf", map = MunichBnd),
+  data = dat2), method = "HMCMC", data = dat1)
 
 ## plot the spatial effects
 op <- par(no.readonly = TRUE)
 par(mfrow = c(1, 3))
-plot(b, term = "s(id)", map = MunichBnd, 
+plot(b, term = "sx(id)", map = MunichBnd, 
   main = "Structured spatial effect")
 plot(b, term = "r(id)", map = MunichBnd, 
   main = "Unstructured spatial effect")

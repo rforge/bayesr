@@ -90,7 +90,23 @@ function(x, info)
       if(!is.null(rval[[k]]) && !is.list(rval[[k]]) && nrow(rval[[k]]) < 2L) 
         attr(rval[[k]], "specs")$is.factor <- TRUE
     }
-    return(x2df(rval, rn = TRUE))
-  } else return(x2df(x, rn = TRUE))  
+    namrval <- names(rval)
+    rval <- x2df(rval, rn = TRUE)
+    if(!inherits(rval, "list")) {
+      rval <- list(rval)
+      names(rval) <- namrval
+    }
+
+    return(rval)
+  } else {
+    xnames <- names(x)
+    x <- x2df(x, rn = TRUE)
+    if(!inherits(x, "list")) {
+      x <- list(x)
+      names(x) <- xnames
+    }
+
+    return(x)
+  }
 }
 

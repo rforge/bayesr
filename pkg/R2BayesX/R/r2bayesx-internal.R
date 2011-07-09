@@ -6,7 +6,9 @@ function(x, ...)
   cat("\n")
   if(!is.null(x$model.fit)) {
     mfn <- names(x$model.fit)
-    mfn <- mfn[mfn != "formula" & mfn != "order"]
+    mfn <- mfn[mfn != "formula" & mfn != "order" & 
+      mfn != "YLevels" & mfn != "nYLevels" & 
+      mfn != "model.name"]
     step <- 5L
     for(i in 1L:length(mfn)) {
       txt <- deparse(x$model.fit[[mfn[i]]])

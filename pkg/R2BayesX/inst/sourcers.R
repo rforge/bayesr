@@ -1,6 +1,72 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
+b <- read.bayesx.output("/tmp/RtmptANWAj/bayesx")
+
+
+f <- stunt ~ -1 + c_sex + residence0 + residence1 + residence2 + precare + bornhome + fhh +
+  s(age_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+  s(age_c,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+  s(bmi_mo_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+  s(bmi_mo_c,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+  s(biage_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) + 
+  s(biage_c,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) + 
+  s(vac_numb_c,k=8,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) + 
+  s(vac_numb_c,k=8,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) + 
+  s(bi_pre_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+  s(bi_pre_c,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+  s(ai_distdiff,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+  s(ai_distdiff,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+  s(educm_y_distdiff,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+  s(educm_y_distdiff,k=12,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+  s(hhs_c,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+  s(hhs_c,k=12,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+  s(b_order_c,k=13,m=c(1,2),bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+  s(b_order_c,k=13,m=c(1,2),by=c_sex,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf"))
+
+b <- bayesx(f, method = "HMCMC", iter = 1200, burnin = 200, step = 2, 
+  seed = 1234, family = "binomial_probit", data = d)
+
+fit_s_probit3<-bayesx(stunt ~ -1+c_sex + residence0 + residence1 + residence2 + precare + 
+bornhome + fhh +
+s(age_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(age_c,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(bmi_mo_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(bmi_mo_c,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(biage_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) + 
+s(biage_c,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) + 
+s(vac_numb_c,k=8,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) + 
+s(vac_numb_c,k=8,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) + 
+s(bi_pre_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(bi_pre_c,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(ai_distdiff,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(ai_distdiff,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(educm_y_distdiff,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(educm_y_distdiff,k=12,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(hhs_c,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(hhs_c,k=12,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(b_order_c,k=13,m=c(1,2),bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+s(b_order_c,k=13,m=c(1,2),by=c_sex,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+
+r(distH, ~ -1 + s(distH,bs="mrf",xt=list(map=mapindia,lambda=1000,centermethod="meanf")) +
+s(dist_ai_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf"))+
+s(dist_eduyears_c,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) 
++
+r(region~s(gdpcap_c,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")),data=dregion)
+,data=ddist) +
+
+r(distH2, ~ -1 + s(distH2,bs="mrf",xt=list(map=mapindia,lambda=1000,centermethod="meanf")) +
+s(dist_ai2_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf"))+
+s(dist_eduyears2_c,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) 
++
+r(region2~-1+s(gdpcap2_c,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")),data=dregion),by=c_sex,
+,data=ddist)
+,data=d , verbose=T,method="HMCMC", iter=53000, step=50, burnin=3000, seed=1234, family="binomial_probit",
+outfile="tmp/probit",replace=T)
+
+
+
+
 
 
 mycol <- diverge_hcl(99, h = c(120, 0), c = 120, l = c(30, 90), power = 1.5, gamma = 2.4, fixup = TRUE)
@@ -374,25 +440,34 @@ plotmap(MunichBnd, x = unique(cbind(x2int(dat$id), dat$sp)),
 # dat <- read.table("http://www.stat.uni-muenchen.de/~bayesx/tutorials/zambia.raw", header = TRUE)
 ZambiaNutrition <- list()
 ZambiaNutrition$stunting <- dat$hazstd
-ZambiaNutrition$bmi <- dat$bmi
+ZambiaNutrition$mbmi <- dat$bmi
 ZambiaNutrition$agechild <- dat$agc
 ZambiaNutrition$district <- dat$district
-memployment <- as.factor(dat$rcw)
-levels(memployment) <- c("not working", "working")
+memployment <- as.integer(dat$rcw)
+memployment[memployment == -1L] <- 0L
+memployment <- factor(memployment)
+levels(memployment) <- c("no", "yes")
 ZambiaNutrition$memployment <- memployment
-education <- as.factor(dat$edu)
-levels(education) <- c("no/incomplete", "minimum primary", "minimum secondary")
-ZambiaNutrition$education <- education
-urban <- as.factor(dat$tpr)
+meducation <- factor(dat$edu)
+levels(meducation) <- c("no", "primary", "secondary")
+ZambiaNutrition$meducation <- meducation
+urban <- as.integer(dat$tpr)
+urban[urban == -1L] <- 0L
+urban <- factor(urban)
 levels(urban) <- c("no", "yes")
 ZambiaNutrition$urban <- urban
+gender <- as.integer(dat$sex)
+gender[gender == -1L] <- 0L
 gender <- as.factor(dat$sex)
+gender <- factor(gender)
 levels(gender) <- c("female", "male")
 ZambiaNutrition$gender <- gender
 ZambiaNutrition <- as.data.frame(ZambiaNutrition)
 ZambiaNutrition <- ZambiaNutrition[order(ZambiaNutrition$district),]
 ZambiaNutrition <- R2BayesX:::d2contrsum(ZambiaNutrition)
 ## save(ZambiaNutrition, file = "/home/nikolaus/svn/bayesr/pkg/R2BayesX/data/ZambiaNutrition.rda", compress = "xz")
+
+
 mm <- model.matrix(~ 1 + memployment, data = ZambiaNutrition)
 cbind(as.numeric(dat$rcw), mm[,2])
 data.frame(ZambiaNutrition$memployment, dat$rcw, mm[,2], as.integer(memployment))
