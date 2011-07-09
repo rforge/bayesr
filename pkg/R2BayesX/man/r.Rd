@@ -124,13 +124,15 @@ dat2 <- data.frame(id = unique(dat1$id),
   x2 = runif(N, -3, 3))
 
 ## response
-dat1$y <- with(dat1, 1.5 + sin(x1) + re + cos(dat2$x2)[id] + rnorm(n, sd = 0.6))
+dat1$y <- with(dat1, 1.5 + sin(x1) + re + 
+  cos(dat2$x2)[id] + rnorm(n, sd = 0.6))
 
 ## estimate hierarchical model
 ## with the intercept in the 
 ## 2nd stage
-system.time(b1 <- bayesx(y ~ -1 + sx(x1) + r(id ~ 1 + sx(x2), data = dat2),
-  method = "HMCMC", data = dat1, dir.rm = FALSE))
+system.time(b1 <- bayesx(y ~ -1 + sx(x1) + 
+  r(id ~ 1 + sx(x2), data = dat2), method = "HMCMC",
+  data = dat1, dir.rm = FALSE))
 summary(b1)
 
 ## non hierarchical
@@ -166,10 +168,12 @@ dat2 <- data.frame(re = rnorm(N, sd = 0.6),
   id = unique(dat1$id))
 
 ## response
-dat1$y <- with(dat1, 1.5 + sin(x1) + dat2$sp[id] + dat2$re[id] + rnorm(n, sd = 0.6))
+dat1$y <- with(dat1, 1.5 + sin(x1) + dat2$sp[id] + 
+  dat2$re[id] + rnorm(n, sd = 0.6))
 
 ## estimate model
-b <- bayesx(y ~ -1 + sx(x1) + r(id ~ 1 + sx(id, bs = "mrf", map = MunichBnd),
+b <- bayesx(y ~ -1 + sx(x1) + 
+  r(id ~ 1 + sx(id, bs = "mrf", map = MunichBnd),
   data = dat2), method = "HMCMC", data = dat1)
 
 ## plot the spatial effects

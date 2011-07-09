@@ -139,7 +139,7 @@ The reminder of this paper is as follows. The next section gives a first example
 \proglang{R} session using \pkg{R2BayesX} on a dataset on childhood malnutrition in Zambia.
 Section~\ref{sec:model} briefly discusses the methodological background of regression models with a
 structured additive predictor, before a description of the package functionality is given in
-Section~\ref{sec:overview}. In Section~\ref{sec:illustrations}, the interface usability is further
+Section~\ref{sec:userinterface}. In Section~\ref{sec:illustrations}, the interface usability is further
 illustrated with the childhood malnutrition data and a dataset on forest health.
 
 
@@ -350,7 +350,7 @@ A thorough introduction into the regression models supported by the program is a
 \pkg{BayesX} methodology manual \citep{R2BayesX:Belitz+Brezger+Kneib+Lang:2011}.
 
 
-\section[Package overview]{Package overview} \label{sec:overview}
+\section[User interface]{User interface} \label{sec:userinterface}
 
 \subsection[Installing the BayesX binary from R]{Installing the \pkg{BayesX} binary from 
   \proglang{R}}
