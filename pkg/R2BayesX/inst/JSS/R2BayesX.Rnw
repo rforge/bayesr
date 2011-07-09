@@ -432,8 +432,8 @@ likelihood/marginal likelihood -- \code{"REML"} and penalized likelihood includi
 -- \code{"STEP"}. An overview of all available distributions for the different methods is given in
 Table~\ref{tab:family}.
 \begin{table}[t!]
-\begin{center}
-\begin{tabular}{|lp{4cm}p{2.5cm}l|}
+\centering
+\begin{tabular}{|lp{4cm}p{1.3cm}l|}
 \hline
 \code{family} & Response distribution & Link & \code{method} \\ \hline
 \code{"binomial"} & binomial & logit & \code{"MCMC"} \code{"REML"} \code{"STEP"} \\
@@ -445,7 +445,7 @@ Table~\ref{tab:family}.
 \code{"cox"} & continuous-time survival data &  & \code{"MCMC"} \code{"REML"} \\
 \code{"cumprobit"} & cumulative threshold & probit & \code{"MCMC"} \code{"REML"} \\
 \code{"multistate"} & continuous-time multi-state data & & \code{"MCMC"} \code{"REML"} \\ \hline
-\code{"binomialcomploglog"} & binomial & complementary log-log & \code{"REML"} \\
+\code{"binomialcomploglog"} & binomial & compl. log-log & \code{"REML"} \\
 \code{"cumlogit"} & cumulative multinomial & logit & \code{"REML"} \\
 \code{"multinomialcatsp"} & unordered multinomial (with category-specific covariates) & logit &
   \code{"REML"} \\
@@ -455,7 +455,6 @@ Table~\ref{tab:family}.
 \end{tabular}
 \caption{\label{tab:family} Distributions implemented for \code{method}s \code{"MCMC"},
 \code{"REML"} and \code{"STEP"}.}
-\end{center}
 \end{table}
 The last argument specifies several parameters controlling the processing of the \pkg{BayesX} binary 
 that are arranged by function \fct{bayesx.control}. Note that all additional controlling arguments
@@ -464,7 +463,7 @@ which is send to \fct{bayesx.control}. The most important parameters for the dif
 listed in Table~\ref{tab:control}.
 \begin{table}[!ht]
 \renewcommand\multirowsetup{\centering}
-\begin{center}
+\centering
 \begin{tabular}{|llp{11cm}|}
 \hline
 \code{method} & Parameter & Description \\ \hline
@@ -508,7 +507,6 @@ listed in Table~\ref{tab:control}.
 \caption{\label{tab:control} Most important controlling parameters for the different methods using
 function \fct{bayesx}. (A detailed documentation is provided in the manual of function
 \fct{bayesx.control} of package \pkg{R2BayesX}.)}
-\end{center}
 \end{table}
 
 The returned fitted model object is a list of class \code{"bayesx"}, which is supported by several
@@ -541,7 +539,7 @@ of post estimation commands. Moreover, the script facilitates the final preparat
 diagnostics to be included in publications. A list of all available functions and methods of package
 \pkg{R2BayesX} can be found in Table~\ref{tab:funmethods}.
 \begin{table}[t!]
-\begin{center}
+\centering
 \begin{tabular}{|p{3.5cm}p{10.5cm}|}
 \hline
 Function & Description \\ \hline
@@ -578,7 +576,6 @@ Function & Description \\ \hline
 \end{tabular}
 \caption{\label{tab:funmethods} Functions and methods for objects of class \code{"bayesx"}. (A
 detailed documentation is provided in the manual of package \pkg{R2BayesX}.)}
-\end{center}
 \end{table}
 
 \clearpage
@@ -855,7 +852,7 @@ to model the dependence of stunting of newborn children, with an age ranging fro
 covariates such as the body mass index of the mother, the age of the child and others presented in
 Table~\ref{tab:zambia}.
 \begin{table}[htbp]
-\begin{center}
+\centering
 \begin{tabular}{|lp{10cm}|}
 \hline
 Variable           & Description \\ \hline
@@ -871,7 +868,6 @@ Variable           & Description \\ \hline
 \code{gender}      & gender of the child with categories `male' and `female'. \\ \hline
 \end{tabular}
 \caption{\label{tab:zambia} Variables in the dataset on childhood malnutrition in Zambia.}
-\end{center}
 \end{table}
 The response \code{stunting} is standardized in terms of a reference population, i.e in this dataset
 stunting for child $i$ is represented by
@@ -1170,7 +1166,7 @@ each tree is aggregated into three ordinal categories, which are modeled in term
 characterizing the stand and site of a tree. In addition, temporal and spatial information is
 available, see also Table~\ref{tab:forest}.
 \begin{table}[!ht]
-\begin{center}
+\centering
 \begin{tabular}{|l|p{10cm}|}
 \hline
 Variable           & Description \\ \hline
@@ -1194,7 +1190,6 @@ Variable           & Description \\ \hline
 \code{fertilized}  & fertilization applied with categories `yes' and `no'. \\ \hline
 \end{tabular}
 \caption{\label{tab:forest} Variables in the forest health dataset.}
-\end{center}
 \end{table}
 
 cumulative threshold model is assigned for the response
@@ -1365,10 +1360,10 @@ plot(fm2, term = "sx(id)", map = BeechBnd)
 @
 Both the kernel density and map effect plot are shown in Figure~\ref{fig:forest-spatial-kde}. In 
 this example the coloring of the plot is strongly influenced by a few very high and low values. 
-Therefore, it might be useful to restrict the color range e.g.\ according to the 5\% and 95\% 
+Therefore, it might be useful to restrict the color range e.g.\ according to the 10\% and 90\% 
 quantiles of the kernel density estimate of the effect, e.g.\ by typing
 <<forest-spatial-id-restrict, echo=TRUE, eval=FALSE>>=
-plot(fm2, term = "sx(id)", map = BeechBnd, range = c(-4, 4))
+plot(fm2, term = "sx(id)", map = BeechBnd, range = c(-3, 3))
 @
 the resulting map is shown in Figure~\ref{fig:forest-spatial-restrict}.
 \begin{figure}[!ht]
@@ -1377,6 +1372,7 @@ the resulting map is shown in Figure~\ref{fig:forest-spatial-restrict}.
 <<forest-spatial-id-restrict, echo=FALSE, fig=TRUE, width=7.3, height=4.5>>=
 par(mar = c(0.1, 0.1, 0.1, 0.1))
 range <- R2BayesX:::kde.quantiles(fitted(fm2, term = "sx(id)")$Estimate)
+range <- c(-3, 3)
 range <- c(-1 * max(abs(range)), max(abs(range)))
 plot(fm2, term = "sx(id)", map = BeechBnd,
   height = 0.24, width = 0.41, range = range)
@@ -1523,7 +1519,7 @@ with \proglang{R} for the upcoming sessions.
   used within function \fct{plot.bayesx}}
 \label{appendix:plotting}
 \begin{table}[b!]
-\begin{center}
+\centering
 \begin{tabular}{|p{2.5cm}p{10cm}|}
 \hline
 Argument & Description \\ \hline
@@ -1564,7 +1560,6 @@ Argument & Description \\ \hline
 \fct{plot.bayesx}. The first block describes arguments of \fct{plot.bayesx}, subsequent blocks
 arguments that are passed to function \fct{plot2d}, \fct{plot3d}, \fct{plotmap} and
 \fct{colorlegend} respectively.}
-\end{center}
 \end{table}
 
 
