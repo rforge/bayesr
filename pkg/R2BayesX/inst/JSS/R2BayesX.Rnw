@@ -50,7 +50,7 @@ some extended terms), fitted using the \pkg{BayesX} binary, represented in \prog
 of suitable classes, and finally printed/summarized/plotted. As a result of the superior graphics 
 capabilities of \proglang{R} package \pkg{R2BayesX} greatly enhances the usability of \pkg{BayesX}. 
 On the other hand some of the more complex models from the STAR class, especially models for 
-multivariate responses, extend the already impressive capabilities  for semiparametric regression in  
+multivariate responses, extend the already impressive capabilities for semiparametric regression in  
 \proglang{R}. Moreover, \pkg{R2BayesX} is the most comprehensive package for simulation based
 Bayesian semiparametric regression in \proglang{R}.
 }
@@ -106,7 +106,7 @@ family regression, \pkg{BayesX} also supports models for multi-categorical respo
 regression for continuous survival times, and continuous time multi-state models.
 
 In this article, we describe the full interactive \proglang{R} \citep{R2BayesX:R} interface to the
-command--line binary version of BayesX, which is an extension of package \pkg{BayesX}
+command-line binary version of BayesX, which is an extension of package \pkg{BayesX}
 \citep{R2BayesX:Kneib+Heinzl+Brezger:2011}, that mainly provides functionality for exploring
 estimation results. The \proglang{R} package is called \pkg{R2BayesX} and has recently been added to
 the Comprehensive \proglang{R} Archive Network (CRAN,
@@ -313,7 +313,7 @@ A fully Bayesian interpretation of STAR models is obtained by specifying prior d
 unknown parameters. Estimation is carried out using Markov chain Monte Carlo simulation techniques.
 \pkg{BayesX} provides numerically efficient implementations of MCMC schemes for structured additive
 regression models. Suitable proposal densities have been developed to obtain rapidly mixing,
-well--behaved sampling schemes without the need for manual tuning
+well-behaved sampling schemes without the need for manual tuning
 \citep{R2BayesX:Brezger+Lang:2006}.
 
 \item \textit{Inference via a mixed model representation} \\
@@ -336,7 +336,7 @@ able to
   \item decide whether a particular covariate enters the model,
   \item decide whether a continuous covariate enters the model linearly or nonlinearly,
   \item decide whether a spatial effect enters the model,
-  \item decide whether a unit-- or cluster--specific heterogeneity effect enters the model
+  \item decide whether a unit- or cluster-specific heterogeneity effect enters the model
   \item select complex interaction effects (two dimensional surfaces, varying coefficient terms)
   \item select the degree of smoothness of nonlinear covariate, spatial or cluster specific
     heterogeneity effects.
@@ -350,15 +350,32 @@ A thorough introduction into the regression models supported by the program is a
 \pkg{BayesX} methodology manual \citep{R2BayesX:Belitz+Brezger+Kneib+Lang:2011}.
 
 
+\section[Implementation in R]{Implementation in \proglang{R}} \label{sec:implementation}
+
+The design of the \proglang{R} interface to \pkg{BayesX} attempts to concern the following major
+issues: First, the interfacing function calls needed to be as practical as possible and oriented at
+\proglang{R}'s standards for regression model fitting functions, and secondly, to provide a set of
+functions and methods for easy representation of fitted model objects, that would enhance the
+usability of \pkg{BayesX}. 
+
+In \proglang{R}, several packages for semiparametric regression models exist. The probably
+best-known and recommended package is \pkg{mgcv} \citep{R2BayesX:Wood:2011}, which provides fast an
+stable algorithms for estimating GAM's (see \citealp{R2BayesX:Wood:2004},
+\citealp{R2BayesX:Wood:2008}). Vector generalized additive models (VGAM) for categorical responses
+are covered by package \pkg{VGAM} \citep{R2BayesX:Yee:2009}. Another comprehensive package for
+GAM's accounting
+
+
+
 \section[User interface]{User interface} \label{sec:userinterface}
 
 \subsection[Installing the BayesX binary from R]{Installing the \pkg{BayesX} binary from 
   \proglang{R}}
 
 Before STAR models can be fitted with package \pkg{R2BayesX} from \proglang{R}, the binary
-command--line version of the program \pkg{BayesX} needs to be installed and linked to \proglang{R}.
-The recommended option on UNIX and Windows systems is to auto--compile/install the \pkg{BayesX}
-command--line binary within \proglang{R} by calling the function \fct{install.bayesx}. Therefore
+command-line version of the program \pkg{BayesX} needs to be installed and linked to \proglang{R}.
+The recommended option on UNIX and Windows systems is to auto-compile/install the \pkg{BayesX}
+command-line binary within \proglang{R} by calling the function \fct{install.bayesx}. Therefore
 package \pkg{R2BayesX} needs to be loaded:
 <<load-bayesx, echo=TRUE, eval=FALSE>>=
 library("R2BayesX")
@@ -385,7 +402,7 @@ compiler is forced on any platform.
 
 \subsection[Linking the BayesX binary to R]{Linking the \pkg{BayesX} binary to \proglang{R}}
 \label{subsec:linking}
-After the successful compilation/installation, usually the full path to the command--line binary
+After the successful compilation/installation, usually the full path to the command-line binary
 needs to be declared to \proglang{R} at the beginning of every new session by setting
 <<options-bayesx, echo=TRUE, eval=FALSE>>=
 options(bayesx.bin = "/path/to/BayesX")
@@ -427,9 +444,9 @@ typically improves the convergence of estimation algorithms used in \pkg{BayesX}
 assigned to the response may be set with argument \code{family}, the default is
 \code{family = "gaussian"}. Note that family objects are currently not supported by BayesX. Argument
 \code{method} determines the inferential concept used for estimation. Options are: Markov chain
-Monte Carlo simulation -- \code{"MCMC"}, mixed model based estimation using restricted maximum
-likelihood/marginal likelihood -- \code{"REML"} and penalized likelihood including model selection
--- \code{"STEP"}. An overview of all available distributions for the different methods is given in
+Monte Carlo simulation - \code{"MCMC"}, mixed model based estimation using restricted maximum
+likelihood/marginal likelihood - \code{"REML"} and penalized likelihood including model selection
+- \code{"STEP"}. An overview of all available distributions for the different methods is given in
 Table~\ref{tab:family}.
 \begin{table}[t!]
 \centering
@@ -464,7 +481,7 @@ listed in Table~\ref{tab:control}.
 \begin{table}[!ht]
 \renewcommand\multirowsetup{\centering}
 \centering
-\begin{tabular}{|llp{11cm}|}
+\begin{tabular}{|llp{10.3cm}|}
 \hline
 \code{method} & Parameter & Description \\ \hline
 \multirow{3}{*}[-0.8cm]{\code{"MCMC"}} & \code{iterations} & integer, sets the number of iterations
@@ -540,7 +557,7 @@ diagnostics to be included in publications. A list of all available functions an
 \pkg{R2BayesX} can be found in Table~\ref{tab:funmethods}.
 \begin{table}[t!]
 \centering
-\begin{tabular}{|p{3.5cm}p{10.5cm}|}
+\begin{tabular}{|p{3.2cm}p{11cm}|}
 \hline
 Function & Description \\ \hline
 \fct{print} & simple printed display of the initial call and some additional information of the
@@ -602,7 +619,7 @@ terms. Argument \code{bs} chooses the basis/type of the term, possible options a
 Table~\ref{tab:terms}.
 \begin{table}[t!]
 \centering
-\begin{tabular}{|p{3.2cm}p{10.2cm}|}
+\begin{tabular}{|p{3.2cm}p{10.5cm}|}
 \hline
 \code{bs} & Description \\ \hline
 \code{"rw1"}, \code{"rw2"} & zero degree P-splines: defines a zero degree P-spline with first or
@@ -641,15 +658,17 @@ Table~\ref{tab:terms}.
                \fct{shp2bnd}), as an additional argument named \code{map} within function \fct{sx},
                or supplied within argument \code{xt} when using function \fct{s}, e.g.\
                \code{xt = list(map = MapBndorGra)}. \\ \hline
+ & \\
 \multicolumn{2}{|r|}{continued on next page} \\ \hline
 \end{tabular}
 \end{table}
 
 \begin{table}[t!]
 \centering
-\begin{tabular}{|p{3.2cm}p{10.2cm}|}
+\begin{tabular}{|p{3.2cm}p{10.5cm}|}
 \hline
-\multicolumn{2}{|l|}{continued from previous page} \\ \hline
+\multicolumn{2}{|l|}{continued from previous page} \\ 
+ & \\ \hline
 \code{"bl"}, \code{"baseline"} & nonlinear baseline effect in hazard regression or multi-state 
               models: defines a P-spline with second order random walk penalty for the parameters of 
               the spline for the log-baseline effect $\log(\lambda(time))$. \\
@@ -908,7 +927,7 @@ about the district neighborhood structure, which e.g.\ is enclosed in the file
 data("ZambiaBnd", package = "R2BayesX")
 @
 The object \code{ZambiaBnd} has class \code{"bnd"} and is basically a \fct{list} of polygon
-matrices, with $x$-- and $y$--coordinates of the boundary points in the first and second column
+matrices, with $x$- and $y$-coordinates of the boundary points in the first and second column
 respectively. To read in an arbitrary boundary file into \proglang{R} function \fct{read.bnd} can
 be used. With the information of the boundary file \pkg{BayesX} may compute an appropriate adjacency 
 matrix, allowing for a smoothly varying effect of the neighboring regions. There is a generic 
@@ -1280,7 +1299,7 @@ In this example some contradictory results occur. The effect of covariate \code{
 monotone increasing effect, this also holds for the effect of \code{elevation}. Moreover, the
 extremely wiggly estimate of \code{inclination} is hardly interpretable. Therefore, the authors
 extend the model by a spatial effect, which is modeled by a two dimensional geospline term of the
-tree locations. The tree $x$-- and $y$--coordinates are calculated by the centroid positions of tree
+tree locations. The tree $x$- and $y$-coordinates are calculated by the centroid positions of tree
 polygons given by the boundary map file, which may be loaded with
 <<forest-model-gra-bnd, echo=TRUE, eval=TRUE>>=
 data("BeechBnd", package = "R2BayesX")
@@ -1473,7 +1492,7 @@ The installation routine \code{BayesX\_windows.exe} (url:
 \pkg{BayesX} homepage and executed. The routine will request all necessary information during the
 installation process. It is recommended to install \pkg{BayesX} in a directory without spaces in the
 path name. This will install a pre-compiled computing kernel including a Java graphical interface,
-which automatically installs the necessary command--line version of \pkg{BayesX} for use within the
+which automatically installs the necessary command-line version of \pkg{BayesX} for use within the
 \proglang{R} interface. The binary is named \code{bayesx.exe} and is stored in the
 \code{commandline} directory of the \pkg{BayesX} installation folder.
 
@@ -1540,7 +1559,7 @@ Argument & Description \\ \hline
 \code{image} & if set to \code{TRUE}, an \fct{image.plot} is drawn. \\
 \code{contour} & if set to \code{TRUE}, a \fct{contour} plot is drawn. \\ \hline
 \code{map} & the map to be plotted, the map object must be a list of matrices with first column
-          indicating the $x$--coordinate and second column the $y$--coordinate each, see also
+          indicating the $x$-coordinate and second column the $y$-coordinate each, see also
           function \fct{polygon}. \\
 \code{legend} & if set to \code{TRUE}, a legend will be shown. \\
 \code{range} & specify the range of values the plot should be generated for, e.g.\ only values
@@ -1548,8 +1567,8 @@ Argument & Description \\ \hline
 \code{color} & the colors for the legend, may also be a function, e.g.\
            \code{colors = heat.colors}. \\
 \code{pos} & the position of the legend, either a numeric vector, e.g.\ \code{pos = c(0.1, 0.2)}
-          will add the legend at the 10\% point in the $x$--direction and at the 20\% point in the
-          $y$--direction of the plotting window, may also be negative, or one of the following:
+          will add the legend at the 10\% point in the $x$-direction and at the 20\% point in the
+          $y$-direction of the plotting window, may also be negative, or one of the following:
           \code{"bottomleft"}, \code{"topleft"}, \code{"topright"} or \code{"bottomright"}. Using
           function \fct{plotmap} option \code{"right"} is also valid. \\
 \code{lrange} & specifies the range of the legend. \\
