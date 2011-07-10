@@ -353,11 +353,10 @@ A thorough introduction into the regression models supported by the program is a
 
 \section[Implementation in R]{Implementation in \proglang{R}} \label{sec:implementation}
 
-The design of the \proglang{R} interface to \pkg{BayesX} attempts to concern the following major
-issues: First, the interfacing function calls needed to be as practical as possible and oriented on
-\proglang{R}'s standards for regression model fitting functions, and secondly, to provide a set of
-functions and methods for an easy representation of fitted model objects, that would enhance the
-usability of \pkg{BayesX}. 
+The design of the interface  attempts to concern the following major issues: First, the interfacing
+function calls needed to be as practical as possible and oriented on \proglang{R}'s standards for
+regression model fitting functions, and secondly, to provide a set of functions and methods for a
+convenient representation of fitted model objects, that would enhance the usability of \pkg{BayesX}. 
 
 In \proglang{R}, several packages for semiparametric regression models exist. The following gives a
 brief overview of some of the larger software projects that have been implemented. The probably
@@ -368,9 +367,10 @@ responses are covered by package \pkg{VGAM} \citep{R2BayesX:Yee:1996, R2BayesX:Y
 comprehensive package for GAM's, accounting for responses that do not necessarily follow the 
 exponential family and may exhibit heterogeneity, is \pkg{gamlss}
 \citep{R2BayesX:Rigby+Stasinopoulos:2005}. A package based on mixed model technologies is
-\pkg{SemiPar} \citep{R2BayesX:Wand:2010} and its dependent version for adaptive P-splines
-\pkg{AdaptFit} \citep{R2BayesX:Krivobokova}. The package \pkg{spikeSlabGAM} applies Bayesian
-variable selection, model choice and regularization for GAMM's \citep{R2BayesX:Scheipl:2011}.
+\pkg{SemiPar} \citep{R2BayesX:Ruppert+Wand+Carrol:2003, R2BayesX:Wand:2010} and its dependent
+version for adaptive P-splines \pkg{AdaptFit} \citep{R2BayesX:Krivobokova}. The package
+\pkg{spikeSlabGAM} applies Bayesian variable selection, model choice and regularization for GAMM's
+\citep{R2BayesX:Scheipl:2011}.
 
 In the developing process of package \pkg{R2BayesX} we first considered how to connect \pkg{BayesX}
 and \proglang{R} most appropriately. Because \pkg{BayesX} does not have an application programming
