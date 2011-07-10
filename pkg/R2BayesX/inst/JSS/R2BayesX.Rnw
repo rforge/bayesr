@@ -353,24 +353,10 @@ A thorough introduction into the regression models supported by the program is a
 
 \section[Implementation in R]{Implementation in \proglang{R}} \label{sec:implementation}
 
-The design of the interface  attempts to concern the following major issues: First, the interfacing
-function calls needed to be as practical as possible and oriented on \proglang{R}'s standards for
+The design of the interface  attempts to address the following major issues: First, the interfacing
+function calls should be as practical as possible and oriented on \proglang{R}'s standards for
 regression model fitting functions, and secondly, to provide a set of functions and methods for a
-convenient representation of fitted model objects, that would enhance the usability of \pkg{BayesX}. 
-
-In \proglang{R}, several packages for semiparametric regression models exist. The following gives a
-brief overview of some of the larger software projects that have been implemented. The probably
-best-known and also recommended package is \pkg{mgcv} \citep{R2BayesX:Wood:2006,
-R2BayesX:Wood:2011b, R2BayesX:Wood:2011}, which provides fast an stable algorithms for estimating
-GAM's based on GCV, REML and others. Vector generalized additive models (VGAM) for categorical
-responses are covered by package \pkg{VGAM} \citep{R2BayesX:Yee:1996, R2BayesX:Yee:2009}. Another
-comprehensive package for GAM's, accounting for responses that do not necessarily follow the 
-exponential family and may exhibit heterogeneity, is \pkg{gamlss}
-\citep{R2BayesX:Rigby+Stasinopoulos:2005}. A package based on mixed model technologies is
-\pkg{SemiPar} \citep{R2BayesX:Ruppert+Wand+Carrol:2003, R2BayesX:Wand:2010} and its dependent
-version for adaptive P-splines \pkg{AdaptFit} \citep{R2BayesX:Krivobokova}. The package
-\pkg{spikeSlabGAM} applies Bayesian variable selection, model choice and regularization for GAMM's
-\citep{R2BayesX:Scheipl:2011}.
+convenient representation of fitted model objects, that would enhance the usability of \pkg{BayesX}.
 
 In the developing process of package \pkg{R2BayesX} we first considered how to connect \pkg{BayesX}
 and \proglang{R} most appropriately. Because \pkg{BayesX} does not have an application programming
@@ -378,54 +364,77 @@ interface (API), amongst others, embedding the sources in an \proglang{R} packag
 difficult since the development status of the project is very advanced. The effort of writing and
 reading data is comparatively small to the processing time needed for estimation of STAR models
 with \pkg{BayesX}. Therefore, we decided to build an interface that primarily sends input program
-files to the command-line binary version of \pkg{BayesX} and reads the output files back into
-\proglang{R}. 
+files to the command-line binary version of \pkg{BayesX} and reads the returned output files back
+into \proglang{R}.  
+
+We also looked for existing \proglang{R} implementations to get an overview of best practices for
+software designs including GAM's. The following gives a short summary of some of the larger
+projects that have added to CRAN. One of the first implementations of GAM's in \proglang{R} is the
+\pkg{gam} package \citep{R2BayesX:Hastie+Tibshirani:1990, R2BayesX:Hastie:2011}. The package is
+supporting local regression and smoothing splines in combination of a backfitting algorithm and is
+actually a version of the \proglang{S}-Plus routines for GAM's. The probably best-known and also
+recommended package is \pkg{mgcv} \citep{R2BayesX:Wood:2006,
+R2BayesX:Wood:2011b, R2BayesX:Wood:2011}, which provides fast an stable algorithms for estimating
+GAM's based on GCV, REML and others. Vector generalized additive models (VGAM,
+\citealp{R2BayesX:Yee:1996}) for categorical responses are covered by package \pkg{VGAM}
+\citep{R2BayesX:Yee:2009}. Another comprehensive package for GAM's, accounting for responses that do
+not necessarily follow the exponential family and may exhibit heterogeneity, is \pkg{gamlss}
+\citep{R2BayesX:Rigby+Stasinopoulos:2005, R2BayesX:Stasinopoulos:Rigby:2007}. A package based on
+mixed model technologies is \pkg{SemiPar} \citep{R2BayesX:Ruppert+Wand+Carrol:2003,
+R2BayesX:Wand:2010} and its dependent version for adaptive splines \pkg{AdaptFit}
+\citep{R2BayesX:Krivobokova}. The package \pkg{spikeSlabGAM} applies Bayesian variable selection,
+model choice and regularization for GAMM's \citep{R2BayesX:Scheipl:2011}.
 
 Within \proglang{R}, regression models are most conveniently specified using its formula language.
 By reviewing the above mentioned packages for GAM's, we searched for existing structures that on the
 hand could support a translation method for \proglang{R} commands to \pkg{BayesX} interpretable
 syntax, and on the other, functionality that is already well established, such that applying
 \pkg{R2BayesX} only requires little additional effort for the common \proglang{R} user.
-Interestingly, most of the packages use different standards for incorporating additive terms. The
-most flexible project seems to be package \pkg{mgcv}. Besides the implemented smooth terms,
-additional types may be added by the user via the model term constructor function \fct{s}. Function
-\fct{s} does not evaluate design or penalty matrices, it returns a smooth term definition object of
-class \code{"xx.smooth.spec"}, where \code{"xx"} may be specified by the user. To set up a model
-with a user defined smooth, a method for the generic function \fct{smooth.construct}, that returns a
-design matrix etc., needs to be supplied. Since implementation of additional model terms is also a
-concern for \pkg{R2BayesX}, we adopted the functionality of \fct{s} and developed methods for a new
-generic function \fct{bayesx.construct}, that returns the required command for a particular smooth
-term in \pkg{BayesX}. Given an \proglang{R} model formula, the specified terms are translated one
-after another and finally merged into a complete program which may be send to \pkg{BayesX}. To give
-an example, we generate a call to function \fct{s} with some covariate \code{x} specifying a
-P-spline term and return the \pkg{BayesX} command with
+Interestingly, most of the packages use different standards for incorporating additive
+(smooth/special) terms in model formulas and the model frame building process, while a popular name
+convention for a model term constructor function is ``\code{s}'', as it is used in package
+\pkg{gam}, \pkg{mgcv} and \pkg{VGAM}. However, the implementations are again more or less different
+from each other, i.e.\ loading packages simultaneously will result in conflicts. The most flexible
+project seems to be package \pkg{mgcv}. Here, similar to package \pkg{gam} and \pkg{VGAM}, function
+\fct{s} does not evaluate design or penalty matrices, but it returns a smooth term definition object
+of class \code{"xx.smooth.spec"}, where \code{"xx"} may be specified by the user. To set up a model
+with a user defined smooth, a method for the \proglang{S}3 generic function \fct{smooth.construct},
+that returns a design matrix etc., needs to be supplied. Since implementation of additional model
+terms is also a concern for \pkg{R2BayesX} and function \fct{s} is a quite parsimonious solution, we
+adopted its functionality and developed methods for a new generic function \fct{bayesx.construct},
+that returns the required command for a particular smooth term in \pkg{BayesX}. To give an example,
+we generate a call to function \fct{s} with some covariate \code{x} specifying a P-spline term and
+return the \pkg{BayesX} command with
 <<implementation-bayesx.construct, echo=TRUE, eval=TRUE>>=
 bayesx.construct(s(x, bs = "ps"))
 @
-Next to the integration of function \fct{s}, a more \pkg{BayesX} alike model term constructor
-function, that accounts for specific defaults and additional arguments, and is therefore seen as the
-main constructor function of the package, has been implemented. The function simply interfaces
+Given an \proglang{R} model formula, the specified terms are translated one after another and
+finally merged into a complete program which may be send to \pkg{BayesX}. Next to the integration of
+function \fct{s}, a more \pkg{BayesX} alike model term constructor function, that accounts for
+specific defaults and additional arguments, and is therefore seen as the main constructor function
+of the package, has been implemented. To avoid package conflicts the new function simply interfaces
 function \fct{s}. Moreover, a special constructor function for random effect terms is provided. See
 Section~\ref{subsec:addterms} for a detailed description.
 
-The final program file is then generated by first applying function \fct{parse.bayesx.input} on the
+The sequence of functions that are consecutively called using the interface is the following: A
+final program file is generated by first applying function \fct{parse.bayesx.input} on the
 \proglang{R} input parameters, including the model \code{formula}, \code{data}, etc. The returned
-object is further processed by function \fct{write.bayesx.input}, utilizing the methods described
-above, as well as setting up the necessary data files (folders) to be used with \pkg{BayesX}.
-Afterwards, function \fct{run.bayesx} executes the program through a function call to function
-\fct{system}. The output files returned by the binary are imported back into \proglang{R} using
-function \fct{read.bayesx.output}. Hence, it is also possible to run and read back already existing
-\pkg{BayesX} program and output files, see Section~\ref{sec:addoptions} and the \pkg{R2BayesX}
-manuals for a detailed description. The object returned by function \fct{read.bayesx.output} is a
-list of class \code{"bayesx"}, wherefore all of the described functions and methods in
-Table~\ref{tab:funmethods} may be applied. The returned fitted model term objects are also assigned
-with suitable classes and have plotting methods, where particular effort has been raised on the
-development of easy to use map effect plots using color legends, see also
+object is then further processed with function \fct{write.bayesx.input}, utilizing the methods
+described above, as well as setting up the necessary data files (folders) to be used with
+\pkg{BayesX}. Afterwards, function \fct{run.bayesx} executes the program through a call to function
+\fct{system}. The output files returned by the binary are imported into \proglang{R} using function
+\fct{read.bayesx.output}. Hence, it is also possible to run and read already existing \pkg{BayesX}
+program and output files, see Section~\ref{sec:addoptions} and the \pkg{R2BayesX} manuals for a
+detailed description. The object returned by function \fct{read.bayesx.output} is a list of class
+\code{"bayesx"}, wherefore a set of base \proglang{R} functions and methods described in
+Table~\ref{tab:funmethods}, amongst others, is available. The returned fitted model term objects are
+also assigned with suitable classes and have plotting methods. Particular effort has been raised on
+the development of easy to use map effect plots using color legends, see also
 Section~\ref{subsec:processing} and Section~\ref{sec:illustrations}.
 
 Functions \fct{parse.bayesx.input}, \fct{write.bayesx.input}, \fct{run.bayesx} and \\
 \fct{read.bayesx.output} are combined in the front end main model fitting function \fct{bayesx}
-presented in the next section.
+presented in Section~\ref{subsec:processing}.
 
 
 \section[User interface]{User interface} \label{sec:userinterface}
@@ -1525,10 +1534,9 @@ summary(zmsccb)
 It is also possible to obtain unconditional confidence bands by setting \code{CI = "MCMCbootstrap"},
 which additionally considers the uncertainty due to model selection.
 
+
 % \section{Summary}\label{sec:conclusion}
-
-
-\section*{Acknowledgments}
+% \section*{Acknowledgments}
 
 
 \nocite{R2BayesX:Kneib+Heinzl+Brezger:2011}

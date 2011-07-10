@@ -11,12 +11,12 @@ function(object, ..., k)
     Call <- match.call()
     Call$k <- NULL
     val <- data.frame(df = extract.model.diagnostic(object, 1L:length(object), "df", FALSE), 
-      AIC = val)
+      BIC = val)
     row.names(val) <- as.character(Call[-1L])
   } else {
     if(length(val) > 1L) {
       val <- data.frame(df = extract.model.diagnostic(object, 1L:length(object), "df", FALSE), 
-        AIC = val)
+        BIC = val)
       rownames(val) <- names(object)
     }
   }
