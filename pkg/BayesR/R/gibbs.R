@@ -1026,7 +1026,6 @@ gibbs <- function(formula, data, weights, family = "gaussian", iter = 1200, burn
 						else
 							{
 							help <- 1/(1+lambd*tildeZmu[[k]][[j]]$s)
-
 							mutmp <- help*crossprod(tildeZmu[[k]][[j]]$tildeZ,r[ind[[k]][[j]]]) 
 							draws <- rnorm(dPM[[k]][j],mutmp,(help*sigma2)^0.5)
 							sums <- sum(draws^2*tildeZmu[[k]][[j]]$s)
@@ -1056,9 +1055,7 @@ gibbs <- function(formula, data, weights, family = "gaussian", iter = 1200, burn
 							#draws <- rtr(Sigma2M,draws)
 							fpsM[[k]][[j]] <- fpsM[[k]][[j]] - mean(fpsM[[k]][[j]])
 							}
-
 						fM[ind[[k]][[j]],k] <- fpsM[[k]][[j]]
-
 						# Storing
 						if(i%in%thinsteps)
 							{
