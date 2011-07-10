@@ -12,6 +12,7 @@ ctrdist,
 delete.NULLs,
 dev,
 dic,
+drawmap,
 extract.linear,
 extract.mult,
 extract,
@@ -43,8 +44,9 @@ spcprob,
 ste,
 tr,
 trans.design,
-sm.predict,
-lin.predict,
+tepredict,
+pspredict,
+mapredict,
 getcoefs,
 cpoint,
 rw,
@@ -67,7 +69,7 @@ ret.pal.colors,
 centroids
 )
 
-importFrom("splines", "spline.des", "splineDesign")
+importFrom(splines, spline.des, splineDesign)
 
 S3method(plot,gibbs)
 S3method(plot,sm.gibbs)
@@ -86,4 +88,4 @@ S3method(print,linear.gibbs)
 S3method(print,gibbsfit)
 S3method(fitted,gibbs)
 
-useDynLib("BayesR")
+useDynLib(BayesR)
