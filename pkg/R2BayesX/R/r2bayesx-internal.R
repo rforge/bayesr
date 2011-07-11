@@ -1,9 +1,19 @@
 .print_bayesx <-
 function(x, ...)
 {
-  cat("Call:\n")
-  print(x$call)
-  cat("\n")
+  if(!is.null(x$call)) {
+    cat("Call:\n")
+    print(x$call)
+    cat("\n")
+  } else {
+    if(!is.null(x$model.fit$formula)) {
+      cat("Formula:\n")
+      if(is.character(x$model.fit$formula))
+        cat(x$model.fit$formula, "\n")
+      else
+        print(x$model.fit$formula)
+    }
+  }
   if(!is.null(x$model.fit)) {
     mfn <- names(x$model.fit)
     mfn <- mfn[mfn != "formula" & mfn != "order" & 
@@ -66,7 +76,10 @@ function(x, digits = max(3L, getOption("digits") - 3L),
   } else {
     if(!is.null(x$model.fit$formula)) {
       cat("Formula:\n")
-      print(as.formula(x$model.fit$formula), showEnv = FALSE)
+      if(is.character(x$model.fit$formula))
+        cat(x$model.fit$formula, "\n")
+      else
+        print(x$model.fit$formula, showEnv = FALSE)
     }
   }
   liner <- ""

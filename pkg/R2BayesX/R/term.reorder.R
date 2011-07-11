@@ -26,7 +26,7 @@ function(x, info)
             label2 <- "not.in.labels"
           if(term$term == attr(x[[j]], "specs")$label || term$term == label2) {
             if(!is.null(term$map)) {
-              if(grep(term$map, ls(envir = globalenv())))
+              if(length(grep(term$map, ls(envir = globalenv()))))
                 attr(x[[j]], "map.name") <- term$map
             }
             rval[[term$pos]] <- x[[j]]
@@ -44,7 +44,7 @@ function(x, info)
         for(j in 1L:nx) {
           if(attr(x[[j]], "specs")$label %in% tnames) {
             if(!is.null(term$map)) {
-              if(grep(term$map, ls(envir = globalenv())))
+              if(length(grep(term$map, ls(envir = globalenv()))))
                 attr(x[[j]], "map.name") <- term$map
             }
             fc[[idf]] <- x[[j]]

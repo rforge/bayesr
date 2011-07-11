@@ -1,7 +1,20 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-b <- read.bayesx.output("/tmp/RtmptANWAj/bayesx")
+
+data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
+
+f <- stunting ~ memployment + urban + gender +
+  sx(meducation, bs = "factor") + sx(mbmi, dfstart = 2) + sx(agechild, dfstart = 2) +
+  sx(district, bs = "mrf", map = ZambiaBnd, dfstart = 5) + r(district, xt = list(dfstart = 5))
+
+zms <- bayesx(f, family = "gaussian", method = "STEP",
+  algorithm = "cdescent1", startmodel = "userdefined",
+  seed = 123, data = ZambiaNutrition)
+
+
+
+b <- read.bayesx.output("/host/paphstructadd/india/resultsprobit/probit3b")
 
 
 f <- stunt ~ -1 + c_sex + residence0 + residence1 + residence2 + precare + bornhome + fhh +

@@ -38,7 +38,8 @@ function(dir, files, data, response, eta, model.name, minfo, info)
           if(grepl("_effect_of_", res, fixed = TRUE)) {
             res2 <- strsplit(res, "_effect_of_")[[1L]]
             res2 <- gsub(".res", "", res2[length(res2)], fixed = TRUE)
-            res2 <- gsub(xnam, "", res2, fixed = TRUE)
+            for(gsx in xnam)
+              res2 <- gsub(gsx, "", res2, fixed = TRUE)
             if(length(res2 <- splitme(res2))) {
               vx <- resplit(res2[1L:(length(res2) - 1L)])
             }

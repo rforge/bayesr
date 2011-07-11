@@ -9,7 +9,7 @@
 
 \usage{
 run.bayesx(dir, prg.name = "bayesx.estim.input.prg", 
-  verbose = FALSE, bin = getOption("bayesx.bin"))
+  verbose = TRUE, bin = getOption("bayesx.bin"))
 }
 
 \arguments{

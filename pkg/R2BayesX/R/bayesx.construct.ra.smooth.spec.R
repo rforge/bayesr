@@ -6,6 +6,8 @@ function(object, dir, prg, data)
     term <- paste(term, "(random", sep = "")
   else
     term <- paste(term, "(hrandom", sep = "")
+cat("yesss!\n")
+print(object)
   term <- paste(do.xt(term, object, NULL), ")", sep = "")
   if(object$by != "NA")
     term <- make_by(term, object, data)

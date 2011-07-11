@@ -93,7 +93,9 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL,
       }
       f <- object$oformula
       save(f, file = rdafile)
-      info <- paste("list(formula=\'", as.expression(f), "\',", sep = "")
+      f <- paste(f[[2L]], " ~ ", paste(attr(terms(f),
+        "term.labels"), collapse= " + "), sep = "") 
+      info <- paste("list(formula=\'", f, "\',", sep = "")
       if(!is.null(object$hlevel))
         object$method <- "HMCMC"
       info <- paste(info, "method=\'", object$method, "\',", sep = "")
