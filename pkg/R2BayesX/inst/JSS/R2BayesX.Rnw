@@ -136,7 +136,7 @@ respectively, as well as the functions \fct{s} and \fct{te} from the \pkg{mgcv} 
 \proglang{R} syntax into \pkg{BayesX} interpretable commands (see Section~\ref{subsec:addterms}).
 
 The reminder of this paper is as follows. The next section gives a first example of a common 
-\proglang{R} session using \pkg{R2BayesX} on a dataset on childhood malnutrition in Zambia.
+\proglang{R} session applying \pkg{R2BayesX} on a dataset on childhood malnutrition in Zambia.
 Section~\ref{sec:model} briefly discusses the methodological background of regression models with a
 structured additive predictor, before a description on implementation details and the user interface
 is given in Section~\ref{sec:implementation} and \ref{sec:userinterface} respectively. In
