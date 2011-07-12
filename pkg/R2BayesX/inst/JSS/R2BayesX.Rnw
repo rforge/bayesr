@@ -1619,7 +1619,6 @@ relating to the version of the installed GNU compiler or the location of the rea
 be necessary. For MAC OS, versions of an adjusted makefile and the main function that have been used
 for a sucessful compilation may be found at the FAQ site
 (\url{http://www.stat.uni-muenchen.de/~bayesx/bayesxfaq.html}).
-\end{appendix}
 
 \subsection[Editing R's profile startup site]{Editing R's profile startup site}
 \label{appendix:linking}
@@ -1645,7 +1644,6 @@ depending on the installation location of the binary.
 Furthermore, another possibility is to add the installation directory of the binary to the
 environment PATH variable of the operating system. Both options will automatically link the binary
 with \proglang{R} for the upcoming sessions.
-
 
 \subsection[Most important arguments used within function plot.bayesx()]{Most important arguments
   used within function \fct{plot.bayesx}}
@@ -1693,6 +1691,6 @@ Argument & Description \\ \hline
 arguments that are passed to function \fct{plot2d}, \fct{plot3d}, \fct{plotmap} and
 \fct{colorlegend} respectively.}
 \end{table}
-
+\end{appendix}
 
 \end{document}
