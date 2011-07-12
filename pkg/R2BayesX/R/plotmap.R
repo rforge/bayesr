@@ -54,7 +54,7 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
       colors <- rep(colors, length.out = n)
     }
   }
-  if(legend && !is.null(args$pos) && args$pos == "right") {
+  if(legend && !is.null(args$pos) && args$pos[1L] == "right") {
     par.orig <- par(c("mar", "las", "mfrow"))
     mar.orig <- mar <- par.orig$mar
     mar[4L] <- 0.1
