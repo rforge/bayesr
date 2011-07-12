@@ -70,22 +70,22 @@ function(object)
     }
   }
   if(!is.h) {
-    cat(paste("% usefile ", object$outfile, "/", prg.file, "\n", sep = ""), 
+    cat(paste("% usefile ", object$outfile, "/", prg.file, "\n\n", sep = ""), 
       file = prg.file, append = FALSE)
-    cat(paste("logopen using ", object$outfile, "/", prg.file, ".log", "\n", sep = ""),
+    cat(paste("logopen using ", object$outfile, "/", prg.file, ".log", "\n\n", sep = ""),
       file = prg.file, append = TRUE)
     if(object$method == "MCMC") {
       if(is.null(object$mcmcreg) && object$first && !object$hmcmc) {
-        cat("bayesreg b\n", file = prg.file, append = TRUE)
+        cat("bayesreg b\n\n", file = prg.file, append = TRUE)
       }
       if((!is.null(object$mcmcreg) && object$first) || object$hmcmc) {
-        cat("mcmcreg b\n", file = prg.file, append = TRUE)
+        cat("mcmcreg b\n\n", file = prg.file, append = TRUE)
       }
     }
     if(object$method == "REML")
-      cat("remlreg b\n", file = prg.file, append = TRUE)
+      cat("remlreg b\n\n", file = prg.file, append = TRUE)
     if(object$method == "STEP")
-      cat("stepwisereg b\n", file = prg.file, append = TRUE)   
+      cat("stepwisereg b\n\n", file = prg.file, append = TRUE)   
   }
 
   ## hierarchical models set here 

@@ -64,8 +64,9 @@ function(object, file = NULL, device = NULL, ...)
         xlab <- specs$term
         ylab <- specs$label
         if(dode) {
-          cat(dcall, "file = \"", paste(dir, "/model-", i, "-term-", specs$label,"\"", sep = ""), 
+          cat(dcall, "width = 5, height = 4, file = \"", paste(dir, "/model-", i, "-term-", specs$label,"\"", sep = ""), 
             ")\n", sep = "", file = script)
+          cat("par(mar = c(4.1, 4.1, 0.1, 1.1))\n", file = script)
         }
         if(inherits(object[[i]]$effects[[k]], c("sm.bayesx", "linear.bayesx")) && specs$dim < 2L) {
           cat("plot(", on, ", model = ", i, ", term = ", "\"", specs$label, 
@@ -76,6 +77,19 @@ function(object, file = NULL, device = NULL, ...)
         }
         if(dode)
           cat("graphics.off()\n", file = script)
+
+        ## now for maps
+        if(!is.null(map.name <- attr(object[[i]]$effects[[k]], "map.name"))) {
+          if(dode) {
+            cat(dcall, "width = 5, height = 4, file = \"", paste(dir, "/model-", i, "-term-", specs$label,"\"", sep = ""), 
+              ")\n", sep = "", file = script)
+            cat("par(mar = c(0, 0, 0, 0))\n", file = script)
+          }
+          cat("plot(", on, ", model = ", i, ", term = ", "\"", specs$label, "\", map = ",
+            map.name,")\n", sep = "", file = script)
+          if(dode)
+            cat("graphics.off()\n", file = script)
+        }
         if(!is.null(attr(object[[i]]$effects[[k]], "sample")))
           ccheck <- TRUE
         if(!is.null(attr(object[[i]]$effects[[k]], "variance.sample")))

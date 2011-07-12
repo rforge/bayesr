@@ -75,12 +75,12 @@ function(response, object, prg.file, data.file, thismodel, terms.specs)
     }
   fullformula <- paste(fullformula, "using", dset)
   cat("dataset", dset, "\n", file = prg.file, append = TRUE)
-  cat(paste(dset, ".infile using ", data.file, "\n", sep = ""), file = prg.file, append = TRUE)
-  cat(paste("b.outfile = ", object$outfile, "/", object$model.name, thismodel, "\n", sep = ""), 
+  cat(paste(dset, ".infile using ", data.file, "\n\n", sep = ""), file = prg.file, append = TRUE)
+  cat(paste("b.outfile = ", object$outfile, "/", object$model.name, thismodel, "\n\n", sep = ""), 
     file = prg.file, append = TRUE)
-  cat(fullformula, "\n", file = prg.file, append = TRUE)
+  cat(fullformula, "\n\n", file = prg.file, append = TRUE)
   if(object$method == "MCMC" && object$first)
-    cat("b.getsample\n", file = prg.file, append = TRUE)
+    cat("b.getsample\n\n", file = prg.file, append = TRUE)
   bayesx.prg <- paste(paste(readLines(paste(object$outfile, "/", prg.file, sep=""), n = -1L), 
     collapse = " \n"), " \n", sep="")
 

@@ -1,83 +1,62 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
+script <- getscript(b1, device = pdf)
 
-data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
-
-f <- stunting ~ memployment + urban + gender +
-  sx(meducation, bs = "factor") + sx(mbmi, dfstart = 2) + sx(agechild, dfstart = 2) +
-  sx(district, bs = "mrf", map = ZambiaBnd, dfstart = 5) + r(district, xt = list(dfstart = 5))
-
-zms <- bayesx(f, family = "gaussian", method = "STEP",
-  algorithm = "cdescent1", startmodel = "userdefined",
-  seed = 123, data = ZambiaNutrition)
-
-
-
-b <- read.bayesx.output("/host/paphstructadd/india/resultsprobit/probit3b")
-
-
-f <- stunt ~ -1 + c_sex + residence0 + residence1 + residence2 + precare + bornhome + fhh +
-  s(age_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-  s(age_c,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-  s(bmi_mo_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-  s(bmi_mo_c,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-  s(biage_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) + 
-  s(biage_c,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) + 
-  s(vac_numb_c,k=8,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) + 
-  s(vac_numb_c,k=8,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) + 
-  s(bi_pre_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-  s(bi_pre_c,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-  s(ai_distdiff,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-  s(ai_distdiff,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-  s(educm_y_distdiff,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-  s(educm_y_distdiff,k=12,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-  s(hhs_c,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-  s(hhs_c,k=12,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-  s(b_order_c,k=13,m=c(1,2),bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-  s(b_order_c,k=13,m=c(1,2),by=c_sex,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf"))
-
-b <- bayesx(f, method = "HMCMC", iter = 1200, burnin = 200, step = 2, 
-  seed = 1234, family = "binomial_probit", data = d)
-
-fit_s_probit3<-bayesx(stunt ~ -1+c_sex + residence0 + residence1 + residence2 + precare + 
+fit_s_probit3b<-bayesx(stunt ~ -1+c_sex + residence0 + residence1 + residence2 + precare + 
 bornhome + fhh +
-s(age_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-s(age_c,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-s(bmi_mo_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-s(bmi_mo_c,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-s(biage_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) + 
-s(biage_c,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) + 
-s(vac_numb_c,k=8,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) + 
-s(vac_numb_c,k=8,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) + 
-s(bi_pre_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-s(bi_pre_c,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-s(ai_distdiff,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-s(ai_distdiff,k=22,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-s(educm_y_distdiff,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-s(educm_y_distdiff,k=12,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-s(hhs_c,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-s(hhs_c,k=12,bs="ps",by=c_sex,xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-s(b_order_c,k=13,m=c(1,2),bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
-s(b_order_c,k=13,m=c(1,2),by=c_sex,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) +
+sx(age_c,lambda=1000,binning=50,centermethod="meanf") +
+sx(age_c,by=c_sex,lambda=1000,binning=50,centermethod="meanf") +
+sx(bmi_mo_c,lambda=1000,binning=50,centermethod="meanf") +
+sx(bmi_mo_c,by=c_sex,lambda=1000,binning=50,centermethod="meanf") +
+sx(biage_c,lambda=1000,binning=50,centermethod="meanf") + 
+sx(biage_c,by=c_sex,lambda=1000,binning=50,centermethod="meanf") + 
+sx(vac_numb_c,nrknots=6,lambda=1000,binning=50,centermethod="meanf") + 
+sx(vac_numb_c,nrknots=6,by=c_sex,lambda=1000,binning=50,centermethod="meanf") + 
+sx(bi_pre_c,lambda=1000,binning=50,centermethod="meanf") +
+sx(bi_pre_c,by=c_sex,lambda=1000,binning=50,centermethod="meanf") +
+sx(ai_distdiff,lambda=1000,binning=50,centermethod="meanf") +
+sx(ai_distdiff,by=c_sex,lambda=1000,binning=50,centermethod="meanf") +
+sx(educm_y_distdiff,nrknots=10,lambda=1000,binning=50,centermethod="meanf") +
+sx(educm_y_distdiff,nrknots=10,by=c_sex,lambda=1000,binning=50,centermethod="meanf") +
+sx(hhs_c,nrknots=10,lambda=1000,binning=50,centermethod="meanf") +
+sx(hhs_c,nrknots=10,by=c_sex,lambda=1000,binning=50,centermethod="meanf") +
+sx(b_order_c,nrknots=13,degree=1,lambda=1000,binning=50,centermethod="meanf") +
+sx(b_order_c,nrknots=13,degree=1,by=c_sex,lambda=1000,binning=50,centermethod="meanf") +
 
-r(distH, ~ -1 + s(distH,bs="mrf",xt=list(map=mapindia,lambda=1000,centermethod="meanf")) +
-s(dist_ai_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf"))+
-s(dist_eduyears_c,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) 
-+
-r(region~s(gdpcap_c,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")),data=dregion)
+r(distH, ~ -1 + sx(distH,bs="geokriging",map=mapindia,update="orthogonal",nrknots=50) +
+sx(dist_ai_c,lambda=1000,binning=50,centermethod="meanf")+
+sx(dist_eduyears_c,nrknots=10,lambda=1000,binning=50,centermethod="meanf") +
+r(region~sx(gdpcap_c,nrknots=10,lambda=1000,binning=50,centermethod="meanf"),data=dregion)
 ,data=ddist) +
 
-r(distH2, ~ -1 + s(distH2,bs="mrf",xt=list(map=mapindia,lambda=1000,centermethod="meanf")) +
-s(dist_ai2_c,k=22,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf"))+
-s(dist_eduyears2_c,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")) 
+r(distH2, ~ -1 + sx(distH2,bs="geokriging",map=mapindia,update="orthogonal",nrknots=50) +
+sx(dist_ai2_c,lambda=1000,binning=50,centermethod="meanf")+
+sx(dist_eduyears2_c,nrknots=10,lambda=1000,binning=50,centermethod="meanf") 
 +
-r(region2~-1+s(gdpcap2_c,k=12,bs="ps",xt=list(lambda=1000,binning=50,centermethod="meanf")),data=dregion),by=c_sex,
-,data=ddist)
-,data=d , verbose=T,method="HMCMC", iter=53000, step=50, burnin=3000, seed=1234, family="binomial_probit",
-outfile="tmp/probit",replace=T)
+r(region2 ~ -1 + sx(gdpcap2_c,nrknots=10,lambda=1000,binning=50,centermethod="meanf"), data=dregion), by=c_sex, data=ddist)
+
+,data=d ,method="HMCMC", iter=53000, step=50, burnin=3000, seed=1234, family="binomial_probit",
+outfile="~/tmp/stefan/probit3b",replace=T, verbose = FALSE)
 
 
+
+## graphics
+library(foreign)
+disttot<-read.dta("/home/c403129/tmp/distHcomplete.dta")
+postscript(file = "graph_kriging/disttot_unexplained_m.eps", height = 6, width = 6,
+  horizontal = FALSE)
+par(mar = c(0, 0, 0, 0))
+plotmap(map = mapindia, x = disttot$totalm, id = disttot$distH,
+  range = c(-0.75, 0.75), swap = TRUE, pos = "bottomright")
+graphics.off()
+
+postscript(file = "graph_kriging/disttot_unexplained_f.eps", 
+  height = 6, width = 6, horizontal = FALSE)
+par(mar = c(0, 0, 0, 0))
+plotmap(map=mapindia, x = disttot$totalf, id = disttot$distH,
+  range = c(-0.75, 0.75), swap = TRUE, pos = "bottomright")
+graphics.off()
 
 
 
@@ -278,8 +257,8 @@ dat1$y <- with(dat1, 1.5 + sin(x1) + re + cos(dat2$x2)[id] +
 ## with the intercept in the 
 ## 2nd stage
 system.time(b1 <- bayesx(y ~ -1 + s(x1, bs = "ps") + 
-  r(id, ~ -1 + s(x2 , bs = "ps") + r(id2, ~ 1 + s(x3, bs = "ps"), data = dat3), data = dat2), 
-  method = "HMCMC", data = dat1, iter = 3000, burnin = 1000, outfile = "~/tmp/bayesxH"))
+  r(id, ~ -1 + s(x2 , bs = "ps") + r(id2, ~ -1 + s(x3, bs = "ps"), data = dat3), data = dat2), 
+  method = "HMCMC", data = dat1, iter = 3000, burnin = 1000, outfile = "~/tmp/bayesxH", replace = TRUE))
 
 
 

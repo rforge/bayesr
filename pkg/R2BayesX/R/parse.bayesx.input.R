@@ -41,6 +41,8 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
           tl <- c(tl, tmp$by)
       }
     }
+    if(attr(terms(formula), "intercept") < 1L)
+      tl <- c(tl, "-1")
     formula <- as.formula(paste(as.character(formula[2L]), "~", paste(tl, collapse = "+")))
   }
   h.variables <- NULL
