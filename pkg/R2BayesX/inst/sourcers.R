@@ -1,7 +1,12 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "J:/c403/stat/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-script <- getscript(b1, device = pdf)
+im <- read.bayesx.output(file.path(dir, "paphstructadd/india/resultsprobit/probit3b"))
+
+
+
+
+
 
 fit_s_probit3b<-bayesx(stunt ~ -1+c_sex + residence0 + residence1 + residence2 + precare + 
 bornhome + fhh +

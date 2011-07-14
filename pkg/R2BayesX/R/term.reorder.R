@@ -83,7 +83,7 @@ function(x, info)
         nrval[[k]] <- x[[nterms[k]]]
         ntn <- c(ntn, nterms[k])
       }
-      names(nrval) <- ntn
+      try(names(nrval) <- ntn, silent = TRUE)
       rval <- c(rval, nrval)
     }
     for(k in 1:length(rval)) {
@@ -96,7 +96,10 @@ function(x, info)
       rval <- list(rval)
       names(rval) <- namrval
     }
-
+    for(k in 1:length(rval)) {
+      if(length(attr(rval[[k]], "specs")$label))
+        names(rval)[k] <- attr(rval[[k]], "specs")$label
+    }
     return(rval)
   } else {
     xnames <- names(x)
