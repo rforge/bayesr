@@ -45,7 +45,7 @@ dat <- data.frame(x = runif(n, -3, 3))
 dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
 
 ## estimate model
-b <- bayesx(y ~ s(x, bs = "ps"), data = dat)
+b <- bayesx(y ~ sx(x), data = dat)
 
 ## now see the prg-file
 bayesx_prgfile(b)

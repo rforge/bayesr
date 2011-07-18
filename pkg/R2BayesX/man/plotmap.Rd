@@ -180,7 +180,7 @@ dat$y <- with(dat, 1.5 + sp + rnorm(n, sd = 0.6))
 
 \dontrun{
 ## estimate model
-b <- bayesx(y ~ s(id, bs = "mrf", xt = list(map = MunichBnd)),
+b <- bayesx(y ~ sx(id, bs = "mrf", map = MunichBnd),
   method = "MCMC", data = dat)
 
 ## summary statistics

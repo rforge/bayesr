@@ -47,10 +47,10 @@ dat <- data.frame(x = runif(n, -3, 3))
 dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
 
 ## estimate model
-b <- bayesx(y ~ s(x, bs = "ps"), data = dat)
+b <- bayesx(y ~ sx(x), data = dat)
 
 ## extract samples for the P-spline
-sax <- samples(b, term = "s(x)")
+sax <- samples(b, term = "sx(x)")
 names(sax)
 
 ## plot coefficient samples
@@ -63,14 +63,15 @@ for(j in 1L:k)
 samples(b, term = "linear-samples")
 
 ## for acf, increase lag
-sax <- samples(b, term = "s(x)", acf = TRUE, lag.max = 200)
+sax <- samples(b, term = "sx(x)", acf = TRUE, lag.max = 200)
 names(sax)
-print(sax$x.Var)
+
 
 ## plot maximum autocorrelation 
 ## of all parameters
-sax <- samples(b, term = c("linear-samples", "var-samples", "s(x)"), 
+sax <- samples(b, term = c("linear-samples", "var-samples", "sx(x)"), 
   acf = TRUE, lag.max = 50)
+names(sax)
 matplot(y = apply(sax, 1, max), type = "h", 
   ylab = "ACF", xlab = "lag")
 }

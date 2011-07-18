@@ -20,6 +20,8 @@ bayesx.term.options(bs = "ps", method = "MCMC")
   \item{bs}{the term specification for which controlling parameters should be shown. Note,
     for random effects specified with function \code{\link{r}}, \code{bs = "random"} will display
     random effects optional arguments.}
+  \item{method}{for which method should additional arguments be shown, options are \code{"MCMC"},
+    \code{"REML"} and \code{"STEP"}.}
 }
 
 \details{

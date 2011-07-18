@@ -20,8 +20,7 @@ A data frame containing 1793 observations on 16 variables.
   \item{id:}{tree location identification number.}
   \item{year:}{year of census.}
   \item{defoliation:}{percentage of tree defoliation in three ordinal categories, 
-    0 == `defoliation < 12.5\%', 1 == `12.5\% <= defoliation < 50\%' and  
-    2 == `defoliation >= 50\%'}
+    `defoliation < 12.5\%', `12.5\% <= defoliation < 50\%' and  `defoliation >= 50\%'}
   \item{x:}{x-coordinate of the tree location.}
   \item{y:}{y-coordinate of the tree location.}
   \item{age:}{age of stands in years.}
@@ -30,9 +29,10 @@ A data frame containing 1793 observations on 16 variables.
   \item{elevation:}{elevation (meters above sea level).}
   \item{soil:}{soil layer depth in cm.}
   \item{ph:}{soil pH at 0-2cm depth.}
-  \item{moisture:}{soil moisture level with categories 1 == `moderately dry', 2 == `moderately
-     moist' and 3 == `moist or temporarily wet'.}
-  \item{alkali:}{proportion of base alkali-ions with categories 1 == `low' to 4 == `high'.}
+  \item{moisture:}{soil moisture level with categories `moderately dry', `moderately moist' and
+    `moist or temporarily wet'.}
+  \item{alkali:}{proportion of base alkali-ions with categories `very low', `low', `high' and
+    `very high'.}
   \item{humus:}{humus layer thickness in cm, categorical coded.}
   \item{stand:}{stand type with categories `deciduous' and `mixed'.}
   \item{fertilized:}{fertilization applied with categories `yes' and `no'.}
@@ -63,14 +63,13 @@ data("BeechBnd")
 
 fm <- bayesx(defoliation ~  stand + fertilized + 
   humus + moisture + alkali + ph + soil + 
-  s(age, bs = "ps") + s(inclination, bs = "ps") + 
-  s(canopy, bs = "ps") + s(year, bs = "ps") + 
-  s(elevation, bs = "ps"),
+  sx(age) + sx(inclination) + sx(canopy) +
+  sx(year) + sx(elevation),
   family = "cumlogit", method = "REML", data = ForestHealth)
 
 summary(fm)
-plot(fm, term = c("s(age)", "s(inclination)", 
-  "s(canopy)", "s(year)", "s(elevation)"))
+plot(fm, term = c("sx(age)", "sx(inclination)", 
+  "sx(canopy)", "sx(year)", "sx(elevation)"))
 }
 }
 

@@ -48,37 +48,30 @@ dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
 
 \dontrun{
 ## estimate model
-b <- bayesx(y ~ s(x, bs = "ps"), data = dat)
+b <- bayesx(y ~ sx(x), data = dat)
 summary(b)
 
 ## plot sampling path for
 ## the variance
-plot(b, term = "s(x)", which = "var-samples")
+plot(b, term = "sx(x)", which = "var-samples")
 
 ## plot sampling paths for 
 ## coefficients
-plot(b, term = "s(x)", which = "coef-samples")
+plot(b, term = "sx(x)", which = "coef-samples")
 
 ## plot maximum autocorrelation of
 ## all sampled parameters of term s(x)
-plot(b, term = "s(x)", which = "coef-samples", max.acf = TRUE)
+plot(b, term = "sx(x)", which = "coef-samples", max.acf = TRUE)
 
-## extract samples of term s(x)
-sax <- samples(b, term = "s(x)")
+## extract samples of term sx(x)
+sax <- as.matrix(samples(b, term = "sx(x)"))
 
 ## now use plotsamples
-plotsamples(sax$coef.samples, selected = "s(x)")
+plotsamples(sax, selected = "sx(x)")
 
 ## some variations
-plotsamples(sax$coef.samples, selected = "s(x)", acf = TRUE)
-plotsamples(sax$coef.samples, selected = "s(x)", acf = TRUE, lag.max = 200)
-
-## plot variance sampling path
-plotsamples(sax$variance.samples, selected = "s(x)", var = TRUE)
-
-## plot maximum autocorrelation of
-## all sampled parameters of term s(x)
-plotsamples(sax$coef.samples, selected = "s(x)", max.acf = TRUE)
+plotsamples(sax, selected = "sx(x)", acf = TRUE)
+plotsamples(sax, selected = "sx(x)", acf = TRUE, lag.max = 200)
 }
 }
 

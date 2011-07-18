@@ -44,7 +44,7 @@ dat <- data.frame(x = runif(n, -3, 3))
 dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
 
 ## estimate model
-b <- bayesx(y ~ s(x, bs = "ps"), data = dat, method = "MCMC")
+b <- bayesx(y ~ sx(x), data = dat, method = "MCMC")
 
 ## extract DIC
 DIC(b)

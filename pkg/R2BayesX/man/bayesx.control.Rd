@@ -212,8 +212,8 @@ dat$y <- with(dat, 10 + sin(x) + rnorm(n, sd = 0.6))
 
 ## estimate models with
 ## bayesx MCMC and REML
-b1 <- bayesx(y ~ s(x, bs = "ps"), method = "MCMC", data = dat)
-b2 <- bayesx(y ~ s(x, bs = "ps"), method = "REML", data = dat)
+b1 <- bayesx(y ~ sx(x), method = "MCMC", data = dat)
+b2 <- bayesx(y ~ sx(x), method = "REML", data = dat)
 
 ## compare reported output
 summary(b1)

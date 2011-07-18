@@ -35,46 +35,54 @@ sx(x, z = NULL, bs = "ps", by = NA, ...)
 \details{
   The following term types may be specified using argument \code{bs}:
   \itemize{
-    \item \code{"lasso"}, \code{"nigmix"}, \code{"ridge"}: shrinkage of fixed effects, defines a 
-      shrinkage-prior for the corresponding parameters \eqn{\gamma_j}, \eqn{j = 1, \ldots, q}, 
-      \eqn{q \geq 1} of the linear effects \eqn{x_1, \ldots, x_q}. There are three priors possible: 
-      ridge-, lasso- and Normal Mixture of inverse Gamma (NMIG)-prior. 
-    \item \code{"bl"}, \code{"baseline"}: nonlinear baseline effect in hazard regression or
-      multi-state models, defines a P-spline with second order random walk penalty for the
-      parameters of the spline for the log-baseline effect \eqn{log(\lambda(time))}.
-    \item \code{"kr"}, \code{"kriging"}: kriging with stationary Gaussian random fields. 
-    \item \code{"gk"}, \code{"geokriging"}: geokriging with stationary Gaussian random fields:
-      estimates a stationary Gaussian random field based on the centroids of a map object provided
-      in boundary format, see function \code{\link[BayesX]{read.bnd}}, within the \code{xt} argument
-      of function \code{\link[mgcv]{s}}, e.g. \code{xt = list(map = MapBnd)}. 
-    \item \code{"gs"}, \code{"geosplines"}: geosplines based on two-dimensional P-splines with first
-      order random walk penalty, defines a two-dimensional P-spline for the spatial covariate region
-      with a two-dimensional first order random walk penalty for the parameters of the spline.
-      Estimation is based on the coordinates of the centroids of the regions provided by a map
-      object in in boundary format, see function \code{\link[BayesX]{read.bnd}}, within the
-      \code{xt} argument of function \code{\link[mgcv]{s}}, e.g. \code{xt = list(map = MapBnd)}. 
-    \item \code{"mrf"}, \code{"spatial"}: Markov random fields: defines a Markov random field prior
-      for a spatial covariate, where geographical informations are provided by a map object in
-      boundary or graph file format, see function \code{\link[BayesX]{read.bnd}} and
-      \code{\link[BayesX]{read.gra}}, within the \code{xt} argument of function
-      \code{\link[mgcv]{s}}, e.g. \code{xt = list(map = MapBndorGra)}. 
-    \item \code{"ps"}, \code{"psplinerw1"}, \code{"psplinerw2"}: P-spline with first or second order
-      difference penalty. 
-    \item \code{"rw1"}, \code{"rw2"}: zero degree P-splines, defines a zero degree P-spline with 
-      first or second order difference penalty. A zero degree P-spline typically estimates for every 
-      distinct covariate value in the data set a separate parameter. Usually there is no reason to 
-      prefer zero degree P-splines over higher order P-splines. An exception are ordinal covariates 
-      or continuous covariates with only a small number of different values. For ordinal covariates 
-      higher order P-splines are not meaningful while zero degree P-splines might be an alternative 
-      to modeling nonlinear relationships via a dummy approach with completely unrestricted 
-      regression parameters.
+    \item \code{"rw1"}, \code{"rw2"}: zero degree P-splines: defines a zero degree P-spline with first or
+                            second order difference penalty. A zero degree P-spline typically
+                            estimates for every distinct covariate value in the dataset a separate
+                            parameter. Usually there is no reason to prefer zero degree P-splines
+                            over higher order P-splines. An exception are ordinal covariates or
+                            continuous covariates with only a small number of different values.
+                            For ordinal covariates higher order P-splines are not meaningful while
+                            zero degree P-splines might be an alternative to modeling nonlinear
+                            relationships via a dummy approach with completely unrestricted
+                            regression parameters. 
     \item \code{"season"}: seasonal effect of a time scale. 
-    \item \code{"te"}, \code{"pspline2dimrw1"}: defines a two-dimensional P-spline based on the
-      tensor product of one-dimensional P-splines with a two-dimensional first order random walk
-      penalty for the parameters of the spline.
-    \item \code{"factor"}: special BayesX specifier for \code{\link[base]{factor}}s, especially 
-      meaningful if \code{method = "STEP"} in \code{\link{bayesx}}, since the factor term is then 
-      treated as a full term, which is either included or removed from the model.
+    \item \code{"ps"}, \code{"psplinerw1"}, \code{"psplinerw2"}: P-spline with first or second order 
+                                                        difference penalty. 
+    \item \code{"te"}, \code{"pspline2dimrw1"}: defines a two-dimensional P-spline based on the tensor 
+              product of one-dimensional P-splines with a two-dimensional first order random walk 
+              penalty for the parameters of the spline. 
+    \item \code{"kr"}, \code{"kriging"}: kriging with stationary Gaussian random fields.  
+    \item \code{"gk"}, \code{"geokriging"}: geokriging with stationary Gaussian random fields: estimates a 
+              stationary Gaussian random field based on the centroids of a map object provided in 
+              boundary format (see function \code{\link{read.bnd}} and \code{\link{shp2bnd}}) as an additional
+              argument named \code{map} within function \code{\link{sx}}, or supplied within argument
+              \code{xt} when using function \code{\link[mgcv]{s}}, e.g.\ \code{xt = list(map = MapBnd)}. 
+    \item \code{"gs"}, \code{"geospline"}: geosplines based on two-dimensional P-splines with first order 
+              random walk penalty: defines a two-dimensional P-spline for the spatial covariate 
+              region with a two-dimensional first order random walk penalty for the parameters of 
+              the spline. Estimation is based on the coordinates of the centroids of the regions 
+              of a map object provided in boundary format (see function \code{\link{read.bnd}} and
+              \code{\link{shp2bnd}}) as an additional argument named \code{map} within function \code{\link{sx}}, or
+              supplied within argument \code{xt} when using function \code{\link[mgcv]{s}}, e.g.\
+              \code{xt = list(map = MapBnd)}. 
+    \item \code{"mrf"}, \code{"spatial"}: Markov random fields: defines a Markov random field prior for a 
+               spatial covariate, where geographical information is provided by a map object in 
+               boundary or graph file format (see function \code{\link{read.bnd}}, \code{\link{read.gra}} and
+               \code{\link{shp2bnd}}), as an additional argument named \code{map} within function \code{\link{sx}},
+               or supplied within argument \code{xt} when using function \code{\link[mgcv]{s}}, e.g.\
+               \code{xt = list(map = MapBndorGra)}.
+    \item \code{"bl"}, \code{"baseline"}: nonlinear baseline effect in hazard regression or multi-state 
+              models: defines a P-spline with second order random walk penalty for the parameters of 
+              the spline for the log-baseline effect \eqn{log(\lambda(time))}. 
+    \item \code{"factor"}: special \pkg{BayesX} specifier for factors, especially meaningful if
+                  \code{method = "STEP"}, since the factor term is then treated as a full term,
+                  which is either included or removed from the model. 
+    \item \code{"ridge"}, \code{"lasso"}, \code{"nigmix"}: shrinkage of fixed effects: defines a
+                                                shrinkage-prior for the corresponding parameters
+                                                \eqn{\gamma_j}, \eqn{j = 1, \ldots, q}, \eqn{q \geq 1} of the
+                                                linear effects \eqn{x_1, \ldots, x_q}. There are three
+                                                priors possible: ridge-, lasso- and Normal Mixture
+                                                of inverse Gamma prior. 
   }
 }
 
@@ -243,13 +251,13 @@ dat$re <- with(dat, rnorm(N, sd = 0.6)[id])
 dat$y <- with(dat, 1.5 + sin(x1) + re + rnorm(n, sd = 0.6))
 
 ## estimate model
-b <- bayesx(y ~ sx(x1, bs = "psplinerw1") + sx(id, bs = "ra"), data = dat)
+b <- bayesx(y ~ sx(x1, bs = "psplinerw1") + r(id), data = dat)
 summary(b)
 plot(b)
 
 ## extract estimated random effects
 ## and compare with true effects
-plot(fitted(b, term = "sx(id)")$Mean ~ unique(dat$re))
+plot(fitted(b, term = "r(id)")$Mean ~ unique(dat$re))
 }
 }
 

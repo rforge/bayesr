@@ -61,23 +61,23 @@ dat <- data.frame(x = runif(n, -3, 3), z = runif(n, 0, 1),
 dat$y <- with(dat, 1.5 + sin(x) + z -3*w + rnorm(n, sd = 0.6))
 
 ## estimate model
-b1 <- bayesx(y ~ s(x, bs = "ps") + z + w, data = dat)
+b1 <- bayesx(y ~ sx(x) + z + w, data = dat)
 
 ## extract fitted values
 fit <- fitted(b1)
-hist(fit, freq = FALSE)
+hist(fit$linpred, freq = FALSE)
 
 ## now extract 1st model term
 ## and plot it
-fx <- fitted(b1, term = "s(x)")
+fx <- fitted(b1, term = "sx(x)")
 plot(fx)
 
 ## extract model residuals
 res <- residuals(b1)
 hist(res[,1L])
 
-## extract partial residuals for s(x)
-pres <- residuals(b1, term = "s(x)")
+## extract partial residuals for sx(x)
+pres <- residuals(b1, term = "sx(x)")
 plot(fx, ylim = range(pres[,2L]))
 points(pres)
 }
@@ -92,7 +92,7 @@ b2 <- read.bayesx.output(dir)
 
 ## extract fitted values
 fit <- fitted(b2)
-hist(fit[,1L])
+hist(fit$linpred)
 
 ## extract model term of x1
 ## and plot it

@@ -86,7 +86,7 @@ dat$y <- with(dat, 10 + sin(x) + rnorm(n,sd=0.6))
 
 \dontrun{
 ## estimate model
-b <- bayesx(y ~ s(x, bs = "ps"), data = dat)
+b <- bayesx(y ~ sx(x), data = dat)
 summary(b)
 
 ## plot estimated effect
@@ -94,7 +94,7 @@ plot(b, which = 1)
 plot(b, which = 1, rug = FALSE)
 
 ## extract fitted effects
-f <- fitted(b, term = "s(x)")
+f <- fitted(b, term = "sx(x)")
 
 ## now use plot2d
 plot2d(f)

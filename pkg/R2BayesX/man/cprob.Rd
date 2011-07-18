@@ -49,10 +49,10 @@ dat <- data.frame(x = runif(n, -3, 3))
 dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
 
 ## estimate model
-b <- bayesx(y ~ s(x, bs = "ps", xt = list(contourprob = 4)), data = dat)
+b <- bayesx(y ~ sx(x, bs = "ps", contourprob = 4), data = dat)
 
 ## extract contour probabilities
-cprob(b, term = "s(x)")
+cprob(b, term = "sx(x)")
 }
 }
 

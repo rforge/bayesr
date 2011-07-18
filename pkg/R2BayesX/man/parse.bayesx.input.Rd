@@ -47,7 +47,7 @@ parse.bayesx.input(formula, data, weights = NULL,
 }
 
 \examples{
-parse.bayesx.input(y ~ x1 + s(x2), data = "")
+parse.bayesx.input(y ~ x1 + sx(x2), data = "")
 }
 
 \keyword{regression}

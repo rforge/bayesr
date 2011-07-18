@@ -98,14 +98,14 @@ dat$y <- with(dat, 1.5 + cos(z) * sin(w) + rnorm(n, sd = 0.6))
 
 \dontrun{
 ## estimate model
-b <- bayesx(y ~ s(z, w, bs = "te"), data = dat)
+b <- bayesx(y ~ sx(z, w, bs = "te", knots = 5), data = dat, method = "REML")
 summary(b)
 
 ## plot estimated effect
-plot(b, term = "s(z,w)")
+plot(b, term = "sx(z,w)")
 
 ## extract fitted effects
-f <- fitted(b, term = "s(z,w)")
+f <- fitted(b, term = "sx(z,w)")
 
 ## now use plot3d
 plot3d(f)
@@ -129,7 +129,7 @@ plot3d(f, contour = TRUE)
 op <- par(no.readonly = TRUE)
 par(mfrow = c(1, 3))
 plot3d(f, image = TRUE, contour = TRUE, c.select = 3)
-plot3d(f, image = TRUE, contour = TRUE, c.select = "Mean")
+plot3d(f, image = TRUE, contour = TRUE, c.select = "Estimate")
 plot3d(f, image = TRUE, contour = TRUE, c.select = "97.5%")
 par(op)
 }
