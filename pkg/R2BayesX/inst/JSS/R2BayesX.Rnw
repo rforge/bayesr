@@ -1486,7 +1486,7 @@ plot(fm2, term = "sx(id)", map = BeechBnd,
   height = 0.24, width = 0.41, range = range)
 @ %$
 \caption{\label{fig:forest-spatial-restrict} Forest damage: Estimate of the spatial effect with
-color scaling based on the 5\% and 95\% quantiles of the kernel density estimate of the effect.}
+color scaling based on the 10\% and 90\% quantiles of the kernel density estimate of the effect.}
 \end{figure}
 Trimming the color range of the plot now leads to a better representation of the effect.
 
