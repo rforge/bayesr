@@ -37,8 +37,9 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     symmetric <- args$symmetric
   if(!is.null(x)) {
     if(is.null(col)) {
-      col <- colorspace::diverge_hcl(ncol, h = c(130, 10), c = 250,
-        l = c(30, 90), power = 1.5, gamma = 2.4, fixup = TRUE)
+      col <- colorspace::diverge_hcl
+      # col <- colorspace::diverge_hcl(ncol, h = c(130, 10), c = 250,
+      #  l = c(30, 90), power = 1.5, gamma = 2.4, fixup = TRUE)
     }
     x <- compute.x.id(x, id, c.select, range, symmetric)
     colors <- make_pal(col = col, ncol = ncol, data = x$x, 
