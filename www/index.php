@@ -43,7 +43,12 @@ echo $contents; } ?>
 
 <!-- end of project description -->
 
-<p> No content added. </p>
+<p> Supplemtary files for the interface package R2BayesX: </p>
+<ul>
+<li> the <a href="R2BayesX.pdf">R2BayesX vignette</a> includes details on implementation and on the user interface,</li>
+<li> the <a href="zambia.R">ZambiaNutrition demo</a> is containing example code for MCMC and STEP estimation,</li>
+<li> and the <a href="forest.R">ForestHealth demo</a> illustrates estimation using REML.</li>
+</ul>
 
 <p> The <strong>project summary page</strong> you can find <a href="http://<?php echo $domain; ?>/projects/<?php echo $group_name; ?>/"><strong>here</strong></a>. </p>
 
