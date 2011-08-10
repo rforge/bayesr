@@ -965,7 +965,7 @@ Table~\ref{tab:zambia}.
 \begin{tabular}{|lp{10cm}|}
 \hline
 Variable           & Description \\ \hline
-\code{stunting}    & standardized Z-score for stunting. \\
+\code{stunting}    & standardized $Z$-score for stunting. \\
 \code{mbmi}        & body mass index of the mother. \\
 \code{agechild}    & age of the child in months. \\
 \code{district}    & district where the mother lives. \\

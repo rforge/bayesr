@@ -58,7 +58,7 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   if(legend && !is.null(args$pos) && args$pos[1L] == "right") {
     par.orig <- par(c("mar", "las", "mfrow"))
     mar.orig <- mar <- par.orig$mar
-    mar[4L] <- 0.1
+    mar[4L] <- 0
     on.exit(par(par.orig))
     par(mar = mar)
     layout(matrix(c(1, 2), nrow = 1), widths = c(1, 0.18))

@@ -33,7 +33,7 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
   if(is.null(plot) || plot == TRUE) {
     plot <- TRUE
     graphics::plot.default(xlim, ylim, type = "n", xlab = "", ylab = "", 
-      axes = FALSE, xlim = xlim, ylim = ylim)
+      axes = FALSE, xlim = xlim, ylim = ylim, asp = NA)
   } else plot <- FALSE
   if(is.null(xpd))
     xpd <- FALSE
