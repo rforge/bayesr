@@ -6,8 +6,7 @@
 <<preliminaries, echo=FALSE, results=hide>>=
 options(width = 70, prompt = "R> ", continue = "+ ")
 library("R2BayesX")
-data("ZambiaBnd")
-data("BeechBnd")
+data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
 @
 
 
