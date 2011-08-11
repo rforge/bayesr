@@ -1,16 +1,9 @@
-dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
-## dir <- "J:/c403/stat/R2BayesX/R"
+## dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
+dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-  b <- bayesx(labsatz ~ s(preis_own, bs = "ps", k = 20), 
-    iter = 12000, burnin = 2000, thinning = 10, data = dattmp)
 
-fits <- cbind(model.frame(b), fitted(b)[,1])
-fits <- fits[order(fits$preis_own),]
-colnames(fits)[3] <- "fitted"
-plot(fitted ~ preis_own, data = fits, type = "l", ylim = range(c(fitted, labsatz)))
-points(labsatz ~ preis_own, data = fits)
+install.bayesx(inst.dir = "D:/Programme/BayesX", source.dir = "D:/Programme/BayesX")
 
-plot(b$response ~ )
 
 
 
