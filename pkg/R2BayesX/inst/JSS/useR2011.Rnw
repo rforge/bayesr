@@ -34,7 +34,11 @@ data("BeechBnd")
   \item Structured Additive Regression Models (STAR)
   \item Installing the \pkg{BayesX} binary
   \item The main model fitting function
+  \item More components of the interface
   \item Available additive terms
+  \item Illustration
+  \item Outlook
+  \item References
 \end{itemize}
 \end{frame}
 
@@ -104,7 +108,7 @@ In \pkg{BayesX}, estimation of regression parameters is based on three inferenti
   \item Visualizing data.
 \end{itemize}
 \bigskip
-Therefore, the \proglang{R} package \pkg{BayesX} (available at CRAN) was developed, to provide
+Therefore, the \proglang{R} package \pkg{BayesX} (available at CRAN) was developed, which provides
 functionality for exploring and visualizing estimation results.
 \bigskip \\
 However, estimating models from \pkg{BayesX} with special program files and handling estimation
@@ -141,18 +145,24 @@ install.packages("R2BayesX",
 \frametitle{Introduction: Example}
 Dataset on childhood malnutrition in Zambia:
 \begin{center}
-\begin{tabular}{|ll|}
+\scriptsize
+\begin{tabular}{|lp{8cm}|}
 \hline
 Variable           & Description \\ \hline
 \code{stunting}    & standardized $Z$-score for stunting. \\
 \code{mbmi}        & body mass index of the mother. \\
 \code{agechild}    & age of the child in months. \\
 \code{district}    & district where the mother lives. \\
-\vdots & \vdots \\ \hline
+\code{memployment} & mother's employment status with categories `yes' and `no'. \\
+\code{meducation}  & mother's educational status with categories for no education or incomplete
+                     primary `no', complete primary but incomplete secondary `primary' and complete
+                     secondary or higher `secondary'. \\
+\code{urban}       & locality of the domicile with categories `yes' and `no'. \\
+\code{gender}      & gender of the child with categories `male' and `female'. \\ \hline
 \end{tabular}
 \end{center}
 \medskip
-We fit the following model:
+We start with the following model:
 $$
 \texttt{stunting}_i = \gamma_0 + f_1(\texttt{agechild}_i) + f_2(\texttt{mbmi}_i) +
   f_{spat}(\texttt{district}_i) + \varepsilon_i,
@@ -163,6 +173,14 @@ with $\varepsilon_i \sim N(0, \sigma^2)$.
 
 \begin{frame}[fragile]
 \frametitle{Introduction: Example}
+Loading the data and boundary object
+
+<<loading-illustration, echo=TRUE, eval=FALSE, fig=FALSE>>=
+data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
+@
+
+\bigskip
+
 The model is specified using \proglang{R}'s formula language definition
 
 <<formula-illustration, echo=TRUE, eval=TRUE, fig=FALSE>>=
@@ -170,12 +188,28 @@ f <- stunting ~ sx(agechild) + sx(mbmi) +
   sx(district, bs = "gk", map = ZambiaBnd, full = TRUE)
 @
 
-and estimated by
+\bigskip 
+
+estimated by
 
 <<fit-illustration, echo=TRUE, eval=FALSE, fig=FALSE>>=
 b <- bayesx(f, family = "gaussian", method = "MCMC",
   data = ZambiaNutrition)
 @
+
+\bigskip
+
+and plotted, e.g.\ by typing
+
+<<plot-illustration, echo=TRUE, eval=FALSE, fig=FALSE>>=
+plot(b, map = ZambiaBnd)
+@
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Introduction: Example}
+\begin{center}
 <<cache-illustration, echo=FALSE, eval=TRUE>>=
 if(file.exists("illustration-model.rda")) {
 load("illustration-model.rda")
@@ -184,12 +218,16 @@ load("illustration-model.rda")
 save(b, file = "illustration-model.rda")
 }
 @
-\bigskip
-\setkeys{Gin}{width=0.48\textwidth}
+\setkeys{Gin}{width=0.44\textwidth}
+<<plot-illustration-mbmi, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.55, 1.2))
+plot(b, term = "sx(mbmi)")
+@
 <<plot-illustration-agechild, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(4, 4.1, 0.55, 1.2))
 plot(b, term = "sx(agechild)", residuals = TRUE, cex = 0.1, rug = FALSE)
 @
+\\[2ex]
 % <<plot-illustration-district, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
 % par(mar = c(0, 0, 0, 0))
 % plot(b, term = "sx(district)", map = ZambiaBnd, swap = TRUE)
@@ -199,6 +237,7 @@ plot(b, term = "sx(agechild)", residuals = TRUE, cex = 0.1, rug = FALSE)
 par(mar = c(4.1, 0, 0.55, 1.95))
 plot(b, term = "sx(district)", map = ZambiaBnd, swap = TRUE, pos = "right")
 @
+\end{center}
 \end{frame}
 
 
@@ -215,11 +254,12 @@ $$
 \eta = f_1(\mathbf{z}) + \ldots + f_p(\mathbf{z}) + \mathbf{x}^{\prime}\boldsymbol{\gamma}
 $$ \\[-1.5ex]
 \begin{itemize}
-  \item $\mathbf{x}^{\prime}\boldsymbol{\gamma}$ parametric part of the predictor 
+  \item $\mathbf{x}^{\prime}\boldsymbol{\gamma}$ parametric part of the predictor. 
   \item $\mathbf{z}$ represents a generic vector of all nonlinear modeled covariates, e.g. may
-    include continuous covariates, time scales, location or unit-or cluster indexes
-  \item the vector $\boldsymbol{\theta}$ comprises all parameters of the functions $f_1, \dots, f_p$
-  \item $f_j$ one-/two (even higher) dimensional, not necessarily continuous functions
+    include continuous covariates, time scales, location or unit-or cluster indexes.
+  \item The vector $\boldsymbol{\theta}$ comprises all parameters of the functions
+    $f_1, \dots, f_p$.
+  \item $f_j$ one-/two (even higher) dimensional, not necessarily continuous functions.
 \end{itemize}
 \end{frame}
 
@@ -227,7 +267,7 @@ $$ \\[-1.5ex]
 \begin{frame}
 \frametitle{STAR models: Modeling the functions $f_j$}
 The functions $f_j$ are possibly smooth functions comprising effects (and combinations) as e.g.\
-given by
+given by:
 \begin{itemize}
   \item Nonlinear effects of continuous covariates: $f_j(\mathbf{z}) = f(z_1)$
   \item Two-dimensional surfaces: $f_j(\mathbf{z}) = f(z_1, z_2)$
@@ -317,23 +357,52 @@ installer, which will additionally install the GUI version of \pkg{BayesX}.
 \begin{frame}[fragile]
 \frametitle{The main model fitting function}
 The arguments of the main model fitting function are
-\begin{Sinput}
+\begin{Soutput}
 bayesx(formula, data, weights = NULL, subset = NULL,
   offset = NULL, na.action = na.fail, contrasts = NULL,
   family = "gaussian", method = "MCMC",
   control = bayesx.control(...), ...)
-\end{Sinput}
+\end{Soutput}
 
 \bigskip
-\textbf{Methods:} \\
-\code{"MCMC"}, \code{"REML"}, \code{"STEP"}. \medskip \\
+
 \textbf{Families:} \\
 \code{"binomial"}, \code{"binomialprobit"}, \code{"gamma"}, \code{"gaussian"}, \code{"multinomial"},
 \code{"poisson"}, \code{"cox"}, \code{"cumprobit"}, \code{"multistate"},
 \code{"binomialcomploglog"}, \code{"cumlogit"}, \code{"multinomialcatsp"},
 \code{"multinomialprobit"}, \code{"seqlogit"}, \code{"seqprobit"}.
-\bigskip \\
+
+\medskip
+
+\textbf{Methods:} \\
+\code{"MCMC"}, \code{"REML"}, \code{"STEP"}.
+
+\bigskip
+
 \textbf{Note:} family objects are currently not supported.
+\end{frame}
+
+
+\subsection{More components of the interface}
+
+\begin{frame}[fragile]
+\frametitle{More components of the interface}
+The functions that are consecutively called by the main model fitting function \fct{bayesx} are:
+\begin{enumerate}
+\item \fct{parse.bayesx.input}
+\item \fct{write.bayesx.input}
+\item \fct{run.bayesx}
+\item \fct{read.bayesx.output}
+\end{enumerate}
+
+\bigskip
+
+These functions are operating independently and may also be helpful for the \proglang{R} user.
+
+\bigskip
+
+Moreover, all functions and methods for returned objects of \fct{bayesx} may be applied on returned
+objects of \fct{read.bayesx.output}. 
 \end{frame}
 
 
@@ -341,27 +410,364 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 
 \begin{frame}[fragile]
 \frametitle{Available additive terms}
-The main model term is function \fct{sx}, with arguments
-\begin{Sinput}
+The main model term constructor function is function \fct{sx}, with arguments
+\begin{Soutput}
 sx(x, z = NULL, bs = "ps", by = NA, ...)
-\end{Sinput}
-\fct{sx} is simply an interface to function \fct{s} from package \pkg{mgcv}.
+\end{Soutput}
 
 \bigskip
-\textbf{Term types:} \\
+
+\fct{sx} is simply an interface to function \fct{s} from package \pkg{mgcv}.
+\begin{Soutput}
+s(..., k = -1, bs = "ps", m = NA, by = NA, xt = NULL)
+\end{Soutput}
+
+\bigskip
+
+Random effects are included in the models using function \fct{r}:
+\begin{Soutput}
+r(id, by = NA, xt = NULL)
+\end{Soutput}
+
+\bigskip
+
+\textbf{Basis/term types:} \\
 \code{"rw1"}, \code{"rw2"}, \code{"season"}, \code{"ps"} (\code{"psplinerw1"}, \code{"psplinerw2"}),
 \code{"te"} (\code{"pspline2dimrw1"}), \code{"kr"} (\code{"kriging"}), \code{"gk"}
 (\code{"geokriging"}), \code{"gs"} (\code{"geospline"}), \code{"mrf"} (\code{"spatial"}),
 \code{"bl"} (\code{"baseline"}), \code{"factor"}, \code{"ridge"}, \code{"lasso"}, \code{"nigmix"}.
+\end{frame}
 
-\bigskip
-Additional options within ``\code{...}'' for each term type and method may be looked up using
-function \fct{bayes.term.options}, e.g.
 
+\begin{frame}[fragile]
+\frametitle{Available additive terms}
+Additional options within ``\code{...}'' and \code{xt} for each basis/term type and method may be
+looked up using function \fct{bayes.term.options}, e.g.
+
+\footnotesize
 <<echo=TRUE, eval=FALSE>>=
 bayesx.term.options(bs = "ps", method = "MCMC")
 @
+\begin{Soutput}
+possible options for 'bs = "ps"': 
+
+     degree: the degree of the B-spline basis functions.
+            Default: integer, 'degree = 3'.
+
+      knots: number of inner knots.
+            Default: integer, 'knots = 20'.
+
+      order: only if 'bs = "ps"', the order of the
+            difference penalty.
+            Default: integer, 'order = 2'.
+        .
+        .
+        .
+\end{Soutput}
 \end{frame}
+
+
+\subsection{Illustration}
+
+\begin{frame}[fragile]
+\frametitle{Illustration}
+Following Kandala, Lang, Klasen and Fahrmeir (2001), we estimate a structured additive regression
+model with model formula
+
+<<formula-zambia, echo=TRUE, eval=TRUE>>=
+f <- stunting ~ memployment + urban + gender + meducation +
+  sx(mbmi) + sx(agechild) +
+  sx(district, bs = "mrf", map = ZambiaBnd) + r(district)
+@
+
+\bigskip
+
+The model is then fitted using MCMC by calling
+
+<<fit-zambia-model, echo=TRUE, eval=FALSE>>=
+zm <- bayesx(f, family = "gaussian", method = "MCMC",
+  iterations = 12000, burnin = 2000, step = 10,
+  seed = 123, data = ZambiaNutrition)
+@
+<<cache-zambia-model, echo=FALSE, eval=TRUE>>=
+if(file.exists("zambia-model.rda")) {
+load("zambia-model.rda")
+} else {
+<<fit-zambia-model>>
+save(zm, file = "zambia-model.rda")
+}
+@
+
+\bigskip
+
+Model summary 
+
+\scriptsize
+<<summary-zambia-model, echo=TRUE, eval=FALSE>>=
+summary(zm)
+@
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Illustration}
+\scriptsize
+\begin{Soutput} 
+Call:
+bayesx(formula = f, data = ZambiaNutrition, family = "gaussian", 
+    method = "MCMC", iterations = 12000, burnin = 2000, step = 10, 
+    seed = 123)
+
+Fixed effects estimation results:
+
+Parametric Coefficients:
+                     Mean      Sd    2.5%     50%   97.5%
+(Intercept)        0.1013  0.0479  0.0076  0.1024  0.1927
+memploymentyes    -0.0076  0.0139 -0.0356 -0.0072  0.0206
+urbanno           -0.0900  0.0221 -0.1343 -0.0896 -0.0477
+genderfemale       0.0583  0.0129  0.0338  0.0584  0.0833
+meducationno      -0.1736  0.0277 -0.2256 -0.1731 -0.1203
+meducationprimary -0.0616  0.0255 -0.1126 -0.0624 -0.0130
+
+Smooth terms variances:
+               Mean     Sd   2.5%    50%  97.5%    Min    Max
+sx(agechild) 0.0059 0.0057 0.0012 0.0042 0.0192 0.0005 0.0699
+sx(district) 0.0356 0.0185 0.0101 0.0320 0.0824 0.0035 0.1317
+sx(mbmi)     0.0018 0.0024 0.0003 0.0011 0.0078 0.0002 0.0307
+\end{Soutput}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Illustration}
+\scriptsize
+\begin{Soutput}  
+Random effects variances:
+              Mean     Sd   2.5%    50%  97.5%    Min    Max
+r(district) 0.0073 0.0059 0.0006 0.0056 0.0215 0.0002 0.0374
+ 
+Scale estimate:
+         Mean     Sd   2.5%    50%  97.5%
+Sigma2 0.8018 0.0165 0.7718 0.8017 0.8342
+ 
+N = 4847  burnin = 2000  DIC = 4903.618  pd = 50.48634  
+method = MCMC  family = gaussian  iterations = 12000  step = 10 
+\end{Soutput}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Illustration}
+Plotting of specific terms
+
+<<summary-zambia-model, echo=TRUE, eval=FALSE>>=
+plot(zm, term = c("sx(mbmi)", "sx(agechild)"))
+@
+
+\begin{center}
+\setkeys{Gin}{width=0.44\textwidth}
+<<zambia-mbmi, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.55, 1.2))
+plot(zm, term = "sx(mbmi)")
+@
+<<zambia-agechild, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.55, 1.2))
+plot(zm, term = "sx(agechild)")
+@
+\end{center}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Illustration}
+Spatial effects, kernel density estimates
+
+<<zambia-district-example-kde, echo=TRUE, eval=FALSE>>=
+plot(zm, term = c("sx(district)", "r(district)"))
+@
+
+\begin{center}
+\setkeys{Gin}{width=0.44\textwidth}
+<<zambia-district-structured-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.55, 1.2))
+plot(zm, term = "sx(district)", map = FALSE, main = "")
+@
+<<zambia-district-unstructured-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.55, 1.2))
+plot(zm, term = "r(district)", map = FALSE, main = "")
+@
+\end{center}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Illustration}
+Spatial effects, map effect plots
+
+<<zambia-district-example-kde, echo=TRUE, eval=FALSE>>=
+plot(zm, term = "sx(district)", map = ZambiaBnd)
+range <- lrange <- c(-0.32, 0.32)
+plot(zm, term = "r(district)", map = ZambiaBnd, 
+  range = range, lrange = lrange)
+@
+
+\begin{center}
+\setkeys{Gin}{width=0.44\textwidth}
+<<zambia-district-structured, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(0, 0, 0, 0))
+plot(zm, term = "sx(district)", map = ZambiaBnd, swap = TRUE)
+@
+<<zambia-district-unstructured-samescale, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(0, 0, 0, 0))
+range <- lrange <- c(-0.32, 0.32)
+plot(zm, term = "r(district)", map = ZambiaBnd,
+  swap = TRUE, range = range, lrange = lrange)
+@
+\end{center}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Illustration}
+Diagnostic plots, sampling paths
+
+<<zambia-mbmi-coef-samples, echo=TRUE, eval=FALSE, fig=FALSE>>=
+plot(zm, term = "sx(mbmi)", which = "coef-samples")
+@
+
+\begin{center}
+\setkeys{Gin}{width=0.9\textwidth}
+<<zambia-mbmi-coef-samples-do, echo=FALSE, fig=TRUE, width=11.5, height=7>>=
+par(oma = c(0.01, 0.01, 0.01, 0.01))
+plot(zm, term = "sx(mbmi)", which = "coef-samples", main = NA)
+@
+\end{center}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Illustration}
+Diagnostic plots, autocorrelation functions and maximum autocorrelation of parameters
+
+<<zambia-autocorr, echo=TRUE, eval=FALSE>>=
+plot(zm, term = "sx(mbmi)", which = "var-samples", acf = TRUE)
+plot(zm, which = "max-acf")
+@
+
+\begin{center}
+\setkeys{Gin}{width=0.44\textwidth}
+<<zambia-autocorr-03, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.55, 1.2))
+plot(zm, term = "sx(mbmi)", which = "var-samples",
+  acf = TRUE, main = "")
+@
+<<zambia-autocorr-04, echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.55, 1.2))
+plot(zm, which = "max-acf", main = "")
+@
+\end{center}
+
+Further inspection through extractor function \fct{samples}, e.g.\ with package \pkg{coda} is
+possible.
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Illustration}
+Inspecting the log-file of the \pkg{BayesX} binary
+
+\scriptsize
+\begin{Sinput}
+R> bayesx_logfile(zm)
+\end{Sinput}
+\begin{Soutput}
+> bayesreg b
+> map ZambiaBnd
+> ZambiaBnd.infile using /tmp/Rtmpa3Z6WF/bayesx/ZambiaBnd.bnd
+NOTE: 57 regions read from file /tmp/Rtmpa3Z6WF/bayesx/ZambiaBnd.bnd
+> dataset d
+> d.infile using /tmp/Rtmpa3Z6WF/bayesx/bayesx.estim.data.raw
+NOTE: 14 variables with 4847 observations read from file
+/tmp/Rtmpa3Z6WF/bayesx/bayesx.estim.data.raw
+
+> b.outfile = /tmp/Rtmpa3Z6WF/bayesx/bayesx.estim
+> b.regress stunting = mbmi(psplinerw2,nrknots=20,degree=3) +
+    agechild(psplinerw2,nrknots=20,degree=3) +
+    district(spatial,map=ZambiaBnd) + district(random) + memploymentyes +
+    urbanno + genderfemale + meducationno + meducationprimary,
+    family=gaussian iterations=12000 burnin=2000 step=10 setseed=123
+    predict using d
+     .
+     .
+     .
+\end{Soutput}
+\end{frame}
+
+
+\subsection{Outlook}
+
+\begin{frame}
+\frametitle{Outlook}
+\begin{itemize}
+\item Bug fixing.
+\item Provide \pkg{BayesX} makefiles for all platforms.
+\item Change to GPL2 licensing of \pkg{BayesX}.
+\item Integrate the \pkg{BayesX} sources within \pkg{R2BayesX}.
+\item Adding the package to CRAN.
+\item Enhance functionality of the package, i.e.\ support spatial objects of other packages, more
+  options for visualization etc.
+\end{itemize}
+
+\medskip
+
+The slides together with a package vignette, the \proglang{R} code and demos are available at:
+
+\begin{center}
+URL~\url{http://bayesr.r-forge.r-project.org/}
+\end{center}
+\end{frame}
+
+
+\subsection{References}
+
+\begin{frame}
+\frametitle{References}
+
+\footnotesize
+
+Belitz C, Brezger A, Kneib T, Lang S (2011). 
+  \textit{\pkg{{B}ayes{X}} -- Software for {B}ayesian Inference in Structured Additive Regression. 
+    Models}. Version 2.0.1. 
+  URL~\url{http://www.stat.uni-muenchen.de/~bayesx}
+
+\bigskip
+
+Brezger A, Kneib T, Lang S (2005).
+  \dquote{\pkg{BayesX}: Analyzing Bayesian Structured Additive Regression Models}.
+  \textit{Journal of Statistical Software}, \textbf{14}(11), 1--22.
+  URL~\url{http://www.jstatsoft.org/v14/i11/}
+
+\bigskip
+
+Kandala NB, Lang S, Klasen S, Fahrmeir L (2001).
+  \dquote{Semiparametric Analysis of the Socio-Demographic and Spatial Determinants of
+  Undernutrition in Two African Countries}.
+  \textit{Research in Official Statistics,}, \textbf{1}, 81--100.
+
+\bigskip
+
+Wood SN (2006).
+  \textit{Generalized Additive Models: An Introduction with \proglang{R}}.
+  Chapman \& Hall/CRC.
+
+\bigskip
+
+Wood SN (2011).
+  \textit{\pkg{mgcv}: GAMs with GCV/AIC/REML Smoothness Estimation and GAMMs by PQL}.
+  \proglang{R}~package version~1.7-6.
+  URL~\url{http://CRAN.R-project.org/package=mgcv}
+\end{frame}
+
 
 \end{document}
 

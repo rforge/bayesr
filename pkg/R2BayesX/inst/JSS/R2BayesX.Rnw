@@ -1188,7 +1188,7 @@ plot(zm, term = "sx(mbmi)", which = "var-samples", acf = TRUE)
 @
 The maximum autocorrelation of all sampled parameters in the model are displayed with
 <<zambia-autocorr-02, echo=TRUE, eval=FALSE>>=
-plot(zm, which = "max-acf", acf = TRUE)
+plot(zm, which = "max-acf")
 @
 \begin{figure}[!t]
 \setkeys{Gin}{width=0.46\textwidth}
