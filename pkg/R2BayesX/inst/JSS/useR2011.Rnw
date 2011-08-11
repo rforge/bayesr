@@ -356,12 +356,12 @@ installer, which will additionally install the GUI version of \pkg{BayesX}.
 \begin{frame}[fragile]
 \frametitle{The main model fitting function}
 The arguments of the main model fitting function are
-\begin{Soutput}
+\begin{Scode}
 bayesx(formula, data, weights = NULL, subset = NULL,
   offset = NULL, na.action = na.fail, contrasts = NULL,
   family = "gaussian", method = "MCMC",
   control = bayesx.control(...), ...)
-\end{Soutput}
+\end{Scode}
 
 \bigskip
 
@@ -410,23 +410,23 @@ objects of \fct{read.bayesx.output}.
 \begin{frame}[fragile]
 \frametitle{Available additive terms}
 The main model term constructor function is function \fct{sx}, with arguments
-\begin{Soutput}
+\begin{Scode}
 sx(x, z = NULL, bs = "ps", by = NA, ...)
-\end{Soutput}
+\end{Scode}
 
 \bigskip
 
 \fct{sx} is simply an interface to function \fct{s} from package \pkg{mgcv}.
-\begin{Soutput}
+\begin{Scode}
 s(..., k = -1, bs = "ps", m = NA, by = NA, xt = NULL)
-\end{Soutput}
+\end{Scode}
 
 \bigskip
 
 Random effects are included in the models using function \fct{r}:
-\begin{Soutput}
+\begin{Scode}
 r(id, by = NA, xt = NULL)
-\end{Soutput}
+\end{Scode}
 
 \bigskip
 
