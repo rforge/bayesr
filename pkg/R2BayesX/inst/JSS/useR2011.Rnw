@@ -16,7 +16,7 @@ data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
 \title{Structured Additive Regression Models: \\
   An \proglang{R} Interface to \pkg{BayesX}}
 
-\author{Nikolaus Umlauf, Thomas Kneib, Stefan Lang, Achim Zeileis}
+\author{Nikolaus Umlauf, Thomas Kneib, Stefan Lang, Achim~Zeileis}
 
 \URL{http://eeecon.uibk.ac.at/~umlauf/}
 
@@ -100,16 +100,21 @@ In \pkg{BayesX}, estimation of regression parameters is based on three inferenti
 
 \begin{frame}
 \frametitle{Introduction: The \proglang{R} interface}
-\textbf{Problems:}
+
+\textbf{Problems:} \pkg{BayesX} only provides limited functionality for
 \begin{itemize}
-  \item \pkg{BayesX} only provides limited functionality for handling and manipulating data sets.
-  \item Handling and manipulation of geographical maps is difficult.
-  \item Visualizing data.
+  \item handling/manipulating data sets,
+  \item handling/manipulating geographical maps,
+  \item exploring/visualizing estimation results.
 \end{itemize}
+
 \bigskip
+
 Therefore, the \proglang{R} package \pkg{BayesX} (available at CRAN) was developed, which provides
 functionality for exploring and visualizing estimation results.
-\bigskip \\
+
+\bigskip
+
 However, estimating models from \pkg{BayesX} with special program files and handling estimation
 outputs within \proglang{R} is still time consuming and not straightforward.
 \end{frame}
@@ -117,11 +122,11 @@ outputs within \proglang{R} is still time consuming and not straightforward.
 
 \begin{frame}[fragile]
 \frametitle{Introduction: The \proglang{R} interface}
-\textbf{Now:} We present the new interface package \pkg{R2BayesX}. For \proglang{R} users it is now 
-possible to:
+
+\textbf{Now:} New interface package \pkg{R2BayesX} for
 \begin{itemize}
-  \item Specify and estimate STAR models with \pkg{BayesX} directly from the \proglang{R} console.
-  \item Apply a set of extractor functions and methods on \pkg{BayesX} fitted model objects, e.g.\ 
+  \item specifying/estimating STAR models with \pkg{BayesX} directly from \proglang{R},
+  \item standard methods and extractor functions for \pkg{BayesX} fitted model objects, e.g.\ 
     producing high level graphics of estimated effects, model diagnostic plots, summary statistics
     and more. 
 \end{itemize}
@@ -219,7 +224,7 @@ save(b, file = "illustration-model.rda")
 @
 \setkeys{Gin}{width=0.44\textwidth}
 <<plot-illustration-mbmi, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.55, 1.2))
+par(mar = c(4.3, 4.1, 0.55, 1.2))
 plot(b, term = "sx(mbmi)")
 @
 <<plot-illustration-agechild, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
@@ -245,7 +250,7 @@ plot(b, term = "sx(district)", map = ZambiaBnd, swap = TRUE, pos = "right")
 \begin{frame}
 \frametitle{STAR models}
 Distributional and structural assumptions, given covariates and parameters, are
-based on {Generalized Linear Models} with
+based on generalized linear models with
 $$
 E(y|\mathbf{x},\mathbf{z},\boldsymbol{\gamma},\boldsymbol{\theta}) = h^{-1}(\eta)$$
 and structured additive predictor
@@ -255,10 +260,10 @@ $$ \\[-1.5ex]
 \begin{itemize}
   \item $\mathbf{x}^{\prime}\boldsymbol{\gamma}$ parametric part of the predictor. 
   \item $\mathbf{z}$ represents a generic vector of all nonlinear modeled covariates, e.g. may
-    include continuous covariates, time scales, location or unit-or cluster indexes.
+    include continuous covariates, time scales, location or unit or cluster indexes.
   \item The vector $\boldsymbol{\theta}$ comprises all parameters of the functions
     $f_1, \dots, f_p$.
-  \item $f_j$ one-/two (even higher) dimensional, not necessarily continuous functions.
+  \item $f_j$ one-/two-/higher-dimensional, not necessarily continuous functions.
 \end{itemize}
 \end{frame}
 
@@ -605,22 +610,22 @@ Spatial effects, map effect plots
 
 <<zambia-district-example-kde, echo=TRUE, eval=FALSE>>=
 plot(zm, term = "sx(district)", map = ZambiaBnd)
-range <- lrange <- c(-0.32, 0.32)
+range <- c(-0.32, 0.32)
 plot(zm, term = "r(district)", map = ZambiaBnd, 
-  range = range, lrange = lrange)
+  range = range, lrange = range)
 @
 
 \begin{center}
 \setkeys{Gin}{width=0.44\textwidth}
-<<zambia-district-structured, echo=FALSE, fig=TRUE, width=5, height=4>>=
+<<zambia-district-structured, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(0, 0, 0, 0))
 plot(zm, term = "sx(district)", map = ZambiaBnd, swap = TRUE)
 @
-<<zambia-district-unstructured-samescale, echo=FALSE, fig=TRUE, width=5, height=4>>=
+<<zambia-district-unstructured-samescale, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(0, 0, 0, 0))
-range <- lrange <- c(-0.32, 0.32)
+range <- c(-0.32, 0.32)
 plot(zm, term = "r(district)", map = ZambiaBnd,
-  swap = TRUE, range = range, lrange = lrange)
+  swap = TRUE, range = range, lrange = range)
 @
 \end{center}
 \end{frame}
@@ -708,12 +713,13 @@ NOTE: 14 variables with 4847 observations read from file
 \begin{frame}
 \frametitle{Outlook}
 \begin{itemize}
-\item Bug fixing.
-\item Provide \pkg{BayesX} makefiles for all platforms.
-\item Change to GPL2 licensing of \pkg{BayesX}.
-\item Integrate the \pkg{BayesX} sources within \pkg{R2BayesX}.
-\item Adding the package to CRAN.
-\item Enhance functionality of the package, i.e.\ support spatial objects of other packages, more
+\item Beta testing and bug fixing.
+\item Facilitate installation of \pkg{BayesX} binary across platforms.
+%% \item Provide \pkg{BayesX} makefiles for all platforms.
+%% \item Change to GPL2 licensing of \pkg{BayesX}.
+%% \item Integrate the \pkg{BayesX} sources within \pkg{R2BayesX}.
+\item Release the package through CRAN.
+\item Enhance functionality of the package, i.e.\ support spatial objects (e.g.\ from \pkg{sp}), more
   options for visualization etc.
 \end{itemize}
 
@@ -722,7 +728,7 @@ NOTE: 14 variables with 4847 observations read from file
 The slides together with a package vignette, the \proglang{R} code and demos are available at:
 
 \begin{center}
-URL~\url{http://bayesr.r-forge.r-project.org/}
+\url{http://bayesr.R-Forge.R-project.org/}
 \end{center}
 \end{frame}
 
@@ -737,7 +743,7 @@ URL~\url{http://bayesr.r-forge.r-project.org/}
 Belitz C, Brezger A, Kneib T, Lang S (2011). 
   \textit{\pkg{{B}ayes{X}} -- Software for {B}ayesian Inference in Structured Additive Regression. 
     Models}. Version 2.0.1. 
-  URL~\url{http://www.stat.uni-muenchen.de/~bayesx}
+  URL~\url{http://www.stat.uni-muenchen.de/~bayesx/}
 
 \bigskip
 
