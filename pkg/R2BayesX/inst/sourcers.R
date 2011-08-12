@@ -1,8 +1,49 @@
-## dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
-dir <- "D:/svn/pkg/R2BayesX/R"
+dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
+## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-install.bayesx(inst.dir = "D:/Programme/BayesX", source.dir = "D:/Programme/BayesX")
+install.bayesx(inst.dir = "/home/nikolaus/bin", source.dir = "/home/nikolaus/bin")
+
+
+
+
+
+
+
+mzip.file.extract <- function (file, zipname = "R.zip",
+  unzip = getOption("unzip"), dir = tempdir()) 
+{
+    .Deprecated("unzip")
+    path <- dirname(file)
+    topic <- basename(file)
+print(path)
+    if (file.exists(file.path(path, zipname))) {
+        if (!is.character(unzip) || length(unzip) != 1L) 
+            stop("'unzip' must be a single character string")
+        if (!nzchar(unzip)) 
+            unzip <- "internal"
+        if (unzip != "internal") {
+            cmd <- paste(unzip, "-oq", shQuote(file.path(path, 
+                zipname)), topic, " -d ", dir)
+            res <- if (.Platform$OS.type == "windows") 
+                system(cmd, invisible = TRUE)
+            else system(paste(cmd, "> /dev/null"))
+            if (!res) 
+                file <- file.path(dir, topic)
+        }
+        else {
+            rc <- .Internal(unzip(file.path(path, zipname), topic, 
+                dir, FALSE, TRUE, FALSE))
+            if (rc == 0L) 
+                file <- file.path(dir, topic)
+        }
+    }
+    file
+}
+
+mzip.file.extract(file = "/home/nikolaus/bin/ ", zipname = "bayesxsource.zip", dir = "/home/nikolaus/bin/ ")
+
+
 
 
 

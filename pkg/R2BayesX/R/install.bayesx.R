@@ -61,22 +61,21 @@ function(inst.dir = NULL, source.dir = NULL, type = NULL)
       warning(paste(bin.dir, "/bayesx ", 
         "does already exist, will not extract bayesxsource.zip!", sep = ""))
     }
-    zip.file.extract(file = dir, zipname = "bayesxsource.zip",
-      unzip = getOption("unzip"), dir = dir)
+    #zip.file.extract(file = paste(dir, "/ ", sep = ""), zipname = "bayesxsource.zip",
+    #  unzip = getOption("unzip"), dir = paste(dir, "/ ", sep = ""))
     dir <- paste(strsplit(dir," "," ")[[1]], collapse = "")
     hereisbayesx <- file.path(dir, "bayesx/sourcecode")
     textfun("start compiling sourcecode, may take some time!")
     owd <- getwd()
-    print(hereisbayesx)
     setwd(hereisbayesx)
-    ok <- try(system("make", intern = TRUE), silent = TRUE)
+    # ok <- try(system("make", intern = TRUE), silent = TRUE)
     if(length(ok) == 0) {
       options(warn = 0)
       stop("could not compile BayesX sourcecode!")
     }
     ok <- file.exists(base_name)
     if(ok) {
-      file.copy(paste(hereisbayesx, "/", base_name, sep = ""), paste(dir, base_name, sep = ""))
+      file.copy(file.path(hereisbayesx, base_name), file.path(dir, base_name))
       try(system(paste("rm -r -f ", dir, "bayesx", sep = ""), intern = TRUE), silent = TRUE)
       textfun(paste("BayesX was successfully installed in: ", bin.dir, sep = ""))
       if(!is.null(owd))
