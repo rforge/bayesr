@@ -18,7 +18,7 @@ data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
 
 \author{Nikolaus Umlauf, Thomas Kneib, Stefan Lang, Achim~Zeileis}
 
-\URL{http://eeecon.uibk.ac.at/~umlauf/}
+\URL{http://www.uibk.ac.at/statistics/personal/umlauf/}
 
 
 \section{R package R2BayesX}
@@ -145,27 +145,19 @@ install.packages("R2BayesX",
 \end{frame}
 
 
-\begin{frame}
+\begin{frame}[fragile]
 \frametitle{Introduction: Example}
-Dataset on childhood malnutrition in Zambia:
-\begin{center}
-\scriptsize
-\begin{tabular}{|lp{8cm}|}
-\hline
-Variable           & Description \\ \hline
-\code{stunting}    & standardized $Z$-score for stunting. \\
-\code{mbmi}        & body mass index of the mother. \\
-\code{agechild}    & age of the child in months. \\
-\code{district}    & district where the mother lives. \\
-\code{memployment} & mother's employment status with categories `yes' and `no'. \\
-\code{meducation}  & mother's educational status with categories for no education or incomplete
-                     primary `no', complete primary but incomplete secondary `primary' and complete
-                     secondary or higher `secondary'. \\
-\code{urban}       & locality of the domicile with categories `yes' and `no'. \\
-\code{gender}      & gender of the child with categories `male' and `female'. \\ \hline
-\end{tabular}
-\end{center}
-\medskip
+\textbf{Dataset on malnutrition in Zambia:} \\
+The main interest is to model the dependence of \code{stunting} of newborn children on covariates
+including
+\begin{itemize}
+\item the age of the child in months (\code{agechild}), 
+\item the mother's bmi (\code{mbmi})
+\item and the \code{district} the mother lives in.
+\end{itemize}
+
+\bigskip
+
 We start with the following model:
 $$
 \texttt{stunting}_i = \gamma_0 + f_1(\texttt{agechild}_i) + f_2(\texttt{mbmi}_i) +
@@ -223,12 +215,12 @@ save(b, file = "illustration-model.rda")
 }
 @
 \setkeys{Gin}{width=0.44\textwidth}
-<<plot-illustration-mbmi, echo=FALSE, fig=TRUE, width=5, height=4>>=
+<<plot-illustration-mbmi, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(4.3, 4.1, 0.55, 1.2))
 plot(b, term = "sx(mbmi)")
 @
 <<plot-illustration-agechild, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
-par(mar = c(4, 4.1, 0.55, 1.2))
+par(mar = c(4.3, 4.1, 0.55, 1.2))
 plot(b, term = "sx(agechild)", residuals = TRUE, cex = 0.1, rug = FALSE)
 @
 \\[2ex]
@@ -273,14 +265,13 @@ $$ \\[-1.5ex]
 The functions $f_j$ are possibly smooth functions comprising effects (and combinations) as e.g.\
 given by:
 \begin{itemize}
-  \item Nonlinear effects of continuous covariates: $f_j(\mathbf{z}) = f(z_1)$
-  \item Two-dimensional surfaces: $f_j(\mathbf{z}) = f(z_1, z_2)$
-  \item Spatially correlated effects: $f_j(\mathbf{z}) = f_{spat}(z_s)$
-  \item Varying coefficients: $f_j(\mathbf{z}) = z_1f(z_2)$
-  \item Spatially varying effects: $f_j(\mathbf{z}) = z_1f_{spat}(z_s)$ or
-    $f_j(\mathbf{z}) = z_1f(z_2, z_3)$
-  \item Random intercepts with cluster index $c$: $f_j(\mathbf{z}) = \beta_c$
-  \item Random slopes with cluster index $c$: $f_j(\mathbf{z}) = z_1\beta_c$
+  \item Nonlinear effects of continuous covariates.
+  \item Two-dimensional surfaces.
+  \item Spatially correlated effects.
+  \item Varying coefficients.
+  \item Spatially varying effects.
+  \item Random intercepts.
+  \item Random slopes.
 \end{itemize}
 \end{frame}
 
@@ -319,9 +310,9 @@ given by:
   \item Structure of $\mathbf{K}_j$ also depends on the type of covariates and on assumptions about
     smoothness of $\mathbf{f}_j$.
   \item The variance parameter $\tau_j^2$ is equivalent to the inverse smoothing parameter in a
-    frequentist approach. Utilizing mixed model technology, restricted maximum likelihood or
-    marginal likelihood estimation forms the basis for determination. From a Bayesian perspective,
-    this yields empirical Bayes/posterior mode estimates for the STAR models.
+    frequentist approach. Utilizing mixed model technology, restricted maximum likelihood (REML)
+    forms a basis for determination. From a Bayesian perspective, this yields empirical
+    Bayes/posterior mode estimates for the STAR models.
 \end{itemize}
 \end{frame}
 
@@ -330,12 +321,12 @@ given by:
 
 \begin{frame}[fragile]
 \frametitle{Installing the \pkg{BayesX} binary}
-Before STAR models can be fitted with package \pkg{R2BayesX} from \proglang{R}, the binary
-command-line version of the program \pkg{BayesX} needs to be installed and linked to \proglang{R}.
+For model fitting with package \pkg{R2BayesX}, the binary command-line version of \pkg{BayesX} needs
+to be installed and linked to \proglang{R} first.
 
 <<echo=TRUE, eval=FALSE>>=
 library("R2BayesX")
-install.bayesx(inst.dir = "/home/bin", source.dir = NULL)
+install.bayesx(inst.dir = "/path/to/bin", source.dir = NULL)
 @
 
 \medskip
@@ -343,7 +334,7 @@ install.bayesx(inst.dir = "/home/bin", source.dir = NULL)
 Then by setting e.g.
 
 <<echo=TRUE, eval=FALSE>>=
-options(bayesx.bin = "/home/bin/BayesX")
+options(bayesx.bin = "/path/to/bin/BayesX")
 @
 
 the model fitting function of \pkg{R2BayesX} will know the location of the binary using function
@@ -351,8 +342,8 @@ the model fitting function of \pkg{R2BayesX} will know the location of the binar
 
 \bigskip 
 
-\textbf{Note:} On Windows systems function \fct{install.bayesx} will try do download and execute an
-installer, which will additionally install the GUI version of \pkg{BayesX}.
+\textbf{Note:} on Windows, function \fct{install.bayesx} will download and execute an installer,
+which also installs the GUI version of \pkg{BayesX}.
 \end{frame}
 
 
@@ -383,15 +374,15 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 
 \bigskip
 
-\textbf{Note:} family objects are currently not supported.
+\textbf{Note:} \code{family} objects are currently not supported.
 \end{frame}
 
 
 \subsection{More components of the interface}
 
-\begin{frame}[fragile]
+\begin{frame}
 \frametitle{More components of the interface}
-The functions that are consecutively called by the main model fitting function \fct{bayesx} are:
+Internally, function \fct{bayesx} calls the following functions:
 \begin{enumerate}
 \item \fct{parse.bayesx.input}
 \item \fct{write.bayesx.input}
@@ -401,12 +392,15 @@ The functions that are consecutively called by the main model fitting function \
 
 \bigskip
 
-These functions are operating independently and may also be helpful for the \proglang{R} user.
+These functions are operating independently and may also be called by the \proglang{R} user.
 
 \bigskip
 
-Moreover, all functions and methods for returned objects of \fct{bayesx} may be applied on returned
-objects of \fct{read.bayesx.output}. 
+The functionality is especially helpful for already existing \pkg{BayesX} program and output files.
+
+\bigskip
+
+Moreover, function \fct{read.bayesx.output} also returns objects of class \code{"bayesx"}. 
 \end{frame}
 
 
@@ -414,7 +408,7 @@ objects of \fct{read.bayesx.output}.
 
 \begin{frame}[fragile]
 \frametitle{Available additive terms}
-The main model term constructor function is function \fct{sx}, with arguments
+The main model term constructor function is function \fct{sx}, with arguments:
 \begin{Scode}
 sx(x, z = NULL, bs = "ps", by = NA, ...)
 \end{Scode}
@@ -428,7 +422,7 @@ s(..., k = -1, bs = "ps", m = NA, by = NA, xt = NULL)
 
 \bigskip
 
-Random effects are included in the models using function \fct{r}:
+Random effects are included in the models using function \fct{r}.
 \begin{Scode}
 r(id, by = NA, xt = NULL)
 \end{Scode}
@@ -475,8 +469,41 @@ possible options for 'bs = "ps"':
 
 \begin{frame}[fragile]
 \frametitle{Illustration}
-Following Kandala, Lang, Klasen and Fahrmeir (2001), we estimate a structured additive regression
-model with model formula
+Following Kandala, Lang, Klasen and Fahrmeir (2001), the task is to model \code{stunting} of newborn
+children on the following covariates:
+\begin{center}
+\scriptsize
+\begin{tabular}{|ll|}
+\hline
+Variable           & Description \\ \hline
+\code{stunting}    & Standardized $Z$-score for stunting. \\
+\code{mbmi}        & Body mass index of the mother. \\
+\code{agechild}    & Age of the child in months. \\
+\code{district}    & District where the mother lives. \\
+\code{memployment} & Is the mother employed? \\
+\code{meducation}  & Mother's educational status. \\
+\code{urban}       & Is the domicile in an urban region? \\
+\code{gender}      & Gender of the child. \\ \hline
+\end{tabular}
+\end{center}
+
+\medskip \normalsize
+
+The predictor of the STAR model is given by \small
+\begin{eqnarray*}
+\eta &=& \gamma_0 + \gamma_1\texttt{memploymentyes} + \gamma_2\texttt{urbanno} +
+         \gamma_3\texttt{genderfemale} + \nonumber \\
+     & & \gamma_4\texttt{meducationno} + \gamma_5\texttt{meducationprimary} + 
+         \nonumber \\
+     & & f_1(\texttt{mbmi}) + f_2(\texttt{agechild}) + f_{str}(\texttt{district}) +
+         f_{unstr}(\texttt{district})
+\end{eqnarray*}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Illustration}
+The formula is set with
 
 <<formula-zambia, echo=TRUE, eval=TRUE>>=
 f <- stunting ~ memployment + urban + gender + meducation +
@@ -569,13 +596,13 @@ plot(zm, term = c("sx(mbmi)", "sx(agechild)"))
 @
 
 \begin{center}
-\setkeys{Gin}{width=0.44\textwidth}
-<<zambia-mbmi, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.55, 1.2))
+\setkeys{Gin}{width=0.49\textwidth}
+<<zambia-mbmi, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
+par(mar = c(4.3, 4.1, 0.55, 1.2))
 plot(zm, term = "sx(mbmi)")
 @
-<<zambia-agechild, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.55, 1.2))
+<<zambia-agechild, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
+par(mar = c(4.3, 4.1, 0.55, 1.2))
 plot(zm, term = "sx(agechild)")
 @
 \end{center}
@@ -591,13 +618,13 @@ plot(zm, term = c("sx(district)", "r(district)"))
 @
 
 \begin{center}
-\setkeys{Gin}{width=0.44\textwidth}
-<<zambia-district-structured-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.55, 1.2))
+\setkeys{Gin}{width=0.49\textwidth}
+<<zambia-district-structured-kde, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
+par(mar = c(4.3, 4.1, 0.55, 1.2))
 plot(zm, term = "sx(district)", map = FALSE, main = "")
 @
-<<zambia-district-unstructured-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.55, 1.2))
+<<zambia-district-unstructured-kde, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
+par(mar = c(4.3, 4.1, 0.55, 1.2))
 plot(zm, term = "r(district)", map = FALSE, main = "")
 @
 \end{center}
@@ -616,7 +643,7 @@ plot(zm, term = "r(district)", map = ZambiaBnd,
 @
 
 \begin{center}
-\setkeys{Gin}{width=0.44\textwidth}
+\setkeys{Gin}{width=0.49\textwidth}
 <<zambia-district-structured, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(0, 0, 0, 0))
 plot(zm, term = "sx(district)", map = ZambiaBnd, swap = TRUE)
@@ -641,7 +668,7 @@ plot(zm, term = "sx(mbmi)", which = "coef-samples")
 
 \begin{center}
 \setkeys{Gin}{width=0.9\textwidth}
-<<zambia-mbmi-coef-samples-do, echo=FALSE, fig=TRUE, width=11.5, height=7>>=
+<<zambia-mbmi-coef-samples-do, echo=FALSE, fig=TRUE, width=11.5, height=7, pdf=FALSE, png=TRUE>>=
 par(oma = c(0.01, 0.01, 0.01, 0.01))
 plot(zm, term = "sx(mbmi)", which = "coef-samples", main = NA)
 @
@@ -660,17 +687,16 @@ plot(zm, which = "max-acf")
 
 \begin{center}
 \setkeys{Gin}{width=0.44\textwidth}
-<<zambia-autocorr-03, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.55, 1.2))
+<<zambia-autocorr-03, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
+par(mar = c(4.3, 4.1, 0.55, 1.2))
 plot(zm, term = "sx(mbmi)", which = "var-samples",
   acf = TRUE, main = "")
 @
-<<zambia-autocorr-04, echo=FALSE, fig=TRUE, width=5, height=4>>=
-par(mar = c(4.1, 4.1, 0.55, 1.2))
+<<zambia-autocorr-04, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
+par(mar = c(4.3, 4.1, 0.55, 1.2))
 plot(zm, which = "max-acf", main = "")
 @
 \end{center}
-
 Further inspection through extractor function \fct{samples}, e.g.\ with package \pkg{coda} is
 possible.
 \end{frame}
@@ -738,7 +764,7 @@ The slides together with a package vignette, the \proglang{R} code and demos are
 \begin{frame}
 \frametitle{References}
 
-\footnotesize
+\scriptsize
 
 Belitz C, Brezger A, Kneib T, Lang S (2011). 
   \textit{\pkg{{B}ayes{X}} -- Software for {B}ayesian Inference in Structured Additive Regression. 
@@ -754,6 +780,12 @@ Brezger A, Kneib T, Lang S (2005).
 
 \bigskip
 
+Fahrmeir L, Kneib T, Lang S (2009).
+  \textit{Regression -- Modelle, Methoden und Anwendungen}.
+  2nd edition. Springer, Berlin.
+
+\bigskip
+
 Kandala NB, Lang S, Klasen S, Fahrmeir L (2001).
   \dquote{Semiparametric Analysis of the Socio-Demographic and Spatial Determinants of
   Undernutrition in Two African Countries}.
@@ -763,7 +795,7 @@ Kandala NB, Lang S, Klasen S, Fahrmeir L (2001).
 
 Wood SN (2006).
   \textit{Generalized Additive Models: An Introduction with \proglang{R}}.
-  Chapman \& Hall/CRC.
+  Chapman \& Hall/CRC, Boca Raton.
 
 \bigskip
 
