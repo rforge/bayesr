@@ -45,6 +45,7 @@ echo $contents; } ?>
 
 <p> Supplemtary files for the interface package R2BayesX: </p>
 <ul>
+<li> <a href="useR2011.R">R code from the useR!2011 slides</a>,</li>
 <li> the <a href="R2BayesX.pdf">R2BayesX vignette</a> includes details on implementation and on the user interface,</li>
 <li> the <a href="zambia.R">ZambiaNutrition demo</a> is containing example code for MCMC and STEP estimation,</li>
 <li> and the <a href="forest.R">ForestHealth demo</a> illustrates estimation using REML.</li>
