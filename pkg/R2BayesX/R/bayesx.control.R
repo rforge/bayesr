@@ -42,6 +42,8 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
       level <- c(level , level)
   if(burnin > iterations)
     burnin <- 1L
+  if(is.null(seed))
+    seed <- round(runif(1L) * .Machine$integer.max)
   if(method == "MCMC" || method == "HMCMC") {
     control$iterations <- iterations
     control$burnin <- burnin
