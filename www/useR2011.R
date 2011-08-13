@@ -1,15 +1,15 @@
 library("R2BayesX")
 
 
-## Installing from R
+## Installing the BayesX command-line binary from R
 install.bayesx(inst.dir = "/path/to/bin", source.dir = NULL)
 
 ## Important, before models can be fitted function bayesx()
 ## needs to know the location of the command-line binary of BayesX!
 options(bayesx.bin = "/path/to/bin/BayesX")
 
-## On Windows after installion of the GUI version of BayesX, the
-## command-line binary is in the folder 'commandline'
+## On Windows, after installion of the GUI version of BayesX,
+## the command-line binary is in the folder 'commandline'
 ## and is named 'bayesx.exe', e.g. set
 options(bayesx.bin = "C:/BayesX/commandline/bayesx.exe")
 
@@ -47,6 +47,8 @@ plot(b, term = "sx(district)", map = ZambiaBnd,
 
 ## View additional options for model terms
 bayesx.term.options(bs = "ps", method = "MCMC")
+bayesx.term.options(bs = "ps", method = "REML")
+bayesx.term.options(bs = "ps", method = "STEP")
 
 
 ## Illustration example
@@ -90,4 +92,11 @@ plot(zm, term = "sx(mbmi)", which = "coef-samples")
 ## of the model
 plot(zm, term = "sx(mbmi)", which = "var-samples", acf = TRUE)
 plot(zm, which = "max-acf")
+
+
+## Extract samples for term 'sx(mbmi)'
+## and plot with the coda package
+samples.mbmi <- samples(zm, term = "sx(mbmi)")
+library("coda")
+plot(as.mcmc(samples.mbmi))
 
