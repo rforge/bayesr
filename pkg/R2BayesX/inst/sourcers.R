@@ -2,7 +2,7 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-install.bayesx(inst.dir = "/home/nikolaus/bin", source.dir = "/home/nikolaus/bin")
+b <- read.bayesx.output("/tmp/Rtmpn7AEef/bayesx")
 
 
 

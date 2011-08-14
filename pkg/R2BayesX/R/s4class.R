@@ -5,6 +5,10 @@ function(x)
     cx <- "random.bayesx"
   if(grepl("_pspline", x))
     cx <- "sm.bayesx"
+  if(grepl("_season", x))
+    cx <- "sm.bayesx"
+  if(grepl("_season", x))
+    cx <- "sm.bayesx"
   if(grepl("_rw", x))
     cx <- "sm.bayesx"
   if(grepl("_spatial", x))
