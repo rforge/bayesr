@@ -58,9 +58,10 @@ f <- stunting ~ memployment + urban + gender + meducation +
   sx(district, bs = "mrf", map = ZambiaBnd) + r(district)
 
 ## estimation
+set.seed(321)
 zm <- bayesx(f, family = "gaussian", method = "MCMC",
-  iterations = 12000, burnin = 2000, step = 10,
-  seed = 123, data = ZambiaNutrition)
+  data = ZambiaNutrition, iterations = 12000,
+  burnin = 2000, step = 10)
 
 ## model summary
 summary(zm)
