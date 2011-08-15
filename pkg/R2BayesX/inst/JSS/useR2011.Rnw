@@ -516,9 +516,10 @@ f <- stunting ~ memployment + urban + gender + meducation +
 The model is then fitted using MCMC by calling
 
 <<fit-zambia-model, echo=TRUE, eval=FALSE>>=
+set.seed(321)
 zm <- bayesx(f, family = "gaussian", method = "MCMC",
-  iterations = 12000, burnin = 2000, step = 10,
-  seed = 123, data = ZambiaNutrition)
+  data = ZambiaNutrition, iterations = 12000, burnin = 2000,
+  step = 10)
 @
 <<cache-zambia-model, echo=FALSE, eval=TRUE>>=
 if(file.exists("zambia-model.rda")) {
@@ -546,25 +547,24 @@ summary(zm)
 \begin{Soutput} 
 Call:
 bayesx(formula = f, data = ZambiaNutrition, family = "gaussian", 
-    method = "MCMC", iterations = 12000, burnin = 2000, step = 10, 
-    seed = 123)
-
+    method = "MCMC", iterations = 12000, burnin = 2000, step = 10)
+ 
 Fixed effects estimation results:
 
 Parametric Coefficients:
                      Mean      Sd    2.5%     50%   97.5%
-(Intercept)        0.1013  0.0479  0.0076  0.1024  0.1927
-memploymentyes    -0.0076  0.0139 -0.0356 -0.0072  0.0206
-urbanno           -0.0900  0.0221 -0.1343 -0.0896 -0.0477
-genderfemale       0.0583  0.0129  0.0338  0.0584  0.0833
-meducationno      -0.1736  0.0277 -0.2256 -0.1731 -0.1203
-meducationprimary -0.0616  0.0255 -0.1126 -0.0624 -0.0130
+(Intercept)        0.0991  0.0475  0.0046  0.1018  0.1863
+memploymentno     -0.0084  0.0135 -0.0359 -0.0084  0.0170
+urbanno           -0.0895  0.0217 -0.1306 -0.0893 -0.0450
+genderfemale       0.0582  0.0133  0.0320  0.0578  0.0850
+meducationno      -0.1722  0.0269 -0.2248 -0.1719 -0.1163
+meducationprimary -0.0611  0.0262 -0.1115 -0.0614 -0.0091
 
 Smooth terms variances:
                Mean     Sd   2.5%    50%  97.5%    Min    Max
-sx(agechild) 0.0059 0.0057 0.0012 0.0042 0.0192 0.0005 0.0699
-sx(district) 0.0356 0.0185 0.0101 0.0320 0.0824 0.0035 0.1317
-sx(mbmi)     0.0018 0.0024 0.0003 0.0011 0.0078 0.0002 0.0307
+sx(agechild) 0.0062 0.0060 0.0014 0.0042 0.0233 0.0007 0.0570
+sx(district) 0.0360 0.0191 0.0094 0.0325 0.0813 0.0025 0.1784
+sx(mbmi)     0.0019 0.0028 0.0003 0.0011 0.0081 0.0002 0.0468
 \end{Soutput}
 \end{frame}
 
@@ -575,13 +575,13 @@ sx(mbmi)     0.0018 0.0024 0.0003 0.0011 0.0078 0.0002 0.0307
 \begin{Soutput}  
 Random effects variances:
               Mean     Sd   2.5%    50%  97.5%    Min    Max
-r(district) 0.0073 0.0059 0.0006 0.0056 0.0215 0.0002 0.0374
+r(district) 0.0076 0.0064 0.0008 0.0062 0.0226 0.0003 0.0701
  
 Scale estimate:
-         Mean     Sd   2.5%    50%  97.5%
-Sigma2 0.8018 0.0165 0.7718 0.8017 0.8342
+         Mean     Sd   2.5%    50% 97.5%
+Sigma2 0.8023 0.0163 0.7721 0.8017 0.836
  
-N = 4847  burnin = 2000  DIC = 4903.618  pd = 50.48634  
+N = 4847  burnin = 2000  DIC = 4899.506  pd = 50.41262  
 method = MCMC  family = gaussian  iterations = 12000  step = 10 
 \end{Soutput}
 \end{frame}

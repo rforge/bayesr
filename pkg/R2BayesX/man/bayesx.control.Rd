@@ -67,7 +67,7 @@ bayesx.control(model.name = "bayesx.estim",
     samples of the deviance \code{D}, the effective number of parameters \code{pD} and the deviance 
     information criterion \code{DIC} of the model.}
   \item{seed}{\code{\link[base]{integer}}, set the seed of the random number generator in 
-    \pkg{BayesX}.}
+    \pkg{BayesX}, usually set using function \code{\link[base]{set.seed}}.}
   \item{hyp.prior}{\code{\link[base]{numeric}}, defines the value of the hyper-parameters \code{a} 
     and \code{b} for the inverse gamma prior of the overall variance parameter \eqn{\sigma^2}, if 
     the response distribution is Gaussian. \code{numeric}, must be a positive real valued number.
