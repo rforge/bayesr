@@ -18,7 +18,7 @@ data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
 
 \author{Nikolaus Umlauf, Thomas Kneib, Stefan Lang, Achim~Zeileis}
 
-\URL{http://www.uibk.ac.at/statistics/personal/umlauf/}
+\URL{http://eeecon.uibk.ac.at/~umlauf/}
 
 
 \section{R package R2BayesX}
@@ -725,8 +725,8 @@ NOTE: 14 variables with 4847 observations read from file
     agechild(psplinerw2,nrknots=20,degree=3) +
     district(spatial,map=ZambiaBnd) + district(random) + memploymentyes +
     urbanno + genderfemale + meducationno + meducationprimary,
-    family=gaussian iterations=12000 burnin=2000 step=10 setseed=123
-    predict using d
+    family=gaussian iterations=12000 burnin=2000 step=10
+    setseed=2052766222 predict using d
      .
      .
      .
