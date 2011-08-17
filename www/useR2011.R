@@ -1,6 +1,5 @@
 library("R2BayesX")
 
-
 ## installing the BayesX command-line binary from R
 install.bayesx(inst.dir = "/path/to/bin", source.dir = NULL)
 
@@ -12,7 +11,6 @@ options(bayesx.bin = "/path/to/bin/BayesX")
 ## the command-line binary is in the folder 'commandline'
 ## and is named 'bayesx.exe', e.g. set
 options(bayesx.bin = "C:/BayesX/commandline/bayesx.exe")
-
 
 ## code of the example
 ## load the data and bnd object
@@ -44,12 +42,10 @@ plot(b, term = "sx(agechild)", residuals = TRUE,
 plot(b, term = "sx(district)", map = ZambiaBnd,
   swap = TRUE, pos = "right")
 
-
 ## view additional options for model terms
 bayesx.term.options(bs = "ps", method = "MCMC")
 bayesx.term.options(bs = "ps", method = "REML")
 bayesx.term.options(bs = "ps", method = "STEP")
-
 
 ## illustration example
 ## set up the formula
@@ -65,7 +61,6 @@ zm <- bayesx(f, family = "gaussian", method = "MCMC",
 
 ## model summary
 summary(zm)
-
 
 ## plot effects for mbmi and agechild
 plot(zm, term = c("sx(mbmi)", "sx(agechild)"))
@@ -94,10 +89,8 @@ plot(zm, term = "sx(mbmi)", which = "coef-samples")
 plot(zm, term = "sx(mbmi)", which = "var-samples", acf = TRUE)
 plot(zm, which = "max-acf")
 
-
 ## extract samples for term 'sx(mbmi)'
 ## and plot with the coda package
 samples.mbmi <- samples(zm, term = "sx(mbmi)")
 library("coda")
 plot(as.mcmc(samples.mbmi))
-
