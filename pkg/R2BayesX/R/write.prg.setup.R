@@ -41,8 +41,10 @@ function(response, object, prg.file, data.file, thismodel, terms.specs)
     object$max.hlevel <- object$hlevel + 1L
     hp <- TRUE
   }
-  if(!is.null(object$hlevel) && object$hlevel != object$max.hlevel)
+  if(!is.null(object$hlevel) && object$hlevel != object$max.hlevel && !hp)
     control.values[c("iterations", "burnin", "step", "level1", "level2", "hlevel", "maxint")] <- NULL
+  if(hp)
+    control.values["hlevel"] <- NULL
   if(!is.null(object$hlevel) && object$hlevel != 1L) {
     # control.values[c("iterations", "burnin", "step", "level1", "level2")] <- NULL
     control.values[c("predict", "modeonly", "setseed", "aresp", "bresp", "pred_check", 
