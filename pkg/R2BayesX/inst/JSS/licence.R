@@ -1,9 +1,12 @@
 library("tools")
 
 
-## Funktion zum suchen und setzen von Code-Files, z.B. mit Dateiendungen ('exts')
+## Suchen und setzen von Code-Files, z.B. mit Dateiendungen ('exts')
 ## .cpp und .h. Der Lizenz 'text' wird dann automatisch an den Anfang jeder
 ## betreffenden Datei gestellt.
+## dir: die directory des Projekts.
+## text: der Lizenz Vermerk, der am Anfang der jeweiligen Datei eingefuegt werden soll.
+## exts: nur in Dateien mit den in exts spezifizierten Endungen werden modifiziert.
 licence <- function(dir, text, exts = c("cpp", "h"))
 {
   dir <- path.expand(dir)
@@ -28,7 +31,7 @@ licence <- function(dir, text, exts = c("cpp", "h"))
 
 
 ## Der Vermerk auf die GPL2 Lizenz, wird an den Anfang von
-## .cpp und .h Dateien gestellt.
+## bspw. den .cpp und .h Dateien gestellt.
 licence.text <- "/* BayesX - Software for Bayesian Inference in
 Structured Additive Regression Models.
 Copyright (C) 2011  Christiane Belitz, Andreas Brezger,
@@ -53,4 +56,3 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. 
 
 ## Kleines Beispiel mit dem entpackten sourcecode von der BayesX Homepage.
 licence("~/bayesx", text = licence.text)
-
