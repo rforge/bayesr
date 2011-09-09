@@ -17,6 +17,8 @@ function(data)
     rownames(eta) <- 1L:nrow(eta)
     storage.mode(eta) <- "numeric"
   }
+  if(!is.null(eta))
+    eta <- na.omit(eta)
 
   return(eta)
 }

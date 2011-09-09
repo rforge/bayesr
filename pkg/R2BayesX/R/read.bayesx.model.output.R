@@ -21,9 +21,14 @@ function(dir, model.name)
       minfo <- eval(parse(text = minfo[length(minfo)]))
     }
     ## search for data
-    data <- NULL
-    if(length(i <- grep(paste(model.name, ".data.raw", sep = ""), files)))
+    data <- isnadata <- NULL
+    if(length(i <- grep(paste(model.name, ".data.raw", sep = ""), files))) {
       data <- as.matrix(read.table(paste(dir, "/", files[i], sep = ""), header = TRUE))
+      if(any(is.na(data))) {
+        isnadata <- rowSums(is.na(data) * 1) > 0
+        data <- data[!isnadata, ]
+      }
+    }
     for(char in c("_predict.raw", "_predictmean.raw", "_predict.res"))
       if(length(i <- grep(char, files)))
         data <- cbind(data, as.matrix(read.table(paste(dir, "/", files[i], sep = ""), header = TRUE)))
@@ -49,13 +54,28 @@ function(dir, model.name)
           if(!is.null(response))
             response <- response[ooo]
           if(!is.null(eta)) {
-            if(is.matrix(eta) || is.data.frame(eta))
-              eta <- eta[ooo,]
-            else
-              eta <- eta[ooo]
+            if(!is.null(isnadata) && length(eta) == length(isnadata)) {
+              if(is.matrix(eta))
+                eta <- eta[!isnadata,]
+              else
+                eta <- eta[!isnadata]
+            }
+            if(is.matrix(eta) || is.data.frame(eta)) {
+              if(nrow(eta) == length(ooo))
+                eta <- eta[ooo,]
+            } else {
+              if(length(eta) == length(ooo))
+                eta <- eta[ooo]
+            }
           }
-          if(is.matrix(eta))
-            rownames(eta) <- 1:NROW(data)
+          if(is.matrix(eta)) {
+            rownames(eta) <- 1:NROW(eta)
+            if(nrow(eta) != nrow(data))
+              eta <- NULL
+          } else {
+            if(nrow(data) != length(eta))
+              eta <- NULL
+          }
         }
         if(!is.null(minfo$YLevels)) {
           response <- as.factor(response)

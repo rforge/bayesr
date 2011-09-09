@@ -3,7 +3,7 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
 
-b2 <- read.bayesx.output("/tmp/RtmpyVmJJu/bayesx")
+b2 <- read.bayesx.output("/tmp/Rtmp6XXknZ/bayesx")
 
 
 
