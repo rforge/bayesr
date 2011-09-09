@@ -24,7 +24,7 @@ function(dir, files, data, response, eta, model.name, minfo, info)
         if(sum(x[,(dimx + 1L):ncol(x)], na.rm = TRUE) != 0) {
           colnx <- colnames(x)
           x <- x[order(x[,1L]),]
-          colnames(x) <- colnx
+          colnames(x) <- rep(colnx, length.out = ncol(x))
           cx <- s4class(res)
           dimx2 <- dimx
           if(cx == "geo.bayesx") {
@@ -63,7 +63,7 @@ function(dir, files, data, response, eta, model.name, minfo, info)
               }
             }
           }
-          colnames(x)[1L:dimx2] <- rrmfs(xnam)
+          colnames(x)[1L:dimx2] <- rep(rrmfs(xnam), length.out = length(1L:dimx2))
           rownames(x) <- 1L:nrow(x)
           labelx <- make.label(cx, xnam, dimx, vx)
           if(!is.null(info)) {

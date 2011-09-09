@@ -102,9 +102,9 @@ function(dir, files, data, response, eta, model.name, rval, minfo, info)
           if(length(id <- grep(on[i], cnd, fixed = TRUE)))
             if(on[i] != rn[i])
               cnd[id] <- rn[i]
-        colnames(data) <- cnd
+        colnames(data) <- rep(cnd, length.out = ncol(data))
       }
-      rownames(FixedEffects) <- rn
+      rownames(FixedEffects) <- rep(rn, length.out = nrow(FixedEffects))
     }
     rval$fixed.effects <- FixedEffects
     rownames(rval$fixed.effects) <- rrmfs(rownames(rval$fixed.effects))
@@ -120,8 +120,8 @@ function(dir, files, data, response, eta, model.name, rval, minfo, info)
         j <- 0L
         if(!is.matrix(FixedEffects)) {
           FixedEffects <- matrix(FixedEffects, nrow = 1)
-          colnames(FixedEffects) <- cF
-          rownames(FixedEffects) <- rF[rF != "(Intercept)"]
+          colnames(FixedEffects) <- rep(cF, length.out = ncol(FixedEffects))
+          rownames(FixedEffects) <- rep(rF[rF != "(Intercept)"], length.out = nrow(FixedEffects))
         }
         if("pstd" %in% cF) {
           id <- c(1L, 3L:ncol(FixedEffects))
@@ -130,10 +130,10 @@ function(dir, files, data, response, eta, model.name, rval, minfo, info)
         }
         if(!is.matrix(FixedEffects)) {
           FixedEffects <- matrix(FixedEffects, nrow = 1)
-          colnames(FixedEffects) <- cF
-          rownames(FixedEffects) <- rF[rF != "(Intercept)"]
+          colnames(FixedEffects) <- rep(cF, length.out = ncol(FixedEffects))
+          rownames(FixedEffects) <- rep(rF[rF != "(Intercept)"], length.out = nrow(FixedEffects))
         }
-        colnames(FixedEffects) <- cF
+        colnames(FixedEffects) <- rep(cF, length.out = ncol(FixedEffects))
         FEattrn <- names(FEattr)
         for(i in 1L:length(FEattrn))
           if(FEattrn[i] != "dim" && FEattrn[i] != "dimnames")
@@ -146,7 +146,7 @@ function(dir, files, data, response, eta, model.name, rval, minfo, info)
           x <- x[order(x[,1L]),]
           if(!is.matrix(x))
             x <- matrix(x, nrow = 1L)
-          colnames(x) <- c(tv, cF)
+          colnames(x) <- rep(c(tv, cF), length.out = ncol(x))
           rownames(x) <- 1L:nrow(x)
           attr(x,"specs") <- list(dim = 1L, term = rrmfs(tv), label = rrmfs(tv))
           attr(x, "partial.resids") <- blow.up.resid(data, x, tv, 
