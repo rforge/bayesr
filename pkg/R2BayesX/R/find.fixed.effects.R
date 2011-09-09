@@ -38,6 +38,15 @@ function(dir, files, data, response, eta, model.name, rval, minfo, info)
         }
         vn[id] <- new
         x$varname <- vn
+      } else {
+        if(!is.null(minfo) && !is.null(minfo$YLevels) && !is.null(minfo$nYLevels)) {
+          oL <- eval(parse(text = minfo$YLevels))
+          nL <- eval(parse(text = minfo$nYLevels))
+          bsf <- strsplit(basename(file), "_")[[1L]]
+          bsf <- gsub(".res", "", bsf[length(bsf)], fixed = TRUE)
+          if(bsf %in% nL)
+            x$varname <- paste(x$varname, ":", oL[nL == bsf], sep = "")
+        }
       }
     }
     if(NROW(x) == 1L && length(split <- strsplit(tf, "_")[[1L]]) == 3L) {

@@ -2,7 +2,15 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-m5 <- bayesx(bin ~ trend + sx(trend) + weekend, data = ibk, family = "binomialprobit", dir.rm = FALSE)
+
+b2 <- read.bayesx.output("/tmp/RtmpyVmJJu/bayesx")
+
+
+
+b <- bayesx(mstatus ~ s(age, bs = "ps"), method = "REML",
+  family = "multinomial", data = nzmarital, reference = "Married/Partnered")
+
+
 
 
 
