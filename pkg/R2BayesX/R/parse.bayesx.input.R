@@ -167,7 +167,7 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
     if(!only) {
       Y <- as.data.frame(Y)
       names(Y) <- Yn
-      data <- cbind(Y,data)
+      data <- cbind(Y, data)
     } 
     if(ncol(data) < 2L) {
       control$order <- order(data[,1L])
