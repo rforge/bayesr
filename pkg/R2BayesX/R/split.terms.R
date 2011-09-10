@@ -27,6 +27,8 @@ function(terms, vars, data, dropvars, intcpt)
           }
           tmp <- tmp[tmp %in% vars]
         }
+        if(is.matrix(tmp2))
+          tmp <- paste(tmp, colnames(tmp2), sep = "")
       }
       linvars <- c(linvars, tmp)
     }

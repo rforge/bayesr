@@ -126,7 +126,7 @@ function(object)
     names(object$data) <- nd
     colnames(dat) <- rmf(colnames(dat))
     intcptcheck <- intcpt <- attr(object$terms, "intercept") == 1L
-    for(sf in nd)
+    for(sf in nd) {
       if(is.factor(object$data[[sf]])) {
         if(intcpt) {
           ff <- as.data.frame(eval(parse(text = paste("model.matrix(~ -1 +", sf,")", 
@@ -141,7 +141,8 @@ function(object)
           mf <- lf[!lf %in% vars]
           dat <- cbind(dat, as.matrix(ff[mf]))
         }
-      }  
+      }
+    }
     object$Yn <- rmf(object$Yn)
     dat <- cbind(as.vector(object$data[[object$Yn]]),dat)
     colnames(dat)[1L] <- object$Yn
