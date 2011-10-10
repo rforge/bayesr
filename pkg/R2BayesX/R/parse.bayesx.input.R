@@ -150,8 +150,9 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
             object <- eval(parse(text = tlsm[k]))
             term <- object$term
             for(j in 1L:length(term))
-              if(is.factor(data[[term[j]]]))
+              if(is.factor(data[[term[j]]])) {
                 data[[term[j]]] <- f2int(data[[term[j]]])
+              }
           }
       }
       if(ncol(data) < 2L && names(data) == Yn)
@@ -172,7 +173,6 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
     if(ncol(data) < 2L) {
       control$order <- order(data[,1L])
       data[,1L] <- data[order(data[,1L]), 1L]
-
     } else {
       control$order <- order(Y)
       data <- data[order(Y),]

@@ -3,12 +3,25 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
 
-b2 <- read.bayesx.output("/tmp/Rtmp6XXknZ/bayesx")
-
-
-
-b <- bayesx(mstatus ~ s(age, bs = "ps"), method = "REML",
-  family = "multinomial", data = nzmarital, reference = "Married/Partnered")
+   set.seed(333)
+          
+     ## simulate some geographical data
+     data("MunichBnd")
+     N <- length(MunichBnd); n <- N*5
+     names(MunichBnd) <- 1:N
+          
+     ## regressors
+     dat <- data.frame(x1 = runif(n, -3, 3),
+       id = as.factor(sort(rep(names(MunichBnd), length.out = n))))
+     dat$sp <- with(dat, sort(runif(N, -2, 2), decreasing = TRUE)[id])
+          
+     ## response
+     dat$y <- with(dat, 1.5 + sin(x1) + sp + rnorm(n, sd = 1.2))
+     
+     ## estimate models with
+     ## bayesx MCMC and REML
+     b1 <- bayesx(y ~ sx(x1) + sx(id, bs = "mrf", map = MunichBnd), 
+       method = "MCMC", data = dat, dir.rm = FALSE)
 
 
 

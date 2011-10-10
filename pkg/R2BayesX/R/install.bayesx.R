@@ -63,6 +63,9 @@ function(inst.dir = NULL, source.dir = NULL, type = NULL)
     }
     #zip.file.extract(file = paste(dir, "/ ", sep = ""), zipname = "bayesxsource.zip",
     #  unzip = getOption("unzip"), dir = paste(dir, "/ ", sep = ""))
+    ## begin FIXME
+    unzip(file.path(dir, "bayesxsource.zip"), exdir = dir)
+    ## end FIXME
     dir <- paste(strsplit(dir," "," ")[[1]], collapse = "")
     hereisbayesx <- file.path(dir, "bayesx/sourcecode")
     textfun("start compiling sourcecode, may take some time!")

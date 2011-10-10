@@ -6,7 +6,8 @@ function(x)
   if(any(is.na(as.numeric(as.character(x)))))
     if(is.factor(x))
       levels(x) <- 1:nlevels(x)
-  x <- as.integer(as.numeric(as.character(x))) - 1L
+  x <- as.integer(as.numeric(as.character(x)))
+  # x <- x - 1L
   if(min(x) < 0)
     x <- x + min(x)
   options(warn = warn)

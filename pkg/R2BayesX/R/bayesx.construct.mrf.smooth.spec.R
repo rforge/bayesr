@@ -15,6 +15,7 @@ function(object, dir, prg, data)
     map.name <- object$xt$map.name
   if(!is.list(object$xt))
     object$xt <- list(object$xt)
+
   map <- object$xt$map
   if(is.null(map)) {
     if(!is.null(object$xt$polys))
