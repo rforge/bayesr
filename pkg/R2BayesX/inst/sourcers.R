@@ -20,7 +20,7 @@ invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
      
      ## estimate models with
      ## bayesx MCMC and REML
-     b1 <- bayesx(y ~ sx(x1) + sx(id, bs = "mrf", map = MunichBnd), 
+     b1 <- bayesx(y ~ sx(x1) + sx(id, bs = "gs", map = MunichBnd), 
        method = "MCMC", data = dat, dir.rm = FALSE)
 
 

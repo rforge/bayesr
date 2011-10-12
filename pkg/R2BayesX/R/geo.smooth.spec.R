@@ -47,7 +47,7 @@ function(object, dir, prg, data, type)
     mapfile <- paste(dir, "/", mapfile, sep = "")
     prgfile <- paste(dir, "/", prg, sep = "")
     cat("map", map.name, "\n", file = prgfile, append = TRUE)
-    if(!any(is.na(poly.names <- f2int(names(map))))) {
+    if(!any(is.na(poly.names <- f2int(names(map), type = 2L)))) {
       poly.names <- sort(poly.names)
       poly.names <- as.character(poly.names)
     } else poly.names <- sort(names(map))

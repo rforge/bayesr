@@ -151,7 +151,11 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
             term <- object$term
             for(j in 1L:length(term))
               if(is.factor(data[[term[j]]])) {
-                data[[term[j]]] <- f2int(data[[term[j]]])
+                if(class(object) %in% c("mrf.smooth.spec", "gk.smooth.spec", "gs.smooth.spec")) {
+                  data[[term[j]]] <- f2int(data[[term[j]]], type = 2L)
+                } else {
+                  data[[term[j]]] <- f2int(data[[term[j]]])
+                }
               }
           }
       }

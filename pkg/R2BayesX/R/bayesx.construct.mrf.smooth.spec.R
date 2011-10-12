@@ -68,7 +68,7 @@ function(object, dir, prg, data)
     cat("map", map.name, "\n", file = prgfile, append = TRUE)
   if(dirok) {
     if(inherits(map, "bnd")) {
-      if(!any(is.na(poly.names <- f2int(names(map))))) {
+      if(!any(is.na(poly.names <- f2int(names(map), type = 2L)))) {
         poly.names <- sort(poly.names)
         poly.names <- as.character(poly.names)
       } else poly.names <- sort(names(map))
