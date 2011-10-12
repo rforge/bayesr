@@ -71,7 +71,7 @@ function(inst.dir = NULL, source.dir = NULL, type = NULL)
     textfun("start compiling sourcecode, may take some time!")
     owd <- getwd()
     setwd(hereisbayesx)
-    # ok <- try(system("make", intern = TRUE), silent = TRUE)
+    ok <- try(system("make", intern = TRUE), silent = TRUE)
     if(length(ok) == 0) {
       options(warn = 0)
       stop("could not compile BayesX sourcecode!")
