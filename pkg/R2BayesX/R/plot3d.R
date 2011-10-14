@@ -261,6 +261,6 @@ function(x, residuals = FALSE, col.surface = NULL,
     }
   }
 
-  return(invisible(NULL))
+  return(invisible(args))
 }
 
