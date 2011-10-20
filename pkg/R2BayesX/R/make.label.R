@@ -5,14 +5,14 @@ function(cx, xnam, dimx, vx)
     label <- paste("r(", xnam, sep = "")
   if(cx == "sm.bayesx") {
     if(dimx > 1L)
-      label <- paste("s(", xnam[1L], ",", xnam[2L], sep = "")
+      label <- paste("sx(", xnam[1L], ",", xnam[2L], sep = "")
     else
-      label <- paste("s(", xnam, sep = "")
+      label <- paste("sx(", xnam, sep = "")
   }
   if(cx == "mrf.bayesx")
-    label <- paste("s(", xnam, sep = "")
+    label <- paste("sx(", xnam, sep = "")
   if(cx == "geo.bayesx")
-    label <- paste("s(", xnam[1], sep = "")
+    label <- paste("sx(", xnam[1], sep = "")
   if(is.null(vx))
     label <- paste(label, ")", sep = "")
   else

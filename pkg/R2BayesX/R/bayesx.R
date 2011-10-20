@@ -5,6 +5,7 @@ function(formula, data, weights = NULL, subset = NULL,
 {
   ## first check installation of bayesx
   ok <- check.install.bayesx(control$bin, verbose = FALSE)
+
   if(is.null(ok))
     stop("please install BayesX or verify bin path, also see function install.bayesx()")
 
