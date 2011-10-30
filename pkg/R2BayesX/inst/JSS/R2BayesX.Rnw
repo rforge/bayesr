@@ -285,7 +285,7 @@ where the design matrix $\mathbf{Z}_j$ depends on the specific term structure ch
 and $\boldsymbol{\beta}_j$ are unknown regression coefficients to be estimated. Hence, the predictor
  (\ref{eqn:structadd}) may be rewritten as
 \begin{equation*} \label{eqn:structaddmat}
-\boldsymbol{\eta} = \mathbf{Z}_1\boldsymbol{\beta}_1 + \ldots \mathbf{Z}_p\boldsymbol{\beta}_p
+\boldsymbol{\eta} = \mathbf{Z}_1\boldsymbol{\beta}_1 + \ldots + \mathbf{Z}_p\boldsymbol{\beta}_p
 + \mathbf{X}\boldsymbol{\gamma},
 \end{equation*}
 where $\mathbf{X}$ corresponds to the usual design matrix for the linear effects.
