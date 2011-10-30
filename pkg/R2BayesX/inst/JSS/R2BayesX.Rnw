@@ -276,7 +276,7 @@ regression \citep{R2BayesX:Fotheringham+Brunsdon+Charlton:2002}.
 
 The unified representation of a STAR predictor arises from the fact that all functions $f_j$ in
 (\ref{eqn:structadd}) may be specified by a basis function approach, where the vector of function
-evaluations $\mathbf{f}_j = (f_j(\mathbf{z}_{1}),\ldots,f_j(\mathbf{z}_{n}))$ of the
+evaluations $\mathbf{f}_j = (f_j(\mathbf{z}_{1}),\ldots,f_j(\mathbf{z}_{n}))^{\prime}$ of the
 $i = 1,\ldots,n$ observations can be written in matrix notation
 \begin{equation*} \label{eqn:matnot}
 \mathbf{f}_j = \mathbf{Z}_j\boldsymbol{\beta}_j,
