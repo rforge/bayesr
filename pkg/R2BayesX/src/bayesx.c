@@ -405,7 +405,7 @@ SEXP cdist(SEXP map, SEXP N, SEXP b)
         dx = REAL(pos1)[0] - REAL(pos2)[0];
         dy = REAL(pos1)[1] - REAL(pos2)[1];
                
-        bptr[j*n + i] = pythag(dx,dy);
+        bptr[j*n + i] = hypot(dx,dy);
         bptr[i*n + j] = bptr[j*n + i];
       }
     }
