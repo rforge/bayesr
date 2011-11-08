@@ -22,13 +22,13 @@
   \item{model}{for which model the fitted values/residuals should be provided, either an integer or 
     a character, e.g. \code{model = "mcmc.model"}.}
   \item{term}{if not \code{NULL}, the function will search for the term fitted values/residuals 
-    specified here, either an integer or a character, eg \code{term = "s(x)"}.}
+    specified here, either an integer or a character, eg \code{term = "sx(x)"}.}
   \item{\dots}{not used.}
 }
 
 \value{ 
   For \code{fitted.bayesx}, either the fitted linear predictor and mean or if e.g. 
-  \code{term = "s(x)"}, an object with class \code{"xx.bayesx"}, where \code{"xx"} is depending of 
+  \code{term = "sx(x)"}, an object with class \code{"xx.bayesx"}, where \code{"xx"} is depending of 
   the type of the term. In principle the returned term object is simply a matrix containing the 
   covariate(s) and its effects, depending on the estimation method, e.g. for MCMC estimated models, 
   mean/median fitted values and other quantities are returned. Several additional informations on 
@@ -96,7 +96,7 @@ hist(fit$linpred)
 
 ## extract model term of x1
 ## and plot it
-fx <- fitted(b2, term = "s(x1)")
+fx <- fitted(b2, term = "sx(x1)")
 plot(fx)
 
 
@@ -115,7 +115,7 @@ b <- c(b1, b2)
 ## extract fitted terms for second model
 fit <- fitted(b, model = 2, term = 1:3)
 names(fit)
-plot(fit["s(district)"])
+plot(fit["sx(district)"])
 }
 }
 
