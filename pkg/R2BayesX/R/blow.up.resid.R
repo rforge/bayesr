@@ -15,6 +15,8 @@ function(data, x, xnam, response, eta, dimx, cx)
       ox <- order(xtmp)
       xtmp <- xtmp[ox]
       response <- response[ox]
+      if(!is.matrix(eta))
+        eta <- matrix(eta, ncol = 1L)
       eta <- eta[ox,]
       ind <- unique.id(xtmp)
       if(max(ind) <= nrow(x)) {
