@@ -1,0 +1,16 @@
+Package: BayesXsrc
+Version: 2.0.1-0
+Date: 2011-11-18
+Title: C++ Sources for BayesX
+Author@R: c(person(given = "Nikolaus", family = "Umlauf", role = c("aut", "cre"), email = "Nikolaus.Umlauf@uibk.ac.at"),
+        person(given = "Daniel", family = "Adler", role = "aut"),
+        person(given = "Stefan", family = "Lang", role = "aut"),
+        person(given = "Thomas", family = "Kneib", role = "aut"),
+        person(given = "Achim", family = "Zeileis", role = "aut"))
+Author: Nikolaus Umlauf [aut, cre], Daniel Adler [aut], Stefan Lang [aut], Thomas Kneib [aut], Achim Zeileis [aut]
+Maintainer: Nikolaus Umlauf <Nikolaus.Umlauf@uibk.ac.at>
+Description: BayesX provides Bayesian inference in structured additive regression (STAR) models.
+	BayesXsrc provides the C++ sources which can be easily interfaced from R using R2BayesX.
+Suggests: R2BayesX
+License: GPL-2 | GPL-3
+URL: http://www.stat.uni-muenchen.de/~bayesx/bayesx.html
