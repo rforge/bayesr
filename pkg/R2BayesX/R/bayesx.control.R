@@ -1,14 +1,14 @@
 bayesx.control <-
 function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",  
-  verbose = TRUE, dir.rm = TRUE, bin = getOption("bayesx.bin"), 
-  outfile = NULL, replace = FALSE, iterations = 12000L, burnin = 2000L, maxint = NULL, 
-  step = 10L, predict = TRUE, seed = NULL, hyp.prior = NULL, distopt = NULL, 
-  reference = NULL, zipdistopt = NULL,  begin = NULL, level = NULL, 
-  eps = 1e-05, lowerlim = 0.001, maxit = 400L, maxchange = 1e+06, leftint = NULL, 
-  lefttrunc = NULL, state = NULL, algorithm = NULL, criterion = NULL, proportion = NULL,
-  startmodel = NULL, trace = NULL, steps = NULL, 
-  CI = NULL, bootstrapsamples = NULL, ...)
+  verbose = TRUE, dir.rm = TRUE, bin = NULL, outfile = NULL, replace = FALSE,
+  iterations = 12000L, burnin = 2000L, maxint = NULL, step = 10L, predict = TRUE,
+  seed = NULL, hyp.prior = NULL, distopt = NULL,  reference = NULL, zipdistopt = NULL,
+  begin = NULL, level = NULL,  eps = 1e-05, lowerlim = 0.001, maxit = 400L, maxchange = 1e+06,
+  leftint = NULL, lefttrunc = NULL, state = NULL, algorithm = NULL, criterion = NULL,
+  proportion = NULL, startmodel = NULL, trace = NULL, steps = NULL, CI = NULL,
+  bootstrapsamples = NULL, ...)
 {
+  if(is.null(bin)) bin <- findBayesX()
   control <- list(...)
   start <- 6L + length(control)
   control$model.name <- model.name 

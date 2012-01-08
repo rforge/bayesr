@@ -1,7 +1,8 @@
 run.bayesx <-
 function(dir, prg.name = "bayesx.estim.input.prg", 
-  verbose = TRUE, bin = getOption("bayesx.bin"))
+  verbose = TRUE, bin = NULL)
 {
+  if(is.null(bin)) bin <- findBayesX()
   ok <- check.install.bayesx(bin, verbose = FALSE) 
   if(is.null(ok))
     stop("please install BayesX or verify bin path, also see function install.bayesx()")

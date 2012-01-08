@@ -9,7 +9,7 @@ export(
   bayesx_runtime,            
   bayesx.term.options, 
   bxopts,               
-  check.install.bayesx, 
+  check.install.bayesx,
   install.bayesx,       
   colorlegend, 
   cprob,  

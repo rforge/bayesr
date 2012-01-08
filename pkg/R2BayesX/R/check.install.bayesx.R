@@ -1,16 +1,17 @@
 check.install.bayesx <-
-function(bin = getOption("bayesx.bin"), verbose = FALSE)
+function(bin = NULL, verbose = FALSE)
 {
+  if(is.null(bin)) bin <- findBayesX()
   warn <- getOption("warn")
   options(warn = -1L)
   ## trivial test program
   temp.dir <- tempdir()
   bayesx.test.prg <- "exit\n"
   testfile <- paste(temp.dir, "/bayesx.test.prg", sep = "")
-  writeLines(bayesx.test.prg,testfile)
+  writeLines(bayesx.test.prg, testfile)
   ok <- TRUE
   if(!is.null(bin))
-    if(!file.exists(bin))
+    if(!file.exists(gsub("'", "", bin, fixed = TRUE)))
       ok <- FALSE
 
   ## if bin unspecified try R2BayesX/bin or direct call
