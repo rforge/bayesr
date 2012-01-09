@@ -1,0 +1,370 @@
+
+R version 2.14.1 (2011-12-22)
+Copyright (C) 2011 The R Foundation for Statistical Computing
+ISBN 3-900051-07-0
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ## BayesX STEP testing
+> library("BayesXsrc")
+> step <- run.bayesx("step.prg", verbose = FALSE)
+> writeLines(step$log)
+NOTE: created directory /home/nik/svn/bayesr/pkg/BayesXsrc.Rcheck/tests/temp
+NOTE: created directory /home/nik/svn/bayesr/pkg/BayesXsrc.Rcheck/tests/output
+> logopen using step.prg.log
+> stepwisereg b
+> dataset d
+> d.infile using data.raw
+NOTE: 5 variables with 1000 observations read from file
+data.raw
+
+> b.outfile = step
+> b.regress y = x1(psplinerw2,nrknots=20,degree=3) + x2(psplinerw2,nrknots=20,degree=3) + x3(psplinerw2,nrknots=20,degree=3) + x4(psplinerw2,nrknots=20,degree=3), family=gaussian iterations=10000 burnin=2000 step=10 algorithm=cdescent1 CI=MCMCselect predict using d
+
+STEPWISE OBJECT b: stepwise procedure 
+
+GENERAL OPTIONS: 
+
+  Performance criterion: AIC_imp 
+  Maximum number of iterations: 100
+
+  RESPONSE DISTRIBUTION: 
+
+  Family: Gaussian
+  Number of observations: 1000
+
+OPTIONS FOR STEPWISE PROCEDURE: 
+
+  OPTIONS FOR NONPARAMETRIC TERM: x1
+
+  Minimum value for the smoothing parameter: 0.435246875
+  This is equivalent to degrees of freedom: approximately 15, exact 14.9855
+  Maximum value for the smoothing parameter: 5625
+  This is equivalent to degrees of freedom: approximately 2, exact 2.02172
+  Number of different smoothing parameters with equidistant degrees of freedom: 20
+  Startvalue of the 1. startmodel is "effect excluded" 
+
+  OPTIONS FOR NONPARAMETRIC TERM: x2
+
+  Minimum value for the smoothing parameter: 0.435246875
+  This is equivalent to degrees of freedom: approximately 15, exact 15.0286
+  Maximum value for the smoothing parameter: 5625
+  This is equivalent to degrees of freedom: approximately 2, exact 2.03136
+  Number of different smoothing parameters with equidistant degrees of freedom: 20
+  Startvalue of the 1. startmodel is "effect excluded" 
+
+  OPTIONS FOR NONPARAMETRIC TERM: x3
+
+  Minimum value for the smoothing parameter: 0.4480453125
+  This is equivalent to degrees of freedom: approximately 15, exact 14.9974
+  Maximum value for the smoothing parameter: 6718.75
+  This is equivalent to degrees of freedom: approximately 2, exact 1.96441
+  Number of different smoothing parameters with equidistant degrees of freedom: 20
+  Startvalue of the 1. startmodel is "effect excluded" 
+
+  OPTIONS FOR NONPARAMETRIC TERM: x4
+
+  Minimum value for the smoothing parameter: 0.435246875
+  This is equivalent to degrees of freedom: approximately 15, exact 15.0226
+  Maximum value for the smoothing parameter: 5625
+  This is equivalent to degrees of freedom: approximately 2, exact 2.01512
+  Number of different smoothing parameters with equidistant degrees of freedom: 20
+  Startvalue of the 1. startmodel is "effect excluded" 
+
+
+STEPWISE PROCEDURE STARTED 
+
+
+
+  Startmodel:
+
+  y = const
+ AIC_imp = -63.014288
+
+  Startmodel:
+
+  y = const + x2 + x1(psplinerw2,df=4.9982,(lambda=128.902)) + x4(psplinerw2,df=2.01512,(lambda=5625))
+ AIC_imp = -1009.6441
+
+  Startmodel:
+
+  y = const + x2 + x1(psplinerw2,df=4.9982,(lambda=128.902)) + x4(psplinerw2,df=2.01512,(lambda=5625))
+ AIC_imp = -1010.9177
+
+  Final Model:
+
+  y = const + x2 + x1(psplinerw2,df=4.9982,(lambda=128.902)) + x4(psplinerw2,df=2.01512,(lambda=5625))
+ AIC_imp = -1010.9189
+  Used number of iterations: 3
+
+  ------------------------------------------------------------------------ 
+  ------------------------------------------------------------------------ 
+
+
+  Final Model:
+
+  y = const + x2 + x1(psplinerw2,df=4.9982,(lambda=128.902)) + x4(psplinerw2,df=2.01512,(lambda=5625))
+ AIC_imp = -1010.9188
+
+
+CALCULATION OF CONFIDENCE INTERVALS STARTED:
+
+  ITERATION: 1
+
+  FixedEffects1
+
+  Acceptance rate:    99.98 %
+
+  Relative Changes in  
+
+  Mean:               0.0404374
+  Variance:           1.79769e+308
+  Minimum:            0.145317
+  Maximum:            0.100748
+
+
+
+  f_x1
+
+  Acceptance rate:    100 %
+
+  Relative Changes in  
+
+  Mean:               0.0815924
+  Variance:           1.79769e+308
+  Minimum:            0.283958
+  Maximum:            0.345093
+
+
+
+  f_x4
+
+  Acceptance rate:    100 %
+
+  Relative Changes in  
+
+  Mean:               0.854329
+  Variance:           1.79769e+308
+  Minimum:            2.57488
+  Maximum:            1.07894
+
+
+
+  FixedEffects1
+
+  Acceptance rate:    99.99 %
+
+  Relative Changes in  
+
+  Mean:               0.00128712
+  Variance:           0.0600304
+  Minimum:            0.0193756
+  Maximum:            0.0201785
+
+
+
+  f_x1
+
+  Acceptance rate:    100 %
+
+  Relative Changes in  
+
+  Mean:               0.00630021
+  Variance:           0.0498526
+  Minimum:            0.0273152
+  Maximum:            0.0612283
+
+
+
+  f_x4
+
+  Acceptance rate:    100 %
+
+  Relative Changes in  
+
+  Mean:               0.0380656
+  Variance:           0.0558807
+  Minimum:            0.154555
+  Maximum:            0.14609
+
+
+
+  FixedEffects1
+
+  Acceptance rate:    99.99 %
+
+  Relative Changes in  
+
+  Mean:               0.000862837
+  Variance:           0.00281695
+  Minimum:            0.00864244
+  Maximum:            0
+
+
+
+  f_x1
+
+  Acceptance rate:    100 %
+
+  Relative Changes in  
+
+  Mean:               0.00356807
+  Variance:           0.0293321
+  Minimum:            0.00158226
+  Maximum:            0.0615172
+
+
+
+  f_x4
+
+  Acceptance rate:    100 %
+
+  Relative Changes in  
+
+  Mean:               0.0145223
+  Variance:           0.0309019
+  Minimum:            0.103133
+  Maximum:            0.0892052
+
+
+  ITERATION: 10000
+
+  FixedEffects1
+
+
+  Acceptance rate:    99.99 %
+
+
+ESTIMATION RESULTS:
+
+  Predicted values:
+
+  Estimated mean of predictors, expectation of response and
+  individual deviances are stored in file
+  step_predictmean.raw
+
+  Estimation results for the deviance: 
+
+  Unstandardized Deviance (-2*Loglikelihood(y|mu))
+
+  Mean:             1818.0527
+  Std. Dev:         5.0236406
+  2.5% Quantile:    1810.1642
+  10% Quantile:     1812.1715
+  50% Quantile:     1817.2634
+  90% Quantile:     1824.6251
+  97.5% Quantile:   1829.5907
+
+  Saturated Deviance (-2*Loglikelihood(y|mu) + 2*Loglikelihood(y|mu=y))
+
+  Mean:             1009.3034
+  Std. Dev:         5.0236406
+  2.5% Quantile:    1001.415
+  10% Quantile:     1003.4223
+  50% Quantile:     1008.5142
+  90% Quantile:     1015.8759
+  97.5% Quantile:   1020.8415
+
+  Samples of the deviance are stored in file
+  step_deviance_sample.raw
+
+  Estimation results for the DIC: 
+
+  DIC based on the unstandardized deviance
+
+  Deviance(bar_mu):           1808.7756
+  pD:                         9.2771086
+  DIC:                        1827.3298
+
+  DIC based on the saturated deviance
+
+  Deviance(bar_mu):           1000.0263
+  pD:                         9.2771086
+  DIC:                        1018.5805
+
+  Estimation results for the scale parameter:
+
+  Acceptance rate:   100 %
+
+  Mean:             0.357318
+  Std. dev.:        4.01226e-08
+  2.5% Quantile:    0.357318
+  10% Quantile:     0.357318
+  50% Quantile:     0.357318
+  90% Quantile:     0.357318
+  97.5% Quantile:   0.357318
+
+
+
+  FixedEffects1
+
+
+  Acceptance rate:    100 %
+
+
+  Variable  mean           Std. Dev.      2.5% quant.    median         97.5% quant.   
+    const     1.41828        0.036665       1.3438         1.41872        1.48983        
+    x2        0.752707       0.0632827      0.62302        0.751685       0.878494       
+
+  Results for fixed effects are also stored in file
+  step_FixedEffects1.res
+
+
+  f_x1
+
+
+  Acceptance rate:    100 %
+
+  Results are stored in file
+  step_f_x1_pspline.res
+
+  Results may be visualized using the R function 'plotnonp'
+  Type for example:
+  plotnonp("step_f_x1_pspline.res")
+
+
+  f_x4
+
+
+  Acceptance rate:    100 %
+
+  Results are stored in file
+  step_f_x4_pspline.res
+
+  Results may be visualized using the R function 'plotnonp'
+  Type for example:
+  plotnonp("step_f_x4_pspline.res")
+
+  Files of model summary: 
+
+  --------------------------------------------------------------------------- 
+
+  Batch file for visualizing effects of nonlinear functions is stored in file 
+  step_graphics.prg
+
+  --------------------------------------------------------------------------- 
+
+  Batch file for visualizing effects of nonlinear functions   in R is stored in file 
+  step_r.R
+
+  --------------------------------------------------------------------------- 
+
+  Latex file of model summary is stored in file 
+  step_model_summary.tex
+
+  --------------------------------------------------------------------------- 
+
+> logclose
+NOTE: log-file step.prg.log closed
+> 

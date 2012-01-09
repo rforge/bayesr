@@ -1,0 +1,519 @@
+
+R version 2.14.1 (2011-12-22)
+Copyright (C) 2011 The R Foundation for Statistical Computing
+ISBN 3-900051-07-0
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ## BayesX MCMC testing
+> library("BayesXsrc")
+> mcmc <- run.bayesx("mcmc.prg", verbose = FALSE)
+> writeLines(mcmc$log)
+NOTE: created directory /home/nik/svn/bayesr/pkg/BayesXsrc.Rcheck/tests/temp
+NOTE: created directory /home/nik/svn/bayesr/pkg/BayesXsrc.Rcheck/tests/output
+> logopen using mcmc.prg.log
+> bayesreg b
+> dataset d
+> d.infile using data.raw
+NOTE: 5 variables with 1000 observations read from file
+data.raw
+
+> b.outfile = mcmc
+> b.regress y = x1(psplinerw2,nrknots=20,degree=3) + x2(psplinerw2,nrknots=20,degree=3), family=gaussian iterations=12000 burnin=2000 step=10 setseed=1298345438 predict using d
+
+
+BAYESREG OBJECT b: regression procedure
+
+GENERAL OPTIONS:
+
+  Number of iterations:  12000
+  Burn-in period:        2000
+  Thinning parameter:    10
+
+
+RESPONSE DISTRIBUTION:
+
+  Family: Gaussian
+  Number of observations: 1000
+  Number of observations with positive weights: 1000
+  Response function: identity
+  Hyperparameter a: 0.001
+  Hyperparameter b: 0.001
+
+
+OPTIONS FOR ESTIMATION:
+
+  OPTIONS FOR FIXED EFFECTS: FixedEffects1
+
+  Priors: diffuse priors
+
+  OPTIONS FOR P-SPLINE TERM: f_x1_pspline
+
+  Prior: second order random walk
+  Number of knots: 20
+  Knot choice: equidistant
+  Degree of Splines: 3
+
+  Hyperprior a for variance parameter: 0.001
+  Hyperprior b for variance parameter: 0.001
+
+  OPTIONS FOR P-SPLINE TERM: f_x2_pspline
+
+  Prior: second order random walk
+  Number of knots: 20
+  Knot choice: equidistant
+  Degree of Splines: 3
+
+  Hyperprior a for variance parameter: 0.001
+  Hyperprior b for variance parameter: 0.001
+
+
+MCMC SIMULATION STARTED
+
+
+
+Computing starting values (may take some time)
+
+  ITERATION: 1
+
+  APPROXIMATE RUN TIME: 0 seconds
+
+  ITERATION: 1000
+  ITERATION: 2000
+  ITERATION: 3000
+  ITERATION: 4000
+  ITERATION: 5000
+
+  FixedEffects1
+
+  Acceptance rate:    99.98 %
+
+  Relative Changes in  
+
+  Mean:               0.0120641
+  Variance:           1.79769e+308
+  Minimum:            0.0444994
+  Maximum:            0.0170617
+
+
+
+  f_x1_pspline
+
+  Acceptance rate:    100 %
+
+  Relative Changes in  
+
+  Mean:               0.235939
+  Variance:           1.79769e+308
+  Minimum:            0.670558
+  Maximum:            0.398403
+
+
+
+  f_x1_pspline_variance
+
+  Acceptance rate:    100 %
+
+  Relative Changes in  
+
+  Mean:               0.402133
+  Variance:           1.79769e+308
+  Minimum:            0.864567
+  Maximum:            2.83032
+
+
+
+  f_x2_pspline
+
+  Acceptance rate:    100 %
+
+  Relative Changes in  
+
+  Mean:               0.283041
+  Variance:           1.79769e+308
+  Minimum:            0.598732
+  Maximum:            1.05882
+
+
+
+  f_x2_pspline_variance
+
+  Acceptance rate:    100 %
+
+  Relative Changes in  
+
+  Mean:               3.01852
+  Variance:           1.79769e+308
+  Minimum:            0.631221
+  Maximum:            29.0583
+
+
+  ITERATION: 6000
+  ITERATION: 7000
+  ITERATION: 8000
+
+  FixedEffects1
+
+  Acceptance rate:    99.99 %
+
+  Relative Changes in  
+
+  Mean:               0.00073483
+  Variance:           0.0545616
+  Minimum:            0
+  Maximum:            0
+
+
+
+  f_x1_pspline
+
+  Acceptance rate:    100 %
+
+  Relative Changes in  
+
+  Mean:               0.0055385
+  Variance:           0.0618065
+  Minimum:            0.0428222
+  Maximum:            0.0748301
+
+
+
+  f_x1_pspline_variance
+
+  Acceptance rate:    100 %
+
+  Relative Changes in  
+
+  Mean:               0.0258003
+  Variance:           0.00376635
+  Minimum:            0.0761123
+  Maximum:            0
+
+
+
+  f_x2_pspline
+
+  Acceptance rate:    100 %
+
+  Relative Changes in  
+
+  Mean:               0.00806802
+  Variance:           0.0839744
+  Minimum:            0.0591563
+  Maximum:            0.147929
+
+
+
+  f_x2_pspline_variance
+
+  Acceptance rate:    100 %
+
+  Relative Changes in  
+
+  Mean:               0.0699433
+  Variance:           0.720275
+  Minimum:            0
+  Maximum:            1.70914
+
+
+  ITERATION: 9000
+  ITERATION: 10000
+  ITERATION: 11000
+
+  FixedEffects1
+
+  Acceptance rate:    99.99 %
+
+  Relative Changes in  
+
+  Mean:               0.000238756
+  Variance:           0.0259043
+  Minimum:            0
+  Maximum:            0
+
+
+
+  f_x1_pspline
+
+  Acceptance rate:    100 %
+
+  Relative Changes in  
+
+  Mean:               0.0024004
+  Variance:           0.0191615
+  Minimum:            0.0356155
+  Maximum:            0.027562
+
+
+
+  f_x1_pspline_variance
+
+  Acceptance rate:    100 %
+
+  Relative Changes in  
+
+  Mean:               0.0216987
+  Variance:           0.101507
+  Minimum:            0.323179
+  Maximum:            0
+
+
+
+  f_x2_pspline
+
+  Acceptance rate:    100 %
+
+  Relative Changes in  
+
+  Mean:               0.00619759
+  Variance:           0.0751093
+  Minimum:            0.424677
+  Maximum:            0.116076
+
+
+
+  f_x2_pspline_variance
+
+  Acceptance rate:    100 %
+
+  Relative Changes in  
+
+  Mean:               0.117659
+  Variance:           0.539608
+  Minimum:            0
+  Maximum:            0.242684
+
+
+  ITERATION: 12000
+
+  FixedEffects1
+
+
+  Acceptance rate:    99.99 %
+
+
+SIMULATION TERMINATED
+
+SIMULATION RUN TIME: 0 seconds
+
+
+ESTIMATION RESULTS:
+
+  Predicted values:
+
+  Estimated mean of predictors, expectation of response and
+  individual deviances are stored in file
+  mcmc_predictmean.raw
+
+  Estimation results for the deviance: 
+
+  Unstandardized Deviance (-2*Loglikelihood(y|mu))
+
+  Mean:             1820.6559
+  Std. Dev:         5.6212139
+  2.5% Quantile:    1811.2326
+  10% Quantile:     1814.1349
+  50% Quantile:     1819.9995
+  90% Quantile:     1828.2074
+  97.5% Quantile:   1833.854
+
+  Saturated Deviance (-2*Loglikelihood(y|mu) + 2*Loglikelihood(y|mu=y))
+
+  Mean:             998.98282
+  Std. Dev:         43.455819
+  2.5% Quantile:    910.95993
+  10% Quantile:     944.28621
+  50% Quantile:     997.5653
+  90% Quantile:     1055.0596
+  97.5% Quantile:   1080.1162
+
+  Samples of the deviance are stored in file
+  mcmc_deviance_sample.raw
+
+  Estimation results for the DIC: 
+
+  DIC based on the unstandardized deviance
+
+  Deviance(bar_mu):           1806.4653
+  pD:                         14.19061
+  DIC:                        1834.8465
+
+  DIC based on the saturated deviance
+
+  Deviance(bar_mu):           983.84152
+  pD:                         15.141302
+  DIC:                        1014.1241
+
+  Estimation results for the scale parameter:
+
+  Acceptance rate:   100 %
+
+  Mean:             0.362311
+  Std. dev.:        0.0158258
+  2.5% Quantile:    0.333712
+  10% Quantile:     0.342526
+  50% Quantile:     0.361939
+  90% Quantile:     0.382146
+  97.5% Quantile:   0.395518
+
+
+
+  FixedEffects1
+
+
+  Acceptance rate:    100 %
+
+
+  Variable  mean           Std. Dev.      2.5% quant.    median         97.5% quant.   
+    const     1.79288        0.0188866      1.75682        1.79247        1.82894        
+
+  Results for fixed effects are also stored in file
+  mcmc_FixedEffects1.res
+
+
+  f_x1_pspline
+
+
+  Acceptance rate:    100 %
+
+  Results are stored in file
+  mcmc_f_x1_pspline.res
+
+  Results may be visualized using the R function 'plotnonp'
+  Type for example:
+  plotnonp("mcmc_f_x1_pspline.res")
+
+
+  f_x1_pspline_variance
+
+
+  Acceptance rate:    100 %
+
+  Estimation results for the variance component:
+
+  Mean:             0.0239194
+  Std. dev.:        0.0171234
+  2.5% Quantile:    0.00717269
+  10% Quantile:     0.00984886
+  50% Quantile:     0.0194797
+  90% Quantile:     0.0439335
+  97.5% Quantile:   0.0705248
+
+  Results for the variance component are also stored in file
+  mcmc_f_x1_pspline_var.res
+
+  Estimation results for the smoothing parameter:
+
+  Mean:             21.2581             (df: 7.4576)
+  Std. dev.:        12.1211
+  2.5% Quantile:    5.15297             (df: 9.93666)
+  10% Quantile:     8.43793             (df: 9.02229)
+  50% Quantile:     18.5992             (df: 7.67132)
+  90% Quantile:     36.3494             (df: 6.64326)
+  97.5% Quantile:   51.8365             (df: 6.14309)
+
+  Results for the smoothing parameter are also stored in file
+  mcmc_f_x1_pspline_lambda.res
+
+
+  f_x2_pspline
+
+
+  Acceptance rate:    100 %
+
+  Results are stored in file
+  mcmc_f_x2_pspline.res
+
+  Results may be visualized using the R function 'plotnonp'
+  Type for example:
+  plotnonp("mcmc_f_x2_pspline.res")
+
+
+  f_x2_pspline_variance
+
+
+  Acceptance rate:    100 %
+
+  Estimation results for the variance component:
+
+  Mean:             0.00199966
+  Std. dev.:        0.002788
+  2.5% Quantile:    0.000277306
+  10% Quantile:     0.000443697
+  50% Quantile:     0.00120169
+  90% Quantile:     0.00414527
+  97.5% Quantile:   0.00856249
+
+  Results for the variance component are also stored in file
+  mcmc_f_x2_pspline_var.res
+
+  Estimation results for the smoothing parameter:
+
+  Mean:             391.278             (df: 3.86896)
+  Std. dev.:        324.746
+  2.5% Quantile:    41.605              (df: 6.46957)
+  10% Quantile:     86.314              (df: 5.49696)
+  50% Quantile:     300.189             (df: 4.11889)
+  90% Quantile:     820.361             (df: 3.24291)
+  97.5% Quantile:   1313.51             (df: 2.8955)
+
+  Results for the smoothing parameter are also stored in file
+  mcmc_f_x2_pspline_lambda.res
+
+  Files of model summary: 
+
+  --------------------------------------------------------------------------- 
+
+  Batch file for visualizing effects of nonlinear functions is stored in file 
+  mcmc_graphics.prg
+
+  --------------------------------------------------------------------------- 
+
+  Batch file for visualizing effects of nonlinear functions   in R is stored in file 
+  mcmc_r.R
+
+  --------------------------------------------------------------------------- 
+
+  Batch file for visualizing effects of nonlinear functions   in Stata is stored in file 
+  mcmc_stata.do
+
+  --------------------------------------------------------------------------- 
+
+  Latex file of model summaries is stored in file 
+  mcmc_model_summary.tex
+
+  --------------------------------------------------------------------------- 
+
+> b.getsample
+Storing sampled parameters...
+Sampled parameters are stored in file(s):
+
+mcmc_FixedEffects1_sample.raw
+
+mcmc_f_x1_pspline_sample.raw
+
+mcmc_f_x1_pspline_variance_sample.raw
+
+mcmc_f_x2_pspline_sample.raw
+
+mcmc_f_x2_pspline_variance_sample.raw
+
+mcmc_scale_sample.raw
+
+
+Storing completed
+
+> logclose
+NOTE: log-file mcmc.prg.log closed
+> 

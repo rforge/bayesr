@@ -1,0 +1,206 @@
+
+R version 2.14.1 (2011-12-22)
+Copyright (C) 2011 The R Foundation for Statistical Computing
+ISBN 3-900051-07-0
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ## BayesX REML testing
+> library("BayesXsrc")
+> reml <- run.bayesx("reml.prg", verbose = FALSE)
+> writeLines(reml$log)
+NOTE: created directory /home/nik/svn/bayesr/pkg/BayesXsrc.Rcheck/tests/temp
+NOTE: created directory /home/nik/svn/bayesr/pkg/BayesXsrc.Rcheck/tests/output
+> logopen using reml.prg.log
+> remlreg b
+> dataset d
+> d.infile using data.raw
+NOTE: 5 variables with 1000 observations read from file
+data.raw
+
+> b.outfile = reml
+> b.regress y = x1(psplinerw2,nrknots=20,degree=3) + x2(psplinerw2,nrknots=20,degree=3), family=gaussian eps=1e-05 lowerlim=0.001 maxit=400 maxchange=1e+06 using d
+
+GENERAL OPTIONS:
+
+  Maxmimum number of iterations:          400
+  Termination criterion:                  1e-05
+  Stopping criterion for small variances: 0.001
+
+RESPONSE DISTRIBUTION:
+
+  Family:                 gaussian
+  Response function:      identity
+  Number of observations: 1000
+  Number of observations with positive weight: 1000
+
+OPTIONS FOR P-SPLINE TERM: f_x1_pspline
+
+  Prior: second order random walk
+  Number of knots: 20
+  Knot choice: equidistant
+  Degree of Splines: 3
+  Starting value for lambda: 10
+
+OPTIONS FOR P-SPLINE TERM: f_x2_pspline
+
+  Prior: second order random walk
+  Number of knots: 20
+  Knot choice: equidistant
+  Degree of Splines: 3
+  Starting value for lambda: 10
+
+
+REML ESTIMATION STARTED
+
+  iteration 1
+  relative changes in the regression coefficients: 198276
+  relative changes in the variance parameters:     0.524002
+
+  iteration 2
+  relative changes in the regression coefficients: 0.050244
+  relative changes in the variance parameters:     0.192223
+
+  iteration 3
+  relative changes in the regression coefficients: 0.0469597
+  relative changes in the variance parameters:     0.0169622
+
+  iteration 4
+  relative changes in the regression coefficients: 0.0246406
+  relative changes in the variance parameters:     0.00244109
+
+  iteration 5
+  relative changes in the regression coefficients: 0.0113715
+  relative changes in the variance parameters:     0.000959529
+
+  iteration 6
+  relative changes in the regression coefficients: 0.00575676
+  relative changes in the variance parameters:     0.000413963
+
+  iteration 7
+  relative changes in the regression coefficients: 0.00294714
+  relative changes in the variance parameters:     0.000135629
+
+  iteration 8
+  relative changes in the regression coefficients: 0.000125248
+  relative changes in the variance parameters:     5.42988e-05
+
+  iteration 9
+  relative changes in the regression coefficients: 5.02091e-05
+  relative changes in the variance parameters:     2.17069e-05
+
+  iteration 10
+  relative changes in the regression coefficients: 2.00738e-05
+  relative changes in the variance parameters:     8.68815e-06
+
+  iteration 11
+  relative changes in the regression coefficients: 8.03423e-06
+  relative changes in the variance parameters:     3.47575e-06
+
+
+REML ESTIMATION CONVERGED
+
+ESTIMATION RESULTS:
+
+
+  Estimated scale parameter: 0.361676
+
+  Scale parameter is also stored in file
+  reml_scale.res
+
+  f_x1_pspline
+
+
+  Estimated variance:  0.0167067
+  Inverse variance:    59.8563
+  Smoothing parameter: 21.6486
+  (Smoothing parameter = scale / variance)
+  Degrees of freedom: 7.46215
+
+  Variance and smoothing parameter are stored in file
+  reml_f_x1_pspline_var.res
+
+  Results are stored in file
+  reml_f_x1_pspline.res
+
+  Results may be visualized using the R function 'plotnonp'
+  Type for example:
+  plotnonp("reml_f_x1_pspline.res")
+
+
+  f_x2_pspline
+
+
+  Estimated variance:  1.23974e-05
+  Inverse variance:    80661.8
+  Smoothing parameter: 29173.4
+  (Smoothing parameter = scale / variance)
+  Degrees of freedom: 1.38027
+  NOTE: Estimation of the variance was stopped after iteration 6
+        because the corresponding penalized part was small relative to the linear predictor.
+  Variance and smoothing parameter are stored in file
+  reml_f_x2_pspline_var.res
+
+  Results are stored in file
+  reml_f_x2_pspline.res
+
+  Results may be visualized using the R function 'plotnonp'
+  Type for example:
+  plotnonp("reml_f_x2_pspline.res")
+
+  FixedEffects
+
+
+  Variable  Post. Mode     Std. Dev.      p-value        95% Confidence Interval       
+    const     1.81388        0.0287615      0              1.7575         1.87027        
+
+  Results for fixed effects are also stored in file
+  reml_FixedEffects.res
+
+
+  Model Fit
+
+
+  -2*log-likelihood:                 -27.7686
+  Degrees of freedom:                9.84242
+  (conditional) AIC:                 -8.08378
+  (conditional) BIC:                 40.2204
+  GCV:                               0.364932
+
+  Results on the model fit are stored in file
+  reml_modelfit.raw
+
+  Additive predictor and expectations
+
+
+  Additive predictor and expectation for each observation are stored in file
+  reml_predict.raw
+
+  Files of model summary: 
+
+  --------------------------------------------------------------------------- 
+
+  Batch file for visualizing effects of nonlinear functions   in R is stored in file 
+  reml_r.R
+
+  --------------------------------------------------------------------------- 
+
+  Latex file of model summaries is stored in file 
+  reml_model_summary.tex
+
+  --------------------------------------------------------------------------- 
+
+> logclose
+NOTE: log-file reml.prg.log closed
+> 
