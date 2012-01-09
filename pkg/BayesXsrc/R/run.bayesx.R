@@ -1,8 +1,8 @@
 run.bayesx <-
 function(prg = NULL, verbose = TRUE, ...)
 {
-  os.type <- .Platform$OS.type == "windows"
-  if(os.type) {
+  os.win <- .Platform$OS.type == "windows"
+  if(os.win) {
     bin <- shQuote(system.file(package = "BayesXsrc", "libs", .Platform$r_arch, "BayesX.exe"))
   } else {
     bin <- shQuote(system.file(package = "BayesXsrc", "libs", .Platform$r_arch, "BayesX"))
@@ -20,19 +20,17 @@ function(prg = NULL, verbose = TRUE, ...)
     setwd(dir)
     output <- file.exists("output")
     temp <- file.exists("temp")
-    win <- FALSE
     ptm <- proc.time()
     if(!verbose) {
-      if(.Platform$OS.type == "unix") {
-        log <- try(system(paste(bin, " ", dir, "/", prg.name, 
-          " > ", dir, "/bayesx.log", sep = ""), intern = FALSE, ...))
-      } else {
+      if(os.win) {
         log <- try(system(paste(bin, " ", dir, "/", prg.name, sep = ""), 
           intern = TRUE, show.output.on.console = FALSE, ...))
-        win <- TRUE
+      } else {
+        log <- try(system(paste(bin, " ", dir, "/", prg.name, 
+          " > ", dir, "/bayesx.log", sep = ""), intern = FALSE, ...))
       }
     } else log <- try(system(paste(bin, " ", dir, "/", prg.name, sep = ""), intern = FALSE, ...))
-	  if(log != 0 && !win)
+	  if(log != 0 && !os.win)
       warning("problem processing BayesX!")
     if(!verbose && .Platform$OS.type == "unix")	
       log <- readLines(paste(dir, "/bayesx.log", sep = ""))
