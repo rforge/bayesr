@@ -32,7 +32,8 @@ run.bayesx(prg = NULL, verbose = TRUE, ...)
 }
 
 \examples{
-a <- 1
+prg <- file.path(.find.package("BayesXsrc"), "tests", "mcmc.prg")
+run.bayesx(prg)
 }
 
 \keyword{regression}
