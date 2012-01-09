@@ -32,8 +32,38 @@ run.bayesx(prg = NULL, verbose = TRUE, ...)
 }
 
 \examples{
-prg <- file.path(.find.package("BayesXsrc"), "tests", "mcmc.prg")
+## create a temporary directory for this example
+dir <- tempdir()
+prg <- file.path(dir, "demo.prg")
+
+## generate some data
+set.seed(111)
+n <- 200
+
+## regressor
+dat <- data.frame(x = runif(n, -3, 3))
+
+## response
+dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
+
+## write data to dir
+write.table(dat, file.path(dir, "data.raw"),
+  quote = FALSE, row.names = FALSE)
+
+## create the .prg file
+writeLines("
+bayesreg b
+dataset d 
+d.infile using data.raw
+b.outfile = mcmc
+b.regress y = x(psplinerw2,nrknots=20,degree=3), family=gaussian predict using d
+b.getsample", prg)
+
+## run the .prg file from R
 run.bayesx(prg)
+
+## delete BayesX output files
+unlink(dir, recursive = TRUE)
 }
 
 \keyword{regression}
