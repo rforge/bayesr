@@ -3,12 +3,6 @@ function(formula, data, weights = NULL, subset = NULL,
   offset = NULL, na.action = na.fail, contrasts = NULL, 
   control = bayesx.control(...), model = TRUE, ...)
 {
-  ## first check installation of bayesx
-  ok <- check.install.bayesx(control$bin, verbose = FALSE)
-
-  if(is.null(ok))
-    stop("please install BayesX or verify bin path, also see function install.bayesx()")
-
   args <- list(...)
   if(is.function(args$family))
     args$family <- args$family()$family
@@ -38,9 +32,8 @@ function(formula, data, weights = NULL, subset = NULL,
   }
 
   ## now estimate with BayesX
-  res$bayesx.run <- run.bayesx(dir = res$bayesx.prg$file.dir, 
-    prg.name = res$bayesx.prg$prg.name, verbose = res$bayesx.setup$verbose, 
-    bin = control$bin)
+  res$bayesx.run <- run.bayesx(file.path(res$bayesx.prg$file.dir, 
+    prg.name = res$bayesx.prg$prg.name), verbose = res$bayesx.setup$verbose)
 
   if(is.null(res$bayesx.setup$hlevel))
     tm <- res$bayesx.prg$model.name
@@ -95,13 +88,11 @@ function(formula, data, weights = NULL, subset = NULL,
 }
 
 
-rmbhmf <- function(x) 
-  {
+rmbhmf <- function(x) {
   if(!is.null(x$h.random)) {
     for(k in 1L:length(x$h.random))
       x$h.random[[k]]$data <- NULL
-      x$h.random[[k]] <- rmbhmf(x$h.random[[k]])
-    }
-
-  return(x)
+    x$h.random[[k]] <- rmbhmf(x$h.random[[k]])
   }
+  return(x)
+}

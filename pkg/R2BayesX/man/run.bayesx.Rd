@@ -8,71 +8,62 @@
 }
 
 \usage{
-run.bayesx(dir, prg.name = "bayesx.estim.input.prg", 
-  verbose = TRUE, bin = getOption("bayesx.bin"))
+run.bayesx(prg = NULL, verbose = TRUE, ...)
 }
 
 \arguments{
-  \item{dir}{a character string, the directory where the prgram file is stored.}
-  \item{prg.name}{the name of the program file.}
-  \item{verbose}{should output be printed to the \R console during runtime of 
-    \code{\link{bayesx}}.}
-  \item{bin}{set the \code{bin} path where the executable binary of \pkg{BayesX} command-line 
-    version is installed, may also be set in function \code{\link{options}} via 
-    \code{options(bayesx.bin="/path/to/BayesX")}, where \code{"/path/to/BayesX"} is the bin path 
-    provided as character string.}
+  \item{prg}{a file path to a \pkg{BayesX} program file. If set to \code{NULL}, \pkg{BayesX} will
+    start in batch mode.}
+  \item{verbose}{should output be printed to the \R console during runtime of \pkg{BayesX}.}
+  \item{\dots}{further arguments to be passed to \code{\link[base]{system}}.}
 }
 
 \details{
-  Function uses \code{\link[base]{system}} to run BayesX within an \R session.
+  Function uses \code{\link[base]{system}} to run \pkg{BayesX} within an \R session.
 }
 
 \value{
-  Returns a \code{list} containg information if \pkg{BayesX} was succesfully launched and how long 
-  the process was running.
+  If a \code{prg} file is provided, the function returns a \code{list} containg information if
+  \pkg{BayesX} was succesfully launched and how long the process was running.
 }
 
 \author{
-  Thomas Kneib, Stefan Lang, Nikolaus Umlauf, Achim Zeileis.
-}
-
-\section{WARNINGS}{
-  Function \code{\link{run.bayesx}} cannot be processed if the \code{bin} path to the BayesX binary 
-  executable command-line version is not specified properly, i.e. before using \code{run.bayesx} the 
-  binary has to be installed, see function \code{\link{install.bayesx}} for installation details. 
-  After installation the \code{bin} path can bet set with
-
-  \code{options(bayesx.bin = "/path/to/BayesX")}
-
-  where \code{"/path/to/BayesX"} represents the full path to the binary with the name of the binary 
-  at last, e.g. on Windows systems this may be something like 
-  \code{"C:/programs/BayesX/commandline/bayesx.exe"}. 
+  Daniel Adler, Thomas Kneib, Stefan Lang, Nikolaus Umlauf, Achim Zeileis.
 }
 
 \examples{
-\dontrun{
+## create a temporary directory for this example
+dir <- tempdir()
+prg <- file.path(dir, "demo.prg")
+
 ## generate some data
 set.seed(111)
-n <- 500
+n <- 200
 
-## regressors
-dat <- data.frame(x = runif(n, -3, 3), z = runif(n, -3, 3),
-   w = runif(n, 0, 6), fac = factor(rep(1:10, n/10)))
+## regressor
+dat <- data.frame(x = runif(n, -3, 3))
 
 ## response
-dat$y <- with(dat, 1.5 + sin(x) + cos(z) * sin(w) +
-   c(2.67, 5, 6, 3, 4, 2, 6, 7, 9, 7.5)[fac] + rnorm(n, sd = 0.6))
+dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
 
-## first create BayesX .prg file
-pars <- parse.bayesx.input(y ~ sx(x) + 
-  sx(z, w, bs = "te") + fac, data = dat)
-prg <- write.bayesx.input(pars)
+## write data to dir
+write.table(dat, file.path(dir, "data.raw"),
+  quote = FALSE, row.names = FALSE)
 
-## now estimate model with BayesX
-ok <- run.bayesx(prg$file.dir)
-writeLines(ok$log)
-print(ok$runtime)
-}
+## create the .prg file
+writeLines("
+bayesreg b
+dataset d 
+d.infile using data.raw
+b.outfile = mcmc
+b.regress y = x(psplinerw2,nrknots=20,degree=3), family=gaussian predict using d
+b.getsample", prg)
+
+## run the .prg file from R
+run.bayesx(prg)
+
+## delete BayesX output files
+unlink(dir, recursive = TRUE)
 }
 
 \keyword{regression}
