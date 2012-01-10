@@ -61,9 +61,6 @@ b.getsample", prg)
 
 ## run the .prg file from R
 run.bayesx(prg)
-
-## delete BayesX output files
-unlink(dir, recursive = TRUE)
 }
 
 \keyword{regression}
