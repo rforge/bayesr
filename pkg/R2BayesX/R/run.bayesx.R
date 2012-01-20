@@ -2,11 +2,15 @@ run.bayesx <-
 function(prg = NULL, verbose = TRUE, ...)
 {
   os.win <- .Platform$OS.type == "windows"
-  if(os.win) {
-    bin <- shQuote(system.file(package = "BayesXsrc", "libs", .Platform$r_arch, "BayesX.exe"))
-  } else {
-    bin <- shQuote(system.file(package = "BayesXsrc", "libs", .Platform$r_arch, "BayesX"))
-  }
+  if(length(.find.package("BayesXsrc", quiet = TRUE)) > 0L) {
+    if(os.win) {
+      bin <- shQuote(system.file(package = "BayesXsrc", "libs", .Platform$r_arch, "BayesX.exe"))
+    } else {
+      bin <- shQuote(system.file(package = "BayesXsrc", "libs", .Platform$r_arch, "BayesX"))
+    }
+  } else bin <- getOption("bayesx.bin")
+  if(is.null(bin))
+    bin <- if(os.win) shQuote("BayesX.exe") else shQuote("BayesX")
   if(is.null(prg)) {
     if(!os.type)
       bin <- paste(shQuote(file.path(R.home(),"bin","R")), "CMD", bin)
