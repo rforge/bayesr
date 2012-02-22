@@ -8,7 +8,7 @@ function(prg = NULL, verbose = TRUE, ...)
     bin <- shQuote(system.file(package = "BayesXsrc", "libs", .Platform$r_arch, "BayesX"))
   }
   if(is.null(prg)) {
-    if(!os.type)
+    if(!os.win)
       bin <- paste(shQuote(file.path(R.home(),"bin","R")), "CMD", bin)
     system(bin, ...)
     return(invisible(NULL))
