@@ -1,12 +1,14 @@
-CVS_RSH=ssh
-CVSROOT=:ext:lang@penelope.stat.uni-muenchen.de:/home/lang/cvs
-export CVS_RSH
-export CVSROOT
-FILES="adaptiv alex andrea bib dag export_type.h graph leyre main.cpp mcmc psplines samson structadd values.h"
+R=http://svn.gwdg.de/svn/bayesx/trunk
+U=guest
+P=guest
+DIRS="adaptiv alex andrea bib dag export_type.h graph leyre main.cpp mcmc psplines samson structadd values.h"
+mkdir -p src/bayesxsrc
+cd src/bayesxsrc
+#for i in $DIRS ; do
+#  svn co --username "${U}" --password "${P}" $R/$i $i
+#done
+FILES="export_type.h main.cpp values.h"
 for i in $FILES ; do
-  MODULES="${MODULES} bayesx/$i"
+  svn export --username "${U}" --password "${P}" $R/$i $i
 done
-cd src
-cvs checkout ${MODULES}
-mv bayesx bayesxsrc
 
