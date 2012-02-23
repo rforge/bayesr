@@ -2,6 +2,11 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
+plot(b, term = "sx(z,w)", col.surface = "lightblue", shade = 0.6)
+
+
+
+
 r<-bayesx(f,family="cox",method="REML",data=data,control = bayesx.control(verbose=T))
 
 

@@ -30,7 +30,7 @@ NOTE: 5 variables with 1000 observations read from file
 data.raw
 
 > b.outfile = step
-> b.regress y = x1(psplinerw2,nrknots=20,degree=3) + x2(psplinerw2,nrknots=20,degree=3) + x3(psplinerw2,nrknots=20,degree=3) + x4(psplinerw2,nrknots=20,degree=3), family=gaussian iterations=10000 burnin=2000 step=10 algorithm=cdescent1 CI=MCMCselect predict using d
+> b.regress y = x1(psplinerw2,nrknots=20,degree=3) + x2(psplinerw2,nrknots=20,degree=3) + x3(psplinerw2,nrknots=20,degree=3) + x4(psplinerw2,nrknots=20,degree=3), family=gaussian iterations=10000 burnin=2000 step=10 setseed=1298345438 algorithm=cdescent1 CI=MCMCselect predict using d
 
 STEPWISE OBJECT b: stepwise procedure 
 
@@ -128,10 +128,10 @@ CALCULATION OF CONFIDENCE INTERVALS STARTED:
 
   Relative Changes in  
 
-  Mean:               0.0404374
+  Mean:               0.0127105
   Variance:           1.79769e+308
-  Minimum:            0.145317
-  Maximum:            0.100748
+  Minimum:            0.155454
+  Maximum:            0.127149
 
 
 
@@ -141,10 +141,10 @@ CALCULATION OF CONFIDENCE INTERVALS STARTED:
 
   Relative Changes in  
 
-  Mean:               0.0815924
+  Mean:               0.131794
   Variance:           1.79769e+308
-  Minimum:            0.283958
-  Maximum:            0.345093
+  Minimum:            0.377453
+  Maximum:            0.296694
 
 
 
@@ -154,10 +154,10 @@ CALCULATION OF CONFIDENCE INTERVALS STARTED:
 
   Relative Changes in  
 
-  Mean:               0.854329
+  Mean:               0.875678
   Variance:           1.79769e+308
-  Minimum:            2.57488
-  Maximum:            1.07894
+  Minimum:            1.81419
+  Maximum:            3.72164
 
 
 
@@ -167,10 +167,10 @@ CALCULATION OF CONFIDENCE INTERVALS STARTED:
 
   Relative Changes in  
 
-  Mean:               0.00128712
-  Variance:           0.0600304
-  Minimum:            0.0193756
-  Maximum:            0.0201785
+  Mean:               0.0035267
+  Variance:           0.0412186
+  Minimum:            0.00587859
+  Maximum:            0.00517516
 
 
 
@@ -180,10 +180,10 @@ CALCULATION OF CONFIDENCE INTERVALS STARTED:
 
   Relative Changes in  
 
-  Mean:               0.00630021
-  Variance:           0.0498526
-  Minimum:            0.0273152
-  Maximum:            0.0612283
+  Mean:               0.00699623
+  Variance:           0.0263269
+  Minimum:            0.0172653
+  Maximum:            0.0443969
 
 
 
@@ -193,10 +193,10 @@ CALCULATION OF CONFIDENCE INTERVALS STARTED:
 
   Relative Changes in  
 
-  Mean:               0.0380656
-  Variance:           0.0558807
-  Minimum:            0.154555
-  Maximum:            0.14609
+  Mean:               0.0559648
+  Variance:           0.0115742
+  Minimum:            0.212353
+  Maximum:            0.0293845
 
 
 
@@ -206,9 +206,9 @@ CALCULATION OF CONFIDENCE INTERVALS STARTED:
 
   Relative Changes in  
 
-  Mean:               0.000862837
-  Variance:           0.00281695
-  Minimum:            0.00864244
+  Mean:               0.000773709
+  Variance:           0.0417637
+  Minimum:            0.00545731
   Maximum:            0
 
 
@@ -219,10 +219,10 @@ CALCULATION OF CONFIDENCE INTERVALS STARTED:
 
   Relative Changes in  
 
-  Mean:               0.00356807
-  Variance:           0.0293321
-  Minimum:            0.00158226
-  Maximum:            0.0615172
+  Mean:               0.00315642
+  Variance:           0.0222178
+  Minimum:            0.00651462
+  Maximum:            0.0265861
 
 
 
@@ -232,10 +232,10 @@ CALCULATION OF CONFIDENCE INTERVALS STARTED:
 
   Relative Changes in  
 
-  Mean:               0.0145223
-  Variance:           0.0309019
-  Minimum:            0.103133
-  Maximum:            0.0892052
+  Mean:               0.0155678
+  Variance:           0.038029
+  Minimum:            0.0251704
+  Maximum:            0.0149953
 
 
   ITERATION: 10000
@@ -258,23 +258,23 @@ ESTIMATION RESULTS:
 
   Unstandardized Deviance (-2*Loglikelihood(y|mu))
 
-  Mean:             1818.0527
-  Std. Dev:         5.0236406
-  2.5% Quantile:    1810.1642
-  10% Quantile:     1812.1715
-  50% Quantile:     1817.2634
-  90% Quantile:     1824.6251
-  97.5% Quantile:   1829.5907
+  Mean:             1817.9364
+  Std. Dev:         5.1296588
+  2.5% Quantile:    1810.0401
+  10% Quantile:     1811.7848
+  50% Quantile:     1817.2257
+  90% Quantile:     1824.7163
+  97.5% Quantile:   1829.917
 
   Saturated Deviance (-2*Loglikelihood(y|mu) + 2*Loglikelihood(y|mu=y))
 
-  Mean:             1009.3034
-  Std. Dev:         5.0236406
-  2.5% Quantile:    1001.415
-  10% Quantile:     1003.4223
-  50% Quantile:     1008.5142
-  90% Quantile:     1015.8759
-  97.5% Quantile:   1020.8415
+  Mean:             1009.1872
+  Std. Dev:         5.1296588
+  2.5% Quantile:    1001.2909
+  10% Quantile:     1003.0356
+  50% Quantile:     1008.4765
+  90% Quantile:     1015.967
+  97.5% Quantile:   1021.1677
 
   Samples of the deviance are stored in file
   step_deviance_sample.raw
@@ -283,15 +283,15 @@ ESTIMATION RESULTS:
 
   DIC based on the unstandardized deviance
 
-  Deviance(bar_mu):           1808.7756
-  pD:                         9.2771086
-  DIC:                        1827.3298
+  Deviance(bar_mu):           1808.7997
+  pD:                         9.1367845
+  DIC:                        1827.0732
 
   DIC based on the saturated deviance
 
-  Deviance(bar_mu):           1000.0263
-  pD:                         9.2771086
-  DIC:                        1018.5805
+  Deviance(bar_mu):           1000.0504
+  pD:                         9.1367845
+  DIC:                        1018.324
 
   Estimation results for the scale parameter:
 
@@ -314,8 +314,8 @@ ESTIMATION RESULTS:
 
 
   Variable  mean           Std. Dev.      2.5% quant.    median         97.5% quant.   
-    const     1.41828        0.036665       1.3438         1.41872        1.48983        
-    x2        0.752707       0.0632827      0.62302        0.751685       0.878494       
+    const     1.41724        0.0373261      1.33891        1.417          1.48913        
+    x2        0.754898       0.0646459      0.632207       0.754435       0.889085       
 
   Results for fixed effects are also stored in file
   step_FixedEffects1.res
