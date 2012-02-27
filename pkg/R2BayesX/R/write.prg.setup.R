@@ -36,6 +36,8 @@ function(response, object, prg.file, data.file, thismodel, terms.specs)
   if("ModelWeights" %in% vars)
     bt <- paste(bt, "weight", "ModelWeights")
   control.values <- object[attr(object, "co.id")]
+  if(object$family == "quantreg")
+    control.values$quantile <- object$quantile
   hp <- FALSE
   if(!is.null(object$hlevel) && is.null(object$max.hlevel)) {
     object$max.hlevel <- object$hlevel + 1L

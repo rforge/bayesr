@@ -44,7 +44,7 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
     burnin <- 1L
   if(is.null(seed))
     seed <- round(runif(1L) * .Machine$integer.max)
-  if(method == "MCMC" || method == "HMCMC") {
+  if(method == "MCMC" || method == "HMCMC" || method == "quantreg") {
     control$iterations <- iterations
     control$burnin <- burnin
     control$maxint <- maxint
@@ -56,6 +56,12 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
     control$begin <- begin
     control$level1 <- level[1L]
     control$level2 <- level[2L]
+    if(method == "quantreg") {
+      control$family <- "quantreg"
+      control$method <- method <- "HMCMC"
+      if(is.null(control$quantile))
+        control$quantile <- 0.5
+    }
     if(family == "multinomial" || family == "multinomialprobit")
       control$reference <- reference
     if(family == "zip" || family == "nbinomial") {
@@ -105,7 +111,7 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
       control$zipdistopt <- zipdistopt
     }
     control$hmcmc <- FALSE
-  } 
+  }
   if(!is.null(bin))
     start <- start + 1L
   if(!is.null(outfile))
