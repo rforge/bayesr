@@ -2,7 +2,10 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-b1 <- bayesx(y ~ sx(x), method = "HMCMC", family = "quantreg", quantile = 0.05, data = dat)
+load("~/tea/arm/data/rats.rda")
+b <- bayesx(response ~ lowtime + hightime + controltime +
+  r(subject) + r(subject, by = transf_time), method = "REML",
+  data = rats, outfile = "~/tmp/rats")
 
 
 

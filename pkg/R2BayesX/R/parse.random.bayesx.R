@@ -3,6 +3,7 @@ function(term, data)
 {
   ra <- eval(parse(text = term))
   term <- ra$term
+  by <- ra$by
   h.random <- NULL
   if(!is.null(ra$ins)) {
     if(is.null(ra$data))
@@ -13,6 +14,6 @@ function(term, data)
     h.random$family <- "gaussian_re"
   }    
 
-  return(list(h.random = h.random, term = term))
+  return(list(h.random = h.random, term = term, by = by))
 }
 

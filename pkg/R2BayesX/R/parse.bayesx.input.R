@@ -45,7 +45,7 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
       tl <- c(tl, "-1")
     formula <- as.formula(paste(as.character(formula[2L]), "~", paste(tl, collapse = "+")))
   }
-  h.variables <- NULL
+  h.variables <- byra <- NULL
   ra.change <- list()
   if(length(tl) > 0L && any(is.rt(tl))) {
     h.random <- list()
@@ -54,6 +54,8 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
       if(is.rt(tl[k])) {
         tmp <- parse.random.bayesx(tl[k], data)
         tl[k] <- tmp$term
+        if(tmp$by != "NA")
+          byra <- c(byra, tmp$by)
         if(!is.null(tmp$h.random)) {
           nr <- nr + 1L
           h.random[[nr]] <- tmp$h.random
@@ -70,6 +72,7 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
       control$max.hlevel <- get.max.hlevel(control$h.random)
       control$h.random <- set.max.hlevel(control$h.random, control$max.hlevel)
     }
+    tl <- unique(c(tl, byra))
     if(!intcpt)
       tl <- c("-1", tl)
     formula <- as.formula(paste(as.character(formula[2L]), "~", paste(tl, collapse = "+")))

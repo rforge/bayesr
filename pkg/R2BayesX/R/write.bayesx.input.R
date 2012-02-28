@@ -144,7 +144,7 @@ function(object)
       }
     }
     object$Yn <- rmf(object$Yn)
-    dat <- cbind(as.vector(object$data[[object$Yn]]),dat)
+    dat <- cbind(as.vector(object$data[[object$Yn]]), dat)
     colnames(dat)[1L] <- object$Yn
     vars <- colnames(dat)
     nc <- ncol(dat)
