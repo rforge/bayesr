@@ -14,9 +14,8 @@ function(x, info)
         term$term <- paste(term$term, ":", term$by, sep = "")
       if(is.null(term$isFactorBy))
         term$isFactorBy <- FALSE
-      if(is.rt(term$term)) {
+      if(is.rt(term$term))
         term$term <- rrd(term$term)
-      }
       nt[term$pos] <- term$term
       if(!term$isFactor && !term$isFactorBy) {
         for(j in 1L:nx) {

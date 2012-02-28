@@ -209,8 +209,7 @@ function(dir, model.name)
     ## get log file
     if(length(log <- grep(".log", files, fixed = TRUE, value = TRUE)))
       rval$logfile <- readLines(paste(dir, "/", log, sep = ""))
-    
+
     return(rval)
   }
 }
-
