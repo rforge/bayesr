@@ -178,10 +178,10 @@ function(dir, files, data, response, eta, model.name, minfo, info)
                 header = TRUE))
             }
           }
-          class(x) <- c(cx, "matrix") 
+          class(x) <- c(cx, "matrix")
           eval(parse(text = paste("effects$\'", attr(x, "specs")$label, "\' <- x", sep = "")))
         }
-      }      
+      }
   }
 
   return(list(effects = effects, smooth.hyp = mum(SmoothHyp), random.hyp = mum(RandomHyp)))

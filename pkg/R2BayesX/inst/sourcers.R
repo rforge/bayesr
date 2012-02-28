@@ -5,7 +5,7 @@ invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 load("~/tea/arm/data/rats.rda")
 b <- bayesx(response ~ lowtime + hightime + controltime +
   r(subject) + r(subject, by = transf_time), method = "REML",
-  data = rats, outfile = "~/tmp/rats")
+  data = rats, verbose = FALSE)
 
 
 
