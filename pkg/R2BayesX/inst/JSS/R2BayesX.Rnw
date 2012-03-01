@@ -95,50 +95,61 @@ data("BeechBnd")
 
 \section{Introduction} \label{sec:intro}
 
-The free software \pkg{BayesX} \citep{R2BayesX:Brezger+Kneib+Lang:2005} is a standalone program
+The free software \pkg{BayesX} \citep[see][]{R2BayesX:Brezger+Kneib+Lang:2005} is a standalone program
+\citep[current version~2.0.1,][]{R2BayesX:Belitz+Brezger+Kneib+Lang:2011}
 comprising powerful tools for Bayesian and mixed-model-based inference in complex semiparametric
-regression models with structured additive predictor (STAR, see Section~\ref{sec:model}). To gain
-improved computational performance, the algorithms implemented utilize numerically efficient
-(sparse) matrix architectures and are written in a \proglang{C++} environment. Besides exponential
+regression models with structured additive predictor. Besides exponential
 family regression, \pkg{BayesX} also supports models for multi-categorical responses, hazard
-regression for continuous survival times, and continuous time multi-state models.
+regression for continuous survival times, and continuous time multi-state models. The software
+is written in \proglang{C++}, utilizing numerically efficient (sparse) matrix architectures. 
 
-In this article, we describe the full interactive \proglang{R} \citep{R2BayesX:R} interface to the
-command-line binary version of BayesX, which is an extension of package \pkg{BayesX}
-\citep{R2BayesX:Kneib+Heinzl+Brezger:2011}, that mainly provides functionality for exploring
-estimation results. The \proglang{R} package is called \pkg{R2BayesX} and has recently been added to
-the Comprehensive \proglang{R} Archive Network (CRAN,
-\url{http://CRAN.R-project.org/package=R2BayesX}). Within the new package, users are now provided
-with a typical \proglang{R} front end that may 
+To facilitate usage of results from \pkg{BayesX} in subsequent analyses, specifically
+in explorations and visualizations of the fitted models, \cite{R2BayesX:Kneib+Heinzl+Brezger:2011}
+provide a package for \proglang{R} \citep{R2BayesX:R}, also called \pkg{BayesX}, that can
+read and process output files from \pkg{BayesX}. However, in this approach the users still have
+to read their data into \pkg{BayesX}, fit the models of interest and obtain the corresponding
+output files. To alleviate this task, we introduce a new \proglang{R} package \pkg{R2BayesX}
+that provides a fully interactive \proglang{R} interface to \pkg{BayesX} that has the usual
+\proglang{R} modeling ``look \& feel'' and obviates the tedious exercise of manually exporting data
+and fitting models in \pkg{BayesX}. Within the new package, users are now provided with 
+the typical \proglang{R} modeling workflow namely:
+%
 \begin{itemize}
-\item specify and estimate STAR models with \pkg{BayesX} directly from the console \\
-  (function \fct{bayesx}, Section~\ref{subsec:processing}),
-\item apply a set of extractor functions and methods on \pkg{BayesX} fitted model objects, e.g., 
-  producing high level graphics of estimated effects, model diagnostic plots, summary statistics and 
-  more (Table~\ref{tab:funmethods}), 
+  \item Specification and estimation of STAR models using \code{bayesx(formula, data, ...)}
+        (which internally calls \pkg{BayesX} and reads its results).
+  \item Methods and extractor functions for fitted \class{bayesx} model objects, e.g., 
+        producing high-level graphics of estimated effects, model diagnostic plots, summary statistics etc.
 \end{itemize}
-In addition, users can
+%
+In addition, users can leverage the underlying infrastructure, i.e.:
+%
 \begin{itemize}
-\item run already existing \pkg{BayesX} input program files from \proglang{R} \\
-  (function \fct{run.bayesx}, Section~\ref{sec:addoptions}),
-\item automatically import \pkg{BayesX} output files into \proglang{R} \\
-  (function \fct{read.bayesx.output}, Section~\ref{sec:addoptions}).
+  \item Run already existing \pkg{BayesX} input program files from \proglang{R} via
+        \fct{run.bayesx}.
+  \item Automatically import \pkg{BayesX} output files into \proglang{R} via
+        \fct{read.bayesx.output}.
 \end{itemize}
-
-Furthermore, the models supported by \pkg{BayesX} are conveniently specified using \proglang{R}'s 
-formula language definition, wherefore several special model term constructor functions, such as
-the main \pkg{R2BayesX} constructor functions \fct{sx} and \fct{r} for smooth and random effects,
+%
+The formula interface of the \fct{bayesx} function uses several special model term
+constructor functions for the structured predictors: \fct{sx} and \fct{r} for smooth and random effects,
 respectively, as well as the functions \fct{s} and \fct{te} from the \pkg{mgcv} package
-\citep{R2BayesX:Wood:2011, R2BayesX:Wood:2006}, facilitate a consistent way to translate
-\proglang{R} syntax into \pkg{BayesX} interpretable commands (see Section~\ref{subsec:addterms}).
+\citep{R2BayesX:Wood:2011, R2BayesX:Wood:2006}, facilitating a consistent way to translate
+\proglang{R} syntax into \pkg{BayesX}-interpretable commands.
 
-The remainder of this paper is as follows. The next section gives a first example of a common 
-\proglang{R} session applying \pkg{R2BayesX} on a dataset on childhood malnutrition in Zambia.
-Section~\ref{sec:model} briefly discusses the methodological background of regression models with a
-structured additive predictor, before a description on implementation details and the user interface
-is given in Section~\ref{sec:implementation} and \ref{sec:userinterface} respectively. In
-Section~\ref{sec:illustrations}, the interface usability is further illustrated with
-the childhood malnutrition data and a dataset on forest health.
+The functionality is made available in package \pkg{R2BayesX}, available from the Comprehensive
+\proglang{R} Archive Network (CRAN) at \url{http://CRAN.R-project.org/package=R2BayesX}. It depends
+on the companion package \pkg{BayesXsrc} \citep[also available from CRAN, see][]{R2BayesX:Adler+Lang+Kneib:2012}
+that ships the \pkg{BayesX} \proglang{C++} sources along with a flexible \code{Makefile} so that upon
+installation of the \proglang{R} package a suitable \pkg{BayesX} binary is produced on all platforms.
+\readme{Daniel, is this technically sound? If not, please adapt.}
+
+The remainder of this paper is as follows. Section~\ref{sec:motivation} gives a first motivating example of an
+\proglang{R} session applying \pkg{R2BayesX} to a dataset on childhood malnutrition in Zambia.
+Subsequently, Section~\ref{sec:model} briefly discusses the methodological background of structured additive
+regression models before Section~\ref{sec:implementation} describes the implementation details and the user interface
+provided by \pkg{R2BayesX}. In Section~\ref{sec:illustrations}, the versatility of \pkg{BayesX} 
+and the flexibility of the \pkg{R2BayesX} interface are further illustrated with
+an extended analyses of the childhood malnutrition data and a dataset on forest health in Germany.
 
 
 \section{Motivating example} \label{sec:motivation}
@@ -149,9 +160,9 @@ Section~\ref{subsec:zambia}, \citealp{R2BayesX:Kandala+Lang+Klasen+Fahrmeir:2001
 chain Monte Carlo (MCMC) simulation. 
 
 The data consists of 4847 observations including 8 variables, both continuous and categorical. In
-this analysis, the main interest is on modeling the dependence of stunting (\code{stunting}),
-represented by anthropometric indicators of newborn children, on covariates including the age of the
-child (\code{age}), the body mass index of the mother (\code{mbmi}) and the district the child lives
+this analysis, the main interest is assessment of the determinats of stunting (\code{stunting}),
+represented by anthropometric indicators of newborn children. Covariates include the age of the
+children (\code{agechild}), the body mass index of the mother (\code{mbmi}) and the district the children live
 in (\code{district}). The model is given by
 \begin{equation*}
 \texttt{stunting}_i = \gamma_0 + f_1(\texttt{agechild}_i) + f_2(\texttt{mbmi}_i) +
@@ -160,7 +171,7 @@ in (\code{district}). The model is given by
 where the functions $f_1$ and $f_2$ of continuous covariates \code{agechild} and \code{mbmi} have
 possible nonlinear effects on \code{stunting} and are  modeled nonparametrically using
 P(enalized)-splines. Here, the spatially correlated effect $f_{spat}$ of locational covariate
-\code{district} is modeled using Kriging based on centroid coordinates (geokriging) of the districts
+\code{district} is modeled using kriging based on centroid coordinates (geokriging) of the districts
 in Zambia. To estimate the model with \pkg{BayesX} from \proglang{R}, the data together with a
 boundary map file of the districts in Zambia is loaded with
 <<data-illustration, echo=TRUE, eval=TRUE, fig=FALSE>>=
@@ -168,13 +179,16 @@ data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
 @
 Boundary files are basically shapefiles (see also package \pkg{shapefiles},
 \citealp{R2BayesX:Stabler:2006}) that only include information on the polygons that form the map and
-may be constructed using function \fct{shp2bnd} or imported with \fct{read.bnd}. The model formula
-is specified by
+may be constructed using function \fct{shp2bnd} or imported with \fct{read.bnd}.
+\fixme{Niki, my feeling is that the boundary file explanations are too lengthy and
+interrupt the reading flow in this introductory example. Maybe you can shorten it and present
+the details elsewhere? The details should then also make some reference to the sp tools.}
+The model formula is specified by
 <<formula-illustration, echo=TRUE, eval=TRUE, fig=FALSE>>=
 f <- stunting ~ sx(agechild) + sx(mbmi) +
   sx(district, bs = "gk", map = ZambiaBnd, full = TRUE)
 @
-
+%
 Finally, the model is fitted with the main model-fitting function \fct{bayesx}
 <<fit-illustration, echo=TRUE, eval=FALSE, fig=FALSE>>=
 b <- bayesx(f, family = "gaussian", method = "MCMC", data = ZambiaNutrition)
@@ -187,8 +201,8 @@ load("illustration-model.rda")
 save(b, file = "illustration-model.rda")
 }
 @
-
-Thereafter, a model summary is displayed by calling
+%
+The model summary is displayed by calling
 <<summary-illustration, echo=TRUE, fig=FALSE, eval=TRUE>>=
 summary(b)
 @
@@ -232,11 +246,14 @@ plot(b, term = "sx(district)", map = ZambiaBnd)
 @
 The plots are shown in Figure~\ref{fig:illustration}. 
 
+\fixme{I feel we need a short paragraph here of maybe 4--8 lines that briefly explains the main
+results of the analysis. What do the curves tell us, what information does the map hold?
+Is this complemented by the summary output?}
 
 \section{STAR models} \label{sec:model}
 
 The STAR model class supported by \pkg{R2BayesX} is based on the framework of Bayesian generalized
-linear models (GLM) (e.g., see \citealp{R2BayesX:Fahrmeir+Kneib+Lang:2009} and
+linear models (GLMs, see e.g., \citealp{R2BayesX:Fahrmeir+Kneib+Lang:2009} and
 \citealp{R2BayesX:Fahrmeir+Tutz:2001}). GLMs assume that, given covariates $\mathbf{x}$ and unknown
 parameters $\boldsymbol{\gamma}$, the distribution of the response variable $y$ belongs to an
 exponential family with mean
@@ -253,17 +270,16 @@ predictor is replaced by a more general and flexible, structured additive predic
 with $\mu = E(y | \mathbf{x}, \mathbf{z}, \boldsymbol{\gamma}, \boldsymbol{\theta})$ and $\mathbf{z}$
 represents a generic vector of all nonlinear modeled covariates. 
 The vector $\boldsymbol{\theta}$ comprises all parameters of the functions $f_1, \dots,f_p$. 
-The functions $f_j$ are possibly
-smooth functions comprising effects as e.g., given by
+The functions $f_j$ are possibly smooth functions encompassing various types of effects, e.g.:
 \begin{itemize}
-  \item nonlinear effects of continuous covariates: $f_j(\mathbf{z}) = f(z_1)$,
-  \item two-dimensional surfaces: $f_j(\mathbf{z}) = f(z_1, z_2)$,
-  \item spatially correlated effects: $f_j(\mathbf{z}) = f_{spat}(z_s)$,
-  \item varying coefficients: $f_j(\mathbf{z}) = z_1f(z_2)$,
-  \item spatially varying effects: $f_j(\mathbf{z}) = z_1f_{spat}(z_s)$ or
-    $f_j(\mathbf{z}) = z_1f(z_2, z_3)$,
-  \item random intercepts with cluster index $c$: $f_j(\mathbf{z}) = \beta_c$,
-  \item random slopes with cluster index $c$: $f_j(\mathbf{z}) = z_1\beta_c$.
+  \item Nonlinear effects of continuous covariates: $f_j(\mathbf{z}) = f(z_1)$.
+  \item Two-dimensional surfaces: $f_j(\mathbf{z}) = f(z_1, z_2)$.
+  \item Spatially correlated effects: $f_j(\mathbf{z}) = f_{spat}(z_s)$.
+  \item Varying coefficients: $f_j(\mathbf{z}) = z_1f(z_2)$.
+  \item Spatially varying effects: $f_j(\mathbf{z}) = z_1f_{spat}(z_s)$ or
+    $f_j(\mathbf{z}) = z_1f(z_2, z_3)$.
+  \item Random intercepts with cluster index $c$: $f_j(\mathbf{z}) = \beta_c$.
+  \item Random slopes with cluster index $c$: $f_j(\mathbf{z}) = z_1\beta_c$.
 \end{itemize}
 STAR models cover a number of well known model classes as special cases, including generalized
 additive models (GAM, \citealp{R2BayesX:Hastie+Tibshirani:1990}), generalized additive mixed models
@@ -309,7 +325,7 @@ In \pkg{BayesX}, estimation of regression parameters is based on three inferenti
 \begin{enumerate}
 \item \textit{Full Bayesian inference via MCMC} \\
 A fully Bayesian interpretation of STAR models is obtained by specifying prior distributions for all
-unknown parameters. Estimation is carried out using Markov chain Monte Carlo simulation techniques.
+unknown parameters. Estimation is carried out using MCMC simulation techniques.
 \pkg{BayesX} provides numerically efficient implementations of MCMC schemes for structured additive
 regression models. Suitable proposal densities have been developed to obtain rapidly mixing,
 well-behaved sampling schemes without the need for manual tuning
@@ -342,7 +358,8 @@ able to
 \end{itemize}
 Inference is based on penalized likelihood in combination with fast algorithms for selecting
 relevant covariates and model terms. Different models are compared via various goodness of fit
-criteria, e.g., AIC, BIC, GCV and 5 or 10 fold cross validation \citep{R2BayesX:Belitz+Lang:2008}.
+criteria, e.g., Akaika or Bayes information criterion (AIC or BIC), generalized cross-validation
+(GCV), or 5- or 10-fold cross-validation \citep{R2BayesX:Belitz+Lang:2008}.
 \end{enumerate}
 
 A thorough introduction into the regression models supported by the program is also provided in the
