@@ -908,13 +908,13 @@ of memory size.
 \section{STAR models in practice} \label{sec:illustrations}
 
 The focus of this section is on demonstrating the various features of the \pkg{R2BayesX} package.
-Therefore, the examples provided are replicate analysis taken from
+Therefore, the examples provided reconsider analyses from
 \citet{R2BayesX:Brezger+Kneib+Lang:2005} and \citet{R2BayesX:Fahrmeir+Kneib+Lang:2009}. The
-presented datasets have been added to package \pkg{R2BayesX}, ensuring straightforward traceability
+presented datasets have been added to package \pkg{R2BayesX}, ensuring straightforward reproducibility
 of the following code. In the first example, a Gaussian regression model is estimated using Markov
-chain Monte Carlo simulation. The second example covers estimation based on mixed model technology,
-where a cumulative threshold model is assigned for the response variable (see
-\citet{R2BayesX:Fahrmeir+Tutz:2001} and \citet{R2BayesX:Kneib+Fahrmeir:2004} for
+chain Monte Carlo simulation. The second example covers estimation based on mixed-model technology,
+where a cumulative threshold model is employed for an ordered response variable (see
+\citealp{R2BayesX:Fahrmeir+Tutz:2001}, and \citealp{R2BayesX:Kneib+Fahrmeir:2004} for
 cumulative threshold models). The last example
 illustrates the approach of the stepwise algorithm for model and variable selection.
 
@@ -945,7 +945,7 @@ Variable           & Description \\ \hline
 \end{tabular}
 \caption{\label{tab:zambia} Variables in the dataset on childhood malnutrition in Zambia.}
 \end{table}
-The response \code{stunting} is standardized in terms of a reference population, i.e in this dataset
+The response \code{stunting} is standardized in terms of a reference population, i.e., in this dataset
 stunting for child $i$ is represented by
 \begin{equation*}
 \texttt{stunting}_i = \frac{\mathit{AI}_i - m}{\sigma},
@@ -966,7 +966,7 @@ regression model with predictor
 \end{eqnarray}
 where \code{memploymentyes} is the deviation (effect) coded version of covariate \code{memployment},
 generated with function \fct{contr.sum} by setting the contrasts argument of the factor variable,
-i.e., \code{memploymentyes} contains of values -1, corresponding to `yes', and 1, `no'
+i.e., \code{memploymentyes} contains of values $-1$, corresponding to `yes', and 1, `no'
 respectively, likewise for covariates \code{genderfemale}, \code{urbanno}, \code{meducationno}
 and \code{meducationprimary}. As mentioned in the introduction, functions $f_1$ and $f_2$ of
 the continuous covariates \code{agechild} and \code{mbmi} are assumed to have a possibly nonlinear
@@ -985,10 +985,9 @@ data("ZambiaBnd", package = "R2BayesX")
 @
 The object \code{ZambiaBnd} has class \class{bnd} and is basically a \fct{list} of polygon
 matrices, with $x$- and $y$-coordinates of the boundary points in the first and second column
-respectively. To read in an arbitrary boundary file into \proglang{R} function \fct{read.bnd} can
-be used. With the information of the boundary file \pkg{BayesX} may compute an appropriate adjacency 
+respectively. With the information of the boundary file \pkg{BayesX} may compute an appropriate adjacency 
 matrix, allowing for a smoothly varying effect of the neighboring regions. There is a generic 
-plotting method implemented for objects of class \class{bnd}, which in principle calls function
+plotting method implemented for objects of class \class{bnd}, which essentially calls function
 \fct{plotmap}. E.g., a simple map, as shown in Figure~\ref{fig:zambia-simple-map}, of the districts
 in Zambia is drawn by typing
 <<plot-zambia-map-01, echo=TRUE, eval=FALSE>>=
@@ -1006,9 +1005,8 @@ districts in Zambia.}
 \end{figure}
 Having loaded the necessary files, the model \code{formula} is specified with
 <<formula-zambia, echo=TRUE, eval=TRUE>>=
-f <- stunting ~ memployment + urban + gender + meducation +
-  sx(mbmi) + sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) + 
-  r(district)
+f <- stunting ~ memployment + urban + gender + meducation + sx(mbmi) + 
+  sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) + r(district)
 @
 The model is then fitted using MCMC by calling
 <<fit-zambia-model, echo=TRUE, eval=FALSE>>=
@@ -1028,11 +1026,10 @@ simulation, the burnin period, which will be removed from the generated samples,
 for which samples should be stored, i.e., if \code{step = 10}, every 10th sampled parameter will
 be saved. In most applications 12000 iterations should be enough for a valid fit with sufficiently
 small autocorrelations of stored parameters, at least in the model building stage. However, it is
-absolutely necessary to take a look at sampled parameters and autocorrelation functions to check the
+crucial to inspect the sampled parameters and autocorrelation functions to check the
 mixing behavior (see below). Moreover, it is generally advisable to specify a higher number of
 iterations for the final model that appears in publications. Argument \code{seed} sets the state of
-the random number generator in \pkg{BayesX}, which is meaningful for exact replication of the 
-examples.
+the random number generator in \pkg{BayesX} for exact reproducibility of the model fit.
 
 After the model has been successfully fitted, summary statistics of the MCMC estimated model object
 may be printed with
@@ -1063,6 +1060,8 @@ credible intervals.}
 \end{figure}
 and are shown in Figure~\ref{fig:zambia-agechild}.
 
+\fixme{Niki, some interpretation should be given for the results so far.}
+
 A visual representation of the structured and unstructured spatial effect can be obtained
 in two ways. Using the plain plot function
 <<zambia-district-example-kde, echo=TRUE, eval=FALSE>>=
@@ -1085,7 +1084,11 @@ plot(zm, term = "r(district)", map = FALSE, main = "")
 Kernel density estimates of the mean of the structured, left panel, and the unstructured spatial
 effect, right panel respectively.}
 \end{figure}
-The kernel densities reveal the general form of the random effects distributions. To view the
+The kernel densities reveal the general form of the random effects distributions.
+
+\fixme{Niki, tne sentence explaining the findings from this figure should be provided.}
+
+To view the
 spatial structure of the correlated effect we have to use the plot function in combination with the
 boundary object \code{ZambiaBnd}:
 <<zambia-district-example, echo=TRUE, eval=FALSE>>=
@@ -1128,6 +1131,8 @@ panel). Using for both the structured and the unstructered effect the same scale
 comparison. In most cases one of the two effects clearly dominates the other. In our case the 
 structured spatially correlated effect clearly exceeds the unstructured effect.
 
+\fixme{Niki, again, some interpretation.}
+
 For MCMC post estimation diagnosis, it is also possible to extract sampling paths of parameters with
 function \fct{samples}, or to plot the samples directly. For instance, coefficient sampling paths
 for term \code{sx(mbmi)} are displayed with
@@ -1136,7 +1141,7 @@ plot(zm, term = "sx(mbmi)", which = "coef-samples")
 @
 see Figure~\ref{fig:zambia-mbmi-coef-samples}. The plot of sampled parameters should ideally show
 white noise, i.e., more or less uncorrelated samples that show no particular pattern. In our case the
-samples are exactly as they should be.
+samples are exactly as they should be. 
 \begin{figure}[!t]
 \setkeys{Gin}{width=\textwidth}
 \centering
@@ -1168,8 +1173,8 @@ par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(zm, which = "max-acf", main = "")
 @
 \caption{\label{fig:zambia-autocorr} Example on childhood malnutrition: Autocorrelation function
-of the samples of the variance parameter of term \code{sx(mbmi)}, left panel, maximum autocorrelation
-of all parameters of the model, right panel respectively.}
+of the samples of the variance parameter of term \code{sx(mbmi)} (left panel)
+and maximum autocorrelation of all parameters of the model (right panel).}
 \end{figure}
 Autocorrelations for all lags should be close to zero as is mostly the case in our example. See
 Figure~\ref{fig:zambia-autocorr}, for the autocorrelation plots. The plot of maximum autocorrelations over all
@@ -1179,7 +1184,7 @@ In some situations problems may occur during processing of the \pkg{BayesX} bina
 automatically detected by the main model fitting function \fct{bayesx}. Therefore the user may
 inspect the log-file generated by the binary in two ways: Setting the option \code{verbose = TRUE}
 in \fct{bayesx.control} will print all information produced by \pkg{BayesX} simultaneously at 
-runtime. The option is especially helpful if \pkg{BayesX} crashes. Another way to obtain the 
+runtime. The option is especially helpful if \pkg{BayesX} fails in the estimation of the model. Another way to obtain the 
 log-file is to use function \fct{bayesx\_logfile} if \pkg{BayesX} successfully finished processing. 
 In this example the log-file may be printed with
 \begin{Sinput}
