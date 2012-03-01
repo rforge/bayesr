@@ -246,7 +246,7 @@ plot(b, term = "sx(district)", map = ZambiaBnd)
 @
 The plots are shown in Figure~\ref{fig:illustration}. 
 
-\fixme{I feel we need a short paragraph here of maybe 4--8 lines that briefly explains the main
+\fixme{Niki, I feel we need a short paragraph here of maybe 4--8 lines that briefly explains the main
 results of the analysis. What do the curves tell us, what information does the map hold?
 Is this complemented by the summary output?}
 
@@ -366,60 +366,78 @@ A thorough introduction into the regression models supported by the program is a
 \pkg{BayesX} methodology manual \citep{R2BayesX:Belitz+Brezger+Kneib+Lang:2011}.
 
 
-\section[Implementation in R]{Implementation in \proglang{R}} \label{sec:implementation}
+\section[Implementation of the R interface to BayesX]{Implementation of the \proglang{R} interface to \pkg{BayesX}} \label{sec:implementation}
 
-The design of the interface  attempts to address the following major issues: First, the interfacing
-function calls should be as practical as possible and oriented on \proglang{R}'s standards for
-regression model fitting functions, second, to provide a set of functions and methods for a
-convenient representation of fitted model objects, that would enhance the usability of \pkg{BayesX}.
+The design of the interface  attempts to address the following major issues: First, the interface
+functions should be follow \proglang{R}'s conventions for regression model fitting functions
+so that they are easy to employ for \proglang{R} users. Second, the functions and methods for
+representing fitted model objects should reflect \pkg{BayesX} models to enhance their
+usability.
 
-In the developing process of package \pkg{R2BayesX} we first considered how to connect \pkg{BayesX}
-and \proglang{R} most appropriately. Because \pkg{BayesX} does not have an application programming
-interface (API), amongst others, adapting the sources in such a way seemed to be difficult since the
-development status of the project is very advanced. The effort of writing and reading data is
-comparatively small to the processing time needed for estimation of STAR models with \pkg{BayesX}.
-Therefore, we decided to build an interface that primarily sends input program files to the
-command-line binary version of \pkg{BayesX} and reads the returned output files back into
-\proglang{R}. To provide an easy and \proglang{R} standard installation process of the \pkg{BayesX}
-binary, the new package \pkg{BayesXsrc} containing the \pkg{BayesX} sources was developed
-additionally (CRAN, \url{http://CRAN.R-project.org/package=BayesXsrc}, see also
-Section~\ref{appendix:BayesXsrc} of the Appendix).
+\readme{I rephrased the following paragraphs in order to get away from the narrative style in
+past tense: We considered \dots and looked for \dots and developed \dots}
 
-We also looked for existing \proglang{R} implementations to get an overview of best practices for
-software designs including GAMs. The following gives a short summary of some of the larger
-projects that have added to CRAN. One of the first implementations of GAMs in \proglang{R} is the
+\subsection{Interface approach}
+
+The first challenge in establishing a communication between \proglang{R} and \pkg{BayesX}
+is the question which interface to use. As \pkg{BayesX} is written in \proglang{C++}, one
+might expect that \fct{.C} or \fct{.Call} could be an option. However, as \pkg{BayesX} was
+designed as a standalone software it does not offer an application programming interface (API)
+and restructuring the mature and complex \pkg{BayesX} \proglang{C++} code to obtain an API
+at this point is not straightforward. Hence, \pkg{R2BayesX} adopts the simpler approach of writing the data
+out from \proglang{R}, calling the \pkg{BayesX} binary with a suitable program file, and then
+collecting all output files and representing them in suitable \proglang{R} objects. This is
+straightforward and the additional computation effort (as compared to a direct call)
+is rather modest compared to time needed for carrying out the estimation of STAR models
+within \pkg{BayesX}. 
+
+Thus, for the interface adopted by \pkg{R2BayesX} a binary installation of \pkg{BayesX} is
+required. To make this easily available to \proglang{R} users in a standardized way,
+the \pkg{BayesX} \proglang{C++} sources are encapsulated in \proglang{R} package
+\pkg{BayesXsrc} along with a suitable \code{Makefile} so that upon installation of the
+\pkg{BayesXsrc} package, the binary \code{BayesX} (or \code{BayesX.exe} on Windows) is
+created in the installed package. Package \pkg{BayesXsrc} is also available from CRAN
+at \url{http://CRAN.R-project.org/package=BayesXsrc} and some of its implementation details
+are discussed in Appendix~\ref{appendix:BayesXsrc}.
+
+\fixme{Daniel, please check whether these paragraphs are technically sound or need
+modification.}
+
+\subsection{Model specification}
+
+The second challenge for the interface package \pkg{R2BayesX} is to employ an objects and
+methods interface that reflects the workflow typically adapted by \proglang{R} packages
+for fitting GAMs and related models. CRAN packages that implement such models include the
+following prominent ones: One of the first implementations of GAMs in \proglang{R} is the
 \pkg{gam} package \citep{R2BayesX:Hastie+Tibshirani:1990, R2BayesX:Hastie:2011}. The package is
 supporting local regression and smoothing splines in combination with a backfitting algorithm and is
 actually a version of the \proglang{S-PLUS} routines for GAMs. The probably best-known and also
 recommended package is \pkg{mgcv} \citep{R2BayesX:Wood:2006,
-R2BayesX:Wood:2011b, R2BayesX:Wood:2011}, which provides fast an stable algorithms for estimating
-GAMs based on GCV, REML and others. Vector generalized additive models (VGAM,
+R2BayesX:Wood:2011b, R2BayesX:Wood:2011}, which provides fast and stable algorithms for estimating
+GAMs based on GCV, REML and others. Vector generalized additive models (VGAMs,
 \citealp{R2BayesX:Yee:1996}) for categorical responses are covered by package \pkg{VGAM}
-\citep{R2BayesX:Yee:2009}. Another comprehensive package for GAMs, accounting for responses that do
-not necessarily follow the exponential family and may exhibit heterogeneity, is \pkg{gamlss}
-\citep{R2BayesX:Rigby+Stasinopoulos:2005, R2BayesX:Stasinopoulos:Rigby:2007}. A package based on
+\citep{R2BayesX:Yee:2009}. Another comprehensive toolbox for GAMs, accounting for responses that do
+not necessarily follow the exponential family and may exhibit heterogeneity, is the \pkg{gamlss}
+suite of packages \citep{R2BayesX:Rigby+Stasinopoulos:2005, R2BayesX:Stasinopoulos:Rigby:2007}. A package based on
 mixed model technologies is \pkg{SemiPar} \citep{R2BayesX:Ruppert+Wand+Carrol:2003,
-R2BayesX:Wand:2010} and its dependent version for adaptive splines \pkg{AdaptFit}
+R2BayesX:Wand:2010} and, building on top of this, the \pkg{AdaptFit} package for adaptive splines
 \citep{R2BayesX:Krivobokova}. The package \pkg{spikeSlabGAM} applies Bayesian variable selection,
-model choice and regularization for GAMM's \citep{R2BayesX:Scheipl:2011}.
+model choice and regularization for GAMMs \citep{R2BayesX:Scheipl:2011}.
 
-Within \proglang{R}, regression models are most conveniently specified using its formula language.
-By reviewing the above mentioned packages for GAMs, we searched for existing structures that on the
-hand could support a translation method for \proglang{R} commands to \pkg{BayesX} interpretable
-syntax, and on the other hand, functionality that is already well established, such that applying
-\pkg{R2BayesX} only requires little additional effort for the common \proglang{R} user.
-Interestingly, most of the packages use different standards for incorporating additive
-(smooth/special) terms in model formulas and the model frame building process, while a popular name
-convention for a model term constructor function is ``\code{s}'', as it is used in package
-\pkg{gam}, \pkg{mgcv} and \pkg{VGAM}. However, the implementations are again more or less different
-from each other, i.e., loading packages simultaneously will result in conflicts. The most flexible
-project seems to be package \pkg{mgcv}. Here, similar to package \pkg{gam} and \pkg{VGAM}, function
-\fct{s} does not evaluate design or penalty matrices, but it returns a smooth term definition object
-of class \code{"xx.smooth.spec"}, where \code{"xx"} may be specified by the user. To set up a model
-with a user defined smooth, a method for the \proglang{S}3 generic function \fct{smooth.construct},
-that returns a design matrix etc., needs to be supplied. Since implementation of additional model
-terms is also a concern for \pkg{R2BayesX} and function \fct{s} is a quite parsimonious solution, we
-adopted its functionality and developed methods for a new generic function \fct{bayesx.construct},
+Most of these packages follow the common \proglang{R} paradigm of specifying regression models
+conveniently using its formula language \citep{R2BayesX:Chambers+Hastie:1992}. However, the
+above-mentioned packages employ somewhat different approaches for representing smooth/special
+terms for GAMs in formulas and the subsequent building of model frames. A popular approach, though,
+is to use a model term constructor function ``\code{s}'', as used in packages
+\pkg{gam}, \pkg{mgcv}, and \pkg{VGAM}. As the implementation details are somewhat different across
+these packages, loading packages simultaneously may lead to conflicts. Therefore, \pkg{R2BayesX}
+follows the approach of the recommended package \pkg{mgcv} where
+\fct{s} does not evaluate design or penalty matrices, but simply returns a smooth term definition object
+of class \class{xx.smooth.spec}, where \code{"xx"} may be specified by the user. To set up a model
+with a user-defined smooth term, a method for the \proglang{S}3 generic function \fct{smooth.construct}
+needs to be supplied, that returns a design matrix etc. Since implementation of additional model
+terms is also a concern for \pkg{R2BayesX} and function \fct{s} is a very lean solution, we
+adopt its functionality and provide methods for a new generic function \fct{bayesx.construct},
 that returns the required command for a particular smooth term in \pkg{BayesX}. To give an example,
 we generate a call to function \fct{s} with some covariate \code{x} specifying a P-spline term and
 return the \pkg{BayesX} command with
@@ -427,74 +445,79 @@ return the \pkg{BayesX} command with
 bayesx.construct(s(x, bs = "ps"))
 @
 Given an \proglang{R} model formula, the specified terms are translated one after another and
-finally merged into a complete program which may be sent to \pkg{BayesX}. Next to the integration of
-function \fct{s}, a more \pkg{BayesX} alike model term constructor function is provided. The
-advantage is that a common \pkg{BayesX} user may specifiy models in a more familiar way, which will
-make a change to \pkg{R2BayesX} more easy. The function is called \fct{sx} and is
-described in Section~\ref{subsec:addterms}. To avoid package conflicts the new function simply
-interfaces function \fct{s}. Moreover, a special constructor function for random effect terms is
-provided.
+finally merged into a complete program which may be sent to \pkg{BayesX}. In addition to the
+support of \pkg{mgcv}'s \fct{s} function, a second smooth term constructor \fct{sx} is provided
+(described in detail in Section~\ref{subsec:addterms}). This is essentially a convenience interface
+that calls \fct{s} but uses somewhat different defaults and additional options specific to the
+terms supported by \pkg{BayesX}. Moreover, a special constructor function \fct{r} for random effect
+terms is provided.
 
-The sequence of functions that are consecutively called using the interface is the following: A
-final program file is generated by first applying function \fct{parse.bayesx.input} on the
+\subsection{Under the hood}
+
+The main user interface of \pkg{R2BayesX} is the function \fct{bayesx}
+(presented in detail in Section~\ref{subsec:processing}). Internally, this function employs
+the helper functions \fct{parse.bayesx.input}, \fct{write.bayesx.input}, \fct{run.bayesx}, and
+\fct{read.bayesx.output} in the following work sequence: First, a
+program file is generated by applying function \fct{parse.bayesx.input} to the
 \proglang{R} input parameters, including the model \code{formula}, \code{data}, etc. The returned
 object is then further processed with function \fct{write.bayesx.input}, utilizing the methods
-described above, as well as setting up the necessary data files (folders) to be used with
-\pkg{BayesX}. Afterwards, function \fct{run.bayesx} executes the program through a call to function
-\fct{system}. The output files returned by the binary are imported into \proglang{R} using function
-\fct{read.bayesx.output}. Hence, it is also possible to run and read already existing \pkg{BayesX}
+described above, as well as setting up the necessary temporary directories and data files to be used with
+\pkg{BayesX}. Afterwards, function \fct{run.bayesx} (provided in \pkg{BayesXsrc}) executes the
+program through a call to function \fct{system}. The output files returned by the binary are imported
+into \proglang{R} using function \fct{read.bayesx.output}. 
+Using these helper functions it is also possible to run and read already existing \pkg{BayesX}
 program and output files, see Section~\ref{sec:addoptions} and the \pkg{R2BayesX} manuals for a
 detailed description. The object returned by function \fct{read.bayesx.output} is a list of class
-\code{"bayesx"}, wherefore a set of base \proglang{R} functions and methods described in
-Table~\ref{tab:funmethods}, amongst others, is available. The returned fitted model term objects are
-also assigned with suitable classes which have plotting methods. Particular effort has been raised on
-the development of easy to use map effect plots using color legends, see also
-Section~\ref{subsec:processing} and Section~\ref{sec:illustrations}.
+\class{bayesx}, for which a set of base \proglang{R} functions and methods described in
+Table~\ref{tab:funmethods}, amongst others, is available. The returned fitted model term objects also
+have suitable classes along with corresponding plotting methods. Particular effort has been given on
+the development of easy-to-use map effect plots using color legends (using HCL-based palettes,
+\citealp{R2BayesX:Zeileis+Hornik+Murrell:2009}, from the \pkg{colorspace} package, \citealp{R2BayesX:Ihaka+Murrell+Hornik:2012}).
+See also Section~\ref{subsec:processing} and Section~\ref{sec:illustrations}.
 
-Functions \fct{parse.bayesx.input}, \fct{write.bayesx.input}, \fct{run.bayesx} and \\
-\fct{read.bayesx.output} are combined in the front end main model fitting function \fct{bayesx}
-presented in Section~\ref{subsec:processing}.
+\fixme{Niki, somewhere we need to briefly discuss the type of support for spatial objects.
+We could do this here, or probably better in the next section. This needs to say something
+about how to connect to the standard sp classes.}
 
 
 \section[User interface]{User interface} \label{sec:userinterface}
 
-\subsection[Installing the BayesX binary from R]{Installing the \pkg{BayesX} binary from 
-  \proglang{R}}
-
-Before STAR models can be fitted with package \pkg{R2BayesX} from \proglang{R}, the binary
-command-line version of the program \pkg{BayesX} needs to be installed and linked to \proglang{R}.
-Therefore the \proglang{R} package \pkg{BayesXsrc} (CRAN,
-\url{http://CRAN.R-project.org/package=BayesXsrc}) needs to be installed and loaded. The package
-features the \pkg{BayesX} sources that have been succesfully compiled for the most popular operating
-systems. For more details on this package please see Section~\ref{appendix:BayesXsrc} of the
-Appendix.
-
-\subsection[Processing BayesX from R]{Processing \pkg{BayesX} from \proglang{R}}
+\subsection[Calling BayesX from R]{Calling \pkg{BayesX} from \proglang{R}}
 \label{subsec:processing}
 
 \hypertarget{bayesx}{The} main model-fitting function in the package \pkg{R2BayesX} is called
 \fct{bayesx}. The arguments of \fct{bayesx} are
-\begin{Sinput}
-bayesx(formula, data, weights = NULL, subset = NULL,
-  offset = NULL, na.action = na.fail, contrasts = NULL,
-  family = "gaussian", method = "MCMC", control = bayesx.control(...),
-  ...)
-\end{Sinput}
+\begin{Code}
+  bayesx(formula, data, weights = NULL, subset = NULL, offset = NULL,
+    na.action = na.fail, contrasts = NULL,
+    family = "gaussian", method = "MCMC", control = bayesx.control(...), ...)
+\end{Code}
 where the first two lines basically represent the standard model frame specifications
-\citep[see][]{R2BayesX:Chambers+Hastie:1992}. However, the object supplied to argument \code{data}
-is not necessarily an \proglang{R} data object, it is also possible to provide a character string
-with a path to a dataset stored on disc, which may be reasonable when using large datasets. An 
-example is given in Section~\ref{sec:addoptions}. Additional contrast specifications for 
+\citep[see][]{R2BayesX:Chambers+Hastie:1992} and the third line collects the arguments
+specific to \pkg{BayesX}. 
+
+\fixme{Niki, why do we use na.fail by default instead of \code{getOption("na.action")}?}
+
+The data processing is carried out ``as usual'' as in \fct{lm} or \fct{glm} with
+the following additions: (1)~The \code{data} can not only be provided as a
+\class{data.frame} but it is also possible to provide a character string
+with a path to a dataset stored on disc, which can be leveraged to avoid reading very
+large data files into \proglang{R} just to write them out again for \pkg{BayesX}.
+An example is given in Section~\ref{sec:addoptions}. (2)~Additional contrast specifications for 
 factor variables can be passed to argument \code{contrasts}. Using factors, we recommend deviation
 or effect coding (see function \fct{contr.sum}) rather than the usual dummy coding of factors as it
-typically improves  convergence of estimation algorithms used in \pkg{BayesX}. The distribution
-assigned to the response may be set with argument \code{family}, the default is
-\code{family = "gaussian"}. Note that family objects are currently not supported by BayesX. Argument
-\code{method} determines the inferential concept used for estimation. Options are: Markov chain
-Monte Carlo simulation - \code{"MCMC"}, mixed-model-based estimation using restricted maximum
-likelihood/marginal likelihood - \code{"REML"} and penalized likelihood including model selection
-- \code{"STEP"}. An overview of all available distributions for the different methods is given in
-Table~\ref{tab:family}.
+typically improves  convergence of estimation algorithms used in \pkg{BayesX}. 
+
+The \pkg{BayesX}-specific arguments comprise specification of the response distribution \code{family},
+the estimation \code{method} and further control parameters collected in \fct{bayesx.control}.
+The default response distribution is \code{family = "gaussian"}. Note that \class{family} objects
+(in the \fct{glm} sense) are currently not supported by \pkg{BayesX}.
+The inferential concepts that can be used as the estimation \code{method} comprise:
+\code{"MCMC"} for Markov chain Monte Carlo simulation,
+\code{"REML"} for mixed-model-based estimation using restricted maximum likelihood/marginal likelihood, and
+\code{"STEP"} for penalized likelihood including model selection.
+An overview of all available distributions for the different methods is given in Table~\ref{tab:family}.
+
 \begin{table}[t!]
 \centering
 \begin{tabular}{lp{4cm}p{1.2cm}l}
@@ -585,8 +608,8 @@ listed in Table~\ref{tab:control}.
 function \fct{bayesx}. See \code{?bayesx.control} for more details.}
 \end{table}
 
-The returned fitted model object is a list of class \code{"bayesx"}, which is supported by several
-standard extractor functions, such as \fct{plot} and \fct{summary}. For models estimated using
+The returned fitted model object is a list of class \class{bayesx}, which is supported by several
+standard methods and extractor functions, such as \fct{plot} and \fct{summary}. For models estimated using
 method \code{"REML"}, function \fct{summary} generates summary statistics similar to objects
 returned from the main model fitting function \fct{gam} of the \pkg{mgcv} package. For \code{"MCMC"}
 estimated models, the mean, standard deviation and quantiles of parameter samples are provided.
@@ -599,21 +622,23 @@ function \fct{plot2d} or \fct{plotblock} (for factors, unit- or cluster specific
 block for every estimated parameter including mean and credible intervals), for perspective or image
 and contour plots function \fct{plot3d}, map effects plots are produced by function \fct{plotmap},
 with or without colorlegends drawn by function \fct{colorlegend}, amongst others. See
-Table~\ref{appendix:plotting} in the Appendix for an overview of the most important arguments for
-the plotting functions. In some situations it may be useful to inspect the log file generated by the
-\pkg{BayesX} binary. The file can either be viewed directly during processing if argument
-\code{verbose} is set to \code{TRUE} in function \fct{bayesx.control}, or extracted from the fitted
-model object using function \fct{bayesx\_logfile}. For MCMC post estimation diagnosis, besides the
+Appendix~\ref{appendix:plotting} for an overview of the most important arguments for
+the plotting functions. For MCMC post-estimation diagnosis, besides the
 implemented trace and autocorrelation plots, samples of the parameters may also be extracted using
-function \fct{samples}. The sampling paths are provided as a data frame, and hence may e.g., be
-converted to objects of class \code{"mcmc"} using the \pkg{coda} package
+function \fct{samples}. The sampling paths are provided as a data frame, and hence may easily be
+converted to objects of class \class{mcmc} using the \pkg{coda} package
 \citep{R2BayesX:Plummer+Best+Cowles+Vines:2006} for further analysis. In addition, an \proglang{R}
 script for the estimated model, including function calls for saving, loading, plotting of term
 effects and diagnostic plots, may be generated using function \fct{getscript}. The produced
 \proglang{R} script may be useful for less experienced users of the package to get a quick overview
-of post estimation commands. Moreover, the script facilitates the final preparation of plots and
-diagnostics to be included in publications. A list of all available functions and methods of package
+of post-estimation commands. Moreover, the script facilitates the final preparation of plots and
+diagnostics to be included in publications. In some situations it may be useful to inspect the log file generated by the
+\pkg{BayesX} binary. The file can either be viewed directly during fitting process when setting
+\code{verbose = TRUE}, or it can be extracted from the fitted
+model object using function \fct{bayesx\_logfile}. 
+A list of all available functions and methods of package
 \pkg{R2BayesX} can be found in Table~\ref{tab:funmethods}.
+
 \begin{table}[t!]
 \centering
 \begin{tabular}{p{3cm}p{11.5cm}}
@@ -621,7 +646,7 @@ diagnostics to be included in publications. A list of all available functions an
 Function & Description \\ \hline
 \fct{print} & Simple printed display of the initial call and some additional information of the
               fitted model. \\
-\fct{summary} & Return an object of class \code{"summary.bayesx"} containing the relevant summary
+\fct{summary} & Return an object of class \class{summary.bayesx} containing the relevant summary
                 statistics (which has a \fct{print} method). \\ \hline
 \fct{coef} & Extract coefficients of the linearly modeled terms. \\
 \fct{confint} & Compute confidence intervals of linear modeled terms if \code{method = "REML"}, for
@@ -649,7 +674,7 @@ Function & Description \\ \hline
                                              availability is dependent on the \code{method} used.
                                              \\ \hline
 \end{tabular}
-\caption{\label{tab:funmethods} Functions and methods for objects of class \code{"bayesx"}. More details
+\caption{\label{tab:funmethods} Functions and methods for objects of class \class{bayesx}. More details
 are provided in the manual pages.}
 \end{table}
 
@@ -659,7 +684,6 @@ are provided in the manual pages.}
 In package \pkg{R2BayesX}, the main constructor function for specifying additive terms in STAR
 \code{formula}s is called \fct{sx}. The function is basically an interface to the term constructor
 function \fct{s} of package \pkg{mgcv}, also see Section~\ref{sec:implementation}.
-
 The arguments of function \fct{sx} are
 \begin{Sinput}
 sx(x, z = NULL, bs = "ps", by = NA, ...)
@@ -721,14 +745,13 @@ Table~\ref{tab:terms}.
 \caption{\label{tab:terms} Possible \pkg{BayesX} model terms within function \fct{sx} and \fct{s}.}
 \end{table}
 
-Note that it is possible to specify all term type versions presented in the table, the short and
-the original ones that are used within \pkg{BayesX}, e.g.,
+Note that some terms have equivalent short and long specifications, e.g.,
 \code{bs = "ps"} or \code{bs = "psplinerw2"} result in the same type of model term. A numeric or a
 factor variable can be provided to argument \code{by} to estimate varying coefficient terms, where
 the effect of the variable provided to \code{by} varies over the range of the covariate(s) of this
-term. The dot dot dot ``\code{...}'' argument is used to specify term specific control parameters
-or additional geographical information. In the example Section~\ref{sec:motivation}, to modify the
-degree and the inner knots for the P-spline term \code{sx(mbmi)}, the user may e.g., type
+term. The ``\code{...}'' argument is used to set term-specific control parameters
+or additional geographical information. For example to modify the degree and the inner knots for the
+P-spline term \code{sx(mbmi)} from Section~\ref{sec:motivation}, the user could use
 \code{sx(mbmi, degree = 2, knots = 10)}. For supplying additional boundary or graph files (see
 function \fct{read.bnd}, \fct{read.gra}, \fct{shp2bnd} and \fct{bnd2gra} for importing and creation
 of spatial objects that may be sent to \pkg{BayesX}), that are used to compute suitable neighborhood
@@ -752,8 +775,9 @@ possible options for 'bs = "ps"':
 
 \end{Sinput}
 For reasons of simplicity only the first two additional controlling arguments are shown.
+\fixme{Niki, is it possible to extend/modify this? Could I request more than two options?}
 
-Some care has to be taken with the identifiability of varying coefficients terms. The standard in
+Some care is warranted for the identifiability of varying coefficients terms. The standard in
 \pkg{BayesX} is to center nonlinear main effects terms around zero whereas varying coefficient terms 
 are not centered. This makes sense since main effects nonlinear terms are not identifiable and 
 varying coefficients terms are usually identifiable. However, there are situations where a varying
@@ -786,7 +810,7 @@ specified by argument ``\code{...}'' in function \fct{sx}, may be set in \fct{s}
 supports calls to the tensor product constructor function \fct{te}, however, only a small set of the 
 features of this function is supported.
 
-In addition to \fct{sx}, \fct{s} and \fct{te}, unit- or cluster specific unstructured (random)
+In addition to \fct{sx}, \fct{s}, and \fct{te}, unit- or cluster specific unstructured (random)
 effects may be incorporated into the model \code{formula} using the random effects term constructor
 function \fct{r}. The arguments of \fct{r} are
 \begin{Sinput}
@@ -802,12 +826,11 @@ variance parameter are set  with \code{r(district, xt = list(a = 0.0001, b = 0.0
 
 \subsection[Additional options]{Additional options} \label{sec:addoptions}
 
-For most practical purposes fitting models with function \fct{bayesx} may be sufficient. However,
-the interfacing functions that are consecutively called within \fct{bayesx} can also be used
-independently. This could be meaningful for two reasons: First, users may want to use already
-existing \pkg{BayesX} program files wherefore a new setup within \proglang{R} is not required, and
-secondly, there might be a need for automated importing of \pkg{BayesX} output files into 
-\proglang{R} for further analysis.
+For practical purposes fitting models with function \fct{bayesx} is typically sufficient. However,
+the interfacing functions that are called internally within \fct{bayesx} can also be used
+independently. This could be useful for two reasons: First, users may want to use already
+existing \pkg{BayesX} program files, and second, there might be a need for automated
+importing of previously generated \pkg{BayesX} output files into \proglang{R} for further analysis.
 
 \hypertarget{run.bayesx}{Function} \fct{run.bayesx}, included in package \pkg{BayesXsrc}, is used to
 run an arbitrary \pkg{BayesX} program 
@@ -819,7 +842,7 @@ where \code{prg} is a character string with the path to a program file to be exe
 \code{prg} is not provided \pkg{BayesX} will start in batch mode. During processing of \pkg{BayesX}
 several informations will be printed to the \proglang{R} console if \code{verbose = TRUE}. Further
 arguments may be passed to function \fct{system}, which calls the \pkg{BayesX} binary, using the
-dots \code{"..."} argument. The function returns a list including the log-file returned by
+``\code{...}'' argument. The function returns a list including the log-file returned by
 \pkg{BayesX} as well as information on the total runtime.
 
 \hypertarget{read.bayesx.output}{Model} output files are imported using function
@@ -828,18 +851,18 @@ read.bayesx.output(dir, model.name = NULL)
 \end{Sinput}
 Here, \code{dir} is again a directory and \code{model.name} the name of the model the files are
 imported for, also provided as character strings. Note that the function will search for all
-different BayesX estimated models in the declared directory if argument \code{model.name} is set to
-\code{NULL}. The returned object is also of class \code{"bayesx"}, i.e., all the functions and
+different \pkg{BayesX}-estimated models in the declared directory if argument \code{model.name} is set to
+\code{NULL}. The returned object is also of class \class{bayesx}, i.e., all the functions and
 methods described in Table~\ref{tab:funmethods} may be applied.
 
 Another noteworthy feature of package \pkg{R2BayesX} is the internal handling of data. \pkg{BayesX} 
 uses numerically efficient algorithms including sparse matrix computations which in principle allow 
-to estimate models using large datasets. Moreover, the number of different observations for 
+to estimate models using very large datasets. Moreover, the number of different observations for 
 particular covariates is usually much smaller than the total number of observations. That is, the 
 output files returned by the binary only include estimates for unique covariate values. Since these 
 files typically reserve much less disc space, importing the fitted model objects into \proglang{R} 
 using \fct{read.bayesx.output} is straightforward in most cases, whereas handling the complete 
-dataset within \proglang{R} may be problematic. As mentioned in Section~\ref{subsec:processing}, 
+dataset within \proglang{R} may be more burdensome. As mentioned in Section~\ref{subsec:processing}, 
 users can exploit this by providing a character string to argument \code{data} in function 
 \fct{bayesx}, which includes the path to a dataset instead of an \proglang{R} data object. As a 
 consequence, this dataset will not be loaded within \proglang{R} and is only used internally by the 
@@ -960,12 +983,12 @@ about the district neighborhood structure, which e.g., is enclosed in the file
 <<data-zambia-bnd, echo=TRUE, eval=TRUE>>=
 data("ZambiaBnd", package = "R2BayesX")
 @
-The object \code{ZambiaBnd} has class \code{"bnd"} and is basically a \fct{list} of polygon
+The object \code{ZambiaBnd} has class \class{bnd} and is basically a \fct{list} of polygon
 matrices, with $x$- and $y$-coordinates of the boundary points in the first and second column
 respectively. To read in an arbitrary boundary file into \proglang{R} function \fct{read.bnd} can
 be used. With the information of the boundary file \pkg{BayesX} may compute an appropriate adjacency 
 matrix, allowing for a smoothly varying effect of the neighboring regions. There is a generic 
-plotting method implemented for objects of class \code{"bnd"}, which in principle calls function
+plotting method implemented for objects of class \class{bnd}, which in principle calls function
 \fct{plotmap}. E.g., a simple map, as shown in Figure~\ref{fig:zambia-simple-map}, of the districts
 in Zambia is drawn by typing
 <<plot-zambia-map-01, echo=TRUE, eval=FALSE>>=
@@ -1087,7 +1110,7 @@ Estimated mean effect of the structured spatial effect (left panel), together wi
 spatial effect using the color and legend scaling of the structured effect (right panel).}
 \end{figure}
 As a default the districts of Zambia are colored in a symmetrical range within
-$\pm \max(|\mathit{pmean}|)$. \fixme{What is pmean?} In many situations the visual impression of the colored map is
+$\pm \max(|\mathit{pmean}|)$. \fixme{Niki, what is pmean? Clarify.} In many situations the visual impression of the colored map is
 problematic. This is primarily the case if there are some districts with extraordinarily high
 posterior means compared to the rest of the districts. Then the map is dominated by the colors of
 these outlying districts. A more informative map may be obtained by restricting the range of the
@@ -1395,7 +1418,6 @@ effect plot using the boundary file \code{BeechBnd} with
 plot(fm2, term = "sx(id)", map = BeechBnd)
 @
 Both the kernel density and map effect plot are shown in Figure~\ref{fig:forest-spatial-kde}.
-\fixme{Should we increase the size of the rectangles so that the color is more visible?}
 In this example the coloring of the plot is strongly influenced by a few very high and low values. 
 Therefore, it might be useful to restrict the color range e.g., according to the 10\% and 90\% 
 quantiles of the kernel density estimate of the effect,  by typing
@@ -1403,7 +1425,7 @@ quantiles of the kernel density estimate of the effect,  by typing
 plot(fm2, term = "sx(id)", map = BeechBnd, range = c(-3, 3))
 @
 the resulting map is shown in Figure~\ref{fig:forest-spatial-restrict}.
-\fixme{Check the computations of \texttt{range} in these figures, shouldn't they be in sync? Also see above for rectangle size.}
+\fixme{Niki, check the computations of \texttt{range} in these figures, shouldn't they be in sync?}
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.65\textwidth}
 \centering
@@ -1545,7 +1567,7 @@ Argument & Description \\ \hline
     \code{"coef-samples"}, \code{"var-samples"}, \code{"intcpt-samples"}, \code{"hist-resid"}, 
     \code{"qq-resid"}, \code{"scatter-resid"}, \code{"scale-resid"}, \code{"max-acf"}. Argument 
     \code{which} may also be specified as integer, e.g., \code{which = 1}. The first three arguments 
-    are all model term specific. For the residual model diagnostic plot options \code{which} 
+    are all model term-specific. For the residual model diagnostic plot options \code{which} 
     may be set with \code{which = 5:8}. \\ \hline
 \code{residuals} & If set to \code{TRUE}, partial residuals may also be plotted if available. \\
 \code{rug} & If set to \code{TRUE}, a \fct{rug} is added to the plot. \\
