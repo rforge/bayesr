@@ -1236,7 +1236,7 @@ messages.
 \subsection{Forest health dataset: Analysis with REML} \label{subsec:forest}
 
 The dataset on forest health comprises information on the defoliation of beech trees, which serves
-as an indicator of overall forest health here. The data was collected annually from 1980 to 1997
+as an indicator of overall forest health here. The data were collected annually from 1980 to 1997
 during a project of visual inspection of trees around Rothenbuch, Germany, see
 \citet{R2BayesX:Goettlein+Pruscha:1996}, and is discussed in detail in
 \citet{R2BayesX:Fahrmeir+Kneib+Lang:2009}. In this example, the percentage rate of defoliation of
@@ -1271,8 +1271,8 @@ Variable           & Description \\ \hline
 \end{table}
 
 Similar to \citet{R2BayesX:Fahrmeir+Kneib+Lang:2009}, we start with a threshold model and cumulative
-logit link, with $P(\texttt{defoliation}_{it} \leq r)$ of tree $i$ at time $t$, $r = 1,2$, and the
-additive predictor
+logit link, with $P(\texttt{defoliation}_{it} \leq r)$ of tree $i$ at time $t$, for response
+category $r = 1,2$, and the additive predictor
 \begin{eqnarray*}
 \eta_{it}^{(r)} &=& f_1(\texttt{age}_{it}) + f_2(\texttt{inclination}_{i}) +
   f_3(\texttt{canopy}_{it}) + f_4(\texttt{year}) + f_5(\texttt{elevation}_{i}) +
@@ -1291,11 +1291,12 @@ f <- defoliation ~  stand + fertilized + humus + moisture + alkali + ph +
 The covariates entering nonlinearly are again modeled by P-splines. The model is then fitted
 applying REML by assigning a cumulative logit model and calling
 <<fit-forest-model-01, echo=TRUE, eval=FALSE>>=
-fm1 <- bayesx(f, family = "cumlogit", method = "REML", data = ForestHealth)
+fm1 <- bayesx(f, family = "cumlogit", method = "REML",
+  data = ForestHealth)
 @
 <<fit-forest-model-02, echo=FALSE, eval=FALSE>>=
 data("BeechBnd", package = "R2BayesX")
-fm2 <- update(fm1, ~ . + sx(id, bs = "gs", map = BeechBnd))
+fm2 <- update(fm1, . ~ . + sx(id, bs = "gs", map = BeechBnd))
 @
 <<cache-forest-model, echo=FALSE, eval=TRUE>>=
 if(file.exists("forest-model.rda")) {
@@ -1307,12 +1308,11 @@ save(fm1, fm2, file = "forest-model.rda")
 }
 @
 After the estimation process has converged, the estimated effects of the nonparametric modeled terms
-may be visualized by typing
+may be visualized by
 <<fit-forest-model-01-plots, echo=TRUE, eval=FALSE>>=
 plot(fm1, term = c("sx(age)", "sx(inclination)", "sx(canopy)", "sx(year)",
   "sx(elevation)"))
 @
-and are shown in Figure~\ref{fig:forest-no-spatial}.
 \begin{figure}[!ht]
 \setkeys{Gin}{width=0.46\textwidth}
 \centering
@@ -1343,18 +1343,20 @@ plot(fm1, term = "sx(elevation)")
 \caption{\label{fig:forest-no-spatial} Forest damage: Estimates of nonparametric effects including
 80\% and 95\% point-wise confidence intervals of the model without the spatial effect.}
 \end{figure}
-In this example some contradictory results occur. The effect of covariate \code{age} on the
-\code{defoliation} seems to decline for both, younger and older trees, which intuitively should be a
-monotone increasing effect, this also holds for the effect of \code{elevation}. Moreover, the
+The results are shown in Figure~\ref{fig:forest-no-spatial} and appear to be rather unintuitive.
+In particular, the effect of the covariate \code{age} on \code{defoliation} seems to be non-monotonic
+with low defoliation levels for both younger and older trees. Similarly, the effect of \code{elevation}
+is very non-monotonic with high defoliation for both low and high elevations. Finally, the
 extremely wiggly estimate of \code{inclination} is hardly interpretable. Therefore,
 \citet{R2BayesX:Goettlein+Pruscha:1996} extend the model by a spatial effect, which is modeled by a
 two dimensional geospline term of the tree locations. The tree $x$- and $y$-coordinates are
 calculated by the centroid positions of tree polygons given by the boundary map file \code{BeechBnd}.
-We now fit the  model \readme{updating the model object directly rather than the formula}:
+We can update the  model by adding a \code{"gs"} effect \readme{updating the model object directly rather than the formula}:
 <<fit-forest-model-02-show, echo=TRUE, eval=FALSE>>=
 <<fit-forest-model-02>>
 @
-Taking a look at model information criteria with
+Taking a look at model information criteria \fixme{Niki, the implementation of BIC with df is non-standard in R.
+\code{logLik} returns a df attribute but \code{AIC} and \code{BIC} just return the information criteria}
 <<summary-forest-model, echo=TRUE, eval=TRUE>>=
 BIC(fm1, fm2)
 GCV(fm1, fm2)
@@ -1448,8 +1450,11 @@ color scaling based on the 10\% and 90\% quantiles of the kernel density estimat
 Trimming the color range of the plot now leads to a better representation of the effect.
 
 Summarizing these results identify a strong influence of the spatial effect of the overall model
-fit, indicating that a clear splitting of locational specific covariates and the spatial effect is
+fit, indicating that a clear splitting of location-specific covariates and the spatial effect is
 hardly possible in this example.
+
+\fixme{Niki, the final conclusion of the results could maybe be somewhat clearer: What are
+the drivers of defoliation here?}
 
 \subsection{Childhood malnutrition in Zambia: Analysis with STEP} \label{subsec:zambia-step}
 
@@ -1459,7 +1464,8 @@ Section~\ref{subsec:zambia}. In this example, the structured additive
 predictor~(\ref{eqn:zambia-eta}) contains two continuous covariates \code{mbmi} and \code{agechild},
 that are assumed to have a possibly nonlinear effect on the response \code{stunting} and are modeled
 with P-splines. However, a linear effect could be more appropriate and, hence, the linear effect is
-also considered using the selection algorithm in \pkg{BayesX}. Additionally, for each variable and
+also \fixme{Niki, clarify: Do you mean in general? In this example? Or\dots?}
+considered using the selection algorithm in \pkg{BayesX}. Additionally, for each variable and
 function, the implemented procedures decide if a term is included or removed from the model. To
 estimate the model applying the option \code{method = "STEP"}, we use the same  model formula of
 Section~\ref{subsec:zambia} and call
@@ -1487,7 +1493,7 @@ save(zms, zmsccb, file = "zambia-model-step.rda")
 }
 @
 where argument \code{algorithm} chooses the selection algorithm and \code{startmodel} the start
-model for variable selection, see also Table ~\ref{tab:control} for all possible options. Usually the selected
+model for variable selection, see also Table~\ref{tab:control} for all possible options. Usually the selected
 final model is unaffected by the selection algorithm and startmodel. However, it is generally of interest to 
 assess the dependence of results on the selction algorithm and the startmodel. The
 summary statistics of the final selected model are then provided with
@@ -1514,7 +1520,9 @@ which additionally considers the uncertainty due to model selection.
 
 Another important feature of the stepwise procedure is the definition of a \code{startmodel}, the
 options are listed in Table~\ref{tab:control}. Besides the default of an \code{"empty"}
-\code{startmodel}, it may be reasonable to start with an userdefined model. Therefore, the starting
+\code{startmodel}, it may be reasonable to start with a user-defined model
+\fixme{Niki, it is somewhat unclear to me which part of the formula specifies the startmodel
+and what specifies the maximal possible model. Maybe this could be clarified?}. Therefore, the starting
 values for the degrees of freedom of the P-spline, spatial and random effect terms need to be
 specified, by typing
 <<fit-zambia-model-step-05, echo=TRUE, eval=FALSE>>=
@@ -1531,7 +1539,8 @@ zmsud <- bayesx(f, family = "gaussian", method = "STEP",
 @
 which actually produces the model output of the first model again.
 
-
+\fixme{Niki, again I would like to see somewhat more interpretation. There is a little bit here but
+the advantages/differences to the first analysis could be pointed out more clearly.}
 
 \section{Summary}\label{sec:conclusion}
 
@@ -1560,6 +1569,9 @@ which actually produces the model output of the first model again.
 
 \section[Options for the plot() method]{Options for the \fct{plot} method}
 \label{appendix:plotting}
+
+\fixme{A short paragraph given some overview of the general approach implemented would be useful
+in addition to the table.}
 
 \begin{table}[h!]
 \centering
