@@ -25,10 +25,14 @@ function(object, dir, prg, data, type)
     }
     if(is.null(map)) {
       map <- object$xt
+      if(is(map, "SpatialPolygonsDataFrame"))
+        map <- SPDF2bnd(map)
       if(is.null(map) || (!is.list(map) && !inherits(map, "bnd")))
         stop("need to supply a bnd file object in argument xt!")
     }
   }
+  if(is(map, "SpatialPolygonsDataFrame"))
+    map <- SPDF2bnd(map)
   if(!inherits(map, "bnd"))
     class(map) <- "bnd"
   counter <- NULL

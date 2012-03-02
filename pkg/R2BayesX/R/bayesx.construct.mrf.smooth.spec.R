@@ -34,10 +34,14 @@ function(object, dir, prg, data)
     } else map <- object$xt[[1L]]
     if(is.null(map)) {
       map <- object$xt
+      if(is(map, "SpatialPolygonsDataFrame"))
+        map <- SPDF2bnd(map)
       if(is.null(map) || (!is.list(map) && !inherits(map, "bnd") || !inherits(map, "gra")))
         stop("need to supply a bnd or graph file object in argument xt!")
     }
   }
+  if(is(map, "SpatialPolygonsDataFrame"))
+    map <- SPDF2bnd(map)
   if(!inherits(map, "bnd") && !inherits(map, "gra")) {
     if(is.list(map))
       class(map) <- "bnd"

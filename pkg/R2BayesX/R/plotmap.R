@@ -6,6 +6,8 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
 {
   if(missing(map))
     stop("map object is missing!")
+  if(is(map, "SpatialPolygonsDataFrame"))
+    map <- SPDF2bnd(map)
   if(!is.list(map))
     stop("argument map must be a list() of matrix polygons!")
   args <- list(...)

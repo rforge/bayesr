@@ -2,7 +2,24 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-plotmap(north)
+plot(b, map = AustriaBnd)
+
+library("maptools")
+austria <- readShapePoly(file.path("/home/nik/svn/meteoR/rain/data/shp", "at"),
+  proj4string = CRS("+proj=longlat +datum=WGS84"))
+
+id <- as.factor(rep(names(AustriaBnd), 100))
+betas <- sort(runif(9))
+betas <- betas - mean(betas)
+y <- betas[id] + rnorm(length(id), sd = 0.6)
+
+b <- bayesx(y ~ sx(id, bs = "gk", map = austria, knots = 5), method = "REML")
+
+plot(b, map = austria)
+plotmap(austria, x = betas, id = paste(0:8))
+
+
+bayesx.construct(sx(id, bs = "mrf", map = MunichBnd))
 
 
 load("~/tea/arm/data/rats.rda")
