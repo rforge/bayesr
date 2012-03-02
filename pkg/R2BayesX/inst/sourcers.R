@@ -2,6 +2,9 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
+plotmap(north)
+
+
 load("~/tea/arm/data/rats.rda")
 b <- bayesx(response ~ lowtime + hightime + controltime +
   r(subject) + r(subject, by = transf_time), method = "REML",
