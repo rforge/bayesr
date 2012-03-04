@@ -2,6 +2,7 @@ SPDF2bnd <- function(map, poly.names = NULL)
 {
   if(!is(map, "SpatialPolygonsDataFrame"))
     stop("map must be of class 'SpatialPolygonsDataFrame'!")
+  require("maptools")
   rval <- list()
   gn <- FALSE
   pn <- NULL
@@ -29,6 +30,6 @@ SPDF2bnd <- function(map, poly.names = NULL)
   }
   names(rval) <- pn
   class(rval) <- c("bnd", "list")
-  attr(rval, "asp") <- 1.5 ##as.numeric(mapasp(map))
+  attr(rval, "asp") <- 1.5 ## as.numeric(mapasp(map)) FIXME
   rval
 }

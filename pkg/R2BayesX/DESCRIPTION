@@ -12,6 +12,6 @@ Maintainer: Nikolaus Umlauf <nikolaus.umlauf@uibk.ac.at>
 Description: An R Interface to Estimate STAR Models with BayesX
 Depends: R (>= 2.13.0)
 Depends: akima, BayesX, colorspace, mgcv
-Suggests: coda
+Suggests: coda, maptools
 License: GPL-2 | GPL-3
 LazyLoad: yes
