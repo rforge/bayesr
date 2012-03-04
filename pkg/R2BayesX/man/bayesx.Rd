@@ -15,7 +15,7 @@
 
 \usage{  
 bayesx(formula, data, weights = NULL, subset = NULL, 
-  offset = NULL, na.action = na.fail, contrasts = NULL, 
+  offset = NULL, na.action = NULL, contrasts = NULL, 
   control = bayesx.control(\dots), model = TRUE, \dots)
 }
 

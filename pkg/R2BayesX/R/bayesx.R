@@ -1,6 +1,6 @@
 bayesx <-
 function(formula, data, weights = NULL, subset = NULL, 
-  offset = NULL, na.action = na.fail, contrasts = NULL, 
+  offset = NULL, na.action = NULL, contrasts = NULL, 
   control = bayesx.control(...), model = TRUE, ...)
 {
   args <- list(...)

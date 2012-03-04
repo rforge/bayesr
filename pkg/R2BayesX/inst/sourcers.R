@@ -2,10 +2,14 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
+ll <- logLik(b1)
+attributes(ll)
+
+
 map <- readShapePoly(file.path("/home/nik/svn/meteoR/rain/data/shp", "at"),
   proj4string = CRS("+proj=longlat +datum=WGS84"))
 map <- readShapePoly(shpName, proj4string = CRS("+proj=longlat +datum=WGS84"))
-mapbnd <- SPDF2bnd(map)
+mapbnd <- R2BayesX:::SPDF2bnd(map)
 par(mfrow = c(1, 2))
 plot(map)
 bb <- bbox(map)
@@ -56,15 +60,18 @@ plotmap(austria)
 
 
 library("maptools")
-austria <- readShapePoly(file.path("/home/nik/svn/meteoR/rain/data/shp", "at"),
-  proj4string = CRS("+proj=longlat +datum=WGS84"))
+shpName <- sub(pattern="(.*)\\.dbf", replacement="\\1",
+  x=system.file("examples/northamerica_adm0.dbf", package="BayesX")) 
+north <- readShapePoly(shpName, proj4string = CRS("+proj=longlat +datum=WGS84"))
 
-id <- as.factor(rep(0:8, 100))
+NorthBnd <- R2BayesX:::SPDF2bnd(north)
+
+id <- as.factor(rep(names(NorthBnd), 100))
 betas <- 1:9
 betas <- betas - mean(betas)
 y <- betas[id] + rnorm(length(id), sd = 0.2)
 
-b <- bayesx(y ~ sx(id, bs = "gk", map = austria, full = TRUE), method = "REML")
+b <- bayesx(y ~ sx(id, bs = "gk", map = NorthBnd, full = TRUE), method = "REML")
 
 par(mfrow = c(2, 2))
 plot(b, map = austria)
