@@ -2,21 +2,78 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-plot(b, map = AustriaBnd)
+map <- readShapePoly(file.path("/home/nik/svn/meteoR/rain/data/shp", "at"),
+  proj4string = CRS("+proj=longlat +datum=WGS84"))
+map <- readShapePoly(shpName, proj4string = CRS("+proj=longlat +datum=WGS84"))
+mapbnd <- SPDF2bnd(map)
+par(mfrow = c(1, 2))
+plot(map)
+bb <- bbox(map)
+abline(v = bb[1, 1])
+abline(v = bb[1, 2])
+abline(h = bb[2, 1])
+abline(h = bb[2, 2])
+axis(1)
+axis(2)
+plotmap(mapbnd)
+abline(v = bb[1, 1])
+abline(v = bb[1, 2])
+abline(h = bb[2, 1])
+abline(h = bb[2, 2])
+axis(1)
+axis(2)
+
+
+north <- readShapePoly(shpName, proj4string = CRS("+proj=longlat +datum=WGS84"))
+nbnd <- SPDF2bnd(north, "COUNTRY")
+par(mfrow = c(1, 2))
+plot(north)
+axis(1)
+axis(2)
+abline(h = 23)
+plotmap(nbnd)
+axis(1)
+axis(2)
+abline(h = 23)
+
+
+
+plot(c(-126.90469, -14.93867), c(-32.72733, 120.28982), type = "n")
+for(i in 1:length(nbnd)) {
+  polygon(nbnd[[i]])
+}
+
+
+plot(austria, names = TRUE)
+
+
+
+plotmap(north)
+
+
+plotmap(austria)
+
+
 
 library("maptools")
 austria <- readShapePoly(file.path("/home/nik/svn/meteoR/rain/data/shp", "at"),
   proj4string = CRS("+proj=longlat +datum=WGS84"))
 
-id <- as.factor(rep(names(AustriaBnd), 100))
-betas <- sort(runif(9))
+id <- as.factor(rep(0:8, 100))
+betas <- 1:9
 betas <- betas - mean(betas)
-y <- betas[id] + rnorm(length(id), sd = 0.6)
+y <- betas[id] + rnorm(length(id), sd = 0.2)
 
-b <- bayesx(y ~ sx(id, bs = "gk", map = austria, knots = 5), method = "REML")
+b <- bayesx(y ~ sx(id, bs = "gk", map = austria, full = TRUE), method = "REML")
 
+par(mfrow = c(2, 2))
 plot(b, map = austria)
 plotmap(austria, x = betas, id = paste(0:8))
+boxplot(y ~ id)
+f <- fitted(b, term = "sx(id)")
+plot(betas, f[["Estimate"]])
+
+
 
 
 bayesx.construct(sx(id, bs = "mrf", map = MunichBnd))

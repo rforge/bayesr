@@ -17,18 +17,18 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   n <- length(map)
   if(is.null(x))
     legend <- FALSE
+  poly.names.orig <- names(map)
   if(!any(is.na(poly.names <- x2int(names(map))))) {
     poly.names <- sort(poly.names)
     poly.names <- as.character(poly.names)
   } else {
     poly.names <- sort(names(map))
-    if(length(unique(poly.names)) < length(poly.names))
-      poly.names <- 1L:length(map)
+  }
+  if(length(unique(poly.names)) < length(poly.names)) {
+    names(map) <- poly.names <- paste(1L:length(map))
   }
   map <- map[poly.names]
   poly.names <- names(map)
-  if(length(unique(poly.names)) < length(poly.names))
-    poly.names <- 1L:length(map)
   surrounding <- attr(map, "surrounding")
   inner.id <- which(sapply(surrounding, length) > 0L)
   if(length(inner.id)) {
@@ -126,7 +126,7 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     c("lwd", "cex", "lty")))
     if(names && !values) {
       args$polygon <- map[[poly]]
-      args$poly.name <- poly
+      args$poly.name <- poly.names.orig[i]
       args$counter <- i
       args$cex <- cex.names
       do.call(centroidtext, delete.args(centroidtext, args, "font"))

@@ -14,11 +14,11 @@ function(map, mar.min = 2, ...)
     height2width <- height2width * 1.1
     if(!is.null(mar.min)) {
       if(height2width > 1) {
-        side <- 17.5 * (1 - 1/height2width) + mar.min/height2width
+        side <- 17.5 * (1 - 1/height2width) + mar.min / height2width
         mar <- c(mar.min, side, mar.min, side)
       }
       else {
-        top <- 17.5  * (1 - height2width)+mar.min*height2width
+        top <- 17.5  * (1 - height2width) + mar.min * height2width
         mar <- c(top, mar.min, top, mar.min)
       }
     }
