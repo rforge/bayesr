@@ -757,7 +757,9 @@ the effect of the variable provided to \code{by} varies over the range of the co
 term. The ``\code{...}'' argument is used to set term-specific control parameters
 or additional geographical information. For example to modify the degree and the inner knots for the
 P-spline term \code{sx(mbmi)} from Section~\ref{sec:motivation}, the user could use
-\code{sx(mbmi, degree = 2, knots = 10)}. For supplying additional boundary or graph files, that are
+\code{sx(mbmi, degree = 2, knots = 10)}.
+\readme{Achim, added some info on \code{"bnd"} and \pkg{sp} in the following \dots}
+For supplying additional boundary or graph files, that are
 used to compute suitable neighborhood penalty matrices for terms using Markov random field priors,
 or to calculate the centroids of particular regions for geosplines and geokriging terms, an argument
 named \code{map} needs to be provided. Boundary files are basically shapefiles (see package
@@ -767,14 +769,15 @@ that form the map and may be constructed using function \fct{shp2bnd} or importe
 spatial neighborhood information objects in graph format that may also be sent to \pkg{BayesX}).
 Currently, package \pkg{R2BayesX} has only limited support for map objects of class
 \code{"SpatialPolygonsDataFrame"}, that are created within the functionality of the
-\proglang{R} package \pkg{sp} \citep{R2BayesX:Pebesma+Bivand:2005} and are basically transformed
-internally if passed to function \fct{sx} or \fct{plotmap} to the \code{"bnd"} format needed using
-\pkg{BayesX}. However, the interplay of popular spatial classes will be extended in future work. Now
-for instance, the necessary boundary file \code{ZambiaBnd} for the geokriging term in
-Section~\ref{sec:motivation} is included with \code{sx(district, bs = "gk", map = ZambiaBnd)}.
-Information about all possible extra arguments for a particular term basis/type can be looked up
-using function \fct{bayesx.term.options}, e.g., possible options for P-splines using \code{"MCMC"}
-are printed to the console by 
+\proglang{R} package \pkg{sp} (\citealp{R2BayesX:Pebesma+Bivand:2005}, e.g.\ by reading shapefiles
+with function \fct{readShapePoly}) and are basically transformed internally to the \code{"bnd"}
+format needed using \pkg{BayesX} if passed to function \fct{sx} or \fct{plotmap}. However, the 
+interplay of popular spatial classes will be extended in future work. Now for instance, the 
+necessary boundary file \code{ZambiaBnd} for the geokriging term in Section~\ref{sec:motivation} is 
+included with \code{sx(district, bs = "gk", map = ZambiaBnd)}. Information about all possible extra 
+arguments for a particular term basis/type can be looked up using function
+\fct{bayesx.term.options}, e.g., possible options for P-splines using \code{"MCMC"} are printed to 
+the console by 
 \begin{Sinput}
 R> bayesx.term.options(bs = "ps", method = "MCMC")
 
@@ -789,7 +792,7 @@ possible options for 'bs = "ps"':
 \end{Sinput}
 For reasons of simplicity only the first two additional controlling arguments are shown.
 \fixme{Niki, is it possible to extend/modify this? Could I request more than two options?}
-\readme{Achim, the function is pretty static and returns all options for a given \code{bs} that are implemented in \pkg{BayesX}. Here we only show the first two since the list is quite long...}
+\readme{Achim, the function is pretty static and returns all options for a given \code{bs} that are implemented in \pkg{BayesX}. Here we only show the first two since the list is quite long \dots}
 
 Some care is warranted for the identifiability of varying coefficients terms. The standard in
 \pkg{BayesX} is to center nonlinear main effects terms around zero whereas varying coefficient terms 
@@ -1105,7 +1108,8 @@ effect, right panel respectively.}
 \end{figure}
 The kernel densities reveal the general form of the random effects distributions, while the
 range of the estimated random spatial effect is much smaller than the range of the structured
-spatial effect, both indicating a relatively good model fit. 
+spatial effect, both indicating that the model specification is relatively accurate in this
+situation. 
 
 \fixme{Niki, tne sentence explaining the findings from this figure should be provided.}
 
@@ -1135,7 +1139,7 @@ spatial effect using the color and legend scaling of the structured effect (righ
 \end{figure}
 As a default the districts of Zambia are colored in a symmetrical range within the estimated
 $\pm \max(|\mathit{\text{posterior mean}}|)$ of the corresponding effect.
-\fixme{Niki, what is pmean? Clarify.}
+\fixme{Niki, what is pmean? Clarify.} \readme{Achim, hope its clear now?}
 In many situations the visual impression of the colored map is
 problematic. This is primarily the case if there are some districts with extraordinarily high
 posterior means compared to the rest of the districts. Then the map is dominated by the colors of
@@ -1157,7 +1161,7 @@ above, also indicating that for future analysis and detecting the drivers of stu
 information needs to be gathered since the spatial effect could probably be explained through other
 covariates.
 
-\fixme{Niki, again, some interpretation.}
+\fixme{Niki, again, some interpretation.} \readme{Achim, added some text here \dots}
 
 For MCMC post estimation diagnosis, it is also possible to extract sampling paths of parameters with
 function \fct{samples}, or to plot the samples directly. For instance, coefficient sampling paths
@@ -1474,11 +1478,13 @@ Trimming the color range of the plot now leads to a better representation of the
 
 Summarizing these results identify a strong influence of the spatial effect of the overall model
 fit, indicating that a clear splitting of location-specific covariates and the spatial effect is
-hardly possible in this example. Moreover, the estimated effects of the first model seem to almost
-completely vanish if a spatially correlated effect is included in the model.
+hardly possible in this example.
 
 \fixme{Niki, the final conclusion of the results could maybe be somewhat clearer: What are
 the drivers of defoliation here?}
+\readme{Achim, I don't know, I think here it is relatively clear, effects seem to vanish if we
+add the spatial effect, we simply don't have covariates, except age, that can explain defoliation
+well!?}
 
 \subsection{Childhood malnutrition in Zambia: Analysis with STEP} \label{subsec:zambia-step}
 
@@ -1487,8 +1493,8 @@ parameters, we proceed with the dataset on malnutrition in Zambia of
 Section~\ref{subsec:zambia}. In this example, the structured additive
 predictor~(\ref{eqn:zambia-eta}) contains two continuous covariates \code{mbmi} and \code{agechild},
 that are assumed to have a possibly nonlinear effect on the response \code{stunting} and are modeled
-with P-splines. However, a linear effect could be more appropriate and, hence, the linear effect is
-also \fixme{Niki, clarify: Do you mean in general? In this example? Or\dots?}
+with P-splines. However, a linear effect could be more appropriate in general and, hence, the
+linear effect is also \fixme{Niki, clarify: Do you mean in general? In this example? Or\dots?}
 considered using the selection algorithm in \pkg{BayesX}. Additionally, for each variable and
 function, the implemented procedures decide if a term is included or removed from the model. To
 estimate the model applying the option \code{method = "STEP"}, we use the same  model formula of
@@ -1544,11 +1550,14 @@ which additionally considers the uncertainty due to model selection.
 
 Another important feature of the stepwise procedure is the definition of a \code{startmodel}, the
 options are listed in Table~\ref{tab:control}. Besides the default of an \code{"empty"}
-\code{startmodel}, it may be reasonable to start with a user-defined model
+\code{startmodel}, it may be reasonable to start with a user-defined model.
 \fixme{Niki, it is somewhat unclear to me which part of the formula specifies the startmodel
-and what specifies the maximal possible model. Maybe this could be clarified?}. Therefore, the starting
-values for the degrees of freedom of the P-spline, spatial and random effect terms need to be
-specified, by typing
+and what specifies the maximal possible model. Maybe this could be clarified?}
+\readme{Achim, using the user-defined option means that the algorithm starts with user-defined
+degrees of freedom (complexity) for the nonlinear modeled terms, the formula for the start model
+is then the same as the user has specified, in Table~\ref{tab:control} the options are described.}
+Therefore, the starting values for the degrees of freedom of the P-spline, spatial and random effect
+terms need to be specified, by typing
 <<fit-zambia-model-step-05, echo=TRUE, eval=FALSE>>=
 f <- stunting ~ memployment + urban + gender +
   sx(meducation, bs = "factor") + sx(mbmi, dfstart = 2) + 
@@ -1561,7 +1570,10 @@ zmsud <- bayesx(f, family = "gaussian", method = "STEP",
   algorithm = "cdescent1", startmodel = "userdefined", CI = "MCMCselect",
   iterations = 10000, step = 10, seed = 123, data = ZambiaNutrition)
 @
-which actually produces the model output of the first model again.
+which actually produces the model output of the first model again. Summarizing these results,
+in \pkg{BayesX}, the stepwise procedure is a fast and stable option for selecting smooth terms
+and smoothing parameters in cases where it is not clear if terms should be modeled nonlinearly or
+parametrically or even dropped from the final model specification.
 
 \fixme{Niki, again I would like to see somewhat more interpretation. There is a little bit here but
 the advantages/differences to the first analysis could be pointed out more clearly.}
