@@ -1079,7 +1079,8 @@ and are shown in Figure~\ref{fig:zambia-agechild}. The resulting plots indicate 
 of the age of the child exceeds the influence on \code{stunting} from the mother's bmi. The mother's
 bmi has a negative effect on \code{stunting} for values up to 25, where the effect of the age of the
 child is decreasing for 0 to 20 month of age and remains almost constant and slightly negative for
-older children.
+older children. Moreover, the plot of the effect for the mother's bmi suggests that the effect
+could also be modeled approprietly by a linear term.
 
 \fixme{Niki, some interpretation should be given for the results so far.}
 \readme{Achim, added some text...}
