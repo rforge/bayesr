@@ -24,9 +24,10 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   } else {
     poly.names <- sort(names(map))
   }
-  if(length(unique(poly.names)) < length(poly.names)) {
-    names(map) <- poly.names <- paste(1L:length(map))
-  }
+  ## FIXME
+  ## if(length(unique(poly.names)) < length(poly.names)) {
+  ##   names(map) <- poly.names <- paste(1L:length(map))
+  ## }
   map <- map[poly.names]
   poly.names <- names(map)
   surrounding <- attr(map, "surrounding")

@@ -1,9 +1,8 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
+plot(b, term = "sx(district)", map = MunichBnd, pos = "topleft", side.ticks = 2, width = 0.5)
 
-ll <- logLik(b1)
-attributes(ll)
 
 
 map <- readShapePoly(file.path("/home/nik/svn/meteoR/rain/data/shp", "at"),
