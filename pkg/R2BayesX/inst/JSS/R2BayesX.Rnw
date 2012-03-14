@@ -798,13 +798,18 @@ the first case, centering is necessary, in the second case, it is not.
 \subsection{Other additive term interfaces}
 
 \fixme{Niki, point out more clearly that these do the same as sx() and are limited by what BayesX can do}
+\readme{Achim, included some extra info here \dots}
 
-As mentioned above, users may optionally call the constructor function \fct{s} directly. The usage
-of \fct{s} in \pkg{R2BayesX} is in principle similar to package \pkg{mgcv}. The applicable arguments
-are
+As mentioned above, users may optionally call the constructor function \fct{s} directly, since
+\fct{sx} is only a wrapper function which calls \fct{s} in the end. The usage
+of \fct{s} in \pkg{R2BayesX} is in principle similar to package \pkg{mgcv}. However, the applicable
+arguments are limited to arguments corresponding to \pkg{BayesX} available arguments given by 
 \begin{Code}
   s(..., k = -1, bs = "ps", m = NA, by = NA, xt = NULL)
 \end{Code}
+Note that within \fct{sx}, the default values for the arguments are the same as the defaults in
+\pkg{BayesX}, while the defaults using \fct{s} with package \pkg{R2BayesX} remain unchanged as
+specified in package \pkg{mgcv}.
 Within \fct{s}, the list of covariates used for the model term is set with argument ``\code{...}''. 
 For instance, in the example of Section~\ref{sec:motivation}, the term for the body mass index of the
 mother may also be included in the model formula by \code{s(mbmi)}, a term with two covariates is
