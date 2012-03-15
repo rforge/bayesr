@@ -1007,11 +1007,15 @@ data("ZambiaBnd", package = "R2BayesX")
 @
 The object \code{ZambiaBnd} has class \class{bnd} and is basically a \fct{list} of polygon
 matrices, with $x$- and $y$-coordinates of the boundary points in the first and second column
-respectively. With the information of the boundary file \pkg{BayesX} may compute an appropriate adjacency 
-matrix, allowing for a smoothly varying effect of the neighboring regions. There is a generic 
-plotting method implemented for objects of class \class{bnd}, which essentially calls function
-\fct{plotmap}. E.g., a simple map, as shown in Figure~\ref{fig:zambia-simple-map}, of the districts
-in Zambia is drawn by typing
+respectively. With the information of the boundary file \pkg{BayesX} may compute an appropriate
+adjacency matrix, allowing for a smoothly varying effect of the neighboring regions.
+\readme{Achim, added some more info on geokriging here.}
+In addition, \class{bnd} objects can be used to calculate centroids of polygons to estimate
+smooth bivariate effects of the resulting coordinates (e.g., using the \code{"geokriging"} option in
+Section~\ref{sec:motivation}, also see Section~\ref{subsec:forest} for another example). There is a
+generic plotting method implemented for objects of class \class{bnd}, which essentially calls
+function \fct{plotmap}. E.g., a simple map, as shown in Figure~\ref{fig:zambia-simple-map}, of the
+districts in Zambia is drawn by typing
 <<plot-zambia-map-01, echo=TRUE, eval=FALSE>>=
 plot(ZambiaBnd)
 @
@@ -1030,7 +1034,9 @@ Having loaded the necessary files, the model \code{formula} is specified with
 f <- stunting ~ memployment + urban + gender + meducation + sx(mbmi) + 
   sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) + r(district)
 @
-The model is then fitted using MCMC by calling
+As mentioned above, the structured spatial effect is now modeled as a Markov random field (option
+\code{"mrf"}), while in Section~\ref{sec:motivation} we used the region centroids to model a smooth
+spatial effect applying (geo)kriging. The model is then fitted using MCMC by calling
 <<fit-zambia-model, echo=TRUE, eval=FALSE>>=
 zm <- bayesx(f, family = "gaussian", method = "MCMC", iterations = 12000,
   burnin = 2000, step = 10, seed = 123, data = ZambiaNutrition)
@@ -1107,12 +1113,14 @@ plot(zm, term = "r(district)", map = FALSE, main = "")
 Kernel density estimates of the mean of the structured, left panel, and the unstructured spatial
 effect, right panel respectively.}
 \end{figure}
-The kernel densities reveal the general form of the random effects distributions, while the
-range of the estimated random spatial effect is much smaller than the range of the structured
-spatial effect, both indicating that the model specification is relatively accurate in this
-situation. 
+The kernel densities reveal the general form of the random effects distributions which are assumed
+to follow a Gaussian distribution. The range of the estimated random spatial effect is much smaller
+than the range of the structured spatial effect, indicating that model fit improvement by including
+random effects that account for unobserved spatial heterogeneity of the regions in Zambia, is
+relatively low. This is also supported by the comparatively low variance estimate of the random
+effects term given in the model summary above.
 
-\fixme{Niki, some more details.}
+\fixme{Niki, some more details.} \readme{Achim, more details here}
 
 To view the
 spatial structure of the correlated effect we have to use the plot function in combination with the
@@ -1154,10 +1162,7 @@ plot(zm, term = "r(district)", map = ZambiaBnd,
 The resulting map is also shown in Figure~\ref{fig:zambia-district-structured-unstructured} (right 
 panel). Using for both the structured and the unstructered effect the same scale is useful for 
 comparison. In most cases one of the two effects clearly dominates the other. In our case the 
-structured spatially correlated effect clearly exceeds the unstructured effect, as mentioned
-above, also indicating that for future analysis and detecting the drivers of stunting additional
-information needs to be gathered since the spatial effect could probably be explained through other
-covariates.
+structured spatially correlated effect clearly exceeds the unstructured effect.
 
 For MCMC post estimation diagnosis, it is also possible to extract sampling paths of parameters with
 function \fct{samples}, or to plot the samples directly. For instance, coefficient sampling paths
@@ -1593,6 +1598,24 @@ which actually produces the model output of the first model (\code{zms}) again.
 
 \fixme{A short paragraph given some overview of the general approach implemented would be useful
 in addition to the table.}
+\readme{Achim, added more info, hope that is sort of what you had in mind?}
+
+Objects of class \class{bayesx} returned either from function \fct{bayesx} or
+\fct{read.bayesx.output} have a generic plotting method. Depending on the structure of the
+\class{bayesx} object, the method identifies the various types of inherent model terms and applies
+one of the following implemented plotting functions: \fct{plot2d}, \fct{plot3d} or \fct{plotmap}.
+Using the method without further specifications will produce a plot of all estimated effects.
+For individual effect plots argument \code{term} is used. For MCMC estimated models argument
+\code{which} is useful to inspect sampling paths of coefficients, but also to view basic residual
+diagnostic plots. To build map effect plots using \fct{plotmap}, a map needs to be supplied to
+argument \code{map}. The \code{map} must be an object of \class{bnd} or
+\class{SpatialPolygonsDataFrame}. Per default, similar to 2d plots, map effect plots are colored
+using a divergent color legend where the \code{range} is set \code{symmetric}al, e.g.\ according to
+the $\pm \, max(|\text{posterior mean}|)$ of the effect. In this setting it is easier to distinguish
+between regions of large and no influence. The most important options of the plotting method are
+shown in Table~\ref{tab:plotting}, for a detailed description of all available arguments and
+options please see documentation of function \fct{plot.bayesx}, \fct{plot2d}, \fct{plot3d},
+\fct{plotmap} and \fct{colorlegend}.  
 
 \begin{table}[h!]
 \centering
