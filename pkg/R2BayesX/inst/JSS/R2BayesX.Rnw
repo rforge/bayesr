@@ -797,19 +797,18 @@ the first case, centering is necessary, in the second case, it is not.
 
 \subsection{Other additive term interfaces}
 
-\fixme{Niki, point out more clearly that these do the same as sx() and are limited by what BayesX can do}
-\readme{Achim, included some extra info here \dots}
-
 As mentioned above, users may optionally call the constructor function \fct{s} directly, since
 \fct{sx} is only a wrapper function which calls \fct{s} in the end. The usage
 of \fct{s} in \pkg{R2BayesX} is in principle similar to package \pkg{mgcv}. However, the applicable
-arguments are limited to arguments corresponding to \pkg{BayesX} available arguments given by 
+arguments are limited to arguments corresponding to those also available in \pkg{BayesX}, i.e.,
 \begin{Code}
   s(..., k = -1, bs = "ps", m = NA, by = NA, xt = NULL)
 \end{Code}
-Note that within \fct{sx}, the default values for the arguments are the same as the defaults in
-\pkg{BayesX}, while the defaults using \fct{s} with package \pkg{R2BayesX} remain unchanged as
-specified in package \pkg{mgcv}.
+Note that the defaults of \fct{s} (as provided by \pkg{mgcv}) are different from the values
+above and would not correspond to a spline basis available in \pkg{BayesX}. Hence, the new
+\fct{sx} function is introduced in \pkg{R2BayesX} as a more convenient interface with defaults
+as in \pkg{BayesX}.
+
 Within \fct{s}, the list of covariates used for the model term is set with argument ``\code{...}''. 
 For instance, in the example of Section~\ref{sec:motivation}, the term for the body mass index of the
 mother may also be included in the model formula by \code{s(mbmi)}, a term with two covariates is
@@ -824,7 +823,7 @@ specified by argument ``\code{...}'' in function \fct{sx}, may be set in \fct{s}
 \code{xt}, e.g., similar to the example above, the boundary object \code{ZambiaBnd} is supplied with
 \code{s(district, bs = "gk", xt = list(map = ZambiaBnd))}. Besides \fct{s}, \pkg{R2BayesX} also
 supports calls to the tensor product constructor function \fct{te}, however, only a small set of the 
-features of this function is supported.
+features of this function is supported by \pkg{BayesX}.
 
 In addition to \fct{sx}, \fct{s}, and \fct{te}, unit- or cluster specific unstructured (random)
 effects may be incorporated into the model \code{formula} using the random effects term constructor
@@ -1009,7 +1008,6 @@ The object \code{ZambiaBnd} has class \class{bnd} and is basically a \fct{list} 
 matrices, with $x$- and $y$-coordinates of the boundary points in the first and second column
 respectively. With the information of the boundary file \pkg{BayesX} may compute an appropriate
 adjacency matrix, allowing for a smoothly varying effect of the neighboring regions.
-\readme{Achim, added some more info on geokriging here.}
 In addition, \class{bnd} objects can be used to calculate centroids of polygons to estimate
 smooth bivariate effects of the resulting coordinates (e.g., using the \code{"geokriging"} option in
 Section~\ref{sec:motivation}, also see Section~\ref{subsec:forest} for another example). There is a
@@ -1119,8 +1117,6 @@ than the range of the structured spatial effect, indicating that model fit impro
 random effects that account for unobserved spatial heterogeneity of the regions in Zambia, is
 relatively low. This is also supported by the comparatively low variance estimate of the random
 effects term given in the model summary above.
-
-\fixme{Niki, some more details.} \readme{Achim, more details here}
 
 To view the
 spatial structure of the correlated effect we have to use the plot function in combination with the
@@ -1590,18 +1586,11 @@ which actually produces the model output of the first model (\code{zms}) again.
 \fixme{Daniel, bitte Beschreibung von \pkg{BayesXsrc} ergaenzen.}
 
 
-\clearpage
-
-
 \section[Options for the plot() method]{Options for the \fct{plot} method}
 \label{appendix:plotting}
 
-\fixme{A short paragraph given some overview of the general approach implemented would be useful
-in addition to the table.}
-\readme{Achim, added more info, hope that is sort of what you had in mind?}
-
 Objects of class \class{bayesx} returned either from function \fct{bayesx} or
-\fct{read.bayesx.output} have a generic plotting method. Depending on the structure of the
+\fct{read.bayesx.output} have a method for the \fct{plot} generic. Depending on the structure of the
 \class{bayesx} object, the method identifies the various types of inherent model terms and applies
 one of the following implemented plotting functions: \fct{plot2d}, \fct{plot3d} or \fct{plotmap}.
 Using the method without further specifications will produce a plot of all estimated effects.
@@ -1610,8 +1599,8 @@ For individual effect plots argument \code{term} is used. For MCMC estimated mod
 diagnostic plots. To build map effect plots using \fct{plotmap}, a map needs to be supplied to
 argument \code{map}. The \code{map} must be an object of \class{bnd} or
 \class{SpatialPolygonsDataFrame}. Per default, similar to 2d plots, map effect plots are colored
-using a divergent color legend where the \code{range} is set \code{symmetric}al, e.g.\ according to
-the $\pm \, max(|\text{posterior mean}|)$ of the effect. In this setting it is easier to distinguish
+using a diverging color legend where the \code{range} is set \code{symmetric}al, e.g.\ according to
+the $\pm \, \max(|\text{posterior mean}|)$ of the effect. In this setting it is easier to distinguish
 between regions of large and no influence. The most important options of the plotting method are
 shown in Table~\ref{tab:plotting}, for a detailed description of all available arguments and
 options please see documentation of function \fct{plot.bayesx}, \fct{plot2d}, \fct{plot3d},
