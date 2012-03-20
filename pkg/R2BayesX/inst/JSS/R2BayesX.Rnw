@@ -139,9 +139,10 @@ respectively, as well as the functions \fct{s} and \fct{te} from the \pkg{mgcv} 
 The functionality is made available in package \pkg{R2BayesX}, available from the Comprehensive
 \proglang{R} Archive Network (CRAN) at \url{http://CRAN.R-project.org/package=R2BayesX}. It depends
 on the companion package \pkg{BayesXsrc} \citep[also available from CRAN, see][]{R2BayesX:Adler+Lang+Kneib:2012}
-that ships the \pkg{BayesX} \proglang{C++} sources along with a flexible \code{Makefile} so that upon
+that ships the \pkg{BayesX} \proglang{C++} sources along with \code{Makefile}s for GNU/BSD and MinGW platforms
+that conform with R build shells so that upon
 installation of the \proglang{R} package a suitable \pkg{BayesX} binary is produced on all platforms.
-\readme{Daniel, is this technically sound? If not, please adapt.}
+\readme{Was fine.. I just exchanged 'flexible' with more details}
 
 The remainder of this paper is as follows. Section~\ref{sec:motivation} gives a first motivating example of an
 \proglang{R} session applying \pkg{R2BayesX} to a dataset on childhood malnutrition in Zambia.
@@ -1583,8 +1584,64 @@ which actually produces the model output of the first model (\code{zms}) again.
 \section[BayesXsrc: Packaging the BayesX C++ Sources for R]{\pkg{BayesXsrc}: Packaging the \pkg{BayesX} \proglang{C++} Sources for \proglang{R}}
 \label{appendix:BayesXsrc}
 
-\fixme{Daniel, bitte Beschreibung von \pkg{BayesXsrc} ergaenzen.}
+\pkg{BayesX} was originally developed under Borland C++ compiler and distributed  
+as Windows application with a Java-based user-interface.
+Since Version 2.0, it is also offered as a command-line version 
+comprising the interpreter and modules for computations. The sources have 
+been modified to be compilant with the GNU Compiler Collection, and the
+software was ported to run on Linux, Mac OS X, Windows and several BSDs.
 
+Our objective with the R package \pkg{BayesXsrc} is to offer R users a 
+convenient way to download, build and install the open-source \pkg{BayesX} 
+software as if this were an ordinary package, and possibly offering
+prebuilt binary versions of \pkg{BayesX} through the CRAN build servers
+for major R platforms.
+
+Based on this idea, we created a tiny R package hull, named \pkg{BayesXsrc}, 
+where the \pkg{BayesX} sources for the command-line version are embedded.
+Since we have to handle two separate source trees, one for \pkg{BayesX} and 
+the other for \pkg{BayesXsrc} package, we use a top-level \code{bootstrap} 
+shell script in the package to pull the BayesX sources from a subversion 
+repository under \code{src/bayesxsrc}. 
+Note that this needs to be done only once by the maintainer of the package 
+to initially check out or synchronize the BayesX sources before creating 
+a \emph{source} package release and uploading the source package to CRAN.
+In order to build the BayesX sources with the R build system, we use 
+\code{Makefile}s under \code{src/} to build the sources under \code{src/bayesxsrc}.
+The current source tree of BayesX requires a slightly different setting of
+build flags for Windows. This do we achieve by using the two standard locations for 
+R Makefiles, \code{src/Makefile.win} for Windows and \code{src/Makefile} otherwise.
+Since R 2.13.1 the package installation was enhanced to support non-standard
+installation of compiled code via an R installation script. If an
+R script placed in \code{src/install.libs.R} is found, it will be executed
+after a successful build.
+We make use of this feature to copy the binary executable to the
+package installation direction in an architecture-specific sub-folder
+to support multi-architecture installations using R as a cross-platform
+portable install shell.
+
+\begin{verbatim}
+binary <- if (WINDOWS) "BayesX.exe" else "BayesX"
+if ( file.exists(binary) ) {
+  libarch <- if (nzchar(R_ARCH)) paste('libs', R_ARCH, sep='') else 'libs'
+  dest <- file.path(R_PACKAGE_DIR, libarch)
+  dir.create(dest, recursive = TRUE, showWarnings = FALSE)
+  file.copy(binary, dest, overwrite = TRUE)
+}
+\end{verbatim}
+
+Since the executable exists in a designated location within the 
+installation directory of the \pkg{BayesXsrc} package, we can run the 
+command-line version from within R via a single front-end function \code{run.bayesx}.
+
+Although we do not effectively distribute an R package in the usual sense, 
+we use the R package system as a cross-platform build system.
+The installation via an R package is an attractive alternative, in particular
+for software that aims to be embedded to R.  
+Potential support for distribution and delivery of self-contained
+software in form of sources and prebuilt  binaries via CRAN is very attractive 
+to end users but also to smaller development teams (like us) that would 
+otherwise have no resources for multi-platform builds and tests.
 
 \section[Options for the plot() method]{Options for the \fct{plot} method}
 \label{appendix:plotting}
