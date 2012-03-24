@@ -1,7 +1,47 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-plot(b, term = "sx(district)", map = MunichBnd, pos = "topleft", side.ticks = 2, width = 0.5)
+sn <- sx(mbmi, bs = "ps", a = 0.00001, b = 0.00001)
+
+## random slopes example
+set.seed(111)
+n <- 1000
+          
+## index vector for random effects
+N <- 100
+dat <- data.frame(id = factor(sort(rep(1:N, n/N))), 
+  x1 = runif(n, -3, 3), x2 = runif(n, -1, 1))
+          
+## create some iid normal random 
+## effects with random slopes
+dat$re <- with(dat, rnorm(N, sd = 0.6)[id])
+     
+## response
+dat$y <- with(dat, 1.5 + sin(x1) + re * x1 + rnorm(n, sd = 0.6))
+          
+## estimate model
+b <- gam(y ~ s(x1) + s(id, bs = "re", by = x1), data = dat)
+
+## extract coefficients
+crs_mgcv <- coef(b)
+crs_mgcv <- cb[grep("s(id):x1", names(crs_mgcv), fixed = TRUE)]
+
+## now with R2BayesX
+b <- bayesx(y ~ s(x1) + r(id, by = x1), data = dat, method = "REML")
+crs_bayesx_reml <- fitted(b, term = "r(id):x1")$Estimate
+
+## plot and compare
+plot(crs_mgcv ~ unique(dat$re),
+  xlab = "random slopes",
+  ylab = "estimated random slopes")
+points(crs_bayesx_reml ~ unique(dat$re),
+  col = "red")
+abline(a = 0, b = 1)
+legend("topleft", legend = c("mgcv", "bayesx reml"),
+  pch = 1, col = 1:2)
+
+## now with MCMC
+b <- bayesx(y ~ s(x1) + r(id, by = x1), data = dat, method = "MCMC", outfile = "~/tmp/rsmodel-mcmc")
 
 
 

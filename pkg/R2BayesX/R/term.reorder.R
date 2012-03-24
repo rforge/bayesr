@@ -53,7 +53,7 @@ function(x, info)
           }
         }
         attr(fc, "specs") <- list(dim = 1L, term = term$term, 
-          label = paste("f(", term$term, ")", sep = ""), is.factor = TRUE)
+          label = term$term, is.factor = TRUE)
         class(fc) <- "linear.bayesx"
         rval[[term$pos]] <- fc
       }

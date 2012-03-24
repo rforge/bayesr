@@ -5,15 +5,15 @@ data("ZambiaNutrition")
 data("ZambiaBnd")
 
 ## estimate model
-zm1 <- bayesx(stunting ~ memployment + education + urban + gender + 
-  sx(bmi) + sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) + r(district),
+zm1 <- bayesx(stunting ~ memployment + meducation + urban + gender + 
+  sx(mbmi) + sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) + r(district),
   iter = 12000, burnin = 2000, step = 10, data = ZambiaNutrition)
 
 ## summary statistics
 summary(zm1)
 
 ## visualising estimation results
-plot(zm1, term = "sx(bmi)")
+plot(zm1, term = "sx(mbmi)")
 plot(zm1, term = "sx(agechild)")
 
 plot(zm1, term = "sx(district)")
@@ -23,19 +23,19 @@ plot(zm1, term = c("sx(district)", "r(district)"),
   map = ZambiaBnd, pos = "topleft")
 
 ## customizing graphics
-plot(zm1, term = "sx(bmi)", resid = TRUE, cex = 0.1)
+plot(zm1, term = "sx(mbmi)", resid = TRUE, cex = 0.1)
 plot(zm1, term = "sx(agechild)", resid = TRUE, cex = 0.1)
 
-plot(zm1, term = "sx(bmi)", main = "Mother body mass index", 
+plot(zm1, term = "sx(mbmi)", main = "Mother body mass index", 
   xlab = "",ylab = "")
-plot(zm1, term = "sx(bmi)", main = "Mother body mass index", 
+plot(zm1, term = "sx(mbmi)", main = "Mother body mass index", 
   xlab = "",ylab = "", ylim = c(-0.8, 0.6))
-plot(zm1, term = "sx(bmi)", main = "Mother body mass index", 
+plot(zm1, term = "sx(mbmi)", main = "Mother body mass index", 
   xlab = "",ylab = "", ylim = c(-0.8, 0.6), rug = FALSE)
-plot(zm1, term = "sx(bmi)", main = "Mother body mass index", 
+plot(zm1, term = "sx(mbmi)", main = "Mother body mass index", 
   xlab = "",ylab = "", ylim = c(-0.8, 0.6), rug = FALSE, 
   col.poly = NA, lwd = 1, lty = 1)
-plot(zm1, term = "sx(bmi)", main = "Mother body mass index", 
+plot(zm1, term = "sx(mbmi)", main = "Mother body mass index", 
   xlab = "", ylab = "", ylim = c(-0.8, 0.6), rug = FALSE, 
   col.poly = NA, lwd = 1, lty = c(3, 1, 2, 2, 1))
 
@@ -66,56 +66,56 @@ par(op)
 plot(zm1, which = 5:8, cex = 0.1)
 plot(zm1, which = "intcpt-samples")
 
-plot(zm1, term = c("memployment", "education"), 
+plot(zm1, term = c("memployment", "meducation"), 
   which = "coef-samples", ask = TRUE)
 
-plot(zm1, term = "sx(bmi)", which = "coef-samples")
-plot(zm1, term = "sx(bmi)", which = "coef-samples", acf = TRUE)
+plot(zm1, term = "sx(mbmi)", which = "coef-samples")
+plot(zm1, term = "sx(mbmi)", which = "coef-samples", acf = TRUE)
 
-plot(zm1, term = "sx(bmi)", which = "var-samples")
-plot(zm1, term = "sx(bmi)", which = "var-samples", acf = TRUE)
-plot(zm1, term = "sx(bmi)", which = "var-samples", acf = TRUE, lag.max = 400)
+plot(zm1, term = "sx(mbmi)", which = "var-samples")
+plot(zm1, term = "sx(mbmi)", which = "var-samples", acf = TRUE)
+plot(zm1, term = "sx(mbmi)", which = "var-samples", acf = TRUE, lag.max = 400)
 
 plot(zm1, term = "sx(agechild)", which = "var-samples")
 plot(zm1, term = "sx(district)", which = "var-samples")
 plot(zm1, term = "r(district)", which = "var-samples")
 
 ## sensitivity analysis 
-zm2 <- bayesx(stunting ~ memployment + education + urban + gender + 
-  sx(bmi, a = 0.00001, b = 0.00001) +
-  sx(agechild, a = 0.00001, b = 0.00001) +
+zm2 <- bayesx(stunting ~ memployment + meducation + urban + gender + 
+  sx(mbmi, bs = "ps", a = 0.00001, b = 0.00001) +
+  sx(agechild, bs = "ps", a = 0.00001, b = 0.00001) +
   sx(district, bs = "mrf", map = ZambiaBnd, a = 0.00001, b = 0.00001) +
   r(district, xt = list(a = 0.00001, b = 0.00001)),
   iter = 12000, burnin = 2000, step = 10, data = ZambiaNutrition)
 
-zm3 <- bayesx(stunting ~ memployment + education + urban + gender +
-  sx(bmi, a = 0.005, b = 0.005) +
-  sx(agechild, a = 0.005, b = 0.005) +
+zm3 <- bayesx(stunting ~ memployment + meducation + urban + gender +
+  sx(mbmi, bs = "ps", a = 0.005, b = 0.005) +
+  sx(agechild, bs = "ps", a = 0.005, b = 0.005) +
   sx(district, bs = "mrf", map = ZambiaBnd, a = 0.005, b = 0.005) +
   r(district, xt = list(a = 0.005, b = 0.005)),
   iter = 12000, burnin = 2000, step = 10, data = ZambiaNutrition)
 
-zm4 <- bayesx(stunting ~ memployment + education + urban + gender +
-  sx(bmi, a = 0.00005, b = 0.00005) +
-  sx(agechild, a = 0.00005, b = 0.00005) +
+zm4 <- bayesx(stunting ~ memployment + meducation + urban + gender +
+  sx(mbmi, bs = "ps", a = 0.00005, b = 0.00005) +
+  sx(agechild, bs = "ps", a = 0.00005, b = 0.00005) +
   sx(district, bs = "mrf", map = ZambiaBnd, a = 0.00005, b = 0.00005) +
   r(district, xt = list(a = 0.00005, b = 0.00005)),
   iter = 12000, burnin = 2000, step = 10, data = ZambiaNutrition)
 
-plot(c(zm1, zm2, zm3, zm4), term = "sx(bmi)")
+plot(c(zm1, zm2, zm3, zm4), term = "sx(mbmi)")
 plot(c(zm1, zm2, zm3, zm4), term = "sx(agechild)")
 
 
 ## same model with REML
-zm5 <- bayesx(stunting ~ memployment + education + urban + gender + 
-  sx(bmi) + sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) + r(district),
+zm5 <- bayesx(stunting ~ memployment + meducation + urban + gender + 
+  sx(mbmi) + sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) + r(district),
   method = "REML", data = ZambiaNutrition)
 summary(zm5)
 plot(zm5, map = ZambiaBnd)
 
 
 ## now use the stepwise algorithm
-zm6 <- bayesx(stunting ~ memployment + education + urban + gender + 
-  sx(bmi) + sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) + r(district),
+zm6 <- bayesx(stunting ~ memployment + meducation + urban + gender + 
+  sx(mbmi) + sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) + r(district),
   method = "STEP", data = ZambiaNutrition)
 summary(zm6)

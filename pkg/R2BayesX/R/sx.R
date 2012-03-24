@@ -5,7 +5,7 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
   k <- -1
   m <- NA
   xt <- list(...)
-  if(by != "NA" && is.vector(by) && length(by) < 2L && (is.numeric(by) || is.integer(by))) {
+  if(by != "NA" && is.vector(by) && length(by) < 2L) {
     xt$b <- by
     by <- "NA"
   }
