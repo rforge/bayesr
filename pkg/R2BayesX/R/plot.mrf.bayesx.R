@@ -33,8 +33,10 @@ function(x, diagnostics = FALSE, ...)
           domap <- TRUE
       }
       if(!is.null(attr(x, "map.name")) && domap) {        
-        args$map <- try(eval(parse(text = attr(x, "map.name")), envir = globalenv()), silent = TRUE)
-        if(class(args$map) == "try-error")
+        tmp <- try(eval(parse(text = attr(x, "map.name")), envir = globalenv()), silent = TRUE)
+        if(all(class(tmp) %in% c("bnd", "list")))
+          args$map <- tmp
+        if(all(class(args$map) == "try-error"))
           args$map <- NULL
       }
       domap <- FALSE
