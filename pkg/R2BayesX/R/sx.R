@@ -5,10 +5,15 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
   k <- -1
   m <- NA
   xt <- list(...)
-  if(by != "NA" && is.vector(by) && length(by) < 2L) {
+  if(!is.null(xt$xt))
+    xt <- xt$xt
+  warn <- getOption("warn")
+  options("warn" = -1)
+  if(by != "NA" && is.vector(by) && length(by) < 2L && !is.na(as.numeric(by))) {
     xt$b <- by
     by <- "NA"
   }
+  options("warn" = warn)
   if(!is.null(xt$knots))
     xt$nrknots <- xt$knots
   if(bs %in% c("ps", "te", "psplinerw1", "psplinerw2", "pspline",

@@ -1,7 +1,7 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-plot(b1, term = "sx(id)", map = MunichBnd)
+bayesx.construct(sx(id, bs = "re", by = x))
 
 ## random slopes example
 set.seed(111)
