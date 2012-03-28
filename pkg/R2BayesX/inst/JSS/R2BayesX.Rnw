@@ -739,7 +739,7 @@ or additional geographical information.
                                                 linear effects $x_1, \ldots, x_q$. There are three
                                                 priors possible: ridge-, lasso- and normal mixture
                                                 of inverse gamma prior. \\ \hline
-\code{"re"} & Random effects, FIXME. \\ \hline
+\code{"re"} & Gaussian i.i.d. Random effects of a unit or cluster identification covariate. \\ \hline
 \end{tabular}
 \caption{\label{tab:terms} Possible \pkg{BayesX} model terms within function \fct{sx}.}
 \end{table}
@@ -823,18 +823,18 @@ specified by argument ``\code{...}'' in function \fct{sx}, may be set in \fct{s}
 supports calls to the tensor product constructor function \fct{te}, however, only a small set of the 
 features of this function is supported by \pkg{BayesX}.
 
-In addition to \fct{sx}, \fct{s}, and \fct{te}, unit- or cluster specific unstructured (random)
-effects may be incorporated into the model \code{formula} using the random effects term constructor
-function \fct{r}. The arguments of \fct{r} are
-\begin{Code}
-  r(id, by = NA, xt = NULL)
-\end{Code}
-where \code{id} is the unit or cluster identification covariate the random effects should be
-estimated for. E.g., the model formula from the introduction could be extended by a random effects
-term for the districts in Zambia with \code{r(district)}.  Argument \code{by} takes covariates
-for which random slopes may be estimated. Argument \code{xt} is used in the same way as
-described for function \fct{s}, i.e., similar to the above, e.g., hyperpriors $a$ and $b$ for the
-variance parameter are set  with \code{r(district, xt = list(a = 0.0001, b = 0.0001))}.
+%In addition to \fct{sx}, \fct{s}, and \fct{te}, unit- or cluster specific unstructured (random)
+%effects may be incorporated into the model \code{formula} using the random effects term constructor
+%function \fct{r}. The arguments of \fct{r} are
+%\begin{Code}
+%  r(id, by = NA, xt = NULL)
+%\end{Code}
+%where \code{id} is the unit or cluster identification covariate the random effects should be
+%estimated for. E.g., the model formula from the introduction could be extended by a random effects
+%term for the districts in Zambia with \code{r(district)}.  Argument \code{by} takes covariates
+%for which random slopes may be estimated. Argument \code{xt} is used in the same way as
+%described for function \fct{s}, i.e., similar to the above, e.g., hyperpriors $a$ and $b$ for the
+%variance parameter are set  with \code{r(district, xt = list(a = 0.0001, b = 0.0001))}.
 
 
 \subsection[Additional options]{Additional options} \label{sec:addoptions}
@@ -875,8 +875,9 @@ particular covariates is usually much smaller than the total number of observati
 output files returned by the binary only include estimates for unique covariate values. Since these 
 files typically reserve much less disc space, importing the fitted model objects into \proglang{R} 
 using \fct{read.bayesx.output} is straightforward in most cases, whereas handling the complete 
-dataset within \proglang{R} may be more burdensome. As mentioned in Section~\ref{subsec:processing}, 
-users can exploit this by providing a character string to argument \code{data} in function 
+dataset within \proglang{R} may be more burdensome when provided to model fitting functions that do
+not account for special matrix structures. As mentioned in Section~\ref{subsec:processing}, users can exploit this by providing a character string
+to argument \code{data} in function 
 \fct{bayesx}, which includes the path to a dataset instead of an \proglang{R} data object. As a 
 consequence, this dataset will not be loaded within \proglang{R} and is only used internally by the 
 \pkg{BayesX} binary. To give an example, we generate a large dataset that might produce problems 
