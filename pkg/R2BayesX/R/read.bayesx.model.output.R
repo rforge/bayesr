@@ -166,7 +166,7 @@ function(dir, model.name)
                       if(any(cn == "df")) {
                         tmpv <- rval$smooth.hyp[cn == "df"]
                         rn <- rownames(rval$smooth.hyp)
-                        rn[tmpv == tmp] <- gsub("s(", "r(", rn[tmpv == tmp], fixed = TRUE)
+                        rn[tmpv == tmp] <- gsub("s(", "re(", rn[tmpv == tmp], fixed = TRUE)
                         rownames(rval$smooth.hyp) <- rn
                       }
                     }
