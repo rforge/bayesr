@@ -253,7 +253,7 @@ are discussed in Sections~\ref{subsec:zambia} and~\ref{subsec:zambia-step}.
 \section{STAR models} \label{sec:model}
 
 The STAR model class supported by \pkg{R2BayesX} is based on the framework of Bayesian generalized
-linear models (GLMs, see e.g., \citealp{R2BayesX:Fahrmeir+Kneib+Lang:2009} and
+linear models (GLMs, see e.g., \citealp{R2BayesX:McCullagh+Nelder:1989} and
 \citealp{R2BayesX:Fahrmeir+Tutz:2001}). GLMs assume that, given covariates $\mathbf{x}$ and unknown
 parameters $\boldsymbol{\gamma}$, the distribution of the response variable $y$ belongs to an
 exponential family with mean
