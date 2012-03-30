@@ -1,7 +1,29 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-bayesx.construct(sx(id, bs = "re", by = x))
+
+plot(zm, term = "sx(district)")
+
+
+
+
+zm <- read.bayesx.output("~/tmp/zm")
+
+
+
+zm <- bayesx(f, family = "gaussian", method = "MCMC",
+  iterations = 1200, burnin = 200, step = 1, seed = 123,
+  data = ZambiaNutrition, outfile = "~/tmp/zm")
+
+
+
+
+
+
+
+
+
+
 
 ## random slopes example
 set.seed(111)

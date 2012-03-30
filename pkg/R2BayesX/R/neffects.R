@@ -10,10 +10,14 @@ function(x, term)
       if(is.character(term[j])) {
         tmp <- splitme(term[j])
         tmp <- resplit(tmp[tmp != " "])
-        take <- pmatch(tmp, ne)
+        take <- NULL
+        for(jj in 1:length(ne)) {
+          if(!is.na(pmatch(tmp, ne[jj])))
+            take <- c(take, jj)
+        }
       } else take <- match(term[j], ne)
       if(length(take) > 0L && length(x[[i]]$effects) > 0L && !is.na(take))
-        n <- n + 1L
+        n <- n + length(take)
     }
   }
 

@@ -24,7 +24,7 @@ function(x, info)
             label2 <- paste("te", resplit(sl2[2L:length(sl2)]), sep = "") 
           else
             label2 <- "not.in.labels"
-          if(term$term == attr(x[[j]], "specs")$label || term$term == label2) {
+          if((term$term == attr(x[[j]], "specs")$label && term$class %in% class(x[[j]])) || term$term == label2) {
             if(!is.null(term$map)) {
               if(length(grep(term$map, ls(envir = globalenv()))))
                 attr(x[[j]], "map.name") <- term$map

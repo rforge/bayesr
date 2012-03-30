@@ -5,6 +5,27 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL,
   warn <- getOption("warn")
   options(warn = -1L)
   nt <- length(terms)
+
+  reclass <- function(x) {
+    if(x == "ps.smooth.spec")
+      x <- "sm.bayesx"
+    if(x == "bl.smooth.spec")
+      x <- "sm.bayesx"
+    if(x == "cs.smooth.spec")
+      x <- "sm.bayesx"
+    if(x == "gk.smooth.spec")
+      x <- "geo.bayesx"
+    if(x == "gs.smooth.spec")
+      x <- "geo.bayesx"
+    if(x == "mrf.smooth.spec")
+      x <- "mrf.bayesx"
+    if(x == "re.smooth.spec")
+      x <- "random.bayesx"
+    if(x == "random.smooth.spec")
+      x <- "random.bayesx"
+    x
+  }
+
   if(nt > 0L) {
     for(k in 1L:nt) {
       if(is.sm(terms[k])) {
@@ -34,21 +55,21 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL,
           }
         }
         israndom <- FALSE
-        if(class(te) == "ra.smooth.spec")
+        if(class(te) == "ra.smooth.spec" || class(te) == "re.smooth.spec")
           israndom <- TRUE
         if(fby) {
           te$label <- gsub(")", paste(",by=", te$by, ")", sep = ""), te$label)
           info <- paste("list(term=\'", te$label, "\',pos=", k, ",by=\'", te$by,
             "\',isFactor=FALSE", ",isFactorBy=", fby, ",isFactorByNames=", fnv, 
-            ",map=", map, ",israndom=", israndom, ")", sep = "")
+            ",map=", map, ",israndom=", israndom, ",class=\'", reclass(class(te)), "\'", ")", sep = "")
         } else {
           info <- paste("list(term=\'", te$label, "\',pos=", k, ",by=\'", te$by,
             "\',isFactor=FALSE", ",isFactorBy=", fby, ",map=", map, 
-            ",israndom=", israndom, ")", sep = "")
+            ",israndom=", israndom, ",class=\'", reclass(class(te)), "\'", ")", sep = "")
         }
       } else {
         sp <- FALSE
-        if(grepl(":",terms[k]))
+        if(grepl(":", terms[k]))
           sp <- TRUE
         if(!is.character(data) && !sp)
           x <- data[[terms[k]]]
@@ -66,10 +87,11 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL,
           xl <- paste(levels(x), collapse = "\',\'")
           xl <- paste("c(\'", xl , "\')", sep = "")
           info <- paste("list(term=\'", terms[k], "\',pos=" , k, 
-            ",isFactor=TRUE", ",names=", fnv, ",levels=", xl, ",realname=", realname, ")", sep = "")
-        } else { 
+            ",isFactor=TRUE", ",names=", fnv, ",levels=", xl, ",realname=", realname,
+            ",class=\'linear.bayesx\'", ")", sep = "")
+        } else {
           info <- paste("list(term=\'", rmf(terms[k]), "\',pos=", k, ",isFactor=FALSE, realname=", 
-            paste("\'", terms[k], "\'", sep = ""),")", sep = "")
+            paste("\'", terms[k], "\'", sep = ""), ",class=\'linear.bayesx\'", ")", sep = "")
         }
       }
       info <- paste(info,"\n")

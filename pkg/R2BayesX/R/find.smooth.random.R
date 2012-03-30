@@ -17,7 +17,8 @@ function(dir, files, data, response, eta, model.name, minfo, info)
     resfiles <- resfiles[!grepl("_lasso", resfiles)]
     resfiles <- resfiles[!grepl("_ridge", resfiles)]
     resfiles <- resfiles[!grepl("_nigmix", resfiles)]
-    if(length(resfiles) > 0L)
+    if(length(resfiles) > 0L) {
+      neffect <- 1; nameseffects <- NULL
       for(res in resfiles) {
         x <- df2m(read.table(paste(dir, "/", res, sep = ""), header = TRUE))
         dimx <- s4dim(x)
@@ -73,6 +74,10 @@ function(dir, files, data, response, eta, model.name, minfo, info)
                 if(!is.null(term$israndom) && term$israndom) {
                   term2 <- gsub("f(", "r(", term$term, fixed = TRUE)
                   term2 <- gsub("s(", "r(", term2, fixed = TRUE)
+                  if(grep("sx(", term$term, fixed = TRUE)) {
+                    term2 <- gsub("r(", "sx(", term2, fixed = TRUE)
+                    labelx <- gsub("r(", "sx(", labelx, fixed = TRUE)
+                  }
                 } else {
                   term2 <- gsub("f(", "s(", term$term, fixed = TRUE)
                   term2 <- gsub("sx(", "s(", term$term, fixed = TRUE)
@@ -179,9 +184,15 @@ function(dir, files, data, response, eta, model.name, minfo, info)
             }
           }
           class(x) <- c(cx, "matrix")
-          eval(parse(text = paste("effects$\'", attr(x, "specs")$label, "\' <- x", sep = "")))
+          effects[[neffect]] <- x
+          nameseffects <- c(nameseffects, attr(x, "specs")$label)
+          neffect <- neffect + 1
+          ## eval(parse(text = paste("effects$\'", attr(x, "specs")$label, "\' <- x", sep = "")))
         }
       }
+    if(!is.null(nameseffects))
+      names(effects) <- nameseffects
+    }
   }
 
   return(list(effects = effects, smooth.hyp = mum(SmoothHyp), random.hyp = mum(RandomHyp)))

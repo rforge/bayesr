@@ -95,23 +95,29 @@ function(x, model = NULL, term = NULL, which = 1L, ask = FALSE, ...)
           if(is.character(ts[j])) {
             tmp <- splitme(ts[j])
             tmp <- resplit(tmp[tmp != " "])
-            take <- pmatch(tmp, ne)
+            take <- NULL
+            for(jj in 1:length(ne)) {
+              if(!is.na(pmatch(tmp, ne[jj])))
+                take <- c(take, jj)
+            }
           } else take <- match(ts[j], ne)
           if(length(take) > 0L && length(x[[i]]$effects) > 0L && !is.na(take)) {
-            args$x <- x[[i]]$effects[[take]]
-            args$diagnostics <- FALSE
-            if("coef-samples" %in% which) {
-              args$diagnostics <- 1L
-              if(length(ts) > 1L && (is.null(args$all.acf) || 
-                !is.null(args$all.acf) && !args$all.acf))
-                par(ask = TRUE)
-            }
-            if("var-samples" %in% which) 
-              args$diagnostics <- 2L
-            if(!is.null(args$x)) {
-              args$ask <- ask
-              pc <- TRUE
-              do.call("plot", args)	
+            for(takeme in take) {
+              args$x <- x[[i]]$effects[[takeme]]
+              args$diagnostics <- FALSE
+              if("coef-samples" %in% which) {
+                args$diagnostics <- 1L
+                if(length(ts) > 1L && (is.null(args$all.acf) || 
+                  !is.null(args$all.acf) && !args$all.acf))
+                  par(ask = TRUE)
+              }
+              if("var-samples" %in% which) 
+                args$diagnostics <- 2L
+              if(!is.null(args$x)) {
+                args$ask <- ask
+                pc <- TRUE
+                do.call("plot", args)	
+              }
             }
           }
         }
