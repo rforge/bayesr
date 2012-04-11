@@ -1568,24 +1568,24 @@ which actually produces the model output of the first model (\code{zms}) again.
 
 \section{Summary}\label{sec:conclusion}
 
-The \proglang{R} package \pkg{R2BayesX} provides an semi-interactive interface to the standalone
-software package \pkg{BayesX}. The presented tools allow the user to specify and estimate STAR
-models in a convenient \proglang{R} style that is oriented on commonly used regression model fitting
-functions. Therefore, besides adapting already existing functionality from the \pkg{mgcv} package
-the package also adds its own \pkg{BayesX} alike smooth term constructor function to provide users
-that are more familiar with \pkg{BayesX} an intuitive start as well as accounting for \pkg{BayesX}
-specific optional controlling arguments. Moreover, the software design is fully modular since the
-user may import already existing \pkg{BayesX} fitted model files and also run \pkg{BayesX}
-program files from \proglang{R} separately. For post estimation analysis and graphical inspection,
-the package facilitates several (generic) functions that produce summary statistics, extract fitted
-model term objects, generate 2d, 3d, image and map effect plots, amongst others. The major
-functionality of the package is demonstrated on two datasets including examples for MCMC, REML and
-stepwise estimation.
+The \proglang{R} package \pkg{R2BayesX} provides an interface to the standalone software package
+\pkg{BayesX} for estimation of structured additive regression (STAR) models via MCMC, REML,
+or stepwise selection. The interface has the usual ``look \& feel'' of regression modeling
+functions in \proglang{R} with a \code{formula}-based fitting function \fct{bayesx} along with
+suitable methods such as \fct{summary} and \fct{plot}. Adapting functionality from the \pkg{mgcv}
+package, the package allows for specification of regressions with smooth terms via the
+\fct{s} constuctor and adds its own smooth term constructor \fct{sx}, which facilitates
+specification of \pkg{BayesX}-specific terms along with corresponding optional
+control arguments. Moreover, the software design is modular
+enabling the import of already existing \pkg{BayesX} fitted-model files or the execution of
+previously generated \pkg{BayesX} program files from \proglang{R}. For post-estimation analysis and
+graphical inspection, the suite of methods allows for extraction of summary statistics and fitted
+model term objects as well as generation of 2d, 3d, image, and map effect plots, amongst others.
 
 
 \section*{Acknowledgments}
 
-\fixme{who to mention here? rest of BayesX team? Fabian for testing? any projects/services?}
+\fixme{Fabian Scheipl for testing, Uwe Ligges for help with compiling BayesXsrc for Windows}
 
 
 \bibliography{R2BayesX}
