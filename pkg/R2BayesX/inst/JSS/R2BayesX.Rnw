@@ -1568,12 +1568,20 @@ which actually produces the model output of the first model (\code{zms}) again.
 
 \section{Summary}\label{sec:conclusion}
 
-The \proglang{R} package \pkg{R2BayesX} provides a semi-interactive interface to the standalone
-software package \pkg{BayesX}. The implemented tools allow the user to specify and estimate STAR
-models in a convenient \proglang{R} style oriented on commonly used regression model fitting
-functions. 
+The \proglang{R} package \pkg{R2BayesX} provides an semi-interactive interface to the standalone
+software package \pkg{BayesX}. The presented tools allow the user to specify and estimate STAR
+models in a convenient \proglang{R} style that is oriented on commonly used regression model fitting
+functions. Therefore, besides adapting already existing functionality from the \pkg{mgcv} package
+the package also adds its own \pkg{BayesX} alike smooth term constructor function to provide users
+that are more familiar with \pkg{BayesX} an intuitive start as well as accounting for \pkg{BayesX}
+specific optional controlling arguments. Moreover, the software design is fully modular since the
+user may import already existing \pkg{BayesX} fitted model files and also run \pkg{BayesX}
+program files from \proglang{R} separately. For post estimation analysis and graphical inspection,
+the package facilitates several (generic) functions that produce summary statistics, extract fitted
+model term objects, generate 2d, 3d, image and map effect plots, amongst others. The major
+functionality of the package is demonstrated on two datasets including examples for MCMC, REML and
+stepwise estimation.
 
-\fixme{still to do}
 
 \section*{Acknowledgments}
 
