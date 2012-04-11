@@ -2,6 +2,10 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
+b <- bayesx(y ~ sx(x1) + r(id), data = dat)
+
+
+
 plot(zm, term = "sx(district)")
 
 

@@ -1568,6 +1568,11 @@ which actually produces the model output of the first model (\code{zms}) again.
 
 \section{Summary}\label{sec:conclusion}
 
+The \proglang{R} package \pkg{R2BayesX} provides a semi-interactive interface to the standalone
+software package \pkg{BayesX}. The implemented tools allow the user to specify and estimate STAR
+models in a convenient \proglang{R} style oriented on commonly used regression model fitting
+functions. 
+
 \fixme{still to do}
 
 \section*{Acknowledgments}

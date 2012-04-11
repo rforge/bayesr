@@ -74,7 +74,7 @@ function(dir, files, data, response, eta, model.name, minfo, info)
                 if(!is.null(term$israndom) && term$israndom) {
                   term2 <- gsub("f(", "r(", term$term, fixed = TRUE)
                   term2 <- gsub("s(", "r(", term2, fixed = TRUE)
-                  if(grep("sx(", term$term, fixed = TRUE)) {
+                  if(length(grep("sx(", term$term, fixed = TRUE))) {
                     term2 <- gsub("r(", "sx(", term2, fixed = TRUE)
                     labelx <- gsub("r(", "sx(", labelx, fixed = TRUE)
                   }
