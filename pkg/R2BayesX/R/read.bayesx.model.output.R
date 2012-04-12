@@ -190,6 +190,20 @@ function(dir, model.name)
     ## reordering and naming
     if(info %in% dir.files)
       rval$effects <- term.reorder(rval$effects, paste(dir, "/", info, sep = ""))
+    if(any(duplicated(names.eff <- names(rval$effects)))) {
+      for(k in names.eff) {
+        if(sum(which <- names.eff == k) > 1L) {
+          for(j in 1:length(which))
+            if(which[j]) {
+              cw <- gsub(".bayesx", "", class(rval$effects[[j]])[1L], fixed = TRUE)
+              cw <- gsub("random", "re", cw)
+              cw <- paste(names.eff[j], cw, sep = ":")
+              names.eff[j] <- attr(rval$effects[[j]], "specs")$label <- cw
+            } 
+        }
+      }
+      names(rval$effects) <- names.eff
+    }
     rval$effects <- delete.NULLs(rval$effects)
 
     ## search for additional info

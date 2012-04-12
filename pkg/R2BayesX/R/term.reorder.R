@@ -108,7 +108,6 @@ function(x, info)
       x <- list(x)
       names(x) <- xnames
     }
-
     return(x)
   }
 }

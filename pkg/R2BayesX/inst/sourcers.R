@@ -2,22 +2,13 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-b <- bayesx(y ~ sx(x1) + r(id), data = dat)
-
-
-
-plot(zm, term = "sx(district)")
-
-
-
-
-zm <- read.bayesx.output("~/tmp/zm")
-
-
-
-zm <- bayesx(f, family = "gaussian", method = "MCMC",
-  iterations = 1200, burnin = 200, step = 1, seed = 123,
-  data = ZambiaNutrition, outfile = "~/tmp/zm")
+data("ZambiaNutrition")
+data("ZambiaBnd")
+f <- stunting ~ memployment + urban + gender + meducation + sx(mbmi) +
+  sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) +
+  sx(district, bs = "re")
+zm <- bayesx(f, family = "gaussian", method = "MCMC", iterations = 1200,
+  burnin = 200, step = 1, seed = 123, data = ZambiaNutrition)
 
 
 
@@ -50,10 +41,10 @@ b <- gam(y ~ s(x1) + s(id, bs = "re", by = x1), data = dat)
 
 ## extract coefficients
 crs_mgcv <- coef(b)
-crs_mgcv <- cb[grep("s(id):x1", names(crs_mgcv), fixed = TRUE)]
+crs_mgcv <- crs_mgcv[grep("s(id):x1", names(crs_mgcv), fixed = TRUE)]
 
 ## now with R2BayesX
-b <- bayesx(y ~ s(x1) + r(id, by = x1), data = dat, method = "REML")
+b <- bayesx(y ~ s(x1) + s(id, bs = "re", by = x1), data = dat, method = "REML")
 crs_bayesx_reml <- fitted(b, term = "r(id):x1")$Estimate
 
 ## plot and compare
@@ -67,7 +58,7 @@ legend("topleft", legend = c("mgcv", "bayesx reml"),
   pch = 1, col = 1:2)
 
 ## now with MCMC
-b <- bayesx(y ~ s(x1) + r(id, by = x1), data = dat, method = "MCMC", outfile = "~/tmp/rsmodel-mcmc")
+b <- bayesx(y ~ s(x1) + sx(id, bs = "re", by = x1), data = dat, method = "MCMC", outfile = "~/tmp/rsmodel-mcmc")
 
 
 

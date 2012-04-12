@@ -1091,23 +1091,23 @@ approprietly by a linear term.
 A visual representation of the structured and unstructured spatial effect can be obtained
 in two ways. Using the plain plot function
 <<zambia-district-example-kde, echo=TRUE, eval=FALSE>>=
-plot(zm, term = c(7, 8))
+plot(zm, term = c("sx(district):mrf", "sx(district):re"))
 @
 produces a kernel density estimator of the posterior mean of the effects, see Figure
-\ref{fig:zambia-district-structured-unstructured-kde}. Here, argument \code{term} is specified
-in terms of the ordering of the model formula as an \code{integer} vector, which is another way how
-to select terms for plotting. \fixme{Achim, we need to specify with an integer vector, because BayesX
-also exports the total spatial effect and we get 3 plot if we say \code{term = "sx(district)"}.}
+\ref{fig:zambia-district-structured-unstructured-kde}. Here, the labels of the effects are extended
+by their basis specification \code{mrf} and \code{re} merged by a colon to uniquely identify which
+term should be plotted. Note that argument \code{term} could also be specified in terms of the
+ordering of the model formula as an \code{integer} vector, e.g., \code{term = c(7, 8)}.
 \begin{figure}[!t]
 \setkeys{Gin}{width=0.46\textwidth}
 \centering
 <<zambia-district-structured-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.4, 1.1))
-plot(zm, term = 7, map = FALSE, main = "")
+plot(zm, term = "sx(district):mrf", map = FALSE, main = "")
 @
 <<zambia-district-unstructured-kde, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.4, 1.1))
-plot(zm, term = 8, map = FALSE, main = "")
+plot(zm, term = "sx(district):re", map = FALSE, main = "")
 @
 \caption{\label{fig:zambia-district-structured-unstructured-kde} Example on childhood malnutrition:
 Kernel density estimates of the mean of the structured, left panel, and the unstructured spatial
@@ -1124,7 +1124,7 @@ To view the
 spatial structure of the correlated effect we have to use the plot function in combination with the
 boundary object \code{ZambiaBnd}:
 <<zambia-district-example, echo=TRUE, eval=FALSE>>=
-plot(zm, term = 7, map = ZambiaBnd)
+plot(zm, term = "sx(district):mrf", map = ZambiaBnd)
 @
 The generated map effect plot is shown in Figure~\ref{fig:zambia-district-structured-unstructured}.
 \begin{figure}[!t]
@@ -1132,11 +1132,11 @@ The generated map effect plot is shown in Figure~\ref{fig:zambia-district-struct
 \centering
 <<zambia-district-structured, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(0, 0, 0, 0))
-plot(zm, term = 7, map = ZambiaBnd, swap = TRUE)
+plot(zm, term = "sx(district):mrf", map = ZambiaBnd, swap = TRUE)
 @
 <<zambia-district-unstructured-samescale, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(0, 0, 0, 0))
-plot(zm, term = 8, map = ZambiaBnd, swap = TRUE,
+plot(zm, term = "sx(district):re", map = ZambiaBnd, swap = TRUE,
   range = c(-0.32, 0.32), lrange = c(-0.32, 0.32))
 @
 \caption{\label{fig:zambia-district-structured-unstructured} Example on childhood malnutrition:
@@ -1154,7 +1154,7 @@ comparably symmetric and without outlying districts such that the plot function 
 produces fairly informative maps. To demonstrate the range option we draw the unstructered random
 effect and the legend range within the same range as the structured random effect
 <<zambia-district-example-redraw, echo=TRUE, eval=FALSE>>=
-plot(zm, term = 8, map = ZambiaBnd,
+plot(zm, term = "sx(district):re", map = ZambiaBnd,
   range = c(-0.32, 0.32), lrange = c(-0.32, 0.32))
 @ %$
 The resulting map is also shown in Figure~\ref{fig:zambia-district-structured-unstructured} (right
@@ -1585,7 +1585,9 @@ model term objects as well as generation of 2d, 3d, image, and map effect plots,
 
 \section*{Acknowledgments}
 
-\fixme{Fabian Scheipl for testing, Uwe Ligges for help with compiling BayesXsrc for Windows}
+We would like to thank Fabian Scheipl for testing the package and giving fruitful feedback. We would
+also like to thank Uwe Ligges, who shared his expertise on compiling and checking the \pkg{BayesX}
+source code package \pkg{BayesXsrc} for Windows.
 
 
 \bibliography{R2BayesX}
