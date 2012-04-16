@@ -27,9 +27,12 @@ bayesx.control(model.name = "bayesx.estim",
   \item{model.name}{\code{\link[base]{character}}, specify a base name model output files are named 
     with in \code{outfile}.}
   \item{family}{\code{\link[base]{character}}, specify the distribution used for the model, options 
-    are: \code{"gaussian"}, \code{"binomialprobit"}, \code{"binomial"}, \code{"multinomialprobit"}, 
-    \code{"multinomial"}, \code{"cumprobit"}, \code{"poisson"}, \code{"nbinomial"}, \code{"zip"}, 
-    \code{"cox"} and \code{"multistate"}.}  
+    for all methods, \code{"MCMC"}, \code{"REML"} and \code{"STEP"} are: \code{"binomial"},
+    \code{"binomialprobit"}, \code{"gamma"}, \code{"gaussian"}, \code{"multinomial"},
+    \code{"poisson"}. For \code{"MCMC"} and \code{"REML"} only: \code{"cox"}, \code{"cumprobit"} and
+    \code{"multistate"}. For \code{"REML"} only use:
+    \code{"binomialcomploglog"}, \code{"cumlogit"}, \code{"multinomialcatsp"},
+    \code{"multinomialprobit"}, \code{"seqlogit"}, \code{"seqprobit"}.}
   \item{method}{\code{\link[base]{character}}, which method should be used for estimation, options 
     are \code{"MCMC"}, \code{"HMCMC"} (hierarchical MCMC), \code{"REML"} and \code{"STEP"}.}
   \item{verbose}{\code{\link[base]{logical}}, should output be printed to the \code{R} console 

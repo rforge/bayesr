@@ -169,7 +169,6 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 }
 
 \examples{
-\dontrun{
 ## generate some data
 set.seed(111)
 n <- 200
@@ -201,7 +200,7 @@ plot(c(b1, b2), residuals = TRUE)
 confint(b1, level = 0.99)
 confint(b2, level = 0.99)
 
-
+\dontrun{
 ## more examples
 set.seed(111)
 n <- 500
@@ -423,7 +422,7 @@ dat <- data.frame(x = runif(n, -3, 3), id = factor(rep(1:4, n/4)))
 dat$y <- with(dat, 1.5 + sin(x) * c(-1, 0.2, 1, 5)[id] + rnorm(n, sd = 0.6))
 
 ## estimate model
-b <- bayesx(y ~ sx(x, by = id, center = FALSE),
+b <- bayesx(y ~ sx(x, by = id, center = TRUE),
   method = "REML", data = dat)
 summary(b)
 plot(b, resid = TRUE, cex.resid = 0.1)
@@ -432,20 +431,18 @@ plot(b, resid = TRUE, cex.resid = 0.1)
 ## experiment with weights 
 set.seed(3)
 n <- 300
-dat <- data.frame(x = seq(-3, 3, length = n))
-dat$y <- with(dat, 1.5 + sin(x) + 
-  rnorm(n, sd = (0.2 + seq(0, 0.4, length = n))))
+dat <- data.frame(x = seq(0.01, 1, length = n))
+dat$y <- with(dat, 1.5 + 2.2 * x + rnorm(n, sd = 1.5 * x))
 
 b1 <- bayesx(y ~ sx(x), data = dat)
 summary(b1)
 plot(b1, resid = TRUE)
 
-dat$ressqrt <- residuals(b1)[,1L]^2
-b2 <- bayesx(ressqrt ~ x, data = dat)
-plot(b2, resid = TRUE)
+dat$res2 <- residuals(b1)[, "linpred"]^2
+b2 <- bayesx(res2 ~ sx(x), data = dat, family = "gamma")
 
-dat$W <- exp(fitted(b2)[,1L])
-b3 <- bayesx(y ~ sx(x), offset = W, data = dat)
+dat$W <- 1 / fitted(b2)[, "mu"]
+b3 <- bayesx(y ~ sx(x), weights = W, data = dat)
 
 summary(c(b1, b3))
 plot(c(b1, b3), resid = TRUE)
