@@ -1,6 +1,6 @@
 bayesx.control <-
 function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",  
-  verbose = TRUE, dir.rm = TRUE, bin = NULL, outfile = NULL, replace = FALSE,
+  verbose = TRUE, dir.rm = TRUE, outfile = NULL, replace = FALSE,
   iterations = 12000L, burnin = 2000L, maxint = NULL, step = 10L, predict = TRUE,
   seed = NULL, hyp.prior = NULL, distopt = NULL,  reference = NULL, zipdistopt = NULL,
   begin = NULL, level = NULL,  eps = 1e-05, lowerlim = 0.001, maxit = 400L, maxchange = 1e+06,
@@ -8,7 +8,6 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
   proportion = NULL, startmodel = NULL, trace = NULL, steps = NULL, CI = NULL,
   bootstrapsamples = NULL, ...)
 {
-  if(is.null(bin)) bin <- findBayesX()
   control <- list(...)
   start <- 6L + length(control)
   control$model.name <- model.name 
@@ -31,7 +30,6 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
   else
     control$outfile <- outfile
   control$replace <- replace
-  control$bin <- bin
   if(is.null(family))
     family <- "gaussian"
   if(is.function(family))
@@ -112,8 +110,6 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
     }
     control$hmcmc <- FALSE
   }
-  if(!is.null(bin))
-    start <- start + 1L
   if(!is.null(outfile))
     start <- start + 1L
   attr(control,"co.id") <- start:length(control)

@@ -13,13 +13,12 @@
 \usage{
 bayesx.control(model.name = "bayesx.estim", 
   family = "gaussian", method = "MCMC", verbose = TRUE, 
-  dir.rm = TRUE, bin = getOption("bayesx.bin"), outfile = NULL, 
-  replace = FALSE, iterations = 12000L, burnin = 2000L, maxint = NULL, 
-  step = 10L, predict = TRUE, seed = NULL, hyp.prior = NULL, 
-  distopt = NULL, reference = NULL, zipdistopt = NULL,  
-  begin = NULL, level = NULL, eps = 1e-05, lowerlim = 0.001, 
-  maxit = 400L, maxchange = 1e+06, leftint = NULL, lefttrunc = NULL, 
-  state = NULL, algorithm = NULL, criterion = NULL, 
+  dir.rm = TRUE, outfile = NULL, replace = FALSE, iterations = 12000L,
+  burnin = 2000L, maxint = NULL, step = 10L, predict = TRUE,
+  seed = NULL, hyp.prior = NULL, distopt = NULL, reference = NULL,
+  zipdistopt = NULL, begin = NULL, level = NULL, eps = 1e-05,
+  lowerlim = 0.001, maxit = 400L, maxchange = 1e+06, leftint = NULL,
+  lefttrunc = NULL, state = NULL, algorithm = NULL, criterion = NULL, 
   proportion = NULL, startmodel = NULL, trace = NULL, 
   steps = NULL, CI = NULL, bootstrapsamples = NULL, \dots)
 }
@@ -36,11 +35,7 @@ bayesx.control(model.name = "bayesx.estim",
   \item{verbose}{\code{\link[base]{logical}}, should output be printed to the \code{R} console 
     during runtime of \code{\link{bayesx}}.}
   \item{dir.rm}{\code{\link[base]{logical}}, should the the \code{output} files and directory 
-    removed after estimation?} 
-  \item{bin}{\code{\link[base]{character}}, set the \code{bin} path where the executable binary of 
-    \pkg{BayesX} command-line version is installed, may also be set in function 
-    \code{\link[base]{options}} via \code{options(bayesx.bin="/...")}, where \code{"/..."} is the 
-    bin path provided as character string.}
+    removed after estimation?}
   \item{outfile}{\code{\link[base]{character}}, specify a directory where \code{\link{bayesx}} 
     should store all output files, all output files will be named with \code{model.name} as the 
     base name.}

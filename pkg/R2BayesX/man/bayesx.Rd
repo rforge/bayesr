@@ -95,9 +95,9 @@ bayesx(formula, data, weights = NULL, subset = NULL,
   The wrapper function \code{bayesx} basically starts by setting up the necessary BayesX program 
   file using function \code{\link{bayesx.construct}}, \code{\link{parse.bayesx.input}} and 
   \code{\link{write.bayesx.input}}. Afterwards the generated program file is send to the 
-  command-line binary executable version of BayesX with \code{\link{run.bayesx}}. As a last step, 
-  function \code{\link{read.bayesx.output}} will read the estimated model object returned from 
-  BayesX back into \R. 
+  command-line binary executable version of BayesX with \code{\link[BayesXsrc]{run.bayesx}}. As a
+  last step, function \code{\link{read.bayesx.output}} will read the estimated model object returned
+  from BayesX back into \R.
   
   For estimation of STAR models, function \code{bayesx} uses formula syntax as provided in package 
   \code{\link[mgcv]{mgcv}} (see \code{\link[mgcv]{formula.gam}}), i.e. models may be specified using
@@ -132,17 +132,6 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 }
 
 \section{WARNINGS}{
-  Function \code{bayesx} or \code{\link{run.bayesx}} cannot be processed if the \code{bin} path to
-  the BayesX binary executable command-line version is not specified properly, i.e. before using 
-  \code{bayesx} the binary has to be installed, see function \code{\link{install.bayesx}} for
-  installation details. After installation the \code{bin} path can bet set with
-
-  \code{options(bayesx.bin = "/path/to/BayesX")}
-
-  or within function \code{\link{bayesx.control}}, where \code{"/path/to/BayesX"} represents the 
-  full path to the binary with the name of the binary at last, e.g. on Windows systems this may be 
-  something like \code{"C:/programs/BayesX/commandline/bayesx.exe"}. 
-
   For geographical effects, note that BayesX may crash if the region identification covariate is
   a \code{\link{factor}}, it is recommended to code these variables as \code{\link{integer}}, please
   see the example below.
@@ -171,8 +160,9 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 }
 
 \seealso{
-  \code{\link{parse.bayesx.input}}, \code{\link{write.bayesx.input}}, \code{\link{run.bayesx}}, 
-  \code{\link{read.bayesx.output}}, \code{\link{summary.bayesx}}, \code{\link{plot.bayesx}},
+  \code{\link{parse.bayesx.input}}, \code{\link{write.bayesx.input}},
+  \code{\link[BayesXsrc]{run.bayesx}}, \code{\link{read.bayesx.output}},
+  \code{\link{summary.bayesx}}, \code{\link{plot.bayesx}},
   \code{\link{fitted.bayesx}}, \code{\link{bayesx.construct}}, \code{\link{bayesx.term.options}},
   \code{\link{sx}}, \code{\link{r}}, \code{\link[mgcv]{formula.gam}}, \code{\link[mgcv]{s}}, 
   \code{\link[mgcv]{te}}.

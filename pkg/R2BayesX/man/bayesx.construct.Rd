@@ -58,7 +58,7 @@ bayesx.construct(object, dir, prg, data)
   \code{bayesx.construct.ps.smooth.construct} may be provided to translate \R specific syntax into 
   \pkg{BayesX} readable commands. During processing with \code{\link{write.bayesx.input}} each model
   term is constructed with \code{bayesx.construct} after another, wrapped into a full formula, which 
-  may then be send to the BayesX binary with \code{\link{run.bayesx}}.
+  may then be send to the BayesX binary with \code{\link[BayesXsrc]{run.bayesx}}.
 
   At the moment the following model terms are implemented:
   \itemize{

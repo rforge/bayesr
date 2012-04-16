@@ -38,8 +38,8 @@ read.bayesx.output(dir, model.name = NULL)
   \item{bayesx.setup}{an object of class \code{"bayesx.input"}, see 
     \code{\link{parse.bayesx.input}},}
   \item{bayesx.prg}{a character containing the \code{.prg} file used for estimation with 
-    \code{\link{run.bayesx}},}
-  \item{bayesx.run}{details on processing with \code{\link{run.bayesx}},}
+    \code{\link[BayesXsrc]{run.bayesx}},}
+  \item{bayesx.run}{details on processing with \code{\link[BayesXsrc]{run.bayesx}},}
   \item{call}{the original function call,}
   \item{fitted.values}{the fitted values of the estimated model,}
   \item{residuals}{the residuals of the estimated model,}

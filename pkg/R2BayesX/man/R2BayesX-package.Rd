@@ -12,9 +12,9 @@
   This package interfaces the BayesX command-line binary from \R. The main model fitting function is 
   called \code{\link{bayesx}}. 
 
-  Before STAR models may be estimated, the command-line version of BayesX needs to be installed and 
-  linked to \R. Please see function \code{\link{install.bayesx}}, \code{\link{bayesx}} and 
-  \code{\link{bayesx.control}} for more details on installation, model fitting and controlling.
+  Before STAR models may be estimated, the command-line version of BayesX needs to be installed,
+  which is done by installing package \pkg{BayesXsrc}. Please see function \code{\link{bayesx}} and 
+  \code{\link{bayesx.control}} for more details on model fitting and controlling.
 
   The package also provides functionality for high level graphics of estimated effects, see function
   \code{\link{plot.bayesx}}, \code{\link{plot2d}}, \code{\link{plot3d}}, \code{\link{plotblock}},
@@ -27,8 +27,8 @@
   sites.
 
   In addition, it is possible to run arbitrary BayesX program files using function 
-  \code{\link{run.bayesx}}. BayesX output files that are stored in a directory may be read into \R
-  calling function \code{\link{read.bayesx.output}}.
+  \code{\link[BayesXsrc]{run.bayesx}}. BayesX output files that are stored in a directory may be
+  read into \R calling function \code{\link{read.bayesx.output}}.
 }
 
 \author{
