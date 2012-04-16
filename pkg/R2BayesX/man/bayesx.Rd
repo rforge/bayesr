@@ -142,7 +142,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
   
   Belitz C, Brezger A, Kneib T, Lang S (2011). BayesX - Software for Bayesian Inference in 
     Structured Additive Regression Models. Version 2.0.1. 
-    URL \url{http://www.stat.uni-muenchen.de/~bayesx}.
+    URL \url{http://www.BayesX.org}.
 
   Belitz C, Lang S (2008). Simultaneous selection of variables and smoothing parameters in 
     structured additive regression models. \emph{Computational Statistics \& Data Analysis}, 

@@ -42,7 +42,7 @@ A data frame containing 4847 observations on 8 variables.
 }
 
 \source{
-  \url{http://www.stat.uni-muenchen.de/~bayesx/}.
+  \url{http://www.BayesX.org}.
 }
 
 \references{

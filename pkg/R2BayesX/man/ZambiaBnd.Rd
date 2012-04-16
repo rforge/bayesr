@@ -15,7 +15,7 @@
 }
 
 \source{
-  \url{http://www.stat.uni-muenchen.de/~bayesx/}.
+  \url{http://www.BayesX.org}.
 }
 
 \seealso{\code{\link{plotmap}}, \code{\link{read.bnd}}, \code{\link{write.bnd}}}

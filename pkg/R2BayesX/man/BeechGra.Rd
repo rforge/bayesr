@@ -15,7 +15,7 @@
 }
 
 \source{
-  \url{http://www.stat.uni-muenchen.de/~kneib/regressionsbuch/}.
+  \url{http://www.BayesX.org}.
 }
 
 \seealso{\code{\link{read.gra}}, \code{\link{bnd2gra}}}

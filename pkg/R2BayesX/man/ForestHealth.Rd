@@ -40,7 +40,7 @@ A data frame containing 1793 observations on 16 variables.
 }
 
 \source{
-  \url{http://www.stat.uni-muenchen.de/~kneib/regressionsbuch/}.
+  \url{http://www.BayesX.org}.
 }
 
 \references{
