@@ -63,8 +63,7 @@ read.bayesx.output(dir, model.name = NULL)
 \examples{
 ## load example data from
 ## package example folder
-dir <- paste(searchpaths()[grep("R2BayesX",searchpaths())],
-           "/examples/ex02",sep="")
+dir <- file.path(find.package("R2BayesX"), "/examples/ex01")
 b <- read.bayesx.output(dir)
 
 ## some model summaries
@@ -75,8 +74,7 @@ summary(b)
 plot(b)
 
 ## 2nd example
-dir <- paste(searchpaths()[grep("R2BayesX",searchpaths())],
-           "/examples/ex03", sep = "")
+dir <- file.path(find.package("R2BayesX"), "/examples/ex02")
 list.files(dir)
 
 ## dir contains of 2 different

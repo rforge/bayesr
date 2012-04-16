@@ -86,8 +86,7 @@ points(pres)
 ## use of read.bayesx.output
 ## load example data from
 ## package R2BayesX
-dir <- paste(searchpaths()[grep("R2BayesX", searchpaths())],
-             "/examples/ex02", sep = "")
+dir <- file.path(find.package("R2BayesX"), "/examples/ex01")
 b2 <- read.bayesx.output(dir)
 
 ## extract fitted values
