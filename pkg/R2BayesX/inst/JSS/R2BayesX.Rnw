@@ -187,7 +187,7 @@ Finally, the model is fitted with the main model-fitting function \fct{bayesx}
 b <- bayesx(f, family = "gaussian", method = "MCMC",
   data = ZambiaNutrition)
 @
-<<cache-illustration, echo=FALSE, eval=TRUE>>=
+<<cache-illustration, echo=FALSE, eval=TRUE, results=hide>>=
 if(file.exists("illustration-model.rda")) {
 load("illustration-model.rda")
 } else {
@@ -1043,7 +1043,7 @@ spatial effect applying (geo)kriging. The model is then fitted using MCMC by cal
 zm <- bayesx(f, family = "gaussian", method = "MCMC", iterations = 12000,
   burnin = 2000, step = 10, seed = 123, data = ZambiaNutrition)
 @
-<<cache-zambia-model, echo=FALSE, eval=TRUE>>=
+<<cache-zambia-model, echo=FALSE, eval=TRUE, results=hide>>=
 if(file.exists("zambia-model.rda")) {
 load("zambia-model.rda")
 } else {
@@ -1336,7 +1336,7 @@ fm1 <- bayesx(f, family = "cumlogit", method = "REML",
 data("BeechBnd", package = "R2BayesX")
 fm2 <- update(fm1, . ~ . + sx(id, bs = "gs", map = BeechBnd))
 @
-<<cache-forest-model, echo=FALSE, eval=TRUE>>=
+<<cache-forest-model, echo=FALSE, eval=TRUE, results=hide>>=
 if(file.exists("forest-model.rda")) {
 load("forest-model.rda")
 } else {
@@ -1512,7 +1512,7 @@ zmsccb <- bayesx(f, family = "gaussian", method = "STEP",
   algorithm = "cdescent1", startmodel = "empty", CI = "MCMCselect",
   iterations = 10000, step = 10, seed = 123, data = ZambiaNutrition)
 @
-<<cache-zambia-model-step, echo=FALSE, eval=TRUE>>=
+<<cache-zambia-model-step, echo=FALSE, eval=TRUE, results=hide>>=
 if(file.exists("zambia-model-step.rda")) {
 load("zambia-model-step.rda")
 } else {
