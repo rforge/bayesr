@@ -1,4 +1,5 @@
-bayesx.construct.ra.smooth.spec <- bayesx.construct.random.smooth.spec <- 
+bayesx.construct.ra.smooth.spec <- bayesx.construct.re.smooth.spec <-
+bayesx.construct.random.smooth.spec <- 
 function(object, dir, prg, data)
 {
   term <- object$term

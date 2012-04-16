@@ -45,7 +45,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 }
 
 \details{  
-  In BayesX, estimation of regression parameters is based on three inferential concepts: 
+  In \pkg{BayesX}, estimation of regression parameters is based on three inferential concepts: 
 
   \bold{Full Bayesian inference via MCMC}: 
   A fully Bayesian interpretation of structured additive regression models is obtained by specifying 
@@ -95,19 +95,19 @@ bayesx(formula, data, weights = NULL, subset = NULL,
   The wrapper function \code{bayesx} basically starts by setting up the necessary BayesX program 
   file using function \code{\link{bayesx.construct}}, \code{\link{parse.bayesx.input}} and 
   \code{\link{write.bayesx.input}}. Afterwards the generated program file is send to the 
-  command-line binary executable version of BayesX with \code{\link[BayesXsrc]{run.bayesx}}. As a
-  last step, function \code{\link{read.bayesx.output}} will read the estimated model object returned
-  from BayesX back into \R.
+  command-line binary executable version of \pkg{BayesX} with \code{\link[BayesXsrc]{run.bayesx}}.
+  As a last step, function \code{\link{read.bayesx.output}} will read the estimated model object
+  returned from BayesX back into \R.
   
   For estimation of STAR models, function \code{bayesx} uses formula syntax as provided in package 
-  \code{\link[mgcv]{mgcv}} (see \code{\link[mgcv]{formula.gam}}), i.e. models may be specified using
+  \code{\link[mgcv]{mgcv}} (see \code{\link[mgcv]{formula.gam}}), i.e., models may be specified using
   the \code{\link{R2BayesX}} main model term constructor functions \code{\link{sx}} and
   \code{\link{r}}, or the \code{\link[mgcv]{mgcv}} constructor functions \code{\link[mgcv]{s}} and
   \code{\link[mgcv]{te}}. For a detailed description of the model formula syntax used within
   \code{bayesx} models see also \code{\link{bayesx.construct}} and
   \code{\link{bayesx.term.options}}.
 
-  After the BayesX binary has successfully finished processing an object of class \code{"bayesx"} is
+  After the \pkg{BayesX} binary has successfully finished processing an object of class \code{"bayesx"} is
   returned, wherefore a set of standard extractor functions and methods is available, including 
   methods to the generic functions \code{\link[base]{print}}, \code{\link[base]{summary}}, 
   \code{\link[graphics]{plot}}, \code{\link[stats]{residuals}} and \code{\link[stats]{fitted}}.

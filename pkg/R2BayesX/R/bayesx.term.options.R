@@ -346,7 +346,7 @@ function(bs = "ps", method = "MCMC")
         cat("        map: a map provided as a list of matrix polygons. \n\n") 
       } 
     }
-    if(bs == "random") {
+    if(bs == "random" || bs == "re" || bs == "ra") {
       if(method == "REML") {
         cat("lambdastart: starting value for the smoothing parameter lambda. \n",
           "            Default: realvalue, positive, \'lambdastart = 10\'. \n\n")

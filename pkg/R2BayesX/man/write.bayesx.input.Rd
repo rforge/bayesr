@@ -7,7 +7,7 @@
 
 \description{
   Function \code{write.bayesx.input} takes an object from \code{\link{parse.bayesx.input}} and 
-  translates the input to an executable program file which may be send to the BayesX binary.
+  translates the input to an executable program file which may be send to the \pkg{BayesX} binary.
 }
 
 \usage{

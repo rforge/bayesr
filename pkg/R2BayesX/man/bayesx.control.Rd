@@ -180,7 +180,7 @@ bayesx.control(model.name = "bayesx.estim",
 \references{
   For methodological and reference details see the BayesX manuals available at:
   
-  \url{http://www.stat.uni-muenchen.de/~bayesx/}.
+  \url{http://www.BayesX.org}.
 
   Belitz C, Lang S (2008). Simultaneous selection of variables and smoothing parameters in 
     structured additive regression models. \emph{Computational Statistics \& Data Analysis}, 
