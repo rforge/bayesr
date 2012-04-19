@@ -4,7 +4,7 @@ function(x, h = NULL, by = NA, xt = NULL,
   offset = NULL, na.action = na.fail, contrasts = NULL, 
   control = bayesx.control(...), ...)
 {
-  term <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500L)
+  term <- if(!is.character(x)) deparse(substitute(x), backtick = TRUE, width.cutoff = 500L) else x
   call <- match.call()
   is.formula <- FALSE
   if(!any(grepl("~", term)) && is.null(h) && !is.null(data)) {
@@ -18,7 +18,7 @@ function(x, h = NULL, by = NA, xt = NULL,
     call$x <- term
     is.formula <- TRUE
   }
-  by.var <- deparse(substitute(by), backtick = TRUE, width.cutoff = 500L)
+  by.var <- if(!is.character(by)) deparse(substitute(by), backtick = TRUE, width.cutoff = 500L) else by
   ins <- formula <- NULL
   if(by.var == ".") 
     stop("by=. not allowed")
@@ -55,7 +55,10 @@ function(x, h = NULL, by = NA, xt = NULL,
     ins = ins, formula = formula, data = data, weights = weights, 
     subset = subset, offset = offset, na.action = na.action, 
     contrasts = contrasts, control = control)
-  class(rval) <- "ra.smooth.spec"
+  if(!is.null(control$bs) && control$bs == "rsps") {
+    rval$control$bs <- NULL
+    class(rval) <- "rsps.smooth.spec"
+  } else class(rval) <- "ra.smooth.spec"
 
   return(rval) 
 }

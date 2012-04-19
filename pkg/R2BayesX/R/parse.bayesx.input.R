@@ -34,11 +34,13 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
     for(k in 1L:length(tl)) {
       if(is.f(tl[k])) {
         tmp <- eval(parse(text = tl[k]))
-        tl[k] <- tmp$term[1L]
-        if(length(tmp$term) > 1L)
-          tl <- c(tl, tmp$term[2L])
-        if(tmp$by != "NA")
-          tl <- c(tl, tmp$by)
+        if(!class(tmp) %in% paste(c("rsps", "re", "ra", "random"), "smooth.spec", sep = ".")) {
+          tl[k] <- tmp$term[1L]
+          if(length(tmp$term) > 1L)
+            tl <- c(tl, tmp$term[2L])
+          if(tmp$by != "NA")
+            tl <- c(tl, tmp$by)
+        }
       }
     }
     if(attr(terms(formula), "intercept") < 1L)

@@ -14,3 +14,12 @@ function(object, dir, prg, data)
   return(term)
 }
 
+
+bayesx.construct.rsps.smooth.spec <- function(object, dir, prg, data)
+{
+  term <- paste(object$by, "(hrandom_pspline,centermethod=meansum2", sep = "")
+  term <- paste(do.xt(term, object, NULL), ")", sep = "")
+  term <- paste(object$term, term , sep = "*")
+
+  return(term)
+}

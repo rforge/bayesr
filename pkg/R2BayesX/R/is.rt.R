@@ -10,6 +10,8 @@ function(x)
         if(resplit(split[1L:2L]) == c("r("))
           isrt[i] <- TRUE
       }
+      if(grepl("\"rsps\"", x[i], fixed = TRUE))
+        isrt[i] <- TRUE
     }
   } else isrt <- FALSE
 

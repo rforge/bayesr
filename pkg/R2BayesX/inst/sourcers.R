@@ -2,6 +2,20 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
+n <- 1000
+m <- 20
+id <- rep(1:m, length.out = n)
+x <- runif(n, -3, 3)
+hcoef <- rnorm(m, sd = 0.6)
+y <- 1.5 + sin(x) * hcoef[id] + rnorm(n, sd = 0.6)
+
+b <- bayesx(y ~ -1 + sx(x, bs = "rsps", by = id ~ 1, xt = list(sum2 = 2)), method = "HMCMC", outfile = "~/tmp")
+
+
+
+
+
+
 data("ZambiaNutrition")
 data("ZambiaBnd")
 f <- stunting ~ memployment + urban + gender + meducation + sx(mbmi) +

@@ -50,7 +50,7 @@ function(response, object, prg.file, data.file, thismodel, terms.specs)
   if(!is.null(object$hlevel) && object$hlevel != 1L) {
     # control.values[c("iterations", "burnin", "step", "level1", "level2")] <- NULL
     control.values[c("predict", "modeonly", "setseed", "aresp", "bresp", "pred_check", 
-      "mse", "mseparam", "centerlinear", "cv", "quantile", "hlevel", "maxint")] <- NULL
+      "mse", "mseparam", "centerlinear", "cv", "quantile", "hlevel", "maxint", "oformula")] <- NULL
   }
   predict <- control.values$predict
   control.values$predict <- NULL
