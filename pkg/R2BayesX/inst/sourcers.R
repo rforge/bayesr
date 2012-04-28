@@ -2,7 +2,7 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-n <- 1000
+n <- 5000
 m <- 20
 id <- rep(1:m, length.out = n)
 x <- runif(n, -3, 3)
