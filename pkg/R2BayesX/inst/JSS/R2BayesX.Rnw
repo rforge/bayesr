@@ -435,19 +435,34 @@ with a user-defined smooth term, a method for the \proglang{S}3 generic function
 needs to be supplied, that returns a design matrix etc. Since implementation of additional model
 terms is also a concern for \pkg{R2BayesX} and function \fct{s} is a very lean solution, we
 adopt its functionality and provide methods for a new generic function \fct{bayesx.construct},
-that returns the required command for a particular smooth term in \pkg{BayesX}. To give an example,
-we generate a call to function \fct{s} with some covariate \code{x} specifying a P-spline term and
-return the \pkg{BayesX} command with
-<<implementation-bayesx.construct, echo=TRUE, eval=TRUE>>=
-bayesx.construct(s(x, bs = "ps"))
-@
+that returns the required command for a particular smooth term in \pkg{BayesX}.
+
 Given an \proglang{R} model formula, the specified terms are translated one after another and
-finally merged into a complete program which may be sent to \pkg{BayesX}. In addition to the
-support of \pkg{mgcv}'s \fct{s} function, a second smooth term constructor \fct{sx} is provided
-(described in detail in Section~\ref{subsec:addterms}). This is essentially a convenience interface
-that calls \fct{s} but uses somewhat different defaults and additional options specific to the
-terms supported by \pkg{BayesX}. Moreover, a special constructor function \fct{r} for random effect
-terms is provided.
+finally merged into a complete program which may be sent to \pkg{BayesX}. Note, however, that due to
+different estimation methods in \pkg{mgcv} and \pkg{BayesX} the default recommendations for
+specification of a given basis (here, P-splines) differ. To account for this a new smooth term
+constructor \fct{sx} is provided that is recommended as the principal user interface in
+\pkg{R2BayesX} (see Section~\ref{subsec:addterms} for details). For example, the defaults for a
+P-spline are
+<<implementation-bayesx.construct, echo=TRUE, eval=TRUE>>=
+bayesx.construct(sx(x, bs = "ps"))
+@
+Internally, \fct{sx} simply calls \fct{s} to set up the smooth term but it chooses the defaults in
+accordance with \pkg{BayesX} (see Appendix C for details). 
+
+%To give an example,
+%we generate a call to function \fct{s} with some covariate \code{x} specifying a P-spline term and
+%return the \pkg{BayesX} command with
+%<<implementation-bayesx.construct, echo=TRUE, eval=TRUE>>=
+%bayesx.construct(s(x, bs = "ps"))
+%@
+%Given an \proglang{R} model formula, the specified terms are translated one after another and
+%finally merged into a complete program which may be sent to \pkg{BayesX}. In addition to the
+%support of \pkg{mgcv}'s \fct{s} function, a second smooth term constructor \fct{sx} is provided
+%(described in detail in Section~\ref{subsec:addterms}). This is essentially a convenience interface
+%that calls \fct{s} but uses somewhat different defaults and additional options specific to the
+%terms supported by \pkg{BayesX}. Moreover, a special constructor function \fct{r} for random effect
+%terms is provided.
 
 \subsection{Under the hood}
 
