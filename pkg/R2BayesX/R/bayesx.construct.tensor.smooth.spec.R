@@ -32,9 +32,13 @@ function(object, dir, prg, data)
       .call = FALSE)
     nrknots <- 5L
   }
+  if(object$p.order[1L] > 3L) {
+    warning("degree of the pspline is too large, values larger than 3 are not permitted, set to 3!")
+    object$p.order[1L] <- 3L
+  }
   term <- paste(termo[1L], "*", termo[2L], "(pspline2dimrw", object$p.order[2L],
     ",nrknots=", nrknots, ",degree=", object$p.order[1L], sep = "")
-  term <- paste(do.xt(term, object$xt, NULL), ")", sep = "")
+  term <- paste(do.xt(term, object, NULL), ")", sep = "")
   if(object$by != "NA")
     term <- make_by(term, object, data)
 

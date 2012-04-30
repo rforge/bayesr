@@ -10,12 +10,16 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
     k <- -1
     m <- NA
     xt <- list(...)
+    if("m" %in% names(xt))
+      stop("argument m is not allowed, please see function s() using this specification!")
+    if("k" %in% names(xt))
+      stop("argument k is not allowed, please see function s() using this specification!")
     if(!is.null(xt$xt))
       xt <- xt$xt
     warn <- getOption("warn")
     options("warn" = -1)
     if(by != "NA" && is.vector(by) && length(by) < 2L && !is.na(as.numeric(by))) {
-      xt$b <- by
+      xt["b"] <- by
       by <- "NA"
     }
     options("warn" = warn)
