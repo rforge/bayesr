@@ -12,6 +12,12 @@ function(x)
       }
       if(grepl("\"rsps\"", x[i], fixed = TRUE))
         isrt[i] <- TRUE
+      if(grepl("\"re\"", x[i], fixed = TRUE))
+        isrt[i] <- TRUE
+      if(grepl("\"ra\"", x[i], fixed = TRUE))
+        isrt[i] <- TRUE
+      if(grepl("\"random\"", x[i], fixed = TRUE))
+        isrt[i] <- TRUE
     }
   } else isrt <- FALSE
 

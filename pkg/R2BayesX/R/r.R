@@ -4,7 +4,8 @@ function(x, h = NULL, by = NA, xt = NULL,
   offset = NULL, na.action = na.fail, contrasts = NULL, 
   control = bayesx.control(...), ...)
 {
-  term <- if(!is.character(x)) deparse(substitute(x), backtick = TRUE, width.cutoff = 500L) else x
+  ## FIXME term <- if(!is.character(x)) deparse(substitute(x), backtick = TRUE, width.cutoff = 500L) else x
+  term <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500L)
   call <- match.call()
   is.formula <- FALSE
   if(!any(grepl("~", term)) && is.null(h) && !is.null(data)) {
