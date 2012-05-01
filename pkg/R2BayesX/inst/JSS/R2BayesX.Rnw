@@ -45,7 +45,8 @@ some extended terms), fitted using the \pkg{BayesX} binary, represented in \prog
 of suitable classes, and finally printed/summarized/plotted. This makes \pkg{BayesX} much more
 accessible to users familiar with \proglang{R} and adds extensive graphics capabilities for
 visualizing fitted STAR models. Furthermore, \pkg{R2BayesX} complements the already impressive
-capabilities for semiparametric regression in \proglang{R} by a comprehensive toolbox comprising in particular more complex response types and alternative inferential procedures such as simulation-based Bayesian inference.
+capabilities for semiparametric regression in \proglang{R} by a comprehensive toolbox comprising in
+particular more complex response types and alternative inferential procedures such as simulation-based Bayesian inference.
 }
 
 \Address{
@@ -130,9 +131,9 @@ In addition, users can leverage the underlying infrastructure, i.e.:
         \fct{read.bayesx.output}.
 \end{itemize}
 %
-The formula interface of the \fct{bayesx} function uses several special model term
-constructor functions for the structured predictors: \fct{sx} and \fct{r} for smooth and random effects,
-respectively, as well as the functions \fct{s} and \fct{te} from the \pkg{mgcv} package
+The formula interface of the \fct{bayesx} function uses the special model term
+constructor function \fct{sx} for structured predictors (such as smooth, spatial, or random
+effects). Internally this leverages smooth term functionality from the \pkg{mgcv} package
 \citep{R2BayesX:Wood:2011, R2BayesX:Wood:2006}, facilitating a consistent way to translate
 \proglang{R} syntax into \pkg{BayesX}-interpretable commands.
 
@@ -375,6 +376,12 @@ so that they are easy to employ for \proglang{R} users. Second, the functions an
 representing fitted model objects should reflect \pkg{BayesX} models to enhance their
 usability.
 
+This section takes a developer's perspective and discusses the design choices in \pkg{R2BayesX}
+and the technical issues involved while the subsequent Section~\ref{sec:userinterface} takes a
+user's perspective, providing an introduction on how to employ the \pkg{R2BayesX} for STAR
+modeling.
+
+
 \subsection{Interface approach}
 
 The first challenge in establishing a communication between \proglang{R} and \pkg{BayesX}
@@ -440,15 +447,16 @@ that returns the required command for a particular smooth term in \pkg{BayesX}.
 Given an \proglang{R} model formula, the specified terms are translated one after another and
 finally merged into a complete program which may be sent to \pkg{BayesX}. Note, however, that due to
 different estimation methods in \pkg{mgcv} and \pkg{BayesX} the default recommendations for
-specification of a given basis (here, P-splines) differ. To account for this a new smooth term
+specification of a given basis (e.g., P-splines) differ. To account for this a new smooth term
 constructor \fct{sx} is provided that is recommended as the principal user interface in
-\pkg{R2BayesX} (see Section~\ref{subsec:addterms} for details). For example, the defaults for a
-P-spline are
+\pkg{R2BayesX} and described in Section~\ref{subsec:addterms} in detail. For example, the defaults for a
+P-spline in \pkg{BayesX} are
 <<implementation-bayesx.construct, echo=TRUE, eval=TRUE>>=
 bayesx.construct(sx(x, bs = "ps"))
 @
-Internally, \fct{sx} simply calls \fct{s} to set up the smooth term but it chooses the defaults in
-accordance with \pkg{BayesX} (see Appendix C for details). 
+Internally, \fct{sx} simply calls \pkg{mgcv}'s \fct{s} to set up the smooth term but it chooses the defaults in
+accordance with \pkg{BayesX}. A detailed account how arguments are mapped between \fct{sx} and \fct{s}
+is provided in Appendix~\ref{appendix:sx}.
 
 %To give an example,
 %we generate a call to function \fct{s} with some covariate \code{x} specifying a P-spline term and
@@ -630,8 +638,8 @@ Function & Description \\ \hline
                 probability level are computed. \\
 \fct{cprob} & Extract contour probabilities of a particular P-spline term, only meaningful if
               \code{method = "MCMC"} and argument \code{contourprob} is specified as an additional
-              argument in the term constructor function \fct{sx}, or within argument \code{xt} in
-              function \fct{s}. E.g., in the introductory example, contour probabilities for \code{mbmi}
+              argument in the term constructor function \fct{sx}.
+	      E.g., in the introductory example, contour probabilities for \code{mbmi}
 	      are estimated with \code{s(mbmi, bs = "ps", xt = list(contourprob = 4))} (see also
               Section~\ref{subsec:addterms}). \\
 \fct{fitted} & Fitted values of either the mean and linear predictor, or a selected model term. \\
@@ -688,9 +696,11 @@ A list of all available functions and methods of package
 
 \subsection[Available additive terms]{Available additive terms}
 \label{subsec:addterms}
+
 In package \pkg{R2BayesX}, the main constructor function for specifying additive terms in STAR
 \code{formula}s is called \fct{sx}. The function is basically an interface to the term constructor
-function \fct{s} of package \pkg{mgcv}, also see Section~\ref{sec:implementation}.
+function \fct{s} of package \pkg{mgcv} but assures defaults appropriate for working with \pkg{BayesX},
+see also Section~\ref{sec:implementation}.
 The arguments of function \fct{sx} are
 \begin{Code}
   sx(x, z = NULL, bs = "ps", by = NA, ...)
@@ -730,8 +740,7 @@ or additional geographical information.
 \code{"gk"}, \code{"geokriging"} & Geokriging with stationary Gaussian random fields: Estimation
               is based on the centroids of a map object provided in
               boundary format (see function \fct{read.bnd} and \fct{shp2bnd}) as an additional
-              argument named \code{map} within function \fct{sx}, or supplied within argument
-              \code{xt} when using function \fct{s}, e.g., \code{xt = list(map = MapBnd)}. \\
+              argument named \code{map} within function \fct{sx}, e.g., \code{map = MapBnd}. \\
 \code{"gs"}, \code{"geospline"} & Geosplines based on two-dimensional P-splines with a
               two-dimensional first order random walk penalty  for the parameters of the spline.	
 	      Estimation is based on the coordinates of the centroids of the regions
@@ -807,49 +816,6 @@ in function \fct{sx}. To give an example, the varying coefficient terms in
 $\eta = \ldots + g_1(z_1)z + g_2(z_2)z + \gamma_0 + \gamma_1 z + \ldots$ are not identified, whereas
 in $\eta = \ldots + g_1(z_1)z + \gamma_0 + \ldots$, the varying coefficient term is identifiable. In
 the first case, centering is necessary, in the second case, it is not.
-
-\subsection{Other additive term interfaces}
-
-As mentioned above, users may optionally call the constructor function \fct{s} directly, since
-\fct{sx} is only a wrapper function which calls \fct{s} in the end. The usage
-of \fct{s} in \pkg{R2BayesX} is in principle similar to package \pkg{mgcv}. However, the applicable
-arguments are limited to arguments corresponding to those also available in \pkg{BayesX}, i.e.,
-\begin{Code}
-  s(..., k = -1, bs = "ps", m = NA, by = NA, xt = NULL)
-\end{Code}
-Note that the defaults of \fct{s} (as provided by \pkg{mgcv}) are different from the values
-above and would not correspond to a spline basis available in \pkg{BayesX}. Hence, the new
-\fct{sx} function is introduced in \pkg{R2BayesX} as a more convenient interface with defaults
-as in \pkg{BayesX}.
-
-Within \fct{s}, the list of covariates used for the model term is set with argument ``\code{...}''.
-For instance, in the example of Section~\ref{sec:motivation}, the term for the body mass index of the
-mother may also be included in the model formula by \code{s(mbmi)}, a term with two covariates is
-specified e.g., with \code{s(mbmi, agechild)}. Here, the parameter \code{k} controls the dimension
-of the basis used for smooth terms. Setting argument \code{m} is only meaningful for P-splines,
-i.e., \code{bs = "ps"}, and controls the degree of the B-spline basis functions and the order of the
-difference penalty. E.g., a B-spline of degree 3 with a 2nd order difference penalty is set with
-\code{s(mbmi, bs = "ps", m = c(1, 2))} (note that argument \code{m} is slightly different than
-argument \code{degree} in function \fct{sx} using P-splines, see also the manual of \fct{s}).
-Argument \code{by} is used in the same way as for \fct{sx}. The additional parameters that are
-specified by argument ``\code{...}'' in function \fct{sx}, may be set in \fct{s} within argument
-\code{xt}, e.g., similar to the example above, the boundary object \code{ZambiaBnd} is supplied with
-\code{s(district, bs = "gk", xt = list(map = ZambiaBnd))}. Besides \fct{s}, \pkg{R2BayesX} also
-supports calls to the tensor product constructor function \fct{te}, however, only a small set of the
-features of this function is supported by \pkg{BayesX}.
-
-%In addition to \fct{sx}, \fct{s}, and \fct{te}, unit- or cluster specific unstructured (random)
-%effects may be incorporated into the model \code{formula} using the random effects term constructor
-%function \fct{r}. The arguments of \fct{r} are
-%\begin{Code}
-%  r(id, by = NA, xt = NULL)
-%\end{Code}
-%where \code{id} is the unit or cluster identification covariate the random effects should be
-%estimated for. E.g., the model formula from the introduction could be extended by a random effects
-%term for the districts in Zambia with \code{r(district)}.  Argument \code{by} takes covariates
-%for which random slopes may be estimated. Argument \code{xt} is used in the same way as
-%described for function \fct{s}, i.e., similar to the above, e.g., hyperpriors $a$ and $b$ for the
-%variance parameter are set  with \code{r(district, xt = list(a = 0.0001, b = 0.0001))}.
 
 
 \subsection[Additional options]{Additional options} \label{sec:addoptions}
@@ -934,15 +900,10 @@ uses less than half a megabyte of memory:
 \begin{Sinput}
 R> print(object.size(b), units = "Mb")
 \end{Sinput}
-
-\vspace*{-0.45cm} %% FIXME: just for nice page breaks
-
 \begin{Soutput}
 0.4 Mb
 \end{Soutput}
 \end{Schunk}
-
-\vspace*{-0.45cm} %% FIXME: just for nice page breaks
 
 
 \section{STAR models in practice} \label{sec:illustrations}
@@ -1587,8 +1548,6 @@ zmsud <- bayesx(f, family = "gaussian", method = "STEP",
 @
 which actually produces the model output of the first model (\code{zms}) again.
 
-\pagebreak %% FIXME: just for formatting
-
 \section{Summary}\label{sec:conclusion}
 
 The \proglang{R} package \pkg{R2BayesX} provides an interface to the standalone software package
@@ -1597,9 +1556,9 @@ or stepwise selection. The interface has the usual ``look \& feel'' of regressio
 functions in \proglang{R} with a \code{formula}-based fitting function \fct{bayesx} along with
 suitable methods such as \fct{summary} and \fct{plot}. Adapting functionality from the \pkg{mgcv}
 package, the package allows for specification of regressions with smooth terms via the
-\fct{s} constuctor and adds its own smooth term constructor \fct{sx}, which facilitates
-specification of \pkg{BayesX}-specific terms along with corresponding optional
-control arguments. Moreover, the software design is modular
+\fct{sx} constuctor function. This is implemented using \pkg{mgcv}'s smooth term constructo
+\fct{s} but facilitates specification of \pkg{BayesX}-specific terms along with
+corresponding optional control arguments. Moreover, the software design is modular
 enabling the import of already existing \pkg{BayesX} fitted-model files or the execution of
 previously generated \pkg{BayesX} program files from \proglang{R}. For post-estimation analysis and
 graphical inspection, the suite of methods allows for extraction of summary statistics and fitted
@@ -1747,6 +1706,40 @@ between regions of large and no influence. The most important options of the plo
 shown in Table~\ref{tab:plotting}, for a detailed description of all available arguments and
 options please see documentation of function \fct{plot.bayesx}, \fct{plot2d}, \fct{plot3d},
 \fct{plotmap} and \fct{colorlegend}.
+
+\section{Smooth term constructor functions} \label{appendix:sx}
+
+\fixme{add more detailed account of argument mapping between s and sx, and rephrase subsection as appendix}
+
+As mentioned above, users may optionally call the constructor function \fct{s} directly, since
+\fct{sx} is only a wrapper function which calls \fct{s} in the end. The usage
+of \fct{s} in \pkg{R2BayesX} is in principle similar to package \pkg{mgcv}. However, the applicable
+arguments are limited to arguments corresponding to those also available in \pkg{BayesX}, i.e.,
+\begin{Code}
+  s(..., k = -1, bs = "ps", m = NA, by = NA, xt = NULL)
+\end{Code}
+Note that the defaults of \fct{s} (as provided by \pkg{mgcv}) are different from the values
+above and would not correspond to a spline basis available in \pkg{BayesX}. Hence, the new
+\fct{sx} function is introduced in \pkg{R2BayesX} as a more convenient interface with defaults
+as in \pkg{BayesX}.
+
+Within \fct{s}, the list of covariates used for the model term is set with argument ``\code{...}''.
+For instance, in the example of Section~\ref{sec:motivation}, the term for the body mass index of the
+mother may also be included in the model formula by \code{s(mbmi)}, a term with two covariates is
+specified e.g., with \code{s(mbmi, agechild)}. Here, the parameter \code{k} controls the dimension
+of the basis used for smooth terms. Setting argument \code{m} is only meaningful for P-splines,
+i.e., \code{bs = "ps"}, and controls the degree of the B-spline basis functions and the order of the
+difference penalty. E.g., a B-spline of degree 3 with a 2nd order difference penalty is set with
+\code{s(mbmi, bs = "ps", m = c(1, 2))} (note that argument \code{m} is slightly different than
+argument \code{degree} in function \fct{sx} using P-splines, see also the manual of \fct{s}).
+Argument \code{by} is used in the same way as for \fct{sx}. The additional parameters that are
+specified by argument ``\code{...}'' in function \fct{sx}, may be set in \fct{s} within argument
+\code{xt}, e.g., similar to the example above, the boundary object \code{ZambiaBnd} is supplied with
+\code{s(district, bs = "gk", xt = list(map = ZambiaBnd))}. Besides \fct{s}, \pkg{R2BayesX} also
+supports calls to the tensor product constructor function \fct{te}, however, only a small set of the
+features of this function is supported by \pkg{BayesX}.
+
+
 
 \end{appendix}
 

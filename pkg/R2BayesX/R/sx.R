@@ -2,6 +2,25 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
 {
   by <- deparse(substitute(by), backtick = TRUE, width.cutoff = 500)
   call <- match.call()
+
+  available.terms <- c(
+    "rw1", "rw2",
+    "season",
+    "ps", "psplinerw1", "psplinerw2", "pspline",
+    "te", "tensor", "pspline2dimrw2",
+    "kr", "kriging",
+    "gk", "geokriging",
+    "gs", "geospline",
+    "mrf", "spatial",
+    "bl", "baseline",
+    "factor",    
+    "ridge", "lasso", "nigmix",
+    "re", "ra", "random",
+    "cs", "catspecific",
+    "offset",
+    "generic")
+  if(!bs %in% available.terms) stop(paste("basis type", sQuote(bs), "not supported by BayesX"))
+
   if(bs %in% c("rsps", "hrandom_pspline")) {
     bs <- "rsps"
     x <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500)    
