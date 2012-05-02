@@ -8,10 +8,15 @@ m <- 20
 id <- rep(1:m, length.out = n)
 x <- runif(n, -3, 3)
 hcoef <- rnorm(m, sd = 0.6)
+
 y <- 1.5 + sin(x) * hcoef[id] + rnorm(n, sd = 0.6)
 
-b <- bayesx(y ~ sx(x, bs = "rsps", by = id, xt = list(sum2 = 2)),
-  method = "HMCMC", outfile = "~/tmp")
+b <- bayesx(y ~ sx(x, bs = "rsps", by = id, xt = list(sum2 = 2)))
+
+plot(b)
+
+hcoefhat <- fitted(b, term = "sx(id):x")[["Mean"]]
+plot(hcoefhat ~ hcoef)
 
 
 
