@@ -719,7 +719,7 @@ or additional geographical information.
 \code{"season"} & Seasonal effect of a time scale. \\
 \code{"ps"}, \code{"psplinerw1"}, \code{"psplinerw2"} & P-spline with first or second order
                                                         difference penalty. \\
-\code{"te"}, \code{"pspline2dimrw1"} & Defines a two-dimensional P-spline based on the tensor
+\code{"te"}, \code{"tensor"}, \code{"pspline2dimrw1"} & Defines a two-dimensional P-spline based on the tensor
               product of one-dimensional P-splines with a two-dimensional first order random walk
               penalty for the parameters of the spline. \\
 \code{"kr"}, \code{"kriging"} & Kriging with stationary Gaussian random fields. \\ \hline
@@ -750,7 +750,7 @@ or additional geographical information.
                                                 linear effects $x_1, \ldots, x_q$. There are three
                                                 priors possible: ridge-, lasso- and normal mixture
                                                 of inverse gamma prior. \\ \hline
-\code{"re"} & Gaussian i.i.d. Random effects of a unit or cluster identification covariate. \\ \hline
+\code{"re"}, \code{"random"}, \code{"ra"} & Gaussian i.i.d. Random effects of a unit or cluster identification covariate. \\ \hline
 \end{tabular}
 \caption{\label{tab:terms} Possible \pkg{BayesX} model terms within function \fct{sx}.}
 \end{table}
