@@ -21,7 +21,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 
 \arguments{
   \item{formula}{symbolic description of the model (of type \code{y ~ x}), also see 
-    \code{\link[mgcv]{formula.gam}}, \code{\link[mgcv]{s}} and \code{\link{r}}.}
+    \code{\link[mgcv]{formula.gam}}, \code{\link[mgcv]{s}}.}
   \item{data}{a \code{\link{data.frame}} or \code{\link{list}} containing the model response 
     variable and covariates required by the formula. By default the variables are taken from 
     \code{environment(formula)}: typically the environment from which \code{bayesx} is called. 
@@ -101,8 +101,8 @@ bayesx(formula, data, weights = NULL, subset = NULL,
   
   For estimation of STAR models, function \code{bayesx} uses formula syntax as provided in package 
   \code{\link[mgcv]{mgcv}} (see \code{\link[mgcv]{formula.gam}}), i.e., models may be specified using
-  the \code{\link{R2BayesX}} main model term constructor functions \code{\link{sx}} and
-  \code{\link{r}}, or the \code{\link[mgcv]{mgcv}} constructor functions \code{\link[mgcv]{s}} and
+  the \code{\link{R2BayesX}} main model term constructor functions \code{\link{sx}} or the
+  \code{\link[mgcv]{mgcv}} constructor functions \code{\link[mgcv]{s}} and
   \code{\link[mgcv]{te}}. For a detailed description of the model formula syntax used within
   \code{bayesx} models see also \code{\link{bayesx.construct}} and
   \code{\link{bayesx.term.options}}.
@@ -164,7 +164,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
   \code{\link[BayesXsrc]{run.bayesx}}, \code{\link{read.bayesx.output}},
   \code{\link{summary.bayesx}}, \code{\link{plot.bayesx}},
   \code{\link{fitted.bayesx}}, \code{\link{bayesx.construct}}, \code{\link{bayesx.term.options}},
-  \code{\link{sx}}, \code{\link{r}}, \code{\link[mgcv]{formula.gam}}, \code{\link[mgcv]{s}}, 
+  \code{\link{sx}}, \code{\link[mgcv]{formula.gam}}, \code{\link[mgcv]{s}}, 
   \code{\link[mgcv]{te}}.
 }
 
@@ -332,13 +332,13 @@ dat$re <- with(dat, rnorm(N, sd = 0.6)[id])
 dat$y <- with(dat, 1.5 + sin(x1) + re + rnorm(n, sd = 0.6))
 
 ## estimate model
-b <- bayesx(y ~ sx(x1) + r(id), data = dat)
+b <- bayesx(y ~ sx(x1) + sx(id, bs = "re"), data = dat)
 summary(b)
 plot(b)
 
 ## extract estimated random effects
 ## and compare with true effects
-plot(fitted(b, term = "r(id)")$Mean ~ unique(dat$re))
+plot(fitted(b, term = "sx(id)")$Mean ~ unique(dat$re))
 
 
 ## now a spatial example

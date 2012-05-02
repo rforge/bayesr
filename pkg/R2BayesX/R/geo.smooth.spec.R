@@ -69,11 +69,11 @@ function(object, dir, prg, data, type)
   m[is.na(m)] <- 2L
   object$p.order <- m
   object$p.order[1L] <- object$p.order[1L] + 2L
-  if(object$p.order[2L] > 1L) {
-    object$p.order[2L] <- 1L
-    if(type == "geospline")
-      warning("only random walks of order 1 supported for geosplines, set to default!")
-  }
+#  if(object$p.order[2L] > 1L) {
+#    object$p.order[2L] <- 1L
+#    if(type == "geospline")
+#      warning("only random walks of order 1 supported for geosplines, set to default!")
+#  }
   if(object$bs.dim < 0L)
     object$bs.dim <- as.integer(length(map)/2)
   else {

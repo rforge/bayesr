@@ -5,9 +5,8 @@
 \title{Show BayesX Term Options}
 
 \description{
-  \pkg{BayesX} model terms specified using functions \code{\link[mgcv]{s}} and \code{\link{r}} may have 
-  additional optional control arguments within argument \code{xt}. The argument passed to \code{xt}
-  must be a named list with the specifications of the control parameters. Therefore function 
+  \pkg{BayesX} model terms specified using functions \code{\link{sx}} may have 
+  additional optional control arguments. Therefore function 
   \code{bayesx.term.options} displays the possible additional controlling parameters for a 
   particular model term.
 }
@@ -17,9 +16,7 @@ bayesx.term.options(bs = "ps", method = "MCMC")
 }
 
 \arguments{
-  \item{bs}{the term specification for which controlling parameters should be shown. Note,
-    for random effects specified with function \code{\link{r}}, \code{bs = "random"} will display
-    random effects optional arguments.}
+  \item{bs}{the term specification for which controlling parameters should be shown.}
   \item{method}{for which method should additional arguments be shown, options are \code{"MCMC"},
     \code{"REML"} and \code{"STEP"}.}
 }
@@ -82,6 +79,7 @@ bayesx.term.options(bs = "ps", method = "MCMC")
 \examples{
 ## show arguments for P-splines
 bayesx.term.options(bs = "ps")
+bayesx.term.options(bs = "ps", method = "REML")
 
 ## Markov random fields
 bayesx.term.options(bs = "mrf")

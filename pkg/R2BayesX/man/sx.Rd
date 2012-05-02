@@ -106,7 +106,7 @@ sx(x, z = NULL, bs = "ps", by = NA, ...)
 }
 
 \seealso{
-  \code{\link{bayesx}}, \code{\link{bayesx.term.options}}, \code{\link[mgcv]{s}}, \code{\link{r}},
+  \code{\link{bayesx}}, \code{\link{bayesx.term.options}}, \code{\link[mgcv]{s}},
   \code{\link{bayesx.construct}}.
 }
 
@@ -250,13 +250,13 @@ dat$re <- with(dat, rnorm(N, sd = 0.6)[id])
 dat$y <- with(dat, 1.5 + sin(x1) + re + rnorm(n, sd = 0.6))
 
 ## estimate model
-b <- bayesx(y ~ sx(x1, bs = "psplinerw1") + r(id), data = dat)
+b <- bayesx(y ~ sx(x1, bs = "psplinerw1") + sx(id, bs = "re"), data = dat)
 summary(b)
 plot(b)
 
 ## extract estimated random effects
 ## and compare with true effects
-plot(fitted(b, term = "r(id)")$Mean ~ unique(dat$re))
+plot(fitted(b, term = "sx(id)")$Mean ~ unique(dat$re))
 }
 }
 

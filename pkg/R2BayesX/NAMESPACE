@@ -6,7 +6,6 @@ export(
   ## main user interface
   "bayesx",               
   "sx",
-  "r",
 
   ## model specification
   "bayesx.construct",     
