@@ -2,7 +2,7 @@ make.label <-
 function(cx, xnam, dimx, vx)
 {
   if(cx == "random.bayesx")
-    label <- paste("r(", xnam, sep = "")
+    label <- paste("sx(", xnam, sep = "")
   if(cx == "sm.bayesx") {
     if(dimx > 1L)
       label <- paste("sx(", xnam[1L], ",", xnam[2L], sep = "")

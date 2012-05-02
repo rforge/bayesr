@@ -2,8 +2,6 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-sx(log(x))
-
 
 n <- 5000
 m <- 20
@@ -12,7 +10,8 @@ x <- runif(n, -3, 3)
 hcoef <- rnorm(m, sd = 0.6)
 y <- 1.5 + sin(x) * hcoef[id] + rnorm(n, sd = 0.6)
 
-b <- bayesx(y ~ -1 + sx(x, bs = "rsps", by = id ~ 1, xt = list(sum2 = 2)), method = "HMCMC", outfile = "~/tmp")
+b <- bayesx(y ~ sx(x, bs = "rsps", by = id, xt = list(sum2 = 2)),
+  method = "HMCMC", outfile = "~/tmp")
 
 
 

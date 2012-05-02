@@ -52,13 +52,16 @@ function(response, object, prg.file, data.file, thismodel, terms.specs)
     control.values[c("predict", "modeonly", "setseed", "aresp", "bresp", "pred_check", 
       "mse", "mseparam", "centerlinear", "cv", "quantile", "hlevel", "maxint", "oformula")] <- NULL
   }
+  if(object$family == "gaussian_re")
+    control.values["predict"] <- NULL
   predict <- control.values$predict
   control.values$predict <- NULL
   control.names <- names(control.values)
+  equal <- if(is.null(bt) || bt == "") "" else " = "
   if(is.null(object$hlevel))
-    fullformula <- paste("b.regress ", response, " = ", bt, ",", sep = "")
+    fullformula <- paste("b.regress ", response, equal, bt, ",", sep = "")
   if(!is.null(object$hlevel) || object$hmcmc)
-    fullformula <- paste("b.hregress ", response, " = ", bt, ",", sep = "")
+    fullformula <- paste("b.hregress ", response, equal, bt, ",", sep = "")
   for(i in 1L:length(control.values)) {
     if(control.names[i] != "hmcmc")
       fullformula <- paste(fullformula, " ", control.names[i], "=", control.values[[i]], sep = "")

@@ -175,7 +175,7 @@ function(object)
     data.file <- paste(object$outfile, "/", object$model.name, ".data.raw", sep = "")
 
     if(!file.exists(data.file))
-      write.table(dat, data.file, col.names = TRUE, row.names = FALSE, quote = FALSE)
+      write.table(unique(dat), data.file, col.names = TRUE, row.names = FALSE, quote = FALSE)
     else {
       wok <- TRUE
       i <- 1L
@@ -183,7 +183,7 @@ function(object)
         data.file <- paste(object$outfile, "/", object$model.name, ".data", i, ".raw", sep = "")
         i <- i + 1L
         if(!file.exists(data.file)) {
-          write.table(dat, data.file, col.names = TRUE, row.names = FALSE, quote = FALSE)
+          write.table(unique(dat), data.file, col.names = TRUE, row.names = FALSE, quote = FALSE)
           wok <- FALSE
         }
       }

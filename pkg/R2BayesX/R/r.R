@@ -61,6 +61,10 @@ function(x, h = NULL, by = NA, xt = NULL,
   if(!is.null(control$bs) && control$bs == "rsps") {
     rval$control$bs <- NULL
     class(rval) <- "rsps.smooth.spec"
+    if(is.null(rval$ins)) {
+      rval$ins <- list()
+      rval$formula <- as.formula(paste(rval$term, "~ -1"))
+    }
   } else class(rval) <- "ra.smooth.spec"
 
   return(rval) 

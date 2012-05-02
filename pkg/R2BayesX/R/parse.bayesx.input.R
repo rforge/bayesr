@@ -41,6 +41,8 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
           if(tmp$by != "NA")
             tl <- c(tl, tmp$by)
         }
+        if(class(tmp) %in% "rsps.smooth.spec")
+          control$family <- "gaussian_re"
       }
     }
     if(attr(terms(formula), "intercept") < 1L)
