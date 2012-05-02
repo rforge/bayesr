@@ -28,10 +28,6 @@ function(object, dir, prg, data)
     nrknots <- 5L
   }
   termo <- object$term
-  if(object$p.order[1L] > 3) {
-    warning("degree of the pspline is too large, values larger than 3 are not permitted, set to 3!")
-    object$p.order[1L] <- 3
-  }
   term <- paste(termo, "(psplinerw", object$p.order[2L], ",nrknots=",
     nrknots, ",degree=", object$p.order[1L], sep = "")
   object$xt[c("knots", "nrknots", "degree")] <- NULL

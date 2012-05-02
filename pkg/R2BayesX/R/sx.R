@@ -18,13 +18,16 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
     "re", "ra", "random",
     "cs", "catspecific",
     "offset",
-    "generic")
+    "generic",
+    "rsps", "hrandom_pspline"
+  )
   if(!bs %in% available.terms) stop(paste("basis type", sQuote(bs), "not supported by BayesX"))
 
   if(bs %in% c("rsps", "hrandom_pspline")) {
     bs <- "rsps"
-    x <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500)    
-    rval <- r(x = by, bs = bs, by = x, ...)
+    x <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500)
+    rcall <- paste("r(x = ", by, ", bs = ", sQuote(bs), ", by = ", x, ", ...)", sep = "")
+    rval <- eval(parse(text = rcall))
   } else {
     k <- -1
     m <- NA
@@ -85,9 +88,9 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
     xt[c("degree", "order", "knots", "nrknots")] <- NULL
     if(!length(xt))
       xt <- NULL
-    term <- as.character(call$x)
+    term <- deparse(call$x)
     if(!is.null(call$z)) 
-      term <- c(term, as.character(call$z))
+      term <- c(term, deparse(call$z))
     rval <- mgcv::s(x, z, k = k, bs = bs, m = m, xt = xt)
     rval$term <- term
     rval$by <- by

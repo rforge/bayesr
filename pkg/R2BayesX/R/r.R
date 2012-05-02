@@ -4,7 +4,6 @@ function(x, h = NULL, by = NA, xt = NULL,
   offset = NULL, na.action = na.fail, contrasts = NULL, 
   control = bayesx.control(...), ...)
 {
-  ## FIXME term <- if(!is.character(x)) deparse(substitute(x), backtick = TRUE, width.cutoff = 500L) else x
   term <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500L)
   call <- match.call()
   is.formula <- FALSE
@@ -36,8 +35,11 @@ function(x, h = NULL, by = NA, xt = NULL,
       formula <- as.formula(paste(term, mlabel))
     else
       formula <- as.formula(mlabel)
-    label <- paste(label, ",", mlabel, collapse="")
-    mf <- terms.formula(formula, specials=c("s", "te", "r"))
+    if(length(grep("~", mlabel, fixed = TRUE)))
+      label <- paste("r(", mlabel)
+    else
+      label <- paste(label, ",", mlabel, collapse="")
+    mf <- terms.formula(formula, specials=c("sx", "s", "te", "r"))
     mterms <- attr(mf, "term.labels")
     if(length(mterms) > 0L)
       for(k in 1L:length(mterms)) {

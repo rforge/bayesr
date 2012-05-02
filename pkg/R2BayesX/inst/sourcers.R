@@ -2,13 +2,7 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-
-f <- stunting ~ memployment + urban + gender + meducation + sx(mbmi) +
-  sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) +
-  sx(district, bs = "re")
-
-zm <- bayesx(f, family = "gaussian", method = "MCMC", iterations = 12000,
-  burnin = 2000, step = 10, seed = 123, data = ZambiaNutrition)
+sx(log(x))
 
 
 n <- 5000
