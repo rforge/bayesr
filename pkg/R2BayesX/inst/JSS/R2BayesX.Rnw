@@ -458,19 +458,6 @@ Internally, \fct{sx} simply calls \pkg{mgcv}'s \fct{s} to set up the smooth term
 accordance with \pkg{BayesX}. A detailed account how arguments are mapped between \fct{sx} and \fct{s}
 is provided in Appendix~\ref{appendix:sx}.
 
-%To give an example,
-%we generate a call to function \fct{s} with some covariate \code{x} specifying a P-spline term and
-%return the \pkg{BayesX} command with
-%<<implementation-bayesx.construct, echo=TRUE, eval=TRUE>>=
-%bayesx.construct(s(x, bs = "ps"))
-%@
-%Given an \proglang{R} model formula, the specified terms are translated one after another and
-%finally merged into a complete program which may be sent to \pkg{BayesX}. In addition to the
-%support of \pkg{mgcv}'s \fct{s} function, a second smooth term constructor \fct{sx} is provided
-%(described in detail in Section~\ref{subsec:addterms}). This is essentially a convenience interface
-%that calls \fct{s} but uses somewhat different defaults and additional options specific to the
-%terms supported by \pkg{BayesX}. Moreover, a special constructor function \fct{r} for random effect
-%terms is provided.
 
 \subsection{Under the hood}
 
@@ -640,7 +627,7 @@ Function & Description \\ \hline
               \code{method = "MCMC"} and argument \code{contourprob} is specified as an additional
               argument in the term constructor function \fct{sx}.
 	      E.g., in the introductory example, contour probabilities for \code{mbmi}
-	      are estimated with \code{s(mbmi, bs = "ps", xt = list(contourprob = 4))} (see also
+	      are estimated with \code{sx(mbmi, bs = "ps", contourprob = 4)} (see also
               Section~\ref{subsec:addterms}). \\
 \fct{fitted} & Fitted values of either the mean and linear predictor, or a selected model term. \\
 \fct{residuals} & Extract model or partial residuals for a selected term. \\
@@ -1556,7 +1543,7 @@ or stepwise selection. The interface has the usual ``look \& feel'' of regressio
 functions in \proglang{R} with a \code{formula}-based fitting function \fct{bayesx} along with
 suitable methods such as \fct{summary} and \fct{plot}. Adapting functionality from the \pkg{mgcv}
 package, the package allows for specification of regressions with smooth terms via the
-\fct{sx} constuctor function. This is implemented using \pkg{mgcv}'s smooth term constructo
+\fct{sx} constuctor function. This is implemented using \pkg{mgcv}'s smooth term constructor
 \fct{s} but facilitates specification of \pkg{BayesX}-specific terms along with
 corresponding optional control arguments. Moreover, the software design is modular
 enabling the import of already existing \pkg{BayesX} fitted-model files or the execution of
@@ -1739,6 +1726,20 @@ specified by argument ``\code{...}'' in function \fct{sx}, may be set in \fct{s}
 supports calls to the tensor product constructor function \fct{te}, however, only a small set of the
 features of this function is supported by \pkg{BayesX}.
 
+
+%To give an example,
+%we generate a call to function \fct{s} with some covariate \code{x} specifying a P-spline term and
+%return the \pkg{BayesX} command with
+%<<implementation-bayesx.construct, echo=TRUE, eval=TRUE>>=
+%bayesx.construct(s(x, bs = "ps"))
+%@
+%Given an \proglang{R} model formula, the specified terms are translated one after another and
+%finally merged into a complete program which may be sent to \pkg{BayesX}. In addition to the
+%support of \pkg{mgcv}'s \fct{s} function, a second smooth term constructor \fct{sx} is provided
+%(described in detail in Section~\ref{subsec:addterms}). This is essentially a convenience interface
+%that calls \fct{s} but uses somewhat different defaults and additional options specific to the
+%terms supported by \pkg{BayesX}. Moreover, a special constructor function \fct{r} for random effect
+%terms is provided.
 
 
 \end{appendix}
