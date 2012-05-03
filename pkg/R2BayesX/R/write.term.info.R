@@ -61,11 +61,13 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL,
           te$label <- gsub(")", paste(",by=", te$by, ")", sep = ""), te$label)
           info <- paste("list(term=\'", te$label, "\',pos=", k, ",by=\'", te$by,
             "\',isFactor=FALSE", ",isFactorBy=", fby, ",isFactorByNames=", fnv, 
-            ",map=", map, ",israndom=", israndom, ",class=\'", reclass(class(te)), "\'", ")", sep = "")
+            ",map=", map, ",israndom=", israndom, ",class=\'", reclass(class(te)),
+            "\',bs=\'", gsub(".smooth.spec", "", class(te)), "\')", sep = "")
         } else {
           info <- paste("list(term=\'", te$label, "\',pos=", k, ",by=\'", te$by,
             "\',isFactor=FALSE", ",isFactorBy=", fby, ",map=", map, 
-            ",israndom=", israndom, ",class=\'", reclass(class(te)), "\'", ")", sep = "")
+            ",israndom=", israndom, ",class=\'", reclass(class(te)),
+            "\',bs=\'", gsub(".smooth.spec", "", class(te)),"\')", sep = "")
         }
       } else {
         sp <- FALSE

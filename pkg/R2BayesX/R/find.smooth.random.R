@@ -6,7 +6,7 @@ function(dir, files, data, response, eta, model.name, minfo, info)
     info <- info[1L:(length(info) - 1L)]
   } else info <- NULL
   effects <- list()
-  SmoothHyp <- RandomHyp <- NULL
+  SmoothHyp <- RandomHyp <- fsnames <- NULL
   if(any((i <- grep(".res", files)))) {
     resfiles <- files[i]
     endings <- c("_predict.res", "FixedEffects", "LinearEffects", "scale.res", "_variance_", 
@@ -20,6 +20,7 @@ function(dir, files, data, response, eta, model.name, minfo, info)
     if(length(resfiles) > 0L) {
       neffect <- 1; nameseffects <- NULL
       for(res in resfiles) {
+        cxbs <- NULL
         x <- df2m(read.table(paste(dir, "/", res, sep = ""), header = TRUE))
         dimx <- s4dim(x)
         if(sum(x[,(dimx + 1L):ncol(x)], na.rm = TRUE) != 0) {
@@ -27,6 +28,7 @@ function(dir, files, data, response, eta, model.name, minfo, info)
           x <- x[order(x[,1L]),]
           colnames(x) <- rep(colnx, length.out = ncol(x))
           cx <- s4class(res)
+          cxbs <- s4bs(res)
           dimx2 <- dimx
           if(cx == "geo.bayesx") {
             dimx2 <- dimx + 1L
@@ -94,6 +96,8 @@ function(dir, files, data, response, eta, model.name, minfo, info)
             labelx <- paste(labelx, ":", vx2, sep = "")
           if(grepl("_spatialtotal.res", res))
             labelx <- paste(labelx, ":total", sep = "")
+          ## labelx <- paste(labelx, if(!is.null(cxbs)) cxbs else cx, sep = ":")
+          ## labelx <- gsub("total:mrf", "total", labelx)
           if(!is.null(data))
             attr(x, "partial.resids") <- blow.up.resid(data, x, xnam, response, eta, dimx, cx)
           attr(x, "specs") <- list(dim = dimx, term = rrmfs(xnam), 

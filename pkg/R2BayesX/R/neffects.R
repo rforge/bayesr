@@ -12,7 +12,8 @@ function(x, term)
         tmp <- resplit(tmp[tmp != " "])
         take <- NULL
         for(jj in 1:length(ne)) {
-          if(!is.na(pmatch(tmp, ne[jj])))
+          ## if(!is.na(pmatch(tmp, ne[jj])))
+          if(length(grep(tmp, ne[jj], fixed = TRUE)))
             take <- c(take, jj)
         }
       } else take <- match(term[j], ne)
