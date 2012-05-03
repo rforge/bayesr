@@ -8,7 +8,7 @@ function(object, dir, prg, data)
     m <- object$p.order
   m[is.na(m)] <- 2L
   object$p.order <- m
-  object$p.order[1L] <- object$p.order[1L] + 2L
+  object$p.order[1L] <- object$p.order[1L] + 1L
   if(class(object) == "psplinerw1.smooth.spec")
     object$p.order[2L] <- 1L
   if(class(object) == "psplinerw2.smooth.spec")

@@ -17,7 +17,7 @@ function(object, dir, prg, data)
     m <- object$p.order
   m[is.na(m)] <- 2L
   object$p.order <- m
-  object$p.order[1L] <- object$p.order[1L] + 2L
+  object$p.order[1L] <- object$p.order[1L] + 1L
   if(length(object$p.order) > 1L) {
     if(object$p.order[2L] > 2L) {
       warning("order of the difference penalty not supported by BayesX, set to 2!")

@@ -407,7 +407,7 @@ at \url{http://CRAN.R-project.org/package=BayesXsrc} and some of its implementat
 are discussed in Appendix~\ref{appendix:BayesXsrc}.
 
 
-\subsection{Model specification}
+\subsection{Model specification} \label{sec:modelspecs}
 
 The second challenge for the interface package \pkg{R2BayesX} is to employ an objects and
 methods interface that reflects the workflow typically adapted by \proglang{R} packages
@@ -1694,52 +1694,48 @@ shown in Table~\ref{tab:plotting}, for a detailed description of all available a
 options please see documentation of function \fct{plot.bayesx}, \fct{plot2d}, \fct{plot3d},
 \fct{plotmap} and \fct{colorlegend}.
 
+
 \section{Smooth term constructor functions} \label{appendix:sx}
 
-\fixme{add more detailed account of argument mapping between s and sx, and rephrase subsection as appendix}
-
-As mentioned above, users may optionally call the constructor function \fct{s} directly, since
-\fct{sx} is only a wrapper function which calls \fct{s} in the end. The usage
-of \fct{s} in \pkg{R2BayesX} is in principle similar to package \pkg{mgcv}. However, the applicable
-arguments are limited to arguments corresponding to those also available in \pkg{BayesX}, i.e.,
+As mentioned in Section~\ref{sec:modelspecs}, the model term constructor function \fct{sx} basically
+calls \pkg{mgcv}'s constructor function \fct{s} in the end. The output returned from \fct{s} is then
+further processed by the generic function \fct{bayesx.construct} to create \pkg{BayesX}
+interpretable commands. Hence, users may optionally call the constructor function \fct{s} directly.
+The usage of \fct{s} in \pkg{R2BayesX} is in principle similar to package \pkg{mgcv}. However, the
+applicable arguments are limited to arguments corresponding to those also available in \pkg{BayesX},
+i.e.,
 \begin{Code}
   s(..., k = -1, bs = "ps", m = NA, by = NA, xt = NULL)
 \end{Code}
-Note that the defaults of \fct{s} (as provided by \pkg{mgcv}) are different from the values
-above and would not correspond to a spline basis available in \pkg{BayesX}. Hence, the new
-\fct{sx} function is introduced in \pkg{R2BayesX} as a more convenient interface with defaults
-as in \pkg{BayesX}.
-
 Within \fct{s}, the list of covariates used for the model term is set with argument ``\code{...}''.
 For instance, in the example of Section~\ref{sec:motivation}, the term for the body mass index of the
 mother may also be included in the model formula by \code{s(mbmi)}, a term with two covariates is
-specified e.g., with \code{s(mbmi, agechild)}. Here, the parameter \code{k} controls the dimension
-of the basis used for smooth terms. Setting argument \code{m} is only meaningful for P-splines,
-i.e., \code{bs = "ps"}, and controls the degree of the B-spline basis functions and the order of the
-difference penalty. E.g., a B-spline of degree 3 with a 2nd order difference penalty is set with
-\code{s(mbmi, bs = "ps", m = c(1, 2))} (note that argument \code{m} is slightly different than
-argument \code{degree} in function \fct{sx} using P-splines, see also the manual of \fct{s}).
-Argument \code{by} is used in the same way as for \fct{sx}. The additional parameters that are
-specified by argument ``\code{...}'' in function \fct{sx}, may be set in \fct{s} within argument
-\code{xt}, e.g., similar to the example above, the boundary object \code{ZambiaBnd} is supplied with
-\code{s(district, bs = "gk", xt = list(map = ZambiaBnd))}. Besides \fct{s}, \pkg{R2BayesX} also
-supports calls to the tensor product constructor function \fct{te}, however, only a small set of the
-features of this function is supported by \pkg{BayesX}.
+specified e.g., with \code{s(mbmi, agechild)}.
 
+Note that the defaults of \fct{s}, as provided by \pkg{mgcv}, are different from the default values
+resulting from \fct{sx} and would not correspond to a spline basis available, and/or suitable
+controlling arguments within \pkg{BayesX}. To give a more precise example using the defaults for
+P-splines, the simple call
+<<appendix-s, echo=TRUE, eval=TRUE>>=
+bayesx.construct(s(mbmi, bs = "ps"))
+@
+produces a P-spline term of basis dimension 10 constructed of 8 inner knots and degree 3 B-spline
+basis functions. To generate a \pkg{BayesX} term with the same base setting as provided from
+function \fct{sx}, the user would need to specify argument \code{k} additionally with
+<<appendix-s, echo=TRUE, eval=TRUE>>=
+bayesx.construct(s(mbmi, bs = "ps", k = 22))
+@
+which controls the basis dimension used for the smooth.
 
-%To give an example,
-%we generate a call to function \fct{s} with some covariate \code{x} specifying a P-spline term and
-%return the \pkg{BayesX} command with
-%<<implementation-bayesx.construct, echo=TRUE, eval=TRUE>>=
-%bayesx.construct(s(x, bs = "ps"))
-%@
-%Given an \proglang{R} model formula, the specified terms are translated one after another and
-%finally merged into a complete program which may be sent to \pkg{BayesX}. In addition to the
-%support of \pkg{mgcv}'s \fct{s} function, a second smooth term constructor \fct{sx} is provided
-%(described in detail in Section~\ref{subsec:addterms}). This is essentially a convenience interface
-%that calls \fct{s} but uses somewhat different defaults and additional options specific to the
-%terms supported by \pkg{BayesX}. Moreover, a special constructor function \fct{r} for random effect
-%terms is provided.
+Setting argument \code{m} is only meaningful
+for P-splines, i.e., \code{bs = "ps"}, and controls the degree of the B-spline basis functions and
+the order of the difference penalty. E.g., a B-spline of degree 3 with a 2nd order difference
+penalty is set with \code{s(mbmi, bs = "ps", m = c(2, 2))} (note that argument \code{m} is slightly different than argument \code{degree} in function \fct{sx} using P-splines, since \code{m[1]}
+specifies the order of the spline, see also the manual of \fct{s}). Argument \code{by} is used in
+the same way as for \fct{sx}. The additional parameters that are specified by argument
+``\code{...}'' in function \fct{sx}, may be set in \fct{s} within argument \code{xt}, e.g., similar
+to the example in Section~\ref{sec:motivation}~and~\ref{subsec:addterms}, the boundary object
+\code{ZambiaBnd} is supplied with \code{s(district, xt = list(map = ZambiaBnd))}.
 
 
 \end{appendix}

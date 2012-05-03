@@ -7,7 +7,7 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
     "rw1", "rw2",
     "season",
     "ps", "psplinerw1", "psplinerw2", "pspline",
-    "te", "tensor", "pspline2dimrw2",
+    "te", "pspline2dimrw2",
     "kr", "kriging",
     "gk", "geokriging",
     "gs", "geospline",
@@ -72,13 +72,19 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
           m <- c(m, 2L)
         if(is.null(xt$order) && length(m) < 2L)
           m <- c(m, 1L)
+        if(bs %in% c("ps", "psplinerw1", "psplinerw2", "pspline", "te", "pspline2dimrw2"))
+          m[1L] <- m[1L] + 1L
         if(!is.null(xt$nrknots))
           k <- xt$nrknots + m[1L] - 1L
         else {
           if(bs %in% c("ps", "psplinerw1", "psplinerw2", "pspline"))
             k <- 20L + m[1L] - 1L
-          else
-            k <- 20L + m[1L] - 1L
+          else {
+            if(bs %in% c("te", "pspline2dimrw2"))
+              k <- 5L + m[1L] - 1L
+            else
+              k <- 20L + m[1L] - 1L
+          }
         } 
         m[1L] <- m[1L] - 2L
       }
