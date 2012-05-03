@@ -1719,9 +1719,9 @@ P-splines, the simple call
 <<appendix-s, echo=TRUE, eval=TRUE>>=
 bayesx.construct(s(mbmi, bs = "ps"))
 @
-produces a P-spline term of basis dimension 10 constructed of 8 inner knots and degree 3 B-spline
-basis functions. To generate a \pkg{BayesX} term with the same base setting as provided from
-function \fct{sx}, the user would need to specify argument \code{k} additionally with
+produces a P-spline term with 10 degree 3 B-spline basis functions constructed from 8 inner knots.
+To generate a \pkg{BayesX} term with the same base setting as provided from function \fct{sx}, the
+user would need to specify argument \code{k} additionally with
 <<appendix-s, echo=TRUE, eval=TRUE>>=
 bayesx.construct(s(mbmi, bs = "ps", k = 22))
 @
