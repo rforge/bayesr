@@ -56,8 +56,7 @@ particular more complex response types and alternative inferential procedures su
   Universit\"at Innsbruck\\
   Universit\"atsstr.~15\\
   6020 Innsbruck, Austria\\
-  E-mail: \email{Nikolaus.Umlauf@uibk.ac.at},\\
-  \phantom{E-mail: }\email{Stefan.Lang@uibk.ac.at},\\
+  E-mail: \email{Nikolaus.Umlauf@uibk.ac.at}, \email{Stefan.Lang@uibk.ac.at},\\
   \phantom{E-mail: }\email{Achim.Zeileis@R-project.org}\\
   URL: \url{http://eeecon.uibk.ac.at/~umlauf/},\\
   \phantom{URL: }\url{http://www.uibk.ac.at/statistics/personal/lang/},\\
@@ -68,8 +67,7 @@ particular more complex response types and alternative inferential procedures su
   Georg-August-Universit\"at G\"ottingen\\
   Platz der G\"ottinger Sieben 5 (MZG)\\
   37073 G\"ottingen, Germany \\
-  E-mail: \email{tkneib@uni-goettingen.de}\\
-  \phantom{E-mail: }\email{dadler@uni-goettingen.de},\\
+  E-mail: \email{tkneib@uni-goettingen.de}, \email{dadler@uni-goettingen.de}\\
   URL: \url{http://www.uni-goettingen.de/en/264255.html},\\
   \phantom{URL: }\url{http://neoscientists.org/~dadler/}\\
 }
@@ -150,7 +148,8 @@ regression models before Section~\ref{sec:implementation} describes the implemen
 provided by \pkg{R2BayesX}. In Section~\ref{sec:illustrations}, the versatility of \pkg{BayesX}
 and the flexibility of the \pkg{R2BayesX} interface are further illustrated with
 an extended analyses of the childhood malnutrition data and a dataset on forest health in Germany.
-
+Section~\ref{sec:conclusion} concludes the paper and further technical details are provided
+in Appendices~\ref{appendix:BayesXsrc}, \ref{appendix:plotting}, and \ref{appendix:sx}.
 
 \section{Motivating example} \label{sec:motivation}
 
@@ -489,7 +488,7 @@ some practical applications.
 \subsection[Calling BayesX from R]{Calling \pkg{BayesX} from \proglang{R}}
 \label{subsec:processing}
 
-\hypertarget{bayesx}{The} main model-fitting function in the package \pkg{R2BayesX} is called
+The main model-fitting function in the package \pkg{R2BayesX} is called
 \fct{bayesx}. The arguments of \fct{bayesx} are
 \begin{Code}
   bayesx(formula, data, weights = NULL, subset = NULL, offset = NULL,
@@ -813,7 +812,7 @@ independently. This could be useful for two reasons: First, users may want to us
 existing \pkg{BayesX} program files, and second, there might be a need for automated
 importing of previously generated \pkg{BayesX} output files into \proglang{R} for further analysis.
 
-\hypertarget{run.bayesx}{Function} \fct{run.bayesx}, included in package \pkg{BayesXsrc}, is used to
+Function \fct{run.bayesx}, included in package \pkg{BayesXsrc}, is used to
 run an arbitrary \pkg{BayesX} program
 file. The arguments of \fct{run.bayesx} are
 \begin{Code}
@@ -826,7 +825,7 @@ arguments may be passed to function \fct{system}, which calls the \pkg{BayesX} b
 ``\code{...}'' argument. The function returns a list including the log-file returned by
 \pkg{BayesX} as well as information on the total runtime.
 
-\hypertarget{read.bayesx.output}{Model} output files are imported using function
+Model output files are imported using function
 \begin{Code}
   read.bayesx.output(dir, model.name = NULL)
 \end{Code}
@@ -1450,6 +1449,7 @@ In summary, the results identify a strong influence of the spatial effect on the
 fit, indicating that a clear splitting of location-specific covariates and the spatial effect is
 hardly possible in this example.
 
+\pagebreak %% FIXME hard-coded formatting
 
 \subsection{Childhood malnutrition in Zambia: Analysis with STEP} \label{subsec:zambia-step}
 
@@ -1570,7 +1570,7 @@ and Uwe Ligges for sharing his expertise on compiling \pkg{BayesXsrc} package fo
 
 \pkg{BayesX} was originally developed under the Borland \proglang{C++} compiler and
 is distributed as a Windows application with a \proglang{Java}-based user interface.
-Since version~2.0, it is also offers a command line version
+Since version~2.0, it also offers a command line version
 comprising the interpreter and modules for computations. The sources have
 been modified to be compliant with the GNU Compiler Collection (GCC), and the
 software was ported to run on Linux, Mac OS~X, Windows and several BSDs.
@@ -1697,10 +1697,39 @@ options please see documentation of function \fct{plot.bayesx}, \fct{plot2d}, \f
 
 \section{Smooth term constructor functions} \label{appendix:sx}
 
-As mentioned in Section~\ref{sec:modelspecs}, the model term constructor function \fct{sx} basically
-calls \pkg{mgcv}'s constructor function \fct{s} in the end. The output returned from \fct{s} is then
-further processed by the generic function \fct{bayesx.construct} to create \pkg{BayesX}
-interpretable commands. Hence, users may optionally call the constructor function \fct{s} directly.
+The main model term constructor function in \pkg{R2BayesX} is \fct{sx} (see also 
+Section~\ref{sec:modelspecs}) which is simply a front-end to \pkg{mgcv}'s smooth
+term constructor function \fct{s} with \pkg{BayesX}-specific argument names and
+corresponding defaults. Due to this setup, \fct{s} (instead of \fct{sx}) can also
+be used directly in \fct{bayesx} model calls, facilitating specification of models
+in a way familiar to \pkg{mgcv} users. However, note that some arguments are named/defined
+somewhat differently in \pkg{mgcv} and \pkg{BayesX}; and due to the usage of
+different estimation methods not all settings that work well in one package necessarily
+work well in the other, too. 
+
+The smooth term construction typically proceeds in the following three steps:
+\begin{enumerate}
+  \item \fct{sx} is called by the user in a formula. It takes \pkg{BayesX}-specific
+        argument/option names and corresponding defaults, and maps them to argument
+	names/values consistent with \fct{s} from \pkg{mgcv}.
+  \item \fct{s} is called by \fct{sx}, creating an object of class \class{xx.smooth.spec}
+        where \code{"xx"} is the name of the basis type \code{bs} specified.
+  \item \fct{bayesx.construct} is called when the formula is parsed. If a method
+        for objects of class \class{xx.smooth.spec} exists, this maps the
+        \pkg{mgcv}-style arguments back to \pkg{BayesX}-style arguments, and
+	subsequently creates a character string with the corresponding
+	\pkg{BayesX}-interpretable command.
+\end{enumerate}
+Although this entails mapping of arguments from \pkg{BayesX} style to \pkg{mgcv} style
+in Step~1 and back again in Step~3, this is worth the effort for two reasons:
+(a)~\pkg{R2BayesX} does not have to reinvent a mechanism for storing information about
+smooth terms but simply leverages the \pkg{mgcv} system. (b)~Expert users can skip
+Step~1 above and directly supply \fct{s} calls in \fct{bayesx} model formulas.
+
+\fixme{I have rewritten the section up to this point but did not modify the subsequent
+text. My feeling is that a table explaining how arguments are mapped would still be useful
+in addition to the illustration.}
+
 The usage of \fct{s} in \pkg{R2BayesX} is in principle similar to package \pkg{mgcv}. However, the
 applicable arguments are limited to arguments corresponding to those also available in \pkg{BayesX},
 i.e.,
