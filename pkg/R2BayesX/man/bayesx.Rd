@@ -27,7 +27,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
     \code{environment(formula)}: typically the environment from which \code{bayesx} is called. 
     Argument \code{data} may also be a character string defining the directory the data is stored, 
     where the first row in the data set must contain the variable names and columns should be tab
-    separated. Using this option will avoid loading the complete data into \R, only the BayesX
+    separated. Using this option will avoid loading the complete data into \R, only the \pkg{BayesX}
     output files will be imported, which might be helpful using large datasets.}
   \item{weights}{prior weights on the data.}
   \item{subset}{an optional vector specifying a subset of observations to be used in the fitting 
@@ -50,13 +50,13 @@ bayesx(formula, data, weights = NULL, subset = NULL,
   \bold{Full Bayesian inference via MCMC}: 
   A fully Bayesian interpretation of structured additive regression models is obtained by specifying 
   prior distributions for all unknown parameters. Estimation can be facilitated using Markov chain 
-  Monte Carlo simulation techniques. BayesX provides numerically efficient implementations of MCMC 
+  Monte Carlo simulation techniques. \pkg{BayesX} provides numerically efficient implementations of MCMC 
   schemes for structured additive regression models. Suitable proposal densities have been developed 
   to obtain rapidly mixing, well-behaved sampling schemes without the need for manual tuning. 
 
   \bold{Inference via a mixed model representation}:
-  The other concept used for estimation is based on mixed model methodology. Within BayesX this 
-  concept has been extended to structured additive regression models and several types of 
+  The other concept used for estimation is based on mixed model methodology. Within \pkg{BayesX}
+  this concept has been extended to structured additive regression models and several types of 
   non-standard regression situations. The general idea is to take advantage of the close connection 
   between penalty concepts and corresponding random effects distributions. The smoothing parameters 
   of the penalties then transform to variance components in the random effects (mixed) model. While 
@@ -71,7 +71,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
   frequentist perspective. 
 
   \bold{Penalized likelihood including variable selection}:
-  As a third alternative BayesX provides a penalized least squares (respectively penalized 
+  As a third alternative \pkg{BayesX} provides a penalized least squares (respectively penalized 
   likelihood) approach for estimating structured additive regression models. In addition, a powerful 
   variable and model selection tool is included. Model choice and estimation of the parameters is 
   done simultaneously. The algorithms are able to
@@ -92,12 +92,12 @@ bayesx(formula, data, weights = NULL, subset = NULL,
   by argument \code{method} of function \code{\link{bayesx.control}}. Options are \code{"MCMC"}, 
   \code{"REML"} and \code{"STEP"}.
   
-  The wrapper function \code{bayesx} basically starts by setting up the necessary BayesX program 
-  file using function \code{\link{bayesx.construct}}, \code{\link{parse.bayesx.input}} and 
+  The wrapper function \code{bayesx} basically starts by setting up the necessary \pkg{BayesX}
+  program file using function \code{\link{bayesx.construct}}, \code{\link{parse.bayesx.input}} and 
   \code{\link{write.bayesx.input}}. Afterwards the generated program file is send to the 
   command-line binary executable version of \pkg{BayesX} with \code{\link[BayesXsrc]{run.bayesx}}.
   As a last step, function \code{\link{read.bayesx.output}} will read the estimated model object
-  returned from BayesX back into \R.
+  returned from \pkg{BayesX} back into \R.
   
   For estimation of STAR models, function \code{bayesx} uses formula syntax as provided in package 
   \code{\link[mgcv]{mgcv}} (see \code{\link[mgcv]{formula.gam}}), i.e., models may be specified using
@@ -139,7 +139,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 \references{
   For methodological and reference details see:
   
-  Belitz C, Brezger A, Kneib T, Lang S (2011). BayesX - Software for Bayesian Inference in 
+  Belitz C, Brezger A, Kneib T, Lang S (2011). \pkg{BayesX} - Software for Bayesian Inference in 
     Structured Additive Regression Models. Version 2.0.1. 
     URL \url{http://www.BayesX.org}.
 
@@ -147,7 +147,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
     structured additive regression models. \emph{Computational Statistics \& Data Analysis}, 
     \bold{53}, 61--81.
 
-  Brezger A, Kneib T, Lang S (2005). BayesX: Analyzing Bayesian Structured Additive Regression 
+  Brezger A, Kneib T, Lang S (2005). \pkg{BayesX}: Analyzing Bayesian Structured Additive Regression 
     Models. \emph{Journal of Statistical Software}, \bold{14}(11), 1--22. 
     URL \url{http://www.jstatsoft.org/v14/i11/}.
 

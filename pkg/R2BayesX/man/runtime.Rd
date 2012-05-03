@@ -7,7 +7,7 @@
 }
 
 \description{
-  Function to extract running times of the BayesX binary.
+  Function to extract running times of the \pkg{BayesX} binary.
 }
  
 \usage{
@@ -21,7 +21,7 @@ bayesx_runtime(x, model = 1L)
 }
 
 \value{
-  The runtime of the BayesX binary returned form \code{\link[base]{system.time}}.
+  The runtime of the \pkg{BayesX} binary returned form \code{\link[base]{system.time}}.
 }
 
 \author{

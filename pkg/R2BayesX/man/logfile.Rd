@@ -7,7 +7,7 @@
 }
 
 \description{
-  Function to show the internal BayesX log-files.
+  Function to show the internal \pkg{BayesX} log-files.
 }
  
 \usage{
@@ -21,7 +21,7 @@ bayesx_logfile(x, model = 1L)
 }
 
 \value{
-  The log-file returned from BayesX.
+  The log-file returned from \pkg{BayesX}.
 }
 
 \author{

@@ -6,7 +6,7 @@
 }
 
 \description{
-  This function automatically reads in BayesX estimation output which is stored in an output 
+  This function automatically reads in \pkg{BayesX} estimation output which is stored in an output 
   directory.
 }
 
@@ -15,7 +15,7 @@ read.bayesx.output(dir, model.name = NULL)
 }
 
 \arguments{
-  \item{dir}{a character string, specifies the directory file where BayesX output is stored.}
+  \item{dir}{a character string, specifies the directory file where \pkg{BayesX} output is stored.}
   \item{model.name}{a character string, specifies the base name of the model that should be read in,
     also see the examples. If not supplied \code{read.bayesx.output} tries to read in all existing
     model outputs in \code{dir}, every model is then stored as one element in the output 

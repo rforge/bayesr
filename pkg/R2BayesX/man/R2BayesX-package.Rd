@@ -2,6 +2,7 @@
 \alias{R2BayesX-package}
 \alias{R2BayesX}
 \alias{r2bayesx}
+\alias{r2bayesx-package}
 \docType{package}
  
 \title{
@@ -9,11 +10,11 @@
 }
 
 \description{
-  This package interfaces the BayesX (\url{http://www.BayesX.org}) command-line binary from \R. The
-  main model fitting function is called \code{\link{bayesx}}. 
+  This package interfaces the \pkg{BayesX} (\url{http://www.BayesX.org}) command-line binary from
+  \R. The main model fitting function is called \code{\link{bayesx}}. 
 
   Before STAR models may be estimated, the command-line version of \pkg{BayesX} needs to be
-  installed, which is done by installing the source code package \pkg{BayesXsrc}. Please see
+  installed, which is done by installing the \R source code package \pkg{BayesXsrc}. Please see
   function \code{\link{bayesx}} and \code{\link{bayesx.control}} for more details on model fitting\
   and controlling.
 
@@ -27,9 +28,9 @@
   \code{\link[stats]{AIC}}, \code{\link[stats]{BIC}} etc., please see the examples of the help 
   sites.
 
-  In addition, it is possible to run arbitrary BayesX program files using function 
-  \code{\link[BayesXsrc]{run.bayesx}}. BayesX output files that are stored in a directory may be
-  read into \R calling function \code{\link{read.bayesx.output}}.
+  In addition, it is possible to run arbitrary \pkg{BayesX} program files using function 
+  \code{\link[BayesXsrc]{run.bayesx}}. \pkg{BayesX} output files that are stored in a directory may
+  be read into \R calling function \code{\link{read.bayesx.output}}.
 }
 
 \author{

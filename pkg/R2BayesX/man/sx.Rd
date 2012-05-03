@@ -84,7 +84,7 @@ sx(x, z = NULL, bs = "ps", by = NA, ...)
 
 \note{
   Some care has to be taken with the identifiability of varying coefficients terms. The standard in
-  BayesX is to center nonlinear main effects terms around zero whereas varying coefficient terms are
+  \pkg{BayesX} is to center nonlinear main effects terms around zero whereas varying coefficient terms are
   not centered. This makes sense since main effects nonlinear terms are not identifiable and varying
   coefficients terms are usually identifiable. However, there are situations where a varying
   coefficients term is not identifiable. Then the term must be centered. Since centering is not

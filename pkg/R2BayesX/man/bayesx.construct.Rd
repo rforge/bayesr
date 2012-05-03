@@ -24,7 +24,7 @@
 
 \description{
   The function \code{bayesx.construct} is used to provide a flexible framework to implement 
-  new model term objects in \code{\link{bayesx}} within the BayesX syntax. 
+  new model term objects in \code{\link{bayesx}} within the \pkg{BayesX} syntax. 
 }
 
 \usage{

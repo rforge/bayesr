@@ -7,7 +7,7 @@
 }
 
 \description{
-  Function to show the internal BayesX program-files.
+  Function to show the internal \pkg{BayesX} program-files.
 }
  
 \usage{
@@ -21,7 +21,7 @@ bayesx_prgfile(x, model = 1L)
 }
 
 \value{
-  The program file used for estimation with BayesX.
+  The program file used for estimation with \pkg{BayesX}.
 }
 
 \author{
