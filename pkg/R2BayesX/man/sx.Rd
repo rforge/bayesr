@@ -102,7 +102,7 @@ sx(x, z = NULL, bs = "ps", by = NA, ...)
 }
 
 \author{
-  Thomas Kneib, Stefan Lang, Nikolaus Umlauf, Achim Zeileis.
+  Nikolaus Umlauf, Thomas Kneib, Stefan Lang, Achim Zeileis.
 }
 
 \seealso{

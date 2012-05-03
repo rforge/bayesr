@@ -81,7 +81,7 @@ colorlegend (color = NULL, ncol = NULL, x = NULL,
 }
 
 \author{
-  Thomas Kneib, Stefan Lang, Nikolaus Umlauf, Achim Zeileis.
+  Nikolaus Umlauf, Thomas Kneib, Stefan Lang, Achim Zeileis.
 }
 
 \examples{

@@ -73,7 +73,7 @@ bayesx.term.options(bs = "ps", method = "MCMC")
 }
 
 \author{
-  Thomas Kneib, Stefan Lang, Nikolaus Umlauf, Achim Zeileis.
+  Nikolaus Umlauf, Thomas Kneib, Stefan Lang, Achim Zeileis.
 }
 
 \examples{

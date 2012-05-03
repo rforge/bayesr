@@ -25,7 +25,7 @@ bayesx_runtime(x, model = 1L)
 }
 
 \author{
-  Thomas Kneib, Stefan Lang, Nikolaus Umlauf, Achim Zeileis.
+  Nikolaus Umlauf, Thomas Kneib, Stefan Lang, Achim Zeileis.
 }
 
 \seealso{

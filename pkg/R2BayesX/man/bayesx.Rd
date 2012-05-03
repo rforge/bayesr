@@ -127,7 +127,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 }
 
 \author{
-  Thomas Kneib, Stefan Lang, Nikolaus Umlauf, Achim Zeileis.
+  Nikolaus Umlauf, Thomas Kneib, Stefan Lang, Achim Zeileis.
 }
 
 \section{WARNINGS}{
