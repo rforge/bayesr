@@ -719,7 +719,7 @@ or additional geographical information.
 \code{"season"} & Seasonal effect of a time scale. \\
 \code{"ps"}, \code{"psplinerw1"}, \code{"psplinerw2"} & P-spline with first or second order
                                                         difference penalty. \\
-\code{"te"}, \code{"tensor"}, \code{"pspline2dimrw1"} & Defines a two-dimensional P-spline based on the tensor
+\code{"te"}, \code{"pspline2dimrw1"} & Defines a two-dimensional P-spline based on the tensor
               product of one-dimensional P-splines with a two-dimensional first order random walk
               penalty for the parameters of the spline. \\
 \code{"kr"}, \code{"kriging"} & Kriging with stationary Gaussian random fields. \\ \hline
