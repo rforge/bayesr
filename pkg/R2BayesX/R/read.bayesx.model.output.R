@@ -190,6 +190,7 @@ function(dir, model.name)
     ## reordering and naming
     if(info %in% dir.files)
       rval$effects <- term.reorder(rval$effects, paste(dir, "/", info, sep = ""))
+    rval$effects <- delete.NULLs(rval$effects)
     if(any(duplicated(names.eff <- names(rval$effects)))) {
       for(k in names.eff) {
         if(sum(which <- names.eff == k) > 1L) {
@@ -204,7 +205,6 @@ function(dir, model.name)
       }
       names(rval$effects) <- names.eff
     }
-    rval$effects <- delete.NULLs(rval$effects)
 
     ## search for additional info
     rval$model.fit <- smi(paste(dir, "/", info, sep = ""), rval$model.fit)

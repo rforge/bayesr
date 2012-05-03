@@ -9,6 +9,10 @@ function(file, terms, data, object = NULL, contrasts.arg = NULL,
   reclass <- function(x) {
     if(x == "ps.smooth.spec")
       x <- "sm.bayesx"
+    if(x == "rw2.smooth.spec")
+      x <- "sm.bayesx"
+    if(x == "rw1.smooth.spec")
+      x <- "sm.bayesx"
     if(x == "bl.smooth.spec")
       x <- "sm.bayesx"
     if(x == "cs.smooth.spec")

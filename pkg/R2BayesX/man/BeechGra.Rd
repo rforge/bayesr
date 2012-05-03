@@ -4,7 +4,7 @@
 \title{Beech Neighborhood Information}
 
 \description{
-  This database produces graph file including neighborhood information of the beech trees around 
+  This database produces a graph file including neighborhood information of the beech trees around 
   Rothenbuch, Germany.
 }
 

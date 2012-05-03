@@ -2,36 +2,9 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-
-     set.seed(333)
-     n <- 1000
-     
-     ## 1st stage
-     N <- 100
-     dat1 <- data.frame(id = sort(rep(1:N, n/N)), 
-       x1 = runif(n, -3, 3))
-     dat1$re <- with(dat1, rnorm(N, sd = 0.6)[id])
-     
-     ## 2nd stage
-     dat2 <- data.frame(id = unique(dat1$id), 
-       x2 = runif(N, -3, 3))
-     
-     ## response
-     dat1$y <- with(dat1, 1.5 + sin(x1) + re + 
-       cos(dat2$x2)[id] + rnorm(n, sd = 0.6))
-     
-     ## estimate hierarchical model
-     ## with the intercept in the 
-     ## 2nd stage
-     system.time(b1 <- bayesx(y ~ -1 + sx(x1) + 
-       sx(id ~ 1 + sx(x2), bs = "re", data = dat2), method = "HMCMC",
-       data = dat1, dir.rm = FALSE))
-     summary(b1)
-     
-     ## non hierarchical
-     dat1$x2 <- with(dat1, dat2$x2[id])
-     system.time(b2 <- bayesx(y ~ sx(x1) + sx(x2) + r(id),
-       method = "MCMC", data = dat1))
+b <- bayesx(y ~ sx(x1, bs = "rw2") + 
+  sx(id, bs = "mrf", map = MunichBnd) +
+  sx(id, bs = "re"), method = "MCMC", data = dat)
 
 
 

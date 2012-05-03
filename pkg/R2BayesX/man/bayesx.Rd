@@ -90,7 +90,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 
   Within the model fitting function \code{bayesx}, the different inferential concepts may be chosen 
   by argument \code{method} of function \code{\link{bayesx.control}}. Options are \code{"MCMC"}, 
-  \code{"HMCMC"} (hierarchical MCMC), \code{"REML"} and \code{"STEP"}.
+  \code{"REML"} and \code{"STEP"}.
   
   The wrapper function \code{bayesx} basically starts by setting up the necessary BayesX program 
   file using function \code{\link{bayesx.construct}}, \code{\link{parse.bayesx.input}} and 
@@ -102,10 +102,9 @@ bayesx(formula, data, weights = NULL, subset = NULL,
   For estimation of STAR models, function \code{bayesx} uses formula syntax as provided in package 
   \code{\link[mgcv]{mgcv}} (see \code{\link[mgcv]{formula.gam}}), i.e., models may be specified using
   the \code{\link{R2BayesX}} main model term constructor functions \code{\link{sx}} or the
-  \code{\link[mgcv]{mgcv}} constructor functions \code{\link[mgcv]{s}} and
-  \code{\link[mgcv]{te}}. For a detailed description of the model formula syntax used within
-  \code{bayesx} models see also \code{\link{bayesx.construct}} and
-  \code{\link{bayesx.term.options}}.
+  \code{\link[mgcv]{mgcv}} constructor functions \code{\link[mgcv]{s}}. For a detailed description
+  of the model formula syntax used within \code{bayesx} models see also
+  \code{\link{bayesx.construct}} and \code{\link{bayesx.term.options}}.
 
   After the \pkg{BayesX} binary has successfully finished processing an object of class \code{"bayesx"} is
   returned, wherefore a set of standard extractor functions and methods is available, including 
@@ -121,10 +120,10 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 }
 
 \note{
-  If a model is specified with a structured and an unstructured spatial effect, e.g. the model 
-  formula is something like \code{y ~ sx(id, bs = "mrf", map = MapBnd) + r(id)}, the model output 
-  contains of one additional total spatial effect, named with \code{"sx(id):total"}. Also see the 
-  last example.
+  If a model is specified with a structured and an unstructured spatial effect, e.g.\ the model 
+  formula is something like \code{y ~ sx(id, bs = "mrf", map = MapBnd) + sx(id, bs = "re")}, the
+  model output contains of one additional total spatial effect, named with \code{"sx(id):total"}.
+  Also see the last example.
 }
 
 \author{
@@ -132,9 +131,9 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 }
 
 \section{WARNINGS}{
-  For geographical effects, note that BayesX may crash if the region identification covariate is
-  a \code{\link{factor}}, it is recommended to code these variables as \code{\link{integer}}, please
-  see the example below.
+  For geographical effects, note that \pkg{BayesX} may crash if the region identification covariate
+  is a \code{\link{factor}}, it is recommended to code these variables as \code{\link{integer}},
+  please see the example below.
 }
 
 \references{
@@ -164,8 +163,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
   \code{\link[BayesXsrc]{run.bayesx}}, \code{\link{read.bayesx.output}},
   \code{\link{summary.bayesx}}, \code{\link{plot.bayesx}},
   \code{\link{fitted.bayesx}}, \code{\link{bayesx.construct}}, \code{\link{bayesx.term.options}},
-  \code{\link{sx}}, \code{\link[mgcv]{formula.gam}}, \code{\link[mgcv]{s}}, 
-  \code{\link[mgcv]{te}}.
+  \code{\link{sx}}, \code{\link[mgcv]{formula.gam}}, \code{\link[mgcv]{s}}.
 }
 
 \examples{
@@ -363,15 +361,15 @@ dat$y <- with(dat, 1.5 + sin(x1) + sp + re + rnorm(n, sd = 0.6))
 ## estimate model
 b <- bayesx(y ~ sx(x1) + 
   sx(id, bs = "mrf", map = MunichBnd) +
-  r(id), method = "MCMC", data = dat)
+  sx(id, bs = "re"), method = "MCMC", data = dat)
 summary(b)
 
 ## plot all spatial effects
 op <- par(no.readonly = TRUE)
 par(mfrow = c(1, 3))
-plot(b, term = "sx(id)", map = MunichBnd, 
+plot(b, term = "sx(id):mrf", map = MunichBnd, 
   main = "Structured spatial effect")
-plot(b, term = "r(id)", map = MunichBnd, 
+plot(b, term = "sx(id):re", map = MunichBnd, 
   main = "Unstructured spatial effect")
 plot(b, term = "sx(id):total", map = MunichBnd, 
   main = "Total spatial effect", digits = 4)

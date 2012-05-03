@@ -181,7 +181,7 @@ bayesx.control(model.name = "bayesx.estim",
 }
 
 \references{
-  For methodological and reference details see the BayesX manuals available at:
+  For methodological and reference details see the \pkg{BayesX} manuals available at:
   
   \url{http://www.BayesX.org}.
 
