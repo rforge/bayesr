@@ -24,7 +24,7 @@ function(object, dir, prg, data)
   nrknots <- object$bs.dim - object$p.order[1L] + 1L
   if(nrknots < 5L) {
     warning("number of inner knots smaller than 5 not supported by BayesX, set to 5!",
-      .call = FALSE)
+      call. = FALSE)
     nrknots <- 5L
   }
   termo <- object$term
@@ -34,7 +34,7 @@ function(object, dir, prg, data)
   term <- paste(do.xt(term, object, NULL), ")", sep = "")
   if(object$by != "NA")
     term <- make_by(term, object, data)
-
+  
   return(term)
 }
 

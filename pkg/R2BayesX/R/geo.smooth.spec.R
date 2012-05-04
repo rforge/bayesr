@@ -37,6 +37,8 @@ function(object, dir, prg, data, type)
     class(map) <- "bnd"
   counter <- NULL
   ok <- TRUE
+  if(length(map) < 2L && is.null(map[[1L]]))
+    stop("map is missing!")
   if(!missing(dir)) {
     files <- list.files(dir)
     while(ok) {
@@ -61,22 +63,25 @@ function(object, dir, prg, data, type)
     cmd <- paste(map.name, ".infile using ", mapfile, "\n", sep = "")
     cat(cmd, file = prgfile, append = TRUE)
   }	  
-  term <- object$term
+  term <- paste(object$term[2L:1L], collapse = "*")
   if(length(object$p.order) == 1L) 
     m <- rep(object$p.order, 2L)
   else 
     m <- object$p.order
   m[is.na(m)] <- 2L
   object$p.order <- m
-  object$p.order[1L] <- object$p.order[1L] + 2L
+  object$p.order[1L] <- object$p.order[1L] + 1L
 #  if(object$p.order[2L] > 1L) {
 #    object$p.order[2L] <- 1L
 #    if(type == "geospline")
 #      warning("only random walks of order 1 supported for geosplines, set to default!")
 #  }
-  if(object$bs.dim < 0L)
-    object$bs.dim <- as.integer(length(map)/2)
-  else {
+  if(object$bs.dim < 0L) {
+    if(type == "geokriging")
+      object$bs.dim <- as.integer(length(map) / 2)
+    else
+      object$bs.dim <- 7L
+  } else {
     if(object$bs.dim >= length(map))
       stop("basis dimension is larger than existing polygons in bnd object!")
   }

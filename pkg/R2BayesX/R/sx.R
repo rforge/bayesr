@@ -65,28 +65,20 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
         if(length(m) < 2L && (bs %in% c("gs", "geospline")))
           m <- c(3L, 1L)
         if(length(m) < 2L && is.na(m))
-          m <- c(3L, 2L)
-        if(length(m) < 2L && is.na(m))
-          m <- c(3L, 1L)    
+          m <- c(3L, 2L)   
         if(is.null(xt$order) && length(m) < 2L)
           m <- c(m, 2L)
         if(is.null(xt$order) && length(m) < 2L)
           m <- c(m, 1L)
-        if(bs %in% c("ps", "psplinerw1", "psplinerw2", "pspline", "te", "pspline2dimrw2"))
-          m[1L] <- m[1L] + 1L
+        m[1L] <- m[1L] - 1L
         if(!is.null(xt$nrknots))
-          k <- xt$nrknots + m[1L] - 1L
+          k <- xt$nrknots + m[1L]
         else {
           if(bs %in% c("ps", "psplinerw1", "psplinerw2", "pspline"))
-            k <- 20L + m[1L] - 1L
-          else {
-            if(bs %in% c("te", "pspline2dimrw2"))
-              k <- 5L + m[1L] - 1L
-            else
-              k <- 20L + m[1L] - 1L
-          }
-        } 
-        m[1L] <- m[1L] - 2L
+            k <- 20L + m[1L]
+          else
+            k <- 5L + m[1L]
+        }
       }
       if(bs %in% c("kr", "gk", "kriging", "geokriging")) {
         m <- c(1L, 1L)
