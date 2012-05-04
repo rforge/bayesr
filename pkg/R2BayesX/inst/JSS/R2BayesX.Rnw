@@ -1764,7 +1764,25 @@ specifies the order of the spline, see also the manual of \fct{s}). Argument \co
 the same way as for \fct{sx}. The additional parameters that are specified by argument
 ``\code{...}'' in function \fct{sx}, may be set in \fct{s} within argument \code{xt}, e.g., similar
 to the example in Section~\ref{sec:motivation}~and~\ref{subsec:addterms}, the boundary object
-\code{ZambiaBnd} is supplied with \code{s(district, xt = list(map = ZambiaBnd))}.
+\code{ZambiaBnd} is supplied with \code{s(district, bs = "mrf", xt = list(map = ZambiaBnd))}.
+
+\begin{table}[b!]
+\centering
+\begin{tabular}{lll|lp{1.5cm}}
+\hline
+                      & \multicolumn{2}{c}{\fct{sx}} & \multicolumn{2}{c}{\fct{s} / \fct{te}} \\
+\code{bs}             & Argument       & Default   & Equivalent                                     & Default \\ \hline
+\code{"ps"}           & \code{nrknots} & \code{20} & \code{k = nrknots + degree - 1}                & \code{10} \\
+                      & \code{degree}  & \code{3}  & \code{m[1] = degree - 1}                       & \code{2} \\
+                      & \code{order}   & \code{2}  & \code{m[2] = order}                            & \code{2} \\ \hline
+\code{"te"}, \fct{te} & \code{nrknots} & \code{7}  & \code{k = nrknots + degree - 1}                & \code{5} \\
+                      & \code{degree}  & \code{3}  & \code{m[1] = degree - 1} (if \code{bs = "ps"}) & \code{2} \\
+                      & \code{order}   & \code{2}  & \code{m[2] = order}                            & \code{2} \\ \hline
+\code{"mrf"}          & \code{map}     & a \class{bnd} object & \code{xt = list(map = MapBnd)} & a list of \,\,\,\, polygons \\ \hline
+\end{tabular}
+\caption{\label{tab:sx2s} Argument mapping and default specifications of
+  functions \fct{sx} and \fct{s} / \fct{te}.}
+\end{table}
 
 
 \end{appendix}
