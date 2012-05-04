@@ -84,7 +84,7 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
         m <- c(1L, 1L)
         if(!is.null(xt$nrknots)) {
           k <- xt$nrknots
-        } else k <- 20
+        } else k <- -1L
       }
       if(!is.null(xt$map))
         xt$map.name <- as.character(call$map)

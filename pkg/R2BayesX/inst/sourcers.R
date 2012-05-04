@@ -1,7 +1,7 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-bayesx.construct(s(x, z, bs = "gs", xt = list(map = ZambiaBnd)))
+bayesx.construct(s(x, z, bs = "gk", xt = list(map = MunichBnd)))
 
 n <- 5000
 m <- 20
