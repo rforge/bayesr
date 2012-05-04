@@ -8,7 +8,7 @@ function(object, dir, prg, data)
   object$by <- by
   term <- bayesx.construct(object, dir, prg, data)
   term <- gsub("psplinerw2", "pspline2dimrw2", term)
-  term <- gsub("psplinerw2", "pspline2dimrw1", term)
+  term <- gsub("psplinerw1", "pspline2dimrw1", term)
 
   return(term)
 }

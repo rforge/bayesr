@@ -1726,10 +1726,6 @@ in Step~1 and back again in Step~3, this is worth the effort for two reasons:
 smooth terms but simply leverages the \pkg{mgcv} system. (b)~Expert users can skip
 Step~1 above and directly supply \fct{s} calls in \fct{bayesx} model formulas.
 
-\fixme{I have rewritten the section up to this point but did not modify the subsequent
-text. My feeling is that a table explaining how arguments are mapped would still be useful
-in addition to the illustration.}
-
 The usage of \fct{s} in \pkg{R2BayesX} is in principle similar to package \pkg{mgcv}. However, the
 applicable arguments are limited to arguments corresponding to those also available in \pkg{BayesX},
 i.e.,
@@ -1740,48 +1736,69 @@ Within \fct{s}, the list of covariates used for the model term is set with argum
 For instance, in the example of Section~\ref{sec:motivation}, the term for the body mass index of the
 mother may also be included in the model formula by \code{s(mbmi)}, a term with two covariates is
 specified e.g., with \code{s(mbmi, agechild)}.
-
-Note that the defaults of \fct{s}, as provided by \pkg{mgcv}, are different from the default values
+As already mentioned above, the defaults in function \fct{s} are different from the default values
 resulting from \fct{sx} and would not correspond to a spline basis available, and/or suitable
 controlling arguments within \pkg{BayesX}. To give a more precise example using the defaults for
 P-splines, the simple call
-<<appendix-s, echo=TRUE, eval=TRUE>>=
+<<appendix-s1, echo=TRUE, eval=TRUE>>=
 bayesx.construct(s(mbmi, bs = "ps"))
 @
 produces a P-spline term with 10 degree 3 B-spline basis functions constructed from 8 inner knots.
-To generate a \pkg{BayesX} term with the same base setting as provided from function \fct{sx}, the
-user would need to specify argument \code{k} additionally with
-<<appendix-s, echo=TRUE, eval=TRUE>>=
+To generate a \pkg{BayesX} term with the same base setting as provided from function \fct{sx}
+<<appendix-s2, echo=TRUE, eval=TRUE>>=
+bayesx.construct(sx(mbmi, bs = "ps"))
+@
+the user would need to specify argument \code{k} additionally with
+<<appendix-s3, echo=TRUE, eval=TRUE>>=
 bayesx.construct(s(mbmi, bs = "ps", k = 22))
 @
 which controls the basis dimension used for the smooth.
-
 Setting argument \code{m} is only meaningful
 for P-splines, i.e., \code{bs = "ps"}, and controls the degree of the B-spline basis functions and
 the order of the difference penalty. E.g., a B-spline of degree 3 with a 2nd order difference
-penalty is set with \code{s(mbmi, bs = "ps", m = c(2, 2))} (note that argument \code{m} is slightly different than argument \code{degree} in function \fct{sx} using P-splines, since \code{m[1]}
-specifies the order of the spline, see also the manual of \fct{s}). Argument \code{by} is used in
-the same way as for \fct{sx}. The additional parameters that are specified by argument
+penalty is set with \code{s(mbmi, bs = "ps", m = c(2, 2))} (note that argument \code{m} is slightly
+different than argument \code{degree} in function \fct{sx} using P-splines, since \code{m[1]}
+specifies the order of the (P-)spline, see also the manual of \fct{s}). Argument \code{by} is used
+in the same way as for \fct{sx}, see Section~\ref{subsec:addterms}.
+The additional parameters that are specified by argument
 ``\code{...}'' in function \fct{sx}, may be set in \fct{s} within argument \code{xt}, e.g., similar
 to the example in Section~\ref{sec:motivation}~and~\ref{subsec:addterms}, the boundary object
-\code{ZambiaBnd} is supplied with \code{s(district, bs = "mrf", xt = list(map = ZambiaBnd))}.
+\code{ZambiaBnd} is supplied with
+<<appendix-mrf, echo=TRUE, eval=TRUE>>=
+bayesx.construct(s(district, bs = "mrf", xt = list(map = ZambiaBnd)))
+@
+Also note that the tensor product smooth specification in \pkg{mgcv} is different, since tensor
+smooths may be constructed from a number of different basis specifications and covariates within
+function \fct{te}, whereas in package \pkg{R2BayesX}, tensor smooths are currently only supported
+for bivariate P-spline marginal basis and are constructed, e.g., by
+<<appendix-te1, echo=TRUE, eval=TRUE>>=
+bayesx.construct(sx(mbmi, agechild, bs = "te"))
+@
+or using \pkg{mgcv}'s function \fct{te} calling
+<<appendix-te2, echo=TRUE, eval=TRUE>>=
+bayesx.construct(te(mbmi, agechild, bs = "ps"))
+@
+In Table~\ref{tab:sx2ste} all arguments that are mapped by function \fct{sx}, \fct{s} and \fct{te}
+are shown as well as their default specifications. The middle row of this table shows the defaults
+for the marginal basis of a tensor product smooth within \fct{sx} and \fct{te}, i.e., \code{k = 5}
+means that the marginal smooth has 5 basis functions and the resulting design matrix $5^2$.
 
-\begin{table}[b!]
+\begin{table}[h!]
 \centering
-\begin{tabular}{lll|lp{1.5cm}}
+\begin{tabular}{llp{1.2cm}|lp{1.5cm}}
 \hline
                       & \multicolumn{2}{c}{\fct{sx}} & \multicolumn{2}{c}{\fct{s} / \fct{te}} \\
 \code{bs}             & Argument       & Default   & Equivalent                                     & Default \\ \hline
 \code{"ps"}           & \code{nrknots} & \code{20} & \code{k = nrknots + degree - 1}                & \code{10} \\
                       & \code{degree}  & \code{3}  & \code{m[1] = degree - 1}                       & \code{2} \\
                       & \code{order}   & \code{2}  & \code{m[2] = order}                            & \code{2} \\ \hline
-\code{"te"}, \fct{te} & \code{nrknots} & \code{7}  & \code{k = nrknots + degree - 1}                & \code{5} \\
+\code{"te"}, \fct{te} & \code{nrknots} & \code{5}  & \code{k = nrknots + degree - 1}                & \code{5} \\
                       & \code{degree}  & \code{3}  & \code{m[1] = degree - 1} (if \code{bs = "ps"}) & \code{2} \\
                       & \code{order}   & \code{2}  & \code{m[2] = order}                            & \code{2} \\ \hline
 \code{"mrf"}          & \code{map}     & a \class{bnd} object & \code{xt = list(map = MapBnd)} & a list of \,\,\,\, polygons \\ \hline
 \end{tabular}
-\caption{\label{tab:sx2s} Argument mapping and default specifications of
-  functions \fct{sx} and \fct{s} / \fct{te}.}
+\caption{\label{tab:sx2ste} Argument mapping and default specifications of
+  functions \fct{sx} and \fct{s} and \fct{te}.}
 \end{table}
 
 
