@@ -7,8 +7,6 @@ Author@R: c(person(given = "Daniel", family = "Adler", role = c("aut", "cre"), e
         person(given = "Stefan", family = "Lang", role = "aut", email = "Stefan.Lang@uibk.ac.at"),
         person(given = "Nikolaus", family = "Umlauf", role = c("aut", "cre"), email = "Nikolaus.Umlauf@uibk.ac.at"),        
         person(given = "Achim", family = "Zeileis", role = "aut", email = "Achim.Zeileis@R-project.org"))
-Author: Daniel Adler [aut, cre], Thomas Kneib [aut], Stefan Lang [aut], Nikolaus Umlauf [aut], Achim Zeileis [aut]
-Maintainer: Daniel Adler <dadler@uni-goettingen.de>
 Description: BayesX performs Bayesian inference in structured additive regression (STAR) models.
 	The R package BayesXsrc provides the BayesX command line tool for easy installation.
 	A convenient R interface is provided in package R2BayesX.
