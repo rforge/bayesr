@@ -1,0 +1,45 @@
+citHeader("When using BayesXsrc in publications, please cite both the BayesXsrc interface and BayesX itself:")
+
+## R >= 2.8.0 passes package metadata to citation().
+if(!exists("meta") || is.null(meta)) meta <- packageDescription("BayesXsrc")
+year <- sub("-.*", "", meta$Date)
+note1 <- sprintf("R package version %s", meta$Version)
+note2 <- sprintf("Version %s", strsplit(meta$Version, "-", fixed = TRUE)[[1]][1])
+
+citEntry(entry = "Manual",
+         title = "{BayesXsrc}: {R} Package Distribution of the {BayesX} {C++} Sources",
+         author = personList(as.person("Daniel Adler"), 
+	                     as.person("Thomas Kneib"),
+                             as.person("Stefan Lang"),
+			     as.person("Nikolaus Umlauf"),
+			     as.person("Achim Zeileis")),
+         year = year,
+         note = note1,
+         url = "http://CRAN.R-project.org/package=BayesXsrc",
+
+         textVersion =
+         paste("Daniel Adler, Thomas Kneib, Stefan Lang, Nikolaus Umlauf, Achim Zeileis",
+   	       sprintf("(%s).", year),	 
+               "BayesXsrc: R Package Distribution of the BayesX C++ Sources.",
+	       paste(note1, ".", sep = ""),
+               "URL http://CRAN.R-project.org/package=BayesXsrc")
+)
+
+citEntry(entry = "Manual",
+         title = "{BayesX}: Software for {B}ayesian Inference in Structured Additive Regression Models",
+         author = personList(as.person("Christiane Belitz"), 
+	                     as.person("Andreas Brezger"),
+	                     as.person("Thomas Kneib"),
+                             as.person("Stefan Lang"),
+			     as.person("Nikolaus Umlauf")),
+         year = year,
+         note = note2,
+         url = "http://www.BayesX.org/",
+
+         textVersion =
+         paste("Christiane Belitz, Andreas Brezger, Thomas Kneib, Stefan Lang, Nikolaus Umlauf",
+   	       sprintf("(%s).", year),	 
+               "BayesX: Software for Bayesian Inference in Structured Additive Regression Models.",
+	       paste(note2, ".", sep = ""),
+               "URL http://www.BayesX.org/")
+)
