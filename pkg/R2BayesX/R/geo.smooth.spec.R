@@ -62,8 +62,8 @@ function(object, dir, prg, data, type)
     write.bnd(map = map, file = mapfile, replace = TRUE)
     cmd <- paste(map.name, ".infile using ", mapfile, "\n", sep = "")
     cat(cmd, file = prgfile, append = TRUE)
-  }	  
-  term <- paste(object$term[2L:1L], collapse = "*")
+  }
+  term <- if(length(object$term) > 2) paste(object$term[2L:1L], collapse = "*") else object$term
   if(length(object$p.order) == 1L) 
     m <- rep(object$p.order, 2L)
   else 

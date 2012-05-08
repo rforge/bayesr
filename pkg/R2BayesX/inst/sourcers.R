@@ -1,22 +1,27 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-bayesx.construct(s(x, z, bs = "gk", xt = list(map = MunichBnd)))
+bayesx.construct(sx(district, bs = "gk", map = ZambiaBnd, full = TRUE))
+
+
+
+
+bayesx.construct(s(z, bs = "gk", xt = list(map = MunichBnd)))
 
 n <- 5000
 m <- 20
 id <- rep(1:m, length.out = n)
 x <- runif(n, -3, 3)
-hcoef <- rnorm(m, sd = 0.6)
+re <- rnorm(m, sd = 0.6)
+y <- 1.5 + sin(x) * re[id] + rnorm(n, sd = 0.6)
 
-y <- 1.5 + sin(x) * hcoef[id] + rnorm(n, sd = 0.6)
-
-b <- bayesx(y ~ sx(x, bs = "rsps", by = id, xt = list(sum2 = 2)))
+b <- bayesx(y ~ sx(x, bs = "rsps", by = id, xt = list(sum2 = 2)), outfile = "~/tmp")
+summary(b)
 
 plot(b)
 
-hcoefhat <- fitted(b, term = "sx(id):x")[["Mean"]]
-plot(hcoefhat ~ hcoef)
+rehat <- fitted(b, term = "sx(id):x")[["Mean"]]
+plot(rehat ~ re)
 
 
 
