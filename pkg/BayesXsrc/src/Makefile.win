@@ -122,6 +122,7 @@ STRUCTADD_OBJS = \
 	bayesxsrc/structadd/design_pspline.o\
 	bayesxsrc/structadd/distr.o\
 	bayesxsrc/structadd/distr_categorical.o\
+	bayesxsrc/structadd/distr_categorical_mult.o\
 	bayesxsrc/structadd/distr_mixture.o\
 	bayesxsrc/structadd/mcmcsim.o\
 	bayesxsrc/structadd/model_parameters.o\
