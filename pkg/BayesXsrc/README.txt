@@ -12,16 +12,16 @@ R CMD INSTALL BayesXsrc
 Build Windows Multiarch
 -----------------------
 R CMD build BayesXsrc
-R CMD INSTALL --merge-multiarch --build bayesxsrc_0.1.tar.gz
+R CMD INSTALL --merge-multiarch --build BayesXsrc_2.1-0.tar.gz
 
 Build OS X Universal
 --------------------
 rm -rf /tmp/pkg
 mkdir /tmp/pkg
 mkdir -p builds/osx/universal
-R --arch=i386 CMD INSTALL -c -l /tmp/pkg bayesxsrc
-R --arch=x86_64 CMD INSTALL -c -l /tmp/pkg --libs-only bayesxsrc
-tar fcvz builds/osx/universal/bayesxsrc_0.1.tgz -C /tmp/pkg bayesxsrc
+R --arch=i386 CMD INSTALL -c -l /tmp/pkg BayesXsrc
+R --arch=x86_64 CMD INSTALL -c -l /tmp/pkg --libs-only BayesXsrc
+tar fcvz builds/osx/universal/BayesXsrc_2.1-0.tgz -C /tmp/pkg BayesXsrc
 rm -rf /tmp/pkg
 
 

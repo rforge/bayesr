@@ -1,2 +1,2 @@
-export(run.bayesx)
+export("run.bayesx")
 
