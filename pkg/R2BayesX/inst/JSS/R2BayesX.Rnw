@@ -1297,7 +1297,8 @@ fm1 <- bayesx(f, family = "cumlogit", method = "REML",
 @
 <<fit-forest-model-02, echo=FALSE, eval=FALSE>>=
 data("BeechBnd", package = "R2BayesX")
-fm2 <- update(fm1, . ~ . + sx(id, bs = "gs", map = BeechBnd, nrknots = 20))
+fm2 <- update(fm1, . ~ . +
+  sx(id, bs = "gs", map = BeechBnd, nrknots = 20))
 @
 <<cache-forest-model, echo=FALSE, eval=TRUE, results=hide>>=
 if(file.exists("forest-model.rda")) {
@@ -1349,20 +1350,21 @@ In particular, the effect of the covariate \code{age} on \code{defoliation} seem
 with low defoliation levels for both younger and older trees. Similarly, the effect of \code{elevation}
 is very non-monotonic with high defoliation for both low and high elevations. Finally, the
 extremely wiggly estimate of \code{inclination} is hardly interpretable. Therefore,
-\citet{R2BayesX:Goettlein+Pruscha:1996} extend the model by a spatial effect, which is modeled by a
+\citet{R2BayesX:Goettlein+Pruscha:1996} extend the model by a spatial effect, modeled by a
 two dimensional geospline term of the tree locations. The tree $x$- and $y$-coordinates are
 calculated by the centroid positions of tree polygons given by the boundary map file \code{BeechBnd}.
 We can update the  model by adding a \code{"gs"} effect:
 <<fit-forest-model-02-show, echo=TRUE, eval=FALSE>>=
 <<fit-forest-model-02>>
 @
-Note that argument \code{nrknots} is set to 20 for exact replication of the analysis. Taking a look
-at model information criteria
+Note that argument \code{nrknots} is set to 20 (default is 8) to obtain a sufficiently flexible
+geospline that replicates the analysis of \citet{R2BayesX:Fahrmeir+Kneib+Lang:2009}. The associated
+model information criteria are:
 <<summary-forest-model, echo=TRUE, eval=TRUE>>=
 BIC(fm1, fm2)
 GCV(fm1, fm2)
 @
-clearly indicates a better fit by modeling the spatial effect of tree locations. The summary
+This clearly indicates a better fit by modeling the spatial effect of tree locations. The summary
 statistics for both models gives:
 <<summary-forest-model>>=
 summary(fm1)
