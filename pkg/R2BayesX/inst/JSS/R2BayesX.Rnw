@@ -1297,7 +1297,7 @@ fm1 <- bayesx(f, family = "cumlogit", method = "REML",
 @
 <<fit-forest-model-02, echo=FALSE, eval=FALSE>>=
 data("BeechBnd", package = "R2BayesX")
-fm2 <- update(fm1, . ~ . + sx(id, bs = "gs", map = BeechBnd, knots = 20))
+fm2 <- update(fm1, . ~ . + sx(id, bs = "gs", map = BeechBnd))
 @
 <<cache-forest-model, echo=FALSE, eval=TRUE, results=hide>>=
 if(file.exists("forest-model.rda")) {
