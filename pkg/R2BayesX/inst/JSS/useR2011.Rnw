@@ -321,29 +321,21 @@ given by:
 
 \begin{frame}[fragile]
 \frametitle{Installing the \pkg{BayesX} binary}
-For model fitting with package \pkg{R2BayesX}, the binary command-line version of \pkg{BayesX} needs
-to be installed and linked to \proglang{R} first.
+For model fitting with package \pkg{R2BayesX}, the \pkg{BayesX} source code package \pkg{BayesXsrc}
+(available at CRAN) needs also to be installed and loaded.
 
 <<echo=TRUE, eval=FALSE>>=
+intall.packages("BayesXsrc")
+@
+<<echo=TRUE, eval=FALSE>>=
+library("BayesXsrc")
 library("R2BayesX")
-install.bayesx(inst.dir = "/path/to/bin", source.dir = NULL)
 @
 
 \medskip
 
-Then by setting e.g.
-
-<<echo=TRUE, eval=FALSE>>=
-options(bayesx.bin = "/path/to/bin/BayesX")
-@
-
-the model fitting function of \pkg{R2BayesX} will know the location of the binary using function
-\fct{getOption}.
-
-\bigskip 
-
-\textbf{Note:} on Windows, function \fct{install.bayesx} will download and execute an installer,
-which also installs the GUI version of \pkg{BayesX}.
+The source code package provides the \pkg{BayesX} binaries for all platforms, i.e.\ Linux, Mac,
+Windows etc.
 \end{frame}
 
 
@@ -422,18 +414,12 @@ s(..., k = -1, bs = "ps", m = NA, by = NA, xt = NULL)
 
 \bigskip
 
-Random effects are included in the models using function \fct{r}.
-\begin{Scode}
-r(id, by = NA, xt = NULL)
-\end{Scode}
-
-\bigskip
-
 \textbf{Basis/term types:} \\
 \code{"rw1"}, \code{"rw2"}, \code{"season"}, \code{"ps"} (\code{"psplinerw1"}, \code{"psplinerw2"}),
 \code{"te"} (\code{"pspline2dimrw1"}), \code{"kr"} (\code{"kriging"}), \code{"gk"}
 (\code{"geokriging"}), \code{"gs"} (\code{"geospline"}), \code{"mrf"} (\code{"spatial"}),
-\code{"bl"} (\code{"baseline"}), \code{"factor"}, \code{"ridge"}, \code{"lasso"}, \code{"nigmix"}.
+\code{"bl"} (\code{"baseline"}), \code{"factor"}, \code{"ridge"}, \code{"lasso"}, \code{"nigmix"},
+\code{"re"} (\code{"ra"}, \code{"random"}).
 \end{frame}
 
 
@@ -508,7 +494,8 @@ The formula is set with
 <<formula-zambia, echo=TRUE, eval=TRUE>>=
 f <- stunting ~ memployment + urban + gender + meducation +
   sx(mbmi) + sx(agechild) +
-  sx(district, bs = "mrf", map = ZambiaBnd) + r(district)
+  sx(district, bs = "mrf", map = ZambiaBnd) +
+  sx(district, bs = "re")
 @
 
 \bigskip
@@ -574,8 +561,8 @@ sx(mbmi)     0.0019 0.0028 0.0003 0.0011 0.0081 0.0002 0.0468
 \scriptsize
 \begin{Soutput}  
 Random effects variances:
-              Mean     Sd   2.5%    50%  97.5%    Min    Max
-r(district) 0.0076 0.0064 0.0008 0.0062 0.0226 0.0003 0.0701
+               Mean     Sd   2.5%    50%  97.5%    Min    Max
+sx(district) 0.0076 0.0064 0.0008 0.0062 0.0226 0.0003 0.0701
  
 Scale estimate:
          Mean     Sd   2.5%    50% 97.5%
@@ -614,18 +601,18 @@ plot(zm, term = "sx(agechild)")
 Spatial effects, kernel density estimates
 
 <<zambia-district-example-kde, echo=TRUE, eval=FALSE>>=
-plot(zm, term = c("sx(district)", "r(district)"))
+plot(zm, term = c("sx(district):mrf", "sx(district):re"))
 @
 
 \begin{center}
 \setkeys{Gin}{width=0.49\textwidth}
 <<zambia-district-structured-kde, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(4.3, 4.1, 0.55, 1.2))
-plot(zm, term = "sx(district)", map = FALSE, main = "")
+plot(zm, term = "sx(district):mrf", map = FALSE, main = "")
 @
 <<zambia-district-unstructured-kde, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(4.3, 4.1, 0.55, 1.2))
-plot(zm, term = "r(district)", map = FALSE, main = "")
+plot(zm, term = "sx(district):re", map = FALSE, main = "")
 @
 \end{center}
 \end{frame}
@@ -636,9 +623,9 @@ plot(zm, term = "r(district)", map = FALSE, main = "")
 Spatial effects, map effect plots
 
 <<zambia-district-example-kde, echo=TRUE, eval=FALSE>>=
-plot(zm, term = "sx(district)", map = ZambiaBnd)
+plot(zm, term = "sx(district):mrf", map = ZambiaBnd)
 range <- c(-0.32, 0.32)
-plot(zm, term = "r(district)", map = ZambiaBnd, 
+plot(zm, term = "sx(district):re", map = ZambiaBnd, 
   range = range, lrange = range)
 @
 
@@ -646,12 +633,12 @@ plot(zm, term = "r(district)", map = ZambiaBnd,
 \setkeys{Gin}{width=0.49\textwidth}
 <<zambia-district-structured, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(0, 0, 0, 0))
-plot(zm, term = "sx(district)", map = ZambiaBnd, swap = TRUE)
+plot(zm, term = "sx(district):mrf", map = ZambiaBnd, swap = TRUE)
 @
 <<zambia-district-unstructured-samescale, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(0, 0, 0, 0))
 range <- c(-0.32, 0.32)
-plot(zm, term = "r(district)", map = ZambiaBnd,
+plot(zm, term = "sx(district):re", map = ZambiaBnd,
   swap = TRUE, range = range, lrange = range)
 @
 \end{center}
