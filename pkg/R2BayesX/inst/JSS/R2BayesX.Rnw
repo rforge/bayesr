@@ -1752,7 +1752,7 @@ Basis/type \code{bs}  & \fct{sx} argument/default & \fct{s}/\fct{te} equivalent 
                       & \code{degree = 3}   & \code{m = c(degree - 1, order)}        &   \\
                       & \code{order = 2}    &                                        &   \\
 		      & \code{...}          & \code{xt = list(...)}                  &   \\ \hline
-\code{"te"}, \fct{te} & \code{nrknots = 5}  & \code{k = nrknots + degree - 1}        & $\ast$ \\
+\code{"te"}, \fct{te} & \code{nrknots = 20}  & \code{k = nrknots + degree - 1}       & $\ast$ \\
                       & \code{degree = 3}   & \code{m = c(degree - 1, order)}        &   \\
                       & \code{order = 2}    &                                        &   \\
 		      & \code{...}          & \code{xt = list(...)}                  &   \\ \hline
