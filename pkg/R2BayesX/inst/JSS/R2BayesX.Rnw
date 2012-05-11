@@ -1297,7 +1297,7 @@ fm1 <- bayesx(f, family = "cumlogit", method = "REML",
 @
 <<fit-forest-model-02, echo=FALSE, eval=FALSE>>=
 data("BeechBnd", package = "R2BayesX")
-fm2 <- update(fm1, . ~ . + sx(id, bs = "gs", map = BeechBnd))
+fm2 <- update(fm1, . ~ . + sx(id, bs = "gs", map = BeechBnd, nrknots = 20))
 @
 <<cache-forest-model, echo=FALSE, eval=TRUE, results=hide>>=
 if(file.exists("forest-model.rda")) {
@@ -1356,7 +1356,8 @@ We can update the  model by adding a \code{"gs"} effect:
 <<fit-forest-model-02-show, echo=TRUE, eval=FALSE>>=
 <<fit-forest-model-02>>
 @
-Taking a look at model information criteria
+Note that argument \code{nrknots} is set to 20 for exact replication of the analysis. Taking a look
+at model information criteria
 <<summary-forest-model, echo=TRUE, eval=TRUE>>=
 BIC(fm1, fm2)
 GCV(fm1, fm2)
@@ -1752,7 +1753,7 @@ Basis/type \code{bs}  & \fct{sx} argument/default & \fct{s}/\fct{te} equivalent 
                       & \code{degree = 3}   & \code{m = c(degree - 1, order)}        &   \\
                       & \code{order = 2}    &                                        &   \\
 		      & \code{...}          & \code{xt = list(...)}                  &   \\ \hline
-\code{"te"}, \fct{te} & \code{nrknots = 20}  & \code{k = nrknots + degree - 1}       & $\ast$ \\
+\code{"te"}, \fct{te} & \code{nrknots = 8}  & \code{k = nrknots + degree - 1}       & $\ast$ \\
                       & \code{degree = 3}   & \code{m = c(degree - 1, order)}        &   \\
                       & \code{order = 2}    &                                        &   \\
 		      & \code{...}          & \code{xt = list(...)}                  &   \\ \hline
