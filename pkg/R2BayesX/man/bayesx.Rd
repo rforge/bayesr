@@ -120,7 +120,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 }
 
 \note{
-  If a model is specified with a structured and an unstructured spatial effect, e.g.\ the model 
+  If a model is specified with a structured and an unstructured spatial effect, e.g. the model 
   formula is something like \code{y ~ sx(id, bs = "mrf", map = MapBnd) + sx(id, bs = "re")}, the
   model output contains of one additional total spatial effect, named with \code{"sx(id):total"}.
   Also see the last example.
@@ -144,7 +144,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
     URL \url{http://www.BayesX.org}.
 
   Belitz C, Lang S (2008). Simultaneous selection of variables and smoothing parameters in 
-    structured additive regression models. \emph{Computational Statistics \& Data Analysis}, 
+    structured additive regression models. \emph{Computational Statistics & Data Analysis}, 
     \bold{53}, 61--81.
 
   Brezger A, Kneib T, Lang S (2005). \pkg{BayesX}: Analyzing Bayesian Structured Additive Regression 

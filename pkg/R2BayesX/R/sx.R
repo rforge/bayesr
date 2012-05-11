@@ -77,7 +77,7 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
           if(bs %in% c("ps", "psplinerw1", "psplinerw2", "pspline"))
             k <- 20L + m[1L]
           else
-            k <- 5L + m[1L]
+            k <- 10L + m[1L]
         }
       }
       if(bs %in% c("kr", "gk", "kriging", "geokriging")) {

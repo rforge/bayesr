@@ -15,12 +15,12 @@
 
   Before STAR models may be estimated, the command-line version of \pkg{BayesX} needs to be
   installed, which is done by installing the \R source code package \pkg{BayesXsrc}. Please see
-  function \code{\link{bayesx}} and \code{\link{bayesx.control}} for more details on model fitting\
+  function \code{\link{bayesx}} and \code{\link{bayesx.control}} for more details on model fitting
   and controlling.
 
   The package also provides functionality for high level graphics of estimated effects, see function
   \code{\link{plot.bayesx}}, \code{\link{plot2d}}, \code{\link{plot3d}}, \code{\link{plotblock}},
-  \code{\link{plotmap}}, \code{\link{plotsamples}}, \code{\link{colorlegend}}.
+  \code{\link{plotmap}}, \code{\link{plotsamples}} and \code{\link{colorlegend}}.
 
   More standard extractor functions and methods for the fitted model objects may be applied, e.g., 
   see function \code{\link{summary.bayesx}}, \code{\link{fitted.bayesx}}, 

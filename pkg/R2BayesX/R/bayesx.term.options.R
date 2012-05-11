@@ -150,7 +150,7 @@ function(bs = "ps", method = "MCMC")
         cat("     degree: the degree of the B-spline basis functions.\n",
             "           Default: integer, \'degree = 3\'.\n\n")
         cat("      knots: number of inner knots.\n",
-            "           Default: integer, \'knots = 20\'.\n\n")
+            "           Default: integer, \'knots = 8\'.\n\n")
         cat("      order: only if \'bs = \"ps\"\', the order of the difference penalty.\n",
             "           Default: integer, \'order = 2\'.\n\n")
         cat("lambdastart: starting value for the smoothing parameter lambda. \n",
@@ -166,7 +166,7 @@ function(bs = "ps", method = "MCMC")
         cat("     degree: the degree of the B-spline basis functions.\n",
             "           Default: integer, \'degree = 3\'.\n\n")
         cat("      knots: number of inner knots.\n",
-            "           Default: integer, \'knots = 20\'.\n\n")
+            "           Default: integer, \'knots = 8\'.\n\n")
         cat("      order: only if \'bs = \"ps\"\', the order of the difference penalty.\n",
             "           Default: integer, \'order = 2\'.\n\n")
         cat("       a, b: the options a and b specify the hyperparameters of the \n",
