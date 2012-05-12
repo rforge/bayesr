@@ -91,6 +91,7 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
       control$step <- step
     }
     control$predict <- predict
+    control$setseed <- seed
     control$algorithm <- algorithm 
     control$criterion <- criterion
     control$proportion <- proportion

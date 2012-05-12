@@ -1,7 +1,10 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-bayesx.construct(sx(district, bs = "gk", map = ZambiaBnd, full = TRUE))
+
+zms <- bayesx(f, family = "gaussian", method = "STEP",
+  algorithm = "cdescent1", startmodel = "empty", seed = 123,
+  data = ZambiaNutrition)
 
 
 
