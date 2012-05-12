@@ -7,7 +7,7 @@
 }
 
 \description{
-  Generic function returning the deviance information criterium of a fitted model object.
+  Generic function returning the deviance information criteriom of a fitted model object.
 }
  
 \usage{

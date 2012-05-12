@@ -1,8 +1,8 @@
 bayesx.construct.tensor.smooth.spec <- bayesx.construct.t2.smooth.spec <-
 function(object, dir, prg, data)
 {
-  by <- object$term[2L]
-  term <- object$term[1L]
+  by <- object$term[1L]
+  term <- object$term[2L]
   object <- object$margin[[1L]]
   object$term <- term
   object$by <- by

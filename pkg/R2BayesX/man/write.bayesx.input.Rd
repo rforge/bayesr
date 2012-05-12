@@ -19,9 +19,10 @@ write.bayesx.input(object)
 }
 
 \details{
-  This function translates the model specified in the \code{formula} in 
-  \code{\link{parse.bayesx.input}} or \code{\link{bayesx}} into \pkg{BayesX} syntax, secondly the 
-  function writes a data file into the specified directory chosen in 
+  This function translates the model specified in the \code{formula} within
+  \code{\link{parse.bayesx.input}} or \code{\link{bayesx}} into a \pkg{BayesX} executable program
+  file, secondly the 
+  function writes a data file into the specified directory chosen in \code{\link{bayesx.control}},
   \code{\link{parse.bayesx.input}} or \code{\link{bayesx}}, where \pkg{BayesX} will find the 
   necessary variables for estimation.
 }

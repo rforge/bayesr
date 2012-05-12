@@ -29,11 +29,11 @@
 \value{ 
   For \code{fitted.bayesx}, either the fitted linear predictor and mean or if e.g. 
   \code{term = "sx(x)"}, an object with class \code{"xx.bayesx"}, where \code{"xx"} is depending of 
-  the type of the term. In principle the returned term object is simply a matrix containing the 
-  covariate(s) and its effects, depending on the estimation method, e.g. for MCMC estimated models, 
-  mean/median fitted values and other quantities are returned. Several additional informations on 
-  the term are provided in the \code{\link{attributes}} of the object. For all types of terms 
-  plotting functions are provided, see function \code{\link{plot.bayesx}}.
+  the type of the term. In principle the returned term object is simply a \code{\link{data.frame}} 
+  containing the covariate(s) and its effects, depending on the estimation method, e.g. for MCMC
+  estimated models, mean/median fitted values and other quantities are returned. Several additional
+  informations on the term are provided in the \code{\link{attributes}} of the object. For all types
+  of terms plotting functions are provided, see function \code{\link{plot.bayesx}}.
 
   Using \code{residuals.bayesx} will either return the mean model residuals or the mean partial 
   residuals of a term specified in argument \code{term}.
@@ -74,11 +74,11 @@ plot(fx)
 
 ## extract model residuals
 res <- residuals(b1)
-hist(res[,1L])
+hist(res[, 1])
 
 ## extract partial residuals for sx(x)
 pres <- residuals(b1, term = "sx(x)")
-plot(fx, ylim = range(pres[,2L]))
+plot(fx, ylim = range(pres[, 2]))
 points(pres)
 }
 

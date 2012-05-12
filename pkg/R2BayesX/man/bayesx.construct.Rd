@@ -17,6 +17,7 @@
 \alias{bayesx.construct.nigmix.smooth.construct}
 \alias{bayesx.construct.kr.smooth.construct}
 \alias{bayesx.construct.season.smooth.construct}
+\alias{bayesx.construct.factor.smooth.construct}
 
 \title{
   Construct BayesX Model Term Objects
@@ -43,8 +44,8 @@ bayesx.construct(object, dir, prg, data)
     will be  written as a \code{"bnd"} or \code{"gra"} file (see \code{\link{read.bnd}} and 
     \code{\link{read.gra}}) to this directory, so \pkg{BayesX} can use this spatial object for 
     estimation.} 
-  \item{prg}{if additional data handling must be applied, e.g. storing \code{"bnd"} objects in the 
-    directory specified in \code{dir}, \code{\link{write.bayesx.input}} needs to write the extra 
+  \item{prg}{if additional data handling must be applied, e.g. storing maps (\code{"bnd"}) objects in
+    the directory specified in \code{dir}, \code{\link{write.bayesx.input}} needs to write the extra 
     commands in a program file provided with argument \code{prg}, i.e. this may all be handled 
     within a \code{bayesx.construct} constructor function.}
   \item{data}{if additional data is needed to setup the \pkg{BayesX} term it is found here.}
@@ -199,8 +200,6 @@ bayesx.construct(sx(id, bs = "gs", knots = 10, map = MunichBnd))
 bayesx.construct(s(id, bs = "gs", k = 12, m = c(1, 1), xt = list(map = MunichBnd)))
 
 ## random effects
-## note: may also have additional stages
-## please see the help files of function 'r'
 bayesx.construct(sx(id, bs = "re"))
 bayesx.construct(sx(id, bs = "re", by = x1))
 bayesx.construct(sx(id, bs = "re", by = x1, xt = list(nofixed=TRUE)))

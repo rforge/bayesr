@@ -18,7 +18,7 @@ parse.bayesx.input(formula, data, weights = NULL,
 
 \arguments{
   \item{formula}{symbolic description of the model (of type \code{y ~ x}). For more details see 
-    \code{\link{bayesx}}.}
+    \code{\link{bayesx}} and \code{\link{sx}}.}
   \item{data}{a \code{\link{data.frame}} or \code{\link{list}} containing the model response 
     variable and covariates required by the formula. By default the variables are taken from 
     \code{environment(formula)}: typically the environment from which \code{bayesx} is called. 

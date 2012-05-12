@@ -7,7 +7,8 @@
 
 \description{
   Function to extract estimated contour probabilities of a particular effect estimated with 
-  P-splines using Markov chain Monte Carlo (MCMC) estimation techniques. 
+  P-splines using Markov chain Monte Carlo (MCMC) estimation techniques. Note that, the contour
+  probability option must be specified within function \code{\link{sx}}, see the example.
 }
  
 \usage{
@@ -49,6 +50,10 @@ dat <- data.frame(x = runif(n, -3, 3))
 dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
 
 ## estimate model
+## need to set the contourprob option, 
+## otherwise BayesX will not calculate probabilities
+## see also the reference manual of BayesX available
+## at www.BayesX.org
 b <- bayesx(y ~ sx(x, bs = "ps", contourprob = 4), data = dat)
 
 ## extract contour probabilities

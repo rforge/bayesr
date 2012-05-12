@@ -82,7 +82,7 @@ dat$y <- with(dat, 1.5 + sin(x) + cos(z) * sin(w) +
    c(2.67, 5, 6, 3, 4, 2, 6, 7, 9, 7.5)[fac] + rnorm(n, sd = 0.6))
 
 ## estimate model
-b1 <- bayesx(y ~ sx(x) + sx(z, w, bs = "te", knots = 5) + fac,
+b1 <- bayesx(y ~ sx(x) + sx(z, w, bs = "te") + fac,
    data = dat, method = "MCMC")
 
 ## plot p-spline term
@@ -94,7 +94,7 @@ plot(b1, term = "sx(x)")
 plot(b1, term = "sx(x)", residuals = TRUE)
 
 ## plot tensor term
-plot(b1, term = 2)
+plot(b1, term = "sx(z,w)")
 
 ## use other palette
 plot(b1, term = "sx(z,w)", col.surface = heat.colors)
@@ -168,7 +168,7 @@ dat$y <- with(dat, 1.5 + sin(x1) + sp + re + rnorm(n, sd = 0.6))
 
 ## estimate model
 b2 <- bayesx(y ~ sx(x1) + sx(id, bs = "mrf", map = MunichBnd) +
-  r(id), method = "MCMC", data = dat)
+  sx(id, bs = "re"), method = "MCMC", data = dat)
 
 ## summary statistics
 summary(b2)
@@ -177,17 +177,17 @@ summary(b2)
 plot(b2, term = "sx(id)", map = MunichBnd)
 
 ## plot unstructured spatial effect
-plot(b2, term = "r(id)", map = MunichBnd)
+plot(b2, term = "sx(id):re", map = MunichBnd)
 
 ## now without map
 ## generates a kernel density plot
 ## of the effects
-plot(b2, term = "sx(id)", map = FALSE)
-plot(b2, term = "r(id)", map = FALSE)
+plot(b2, term = "sx(id):mrf", map = FALSE)
+plot(b2, term = "sx(id):re", map = FALSE)
 
 ## with approximate quantiles of the  
 ## kernel density estimate 
-plot(b2, term = "r(id)", map = FALSE, 
+plot(b2, term = "sx(id):re", map = FALSE, 
   kde.quantiles = TRUE, probs = c(0.025, 0.5, 0.975))
 
 ## plot the total spatial effect

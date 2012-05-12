@@ -21,7 +21,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 
 \arguments{
   \item{formula}{symbolic description of the model (of type \code{y ~ x}), also see 
-    \code{\link[mgcv]{formula.gam}}, \code{\link[mgcv]{s}}.}
+    \code{\link{sx}}, \code{\link[mgcv]{formula.gam}} and \code{\link[mgcv]{s}}.}
   \item{data}{a \code{\link{data.frame}} or \code{\link{list}} containing the model response 
     variable and covariates required by the formula. By default the variables are taken from 
     \code{environment(formula)}: typically the environment from which \code{bayesx} is called. 
@@ -229,7 +229,7 @@ summary(b3)
 
 ## plot the effects
 op <- par(no.readonly = TRUE)
-par(mfrow = c(3,2))
+par(mfrow = c(3, 2))
 plot(b1, term = "sx(x)")
 plot(b1, term = "sx(z,w)")
 plot(b2, term = "sx(x)")
@@ -424,26 +424,6 @@ b <- bayesx(y ~ sx(x, by = id, center = TRUE),
   method = "REML", data = dat)
 summary(b)
 plot(b, resid = TRUE, cex.resid = 0.1)
-
-
-## experiment with weights 
-set.seed(3)
-n <- 300
-dat <- data.frame(x = seq(0.01, 1, length = n))
-dat$y <- with(dat, 1.5 + 2.2 * x + rnorm(n, sd = 1.5 * x))
-
-b1 <- bayesx(y ~ sx(x), data = dat)
-summary(b1)
-plot(b1, resid = TRUE)
-
-dat$res2 <- residuals(b1)[, "linpred"]^2
-b2 <- bayesx(res2 ~ sx(x), data = dat, family = "gamma")
-
-dat$W <- 1 / fitted(b2)[, "mu"]
-b3 <- bayesx(y ~ sx(x), weights = W, data = dat)
-
-summary(c(b1, b3))
-plot(c(b1, b3), resid = TRUE)
 }
 }
 
