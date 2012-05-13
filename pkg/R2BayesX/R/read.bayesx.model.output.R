@@ -127,7 +127,7 @@ function(dir, model.name)
       DIC <- mf$unstandardized_deviance[length(mf$unstandardized_deviance)]
       mf <- list(DIC = DIC, pd = pd)
     }
-    if(any(grep(".tex",files))) {
+    if(any(grep(".tex", files))) {
       sm <- readLines(paste(dir, "/", grep(".tex", files, value = TRUE), sep = ""))
       model.results <- search.bayesx.tex(sm)
       method <- model.results$method
@@ -204,6 +204,16 @@ function(dir, model.name)
         }
       }
       names(rval$effects) <- names.eff
+    }
+
+    ## was there a .prg/.log file?
+    if(length(prg <- grep(".prg", files, value = TRUE))) {
+      for(j in prg) {
+        if(grepl(".log", j))
+          rval$bayesx.run <- list("log" = readLines(file.path(dir, j)))
+        else
+          rval$bayesx.prg <- list("prg" = readLines(file.path(dir, j)))
+      }
     }
 
     ## search for additional info

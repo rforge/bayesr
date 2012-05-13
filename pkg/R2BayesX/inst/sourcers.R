@@ -1,6 +1,9 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
+b <- read.bayesx.output("/home/nik/svn/bayesr/pkg/R2BayesX/inst/examples/ex01")
+
+
 
 zms <- bayesx(f, family = "gaussian", method = "STEP",
   algorithm = "cdescent1", startmodel = "empty", seed = 123,
