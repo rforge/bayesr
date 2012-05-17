@@ -1,4 +1,4 @@
-installation:
+Installation:
 =============
 
 Build & Install
@@ -39,3 +39,12 @@ Issues:
 Debugging:
 - R 2.14.0, gcc-4.5,   Windows XP,    i386
 
+
+History:
+========
+
+BayesX SVN revision | BayesX version | BayesXsrc version | Comment
+--------------------+----------------+-------------------+--------
+                948 |            2.1 |             2.1-0 | First GPL-2 release of BayesX
+                953 |              - |             2.1-1 | Fixes to comply with gcc-4.7		
+		    |                |                   |
