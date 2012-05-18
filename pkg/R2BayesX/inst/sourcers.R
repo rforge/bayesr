@@ -1,7 +1,23 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-b <- read.bayesx.output("/home/nik/svn/bayesr/pkg/R2BayesX/inst/examples/ex01")
+
+b <- read.bayesx.output("/media/Debian/tmp1")
+
+
+
+n <- 1000
+z <- runif(n)
+x <- runif(n, -3, 3)
+re <- rnorm(20, sd = 0.3)
+id <- sort(rep(1:20, length.out = n))
+y <- sin(z) + x * re[id] + rnorm(n, sd = 0.6)
+
+b <- bayesx(y ~ sx(z) + sx(id, bs = "re", by = x), outfile = "~/tmp")
+
+
+
+
 
 
 

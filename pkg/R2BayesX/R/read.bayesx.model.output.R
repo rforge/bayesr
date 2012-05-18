@@ -9,8 +9,13 @@ function(dir, model.name)
   if(!any(grep(model.name,files)))
     stop(paste("no model results existing for ", model.name, "!", sep = ""))
   else {
+    fileext <- function(x) {
+      pos <- regexpr("\\.([[:alnum:]]+)$", x)
+      ifelse(pos > -1L, substring(x, pos + 1L), "")
+    }
     rval <- list()
     files <- grep(model.name, files, value = TRUE, fixed = TRUE)
+    files <- files[fileext(files) != "ps"]
     filep <- grep(paste(model.name, ".", sep = ""), files, value = TRUE, fixed = TRUE)  
     files <- c(grep(paste(model.name, "_", sep = ""), files, value = TRUE, fixed = TRUE), filep)  
     info <- paste(model.name, ".terms.info", sep = "")
@@ -137,6 +142,7 @@ function(dir, model.name)
       mf <- chacol(read.table(paste(dir, "/", mf, sep = ""), header = TRUE))
       mf <- mf2 <- as.list(mf)
     }
+
     if(!is.null(model.results)) {
       if(!is.null(mf2)) {
         n1 <- names(mf2)
@@ -232,7 +238,7 @@ function(dir, model.name)
 
     ## get log file
     if(length(log <- grep(".log", files, fixed = TRUE, value = TRUE)))
-      rval$logfile <- readLines(paste(dir, "/", log, sep = ""))
+      rval$logfile <- readLines(paste(dir, "/", log[1], sep = ""))
 
     return(rval)
   }

@@ -2,7 +2,7 @@ get.scale <-
 function(files, dir)
 {
   var <- NULL
-  if(any(grep("scale.res",files))) {
+  if(any(grep("scale.res", files))) {
     sample <- NULL
     if(length(var <- grep("scale", files, value = TRUE))) {
       sc <- grep("sample", var)

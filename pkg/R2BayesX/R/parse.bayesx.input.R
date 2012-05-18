@@ -183,10 +183,10 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
     } 
     if(ncol(data) < 2L) {
       control$order <- order(data[,1L])
-      data[,1L] <- data[order(data[,1L]), 1L]
+      ##data[,1L] <- data[order(data[,1L]), 1L]
     } else {
       control$order <- order(Y)
-      data <- data[order(Y),]
+      ##data <- data[order(Y),]
     }
     control <- c(control, list(data = data, Yn = Yn))
   } else {

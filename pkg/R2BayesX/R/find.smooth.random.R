@@ -11,9 +11,9 @@ function(dir, files, data, response, eta, model.name, minfo, info)
     resfiles <- files[i]
     endings <- c("_predict.res", "FixedEffects", "LinearEffects", "scale.res", "_variance_", 
       "_var.res", ".raw", "_param.res", "_interact.res", "_df.res", "_lambda.res", 
-      "_knots.raw", "_contour.res", "_theta.res")
+      "_knots.raw", "_contour.res", "_theta.res", "_variance_sample.ps", "_random_fixed.res")
     for(res in endings)
-      resfiles <- resfiles[!grepl(res, resfiles)]
+      resfiles <- resfiles[!grepl(res, resfiles, fixed = TRUE)]
     resfiles <- resfiles[!grepl("_lasso", resfiles)]
     resfiles <- resfiles[!grepl("_ridge", resfiles)]
     resfiles <- resfiles[!grepl("_nigmix", resfiles)]
@@ -151,28 +151,36 @@ function(dir, files, data, response, eta, model.name, minfo, info)
                   else
                     SmoothHyp <- rbind(SmoothHyp, attr(x, "variance"))
                 }
-                if(length(vf2 <- vf[grepl("sample", vf)]))
-                  for(tf in vf2) {
-                    attr(x, "variance.sample") <- df2m(read.table(paste(dir, "/", tf[1L], sep = ""), 
-                      header = TRUE))
-                    if(is.matrix(attr(x, "variance.sample")))
-                      attr(x, "variance.sample") <- attr(x, "variance.sample")[,1L]
-                    if(is.matrix(attr(x, "variance.sample"))) {
-                      if(ncol(attr(x, "variance.sample")) < 2L)
-                        colnames(attr(x, "variance.sample")) <- "Variance"
-                      else
-                        colnames(attr(x, "variance.sample")) <- paste("Var", 1:ncol(attr(x, "variance.sample")), sep = "")
+                if(length(vf2 <- vf[grepl("sample", vf)])) {
+                  vf2 <- vf2[!grepl("_sample.ps", vf2)]
+                  if(length(vf2)) {
+                    for(tf in vf2) {
+                      attr(x, "variance.sample") <- df2m(read.table(paste(dir, "/", tf[1L], sep = ""), 
+                        header = TRUE))
+                      if(is.matrix(attr(x, "variance.sample")))
+                        attr(x, "variance.sample") <- attr(x, "variance.sample")[,1L]
+                      if(is.matrix(attr(x, "variance.sample"))) {
+                        if(ncol(attr(x, "variance.sample")) < 2L)
+                          colnames(attr(x, "variance.sample")) <- "Variance"
+                        else
+                          colnames(attr(x, "variance.sample")) <- paste("Var", 1:ncol(attr(x, "variance.sample")), sep = "")
+                      }
                     }
                   }
+                }
               }
             }
             if(length(sf <- grep("_sample", af, value = TRUE)))
-              if(length(sf <- sf[!grepl("_variance_", sf)]))
-                for(tf in sf) {
-                  attr(x, "sample") <- df2m(read.table(paste(dir, "/", tf[1L], sep = ""), 
-                    header = TRUE))
-                  colnames(attr(x, "sample")) <- paste("C", 1L:ncol(attr(x, "sample")), sep = "")
+              if(length(sf <- sf[!grepl("_variance_", sf)])) {
+                sf <- sf[!grepl("_sample.ps", sf)]
+                if(length(sf)) {
+                  for(tf in sf) {
+                    attr(x, "sample") <- df2m(read.table(paste(dir, "/", tf[1L], sep = ""), 
+                      header = TRUE))
+                    colnames(attr(x, "sample")) <- paste("C", 1L:ncol(attr(x, "sample")), sep = "")
+                  }
                 }
+              }
             if(length(pf <- grep("_param", af, value = TRUE)))
               for(tf in pf)
                 attr(x, "param") <- df2m(read.table(paste(dir, "/", tf[1L], sep = ""), header = TRUE))
