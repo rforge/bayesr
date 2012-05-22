@@ -1,10 +1,13 @@
-### R code from vignette source 'R2BayesX.Rnw'
+########################
+## Motivating example ##
+########################
+
+## package, data, and random seed
 set.seed(1090)
 library("R2BayesX")
 data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
 
-### Section 2 - Motivating example
-## model formula of the illustration model
+## model formula
 f <- stunting ~ sx(agechild) + sx(mbmi) +
   sx(district, bs = "gk", map = ZambiaBnd, full = TRUE)
 
@@ -26,18 +29,27 @@ plot(b, term = "sx(agechild)", residuals = TRUE, cex = 0.1, rug = FALSE)
 plot(b, term = "sx(district)", map = ZambiaBnd, swap = TRUE)
 
 
-### Section 4.2 - Model specification
+#########################
+## Model specification ##
+#########################
+
 ## corresponding BayesX command using the constructor
 ## function bayesx.construct()
 bayesx.construct(sx(x, bs = "ps"))
 
 
-### Section 5.2 - Available additive terms
+##############################
+## Available additive terms ##
+##############################
+
 ## show possible options for various types of bases and methods  
 bayesx.term.options(bs = "ps", method = "MCMC")
 
 
-### Section 6.1 - Childhood malnutrition in Zambia: Analysis with MCMC
+##########################################################
+## Childhood malnutrition in Zambia: Analysis with MCMC ##
+##########################################################
+
 ## plot of the map of Zambia
 plot(ZambiaBnd, col = "lightgray")
 
@@ -87,7 +99,11 @@ plot(zm, term = "sx(mbmi)", which = "var-samples", acf = TRUE)
 plot(zm, which = "max-acf", main = "")
 
 
-### Section 6.2 - Forest health dataset: Analysis with REML
+###############################################
+## Forest health dataset: Analysis with REML ##
+###############################################
+
+## data and map
 data("ForestHealth", "BeechBnd", package = "R2BayesX")
 
 ## the model formula of the example
@@ -135,7 +151,10 @@ plot(fm2, term = "sx(id)", map = BeechBnd,
   height = 0.24, width = 0.41, range = c(-3, 3))
 
 
-### Section 6.3 - Childhood malnutrition in Zambia: Analysis with STEP
+##########################################################
+## Childhood malnutrition in Zambia: Analysis with STEP ##
+##########################################################
+
 ## the stepwise model formula
 f <- stunting ~ memployment + urban + gender +
   sx(meducation, bs = "factor") + sx(mbmi) + sx(agechild) +
@@ -155,13 +174,4 @@ zmsccb <- bayesx(f, family = "gaussian", method = "STEP",
 ##  summary statistics, with and without confidence intervals
 summary(zms)
 summary(zmsccb)
-
-
-### Appendic C - Smooth term constructor functions
-## examples of different defaults and resulting
-## paramaters using functions s() of package mgcv
-## and the main model term constructor function sx()
-## in R2BayesX
-bayesx.construct(sx(mbmi))
-bayesx.construct(s(mbmi, bs = "ps"))
 
