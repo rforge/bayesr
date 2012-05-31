@@ -36,7 +36,8 @@ export(
   "plot3d",              
   "plotblock",            
   "plotmap",              
-  "plotsamples"
+  "plotsamples",
+  "sliceplot"
 )
 
 ## methods for objects of class bayesx etc.

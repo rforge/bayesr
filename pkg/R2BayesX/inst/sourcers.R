@@ -2,6 +2,15 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
+sliceplot(x, y, z)
+
+
+
+plot(b1, term = "sx(z,w)", sliceplot = TRUE, view = 2, probs = seq(0, 1, by = 0.1))
+
+
+
+
 b <- read.bayesx.output("/media/Debian/tmp1")
 
 

@@ -4,7 +4,7 @@ function(x, residuals = FALSE, col.surface = NULL,
   c.select = NULL, grid = 30L, image = FALSE, contour = FALSE, 
   legend = TRUE, cex.legend = 1, breaks = NULL, range = NULL, 
   digits = 2L, d.persp = 1L, r.persp = sqrt(3), linear = TRUE, extrap = FALSE, 
-  outscale = 0, data = NULL, ...)
+  duplicate = "mean", outscale = 0, data = NULL, ...)
 {
   if(is.null(x))
     return(invisible(NULL))
@@ -18,9 +18,9 @@ function(x, residuals = FALSE, col.surface = NULL,
     if(ncol(x) < 3L)
       stop("formula is specified wrong!")
     if(ncol(x) > 3L)
-      x <- x[,c(2L, 3L, 1L, 4L:ncol(x))]
+      x <- x[, c(2L, 3L, 1L, 4L:ncol(x))]
     else
-      x <- x[,c(2L, 3L, 1L)]
+      x <- x[, c(2L, 3L, 1L)]
   }
   if(is.data.frame(x))
     x <- df2m(x)
@@ -90,12 +90,12 @@ function(x, residuals = FALSE, col.surface = NULL,
       stop("argument c.select is specified wrong!")
     for(k in 1:length(take)) {
       fitted[[k]] <- akima::interp(X, z, x[,take[k]], xo = xn, yo = zn, 
-        duplicate = "strip", linear = linear, extrap = extrap)$z
+        duplicate = duplicate, linear = linear, extrap = extrap)$z
     }
   }
   if(length(fitted[[1L]]) == 1L && is.na(fitted[[1L]][1L])) {
     fitted[[1L]] <- akima::interp(X, z, x[,3L], xo = xn, yo = zn, 
-      duplicate = "strip", linear = linear, extrap = extrap)$z
+      duplicate = duplicate, linear = linear, extrap = extrap)$z
   }
   if(!is.null(range))
     for(k in 1L:length(fitted)) {
