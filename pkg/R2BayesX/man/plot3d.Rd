@@ -56,7 +56,7 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
   \item{r.persp}{see argument \code{r} in function \code{\link[graphics]{persp}}.}
   \item{linear}{see function \code{\link[akima]{interp}}.}
   \item{extrap}{see function \code{\link[akima]{interp}}.}
-  \item(duplicate}{see function \code{\link[akima]{interp}}.}
+  \item{duplicate}{see function \code{\link[akima]{interp}}.}
   \item{outscale}{scales the outer ranges of \code{x} and \code{z} limits used for interpolation.}
   \item{data}{if \code{x} is a \code{formula}, a \code{data.frame} or \code{list}. By default the 
     variables are taken from \code{environment(x)}: typically the environment from which 
