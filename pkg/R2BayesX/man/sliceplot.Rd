@@ -41,7 +41,7 @@ sliceplot(x, y = NULL, z = NULL, view = 1, c.select = NULL,
   \item{grid}{the grid size of the surface where the slices are generated from.}
   \item{linear}{see function \code{\link[akima]{interp}}.}
   \item{extrap}{see function \code{\link[akima]{interp}}.}
-  \item(duplicate}{see function \code{\link[akima]{interp}}.}
+  \item{duplicate}{see function \code{\link[akima]{interp}}.}
   \item{legend}{if set to \code{TRUE}, a legend with the \code{values} that where used for slicing
     will be added.}
   \item{pos}{the position of the legend, see also function \code{\link[graphics]{legend}}.}
