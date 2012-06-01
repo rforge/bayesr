@@ -137,12 +137,11 @@ function(dir, model.name)
       model.results <- search.bayesx.tex(sm)
       method <- model.results$method
     }
-    if(any(grep("modelfit.raw",files))) {
+    if(any(grep("modelfit.raw", files))) {
       mf <- grep("modelfit.raw", files, value = TRUE)
       mf <- chacol(read.table(paste(dir, "/", mf, sep = ""), header = TRUE))
       mf <- mf2 <- as.list(mf)
     }
-
     if(!is.null(model.results)) {
       if(!is.null(mf2)) {
         n1 <- names(mf2)
@@ -224,6 +223,13 @@ function(dir, model.name)
 
     ## search for additional info
     rval$model.fit <- smi(paste(dir, "/", info, sep = ""), rval$model.fit)
+
+    ## new with HMCMC
+    if(any(grep("_DIC.res", files))) {
+      dic <- grep("_DIC.res", files, value = TRUE)
+      dic <- chacol(read.table(paste(dir, "/", dic, sep = ""), header = TRUE))
+      rval$model.fit <- c(rval$model.fit, as.list(dic))
+    }
 
     ## reformate output
     rval <- bayesx.reformate(rval)

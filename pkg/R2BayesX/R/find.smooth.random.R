@@ -11,7 +11,8 @@ function(dir, files, data, response, eta, model.name, minfo, info)
     resfiles <- files[i]
     endings <- c("_predict.res", "FixedEffects", "LinearEffects", "scale.res", "_variance_", 
       "_var.res", ".raw", "_param.res", "_interact.res", "_df.res", "_lambda.res", 
-      "_knots.raw", "_contour.res", "_theta.res", "_variance_sample.ps", "_random_fixed.res")
+      "_knots.raw", "_contour.res", "_theta.res", "_variance_sample.ps", "_random_fixed.res",
+      "_DIC.res")
     for(res in endings)
       resfiles <- resfiles[!grepl(res, resfiles, fixed = TRUE)]
     resfiles <- resfiles[!grepl("_lasso", resfiles)]
