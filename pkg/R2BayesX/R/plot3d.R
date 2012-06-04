@@ -197,7 +197,8 @@ function(x, residuals = FALSE, col.surface = NULL,
       if(legend) {
         mar[4L] <- 0
         par(mar = mar)
-        layout(matrix(c(1, 2), nrow = 1), widths = c(1, 0.2))
+        w <- (3 + mar[2L]) * par("csi") * 2.54
+        layout(matrix(c(1, 2), nrow = 1), widths = c(1, lcm(w)))
       }
       do.call(graphics::image, 
         delete.args(graphics::image.default, args, 
@@ -225,7 +226,8 @@ function(x, residuals = FALSE, col.surface = NULL,
       }
       if(legend) {
         mar <- mar.orig
-        mar[2L] <- 0.5
+        mar[2L] <- 1
+        mar[4L] <- 3.1
         par(mar = mar, xaxs = "i", yaxs = "i")
         args2 <- args
         if(is.null(args$side.legend))

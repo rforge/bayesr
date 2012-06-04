@@ -70,7 +70,8 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     mar[4L] <- 0
     on.exit(par(par.orig))
     par(mar = mar)
-    layout(matrix(c(1, 2), nrow = 1), widths = c(1, 0.18))
+    w <- (3 + mar[2L]) * par("csi") * 2.54
+    layout(matrix(c(1, 2), nrow = 1), widths = c(1, lcm(w)))
   }
   if(!is.null(map.limits$mar) && is.null(args$asp) && !add)
     par(mar = map.limits$mar)
@@ -149,7 +150,8 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
       args$side.legend <- 2L
       args$side.ticks <- 2L
       mar <- mar.orig
-      mar[2L] <- 0
+      mar[2L] <- 0.5
+      mar[4L] <- 3.1
       par(mar = mar, xaxs = "i", yaxs = "i")
       args$plot <- TRUE
       args$add <- FALSE

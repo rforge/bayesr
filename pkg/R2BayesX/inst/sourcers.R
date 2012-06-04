@@ -2,15 +2,12 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-b <- bayesx(y ~  sx(x1) + sx(x2) + sx(devmean) +
-	r(reg_id ~ -1 + amean + r(country ~ 1, data=country), data=region) +
-	r(country1 ~ 1, by=x3, data=country) +
-	r(country2 ~ -1, by=x1, data=country) + 
-	r(country3 ~ -1, by=x2, data=country) + 
-	r(country4 ~ -1, by=devmean, data=country)
 
-,data=dat, method="HMCMC", iter=3000, step=2, burnin=1000,
-seed=1234, family="binomial_probit", replace=TRUE, predict=TRUE)
+plot(b, map = MunichBnd, pos = "right")
+
+
+plot(b, term = "sx(z,w)", image = TRUE)
+
 
 
 sliceplot(x, y, z)
