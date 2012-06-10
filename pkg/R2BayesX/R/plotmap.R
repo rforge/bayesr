@@ -179,9 +179,14 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     args$digits <- digits
     args$cex.labels <- cex.legend
     args$symmetric <- symmetric
+    if(is.null(range)) {
+      range <- range(args$x)
+      if(diff(range) == 0)
+        range <- unique(range) + c(-1, 1)
+    }
     args$range <- range
     if(is.null(args$lrange))
-      args$lrange <- x$range
+      args$lrange <- args$range
     do.call(colorlegend, delete.args(colorlegend, args, c("font")))
   }
   if(!is.null(args$xlab))

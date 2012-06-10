@@ -48,9 +48,9 @@ plot(zm1, term = "sx(district)", map = ZambiaBnd, pos = "topleft",
   names = TRUE, cex.names = 0.8, cex.legend = 0.8)
 plot(zm1, term = "sx(district)", map = ZambiaBnd, pos = "topleft", 
   range = c(-0.2, 0.2))
-plot(zm1, term = "sx(district)", map = ZambiaBnd, pos = "topleft", 
+plot(zm1, term = "sx(district):mrf", map = ZambiaBnd, pos = "topleft", 
   c.select = "pcat95", at = c(-1, 0, 1), ncol = 3)
-plot(zm1, term = "sx(district)", map = ZambiaBnd, pos = "topleft", 
+plot(zm1, term = "sx(district):mrf", map = ZambiaBnd, pos = "topleft", 
   c.select = "pcat80", at = c(-1, 0, 1), ncol = 3)
 
 op <- par(no.readonly = TRUE)

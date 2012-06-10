@@ -2,6 +2,9 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
+plot(zm1, term = "sx(district):re", map = ZambiaBnd, pos = "topleft", 
+  c.select = "pcat95", at = c(-1, 0, 1), ncol = 3)
+
 
 plot(b, map = MunichBnd, pos = "right")
 
