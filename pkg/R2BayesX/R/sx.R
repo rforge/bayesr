@@ -50,6 +50,11 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
         by <- "NA"
       }
       options("warn" = warn)
+      if(bs %in% c("pspline2dimrw1", "pspline2dimrw2", "te",
+        "gs", "geospline", "kr", "gk", "kriging", "geokriging")) {
+        if(by != "NA")
+          stop(paste("by variables are not allowed for smooths of type bs = '", bs, "'!", sep = ""))
+      }
       if(!is.null(xt$knots))
         xt$nrknots <- xt$knots
       if(bs %in% c("ps", "te", "psplinerw1", "psplinerw2", "pspline",
