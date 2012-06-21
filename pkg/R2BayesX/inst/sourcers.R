@@ -1,7 +1,16 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
-sx(x, y, bs = "te")
+
+m2 <- bayesx(anytrips ~ userfee,
+  data = RecreationDemand, family = binomial,
+  outfile = "~/svn/bayesr/R2BayesX-bugs/recreation")
+
+
+
+
+
+
 
 
 plot(zm1, term = "sx(district):re", map = ZambiaBnd, pos = "topleft", 
