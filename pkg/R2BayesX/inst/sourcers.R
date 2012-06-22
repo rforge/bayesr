@@ -1,13 +1,20 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
+     
+## generate some data
+set.seed(111)
+n <- 500
+     
+## regressors
+dat <- data.frame(x = runif(n, -3, 3),
+  fac = factor(rep(1:2, n/2)))
+     
+## response
+dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
 
-m2 <- bayesx(anytrips ~ sx(income) + userfee,
-  data = RecreationDemand, family = binomial,
-  outfile = "~/svn/bayesr/R2BayesX-bugs/recreation")
-
-
-
+## testing subset
+b <- bayesx(y ~ sx(x), data = dat, subset = fac == 1)
 
 
 

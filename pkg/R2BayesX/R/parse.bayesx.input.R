@@ -98,8 +98,13 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
     }
     if(!is.null(subset) && is.character(subset)) {
       S <- data[[subset]]
-      if(is.null(S))
-        S <- eval(parse(text = subset), envir = .GlobalEnv)
+      if(is.null(S)) {
+        S <- try(eval(parse(text = subset), envir = .GlobalEnv), silent = TRUE)
+        if(class(S) == "try-error")
+          S <- try(eval(parse(text = subset), envir = data), silent = TRUE)
+        if(class(S) == "try-error")
+          stop("problems evaluating argument subset!")
+      }
       subset <- S
     }
     ff <- formula
