@@ -1,6 +1,8 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
+
+b <- read.bayesx.output("~/tmp/janmodel")
      
 ## generate some data
 set.seed(111)

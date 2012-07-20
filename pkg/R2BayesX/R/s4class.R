@@ -1,23 +1,23 @@
 s4class <-
 function(x)
 {
-  if(grepl("_random", x))
+  if(grepl("_random.", x, fixed = TRUE))
     cx <- "random.bayesx"
-  if(grepl("_pspline", x))
+  if(grepl("_pspline.", x, fixed = TRUE))
     cx <- "sm.bayesx"
-  if(grepl("_season", x))
+  if(grepl("_season.", x, fixed = TRUE))
     cx <- "sm.bayesx"
-  if(grepl("_rw", x))
+  if(grepl("_rw.", x, fixed = TRUE))
     cx <- "sm.bayesx"
-  if(grepl("_spatial", x))
+  if(grepl("_spatial.", x, fixed = TRUE))
     cx <- "mrf.bayesx"
-  if(grepl("_geospline", x))
+  if(grepl("_geospline.", x, fixed = TRUE))
     cx <- "geo.bayesx"
-  if(grepl("_geokriging", x))
+  if(grepl("_geokriging.", x, fixed = TRUE))
     cx <- "geo.bayesx"
-  if(grepl("_logbaseline", x))
+  if(grepl("_logbaseline.", x, fixed = TRUE))
     cx <- "sm.bayesx"
-  if(grepl("_kriging", x))
+  if(grepl("_kriging.", x, fixed = TRUE))
     cx <- "sm.bayesx"
 
   return(cx)
