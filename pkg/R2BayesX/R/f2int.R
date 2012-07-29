@@ -9,7 +9,7 @@ f2int <- function(x, type = 1L)
   if(type != 2L)
     x <- x - 1L
   if(min(x) < 0)
-    x <- x + min(x)
+    x <- x + abs(min(x))
   options(warn = warn)
 
   return(x)

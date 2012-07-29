@@ -2,6 +2,15 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
+m5b <- bayesx(factor(X) ~ sx(q0, by = loc), method = "MCMC", family = "binomial", data = dat.3)
+
+
+b <- read.bayesx.output("~/tmp/bayesx")
+
+
+m2 <- bayesx(X ~ sx(q0, by = loc) + T3 + T2, data = dat.2, family = "gaussian", verbose = FALSE,
+  outfile = "~/tmp/bayesx")
+
 b <- read.bayesx.output("~/tmp/janmodel")
      
 ## generate some data

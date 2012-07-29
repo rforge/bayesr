@@ -74,9 +74,10 @@ function(dir, model.name)
             }
           }
           if(is.matrix(eta)) {
-            rownames(eta) <- 1:NROW(eta)
             if(nrow(eta) != nrow(data))
               eta <- NULL
+            else
+              rownames(eta) <- 1:NROW(eta)
           } else {
             if(nrow(data) != length(eta))
               eta <- NULL
