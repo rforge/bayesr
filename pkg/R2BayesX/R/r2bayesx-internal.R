@@ -25,12 +25,12 @@ function(x, ...)
       if(i < step) {
         if(!is.null(txt) && txt != "") {
           if(mfn[i] != "step.final.model")
-            cat(mfn[i], "=", txt," ")
+            cat(mfn[i], "=", gsub('\"', "", txt, fixed = TRUE)," ")
           else {
             cat("\n\n")
             cat("Stepwise final model:\n")
-            cat("\n")
-            cat(txt)
+            cat(gsub('\"', "", txt, fixed = TRUE))
+            cat("\n\n")
           }
         }
       }
@@ -87,7 +87,7 @@ function(x, digits = max(3L, getOption("digits") - 3L),
   if(!is.null(x$fixed.effects)) {
     fc <- TRUE
     if(nrow(x$fixed.effects) < 2L) {
-      if(all(x$fixed.effects[1L,] == 0))
+      if(!any(is.na(x$fixed.effects)) && all(x$fixed.effects[1L,] == 0))
         fc <- FALSE
     } else {
       if(!all(as.character(x$fixed.effects) == "NaN") && all(x$fixed.effects[1L,] == 0)) {
