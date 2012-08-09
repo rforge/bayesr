@@ -2,6 +2,26 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
+b <- read.bayesx.output("~/tmp1")
+
+
+
+b <- bayesx(y ~  sx(x1) + sx(x2) + sx(devmean) +
+	sx(reg_id ~ -1 +  sx(country ~ 1, bs="re", data=country), bs="re", data=region) +
+	sx(country1 ~ 1, by=x3, bs="re", data=country) +
+	sx(country2 ~ -1, by=x1, bs="re", data=country) + 
+	sx(country3 ~ -1, by=x2, bs="re", data=country) + 
+	sx(country4 ~ -1, by=devmean, bs="re", data=country),
+  data=dat, method="HMCMC", iter=3000, step=2, burnin=1000, seed=1234, family="binomial_probit",
+  outfile = "~/tmp")
+
+
+
+
+
+cols <- colorlegend(plot = FALSE)
+
+
 m5b <- bayesx(factor(X) ~ sx(q0, by = loc), method = "MCMC", family = "binomial", data = dat.3)
 
 

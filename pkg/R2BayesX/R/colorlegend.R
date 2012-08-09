@@ -7,7 +7,6 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
   labels = NULL, distance.labels = 1L, col.labels = "black", cex.labels = 1L, 
   digits = 2L, swap = FALSE, symmetric = TRUE, xpd = NULL, ...)
 {
-  op <- par(no.readonly = TRUE)
   args <- list(...)
   if(is.null(xlim))
     xlim <- c(0L, 1L)
