@@ -182,7 +182,7 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
         }
       axis(where, at = at, labels = labels, col = col.labels, 
         tick = ticks, lty = lty.ticks, col.ticks = col.ticks, 
-        lwd.ticks = lwd.ticks, cex = cex.labels)
+        lwd.ticks = lwd.ticks, cex.axis = cex.labels[1])
       }
     }
   }

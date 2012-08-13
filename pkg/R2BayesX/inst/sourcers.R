@@ -2,7 +2,19 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-summary(m)
+mar <- c(4.1, 0.1, 4.1, 0.1)
+par(mar = mar)
+w <- (3 + mar[2L]) * par("csi") * 4.1
+layout(matrix(c(1, 2), nrow = 1), widths = c(1, lcm(w)))
+pdata <- slot(austria_map, "data")$POP_ADMIN
+colors <- colorlegend(x = pdata, plot = FALSE, symmetric = FALSE,
+  color = heat_hcl, swap = TRUE)
+plot(austria_map, col = colors$map(pdata))
+mar[4] <- 3.1
+par(mar = mar)
+colorlegend(x = pdata, full = TRUE, side.legend = 2,
+  side.ticks = 2, symmetric = FALSE, color = heat_hcl,
+  swap = TRUE, cex.labels = 2)
 
 
 
