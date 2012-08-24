@@ -12,9 +12,9 @@
 
 \usage{
 colorlegend (color = NULL, ncol = NULL, x = NULL, 
-  breaks = NULL, pos = NULL, side.legend = 1L, 
+  breaks = NULL, pos = NULL, shift = 0.02, side.legend = 1L, 
   side.ticks = 1L, range = NULL, lrange = NULL, 
-  width = 1L, height = 1L, scale = TRUE, xlim = NULL, 
+  width = 0.4, height = 0.06, scale = TRUE, xlim = NULL, 
   ylim = NULL, plot = NULL, full = FALSE, add = FALSE, 
   col.border = "black", lty.border = 1L, lwd.border = 1L, 
   ticks = TRUE, at = NULL, col.ticks = "black", lwd.ticks = 1L, 
@@ -33,7 +33,10 @@ colorlegend (color = NULL, ncol = NULL, x = NULL,
   \item{pos}{the position of the legend, either a numeric vector, e.g. \code{pos = c(0.1, 0.2)} will 
     add the legend at the 10\eqn{\%} point in the x-direction and at the 20\eqn{\%} point in the 
     y-direction of the plotting window, may also be negative, or one of the following: 
-    \code{"bottomleft"}, \code{"topleft"}, \code{"topright"} or \code{"bottomright"}.}
+    \code{"bottomleft"}, \code{"topleft"}, \code{"topright"}, \code{"bottomright"},
+    \code{"left"}, \code{"right"}, \code{"top"}, \code{"bottom"} and \code{"center"}.}
+  \item{shift}{if argument \code{pos} is a character, \code{shift} determines the distance of the
+    legend from the plotting box.}
   \item{side.legend}{if set to \code{2} the legend will be flipped by 90 degrees.}
   \item{side.ticks}{if set to \code{2}, the ticks and labels will be on the opposite site of the 
     legend.}

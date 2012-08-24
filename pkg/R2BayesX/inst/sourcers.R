@@ -2,6 +2,14 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
+plot(1, 1)
+colorlegend(add = TRUE, plot = FALSE, pos = "center")
+
+colors <- mapfun(dat$x, dat$y, dat$fit,
+  lrange = c(0, 1), range = c(-1, 1),
+  color = diverge_hcl(10, h = c(0, 0)),
+  p.cex = 0.6, pch = 21, legend = FALSE)
+
 mar <- c(4.1, 0.1, 4.1, 0.1)
 par(mar = mar)
 w <- (3 + mar[2L]) * par("csi") * 4.1

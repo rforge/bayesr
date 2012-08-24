@@ -1,17 +1,25 @@
 colorlegend <-
 function(color = NULL, ncol = NULL, x = NULL, breaks = NULL, 
-  pos = NULL, side.legend = 1L, side.ticks = 1L, range = NULL, lrange = NULL, 
-  width = 1L, height = 1L, scale = TRUE, xlim = NULL, ylim = NULL, plot = NULL, full = FALSE,
+  pos = NULL, shift = 0.02, side.legend = 1L, side.ticks = 1L, range = NULL, lrange = NULL, 
+  width = 0.4, height = 0.06, scale = TRUE, xlim = NULL, ylim = NULL, plot = NULL, full = FALSE,
   add = FALSE, col.border = "black", lty.border = 1L, lwd.border = 1L, ticks = TRUE, 
   at = NULL, col.ticks = "black", lwd.ticks = 1L, lty.ticks = 1L, length.ticks = 1L, 
   labels = NULL, distance.labels = 1L, col.labels = "black", cex.labels = 1L, 
   digits = 2L, swap = FALSE, symmetric = TRUE, xpd = NULL, ...)
 {
   args <- list(...)
-  if(is.null(xlim))
-    xlim <- c(0L, 1L)
-  if(is.null(ylim))
-    ylim <- c(0L, 1L)
+  if(is.null(xlim)) {
+    if(add)
+      xlim <- par("usr")[1L:2L]
+    else
+      xlim <- c(0L, 1L)
+  }
+  if(is.null(ylim)) {
+    if(add)
+      ylim <- par("usr")[3L:4L]
+    else
+      ylim <- c(0L, 1L)
+  }
   if(!side.legend %in% c(1L, 2L)) {
     warning("argument side.legend is specified wrong, set to default!")
     side.legend <- 1L
@@ -39,7 +47,8 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
   if(xpd)
     par(xpd = xpd)
   pos2 <- NULL
-  postxt <- c("bottomleft", "topleft", "topright", "bottomright")
+  postxt <- c("bottomleft", "topleft", "topright", "bottomright",
+    "left", "right", "top", "bottom", "center")
   poscheck <- pmatch(pos, postxt)
   if(all(!is.na(poscheck)) && length(poscheck) > 0) {
     pos2 <- postxt[pmatch(pos, postxt)]
@@ -56,8 +65,8 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
   if(side.legend > 1L)
     limits <- rev(limits)
   if(scale) {
-    width <- width * diff(limits[[1L]]) * 0.7
-    height <- height * diff(limits[[2L]]) * 0.3
+    width <- width * diff(limits[[1L]])
+    height <- height * diff(limits[[2L]])
   }
   if(side.legend > 1L) {
     wi <- width
@@ -68,7 +77,7 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
     xlim <- range(c(pos[1L], pos[1L] + width, pos[1L] + width, pos[1L]))
     ylim <- range(c(pos[2L], pos[2L], pos[2L] + height, pos[2L] + height))
   } else {
-    pos2 <- dopos(pos2, limits, width, height, side.legend)
+    pos2 <- dopos(pos2, limits, width, height, side.legend, shift)
     xlim <- pos2$xlim
     ylim <- pos2$ylim
   }
@@ -129,14 +138,14 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
         labels <- round(at, digits = digits)
       if(side.legend < 2L) {
         at <- obs2legend(at, xlim)
-        length.ticks <- length.ticks * diff(ylim) * 0.1
+        length.ticks <- length.ticks * diff(ylim) * 0.23
         if(any(at > max(xlim))) 
           at[at > max(xlim)] <- max(xlim)
         if(any(at < min(xlim)))
           at[at < min(xlim)] <- min(xlim)
       } else {
         at <- obs2legend(at, ylim)
-        length.ticks <- length.ticks * diff(xlim) * 0.1
+        length.ticks <- length.ticks * diff(xlim) * 0.25
         if(any(at > max(ylim))) 
           at[at > max(ylim)] <- max(ylim)
         if(any(at < min(ylim)))
@@ -160,7 +169,7 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
                 lwd = lwd.ticks[i], lty = lty.ticks[i], col = col.ticks[i])
             }
             if(dl) {
-              graphics::text(at[i], ylim[side.ticks] - length.ticks - (distance.labels * length.ticks * 1.8),
+              graphics::text(at[i], ylim[side.ticks] - length.ticks - (distance.labels * length.ticks * 2),
                 labels = labels[i], col = col.labels[i], cex = cex.labels[i], ...)
             }
           } else {
@@ -169,7 +178,7 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
                 lwd = lwd.ticks[i], lty = lty.ticks[i], col = col.ticks[i]) 
             }
             if(dl) {
-              graphics::text(xlim[side.ticks] - length.ticks - (distance.labels * length.ticks * 1.8), 
+              graphics::text(xlim[side.ticks] - length.ticks - (distance.labels * length.ticks * 2), 
                 at[i], labels = labels[i], col = col.labels[i], cex = cex.labels[i], ...)
             }
           }
