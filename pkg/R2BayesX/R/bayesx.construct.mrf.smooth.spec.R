@@ -81,8 +81,17 @@ function(object, dir, prg, data)
       write.bnd(map = map, file = mapfile, replace = TRUE)
       cmd <- paste(map.name, ".infile using ", mapfile, "\n", sep = "")
     } else {
-      write.gra(map = map, file = mapfile, replace = TRUE)
-      cmd <- paste(map.name, ".infile, graph using ", mapfile, "\n", sep = "")
+      if(!is.character(map)) {
+        write.gra(map = map, file = mapfile, replace = TRUE)
+        cmd <- paste(map.name, ".infile, graph using ", mapfile, "\n", sep = "")
+      } else {
+        stopifnot(is.character(map))
+        require("tools")
+        if(file_ext(map) == "gra")
+          cmd <- paste(map.name, ".infile, graph using ", path.expand(map), "\n", sep = "")
+        else
+          cmd <- paste(map.name, ".infile using ", path.expand(map), "\n", sep = "")
+      }
     }
   }
   if(prgok)

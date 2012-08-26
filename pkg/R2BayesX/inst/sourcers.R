@@ -2,6 +2,11 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
+fg <- "~/tmp/fg.gra"
+b <- bayesx(y ~ sx(id, bs = "mrf", map = FantasyBnd), data = xy, outfile = "~/tmp")
+
+
+
 plot(1, 1)
 colorlegend(add = TRUE, plot = FALSE, pos = "center")
 
