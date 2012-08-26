@@ -86,8 +86,9 @@ function(object, dir, prg, data)
         cmd <- paste(map.name, ".infile, graph using ", mapfile, "\n", sep = "")
       } else {
         stopifnot(is.character(map))
-        require("tools")
-        if(file_ext(map) == "gra")
+        pos <- regexpr("\\.([[:alnum:]]+)$", map)
+        fext <- ifelse(pos > -1L, substring(map, pos + 1L), "")
+        if(fext == "gra")
           cmd <- paste(map.name, ".infile, graph using ", path.expand(map), "\n", sep = "")
         else
           cmd <- paste(map.name, ".infile using ", path.expand(map), "\n", sep = "")

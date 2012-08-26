@@ -3,7 +3,7 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
 fg <- "~/tmp/fg.gra"
-b <- bayesx(y ~ sx(id, bs = "mrf", map = FantasyBnd), data = xy, outfile = "~/tmp")
+b <- bayesx(y ~ sx(id, bs = "mrf", map = fg), data = xy, outfile = "~/tmp")
 
 
 
