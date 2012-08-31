@@ -7,7 +7,7 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
     "rw1", "rw2",
     "season",
     "ps", "psplinerw1", "psplinerw2", "pspline",
-    "te", "pspline2dimrw2",
+    "te", "pspline2dimrw2", "te2",
     "kr", "kriging",
     "gk", "geokriging",
     "gs", "geospline",
@@ -55,6 +55,7 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
         if(by != "NA")
           stop(paste("by variables are not allowed for smooths of type bs = '", bs, "'!", sep = ""))
       }
+      if(bs == "te2") bs <- "te"
       if(!is.null(xt$knots))
         xt$nrknots <- xt$knots
       if(bs %in% c("ps", "te", "psplinerw1", "psplinerw2", "pspline",
