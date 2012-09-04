@@ -2,6 +2,8 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
+tmp <- bayesx.construct(sx(x, z, bs = "te1"))
+
 
 ## 2d * factor simulation
 n <- 3000
@@ -10,9 +12,12 @@ dat <- data.frame(
   "z" = runif(n, -3, 3),
   "id" = factor(rep(1:3, length.out = n))
 )
+dat$id1 <- 1 * (dat$id == 1)
+dat$id2 <- 1 * (dat$id == 2)
+dat$id3 <- 1 * (dat$id == 3)
+
 dat$y <- with(dat, sin(x) * cos(z) * c(-1, 1, 0.1)[id] + rnorm(n, sd = 1.2))
-b <- bayesx(y ~ sx(x, z, bs = "te2", by = id), data = dat, method = "REML",
-  outfile = "~/2dxfactor")
+b <- bayesx(y ~ sx(x, z, bs = "te1", by = id), data = dat, method = "REML")
 
 
 
