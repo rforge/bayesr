@@ -2,7 +2,7 @@ rmf <-
 function(x) 
 {
   for(i in 1L:length(x)) {
-    for(char in c("+", "-", "*", ":", "^", "/", " ", "(", ")", "]", "[", ",")) 
+    for(char in c("+", "-", "*", ":", "^", "/", " ", "(", ")", "]", "[", ",", "."))
       x[i] <- gsub(char, "_", x[i], fixed = TRUE)
   }
 
@@ -31,7 +31,7 @@ rmfscript <-
 function(x) 
 {
   for(i in 1L:length(x)) {
-    for(char in c("+", "-", "*", ":", "^", "/", " ", "(", ")", ",")) 
+    for(char in c("+", "-", "*", ":", "^", "/", " ", "(", ")", ",", ".")) 
       x[i] <- gsub(char, "", x[i], fixed = TRUE)
   }
 
