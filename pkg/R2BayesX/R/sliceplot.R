@@ -1,7 +1,7 @@
 sliceplot <- function(x, y = NULL, z = NULL, view = 1, c.select = NULL,
   values = NULL, probs = c(0.1, 0.5, 0.9), grid = 100, linear = FALSE,
   extrap = FALSE, duplicate = "mean", legend = TRUE, pos = "topright",
-  digits = 2, data = NULL, ...)
+  digits = 2, data = NULL, rawdata = FALSE, ...)
 {
   if(is.vector(x) && is.vector(y) && is.vector(z)) {
     nx <- c(
@@ -42,13 +42,19 @@ sliceplot <- function(x, y = NULL, z = NULL, view = 1, c.select = NULL,
   values <- if(is.null(values)) {
     quantile(x[, noview], probs = probs, type = 1)
   } else values
-  viewmat <- akima::interp(x[, view], x[, noview], x[, c.select],
-    seq(min(x[, view]), max(x[, view]), length = grid),
-    seq(min(x[, noview]), max(x[, noview]), length = grid),
-    duplicate = duplicate, linear = linear, extrap = extrap)
-  yg <- rep(viewmat$y, each = grid)
-  zg <- as.vector(viewmat$z)
-  slices <- viewmat$x
+  if(!rawdata) {
+    viewmat <- akima::interp(x[, view], x[, noview], x[, c.select],
+      seq(min(x[, view]), max(x[, view]), length = grid),
+      seq(min(x[, noview]), max(x[, noview]), length = grid),
+      duplicate = duplicate, linear = linear, extrap = extrap)
+    yg <- rep(viewmat$y, each = grid)
+    zg <- as.vector(viewmat$z)
+    slices <- viewmat$x
+  } else {
+    yg <- x[, noview]
+    zg <- x[, c.select]
+    slices <- unique(x[, view])
+  }
   for(j in values) {
     val <- unique(yg[which.min(abs(yg - j))])
     slices <- cbind(slices, zg[yg == val])
