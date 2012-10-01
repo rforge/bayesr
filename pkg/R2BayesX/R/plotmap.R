@@ -161,12 +161,12 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
         args$xpd <- TRUE
       args$add <- TRUE
     }
-    if(is.null(args$width))
-      args$width <- 0.6
-    if(is.null(args$height))
-      args$height <- 0.2
+#    if(is.null(args$width))
+#      args$width <- 0.6
+#    if(is.null(args$height))
+#      args$height <- 0.2
     if(is.null(args$distance.labels))
-     args$distance.labels <- 2
+      args$distance.labels <- 1
     if(is.null(args$length.ticks))
       args$length.ticks <- 2L
     args$xlim <- map.limits$xlim
