@@ -2,7 +2,12 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-sliceplot(fit ~ map + lag1, view = "map", data = nd, rawdata = TRUE)
+colorlegend(title = "A title", side.legend = 2)
+
+  par(mar = c(0.1, 0.1, 0.1, 0.1))
+  with(tc, xymap(long, lat, predict(logm, type = "response"),
+    lrange = c(0, 1), range = c(0, 1), color = sgreen,
+    swap = TRUE, p.cex = 0.6, pch = 21, title = "Probability of being forest"))
 
 
 

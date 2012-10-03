@@ -5,7 +5,8 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
   add = FALSE, col.border = "black", lty.border = 1L, lwd.border = 1L, ticks = TRUE, 
   at = NULL, col.ticks = "black", lwd.ticks = 1L, lty.ticks = 1L, length.ticks = 1L, 
   labels = NULL, distance.labels = 1L, col.labels = "black", cex.labels = 1L, 
-  digits = 2L, swap = FALSE, symmetric = TRUE, xpd = NULL, ...)
+  digits = 2L, swap = FALSE, symmetric = TRUE, xpd = NULL,
+  title = NULL, side.title = 2, shift.title = c(0, 0), ...)
 {
   args <- list(...)
   if(is.null(xlim)) {
@@ -192,6 +193,19 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
       axis(where, at = at, labels = labels, col = col.labels, 
         tick = ticks, lty = lty.ticks, col.ticks = col.ticks, 
         lwd.ticks = lwd.ticks, cex.axis = cex.labels[1])
+      }
+    }
+    if(!is.null(title)) {
+      if(length(shift.title) < 2)
+        shift.title <- c(shift.title, 0)
+      if(!full) {
+        xp <- xlim[1L] + shift.title[1] * diff(range(xlim))
+        yp <- ylim[2L] + shift.title[2] * diff(range(ylim))
+        text(if(side.legend < 2) xp else yp,
+          if(side.legend < 2) yp else xp, title, pos = 3,
+          srt = if(side.legend == 2) 270 else 0)
+      } else {
+        mtext(title, side = side.title)
       }
     }
   }
