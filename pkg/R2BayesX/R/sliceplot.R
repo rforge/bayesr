@@ -3,7 +3,7 @@ sliceplot <- function(x, y = NULL, z = NULL, view = 1, c.select = NULL,
   extrap = FALSE, duplicate = "mean", legend = TRUE, pos = "topright",
   digits = 2, data = NULL, rawdata = FALSE, ...)
 {
-  if(is.vector(x) && is.vector(y) && is.vector(z)) {
+  if(is.vector(x) & is.vector(y) & is.vector(z)) {
     nx <- c(
       deparse(substitute(x), backtick = TRUE, width.cutoff = 500),
       deparse(substitute(y), backtick = TRUE, width.cutoff = 500),
@@ -43,7 +43,7 @@ sliceplot <- function(x, y = NULL, z = NULL, view = 1, c.select = NULL,
     quantile(x[, noview], probs = probs, type = 1)
   } else values
   if(!rawdata) {
-    viewmat <- akima::interp(x[, view], x[, noview], x[, c.select],
+    viewmat <- akima::interp(jitter(x[, view]), jitter(x[, noview]), x[, c.select],
       seq(min(x[, view]), max(x[, view]), length = grid),
       seq(min(x[, noview]), max(x[, noview]), length = grid),
       duplicate = duplicate, linear = linear, extrap = extrap)
