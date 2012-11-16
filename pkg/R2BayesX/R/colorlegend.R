@@ -199,7 +199,7 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
       if(length(shift.title) < 2)
         shift.title <- c(shift.title, 0)
       if(!full) {
-        xp <- xlim[1L] + shift.title[1] * diff(range(xlim))
+        xp <- xlim[1L] + shift.title[1] * diff(range(xlim)) + diff(range(xlim)) / 2
         yp <- ylim[2L] + shift.title[2] * diff(range(ylim))
         text(if(side.legend < 2) xp else yp,
           if(side.legend < 2) yp else xp, title, pos = 3,
