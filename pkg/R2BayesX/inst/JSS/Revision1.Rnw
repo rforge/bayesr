@@ -55,76 +55,146 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
 
 \begin{itemize}
 
-\item \emph{Is there any option to run multiple chains within
-   a single command call so that other convergence
-   diagnostics such as the Gelman Rubin statistic can
-   be computed? Related to this, would it be possible
-   to distribute chains to different cores on a
-   multiple-cores machine?}
+\item \textbf{Is there any option to run multiple chains within
+  a single command call so that other convergence
+  diagnostics such as the Gelman Rubin statistic can
+  be computed? Related to this, would it be possible
+  to distribute chains to different cores on a
+  multiple-cores machine?}
 
-\item \emph{The STEP method for model/variable selection is
-   interesting, as demonstrated in Section 6.3. However,
-   at the moment only the "best" model is reported. Is
-   it possible to compute the posterior model probability
-   (cf. a summary output from the RJMCMC interface in
-   WinBUGS, see Lunn et al. 2008, subsection 5.1)?
-   (Lunn, D. J., Best, N. and Whittaker, J. (2008)
-   Generic reversible jump MCMC using graphical models,
-   Statistics and Computing)}
+  \medskip
 
-\item \emph{Not being able to store large objects is an issue
-   in R. How does R2BayesX scale up to cope with outputs
-   from large (e.g. spatio-temporal) models?}
+  Unfortunately multiple chain/core processing is not implemented yet, but it is on our
+  to do list.
 
-\item \emph{Although missing data is implicitly discussed in the
-   childhood malnutrition example, how are missing data
-   generally coded in BayesX/R2BayesX? It is not immediately
-   clear by looking at the data (ZambiaNutrition).}
 
-\item \emph{How to compute posterior summary of transformed variables
-   (e.g. posterior probability or prediction of outcome given
-   covariates)?}
+\item \textbf{The STEP method for model/variable selection is
+  interesting, as demonstrated in Section 6.3. However,
+  at the moment only the "best" model is reported. Is
+  it possible to compute the posterior model probability
+  (cf. a summary output from the RJMCMC interface in
+  WinBUGS, see Lunn et al. 2008, subsection 5.1)?
+  (Lunn, D. J., Best, N. and Whittaker, J. (2008)
+  Generic reversible jump MCMC using graphical models,
+  Statistics and Computing)}
 
-\item \emph{It would be useful to provide some guidance on specifying
-   the degrees and knots when using p-spline in practice (do
-   we perform a sensitivity analysis on different settings
-   for knots/degrees? Also are the basis functions first
-   pre-specified based on the fixed and equally spaced knots
-   and are fixed throughout the MCMC run?)}
+  \medskip
 
-\item \emph{Could the authors briefly compare BayesX to WinBUGS and INLA?
-   Although it is not the main aim of this paper and perhaps
-   can itself form another paper, this brief comparison can
-   give readers a clearer idea of what these packages offer.}
+  \fixme{Stefan/Thomas?}
 
-\item \emph{On page 2, Section 5 does not appear in the last paragraph.}
 
-\item \emph{Sections 2 and 3 can be merged into one section, which first
-   introduces the STAR models and then gives the motivating
-   example. I think the R commands in the motivating example
-   can be simplified (on the initial reading, I skipped most
-   of the command lines).}
+\item \textbf{Not being able to store large objects is an issue
+  in R. How does R2BayesX scale up to cope with outputs
+  from large (e.g. spatio-temporal) models?}
 
-\item \emph{State in the caption of Figure 1 that data (both outcomes
-   and covariates are missing?) of the areas shaded with
-   vertical lines are missing.}
+  \medskip
 
-\item \emph{Page 17, the third line underneath subsection 6.1,
-   "development countries" \code{->} "developing countries"?}
+  Probably we need to describe better that BayesX only provides
+  predictions for unique covariate values etc.? However, this is already explained in
+  Section~5.3. Additional options?
 
-\item \emph{On page 21, please rewrite the sentence "The range of the
-   estimated random spatial effect is much ...". Both Figures 4
-   and 5 suggest the spatially structured random effect is
-   more important than the unstructured one. The variance
-   partition coefficient can be computed here to report
-   the relative importance of each random effect component.}
 
-\item \emph{On page 22, autocorrelation is one measure for assessing
-   convergence. However, chains trapped at some local modes
-   can sometimes have "well-behave" ACF. Multiple chains should
-   be run (see general comment 1 above).}
+\item \textbf{Although missing data is implicitly discussed in the
+  childhood malnutrition example, how are missing data
+  generally coded in BayesX/R2BayesX? It is not immediately
+  clear by looking at the data (ZambiaNutrition).}
 
-\item \emph{Last line on page 22, ore \code{->} or?}
+  \medskip
+
+  \fixme{Achim, I suppose that the \code{na.action} argument is sufficient?}
+  Missing data is processed by the \code{na.action} argument in \fct{bayesx}/\fct{parse.bayesx.input}.
+  The default in \fct{bayesx} is \code{na.action = NULL}, which means that the function that is
+  provided within the \fct{options} setting will be used, the default here is \fct{na.omit}.
+  \pkg{BayesX} will then process on the data that is provided from \proglang{R}, in general,
+  the \pkg{BayesX} binary will remove all \code{NA}s. \fixme{Stefan/Thomas, is that true?}
+ 
+
+\item \textbf{How to compute posterior summary of transformed variables
+  (e.g. posterior probability or prediction of outcome given
+  covariates)?}
+ 
+  \medskip
+
+  Prediction using new covariate values is not implemented yet, since the \pkg{BayesX}
+  binary does not support prediction at the moment. The plan is to do a work around, i.e.\ construct
+  design matrices for new covariate values within \proglang{R} directly and combinate them with the
+  samples of the parameters for prediction.
+  \fixme{Achim, should we note that in the paper?}
+
+
+\item \textbf{It would be useful to provide some guidance on specifying
+  the degrees and knots when using p-spline in practice (do
+  we perform a sensitivity analysis on different settings
+  for knots/degrees? Also are the basis functions first
+  pre-specified based on the fixed and equally spaced knots
+  and are fixed throughout the MCMC run?)}
+
+  \medskip
+
+  The default settings have been thoroughly tested and should fit for common regression problems.
+  The common user does usually not have to do sensitivity checks. We have added some more
+  explanation on this topic in Section~5.2 Available additive terms.
+  \fixme{Stefan/Thomas, any suggestions here?}
+
+
+\item \textbf{Could the authors briefly compare BayesX to WinBUGS and INLA?
+  Although it is not the main aim of this paper and perhaps
+  can itself form another paper, this brief comparison can
+  give readers a clearer idea of what these packages offer.}
+
+  \medskip
+
+  In the paper \medskip \\
+  Brezger A, Kneib T, Lang S (2005). \emph{"\pkg{BayesX}: Analyzing Bayesian Structured Additive
+  Regression Models."} Journal of Statistical Software, \textbf{14}(11), 1--22.
+  URL~\url{http://www.jstatsoft.org/v14/i11/.} \medskip \\
+  Section~3, a thorough comparison of software with built in functions for GAM modeling is presented
+  and also a section with a \pkg{WinBUGS} comparison. \fixme{Achim, one or two words on \pkg{INLA}?}
+
+
+\item \textbf{On page 2, Section 5 does not appear in the last paragraph.}
+
+ \medskip
+
+ Fixed.
+
+
+\item \textbf{Sections 2 and 3 can be merged into one section, which first
+  introduces the STAR models and then gives the motivating
+  example. I think the R commands in the motivating example
+  can be simplified (on the initial reading, I skipped most
+  of the command lines).}
+
+\item \textbf{State in the caption of Figure 1 that data (both outcomes
+  and covariates are missing?) of the areas shaded with
+  vertical lines are missing.}
+
+  \medskip
+
+  Fixed.
+
+
+\item \textbf{Page 17, the third line underneath subsection 6.1,
+  "development countries" \code{->} "developing countries"?}
+
+  \medskip
+
+  Fixed.
+
+
+\item \textbf{On page 21, please rewrite the sentence "The range of the
+  estimated random spatial effect is much ...". Both Figures 4
+  and 5 suggest the spatially structured random effect is
+  more important than the unstructured one. The variance
+  partition coefficient can be computed here to report
+  the relative importance of each random effect component.}
+
+\item \textbf{On page 22, autocorrelation is one measure for assessing
+  convergence. However, chains trapped at some local modes
+  can sometimes have "well-behave" ACF. Multiple chains should
+  be run (see general comment 1 above).}
+
+\item \textbf{Last line on page 22, ore \code{->} or?}
 
 \end{itemize}
 
@@ -136,109 +206,109 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
 
 \begin{itemize}
 
-\item \emph{The installation of R2BayesX on OSX was problematic. It didn't
-   install at all in R 2.14.  After a clean install of R (R version
-   2.15.1 (2012-06-22), Platform: x86\_64-apple-darwin9.8.0/x86\_64 (64-bit)),
-   the default installer still didn't work.  A google search for
-   the error (dyld: Library not loaded: /usr/local/lib/libreadline.5.2.dylib),
-   shows that this is a problem that others have had.}
+\item \textbf{The installation of R2BayesX on OSX was problematic. It didn't
+  install at all in R 2.14.  After a clean install of R (R version
+  2.15.1 (2012-06-22), Platform: x86\_64-apple-darwin9.8.0/x86\_64 (64-bit)),
+  the default installer still didn't work.  A google search for
+  the error (dyld: Library not loaded: /usr/local/lib/libreadline.5.2.dylib),
+  shows that this is a problem that others have had.}
 
-\item \emph{It looks like the authors misunderstood the way that R installs on a mac.
-   This is fairly common when porting from unix.  It can be fixed with
-   using a symbolic link, but that's not very satisfactory!  It would be
-   better if they used the correct directory to begin with. To be honest,
-   were I not reviewing this package, I probably wouldn't have spent the
-   time tracking down a fix.}
+\item \textbf{It looks like the authors misunderstood the way that R installs on a mac.
+  This is fairly common when porting from unix.  It can be fixed with
+  using a symbolic link, but that's not very satisfactory!  It would be
+  better if they used the correct directory to begin with. To be honest,
+  were I not reviewing this package, I probably wouldn't have spent the
+  time tracking down a fix.}
 
-\item \emph{I tried to run the munich rent example that comes with INLA in R2BayesX
-   (http://www.r-inla.org/examples/volume-1) in order to get a grip on how
-   easy R2BayesX was to use.
-   I first tried to run it without the spatial effect, at which point I was
-   informed that the variable names were not valid (they had .'s in them).
-   This is quite tedious and should probably appear in the text.  It would
-   be even better if the variables could be renamed internally to fix this
-   problem automatically.
-   Firstly, the graph file was in the wrong form, which was inconvenient.
-   After checking with the BayesX manual, I wrote a short awk script to
-   convert the inla graph format to the BayesX format \medskip \\
-   $\phantom{mm}$\code{awk 'NF == 1 {print \$0};  NF > 2 {print \$1 - 1; print \$2; \$1="";} \\
-   $\phantom{mm}$\code{\$2 = ""; for (i=3;i<=NF;i++){\$i = \$i-1}; print \$0}' < munich.graph >} \\
-   $\phantom{mm}$\code{munich.bayesx.graph} \medskip \\
-   It would be convenient if the authors to provide some mechanisms to
-   construct graph files, rather than assuming that the graph file has
-   been converted to the BayesX format.  Minimal functionality would be to
-   extend read.gra() to take an adjacency matrix.  It's only half a dozen
-   lines of code, but it's nice for users.}
+\item \textbf{I tried to run the munich rent example that comes with INLA in R2BayesX
+  (http://www.r-inla.org/examples/volume-1) in order to get a grip on how
+  easy R2BayesX was to use.
+  I first tried to run it without the spatial effect, at which point I was
+  informed that the variable names were not valid (they had .'s in them).
+  This is quite tedious and should probably appear in the text.  It would
+  be even better if the variables could be renamed internally to fix this
+  problem automatically.
+  Firstly, the graph file was in the wrong form, which was inconvenient.
+  After checking with the BayesX manual, I wrote a short awk script to
+  convert the inla graph format to the BayesX format \medskip \\
+  $\phantom{mm}$\code{awk 'NF == 1 {print \$0};  NF > 2 {print \$1 - 1; print \$2; \$1="";} \\
+  $\phantom{mm}$\code{\$2 = ""; for (i=3;i<=NF;i++){\$i = \$i-1}; print \$0}' < munich.graph >} \\
+  $\phantom{mm}$\code{munich.bayesx.graph} \medskip \\
+  It would be convenient if the authors to provide some mechanisms to
+  construct graph files, rather than assuming that the graph file has
+  been converted to the BayesX format.  Minimal functionality would be to
+  extend read.gra() to take an adjacency matrix.  It's only half a dozen
+  lines of code, but it's nice for users.}
 
-\item \emph{It would also be nice if a function was provided that checked the
-   validity of graph files.}
+\item \textbf{It would also be nice if a function was provided that checked the
+  validity of graph files.}
 
-\item \emph{Would it be better in the STEP algorithm to set the quantiles to NA
-   (not available) rather than 0.00?}
+\item \textbf{Would it be better in the STEP algorithm to set the quantiles to NA
+  (not available) rather than 0.00?}
 
-\item \emph{In the bayesx() call, the family parameter is case sensitive (I
-   accidentally wrote "Gaussian" instead of "gaussian"). This could be
-   fixed with tolower(). A similar thing happened with CI = "MCMCselect".}
+\item \textbf{In the bayesx() call, the family parameter is case sensitive (I
+  accidentally wrote "Gaussian" instead of "gaussian"). This could be
+  fixed with tolower(). A similar thing happened with CI = "MCMCselect".}
 
-\item \emph{Section 2: The option "full = TRUE" in the formula is not
-   mentioned anywhere else in this paper.  What does it do?}
+\item \textbf{Section 2: The option "full = TRUE" in the formula is not
+  mentioned anywhere else in this paper.  What does it do?}
 
-\item \emph{Section 3: Is the list on page 5 an exhaustive list of models
-   implemented in R2BayesX?}
+\item \textbf{Section 3: Is the list on page 5 an exhaustive list of models
+  implemented in R2BayesX?}
 
-\item \emph{Section 4.2: I note in passing that the INLA package can solve a
-   large class of latent Gaussian models in which each observation depends
-   linearly on the latent Gaussian field.  This includes GLMMs, GAMMs and
-   many STAR (but not all - variable coefficient models aren't implemented)
-   models, as well as models where the link is not through the mean (such
-   as stochastic volatility models).}
+\item \textbf{Section 4.2: I note in passing that the INLA package can solve a
+  large class of latent Gaussian models in which each observation depends
+  linearly on the latent Gaussian field.  This includes GLMMs, GAMMs and
+  many STAR (but not all - variable coefficient models aren't implemented)
+  models, as well as models where the link is not through the mean (such
+  as stochastic volatility models).}
 
-\item \emph{Table 4:  It would be useful to specify which GMRF model is being used.
-   There are more than one! A reference would be sufficient.  Similar comment
-   or "geokriging" - which stationary GRF?}
+\item \textbf{Table 4:  It would be useful to specify which GMRF model is being used.
+  There are more than one! A reference would be sufficient.  Similar comment
+  or "geokriging" - which stationary GRF?}
 
-\item \emph{Bottom of page 15: "several informations" \code{->} "several pieces of
-   information" or just "information"}
+\item \textbf{Bottom of page 15: "several informations" \code{->} "several pieces of
+  information" or just "information"}
 
-\item \emph{Same place: "further arguments may be passed to the function system()"
+\item \textbf{Same place: "further arguments may be passed to the function system()"
   <-- I would probably use 'can' instead of 'may' - I misread the sentence
   the first time.}
 
-\item \emph{Top of page 16: " model.name the name of the model" \code{<-} missing is}
+\item \textbf{Top of page 16: " model.name the name of the model" \code{<-} missing is}
 
-\item \emph{Page 16 paragraph 2: What is a "very large dataset" for BayesX? Are
-   there benchmarks?}
+\item \textbf{Page 16 paragraph 2: What is a "very large dataset" for BayesX? Are
+  there benchmarks?}
 
-\item \emph{Page 20: I'm not a fan of an enormous piece of R output breaking
-   a sentence.}
+\item \textbf{Page 20: I'm not a fan of an enormous piece of R output breaking
+  a sentence.}
 
-\item \emph{Figure 4: I am unsure what the x axis on these images stand for.  And
-   what exactly is the is kernel density estimate of? Is it just the density
-   of the posterior ignoring the spatial location (i.e. lumping all of the
-   distributions together)?  If so is there any statistical justification
-   or meaning for this plot?  The locations are not independent!}
+\item \textbf{Figure 4: I am unsure what the x axis on these images stand for.  And
+  what exactly is the is kernel density estimate of? Is it just the density
+  of the posterior ignoring the spatial location (i.e. lumping all of the
+  distributions together)?  If so is there any statistical justification
+  or meaning for this plot?  The locations are not independent!}
 
-\item \emph{It would be nice to mention that all of these plotting options can be
-   found in Appendix B.}
+\item \textbf{It would be nice to mention that all of these plotting options can be
+  found in Appendix B.}
 
-\item \emph{Bottom of page 22: probably didn't mean "ore"...}
+\item \textbf{Bottom of page 22: probably didn't mean "ore"...}
 
-\item \emph{Same place: As this is a manual, it would be nice to give some
-   indication of the thought process behind increasing the number of
-   iterations to 20k or 30k.}
+\item \textbf{Same place: As this is a manual, it would be nice to give some
+  indication of the thought process behind increasing the number of
+  iterations to 20k or 30k.}
 
-\item \emph{Bottom of page 23: Most users would probably attack the 'verbose' option
-   directly through the bayesx() call.  I note that it's mentioned earlier
-   that the ellipsis argument in bayesx() maps to bayesx.control(), so this
-   is implied by the current text, but it would probably be good to clarify.}
+\item \textbf{Bottom of page 23: Most users would probably attack the 'verbose' option
+  directly through the bayesx() call.  I note that it's mentioned earlier
+  that the ellipsis argument in bayesx() maps to bayesx.control(), so this
+  is implied by the current text, but it would probably be good to clarify.}
 
-\item \emph{Example in 6.2: Is there an easy way to perform spatial prediction
-   with R2BayesX?  It would be nice to get a smooth spatial interpolant
-   for the whole region.}
+\item \textbf{Example in 6.2: Is there an easy way to perform spatial prediction
+  with R2BayesX?  It would be nice to get a smooth spatial interpolant
+  for the whole region.}
 
-\item \emph{Something weird has happened in the second paragraph of page 34.}
+\item \textbf{Something weird has happened in the second paragraph of page 34.}
 
-\item \emph{Table 7: This should include the "acf=TRUE" option used in Figure 7.}
+\item \textbf{Table 7: This should include the "acf=TRUE" option used in Figure 7.}
 
 \end{itemize}
 
@@ -250,33 +320,33 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
 
 \begin{itemize}
 
-\item \emph{Would it be possible to store all the masses of output information from
-   BayesX in the fitted model object, for later retrieval, rather than printing
-   it all to the screen? The current behaviour is really a bit off putting and
-   not in the spirit of R modelling functions. (Warnings or errors are
-   different of course, and should be printed out by default). Perhaps a
-   verbose option could be used to turn printing back on, if needed?}
+\item \textbf{Would it be possible to store all the masses of output information from
+  BayesX in the fitted model object, for later retrieval, rather than printing
+  it all to the screen? The current behaviour is really a bit off putting and
+  not in the spirit of R modelling functions. (Warnings or errors are
+  different of course, and should be printed out by default). Perhaps a
+  verbose option could be used to turn printing back on, if needed?}
 
-\item \emph{There seems to be an ordering problem with fitted.bayesx. I noticed this
-   from a more complicated example, but actually the first example in ?bayesx
-   illustrates the issue:}
+\item \textbf{There seems to be an ordering problem with fitted.bayesx. I noticed this
+  from a more complicated example, but actually the first example in ?bayesx
+  illustrates the issue:}
 
-   \begin{Schunk}
-   \begin{Sinput}
-   require(R2BayesX)
-   set.seed(111)
-   n <- 200
-   ## regressor
-   dat <- data.frame(x = runif(n, -3, 3))
-   ## response
-   dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
-   ## estimate models with bayesx REML and MCMC
-   b1 <- bayesx(y ~ sx(x), method = "REML", data = dat)
+  \begin{Schunk}
+  \begin{Sinput}
+  require(R2BayesX)
+  set.seed(111)
+  n <- 200
+  ## regressor
+  dat <- data.frame(x = runif(n, -3, 3))
+  ## response
+  dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
+  ## estimate models with bayesx REML and MCMC
+  b1 <- bayesx(y ~ sx(x), method = "REML", data = dat)
 
-   cor(fitted(b1)$mu,dat$y)   ## about 7% - should be about 80%, I think
-   plot(fitted(b1)$mu,dat$y)  ## shows almost no relationship !
-   \end{Sinput}
-   \end{Schunk}
+  cor(fitted(b1)$mu,dat$y)  ## about 7% - should be about 80%, I think
+  plot(fitted(b1)$mu,dat$y)  ## shows almost no relationship !
+  \end{Sinput}
+  \end{Schunk}
 
 \end{itemize}
 
@@ -288,21 +358,21 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
 
 \begin{itemize}
 
-\item \emph{It is not entirely clear who the authors have in mind as the audience for the paper.
+\item \textbf{It is not entirely clear who the authors have in mind as the audience for the paper.
   The introduction emphasizes the relationship between BayesX and R2BayesX. The paper then has a
   nice motivating example, which unfortunately plays virtually no role until the very end of the 
   paper. In between, there is a section providing details on how the BayesX package was modified 
   into an R framework, followed by a long section that provides useful lists of the major options 
   used in the package. Finally, there is a nice section on estimating STAR models in practice.}
 
-\item \emph{The discussion of the relationship between the two packages is probably useful to 
+\item \textbf{The discussion of the relationship between the two packages is probably useful to 
   someone who is familiar with BayesX. However, I would guess that the main audience for the paper 
   will be R users. As an R user who is now convinced that R2BayesX is extremely useful, I found 
   sections 2-5 to be frustrating and at time nearly useless. Though the package is incredibly 
   powerful and has many options, it is not until page 17 that we begin to learn how to use the 
   package in any detail.}
 
-\item \emph{Although it would involve substantial rewriting, I think the paper would be much more 
+\item \textbf{Although it would involve substantial rewriting, I think the paper would be much more 
   useful if it were organized around the empirical examples. Section 4 could be placed in an 
   appendix. Though the most important parts of section 5 are the tables, the various options are
   not illustrated in any detail. It would be useful to organize the empirical applications around 
@@ -311,7 +381,7 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
   listed in Table 3. Finally, there might be some discussion of the usefulness of altering some of 
   the options listed in Table 2.}
 
-\item \emph{In its current form, the reader is simply provided with a list of options in Table 
+\item \textbf{In its current form, the reader is simply provided with a list of options in Table 
   2-4. In my view, these tables and the empirical examples are the crux of the paper. I was able 
   to use these tables to experiment successfully with some of my own data sets. I was very 
   impressed. My complaint is that I did most of this work on my own with reference to Tables 2-4. 
@@ -320,7 +390,7 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
   geokriging, and geospline to be confusing. It would be straightforward to modify the empirical 
   examples to illustrate some of these differences and to show how to access the model results.}
 
-\item \emph{It might also be useful if the authors added a brief discussion of some of the
+\item \textbf{It might also be useful if the authors added a brief discussion of some of the
   advantages of STAR models over other approaches. They mention alternatives such as GAM, GAMM, 
   and varying coefficient models, and point out that each of these can be considered a special 
   case of the STAR approach. Again, this might serve as a useful organizing principle for the 

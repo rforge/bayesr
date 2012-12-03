@@ -144,8 +144,10 @@ installation of the \proglang{R} package a suitable \pkg{BayesX} binary is produ
 The remainder of this paper is as follows. Section~\ref{sec:motivation} gives a first motivating example of an
 \proglang{R} session applying \pkg{R2BayesX} to a dataset on childhood malnutrition in Zambia.
 Subsequently, Section~\ref{sec:model} briefly discusses the methodological background of structured additive
-regression models before Section~\ref{sec:implementation} describes the implementation details and the user interface
-provided by \pkg{R2BayesX}. In Section~\ref{sec:illustrations}, the versatility of \pkg{BayesX}
+regression models before Section~\ref{sec:implementation} describes the implementation details.
+Readers not interested in the implementational details of \pkg{R2BayesX} may directly jump to
+the description of the user interface in Section~\ref{sec:userinterface}. In
+Section~\ref{sec:illustrations}, the versatility of \pkg{BayesX}
 and the flexibility of the \pkg{R2BayesX} interface are further illustrated with
 an extended analyses of the childhood malnutrition data and a dataset on forest health in Germany.
 Section~\ref{sec:conclusion} concludes the paper and further technical details are provided
@@ -222,9 +224,9 @@ plot(b, term = "sx(district)", map = ZambiaBnd, swap = TRUE)
 @
 \caption{\label{fig:illustration} Visualization examples: Estimated effect for covariate \code{mbmi}
 (black line) together with 95\% and 80\% credible intervals (upper left panel). The upper right
-panel shows the estimated effect of \code{agechild} including partial residuals. The lower panel
-illustrates visualization of the estimated spatial effect for covariate \code{district} using
-a map effect plot.}
+panel shows the estimated effect of \code{agechild}. The lower panel illustrates visualization of
+the estimated spatial effect for covariate \code{district} using a map effect plot (regions
+with vertical lines represent areas with no observations).}
 \end{figure}
 A plot of the estimated effect for covariate \code{mbmi} may then be produced by typing
 <<illustration-plot-mbmi, echo=TRUE, fig=FALSE, eval=FALSE>>=
@@ -765,7 +767,13 @@ bayesx.term.options(bs = "ps", method = "MCMC")
 out <- capture.output(bayesx.term.options(bs = "ps", method = "MCMC"))
 writeLines(c(out[1:9], "..."))
 @
-For simplicity, only the first two options are shown here.
+For simplicity, only the first two options are shown here. Note that all default specifications,
+e.g.\ the number of equally spaced knots for P-splines, have been thoroughly tested and should
+usually fit for common regression problems, however, in some situations it might be useful to
+evaluate the sensitivity of the results when changing certain parameters (number of knots, degree of
+the spline, hyperpriors etc.), e.g., when modeling highly oscillating functions 20 knots may not
+be sufficient to capture the overall curvature.
+\readme{Achim, added this line due to comment of reviewer 1. Do you think this needs further explanations?}
 
 For fitting geoadditive models utilizing spatial information -- i.e., by computing
 suitable neighborhood penalty matrices for terms using Markov random field (MRF) priors,
@@ -909,7 +917,7 @@ illustrates the approach of the stepwise algorithm for model and variable select
 
 This analysis has already been conducted by \citet{R2BayesX:Kandala+Lang+Klasen+Fahrmeir:2001} and
 has also been used as a demonstrating example in \citet{R2BayesX:Brezger+Kneib+Lang:2005}. Stunting
-is one of the leading drivers of a number of problems development countries are faced with, for
+is one of the leading drivers of a number of problems developing countries are faced with, for
 instance, a direct consequence of stunting is a high mortality rate. Here, the primary interest is
 to model the dependence of stunting of newborn children, with an age ranging from 0 to 5 years, on
 covariates such as the body mass index of the mother, the age of the child and others presented in
