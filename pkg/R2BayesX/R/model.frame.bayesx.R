@@ -1,5 +1,4 @@
-model.frame.bayesx <-
-function (formula, ...) 
+model.frame.bayesx <- function (formula, ...) 
 {
   dots <- list(...)
   nargs <- dots[match(c("data", "na.action", "subset"), names(dots), 0L)]
@@ -28,8 +27,7 @@ function (formula, ...)
       return(gad(rval, rval$data))
     else
       return(rval$data)
-  }
-  else {
+  } else {
     if(any(mcheck)) {
       rval <- list()
       for(k in 1L:length(formula))

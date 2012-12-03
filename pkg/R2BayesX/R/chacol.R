@@ -1,5 +1,4 @@
-chacol <-
-function(x)
+chacol <- function(x)
 {
   if(!is.null(cn <- colnames(x))) {
     for(i in 1L:length(cn)) {

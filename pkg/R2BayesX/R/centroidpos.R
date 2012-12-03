@@ -1,5 +1,4 @@
-centroidpos <-
-function(polygon) 
+centroidpos <- function(polygon) 
 {
   p <- polygon
   np <- (nrow(p) - 1L)

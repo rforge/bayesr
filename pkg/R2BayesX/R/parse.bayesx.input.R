@@ -1,5 +1,4 @@
-parse.bayesx.input <-
-function(formula, data, weights = NULL, subset = NULL, offset = NULL, 
+parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, offset = NULL, 
   na.action = na.fail, contrasts = NULL, control = bayesx.control(...), ...)
 {
   if(missing(data))
@@ -18,6 +17,8 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
   if(!is.null(offset) && offset == "ra$offset") offset <- NULL
   if(!is.null(subset) && subset == "NULL") subset <- NULL
   if(!is.null(subset) && subset == "ra$subset") subset <- NULL
+  if(is.null(na.action))
+    na.action <- get(getOption("na.action"))
   co.id <- attr(control, "co.id")
   outfile <- control$outfile
   control$oformula <- formula
@@ -193,13 +194,14 @@ function(formula, data, weights = NULL, subset = NULL, offset = NULL,
       control$order <- order(Y)
       data <- data[order(Y),]
     }
-    control <- c(control, list(data = data, Yn = Yn))
+    control <- c(control, list(data = na.action(data), Yn = Yn))
   } else {
     Yn <- as.character(formula[2L])
     control <- c(control, list(data = data, Y = Yn, Yn = Yn, weights = weights, offset = offset))
   }
   attr(control$data, "terms") <- control$formula
   attr(attr(control$data, "terms"), "response") <- 1L
+  attr(control$data, "na.action") <- na.action
   control$contrasts <- contrasts
   attr(control, "co.id") <- co.id
   class(control) <- "bayesx.input"

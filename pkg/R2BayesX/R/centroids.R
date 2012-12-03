@@ -1,5 +1,4 @@
-centroids <-
-function(map) 
+centroids <- function(map) 
 {
   n <- length(map)
   cp <- matrix(0, n, 2L)

@@ -1,6 +1,5 @@
 bayesx.construct.te.smooth.spec <- bayesx.construct.pspline2dimrw2.smooth.spec <-
-bayesx.construct.pspline2dimrw1.smooth.spec <-
-function(object, dir, prg, data)
+bayesx.construct.pspline2dimrw1.smooth.spec <- function(object, dir, prg, data)
 {
   oby <- if(object$by != "NA") object$by else NULL
   object$by <- object$term[1L]

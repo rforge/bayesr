@@ -1,5 +1,4 @@
-BIC.bayesx <-
-function(object, ..., k)
+BIC.bayesx <- function(object, ..., k)
 {
   obj <- list(...)
   if(length(obj)) 

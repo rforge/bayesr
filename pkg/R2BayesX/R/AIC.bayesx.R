@@ -1,5 +1,4 @@
-AIC.bayesx <-
-function(object, ..., k)
+AIC.bayesx <- function(object, ..., k)
 {
   obj <- list(...)
   if(length(obj)) 

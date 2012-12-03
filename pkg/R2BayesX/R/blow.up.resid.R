@@ -1,5 +1,4 @@
- blow.up.resid <-
-function(data, x, xnam, response, eta, dimx, cx)
+blow.up.resid <- function(data, x, xnam, response, eta, dimx, cx)
 {
   if(!is.null(data) && !is.null(response) && !is.null(eta) && !is.factor(response)) {
     x <- x[order(x[,1L]),]

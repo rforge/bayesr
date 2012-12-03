@@ -1,5 +1,4 @@
-bayesx.term.options <-
-function(bs = "ps", method = "MCMC")
+bayesx.term.options <- bxopts <- function(bs = "ps", method = "MCMC")
 {
   bterms <- c("lasso", "ridge", "bl", "kr", "gk", 
     "gs", "mrf", "ps", "rw1", "rw2", "random", "te",
