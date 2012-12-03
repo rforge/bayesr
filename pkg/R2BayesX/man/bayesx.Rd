@@ -33,7 +33,9 @@ bayesx(formula, data, weights = NULL, subset = NULL,
   \item{subset}{an optional vector specifying a subset of observations to be used in the fitting 
     process.}
   \item{offset}{can be used to supply a model offset for use in fitting.}
-  \item{na.action}{a function which indicates what should happen when the data contain \code{NA}'s.}
+  \item{na.action}{a function which indicates what should happen when the data contain \code{NA}'s.
+    The default is set by the \code{na.action} setting of \code{\link{options}}, and is
+    \code{\link{na.omit}} if set to \code{NULL}.}
   \item{contrasts}{an optional list. See the \code{contrasts.arg} of 
     \code{\link[stats]{model.matrix.default}}.}
   \item{control}{specify several global control parameters for \code{bayesx}, see 
