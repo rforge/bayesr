@@ -2,6 +2,15 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
+
+ zm <- bayesx(stunting ~ memployment + meducation + urban + gender + 
+       sx(mbmi) + sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) +
+       sx(district, bs = "re"), method = "STEP",
+       data = ZambiaNutrition, outfile = "~/tmp2")
+
+
+
+
 colorlegend(title = "A title", side.legend = 2)
 
   par(mar = c(0.1, 0.1, 0.1, 0.1))

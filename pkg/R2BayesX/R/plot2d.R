@@ -102,10 +102,10 @@ function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
   }
   if(is.null(args$xlim))
     args$xlim <- base::range(x[,1L], na.rm = TRUE)
-  if(!is.null(args$add) && args$add)
-    par(new = TRUE)
-  graphics::plot(args$xlim, args$ylim, type = "n", axes = FALSE, 
-    xlab = args$xlab, ylab = args$ylab, main = args$main)
+  if(!(!is.null(args$add) && args$add)) {
+    graphics::plot(args$xlim, args$ylim, type = "n", axes = FALSE, 
+      xlab = args$xlab, ylab = args$ylab, main = args$main)
+  }
   args <- set.plot2d.specs(ncol(x) - 1L, args, col.lines, is.bayesx)
   args$specs <- args
   args$residuals <- residuals
