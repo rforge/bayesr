@@ -23,6 +23,7 @@ export(
   "GCV",
   "DIC",
   "samples",
+  "VPC",
 
   ## BayesX extractor functions
   "bayesx_logfile",       

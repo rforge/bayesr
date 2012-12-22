@@ -5,6 +5,8 @@ function(x)
   for(j in c(".", "_")) {
     if(grepl(paste("_random", j, sep = ""), x, fixed = TRUE))
       cx <- "random.bayesx"
+    if(grepl(paste("_spatialtotal", j, sep = ""), x, fixed = TRUE))
+      cx <- "mrf.bayesx"
     if(grepl(paste("_pspline", j, sep = ""), x, fixed = TRUE))
       cx <- "sm.bayesx"
     if(grepl(paste("_season", j, sep = ""), x, fixed = TRUE))

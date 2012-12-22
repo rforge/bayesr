@@ -156,7 +156,7 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
 
  \medskip
 
- Fixed.
+ Done.
 
 
 \item \textbf{Sections 2 and 3 can be merged into one section, which first
@@ -171,7 +171,7 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
 
   \medskip
 
-  Fixed.
+  Done.
 
 
 \item \textbf{Page 17, the third line underneath subsection 6.1,
@@ -179,7 +179,7 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
 
   \medskip
 
-  Fixed.
+  Done.
 
 
 \item \textbf{On page 21, please rewrite the sentence "The range of the
@@ -189,12 +189,18 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
   partition coefficient can be computed here to report
   the relative importance of each random effect component.}
 
+  \fixme{Stefan, Thomas, computation of the VPC for non Gaussian responses and multilevel models?}
+
 \item \textbf{On page 22, autocorrelation is one measure for assessing
   convergence. However, chains trapped at some local modes
   can sometimes have "well-behave" ACF. Multiple chains should
   be run (see general comment 1 above).}
 
 \item \textbf{Last line on page 22, ore \code{->} or?}
+
+  \medskip
+
+  Done.
 
 \end{itemize}
 
@@ -213,6 +219,10 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
   the error (dyld: Library not loaded: /usr/local/lib/libreadline.5.2.dylib),
   shows that this is a problem that others have had.}
 
+  \medskip
+
+  \fixme{Daniel?}
+
 \item \textbf{It looks like the authors misunderstood the way that R installs on a mac.
   This is fairly common when porting from unix.  It can be fixed with
   using a symbolic link, but that's not very satisfactory!  It would be
@@ -220,8 +230,12 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
   were I not reviewing this package, I probably wouldn't have spent the
   time tracking down a fix.}
 
+  \medskip
+
+  \fixme{Daniel?}
+
 \item \textbf{I tried to run the munich rent example that comes with INLA in R2BayesX
-  (http://www.r-inla.org/examples/volume-1) in order to get a grip on how
+  (\url{http://www.r-inla.org/examples/volume-1}) in order to get a grip on how
   easy R2BayesX was to use.
   I first tried to run it without the spatial effect, at which point I was
   informed that the variable names were not valid (they had .'s in them).
@@ -239,6 +253,10 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
   been converted to the BayesX format.  Minimal functionality would be to
   extend read.gra() to take an adjacency matrix.  It's only half a dozen
   lines of code, but it's nice for users.}
+
+  \medskip
+
+  \readme{Porting \pkg{BayesX} functions to \pkg{R2BayesX}?}
 
 \item \textbf{It would also be nice if a function was provided that checked the
   validity of graph files.}

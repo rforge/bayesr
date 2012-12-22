@@ -2,12 +2,8 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-
- zm <- bayesx(stunting ~ memployment + meducation + urban + gender + 
-       sx(mbmi) + sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) +
-       sx(district, bs = "re"), method = "STEP",
-       data = ZambiaNutrition, outfile = "~/tmp2")
-
+g1 <- read.gra("http://www.math.ntnu.no/~hrue/r-inla.org/examples/munich/munich.graph")
+g2 <- read.gra(system.file("examples/germany.gra", package="BayesX"))
 
 
 

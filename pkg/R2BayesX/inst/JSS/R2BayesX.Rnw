@@ -1184,7 +1184,7 @@ and maximum autocorrelation of all parameters of the model (right panel).}
 \end{figure}
 Autocorrelations for all lags should be close to zero as is mostly the case in our example. See
 Figure~\ref{fig:zambia-autocorr}, for the autocorrelation plots. The plot of maximum autocorrelations over all
-model parameters suggests to use a larger number of iterations in a final run (e.g., 22000 ore even 32000 iterations).
+model parameters suggests to use a larger number of iterations in a final run (e.g., 22000 or even 32000 iterations).
 
 In some situations problems may occur during processing of the \pkg{BayesX} binary, that are not
 automatically detected by the main model fitting function \fct{bayesx}. Therefore the user may
