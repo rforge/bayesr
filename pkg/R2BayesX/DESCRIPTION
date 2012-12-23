@@ -7,7 +7,7 @@ Authors@R: c(person(given = "Nikolaus", family = "Umlauf", role = c("aut", "cre"
         person(given = "Stefan", family = "Lang", role = "aut", email = "Stefan.Lang@uibk.ac.at"),
         person(given = "Achim", family = "Zeileis", role = "aut", email = "Achim.Zeileis@R-project.org"))
 Description: An R interface to estimate structured additive regression (STAR) models with BayesX.
-Depends: R (>= 2.13.0), akima, BayesX, BayesXsrc, colorspace, mgcv
-Suggests: coda, maptools
+Depends: R (>= 2.13.0), akima, BayesXsrc, colorspace, mgcv
+Suggests: coda, maptools, shapefiles, sp, spdep
 License: GPL-2 | GPL-3
 LazyLoad: yes

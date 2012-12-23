@@ -138,7 +138,7 @@ bayesx.construct(object, dir, prg, data)
 \seealso{
   \code{\link{sx}}, \code{\link{bayesx.term.options}}, \code{\link[mgcv]{s}},
   \code{\link[mgcv]{formula.gam}}, \code{\link{read.bnd}},
-  \code{\link{read.gra}}, .
+  \code{\link{read.gra}}.
 }
 
 \examples{

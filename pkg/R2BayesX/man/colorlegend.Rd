@@ -20,7 +20,8 @@ colorlegend (color = NULL, ncol = NULL, x = NULL,
   ticks = TRUE, at = NULL, col.ticks = "black", lwd.ticks = 1L, 
   lty.ticks = 1L, length.ticks = 1L, labels = NULL, 
   distance.labels = 1L, col.labels = "black", cex.labels = 1L, 
-  digits = 2L, swap = FALSE, symmetric = TRUE, xpd = NULL, ...)
+  digits = 2L, swap = FALSE, symmetric = TRUE, xpd = NULL,
+  title = NULL, side.title = 2, shift.title = c(0, 0), ...)
 }
 
 \arguments{
@@ -74,6 +75,11 @@ colorlegend (color = NULL, ncol = NULL, x = NULL,
   \item{symmetric}{if set to \code{TRUE}, a symmetric legend will be drawn corresponding to the
     \code{+- max(abs(x))} value.}
   \item{xpd}{sets the \code{xpd} parameter in function \code{\link[graphics]{par}}.}
+  \item{title}{character. A title for the legend.}
+  \item{side.title}{integer, \code{1} or \code{2}. Specifies where the legend is placed, either on
+    top if \code{side.title = 1} or at the bottom if \code{side.title = 2}.}
+  \item{shift.title}{numeric vector of length 2. Specifies a possible shift of the title in either
+    x- or y-direction.}
   \item{\dots}{other graphical parameters to be passed to function \code{\link[graphics]{text}}.}
 }
 

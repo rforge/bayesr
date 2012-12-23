@@ -1,5 +1,4 @@
-find.limits <-
-function(map, mar.min = 2, ...)
+find.limits <- function(map, mar.min = 2, ...)
 {
   if(!is.list(map))
     stop("argument map must be a list() of matrix polygons!")

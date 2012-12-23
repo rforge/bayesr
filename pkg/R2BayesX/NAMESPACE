@@ -23,7 +23,6 @@ export(
   "GCV",
   "DIC",
   "samples",
-  "VPC",
 
   ## BayesX extractor functions
   "bayesx_logfile",       
@@ -38,7 +37,22 @@ export(
   "plotblock",            
   "plotmap",              
   "plotsamples",
-  "sliceplot"
+  "sliceplot",
+
+  ## old package BayesX functions
+  "write.bnd",
+  "bnd2gra",
+  "add.neighbor",
+  "delete.neighbor",
+  "get.neighbor",
+  "write.gra",
+  "read.gra",
+  "read.bnd",
+  "shp2bnd",
+  "bnd2sp",
+  "sp2bnd",
+  "nb2gra",
+  "gra2nb"
 )
 
 ## methods for objects of class bayesx etc.

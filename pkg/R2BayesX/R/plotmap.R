@@ -1,5 +1,4 @@
-plotmap <-
-function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE, 
+plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE, 
   swap = FALSE, range = NULL, names = FALSE, values = FALSE, col = NULL, ncol = 100, 
   breaks = NULL, cex.legend = 1, cex.names = 1, cex.values = cex.names, digits = 2L,
   mar.min = 2, add = FALSE, ...)
@@ -24,10 +23,16 @@ function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   } else {
     poly.names <- sort(names(map))
   }
-  ## FIXME
-  ## if(length(unique(poly.names)) < length(poly.names)) {
-  ##   names(map) <- poly.names <- paste(1L:length(map))
-  ## }
+  if(length(upn <- unique(poly.names)) < length(poly.names)) {
+    nn <- NULL
+    for(i in upn) {
+      j <- poly.names == i
+      poly.names[j] <- paste(poly.names[j],
+        if(sum(j) > 1) paste(".", 1:sum(j), sep = "") else NULL,
+        sep = "")
+    }
+    names(map) <- poly.names
+  }
   map <- map[poly.names]
   poly.names <- names(map)
   surrounding <- attr(map, "surrounding")

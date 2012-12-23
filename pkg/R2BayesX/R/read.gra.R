@@ -1,68 +1,59 @@
 read.gra <- function(file, sorted = FALSE, sep = " ")
 {    
   ## read information from the graph file
-  gd <- strsplit(readLines(file), sep)
+  gfile <- strsplit(readLines(file), sep)
 
   ## get region names and neighbors
-  if(length(gd[[2]]) < 2) {
-    ids <- rep(1:3, length = length(gd) - 1)
-    rn <- unlist(gd[c(2:length(gd))[ids == 1]])
-    ng <- gd[c(2:length(gd))[ids == 3]]
+  if(length(gfile[[2]]) < 2) {
+    ids <- rep(1:3, length = length(gfile) - 1)
+    regions <- unlist(gfile[c(2:length(gfile))[ids == 1]])
+    neighbors <- gfile[c(2:length(gfile))[ids == 3]]
+    foo <- function(x) as.integer(x) + 1
   } else {
-    rn <- sapply(gd[-1], function(x) x[1])
-    ng <- sapply(gd[-1], function(x) x[-1])
+    regions <- sapply(gfile[-1], function(x) x[1])
+    neighbors <- sapply(gfile[-1], function(x) x[-1])
+    foo <- function(x) as.integer(x)
   }
-  ng <- lapply(ng, as.integer)
+  neighbors <- lapply(neighbors, foo)
 
-  ## extract the number of districts
-  n <- length(rn)
-  cat("Note: map consists of", S, "regions\n")
+  ## extract the number of regions
+  n <- length(regions)
+  cat("Note: map consists of", n, "regions\n")
 
   cat("Creating adjacency matrix ...\n")
 
   ## create the adjacency matrix
-  pmat <- matrix(0, n, n)
+  adjmat <- matrix(0, n, n)
   
   ## number of neighbors for each region
-  diag(pmat) <- dp <- sapply(ng, length)
+  diag(adjmat) <- sapply(neighbors, length)
 
-  ## loop over the districts
+  ## loop over the regions
   for(i in 1:n) {
-    ## off-diagonal entries in pmat
+    ## off-diagonal entries in adjmat
     ## Note: the indices are zero-based!
-    if(length(ng[[i]]))
-      pmat[i, ng[[i]]] <- -1
+    if(length(neighbors[[i]]))
+      adjmat[i, neighbors[[i]]] <- -1
   }
 
-  colnames(pmat) <- rownames(pmat) <- rn
+  colnames(adjmat) <- rownames(adjmat) <- regions
 
   cat("finished\n")
     
   if(sorted) {
-    ## sort districts and adjacency matrix
-    if(sum(is.na(as.numeric(districts))) == 0){
-      rn <- as.numeric(rn)
+    ## sort regions and adjacency matrix
+    if(sum(is.na(as.numeric(regions))) == 0){
+      regions <- as.numeric(regions)
       cat("Note: regions sorted by number\n") 
-    } else  cat("Note: regions sorted by name\n")
-    ord <- order(rn)
-    rn <- sort(rn)
-        
-    pmat.sort <- matrix(0, S, S)
-
-    for(i in 1:n){
-      ordi <- ord[i]
-      for(j in 1:S){
-        ordj <- ord[j]
-        pmat.sort[i, j] <- pmat[ordi, ordj]
-      } 
-    }
-        
-    pmat <- pmat.sort
+    } else cat("Note: regions sorted by name\n")
+    ord <- order(regions)
+    regions <- sort(regions)
+    adjmat <- adjmat[ord, ord]
   }
 
-  rownames(pmat) <- colnames(pmat) <- rn
+  rownames(adjmat) <- colnames(adjmat) <- regions
 
-  class(pmat) <- "gra"
-  return(pmat)
+  class(adjmat) <- c("gra", "matrix")
+  return(adjmat)
 }
 
