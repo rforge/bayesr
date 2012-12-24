@@ -1,6 +1,7 @@
 \name{plotmap}
 \alias{plotmap}
 \alias{plot.bnd}
+\alias{drawmap}
 
 \title{
   Plot Maps

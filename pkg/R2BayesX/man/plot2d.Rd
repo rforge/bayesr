@@ -1,5 +1,6 @@
 \name{plot2d}
 \alias{plot2d}
+\alias{plotnonp}
   
 \title{
   2D Effect Plot 

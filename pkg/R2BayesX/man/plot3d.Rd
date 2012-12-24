@@ -1,5 +1,6 @@
 \name{plot3d}
 \alias{plot3d}
+\alias{plotsurf}
 
 \title{
   3D Effect Plot 
