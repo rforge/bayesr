@@ -10,8 +10,8 @@ read.gra <- function(file, sorted = FALSE, sep = " ")
     neighbors <- gfile[c(2:length(gfile))[ids == 3]]
     foo <- function(x) as.integer(x) + 1
   } else {
-    regions <- sapply(gfile[-1], function(x) x[1])
-    neighbors <- sapply(gfile[-1], function(x) x[-1])
+    regions <- sapply(gfile[-1], function(x) x[2])
+    neighbors <- sapply(gfile[-1], function(x) x[-c(1:2)])
     foo <- function(x) as.integer(x)
   }
   neighbors <- lapply(neighbors, foo)

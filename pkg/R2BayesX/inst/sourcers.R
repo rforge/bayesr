@@ -2,12 +2,23 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-plotmap(FantasyBnd, x = nx, density = 20, pos = c(0, 1))
+write.gra(MunichGra, file = "~/tmp/mgra.gra")
 
 
 
-g1 <- read.gra("http://www.math.ntnu.no/~hrue/r-inla.org/examples/munich/munich.graph")
-g2 <- read.gra(system.file("examples/germany.gra", package="BayesX"))
+b <- bayesx(rent ~ sx(location, bs = "mrf", map = MunichGra), data = Munich, method = "REML")
+
+
+Munich <- read.table("http://www.math.ntnu.no/~hrue/r-inla.org/examples/munich/Munich.txt", header = TRUE)
+MunichGra <- read.gra("http://www.math.ntnu.no/~hrue/r-inla.org/examples/munich/munich.graph")
+
+formula <- rent ~ sx(location, bs = "mrf", map = MunichGra) +
+  sx(year) + sx(floor.size) + Gute.Wohnlage + Beste.Wohnlage +
+  Keine.Wwv + Keine.Zh + Kein.Badkach  + Besond.Bad + Gehobene.Kueche +
+  zim1 + zim2 + zim3 + zim4 + zim5 + zim6 -1
+
+b <- bayesx(rent ~ sx(location, bs = "mrf", map = MunichGra), data = Munich, seed = 123,
+  outfile = "~/tmp", replace = TRUE)
 
 
 

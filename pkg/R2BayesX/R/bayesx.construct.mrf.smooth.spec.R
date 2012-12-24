@@ -56,7 +56,7 @@ bayesx.construct.mrf.smooth.spec <- bayesx.construct.spatial.smooth.spec <- func
       if(length(classm) > 1L)
         if("list" %in% classm)
           class(map) <- classm[classm != "list"]
-      mapfile <- paste(map.name,counter ,".", class(map), sep = "")
+      mapfile <- paste(map.name, counter, ".", class(map), sep = "")[1]
       if(any(grepl(mapfile, files))) {
         if(is.null(counter))
           counter <- 0L

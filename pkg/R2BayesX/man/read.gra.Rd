@@ -56,17 +56,17 @@ read.gra(file, sorted = FALSE, sep = " ")
   In addition, graph files using the following format may be imported:
   \itemize{
     \item The first line of the graph file specifies the total number of nodes.
-    \item The subsequent lines start with the node name followed by neighboring node identity
-      numbers.
+    \item The subsequent lines start with the row number then the node name followed by neighboring
+      node identity numbers.
   }
   Example:
   \tabular{l}{
     309 \cr
-    1001 2 \cr
-    1059 1 4 5 \cr
-    1002 6 5 \cr
-    1051 5 2 10 \cr
-    1058 3 7 4 6 2 11 10 \cr
+    1 1001 2 \cr
+    2 1059 1 4 5 \cr
+    3 1002 6 5 \cr
+    4 1051 5 2 10 \cr
+    5 1058 3 7 4 6 2 11 10 \cr
     \dots
   }
 }
