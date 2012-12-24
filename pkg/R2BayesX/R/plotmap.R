@@ -150,7 +150,7 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   if(legend) {
     if(is.null(args$pos))
       args$pos <- "topleft"
-    if(args$pos == "right") {
+    if(args$pos[1L] == "right") {
       args$full <- TRUE
       args$side.legend <- 2L
       args$side.ticks <- 2L

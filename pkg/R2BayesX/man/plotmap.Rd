@@ -10,7 +10,7 @@
 \description{
   The function takes a \code{\link[base]{list}} polygons and draws the corresponding map. Different 
   colors for each polygon can be used. Typically used for objects of class \code{"mrf.bayesx"} and
-  \code{"ra.bayesx"} returned from function \code{\link{bayesx}} and 
+  \code{"random.bayesx"} returned from function \code{\link{bayesx}} and 
   \code{\link{read.bayesx.output}}.
 }
  
