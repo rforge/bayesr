@@ -1,5 +1,4 @@
-write.bayesx.input <-
-function(object)
+write.bayesx.input <- function(object)
 {
   if(is.null(object) || missing(object))
     stop("nothing to do!")
@@ -150,7 +149,7 @@ function(object)
     nc <- ncol(dat)
     intcpt <- FALSE
     if("(Intercept)" %in% vars && nc > 1L) {
-      dat <- matrix(dat[,!vars %in% "(Intercept)"], ncol = (nc - 1L))
+      dat <- matrix(dat[, !vars %in% "(Intercept)"], ncol = (nc - 1L))
       colnames(dat) <- vars[!vars %in% "(Intercept)"]
       intcpt <- TRUE
     }

@@ -1,5 +1,4 @@
-rmf <-
-function(x) 
+rmf <- function(x) 
 {
   for(i in 1L:length(x)) {
     for(char in c("+", "-", "*", ":", "^", "/", " ", "(", ")", "]", "[", ",", "."))
@@ -8,7 +7,6 @@ function(x)
 
   return(rmfs(x))
 }
-
 
 rmfs <- function(x)
 {
@@ -26,9 +24,7 @@ rrmfs <- function(x)
   return(x)
 }
 
-
-rmfscript <-
-function(x) 
+rmfscript <- function(x) 
 {
   for(i in 1L:length(x)) {
     for(char in c("+", "-", "*", ":", "^", "/", " ", "(", ")", ",", ".")) 

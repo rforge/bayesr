@@ -1,5 +1,4 @@
-write.term.info <-
-function(file, terms, data, object = NULL, contrasts.arg = NULL, 
+write.term.info <- function(file, terms, data, object = NULL, contrasts.arg = NULL, 
   xlev = NULL, intcpt = TRUE, rdafile)
 {
   warn <- getOption("warn")

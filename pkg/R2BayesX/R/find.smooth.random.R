@@ -85,7 +85,8 @@ function(dir, files, data, response, eta, model.name, minfo, info)
                   term2 <- gsub("f(", "s(", term$term, fixed = TRUE)
                   term2 <- gsub("sx(", "s(", term$term, fixed = TRUE)
                 }
-                if(term2 == make.label(cx, rrmfs(xnam), dimx, NULL)) {
+                tl <- gsub("sx(", "s(", make.label(cx, xnam, dimx, NULL), fixed = TRUE)
+                if(rmf(term2) == rmf(tl)) {
                   labelx <- term$term
                   if(!is.null(vx))
                     labelx <- paste(labelx, ":", vx, sep = "")
