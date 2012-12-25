@@ -39,6 +39,7 @@
 <<preliminaries, echo=FALSE, results=hide>>=
 options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
   SweaveHooks = list(fig = function() par(mar = c(4.1, 4.1, 0.1, 0.1))))
+library("R2BayesX")
 @
 
 \title{\pkg{R2BayesX} Revision}
@@ -256,23 +257,104 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
 
   \medskip
 
-  \readme{Porting \pkg{BayesX} functions to \pkg{R2BayesX}?}
+  The naming problem for smooth terms has been fixed, names are checked and renamed internally.
+  We have adapted the function \code{read.gra()}, it now fully supports both formats, the one
+  suggested in the \pkg{BayesX} reference manual and the format of the \pkg{INLA} project. The
+  Munich rent example code runs smoothly now
+<<eval=FALSE>>=
+url <- "http://www.math.ntnu.no/~hrue/r-inla.org/examples/munich/"
+Munich <- read.table(file.path(url, "Munich.txt"), header = TRUE)
+MunichGra <- read.gra(file.path(url, "munich.graph"))
+
+f <- rent ~ sx(location, bs = "mrf", map = MunichGra) +
+  sx(year) + sx(floor.size) + Gute.Wohnlage + Beste.Wohnlage +
+  Keine.Wwv + Keine.Zh + Kein.Badkach  + Besond.Bad + Gehobene.Kueche +
+  zim1 + zim2 + zim3 + zim4 + zim5 + zim6 -1
+
+b <- bayesx(f, data = Munich, seed = 1234)
+summary(b)
+@
+\begin{Schunk}
+\begin{Soutput}
+Call:
+bayesx(formula = f, data = Munich, seed = 1234)
+ 
+Fixed effects estimation results:
+
+Parametric Coefficients:
+                   Mean      Sd    2.5%     50%   97.5%
+(Intercept)      7.4400  2.2964  3.9236  7.2843 11.7855
+Gute.Wohnlage    0.6170  0.1136  0.3948  0.6209  0.8217
+Beste.Wohnlage   1.8010  0.3102  1.1676  1.8048  2.4069
+Keine.Wwv       -1.9280  0.2734 -2.4586 -1.9300 -1.3780
+Keine.Zh        -1.3779  0.1905 -1.7623 -1.3752 -0.9969
+Kein.Badkach    -0.5600  0.1157 -0.7907 -0.5624 -0.3220
+Besond.Bad       0.5136  0.1583  0.2009  0.5121  0.8184
+Gehobene.Kueche  1.1352  0.1774  0.7855  1.1397  1.4779
+zim1             0.2050  2.3148 -4.1562  0.4264  3.7749
+zim2             0.5827  2.2971 -3.6820  0.7537  4.1176
+zim3             0.4503  2.2936 -3.7556  0.6297  3.9758
+zim4             0.0714  2.2929 -4.1738  0.2050  3.6210
+zim5             0.3227  2.3296 -3.9760  0.5194  4.0501
+zim6             0.2940  2.3754 -4.2415  0.4391  4.1771
+
+Smooth terms variances:
+                 Mean     Sd   2.5%    50%  97.5%    Min    Max
+sx(floor.size) 0.4101 0.3332 0.0814 0.3086 1.3265 0.0535 2.4858
+sx(location)   0.4997 0.1601 0.2378 0.4821 0.8578 0.1204 1.2812
+sx(year)       0.0778 0.0785 0.0101 0.0551 0.2803 0.0022 0.7267
+ 
+Scale estimate:
+         Mean     Sd   2.5%    50%  97.5%
+Sigma2 3.6640 0.1270 3.4208 3.6600 3.9208
+ 
+N = 2035  burnin = 2000  DIC = 2134.859  pd = 96.26702  
+method = MCMC  family = gaussian  iterations = 12000  step = 10
+\end{Soutput}
+\end{Schunk}
 
 \item \textbf{It would also be nice if a function was provided that checked the
   validity of graph files.}
 
+  \medskip
+
+  \fixme{Thomas, is there a official format for graph files?}
+
 \item \textbf{Would it be better in the STEP algorithm to set the quantiles to NA
   (not available) rather than 0.00?}
+
+  \medskip
+
+  \fixme{Stefan, Thomas, the output matrices could set \code{NA}s instead of \code{0}?
+    The problem is that I cannot account for that in the interface, because I do not know 
+    if all \code{0}s are really \code{NA}s!}
 
 \item \textbf{In the bayesx() call, the family parameter is case sensitive (I
   accidentally wrote "Gaussian" instead of "gaussian"). This could be
   fixed with tolower(). A similar thing happened with CI = "MCMCselect".}
 
+  \medskip
+
+  The case sensitivity for the \code{family} and \code{CI} parameter has been removed.
+
 \item \textbf{Section 2: The option "full = TRUE" in the formula is not
   mentioned anywhere else in this paper.  What does it do?}
 
+  \medskip
+
+  The option was accidently set and has been removed from the paper, it specifies the number of
+  locations that should be used as knots. All options for all possible terms may be looked up using
+  function \code{bayesx.term.options()} (Section 5.2).
+<<>>=
+bayesx.term.options(bs = "gk", method = "REML")
+@
+
 \item \textbf{Section 3: Is the list on page 5 an exhaustive list of models
   implemented in R2BayesX?}
+
+  \medskip
+
+  \fixme{Stefan, Thomas?}
 
 \item \textbf{Section 4.2: I note in passing that the INLA package can solve a
   large class of latent Gaussian models in which each observation depends
@@ -281,9 +363,17 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
   models, as well as models where the link is not through the mean (such
   as stochastic volatility models).}
 
+  \medskip
+
+  \fixme{Achim? I do not know why he mentions Section 4.2 here?}
+
 \item \textbf{Table 4:  It would be useful to specify which GMRF model is being used.
   There are more than one! A reference would be sufficient.  Similar comment
   or "geokriging" - which stationary GRF?}
+
+  \medskip
+
+  \fixme{Stefan, Thomas? Can you add the references?}
 
 \item \textbf{Bottom of page 15: "several informations" \code{->} "several pieces of
   information" or just "information"}

@@ -15,7 +15,8 @@ f <- rent ~ sx(location, bs = "mrf", map = MunichGra) +
   Keine.Wwv + Keine.Zh + Kein.Badkach  + Besond.Bad + Gehobene.Kueche +
   zim1 + zim2 + zim3 + zim4 + zim5 + zim6 -1
 
-b <- bayesx(f, data = Munich, seed = 1234)
+b <- bayesx(f, data = Munich, seed = 1234, method = "STEP",
+  outfile = "~/tmp", replace = TRUE)
 
 
 

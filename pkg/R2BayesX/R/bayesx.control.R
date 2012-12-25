@@ -34,6 +34,7 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
     family <- "gaussian"
   if(is.function(family))
     family <- family()$family
+  family <- tolower(family)
   control$family <- family
   if(!is.null(level))
     if(length(level) < 2L)
@@ -85,6 +86,12 @@ function(model.name = "bayesx.estim", family = "gaussian", method = "MCMC",
     control$hmcmc <- FALSE
   }
   if(method == "STEP") {
+    if(!is.null(CI)) {
+      cin <- c("mcmcselect", "mcmcbootstrap")
+      CI <- cin[pmatch(tolower(CI), cin)]
+      CI <- strsplit(CI, "mcmc")[[1]][2]
+      CI <- paste("MCMC", CI, sep = "")
+    }
     if(!is.null(CI) && (CI == "MCMCselect" || CI == "MCMCbootstrap")) {
       control$iterations <- iterations
       control$burnin <- burnin

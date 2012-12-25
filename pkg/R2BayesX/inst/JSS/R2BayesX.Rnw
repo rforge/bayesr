@@ -182,7 +182,7 @@ data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
 The model formula is specified by
 <<formula-illustration, echo=TRUE, eval=TRUE, fig=FALSE>>=
 f <- stunting ~ sx(agechild) + sx(mbmi) +
-  sx(district, bs = "gk", map = ZambiaBnd, full = TRUE)
+  sx(district, bs = "gk", map = ZambiaBnd)
 @
 %
 Finally, the model is fitted with the main model-fitting function \fct{bayesx}
