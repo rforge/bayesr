@@ -81,6 +81,10 @@ bayesx.construct.mrf.smooth.spec <- bayesx.construct.spatial.smooth.spec <- func
       cmd <- paste(map.name, ".infile using ", mapfile, "\n", sep = "")
     } else {
       if(!is.character(map)) {
+        dx <- as.character(unique(data[[object$term]]))
+        cnm <- colnames(map)
+        if(!all(dx %in% cnm))
+          stop(paste("not all regions specified in variable", object$term, "in adjacency matrix!"))
         write.gra(map = map, file = mapfile, replace = TRUE)
         cmd <- paste(map.name, ".infile, graph using ", mapfile, "\n", sep = "")
       } else {

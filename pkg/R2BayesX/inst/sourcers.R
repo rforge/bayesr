@@ -2,8 +2,8 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-write.gra(MunichGra, file = "~/tmp/mgra.gra")
-
+b <- bayesx(rent ~ sx(location, bs = "mrf", map = MunichGra), data = Munich, seed = 123,
+  outfile = "~/tmp", replace = TRUE)
 
 
 b <- bayesx(rent ~ sx(location, bs = "mrf", map = MunichGra), data = Munich, method = "REML")
