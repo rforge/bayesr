@@ -90,9 +90,9 @@ library("R2BayesX")
 
   \medskip
 
-  Probably we need to describe better that BayesX only provides
+  \readme{Achim, probably we need to describe better that BayesX only provides
   predictions for unique covariate values etc.? However, this is already explained in
-  Section~5.3. Additional options?
+  Section~5.3. Additional options?}
 
 
 \item \textbf{Although missing data is implicitly discussed in the
@@ -134,7 +134,8 @@ library("R2BayesX")
 
   The default settings have been thoroughly tested and should fit for common regression problems.
   The common user does usually not have to do sensitivity checks. We have added some more
-  explanation on this topic in Section~5.2 Available additive terms.
+  explanation on this topic in Section~5.2 Available additive terms. The user may look up all
+  default settings for all possible terms using function \code{bayesx.term.options()}.
   \fixme{Stefan/Thomas, any suggestions here?}
 
 
