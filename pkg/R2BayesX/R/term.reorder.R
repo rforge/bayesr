@@ -61,7 +61,7 @@ function(x, info)
         by <- list()
         xl <- names(x)
         for(k in 1L:length(term$isFactorByNames))
-          if(length(j <- grep(paste("):", term$isFactorByNames[k], sep = ""), xl, fixed = TRUE))) {
+          if(!is.na(j <- match(term$isFactorByNames[k], xl))) {
             if(!is.null(term$map)) {
               if(grep(term$map, ls(envir = globalenv())))
                 attr(x[[j]], "map.name") <- term$map

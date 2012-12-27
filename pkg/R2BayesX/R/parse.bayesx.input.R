@@ -197,6 +197,8 @@ parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, off
     control <- c(control, list(data = na.action(data), Yn = Yn))
   } else {
     Yn <- as.character(formula[2L])
+    data <- path.expand(data)
+    stopifnot(file.exists(data))
     control <- c(control, list(data = data, Y = Yn, Yn = Yn, weights = weights, offset = offset))
   }
   attr(control$data, "terms") <- control$formula

@@ -19,7 +19,8 @@ plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   swap = FALSE, range = NULL, names = FALSE, values = FALSE, 
   col = NULL, ncol = 100, breaks = NULL, cex.legend = 1, 
   cex.names = 1, cex.values = cex.names, digits = 2L, 
-  mar.min = 2, add = FALSE, ...)
+  mar.min = 2, add = FALSE, interp = TRUE, linear = FALSE, extrap = FALSE,
+  outside = FALSE, grid = 200, p.pch = 16, p.cex = 1, ...)
 }
 
 \arguments{
@@ -57,6 +58,14 @@ plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     calculated according to the height to width ratio of the map with minimal boundary 
     \code{mar.min}.}
   \item{add}{if set to \code{TRUE}, the map will be added to an existing plot.}
+  \item{interp}{logical. Should the values provided in argument \code{x} be interpolated to obtain
+    a smooth colored map. For interpolation function \code{\link[akima]{interp}} is used.}
+  \item{linear}{see function \code{\link[akima]{interp}}.}
+  \item{extrap}{see function \code{\link[akima]{interp}}.}
+  \item{outside}{logical. Should interpolated values outside the boundaries of the map be plotted.}
+  \item{grid}{integer. Defines the number of grid cells to be used for interpolation.}
+  \item{p.pch}{numeric. The point size of the grid cells when using interpolation.}
+  \item{p.cex}{numeric. The size of the grid cell points whein using interpolation.}
   \item{\dots}{parameters to be passed to \code{\link{colorlegend}} and others, e.g. change the 
     \code{border} of the polygons and \code{density}, see \code{\link[graphics]{polygon}}. Please 
     see the exmaples.}

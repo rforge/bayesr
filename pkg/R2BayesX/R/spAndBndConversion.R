@@ -87,44 +87,44 @@ bnd2sp <- function(bndObject)
 
 
 
-sp2bnd <-
-    function(spObject,            # object of class SpatialPolygons (or specializations)
-             regionNames=sapply(spObject@polygons, slot, "ID"), # character vector of region names
-                                        # (parallel to the Polygons list in spObject)
-             height2width=round(diff(sp::bbox(spObject)[2, ]) / diff(sp::bbox(spObject)[1, ]), 2),
-                                        # ratio of height to width
-             epsilon=sqrt(.Machine$double.eps)) # how much can two polygons differ (in maximumn
-                                        # squared Euclidean distance) and still match each other?
+sp2bnd <- function(spObject,
+  ## object of class SpatialPolygons (or specializations)
+  regionNames=sapply(spObject@polygons, slot, "ID"),
+  ## character vector of region names
+  ## (parallel to the Polygons list in spObject)
+  height2width=round(diff(sp::bbox(spObject)[2, ]) / diff(sp::bbox(spObject)[1, ]), 2),
+  ## ratio of height to width
+  epsilon=sqrt(.Machine$double.eps))
+  ## how much can two polygons differ (in maximumn
+  ## squared Euclidean distance) and still match each other?
     
 {
   require("sp")
 
-    ## check if S4 class of spObject is "SpatialPolygons"
-    stopifnot(is(object=spObject,
-                 class2="SpatialPolygons"))
+  ## check if S4 class of spObject is "SpatialPolygons"
+  stopifnot(is(object = spObject, class2 = "SpatialPolygons"))
 
-    ## extracts
-    spObject <- sp::polygons(spObject)      # now surely a SpatialPolygons object
-    spList <- spObject@polygons         # discard other slots
-    nRegions <- length(spList)
+  ## extracts
+  spObject <- sp::polygons(spObject)  ## now surely a SpatialPolygons object
+  spList <- spObject@polygons         ## discard other slots
+  nRegions <- length(spList)
 
-    ## check if number of regions matches with the length of regionNames etc
-    stopifnot(is.character(regionNames),
-              identical(length(regionNames), nRegions),
-              height2width > 0)
+  ## check if number of regions matches with the length of regionNames etc
+  stopifnot(is.character(regionNames),
+    identical(length(regionNames), nRegions),
+    height2width > 0)
 
-    ## set up return and holes list
-    ret <- list()
-    holes <- list()    
+  ## set up return and holes list
+  ret <- list()
+  holes <- list()    
 
-    ## number of polygons and holes already processed
-    numPolysProcessed <- 0
-    numHolesProcessed <- 0
+  ## number of polygons and holes already processed
+  numPolysProcessed <- 0
+  numHolesProcessed <- 0
     
-    ## process each region
-    for(regionIterator in seq_along(spList))
-    {
-        thisRegion <- spList[[regionIterator]]@Polygons
+  ## process each region
+  for(regionIterator in seq_along(spList)) {
+    thisRegion <- spList[[regionIterator]]@Polygons
         
         ## process each Polygon in this region
         for(polygonObject in thisRegion)

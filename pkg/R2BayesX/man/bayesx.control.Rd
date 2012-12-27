@@ -63,7 +63,11 @@ bayesx.control(model.name = "bayesx.estim",
     autocorrelations between sampled parameters.}
   \item{predict}{\code{\link[base]{logical}}, option \code{predict} may be specified to compute 
     samples of the deviance \code{D}, the effective number of parameters \code{pD} and the deviance 
-    information criterion \code{DIC} of the model.}
+    information criterion \code{DIC} of the model. In addition, if \code{predict = FALSE}, only
+    output files of estimated effects will be returned, otherwise an expanded dataset using all
+    observations would be written in the output directory, also containing the data used for
+    estimation. Hence, this option is useful when dealing with large data sets, that might cause
+    memory problems if \code{predict} is set to \code{TRUE}.}
   \item{seed}{\code{\link[base]{integer}}, set the seed of the random number generator in 
     \pkg{BayesX}, usually set using function \code{\link[base]{set.seed}}.}
   \item{hyp.prior}{\code{\link[base]{numeric}}, defines the value of the hyper-parameters \code{a} 

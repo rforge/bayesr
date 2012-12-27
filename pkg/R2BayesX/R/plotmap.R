@@ -1,12 +1,13 @@
-plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE, 
-  swap = FALSE, range = NULL, names = FALSE, values = FALSE, col = NULL, ncol = 100, 
-  breaks = NULL, cex.legend = 1, cex.names = 1, cex.values = cex.names, digits = 2L,
-  mar.min = 2, add = FALSE, ...)
+plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
+  swap = FALSE, range = NULL, names = FALSE, values = FALSE, col = NULL,
+  ncol = 100, breaks = NULL, cex.legend = 1, cex.names = 1, cex.values = cex.names,
+  digits = 2L, mar.min = 2, add = FALSE, interp = FALSE, linear = FALSE, extrap = FALSE,
+  outside = FALSE, grid = 100, p.pch = 16, p.cex = 1, ...)
 {
   if(missing(map))
     stop("map object is missing!")
-  if(is(map, "SpatialPolygonsDataFrame"))
-    map <- SPDF2bnd(map)
+  if(inherits(map, "SpatialPolygons"))
+    map <- sp2bnd(map)
   if(!is.list(map))
     stop("argument map must be a list() of matrix polygons!")
   args <- list(...)
@@ -56,9 +57,10 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
       #  l = c(30, 90), power = 1.5, gamma = 2.4, fixup = TRUE)
     }
     x <- compute.x.id(x, id, c.select, range, symmetric)
-    colors <- make_pal(col = col, ncol = ncol, data = x$x, 
+    map_fun <- make_pal(col = col, ncol = ncol, data = x$x, 
       range = range, breaks = breaks, swap = swap, 
-      symmetric = symmetric)$map(x$x)
+      symmetric = symmetric)$map
+    colors <- map_fun(x$x)
   } else {
     if(is.null(col))
       colors <- rep(NA, length.out = n)
@@ -91,7 +93,46 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   if(is.null(args$ylab))
     args$ylab <- ""
   if(!add)
-    do.call(graphics::plot.default, delete.args(graphics::plot.default, args)) 
+    do.call(graphics::plot.default, delete.args(graphics::plot.default, args))
+  if(interp & !is.null(x)) {
+    stopifnot(require("maptools"))
+
+    cdata <- data.frame(R2BayesX:::centroids(map), "id" = names(map))
+    cdata <- merge(cdata, data.frame("z" = x$x, "id" = x$id), by = "id")
+
+    ico <- with(cdata, akima::interp(x = xco, y = yco, z = z,
+      xo = seq(map.limits$x[1], map.limits$x[2], length = grid),
+      yo = seq(map.limits$y[1], map.limits$y[2], length = grid),
+      duplicate = "strip", linear = linear, extrap = extrap))
+    
+    yco <- rep(ico$y, each = length(ico$x))
+    xco <- rep(ico$x, length(ico$y))
+
+    cvals <- as.numeric(ico$z)
+    cvals[cvals < min(cdata$z)] <- min(cdata$z)
+    cvals[cvals > max(cdata$z)] <- max(cdata$z)
+    icolors <- map_fun(cvals)
+
+    if(!outside) {
+      gpclibPermit()
+      class(map) <- "bnd"
+      mapsp <- bnd2sp(map)
+      ob <- unionSpatialPolygons(mapsp, rep(1L, length = length(mapsp)), avoidGEOS  = TRUE)
+
+      nob <- length(slot(slot(ob, "polygons")[[1]], "Polygons"))
+      pip <- NULL
+      for(j in 1:nob) {
+        oco <- slot(slot(slot(ob, "polygons")[[1]], "Polygons")[[j]], "coords")
+        pip <- cbind(pip, point.in.polygon(xco, yco, oco[, 1L], oco[, 2L], mode.checked = FALSE) < 1L)
+      }
+      pip <- apply(pip, 1, function(x) all(x))
+    
+      icolors[pip] <- NA
+    }
+
+    points(SpatialPoints(cbind(xco, yco)), col = icolors, pch = p.pch, cex = p.cex)
+    colors <- rep(NA, length = length(colors))
+  }
   args$ylab <- args$xlab <- args$main <- ""
   args$type <- NULL
   args$axes <- NULL

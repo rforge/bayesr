@@ -267,7 +267,6 @@ set.seed(333)
 ## simulate some geographical data
 data("MunichBnd")
 N <- length(MunichBnd); n <- N*5
-names(MunichBnd) <- 1:N
      
 ## regressors
 dat <- data.frame(x1 = runif(n, -3, 3),
