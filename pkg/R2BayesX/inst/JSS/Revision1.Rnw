@@ -545,6 +545,10 @@ bayesx.term.options(bs = "gk", method = "REML")
   \end{Sinput}
   \end{Schunk}
 
+  \medskip
+
+  The ordering problem has been solved.
+
 \end{itemize}
 
 

@@ -7,14 +7,14 @@ fitted.bayesx <- function(object, model = NULL, term = NULL, ...)
     if(length(object) > 1L) {
       rval <- vector("list", length = k)
       for(i in 1L:k) {
-        rval[[i]] <- object[[i]]$fitted.values
+        rval[[i]] <- bayesx.reorder(object[[i]], object[[i]]$fitted.values)
         if(!is.null(object[[i]]$bayesx.setup$model.name))
           mn[i] <- object[[i]]$bayesx.setup$model.name
       }
       mn[duplicated(mn)] <- paste(mn[duplicated(mn)], 1:length(mn[duplicated(mn)]) + 1L, sep = "")
       names(rval) <- mn
     } else {
-      rval <- object[[1L]]$fitted.values
+      rval <- bayesx.reorder(object[[1L]], object[[1L]]$fitted.values)
     }
   } else {
     if(length(object) > 1L) {
@@ -99,6 +99,25 @@ x2df <- function(x, rn = FALSE)
       for(k in 1L:length(nxa)) 
         if(all(nxa[k] != c("dim", "dimnames", "class", "names", "row.names")))
           attr(x, nxa[k]) <- xattr[[k]]
+    }
+  }
+
+  return(x)
+}
+
+
+bayesx.reorder <- function(object = NULL, x) {
+  if(!is.null(object)) {
+    i <- if(is.list(object)) object$bayesx.setup$order else object
+    if(!is.null(i)) {
+      if(!is.null(dim(x))) {
+        j <- 1:nrow(x)
+        x <- x[j[order(i)], ]
+        rownames(x) <- 1:nrow(x)
+      } else {
+        j <- 1:length(x)
+        x <- x[j[order(i)]]
+      }
     }
   }
 

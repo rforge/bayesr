@@ -2,11 +2,7 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-drawmap2(res, map=germany)
-
-
-
-
+e <- residuals(c(b1, b2))
 
 
 
