@@ -2,7 +2,7 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   swap = FALSE, range = NULL, names = FALSE, values = FALSE, col = NULL,
   ncol = 100, breaks = NULL, cex.legend = 1, cex.names = 1, cex.values = cex.names,
   digits = 2L, mar.min = 2, add = FALSE, interp = FALSE, linear = FALSE, extrap = FALSE,
-  outside = FALSE, grid = 100, p.pch = 16, p.cex = 1, ...)
+  outside = FALSE, grid = 200, p.pch = 15, p.cex = 1, ...)
 {
   if(missing(map))
     stop("map object is missing!")

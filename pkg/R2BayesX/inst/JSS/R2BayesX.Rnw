@@ -1438,13 +1438,12 @@ plot(fm2, term = "sx(id)", map = BeechBnd,
 par(mar = c(0.1, 0.1, 0.1, 0.1))
 plot(fm2, term = "sx(id)", map = BeechBnd,
   height = 0.07, width = 0.27,
-  interp = TRUE, outside = TRUE)
+  interp = TRUE, outside = TRUE,
+  p.cex = 0.46)
 @
-\caption{\label{fig:forest-spatial-kde} Forest damage: Kernel density estimate of the spatial
-  effect (top panel), together with a map effect plot (middle panel), and map effect plot
-  with modified color scaling (bottom panel). In the latter plot, the maximum shading is
-  attained at $-3$ and $3$, respectively, corresponding to the
-  10\% and 90\% quantiles of the kernel density estimate of the effect.}
+\caption{\label{fig:forest-spatial-interp} Forest damage: Kernel density estimate of the spatial
+  effect (top panel), together with a map effect plot (middle panel), and a map effect plot
+  applying smooth spatial interpolation (bottom panel).}
 \end{figure}
 The effect may also be visualized either using a 3d perspective plot, an image/contour plot or a map
 effect plot using the boundary file \code{BeechBnd} with
@@ -1452,16 +1451,19 @@ effect plot using the boundary file \code{BeechBnd} with
 plot(fm2, term = "sx(id)", map = BeechBnd)
 @
 Both the kernel density and map effect plot are shown in the first two panels of
-Figure~\ref{fig:forest-spatial-kde}. In this example the coloring of the plot is strongly influenced
-by a few very high and low values. Therefore, it is helpful to restrict the color range e.g., using
-the maximum shading for all absolute effects in excess of 3 (which roughly corresponds to the
-absolute values of the 10\% and 90\%  quantiles of the kernel density estimate of the effect).
-The resulting map in the bottom panel of Figure~\ref{fig:forest-spatial-kde} is created by:
+Figure~\ref{fig:forest-spatial-interp}. In this example the coloring of the plot is strongly influenced
+by a few very high and low values. In addition, the size of the polygon areas is relatively small
+and makes it difficult to examine the effect. Therefore, it is helpful to plot a smooth
+interpolated map of the effect. The resulting map in the bottom panel of
+Figure~\ref{fig:forest-spatial-interp} is created by:
 <<forest-spatial-id-restrict, echo=TRUE, eval=FALSE>>=
 plot(fm2, term = "sx(id)", map = BeechBnd,
   interp = TRUE, outside = TRUE)
 @
-Trimming the color range of the plot now leads to a better representation of the effect.
+Plotting interpolated values now leads to a better representation of the effect. The argument
+\code{interp} specifies if interpolation of estimated effects should be applied. Argument
+\code{outside} specifies if values outside the polygon areas should be shown, which is necessary
+in this example, since the polygon areas are relatively small. ()
 
 In summary, the results identify a strong influence of the spatial effect on the overall model
 fit, indicating that a clear splitting of location-specific covariates and the spatial effect is
@@ -1687,7 +1689,9 @@ Argument & Description \\ \hline
           function \fct{plotmap} option \code{"right"} is also valid. \\
 \code{lrange} & Specifies the range of the legend. \\
 \code{symmetric} & If set to \code{TRUE}, a symmetric legend will be drawn corresponding to the
-          $\pm \max(|x|)$ of values $x$ that are used for plotting. \\ \hline
+          $\pm \max(|x|)$ of values $x$ that are used for plotting. \\
+\code{interp} & If set to \code{TRUE}, values will be smoothly interpolated. \\
+\code{outside} & If set to \code{TRUE}, interpolated values outside the polygon areas will be plotted. \\ \hline
 \end{tabular}
 \caption{\label{tab:plotting} Most important arguments of the \fct{plot} method for \class{bayesx}
 objects. The first block describes arguments of the \fct{plot} method itself, subsequent blocks

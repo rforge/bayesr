@@ -20,7 +20,7 @@ plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   col = NULL, ncol = 100, breaks = NULL, cex.legend = 1, 
   cex.names = 1, cex.values = cex.names, digits = 2L, 
   mar.min = 2, add = FALSE, interp = TRUE, linear = FALSE, extrap = FALSE,
-  outside = FALSE, grid = 200, p.pch = 16, p.cex = 1, ...)
+  outside = FALSE, grid = 200, p.pch = 15, p.cex = 1, ...)
 }
 
 \arguments{
