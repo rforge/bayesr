@@ -17,12 +17,7 @@ residuals.bayesx <- function(object, model = NULL, term = NULL, ...)
         }
       } else rval[[i]] <- attr(object[[i]]$effects[[term]], "partial.resids")
     } else {
-      rval[[i]] <- bayesx.reorder(object[[i]], object[[i]]$residuals)
-      if(!is.null(dim(rval[[i]])) & ncol(rval[[i]]) == 2L) {
-        ui <- apply(rval[[i]], 1, function(x) any(duplicated(x)))
-        if(all(ui))
-          rval[[i]] <- drop(rval[[i]][, 1L])
-      }
+      rval[[i]] <- bayesx.reorder(object[[i]], object[[i]]$residuals, TRUE)
     }
     if(!is.null(object[[i]]$bayesx.setup$model.name))
       mn[i] <- object[[i]]$bayesx.setup$model.name

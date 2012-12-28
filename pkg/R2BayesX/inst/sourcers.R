@@ -2,6 +2,8 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
+fitted(b1)
+
 e <- residuals(c(b1, b2))
 
 
