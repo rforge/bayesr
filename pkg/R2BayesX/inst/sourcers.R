@@ -2,29 +2,7 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-
-plot(zm1, term = "sx(district):mrf", map = ZambiaBnd)
-
-
-
-
-plot(fm, term = "sx(id)", map = BeechBnd)
-
-
-
-data("ForestHealth", "BeechBnd", package = "R2BayesX")
-
-f <- defoliation ~ stand + fertilized + humus + moisture + alkali + ph +
-  soil + sx(age) + sx(inclination) + sx(canopy) + sx(year) + sx(elevation) +
-  sx(id, bs = "gs", map = BeechBnd, nrknots = 20)
-
-fm <- bayesx(f, family = "cumlogit", method = "REML", data = ForestHealth)
-
-
-
-
-
-
+drawmap2(res, map=germany)
 
 
 

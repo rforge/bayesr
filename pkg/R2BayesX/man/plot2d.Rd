@@ -16,7 +16,8 @@
 plot2d(x, residuals = FALSE, rug = TRUE, jitter = TRUE, 
   col.residuals = NULL, col.lines = NULL, col.polygons = NULL, 
   col.rug = NULL, c.select = NULL, fill.select = NULL, 
-  data = NULL, ...)
+  data = NULL, sep = "", month = NULL, year = NULL,
+  step = 12, ...)
 }
 
 \arguments{
@@ -25,7 +26,8 @@ plot2d(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
     for univariate functions returned within \code{\link{bayesx}} and 
     \code{\link{read.bayesx.output}} model term objects is used, also see 
     \code{\link{fitted.bayesx}}. Another possibility is to specify the plot via a \code{formula}, 
-    e.g. \code{y ~ x}, also see the example.}
+    e.g. \code{y ~ x}, also see the example. \code{x} may also be a character file path to the
+    data to be used for plotting.}
   \item{residuals}{if set to \code{TRUE}, partial residuals may also be plotted if available.}
   \item{rug}{add a \code{\link[graphics]{rug}} to the plot.}
   \item{jitter}{if set to \code{TRUE} a \code{\link[base]{jitter}}ed 
@@ -38,8 +40,8 @@ plot2d(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
   \item{c.select}{\code{integer} vector of maximum length of columns of \code{x}, selects the 
     columns of the resulting data matrix that should be used for plotting. E.g. if \code{x} has 5
     columns, then \code{c.select = c(1, 2, 5)} will select column 1, 2 and 5 for plotting. Note that
-    first element of \code{c.select} should always be 1, since this is the column of the covariate 
-    the effect is plotted for.}
+    first element of \code{c.select} should always be the column that holds the variable for the
+    x-axis.}
   \item{fill.select}{\code{integer} vector, select pairwise the columns of the resulting data matrix 
     that should form one polygon with a certain background color specified in argument \code{col}. 
     E.g. \code{x} has three columns, or is specified with formula \code{f1 + f2 ~ x}, then setting 
@@ -49,7 +51,13 @@ plot2d(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
     are selected to form two polygons.}
   \item{data}{if \code{x} is a formula, a \code{data.frame} or \code{list}. By default the variables 
     are taken from \code{environment(x)}: typically the environment from which \code{plot2d} is 
-    called.}
+    called. Note that \code{data} may also be a character file path to the data.}
+  \item{sep}{the field separator character when \code{x} or \code{data} is a character, see function
+    \code{\link{read.table}}.}
+  \item{month, year, step}{provide specific annotation for plotting estimation results for temporal
+    variables. \code{month} and \code{year} define the minimum time point whereas step specifies the
+    type of temporal data with \code{step = 4}, \code{step = 2} and \code{step = 1} corresponding to
+    quartely, half yearly and yearly data.}
   \item{\dots}{other graphical parameters, please see the details.}
 }
 

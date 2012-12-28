@@ -8,9 +8,9 @@ find.limits <- function(map, mar.min = 2, ...)
   }
   xlim <- range(unlist(lapply(map, myrange, c.select = 1L, ...)))
   ylim <- range(unlist(lapply(map, myrange, c.select = 2L, ...)))
-  mar <- NULL
+  mar <- asp <- NULL
   if(!is.null(height2width <- attr(map, "height2width"))) {
-    height2width <- height2width * 1.1
+    height2width <- asp <- height2width * 0.8
     if(!is.null(mar.min)) {
       if(height2width > 1) {
         side <- 17.5 * (1 - 1/height2width) + mar.min / height2width
@@ -23,6 +23,6 @@ find.limits <- function(map, mar.min = 2, ...)
     }
   }
 
-  return(list(ylim = ylim, xlim = xlim, mar = mar))
+  return(list(ylim = ylim, xlim = xlim, mar = mar, asp = asp))
 }
 

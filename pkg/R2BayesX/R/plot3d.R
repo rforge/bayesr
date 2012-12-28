@@ -1,13 +1,20 @@
-plot3d <-
-function(x, residuals = FALSE, col.surface = NULL, 
+plot3d <- function(x, residuals = FALSE, col.surface = NULL, 
   ncol = 99L, swap = FALSE, col.residuals = NULL, col.contour = NULL, 
   c.select = NULL, grid = 30L, image = FALSE, contour = FALSE, 
   legend = TRUE, cex.legend = 1, breaks = NULL, range = NULL, 
   digits = 2L, d.persp = 1L, r.persp = sqrt(3), linear = TRUE, extrap = FALSE, 
-  duplicate = "mean", outscale = 0, data = NULL, ...)
+  duplicate = "mean", outscale = 0, data = NULL, sep = "", ...)
 {
   if(is.null(x))
     return(invisible(NULL))
+  if(is.character(x)) {
+    stopifnot(file.exists(x <- path.expand(x)))
+    x <- read.table(x, header = TRUE, sep = sep)
+  }
+  if(is.character(data)) {
+    stopifnot(file.exists(data <- path.expand(data)))
+    data <- read.table(data, header = TRUE, sep = sep)
+  }
   if(inherits(x,"formula")) {
     if(is.null(data))
       data <- environment(x)
@@ -22,8 +29,11 @@ function(x, residuals = FALSE, col.surface = NULL,
     else
       x <- x[, c(2L, 3L, 1L)]
   }
-  if(is.data.frame(x))
+  if(is.data.frame(x)) {
+    if(!is.na(match("intnr", names(x))) & !is.null(c.select) & !is.character(c.select))
+      c.select <- c.select - 1
     x <- df2m(x)
+  }
   if(!is.matrix(x))
     stop("x must be a matrix!")
   if(ncol(x) < 3)
@@ -43,9 +53,9 @@ function(x, residuals = FALSE, col.surface = NULL,
       by <- specs$term[length(specs$term)]
   }
   nx <- colnames(x)
-  x <- x[order(x[,1L]),]
-  X <- x[,1L]
-  z <- x[,2L]
+  x <- x[order(x[, 1L]), ]
+  X <- x[, 1L]
+  z <- x[, 2L]
   xrd <- diff(range(X))
   zrd <- diff(range(z))
   xn <- seq(min(X) - outscale * xrd , max(X) + outscale * xrd, length = grid)

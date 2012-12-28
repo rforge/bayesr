@@ -34,7 +34,7 @@ export(
   "colorlegend",
   "plot2d",               
   "plot3d",              
-  "plotblock",            
+  "plotblock",
   "plotmap",              
   "plotsamples",
   "sliceplot",
@@ -52,7 +52,10 @@ export(
   "bnd2sp",
   "sp2bnd",
   "nb2gra",
-  "gra2nb"
+  "gra2nb",
+  "plotnonp",
+  "plotsurf",
+  "drawmap"
 )
 
 ## methods for objects of class bayesx etc.

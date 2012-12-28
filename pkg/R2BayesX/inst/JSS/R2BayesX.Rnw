@@ -220,7 +220,7 @@ plot(b, term = "sx(agechild)", residuals = TRUE, cex = 0.1, rug = FALSE)
 \hspace*{0.3cm}
 <<plot-illustration-district, echo=FALSE, fig=TRUE, width=5.3, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(0, 0, 0, 0))
-plot(b, term = "sx(district)", map = ZambiaBnd, swap = TRUE)
+plot(b, term = "sx(district)", map = ZambiaBnd, swap = TRUE, pos = "topleft")
 @
 \caption{\label{fig:illustration} Visualization examples: Estimated effect for covariate \code{mbmi}
 (black line) together with 95\% and 80\% credible intervals (upper left panel). The upper right
@@ -1108,12 +1108,12 @@ plot(zm, term = "sx(district):mrf", map = ZambiaBnd)
 \centering
 <<zambia-district-structured, echo=FALSE, fig=TRUE, width=5, height=4, pdf=FALSE, png=TRUE>>=
 par(mar = c(0, 0, 0, 0))
-plot(zm, term = "sx(district):mrf", map = ZambiaBnd, swap = TRUE)
+plot(zm, term = "sx(district):mrf", map = ZambiaBnd, swap = TRUE, pos = "topleft")
 @
 <<zambia-district-unstructured-samescale, echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(0, 0, 0, 0))
 plot(zm, term = "sx(district):re", map = ZambiaBnd, swap = TRUE,
-  range = c(-0.32, 0.32), lrange = c(-0.32, 0.32))
+  range = c(-0.32, 0.32), lrange = c(-0.32, 0.32), pos = "topleft")
 @
 \caption{\label{fig:zambia-district-structured-unstructured} Example on childhood malnutrition:
 Estimated mean effect of the structured spatial effect (left panel), together with the unstructured
@@ -1430,7 +1430,7 @@ plot(fm2, term = "sx(id)", map = FALSE, main = "")
 <<forest-spatial-id, echo=FALSE, fig=TRUE, width=7.3, height=4.5, pdf=FALSE, png=TRUE>>=
 par(mar = c(0.1, 0.1, 0.1, 0.1))
 plot(fm2, term = "sx(id)", map = BeechBnd,
-  height = 0.07, width = 0.27)
+  height = 0.07, width = 0.27, pos = "topleft")
 @
 \\[2ex]
 
@@ -1439,7 +1439,7 @@ par(mar = c(0.1, 0.1, 0.1, 0.1))
 plot(fm2, term = "sx(id)", map = BeechBnd,
   height = 0.07, width = 0.27,
   interp = TRUE, outside = TRUE,
-  p.cex = 0.46)
+  p.cex = 0.46, pos = "topleft")
 @
 \caption{\label{fig:forest-spatial-interp} Forest damage: Kernel density estimate of the spatial
   effect (top panel), together with a map effect plot (middle panel), and a map effect plot
@@ -1460,10 +1460,10 @@ Figure~\ref{fig:forest-spatial-interp} is created by:
 plot(fm2, term = "sx(id)", map = BeechBnd,
   interp = TRUE, outside = TRUE)
 @
-Plotting interpolated values now leads to a better representation of the effect. The argument
-\code{interp} specifies if interpolation of estimated effects should be applied. Argument
-\code{outside} specifies if values outside the polygon areas should be shown, which is necessary
-in this example, since the polygon areas are relatively small. ()
+where argument \code{interp} specifies if interpolation of estimated effects should be applied and
+argument \code{outside} if values outside the polygon areas should be shown (see also
+Appendix~\ref{appendix:plotting}). Plotting interpolated values now leads to a better representation
+of the effect.
 
 In summary, the results identify a strong influence of the spatial effect on the overall model
 fit, indicating that a clear splitting of location-specific covariates and the spatial effect is
@@ -1665,7 +1665,9 @@ Argument & Description \\ \hline
     \code{"qq-resid"}, \code{"scatter-resid"}, \code{"scale-resid"}, \code{"max-acf"}. Argument
     \code{which} may also be specified as integer, e.g., \code{which = 1}. The first three arguments
     are all model term-specific. For the residual model diagnostic plot options \code{which}
-    may be set with \code{which = 5:8}. \\ \hline
+    may be set with \code{which = 5:8}. \\
+\code{acf} & If set to \code{TRUE} and \code{which} specifies samples to be plotted, the
+             autocorrelation function of the samples are shown. \\ \hline
 \code{residuals} & If set to \code{TRUE}, partial residuals may also be plotted if available. \\
 \code{rug} & If set to \code{TRUE}, a \fct{rug} is added to the plot. \\
 \code{jitter} & If set to \code{TRUE}, a \fct{jitter}ed \fct{rug} is added to the plot. \\ \hline
@@ -1679,7 +1681,10 @@ Argument & Description \\ \hline
           function \fct{polygon}. \\
 \code{legend} & If set to \code{TRUE}, a legend will be shown. \\
 \code{range} & Specify the range of values the plot should be generated for, e.g., only values
-           between $-2$ and 2 are of interest then \code{range = c(-2, 2)}. \\ \hline
+           between $-2$ and 2 are of interest then \code{range = c(-2, 2)}. \\
+\code{interp} & If set to \code{TRUE}, values will be smoothly interpolated. \\
+\code{outside} & If set to \code{TRUE}, interpolated values outside the polygon areas will be
+                 plotted. \\ \hline
 \code{color} & The colors for the legend, may also be a function, e.g.,
            \code{colors = heat.colors}. \\
 \code{pos} & The position of the legend, either a numeric vector, e.g., \code{pos = c(0.1, 0.2)}
@@ -1689,9 +1694,7 @@ Argument & Description \\ \hline
           function \fct{plotmap} option \code{"right"} is also valid. \\
 \code{lrange} & Specifies the range of the legend. \\
 \code{symmetric} & If set to \code{TRUE}, a symmetric legend will be drawn corresponding to the
-          $\pm \max(|x|)$ of values $x$ that are used for plotting. \\
-\code{interp} & If set to \code{TRUE}, values will be smoothly interpolated. \\
-\code{outside} & If set to \code{TRUE}, interpolated values outside the polygon areas will be plotted. \\ \hline
+          $\pm \max(|x|)$ of values $x$ that are used for plotting. \\ \hline
 \end{tabular}
 \caption{\label{tab:plotting} Most important arguments of the \fct{plot} method for \class{bayesx}
 objects. The first block describes arguments of the \fct{plot} method itself, subsequent blocks

@@ -1,6 +1,5 @@
-fitted.bayesx <-
-function(object, model = NULL, term = NULL, ...)
-{    
+fitted.bayesx <- function(object, model = NULL, term = NULL, ...)
+{  
   object <- get.model(object, model)
   k <- length(object)
   mn <- rep("model", length.out = k)
@@ -14,7 +13,9 @@ function(object, model = NULL, term = NULL, ...)
       }
       mn[duplicated(mn)] <- paste(mn[duplicated(mn)], 1:length(mn[duplicated(mn)]) + 1L, sep = "")
       names(rval) <- mn
-    } else rval <- object[[1L]]$fitted.values
+    } else {
+      rval <- object[[1L]]$fitted.values
+    }
   } else {
     if(length(object) > 1L) {
       rval <- list()

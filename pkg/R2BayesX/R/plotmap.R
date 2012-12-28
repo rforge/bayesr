@@ -12,8 +12,11 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     stop("argument map must be a list() of matrix polygons!")
   args <- list(...)
   map.limits <- find.limits(map, mar.min, ...)
-  if(is.null(args$asp))
+  if(is.null(args$asp)) {
     args$asp <- attr(map, "asp")
+    if(is.null(args$asp))
+      args$asp <- map.limits$asp
+  }
   n <- length(map)
   if(is.null(x))
     legend <- FALSE
@@ -71,13 +74,16 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
       colors <- rep(colors, length.out = n)
     }
   }
+  if(is.null(args$pos))
+    args$pos <- "right"
   if(legend && !is.null(args$pos) && args$pos[1L] == "right") {
     par.orig <- par(c("mar", "las", "mfrow"))
     mar.orig <- mar <- par.orig$mar
     mar[4L] <- 0
+    mar[c(1, 3)] <- 1
     on.exit(par(par.orig))
     par(mar = mar)
-    w <- (3 + mar[2L]) * par("csi") * 2.54
+    w <- (3 + mar[2L]) * par("csi") * 2
     layout(matrix(c(1, 2), nrow = 1), widths = c(1, lcm(w)))
   }
   if(!is.null(map.limits$mar) && is.null(args$asp) && !add)

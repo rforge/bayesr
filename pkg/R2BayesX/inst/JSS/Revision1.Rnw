@@ -337,9 +337,10 @@ method = MCMC  family = gaussian  iterations = 12000  step = 10
 
   \medskip
 
-  \fixme{Stefan, Thomas, the output matrices could set \code{NA}s instead of \code{0}?
-    The problem is that I cannot account for that in the interface, because I do not know 
-    if all \code{0}s are really \code{NA}s!}
+  We have set these to \code{NA} now.
+  \fixme{Stefan, Thomas, the output matrices could set \code{NA}s instead of \code{0}? I only did
+    a workaround here, which is not the best solution, because I do not exactly know if values are
+    really \code{NA} or just \code{0}!}
 
 \item \textbf{In the bayesx() call, the family parameter is case sensitive (I
   accidentally wrote "Gaussian" instead of "gaussian"). This could be
@@ -481,12 +482,23 @@ bayesx.term.options(bs = "gk", method = "REML")
 
   \medskip
 
-    
+  Using function \code{plotmap()}, we have added an option to plot interpolated maps now, also see
+  Figure~10.
 
 
 \item \textbf{Something weird has happened in the second paragraph of page 34.}
 
+  \medskip
+
+  \fixme{Achim, do you know what he means?}
+
+
 \item \textbf{Table 7: This should include the "acf=TRUE" option used in Figure 7.}
+
+  \medskip
+
+  We have included this option in Table~7 now.
+
 
 \end{itemize}
 
@@ -504,6 +516,13 @@ bayesx.term.options(bs = "gk", method = "REML")
   not in the spirit of R modelling functions. (Warnings or errors are
   different of course, and should be printed out by default). Perhaps a
   verbose option could be used to turn printing back on, if needed?}
+
+  \medskip
+
+  We have a \code{verbose} option to suppress the output of the \pkg{BayesX} binary. Also, we check
+  for possible errors in the log file of \pkg{BayesX}. We have set the default to
+  \code{verbose = FALSE} now.
+
 
 \item \textbf{There seems to be an ordering problem with fitted.bayesx. I noticed this
   from a more complicated example, but actually the first example in ?bayesx

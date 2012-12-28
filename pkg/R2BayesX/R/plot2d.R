@@ -1,10 +1,18 @@
-plot2d <-
-function(x, residuals = FALSE, rug = TRUE, jitter = TRUE, 
+plot2d <- function(x, residuals = FALSE, rug = TRUE, jitter = TRUE, 
   col.residuals = NULL, col.lines = NULL, col.polygons = NULL, 
-  col.rug = NULL, c.select = NULL, fill.select = NULL, data = NULL, ...)
+  col.rug = NULL, c.select = NULL, fill.select = NULL, data = NULL,
+  sep = "", month = NULL, year = NULL, step = 12, ...)
 {
   if(is.null(x))
     return(invisible(NULL))
+  if(is.character(x)) {
+    stopifnot(file.exists(x <- path.expand(x)))
+    x <- read.table(x, header = TRUE, sep = sep)
+  }
+  if(is.character(data)) {
+    stopifnot(file.exists(data <- path.expand(data)))
+    data <- read.table(data, header = TRUE, sep = sep)
+  }
   if(inherits(x, "formula")) {
     if(is.null(data))
       data <- environment(x)
@@ -20,8 +28,11 @@ function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
       stop("formula is specified wrong!")
   }
   is.bayesx <- grepl(".bayesx", class(x))[1L]
-  if(is.data.frame(x))
+  if(is.data.frame(x)) {
+    if(!is.na(match("intnr", names(x))) & !is.null(c.select) & !is.character(c.select))
+      c.select <- c.select - 1
     x <- df2m(x)
+  }
   if(!is.list(x) && !is.matrix(x))
     stop("x must be a matrix!")
   if(!is.list(x) && ncol(x) < 2L)
@@ -40,15 +51,9 @@ function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
     c.select <- c.select[1L:nc]
   if(is.null(fill.select))
     if(is.bayesx)
-      fill.select <- c(0L, 0L, 1L, 2L, 2L, 1L) 
+      fill.select <- c(0L, 0L, 1L, 2L, 2L, 1L)
   if(!is.bayesx && length(fill.select) < nc) {
     fill.select <- NULL
-    if(ncol(x) > 2L) {
-      if(any(rm <- grepl("pcat", colnames(x)))) {
-        x <- x[, !rm]
-        c.select <- 1:ncol(x)
-      }
-    }
   }
   if(is.null(col.polygons))
     args$col.polygons <- rep(c("grey80", "grey70"), round(nc/2))
@@ -87,7 +92,7 @@ function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
   }	
   if(is.character(c.select)) 
     c.select <- pmatch(c.select, colnames(x))
-  x <- x[,c.select]
+  x <- x[, c.select]
   if(residuals)
     attr(x, "partial.resids") <- pres
   if(is.null(args$ylim)) {
@@ -124,7 +129,23 @@ function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
       box()
   if(is.null(args$axes)) {
     axis(2L)
-    axis(1L)
+    if(!is.null(month) & !is.null(year)) {
+      start <- min(x[, 1], na.rm = TRUE) - month + 1
+      stop <- max(x[, 1] + 1, na.rm=TRUE)
+      pos <- seq(start, stop, step)
+      label <- (pos - pos[1]) / step + year
+      if(nrow(x) <= 24) {
+        label2 <- month.abb[ifelse(step == 12, 1:12,
+          ifelse(step == 4, c(1, 4, 7, 10),
+          ifelse(step == 2, c(1, 7), FALSE)))]
+        label2 <- rep(label2, length.out = nrow(x) + month - 1)
+        label2 <- label2[month:(nrow(x) + month - 1)]
+        start2 <- x[1, 1]
+        stop2 <- max(x[, 1], na.rm = TRUE)
+        pos2 <- seq(start2, stop2, 1)
+        axis(side = 1, at = pos2, labels = label2)
+      } else axis(side = 1, at = pos, labels = label)
+    } else axis(1L)
   } else {
     if(args$axes) {
       axis(2L)

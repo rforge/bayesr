@@ -18,7 +18,8 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
   c.select = NULL, grid = 30L, image = FALSE, contour = FALSE, 
   legend = TRUE, cex.legend = 1, breaks = NULL, range = NULL, 
   digits = 2L, d.persp = 1L, r.persp = sqrt(3), linear = TRUE, 
-  extrap = FALSE, duplicate = "mean", outscale = 0, data = NULL, ...)
+  extrap = FALSE, duplicate = "mean", outscale = 0, data = NULL,
+  sep = "", ...)
 }
 
 \arguments{
@@ -27,7 +28,8 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
     the structure for bivariate functions returned within \code{\link{bayesx}} and 
     \code{\link{read.bayesx.output}} model term objects is used, also see 
     \code{\link{fitted.bayesx}}. Another possibility is to specify the plot via a \code{formula}, 
-    e.g. for simple plotting of bivariate surfaces \code{z ~ x + y}, also see the example.}
+    e.g. for simple plotting of bivariate surfaces \code{z ~ x + y}, also see the example.
+    \code{x} may also be a character file path to the data to be used for plotting.}
   \item{residuals}{if set to \code{TRUE}, partial residuals may also be plotted if available.}
   \item{col.surface}{the color of the surface, may also be a function, e.g. 
     \code{col.surface = heat.colors}.}
@@ -61,7 +63,9 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
   \item{outscale}{scales the outer ranges of \code{x} and \code{z} limits used for interpolation.}
   \item{data}{if \code{x} is a \code{formula}, a \code{data.frame} or \code{list}. By default the 
     variables are taken from \code{environment(x)}: typically the environment from which 
-    \code{plot3d} is called.}
+    \code{plot3d} is called. Note that \code{data} may also be a character file path to the data.}
+  \item{sep}{the field separator character when \code{x} or \code{data} is a character, see function
+    \code{\link{read.table}}.}
   \item{\dots}{parameters passed to \code{\link{colorlegend}} if an image plot with legend is drawn,
     also other graphical parameters, please see the details.}
 }
