@@ -1,7 +1,7 @@
 GRstat <- function(object, term = NULL) {
   if((n <- length(object)) < 2L)
     stop("at least two models ar needed for calculation!")
-  os <- samples(object, model, term)
+  os <- samples(object, model = NULL, term)
   rval <- vector(mode = "list", length = length(os[[1L]]))
   for(i in 1:length(os[[1L]])) {
     chains <- list()

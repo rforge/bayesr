@@ -2,11 +2,12 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-GRstat(b1, term = 1)
+zm1 <- bayesx(stunting ~ memployment + meducation + urban + gender + 
+  sx(mbmi) + sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) +
+  sx(district, bs = "re"), iter = 12200, burnin = 200, step = 10,
+  data = ZambiaNutrition, hpc = TRUE, cores = 3)
 
-
-
-b <- bayesx(y ~ sx(x) + z + w, data = dat, hpc = TRUE, cores = 3)
+GRstat(zm1, term = "sx(agechild)")
 
 
 

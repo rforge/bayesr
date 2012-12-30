@@ -5,6 +5,7 @@ bayesx <- function(formula, data, weights = NULL, subset = NULL,
 {
   ## multiple core processing
   if(hpc) {
+    require("parallel")
     if(.Platform$OS.type == "windows")
       stop("high perfomance computing (hpc) not available on Windows systems!")
     if(is.null(cores))

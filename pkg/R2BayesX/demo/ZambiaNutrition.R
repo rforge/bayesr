@@ -7,8 +7,8 @@ data("ZambiaBnd")
 ## estimate model
 zm1 <- bayesx(stunting ~ memployment + meducation + urban + gender + 
   sx(mbmi) + sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) +
-  sx(district, bs = "re"), iter = 12000, burnin = 2000, step = 10,
-  data = ZambiaNutrition)
+  sx(district, bs = "re"), iter = 500, burnin = 100, step = 1,
+  data = ZambiaNutrition, hpc = TRUE, cores = 3)
 
 ## summary statistics
 summary(zm1)
