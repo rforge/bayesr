@@ -46,7 +46,11 @@ predict.bayesx <- function(object, newdata, model = NULL, term = NULL,
             stop(paste("cannot find variables", specs$term, "in newdata!"))
           if(is.null(specs$is.factor)) specs$is.factor <- FALSE
           tmp <- samples(object[[j]], term = i)
-          m.samples[[i]] <- rbind(m.samples[[i]], tmp[[1]]$Coef)
+          tmp <- tmp[[1]]$Coef
+          if(is.null(dim(tmp))) {
+            tmp <- matrix(tmp, ncol = 1)
+          }
+          m.samples[[i]] <- rbind(m.samples[[i]], tmp)
           if(inherits(object[[j]]$effects[[i]], "linear.bayesx")) {
             if(specs$is.factor & !is.character(newdata)) {
               hi <- if(!is.null(object[[j]]$fixed.effects)) {
@@ -74,7 +78,7 @@ predict.bayesx <- function(object, newdata, model = NULL, term = NULL,
       if(intercept) {
         sami <- attr(object[[j]]$fixed.effects, "sample")
         if(!is.null(sami)) {
-          sami <- sami[grep("(Intercept)", colnames(sami), fixed = TRUE), ]
+          sami <- sami[, grep("(Intercept)", colnames(sami), fixed = TRUE)]
           if(length(sami))
             m.samples$Intercept <- sami
         }

@@ -4,9 +4,7 @@ invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
 ## b2 <- bayesx(y ~ sx(x), method = "MCMC", iter = 1200, burnin = 200, data = dat)
 
-
-pred <- predict(b1, newdata = nd, term = "sx(x)")
-
+pred <- predict(b1, newdata = nd, term = "w")
 
 
 
