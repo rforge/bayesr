@@ -75,6 +75,8 @@ b1 <- bayesx(y ~ sx(x) + z + w, data = dat)
 nd <- dat[1:100, ]
 
 ## and only for sx(x) and w
+## note that this computes the combined predictions:
+## intercept + sx(x) + w
 pred <- predict(b1, newdata = nd, term = c("sx(x)", "w"))
 pred
 }
