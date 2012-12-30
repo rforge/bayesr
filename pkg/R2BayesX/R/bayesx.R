@@ -29,7 +29,7 @@ bayesx <- function(formula, data, weights = NULL, subset = NULL,
     }
     rval <- mclapply(1:cores, hpc_bayesx, mc.cores = cores)
     names(rval) <- paste("BayesX_Core", 1:cores, sep = "_")
-    class(rval) <- c("bayesx", "list")
+    class(rval) <- c("bayesx", "bayesx.hpc")
     return(rval)
   }
 
