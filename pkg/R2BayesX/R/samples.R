@@ -89,7 +89,7 @@ samples <- function(object, model = NULL, term = NULL, acf = FALSE, ...)
   }
   if(k > 1L) {
     mn[duplicated(mn)] <- paste(mn[duplicated(mn)], 1:length(mn[duplicated(mn)]) + 1L, sep = "")
-    names(rval) <- mn
+    names(rval) <- if(is.null(names(object))) mn else names(object)
   } else rval <- rval[[1L]]
   if(is.null(rval) || length(rval) < 1L)
     rval <- NA

@@ -2,7 +2,9 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-b
+GRstat(b1, term = 1)
+
+
 
 b <- bayesx(y ~ sx(x) + z + w, data = dat, hpc = TRUE, cores = 3)
 
