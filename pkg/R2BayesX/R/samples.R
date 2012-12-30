@@ -1,5 +1,4 @@
-samples <-
-function(object, model = NULL, term = NULL, acf = FALSE, ...)
+samples <- function(object, model = NULL, term = NULL, acf = FALSE, ...)
 {
   if(is.null(object) || length(object) < 2L)
     stop("nothing to do!")
@@ -36,16 +35,20 @@ function(object, model = NULL, term = NULL, acf = FALSE, ...)
   for(i in 1L:k) {
     rval[[i]] <- list()
     for(j in 1:length(term)) {
-      if(is.na(match(term[j], "linear-samples")) && is.na(match(term[j], "var-samples"))) {
+      if(is.na(pmatch(term[j], "linear-samples")) && is.na(pmatch(term[j], "var-samples"))) {
+        xn <- NULL
         if(!is.null(attr(object[[i]]$effects[[term[j]]], "specs")) &&
           !is.null(attr(object[[i]]$effects[[term[j]]], "specs")$is.factor) && 
           attr(object[[i]]$effects[[term[j]]], "specs")$is.factor) {
-          sattr <- NULL
-          for(jj in 1L:length(object[[i]]$effects[[term[j]]]))
-            sattr <- cbind(sattr, attr(object[[i]]$effects[[term[j]]][[jj]], "sample"))
-          if(!is.null(sattr) && ncol(sattr) > 1L)
-            colnames(sattr) <- paste("C", 1L:ncol(sattr), sep = "")
+          linhead <- colnames(attr(object[[i]]$fixed.effects, "sample"))
+          sattr <- attr(object[[i]]$fixed.effects, "sample")[, grepl(term[j], linhead)]
           attr(object[[i]]$effects[[term[j]]], "sample") <- sattr
+          xn <- term[j]
+        } else {
+          if(!is.null(xn <- attr(object[[i]]$effects[[term[j]]], "specs")$term))
+            xn <- paste(xn, collapse = ".", sep = "")
+          else
+            xn <- term[j]
         }
         tmp <- list()
         if(!is.null(attr(object[[i]]$effects[[term[j]]], "sample")))
@@ -60,21 +63,19 @@ function(object, model = NULL, term = NULL, acf = FALSE, ...)
             tmp2$Var <- samplesacf(tmp$Var, ...)
           tmp <- tmp2
         }
-        if(!is.null(xn <- attr(object[[i]]$effects[[term[j]]], "specs")$term))
-          xn <- paste(xn, collapse = ".", sep = "")
-        else
-          xn <- term[j]
         eval(parse(text = paste("rval[[i]]$'", xn, "' <- tmp", sep = "")))
       } 
-      if(!is.na(match(term[j], "linear-samples"))) {
+      if(!is.na(pmatch(term[j], "linear-samples"))) {
         if(acf) {
           if(!is.null(attr(object[[i]]$fixed.effects, "sample"))) {
             tmp <- samplesacf(attr(object[[i]]$fixed.effects, "sample"), ...)
           } else tmp <- NULL
         } else tmp <- attr(object[[i]]$fixed.effects, "sample")
+        if(!is.null(dim(tmp)))
+          colnames(tmp) <- gsub("(Intercept)", "Intercept", colnames(tmp), fixed = TRUE)
         eval(parse(text = paste("rval[[i]]$'Lin' <- tmp", sep = "")))
       } 
-      if(!is.na(match(term[j], "var-samples"))) {
+      if(!is.na(pmatch(term[j], "var-samples"))) {
         if(acf) {
           if(!is.null(attr(object[[i]]$variance, "sample"))) {
             tmp <- samplesacf(attr(object[[i]]$variance, "sample"), ...)
@@ -95,9 +96,8 @@ function(object, model = NULL, term = NULL, acf = FALSE, ...)
   if(any(is.na(rval)))
     warning("samples are missing in object!")
   rval <- delete.NULLs(rval)
-  if(length(rval) < 2L && length(rval[[1L]]) < 2L)
-    names(rval[[1L]]) <- names(rval)
-  rval <- as.data.frame(rval)
+  if(!is.null(dim(rval)) & all(dim(rval) == 1))
+    rval <- as.numeric(rval)
 
   return(rval)
 }

@@ -65,12 +65,14 @@ write.term.info <- function(file, terms, data, object = NULL, contrasts.arg = NU
           info <- paste("list(term=\'", te$label, "\',pos=", k, ",by=\'", te$by,
             "\',isFactor=FALSE", ",isFactorBy=", fby, ",isFactorByNames=", fnv, 
             ",map=", map, ",israndom=", israndom, ",class=\'", reclass(class(te)),
-            "\',bs=\'", gsub(".smooth.spec", "", class(te)), "\')", sep = "")
+            "\',bs=\'", gsub(".smooth.spec", "", class(te)),
+            "\',call=\'", terms[k], "\')", sep = "")
         } else {
           info <- paste("list(term=\'", te$label, "\',pos=", k, ",by=\'", te$by,
             "\',isFactor=FALSE", ",isFactorBy=", fby, ",map=", map, 
             ",israndom=", israndom, ",class=\'", reclass(class(te)),
-            "\',bs=\'", gsub(".smooth.spec", "", class(te)),"\')", sep = "")
+            "\',bs=\'", gsub(".smooth.spec", "", class(te)),
+            "\',call=\'", terms[k], "\')", sep = "")
         }
       } else {
         sp <- FALSE

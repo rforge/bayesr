@@ -1,5 +1,4 @@
-find.smooth.random <-
-function(dir, files, data, response, eta, model.name, minfo, info)
+find.smooth.random <- function(dir, files, data, response, eta, model.name, minfo, info)
 {
   if(file.exists(info)) {
     info <- readLines(info)
@@ -70,6 +69,7 @@ function(dir, files, data, response, eta, model.name, minfo, info)
           colnames(x)[1L:dimx2] <- rep(rrmfs(xnam), length.out = length(1L:dimx2))
           rownames(x) <- 1L:nrow(x)
           labelx <- make.label(cx, xnam, dimx, vx)
+          term.call <- NULL
           if(!is.null(info)) {
             for(k in 1L:length(info)) {
               term <- eval(parse(text = info[k]))
@@ -88,6 +88,7 @@ function(dir, files, data, response, eta, model.name, minfo, info)
                 tl <- gsub("sx(", "s(", make.label(cx, xnam, dimx, NULL), fixed = TRUE)
                 if(rmf(term2) == rmf(tl)) {
                   labelx <- term$term
+                  term.call <- term$call
                   if(!is.null(vx))
                     labelx <- paste(labelx, ":", vx, sep = "")
                 }
@@ -103,7 +104,8 @@ function(dir, files, data, response, eta, model.name, minfo, info)
           if(!is.null(data))
             attr(x, "partial.resids") <- blow.up.resid(data, x, xnam, response, eta, dimx, cx)
           attr(x, "specs") <- list(dim = dimx, term = rrmfs(xnam), 
-            by = rrmfs(vx), label = rrmfs(labelx), is.factor = FALSE)
+            by = rrmfs(vx), label = rrmfs(labelx), is.factor = FALSE, type = cxbs,
+            call = term.call)
           ## search and set additional attributes
           nx <- length(xnam2)
           if(nx > 1L) {

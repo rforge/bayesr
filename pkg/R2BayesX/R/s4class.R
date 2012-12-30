@@ -1,5 +1,4 @@
-s4class <-
-function(x)
+s4class <- function(x)
 {
   cx <- NULL
   for(j in c(".", "_")) {
@@ -32,8 +31,7 @@ function(x)
   return(cx)
 }
 
-s4bs <-
-function(x)
+s4bs <- function(x)
 {
   if(grepl("_random", x))
     bs <- "re"

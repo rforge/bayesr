@@ -2,13 +2,10 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-fitted(b1)
-
-e <- residuals(c(b1, b2))
+## b2 <- bayesx(y ~ sx(x), method = "MCMC", iter = 1200, burnin = 200, data = dat)
 
 
-
-
+pred <- predict(b1, newdata = nd, term = "sx(x)")
 
 
 
