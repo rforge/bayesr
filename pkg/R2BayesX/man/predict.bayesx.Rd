@@ -69,15 +69,15 @@ dat <- data.frame(x = runif(n, -3, 3), z = runif(n, 0, 1),
 dat$y <- with(dat, 1.5 + sin(x) + z -3 * w + rnorm(n, sd = 0.6))
 
 ## estimate model
-b1 <- bayesx(y ~ sx(x) + z + w, data = dat)
+b <- bayesx(y ~ sx(x) + z + w, data = dat)
 
 ## get predictions for a subset of the data
-nd <- dat[1:100, ]
+nd <- dat[sample(1:n, size = 10), ]
 
 ## and only for sx(x) and w
 ## note that this computes the combined predictions:
 ## intercept + sx(x) + w
-pred <- predict(b1, newdata = nd, term = c("sx(x)", "w"))
+pred <- predict(b, newdata = nd, term = c("sx(x)", "w"))
 pred
 }
 }

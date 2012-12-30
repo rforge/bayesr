@@ -1,7 +1,38 @@
 bayesx <- function(formula, data, weights = NULL, subset = NULL, 
   offset = NULL, na.action = NULL, contrasts = NULL, 
-  control = bayesx.control(...), model = TRUE, ...)
+  control = bayesx.control(...), model = TRUE,
+  hpc = FALSE, cores = NULL, ...)
 {
+  ## multiple core processing
+  if(hpc) {
+    if(.Platform$OS.type == "windows")
+      stop("high perfomance computing (hpc) not available on Windows systems!")
+    if(is.null(cores))
+      cores <- getOption("mc.cores", 2L)
+    setseed <- round(runif(cores) * .Machine$integer.max)
+    outfile <- if(nout <- is.null(control$outfile)) {
+      file.path(tempfile(), paste("BayesX_Core", 1:cores, sep = "_"))
+    } else {
+      if(length(control$outfile) < 2)
+        file.path(path.expand(control$outfile), paste("bayesx_core", 1:cores, sep = "_"))
+      else
+        path.expand(control$outfile)
+    }
+    if(length(unique(outfile)) != cores)
+      stop(paste("there must be", cores, "direcories supplied within outfile for hpc computing!"))
+    hpc_bayesx <- function(j) {
+      control$setseed <- setseed[j]
+      control$outfile <- outfile[j]
+      control$dir.rm <- if(nout) TRUE else control$dir.rm
+      bayesx(formula, data, weights, subset, offset, na.action,
+        contrasts, control, model, hpc = FALSE)
+    }
+    rval <- mclapply(1:cores, hpc_bayesx, mc.cores = cores)
+    names(rval) <- paste("BayesX_Core", 1:cores, sep = "_")
+    class(rval) <- c("bayesx", "list")
+    return(rval)
+  }
+
   args <- list(...)
   if(is.function(args$family))
     args$family <- args$family()$family
@@ -61,7 +92,7 @@ bayesx <- function(formula, data, weights = NULL, subset = NULL,
     }
   } else warning("an error occured during runtime of BayesX!")
 
-  ## maybe remove output folder
+  ## remove output folder
   if((is.null(res$bayesx.setup$outfile)) && res$bayesx.setup$dir.rm) {
     wd <- getwd()
     try(Sys.chmod(res$bayesx.prg$file.dir, mode = "7777"), silent = TRUE)

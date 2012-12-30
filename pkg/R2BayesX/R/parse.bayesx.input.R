@@ -146,6 +146,9 @@ parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, off
         if(length(Y) > length(offset))
           offset <- offset[get.unique(Y, 22L)$ind]
       }
+      if(is.function(weights)) weights <- NULL
+      if(is.function(subset)) subset <- NULL
+      if(is.function(offset)) offset <- NULL
       ml <- list(formula = ff, data = data, weights = weights, subset = subset,
         offset = offset, na.action = na.action, drop.unused.levels = TRUE)
       data <- do.call("model.frame", ml)
