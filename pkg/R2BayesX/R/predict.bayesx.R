@@ -17,7 +17,9 @@ predict.bayesx <- function(object, newdata, model = NULL, term = NULL,
   enames <- names(object[[1L]]$effects)
   term <- if(!is.null(enames)) {
     if(is.null(term)) enames else {
-      if(is.character(term)) enames[pmatch(term, enames)] else enames[term]
+      if(is.character(term))
+        enames[pmatch(gsub("[[:space:]]", "", term), enames)]
+      else enames[term]
     }
   } else NULL
   term <- term[!is.na(term)]
@@ -27,6 +29,7 @@ predict.bayesx <- function(object, newdata, model = NULL, term = NULL,
     stop("unknown estimation method used, cannot predict!")
   if(length(ut <- unique(types)) > 1)
     stop("cannot combine predictions of models using different estimation methods!")
+  rval <- NULL
   if(grepl("mcmc", ut)) {
     if(missing(newdata))
       newdata <- model.frame(object[[1L]])
@@ -151,6 +154,23 @@ Predict.matrix.bayesx.sm.bayesx <- function(object, data)
     for(j in 1:ncol(Xm[[1L]]))
 		  X <- cbind(X, Xm[[1L]][, j] * Xm[[2L]])
   }
+
+  return(X)
+}
+
+
+Predict.matrix.bayesx.mrf.bayesx <- Predict.matrix.bayesx.random.bayesx <- function(object, data)
+{
+  specs <- attr(object, "specs")
+  if(is.null(specs$call)) stop("cannot compute predict matrix, unknown term call!")
+  term <- eval(parse(text = specs$call))
+  x <- unique(object[[term$term]])
+  ndx <- data[[term$term]]
+  if(is.factor(ndx))
+    ndx <- f2int(ndx)
+  if(!all(ndx %in% x)) stop(paste("newdata variable", term$term, "has unknown levels!"))
+  nl <- length(x)
+	X <- diag(nl)[factor(ndx, levels = x), ]
 
   return(X)
 }

@@ -2,21 +2,10 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-GRstats(b, term = c("linear-samples", "var-samples", ))
+mf <- model.frame(zm1)
+mf$fit <- predict(zm1, mf, term = "sx(district)", intercept = FALSE)
 
-
-
-zm1 <- bayesx(stunting ~ memployment + meducation + urban + gender + 
-  sx(mbmi) + sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) +
-  sx(district, bs = "re"), iter = 500, burnin = 0, step = 1,
-  data = ZambiaNutrition, hpc = TRUE, cores = 3)
-
-GRstats(zm1, term = "sx(agechild)")
-
-
-
-
-
+plotmap(ZambiaBnd, x = mf$fit, id = mf$district, swap = TRUE)
 
 
 
