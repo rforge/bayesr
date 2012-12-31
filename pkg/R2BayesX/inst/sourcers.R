@@ -3,7 +3,7 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
 mf <- model.frame(zm1)
-mf$fit <- predict(zm1, mf, term = "sx(district)", intercept = FALSE)
+mf$fit <- predict(zm1, mf, term = "sx(district):geo", intercept = FALSE)
 
 plotmap(ZambiaBnd, x = mf$fit, id = mf$district, swap = TRUE)
 

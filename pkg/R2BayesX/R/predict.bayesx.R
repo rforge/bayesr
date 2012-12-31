@@ -17,9 +17,9 @@ predict.bayesx <- function(object, newdata, model = NULL, term = NULL,
   enames <- names(object[[1L]]$effects)
   term <- if(!is.null(enames)) {
     if(is.null(term)) enames else {
-      if(is.character(term))
+      if(is.character(term)) {
         enames[pmatch(gsub("[[:space:]]", "", term), enames)]
-      else enames[term]
+      } else enames[term]
     }
   } else NULL
   term <- term[!is.na(term)]
@@ -45,6 +45,8 @@ predict.bayesx <- function(object, newdata, model = NULL, term = NULL,
       if(!is.null(term) & length(term) & !all(is.na(term))) {
         for(i in term) {
           specs <- attr(object[[j]]$effects[[i]], "specs")
+          if(inherits(object[[j]]$effects[[i]], "geo.bayesx"))
+            specs$term <- specs$term[1]
           if(!all(specs$term %in% nn))
             stop(paste("cannot find variables", specs$term, "in newdata!"))
           if(is.null(specs$is.factor)) specs$is.factor <- FALSE
@@ -131,11 +133,11 @@ Predict.matrix.bayesx.sm.bayesx <- function(object, data)
       require("splines")
       term <- eval(parse(text = specs$call))
       p.order <- term$p.order[1L] + 1L
-      xr <- range(object[, term$term]) + c(-0.051, 0.051)
+      xr <- range(object[, term$term], na.rm = TRUE) + c(-0.051, 0.051)
       nrknots <- term$bs.dim - p.order + 1L
       step <- diff(xr) / nrknots
       knots <- seq(xr[1] - (p.order - 1) * step, xr[2] + (p.order - 1) * step, by = step)
-      X <- splineDesign(knots, data[[term$term]], ord = p.order)
+      X <- splineDesign(knots, data[[term$term]], ord = p.order, outer.ok = TRUE)
     } else stop("predict type not available!")
   } else {
     require("splines")
@@ -143,13 +145,12 @@ Predict.matrix.bayesx.sm.bayesx <- function(object, data)
     p.order <- term$p.order[1L] + 1L
     Xm <- list()
     for(j in term$term) {
-      xr <- range(object[, j]) + c(-0.051, 0.051)
+      xr <- range(object[, j], na.rm = TRUE) + c(-0.051, 0.051)
       nrknots <- term$bs.dim - p.order + 1L
       step <- diff(xr) / nrknots
       knots <- seq(xr[1] - (p.order - 1) * step, xr[2] + (p.order - 1) * step, by = step)
-      Xm[[j]] <- splineDesign(knots, data[[j]], ord = p.order)
+      Xm[[j]] <- splineDesign(knots, data[[j]], ord = p.order, outer.ok = TRUE)
     }
-
     X <- matrix(0, nrow(data), 0)
     for(j in 1:ncol(Xm[[1L]]))
 		  X <- cbind(X, Xm[[1L]][, j] * Xm[[2L]])
@@ -171,6 +172,43 @@ Predict.matrix.bayesx.mrf.bayesx <- Predict.matrix.bayesx.random.bayesx <- funct
   if(!all(ndx %in% x)) stop(paste("newdata variable", term$term, "has unknown levels!"))
   nl <- length(x)
 	X <- diag(nl)[factor(ndx, levels = x), ]
+
+  return(X)
+}
+
+
+Predict.matrix.bayesx.geo.bayesx <- function(object, data)
+{
+  specs <- attr(object, "specs")
+  if(specs$type == "gk")
+    stop("predict matrix for geokriging term not supported yet!")
+  if(is.null(specs$call)) stop("cannot compute predict matrix, unknown term call!")
+  require("splines")
+  term <- eval(parse(text = specs$call))
+  p.order <- term$p.order[1L] + 1L
+  t.data <- f2int(data[[term$term]])
+  xy <- NULL
+  if(!all(t.data %in% object[, term$term]))
+    stop(paste("not all values in newdata variable", term$term, "in model term!"))
+  for(i in unique(t.data)) {
+    x <- object[object[, 1L] == i, "x"]
+    y <- object[object[, 1L] == i, "x"]
+    n <- sum(t.data == i)
+    x <- rep(x, length.out = n)
+    y <- rep(y, length.out = n)
+    xy <- rbind(xy, cbind("x" = x, "y" = y))
+  }
+  Xm <- list()
+  for(j in c("x", "y")) {
+    xr <- range(xy[, j], na.rm = TRUE) + c(-0.051, 0.051)
+    nrknots <- term$bs.dim - p.order + 1L
+    step <- diff(xr) / nrknots
+    knots <- seq(xr[1] - (p.order - 1) * step, xr[2] + (p.order - 1) * step, by = step)
+    Xm[[j]] <- splineDesign(knots, xy[, j], ord = p.order, outer.ok = TRUE)
+  }
+  X <- matrix(0, nrow(data), 0)
+  for(j in 1:ncol(Xm[[1L]]))
+    X <- cbind(X, Xm[[1L]][, j] * Xm[[2L]])
 
   return(X)
 }

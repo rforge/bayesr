@@ -38,7 +38,7 @@
   \item{intercept}{logical. Should predictions for the intercept be included using \code{"MCMC"}
     estimated models?}
   \item{FUN}{the function that is used to calculate predictions of the samples and the data/newdata,
-    e.g. could also be \code{FUN = function(x) quantile(x, probs = c(0.025, 0.5, 0.975)}.}
+    e.g. could also be \code{FUN = function(x) quantile(x, probs = c(0.025, 0.5, 0.975))}.}
   \item{\dots}{arguments passed to \code{\link{read.table}} if \code{newdata} is a character path
     to the data that should be used for prediction.}
 }
@@ -52,8 +52,16 @@
   Nikolaus Umlauf, Thomas Kneib, Stefan Lang, Achim Zeileis.
 }
 
+\section{WARNINGS}{
+  Using  geospline/geokriging model terms, predictions for MCMC models are not available at the
+  moment! If geosplines are needed, it is recommended to compute the x- and y coordinates of e.g.
+  the centroids of some region polygons (e.g. of a map, see function \code{\link{read.bnd}} and 
+  \code{\link{plotmap}}) and use these for estimating geosplines with tensor product splines, i.e.,
+  \code{bs = "te"} in function \code{\link{sx}}.
+}
+
 \seealso{
-  \code{\link{fitted.bayesx}}.
+  \code{\link{fitted.bayesx}, \code{\link{bayesx}}.
 }
 
 \examples{
