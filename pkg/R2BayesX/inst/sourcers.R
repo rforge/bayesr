@@ -7,7 +7,7 @@ zm1 <- bayesx(stunting ~ memployment + meducation + urban + gender +
   sx(district, bs = "re"), iter = 12200, burnin = 200, step = 10,
   data = ZambiaNutrition, hpc = TRUE, cores = 3)
 
-GRstat(zm1, term = "sx(agechild)")
+GRstats(zm1, term = "sx(agechild)")
 
 
 

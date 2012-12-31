@@ -1,4 +1,4 @@
-GRstat <- function(object, term = NULL) {
+GRstats <- function(object, term = NULL) {
   if((n <- length(object)) < 2L)
     stop("at least two models ar needed for calculation!")
   os <- samples(object, model = NULL, term)
