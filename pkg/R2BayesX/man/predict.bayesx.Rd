@@ -17,18 +17,19 @@
 }
 
 \arguments{
-  \item{object}{an object of class \code{"bayesx"}.}
+  \item{object}{an object of class \code{"bayesx"} or \code{"bayesx.hpc"}.}
   \item{newdata}{a data frame or list containing the values of the model covariates at which
     predictions are required. Note, supplying \code{newdata} is only possible for \code{"MCMC"}
     estimated models!. If this is not provided then predictions corresponding to the original data
-    are returned. If \code{newdata} is provided then it should contain all the variables needed for 
+    are returned. If \code{newdata} is provided, then it should contain all the variables needed for 
     prediction!}
   \item{model}{for which model should predictions be calculated, either an integer or 
     a character, e.g. \code{model = "mcmc.model"}. For \code{"MCMC"} estimated models, predictions
-    may be calculated by combining the parameter samples of different models. Note that the terms
-    in all \code{model}s need to be exactly the same! This option is usefull when seperate
-    models have been started e.g. on seperate CPUs, i.e. the user may compute predictions by
-    combining the samples of all models.}
+    may be calculated by combining the parameter samples of different models. Note that the terms in
+    all \code{model}s need to be exactly the same! This option is usefull when seperate models have
+    been started e.g. on seperate CPUs, i.e. the user may compute predictions by combining the
+    samples of all models, see also the high performance computing option (\code{hpc}) in function
+    \code{\link{bayesx}}.}
   \item{term}{if not \code{NULL}, the function will search for the term the predictions should be
     calculated for, either an integer or a character, eg \code{term = "sx(x)"}. If
     \code{term = NULL} predictions for all terms will be calculated. Note that for \code{"MCMC"}
@@ -77,6 +78,14 @@ nd <- dat[sample(1:n, size = 10), ]
 ## and only for sx(x) and w
 ## note that this computes the combined predictions:
 ## intercept + sx(x) + w
+pred <- predict(b, newdata = nd, term = c("sx(x)", "w"))
+pred
+
+## predictions of multicore model
+b <- bayesx(y ~ sx(x) + z + w, data = dat,
+  hpc = TRUE, cores = 2)
+
+## same as before
 pred <- predict(b, newdata = nd, term = c("sx(x)", "w"))
 pred
 }

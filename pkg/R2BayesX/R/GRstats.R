@@ -1,8 +1,14 @@
-GRstats <- function(object, term = NULL) {
+GRstats <- function(object, term = NULL, combine = TRUE, ...) {
+  if(!inherits(object, "bayesx.hpc"))
+    stop("cannot compute Gelman Rubin statistics of this object, object does not contain of parallel chains!")
+  require("coda")
   if((n <- length(object)) < 2L)
     stop("at least two models ar needed for calculation!")
   os <- samples(object, model = NULL, term)
+  nos <- names(os[[1L]])
   rval <- vector(mode = "list", length = length(os[[1L]]))
+  if(combine)
+    chains.combine <- vector(mode = "list", length = n)
   for(i in 1:length(os[[1L]])) {
     chains <- list()
     for(j in 1:n) {
@@ -12,48 +18,34 @@ GRstats <- function(object, term = NULL) {
       for(j in 1:n)
         chains[[j]] <- as.data.frame(chains[[j]])
     }
-    for(k in 1:ncol(chains[[1L]])) {
-      grs <- NULL
-      for(j in 1:n)
-        grs <- cbind(grs, chains[[j]][, k])
-      rval[[i]] <- c(rval[[i]], GR_calc(grs))
+    if(combine) {
+      for(j in 1:n) {
+        if(is.null(chains.combine[[j]]))
+          chains.combine[[j]] <- data.frame("id" = 1:nrow(chains[[j]]))
+        if(is.null(dim(chains[[j]]))) {
+          chains[[j]] <- data.frame(chains[[j]])
+          names(chains[[j]]) <- NULL
+        }
+        colnames(chains[[j]]) <- paste(nos[i], colnames(chains[[j]]), sep = ".")
+        chains.combine[[j]] <- cbind(chains.combine[[j]], chains[[j]])
+      }
+    } else {
+      for(j in 1:n) {
+        chains[[j]] <- mcmc(chains[[j]])
+      }
+      rval[[i]] <- gelman.diag(mcmc.list(chains), ...)
     }
-    names(rval[[i]]) <- colnames(chains[[1L]])
   }
-  names(rval) <- names(os[[1L]])
+  if(combine) {
+    for(j in 1:n) {
+      chains.combine[[j]]$id <- NULL
+      chains.combine[[j]] <- mcmc(chains.combine[[j]])
+    }
+    rval <- gelman.diag(mcmc.list(chains.combine), ...)
+  } else {
+    names(rval) <- names(os[[1L]])
+  }
 
   rval
-}
-
-
-GR_calc <- function(theta) {
-  if(!is.matrix(theta))
-    stop("theta must be a matrix")
-
-  nObs <- nrow(theta)
-  nCols <- ncol(theta)
-  n1 <- floor(nObs * 0.5)
-  n2 <- nObs - n1
-
-  if(nObs < 100)
-    stop("There must be at least 100 observations from each chain")
-
-  if(nCols < 2)
-    stop("There must be at least two chains")
-
-  theta <- theta[-(1:n1), ]
-
-  vars <- apply(theta, 2, var)
-  means  <- apply(theta, 2, mean)
-  mBar <- mean(means)
-
-  B <- n2*sum((means - mBar)^2) / (nCols - 1)
-  W <- sum(vars) / nCols
-  sigmaSq <- ((n2 - 1) * W + B) / (n2)
-  vHat <- sigmaSq + B / (n2 * nCols)
-  df <- n2
-  R <- sqrt(vHat / W * (df / (df - 2)))
-
-  return(R)
 }
 

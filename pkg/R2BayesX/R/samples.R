@@ -35,6 +35,16 @@ samples <- function(object, model = NULL, term = NULL, acf = FALSE, ...)
   for(i in 1L:k) {
     rval[[i]] <- list()
     for(j in 1:length(term)) {
+      if(is.character(term[j]) & !is.null(neff <- names(object[[i]]$effects))) {
+        if(!(term[j] %in% c("linear-samples", "var-samples"))) {
+          term[j] <- gsub("[[:space:]]", "", term[j])
+          term[j] <- neff[pmatch(term[j], neff)]
+          if(is.na(term[j])) stop(paste("term", term[j], "does not exist, no samples available!"))
+        }
+      } else {
+        if(term[j] > length(object[[i]]$effects))
+          stop("term does not exist, no samples available!")
+      }
       if(is.na(pmatch(term[j], "linear-samples")) && is.na(pmatch(term[j], "var-samples"))) {
         xn <- NULL
         if(!is.null(attr(object[[i]]$effects[[term[j]]], "specs")) &&
