@@ -2,13 +2,14 @@
 \alias{predict.bayesx}
 
 \title{
-  Prediction from fitted BayesX model
+  Prediction from fitted BayesX MCMC model
 }
 
 \description{
-  Takes a fitted \code{bayesx} object produced by \code{\link{bayesx}} and produces predictions
-  given a new set of values for the model covariates or the original values used for the model fit.
-  Note that prediction for newdata is only possible for \code{"MCMC"} estimated models!
+  Takes a fitted \code{"bayesx"} object produced by \code{\link{bayesx}} and produces predictions
+  on the scale of the \bold{linear predictor} given a new set of values for the model covariates or
+  the original values used for the model fit. Note that prediction for newdata is only possible for
+  \code{"MCMC"} estimated models!
 }
  
 \usage{
