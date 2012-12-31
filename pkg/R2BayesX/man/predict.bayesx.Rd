@@ -57,11 +57,12 @@
   moment! If geosplines are needed, it is recommended to compute the x- and y coordinates of e.g.
   the centroids of some region polygons (e.g. of a map, see function \code{\link{read.bnd}} and 
   \code{\link{plotmap}}) and use these for estimating geosplines with tensor product splines, i.e.,
-  \code{bs = "te"} in function \code{\link{sx}}.
+  \code{bs = "te"} in function \code{\link{sx}}. In addition, out of sample prediction is not
+  supported yet.
 }
 
 \seealso{
-  \code{\link{fitted.bayesx}, \code{\link{bayesx}}.
+  \code{\link{fitted.bayesx}}, \code{\link{bayesx}}.
 }
 
 \examples{
