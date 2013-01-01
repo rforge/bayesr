@@ -12,10 +12,10 @@ bayesx <- function(formula, data, weights = NULL, subset = NULL,
       cores <- getOption("mc.cores", 2L)
     setseed <- round(runif(cores) * .Machine$integer.max)
     outfile <- if(nout <- is.null(control$outfile)) {
-      file.path(tempfile(), paste("BayesX_Core", 1:cores, sep = "_"))
+      file.path(tempfile(), paste(control$model.name, "core", 1:cores, sep = "_"))
     } else {
       if(length(control$outfile) < 2)
-        file.path(path.expand(control$outfile), paste("bayesx_core", 1:cores, sep = "_"))
+        file.path(path.expand(control$outfile), paste(control$model.name, 1:cores, sep = "_"))
       else
         path.expand(control$outfile)
     }
@@ -31,7 +31,7 @@ bayesx <- function(formula, data, weights = NULL, subset = NULL,
     rval <- mclapply(1:cores, hpc_bayesx, mc.cores = cores)
     for(j in 1:length(rval))
       rval[[j]]$call <- match.call()
-    names(rval) <- paste("BayesX_Core", 1:cores, sep = "_")
+    names(rval) <- paste(control$model.name, "core", 1:cores, sep = "_")
     class(rval) <- c("bayesx", "bayesx.hpc")
     return(rval)
   }

@@ -65,8 +65,38 @@ library("R2BayesX")
 
   \medskip
 
-  Unfortunately, multiple chain/core processing is not implemented yet, but it is on our
-  to do list.
+  Yes, we have implemented multiple core processing using the functionality of the \pkg{parallel}
+  package. The user can now start models on e.g.\ 3 cores by typing
+  \begin{Schunk}
+  \begin{Sinput}
+  library("R2BayesX")
+  ## generate some data
+  set.seed(111)
+  n <- 500
+     
+  ## regressors
+  dat <- data.frame(x = runif(n, -3, 3), z = runif(n, -3, 3),
+    w = runif(n, 0, 6), fac = factor(rep(1:10, n/10)))
+     
+  ## response
+  dat$y <- with(dat, 1.5 + sin(x) + cos(z) * sin(w) +
+    c(2.67, 5, 6, 3, 4, 2, 6, 7, 9, 7.5)[fac] + rnorm(n, sd = 0.6))
+     
+  ## estimate model
+  b <- bayesx(y ~ sx(x) + sx(z, w, bs = "te") + fac,
+    data = dat, method = "MCMC", hpc = TRUE, cores = 3)
+  \end{Sinput}
+  \end{Schunk}
+  In addition, we have implemented a function that computes the Gelman and Rubin's convergence
+  diagnostic using function \code{gelman.diag()} of the \pkg{coda} package. E.g., the user may
+  type
+  \begin{Schunk}
+  \begin{Sinput}
+  GRstats(b, term = c("sx(x)", "sx(z,w)"))
+  GRstats(b, term = c("linear-samples", "var-samples"))
+  ## output not shown
+  \end{Sinput}
+  \end{Schunk}
 
 
 \item \textbf{The STEP method for model/variable selection is
@@ -120,11 +150,36 @@ library("R2BayesX")
  
   \medskip
 
-  Prediction using new covariate values is not implemented yet, since the \pkg{BayesX}
-  binary does not support prediction at the moment. The plan is to do a work around, i.e.\ construct
-  design matrices for new covariate values within \proglang{R} directly and combine them with the
-  samples of the parameters for prediction.
-  \fixme{Achim, should we note that in the paper?}
+  We have now implemented a prediction method for MCMC estimated models. The method can calculate
+  predictions on the scale of the linear predictor for all combinations of model terms and also from
+  models estimated on multiple cores, i.e., the method can use multiple chains for prediction. The
+  user can type e.g:
+  \begin{Schunk}
+  \begin{Sinput}
+  ## generate some data
+  set.seed(121)
+  n <- 500
+     
+  ## regressors
+  dat <- data.frame(x = runif(n, -3, 3), z = runif(n, 0, 1),
+    w = runif(n, 0, 3))
+     
+  ## generate response 
+    dat$y <- with(dat, 1.5 + sin(x) + z -3 * w + rnorm(n, sd = 0.6))
+     
+  ## estimate model
+  b <- bayesx(y ~ sx(x) + z + w, data = dat, method = "MCMC",
+    hpc = TRUE, cores = 3)
+
+  ## get predictions for a subset of the data
+  nd <- dat[sample(1:n, size = 10), ]
+
+  ## and only for sx(x) and w
+  ## note that this computes the combined predictions:
+  ## intercept + sx(x) + w
+  pred <- predict(b, newdata = nd, term = c("sx(x)", "w"))
+  \end{Sinput}
+  \end{Schunk}
 
 
 \item \textbf{It would be useful to provide some guidance on specifying
@@ -482,7 +537,7 @@ bayesx.term.options(bs = "gk", method = "REML")
 
   \medskip
 
-  Using function \code{plotmap()}, we have added an option to plot interpolated maps now, also see
+  Using function \code{plotmap()}, we have added an option to plot interpolated maps now, see
   Figure~10.
 
 
