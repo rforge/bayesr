@@ -2,12 +2,19 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-mf <- model.frame(zm1)
-mf$fit <- predict(zm1, mf, term = "sx(district):geo", intercept = FALSE)
 
-plotmap(ZambiaBnd, x = mf$fit, id = mf$district, swap = TRUE)
+mf <- model.frame(b1)
+term <- "sx(z,w)"
+mf$fit <- predict(b1, term = term, intercept = FALSE)
+## mf <- unique(mf[, c("z", "w", "fit")])
+## mf <- mf[order(mf$z), ]
+
+par(mfrow = c(1, 2))
+plot3d(fit ~ z + w, data = mf)
+plot(b1, term = "sx(z,w)")
 
 
+plot(mf$fit, b1$effect[[term]][, "Mean"])
 
 
 

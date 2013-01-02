@@ -42,7 +42,7 @@ predict.bayesx <- function(object, newdata, model = NULL, term = NULL,
     nn <- names(newdata)
     m.samples <- m.designs <- list()
     for(j in 1:k) {
-      if(!is.null(term) & length(term) & !all(is.na(term))) {
+      if(!is.null(term)) {
         for(i in term) {
           specs <- attr(object[[j]]$effects[[i]], "specs")
           if(inherits(object[[j]]$effects[[i]], "geo.bayesx"))
@@ -84,8 +84,13 @@ predict.bayesx <- function(object, newdata, model = NULL, term = NULL,
         sami <- attr(object[[j]]$fixed.effects, "sample")
         if(!is.null(sami)) {
           sami <- sami[, grep("(Intercept)", colnames(sami), fixed = TRUE)]
-          if(length(sami))
+          if(length(sami)) {
             m.samples$Intercept <- sami
+            i <- if(is.null(term)) 1 else {
+              length(m.designs) + 1
+            }
+            m.designs[[i]] <- matrix(1, nrow = nrow(newdata), ncol = 1)
+          }
         }
       }
     }
@@ -95,8 +100,6 @@ predict.bayesx <- function(object, newdata, model = NULL, term = NULL,
       m.samples <- as.data.frame(m.samples)
       m.designs <- as.data.frame(m.designs)
       options("warn" = warn)
-      if(any(grepl("Intercept", names(m.samples))))
-        m.designs <- cbind(m.designs, 1)
       get.mu <- function(X, b) {
         as.matrix(X) %*% as.numeric(b)
       }
@@ -106,7 +109,7 @@ predict.bayesx <- function(object, newdata, model = NULL, term = NULL,
         if(nrow(rval) != nrow(newdata))
           rval <- as.data.frame(t(rval))
       }
-    }
+    } else stop("no model terms selected for prediction!")
   } else {
     if(!missing(newdata))
       stop(paste("out of sample prediction for", toupper(ut), "models currently not available!"))
@@ -130,26 +133,28 @@ Predict.matrix.bayesx.sm.bayesx <- function(object, data)
   if(is.null(specs$call)) stop("cannot compute predict matrix, unknown term call!")
   if(specs$dim < 2) {
     if(specs$type == "ps") {
+      ## P-splines
       require("splines")
       term <- eval(parse(text = specs$call))
       p.order <- term$p.order[1L] + 1L
-      xr <- range(object[, term$term], na.rm = TRUE) + c(-0.051, 0.051)
-      nrknots <- term$bs.dim - p.order + 1L
+      xr <- range(object[, term$term], na.rm = TRUE) + c(-0.001, 0.001)
+      nrknots <- term$bs.dim - p.order
       step <- diff(xr) / nrknots
-      knots <- seq(xr[1] - (p.order - 1) * step, xr[2] + (p.order - 1) * step, by = step)
-      X <- splineDesign(knots, data[[term$term]], ord = p.order, outer.ok = TRUE)
+      knots <- seq(xr[1] - p.order * step, xr[2] + p.order * step, by = step)
+      X <- splineDesign(knots, data[[term$term]], ord = p.order + 1L, outer.ok = TRUE)
     } else stop("predict type not available!")
   } else {
+    ## tensor P-splines
     require("splines")
     term <- eval(parse(text = specs$call))
     p.order <- term$p.order[1L] + 1L
     Xm <- list()
     for(j in term$term) {
-      xr <- range(object[, j], na.rm = TRUE) + c(-0.051, 0.051)
-      nrknots <- term$bs.dim - p.order + 1L
+      xr <- range(object[, j], na.rm = TRUE) + c(-0.001, 0.001)
+      nrknots <- term$bs.dim - p.order
       step <- diff(xr) / nrknots
-      knots <- seq(xr[1] - (p.order - 1) * step, xr[2] + (p.order - 1) * step, by = step)
-      Xm[[j]] <- splineDesign(knots, data[[j]], ord = p.order, outer.ok = TRUE)
+      knots <- seq(xr[1] - p.order * step, xr[2] + p.order * step, by = step)
+      Xm[[j]] <- splineDesign(knots, data[[j]], ord = p.order + 1L, outer.ok = TRUE)
     }
     X <- matrix(0, nrow(data), 0)
     for(j in 1:ncol(Xm[[1L]]))
@@ -200,11 +205,11 @@ Predict.matrix.bayesx.geo.bayesx <- function(object, data)
   }
   Xm <- list()
   for(j in c("x", "y")) {
-    xr <- range(xy[, j], na.rm = TRUE) + c(-0.051, 0.051)
-    nrknots <- term$bs.dim - p.order + 1L
+    xr <- range(xy[, j], na.rm = TRUE) + c(-0.001, 0.001)
+    nrknots <- term$bs.dim - p.order
     step <- diff(xr) / nrknots
-    knots <- seq(xr[1] - (p.order - 1) * step, xr[2] + (p.order - 1) * step, by = step)
-    Xm[[j]] <- splineDesign(knots, xy[, j], ord = p.order, outer.ok = TRUE)
+    knots <- seq(xr[1] - p.order * step, xr[2] + p.order * step, by = step)
+    Xm[[j]] <- splineDesign(knots, xy[, j], ord = p.order + 1L, outer.ok = TRUE)
   }
   X <- matrix(0, nrow(data), 0)
   for(j in 1:ncol(Xm[[1L]]))
