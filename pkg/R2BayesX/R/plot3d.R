@@ -3,7 +3,8 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
   c.select = NULL, grid = 30L, image = FALSE, contour = FALSE, 
   legend = TRUE, cex.legend = 1, breaks = NULL, range = NULL, 
   digits = 2L, d.persp = 1L, r.persp = sqrt(3), linear = TRUE, extrap = FALSE, 
-  duplicate = "mean", outscale = 0, data = NULL, sep = "", ...)
+  duplicate = "mean", outscale = 0, data = NULL, sep = "",
+  shift = NULL, trans = NULL, ...)
 {
   if(is.null(x))
     return(invisible(NULL))
@@ -40,8 +41,11 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
     stop("x must have at least 3 columns!")
   args <- list(...)
   e <- NULL
-  if(!is.null(attr(x, "partial.resids")))
+  if(!is.null(attr(x, "partial.resids"))) {
     e <- attr(x, "partial.resids")
+    if(!is.null(shift))
+      e[, 3L] <- e[, 3L] + shift
+  }
   if(!is.null(e) && all(is.na(e)))
     residuals <- FALSE
   specs <- attr(x, "specs")
@@ -107,16 +111,28 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
     fitted[[1L]] <- akima::interp(X, z, x[,3L], xo = xn, yo = zn, 
       duplicate = duplicate, linear = linear, extrap = extrap)$z
   }
-  if(!is.null(range))
+  if(!is.null(range)) {
     for(k in 1L:length(fitted)) {
       if(min(range, na.rm = TRUE) > min(fitted[[k]], na.rm = TRUE))
         fitted[[k]][fitted[[k]] < min(range, na.rm = TRUE)] <- min(range, na.rm = TRUE)  
       if(max(range, na.rm = TRUE) < max(fitted[[k]], na.rm = TRUE))
         fitted[[k]][fitted[[k]] > max(range, na.rm = TRUE)] <- max(range, na.rm = TRUE)  
     }
+  }
+  if(!is.null(shift)) {
+    for(k in 1L:length(fitted)) {
+        fitted[[k]] <- fitted[[k]] + shift
+    }
+  }
+  if(!is.null(trans)) {
+    if(!is.function(trans)) stop("argument trans must be a function!")
+    for(k in 1L:length(fitted)) {
+      fitted[[k]] <- trans(fitted[[k]])
+    }
+  }
   names <- colnames(x)[1L:2L]
   if(residuals)
-    zlimit <- range(c(unlist(fitted), e[,3L]), na.rm = TRUE)
+    zlimit <- range(c(unlist(fitted), e[, 3L]), na.rm = TRUE)
   else
     zlimit <- range(unlist(fitted), na.rm = TRUE)
   if(is.null(args$xlab))

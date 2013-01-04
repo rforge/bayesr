@@ -2,7 +2,7 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   swap = FALSE, range = NULL, names = FALSE, values = FALSE, col = NULL,
   ncol = 100, breaks = NULL, cex.legend = 1, cex.names = 1, cex.values = cex.names,
   digits = 2L, mar.min = 2, add = FALSE, interp = FALSE, linear = FALSE, extrap = FALSE,
-  outside = FALSE, grid = 200, p.pch = 15, p.cex = 1, ...)
+  outside = FALSE, grid = 200, p.pch = 15, p.cex = 1, shift = NULL, trans = NULL, ...)
 {
   if(missing(map))
     stop("map object is missing!")
@@ -60,6 +60,12 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
       #  l = c(30, 90), power = 1.5, gamma = 2.4, fixup = TRUE)
     }
     x <- compute.x.id(x, id, c.select, range, symmetric)
+    if(!is.null(shift))
+      x$x <- x$x + shift
+    if(!is.null(trans)) {
+      if(!is.function(trans)) stop("argument trans must be a function!")
+      x$x <- trans(x$x)
+    }
     map_fun <- make_pal(col = col, ncol = ncol, data = x$x, 
       range = range, breaks = breaks, swap = swap, 
       symmetric = symmetric)$map

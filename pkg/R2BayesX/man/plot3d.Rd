@@ -19,7 +19,7 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
   legend = TRUE, cex.legend = 1, breaks = NULL, range = NULL, 
   digits = 2L, d.persp = 1L, r.persp = sqrt(3), linear = TRUE, 
   extrap = FALSE, duplicate = "mean", outscale = 0, data = NULL,
-  sep = "", ...)
+  sep = "", shift = NULL, trans = NULL, ...)
 }
 
 \arguments{
@@ -66,6 +66,9 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
     \code{plot3d} is called. Note that \code{data} may also be a character file path to the data.}
   \item{sep}{the field separator character when \code{x} or \code{data} is a character, see function
     \code{\link{read.table}}.}
+  \item{shift}{numeric. Constant to be added to the smooth before plotting.}
+  \item{trans}{function to be applied to the smooth before plotting, e.g., to transform the
+    plot to the response scale.}
   \item{\dots}{parameters passed to \code{\link{colorlegend}} if an image plot with legend is drawn,
     also other graphical parameters, please see the details.}
 }

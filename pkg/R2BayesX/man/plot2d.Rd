@@ -17,7 +17,7 @@ plot2d(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
   col.residuals = NULL, col.lines = NULL, col.polygons = NULL, 
   col.rug = NULL, c.select = NULL, fill.select = NULL, 
   data = NULL, sep = "", month = NULL, year = NULL,
-  step = 12, ...)
+  step = 12, shift = NULL, trans = NULL, ...)
 }
 
 \arguments{
@@ -58,6 +58,9 @@ plot2d(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
     variables. \code{month} and \code{year} define the minimum time point whereas step specifies the
     type of temporal data with \code{step = 4}, \code{step = 2} and \code{step = 1} corresponding to
     quartely, half yearly and yearly data.}
+  \item{shift}{numeric. Constant to be added to the smooth before plotting.}
+  \item{trans}{function to be applied to the smooth before plotting, e.g., to transform the
+    plot to the response scale.}
   \item{\dots}{other graphical parameters, please see the details.}
 }
 

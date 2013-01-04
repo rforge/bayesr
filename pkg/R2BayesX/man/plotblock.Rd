@@ -96,10 +96,10 @@ b <- bayesx(y ~ fac, data = dat)
 summary(b)
 
 ## plot factor term effects
-plot(b, term = "f(fac)")
+plot(b, term = "fac")
 
 ## extract fitted effects
-f <- fitted(b, term = "f(fac)")
+f <- fitted(b, term = "fac")
 
 ## now use plotblock
 plotblock(f)

@@ -2,6 +2,8 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
+plot(b, trans = binomial()$linkinv)
+
 
 mf <- model.frame(b1)
 term <- "sx(z,w)"

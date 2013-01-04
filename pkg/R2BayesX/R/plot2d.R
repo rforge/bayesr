@@ -1,7 +1,8 @@
 plot2d <- function(x, residuals = FALSE, rug = TRUE, jitter = TRUE, 
   col.residuals = NULL, col.lines = NULL, col.polygons = NULL, 
   col.rug = NULL, c.select = NULL, fill.select = NULL, data = NULL,
-  sep = "", month = NULL, year = NULL, step = 12, ...)
+  sep = "", month = NULL, year = NULL, step = 12,
+  shift = NULL, trans = NULL, ...)
 {
   if(is.null(x))
     return(invisible(NULL))
@@ -93,8 +94,17 @@ plot2d <- function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
   if(is.character(c.select)) 
     c.select <- pmatch(c.select, colnames(x))
   x <- x[, c.select]
-  if(residuals)
+  if(!is.null(shift))
+    x[, 2:ncol(x)] <- x[, 2:ncol(x)] + shift
+  if(!is.null(trans)) {
+    if(!is.function(trans)) stop("argument trans must be a function!")
+    for(j in 2:ncol(x))
+      x[, j] <- trans(x[, j])
+  }
+  if(residuals) {
+    if(!is.null(shift)) pres[, 2L] <- pres[, 2L] + shift
     attr(x, "partial.resids") <- pres
+  }
   if(is.null(args$ylim)) {
     ylim <- NULL
     for(j in 2L:ncol(x))

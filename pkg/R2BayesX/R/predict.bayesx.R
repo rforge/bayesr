@@ -144,7 +144,7 @@ Predict.matrix.bayesx.sm.bayesx <- function(object, data)
       X <- splineDesign(knots, data[[term$term]], ord = p.order + 1L, outer.ok = TRUE)
     } else stop("predict type not available!")
   } else {
-    ## tensor P-splines
+    ## tensor splines
     require("splines")
     term <- eval(parse(text = specs$call))
     p.order <- term$p.order[1L] + 1L
