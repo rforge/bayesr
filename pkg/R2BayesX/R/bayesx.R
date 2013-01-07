@@ -1,13 +1,13 @@
 bayesx <- function(formula, data, weights = NULL, subset = NULL, 
   offset = NULL, na.action = NULL, contrasts = NULL, 
   control = bayesx.control(...), model = TRUE,
-  hpc = FALSE, cores = NULL, ...)
+  parallel = FALSE, cores = NULL, ...)
 {
   ## multiple core processing
-  if(hpc) {
+  if(parallel) {
     require("parallel")
     if(.Platform$OS.type == "windows")
-      stop("high perfomance computing (hpc) not available on Windows systems!")
+      stop("high perfomance computing (parallel) not available on Windows systems!")
     if(is.null(cores))
       cores <- getOption("mc.cores", 2L)
     setseed <- round(runif(cores) * .Machine$integer.max)
@@ -20,19 +20,19 @@ bayesx <- function(formula, data, weights = NULL, subset = NULL,
         path.expand(control$outfile)
     }
     if(length(unique(outfile)) != cores)
-      stop(paste("there must be", cores, "direcories supplied within outfile for hpc computing!"))
-    hpc_bayesx <- function(j) {
+      stop(paste("there must be", cores, "direcories supplied within outfile for parallel computing!"))
+    parallel_bayesx <- function(j) {
       control$setseed <- setseed[j]
       control$outfile <- outfile[j]
       control$dir.rm <- if(nout) TRUE else control$dir.rm
       bayesx(formula, data, weights, subset, offset, na.action,
-        contrasts, control, model, hpc = FALSE)
+        contrasts, control, model, parallel = FALSE)
     }
-    rval <- mclapply(1:cores, hpc_bayesx, mc.cores = cores)
+    rval <- mclapply(1:cores, parallel_bayesx, mc.cores = cores)
     for(j in 1:length(rval))
       rval[[j]]$call <- match.call()
     names(rval) <- paste(control$model.name, "core", 1:cores, sep = "_")
-    class(rval) <- c("bayesx", "bayesx.hpc")
+    class(rval) <- c("bayesx", "bayesx.parallel")
     return(rval)
   }
 

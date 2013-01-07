@@ -17,7 +17,7 @@
 bayesx(formula, data, weights = NULL, subset = NULL, 
   offset = NULL, na.action = NULL, contrasts = NULL, 
   control = bayesx.control(\dots), model = TRUE,
-  hpc = FALSE, cores = NULL, \dots)
+  parallel = FALSE, cores = NULL, \dots)
 }
 
 \arguments{
@@ -43,14 +43,14 @@ bayesx(formula, data, weights = NULL, subset = NULL,
     \code{\link{bayesx.control}}.}
   \item{model}{a logical value indicating whether \code{\link[stats]{model.frame}} should be
     included as a component of the returned value.}
-  \item{hpc}{logical. Should models be estimated on multiple cores? If \code{hpc = TRUE} and models
+  \item{parallel}{logical. Should models be estimated on multiple cores? If \code{parallel = TRUE} and models
     are estimated on at least 2 \code{cores}, function \code{bayesx()} returns an object of class
-    \code{'bayesx.hpc'}, which is a list of length \code{cores}, i.e., one model for each core.
+    \code{'bayesx.parallel'}, which is a list of length \code{cores}, i.e., one model for each core.
     This option is not possible on Windows systems, parallel computing is based on function
     \code{\link[parallel]{mclapply}} of package \pkg{parallel}. Note that on the returned object all
     of the plotting and extractor functions may be applied, too. In addition, convergence
     diagnostics can be computed using function \code{\link{GRstats}}.}
-  \item{cores}{integer. How many cores should be used if \code{hpc = TRUE}?}
+  \item{cores}{integer. How many cores should be used if \code{parallel = TRUE}?}
   \item{\dots}{arguments passed to \code{\link{bayesx.control}}, e.g. \code{family} and 
     \code{method}, defaults are \code{family = "gaussian"}, \code{method = "MCMC"}.}
 }

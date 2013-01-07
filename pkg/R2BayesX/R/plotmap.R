@@ -60,8 +60,10 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
       #  l = c(30, 90), power = 1.5, gamma = 2.4, fixup = TRUE)
     }
     x <- compute.x.id(x, id, c.select, range, symmetric)
-    if(!is.null(shift))
+    if(!is.null(shift)) {
+      shift <- as.numeric(shift[1])
       x$x <- x$x + shift
+    }
     if(!is.null(trans)) {
       if(!is.function(trans)) stop("argument trans must be a function!")
       x$x <- trans(x$x)

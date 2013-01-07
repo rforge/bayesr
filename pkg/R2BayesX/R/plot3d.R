@@ -40,6 +40,8 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
   if(ncol(x) < 3)
     stop("x must have at least 3 columns!")
   args <- list(...)
+  if(!is.null(shift))
+    shift <- as.numeric(shift[1])
   e <- NULL
   if(!is.null(attr(x, "partial.resids"))) {
     e <- attr(x, "partial.resids")

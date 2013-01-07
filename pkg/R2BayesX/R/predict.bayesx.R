@@ -137,9 +137,11 @@ Predict.matrix.bayesx.sm.bayesx <- function(object, data)
       require("splines")
       term <- eval(parse(text = specs$call))
       p.order <- term$p.order[1L] + 1L
-      xr <- range(object[, term$term], na.rm = TRUE) + c(-0.001, 0.001)
       nrknots <- term$bs.dim - p.order
-      step <- diff(xr) / nrknots
+      xr <- range(object[, term$term], na.rm = TRUE)
+      dxr <- diff(xr)
+      xr <- xr + dxr * c(-0.01, 0.01)
+      step <- dxr / nrknots
       knots <- seq(xr[1] - p.order * step, xr[2] + p.order * step, by = step)
       X <- splineDesign(knots, data[[term$term]], ord = p.order + 1L, outer.ok = TRUE)
     } else stop("predict type not available!")
@@ -150,15 +152,15 @@ Predict.matrix.bayesx.sm.bayesx <- function(object, data)
     p.order <- term$p.order[1L] + 1L
     Xm <- list()
     for(j in term$term) {
-      xr <- range(object[, j], na.rm = TRUE) + c(-0.001, 0.001)
       nrknots <- term$bs.dim - p.order
-      step <- diff(xr) / nrknots
+      xr <- range(object[, j], na.rm = TRUE)
+      dxr <- diff(xr)
+      xr <- xr + dxr * c(-0.01, 0.01)
+      step <- dxr / nrknots
       knots <- seq(xr[1] - p.order * step, xr[2] + p.order * step, by = step)
       Xm[[j]] <- splineDesign(knots, data[[j]], ord = p.order + 1L, outer.ok = TRUE)
     }
-    X <- matrix(0, nrow(data), 0)
-    for(j in 1:ncol(Xm[[1L]]))
-		  X <- cbind(X, Xm[[1L]][, j] * Xm[[2L]])
+    X <- mgcv:::tensor.prod.model.matrix(Xm)
   }
 
   return(X)

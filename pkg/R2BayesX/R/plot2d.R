@@ -94,8 +94,10 @@ plot2d <- function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
   if(is.character(c.select)) 
     c.select <- pmatch(c.select, colnames(x))
   x <- x[, c.select]
-  if(!is.null(shift))
+  if(!is.null(shift)) {
+    shift <- as.numeric(shift[1])
     x[, 2:ncol(x)] <- x[, 2:ncol(x)] + shift
+  }
   if(!is.null(trans)) {
     if(!is.function(trans)) stop("argument trans must be a function!")
     for(j in 2:ncol(x))

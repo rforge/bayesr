@@ -35,6 +35,8 @@ plotblock <- function(x, residuals = FALSE, range = c(0.3, 0.3),
     else
       args$ylab <- attr(x, "specs")$label
   }
+  if(!is.null(shift))
+    shift <- as.numeric(shift[1])
   if(!is.list(x))
     nc <- ncol(x)
   else

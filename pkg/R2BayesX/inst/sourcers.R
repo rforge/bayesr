@@ -2,25 +2,13 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-plot(b, trans = binomial()$linkinv)
-
-
 mf <- model.frame(b1)
-term <- "sx(z,w)"
-mf$fit <- predict(b1, term = term, intercept = FALSE)
-## mf <- unique(mf[, c("z", "w", "fit")])
-## mf <- mf[order(mf$z), ]
+mf$fit <- predict(b1, term = "sx(z,w)")
+
 
 par(mfrow = c(1, 2))
+plot(b1, term = "sx(z,w)", shift = coef(b)[1, 1])
 plot3d(fit ~ z + w, data = mf)
-plot(b1, term = "sx(z,w)")
-
-
-plot(mf$fit, b1$effect[[term]][, "Mean"])
-
-
-
-
 
 
 

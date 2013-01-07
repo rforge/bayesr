@@ -1,5 +1,6 @@
-GRstats <- function(object, term = NULL, combine = TRUE, ...) {
-  if(!inherits(object, "bayesx.hpc"))
+GRstats <- function(object, term = NULL, combine = TRUE, ...)
+{
+  if(!inherits(object, "bayesx.parallel"))
     stop("cannot compute Gelman Rubin statistics of this object, object does not contain of parallel chains!")
   require("coda")
   if((n <- length(object)) < 2L)
