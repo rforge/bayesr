@@ -110,6 +110,7 @@ STRUCTADD_OBJS = \
 	bayesxsrc/structadd/FC_nonp_variance.o\
 	bayesxsrc/structadd/FC_nonp_variance_vec.o\
 	bayesxsrc/structadd/FC_predict.o\
+	bayesxsrc/structadd/FC_predict_mult.o\
 	bayesxsrc/structadd/FC_cv.o\
 	bayesxsrc/structadd/FC_variance_pen_vector.o\
 	bayesxsrc/structadd/GENERAL_OPTIONS.o\
@@ -122,6 +123,7 @@ STRUCTADD_OBJS = \
 	bayesxsrc/structadd/distr_categorical.o\
 	bayesxsrc/structadd/distr_categorical_mult.o\
 	bayesxsrc/structadd/distr_mixture.o\
+	bayesxsrc/structadd/distr_gamlss.o\
 	bayesxsrc/structadd/mcmcsim.o\
 	bayesxsrc/structadd/model_parameters.o\
 	bayesxsrc/structadd/superbayesreg.o\
