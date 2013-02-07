@@ -180,7 +180,8 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
             }
             if(dl) {
               graphics::text(xlim[side.ticks] - length.ticks - (distance.labels * length.ticks * 2), 
-                at[i], labels = labels[i], col = col.labels[i], cex = cex.labels[i], ...)
+                at[i], labels = labels[i], col = col.labels[i], cex = cex.labels[i],
+                pos = if(side.ticks < 2L) 4 else 2, ...)
             }
           }
         }
