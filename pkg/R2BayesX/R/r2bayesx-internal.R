@@ -102,6 +102,7 @@
   if(fc || (!is.null(x$smooth.hyp))) {
     cat(liner, "\n")
     cat("Fixed effects estimation results:\n")
+    cat("\n")
   }
   if(fc) {
     cat("Parametric Coefficients:\n")
