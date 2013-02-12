@@ -1,5 +1,4 @@
-.print_bayesx <-
-function(x, ...)
+.print_bayesx <- function(x, ...)
 {
   if(!is.null(x$call)) {
     cat("Call:\n")
@@ -46,8 +45,7 @@ function(x, ...)
   return(invisible(NULL))
 }
 
-.print_summary_bayesx <-
-function(x, digits = max(3L, getOption("digits") - 3L),
+.print_summary_bayesx <- function(x, digits = max(3L, getOption("digits") - 3L),
   signif.stars = getOption("show.signif.stars"), ...)
 {
   if(!is.null(x$model.fit))
@@ -104,7 +102,6 @@ function(x, digits = max(3L, getOption("digits") - 3L),
   if(fc || (!is.null(x$smooth.hyp))) {
     cat(liner, "\n")
     cat("Fixed effects estimation results:\n")
-    cat("\n")
   }
   if(fc) {
     cat("Parametric Coefficients:\n")
