@@ -1,5 +1,4 @@
-plotsamples <-
-function(x, selected = "NA", acf = FALSE, var = FALSE, max.acf = FALSE, ...)
+plotsamples <- function(x, selected = "NA", acf = FALSE, var = FALSE, max.acf = FALSE, ...)
 {
   if(is.null(x)) {
     warning("there is nothing to plot!")
@@ -107,9 +106,9 @@ function(x, selected = "NA", acf = FALSE, var = FALSE, max.acf = FALSE, ...)
           ptxt <- "Variance"
         else {
           if(nr > 1L)
-            ptxt <- "Coeffiecients"
+            ptxt <- "Coefficients"
           else
-            ptxt <- "Coeffiecient"
+            ptxt <- "Coefficient"
         }
         if(acf)
           ptxt <- paste(ptxt, "autocorrelation")
