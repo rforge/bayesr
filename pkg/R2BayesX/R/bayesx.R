@@ -1,15 +1,11 @@
 bayesx <- function(formula, data, weights = NULL, subset = NULL, 
   offset = NULL, na.action = NULL, contrasts = NULL, 
   control = bayesx.control(...), model = TRUE,
-  parallel = FALSE, cores = NULL, ...)
+  chains = 1, cores = NULL, ...)
 {
   ## multiple core processing
-  if(parallel) {
+  if(!is.null(cores)) {
     require("parallel")
-    if(.Platform$OS.type == "windows")
-      stop("high perfomance computing (parallel) not available on Windows systems!")
-    if(is.null(cores))
-      cores <- getOption("mc.cores", 2L)
     setseed <- round(runif(cores) * .Machine$integer.max)
     outfile <- if(nout <- is.null(control$outfile)) {
       file.path(tempfile(), paste(control$model.name, "core", 1:cores, sep = "_"))

@@ -2,21 +2,9 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-spng(file.path(dir, "worldmap-soillevels.png"), height = 4, width = 19, save = save_png)
-par(las = 1, mar = c(0.1, 0.1, 0.1, 0.1))
-tc <- subset(ewdata7, trees.2008 >= 60 & map.1961.2008 <= 4000)
-tc$soiltype <- as.integer(tc$soiltype)
-with(tc,
-  xymap(long, lat, soiltype, symmetric = FALSE,
-    color = terrain_hcl(n = 8)[1:7], swap = FALSE,
-    p.cex = 0.01, at = 1:7, range = c(0.5, 7.5), lrange = c(0.5, 7.5),
-    title = "Nutrient availability", layout = FALSE, pos = c(0.58, -0.1),
-    width = 0.75, height = 0.02, length.ticks = 1, cex.labels = 1,
-    side.legend = 2, side.ticks = 2, labels = format(c("No constraint", "Moderate constraints",
-      "Severe constraints", "Very servere constraints", "Mainly non-soil",
-      "Permafrost", "water bodies"))))
-if(save_png) dev.off()
+b <- read.bayesx.output("~/tmp1")
 
+m <- bayesx(value ~ sx(dev, by = origin), data = ddm, outfile = "~/tmp")
 
 
 

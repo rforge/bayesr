@@ -115,7 +115,9 @@ find.fixed.effects <- function(dir, files, data, response, eta, model.name, rval
       rownames(FixedEffects) <- rep(rn, length.out = nrow(FixedEffects))
     }
     if(ncol(FixedEffects) > 1) {
-      if(all(FixedEffects[, 2:ncol(FixedEffects)] == 0))
+      check <- all(FixedEffects[, 2:ncol(FixedEffects)] == 0)
+      if(is.na(check)) check <- TRUE 
+      if(check)
         for(j in 2:ncol(FixedEffects))
           FixedEffects[, j] <- rep(NA, nrow(FixedEffects))
     }
