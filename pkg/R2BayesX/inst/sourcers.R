@@ -2,21 +2,23 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-b <- read.bayesx.output("~/tmp1")
+b1 <- bayesx(y ~ sx(x), data = dat, chains = 2, cores = 2)
 
-m <- bayesx(value ~ sx(dev, by = origin), data = ddm, outfile = "~/tmp")
+xp <- seq(max(dat$x), max(dat$x) + 3, length = 100)
+weights <- c(rep(1, nrow(dat)), rep(0, length(xp)))
+dat2 <- rbind(dat, data.frame(y = 0, x = xp))
+dat2$w <- weights
 
-
-
-
-
-
-
+b2 <- bayesx(y ~ sx(x), data = dat2, weights = w, seed = 111)
 
 
+f1 <- fitted(b1, term = 1)
+f2 <- fitted(b2, term = 1)
 
+m1 <- f1$Mean[1:nrow(dat)]
+m2 <- f2$Mean[1:nrow(dat)]
 
-
+hist(m1 - m2)
 
 
 

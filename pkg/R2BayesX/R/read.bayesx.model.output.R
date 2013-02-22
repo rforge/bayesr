@@ -43,7 +43,10 @@ function(dir, model.name)
     response <- eta <- residuals <- NULL
     if(!is.null(data)) {
       data[data == "."] <- "NA"
+      warn <- getOption("warn")
+      options("warn" = -1)
       mode(data) <- "numeric"
+      options("warn" = warn)
       data <- as.data.frame(data)
       data$intnr <- NULL
       dn <- unique(names(data))
@@ -112,6 +115,7 @@ function(dir, model.name)
         rval$residuals <- response - eta
       rval$response <- response
     }
+
     ## get smooth and random effects
     rval <- c(rval, find.smooth.random(dir, files, data, response, eta, 
       model.name, minfo, paste(dir, "/", info, sep = "")))

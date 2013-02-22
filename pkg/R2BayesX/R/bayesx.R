@@ -1,34 +1,49 @@
 bayesx <- function(formula, data, weights = NULL, subset = NULL, 
   offset = NULL, na.action = NULL, contrasts = NULL, 
   control = bayesx.control(...), model = TRUE,
-  chains = 1, cores = NULL, ...)
+  chains = NULL, cores = NULL, ...)
 {
   ## multiple core processing
   if(!is.null(cores)) {
     require("parallel")
     setseed <- round(runif(cores) * .Machine$integer.max)
+    control$dir.rm <- if(is.null(control$outfile)) TRUE else control$dir.rm
+    parallel_bayesx <- function(j) {
+      control$setseed <- setseed[j]
+      bayesx(formula, data, weights, subset, offset, na.action,
+        contrasts, control, model, chains = chains, cores = NULL)
+    }
+    rval <- mclapply(1:cores, parallel_bayesx, mc.cores = cores)
+    names(rval) <- paste("Core", 1:cores, control$model.name, sep = "_")
+    return(rval)
+  }
+  if(!is.null(chains)) {
+    if(!is.null(control$setseed))
+      set.seed(control$setseed)
+    setseed <- round(runif(chains) * .Machine$integer.max)
     outfile <- if(nout <- is.null(control$outfile)) {
-      file.path(tempfile(), paste(control$model.name, "core", 1:cores, sep = "_"))
+      file.path(tempfile(), paste(control$model.name, "chain", 1:chains, sep = "_"))
     } else {
       if(length(control$outfile) < 2)
         file.path(path.expand(control$outfile), paste(control$model.name, 1:cores, sep = "_"))
       else
         path.expand(control$outfile)
     }
-    if(length(unique(outfile)) != cores)
-      stop(paste("there must be", cores, "direcories supplied within outfile for parallel computing!"))
-    parallel_bayesx <- function(j) {
+    if(length(unique(outfile)) != chains)
+      stop(paste("there must be", chains, "direcories supplied within outfile for parallel computing!"))
+    bayesx_chain <- function(j) {
       control$setseed <- setseed[j]
       control$outfile <- outfile[j]
       control$dir.rm <- if(nout) TRUE else control$dir.rm
       bayesx(formula, data, weights, subset, offset, na.action,
-        contrasts, control, model, parallel = FALSE)
+        contrasts, control, model, chains = NULL, cores = NULL)
     }
-    rval <- mclapply(1:cores, parallel_bayesx, mc.cores = cores)
-    for(j in 1:length(rval))
-      rval[[j]]$call <- match.call()
-    names(rval) <- paste(control$model.name, "core", 1:cores, sep = "_")
-    class(rval) <- c("bayesx", "bayesx.parallel")
+    rval <- list()
+    for(j in 1:chains) {
+      rval[[j]] <- bayesx_chain(j)
+    }
+    names(rval) <- paste("Chain", 1:chains, control$model.name, sep = "_")
+    class(rval) <- "bayesx"
     return(rval)
   }
 
