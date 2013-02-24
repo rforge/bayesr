@@ -8,17 +8,19 @@ bayesx <- function(formula, data, weights = NULL, subset = NULL,
     require("parallel")
     setseed <- round(runif(cores) * .Machine$integer.max)
     control$dir.rm <- if(is.null(control$outfile)) TRUE else control$dir.rm
-    parallel_bayesx <- function(j) {
+    bayesx_parallel <- function(j) {
       control$setseed <- setseed[j]
       bayesx(formula, data, weights, subset, offset, na.action,
         contrasts, control, model, chains = chains, cores = NULL)
     }
-    rval <- mclapply(1:cores, parallel_bayesx, mc.cores = cores)
+    rval <- mclapply(1:cores, bayesx_parallel, mc.cores = cores)
     if(inherits(rval[[1]][[1]], "bayesx")) {
       k <- length(rval[[1]])
       rval2 <- list(); mn <- NULL
       for(i in 1:cores) {
-        mn <- c(mn, paste("Core", i, "Chain", 1:k, sep = "_"))
+        mn <- c(mn, paste("Core", i,
+          if(k > 1) paste("Chain", 1:k, sep = "_") else NULL,
+          sep = "_"))
         rval2 <- c(rval2, rval[[i]])
       }
       names(rval2) <- mn
@@ -37,10 +39,10 @@ bayesx <- function(formula, data, weights = NULL, subset = NULL,
       set.seed(control$setseed)
     setseed <- round(runif(chains) * .Machine$integer.max)
     outfile <- if(nout <- is.null(control$outfile)) {
-      file.path(tempfile(), paste(control$model.name, "chain", 1:chains, sep = "_"))
+      file.path(tempfile(), paste("Chain", 1:chains, control$model.name, sep = "_"))
     } else {
       if(length(control$outfile) < 2)
-        file.path(path.expand(control$outfile), paste(control$model.name, 1:cores, sep = "_"))
+        file.path(path.expand(control$outfile), paste("Chain", 1:chains, control$model.name, sep = "_"))
       else
         path.expand(control$outfile)
     }
