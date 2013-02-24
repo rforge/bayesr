@@ -92,6 +92,7 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     on.exit(par(par.orig))
     par(mar = mar)
     w <- (3 + mar[2L]) * par("csi") * 2
+    w <- max(c(2.84, w))
     layout(matrix(c(1, 2), nrow = 1), widths = c(1, lcm(w)))
   }
   if(!is.null(map.limits$mar) && is.null(args$asp) && !add)

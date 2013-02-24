@@ -71,7 +71,7 @@ bayesx.construct.mrf.smooth.spec <- bayesx.construct.spatial.smooth.spec <- func
     cat("map", map.name, "\n", file = prgfile, append = TRUE)
   if(dirok) {
     if(inherits(map, "bnd")) {
-      if(!any(is.na(poly.names <- f2int(names(map), type = 2L)))) {
+      if(!any(is.na(poly.names <- as.integer(names(map))))) {
         poly.names <- sort(poly.names)
         poly.names <- as.character(poly.names)
       } else poly.names <- sort(names(map))

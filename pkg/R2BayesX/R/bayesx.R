@@ -14,9 +14,24 @@ bayesx <- function(formula, data, weights = NULL, subset = NULL,
         contrasts, control, model, chains = chains, cores = NULL)
     }
     rval <- mclapply(1:cores, parallel_bayesx, mc.cores = cores)
-    names(rval) <- paste("Core", 1:cores, control$model.name, sep = "_")
-    return(rval)
+    if(inherits(rval[[1]][[1]], "bayesx")) {
+      k <- length(rval[[1]])
+      rval2 <- list(); mn <- NULL
+      for(i in 1:cores) {
+        mn <- c(mn, paste("Core", i, "Chain", 1:k, sep = "_"))
+        rval2 <- c(rval2, rval[[i]])
+      }
+      names(rval2) <- mn
+      class(rval2) <- "bayesx"
+      return(rval2)
+    } else {
+      names(rval) <- paste("Core", 1:cores, sep = "_")
+      class(rval) <- "bayesx"
+      return(rval)
+    }
   }
+
+  ## multiple chain processing
   if(!is.null(chains)) {
     if(!is.null(control$setseed))
       set.seed(control$setseed)
@@ -42,11 +57,12 @@ bayesx <- function(formula, data, weights = NULL, subset = NULL,
     for(j in 1:chains) {
       rval[[j]] <- bayesx_chain(j)
     }
-    names(rval) <- paste("Chain", 1:chains, control$model.name, sep = "_")
+    names(rval) <- paste("Chain", 1:chains, sep = "_")
     class(rval) <- "bayesx"
     return(rval)
   }
 
+  ## special handling of control arguments
   args <- list(...)
   if(is.function(args$family))
     args$family <- args$family()$family

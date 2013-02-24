@@ -116,7 +116,7 @@ parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, off
       Y <- f2int(Y)
       control$nYLevels <- levels(as.factor(Y))
       if(!is.null(control$reference)) {
-
+         aaa <- 1 ## FIXME!
       }
     }
     if(!is.null(control$reference)) {

@@ -2,7 +2,20 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-b1 <- bayesx(y ~ sx(x), data = dat, chains = 2, cores = 2)
+
+plot(zm1, term = "sx(district):mrf", map = ZambiaBnd)
+plotmap(ZambiaBnd, x = runif(length(ZambiaBnd)), id = names(ZambiaBnd))
+
+
+
+zm1 <- bayesx(stunting ~ memployment + meducation + urban + gender + 
+  sx(mbmi) + sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) +
+  sx(district, bs = "re"), iter = 12000, burnin = 2000, step = 10,
+  data = ZambiaNutrition)
+
+
+
+
 
 xp <- seq(max(dat$x), max(dat$x) + 3, length = 100)
 weights <- c(rep(1, nrow(dat)), rep(0, length(xp)))
