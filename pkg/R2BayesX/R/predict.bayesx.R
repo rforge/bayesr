@@ -1,4 +1,10 @@
-predict.bayesx <- function(object, newdata, model = NULL, term = NULL,
+predict.bayesx <- function(object, newdata = NULL, ...) {
+  if(!is.null(newdata))
+    stop("predicting for newdata is currently not implemented!")
+  return(fitted.bayesx(object, ...))
+}
+
+.predict.bayesx <- function(object, newdata, model = NULL, term = NULL,
   intercept = TRUE, FUN = mean, ...)
 {
   object <- get.model(object, model)
