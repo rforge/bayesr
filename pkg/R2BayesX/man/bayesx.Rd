@@ -52,7 +52,7 @@ bayesx(formula, data, weights = NULL, subset = NULL,
   \item{cores}{integer. How many cores should be used? The default is one core if
     \code{cores = NULL}. The return value is again a list of class \code{"bayesx"}, for which all
     plotting and extractor functions can be applied, see argument \code{chains}. Note that this
-    option is not available on Winows systems, see the documentation of function
+    option is not available on Windows systems, see the documentation of function
     \code{\link[parallel]{mclapply}}.}
   \item{\dots}{arguments passed to \code{\link{bayesx.control}}, e.g. \code{family} and 
     \code{method}, defaults are \code{family = "gaussian"}, \code{method = "MCMC"}.}

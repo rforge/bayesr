@@ -1,4 +1,4 @@
-samples <- function(object, model = NULL, term = NULL, acf = FALSE, ...)
+samples <- function(object, model = NULL, term = NULL, coda = TRUE, acf = FALSE, ...)
 {
   if(is.null(object) || length(object) < 2L)
     stop("nothing to do!")
@@ -83,7 +83,7 @@ samples <- function(object, model = NULL, term = NULL, acf = FALSE, ...)
         } else tmp <- attr(object[[i]]$fixed.effects, "sample")
         if(!is.null(dim(tmp)))
           colnames(tmp) <- gsub("(Intercept)", "Intercept", colnames(tmp), fixed = TRUE)
-        eval(parse(text = paste("rval[[i]]$'Lin' <- tmp", sep = "")))
+        eval(parse(text = paste("rval[[i]]$'Param' <- tmp", sep = "")))
       } 
       if(!is.na(pmatch(term[j], "var-samples"))) {
         if(acf) {
@@ -108,6 +108,29 @@ samples <- function(object, model = NULL, term = NULL, acf = FALSE, ...)
   rval <- delete.NULLs(rval)
   if(!is.null(dim(rval)) & all(dim(rval) == 1))
     rval <- as.numeric(rval)
+  if(coda) {
+    require("coda")
+    nc <- if(inherits(object[[1]], "bayesx")) length(object) else 1
+    if(nc < 2)
+      rval <- list(rval)
+    crval <- list()
+    for(i in 1:nc) {
+      st <- NULL
+      for(j in rval[[i]]) {
+        if(is.list(j))
+          j <- as.data.frame(j)
+        st <- cbind(st, as.matrix(j))
+      }
+      crval[[i]] <- mcmc(st, start = 1, end = nrow(st), thin = 1)
+    }
+    if(nc > 1) {
+      crval <- mcmc.list(crval)
+      names(crval) <- names(object)
+    } else crval <- crval[[1]]
+    rval <- crval
+  } else {
+    rval <- as.data.frame(rval)
+  }
 
   return(rval)
 }

@@ -6,24 +6,25 @@
 }
 
 \description{
-  This function takes a fitted \code{\link{bayesx}} object estimated using the high performance
-  option and computes the Gelman and Rubin's convergence diagnostic of the model parameters using
-  function \code{\link[coda]{gelman.diag}} provided in package \pkg{coda}. Note that
-  high performance computing is not available on Windows systems, see function
-  \code{\link[parallel]{mclapply}}.
+  This function takes a fitted \code{\link{bayesx}} object estimated with multiple chains/cores and
+  computes the Gelman and Rubin's convergence diagnostic of the model parameters using function
+  \code{\link[coda]{gelman.diag}} provided in package \pkg{coda}.
 }
  
 \usage{
-GRstats(object, term = NULL, combine = TRUE, ...)
+GRstats(object, term = NULL, ...)
 }
 
 \arguments{
-  \item{object}{an object of class \code{"bayesx.hpc"}, returned from the model fitting function
-    \code{\link{bayesx}} using the high performance computing option (\code{hpc}).}
+  \item{object}{an object of class \code{"bayesx"}, returned from the model fitting function
+    \code{\link{bayesx}} using the multiple chain or core option.}
   \item{term}{character or integer. The term for which the diagnostics should be computed, 
     see also function \code{\link{samples}}.}
-  \item{combine}{logical. Should the diagnostics be computed for every \code{term} separately?}
   \item{\dots}{arguments passed to function \code{\link[coda]{gelman.diag}}.}
+}
+
+\value{
+  An object returned from \code{\link[coda]{gelman.diag}}.
 }
 
 \author{
@@ -50,7 +51,7 @@ dat$y <- with(dat, 1.5 + sin(x) + cos(z) * sin(w) +
 
 ## estimate model
 b <- bayesx(y ~ sx(x) + sx(z, w, bs = "te") + fac,
-   data = dat, method = "MCMC", hpc = TRUE, cores = 2)
+   data = dat, method = "MCMC", chains = 3)
 
 ## obtain Gelman and Rubin's convergence diagnostics
 GRstats(b, term = c("sx(x)", "sx(z,w)"))
