@@ -65,8 +65,9 @@ library("R2BayesX")
 
   \medskip
 
-  Yes, we have implemented multiple chain and core processing using the functionality of the
-  \pkg{parallel} package. The user can now start models on e.g.\ 3 cores using 2 chains by typing
+  Yes, according to your recommendations we have now implemented multiple chain and core processing
+  using the functionality of the \pkg{parallel} package. The user can now start models on e.g.\ 3
+  cores with 2 chains each by typing
   \begin{Schunk}
   \begin{Sinput}
   library("R2BayesX")
@@ -88,15 +89,15 @@ library("R2BayesX")
   \end{Sinput}
   \end{Schunk}
   The object \code{b} is also of class \code{"bayesx"} for which all e.g.\ plotting and extractor
-  functions may be applied. We have also adapted the \fct{samples} extractor function, which by
-  default returns objects of class \code{"mcmc"} or \code{"mcmc.list"} when multiple chains are run.
-  In addition, we have implemented a convenience function that directly computes the Gelman and
-  Rubin's convergence diagnostic using function \code{gelman.diag()} of the \pkg{coda} package.
-  E.g., the user may type
+  functions can be applied. We have also adapted the \fct{samples} extractor function, which by
+  default returns objects of class \code{"mcmc"} for a single chain or \code{"mcmc.list"} for
+  multiple chains, as provided in the \pkg{coda} package. In addition, we have implemented a
+  convenience function that directly computes the Gelman and Rubin's convergence diagnostic using
+  function \code{gelman.diag()} of the \pkg{coda} package. E.g., the user may type
   \begin{Schunk}
   \begin{Sinput}
-  GRstats(b, term = c("sx(x)", "sx(z,w)"))
-  GRstats(b, term = c("linear-samples", "var-samples"))
+  GRstats(b, term = "linear-samples")
+  GRstats(b, term = c("sx(x)", "sx(z,w)"), multivariate = TRUE)
   ## output not shown
   \end{Sinput}
   \end{Schunk}
@@ -235,7 +236,8 @@ library("R2BayesX")
 
   \medskip
 
-  \fixme{Niki, include this example \dots}
+  We have now added an example using 2 chains where we compute the Gelman and Rubin’s convergence
+  diagnostic for certain parameters.
 
 
 \item \textbf{Last line on page 22, ore \code{->} or?}

@@ -495,7 +495,8 @@ The main model-fitting function in the package \pkg{R2BayesX} is called
 \begin{Code}
   bayesx(formula, data, weights = NULL, subset = NULL, offset = NULL,
     na.action = NULL, contrasts = NULL,
-    family = "gaussian", method = "MCMC", control = bayesx.control(...), ...)
+    family = "gaussian", method = "MCMC", control = bayesx.control(...),
+    chains = NULL, cores = NULL, ...)
 \end{Code}
 where the first two lines basically represent the standard model frame specifications
 \citep[see][]{R2BayesX:Chambers+Hastie:1992} and the third line collects the arguments
@@ -520,6 +521,10 @@ The inferential concepts that can be used as the estimation \code{method} compri
 \code{"REML"} for mixed-model-based estimation using restricted maximum likelihood/marginal likelihood, and
 \code{"STEP"} for penalized likelihood including model selection.
 An overview of all available distributions for the different methods is given in Table~\ref{tab:family}.
+
+The user can additionally run \code{"MCMC"} models on multiple chains and cores, e.g., to check
+convergence of the samples (for an example see Section~\ref{subsec:zambia}). While the latter is not
+supported on Windows system, multiple chains can be started on all platforms.
 
 \begin{table}[t!]
 \centering
@@ -1186,6 +1191,37 @@ Autocorrelations for all lags should be close to zero as is mostly the case in o
 Figure~\ref{fig:zambia-autocorr}, for the autocorrelation plots. The plot of maximum
 autocorrelations over all model parameters suggests to use a larger number of iterations in a final
 run (e.g., 22000 or even 32000 iterations).
+
+Convergence can also be checked, e.g., by running multiple chains or cores. A model using two
+chains can be estimated by
+<<fit-zambia-model-2chains, echo=TRUE, eval=FALSE>>=
+zm2 <- bayesx(f, family = "gaussian", method = "MCMC", iterations = 12000,
+  burnin = 2000, step = 10, seed = 123, data = ZambiaNutrition,
+  chains = 2)
+@
+<<cache-zambia-model, echo=FALSE, eval=TRUE, results=hide>>=
+if(file.exists("zambia-model-2chains.rda")) {
+load("zambia-model-2chains.rda")
+} else {
+<<fit-zambia-model-2chains>>
+save(zm2, file = "zambia-model-2chains.rda")
+}
+@
+The returned object \code{zm2} now contains of two separate models, and is also of class
+\class{bayesx}, for which all summary, plotting an extractor functions can be used. Now, to further
+analyze convergence, the user can extract the samples for certain parameters and terms with the
+extractor function \fct{samples}
+<<zambia-samples2, echo=TRUE, eval=TRUE>>=
+zs <- samples(zm2, term = "linear-samples")
+@
+In this case we only extract samples for the parametric modeled terms. Per default, function
+\fct{samples} returns an object of class \class{mcmc} using a single chain and core or of class
+\class{mcmc.list} when multiple chains or cores are used. One convergence diagnostic function, as
+implemented in the package \pkg{coda}, is the Gelman and Rubin's convergence diagnostic, that can
+then be computed e.g.\ by
+<<zambia-samples2, echo=TRUE, eval=TRUE>>=
+gelman.diag(zs, multivariate = TRUE)
+@
 
 In some situations problems may occur during processing of the \pkg{BayesX} binary, that are not
 automatically detected by the main model fitting function \fct{bayesx}. Therefore the user may
