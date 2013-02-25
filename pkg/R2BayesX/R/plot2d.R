@@ -105,6 +105,7 @@ plot2d <- function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
   }
   if(residuals) {
     if(!is.null(shift)) pres[, 2L] <- pres[, 2L] + shift
+    if(!is.null(trans)) pres[, 2L] <- trans(pres[, 2L])
     attr(x, "partial.resids") <- pres
   }
   if(is.null(args$ylim)) {
