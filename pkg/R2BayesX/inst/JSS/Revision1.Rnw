@@ -153,7 +153,7 @@ library("R2BayesX")
  
   \medskip
 
-  \fixme{Stefan/Thomas, can you add a few words, how the user should compute predictions?}
+  \fixme{Stefan/Thomas, can you add a few words how the user should compute predictions?}
 
 
 \item \textbf{It would be useful to provide some guidance on specifying
@@ -226,7 +226,7 @@ library("R2BayesX")
   partition coefficient can be computed here to report
   the relative importance of each random effect component.}
 
-  \fixme{Stefan, Thomas, computation of the VPC for non Gaussian responses and multilevel models?}
+  \fixme{Stefan, Thomas, computation of the VPC?}
 
 \item \textbf{On page 22, autocorrelation is one measure for assessing
   convergence. However, chains trapped at some local modes
@@ -235,7 +235,7 @@ library("R2BayesX")
 
   \medskip
 
-  \fixme{Stefan, Thomas}
+  \fixme{Niki, include this example \dots}
 
 
 \item \textbf{Last line on page 22, ore \code{->} or?}
