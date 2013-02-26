@@ -1,9 +1,8 @@
-.print_bayesx <- function(x, ...)
+.print_bayesx <- function(x, digits = max(3L, getOption("digits") - 3L), ...)
 {
   if(!is.null(x$call)) {
     cat("Call:\n")
     print(x$call)
-    cat("\n")
   } else {
     if(!is.null(x$model.fit$formula)) {
       cat("Formula:\n")
@@ -14,17 +13,21 @@
     }
   }
   if(!is.null(x$model.fit)) {
+    cat("Summary:\n")
     mfn <- names(x$model.fit)
     mfn <- mfn[mfn != "formula" & mfn != "order" & 
       mfn != "YLevels" & mfn != "nYLevels" & 
       mfn != "model.name"]
     step <- 5L
     for(i in 1L:length(mfn)) {
-      txt <- deparse(x$model.fit[[mfn[i]]])
+      txt <- x$model.fit[[mfn[i]]]
+      if(is.numeric(txt))
+        txt <- round(txt, digits)
+      txt <- deparse(txt)
       if(i < step) {
         if(!is.null(txt) && txt != "") {
           if(mfn[i] != "step.final.model")
-            cat(mfn[i], "=", gsub('\"', "", txt, fixed = TRUE)," ")
+            cat(mfn[i], "=", gsub('\"', "", txt, fixed = TRUE), " ")
           else {
             cat("\n\n")
             cat("Stepwise final model:\n")
