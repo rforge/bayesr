@@ -2,8 +2,8 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
   ncol = 99L, swap = FALSE, col.residuals = NULL, col.contour = NULL, 
   c.select = NULL, grid = 30L, image = FALSE, contour = FALSE, 
   legend = TRUE, cex.legend = 1, breaks = NULL, range = NULL, 
-  digits = 2L, d.persp = 1L, r.persp = sqrt(3), linear = TRUE, extrap = FALSE, 
-  duplicate = "mean", outscale = 0, data = NULL, sep = "",
+  digits = 2L, d.persp = 1L, r.persp = sqrt(3), extrap = FALSE, 
+  outscale = 0, data = NULL, sep = "",
   shift = NULL, trans = NULL, ...)
 {
   if(is.null(x))
@@ -105,13 +105,11 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
     if(is.null(take))
       stop("argument c.select is specified wrong!")
     for(k in 1:length(take)) {
-      fitted[[k]] <- akima::interp(X, z, x[,take[k]], xo = xn, yo = zn, 
-        duplicate = duplicate, linear = linear, extrap = extrap)$z
+      fitted[[k]] <- interp2(X, z, x[, take[k]], xo = xn, yo = zn, extrap = extrap)
     }
   }
   if(length(fitted[[1L]]) == 1L && is.na(fitted[[1L]][1L])) {
-    fitted[[1L]] <- akima::interp(X, z, x[,3L], xo = xn, yo = zn, 
-      duplicate = duplicate, linear = linear, extrap = extrap)$z
+    fitted[[1L]] <- interp2(X, z, x[, 3L], xo = xn, yo = zn, extrap = extrap)
   }
   if(!is.null(range)) {
     for(k in 1L:length(fitted)) {

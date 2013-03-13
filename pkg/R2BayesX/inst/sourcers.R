@@ -2,16 +2,7 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-b
-
-
-plot(b, term = 1, residuals = TRUE, pch = ".", shift = coef(b)[1],
-  ylim = ylim, trans = trans,
-  xlab = "Lifetime (years)", ylab = "Effect on default rates")
-
-
-
-
+plot(f)
 
 
 
