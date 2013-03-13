@@ -1,7 +1,7 @@
 plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   swap = FALSE, range = NULL, names = FALSE, values = FALSE, col = NULL,
   ncol = 100, breaks = NULL, cex.legend = 1, cex.names = 1, cex.values = cex.names,
-  digits = 2L, mar.min = 2, add = FALSE, interp = FALSE, linear = FALSE, extrap = FALSE,
+  digits = 2L, mar.min = 2, add = FALSE, interp = FALSE, extrap = FALSE,
   outside = FALSE, grid = 200, p.pch = 15, p.cex = 1, shift = NULL, trans = NULL, ...)
 {
   if(missing(map))
@@ -115,10 +115,10 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     cdata <- data.frame(R2BayesX:::centroids(map), "id" = names(map))
     cdata <- merge(cdata, data.frame("z" = x$x, "id" = x$id), by = "id")
 
-    ico <- with(cdata, akima::interp(x = xco, y = yco, z = z,
+    ico <- with(cdata, interp2(x = xco, y = yco, z = z,
       xo = seq(map.limits$x[1], map.limits$x[2], length = grid),
       yo = seq(map.limits$y[1], map.limits$y[2], length = grid),
-      duplicate = "strip", linear = linear, extrap = extrap))
+      extrap = extrap))
     
     yco <- rep(ico$y, each = length(ico$x))
     xco <- rep(ico$x, length(ico$y))

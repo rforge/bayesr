@@ -1,6 +1,6 @@
 sliceplot <- function(x, y = NULL, z = NULL, view = 1, c.select = NULL,
-  values = NULL, probs = c(0.1, 0.5, 0.9), grid = 100, linear = FALSE,
-  extrap = FALSE, duplicate = "mean", legend = TRUE, pos = "topright",
+  values = NULL, probs = c(0.1, 0.5, 0.9), grid = 100,
+  extrap = FALSE, legend = TRUE, pos = "topright",
   digits = 2, data = NULL, rawdata = FALSE, ...)
 {
   if(is.vector(x) & is.vector(y) & is.vector(z)) {
@@ -43,10 +43,10 @@ sliceplot <- function(x, y = NULL, z = NULL, view = 1, c.select = NULL,
     quantile(x[, noview], probs = probs, type = 1)
   } else values
   if(!rawdata) {
-    viewmat <- akima::interp(jitter(x[, view]), jitter(x[, noview]), x[, c.select],
+    viewmat <- interp(jitter(x[, view]), jitter(x[, noview]), x[, c.select],
       seq(min(x[, view]), max(x[, view]), length = grid),
       seq(min(x[, noview]), max(x[, noview]), length = grid),
-      duplicate = duplicate, linear = linear, extrap = extrap)
+      extrap = extrap)
     yg <- rep(viewmat$y, each = grid)
     zg <- as.vector(viewmat$z)
     slices <- viewmat$x

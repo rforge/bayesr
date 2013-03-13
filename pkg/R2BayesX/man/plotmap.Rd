@@ -60,9 +60,8 @@ plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     \code{mar.min}.}
   \item{add}{if set to \code{TRUE}, the map will be added to an existing plot.}
   \item{interp}{logical. Should the values provided in argument \code{x} be interpolated to obtain
-    a smooth colored map. For interpolation function \code{\link[akima]{interp}} is used.}
-  \item{linear}{see function \code{\link[akima]{interp}}.}
-  \item{extrap}{see function \code{\link[akima]{interp}}.}
+    a smooth colored map.}
+  \item{extrap}{should values be extrapolated?}
   \item{outside}{logical. Should interpolated values outside the boundaries of the map be plotted.}
   \item{grid}{integer. Defines the number of grid cells to be used for interpolation.}
   \item{p.pch}{numeric. The point size of the grid cells when using interpolation.}

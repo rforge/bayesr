@@ -39,9 +39,7 @@ sliceplot(x, y = NULL, z = NULL, view = 1, c.select = NULL,
   \item{probs}{numeric vector of probabilities with values in [0,1] to be used within function
     \code{\link[stats]{quantile}} to compute the \code{values} for plotting the slices.}
   \item{grid}{the grid size of the surface where the slices are generated from.}
-  \item{linear}{see function \code{\link[akima]{interp}}.}
-  \item{extrap}{see function \code{\link[akima]{interp}}.}
-  \item{duplicate}{see function \code{\link[akima]{interp}}.}
+  \item{extrap}{should values be extrapolated?}
   \item{legend}{if set to \code{TRUE}, a legend with the \code{values} that where used for slicing
     will be added.}
   \item{pos}{the position of the legend, see also function \code{\link[graphics]{legend}}.}
@@ -56,8 +54,7 @@ sliceplot(x, y = NULL, z = NULL, view = 1, c.select = NULL,
 
 \details{
   Similar to function \code{\link{plot3d}}, this function first applies bivariate interpolation
-  using function \code{\link[akima]{interp}} on a regular \code{grid}, afterwards the slices are
-  computed from the resulting surface. 
+  on a regular \code{grid}, afterwards the slices are computed from the resulting surface. 
 }
 
 \author{
