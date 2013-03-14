@@ -1,4 +1,4 @@
-interp2 <- function(x, y, z, xo = NULL, yo = NULL, k = 50, grid = 30, extrap = TRUE)
+interp2 <- function(x, y, z, xo = NULL, yo = NULL, k = 40, grid = 30, extrap = TRUE)
 {
   if(is.null(xo))
     xo <- seq(min(x, na.rm = TRUE), max(x, na.rm = TRUE), length = grid)
