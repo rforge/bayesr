@@ -2,8 +2,7 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-plot(b, image = TRUE)
-
+plot(b, term = "sx(z,w)", sliceplot = TRUE)
 
 
 

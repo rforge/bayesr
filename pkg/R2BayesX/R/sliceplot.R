@@ -43,13 +43,13 @@ sliceplot <- function(x, y = NULL, z = NULL, view = 1, c.select = NULL,
     quantile(x[, noview], probs = probs, type = 1)
   } else values
   if(!rawdata) {
-    viewmat <- interp2(jitter(x[, view]), jitter(x[, noview]), x[, c.select],
-      seq(min(x[, view]), max(x[, view]), length = grid),
-      seq(min(x[, noview]), max(x[, noview]), length = grid),
+    viewmat <- interp2(x[, view], x[, noview], x[, c.select],
+      xo <- seq(min(x[, view]), max(x[, view]), length = grid),
+      yo <- seq(min(x[, noview]), max(x[, noview]), length = grid),
       extrap = extrap, k = k)
-    yg <- rep(viewmat$y, each = grid)
-    zg <- as.vector(viewmat$z)
-    slices <- viewmat$x
+    yg <- rep(yo, each = grid)
+    zg <- as.vector(viewmat)
+    slices <- xo
   } else {
     yg <- x[, noview]
     zg <- x[, c.select]
