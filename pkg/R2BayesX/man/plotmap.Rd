@@ -21,7 +21,7 @@ plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   cex.names = 1, cex.values = cex.names, digits = 2L, 
   mar.min = 2, add = FALSE, interp = FALSE, linear = FALSE,
   extrap = FALSE, outside = FALSE, grid = 200,
-  p.pch = 15, p.cex = 1, shift = NULL, trans = NULL, ...)
+  p.pch = 15, p.cex = 1, shift = NULL, trans = NULL, k = 40, ...)
 }
 
 \arguments{
@@ -69,6 +69,7 @@ plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   \item{shift}{numeric. Constant to be added to the smooth before plotting.}
   \item{trans}{function to be applied to the smooth before plotting, e.g., to transform the
     plot to the response scale.}
+  \item{k}{integer. The number of basis functions to be used to compute the interpolated surface.}
   \item{\dots}{parameters to be passed to \code{\link{colorlegend}} and others, e.g. change the 
     \code{border} of the polygons and \code{density}, see \code{\link[graphics]{polygon}}. Please 
     see the exmaples.}

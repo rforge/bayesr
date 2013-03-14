@@ -1,7 +1,7 @@
 sliceplot <- function(x, y = NULL, z = NULL, view = 1, c.select = NULL,
   values = NULL, probs = c(0.1, 0.5, 0.9), grid = 100,
   extrap = FALSE, legend = TRUE, pos = "topright",
-  digits = 2, data = NULL, rawdata = FALSE, ...)
+  digits = 2, data = NULL, rawdata = FALSE, k = 40, ...)
 {
   if(is.vector(x) & is.vector(y) & is.vector(z)) {
     nx <- c(
@@ -46,7 +46,7 @@ sliceplot <- function(x, y = NULL, z = NULL, view = 1, c.select = NULL,
     viewmat <- interp(jitter(x[, view]), jitter(x[, noview]), x[, c.select],
       seq(min(x[, view]), max(x[, view]), length = grid),
       seq(min(x[, noview]), max(x[, noview]), length = grid),
-      extrap = extrap)
+      extrap = extrap, k = k)
     yg <- rep(viewmat$y, each = grid)
     zg <- as.vector(viewmat$z)
     slices <- viewmat$x
