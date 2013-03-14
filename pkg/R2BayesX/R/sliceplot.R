@@ -43,7 +43,7 @@ sliceplot <- function(x, y = NULL, z = NULL, view = 1, c.select = NULL,
     quantile(x[, noview], probs = probs, type = 1)
   } else values
   if(!rawdata) {
-    viewmat <- interp(jitter(x[, view]), jitter(x[, noview]), x[, c.select],
+    viewmat <- interp2(jitter(x[, view]), jitter(x[, noview]), x[, c.select],
       seq(min(x[, view]), max(x[, view]), length = grid),
       seq(min(x[, noview]), max(x[, noview]), length = grid),
       extrap = extrap, k = k)
