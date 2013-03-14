@@ -115,15 +115,18 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     cdata <- data.frame(R2BayesX:::centroids(map), "id" = names(map))
     cdata <- merge(cdata, data.frame("z" = x$x, "id" = x$id), by = "id")
 
+    xo <- seq(map.limits$x[1], map.limits$x[2], length = grid)
+    yo <- seq(map.limits$y[1], map.limits$y[2], length = grid)
+
     ico <- with(cdata, interp2(x = xco, y = yco, z = z,
-      xo = seq(map.limits$x[1], map.limits$x[2], length = grid),
-      yo = seq(map.limits$y[1], map.limits$y[2], length = grid),
+      xo = xo,
+      yo = yo,
       extrap = extrap, k = k))
     
-    yco <- rep(ico$y, each = length(ico$x))
-    xco <- rep(ico$x, length(ico$y))
+    yco <- rep(yo, each = length(xo))
+    xco <- rep(xo, length(yo))
 
-    cvals <- as.numeric(ico$z)
+    cvals <- as.numeric(ico)
     cvals[cvals < min(cdata$z)] <- min(cdata$z)
     cvals[cvals > max(cdata$z)] <- max(cdata$z)
     icolors <- map_fun(cvals)
