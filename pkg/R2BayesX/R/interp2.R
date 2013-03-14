@@ -26,8 +26,11 @@ interp2 <- function(x, y, z, xo = NULL, yo = NULL, k = 50, grid = 30, extrap = T
   fit <- as.vector(predict(b, newdata = nd))
 
   if(!extrap) {
-    out <- mgcv:::exclude.too.far(nd$x, nd$y, x, y, 0.1)
-    fit[out] <- NA
+    require("sp")
+    pid <- chull(X <- cbind(x, y))
+    pol <- X[c(pid, pid[1]), ]
+    pip <- point.in.polygon(nd$x, nd$y, pol[, 1], pol[, 2])
+    fit[!pip] <- NA
   }
 
   return(matrix(fit, grid, grid))
