@@ -2,7 +2,7 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   swap = FALSE, range = NULL, names = FALSE, values = FALSE, col = NULL,
   ncol = 100, breaks = NULL, cex.legend = 1, cex.names = 1, cex.values = cex.names,
   digits = 2L, mar.min = 2, add = FALSE, interp = FALSE, extrap = FALSE,
-  outside = FALSE, grid = 200, p.pch = 15, p.cex = 1, shift = NULL, trans = NULL, k = 40, ...)
+  outside = FALSE, grid = 200, p.pch = 15, p.cex = 1, shift = NULL, trans = NULL, k = NULL, mba = FALSE, ...)
 {
   if(missing(map))
     stop("map object is missing!")
@@ -121,7 +121,9 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     ico <- with(cdata, interp2(x = xco, y = yco, z = z,
       xo = xo,
       yo = yo,
-      extrap = extrap, k = k))
+      extrap = extrap,
+      k = if(is.null(k)) ceiling(length(map) * 0.8) else as.integer(k),
+      mba = mba))
     
     yco <- rep(yo, each = length(xo))
     xco <- rep(xo, length(yo))

@@ -14,7 +14,7 @@
 sliceplot(x, y = NULL, z = NULL, view = 1, c.select = NULL,
   values = NULL, probs = c(0.1, 0.5, 0.9), grid = 100, linear = FALSE,
   extrap = FALSE, duplicate = "mean", legend = TRUE, pos = "topright",
-  digits = 2, data = NULL, rawdata = FALSE, k = 40, ...)
+  digits = 2, data = NULL, rawdata = FALSE, k = 40, mba = FALSE, ...)
 }
 
 \arguments{
@@ -50,6 +50,7 @@ sliceplot(x, y = NULL, z = NULL, view = 1, c.select = NULL,
   \item{rawdata}{if set to \code{TRUE}, the data will not be interpolated, only raw data will be
     used. This is useful when displaying data on a regular grid.}
   \item{k}{integer. The number of basis functions to be used to compute the interpolated surface.}
+  \item{mba}{logical. For interpolated maps, should package \pkg{MBA} be used?}
   \item{\dots}{parameters passed to \code{\link{matplot}} and \code{\link[graphics]{legend}}.}
 }
 

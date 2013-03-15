@@ -1,7 +1,8 @@
 sliceplot <- function(x, y = NULL, z = NULL, view = 1, c.select = NULL,
   values = NULL, probs = c(0.1, 0.5, 0.9), grid = 100,
   extrap = FALSE, legend = TRUE, pos = "topright",
-  digits = 2, data = NULL, rawdata = FALSE, k = 40, ...)
+  digits = 2, data = NULL, rawdata = FALSE, k = 40,
+  mba = FALSE, ...)
 {
   if(is.vector(x) & is.vector(y) & is.vector(z)) {
     nx <- c(
@@ -43,12 +44,12 @@ sliceplot <- function(x, y = NULL, z = NULL, view = 1, c.select = NULL,
     quantile(x[, noview], probs = probs, type = 1)
   } else values
   if(!rawdata) {
-    viewmat <- interp2(x[, view], x[, noview], x[, c.select],
+    zi <- interp2(x[, view], x[, noview], x[, c.select],
       xo <- seq(min(x[, view]), max(x[, view]), length = grid),
       yo <- seq(min(x[, noview]), max(x[, noview]), length = grid),
-      extrap = extrap, k = k)
+      extrap = extrap, k = k, mba = mba)
     yg <- rep(yo, each = grid)
-    zg <- as.vector(viewmat)
+    zg <- as.vector(zi)
     slices <- xo
   } else {
     yg <- x[, noview]

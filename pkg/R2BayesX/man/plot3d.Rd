@@ -19,7 +19,7 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
   legend = TRUE, cex.legend = 1, breaks = NULL, range = NULL, 
   digits = 2L, d.persp = 1L, r.persp = sqrt(3), linear = TRUE, 
   extrap = FALSE, duplicate = "mean", outscale = 0, data = NULL,
-  sep = "", shift = NULL, trans = NULL, k = 40, ...)
+  sep = "", shift = NULL, trans = NULL, k = 40, mba = FALSE, ...)
 }
 
 \arguments{
@@ -68,6 +68,7 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
   \item{trans}{function to be applied to the smooth before plotting, e.g., to transform the
     plot to the response scale.}
   \item{k}{integer. The number of basis functions to be used to compute the interpolated surface.}
+  \item{mba}{logical. For interpolation, should package \pkg{MBA} be used?}
   \item{\dots}{parameters passed to \code{\link{colorlegend}} if an image plot with legend is drawn,
     also other graphical parameters, please see the details.}
 }

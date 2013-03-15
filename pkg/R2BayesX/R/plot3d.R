@@ -4,7 +4,7 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
   legend = TRUE, cex.legend = 1, breaks = NULL, range = NULL, 
   digits = 2L, d.persp = 1L, r.persp = sqrt(3), extrap = FALSE, 
   outscale = 0, data = NULL, sep = "",
-  shift = NULL, trans = NULL, k = 40, ...)
+  shift = NULL, trans = NULL, k = 40, mba = FALSE, ...)
 {
   if(is.null(x))
     return(invisible(NULL))
@@ -105,11 +105,11 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
     if(is.null(take))
       stop("argument c.select is specified wrong!")
     for(k in 1:length(take)) {
-      fitted[[k]] <- interp2(X, z, x[, take[k]], xo = xn, yo = zn, extrap = extrap, k = k)
+      fitted[[k]] <- interp2(X, z, x[, take[k]], xo = xn, yo = zn, extrap = extrap, k = k, mba = mba)
     }
   }
   if(length(fitted[[1L]]) == 1L && is.na(fitted[[1L]][1L])) {
-    fitted[[1L]] <- interp2(X, z, x[, 3L], xo = xn, yo = zn, extrap = extrap, k = k)
+    fitted[[1L]] <- interp2(X, z, x[, 3L], xo = xn, yo = zn, extrap = extrap, k = k, mba = mba)
   }
   if(!is.null(range)) {
     for(k in 1L:length(fitted)) {
