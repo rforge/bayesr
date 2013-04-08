@@ -1,5 +1,4 @@
-plot.sm.bayesx <-
-function(x, diagnostics = FALSE, ...)
+plot.sm.bayesx <- function(x, diagnostics = FALSE, ...)
 {
   if(!is.null(x)) {
     args <- list(...)

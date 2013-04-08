@@ -114,9 +114,9 @@ plot2d <- function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
       if(j <= 7L)
         ylim <- c(ylim, x[,j])
     if(residuals)
-      args$ylim <- base::range(c(ylim, pres[,2L]), na.rm = TRUE)
+      args$ylim <- range(c(ylim, pres[,2L]), na.rm = TRUE)
     else
-      args$ylim <- base::range(ylim, na.rm = TRUE)
+      args$ylim <- range(ylim, na.rm = TRUE)
   }
   if(is.null(args$xlim))
     args$xlim <- base::range(x[,1L], na.rm = TRUE)

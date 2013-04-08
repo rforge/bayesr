@@ -157,7 +157,7 @@ find.fixed.effects <- function(dir, files, data, response, eta, model.name, rval
           j <- j + 1L
           x <- unique(as.vector(unlist(data[[tv]])))
           vc <- matrix(FixedEffects[rownames(FixedEffects) == tv,], nrow = 1L)
-          x <- cbind(x, x %*% vc)    
+          x <- cbind(x, x %*% vc) 
           x <- x[order(x[,1L]), ]
           if(!is.matrix(x))
             x <- matrix(x, nrow = 1L)
