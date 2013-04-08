@@ -1,9 +1,34 @@
-predict.bayesx <- function(object, newdata = NULL, ...) {
-  if(!is.null(newdata))
-    stop("predicting for newdata is currently not implemented!")
+## prediction method based on refitting with weights
+predict.bayesx <- function(object, newdata = NULL, model = NULL, ...) {
+  if(!is.null(newdata)) {
+    object <- get.model(object, model)
+    if(length(object) > 1)
+      stop("only predictions for one model are allowed, please select one model!")
+    object <- object[[1]]
+    mf <- model.frame(object)
+    stopifnot(inherits(newdata, c("data.frame", "list", "matrix")))
+    newdata <- as.data.frame(newdata)
+    if(!all(names(newdata) %in% names(mf)))
+      stop("variables missing in newdata!")
+    nmf <- nrow(mf)
+    nnd <- nrow(newdata)
+    vn <- names(mf)
+    response <- as.character(terms(object))[2]
+    vn <- vn[vn != response]
+    nd <- list()
+    for(j in vn) {
+      nd[[j]] <- c(mf[[j]], newdata[[j]])
+    }
+    nd[[response]] <- c(mf[[response]], rep(0, length = nnd))
+    nd <- as.data.frame(nd)
+    weights <- c(rep(1, length = nmf), rep(0, length = nnd))
+    return(update(object, . ~ ., data = nd, weights = weights))
+  }
   return(fitted.bayesx(object, ...))
 }
 
+
+## prediction method based on samples
 .predict.bayesx <- function(object, newdata, model = NULL, term = NULL,
   intercept = TRUE, FUN = mean, ...)
 {

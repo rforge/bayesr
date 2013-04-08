@@ -1,5 +1,4 @@
-term.reorder <-
-function(x, info) 
+term.reorder <- function(x, info) 
 {
   if(!is.null(x) && length(x) > 0L) {
     rval <- list()
@@ -10,6 +9,7 @@ function(x, info)
     taken <- NULL
     for(k in 1L:ni) {
       term <- eval(parse(text = info[k]))
+      if(is.null(term$term)) next
       if(!is.null(term$by) && term$by != "NA")
         term$term <- paste(term$term, ":", term$by, sep = "")
       if(is.null(term$isFactorBy))

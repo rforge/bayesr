@@ -2,7 +2,11 @@ dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 ## dir <- "D:/svn/pkg/R2BayesX/R"
 invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
-plot(b, term = "sx(z,w)")
+p <- predict(b, newdata = nd)
+
+b <- bayesx(y ~ sx(x), method = "MCMC", data = dat)
+
+
 
 
 
