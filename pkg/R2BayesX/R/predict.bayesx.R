@@ -1,6 +1,7 @@
 ## prediction method based on refitting with weights
 predict.bayesx <- function(object, newdata = NULL, model = NULL,
-  type = c("response", "link", "terms", "model"), na.action = na.pass, ...)
+  type = c("response", "link", "terms", "model"), na.action = na.pass,
+  digits = 5, ...)
 {
   type <- match.arg(type)
   if(!is.null(newdata)) {
@@ -36,18 +37,45 @@ predict.bayesx <- function(object, newdata = NULL, model = NULL,
     weights <- model.weights(mf)
     if(is.null(weights))
       weights <- rep(1, length = nrow(mf))
+    i <- c(rep(FALSE, length(weights)), rep(TRUE, nrow(newdata)))
     nd$weights <- c(weights, rep(0, length = nrow(newdata)))
 
     pm <- update(object, . ~ ., data = nd, weights = weights,
       seed = object$bayesx.setup$setseed, parse.model.frame = FALSE)
     
-    if(type == "model")
-      return(pm)
+    if(type == "model") return(pm)
     if(type == "response") {
       pr <- fitted(pm)
-      if(!is.vector(pr))
-        pr <- as.vector(pr[, 1])
+      if(!is.null(dim(pr)))
+        pr <- pr[, 1]
+      pr <- pr[i]
     }
+    if(type == "link") {
+      pr <- fitted(pm)
+      if(!is.null(dim(pr))) {
+        if(any(j <- grepl("mu", names(pr))))
+          pr <- pr[, j, drop = FALSE]
+        pr <- pr[i, ]
+      } else pr <- pr[i]
+    }
+    if(type == "terms") {
+      pr <- fitted(pm, term = names(object$effects))
+      if(inherits(pr, "data.frame")) pr <- list(pr)
+      labels <- NULL
+      for(j in seq_along(pr)) {
+        if(inherits(pr[[j]], "data.frame")) {
+          nt <- names(pr[[j]])[1]
+          i <- round(pr[[j]][[nt]], digits) %in% round(newdata[[nt]], digits)
+          pr[[j]] <- pr[[j]][i, ]
+          rownames(pr[[j]]) <- NULL
+        }
+        tl <- attr(pr[[j]], "specs")$label
+        labels <- c(labels, if(is.null(tl)) "NA" else tl)
+      }
+      names(pr) <- labels
+      if(length(pr) < 2) pr <- pr[[1]]
+    }
+    return(pr)
   }
   return(fitted.bayesx(object, ...))
 }
