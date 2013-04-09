@@ -1,5 +1,5 @@
 # Project: BayesX
-# Hybrid GNU/BSD makefile for R package 'bayesxsrc'
+# Hybrid GNU/BSD/SUN makefile for R package 'bayesxsrc'
 # author: Daniel Adler <dadler@uni-goettingen.de>
 
 all: BayesX
@@ -104,6 +104,7 @@ STRUCTADD_OBJS = \
 	bayesxsrc/structadd/FC_hrandom.o\
 	bayesxsrc/structadd/FC_hrandom_variance.o\
 	bayesxsrc/structadd/FC_hrandom_variance_vec.o\
+	bayesxsrc/structadd/FC_hrandom_variance_vec_nmig.o\
 	bayesxsrc/structadd/FC_linear.o\
 	bayesxsrc/structadd/FC_mult.o\
 	bayesxsrc/structadd/FC_nonp.o\
@@ -149,7 +150,8 @@ CPPFLAGS += -D__BUILDING_GNU -D__BUILDING_LINUX -DTEMPL_INCL_DEF -D_MSC_VER2 -DN
 # CXXFLAGS += -O3 -ansi
 
 BayesX: ${OBJS}
-	${CXX} ${OBJS} ${LDFLAGS} ${TARGET_ARCH} -o BayesX
+	${CXX} ${OBJS} ${LDFLAGS} -o BayesX
+#	${CXX} ${OBJS} ${LDFLAGS} ${TARGET_ARCH} -o BayesX
 
 clean:
 	rm -f ${OBJS}
