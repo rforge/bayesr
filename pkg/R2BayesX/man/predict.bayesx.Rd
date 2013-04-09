@@ -11,7 +11,9 @@
 }
  
 \usage{
-\method{predict}{bayesx}(object, newdata, model = NULL, ...)
+\method{predict}{bayesx}(object, newdata, model = NULL,
+  type = c("response", "link", "terms", "model"),
+  na.action = na.pass, digits = 5, ...)
 }
 
 \arguments{
@@ -21,14 +23,24 @@
   \item{model}{for which model should predictions be calculated, either an integer or 
     a character, e.g. \code{model = "mcmc.model"}. Note that using \code{newdata} exactly one model
     must be selected within argument \code{model}!}
+  \item{type}{when \code{type = "response"}, the default, predictions on the scale of the response
+    are returned, \code{"link"} returns the linear predictor. When \code{type = "terms"}, each
+    component of the linear predictor is returned, but excludes any offset and intercept.
+    If \code{type = "model"}, the full model returned from updating the initial model with weights,
+    that is used for computing predictions, is returned.}
+  \item{na.action}{function determining what should be done with missing values in \code{newdata}.}
+  \item{digits}{predictions should usually based on the new values provided in argument
+    \code{newdata}. However, since this prediction method is based on refitting a model with
+    weights, predictions for model terms need to be matched with the new observations. \pkg{BayesX}
+    returns values with a lower precision than \R, therefore argument \code{digits} is used to round
+    values when \code{type = "terms"}, to find matching newdata pairs in the fitted objects returned
+    from the refitted model and the new data. Note that this is a workaround and not 100\% the
+    bulletproof.}
   \item{\dots}{arguments passed to \code{\link{fitted.bayesx}}.}
 }
 
 \value{ 
-  If \code{newdata} is supplied, an object of class \code{"bayesx"} is returned, otherwise objects
-  returned from \code{\link{fitted.bayesx}}. The prediction object is a simple refit of the initial
-  model using the old and the \code{newdata} including \code{weights} that are set to zero for the
-  \code{newdata}. Predictions can then be extracted using function \code{\link{fitted.bayesx}}.
+  Depending on the specifications of argument \code{type}.
 }
 
 \author{
@@ -59,8 +71,8 @@ b <- bayesx(y ~ sx(x) + z + w, data = dat)
 nd <- data.frame(x = seq(2, 5, length = 100), z = 1, w = 0)
 
 ## prediction model from refitting with weights
-p <- predict(b, newdata = nd)
-plot(p)
+nd$fit <- predict(b, newdata = nd)
+plot(fit ~ x, type = "l", data = nd)
 }
 }
 
