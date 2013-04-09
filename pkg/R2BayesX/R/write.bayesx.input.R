@@ -115,7 +115,7 @@ write.bayesx.input <- function(object)
       nc <- ncol(dat)
       dat <- cbind(dat, model.offset(object$data))
       colnames(dat)[nc + 1L] <- "ModelOffset"
-    }  
+    }
     if(!is.null(model.weights(object$data))) {
       nc <- ncol(dat)
       dat <- cbind(dat, model.weights(object$data))

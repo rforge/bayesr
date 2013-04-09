@@ -153,6 +153,13 @@ parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, off
         ml <- list(formula = ff, data = data, weights = weights, subset = subset,
           offset = offset, na.action = na.action, drop.unused.levels = TRUE)
         data <- do.call("model.frame", ml)
+      } else {
+        if(!is.null(weights))
+          data[["(weights)"]] <- weights
+        if(!is.null(offset))
+          data[["(offset)"]] <- offset
+        if(!is.null(subset))
+          data <- subset(data, subset)
       }
       if(!is.null(h.variables)) {
         nd <- names(data)
@@ -210,6 +217,7 @@ parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, off
     data <- path.expand(data)
     control <- c(control, list(data = data, Y = Yn, Yn = Yn, weights = weights, offset = offset))
   }
+
   attr(control$data, "terms") <- control$formula
   attr(attr(control$data, "terms"), "response") <- 1L
   attr(control$data, "na.action") <- na.action

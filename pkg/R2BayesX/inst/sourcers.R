@@ -4,7 +4,7 @@ invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
 
 p <- predict(b, newdata = nd)
 
-b <- bayesx(y ~ sx(x), method = "MCMC", data = dat)
+b <- bayesx(y ~ sx(x) + z + w, method = "MCMC", data = dat)
 
 
 
