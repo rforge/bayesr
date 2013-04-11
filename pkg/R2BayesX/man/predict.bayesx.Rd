@@ -7,7 +7,7 @@
 
 \description{
   Takes a fitted \code{"bayesx"} object returned from \code{\link{bayesx}} and produces predictions
-  by simple refitting with weights.
+  by refitting the initial model with weights set to zero for new observations.
 }
  
 \usage{
@@ -19,28 +19,39 @@
 \arguments{
   \item{object}{an object of class \code{"bayesx"} or \code{"bayesx.hpc"}.}
   \item{newdata}{a data frame or list containing the values of the model covariates at which
-    predictions are required.}
+    predictions are required. If missing \code{newdata} is the \code{model.frame} of the provided
+    model.}
   \item{model}{for which model should predictions be calculated, either an integer or 
-    a character, e.g. \code{model = "mcmc.model"}. Note that using \code{newdata} exactly one model
-    must be selected within argument \code{model}!}
+    a character, e.g. \code{model = "mcmc.model"}. Note that exactly one model must be selected
+    within argument \code{model} to compute predicted values!}
   \item{type}{when \code{type = "response"}, the default, predictions on the scale of the response
     are returned, \code{"link"} returns the linear predictor. When \code{type = "terms"}, each
     component of the linear predictor is returned, but excludes any offset and intercept.
     If \code{type = "model"}, the full model returned from updating the initial model with weights,
     that is used for computing predictions, is returned.}
   \item{na.action}{function determining what should be done with missing values in \code{newdata}.}
-  \item{digits}{predictions should usually based on the new values provided in argument
-    \code{newdata}. However, since this prediction method is based on refitting a model with
+  \item{digits}{predictions should usually be based on the new values provided in argument
+    \code{newdata}. However, since this prediction method uses refitting of the model with
     weights, predictions for model terms need to be matched with the new observations. \pkg{BayesX}
     returns values with a lower precision than \R, therefore argument \code{digits} is used to round
-    values when \code{type = "terms"}, to find matching newdata pairs in the fitted objects returned
-    from the refitted model and the new data. Note that this is a workaround and not 100\% the
-    bulletproof.}
-  \item{\dots}{arguments passed to \code{\link{fitted.bayesx}}.}
+    values when \code{type = "terms"}, to find matching \code{newdata} pairs in the fitted objects
+    returned from the refitted model and the new data. Note that this is a workaround and not 100\%
+    bulletproof. It is recommended to compute predictions for \code{type = "response"} or
+    \code{type = "link"}.}
+  \item{\dots}{not used.}
 }
 
 \value{ 
   Depending on the specifications of argument \code{type}.
+}
+
+\note{
+  This prediction method is based on refitting the initial model with weights, i.e., if new
+  observations lie outside the domain of the respective covariate, the knot locations when using
+  e.g. P-splines are calculated using the old and the new data. Hence, if there are large gaps
+  between the old data domain and new observations, this could affect the overall fit of the
+  estimated spline, i.e., compared to the initial model fit there will be smaller or larger
+  differences depending on the \code{newdata} provided. 
 }
 
 \author{

@@ -1,6 +1,5 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
-## dir <- "D:/svn/pkg/R2BayesX/R"
-invisible(sapply(paste(dir, "/", list.files(dir), sep = ""), source))
+invisible(sapply(file.path(dir, list.files(dir)), source))
 
 b <- bayesx(y ~ sx(X1) + X2 + X3 + X4 + sx(C ~ -1, bs = "re"), data = d1, method = "HMCMC")
 
@@ -18,22 +17,24 @@ b <- bayesx(y ~ sx(X1) + X2 + X3 + X4 + sx(C ~ -1, bs = "re"), data = d1, method
 
 ## multinomial example
 library("R2BayesX")
-data("nzmarital", package = "VGAM")
-b <- bayesx(mstatus ~ s(age, bs = "ps"), method = "REML",
-  family = "multinomial", data = nzmarital, reference = "Married/Partnered")
-fb <- fitted(b)[,4:6]
-cnfb <- c(gsub("mu:", "", colnames(fb)), "Married/Partnered")
+data("marital.nz", package = "VGAM")
+b <- bayesx(mstatus ~ sx(age), method = "REML",
+  family = "multinomial", data = marital.nz, reference = "Married/Partnered")
+fb <- predict(b, marital.nz, type = "response")
+
 fb <- cbind(fb, 1 - rowSums(fb))
 mycol <- c("red", "darkgreen", "blue")
-ooo <- with(nzmarital, order(age))
-with(nzmarital, matplot(age[ooo], fb[ooo,],
-  type = "l", las = 1, lwd = 2, ylim = 0:1, ylab = "Fitted probabilities",
+mf <- model.frame(b)
+mf <- mf[order(mf$mstatus), ]
+ooo <- with(mf, order(age))
+with(mf, matplot(age, fb,
+  type = "p", las = 1, lwd = 2, ylim = 0:1, ylab = "Fitted probabilities",
   xlab = "Age", col = c(mycol[1], "black", mycol[-1])))
 legend(x = 52.5, y = 0.62, col = c(mycol[1], "black", mycol[-1]),
-  lty = 1:4, legend = cnfb, lwd = 2)
+  lty = 1:4, legend = levels(marital.nz$mstatus), lwd = 2)
 
 
-fit.ms <- vgam(mstatus ~ s(age, df = 10), multinomial(refLevel = 2), data = nzmarital)
+fit.ms <- vgam(mstatus ~ s(age, df = 10), multinomial(refLevel = 2), data = marital.nz)
 par(mfrow = c(3, 1))
 plotvgam(fit.ms, se = TRUE, which.term = 1)
 plotvgam(fit.ms, se = TRUE, which.term = 2)
