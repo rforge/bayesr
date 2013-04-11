@@ -1,5 +1,4 @@
-write.prg.setup <-
-function(response, object, prg.file, data.file, thismodel, terms.specs)
+write.prg.setup <- function(response, object, prg.file, data.file, thismodel, terms.specs)
 {
   add.terms <- terms.specs$terms
   bt <- NULL

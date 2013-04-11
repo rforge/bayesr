@@ -23,9 +23,7 @@ parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, off
   outfile <- control$outfile
   control$oformula <- formula
   control$terms <- terms(formula, specials = c("s", "te", "r", "sx", "t2"), keep.order = TRUE)
-  intcpt <- TRUE
-  if(grepl("-1", as.character(formula)[3L]))
-    intcpt <- FALSE
+  intcpt <- attr(control$terms, "intercept") > 0
   tlsm <- attr(terms(formula), "term.labels")
   formula <- mgcv::interpret.gam(formula)$fake.formula
   control$first <- TRUE
