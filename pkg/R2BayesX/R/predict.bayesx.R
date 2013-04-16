@@ -32,13 +32,8 @@ predict.bayesx <- function(object, newdata, model = NULL,
     }
     nd <- as.data.frame(nd)
     names(nd) <- nam_mf
-    nd[[response]] <- c(mf[[response]], rep(0, length = nrow(newdata)))
-    if(yf) {
-      nd[[response]] <- factor(nd[[response]],
-        levels = as.integer(object$bayesx.setup$nYLevels),
-        labels = object$bayesx.setup$YLevels)
-    }
-
+    cr <- rep(if(yf) mf[[response]][1] else 0, length = nrow(newdata))
+    nd[[response]] <- unlist(list(mf[[response]], cr))
     weights <- model.weights(mf)
     if(is.null(weights))
       weights <- rep(1, length = nrow(mf))
