@@ -86,6 +86,7 @@ set.seed(1090)
 library("R2BayesX")
 data("ZambiaBnd")
 data("BeechBnd")
+options("use.akima" = TRUE)
 @
 
 
