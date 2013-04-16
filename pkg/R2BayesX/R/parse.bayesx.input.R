@@ -124,8 +124,8 @@ parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, off
         else
           control$reference <- control$nYLevels[control$YLevels == control$reference]
       }
-      if(!control$reference %in% control$nYLevels)
-        stop("argument reference is specified wrong, not in response!")
+      if(!(control$reference %in% control$nYLevels))
+        stop("argument reference is specified wrong, level not within response levels!")
     }
     ff[2] <- NULL
     only <- only2 <- FALSE
@@ -147,11 +147,10 @@ parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, off
       if(is.function(weights)) weights <- NULL
       if(is.function(subset)) subset <- NULL
       if(is.function(offset)) offset <- NULL
-      if(control$parse.model.frame) {
-        ml <- list(formula = ff, data = data, weights = weights, subset = subset,
-          offset = offset, na.action = na.action, drop.unused.levels = TRUE)
-        data <- do.call("model.frame", ml)
-      } else {
+      ml <- list(formula = ff, data = data, weights = if(control$prediction) NULL else weights,
+        subset = subset, offset = offset, na.action = na.action, drop.unused.levels = TRUE)
+      data <- do.call("model.frame", ml)
+      if(control$prediction) {
         if(!is.null(weights))
           data[["(weights)"]] <- weights
         if(!is.null(offset))
@@ -192,30 +191,24 @@ parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, off
       if(length(Y) != nrow(data))
         stop(paste("variable lengths differ (found for \'",Yn,"\')", sep = ""))
     }
-    if(control$parse.model.frame) {
-      if(!only) {
-        Y <- as.data.frame(Y)
-        names(Y) <- Yn
-        data <- cbind(Y, data)
-      }
-      if(ncol(data) < 2L) {
-        control$order <- order(data[, 1L])
-        data[, 1L] <- data[order(data[, 1L]), 1L]
-      } else {
-        control$order <- order(Y)
-        data <- data[order(Y), ]
-      }
-      control <- c(control, list(data = na.action(data), Yn = Yn))
-    } else {
-      control$order <- 1:nrow(data)
-      control <- c(control, list(data = data, Yn = Yn))
+    if(!only) {
+      Y <- as.data.frame(Y)
+      names(Y) <- Yn
+      data <- cbind(Y, data)
     }
+    if(ncol(data) < 2L) {
+      control$order <- order(data[, 1L])
+      data[, 1L] <- data[order(data[, 1L]), 1L]
+    } else {
+      control$order <- order(Y)
+      data <- data[order(Y), ]
+    }
+    control <- c(control, list(data = na.action(data), Yn = Yn))
   } else {
     Yn <- as.character(formula[2L])
     data <- path.expand(data)
     control <- c(control, list(data = data, Y = Yn, Yn = Yn, weights = weights, offset = offset))
   }
-
   attr(control$data, "terms") <- control$formula
   attr(attr(control$data, "terms"), "response") <- 1L
   attr(control$data, "na.action") <- na.action

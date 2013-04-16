@@ -17,9 +17,10 @@ predict.bayesx <- function(object, newdata, model = NULL,
     response <- all.vars(ff)[1]
     yf <- is.factor(mf[[response]])
     newdata[[response]] <- if(yf) mf[[response]][1] else 0
-    newdata <- model.frame.bayesx(ff, data = newdata, na.action = na.action, ...)
+    control <- object$bayesx.setup
+    control$reference <- NULL
+    newdata <- model.frame.bayesx(ff, data = newdata, na.action = na.action)
     newdata[[response]] <- NULL
-
     nam_nd <- names(newdata)
     nam_mf <- names(mf)
     nam_mf <- nam_mf[nam_mf != response]
@@ -28,7 +29,7 @@ predict.bayesx <- function(object, newdata, model = NULL,
 
     nd <- list()
     for(j in nam_mf) {
-      nd[[j]] <- c(mf[[j]], newdata[[j]])
+      nd[[j]] <- unlist(list(mf[[j]], newdata[[j]]))
     }
     nd <- as.data.frame(nd)
     names(nd) <- nam_mf
@@ -38,10 +39,10 @@ predict.bayesx <- function(object, newdata, model = NULL,
     if(is.null(weights))
       weights <- rep(1, length = nrow(mf))
     i <- c(rep(FALSE, length(weights)), rep(TRUE, nrow(newdata)))
-    nd$weights <- c(weights, rep(0, length = nrow(newdata)))
+    nd$weights <- weights <- c(weights, rep(0, length = nrow(newdata)))
     oterms <- names(object$effects)
     object <- update(object, . ~ ., data = nd, weights = weights,
-      seed = object$bayesx.setup$setseed, parse.model.frame = FALSE)
+      seed = object$bayesx.setup$setseed, prediction = TRUE, ...)
   } else {
     newdata <- model.frame(object)
     oterms <- names(object$effects)

@@ -56,8 +56,8 @@ function(dir, model.name)
       rval$fitted.values <- eta <- get.eta(data)
       if(!is.null(minfo)) {
         if(!is.null(minfo$order)) {
-          ooo <- order(eval(parse(text = minfo$order)))
-          data <- data[ooo,]
+          ooo <- 1:NROW(data) ## order(eval(parse(text = minfo$order))) FIXME!
+          data <- data[ooo, ]
           rownames(data) <- 1:NROW(data)
           if(!is.null(response))
             response <- response[ooo]
@@ -106,8 +106,8 @@ function(dir, model.name)
                   cne[k] <- paste("mu:", YLevels[nYLevels == tmp2[2L]], sep = "")
               }
             }
-          colnames(eta) <- cne
-          rval$fitted.values <- eta
+            colnames(eta) <- cne
+            rval$fitted.values <- eta
           }
         }
       } 

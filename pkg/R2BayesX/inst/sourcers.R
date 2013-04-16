@@ -18,17 +18,19 @@ b <- bayesx(y ~ sx(X1) + X2 + X3 + X4 + sx(C ~ -1, bs = "re"), data = d1, method
 ## multinomial example
 library("R2BayesX")
 data("marital.nz", package = "VGAM")
-b <- bayesx(mstatus ~ sx(age), method = "REML",
-  family = "multinomial", data = marital.nz, reference = "Married/Partnered")
-fb <- predict(b, marital.nz, type = "response")
+marital.nz$somefactor <- factor(sample(1:3, nrow(marital.nz), replace = TRUE),
+  levels = 1:3, labels = c("red", "blue", "green"))
 
+b <- bayesx(mstatus ~ sx(age) + somefactor, method = "MCMC",
+  family = "multinomial", data = marital.nz, reference = "Married/Partnered")
+
+fb <- predict(b, type = "response")
 fb <- cbind(fb, 1 - rowSums(fb))
 mycol <- c("red", "darkgreen", "blue")
 mf <- model.frame(b)
-mf <- mf[order(mf$mstatus), ]
 ooo <- with(mf, order(age))
-with(mf, matplot(age, fb,
-  type = "p", las = 1, lwd = 2, ylim = 0:1, ylab = "Fitted probabilities",
+with(mf, matplot(age[ooo], fb[ooo, ],
+  type = "l", las = 1, lwd = 2, ylim = 0:1, ylab = "Fitted probabilities",
   xlab = "Age", col = c(mycol[1], "black", mycol[-1])))
 legend(x = 52.5, y = 0.62, col = c(mycol[1], "black", mycol[-1]),
   lty = 1:4, legend = levels(marital.nz$mstatus), lwd = 2)
