@@ -17,9 +17,10 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
   ncol = 99L, swap = FALSE, col.residuals = NULL, col.contour = NULL, 
   c.select = NULL, grid = 30L, image = FALSE, contour = FALSE, 
   legend = TRUE, cex.legend = 1, breaks = NULL, range = NULL, 
-  digits = 2L, d.persp = 1L, r.persp = sqrt(3), linear = TRUE, 
-  extrap = FALSE, duplicate = "mean", outscale = 0, data = NULL,
-  sep = "", shift = NULL, trans = NULL, k = 40, mba = FALSE, ...)
+  digits = 2L, d.persp = 1L, r.persp = sqrt(3), outscale = 0,
+  data = NULL, sep = "", shift = NULL, trans = NULL,
+  type = "akima", linear = TRUE, extrap = FALSE,
+  k = 40, ...)
 }
 
 \arguments{
@@ -57,7 +58,6 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
   \item{digits}{specifies the legend decimal places.}
   \item{d.persp}{see argument \code{d} in function \code{\link[graphics]{persp}}.}
   \item{r.persp}{see argument \code{r} in function \code{\link[graphics]{persp}}.}
-  \item{extrap}{should values be extrapolated?}
   \item{outscale}{scales the outer ranges of \code{x} and \code{z} limits used for interpolation.}
   \item{data}{if \code{x} is a \code{formula}, a \code{data.frame} or \code{list}. By default the 
     variables are taken from \code{environment(x)}: typically the environment from which 
@@ -67,8 +67,17 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
   \item{shift}{numeric. Constant to be added to the smooth before plotting.}
   \item{trans}{function to be applied to the smooth before plotting, e.g., to transform the
     plot to the response scale.}
-  \item{k}{integer. The number of basis functions to be used to compute the interpolated surface.}
-  \item{mba}{logical. For interpolation, should package \pkg{MBA} be used?}
+  \item{type}{character. Which type of interpolation metjod should be used. The default is
+    \code{type = "akima"}, see function \code{\link[akima]{interp}}. The two other options are
+    \code{type = "mba"}, which calls function \code{\link[MBA]{mba.surf}} of package \pkg{MBA}, or
+    \code{type = "mgcv"}, which uses a spatial smoother withing package \pkg{mgcv} for interpolation.
+    The last option is definitely the slowest, since a full regression model needs to be estimated.}
+  \item{linear}{logical. Should linear interpolation be used withing function
+     \code{\link[akima]{interp}}?}
+  \item{extrap}{logical. Should interpolations be computed outside the observation area
+    (i.e., extrapolated)?}
+  \item{k}{integer. The number of basis functions to be used to compute the interpolated surface
+    when \code{type = "mgcv"}.}
   \item{\dots}{parameters passed to \code{\link{colorlegend}} if an image plot with legend is drawn,
     also other graphical parameters, please see the details.}
 }
@@ -83,6 +92,19 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
     \item \code{\dots}: other graphical parameters passed functions \code{\link[graphics]{persp}},
       \code{\link[fields]{image.plot}} and \code{\link[graphics]{contour}}.
     }
+}
+
+\note{
+  Function \code{plot3d} uses per default the \pkg{akima} package to construct smooth interpolated
+  surfaces, therefore, package \pkg{akima} needs to be installed. The \pkg{akima} package has an ACM
+  license that restricts applications to non-commercial usage, see
+
+  \url{http://www.acm.org/publications/policies/softwarecrnotice}
+  
+  Function \code{plot3d} prints a note refering to the ACM licence. This note can be supressed by
+  setting
+
+  \code{options("use.akima" = TRUE)} 
 }
 
 \author{

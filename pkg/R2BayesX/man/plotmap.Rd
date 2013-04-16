@@ -15,13 +15,13 @@
 }
  
 \usage{
-plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE, 
-  swap = FALSE, range = NULL, names = FALSE, values = FALSE, 
-  col = NULL, ncol = 100, breaks = NULL, cex.legend = 1, 
-  cex.names = 1, cex.values = cex.names, digits = 2L, 
-  mar.min = 2, add = FALSE, interp = FALSE, linear = FALSE,
-  extrap = FALSE, outside = FALSE, grid = 200,
-  p.pch = 15, p.cex = 1, shift = NULL, trans = NULL, k = NULL, ...)
+plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
+  swap = FALSE, range = NULL, names = FALSE, values = FALSE,
+  col = NULL, ncol = 100, breaks = NULL, cex.legend = 1,
+  cex.names = 1, cex.values = cex.names, digits = 2L,
+  mar.min = 2, add = FALSE, interp = FALSE, grid = 200,
+  extrap = FALSE, outside = FALSE, type = "akima", linear = TRUE,
+  k = 40, p.pch = 15, p.cex = 1, shift = NULL, trans = NULL, ...)
 }
 
 \arguments{
@@ -61,19 +61,40 @@ plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   \item{add}{if set to \code{TRUE}, the map will be added to an existing plot.}
   \item{interp}{logical. Should the values provided in argument \code{x} be interpolated to obtain
     a smooth colored map.}
-  \item{extrap}{should values be extrapolated?}
-  \item{outside}{logical. Should interpolated values outside the boundaries of the map be plotted.}
   \item{grid}{integer. Defines the number of grid cells to be used for interpolation.}
+  \item{extrap}{logical. Should interpolations be computed outside the observation area
+    (i.e., extrapolated)?}
+  \item{outside}{logical. Should interpolated values outside the boundaries of the map be plotted.}
+  \item{type}{character. Which type of interpolation metjod should be used. The default is
+    \code{type = "akima"}, see function \code{\link[akima]{interp}}. The two other options are
+    \code{type = "mba"}, which calls function \code{\link[MBA]{mba.surf}} of package \pkg{MBA}, or
+    \code{type = "mgcv"}, which uses a spatial smoother withing package \pkg{mgcv} for interpolation.
+    The last option is definitely the slowest, since a full regression model needs to be estimated.}
+  \item{linear}{logical. Should linear interpolation be used withing function
+     \code{\link[akima]{interp}}?}
+  \item{k}{integer. The number of basis functions to be used to compute the interpolated surface
+    when \code{type = "mgcv"}.}
   \item{p.pch}{numeric. The point size of the grid cells when using interpolation.}
   \item{p.cex}{numeric. The size of the grid cell points whein using interpolation.}
   \item{shift}{numeric. Constant to be added to the smooth before plotting.}
   \item{trans}{function to be applied to the smooth before plotting, e.g., to transform the
     plot to the response scale.}
-  \item{k}{integer. The number of basis functions to be used to compute the interpolated surface.}
-  \item{mba}{logical. For interpolated maps, should package \pkg{MBA} be used?}
   \item{\dots}{parameters to be passed to \code{\link{colorlegend}} and others, e.g. change the 
     \code{border} of the polygons and \code{density}, see \code{\link[graphics]{polygon}}. Please 
     see the exmaples.}
+}
+
+\note{
+  Function \code{plotmap} uses per default the \pkg{akima} package to construct smooth interpolated
+  surfaces, therefore, package \pkg{akima} needs to be installed. The \pkg{akima} package has an ACM
+  license that restricts applications to non-commercial usage, see
+
+  \url{http://www.acm.org/publications/policies/softwarecrnotice}
+  
+  Function \code{plotmap} prints a note refering to the ACM licence. This note can be supressed by
+  setting
+
+  \code{options("use.akima" = TRUE)} 
 }
 
 \author{
