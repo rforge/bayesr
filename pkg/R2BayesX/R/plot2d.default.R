@@ -6,7 +6,8 @@ plot2d.default <- function(x, residuals, range, col.residuals = "black",
     residuals <- TRUE
   else
     residuals <- FALSE
-  x <- na.omit(x)
+  if(nrow(x) > 1)
+    x <- na.omit(x)
   if(!is.matrix(x))
     x <- matrix(x, nrow = 1L)
   if(residuals)

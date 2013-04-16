@@ -95,6 +95,15 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name, minf
               }
             }
           }
+          xnam3 <- xnam
+          if(!is.null(term.call)) {
+            tmp <- eval(parse(text = term.call))
+            if(!is.null(tmp$term))
+              xnam3 <- tmp$term
+            if(!is.null(tmp$label))
+              labelx <- tmp$label
+            colnames(x)[1L:dimx2] <- rep(rrmfs(xnam3), length.out = length(1L:dimx2))
+          }
           if(!is.null(vx2))
             labelx <- paste(labelx, ":", vx2, sep = "")
           if(grepl("_spatialtotal.res", res))
@@ -103,7 +112,7 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name, minf
           ## labelx <- gsub("total:mrf", "total", labelx)
           if(!is.null(data))
             attr(x, "partial.resids") <- blow.up.resid(data, x, xnam, response, eta, dimx, cx)
-          attr(x, "specs") <- list(dim = dimx, term = rrmfs(xnam), 
+          attr(x, "specs") <- list(dim = dimx, term = rrmfs(xnam3), 
             by = rrmfs(vx), label = rrmfs(labelx), is.factor = FALSE, type = cxbs,
             call = term.call)
           ## search and set additional attributes

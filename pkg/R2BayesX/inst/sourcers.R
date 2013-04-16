@@ -1,8 +1,7 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 invisible(sapply(file.path(dir, list.files(dir)), source))
 
-b <- bayesx(y ~ sx(X1) + X2 + X3 + X4 + sx(C ~ -1, bs = "re"), data = d1, method = "HMCMC")
-
+b2 <- bayesx(y ~ sx(x) + sx(scale(z), scale(w), bs = "te") + fac, data = dat)
 
 
 

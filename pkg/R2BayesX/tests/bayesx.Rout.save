@@ -1,0 +1,223 @@
+
+R version 2.15.1 (2012-06-22) -- "Roasted Marshmallows"
+Copyright (C) 2012 The R Foundation for Statistical Computing
+ISBN 3-900051-07-0
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ## R2BayesX testing
+> library("R2BayesX")
+Loading required package: BayesXsrc
+Loading required package: colorspace
+Loading required package: mgcv
+This is mgcv 1.7-22. For overview type 'help("mgcv-package")'.
+> 
+> 
+> ## (1) model including factors
+> set.seed(111)
+> n <- 200
+>      
+> ## regressors
+> dat <- data.frame(x = runif(n, -3, 3), fac = factor(rep(1:10, n/10), labels = letters[1:10]))
+>      
+> ## response
+> dat$y <- with(dat, 1.5 + sin(x) + c(2.67, 5, 6, 3, 4, 2, 6, 7, 9, 7.5)[fac] + rnorm(n, sd = 0.6))
+>      
+> ## estimate models
+> b1 <- bayesx(y ~ sx(x) + fac, data = dat, method = "MCMC")
+> b2 <- bayesx(y ~ sx(x) + fac, data = dat, method = "REML")
+> b3 <- bayesx(y ~ sx(x) + fac, data = dat, method = "STEP")
+> 
+> ## summaries
+> summary(b1)
+Call:
+bayesx(formula = y ~ sx(x) + fac, data = dat, method = "MCMC")
+ 
+Fixed effects estimation results:
+
+Parametric coefficients:
+               Mean      Sd    2.5%     50%   97.5%
+(Intercept)  4.4140  0.1273  4.1609  4.4148  4.6716
+facb         2.1939  0.1846  1.8509  2.1907  2.5588
+facc         3.0581  0.1837  2.6863  3.0636  3.4043
+facd         0.2393  0.1793 -0.1169  0.2311  0.5908
+face         0.9999  0.1899  0.6405  0.9955  1.3577
+facf        -0.9842  0.1827 -1.3425 -0.9920 -0.6171
+facg         3.0456  0.1782  2.6825  3.0459  3.3668
+fach         3.9962  0.1809  3.6289  3.9977  4.3485
+faci         6.1615  0.1753  5.8271  6.1588  6.4958
+facj         4.6198  0.1812  4.2449  4.6244  4.9839
+
+Smooth terms variances:
+        Mean     Sd   2.5%    50%  97.5%    Min    Max
+sx(x) 0.4131 0.4042 0.0445 0.2845 1.5629 0.0168 3.3053
+ 
+Scale estimate:
+         Mean     Sd   2.5%    50% 97.5%
+Sigma2 0.3190 0.0365 0.2541 0.3163 0.395
+ 
+N = 200  burnin = 2000  DIC = 224.1601  pd = 24.49235  
+method = MCMC  family = gaussian  iterations = 12000  step = 10  
+> summary(b2)
+Call:
+bayesx(formula = y ~ sx(x) + fac, data = dat, method = "REML")
+ 
+Fixed effects estimation results:
+
+Parametric coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)   4.4603     0.1352 32.9968   <2e-16 ***
+facb          2.2108     0.1793 12.3304   <2e-16 ***
+facc          3.0621     0.1786 17.1492   <2e-16 ***
+facd          0.2065     0.1778  1.1613   0.2469    
+face          0.9755     0.1788  5.4570   <2e-16 ***
+facf         -1.0009     0.1818 -5.5055   <2e-16 ***
+facg          3.0354     0.1781 17.0437   <2e-16 ***
+fach          4.0156     0.1819 22.0793   <2e-16 ***
+faci          6.1588     0.1776 34.6841   <2e-16 ***
+facj          4.6324     0.1787 25.9257   <2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+
+Smooth terms:
+      Variance Smooth Par.     df Stopped
+sx(x)   0.1669      1.8548 8.7955       0
+ 
+Scale estimate: 0.3096 
+ 
+N = 200  df = 18.7955  AIC = -15.6772  BIC = 46.3164  
+GCV = 0.341751  logLik = 26.63415  method = REML  family = gaussian  
+> summary(b3)
+Call:
+bayesx(formula = y ~ sx(x) + fac, data = dat, method = "STEP")
+ 
+Fixed effects estimation results:
+
+Parametric coefficients:
+               Mean Sd 2.5% 50% 97.5%
+(Intercept)  4.4334 NA   NA  NA    NA
+facb         2.1517 NA   NA  NA    NA
+facc         3.0206 NA   NA  NA    NA
+facd         0.2103 NA   NA  NA    NA
+face         0.9908 NA   NA  NA    NA
+facf        -1.0220 NA   NA  NA    NA
+facg         3.0374 NA   NA  NA    NA
+fach         3.9625 NA   NA  NA    NA
+faci         6.1543 NA   NA  NA    NA
+facj         4.6310 NA   NA  NA    NA
+
+Smooth terms:
+     lambda     df
+f(x)  0.323 12.002
+ 
+Scale estimate: 0.2694 
+ 
+N = 200  AIC_imp = -212.566  method = STEP  family = gaussian  
+> 
+> 
+> ## (2) models with transformations
+> b1 <- bayesx(log(y) ~ sx(scale(x)) + fac, data = dat, method = "MCMC")
+> b2 <- bayesx(log(y) ~ sx(scale(x)) + fac, data = dat, method = "REML")
+> b3 <- bayesx(log(y) ~ sx(scale(x)) + fac, data = dat, method = "STEP")
+> 
+> ## summaries
+> summary(b1)
+Call:
+bayesx(formula = log(y) ~ sx(scale(x)) + fac, data = dat, method = "MCMC")
+ 
+Fixed effects estimation results:
+
+Parametric coefficients:
+               Mean      Sd    2.5%     50%   97.5%
+(Intercept)  1.4679  0.0263  1.4186  1.4686  1.5201
+facb         0.4006  0.0368  0.3301  0.4011  0.4758
+facc         0.5306  0.0362  0.4555  0.5321  0.6011
+facd         0.0264  0.0373 -0.0448  0.0254  0.0989
+face         0.1999  0.0376  0.1280  0.1994  0.2734
+facf        -0.3021  0.0390 -0.3785 -0.3020 -0.2308
+facg         0.5284  0.0374  0.4552  0.5288  0.5987
+fach         0.6439  0.0379  0.5755  0.6412  0.7236
+faci         0.8824  0.0369  0.8059  0.8828  0.9536
+facj         0.7231  0.0382  0.6473  0.7235  0.7984
+
+Smooth terms variances:
+               Mean     Sd   2.5%    50%  97.5%    Min    Max
+sx(scale(x)) 0.0290 0.0255 0.0025 0.0219 0.0969 0.0006 0.2252
+ 
+Scale estimate:
+         Mean     Sd   2.5%    50%  97.5%
+Sigma2 0.0133 0.0015 0.0107 0.0132 0.0167
+ 
+N = 200  burnin = 2000  DIC = 225.7409  pd = 25.80806  
+method = MCMC  family = gaussian  iterations = 12000  step = 10  
+> summary(b2)
+Call:
+bayesx(formula = log(y) ~ sx(scale(x)) + fac, data = dat, method = "REML")
+ 
+Fixed effects estimation results:
+
+Parametric coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)   1.4757     0.0284 52.0193   <2e-16 ***
+facb          0.4063     0.0368 11.0304   <2e-16 ***
+facc          0.5311     0.0367 14.4628   <2e-16 ***
+facd          0.0228     0.0366  0.6224   0.5344    
+face          0.1987     0.0367  5.4145   <2e-16 ***
+facf         -0.3039     0.0374 -8.1271   <2e-16 ***
+facg          0.5267     0.0365 14.4122   <2e-16 ***
+fach          0.6492     0.0374 17.3491   <2e-16 ***
+faci          0.8820     0.0365 24.1544   <2e-16 ***
+facj          0.7237     0.0367 19.7069   <2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+
+Smooth terms:
+             Variance Smooth Par.     df Stopped
+sx(scale(x))   0.0127      1.0224 9.8889       0
+ 
+Scale estimate: 0.013 
+ 
+N = 200  df = 19.8889  AIC = -648.537  BIC = -582.937  
+GCV = 0.0144453  logLik = 344.157  method = REML  family = gaussian  
+> summary(b3)
+Call:
+bayesx(formula = log(y) ~ sx(scale(x)) + fac, data = dat, method = "STEP")
+ 
+Fixed effects estimation results:
+
+Parametric coefficients:
+               Mean Sd 2.5% 50% 97.5%
+(Intercept)  1.4699 NA   NA  NA    NA
+facb         0.3955 NA   NA  NA    NA
+facc         0.5256 NA   NA  NA    NA
+facd         0.0247 NA   NA  NA    NA
+face         0.2011 NA   NA  NA    NA
+facf        -0.3061 NA   NA  NA    NA
+facg         0.5270 NA   NA  NA    NA
+fach         0.6394 NA   NA  NA    NA
+faci         0.8804 NA   NA  NA    NA
+facj         0.7231 NA   NA  NA    NA
+
+Smooth terms:
+            lambda     df
+f(scale_x_)  0.323 12.002
+ 
+Scale estimate: 0.0114 
+ 
+N = 200  AIC_imp = -845.854  method = STEP  family = gaussian  
+> 
+> 
+> proc.time()
+   user  system elapsed 
+  3.600   0.480   4.109 

@@ -108,7 +108,7 @@
     cat("\n")
   }
   if(fc) {
-    cat("Parametric Coefficients:\n")
+    cat("Parametric coefficients:\n")
     printCoefmat(x$fixed.effects)
   }
   if(!is.null(x$smooth.hyp)) {
