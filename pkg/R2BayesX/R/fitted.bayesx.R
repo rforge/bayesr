@@ -121,6 +121,13 @@ bayesx.reorder <- function(object = NULL, x, unique = FALSE) {
         x <- x[j[order(i)]]
       }
     }
+    if(is.list(object)) {
+      if(!is.null(object$bayesx.setup$YLevels)) {
+        x[[object$bayesx.setup$Yn]] <- factor(x[[object$bayesx.setup$Yn]],
+          levels = as.integer(object$bayesx.setup$nYLevels),
+          labels = object$bayesx.setup$YLevels)
+      }
+    }
   }
   if(unique & !is.null(dim(x))) {
     if(ncol(x) == 2) {
