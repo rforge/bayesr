@@ -263,11 +263,14 @@ library("R2BayesX")
   2.15.1 (2012-06-22), Platform: x86\_64-apple-darwin9.8.0/x86\_64 (64-bit)),
   the default installer still didn't work.  A google search for
   the error (dyld: Library not loaded: /usr/local/lib/libreadline.5.2.dylib),
-  shows that this is a problem that others have had.}
+  shows that this is a problem that others have had.
 
   \medskip
 
-  \fixme{Daniel?}
+  Thanks for pointing this out. We fixed this now:
+  \verb|-L${R_HOME}/lib| is now included in the \verb|LDFLAGS| of the \verb|Makefile|
+  which fixes readline linkage failure on OS X.
+  \fixme{Daniel, please check.}
 
 \item \textbf{It looks like the authors misunderstood the way that R installs on a mac.
   This is fairly common when porting from unix.  It can be fixed with
@@ -278,7 +281,8 @@ library("R2BayesX")
 
   \medskip
 
-  \fixme{Daniel?}
+  \fixme{Daniel, is there anything else to do here? I guess not and we can probably
+  just delete the second part if this question\dots}
 
 \item \textbf{I tried to run the munich rent example that comes with INLA in R2BayesX
   (\url{http://www.r-inla.org/examples/volume-1}) in order to get a grip on how
