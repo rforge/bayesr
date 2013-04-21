@@ -96,7 +96,7 @@ options("use.akima" = TRUE)
 \section{Introduction} \label{sec:intro}
 
 The free software \pkg{BayesX} \citep[see][]{R2BayesX:Brezger+Kneib+Lang:2005} is a standalone program
-\citep[current version~2.0.1,][]{R2BayesX:Belitz+Brezger+Kneib+Lang:2011}
+\citep[current version~2.0.1,][]{R2BayesX:Belitz+Brezger+Kneib+Lang:2011} \fixme{update version prior to resubmission to JSS}
 comprising powerful tools for Bayesian, mixed-model-based and stepwise inference in complex semiparametric
 regression models with structured additive predictor. Besides exponential
 family regression, \pkg{BayesX} also supports models for multi-categorical responses, hazard
@@ -115,7 +115,7 @@ and fitting models in \pkg{BayesX}. Within the new package, users are now provid
 the typical \proglang{R} modeling workflow namely:
 %
 \begin{itemize}
-  \item Specification and estimation of STAR models using \code{bayesx(formula, data, ...)}
+  \item Specification and estimation of STAR models using \code{bayesx(formula, data, ...)}\linebreak
         (which internally calls \pkg{BayesX} and reads its results).
   \item Methods and extractor functions for fitted \class{bayesx} model objects, e.g.,
         producing high-level graphics of estimated effects, model diagnostic plots, summary statistics etc.
@@ -142,15 +142,20 @@ on the companion package \pkg{BayesXsrc} \citep[also available from CRAN, see][]
 that ships the \pkg{BayesX} \proglang{C++} sources along with flexible \code{Makefile}s so that upon
 installation of the \proglang{R} package a suitable \pkg{BayesX} binary is produced on all platforms.
 
+\readme{The following paragraph has been rewritten in response to Reviewer~4, please check or further improve.}
+
 The remainder of this paper is as follows. Section~\ref{sec:motivation} gives a first motivating example of an
-\proglang{R} session applying \pkg{R2BayesX} to a dataset on childhood malnutrition in Zambia.
-Subsequently, Section~\ref{sec:model} briefly discusses the methodological background of structured additive
-regression models before Section~\ref{sec:implementation} describes the implementation details.
-Readers not interested in the implementational details of \pkg{R2BayesX} may directly jump to
-the description of the user interface in Section~\ref{sec:userinterface}. In
-Section~\ref{sec:illustrations}, the versatility of \pkg{BayesX}
-and the flexibility of the \pkg{R2BayesX} interface are further illustrated with
-an extended analyses of the childhood malnutrition data and a dataset on forest health in Germany.
+\proglang{R}~session applying \pkg{R2BayesX} to a dataset on childhood malnutrition in Zambia.
+Subsequently, Sections~\ref{sec:model}--\ref{sec:userinterface} introduce the underlying methodological
+and computational building blocks before Section~\ref{sec:illustrations} returns to more advanced illustrations
+of using \pkg{R2BayesX} in practice (for the childhood malnutrition data and a dataset on forest health in Germany).
+More specifically, Section~\ref{sec:model} briefly discusses the
+methodological background of structured additive regression models, Section~\ref{sec:implementation}
+covers the interface design and implementation details, and Section~\ref{sec:userinterface} describes
+the user interface. These three sections are written in a modular style so that they can be easily skipped
+(or read at a later time) by readers that are less interested in the underlying methodological/computational
+details (especially the interface design in Section~\ref{sec:implementation}) and more interested in
+applying \pkg{R2BayesX} in practice.
 Section~\ref{sec:conclusion} concludes the paper and further technical details are provided
 in Appendices~\ref{appendix:BayesXsrc}, \ref{appendix:plotting}, and \ref{appendix:sx}.
 
@@ -774,12 +779,15 @@ out <- capture.output(bayesx.term.options(bs = "ps", method = "MCMC"))
 writeLines(c(out[1:9], "..."))
 @
 For simplicity, only the first two options are shown here. Note that all default specifications,
-e.g.\ the number of equally spaced knots for P-splines, have been thoroughly tested and should
-usually fit for common regression problems, however, in some situations it might be useful to
-evaluate the sensitivity of the results when changing certain parameters (number of knots, degree of
-the spline, hyperpriors etc.), e.g., when modeling highly oscillating functions 20 knots may not
+e.g., the number of equally spaced knots for P-splines, have been thoroughly tested and should
+usually be well-suited for common regression problems. However, in some situations it might be useful to
+evaluate the sensitivity of the results when changing certain parameters (such as number of knots, degree of
+the spline, hyperpriors, etc.), e.g., when modeling highly oscillating functions 20~knots may not
 be sufficient to capture the overall curvature.
-\readme{Achim, added this line due to comment of reviewer 1. Do you think this needs further explanations?}
+\readme{Achim, added this line due to comment of reviewer 1. Do you think this needs further explanations?
+Niki, I think the paragraph is intelligible. But it would be even better if we could reference some
+resource where more details or a worked example are provided. Is there some section in the BayesX
+manual for this?}
 
 For fitting geoadditive models utilizing spatial information -- i.e., by computing
 suitable neighborhood penalty matrices for terms using Markov random field (MRF) priors,
@@ -1043,7 +1051,7 @@ may be printed with
 <<summary-zambia-model>>=
 summary(zm)
 @
-which typically includes mean, standard deviation and quantiles of sampled linear effects, smooth
+The summary typically includes mean, standard deviation and quantiles of sampled linear effects, smooth
 terms variances and random effects variances, as well as goodness of fit criteria and some other
 information about the model. The estimated effects for covariates \code{agechild} and \code{mbmi}
 may then be visualized with
@@ -1079,7 +1087,8 @@ plot(zm, term = c("sx(district):mrf", "sx(district):re"))
 @
 Note that here the \code{term} labels have been extended by their respective basis specifications
 (\code{mrf} and \code{re}) to make the labels unique. Equivalently, \code{term} can also be
-specified by the corresponding index (based on the ordering in the model formula), e.g., \code{term = c(7, 8)}.
+specified by the corresponding index (based on the ordering in the model formula), e.g., \code{term = c(7, 8)}
+(see Appendix~\ref{appendix:plotting} for more details).
 \begin{figure}[!t]
 \setkeys{Gin}{width=0.46\textwidth}
 \centering
@@ -1505,8 +1514,6 @@ of the effect.
 In summary, the results identify a strong influence of the spatial effect on the overall model
 fit, indicating that a clear splitting of location-specific covariates and the spatial effect is
 hardly possible in this example.
-
-\pagebreak %% FIXME hard-coded formatting
 
 \subsection{Childhood malnutrition in Zambia: Analysis with STEP} \label{subsec:zambia-step}
 
