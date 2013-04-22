@@ -103,26 +103,31 @@ bayesx <- function(formula, data, weights = NULL, subset = NULL,
     tm <- s4hm(res$bayesx.prg$file.dir, control$model.name)
 
   ## read bayesx output files
-  if(!grepl("ERROR:", res$bayesx.run$log[length(res$bayesx.run$log)]) || 
-    res$bayesx.run$log[1L] == 0) {
-    if(length(tm) > 1L) {
-      res.h <- read.bayesx.output(res$bayesx.prg$file.dir, tm)
-      for(k in 1:length(res.h)) {
-        res.h[[k]]$model.fit$method = "HMCMC"
-        res.h[[k]]$model.fit$model.name <- tm[k] 
+  if(control$read) {
+    if(!grepl("ERROR:", res$bayesx.run$log[length(res$bayesx.run$log)]) || 
+      res$bayesx.run$log[1L] == 0) {
+      if(length(tm) > 1L) {
+        res.h <- read.bayesx.output(res$bayesx.prg$file.dir, tm)
+        for(k in 1:length(res.h)) {
+          res.h[[k]]$model.fit$method = "HMCMC"
+          res.h[[k]]$model.fit$model.name <- tm[k] 
+        }
+        res.h <- res.h[length(res.h):1L]
+        res.h[[1L]]$call <- match.call()
+        res.h[[1L]][names(res)] <- res[names(res)]
+        class(res.h) <- "bayesx"
+      } else {
+        res.h <- NULL
+        res <- c(res, read.bayesx.model.output(res$bayesx.prg$file.dir, tm))
+        res$call <- match.call()
+        res$terms <- res$bayesx.setup$term.labels
+        res$model.fit$family <- control$family
       }
-      res.h <- res.h[length(res.h):1L]
-      res.h[[1L]]$call <- match.call()
-      res.h[[1L]][names(res)] <- res[names(res)]
-      class(res.h) <- "bayesx"
-    } else {
-      res.h <- NULL
-      res <- c(res, read.bayesx.model.output(res$bayesx.prg$file.dir, tm))
-      res$call <- match.call()
-      res$terms <- res$bayesx.setup$term.labels
-      res$model.fit$family <- control$family
-    }
-  } else warning("an error occured during runtime of BayesX!")
+    } else warning("an error occured during runtime of BayesX!")
+  } else {
+    cat("All output files are stored in:", res$bayesx.prg$file.dir, "\n")
+    return(invisible(res$bayesx.prg$file.dir))
+  }
 
   ## remove output folder
   if((is.null(res$bayesx.setup$outfile)) && res$bayesx.setup$dir.rm) {

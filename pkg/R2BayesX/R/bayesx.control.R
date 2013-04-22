@@ -119,10 +119,13 @@ bayesx.control <- function(model.name = "bayesx.estim", family = "gaussian", met
   }
   if(!is.null(outfile))
     start <- start + 1L
-  attr(control,"co.id") <- start:length(control)
+  attr(control, "co.id") <- start:length(control)
   control$prediction <- if(is.null(control$prediction)) {
     FALSE
   } else control$prediction
+  control$read <- if(is.null(control$read)) {
+    TRUE
+  } else control$read
   return(control)
 }
 
