@@ -62,9 +62,11 @@ GAMart <- function(n = 500, sd = 0.1, seed = TRUE)
   
   ## response
   d$eta <- with(d, hs(f1(x1) + f2(x2) + f3(x3) + f4(long, lat) + f5(id) + f6(fac), -1, 1))
-  d$num <- with(d, eta + rnorm(n, sd = sd))
+  d$err <- rnorm(n, sd = sd)
+  d$num <- with(d, eta + err)
   d$bin <- cut(d$num, quantile(d$num, probs = c(0, 0.5, 1)), labels = c("no", "yes"), include.lowest = TRUE)
   d$cat <- cut(d$num, quantile(d$num), labels = c("none", "low", "medium", "high"), include.lowest = TRUE)
+  d <- d[, c("num", "bin", "cat", "eta", "x1", "x2", "x3", "fac", "id", "long", "lat", "err")]
 
   d
 }
