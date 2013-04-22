@@ -19,7 +19,7 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
   legend = TRUE, cex.legend = 1, breaks = NULL, range = NULL, 
   digits = 2L, d.persp = 1L, r.persp = sqrt(3), outscale = 0,
   data = NULL, sep = "", shift = NULL, trans = NULL,
-  type = "akima", linear = TRUE, extrap = FALSE,
+  type = "akima", linear = FALSE, extrap = FALSE,
   k = 40, ...)
 }
 

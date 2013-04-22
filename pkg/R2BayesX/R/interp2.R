@@ -1,5 +1,5 @@
 interp2 <- function(x, y, z, xo = NULL, yo = NULL, grid = 30,
-  type = c("akima", "mba", "mgcv", "gam"), linear = TRUE, extrap = FALSE, k = 40)
+  type = c("akima", "mba", "mgcv", "gam"), linear = FALSE, extrap = FALSE, k = 40)
 {
   type <- tolower(type)
   type <- match.arg(type)

@@ -20,7 +20,7 @@ plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   col = NULL, ncol = 100, breaks = NULL, cex.legend = 1,
   cex.names = 1, cex.values = cex.names, digits = 2L,
   mar.min = 2, add = FALSE, interp = FALSE, grid = 200,
-  extrap = FALSE, outside = FALSE, type = "akima", linear = TRUE,
+  extrap = FALSE, outside = FALSE, type = "akima", linear = FALSE,
   k = 40, p.pch = 15, p.cex = 1, shift = NULL, trans = NULL, ...)
 }
 
