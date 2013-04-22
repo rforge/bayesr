@@ -48,7 +48,7 @@ interp2 <- function(x, y, z, xo = NULL, yo = NULL, grid = 30,
       if(require("akima")) {
         cat("NOTE: Package 'akima' has an ACM license that restricts applications to non-commercial usage.\n")
       } else {
-        stop(paste("plot3() can only be used if the 'akima' package is installed. ",
+        stop(paste("plot3d() can only be used if the 'akima' package is installed. ",
           "Note that 'akima' has an ACM license that restricts applications to ",
           "non-commercial usage.", sep = ""))
       }

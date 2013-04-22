@@ -90,7 +90,7 @@ library("R2BayesX")
   \begin{Schunk}
   \begin{Sinput}
   GRstats(b, term = "linear-samples")
-  GRstats(b, term = c("sx(x)", "sx(z,w)"), multivariate = TRUE)
+  GRstats(b, term = c("sx(x1)", "sx(long,lat)"), multivariate = TRUE)
   ## output not shown
   \end{Sinput}
   \end{Schunk}

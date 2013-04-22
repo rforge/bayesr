@@ -1,3 +1,4 @@
 inst/sourcers.R
 inst/JSS
+inst/bayesx_tests.R
 man/r.Rd
