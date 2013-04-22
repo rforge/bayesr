@@ -1,5 +1,5 @@
 interp2 <- function(x, y, z, xo = NULL, yo = NULL, grid = 30,
-  type = c("akima", "mba", "mgcv"), linear = TRUE, extrap = FALSE, k = 40)
+  type = c("akima", "mba", "mgcv", "gam"), linear = TRUE, extrap = FALSE, k = 40)
 {
   type <- tolower(type)
   type <- match.arg(type)
@@ -12,7 +12,7 @@ interp2 <- function(x, y, z, xo = NULL, yo = NULL, grid = 30,
   grid <- length(xo)
   x <- as.numeric(x); y <- as.numeric(y); z <- as.numeric(z)
 
-  if(type == "mgcv") {
+  if(type %in% c("mgcv", "gam")) {
     xo <- as.numeric(xo); yo <- as.numeric(yo)
     xr <- range(x, na.rm = TRUE)
     yr <- range(y, na.rm = TRUE)
@@ -55,10 +55,12 @@ interp2 <- function(x, y, z, xo = NULL, yo = NULL, grid = 30,
     }
 
     fit <- try(akima::interp(x, y, z, xo = xo, yo = yo, 
-      duplicate = "strip", linear = linear, extrap = extrap)$z, silent = TRUE)
-    if(inherits(fit, "try-error")) {
-      fit <- try(akima::interp(jitter(x), jitter(y), z, xo = xo, yo = yo, 
-        duplicate = "strip", linear = linear, extrap = extrap)$z, silent = TRUE)
+      duplicate = "mean", linear = linear, extrap = extrap)$z, silent = TRUE)
+    if(inherits(fit, "try-error") | all(is.na(fit))) {
+      cat("NOTE: akima::interp() is designed for irregular data points, the coordinates will be slightly jittered to obtain irregular spaced points.\n")
+      fit <- try(akima::interp(jitter(x, amount = .Machine$double.eps),
+        jitter(y, amount = .Machine$double.eps), z, xo = xo, yo = yo, 
+        duplicate = "mean", linear = linear, extrap = extrap)$z, silent = TRUE)
     }
   }
 

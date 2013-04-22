@@ -1,9 +1,7 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 invisible(sapply(file.path(dir, list.files(dir)), source))
 
-b2 <- bayesx(y ~ sx(x) + sx(scale(z), scale(w), bs = "te") + fac, data = dat)
-
-
+plot(b, linear = FALSE)
 
 
 
