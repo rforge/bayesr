@@ -37,21 +37,24 @@ A data frame containing 500 observations on 12 variables.
 \dontrun{
 data("GAMart")
 
-## normal regression model with spatial effect
-b <- bayesx(num ~ sx(x1) + sx(x2) + sx(x3) + sx(long, lat, bs = "te"),
+## normal response
+b <- bayesx(num ~ fac + sx(x1) + sx(x2) + sx(x3) +
+  sx(long, lat, bs = "te") + sx(id, bs = "re"),
   data = GAMart)
 summary(b)
 plot(b)
 
-## binomial
-b <- bayesx(bin ~ sx(x1) + sx(x2) + sx(x3) + sx(long, lat, bs = "te"),
-  data = GAMart, family = "binomial")
+## binomial response
+b <- bayesx(bin ~ fac + sx(x1) + sx(x2) + sx(x3) +
+  sx(long, lat, bs = "te") + sx(id, bs = "re"),
+  data = GAMart, family = "binomial", method = "REML")
 summary(b)
 plot(b)
 
 ## categorical response
-b <- bayesx(cat ~ sx(x1) + sx(x2) + sx(x3) + sx(long, lat, bs = "te"),
-  data = GAMart, family = "cumlogit", method = "REML")
+b <- bayesx(cat ~ fac + sx(x1) + sx(x2) + sx(x3) +
+  sx(long, lat, bs = "te") + sx(id, bs = "re"),
+  data = GAMart, family = "cumprobit", method = "REML")
 summary(b)
 plot(b)
 }
