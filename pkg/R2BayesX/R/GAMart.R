@@ -1,4 +1,4 @@
-GAMart <- function(n = 500, sd = 0.6, seed = TRUE)
+GAMart <- function(n = 500, sd = 0.1, seed = TRUE)
 {
   if(seed) set.seed(111)
 
@@ -14,15 +14,20 @@ GAMart <- function(n = 500, sd = 0.6, seed = TRUE)
   ## spatial
   n2 <- ceiling(sqrt(n) / 4)
   d <- expand.grid("long" = seq(0, 1, length = n2), "lat" = seq(0, 1, length = n2))
+  d$id <- factor(1:nrow(d))
   d <- rep(d, ceiling(n / (n2 * n2)))
-  d <- data.frame("long" = unlist(d[grepl("long", names(d))]),
-    "lat" = unlist(d[grepl("lat", names(d))]))
+  d <- data.frame(
+    "long" = unlist(d[grepl("long", names(d))]),
+    "lat" = unlist(d[grepl("lat", names(d))]),
+    "id" = unlist(d[grepl("id", names(d))])
+  )
   d <- d[1:n, ]
   
   ## other covariates
   d$x1 <- runif(n, 0, 1)
   d$x2 <- runif(n, 0, 1)
   d$x3 <- runif(n, 0, 1)
+  d$fac <- factor(sample(1:3, size = n, replace = TRUE), label = c("low", "medium", "high"))
 
   ## (4) functions
   ## linear
@@ -44,13 +49,22 @@ GAMart <- function(n = 500, sd = 0.6, seed = TRUE)
   f4 <- function(long, lat) {
     hs(sin(hs(long, -3, 3)) * cos(hs(lat, -3, 3)), -1, 1)
   }
+
+  ## random
+  f5 <- function(id) {
+    hs(rnorm(length(unique(id)), sd = 0.2)[id], -0.2, 0.2)
+  }
+
+  ## factor
+  f6 <- function(fac) {
+    hs(sort(rnorm(length(unique(fac)), sd = 1))[fac], -0.5, 0.5)
+  }
   
   ## response
-  d$f1 <- f1(d$x1); d$f2 <- f2(d$x2); d$f3 <- f3(d$x3); d$f4 <- f4(d$long, d$lat);
-  d$eta <- with(d, hs(f1 + f2 + f3 + f4, -1, 1))
+  d$eta <- with(d, hs(f1(x1) + f2(x2) + f3(x3) + f4(long, lat) + f5(id) + f6(fac), -1, 1))
   d$num <- with(d, eta + rnorm(n, sd = sd))
-  d$bin <- 1 * (hs(d$eta, -1, 1) + rnorm(n) > 0)
-  d$cat <- cut(d$num, quantile(d$num), include.lowest = TRUE)
+  d$bin <- cut(d$num, quantile(d$num, probs = c(0, 0.5, 1)), labels = c("no", "yes"), include.lowest = TRUE)
+  d$cat <- cut(d$num, quantile(d$num), labels = c("none", "low", "medium", "high"), include.lowest = TRUE)
 
   d
 }
