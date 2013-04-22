@@ -71,21 +71,14 @@ library("R2BayesX")
   \begin{Schunk}
   \begin{Sinput}
   library("R2BayesX")
-  ## generate some data
-  set.seed(111)
-  n <- 500
-     
-  ## regressors
-  dat <- data.frame(x = runif(n, -3, 3), z = runif(n, -3, 3),
-    w = runif(n, 0, 6), fac = factor(rep(1:10, n/10)))
-     
-  ## response
-  dat$y <- with(dat, 1.5 + sin(x) + cos(z) * sin(w) +
-    c(2.67, 5, 6, 3, 4, 2, 6, 7, 9, 7.5)[fac] + rnorm(n, sd = 0.6))
+
+  ## load artificial data set
+  data("GAMart")
      
   ## estimate model
-  b <- bayesx(y ~ sx(x) + sx(z, w, bs = "te") + fac,
-    data = dat, method = "MCMC", chains = 2, cores = 3)
+  b <- bayesx(num ~ fac + sx(x1) + sx(x2) + sx(x3) +
+    sx(long, lat, bs = "te") + sx(id, bs = "re"),
+    data = GAMart, method = "MCMC", chains = 2, cores = 3)
   \end{Sinput}
   \end{Schunk}
   The object \code{b} is also of class \code{"bayesx"} for which all e.g.\ plotting and extractor

@@ -125,8 +125,14 @@ samples <- function(object, model = NULL, term = NULL, coda = TRUE, acf = FALSE,
     }
     if(nc > 1) {
       crval <- mcmc.list(crval)
+      for(j in 1:nc) {
+        colnames(crval[[j]]) <- gsub("Coef.C", "Coef.", colnames(crval[[j]]), fixed = TRUE)
+      }
       names(crval) <- names(object)
-    } else crval <- crval[[1]]
+    } else {
+      crval <- crval[[1]]
+      colnames(crval) <- gsub("Coef.C", "Coef.", colnames(crval), fixed = TRUE)
+    }
     rval <- crval
   } else {
     rval <- as.data.frame(rval)
