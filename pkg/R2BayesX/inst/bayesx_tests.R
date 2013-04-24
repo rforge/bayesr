@@ -13,6 +13,19 @@ b <- bayesx(num ~ fac + sx(x1) + sx(x2) + sx(x3) +
 summary(b)
 plot(b)
 
+## gamma
+GAMart$num2 <- GAMart$num + abs(min(GAMart$num)) + 1
+
+## working
+b <- bayesx(num2 ~ fac + sx(x1) + sx(x2) + sx(x3) +
+  sx(long, lat, bs = "te"),
+  data = GAMart, method = "MCMC", family = "gamma")
+
+## FIXME: not working?
+b <- bayesx(num2 ~ fac + sx(x1) + sx(x2) + sx(x3) +
+  sx(long, lat, bs = "te") + sx(id, bs = "re"),
+  data = GAMart, method = "MCMC", family = "gamma")
+
 ## binomial
 ## FIXME: factor and random effects not working?
 b <- bayesx(bin ~ fac + sx(x1) + sx(x2) + sx(x3) +
