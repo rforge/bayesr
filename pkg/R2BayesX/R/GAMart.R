@@ -27,7 +27,7 @@ GAMart <- function(n = 500, sd = 0.1, seed = TRUE)
   d$x1 <- runif(n, 0, 1)
   d$x2 <- runif(n, 0, 1)
   d$x3 <- runif(n, 0, 1)
-  d$fac <- factor(sample(1:3, size = n, replace = TRUE), label = c("low", "medium", "high"))
+  d$fac <- factor(sample(1:3, size = n, replace = TRUE), labels = c("low", "medium", "high"))
 
   ## (4) functions
   ## linear

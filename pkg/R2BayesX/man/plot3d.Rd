@@ -193,4 +193,4 @@ plot3d(sin(z) * cos(w) ~ z + w,
   image = TRUE, grid = 200, data = dat)
 }
 
-\keyword{regression}
+\keyword{hplot}

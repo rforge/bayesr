@@ -149,4 +149,4 @@ plotblock(cbind(y - 0.1, y + 0.1) ~ fac, data = dat,
   border = "grey5")
 }
 
-\keyword{regression}
+\keyword{hplot}

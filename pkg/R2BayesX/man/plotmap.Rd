@@ -238,4 +238,4 @@ par(op)
 }
 }
 
-\keyword{regression} 
+\keyword{hplot} 

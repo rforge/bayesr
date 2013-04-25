@@ -13,7 +13,8 @@
 
 \arguments{
   \item{map}{map object in graph format that should be modified.}
-  \item{region1, region2}{names of the regions that should be connected as neighbors.}
+  \item{region1, region2}{character, names of the regions that should be connected as
+    neighbors.}
 }
 
 \value{

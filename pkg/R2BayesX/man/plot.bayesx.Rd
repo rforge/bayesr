@@ -209,4 +209,4 @@ plot(b)
 }
 }
 
-\keyword{regression}
+\keyword{hplot}

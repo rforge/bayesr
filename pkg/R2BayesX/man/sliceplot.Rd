@@ -6,8 +6,7 @@
 }
 
 \description{
-  This function plots slices from user defined values of surfaces from bivariate estimated
-  functions.
+  This function plots slices from user defined values of bivariate surfaces.
 }
  
 \usage{
@@ -128,4 +127,4 @@ sliceplot(sin(z) * 1.5 * w ~ z + w, ylab = "f(z)", data = dat)
 sliceplot(sin(z) * 1.5 * w ~ z + w, view = 2, ylab = "f(z)", data = dat)
 }
 
-\keyword{regression}
+\keyword{hplot}

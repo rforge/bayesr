@@ -135,4 +135,4 @@ plot2d(f1 + f + f2 ~ x, data = dat, fill.select = c(0, 1, 0, 1),
   lty = c(0, 1, 0), density = 20, poly.lty = 1, poly.lwd = 2)
 }
 
-\keyword{regression}
+\keyword{hplot}
