@@ -7,7 +7,7 @@ BIC.bayesx <- function(object, ..., k = NULL)
 
   Call <- match.call()
   Call$k <- NULL
-  row.names(val) <- as.character(Call[-1L])
+  row.names(val) <- if(nrow(val) > 1) as.character(Call[-1L]) else ""
 
   return(val)
 }

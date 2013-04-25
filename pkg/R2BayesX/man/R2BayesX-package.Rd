@@ -27,7 +27,7 @@
   \code{\link{residuals.bayesx}}, \code{\link{samples}}, \code{\link{plot.bayesx}}, as well as
   \code{\link[stats]{AIC}}, \code{\link[stats]{BIC}} etc., please see the examples of the help 
   sites. Predictions for new data based on refitting with weights can be obtained by function
-  \code{\link{ptredict.bayesx}}.
+  \code{\link{predict.bayesx}}.
 
   In addition, it is possible to run arbitrary \pkg{BayesX} program files using function 
   \code{\link[BayesXsrc]{run.bayesx}}. \pkg{BayesX} output files that are stored in a directory may
