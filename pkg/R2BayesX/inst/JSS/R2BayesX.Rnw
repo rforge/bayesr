@@ -374,6 +374,8 @@ criteria, e.g., Akaike or Bayes information criterion (AIC or BIC), generalized 
 A thorough introduction into the regression models supported by the program is also provided in the
 \pkg{BayesX} methodology manual \citep{R2BayesX:Belitz+Brezger+Kneib+Lang:2011}.
 
+Software packages that can deal with similar models are  
+
 
 \section[Implementation of the R interface to BayesX]{Implementation of the \proglang{R} interface to \pkg{BayesX}} \label{sec:implementation}
 

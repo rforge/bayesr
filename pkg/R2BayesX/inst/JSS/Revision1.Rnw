@@ -140,7 +140,7 @@ library("R2BayesX")
   the data are prepared in \proglang{R} for \pkg{BayesX}. But other approaches can
   be employed in the usual way. If \code{NAs} remain in the
   data sent over, \pkg{BayesX} will remove these.
-  \fixme{Niki/Stefan/Thomas, please check.}
+  \fixme{Stefan/Thomas, please check.}
  
 
 \item \textbf{How to compute posterior summary of transformed variables
@@ -149,7 +149,11 @@ library("R2BayesX")
  
   \medskip
 
-  \fixme{Stefan/Thomas, can you add a few words how the user should compute predictions?}
+  \pkg{BayesX} does not have functionality to compute predictions at the moment, however, as a
+  workaround, we have implemented a prediction method in \proglang{R} that is based on refitting the
+  initial model with weights set to zero for new observations. The method can be used in the same
+  fashion as other commonly used prediction methods, e.g.\ as provided for models of class
+  \code{"lm"}, \code{"glm"} and \code{"gam"}.
 
 
 \item \textbf{It would be useful to provide some guidance on specifying
@@ -388,9 +392,6 @@ method = MCMC  family = gaussian  iterations = 12000  step = 10
   The option was accidently set and has been removed from the paper, it specifies the number of
   locations that should be used as knots. All options for all possible terms may be looked up using
   function \code{bayesx.term.options()} (Section 5.2).
-  \fixme{Niki, I have manually abbreviated the output to focus on the most relevant parts.
-  As an aside, maybe we should change `possible options' in the header of the output to
-  `Available options'?}
 <<opt1, echo=TRUE, eval=FALSE>>=
 bayesx.term.options(bs = "gk", method = "REML")
 @
