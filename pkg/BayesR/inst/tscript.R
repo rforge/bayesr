@@ -15,7 +15,7 @@ fun <- function(x, theta = c(2, -20, -0.1)) {
 dat$y <- with(dat, 1.2 + sin(x1) + rnorm(n, sd = 0.1))
 
 ## fit model
-b <- bayesr(y ~ s(x1, k = 40, bs = "ps"), data = dat)
+b <- bayesr(y ~ s(x1, k = 10, bs = "ps"), data = dat)
 
 
 p <- predict(b, term = "s(x1)")
