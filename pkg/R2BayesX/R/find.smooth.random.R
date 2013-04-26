@@ -102,6 +102,8 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name, minf
               xnam3 <- tmp$term
             if(!is.null(tmp$label))
               labelx <- tmp$label
+            if(tmp$by != "NA")
+              labelx <- paste(labelx, tmp$by, sep = ":")
             colnames(x)[1L:dimx2] <- rep(rrmfs(xnam3), length.out = length(1L:dimx2))
           }
           if(!is.null(vx2))
