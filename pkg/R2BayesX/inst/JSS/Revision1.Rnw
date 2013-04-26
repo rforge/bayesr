@@ -184,8 +184,10 @@ library("R2BayesX")
   Regression Models."} Journal of Statistical Software, \textbf{14}(11), 1--22.
   URL~\url{http://www.jstatsoft.org/v14/i11/.} \medskip \\
   Section~3, a thorough comparison of software with built in functions for GAM modeling is presented
-  and also a section with a \pkg{WinBUGS} comparison. \fixme{Thomas, I have in mind that you also
-  did a comparison of \pkg{BayesX} and \pkg{INLA}?}
+  and also a section with a \pkg{WinBUGS} comparison. We have added a small paragraph at the end of
+  Section 3 that points out software packages which have a similar scope.
+  \fixme{Thomas, I have in mind that you also did a comparison of \pkg{BayesX} and \pkg{INLA}? Can
+  you add some words about \pkg{INLA} at the end of Section 3?}
 
 
 \item \textbf{On page 2, Section 5 does not appear in the last paragraph.}
@@ -416,14 +418,9 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
 
   \medskip
 
-  \fixme{Achim, I do not know why he mentions Section 4.2 here? And I do not know what he
-    actually means?}
-  \fixme{Niki, I think he just wants to say that INLA is another package that allows
-    for fitting many of the types of models supported in BayesX. I guess that it couldn't
-    hurt to include a pointer to this somewhere. One way to do this would be to include
-    an additional paragraph at the end of Section~3 that points out which other software
-    packages are around that have a similar scope. Also, we could point to the comparison
-    with WinBUGS that was requested above.}
+  We have now added a small paragraph at the end of Section 3 that points out software packages that
+  have a similar scope.
+  \fixme{Achim, is that sufficient?}
 
 
 \item \textbf{Table 4:  It would be useful to specify which GMRF model is being used.
@@ -538,6 +535,8 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
   \fixme{Niki, some half-sentence seems to have been forgotten/lost here. The second
   sentence starts with ``In the userdefined case'' but this is not concluded before
   the third sentence ``Besides the default\dots'' starts.}
+  \fixme{Stefan/Thomas, how to define userdefined models? We need to add some more explanation in
+  Section 6.3.}
 
 
 \item \textbf{Table 7: This should include the \code{acf=TRUE} option used in Figure 7.}
