@@ -68,8 +68,7 @@ library("R2BayesX")
   Yes, according to your recommendations we have now implemented multiple chain and core processing
   using the functionality of the \pkg{parallel} package. The user can now start models on e.g.\ 3
   cores with 2 chains each by typing
-  \begin{Schunk}
-  \begin{Sinput}
+<<eval=FALSE>>=
   library("R2BayesX")
 
   ## load artificial data set
@@ -79,21 +78,18 @@ library("R2BayesX")
   b <- bayesx(num ~ fac + sx(x1) + sx(x2) + sx(x3) +
     sx(long, lat, bs = "te") + sx(id, bs = "re"),
     data = GAMart, method = "MCMC", chains = 2, cores = 3)
-  \end{Sinput}
-  \end{Schunk}
+@
   The object \code{b} is also of class \code{"bayesx"} for which all e.g.\ plotting and extractor
   functions can be applied. We have also adapted the \fct{samples} extractor function, which by
   default returns objects of class \code{"mcmc"} for a single chain or \code{"mcmc.list"} for
   multiple chains, as provided in the \pkg{coda} package. In addition, we have implemented a
   convenience function that directly computes the Gelman and Rubin's convergence diagnostic using
   function \code{gelman.diag()} of the \pkg{coda} package. E.g., the user may type
-  \begin{Schunk}
-  \begin{Sinput}
+<<eval=FALSE>>=
   GRstats(b, term = "linear-samples")
   GRstats(b, term = c("sx(x1)", "sx(long,lat)"), multivariate = TRUE)
   ## output not shown
-  \end{Sinput}
-  \end{Schunk}
+@
 
 
 \item \textbf{The STEP method for model/variable selection is
@@ -149,11 +145,14 @@ library("R2BayesX")
  
   \medskip
 
-  \pkg{BayesX} does not have functionality to compute predictions at the moment, however, as a
-  workaround, we have implemented a prediction method in \proglang{R} that is based on refitting the
-  initial model with weights set to zero for new observations. The method can be used in the same
-  fashion as other commonly used prediction methods, e.g.\ as provided for models of class
-  \code{"lm"}, \code{"glm"} and \code{"gam"}.
+  User defined summaries of parameters can be obtained by extracting samples with the extractor
+  function \fct{samples}, which can then e.g.\ be used in combination with function \fct{quantile}
+  etc. \pkg{BayesX} does not have functionality to compute predictions at the moment, however, as a
+  workaround, we have now implemented a prediction method in \proglang{R} that is based on refitting
+  the initial model with weights set to zero for new observations. The method can be used in the
+  same fashion as other commonly used prediction methods, e.g.\ as provided for models of class
+  \code{"lm"}, \code{"glm"} and \code{"gam"}. In addition, the method can also return the full
+  refitted model for which again all plotting and extractor functions can be used.
 
 
 \item \textbf{It would be useful to provide some guidance on specifying
@@ -169,7 +168,8 @@ library("R2BayesX")
   The common user does usually not have to do sensitivity checks. We have added some more
   explanation on this topic in Section~5.2 Available additive terms. The user may look up all
   default settings for all possible terms using function \code{bayesx.term.options()}.
-  \fixme{Stefan/Thomas, any suggestions here?}
+  \fixme{Stefan/Thomas, any suggestions here? Is there a section in the \pkg{BayesX} manuals
+  according this?}
 
 
 \item \textbf{Could the authors briefly compare BayesX to WinBUGS and INLA?
@@ -574,9 +574,8 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
   from a more complicated example, but actually the first example in ?bayesx
   illustrates the issue:}
 
-  \begin{Schunk}
-  \begin{Sinput}
-  require(R2BayesX)
+<<>>=
+  require("R2BayesX")
   set.seed(111)
   n <- 200
   ## regressor
@@ -586,10 +585,8 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
   ## estimate models with bayesx REML and MCMC
   b1 <- bayesx(y ~ sx(x), method = "REML", data = dat)
 
-  cor(fitted(b1)$mu,dat$y)  ## about 7% - should be about 80%, I think
-  plot(fitted(b1)$mu,dat$y) ## shows almost no relationship !
-  \end{Sinput}
-  \end{Schunk}
+  cor(fitted(b1), dat$y)
+@
 
   \medskip
 

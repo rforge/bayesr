@@ -374,7 +374,7 @@ criteria, e.g., Akaike or Bayes information criterion (AIC or BIC), generalized 
 A thorough introduction into the regression models supported by the program is also provided in the
 \pkg{BayesX} methodology manual \citep{R2BayesX:Belitz+Brezger+Kneib+Lang:2011}.
 
-Software packages which have a similar scope are the \proglang{R} package \pkg{INLA}
+Software packages which have a similar Bayesian scope are the \proglang{R} package \pkg{INLA}
 \citep{R2BayesX:Rue+Martino+Chopin:2009}, \pkg{BUGS}/\pkg{WinBUGS}
 \citep{R2BayesX:BUGS:2009, R2BayesX:Lunn+Thomas+Best+Spiegelhalter:2000},
 \pkg{JAGS} \citep{R2BayesX:Plummer:2013} and \pkg{STAN} \citep{R2BayesX:stan-software:2013}.
@@ -384,10 +384,14 @@ sampling but on integrated nested Laplace approximation (INLA).
 \fixme{Thomas, can you add some words about \pkg{INLA} here?}
 The latter packages apply Bayesian inference using Gibbs sampling, where the user can in principle
 program a number of very complex models, also the ones covered by \pkg{R2BayesX}, but due to their
-flexible MCMC sampler and the data management/efficiency, STAR models usually run very long and 
-have inferior sampling properties or even do not converge. For a comparison of \pkg{BayesX} with
-other software packages including \pkg{WinBUGS} see also
-\citet[Section 3]{R2BayesX:Brezger+Kneib+Lang:2005}.
+flexible MCMC samplers and the data management/efficiency, STAR models usually run very long and 
+show inferior sampling properties. A detailed comparison of \pkg{BayesX} with other software
+packages including \pkg{WinBUGS} is provided in
+\citet[Section 3]{R2BayesX:Brezger+Kneib+Lang:2005}. See also Section~\ref{sec:modelspecs} for more
+\proglang{R} packages, that deal with GLM and GAM models, mainly from a frequentist perspective.
+
+
+\newpage
 
 
 \section[Implementation of the R interface to BayesX]{Implementation of the \proglang{R} interface to \pkg{BayesX}} \label{sec:implementation}
