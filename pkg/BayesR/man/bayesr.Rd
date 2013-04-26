@@ -64,7 +64,7 @@ bayesr(formula, family = gaussian(), data = NULL,
 }
 
 \author{
-  Nikolaus Umlauf, Achim Zeileis.
+  Nikolaus Umlauf, Stefan Lang, Achim Zeileis.
 }
 
 \examples{

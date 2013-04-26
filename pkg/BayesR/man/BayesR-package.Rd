@@ -22,7 +22,7 @@
 }
 
 \author{
-  Nikolaus Umlauf, Achim Zeileis.
+  Nikolaus Umlauf, Stefan Lang, Achim Zeileis.
 }
 
 \references{
