@@ -169,6 +169,7 @@ parse.formula.bayesr <- function(formula)
     tf <- tempfile()
     capture.output(print(formula), file = tf)
     ft <- paste(readLines(tf), collapse = "")
+    on.exit(unlink(tf))
     if(any(grep("|", ft, fixed = TRUE))) {
       formula <- as.list(strsplit(ft, "|", fixed = TRUE)[[1]])
       for(j in seq_along(formula))
