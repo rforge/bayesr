@@ -12,9 +12,9 @@
 \usage{
 bayesr(formula, family = gaussian(), data = NULL,
   knots = NULL, weights = NULL, subset = NULL, offset = NULL,
-  na.action = na.fail, contrasts = NULL, transform = randomize,
-  setup = setupJAGS, sampler = samplerJAGS, results = resultsJAGS,
-  cores = NULL, combine = TRUE, ...)
+  na.action = na.fail, contrasts = NULL, parse.input = parse.input.bayesr,
+  transform = randomize, setup = setupJAGS, sampler = samplerJAGS,
+  results = resultsJAGS, cores = NULL, combine = TRUE, ...)
 }
 
 \arguments{
@@ -34,6 +34,8 @@ bayesr(formula, family = gaussian(), data = NULL,
     \code{\link{na.omit}} if set to \code{NULL}.}
   \item{contrasts}{an optional list. See the \code{contrasts.arg} of 
     \code{\link[stats]{model.matrix.default}}.}
+  \item{parse.input}{function, used to parse all input parameters, see function
+    \code{parse.bayesr.input}.}
   \item{transform}{function, a transformator function to be applied on smooth term objects.}
   \item{setup}{MCMC setup function or named list controlling arguments of the default setup
     function.}

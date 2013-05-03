@@ -3,24 +3,15 @@
 ################################################
 bayesr <- function(formula, family = gaussian(), data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.fail, contrasts = NULL,
-  transform = randomize, setup = setupJAGS, sampler = samplerJAGS, results = resultsJAGS,
+  parse.input = parse.input.bayesr, transform = randomize, setup = setupJAGS,
+  sampler = samplerJAGS, results = resultsJAGS,
   cores = NULL, combine = TRUE, ...)
 {
-  require("R2BayesX")
-  require("coda")
-
-  ## Parsing all inputs using mgcv structures.
-  pm <- match.call(expand.dots = FALSE)
-  pm$setup <- pm$samples <- pm$results <- NULL
-  pm[[1]] <- as.name("parse.bayesr.input")
-  pm <- eval(pm, parent.frame())
-  pm$call <- match.call()
-
   ## Setup all processing functions.
   if(is.null(transform))
     transform <- function(x) { x }
-  foo <- list("transform" = transform, "setup" = setup,
-    "sampler" = sampler, "results" = results)
+  foo <- list("transform" = transform, "setup" = setup, "sampler" = sampler, "results" = results)
+  nf <- names(foo)
   default_fun <- c("randomize", "setupJAGS", "samplerJAGS", "resultsJAGS")
   functions <- list()
   for(j in 1:length(foo)) {
@@ -33,8 +24,21 @@ bayesr <- function(formula, family = gaussian(), data = NULL, knots = NULL,
         do.call(fun, args)
       }
     } else functions[[j]] <- foo[[j]]
+    if(!is.function(functions[[j]]))
+      stop(paste("argument", nf[j], "is not a function!"))
   }
   names(functions) <- names(foo)
+  functions$parse.input <- if(!is.null(parse.input)) {
+    stopifnot(is.function(parse.input))
+    deparse(substitute(parse.input), backtick = TRUE, width.cutoff = 500)
+  } else "parse.input.bayesr"
+
+  ## Parse input.
+  pm <- match.call(expand.dots = FALSE)
+  pm$parse.input <- pm$setup <- pm$samples <- pm$results <- NULL
+  pm[[1]] <- as.name(functions$parse.input)
+  pm <- eval(pm, parent.frame())
+  pm$call <- match.call()
 
   ## Transform inputs.
   pm <- functions$transform(pm)
@@ -82,10 +86,11 @@ bayesr <- function(formula, family = gaussian(), data = NULL, knots = NULL,
 ##########################################################
 ## (2) Parsing all input using package mgcv structures. ##
 ##########################################################
-parse.bayesr.input <- function(formula, data, family = gaussian(),
+parse.input.bayesr <- function(formula, data, family = gaussian(),
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, ...)
 {
+  formula <- parse.formula.bayesr(formula)
   if(missing(data))
     data <- environment(formula)
   if(is.matrix(data))
@@ -154,6 +159,47 @@ parse.bayesr.input <- function(formula, data, family = gaussian(),
     "X" = X, "smooth" = smooth, "pterms" = pterms, "sterms" = sterms, "mf" = mf, "family" = family)
 
   rval
+}
+
+parse.formula.bayesr <- function(formula)
+{
+  env <- environment(formula)
+  if(is.null(env)) env <- .GlobalEnv
+  if(!is.list(formula)) {
+    tf <- tempfile()
+    capture.output(print(formula), file = tf)
+    ft <- paste(readLines(tf), collapse = "")
+    if(any(grep("|", ft, fixed = TRUE))) {
+      formula <- as.list(strsplit(ft, "|", fixed = TRUE)[[1]])
+      for(j in seq_along(formula))
+        formula[[j]] <- as.formula(formula[[j]], env = env)
+    }
+  }
+  if(is.list(formula)) {
+    nf <- names(formula)
+    if(is.null(nf)) nf <- rep("", length(formula))
+    nf2 <- rep(NA, length(formula))
+    for(j in seq_along(formula)) {
+      tf <- terms(formula[[j]])
+      if(attr(tf, "response") < 1) {
+        if(is.null(nf))
+          stop("formulae need named responses when supplied as unnamed list!")
+        else {
+          nf2[j] <- nf[j]
+          ft <- paste(nf[j], paste(as.character(formula[[j]]), collapse = " "))
+          formula[[j]] <- as.formula(ft)
+        }
+      } else {
+        if(is.null(nf) | nf[j] == "") {
+          nf2[j] <- as.character(formula[[j]])[2]
+        }
+      }
+      environment(formula[[j]]) <- env
+    }
+    names(formula) <- nf2
+  }
+
+  formula
 }
 
 
@@ -238,7 +284,7 @@ get.model <- function(x, model)
 
 
 ## Model frame extractor function.
-model.frame.bayesr <- function(formula, ...)
+model.frame.bayesr <- function(formula, parse.input = NULL, ...)
 {
   dots <- list(...)
   nargs <- dots[match(c("data", "na.action", "subset"), names(dots), 0L)]
@@ -247,11 +293,15 @@ model.frame.bayesr <- function(formula, ...)
     if(is.null(fcall))
       fcall <- formula$call
     if(is.null(fcall)) {
+      pin <- if(!is.null(parse.input)) {
+        stopifnot(is.function(parse.input))
+        deparse(substitute(parse.input), backtick = TRUE, width.cutoff = 500)
+      } else "parse.input.bayesr"
       dots$formula <- formula
-      rval <- do.call("parse.bayesr.input", dots)
+      rval <- do.call(pin, dots)
       rval <- rval$mf
     } else {
-      fcall[[1L]] <- as.name("parse.bayesr.input")
+      fcall[[1L]] <- as.name(attr(formula, "functions")$parse.input)
       fcall[names(nargs)] <- nargs
       env <- environment(terms(formula))
       if(is.null(env)) 
@@ -354,7 +404,7 @@ compute_term <- function(x, fsamples, psamples, vsamples = NULL,
 predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
   intercept = TRUE, FUN = mean, ...)
 {
-  object <- R2BayesX:::get.model(object, model)
+  object <- get.model(object, model)
   k <- length(object)
   enames <- list()
   for(j in 1:k) {
