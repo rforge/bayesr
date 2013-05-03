@@ -161,6 +161,9 @@ parse.input.bayesr <- function(formula, data, family = gaussian(),
   rval
 }
 
+
+## Special formula parser, can deal with multi parameter models
+## and hierarchical structures.
 parse.formula.bayesr <- function(formula)
 {
   env <- environment(formula)
@@ -198,24 +201,59 @@ parse.formula.bayesr <- function(formula)
       environment(formula[[j]]) <- env
     }
     names(formula) <- nf2
-    check <- as.list(rep(NA, length = length(nf2) - 1))
-    for(j in 2:length(nf2)) {
-      for(i in seq_along(nf2)) {
-        if(j != i) {
-          if(p <- length(grep(nf2[j], as.character(formula[[i]]), fixed = TRUE))) {
-            if(p > 1) stop(paste("variable", nf2[j], "specified in too often!"))
-              formula[[i]] <- c(formula[[i]], formula[[j]])
-              formula[[j]] <- NA
+    formula <- hformula(formula)
+  }
+
+  formula
+}
+
+
+## Hierarchical formulae.
+hcheck <- function(formula)
+{
+  if(!is.list(formula))
+    return(formula)
+  nf <- names(formula)
+  snf <- seq_along(nf)
+  check <- rep(NA, length(formula))
+  for(j in snf) {
+    for(i in snf) {
+      if(j != i) {
+        fi <- if(!is.list(formula[[i]])) list(formula[[i]]) else formula[[i]]
+        for(jj in seq_along(fi)) {
+          av <- all.vars(fi[[jj]])
+          if(length(one <- grep("1", as.character(fi[[jj]]), fixed = TRUE, value = TRUE))) {
+            av <- c(av, one)
+          }
+          if(any(av %in% nf[j])) {
+            check[j] <- i
           }
         }
       }
     }
-    if(any(is.na(unlist(formula)))) {
-      formula <- lapply(formula, function(x) { if(length(x) < 2 & is.na(x[1])) NULL else x })
-   	  formula <- formula[unlist(lapply(formula, length) != 0)]
-    }
   }
+  check
+}
 
+hinsert <- function(from, to, formula)
+{
+  nf <- names(formula)
+  formula[[to]] <- c(formula[[to]], formula[[from]])
+  formula <- formula[take <- 1:length(formula) != from]
+  names(formula) <- nf[take]
+  formula
+}
+
+hformula <- function(formula)
+{
+  if(!is.list(formula))
+    return(formula)
+  j <- hcheck(formula)
+  while(any(!is.na(j))) {
+    i <- which(!is.na(j))[1]
+    formula <- hinsert(i, j[i], formula)
+    j <- hcheck(formula)
+  }
   formula
 }
 
