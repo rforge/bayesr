@@ -198,6 +198,22 @@ parse.formula.bayesr <- function(formula)
       environment(formula[[j]]) <- env
     }
     names(formula) <- nf2
+    check <- as.list(rep(NA, length = length(nf2) - 1))
+    for(j in 2:length(nf2)) {
+      for(i in seq_along(nf2)) {
+        if(j != i) {
+          if(p <- length(grep(nf2[j], as.character(formula[[i]]), fixed = TRUE))) {
+            if(p > 1) stop(paste("variable", nf2[j], "specified in too often!"))
+              formula[[i]] <- c(formula[[i]], formula[[j]])
+              formula[[j]] <- NA
+          }
+        }
+      }
+    }
+    if(any(is.na(unlist(formula)))) {
+      formula <- lapply(formula, function(x) { if(length(x) < 2 & is.na(x[1])) NULL else x })
+   	  formula <- formula[unlist(lapply(formula, length) != 0)]
+    }
   }
 
   formula
