@@ -104,7 +104,7 @@ library("R2BayesX")
 
   \medskip
 
-  \fixme{Stefan/Thomas?}
+  \fixme{Stefan?}
 
 
 \item \textbf{Not being able to store large objects is an issue
@@ -136,7 +136,6 @@ library("R2BayesX")
   the data are prepared in \proglang{R} for \pkg{BayesX}. But other approaches can
   be employed in the usual way. If \code{NAs} remain in the
   data sent over, \pkg{BayesX} will remove these.
-  \fixme{Stefan/Thomas, please check.}
  
 
 \item \textbf{How to compute posterior summary of transformed variables
@@ -166,10 +165,15 @@ library("R2BayesX")
 
   The default settings have been thoroughly tested and should fit for common regression problems.
   The common user does usually not have to do sensitivity checks. We have added some more
-  explanation on this topic in Section~5.2 Available additive terms. The user may look up all
-  default settings for all possible terms using function \code{bayesx.term.options()}.
-  \fixme{Stefan/Thomas, any suggestions here? Is there a section in the \pkg{BayesX} manuals
-  according this?}
+  explanation on this topic in Section~5.2 Available additive terms. Please find more information
+  on Bayesian P-Splines In: \medskip \\
+  Lang S, Brezger A (2004). \emph{"Bayesian P-Splines."} Journal of Computational and Graphical
+  Statistics, \textbf{13}, 183--212. \medskip \\
+  Brezger A, Lang S (2006). \emph{"Generalized Structured Additive Regression Based on Bayesian
+  P-Splines."} Computational Statistics \& Data Analysis, \textbf{50}, 947--991. \medskip\\
+  The user may look up all default settings for all possible terms using function \\
+  \code{bayesx.term.options()}. All basis functions are only computed once and are then fixed for
+  all iterations of the MCMC sampler and are not modified anymore.
 
 
 \item \textbf{Could the authors briefly compare BayesX to WinBUGS and INLA?
@@ -186,8 +190,6 @@ library("R2BayesX")
   Section~3, a thorough comparison of software with built in functions for GAM modeling is presented
   and also a section with a \pkg{WinBUGS} comparison. We have added a small paragraph at the end of
   Section 3 that points out software packages which have a similar scope.
-  \fixme{Thomas, I have in mind that you also did a comparison of \pkg{BayesX} and \pkg{INLA}? Can
-  you add some words about \pkg{INLA} at the end of Section 3?}
 
 
 \item \textbf{On page 2, Section 5 does not appear in the last paragraph.}
@@ -228,7 +230,13 @@ library("R2BayesX")
   partition coefficient can be computed here to report
   the relative importance of each random effect component.}
 
-  \fixme{Stefan, Thomas, computation of the VPC?}
+  \medskip
+
+  Yes, we could compute $\tau_1^2(\tau_1^2 + \tau_2^2)$, but these are two different variances,
+  one of a Markov random field and the other of an $i.i.d.$ random effect. We probably cannot
+  really distinguish between these two effects anyway, therefore, we usually do not put too much
+  weight on this and prefer a graphical comparison.
+
 
 \item \textbf{On page 22, autocorrelation is one measure for assessing
   convergence. However, chains trapped at some local modes
@@ -271,6 +279,7 @@ library("R2BayesX")
   which fixes readline linkage failure on OS X.
   \fixme{Daniel, please check.}
 
+
 \item \textbf{It looks like the authors misunderstood the way that R installs on a mac.
   This is fairly common when porting from unix.  It can be fixed with
   using a symbolic link, but that's not very satisfactory!  It would be
@@ -282,6 +291,7 @@ library("R2BayesX")
 
   \fixme{Daniel, is there anything else to do here? I guess not and we can probably
   just delete the second part if this question\dots}
+
 
 \item \textbf{I tried to run the munich rent example that comes with INLA in R2BayesX
   (\url{http://www.r-inla.org/examples/volume-1}) in order to get a grip on how
@@ -308,7 +318,8 @@ library("R2BayesX")
   The naming problem for smooth terms has been fixed, names are checked and renamed internally.
   We have adapted the function \code{read.gra()}, it now fully supports both formats, the one
   suggested in the \pkg{BayesX} reference manual and the format of the \pkg{INLA} project. The
-  Munich rent example code runs smoothly now
+  manual page of \code{read.gra()} now includes a detailed description for setting up graph files,
+  too. The Munich rent example code runs smoothly now
 <<eval=FALSE>>=
 url <- "http://www.math.ntnu.no/~hrue/r-inla.org/examples/munich/"
 Munich <- read.table(file.path(url, "Munich.txt"), header = TRUE)
@@ -361,12 +372,14 @@ method = MCMC  family = gaussian  iterations = 12000  step = 10
 \end{Soutput}
 \end{Schunk}
 
+
 \item \textbf{It would also be nice if a function was provided that checked the
   validity of graph files.}
 
   \medskip
 
-  \fixme{Thomas, is there an official format for graph files?}
+  \fixme{Achim, not sure if we should just drop this point and refer to the above point?}
+
 
 \item \textbf{Would it be better in the STEP algorithm to set the quantiles to NA
   (not available) rather than 0.00?}
@@ -374,9 +387,7 @@ method = MCMC  family = gaussian  iterations = 12000  step = 10
   \medskip
 
   We have set these to \code{NA} now.
-  \fixme{Stefan, Thomas, the output matrices could set \code{NA}s instead of \code{0}? I only did
-    a workaround here, which is not the best solution, because I do not exactly know if values are
-    really \code{NA} or just \code{0}!}
+
 
 \item \textbf{In the bayesx() call, the family parameter is case sensitive (I
   accidentally wrote \code{"Gaussian"} instead of \code{"gaussian"}). This could be
@@ -385,6 +396,7 @@ method = MCMC  family = gaussian  iterations = 12000  step = 10
   \medskip
 
   The case sensitivity for the \code{family} and \code{CI} parameter has been removed.
+
 
 \item \textbf{Section 2: The option \code{full = TRUE} in the formula is not
   mentioned anywhere else in this paper.  What does it do?}
@@ -402,12 +414,15 @@ opt <- capture.output(bayesx.term.options(bs = "gk", method = "REML"))
 writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
 @
 
+
 \item \textbf{Section 3: Is the list on page 5 an exhaustive list of models
   implemented in R2BayesX?}
 
   \medskip
 
-  \fixme{Stefan, Thomas?}
+  No, these are just examples of model terms that fit in the STAR framework. There is more, e.g.\
+  Bayesian ridge, Bayesian LASSO, Kriging, etc.
+
 
 \item \textbf{Section 4.2: I note in passing that the INLA package can solve a
   large class of latent Gaussian models in which each observation depends
@@ -429,7 +444,13 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
 
   \medskip
 
-  \fixme{Stefan, Thomas? Can you add the references?}
+  The paper \medskip \\
+  Fahrmeir L, Kneib T, Lang S (2004). \emph{"Penalized Structured Additive Regression for Space
+  Time Data: A Bayesian Perspective."} Statistica Sinica, \textbf{14}, 731--761. \medskip \\
+  provides a detailed discussion of the methodology used, we have added the reference in Table 4,
+  too.
+  \fixme{Achim, is that ok?}
+
 
 \item \textbf{Bottom of page 15: ``several informations" \code{->} ``several pieces of
   information" or just ``information"}
@@ -460,7 +481,7 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
 
   \medskip
 
-  \fixme{Stefan, Thomas, do you have examples with large data?}
+  \fixme{Stefan, do you have examples with large data/models with large number of model terms?}
 
 
 \item \textbf{Page 20: I'm not a fan of an enormous piece of R output breaking
@@ -535,7 +556,8 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
   \fixme{Niki, some half-sentence seems to have been forgotten/lost here. The second
   sentence starts with ``In the userdefined case'' but this is not concluded before
   the third sentence ``Besides the default\dots'' starts.}
-  \fixme{Stefan/Thomas, how to define userdefined models? We need to add some more explanation in
+
+  \fixme{Stefan, how to define userdefined models? We need to add some more explanation in
   Section 6.3.}
 
 

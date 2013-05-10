@@ -380,13 +380,16 @@ Software packages which have a similar Bayesian scope are the \proglang{R} packa
 \pkg{JAGS} \citep{R2BayesX:Plummer:2013} and \pkg{STAN} \citep{R2BayesX:stan-software:2013}.
 While the former package is relatively similar in its workflow compared to \pkg{R2BayesX} and works
 with hierarchical Gaussian Markov random fields (GMRF), Bayesian inference is not based on MCMC
-sampling but on integrated nested Laplace approximation (INLA).
-\fixme{Thomas, can you add some words about \pkg{INLA} here?}
-The latter packages apply Bayesian inference using Gibbs sampling, where the user can in principle
-program a number of very complex models, also the ones covered by \pkg{R2BayesX}, but due to their
-flexible MCMC samplers and the data management/efficiency, STAR models usually run very long and 
-show inferior sampling properties. A detailed comparison of \pkg{BayesX} with other software
-packages including \pkg{WinBUGS} is provided in
+sampling but on integrated nested Laplace approximation (INLA). This has the advantage of avoiding
+questions concerning mixing and convergence but also requires quite advanced mathematical and
+numerical tools for implementation. Moreover, complex hierarchical prior structures (such as the
+Bayesian LASSO) or models with a large number of hyperparameters are more difficult to handle in the
+INLA framework. In summary, \pkg{R2BayesX} and \pkg{INLA} address special model classes using
+optimized algorithms, the latter packages apply Bayesian inference using Gibbs sampling, where the
+user can in principle program a number of very complex models, also the ones covered by
+\pkg{R2BayesX}, but due to their flexible MCMC samplers and the data management/efficiency, STAR
+models usually run very long and show inferior sampling properties. A detailed comparison of
+\pkg{BayesX} with other software packages including \pkg{WinBUGS} is provided in
 \citet[Section 3]{R2BayesX:Brezger+Kneib+Lang:2005}. See also Section~\ref{sec:modelspecs} for more
 \proglang{R} packages, that deal with GLM and GAM models, mainly from a frequentist perspective.
 
@@ -755,7 +758,8 @@ or additional geographical information.
               penalty for the parameters of the spline. \\
 \code{"kr"}, \code{"kriging"} & Kriging with stationary Gaussian random fields. \\ \hline
 
-\code{"gk"}, \code{"geokriging"} & Geokriging with stationary Gaussian random fields: Estimation
+\code{"gk"}, \code{"geokriging"} & Geokriging with stationary Gaussian random fields
+              \citep{R2BayesX:Fahrmeir+Kneib+Lang:2004}: Estimation
               is based on the centroids of a map object provided in
               boundary format (see function \fct{read.bnd} and \fct{shp2bnd}) as an additional
               argument named \code{map} within function \fct{sx}, e.g., \code{map = MapBnd}. \\
@@ -764,10 +768,11 @@ or additional geographical information.
 	      Estimation is based on the coordinates of the centroids of the regions
               of a map object provided in boundary format (see function \fct{read.bnd} and
               \fct{shp2bnd}) as an additional argument named \code{map} (see above). \\
-\code{"mrf"}, \code{"spatial"} & Markov random fields: Defines a Markov random field prior for a
-               spatial covariate, where geographical information is provided by a map object in
-               boundary or graph file format (see function \fct{read.bnd}, \fct{read.gra} and
-               \fct{shp2bnd}), as an additional argument named \code{map} (see above). \\ \hline
+\code{"mrf"}, \code{"spatial"} & Markov random fields \citep{R2BayesX:Fahrmeir+Kneib+Lang:2004}:
+               Defines a Markov random field prior for a spatial covariate, where geographical
+               information is provided by a map object in boundary or graph file format (see
+               function \fct{read.bnd}, \fct{read.gra} and \fct{shp2bnd}), as an additional argument
+               named \code{map} (see above). \\ \hline
 
 \code{"bl"}, \code{"baseline"} & Nonlinear baseline effect in hazard regression or multi-state
               models: Defines a P-spline with second order random walk penalty for the parameters of
@@ -799,14 +804,11 @@ writeLines(c(out[1:9], "..."))
 @
 For simplicity, only the first two options are shown here. Note that all default specifications,
 e.g., the number of equally spaced knots for P-splines, have been thoroughly tested and should
-usually be well-suited for common regression problems. However, in some situations it might be useful to
-evaluate the sensitivity of the results when changing certain parameters (such as number of knots, degree of
-the spline, hyperpriors, etc.), e.g., when modeling highly oscillating functions 20~knots may not
-be sufficient to capture the overall curvature.
-\readme{Achim, added this line due to comment of reviewer 1. Do you think this needs further explanations?
-Niki, I think the paragraph is intelligible. But it would be even better if we could reference some
-resource where more details or a worked example are provided. Is there some section in the BayesX
-manual for this?}
+usually be well-suited for common regression problems (see also \citet{R2BayesX:Lang+Brezger:2004}
+and \citet{R2BayesX:Brezger+Lang:2006} for a detailed discussion). However, in some situations it
+might be useful to evaluate the sensitivity of the results when changing certain parameters (such as
+number of knots, degree of the spline, hyperpriors, etc.), e.g., when modeling highly oscillating
+functions 20~knots may not be sufficient to capture the overall curvature.
 
 For fitting geoadditive models utilizing spatial information -- i.e., by computing
 suitable neighborhood penalty matrices for terms using Markov random field (MRF) priors,
