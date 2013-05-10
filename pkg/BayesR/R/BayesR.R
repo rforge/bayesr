@@ -91,74 +91,99 @@ parse.input.bayesr <- function(formula, data, family = gaussian(),
   contrasts = NULL, knots = NULL, specials = NULL, ...)
 {
   formula <- parse.formula.bayesr(formula)
-  if(missing(data))
-    data <- environment(formula)
-  if(is.matrix(data))
-    data <- as.data.frame(data)
-  specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", specials))
-  mt <- terms(formula, specials = specials, keep.order = TRUE)
-  tl <- attr(mt, "term.labels")
-  sm <- grepl("(", tl, fixed = TRUE)
-  pterms <- tl[!sm]
-  pf <- paste("~ ", if(attr(mt, "intercept")) 1 else -1,
-    if(length(pterms)) paste(" +", paste(pterms, collapse = " + ")), sep = "")
-  sterms <- NULL
-  if(length(sm <- tl[sm])) {
-    for(j in sm) {
-      smj <- eval(parse(text = j))
-      sterms <- c(sterms, smj$term, smj$by)
-      if(!is.null(smj$by.formula)) {
-        sterms <- c(sterms, attr(terms(smj$by.formula, keep.order = TRUE), "term.labels"))
-      }
-    }
-  }
-  sterms <- unique(sterms[sterms != "NA"])
-  response <- as.character(formula)[2]
-  fake.formula <- as.formula(paste(response, "~ 1 +", paste(c(pterms, sterms), collapse = " + ")))
-  if(is.null(na.action))
-    na.action <- get(getOption("na.action"))
-  mf <- list(formula = fake.formula, data = data, weights = weights, subset = subset,
-    offset = offset, na.action = na.action, drop.unused.levels = TRUE)
-  mf <- do.call("model.frame", mf)
-  for(j in 1:ncol(mf)) {
-    if(class(mf[, j]) %in% c("numeric", "integer"))
-      if(any(!is.finite(mf[, j]))) {
-        warning("infinite values in data, removing these observations in model frame!")
-        mf <- mf[is.finite(mf[, j]), ]
-      }
-  }
-  X <- model.matrix(as.formula(pf), data = mf, contrasts.arg = contrasts, ...)
-  smooth <- list()
-  if(length(sm)) {
-    for(j in sm) {
-      tsm <- eval(parse(text = j))
-      if(is.null(tsm$special)) {
-        acons <- TRUE
-        if(!is.null(tsm$xt$center))
-          acons <- tsm$xt$center
-        smt <- smoothCon(tsm, mf, knots, absorb.cons = acons)
+  if(is.list(formula)) {
+    rval <- formula
+    for(j in seq_along(formula)) {
+      if(is.list(formula[[j]])) {
+        for(i in seq_along(formula[[j]])) {
+          rval[[j]][[i]] <- parse.input.bayesr(formula[[j]][[i]], data, family,
+            weights, subset, offset, na.action, contrasts, knots, specials, ...)
+        }
       } else {
-        smt <- smooth.construct(tsm, mf, knots)
-        class(smt) <- c(class(smt), "mgcv.smooth")
-        smt <- list(smt)
+        rval[[j]] <- parse.input.bayesr(formula[[j]], data, family,
+          weights, subset, offset, na.action, contrasts, knots, specials, ...)
       }
-      smooth <- c(smooth, smt)
     }
-    smooth <- mgcv:::gam.side(smooth, X, tol = .Machine$double.eps^.5)
-    sme <- mgcv:::expand.t2.smooths(smooth)
-    if(is.null(sme)) {
-      original.smooth <- NULL
-    } else {
-      original.smooth <- smooth
-      smooth <- sme
-      rm(sme)
+    names(rval) <- names(formula)
+    class(rval) <- c("list", "bayesr.list")
+    return(rval)
+  } else {
+    if(missing(data))
+      data <- environment(formula)
+    if(is.matrix(data))
+      data <- as.data.frame(data)
+    specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", specials))
+    mt <- terms(formula, specials = specials, keep.order = TRUE)
+    tl <- attr(mt, "term.labels")
+    sm <- grepl("(", tl, fixed = TRUE)
+    pterms <- tl[!sm]
+    pf <- paste("~ ", if(attr(mt, "intercept")) 1 else -1,
+      if(length(pterms)) paste(" +", paste(pterms, collapse = " + ")), sep = "")
+    sterms <- NULL
+    if(length(sm <- tl[sm])) {
+      for(j in sm) {
+        smj <- eval(parse(text = j))
+        sterms <- c(sterms, smj$term, smj$by)
+        if(!is.null(smj$by.formula)) {
+          sterms <- c(sterms, attr(terms(smj$by.formula, keep.order = TRUE), "term.labels"))
+        }
+      }
     }
+    sterms <- unique(sterms[sterms != "NA"])
+    response <- as.character(formula)[2]
+    fake.formula <- as.formula(paste(response, "~ 1 +", paste(c(pterms, sterms), collapse = " + ")))
+    if(is.null(na.action))
+      na.action <- get(getOption("na.action"))
+    mf <- list(formula = fake.formula, data = data, weights = weights, subset = subset,
+      offset = offset, na.action = na.action, drop.unused.levels = TRUE)
+    mf <- unique(do.call("model.frame", mf))
+    for(j in 1:ncol(mf)) {
+      if(class(mf[, j]) %in% c("numeric", "integer"))
+        if(any(!is.finite(mf[, j]))) {
+          warning("infinite values in data, removing these observations in model frame!")
+          mf <- mf[is.finite(mf[, j]), ]
+        }
+    }
+    X <- model.matrix(as.formula(pf), data = mf, contrasts.arg = contrasts, ...)
+    smooth <- sx.smooth <- list()
+    if(length(sm)) {
+      for(j in sm) {
+        tsm <- eval(parse(text = j))
+        if(!grepl("sx(", tsm$label, fixed = TRUE)) {
+          if(is.null(tsm$special)) {
+            acons <- TRUE
+            if(!is.null(tsm$xt$center))
+              acons <- tsm$xt$center
+            smt <- smoothCon(tsm, mf, knots, absorb.cons = acons)
+          } else {
+            smt <- smooth.construct(tsm, mf, knots)
+            class(smt) <- c(class(smt), "mgcv.smooth")
+            smt <- list(smt)
+          }
+          smooth <- c(smooth, smt)
+        } else {
+          sx.smooth <- c(sx.smooth, list(tsm))
+        }
+      }
+      if(length(smooth)) {
+        smooth <- mgcv:::gam.side(smooth, X, tol = .Machine$double.eps^.5)
+        sme <- mgcv:::expand.t2.smooths(smooth)
+        if(is.null(sme)) {
+          original.smooth <- NULL
+        } else {
+          original.smooth <- smooth
+          smooth <- sme
+          rm(sme)
+        }
+      }
+    }
+
+    rval <- list("formula" = formula, "fake.formula" = fake.formula, "response" = response,
+      "X" = X, "smooth" = smooth, "sx.smooth" = sx.smooth, "pterms" = pterms, "sterms" = sterms,
+      "mf" = mf, "family" = family)
+
+    return(rval)
   }
-
-  rval <- list("formula" = formula, "fake.formula" = fake.formula, "response" = response,
-    "X" = X, "smooth" = smooth, "pterms" = pterms, "sterms" = sterms, "mf" = mf, "family" = family)
-
-  rval
 }
 
 
@@ -166,6 +191,8 @@ parse.input.bayesr <- function(formula, data, family = gaussian(),
 ## and hierarchical structures.
 parse.formula.bayesr <- function(formula)
 {
+  if(inherits(formula, "bayesr.formula"))
+    return(formula)
   env <- environment(formula)
   if(is.null(env)) env <- .GlobalEnv
   if(!is.list(formula)) {
@@ -199,10 +226,12 @@ parse.formula.bayesr <- function(formula)
         }
       }
       environment(formula[[j]]) <- env
+      class(formula[[j]]) <- c(class(formula[[j]]), "bayesr.formula")
     }
     names(formula) <- nf2
     formula <- hformula(formula)
   }
+  class(formula) <- c(class(formula), "bayesr.formula")
 
   formula
 }
@@ -290,6 +319,8 @@ randomize <- function(x)
 ## Combine sample chains.
 combine_chains <- function(x)
 {
+  if(!inherits(x, "mcmc.list"))
+    return(x)
   rval <- NULL
   for(j in 1:length(x)) {
     rval <- rbind(rval, x[[j]])
@@ -804,9 +835,35 @@ plot.bayesr.effect.default <- function(x, ...) {
       args$lty <- c(2, 1, 2)
     if(is.null(args$col.lines))
       args$col.lines <- c(NA, "black", NA)
-    do.call("plot2d", args)
+    if(inherits(x, "random.effect")) {
+      if(if(!is.null(args$density)) args$density else FALSE) {
+        args$density <- NULL
+        if(is.null(args$main))
+          args$main <- attr(x, "specs")$label
+        args$x <- density(x[, "50%"])
+        do.call("plot.density", delete.args("plot.density", args))
+      } else do.call("plotblock", args)
+     } else do.call("plot2d", args)
   } else {
     do.call("plot3d", args)
   }
+}
+
+
+##################################
+## (7) Other helping functions. ##
+##################################delete.args <-
+delete.args <- function(fun = NULL, args = NULL, not = NULL)
+{
+  nf <- names(formals(fun))
+  na <- names(args)
+  for(elmt in na)
+    if(!elmt %in% nf) {
+      if(!is.null(not)) {
+        if(!elmt %in% not)
+          args[elmt] <- NULL
+      } else args[elmt] <- NULL
+    }
+  args
 }
 
