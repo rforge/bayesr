@@ -125,6 +125,8 @@ STRUCTADD_OBJS = \
 	bayesxsrc/structadd/distr_categorical_mult.o\
 	bayesxsrc/structadd/distr_mixture.o\
 	bayesxsrc/structadd/distr_gamlss.o\
+  bayesxsrc/structadd/distr_gamlss_nadja.o\
+  bayesxsrc/structadd/distr_zeroadjusted.o\
 	bayesxsrc/structadd/mcmcsim.o\
 	bayesxsrc/structadd/model_parameters.o\
 	bayesxsrc/structadd/superbayesreg.o\
