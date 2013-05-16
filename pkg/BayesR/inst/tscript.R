@@ -16,7 +16,7 @@ fun <- function(x, theta = c(2, -20, -0.1)) {
 dat$y <- with(dat, 1.2 + sin(x1) + re + rnorm(n, sd = 0.1))
 
 ## fit model
-b <- bayesr(y ~ s(x1) + s(fac, bs = "re") | fac ~ s(x2), data = dat)
+b <- bayesx2(y ~ s(x1) + s(fac, bs = "re") | fac ~ s(x2), data = dat)
 
 dat <- dat[order(dat$x1), ]
 
