@@ -514,7 +514,7 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
   rval <- NULL
 
   if(missing(newdata))
-    newdata <- model.frame(object[[1L]])
+    newdata <- model.frame(object)
   if(is.character(newdata)) {
     if(file.exists(newdata <- path.expand(newdata)))
       newdata <- read.table(newdata, header = TRUE, ...)

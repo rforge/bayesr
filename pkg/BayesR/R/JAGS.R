@@ -84,7 +84,7 @@ setupJAGS <- function(x)
   }
   model <- c(model, setup$priors.scale, setup$close, setup$close2, "}")
 
-  writeLines(model)
+  ## writeLines(model)
 
   ## Final touch ups.
   setup$data$response <- x$mf[[x$response]]
