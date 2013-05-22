@@ -63,8 +63,8 @@ bayesx.construct.mrf.smooth.spec <- bayesx.construct.spatial.smooth.spec <- func
         counter <- counter + 1L
       } else ok <- FALSE
     }
-    mapfile <- paste(dir, "/", mapfile, sep = "")
-    prgfile <- paste(dir, "/", prg, sep = "")
+    mapfile <- file.path(dir, mapfile)
+    prgfile <- file.path(dir, prg)
     prgok <- file.exists(prgfile)
   } else prgok <- FALSE
   if(prgok)
