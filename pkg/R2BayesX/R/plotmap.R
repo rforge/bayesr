@@ -156,17 +156,17 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   args$ylab <- args$xlab <- args$main <- ""
   args$type <- NULL
   args$axes <- NULL
-  lwd.p <- rep(args$lwd, length.out = n)
+  lwd.p <- if(!is.null(args$lwd)) rep(args$lwd, length.out = n) else NULL
   if(is.null(lwd.p))
     lwd.p <- rep(1, length.out = n)
-  lty.p <- rep(args$lty, length.out = n)
+  lty.p <- if(!is.null(args$lty)) rep(args$lty, length.out = n) else NULL
   if(is.null(lty.p))
     lty.p <- rep(1, length.out = n)
-  border.p <- rep(args$border, length.out = n)
+  border.p <- if(!is.null(args$border)) rep(args$border, length.out = n) else NULL
   if(is.null(border.p))
     border.p <- rep("black", length.out = n)
-  density.p <- rep(args$density, length.out = n)
-  angle.p <- rep(args$angle, length.out = n)
+  density.p <- if(!is.null(args$density)) rep(args$density, length.out = n) else NULL
+  angle.p <- if(!is.null(args$angle)) rep(args$angle, length.out = n) else NULL
   if(is.null(angle.p))
     angle.p <- rep(90, length.out = n)
   i <- 1L
