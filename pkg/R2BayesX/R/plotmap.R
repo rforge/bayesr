@@ -23,11 +23,15 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     legend <- FALSE
   poly.names.orig <- names(map)
   if(!any(is.na(poly.names <- x2int(names(map))))) {
-    poly.names <- sort(poly.names)
+    op <- order(poly.names)
+    poly.names <- poly.names[op]
     poly.names <- as.character(poly.names)
   } else {
-    poly.names <- sort(names(map))
+    poly.names <- names(map)
+    op <- order(poly.names)
+    poly.names <- poly.names[op]
   }
+  poly.names.orig <- poly.names.orig[op]
   if(length(upn <- unique(poly.names)) < length(poly.names)) {
     nn <- NULL
     for(i in upn) {
