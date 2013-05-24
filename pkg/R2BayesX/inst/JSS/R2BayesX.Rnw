@@ -1617,18 +1617,6 @@ The model is then fitted by
 zmsud <- bayesx(f, family = "gaussian", method = "STEP",
   algorithm = "cdescent1", startmodel = "userdefined", CI = "MCMCselect",
   iterations = 10000, step = 10, seed = 123, data = ZambiaNutrition)
-
-f <- stunting ~ memployment + urban + gender +
-  sx(meducation, bs = "factor") + sx(mbmi) +
-  sx(district, bs = "mrf", map = ZambiaBnd) +
-  sx(district, bs = "re") + sx(agechild)
-
-zmsud <- bayesx(f, family = "gaussian", method = "STEP",
-  algorithm = "cdescent1", startmodel = "empty", CI = "MCMCbootstrap",
-  bootstrapsamples = 1000, iterations = 10000, step = 10, seed = 123,
-  data = ZambiaNutrition, outfile = "~/tmp")
-
-
 @
 which actually produces the model output of the first model (\code{zms}) again.
 

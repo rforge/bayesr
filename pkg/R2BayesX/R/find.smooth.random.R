@@ -14,6 +14,7 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name, minf
       "_DIC.res")
     for(res in endings)
       resfiles <- resfiles[!grepl(res, resfiles, fixed = TRUE)]
+    resfiles <- unique(resfiles)
     ## resfiles <- resfiles[!grepl("_lasso", resfiles)]
     ## resfiles <- resfiles[!grepl("_ridge", resfiles)]
     ## resfiles <- resfiles[!grepl("_nigmix", resfiles)]
@@ -110,6 +111,10 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name, minf
             labelx <- paste(labelx, ":", vx2, sep = "")
           if(grepl("_spatialtotal.res", res))
             labelx <- paste(labelx, ":total", sep = "")
+          if(grepl("_spatial.res", res))
+            labelx <- paste(labelx, ":mrf", sep = "")
+          if(grepl("_random.res", res))
+            labelx <- paste(labelx, ":re", sep = "")
           ## labelx <- paste(labelx, if(!is.null(cxbs)) cxbs else cx, sep = ":")
           ## labelx <- gsub("total:mrf", "total", labelx)
           if(!is.null(data))
@@ -140,6 +145,7 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name, minf
             af <- grep("_geokriging", af, fixed = TRUE, value = TRUE)
           if(!is.null(vx))
             af <- af[grepl(paste(vx, "_", sep = ""), af)]
+          af <- unique(af)
           if(length(af) > 0L) {
             if(length(varf <- grep("_var", af, value = TRUE))) {
               if(length(vf <- grep("_var.res", varf, value = TRUE))) {
@@ -201,7 +207,18 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name, minf
               attr(x, "contourprob") <-  df2m(read.table(file.path(dir, cf[1L]), header = TRUE))
             }
             if(length(df <- grep("_df.", af, value = TRUE))) {
-              attr(x, "df") <-  read.table(file.path(dir, df[1L]), header = TRUE)
+              dfd <- read.table(file.path(dir, df[1L]), header = TRUE)
+              attr(x, "df") <-  dfd
+              if(length(grep("selected", names(dfd)))) {
+                sl <- dfd[dfd$selected == "+", ]
+                if(length(grep("_random", df, fixed = TRUE))) {
+                  sl <- data.frame("df_value" = sl$value, "sp_value" = NA,
+                    "frequency" = sl$frequency, "selected" = sl$selected)
+                }
+                sl <- sl[, !(names(sl) %in% "selected")] 
+                rownames(sl) <- attr(x, "specs")$label
+                SmoothHyp <- rbind(SmoothHyp, as.matrix(sl))
+              }
             }
           }
           class(x) <- c(cx, "matrix")

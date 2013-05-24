@@ -156,7 +156,7 @@ function(dir, model.name)
             eval(parse(text = paste("model.results$", n1[i], "<- mf2[[i]]", sep = "")))
       }
       mf <- model.results
-      if(!is.null(mf$smooth.hyp.step)) {
+      if(!is.null(mf$smooth.hyp.step) & is.null(rval$smooth.hyp)) {
         rval$smooth.hyp <- mf$smooth.hyp.step
         if(length(log <- grep(".log", files, fixed = TRUE, value = TRUE))) {
           log <- readLines(file.path(dir, log))
@@ -191,6 +191,8 @@ function(dir, model.name)
         mf$smooth.hyp.step <- NULL
       }
     } else mf <- c(list(method = method, N = N), mf)
+    if(!is.null(mf$smooth.hyp.step))
+      mf$smooth.hyp.step <- NULL
     if(mf$method == " ")
       mf$method <- "NA"
     if(!is.null(mf$logLik))
