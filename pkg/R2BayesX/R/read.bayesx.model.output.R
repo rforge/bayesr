@@ -22,13 +22,13 @@ function(dir, model.name)
     mformula <- paste(model.name, ".formula.rda", sep = "")
     minfo <- NULL
     if(info %in% dir.files) {
-      minfo <- readLines(paste(dir, "/", info, sep = ""))
+      minfo <- readLines(file.path(dir, info))
       minfo <- eval(parse(text = minfo[length(minfo)]))
     }
     ## search for data
     data <- isnadata <- NULL
     if(length(i <- grep(paste(model.name, ".data.raw", sep = ""), files))) {
-      data <- as.matrix(read.table(paste(dir, "/", files[i], sep = ""), header = TRUE))
+      data <- as.matrix(read.table(file.path(dir, files[i]), header = TRUE))
       if(any(is.na(data))) {
         isnadata <- rowSums(is.na(data) * 1) > 0
         data <- data[!isnadata, ]
@@ -36,7 +36,7 @@ function(dir, model.name)
     }
     for(char in c("_predict.raw", "_predictmean.raw", "_predict.res"))
       if(length(i <- grep(char, files)))
-        data <- cbind(data, as.matrix(read.table(paste(dir, "/", files[i], sep = ""), header = TRUE)))
+        data <- cbind(data, as.matrix(read.table(file.path(dir, files[i]), header = TRUE)))
 
     ## set response and predictor
     N <- NA
@@ -118,11 +118,11 @@ function(dir, model.name)
 
     ## get smooth and random effects
     rval <- c(rval, find.smooth.random(dir, files, data, response, eta, 
-      model.name, minfo, paste(dir, "/", info, sep = "")))
+      model.name, minfo, file.path(dir, info)))
 
     ## get fixed effects
     rval <- find.fixed.effects(dir, files, data, response, eta, model.name, 
-      rval, minfo, paste(dir, "/", info, sep = ""))
+      rval, minfo, file.path(dir, info))
 
     ## get scale estimate
     rval$variance <- get.scale(files, dir)
@@ -132,19 +132,19 @@ function(dir, model.name)
     method <- ""
     if(any(grep("deviance.raw", files))) {
       mf <- grep("deviance.raw", files, value = TRUE)
-      mf <- read.table(paste(dir, "/", mf, sep = ""), header = TRUE)
+      mf <- read.table(file.path(dir, mf), header = TRUE)
       pd <- mf$unstandardized_deviance[length(mf$unstandardized_deviance) - 1L]
       DIC <- mf$unstandardized_deviance[length(mf$unstandardized_deviance)]
       mf <- list(DIC = DIC, pd = pd)
     }
     if(any(grep(".tex", files))) {
-      sm <- readLines(paste(dir, "/", grep(".tex", files, value = TRUE), sep = ""))
+      sm <- readLines(file.path(dir, grep(".tex", files, value = TRUE)))
       model.results <- search.bayesx.tex(sm)
       method <- model.results$method
     }
     if(any(grep("modelfit.raw", files))) {
       mf <- grep("modelfit.raw", files, value = TRUE)
-      mf <- chacol(read.table(paste(dir, "/", mf, sep = ""), header = TRUE))
+      mf <- chacol(read.table(file.path(dir, mf), header = TRUE))
       mf <- mf2 <- as.list(mf)
     }
     if(!is.null(model.results)) {
@@ -158,8 +158,8 @@ function(dir, model.name)
       mf <- model.results
       if(!is.null(mf$smooth.hyp.step)) {
         rval$smooth.hyp <- mf$smooth.hyp.step
-        if(length(log <- grep(".log", files, fixed = TRUE, value = TRUE))) { 
-          log <- readLines(paste(dir, "/", log, sep = ""))
+        if(length(log <- grep(".log", files, fixed = TRUE, value = TRUE))) {
+          log <- readLines(file.path(dir, log))
           if(length(i <- grep("Final Model:", log))) {
             i <- i[length(i)]
             log <- log[i:length(log)][3]
@@ -199,7 +199,7 @@ function(dir, model.name)
 
     ## reordering and naming
     if(info %in% dir.files)
-      rval$effects <- term.reorder(rval$effects, paste(dir, "/", info, sep = ""))
+      rval$effects <- term.reorder(rval$effects, file.path(dir, info))
     rval$effects <- delete.NULLs(rval$effects)
     if(any(duplicated(names.eff <- names(rval$effects)))) {
       for(k in names.eff) {
@@ -227,12 +227,12 @@ function(dir, model.name)
     }
 
     ## search for additional info
-    rval$model.fit <- smi(paste(dir, "/", info, sep = ""), rval$model.fit)
+    rval$model.fit <- smi(file.path(dir, info), rval$model.fit)
 
     ## new with HMCMC
     if(any(grep("_DIC.res", files))) {
       dic <- grep("_DIC.res", files, value = TRUE)
-      dic <- chacol(read.table(paste(dir, "/", dic, sep = ""), header = TRUE))
+      dic <- chacol(read.table(file.path(dir, dic), header = TRUE))
       rval$model.fit <- c(rval$model.fit, as.list(dic))
     }
 
@@ -242,14 +242,14 @@ function(dir, model.name)
     ## get long formulas
     if(mformula %in% files) {
       nenv <- new.env()
-      load(paste(dir, "/", mformula, sep = ""), envir = nenv)
+      load(file.path(dir, mformula), envir = nenv)
       rval$model.fit$formula <- get("f", envir = nenv)
-      unlink(paste(dir, "/", mformula, sep = ""))
+      unlink(file.path(dir, mformula))
     }
 
     ## get log file
     if(length(log <- grep(".log", files, fixed = TRUE, value = TRUE)))
-      rval$logfile <- readLines(paste(dir, "/", log[1], sep = ""))
+      rval$logfile <- readLines(file.path(dir, log[1]))
 
     return(rval)
   }

@@ -1,5 +1,4 @@
-search.bayesx.tex <-
-function(x)
+search.bayesx.tex <- function(x)
 {
   rval <- list()
   fam <- any(grepl("Family:", x))
@@ -204,7 +203,7 @@ function(x)
       if(i == length(x))
         run <- FALSE
     }
-    final <- splitme(grep("eta",stepfiles,value=TRUE))
+    final <- splitme(grep("eta", stepfiles, value = TRUE))
     grepfinal <- NULL
     for(i in 1L:length(final)) {
       check <- final[i] != "$" && final[i] != "&" && final[i] != "\\"

@@ -9,19 +9,19 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name, minf
   if(any((i <- grep(".res", files)))) {
     resfiles <- files[i]
     endings <- c("_predict.res", "FixedEffects", "LinearEffects", "scale.res", "_variance_", 
-      "_var.res", ".raw", "_param.res", "_interact.res", "_df.res", "_lambda.res", 
+      "_var.res", ".raw", "_param.res", "_interact.res", "_lambda.res", "_df.res",
       "_knots.raw", "_contour.res", "_theta.res", "_variance_sample.ps", "_random_fixed.res",
       "_DIC.res")
     for(res in endings)
       resfiles <- resfiles[!grepl(res, resfiles, fixed = TRUE)]
-    resfiles <- resfiles[!grepl("_lasso", resfiles)]
-    resfiles <- resfiles[!grepl("_ridge", resfiles)]
-    resfiles <- resfiles[!grepl("_nigmix", resfiles)]
+    ## resfiles <- resfiles[!grepl("_lasso", resfiles)]
+    ## resfiles <- resfiles[!grepl("_ridge", resfiles)]
+    ## resfiles <- resfiles[!grepl("_nigmix", resfiles)]
     if(length(resfiles) > 0L) {
       neffect <- 1; nameseffects <- NULL
       for(res in resfiles) {
         cxbs <- NULL
-        x <- df2m(read.table(paste(dir, "/", res, sep = ""), header = TRUE))
+        x <- df2m(read.table(file.path(dir, res), header = TRUE))
         dimx <- s4dim(x)
         if(sum(x[,(dimx + 1L):ncol(x)], na.rm = TRUE) != 0) {
           colnx <- colnames(x)
@@ -147,8 +147,7 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name, minf
                   vf <- grep(vx3, vf, value = TRUE)
                 if(!is.null(vx))
                   vf <- grep(vx, vf, value = TRUE)
-                attr(x, "variance") <- df2m(read.table(paste(dir, "/", vf[1L], sep = ""), 
-                  header = TRUE))
+                attr(x, "variance") <- df2m(read.table(file.path(dir, vf[1L]), header = TRUE))
                 rownames(attr(x, "variance"))[1L] <- labelx
                 if(cx == "random.bayesx")
                   RandomHyp <- rbind(RandomHyp, attr(x, "variance"))
@@ -158,8 +157,7 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name, minf
               if(length(vf <- grep("_variance_", varf, value = TRUE))) {
                 vf <- unique(vf)
                 if(length(vf2 <- vf[!grepl("sample", vf)])) {
-                  attr(x, "variance") <- df2m(read.table(paste(dir, "/", vf2[1L], sep = ""), 
-                    header = TRUE))
+                  attr(x, "variance") <- df2m(read.table(file.path(dir, vf2[1L]), header = TRUE))
                   rownames(attr(x, "variance"))[1L] <- labelx
                   if(cx == "random.bayesx")
                     RandomHyp <- rbind(RandomHyp, attr(x, "variance"))
@@ -170,8 +168,7 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name, minf
                   vf2 <- vf2[!grepl("_sample.ps", vf2)]
                   if(length(vf2)) {
                     for(tf in vf2) {
-                      attr(x, "variance.sample") <- df2m(read.table(paste(dir, "/", tf[1L], sep = ""), 
-                        header = TRUE))
+                      attr(x, "variance.sample") <- df2m(read.table(file.path(dir, tf[1L]), header = TRUE))
                       if(is.matrix(attr(x, "variance.sample")))
                         attr(x, "variance.sample") <- attr(x, "variance.sample")[,1L]
                       if(is.matrix(attr(x, "variance.sample"))) {
@@ -190,24 +187,21 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name, minf
                 sf <- sf[!grepl("_sample.ps", sf)]
                 if(length(sf)) {
                   for(tf in sf) {
-                    attr(x, "sample") <- df2m(read.table(paste(dir, "/", tf[1L], sep = ""), 
-                      header = TRUE))
+                    attr(x, "sample") <- df2m(read.table(file.path(dir, tf[1L]), header = TRUE))
                     colnames(attr(x, "sample")) <- paste("C", 1L:ncol(attr(x, "sample")), sep = "")
                   }
                 }
               }
             if(length(pf <- grep("_param", af, value = TRUE)))
               for(tf in pf)
-                attr(x, "param") <- df2m(read.table(paste(dir, "/", tf[1L], sep = ""), header = TRUE))
+                attr(x, "param") <- df2m(read.table(file.path(dir, tf[1L]), header = TRUE))
             if(length(kf <- grep("_knots", af, value = TRUE)))
-              attr(x, "knots") <-  df2m(read.table(paste(dir, "/", kf[1L], sep = ""), header = TRUE))
+              attr(x, "knots") <-  df2m(read.table(file.path(dir, kf[1L]), header = TRUE))
             if(length(cf <- grep("_contour", af, value = TRUE))) {
-              attr(x, "contourprob") <-  df2m(read.table(paste(dir, "/", cf[1L], sep = ""), 
-                header = TRUE))
+              attr(x, "contourprob") <-  df2m(read.table(file.path(dir, cf[1L]), header = TRUE))
             }
             if(length(df <- grep("_df.", af, value = TRUE))) {
-              attr(x, "df") <-  df2m(read.table(paste(dir, "/", df[1L], sep = ""), 
-                header = TRUE))
+              attr(x, "df") <-  read.table(file.path(dir, df[1L]), header = TRUE)
             }
           }
           class(x) <- c(cx, "matrix")

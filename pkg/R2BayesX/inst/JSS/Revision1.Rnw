@@ -104,7 +104,20 @@ library("R2BayesX")
 
   \medskip
 
-  \fixme{Stefan?}
+
+  The STEP method optimizes some goodness of fit criterion (e.g. AIC) using model optimization
+  heuristics as described in
+
+  Belitz C, Lang S (2008). "Simultaneous Selection of Variables and Smoothing Parameters in
+  Structured Additive Regression Models." \emph{Computational Statistics \& Data Analysis},
+  \textbf{53}, 61--81.
+
+  The algorithms are designed such that they provide good or near optimal models (in terms of the
+  goodness of fit criterion) within a small number of iterations to minimize computing time. The 
+  drawback of this procedure is that our search path contains only a few models such that
+  posterior inclusion probabilities are generally not available. However, the bootstrap approach 
+  for obtaining unconditional confidence bands also provides a frequency table of the relative
+  frequency each model term has been selected during the bootstrap iterations.
 
 
 \item \textbf{Not being able to store large objects is an issue

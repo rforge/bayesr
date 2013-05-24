@@ -75,17 +75,14 @@ find.fixed.effects <- function(dir, files, data, response, eta, model.name, rval
     if(length(res <- grep(".res", fefiles, value = TRUE))) {
       if(length(res2 <- res[!grepl("_df.res", res)]))
         for(tf in res2)
-          FixedEffects <- rbind(FixedEffects, df2m2(fixed2table(paste(dir, "/", tf, sep = ""), tf)))
+          FixedEffects <- rbind(FixedEffects, df2m2(fixed2table(file.path(dir, tf), tf)))
       if(length(res2 <- res[grepl("_df.res", res)])) {
-        nres2 <- length(res2) 
-        fdf <- vector("list", length = nres2)
-        for(k in 1L:nres2)
-          fdf[[k]] <- read.table(paste(dir, "/", res2[k], sep = ""), header = TRUE)
+        fdf <- read.table(file.path(dir, res2[1]), header = TRUE)
       }
     }
     if(length(res <- grep("_sample.raw", fefiles, value = TRUE)))
       for(tf in res)
-        fsample <- cbind(fsample, df2m(read.table(paste(dir, "/", tf, sep = ""), header = TRUE)))
+        fsample <- cbind(fsample, df2m(read.table(file.path(dir, tf), header = TRUE)))
     attr(FixedEffects, "sample") <- fsample
     attr(FixedEffects, "df") <- fdf
     if(!is.null(FixedEffects) && !is.null(info)) {

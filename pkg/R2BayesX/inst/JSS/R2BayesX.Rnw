@@ -1602,11 +1602,10 @@ which additionally considers the uncertainty due to model selection.
 
 Another variation of this model would be to start from a \code{"userdefined"} instead of an \code{"empty"}
 \code{startmodel} (see also Table~\ref{tab:control} for further options). In the
-\code{"userdefined"} case \fixme{Stefan/Thomas, how to define userdefined models?} 
-Besides the default of an \code{"empty"} \code{startmodel}, it may be reasonable to start with a
-the initial degrees of freedom (complexity or roughness) in the search for the nonlinearly modeled
-terms can be supplied. For example, the starting values for the degrees of freedom of
-the P-spline, spatial and random effect terms can be specified via
+\code{"userdefined"} case, it may be reasonable to start with a the initial degrees of freedom 
+(complexity or roughness) in the search for the nonlinearly modeled terms can be supplied. For 
+example, the starting values for the degrees of freedom of the P-spline, spatial and random 
+effect terms can be specified via
 <<fit-zambia-model-step-05, echo=TRUE, eval=FALSE>>=
 f <- stunting ~ memployment + urban + gender +
   sx(meducation, bs = "factor") + sx(mbmi, dfstart = 2) +
@@ -1618,6 +1617,18 @@ The model is then fitted by
 zmsud <- bayesx(f, family = "gaussian", method = "STEP",
   algorithm = "cdescent1", startmodel = "userdefined", CI = "MCMCselect",
   iterations = 10000, step = 10, seed = 123, data = ZambiaNutrition)
+
+f <- stunting ~ memployment + urban + gender +
+  sx(meducation, bs = "factor") + sx(mbmi) +
+  sx(district, bs = "mrf", map = ZambiaBnd) +
+  sx(district, bs = "re") + sx(agechild)
+
+zmsud <- bayesx(f, family = "gaussian", method = "STEP",
+  algorithm = "cdescent1", startmodel = "empty", CI = "MCMCbootstrap",
+  bootstrapsamples = 1000, iterations = 10000, step = 10, seed = 123,
+  data = ZambiaNutrition, outfile = "~/tmp")
+
+
 @
 which actually produces the model output of the first model (\code{zms}) again.
 
