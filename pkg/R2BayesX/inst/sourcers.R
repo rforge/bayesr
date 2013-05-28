@@ -1,18 +1,7 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 invisible(sapply(file.path(dir, list.files(dir)), source))
 
-b <- read.bayesx.output('~/tmp1')
-
-
-f <- stunting ~ memployment + urban + gender +
-  sx(meducation, bs = "factor") + sx(mbmi, dfstart = 2) +
-  sx(district, bs = "mrf", map = ZambiaBnd, dfstart = 5) +
-  sx(district, bs = "re", dfstart = 5) + sx(agechild, dfstart = 2)
-
-zmsud <- bayesx(f, family = "gaussian", method = "STEP",
-  algorithm = "cdescent1", startmodel = "userdefined", CI = "MCMCbootstrap",
-  bootstrapsamples = 99, iterations = 10000, step = 10, seed = 123,
-  data = ZambiaNutrition, outfile = "~/tmp")
+b <- read.bayesx.output("~/tmp1")
 
 
 

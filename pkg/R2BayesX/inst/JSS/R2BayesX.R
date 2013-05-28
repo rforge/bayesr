@@ -511,7 +511,16 @@ plot(fm2, term = "sx(id)", map = BeechBnd,
 
 
 ###################################################
-### code chunk number 70: cache-zambia-model-step
+### code chunk number 70: fit-zambia-model-step-03 (eval = FALSE)
+###################################################
+## zmsccb2 <- bayesx(f, family = "gaussian", method = "STEP",
+##   algorithm = "cdescent1", startmodel = "empty", CI = "MCMCbootstrap",
+##   bootstrapsamples = 1000, iterations = 10000, step = 10, seed = 123,
+##   data = ZambiaNutrition)
+
+
+###################################################
+### code chunk number 71: cache-zambia-model-step
 ###################################################
 if(file.exists("zambia-model-step.rda")) {
 load("zambia-model-step.rda")
@@ -522,22 +531,26 @@ f <- stunting ~ memployment + urban + gender +
   sx(district, bs = "mrf", map = ZambiaBnd) + sx(district, bs = "re")
 zms <- bayesx(f, family = "gaussian", method = "STEP",
   algorithm = "cdescent1", startmodel = "empty", seed = 123,
-  data = ZambiaNutrition)
+  data = ZambiaNutrition, outfile = "~/tmp")
 zmsccb <- bayesx(f, family = "gaussian", method = "STEP",
   algorithm = "cdescent1", startmodel = "empty", CI = "MCMCselect",
   iterations = 10000, step = 10, seed = 123, data = ZambiaNutrition)
-save(zms, zmsccb, file = "zambia-model-step.rda")
+zmsccb2 <- bayesx(f, family = "gaussian", method = "STEP",
+  algorithm = "cdescent1", startmodel = "empty", CI = "MCMCbootstrap",
+  bootstrapsamples = 99, iterations = 10000, step = 10, seed = 123,
+  data = ZambiaNutrition, outfile = "~/tmp")
+save(zms, zmsccb, zmsccb2, file = "zambia-model-step.rda")
 }
 
 
 ###################################################
-### code chunk number 71: zambia-model-step-summary
+### code chunk number 72: zambia-model-step-summary
 ###################################################
 summary(zms)
 
 
 ###################################################
-### code chunk number 72: fit-zambia-model-step-02-show (eval = FALSE)
+### code chunk number 73: fit-zambia-model-step-02-show (eval = FALSE)
 ###################################################
 ## zmsccb <- bayesx(f, family = "gaussian", method = "STEP",
 ##   algorithm = "cdescent1", startmodel = "empty", CI = "MCMCselect",
@@ -545,13 +558,13 @@ summary(zms)
 
 
 ###################################################
-### code chunk number 73: zambia-model-step-summary-2
+### code chunk number 74: zambia-model-step-summary-2
 ###################################################
 summary(zmsccb)
 
 
 ###################################################
-### code chunk number 74: fit-zambia-model-step-05 (eval = FALSE)
+### code chunk number 75: fit-zambia-model-step-05 (eval = FALSE)
 ###################################################
 ## f <- stunting ~ memployment + urban + gender +
 ##   sx(meducation, bs = "factor") + sx(mbmi, dfstart = 2) +
@@ -560,7 +573,7 @@ summary(zmsccb)
 
 
 ###################################################
-### code chunk number 75: fit-zambia-model-step-06 (eval = FALSE)
+### code chunk number 76: fit-zambia-model-step-06 (eval = FALSE)
 ###################################################
 ## zmsud <- bayesx(f, family = "gaussian", method = "STEP",
 ##   algorithm = "cdescent1", startmodel = "userdefined", CI = "MCMCselect",
@@ -568,26 +581,26 @@ summary(zmsccb)
 
 
 ###################################################
-### code chunk number 76: appendix-s1
+### code chunk number 77: appendix-s1
 ###################################################
 bayesx.construct(sx(mbmi))
 
 
 ###################################################
-### code chunk number 77: appendix-s2
+### code chunk number 78: appendix-s2
 ###################################################
 bayesx.construct(s(mbmi, bs = "ps"))
 
 
 ###################################################
-### code chunk number 78: appendix-te (eval = FALSE)
+### code chunk number 79: appendix-te (eval = FALSE)
 ###################################################
 ## sx(mbmi, agechild, bs = "te")
 ## te(mbmi, agechild, bs = "ps", k = 7)
 
 
 ###################################################
-### code chunk number 79: appendix-mrf (eval = FALSE)
+### code chunk number 80: appendix-mrf (eval = FALSE)
 ###################################################
 ## sx(district, bs = "mrf", map = ZambiaBnd)
 ##  s(district, bs = "mrf", xt = list(map = ZambiaBnd))

@@ -253,7 +253,7 @@ search.bayesx.tex <- function(x)
     fcn <- resplit(fcn)
     fcn <- sub(" ", "", fcn)
     eval(parse(text=paste("rval$", fcn, "<-", fc, sep = "")))
-    step.final.model <- gsub("f\\(", "s\\(", resplit(stepgrep))
+    step.final.model <- gsub("f\\(", "sx\\(", resplit(stepgrep))
     step.final.model <- gsub("gamma0", "\\(Intercept\\)", step.final.model)
     rval$step.final.model <- step.final.model
   }
@@ -274,7 +274,7 @@ search.bayesx.tex <- function(x)
     if(length(id <- grep("\\$f_\\{", stepfiles))) {
       SmoothHyp <- NULL; ok <- FALSE
       for(i in 1:length(id)) {
-        term <- paste("s", collect(stepfiles[id[i]], start = "(", stop = ")"), sep = "")
+        term <- paste("sx", collect(stepfiles[id[i]], start = "(", stop = ")"), sep = "")
         nextpart <- strsplit(stepfiles[id[i] + 1], "=")[[1L]]
         if(length(nextpart) == 4L) {
           ok <- TRUE

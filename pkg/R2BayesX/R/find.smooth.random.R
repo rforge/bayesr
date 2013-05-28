@@ -208,16 +208,26 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name, minf
             }
             if(length(df <- grep("_df.", af, value = TRUE))) {
               dfd <- read.table(file.path(dir, df[1L]), header = TRUE)
+              colnames(dfd) <- gsub("df_value", "df", colnames(dfd), fixed = TRUE)
+              colnames(dfd) <- gsub("sp_value", "lambda", colnames(dfd), fixed = TRUE)
+              rownames(dfd) <- NULL
+              if(length(grep("_random", df, fixed = TRUE))) {
+                colnames(dfd) <- gsub("value", "df", colnames(dfd), fixed = TRUE)
+              }
               attr(x, "df") <-  dfd
               if(length(grep("selected", names(dfd)))) {
-                sl <- dfd[dfd$selected == "+", ]
-                if(length(grep("_random", df, fixed = TRUE))) {
-                  sl <- data.frame("df_value" = sl$value, "sp_value" = NA,
-                    "frequency" = sl$frequency, "selected" = sl$selected)
+                if(any(grepl("+", as.character(dfd$selected)))) {
+                  sl <- dfd[dfd$frequency == max(dfd$frequency), ]
+                  if(nrow(sl) > 0) {
+                    if(length(grep("_random", df, fixed = TRUE))) {
+                      sl <- data.frame("df" = sl$df, "lambda" = NA,
+                        "frequency" = sl$frequency, "selected" = sl$selected)
+                    }
+                    sl <- sl[, !(names(sl) %in% "selected")] 
+                    rownames(sl) <- attr(x, "specs")$label
+                    SmoothHyp <- rbind(SmoothHyp, as.matrix(sl))
+                  }
                 }
-                sl <- sl[, !(names(sl) %in% "selected")] 
-                rownames(sl) <- attr(x, "specs")$label
-                SmoothHyp <- rbind(SmoothHyp, as.matrix(sl))
               }
             }
           }

@@ -24,6 +24,7 @@ export(
   "DIC",
   "samples",
   "GRstats",
+  "term.freqs",
 
   ## BayesX extractor functions
   "bayesx_logfile",       

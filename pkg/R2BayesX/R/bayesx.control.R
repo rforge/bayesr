@@ -92,6 +92,8 @@ bayesx.control <- function(model.name = "bayesx.estim", family = "gaussian", met
       CI <- paste("MCMC", CI, sep = "")
     }
     if(!is.null(CI) && (CI == "MCMCselect" || CI == "MCMCbootstrap")) {
+      if(CI == "MCMCbootstrap")
+        burnin <- NULL
       control$iterations <- iterations
       control$burnin <- burnin
       control$step <- step

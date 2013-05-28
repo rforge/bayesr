@@ -104,20 +104,19 @@ library("R2BayesX")
 
   \medskip
 
-
-  The STEP method optimizes some goodness of fit criterion (e.g. AIC) using model optimization
-  heuristics as described in
-
+  The STEP method optimizes some goodness of fit criterion (e.g.\ AIC) using model optimization
+  heuristics as described in \medskip \\
   Belitz C, Lang S (2008). "Simultaneous Selection of Variables and Smoothing Parameters in
   Structured Additive Regression Models." \emph{Computational Statistics \& Data Analysis},
-  \textbf{53}, 61--81.
-
+  \textbf{53}, 61--81. \medskip \\
   The algorithms are designed such that they provide good or near optimal models (in terms of the
   goodness of fit criterion) within a small number of iterations to minimize computing time. The 
   drawback of this procedure is that our search path contains only a few models such that
   posterior inclusion probabilities are generally not available. However, the bootstrap approach 
   for obtaining unconditional confidence bands also provides a frequency table of the relative
-  frequency each model term has been selected during the bootstrap iterations.
+  frequency each model term has been selected during the bootstrap iterations. We have now
+  implemented an extractor function \code{term.freqs()} to make these frequency tables easily
+  available. We have also added a small example in Section~6.3 using the bootstrap option.
 
 
 \item \textbf{Not being able to store large objects is an issue
@@ -246,9 +245,17 @@ library("R2BayesX")
   \medskip
 
   Yes, we could compute $\tau_1^2(\tau_1^2 + \tau_2^2)$, but these are two different variances,
-  one of a Markov random field and the other of an $i.i.d.$ random effect. We probably cannot
-  really distinguish between these two effects anyway, therefore, we usually do not put too much
-  weight on this and prefer a graphical comparison.
+  one of a Markov random field and the other of an $i.i.d.$ random effect. As has been shown in \medskip \\
+  Fahrmeir L, Lang S (2001). "Bayesian Inference for Generalized Additive Mixed Models based
+  on Markov Random Field Priors." \emph{Journal of the Royal Statistical Society C}, \textbf{50},
+  201--220. \medskip \\
+  the unstructured and the structured spatial effect can generally not be separated and are often
+  estimated with bias. Only the sum of both effects is estimated satisfactorily. This means in
+  practice that only the complete spatial effect should be interpreted and nothing (or not much) can
+  be said about the relative importance of both effects. Exception are cases where one of both
+  effects (either the unstructured or the structured effect) is estimated practically zero and the
+  other effect clearly dominates. Therefore, we usually do not put too much weight on this and
+  prefer a graphical comparison. We have added these explanations in Section~6.1, too.
 
 
 \item \textbf{On page 22, autocorrelation is one measure for assessing
@@ -494,7 +501,12 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
 
   \medskip
 
-  \fixme{Stefan, do you have examples with large data/models with large number of model terms?}
+  \pkg{BayesX} is able to handle rather complex models with several hundred thousand of
+  observations. E.g., we have successfully fitted a large model using precipitation data with more
+  than a million observations. See also \medskip \\
+  Nikolaus Umlauf, Georg Mayr, Jakob Messner, and Achim Zeileis. Why does it always rain on me? A
+  spatio-temporal analysis of precipitation in Austria. \emph{Austrian Journal of Statistics},
+  \textbf{41}(1):81--92, 2012.
 
 
 \item \textbf{Page 20: I'm not a fan of an enormous piece of R output breaking

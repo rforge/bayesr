@@ -1163,16 +1163,28 @@ posterior means compared to the rest of the districts. Then the map is dominated
 these outlying districts. A more informative map may be obtained by restricting the range of the
 plotting area using the range option. For the Zambia data the corresponding random effects are
 comparably symmetric and without outlying districts such that the plot function with default options
-produces fairly informative maps. To demonstrate the \code{range} option we draw the unstructered random
-effect and the legend range within the same range as the structured random effect, yielding
+produces fairly informative maps. To demonstrate the \code{range} option we draw the unstructured
+random effect and the legend range within the same range as the structured random effect, yielding
 the right panel of Figure~\ref{fig:zambia-district-structured-unstructured}:
 <<zambia-district-example-redraw, echo=TRUE, eval=FALSE>>=
 plot(zm, term = "sx(district):re", map = ZambiaBnd,
   range = c(-0.32, 0.32), lrange = c(-0.32, 0.32))
 @ %$
-Using the same scale for both the structured and the unstructered effect is useful for
+Using the same scale for both the structured and the unstructured effect is useful for
 comparison. In most cases one of the two effects clearly dominates the other. In our case the
 structured spatially correlated effect clearly exceeds the unstructured effect.
+
+In addition, care has to be taken interpreting structured and unstructured spatial effects. As has
+been shown in \citet{R2BayesX:Fahrmeir+Lang:2001} the unstructured and the structured spatial effect
+can generally not be separated and are often estimated with bias. Only the sum of both effects is
+estimated satisfactorily. This means in practice that only the complete spatial effect should be
+interpreted and nothing (or not much) can be said about the relative importance of both effects.
+Exception are cases where one of both effects (either the unstructured or the structured effect) is
+estimated practically zero and the other effect clearly dominates as shown in this example. Whenever
+a structured and unstructured spatial effect is estimated it is possible to plot the sum of both
+effects by extending the corresponding term name with \code{":total"}, i.e., similar to the
+\code{":mrf"} and \code{":re"} extension in the above.\footnote{for convenience, the plot of the
+total spatial effect is not shown here.}
 
 \begin{figure}[!t]
 \setkeys{Gin}{width=\textwidth}
@@ -1561,6 +1573,11 @@ zmsccb <- bayesx(f, family = "gaussian", method = "STEP",
   algorithm = "cdescent1", startmodel = "empty", CI = "MCMCselect",
   iterations = 10000, step = 10, seed = 123, data = ZambiaNutrition)
 @
+<<fit-zambia-model-step-03, echo=FALSE, eval=FALSE>>=
+zmsccb2 <- bayesx(f, family = "gaussian", method = "STEP",
+  CI = "MCMCbootstrap", bootstrapsamples = 99, iterations = 10000,
+  step = 10, seed = 123, data = ZambiaNutrition)
+@
 <<cache-zambia-model-step, echo=FALSE, eval=TRUE, results=hide>>=
 if(file.exists("zambia-model-step.rda")) {
 load("zambia-model-step.rda")
@@ -1568,7 +1585,8 @@ load("zambia-model-step.rda")
 data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
 <<fit-zambia-model-step-01>>
 <<fit-zambia-model-step-02>>
-save(zms, zmsccb, file = "zambia-model-step.rda")
+<<fit-zambia-model-step-03>>
+save(zms, zmsccb, zmsccb2, file = "zambia-model-step.rda")
 }
 @
 where argument \code{algorithm} chooses the selection algorithm and \code{startmodel} the start
@@ -1598,7 +1616,20 @@ which results in the following summary
 summary(zmsccb)
 @
 It is also possible to obtain unconditional confidence bands by setting \code{CI = "MCMCbootstrap"},
-which additionally considers the uncertainty due to model selection.
+which additionally considers the uncertainty due to model selection. The model is specified e.g.\ by
+<<fit-zambia-model-step-03-show, echo=TRUE, eval=FALSE>>=
+<<fit-zambia-model-step-03>>
+@
+The bootstrap approach for obtaining unconditional confidence bands also provides the relative
+frequencies each model term has been selected during the bootstrap iterations. The frequency tables
+can be extracted using function \fct{term.freqs}, e.g.\ for the effect of the body mass index of
+the mother the frequency table is extracted by
+<<zambia-model-step-freqs, echo=TRUE, eval=TRUE>>=
+term.freqs(zmsccb2, term = "sx(mbmi)")
+@
+showing that a linear representation of that term with one degrees of freedom has been selected 73
+times by the algorithm, i.e., as in the above, the linear effect for variable \code{mbmi} is
+selected in the final model.
 
 Another variation of this model would be to start from a \code{"userdefined"} instead of an \code{"empty"}
 \code{startmodel} (see also Table~\ref{tab:control} for further options). In the

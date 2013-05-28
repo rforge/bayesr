@@ -28,12 +28,12 @@
         if(!is.null(txt) && txt != "") {
           if(mfn[i] != "step.final.model")
             cat(mfn[i], "=", gsub('\"', "", txt, fixed = TRUE), " ")
-          else {
-            cat("\n\n")
-            cat("Stepwise final model:\n")
-            cat(gsub('\"', "", txt, fixed = TRUE))
-            cat("\n\n")
-          }
+#          else {
+#            cat("\n\n")
+#            cat("Stepwise final model:\n")
+#            cat(gsub('\"', "", txt, fixed = TRUE))
+#            cat("\n\n")
+#          }
         }
       }
       if(i == step) {
