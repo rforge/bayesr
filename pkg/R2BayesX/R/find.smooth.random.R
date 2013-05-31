@@ -23,6 +23,7 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name, minf
       for(res in resfiles) {
         cxbs <- NULL
         x <- df2m(read.table(file.path(dir, res), header = TRUE))
+        x <- x[, !grepl("pstd", colnames(x), fixed = TRUE)]
         dimx <- s4dim(x)
         if(sum(x[,(dimx + 1L):ncol(x)], na.rm = TRUE) != 0) {
           colnx <- colnames(x)
