@@ -551,7 +551,10 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
 
   \medskip
 
-  \fixme{Stefan, can you add a sentence here?}
+  The number of iterations are chosen such that the samples after thinning are (nearly)
+  uncorrelated. Hence the number of iterations depend primarily on the mixing behavior of the
+  samples. The mixing behavior depends primarily on the complexity of the model and the amount of
+  correlations among different model terms. We have added more information now.
 
 
 \item \textbf{Bottom of page 23: Most users would probably attack the 'verbose' option
@@ -578,12 +581,7 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
 
   \medskip
 
-  \fixme{Niki, some half-sentence seems to have been forgotten/lost here. The second
-  sentence starts with ``In the userdefined case'' but this is not concluded before
-  the third sentence ``Besides the default\dots'' starts.}
-
-  \fixme{Stefan, how to define userdefined models? We need to add some more explanation in
-  Section 6.3.}
+  Done.
 
 
 \item \textbf{Table 7: This should include the \code{acf=TRUE} option used in Figure 7.}

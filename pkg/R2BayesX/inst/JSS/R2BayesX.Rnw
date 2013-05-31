@@ -1233,7 +1233,8 @@ and maximum autocorrelation of all parameters of the model (right panel).}
 Autocorrelations for all lags should be close to zero as is mostly the case in our example. See
 Figure~\ref{fig:zambia-autocorr}, for the autocorrelation plots. The plot of maximum
 autocorrelations over all model parameters suggests to use a larger number of iterations in a final
-run (e.g., 22000 or even 32000 iterations).
+run (e.g., 22000 or even 32000 iterations) to improve the mixing behavior, i.e., the number of
+iterations should be chosen such that the samples after thinning are (nearly) uncorrelated.
 
 Convergence can also be checked, e.g., by running multiple chains or cores. A model using two
 chains can be estimated by
