@@ -156,6 +156,8 @@ find.fixed.effects <- function(dir, files, data, response, eta, model.name, rval
           vc <- matrix(FixedEffects[rownames(FixedEffects) == tv,], nrow = 1L)
           x <- cbind(x, x %*% vc) 
           x <- x[order(x[,1L]), ]
+          jj <- which(apply(x, 1, function(x) { all(x == 0) }))
+          x <- x[-jj, ]
           if(!is.matrix(x))
             x <- matrix(x, nrow = 1L)
           colnames(x) <- rep(c(tv, cF), length.out = ncol(x))

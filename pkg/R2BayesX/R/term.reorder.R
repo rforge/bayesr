@@ -8,7 +8,9 @@ term.reorder <- function(x, info)
     nt <- rep(NA, ni)
     taken <- NULL
     for(k in 1L:ni) {
-      term <- eval(parse(text = info[k]))
+      pt <- try(parse(text = info[k]), silent = TRUE)
+      if(inherits(pt, "try-error")) next
+      term <- eval(pt)
       if(is.null(term$term)) next
       if(!is.null(term$by) && term$by != "NA")
         term$term <- paste(term$term, ":", term$by, sep = "")

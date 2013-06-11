@@ -78,14 +78,16 @@ x2df <- function(x, rn = FALSE)
               x[[i]] <- chacol(x[[i]])
             x[[i]] <- as.data.frame(x[[i]])
             class(x[[i]]) <- c(cx, class(x[[i]]))
-            for(k in 1L:length(nxa)) 
+            for(k in 1L:length(nxa))
               if(all(nxa[k] != c("dim", "dimnames", "class", "names", "row.names")))
                 attr(x[[i]], nxa[k]) <- xattr[[k]]
           }
         } 
       }
-    if(length(x) < 2L)
-      x <- x[[1L]]
+    if(length(x) < 2L) {
+      if(is.null(attr(x, "specs")$is.factor))
+        x <- x[[1L]]
+    }
     } else {
       if(!is.null(dim(x))) {
         xattr <- attributes(x)

@@ -74,25 +74,28 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name, minf
           term.call <- NULL
           if(!is.null(info)) {
             for(k in 1L:length(info)) {
-              term <- eval(parse(text = info[k]))
-              if(!is.null(term$term)) {
-                if(!is.null(term$israndom) && term$israndom) {
-                  term2 <- gsub("f(", "r(", term$term, fixed = TRUE)
-                  term2 <- gsub("s(", "r(", term2, fixed = TRUE)
-                  if(length(grep("sx(", term$term, fixed = TRUE))) {
-                    term2 <- gsub("r(", "sx(", term2, fixed = TRUE)
-                    labelx <- gsub("r(", "sx(", labelx, fixed = TRUE)
+              pt <- try(parse(text = info[k]), silent = TRUE)
+              if(!inherits(pt, "try-error")) {
+                term <- eval(pt)
+                if(!is.null(term$term)) {
+                  if(!is.null(term$israndom) && term$israndom) {
+                    term2 <- gsub("f(", "r(", term$term, fixed = TRUE)
+                    term2 <- gsub("s(", "r(", term2, fixed = TRUE)
+                    if(length(grep("sx(", term$term, fixed = TRUE))) {
+                      term2 <- gsub("r(", "sx(", term2, fixed = TRUE)
+                      labelx <- gsub("r(", "sx(", labelx, fixed = TRUE)
+                    }
+                  } else {
+                    term2 <- gsub("f(", "s(", term$term, fixed = TRUE)
+                    term2 <- gsub("sx(", "s(", term$term, fixed = TRUE)
                   }
-                } else {
-                  term2 <- gsub("f(", "s(", term$term, fixed = TRUE)
-                  term2 <- gsub("sx(", "s(", term$term, fixed = TRUE)
-                }
-                tl <- gsub("sx(", "s(", make.label(cx, xnam, dimx, NULL), fixed = TRUE)
-                if(rmf(term2) == rmf(tl)) {
-                  labelx <- term$term
-                  term.call <- term$call
-                  if(!is.null(vx))
-                    labelx <- paste(labelx, ":", vx, sep = "")
+                  tl <- gsub("sx(", "s(", make.label(cx, xnam, dimx, NULL), fixed = TRUE)
+                  if(rmf(term2) == rmf(tl)) {
+                    labelx <- term$term
+                    term.call <- term$call
+                    if(!is.null(vx))
+                      labelx <- paste(labelx, ":", vx, sep = "")
+                  }
                 }
               }
             }

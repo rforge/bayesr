@@ -1,7 +1,18 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 invisible(sapply(file.path(dir, list.files(dir)), source))
 
-b <- read.bayesx.output("~/tmp1")
+## Models
+b <- bayesx(lgd ~ collateral + seniority + cash + fixedassets +
+  liquidassets + realestate + risk1y + sx(ddate2), data = d, method = "MCMC")
+
+
+b <- bayesx(lgd ~ collateral + seniority + cash + fixedassets + liquidassets + realestate + facility +
+  risk1y + sx(ddate2) + sx(capur), data = d, method = "HMCMC", outfile = "~/tmp1", overwrite = TRUE)
+
+
+
+
+
 
 
 
