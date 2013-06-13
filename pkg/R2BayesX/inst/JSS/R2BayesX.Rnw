@@ -502,7 +502,7 @@ described above, as well as setting up the necessary temporary directories and d
 program through a call to function \fct{system}. The output files returned by the binary are imported
 into \proglang{R} using function \fct{read.bayesx.output}.
 Using these helper functions it is also possible to run and read already existing \pkg{BayesX}
-program and output files, see Section~\ref{sec:addoptions} and the \pkg{R2BayesX} manuals for a
+program and output files, see Appendix~\ref{appendix:addoptions} and the \pkg{R2BayesX} manuals for a
 detailed description. The object returned by function \fct{read.bayesx.output} is a list of class
 \class{bayesx}, for which a set of base \proglang{R} functions and methods described in
 Table~\ref{tab:funmethods}, amongst others, is available. The returned fitted model term objects also
@@ -535,7 +535,7 @@ the following additions: (1)~The \code{data} can not only be provided as a
 \class{data.frame} but it is also possible to provide a character string
 with a path to a dataset stored on disc, which can be leveraged to avoid reading very
 large data files into \proglang{R} just to write them out again for \pkg{BayesX}.
-An example is given in Section~\ref{sec:addoptions}. (2)~Additional contrast specifications for
+An example is given in Appendix~\ref{appendix:addoptions}. (2)~Additional contrast specifications for
 factor variables can be passed to argument \code{contrasts}. Using factors, we recommend deviation
 or effect coding (see function \fct{contr.sum}) rather than the usual dummy coding of factors as it
 typically improves  convergence of estimation algorithms used in \pkg{BayesX}.
@@ -845,94 +845,6 @@ in function \fct{sx}. To give an example, the varying coefficient terms in
 $\eta = \ldots + g_1(z_1)z + g_2(z_2)z + \gamma_0 + \gamma_1 z + \ldots$ are not identified, whereas
 in $\eta = \ldots + g_1(z_1)z + \gamma_0 + \ldots$, the varying coefficient term is identifiable. In
 the first case, centering is necessary, in the second case, it is not.
-
-
-\subsection[Additional options]{Additional options} \label{sec:addoptions}
-
-For practical purposes fitting models with function \fct{bayesx} is typically sufficient. However,
-the interfacing functions that are called internally within \fct{bayesx} can also be used
-independently. This could be useful for two reasons: First, users may want to use already
-existing \pkg{BayesX} program files, and second, there might be a need for automated
-importing of previously generated \pkg{BayesX} output files into \proglang{R} for further analysis.
-
-Function \fct{run.bayesx}, included in package \pkg{BayesXsrc}, is used to
-run an arbitrary \pkg{BayesX} program
-file. The arguments of \fct{run.bayesx} are
-\begin{Code}
-  run.bayesx(prg = NULL, verbose = TRUE, ...)
-\end{Code}
-where \code{prg} is a character string with the path to a program file to be executed. If argument
-\code{prg} is not provided \pkg{BayesX} will start in batch mode. During processing of \pkg{BayesX}
-several pieces of information will be printed to the \proglang{R} console if \code{verbose = TRUE}.
-Further arguments can be passed to function \fct{system}, which calls the \pkg{BayesX} binary, using
-the ``\code{...}'' argument. The function returns a list including the log-file returned by
-\pkg{BayesX} as well as information on the total runtime.
-
-Model output files are imported using function
-\begin{Code}
-  read.bayesx.output(dir, model.name = NULL)
-\end{Code}
-Here, \code{dir} is again a directory and \code{model.name} is the name of the model the files are
-imported for, also provided as character strings. Note that the function will search for all
-different \pkg{BayesX}-estimated models in the declared directory if argument \code{model.name} is set to
-\code{NULL}. The returned object is also of class \class{bayesx}, i.e., all the functions and
-methods described in Table~\ref{tab:funmethods} may be applied.
-
-Another noteworthy feature of package \pkg{R2BayesX} is the internal handling of data. \pkg{BayesX}
-uses numerically efficient algorithms including sparse matrix computations which in principle allow
-to estimate models using very large datasets. Moreover, the number of different observations for
-particular covariates is usually much smaller than the total number of observations. That is, the
-output files returned by the binary only include estimates for unique covariate values. Since these
-files typically reserve much less disc space, importing the fitted model objects into \proglang{R}
-using \fct{read.bayesx.output} is straightforward in most cases, whereas handling the complete
-dataset within \proglang{R} may be more burdensome when provided to model fitting functions that do
-not account for special matrix structures. As mentioned in Section~\ref{subsec:processing}, users can exploit this by providing a character string
-to argument \code{data} in function
-\fct{bayesx}, which includes the path to a dataset instead of an \proglang{R} data object. As a
-consequence, this dataset will not be loaded within \proglang{R} and is only used internally by the
-\pkg{BayesX} binary. To give an example, we generate a large dataset that might produce problems
-with \proglang{R}'s memory allocation using a model fitting function, especially if the model
-contains a large number of parameters. Therefore, we store the data on disc in the temporary folder
-of the running session with
-<<large-data, echo=TRUE, eval=FALSE>>=
-set.seed(321)
-file <- paste(tempdir(), "/data.raw", sep = "")
-n <- 5e+06
-dat <- data.frame(x = rep(runif(1000, -3, 3), length.out = n))
-dat$y <- with(dat, sin(x) + rnorm(n, sd = 2))
-write.table(dat, file = file, quote = FALSE, row.names = FALSE)
-@
-This produces a dataset of approximately 170Mb with only 1000 unique observations for covariate
-\code{x}. The path to the dataset is stored in object \code{file} and is provided to argument
-\code{data} in the function call
-<<large-data-01, echo=TRUE, eval=FALSE>>=
-b <- bayesx(y ~ sx(x), family = "gaussian", method = "MCMC",
-  iterations = 3000, burnin = 1000, step = 2, predict = FALSE,
-  data = file, seed = 123)
-@
-For illustration purposes, the number of iterations is only set to 3000. Note that argument
-\code{predict} is set to \code{FALSE}, i.e., only output files of estimated effects will be returned,
-otherwise an expanded dataset using all observations would be written in the output directory, also
-containing the data used for estimation. The runtime of this example is about 4 1/2 hours
-\begin{Schunk}
-\begin{Sinput}
-R> bayesx_runtime(b)
-\end{Sinput}
-\begin{Soutput}
-    user   system  elapsed
-16442.12     7.56 16461.33
-\end{Soutput}
-\end{Schunk}
-on a Linux system with an Intel 2.33GHz Dual Core processor, while the returned object \code{b}
-uses less than half a megabyte of memory:
-\begin{Schunk}
-\begin{Sinput}
-R> print(object.size(b), units = "Mb")
-\end{Sinput}
-\begin{Soutput}
-0.4 Mb
-\end{Soutput}
-\end{Schunk}
 
 
 \section{STAR models in practice} \label{sec:illustrations}
@@ -1932,6 +1844,94 @@ two specifications lead to identical results when passed to \fct{bayesx.construc
 sx(district, bs = "mrf", map = ZambiaBnd)
  s(district, bs = "mrf", xt = list(map = ZambiaBnd))
 @
+
+
+\section[Additional options]{Additional options} \label{appendix:addoptions}
+
+For practical purposes fitting models with function \fct{bayesx} is typically sufficient. However,
+the interfacing functions that are called internally within \fct{bayesx} can also be used
+independently. This could be useful for two reasons: First, users may want to use already
+existing \pkg{BayesX} program files, and second, there might be a need for automated
+importing of previously generated \pkg{BayesX} output files into \proglang{R} for further analysis.
+
+Function \fct{run.bayesx}, included in package \pkg{BayesXsrc}, is used to
+run an arbitrary \pkg{BayesX} program
+file. The arguments of \fct{run.bayesx} are
+\begin{Code}
+  run.bayesx(prg = NULL, verbose = TRUE, ...)
+\end{Code}
+where \code{prg} is a character string with the path to a program file to be executed. If argument
+\code{prg} is not provided \pkg{BayesX} will start in batch mode. During processing of \pkg{BayesX}
+several pieces of information will be printed to the \proglang{R} console if \code{verbose = TRUE}.
+Further arguments can be passed to function \fct{system}, which calls the \pkg{BayesX} binary, using
+the ``\code{...}'' argument. The function returns a list including the log-file returned by
+\pkg{BayesX} as well as information on the total runtime.
+
+Model output files are imported using function
+\begin{Code}
+  read.bayesx.output(dir, model.name = NULL)
+\end{Code}
+Here, \code{dir} is again a directory and \code{model.name} is the name of the model the files are
+imported for, also provided as character strings. Note that the function will search for all
+different \pkg{BayesX}-estimated models in the declared directory if argument \code{model.name} is set to
+\code{NULL}. The returned object is also of class \class{bayesx}, i.e., all the functions and
+methods described in Table~\ref{tab:funmethods} may be applied.
+
+Another noteworthy feature of package \pkg{R2BayesX} is the internal handling of data. \pkg{BayesX}
+uses numerically efficient algorithms including sparse matrix computations which in principle allow
+to estimate models using very large datasets. Moreover, the number of different observations for
+particular covariates is usually much smaller than the total number of observations. That is, the
+output files returned by the binary only include estimates for unique covariate values. Since these
+files typically reserve much less disc space, importing the fitted model objects into \proglang{R}
+using \fct{read.bayesx.output} is straightforward in most cases, whereas handling the complete
+dataset within \proglang{R} may be more burdensome when provided to model fitting functions that do
+not account for special matrix structures. As mentioned in Section~\ref{subsec:processing}, users can exploit this by providing a character string
+to argument \code{data} in function
+\fct{bayesx}, which includes the path to a dataset instead of an \proglang{R} data object. As a
+consequence, this dataset will not be loaded within \proglang{R} and is only used internally by the
+\pkg{BayesX} binary. To give an example, we generate a large dataset that might produce problems
+with \proglang{R}'s memory allocation using a model fitting function, especially if the model
+contains a large number of parameters. Therefore, we store the data on disc in the temporary folder
+of the running session with
+<<large-data, echo=TRUE, eval=FALSE>>=
+set.seed(321)
+file <- paste(tempdir(), "/data.raw", sep = "")
+n <- 5e+06
+dat <- data.frame(x = rep(runif(1000, -3, 3), length.out = n))
+dat$y <- with(dat, sin(x) + rnorm(n, sd = 2))
+write.table(dat, file = file, quote = FALSE, row.names = FALSE)
+@
+This produces a dataset of approximately 170Mb with only 1000 unique observations for covariate
+\code{x}. The path to the dataset is stored in object \code{file} and is provided to argument
+\code{data} in the function call
+<<large-data-01, echo=TRUE, eval=FALSE>>=
+b <- bayesx(y ~ sx(x), family = "gaussian", method = "MCMC",
+  iterations = 3000, burnin = 1000, step = 2, predict = FALSE,
+  data = file, seed = 123)
+@
+For illustration purposes, the number of iterations is only set to 3000. Note that argument
+\code{predict} is set to \code{FALSE}, i.e., only output files of estimated effects will be returned,
+otherwise an expanded dataset using all observations would be written in the output directory, also
+containing the data used for estimation. The runtime of this example is about 4 1/2 hours
+\begin{Schunk}
+\begin{Sinput}
+R> bayesx_runtime(b)
+\end{Sinput}
+\begin{Soutput}
+    user   system  elapsed
+16442.12     7.56 16461.33
+\end{Soutput}
+\end{Schunk}
+on a Linux system with an Intel 2.33GHz Dual Core processor, while the returned object \code{b}
+uses less than half a megabyte of memory:
+\begin{Schunk}
+\begin{Sinput}
+R> print(object.size(b), units = "Mb")
+\end{Sinput}
+\begin{Soutput}
+0.4 Mb
+\end{Soutput}
+\end{Schunk}
 
 
 

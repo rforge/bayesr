@@ -215,7 +215,12 @@ library("R2BayesX")
   introduces the STAR models and then gives the motivating
   example. I think the R commands in the motivating example
   can be simplified (on the initial reading, I skipped most
-  of the command lines).}  
+  of the command lines).}
+
+  \medskip
+
+  \fixme{Achim, is that really useful? Also, I cannot see where we can skip code in the example?
+    We could write the formula within the \code{bayesx()} call, but that is not really less code!}
 
 
 \item \textbf{State in the caption of Figure 1 that data (both outcomes
@@ -348,7 +353,7 @@ MunichGra <- read.gra(file.path(url, "munich.graph"))
 f <- rent ~ sx(location, bs = "mrf", map = MunichGra) +
   sx(year) + sx(floor.size) + Gute.Wohnlage + Beste.Wohnlage +
   Keine.Wwv + Keine.Zh + Kein.Badkach  + Besond.Bad + Gehobene.Kueche +
-  zim1 + zim2 + zim3 + zim4 + zim5 + zim6 -1
+  zim1 + zim2 + zim3 + zim4 + zim5 + zim6
 
 b <- bayesx(f, data = Munich, seed = 1234)
 summary(b)
@@ -398,7 +403,7 @@ method = MCMC  family = gaussian  iterations = 12000  step = 10
 
   \medskip
 
-  \fixme{Achim, not sure if we should just drop this point and refer to the above point?}
+  \fixme{Achim, not sure if we should just drop this point and refer to the point above?}
 
 
 \item \textbf{Would it be better in the STEP algorithm to set the quantiles to NA
@@ -683,10 +688,10 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
   (2)~implementation, (3)~application for introducing software packages. Hence, we also follow
   this setup. However, we now try to make this structure more obvious at the end of the introduction
   and verbosely encourage readers to skip forward if they are more interested in certain aspects
-  of the manuscript.
+  of the manuscript. To improve the reading flow, we have also moved Section~5.3 to the appendix,
+  since this section is probably less frequently used in practice.
   
-  \fixme{Everyone: Should we do more? I would suggest to move Section~5.3 to an appendix as this is
-  probably less frequently used in practice.}
+  \fixme{Achim, moved Section~5.3 to the appendix, is the note above enough?}
   
 \item \textbf{In its current form, the reader is simply provided with a list of options in Table 
   2--4. In my view, these tables and the empirical examples are the crux of the paper. I was able 
