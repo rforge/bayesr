@@ -185,16 +185,12 @@ is loaded with
 <<data-illustration, echo=TRUE, eval=TRUE, fig=FALSE>>=
 data("ZambiaNutrition", "ZambiaBnd", package = "R2BayesX")
 @
-The model formula is specified by
-<<formula-illustration, echo=TRUE, eval=TRUE, fig=FALSE>>=
-f <- stunting ~ sx(agechild) + sx(mbmi) +
-  sx(district, bs = "gk", map = ZambiaBnd)
-@
-%
-Finally, the model is fitted with the main model-fitting function \fct{bayesx}
+Then, the model can be fitted to a suitable formula with the main model-fitting
+function \fct{bayesx}
 <<fit-illustration, echo=TRUE, eval=FALSE, fig=FALSE>>=
-b <- bayesx(f, family = "gaussian", method = "MCMC",
-  data = ZambiaNutrition)
+b <- bayesx(stunting ~ sx(agechild) + sx(mbmi) +
+  sx(district, bs = "gk", map = ZambiaBnd),
+  family = "gaussian", method = "MCMC", data = ZambiaNutrition)
 @
 <<cache-illustration, echo=FALSE, eval=TRUE, results=hide>>=
 if(file.exists("illustration-model.rda")) {
@@ -377,13 +373,13 @@ A thorough introduction into the regression models supported by the program is a
 Software packages which have a similar Bayesian scope are the \proglang{R} package \pkg{INLA}
 \citep{R2BayesX:Rue+Martino+Chopin:2009}, \pkg{BUGS}/\pkg{WinBUGS}
 \citep{R2BayesX:BUGS:2009, R2BayesX:Lunn+Thomas+Best+Spiegelhalter:2000},
-\pkg{JAGS} \citep{R2BayesX:Plummer:2013} and \pkg{STAN} \citep{R2BayesX:stan-software:2013}.
+\pkg{JAGS} \citep{R2BayesX:Plummer:2013} and \pkg{Stan} \citep{R2BayesX:stan-software:2013}.
 While the former package is relatively similar in its workflow compared to \pkg{R2BayesX} and works
 with hierarchical Gaussian Markov random fields (GMRF), Bayesian inference is not based on MCMC
 sampling but on integrated nested Laplace approximation (INLA). This has the advantage of avoiding
 questions concerning mixing and convergence but also requires quite advanced mathematical and
 numerical tools for implementation. Moreover, complex hierarchical prior structures (such as the
-Bayesian LASSO) or models with a large number of hyperparameters are more difficult to handle in the
+Bayesian lasso) or models with a large number of hyperparameters are more difficult to handle in the
 INLA framework. In summary, \pkg{R2BayesX} and \pkg{INLA} address special model classes using
 optimized algorithms, the latter packages apply Bayesian inference using Gibbs sampling, where the
 user can in principle program a number of very complex models, also the ones covered by
@@ -1846,7 +1842,7 @@ sx(district, bs = "mrf", map = ZambiaBnd)
 @
 
 
-\section[Additional options]{Additional options} \label{appendix:addoptions}
+\section[Additional options for running BayesX]{Additional options for running \pkg{BayesX}} \label{appendix:addoptions}
 
 For practical purposes fitting models with function \fct{bayesx} is typically sufficient. However,
 the interfacing functions that are called internally within \fct{bayesx} can also be used

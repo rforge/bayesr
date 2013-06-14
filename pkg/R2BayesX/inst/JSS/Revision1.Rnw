@@ -66,29 +66,23 @@ library("R2BayesX")
   \medskip
 
   Yes, according to your recommendations we have now implemented multiple chain and core processing
-  using the functionality of the \pkg{parallel} package. The user can now start models on e.g.\ 3
-  cores with 2 chains each by typing
+  using the functionality of the \pkg{parallel} package. The user can now start models on e.g.,
+  using 3~cores with 2~chains each:
 <<eval=FALSE>>=
-  library("R2BayesX")
-
-  ## load artificial data set
-  data("GAMart")
-     
-  ## estimate model
+  data("GAMart", package = "R2BayesX")
   b <- bayesx(num ~ fac + sx(x1) + sx(x2) + sx(x3) +
     sx(long, lat, bs = "te") + sx(id, bs = "re"),
     data = GAMart, method = "MCMC", chains = 2, cores = 3)
 @
-  The object \code{b} is also of class \code{"bayesx"} for which all e.g.\ plotting and extractor
+  The object \code{b} is also of class \code{"bayesx"} for which all e.g., plotting and extractor
   functions can be applied. We have also adapted the \fct{samples} extractor function, which by
   default returns objects of class \code{"mcmc"} for a single chain or \code{"mcmc.list"} for
   multiple chains, as provided in the \pkg{coda} package. In addition, we have implemented a
-  convenience function that directly computes the Gelman and Rubin's convergence diagnostic using
-  function \code{gelman.diag()} of the \pkg{coda} package. E.g., the user may type
+  convenience function that directly computes the Gelman and Rubin convergence diagnostic using
+  function \code{gelman.diag()} from the \pkg{coda} package. E.g.
 <<eval=FALSE>>=
   GRstats(b, term = "linear-samples")
   GRstats(b, term = c("sx(x1)", "sx(long,lat)"), multivariate = TRUE)
-  ## output not shown
 @
 
 
@@ -96,7 +90,7 @@ library("R2BayesX")
   interesting, as demonstrated in Section 6.3. However,
   at the moment only the ``best" model is reported. Is
   it possible to compute the posterior model probability
-  (cf. a summary output from the RJMCMC interface in
+  (cf.\ a summary output from the RJMCMC interface in
   WinBUGS, see Lunn et al. 2008, subsection 5.1)?
   (Lunn, D. J., Best, N. and Whittaker, J. (2008)
   Generic reversible jump MCMC using graphical models,
@@ -104,24 +98,26 @@ library("R2BayesX")
 
   \medskip
 
-  The STEP method optimizes some goodness of fit criterion (e.g.\ AIC) using model optimization
-  heuristics as described in \medskip \\
-  Belitz C, Lang S (2008). "Simultaneous Selection of Variables and Smoothing Parameters in
-  Structured Additive Regression Models." \emph{Computational Statistics \& Data Analysis},
-  \textbf{53}, 61--81. \medskip \\
+  The STEP method optimizes some goodness-of-fit criterion (e.g., AIC) using model optimization
+  heuristics as described in
+  
+  Belitz C, Lang S (2008). ``Simultaneous Selection of Variables and Smoothing Parameters in
+  Structured Additive Regression Models.'' \emph{Computational Statistics \& Data Analysis},
+  \textbf{53}, 61--81.
+  
   The algorithms are designed such that they provide good or near optimal models (in terms of the
   goodness of fit criterion) within a small number of iterations to minimize computing time. The 
   drawback of this procedure is that our search path contains only a few models such that
   posterior inclusion probabilities are generally not available. However, the bootstrap approach 
   for obtaining unconditional confidence bands also provides a frequency table of the relative
-  frequency each model term has been selected during the bootstrap iterations. We have now
+  frequency with which each model term has been selected during the bootstrap iterations. We have now
   implemented an extractor function \code{term.freqs()} to make these frequency tables easily
   available. We have also added a small example in Section~6.3 using the bootstrap option.
 
 
 \item \textbf{Not being able to store large objects is an issue
   in R. How does R2BayesX scale up to cope with outputs
-  from large (e.g. spatio-temporal) models?}
+  from large (e.g., spatio-temporal) models?}
 
   \medskip
 
@@ -151,18 +147,18 @@ library("R2BayesX")
  
 
 \item \textbf{How to compute posterior summary of transformed variables
-  (e.g. posterior probability or prediction of outcome given
+  (e.g., posterior probability or prediction of outcome given
   covariates)?}
  
   \medskip
 
-  User defined summaries of parameters can be obtained by extracting samples with the extractor
-  function \fct{samples}, which can then e.g.\ be used in combination with function \fct{quantile}
+  User-defined summaries of parameters can be obtained by extracting samples with the extractor
+  function \fct{samples}, which can then be used in combination with function such as \fct{quantile}
   etc. \pkg{BayesX} does not have functionality to compute predictions at the moment, however, as a
   workaround, we have now implemented a prediction method in \proglang{R} that is based on refitting
   the initial model with weights set to zero for new observations. The method can be used in the
-  same fashion as other commonly used prediction methods, e.g.\ as provided for models of class
-  \code{"lm"}, \code{"glm"} and \code{"gam"}. In addition, the method can also return the full
+  same fashion as other commonly used prediction methods, e.g., as provided for models of class
+  \code{"lm"}, \code{"glm"}, and \code{"gam"}. In addition, the method can also return the full
   refitted model for which again all plotting and extractor functions can be used.
 
 
@@ -177,13 +173,16 @@ library("R2BayesX")
 
   The default settings have been thoroughly tested and should fit for common regression problems.
   The common user does usually not have to do sensitivity checks. We have added some more
-  explanation on this topic in Section~5.2 Available additive terms. Please find more information
-  on Bayesian P-Splines In: \medskip \\
-  Lang S, Brezger A (2004). \emph{"Bayesian P-Splines."} Journal of Computational and Graphical
-  Statistics, \textbf{13}, 183--212. \medskip \\
-  Brezger A, Lang S (2006). \emph{"Generalized Structured Additive Regression Based on Bayesian
-  P-Splines."} Computational Statistics \& Data Analysis, \textbf{50}, 947--991. \medskip\\
-  The user may look up all default settings for all possible terms using function \\
+  explanations in Section~5.2 (Available additive terms). Please find more information
+  on Bayesian P-splines in:
+  
+  Lang S, Brezger A (2004). ``Bayesian P-Splines.'' \emph{Journal of Computational and Graphical
+  Statistics}, \textbf{13}, 183--212.
+  
+  Brezger A, Lang S (2006). ``Generalized Structured Additive Regression Based on Bayesian
+  P-Splines.'' \emph{Computational Statistics \& Data Analysis}, \textbf{50}, 947--991.
+  
+  The user may look up all default settings for all possible terms using function \linebreak
   \code{bayesx.term.options()}. All basis functions are only computed once and are then fixed for
   all iterations of the MCMC sampler and are not modified anymore.
 
@@ -195,13 +194,15 @@ library("R2BayesX")
 
   \medskip
 
-  In the paper \medskip \\
-  Brezger A, Kneib T, Lang S (2005). \emph{"\pkg{BayesX}: Analyzing Bayesian Structured Additive
-  Regression Models."} Journal of Statistical Software, \textbf{14}(11), 1--22.
-  URL~\url{http://www.jstatsoft.org/v14/i11/.} \medskip \\
-  Section~3, a thorough comparison of software with built in functions for GAM modeling is presented
+  This is discussed in
+  
+  Brezger A, Kneib T, Lang S (2005). ``\pkg{BayesX}: Analyzing Bayesian Structured Additive
+  Regression Models.'' \emph{Journal of Statistical Software}, \textbf{14}(11), 1--22.
+  URL~\url{http://www.jstatsoft.org/v14/i11/.}
+  
+  In Section~3 of the paper a thorough comparison of software with built in functions for GAM modeling is presented
   and also a section with a \pkg{WinBUGS} comparison. We have added a small paragraph at the end of
-  Section 3 that points out software packages which have a similar scope.
+  Section~3 (of the paper under review) that points out software packages which have a similar scope.
 
 
 \item \textbf{On page 2, Section 5 does not appear in the last paragraph.}
@@ -219,8 +220,14 @@ library("R2BayesX")
 
   \medskip
 
-  \fixme{Achim, is that really useful? Also, I cannot see where we can skip code in the example?
-    We could write the formula within the \code{bayesx()} call, but that is not really less code!}
+  We have removed the separate setup of the formula which saves one command line.
+  The remaining commands are \code{data}, \code{bayesx}, \code{summary}, and three
+  \code{plot}s. So there is not much room for simplification and we feel that
+  all three plots are worthwhile and do not need too much space.
+  
+  As for the suggestion to merge Sections~2 and~3, we have decided
+  to keep them separate to make it easier to access (or skip) the theory
+  section.
 
 
 \item \textbf{State in the caption of Figure 1 that data (both outcomes
@@ -233,7 +240,7 @@ library("R2BayesX")
 
 
 \item \textbf{Page 17, the third line underneath subsection 6.1,
- ``development countries" \code{->} ``developing countries"?}
+ ``development countries" $\rightarrow$ ``developing countries"?}
 
   \medskip
 
@@ -250,31 +257,33 @@ library("R2BayesX")
   \medskip
 
   Yes, we could compute $\tau_1^2(\tau_1^2 + \tau_2^2)$, but these are two different variances,
-  one of a Markov random field and the other of an $i.i.d.$ random effect. As has been shown in \medskip \\
-  Fahrmeir L, Lang S (2001). "Bayesian Inference for Generalized Additive Mixed Models based
-  on Markov Random Field Priors." \emph{Journal of the Royal Statistical Society C}, \textbf{50},
-  201--220. \medskip \\
+  one of a Markov random field and the other of an i.i.d.\ random effect. As has been shown in
+  
+  Fahrmeir L, Lang S (2001). ``Bayesian Inference for Generalized Additive Mixed Models Based
+  on Markov Random Field Priors.'' \emph{Journal of the Royal Statistical Society C}, \textbf{50},
+  201--220.
+  
   the unstructured and the structured spatial effect can generally not be separated and are often
   estimated with bias. Only the sum of both effects is estimated satisfactorily. This means in
   practice that only the complete spatial effect should be interpreted and nothing (or not much) can
-  be said about the relative importance of both effects. Exception are cases where one of both
-  effects (either the unstructured or the structured effect) is estimated practically zero and the
+  be said about the relative importance of both effects. Exceptions are cases where one of both
+  effects (either the unstructured or the structured effect) is estimated to be practically zero and the
   other effect clearly dominates. Therefore, we usually do not put too much weight on this and
   prefer a graphical comparison. We have added these explanations in Section~6.1, too.
 
 
 \item \textbf{On page 22, autocorrelation is one measure for assessing
   convergence. However, chains trapped at some local modes
-  can sometimes have ``well-behave" ACF. Multiple chains should
+  can sometimes have ``well-behave'' ACF. Multiple chains should
   be run (see general comment 1 above).}
 
   \medskip
 
-  We have now added an example using 2 chains where we compute the Gelman and Rubin’s convergence
+  We have now added an example using 2 chains where we compute the Gelman and Rubin convergence
   diagnostic for certain parameters.
 
 
-\item \textbf{Last line on page 22, ore \code{->} or?}
+\item \textbf{Last line on page 22, ore $\rightarrow$ or?}
 
   \medskip
 
@@ -301,21 +310,7 @@ library("R2BayesX")
 
   Thanks for pointing this out. We fixed this now:
   \verb|-L${R_HOME}/lib| is now included in the \verb|LDFLAGS| of the \verb|Makefile|
-  which fixes readline linkage failure on OS X.
-  \fixme{Daniel, please check.}
-
-
-\item \textbf{It looks like the authors misunderstood the way that R installs on a mac.
-  This is fairly common when porting from unix.  It can be fixed with
-  using a symbolic link, but that's not very satisfactory!  It would be
-  better if they used the correct directory to begin with. To be honest,
-  were I not reviewing this package, I probably wouldn't have spent the
-  time tracking down a fix.}
-
-  \medskip
-
-  \fixme{Daniel, is there anything else to do here? I guess not and we can probably
-  just delete the second part if this question\dots}
+  which fixes readline linkage failure on OS~X.
 
 
 \item \textbf{I tried to run the munich rent example that comes with INLA in R2BayesX
@@ -398,20 +393,12 @@ method = MCMC  family = gaussian  iterations = 12000  step = 10
 \end{Schunk}
 
 
-\item \textbf{It would also be nice if a function was provided that checked the
-  validity of graph files.}
-
-  \medskip
-
-  \fixme{Achim, not sure if we should just drop this point and refer to the point above?}
-
-
 \item \textbf{Would it be better in the STEP algorithm to set the quantiles to NA
   (not available) rather than 0.00?}
 
   \medskip
 
-  We have set these to \code{NA} now.
+  Yes, thanks, we have set these to \code{NA} now.
 
 
 \item \textbf{In the bayesx() call, the family parameter is case sensitive (I
@@ -430,7 +417,7 @@ method = MCMC  family = gaussian  iterations = 12000  step = 10
 
   The option was accidently set and has been removed from the paper, it specifies the number of
   locations that should be used as knots. All options for all possible terms may be looked up using
-  function \code{bayesx.term.options()} (Section 5.2).
+  function \code{bayesx.term.options()} (Section~5.2).
 <<opt1, echo=TRUE, eval=FALSE>>=
 bayesx.term.options(bs = "gk", method = "REML")
 @
@@ -445,22 +432,21 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
 
   \medskip
 
-  No, these are just examples of model terms that fit in the STAR framework. There is more, e.g.\
-  Bayesian ridge, Bayesian LASSO, Kriging, etc.
+  No, these are just examples of model terms that fit in the STAR framework. There is more, e.g.,
+  Bayesian ridge, Bayesian lasso, Kriging, etc.
 
 
 \item \textbf{Section 4.2: I note in passing that the INLA package can solve a
   large class of latent Gaussian models in which each observation depends
   linearly on the latent Gaussian field.  This includes GLMMs, GAMMs and
-  many STAR (but not all - variable coefficient models aren't implemented)
+  many STAR (but not all -- variable coefficient models aren't implemented)
   models, as well as models where the link is not through the mean (such
   as stochastic volatility models).}
 
   \medskip
 
-  We have now added a small paragraph at the end of Section 3 that points out software packages that
-  have a similar scope.
-  \fixme{Achim, is that sufficient?}
+  We have now added a brief discussion at the end of Section~3 that points out
+  software packages that have a similar scope (including \pkg{INLA}).
 
 
 \item \textbf{Table 4:  It would be useful to specify which GMRF model is being used.
@@ -469,15 +455,15 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
 
   \medskip
 
-  The paper \medskip \\
-  Fahrmeir L, Kneib T, Lang S (2004). \emph{"Penalized Structured Additive Regression for Space
-  Time Data: A Bayesian Perspective."} Statistica Sinica, \textbf{14}, 731--761. \medskip \\
-  provides a detailed discussion of the methodology used, we have added the reference in Table 4,
-  too.
-  \fixme{Achim, is that ok?}
+  We have added a reference to the following paper in Table~4.
+  
+  Fahrmeir L, Kneib T, Lang S (2004). ``Penalized Structured Additive Regression for Space
+  Time Data: A Bayesian Perspective.'' \emph{Statistica Sinica}, \textbf{14}, 731--761.
+  
+  This provides a detailed discussion of the methodology used.
+  
 
-
-\item \textbf{Bottom of page 15: ``several informations" \code{->} ``several pieces of
+\item \textbf{Bottom of page 15: ``several informations" $\rightarrow$ ``several pieces of
   information" or just ``information"}
 
   \medskip
@@ -506,15 +492,16 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
 
   \medskip
 
-  \pkg{BayesX} is able to handle rather complex models with several hundred thousand of
+  \pkg{BayesX} is able to handle rather complex models with several hundred thousand
   observations. E.g., we have successfully fitted a large model using precipitation data with more
-  than a million observations. See also \medskip \\
-  Nikolaus Umlauf, Georg Mayr, Jakob Messner, and Achim Zeileis. Why does it always rain on me? A
-  spatio-temporal analysis of precipitation in Austria. \emph{Austrian Journal of Statistics},
-  \textbf{41}(1):81--92, 2012.
+  than a million observations. See also
+  
+  Umlauf N, Mayr G, Messner J, Zeileis A (2012). ``Why Does It Always Rain on Me? A
+  Spatio-Temporal Analysis of Precipitation in Austria.'' \emph{Austrian Journal of Statistics},
+  \textbf{41}(1), 81--92.
 
 
-\item \textbf{Page 20: I'm not a fan of an enormous piece of R output breaking
+\item \textbf{Page 20: I'm not a fan of an enormous piece of \proglang{R} output breaking
   a sentence.}
 
   \medskip
@@ -524,7 +511,7 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
 
 \item \textbf{Figure 4: I am unsure what the x axis on these images stand for.  And
   what exactly is the is kernel density estimate of? Is it just the density
-  of the posterior ignoring the spatial location (i.e. lumping all of the
+  of the posterior ignoring the spatial location (i.e., lumping all of the
   distributions together)?  If so is there any statistical justification
   or meaning for this plot?  The locations are not independent!}
 
@@ -622,25 +609,11 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
 
 \item \textbf{There seems to be an ordering problem with fitted.bayesx. I noticed this
   from a more complicated example, but actually the first example in ?bayesx
-  illustrates the issue:}
-
-<<>>=
-  require("R2BayesX")
-  set.seed(111)
-  n <- 200
-  ## regressor
-  dat <- data.frame(x = runif(n, -3, 3))
-  ## response
-  dat$y <- with(dat, 1.5 + sin(x) + rnorm(n, sd = 0.6))
-  ## estimate models with bayesx REML and MCMC
-  b1 <- bayesx(y ~ sx(x), method = "REML", data = dat)
-
-  cor(fitted(b1), dat$y)
-@
+  illustrates the issue}
 
   \medskip
 
-  Thanks, the ordering problem has been fixed.
+  Thanks for spotting this. The ordering problem has been fixed now.
 
 \end{itemize}
 
@@ -688,10 +661,10 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
   (2)~implementation, (3)~application for introducing software packages. Hence, we also follow
   this setup. However, we now try to make this structure more obvious at the end of the introduction
   and verbosely encourage readers to skip forward if they are more interested in certain aspects
-  of the manuscript. To improve the reading flow, we have also moved Section~5.3 to the appendix,
-  since this section is probably less frequently used in practice.
+  of the manuscript.
   
-  \fixme{Achim, moved Section~5.3 to the appendix, is the note above enough?}
+  To improve the reading flow, we have now moved Section~5.3 to the appendix,
+  since this section is probably less frequently used in practice.
   
 \item \textbf{In its current form, the reader is simply provided with a list of options in Table 
   2--4. In my view, these tables and the empirical examples are the crux of the paper. I was able 
