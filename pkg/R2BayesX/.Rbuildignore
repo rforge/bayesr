@@ -1,4 +1,6 @@
 inst/sourcers.R
 inst/JSS
 inst/bayesx_tests.R
-man/r.Rd
+tests
+tests/bayesx.R
+tests/bayesx.Rout.save
