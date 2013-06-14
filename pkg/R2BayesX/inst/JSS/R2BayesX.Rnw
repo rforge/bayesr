@@ -847,7 +847,7 @@ the first case, centering is necessary, in the second case, it is not.
 
 The focus of this section is on demonstrating the various features of the \pkg{R2BayesX} package.
 Therefore, the examples provided reconsider analyses from
-\citet{R2BayesX:Brezger+Kneib+Lang:2005} and \citet{R2BayesX:Fahrmeir+Kneib+Lang:2009}. The
+\citet{R2BayesX:Brezger+Kneib+Lang:2005} and \citet{R2BayesX:Fahrmeir+Kneib+Lang+Marx:2013}. The
 presented datasets have been added to package \pkg{R2BayesX}, ensuring straightforward reproducibility
 of the following code. In the first example, a Gaussian regression model is estimated using Markov
 chain Monte Carlo simulation. The second example covers estimation based on mixed-model technology,
@@ -1241,7 +1241,7 @@ The dataset on forest health comprises information on the defoliation of beech t
 as an indicator of overall forest health here. The data were collected annually from 1980 to 1997
 during a project of visual inspection of trees around Rothenbuch, Germany, see
 \citet{R2BayesX:Goettlein+Pruscha:1996}, and is discussed in detail in
-\citet{R2BayesX:Fahrmeir+Kneib+Lang:2009}. In this example, the percentage rate of defoliation of
+\citet{R2BayesX:Fahrmeir+Kneib+Lang+Marx:2013}. In this example, the percentage rate of defoliation of
 each tree is aggregated into three ordinal categories, which are modeled in terms of covariates
 characterizing the stand and site of a tree. In addition, temporal and spatial information is
 available, see also Table~\ref{tab:forest}.
@@ -1272,7 +1272,7 @@ Variable           & Description \\ \hline
 \caption{\label{tab:forest} Variables in the forest health dataset.}
 \end{table}
 
-Similar to \citet{R2BayesX:Fahrmeir+Kneib+Lang:2009}, we start with a threshold model and cumulative
+Similar to \citet{R2BayesX:Fahrmeir+Kneib+Lang+Marx:2013}, we start with a threshold model and cumulative
 logit link, with $P(\texttt{defoliation}_{it} \leq r)$ of tree $i$ at time $t$, for response
 category $r = 1,2$, and the additive predictor
 \begin{eqnarray*}
@@ -1359,7 +1359,7 @@ We can update the  model by adding a \code{"gs"} effect:
 <<fit-forest-model-02>>
 @
 Note that argument \code{nrknots} is set to 20 (default is 8) to obtain a sufficiently flexible
-geospline that replicates the analysis of \citet{R2BayesX:Fahrmeir+Kneib+Lang:2009}. The associated
+geospline that replicates the analysis of \citet{R2BayesX:Fahrmeir+Kneib+Lang+Marx:2013}. The associated
 model information criteria are:
 <<summary-forest-model, echo=TRUE, eval=TRUE>>=
 BIC(fm1, fm2)
