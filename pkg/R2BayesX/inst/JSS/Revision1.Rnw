@@ -705,13 +705,13 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
   As desbribed in Section~3, the STAR model approach, which comprises several models such as GAM,
   GAMM, VCM etc.\ proposes an unified treatment of the model components. Sure, the transition of
   e.g.\ GAM to STAR is smooth. However, since we adopt the Bayesian perspective this has the
-  advantage, that all priors can be represented in a general form, which is heavily utilized in
-  \pkg{BayesX} by unified estimation procedures. In
+  advantage, that all model term priors can be represented in a general form, which is heavily
+  utilized in \pkg{BayesX} by unified estimation procedures. In
 
   Fahrmeir L, Kneib T, Lang S (2004). "Penalized Structured Additive Regression for Space
   Time Data: A Bayesian Perspective." \emph{Statistica Sinica}, \textbf{14}, 731--761.
 
-  a lot of special cases of STAR models are discussed. We have added this reference also in
+  special cases of STAR models are discussed in more detail. We have added this reference also in
   Section~3.
 
 \end{itemize}
