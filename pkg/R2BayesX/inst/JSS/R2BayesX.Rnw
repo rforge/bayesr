@@ -368,7 +368,11 @@ criteria, e.g., Akaike or Bayes information criterion (AIC or BIC), generalized 
 \end{enumerate}
 
 A thorough introduction into the regression models supported by the program is also provided in the
-\pkg{BayesX} methodology manual \citep{R2BayesX:Belitz+Brezger+Kneib+Lang:2011}.
+\pkg{BayesX} methodology manual \citep{R2BayesX:Belitz+Brezger+Kneib+Lang:2011}. An in depth
+discussion using a number of empirical examples is also provided in
+\citet{R2BayesX:Fahrmeir+Kneib+Lang+Marx:2013}. Further details on special cases of STAR models are
+also provided in \citet{R2BayesX:Fahrmeir+Kneib+Lang:2004}.
+\readme{Achim, added these two references.}
 
 Software packages which have a similar Bayesian scope are the \proglang{R} package \pkg{INLA}
 \citep{R2BayesX:Rue+Martino+Chopin:2009}, \pkg{BUGS}/\pkg{WinBUGS}

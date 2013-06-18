@@ -638,6 +638,8 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
   powerful and has many options, it is not until page 17 that we begin to learn how to use the 
   package in any detail.}
 
+  \medskip
+
   It is true that there is some tension between the different objectives that the manuscript
   tries to accomplish. There are at least three groups of readers that we try to serve:
   (1)~\proglang{R}~users that do not know \pkg{BayesX} yet (who may or may not be aware of
@@ -657,6 +659,8 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
   listed in Table 3. Finally, there might be some discussion of the usefulness of altering some of 
   the options listed in Table 2.}
 
+  \medskip
+
   Many publications in \emph{Journal of Statistical Software} employ the sequence (1)~methods,
   (2)~implementation, (3)~application for introducing software packages. Hence, we also follow
   this setup. However, we now try to make this structure more obvious at the end of the introduction
@@ -675,11 +679,19 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
   geokriging, and geospline to be confusing. It would be straightforward to modify the empirical 
   examples to illustrate some of these differences and to show how to access the model results.}
 
-  \fixme{Everyone: This would indeed require a lot of rewriting and would teach readers the
-  STAR framework while providing \proglang{R} examples for the different types of models.
-  My feeling is that this would be beyond the scope of the paper and we reference other resources
-  with thorough STAR introductions. But maybe someone has an idea how to improve the manuscript
-  in this direction without a major rewrite?}
+  \medskip
+
+  The STAR model framework is a quite complex issue, we have the feeling that a detailed
+  description is beyond the scope of the paper. Thorough introductions describing the
+  STAR methodology are provided in
+
+  Belitz C, Brezger A, Kneib T, Lang S (2009). \pkg{BayesX} – Software for Bayesian Inference in
+  Structured Additive Regression Models. Version 2.0.1, URL \url{http://www.BayesX.org/}.
+
+  and
+
+  Fahrmeir L, Kneib T, Lang S, Marx B (2013). Regression -- Models, Methods and Applications.
+  \emph{Springer-Verlag}, Berlin. ISBN 978-3-642-34332-2.
 
 \item \textbf{It might also be useful if the authors added a brief discussion of some of the
   advantages of STAR models over other approaches. They mention alternatives such as GAM, GAMM, 
@@ -688,11 +700,19 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
   empirical examples. Suppose we want to estimate a GAM model; how is it accomplished using the
   Bayes2X package?}
 
-  \fixme{Niki, Stefan, Thomas: My feeling is that this is mainly terminology. Is there a really
-  sharp definition where GAMs end and where more general STARs start? For example, the \pkg{mgcv}
-  and \pkg{gamlss} packages employ the term GAM in a broader sense (not unsimilar to STAR) than
-  other resources. If this is correct, then we could maybe just add some more explanations for
-  a unifying view in Section~3.}
+  \medskip
+
+  The STAR model approach, which comprises several models such as GAM, GAMM, VCM etc. proposes an
+  unified treatment of the model components. Sure, the transition of e.g.\ GAM to STAR is smooth.
+  However, since we adopt the Bayesian perspective this has the advantage, that all priors can be
+  represented in a general form, which is heavily utilized in \pkg{BayesX} by unified estimation
+  procedures. In
+
+  Fahrmeir L, Kneib T, Lang S (2004). "Penalized Structured Additive Regression for Space
+  Time Data: A Bayesian Perspective." \emph{Statistica Sinica}, \textbf{14}, 731--761.
+
+  a lot of special cases of STAR models are discussed. We have added this reference also in
+  Section~3.
 
 \end{itemize}
 
