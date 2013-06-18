@@ -1,7 +1,9 @@
 dir <- path.expand("~/svn/bayesr/pkg/R2BayesX/R")
 invisible(sapply(file.path(dir, list.files(dir)), source))
 
-b <- read.bayesx.output("~/tmp1")
+zm2 <- bayesx(f, family = "gaussian", method = "MCMC", iterations = 12000,
+  burnin = 2000, step = 10, seed = 123, data = ZambiaNutrition,
+  chains = 2)
 
 
 
