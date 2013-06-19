@@ -644,9 +644,9 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
   tries to accomplish. There are at least three groups of readers that we try to serve:
   (1)~\proglang{R}~users that do not know \pkg{BayesX} yet (who may or may not be aware of
   the unifying STAR framework), (2)~\pkg{BayesX} users who want to integrate their analyses
-  with \proglang{R} (and may have more or less experience with other \proglang{R}~packages like \pkg{mgcv}),
-  (3)~\proglang{R}~programmers interested in designing interfaces to external programs for
-  fitting regression models.  
+  with \proglang{R} (and may have more or less experience with other \proglang{R}~packages like
+  \pkg{mgcv}), (3)~\proglang{R}~programmers interested in designing interfaces to external programs
+  for fitting regression models.  
   We agree that (1) is likely to include the largest group of readers but we also want to
   provide sufficient information for (2) and~(3). 
   
@@ -682,16 +682,22 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
   \medskip
 
   The STAR model framework is a quite complex issue, we have the feeling that a detailed
-  description is beyond the scope of the paper. Thorough introductions describing the
-  STAR methodology are provided in
+  description is beyond the scope of the paper. In fact, the focus of the current paper is to
+  describe the interface between the \proglang{R} computing environment and \pkg{BayesX} via the
+  package \pkg{R2BayesX} and not to describe STAR models and methods in detail. The latter has been
+  done (to some extent) in a previous paper in JSS on \pkg{BayesX}
 
-  Belitz C, Brezger A, Kneib T, Lang S (2009). \pkg{BayesX} – Software for Bayesian Inference in
-  Structured Additive Regression Models. Version 2.0.1, URL \url{http://www.BayesX.org/}.
+  Brezger A, Kneib T, Lang S (2005). ``\pkg{BayesX}: Analyzing Bayesian Structured Additive
+  Regression Models.'' \emph{Journal of Statistical Software}, \textbf{14}(11), 1--22.
+  URL~\url{http://www.jstatsoft.org/v14/i11/.}
 
-  and
+  and more details are available in
 
-  Fahrmeir L, Kneib T, Lang S, Marx B (2013). Regression -- Models, Methods and Applications.
+  Fahrmeir L, Kneib T, Lang S, Marx B (2013). ``Regression -- Models, Methods and Applications.''
   \emph{Springer-Verlag}, Berlin. ISBN 978-3-642-34332-2.
+
+  and also in the \pkg{BayesX} methodological references. Adding all detail again would lead to a
+  very long manuscript that would also change the main subject considerably
 
 \item \textbf{It might also be useful if the authors added a brief discussion of some of the
   advantages of STAR models over other approaches. They mention alternatives such as GAM, GAMM, 
@@ -708,8 +714,8 @@ writeLines(c(opt[1:6], "      [...]", opt[11:15], "      [...]"))
   advantage, that all model term priors can be represented in a general form, which is heavily
   utilized in \pkg{BayesX} by unified estimation procedures. In
 
-  Fahrmeir L, Kneib T, Lang S (2004). "Penalized Structured Additive Regression for Space
-  Time Data: A Bayesian Perspective." \emph{Statistica Sinica}, \textbf{14}, 731--761.
+  Fahrmeir L, Kneib T, Lang S (2004). ``Penalized Structured Additive Regression for Space
+  Time Data: A Bayesian Perspective.'' \emph{Statistica Sinica}, \textbf{14}, 731--761.
 
   special cases of STAR models are discussed in more detail. We have added this reference also in
   Section~3.
