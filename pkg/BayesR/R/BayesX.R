@@ -207,3 +207,4 @@ run.bayesx2 <- function(prg = NULL, verbose = TRUE, bin = NULL, ...)
     return(invisible(list(log = log, runtime = runtime)))
   }
 }
+

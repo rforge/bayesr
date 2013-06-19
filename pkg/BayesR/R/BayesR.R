@@ -93,10 +93,12 @@ parse.input.bayesr <- function(formula, data, family = gaussian(),
   formula <- parse.formula.bayesr(formula)
   if(is.list(formula)) {
     rval <- formula
+    nf <- length(formula)
+    family <- if(!inherits(family, "list")) list(family) else rep(list(family), length.out = nf)
     for(j in seq_along(formula)) {
       if(is.list(formula[[j]])) {
         for(i in seq_along(formula[[j]])) {
-          rval[[j]][[i]] <- parse.input.bayesr(formula[[j]][[i]], data, family,
+          rval[[j]][[i]] <- parse.input.bayesr(formula[[j]][[i]], data, family[[j]],
             weights, subset, offset, na.action, contrasts, knots, specials, ...)
         }
       } else {
@@ -106,6 +108,7 @@ parse.input.bayesr <- function(formula, data, family = gaussian(),
     }
     names(rval) <- names(formula)
     class(rval) <- c("list", "bayesr.list")
+
     return(rval)
   } else {
     if(missing(data))
@@ -134,8 +137,9 @@ parse.input.bayesr <- function(formula, data, family = gaussian(),
     fake.formula <- as.formula(paste(response, "~ 1 +", paste(c(pterms, sterms), collapse = " + ")))
     if(is.null(na.action))
       na.action <- get(getOption("na.action"))
-    mf <- list(formula = fake.formula, data = data, weights = weights, subset = subset,
-      offset = offset, na.action = na.action, drop.unused.levels = TRUE)
+    mf <- list(formula = fake.formula, data = dat_search(data, all.vars(fake.formula)),
+      weights = weights, subset = subset, offset = offset, na.action = na.action,
+      drop.unused.levels = TRUE)
     mf <- unique(do.call("model.frame", mf))
     for(j in 1:ncol(mf)) {
       if(class(mf[, j]) %in% c("numeric", "integer"))
@@ -187,6 +191,22 @@ parse.input.bayesr <- function(formula, data, family = gaussian(),
 }
 
 
+## Search for variables in data object and return flattened data.frame.
+dat_search <- function(data, xn)
+{
+  if(inherits(data, "list")) {
+    i <- NULL
+    for(j in seq_along(data)) {
+      data[[j]] <- dat_search(data[[j]], xn)
+      i <- c(i, !all(is.na(data[[j]])))
+    }
+    return(data[[which(i)[1]]])
+  } else {
+    return(if(all(xn %in% colnames(data))) unique(as.data.frame(data)[, xn]) else NA)
+  }
+}
+
+
 ## Special formula parser, can deal with multi parameter models
 ## and hierarchical structures.
 parse.formula.bayesr <- function(formula)
@@ -202,10 +222,18 @@ parse.formula.bayesr <- function(formula)
     on.exit(unlink(tf))
     if(any(grep("|", ft, fixed = TRUE))) {
       formula <- as.list(strsplit(ft, "|", fixed = TRUE)[[1]])
-      for(j in seq_along(formula))
+      for(j in seq_along(formula)) {
+        if(!any(grepl("~", formula[[j]], fixed = TRUE)))
+          formula[[j]] <- paste("~", formula[[j]])
         formula[[j]] <- as.formula(formula[[j]], env = env)
+        if((attr(terms(formula[[j]]), "response") < 1) & (j > 1)) {
+          uf <- as.formula(paste(get_resp_name(formula[[j - 1]]), "~ ."), env = env)
+          formula[[j]] <- update(formula[[j]], uf)
+        }
+      }
     }
   }
+  nol <- FALSE
   if(is.list(formula)) {
     nf <- names(formula)
     if(is.null(nf)) nf <- rep("", length(formula))
@@ -218,11 +246,11 @@ parse.formula.bayesr <- function(formula)
         else {
           nf2[j] <- nf[j]
           ft <- paste(nf[j], paste(as.character(formula[[j]]), collapse = " "))
-          formula[[j]] <- as.formula(ft)
+          formula[[j]] <- as.formula(ft, env = env)
         }
       } else {
         if(is.null(nf) | nf[j] == "") {
-          nf2[j] <- as.character(formula[[j]])[2]
+          nf2[j] <- get_resp_name(formula[[j]])
         }
       }
       environment(formula[[j]]) <- env
@@ -231,11 +259,58 @@ parse.formula.bayesr <- function(formula)
     names(formula) <- nf2
     formula <- hformula(formula)
   }
-  class(formula) <- c(class(formula), "bayesr.formula")
+  formula <- formula_and(formula, env)
+  class(formula) <- c("bayesr.formula", class(formula))
 
   formula
 }
 
+
+## Get response name.
+get_resp_name <- function(x)
+{
+  tf <- tempfile()
+  capture.output(print(x), file = tf)
+  ft <- paste(readLines(tf), collapse = "")
+  on.exit(unlink(tf))
+  if(any(grepl("~", ft, fixed = TRUE))) {
+    ft <- strsplit(ft, "")[[1]]
+    i <- which(ft == "~")[1]
+    x <- gsub(" ", "", paste(ft[1:(i - 1)], collapse = "", sep = ""))
+  }
+  x
+}
+
+## Search and process "&"
+formula_and <- function(formula, env)
+{
+  if(nol <- !is.list(formula))
+    formula <- list(formula)
+  tf <- tempfile()
+  for(j in seq_along(formula)) {
+    if(!inherits(formula[[j]], "formula")) {
+      formula[[j]] <- formula_and(formula[[j]], env)
+    } else {
+      capture.output(print(formula[[j]]), file = tf)
+      ft <- paste(readLines(tf), collapse = "")
+      if(any(grep("&", ft, fixed = TRUE))) {
+        formula[[j]] <- as.list(strsplit(ft, "&", fixed = TRUE)[[1]])
+        for(i in seq_along(formula[[j]])) {
+          if(!any(grepl("~", formula[[j]][[i]], fixed = TRUE)))
+            formula[[j]][[i]] <- paste("~", formula[[j]][[i]])
+          formula[[j]][[i]] <- as.formula(formula[[j]][[i]], env = env)
+        }
+      }
+    }
+  }
+  if(nol) {
+    names(formula) <- get_resp_name(formula[[1]][[1]])
+    if(inherits(formula[[1]], "formula"))
+      formula <- formula[[1]]
+  }
+  on.exit(unlink(tf))
+  formula
+}
 
 ## Hierarchical formulae.
 hcheck <- function(formula)
@@ -244,7 +319,7 @@ hcheck <- function(formula)
     return(formula)
   nf <- names(formula)
   snf <- seq_along(nf)
-  check <- rep(NA, length(formula))
+  check <- vector(mode = "list", length = length(formula))
   for(j in snf) {
     for(i in snf) {
       if(j != i) {
@@ -255,7 +330,7 @@ hcheck <- function(formula)
             av <- c(av, one)
           }
           if(any(av %in% nf[j])) {
-            check[j] <- i
+            check[[j]] <- c(check[[j]], i)
           }
         }
       }
@@ -267,8 +342,17 @@ hcheck <- function(formula)
 hinsert <- function(from, to, formula)
 {
   nf <- names(formula)
-  formula[[to]] <- c(formula[[to]], formula[[from]])
-  formula <- formula[take <- 1:length(formula) != from]
+
+  o <- order(from, decreasing = TRUE)
+  from <- from[o]
+  to <- to[o]
+
+  for(j in seq_along(from)) {
+    for(i in seq_along(to[[j]])) {
+      formula[[to[[j]][i]]] <- c(formula[[to[[j]][i]]], formula[[from[j]]])
+    }
+  }
+  formula <- formula[take <- !(1:length(formula) %in% from)]
   names(formula) <- nf[take]
   formula
 }
@@ -278,8 +362,9 @@ hformula <- function(formula)
   if(!is.list(formula))
     return(formula)
   j <- hcheck(formula)
-  while(any(!is.na(j))) {
-    i <- which(!is.na(j))[1]
+  while(any(!sapply(j, is.null))) {
+    i <- which(!sapply(j, is.null))
+    hm <- sapply(j[i], max)
     formula <- hinsert(i, j[i], formula)
     j <- hcheck(formula)
   }
@@ -349,8 +434,8 @@ c.bayesr <- function(...)
 get.model <- function(x, model)
 {
   cx <- class(x)
-  elmts <- c("formula", "fitted.values", "residuals", "response", "effects", "smooth.hyp", 
-    "fixed.effects", "variance", "model.fit", "call")
+  elmts <- c("formula", "family", "fitted.values", "residuals", "response",
+    "effects", "effects.hyp", "param.effects", "scale", "model", "call")
   if(!any(names(x) %in% elmts)) {
     if(!is.null(model)) {
       if(is.character(model)) {
@@ -404,7 +489,7 @@ model.frame.bayesr <- function(formula, parse.input = NULL, ...)
 
 ## Function to compute statistics from samples of a model term.
 compute_term <- function(x, fsamples, psamples, vsamples = NULL,
-  FUN = NULL, snames, smooth.hyp, fitted.values, data)
+  FUN = NULL, snames, effects.hyp, fitted.values, data)
 {
   require("coda")
   if(is.null(FUN)) {
@@ -472,13 +557,13 @@ compute_term <- function(x, fsamples, psamples, vsamples = NULL,
       colnames(vsamples) <- paste(x$label, "tau", 1:nrow(smatfull), sep = ".")
       attr(smf, "samples.scale") <- as.mcmc(vsamples)
     }
-    smooth.hyp <- rbind(smooth.hyp, smatfull)
+    effects.hyp <- rbind(effects.hyp, smatfull)
   }
 
   ## Assign samples.
   attr(smf, "samples") <- as.mcmc(psamples)
 
-  return(list("term" = smf, "smooth.hyp" = smooth.hyp, "fitted.values" = fitted.values))
+  return(list("term" = smf, "effects.hyp" = effects.hyp, "fitted.values" = fitted.values))
 }
 
 
@@ -541,8 +626,8 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
           m.samples[[i]] <- rbind(m.samples[[i]], tmp)
           if(inherits(object[[j]]$effects[[i]], "linear.bayesx")) {
             if(specs$is.factor & !is.character(newdata)) {
-              hi <- if(!is.null(object[[j]]$fixed.effects)) {
-                any(grepl("(Intercept)", rownames(object[[j]]$fixed.effects), fixed = TRUE))
+              hi <- if(!is.null(object[[j]]$param.effects)) {
+                any(grepl("(Intercept)", rownames(object[[j]]$param.effects), fixed = TRUE))
               } else FALSE
               nl <- nlevels(newdata[[i]]) - if(hi) 1 else 0
               if(nl != ncol(m.samples[[i]]))
@@ -569,7 +654,7 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
     }
 
     if(intercept & j < 2) {
-      sami <- attr(object[[j]]$fixed.effects, "samples")
+      sami <- attr(object[[j]]$param.effects, "samples")
       if(!is.null(sami)) {
         sami <- sami[, grep("(Intercept)", colnames(sami), fixed = TRUE)]
         if(length(sami)) {
@@ -799,7 +884,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, sc
   if(which == "scale-samples") {
     if(!ask) par(mfrow = n2mfrow(n)) else par(ask = ask)
     for(i in 1:n) {
-      args$x <- attr(x[[i]]$variance, "samples")
+      args$x <- attr(x[[i]]$scale, "samples")
       do.call("plot", args)
     }
   }
@@ -852,7 +937,7 @@ plot.bayesr.effect.default <- function(x, ...) {
 
 ##################################
 ## (7) Other helping functions. ##
-##################################delete.args <-
+##################################
 delete.args <- function(fun = NULL, args = NULL, not = NULL)
 {
   nf <- names(formals(fun))
@@ -865,5 +950,62 @@ delete.args <- function(fun = NULL, args = NULL, not = NULL)
       } else args[elmt] <- NULL
     }
   args
+}
+
+
+##################################
+## (8) Model summary functions. ##
+##################################
+summary.bayesr <- function(object, model = NULL, ...)
+{
+  object <- get.model(object, model)
+  rval <- list()
+  n <- length(object)
+  for(i in n) {
+    for(j in c("param.effects", "effects.hyp", "scale"))
+      attr(object[[i]][[j]], "samples") <- NULL
+    rval[[i]] <- with(object[[i]],
+      c(list("call" = call, "param.effects" = param.effects,
+        "effects.hyp" = effects.hyp, "scale" = scale, "family" = family),
+        model)
+    )
+  }
+  if(n < 2)
+    rval <- rval[[1]]
+  attr(rval, "n") <- n
+  class(rval) <- "summary.bayesr"
+  rval
+}
+
+print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ...)
+{
+  on.exit(return(invisible(x)))
+  n <- attr(x, "n")
+  if(n < 2) x <- list(x)
+  for(i in 1:n) {
+    print(x[[i]]$family)
+    cat("Formula:\n")
+    print(x[[i]]$formula)
+    if(length(x[[i]]$param.effects) > 0) {
+      cat("\nParametric coefficients:\n")
+      printCoefmat(x[[i]]$param.effects, digits = digits, na.print = "NA", ...)
+    }
+    if(length(x[[i]]$effects.hyp) > 0) {
+      cat("\nSmooth effects variances:\n")
+      printCoefmat(x[[i]]$effects, digits = digits, na.print = "NA", ...)
+    }
+    if(!is.null(x[[i]]$scale)) {
+      cat("\nScale estimate:\n")
+      printCoefmat(x[[i]]$scale, digits = digits, na.print = "NA", ...)
+    }
+    if(!is.null(x[[i]]$DIC) & !is.null(x[[i]]$pd)) {
+      cat("\nDIC =", formatC(x[[i]]$DIC, digits = digits, flag = "-"), "pd =",
+        formatC(x[[i]]$pd, digits = digits, flag = "-"))
+    }
+    if(!is.null(x[[i]]$N)) {
+      cat(" N =", formatC(x[[i]]$N, digits = digits, flag = "-"))
+    }
+    cat("\n\n")
+  }
 }
 

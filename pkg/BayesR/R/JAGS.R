@@ -58,16 +58,16 @@ setupJAGS <- function(x)
     "model {",
     setup$start,
     "  for(i in 1:n) {",
+    if(is.null(setup$adds)) c(response, setup$eta),
     setup$param, setup$smooth,
-    if(is.null(setup$adds)) c(setup$eta, response),
     "  }"
   )
   if(!is.null(setup$adds)) {
     model <- c(model,
       "  for(i in 1:n) {",
+      response,
       setup$adds,
       setup$eta,
-      response,
       "  }"
     )
   }
@@ -84,7 +84,7 @@ setupJAGS <- function(x)
   }
   model <- c(model, setup$priors.scale, setup$close, setup$close2, "}")
 
-  ## writeLines(model)
+  writeLines(model)
 
   ## Final touch ups.
   setup$data$response <- x$mf[[x$response]]
@@ -304,10 +304,10 @@ resultsJAGS <- function(x, samples)
     }
 
     ## Compute model term effects.
-    fixed.effects <- effects <- smooth.hyp <- NULL
+    param.effects <- effects <- effects.hyp <- NULL
     fitted.values <- 0
 
-    ## Fixed effects.
+    ## Parametric effects.
     if(k <- ncol(x$X)) {
       samps <- as.matrix(samples[[j]][, grepl("beta", snames)], ncol = k)
       nx <- colnames(x$X)
@@ -330,7 +330,7 @@ resultsJAGS <- function(x, samples)
           effects[[nx[i]]] <- as.data.frame(unique(cbind(Z, fm, f)))
           colnames(effects[[nx[i]]]) <- c(nx[i], "Mean", "2.5%", "10%", "50%", "90%", "97.5%")
           class(effects[[nx[i]]]) <- "data.frame"
-          attr(effects[[nx[i]]], "sample") <- samps[, i]
+          attr(effects[[nx[i]]], "samples") <- samps[, i]
           attr(effects[[nx[i]]], "specs") <- list(dim = 1, label = nx[i])
           attr(effects[[nx[i]]], "fit") <- fm
           attr(effects[[nx[i]]], "x") <- x$X[, i]
@@ -339,14 +339,14 @@ resultsJAGS <- function(x, samples)
       qu <- t(apply(samps, 2, quantile, probs = c(0.025, 0.5, 0.975)))
       sd <- drop(apply(samps, 2, sd))
       me <- drop(apply(samps, 2, mean))
-      fixed.effects <- cbind(me, sd, qu)
-      rownames(fixed.effects) <- nx
-      colnames(fixed.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
+      param.effects <- cbind(me, sd, qu)
+      rownames(param.effects) <- nx
+      colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
       if(grepl("(Intercept)", nx[i])) {
-        fitted.values <- fitted.values + fixed.effects[1, 1]
+        fitted.values <- fitted.values + param.effects[1, 1]
       }
-      attr(fixed.effects, "samples") <- samps
-      colnames(attr(fixed.effects, "sample")) <- nx
+      attr(param.effects, "samples") <- samps
+      colnames(attr(param.effects, "samples")) <- nx
     }
   
     ## Smooth terms.
@@ -358,13 +358,13 @@ resultsJAGS <- function(x, samples)
           fst <- resultsJAGS.special(x$smooth[[i]], samples[[j]], x$mf, i)
           if(is.null(attr(fst, "by"))) {
             effects[[x$smooth[[i]]$label]] <- fst$term
-            smooth.hyp <- rbind(smooth.hyp, fst$smooth.hyp)
+            effects.hyp <- rbind(effects.hyp, fst$effects.hyp)
             fitted.values <- fitted.values + fst$fitted.values
           } else {
             tjl <- names(fst)
             for(l in tjl) {
               effects[[l]] <- fst[[l]]$term
-              smooth.hyp <- rbind(smooth.hyp, fst[[l]]$smooth.hyp)
+              effects.hyp <- rbind(effects.hyp, fst[[l]]$effects.hyp)
               fitted.values <- fitted.values + fst[[l]]$fitted.values
             }
           }
@@ -418,13 +418,13 @@ resultsJAGS <- function(x, samples)
           ## Compute final smooth term object.
           fst <- compute_term(x$smooth[[i]], fsamples = fsamples, psamples = psamples,
             vsamples = vsamples, FUN = NULL, snames = snames,
-            smooth.hyp = smooth.hyp, fitted.values = fitted.values, data = x$mf)
+            effects.hyp = effects.hyp, fitted.values = fitted.values, data = x$mf)
 
           attr(fst$term, "specs")$get.mu <- get.mu 
 
           ## Add term to effects list.
           effects[[x$smooth[[i]]$label]] <- fst$term
-          smooth.hyp <- fst$smooth.hyp
+          effects.hyp <- fst$effects.hyp
 
           fitted.values <- fst$fitted.values
           rm(fst)
@@ -437,12 +437,12 @@ resultsJAGS <- function(x, samples)
     qu <- drop(quantile(samps, probs = c(0.025, 0.5, 0.975)))
     sd <- sd(drop(samps))
     me <- mean(samps)
-    variance <- matrix(c(me, sd, qu), nrow = 1)
-    colnames(variance) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
-    rownames(variance) <- "Sigma2"
+    scale <- matrix(c(me, sd, qu), nrow = 1)
+    colnames(scale) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
+    rownames(scale) <- "Sigma"
     samps <- matrix(samps, ncol = 1)
     colnames(samps) <- "scale"
-    attr(variance, "samples") <- as.mcmc(samps)
+    attr(scale, "samples") <- as.mcmc(samps)
 
     ## Compute partial residuals.
     for(i in seq_along(effects)) {
@@ -465,18 +465,19 @@ resultsJAGS <- function(x, samples)
     }
 
     ## Stuff everything together.
-    rval[[j]] <- list("fixed.effects" = fixed.effects, "effects" = effects,
-      "smooth.hyp" = smooth.hyp, "model.fit" = list("method" = "MCMC", "DIC" = DIC, "pd" = pd,
-      "N" = nrow(x$mf), "formula" = x$formula), "variance" = variance, "call" = x$call,
-      "fitted.values" = fitted.values, "residuals" = x$mf[[x$response]] - fitted.values)
+    rval[[j]] <- list("call" = x$call, "family" = x$family,
+      "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(x$mf),
+      "formula" = x$formula), "param.effects" = param.effects, "effects" = effects,
+      "effects.hyp" = effects.hyp, "scale" = scale, "fitted.values" = fitted.values,
+      "residuals" = x$mf[[x$response]] - fitted.values)
 
-    class(rval[[j]]) <- c("bayesr", "bayesx")
+    class(rval[[j]]) <- "bayesr"
   }
   names(rval) <- paste("Chain", 1:chains, sep = "_")
   if(length(rval) < 2) {
     rval <- rval[[1]]
   }
-  class(rval) <- c("bayesr", "bayesx")
+  class(rval) <- "bayesr"
 
   rval
 }
@@ -543,11 +544,11 @@ resultsJAGS.special.default <- function(x, samples, data, i, ...)
   ## Compute final smooth term object.
   fst <- compute_term(x, fsamples = fsamples, psamples = psamples,
     vsamples = vsamples, FUN = NULL, snames = snames,
-    smooth.hyp = NULL, fitted.values = NULL, data = data)
+    effects.hyp = NULL, fitted.values = NULL, data = data)
 
   attr(fst$term, "specs")$get.mu <- get.mu 
 
-  rval <- list("term" = fst$term, "smooth.hyp" = fst$smooth.hyp, "fitted.values" = fst$fitted.values)
+  rval <- list("term" = fst$term, "effects.hyp" = fst$effects.hyp, "fitted.values" = fst$fitted.values)
 }
 
 
@@ -612,7 +613,7 @@ resultsJAGS.special.rs.smooth <- function(x, samples, data, i, ...)
         x2$by.level <- by.levels[jj]
         fst <- compute_term(x2, fsamples = fsamples, psamples = rsamples,
           vsamples = vsamples, FUN = NULL, snames = snames,
-          smooth.hyp = NULL, fitted.values = NULL, data = data)
+          effects.hyp = NULL, fitted.values = NULL, data = data)
 
         rval[[x2$label]] <- fst
       }
@@ -622,9 +623,9 @@ resultsJAGS.special.rs.smooth <- function(x, samples, data, i, ...)
   } else {
     fst <- compute_term(x2, fsamples = fsamples, psamples = psamples,
       vsamples = NULL, FUN = NULL, snames = snames,
-      smooth.hyp = NULL, fitted.values = NULL, data = data)
+      effects.hyp = NULL, fitted.values = NULL, data = data)
 
-    rval <- list("term" = fst$term, "smooth.hyp" = fst$smooth.hyp, "fitted.values" = fst$fitted.values)
+    rval <- list("term" = fst$term, "effects.hyp" = fst$effects.hyp, "fitted.values" = fst$fitted.values)
   }
 
   rval
@@ -661,7 +662,7 @@ resultsJAGS.special.gc.smooth <- function(x, samples, data, i, ...)
       x2$by.level <- x$by.levels[j]
       fst <- compute_term(x2, fsamples = fsamples, psamples = psamples,
         vsamples = NULL, FUN = NULL, snames = snames,
-        smooth.hyp = NULL, fitted.values = NULL, data = data)
+        effects.hyp = NULL, fitted.values = NULL, data = data)
 
       rval[[x2$label]] <- fst
     }
@@ -684,9 +685,9 @@ resultsJAGS.special.gc.smooth <- function(x, samples, data, i, ...)
 
     fst <- compute_term(x, fsamples = fsamples, psamples = psamples,
       vsamples = vsamples, FUN = NULL, snames = snames,
-      smooth.hyp = NULL, fitted.values = NULL, data = data)
+      effects.hyp = NULL, fitted.values = NULL, data = data)
 
-    rval <- list("term" = fst$term, "smooth.hyp" = fst$smooth.hyp, "fitted.values" = fst$fitted.values)
+    rval <- list("term" = fst$term, "effects.hyp" = fst$effects.hyp, "fitted.values" = fst$fitted.values)
   }
   rval
 }
