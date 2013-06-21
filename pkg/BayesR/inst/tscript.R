@@ -38,3 +38,13 @@ b <- bayesx(y ~ fixed + sx(random.1, bs = "ridge") + sx(random.2, bs = "ridge") 
 p <- predict(b, term = "s(x1)")
 plot(dat$x1, p)
 points(dat$x1, dat$cf * fun(dat$x1), col = 2, pch = 3)
+
+
+## generate data
+n <- 500
+dat <- data.frame("x1" = runif(n, -3, 3), x2 = runif(n, -3, 3))
+
+## dat$y <- with(dat, 21 + cf + sin(x2) + rnorm(n, sd = 0.1))
+dat$y <- with(dat, 1.2 + sin(x1) + cos(x2) + rnorm(n, sd = (cos(dat$x1) + 2) / 4))
+
+b <- bayesr(y ~ s(x1) + s(x2), data = dat)

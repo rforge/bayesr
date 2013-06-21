@@ -6,94 +6,149 @@
 ## to run a JAGS sampler.
 setupJAGS <- function(x)
 {
-  family <- x$family
-  if(!is.character(family))
-    family <- as.character(family)[1]
-  for(char in c("(", ")"))
-    family <- gsub(char, "", family, fixed = TRUE)
+  JAGSeta <- function(x, id = NULL) {
+    setup <- list()
+    setup$inits <- list()
 
-  ## Start actual setup.
-  setup <- list()
-  setup$inits <- list("sigma" = runif(1))
-  setup$psave <- "sigma"
- 
-  ## Parametric part.
-  if(k <- ncol(x$X)) {
-    setup$data$X <- x$X
-    if(all(x$X[, 1] == 1))
-      attr(setup, "intercept") <- TRUE
-    for(j in 1:k) {
-      setup$param <- c(setup$param, paste(if(k < 2) "beta" else paste("beta[", j, "]", sep = ""),
-        " * X[i, ", j, "]", sep = ""))
+    ## Parametric part.
+    if(k <- ncol(x$X)) {
+      id2 <- if(is.null(id)) 1 else id
+      setup$data[[paste("X", id2, sep = "")]] <- x$X
+      for(j in 1:k) {
+        setup$param <- c(setup$param, paste(if(k < 2) paste("beta", id2, sep = "") else paste("beta", id2, "[", j, "]",
+          sep = ""), "*X", id2, "[i, ", j, "]", sep = ""))
+      }
+      setup$param <- paste(setup$param, collapse = " + ")
+      setup$param <- paste("    param", id2, "[i] <- ", setup$param, sep = "")
+      setup$loops <- k
+      setup$priors.coef <- if(k > 1) {
+        paste("    beta", id2, "[j] ~ dnorm(0, 1.0E-6)", sep = "")
+      } else paste("  beta", id2, " ~ dnorm(0, 1.0E-6)", sep = "")
+      setup$inits[[paste("beta", id2, sep = "")]] <- runif(k)
+      setup$psave <- c(setup$psave, paste("beta", id2, sep = ""))
+      setup$eta <- paste("param", id2, "[i]", sep = "")
     }
-    setup$param <- paste(setup$param, collapse = " + ")
-    setup$param <- paste("    param[i] <-", setup$param)
-    setup$loops <- k
-    setup$priors.coef <- if(k > 1) "    beta[j] ~ dnorm(0, sigma)" else "  beta ~ dnorm(0, sigma)"
-    setup$inits$beta <- runif(k)
-    setup$psave <- c(setup$psave, "beta")
-    setup$eta <- "param[i]"
-  }
-  attr(setup, "intercept") <- attr(terms(x$fake.formula), "intercept")
-  attr(setup, "k") <- k
-  
-  ## Smooth part.
-  if(m <- length(x$smooth)) {
-    for(i in 1:m) {
-      setup <- if(!is.null(x$smooth[[i]]$special)) {
-        buildJAGS.smooth.special(x$smooth[[i]], setup, i)
-      } else {
-        buildJAGS.smooth(x$smooth[[i]], setup, i)
+
+    ## Smooth part.
+    if(m <- length(x$smooth)) {
+      for(i in 1:m) {
+        setup <- if(!is.null(x$smooth[[i]]$special)) {
+          buildJAGS.smooth.special(x$smooth[[i]], setup, paste(i, id, sep = ""))
+        } else {
+          buildJAGS.smooth(x$smooth[[i]], setup, paste(i, id, sep = ""))
+        }
       }
     }
+
+    ## Final touch ups.
+    if(!is.null(x$mf[[x$response]]))
+      setup$data$response <- x$mf[[x$response]]
+
+    setup
   }
 
-  ## Setup complete model.
-  setup$eta <- paste("    eta[i] <-", setup$eta)
-  if(!is.na(pmatch(tolower(family), "gaussian"))) {
-    response <- "    response[i] ~ dnorm(eta[i], sigma)"
-    setup$priors.scale <- c(setup$priors.scale, "  sigma ~ dgamma(1.0E-6, 1.0E-6)")
-  }
-  model <- c(
-    "model {",
-    setup$start,
-    "  for(i in 1:n) {",
-    if(is.null(setup$adds)) c(response, setup$eta),
-    setup$param, setup$smooth,
-    "  }"
-  )
-  if(!is.null(setup$adds)) {
-    model <- c(model,
-      "  for(i in 1:n) {",
-      response,
-      setup$adds,
-      setup$eta,
-      "  }"
+  JAGSlinks <- function(x)
+  {
+    switch(x,
+      "identity" = NULL,
+      "log" = "exp",
+      "exp" = "log",
+      "inverse" = "1 /"
     )
   }
 
-  lp <- list()
-  for(j in 1:length(setup$loops))
-    lp[[paste(setup$loops[j])]] <- c(lp[[paste(setup$loops[j])]], setup$priors.coef[j])
-  for(j in names(lp)) {
-    if(j != 1)
-      tmp <- c(paste("  for(j in 1:", j, ") {", sep = ""), lp[[j]], "  }")
-    else
-      tmp <- lp[[j]]
-    model <- c(model, tmp)
+  JAGSmodel <- function(x, family) {
+    if(is.function(family))
+      family <- family()
+    if(is.null(family$JAGS)) stop("no family for JAGS available!")
+    k <- if(all(c("inits", "data", "psave") %in% names(x))) {
+      x <- list(x)
+      1
+    } else length(x)
+    if(k > family$k) {
+      stop(paste("more parameters specified than existing in family ",
+        family$family, ".BayesR()!", sep = ""), call. = FALSE)
+    }
+
+    model <- "model {"
+    for(j in 1:k) {
+      model <- c(model, x[[j]]$start)
+    }
+    pn <- family$names
+    if(is.null(pn)) pn <- paste("theta", 1:family$k, sep = "")
+    pn[1:k] <- paste(pn[1:k], "[i]", sep = "")
+    links <- family[grep("link", names(family), fixed = TRUE, value = TRUE)]
+    links <- sapply(links, JAGSlinks)
+    model <- c(model,  "  for(i in 1:n) {",
+      paste("    response[i] ~ ", family$JAGS$dist, "(", paste(pn, collapse = ", "), ")", sep = ""))
+    for(j in 1:k) {
+      model <- c(model, paste("   ", pn[j], " <- ",
+        if(!is.null(links[[j]])) paste(links[[j]], "(", sep = "") else NULL, x[[j]]$eta,
+        if(!is.null(links[[j]])) ")" else NULL, sep = ""))
+    }
+    for(j in 1:k)
+      model <- c(model, x[[j]]$adds)
+    for(j in 1:k)
+      model <- c(model, x[[j]]$param, x[[j]]$smooth)
+    model <- c(model, "  }")
+
+    for(i in 1:k) {
+      lp <- list()
+      for(j in 1:length(x[[i]]$loops))
+        lp[[paste(x[[i]]$loops[j])]] <- c(lp[[paste(x[[i]]$loops[j])]], x[[i]]$priors.coef[j])
+      for(j in names(lp)) {
+        if(j != 1)
+          tmp <- c(paste("  for(j in 1:", j, ") {", sep = ""), lp[[j]], "  }")
+        else
+          tmp <- lp[[j]]
+        model <- c(model, tmp)
+      }
+      model <- c(model, x[[i]]$priors.scale, x[[i]]$close, x[[i]]$close2)
+    }
+    if(k < family$k) {
+      model <- c(model, paste(" ", family$JAGS$default.prior[(k + 1):family$k]))
+    }
+    model <- c(model, "}")
+    if(k < family$k) {
+      attr(model, "psave") <- family$names[(k + 1):family$k]
+    }
+
+    model
   }
-  model <- c(model, setup$priors.scale, setup$close, setup$close2, "}")
 
-  writeLines(model)
+  if(!all(c("family", "formula", "response") %in% names(x))) {
+    nx <- names(x)
+    nx <- nx[nx != "call"]
+    if(is.null(nx))
+      nx <- 1:length(x)
+    rval <- list()
+    family <- if(is.function(x[[1]]$family)) x[[1]]$family() else x[[1]]$family
+    fn <- family$names
+    for(i in seq_along(nx)) rval[[nx[i]]] <- JAGSeta(x[[i]], fn[i])
+  } else {
+    rval <- JAGSeta(x)
+    family <- x$family 
+  }
+  
+  ## Create model code.
+  model <- JAGSmodel(rval, family)
 
-  ## Final touch ups.
-  setup$data$response <- x$mf[[x$response]]
-  setup$data$n <- length(setup$data$response)
+  ## Collect data.
+  if(all(c("inits", "data", "psave") %in% names(rval)))
+    rval <- list(rval)
+  data <- inits <- psave <- NULL
+  for(j in seq_along(rval)) {
+    data <- c(data, rval[[j]]$data)
+    inits <- c(inits, rval[[j]]$inits)
+    psave <- c(psave, rval[[j]]$psave)
+  }
+  data$n <- nrow(if(all(c("family", "formula", "response") %in% names(x))) x$mf else x[[1]]$mf)
+  psave <- c(psave, attr(model, "psave"))
 
-  rval <- list("model" = model, "data" = setup$data,
-    "inits" = setup$inits, "psave" = setup$psave)
-
-  rval
+  rval <- list("model" = model, "data" = data,
+    "inits" = inits, "psave" = psave)
+  
+  return(rval)
 }
 
 
@@ -107,8 +162,8 @@ buildJAGS.smooth <- function(smooth, setup, i) {
       "*Xf", i, "[i, ", 1:kx, "]", sep = ""))
     setup$data[[paste("Xf", i, sep = "")]] <- smooth$Xf
     tmp <- if(kx > 1) {
-        paste("    b", i, "[j] ~ dnorm(0, sigma)", sep = "")
-    } else paste("  b", i, " ~ dnorm(0, sigma)", sep = "")
+        paste("    b", i, "[j] ~ dnorm(0, 1.0E-6)", sep = "")
+    } else paste("  b", i, " ~ dnorm(0, 1.0E-6)", sep = "")
     setup$priors.coef <- c(setup$priors.coef, tmp)
     setup$loops <- c(setup$loops, kx)
     setup$inits[[paste("b", i, sep = "")]] <- runif(kx)
@@ -267,6 +322,8 @@ samplerJAGS <- function(x, tdir = NULL,
 
   ## Sampling.
   load.module("dic"); load.module("glm")
+
+writeLines(x$model)
   
   jmodel <- jags.model(mfile, data = x$data, inits = inits,
     n.chains = n.chains, n.adapt = n.adapt, ...)
@@ -289,197 +346,222 @@ samplerJAGS <- function(x, tdir = NULL,
 ## Function to extract all results obtained by running the JAGS
 ## sampler. The function uses BayesR structures to represent fitted
 ## model terms etc.
-resultsJAGS <- function(x, samples)
+resultsJAGS <- function(x, samples, id = NULL)
 {
-  chains <- length(samples)
-  rval <- vector(mode = "list", length = chains)
-  snames <- colnames(samples[[1]])
-  for(j in 1:chains) {
-    if(any(grepl("deviance", snames))) {
-      DIC <- as.numeric(samples[[j]][, grepl("deviance", snames)])
-      pd <- var(DIC) / 2
-      DIC <- mean(DIC)
-    } else {
-      DIC <- pd <- NA
-    }
-
-    ## Compute model term effects.
-    param.effects <- effects <- effects.hyp <- NULL
-    fitted.values <- 0
-
-    ## Parametric effects.
-    if(k <- ncol(x$X)) {
-      samps <- as.matrix(samples[[j]][, grepl("beta", snames)], ncol = k)
-      nx <- colnames(x$X)
-      for(i in seq_along(nx)) {
-        if(nx[i] != "(Intercept)") {
-          if(is.null(effects))
-            effects <- list()
-          Z <- matrix(x$X[, i])
-          if(grepl("(Intercept)", nx[i])) {
-            Z <- cbind(x$X[, 1], Z)
-            f <- apply(matrix(cbind(samps[, 1], samps[, i]), ncol = 1), 1, function(x) Z %*% x)
-          } else {
-            f <- apply(matrix(samps[, i], ncol = 1), 1, function(x) Z %*% x)
-          }
-          f <- t(apply(f, 1, quantile, probs = c(0.025, 0.1, 0.5, 0.9, 0.975)))
-          fm <- apply(f, 1, mean)
-          fitted.values <- fitted.values + fm
-          f <- f - mean(fm)
-          fm <- fm - mean(fm)
-          effects[[nx[i]]] <- as.data.frame(unique(cbind(Z, fm, f)))
-          colnames(effects[[nx[i]]]) <- c(nx[i], "Mean", "2.5%", "10%", "50%", "90%", "97.5%")
-          class(effects[[nx[i]]]) <- "data.frame"
-          attr(effects[[nx[i]]], "samples") <- samps[, i]
-          attr(effects[[nx[i]]], "specs") <- list(dim = 1, label = nx[i])
-          attr(effects[[nx[i]]], "fit") <- fm
-          attr(effects[[nx[i]]], "x") <- x$X[, i]
-        }
-      }
-      qu <- t(apply(samps, 2, quantile, probs = c(0.025, 0.5, 0.975)))
-      sd <- drop(apply(samps, 2, sd))
-      me <- drop(apply(samps, 2, mean))
-      param.effects <- cbind(me, sd, qu)
-      rownames(param.effects) <- nx
-      colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
-      if(grepl("(Intercept)", nx[i])) {
-        fitted.values <- fitted.values + param.effects[1, 1]
-      }
-      attr(param.effects, "samples") <- samps
-      colnames(attr(param.effects, "samples")) <- nx
-    }
-  
-    ## Smooth terms.
-    if(length(x$smooth)) {
-      if(!is.list(effects))
-        effects <- list()
-      for(i in 1:length(x$smooth)) {
-        if(!is.null(x$smooth[[i]]$special)) {
-          fst <- resultsJAGS.special(x$smooth[[i]], samples[[j]], x$mf, i)
-          if(is.null(attr(fst, "by"))) {
-            effects[[x$smooth[[i]]$label]] <- fst$term
-            effects.hyp <- rbind(effects.hyp, fst$effects.hyp)
-            fitted.values <- fitted.values + fst$fitted.values
-          } else {
-            tjl <- names(fst)
-            for(l in tjl) {
-              effects[[l]] <- fst[[l]]$term
-              effects.hyp <- rbind(effects.hyp, fst[[l]]$effects.hyp)
-              fitted.values <- fitted.values + fst[[l]]$fitted.values
-            }
-          }
-          rm(fst)
-        } else {
-          ## Get coefficient samples of smooth term.
-          xsamples <- rsamples <- NULL
-          kr <- if(is.null(x$smooth[[i]]$rand$Xr)) 0 else ncol(x$smooth[[i]]$rand$Xr)
-          kx <- if(is.null(x$smooth[[i]]$Xf)) 0 else ncol(x$smooth[[i]]$Xf)
-          kw <- 0
-          if(kx) {
-            pn <- grep(paste("b", i, sep = ""), snames, value = TRUE, fixed = TRUE)
-            pn <- pn[!grepl("tau", pn)]
-            xsamples <- matrix(samples[[j]][, snames %in% pn], ncol = kx)
-          }
-          if(kr) {
-            pn <- grep(paste("g", i, sep = ""), snames, value = TRUE, fixed = TRUE)
-            pn <- pn[!grepl("tau", pn)]
-            rsamples <- as.matrix(samples[[j]][, snames %in% pn], ncol = kr)
-          }
-          psamples <- cbind("ra" = rsamples, "fx" = xsamples)
-  
-          ## Retransform parameter samples.
-          if(kr) {
-            re_trans <- function(g) {
-              g <- x$smooth[[i]]$trans.D * g
-              if(!is.null(x$smooth[[i]]$trans.U))
-                g <- x$smooth[[i]]$trans.U %*% g
-              g
-            }
-            psamples <- t(apply(psamples, 1, re_trans))
-          }
-
-          ## Prediction matrix.
-          X <- PredictMat(x$smooth[[i]], x$mf)
-
-          ## Possible variance parameter samples.
-          vsamples <- NULL
-          taug <- paste("taug", if(is.null(x$smooth[[i]]$id)) i else x$smooth[[i]]$id, sep = "")
-          if(taug %in% snames) {
-            vsamples <- as.numeric(samples[[j]][, snames %in% taug])
-          }
-
-          get.mu <- function(X, g) {
-            X %*% as.numeric(g)
-          }
-
-          ## Compute samples of fitted values.
-          fsamples <- apply(psamples, 1, function(g) { get.mu(X, g) })
-
-          ## Compute final smooth term object.
-          fst <- compute_term(x$smooth[[i]], fsamples = fsamples, psamples = psamples,
-            vsamples = vsamples, FUN = NULL, snames = snames,
-            effects.hyp = effects.hyp, fitted.values = fitted.values, data = x$mf)
-
-          attr(fst$term, "specs")$get.mu <- get.mu 
-
-          ## Add term to effects list.
-          effects[[x$smooth[[i]]$label]] <- fst$term
-          effects.hyp <- fst$effects.hyp
-
-          fitted.values <- fst$fitted.values
-          rm(fst)
-        }
+  if(!all(c("family", "formula") %in% names(x))) {
+    nx <- names(x)
+    nx <- nx[nx != "call"]
+    rval <- list()
+    family <- x[[1]]$family
+    if(is.function(family))
+      family <- family()
+    fn <- family$names
+    for(j in seq_along(nx)) {
+      rval[[nx[j]]] <- resultsJAGS(x[[nx[j]]], samples, id = fn[j])
+      if(!is.null(rval[[nx[j]]]$effects)) {
+        names(rval[[nx[j]]]$effects) <- paste(names(rval[[nx[j]]]$effects), fn[j], sep = ":")
       }
     }
-
-    ## Scale parameter.
-    samps <- 1 / as.numeric(samples[[j]][, snames %in% "sigma"])
-    qu <- drop(quantile(samps, probs = c(0.025, 0.5, 0.975)))
-    sd <- sd(drop(samps))
-    me <- mean(samps)
-    scale <- matrix(c(me, sd, qu), nrow = 1)
-    colnames(scale) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
-    rownames(scale) <- "Sigma"
-    samps <- matrix(samps, ncol = 1)
-    colnames(samps) <- "scale"
-    attr(scale, "samples") <- as.mcmc(samps)
-
-    ## Compute partial residuals.
-    for(i in seq_along(effects)) {
-      e <- x$mf[[x$response]] - (fitted.values - attr(effects[[i]], "fit"))
-      if(is.null(attr(effects[[i]], "specs")$xt$center)) {
-        e <- e - mean(e)
+    names(rval) <- fn
+    class(rval) <- "bayesr"
+    return(rval)
+  } else {
+    chains <- length(samples)
+    rval <- vector(mode = "list", length = chains)
+    snames <- colnames(samples[[1]])
+    for(j in 1:chains) {
+      if(any(grepl("deviance", snames))) {
+        DIC <- as.numeric(samples[[j]][, grepl("deviance", snames)])
+        pd <- var(DIC) / 2
+        DIC <- mean(DIC)
       } else {
-        if(attr(effects[[i]], "specs")$xt$center)
-          e <- e - mean(e)
+        DIC <- pd <- NA
       }
-      e <- cbind(attr(effects[[i]], "x"), e)
-      if(!is.null(attr(effects[[i]], "by.drop")))
-        e <- e[attr(effects[[i]], "by.drop"), ]
-      e <- as.data.frame(e)
-      try(names(e) <- c(attr(effects[[i]], "specs")$term, "partial.resids"))
-      attr(effects[[i]], "partial.resids") <- e
-      attr(effects[[i]], "fit") <- NULL
-      attr(effects[[i]], "x") <- NULL
-      attr(effects[[i]], "by.drop") <- NULL
+
+      ## Compute model term effects.
+      param.effects <- effects <- effects.hyp <- NULL
+      fitted.values <- 0
+
+      ## Parametric effects.
+      if(k <- ncol(x$X)) {
+        samps <- as.matrix(samples[[j]][, grepl(paste("beta", id, sep = ""), snames)], ncol = k)
+        nx <- colnames(x$X)
+        for(i in seq_along(nx)) {
+          if(nx[i] != "(Intercept)") {
+            if(is.null(effects))
+              effects <- list()
+            Z <- matrix(x$X[, i])
+            if(grepl("(Intercept)", nx[i])) {
+              Z <- cbind(x$X[, 1], Z)
+              f <- apply(matrix(cbind(samps[, 1], samps[, i]), ncol = 1), 1, function(x) Z %*% x)
+            } else {
+              f <- apply(matrix(samps[, i], ncol = 1), 1, function(x) Z %*% x)
+            }
+            f <- t(apply(f, 1, quantile, probs = c(0.025, 0.1, 0.5, 0.9, 0.975)))
+            fm <- apply(f, 1, mean)
+            fitted.values <- fitted.values + fm
+            f <- f - mean(fm)
+            fm <- fm - mean(fm)
+            effects[[nx[i]]] <- as.data.frame(unique(cbind(Z, fm, f)))
+            colnames(effects[[nx[i]]]) <- c(nx[i], "Mean", "2.5%", "10%", "50%", "90%", "97.5%")
+            class(effects[[nx[i]]]) <- "data.frame"
+            attr(effects[[nx[i]]], "samples") <- samps[, i]
+            attr(effects[[nx[i]]], "specs") <- list(dim = 1, label = nx[i])
+            attr(effects[[nx[i]]], "fit") <- fm
+            attr(effects[[nx[i]]], "x") <- x$X[, i]
+          }
+        }
+        qu <- t(apply(samps, 2, quantile, probs = c(0.025, 0.5, 0.975)))
+        sd <- drop(apply(samps, 2, sd))
+        me <- drop(apply(samps, 2, mean))
+        param.effects <- cbind(me, sd, qu)
+
+        rownames(param.effects) <- nx
+        colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
+        if(grepl("(Intercept)", nx[i])) {
+          fitted.values <- fitted.values + param.effects[1, 1]
+        }
+        attr(param.effects, "samples") <- samps
+        colnames(attr(param.effects, "samples")) <- nx
+      }
+  
+      ## Smooth terms.
+      if(length(x$smooth)) {
+        if(!is.list(effects))
+          effects <- list()
+        for(i in 1:length(x$smooth)) {
+          if(!is.null(x$smooth[[i]]$special)) {
+            fst <- resultsJAGS.special(x$smooth[[i]], samples[[j]], x$mf, i)
+            if(is.null(attr(fst, "by"))) {
+              effects[[x$smooth[[i]]$label]] <- fst$term
+              effects.hyp <- rbind(effects.hyp, fst$effects.hyp)
+              fitted.values <- fitted.values + fst$fitted.values
+            } else {
+              tjl <- names(fst)
+              for(l in tjl) {
+                effects[[l]] <- fst[[l]]$term
+                effects.hyp <- rbind(effects.hyp, fst[[l]]$effects.hyp)
+                fitted.values <- fitted.values + fst[[l]]$fitted.values
+              }
+            }
+            rm(fst)
+          } else {
+            ## Get coefficient samples of smooth term.
+            xsamples <- rsamples <- NULL
+            kr <- if(is.null(x$smooth[[i]]$rand$Xr)) 0 else ncol(x$smooth[[i]]$rand$Xr)
+            kx <- if(is.null(x$smooth[[i]]$Xf)) 0 else ncol(x$smooth[[i]]$Xf)
+            kw <- 0
+            if(kx) {
+              pn <- grep(paste("b", i, id, sep = ""), snames, value = TRUE, fixed = TRUE)
+              pn <- pn[!grepl(paste("tau", id, sep = ""), pn)]
+              xsamples <- matrix(samples[[j]][, snames %in% pn], ncol = kx)
+            }
+            if(kr) {
+              pn <- grep(paste("g", i, id, sep = ""), snames, value = TRUE, fixed = TRUE)
+              pn <- pn[!grepl(paste("taug", i, id, sep = ""), pn)]
+              rsamples <- as.matrix(samples[[j]][, snames %in% pn], ncol = kr)
+            }
+            psamples <- cbind("ra" = rsamples, "fx" = xsamples)
+  
+            ## Retransform parameter samples.
+            if(kr) {
+              re_trans <- function(g) {
+                g <- x$smooth[[i]]$trans.D * g
+                if(!is.null(x$smooth[[i]]$trans.U))
+                  g <- x$smooth[[i]]$trans.U %*% g
+                g
+              }
+              psamples <- t(apply(psamples, 1, re_trans))
+            }
+
+            ## Prediction matrix.
+            X <- PredictMat(x$smooth[[i]], x$mf)
+
+            ## Possible variance parameter samples.
+            vsamples <- NULL
+            taug <- paste("taug", if(is.null(x$smooth[[i]]$id)) i else x$smooth[[i]]$id, id, sep = "")
+            if(taug %in% snames) {
+              vsamples <- as.numeric(samples[[j]][, snames %in% taug])
+            }
+
+            get.mu <- function(X, g) {
+              X %*% as.numeric(g)
+            }
+
+            ## Compute samples of fitted values.
+            fsamples <- apply(psamples, 1, function(g) { get.mu(X, g) })
+
+            ## Compute final smooth term object.
+            fst <- compute_term(x$smooth[[i]], fsamples = fsamples, psamples = psamples,
+              vsamples = vsamples, FUN = NULL, snames = snames,
+              effects.hyp = effects.hyp, fitted.values = fitted.values, data = x$mf)
+
+            attr(fst$term, "specs")$get.mu <- get.mu 
+
+            ## Add term to effects list.
+            effects[[x$smooth[[i]]$label]] <- fst$term
+            effects.hyp <- fst$effects.hyp
+
+            fitted.values <- fst$fitted.values
+            rm(fst)
+          }
+        }
+      }
+
+      ## Scale parameter.
+      if(!is.null(id)) {
+        if(id %in% snames) {
+          samps <- 1 / as.numeric(samples[[j]][, snames %in% id])
+          qu <- drop(quantile(samps, probs = c(0.025, 0.5, 0.975)))
+          sd <- sd(drop(samps))
+          me <- mean(samps)
+          scale <- matrix(c(me, sd, qu), nrow = 1)
+          colnames(scale) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
+          rownames(scale) <- "Sigma"
+          samps <- matrix(samps, ncol = 1)
+          colnames(samps) <- "scale"
+          attr(scale, "samples") <- as.mcmc(samps)
+        }
+      }
+
+      ## Compute partial residuals.
+      if(x$response %in% names(x$mf)) {
+        for(i in seq_along(effects)) {
+          e <- x$mf[[x$response]] - (fitted.values - attr(effects[[i]], "fit"))
+          if(is.null(attr(effects[[i]], "specs")$xt$center)) {
+            e <- e - mean(e)
+          } else {
+            if(attr(effects[[i]], "specs")$xt$center)
+              e <- e - mean(e)
+          }
+          e <- cbind(attr(effects[[i]], "x"), e)
+          if(!is.null(attr(effects[[i]], "by.drop")))
+            e <- e[attr(effects[[i]], "by.drop"), ]
+          e <- as.data.frame(e)
+          try(names(e) <- c(attr(effects[[i]], "specs")$term, "partial.resids"))
+          attr(effects[[i]], "partial.resids") <- e
+          attr(effects[[i]], "fit") <- NULL
+          attr(effects[[i]], "x") <- NULL
+          attr(effects[[i]], "by.drop") <- NULL
+        }
+      }
+
+      ## Stuff everything together.
+      rval[[j]] <- list("call" = x$call, "family" = x$family,
+        "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(x$mf),
+        "formula" = x$formula), "param.effects" = param.effects, "effects" = effects,
+        "effects.hyp" = effects.hyp, "scale" = scale, "fitted.values" = fitted.values,
+        "residuals" = x$mf[[x$response]] - fitted.values)
+
+      class(rval[[j]]) <- "bayesr"
     }
-
-    ## Stuff everything together.
-    rval[[j]] <- list("call" = x$call, "family" = x$family,
-      "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(x$mf),
-      "formula" = x$formula), "param.effects" = param.effects, "effects" = effects,
-      "effects.hyp" = effects.hyp, "scale" = scale, "fitted.values" = fitted.values,
-      "residuals" = x$mf[[x$response]] - fitted.values)
-
-    class(rval[[j]]) <- "bayesr"
+    names(rval) <- paste("Chain", 1:chains, sep = "_")
+    if(length(rval) < 2) {
+      rval <- rval[[1]]
+    }
+    class(rval) <- "bayesr"
+    return(rval)
   }
-  names(rval) <- paste("Chain", 1:chains, sep = "_")
-  if(length(rval) < 2) {
-    rval <- rval[[1]]
-  }
-  class(rval) <- "bayesr"
-
-  rval
 }
 
 
