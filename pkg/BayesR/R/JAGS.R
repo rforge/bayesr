@@ -4,8 +4,33 @@
 ## Setup the model structure needed for the sampler.
 ## The function creates the model code, initials and data
 ## to run a JAGS sampler.
+restructure_x <- function(x) {
+  call <- x$call
+  x <- x[names(x) != "call"]
+  x2 <- list(); k <- 1
+  for(i in seq_along(x)) {
+    if(!all(c("family", "formula", "response") %in% names(x[[i]]))) {
+      x2[[k]] <- x[[i]]
+      x[[i]] <- NULL
+    }
+  }
+  x <- c(x, x2)
+  if(any(duplicated(nx <- names(x))))
+    names(x) <- paste(nx, 1:length(nx), sep = "")
+  x$call <- call
+  x
+}
+
+transformJAGS <- function(x) {
+  x <- randomize(x)
+  x <- restructure_x(x)
+  x
+}
+
 setupJAGS <- function(x)
 {
+  x <- restructure_x(x)
+
   JAGSeta <- function(x, id = NULL) {
     setup <- list()
     setup$inits <- list()
@@ -142,6 +167,9 @@ setupJAGS <- function(x)
     inits <- c(inits, rval[[j]]$inits)
     psave <- c(psave, rval[[j]]$psave)
   }
+  data <- data[unique(names(data))]
+  inits <- inits[unique(names(inits))]
+  psave <- unique(psave)
   data$n <- nrow(if(all(c("family", "formula", "response") %in% names(x))) x$mf else x[[1]]$mf)
   psave <- c(psave, attr(model, "psave"))
 
@@ -359,6 +387,11 @@ resultsJAGS <- function(x, samples, id = NULL)
     for(j in seq_along(nx)) {
       rval[[nx[j]]] <- resultsJAGS(x[[nx[j]]], samples, id = fn[j])
       if(!is.null(rval[[nx[j]]]$effects)) {
+        for(i in seq_along(rval[[nx[j]]]$effects)) {
+          specs <- attr(rval[[nx[j]]]$effects[[i]], "specs")
+          specs$label <- paste(specs$label, fn[j], sep = ":")
+          attr(rval[[nx[j]]]$effects[[i]], "specs") <- specs
+        }
         names(rval[[nx[j]]]$effects) <- paste(names(rval[[nx[j]]]$effects), fn[j], sep = ":")
       }
     }

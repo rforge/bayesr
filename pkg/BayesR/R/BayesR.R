@@ -3,7 +3,7 @@
 ################################################
 bayesr <- function(formula, family = gaussian(), data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.fail, contrasts = NULL,
-  parse.input = parse.input.bayesr, transform = randomize, setup = setupJAGS,
+  parse.input = parse.input.bayesr, transform = transformJAGS, setup = setupJAGS,
   sampler = samplerJAGS, results = resultsJAGS,
   cores = NULL, combine = TRUE, ...)
 {
@@ -86,7 +86,7 @@ bayesr <- function(formula, family = gaussian(), data = NULL, knots = NULL,
 ##########################################################
 ## (2) Parsing all input using package mgcv structures. ##
 ##########################################################
-parse.input.bayesr <- function(formula, data, family = gaussian(),
+parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, ...)
 {
@@ -203,6 +203,9 @@ parse.input.bayesr <- function(formula, data, family = gaussian(),
       if(is.null(ft)) stop("argument family is specified wrong!")
       family <- eval(parse(text = paste(tolower(as.character(ft)), "BayesR", sep = ".")))
     }
+    fe <- if(is.function(family)) family() else family
+    if(!is.null(fe$validate))
+      fe$validate(mf[[response]])
 
     rval <- list("formula" = formula, "fake.formula" = fake.formula, "response" = response,
       "X" = X, "smooth" = smooth, "sx.smooth" = sx.smooth, "pterms" = pterms, "sterms" = sterms,
@@ -348,6 +351,8 @@ formula_hcheck <- function(formula)
         fi <- if(!is.list(formula[[i]])) list(formula[[i]]) else formula[[i]]
         for(jj in seq_along(fi)) {
           av <- all.vars(fi[[jj]])
+          rn <- formula_respname(fi[[jj]])
+          av <- av[av != rn]
           if(length(one <- grep("1", as.character(fi[[jj]]), fixed = TRUE, value = TRUE))) {
             av <- c(av, one)
           }
@@ -402,10 +407,12 @@ randomize <- function(x)
 {
   if(!all(c("family", "formula", "response") %in% names(x))) {
     nx <- names(x)
-    nx <- nx[nx != "call"]
     if(is.null(nx))
       nx <- 1:length(x)
-    for(i in nx) x[[i]] <- randomize(x[[i]])
+    for(i in seq_along(x)) {
+      if(nx[i] != "call")
+        x[[i]] <- randomize(x[[i]])
+    }
   } else {
     if(m <- length(x$smooth)) {
       for(j in 1:m) {
@@ -867,23 +874,26 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, sc
     args$residuals <- if(is.null(args$residuals)) FALSE else args$residuals
     if(!is.null(args$ylim) || which == "samples")
       scale <- 0
-    ne <- names(x[[1]]$effects)
-    if(is.null(term))
-      term <- 1:length(ne)
-    else {
-      if(is.character(term)) {
-        tterm <- NULL
-        for(j in term)
-          tterm <- c(tterm, grep(j, ne, fixed = TRUE))
-        term <- na.omit(tterm)
-      } else term <- term[term <= length(ne)]
+    ne <- pterms <- list()
+    for(i in 1:n) {
+      ne[[i]] <- names(x[[i]]$effects)
+      if(is.null(term))
+        pterms[[i]] <- 1:length(ne[[i]])
+      else {
+        if(is.character(term)) {
+          tterm <- NULL
+          for(j in term)
+            tterm <- c(tterm, grep(j, ne[[i]], fixed = TRUE))
+          pterms[[i]] <- if(length(tterm)) tterm else NA
+        } else pterms[[i]] <- term[term <= length(ne[[i]])]
+      }
     }
     for(i in 1:n) {
       if(!is.null(x[[i]]$effects)) {
-        k <- k + length(term)
+        k <- k + length(pterms[[i]])
         if(scale > 0) {
           term <- term[1:length(x[[i]]$effects)]
-          for(e in term) {
+          for(e in pterms[[i]]) {
             et <- x[[i]]$effects[[e]]
             de <- attr(et, "specs")$dim + 1
             ylim <- c(ylim, range(et[, de:ncol(et)]))
@@ -907,7 +917,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, sc
     } else args$residuals <- NULL
     for(i in 1:n) {
       if(!is.null(x[[i]]$effects)) {
-        for(e in term) {
+        for(e in pterms[[i]]) {
           args$x <- x[[i]]$effects[[e]]
           do.call("plot.bayesr.effect", args)
         }
@@ -991,6 +1001,7 @@ delete.args <- function(fun = NULL, args = NULL, not = NULL)
 ##################################
 summary.bayesr <- function(object, model = NULL, ...)
 {
+  call <- attr(object, "call")
   object <- get.model(object, model)
   rval <- list()
   n <- length(object)
@@ -1000,7 +1011,7 @@ summary.bayesr <- function(object, model = NULL, ...)
         attr(object[[i]][[j]], "samples") <- NULL
     }
     rval[[i]] <- with(object[[i]],
-      c(list("call" = call, "param.effects" = param.effects,
+      c(list("param.effects" = param.effects,
         "effects.hyp" = effects.hyp, "scale" = scale, "family" = family),
         model)
     )
@@ -1010,6 +1021,7 @@ summary.bayesr <- function(object, model = NULL, ...)
   else
     names(rval) <- names(object)
   attr(rval, "n") <- n
+  attr(rval, "call") <- call
   class(rval) <- "summary.bayesr"
   rval
 }
@@ -1023,6 +1035,8 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
     x <- list(x)
   else
     nx <- names(x)
+  cat("\n")
+  cat("Call:\n"); print(attr(x, "call"))
   cat("\n")
   print(if(is.function(x[[1]]$family)) x[[1]]$family() else x[[1]]$family)
   cat("---\n\n")
@@ -1058,7 +1072,6 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
       cat("\n\n")
     } else cat("\n")
   }
-  invisible(x)
 }
 
 
@@ -1073,9 +1086,30 @@ gaussian.BayesR <- function(mu.link = "identity", sigma.link = "log")
     "mu.link" = mu.link,
     "sigma.link" = sigma.link,
     "names" = c("mu", "sigma"),
+    "validate" = function(x) { NULL },
     "JAGS" = list(
       "dist" = "dnorm",
       "default.prior" = c("mu ~ dnorm(0, 1.0E-6)", "sigma ~ dgamma(1.0E-6, 1.0E-6)")
+    )
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+beta.BayesR <- function(alpha.link = "log", beta.link = "log")
+{
+  rval <- list(
+    "family" = "beta",
+    "k" = 2,
+    "alpha.link" = alpha.link,
+    "beta.link" = beta.link,
+    "names" = c("alpha", "beta"),
+    "validate" = function(x) {
+      if(!all(x > 0 & x < 1)) stop("values not in (0, 1) using beta.BayesR!")
+    },
+    "JAGS" = list(
+      "dist" = "dbeta",
+      "default.prior" = c("alpha ~ dgamma(1.0E-6, 1.0E-6)", "beta ~ dgamma(1.0E-6, 1.0E-6)")
     )
   )
   class(rval) <- "family.BayesR"

@@ -47,4 +47,4 @@ dat <- data.frame("x1" = runif(n, -3, 3), x2 = runif(n, -3, 3))
 ## dat$y <- with(dat, 21 + cf + sin(x2) + rnorm(n, sd = 0.1))
 dat$y <- with(dat, 1.2 + sin(x1) + cos(x2) + rnorm(n, sd = (cos(dat$x1) + 2) / 4))
 
-b <- bayesr(y ~ s(x1) + s(x2), data = dat)
+b <- bayesr(y ~ s(x1) + s(x2) | s(x1), data = dat)
