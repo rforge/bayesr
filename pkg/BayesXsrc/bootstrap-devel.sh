@@ -11,4 +11,7 @@ done
 for i in $FILES ; do
   svn export --username "${USER}" --password "${PASSWD}" $REPOS/$i $i
 done
+cd ..
+cp dev-Makefile Makefile
+cp dev-Makefile.win Makefile.win
 
