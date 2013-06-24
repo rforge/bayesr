@@ -187,14 +187,15 @@ parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
         }
       }
     }
-
     
-    if(!is.function(family)) {
-      if(!is.character(family)) {
-        family <- family$family
-        if(is.null(family)) stop("argument family is specified wrong!")
+    if(!inherits(family, "family.BayesR")) {
+      if(!is.function(family)) {
+        if(!is.character(family)) {
+          family <- family$family
+          if(is.null(family)) stop("argument family is specified wrong!")
+        }
+        family <- eval(parse(text = paste(tolower(family), "BayesR", sep = ".")))
       }
-      family <- eval(parse(text = paste(tolower(family), "BayesR", sep = ".")))
     }
     if(!inherits(family, "family.BayesR")) {
       if(!is.function(family))
@@ -204,8 +205,10 @@ parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
       family <- eval(parse(text = paste(tolower(as.character(ft)), "BayesR", sep = ".")))
     }
     fe <- if(is.function(family)) family() else family
-    if(!is.null(fe$validate))
-      fe$validate(mf[[response]])
+    if(!is.null(fe$valideta))
+      fe$valideta(mf[[response]])
+    if(is.factor(mf[[response]]))
+      mf[[response]] <- as.integer(mf[[response]]) - 1
 
     rval <- list("formula" = formula, "fake.formula" = fake.formula, "response" = response,
       "X" = X, "smooth" = smooth, "sx.smooth" = sx.smooth, "pterms" = pterms, "sterms" = sterms,
@@ -227,7 +230,14 @@ dat_search <- function(data, xn)
     }
     return(data[[which(i)[1]]])
   } else {
-    return(if(all(xn %in% colnames(data))) as.data.frame(data)[, xn, drop = FALSE] else NA)
+    if(is.environment(data)) {
+      dat <- list()
+      for(j in xn)
+        dat[[j]] <- get(j, envir = data)
+      return(as.data.frame(dat))
+    } else {
+      return(if(all(xn %in% colnames(data))) as.data.frame(data)[, xn, drop = FALSE] else NA)
+    }
   }
 }
 
@@ -854,7 +864,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, sc
 
   ## What should be plotted?
   which.match <- c("effects", "samples", "hist-resid", "qq-resid",
-    "scatter-resid", "scale-resid", "scale-samples", "max-acf")
+    "scatter-resid", "scale-resid", "scale-samples", "max-acf", "param-samples")
   if(!is.character(which)) {
     if(any(which > 8L))
       which <- which[which <= 8L]
@@ -876,7 +886,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, sc
       scale <- 0
     ne <- pterms <- list()
     for(i in 1:n) {
-      ne[[i]] <- names(x[[i]]$effects)
+      ne[[i]] <- if(!is.null(names(x[[i]]$effects))) names(x[[i]]$effects) else NA
       if(is.null(term))
         pterms[[i]] <- 1:length(ne[[i]])
       else {
@@ -928,6 +938,13 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, sc
     if(!ask) par(mfrow = n2mfrow(n)) else par(ask = ask)
     for(i in 1:n) {
       args$x <- attr(x[[i]]$scale, "samples")
+      do.call("plot", args)
+    }
+  }
+  if(which == "param-samples") {
+    if(!ask) par(mfrow = n2mfrow(n)) else par(ask = ask)
+    for(i in 1:n) {
+      args$x <- attr(x[[i]]$param.effects, "samples")
       do.call("plot", args)
     }
   }
@@ -1029,6 +1046,7 @@ summary.bayesr <- function(object, model = NULL, ...)
 print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ...)
 {
   on.exit(return(invisible(x)))
+  call <- attr(x, "call")
   n <- attr(x, "n")
   nx <- NULL
   if(n < 2)
@@ -1036,7 +1054,7 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
   else
     nx <- names(x)
   cat("\n")
-  cat("Call:\n"); print(attr(x, "call"))
+  cat("Call:\n"); print(call)
   cat("\n")
   print(if(is.function(x[[1]]$family)) x[[1]]$family() else x[[1]]$family)
   cat("---\n\n")
@@ -1072,58 +1090,5 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
       cat("\n\n")
     } else cat("\n")
   }
-}
-
-
-###################
-## (9) Families. ##
-###################
-gaussian.BayesR <- function(mu.link = "identity", sigma.link = "log")
-{
-  rval <- list(
-    "family" = "gaussian",
-    "k" = 2,
-    "mu.link" = mu.link,
-    "sigma.link" = sigma.link,
-    "names" = c("mu", "sigma"),
-    "validate" = function(x) { NULL },
-    "JAGS" = list(
-      "dist" = "dnorm",
-      "default.prior" = c("mu ~ dnorm(0, 1.0E-6)", "sigma ~ dgamma(1.0E-6, 1.0E-6)")
-    )
-  )
-  class(rval) <- "family.BayesR"
-  rval
-}
-
-beta.BayesR <- function(alpha.link = "log", beta.link = "log")
-{
-  rval <- list(
-    "family" = "beta",
-    "k" = 2,
-    "alpha.link" = alpha.link,
-    "beta.link" = beta.link,
-    "names" = c("alpha", "beta"),
-    "validate" = function(x) {
-      if(!all(x > 0 & x < 1)) stop("values not in (0, 1) using beta.BayesR!")
-    },
-    "JAGS" = list(
-      "dist" = "dbeta",
-      "default.prior" = c("alpha ~ dgamma(1.0E-6, 1.0E-6)", "beta ~ dgamma(1.0E-6, 1.0E-6)")
-    )
-  )
-  class(rval) <- "family.BayesR"
-  rval
-}
-
-print.family.BayesR <- function(x)
-{
-  cat("Family:", x$family, "\n")
-  links <- NULL
-  for(j in grep("link", names(x), value = TRUE))
-    links <- c(links, paste(gsub(".link", "", j, fixed = TRUE), " = \"", x[[j]], "\"", sep = ""))
-  links <- paste(links, collapse = ", ")
-  cat("Links:", links, sep = " ")
-  cat("\n")
 }
 

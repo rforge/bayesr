@@ -5,19 +5,22 @@
 ## The function creates the model code, initials and data
 ## to run a JAGS sampler.
 restructure_x <- function(x) {
-  call <- x$call
-  x <- x[names(x) != "call"]
-  x2 <- list(); k <- 1
-  for(i in seq_along(x)) {
-    if(!all(c("family", "formula", "response") %in% names(x[[i]]))) {
-      x2[[k]] <- x[[i]]
-      x[[i]] <- NULL
+  if(!all(c("family", "formula", "response") %in% names(x))) {
+    call <- x$call
+    x <- x[names(x) != "call"]
+    x2 <- list(); k <- 1
+    for(i in seq_along(x)) {
+      if(!all(c("family", "formula", "response") %in% names(x[[i]]))) {
+        x2[[k]] <- x[[i]]
+        x[[i]] <- NULL
+      }
     }
+    if(length(x2))
+      x <- c(x, x2)
+    if(any(duplicated(nx <- names(x))))
+      names(x) <- paste(nx, 1:length(nx), sep = "")
+    x$call <- call
   }
-  x <- c(x, x2)
-  if(any(duplicated(nx <- names(x))))
-    names(x) <- paste(nx, 1:length(nx), sep = "")
-  x$call <- call
   x
 }
 
@@ -75,10 +78,12 @@ setupJAGS <- function(x)
   JAGSlinks <- function(x)
   {
     switch(x,
-      "identity" = NULL,
-      "log" = "exp",
-      "exp" = "log",
-      "inverse" = "1 /"
+      "identity" = "eta",
+      "log" = "exp(eta)",
+      "exp" = "log(eta)",
+      "inverse" = "1 / (eta)",
+      "logit" = "1 / (1 + exp(-(eta)))",
+      "probit" = "phi(eta)"
     )
   }
 
@@ -107,9 +112,7 @@ setupJAGS <- function(x)
     model <- c(model,  "  for(i in 1:n) {",
       paste("    response[i] ~ ", family$JAGS$dist, "(", paste(pn, collapse = ", "), ")", sep = ""))
     for(j in 1:k) {
-      model <- c(model, paste("   ", pn[j], " <- ",
-        if(!is.null(links[[j]])) paste(links[[j]], "(", sep = "") else NULL, x[[j]]$eta,
-        if(!is.null(links[[j]])) ")" else NULL, sep = ""))
+      model <- c(model, paste("    ", pn[j], " <- ", gsub("eta", x[[j]]$eta, links[[j]]), sep = ""))
     }
     for(j in 1:k)
       model <- c(model, x[[j]]$adds)
@@ -448,13 +451,12 @@ resultsJAGS <- function(x, samples, id = NULL)
         sd <- drop(apply(samps, 2, sd))
         me <- drop(apply(samps, 2, mean))
         param.effects <- cbind(me, sd, qu)
-
         rownames(param.effects) <- nx
         colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
         if(grepl("(Intercept)", nx[i])) {
           fitted.values <- fitted.values + param.effects[1, 1]
         }
-        attr(param.effects, "samples") <- samps
+        attr(param.effects, "samples") <- as.mcmc(samps)
         colnames(attr(param.effects, "samples")) <- nx
       }
   
@@ -541,19 +543,26 @@ resultsJAGS <- function(x, samples, id = NULL)
         }
       }
 
-      ## Scale parameter.
-      if(!is.null(id)) {
-        if(id %in% snames) {
-          samps <- 1 / as.numeric(samples[[j]][, snames %in% id])
+      ## Scale parameters.
+      scale.m <- scale.samps.m <- NULL
+      sn <- if(is.null(id)) {
+        family <- if(is.function(x$family)) x$family() else x$family
+        family$names
+      } else id
+      for(snj in sn) {
+        if(snj %in% snames) {
+          samps <- 1 / as.numeric(samples[[j]][, snames %in% snj])
           qu <- drop(quantile(samps, probs = c(0.025, 0.5, 0.975)))
           sd <- sd(drop(samps))
           me <- mean(samps)
           scale <- matrix(c(me, sd, qu), nrow = 1)
           colnames(scale) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
-          rownames(scale) <- "Sigma"
+          rownames(scale) <- snj
           samps <- matrix(samps, ncol = 1)
-          colnames(samps) <- "scale"
-          attr(scale, "samples") <- as.mcmc(samps)
+          colnames(samps) <- snj
+          scale.samps.m <- cbind(scale.samps.m, samps)
+          scale.m <- rbind(scale.m, scale)
+          attr(scale.m, "samples") <- as.mcmc(scale.samps.m)
         }
       }
 
@@ -583,7 +592,7 @@ resultsJAGS <- function(x, samples, id = NULL)
       rval[[j]] <- list("call" = x$call, "family" = x$family,
         "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(x$mf),
         "formula" = x$formula), "param.effects" = param.effects, "effects" = effects,
-        "effects.hyp" = effects.hyp, "scale" = scale, "fitted.values" = fitted.values,
+        "effects.hyp" = effects.hyp, "scale" = scale.m, "fitted.values" = fitted.values,
         "residuals" = x$mf[[x$response]] - fitted.values)
 
       class(rval[[j]]) <- "bayesr"
