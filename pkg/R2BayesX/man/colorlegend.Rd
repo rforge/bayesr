@@ -12,14 +12,14 @@
 
 \usage{
 colorlegend (color = NULL, ncol = NULL, x = NULL, 
-  breaks = NULL, pos = NULL, shift = 0.02, side.legend = 1L, 
+  breaks = NULL, pos = "center", shift = 0.02, side.legend = 1L, 
   side.ticks = 1L, range = NULL, lrange = NULL, 
   width = 0.4, height = 0.06, scale = TRUE, xlim = NULL, 
   ylim = NULL, plot = NULL, full = FALSE, add = FALSE, 
   col.border = "black", lty.border = 1L, lwd.border = 1L, 
   ticks = TRUE, at = NULL, col.ticks = "black", lwd.ticks = 1L, 
-  lty.ticks = 1L, length.ticks = 1L, labels = NULL, 
-  distance.labels = 1L, col.labels = "black", cex.labels = 1L, 
+  lty.ticks = 1L, length.ticks = 0.3, labels = NULL, 
+  distance.labels = 0.8, col.labels = "black", cex.labels = 1L, 
   digits = 2L, swap = FALSE, symmetric = TRUE, xpd = NULL,
   title = NULL, side.title = 2, shift.title = c(0, 0), ...)
 }
@@ -65,7 +65,8 @@ colorlegend (color = NULL, ncol = NULL, x = NULL,
   \item{col.ticks}{the colors of the ticks.}
   \item{lwd.ticks}{the line width of the ticks.}
   \item{lty.ticks}{the line type of the ticks.}
-  \item{length.ticks}{numeric, the length of the ticks.}
+  \item{length.ticks}{numeric, the length of the ticks as percentage of the \code{height} or
+    \code{width} of the colorlegend.}
   \item{labels}{character, specifies labels that should be added to the ticks.}
   \item{distance.labels}{numeric, the distance of the labels to the ticks, proportional to the
     length of the ticks.}
@@ -104,10 +105,10 @@ colorlegend(width = 1, height = 0.8, scale = FALSE,
   pos = c(0, 0.2), length.ticks = 0.5)
 colorlegend(color = heat.colors, ncol = 9)
 colorlegend(color = heat.colors, ncol = 9, swap = TRUE)
-colorlegend(pos = "bottomleft", xpd = TRUE)
-colorlegend(pos = "topleft", xpd = TRUE)
-colorlegend(pos = "topright", xpd = TRUE)
-colorlegend(pos = "bottomright", xpd = TRUE)
+colorlegend(pos = "bottomleft")
+colorlegend(pos = "topleft")
+colorlegend(pos = "topright")
+colorlegend(pos = "bottomright")
 
 
 ## take x values for the color legend
@@ -153,14 +154,12 @@ x <- y <- seq(-3, 3, length.out = n)
 z <- outer(sin(x), cos(x)) 
 pal <- colorlegend(color = diverge_hcl, x = z, plot = FALSE)
 op <- par(no.readonly = TRUE)
-par(mar = c(5.1, 4.1, 4.1, 6.1))
+par(mar = c(4.1, 4.1, 1.1, 1.1))
+layout(matrix(c(1, 2), nrow = 1), widths = c(1, 0.3))
 image(x = x, y = y, z = z, col = pal$colors, breaks = pal$breaks)
-colorlegend(color = diverge_hcl, x = z, plot = FALSE, add = TRUE,
-  xlim = range(x), ylim = range(z), scale = FALSE, 
-  side.legend = 2, side.ticks = 2, pos = c(1.05, -1),
-  width = diff(range(y)), height = 0.1 * diff(range(x)), 
-  length.ticks = 3, at = seq(min(z), max(z), length.out = 5),
-  xpd = TRUE)
+par(mar = c(4.1, 0.1, 1.1, 3.1))
+colorlegend(color = diverge_hcl, x = z, plot = TRUE, full = TRUE,
+  side.legend = 2, side.ticks = 2)
 par(op)
 
 
@@ -169,10 +168,11 @@ n <- 50
 x <- sin(seq(-3, 3, length.out = n)) 
 pal <- colorlegend(color = diverge_hcl, x = x, plot = FALSE)
 op <- par(no.readonly = TRUE)
+par(mar = c(7.1, 4.1, 1.1, 1.1))
 barplot(x, border = "transparent", col = pal$map(x))
 colorlegend(color = diverge_hcl, x = x, plot = FALSE, add = TRUE,
   xlim = c(0, 60), ylim = c(-1, 1), pos = c(0, -0.15), xpd = TRUE,
-  scale = FALSE, width = 60, height = 0.15, length.ticks = 3,
+  scale = FALSE, width = 60, height = 0.15,
   at = seq(min(x), max(x), length.out = 9))
 par(op)
 }

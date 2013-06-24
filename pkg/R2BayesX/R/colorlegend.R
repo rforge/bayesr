@@ -1,10 +1,9 @@
-colorlegend <-
-function(color = NULL, ncol = NULL, x = NULL, breaks = NULL, 
-  pos = NULL, shift = 0.02, side.legend = 1L, side.ticks = 1L, range = NULL, lrange = NULL, 
+colorlegend <- function(color = NULL, ncol = NULL, x = NULL, breaks = NULL, 
+  pos = "center", shift = 0.02, side.legend = 1L, side.ticks = 1L, range = NULL, lrange = NULL, 
   width = 0.4, height = 0.06, scale = TRUE, xlim = NULL, ylim = NULL, plot = NULL, full = FALSE,
   add = FALSE, col.border = "black", lty.border = 1L, lwd.border = 1L, ticks = TRUE, 
-  at = NULL, col.ticks = "black", lwd.ticks = 1L, lty.ticks = 1L, length.ticks = 1L, 
-  labels = NULL, distance.labels = 1L, col.labels = "black", cex.labels = 1L, 
+  at = NULL, col.ticks = "black", lwd.ticks = 1L, lty.ticks = 1L, length.ticks = 0.3, 
+  labels = NULL, distance.labels = 0.8, col.labels = "black", cex.labels = 1L, 
   digits = 2L, swap = FALSE, symmetric = TRUE, xpd = NULL,
   title = NULL, side.title = 2, shift.title = c(0, 0), ...)
 {
@@ -139,14 +138,14 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
         labels <- round(at, digits = digits)
       if(side.legend < 2L) {
         at <- obs2legend(at, xlim)
-        length.ticks <- length.ticks * diff(ylim) * 0.23
+        length.ticks <- length.ticks * height
         if(any(at > max(xlim))) 
           at[at > max(xlim)] <- max(xlim)
         if(any(at < min(xlim)))
           at[at < min(xlim)] <- min(xlim)
       } else {
         at <- obs2legend(at, ylim)
-        length.ticks <- length.ticks * diff(xlim) * 0.25
+        length.ticks <- length.ticks * width
         if(any(at > max(ylim))) 
           at[at > max(ylim)] <- max(ylim)
         if(any(at < min(ylim)))
@@ -171,7 +170,7 @@ function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
             }
             if(dl) {
               graphics::text(at[i], ylim[side.ticks] - length.ticks - (distance.labels * length.ticks * 2),
-                labels = labels[i], col = col.labels[i], cex = cex.labels[i], ...)
+                labels = labels[i], col = col.labels[i], cex = cex.labels[i], pos = 1, ...)
             }
           } else {
             if(ticks) {

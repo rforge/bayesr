@@ -13,7 +13,7 @@
   This package interfaces the \pkg{BayesX} (\url{http://www.BayesX.org}) command-line binary from
   \R. The main model fitting function is called \code{\link{bayesx}}. 
 
-  Before STAR models may be estimated, the command-line version of \pkg{BayesX} needs to be
+  Before STAR models can be estimated, the command-line version of \pkg{BayesX} needs to be
   installed, which is done by installing the \R source code package \pkg{BayesXsrc}. Please see
   function \code{\link{bayesx}} and \code{\link{bayesx.control}} for more details on model fitting
   and controlling.

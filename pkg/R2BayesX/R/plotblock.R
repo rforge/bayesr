@@ -94,7 +94,7 @@ plotblock <- function(x, residuals = FALSE, range = c(0.3, 0.3),
       colnames(effects[[i]]) <- rep(paste(xnam, xu[i], sep = ""), ncol(effects[[i]]))
       if(residuals) {
         if(length(pres <- e[e[,1L] == xu[i],])) {
-          if(!is.matrix(pres))
+          if(is.null(dim(pres)))
             pres <- matrix(pres, nrow = 1)
           if(!is.null(shift))
             pres[, 2L:ncol(pres)] <- pres[, 2L:ncol(pres)] + shift
