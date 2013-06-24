@@ -144,6 +144,10 @@ parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
     mf <- list(formula = fake.formula, data = dat_search(data, all.vars(fake.formula)),
       weights = weights, subset = subset, offset = offset, na.action = na.action,
       drop.unused.levels = TRUE)
+    if(length(mf$data) < 2) {
+      if(is.na(mf$data))
+        stop("cannot find variables in data!", call. = FALSE)
+    }
     mf <- do.call("model.frame", mf)
     if(ncol(mf) > 0) {
       for(j in 1:ncol(mf)) {
@@ -232,11 +236,16 @@ dat_search <- function(data, xn)
   } else {
     if(is.environment(data)) {
       dat <- list()
-      for(j in xn)
-        dat[[j]] <- get(j, envir = data)
+      for(j in xn) {
+        tg <- get(j, envir = data)
+        dat[[j]] <- if(!is.function(tg)) tg else NULL
+      }
       return(as.data.frame(dat))
     } else {
-      return(if(all(xn %in% colnames(data))) as.data.frame(data)[, xn, drop = FALSE] else NA)
+      rval <- if(all(xn %in% colnames(data))) {
+        as.data.frame(data)[, xn, drop = FALSE]
+      } else NA
+      return(rval)
     }
   }
 }
@@ -571,6 +580,9 @@ compute_term <- function(x, fsamples, psamples, vsamples = NULL,
 
   ## Assign class and attributes.
   smf <- as.data.frame(unique(as.matrix(smf)))
+  if(is.factor(data[, x$term])) {
+    bbb <- 1 ## FIXME: factors!
+  }
   class(smf) <- c(class(x), "data.frame")
   x["X"] <- NULL
   attr(smf, "specs") <- x
@@ -590,9 +602,8 @@ compute_term <- function(x, fsamples, psamples, vsamples = NULL,
       qu <- drop(quantile(vsamples[, j], probs = c(0.025, 0.5, 0.975)))
       sd <- sd(vsamples[, j])
       me <- mean(vsamples[, j])
-      ra <- range(vsamples[, j])
-      smat <- matrix(c(me, sd, qu, ra), nrow = 1)
-      colnames(smat) <- c("Mean", "Sd", "2.5%", "50%", "97.5%", "Min", "Max")
+      smat <- matrix(c(me, sd, qu), nrow = 1)
+      colnames(smat) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
       rownames(smat) <- x$label
       smatfull <- rbind(smatfull, smat)
     }
@@ -928,6 +939,12 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, sc
     for(i in 1:n) {
       if(!is.null(x[[i]]$effects)) {
         for(e in pterms[[i]]) {
+          if(attr(x[[i]]$effects[[e]], "specs")$dim > 1) {
+            if(!is.null(ylim) & is.null(args$zlim)) {
+              args$ylim <- NULL
+              ## args$zlim <- ylim
+            }
+          }
           args$x <- x[[i]]$effects[[e]]
           do.call("plot.bayesr.effect", args)
         }

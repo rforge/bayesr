@@ -24,126 +24,136 @@ restructure_x <- function(x) {
   x
 }
 
+## Transform design and penalty matrices to iid random effects structure.
 transformJAGS <- function(x) {
   x <- randomize(x)
   x <- restructure_x(x)
   x
 }
 
+## Default linear predictor and model setup functions.
+JAGSeta <- function(x, id = NULL, ...) {
+  setup <- list()
+  setup$inits <- list()
+
+  ## Parametric part.
+  if(k <- ncol(x$X)) {
+    id2 <- if(is.null(id)) 1 else id
+    setup$data[[paste("X", id2, sep = "")]] <- x$X
+    for(j in 1:k) {
+      setup$param <- c(setup$param, paste(if(k < 2) paste("beta", id2, sep = "") else paste("beta", id2, "[", j, "]",
+        sep = ""), "*X", id2, "[i, ", j, "]", sep = ""))
+    }
+    setup$param <- paste(setup$param, collapse = " + ")
+    setup$param <- paste("    param", id2, "[i] <- ", setup$param, sep = "")
+    setup$loops <- k
+    setup$priors.coef <- if(k > 1) {
+      paste("    beta", id2, "[j] ~ dnorm(0, 1.0E-6)", sep = "")
+    } else paste("  beta", id2, " ~ dnorm(0, 1.0E-6)", sep = "")
+    setup$inits[[paste("beta", id2, sep = "")]] <- runif(k)
+    setup$psave <- c(setup$psave, paste("beta", id2, sep = ""))
+    setup$eta <- paste("param", id2, "[i]", sep = "")
+  }
+
+  ## Smooth part.
+  if(m <- length(x$smooth)) {
+    for(i in 1:m) {
+      setup <- if(!is.null(x$smooth[[i]]$special)) {
+        buildJAGS.smooth.special(x$smooth[[i]], setup, paste(i, id, sep = ""))
+      } else {
+        buildJAGS.smooth(x$smooth[[i]], setup, paste(i, id, sep = ""))
+      }
+    }
+  }
+
+  ## Final touch ups.
+  if(!is.null(x$mf[[x$response]]))
+    setup$data$response <- x$mf[[x$response]]
+
+  setup
+}
+
+## Get link functions.
+JAGSlinks <- function(x)
+{
+  switch(x,
+    "identity" = "eta",
+    "log" = "exp(eta)",
+    "exp" = "log(eta)",
+    "inverse" = "1 / (eta)",
+    "logit" = "1 / (1 + exp(-(eta)))",
+    "probit" = "phi(eta)"
+  )
+}
+
+## Construct the final model code.
+JAGSmodel <- function(x, family, ...) {
+  if(is.function(family))
+    family <- family()
+  if(is.null(family$JAGS)) stop("no family for JAGS available!")
+  k <- if(all(c("inits", "data", "psave") %in% names(x))) {
+    x <- list(x)
+    1
+  } else length(x)
+  if(k > family$k) {
+    stop(paste("more parameters specified than existing in family ",
+      family$family, ".BayesR()!", sep = ""), call. = FALSE)
+  }
+
+  model <- "model {"
+  for(j in 1:k) {
+    model <- c(model, x[[j]]$start)
+  }
+  pn <- family$names
+  if(is.infinite(family$k))
+    family$k <- k
+  if(is.null(pn)) pn <- paste("theta", 1:family$k, sep = "")
+  if(length(pn) < 2 & length(pn) != k)
+    pn <- paste(pn, 1:k, sep = "")
+  pn[1:k] <- paste(pn[1:k], "[i]", sep = "")
+  links <- family[grep("link", names(family), fixed = TRUE, value = TRUE)]
+  links <- rep(sapply(links, JAGSlinks), length.out = k)
+  model <- c(model,  "  for(i in 1:n) {",
+    paste("    response[i] ~ ", family$JAGS$dist, "(", paste(pn, collapse = ", "), ")", sep = ""))
+  for(j in 1:k) {
+    model <- c(model, paste("    ", pn[j], " <- ", gsub("eta", x[[j]]$eta, links[[j]]), sep = ""))
+  }
+print(model)
+stop()
+  for(j in 1:k)
+    model <- c(model, x[[j]]$adds)
+  for(j in 1:k)
+    model <- c(model, x[[j]]$param, x[[j]]$smooth)
+  model <- c(model, "  }")
+
+  for(i in 1:k) {
+    lp <- list()
+    for(j in 1:length(x[[i]]$loops))
+      lp[[paste(x[[i]]$loops[j])]] <- c(lp[[paste(x[[i]]$loops[j])]], x[[i]]$priors.coef[j])
+    for(j in names(lp)) {
+      if(j != 1)
+        tmp <- c(paste("  for(j in 1:", j, ") {", sep = ""), lp[[j]], "  }")
+      else
+        tmp <- lp[[j]]
+      model <- c(model, tmp)
+    }
+    model <- c(model, x[[i]]$priors.scale, x[[i]]$close, x[[i]]$close2)
+  }
+  if(k < family$k) {
+    model <- c(model, paste(" ", family$JAGS$default.prior[(k + 1):family$k]))
+  }
+  model <- c(model, "}")
+  if(k < family$k) {
+    attr(model, "psave") <- family$names[(k + 1):family$k]
+  }
+
+  model
+}
+
+## Create final model setup.
 setupJAGS <- function(x)
 {
   x <- restructure_x(x)
-
-  JAGSeta <- function(x, id = NULL) {
-    setup <- list()
-    setup$inits <- list()
-
-    ## Parametric part.
-    if(k <- ncol(x$X)) {
-      id2 <- if(is.null(id)) 1 else id
-      setup$data[[paste("X", id2, sep = "")]] <- x$X
-      for(j in 1:k) {
-        setup$param <- c(setup$param, paste(if(k < 2) paste("beta", id2, sep = "") else paste("beta", id2, "[", j, "]",
-          sep = ""), "*X", id2, "[i, ", j, "]", sep = ""))
-      }
-      setup$param <- paste(setup$param, collapse = " + ")
-      setup$param <- paste("    param", id2, "[i] <- ", setup$param, sep = "")
-      setup$loops <- k
-      setup$priors.coef <- if(k > 1) {
-        paste("    beta", id2, "[j] ~ dnorm(0, 1.0E-6)", sep = "")
-      } else paste("  beta", id2, " ~ dnorm(0, 1.0E-6)", sep = "")
-      setup$inits[[paste("beta", id2, sep = "")]] <- runif(k)
-      setup$psave <- c(setup$psave, paste("beta", id2, sep = ""))
-      setup$eta <- paste("param", id2, "[i]", sep = "")
-    }
-
-    ## Smooth part.
-    if(m <- length(x$smooth)) {
-      for(i in 1:m) {
-        setup <- if(!is.null(x$smooth[[i]]$special)) {
-          buildJAGS.smooth.special(x$smooth[[i]], setup, paste(i, id, sep = ""))
-        } else {
-          buildJAGS.smooth(x$smooth[[i]], setup, paste(i, id, sep = ""))
-        }
-      }
-    }
-
-    ## Final touch ups.
-    if(!is.null(x$mf[[x$response]]))
-      setup$data$response <- x$mf[[x$response]]
-
-    setup
-  }
-
-  JAGSlinks <- function(x)
-  {
-    switch(x,
-      "identity" = "eta",
-      "log" = "exp(eta)",
-      "exp" = "log(eta)",
-      "inverse" = "1 / (eta)",
-      "logit" = "1 / (1 + exp(-(eta)))",
-      "probit" = "phi(eta)"
-    )
-  }
-
-  JAGSmodel <- function(x, family) {
-    if(is.function(family))
-      family <- family()
-    if(is.null(family$JAGS)) stop("no family for JAGS available!")
-    k <- if(all(c("inits", "data", "psave") %in% names(x))) {
-      x <- list(x)
-      1
-    } else length(x)
-    if(k > family$k) {
-      stop(paste("more parameters specified than existing in family ",
-        family$family, ".BayesR()!", sep = ""), call. = FALSE)
-    }
-
-    model <- "model {"
-    for(j in 1:k) {
-      model <- c(model, x[[j]]$start)
-    }
-    pn <- family$names
-    if(is.null(pn)) pn <- paste("theta", 1:family$k, sep = "")
-    pn[1:k] <- paste(pn[1:k], "[i]", sep = "")
-    links <- family[grep("link", names(family), fixed = TRUE, value = TRUE)]
-    links <- sapply(links, JAGSlinks)
-    model <- c(model,  "  for(i in 1:n) {",
-      paste("    response[i] ~ ", family$JAGS$dist, "(", paste(pn, collapse = ", "), ")", sep = ""))
-    for(j in 1:k) {
-      model <- c(model, paste("    ", pn[j], " <- ", gsub("eta", x[[j]]$eta, links[[j]]), sep = ""))
-    }
-    for(j in 1:k)
-      model <- c(model, x[[j]]$adds)
-    for(j in 1:k)
-      model <- c(model, x[[j]]$param, x[[j]]$smooth)
-    model <- c(model, "  }")
-
-    for(i in 1:k) {
-      lp <- list()
-      for(j in 1:length(x[[i]]$loops))
-        lp[[paste(x[[i]]$loops[j])]] <- c(lp[[paste(x[[i]]$loops[j])]], x[[i]]$priors.coef[j])
-      for(j in names(lp)) {
-        if(j != 1)
-          tmp <- c(paste("  for(j in 1:", j, ") {", sep = ""), lp[[j]], "  }")
-        else
-          tmp <- lp[[j]]
-        model <- c(model, tmp)
-      }
-      model <- c(model, x[[i]]$priors.scale, x[[i]]$close, x[[i]]$close2)
-    }
-    if(k < family$k) {
-      model <- c(model, paste(" ", family$JAGS$default.prior[(k + 1):family$k]))
-    }
-    model <- c(model, "}")
-    if(k < family$k) {
-      attr(model, "psave") <- family$names[(k + 1):family$k]
-    }
-
-    model
-  }
-
   if(!all(c("family", "formula", "response") %in% names(x))) {
     nx <- names(x)
     nx <- nx[nx != "call"]
@@ -152,14 +162,14 @@ setupJAGS <- function(x)
     rval <- list()
     family <- if(is.function(x[[1]]$family)) x[[1]]$family() else x[[1]]$family
     fn <- family$names
-    for(i in seq_along(nx)) rval[[nx[i]]] <- JAGSeta(x[[i]], fn[i])
+    for(i in seq_along(nx)) rval[[nx[i]]] <- family$JAGS$eta(x[[i]], fn[i])
   } else {
-    rval <- JAGSeta(x)
     family <- x$family 
+    rval <- family$JAGS$eta(x)
   }
   
   ## Create model code.
-  model <- JAGSmodel(rval, family)
+  model <- family$JAGS$model(rval, family)
 
   ## Collect data.
   if(all(c("inits", "data", "psave") %in% names(rval)))
@@ -422,39 +432,14 @@ resultsJAGS <- function(x, samples, id = NULL)
       if(k <- ncol(x$X)) {
         samps <- as.matrix(samples[[j]][, grepl(paste("beta", id, sep = ""), snames)], ncol = k)
         nx <- colnames(x$X)
-        for(i in seq_along(nx)) {
-          if(nx[i] != "(Intercept)") {
-            if(is.null(effects))
-              effects <- list()
-            Z <- matrix(x$X[, i])
-            if(grepl("(Intercept)", nx[i])) {
-              Z <- cbind(x$X[, 1], Z)
-              f <- apply(matrix(cbind(samps[, 1], samps[, i]), ncol = 1), 1, function(x) Z %*% x)
-            } else {
-              f <- apply(matrix(samps[, i], ncol = 1), 1, function(x) Z %*% x)
-            }
-            f <- t(apply(f, 1, quantile, probs = c(0.025, 0.1, 0.5, 0.9, 0.975)))
-            fm <- apply(f, 1, mean)
-            fitted.values <- fitted.values + fm
-            f <- f - mean(fm)
-            fm <- fm - mean(fm)
-            effects[[nx[i]]] <- as.data.frame(unique(cbind(Z, fm, f)))
-            colnames(effects[[nx[i]]]) <- c(nx[i], "Mean", "2.5%", "10%", "50%", "90%", "97.5%")
-            class(effects[[nx[i]]]) <- "data.frame"
-            attr(effects[[nx[i]]], "samples") <- samps[, i]
-            attr(effects[[nx[i]]], "specs") <- list(dim = 1, label = nx[i])
-            attr(effects[[nx[i]]], "fit") <- fm
-            attr(effects[[nx[i]]], "x") <- x$X[, i]
-          }
-        }
         qu <- t(apply(samps, 2, quantile, probs = c(0.025, 0.5, 0.975)))
         sd <- drop(apply(samps, 2, sd))
         me <- drop(apply(samps, 2, mean))
         param.effects <- cbind(me, sd, qu)
         rownames(param.effects) <- nx
         colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
-        if(grepl("(Intercept)", nx[i])) {
-          fitted.values <- fitted.values + param.effects[1, 1]
+        if(length(i <- grepl("(Intercept)", nx))) {
+          fitted.values <- fitted.values + param.effects[1, i]
         }
         attr(param.effects, "samples") <- as.mcmc(samps)
         colnames(attr(param.effects, "samples")) <- nx

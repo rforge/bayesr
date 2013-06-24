@@ -26,7 +26,9 @@ gaussian.BayesR <- function(mu.link = "identity", sigma.link = "log")
     "JAGS" = list(
       "dist" = "dnorm",
       "default.prior" = c("mu ~ dnorm(0, 1.0E-6)", "sigma ~ dgamma(1.0E-6, 1.0E-6)"),
-      "trans" <- list("mu" = function(x) { x }, "sigma" = function(x) { 1 / exp(x) })
+      "trans" <- list("mu" = function(x) { x }, "sigma" = function(x) { 1 / exp(x) }),
+      "eta" = JAGSeta,
+      "model" = JAGSmodel
     )
   )
   class(rval) <- "family.BayesR"
@@ -47,7 +49,9 @@ beta.BayesR <- function(shape1.link = "log", shape2.link = "log")
     },
     "JAGS" = list(
       "dist" = "dbeta",
-      "default.prior" = c("shape1 ~ dgamma(1.0E-6, 1.0E-6)", "shape2 ~ dgamma(1.0E-6, 1.0E-6)")
+      "default.prior" = c("shape1 ~ dgamma(1.0E-6, 1.0E-6)", "shape2 ~ dgamma(1.0E-6, 1.0E-6)"),
+      "eta" = JAGSeta,
+      "model" = JAGSmodel
     )
   )
   class(rval) <- "family.BayesR"
@@ -55,7 +59,7 @@ beta.BayesR <- function(shape1.link = "log", shape2.link = "log")
 }
 
 
-##  Categorical responses.
+## Categorical responses.
 binomial.BayesR <- function(link = "logit")
 {
   rval <- list(
@@ -70,9 +74,34 @@ binomial.BayesR <- function(link = "logit")
     },
     "JAGS" = list(
       "dist" = "dbern",
-      "default.prior" = "pi ~ dnorm(0, 1.0E-6)"
+      "default.prior" = "pi ~ dnorm(0, 1.0E-6)",
+      "eta" = JAGSeta,
+      "model" = JAGSmodel
     )
   )
   class(rval) <- "family.BayesR"
   rval
 }
+
+multinomial.BayesR <- function(link = "logit")
+{
+  rval <- list(
+    "family" = "multinomial",
+    "k" = Inf,
+    "link" = link,
+    "names" = "pi",
+    "valideta" = function(x) {
+      if(!is.factor(x)) stop("response must be a factor!", call. = FALSE)
+      TRUE
+    },
+    "JAGS" = list(
+      "dist" = "dmulti",
+      "default.prior" = "pi ~ dnorm(0, 1.0E-6)",
+      "eta" = JAGSeta,
+      "model" = JAGSmodel
+    )
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
