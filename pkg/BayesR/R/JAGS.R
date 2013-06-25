@@ -166,6 +166,7 @@ setupJAGS <- function(x)
     fn <- family$names
     for(i in seq_along(nx)) rval[[nx[i]]] <- family$JAGS$eta(x[[i]], fn[i])
   } else {
+    family <- if(is.function(x$family)) x$family() else x$family
     rval <- family$JAGS$eta(x)
   }
   
