@@ -94,8 +94,9 @@ multinomial.BayesR <- function(link = "logit")
       if(!is.factor(x)) stop("response must be a factor!", call. = FALSE)
       TRUE
     },
+    "cat" = TRUE,
     "JAGS" = list(
-      "dist" = "dmulti",
+      "dist" = "dcat",
       "default.prior" = "pi ~ dnorm(0, 1.0E-6)",
       "eta" = JAGSeta,
       "model" = JAGSmodel
@@ -104,4 +105,8 @@ multinomial.BayesR <- function(link = "logit")
   class(rval) <- "family.BayesR"
   rval
 }
+
+
+## Ordered logit.
+## http://staff.washington.edu/lorenc2/bayesian/ologit.R
 

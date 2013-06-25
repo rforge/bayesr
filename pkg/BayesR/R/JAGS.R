@@ -111,15 +111,16 @@ JAGSmodel <- function(x, family, ...) {
   if(length(pn) < 2 & length(pn) != k)
     pn <- paste(pn, 1:k, sep = "")
   pn[1:k] <- paste(pn[1:k], "[i]", sep = "")
+  on <- family$oname
   links <- family[grep("link", names(family), fixed = TRUE, value = TRUE)]
   links <- rep(sapply(links, JAGSlinks), length.out = k)
   model <- c(model,  "  for(i in 1:n) {",
-    paste("    response[i] ~ ", family$JAGS$dist, "(", paste(pn, collapse = ", "), ")", sep = ""))
+    paste("    response[i] ~ ", family$JAGS$dist, "(",
+      paste(if(is.null(on)) pn else paste(on, "[i, ]", sep = ""), collapse = ", "), ")", sep = ""))
   for(j in 1:k) {
-    model <- c(model, paste("    ", pn[j], " <- ", gsub("eta", x[[j]]$eta, links[[j]]), sep = ""))
+    model <- c(model, paste("    ", if(is.null(on)) pn[j] else paste(on, "[i, ", j, "]", sep = ""),
+      " <- ", gsub("eta", x[[j]]$eta, links[[j]]), sep = ""))
   }
-print(model)
-stop()
   for(j in 1:k)
     model <- c(model, x[[j]]$adds)
   for(j in 1:k)
@@ -154,6 +155,7 @@ stop()
 setupJAGS <- function(x)
 {
   x <- restructure_x(x)
+  ncat <- NULL
   if(!all(c("family", "formula", "response") %in% names(x))) {
     nx <- names(x)
     nx <- nx[nx != "call"]
@@ -164,7 +166,6 @@ setupJAGS <- function(x)
     fn <- family$names
     for(i in seq_along(nx)) rval[[nx[i]]] <- family$JAGS$eta(x[[i]], fn[i])
   } else {
-    family <- x$family 
     rval <- family$JAGS$eta(x)
   }
   
@@ -185,6 +186,8 @@ setupJAGS <- function(x)
   psave <- unique(psave)
   data$n <- nrow(if(all(c("family", "formula", "response") %in% names(x))) x$mf else x[[1]]$mf)
   psave <- c(psave, attr(model, "psave"))
+#  if(!is.null(fhamily$oname))
+#    inits[[family$oname]] <- matrix(0, data$n, length(rval))
 
   rval <- list("model" = model, "data" = data,
     "inits" = inits, "psave" = psave)

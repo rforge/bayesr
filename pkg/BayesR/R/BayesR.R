@@ -91,6 +91,31 @@ parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
   contrasts = NULL, knots = NULL, specials = NULL, ...)
 {
   formula <- parse.formula.bayesr(formula)
+  family <- parse.family.bayesr(family)
+
+  if(!is.null(family$cat)) {
+    response <- formula_respname(formula)
+    ncat <- nlevels(as.factor(if(is.environment(data)) {
+      get(response, envir = data)
+    } else data[[response]]))
+  }
+  if(!is.list(formula) & !is.null(family$cat)) {
+    formula <- rep(list(formula), 4)
+    for(j in 2:ncat) formula[[j]][2] <- NULL
+    family$oname <- family$names[1]
+    names(formula) <- paste(family$names[1], 1:ncat, sep = "")
+    family$names <- names(formula)
+  }
+  if(is.list(formula) & !is.null(family$cat)) {
+    if(ncat != length(formula))
+      stop("not enough formulas supplied for categorical response!")
+    if(length(family$names) != ncat)
+      family$names <- rep(family$names, length.out = ncat)
+    if(any(i <- duplicated(family$names)))
+      family$names[i] <- paste(family$names[i], 1:length(i), sep = "")
+  }
+  family$cat <- NULL
+
   if(is.list(formula)) {
     rval <- formula
     nf <- length(formula)
@@ -145,7 +170,7 @@ parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
       weights = weights, subset = subset, offset = offset, na.action = na.action,
       drop.unused.levels = TRUE)
     if(length(mf$data) < 2) {
-      if(is.na(mf$data))
+      if(all(is.na(mf$data)))
         stop("cannot find variables in data!", call. = FALSE)
     }
     mf <- do.call("model.frame", mf)
@@ -192,25 +217,10 @@ parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
       }
     }
     
-    if(!inherits(family, "family.BayesR")) {
-      if(!is.function(family)) {
-        if(!is.character(family)) {
-          family <- family$family
-          if(is.null(family)) stop("argument family is specified wrong!")
-        }
-        family <- eval(parse(text = paste(tolower(family), "BayesR", sep = ".")))
-      }
+    if(!is.null(family$valideta)) {
+      if(response %in% colnames(mf))
+        family$valideta(mf[[response]])
     }
-    if(!inherits(family, "family.BayesR")) {
-      if(!is.function(family))
-        stop("argument family must be a function!")
-      ft <- family()$family
-      if(is.null(ft)) stop("argument family is specified wrong!")
-      family <- eval(parse(text = paste(tolower(as.character(ft)), "BayesR", sep = ".")))
-    }
-    fe <- if(is.function(family)) family() else family
-    if(!is.null(fe$valideta))
-      fe$valideta(mf[[response]])
     if(is.factor(mf[[response]]))
       mf[[response]] <- as.integer(mf[[response]]) - 1
 
@@ -220,6 +230,30 @@ parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
 
     return(rval)
   }
+}
+
+
+## Parse families.
+parse.family.bayesr <- function(family)
+{
+  if(!inherits(family, "family.BayesR")) {
+    if(!is.function(family)) {
+      if(!is.character(family)) {
+        family <- family$family
+        if(is.null(family)) stop("argument family is specified wrong!")
+      }
+      family <- eval(parse(text = paste(tolower(family), "BayesR", sep = ".")))
+    }
+  }
+  if(!inherits(family, "family.BayesR")) {
+    if(!is.function(family))
+      stop("argument family must be a function!")
+    ft <- family()$family
+    if(is.null(ft)) stop("argument family is specified wrong!")
+    family <- eval(parse(text = paste(tolower(as.character(ft)), "BayesR", sep = ".")))
+  }
+  family <- if(is.function(family)) family() else family
+  family
 }
 
 
