@@ -47,33 +47,39 @@ transformBayesX <- function(x, ...)
   args <- list(...)
   dir <- args$dir
   prg.name <- args$prg.name
-  
-  if(inherits(x, "list") & !("smooth" %in% names(x))) {
-    for(j in seq_along(x))
+  if(inherits(x, "list") & !any(c("smooth", "response") %in% names(x))) {
+    nx <- names(x)
+    nx <- nx[nx != "call"]
+    if(is.null(nx)) nx <- 1:length(x)
+    for(j in nx)
       x[[j]] <- transformBayesX(x[[j]], dir = dir, prg = prg.name, ...)
   } else {
     x <- randomize(x)
     if(length(x$smooth)) stop("arbitrary smooths not supported yet!")
     if(length(x$sx.smooth)) {
       for(j in seq_along(x$sx.smooth)) {
-        tt <- x$sx.smooth[[j]]
-        nx <- colnames(x$X)
-        x$X <- cbind(x$X, x$mf[, tt$term], if(tt$by != "NA") x$mf[, tt$by] else NULL)
-        colnames(x$X) <- c(nx, tt$term, if(tt$by != "NA") tt$by else NULL)
-        x$sx.smooth[[j]] <- bayesx.construct(object = tt, dir = dir, prg = prg.name, data = x$mf)
+        x$sx.smooth[[j]] <- bayesx.construct(object = x$sx.smooth[[j]], dir = dir,
+          prg = prg.name, data = x$mf)
       }
     }
-    x$X <- cbind(x$mf[, x$response], x$X)
-    colnames(x$X)[1] <- x$response
-    x$X <- x$X[, !grepl('(Intercept)', colnames(x$X), fixed = TRUE)]
-    x$X <- x$X[, !duplicated(colnames(x$X))]
   }
 
   x
 }
 
 
-setupBayesX <- function(x, n.iter = 1200, thin = 1, burnin = 200, seed = NULL, ...)
+BayesX.control <- function(n.iter = 1200, thin = 1, burnin = 200,
+  seed = NULL, predict = "full", ...)
+{
+  if(is.null(seed))
+    seed <- round(runif(1L) * .Machine$integer.max)
+  stopifnot(burnin < n.iter)
+  cvals <- list("iterations" = n.iter, "burnin" = burnin, "step" = thin, "setseed" = seed,
+    "predict" = predict)
+  cvals
+}
+
+setupBayesX <- function(x, control = BayesX.control(...), ...)
 {
   x$call <- NULL
 
@@ -81,6 +87,7 @@ setupBayesX <- function(x, n.iter = 1200, thin = 1, burnin = 200, seed = NULL, .
   model.name <- args$model.name
   data.name <- args$data.name
   dir <- args$dir
+dir <- path.expand("~/tmp")
   prg.name <- args$prg.name
 
   if(inherits(x, "list") & !("smooth" %in% names(x))) {
@@ -90,121 +97,139 @@ setupBayesX <- function(x, n.iter = 1200, thin = 1, burnin = 200, seed = NULL, .
     n <- 1
   }
 
-  prg <- paste('logopen using', file.path(dir, paste(model.name, 'log', sep = '.')))
+  prg <- paste('logopen using', file.path(dir, paste(model.name, 'log\n', sep = '.')))
+
+  BayesX_data <- function(x) {
+    X <- NULL
+    if(!is.null(x$X)) {
+      if(ncol(x$X) > 0)
+        X <- as.data.frame(x$X)
+    }
+    if(k2 <- length(x$sterms)) {
+      X <- if(!is.null(X)) {
+        cbind(X, as.data.frame(x$mf[, x$sterms]))
+      } else as.data.frame(x$mf[, x$sterms])
+      k1 <- ncol(X)
+      colnames(X)[(k1 - k2 + 1):k1] <- x$sterms
+    }
+    X <- X[, !grepl("(Intercept)", colnames(X), fixed = TRUE), drop = FALSE]
+    X[[x$response]] <- x$mf[, x$response, drop = FALSE]
+    X <- as.data.frame(X)
+    for(j in 1:ncol(X)) {
+      if(is.factor(X[, j])) {
+        X[, j] <- as.integer(X[, j])
+        X <- X[order(X[, j]), ]
+      }
+    }
+    return(unique(X))
+  }
+
+  get_family <- function(x) {
+    if(is.null(x$family))
+      for(j in x) {
+        family <- get_family(j)
+    } else family <- x$family
+    family
+  }
+
+  family <- get_family(x)
+  family <- if(is.function(family)) family() else family
+  stopifnot(!is.null(family$BayesX))
+  names(x) <- rep(family$names, length.out = n)
+  nx <- names(x)
 
   count <- 1
   for(j in n:1) {
     if(!"fake.formula" %in% names(x[[j]])) {
       for(i in length(x[[j]]):1) {
-        dpath <- file.path(dir, paste(paste(data.name, count, sep = ''), "raw", sep = '.'))
-        write.table(x[[j]][[i]]$X, file = dpath, quote = FALSE, row.names = FALSE, col.names = TRUE)
+        dpath <- file.path(dir, paste(dname <- paste(data.name, count, sep = ''), "raw", sep = '.'))
+        d <- BayesX_data(x[[j]][[i]])
+        x[[j]][[i]]$hlevel <- i
+        if(!is.null(d)) {
+          x[[j]][[i]]$dname <- dname
+print(head(d))
+          write.table(d, file = dpath, quote = FALSE, row.names = FALSE, col.names = TRUE)
+          prg <- c(prg,
+            paste('dataset ', data.name, count, sep = ''),
+            paste(data.name, count, '.infile using ', dpath, sep = '')
+          )
+          count <- count + 1
+        }
+      }
+    } else {
+      dpath <- file.path(dir, paste(dname <- paste(data.name, count, sep = ''), "raw", sep = '.'))
+      d <- BayesX_data(x[[j]])
+      if(!is.null(d)) {
+        x[[j]]$dname <- dname
+        write.table(d, file = dpath, quote = FALSE, row.names = FALSE, col.names = TRUE)
         prg <- c(prg,
           paste('dataset ', data.name, count, sep = ''),
-          paste(data.name, count, '.infile using ', dpath, sep = '')
+          paste(data.name, count, '.infile using', dpath, sep = '')
         )
         count <- count + 1
       }
-    } else {
-      dpath <- file.path(dir, paste(paste(data.name, count, sep = ''), "raw", sep = '.'))
-      write.table(x[[j]]$X, file = dpath, quote = FALSE, row.names = FALSE, col.names = TRUE)
-      prg <- c(prg,
-        paste('dataset ', data.name, count, sep = ''),
-        paste(data.name, count, '.infile using', dpath, sep = '')
-      )
-      count <- count + 1
     }
   }
 
   prg <- c(prg, paste('\nmcmcreg', model.name))
   prg <- c(prg, paste(model.name, '.outfile = ', file.path(dir, model.name), '\n', sep = ''))
- 
+
+  count <- 1
   for(j in n:1) {
     if(!"fake.formula" %in% names(x[[j]])) {
       for(i in length(x[[j]]):1) {
-        eqn <- paste(model.name, '.hregress ', x[[j]][[i]]$response, ' = ', sep = '')
-        if(length(x[[j]][[i]]$pterms))
-          eqn <- paste(eqn, paste(x[[j]][[i]]$pterms, collapse = ' + '))
+        eqn <- paste(model.name, '.hregress ', x[[j]][[i]]$response, sep = '')
+        et <- x[[j]][[i]]$pterms
+        if(attr(terms(x[[j]][[i]]$formula), "intercept"))
+          et <- c("const", et)
         if(length(x[[j]][[i]]$sx.smooth))
-          eqn <- paste(eqn, paste(unlist(x[[j]][[i]]$sx.smooth), collapse = ' + '))
+          et <- c(et, x[[j]][[i]]$sx.smooth)
+        if(length(et))
+          eqn <- paste(eqn, '=', paste(et, collapse = ' + '))
+        if(count < 2) {
+          eqn <- paste(eqn, ", ", paste(names(control), "=", unlist(control),
+            sep = "", collapse = " "), sep = "")
+        } else eqn <- paste(eqn, ", ", sep = "")
+        if(!is.null(x[[j]][[i]]$hlevel)) {
+          eqn <- paste(eqn, " hlevel=", x[[j]][[i]]$hlevel, sep = "")
+          if(x[[j]][[i]]$hlevel > 1)
+            eqn <- paste(eqn, " family=", family$BayesX$h, sep = "")
+        }
+        if(i < 2)
+          eqn <- paste(eqn, " family=", family$BayesX[[nx[j]]][1], sep = "")
+        eqn <- paste(eqn, " equationtype=", family$BayesX[[nx[j]]][2], sep = "")
+        if(!is.null(x[[j]][[i]]$dname))
+          eqn <- paste(eqn, " using ", x[[j]][[i]]$dname, sep = "")
         prg <- c(prg, eqn)
+        count <- count + 1
       }
     } else {
-      eqn <- paste(model.name, '.hregress ', x[[j]]$response, ' = ', sep = '')
-      if(length(x[[j]]$pterms))
-        eqn <- paste(eqn, paste(x[[j]]$pterms, collapse = ' + '))
-      if(length(x[[j]][[i]]$sx.smooth))
-        eqn <- paste(eqn, paste(unlist(x[[j]]$sx.smooth), collapse = ' + '))
+      eqn <- paste(model.name, '.hregress ', x[[j]]$response, sep = '')
+      et <- x[[j]]$pterms
+      if(attr(terms(x[[j]]$formula), "intercept"))
+        et <- c("const", et)
+      if(length(x[[j]]$sx.smooth))
+        et <- c(et, x[[j]]$sx.smooth)
+      if(length(et))
+        eqn <- paste(eqn, '=', paste(et, collapse = ' + '))
+      if(!is.null(x[[j]]$dname))
+        eqn <- paste(eqn, " using ", x[[j]]$dname, sep = "")
       prg <- c(prg, eqn)
+      count <- count + 1
     }
   }
 
+  prg <- gsub("(random", "(hrandom", prg, fixed = TRUE)
+  for(i in 1:3)
+    prg <- gsub(paste("(psplinerw", i, sep = ""), "(pspline", prg, fixed = TRUE)
+
+writeLines(prg)
+
   cat(paste(prg, collapse = '\n'), file = file.path(dir, prg.name), append = TRUE)
-stop()
 }
 
 
 samplerBayesX <- function(x, ...) { x }
 resultsBayesX <- function(x, ...) { x }
 
-
-## Run BayesX .prg files.
-run.bayesx2 <- function(prg = NULL, verbose = TRUE, bin = NULL, ...)
-{
-  os.win <- .Platform$OS.type == "windows"
-  bin <- if(is.null(dir)) {
-    system.file(package = "BayesXsrc", "libs", .Platform$r_arch, if(os.win) "BayesX.exe" else "BayesX")
-  } else path.expand(bin)
-  bin <- shQuote(bin)
-  if(is.null(prg)) {
-    output <- file.exists("output")
-    temp <- file.exists("temp")
-    if(!os.win)
-      bin <- paste(shQuote(file.path(R.home(),"bin","R")), "CMD", bin)
-    system(bin, ...)
-    if(!output && file.exists("output"))
-      try(suppressWarnings(file.remove("output")), silent = TRUE)
-    if(!temp && file.exists("temp"))
-      try(suppressWarnings(file.remove("temp")), silent = TRUE)
-    return(invisible(NULL))
-  } else {
-    fileo <- getwd()
-    prg <- path.expand(prg)
-    dir <- dirname(prg)
-    prg.name <- basename(prg)
-    setwd(dir)
-    output <- file.exists("output")
-    temp <- file.exists("temp")
-    ptm <- proc.time()
-    if(!verbose) {
-      if(os.win) {
-        log <- try(system(paste(bin, " ", dir, "/", prg.name, sep = ""), 
-          intern = TRUE, show.output.on.console = FALSE, ...))
-      } else {
-        log <- try(system(paste(bin, " ", dir, "/", prg.name, 
-          " > ", dir, "/bayesx.log", sep = ""), intern = FALSE, ...))
-      }
-    } else log <- try(system(paste(bin, " ", dir, "/", prg.name, sep = ""), intern = FALSE, ...))
-	  if(log != 0 && !os.win)
-      warning("problem processing BayesX!")
-    if(!verbose && .Platform$OS.type == "unix")	
-      log <- readLines(paste(dir, "/bayesx.log", sep = ""))
-    now <- proc.time()
-    runtime <- now - ptm
-    runtime <- runtime
-    if(verbose)
-      cat("Total run time was:", runtime[3L], "sec\n")
-    if(!output && file.exists("output"))
-      try(suppressWarnings(file.remove("output")), silent = TRUE)
-    if(!temp && file.exists("temp"))
-      try(suppressWarnings(file.remove("temp")), silent = TRUE)
-    try(setwd(fileo), silent = TRUE)
-    logerror <- FALSE
-    for(logline in log)
-      if(grepl("ERROR", logline))
-        logerror <- TRUE
-    if(logerror)
-      warning("an error occurred during runtime of BayesX, please check the BayesX logfile!")
-    return(invisible(list(log = log, runtime = runtime)))
-  }
-}
 

@@ -442,7 +442,6 @@ resultsJAGS <- function(x, samples, id = NULL)
         param.effects <- cbind(me, sd, qu)
         rownames(param.effects) <- nx
         colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
-print(param.effects)
         if(length(i <- grepl("(Intercept)", nx))) {
           fitted.values <- fitted.values + param.effects[i, 1]
         }

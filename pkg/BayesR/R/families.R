@@ -29,6 +29,12 @@ gaussian.BayesR <- function(mu.link = "identity", sigma.link = "log")
       "trans" <- list("mu" = function(x) { x }, "sigma" = function(x) { 1 / exp(x) }),
       "eta" = JAGSeta,
       "model" = JAGSmodel
+    ),
+    "BayesX" = list(
+      "mu" = c("gaussian_mu", "mean"),
+      "sigma" = c("gaussian_sigma2", "scale"),
+      "single" = "gaussian",
+      "h" = "gaussian_re"
     )
   )
   class(rval) <- "family.BayesR"
