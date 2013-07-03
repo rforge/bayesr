@@ -29,7 +29,7 @@ bayesx2 <- function(formula, family = gaussian(), data = NULL, knots = NULL,
       dir = dir, prg.name = prg.name, ...)
   }
   sampler <- function(x) { samplerBayesX(x, ...) }
-  results <- function(x) { resultsBayesX(x, ...) }
+  results <- function(x, ...) { resultsBayesX(x, ...) }
 
   bayesr(formula, family = family, data = data, knots = knots,
     weights = weights, subset = subset, offset = offset, na.action = na.action,
@@ -113,7 +113,7 @@ dir <- path.expand("~/tmp")
       colnames(X)[(k1 - k2 + 1):k1] <- x$sterms
     }
     X <- X[, !grepl("(Intercept)", colnames(X), fixed = TRUE), drop = FALSE]
-    X[[x$response]] <- x$mf[, x$response, drop = FALSE]
+    X[[x$response]] <- x$mf[[x$response]]
     X <- as.data.frame(X)
     for(j in 1:ncol(X)) {
       if(is.factor(X[, j])) {
@@ -147,7 +147,6 @@ dir <- path.expand("~/tmp")
         x[[j]][[i]]$hlevel <- i
         if(!is.null(d)) {
           x[[j]][[i]]$dname <- dname
-print(head(d))
           write.table(d, file = dpath, quote = FALSE, row.names = FALSE, col.names = TRUE)
           prg <- c(prg,
             paste('dataset ', data.name, count, sep = ''),
