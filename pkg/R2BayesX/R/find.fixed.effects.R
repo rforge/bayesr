@@ -43,6 +43,7 @@ find.fixed.effects <- function(dir, files, data, response, eta, model.name, rval
           nL <- eval(parse(text = minfo$nYLevels))
           bsf <- strsplit(basename(file), "_")[[1L]]
           bsf <- gsub(".res", "", bsf[length(bsf)], fixed = TRUE)
+          bsf <- gsub("FixedEffects", "", bsf)
           if(bsf %in% nL)
             x$varname <- paste(x$varname, ":", oL[nL == bsf], sep = "")
         }
@@ -58,7 +59,8 @@ find.fixed.effects <- function(dir, files, data, response, eta, model.name, rval
             split <- oL[nL == split]
           }
         }
-        x$varname <- paste(x$varname, ":", split, sep = "", collapse = "")
+        if(!any(grepl(split, x$varname)))
+          x$varname <- paste(x$varname, ":", split, sep = "", collapse = "")
       }
     }
     return(x)

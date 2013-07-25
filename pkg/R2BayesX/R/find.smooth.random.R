@@ -19,13 +19,14 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name, minf
     ## resfiles <- resfiles[!grepl("_ridge", resfiles)]
     ## resfiles <- resfiles[!grepl("_nigmix", resfiles)]
     if(length(resfiles) > 0L) {
-      neffect <- 1; nameseffects <- NULL
+      neffect <- 1; nameseffects <- fprocessed <- NULL
       for(res in resfiles) {
         cxbs <- NULL
         x <- df2m(read.table(file.path(dir, res), header = TRUE))
         x <- x[, !grepl("pstd", colnames(x), fixed = TRUE)]
         dimx <- s4dim(x)
         if(sum(x[,(dimx + 1L):ncol(x)], na.rm = TRUE) != 0) {
+          fprocessed <- c(fprocessed, file.path(dir, res))
           colnx <- colnames(x)
           x <- x[order(x[,1L]),]
           colnames(x) <- rep(colnx, length.out = ncol(x))
@@ -157,7 +158,9 @@ find.smooth.random <- function(dir, files, data, response, eta, model.name, minf
                   vf <- grep(vx3, vf, value = TRUE)
                 if(!is.null(vx))
                   vf <- grep(vx, vf, value = TRUE)
+                vf <- vf[!vf %in% fprocessed]
                 attr(x, "variance") <- df2m(read.table(file.path(dir, vf[1L]), header = TRUE))
+                fprocessed <- c(fprocessed, file.path(dir, vf[1L]))
                 rownames(attr(x, "variance"))[1L] <- labelx
                 if(cx == "random.bayesx")
                   RandomHyp <- rbind(RandomHyp, attr(x, "variance"))

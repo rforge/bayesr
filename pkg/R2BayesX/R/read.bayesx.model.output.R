@@ -1,5 +1,4 @@
-read.bayesx.model.output <-
-function(dir, model.name)
+read.bayesx.model.output <- function(dir, model.name)
 {
   if(is.null(dir))
     stop("no directory specified!")

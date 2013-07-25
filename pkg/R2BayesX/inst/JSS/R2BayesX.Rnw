@@ -62,14 +62,20 @@ particular more complex response types and alternative inferential procedures su
   \phantom{URL: }\url{http://www.uibk.ac.at/statistics/personal/lang/},\\
   \phantom{URL: }\url{http://eeecon.uibk.ac.at/~zeileis/}\\
 
-  Thomas Kneib, Daniel Adler\\
+  Daniel Adler\\
+  GWDG - Gesellschaft f\"ur wissenschaftliche Datenverarbeitung GmbH G\"ottingen\\
+  Am Fa{\ss}berg 11\\
+  37077 G\"ottingen, Germany\\
+  E-mail: \email{dadler1@gwdg.de}\\
+  URL: \url{http://neoscientists.org/~dadler}\\
+
+  Thomas Kneib\\
   Department of Statistics and Econometrics\\
   Georg-August-Universit\"at G\"ottingen\\
   Platz der G\"ottinger Sieben 5 (MZG)\\
   37073 G\"ottingen, Germany \\
-  E-mail: \email{tkneib@uni-goettingen.de}, \email{dadler@uni-goettingen.de}\\
-  URL: \url{http://www.uni-goettingen.de/en/264255.html},\\
-  \phantom{URL: }\url{http://neoscientists.org/~dadler/}\\
+  E-mail: \email{tkneib@uni-goettingen.de}\\
+  URL: \url{http://www.uni-goettingen.de/en/264255.html}
 }
 
 %% Sweave/vignette information and metadata
