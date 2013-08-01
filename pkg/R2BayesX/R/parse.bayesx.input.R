@@ -174,7 +174,7 @@ parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, off
             for(j in 1L:length(term))
               if(is.factor(data[[term[j]]])) {
                 if(class(object) %in% c("mrf.smooth.spec", "gk.smooth.spec", "gs.smooth.spec")) {
-                  data[[term[j]]] <- f2int(data[[term[j]]], type = 2L)
+                  data[[term[j]]] <- f2int(data[[term[j]]], type = 3L)
                 } else {
                   data[[term[j]]] <- f2int(data[[term[j]]])
                 }
