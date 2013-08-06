@@ -554,6 +554,9 @@ combine_chains <- function(x)
     rval <- rbind(rval, x[[j]])
   }
   rval <- as.mcmc.list(list(as.mcmc(rval)))
+  xattr <- attributes(x)
+  if(any(grepl("Rf", names(xattr))))
+    attr(rval, "Rf") <- xattr[["Rf"]]
   rval
 }
 

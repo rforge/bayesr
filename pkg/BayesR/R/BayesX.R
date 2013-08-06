@@ -255,6 +255,7 @@ setupBayesX <- function(x, control = BayesX.control(...), ...)
   prg <- gsub("(random", "(hrandom", prg, fixed = TRUE)
   for(i in 1:5)
     prg <- gsub(paste("(psplinerw", i, sep = ""), "(pspline", prg, fixed = TRUE)
+  prg <- c(prg, paste(model.name, "getsample", sep = "."))
 
   cat(paste(prg, collapse = '\n'), file = file.path(dir, prg.name), append = TRUE)
   x$prg <- file.path(dir, prg.name)
@@ -265,10 +266,58 @@ setupBayesX <- function(x, control = BayesX.control(...), ...)
 }
 
 
-samplerBayesX <- function(x, ...) {
-  ok <- BayesXsrc::run.bayesx(prg = x$prg, ...)
-  ok
+samplerBayesX <- function(x, verbose = FALSE, ...)
+{
+  ok <- BayesXsrc::run.bayesx(prg = x$prg, verbose = verbose, ...)
+  samples <- NULL
+  Rf <- grep(paste(x$model.name, "_R.r", sep = ""), dir(x$dir), value = TRUE, fixed = TRUE)
+  if(length(Rf)) {
+    Rf <- readLines(file.path(x$dir, Rf))
+    Rf <- process_Rf(Rf)
+    for(j in 1:nrow(Rf)) {
+      ts <- read.table(Rf[j, "samples"], header = TRUE)
+      ts$intnr <- NULL
+      names(ts) <- paste(Rf[j, "terms"], "_p[", 1:ncol(ts), "]", sep = "")
+      samples <- cbind(samples, as.matrix(ts))
+    }
+    samples <- as.mcmc.list(list(as.mcmc(samples)))
+    attr(samples, "Rf") <- Rf
+  }
+  samples
 }
-resultsBayesX <- function(x, ...) { x }
 
+process_Rf <- function(x)
+{
+  n <- length(x)
+  samples <- eqntype <- family <- basis <- terms <- hlevel <- rep(NA, length = n)
+  for(j in 1:n) {
+    specs <- strsplit(x[j], ",")[[1]]
+    samples[j] <- gsub("\\s", "", strsplit(grep("pathsamples", specs, value = TRUE),
+      "=", fixed = TRUE)[[1]][2])
+    eqntype[j] <- gsub("\\s", "", strsplit(grep("equationtype", specs, value = TRUE),
+      "=", fixed = TRUE)[[1]][2])
+    family[j] <- gsub("\\s", "", strsplit(grep("family", specs, value = TRUE),
+      "=", fixed = TRUE)[[1]][2])
+    basis[j] <- gsub("\\s", "", strsplit(grep("pathbasis", specs, value = TRUE),
+      "=", fixed = TRUE)[[1]][2])
+    hlevel[j] <- gsub("\\s", "", strsplit(grep("hlevel", specs, value = TRUE),
+      "=", fixed = TRUE)[[1]][2])
+    terms[j] <- gsub("\\s", "", strsplit(grep("term", specs, value = TRUE),
+      "=", fixed = TRUE)[[1]][2])
+  }
+  if(any(i <- duplicated(terms))) {
+    for(j in terms[i]) {
+      tt <- grep(j, terms, value = TRUE, fixed = TRUE)
+      tt <- paste(tt, 1:length(tt), sep = ":")
+      terms[terms == j] <- tt
+    }
+  }
+  rval <- cbind(terms, samples, basis, family, eqntype, hlevel)
+  rval
+}
+
+resultsBayesX <- function(x, samples, ...)
+{
+  samples
+}
 

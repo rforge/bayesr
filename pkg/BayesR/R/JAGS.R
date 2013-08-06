@@ -341,7 +341,7 @@ buildJAGS.smooth.special.gc.smooth <- function(smooth, setup, i)
 samplerJAGS <- function(x, tdir = NULL,
   n.chains = 1, n.adapt = 100,
   n.iter = 1200, thin = 1, burnin = 200,
-  seed = NULL, ...)
+  seed = NULL, verbose = TRUE, ...)
 {
   require("rjags")
 
@@ -367,8 +367,8 @@ samplerJAGS <- function(x, tdir = NULL,
 
   ## Sampling.
   load.module("dic"); load.module("glm")
-
-writeLines(x$model)
+  
+  if(verbose) writeLines(x$model)
   
   jmodel <- jags.model(mfile, data = x$data, inits = inits,
     n.chains = n.chains, n.adapt = n.adapt, ...)
