@@ -304,7 +304,7 @@ parse.formula.bayesr <- function(formula)
         if(!any(grepl("~", formula[[j]], fixed = TRUE)))
           formula[[j]] <- paste("~", formula[[j]])
         formula[[j]] <- as.formula(formula[[j]], env = env)
-        if((attr(terms(formula[[j]]), "response") < 1) & (j > 1)) {
+        if((attr(terms(formula_rm_at(formula[[j]])), "response") < 1) & (j > 1)) {
           uf <- as.formula(paste(formula_respname(formula[[j - 1]]), "~ ."), env = env)
           formula[[j]] <- update(formula[[j]], uf)
         }
@@ -317,7 +317,7 @@ parse.formula.bayesr <- function(formula)
     if(is.null(nf)) nf <- rep("", length(formula))
     nf2 <- rep(NA, length(formula))
     for(j in seq_along(formula)) {
-      tf <- terms(formula[[j]])
+      tf <- terms(formula_rm_at(formula[[j]]))
       if(attr(tf, "response") < 1) {
         if(is.null(nf))
           stop("formulae need named responses when supplied as unnamed list!")
@@ -338,6 +338,7 @@ parse.formula.bayesr <- function(formula)
     formula <- formula_hierarchical(formula)
   }
   formula <- formula_and(formula, env)
+  formula <- formula_at(formula, env)
   class(formula) <- c("bayesr.formula", class(formula))
 
   formula
@@ -360,7 +361,7 @@ formula_respname <- function(x)
 }
 
 ## Search and process "&"
-formula_and <- function(formula, env)
+formula_and <- function(formula, env = parent.frame())
 {
   if(nol <- !is.list(formula))
     formula <- list(formula)
@@ -387,6 +388,59 @@ formula_and <- function(formula, env)
       formula <- formula[[1]]
   }
   on.exit(unlink(tf))
+  formula
+}
+
+## Search and process "@"
+formula_at <- function(formula, env = parent.frame())
+{
+  if(nol <- !is.list(formula))
+    formula <- list(formula)
+  tf <- tempfile()
+  for(j in seq_along(formula)) {
+    if(!inherits(formula[[j]], "formula")) {
+      formula[[j]] <- formula_at(formula[[j]], env)
+    } else {
+      capture.output(print(formula[[j]]), file = tf)
+      ft <- paste(readLines(tf), collapse = "")
+      if(any(grep("@", ft, fixed = TRUE))) {
+        formula[[j]] <- strsplit(ft, "@", fixed = TRUE)[[1]]
+        control <- formula[[j]][-1]
+        formula[[j]] <- as.formula(formula[[j]][1], env = env)
+        control <- gsub(":", "=", control)
+        attr(formula[[j]], "control") <- gsub("using=", "using ", control, fixed = TRUE)
+      }
+    }
+  }
+  if(nol) {
+    names(formula) <- formula_respname(formula[[1]][[1]])
+    if(inherits(formula[[1]], "formula"))
+      formula <- formula[[1]]
+  }
+  on.exit(unlink(tf))
+  formula
+}
+
+formula_rm_at <- function(formula, env = parent.frame())
+{
+  if(isf <- !is.character(formula)) {
+    env <- environment(formula)
+    tf <- tempfile()
+    capture.output(print(formula), file = tf)
+    formula <- paste(readLines(tf), collapse = "")
+    on.exit(unlink(tf))
+  }
+  if(any(grepl("@", formula)))
+    formula <- strsplit(formula, "@")[[1]][1]
+  if(!isf) {
+    tf2 <- tempfile()
+    formula <- as.formula(formula, env = env)
+    capture.output(print(formula), file = tf2)
+    formula <- paste(readLines(tf2), collapse = "")
+    on.exit(unlink(tf2), add = TRUE)
+  }
+  if(isf)
+    formula <- as.formula(formula, env = env)
   formula
 }
 
@@ -458,14 +512,13 @@ formula_hierarchical <- function(formula)
 ## Transform smooth terms to mixed model representation.
 randomize <- function(x)
 {
-  if(!all(c("family", "formula", "response") %in% names(x))) {
+  if(inherits(x, "list") & !any(c("smooth", "response") %in% names(x))) {
     nx <- names(x)
-    if(is.null(nx))
-      nx <- 1:length(x)
-    for(i in seq_along(x)) {
-      if(nx[i] != "call")
-        x[[i]] <- randomize(x[[i]])
-    }
+    nx <- nx[nx != "call"]
+    if(is.null(nx)) nx <- 1:length(x)
+    if(length(unique(nx)) < length(x)) nx <- 1:length(x)
+    for(j in nx)
+      x[[j]] <- randomize(x[[j]])
   } else {
     if(m <- length(x$smooth)) {
       for(j in 1:m) {

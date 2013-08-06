@@ -31,8 +31,8 @@ gaussian.BayesR <- function(mu.link = "identity", sigma.link = "log")
       "model" = JAGSmodel
     ),
     "BayesX" = list(
-      "mu" = c("gaussian_mu", "mean"),
-      "sigma" = c("gaussian_sigma2", "scale"),
+      "mu" = c("lognormal_mu", "mean"),
+      "sigma" = c("lognormal_sigma2", "scale"),
       "single" = "gaussian",
       "h" = "gaussian_re"
     )
