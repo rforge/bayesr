@@ -90,7 +90,6 @@ JAGSlinks <- function(x)
 JAGSmodel <- function(x, family, ...) {
   if(is.function(family))
     family <- family()
-  if(is.null(family$JAGS)) stop("no family for JAGS available!")
   k <- if(all(c("inits", "data", "psave") %in% names(x))) {
     x <- list(x)
     1
@@ -115,7 +114,7 @@ JAGSmodel <- function(x, family, ...) {
   links <- family[grep("link", names(family), fixed = TRUE, value = TRUE)]
   links <- rep(sapply(links, JAGSlinks), length.out = k)
   model <- c(model,  "  for(i in 1:n) {",
-    paste("    response[i] ~ ", family$JAGS$dist, "(",
+    paste("    response[i] ~ ", family$dist, "(",
       paste(if(is.null(on)) pn else paste(on, "[i, ]", sep = ""), collapse = ", "), ")", sep = ""))
   for(j in 1:k) {
     model <- c(model, paste("    ", if(is.null(on)) pn[j] else paste(on, "[i, ", j, "]", sep = ""),
@@ -141,7 +140,7 @@ JAGSmodel <- function(x, family, ...) {
     model <- c(model, x[[i]]$priors.scale, x[[i]]$close, x[[i]]$close2)
   }
   if(k < family$k) {
-    model <- c(model, paste(" ", family$JAGS$default.prior[(k + 1):family$k]))
+    model <- c(model, paste(" ", family$default.prior[(k + 1):family$k]))
   }
   model <- c(model, "}")
   if(k < family$k) {
@@ -164,14 +163,14 @@ setupJAGS <- function(x)
     rval <- list()
     family <- if(is.function(x[[1]]$family)) x[[1]]$family() else x[[1]]$family
     fn <- family$names
-    for(i in seq_along(nx)) rval[[nx[i]]] <- family$JAGS$eta(x[[i]], fn[i])
+    for(i in seq_along(nx)) rval[[nx[i]]] <- family$eta(x[[i]], fn[i])
   } else {
     family <- if(is.function(x$family)) x$family() else x$family
-    rval <- family$JAGS$eta(x)
+    rval <- family$eta(x)
   }
   
   ## Create model code.
-  model <- family$JAGS$model(rval, family)
+  model <- family$model(rval, family)
 
   ## Collect data.
   if(all(c("inits", "data", "psave") %in% names(rval)))

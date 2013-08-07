@@ -1,7 +1,7 @@
 ################################################
 ## (1) BayesR main model fitting constructor. ##
 ################################################
-bayesr <- function(formula, family = gaussian(), data = NULL, knots = NULL,
+bayesr <- function(formula, family = gaussian.JAGS, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.fail, contrasts = NULL,
   parse.input = parse.input.bayesr, transform = transformJAGS, setup = setupJAGS,
   sampler = samplerJAGS, results = resultsJAGS,
@@ -242,15 +242,8 @@ parse.family.bayesr <- function(family)
         family <- family$family
         if(is.null(family)) stop("argument family is specified wrong!")
       }
-      family <- eval(parse(text = paste(tolower(family), "BayesR", sep = ".")))
+      family <- eval(parse(text = family))
     }
-  }
-  if(!inherits(family, "family.BayesR")) {
-    if(!is.function(family))
-      stop("argument family must be a function!")
-    ft <- family()$family
-    if(is.null(ft)) stop("argument family is specified wrong!")
-    family <- eval(parse(text = paste(tolower(as.character(ft)), "BayesR", sep = ".")))
   }
   family <- if(is.function(family)) family() else family
   family

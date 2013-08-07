@@ -14,8 +14,10 @@ print.family.BayesR <- function(x)
 }
 
 
-##  Continuous responses.
-gaussian.BayesR <- function(mu.link = "identity", sigma.link = "log")
+##############
+## (a) JAGS ##
+##############
+gaussian.JAGS <- function(mu.link = "identity", sigma.link = "log")
 {
   rval <- list(
     "family" = "gaussian",
@@ -23,25 +25,17 @@ gaussian.BayesR <- function(mu.link = "identity", sigma.link = "log")
     "mu.link" = mu.link,
     "sigma.link" = sigma.link,
     "names" = c("mu", "sigma"),
-    "JAGS" = list(
-      "dist" = "dnorm",
-      "default.prior" = c("mu ~ dnorm(0, 1.0E-6)", "sigma ~ dgamma(1.0E-6, 1.0E-6)"),
-      "trans" <- list("mu" = function(x) { x }, "sigma" = function(x) { 1 / exp(x) }),
-      "eta" = JAGSeta,
-      "model" = JAGSmodel
-    ),
-    "BayesX" = list(
-      "mu" = c("lognormal_mu", "mean"),
-      "sigma" = c("lognormal_sigma2", "scale"),
-      "single" = "gaussian",
-      "h" = "gaussian_re"
-    )
+    "dist" = "dnorm",
+    "default.prior" = c("mu ~ dnorm(0, 1.0E-6)", "sigma ~ dgamma(1.0E-6, 1.0E-6)"),
+    "trans" <- list("mu" = function(x) { x }, "sigma" = function(x) { 1 / exp(x) }),
+    "eta" = JAGSeta,
+    "model" = JAGSmodel
   )
   class(rval) <- "family.BayesR"
   rval
 }
 
-beta.BayesR <- function(shape1.link = "log", shape2.link = "log")
+beta.JAGS <- function(shape1.link = "log", shape2.link = "log")
 {
   rval <- list(
     "family" = "beta",
@@ -53,20 +47,16 @@ beta.BayesR <- function(shape1.link = "log", shape2.link = "log")
       if(ok <- !all(x > 0 & x < 1)) stop("values not in [0, 1] using beta.BayesR!", call. = FALSE)
       ok
     },
-    "JAGS" = list(
-      "dist" = "dbeta",
-      "default.prior" = c("shape1 ~ dgamma(1.0E-6, 1.0E-6)", "shape2 ~ dgamma(1.0E-6, 1.0E-6)"),
-      "eta" = JAGSeta,
-      "model" = JAGSmodel
-    )
+    "dist" = "dbeta",
+    "default.prior" = c("shape1 ~ dgamma(1.0E-6, 1.0E-6)", "shape2 ~ dgamma(1.0E-6, 1.0E-6)"),
+    "eta" = JAGSeta,
+    "model" = JAGSmodel
   )
   class(rval) <- "family.BayesR"
   rval
 }
 
-
-## Categorical responses.
-binomial.BayesR <- function(link = "logit")
+binomial.JAGS <- function(link = "logit")
 {
   rval <- list(
     "family" = "binomial",
@@ -78,18 +68,16 @@ binomial.BayesR <- function(link = "logit")
       if(nlevels(x) > 2) stop("more than 2 levels in factor response!", call. = FALSE)
       TRUE
     },
-    "JAGS" = list(
-      "dist" = "dbern",
-      "default.prior" = "pi ~ dnorm(0, 1.0E-6)",
-      "eta" = JAGSeta,
-      "model" = JAGSmodel
-    )
+    "dist" = "dbern",
+    "default.prior" = "pi ~ dnorm(0, 1.0E-6)",
+    "eta" = JAGSeta,
+    "model" = JAGSmodel
   )
   class(rval) <- "family.BayesR"
   rval
 }
 
-multinomial.BayesR <- function(link = "logit")
+multinomial.JAGS <- function(link = "logit")
 {
   rval <- list(
     "family" = "multinomial",
@@ -101,18 +89,36 @@ multinomial.BayesR <- function(link = "logit")
       TRUE
     },
     "cat" = TRUE,
-    "JAGS" = list(
-      "dist" = "dcat",
-      "default.prior" = "pi ~ dnorm(0, 1.0E-6)",
-      "eta" = JAGSeta,
-      "model" = JAGSmodel
-    )
+    "dist" = "dcat",
+    "default.prior" = "pi ~ dnorm(0, 1.0E-6)",
+    "eta" = JAGSeta,
+    "model" = JAGSmodel
   )
   class(rval) <- "family.BayesR"
   rval
 }
 
-
 ## Ordered logit.
 ## http://staff.washington.edu/lorenc2/bayesian/ologit.R
+
+
+################
+## (b) BayesX ##
+################
+gaussian.BayesX <- function(mu.link = "log", sigma.link = "log")
+{
+  rval <- list(
+    "family" = "gaussian",
+    "k" = 2,
+    "mu.link" = mu.link,
+    "sigma.link" = sigma.link,
+    "names" = c("mu", "sigma"),
+    "mu" = c("lognormal_mu", "mean"),
+    "sigma" = c("lognormal_sigma2", "scale"),
+    "single" = "gaussian",
+    "h" = "gaussian_re"
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
 
