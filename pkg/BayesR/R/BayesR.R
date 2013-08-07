@@ -408,6 +408,10 @@ formula_at <- function(formula, env = parent.frame())
         control <- formula[[j]][-1]
         formula[[j]] <- as.formula(formula[[j]][1], env = env)
         control <- gsub(":", "=", control)
+        if(any(grepl("+", control)))
+          control <- strsplit(control, "+", fixed = TRUE)[[1]]
+        control <- gsub("^ +", "", control)
+        control <- gsub(" +$", "", control)
         attr(formula[[j]], "control") <- gsub("using=", "using ", control, fixed = TRUE)
       }
     }
@@ -545,7 +549,7 @@ randomize <- function(x)
 
 
 ## Combine sample chains.
-combine_chains <- function(x)
+combine_chains <- function(x, copy = "tspecs")
 {
   if(!inherits(x, "mcmc.list"))
     return(x)
@@ -555,8 +559,12 @@ combine_chains <- function(x)
   }
   rval <- as.mcmc.list(list(as.mcmc(rval)))
   xattr <- attributes(x)
-  if(any(grepl("Rf", names(xattr))))
-    attr(rval, "Rf") <- xattr[["Rf"]]
+  if(!is.null(copy)) {
+    for(j in copy) {
+      if(any(grepl(j, names(xattr))))
+        attr(rval, j) <- xattr[[j]]
+    }
+  }
   rval
 }
 
@@ -1118,6 +1126,12 @@ delete.args <- function(fun = NULL, args = NULL, not = NULL)
     }
   args
 }
+
+delete.NULLs <- function(x.list) 
+{
+  x.list[unlist(lapply(x.list, length) != 0)]
+}
+
 
 
 ##################################

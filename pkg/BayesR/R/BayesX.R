@@ -188,7 +188,6 @@ setupBayesX <- function(x, control = BayesX.control(...), ...)
   prg <- c(prg, paste('\nmcmcreg', model.name))
   prg <- c(prg, paste(model.name, '.outfile = ', file.path(dir, model.name), '\n', sep = ''))
 
-
   make_eqn <- function(x, ctr = TRUE) {
     n <- length(x)
     eqn <- NULL
@@ -255,7 +254,7 @@ setupBayesX <- function(x, control = BayesX.control(...), ...)
   prg <- gsub("(random", "(hrandom", prg, fixed = TRUE)
   for(i in 1:5)
     prg <- gsub(paste("(psplinerw", i, sep = ""), "(pspline", prg, fixed = TRUE)
-  prg <- c(prg, paste(model.name, "getsample", sep = "."))
+  prg <- c(prg, "", paste(model.name, "getsample", sep = "."))
 
   cat(paste(prg, collapse = '\n'), file = file.path(dir, prg.name), append = TRUE)
   x$prg <- file.path(dir, prg.name)
@@ -268,25 +267,37 @@ setupBayesX <- function(x, control = BayesX.control(...), ...)
 
 samplerBayesX <- function(x, verbose = FALSE, ...)
 {
+  warn <- getOption("warn")
+  options(warn = -1)
   ok <- BayesXsrc::run.bayesx(prg = x$prg, verbose = verbose, ...)
+  options("warn" = warn)
+  if(length(i <- grep("error", ok$log, ignore.case = TRUE))) {
+    errl <- gsub("^ +", "", ok$log[i])
+    errl <- gsub(" +$", "", errl)
+    errl <- encodeString(errl, width = NA, justify = "left")
+    errl <- paste(" *", errl)
+    errm <- paste("an error occurred running the BayesX binary! The following messages are returned:\n\n",
+      paste(errl, collapse = "\n", sep = ""), sep = "")
+    stop(errm)
+  }
   samples <- NULL
-  Rf <- grep(paste(x$model.name, "_R.r", sep = ""), dir(x$dir), value = TRUE, fixed = TRUE)
-  if(length(Rf)) {
-    Rf <- readLines(file.path(x$dir, Rf))
-    Rf <- process_Rf(Rf)
-    for(j in 1:nrow(Rf)) {
-      ts <- read.table(Rf[j, "samples"], header = TRUE)
+  tspecs <- grep(paste(x$model.name, "_R.r", sep = ""), dir(x$dir), value = TRUE, fixed = TRUE)
+  if(length(tspecs)) {
+    tspecs <- readLines(file.path(x$dir, tspecs))
+    tspecs <- process_tspecs(tspecs)
+    for(j in 1:nrow(tspecs)) {
+      ts <- read.table(tspecs[j, "samples"], header = TRUE)
       ts$intnr <- NULL
-      names(ts) <- paste(Rf[j, "terms"], "_p[", 1:ncol(ts), "]", sep = "")
+      names(ts) <- paste(tspecs[j, "terms"], "_p[", 1:ncol(ts), "]", sep = "")
       samples <- cbind(samples, as.matrix(ts))
     }
     samples <- as.mcmc.list(list(as.mcmc(samples)))
-    attr(samples, "Rf") <- Rf
+    attr(samples, "tspecs") <- tspecs
   }
   samples
 }
 
-process_Rf <- function(x)
+process_tspecs <- function(x)
 {
   n <- length(x)
   samples <- eqntype <- family <- basis <- terms <- hlevel <- rep(NA, length = n)
@@ -318,6 +329,7 @@ process_Rf <- function(x)
 
 resultsBayesX <- function(x, samples, ...)
 {
+  print(names(x))
   samples
 }
 

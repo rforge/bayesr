@@ -583,6 +583,9 @@ resultsJAGS <- function(x, samples, id = NULL)
         "formula" = x$formula), "param.effects" = param.effects, "effects" = effects,
         "effects.hyp" = effects.hyp, "scale" = scale.m, "fitted.values" = fitted.values,
         "residuals" = x$mf[[x$response]] - fitted.values)
+      
+      ## Clean.
+      rval[[j]] <- delete.NULLs(rval[[j]])
 
       class(rval[[j]]) <- "bayesr"
     }
