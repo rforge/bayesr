@@ -55,14 +55,8 @@ bayesr <- function(formula, family = gaussian.JAGS, data = NULL, knots = NULL,
       functions$sampler(ms)
     }
     so <- mclapply(1:cores, parallel_fun, mc.cores = cores)
-    if(length(so) > 1) {
-      so2 <- so[[1]]
-      for(j in 2:length(so)) {
-        so2 <- c(so2, so[[j]])
-      }
-      so <- so2
-      rm(so2)
-    } else so <- so[[1]]
+    if(length(so) < 2)
+      so <- so[[1]]
   }
 
   ## Combine samples.
@@ -86,7 +80,7 @@ bayesr <- function(formula, family = gaussian.JAGS, data = NULL, knots = NULL,
 ##########################################################
 ## (2) Parsing all input using package mgcv structures. ##
 ##########################################################
-parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
+parse.input.bayesr <- function(formula, data, family = gaussian.JAGS,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, ...)
 {
@@ -542,22 +536,23 @@ randomize <- function(x)
 
 
 ## Combine sample chains.
-combine_chains <- function(x, copy = "tspecs")
+combine_chains <- function(x)
 {
-  if(!inherits(x, "mcmc.list"))
+  if(!is.list(x))
     return(x)
+  model.specs <- attr(x[[1]], "model.specs")
+  if(inherits(x[[1]], "mcmc.list")) {
+    x <- as.mcmc.list(do.call("c", x))
+  } else {
+    stopifnot(inherits(x[[1]], "mcmc"))
+    x <- as.mcmc.list(x)
+  }
   rval <- NULL
   for(j in 1:length(x)) {
     rval <- rbind(rval, x[[j]])
   }
   rval <- as.mcmc.list(list(as.mcmc(rval)))
-  xattr <- attributes(x)
-  if(!is.null(copy)) {
-    for(j in copy) {
-      if(any(grepl(j, names(xattr))))
-        attr(rval, j) <- xattr[[j]]
-    }
-  }
+  attr(rval, "model.specs") <- model.specs
   rval
 }
 

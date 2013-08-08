@@ -16,11 +16,15 @@ bayesx2 <- function(formula, family = gaussian.BayesX, data = NULL, knots = NULL
       seed = seed, data.name = data.name, cores = cores, ...)
   }
 
-  bayesr(formula, family = family, data = data, knots = knots,
+  rval <- bayesr(formula, family = family, data = data, knots = knots,
     weights = weights, subset = subset, offset = offset, na.action = na.action,
     contrasts = contrasts, parse.input = parse.input.bayesr, transform = transformBayesX,
     setup = setup, sampler = samplerBayesX, results = resultsBayesX,
     cores = cores, combine = combine, ...)
+  
+  attr(rval, "call") <- match.call()
+  
+  rval
 }
 
 
@@ -70,7 +74,9 @@ tBayesX <- function(x, ...)
     if(length(x$smooth)) stop("arbitrary smooths not supported yet!")
     if(length(x$sx.smooth)) {
       for(j in seq_along(x$sx.smooth)) {
-        x$sx.smooth[[j]] <- sx.construct(x$sx.smooth[[j]], x$mf)
+        tmp <- sx.construct(x$sx.smooth[[j]], x$mf)
+        attr(tmp, "specs") <- x$sx.smooth[[j]]
+        x$sx.smooth[[j]] <- tmp
       }
     }
   }
@@ -98,6 +104,7 @@ controlBayesX <- function(n.iter = 1200, thin = 1, burnin = 200,
     dir.create(dir <- tempfile())
     attr(dir, "unlink") <- TRUE
   } else dir <- path.expand(dir)
+  if(!file.exists(dir)) dir.create(dir)
   if(is.null(cores)) cores <- 1
 
   cvals <- list(
@@ -280,6 +287,10 @@ samplerBayesX <- function(x, ...)
     x$prg <- gsub("##seed##", round(runif(1L) * .Machine$integer.max), x$prg, fixed = TRUE)
 
   dir <- x$control$setup$dir
+  if(!is.null(attr(dir, "unlink"))) {
+    if(attr(dir, "unlink"))
+      on.exit(unlink(dir))
+  }
   prg.name <- x$control$setup$prg.name
   model.name <- x$control$setup$model.name
   cores <- x$control$setup$cores
@@ -320,31 +331,43 @@ samplerBayesX <- function(x, ...)
     stop(errm)
   }
   samples <- NULL
-  tspecs <- grep(paste(x$control$setup$model.name, "_R.r", sep = ""), dir(dir), value = TRUE, fixed = TRUE)
-  if(length(tspecs)) {
-    tspecs <- readLines(file.path(dir, tspecs))
-    tspecs <- process_tspecs(tspecs)
-    for(j in 1:nrow(tspecs$effects)) {
-      ts <- read.table(tspecs$effects[j, "samples"], header = TRUE)
+  mfile <- grep(paste(x$control$setup$model.name, "_R.r", sep = ""), dir(dir), value = TRUE, fixed = TRUE)
+  if(length(mfile)) {
+    mfile <- readLines(file.path(dir, mfile))
+    mfile <- process_mfile(mfile)
+    mspecs <- list("effects" = list(), "model" = list())
+    for(j in 1:nrow(mfile$effects)) {
+      ts <- read.table(mfile$effects[j, "samples"], header = TRUE)
       ts$intnr <- NULL
-      names(ts) <- paste(tspecs$effects[j, "terms"], "[", 1:ncol(ts), "]", sep = "")
+      names(ts) <- paste(mfile$effects[j, "terms"], "[", 1:ncol(ts), "]", sep = "")
       samples <- cbind(samples, as.matrix(ts))
+      mspecs$effects[[mfile$effects[j, "terms"]]] <- list(
+        "basis" = if(!is.na(mfile$effects[j, "basis"])) {
+            eval(parse(file = mfile$effects[j, "basis"]))
+         } else function(x) { x },
+        "family" = mfile$effects[j, "family"],
+        "eqntype" = mfile$effects[j, "eqntype"],
+        "hlevel" =  as.integer(mfile$effects[j, "hlevel"])
+      )
     }
-    samples <- as.mcmc.list(list(as.mcmc(samples)))
-    attr(samples, "tspecs") <- tspecs
+    dic <- if(!is.null(mfile$model$dic)) read.table(mfile$model$dic, header = TRUE) else NULL
+    samples <- cbind(samples, "dic" = dic$dic, "pd" = dic$pd)
+    samples <- as.mcmc(samples)
+    attr(samples, "model.specs") <- mspecs
   }
+
   samples
 }
 
-process_tspecs <- function(x)
+process_mfile <- function(x)
 {
   predict <- dic <- NULL
   if(length(i <- grep("predict.res", x, ignore.case = TRUE))) {
-    predict <- gsub("\\s", "", strsplit(x[i], "=", fixed = TRUE)[[1]][2])
+    predict <- gsub(";", "", gsub("\\s", "", strsplit(x[i], "=", fixed = TRUE)[[1]][2]))
     x <- x[-i]
   }
   if(length(i <- grep("DIC.res", x, ignore.case = TRUE))) {
-    dic <- gsub("\\s", "", strsplit(x[i], "=", fixed = TRUE)[[1]][2])
+    dic <- gsub(";", "", gsub("\\s", "", strsplit(x[i], "=", fixed = TRUE)[[1]][2]))
     x <- x[-i]
   }
   n <- length(x)
@@ -361,8 +384,9 @@ process_tspecs <- function(x)
       "=", fixed = TRUE)[[1]][2])
     hlevel[j] <- gsub("\\s", "", strsplit(grep("hlevel", specs, value = TRUE),
       "=", fixed = TRUE)[[1]][2])
-    terms[j] <- gsub("\\s", "", strsplit(grep("term", specs, value = TRUE),
-      "=", fixed = TRUE)[[1]][2])
+    tt <- strsplit(grep("term", specs, value = TRUE), "=", fixed = TRUE)[[1]][2]
+    tt <- gsub("^\\s+|\\s+$", "", tt)
+    terms[j] <- gsub("\\s", "+", tt)
     terms[j] <- paste(terms[j], if(any(grepl("_", family[j]))) {
       strsplit(family[j], "_", fixed = TRUE)[[1]][2]
     } else family[j], sep = ":")
@@ -375,13 +399,16 @@ process_tspecs <- function(x)
     }
   }
   rval <- list("effects" = cbind(terms, samples, basis, family, eqntype, hlevel),
-    "model" = c(predict, dic))
+    "model" = list("predict" = predict, "dic" = dic))
   rval
 }
 
-resultsBayesX <- function(x, samples, id = NULL, ...)
+resultsBayesX <- function(x, samples, id = NULL, mspecs = NULL, ...)
 {
-  tspecs <- attr(samples, "tspecs")
+  if(is.null(mspecs))
+    mspecs <- attr(samples, "model.specs")
+  if(is(samples, "mcmc"))
+    samples <- as.mcmc.list(list(samples))
   if(!all(c("family", "formula") %in% names(x))) {
     nx <- names(x)
     nx <- nx[!(nx %in% c("call", "family"))]
@@ -391,8 +418,8 @@ resultsBayesX <- function(x, samples, id = NULL, ...)
       family <- family()
     fn <- family$names
     for(j in seq_along(nx)) {
-      rval[[nx[j]]] <- resultsBayesX(x[[nx[j]]], samples, id = fn[j])
-      if(!is.null(rval[[nx[j]]]$effects)) {
+      rval[[nx[j]]] <- resultsBayesX(x[[nx[j]]], samples, id = fn[j], mspecs = mspecs)
+      if(FALSE) {
         for(i in seq_along(rval[[nx[j]]]$effects)) {
           specs <- attr(rval[[nx[j]]]$effects[[i]], "specs")
           specs$label <- paste(specs$label, fn[j], sep = ":")
@@ -408,9 +435,123 @@ resultsBayesX <- function(x, samples, id = NULL, ...)
     chains <- length(samples)
     rval <- vector(mode = "list", length = chains)
     snames <- colnames(samples[[1]])
-print(snames)
-print(chains)
-stop()
+    for(j in 1:chains) {
+      if(any(grepl("dic", snames))) {
+        DIC <- mean(as.numeric(samples[[j]][, grepl("dic", snames)]))
+        pd <- mean(as.numeric(samples[[j]][, grepl("pd", snames)]))
+      } else {
+        DIC <- pd <- NA
+      }
+
+      ## Compute model term effects.
+      param.effects <- effects <- effects.hyp <- NULL
+      fitted.values <- 0
+
+      ## Parametric effects.
+      if(k <- ncol(x$X)) {
+        nx <- x$pterms
+        if(attr(terms(x$fake.formula), "intercept"))
+          nx <- c("const", nx)
+        pt <- paste(nx, collapse = "+")
+        pt <- paste(pt, id, sep = ":")
+        samps <- as.matrix(samples[[j]][, grepl(pt, snames, fixed = TRUE)], ncol = k)
+        nx <- gsub("const", "(Intercept)", nx, fixed = TRUE)
+        qu <- t(apply(samps, 2, quantile, probs = c(0.025, 0.5, 0.975)))
+        sd <- drop(apply(samps, 2, sd))
+        me <- drop(apply(samps, 2, mean))
+        param.effects <- cbind(me, sd, qu)
+        rownames(param.effects) <- nx
+        colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
+        fitted.values <- as.vector(fitted.values + x$X %*% param.effects[, 1])
+        attr(param.effects, "samples") <- as.mcmc(samps)
+        colnames(attr(param.effects, "samples")) <- nx
+      }
+
+      ## Smooth terms.
+      if(length(i <- grep("sx(", names(mspecs$effects), fixed = TRUE))) {
+        sx.smooth <- mspecs$effects[i]
+        if(length(i <- grep(id, names(sx.smooth)))) {
+          if(!is.list(effects))
+            effects <- list()
+          sx.smooth <- sx.smooth[i]
+          for(i in names(sx.smooth)) {
+            tn <- grep(i, snames, fixed = TRUE, value = TRUE)
+            psamples <- as.matrix(samples[[j]][, snames %in% tn], ncol = length(tn))
+
+            ## Prediction matrix.
+            tn0 <- strsplit(i, ":")[[1]][1]
+            tn <- gsub(")", "", gsub("sx(", "", tn0, fixed = TRUE), fixed = TRUE)
+            tn <- strsplit(tn, ",", fixed = TRUE)[[1]]
+            X <- sx.smooth[[i]]$basis(x$mf[, tn])
+
+            ## Possible variance parameter samples.
+            vsamples <- NULL
+
+            get.mu <- function(X, g) {
+              X %*% as.numeric(g)
+            }
+
+            ## Compute samples of fitted values.
+            fsamples <- apply(psamples, 1, function(g) { get.mu(X, g) })
+
+            ## Compute final smooth term object.
+            fst <- compute_term(eval(parse(text = tn0)), fsamples = fsamples, psamples = psamples,
+              vsamples = vsamples, FUN = NULL, snames = snames,
+              effects.hyp = effects.hyp, fitted.values = fitted.values, data = x$mf)
+
+            attr(fst$term, "specs")$get.mu <- get.mu
+            attr(fst$term, "specs")$basis <- sx.smooth[[i]]$basis
+
+            ## Add term to effects list.
+            effects[[tn0]] <- fst$term
+            effects.hyp <- fst$effects.hyp
+
+            fitted.values <- fst$fitted.values
+            rm(fst)
+          }
+        }
+      }
+
+      ## Scale parameters.
+      scale.m <- scale.samps.m <- NULL
+
+      ## Compute partial residuals.
+      if(x$response %in% names(x$mf)) {
+        for(i in seq_along(effects)) {
+          e <- x$mf[[x$response]] - (fitted.values - attr(effects[[i]], "fit"))
+          if(is.null(attr(effects[[i]], "specs")$xt$center)) {
+            e <- e - mean(e)
+          } else {
+            if(attr(effects[[i]], "specs")$xt$center)
+              e <- e - mean(e)
+          }
+          e <- cbind(attr(effects[[i]], "x"), e)
+          if(!is.null(attr(effects[[i]], "by.drop")))
+            e <- e[attr(effects[[i]], "by.drop"), ]
+          e <- as.data.frame(e)
+          try(names(e) <- c(attr(effects[[i]], "specs")$term, "partial.resids"))
+          attr(effects[[i]], "partial.resids") <- e
+          attr(effects[[i]], "fit") <- NULL
+          attr(effects[[i]], "x") <- NULL
+          attr(effects[[i]], "by.drop") <- NULL
+        }
+      }
+
+      ## Stuff everything together.
+      rval[[j]] <- list("call" = x$call, "family" = x$family,
+        "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(x$mf),
+        "formula" = x$formula), "param.effects" = param.effects, "effects" = effects,
+        "effects.hyp" = effects.hyp, "scale" = scale.m, "fitted.values" = fitted.values,
+        "residuals" = x$mf[[x$response]] - fitted.values)
+
+      class(rval[[j]]) <- "bayesr"
+    }
+    names(rval) <- paste("Chain", 1:chains, sep = "_")
+    if(length(rval) < 2) {
+      rval <- rval[[1]]
+    }
+    class(rval) <- "bayesr"
+    return(rval)
   }
 }
 
@@ -418,6 +559,118 @@ stop()
 ########################################
 ## (3) BayesX model term construction ##
 ########################################
+sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
+{
+  by <- deparse(substitute(by), backtick = TRUE, width.cutoff = 500)
+  call <- match.call()
+
+  available.terms <- c(
+    "rw1", "rw2",
+    "season",
+    "ps", "psplinerw1", "psplinerw2", "pspline",
+    "te", "pspline2dimrw2", "te1", "pspline2dimrw1",
+    "kr", "kriging",
+    "gk", "geokriging",
+    "gs", "geospline",
+    "mrf", "spatial",
+    "bl", "baseline",
+    "factor",    
+    "ridge", "lasso", "nigmix",
+    "re", "ra", "random",
+    "cs", "catspecific",
+    "offset",
+    "generic",
+    "rsps", "hrandom_pspline"
+  )
+  if(!bs %in% available.terms) stop(paste("basis type", sQuote(bs), "not supported by BayesX"))
+
+  if(bs %in% c("rsps", "hrandom_pspline")) {
+    bs <- "rsps"
+    x <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500)
+    rcall <- paste("R2BayesX:::r(x = ", by, ", bs = ", sQuote(bs), ", by = ", x, ", ...)", sep = "")
+    rval <- eval(parse(text = rcall))
+  } else {
+    if(length(grep("~", term <- deparse(call$x))) && bs %in% c("re", "ra", "random")) {
+      x <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500)
+      rcall <- paste("R2BayesX:::r(x = ", x, ", by = ", by, ", ...)", sep = "")
+      rval <- eval(parse(text = rcall))
+    } else {
+      k <- -1
+      m <- NA
+      xt <- list(...)
+      if("m" %in% names(xt))
+        stop("argument m is not allowed, please see function s() using this specification!")
+      if("k" %in% names(xt))
+        stop("argument k is not allowed, please see function s() using this specification!")
+      if(!is.null(xt$xt))
+        xt <- xt$xt
+      warn <- getOption("warn")
+      options("warn" = -1)
+      if(by != "NA" && is.vector(by) && length(by) < 2L && !is.na(as.numeric(by))) {
+        xt["b"] <- by
+        by <- "NA"
+      }
+      options("warn" = warn)
+      if(bs %in% c("pspline2dimrw1", "pspline2dimrw2", "te",
+        "gs", "geospline", "kr", "gk", "kriging", "geokriging")) {
+        if(by != "NA")
+          stop(paste("by variables are not allowed for smooths of type bs = '", bs, "'!", sep = ""))
+      }
+      if(bs == "te1") bs <- "pspline2dimrw1"
+      if(!is.null(xt$knots))
+        xt$nrknots <- xt$knots
+      if(bs %in% c("ps", "te", "psplinerw1", "psplinerw2", "pspline",
+        "pspline2dimrw2", "pspline2dimrw1", "gs", "geospline")) {
+        if(!is.null(xt$degree))
+          m <- xt$degree
+        if(!is.null(xt$order)) {
+          if(is.na(m))
+            m <- c(3L, xt$order)
+          else
+            m <- c(m[1L], xt$order)
+        }
+        if(length(m) < 2L && (bs %in% c("gs", "geospline")))
+          m <- c(3L, 1L)
+        if(length(m) < 2L && is.na(m))
+          m <- c(3L, 2L)   
+        if(is.null(xt$order) && length(m) < 2L)
+          m <- c(m, 2L)
+        if(is.null(xt$order) && length(m) < 2L)
+          m <- c(m, 1L)
+        m[1L] <- m[1L] - 1L
+        if(!is.null(xt$nrknots))
+          k <- xt$nrknots + m[1L]
+        else {
+          if(bs %in% c("ps", "psplinerw1", "psplinerw2", "pspline"))
+            k <- 20L + m[1L]
+          else
+            k <- 10L + m[1L]
+        }
+      }
+      if(bs %in% c("kr", "gk", "kriging", "geokriging")) {
+        m <- c(1L, 1L)
+        if(!is.null(xt$nrknots)) {
+          k <- xt$nrknots
+        } else k <- -1L
+      }
+      if(!is.null(xt$map))
+        xt$map.name <- as.character(call$map)
+      xt[c("degree", "order", "knots", "nrknots")] <- NULL
+      if(!length(xt))
+        xt <- NULL
+      if(!is.null(call$z)) 
+        term <- c(term, deparse(call$z))
+      rval <- mgcv::s(x, z, k = k, bs = bs, m = m, xt = xt)
+      rval$term <- term
+      rval$dim <- length(term)
+      rval$by <- by
+      rval$label <- paste("sx(", paste(term, collapse = ",", sep = ""), ")", sep = "")
+    }
+  }
+
+  return(rval)
+}
+
 sx.construct <- function(object, data) 
 {
   UseMethod("sx.construct")

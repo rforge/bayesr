@@ -112,9 +112,9 @@ gaussian.BayesX <- function(mu.link = "log", sigma.link = "log")
     "k" = 2,
     "mu.link" = mu.link,
     "sigma.link" = sigma.link,
-    "names" = c("mu", "sigma"),
+    "names" = c("mu", "sigma2"),
     "mu" = c("lognormal_mu", "mean"),
-    "sigma" = c("lognormal_sigma2", "scale"),
+    "sigma2" = c("lognormal_sigma2", "scale"),
     "single" = "gaussian",
     "h" = "gaussian_re"
   )

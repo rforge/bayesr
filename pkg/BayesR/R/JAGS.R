@@ -441,9 +441,7 @@ resultsJAGS <- function(x, samples, id = NULL)
         param.effects <- cbind(me, sd, qu)
         rownames(param.effects) <- nx
         colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
-        if(length(i <- grepl("(Intercept)", nx))) {
-          fitted.values <- fitted.values + param.effects[i, 1]
-        }
+        fitted.values <- as.vector(fitted.values + x$X %*% param.effects[, 1])
         attr(param.effects, "samples") <- as.mcmc(samps)
         colnames(attr(param.effects, "samples")) <- nx
       }
@@ -583,8 +581,8 @@ resultsJAGS <- function(x, samples, id = NULL)
         "effects.hyp" = effects.hyp, "scale" = scale.m, "fitted.values" = fitted.values,
         "residuals" = x$mf[[x$response]] - fitted.values)
       
-      ## Clean.
-      rval[[j]] <- delete.NULLs(rval[[j]])
+#      ## Clean.
+#      rval[[j]] <- delete.NULLs(rval[[j]])
 
       class(rval[[j]]) <- "bayesr"
     }
