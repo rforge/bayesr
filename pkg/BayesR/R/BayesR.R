@@ -211,9 +211,9 @@ parse.input.bayesr <- function(formula, data, family = gaussian.JAGS,
       }
     }
     
-    if(!is.null(family$valideta)) {
+    if(!is.null(family$valid.response)) {
       if(response %in% colnames(mf))
-        family$valideta(mf[[response]])
+        family$valid.response(mf[[response]])
     }
     if(is.factor(mf[[response]]))
       mf[[response]] <- as.integer(mf[[response]]) - 1
@@ -764,7 +764,7 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
           tmp <- matrix(tmp, ncol = 1)
         }
         if(!is.null(specs$special)) {
-          m.specials[[i]] <- list("X" = PredictMat(specs, newdata),
+          m.specials[[i]] <- list("X" = PredictMat(specs, newdata), ## FIXME: also allow basis()?
             "get.mu" = specs$get.mu, "samples" = tmp)
         } else {
           m.samples[[i]] <- rbind(m.samples[[i]], tmp)
@@ -789,7 +789,12 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
             if(j < 2) {
               m.designs[[i]] <- if(inherits(specs, "mgcv.smooth")) {
                 PredictMat(specs, newdata)
-              } else newdata[[specs$label]]
+              } else {
+                if(!is.null(specs$basis)) {
+                  stopifnot(is.function(specs$basis))
+                  specs$basis(newdata[[specs$term]])
+                } else stop(paste("cannot compute design matrix for term ", specs$label, "!", sep = ""))
+              }
             }
           }
           attr(m.samples[[i]], "is.factor") <- specs$is.factor

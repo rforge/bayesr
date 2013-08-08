@@ -43,8 +43,8 @@ beta.JAGS <- function(shape1.link = "log", shape2.link = "log")
     "shape1.link" = shape1.link,
     "shape2.link" = shape2.link,
     "names" = c("shape1", "shape2"),
-    "valideta" = function(x) {
-      if(ok <- !all(x > 0 & x < 1)) stop("values not in [0, 1] using beta.BayesR!", call. = FALSE)
+    "valid.response" = function(x) {
+      if(ok <- !all(x > 0 & x < 1)) stop("response values not in [0, 1]!", call. = FALSE)
       ok
     },
     "dist" = "dbeta",
@@ -63,7 +63,7 @@ binomial.JAGS <- function(link = "logit")
     "k" = 1,
     "link" = link,
     "names" = "pi",
-    "valideta" = function(x) {
+    "valid.response" = function(x) {
       if(!is.factor(x)) stop("response must be a factor!", call. = FALSE)
       if(nlevels(x) > 2) stop("more than 2 levels in factor response!", call. = FALSE)
       TRUE
@@ -84,7 +84,7 @@ multinomial.JAGS <- function(link = "logit")
     "k" = Inf,
     "link" = link,
     "names" = "pi",
-    "valideta" = function(x) {
+    "valid.response" = function(x) {
       if(!is.factor(x)) stop("response must be a factor!", call. = FALSE)
       TRUE
     },
@@ -148,7 +148,11 @@ beta.BayesX <- function(...)
     "mu" = c("beta_mu", "mean"),
     "sigma2" = c("beta_sigma2", "scale"),
     "all" = TRUE,
-    "h" = "gaussian_re"
+    "h" = "gaussian_re",
+    "valid.response" = function(x) {
+      if(ok <- !all(x > 0 & x < 1)) stop("response values not in [0, 1]!", call. = FALSE)
+      ok
+    }
   )
   class(rval) <- "family.BayesR"
   rval
@@ -170,7 +174,11 @@ betainflated.BayesX <- function(...)
     "tau" = c("betainf_tau", "mean"),
     "all" = TRUE,
     "h" = "gaussian_re",
-    "order" = 1:4
+    "order" = 1:4,
+    "valid.response" = function(x) {
+      if(ok <- !all(x > 0 & x < 1)) stop("response values not in [0, 1]!", call. = FALSE)
+      ok
+    }
   )
   class(rval) <- "family.BayesR"
   rval
