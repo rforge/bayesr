@@ -105,18 +105,72 @@ multinomial.JAGS <- function(link = "logit")
 ################
 ## (b) BayesX ##
 ################
-gaussian.BayesX <- function(mu.link = "log", sigma.link = "log")
+gaussian.BayesX <- function(...)
 {
   rval <- list(
     "family" = "gaussian",
+    "k" = 1,
+    "mu.link" = "identity",
+    "names" = "mu",
+    "mu" = c("gaussian", "mean"),
+    "all" = TRUE,
+    "h" = "gaussian_re"
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+lognormal.BayesX <- function(...)
+{
+  rval <- list(
+    "family" = "lognormal",
     "k" = 2,
-    "mu.link" = mu.link,
-    "sigma.link" = sigma.link,
+    "mu.link" = "log",
+    "sigma2.link" = "log",
     "names" = c("mu", "sigma2"),
     "mu" = c("lognormal_mu", "mean"),
     "sigma2" = c("lognormal_sigma2", "scale"),
-    "single" = "gaussian",
+    "all" = TRUE,
     "h" = "gaussian_re"
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+beta.BayesX <- function(...)
+{
+  rval <- list(
+    "family" = "beta",
+    "k" = 2,
+    "mu.link" = "logit",
+    "sigma2.link" = "logit",
+    "names" = c("mu", "sigma2"),
+    "mu" = c("beta_mu", "mean"),
+    "sigma2" = c("beta_sigma2", "scale"),
+    "all" = TRUE,
+    "h" = "gaussian_re"
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+betainflated.BayesX <- function(...)
+{
+  rval <- list(
+    "family" = "betainflated",
+    "k" = 4,
+    "mu.link" = "logit",
+    "sigma2.link" = "logit",
+    "nu.link" = "log",
+    "tau.link" = "log",
+    "names" = c("mu", "sigma2", "nu", "tau"),
+    "mu" = c("betainf_mu", "location"),
+    "sigma2" = c("betainf_sigma2", "scale"),
+    "nu" = c("betainf_nu", "shape"),
+    "tau" = c("betainf_tau", "mean"),
+    "all" = TRUE,
+    "h" = "gaussian_re",
+    "order" = 1:4
   )
   class(rval) <- "family.BayesR"
   rval

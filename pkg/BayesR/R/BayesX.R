@@ -54,6 +54,8 @@ transformBayesX <- function(x, ...)
   family <- get_family(x)
   family <- if(is.function(family)) family() else family
   names(x) <- rep(family$names, length.out = n)
+  if(!is.null(family$order))
+    x <- x[rev(family$order)]
   x$call <- call
   x$family <- family
 
@@ -163,6 +165,11 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
 
   nx <- names(x)
   n <- length(x)
+
+  if(!is.null(family$all)) {
+    if(n < family$k & family$all)
+      stop('all parameters must have a model formula, e.g. at least an intercept only model "~ 1"!')
+  }
 
   count <- 1
   for(j in n:1) {
@@ -326,9 +333,9 @@ samplerBayesX <- function(x, ...)
     errl <- gsub(" +$", "", errl)
     errl <- encodeString(errl, width = NA, justify = "left")
     errl <- paste(" *", errl)
-    errm <- paste("an error occurred running the BayesX binary! The following messages are returned:\n\n",
+    errm <- paste("an error occurred running the BayesX binary! The following messages are returned:\n",
       paste(errl, collapse = "\n", sep = ""), sep = "")
-    stop(errm)
+    stop(errm, call. = FALSE)
   }
   samples <- NULL
   mfile <- grep(paste(x$control$setup$model.name, "_R.r", sep = ""), dir(dir), value = TRUE, fixed = TRUE)
@@ -403,15 +410,17 @@ process_mfile <- function(x)
   rval
 }
 
-resultsBayesX <- function(x, samples, id = NULL, mspecs = NULL, ...)
+resultsBayesX <- function(x, samples, id = "", mspecs = NULL, ...)
 {
+  nx <- names(x)
+  nx <- nx[!(nx %in% c("call", "family"))]
+  if(length(nx) < 2)
+    x <- x[[nx]]
   if(is.null(mspecs))
     mspecs <- attr(samples, "model.specs")
   if(is(samples, "mcmc"))
     samples <- as.mcmc.list(list(samples))
   if(!all(c("family", "formula") %in% names(x))) {
-    nx <- names(x)
-    nx <- nx[!(nx %in% c("call", "family"))]
     rval <- list()
     family <- x[[1]]$family
     if(is.function(family))
