@@ -416,8 +416,11 @@ resultsBayesX <- function(x, samples, id = "", mspecs = NULL, ...)
   nx <- nx[!(nx %in% c("call", "family"))]
   if(length(nx) < 2)
     x <- x[[nx]]
-  if(is.null(mspecs))
+  if(is.null(mspecs)) {
     mspecs <- attr(samples, "model.specs")
+    if(is.null(mspecs) & is.list(samples))
+      mspecs <- attr(samples[[1]], "model.specs")
+  }
   if(is(samples, "mcmc"))
     samples <- as.mcmc.list(list(samples))
   if(!all(c("family", "formula") %in% names(x))) {
@@ -441,6 +444,8 @@ resultsBayesX <- function(x, samples, id = "", mspecs = NULL, ...)
     class(rval) <- "bayesr"
     return(rval)
   } else {
+    if(inherits(samples[[1]], "mcmc.list"))
+      samples <- do.call("c", samples)
     chains <- length(samples)
     rval <- vector(mode = "list", length = chains)
     snames <- colnames(samples[[1]])
@@ -524,10 +529,11 @@ resultsBayesX <- function(x, samples, id = "", mspecs = NULL, ...)
       ## Scale parameters.
       scale.m <- scale.samps.m <- NULL
 
-      ## Compute partial residuals.
+      ## Compute partial residuals. FIXME: binomial()$linkfun()
       if(x$response %in% names(x$mf)) {
+        stats <- make.link(x$family[[paste(id, "link", sep = ".")]])
         for(i in seq_along(effects)) {
-          e <- x$mf[[x$response]] - (fitted.values - attr(effects[[i]], "fit"))
+          e <- stats$linkfun(x$mf[[x$response]]) - (fitted.values - attr(effects[[i]], "fit"))
           if(is.null(attr(effects[[i]], "specs")$xt$center)) {
             e <- e - mean(e)
           } else {

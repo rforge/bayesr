@@ -415,6 +415,8 @@ resultsJAGS <- function(x, samples, id = NULL)
     class(rval) <- "bayesr"
     return(rval)
   } else {
+    if(inherits(samples[[1]], "mcmc.list"))
+      samples <- do.call("c", samples)
     chains <- length(samples)
     rval <- vector(mode = "list", length = chains)
     snames <- colnames(samples[[1]])
@@ -554,8 +556,9 @@ resultsJAGS <- function(x, samples, id = NULL)
 
       ## Compute partial residuals.
       if(x$response %in% names(x$mf)) {
+        stats <- make.link(x$family[[paste(id, "link", sep = ".")]])
         for(i in seq_along(effects)) {
-          e <- x$mf[[x$response]] - (fitted.values - attr(effects[[i]], "fit"))
+          e <- stats$linkfun(x$mf[[x$response]]) - (fitted.values - attr(effects[[i]], "fit"))
           if(is.null(attr(effects[[i]], "specs")$xt$center)) {
             e <- e - mean(e)
           } else {

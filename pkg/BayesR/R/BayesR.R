@@ -55,8 +55,6 @@ bayesr <- function(formula, family = gaussian.JAGS, data = NULL, knots = NULL,
       functions$sampler(ms)
     }
     so <- mclapply(1:cores, parallel_fun, mc.cores = cores)
-    if(length(so) < 2)
-      so <- so[[1]]
   }
 
   ## Combine samples.
@@ -792,7 +790,7 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
               } else {
                 if(!is.null(specs$basis)) {
                   stopifnot(is.function(specs$basis))
-                  specs$basis(newdata[[specs$term]])
+                  specs$basis(newdata[specs$term])
                 } else stop(paste("cannot compute design matrix for term ", specs$label, "!", sep = ""))
               }
             }
@@ -1168,8 +1166,10 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
   else
     nx <- names(x)
   cat("\n")
-  cat("Call:\n"); print(call)
-  cat("\n")
+  if(!is.null(call)) {
+    cat("Call:\n"); print(call)
+    cat("\n")
+  }
   print(if(is.function(x[[1]]$family)) x[[1]]$family() else x[[1]]$family)
   cat("---\n\n")
   for(i in 1:n) {

@@ -56,5 +56,5 @@ dat$y <- hs(with(dat, 1.2 + sin(x1) + cos(x2) + rnorm(n, sd = (cos(dat$x1) + 2) 
 
 a <- bayesr(y ~ s(x1) + s(x2) | s(x1), data = dat, family = gaussian.JAGS)
 
-b <- bayesx2(y ~ sx(x1) + sx(x2), data = dat, family = gaussian.BayesX)
+b <- bayesx2(y ~ sx(x1) + sx(x2) | sx(x1), data = dat, family = beta.BayesX)
 
