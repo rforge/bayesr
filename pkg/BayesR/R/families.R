@@ -105,6 +105,21 @@ multinomial.JAGS <- function(link = "logit")
 ################
 ## (b) BayesX ##
 ################
+binomial.BayesX <- function(link = "logit")
+{
+  rval <- list(
+    "family" = "binomial",
+    "k" = 1,
+    "mu.link" = link,
+    "names" = "mu",
+    "mu" = c(paste("binomial", link, sep = "_"), "mean"),
+    "all" = TRUE,
+    "h" = "gaussian_re"
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
 gaussian.BayesX <- function(...)
 {
   rval <- list(
@@ -113,6 +128,23 @@ gaussian.BayesX <- function(...)
     "mu.link" = "identity",
     "names" = "mu",
     "mu" = c("gaussian", "mean"),
+    "all" = TRUE,
+    "h" = "gaussian_re"
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+normal.BayesX <- function(...)
+{
+  rval <- list(
+    "family" = "normal",
+    "k" = 2,
+    "mu.link" = "identity",
+    "sigma2.link" = "log",
+    "names" = c("mu", "sigma2"),
+    "mu" = c("normal_mu", "mean"),
+    "sigma2" = c("normal_sigma2", "scale"),
     "all" = TRUE,
     "h" = "gaussian_re"
   )
@@ -131,7 +163,12 @@ lognormal.BayesX <- function(...)
     "mu" = c("lognormal_mu", "mean"),
     "sigma2" = c("lognormal_sigma2", "scale"),
     "all" = TRUE,
-    "h" = "gaussian_re"
+    "h" = "gaussian_re",
+    "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    }
   )
   class(rval) <- "family.BayesR"
   rval
@@ -150,6 +187,7 @@ beta.BayesX <- function(...)
     "all" = TRUE,
     "h" = "gaussian_re",
     "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
       if(ok <- !all(x > 0 & x < 1)) stop("response values not in [0, 1]!", call. = FALSE)
       ok
     }
@@ -176,6 +214,7 @@ betainflated.BayesX <- function(...)
     "h" = "gaussian_re",
     "order" = 1:4,
     "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
       if(ok <- !all(x > 0 & x < 1)) stop("response values not in [0, 1]!", call. = FALSE)
       ok
     }

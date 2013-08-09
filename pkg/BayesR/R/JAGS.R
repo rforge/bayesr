@@ -556,9 +556,8 @@ resultsJAGS <- function(x, samples, id = NULL)
 
       ## Compute partial residuals.
       if(x$response %in% names(x$mf)) {
-        stats <- make.link(x$family[[paste(id, "link", sep = ".")]])
         for(i in seq_along(effects)) {
-          e <- stats$linkfun(x$mf[[x$response]]) - (fitted.values - attr(effects[[i]], "fit"))
+          e <- x$mf[[x$response]] - (fitted.values - attr(effects[[i]], "fit"))
           if(is.null(attr(effects[[i]], "specs")$xt$center)) {
             e <- e - mean(e)
           } else {

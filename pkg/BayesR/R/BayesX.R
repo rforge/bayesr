@@ -115,7 +115,7 @@ controlBayesX <- function(n.iter = 1200, thin = 1, burnin = 200,
       "setseed" = seed, "predict" = predict
     ),
     "setup" = list(
-      "main" = rep(FALSE, 5), "model.name" = model.name, "data.name" = data.name,
+      "main" = c(rep(FALSE, 4), TRUE), "model.name" = model.name, "data.name" = data.name,
       "prg.name" = prg.name, "dir" = dir, "verbose" = verbose, "cores" = cores
     )
   )
@@ -136,7 +136,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
   cores <- control$setup$cores
   if(is.null(cores)) cores <- 1
 
-  prg <- paste('logopen using', file.path(dir, paste(model.name, 'log', sep = '.')))
+  prg <- c(paste('logopen using', file.path(dir, paste(model.name, 'log', sep = '.'))), "")
 
   BayesX_data <- function(x) {
     X <- NULL
@@ -208,12 +208,13 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
     if(cores < 2) file.path(dir, model.name) else '##outfile##',
     sep = ''))
 
-  make_eqn <- function(x, ctr = TRUE) {
+  make_eqn <- function(x, ctr = TRUE, id = NULL) {
     n <- length(x)
     eqn <- NULL
     for(j in n:1) {
       if(!"fake.formula" %in% names(x[[j]])) {
-        eqn <- c(eqn, make_eqn(x[[j]], ctr))
+        eqn <- c(eqn, make_eqn(x[[j]], ctr, id = j))
+        ctr <- FALSE
       } else {
         teqn <- paste(model.name, '.hregress ', x[[j]]$response, sep = '')
         et <- x[[j]]$pterms
@@ -246,13 +247,18 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
                 ok <- FALSE
               }
             }
+            if(x[[j]]$hlevel < 2) {
+              if(any(grepl("predict", names(control$prg)))) {
+                teqn <- paste(teqn, " predict=", control$prg$predict, sep = "")
+              }
+            }
           } else ok <- grepl("1", fctr[grepl("hlevel", fctr)])
         }
         if(ok) {
           if(!any(grepl("family", fctr)))
-            teqn <- paste(teqn, " family=", family[[nx[j]]][1], sep = "")
+            teqn <- paste(teqn, " family=", family[[nx[if(is.null(id)) j else id]]][1], sep = "")
           if(!any(grepl("equationtype", fctr)))
-            teqn <- paste(teqn, " equationtype=", family[[nx[j]]][2], sep = "")
+            teqn <- paste(teqn, " equationtype=", family[[nx[if(is.null(id)) j else id]]][2], sep = "")
         }
         if(length(fctr)) {
           fctr <- paste(fctr, collapse = " ")
@@ -378,25 +384,34 @@ process_mfile <- function(x)
     x <- x[-i]
   }
   n <- length(x)
+  x <- gsub("equation=", "family=", x, fixed = TRUE)
+  x <- gsub("-", "_", x, fixed = TRUE)
   samples <- eqntype <- family <- basis <- terms <- hlevel <- rep(NA, length = n)
   for(j in 1:n) {
     specs <- strsplit(x[j], ",")[[1]]
-    samples[j] <- gsub("\\s", "", strsplit(grep("pathsamples", specs, value = TRUE),
-      "=", fixed = TRUE)[[1]][2])
-    eqntype[j] <- gsub("\\s", "", strsplit(grep("equationtype", specs, value = TRUE),
-      "=", fixed = TRUE)[[1]][2])
-    family[j] <- gsub("\\s", "", strsplit(grep("family", specs, value = TRUE),
-      "=", fixed = TRUE)[[1]][2])
-    basis[j] <- gsub("\\s", "", strsplit(grep("pathbasis", specs, value = TRUE),
-      "=", fixed = TRUE)[[1]][2])
-    hlevel[j] <- gsub("\\s", "", strsplit(grep("hlevel", specs, value = TRUE),
-      "=", fixed = TRUE)[[1]][2])
-    tt <- strsplit(grep("term", specs, value = TRUE), "=", fixed = TRUE)[[1]][2]
-    tt <- gsub("^\\s+|\\s+$", "", tt)
-    terms[j] <- gsub("\\s", "+", tt)
-    terms[j] <- paste(terms[j], if(any(grepl("_", family[j]))) {
-      strsplit(family[j], "_", fixed = TRUE)[[1]][2]
-    } else family[j], sep = ":")
+    if(length(tmp <- grep("pathsamples", specs, value = TRUE))) {
+      samples[j] <- gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2])
+    }
+    if(length(tmp <- grep("equationtype", specs, value = TRUE))) {
+      eqntype[j] <- gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2])
+    }
+    if(length(tmp <- grep("family", specs, value = TRUE))) {
+      family[j] <- tolower(gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2]))
+    }
+    if(length(tmp <- grep("pathbasis", specs, value = TRUE))) {
+      basis[j] <- gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2])
+    }
+    if(length(tmp <- grep("hlevel", specs, value = TRUE))) {
+      hlevel[j] <- gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2])
+    } else hlevel[j] <- 1
+    if(length(tmp <- grep("term", specs, value = TRUE))) {
+      tt <- strsplit(tmp, "=", fixed = TRUE)[[1]][2]
+      tt <- gsub("^\\s+|\\s+$", "", tt)
+      terms[j] <- gsub("\\s", "+", tt)
+      terms[j] <- paste(terms[j], paste(if(any(grepl("_", family[j]))) {
+        strsplit(family[j], "_", fixed = TRUE)[[1]][2]
+      } else tolower(family[j]), hlevel[j], sep = ":"), sep = ":")
+    }
   }
   if(any(i <- duplicated(terms))) {
     for(j in terms[i]) {
@@ -429,6 +444,10 @@ resultsBayesX <- function(x, samples, id = "", mspecs = NULL, ...)
     if(is.function(family))
       family <- family()
     fn <- family$names
+    if(is.null(names(x))) {
+      nx <- paste("h", 1:length(x), sep = "")
+      names(x) <- nx
+    }
     for(j in seq_along(nx)) {
       rval[[nx[j]]] <- resultsBayesX(x[[nx[j]]], samples, id = fn[j], mspecs = mspecs)
       if(FALSE) {
@@ -531,7 +550,11 @@ resultsBayesX <- function(x, samples, id = "", mspecs = NULL, ...)
 
       ## Compute partial residuals. FIXME: binomial()$linkfun()
       if(x$response %in% names(x$mf)) {
-        stats <- make.link(x$family[[paste(id, "link", sep = ".")]])
+        stats <- if(id != "") {
+          make.link(x$family[[paste(id, "link", sep = ".")]])
+        } else {
+          make.link(x$family[[grep(".link", names(x$family), fixed = TRUE)]])
+        }
         for(i in seq_along(effects)) {
           e <- stats$linkfun(x$mf[[x$response]]) - (fitted.values - attr(effects[[i]], "fit"))
           if(is.null(attr(effects[[i]], "specs")$xt$center)) {
