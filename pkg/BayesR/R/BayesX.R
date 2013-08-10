@@ -275,7 +275,26 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
     eqn
   }
 
-  prg <- c(prg, make_eqn(x))
+  prg_extras <- function(x) {
+    n <- length(x)
+    prgex <- NULL
+    for(j in n:1) {
+      if(!"fake.formula" %in% names(x[[j]])) {
+        prgex <- c(prgex, prg_extras(x[[j]]))
+      } else {
+        if(length(x[[j]]$sx.smooth)) {
+          for(k in x[[j]]$sx.smooth) {
+            if(!is.null(attr(k, "write")))
+              prgex <- c(prgex, attr(k, "write")(dir))
+          }
+        }
+      }
+    }
+    if(!is.null(prgex)) prgex <- c(prgex, "")
+    prgex
+  }
+  
+  prg <- c(prg_extras(x), prg, make_eqn(x))
 
   prg <- gsub("(random", "(hrandom", prg, fixed = TRUE)
   for(i in 1:5)
@@ -822,5 +841,162 @@ sx.construct.rsps.smooth.spec <- function(object, data)
   term <- paste(object$term, term , sep = "*")
 
   return(term)
+}
+
+sx.construct.mrf.smooth.spec <- sx.construct.spatial.smooth.spec <- function(object, data)
+{
+  if(is.null(object$xt))
+    stop("need to supply a map object in argument xt!")  
+  map.name <- help.map.name(deparse(substitute(object, env = .GlobalEnv), 
+    backtick = TRUE, width.cutoff = 500L))
+  if(!is.null(object$xt$map.name))
+    map.name <- object$xt$map.name
+  if(!is.list(object$xt))
+    object$xt <- list(object$xt)
+
+  map <- object$xt$map
+  if(is.null(map)) {
+    if(!is.null(object$xt$polys))
+      map <- object$xt$polys
+    if(!is.null(object$xt$penalty))
+      map <- object$xt$penalty
+  }
+  if(is.null(map))
+    map <- object$xt$gra
+  if(is.null(map)) {
+    if(!is.list(object$xt[[1L]])) {
+      if(inherits(object$xt[[1L]], "gra"))
+        map <- object$xt[[1L]]
+      else
+        map <- object$xt
+    } else map <- object$xt[[1L]]
+    if(is.null(map)) {
+      map <- object$xt
+      if(is(map, "SpatialPolygonsDataFrame"))
+        map <- SPDF2bnd(map)
+      if(is.null(map) || (!is.list(map) && !inherits(map, "bnd") || !inherits(map, "gra")))
+        stop("need to supply a bnd or graph file object in argument xt!")
+    }
+  }
+  if(is(map, "SpatialPolygonsDataFrame"))
+    map <- SPDF2bnd(map)
+  if(!inherits(map, "bnd") && !inherits(map, "gra")) {
+    if(is.list(map))
+      class(map) <- "bnd"
+    else
+      class(map) <- "gra"
+  }
+
+  write <- function(dir = NULL) {
+    if(is.null(dir)) {
+      dir.create(dir <- tempfile())
+      on.exit(unlink(dir))
+    } else dir <- path.expand(dir)
+    if(!file.exists(dir)) dir.create(dir)
+
+    counter <- NULL
+    ok <- TRUE
+    files <- list.files(dir)
+    while(ok) {
+      classm <- class(map)
+      if(length(classm) > 1L)
+        if("list" %in% classm)
+          class(map) <- classm[classm != "list"]
+      mapfile <- paste(map.name, counter, ".", class(map), sep = "")[1]
+      if(any(grepl(mapfile, files))) {
+        if(is.null(counter))
+          counter <- 0L
+        counter <- counter + 1L
+      } else ok <- FALSE
+    }
+    mapfile <- file.path(dir, mapfile)
+
+    prg <- paste("map", map.name)
+    if(inherits(map, "bnd")) {
+      if(!any(is.na(poly.names <- as.integer(names(map))))) {
+        poly.names <- sort(poly.names)
+        poly.names <- as.character(poly.names)
+      } else poly.names <- sort(names(map))
+      map <- map[poly.names]
+      class(map) <- "bnd"
+      write.bnd(map = map, file = mapfile, replace = TRUE)
+      prg <- c(prg, paste(map.name, ".infile using ", mapfile, sep = ""))
+    } else {
+      if(!is.character(map)) {
+        write.gra(map = map, file = mapfile, replace = TRUE)
+        prg <- c(prg, paste(map.name, ".infile, graph using ", mapfile, sep = ""))
+      } else {
+        stopifnot(is.character(map))
+        pos <- regexpr("\\.([[:alnum:]]+)$", map)
+        fext <- ifelse(pos > -1L, substring(map, pos + 1L), "")
+        if(fext == "gra")
+          prg <- c(prg, paste(map.name, ".infile, graph using ", path.expand(map), sep = ""))
+        else
+          prg <- c(prg, paste(map.name, ".infile using ", path.expand(map), sep = ""))
+      }
+    }
+    prg
+  }
+
+  term <- object$term
+  term <- paste(term, "(spatial,map=", map.name, sep = "")
+  term <- paste(do.xt(term, object, c("map", "polys", "penalty", "map.name")), ")", sep = "")
+  if(object$by != "NA")
+    term <- make_by(term, object, data)
+
+  attr(term, "write") <- write
+
+  return(term)
+}
+
+help.map.name <- function(x)
+{
+  if(is.null(x))
+    return("")
+  x <- splitme(x)
+  if(resplit(x[1L:2L]) == "s(") {
+    x <- resplit(c("sfoofun", x[2L:length(x)]))
+    x <- eval(parse(text = x), envir = parent.frame())
+    if(is.null(x))
+      x <- "map"
+  } else  x <- "map"
+
+  return(x)
+}
+
+sfoofun <- function(x, xt = NULL, ...)
+{
+  if(is.null(x) || is.null(xt))
+    return(NULL)
+  x <- rval <- deparse(substitute(xt), backtick = TRUE, width.cutoff = 500L)
+  if(is.list(xt) && length(xt)>1)
+    for(i in 1L:length(xt))
+      if(inherits(xt[[i]], "bnd") || inherits(xt[[i]], "gra") || inherits(xt[[i]], "list")) {
+        rval <- strsplit(x, ",", " ")[[1L]]
+        if(length(rval) > 1L)
+          rval <- rval[i]
+      }
+  rval <- splitme(rval)
+  if(length(rval) > 5L)
+    if(resplit(rval[1L:5L]) == "list(")
+      rval <- rval[6L:length(rval)]
+  if(rval[length(rval)] == ")")
+    rval <- rval[1L:(length(rval) - 1)]
+  if(any(grepl("=", rval)))
+    rval <- rval[(grep("=", rval) + 2L):length(rval)]
+  rval <- resplit(rval)
+   
+  return(rval)
+}
+
+splitme <- function(x) {
+  return(strsplit(x, "")[[1L]])
+}
+
+resplit <- function(x) {
+  if(!is.null(x))
+    x <- paste(x, sep = "", collapse = "")
+	
+  return(x)
 }
 

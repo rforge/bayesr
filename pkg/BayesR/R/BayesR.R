@@ -1195,11 +1195,14 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
     }
     if(i == n) {
       if(!is.null(x[[i]]$DIC) & !is.null(x[[i]]$pd)) {
-        cat("\nDIC =", formatC(x[[i]]$DIC, digits = digits, flag = "-"), "pd =",
-          formatC(x[[i]]$pd, digits = digits, flag = "-"))
+        cat("\nDIC =", if(is.na(x[[i]]$DIC)) "NA" else {
+            formatC(x[[i]]$DIC, digits = digits, flag = "-")
+          }, "pd =", if(is.na(x[[i]]$pd)) "NA" else {
+            formatC(x[[i]]$pd, digits = digits, flag = "-")
+          })
       }
       if(!is.null(x[[i]]$N)) {
-        cat(" N =", formatC(x[[i]]$N, digits = digits, flag = "-"))
+        cat(" N =", if(is.na(x[[i]]$N)) "NA" else formatC(x[[i]]$N, digits = digits, flag = "-"))
       }
       cat("\n\n")
     } else cat("\n")
