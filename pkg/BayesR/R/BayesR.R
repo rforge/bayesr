@@ -85,7 +85,7 @@ parse.input.bayesr <- function(formula, data, family = gaussian.JAGS,
   formula <- parse.formula.bayesr(formula)
   family <- parse.family.bayesr(family)
 
-  if(!is.null(family$cat)) {
+  if(!is.null(family$cat)) {ls
     response <- formula_respname(formula)
     ncat <- nlevels(as.factor(if(is.environment(data)) {
       get(response, envir = data)
@@ -213,8 +213,8 @@ parse.input.bayesr <- function(formula, data, family = gaussian.JAGS,
       if(response %in% colnames(mf))
         family$valid.response(mf[[response]])
     }
-    if(is.factor(mf[[response]]))
-      mf[[response]] <- as.integer(mf[[response]]) - 1
+#    if(is.factor(mf[[response]]))
+#      mf[[response]] <- as.integer(mf[[response]]) - 1
 
     rval <- list("formula" = formula, "fake.formula" = fake.formula, "response" = response,
       "X" = X, "smooth" = smooth, "sx.smooth" = sx.smooth, "pterms" = pterms, "sterms" = sterms,
@@ -634,18 +634,18 @@ compute_term <- function(x, fsamples, psamples, vsamples = NULL,
   require("coda")
   if(is.null(FUN)) {
     FUN <- function(x) {
-      rval <- as.numeric(quantile(x, probs = c(0.025, 0.5, 0.975)))
+      rval <- as.numeric(quantile(x, probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
       names(rval) <- c("2.5%", "50%", "97.5%")
       rval
     }
   }
   smf <- t(apply(fsamples, 1, FUN))
   cnames <- colnames(smf)
+  smf <- as.data.frame(smf)
   nt <- length(x$term)
   for(l in nt:1) {
     smf <- cbind(data[[x$term[l]]], smf)
   }
-  smf <- data.frame(smf)
   names(smf) <- c(x$term, cnames)
 
   ## Compute new linear predictor.
@@ -663,7 +663,7 @@ compute_term <- function(x, fsamples, psamples, vsamples = NULL,
   fitted.values <- if(!is.null(fitted.values)) fitted.values + fit else fit
 
   ## Assign class and attributes.
-  smf <- as.data.frame(unique(as.matrix(smf)))
+  smf <- unique(smf)
   if(is.factor(data[, x$term])) {
     bbb <- 1 ## FIXME: factors!
   }
@@ -1006,11 +1006,11 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, sc
           for(e in pterms[[i]]) {
             et <- x[[i]]$effects[[e]]
             de <- attr(et, "specs")$dim + 1
-            ylim <- c(ylim, range(et[, de:ncol(et)]))
+            ylim <- c(ylim, range(et[, de:ncol(et)], na.rm = TRUE))
             if(args$residuals) {
               if(!is.null(attr(et, "partial.resids"))) {
                 res <- attr(et, "partial.resids")
-                ylim <- c(ylim, range(res[, de:ncol(res)]))
+                ylim <- c(ylim, range(res[, de:ncol(res)], na.rm = TRUE))
               }
             }
           }
@@ -1019,7 +1019,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, sc
     }
     if(k < 0) stop("no terms to plot in model object!")
     if(scale > 0)
-      ylim <- range(ylim)
+      ylim <- range(ylim, na.rm = TRUE)
     args$ylim <- ylim
     args$which <- which
     if(which == "effects") {
@@ -1086,15 +1086,21 @@ plot.bayesr.effect.default <- function(x, ...) {
       args$lty <- c(2, 1, 2)
     if(is.null(args$col.lines))
       args$col.lines <- c(NA, "black", NA)
-    if(inherits(x, "random.effect")) {
+    if(inherits(x, "random.effect") | inherits(x, "re.smooth.spec") | inherits(x, "mrf.smooth.spec")) {
       if(if(!is.null(args$density)) args$density else FALSE) {
         args$density <- NULL
         if(is.null(args$main))
           args$main <- attr(x, "specs")$label
         args$x <- density(x[, "50%"])
         do.call("plot.density", delete.args("plot.density", args))
-      } else do.call("plotblock", args)
-     } else do.call("plot2d", args)
+      } else {
+        if(!is.null(args$map)) {
+          args$x <- x[, grepl("50%", colnames(x), fixed = TRUE)]
+          args$id <- as.character(x[, 1])
+          do.call("plotmap", delete.args("plotmap", args))
+        } else do.call("plotblock", args)
+      }
+    } else do.call("plot2d", args)
   } else {
     do.call("plot3d", args)
   }

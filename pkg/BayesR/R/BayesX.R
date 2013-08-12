@@ -153,13 +153,21 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
     }
     X <- X[, !grepl("(Intercept)", colnames(X), fixed = TRUE), drop = FALSE]
     X[[x$response]] <- x$mf[[x$response]]
+    yf <- is.factor(X[[x$response]])
     X <- as.data.frame(X)
     for(j in 1:ncol(X)) {
       if(is.factor(X[, j])) {
-        X[, j] <- as.integer(X[, j])
-        X <- X[order(X[, j]), ]
+        warn <- getOption("warn")
+        options(warn = -1)
+        tx <- as.integer(as.character(X[, j]))
+        options("warn" = warn)
+        X[, j] <- if(!any(is.na(tx))) tx else as.integer(X[, j])
+        X <- X[order(X[, j]), , drop = FALSE]
       }
     }
+    if(yf)
+      X <- X[order(X[[x$response]]), , drop = FALSE]
+
     return(unique(X))
   }
 
@@ -482,6 +490,7 @@ resultsBayesX <- function(x, samples, id = "", mspecs = NULL, ...)
     class(rval) <- "bayesr"
     return(rval)
   } else {
+    if(is.na(id)) id <- "re"
     if(inherits(samples[[1]], "mcmc.list"))
       samples <- do.call("c", samples)
     chains <- length(samples)
@@ -547,7 +556,11 @@ resultsBayesX <- function(x, samples, id = "", mspecs = NULL, ...)
             fsamples <- apply(psamples, 1, function(g) { get.mu(X, g) })
 
             ## Compute final smooth term object.
-            fst <- compute_term(eval(parse(text = tn0)), fsamples = fsamples, psamples = psamples,
+            tn1 <- eval(parse(text = tn0))
+            stype <- attr(X, "type")
+            class(tn1) <- paste(stype, "smooth.spec", sep = ".")
+
+            fst <- compute_term(tn1, fsamples = fsamples, psamples = psamples,
               vsamples = vsamples, FUN = NULL, snames = snames,
               effects.hyp = effects.hyp, fitted.values = fitted.values, data = x$mf)
 
@@ -555,7 +568,9 @@ resultsBayesX <- function(x, samples, id = "", mspecs = NULL, ...)
             attr(fst$term, "specs")$basis <- sx.smooth[[i]]$basis
 
             ## Add term to effects list.
-            effects[[tn0]] <- fst$term
+            slab <- paste(tn0, stype, sep = ":")
+            attr(fst$term, "specs")$label <- slab
+            effects[[slab]] <- fst$term
             effects.hyp <- fst$effects.hyp
 
             fitted.values <- fst$fitted.values
@@ -569,11 +584,12 @@ resultsBayesX <- function(x, samples, id = "", mspecs = NULL, ...)
 
       ## Compute partial residuals. FIXME: binomial()$linkfun()
       if(x$response %in% names(x$mf)) {
-        stats <- if(id != "") {
+        stats <- try(if(id != "") {
           make.link(x$family[[paste(id, "link", sep = ".")]])
         } else {
           make.link(x$family[[grep(".link", names(x$family), fixed = TRUE)]])
-        }
+        }, silent = TRUE)
+        if(inherits(stats, "try-error")) stats <- make.link("identity")
         for(i in seq_along(effects)) {
           e <- stats$linkfun(x$mf[[x$response]]) - (fitted.values - attr(effects[[i]], "fit"))
           if(is.null(attr(effects[[i]], "specs")$xt$center)) {

@@ -126,8 +126,8 @@ gaussian.BayesX <- function(...)
     "family" = "gaussian",
     "k" = 1,
     "mu.link" = "identity",
-    "names" = "mu",
-    "mu" = c("gaussian", "mean"),
+    "names" = "gaussian",
+    "gaussian" = c("gaussian", "mean"),
     "all" = TRUE,
     "h" = "gaussian_re"
   )
