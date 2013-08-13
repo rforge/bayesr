@@ -2,7 +2,7 @@
 ## (1) Families. ##
 ###################
 ## Print method.
-print.family.BayesR <- function(x)
+print.family.BayesR <- function(x, ...)
 {
   cat("Family:", x$family, "\n")
   links <- NULL
