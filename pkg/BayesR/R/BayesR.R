@@ -5,7 +5,7 @@ bayesr <- function(formula, family = gaussian.JAGS, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.fail, contrasts = NULL,
   parse.input = parse.input.bayesr, transform = transformJAGS, setup = setupJAGS,
   sampler = samplerJAGS, results = resultsJAGS,
-  cores = NULL, combine = TRUE, ...)
+  cores = NULL, combine = TRUE, model = TRUE, ...)
 {
   ## Setup all processing functions.
   if(is.null(transform))
@@ -63,13 +63,14 @@ bayesr <- function(formula, family = gaussian.JAGS, data = NULL, knots = NULL,
 
   ## Compute results.
   rval <- functions$results(pm, so)
-  attr(rval, "functions") <- functions
   rm(so)
 
   ## Assign more model information.
-  attr(rval, "model.frame") <- pm$mf
-  attr(rval, "call") <- pm$call
   attr(rval, "functions") <- functions
+  if(model)
+    attr(rval, "model.frame") <- attr(pm, "model.frame")
+  attr(rval, "family") <- attr(pm, "family")
+  attr(rval, "call") <- pm$call
 
   rval
 }
@@ -86,7 +87,20 @@ parse.input.bayesr <- function(formula, data, family = gaussian.JAGS,
   rval <- parse.data.bayesr(rval, data, weights, subset, offset, na.action)
   rval <- assign.design.bayesr(rval, contrasts, knots, ...)
   attr(rval, "family") <- parse.family.bayesr(family)
+  class(rval) <- "bayesr.input"
 
+  rval
+}
+
+"[.bayesr.input" <- function(x, ...) {
+  rval <- NextMethod("[")
+  mostattributes(rval) <- attributes(x)
+  rval
+}
+
+"[.bayesr" <- function(x, ...) {
+  rval <- NextMethod("[")
+  mostattributes(rval) <- attributes(x)
   rval
 }
 
@@ -102,6 +116,7 @@ assign.design.bayesr <- function(x, contrasts = NULL, knots = NULL, ...)
     obj$X <- model.matrix(as.formula(pf),
       data = if(is.null(attr(obj, "model.frame"))) attr(x, "model.frame") else attr(obj, "model.frame"),
       contrasts.arg = contrasts, ...)
+    obj$response.vec <- attr(x, "model.frame")[[obj$response]]
     if(length(obj$smooth)) {
       smooth <- list()
       for(j in obj$smooth) {
@@ -722,7 +737,7 @@ formula_hlevel <- function(formula)
 ## Transform smooth terms to mixed model representation.
 randomize <- function(x)
 {
-  if(inherits(x, "list") & !any(c("smooth", "response") %in% names(x))) {
+  if(inherits(x, "bayesr.input") & !any(c("smooth", "response") %in% names(x))) {
     nx <- names(x)
     nx <- nx[nx != "call"]
     if(is.null(nx)) nx <- 1:length(x)
@@ -733,7 +748,7 @@ randomize <- function(x)
     if(m <- length(x$smooth)) {
       for(j in 1:m) {
         if(!inherits(x$smooth[[j]], "no.mgcv")) {
-          tmp <- mgcv:::smooth2random(x$smooth[[j]], names(x$mf), type = 2)
+          tmp <- mgcv:::smooth2random(x$smooth[[j]], names(attr(x, "model.frame")), type = 2)
           if(is.null(x$smooth[[j]]$xt$nolin))
             x$smooth[[j]]$Xf <- tmp$Xf
 #          if(inherits(x$smooth[[j]], "random.effect")) {
@@ -1358,6 +1373,7 @@ delete.NULLs <- function(x.list)
 summary.bayesr <- function(object, model = NULL, ...)
 {
   call <- attr(object, "call")
+  family <- attr(object, "family")
   object <- get.model(object, model)
   rval <- list()
   n <- length(object)
@@ -1368,7 +1384,7 @@ summary.bayesr <- function(object, model = NULL, ...)
     }
     rval[[i]] <- with(object[[i]],
       c(list("param.effects" = param.effects,
-        "effects.hyp" = effects.hyp, "scale" = scale, "family" = family),
+        "effects.hyp" = effects.hyp, "scale" = scale),
         model)
     )
   }
@@ -1378,6 +1394,7 @@ summary.bayesr <- function(object, model = NULL, ...)
     names(rval) <- names(object)
   attr(rval, "n") <- n
   attr(rval, "call") <- call
+  attr(rval, "family") <- family
   class(rval) <- "summary.bayesr"
   rval
 }
@@ -1386,6 +1403,7 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
 {
   on.exit(return(invisible(x)))
   call <- attr(x, "call")
+  family <- attr(x, "family")
   n <- attr(x, "n")
   nx <- NULL
   if(n < 2)
@@ -1397,7 +1415,7 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
     cat("Call:\n"); print(call)
     cat("\n")
   }
-  print(if(is.function(x[[1]]$family)) x[[1]]$family() else x[[1]]$family)
+  print(if(is.function(family)) family() else family)
   cat("---\n\n")
   for(i in 1:n) {
     if(!is.null(nx)) {

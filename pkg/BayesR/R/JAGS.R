@@ -2,23 +2,24 @@
 ## (1) General JAGS setup functions, model code, initials and data. ##
 ######################################################################
 ## Setup the model structure needed for the sampler.
-## The function creates the model code, initials and data
+## These functions create the model code, initials and data
 ## to run a JAGS sampler.
 restructure_x <- function(x) {
-  if(!all(c("family", "formula", "response") %in% names(x))) {
+  if(inherits(x, "bayesr.input") & !all(c("formula", "fake.formula", "response") %in% names(x))) {
     call <- x$call
     x <- x[names(x) != "call"]
     x2 <- list(); k <- 1
     for(i in seq_along(x)) {
-      if(!all(c("family", "formula", "response") %in% names(x[[i]]))) {
+      if(!all(c("formula", "fake.formula", "response") %in% names(x[[i]]))) {
         x2[[k]] <- x[[i]]
         x[[i]] <- NULL
       }
     }
     if(length(x2))
       x <- c(x, x2)
-    if(any(duplicated(nx <- names(x))))
-      names(x) <- paste(nx, 1:length(nx), sep = "")
+    if(any(duplicated(nx <- names(x))) | is.null(names(x))) {
+      names(x) <- paste(nx, 1:length(x), sep = "")
+    }
     x$call <- call
   }
   x
@@ -67,8 +68,8 @@ JAGSeta <- function(x, id = NULL, ...) {
   }
 
   ## Final touch ups.
-  if(!is.null(x$mf[[x$response]]))
-    setup$data$response <- x$mf[[x$response]]
+  if(!is.null(x$response.vec))
+    setup$data$response <- x$response.vec
 
   setup
 }
@@ -153,19 +154,21 @@ JAGSmodel <- function(x, family, ...) {
 ## Create final model setup.
 setupJAGS <- function(x)
 {
+  family <- attr(x, "family")
+  if(is.function(family))
+    family <- family()
   x <- restructure_x(x)
   ncat <- NULL
-  if(!all(c("family", "formula", "response") %in% names(x))) {
+  if(!all(c("formula", "fake.formula", "response") %in% names(x))) {
     nx <- names(x)
     nx <- nx[nx != "call"]
     if(is.null(nx))
       nx <- 1:length(x)
     rval <- list()
-    family <- if(is.function(x[[1]]$family)) x[[1]]$family() else x[[1]]$family
+
     fn <- family$names
     for(i in seq_along(nx)) rval[[nx[i]]] <- family$eta(x[[i]], fn[i])
   } else {
-    family <- if(is.function(x$family)) x$family() else x$family
     rval <- family$eta(x)
   }
   
@@ -184,7 +187,7 @@ setupJAGS <- function(x)
   data <- data[unique(names(data))]
   inits <- inits[unique(names(inits))]
   psave <- unique(psave)
-  data$n <- nrow(if(all(c("family", "formula", "response") %in% names(x))) x$mf else x[[1]]$mf)
+  data$n <- nrow(attr(x, "model.frame"))
   psave <- c(psave, attr(model, "psave"))
 #  if(!is.null(fhamily$oname))
 #    inits[[family$oname]] <- matrix(0, data$n, length(rval))
@@ -390,31 +393,17 @@ samplerJAGS <- function(x, tdir = NULL,
 ## Function to extract all results obtained by running the JAGS
 ## sampler. The function uses BayesR structures to represent fitted
 ## model terms etc.
-resultsJAGS <- function(x, samples, id = NULL)
+resultsJAGS <- function(x, samples)
 {
-  if(!all(c("family", "formula") %in% names(x))) {
-    nx <- names(x)
-    nx <- nx[nx != "call"]
-    rval <- list()
-    family <- x[[1]]$family
-    if(is.function(family))
-      family <- family()
-    fn <- family$names
-    for(j in seq_along(nx)) {
-      rval[[nx[j]]] <- resultsJAGS(x[[nx[j]]], samples, id = fn[j])
-      if(!is.null(rval[[nx[j]]]$effects)) {
-        for(i in seq_along(rval[[nx[j]]]$effects)) {
-          specs <- attr(rval[[nx[j]]]$effects[[i]], "specs")
-          specs$label <- paste(specs$label, fn[j], sep = ":")
-          attr(rval[[nx[j]]]$effects[[i]], "specs") <- specs
-        }
-        names(rval[[nx[j]]]$effects) <- paste(names(rval[[nx[j]]]$effects), fn[j], sep = ":")
-      }
-    }
-    names(rval) <- fn
-    class(rval) <- "bayesr"
-    return(rval)
-  } else {
+  family <- attr(x, "family")
+  if(is.function(family))
+    family <- family()
+
+  xmf <- attr(x, "model.frame")
+  attr(x, "model.frame") <- NULL
+
+  createJAGSresults <- function(obj, samples, id = NULL)
+  {
     if(inherits(samples[[1]], "mcmc.list"))
       samples <- do.call("c", samples)
     chains <- length(samples)
@@ -434,29 +423,29 @@ resultsJAGS <- function(x, samples, id = NULL)
       fitted.values <- 0
 
       ## Parametric effects.
-      if(k <- ncol(x$X)) {
+      if(k <- ncol(obj$X)) {
         samps <- as.matrix(samples[[j]][, grepl(paste("beta", id, sep = ""), snames)], ncol = k)
-        nx <- colnames(x$X)
+        nx <- colnames(obj$X)
         qu <- t(apply(samps, 2, quantile, probs = c(0.025, 0.5, 0.975)))
         sd <- drop(apply(samps, 2, sd))
         me <- drop(apply(samps, 2, mean))
         param.effects <- cbind(me, sd, qu)
         rownames(param.effects) <- nx
         colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
-        fitted.values <- as.vector(fitted.values + x$X %*% param.effects[, 1])
+        fitted.values <- as.vector(fitted.values + obj$X %*% param.effects[, 1])
         attr(param.effects, "samples") <- as.mcmc(samps)
         colnames(attr(param.effects, "samples")) <- nx
       }
   
       ## Smooth terms.
-      if(length(x$smooth)) {
+      if(length(obj$smooth)) {
         if(!is.list(effects))
           effects <- list()
-        for(i in 1:length(x$smooth)) {
-          if(!is.null(x$smooth[[i]]$special)) {
-            fst <- resultsJAGS.special(x$smooth[[i]], samples[[j]], x$mf, i)
+        for(i in 1:length(obj$smooth)) {
+          if(!is.null(obj$smooth[[i]]$special)) {
+            fst <- resultsJAGS.special(obj$smooth[[i]], samples[[j]], xmf, i)
             if(is.null(attr(fst, "by"))) {
-              effects[[x$smooth[[i]]$label]] <- fst$term
+              effects[[obj$smooth[[i]]$label]] <- fst$term
               effects.hyp <- rbind(effects.hyp, fst$effects.hyp)
               fitted.values <- fitted.values + fst$fitted.values
             } else {
@@ -471,8 +460,8 @@ resultsJAGS <- function(x, samples, id = NULL)
           } else {
             ## Get coefficient samples of smooth term.
             xsamples <- rsamples <- NULL
-            kr <- if(is.null(x$smooth[[i]]$rand$Xr)) 0 else ncol(x$smooth[[i]]$rand$Xr)
-            kx <- if(is.null(x$smooth[[i]]$Xf)) 0 else ncol(x$smooth[[i]]$Xf)
+            kr <- if(is.null(obj$smooth[[i]]$rand$Xr)) 0 else ncol(obj$smooth[[i]]$rand$Xr)
+            kx <- if(is.null(obj$smooth[[i]]$Xf)) 0 else ncol(obj$smooth[[i]]$Xf)
             kw <- 0
             if(kx) {
               pn <- grep(paste("b", i, id, sep = ""), snames, value = TRUE, fixed = TRUE)
@@ -489,20 +478,20 @@ resultsJAGS <- function(x, samples, id = NULL)
             ## Retransform parameter samples.
             if(kr) {
               re_trans <- function(g) {
-                g <- x$smooth[[i]]$trans.D * g
-                if(!is.null(x$smooth[[i]]$trans.U))
-                  g <- x$smooth[[i]]$trans.U %*% g
+                g <- obj$smooth[[i]]$trans.D * g
+                if(!is.null(obj$smooth[[i]]$trans.U))
+                  g <- obj$smooth[[i]]$trans.U %*% g
                 g
               }
               psamples <- t(apply(psamples, 1, re_trans))
             }
 
             ## Prediction matrix.
-            X <- PredictMat(x$smooth[[i]], x$mf)
+            X <- PredictMat(obj$smooth[[i]], xmf)
 
             ## Possible variance parameter samples.
             vsamples <- NULL
-            taug <- paste("taug", if(is.null(x$smooth[[i]]$id)) i else x$smooth[[i]]$id, id, sep = "")
+            taug <- paste("taug", if(is.null(obj$smooth[[i]]$id)) i else obj$smooth[[i]]$id, id, sep = "")
             if(taug %in% snames) {
               vsamples <- as.numeric(samples[[j]][, snames %in% taug])
             }
@@ -515,14 +504,14 @@ resultsJAGS <- function(x, samples, id = NULL)
             fsamples <- apply(psamples, 1, function(g) { get.mu(X, g) })
 
             ## Compute final smooth term object.
-            fst <- compute_term(x$smooth[[i]], fsamples = fsamples, psamples = psamples,
+            fst <- compute_term(obj$smooth[[i]], fsamples = fsamples, psamples = psamples,
               vsamples = vsamples, FUN = NULL, snames = snames,
-              effects.hyp = effects.hyp, fitted.values = fitted.values, data = x$mf)
+              effects.hyp = effects.hyp, fitted.values = fitted.values, data = xmf)
 
             attr(fst$term, "specs")$get.mu <- get.mu 
 
             ## Add term to effects list.
-            effects[[x$smooth[[i]]$label]] <- fst$term
+            effects[[obj$smooth[[i]]$label]] <- fst$term
             effects.hyp <- fst$effects.hyp
 
             fitted.values <- fst$fitted.values
@@ -534,7 +523,7 @@ resultsJAGS <- function(x, samples, id = NULL)
       ## Scale parameters.
       scale.m <- scale.samps.m <- NULL
       sn <- if(is.null(id)) {
-        family <- if(is.function(x$family)) x$family() else x$family
+        family <- if(is.function(family)) family() else family
         family$names
       } else id
       for(snj in sn) {
@@ -555,9 +544,9 @@ resultsJAGS <- function(x, samples, id = NULL)
       }
 
       ## Compute partial residuals.
-      if(x$response %in% names(x$mf)) {
+      if(obj$response %in% names(xmf)) {
         for(i in seq_along(effects)) {
-          e <- x$mf[[x$response]] - (fitted.values - attr(effects[[i]], "fit"))
+          e <- xmf[[obj$response]] - (fitted.values - attr(effects[[i]], "fit"))
           if(is.null(attr(effects[[i]], "specs")$xt$center)) {
             e <- e - mean(e)
           } else {
@@ -577,11 +566,12 @@ resultsJAGS <- function(x, samples, id = NULL)
       }
 
       ## Stuff everything together.
-      rval[[j]] <- list("call" = x$call, "family" = x$family,
-        "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(x$mf),
-        "formula" = x$formula), "param.effects" = param.effects, "effects" = effects,
+      rval[[j]] <- list(
+        "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(xmf), "formula" = x$formula),
+        "param.effects" = param.effects, "effects" = effects,
         "effects.hyp" = effects.hyp, "scale" = scale.m, "fitted.values" = fitted.values,
-        "residuals" = x$mf[[x$response]] - fitted.values)
+        "residuals" = xmf[[obj$response]] - fitted.values
+      )
       
 #      ## Clean.
 #      rval[[j]] <- delete.NULLs(rval[[j]])
@@ -594,6 +584,30 @@ resultsJAGS <- function(x, samples, id = NULL)
     }
     class(rval) <- "bayesr"
     return(rval)
+  }
+
+  if(inherits(x, "bayesr.input") & !all(c("formula", "fake.formula", "response") %in% names(x))) {
+    nx <- names(x)
+    nx <- nx[nx != "call"]
+    rval <- list()
+    fn <- family$names
+    for(j in seq_along(nx)) {
+      rval[[nx[j]]] <- createJAGSresults(x[[nx[j]]], samples, id = fn[j])
+      if(!is.null(rval[[nx[j]]]$effects)) {
+        for(i in seq_along(rval[[nx[j]]]$effects)) {
+          specs <- attr(rval[[nx[j]]]$effects[[i]], "specs")
+          specs$label <- paste(specs$label, fn[j], sep = ":")
+          attr(rval[[nx[j]]]$effects[[i]], "specs") <- specs
+        }
+        names(rval[[nx[j]]]$effects) <- paste(names(rval[[nx[j]]]$effects), fn[j], sep = ":")
+      }
+    }
+    names(rval) <- fn
+    attr(rval, "family") <- family
+    class(rval) <- "bayesr"
+    return(rval)
+  } else {
+    return(createJAGSresults(x, samples))
   }
 }
 
