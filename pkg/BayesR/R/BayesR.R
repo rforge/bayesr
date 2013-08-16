@@ -670,8 +670,7 @@ c.bayesr <- function(...)
 get.model <- function(x, model)
 {
   cx <- class(x)
-  elmts <- c("formula", "family", "fitted.values", "residuals", "response",
-    "effects", "effects.hyp", "param.effects", "scale", "model", "call")
+  elmts <- c("formula", "fake.formula")
   if(!any(names(x) %in% elmts)) {
     if(!is.null(model)) {
       if(is.character(model)) {
@@ -681,7 +680,7 @@ get.model <- function(x, model)
         if(max(model) > length(x) || is.na(model) || min(model) < 1) 
           stop("argument model is specified wrong!")
       }
-      x <- x[model]
+      x <- x[[model]]
     }
   } else x <- list(x)
   class(x) <- cx
