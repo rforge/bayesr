@@ -212,7 +212,7 @@ betainflated.BayesX <- function(...)
     "tau" = c("betainf_tau", "mean"),
     "all" = TRUE,
     "h" = "gaussian_re",
-    "order" = 1:4,
+    "order" = 4:1,
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
       if(ok <- !all(x > 0 & x < 1)) stop("response values not in [0, 1]!", call. = FALSE)

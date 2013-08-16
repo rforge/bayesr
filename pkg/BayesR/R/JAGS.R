@@ -399,9 +399,6 @@ resultsJAGS <- function(x, samples)
   if(is.function(family))
     family <- family()
 
-  xmf <- attr(x, "model.frame")
-  attr(x, "model.frame") <- NULL
-
   createJAGSresults <- function(obj, samples, id = NULL)
   {
     if(inherits(samples[[1]], "mcmc.list"))
@@ -443,7 +440,7 @@ resultsJAGS <- function(x, samples)
           effects <- list()
         for(i in 1:length(obj$smooth)) {
           if(!is.null(obj$smooth[[i]]$special)) {
-            fst <- resultsJAGS.special(obj$smooth[[i]], samples[[j]], xmf, i)
+            fst <- resultsJAGS.special(obj$smooth[[i]], samples[[j]], attr(x, "model.frame"), i)
             if(is.null(attr(fst, "by"))) {
               effects[[obj$smooth[[i]]$label]] <- fst$term
               effects.hyp <- rbind(effects.hyp, fst$effects.hyp)
@@ -487,7 +484,7 @@ resultsJAGS <- function(x, samples)
             }
 
             ## Prediction matrix.
-            X <- PredictMat(obj$smooth[[i]], xmf)
+            X <- PredictMat(obj$smooth[[i]], attr(x, "model.frame"))
 
             ## Possible variance parameter samples.
             vsamples <- NULL
@@ -506,7 +503,7 @@ resultsJAGS <- function(x, samples)
             ## Compute final smooth term object.
             fst <- compute_term(obj$smooth[[i]], fsamples = fsamples, psamples = psamples,
               vsamples = vsamples, FUN = NULL, snames = snames,
-              effects.hyp = effects.hyp, fitted.values = fitted.values, data = xmf)
+              effects.hyp = effects.hyp, fitted.values = fitted.values, data = attr(x, "model.frame"))
 
             attr(fst$term, "specs")$get.mu <- get.mu 
 
@@ -544,9 +541,9 @@ resultsJAGS <- function(x, samples)
       }
 
       ## Compute partial residuals.
-      if(obj$response %in% names(xmf)) {
+      if(obj$response %in% names(attr(x, "model.frame"))) {
         for(i in seq_along(effects)) {
-          e <- xmf[[obj$response]] - (fitted.values - attr(effects[[i]], "fit"))
+          e <- attr(x, "model.frame")[[obj$response]] - (fitted.values - attr(effects[[i]], "fit"))
           if(is.null(attr(effects[[i]], "specs")$xt$center)) {
             e <- e - mean(e)
           } else {
@@ -567,10 +564,10 @@ resultsJAGS <- function(x, samples)
 
       ## Stuff everything together.
       rval[[j]] <- list(
-        "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(xmf), "formula" = x$formula),
+        "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(attr(x, "model.frame")), "formula" = obj$formula),
         "param.effects" = param.effects, "effects" = effects,
         "effects.hyp" = effects.hyp, "scale" = scale.m, "fitted.values" = fitted.values,
-        "residuals" = xmf[[obj$response]] - fitted.values
+        "residuals" = obj$response.vec - fitted.values
       )
       
 #      ## Clean.

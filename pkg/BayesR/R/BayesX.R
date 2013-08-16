@@ -33,55 +33,49 @@ bayesx2 <- function(formula, family = gaussian.BayesX, data = NULL, knots = NULL
 ####################################
 transformBayesX <- function(x, ...)
 {
-  x <- tBayesX(x, ...)
+  family <- attr(x, "family")
+  family <- if(is.function(family)) family() else family
   call <- x$call; x$call <- NULL
 
-  if(inherits(x, "list") & !("smooth" %in% names(x))) {
+  tBayesX <- function(obj, ...) {
+    if(!any(c("formula", "fake.formula", "response") %in% names(obj))) {
+      nx <- names(obj)
+      nx <- nx[nx != "call"]
+      if(is.null(nx)) nx <- 1:length(obj)
+      if(length(unique(nx)) < length(obj)) nx <- 1:length(obj)
+      for(j in nx)
+        obj[[j]] <- tBayesX(obj[[j]], ...)
+    } else {
+      obj <- randomize(obj)
+      if(length(obj$smooth)) stop("arbitrary smooths not supported yet!")
+      if(length(obj$sx.smooth)) {
+        for(j in seq_along(obj$sx.smooth)) {
+          tmp <- sx.construct(obj$sx.smooth[[j]],
+            if(is.null(attr(obj, "model.frame"))) {
+              attr(x, "model.frame")
+            } else attr(obj, "model.frame"))
+          attr(tmp, "specs") <- obj$sx.smooth[[j]]
+          obj$sx.smooth[[j]] <- tmp
+        }
+      }
+    }
+    obj
+  }
+
+  x <- tBayesX(x, ...)
+
+  if(inherits(x, "bayesr.input") & !any(c("formula", "fake.formula", "response") %in% names(x))) {
     n <- length(x)
   } else {
     x <- list(x)
     n <- 1
   }
 
-  get_family <- function(x) {
-    if(is.null(x$family))
-      for(j in x) {
-        family <- get_family(j)
-    } else family <- x$family
-    family
-  }
-
-  family <- get_family(x)
-  family <- if(is.function(family)) family() else family
   names(x) <- rep(family$names, length.out = n)
   if(!is.null(family$order))
-    x <- x[rev(family$order)]
-  x$call <- call
-  x$family <- family
-
-  x
-}
-
-tBayesX <- function(x, ...)
-{
-  if(inherits(x, "list") & !any(c("smooth", "response") %in% names(x))) {
-    nx <- names(x)
-    nx <- nx[nx != "call"]
-    if(is.null(nx)) nx <- 1:length(x)
-    if(length(unique(nx)) < length(x)) nx <- 1:length(x)
-    for(j in nx)
-      x[[j]] <- tBayesX(x[[j]], ...)
-  } else {
-    x <- randomize(x)
-    if(length(x$smooth)) stop("arbitrary smooths not supported yet!")
-    if(length(x$sx.smooth)) {
-      for(j in seq_along(x$sx.smooth)) {
-        tmp <- sx.construct(x$sx.smooth[[j]], x$mf)
-        attr(tmp, "specs") <- x$sx.smooth[[j]]
-        x$sx.smooth[[j]] <- tmp
-      }
-    }
-  }
+    x <- x[family$order]
+  attr(x, "call") <- call
+  attr(x, "family") <- family
 
   x
 }
@@ -125,7 +119,7 @@ controlBayesX <- function(n.iter = 1200, thin = 1, burnin = 200,
 
 setupBayesX <- function(x, control = controlBayesX(...), ...)
 {
-  family <- x$family
+  family <- attr(x, "family")
   x$call <- x$family <- NULL
 
   args <- list(...)
@@ -136,24 +130,37 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
   cores <- control$setup$cores
   if(is.null(cores)) cores <- 1
 
-  prg <- c(paste('logopen using', file.path(dir, paste(model.name, 'log', sep = '.'))), "")
-
-  BayesX_data <- function(x) {
+  BayesX_data <- function(obj) {
     X <- NULL
-    if(!is.null(x$X)) {
-      if(ncol(x$X) > 0)
-        X <- as.data.frame(x$X)
+    if(!is.null(obj$X)) {
+      if(ncol(obj$X) > 0) {
+        X <- obj$X
+        if(length(i <- grep("(Intercept)", colnames(X), fixed = TRUE)))
+          X <- obj$X[, -i, drop = FALSE]
+        X <- as.data.frame(X)
+      }
     }
-    if(k2 <- length(x$sterms)) {
+    if(k2 <- length(obj$sterms)) {
       X <- if(!is.null(X)) {
-        cbind(X, as.data.frame(x$mf[, x$sterms]))
-      } else as.data.frame(x$mf[, x$sterms])
+        cbind(X,
+          if(is.null(attr(obj, "model.frame"))) {
+            attr(x, "model.frame")[, obj$sterms, drop = FALSE]
+          } else {
+            attr(obj, "model.frame")[, obj$sterms, drop = FALSE]
+          })
+      } else {
+        if(is.null(attr(obj, "model.frame"))) {
+          attr(x, "model.frame")[, obj$sterms]
+        } else {
+          attr(obj, "model.frame")[, obj$sterms, drop = FALSE]
+        }
+      }
       k1 <- ncol(X)
-      colnames(X)[(k1 - k2 + 1):k1] <- x$sterms
+      colnames(X)[(k1 - k2 + 1):k1] <- obj$sterms
     }
     X <- X[, !grepl("(Intercept)", colnames(X), fixed = TRUE), drop = FALSE]
-    X[[x$response]] <- x$mf[[x$response]]
-    yf <- is.factor(X[[x$response]])
+    X[[obj$response]] <- obj$response.vec
+    yf <- is.factor(X[[obj$response]])
     X <- as.data.frame(X)
     for(j in 1:ncol(X)) {
       if(is.factor(X[, j])) {
@@ -166,7 +173,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
       }
     }
     if(yf)
-      X <- X[order(X[[x$response]]), , drop = FALSE]
+      X <- X[order(X[[obj$response]]), , drop = FALSE]
 
     return(unique(X))
   }
@@ -180,15 +187,23 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
   }
 
   count <- 1
+  d <- prg <- NULL
+  dpath0 <- file.path(dir, paste(dname0 <- paste(data.name, 0, sep = ''), "raw", sep = '.'))
   for(j in n:1) {
     if(!"fake.formula" %in% names(x[[j]])) {
-      for(i in length(x[[j]]):1) {
-        dpath <- file.path(dir, paste(dname <- paste(data.name, count, sep = ''), "raw", sep = '.'))
-        d <- BayesX_data(x[[j]][[i]])
+      for(i in 1:length(x[[j]])) {
+        d2 <- NULL
+        if(i < 2) {
+          d <- if(is.null(d)) BayesX_data(x[[j]][[i]]) else cbind(d, BayesX_data(x[[j]][[i]]))
+          d <- d[, unique(names(d)), drop = FALSE]
+          x[[j]][[i]]$dname <- dname0
+        } else d2 <- BayesX_data(x[[j]][[i]])
         x[[j]][[i]]$hlevel <- i
-        if(!is.null(d)) {
+        if(!is.null(d2)) {
+          dpath <- file.path(dir, paste(dname <- paste(data.name, count, sep = ''),
+            "raw", sep = '.'))
           x[[j]][[i]]$dname <- dname
-          write.table(d, file = dpath, quote = FALSE, row.names = FALSE, col.names = TRUE)
+          write.table(d2, file = dpath, quote = FALSE, row.names = FALSE, col.names = TRUE)
           prg <- c(prg,
             paste('dataset ', data.name, count, sep = ''),
             paste(data.name, count, '.infile using ', dpath, sep = '')
@@ -197,20 +212,21 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         }
       }
     } else {
-      dpath <- file.path(dir, paste(dname <- paste(data.name, count, sep = ''), "raw", sep = '.'))
-      d <- BayesX_data(x[[j]])
-      if(!is.null(d)) {
-        x[[j]]$dname <- dname
-        write.table(d, file = dpath, quote = FALSE, row.names = FALSE, col.names = TRUE)
-        prg <- c(prg,
-          paste('dataset ', data.name, count, sep = ''),
-          paste(data.name, count, '.infile using ', dpath, sep = '')
-        )
-        count <- count + 1
-      }
+      d <- if(is.null(d)) BayesX_data(x[[j]]) else cbind(d, BayesX_data(x[[j]]))
+      d <- d[, unique(names(d)), drop = FALSE]
+      x[[j]]$dname <- dname0
+      x[[j]]$hlevel <- 1
     }
   }
 
+  write.table(d, file = dpath0, quote = FALSE, row.names = FALSE, col.names = TRUE)
+  prg <- c(
+    paste('dataset', dname0),
+    paste(dname0, '.infile using ', dpath0, sep = ''),
+    prg
+  )
+
+  prg <- c(paste('logopen using', file.path(dir, paste(model.name, 'log', sep = '.'))), "", prg)
   prg <- c(prg, paste('\nmcmcreg', model.name))
   prg <- c(prg, paste(model.name, '.outfile = ',
     if(cores < 2) file.path(dir, model.name) else '##outfile##',
@@ -228,10 +244,11 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         et <- x[[j]]$pterms
         fctr <- attr(x[[j]]$formula, "control")
         if(is.null(fctr)) fctr <- ""
-        if(attr(terms(x[[j]]$formula), "intercept"))
-          et <- c("const", et)
-        if(length(x[[j]]$sx.smooth))
+        if(length(i <- grep("(Intercept)", et, fixed = TRUE)))
+          et[i] <- "const"
+        if(length(x[[j]]$sx.smooth)) {
           et <- c(et, x[[j]]$sx.smooth)
+        }
         if(length(et))
           teqn <- paste(teqn, '=', paste(et, collapse = ' + '))
         if(ctr) {
@@ -252,6 +269,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
             if(x[[j]]$hlevel > 1) {
               if(!any(grepl("family", fctr))) {
                 teqn <- paste(teqn, " family=", family$h, sep = "")
+                teqn <- paste(teqn, " equationtype=", family[[nx[if(is.null(id)) j else id]]][2], sep = "")
                 ok <- FALSE
               }
             }
@@ -314,10 +332,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
     prg
   )
 
-  x$prg <- prg
-  x$control <- control
-
-  x
+  return(list("prg" = prg, "control" = control))
 }
 
 
@@ -381,12 +396,19 @@ samplerBayesX <- function(x, ...)
       ts$intnr <- NULL
       names(ts) <- paste(mfile$effects[j, "terms"], "[", 1:ncol(ts), "]", sep = "")
       samples <- cbind(samples, as.matrix(ts))
+      if(!is.na(mfile$effects[j, "varsamples"])) {
+        ts <- read.table(mfile$effects[j, "varsamples"], header = TRUE)
+        ts$intnr <- NULL
+        names(ts) <- paste(mfile$effects[j, "terms"], ":var[", 1:ncol(ts), "]", sep = "")
+        samples <- cbind(samples, as.matrix(ts))
+      }
       mspecs$effects[[mfile$effects[j, "terms"]]] <- list(
         "basis" = if(!is.na(mfile$effects[j, "basis"])) {
             eval(parse(file = mfile$effects[j, "basis"]))
          } else function(x) { x },
         "family" = mfile$effects[j, "family"],
         "eqntype" = mfile$effects[j, "eqntype"],
+        "filetype" = mfile$effects[j, "filetype"],
         "hlevel" =  as.integer(mfile$effects[j, "hlevel"])
       )
     }
@@ -413,14 +435,20 @@ process_mfile <- function(x)
   n <- length(x)
   x <- gsub("equation=", "family=", x, fixed = TRUE)
   x <- gsub("-", "_", x, fixed = TRUE)
-  samples <- eqntype <- family <- basis <- terms <- hlevel <- rep(NA, length = n)
+  samples <- varsamples <- eqntype <- family <- basis <- terms <- hlevel <- filetype <- rep(NA, length = n)
   for(j in 1:n) {
     specs <- strsplit(x[j], ",")[[1]]
     if(length(tmp <- grep("pathsamples", specs, value = TRUE))) {
       samples[j] <- gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2])
     }
+    if(length(tmp <- grep("pathvarsample", specs, value = TRUE))) {
+      varsamples[j] <- gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2])
+    }
     if(length(tmp <- grep("equationtype", specs, value = TRUE))) {
       eqntype[j] <- gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2])
+    }
+    if(length(tmp <- grep("filetype", specs, value = TRUE))) {
+      filetype[j] <- gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2])
     }
     if(length(tmp <- grep("family", specs, value = TRUE))) {
       family[j] <- tolower(gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2]))
@@ -429,17 +457,32 @@ process_mfile <- function(x)
       basis[j] <- gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2])
     }
     if(length(tmp <- grep("hlevel", specs, value = TRUE))) {
-      hlevel[j] <- gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2])
+      hlevel[j] <- as.integer(gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2]))
     } else hlevel[j] <- 1
     if(length(tmp <- grep("term", specs, value = TRUE))) {
       tt <- strsplit(tmp, "=", fixed = TRUE)[[1]][2]
       tt <- gsub("^\\s+|\\s+$", "", tt)
       terms[j] <- gsub("\\s", "+", tt)
-      terms[j] <- paste(terms[j], paste(if(any(grepl("_", family[j]))) {
-        strsplit(family[j], "_", fixed = TRUE)[[1]][2]
-      } else tolower(family[j]), hlevel[j], sep = ":"), sep = ":")
     }
   }
+  for(j in 1:n) {
+    if(grepl("gaussian_re", family[j], fixed = TRUE)) {
+      i <- grep(eqntype[j], eqntype)
+      i <- i[i != j]
+      ok <- TRUE
+      for(l in i) {
+        if(hlevel[l] < 2 & ok) {
+          family[j] <- family[l]
+          ok <- FALSE
+        }
+      }
+    }
+  }
+  ft <- sapply(strsplit(family, "_"), function(x) {
+    if(length(x) > 1) x[2] else x
+  })
+  terms <- paste(terms, ft, sep = ":")
+  terms <- paste(terms, hlevel, sep = ":")
   if(any(i <- duplicated(terms))) {
     for(j in terms[i]) {
       tt <- grep(j, terms, value = TRUE, fixed = TRUE)
@@ -447,50 +490,22 @@ process_mfile <- function(x)
       terms[terms == j] <- tt
     }
   }
-  rval <- list("effects" = cbind(terms, samples, basis, family, eqntype, hlevel),
+  rval <- list("effects" = cbind(terms, filetype, samples, varsamples, basis, family, eqntype, hlevel),
     "model" = list("predict" = predict, "dic" = dic))
   rval
 }
 
-resultsBayesX <- function(x, samples, id = "", mspecs = NULL, ...)
+
+resultsBayesX <- function(x, samples, ...)
 {
-  nx <- names(x)
-  nx <- nx[!(nx %in% c("call", "family"))]
-  if(length(nx) < 2)
-    x <- x[[nx]]
-  if(is.null(mspecs)) {
-    mspecs <- attr(samples, "model.specs")
-    if(is.null(mspecs) & is.list(samples))
-      mspecs <- attr(samples[[1]], "model.specs")
-  }
-  if(is(samples, "mcmc"))
-    samples <- as.mcmc.list(list(samples))
-  if(!all(c("family", "formula") %in% names(x))) {
-    rval <- list()
-    family <- x[[1]]$family
-    if(is.function(family))
-      family <- family()
-    fn <- family$names
-    if(is.null(names(x))) {
-      nx <- paste("h", 1:length(x), sep = "")
-      names(x) <- nx
-    }
-    for(j in seq_along(nx)) {
-      rval[[nx[j]]] <- resultsBayesX(x[[nx[j]]], samples, id = fn[j], mspecs = mspecs)
-      if(FALSE) {
-        for(i in seq_along(rval[[nx[j]]]$effects)) {
-          specs <- attr(rval[[nx[j]]]$effects[[i]], "specs")
-          specs$label <- paste(specs$label, fn[j], sep = ":")
-          attr(rval[[nx[j]]]$effects[[i]], "specs") <- specs
-        }
-        names(rval[[nx[j]]]$effects) <- paste(names(rval[[nx[j]]]$effects), fn[j], sep = ":")
-      }
-    }
-    names(rval) <- fn
-    class(rval) <- "bayesr"
-    return(rval)
-  } else {
-    if(is.na(id)) id <- "re"
+  family <- attr(x, "family")
+  if(is.function(family))
+    family <- family()
+  mspecs <- attr(samples, "model.specs")
+  if(is.null(mspecs) & is.list(samples))
+    mspecs <- attr(samples[[1]], "model.specs")
+
+  createBayesXresults <- function(obj, samples, id = NULL) {
     if(inherits(samples[[1]], "mcmc.list"))
       samples <- do.call("c", samples)
     chains <- length(samples)
@@ -509,29 +524,28 @@ resultsBayesX <- function(x, samples, id = "", mspecs = NULL, ...)
       fitted.values <- 0
 
       ## Parametric effects.
-      if(k <- ncol(x$X)) {
-        nx <- x$pterms
-        if(attr(terms(x$fake.formula), "intercept"))
-          nx <- c("const", nx)
+      if(k <- ncol(obj$X)) {
+        nx <- obj$pterms
+        nx <- gsub("(Intercept)", "const", nx, fixed = TRUE)
         pt <- paste(nx, collapse = "+")
-        pt <- paste(pt, id, sep = ":")
+        pt <- paste(pt, id, obj$hlevel, sep = ":")
         samps <- as.matrix(samples[[j]][, grepl(pt, snames, fixed = TRUE)], ncol = k)
         nx <- gsub("const", "(Intercept)", nx, fixed = TRUE)
+        colnames(samps) <- nx
         qu <- t(apply(samps, 2, quantile, probs = c(0.025, 0.5, 0.975)))
         sd <- drop(apply(samps, 2, sd))
         me <- drop(apply(samps, 2, mean))
         param.effects <- cbind(me, sd, qu)
         rownames(param.effects) <- nx
         colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
-        fitted.values <- as.vector(fitted.values + x$X %*% param.effects[, 1])
+        fitted.values <- as.vector(fitted.values + obj$X %*% param.effects[, 1])
         attr(param.effects, "samples") <- as.mcmc(samps)
-        colnames(attr(param.effects, "samples")) <- nx
       }
 
       ## Smooth terms.
       if(length(i <- grep("sx(", names(mspecs$effects), fixed = TRUE))) {
         sx.smooth <- mspecs$effects[i]
-        if(length(i <- grep(id, names(sx.smooth)))) {
+        if(length(i <- grep(paste(id, obj$hlevel, sep = ":"), names(sx.smooth), fixed = TRUE))) {
           if(!is.list(effects))
             effects <- list()
           sx.smooth <- sx.smooth[i]
@@ -539,14 +553,19 @@ resultsBayesX <- function(x, samples, id = "", mspecs = NULL, ...)
             tn <- grep(i, snames, fixed = TRUE, value = TRUE)
             psamples <- as.matrix(samples[[j]][, snames %in% tn], ncol = length(tn))
 
+            ## Possible variance parameter samples.
+            if(length(vs <- grep(":var[", colnames(psamples), fixed = TRUE))) {
+              vsamples <- psamples[, vs[1]]
+              psamples <- psamples[, -vs, drop = FALSE]
+            }
+
             ## Prediction matrix.
             tn0 <- strsplit(i, ":")[[1]][1]
             tn <- gsub(")", "", gsub("sx(", "", tn0, fixed = TRUE), fixed = TRUE)
             tn <- strsplit(tn, ",", fixed = TRUE)[[1]]
-            X <- sx.smooth[[i]]$basis(x$mf[, tn])
-
-            ## Possible variance parameter samples.
-            vsamples <- NULL
+            X <- sx.smooth[[i]]$basis(if(is.null(attr(obj, "model.frame"))) {
+                attr(x, "model.frame")[, tn]
+              } else attr(obj, "model.frame")[, tn])
 
             get.mu <- function(X, g) {
               X %*% as.numeric(g)
@@ -562,7 +581,10 @@ resultsBayesX <- function(x, samples, id = "", mspecs = NULL, ...)
 
             fst <- compute_term(tn1, fsamples = fsamples, psamples = psamples,
               vsamples = vsamples, FUN = NULL, snames = snames,
-              effects.hyp = effects.hyp, fitted.values = fitted.values, data = x$mf)
+              effects.hyp = effects.hyp, fitted.values = fitted.values,
+              data = if(is.null(attr(obj, "model.frame"))) {
+                attr(x, "model.frame")[, tn, drop = FALSE]
+              } else attr(obj, "model.frame")[, tn, drop = FALSE])
 
             attr(fst$term, "specs")$get.mu <- get.mu
             attr(fst$term, "specs")$basis <- sx.smooth[[i]]$basis
@@ -583,39 +605,46 @@ resultsBayesX <- function(x, samples, id = "", mspecs = NULL, ...)
       scale.m <- scale.samps.m <- NULL
 
       ## Compute partial residuals. FIXME: binomial()$linkfun()
-      if(x$response %in% names(x$mf)) {
-        stats <- try(if(id != "") {
-          make.link(x$family[[paste(id, "link", sep = ".")]])
-        } else {
-          make.link(x$family[[grep(".link", names(x$family), fixed = TRUE)]])
-        }, silent = TRUE)
-        if(inherits(stats, "try-error")) stats <- make.link("identity")
-        for(i in seq_along(effects)) {
-          e <- stats$linkfun(x$mf[[x$response]]) - (fitted.values - attr(effects[[i]], "fit"))
-          if(is.null(attr(effects[[i]], "specs")$xt$center)) {
-            e <- e - mean(e)
+      if(!is.factor(obj$response.vec)) {
+        if(obj$response %in% names(if(is.null(attr(obj, "model.frame"))) {
+          attr(x, "model.frame")
+        } else attr(obj, "model.frame"))) {
+          stats <- try(if(id != "") {
+            make.link(family[[paste(id, "link", sep = ".")]])
           } else {
-            if(attr(effects[[i]], "specs")$xt$center)
+            make.link(family[[grep(".link", names(family), fixed = TRUE)]])
+          }, silent = TRUE)
+          if(inherits(stats, "try-error")) stats <- make.link("identity")
+          for(i in seq_along(effects)) {
+            e <- stats$linkfun(obj$response.vec) - (fitted.values - attr(effects[[i]], "fit"))
+            if(is.null(attr(effects[[i]], "specs")$xt$center)) {
               e <- e - mean(e)
+            } else {
+              if(attr(effects[[i]], "specs")$xt$center)
+                e <- e - mean(e)
+            }
+            e <- cbind(attr(effects[[i]], "x"), e)
+            if(!is.null(attr(effects[[i]], "by.drop")))
+              e <- e[attr(effects[[i]], "by.drop"), ]
+            e <- as.data.frame(e)
+            try(names(e) <- c(attr(effects[[i]], "specs")$term, "partial.resids"))
+            attr(effects[[i]], "partial.resids") <- e
+            attr(effects[[i]], "fit") <- NULL
+            attr(effects[[i]], "x") <- NULL
+            attr(effects[[i]], "by.drop") <- NULL
           }
-          e <- cbind(attr(effects[[i]], "x"), e)
-          if(!is.null(attr(effects[[i]], "by.drop")))
-            e <- e[attr(effects[[i]], "by.drop"), ]
-          e <- as.data.frame(e)
-          try(names(e) <- c(attr(effects[[i]], "specs")$term, "partial.resids"))
-          attr(effects[[i]], "partial.resids") <- e
-          attr(effects[[i]], "fit") <- NULL
-          attr(effects[[i]], "x") <- NULL
-          attr(effects[[i]], "by.drop") <- NULL
         }
       }
 
       ## Stuff everything together.
-      rval[[j]] <- list("call" = x$call, "family" = x$family,
-        "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(x$mf),
-        "formula" = x$formula), "param.effects" = param.effects, "effects" = effects,
+      rval[[j]] <- list(
+        "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(if(is.null(attr(obj, "model.frame"))) {
+          attr(x, "model.frame")
+        } else attr(obj, "model.frame")), "formula" = obj$formula),
+        "param.effects" = param.effects, "effects" = effects,
         "effects.hyp" = effects.hyp, "scale" = scale.m, "fitted.values" = fitted.values,
-        "residuals" = x$mf[[x$response]] - fitted.values)
+        "residuals" = if(!is.factor(obj$response.vec)) obj$response.vec - fitted.values else NULL
+      )
 
       class(rval[[j]]) <- "bayesr"
     }
@@ -625,6 +654,37 @@ resultsBayesX <- function(x, samples, id = "", mspecs = NULL, ...)
     }
     class(rval) <- "bayesr"
     return(rval)
+  }
+
+  nx <- names(x)
+  nx <- nx[!(nx %in% c("call", "family"))]
+  if(is(samples, "mcmc"))
+    samples <- as.mcmc.list(list(samples))
+  if(!all(c("formula", "fake.formula") %in% names(x))) {
+    rval <- list()
+    fn <- family$names
+    if(is.null(names(x))) {
+      nx <- paste("h", 1:length(x), sep = "")
+      names(x) <- nx
+    }
+    for(j in seq_along(nx)) {
+      if(!all(c("formula", "fake.formula") %in% names(x[[nx[j]]]))) {
+        rval[[nx[j]]] <- list()
+        for(i in seq_along(x[[nx[j]]]))
+          rval[[nx[j]]][[paste("h", i, sep = "")]] <- createBayesXresults(x[[nx[j]]][[i]], samples, id = fn[j])
+      } else {
+        rval[[nx[j]]] <- createBayesXresults(x[[nx[j]]], samples, id = fn[j])
+      }
+      class(rval[[nx[j]]]) <- "bayesr"
+    }
+    if(length(nx) > 1)
+      names(rval) <- fn
+    else
+      rval <- rval[[1]]
+    class(rval) <- "bayesr"
+    return(rval)
+  } else {
+    return(createBayesXresults(x, samples, id = family$names))
   }
 }
 
@@ -744,7 +804,7 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
   return(rval)
 }
 
-sx.construct <- function(object, data) 
+sx.construct <- function(object, data)
 {
   UseMethod("sx.construct")
 }
@@ -963,6 +1023,36 @@ sx.construct.mrf.smooth.spec <- sx.construct.spatial.smooth.spec <- function(obj
   attr(term, "write") <- write
 
   return(term)
+}
+
+make_by <- function(term, object, data)
+{
+  if(!missing(data) && !is.character(data)) {
+    by <- data[[object$by]]
+    if(is.factor(by) && nlevels(by) > 1) {
+      nocenter <- paste(c("lasso", "nigmix", "ridge", "ra"), ".smooth.spec", sep = "")
+      term <- paste(paste(rmf(object$by), rmf(levels(by)), sep = ""), "*", term, sep = "")
+      if((k <- length(term)) > 1)
+        for(j in 1:k) 
+          if(!grepl("center", term[j]) && is.null(object$xt$center))
+            if(!class(object) %in% nocenter)
+              term[j] <- gsub(")", ",center)", term[j])
+    } else term <- paste(rmf(object$by), "*", term, sep = "")
+  } else term <- paste(rmf(object$by), "*", term, sep = "")
+
+  return(term)
+}
+
+rmf <- function(x) 
+{
+  for(i in 1L:length(x)) {
+    for(char in c("+", "-", "*", ":", "^", "/", " ", "(", ")", "]", "[",
+      ",", ".", "<", ">", "?", "!", "'", "#", "~", "`", ";", "=", "&", "$", "@")) {
+      x[i] <- gsub(char, "_", x[i], fixed = TRUE)
+    }
+  }
+
+  return(rmfs(x))
 }
 
 help.map.name <- function(x)
