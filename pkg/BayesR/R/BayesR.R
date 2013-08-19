@@ -1,7 +1,7 @@
 ################################################
 ## (1) BayesR main model fitting constructor. ##
 ################################################
-bayesr <- function(formula, family = gaussian.JAGS, data = NULL, knots = NULL,
+bayesr <- function(formula, family = gaussian, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.fail, contrasts = NULL,
   parse.input = parse.input.bayesr, transform = transformJAGS, setup = setupJAGS,
   sampler = samplerJAGS, results = resultsJAGS,
@@ -79,7 +79,7 @@ bayesr <- function(formula, family = gaussian.JAGS, data = NULL, knots = NULL,
 ##########################################################
 ## (2) Parsing all input using package mgcv structures. ##
 ##########################################################
-parse.input.bayesr <- function(formula, data, family = gaussian.JAGS,
+parse.input.bayesr <- function(formula, data, family = gaussian,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, ...)
 {
@@ -87,7 +87,8 @@ parse.input.bayesr <- function(formula, data, family = gaussian.JAGS,
   rval <- parse.data.bayesr(rval, data, weights, subset, offset, na.action)
   rval <- assign.design.bayesr(rval, contrasts, knots, ...)
   rval <- insert.hlevel.bayesr(rval)
-  attr(rval, "family") <- parse.family.bayesr(family)
+  attr(rval, "family") <- family
+
   class(rval) <- c("bayesr.input", "list")
 
   rval
@@ -254,19 +255,28 @@ rm_infinite <- function(x) {
 }
 
 
-## Parse families.
-parse.family.bayesr <- function(family)
+## Parse families and get correct family object, depending on sampler.
+parse.family.bayesr <- function(family, sampler = NULL)
 {
-  if(!inherits(family, "family.BayesR")) {
-    if(!is.function(family)) {
-      if(!is.character(family)) {
-        family <- family$family
-        if(is.null(family)) stop("argument family is specified wrong!")
+  family <- if(is.function(family)) family() else {
+    if(is.character(family)) {
+      family <- gsub('"', "", family, fixed = TRUE)
+      if(!is.null(sampler)) {
+        if(!grepl(sampler, family))
+          family <- paste(family, sampler, sep = ".")
       }
       family <- eval(parse(text = family))
-    }
+      family()
+    } else family
   }
-  family <- if(is.function(family)) family() else family
+  if(!inherits(family, "family.BayesR")) {
+    if(!is.character(family)) {
+      if(is.null(family$family)) stop("family is specidied wrong, no family name available!")
+      family <- family$family
+    }
+    family <- eval(parse(text = paste(family, sampler, sep = if(!is.null(sampler)) "." else "")))
+    family <- family()
+  }
   family
 }
 
@@ -670,7 +680,8 @@ c.bayesr <- function(...)
 get.model <- function(x, model)
 {
   cx <- class(x)
-  elmts <- c("formula", "fake.formula")
+  elmts <- c("formula", "fake.formula", "model", "param.effects",
+    "effects", "fitted.values", "residuals")
   if(!any(names(x) %in% elmts)) {
     if(!is.null(model)) {
       if(is.character(model)) {
@@ -1174,6 +1185,15 @@ plot.bayesr.effect <- function(x, which = "effects", ...) {
 plot.bayesr.effect.default <- function(x, ...) {
   args <- list(...)
   args$x <- x
+
+  if(is.null(args$ylim)) {
+    args$ylim <- range(x[, c("2.5%", "97.5%")], na.rm = TRUE)
+    if(!is.null(args$residuals)) {
+      if(args$residuals & !is.null(attr(x, "partial.resids")))
+        args$ylim <- range(c(args$ylim, attr(x, "partial.resids")[, -1]), na.rm = TRUE)
+    }
+  }
+
   if(attr(x, "specs")$dim < 2) {
     if(is.null(args$fill.select))
       args$fill.select <- c(0, 1, 0, 1)
@@ -1181,7 +1201,8 @@ plot.bayesr.effect.default <- function(x, ...) {
       args$lty <- c(2, 1, 2)
     if(is.null(args$col.lines))
       args$col.lines <- c(NA, "black", NA)
-    if(inherits(x, "random.effect") | inherits(x, "re.smooth.spec") | inherits(x, "mrf.smooth.spec")) {
+    if(inherits(x, "random.effect") | inherits(x, "re.smooth.spec") |
+       inherits(x, "mrf.smooth.spec") | inherits(x, "mrf.smooth")) {
       if(if(!is.null(args$density)) args$density else FALSE) {
         args$density <- NULL
         if(is.null(args$main))

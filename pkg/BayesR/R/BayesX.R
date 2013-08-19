@@ -1,7 +1,7 @@
 #######################################
 ## (1) BayesX model fitting wrapper. ##
 #######################################
-bayesx2 <- function(formula, family = gaussian.BayesX, data = NULL, knots = NULL,
+bayesx2 <- function(formula, family = gaussian, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.fail, contrasts = NULL,
   cores = NULL, combine = TRUE, n.iter = 1200, thin = 1, burnin = 200, seed = NULL, ...)
 {
@@ -15,6 +15,8 @@ bayesx2 <- function(formula, family = gaussian.BayesX, data = NULL, knots = NULL
     setupBayesX(x, n.iter = n.iter, thin = thin, burnin = burnin,
       seed = seed, data.name = data.name, cores = cores, ...)
   }
+
+  family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
 
   rval <- bayesr(formula, family = family, data = data, knots = knots,
     weights = weights, subset = subset, offset = offset, na.action = na.action,
@@ -33,8 +35,8 @@ bayesx2 <- function(formula, family = gaussian.BayesX, data = NULL, knots = NULL
 ####################################
 transformBayesX <- function(x, ...)
 {
-  family <- attr(x, "family")
-  family <- if(is.function(family)) family() else family
+  family <- parse.family.bayesr(attr(x, "family"), sampler = "BayesX")
+
   call <- x$call; x$call <- NULL
 
   tBayesX <- function(obj, ...) {
@@ -590,9 +592,7 @@ resultsBayesX <- function(x, samples, ...)
             attr(fst$term, "specs")$basis <- sx.smooth[[i]]$basis
 
             ## Add term to effects list.
-            slab <- paste(tn0, stype, sep = ":")
-            attr(fst$term, "specs")$label <- slab
-            effects[[slab]] <- fst$term
+            effects[[paste(tn0, stype, sep = ":")]] <- fst$term
             effects.hyp <- fst$effects.hyp
 
             fitted.values <- fst$fitted.values
@@ -609,21 +609,21 @@ resultsBayesX <- function(x, samples, ...)
         if(obj$response %in% names(if(is.null(attr(obj, "model.frame"))) {
           attr(x, "model.frame")
         } else attr(obj, "model.frame"))) {
-          stats <- try(if(id != "") {
-            make.link(family[[paste(id, "link", sep = ".")]])
-          } else {
-            make.link(family[[grep(".link", names(family), fixed = TRUE)]])
-          }, silent = TRUE)
-          if(inherits(stats, "try-error")) stats <- make.link("identity")
           for(i in seq_along(effects)) {
-            e <- stats$linkfun(obj$response.vec) - (fitted.values - attr(effects[[i]], "fit"))
+            e <- obj$response.vec - (fitted.values - attr(effects[[i]], "fit"))
             if(is.null(attr(effects[[i]], "specs")$xt$center)) {
               e <- e - mean(e)
             } else {
               if(attr(effects[[i]], "specs")$xt$center)
                 e <- e - mean(e)
             }
-            e <- cbind(attr(effects[[i]], "x"), e)
+            e <- if(is.factor(attr(effects[[i]], "x"))) {
+              warn <- getOption("warn")
+              options(warn = -1)
+              tx <- as.integer(as.character(attr(effects[[i]], "x")))
+              options("warn" = warn)
+              cbind(if(!any(is.na(tx))) tx else as.integer(attr(effects[[i]], "x")), e)
+            } else cbind(attr(effects[[i]], "x"), e)
             if(!is.null(attr(effects[[i]], "by.drop")))
               e <- e[attr(effects[[i]], "by.drop"), ]
             e <- as.data.frame(e)

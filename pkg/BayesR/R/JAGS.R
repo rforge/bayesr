@@ -27,8 +27,10 @@ restructure_x <- function(x) {
 
 ## Transform design and penalty matrices to iid random effects structure.
 transformJAGS <- function(x) {
+  family <- parse.family.bayesr(attr(x, "family"), sampler = "JAGS")
   x <- randomize(x)
   x <- restructure_x(x)
+  attr(x, "family") <- family
   x
 }
 
@@ -550,7 +552,13 @@ resultsJAGS <- function(x, samples)
             if(attr(effects[[i]], "specs")$xt$center)
               e <- e - mean(e)
           }
-          e <- cbind(attr(effects[[i]], "x"), e)
+          e <- if(is.factor(attr(effects[[i]], "x"))) {
+            warn <- getOption("warn")
+            options(warn = -1)
+            tx <- as.integer(as.character(attr(effects[[i]], "x")))
+            options("warn" = warn)
+            cbind(if(!any(is.na(tx))) tx else as.integer(attr(effects[[i]], "x")), e)
+          } else cbind(attr(effects[[i]], "x"), e)
           if(!is.null(attr(effects[[i]], "by.drop")))
             e <- e[attr(effects[[i]], "by.drop"), ]
           e <- as.data.frame(e)
