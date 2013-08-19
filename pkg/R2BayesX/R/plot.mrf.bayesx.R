@@ -55,7 +55,7 @@ plot.mrf.bayesx <- function(x, diagnostics = FALSE, ...)
           args$main <- paste("Kernel density estimate of term", attr(x, "specs")$label)
         args2 <- args
         args2$x <- do.call(stats::density, delete.args(stats::density.default, args))
-        do.call(plot, delete.args("plot.density", args2))
+        do.call(plot, delete.args("plot.density", args2, package = "stats"))
         if(!is.null(args$kde.quantiles))
           if(args$kde.quantiles) {
             if(is.null(args$lty))
