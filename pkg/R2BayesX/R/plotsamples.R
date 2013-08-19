@@ -77,7 +77,7 @@ plotsamples <- function(x, selected = "NA", acf = FALSE, var = FALSE, max.acf = 
           ylim <- c(-0.2, 1)
         else
           ylim = args$ylim
-        stats:::plot.acf(acfx, main = args$main, axes = FALSE, ylim = ylim, xlab = args$xlab,
+        stats::plot.acf(acfx, main = args$main, axes = FALSE, ylim = ylim, xlab = args$xlab,
           ylab = args$ylab)
       }
     }
@@ -140,7 +140,7 @@ plotsamples <- function(x, selected = "NA", acf = FALSE, var = FALSE, max.acf = 
       if(all(par()$mar == c(5.1, 4.1, 4.1, 2.1)))
         par(mar = c(5.1, 4.1, 5.1, 2.1))
     } else acfx$main <- args$main
-    stats:::plot.acf(acfx, main = acfx$main, axes = FALSE, ylim = ylim, xlab = args$xlab,
+    stats::plot.acf(acfx, main = acfx$main, axes = FALSE, ylim = ylim, xlab = args$xlab,
       ylab = args$ylab)
     if(axes) {
       box()
