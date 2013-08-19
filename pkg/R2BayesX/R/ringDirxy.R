@@ -4,7 +4,7 @@
 ## Time-stamp: <[ringDirxy.R] by DSB Sam 28/02/2009 19:18 (GMT) on daniel@puc-home>
 ##
 ## Description:
-## Private R code replacing maptools:::.ringDirxy.
+## Private R code replacing maptools .ringDirxy.
 ##
 ## History:
 ## 28/02/2009   file creation

@@ -183,7 +183,7 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
       args$col <- color[1L]
       args$border <- bcol[1L]
       pmat <- do.call(graphics::persp, 
-        delete.args(graphics:::persp.default, args, c("lwd", "lty")))
+        delete.args("persp.default", args, c("lwd", "lty"), package = "graphics"))
       for(k in 2L:length(fitted)) {
         par(new = TRUE)
         args$col <- color[k]
@@ -191,10 +191,11 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
         myfit <- matrix(fitted[[k]], grid, grid)
         args$z <- substitute(myfit)
         pmat <- do.call(graphics::persp, 
-          delete.args(graphics:::persp.default, args, c("lwd", "lty")))
+          delete.args("persp.default", args, c("lwd", "lty"), package = "graphics"))
       }
     } else {
-      pmat <- do.call(graphics::persp, delete.args(graphics:::persp.default, args, c("lwd", "lty")))
+      pmat <- do.call(graphics::persp, delete.args("persp.default",
+        args, c("lwd", "lty"), package = "graphics"))
     }
     if(residuals && !is.null(e)) {
       t3d <- trans3d(e[,1L], e[,2L], e[,3L], pmat)
