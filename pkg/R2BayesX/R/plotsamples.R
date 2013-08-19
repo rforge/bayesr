@@ -4,6 +4,7 @@ plotsamples <- function(x, selected = "NA", acf = FALSE, var = FALSE, max.acf = 
     warning("there is nothing to plot!")
     return(invisible(NULL))
   }
+  foo <- getS3method("plot", class = "acf")
   args <- list(...)
   if(is.null(args$axes))
     axes <- TRUE
@@ -140,7 +141,7 @@ plotsamples <- function(x, selected = "NA", acf = FALSE, var = FALSE, max.acf = 
       if(all(par()$mar == c(5.1, 4.1, 4.1, 2.1)))
         par(mar = c(5.1, 4.1, 5.1, 2.1))
     } else acfx$main <- args$main
-    stats::plot.acf(acfx, main = acfx$main, axes = FALSE, ylim = ylim, xlab = args$xlab,
+    foo(acfx, main = acfx$main, axes = FALSE, ylim = ylim, xlab = args$xlab,
       ylab = args$ylab)
     if(axes) {
       box()
