@@ -78,7 +78,7 @@ plotsamples <- function(x, selected = "NA", acf = FALSE, var = FALSE, max.acf = 
           ylim <- c(-0.2, 1)
         else
           ylim = args$ylim
-        stats::plot.acf(acfx, main = args$main, axes = FALSE, ylim = ylim, xlab = args$xlab,
+        foo(acfx, main = args$main, axes = FALSE, ylim = ylim, xlab = args$xlab,
           ylab = args$ylab)
       }
     }
