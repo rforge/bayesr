@@ -117,7 +117,7 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   if(interp & !is.null(x)) {
     stopifnot(require("maptools"))
 
-    cdata <- data.frame(R2BayesX:::centroids(map), "id" = names(map))
+    cdata <- data.frame(centroids(map), "id" = names(map))
     cdata <- merge(cdata, data.frame("z" = x$x, "id" = x$id), by = "id")
 
     xo <- seq(map.limits$x[1], map.limits$x[2], length = grid)
