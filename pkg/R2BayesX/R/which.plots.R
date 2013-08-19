@@ -1,5 +1,4 @@
-which.plots <-
-function(x, which, ask, model.name, nx, ...)
+which.plots <- function(x, which, ask, model.name, nx, ...)
 {
   args <- list(...)
   nw <- length(which)
