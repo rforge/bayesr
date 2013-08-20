@@ -507,7 +507,7 @@ resultsBayesX <- function(x, samples, ...)
   if(is.null(mspecs) & is.list(samples))
     mspecs <- attr(samples[[1]], "model.specs")
 
-  createBayesXresults <- function(obj, samples, id = NULL) {
+  createBayesXresults <- function(obj, samples, id = NULL, sid = FALSE) {
     if(inherits(samples[[1]], "mcmc.list"))
       samples <- do.call("c", samples)
     chains <- length(samples)
@@ -590,6 +590,8 @@ resultsBayesX <- function(x, samples, ...)
 
             attr(fst$term, "specs")$get.mu <- get.mu
             attr(fst$term, "specs")$basis <- sx.smooth[[i]]$basis
+            if(sid)
+              attr(fst$term, "specs")$label <- paste(attr(fst$term, "specs")$label, id, sep = ":")
 
             ## Add term to effects list.
             effects[[paste(tn0, stype, sep = ":")]] <- fst$term
@@ -670,10 +672,12 @@ resultsBayesX <- function(x, samples, ...)
     for(j in seq_along(nx)) {
       if(!all(c("formula", "fake.formula") %in% names(x[[nx[j]]]))) {
         rval[[nx[j]]] <- list()
-        for(i in seq_along(x[[nx[j]]]))
-          rval[[nx[j]]][[paste("h", i, sep = "")]] <- createBayesXresults(x[[nx[j]]][[i]], samples, id = fn[j])
+        for(i in seq_along(x[[nx[j]]])) {
+          rval[[nx[j]]][[paste("h", i, sep = "")]] <- createBayesXresults(x[[nx[j]]][[i]],
+            samples, id = fn[j], sid = TRUE)
+        }
       } else {
-        rval[[nx[j]]] <- createBayesXresults(x[[nx[j]]], samples, id = fn[j])
+        rval[[nx[j]]] <- createBayesXresults(x[[nx[j]]], samples, id = fn[j], sid = TRUE)
       }
       class(rval[[nx[j]]]) <- "bayesr"
     }

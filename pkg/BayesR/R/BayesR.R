@@ -88,9 +88,7 @@ parse.input.bayesr <- function(formula, data, family = gaussian,
   rval <- assign.design.bayesr(rval, contrasts, knots, ...)
   rval <- insert.hlevel.bayesr(rval)
   attr(rval, "family") <- family
-
   class(rval) <- c("bayesr.input", "list")
-
   rval
 }
 
@@ -1332,5 +1330,75 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
       cat("\n\n")
     } else cat("\n")
   }
+}
+
+
+## Simple "bayesr" print method.
+print.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ...) 
+{
+  on.exit(return(invisible(x)))
+  xs <- summary(x)
+
+  family <- attr(x, "family")
+  n <- attr(xs, "n")
+  nx <- NULL
+  if(n < 2)
+    xs <- list(xs)
+  else
+    nx <- names(xs)
+  
+  cat("\n")
+  print(if(is.function(family)) family() else family)
+  cat("---\n")
+  for(i in 1:n) {
+    if(!is.null(nx)) {
+      cat("Formula ", nx[i], ":\n", sep = "")
+    } else cat("Formula:\n")
+    print(xs[[i]]$formula)
+
+    cat("---\n")
+
+    if(i == n) {
+      if(!is.null(xs[[i]]$DIC) & !is.null(xs[[i]]$pd)) {
+        cat("DIC =", if(is.na(xs[[i]]$DIC)) "NA" else {
+            formatC(xs[[i]]$DIC, digits = digits, flag = "-")
+          }, "pd =", if(is.na(xs[[i]]$pd)) "NA" else {
+            formatC(xs[[i]]$pd, digits = digits, flag = "-")
+          })
+      }
+      if(!is.null(xs[[i]]$N)) {
+        cat(" N =", if(is.na(xs[[i]]$N)) "NA" else formatC(xs[[i]]$N, digits = digits, flag = "-"))
+      }
+      cat("\n\n")
+    }
+  }
+}
+
+
+###################################
+## (9) More extractor functions. ##
+###################################
+DIC <- function(object, ...)
+{
+  UseMethod("DIC")
+}
+
+DIC.bayesr <- function(object, ...)
+{
+  object <- c(object, ...)
+  rval <- NULL
+  for(i in 1:length(object)) {
+    xs <- summary(object[[i]])
+    n <- attr(xs, "n")
+    if(n < 2)
+      xs <- list(xs)
+    rval <- rbind(rval, data.frame(
+      "DIC" = xs[[n]]$DIC,
+      "pd" = xs[[n]]$pd
+    ))
+  }
+  Call <- match.call()
+  row.names(rval) <- if(nrow(rval) > 1) as.character(Call[-1L]) else ""
+  rval
 }
 
