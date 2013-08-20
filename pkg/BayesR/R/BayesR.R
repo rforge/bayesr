@@ -70,6 +70,7 @@ bayesr <- function(formula, family = gaussian, data = NULL, knots = NULL,
   if(model)
     attr(rval, "model.frame") <- attr(pm, "model.frame")
   attr(rval, "family") <- attr(pm, "family")
+  attr(rval, "formula") <- formula
   attr(rval, "call") <- pm$call
 
   rval
@@ -674,63 +675,6 @@ c.bayesr <- function(...)
 }
 
 
-## Model extractor function.
-get.model <- function(x, model)
-{
-  cx <- class(x)
-  elmts <- c("formula", "fake.formula", "model", "param.effects",
-    "effects", "fitted.values", "residuals")
-  if(!any(names(x) %in% elmts)) {
-    if(!is.null(model)) {
-      if(is.character(model)) {
-        if(all(is.na(model <- pmatch(model, names(x)))))
-          stop("argument model is specified wrong!")
-      } else {
-        if(max(model) > length(x) || is.na(model) || min(model) < 1) 
-          stop("argument model is specified wrong!")
-      }
-      x <- x[[model]]
-    }
-  } else x <- list(x)
-  class(x) <- cx
-
-  return(x)
-}
-
-
-## Model frame extractor function.
-model.frame.bayesr <- function(formula, parse.input = NULL, ...)
-{
-  dots <- list(...)
-  nargs <- dots[match(c("data", "na.action", "subset"), names(dots), 0L)]
-  if(length(nargs) || is.null(attr(formula, "model.frame"))) {
-    fcall <- attr(formula, "call")
-    if(is.null(fcall))
-      fcall <- formula$call
-    if(is.null(fcall)) {
-      pin <- if(!is.null(parse.input)) {
-        stopifnot(is.function(parse.input))
-        deparse(substitute(parse.input), backtick = TRUE, width.cutoff = 500)
-      } else "parse.input.bayesr"
-      dots$formula <- formula
-      rval <- do.call(pin, dots)
-      rval <- rval$mf
-    } else {
-      fcall[[1L]] <- as.name(attr(formula, "functions")$parse.input)
-      fcall[names(nargs)] <- nargs
-      env <- environment(terms(formula))
-      if(is.null(env)) 
-        env <- parent.frame()
-      rval <- eval(fcall, env)
-      rval <- rval$mf
-    }
-  } else {
-    rval <- attr(formula, "model.frame")
-  }
-  rval
-}
-
-
 ## Function to compute statistics from samples of a model term.
 compute_term <- function(x, fsamples, psamples, vsamples = NULL,
   FUN = NULL, snames, effects.hyp, fitted.values, data)
@@ -1121,7 +1065,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, sc
         }
       }
     }
-    if(k < 0) stop("no terms to plot in model object!")
+    if(k < 1) stop("no terms to plot in model object!")
     if(scale > 0)
       ylim <- range(ylim, na.rm = TRUE)
     args$ylim <- ylim
@@ -1317,6 +1261,7 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
       }
     }
     if(i == n) {
+      cat("\n---")
       if(!is.null(x[[i]]$DIC) & !is.null(x[[i]]$pd)) {
         cat("\nDIC =", if(is.na(x[[i]]$DIC)) "NA" else {
             formatC(x[[i]]$DIC, digits = digits, flag = "-")
@@ -1324,8 +1269,8 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
             formatC(x[[i]]$pd, digits = digits, flag = "-")
           })
       }
-      if(!is.null(x[[i]]$N)) {
-        cat(" N =", if(is.na(x[[i]]$N)) "NA" else formatC(x[[i]]$N, digits = digits, flag = "-"))
+      if(!is.null(x[[1]]$N)) {
+        cat(" N =", if(is.na(x[[1]]$N)) "NA" else formatC(x[[1]]$N, digits = digits, flag = "-"))
       }
       cat("\n\n")
     } else cat("\n")
@@ -1399,6 +1344,91 @@ DIC.bayesr <- function(object, ...)
   }
   Call <- match.call()
   row.names(rval) <- if(nrow(rval) > 1) as.character(Call[-1L]) else ""
+  rval
+}
+
+
+formula.bayesr <- function(x, ...) { attr(x, "formula") }
+
+
+## Model extractor function.
+get.model <- function(x, model)
+{
+  cx <- class(x)
+  elmts <- c("formula", "fake.formula", "model", "param.effects",
+    "effects", "fitted.values", "residuals")
+  if(!any(names(x) %in% elmts)) {
+    if(!is.null(model)) {
+      if(is.character(model)) {
+        if(all(is.na(model <- pmatch(model, names(x)))))
+          stop("argument model is specified wrong!")
+      } else {
+        if(max(model) > length(x) || is.na(model) || min(model) < 1) 
+          stop("argument model is specified wrong!")
+      }
+      x <- x[[model]]
+    }
+  } else x <- list(x)
+  class(x) <- cx
+
+  return(x)
+}
+
+
+## Model frame extractor function.
+model.frame.bayesr <- function(formula, parse.input = NULL, ...)
+{
+  get_all_mf <- function(x) {
+
+    get_all_mf2 <- function(x) {
+      rval <- NULL
+      if(!any(c("model", "param.effects", "effects", "DIC", "pd", "formula") %in% names(x))) {
+        rval <- list(); k <- 1
+        for(i in seq_along(x)) {
+          if(!is.null(td <- get_all_mf2(x[[i]]))) {
+            rval[[k]] <- td
+            k <- k + 1
+          }
+        }
+      } else rval <- attr(x, "model.frame")
+      if(is.list(rval) & length(rval) == 1)
+        rval <- rval[[1]]
+      rval
+    }
+
+    mf <- list(attr(x, "model.frame"))
+    if(!is.null(mf2 <- get_all_mf2(x)))
+      mf <- c(mf, mf2)
+    if(length(mf) < 2)
+      mf <- mf[[1]]
+
+    mf
+  }
+
+  dots <- list(...)
+  nargs <- dots[match(c("data", "na.action", "subset"), names(dots), 0L)]
+  if(length(nargs) || is.null(attr(formula, "model.frame"))) {
+    fcall <- attr(formula, "call")
+    if(is.null(fcall))
+      fcall <- formula$call
+    if(is.null(fcall)) {
+      pin <- if(!is.null(parse.input)) {
+        stopifnot(is.function(parse.input))
+        deparse(substitute(parse.input), backtick = TRUE, width.cutoff = 500)
+      } else "parse.input.bayesr"
+      dots$formula <- formula
+      rval <- get_all_mf(do.call(pin, dots))
+    } else {
+      fcall[[1L]] <- as.name(attr(formula, "functions")$parse.input)
+      fcall[names(nargs)] <- nargs
+      env <- environment(formula)
+      if(is.null(env)) 
+        env <- parent.frame()
+      rval <- get_all_mf(eval(fcall, env))
+    }
+  } else {
+    rval <- get_all_mf(formula)
+  }
   rval
 }
 
