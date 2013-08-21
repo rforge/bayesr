@@ -1007,8 +1007,14 @@ Predict.matrix.gc.smooth <- function(object, data, knots)
 ## Plotting method for "bayesr" objects.
 plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, scale = 1, ...)
 {
-  op <- par(no.readonly = TRUE)
-  on.exit(par(op))
+  args <- list(...)
+
+  if(is.null(args$do_par)) {
+    op <- par(no.readonly = TRUE)
+    on.exit(par(op))
+  }
+
+  x <- get.model(x, model)
 
   ## What should be plotted?
   which.match <- c("effects", "samples", "hist-resid", "qq-resid",
@@ -1021,6 +1027,53 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, sc
   if(length(which) > length(which.match) || !any(which %in% which.match))
     stop("argument which is specified wrong!")
 
+  ## Get number of plots.
+  get_k_n <- function(x) {
+    kn <- c(0, length(x))
+    ne <- pterms <- list()
+    for(i in 1:kn[2]) {
+      if(!any(c("effects", "param.effects") %in% names(x[[i]]))) {
+        kn <- kn + get_k_n(x[[i]])
+      } else {
+        ne[[i]] <- if(!is.null(names(x[[i]]$effects))) names(x[[i]]$effects) else NA
+        if(is.null(term))
+          pterms[[i]] <- 1:length(ne[[i]])
+        else {
+          if(is.character(term)) {
+            tterm <- NULL
+            for(j in term)
+              tterm <- c(tterm, grep(j, ne[[i]], fixed = TRUE))
+            pterms[[i]] <- if(length(tterm)) tterm else NA
+          } else pterms[[i]] <- term[term <= length(ne[[i]])]
+        }
+        if(!is.null(x[[i]]$effects)) {
+          kn[1] <- kn[1] + length(na.omit(pterms[[i]]))
+        }
+      }
+    }
+    kn
+  }
+
+  kn <- get_k_n(x)
+
+  if(which == "effects" & kn[1] < 1) stop("no terms to plot in model object!")
+
+  if(is.null(args$do_par)) {
+    if(!ask) par(mfrow = n2mfrow(kn[if(which == "effects") 1 else 2])) else par(ask = ask)
+  }
+
+  for(i in seq_along(x)) {
+    if(!any(c("effects", "param.effects") %in% names(x[[i]])))
+      plot.bayesr(x[[i]], term = term, which = which, ask = ask, scale = scale, do_par = FALSE, ...)
+    else
+      .plot.bayesr(x[[i]], term = term, which = which, ask = ask, scale = scale, ...)
+  }
+
+  invisible(NULL)
+}
+
+.plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, scale = 1, ...)
+{
   x <- get.model(x, model)
   n <- length(x)
   args <- list(...)
@@ -1047,8 +1100,8 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, sc
       }
     }
     for(i in 1:n) {
-      if(!is.null(x[[i]]$effects)) {
-        k <- k + length(pterms[[i]])
+      if(!is.null(x[[i]]$effects) & length(na.omit(pterms[[i]]))) {
+        k <- k + length(na.omit(pterms[[i]]))
         if(scale > 0) {
           term <- term[1:length(x[[i]]$effects)]
           for(e in pterms[[i]]) {
@@ -1065,14 +1118,13 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, sc
         }
       }
     }
-    if(k < 1) stop("no terms to plot in model object!")
+    if(k < 1) return(NULL)
     if(scale > 0)
       ylim <- range(ylim, na.rm = TRUE)
     args$ylim <- ylim
     args$which <- which
-    if(which == "effects") {
-      if(!ask) par(mfrow = n2mfrow(k)) else par(ask = ask)
-    } else args$residuals <- NULL
+    if(which != "effects")
+      args$residuals <- NULL
     for(i in 1:n) {
       if(!is.null(x[[i]]$effects)) {
         for(e in pterms[[i]]) {
@@ -1089,14 +1141,12 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, sc
     }
   }
   if(which == "scale-samples") {
-    if(!ask) par(mfrow = n2mfrow(n)) else par(ask = ask)
     for(i in 1:n) {
       args$x <- attr(x[[i]]$scale, "samples")
       do.call("plot", args)
     }
   }
   if(which == "param-samples") {
-    if(!ask) par(mfrow = n2mfrow(n)) else par(ask = ask)
     for(i in 1:n) {
       args$x <- attr(x[[i]]$param.effects, "samples")
       do.call("plot", args)

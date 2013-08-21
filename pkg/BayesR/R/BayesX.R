@@ -613,11 +613,13 @@ resultsBayesX <- function(x, samples, ...)
         } else attr(obj, "model.frame"))) {
           for(i in seq_along(effects)) {
             e <- obj$response.vec - (fitted.values - attr(effects[[i]], "fit"))
-            if(is.null(attr(effects[[i]], "specs")$xt$center)) {
-              e <- e - mean(e)
-            } else {
-              if(attr(effects[[i]], "specs")$xt$center)
+            if(FALSE) { ## FIXME: computation of partial residuals
+              if(is.null(attr(effects[[i]], "specs")$xt$center)) {
                 e <- e - mean(e)
+              } else {
+                if(attr(effects[[i]], "specs")$xt$center)
+                  e <- e - mean(e)
+              }
             }
             e <- if(is.factor(attr(effects[[i]], "x"))) {
               warn <- getOption("warn")
