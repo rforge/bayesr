@@ -160,9 +160,15 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
       k1 <- ncol(X)
       colnames(X)[(k1 - k2 + 1):k1] <- obj$sterms
     }
-    if(ncol(X) > 0)
-      X <- X[, !grepl("(Intercept)", colnames(X), fixed = TRUE), drop = FALSE]
-    X[[obj$response]] <- obj$response.vec
+    if(!is.null(X)) {
+      if(ncol(X) > 0)
+        X <- X[, !grepl("(Intercept)", colnames(X), fixed = TRUE), drop = FALSE]
+      X[[obj$response]] <- obj$response.vec
+    } else {
+      X <- list()
+      X[[obj$response]] <- obj$response.vec
+      X <- as.data.frame(X)
+    }
     yf <- is.factor(X[[obj$response]])
     X <- as.data.frame(X)
     for(j in 1:ncol(X)) {
