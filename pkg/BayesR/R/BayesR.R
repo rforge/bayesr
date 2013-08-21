@@ -1054,6 +1054,9 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, sc
     kn
   }
 
+  if(any(c("effects", "param.effects") %in% names(x)))
+    x <- list(x)
+
   kn <- get_k_n(x)
 
   if(which == "effects" & kn[1] < 1) stop("no terms to plot in model object!")
