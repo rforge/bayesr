@@ -1200,15 +1200,20 @@ summary.bayesr <- function(object, model = NULL, ...)
   rval <- list()
   n <- length(object)
   for(i in 1:n) {
-    for(j in c("param.effects", "effects.hyp", "scale")) {
-      if(!is.null(object[[i]][[j]]))
-        attr(object[[i]][[j]], "samples") <- NULL
+    if(!is.null(attr(object[[i]], "hlevel"))) {
+      rval[[i]] <- summary.bayesr(object[[i]])
+      attr(rval[[i]], "hlevel") <- TRUE
+    } else {
+      for(j in c("param.effects", "effects.hyp", "scale")) {
+        if(!is.null(object[[i]][[j]]))
+          attr(object[[i]][[j]], "samples") <- NULL
+      }
+      rval[[i]] <- with(object[[i]],
+        c(list("param.effects" = param.effects,
+          "effects.hyp" = effects.hyp, "scale" = scale),
+          model)
+      )
     }
-    rval[[i]] <- with(object[[i]],
-      c(list("param.effects" = param.effects,
-        "effects.hyp" = effects.hyp, "scale" = scale),
-        model)
-    )
   }
   if(n < 2)
     rval <- rval[[1]]
@@ -1224,6 +1229,26 @@ summary.bayesr <- function(object, model = NULL, ...)
 print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ...)
 {
   on.exit(return(invisible(x)))
+  h0 <- !is.null(attr(x, "hlevel"))
+
+  print_dic_pd <- function(x, ok = TRUE) {
+    dp <- FALSE
+    if(!is.null(x$DIC) & !is.null(x$pd)) {
+      dp <- TRUE
+      if(ok) cat("\n---") else cat("---")
+      cat("\nDIC =", if(is.na(x$DIC)) "NA" else {
+            formatC(x$DIC, digits = digits, flag = "-")
+          }, "pd =", if(is.na(x$pd)) "NA" else {
+            formatC(x$pd, digits = digits, flag = "-")
+          })
+    }
+    if(!is.null(x$N)) {
+      dp <- TRUE
+      cat(" N =", if(is.na(x$N)) "NA" else formatC(x$N, digits = digits, flag = "-"))
+    }
+    if(dp) cat("\n\n")
+  }
+
   call <- attr(x, "call")
   family <- attr(x, "family")
   n <- attr(x, "n")
@@ -1237,43 +1262,41 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
     cat("Call:\n"); print(call)
     cat("\n")
   }
-  print(if(is.function(family)) family() else family)
-  cat("---\n\n")
+  if(!is.null(family)) {
+    print(if(is.function(family)) family() else family)
+    cat("---\n\n")
+  }
   for(i in 1:n) {
+    h1 <- !is.null(attr(x[[i]], "hlevel"))
     if(!is.null(nx)) {
       cat("Results for ", nx[i], ":\n", sep = "")
-      cat("---\n")
+      if(h1) cat("---") else cat("---\n")
     }
-    cat("Formula:\n")
-    print(x[[i]]$formula)
-    if(length(x[[i]]$param.effects) > 0) {
-      cat("\nParametric coefficients:\n")
-      printCoefmat(x[[i]]$param.effects, digits = digits, na.print = "NA", ...)
-    }
-    if(length(x[[i]]$effects.hyp) > 0) {
-      cat("\nSmooth effects variances:\n")
-      printCoefmat(x[[i]]$effects, digits = digits, na.print = "NA", ...)
-    }
-    if(!is.function(x[[i]]$scale)) {
-      if(!is.null(x[[i]]$scale)) {
-        cat("\nScale estimate:\n")
-        printCoefmat(x[[i]]$scale, digits = digits, na.print = "NA", ...)
+    if(h1) {
+      print.summary.bayesr(x[[i]], digits = digits, ...)
+      if(i == n)
+        print_dic_pd(x[[i]][[1]], ok = FALSE)
+    } else {
+      cat("Formula:\n")
+      print(x[[i]]$formula)
+      if(length(x[[i]]$param.effects) > 0) {
+        cat("\nParametric coefficients:\n")
+        printCoefmat(x[[i]]$param.effects, digits = digits, na.print = "NA", ...)
       }
+      if(length(x[[i]]$effects.hyp) > 0) {
+        cat("\nSmooth effects variances:\n")
+        printCoefmat(x[[i]]$effects, digits = digits, na.print = "NA", ...)
+      }
+      if(!is.function(x[[i]]$scale)) {
+        if(!is.null(x[[i]]$scale)) {
+          cat("\nScale estimate:\n")
+          printCoefmat(x[[i]]$scale, digits = digits, na.print = "NA", ...)
+        }
+      }
+      if(i == n & !h0) {
+        print_dic_pd(x[[1]])
+      } else cat("\n")
     }
-    if(i == n) {
-      cat("\n---")
-      if(!is.null(x[[i]]$DIC) & !is.null(x[[i]]$pd)) {
-        cat("\nDIC =", if(is.na(x[[i]]$DIC)) "NA" else {
-            formatC(x[[i]]$DIC, digits = digits, flag = "-")
-          }, "pd =", if(is.na(x[[i]]$pd)) "NA" else {
-            formatC(x[[i]]$pd, digits = digits, flag = "-")
-          })
-      }
-      if(!is.null(x[[1]]$N)) {
-        cat(" N =", if(is.na(x[[1]]$N)) "NA" else formatC(x[[1]]$N, digits = digits, flag = "-"))
-      }
-      cat("\n\n")
-    } else cat("\n")
   }
 }
 
@@ -1283,6 +1306,27 @@ print.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ...)
 {
   on.exit(return(invisible(x)))
   xs <- summary(x)
+
+  h0 <- !is.null(attr(x, "hlevel"))
+
+  print_dic_pd <- function(x, ok = TRUE) {
+    dp <- FALSE
+    if(!is.null(x$DIC) & !is.null(x$pd)) {
+      dp <- TRUE
+      cat("---\n")
+      cat("DIC =", if(is.na(x$DIC)) "NA" else {
+          formatC(x$DIC, digits = digits, flag = "-")
+        }, "pd =", if(is.na(x$pd)) "NA" else {
+          formatC(x$pd, digits = digits, flag = "-")
+        })
+    }
+    if(!is.null(x$N)) {
+      if(!dp) cat("---\n")
+      dp <- TRUE
+      cat(" N =", if(is.na(x$N)) "NA" else formatC(x$N, digits = digits, flag = "-"))
+    }
+    if(ok & dp) cat("\n\n")
+  }
 
   family <- attr(x, "family")
   n <- attr(xs, "n")
@@ -1299,22 +1343,20 @@ print.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ...)
     if(!is.null(nx)) {
       cat("Formula ", nx[i], ":\n", sep = "")
     } else cat("Formula:\n")
-    print(xs[[i]]$formula)
-
-    cat("---\n")
-
-    if(i == n) {
-      if(!is.null(xs[[i]]$DIC) & !is.null(xs[[i]]$pd)) {
-        cat("DIC =", if(is.na(xs[[i]]$DIC)) "NA" else {
-            formatC(xs[[i]]$DIC, digits = digits, flag = "-")
-          }, "pd =", if(is.na(xs[[i]]$pd)) "NA" else {
-            formatC(xs[[i]]$pd, digits = digits, flag = "-")
-          })
+    if(!is.null(attr(xs[[i]], "hlevel"))) {
+      nh <- names(xs[[i]])
+      for(j in seq_along(xs[[i]])) {
+        cat(nh[j], ": ", sep = ""); print(xs[[i]][[j]]$formula)
       }
-      if(!is.null(xs[[i]]$N)) {
-        cat(" N =", if(is.na(xs[[i]]$N)) "NA" else formatC(xs[[i]]$N, digits = digits, flag = "-"))
-      }
-      cat("\n\n")
+      if(i < n) cat("---\n")
+      if(i == n)
+        print_dic_pd(xs[[i]][[1]])
+    } else print(xs[[i]]$formula)
+
+    if(i < n & h0) cat("---\n")
+
+    if(i == n & h0) {
+      print_dic_pd(xs[[1]])
     }
   }
 }
@@ -1354,6 +1396,7 @@ formula.bayesr <- function(x, ...) { attr(x, "formula") }
 ## Model extractor function.
 get.model <- function(x, model)
 {
+  family <- attr(x, "family")
   cx <- class(x)
   elmts <- c("formula", "fake.formula", "model", "param.effects",
     "effects", "fitted.values", "residuals")
@@ -1370,6 +1413,7 @@ get.model <- function(x, model)
     }
   } else x <- list(x)
   class(x) <- cx
+  attr(x, "family") <- family
 
   return(x)
 }

@@ -676,13 +676,12 @@ resultsBayesX <- function(x, samples, ...)
           nh <- paste("h", i, sep = "")
           rval[[nx[j]]][[nh]] <- createBayesXresults(x[[nx[j]]][[i]],
             samples, id = fn[j], sid = TRUE)
-          attr(rval[[nx[j]]][[nh]], "hlevel") <- i
           attr(rval[[nx[j]]][[nh]], "model.frame") <- attr(x[[nx[j]]][[i]], "model.frame")
           attr(x[[nx[j]]][[i]], "model.frame") <- NULL
         }
+        attr(rval[[nx[j]]], "hlevel") <- TRUE
       } else {
         rval[[nx[j]]] <- createBayesXresults(x[[nx[j]]], samples, id = fn[j], sid = TRUE)
-        attr(rval[[nx[j]]], "hlevel") <- 1
         attr(rval[[nx[j]]], "model.frame") <- attr(x[[nx[j]]], "model.frame")
         attr(x[[nx[j]]], "model.frame") <- NULL
       }
