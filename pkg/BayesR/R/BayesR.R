@@ -1285,6 +1285,10 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
   h0 <- !is.null(attr(x, "hlevel"))
 
   print_dic_pd <- function(x, ok = TRUE) {
+    if(is.list(x)) {
+      if(any(c("DIC", "pd") %in% names(x[[1]])))
+        x <- x[[1]]
+    }
     dp <- FALSE
     if(!is.null(x$DIC) & !is.null(x$pd)) {
       dp <- TRUE
@@ -1363,6 +1367,10 @@ print.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ...)
   h0 <- !is.null(attr(x, "hlevel"))
 
   print_dic_pd <- function(x, ok = TRUE) {
+    if(is.list(x)) {
+      if(any(c("DIC", "pd") %in% names(x[[1]])))
+        x <- x[[1]]
+    }
     dp <- FALSE
     if(!is.null(x$DIC) & !is.null(x$pd)) {
       dp <- TRUE
@@ -1404,7 +1412,11 @@ print.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ...)
       if(i < n) cat("---\n")
       if(i == n)
         print_dic_pd(xs[[i]][[1]])
-    } else print(xs[[i]]$formula)
+    } else {
+      print(xs[[i]]$formula)
+      if(i == n)
+        print_dic_pd(xs[[i]])
+    }
 
     if(i < n & h0) cat("---\n")
 

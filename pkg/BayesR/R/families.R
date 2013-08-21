@@ -111,10 +111,11 @@ binomial.BayesX <- function(link = "logit")
     "family" = "binomial",
     "k" = 1,
     "mu.link" = link,
-    "names" = "mu",
-    "mu" = c(paste("binomial", link, sep = "_"), "mean"),
+    "names" = "binomial",
+    "binomial" = c(paste("binomial", link, sep = "_"), "mean"),
     "all" = TRUE,
-    "h" = "gaussian_re"
+    "h" = "gaussian_re",
+    "factor" = TRUE
   )
   class(rval) <- "family.BayesR"
   rval

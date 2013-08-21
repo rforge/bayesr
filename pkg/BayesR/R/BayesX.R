@@ -132,7 +132,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
   cores <- control$setup$cores
   if(is.null(cores)) cores <- 1
 
-  BayesX_data <- function(obj) {
+  BayesX_data <- function(obj, h = FALSE) {
     X <- NULL
     if(!is.null(obj$X)) {
       if(ncol(obj$X) > 0) {
@@ -152,7 +152,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
           })
       } else {
         if(is.null(attr(obj, "model.frame"))) {
-          attr(x, "model.frame")[, obj$sterms]
+          attr(x, "model.frame")[, obj$sterms, drop = FALSE]
         } else {
           attr(obj, "model.frame")[, obj$sterms, drop = FALSE]
         }
@@ -160,7 +160,8 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
       k1 <- ncol(X)
       colnames(X)[(k1 - k2 + 1):k1] <- obj$sterms
     }
-    X <- X[, !grepl("(Intercept)", colnames(X), fixed = TRUE), drop = FALSE]
+    if(ncol(X) > 0)
+      X <- X[, !grepl("(Intercept)", colnames(X), fixed = TRUE), drop = FALSE]
     X[[obj$response]] <- obj$response.vec
     yf <- is.factor(X[[obj$response]])
     X <- as.data.frame(X)
@@ -174,8 +175,13 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         X <- X[order(X[, j]), , drop = FALSE]
       }
     }
-    if(yf)
+    if(yf) {
+      if(!is.null(family$factor) & !h) {
+        if(family$factor)
+          X[[obj$response]] <- as.integer(as.factor(X[[obj$response]])) - 1
+      }
       X <- X[order(X[[obj$response]]), , drop = FALSE]
+    }
 
     return(unique(X))
   }
@@ -196,10 +202,10 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
       for(i in 1:length(x[[j]])) {
         d2 <- NULL
         if(i < 2) {
-          d <- if(is.null(d)) BayesX_data(x[[j]][[i]]) else cbind(d, BayesX_data(x[[j]][[i]]))
+          d <- if(is.null(d)) BayesX_data(x[[j]][[i]]) else cbind(d, BayesX_data(x[[j]][[i]], i > 1))
           d <- d[, unique(names(d)), drop = FALSE]
           x[[j]][[i]]$dname <- dname0
-        } else d2 <- BayesX_data(x[[j]][[i]])
+        } else d2 <- BayesX_data(x[[j]][[i]], i > 1)
         x[[j]][[i]]$hlevel <- i
         if(!is.null(d2)) {
           dpath <- file.path(dir, paste(dname <- paste(data.name, count, sep = ''),
@@ -480,8 +486,14 @@ process_mfile <- function(x)
       }
     }
   }
+
+  known_paramaters <- c("mu", "sigma", "sigma2", "pi", "delta", "tau",
+    "a", "b", "p", "df", "rho", "lambda", "alpha", "nu")
+
   ft <- sapply(strsplit(family, "_"), function(x) {
-    if(length(x) > 1) x[2] else x
+    if(length(x) > 1) {
+      if(x[2] %in% known_paramaters) x[2] else x[1]
+    } else x
   })
   terms <- paste(terms, ft, sep = ":")
   terms <- paste(terms, hlevel, sep = ":")
@@ -504,6 +516,7 @@ resultsBayesX <- function(x, samples, ...)
   if(is.function(family))
     family <- family()
   mspecs <- attr(samples, "model.specs")
+
   if(is.null(mspecs) & is.list(samples))
     mspecs <- attr(samples[[1]], "model.specs")
 
@@ -565,6 +578,7 @@ resultsBayesX <- function(x, samples, ...)
             tn0 <- strsplit(i, ":")[[1]][1]
             tn <- gsub(")", "", gsub("sx(", "", tn0, fixed = TRUE), fixed = TRUE)
             tn <- strsplit(tn, ",", fixed = TRUE)[[1]]
+
             X <- sx.smooth[[i]]$basis(if(is.null(attr(obj, "model.frame"))) {
                 attr(x, "model.frame")[, tn]
               } else attr(obj, "model.frame")[, tn])
@@ -677,13 +691,13 @@ resultsBayesX <- function(x, samples, ...)
         for(i in seq_along(x[[nx[j]]])) {
           nh <- paste("h", i, sep = "")
           rval[[nx[j]]][[nh]] <- createBayesXresults(x[[nx[j]]][[i]],
-            samples, id = fn[j], sid = TRUE)
+            samples, id = fn[j], sid = length(nx) > 1)
           attr(rval[[nx[j]]][[nh]], "model.frame") <- attr(x[[nx[j]]][[i]], "model.frame")
           attr(x[[nx[j]]][[i]], "model.frame") <- NULL
         }
         attr(rval[[nx[j]]], "hlevel") <- TRUE
       } else {
-        rval[[nx[j]]] <- createBayesXresults(x[[nx[j]]], samples, id = fn[j], sid = TRUE)
+        rval[[nx[j]]] <- createBayesXresults(x[[nx[j]]], samples, id = fn[j], sid = length(nx) > 1)
         attr(rval[[nx[j]]], "model.frame") <- attr(x[[nx[j]]], "model.frame")
         attr(x[[nx[j]]], "model.frame") <- NULL
       }
