@@ -1396,6 +1396,8 @@ print.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ...)
     xs <- list(xs)
   else
     nx <- names(xs)
+
+  pdic <- TRUE
   
   cat("\n")
   print(if(is.function(family)) family() else family)
@@ -1410,17 +1412,21 @@ print.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ...)
         cat(nh[j], ": ", sep = ""); print(xs[[i]][[j]]$formula)
       }
       if(i < n) cat("---\n")
-      if(i == n)
+      if(i == n & pdic) {
         print_dic_pd(xs[[i]][[1]])
+        pdic <- FALSE
+      }
     } else {
       print(xs[[i]]$formula)
-      if(i == n)
-        print_dic_pd(xs[[i]])
+      if(i == n & pdic) {
+        print_dic_pd(xs[[1]])
+        pdic <- FALSE
+      }
     }
 
     if(i < n & h0) cat("---\n")
 
-    if(i == n & h0) {
+    if(i == n & h0 & pdic) {
       print_dic_pd(xs[[1]])
     }
   }
