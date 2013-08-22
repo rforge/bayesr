@@ -241,6 +241,7 @@ parse.data.bayesr <- function(formula, data, weights = NULL, subset = NULL,
 
 ## Remove Inf values from data.
 rm_infinite <- function(x) {
+  if(is.null(dim(x))) return(x)
   if(ncol(x) > 0) {
     for(j in 1:ncol(x)) {
       if(class(x[, j]) %in% c("numeric", "integer")) {
