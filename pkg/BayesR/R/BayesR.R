@@ -5,7 +5,7 @@ bayesr <- function(formula, family = gaussian, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.fail, contrasts = NULL,
   parse.input = parse.input.bayesr, transform = transformJAGS, setup = setupJAGS,
   sampler = samplerJAGS, results = resultsJAGS,
-  cores = NULL, combine = TRUE, model = TRUE, ...)
+  cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, ...)
 {
   ## Setup all processing functions.
   if(is.null(transform))
@@ -52,6 +52,7 @@ bayesr <- function(formula, family = gaussian, data = NULL, knots = NULL,
   } else {
     require("parallel")
     parallel_fun <- function(j) {
+      if(j > 1 & !is.null(sleep)) Sys.sleep(sleep)
       functions$sampler(ms)
     }
     so <- mclapply(1:cores, parallel_fun, mc.cores = cores)
@@ -1059,17 +1060,27 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, sc
 
   kn <- get_k_n(x)
 
-  if(which == "effects" & kn[1] < 1) stop("no terms to plot in model object!")
+  if(which == "effects" & kn[1] < 1) on.exit(warning("no terms to plot in model object!"), add = TRUE)
 
   if(is.null(args$do_par)) {
     if(!ask) par(mfrow = n2mfrow(kn[if(which == "effects") 1 else 2])) else par(ask = ask)
   }
 
+  mmain <- if(any(c("h1", "Chain_1") %in% (nx <- names(x)))) TRUE else FALSE
+  main <- args$main
+  if((is.null(args$main) & mmain) | !is.null(args$mmain)) {
+    main <- if(!is.null(args$main)) paste(args$main, nx, sep = "-") else nx
+    args$mmain <- TRUE
+  }
+  if(!is.null(main)) main <- rep(main, length.out = length(x))
+
   for(i in seq_along(x)) {
-    if(!any(c("effects", "param.effects") %in% names(x[[i]])))
-      plot.bayesr(x[[i]], term = term, which = which, ask = ask, scale = scale, do_par = FALSE, ...)
-    else
-      .plot.bayesr(x[[i]], term = term, which = which, ask = ask, scale = scale, ...)
+    args[c("x", "term", "which", "ask", "scale")] <- list(x[[i]], term, which, ask, scale)
+    args$main <- if(!is.null(main)) main[i] else NULL
+    if(!any(c("effects", "param.effects") %in% names(x[[i]]))) {
+      args$do_par <- FALSE
+      do.call("plot.bayesr", args)
+    } else do.call(".plot.bayesr", args)
   }
 
   invisible(NULL)

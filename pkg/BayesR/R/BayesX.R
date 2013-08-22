@@ -22,7 +22,7 @@ bayesx2 <- function(formula, family = gaussian, data = NULL, knots = NULL,
     weights = weights, subset = subset, offset = offset, na.action = na.action,
     contrasts = contrasts, parse.input = parse.input.bayesr, transform = transformBayesX,
     setup = setup, sampler = samplerBayesX, results = resultsBayesX,
-    cores = cores, combine = combine, ...)
+    cores = cores, combine = combine, sleep = 1, ...)
   
   attr(rval, "call") <- match.call()
   
