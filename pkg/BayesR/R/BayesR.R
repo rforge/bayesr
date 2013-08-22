@@ -767,6 +767,8 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
   intercept = TRUE, FUN = mean, ...)
 {
   object <- get.model(object, model)
+  if(any(c("effects", "param.effects") %in% names(object)))
+    object <- list(object)
   k <- length(object)
   enames <- list()
   for(j in 1:k) {

@@ -609,7 +609,12 @@ resultsBayesX <- function(x, samples, ...)
               } else attr(obj, "model.frame")[, tn, drop = FALSE])
 
             attr(fst$term, "specs")$get.mu <- get.mu
-            attr(fst$term, "specs")$basis <- sx.smooth[[i]]$basis
+            attr(fst$term, "specs")$basis <- function(x) {
+              if(!is.null(dim(x))) {
+                if(ncol(x) < 2) x <- x[, 1]
+              }
+              sx.smooth[[i]]$basis(x)
+            }
             if(sid)
               attr(fst$term, "specs")$label <- paste(attr(fst$term, "specs")$label, id, sep = ":")
 
