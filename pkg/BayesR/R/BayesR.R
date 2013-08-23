@@ -96,6 +96,7 @@ parse.input.bayesr <- function(formula, data, family = gaussian,
 
 "[.bayesr.input" <- function(x, ...) {
   rval <- NextMethod("[")
+  xattr <- attributes(x)
   mostattributes(rval) <- attributes(x)
   rval
 }

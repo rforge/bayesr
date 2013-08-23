@@ -88,8 +88,13 @@ transformBayesX <- function(x, ...)
   }
 
   names(x) <- rep(family$names, length.out = n)
-  if(!is.null(family$order))
+  if(!is.null(family$order)) {
+    mf <- attr(x, "model.frame")
+    class(x) <- "list"
     x <- x[family$order]
+    class(x) <- c("bayesr.input", "list")
+    attr(x, "model.frame") <- mf; rm(mf)
+  }
   attr(x, "call") <- call
   attr(x, "family") <- family
 
