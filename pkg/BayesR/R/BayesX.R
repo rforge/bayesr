@@ -418,7 +418,7 @@ samplerBayesX <- function(x, ...)
     errl <- paste(" *", errl)
     errm <- paste("an error occurred running the BayesX binary! The following messages are returned:\n",
       paste(errl, collapse = "\n", sep = ""), sep = "")
-    stop(errm, call. = FALSE)
+    warning(errm, call. = FALSE)
   }
   samples <- NULL
   mfile <- grep(paste(x$control$setup$model.name, "_R.r", sep = ""), dir(dir), value = TRUE, fixed = TRUE)
@@ -1059,7 +1059,6 @@ sx.construct.mrf.smooth.spec <- sx.construct.spatial.smooth.spec <- function(obj
       prg <- c(prg, paste(map.name, ".infile using ", mapfile, sep = ""))
     } else {
       if(!is.character(map)) {
-cat("yo!\n")
         write.gra(map = map, file = mapfile, replace = TRUE)
         prg <- c(prg, paste(map.name, ".infile, graph using ", mapfile, sep = ""))
       } else {
