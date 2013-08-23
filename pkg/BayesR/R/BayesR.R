@@ -542,8 +542,8 @@ formula_hcheck <- function(formula)
           av <- all.vars(fi[[jj]])
           rn <- formula_respname(fi[[jj]])
           av <- av[av != rn]
-          if(length(one <- grep("1", as.character(fi[[jj]]), fixed = TRUE, value = TRUE))) {
-            av <- c(av, one)
+          if(attr(terms(fi[[jj]]), "intercept") < 1) {
+            av <- c(av, "-1")
           }
           if(any(av %in% nf[j])) {
             check[[j]] <- c(check[[j]], i)

@@ -37,6 +37,8 @@ transformBayesX <- function(x, ...)
 {
   family <- parse.family.bayesr(attr(x, "family"), sampler = "BayesX")
 
+  names(attr(x, "model.frame")) <- rmf(names(attr(x, "model.frame")))
+
   call <- x$call; x$call <- NULL
 
   tBayesX <- function(obj, ...) {
@@ -49,9 +51,21 @@ transformBayesX <- function(x, ...)
         obj[[j]] <- tBayesX(obj[[j]], ...)
     } else {
       obj <- randomize(obj)
+      if(!is.null(attr(obj, "model.frame"))) {
+        names(attr(obj, "model.frame")) <- rmf(names(attr(obj, "model.frame")))
+      }
+      obj$response <- rmf(obj$response)
+      if(!is.null(dim(obj$X)))
+        colnames(obj$X) <- rmf(colnames(obj$X))
+      if(length(obj$pterms))
+        obj$pterms <- rmf(obj$pterms)
+      if(length(obj$sterms))
+        obj$sterms <- rmf(obj$sterms)
+
       if(length(obj$smooth)) stop("arbitrary smooths not supported yet!")
       if(length(obj$sx.smooth)) {
         for(j in seq_along(obj$sx.smooth)) {
+          obj$sx.smooth[[j]]$term <- rmf(obj$sx.smooth[[j]]$term)
           tmp <- sx.construct(obj$sx.smooth[[j]],
             if(is.null(attr(obj, "model.frame"))) {
               attr(x, "model.frame")
@@ -121,6 +135,8 @@ controlBayesX <- function(n.iter = 1200, thin = 1, burnin = 200,
 
 setupBayesX <- function(x, control = controlBayesX(...), ...)
 {
+  names(attr(x, "model.frame")) <- rmf(names(attr(x, "model.frame")))
+
   family <- attr(x, "family")
   x$call <- x$family <- NULL
 
@@ -137,7 +153,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
     if(!is.null(obj$X)) {
       if(ncol(obj$X) > 0) {
         X <- obj$X
-        if(length(i <- grep("(Intercept)", colnames(X), fixed = TRUE)))
+        if(length(i <- grep("Intercept", colnames(X), fixed = TRUE)))
           X <- obj$X[, -i, drop = FALSE]
         X <- as.data.frame(X)
       }
@@ -162,7 +178,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
     }
     if(!is.null(X)) {
       if(ncol(X) > 0)
-        X <- X[, !grepl("(Intercept)", colnames(X), fixed = TRUE), drop = FALSE]
+        X <- X[, !grepl("Intercept", colnames(X), fixed = TRUE), drop = FALSE]
       X[[obj$response]] <- obj$response.vec
     } else {
       X <- list()
@@ -258,7 +274,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         et <- x[[j]]$pterms
         fctr <- attr(x[[j]]$formula, "control")
         if(is.null(fctr)) fctr <- ""
-        if(length(i <- grep("(Intercept)", et, fixed = TRUE)))
+        if(length(i <- grep("Intercept", et, fixed = TRUE)))
           et[i] <- "const"
         if(length(x[[j]]$sx.smooth)) {
           et <- c(et, x[[j]]$sx.smooth)
@@ -1085,11 +1101,11 @@ rmf <- function(x)
   for(i in 1L:length(x)) {
     for(char in c("+", "-", "*", ":", "^", "/", " ", "(", ")", "]", "[",
       ",", ".", "<", ">", "?", "!", "'", "#", "~", "`", ";", "=", "&", "$", "@")) {
-      x[i] <- gsub(char, "_", x[i], fixed = TRUE)
+      x[i] <- gsub(char, "", x[i], fixed = TRUE)
     }
   }
 
-  return(rmfs(x))
+  return(x)
 }
 
 help.map.name <- function(x)
