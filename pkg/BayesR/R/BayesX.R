@@ -548,6 +548,8 @@ resultsBayesX <- function(x, samples, ...)
     chains <- length(samples)
     rval <- vector(mode = "list", length = chains)
     snames <- colnames(samples[[1]])
+    if(is.null(snames))
+      snames <- attributes(samples[[1]])$dimnames[[2]]
     for(j in 1:chains) {
       if(any(grepl("dic", snames))) {
         DIC <- mean(as.numeric(samples[[j]][, grepl("dic", snames)]))
@@ -563,7 +565,7 @@ resultsBayesX <- function(x, samples, ...)
       ## Parametric effects.
       if(k <- ncol(obj$X)) {
         nx <- obj$pterms
-        nx <- gsub("(Intercept)", "const", nx, fixed = TRUE)
+        nx <- gsub("Intercept", "const", nx, fixed = TRUE)
         pt <- paste(nx, collapse = "+")
         pt <- paste(pt, id, obj$hlevel, sep = ":")
         samps <- as.matrix(samples[[j]][, grepl(pt, snames, fixed = TRUE)], ncol = k)
