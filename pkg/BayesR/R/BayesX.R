@@ -1059,6 +1059,7 @@ sx.construct.mrf.smooth.spec <- sx.construct.spatial.smooth.spec <- function(obj
       prg <- c(prg, paste(map.name, ".infile using ", mapfile, sep = ""))
     } else {
       if(!is.character(map)) {
+cat("yo!\n")
         write.gra(map = map, file = mapfile, replace = TRUE)
         prg <- c(prg, paste(map.name, ".infile, graph using ", mapfile, sep = ""))
       } else {

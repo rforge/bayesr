@@ -1223,7 +1223,8 @@ plot.bayesr.effect.default <- function(x, ...) {
         if(!is.null(args$map)) {
           args$x <- x[, grepl("50%", colnames(x), fixed = TRUE)]
           args$id <- as.character(x[, 1])
-          do.call("plotmap", delete.args("plotmap", args))
+          do.call("plotmap", delete.args("plotmap", args,
+            not = c("border", "lwd", "lty")))
         } else do.call("plotblock", args)
       }
     } else do.call("plot2d", args)
