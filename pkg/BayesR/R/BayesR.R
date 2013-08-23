@@ -1010,11 +1010,12 @@ Predict.matrix.gc.smooth <- function(object, data, knots)
 ## (6) Plotting. ##
 ###################
 ## Plotting method for "bayesr" objects.
-plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, scale = 1, ...)
+plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
+  ask = FALSE, scale = 1, spar = TRUE, ...)
 {
   args <- list(...)
 
-  if(is.null(args$do_par)) {
+  if(is.null(args$do_par) & spar) {
     op <- par(no.readonly = TRUE)
     on.exit(par(op))
   }
@@ -1066,7 +1067,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, sc
 
   if(which == "effects" & kn[1] < 1) on.exit(warning("no terms to plot in model object!"), add = TRUE)
 
-  if(is.null(args$do_par)) {
+  if(is.null(args$do_par) & spar) {
     if(!ask) par(mfrow = n2mfrow(kn[if(which == "effects") 1 else 2])) else par(ask = ask)
   }
 
@@ -1090,7 +1091,8 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, sc
   invisible(NULL)
 }
 
-.plot.bayesr <- function(x, model = NULL, term = NULL, which = 1, ask = FALSE, scale = 1, ...)
+.plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
+  ask = FALSE, scale = 1, spar = TRUE, ...)
 {
   x <- get.model(x, model)
   n <- length(x)
@@ -1224,7 +1226,7 @@ plot.bayesr.effect.default <- function(x, ...) {
           args$x <- x[, grepl("50%", colnames(x), fixed = TRUE)]
           args$id <- as.character(x[, 1])
           do.call("plotmap", delete.args("plotmap", args,
-            not = c("border", "lwd", "lty")))
+            not = c("border", "lwd", "lty", names(formals("colorlegend")))))
         } else do.call("plotblock", args)
       }
     } else do.call("plot2d", args)
