@@ -2,15 +2,3 @@ README.txt
 bootstrap-devel.sh
 bootstrap-release.sh
 cleanup.win
-tests
-tests/data.raw
-tests/mcmc.prg
-tests/mcmc.R
-tests/mcmc.Rout.save
-tests/reml.prg
-tests/reml.R
-tests/reml.Rout.save
-tests/step.prg
-tests/step.R
-tests/step.Rout.save
-tests/zfileremoves.R
