@@ -1,4 +1,7 @@
 ## BayesX REML testing
 library("BayesXsrc")
 reml <- run.bayesx("reml.prg", verbose = FALSE)
-writeLines(reml$log)
+fx1 <- read.table("reml_f_x1_pspline.res", header = TRUE)
+fx2 <- read.table("reml_f_x2_pspline.res", header = TRUE)
+print(fx1)
+print(fx2)
