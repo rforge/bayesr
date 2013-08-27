@@ -485,9 +485,6 @@ resultsJAGS <- function(x, samples)
               psamples <- t(apply(psamples, 1, re_trans))
             }
 
-            ## Prediction matrix.
-            X <- PredictMat(obj$smooth[[i]], attr(x, "model.frame"))
-
             ## Possible variance parameter samples.
             vsamples <- NULL
             taug <- paste("taug", if(is.null(obj$smooth[[i]]$id)) i else obj$smooth[[i]]$id, id, sep = "")
@@ -499,13 +496,17 @@ resultsJAGS <- function(x, samples)
               X %*% as.numeric(g)
             }
 
-            ## Compute samples of fitted values.
-            fsamples <- apply(psamples, 1, function(g) { get.mu(X, g) })
+            ## Prediction matrix.
+            get.X <- function(x) {
+              X <- PredictMat(obj$smooth[[i]], x)
+              X
+            }
 
             ## Compute final smooth term object.
-            fst <- compute_term(obj$smooth[[i]], fsamples = fsamples, psamples = psamples,
-              vsamples = vsamples, FUN = NULL, snames = snames,
-              effects.hyp = effects.hyp, fitted.values = fitted.values, data = attr(x, "model.frame"))
+            fst <- compute_term(obj$smooth[[i]], get.X = get.X, get.mu = get.mu,
+              psamples = psamples, vsamples = vsamples, FUN = NULL, snames = snames,
+              effects.hyp = effects.hyp, fitted.values = fitted.values,
+              data = attr(x, "model.frame")[, obj$smooth[[i]]$term, drop = FALSE])
 
             attr(fst$term, "specs")$get.mu <- get.mu 
 

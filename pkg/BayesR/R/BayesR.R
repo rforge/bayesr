@@ -679,10 +679,29 @@ c.bayesr <- function(...)
 
 
 ## Function to compute statistics from samples of a model term.
-compute_term <- function(x, fsamples, psamples, vsamples = NULL,
+compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   FUN = NULL, snames, effects.hyp, fitted.values, data)
 {
   require("coda")
+
+  ## Compute new data set for which effects should
+  ## be calculated, n = 100.
+  if(length(x$term) < 2 & !is.factor(data[[x$term[1]]])) {
+    xsmall <- TRUE
+    nd <- list()
+    for(j in x$term) {
+      xr <- range(data[[j]], na.rm = TRUE)
+      nd[[j]] <- seq(xr[1], xr[2], length = 100)
+    }
+    data0 <- data
+    data <- as.data.frame(nd)
+  } else xsmall <- FALSE
+
+  X <- get.X(data)
+
+  ## Compute samples of fitted values.
+  fsamples <- apply(psamples, 1, function(g) { get.mu(X, g) })
+
   if(is.null(FUN)) {
     FUN <- function(x) {
       rval <- as.numeric(quantile(x, probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
@@ -704,13 +723,17 @@ compute_term <- function(x, fsamples, psamples, vsamples = NULL,
   if(any(im <- grepl("50%", tolower(colnames(smf)), fixed = TRUE))) {
     im <- c(1:ncol(smf))[im]
     fit <- smf[, im[1]]
+    if(xsmall)
+      fit <- approx(data[[x$term]], fit, xout = data0[[x$term]])$y
   }
   by.drop <- NULL
   if(x$by != "NA") {
-    by.drop <- data[[x$by]] == x$by.level
+    by.drop <- (if(xsmall) data0[[x$by]] else data[[x$by]]) == x$by.level
     fit[!by.drop] <- 0
-    smf <- smf[by.drop, ]
+    if(!xsmall)
+      smf <- smf[by.drop, ]
   }
+
   fitted.values <- if(!is.null(fitted.values)) fitted.values + fit else fit
 
   ## Assign class and attributes.
@@ -724,7 +747,7 @@ compute_term <- function(x, fsamples, psamples, vsamples = NULL,
   attr(smf, "specs")[c("X", "Xf", "rand", "trans.D", "trans.U")] <- NULL
   class(attr(smf, "specs")) <- class(x)
   attr(smf, "fit") <- fit
-  attr(smf, "x") <- data[, x$term]
+  attr(smf, "x") <- if(xsmall) data0[, x$term] else data[, x$term]
   attr(smf, "by.drop") <- by.drop
   colnames(psamples) <- paste(x$label, 1:ncol(psamples), sep = ".")
 

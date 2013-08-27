@@ -609,23 +609,20 @@ resultsBayesX <- function(x, samples, ...)
             tn <- strsplit(tn, ",", fixed = TRUE)[[1]]
 
             X <- sx.smooth[[i]]$basis(if(is.null(attr(obj, "model.frame"))) {
-                attr(x, "model.frame")[, tn]
-              } else attr(obj, "model.frame")[, tn])
+                attr(x, "model.frame")[1, tn, drop = FALSE]
+              } else attr(obj, "model.frame")[1, tn, drop = FALSE])
 
             get.mu <- function(X, g) {
               X %*% as.numeric(g)
             }
-
-            ## Compute samples of fitted values.
-            fsamples <- apply(psamples, 1, function(g) { get.mu(X, g) })
 
             ## Compute final smooth term object.
             tn1 <- eval(parse(text = tn0))
             stype <- attr(X, "type")
             class(tn1) <- paste(stype, "smooth.spec", sep = ".")
 
-            fst <- compute_term(tn1, fsamples = fsamples, psamples = psamples,
-              vsamples = vsamples, FUN = NULL, snames = snames,
+            fst <- compute_term(tn1, get.X = sx.smooth[[i]]$basis, get.mu = get.mu,
+              psamples = psamples, vsamples = vsamples, FUN = NULL, snames = snames,
               effects.hyp = effects.hyp, fitted.values = fitted.values,
               data = if(is.null(attr(obj, "model.frame"))) {
                 attr(x, "model.frame")[, tn, drop = FALSE]
