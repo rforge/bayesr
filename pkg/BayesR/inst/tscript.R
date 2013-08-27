@@ -1,6 +1,14 @@
 ## source all functions
 sbayesr()
 
+## scaling function
+hs <- function(x, min = 0.1, max = 0.6) {
+  x <- if(length(unique(x)) > 1) {
+    (x - min(x, na.rm = TRUE)) / diff(range(x, na.rm = TRUE)) * (max - min) + min
+  } else x
+  x
+}
+
 ## generate data
 n <- 500
 dat <- data.frame("x1" = runif(n, -3, 3))
@@ -30,7 +38,7 @@ Xr <- X$rand$Xr
 dat2 <- data.frame("fixed" = Xf, "random" = Xr)
 dat2$y <- dat$y
 
-b <- bayesx(y ~ fixed + sx(random.1, bs = "ridge") + sx(random.2, bs = "ridge") +
+b <- bayesx2(y ~ fixed + sx(random.1, bs = "ridge") + sx(random.2, bs = "ridge") +
   sx(random.3, bs = "ridge") + sx(random.4, bs = "ridge") + sx(random.5, bs = "ridge") +
   sx(random.6, bs = "ridge") + sx(random.7, bs = "ridge") + sx(random.8, bs = "ridge"),
   data = dat2)
@@ -43,13 +51,6 @@ points(dat$x1, dat$cf * fun(dat$x1), col = 2, pch = 3)
 
 
 ## generate data
-hs <- function(x, min = 0.1, max = 0.6) {
-  x <- if(length(unique(x)) > 1) {
-    (x - min(x, na.rm = TRUE)) / diff(range(x, na.rm = TRUE)) * (max - min) + min
-  } else x
-  x
-}
-
 n <- 500
 dat <- data.frame("x1" = runif(n, -3, 3), x2 = runif(n, -3, 3))
 dat$y <- hs(with(dat, 1.2 + sin(x1) + cos(x2) + rnorm(n, sd = (cos(dat$x1) + 2) / 4)), 0.001, 0.999)
