@@ -287,26 +287,6 @@ neighbormatrix <- function(x, type = "dist", scale = NULL, k = 1) {
 }
 
 
-## Function to transform a map list()
-## of polygons to an object of class
-## "SpatialPolygons".
-map2SP <- function(x) {
-  require("maptools")
-  nx <- names(x)
-  if(any(duplicated(nx)))
-    warning("duplicated polygon names, these should be unique!")
-  rval <- list()
-  for(i in nx) {
-    pol <- na.omit(x[[i]])
-    if(!all(pol[1, ] == pol[nrow(pol), ]))
-      pol <- rbind(pol, pol[1, ])
-    rval[[i]] <- Polygons(list(Polygon(pol)), ID = i)
-  }
-  rval <- SpatialPolygons(rval)
-  rval
-}
-
-
 ## Function to plot the neighborhood relationship
 ## given some polygon list() map x.
 plotneighbors <- function(x, type = "dist", scale = NULL, k = 1,
