@@ -503,10 +503,12 @@ resultsJAGS <- function(x, samples)
             }
 
             ## Compute final smooth term object.
+            tn <- c(obj$smooth[[i]]$term, if(obj$smooth[[i]]$by != "NA") obj$smooth[[i]]$by else NULL)
+
             fst <- compute_term(obj$smooth[[i]], get.X = get.X, get.mu = get.mu,
               psamples = psamples, vsamples = vsamples, FUN = NULL, snames = snames,
               effects.hyp = effects.hyp, fitted.values = fitted.values,
-              data = attr(x, "model.frame")[, obj$smooth[[i]]$term, drop = FALSE])
+              data = attr(x, "model.frame")[, tn, drop = FALSE])
 
             attr(fst$term, "specs")$get.mu <- get.mu 
 

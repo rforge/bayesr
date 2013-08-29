@@ -620,6 +620,8 @@ resultsBayesX <- function(x, samples, ...)
             tn1 <- eval(parse(text = tn0))
             stype <- attr(X, "type")
             class(tn1) <- paste(stype, "smooth.spec", sep = ".")
+            if(tn1$by != "NA")
+              tn <- c(tn, tn1$by)
 
             fst <- compute_term(tn1, get.X = sx.smooth[[i]]$basis, get.mu = get.mu,
               psamples = psamples, vsamples = vsamples, FUN = NULL, snames = snames,

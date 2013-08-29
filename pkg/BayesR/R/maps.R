@@ -150,9 +150,13 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
 
 ## Function to compute a polygon map from
 ## a grid overlayed on x- and y-coordinates.
-gridmap <- function(x, y, size = 0.1, width = NULL, data = NULL,
-  all = TRUE, at.xy = FALSE, scale = TRUE, ...)
+pixelmap <- function(x, y, size = 0.1, width = NULL, data = NULL,
+  all = TRUE, at.xy = FALSE, scale = TRUE, n = 20, ...)
 {
+  if(missing(x) & missing(y) & is.null(data)) {
+    x <- expand.grid("x" = seq(0, 1, length = n), "y" = seq(0, 1, length = n))
+    at.xy <- TRUE; size <- NA
+  }
   if(missing(y) & (is.matrix(x) | is.data.frame(x) | is.list(x))) {
     x <- as.data.frame(x)
   } else {
@@ -230,7 +234,7 @@ gridmap <- function(x, y, size = 0.1, width = NULL, data = NULL,
   nmat[nmat > 0] <- -1
   diag(nmat) <- nn
 
-  return(list("map" = map, "id" = id, "nmat" = nmat))
+  return(list("map" = map, "nmat" = nmat, "data" = cbind(x, "id" = id)))
 }
 
 

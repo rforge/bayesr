@@ -693,6 +693,12 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
       xr <- range(data[[j]], na.rm = TRUE)
       nd[[j]] <- seq(xr[1], xr[2], length = 100)
     }
+    if(x$by != "NA") { ## FIXME: check by variables!
+      if(!is.factor(data[[x$by]])) {
+        xr <- range(data[[x$by]], na.rm = TRUE)
+        nd[[x$by]] <- seq(xr[1], xr[2], length = 100)
+      } else nd[[x$by]] <- data[[x$by]]
+    }
     data0 <- data
     data <- as.data.frame(nd)
   } else xsmall <- FALSE
