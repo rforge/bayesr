@@ -686,7 +686,8 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
 
   ## Compute new data set for which effects should
   ## be calculated, n = 100.
-  if(length(x$term) < 2 & !is.factor(data[[x$term[1]]])) {
+  if(length(x$term) < 2 & !is.factor(data[[x$term[1]]]) & !any(grepl("mrf", class(x))) &
+     !any(grepl("re.", class(x), fixed = TRUE)) & !any(grepl("random", class(x)))) {
     xsmall <- TRUE
     nd <- list()
     for(j in x$term) {
@@ -1238,7 +1239,7 @@ plot.bayesr.effect.default <- function(x, ...) {
   if(attr(x, "specs")$dim < 2) {
     if(is.null(args$fill.select))
       args$fill.select <- c(0, 1, 0, 1)
-    if(is.null(args$lty))
+    if(is.null(args$lty) & is.null(args$map))
       args$lty <- c(2, 1, 2)
     if(is.null(args$col.lines))
       args$col.lines <- c(NA, "black", NA)
