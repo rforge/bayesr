@@ -16,9 +16,9 @@
  
 \usage{
 plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
-  swap = FALSE, range = NULL, names = FALSE, values = FALSE,
-  col = NULL, ncol = 100, breaks = NULL, cex.legend = 1,
-  cex.names = 1, cex.values = cex.names, digits = 2L,
+  missing = TRUE, swap = FALSE, range = NULL, names = FALSE,
+  values = FALSE, col = NULL, ncol = 100, breaks = NULL,
+  cex.legend = 1, cex.names = 1, cex.values = cex.names, digits = 2L,
   mar.min = 2, add = FALSE, interp = FALSE, grid = 200,
   extrap = FALSE, outside = FALSE, type = "akima", linear = FALSE,
   k = 40, p.pch = 15, p.cex = 1, shift = NULL, trans = NULL, ...)
@@ -38,6 +38,7 @@ plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   \item{c.select}{select the column of the data in \code{x} which should be used for plotting, may
     be an integer or character with the corresponding column name.}
   \item{legend}{if set to \code{TRUE}, a legend will be shown.}
+  \item{missing}{should polygons be plotted for which no data is available in \code{x}?}
   \item{swap}{if set to \code{TRUE}, colors will be represented in reverse order.}
   \item{range}{specify the range of values in \code{x} which should enter the plot, e.g. only 
     values between -2 and 2 are of interest then \code{range = c(-2, 2)}.}

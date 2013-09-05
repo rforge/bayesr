@@ -4,7 +4,7 @@ find.limits <- function(map, mar.min = 2, ...)
     stop("argument map must be a list() of matrix polygons!")
   n <- length(map)
   myrange <- function(x, c.select = 1L, ...) {
-    return(na.omit(x[,c.select], ...))
+    return(na.omit(x[, c.select], ...))
   }
   xlim <- range(unlist(lapply(map, myrange, c.select = 1L, ...)))
   ylim <- range(unlist(lapply(map, myrange, c.select = 2L, ...)))

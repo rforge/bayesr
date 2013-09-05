@@ -1,5 +1,5 @@
 plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
-  swap = FALSE, range = NULL, names = FALSE, values = FALSE, col = NULL,
+  missing = TRUE, swap = FALSE, range = NULL, names = FALSE, values = FALSE, col = NULL,
   ncol = 100, breaks = NULL, cex.legend = 1, cex.names = 1, cex.values = cex.names,
   digits = 2L, mar.min = 2, add = FALSE, interp = FALSE, grid = 200,
   extrap = FALSE, outside = FALSE, type = "akima", linear = FALSE, k = 40,
@@ -188,6 +188,7 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
         args$col <- colors[k]
         args$density <- NULL
       } else {
+        if(!missing) next
         args$col <- NULL
         if(is.null(args$density))
           args$density <- 20L
