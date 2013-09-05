@@ -180,10 +180,12 @@ pixelmap <- function(x, y, size = 0.1, width = NULL, data = NULL,
     id <- rep(NA, nrow(x))
     xu <- unique(x)
     if(is.null(width)) {
+      xd <- abs(diff(xu[, 1]))
+      xd <- xd[xd > 0]
       xstep <- if(is.numeric(size)) {
-        size * min(abs(diff(xu[, 1])), na.rm = TRUE)
+        size * min(xd, na.rm = TRUE)
       } else {
-        min(abs(diff(xu[, 1])), na.rm = TRUE) / 2
+        min(xd, na.rm = TRUE) / 2
       }
     } else xstep <- width / 2
     if(scale) {
@@ -233,6 +235,9 @@ pixelmap <- function(x, y, size = 0.1, width = NULL, data = NULL,
   nn <- rowSums(nmat)
   nmat[nmat > 0] <- -1
   diag(nmat) <- nn
+  id <- factor(as.character(id))
+  lid <- levels(id)
+  nmat <- nmat[lid, lid]
 
   return(list("map" = map, "nmat" = nmat, "data" = cbind(x, "id" = id)))
 }
@@ -262,6 +267,12 @@ neighbormatrix <- function(x, type = "dist", scale = NULL, k = 1) {
     dims <- dim(adjmat)
     adjmat <- matrix(adjmat)
     dim(adjmat) <- dims
+    if(!is.null(scale)) {
+      require("fields")
+      coords <- coordinates(x)
+      codist <- fields::rdist(coords, coords)
+      adjmat[(codist > (diff(range(codist)) * scale))] <- 0
+    }
   }
   if(type == "dist") {
     require("fields")
@@ -277,6 +288,17 @@ neighbormatrix <- function(x, type = "dist", scale = NULL, k = 1) {
     adjmat[adjmat != 0] <- 1
     diag(adjmat) <- 0
     nx <- NULL
+  }
+  if(!isSymmetric(adjmat)) {
+    n <- nrow(adjmat)
+    for(i in 1:n) {
+      for(j in 1:n) {
+        if(adjmat[i, j] > 0 & adjmat[j, i] < 1)
+          adjmat[j, i] <- 1
+        if(adjmat[i, j] < 1 & adjmat[j, i] > 0)
+          adjmat[i, j] <- 1
+      }
+    }
   }
   if(is.null(nx))
     nx <- try(slot(x, "data")$NAME, silent = TRUE)
