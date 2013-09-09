@@ -151,7 +151,7 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
 ## Function to compute a polygon map from
 ## a grid overlayed on x- and y-coordinates.
 pixelmap <- function(x, y, size = 0.1, width = NULL, data = NULL,
-  all = TRUE, at.xy = FALSE, scale = TRUE, n = 20, ...)
+  all = TRUE, at.xy = FALSE, yscale = TRUE, n = 20, ...)
 {
   if(missing(x) & missing(y) & is.null(data)) {
     x <- expand.grid("x" = seq(0, 1, length = n), "y" = seq(0, 1, length = n))
@@ -188,7 +188,7 @@ pixelmap <- function(x, y, size = 0.1, width = NULL, data = NULL,
         min(xd, na.rm = TRUE) / 2
       }
     } else xstep <- width / 2
-    if(scale) {
+    if(yscale) {
       p <- xstep / abs(diff(xr))
       ystep <- abs(diff(yr)) * p
     } else ystep <- xstep
@@ -204,7 +204,7 @@ pixelmap <- function(x, y, size = 0.1, width = NULL, data = NULL,
     names(map) <- as.character(1:n)
   } else {
     xstep <- if(is.null(width)) abs(diff(xr)) * size else width / 2
-    if(scale) {
+    if(yscale) {
       p <- xstep / abs(diff(xr))
       ystep <- abs(diff(yr)) * p
     } else ystep <- xstep
