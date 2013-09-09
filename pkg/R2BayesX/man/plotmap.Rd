@@ -19,7 +19,7 @@ plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   missing = TRUE, swap = FALSE, range = NULL, names = FALSE,
   values = FALSE, col = NULL, ncol = 100, breaks = NULL,
   cex.legend = 1, cex.names = 1, cex.values = cex.names, digits = 2L,
-  mar.min = 2, add = FALSE, interp = FALSE, grid = 200, land.only = TRUE,
+  mar.min = 2, add = FALSE, interp = FALSE, grid = 200,
   extrap = FALSE, outside = FALSE, type = "akima", linear = FALSE,
   k = 40, p.pch = 15, p.cex = 1, shift = NULL, trans = NULL, ...)
 }
@@ -63,7 +63,7 @@ plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   \item{interp}{logical. Should the values provided in argument \code{x} be interpolated to obtain
     a smooth colored map.}
   \item{grid}{integer. Defines the number of grid cells to be used for interpolation.}
-  \item{land.only}{if set to \code TRUE, only interpoltated pixels that cover land are drawn,
+  \item{land.only}{if set to \code{TRUE}, only interpoltated pixels that cover land are drawn,
     see also function \code{\link[maps]{is.land}}.}
   \item{extrap}{logical. Should interpolations be computed outside the observation area
     (i.e., extrapolated)?}
