@@ -102,7 +102,7 @@ options("use.akima" = TRUE)
 \section{Introduction} \label{sec:intro}
 
 The free software \pkg{BayesX} \citep[see][]{R2BayesX:Brezger+Kneib+Lang:2005} is a standalone program
-\citep[current version~2.0.1,][]{R2BayesX:Belitz+Brezger+Kneib+Lang:2011} \fixme{update version prior to resubmission to JSS}
+\citep[current version~2.1,][]{R2BayesX:Belitz+Brezger+Kneib+Lang:2011}
 comprising powerful tools for Bayesian, mixed-model-based and stepwise inference in complex semiparametric
 regression models with structured additive predictor. Besides exponential
 family regression, \pkg{BayesX} also supports models for multi-categorical responses, hazard
@@ -148,8 +148,6 @@ on the companion package \pkg{BayesXsrc} \citep[also available from CRAN, see][]
 that ships the \pkg{BayesX} \proglang{C++} sources along with flexible \code{Makefile}s so that upon
 installation of the \proglang{R} package a suitable \pkg{BayesX} binary is produced on all platforms.
 
-\readme{The following paragraph has been rewritten in response to Reviewer~4, please check or further improve.}
-
 The remainder of this paper is as follows. Section~\ref{sec:motivation} gives a first motivating example of an
 \proglang{R}~session applying \pkg{R2BayesX} to a dataset on childhood malnutrition in Zambia.
 Subsequently, Sections~\ref{sec:model}--\ref{sec:userinterface} introduce the underlying methodological
@@ -164,6 +162,10 @@ details (especially the interface design in Section~\ref{sec:implementation}) an
 applying \pkg{R2BayesX} in practice.
 Section~\ref{sec:conclusion} concludes the paper and further technical details are provided
 in Appendices~\ref{appendix:BayesXsrc}, \ref{appendix:plotting}, and \ref{appendix:sx}.
+
+
+\newpage
+
 
 \section{Motivating example} \label{sec:motivation}
 
@@ -378,7 +380,6 @@ A thorough introduction into the regression models supported by the program is a
 discussion using a number of empirical examples is also provided in
 \citet{R2BayesX:Fahrmeir+Kneib+Lang+Marx:2013}. Further details on special cases of STAR models are
 also provided in \citet{R2BayesX:Fahrmeir+Kneib+Lang:2004}.
-\readme{Achim, added these two references.}
 
 Software packages which have a similar Bayesian scope are the \proglang{R} package \pkg{INLA}
 \citep{R2BayesX:Rue+Martino+Chopin:2009}, \pkg{BUGS}/\pkg{WinBUGS}
@@ -398,9 +399,6 @@ models usually run very long and show inferior sampling properties. A detailed c
 \pkg{BayesX} with other software packages including \pkg{WinBUGS} is provided in
 \citet[Section 3]{R2BayesX:Brezger+Kneib+Lang:2005}. See also Section~\ref{sec:modelspecs} for more
 \proglang{R} packages, that deal with GLM and GAM models, mainly from a frequentist perspective.
-
-
-\newpage
 
 
 \section[Implementation of the R interface to BayesX]{Implementation of the \proglang{R} interface to \pkg{BayesX}} \label{sec:implementation}
