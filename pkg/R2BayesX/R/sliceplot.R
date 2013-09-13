@@ -74,7 +74,7 @@ sliceplot <- function(x, y = NULL, z = NULL, view = 1, c.select = NULL,
   args$x <- slices[, 1]
   args$y <- slices[, 2:ncol(slices)]
   args$type = "l"
-  do.call("matplot", delete.args("matplot", args, "axes"))
+  do.call("matplot", delete.args("matplot", args, c("axes", "main", "xlab", "ylab")))
   if(legend) {
     l.args$x <- pos
     l.args$legend <- paste(nx[noview], "=", round(values, digits))
