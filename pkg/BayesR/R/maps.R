@@ -246,7 +246,7 @@ pixelmap <- function(x, y, size = 0.1, width = NULL, data = NULL,
 ## Function to create a neighbormatrix from
 ## a list() of polygons or objects of class
 ## "SpatialPolygons".
-neighbormatrix <- function(x, type = "dist", scale = NULL, k = 1) {
+neighbormatrix <- function(x, type = "dist", k = 1, maxdist = NULL, abs = FALSE) {
   require("maptools"); require("spdep")
   nx <- NULL
   ox <- x
@@ -267,20 +267,28 @@ neighbormatrix <- function(x, type = "dist", scale = NULL, k = 1) {
     dims <- dim(adjmat)
     adjmat <- matrix(adjmat)
     dim(adjmat) <- dims
-    if(!is.null(scale)) {
+    if(!is.null(maxdist)) {
       require("fields")
       coords <- coordinates(x)
       codist <- fields::rdist(coords, coords)
-      adjmat[(codist > (diff(range(codist)) * scale))] <- 0
+      if(abs)
+        adjmat[codist > maxdist] <- 0
+      else
+        adjmat[(codist > (diff(range(codist)) * maxdist))] <- 0
     }
   }
   if(type == "dist") {
     require("fields")
     coords <- coordinates(x)
     codist <- fields::rdist(coords, coords)
-    if(is.null(scale))
-      scale <- 0.2
-    adjmat <- 1 * (codist < (diff(range(codist)) * scale))
+    if(is.null(maxdist)) {
+      abs <- FALSE
+      maxdist <- 0.2
+    }
+    if(abs)
+      adjmat <- 1 * (codist < maxdist)
+    else
+      adjmat <- 1 * (codist < (diff(range(codist)) * maxdist))
   }
   if(type == "boundary") {
     adjmat <- bnd2gra(ox)
@@ -315,9 +323,9 @@ neighbormatrix <- function(x, type = "dist", scale = NULL, k = 1) {
 
 ## Function to plot the neighborhood relationship
 ## given some polygon list() map x.
-plotneighbors <- function(x, type = "dist", scale = NULL, k = 1,
+plotneighbors <- function(x, type = "dist", k = 1, maxdist = NULL, abs = FALSE,
   n.lwd = 1, n.col = "black", n.lty = 1, add = FALSE, ...) {
-  adjmat <- neighbormatrix(x, type, scale, k)
+  adjmat <- neighbormatrix(x, type, k, maxdist, abs)
   coords <- attr(adjmat, "coords")
   if(!add)
     plotmap(x, ...)
