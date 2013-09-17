@@ -246,7 +246,7 @@ pixelmap <- function(x, y, size = 0.1, width = NULL, data = NULL,
 ## Function to create a neighbormatrix from
 ## a list() of polygons or objects of class
 ## "SpatialPolygons".
-neighbormatrix <- function(x, type = "dist", k = 1, maxdist = NULL, abs = FALSE) {
+neighbormatrix <- function(x, type = "dist", k = 1, maxdist = NULL, abs = FALSE, npoints = 2) {
   require("maptools"); require("spdep")
   nx <- NULL
   ox <- x
@@ -291,7 +291,7 @@ neighbormatrix <- function(x, type = "dist", k = 1, maxdist = NULL, abs = FALSE)
       adjmat <- 1 * (codist < (diff(range(codist)) * maxdist))
   }
   if(type == "boundary") {
-    adjmat <- bnd2gra(ox)
+    adjmat <- bnd2gra(ox, npoints = npoints)
     class(adjmat) <- "matrix"
     adjmat[adjmat != 0] <- 1
     diag(adjmat) <- 0
