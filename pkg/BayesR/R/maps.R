@@ -324,8 +324,8 @@ neighbormatrix <- function(x, type = "dist", k = 1, maxdist = NULL, abs = FALSE,
 ## Function to plot the neighborhood relationship
 ## given some polygon list() map x.
 plotneighbors <- function(x, type = "dist", k = 1, maxdist = NULL, abs = FALSE,
-  n.lwd = 1, n.col = "black", n.lty = 1, add = FALSE, ...) {
-  adjmat <- neighbormatrix(x, type, k, maxdist, abs)
+  n.lwd = 1, n.col = "black", n.lty = 1, add = FALSE, npoints = 2, ...) {
+  adjmat <- neighbormatrix(x, type, k, maxdist, abs, npoints)
   coords <- attr(adjmat, "coords")
   if(!add)
     plotmap(x, ...)
