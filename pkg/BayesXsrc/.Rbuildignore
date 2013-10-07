@@ -2,3 +2,6 @@ README.txt
 bootstrap-devel.sh
 bootstrap-release.sh
 cleanup.win
+tests/mcmc.Rout.save
+tests/reml.Rout.save
+tests/step.Rout.save
