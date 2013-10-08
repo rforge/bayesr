@@ -82,12 +82,14 @@ colorlegend <- function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
     ylim <- pos2$ylim
   }
   if(!is.null(x)) {
-    if(is.null(lrange)) {      
-      lrange <- range(x, na.rm = TRUE)
-      if(symmetric) {
-        mar <- max(abs(lrange))
-        lrange <- c(0 - mar, mar)
-      }
+    if(is.null(lrange)) {
+      if(is.null(range)) {      
+        lrange <- range(x, na.rm = TRUE)
+        if(symmetric) {
+          mar <- max(abs(lrange))
+          lrange <- c(0 - mar, mar)
+        }
+      } else lrange <- range
     }
     x <- unique(na.omit(sort(x)))
   } else { 
