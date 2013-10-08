@@ -8,7 +8,6 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
   contour.data = NULL, k = 30, akima = FALSE, data = NULL, subset = NULL, box = FALSE,
   ireturn = FALSE, sort = TRUE, ...)
 {
-  require("R2BayesX")
   require("maps")
   require("sp")
 
