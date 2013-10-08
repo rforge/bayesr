@@ -1017,7 +1017,7 @@ approprietly by a linear term.
 
 A visual representation of the posterior means for the structured and unstructured spatial effects,
 respectively, can be obtained in two ways: via kernel density estimates or using shaded maps.
-The former can be obtained be the plain plot function yielding both panels of
+The former can be obtained by the plain plot function yielding both panels of
 Figure~\ref{fig:zambia-district-structured-unstructured-kde}:
 <<zambia-district-example-kde, echo=TRUE, eval=FALSE>>=
 plot(zm, term = c("sx(district):mrf", "sx(district):re"))
@@ -1038,8 +1038,8 @@ par(mar = c(4.1, 4.1, 0.4, 1.1))
 plot(zm, term = "sx(district):re", map = FALSE, main = "")
 @
 \caption{\label{fig:zambia-district-structured-unstructured-kde} Example on childhood malnutrition:
-Kernel density estimates of the mean coefficients for all regions of the structured, left panel, and
-the unstructured spatial effect, right panel respectively.}
+Kernel density estimates of the posterior means of coefficients for all regions of the structured,
+left panel, and the unstructured spatial effect, right panel respectively.}
 \end{figure}
 In Figure~\ref{fig:zambia-district-structured-unstructured-kde},
 the kernel densities reveal the general form of the random effects distributions which are assumed
