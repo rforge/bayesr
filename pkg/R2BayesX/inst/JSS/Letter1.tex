@@ -1,0 +1,47 @@
+\documentclass[american]{uibkletter}
+
+\usepackage{pdfpages}
+
+%% jss stuff
+\let\proglang=\textsf
+\newcommand{\pkg}[1]{{\fontseries{b}\selectfont #1}}
+
+\name{Nikolaus Umlauf}
+\emailaddress{Nikolaus.Umlauf@uibk.ac.at}
+\department[Department of Statistics]{Institut f\"ur Statistik}
+\address{Universit\"atsstr.~15 $|$ A-6020 Innsbruck}
+\phonenumber{+43/512/507-7104}
+\faxnumber{+43/512/507-2851}
+\university{Universit\"at Innsbruck}
+\webaddress{http://eeecon.uibk.ac.at/$\sim$umlauf/}
+
+\begin{document}
+\begin{letter}{
+Journal of Statistical Software \\
+University of California \\
+United States of America}
+
+\concerning{JSS 931 revision}
+
+\opening{Dear editors and reviewers,}
+
+thank you for the constructive and helpful feedback on our \pkg{R2BayesX} package and manuscript
+``Structured Additive Regression Models: An \proglang{R} Interface to \pkg{BayesX}''. These led to
+substantial improvements in both the software and the accompanying manuscript. The major changes
+are the following:
+\begin{itemize}
+\item Better structure of the manuscript with clear pointers making the text more accessible for different groups of readers.
+\item Enhanced \pkg{BayesX} source code portability, especially for OS~X (and Solaris).
+\item Multiple chain and core processing.
+\item Extended methods for fitted model objects, e.g., a new \texttt{predict} method based on refitting
+  with weights, interpolated maps, MCMC post estimation with \pkg{coda} etc.
+\item Support of differently formatted graph files.
+\end{itemize}
+We hope that this addresses all concerns of the previous version.
+  
+\closing{Best regards,}
+\end{letter}
+
+\includepdf[pages=-,noautoscale=true]{Revision1.pdf}
+
+\end{document}
