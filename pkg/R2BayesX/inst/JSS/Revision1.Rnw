@@ -71,10 +71,10 @@ library("R2BayesX")
   using the functionality of the \pkg{parallel} package. The user can now start models on e.g.,
   3~cores with 2~chains each:
 <<eval=FALSE>>=
-  data("GAMart", package = "R2BayesX")
-  b <- bayesx(num ~ fac + sx(x1) + sx(x2) + sx(x3) +
-    sx(long, lat, bs = "te") + sx(id, bs = "re"),
-    data = GAMart, method = "MCMC", chains = 2, cores = 3)
+data("GAMart", package = "R2BayesX")
+b <- bayesx(num ~ fac + sx(x1) + sx(x2) + sx(x3) +
+  sx(long, lat, bs = "te") + sx(id, bs = "re"),
+  data = GAMart, method = "MCMC", chains = 2, cores = 3)
 @
   The object \code{b} is also of class \code{"bayesx"} for which all e.g., plotting and extractor
   functions can be applied. We have also adapted the \fct{samples} extractor function, which by
@@ -83,8 +83,8 @@ library("R2BayesX")
   convenience function that directly computes the Gelman and Rubin convergence diagnostic using
   function \code{gelman.diag()} from the \pkg{coda} package. E.g.
 <<eval=FALSE>>=
-  GRstats(b, term = "linear-samples")
-  GRstats(b, term = c("sx(x1)", "sx(long,lat)"), multivariate = TRUE)
+GRstats(b, term = "linear-samples")
+GRstats(b, term = c("sx(x1)", "sx(long,lat)"), multivariate = TRUE)
 @
 
 
