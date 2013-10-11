@@ -14,7 +14,7 @@
 
 %% Authors: NU + rest in alphabetical order
 \author{Nikolaus Umlauf\\Universit\"at Innsbruck \And
-        Daniel Adler\\Universit\"at G\"ottingen \And
+        Daniel Adler\\GWDG \And
         Thomas Kneib\\Universit\"at G\"ottingen \AND
         Stefan Lang\\Universit\"at Innsbruck \And
         Achim Zeileis\\Universit\"at Innsbruck}
@@ -63,7 +63,7 @@ particular more complex response types and alternative inferential procedures su
   \phantom{URL: }\url{http://eeecon.uibk.ac.at/~zeileis/}\\
 
   Daniel Adler\\
-  GWDG - Gesellschaft f\"ur wissenschaftliche Datenverarbeitung GmbH G\"ottingen\\
+  GWDG -- Gesellschaft f\"ur wissenschaftliche Datenverarbeitung GmbH G\"ottingen\\
   Am Fa{\ss}berg 11\\
   37077 G\"ottingen, Germany\\
   E-mail: \email{dadler1@gwdg.de}\\
@@ -1587,8 +1587,9 @@ model term objects as well as generation of 2d, 3d, image, and map effect plots,
 
 \section*{Acknowledgments}
 
-We would like to thank Fabian Scheipl for testing the \pkg{R2BayesX} package and giving fruitful feedback,
-and Uwe Ligges for sharing his expertise on compiling \pkg{BayesXsrc} package for Windows.
+We would like to thank Fabian Scheipl for testing the \pkg{R2BayesX} package and giving fruitful feedback.
+We are indebted to Kurt Hornik, Uwe Ligges, and Brian D.\ Ripley for providing help and sharing their expertise
+on compiling the \pkg{BayesXsrc} package with Clang and making it available on Windows and Solaris.
 
 
 \bibliography{R2BayesX}
