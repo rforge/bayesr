@@ -13,7 +13,14 @@ for i in $FILES ; do
 done
 svn update --revision 1233 --username "${USER}" --password "${PASSWD}" bib/Random.cpp
 svn update --revision 1233 --username "${USER}" --password "${PASSWD}" bib/Random.h
+svn update --revision 1246 --username "${USER}" --password "${PASSWD}" bib/remlreg.cpp
+svn update --revision 1246 --username "${USER}" --password "${PASSWD}" bib/bayesreg.cpp
+svn update --revision 1246 --username "${USER}" --password "${PASSWD}" bib/stepwisereg.cpp
+svn update --revision 1246 --username "${USER}" --password "${PASSWD}" bib/mapobject.cpp
+svn update --revision 1246 --username "${USER}" --password "${PASSWD}" bib/dataobj.cpp
+svn update --revision 1247 --username "${USER}" --password "${PASSWD}" mcmc/fullcond.h
+svn update --revision 1247 --username "${USER}" --password "${PASSWD}" mcmc/mcmc_const.h
+svn update --revision 1247 --username "${USER}" --password "${PASSWD}" mcmc/distribution.h
 cd ..
 cp rel-Makefile Makefile
 cp rel-Makefile.win Makefile.win
-
