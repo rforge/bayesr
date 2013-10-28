@@ -245,68 +245,33 @@ pixelmap <- function(x, y, size = 0.1, width = NULL, data = NULL,
 ## Function to create a neighbormatrix from
 ## a list() of polygons or objects of class
 ## "SpatialPolygons".
-neighbormatrix <- function(x, type = "dist", k = 1, maxdist = NULL, abs = FALSE, npoints = 2) {
+neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
+  k = 1, ...)
+{
   require("maptools"); require("spdep")
+  type <- match.arg(type)
+
   nx <- NULL
-  ox <- x
-  if(is.list(x)) {
+  if(is.list(x) & !inherits(x, "nb")) {
     nx <- names(x)
     x <- bnd2sp(x)
   }
-  if(is.null(type) || type == "delaunay" || type == "knear") {
-    neighbors <- if(is.null(type)) {
-      poly2nb(x)
-    } else {
-      if(type == "delaunay")
-        tri2nb(coordinates(x))
-      else
-        knn2nb(knearneigh(coordinates(x), k = k, longlat = TRUE, RANN = FALSE), sym = FALSE)
-    }
-    adjmat <- nb2mat(neighbors, style = "B", zero.policy = TRUE)
-    dims <- dim(adjmat)
-    adjmat <- matrix(adjmat)
-    dim(adjmat) <- dims
-    if(!is.null(maxdist)) {
-      require("fields")
-      coords <- coordinates(x)
-      codist <- fields::rdist(coords, coords)
-      if(abs)
-        adjmat[codist > maxdist] <- 0
-      else
-        adjmat[(codist > (diff(range(codist)) * maxdist))] <- 0
-    }
+
+  adjmat <- if(!inherits(x, "nb")) {
+    switch(type,
+      "boundary" =  poly2nb(x, ...),
+      "dist" = dnearneigh(coordinates(x), ...),
+      "delaunay" = tri2nb(coordinates(x), ...),
+      "knear" = knn2nb(knearneigh(coordinates(x), k = k, ...), sym = TRUE))
+  } else x
+
+  if(!(is.symmetric.nb(adjmat, verbose = FALSE, force = TRUE))) {
+    warning("neighbormatrix is not symmetric, will envorce symmetry!")
+    adjmat <- make.sym.nb(adjmat)
   }
-  if(type == "dist") {
-    require("fields")
-    coords <- coordinates(x)
-    codist <- fields::rdist(coords, coords)
-    if(is.null(maxdist)) {
-      abs <- FALSE
-      maxdist <- 0.2
-    }
-    if(abs)
-      adjmat <- 1 * (codist < maxdist)
-    else
-      adjmat <- 1 * (codist < (diff(range(codist)) * maxdist))
-  }
-  if(type == "boundary") {
-    adjmat <- bnd2gra(ox, npoints = npoints)
-    class(adjmat) <- "matrix"
-    adjmat[adjmat != 0] <- 1
-    diag(adjmat) <- 0
-    nx <- NULL
-  }
-  if(!isSymmetric(adjmat)) {
-    n <- nrow(adjmat)
-    for(i in 1:n) {
-      for(j in 1:n) {
-        if(adjmat[i, j] > 0 & adjmat[j, i] < 1)
-          adjmat[j, i] <- 1
-        if(adjmat[i, j] < 1 & adjmat[j, i] > 0)
-          adjmat[i, j] <- 1
-      }
-    }
-  }
+
+  adjmat <- nb2mat(adjmat, style = "B", zero.policy = TRUE)
+
   if(is.null(nx))
     nx <- try(slot(x, "data")$NAME, silent = TRUE)
   if(is.null(nx))
@@ -316,20 +281,32 @@ neighbormatrix <- function(x, type = "dist", k = 1, maxdist = NULL, abs = FALSE,
     colnames(adjmat) <- nx
   }
   attr(adjmat, "coords") <- coordinates(x)
+
   adjmat
 }
 
 
 ## Function to plot the neighborhood relationship
 ## given some polygon list() map x.
-plotneighbors <- function(x, type = "dist", k = 1, maxdist = NULL, abs = FALSE,
-  n.lwd = 1, n.col = "black", n.lty = 1, add = FALSE, npoints = 2, ...) {
-  adjmat <- neighbormatrix(x, type, k, maxdist, abs, npoints)
+plotneighbors <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
+  k = 1, nb.specs = list(), n.lwd = 1, n.col = "black", n.lty = 1, n.pch = 1,
+  add = FALSE, ...)
+{
+  type <- match.arg(type)
+  nb.specs$x <- x
+  nb.specs$type <- type
+  nb.specs$k <- k
+  adjmat <- if(!is.matrix(x)) {
+    do.call("neighbormatrix", nb.specs)
+  } else {
+    add <- TRUE
+    x
+  }
   coords <- attr(adjmat, "coords")
   if(!add)
     plotmap(x, ...)
   args <- list(...)
-  if(is.null(args$names)) points(coords)
+  if(is.null(args$names)) points(coords, pch = n.pch, col = n.col)
   id <- 1:ncol(adjmat)
   for(i in 1:nrow(adjmat)) {
     neighbors <- id[adjmat[i, ] > 0]
