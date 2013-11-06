@@ -121,13 +121,11 @@ read.bnd <- function(file, sorted=FALSE)
     x.range <- maximum[1] - minimum[1]
     y.range <- maximum[2] - minimum[2]
 
-    height2width <- round(y.range / x.range, digits=2)
-
     ## return the bnd object
-    return(structure(map,
-                     class="bnd",
-                     height2width=height2width,
-                     surrounding=surrounding,
-                     regions=regions))
+    rval <- structure(map, class = "bnd",
+      surrounding = surrounding, regions = regions)
+    attr(rval, "asp") <- (y.range / x.range) / cos((mean(c(maximum[2] - minimum[2])) * pi) / 180)
+
+    rval
 }
 

@@ -8,9 +8,12 @@ find.limits <- function(map, mar.min = 2, ...)
   }
   xlim <- range(unlist(lapply(map, myrange, c.select = 1L, ...)))
   ylim <- range(unlist(lapply(map, myrange, c.select = 2L, ...)))
-  mar <- asp <- NULL
+  mar <- NULL
+  asp <- attr(map, "asp")
+  if(is.null(asp))
+    asp <- (diff(ylim) / diff(xlim)) / cos((mean(ylim) * pi) / 180)
   if(!is.null(height2width <- attr(map, "height2width"))) {
-    height2width <- asp <- height2width * 0.8
+    height2width <- height2width * 0.8
     if(!is.null(mar.min)) {
       if(height2width > 1) {
         side <- 17.5 * (1 - 1/height2width) + mar.min / height2width
