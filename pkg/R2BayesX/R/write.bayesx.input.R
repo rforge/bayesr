@@ -131,7 +131,7 @@ write.bayesx.input <- function(object)
           ff <- as.data.frame(eval(parse(text = paste("model.matrix(~ -1 +", sf,")", 
             sep = "")), envir = object$data))
         } else {
-          ff <- as.data.frame(eval(parse(text = paste("model.matrix(~ 1", sf,")", 
+          ff <- as.data.frame(eval(parse(text = paste("model.matrix(~ 1 +", sf,")", 
             sep = "")), envir = object$data))
         }
         lf <- colnames(ff)

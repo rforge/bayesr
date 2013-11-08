@@ -146,9 +146,11 @@ bayesx <- function(formula, data, weights = NULL, subset = NULL,
     setwd(wd)
   }
 
-  if(!is.null(res.h))
+  if(!is.null(res.h)) {
+    res.h <- res.h[sort(names(res.h))]
+    class(res.h) <- "bayesx"
     return(res.h)
-  else {
+  } else {
     class(res) <- "bayesx"
     return(res)
   }
