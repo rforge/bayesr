@@ -181,47 +181,47 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     angle.p <- rep(90, length.out = n)
 
   plot_poly <- function(p, i, args, x, poly) {
-    args$x <- p[, 1L]
-    args$y <- p[, 2L]
-    args$border <- border.p[i]
-    args$angle <- angle.p[i]
-    args$lwd <- lwd.p[i]
-    args$lty <- lty.p[i]
-    if(!is.null(density.p))
-      args$density <- density.p[i]
-    if(!is.null(x)){ 
-      if(!is.na(k <- pmatch(poly, x$id))) {
-        args$col <- colors[k]
-        args$density <- NULL
-      } else {
-        if(!missing) next
-        args$col <- NULL
-        if(is.null(args$density))
-          args$density <- 20L
-      }
-    } else args$col <- colors[i]
-    do.call(graphics::polygon, 
-      delete.args(graphics::polygon, args, 
-      c("lwd", "cex", "lty")))
-    if(names && !values) {
-      args$polygon <- p
-      args$poly.name <- poly.names.orig[i]
-      args$counter <- i
-      args$cex <- cex.names
-      do.call(centroidtext, delete.args(centroidtext, args, "font"))
-    }
-    if(values && !names) {
-      args$polygon <- p
-      args$poly.name <- as.character(round(x$x[k], digits = digits))
-      args$counter <- k
-      args$cex <- cex.values
-      do.call(centroidtext, delete.args(centroidtext, args, "font"))
-    }
+
   }
 
   for(poly in unique(poly.names.orig)) {
     for(i in which(poly.names.orig == poly)) {
-      plot_poly(map[[i]], i, args, x, poly)
+      args$x <- map[[i]][, 1L]
+      args$y <- map[[i]][, 2L]
+      args$border <- border.p[i]
+      args$angle <- angle.p[i]
+      args$lwd <- lwd.p[i]
+      args$lty <- lty.p[i]
+      if(!is.null(density.p))
+        args$density <- density.p[i]
+      if(!is.null(x)){ 
+        if(!is.na(k <- pmatch(poly, x$id))) {
+          args$col <- colors[k]
+          args$density <- NULL
+        } else {
+          if(!missing) next
+          args$col <- NULL
+          if(is.null(args$density))
+            args$density <- 20L
+        }
+      } else args$col <- colors[i]
+      do.call(graphics::polygon, 
+        delete.args(graphics::polygon, args, 
+        c("lwd", "cex", "lty")))
+      if(names && !values) {
+        args$polygon <- p
+        args$poly.name <- poly.names.orig[i]
+        args$counter <- i
+        args$cex <- cex.names
+        do.call(centroidtext, delete.args(centroidtext, args, "font"))
+      }
+      if(values && !names) {
+        args$polygon <- p
+        args$poly.name <- as.character(round(x$x[k], digits = digits))
+        args$counter <- k
+        args$cex <- cex.values
+        do.call(centroidtext, delete.args(centroidtext, args, "font"))
+      }
     }
   }
 
