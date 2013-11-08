@@ -42,6 +42,7 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     }
     names(map) <- poly.names
   }
+
   map <- map[poly.names]
   poly.names <- names(map)
   surrounding <- attr(map, "surrounding")
@@ -178,10 +179,10 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   angle.p <- if(!is.null(args$angle)) rep(args$angle, length.out = n) else NULL
   if(is.null(angle.p))
     angle.p <- rep(90, length.out = n)
-  i <- 1L
-  for(poly in poly.names) {
-    args$x <- map[[poly]][,1L]
-    args$y <- map[[poly]][,2L]
+
+  plot_poly <- function(p, i, args, x, poly) {
+    args$x <- p[, 1L]
+    args$y <- p[, 2L]
     args$border <- border.p[i]
     args$angle <- angle.p[i]
     args$lwd <- lwd.p[i]
@@ -200,24 +201,30 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
       }
     } else args$col <- colors[i]
     do.call(graphics::polygon, 
-    delete.args(graphics::polygon, args, 
-    c("lwd", "cex", "lty")))
+      delete.args(graphics::polygon, args, 
+      c("lwd", "cex", "lty")))
     if(names && !values) {
-      args$polygon <- map[[poly]]
+      args$polygon <- p
       args$poly.name <- poly.names.orig[i]
       args$counter <- i
       args$cex <- cex.names
       do.call(centroidtext, delete.args(centroidtext, args, "font"))
     }
     if(values && !names) {
-      args$polygon <- map[[poly]]
+      args$polygon <- p
       args$poly.name <- as.character(round(x$x[k], digits = digits))
       args$counter <- k
       args$cex <- cex.values
       do.call(centroidtext, delete.args(centroidtext, args, "font"))
     }
-    i <- i + 1L
   }
+
+  for(poly in unique(poly.names.orig)) {
+    for(i in which(poly.names.orig == poly)) {
+      plot_poly(map[[i]], i, args, x, poly)
+    }
+  }
+
   if(legend) {
     if(is.null(args$pos))
       args$pos <- "topleft"
