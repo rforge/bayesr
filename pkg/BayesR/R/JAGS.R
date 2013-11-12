@@ -4,6 +4,8 @@
 ## Setup the model structure needed for the sampler.
 ## These functions create the model code, initials and data
 ## to run a JAGS sampler.
+## Examples: http://sourceforge.net/projects/mcmc-jags/files/
+##           http://www.indiana.edu/~kruschke/DoingBayesianDataAnalysis/Programs/
 restructure_x <- function(x) {
   if(inherits(x, "bayesr.input") & !all(c("formula", "fake.formula", "response") %in% names(x))) {
     call <- x$call
@@ -35,7 +37,7 @@ transformJAGS <- function(x) {
 }
 
 ## Default linear predictor and model setup functions.
-JAGSeta <- function(x, id = NULL, ...) {
+JAGSeta <- function(x, id = NULL, zero = FALSE, ...) {
   setup <- list()
   setup$inits <- list()
 
@@ -51,9 +53,10 @@ JAGSeta <- function(x, id = NULL, ...) {
     setup$param <- paste("    param", id2, "[i] <- ", setup$param, sep = "")
     setup$loops <- k
     setup$priors.coef <- if(k > 1) {
-      paste("    beta", id2, "[j] ~ dnorm(0, 1.0E-6)", sep = "")
-    } else paste("  beta", id2, " ~ dnorm(0, 1.0E-6)", sep = "")
-    setup$inits[[paste("beta", id2, sep = "")]] <- runif(k)
+      paste("    beta", id2, if(zero) "[j] <- 0.0" else "[j] ~ dnorm(0, 1.0E-6)", sep = "")
+    } else paste("  beta", id2, if(zero) " <- 0.0" else " ~ dnorm(0, 1.0E-6)", sep = "")
+    if(!zero)
+      setup$inits[[paste("beta", id2, sep = "")]] <- runif(k)
     setup$psave <- c(setup$psave, paste("beta", id2, sep = ""))
     setup$eta <- paste("param", id2, "[i]", sep = "")
   }
@@ -62,9 +65,9 @@ JAGSeta <- function(x, id = NULL, ...) {
   if(m <- length(x$smooth)) {
     for(i in 1:m) {
       setup <- if(!is.null(x$smooth[[i]]$special)) {
-        buildJAGS.smooth.special(x$smooth[[i]], setup, paste(i, id, sep = ""))
+        buildJAGS.smooth.special(x$smooth[[i]], setup, paste(i, id, sep = ""), zero)
       } else {
-        buildJAGS.smooth(x$smooth[[i]], setup, paste(i, id, sep = ""))
+        buildJAGS.smooth(x$smooth[[i]], setup, paste(i, id, sep = ""), zero)
       }
     }
   }
@@ -83,14 +86,15 @@ JAGSlinks <- function(x)
     "identity" = "eta",
     "log" = "exp(eta)",
     "exp" = "log(eta)",
-    "inverse" = "1 / (eta)",
+    "inverse" = "1 / (eta^2)",
     "logit" = "1 / (1 + exp(-(eta)))",
-    "probit" = "phi(eta)"
+    "probit" = "phi(eta)",
+    "cloglog" = "log(-log(1 - eta))"
   )
 }
 
 ## Construct the final model code.
-JAGSmodel <- function(x, family, ...) {
+JAGSmodel <- function(x, family, cat = FALSE, ...) {
   if(is.function(family))
     family <- family()
   k <- if(all(c("inits", "data", "psave") %in% names(x))) {
@@ -112,13 +116,21 @@ JAGSmodel <- function(x, family, ...) {
   if(is.null(pn)) pn <- paste("theta", 1:family$k, sep = "")
   if(length(pn) < 2 & length(pn) != k)
     pn <- paste(pn, 1:k, sep = "")
+
   pn[1:k] <- paste(pn[1:k], "[i]", sep = "")
-  on <- family$oname
+  on <- if(cat) family$names else NULL
   links <- family[grep("link", names(family), fixed = TRUE, value = TRUE)]
   links <- rep(sapply(links, JAGSlinks), length.out = k)
   model <- c(model,  "  for(i in 1:n) {",
     paste("    response[i] ~ ", family$dist, "(",
-      paste(if(is.null(on)) pn else paste(on, "[i, ]", sep = ""), collapse = ", "), ")", sep = ""))
+      paste(if(is.null(on)) pn else paste(on, ## if(cat) "n" else NULL,
+      "[i, 1:", k, "]", sep = ""),
+      collapse = ", "), ")", sep = ""))
+#  if(cat) {
+#    npn <- if(is.null(on)) pn else on
+#    model <- c(model, paste("    ", npn, "n[i, ", 1:k, "] <- ",
+#      npn, "[i, ", 1:k, "] / sum(", npn, "[i, 1:", k, "])", sep = ""))
+#  }
   for(j in 1:k) {
     model <- c(model, paste("    ", if(is.null(on)) pn[j] else paste(on, "[i, ", j, "]", sep = ""),
       " <- ", gsub("eta", x[[j]]$eta, links[[j]]), sep = ""))
@@ -157,6 +169,8 @@ JAGSmodel <- function(x, family, ...) {
 setupJAGS <- function(x)
 {
   family <- attr(x, "family")
+  reference <- attr(x, "reference")
+  ylevels <- attr(x, "ylevels")
   if(is.function(family))
     family <- family()
   x <- restructure_x(x)
@@ -167,15 +181,19 @@ setupJAGS <- function(x)
     if(is.null(nx))
       nx <- 1:length(x)
     rval <- list()
-
     fn <- family$names
-    for(i in seq_along(nx)) rval[[nx[i]]] <- family$eta(x[[i]], fn[i])
+    if(length(fn) < length(x))
+      fn <- paste(fn, 1:length(nx), sep = "")
+    for(i in seq_along(nx)) {
+      rval[[nx[i]]] <- family$eta(x[[i]], fn[i],
+        zero = if(!is.null(reference)) ylevels[i] == reference else NULL)
+    }
   } else {
     rval <- family$eta(x)
   }
   
   ## Create model code.
-  model <- family$model(rval, family)
+  model <- family$model(rval, family, cat = !is.null(reference))
 
   ## Collect data.
   if(all(c("inits", "data", "psave") %in% names(rval)))
@@ -194,6 +212,9 @@ setupJAGS <- function(x)
 #  if(!is.null(fhamily$oname))
 #    inits[[family$oname]] <- matrix(0, data$n, length(rval))
 
+  if(is.factor(data$response))
+    data$response <- as.integer(data$response) - 1
+
   rval <- list("model" = model, "data" = data,
     "inits" = inits, "psave" = psave)
   
@@ -202,7 +223,7 @@ setupJAGS <- function(x)
 
 
 ## Build the JAGS model code for a smooth term. 
-buildJAGS.smooth <- function(smooth, setup, i) {
+buildJAGS.smooth <- function(smooth, setup, i, zero) {
   fall <- NULL
   kr <- if(is.null(smooth$rand$Xr)) 0 else ncol(smooth$rand$Xr)
   kx <- if(is.null(smooth$Xf)) 0 else ncol(smooth$Xf)
@@ -211,11 +232,12 @@ buildJAGS.smooth <- function(smooth, setup, i) {
       "*Xf", i, "[i, ", 1:kx, "]", sep = ""))
     setup$data[[paste("Xf", i, sep = "")]] <- smooth$Xf
     tmp <- if(kx > 1) {
-        paste("    b", i, "[j] ~ dnorm(0, 1.0E-6)", sep = "")
-    } else paste("  b", i, " ~ dnorm(0, 1.0E-6)", sep = "")
+        paste("    b", i, if(zero) "[j] <- 0.0" else "[j] ~ dnorm(0, 1.0E-6)", sep = "")
+    } else paste("  b", i, if(zero) " <- 0.0" else " ~ dnorm(0, 1.0E-6)", sep = "")
     setup$priors.coef <- c(setup$priors.coef, tmp)
     setup$loops <- c(setup$loops, kx)
-    setup$inits[[paste("b", i, sep = "")]] <- runif(kx)
+    if(!zero)
+      setup$inits[[paste("b", i, sep = "")]] <- runif(kx)
     setup$psave <- c(setup$psave, paste("b", i, sep = ""))
   }
   if(kr > 0) {
@@ -224,16 +246,19 @@ buildJAGS.smooth <- function(smooth, setup, i) {
     setup$data[[paste("Xr", i, sep = "")]] <- smooth$rand$Xr
     taug <- paste("taug", if(is.null(smooth$id)) i else smooth$id, sep = "")
     tmp <- if(kr > 1) {
-      paste("    g", i, "[j] ~ dnorm(0, ", taug, ")", sep = "")
-    } else paste("g", i, " ~ dnorm(0, ", taug, ")", sep = "")
+      paste("    g", i, if(zero) "[j] <- 0.0" else paste("[j] ~ dnorm(0, ", taug, ")", sep = ""), sep = "")
+    } else paste("g", i, if(zero) " <- 0.0" else paste(" ~ dnorm(0, ", taug, ")", sep = ""), sep = "")
     setup$priors.coef <- c(setup$priors.coef, tmp)
     setup$loops <- c(setup$loops, kr)
     if(is.null(setup$priors.scale) || !any(grepl(taug, setup$priors.scale))) {
-      setup$priors.scale <- c(setup$priors.scale, paste("  ", taug, " ~ dgamma(1.0E-6, 1.0E-6)", sep = ""))
-      setup$inits[[taug]] <- runif(1, 0.00001, 0.0001)
+      setup$priors.scale <- c(setup$priors.scale, paste("  ", taug,
+        if(zero) " <- 0.0" else " ~ dgamma(1.0E-6, 1.0E-6)", sep = ""))
+      if(!zero)
+        	setup$inits[[taug]] <- runif(1, 0.00001, 0.0001)
       setup$psave <- c(setup$psave, taug)
     }
-    setup$inits[[paste("g", i, sep = "")]] <- runif(kr)
+    if(!zero)
+      setup$inits[[paste("g", i, sep = "")]] <- runif(kr)
     setup$psave <- c(setup$psave, paste("g", i, sep = ""))
   }
 
@@ -248,21 +273,21 @@ buildJAGS.smooth <- function(smooth, setup, i) {
 
 ## For special terms, e.g. growth curves, this function
 ## builds the model code.
-buildJAGS.smooth.special <- function(smooth, setup, i)
+buildJAGS.smooth.special <- function(smooth, setup, i, zero)
 {
   UseMethod("buildJAGS.smooth.special")
 }
 
 
 ## Default special model term builder.
-buildJAGS.smooth.special.default <- function(smooth, setup, i)
+buildJAGS.smooth.special.default <- function(smooth, setup, i, zero)
 {
   buildJAGS.smooth(smooth, setup, i)
 }
 
 
 ## JAGS random scaling model term constructor.
-buildJAGS.smooth.special.rs.smooth <- function(smooth, setup, i)
+buildJAGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
 {
   smooth$special <- FALSE
   setup <- buildJAGS.smooth(smooth, setup, i)
@@ -292,7 +317,7 @@ buildJAGS.smooth.special.rs.smooth <- function(smooth, setup, i)
 
 
 ## Special code builder for growth curve terms.
-buildJAGS.smooth.special.gc.smooth <- function(smooth, setup, i)
+buildJAGS.smooth.special.gc.smooth <- function(smooth, setup, i, zero)
 {
   pn <- paste("g", i, sep = "")
 
@@ -548,7 +573,10 @@ resultsJAGS <- function(x, samples)
       ## Compute partial residuals.
       if(obj$response %in% names(attr(x, "model.frame"))) {
         for(i in seq_along(effects)) {
-          e <- attr(x, "model.frame")[[obj$response]] - (fitted.values - attr(effects[[i]], "fit"))
+          response <- if(is.factor(attr(x, "model.frame")[[obj$response]])) {
+            as.integer(attr(x, "model.frame")[[obj$response]]) - 1
+          } else attr(x, "model.frame")[[obj$response]]
+          e <- response - (fitted.values - attr(effects[[i]], "fit"))
           if(is.null(attr(effects[[i]], "specs")$xt$center)) {
             e <- e - mean(e)
           } else {
@@ -578,7 +606,11 @@ resultsJAGS <- function(x, samples)
         "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(attr(x, "model.frame")), "formula" = obj$formula),
         "param.effects" = param.effects, "effects" = effects,
         "effects.hyp" = effects.hyp, "scale" = scale.m, "fitted.values" = fitted.values,
-        "residuals" = obj$response.vec - fitted.values
+        "residuals" = if(is.factor(obj$response.vec)) {
+            as.integer(obj$response.vec) - 1
+          } else {
+            obj$response.vec
+          } - fitted.values
       )
       
 #      ## Clean.
@@ -599,6 +631,8 @@ resultsJAGS <- function(x, samples)
     nx <- nx[nx != "call"]
     rval <- list()
     fn <- family$names
+    if(length(fn) != length(nx))
+      fn <- paste(fn, 1:length(nx), sep = "")
     for(j in seq_along(nx)) {
       rval[[nx[j]]] <- createJAGSresults(x[[nx[j]]], samples, id = fn[j])
       if(!is.null(rval[[nx[j]]]$effects)) {

@@ -259,7 +259,7 @@ neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
 
   adjmat <- if(!inherits(x, "nb")) {
     switch(type,
-      "boundary" =  poly2nb(x, ...),
+      "boundary" = poly2nb(x, ...),
       "dist" = dnearneigh(coordinates(x), ...),
       "delaunay" = tri2nb(coordinates(x), ...),
       "knear" = knn2nb(knearneigh(coordinates(x), k = k, ...), sym = TRUE))
@@ -306,7 +306,7 @@ plotneighbors <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
   if(!add)
     plotmap(x, ...)
   args <- list(...)
-  if(is.null(args$names)) points(coords, pch = n.pch, col = n.col)
+  if(is.null(args$names) & !add) points(coords, pch = n.pch, col = n.col)
   id <- 1:ncol(adjmat)
   for(i in 1:nrow(adjmat)) {
     neighbors <- id[adjmat[i, ] > 0]

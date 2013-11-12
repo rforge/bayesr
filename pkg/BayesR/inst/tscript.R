@@ -24,7 +24,7 @@ fun <- function(x, theta = c(2, -20, -0.1)) {
 dat$y <- hs(with(dat, 1.2 + sin(x1) + re + rnorm(n, sd = 0.1)), 0.0001, 2)
 
 ## fit model
-b <- bayesx2(y ~ sx(x1) + sx(fac, bs = "re") & fac ~ sx(x2) | y ~ sx(fac, bs = "re") & fac ~ sx(x2), family = normal.BayesX, data = dat, cores = 2, combine = FALSE)
+b <- bayesx2(y ~ sx(x1) + sx(fac, bs = "re") & fac ~ sx(x2) | y ~ sx(fac, bs = "re") & fac ~ sx(x2), family = normal.BayesX, data = dat, cores = 2, combine = TRUE)
 
 
 b <- bayesr(y ~ s(x1) + s(fac, bs = "re") | fac ~ s(x2), data = dat)
@@ -55,7 +55,7 @@ n <- 500
 dat <- data.frame("x1" = runif(n, -3, 3), x2 = runif(n, -3, 3))
 dat$y <- hs(with(dat, 1.2 + sin(x1) + cos(x2) + rnorm(n, sd = (cos(dat$x1) + 2) / 4)), 0.001, 0.999)
 
-a <- bayesr(y ~ s(x1) + s(x2) | s(x1), data = dat, family = gaussian.JAGS)
+a <- bayesr(y ~ s(x1) + s(x2), ~ s(x1), data = dat, family = gaussian.BayesR)
 
-b <- bayesx2(y ~ sx(x1) + sx(x2) | sx(x1), data = dat, family = normal)
+b <- bayesx2(y ~ sx(x1) + sx(x2), ~ sx(x1), data = dat, family = normal)
 

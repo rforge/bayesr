@@ -1,9 +1,11 @@
 ################################################
 ## (1) BayesR main model fitting constructor. ##
 ################################################
-bayesr <- function(formula, family = gaussian, data = NULL, knots = NULL,
+## Could be interesting: http://people.duke.edu/~neelo003/r/
+##                       http://www.life.illinois.edu/dietze/Lectures2012/
+bayesr <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.fail, contrasts = NULL,
-  parse.input = parse.input.bayesr, transform = transformJAGS, setup = setupJAGS,
+  reference = NULL, parse.input = parse.input.bayesr, transform = transformJAGS, setup = setupJAGS,
   sampler = samplerJAGS, results = resultsJAGS,
   cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, ...)
 {
@@ -81,16 +83,58 @@ bayesr <- function(formula, family = gaussian, data = NULL, knots = NULL,
 ##########################################################
 ## (2) Parsing all input using package mgcv structures. ##
 ##########################################################
-parse.input.bayesr <- function(formula, data, family = gaussian,
+parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
-  contrasts = NULL, knots = NULL, specials = NULL, ...)
+  contrasts = NULL, knots = NULL, specials = NULL, reference = NULL, ...)
 {
-  rval <- parse.formula.bayesr(formula, specials)
-  rval <- parse.data.bayesr(rval, data, weights, subset, offset, na.action)
-  rval <- assign.design.bayesr(rval, contrasts, knots, ...)
-  rval <- insert.hlevel.bayesr(rval)
+  ## Search for additional formulas
+  formula2 <- NULL
+  fn <- names(fo <- formals(fun = parse.input.bayesr))[-1]
+  fn <- fn[fn != "..."]
+  for(f in fn) {
+    fe <- eval(parse(text = f))
+    if(inherits(fe, "formula")) {
+      formula2 <- c(formula2, fe)
+      eval(parse(text = paste(f, if(is.null(fo[[f]])) "NULL" else fo[[f]], sep = " = ")))
+    }
+  }
+
+  ## Parse family object.
+  family <- bayesr.family(family)
+
+  ## Parse formula
+  formula <- bayesr.formula(c(formula, formula2), specials, family)
+
+  ## Create the model frame.
+  mf <- bayesr.model.frame(formula, data, family, weights,
+    subset, offset, na.action, specials)
+  response.name <- attr(mf, "response.name")
+
+  ## For categorical responses, extend formula object.
+  ylevels <- NULL
+  if(is.factor(mf[[response.name]]) & family$cat) {
+    if(nlevels(mf[[response.name]]) > 2) {
+      if(is.null(reference)) {
+        ty <- table(mf[[response.name]])
+        reference <- c(names(ty)[ty == max(ty)])[1]
+      }
+      ylevels <- levels(mf[[response.name]])
+      if(length(formula) != (n <- length(ylevels) - 1))
+        formula <- rep(formula, length.out = n)
+      names(formula) <- paste(response.name, ylevels[ylevels != reference], sep = ":")
+    }
+  } else mf[[response.name]] <- as.numeric(mf[[response.name]])
+
+  ## Assign all design matrices and the hierarchical level, if any.
+  rval <- bayesr.design(formula, mf, contrasts, knots, ...)
+  rval <- bayesr.hlevel(rval)
+
   attr(rval, "family") <- family
+  attr(rval, "reference") <- reference
+  attr(rval, "model.frame") <- mf
+
   class(rval) <- c("bayesr.input", "list")
+
   rval
 }
 
@@ -109,22 +153,18 @@ parse.input.bayesr <- function(formula, data, family = gaussian,
 
 
 ## Assign all designs matrices.
-assign.design.bayesr <- function(x, contrasts = NULL, knots = NULL, ...)
+bayesr.design <- function(x, data, contrasts = NULL, knots = NULL, ...)
 {
-  create_design <- function(obj) {
+  assign.design <- function(obj, mf) {
     if(!all(c("formula", "fake.formula", "response") %in% names(obj)))
       return(obj)
     pf <- paste("~ ", if(obj$intercept) 1 else -1,
       if(length(obj$pterms)) paste(" +", paste(obj$pterms, collapse = " + ")), sep = "")
     obj$X <- model.matrix(as.formula(pf),
-      data = if(is.null(attr(obj, "model.frame"))) attr(x, "model.frame") else attr(obj, "model.frame"),
-      contrasts.arg = contrasts, ...)
+      data = mf, contrasts.arg = contrasts, ...)
     obj$pterms <- colnames(obj$X)
-    obj$response.vec <- if(is.null(attr(obj, "model.frame"))) {
-        attr(x, "model.frame")[[obj$response]]
-      } else {
-        attr(obj, "model.frame")[[obj$response]]
-      }
+    rn <- obj$response
+    obj$response.vec <- if(!is.null(rn)) mf[[rn]] else NULL
     if(length(obj$smooth)) {
       smooth <- list()
       for(j in obj$smooth) {
@@ -133,19 +173,15 @@ assign.design.bayesr <- function(x, contrasts = NULL, knots = NULL, ...)
           acons <- TRUE
           if(!is.null(tsm$xt$center))
             acons <- tsm$xt$center
-          smt <- smoothCon(tsm,
-            if(is.null(attr(obj, "model.frame"))) attr(x, "model.frame") else attr(obj, "model.frame"),
-            knots, absorb.cons = acons)
+          smt <- smoothCon(tsm, mf, knots, absorb.cons = acons)
         } else {
-          smt <- smooth.construct(tsm,
-            if(is.null(attr(obj, "model.frame"))) attr(x, "model.frame") else attr(obj, "model.frame"),
-            knots)
+          smt <- smooth.construct(tsm, mf, knots)
           class(smt) <- c(class(smt), "mgcv.smooth")
           smt <- list(smt)
         }
         smooth <- c(smooth, smt)
       }
-      smooth <- mgcv:::gam.side(smooth, obj$X, tol = .Machine$double.eps^.5)
+      smooth <- gam.side(smooth, obj$X, tol = .Machine$double.eps^.5)
       sme <- mgcv:::expand.t2.smooths(smooth)
       if(is.null(sme)) {
         original.smooth <- NULL
@@ -170,20 +206,24 @@ assign.design.bayesr <- function(x, contrasts = NULL, knots = NULL, ...)
     for(j in seq_along(x)) {
       if(!all(c("formula", "fake.formula", "response") %in% names(x[[j]]))) {
         for(i in seq_along(x[[j]])) {
-          x[[j]][[i]] <- create_design(x[[j]][[i]])
+          x[[j]][[i]] <- assign.design(x[[j]][[i]],
+            if(i > 1) unique(data[all.vars(x[[j]][[i]]$fake.formula)]) else data)
         }
-      } else x[[j]] <- create_design(x[[j]])
+      } else x[[j]] <- assign.design(x[[j]], data)
     }
-  } else x <- create_design(x)
+  } else x <- assign.design(x, data)
   
   x
 }
 
 
-## Assign the model.frame(s), depending on hierarchical structures.
-parse.data.bayesr <- function(formula, data, weights = NULL, subset = NULL,
-  offset = NULL, na.action = na.omit)
+## Create the model.frame.
+bayesr.model.frame <- function(formula, data, family, weights = NULL,
+  subset = NULL, offset = NULL, na.action = na.omit, specials = NULL)
 {
+  family <- bayesr.family(family)
+  formula <- bayesr.formula(formula, specials, family)
+
   if(is.null(na.action))
     na.action <- get(getOption("na.action"))
   if(missing(data))
@@ -191,52 +231,23 @@ parse.data.bayesr <- function(formula, data, weights = NULL, subset = NULL,
   if(is.matrix(data))
     data <- as.data.frame(data)
 
-  make_mf <- function(formula, mf = NULL, j = NULL, weights, offset) {
-    fake.formula <- formula$fake.formula
-    if(!all(all.vars(fake.formula) %in% names(mf))) {
-      mf0 <- list(formula = fake.formula, data = dat_search(data, all.vars(fake.formula)),
-        weights = weights, subset = subset, offset = offset, na.action = na.action,
-        drop.unused.levels = TRUE)
-      if(length(mf0$data) < 2) {
-        if(all(is.na(mf0$data)))
-          stop("cannot find variables in data!", call. = FALSE)
-      }
-      mf0 <- do.call("model.frame", mf0)
-      if(!is.null(j)) {
-        if(length(w <- grep("(weights)", names(mf0), fixed = TRUE)))
-          names(mf0)[w] <- paste(names(mf0)[w], j, sep = ":")
-      }
-      mf <- if(!is.null(mf)) merge(mf, mf0) else mf0
-    }
+  ## Make fake "Formula" object.
+  fF <- make_fFormula(formula)
 
-    mf
-  }
+  ## Set up the model.frame.
+  mf <- list(formula = fF, data = data, weights = weights,
+    subset = subset, offset = offset, na.action = na.action,
+    drop.unused.levels = TRUE)
+  mf <- do.call("model.frame", mf)
 
-  if(!all(c("formula", "fake.formula", "response") %in% names(formula))) {
-    n <- length(formula)
-    weights <- rep(if(is.list(weights)) weights else list(weights), length.out = n)
-    offset <- rep(if(is.list(offset)) offset else list(offset), length.out = n)
-    mf <- NULL
-    for(j in seq_along(formula)) {
-      if(!all(c("formula", "fake.formula", "response") %in% names(formula[[j]]))) {
-        for(i in seq_along(formula[[j]])) {
-          if(i < 2) {
-            mf <- make_mf(formula[[j]][[i]], mf, j, weights[[j]], offset[[j]])
-          } else {
-            attr(formula[[j]][[i]], "model.frame") <- rm_infinite(unique(make_mf(formula[[j]][[i]],
-              mf = NULL, j = NULL, weights[[j]], offset[[j]])))
-          }
-        }
-      } else {
-        mf <- make_mf(formula[[j]], mf, j, weights[[j]], offset[[j]])
-      }
-    }
-  } else {
-    mf <- make_mf(formula, mf = NULL, j = NULL, weights, offset)
-  }
+  ## Remove inf values
+  mf <- rm_infinite(mf)
 
-  attr(formula, "model.frame") <- rm_infinite(mf)
-  formula
+  ## assign main response name
+  ok <- all(c("formula", "response", "fake.formula") %in% names(formula[[1]]))
+  attr(mf, "response.name") <- if(!ok) formula[[1]][[1]]$response else formula[[1]]$response
+
+  mf
 }
 
 
@@ -257,15 +268,15 @@ rm_infinite <- function(x) {
 }
 
 
-## Parse families and get correct family object, depending on sampler.
-parse.family.bayesr <- function(family, sampler = NULL)
+## Parse families and get correct family object, depending on type.
+bayesr.family <- function(family, type = "BayesR")
 {
   family <- if(is.function(family)) family() else {
     if(is.character(family)) {
       family <- gsub('"', "", family, fixed = TRUE)
-      if(!is.null(sampler)) {
-        if(!grepl(sampler, family))
-          family <- paste(family, sampler, sep = ".")
+      if(!is.null(type)) {
+        if(!grepl(type, family))
+          family <- paste(family, type, sep = ".")
       }
       family <- eval(parse(text = family))
       family()
@@ -276,118 +287,88 @@ parse.family.bayesr <- function(family, sampler = NULL)
       if(is.null(family$family)) stop("family is specidied wrong, no family name available!")
       family <- family$family
     }
-    family <- eval(parse(text = paste(family, sampler, sep = if(!is.null(sampler)) "." else "")))
+    family <- eval(parse(text = paste(family, type, sep = if(!is.null(type)) "." else "")))
     family <- family()
   }
   family
 }
 
 
-## Search for variables in data object and return flattened data.frame.
-dat_search <- function(data, xn)
-{
-  if(inherits(data, "list")) {
-    i <- NULL
-    for(j in seq_along(data)) {
-      data[[j]] <- dat_search(data[[j]], xn)
-      i <- c(i, !all(is.na(data[[j]])))
-    }
-    return(data[[which(i)[1]]])
-  } else {
-    if(is.environment(data)) {
-      dat <- list()
-      for(j in xn) {
-        tg <- get(j, envir = data)
-        dat[[j]] <- if(!is.function(tg)) tg else NULL
-      }
-      return(as.data.frame(dat))
-    } else {
-      rval <- if(all(xn %in% colnames(data))) {
-        as.data.frame(data)[, xn, drop = FALSE]
-      } else NA
-      return(rval)
-    }
-  }
-}
-
-
 ## Special formula parser, can deal with multi parameter models
 ## and hierarchical structures.
-parse.formula.bayesr <- function(formula, specials)
+bayesr.formula <- function(formula, specials, family)
 {
   if(inherits(formula, "bayesr.formula"))
     return(formula)
+
   env <- environment(formula)
   if(is.null(env)) env <- .GlobalEnv
-  if(!is.list(formula)) {
-    tf <- tempfile()
-    capture.output(print(formula), file = tf)
-    ft <- paste(readLines(tf), collapse = "")
-    on.exit(unlink(tf))
-    if(any(grep("|", ft, fixed = TRUE))) {
-      formula <- as.list(strsplit(ft, "|", fixed = TRUE)[[1]])
-      for(j in seq_along(formula)) {
-        if(!any(grepl("~", formula[[j]], fixed = TRUE)))
-          formula[[j]] <- paste("~", formula[[j]])
-        formula[[j]] <- as.formula(formula[[j]], env = env)
-        if((attr(terms(formula_rm_at(formula[[j]])), "response") < 1) & (j > 1)) {
-          uf <- as.formula(paste(formula_respname(formula[[j - 1]]), "~ ."), env = env)
-          ctr <- attr(formula_at(formula[[j]]), "control")
-          formula[[j]] <- formula_rm_at(formula[[j]])
-          formula[[j]] <- update(formula[[j]], uf)
-          if(!is.null(ctr))
-            attr(formula[[j]], "control") <- ctr
-        }
+  if(!is.list(formula)) formula <- list(formula)
+  if(!length(formula)) stop("formula is specified wrong!")
+  names(formula) <- family$names[1:length(formula)]
+
+  complete_formula <- function(formula) {
+    if(any(i <- is.na(names(formula))))
+      names(formula)[i] <- family$names[i]
+    for(j in family$names) {
+      if(is.null(formula[[j]])) {
+        formula[[j]] <- as.formula(paste(j, "1", sep = " ~ "))
+        environment(formula[[j]]) <- env
       }
     }
+    formula
   }
-  nol <- FALSE
-  if(is.list(formula)) {
-    nf <- names(formula)
-    if(is.null(nf)) nf <- rep("", length(formula))
-    nf2 <- rep(NA, length(formula))
-    for(j in seq_along(formula)) {
-      tf <- terms(formula_rm_at(formula[[j]]))
-      if(attr(tf, "response") < 1) {
-        if(is.null(nf))
-          stop("formulae need named responses when supplied as unnamed list!")
-        else {
-          nf2[j] <- nf[j]
-          ft <- paste(nf[j], paste(as.character(formula[[j]]), collapse = " "))
-          formula[[j]] <- as.formula(ft, env = env)
-        }
-      } else {
-        if(is.null(nf) | nf[j] == "") {
-          nf2[j] <- formula_respname(formula[[j]])
-        }
-      }
-      environment(formula[[j]]) <- env
-      class(formula[[j]]) <- c(class(formula[[j]]), "bayesr.formula")
-    }
-    names(formula) <- nf2
-    formula <- formula_hierarchical(formula)
-  }
+
   formula <- formula_and(formula, env)
   formula <- formula_at(formula, env)
-  formula <- formula_extend(formula)
+  formula <- complete_formula(formula_hierarchical(formula))
+  formula <- formula_extend(formula, specials, family)
+
+  environment(formula) <- env
+  class(formula) <- "bayesr.formula"
 
   formula
 }
 
 
-## Extend formual by a fake formula with all variables
+## Make "Formula" object from fake.formulas.
+make_fFormula <- function(formula)
+{
+  fF <- NULL
+  for(j in seq_along(formula)) {
+    if(!all(c("formula", "intercept", "fake.formula") %in% names(formula[[j]]))) {
+      for(i in seq_along(formula[[j]]))
+        fF <- c(fF, formula[[j]][[i]]$fake.formula)
+    } else {
+      fF <- c(fF, formula[[j]]$fake.formula)
+    }
+  }
+  fF <- do.call("as.Formula", fF)
+  fF
+}
+
+
+## Extend formula by a fake formula with all variables
 ## to compute a model.frame, create smooth objects.
-formula_extend <- function(formula, specials = NULL)
+formula_extend <- function(formula, specials = NULL, family)
 {
   if(is.list(formula)) {
     for(j in seq_along(formula))
-      formula[[j]] <- formula_extend(formula[[j]], specials)
+      formula[[j]] <- formula_extend(formula[[j]], specials, family)
     return(formula)
   } else {
     specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", specials))
     mt <- terms(formula, specials = specials, keep.order = TRUE)
     tl <- attr(mt, "term.labels")
-    sm <- grepl("(", tl, fixed = TRUE)
+    sm <- rep(NA, length = length(tl))
+    for(j in seq_along(tl)) {
+      iss <- FALSE
+      for(i in specials) {
+        if(grepl(paste(i, "(", sep = ""), tl[j], fixed = TRUE))
+          iss <- TRUE
+      }
+      sm[j] <- iss
+    }
     pterms <- if(length(tl[!sm])) tl[!sm] else NULL
     intercept <- attr(mt, "intercept") > 0
     sterms <- NULL
@@ -401,7 +382,8 @@ formula_extend <- function(formula, specials = NULL)
       }
     }
     sterms <- unique(sterms[sterms != "NA"])
-    response <- as.character(formula)[2]
+    response <- formula_respname(formula)
+    if(is.na(response) | response %in% family$names) response <- NULL
     fake.formula <- as.formula(paste(response, "~ 1", if(length(c(pterms, sterms))) " + " else NULL,
       paste(c(pterms, sterms), collapse = " + ")), env = environment(formula))
 
@@ -422,18 +404,9 @@ formula_extend <- function(formula, specials = NULL)
 }
 
 ## Get response name.
-formula_respname <- function(x)
+formula_respname <- function(formula)
 {
-  tf <- tempfile()
-  capture.output(print(x), file = tf)
-  ft <- paste(readLines(tf), collapse = "")
-  on.exit(unlink(tf))
-  if(any(grepl("~", ft, fixed = TRUE))) {
-    ft <- strsplit(ft, "")[[1]]
-    i <- which(ft == "~")[1]
-    x <- gsub(" ", "", paste(ft[1:(i - 1)], collapse = "", sep = ""))
-  }
-  x
+  if(length(formula) < 3) NA else deparse(formula[[2]])
 }
 
 ## Search and process "&"
@@ -441,13 +414,11 @@ formula_and <- function(formula, env = parent.frame())
 {
   if(nol <- !is.list(formula))
     formula <- list(formula)
-  tf <- tempfile()
   for(j in seq_along(formula)) {
     if(!inherits(formula[[j]], "formula")) {
       formula[[j]] <- formula_and(formula[[j]], env)
     } else {
-      capture.output(print(formula[[j]]), file = tf)
-      ft <- paste(readLines(tf), collapse = "")
+      ft <- deparse(formula[[j]])
       if(any(grep("&", ft, fixed = TRUE))) {
         formula[[j]] <- as.list(strsplit(ft, "&", fixed = TRUE)[[1]])
         for(i in seq_along(formula[[j]])) {
@@ -463,7 +434,6 @@ formula_and <- function(formula, env = parent.frame())
     if(inherits(formula[[1]], "formula"))
       formula <- formula[[1]]
   }
-  on.exit(unlink(tf))
   formula
 }
 
@@ -472,13 +442,11 @@ formula_at <- function(formula, env = parent.frame())
 {
   if(nol <- !is.list(formula))
     formula <- list(formula)
-  tf <- tempfile()
   for(j in seq_along(formula)) {
     if(!inherits(formula[[j]], "formula")) {
       formula[[j]] <- formula_at(formula[[j]], env)
     } else {
-      capture.output(print(formula[[j]]), file = tf)
-      ft <- paste(readLines(tf), collapse = "")
+      ft <- deparse(formula[[j]])
       if(any(grep("@", ft, fixed = TRUE))) {
         formula[[j]] <- strsplit(ft, "@", fixed = TRUE)[[1]]
         control <- formula[[j]][-1]
@@ -497,7 +465,6 @@ formula_at <- function(formula, env = parent.frame())
     if(inherits(formula[[1]], "formula"))
       formula <- formula[[1]]
   }
-  on.exit(unlink(tf))
   formula
 }
 
@@ -507,19 +474,13 @@ formula_rm_at <- function(formula, env = parent.frame())
   attr(formula, "control") <- NULL
   if(isf <- !is.character(formula)) {
     env <- environment(formula)
-    tf <- tempfile()
-    capture.output(print(formula), file = tf)
-    formula <- paste(readLines(tf), collapse = "")
-    on.exit(unlink(tf))
+    formula <- deparse(formula)
   }
   if(any(grepl("@", formula)))
     formula <- strsplit(formula, "@")[[1]][1]
   if(!isf) {
-    tf2 <- tempfile()
     formula <- as.formula(formula, env = env)
-    capture.output(print(formula), file = tf2)
-    formula <- paste(readLines(tf2), collapse = "")
-    on.exit(unlink(tf2), add = TRUE)
+    formula <- deparse(formula)
   }
   if(isf)
     formula <- as.formula(formula, env = env)
@@ -532,7 +493,7 @@ formula_hcheck <- function(formula)
 {
   if(!is.list(formula))
     return(formula)
-  nf <- names(formula)
+  nf <- sapply(formula, formula_respname)
   snf <- seq_along(nf)
   check <- vector(mode = "list", length = length(formula))
   for(j in snf) {
@@ -559,11 +520,9 @@ formula_hcheck <- function(formula)
 formula_insert <- function(from, to, formula)
 {
   nf <- names(formula)
-
   o <- order(from, decreasing = TRUE)
   from <- from[o]
   to <- to[o]
-
   for(j in seq_along(from)) {
     for(i in seq_along(to[[j]])) {
       formula[[to[[j]][i]]] <- c(formula[[to[[j]][i]]], formula[[from[j]]])
@@ -588,7 +547,7 @@ formula_hierarchical <- function(formula)
   formula
 }
 
-insert.hlevel.bayesr <- function(x)
+bayesr.hlevel <- function(x)
 {
   if(!all(c("formula", "fake.formula", "response") %in% names(x))) {
     for(j in seq_along(x)) {
@@ -1536,63 +1495,5 @@ get.model <- function(x, model)
   attr(x, "family") <- family
 
   return(x)
-}
-
-
-## Model frame extractor function.
-model.frame.bayesr <- function(formula, parse.input = NULL, ...)
-{
-  get_all_mf <- function(x) {
-
-    get_all_mf2 <- function(x) {
-      rval <- NULL
-      if(!any(c("model", "param.effects", "effects", "DIC", "pd", "formula") %in% names(x))) {
-        rval <- list(); k <- 1
-        for(i in seq_along(x)) {
-          if(!is.null(td <- get_all_mf2(x[[i]]))) {
-            rval[[k]] <- td
-            k <- k + 1
-          }
-        }
-      } else rval <- attr(x, "model.frame")
-      if(is.list(rval) & length(rval) == 1)
-        rval <- rval[[1]]
-      rval
-    }
-
-    mf <- list(attr(x, "model.frame"))
-    if(!is.null(mf2 <- get_all_mf2(x)))
-      mf <- c(mf, mf2)
-    if(length(mf) < 2)
-      mf <- mf[[1]]
-
-    mf
-  }
-
-  dots <- list(...)
-  nargs <- dots[match(c("data", "na.action", "subset"), names(dots), 0L)]
-  if(length(nargs) || is.null(attr(formula, "model.frame"))) {
-    fcall <- attr(formula, "call")
-    if(is.null(fcall))
-      fcall <- formula$call
-    if(is.null(fcall)) {
-      pin <- if(!is.null(parse.input)) {
-        stopifnot(is.function(parse.input))
-        deparse(substitute(parse.input), backtick = TRUE, width.cutoff = 500)
-      } else "parse.input.bayesr"
-      dots$formula <- formula
-      rval <- get_all_mf(do.call(pin, dots))
-    } else {
-      fcall[[1L]] <- as.name(attr(formula, "functions")$parse.input)
-      fcall[names(nargs)] <- nargs
-      env <- environment(formula)
-      if(is.null(env)) 
-        env <- parent.frame()
-      rval <- get_all_mf(eval(fcall, env))
-    }
-  } else {
-    rval <- get_all_mf(formula)
-  }
-  rval
 }
 
