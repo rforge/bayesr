@@ -55,14 +55,42 @@ beta.BayesR <- function(links = c(mu = "logit", phi = "log"), ...)
       if(ok <- !all(x > 0 & x < 1)) stop("response values not in [0, 1]!", call. = FALSE)
       ok
     },
+    bayesx = list(
+      "mu" = c("beta_mu", "mean"),
+      "phi" = c("beta_sigma2", "scale")
+    ),
     jags = list(
       "dist" = "dbeta",
       "eta" = JAGSeta,
       "model" = JAGSmodel,
       "reparam" = c(
-        alpha = "mu * phi",
-        beta = "(1 - mu) * phi"
+        mu = "mu * (1 / phi)",
+        phi = "(1 - mu) * (1 / phi)"
       )
+    )
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
+betai.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log", tau = "log"), ...)
+{
+  rval <- list(
+    "family" = "betainflated",
+    "names" = c("mu", "sigma2", "nu", "tau"),
+    "links" =  parse.links(links, c(mu = "logit", sigma2 = "logit", nu = "log", tau = "log"), ...),
+    "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x > 0 & x < 1)) stop("response values not in [0, 1]!", call. = FALSE)
+      ok
+    },
+    "order" = 4:1,
+    bayesx = list(
+      "mu" = c("betainf_mu", "location"),
+      "sigma2" = c("betainf_sigma2", "scale"),
+      "nu" = c("betainf_nu", "shape"),
+      "tau" = c("betainf_tau", "mean")
     )
   )
   class(rval) <- "family.BayesR"
@@ -81,6 +109,9 @@ binomial.BayesR <- function(link = "logit", ...)
       if(nlevels(x) > 2) stop("more than 2 levels in factor response!", call. = FALSE)
       TRUE
     },
+    bayesx = list(
+      "pi" = c(paste("binomial", link, sep = "_"), "mean")
+    ),
     jags = list(
       "dist" = "dbern",
       "eta" = JAGSeta,
@@ -105,11 +136,52 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
     jags = list(
       "dist" = "dnorm",
       "eta" = JAGSeta,
+      "model" = JAGSmodel,
+      "reparam" = c(sigma = "1 / sigma")
+    )
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
+gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
+{
+  rval <- list(
+    "family" = "gamma",
+    "names" = c("mu", "sigma"),
+    "links" = parse.links(links, c(mu = "log", sigma = "log"), ...),
+    bayesx = list(
+      "mu" = c("gamma_mu", "mean"),
+      "sigma" = c("gamma_sigma", "scale")
+    ),
+    jags = list(
+      "dist" = "dgamma",
+      "eta" = JAGSeta,
       "model" = JAGSmodel
     )
   )
   class(rval) <- "family.BayesR"
+  rval
+}
 
+
+lognormal.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
+{
+  rval <- list(
+    "family" = "gaussian",
+    "names" = c("mu", "sigma"),
+    "links" = parse.links(links, c(mu = "log", sigma = "log"), ...),
+    "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
+    bayesx = list(
+      "mu" = c("lognormal_mu", "mean"),
+      "sigma" = c("lognormal_sigma2", "scale")
+    ))
+  class(rval) <- "family.BayesR"
   rval
 }
 
@@ -132,7 +204,6 @@ multinomial.BayesR <- function(link = "logit", ...)
     )
   )
   class(rval) <- "family.BayesR"
-
   rval
 }
 
@@ -153,15 +224,14 @@ quant.BayesR <- function(links = c(mu = "identity", sigma = "log"), prob = 0.5, 
       "eta" = JAGSeta,
       "model" = JAGSmodel,
       "reparam" = c(
-        m1 = "(1 - 2 * prop) / (prop * (1 - prop)) * w[i] + mu",
-        s1 = "(prop * (1 - prop) * sigma) / (2 * w[i])"
+        mu = "(1 - 2 * prop) / (prop * (1 - prop)) * w[i] + mu",
+        sigma = "(prop * (1 - prop) * (1 / sigma)) / (2 * w[i])"
       ),
-      "addparam" = list("w[i] ~ dexp(sigma[i])"),
+      "addparam" = list("w[i] ~ dexp(1 / sigma[i])"),
       "addvalues" = list("prop" = prob)
     )
   )
   class(rval) <- "family.BayesR"
-
   rval
 }
 
@@ -183,109 +253,6 @@ quant.BayesR <- function(links = c(mu = "identity", sigma = "log"), prob = 0.5, 
 #    "all" = TRUE,
 #    "h" = "gaussian_re",
 #    "factor" = TRUE
-#  )
-#  class(rval) <- "family.BayesR"
-#  rval
-#}
-
-#gaussian.BayesX <- function(...)
-#{
-#  rval <- list(
-#    "family" = "gaussian",
-#    "k" = 1,
-#    "mu.link" = "identity",
-#    "names" = "gaussian",
-#    "gaussian" = c("gaussian", "mean"),
-#    "all" = TRUE,
-#    "h" = "gaussian_re"
-#  )
-#  class(rval) <- "family.BayesR"
-#  rval
-#}
-
-#normal.BayesX <- function(...)
-#{
-#  rval <- list(
-#    "family" = "normal",
-#    "k" = 2,
-#    "mu.link" = "identity",
-#    "sigma2.link" = "log",
-#    "names" = c("mu", "sigma2"),
-#    "mu" = c("normal_mu", "mean"),
-#    "sigma2" = c("normal_sigma2", "scale"),
-#    "all" = TRUE,
-#    "h" = "gaussian_re"
-#  )
-#  class(rval) <- "family.BayesR"
-#  rval
-#}
-
-#lognormal.BayesX <- function(...)
-#{
-#  rval <- list(
-#    "family" = "lognormal",
-#    "k" = 2,
-#    "mu.link" = "log",
-#    "sigma2.link" = "log",
-#    "names" = c("mu", "sigma2"),
-#    "mu" = c("lognormal_mu", "mean"),
-#    "sigma2" = c("lognormal_sigma2", "scale"),
-#    "all" = TRUE,
-#    "h" = "gaussian_re",
-#    "valid.response" = function(x) {
-#      if(is.factor(x)) return(FALSE)
-#      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
-#      ok
-#    }
-#  )
-#  class(rval) <- "family.BayesR"
-#  rval
-#}
-
-#beta.BayesX <- function(...)
-#{
-#  rval <- list(
-#    "family" = "beta",
-#    "k" = 2,
-#    "mu.link" = "logit",
-#    "sigma2.link" = "logit",
-#    "names" = c("mu", "sigma2"),
-#    "mu" = c("beta_mu", "mean"),
-#    "sigma2" = c("beta_sigma2", "scale"),
-#    "all" = TRUE,
-#    "h" = "gaussian_re",
-#    "valid.response" = function(x) {
-#      if(is.factor(x)) return(FALSE)
-#      if(ok <- !all(x > 0 & x < 1)) stop("response values not in [0, 1]!", call. = FALSE)
-#      ok
-#    }
-#  )
-#  class(rval) <- "family.BayesR"
-#  rval
-#}
-
-#betainflated.BayesX <- function(...)
-#{
-#  rval <- list(
-#    "family" = "betainflated",
-#    "k" = 4,
-#    "mu.link" = "logit",
-#    "sigma2.link" = "logit",
-#    "nu.link" = "log",
-#    "tau.link" = "log",
-#    "names" = c("mu", "sigma2", "nu", "tau"),
-#    "mu" = c("betainf_mu", "location"),
-#    "sigma2" = c("betainf_sigma2", "scale"),
-#    "nu" = c("betainf_nu", "shape"),
-#    "tau" = c("betainf_tau", "mean"),
-#    "all" = TRUE,
-#    "h" = "gaussian_re",
-#    "order" = 4:1,
-#    "valid.response" = function(x) {
-#      if(is.factor(x)) return(FALSE)
-#      if(ok <- !all(x > 0 & x < 1)) stop("response values not in [0, 1]!", call. = FALSE)
-#      ok
-#    }
 #  )
 #  class(rval) <- "family.BayesR"
 #  rval

@@ -35,7 +35,7 @@ bayesx2 <- function(formula, family = gaussian, data = NULL, knots = NULL,
 ####################################
 transformBayesX <- function(x, ...)
 {
-  family <- parse.family.bayesr(attr(x, "family"), sampler = "BayesX")
+  family <- bayesr.family(attr(x, "family"))
 
   names(attr(x, "model.frame")) <- rmf(names(attr(x, "model.frame")))
 
@@ -160,23 +160,14 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         X <- obj$X
         if(length(i <- grep("Intercept", colnames(X), fixed = TRUE)))
           X <- obj$X[, -i, drop = FALSE]
-        X <- as.data.frame(X)
+        X <- if(ncol(X) > 0) as.data.frame(X) else NULL
       }
     }
     if(k2 <- length(obj$sterms)) {
       X <- if(!is.null(X)) {
-        cbind(X,
-          if(is.null(attr(obj, "model.frame"))) {
-            attr(x, "model.frame")[, obj$sterms, drop = FALSE]
-          } else {
-            attr(obj, "model.frame")[, obj$sterms, drop = FALSE]
-          })
+        cbind(X, attr(x, "model.frame")[, obj$sterms, drop = FALSE])
       } else {
-        if(is.null(attr(obj, "model.frame"))) {
-          attr(x, "model.frame")[, obj$sterms, drop = FALSE]
-        } else {
-          attr(obj, "model.frame")[, obj$sterms, drop = FALSE]
-        }
+        attr(x, "model.frame")[, obj$sterms, drop = FALSE]
       }
       k1 <- ncol(X)
       colnames(X)[(k1 - k2 + 1):k1] <- obj$sterms
@@ -184,30 +175,37 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
     if(!is.null(X)) {
       if(ncol(X) > 0)
         X <- X[, !grepl("Intercept", colnames(X), fixed = TRUE), drop = FALSE]
-      X[[obj$response]] <- obj$response.vec
+      if(!is.null(obj$response)) {
+        X[[obj$response]] <- obj$response.vec
+      }
     } else {
       X <- list()
-      X[[obj$response]] <- obj$response.vec
+      if(!is.null(obj$response))
+        X[[obj$response]] <- obj$response.vec
       X <- as.data.frame(X)
     }
-    yf <- is.factor(X[[obj$response]])
-    X <- as.data.frame(X)
-    for(j in 1:ncol(X)) {
-      if(is.factor(X[, j])) {
-        warn <- getOption("warn")
-        options(warn = -1)
-        tx <- as.integer(as.character(X[, j]))
-        options("warn" = warn)
-        X[, j] <- if(!any(is.na(tx))) tx else as.integer(X[, j])
-        X <- X[order(X[, j]), , drop = FALSE]
+    if(ncol(X) < 1) {
+      X <- NULL
+    } else {
+      yf <- if(is.null(obj$response)) FALSE else is.factor(X[[obj$response]])
+      X <- as.data.frame(X)
+      for(j in 1:ncol(X)) {
+        if(is.factor(X[, j])) {
+          warn <- getOption("warn")
+          options(warn = -1)
+          tx <- as.integer(as.character(X[, j]))
+          options("warn" = warn)
+          X[, j] <- if(!any(is.na(tx))) tx else as.integer(X[, j])
+          X <- X[order(X[, j]), , drop = FALSE]
+        }
       }
-    }
-    if(yf) {
-      if(!is.null(family$factor) & !h) {
-        if(family$factor)
-          X[[obj$response]] <- as.integer(as.factor(X[[obj$response]])) - 1
+      if(yf) {
+        if(!h) {
+          if(!is.null(obj$response))
+            X[[obj$response]] <- as.integer(as.factor(X[[obj$response]])) - 1
+        }
+        X <- X[order(X[[obj$response]]), , drop = FALSE]
       }
-      X <- X[order(X[[obj$response]]), , drop = FALSE]
     }
 
     return(unique(X))
@@ -215,11 +213,6 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
 
   nx <- names(x)
   n <- length(x)
-
-  if(!is.null(family$all)) {
-    if(n < family$k & family$all)
-      stop('all parameters must have a model formula, e.g. at least an intercept only model "~ 1"!')
-  }
 
   count <- 1
   d <- prg <- NULL
@@ -229,7 +222,13 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
       for(i in 1:length(x[[j]])) {
         d2 <- NULL
         if(i < 2) {
-          d <- if(is.null(d)) BayesX_data(x[[j]][[i]]) else cbind(d, BayesX_data(x[[j]][[i]], i > 1))
+          d2 <- BayesX_data(x[[j]][[i]])
+          if(is.null(d)) {
+            d <- d2
+          } else {
+            if(!is.null(d2))
+              d <- cbind(d, d2, i > 1)
+          }
           d <- d[, unique(names(d)), drop = FALSE]
           x[[j]][[i]]$dname <- dname0
         } else d2 <- BayesX_data(x[[j]][[i]], i > 1)
@@ -247,7 +246,13 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         }
       }
     } else {
-      d <- if(is.null(d)) BayesX_data(x[[j]]) else cbind(d, BayesX_data(x[[j]]))
+      d2 <- BayesX_data(x[[j]])
+      if(is.null(d)) {
+        d <- d2
+      } else {
+        if(!is.null(d2))
+          d <- cbind(d, BayesX_data(x[[j]]))
+      }
       d <- d[, unique(names(d)), drop = FALSE]
       x[[j]]$dname <- dname0
       x[[j]]$hlevel <- 1
@@ -275,7 +280,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         eqn <- c(eqn, make_eqn(x[[j]], ctr, id = j))
         ctr <- FALSE
       } else {
-        teqn <- paste(model.name, '.hregress ', x[[j]]$response, sep = '')
+        teqn <- paste(model.name, '.hregress ', x[[1]]$response, sep = '')
         et <- x[[j]]$pterms
         fctr <- attr(x[[j]]$formula, "control")
         if(is.null(fctr)) fctr <- ""
@@ -303,8 +308,9 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
             teqn <- paste(teqn, " hlevel=", x[[j]]$hlevel, sep = "")
             if(x[[j]]$hlevel > 1) {
               if(!any(grepl("family", fctr))) {
-                teqn <- paste(teqn, " family=", family$h, sep = "")
-                teqn <- paste(teqn, " equationtype=", family[[nx[if(is.null(id)) j else id]]][2], sep = "")
+                teqn <- paste(teqn, " family=", "gaussian_re", sep = "")
+                teqn <- paste(teqn, " equationtype=",
+                  family$bayesx[[nx[if(is.null(id)) j else id]]][2], sep = "")
                 ok <- FALSE
               }
             }
@@ -317,9 +323,9 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         }
         if(ok) {
           if(!any(grepl("family", fctr)))
-            teqn <- paste(teqn, " family=", family[[nx[if(is.null(id)) j else id]]][1], sep = "")
+            teqn <- paste(teqn, " family=", family$bayesx[[nx[if(is.null(id)) j else id]]][1], sep = "")
           if(!any(grepl("equationtype", fctr)))
-            teqn <- paste(teqn, " equationtype=", family[[nx[if(is.null(id)) j else id]]][2], sep = "")
+            teqn <- paste(teqn, " equationtype=", family$bayesx[[nx[if(is.null(id)) j else id]]][2], sep = "")
         }
         if(length(fctr)) {
           fctr <- paste(fctr, collapse = " ")
@@ -544,6 +550,21 @@ resultsBayesX <- function(x, samples, ...)
     family <- family()
   mspecs <- attr(samples, "model.specs")
 
+  rename.p <- function(x) {
+    if(family$family %in% c("beta", "gaussian", "lognormal", "binomial")) {
+      foo <- switch(family$family,
+        "gaussian" = function(x) gsub("sigma2", "sigma", x),
+        "beta" = function(x) gsub("sigma2", "phi", x),
+        "lognormal" = function(x) gsub("sigma2", "sigma", x),
+        "binomial" = function(x) gsub("binomial", "pi", x)
+      )
+      x <- foo(x)
+    }
+    x
+  }
+
+  names(mspecs$effects) <- rename.p(names(mspecs$effects))
+
   if(is.null(mspecs) & is.list(samples))
     mspecs <- attr(samples[[1]], "model.specs")
 
@@ -552,7 +573,7 @@ resultsBayesX <- function(x, samples, ...)
       samples <- do.call("c", samples)
     chains <- length(samples)
     rval <- vector(mode = "list", length = chains)
-    snames <- colnames(samples[[1]])
+    snames <- rename.p(colnames(samples[[1]]))
     if(is.null(snames))
       snames <- attributes(samples[[1]])$dimnames[[2]]
     for(j in 1:chains) {
@@ -608,9 +629,7 @@ resultsBayesX <- function(x, samples, ...)
             tn <- gsub(")", "", gsub("sx(", "", tn0, fixed = TRUE), fixed = TRUE)
             tn <- strsplit(tn, ",", fixed = TRUE)[[1]]
 
-            X <- sx.smooth[[i]]$basis(if(is.null(attr(obj, "model.frame"))) {
-                attr(x, "model.frame")[1, tn, drop = FALSE]
-              } else attr(obj, "model.frame")[1, tn, drop = FALSE])
+            X <- sx.smooth[[i]]$basis(attr(x, "model.frame")[1, tn, drop = FALSE])
 
             get.mu <- function(X, g) {
               X %*% as.numeric(g)
@@ -626,9 +645,7 @@ resultsBayesX <- function(x, samples, ...)
             fst <- compute_term(tn1, get.X = sx.smooth[[i]]$basis, get.mu = get.mu,
               psamples = psamples, vsamples = vsamples, FUN = NULL, snames = snames,
               effects.hyp = effects.hyp, fitted.values = fitted.values,
-              data = if(is.null(attr(obj, "model.frame"))) {
-                attr(x, "model.frame")[, tn, drop = FALSE]
-              } else attr(obj, "model.frame")[, tn, drop = FALSE])
+              data = attr(x, "model.frame")[, tn, drop = FALSE])
 
             attr(fst$term, "specs")$get.mu <- get.mu
             attr(fst$term, "specs")$basis <- function(x) {
@@ -654,45 +671,43 @@ resultsBayesX <- function(x, samples, ...)
       scale.m <- scale.samps.m <- NULL
 
       ## Compute partial residuals. FIXME: binomial()$linkfun()
-      if(!is.factor(obj$response.vec)) {
-        if(obj$response %in% names(if(is.null(attr(obj, "model.frame"))) {
-          attr(x, "model.frame")
-        } else attr(obj, "model.frame"))) {
-          for(i in seq_along(effects)) {
-            e <- obj$response.vec - (fitted.values - attr(effects[[i]], "fit"))
-            if(FALSE) { ## FIXME: computation of partial residuals
-              if(is.null(attr(effects[[i]], "specs")$xt$center)) {
-                e <- e - mean(e)
-              } else {
-                if(attr(effects[[i]], "specs")$xt$center)
+      if(!is.null(obj$response.vec)) {
+        if(!is.factor(obj$response.vec)) {
+          if(obj$response %in% names(attr(x, "model.frame"))) {
+            for(i in seq_along(effects)) {
+              e <- obj$response.vec - (fitted.values - attr(effects[[i]], "fit"))
+              if(FALSE) { ## FIXME: computation of partial residuals
+                if(is.null(attr(effects[[i]], "specs")$xt$center)) {
                   e <- e - mean(e)
+                } else {
+                  if(attr(effects[[i]], "specs")$xt$center)
+                    e <- e - mean(e)
+                }
               }
+              e <- if(is.factor(attr(effects[[i]], "x"))) {
+                warn <- getOption("warn")
+                options(warn = -1)
+                tx <- as.integer(as.character(attr(effects[[i]], "x")))
+                options("warn" = warn)
+                cbind(if(!any(is.na(tx))) tx else as.integer(attr(effects[[i]], "x")), e)
+              } else cbind(attr(effects[[i]], "x"), e)
+              if(!is.null(attr(effects[[i]], "by.drop")))
+                e <- e[attr(effects[[i]], "by.drop"), ]
+              e <- as.data.frame(e)
+              try(names(e) <- c(attr(effects[[i]], "specs")$term, "partial.resids"))
+              attr(effects[[i]], "partial.resids") <- e
+              attr(effects[[i]], "fit") <- NULL
+              attr(effects[[i]], "x") <- NULL
+              attr(effects[[i]], "by.drop") <- NULL
             }
-            e <- if(is.factor(attr(effects[[i]], "x"))) {
-              warn <- getOption("warn")
-              options(warn = -1)
-              tx <- as.integer(as.character(attr(effects[[i]], "x")))
-              options("warn" = warn)
-              cbind(if(!any(is.na(tx))) tx else as.integer(attr(effects[[i]], "x")), e)
-            } else cbind(attr(effects[[i]], "x"), e)
-            if(!is.null(attr(effects[[i]], "by.drop")))
-              e <- e[attr(effects[[i]], "by.drop"), ]
-            e <- as.data.frame(e)
-            try(names(e) <- c(attr(effects[[i]], "specs")$term, "partial.resids"))
-            attr(effects[[i]], "partial.resids") <- e
-            attr(effects[[i]], "fit") <- NULL
-            attr(effects[[i]], "x") <- NULL
-            attr(effects[[i]], "by.drop") <- NULL
           }
         }
       }
 
       ## Stuff everything together.
       rval[[j]] <- list(
-        "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(if(is.null(attr(obj, "model.frame"))) {
-          attr(x, "model.frame")
-        } else attr(obj, "model.frame")), "formula" = obj$formula),
-        "param.effects" = param.effects, "effects" = effects,
+        "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(attr(x, "model.frame")),
+        "formula" = obj$formula), "param.effects" = param.effects, "effects" = effects,
         "effects.hyp" = effects.hyp, "scale" = scale.m, "fitted.values" = fitted.values,
         "residuals" = if(!is.factor(obj$response.vec)) obj$response.vec - fitted.values else NULL
       )
@@ -731,8 +746,6 @@ resultsBayesX <- function(x, samples, ...)
         attr(rval[[nx[j]]], "hlevel") <- TRUE
       } else {
         rval[[nx[j]]] <- createBayesXresults(x[[nx[j]]], samples, id = fn[j], sid = length(nx) > 1)
-        attr(rval[[nx[j]]], "model.frame") <- attr(x[[nx[j]]], "model.frame")
-        attr(x[[nx[j]]], "model.frame") <- NULL
       }
       class(rval[[nx[j]]]) <- "bayesr"
     }

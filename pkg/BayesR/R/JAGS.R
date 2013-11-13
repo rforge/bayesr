@@ -82,7 +82,9 @@ JAGSmodel <- function(x, family, cat = FALSE, ...) {
   for(j in 1:k) {
     model <- c(model, x[[j]]$start)
   }
-  pn <- if(is.null(family$jags$reparam)) family$names else names(family$jags$reparam)
+  pn <- family$names
+  if(!is.null(family$jags$reparam))
+    pn[repi <- match(names(family$jags$reparam), pn)] <- paste("rp", 1:length(family$jags$reparam), sep = "")
   if(is.null(pn)) pn <- paste("theta", 1:k, sep = "")
   if(length(pn) < 2 & length(pn) != k)
     pn <- paste(pn, 1:k, sep = "")
@@ -103,11 +105,13 @@ JAGSmodel <- function(x, family, cat = FALSE, ...) {
 #  }
 
   if(!is.null(family$jags$reparam)) {
-    reparam <- paste("    ", names(family$jags$reparam), "[i] <- ", family$jags$reparam, sep = "")
+    reparam <- NULL
+    for(j in seq_along(family$jags$reparam))
+      reparam <- c(reparam, paste("    rp", j, "[i] <- ", family$jags$reparam[j], sep = ""))
     for(j in family$names)
       reparam <- gsub(j, paste(j, "[i]", sep = ""), reparam)
     model <- c(model, reparam)
-    pn <- paste(family$names, "[i]", sep = "")
+    pn[repi] <- paste(family$names[repi], "[i]", sep = "")
   }
   if(!is.null(family$jags$addparam)) {
     for(j in family$jags$addparam)
