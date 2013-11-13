@@ -55,7 +55,9 @@ n <- 500
 dat <- data.frame("x1" = runif(n, -3, 3), x2 = runif(n, -3, 3))
 dat$y <- hs(with(dat, 1.2 + sin(x1) + cos(x2) + rnorm(n, sd = (cos(dat$x1) + 2) / 4)), 0.001, 0.999)
 
-a <- bayesr(y ~ s(x1) + s(x2), ~ s(x1), data = dat, family = gaussian.BayesR)
+a <- bayesr(y ~ s(x1) + s(x2), ~ s(x1), data = dat, family = beta.BayesR(sigma = "pow"))
 
 b <- bayesx2(y ~ sx(x1) + sx(x2), ~ sx(x1), data = dat, family = normal)
+
+
 

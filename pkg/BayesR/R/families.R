@@ -44,14 +44,60 @@ parse.links <- function(links, default.links, ...)
 }
 
 
+## http://stats.stackexchange.com/questions/41536/how-can-i-model-a-proportion-with-bugs-jags-stan
+beta.BayesR <- function(links = c(mu = "logit", phi = "log"), ...)
+{
+  rval <- list(
+    "family" = "beta",
+    "names" = c("mu", "phi"),
+    "links" =  parse.links(links, c(mu = "logit", phi = "log"), ...),
+    "valid.response" = function(x) {
+      if(ok <- !all(x > 0 & x < 1)) stop("response values not in [0, 1]!", call. = FALSE)
+      ok
+    },
+    jags = list(
+      "dist" = "dbeta",
+      "eta" = JAGSeta,
+      "model" = JAGSmodel,
+      "reparam" = c(
+        alpha = "mu * phi",
+        beta = "(1 - mu) * phi"
+      )
+    )
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
+binomial.BayesR <- function(link = "logit", ...)
+{
+  rval <- list(
+    "family" = "binomial",
+    "names" = "pi",
+    "links" = parse.links(link, c(pi = "logit"), ...),
+    "valid.response" = function(x) {
+      if(!is.factor(x)) stop("response must be a factor!", call. = FALSE)
+      if(nlevels(x) > 2) stop("more than 2 levels in factor response!", call. = FALSE)
+      TRUE
+    },
+    jags = list(
+      "dist" = "dbern",
+      "eta" = JAGSeta,
+      "model" = JAGSmodel
+    )
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
 gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "identity", sigma = "log"), ...)
-
   rval <- list(
     "family" = "gaussian",
     "names" = c("mu", "sigma"),
-    "links" = links,
+    "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
     bayesx = list(
       "mu" = c("normal_mu", "mean"),
       "sigma" = c("normal_sigma2", "scale")
@@ -70,12 +116,10 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
 
 multinomial.BayesR <- function(link = "logit", ...)
 {
-  link <- parse.links(link, c(pi = "logit"), ...)
-
   rval <- list(
     "family" = "multinomial",
     "names" = "pi",
-    "links" = link,
+    "links" = parse.links(link, c(pi = "logit"), ...),
     "cat" = TRUE,
     "valid.response" = function(x) {
       if(!is.factor(x)) stop("response must be a factor!", call. = FALSE)
@@ -93,93 +137,37 @@ multinomial.BayesR <- function(link = "logit", ...)
 }
 
 
-##############
-## (a) JAGS ##
-##############
-#gaussian.JAGS <- function(mu.link = "identity", sigma.link = "log")
-#{
-#  rval <- list(
-#    "family" = "gaussian",
-#    "k" = 2,
-#    "mu.link" = mu.link,
-#    "sigma.link" = sigma.link,
-#    "names" = c("mu", "sigma"),
-#    "dist" = "dnorm",
-#    "default.prior" = c("mu ~ dnorm(0, 1.0E-6)", "sigma ~ dgamma(1.0E-6, 1.0E-6)"),
-#    "trans" <- list("mu" = function(x) { x }, "sigma" = function(x) { 1 / exp(x) }),
-#    "eta" = JAGSeta,
-#    "model" = JAGSmodel
-#  )
-#  class(rval) <- "family.BayesR"
-#  rval
-#}
+## http://stats.stackexchange.com/questions/17672/quantile-regression-in-jags
+quant.BayesR <- function(links = c(mu = "identity", sigma = "log"), prob = 0.5, ...)
+{
+  rval <- list(
+    "family" = "gaussian",
+    "names" = c("mu", "sigma"),
+    "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
+    bayesx = list(
+      "mu" = c("normal_mu", "mean"),
+      "sigma" = c("normal_sigma2", "scale")
+    ),
+    jags = list(
+      "dist" = "dnorm",
+      "eta" = JAGSeta,
+      "model" = JAGSmodel,
+      "reparam" = c(
+        m1 = "(1 - 2 * prop) / (prop * (1 - prop)) * w[i] + mu",
+        s1 = "(prop * (1 - prop) * sigma) / (2 * w[i])"
+      ),
+      "addparam" = list("w[i] ~ dexp(sigma[i])"),
+      "addvalues" = list("prop" = prob)
+    )
+  )
+  class(rval) <- "family.BayesR"
 
-#beta.JAGS <- function(shape1.link = "log", shape2.link = "log")
-#{
-#  rval <- list(
-#    "family" = "beta",
-#    "k" = 2,
-#    "shape1.link" = shape1.link,
-#    "shape2.link" = shape2.link,
-#    "names" = c("shape1", "shape2"),
-#    "valid.response" = function(x) {
-#      if(ok <- !all(x > 0 & x < 1)) stop("response values not in [0, 1]!", call. = FALSE)
-#      ok
-#    },
-#    "dist" = "dbeta",
-#    "default.prior" = c("shape1 ~ dgamma(1.0E-6, 1.0E-6)", "shape2 ~ dgamma(1.0E-6, 1.0E-6)"),
-#    "eta" = JAGSeta,
-#    "model" = JAGSmodel
-#  )
-#  class(rval) <- "family.BayesR"
-#  rval
-#}
+  rval
+}
 
-#binomial.JAGS <- function(link = "logit")
-#{
-#  rval <- list(
-#    "family" = "binomial",
-#    "k" = 1,
-#    "link" = link,
-#    "names" = "pi",
-#    "valid.response" = function(x) {
-#      if(!is.factor(x)) stop("response must be a factor!", call. = FALSE)
-#      if(nlevels(x) > 2) stop("more than 2 levels in factor response!", call. = FALSE)
-#      TRUE
-#    },
-#    "dist" = "dbern",
-#    "default.prior" = "pi ~ dnorm(0, 1.0E-6)",
-#    "eta" = JAGSeta,
-#    "model" = JAGSmodel
-#  )
-#  class(rval) <- "family.BayesR"
-#  rval
-#}
-
-#multinomial.JAGS <- function(link = "logit")
-#{
-#  rval <- list(
-#    "family" = "multinomial",
-#    "k" = Inf,
-#    "link" = link,
-#    "names" = "pi",
-#    "valid.response" = function(x) {
-#      if(!is.factor(x)) stop("response must be a factor!", call. = FALSE)
-#      TRUE
-#    },
-#    "cat" = TRUE,
-#    "dist" = "dcat",
-#    "default.prior" = "pi ~ dnorm(0, 1.0E-6)",
-#    "eta" = JAGSeta,
-#    "model" = JAGSmodel
-#  )
-#  class(rval) <- "family.BayesR"
-#  rval
-#}
 
 ### Ordered logit.
 ### http://staff.washington.edu/lorenc2/bayesian/ologit.R
-
 
 #################
 ### (b) BayesX ##

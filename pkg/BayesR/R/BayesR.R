@@ -5,7 +5,7 @@
 ##                       http://www.life.illinois.edu/dietze/Lectures2012/
 bayesr <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.fail, contrasts = NULL,
-  reference = NULL, parse.input = parse.input.bayesr, transform = transformJAGS, setup = setupJAGS,
+  reference = NULL, parse.input = parse.input.bayesr, transform = randomize, setup = setupJAGS,
   sampler = samplerJAGS, results = resultsJAGS,
   cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, ...)
 {
@@ -40,7 +40,6 @@ bayesr <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
   pm$parse.input <- pm$setup <- pm$samples <- pm$results <- NULL
   pm[[1]] <- as.name(functions$parse.input)
   pm <- eval(pm, parent.frame())
-  pm$call <- match.call()
 
   ## Transform inputs.
   pm <- functions$transform(pm)
@@ -74,7 +73,7 @@ bayesr <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
     attr(rval, "model.frame") <- attr(pm, "model.frame")
   attr(rval, "family") <- attr(pm, "family")
   attr(rval, "formula") <- formula
-  attr(rval, "call") <- pm$call
+  attr(rval, "call") <- match.call()
 
   rval
 }
@@ -112,8 +111,9 @@ parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
 
   ## For categorical responses, extend formula object.
   ylevels <- NULL
-  if(is.factor(mf[[response.name]]) & family$cat) {
-    if(nlevels(mf[[response.name]]) > 2) {
+  if(is.factor(mf[[response.name]])) {
+    cat <- if(is.null(family$cat)) FALSE else family$cat
+    if(cat & nlevels(mf[[response.name]]) > 2) {
       if(is.null(reference)) {
         ty <- table(mf[[response.name]])
         reference <- c(names(ty)[ty == max(ty)])[1]
@@ -131,6 +131,7 @@ parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
 
   attr(rval, "family") <- family
   attr(rval, "reference") <- reference
+  attr(rval, "ylevels") <- ylevels
   attr(rval, "model.frame") <- mf
 
   class(rval) <- c("bayesr.input", "list")
@@ -245,7 +246,11 @@ bayesr.model.frame <- function(formula, data, family, weights = NULL,
 
   ## assign main response name
   ok <- all(c("formula", "response", "fake.formula") %in% names(formula[[1]]))
-  attr(mf, "response.name") <- if(!ok) formula[[1]][[1]]$response else formula[[1]]$response
+  rn <- attr(mf, "response.name") <- if(!ok) formula[[1]][[1]]$response else formula[[1]]$response
+
+  ## Check response.
+  if(!is.null(family$valid.response))
+    family$valid.response(mf[[rn]])
 
   mf
 }
@@ -755,7 +760,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
 ## A prediction method for "bayesr" objects.
 ## Prediction can also be based on multiple chains.
 predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
-  intercept = TRUE, FUN = mean, ...)
+  intercept = TRUE, FUN = mean, trans = NULL, ...)
 {
   object <- get.model(object, model)
   if(any(c("effects", "param.effects") %in% names(object)))
@@ -873,6 +878,8 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
         rval <- rval + apply(i$samples, 1, function(x) { i$get.mu(i$X, x) })
       }
     }
+    if(!is.null(trans))
+      rval <- apply(rval, 1, trans)
     rval <- apply(rval, 1, FUN)
     if(!is.null(dim(rval))) {
       if(nrow(rval) != nrow(newdata))

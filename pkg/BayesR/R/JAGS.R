@@ -6,39 +6,10 @@
 ## to run a JAGS sampler.
 ## Examples: http://sourceforge.net/projects/mcmc-jags/files/
 ##           http://www.indiana.edu/~kruschke/DoingBayesianDataAnalysis/Programs/
-restructure_x <- function(x) {
-  if(inherits(x, "bayesr.input") & !all(c("formula", "fake.formula", "response") %in% names(x))) {
-    call <- x$call
-    x <- x[names(x) != "call"]
-    x2 <- list(); k <- 1
-    for(i in seq_along(x)) {
-      if(!all(c("formula", "fake.formula", "response") %in% names(x[[i]]))) {
-        x2[[k]] <- x[[i]]
-        x[[i]] <- NULL
-      }
-    }
-    if(length(x2))
-      x <- c(x, x2)
-    if(any(duplicated(nx <- names(x))) | is.null(names(x))) {
-      names(x) <- paste(nx, 1:length(x), sep = "")
-    }
-    x$call <- call
-  }
-  x
-}
-
-## Transform design and penalty matrices to iid random effects structure.
-transformJAGS <- function(x) {
-  family <- parse.family.bayesr(attr(x, "family"), sampler = "JAGS")
-  x <- randomize(x)
-  x <- restructure_x(x)
-  attr(x, "family") <- family
-  x
-}
-
 ## Default linear predictor and model setup functions.
 JAGSeta <- function(x, id = NULL, zero = FALSE, ...) {
   setup <- list()
+  if(is.null(zero)) zero <- FALSE
   setup$inits <- list()
 
   ## Parametric part.
@@ -89,7 +60,8 @@ JAGSlinks <- function(x)
     "inverse" = "1 / (eta^2)",
     "logit" = "1 / (1 + exp(-(eta)))",
     "probit" = "phi(eta)",
-    "cloglog" = "log(-log(1 - eta))"
+    "cloglog" = "log(-log(1 - eta))",
+    "pow" = "pow(eta, -2)"
   )
 }
 
@@ -101,7 +73,7 @@ JAGSmodel <- function(x, family, cat = FALSE, ...) {
     x <- list(x)
     1
   } else length(x)
-  if(k > family$k) {
+  if(k > length(family$names) & !cat) {
     stop(paste("more parameters specified than existing in family ",
       family$family, ".BayesR()!", sep = ""), call. = FALSE)
   }
@@ -110,19 +82,17 @@ JAGSmodel <- function(x, family, cat = FALSE, ...) {
   for(j in 1:k) {
     model <- c(model, x[[j]]$start)
   }
-  pn <- family$names
-  if(is.infinite(family$k))
-    family$k <- k
-  if(is.null(pn)) pn <- paste("theta", 1:family$k, sep = "")
+  pn <- if(is.null(family$jags$reparam)) family$names else names(family$jags$reparam)
+  if(is.null(pn)) pn <- paste("theta", 1:k, sep = "")
   if(length(pn) < 2 & length(pn) != k)
     pn <- paste(pn, 1:k, sep = "")
 
   pn[1:k] <- paste(pn[1:k], "[i]", sep = "")
   on <- if(cat) family$names else NULL
-  links <- family[grep("link", names(family), fixed = TRUE, value = TRUE)]
+  links <- family[[grep("links", names(family), fixed = TRUE, value = TRUE)]]
   links <- rep(sapply(links, JAGSlinks), length.out = k)
   model <- c(model,  "  for(i in 1:n) {",
-    paste("    response[i] ~ ", family$dist, "(",
+    paste("    response[i] ~ ", family$jags$dist, "(",
       paste(if(is.null(on)) pn else paste(on, ## if(cat) "n" else NULL,
       "[i, 1:", k, "]", sep = ""),
       collapse = ", "), ")", sep = ""))
@@ -131,6 +101,23 @@ JAGSmodel <- function(x, family, cat = FALSE, ...) {
 #    model <- c(model, paste("    ", npn, "n[i, ", 1:k, "] <- ",
 #      npn, "[i, ", 1:k, "] / sum(", npn, "[i, 1:", k, "])", sep = ""))
 #  }
+
+  if(!is.null(family$jags$reparam)) {
+    reparam <- paste("    ", names(family$jags$reparam), "[i] <- ", family$jags$reparam, sep = "")
+    for(j in family$names)
+      reparam <- gsub(j, paste(j, "[i]", sep = ""), reparam)
+    model <- c(model, reparam)
+    pn <- paste(family$names, "[i]", sep = "")
+  }
+  if(!is.null(family$jags$addparam)) {
+    for(j in family$jags$addparam)
+      model <- c(model, paste("   ", j))
+  }
+  if(!is.null(family$jags$addvalues)) {
+    for(j in names(family$jags$addvalues))
+      model <- gsub(j, family$jags$addvalues[[j]], model)
+  }
+
   for(j in 1:k) {
     model <- c(model, paste("    ", if(is.null(on)) pn[j] else paste(on, "[i, ", j, "]", sep = ""),
       " <- ", gsub("eta", x[[j]]$eta, links[[j]]), sep = ""))
@@ -154,13 +141,7 @@ JAGSmodel <- function(x, family, cat = FALSE, ...) {
     }
     model <- c(model, x[[i]]$priors.scale, x[[i]]$close, x[[i]]$close2)
   }
-  if(k < family$k) {
-    model <- c(model, paste(" ", family$default.prior[(k + 1):family$k]))
-  }
   model <- c(model, "}")
-  if(k < family$k) {
-    attr(model, "psave") <- family$names[(k + 1):family$k]
-  }
 
   model
 }
@@ -173,7 +154,6 @@ setupJAGS <- function(x)
   ylevels <- attr(x, "ylevels")
   if(is.function(family))
     family <- family()
-  x <- restructure_x(x)
   ncat <- NULL
   if(!all(c("formula", "fake.formula", "response") %in% names(x))) {
     nx <- names(x)
@@ -185,15 +165,15 @@ setupJAGS <- function(x)
     if(length(fn) < length(x))
       fn <- paste(fn, 1:length(nx), sep = "")
     for(i in seq_along(nx)) {
-      rval[[nx[i]]] <- family$eta(x[[i]], fn[i],
+      rval[[nx[i]]] <- family$jags$eta(x[[i]], fn[i],
         zero = if(!is.null(reference)) ylevels[i] == reference else NULL)
     }
   } else {
-    rval <- family$eta(x)
+    rval <- family$jags$eta(x)
   }
   
   ## Create model code.
-  model <- family$model(rval, family, cat = !is.null(reference))
+  model <- family$jags$model(rval, family, cat = !is.null(reference))
 
   ## Collect data.
   if(all(c("inits", "data", "psave") %in% names(rval)))
@@ -369,8 +349,8 @@ buildJAGS.smooth.special.gc.smooth <- function(smooth, setup, i, zero)
 ########################################
 samplerJAGS <- function(x, tdir = NULL,
   n.chains = 1, n.adapt = 100,
-  n.iter = 1200, thin = 1, burnin = 200,
-  seed = NULL, verbose = TRUE, ...)
+  n.iter = 4000, thin = 2, burnin = 1000,
+  seed = NULL, verbose = TRUE, set.inits = FALSE, ...)
 {
   require("rjags")
 
@@ -399,8 +379,13 @@ samplerJAGS <- function(x, tdir = NULL,
   
   if(verbose) writeLines(x$model)
   
-  jmodel <- jags.model(mfile, data = x$data, inits = inits,
-    n.chains = n.chains, n.adapt = n.adapt, ...)
+  if(set.inits) {
+    jmodel <- jags.model(mfile, data = x$data, inits = inits,
+      n.chains = n.chains, n.adapt = n.adapt, ...)
+  } else {
+    jmodel <- jags.model(mfile, data = x$data,
+      n.chains = n.chains, n.adapt = n.adapt, ...)
+  }
   jsamples <- coda.samples(jmodel, variable.names = c(x$psave, "deviance"),
     n.iter = n.iter, thin = thin, ...)
 
@@ -571,33 +556,35 @@ resultsJAGS <- function(x, samples)
       }
 
       ## Compute partial residuals.
-      if(obj$response %in% names(attr(x, "model.frame"))) {
-        for(i in seq_along(effects)) {
-          response <- if(is.factor(attr(x, "model.frame")[[obj$response]])) {
-            as.integer(attr(x, "model.frame")[[obj$response]]) - 1
-          } else attr(x, "model.frame")[[obj$response]]
-          e <- response - (fitted.values - attr(effects[[i]], "fit"))
-          if(is.null(attr(effects[[i]], "specs")$xt$center)) {
-            e <- e - mean(e)
-          } else {
-            if(attr(effects[[i]], "specs")$xt$center)
+      if(!is.null(obj$response)) {
+        if(obj$response %in% names(attr(x, "model.frame"))) {
+          for(i in seq_along(effects)) {
+            response <- if(is.factor(attr(x, "model.frame")[[obj$response]])) {
+              as.integer(attr(x, "model.frame")[[obj$response]]) - 1
+            } else attr(x, "model.frame")[[obj$response]]
+            e <- response - (fitted.values - attr(effects[[i]], "fit"))
+            if(is.null(attr(effects[[i]], "specs")$xt$center)) {
               e <- e - mean(e)
+            } else {
+              if(attr(effects[[i]], "specs")$xt$center)
+                e <- e - mean(e)
+            }
+            e <- if(is.factor(attr(effects[[i]], "x"))) {
+              warn <- getOption("warn")
+              options(warn = -1)
+              tx <- as.integer(as.character(attr(effects[[i]], "x")))
+              options("warn" = warn)
+              cbind(if(!any(is.na(tx))) tx else as.integer(attr(effects[[i]], "x")), e)
+            } else cbind(attr(effects[[i]], "x"), e)
+            if(!is.null(attr(effects[[i]], "by.drop")))
+              e <- e[attr(effects[[i]], "by.drop"), ]
+            e <- as.data.frame(e)
+            try(names(e) <- c(attr(effects[[i]], "specs")$term, "partial.resids"))
+            attr(effects[[i]], "partial.resids") <- e
+            attr(effects[[i]], "fit") <- NULL
+            attr(effects[[i]], "x") <- NULL
+            attr(effects[[i]], "by.drop") <- NULL
           }
-          e <- if(is.factor(attr(effects[[i]], "x"))) {
-            warn <- getOption("warn")
-            options(warn = -1)
-            tx <- as.integer(as.character(attr(effects[[i]], "x")))
-            options("warn" = warn)
-            cbind(if(!any(is.na(tx))) tx else as.integer(attr(effects[[i]], "x")), e)
-          } else cbind(attr(effects[[i]], "x"), e)
-          if(!is.null(attr(effects[[i]], "by.drop")))
-            e <- e[attr(effects[[i]], "by.drop"), ]
-          e <- as.data.frame(e)
-          try(names(e) <- c(attr(effects[[i]], "specs")$term, "partial.resids"))
-          attr(effects[[i]], "partial.resids") <- e
-          attr(effects[[i]], "fit") <- NULL
-          attr(effects[[i]], "x") <- NULL
-          attr(effects[[i]], "by.drop") <- NULL
         }
       }
 
