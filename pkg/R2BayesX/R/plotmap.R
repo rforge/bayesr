@@ -209,14 +209,14 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
         delete.args(graphics::polygon, args, 
         c("lwd", "cex", "lty")))
       if(names && !values) {
-        args$polygon <- p
+        args$polygon <- map[[i]]
         args$poly.name <- poly.names.orig[i]
         args$counter <- i
         args$cex <- cex.names
         do.call(centroidtext, delete.args(centroidtext, args, "font"))
       }
       if(values && !names) {
-        args$polygon <- p
+        args$polygon <- map[[i]]
         args$poly.name <- as.character(round(x$x[k], digits = digits))
         args$counter <- k
         args$cex <- cex.values
