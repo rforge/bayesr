@@ -244,6 +244,7 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
         args$xpd <- TRUE
       args$add <- TRUE
     }
+    args$shift <- args$legend.shift
     args$xlim <- map.limits$xlim
     args$ylim <- map.limits$ylim
     args$color <- col
