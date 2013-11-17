@@ -153,7 +153,7 @@ gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
     "links" = parse.links(links, c(mu = "log", sigma = "log"), ...),
     bayesx = list(
       "mu" = c("gamma_mu", "mean"),
-      "sigma" = c("gamma_sigma", "scale")
+      "sigma" = c("gamma_sigma", "shape")
     ),
     jags = list(
       "dist" = "dgamma",
