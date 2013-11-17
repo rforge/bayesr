@@ -502,14 +502,14 @@ formula_hcheck <- function(formula)
   snf <- seq_along(nf)
   check <- vector(mode = "list", length = length(formula))
   for(j in snf) {
-    if(!is.na(nf[j])) {
       for(i in snf) {
         if(j != i) {
           fi <- if(!is.list(formula[[i]])) list(formula[[i]]) else formula[[i]]
           for(jj in seq_along(fi)) {
             av <- all.vars(fi[[jj]])
             rn <- formula_respname(fi[[jj]])
-            av <- av[av != rn]
+            if(!is.na(rn))
+              av <- av[av != rn]
             if(attr(terms(fi[[jj]]), "intercept") < 1) {
               av <- c(av, "-1")
             }
@@ -519,7 +519,6 @@ formula_hcheck <- function(formula)
           }
         }
       }
-    }
   }
   check
 }

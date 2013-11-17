@@ -51,9 +51,6 @@ transformBayesX <- function(x, ...)
         obj[[j]] <- tBayesX(obj[[j]], ...)
     } else {
       obj <- randomize(obj)
-      if(!is.null(attr(obj, "model.frame"))) {
-        names(attr(obj, "model.frame")) <- rmf(names(attr(obj, "model.frame")))
-      }
       obj$response <- rmf(obj$response)
       if(!is.null(dim(obj$X)))
         colnames(obj$X) <- rmf(colnames(obj$X))
@@ -106,6 +103,7 @@ controlBayesX <- function(n.iter = 1200, thin = 1, burnin = 200,
   seed = NULL, predict = "full", model.name = "bayesr", data.name = "d",
   prg.name = NULL, dir = NULL, verbose = FALSE, cores = NULL, ...)
 {
+dir <- "~/tmp"
   if(is.null(seed))
     seed <- '##seed##'
   stopifnot(burnin < n.iter)
@@ -207,8 +205,9 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         X <- X[order(X[[obj$response]]), , drop = FALSE]
       }
     }
+    if(h) X <- unique(X)
 
-    return(unique(X))
+    return(X)
   }
 
   nx <- names(x)
@@ -227,8 +226,9 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
             d <- d2
           } else {
             if(!is.null(d2))
-              d <- cbind(d, d2, i > 1)
+              d <- cbind(d, d2)
           }
+          d2 <- NULL
           d <- d[, unique(names(d)), drop = FALSE]
           x[[j]][[i]]$dname <- dname0
         } else d2 <- BayesX_data(x[[j]][[i]], i > 1)
@@ -253,6 +253,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         if(!is.null(d2))
           d <- cbind(d, BayesX_data(x[[j]]))
       }
+      d2 <- NULL
       d <- d[, unique(names(d)), drop = FALSE]
       x[[j]]$dname <- dname0
       x[[j]]$hlevel <- 1
@@ -272,6 +273,8 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
     if(cores < 2) file.path(dir, model.name) else '##outfile##',
     sep = ''))
 
+  response.name <- attr(attr(x, "model.frame"), "response.name")
+
   make_eqn <- function(x, ctr = TRUE, id = NULL) {
     n <- length(x)
     eqn <- NULL
@@ -280,7 +283,8 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         eqn <- c(eqn, make_eqn(x[[j]], ctr, id = j))
         ctr <- FALSE
       } else {
-        teqn <- paste(model.name, '.hregress ', x[[1]]$response, sep = '')
+        teqn <- paste(model.name, '.hregress ',
+          if(is.null(x[[j]]$response)) response.name else x[[j]]$response, sep = '')
         et <- x[[j]]$pterms
         fctr <- attr(x[[j]]$formula, "control")
         if(is.null(fctr)) fctr <- ""
@@ -411,6 +415,7 @@ samplerBayesX <- function(x, ...)
   }
 
   prg <- file.path(dir, prg.name)
+writeLines(x$prg)
   writeLines(x$prg, file.path(dir, prg.name))
 
   warn <- getOption("warn")
