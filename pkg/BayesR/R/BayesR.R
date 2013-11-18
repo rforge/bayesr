@@ -1138,21 +1138,21 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
     if(k < 1) return(NULL)
     if(scale > 0)
       ylim <- range(ylim, na.rm = TRUE)
-    args$ylim <- ylim
     args$which <- which
     if(which != "effects")
       args$residuals <- NULL
     for(i in 1:n) {
       if(!is.null(x[[i]]$effects)) {
         for(e in pterms[[i]]) {
-          if(attr(x[[i]]$effects[[e]], "specs")$dim > 1) {
-            if(!is.null(ylim) & is.null(args$zlim)) {
-              args$ylim <- NULL
-              ## args$zlim <- ylim
-            }
+          lim <- c("ylim", "zlim")[(attr(x[[i]]$effects[[e]], "specs")$dim > 1) * 1 + 1]
+          setlim <- FALSE
+          if(!is.null(ylim) & is.null(args[[lim]])) {
+            args[[lim]]<- ylim
+            setlim <- TRUE
           }
           args$x <- x[[i]]$effects[[e]]
           do.call("plot.bayesr.effect", args)
+          if(setlim) args[[lim]] <- NULL
         }
       }
     }
@@ -1195,14 +1195,14 @@ plot.bayesr.effect.default <- function(x, ...) {
   args <- list(...)
   args$x <- x
 
-  if(is.null(args$ylim)) {
-    args$ylim <- range(x[, c("2.5%", "97.5%")], na.rm = TRUE)
+  lim <- c("ylim", "zlim")[(attr(x, "specs")$dim > 1) * 1 + 1]
+  if(is.null(args[[lim]])) {
+    args[[lim]] <- range(x[, c("2.5%", "97.5%")], na.rm = TRUE)
     if(!is.null(args$residuals)) {
       if(args$residuals & !is.null(attr(x, "partial.resids")))
-        args$ylim <- range(c(args$ylim, attr(x, "partial.resids")[, -1]), na.rm = TRUE)
+        args[[lim]] <- range(c(args[[lim]], attr(x, "partial.resids")[, -1]), na.rm = TRUE)
     }
   }
-
   if(attr(x, "specs")$dim < 2) {
     if(is.null(args$fill.select))
       args$fill.select <- c(0, 1, 0, 1)
@@ -1228,9 +1228,7 @@ plot.bayesr.effect.default <- function(x, ...) {
         } else do.call("plotblock", args)
       }
     } else do.call("plot2d", args)
-  } else {
-    do.call("plot3d", args)
-  }
+  } else do.call("plot3d", args)
 }
 
 
