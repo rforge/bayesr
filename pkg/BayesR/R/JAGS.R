@@ -1,5 +1,46 @@
+#########################################
+## (1) Special JAGS transform function ##
+#########################################
+transformJAGS <- function(x)
+{
+  family <- attr(x, "family")
+  cat <- if(is.null(family$cat)) FALSE else family$cat
+
+  if(cat) {
+    reference <- attr(x, "reference")
+
+    tJAGS <- function(obj) {
+      if(inherits(obj, "bayesr.input") & !any(c("smooth", "response") %in% names(obj))) {
+        no <- names(obj)
+        no <- no[no != "call"]
+        if(is.null(no)) no <- 1:length(obj)
+        if(length(unique(no)) < length(obj)) no <- 1:length(obj)
+        for(j in no)
+          obj[[j]] <- tJAGS(obj[[j]])
+      } else {
+        rn <- formula_respname(obj$cat.formula)
+        if(grepl(reference, rn, fixed = TRUE)) {
+          obj$formula <- obj$fake.formula <- as.formula(paste(rn, "1", sep = " ~ "))
+          obj$intercept <- TRUE
+          obj$smooth <- obj$sterms <- NULL
+          obj$pterms
+          obj$X <- matrix(1, nrow = nrow(attr(x, "model.frame")), ncol = 1)
+        }
+      }
+      obj
+    }
+
+    x <- tJAGS(x)
+  }
+
+  x <- randomize(x)
+  
+  x
+}
+
+
 ######################################################################
-## (1) General JAGS setup functions, model code, initials and data. ##
+## (2) General JAGS setup functions, model code, initials and data. ##
 ######################################################################
 ## Setup the model structure needed for the sampler.
 ## These functions create the model code, initials and data
@@ -166,6 +207,9 @@ setupJAGS <- function(x)
       nx <- 1:length(x)
     rval <- list()
     fn <- family$names
+    cat <- if(!is.null(family$cat)) family$cat else FALSE
+    if(cat)
+      fn <- paste(fn, gsub(attr(attr(x, "model.frame"), "response.name"), "", names(x)), sep = "")
     if(length(fn) < length(x))
       fn <- paste(fn, 1:length(nx), sep = "")
     for(i in seq_along(nx)) {
@@ -193,11 +237,13 @@ setupJAGS <- function(x)
   psave <- unique(psave)
   data$n <- nrow(attr(x, "model.frame"))
   psave <- c(psave, attr(model, "psave"))
-#  if(!is.null(fhamily$oname))
-#    inits[[family$oname]] <- matrix(0, data$n, length(rval))
 
-  if(is.factor(data$response))
-    data$response <- as.integer(data$response) - 1
+  if(is.factor(data$response)) {
+    nl <- nlevels(data$response)
+    data$response <- as.integer(data$response)
+    if(nl < 3)
+      data$response <- data$response - 1
+  }
 
   rval <- list("model" = model, "data" = data,
     "inits" = inits, "psave" = psave)
@@ -349,7 +395,7 @@ buildJAGS.smooth.special.gc.smooth <- function(smooth, setup, i, zero)
 
 
 ########################################
-## (2) Interface to the JAGS sampler. ##
+## (3) Interface to the JAGS sampler. ##
 ########################################
 samplerJAGS <- function(x, tdir = NULL,
   n.chains = 1, n.adapt = 100,
@@ -403,7 +449,7 @@ samplerJAGS <- function(x, tdir = NULL,
 
 
 ###################################################################
-## (3) Functions to compute summary statistics, plots, etc. from ##
+## (4) Functions to compute summary statistics, plots, etc. from ##
 ##     samples returned the JAGS sampler.                        ##
 ###################################################################
 ## Function to extract all results obtained by running the JAGS
@@ -622,6 +668,9 @@ resultsJAGS <- function(x, samples)
     nx <- nx[nx != "call"]
     rval <- list()
     fn <- family$names
+    cat <- if(!is.null(family$cat)) family$cat else FALSE
+    if(cat)
+      fn <- paste(fn, gsub(attr(attr(x, "model.frame"), "response.name"), "", names(x)), sep = "")
     if(length(fn) != length(nx))
       fn <- paste(fn, 1:length(nx), sep = "")
     for(j in seq_along(nx)) {
@@ -636,6 +685,10 @@ resultsJAGS <- function(x, samples)
       }
     }
     names(rval) <- fn
+    if(cat) {
+      reference <- attr(x, "reference")
+      rval <- rval[!grepl(reference, fn)]
+    }
     attr(rval, "family") <- family
     class(rval) <- "bayesr"
     return(rval)

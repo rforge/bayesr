@@ -61,6 +61,6 @@ b <- bayesx2(y ~ sx(x1) + sx(x2), ~ sx(x1), data = dat, family = gaussian.BayesR
 
 
 data("GAMart")
-b <- bayesx2(cat ~ sx(x1) + sx(x2) + sx(x3), family = multinom, data = GAMart)
+b <- bayesr(cat ~ s(x1) + s(x2) + s(x3) + s(long, lat), family = multinomial.BayesR, data = GAMart)
 
 

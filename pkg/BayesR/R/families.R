@@ -201,6 +201,9 @@ multinomial.BayesR <- function(link = "logit", ...)
       "dist" = "dcat",
       "eta" = JAGSeta,
       "model" = JAGSmodel
+    ),
+    bayesx = list(
+      "pi" = c(paste("multinom", link, sep = "_"), "mean", "meanservant")
     )
   )
   class(rval) <- "family.BayesR"

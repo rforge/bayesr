@@ -37,6 +37,14 @@ transformBayesX <- function(x, ...)
 {
   family <- bayesr.family(attr(x, "family"))
 
+  if(family$cat) {
+    rn <- attr(attr(x, "model.frame"), "response.name")
+    response <- attr(x, "model.frame")[[rn]]
+    f <- as.formula(paste("~ -1 +", rn))
+    rm <- as.data.frame(model.matrix(f, data = attr(x, "model.frame")))
+    attr(x, "model.frame") <- cbind(attr(x, "model.frame"), rm)
+  }
+
   names(attr(x, "model.frame")) <- rmf(names(attr(x, "model.frame")))
 
   call <- x$call; x$call <- NULL
@@ -152,6 +160,10 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
   if(is.null(cores)) cores <- 1
 
   BayesX_data <- function(obj, h = FALSE) {
+    if(!is.null(obj$cat.formula) & !h) {
+      obj$response <- formula_respname(obj$cat.formula)
+      obj$reponse.vec <- attr(x, "model.frame")[[obj$response]]
+    }
     X <- NULL
     if(!is.null(obj$X)) {
       if(ncol(obj$X) > 0) {
@@ -284,7 +296,11 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         ctr <- FALSE
       } else {
         teqn <- paste(model.name, '.hregress ',
-          if(is.null(x[[j]]$response)) response.name else x[[j]]$response, sep = '')
+          if(family$cat) {
+            formula_respname(x[[j]]$cat.formula)
+          } else {
+            if(is.null(x[[j]]$response)) response.name else x[[j]]$response
+          }, sep = '')
         et <- x[[j]]$pterms
         fctr <- attr(x[[j]]$formula, "control")
         if(is.null(fctr)) fctr <- ""

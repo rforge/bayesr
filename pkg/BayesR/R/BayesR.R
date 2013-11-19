@@ -5,8 +5,8 @@
 ##                       http://www.life.illinois.edu/dietze/Lectures2012/
 bayesr <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.fail, contrasts = NULL,
-  reference = NULL, parse.input = parse.input.bayesr, transform = randomize, setup = setupJAGS,
-  sampler = samplerJAGS, results = resultsJAGS,
+  reference = NULL, parse.input = parse.input.bayesr, transform = transformJAGS,
+  setup = setupJAGS, sampler = samplerJAGS, results = resultsJAGS,
   cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, ...)
 {
   ## Setup all processing functions.
@@ -118,10 +118,17 @@ parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
         ty <- table(mf[[response.name]])
         reference <- c(names(ty)[ty == max(ty)])[1]
       }
-      ylevels <- levels(mf[[response.name]])
-      if(length(formula) != (n <- length(ylevels) - 1))
+      reference <- rmf(reference)
+      ylevels <- rmf(levels(mf[[response.name]]))
+      if(length(formula) != (n <- length(ylevels)))
         formula <- rep(formula, length.out = n)
-      names(formula) <- paste(response.name, ylevels[ylevels != reference], sep = ":")
+      names(formula) <- nf <- paste(response.name, ylevels, sep = "")
+      for(j in seq_along(formula)) {
+        uf <- eval(parse(text = paste(nf[j], " ~ .", sep = "")))
+        if(!all(c("formula", "fake.formula") %in% names(formula[[j]]))) {
+          formula[[j]][[1]]$cat.formula <- update(formula[[j]][[1]]$formula, uf)
+        } else formula[[j]]$cat.formula <- update(formula[[j]]$formula, uf)
+      }
     }
   } else mf[[response.name]] <- as.numeric(mf[[response.name]])
 
@@ -1227,8 +1234,8 @@ plot.bayesr.effect.default <- function(x, ...) {
             not = c("border", "lwd", "lty", names(formals("colorlegend")))))
         } else do.call("plotblock", args)
       }
-    } else do.call("plot2d", args)
-  } else do.call("plot3d", args)
+    } else do.call("plot2d", delete.args("plot2d", args))
+  } else do.call("plot3d", delete.args("plot3d", args))
 }
 
 
