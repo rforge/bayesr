@@ -209,7 +209,7 @@ setupJAGS <- function(x)
     fn <- family$names
     cat <- if(!is.null(family$cat)) family$cat else FALSE
     if(cat)
-      fn <- paste(fn, gsub(attr(attr(x, "model.frame"), "response.name"), "", names(x)), sep = "")
+      fn <- gsub(attr(attr(x, "model.frame"), "response.name"), "", names(x))
     if(length(fn) < length(x))
       fn <- paste(fn, 1:length(nx), sep = "")
     for(i in seq_along(nx)) {
@@ -670,7 +670,7 @@ resultsJAGS <- function(x, samples)
     fn <- family$names
     cat <- if(!is.null(family$cat)) family$cat else FALSE
     if(cat)
-      fn <- paste(fn, gsub(attr(attr(x, "model.frame"), "response.name"), "", names(x)), sep = "")
+      fn <- gsub(attr(attr(x, "model.frame"), "response.name"), "", names(x))
     if(length(fn) != length(nx))
       fn <- paste(fn, 1:length(nx), sep = "")
     for(j in seq_along(nx)) {

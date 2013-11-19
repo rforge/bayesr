@@ -64,3 +64,7 @@ data("GAMart")
 b <- bayesr(cat ~ s(x1) + s(x2) + s(x3) + s(long, lat), family = multinomial.BayesR, data = GAMart)
 
 
+
+data("marital.nz", package = "VGAM")
+b <- bayesr(mstatus ~ s(age), family = multinomial.BayesR, data = marital.nz)
+
