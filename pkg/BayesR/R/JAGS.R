@@ -565,6 +565,14 @@ resultsJAGS <- function(x, samples)
             ## Compute final smooth term object.
             tn <- c(obj$smooth[[i]]$term, if(obj$smooth[[i]]$by != "NA") obj$smooth[[i]]$by else NULL)
 
+            if(length(effects)) {
+              if(obj$smooth[[i]]$label %in% names(effects)) {
+                ct <- gsub(".smooth.spec", "", class(obj$smooth[[i]]))[1]
+                if(ct == "random.effect") ct <- "re"
+                obj$smooth[[i]]$label <- paste(obj$smooth[[i]]$label, ct, sep = ":")
+              }
+            }
+
             fst <- compute_term(obj$smooth[[i]], get.X = get.X, get.mu = get.mu,
               psamples = psamples, vsamples = vsamples, FUN = NULL, snames = snames,
               effects.hyp = effects.hyp, fitted.values = fitted.values,

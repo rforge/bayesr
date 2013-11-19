@@ -220,7 +220,7 @@ bayesr.design <- function(x, data, contrasts = NULL, knots = NULL, ...)
       } else x[[j]] <- assign.design(x[[j]], data)
     }
   } else x <- assign.design(x, data)
-  
+
   x
 }
 
@@ -1234,8 +1234,8 @@ plot.bayesr.effect.default <- function(x, ...) {
             not = c("border", "lwd", "lty", names(formals("colorlegend")))))
         } else do.call("plotblock", args)
       }
-    } else do.call("plot2d", delete.args("plot2d", args))
-  } else do.call("plot3d", delete.args("plot3d", args))
+    } else do.call("plot2d", delete.args("plot2d", args, c("xlim", "ylim", "pch")))
+  } else do.call("plot3d", delete.args("plot3d", args, c("xlim", "ylim", "zlim", "pch")))
 }
 
 

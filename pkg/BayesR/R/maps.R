@@ -246,7 +246,7 @@ pixelmap <- function(x, y, size = 0.1, width = NULL, data = NULL,
 ## a list() of polygons or objects of class
 ## "SpatialPolygons".
 neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
-  k = 1, ...)
+  k = 1, id = NULL, ...)
 {
   require("maptools"); require("spdep")
   type <- match.arg(type)
@@ -280,6 +280,16 @@ neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
     rownames(adjmat) <- nx
     colnames(adjmat) <- nx
   }
+
+  if(!is.null(id)) {
+    id <- as.character(unique(id))
+    i <- nx %in% id
+    adjmat <- adjmat[i, i]
+    nn <- rowSums(adjmat)
+    adjmat[adjmat > 0] <- -1
+    diag(adjmat) <- nn
+  }
+
   attr(adjmat, "coords") <- coordinates(x)
 
   adjmat
