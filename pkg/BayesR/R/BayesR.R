@@ -285,13 +285,14 @@ bayesr.family <- function(family, type = "BayesR")
 {
   family <- if(is.function(family)) family() else {
     if(is.character(family)) {
-      family <- gsub('"', "", family, fixed = TRUE)
       if(!is.null(type)) {
         if(!grepl(type, family))
           family <- paste(family, type, sep = ".")
       }
       family <- eval(parse(text = family))
-      family()
+      if(is.function(family))
+        family()
+      else family
     } else family
   }
   if(!inherits(family, "family.BayesR")) {

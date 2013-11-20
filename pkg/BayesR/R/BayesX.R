@@ -149,11 +149,15 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
   names(attr(x, "model.frame")) <- rmf(names(attr(x, "model.frame")))
 
   family <- attr(x, "family")
+
+  if(family$cat)
+    reference <- attr(x, "reference")
+
   x$call <- x$family <- NULL
 
   args <- list(...)
   model.name <- control$setup$model.name
-  data.name <- control$setup$data.name
+  data.name <- rmf(control$setup$data.name)
   prg.name <- control$setup$prg.name
   dir <- control$setup$dir
   cores <- control$setup$cores
@@ -323,14 +327,20 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
           ctr <- FALSE
         } else teqn <- paste(teqn, ",", sep = "")
         ok <- TRUE
+        eqtj <- 2
+        if(family$cat) {
+          if(grepl(reference, formula_respname(x[[j]]$cat.formula)))
+            eqtj <- 3
+        }
         if(!is.null(x[[j]]$hlevel)) {
           if(!any(grepl("hlevel", fctr))) {
             teqn <- paste(teqn, " hlevel=", x[[j]]$hlevel, sep = "")
             if(x[[j]]$hlevel > 1) {
               if(!any(grepl("family", fctr))) {
+                
                 teqn <- paste(teqn, " family=", "gaussian_re", sep = "")
                 teqn <- paste(teqn, " equationtype=",
-                  family$bayesx[[nx[if(is.null(id)) j else id]]][2], sep = "")
+                  family$bayesx[[nx[if(is.null(id)) j else id]]][eqtj], sep = "")
                 ok <- FALSE
               }
             }
@@ -345,7 +355,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
           if(!any(grepl("family", fctr)))
             teqn <- paste(teqn, " family=", family$bayesx[[nx[if(is.null(id)) j else id]]][1], sep = "")
           if(!any(grepl("equationtype", fctr)))
-            teqn <- paste(teqn, " equationtype=", family$bayesx[[nx[if(is.null(id)) j else id]]][2], sep = "")
+            teqn <- paste(teqn, " equationtype=", family$bayesx[[nx[if(is.null(id)) j else id]]][eqtj], sep = "")
         }
         if(length(fctr)) {
           fctr <- paste(fctr, collapse = " ")

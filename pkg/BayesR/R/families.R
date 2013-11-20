@@ -186,12 +186,12 @@ lognormal.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
 }
 
 
-multinomial.BayesR <- function(link = "logit", ...)
+multinomial.BayesR <- function(link = "probit", ...)
 {
   rval <- list(
     "family" = "multinomial",
     "names" = "pi",
-    "links" = parse.links(link, c(pi = "logit"), ...),
+    "links" = parse.links(link, c(pi = "probit"), ...),
     "cat" = TRUE,
     "valid.response" = function(x) {
       if(!is.factor(x)) stop("response must be a factor!", call. = FALSE)
