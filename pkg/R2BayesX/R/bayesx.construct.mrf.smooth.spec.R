@@ -14,6 +14,7 @@ bayesx.construct.mrf.smooth.spec <- bayesx.construct.spatial.smooth.spec <- func
     map.name <- object$xt$map.name
   if(!is.list(object$xt))
     object$xt <- list(object$xt)
+  map.name <- rmf(map.name)
 
   map <- object$xt$map
   if(is.null(map)) {

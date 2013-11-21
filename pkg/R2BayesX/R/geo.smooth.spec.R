@@ -6,6 +6,7 @@ geo.smooth.spec <- function(object, dir, prg, data, type)
     backtick = TRUE, width.cutoff = 500L))
   if(!is.null(object$xt$map.name))
     map.name <- object$xt$map.name
+  map.name <- rmf(map.name)
   map <- object$xt$map
   if(is.null(map)) {
     if(!is.null(object$xt$polys))
