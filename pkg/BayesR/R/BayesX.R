@@ -3,7 +3,7 @@
 #######################################
 bayesx2 <- function(formula, family = gaussian, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.fail, contrasts = NULL,
-  cores = NULL, combine = TRUE, n.iter = 1200, thin = 1, burnin = 200, seed = NULL, ...)
+  cores = NULL, combine = TRUE, n.iter = 12000, thin = 10, burnin = 2000, seed = NULL, ...)
 {
   require("BayesXsrc")
 
@@ -43,9 +43,13 @@ transformBayesX <- function(x, ...)
     f <- as.formula(paste("~ -1 +", rn))
     rm <- as.data.frame(model.matrix(f, data = attr(x, "model.frame")))
     attr(x, "model.frame") <- cbind(attr(x, "model.frame"), rm)
+    i <- which(attr(x, "ylevels") == attr(x, "reference"))
+    j <- 1:length(x)
+    family$order <- c(i, j[j != i])
   }
 
   names(attr(x, "model.frame")) <- rmf(names(attr(x, "model.frame")))
+  attr(attr(x, "model.frame"), "response.name") <- rmf(attr(attr(x, "model.frame"), "response.name"))
 
   call <- x$call; x$call <- NULL
 
@@ -95,10 +99,14 @@ transformBayesX <- function(x, ...)
   names(x) <- rep(family$names, length.out = n)
   if(!is.null(family$order)) {
     mf <- attr(x, "model.frame")
+    ylevels <- attr(x, "ylevels")
+    reference <- attr(x, "reference")
     class(x) <- "list"
     x <- x[family$order]
     class(x) <- c("bayesr.input", "list")
     attr(x, "model.frame") <- mf; rm(mf)
+    attr(x, "ylevels") <- ylevels
+    attr(x, "reference") <- reference
   }
   attr(x, "call") <- call
   attr(x, "family") <- family
@@ -111,7 +119,6 @@ controlBayesX <- function(n.iter = 1200, thin = 1, burnin = 200,
   seed = NULL, predict = "full", model.name = "bayesr", data.name = "d",
   prg.name = NULL, dir = NULL, verbose = FALSE, cores = NULL, ...)
 {
-dir <- "~/tmp"
   if(is.null(seed))
     seed <- '##seed##'
   stopifnot(burnin < n.iter)
@@ -166,7 +173,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
   BayesX_data <- function(obj, h = FALSE) {
     if(!is.null(obj$cat.formula) & !h) {
       obj$response <- formula_respname(obj$cat.formula)
-      obj$reponse.vec <- attr(x, "model.frame")[[obj$response]]
+      obj$response.vec <- attr(x, "model.frame")[[obj$response]]
     }
     X <- NULL
     if(!is.null(obj$X)) {
@@ -295,6 +302,8 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
     n <- length(x)
     eqn <- NULL
     for(j in n:1) {
+      ctr2 <- if(j != n) FALSE else TRUE
+      if(!is.null(id)) ctr2 <- id != n
       if(!"fake.formula" %in% names(x[[j]])) {
         eqn <- c(eqn, make_eqn(x[[j]], ctr, id = j))
         ctr <- FALSE
@@ -344,7 +353,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
                 ok <- FALSE
               }
             }
-            if(x[[j]]$hlevel < 2) {
+            if(x[[j]]$hlevel < 2 & ctr2) {
               if(any(grepl("predict", names(control$prg)))) {
                 teqn <- paste(teqn, " predict=", control$prg$predict, sep = "")
               }
@@ -447,6 +456,7 @@ writeLines(x$prg)
   warn <- getOption("warn")
   options(warn = -1)
   ok <- BayesXsrc::run.bayesx(prg = prg, verbose = x$control$setup$verbose, ...)
+## ok <- list(log = "hurra")
   options("warn" = warn)
   if(length(i <- grep("error", ok$log, ignore.case = TRUE))) {
     errl <- gsub("^ +", "", ok$log[i])
@@ -582,12 +592,13 @@ resultsBayesX <- function(x, samples, ...)
   mspecs <- attr(samples, "model.specs")
 
   rename.p <- function(x) {
-    if(family$family %in% c("beta", "gaussian", "lognormal", "binomial")) {
+    if(family$family %in% c("beta", "gaussian", "lognormal", "binomial", "multinomial")) {
       foo <- switch(family$family,
         "gaussian" = function(x) gsub("sigma2", "sigma", x),
         "beta" = function(x) gsub("sigma2", "phi", x),
         "lognormal" = function(x) gsub("sigma2", "sigma", x),
-        "binomial" = function(x) gsub("binomial", "pi", x)
+        "binomial" = function(x) gsub("binomial", "pi", x),
+        "multinomial" = function(x) gsub("multinom:1", "pi", x)
       )
       x <- foo(x)
     }
@@ -764,6 +775,8 @@ resultsBayesX <- function(x, samples, ...)
       nx <- paste("h", 1:length(x), sep = "")
       names(x) <- nx
     }
+    if(length(fn) != length(nx))
+      fn <- nx
     for(j in seq_along(nx)) {
       if(!all(c("formula", "fake.formula") %in% names(x[[nx[j]]]))) {
         rval[[nx[j]]] <- list()

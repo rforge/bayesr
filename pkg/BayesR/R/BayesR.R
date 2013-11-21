@@ -303,6 +303,8 @@ bayesr.family <- function(family, type = "BayesR")
     family <- eval(parse(text = paste(family, type, sep = if(!is.null(type)) "." else "")))
     family <- family()
   }
+  if(is.null(family$cat))
+    family$cat <- FALSE
   family
 }
 
