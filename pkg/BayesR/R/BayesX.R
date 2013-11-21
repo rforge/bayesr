@@ -36,22 +36,25 @@ bayesx2 <- function(formula, family = gaussian, data = NULL, knots = NULL,
 transformBayesX <- function(x, ...)
 {
   family <- bayesr.family(attr(x, "family"))
+  call <- x$call; x$call <- NULL
 
   if(family$cat) {
+    ylevels <- attr(x, "ylevels")
+    reference <- attr(x, "reference")
     rn <- attr(attr(x, "model.frame"), "response.name")
-    response <- attr(x, "model.frame")[[rn]]
     f <- as.formula(paste("~ -1 +", rn))
     rm <- as.data.frame(model.matrix(f, data = attr(x, "model.frame")))
-    attr(x, "model.frame") <- cbind(attr(x, "model.frame"), rm)
-    i <- which(attr(x, "ylevels") == attr(x, "reference"))
-    j <- 1:length(x)
-    family$order <- c(i, j[j != i])
+    cn <- colnames(rm) <- rmf(colnames(rm))
+    rm <- rm[, !grepl(reference, cn), drop = FALSE]
+    mf <- cbind(attr(x, "model.frame"), rm)
+    x <- x[ylevels != reference]
+    attr(x, "ylevels") <- ylevels
+    attr(x, "reference") <- reference
+    attr(x, "model.frame") <- mf
   }
 
   names(attr(x, "model.frame")) <- rmf(names(attr(x, "model.frame")))
   attr(attr(x, "model.frame"), "response.name") <- rmf(attr(attr(x, "model.frame"), "response.name"))
-
-  call <- x$call; x$call <- NULL
 
   tBayesX <- function(obj, ...) {
     if(!any(c("formula", "fake.formula", "response") %in% names(obj))) {
@@ -99,14 +102,11 @@ transformBayesX <- function(x, ...)
   names(x) <- rep(family$names, length.out = n)
   if(!is.null(family$order)) {
     mf <- attr(x, "model.frame")
-    ylevels <- attr(x, "ylevels")
-    reference <- attr(x, "reference")
     class(x) <- "list"
     x <- x[family$order]
     class(x) <- c("bayesr.input", "list")
     attr(x, "model.frame") <- mf; rm(mf)
-    attr(x, "ylevels") <- ylevels
-    attr(x, "reference") <- reference
+
   }
   attr(x, "call") <- call
   attr(x, "family") <- family
@@ -156,10 +156,6 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
   names(attr(x, "model.frame")) <- rmf(names(attr(x, "model.frame")))
 
   family <- attr(x, "family")
-
-  if(family$cat)
-    reference <- attr(x, "reference")
-
   x$call <- x$family <- NULL
 
   args <- list(...)
@@ -336,11 +332,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
           ctr <- FALSE
         } else teqn <- paste(teqn, ",", sep = "")
         ok <- TRUE
-        eqtj <- 2
-        if(family$cat) {
-          if(grepl(reference, formula_respname(x[[j]]$cat.formula)))
-            eqtj <- 3
-        }
+        eqtj <- if(family$cat & j != 1) 3 else 2
         if(!is.null(x[[j]]$hlevel)) {
           if(!any(grepl("hlevel", fctr))) {
             teqn <- paste(teqn, " hlevel=", x[[j]]$hlevel, sep = "")
@@ -570,7 +562,6 @@ process_mfile <- function(x)
     } else x
   })
   terms <- paste(terms, ft, sep = ":")
-  terms <- paste(terms, hlevel, sep = ":")
   if(any(i <- duplicated(terms))) {
     for(j in terms[i]) {
       tt <- grep(j, terms, value = TRUE, fixed = TRUE)
@@ -578,6 +569,7 @@ process_mfile <- function(x)
       terms[terms == j] <- tt
     }
   }
+  terms <- paste(terms, hlevel, sep = ":")
   rval <- list("effects" = cbind(terms, filetype, samples, varsamples, basis, family, eqntype, hlevel),
     "model" = list("predict" = predict, "dic" = dic))
   rval
@@ -590,6 +582,10 @@ resultsBayesX <- function(x, samples, ...)
   if(is.function(family))
     family <- family()
   mspecs <- attr(samples, "model.specs")
+  ylevels <- attr(x, "ylevels")
+  reference <- attr(x, "reference")
+  if(family$cat)
+    ylevels <- ylevels[ylevels != reference]
 
   rename.p <- function(x) {
     if(family$family %in% c("beta", "gaussian", "lognormal", "binomial", "multinomial")) {
@@ -598,7 +594,11 @@ resultsBayesX <- function(x, samples, ...)
         "beta" = function(x) gsub("sigma2", "phi", x),
         "lognormal" = function(x) gsub("sigma2", "sigma", x),
         "binomial" = function(x) gsub("binomial", "pi", x),
-        "multinomial" = function(x) gsub("multinom:1", "pi", x)
+        "multinomial" = function(x) {
+          for(j in seq_along(ylevels))
+            x <- gsub(paste("multinom", j, sep = ":"), ylevels[j], x)
+          x
+        }
       )
       x <- foo(x)
     }
@@ -775,6 +775,14 @@ resultsBayesX <- function(x, samples, ...)
       nx <- paste("h", 1:length(x), sep = "")
       names(x) <- nx
     }
+    if(length(unique(nx)) != length(nx)) {
+      nx <- paste(rep(nx, length.out = length(nx)), 1:length(nx), sep = ":")
+      names(x) <- nx
+    }
+    if(family$cat) {
+      fn <- ylevels
+      names(x) <- nx <- fn
+    }
     if(length(fn) != length(nx))
       fn <- nx
     for(j in seq_along(nx)) {
@@ -784,8 +792,6 @@ resultsBayesX <- function(x, samples, ...)
           nh <- paste("h", i, sep = "")
           rval[[nx[j]]][[nh]] <- createBayesXresults(x[[nx[j]]][[i]],
             samples, id = fn[j], sid = length(nx) > 1)
-          attr(rval[[nx[j]]][[nh]], "model.frame") <- attr(x[[nx[j]]][[i]], "model.frame")
-          attr(x[[nx[j]]][[i]], "model.frame") <- NULL
         }
         attr(rval[[nx[j]]], "hlevel") <- TRUE
       } else {
@@ -903,7 +909,7 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
         } else k <- -1L
       }
       if(!is.null(xt$map))
-        xt$map.name <- as.character(call$map)
+        xt$map.name <- rmf(as.character(call$map))
       xt[c("degree", "order", "knots", "nrknots")] <- NULL
       if(!length(xt))
         xt <- NULL

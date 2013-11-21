@@ -57,7 +57,7 @@ dat$y <- hs(with(dat, 1.2 + sin(x1) + cos(x2) + rnorm(n, sd = (cos(dat$x1) + 2) 
 
 a <- bayesr(y ~ s(x1) + s(x2), ~ s(x1), data = dat, family = gamma.BayesR)
 
-b <- bayesx2(y ~ sx(x1) + sx(x2), ~ sx(x1), data = dat, family = gaussian.BayesR)
+b <- bayesx2(y ~ sx(x1) + sx(x2), ~ sx(x1), data = dat, family = gamma.BayesR)
 
 
 data("GAMart")
