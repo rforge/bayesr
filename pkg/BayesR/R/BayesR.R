@@ -1227,18 +1227,24 @@ plot.bayesr.effect.default <- function(x, ...) {
         if(is.null(args$main))
           args$main <- attr(x, "specs")$label
         args$x <- density(x[, "50%"])
-        do.call("plot.density", delete.args("plot.density", args))
+        do.call("plot", delete.args(stats:::plot.density, args, "main"))
       } else {
         if(!is.null(args$map)) {
           args$x <- x[, grepl("50%", colnames(x), fixed = TRUE)]
           args$id <- as.character(x[, 1])
           args$xlim <- args$ylim <- NULL
           do.call("plotmap", delete.args("plotmap", args,
-            not = c("border", "lwd", "lty", names(formals("colorlegend")))))
+            not = c("border", "lwd", "lty", names(formals("colorlegend")), "main")))
         } else do.call("plotblock", args)
       }
-    } else do.call("plot2d", delete.args("plot2d", args, c("xlim", "ylim", "pch")))
-  } else do.call("plot3d", delete.args("plot3d", args, c("xlim", "ylim", "zlim", "pch")))
+    } else {
+      do.call("plot2d", delete.args("plot2d", args,
+        c("xlim", "ylim", "pch", "main", "xlab", "ylab")))
+    }
+  } else {
+    do.call("plot3d", delete.args("plot3d", args,
+      c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab", "zlab")))
+  }
 }
 
 
@@ -1277,7 +1283,7 @@ summary.bayesr <- function(object, model = NULL, ...)
   rval <- list()
   n <- length(object)
   for(i in 1:n) {
-    if(!is.null(attr(object[[i]], "hlevel"))) {
+    if(!any(c("param.effects", "effects.hyp", "scale") %in% names(object[[i]]))) {
       rval[[i]] <- summary.bayesr(object[[i]])
       attr(rval[[i]], "hlevel") <- TRUE
     } else {
@@ -1307,6 +1313,8 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
 {
   on.exit(return(invisible(x)))
   h0 <- !is.null(attr(x, "hlevel"))
+
+  dic_out <- is.null(list(...)$dic_out)
 
   print_dic_pd <- function(x, ok = TRUE) {
     if(is.list(x)) {
@@ -1347,6 +1355,7 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
     print(if(is.function(family)) family() else family)
     cat("---\n\n")
   }
+
   for(i in 1:n) {
     h1 <- !is.null(attr(x[[i]], "hlevel"))
     if(!is.null(nx)) {
@@ -1354,8 +1363,8 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
       if(h1) cat("---") else cat("---\n")
     }
     if(h1) {
-      print.summary.bayesr(x[[i]], digits = digits, ...)
-      if(i == n)
+      print.summary.bayesr(x[[i]], digits = digits, dic_out = FALSE, ...)
+      if(i == n & dic_out)
         print_dic_pd(x[[i]][[1]], ok = FALSE)
     } else {
       cat("Formula:\n")

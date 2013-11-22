@@ -448,7 +448,6 @@ writeLines(x$prg)
   warn <- getOption("warn")
   options(warn = -1)
   ok <- BayesXsrc::run.bayesx(prg = prg, verbose = x$control$setup$verbose, ...)
-## ok <- list(log = "hurra")
   options("warn" = warn)
   if(length(i <- grep("error", ok$log, ignore.case = TRUE))) {
     errl <- gsub("^ +", "", ok$log[i])
@@ -605,10 +604,9 @@ resultsBayesX <- function(x, samples, ...)
     x
   }
 
-  names(mspecs$effects) <- rename.p(names(mspecs$effects))
-
   if(is.null(mspecs) & is.list(samples))
     mspecs <- attr(samples[[1]], "model.specs")
+  names(mspecs$effects) <- rename.p(names(mspecs$effects))
 
   createBayesXresults <- function(obj, samples, id = NULL, sid = FALSE) {
     if(inherits(samples[[1]], "mcmc.list"))
