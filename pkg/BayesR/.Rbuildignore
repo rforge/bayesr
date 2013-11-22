@@ -1,2 +1,3 @@
 inst/tscript.R
 R/devtools.R
+tests
