@@ -1489,27 +1489,44 @@ formula.bayesr <- function(x, ...) { attr(x, "formula") }
 
 
 ## Model extractor function.
-get.model <- function(x, model)
+get.model <- function(x, model = NULL)
 {
-  family <- attr(x, "family")
-  cx <- class(x)
-  elmts <- c("formula", "fake.formula", "model", "param.effects",
-    "effects", "fitted.values", "residuals")
-  if(!any(names(x) %in% elmts)) {
-    if(!is.null(model)) {
-      if(is.character(model)) {
-        if(all(is.na(model <- pmatch(model, names(x)))))
-          stop("argument model is specified wrong!")
-      } else {
-        if(max(model) > length(x) || is.na(model) || min(model) < 1) 
-          stop("argument model is specified wrong!")
+  if(length(model) > 1) {
+    for(j in model)
+      x <- get.model(x, j)
+  } else {
+    family <- attr(x, "family")
+    cx <- class(x)
+    elmts <- c("formula", "fake.formula", "model", "param.effects",
+      "effects", "fitted.values", "residuals")
+    if(!any(names(x) %in% elmts)) {
+      if(!is.null(model)) {
+        if(is.character(model)) {
+          if(all(is.na(model <- pmatch(model, names(x)))))
+            stop("argument model is specified wrong!")
+        } else {
+          if(max(model) > length(x) || is.na(model) || min(model) < 1) 
+            stop("argument model is specified wrong!")
+        }
+        x <- x[[model]]
       }
-      x <- x[[model]]
-    }
-  } else x <- list(x)
-  class(x) <- cx
-  attr(x, "family") <- family
+    } else x <- list(x)
+    class(x) <- cx
+    attr(x, "family") <- family
+  }
 
   return(x)
+}
+
+
+#############################
+## (10) Utility functions. ##
+#############################
+scale2 <- function(x, lower = 0, upper = 1)
+{
+  x <- if(length(unique(x)) > 1) {
+    (x - min(x, na.rm = TRUE)) / diff(range(x, na.rm = TRUE)) * (upper - lower) + lower
+  } else x
+  x
 }
 

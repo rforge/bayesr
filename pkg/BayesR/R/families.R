@@ -11,7 +11,13 @@ print.family.BayesR <- function(x, ...)
   cat("\n")
 }
 
+## Extract method.
+family.bayesr <- function(object, ...)
+{
+  attr(object, "family")
+}
 
+## Second make.link function.
 make.link2 <- function(link)
 {
   if(link %in% c("logit", "probit", "cauchit", "cloglog", "identity",

@@ -690,19 +690,13 @@ resultsBayesX <- function(x, samples, ...)
               data = attr(x, "model.frame")[, tn, drop = FALSE])
 
             attr(fst$term, "specs")$get.mu <- get.mu
-            attr(fst$term, "specs")$basis <- function(x) {
-              if(!is.null(dim(x))) {
-                if(ncol(x) < 2) x <- x[, 1]
-              }
-              sx.smooth[[i]]$basis(x)
-            }
+            attr(fst$term, "specs")$basis <- sx.smooth[[i]]$basis
             if(sid)
               attr(fst$term, "specs")$label <- paste(attr(fst$term, "specs")$label, id, sep = ":")
 
             ## Add term to effects list.
             effects[[paste(tn0, stype, sep = ":")]] <- fst$term
             effects.hyp <- fst$effects.hyp
-
             fitted.values <- fst$fitted.values
             rm(fst)
           }
@@ -788,9 +782,9 @@ resultsBayesX <- function(x, samples, ...)
     for(j in seq_along(nx)) {
       if(!all(c("formula", "fake.formula") %in% names(x[[nx[j]]]))) {
         rval[[nx[j]]] <- list()
-        for(i in seq_along(x[[nx[j]]])) {
-          nh <- paste("h", i, sep = "")
-          rval[[nx[j]]][[nh]] <- createBayesXresults(x[[nx[j]]][[i]],
+        for(ii in seq_along(x[[nx[j]]])) {
+          nh <- paste("h", ii, sep = "")
+          rval[[nx[j]]][[nh]] <- createBayesXresults(x[[nx[j]]][[ii]],
             samples, id = fn[j], sid = length(nx) > 1)
         }
         attr(rval[[nx[j]]], "hlevel") <- TRUE

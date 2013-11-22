@@ -1,14 +1,3 @@
-## source all functions
-sbayesr()
-
-## scaling function
-hs <- function(x, min = 0.1, max = 0.6) {
-  x <- if(length(unique(x)) > 1) {
-    (x - min(x, na.rm = TRUE)) / diff(range(x, na.rm = TRUE)) * (max - min) + min
-  } else x
-  x
-}
-
 ## generate data
 n <- 500
 dat <- data.frame("x1" = runif(n, -3, 3))
@@ -21,10 +10,16 @@ fun <- function(x, theta = c(2, -20, -0.1)) {
 }
 
 ## dat$y <- with(dat, 21 + cf + sin(x2) + rnorm(n, sd = 0.1))
-dat$y <- hs(with(dat, 1.2 + sin(x1) + re + rnorm(n, sd = 0.1)), 0.0001, 2)
+dat$y <- scale2(with(dat, 1.2 + sin(x1) + re + rnorm(n, sd = 0.1)), 0.0001, 2)
 
 ## fit model
 b <- bayesx2(y ~ sx(x1) + sx(fac, bs = "re"), fac ~ sx(x2), ~ sx(x1) + sx(fac, bs = "re"), family = gaussian.BayesR, data = dat)
+
+n <- 50
+nd <- data.frame(x1 = seq(-10, 10, length = n), x2 = seq(-10, 10, length = n))
+nd$p <- predict(b, nd, model = c("mu", "h1"), term = "sx(x1)")
+
+nd$p <- predict(b2, nd, model = "mu", term = "sx(x1)")
 
 
 b <- bayesr(y ~ s(x1) + s(fac, bs = "re") | fac ~ s(x2), data = dat)
@@ -53,11 +48,11 @@ points(dat$x1, dat$cf * fun(dat$x1), col = 2, pch = 3)
 ## generate data
 n <- 500
 dat <- data.frame("x1" = runif(n, -3, 3), x2 = runif(n, -3, 3))
-dat$y <- hs(with(dat, 1.2 + sin(x1) + cos(x2) + rnorm(n, sd = (cos(dat$x1) + 2) / 4)), 0.001, 0.999)
+dat$y <- scale2(with(dat, 1.2 + sin(x1) + cos(x2) + rnorm(n, sd = (cos(dat$x1) + 2) / 4)), 0.001, 0.999)
 
-a <- bayesr(y ~ s(x1) + s(x2), ~ s(x1), data = dat, family = gamma.BayesR)
+a <- bayesr(y ~ s(x1) + s(x2), ~ s(x1), data = dat, family = gaussian.BayesR)
 
-b <- bayesx2(y ~ sx(x1) + sx(x2), ~ sx(x1), data = dat, family = gamma.BayesR)
+b2 <- bayesx2(y ~ sx(x1) + sx(x2), ~ sx(x1), data = dat, family = gamma.BayesR)
 
 
 data("GAMart")
