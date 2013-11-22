@@ -10,11 +10,14 @@
 }
 
 \usage{
-bayesr(formula, family = gaussian(), data = NULL,
-  knots = NULL, weights = NULL, subset = NULL, offset = NULL,
-  na.action = na.fail, contrasts = NULL, parse.input = parse.input.bayesr,
-  transform = randomize, setup = setupJAGS, sampler = samplerJAGS,
-  results = resultsJAGS, cores = NULL, combine = TRUE, ...)
+bayesr(formula, family = gaussian.BayesR,
+  data = NULL, knots = NULL, weights = NULL, subset = NULL,
+  offset = NULL, na.action = na.fail, contrasts = NULL,
+  reference = NULL, parse.input = parse.input.bayesr,
+  transform = transformJAGS, setup = setupJAGS,
+  sampler = samplerJAGS, results = resultsJAGS,
+  cores = NULL, sleep = NULL, combine = TRUE,
+  model = TRUE, ...)
 }
 
 \arguments{
@@ -34,6 +37,7 @@ bayesr(formula, family = gaussian(), data = NULL,
     \code{\link{na.omit}} if set to \code{NULL}.}
   \item{contrasts}{an optional list. See the \code{contrasts.arg} of 
     \code{\link[stats]{model.matrix.default}}.}
+  \item{reference}{character or integer. The reference category for categorical response models.}
   \item{parse.input}{function, used to parse all input parameters, see function
     \code{parse.bayesr.input}.}
   \item{transform}{function, a transformator function to be applied on smooth term objects.}
@@ -41,15 +45,17 @@ bayesr(formula, family = gaussian(), data = NULL,
     function.}
   \item{sampler}{MCMC sampler function or named list controlling arguments of the default MCMC
     sampler function.}
-  \item{sampler}{MCMC results function or named list controlling arguments of the default MCMC
-    results function.}
+  \item{results}{function, a function that computes the desired results from MCMC samples and data.}
   \item{cores}{integer. How many cores should be used? The default is one core if
     \code{cores = NULL}. If \code{cores} > 1, the return value is again a list of class
     \code{"bayesr"}, for which all plotting and extractor functions can be applied, see argument
     \code{chains}. Note that this option is not available on Windows systems, see the documentation
     of function \code{\link[parallel]{mclapply}}.}
+  \item{sleep}{numeric, when using the multiple core option, sleep determines the waiting time until
+    the next process is started.}
   \item{combine}{logical, should samples from different chains/cores already be combined within
     \code{bayesr}?}
+  \item{model}{should the model frame be returned?}
   \item{\dots}{arguments passed to \code{setup}, \code{sampler}, \code{results}.}
 }
 
@@ -70,7 +76,7 @@ bayesr(formula, family = gaussian(), data = NULL,
 }
 
 \examples{
-## generate some data
+\dontrun{## generate some data
 set.seed(111)
 n <- 200
 
@@ -85,6 +91,6 @@ b <- bayesr(y ~ s(x), data = dat)
 
 ## plot fitted model term
 plot(b)
-}
+}}
 
 \keyword{regression}
