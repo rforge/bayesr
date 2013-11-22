@@ -25,5 +25,5 @@ b0 <- bayesr(yg ~ s(x1) + s(x2) + s(id, bs = "mrf", xt = list(penalty = gm$nmat)
   s(id, bs = "re"), data = dat, family = gaussian.BayesR)
 
 ## Model with BayesX.
-b1 <- bayesx2(yg ~ -1 + sx(x1) + sx(x2) + sx(id, bs = "mrf", map = gmap) +
-  sx(id, bs = "re"), id ~ 1, data = dat, family = gaussian.BayesR)
+b1 <- bayesx2(yg ~ sx(x1) + sx(x2) + sx(id, bs = "mrf", map = gm$map) +
+  sx(id, bs = "re"), id ~ -1, data = dat, family = gaussian.BayesR)
