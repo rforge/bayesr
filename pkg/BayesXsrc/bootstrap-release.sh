@@ -21,6 +21,8 @@ svn update --revision 1246 --username "${USER}" --password "${PASSWD}" bib/datao
 svn update --revision 1247 --username "${USER}" --password "${PASSWD}" mcmc/fullcond.h
 svn update --revision 1247 --username "${USER}" --password "${PASSWD}" mcmc/mcmc_const.h
 svn update --revision 1247 --username "${USER}" --password "${PASSWD}" mcmc/distribution.h
+svn update --revision 1249 --username "${USER}" --password "${PASSWD}" bib/clstring.h
+svn update --revision 1249 --username "${USER}" --password "${PASSWD}" leyre/nbinomial.cpp
 cd ..
 cp rel-Makefile Makefile
 cp rel-Makefile.win Makefile.win
