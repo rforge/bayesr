@@ -47,7 +47,7 @@ points(dat$x1, dat$cf * fun(dat$x1), col = 2, pch = 3)
 
 ## generate data
 n <- 500
-dat <- data.frame("x1" = runif(n, -3, 3), x2 = runif(n, -3, 3))
+dat <- data.frame("x1" = sort(runif(n, -3, 3)), x2 = runif(n, -3, 3))
 dat$y <- scale2(with(dat, 1.2 + sin(x1) + cos(x2) + rnorm(n, sd = (cos(dat$x1) + 2) / 4)), 0.001, 0.999)
 
 a <- bayesr(y ~ s(x1) + s(x2), ~ s(x1), data = dat, family = gaussian.BayesR)

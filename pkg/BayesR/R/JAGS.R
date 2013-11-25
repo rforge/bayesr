@@ -312,15 +312,15 @@ buildJAGS.smooth.special <- function(smooth, setup, i, zero)
 ## Default special model term builder.
 buildJAGS.smooth.special.default <- function(smooth, setup, i, zero)
 {
-  buildJAGS.smooth(smooth, setup, i)
+  buildJAGS.smooth(smooth, setup, i, zero)
 }
 
 
 ## JAGS random scaling model term constructor.
-buildJAGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
+buildJAGS.smooth.special.rsc.smooth <- function(smooth, setup, i, zero)
 {
   smooth$special <- FALSE
-  setup <- buildJAGS.smooth(smooth, setup, i)
+  setup <- buildJAGS.smooth(smooth, setup, i, zero)
 
   if(!is.null(smooth$by.formula)) {
     st <- setup$smooth[si <- grep(paste("sm", i, "[i] <-", sep = ""), setup$smooth, fixed = TRUE)]
@@ -387,6 +387,70 @@ buildJAGS.smooth.special.gc.smooth <- function(smooth, setup, i, zero)
 
   setup$smooth <- c(setup$smooth, paste("    sm", i, "[i] <- ",
     paste(fall, collapse = " + ", sep = ""), sep = ""))
+  setup$eta <- paste(setup$eta, paste("sm", i, "[i]", sep = ""),
+    sep = if(length(setup$eta)) " + " else "")
+
+  setup
+}
+
+
+## Special code builder for rational splines.
+buildJAGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
+{
+  fall <- fall0 <- NULL
+  kr <- if(is.null(smooth$rand$Xr)) 0 else ncol(smooth$rand$Xr)
+  kx <- if(is.null(smooth$Xf)) 0 else ncol(smooth$Xf)
+  kx <- if(kr < 1 & kx < 1) ncol(smooth$X) else kx
+
+  if(kx > 0) {
+    fall0 <- c(fall0, paste("Xf", i, "[i, ", 1:kx, "]", sep = ""))
+    fall <- c(fall, paste("b", i, if(kx > 1) paste("[", 1:kx, "]", sep = ""),
+      "*Xf", i, "[i, ", 1:kx, "]", sep = ""))
+    setup$data[[paste("Xf", i, sep = "")]] <- if(smooth$fixed) smooth$X else smooth$Xf
+    tmp <- if(kx > 1) {
+        paste("    b", i, if(zero) "[j] <- 0.0" else "[j] ~ dnorm(0, 1.0E-6)", sep = "")
+    } else paste("  b", i, if(zero) " <- 0.0" else " ~ dnorm(0, 1.0E-6)", sep = "")
+    setup$priors.coef <- c(setup$priors.coef, tmp)
+    setup$loops <- c(setup$loops, kx)
+    if(!zero)
+      setup$inits[[paste("b", i, sep = "")]] <- runif(kx)
+    setup$psave <- c(setup$psave, paste("b", i, sep = ""))
+  }
+  if(kr > 0) {
+    fall0 <- c(fall0, paste("Xr", i, "[i, ", 1:kr, "]", sep = ""))
+    fall <- c(fall, paste("g", i, if(kr > 1) paste("[", 1:kr, "]", sep = ""), "*Xr",
+      i, "[i, ", 1:kr, "]", sep = ""))
+    setup$data[[paste("Xr", i, sep = "")]] <- smooth$rand$Xr
+    taug <- paste("taug", if(is.null(smooth$id)) i else smooth$id, sep = "")
+    tmp <- if(kr > 1) {
+      paste("    g", i, if(zero) "[j] <- 0.0" else paste("[j] ~ dnorm(0, ", taug, ")", sep = ""), sep = "")
+    } else paste("g", i, if(zero) " <- 0.0" else paste(" ~ dnorm(0, ", taug, ")", sep = ""), sep = "")
+    setup$priors.coef <- c(setup$priors.coef, tmp)
+    setup$loops <- c(setup$loops, kr)
+    if(is.null(setup$priors.scale) || !any(grepl(taug, setup$priors.scale))) {
+      setup$priors.scale <- c(setup$priors.scale, paste("  ", taug,
+        if(zero) " <- 0.0" else " ~ dgamma(1.0E-6, 1.0E-6)", sep = ""))
+      if(!zero)
+        	setup$inits[[taug]] <- runif(1, 0.00001, 0.0001)
+      setup$psave <- c(setup$psave, taug)
+    }
+  }
+
+    tmp <- if((kw <- length(fall)) > 1) {
+        paste("    w", i, if(zero) "[j] <- 0.0" else "[j] ~ dgamma(1.0E-6, 1.0E-6)", sep = "")
+    } else paste("  w", i, if(zero) " <- 0.0" else " ~ dgamma(1.0E-6, 1.0E-6)", sep = "")
+    setup$priors.coef <- c(setup$priors.coef, tmp)
+    setup$loops <- c(setup$loops, kw)
+    if(!zero)
+      setup$inits[[paste("w", i, sep = "")]] <- runif(kw)
+    setup$psave <- c(setup$psave, paste("w", i, sep = ""))
+
+  fall0 <- paste(fall0, c(1, paste("w", i, "[", 1:(length(fall0) - 1), "]", sep = "")), sep = "*")
+  fall <- paste(fall, c(1, paste("w", i, "[", 1:(length(fall) - 1), "]", sep = "")), sep = "*")
+  fall0 <- paste("    sm0", i, "[i] <- 1 / (", paste(fall0, collapse = " + "), ")", sep = "")
+  fall <- paste("    sm", i, "[i] <- sm0", i, "[i] * (", paste(fall, collapse = " + "), ")", sep = "")
+
+  setup$smooth <- c(setup$smooth, fall, fall0)
   setup$eta <- paste(setup$eta, paste("sm", i, "[i]", sep = ""),
     sep = if(length(setup$eta)) " + " else "")
 
@@ -716,14 +780,16 @@ resultsJAGS.special <- function(x, samples, data, i, ...)
 ## Default special term results method.
 resultsJAGS.special.default <- function(x, samples, data, i, ...)
 {
-  warning("Please fixme!")
   snames <- colnames(samples)
 
   ## Get coefficient samples of smooth term.
   xsamples <- rsamples <- NULL
   kr <- if(is.null(x$rand$Xr)) 0 else ncol(x$rand$Xr)
-  kx <- if(is.null(x$Xf)) 0 else ncol(x$Xf)
-  kw <- 0
+  kx <- if(x$fixed) {
+    ncol(x$X)
+  } else {
+    if(is.null(x$Xf)) 0 else ncol(x$Xf)
+  }
   if(kx) {
     pn <- grep(paste("b", i, sep = ""), snames, value = TRUE, fixed = TRUE)
     pn <- pn[!grepl("tau", pn)]
@@ -737,7 +803,7 @@ resultsJAGS.special.default <- function(x, samples, data, i, ...)
   psamples <- cbind("ra" = rsamples, "fx" = xsamples)
   
   ## Retransform parameter samples.
-  if(kr) {
+  if(kr & !x$fixed) {
     re_trans <- function(g) {
       g <- x$trans.D * g
       if(!is.null(x$trans.U))
@@ -748,7 +814,10 @@ resultsJAGS.special.default <- function(x, samples, data, i, ...)
   }
 
   ## Prediction matrix.
-  X <- PredictMat(x, data)
+  get.X <- function(data) {
+    X <- PredictMat(x, data)
+    X
+  }
 
   ## Possible variance parameter samples.
   vsamples <- NULL
@@ -757,17 +826,27 @@ resultsJAGS.special.default <- function(x, samples, data, i, ...)
     vsamples <- as.numeric(samples[, snames %in% taug])
   }
 
-  get.mu <- function(X, g) {
-    X %*% as.numeric(g)
+  if(is.null(x$get.mu)) {
+    get.mu <- function(X, g) {
+      X %*% as.numeric(g)
+    }
+  } else {
+    get.mu <- x$get.mu
   }
 
-  ## Compute samples of fitted values.
-  fsamples <- apply(psamples, 1, function(g) { get.mu(X, g) })
+  ## Get weight parameters for rational splines.
+  if(inherits(x, "rs.smooth")) {
+    pn <- grep(paste("w", i, sep = ""), snames, value = TRUE, fixed = TRUE)
+    pn <- pn[!grepl("tau", pn)]
+    wsamples <- matrix(samples[, snames %in% pn], ncol = (kx + kr))
+    psamples <- cbind(psamples, "w" = wsamples)
+  }
 
   ## Compute final smooth term object.
-  fst <- compute_term(x, fsamples = fsamples, psamples = psamples,
-    vsamples = vsamples, FUN = NULL, snames = snames,
-    effects.hyp = NULL, fitted.values = NULL, data = data)
+  fst <- compute_term(x, get.X = get.X, get.mu = get.mu,
+    psamples = psamples, vsamples = vsamples, FUN = NULL, snames = snames,
+    effects.hyp = NULL, fitted.values = NULL,
+    data = data)
 
   attr(fst$term, "specs")$get.mu <- get.mu 
 
@@ -776,7 +855,7 @@ resultsJAGS.special.default <- function(x, samples, data, i, ...)
 
 
 ## Random scaling results function.
-resultsJAGS.special.rs.smooth <- function(x, samples, data, i, ...)
+resultsJAGS.special.rsc.smooth <- function(x, samples, data, i, ...)
 {
   snames <- colnames(samples)
 

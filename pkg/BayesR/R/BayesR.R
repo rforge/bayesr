@@ -684,6 +684,8 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   ## Compute samples of fitted values.
   fsamples <- apply(psamples, 1, function(g) { get.mu(X, g) })
 
+matplot(data$x1, fsamples, type= "l")
+
   if(is.null(FUN)) {
     FUN <- function(x) {
       rval <- as.numeric(quantile(x, probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
@@ -916,7 +918,7 @@ s2 <- function(...)
 
 
 ## Setup function for random scaling terms.
-rs <- function(..., by = NA)
+rsc <- function(..., by = NA)
 {
   by <- deparse(substitute(by), backtick = TRUE, width.cutoff = 500)
   if(by != "NA") {
@@ -930,13 +932,13 @@ rs <- function(..., by = NA)
   rval$by.formula <- if(by != "NA") as.formula(by) else NULL
   rval$class <- class(rval)
   rval$special <- TRUE
-  class(rval) <- "rs.smooth.spec"
+  class(rval) <- "rsc.smooth.spec"
   rval
 }
 
 
 ## Smooth constructor function for random scaling terms.
-smooth.construct.rs.smooth.spec <- function(object, data, knots) {
+smooth.construct.rsc.smooth.spec <- function(object, data, knots) {
   class(object) <- object$class
   acons <- TRUE
   if(!is.null(object$xt$center))
@@ -969,7 +971,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots) {
     }
   }
 
-  class(rval) <- "rs.smooth"
+  class(rval) <- "rsc.smooth"
   rval
 }
 
@@ -1004,12 +1006,48 @@ smooth.construct.gc.smooth.spec <- function(object, data, knots)
   object
 }
 
-
 ## Work around for the "prediction matrix" of a growth curve.
 Predict.matrix.gc.smooth <- function(object, data, knots) 
 {
   X <- matrix(as.numeric(data[[object$term]]), ncol = 1)
   X
+}
+
+
+## Rational spline constructor.
+rs <- function(...)
+{
+  rval <- s(...)
+  rval$class <- class(rval)
+  rval$special <- TRUE
+  class(rval) <- "rs.smooth.spec"
+  rval
+}
+
+smooth.construct.rs.smooth.spec <- function(object, data, knots) 
+{
+  class(object) <- object$class
+  acons <- TRUE
+  if(!is.null(object$xt$center))
+    acons <- object$xt$center
+  object <- smoothCon(object, data, knots, absorb.cons = acons)[[1]]
+  object$by.done <- TRUE
+  object$get.mu <- function(X, g) {
+    k <- ncol(X)
+    w <- c(1, g[(k + 1):(2 * k - 1)])
+    g <- g[1:k]
+    R <- diag(1 / drop(X %*% w)) %*% X %*% diag(w)
+    R %*% g
+  }
+  object$class <- class(object)
+  class(object) <- if(object$fixed) c("rs.smooth", "no.mgcv") else "rs.smooth"
+  object
+}
+
+Predict.matrix.rs.smooth <- function(object, data, knots)
+{
+  class(object) <- object$class
+  Predict.matrix(object, data) 
 }
 
 
