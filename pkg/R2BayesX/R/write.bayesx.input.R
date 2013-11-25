@@ -172,6 +172,11 @@ write.bayesx.input <- function(object)
       }
     }
     data.file <- paste(object$outfile, "/", object$model.name, ".data.raw", sep = "")
+    if(!is.null(object$begin.vec)) {
+      dn <- c(colnames(dat), object$begin)
+      dat <- cbind(dat, object$begin.vec)
+      colnames(dat) <- dn
+    }
     if(!file.exists(data.file))
       write.table(dat, data.file, col.names = TRUE, row.names = FALSE, quote = FALSE)
     else {

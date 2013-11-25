@@ -19,6 +19,7 @@ parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, off
   if(!is.null(subset) && subset == "ra$subset") subset <- NULL
   if(is.null(na.action))
     na.action <- get(getOption("na.action"))
+  begin <- NULL 
   co.id <- attr(control, "co.id")
   outfile <- control$outfile
   control$oformula <- formula
@@ -105,6 +106,16 @@ parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, off
           stop("problems evaluating argument subset!")
       }
       subset <- S
+    }
+    if(!is.null(control$begin)) {
+      begin <- data[[control$begin]]
+      if(is.null(begin)) {
+        begin <- try(eval(parse(text = control$begin), envir = .GlobalEnv), silent = TRUE)
+        if(class(begin) == "try-error")
+          begin <- try(eval(parse(text = control$begin), envir = data), silent = TRUE)
+        if(class(begin) == "try-error")
+          stop("problems evaluating argument begin!")
+      }
     }
     ff <- formula
     Yn <- as.character(ff[2L])
@@ -213,6 +224,8 @@ parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, off
   attr(attr(control$data, "terms"), "response") <- 1L
   attr(control$data, "na.action") <- na.action
   control$contrasts <- contrasts
+  if(!is.null(begin))
+    control$begin.vec <- begin
   attr(control, "co.id") <- co.id
   class(control) <- "bayesx.input"
 
