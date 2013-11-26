@@ -684,8 +684,6 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   ## Compute samples of fitted values.
   fsamples <- apply(psamples, 1, function(g) { get.mu(X, g) })
 
-matplot(data$x1, fsamples, type= "l")
-
   if(is.null(FUN)) {
     FUN <- function(x) {
       rval <- as.numeric(quantile(x, probs = c(0.025, 0.5, 0.975), na.rm = TRUE))

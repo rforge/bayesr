@@ -63,3 +63,30 @@ b <- bayesr(cat ~ s(x1) + s(x2) + s(x3) + s(long, lat), family = multinomial.Bay
 data("marital.nz", package = "VGAM")
 b <- bayesr(mstatus ~ s(age), family = multinomial.BayesR, data = marital.nz)
 
+
+
+## pick function
+funpick <- function(x, min = 0, max = 1) { 
+  x <- (x - min) / (max - min)
+  y <- sin(2 * (4 * x - 2)) + 2 * exp(-16^2 * (x - 0.5)^2)
+  return(y - mean(y))
+}
+
+n <- 500
+dat <- data.frame("x1" = sort(runif(n, 0, 1)))
+dat$y <- with(dat, 1.2 + funpick(x1) + rnorm(n, sd = 0.1))
+
+b <- bayesr(y ~ -1 + rs(x1, bs = "ps", k = 5, fx = TRUE, xt = list(center = FALSE)), data = dat,
+  sampler = list(n.iter = 22000, burnin = 12000, thin = 2))
+
+
+
+## by variable test
+n <- 500
+dat <- data.frame(x1 = sort(runif(n, -3, 3)), x2 = sort(runif(n)))
+dat$y <- with(dat, 1.2 + sin(x1) * x2 + rnorm(n, sd = 0.2))
+
+b0 <- gam(y ~ s(x1, by = x2), data = dat)
+b1 <- bayesr(y ~ s(x1, by = x2), data = dat)
+b2 <- bayesx2(y ~ sx(x1, by = x2), data = dat)
+

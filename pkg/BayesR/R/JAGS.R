@@ -436,14 +436,20 @@ buildJAGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
     }
   }
 
-    tmp <- if((kw <- length(fall)) > 1) {
-        paste("    w", i, if(zero) "[j] <- 0.0" else "[j] ~ dgamma(1.0E-6, 1.0E-6)", sep = "")
-    } else paste("  w", i, if(zero) " <- 0.0" else " ~ dgamma(1.0E-6, 1.0E-6)", sep = "")
-    setup$priors.coef <- c(setup$priors.coef, tmp)
-    setup$loops <- c(setup$loops, kw)
-    if(!zero)
-      setup$inits[[paste("w", i, sep = "")]] <- runif(kw)
-    setup$psave <- c(setup$psave, paste("w", i, sep = ""))
+#  tmp <- if((kw <- length(fall)) > 1) {
+#    paste("    w", i, if(zero) "[j] <- 0.0" else "[j] ~ dgamma(1.0E-6, 1.0E-6)", sep = "")
+#  } else paste("  w", i, if(zero) " <- 0.0" else " ~ dgamma(1.0E-6, 1.0E-6)", sep = "")
+
+  tmp <- if((kw <- length(fall)) > 1) {
+    paste("    w", i, if(zero) "[j] <- 0.0" else "[j] ~ dunif(1.0E-6, 1)", sep = "")
+  } else paste("  w", i, if(zero) " <- 0.0" else " ~ dunif(1.0E-6, 1)", sep = "")
+
+  ## setup$adds <- paste("  w2", i, " <- 1 / sum(w", i, ")", sep = "")
+  setup$priors.coef <- c(setup$priors.coef, tmp)
+  setup$loops <- c(setup$loops, kw)
+  if(!zero)
+    setup$inits[[paste("w", i, sep = "")]] <- runif(kw)
+  setup$psave <- c(setup$psave, paste("w", i, sep = ""))
 
   fall0 <- paste(fall0, c(1, paste("w", i, "[", 1:(length(fall0) - 1), "]", sep = "")), sep = "*")
   fall <- paste(fall, c(1, paste("w", i, "[", 1:(length(fall) - 1), "]", sep = "")), sep = "*")

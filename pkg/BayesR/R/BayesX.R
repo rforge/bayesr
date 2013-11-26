@@ -509,8 +509,19 @@ process_mfile <- function(x)
   x <- gsub("equation=", "family=", x, fixed = TRUE)
   x <- gsub("-", "_", x, fixed = TRUE)
   samples <- varsamples <- eqntype <- family <- basis <- terms <- hlevel <- filetype <- rep(NA, length = n)
+
+  c2c <- function(x) {
+    if(any(grepl("(", x, fixed = TRUE))) {
+      i <- regexpr("\\((.*)\\)", x)
+      x2 <- substring(x, i + 1, i + attr(i, "match.length") - 2)
+      x3 <- gsub(",", ";", x2, fixed = TRUE)
+      x <- gsub(x2, x3, x, fixed = TRUE)
+    }
+    x
+  }
+
   for(j in 1:n) {
-    specs <- strsplit(x[j], ",")[[1]]
+    specs <- strsplit(c2c(x[j]), ",")[[1]]
     if(length(tmp <- grep("pathsamples", specs, value = TRUE))) {
       samples[j] <- gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2])
     }
@@ -533,7 +544,9 @@ process_mfile <- function(x)
       hlevel[j] <- as.integer(gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2]))
     } else hlevel[j] <- 1
     if(length(tmp <- grep("term", specs, value = TRUE))) {
-      tt <- strsplit(tmp, "=", fixed = TRUE)[[1]][2]
+      tt <- strsplit(tmp, "=", fixed = TRUE)[[1]]
+      tt <- paste(tt[2:length(tt)], collapse = "=")
+      tt <- gsub(";", ",", tt, fixed = TRUE)
       tt <- gsub("^\\s+|\\s+$", "", tt)
       terms[j] <- gsub("\\s", "+", tt)
     }
@@ -560,6 +573,7 @@ process_mfile <- function(x)
       if(x[2] %in% known_paramaters) x[2] else x[1]
     } else x
   })
+
   terms <- paste(terms, ft, sep = ":")
   if(any(i <- duplicated(terms))) {
     for(j in terms[i]) {
@@ -569,6 +583,7 @@ process_mfile <- function(x)
     }
   }
   terms <- paste(terms, hlevel, sep = ":")
+
   rval <- list("effects" = cbind(terms, filetype, samples, varsamples, basis, family, eqntype, hlevel),
     "model" = list("predict" = predict, "dic" = dic))
   rval
@@ -668,27 +683,37 @@ resultsBayesX <- function(x, samples, ...)
             tn0 <- strsplit(i, ":")[[1]][1]
             tn <- gsub(")", "", gsub("sx(", "", tn0, fixed = TRUE), fixed = TRUE)
             tn <- strsplit(tn, ",", fixed = TRUE)[[1]]
+            tn <- tn[!grepl("by", tn)]
+            tn1 <- eval(parse(text = tn0))
+
+            basis <- sx.smooth[[i]]$basis
+
+            if(tn1$by != "NA") {
+              tn <- c(tn, tn1$by)
+              get.X <- function(data) {
+                diag(data[, ncol(data)]) %*% basis(data[, 1:(ncol(data) - 1)])
+              }
+            } else {
+              get.X <- basis
+            }
 
             X <- sx.smooth[[i]]$basis(attr(x, "model.frame")[1, tn, drop = FALSE])
-
+            
             get.mu <- function(X, g) {
               X %*% as.numeric(g)
             }
 
             ## Compute final smooth term object.
-            tn1 <- eval(parse(text = tn0))
             stype <- attr(X, "type")
             class(tn1) <- paste(stype, "smooth.spec", sep = ".")
-            if(tn1$by != "NA")
-              tn <- c(tn, tn1$by)
 
-            fst <- compute_term(tn1, get.X = sx.smooth[[i]]$basis, get.mu = get.mu,
+            fst <- compute_term(tn1, get.X = get.X, get.mu = get.mu,
               psamples = psamples, vsamples = vsamples, FUN = NULL, snames = snames,
               effects.hyp = effects.hyp, fitted.values = fitted.values,
               data = attr(x, "model.frame")[, tn, drop = FALSE])
 
             attr(fst$term, "specs")$get.mu <- get.mu
-            attr(fst$term, "specs")$basis <- sx.smooth[[i]]$basis
+            attr(fst$term, "specs")$basis <- get.X ## sx.smooth[[i]]$basis
             if(sid)
               attr(fst$term, "specs")$label <- paste(attr(fst$term, "specs")$label, id, sep = ":")
 
