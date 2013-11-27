@@ -619,8 +619,7 @@ resultsBayesX <- function(x, samples, ...)
         "lognormal" = function(x) gsub("sigma2", "sigma", x),
         "binomial" = function(x) gsub("binomial", "pi", x),
         "multinomial" = function(x) {
-          for(j in seq_along(ylevels))
-            x <- gsub("multinom:", "", x)
+          x <- gsub(response.name, "", gsub("multinom:", "", x))
           x
         }
       )
@@ -807,7 +806,7 @@ resultsBayesX <- function(x, samples, ...)
       names(x) <- nx
     }
     if(family$cat) {
-      fn <- rmf(paste(response.name, ylevels, sep = ""))
+      fn <- rmf(ylevels)
       names(x) <- nx <- fn
     }
     if(length(fn) != length(nx))
