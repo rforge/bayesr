@@ -41,6 +41,7 @@ transformBayesX <- function(x, ...)
   if(family$cat) {
     ylevels <- attr(x, "ylevels")
     reference <- attr(x, "reference")
+    grid <- attr(x, "grid")
     rn <- attr(attr(x, "model.frame"), "response.name")
     f <- as.formula(paste("~ -1 +", rn))
     rm <- as.data.frame(model.matrix(f, data = attr(x, "model.frame")))
@@ -51,6 +52,7 @@ transformBayesX <- function(x, ...)
     attr(x, "ylevels") <- ylevels
     attr(x, "reference") <- reference
     attr(x, "model.frame") <- mf
+    attr(x, "grid") <- grid
   }
 
   names(attr(x, "model.frame")) <- rmf(names(attr(x, "model.frame")))
@@ -593,6 +595,8 @@ process_mfile <- function(x)
 resultsBayesX <- function(x, samples, ...)
 {
   family <- attr(x, "family")
+  grid <- attr(x, "grid")
+  if(is.null(grid)) grid <- 100
   if(is.function(family))
     family <- family()
   mspecs <- attr(samples, "model.specs")
@@ -710,7 +714,7 @@ resultsBayesX <- function(x, samples, ...)
             fst <- compute_term(tn1, get.X = get.X, get.mu = get.mu,
               psamples = psamples, vsamples = vsamples, FUN = NULL, snames = snames,
               effects.hyp = effects.hyp, fitted.values = fitted.values,
-              data = attr(x, "model.frame")[, tn, drop = FALSE])
+              data = attr(x, "model.frame")[, tn, drop = FALSE], grid = grid)
 
             attr(fst$term, "specs")$get.mu <- get.mu
             attr(fst$term, "specs")$basis <- get.X ## sx.smooth[[i]]$basis

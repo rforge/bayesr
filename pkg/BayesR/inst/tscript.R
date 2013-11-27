@@ -52,7 +52,7 @@ dat$y <- scale2(with(dat, 1.2 + sin(x1) + cos(x2) + rnorm(n, sd = (cos(dat$x1) +
 
 a <- bayesr(y ~ s(x1) + s(x2), ~ s(x1), data = dat, family = gaussian.BayesR)
 
-b2 <- bayesx2(y ~ sx(x1) + sx(x2), ~ sx(x1), data = dat, family = gamma.BayesR)
+b2 <- bayesx2(y ~ sx(x1) + sx(x2), data = dat)
 
 
 data("GAMart")

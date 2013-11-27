@@ -7,7 +7,7 @@ bayesr <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.fail, contrasts = NULL,
   reference = NULL, parse.input = parse.input.bayesr, transform = transformJAGS,
   setup = setupJAGS, sampler = samplerJAGS, results = resultsJAGS,
-  cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, ...)
+  cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, grid = 100, ...)
 {
   ## Setup all processing functions.
   if(is.null(transform))
@@ -84,7 +84,8 @@ bayesr <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
 ##########################################################
 parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
-  contrasts = NULL, knots = NULL, specials = NULL, reference = NULL, ...)
+  contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
+  grid = 100, ...)
 {
   ## Search for additional formulas
   formula2 <- NULL
@@ -139,6 +140,7 @@ parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
   attr(rval, "family") <- family
   attr(rval, "reference") <- reference
   attr(rval, "ylevels") <- ylevels
+  attr(rval, "grid") <- grid
   attr(rval, "model.frame") <- mf
 
   class(rval) <- c("bayesr.input", "list")
@@ -655,29 +657,39 @@ c.bayesr <- function(...)
 
 ## Function to compute statistics from samples of a model term.
 compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
-  FUN = NULL, snames, effects.hyp, fitted.values, data)
+  FUN = NULL, snames, effects.hyp, fitted.values, data,
+  grid = 100, rug = TRUE)
 {
   require("coda")
 
+  ## Data for rug plotting.
+  rugp <- if(length(x$term) < 2 & rug) data[[x$term]] else NULL
+
   ## Compute new data set for which effects should
   ## be calculated, n = 100.
-  if(length(x$term) < 2 & !is.factor(data[[x$term[1]]]) & !any(grepl("mrf", class(x))) &
-     !any(grepl("re.", class(x), fixed = TRUE)) & !any(grepl("random", class(x)))) {
-    xsmall <- TRUE
-    nd <- list()
-    for(j in x$term) {
-      xr <- range(data[[j]], na.rm = TRUE)
-      nd[[j]] <- seq(xr[1], xr[2], length = 100)
-    }
-    if(x$by != "NA") { ## FIXME: check by variables!
-      if(!is.factor(data[[x$by]])) {
-        xr <- range(data[[x$by]], na.rm = TRUE)
-        nd[[x$by]] <- seq(xr[1], xr[2], length = 100)
-      } else nd[[x$by]] <- data[[x$by]]
-    }
-    data0 <- data
-    data <- as.data.frame(nd)
-  } else xsmall <- FALSE
+  if(!is.na(grid)) {
+    if(length(x$term) < 2 & !is.factor(data[[x$term[1]]]) & !any(grepl("mrf", class(x))) &
+      !any(grepl("re.", class(x), fixed = TRUE)) & !any(grepl("random", class(x)))) {
+      xsmall <- TRUE
+      nd <- list()
+      for(j in x$term) {
+        xr <- range(data[[j]], na.rm = TRUE)
+        nd[[j]] <- seq(xr[1], xr[2], length = grid)
+      }
+      if(x$by != "NA") { ## FIXME: check by variables!
+        if(!is.factor(data[[x$by]])) {
+          xr <- range(data[[x$by]], na.rm = TRUE)
+          nd[[x$by]] <- seq(xr[1], xr[2], length = 100)
+        } else nd[[x$by]] <- data[[x$by]]
+      }
+      data0 <- data
+      data <- as.data.frame(nd)
+    } else xsmall <- FALSE
+  } else {
+    data0 <- data[, c(x$term, if(x$by != "NA") x$by else NULL), drop = FALSE]
+    data <- unique(data0)
+    xsmall <- if(nrow(data) != nrow(data0)) TRUE else FALSE
+  }
 
   X <- get.X(data)
 
@@ -731,6 +743,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   attr(smf, "fit") <- fit
   attr(smf, "x") <- if(xsmall) data0[, x$term] else data[, x$term]
   attr(smf, "by.drop") <- by.drop
+  attr(smf, "rug") <- rugp
   colnames(psamples) <- paste(x$label, 1:ncol(psamples), sep = ".")
 
   ## Get samples of the variance parameter.

@@ -528,6 +528,8 @@ samplerJAGS <- function(x, tdir = NULL,
 resultsJAGS <- function(x, samples)
 {
   family <- attr(x, "family")
+  grid <- attr(x, "grid")
+  if(is.null(grid)) grid <- 100
   if(is.function(family))
     family <- family()
 
@@ -646,7 +648,7 @@ resultsJAGS <- function(x, samples)
             fst <- compute_term(obj$smooth[[i]], get.X = get.X, get.mu = get.mu,
               psamples = psamples, vsamples = vsamples, FUN = NULL, snames = snames,
               effects.hyp = effects.hyp, fitted.values = fitted.values,
-              data = attr(x, "model.frame")[, tn, drop = FALSE])
+              data = attr(x, "model.frame")[, tn, drop = FALSE], grid = grid)
 
             attr(fst$term, "specs")$get.mu <- get.mu 
 
