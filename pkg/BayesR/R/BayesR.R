@@ -114,7 +114,7 @@ parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
   ylevels <- NULL
   if(is.factor(mf[[response.name]])) {
     cat <- if(is.null(family$cat)) FALSE else family$cat
-    if(cat & nlevels(mf[[response.name]]) > 2) {
+    if(cat & nlevels(mf[[response.name]]) > 1) {
       if(is.null(reference)) {
         ty <- table(mf[[response.name]])
         reference <- c(names(ty)[ty == max(ty)])[1]

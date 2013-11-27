@@ -48,6 +48,7 @@ transformBayesX <- function(x, ...)
     cn <- colnames(rm) <- rmf(colnames(rm))
     rm <- rm[, !grepl(reference, cn), drop = FALSE]
     mf <- cbind(attr(x, "model.frame"), rm)
+    attr(mf, "response.name") <- rn
     x <- x[ylevels != reference]
     attr(x, "ylevels") <- ylevels
     attr(x, "reference") <- reference
@@ -551,6 +552,11 @@ process_mfile <- function(x)
       tt <- gsub(";", ",", tt, fixed = TRUE)
       tt <- gsub("^\\s+|\\s+$", "", tt)
       terms[j] <- gsub("\\s", "+", tt)
+      if(grepl("multinom", family[j])) {
+        cat <- strsplit(samples[j], "_", fixed = TRUE)[[1]]
+        cat <- cat[4]
+        terms[j] <- paste(terms[j], cat, sep = ":")
+      }
     }
   }
   for(j in 1:n) {
@@ -575,7 +581,6 @@ process_mfile <- function(x)
       if(x[2] %in% known_paramaters) x[2] else x[1]
     } else x
   })
-
   terms <- paste(terms, ft, sep = ":")
   if(any(i <- duplicated(terms))) {
     for(j in terms[i]) {
@@ -596,6 +601,7 @@ resultsBayesX <- function(x, samples, ...)
 {
   family <- attr(x, "family")
   grid <- attr(x, "grid")
+  response.name <- attr(attr(x, "model.frame"), "response.name")
   if(is.null(grid)) grid <- 100
   if(is.function(family))
     family <- family()
@@ -614,7 +620,7 @@ resultsBayesX <- function(x, samples, ...)
         "binomial" = function(x) gsub("binomial", "pi", x),
         "multinomial" = function(x) {
           for(j in seq_along(ylevels))
-            x <- gsub(paste("multinom", j, sep = ":"), ylevels[j], x)
+            x <- gsub("multinom:", "", x)
           x
         }
       )
@@ -801,7 +807,7 @@ resultsBayesX <- function(x, samples, ...)
       names(x) <- nx
     }
     if(family$cat) {
-      fn <- ylevels
+      fn <- rmf(paste(response.name, ylevels, sep = ""))
       names(x) <- nx <- fn
     }
     if(length(fn) != length(nx))
