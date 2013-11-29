@@ -386,8 +386,12 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
       } else {
         if(length(x[[j]]$sx.smooth)) {
           for(k in x[[j]]$sx.smooth) {
-            if(!is.null(attr(k, "write")))
-              prgex <- c(prgex, attr(k, "write")(dir))
+            if(!is.null(attr(k, "write"))) {
+              if(!is.null(attr(k, "map.name"))) {
+                if(!any(grepl(paste("map", attr(k, "map.name")), prgex)))
+                  prgex <- c(prgex, attr(k, "write")(dir))
+              } else prgex <- c(prgex, attr(k, "write")(dir))
+            }
           }
         }
       }
@@ -1218,6 +1222,7 @@ sx.construct.mrf.smooth.spec <- sx.construct.spatial.smooth.spec <- function(obj
     term <- make_by(term, object, data)
 
   attr(term, "write") <- write
+  attr(term, "map.name") <- map.name
 
   return(term)
 }
