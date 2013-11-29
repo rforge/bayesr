@@ -30,15 +30,6 @@ transformJAGS <- function(x)
         if(length(unique(no)) < length(obj)) no <- 1:length(obj)
         for(j in no)
           obj[[j]] <- tJAGS(obj[[j]])
-      } else {
-        rn <- formula_respname(obj$cat.formula)
-        if(grepl(reference, rn, fixed = TRUE)) {
-          obj$formula <- obj$fake.formula <- as.formula(paste(rn, "1", sep = " ~ "))
-          obj$intercept <- TRUE
-          obj$smooth <- obj$sterms <- NULL
-          obj$pterms <- NULL
-          obj$X <- matrix(1, nrow = nrow(attr(x, "model.frame")), ncol = 1)
-        }
       }
       obj
     }
