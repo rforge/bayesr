@@ -82,7 +82,7 @@ bayesr <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
 ##########################################################
 ## (2) Parsing all input using package mgcv structures. ##
 ##########################################################
-parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
+parse.input.bayesr <- function(formula, data = NULL, family = gaussian.BayesR,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
   grid = 100, ...)
@@ -93,6 +93,10 @@ parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
   fn <- fn[fn != "..."]
   for(f in fn) {
     fe <- eval(parse(text = f))
+    if(is.character(fe)) {
+      if(grepl("~", fe, fixed = TRUE))
+        fe <- as.formula(fe)
+    }
     if(inherits(fe, "formula")) {
       formula2 <- c(formula2, fe)
       eval(parse(text = paste(f, if(is.null(fo[[f]])) "NULL" else fo[[f]], sep = " = ")))
@@ -121,6 +125,7 @@ parse.input.bayesr <- function(formula, data, family = gaussian.BayesR,
       }
       reference <- rmf(reference)
       ylevels <- rmf(levels(mf[[response.name]]))
+      ylevels <- ylevels[ylevels != reference]
       if(length(formula) != (n <- length(ylevels)))
         formula <- rep(formula, length.out = n)
       names(formula) <- nf <- paste(response.name, ylevels, sep = "")
@@ -538,7 +543,8 @@ formula_hcheck <- function(formula)
 formula_insert <- function(from, to, formula)
 {
   nf <- names(formula)
-  o <- order(from, decreasing = TRUE)
+  hm <- sapply(to, max)
+  o <- order(hm, decreasing = TRUE)
   from <- from[o]
   to <- to[o]
   for(j in seq_along(from)) {
@@ -558,7 +564,6 @@ formula_hierarchical <- function(formula)
   j <- formula_hcheck(formula)
   while(any(!sapply(j, is.null))) {
     i <- which(!sapply(j, is.null))
-    hm <- sapply(j[i], max)
     formula <- formula_insert(i, j[i], formula)
     j <- formula_hcheck(formula)
   }

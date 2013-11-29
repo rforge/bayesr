@@ -2,6 +2,7 @@
 n <- 500
 dat <- data.frame("x1" = runif(n, -3, 3))
 dat$fac <- factor(rep(1:50, length.out = n))
+dat$fac2 <- factor(rep(1:5, length.out = n))
 dat$x2 <- with(dat, runif(length(unique(fac)), -3, 3)[fac])
 dat$re <- with(dat, cos(x2) + rnorm(length(unique(fac)), sd = 0.1)[fac])
 
@@ -13,7 +14,7 @@ fun <- function(x, theta = c(2, -20, -0.1)) {
 dat$y <- scale2(with(dat, 1.2 + sin(x1) + re + rnorm(n, sd = 0.1)), 0.0001, 2)
 
 ## fit model
-b <- bayesx2(y ~ sx(x1) + sx(fac, bs = "re"), fac ~ - 1 + sx(x2), ~ sx(x1) + sx(fac, bs = "re"), family = gaussian.BayesR, data = dat, cores = 2, combine = FALSE)
+b <- bayesx2(y ~ sx(x1) + sx(fac, bs = "re"), fac ~ - 1 + sx(x2), ~ sx(x1) + sx(fac, bs = "re"), family = gaussian.BayesR, data = dat, dir = "~/tmp")
 
 n <- 50
 nd <- data.frame(x1 = seq(-10, 10, length = n), x2 = seq(-10, 10, length = n))

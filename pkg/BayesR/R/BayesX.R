@@ -309,7 +309,9 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
       } else {
         teqn <- paste(model.name, '.hregress ',
           if(family$cat) {
-            formula_respname(x[[j]]$cat.formula)
+            if(x[[j]]$hlevel > 1) {
+              x[[j]]$response
+            } else formula_respname(x[[j]]$cat.formula)
           } else {
             if(is.null(x[[j]]$response)) response.name else x[[j]]$response
           }, sep = '')
@@ -335,13 +337,12 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
           ctr <- FALSE
         } else teqn <- paste(teqn, ",", sep = "")
         ok <- TRUE
-        eqtj <- if(family$cat & j != 1) 3 else 2
+        eqtj <- if(family$cat & (if(is.null(id)) j else id) != 1) 3 else 2
         if(!is.null(x[[j]]$hlevel)) {
           if(!any(grepl("hlevel", fctr))) {
             teqn <- paste(teqn, " hlevel=", x[[j]]$hlevel, sep = "")
             if(x[[j]]$hlevel > 1) {
               if(!any(grepl("family", fctr))) {
-                
                 teqn <- paste(teqn, " family=", "gaussian_re", sep = "")
                 teqn <- paste(teqn, " equationtype=",
                   family$bayesx[[nx[if(is.null(id)) j else id]]][eqtj], sep = "")
@@ -552,11 +553,15 @@ process_mfile <- function(x)
       tt <- gsub(";", ",", tt, fixed = TRUE)
       tt <- gsub("^\\s+|\\s+$", "", tt)
       terms[j] <- gsub("\\s", "+", tt)
+      
+      ## FIXME: this is just a brute force fix for multinom hierarchical structures!
+      ##        Searching for the correct category in the samples path.
       if(grepl("multinom", family[j])) {
         cat <- strsplit(samples[j], "_", fixed = TRUE)[[1]]
         cat <- cat[4]
         terms[j] <- paste(terms[j], cat, sep = ":")
       }
+
     }
   }
   for(j in 1:n) {
@@ -568,6 +573,26 @@ process_mfile <- function(x)
         if(hlevel[l] < 2 & ok) {
           family[j] <- family[l]
           ok <- FALSE
+        }
+      }
+    }
+  }
+
+  ## FIXME: this is just a brute force fix for multinom hierarchical structures!
+  ##        Searching for the correct category by matching the equationtype.
+  ##        Not possible for more than 2 modeled categories!
+  if(any(grepl("multinom", family))) {
+    for(j in seq_along(hlevel)) {
+      if(hlevel[j] > 1 & !grepl(":", terms[j], fixed = TRUE)) {
+        et <- eqntype[j]
+        ok <- TRUE
+        for(i in seq_along(eqntype)) {
+          if(i != j & et == eqntype[i]) {
+            if(grepl(":", terms[i], fixed = TRUE) & ok) {
+              terms[j] <- paste(terms[j], strsplit(terms[i], ":", fixed = TRUE)[[1]][2], sep = ":")
+              ok <- FALSE
+            }
+          }
         }
       }
     }
@@ -619,7 +644,24 @@ resultsBayesX <- function(x, samples, ...)
         "lognormal" = function(x) gsub("sigma2", "sigma", x),
         "binomial" = function(x) gsub("binomial", "pi", x),
         "multinomial" = function(x) {
-          x <- gsub(response.name, "", gsub("multinom:", "", x))
+          if(any(grepl("):", x, fixed = TRUE))) {
+            x <- strsplit(x, "):", fixed = TRUE)
+            x <- sapply(x, function(x2) {
+              if(length(x2) > 1) {
+                x2[2] <- gsub(response.name, "", gsub("multinom:", "", x2[2]))
+                x2[2] <- gsub("multinomialprobit:", "", x2[2])
+                x2 <- paste(x2, collapse = "):")
+              } else {
+                x2 <- gsub(response.name, "", gsub("multinom:", "", x2))
+                x2 <- gsub("multinomialprobit:", "", x2)
+              }
+              x2
+            })
+            x <- unlist(x)
+          } else {
+            x <- gsub(response.name, "", gsub("multinom:", "", x))
+            x <- gsub("multinomialprobit:", "", x)
+          }
           x
         }
       )
@@ -637,6 +679,7 @@ resultsBayesX <- function(x, samples, ...)
       samples <- do.call("c", samples)
     chains <- length(samples)
     rval <- vector(mode = "list", length = chains)
+
     snames <- rename.p(colnames(samples[[1]]))
     if(is.null(snames))
       snames <- attributes(samples[[1]])$dimnames[[2]]
@@ -658,17 +701,19 @@ resultsBayesX <- function(x, samples, ...)
         nx <- gsub("Intercept", "const", nx, fixed = TRUE)
         pt <- paste(nx, collapse = "+")
         pt <- paste(pt, id, obj$hlevel, sep = ":")
-        samps <- as.matrix(samples[[j]][, grepl(pt, snames, fixed = TRUE)], ncol = k)
-        nx <- gsub("const", "(Intercept)", nx, fixed = TRUE)
-        colnames(samps) <- nx
-        qu <- t(apply(samps, 2, quantile, probs = c(0.025, 0.5, 0.975)))
-        sd <- drop(apply(samps, 2, sd))
-        me <- drop(apply(samps, 2, mean))
-        param.effects <- cbind(me, sd, qu)
-        rownames(param.effects) <- nx
-        colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
-        fitted.values <- as.vector(fitted.values + obj$X %*% param.effects[, 1])
-        attr(param.effects, "samples") <- as.mcmc(samps)
+        if(any(grepl(pt, snames, fixed = TRUE))) {
+          samps <- as.matrix(samples[[j]][, grepl(pt, snames, fixed = TRUE)], ncol = k)
+          nx <- gsub("const", "(Intercept)", nx, fixed = TRUE)
+          colnames(samps) <- nx
+          qu <- t(apply(samps, 2, quantile, probs = c(0.025, 0.5, 0.975)))
+          sd <- drop(apply(samps, 2, sd))
+          me <- drop(apply(samps, 2, mean))
+          param.effects <- cbind(me, sd, qu)
+          rownames(param.effects) <- nx
+          colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
+          fitted.values <- as.vector(fitted.values + obj$X %*% param.effects[, 1])
+          attr(param.effects, "samples") <- as.mcmc(samps)
+        } else warning("please check the BayesX files!")
       }
 
       ## Smooth terms.
