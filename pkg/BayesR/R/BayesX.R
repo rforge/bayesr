@@ -764,7 +764,8 @@ resultsBayesX <- function(x, samples, ...)
             fst <- compute_term(tn1, get.X = get.X, get.mu = get.mu,
               psamples = psamples, vsamples = vsamples, FUN = NULL, snames = snames,
               effects.hyp = effects.hyp, fitted.values = fitted.values,
-              data = attr(x, "model.frame")[, tn, drop = FALSE], grid = grid)
+              data = attr(x, "model.frame")[, tn, drop = FALSE], grid = grid,
+              hlevel = obj$hlevel)
 
             attr(fst$term, "specs")$get.mu <- get.mu
             attr(fst$term, "specs")$basis <- get.X ## sx.smooth[[i]]$basis

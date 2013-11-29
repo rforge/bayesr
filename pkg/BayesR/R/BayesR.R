@@ -663,14 +663,17 @@ c.bayesr <- function(...)
 ## Function to compute statistics from samples of a model term.
 compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   FUN = NULL, snames, effects.hyp, fitted.values, data,
-  grid = 100, rug = TRUE)
+  grid = 100, rug = TRUE, hlevel = 1)
 {
   require("coda")
 
   ## Data for rug plotting.
   rugp <- if(length(x$term) < 2 & rug) data[[x$term]] else NULL
 
-  ## Compute new data set for which effects should
+  if(hlevel > 1)
+    data <- unique(data)
+
+  ## New x values for which effect should
   ## be calculated, n = 100.
   if(!is.na(grid)) {
     if(length(x$term) < 2 & !is.factor(data[[x$term[1]]]) & !any(grepl("mrf", class(x))) &

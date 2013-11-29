@@ -9,6 +9,19 @@ transformJAGS <- function(x)
   if(cat) {
     reference <- attr(x, "reference")
 
+    xr <- list(
+      "formula" = as.formula(paste(reference, "~ 1", sep = "")),
+      "fake.formula" = as.formula(paste(reference, "~ 1", sep = "")),
+      "cat.formula" = as.formula(paste(reference, "~ 1", sep = "")),
+      "intercept" = TRUE,
+      "X" = matrix(1, nrow = nrow(attr(x, "model.frame")), ncol = 1)
+    )
+
+    nx <- names(x)
+    x[[length(x) + 1]] <- xr
+    names(x) <- c(nx, reference)
+    attr(x, "ylevels") <- c(attr(x, "ylevels"), reference)
+
     tJAGS <- function(obj) {
       if(inherits(obj, "bayesr.input") & !any(c("smooth", "response") %in% names(obj))) {
         no <- names(obj)
@@ -23,7 +36,7 @@ transformJAGS <- function(x)
           obj$formula <- obj$fake.formula <- as.formula(paste(rn, "1", sep = " ~ "))
           obj$intercept <- TRUE
           obj$smooth <- obj$sterms <- NULL
-          obj$pterms
+          obj$pterms <- NULL
           obj$X <- matrix(1, nrow = nrow(attr(x, "model.frame")), ncol = 1)
         }
       }
