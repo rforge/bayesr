@@ -128,8 +128,8 @@ JAGSmodel <- function(x, family, cat = FALSE, ...) {
     model <- c(model, x[[j]]$start)
   }
   pn <- family$names
-  if(!is.null(family$jags$reparam))
-    pn[repi <- match(names(family$jags$reparam), pn)] <- paste("rp", 1:length(family$jags$reparam), sep = "")
+  if(!is.null(family$jagstan$reparam))
+    pn[repi <- match(names(family$jagstan$reparam), pn)] <- paste("rp", 1:length(family$jagstan$reparam), sep = "")
   if(is.null(pn)) pn <- paste("theta", 1:k, sep = "")
   if(length(pn) < 2 & length(pn) != k)
     pn <- paste(pn, 1:k, sep = "")
@@ -139,7 +139,7 @@ JAGSmodel <- function(x, family, cat = FALSE, ...) {
   links <- family[[grep("links", names(family), fixed = TRUE, value = TRUE)]]
   links <- rep(sapply(links, JAGSlinks), length.out = k)
   model <- c(model,  "  for(i in 1:n) {",
-    paste("    response[i] ~ ", family$jags$dist, "(",
+    paste("    response[i] ~ ", family$jagstan$dist, "(",
       paste(if(is.null(on)) pn else paste(on, ## if(cat) "n" else NULL,
       "[i, 1:", k, "]", sep = ""),
       collapse = ", "), ")", sep = ""))
@@ -149,22 +149,22 @@ JAGSmodel <- function(x, family, cat = FALSE, ...) {
 #      npn, "[i, ", 1:k, "] / sum(", npn, "[i, 1:", k, "])", sep = ""))
 #  }
 
-  if(!is.null(family$jags$reparam)) {
+  if(!is.null(family$jagstan$reparam)) {
     reparam <- NULL
-    for(j in seq_along(family$jags$reparam))
-      reparam <- c(reparam, paste("    rp", j, "[i] <- ", family$jags$reparam[j], sep = ""))
+    for(j in seq_along(family$jagstan$reparam))
+      reparam <- c(reparam, paste("    rp", j, "[i] <- ", family$jagstan$reparam[j], sep = ""))
     for(j in family$names)
       reparam <- gsub(j, paste(j, "[i]", sep = ""), reparam)
     model <- c(model, reparam)
     pn[repi] <- paste(family$names[repi], "[i]", sep = "")
   }
-  if(!is.null(family$jags$addparam)) {
-    for(j in family$jags$addparam)
+  if(!is.null(family$jagstan$addparam)) {
+    for(j in family$jagstan$addparam)
       model <- c(model, paste("   ", j))
   }
-  if(!is.null(family$jags$addvalues)) {
-    for(j in names(family$jags$addvalues))
-      model <- gsub(j, family$jags$addvalues[[j]], model)
+  if(!is.null(family$jagstan$addvalues)) {
+    for(j in names(family$jagstan$addvalues))
+      model <- gsub(j, family$jagstan$addvalues[[j]], model)
   }
 
   for(j in 1:k) {
@@ -217,15 +217,15 @@ setupJAGS <- function(x)
     if(length(fn) < length(x))
       fn <- paste(fn, 1:length(nx), sep = "")
     for(i in seq_along(nx)) {
-      rval[[nx[i]]] <- family$jags$eta(x[[i]], fn[i],
+      rval[[nx[i]]] <- family$jagstan$eta(x[[i]], fn[i],
         zero = if(!is.null(reference)) ylevels[i] == reference else NULL)
     }
   } else {
-    rval <- family$jags$eta(x)
+    rval <- family$jagstan$eta(x)
   }
   
   ## Create model code.
-  model <- family$jags$model(rval, family, cat = !is.null(reference))
+  model <- family$jagstan$model(rval, family, cat = !is.null(reference))
 
   ## Collect data.
   if(all(c("inits", "data", "psave") %in% names(rval)))

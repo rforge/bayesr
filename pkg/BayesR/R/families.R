@@ -65,7 +65,7 @@ beta.BayesR <- function(links = c(mu = "logit", phi = "log"), ...)
       "mu" = c("beta_mu", "mean"),
       "phi" = c("beta_sigma2", "scale")
     ),
-    jags = list(
+    jagstan = list(
       "dist" = "dbeta",
       "eta" = JAGSeta,
       "model" = JAGSmodel,
@@ -118,7 +118,7 @@ binomial.BayesR <- function(link = "logit", ...)
     bayesx = list(
       "pi" = c(paste("binomial", link, sep = "_"), "mean")
     ),
-    jags = list(
+    jagstan = list(
       "dist" = "dbern",
       "eta" = JAGSeta,
       "model" = JAGSmodel
@@ -139,7 +139,7 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
       "mu" = c("normal_mu", "mean"),
       "sigma" = c("normal_sigma2", "scale")
     ),
-    jags = list(
+    jagstan = list(
       "dist" = "dnorm",
       "eta" = JAGSeta,
       "model" = JAGSmodel,
@@ -161,7 +161,7 @@ gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
       "mu" = c("gamma_mu", "mean"),
       "sigma" = c("gamma_sigma", "shape")
     ),
-    jags = list(
+    jagstan = list(
       "dist" = "dgamma",
       "eta" = JAGSeta,
       "model" = JAGSmodel
@@ -203,7 +203,7 @@ multinomial.BayesR <- function(link = "probit", ...)
       if(!is.factor(x)) stop("response must be a factor!", call. = FALSE)
       TRUE
     },
-    jags = list(
+    jagstan = list(
       "dist" = "dcat",
       "eta" = JAGSeta,
       "model" = JAGSmodel
@@ -228,7 +228,7 @@ quant.BayesR <- function(links = c(mu = "identity", sigma = "log"), prob = 0.5, 
       "mu" = c("normal_mu", "mean"),
       "sigma" = c("normal_sigma2", "scale")
     ),
-    jags = list(
+    jagstan = list(
       "dist" = "dnorm",
       "eta" = JAGSeta,
       "model" = JAGSmodel,
