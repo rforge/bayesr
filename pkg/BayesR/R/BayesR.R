@@ -72,7 +72,7 @@ bayesr <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
   if(model)
     attr(rval, "model.frame") <- attr(pm, "model.frame")
   attr(rval, "family") <- attr(pm, "family")
-  attr(rval, "formula") <- formula
+  attr(rval, "formula") <- attr(pm, "formula0")
   attr(rval, "call") <- match.call()
 
   rval
@@ -108,6 +108,7 @@ parse.input.bayesr <- function(formula, data = NULL, family = gaussian.BayesR,
 
   ## Parse formula
   formula <- bayesr.formula(c(formula, formula2), specials, family)
+  formula0 <- attr(formula, "formula0")
 
   ## Create the model frame.
   mf <- bayesr.model.frame(formula, data, family, weights,
@@ -147,6 +148,7 @@ parse.input.bayesr <- function(formula, data = NULL, family = gaussian.BayesR,
   attr(rval, "ylevels") <- ylevels
   attr(rval, "grid") <- grid
   attr(rval, "model.frame") <- mf
+  attr(rval, "formula0") <- formula0
 
   class(rval) <- c("bayesr.input", "list")
 
@@ -343,11 +345,12 @@ bayesr.formula <- function(formula, specials, family)
 
   formula <- formula_and(formula, env)
   formula <- formula_at(formula, env)
-  formula <- complete_formula(formula_hierarchical(formula))
+  formula <- formula0 <- complete_formula(formula_hierarchical(formula))
   formula <- formula_extend(formula, specials, family)
 
-  environment(formula) <- env
-  class(formula) <- "bayesr.formula"
+  environment(formula) <- environment(formula0) <- env
+  class(formula) <- class(formula0) <- c("bayesr.formula", "list")
+  attr(formula, "formula0") <- formula0
 
   formula
 }
@@ -1551,7 +1554,69 @@ DIC.bayesr <- function(object, ...)
 }
 
 
-formula.bayesr <- function(x, ...) { attr(x, "formula") }
+## Extract model formulas.
+formula.bayesr <- function(x, model = NULL, ...)
+{
+  if(!is.null(model))
+    x <- get.model(x, model)
+  if(all(c("model", "effects") %in% names(x))) {
+    f <- x$model$formula
+  } else {
+    f <- attr(x, "formula")
+    if(inherits(f, "list")) {
+      if(length(f) < 2)
+        f <- f[[1]]
+    }
+  }
+  f
+}
+
+print.bayesr.formula <- function(x, ...) {
+  if(!inherits(x, "list")) {
+    print(x)
+  } else {
+    nx <- names(x)
+    if(is.null(nx))
+      nx <- as.character(1:length(x))
+    for(i in seq_along(x)) {
+      cat("Formula ", nx[i], ":\n---\n", sep = "")
+      if(inherits(x[[i]], "list")) {
+        for(j in seq_along(x[[i]])) {
+          cat("h", j, ": ", sep = "")
+          print(x[[i]][[j]])
+        }
+      } else print(x[[i]])
+      if(i < length(x))
+      cat("\n")
+    }
+  }
+  invisible(NULL)
+}
+
+
+## Extract formula terms.
+terms.bayesr <- function(x, ...) {
+  terms.bayesr.formula(formula(x, ...))
+}
+
+terms.bayesr.formula <- function(x)
+{
+  if(!inherits(x, "list")) {
+    tx <- terms(x)
+  } else {
+    tx <- list()
+    for(i in seq_along(x)) {
+      if(inherits(x[[i]], "list")) {
+        tx[[i]] <- terms.bayesr.formula(x[[i]])
+        names(tx[[i]]) <- paste("h", 1:length(x[[i]]), sep = "")
+      } else tx[[i]] <- terms(x[[i]])
+    }
+    names(tx) <- names(x)
+    if(length(tx) < 2)
+      tx <- tx[[1]]
+  }
+  tx
+}
 
 
 ## Model extractor function.
