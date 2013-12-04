@@ -254,6 +254,12 @@ neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
   nx <- NULL
   if(is.list(x) & !inherits(x, "nb")) {
     nx <- names(x)
+    if(any(dups <- duplicated(nx))) {
+      nx <- nx[!dups]
+      x <- x[!dups]
+      class(x) <- "bnd"
+      warning("duplicated polygon names in map!")
+    }
     x <- bnd2sp(x)
   }
 

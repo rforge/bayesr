@@ -111,7 +111,7 @@ JAGSlinks <- function(x)
 }
 
 ## Construct the final model code.
-JAGSmodel <- function(x, family, cat = FALSE, ...) {
+JAGSmodel <- function(x, family, cat = FALSE, is.stan = FALSE, ...) {
   if(is.function(family))
     family <- family()
   k <- if(all(c("inits", "data", "psave") %in% names(x))) {
@@ -198,6 +198,7 @@ JAGSmodel <- function(x, family, cat = FALSE, ...) {
 ## Create final model setup.
 setupJAGS <- function(x)
 {
+  is.stan <- if(is.null(attr(x, "is.stan"))) FALSE else TRUE
   family <- attr(x, "family")
   reference <- attr(x, "reference")
   ylevels <- attr(x, "ylevels")
@@ -225,7 +226,7 @@ setupJAGS <- function(x)
   }
   
   ## Create model code.
-  model <- family$jagstan$model(rval, family, cat = !is.null(reference))
+  model <- family$jagstan$model(rval, family, cat = !is.null(reference), is.stan)
 
   ## Collect data.
   if(all(c("inits", "data", "psave") %in% names(rval)))

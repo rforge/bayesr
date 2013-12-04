@@ -12,49 +12,57 @@ install.stan <- function() {
 ################################
 ## (2) STAN helper functions. ##
 ################################
-list2stan <- function(x)
-{
-  if(is.null(nx <- names(x))) stop("the data list must be a named list!")
-
-  dtype <- function(type) {
-    switch(type,
-      'integer' = 'int',
-      'numeric' = 'vector',
-      'logical' = NA
-    )
-  }
-
-  rval <- NULL
-  for(j in seq_along(x)) {
-    rval <- if(!is.matrix(x[[j]])) {
-      tx <- dtype(class(x[[j]]))
-      if(tx == 'vector') {
-        c(rval, paste(tx, '[', length(x[[j]]), '] ', nx[j], ';', sep = ''))
-      } else c(rval, paste(tx, ' ', nx[j], '[', length(x[[j]]), ']', ';', sep = ''))
-    } else c(rval, paste('matrix[', nrow(x[[j]]), ',', ncol(x[[j]]), '] ', nx[j], ';', sep = ''))
-  }
-
-  rval
-}
-
-
 ## Sets up data and model code for fitting with STAN.
 jags2stan <- function(x)
 {
-  x <- setupJAGS(x)
+  STAN_data <- function(x)
+  {
+    if(is.null(nx <- names(x))) stop("the data list must be a named list!")
 
-  jdata <- list2stan(x$data)
-  jpar <- list2stan(x$inits)
+    dtype <- function(type) {
+      switch(type,
+        'integer' = 'int',
+        'numeric' = 'vector',
+        'logical' = NA
+      )
+    }
+
+    rval <- NULL
+    for(j in seq_along(x)) {
+      rval <- if(!is.matrix(x[[j]])) {
+        tx <- dtype(class(x[[j]]))
+        if(tx == 'vector') {
+          c(rval, paste(tx, '[', length(x[[j]]), '] ', nx[j], ';', sep = ''))
+        } else c(rval, paste(tx, ' ', nx[j], '[', length(x[[j]]), ']', ';', sep = ''))
+      } else c(rval, paste('matrix[', nrow(x[[j]]), ',', ncol(x[[j]]), '] ', nx[j], ';', sep = ''))
+    }
+
+    rval
+  }
+
+  STAN_model_data <- function(x, n) {
+    d <- grep("<-", x, fixed = TRUE, value = TRUE)
+    d <- sapply(strsplit(d, "<-", fixed = TRUE), function(x) { x[1] })
+    if(length(d)) {
+      d <- gsub("[i]", "", d, fixed = TRUE)
+      d <- gsub("\\s", "", d)
+      d <- paste("vector[", n, "] ", d, ";", sep = "")
+    } else d <- NULL
+    d
+  }
+
+  x <- setupJAGS(x)
   
   data <- c(
     'data {',
-    paste('  ', jdata, sep = ''),
+    paste('  ', STAN_data(x$data), sep = ''),
+    paste('  ', STAN_model_data(x$model, x$data$n), sep = ''),
     '}'
   )
 
   parameters <- c(
     'parameters {',
-    paste('  ', jpar, sep = ''),
+    paste('  ', STAN_data(x$inits), sep = ''),
     '}'
   )
 
@@ -67,6 +75,7 @@ jags2stan <- function(x)
   }
 
   model <- dist2stan(c(data, parameters, x$model))
+  model <- gsub('i in 1:n', paste('i in 1:', x$data$n, sep = ''), model, fixed = TRUE)
 
   x$model <- model
 
