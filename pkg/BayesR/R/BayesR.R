@@ -350,6 +350,12 @@ bayesr.formula <- function(formula, specials, family)
 
   environment(formula) <- environment(formula0) <- env
   class(formula) <- class(formula0) <- c("bayesr.formula", "list")
+  for(j in seq_along(formula0)) {
+    if(!inherits(formula0[[j]], "formula")) {
+      if(is.null(names(formula0[[j]])))
+        names(formula0[[j]]) <- paste("h", 1:length(formula0[[j]]), sep = "")
+    }
+  }
   attr(formula, "formula0") <- formula0
 
   formula
@@ -797,31 +803,6 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
 predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
   intercept = TRUE, FUN = mean, trans = NULL, ...)
 {
-  object <- get.model(object, model)
-  if(any(c("effects", "param.effects") %in% names(object)))
-    object <- list(object)
-  k <- length(object)
-  enames <- list()
-  for(j in 1:k) {
-    enames[[j]] <- names(object[[j]]$effects)
-  }
-  if(length(diff) & !all(diff(sapply(enames, length)) == 0))
-    stop("the number of terms in the models is not identical, cannot compute prediction!")
-  enames <- data.frame(enames)
-  if(!all(apply(enames, 1, function(x) length(unique(x))) == 1))
-    stop("different terms in the supplied models, cannot compute prediction!")
-  enames <- names(object[[1L]]$effects)
-  term <- if(!is.null(enames)) {
-    if(is.null(term)) enames else {
-      if(is.character(term)) {
-        enames[grepl(gsub("[[:space:]]", "", term), enames, fixed = TRUE)]
-      } else enames[term]
-    }
-  } else NULL
-  term <- term[!is.na(term)]
-  if(!length(term)) term <- NULL
-  rval <- NULL
-
   if(missing(newdata))
     newdata <- model.frame(object)
   if(is.character(newdata)) {
@@ -831,53 +812,96 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
   if(is.matrix(newdata) || is.list(newdata))
     newdata <- as.data.frame(newdata)
   nn <- names(newdata)
+
+  object <- get.model(object, model)
+  if(any(c("effects", "param.effects") %in% names(object)))
+    object <- list(object)
+  k <- length(object)
+  enames <- list()
+  for(j in 1:k)
+    enames[[j]] <- all.terms(object[[j]], j)
+  if(!all(diff(sapply(enames, length)) == 0))
+    stop("the number of terms in the models is not identical, cannot compute prediction!")
+  enames <- data.frame(enames)
+  if(!all(apply(enames, 1, function(x) length(unique(x))) == 1))
+    stop("different terms in the supplied models, cannot compute prediction!")
+  enames <- all.terms(object[[1L]])
+  term <- if(!is.null(enames)) {
+    if(is.null(term)) enames else {
+      if(is.character(term)) {
+        unlist(sapply(term, function(x) {
+          enames[grepl(gsub("[[:space:]]", "", x), enames, fixed = TRUE)]
+        }))
+      } else enames[term]
+    }
+  } else NULL
+  term <- term[!is.na(term)]
+  if(!length(term)) term <- NULL
+  rval <- NULL
   m.samples <- m.designs <- m.specials <- list()
   for(j in 1:k) {
+    hi <- if(!is.null(object[[j]]$param.effects)) {
+      any(grepl("(Intercept)", rownames(object[[j]]$param.effects), fixed = TRUE))
+    } else FALSE
     if(!is.null(term)) {
       for(i in term) {
         specs <- attr(object[[j]]$effects[[i]], "specs")
-        if(!all(specs$term %in% nn))
-          stop(paste("cannot find variables", specs$term, "in newdata!"))
-        if(is.null(specs$is.factor)) specs$is.factor <- FALSE
-        tmp <- attr(object[[j]]$effects[[i]], "samples")
-        if(is.null(dim(tmp))) {
-          tmp <- matrix(tmp, ncol = 1)
-        }
-        if(!is.null(specs$special)) {
-          m.specials[[i]] <- list("X" = PredictMat(specs, newdata), ## FIXME: also allow basis()?
-            "get.mu" = specs$get.mu, "samples" = tmp)
+        if(!is.null(specs)) {
+          if(!all(specs$term %in% nn))
+            stop(paste("cannot find variables", specs$term, "in newdata!"))
+          if(is.null(specs$is.factor)) specs$is.factor <- FALSE
+          tmp <- attr(object[[j]]$effects[[i]], "samples")
+          if(is.null(dim(tmp))) {
+            tmp <- matrix(tmp, ncol = 1)
+          }
+          if(!is.null(specs$special)) {
+            m.specials[[i]] <- list("X" = PredictMat(specs, newdata), ## FIXME: also allow basis()?
+              "get.mu" = specs$get.mu, "samples" = tmp)
+          } else {
+            m.samples[[i]] <- rbind(m.samples[[i]], tmp)
+            if(inherits(object[[j]]$effects[[i]], "linear.bayesx")) {
+              if(specs$is.factor & !is.character(newdata)) {
+                nl <- nlevels(newdata[[i]]) - if(hi) 1 else 0
+                if(nl != ncol(m.samples[[i]]))
+                  stop(paste("levels of factor variable", i, "in newdata not identical to model levels!"))
+                f <- as.formula(paste("~", if(hi) "1" else "-1", "+", i))
+                if(j < 2) {
+                  m.designs[[i]] <- model.matrix(f, data = newdata)
+                  if(hi) m.designs[[i]] <- m.designs[[i]][, -1]
+                }
+              } else {
+                if(j < 2)
+                  m.designs[[i]] <- newdata[[i]]
+              }
+            } else {
+              if(j < 2) {
+                m.designs[[i]] <- if(inherits(specs, "mgcv.smooth")) {
+                  PredictMat(specs, newdata)
+                } else {
+                  if(!is.null(specs$basis)) {
+                    stopifnot(is.function(specs$basis))
+                    specs$basis(newdata[specs$term])
+                  } else stop(paste("cannot compute design matrix for term ", specs$label, "!", sep = ""))
+                }
+              }
+            }
+            attr(m.samples[[i]], "is.factor") <- specs$is.factor
+          }
         } else {
-          m.samples[[i]] <- rbind(m.samples[[i]], tmp)
-          if(inherits(object[[j]]$effects[[i]], "linear.bayesx")) {
-            if(specs$is.factor & !is.character(newdata)) {
-              hi <- if(!is.null(object[[j]]$param.effects)) {
-                any(grepl("(Intercept)", rownames(object[[j]]$param.effects), fixed = TRUE))
-              } else FALSE
+          if(any(grepl(i, rownames(object[[j]]$param.effects), fixed = TRUE))) {
+            ij <- grep(i, colnames(attr(object[[j]]$param.effects, "samples")), fixed = TRUE)
+            m.samples[[i]] <- cbind(m.samples[[i]],
+              matrix(attr(object[[j]]$param.effects, "samples")[, ij, drop = FALSE],
+              ncol = length(ij)))
+            if(is.factor(nd[[i]])) {
               nl <- nlevels(newdata[[i]]) - if(hi) 1 else 0
               if(nl != ncol(m.samples[[i]]))
                 stop(paste("levels of factor variable", i, "in newdata not identical to model levels!"))
               f <- as.formula(paste("~", if(hi) "1" else "-1", "+", i))
-              if(j < 2) {
-                m.designs[[i]] <- model.matrix(f, data = newdata)
-                if(hi) m.designs[[i]] <- m.designs[[i]][, -1]
-              }
-            } else {
-              if(j < 2)
-                m.designs[[i]] <- newdata[[i]]
-            }
-          } else {
-            if(j < 2) {
-              m.designs[[i]] <- if(inherits(specs, "mgcv.smooth")) {
-                PredictMat(specs, newdata)
-              } else {
-                if(!is.null(specs$basis)) {
-                  stopifnot(is.function(specs$basis))
-                  specs$basis(newdata[specs$term])
-                } else stop(paste("cannot compute design matrix for term ", specs$label, "!", sep = ""))
-              }
-            }
+              m.designs[[i]] <- model.matrix(f, data = newdata)
+              if(hi) m.designs[[i]] <- m.designs[[i]][, -1]
+            } else m.designs[[i]] <- newdata[[i]]
           }
-          attr(m.samples[[i]], "is.factor") <- specs$is.factor
         }
       }
     }
@@ -1557,15 +1581,20 @@ DIC.bayesr <- function(object, ...)
 ## Extract model formulas.
 formula.bayesr <- function(x, model = NULL, ...)
 {
-  if(!is.null(model))
-    x <- get.model(x, model)
   if(all(c("model", "effects") %in% names(x))) {
     f <- x$model$formula
   } else {
     f <- attr(x, "formula")
     if(inherits(f, "list")) {
-      if(length(f) < 2)
+      if(length(f) < 2) {
         f <- f[[1]]
+      } else {
+        if(!is.null(model)) {
+          for(j in model) {
+            f <- f[[j]]
+          }
+        }
+      }
     }
   }
   f
@@ -1684,6 +1713,111 @@ fitted.bayesr <- function(object, model = NULL, term = NULL, ...)
   rval <- delete.NULLs(rval)
 
   rval
+}
+
+## Functions for model samples
+samples <- function(x, ...) {
+  UseMethod("samples")
+}
+
+grep2 <- function(pattern, x, ...) {
+  i <- NULL
+  for(p in pattern)
+    i <- c(i, grep(p, x, ...))
+  sort(i)
+}
+
+samples.bayesr <- function(x, model = NULL, term = NULL, ...)
+{
+  x <- get.model(x, model)
+  if(!is.null(nx <- names(x))) {
+    if(all(c("effects", "param.effects", "scale") %in% nx))
+      x <- list(x)
+  }
+  samps <- list(); k <- 1
+  for(j in seq_along(x)) {
+    if(!all(c("effects", "param.effects", "scale") %in% names(x[[j]]))) {
+      samps[[j]] <- samples.bayesr(x[[j]], term = term)
+    } else {
+      if(!is.null(x[[j]]$param.effects)) {
+        if(nrow(x[[j]]$param.effects) > 0) {
+          if(length(i <- grep2(term, rownames(x[[j]]$param.effects), fixed = TRUE))) {
+            samps[[k]] <- attr(x[[j]]$param.effects, "samples")[, i, drop = FALSE]
+            k <- k + 1
+          }
+        }
+      }
+      if(!is.null(x[[j]]$effects)) {
+        if(length(i <- grep2(term, names(x[[j]]$effects), fixed = TRUE))) {
+          for(e in i) {
+            samps[[k]] <- attr(x[[j]]$effects[[e]], "samples")
+            k <- k + 1
+          }
+        }
+      }
+    }
+  }
+  samps <- if(length(samps) < 1) NULL else as.mcmc(do.call("cbind", samps))
+  samps
+}
+
+
+## Credible intervals of coefficients.
+confint.bayesr <- function(object, parm, level = 0.95, model = NULL, ...)
+{
+  if(missing(parm))
+    parm <- all.terms(object)
+  samps <- samples(object, model = model, term = parm)
+  np <- colnames(samps)
+  probs <- c((1 - level) / 2, 1 - (1 - level) / 2)
+  apply(samps, 2, quantile, probs = probs)
+}
+
+
+## Extract model coefficients.
+coef.bayesr <- function(object, model = NULL, term = NULL, FUN = mean, ...)
+{
+  object <- get.model(object)
+  if(is.null(term))
+    term <- all.terms(object)
+  samps <- samples(object, model = model, term = term)
+  apply(samps, 2, FUN, ...)
+}
+
+
+## Get all terms names used.
+all.terms <- function(x, model = NULL)
+{
+  tx <- terms.bayesr(x, model)
+  if(!inherits(tx, "list"))
+    tx <- list(tx)
+  tl <- NULL
+  for(j in tx) {
+    if(inherits(j, "list")) {
+      for(i in j)
+        tl <- c(tl, attr(i, "term.labels"))
+    } else tl <- c(tl, attr(j, "term.labels"))
+  }
+  tl
+}
+
+
+## Get the model.frame.
+model.frame.bayesr <- function(formula, ...) 
+{
+  dots <- list(...)
+  nargs <- dots[match(c("data", "na.action", "subset"), names(dots), 0L)]
+  if(length(nargs) || is.null(attr(formula, "model.frame"))) {
+    fcall <- attr(formula, "call")
+    fcall$method <- "model.frame"
+    fcall[[1L]] <- quote(bayesr.model.frame)
+    fcall[names(nargs)] <- nargs
+    env <- environment(attr(formula, "formula"))
+    if(is.null(env)) 
+      env <- parent.frame()
+    eval(fcall, env)
+  }
+  else attr(formula, "model.frame")
 }
 
 

@@ -286,8 +286,11 @@ buildJAGS.smooth <- function(smooth, setup, i, zero) {
     setup$priors.coef <- c(setup$priors.coef, tmp)
     setup$loops <- c(setup$loops, kr)
     if(is.null(setup$priors.scale) || !any(grepl(taug, setup$priors.scale))) {
+#      setup$priors.scale <- c(setup$priors.scale, paste("  ", taug,
+#        if(zero) " <- 0.0" else " ~ dgamma(1.0E-6, 1.0E-6)", sep = ""))
       setup$priors.scale <- c(setup$priors.scale, paste("  ", taug,
-        if(zero) " <- 0.0" else " ~ dgamma(1.0E-6, 1.0E-6)", sep = ""))
+        if(zero) " <- 0.0" else " <- abs(", taug, 0, ")", sep = ""),
+        paste("  ", taug, 0, "~ dt(0, 10, 1)", sep = ""))
       if(!zero)
         	setup$inits[[taug]] <- runif(1, 0.00001, 0.0001)
       setup$psave <- c(setup$psave, taug)

@@ -51,27 +51,27 @@ parse.links <- function(links, default.links, ...)
 
 
 ## http://stats.stackexchange.com/questions/41536/how-can-i-model-a-proportion-with-bugs-jags-stan
-beta.BayesR <- function(links = c(mu = "logit", phi = "log"), ...)
+beta.BayesR <- function(links = c(mu = "logit", sigma = "log"), ...)
 {
   rval <- list(
     "family" = "beta",
-    "names" = c("mu", "phi"),
-    "links" =  parse.links(links, c(mu = "logit", phi = "log"), ...),
+    "names" = c("mu", "sigma"),
+    "links" =  parse.links(links, c(mu = "logit", sigma = "log"), ...),
     "valid.response" = function(x) {
       if(ok <- !all(x > 0 & x < 1)) stop("response values not in [0, 1]!", call. = FALSE)
       ok
     },
     bayesx = list(
       "mu" = c("beta_mu", "mean"),
-      "phi" = c("beta_sigma2", "scale")
+      "sigma" = c("beta_sigma2", "scale")
     ),
     jagstan = list(
       "dist" = "dbeta",
       "eta" = JAGSeta,
       "model" = JAGSmodel,
       "reparam" = c(
-        mu = "mu * (1 / phi)",
-        phi = "(1 - mu) * (1 / phi)"
+        mu = "mu * (1 / sigma)",
+        sigma = "(1 - mu) * (1 / sigma)"
       )
     )
   )
@@ -144,6 +144,28 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
       "eta" = JAGSeta,
       "model" = JAGSmodel,
       "reparam" = c(sigma = "1 / sigma")
+    )
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
+mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
+  sigma1 = "log", sigma2 = "log", "rho" = "identity"), ...)
+{
+  rval <- list(
+    "family" = "gaussian",
+    "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho"),
+    "links" = parse.links(links, c(mu1 = "identity", mu2 = "identity",
+       sigma1 = "log", sigma2 = "log", "rho" = "identity"), ...),
+    "order" = 5:1,
+    bayesx = list(
+      "mu1" = c("bivnormal_mu", "mean"),
+      "mu2" = c("bivnormal_mu", "mu"),
+      "sigma1" = c("bivnormal_sigma", "scale"),
+      "sigma2" = c("bivnormal_sigma", "scale"),
+      "rho" = c("bivnormal_rho", "rho")
     )
   )
   class(rval) <- "family.BayesR"
