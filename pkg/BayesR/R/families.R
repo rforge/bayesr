@@ -131,10 +131,15 @@ binomial.BayesR <- function(link = "logit", ...)
 
 gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
 {
+  links <- parse.links(links, c(mu = "identity", sigma = "log"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+
   rval <- list(
     "family" = "gaussian",
     "names" = c("mu", "sigma"),
-    "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
+    "links" = links,
     bayesx = list(
       "mu" = c("normal_mu", "mean"),
       "sigma" = c("normal_sigma2", "scale")
@@ -144,6 +149,20 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
       "eta" = JAGSeta,
       "model" = JAGSmodel,
       "reparam" = c(sigma = "1 / sigma")
+    ),
+    iwls = list(
+      "loglik" = function(y, eta, ...) {
+        sigma2 <- linkinv$sigma(eta$sigma)^2
+        sum(-0.5 * log(2 * pi) - 0.5 * log(sigma2) - (y - linkinv$mu(eta$mu))^2 / (2 * sigma2))
+      },
+      "mu" = list(
+        "score" = function(y, eta, ...) { drop((y - eta[["mu"]]) / eta[["sigma"]]^2) },
+        "weights" = function(y, eta, ...) { drop(1 / eta[["sigma"]]^2) }
+      ),
+      "sigma" = list(
+        "score" = function(y, eta, ...) { drop(-0.5 + (y - eta[["mu"]])^2 / (2 * eta[["sigma"]]^2)) },
+        "weights" = function(y, eta, ...) { rep(0.5, length(y)) }
+      )
     )
   )
   class(rval) <- "family.BayesR"

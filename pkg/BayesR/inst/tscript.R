@@ -98,5 +98,11 @@ b1 <- bayesr(y ~ s(x1, by = x2), data = dat)
 b2 <- bayesx2(y ~ sx(x1, by = x2), data = dat)
 
 
-## multivariate normal test
+## IWLS test
+n <- 500
+dat <- data.frame("x" = sort(runif(n, -3, 3)))
+dat$y <- with(dat, 1.2 + sin(x) + rnorm(n, sd = 0.1))
+
+b <- bayesr(y ~ s(x), family = gaussian.BayesR, data = dat, transform = function(x) { x }, setup = setupIWLS, sampler = samplerIWLS, results = function(x, ...) { x })
+
 
