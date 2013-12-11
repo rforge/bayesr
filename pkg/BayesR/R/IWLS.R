@@ -3,7 +3,6 @@
 setupIWLS <- function(x, ...)
 {
   call <- x$call; x$call <- NULL
-  family <- attr(x, "family")
 
   sIWLS <- function(obj, ...) {
     if(!any(c("formula", "fake.formula", "response") %in% names(obj))) {
@@ -36,7 +35,8 @@ setupIWLS <- function(x, ...)
   x <- sIWLS(x, ...)
 
   attr(x, "call") <- call
-  attr(x, "family") <- family
+  attr(x, "response.vec") <- attr(x, "model.frame")[, attr(attr(x, "model.frame"), "response.name")]
+  attr(x, "model.frame") <- NULL
 
   x
 }
@@ -61,13 +61,17 @@ smooth.IWLS.default <- function(x, ...)
   x$b <- if(is.null(x$xt$b)) 1e-04 else x$xt$b
   x$p.save <- if(is.null(x$p.save)) c("g", "tau2") else x$p.save
   if(is.null(x$samples)) {
-    x$samples <- list("g" = runif(ncol(x$X), 0.95, 1.05), "tau2" = runif(1, 0.95, 1.05))
+    x$samples <- list()
+    x$samples$g <- runif(ncol(x$X), 0.001, 0.002)
+    x$samples$tau2 <- runif(1, 0.99, 1)
+    x$samples$M <- rep(1, ncol(x$X))
+    x$samples$P <- solve(crossprod(x$X))
     x$s.colnames <- if(is.null(x$s.colnames)) {
       c(paste("g[", 1:length(x$samples$g), "]", sep = ""), "tau2[1]")
     } else x$s.colnames
     x$samples$log.prior <- drop(-1 / x$samples$tau2 * crossprod(x$samples$g, x$S[[1]]) %*% x$samples$g)
+    x$np <- ncol(x$X) + 1
   }
-  x$np <- length(unlist(x$samples)) - 1
 
   if(is.null(x$update)) {
     if(is.null(x$rand)) {
@@ -75,12 +79,15 @@ smooth.IWLS.default <- function(x, ...)
       x$update <- function(x, z, eta, weights) {
         XW <- crossprod(x$X, diag(weights))
         P <- chol2inv(chol(XW %*% x$X + 1 / x$samples$tau2 * x$S[[1]]))
-        M <- P %*% XW %*% (z - eta)
+        M <- P %*% (XW %*% (z - eta))
         x$samples$g <- drop(mvrnorm(n = 1, mu = M, Sigma = P))
         a <- x$rank / 2 + x$a
         b <- 0.5 * crossprod(x$samples$g, x$S[[1]]) %*% x$samples$g + x$b
         x$samples$tau2 <- 1 / rgamma(1, a, b)
         x$samples$fs <- drop(x$X %*% x$samples$g)
+        x$samples$log.prior <- drop(-1 / x$samples$tau2 * crossprod(x$samples$g, x$S[[1]]) %*% x$samples$g)
+        x$samples$M <- M
+        x$samples$P <- P
         x$samples
       }
     }
@@ -94,19 +101,19 @@ smooth.IWLS.default <- function(x, ...)
 samplerIWLS <- function(x, n.iter = 1000, thin = 2, burnin = 200,
   verbose = TRUE, step = 100, tdir = NULL, ...)
 {
+  require("mvtnorm")
+
   family <- attr(x, "family")
   nx <- family$names
   if(!all(nx %in% names(x)))
     stop("parameter names mismatch with family names!")
+  response <- attr(x, "response.vec")
 
   ## Actual number of samples to save.
   if(n.iter < burnin) stop("argument burnin exceeds n.iter!")
   if(thin > (n.iter - burnin)) stop("argument thin is set too large!")
   iterthin <- as.integer(seq(burnin, n.iter, by = thin))
   n.save <- length(iterthin)
-
-  ## Extract the response
-  response <- attr(x, "model.frame")[, attr(attr(x, "model.frame"), "response.name")]
   
   ## Add accptance rate and fitted values vectors.
   smIWLS <- function(obj, ...) {
@@ -155,13 +162,13 @@ samplerIWLS <- function(x, n.iter = 1000, thin = 2, burnin = 200,
       
     for(j in 1:np) {
       ## Compute weights.
-      weights <- 1 / iwls[[nx[j]]]$weights(response, eta)
+      weights <- iwls[[nx[j]]]$weights(response, eta)
 
       ## Score.
       score <- iwls[[nx[j]]]$score(response, eta)
 
       ## Compute working observations.
-      z <- eta[[nx[j]]] + weights * score
+      z <- eta[[nx[j]]] + 1 / weights * score
 
       ## Sample smooth effects
       if(length(x[[nx[j]]]$smooth)) {
@@ -170,7 +177,7 @@ samplerIWLS <- function(x, n.iter = 1000, thin = 2, burnin = 200,
           eta0 <- eta[[nx[j]]]
 
           ## Compute old log likelihood + log prior.
-          p0 <- iwls$loglik(response, eta) + x[[nx[j]]]$smooth[[sj]]$samples$log.prior
+          p0 <- iwls$loglik(response, eta)
 
           ## Compute partial predictor.
           eta[[nx[j]]] <- eta0 - x[[nx[j]]]$smooth[[sj]]$samples$fs
@@ -182,13 +189,16 @@ samplerIWLS <- function(x, n.iter = 1000, thin = 2, burnin = 200,
           eta[[nx[j]]] <- eta[[nx[j]]] + sms$fs
 
           ## Compute new log likelihood + log prior.
-          p1 <- iwls$loglik(response, eta) + sms$log.prior
+          p1 <- iwls$loglik(response, eta)
 
           ## Compute acceptance probablity.
-          alpha <- p0 / p1
+
+          alpha <- (p1 + x[[nx[j]]]$smooth[[sj]]$samples$log.priors[1] + sms$log.priors[2]) -
+            (p0 + sms$log.priors[1] + x[[nx[j]]]$smooth[[sj]]$samples$log.priors[2])
 
           ## If accepted, set current state to proposed state.
           accepted <- if(is.na(alpha)) FALSE else log(runif(1)) <= alpha
+print(accepted)
           if(accepted) {
             x[[nx[j]]]$smooth[[sj]]$samples <- sms
           } else eta[[nx[j]]] <- eta0
@@ -222,7 +232,7 @@ samplerIWLS <- function(x, n.iter = 1000, thin = 2, burnin = 200,
         p1 <- iwls$loglik(response, eta)
 
         ## Compute acceptance probablity.
-        alpha <- p0 / p1
+        alpha <- p0 - p1
 
         ## If accepted, set current state to proposed state.
         accepted <- if(is.na(alpha)) FALSE else log(runif(1)) <= alpha
@@ -249,7 +259,6 @@ samplerIWLS <- function(x, n.iter = 1000, thin = 2, burnin = 200,
     dir.create(tdir <- tempfile())
     on.exit(unlink(tdir))
   }
-tdir <- "~/tmp"
   tdir <- path.expand(tdir)
 
   samplesIWLS <- function(obj, id = NULL, ...) {

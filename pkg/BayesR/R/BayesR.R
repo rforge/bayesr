@@ -819,13 +819,13 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
   k <- length(object)
   enames <- list()
   for(j in 1:k)
-    enames[[j]] <- all.terms(object[[j]], j)
+    enames[[j]] <- all.terms(object[[j]], j, ne = TRUE)
   if(!all(diff(sapply(enames, length)) == 0))
     stop("the number of terms in the models is not identical, cannot compute prediction!")
   enames <- data.frame(enames)
   if(!all(apply(enames, 1, function(x) length(unique(x))) == 1))
     stop("different terms in the supplied models, cannot compute prediction!")
-  enames <- all.terms(object[[1L]])
+  enames <- all.terms(object[[1L]], ne = TRUE)
   term <- if(!is.null(enames)) {
     if(is.null(term)) enames else {
       if(is.character(term)) {
@@ -1786,18 +1786,30 @@ coef.bayesr <- function(object, model = NULL, term = NULL, FUN = mean, ...)
 
 
 ## Get all terms names used.
-all.terms <- function(x, model = NULL)
+all.terms <- function(x, model = NULL, ne = FALSE)
 {
-  tx <- terms.bayesr(x, model)
-  if(!inherits(tx, "list"))
-    tx <- list(tx)
-  tl <- NULL
-  for(j in tx) {
-    if(inherits(j, "list")) {
-      for(i in j)
-        tl <- c(tl, attr(i, "term.labels"))
-    } else tl <- c(tl, attr(j, "term.labels"))
+  if(!ne) {
+    tx <- terms.bayesr(x, model)
+    if(!inherits(tx, "list"))
+      tx <- list(tx)
+    tl <- NULL
+    for(j in tx) {
+      if(inherits(j, "list")) {
+        for(i in j)
+          tl <- c(tl, attr(i, "term.labels"))
+      } else tl <- c(tl, attr(j, "term.labels"))
+    }
+  } else {
+    x <- get.model(x, model)
+    tl <- NULL
+    for(j in seq_along(x)) {
+      if(!"effects" %in% names(x[[j]]))
+        tl <- c(tl, all.terms(x[[j]], ne = TRUE))
+      else
+        tl <- c(tl, names(x[[j]]$effects))
+    }
   }
+
   tl
 }
 

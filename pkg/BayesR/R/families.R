@@ -171,13 +171,13 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
 
 
 mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
-  sigma1 = "log", sigma2 = "log", "rho" = "identity"), ...)
+  sigma1 = "log", sigma2 = "log", rho = "identity"), ...)
 {
   rval <- list(
     "family" = "gaussian",
     "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho"),
     "links" = parse.links(links, c(mu1 = "identity", mu2 = "identity",
-       sigma1 = "log", sigma2 = "log", "rho" = "identity"), ...),
+       sigma1 = "log", sigma2 = "log", rho = "identity"), ...),
     "order" = 5:1,
     bayesx = list(
       "mu1" = c("bivnormal_mu", "mean"),

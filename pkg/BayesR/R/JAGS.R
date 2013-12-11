@@ -262,6 +262,7 @@ buildJAGS.smooth <- function(smooth, setup, i, zero) {
   fall <- NULL
   kr <- if(is.null(smooth$rand$Xr)) 0 else ncol(smooth$rand$Xr)
   kx <- if(is.null(smooth$Xf)) 0 else ncol(smooth$Xf)
+  hcauchy <- if(is.null(smooth$xt$hcauchy)) FALSE else smooth$xt$hcauchy
   if(kx > 0) {
     fall <- c(fall, paste("b", i, if(kx > 1) paste("[", 1:kx, "]", sep = ""),
       "*Xf", i, "[i, ", 1:kx, "]", sep = ""))
@@ -286,11 +287,14 @@ buildJAGS.smooth <- function(smooth, setup, i, zero) {
     setup$priors.coef <- c(setup$priors.coef, tmp)
     setup$loops <- c(setup$loops, kr)
     if(is.null(setup$priors.scale) || !any(grepl(taug, setup$priors.scale))) {
-#      setup$priors.scale <- c(setup$priors.scale, paste("  ", taug,
-#        if(zero) " <- 0.0" else " ~ dgamma(1.0E-6, 1.0E-6)", sep = ""))
-      setup$priors.scale <- c(setup$priors.scale, paste("  ", taug,
-        if(zero) " <- 0.0" else " <- abs(", taug, 0, ")", sep = ""),
-        paste("  ", taug, 0, "~ dt(0, 10, 1)", sep = ""))
+      if(!hcauchy) {
+        setup$priors.scale <- c(setup$priors.scale, paste("  ", taug,
+          if(zero) " <- 0.0" else " ~ dgamma(1.0E-6, 1.0E-6)", sep = ""))
+      } else {
+        setup$priors.scale <- c(setup$priors.scale, paste("  ", taug,
+          if(zero) " <- 0.0" else " <- abs(", taug, 0, ")", sep = ""),
+          paste("  ", taug, 0, "~ dt(0, 10, 1)", sep = ""))
+      }
       if(!zero)
         	setup$inits[[taug]] <- runif(1, 0.00001, 0.0001)
       setup$psave <- c(setup$psave, taug)
