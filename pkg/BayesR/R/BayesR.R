@@ -26,8 +26,10 @@ bayesr <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
         do.call(fun, args)
       }
     } else functions[[j]] <- foo[[j]]
-    if(!is.function(functions[[j]]))
-      stop(paste("argument", nf[j], "is not a function!"))
+    if(!is.function(functions[[j]])) {
+      if(!is.logical(functions[[j]]))
+        stop(paste("argument", nf[j], "is not a function!"))
+    }
   }
   names(functions) <- names(foo)
   functions$parse.input <- if(!is.null(parse.input)) {
@@ -45,16 +47,21 @@ bayesr <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
   pm <- functions$transform(pm)
 
   ## Sampling setup.
-  ms <- functions$setup(pm)
+  if(is.logical(functions$setup)) {
+    sc <- FALSE
+  } else {
+    sc <- TRUE
+    ms <- functions$setup(pm)
+  }
 
   ## Start sampling.
   if(is.null(cores)) {
-    so <- functions$sampler(ms)
+    so <- functions$sampler(if(sc) ms else pm)
   } else {
     require("parallel")
     parallel_fun <- function(j) {
       if(j > 1 & !is.null(sleep)) Sys.sleep(sleep)
-      functions$sampler(ms)
+      functions$sampler(if(sc) ms else pm)
     }
     so <- mclapply(1:cores, parallel_fun, mc.cores = cores)
   }
