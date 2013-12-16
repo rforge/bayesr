@@ -154,11 +154,11 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
       sum(dnorm(y, eta$mu, linkinv$sigma(eta$sigma), log = TRUE))
     },
     "score" = list(
-      "mu" = function(y, eta, ...) { drop((y - eta[["mu"]]) / eta[["sigma"]]^2) },
-      "sigma" = function(y, eta, ...) { drop(-1 + (y - eta[["mu"]])^2 / (eta[["sigma"]]^2)) }
+      "mu" = function(y, eta, ...) { drop((y - eta$mu) / eta$sigma^2) },
+      "sigma" = function(y, eta, ...) { drop(-1 + (y - eta$mu)^2 / (eta$sigma^2)) }
     ),
     "weights" = list(
-      "mu" = function(y, eta, ...) { drop(1 / eta[["sigma"]]^2) },
+      "mu" = function(y, eta, ...) { drop(1 / eta$sigma^2) },
       "sigma" = function(y, eta, ...) { rep(2, length(y)) }
     )
   )
