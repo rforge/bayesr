@@ -141,8 +141,8 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
     "names" = c("mu", "sigma"),
     "links" = links,
     bayesx = list(
-      "mu" = c("normal_mu", "mean"),
-      "sigma" = c("normal_sigma2", "scale")
+      "mu" = c("normal2_mu", "mean"),
+      "sigma" = c("normal2_sigma", "scale")
     ),
     jagstan = list(
       "dist" = "dnorm",
@@ -151,16 +151,15 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
       "reparam" = c(sigma = "1 / sigma")
     ),
     "loglik" = function(y, eta, ...) {
-      sigma2 <- linkinv$sigma(eta$sigma)^2
-      sum(-0.5 * log(2 * pi) - 0.5 * log(sigma2) - (y - linkinv$mu(eta$mu))^2 / (2 * sigma2))
+      sum(dnorm(y, eta$mu, linkinv$sigma(eta$sigma), log = TRUE))
     },
     "score" = list(
       "mu" = function(y, eta, ...) { drop((y - eta[["mu"]]) / eta[["sigma"]]^2) },
-      "sigma" = function(y, eta, ...) { drop(-0.5 + (y - eta[["mu"]])^2 / (2 * eta[["sigma"]]^2)) }
+      "sigma" = function(y, eta, ...) { drop(-1 + (y - eta[["mu"]])^2 / (eta[["sigma"]]^2)) }
     ),
     "weights" = list(
       "mu" = function(y, eta, ...) { drop(1 / eta[["sigma"]]^2) },
-      "sigma" = function(y, eta, ...) { rep(0.5, length(y)) }
+      "sigma" = function(y, eta, ...) { rep(2, length(y)) }
     )
   )
   class(rval) <- "family.BayesR"

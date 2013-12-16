@@ -97,7 +97,7 @@ smooth.IWLS.default <- function(x, ...)
         pibeta <- family$loglik(response, eta)
         p1 <- if(x$fixed) {
           0
-        } else drop(-1 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+        } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
 
         ## Compute partial predictor.
         eta[[id]] <- eta0 - x$state$fit
@@ -118,10 +118,10 @@ smooth.IWLS.default <- function(x, ...)
         ## Compute log priors
         p2 <- if(x$fixed) {
           0
-        } else drop(-1 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+        } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
         g1 <- x$state$g - M
         qbetaprop <- 0.5 * sum(log((diag(chol(P0, symmetric = TRUE))^2))) -0.5 * crossprod(g1, P0) %*% g1
-        ## qbetaprop2 <- dmvnorm(x$state$g, mean = M, sigma = P, log = TRUE)
+        qbetaprop2 <- dmvnorm(x$state$g, mean = M, sigma = P, log = TRUE)
 
         ## Compute fitted values.        
         x$state$fit <- drop(x$X %*% x$state$g)
@@ -152,10 +152,9 @@ smooth.IWLS.default <- function(x, ...)
         M2 <- P2 %*% (XW %*% (z - eta[[id]]))
 
         ## Get the log prior.
-        qbeta <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
         g2 <- g0 - M2
-        qbeta <- 0.5 * sum(log((diag(chol(P0, symmetric = TRUE))^2))) -0.5 * crossprod(g2, P0) %*% g1
-        ## qbeta2 <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
+        qbeta <- 0.5 * sum(log((diag(chol(P0, symmetric = TRUE))^2))) -0.5 * crossprod(g2, P0) %*% g2
+        qbeta2 <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
 
         ## Sample variance parameter.
         if(!x$fixed & is.null(x$sp)) {
@@ -241,7 +240,7 @@ samplerIWLS <- function(x, n.iter = 1200, thin = 1, burnin = 200,
         p.state <- x[[nx[j]]]$smooth[[sj]]$propose(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j])
 
         ## If accepted, set current state to proposed state.
-        accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
+        accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= min(c(p.state$alpha, 1))
 
         if(accepted) {
           eta[[nx[j]]] <- eta[[nx[j]]] - x[[nx[j]]]$smooth[[sj]]$state$fit + p.state$fit
