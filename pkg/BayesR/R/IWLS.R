@@ -90,60 +90,37 @@ smooth.IWLS.default <- function(x, ...)
         ## Compute working observations.
         z <- eta[[id]] + 1 / weights * score
 
-#        ## Save old predictor.
-#        eta0 <- eta[[id]]
-
         ## Compute old log likelihood and old log coefficients prior.
         pibeta <- family$loglik(response, eta)
-#        p1 <- if(x$fixed) {
-#          0
-#        } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+        p1 <- if(x$fixed) {
+          0
+        } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
 
         ## Compute partial predictor.
         eta[[id]] <- eta[[id]] - x$state$fit
 
-#        ## Compute mean and precision.
-#        XW <- t(x$X * weights)
-#        P <- if(x$fixed) {
-#          chol2inv(chol(P0 <- XW %*% x$X))
-#        } else chol2inv(chol(P0 <- XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
-#        M <- P %*% (XW %*% (z - eta[[id]]))
+        ## Compute mean and precision.
+        XW <- t(x$X * weights)
+        P <- if(x$fixed) {
+          chol2inv(chol(XW %*% x$X))
+        } else chol2inv(chol(XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
+        M <- P %*% (XW %*% (z - eta[[id]]))
 
         ## Save old coefficients
         g0 <- x$state$g
 
-#        ## Sample new parameters.
-#        x$state$g <- drop(rmvnorm(n = 1, mean = M, sigma = P))
+        ## Sample new parameters.
+        x$state$g <- drop(rmvnorm(n = 1, mean = M, sigma = P))
 
-        ## Start Nadja.
-        coeff <- g0
-        pr <- t(x$X) %*% (x$X * weights) + if(!x$fixed) 1 / x$state$tau2 * x$S[[1]] else 0
-        cholpr <- chol(pr, symmetric = TRUE)
-        zufall <- rnorm(ncol(x$X), mean = 0, sd = 1)
-        coeffprop <- solve(cholpr, zufall) ## N(0, P^-1)
-        vec <- solve(t(cholpr), t(x$X * weights) %*% (z - eta[[id]]))
-        mu <- solve(cholpr, vec)
-        coeffprop <- coeffprop + mu
-        if(!x$fixed) {
-          hilfsvec <- solve(t(cholpr), t(rep(1, length(score)) %*% x$X))
-          v <- solve(cholpr, hilfsvec)
-          w <- drop(rep(1, length(score)) %*% x$X %*% v)
-          x$state$g <- drop(coeffprop - t(1/w * t(v)) %*% (rep(1, length(score)) %*% x$X %*% coeffprop))
-        }
-        x$state$fit <- x$X %*% x$state$g
-        ## End Nadja.
+        ## Compute log priors.
+        p2 <- if(x$fixed) {
+          0
+        } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+        g1 <- x$state$g - M
+        qbetaprop <- dmvnorm(x$state$g, mean = M, sigma = P, log = TRUE)
 
-#        ## Compute log priors.
-#        p2 <- if(x$fixed) {
-#          0
-#        } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
-#        g1 <- x$state$g - M
-#        qbetaprop <- 0.5 * sum(log((diag(chol(P0, symmetric = TRUE))^2))) -0.5 * crossprod(g1, P0) %*% g1
-#        qbetaprop2 <- dmvnorm(x$state$g, mean = M, sigma = P, log = TRUE)
-
-#        ## Compute fitted values.        
-#        x$state$fit <- drop(x$X %*% x$state$g)
-#        x$state$fit <- x$state$fit - mean(x$state$fit)
+        ## Compute fitted values.        
+        x$state$fit <- drop(x$X %*% x$state$g)
 
         ## Set up new predictor.
         eta[[id]] <- eta[[id]] + x$state$fit
@@ -160,31 +137,16 @@ smooth.IWLS.default <- function(x, ...)
         ## New working observations.
         z <- eta[[id]] + 1 / weights * score
 
-#        ## Compute partial predictor.
-#        eta[[id]] <- eta[[id]] - x$state$fit
+        ## Compute mean and precision.
+        XW <- t(x$X * weights)
+        P2 <- if(x$fixed) {
+          chol2inv(chol(XW %*% x$X))
+        } else chol2inv(chol(XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
+        M2 <- P2 %*% (XW %*% (z - (eta[[id]] - x$state$fit)))
 
-        ## Start Nadja.      
-        prprop <- t(x$X) %*% (x$X * weights) + if(!x$fixed) 1 / x$state$tau2 * x$S[[1]] else 0
-        cholprprop <- chol(prprop, symmetric = TRUE)
-        vecprop <- solve(t(cholprprop), t(x$X * weights) %*% (z - (eta[[id]] - x$state$fit)))
-        muprop <- solve(cholprprop, vecprop)
-        qbeta <- 0.5 * sum(log((diag(cholprprop)^2))) - 0.5 * t(coeff - muprop) %*% prprop %*% (coeff - muprop)
-        qbetaprop <- 0.5 * sum(log((diag(cholpr)^2))) - 0.5 * t(x$state$g - mu) %*% pr %*% (x$state$g - mu)
-        p1 <- if(!x$fixed) - 1 / (2 * x$state$tau2) * t(coeff) %*% x$S[[1]] %*% coeff else 0
-        p2 <- if(!x$fixed) - 1 / (2 * x$state$tau2) * t(x$state$g) %*% x$S[[1]] %*% x$state$g else 0
-        ## End Nadja.
-
-#        ## Compute mean and precision.
-#        XW <- t(x$X * weights)
-#        P2 <- if(x$fixed) {
-#          chol2inv(chol(P0 <- XW %*% x$X))
-#        } else chol2inv(chol(P0 <- XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
-#        M2 <- P2 %*% (XW %*% (z - eta[[id]]))
-
-#        ## Get the log prior.
-#        g2 <- g0 - M2
-#        qbeta <- 0.5 * sum(log((diag(chol(P0, symmetric = TRUE))^2))) -0.5 * crossprod(g2, P0) %*% g2
-#        qbeta2 <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
+        ## Get the log prior.
+        g2 <- g0 - M2
+        qbeta <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
 
         ## Sample variance parameter.
         if(!x$fixed & is.null(x$sp)) {
@@ -273,8 +235,7 @@ samplerIWLS <- function(x, n.iter = 1200, thin = 1, burnin = 200,
         accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= min(c(p.state$alpha, 1))
 
 print(accepted)
-plot(p.state$fit ~ dat$x)
-Sys.sleep(2)
+#plot(p.state$fit ~ dat$x)
 accepted <- TRUE
 
         if(accepted) {
