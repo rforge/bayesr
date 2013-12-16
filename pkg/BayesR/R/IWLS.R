@@ -232,7 +232,7 @@ samplerIWLS <- function(x, n.iter = 1200, thin = 1, burnin = 200,
         p.state <- x[[nx[j]]]$smooth[[sj]]$propose(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j])
 
         ## If accepted, set current state to proposed state.
-        accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= min(c(p.state$alpha, 1))
+        accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
 
 print(accepted)
 #plot(p.state$fit ~ dat$x)
