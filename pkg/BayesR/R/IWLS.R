@@ -19,9 +19,12 @@ transformIWLS <- function(x, ...)
           "X" = obj$X,
           "S" = list(diag(0, ncol(obj$X))),
           "rank" = ncol(obj$X),
-          "term" = "parametric",
+          "term" = "linear",
+          "label" = "linear",
           "bs.dim" = ncol(obj$X),
-          "fixed" = TRUE
+          "fixed" = TRUE,
+          "by" = "NA",
+          "is.linear" = TRUE
         )
         obj$sterms <- c(obj$strems, "parametric")
         obj$X <- NULL
@@ -39,7 +42,6 @@ transformIWLS <- function(x, ...)
 
   attr(x, "call") <- call
   attr(x, "response.vec") <- attr(x, "model.frame")[, attr(attr(x, "model.frame"), "response.name")]
-  attr(x, "model.frame") <- NULL
 
   x
 }
@@ -53,11 +55,11 @@ smooth.IWLS <- function(x, ...) {
 smooth.IWLS.default <- function(x, ...)
 {
   if(is.null(x$get.mu)) {
-    x$get.mu <- if(is.null(x$xt$get.mu)) {
+    x$get.mu <- if(is.null(x$get.mu)) {
       function(X, g) {
         X %*% as.numeric(g)
       }
-    } else x$xt$get.mu
+    } else x$get.mu
   }
 
   x$a <- if(is.null(x$xt$a)) 1e-04 else x$xt$a
@@ -67,11 +69,13 @@ smooth.IWLS.default <- function(x, ...)
     x$p.save <- c("g", "tau2")
     x$state <- list()
     x$state$g <- runif(ncol(x$X), 1.001, 1.002)
-    x$state$tau2 <- runif(1, 0.99, 1)
+    if(!x$fixed)
+      x$state$tau2 <- runif(1, 0.99, 1)
     x$s.colnames <- if(is.null(x$s.colnames)) {
-      c(paste("g[", 1:length(x$state$g), "]", sep = ""), "tau2[1]")
+      c(paste("c", 1:length(x$state$g), sep = ""),
+        if(!x$fixed) "tau2" else NULL)
     } else x$s.colnames
-    x$np <- ncol(x$X) + 1
+    x$np <- length(x$s.colnames)
   }
 
   if(is.null(x$propose)) {
@@ -91,14 +95,18 @@ smooth.IWLS.default <- function(x, ...)
 
         ## Compute old log likelihood and old log coefficients prior.
         pibeta <- family$loglik(response, eta)
-        p1 <- drop(-1 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+        p1 <- if(x$fixed) {
+          0
+        } else drop(-1 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
 
         ## Compute partial predictor.
         eta[[id]] <- eta0 - x$state$fit
 
         ## Compute mean and precision.
         XW <- t(x$X * weights)
-        P <- chol2inv(chol(P0 <- XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
+        P <- if(x$fixed) {
+          chol2inv(chol(P0 <- XW %*% x$X))
+        } else chol2inv(chol(P0 <- XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
         M <- P %*% (XW %*% (z - eta[[id]]))
 
         ## Save old coefficients
@@ -108,7 +116,9 @@ smooth.IWLS.default <- function(x, ...)
         x$state$g <- drop(rmvnorm(n = 1, mean = M, sigma = P))
 
         ## Compute log priors
-        p2 <- drop(-1 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+        p2 <- if(x$fixed) {
+          0
+        } else drop(-1 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
         g1 <- x$state$g - M
         qbetaprop <- 0.5 * sum(log((diag(chol(P0, symmetric = TRUE))^2))) -0.5 * crossprod(g1, P0) %*% g1
         ## qbetaprop2 <- dmvnorm(x$state$g, mean = M, sigma = P, log = TRUE)
@@ -136,7 +146,9 @@ smooth.IWLS.default <- function(x, ...)
 
         ## Compute mean and precision.
         XW <- t(x$X * weights)
-        P2 <- chol2inv(chol(P0 <- XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
+        P2 <- if(x$fixed) {
+          chol2inv(chol(P0 <- XW %*% x$X))
+        } else chol2inv(chol(P0 <- XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
         M2 <- P2 %*% (XW %*% (z - eta[[id]]))
 
         ## Get the log prior.
@@ -146,9 +158,11 @@ smooth.IWLS.default <- function(x, ...)
         ## qbeta2 <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
 
         ## Sample variance parameter.
-        a <- x$rank / 2 + x$a
-        b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
-        x$state$tau2 <- 1 / rgamma(1, a, b)
+        if(!x$fixed) {
+          a <- x$rank / 2 + x$a
+          b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
+          x$state$tau2 <- 1 / rgamma(1, a, b)
+        }
 
         ## Compute acceptance probablity
         x$state$alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
@@ -163,7 +177,7 @@ smooth.IWLS.default <- function(x, ...)
 
 
 ## Sampler based on IWLS proposals.
-samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
+samplerIWLS <- function(x, n.iter = 1200, thin = 1, burnin = 200,
   verbose = TRUE, step = 100, tdir = NULL, ...)
 {
   require("mvtnorm")
@@ -212,6 +226,8 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   for(j in 1:np)
     eta[[j]] <- rep(0.1, length(response))
 
+  deviance <- rep(0, length(iterthin))
+
   ## Start sampling
   for(i in 1:n.iter) {
     if(save <- i %in% iterthin)
@@ -236,6 +252,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
         if(save) {
           x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- accepted
           x[[nx[j]]]$smooth[[sj]]$s.samples[js, ] <- unlist(x[[nx[j]]]$smooth[[sj]]$state[x[[nx[j]]]$smooth[[sj]]$p.save])
+          deviance[js] <- -2 * family$loglik(response, eta)
         }
       }
     }
@@ -262,11 +279,6 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
       for(j in nx)
         samplesIWLS(obj[[j]], id = j, ...)
     } else {
-      if(!is.null(dim(obj$X))) {
-        fn <- file.path(tdir, paste(id, if(!is.null(id)) ":", "h", obj$hlevel, ":", "param", ".raw", sep = ""))
-        colnames(obj$s.samples) <- paste("b[", 1:ncol(obj$X), "]", sep = "")
-        write.table(obj$s.samples, file = fn, row.names = FALSE, quote = FALSE)
-      }
       if(length(obj$smooth)) {
         for(j in seq_along(obj$smooth)) {
           fn <- file.path(tdir, paste(id, if(!is.null(id)) ":", "h",
@@ -289,9 +301,10 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   samples <- NULL
   for(j in sf) {
     st <- as.matrix(read.table(file.path(tdir, j), header = TRUE))
-    colnames(st) <- paste(gsub(".raw", "", j), colnames(st), sep = ":")
+    colnames(st) <- paste(gsub(".raw", "", j), gsub("c", "", colnames(st)), sep = ".")
     samples <- cbind(samples, st)
   }
+  samples <- cbind(samples, "deviance" = deviance)
 
   return(as.mcmc(samples))
 }
@@ -307,7 +320,157 @@ resultsIWLS <- function(x, samples)
 
   createIWLSresults <- function(obj, samples, id = NULL)
   {
+    if(inherits(samples[[1]], "mcmc.list"))
+      samples <- do.call("c", samples)
+    else samples <- as.mcmc.list(list(samples))
+    chains <- length(samples)
+    rval <- vector(mode = "list", length = chains)
+    snames <- colnames(samples[[1]])
 
+    for(j in 1:chains) {
+      if(any(grepl("deviance", snames))) {
+        DIC <- as.numeric(samples[[j]][, grepl("deviance", snames)])
+        pd <- var(DIC) / 2
+        DIC <- mean(DIC)
+      } else {
+        DIC <- pd <- NA
+      }
+
+      ## Compute model term effects.
+      param.effects <- effects <- effects.hyp <- NULL
+      fitted.values <- 0
+
+      ## Smooth terms.
+      if(length(obj$smooth)) {
+        for(i in 1:length(obj$smooth)) {
+          ## Get coefficient samples of smooth term.
+          psamples <- NULL
+          k <- ncol(obj$smooth[[i]]$X)
+          pn <- grep(paste(id, "h1", obj$smooth[[i]]$label, sep = ":"), snames, value = TRUE, fixed = TRUE) ## FIXME: hlevels!
+          pn <- pn[!grepl("tau2", pn)]
+          psamples <- matrix(samples[[j]][, snames %in% pn], ncol = k)
+
+          ## Possible variance parameter samples.
+          vsamples <- NULL
+          tau2 <- paste(obj$smooth[[i]]$label, "tau2", sep = ".")
+          if(length(tau2 <- grep(tau2, snames, fixed = TRUE))) {
+            vsamples <- as.numeric(samples[[j]][, tau2])
+          }
+
+          ## Prediction matrix.
+          get.X <- function(x) {
+            X <- PredictMat(obj$smooth[[i]], x)
+            X
+          }
+
+          ## Compute final smooth term object.
+          tn <- c(obj$smooth[[i]]$term, if(obj$smooth[[i]]$by != "NA") obj$smooth[[i]]$by else NULL)
+
+          if(is.null(obj$smooth[[i]]$is.linear)) {
+            if(!is.list(effects))
+              effects <- list()
+            if(length(effects)) {
+              if(obj$smooth[[i]]$label %in% names(effects)) {
+                ct <- gsub(".smooth.spec", "", class(obj$smooth[[i]]))[1]
+                if(ct == "random.effect") ct <- "re"
+                obj$smooth[[i]]$label <- paste(obj$smooth[[i]]$label, ct, sep = ":")
+              }
+            }
+
+            fst <- compute_term(obj$smooth[[i]], get.X = get.X, get.mu = obj$smooth[[i]]$get.mu,
+              psamples = psamples, vsamples = vsamples, FUN = NULL, snames = snames,
+              effects.hyp = effects.hyp, fitted.values = fitted.values,
+              data = attr(x, "model.frame")[, tn, drop = FALSE], grid = grid)
+
+            attr(fst$term, "specs")$get.mu <- obj$smooth[[i]]$get.mu
+
+            ## Add term to effects list.
+            effects[[obj$smooth[[i]]$label]] <- fst$term
+            effects.hyp <- fst$effects.hyp
+
+            fitted.values <- fst$fitted.values
+            rm(fst)
+          } else {
+            nx <- colnames(obj$smooth[[i]]$X)
+            qu <- t(apply(psamples, 2, quantile, probs = c(0.025, 0.5, 0.975)))
+            sd <- drop(apply(psamples, 2, sd))
+            me <- drop(apply(psamples, 2, mean))
+            param.effects <- cbind(me, sd, qu)
+            rownames(param.effects) <- nx
+            colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
+            fitted.values <- as.vector(fitted.values + obj$smooth[[i]]$X %*% param.effects[, 1])
+            attr(param.effects, "samples") <- as.mcmc(psamples)
+            colnames(attr(param.effects, "samples")) <- nx
+          }
+        }
+      }
+
+      ## Compute partial residuals.
+      if(!is.null(effects)) {
+        if(length(obj$response)) {
+          if(obj$response %in% names(attr(x, "model.frame"))) {
+            effects <- partial.residuals(effects, attr(x, "model.frame")[[obj$response]],
+              fitted.values, NULL)
+          }
+        }
+      }
+
+      ## Stuff everything together.
+      rval[[j]] <- list(
+        "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(attr(x, "model.frame")), "formula" = obj$formula),
+        "param.effects" = param.effects, "effects" = effects,
+        "effects.hyp" = effects.hyp, "fitted.values" = fitted.values,
+        "residuals" = if(is.factor(obj$response.vec)) {
+            as.integer(obj$response.vec) - 1
+          } else {
+            obj$response.vec
+          } - fitted.values
+      )
+      
+#      ## Clean.
+#      rval[[j]] <- delete.NULLs(rval[[j]])
+
+      class(rval[[j]]) <- "bayesr"
+    }
+    names(rval) <- paste("Chain", 1:chains, sep = "_")
+    if(length(rval) < 2) {
+      rval <- rval[[1]]
+    }
+    class(rval) <- "bayesr"
+    return(rval)
+  }
+
+  if(inherits(x, "bayesr.input") & !all(c("formula", "fake.formula", "response") %in% names(x))) {
+    nx <- names(x)
+    nx <- nx[nx != "call"]
+    rval <- list()
+    fn <- family$names
+    cat <- if(!is.null(family$cat)) family$cat else FALSE
+    if(cat)
+      fn <- gsub(attr(attr(x, "model.frame"), "response.name"), "", names(x))
+    if(length(fn) != length(nx))
+      fn <- paste(fn, 1:length(nx), sep = "")
+    for(j in seq_along(nx)) {
+      rval[[nx[j]]] <- createIWLSresults(x[[nx[j]]], samples, id = fn[j])
+      if(!is.null(rval[[nx[j]]]$effects)) {
+        for(i in seq_along(rval[[nx[j]]]$effects)) {
+          specs <- attr(rval[[nx[j]]]$effects[[i]], "specs")
+          specs$label <- paste(specs$label, fn[j], sep = ":")
+          attr(rval[[nx[j]]]$effects[[i]], "specs") <- specs
+        }
+        names(rval[[nx[j]]]$effects) <- paste(names(rval[[nx[j]]]$effects), fn[j], sep = ":")
+      }
+    }
+    names(rval) <- fn
+    if(cat) {
+      reference <- attr(x, "reference")
+      rval <- rval[!grepl(reference, fn)]
+    }
+    attr(rval, "family") <- family
+    class(rval) <- "bayesr"
+    return(rval)
+  } else {
+    return(createIWLSresults(x, samples))
   }
 }
 

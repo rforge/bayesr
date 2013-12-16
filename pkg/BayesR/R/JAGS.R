@@ -698,34 +698,11 @@ resultsJAGS <- function(x, samples)
       }
 
       ## Compute partial residuals.
-      if(!is.null(obj$response)) {
-        if(obj$response %in% names(attr(x, "model.frame"))) {
-          for(i in seq_along(effects)) {
-            response <- if(is.factor(attr(x, "model.frame")[[obj$response]])) {
-              as.integer(attr(x, "model.frame")[[obj$response]]) - 1
-            } else attr(x, "model.frame")[[obj$response]]
-            e <- response - (fitted.values - attr(effects[[i]], "fit"))
-            if(is.null(attr(effects[[i]], "specs")$xt$center)) {
-              e <- e - mean(e)
-            } else {
-              if(attr(effects[[i]], "specs")$xt$center)
-                e <- e - mean(e)
-            }
-            e <- if(is.factor(attr(effects[[i]], "x"))) {
-              warn <- getOption("warn")
-              options(warn = -1)
-              tx <- as.integer(as.character(attr(effects[[i]], "x")))
-              options("warn" = warn)
-              cbind(if(!any(is.na(tx))) tx else as.integer(attr(effects[[i]], "x")), e)
-            } else cbind(attr(effects[[i]], "x"), e)
-            if(!is.null(attr(effects[[i]], "by.drop")))
-              e <- e[attr(effects[[i]], "by.drop"), ]
-            e <- as.data.frame(e)
-            try(names(e) <- c(attr(effects[[i]], "specs")$term, "partial.resids"))
-            attr(effects[[i]], "partial.resids") <- e
-            attr(effects[[i]], "fit") <- NULL
-            attr(effects[[i]], "x") <- NULL
-            attr(effects[[i]], "by.drop") <- NULL
+      if(!is.null(effects)) {
+        if(length(obj$response)) {
+          if(obj$response %in% names(attr(x, "model.frame"))) {
+            effects <- partial.residuals(effects, attr(x, "model.frame")[[obj$response]],
+              fitted.values, NULL)
           }
         }
       }

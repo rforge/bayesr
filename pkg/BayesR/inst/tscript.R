@@ -101,8 +101,8 @@ b2 <- bayesx2(y ~ sx(x1, by = x2), data = dat)
 ## IWLS test
 n <- 500
 dat <- data.frame("x" = sort(runif(n, -3, 3)))
-dat$y <- with(dat, 1.2 + sin(x) + rnorm(n, sd = 0.1))
+dat$y <- with(dat, 1.2 + sin(x) + rnorm(n, sd = scale3(cos(x), 0.1, 0.8)))
 
-b <- bayesr(y ~ x, family = gaussian.BayesR, data = dat, transform = transformIWLS, setup = FALSE, sampler = samplerIWLS, results = function(x0, x1, ...) { x1 })
+b <- bayesr(y ~ x, family = gaussian.BayesR, data = dat, transform = transformIWLS, setup = FALSE, sampler = samplerIWLS, results = resultsIWLS)
 
 
