@@ -125,6 +125,7 @@ smooth.IWLS.default <- function(x, ...)
 
         ## Compute fitted values.        
         x$state$fit <- drop(x$X %*% x$state$g)
+        x$state$fit <- x$state$fit - mean(x$state$fit)
 
         ## Set up new predictor.
         eta[[id]] <- eta[[id]] + x$state$fit
