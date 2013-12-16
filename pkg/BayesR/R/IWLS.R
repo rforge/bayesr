@@ -70,7 +70,7 @@ smooth.IWLS.default <- function(x, ...)
     x$state <- list()
     x$state$g <- runif(ncol(x$X), 1.001, 1.002)
     if(!x$fixed)
-      x$state$tau2 <- runif(1, 0.99, 1)
+      x$state$tau2 <- if(is.null(x$sp)) runif(1, 0.99, 1) else x$sp
     x$s.colnames <- if(is.null(x$s.colnames)) {
       c(paste("c", 1:length(x$state$g), sep = ""),
         if(!x$fixed) "tau2" else NULL)
@@ -158,7 +158,7 @@ smooth.IWLS.default <- function(x, ...)
         ## qbeta2 <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
 
         ## Sample variance parameter.
-        if(!x$fixed) {
+        if(!x$fixed & is.null(x$sp)) {
           a <- x$rank / 2 + x$a
           b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
           x$state$tau2 <- 1 / rgamma(1, a, b)
@@ -352,7 +352,7 @@ resultsIWLS <- function(x, samples)
 
           ## Possible variance parameter samples.
           vsamples <- NULL
-          tau2 <- paste(obj$smooth[[i]]$label, "tau2", sep = ".")
+          tau2 <- paste(id, "h1", paste(obj$smooth[[i]]$label, "tau2", sep = "."), sep = ":")
           if(length(tau2 <- grep(tau2, snames, fixed = TRUE))) {
             vsamples <- as.numeric(samples[[j]][, tau2])
           }

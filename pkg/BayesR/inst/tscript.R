@@ -103,6 +103,6 @@ n <- 500
 dat <- data.frame("x" = sort(runif(n, -3, 3)))
 dat$y <- with(dat, 1.2 + sin(x) + rnorm(n, sd = scale3(cos(x), 0.1, 0.8)))
 
-b <- bayesr(y ~ x, family = gaussian.BayesR, data = dat, transform = transformIWLS, setup = FALSE, sampler = samplerIWLS, results = resultsIWLS)
+b <- bayesr(y ~ s(x), ~ s(x), family = gaussian.BayesR, data = dat, transform = transformIWLS, setup = FALSE, sampler = samplerIWLS, results = resultsIWLS)
 
 
