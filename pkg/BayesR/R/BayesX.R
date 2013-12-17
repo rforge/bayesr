@@ -643,7 +643,7 @@ resultsBayesX <- function(x, samples, ...)
     if(family$family %in% c("beta", "gaussian", "lognormal", "binomial", "multinomial")) {
       foo <- switch(family$family,
         "gaussian" = function(x) gsub("sigma2", "sigma", x),
-        "beta" = function(x) gsub("sigma2", "phi", x),
+        "beta" = function(x) gsub("sigma2", "sigma", x),
         "lognormal" = function(x) gsub("sigma2", "sigma", x),
         "binomial" = function(x) gsub("binomial", "pi", x),
         "multinomial" = function(x) {
@@ -787,36 +787,15 @@ resultsBayesX <- function(x, samples, ...)
       ## Scale parameters.
       scale.m <- scale.samps.m <- NULL
 
-      ## Compute partial residuals. FIXME: binomial()$linkfun()
-      if(!is.null(obj$response.vec)) {
-        if(!is.factor(obj$response.vec)) {
+      ## Compute partial residuals.
+      if(!is.null(effects)) {
+        if(length(obj$response)) {
           if(obj$response %in% names(attr(x, "model.frame"))) {
-            for(i in seq_along(effects)) {
-              e <- obj$response.vec - (fitted.values - attr(effects[[i]], "fit"))
-              if(FALSE) { ## FIXME: computation of partial residuals
-                if(is.null(attr(effects[[i]], "specs")$xt$center)) {
-                  e <- e - mean(e)
-                } else {
-                  if(attr(effects[[i]], "specs")$xt$center)
-                    e <- e - mean(e)
-                }
-              }
-              e <- if(is.factor(attr(effects[[i]], "x"))) {
-                warn <- getOption("warn")
-                options(warn = -1)
-                tx <- as.integer(as.character(attr(effects[[i]], "x")))
-                options("warn" = warn)
-                cbind(if(!any(is.na(tx))) tx else as.integer(attr(effects[[i]], "x")), e)
-              } else cbind(attr(effects[[i]], "x"), e)
-              if(!is.null(attr(effects[[i]], "by.drop")))
-                e <- e[attr(effects[[i]], "by.drop"), ]
-              e <- as.data.frame(e)
-              try(names(e) <- c(attr(effects[[i]], "specs")$term, "partial.resids"))
-              attr(effects[[i]], "partial.resids") <- e
-              attr(effects[[i]], "fit") <- NULL
-              attr(effects[[i]], "x") <- NULL
-              attr(effects[[i]], "by.drop") <- NULL
-            }
+            if(!is.na(link <- family$links[id])) {
+              link <- make.link2(link)
+            } else link <- NULL
+            effects <- partial.residuals(effects, attr(x, "model.frame")[[obj$response]],
+              fitted.values, link)
           }
         }
       }

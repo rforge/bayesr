@@ -53,10 +53,15 @@ parse.links <- function(links, default.links, ...)
 ## http://stats.stackexchange.com/questions/41536/how-can-i-model-a-proportion-with-bugs-jags-stan
 beta.BayesR <- function(links = c(mu = "logit", sigma = "log"), ...)
 {
+  links <- parse.links(links, c(mu = "logit", sigma = "log"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+
   rval <- list(
     "family" = "beta",
     "names" = c("mu", "sigma"),
-    "links" =  parse.links(links, c(mu = "logit", sigma = "log"), ...),
+    "links" =  links,
     "valid.response" = function(x) {
       if(ok <- !all(x > 0 & x < 1)) stop("response values not in [0, 1]!", call. = FALSE)
       ok
@@ -73,6 +78,47 @@ beta.BayesR <- function(links = c(mu = "logit", sigma = "log"), ...)
         mu = "mu * (1 / sigma)",
         sigma = "(1 - mu) * (1 / sigma)"
       )
+    ),
+    "loglik" = function(y, eta, ...) {
+      a <- linkinv$mu(eta$mu)
+      b <- linkinv$sigma(eta$sigma)
+      hilfs <- a * (1 - b) / b
+      hilfs2 <- (1 - a) * (1 - b) / b
+      sum((hilfs - 1) * log(y) + (hilfs2 - 1) * log(1 - y) - lgamma(hilfs) - lgamma(hilfs2) + lgamma((1 - b) / b))
+    },
+    "score" = list(
+      "mu" = function(y, eta, ...) {
+        a <- linkinv$mu(eta$mu)
+        b <- linkinv$sigma(eta$sigma)
+        hilfs <- a * (1 - b) / b
+        hilfs2 <- (1 - a) * (1 - b) / b
+        drop(a * hilfs2 * log(y) - a * hilfs2 * log(1 - y) +
+          ((1 - b) / b) * a * (1 - a) * (-digamma(hilfs) + digamma(hilfs2)))
+      },
+      "sigma" = function(y, eta, ...) {
+        a <- linkinv$mu(eta$mu)
+        b <- linkinv$sigma(eta$sigma)
+        hilfs <- a*(1-b)/b
+        hilfs2 <- (1-a)*(1-b)/b
+        drop(-(1 - b) / (b) * ( -a * digamma(hilfs) - (1 - a) * digamma(hilfs2) +
+          digamma((1 - b) / (b)) + a * log(y) + (1 - a) * log(1 - y)))
+       }
+    ),
+    "weights" = list(
+      "mu" = function(y, eta, ...) {
+        a <- linkinv$mu(eta$mu)
+        b <- linkinv$sigma(eta$sigma)
+        hilfs <- a * (1 - b) / b
+        hilfs2 <- (1 - a) * (1 - b) / b
+        drop(((1 - b) / b)^2 * a^2 * (1 - a)^2 * (trigamma(hilfs) + trigamma(hilfs2)))
+      },
+      "sigma" = function(y, eta, ...) {
+        a <- linkinv$mu(eta$mu)
+        b <- linkinv$sigma(eta$sigma)
+        hilfs <- a * (1 - b) / b
+        hilfs2 <- (1 - a) * (1 - b) / b
+        drop(((1 - b) / b)^2 * (a^2 * trigamma(hilfs) + (1 - a)^2 * trigamma(hilfs2) - trigamma((1 - b) / (b))))
+      }
     )
   )
   class(rval) <- "family.BayesR"

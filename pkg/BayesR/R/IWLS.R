@@ -102,7 +102,9 @@ smooth.IWLS.default <- function(x, ...)
         ## Compute mean and precision.
         XW <- t(x$X * weights)
         P <- if(x$fixed) {
-          chol2inv(chol(XW %*% x$X))
+          if(k <- ncol(x$X) < 2) {
+            1 / (XW %*% x$X)
+          } else chol2inv(chol(XW %*% x$X))
         } else chol2inv(chol(XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
         M <- P %*% (XW %*% (z - eta[[id]]))
 
@@ -140,7 +142,9 @@ smooth.IWLS.default <- function(x, ...)
         ## Compute mean and precision.
         XW <- t(x$X * weights)
         P2 <- if(x$fixed) {
-          chol2inv(chol(XW %*% x$X))
+          if(k < 2) {
+            1 / (XW %*% x$X)
+          } else chol2inv(chol(XW %*% x$X))
         } else chol2inv(chol(XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
         M2 <- P2 %*% (XW %*% (z - (eta[[id]] - x$state$fit)))
 
