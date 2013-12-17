@@ -68,9 +68,9 @@ smooth.IWLS.default <- function(x, ...)
   if(is.null(x$state)) {
     x$p.save <- c("g", "tau2")
     x$state <- list()
-    x$state$g <- runif(ncol(x$X), 1.001, 1.002)
+    x$state$g <- runif(ncol(x$X), 0.001, 0.002)
     if(!x$fixed)
-      x$state$tau2 <- if(is.null(x$sp)) runif(1, 0.99, 1) else x$sp
+      x$state$tau2 <- if(is.null(x$sp)) runif(1, 0.001, 0.005) else x$sp
     x$s.colnames <- if(is.null(x$s.colnames)) {
       c(paste("c", 1:length(x$state$g), sep = ""),
         if(!x$fixed) "tau2" else NULL)
@@ -107,7 +107,7 @@ smooth.IWLS.default <- function(x, ...)
         M <- P %*% (XW %*% (z - eta[[id]]))
 
         ## Save old coefficients
-        g0 <- x$state$g
+        g0 <- drop(x$state$g)
 
         ## Sample new parameters.
         x$state$g <- drop(rmvnorm(n = 1, mean = M, sigma = P))
@@ -145,7 +145,6 @@ smooth.IWLS.default <- function(x, ...)
         M2 <- P2 %*% (XW %*% (z - (eta[[id]] - x$state$fit)))
 
         ## Get the log prior.
-        g2 <- g0 - M2
         qbeta <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
 
         ## Sample variance parameter.
@@ -163,13 +162,43 @@ smooth.IWLS.default <- function(x, ...)
     }
   }
 
+  ## Function for computing starting values with backfitting.
+  if(is.null(x$update)) {
+    x$update <- function(x, family, response, eta, id, ...) {
+      ## Compute weights.
+      weights <- family$weights[[id]](response, eta)
+
+      ## Score.
+      score <- family$score[[id]](response, eta)
+
+      ## Compute working observations.
+      z <- eta[[id]] + 1 / weights * score
+
+      ## Compute partial predictor.
+      eta[[id]] <- eta[[id]] - x$state$fit
+
+      ## Compute mean and precision.
+      XW <- t(x$X * weights)
+      P <- if(x$fixed) {
+        chol2inv(chol(XW %*% x$X))
+      } else chol2inv(chol(XW %*% x$X + 0 * x$S[[1]]))
+      x$state$g <- P %*% (XW %*% (z - eta[[id]]))
+
+      ## Compute fitted values.        
+      x$state$fit <- drop(x$X %*% x$state$g)
+
+      return(x$state)
+    }
+  }
+
   x
 }
 
 
 ## Sampler based on IWLS proposals.
-samplerIWLS <- function(x, n.iter = 1200, thin = 1, burnin = 200,
-  verbose = TRUE, step = 100, tdir = NULL, ...)
+samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
+  verbose = TRUE, step = 10, svalues = TRUE, eps = 1e-04, maxit = 100,
+  tdir = NULL, ...)
 {
   require("mvtnorm")
 
@@ -184,6 +213,7 @@ samplerIWLS <- function(x, n.iter = 1200, thin = 1, burnin = 200,
   if(thin > (n.iter - burnin)) stop("argument thin is set too large!")
   iterthin <- as.integer(seq(burnin, n.iter, by = thin))
   n.save <- length(iterthin)
+  step <- floor(n.iter / step)
   
   ## Add accptance rate and fitted values vectors.
   smIWLS <- function(obj, ...) {
@@ -217,9 +247,33 @@ samplerIWLS <- function(x, n.iter = 1200, thin = 1, burnin = 200,
   for(j in 1:np)
     eta[[j]] <- rep(0.1, length(response))
 
+  ## Find starting values with backfitting.
+  if(svalues) {
+    eps0 <- i <- 1
+    while(eps0 > eps & i < maxit) {
+      eta0 <- eta
+      ## Cycle through all parameters
+      for(j in 1:np) {
+        ## And all terms.
+        for(sj in seq_along(x[[nx[j]]]$smooth)) {
+          ## Get updated parameters.
+          p.state <- x[[nx[j]]]$smooth[[sj]]$update(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j])
+
+          ## Update predictor and smooth fit.
+          eta[[nx[j]]] <- eta[[nx[j]]] - x[[nx[j]]]$smooth[[sj]]$state$fit + p.state$fit
+          x[[nx[j]]]$smooth[[sj]]$state <- p.state 
+        }
+      }
+
+      eps0 <- mean((do.call("cbind", eta) - do.call("cbind", eta0))^2)
+      i <- i + 1
+    }
+  }
+
   deviance <- rep(0, length(iterthin))
 
   ## Start sampling
+  cat("progress: ")
   for(i in 1:n.iter) {
     if(save <- i %in% iterthin)
       js <- which(iterthin == i)
@@ -234,10 +288,6 @@ samplerIWLS <- function(x, n.iter = 1200, thin = 1, burnin = 200,
         ## If accepted, set current state to proposed state.
         accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
 
-print(accepted)
-#plot(p.state$fit ~ dat$x)
-accepted <- TRUE
-
         if(accepted) {
           eta[[nx[j]]] <- eta[[nx[j]]] - x[[nx[j]]]$smooth[[sj]]$state$fit + p.state$fit
           x[[nx[j]]]$smooth[[sj]]$state <- p.state 
@@ -245,21 +295,22 @@ accepted <- TRUE
 
         ## Save the samples and acceptance.
         if(save) {
-          x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- accepted
+          x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- exp(p.state$alpha)
           x[[nx[j]]]$smooth[[sj]]$s.samples[js, ] <- unlist(x[[nx[j]]]$smooth[[sj]]$state[x[[nx[j]]]$smooth[[sj]]$p.save])
           deviance[js] <- -2 * family$loglik(response, eta)
         }
       }
     }
     if(verbose) {
-      if(i %% step == 0)
-        cat("iteration:", i, "\n")
+      if(i %% step == 0) {
+        cat(round(i / n.iter, 2) * 100, "%/", sep = "")
+      }
     }
   }
+  cat("\n")
 
   ## Return all samples as mcmc matrix.
   ## (1) Write out all samples to tdir.
-tdir <- "~/tmp"
   if(is.null(tdir)) {
     dir.create(tdir <- tempfile())
     on.exit(unlink(tdir))
@@ -279,7 +330,8 @@ tdir <- "~/tmp"
         for(j in seq_along(obj$smooth)) {
           fn <- file.path(tdir, paste(id, if(!is.null(id)) ":", "h",
             obj$hlevel, ":", obj$smooth[[j]]$label, ".raw", sep = ""))
-          colnames(obj$smooth[[j]]$s.samples) <- obj$smooth[[j]]$s.colnames
+          obj$smooth[[j]]$s.samples <- cbind(obj$smooth[[j]]$s.samples, obj$smooth[[j]]$s.alpha)
+          colnames(obj$smooth[[j]]$s.samples) <- c(obj$smooth[[j]]$s.colnames, "alpha")
           write.table(obj$smooth[[j]]$s.samples, file = fn, row.names = FALSE, quote = FALSE)
         }
       }
@@ -343,7 +395,7 @@ resultsIWLS <- function(x, samples)
           psamples <- NULL
           k <- ncol(obj$smooth[[i]]$X)
           pn <- grep(paste(id, "h1", obj$smooth[[i]]$label, sep = ":"), snames, value = TRUE, fixed = TRUE) ## FIXME: hlevels!
-          pn <- pn[!grepl("tau2", pn)]
+          pn <- pn[!grepl("tau2", pn) & !grepl("alpha", pn)]
           psamples <- matrix(samples[[j]][, snames %in% pn], ncol = k)
 
           ## Possible variance parameter samples.
@@ -351,6 +403,13 @@ resultsIWLS <- function(x, samples)
           tau2 <- paste(id, "h1", paste(obj$smooth[[i]]$label, "tau2", sep = "."), sep = ":")
           if(length(tau2 <- grep(tau2, snames, fixed = TRUE))) {
             vsamples <- as.numeric(samples[[j]][, tau2])
+          }
+
+          ## Acceptance probalities.
+          asamples <- NULL
+          alpha <- paste(id, "h1", paste(obj$smooth[[i]]$label, "alpha", sep = "."), sep = ":")
+          if(length(alpha <- grep(alpha, snames, fixed = TRUE))) {
+            asamples <- as.numeric(samples[[j]][, alpha])
           }
 
           ## Prediction matrix.
@@ -374,9 +433,10 @@ resultsIWLS <- function(x, samples)
             }
 
             fst <- compute_term(obj$smooth[[i]], get.X = get.X, get.mu = obj$smooth[[i]]$get.mu,
-              psamples = psamples, vsamples = vsamples, FUN = NULL, snames = snames,
-              effects.hyp = effects.hyp, fitted.values = fitted.values,
-              data = attr(x, "model.frame")[, tn, drop = FALSE], grid = grid)
+              psamples = psamples, vsamples = vsamples, asamples = asamples,
+              FUN = NULL, snames = snames, effects.hyp = effects.hyp,
+              fitted.values = fitted.values, data = attr(x, "model.frame")[, tn, drop = FALSE],
+              grid = grid)
 
             attr(fst$term, "specs")$get.mu <- obj$smooth[[i]]$get.mu
 

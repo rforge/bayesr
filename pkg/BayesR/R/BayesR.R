@@ -678,7 +678,7 @@ c.bayesr <- function(...)
 
 ## Function to compute statistics from samples of a model term.
 compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
-  FUN = NULL, snames, effects.hyp, fitted.values, data,
+  asamples = NULL, FUN = NULL, snames, effects.hyp, fitted.values, data,
   grid = 100, rug = TRUE, hlevel = 1)
 {
   require("coda")
@@ -782,6 +782,9 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
       smat <- matrix(c(me, sd, qu), nrow = 1)
       colnames(smat) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
       rownames(smat) <- x$label
+      if(!is.null(asamples)) {
+        smat <- cbind(smat, "alpha" = mean(asamples))
+      }
       smatfull <- rbind(smatfull, smat)
     }
     if(!is.null(smf)) {
@@ -791,6 +794,11 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
         sep = ""), x$label)
       colnames(vsamples) <- paste(x$label, "tau", 1:nrow(smatfull), sep = ".")
       attr(smf, "samples.scale") <- as.mcmc(vsamples)
+      if(!is.null(asamples)) {
+        asamples <- matrix(asamples, ncol = 1)
+        colnames(asamples) <- paste(x$label, "alpha", sep = ".")
+        attr(smf, "samples.alpha") <- as.mcmc(asamples)
+      }
     }
     effects.hyp <- rbind(effects.hyp, smatfull)
   }
@@ -1322,6 +1330,8 @@ plot.bayesr.effect <- function(x, which = "effects", ...) {
     args$x <- attr(x, "samples")
     if(!is.null(attr(x, "samples.scale")))
       args$x <- as.mcmc(cbind(as.matrix(args$x), as.matrix(attr(x, "samples.scale"))))
+    if(!is.null(attr(x, "samples.alpha")))
+      args$x <- as.mcmc(cbind(as.matrix(args$x), as.matrix(attr(x, "samples.alpha"))))
     par(ask = TRUE)
     do.call("plot", args)
   }

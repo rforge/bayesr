@@ -841,8 +841,8 @@ resultsJAGS.special.default <- function(x, samples, data, i, ...)
 
   ## Compute final smooth term object.
   fst <- compute_term(x, get.X = get.X, get.mu = get.mu,
-    psamples = psamples, vsamples = vsamples, FUN = NULL, snames = snames,
-    effects.hyp = NULL, fitted.values = NULL,
+    psamples = psamples, vsamples = vsamples, asamples = NULL, FUN = NULL,
+    snames = snames, effects.hyp = NULL, fitted.values = NULL,
     data = data)
 
   attr(fst$term, "specs")$get.mu <- get.mu 

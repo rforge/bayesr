@@ -151,7 +151,7 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
       "reparam" = c(sigma = "1 / sigma")
     ),
     "loglik" = function(y, eta, ...) {
-      sum(dnorm(y, eta$mu, linkinv$sigma(eta$sigma), log = TRUE))
+      sum(dnorm(y, eta$mu, sqrt(linkinv$sigma(eta$sigma)), log = TRUE))
     },
     "score" = list(
       "mu" = function(y, eta, ...) { drop((y - eta$mu) / linkinv$sigma(eta$sigma)) },
