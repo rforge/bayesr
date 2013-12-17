@@ -9,7 +9,7 @@ ZambiaNutrition$district <- ZambiaNutrition$district2 <- as.factor(ZambiaNutriti
 
 f <- stunting ~ memployment + urban + gender + meducation + s(mbmi) +
   s(agechild) + s(district, bs = "mrf", xt = list("penalty" = K)) +
-  s(district, bs = "re")
+  s(district2, bs = "re")
 
 b0 <- bayesr(f, family = gaussian, data = ZambiaNutrition, engine = "JAGS")
 b1 <- bayesr(f, f, family = gaussian, data = ZambiaNutrition, engine = "IWLS",

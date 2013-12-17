@@ -332,22 +332,3 @@ quant.BayesR <- function(links = c(mu = "identity", sigma = "log"), prob = 0.5, 
 ### Ordered logit.
 ### http://staff.washington.edu/lorenc2/bayesian/ologit.R
 
-#################
-### (b) BayesX ##
-#################
-#binomial.BayesX <- function(link = "logit")
-#{
-#  rval <- list(
-#    "family" = "binomial",
-#    "k" = 1,
-#    "mu.link" = link,
-#    "names" = "binomial",
-#    "binomial" = c(paste("binomial", link, sep = "_"), "mean"),
-#    "all" = TRUE,
-#    "h" = "gaussian_re",
-#    "factor" = TRUE
-#  )
-#  class(rval) <- "family.BayesR"
-#  rval
-#}
-
