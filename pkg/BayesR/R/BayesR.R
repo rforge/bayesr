@@ -1,18 +1,18 @@
 ################################################
-## (1) BayesR main model fitting constructor. ##
+## (0) BayesR main model fitting constructor. ##
 ################################################
 ## Could be interesting: http://people.duke.edu/~neelo003/r/
 ##                       http://www.life.illinois.edu/dietze/Lectures2012/
-bayesr <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
+xreg <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.fail, contrasts = NULL,
   reference = NULL, parse.input = parse.input.bayesr, transform = transformJAGS,
-  setup = setupJAGS, sampler = samplerJAGS, results = resultsJAGS,
+  setup = setupJAGS, engine = samplerJAGS, results = resultsJAGS,
   cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, grid = 100, ...)
 {
   ## Setup all processing functions.
   if(is.null(transform))
     transform <- function(x) { x }
-  foo <- list("transform" = transform, "setup" = setup, "sampler" = sampler, "results" = results)
+  foo <- list("transform" = transform, "setup" = setup, "engine" = engine, "results" = results)
   nf <- names(foo)
   default_fun <- c("randomize", "setupJAGS", "samplerJAGS", "resultsJAGS")
   functions <- list()
@@ -56,12 +56,12 @@ bayesr <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
 
   ## Start sampling.
   if(is.null(cores)) {
-    so <- functions$sampler(if(sc) ms else pm)
+    so <- functions$engine(if(sc) ms else pm)
   } else {
     require("parallel")
     parallel_fun <- function(j) {
       if(j > 1 & !is.null(sleep)) Sys.sleep(sleep)
-      functions$sampler(if(sc) ms else pm)
+      functions$engine(if(sc) ms else pm)
     }
     so <- mclapply(1:cores, parallel_fun, mc.cores = cores)
   }
@@ -82,6 +82,77 @@ bayesr <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
   attr(rval, "formula") <- attr(pm, "formula0")
   attr(rval, "call") <- match.call()
 
+  rval
+}
+
+
+#########################
+## (1) BayesR wrapper. ##
+#########################
+bayesr <- function(formula, family = gaussian, data = NULL, knots = NULL,
+  weights = NULL, subset = NULL, offset = NULL, na.action = na.fail, contrasts = NULL,
+  engine = c("IWLS", "BayesX", "JAGS", "STAN"), cores = NULL, combine = TRUE,
+  n.iter = 12000, thin = 10, burnin = 2000, seed = NULL, ...)
+{
+  xengine <- match.arg(engine)
+  family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
+
+  if(xengine == "BayesX") {
+    require("BayesXsrc")
+
+    data.name <- if(!is.null(data)) {
+      deparse(substitute(data), backtick = TRUE, width.cutoff = 500)
+    } else "d"
+
+    transform <- transformBayesX
+    setup <- function(x) {
+      setupBayesX(x, n.iter = n.iter, thin = thin, burnin = burnin,
+        seed = seed, data.name = data.name, cores = cores, ...)
+    }
+    engine <- samplerBayesX
+    results <- resultsBayesX
+  }
+
+  if(xengine == "IWLS") {
+
+    transform <- transformIWLS
+    setup <- FALSE
+    engine <- function(x) {
+      samplerIWLS(x, n.iter = n.iter, thin = thin,
+        burnin = burnin, seed = seed, ...)
+    }
+    results <- resultsIWLS
+  }
+  
+  if(xengine %in% c("JAGS", "STAN")) {
+    transform <- transformJAGS
+    if(xengine == "JAGS") {
+      require("rjags")
+      setup <- setupJAGS
+      engine <- function(x) {
+        samplerJAGS(x, n.iter = n.iter, thin = thin,
+          burnin = burnin, seed = seed, ...)
+      }
+    } else {
+      require("rstan")
+      setup <- jags2stan
+      engine <- function(x) {
+        samplerSTAN(x, n.iter = n.iter, thin = thin,
+          burnin = burnin, seed = seed, ...)
+      }  
+    }
+
+    results <- resultsJAGS
+  }
+
+  rval <- xreg(formula, family = family, data = data, knots = knots,
+    weights = weights, subset = subset, offset = offset, na.action = na.action,
+    contrasts = contrasts, parse.input = parse.input.bayesr, transform = transform,
+    setup = setup, engine = engine, results = results, cores = cores,
+    combine = combine, sleep = 1, ...)
+  
+  attr(rval, "call") <- match.call()
+  
   rval
 }
 
