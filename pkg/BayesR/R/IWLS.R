@@ -197,7 +197,7 @@ smooth.IWLS.default <- function(x, ...)
 
 ## Sampler based on IWLS proposals.
 samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
-  verbose = TRUE, step = 10, svalues = TRUE, eps = 1e-04, maxit = 100,
+  verbose = TRUE, step = 20, svalues = TRUE, eps = 1e-04, maxit = 100,
   tdir = NULL, ...)
 {
   require("mvtnorm")
@@ -213,6 +213,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   if(thin > (n.iter - burnin)) stop("argument thin is set too large!")
   iterthin <- as.integer(seq(burnin, n.iter, by = thin))
   n.save <- length(iterthin)
+  nstep <- step
   step <- floor(n.iter / step)
   
   ## Add accptance rate and fitted values vectors.
@@ -273,7 +274,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   deviance <- rep(0, length(iterthin))
 
   ## Start sampling
-  cat("progress: ")
+  cat("|", rep(" ", nstep), "| 0%", sep = "")
   for(i in 1:n.iter) {
     if(save <- i %in% iterthin)
       js <- which(iterthin == i)
@@ -303,7 +304,12 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
     }
     if(verbose) {
       if(i %% step == 0) {
-        cat(round(i / n.iter, 2) * 100, "%/", sep = "")
+        cat("\r")
+        p <- i / n.iter
+        p <- paste("|", paste(rep("*", round(nstep * p)), collapse = ""),
+          paste(rep(" ", round(nstep * (1 - p))), collapse = ""), "| ", round(p, 2) * 100, "%", sep = "")
+        cat(p)
+        if(.Platform$OS.type != "unix") flush.console()
       }
     }
   }

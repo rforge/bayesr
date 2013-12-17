@@ -141,8 +141,8 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
     "names" = c("mu", "sigma"),
     "links" = links,
     bayesx = list(
-      "mu" = c("normal2_mu", "mean"),
-      "sigma" = c("normal2_sigma", "scale")
+      "mu" = c("normal_mu", "mean"),
+      "sigma" = c("normal_sigma2", "scale")
     ),
     jagstan = list(
       "dist" = "dnorm",
