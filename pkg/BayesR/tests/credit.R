@@ -5,9 +5,10 @@ credit <- read.table("http://www.stat.uni-muenchen.de/~kneib/regressionsbuch/dow
 credit$creditw <- with(credit, factor(y, levels = 0:1, labels = c("no", "yes")))
 
 b0 <- bayesr(creditw ~ acc1 + acc2 + moral + intuse +
-  s(duration) + s(amount), family = binomial.BayesR(link = "logit"),
-  data = credit)
+  s(duration) + s(amount), family = binomial,
+  data = credit, engine = "JAGS")
 
-b1 <- bayesx2(creditw ~ acc1 + acc2 + moral + intuse +
-  sx(duration) + sx(amount), family = binomial.BayesR(link = "logit"),
-  data = credit)
+b1 <- bayesr(creditw ~ acc1 + acc2 + moral + intuse +
+  sx(duration) + sx(amount), family = binomial,
+  data = credit, engine = "BayesX")
+

@@ -79,7 +79,7 @@ smooth.IWLS.default <- function(x, ...)
   }
 
   if(is.null(x$propose)) {
-    if(is.null(x$rand)) {
+    ## if(is.null(x$rand)) { FIXME: mixed model representation?
       x$propose <- function(x, family, response, eta, id, ...) {
         ## Compute weights.
         weights <- family$weights[[id]](response, eta)
@@ -163,7 +163,7 @@ smooth.IWLS.default <- function(x, ...)
 
         return(x$state)
       }
-    }
+    ## }
   }
 
   ## Function for computing starting values with backfitting.

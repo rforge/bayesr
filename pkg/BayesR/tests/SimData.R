@@ -22,8 +22,8 @@ dat$yg <- with(dat, eta + rnorm(n, sd = 0.6))
 
 ## Model with JAGS.
 b0 <- bayesr(yg ~ s(x1) + s(x2) + s(id, bs = "mrf", xt = list(penalty = gm$nmat)) +
-  s(id, bs = "re"), data = dat, family = gaussian.BayesR)
+  s(id, bs = "re"), data = dat, family = gaussian, engine = "JAGS")
 
 ## Model with BayesX.
-b1 <- bayesx2(yg ~ sx(x1) + sx(x2) + sx(id, bs = "mrf", map = gm$map) +
-  sx(id, bs = "re"), id ~ -1, data = dat, family = gaussian.BayesR)
+b1 <- bayesr(yg ~ sx(x1) + sx(x2) + sx(id, bs = "mrf", map = gm$map) +
+  sx(id, bs = "re"), id ~ -1, data = dat, family = gaussian, engine = "BayesX")

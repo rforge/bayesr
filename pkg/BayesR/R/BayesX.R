@@ -1,37 +1,5 @@
-#######################################
-## (1) BayesX model fitting wrapper. ##
-#######################################
-bayesx2 <- function(formula, family = gaussian, data = NULL, knots = NULL,
-  weights = NULL, subset = NULL, offset = NULL, na.action = na.fail, contrasts = NULL,
-  cores = NULL, combine = TRUE, n.iter = 12000, thin = 10, burnin = 2000, seed = NULL, ...)
-{
-  require("BayesXsrc")
-
-  data.name <- if(!is.null(data)) {
-    deparse(substitute(data), backtick = TRUE, width.cutoff = 500)
-  } else "d"
-
-  setup <- function(x) {
-    setupBayesX(x, n.iter = n.iter, thin = thin, burnin = burnin,
-      seed = seed, data.name = data.name, cores = cores, ...)
-  }
-
-  family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
-
-  rval <- bayesr(formula, family = family, data = data, knots = knots,
-    weights = weights, subset = subset, offset = offset, na.action = na.action,
-    contrasts = contrasts, parse.input = parse.input.bayesr, transform = transformBayesX,
-    setup = setup, sampler = samplerBayesX, results = resultsBayesX,
-    cores = cores, combine = combine, sleep = 1, ...)
-  
-  attr(rval, "call") <- match.call()
-  
-  rval
-}
-
-
 ####################################
-## (2) BayesX specific functions. ##
+## (1) BayesX specific functions. ##
 ####################################
 transformBayesX <- function(x, ...)
 {
@@ -866,7 +834,7 @@ resultsBayesX <- function(x, samples, ...)
 
 
 ########################################
-## (3) BayesX model term construction ##
+## (2) BayesX model term construction ##
 ########################################
 sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
 {
