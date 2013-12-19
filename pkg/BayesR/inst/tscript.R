@@ -102,8 +102,18 @@ n <- 500
 dat <- data.frame("x" = sort(runif(n, -3, 3)))
 dat$y <- with(dat, 1.2 + sin(x) + rnorm(n, sd = scale3(cos(x), 0.1, 0.8)))
 
-b <- bayesr(y ~ s(x), ~ s(x), family = gaussian.BayesR, data = dat)
+b <- bayesr(y ~ s(x), ~ s(x), family = gaussian, data = dat)
 
 plot(b)
 plot(b, which = "samples")
+
+
+## random test
+n <- 500
+dat <- data.frame("x" = sort(runif(n, -3, 3)))
+dat$y <- with(dat, 1.2 + sin(x) + rnorm(n, sd = scale3(cos(x), 0.1, 0.8)))
+
+X <- mgcv:::smooth2random(smoothCon(s(x), dat, NULL, absorb.cons = TRUE)[[1]], names(dat), type = 2)
+Xf <- X$Xf
+Xr <- X$rand$Xr
 

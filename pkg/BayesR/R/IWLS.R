@@ -32,6 +32,32 @@ transformIWLS <- function(x, ...)
       if(length(obj$smooth)) {
         for(j in seq_along(obj$smooth)) {
           obj$smooth[[j]] <- smooth.IWLS(obj$smooth[[j]])
+          if(!is.null(obj$smooth[[j]]$Xf)) {
+            obj$smooth[[j]]$Xfcn <- paste(paste(paste(obj$smooth[[j]]$term, collapse = "."),
+              "Xf", sep = "."), 1:ncol(obj$smooth[[j]]$Xf), sep = ".")
+            colnames(obj$smooth[[j]]$Xf) <- obj$smooth[[j]]$Xfcn
+            if(is.null(obj$smooth[["parametric"]])) {
+              obj$smooth[["parametric"]] <- list(
+                "X" = obj$smooth[[j]]$Xf,
+                "S" = list(diag(0, ncol(obj$X))),
+                "rank" = ncol(obj$smooth[[j]]$Xf),
+                "term" = "linear",
+                "label" = "linear",
+                "bs.dim" = ncol(obj$smooth[[j]]$Xf),
+                "fixed" = TRUE,
+                "by" = "NA",
+                "is.linear" = TRUE
+              )
+              obj$sterms <- c(obj$strems, "parametric")
+            } else {
+              cn <- colnames(obj$smooth[["parametric"]]$X)
+              obj$smooth[["parametric"]]$X <- cbind(obj$smooth[["parametric"]]$X, obj$smooth[[j]]$Xf)
+              obj$smooth[["parametric"]]$S <- list(diag(0, ncol(obj$smooth[["parametric"]]$X)))
+              obj$smooth[["parametric"]]$bs.dim <- list(diag(0, ncol(obj$smooth[["parametric"]]$X)))
+              cn <- gsub("Intercept.", "Intercept", gsub("X.", "", c(cn , obj$smooth[[j]]$Xfcn), fixed = TRUE))
+              obj$smooth[["parametric"]]$s.colnames <- colnames(obj$smooth[["parametric"]]$X) <- cn 
+            }
+          }
         }
       }
     }
@@ -79,91 +105,91 @@ smooth.IWLS.default <- function(x, ...)
   }
 
   if(is.null(x$propose)) {
-    ## if(is.null(x$rand)) { FIXME: mixed model representation?
-      x$propose <- function(x, family, response, eta, id, ...) {
-        ## Compute weights.
-        weights <- family$weights[[id]](response, eta)
+    x$propose <- function(x, family, response, eta, id, ...) {
+      ## Compute weights.
+      weights <- family$weights[[id]](response, eta)
 
-        ## Score.
-        score <- family$score[[id]](response, eta)
+      ## Score.
+      score <- family$score[[id]](response, eta)
 
-        ## Compute working observations.
-        z <- eta[[id]] + 1 / weights * score
+      ## Compute working observations.
+      z <- eta[[id]] + 1 / weights * score
 
-        ## Compute old log likelihood and old log coefficients prior.
-        pibeta <- family$loglik(response, eta)
-        p1 <- if(x$fixed) {
-          0
-        } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+      ## Compute old log likelihood and old log coefficients prior.
+      pibeta <- family$loglik(response, eta)
+      p1 <- if(x$fixed) {
+        0
+      } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
 
-        ## Compute partial predictor.
-        eta[[id]] <- eta[[id]] - x$state$fit
+      ## Compute partial predictor.
+      eta[[id]] <- eta[[id]] - x$state$fit
 
-        ## Compute mean and precision.
-        XW <- t(x$X * weights)
-        P <- if(x$fixed) {
-          if(k <- ncol(x$X) < 2) {
-            1 / (XW %*% x$X)
-          } else chol2inv(chol(XW %*% x$X))
-        } else chol2inv(chol(XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
-        M <- P %*% (XW %*% (z - eta[[id]]))
+      ## Compute mean and precision.
+      XW <- t(x$X * weights)
+      P <- if(x$fixed) {
+        if(k <- ncol(x$X) < 2) {
+          1 / (XW %*% x$X)
+        } else chol2inv(chol(XW %*% x$X))
+      } else chol2inv(chol(XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
+      P[P == Inf] <- 0
+      M <- P %*% (XW %*% (z - eta[[id]]))
 
-        ## Save old coefficients
-        g0 <- drop(x$state$g)
+      ## Save old coefficients
+      g0 <- drop(x$state$g)
 
-        ## Sample new parameters.
-        x$state$g <- drop(rmvnorm(n = 1, mean = M, sigma = P))
+      ## Sample new parameters.
+      x$state$g <- drop(rmvnorm(n = 1, mean = M, sigma = P))
 
-        ## Compute log priors.
-        p2 <- if(x$fixed) {
-          0
-        } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
-        g1 <- x$state$g - M
-        qbetaprop <- dmvnorm(x$state$g, mean = M, sigma = P, log = TRUE)
+      ## Compute log priors.
+      p2 <- if(x$fixed) {
+        0
+      } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+      g1 <- x$state$g - M
+      qbetaprop <- dmvnorm(x$state$g, mean = M, sigma = P, log = TRUE)
 
-        ## Compute fitted values.        
-        x$state$fit <- drop(x$X %*% x$state$g)
+      ## Compute fitted values.        
+      x$state$fit <- drop(x$X %*% x$state$g)
 
-        ## Set up new predictor.
-        eta[[id]] <- eta[[id]] + x$state$fit
+      ## Set up new predictor.
+      eta[[id]] <- eta[[id]] + x$state$fit
 
-        ## Compute new log likelihood.
-        pibetaprop <- family$loglik(response, eta)
+      ## Compute new log likelihood.
+      pibetaprop <- family$loglik(response, eta)
 
-        ## Compute new weights
-        weights <- family$weights[[id]](response, eta)
+      ## Compute new weights
+      weights <- family$weights[[id]](response, eta)
 
-        ## New score.
-        score <- family$score[[id]](response, eta)
+      ## New score.
+      score <- family$score[[id]](response, eta)
 
-        ## New working observations.
-        z <- eta[[id]] + 1 / weights * score
+      ## New working observations.
+      z <- eta[[id]] + 1 / weights * score
 
-        ## Compute mean and precision.
-        XW <- t(x$X * weights)
-        P2 <- if(x$fixed) {
-          if(k < 2) {
-            1 / (XW %*% x$X)
-          } else chol2inv(chol(XW %*% x$X))
-        } else chol2inv(chol(XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
-        M2 <- P2 %*% (XW %*% (z - (eta[[id]] - x$state$fit)))
+      ## Compute mean and precision.
+      XW <- t(x$X * weights)
+      P2 <- if(x$fixed) {
+        if(k < 2) {
+          1 / (XW %*% x$X)
+        } else chol2inv(chol(XW %*% x$X))
+      } else chol2inv(chol(XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
+      P2[P2 == Inf] <- 0
+      M2 <- P2 %*% (XW %*% (z - (eta[[id]] - x$state$fit)))
 
-        ## Get the log prior.
-        qbeta <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
+      ## Get the log prior.
+      qbeta <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
 
-        ## Sample variance parameter.
-        if(!x$fixed & is.null(x$sp)) {
-          a <- x$rank / 2 + x$a
-          b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
-          x$state$tau2 <- 1 / rgamma(1, a, b)
-        }
-
-        ## Compute acceptance probablity.
-        x$state$alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
-
-        return(x$state)
+      ## Sample variance parameter.
+      if(!x$fixed & is.null(x$sp)) {
+        a <- x$rank / 2 + x$a
+        b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
+        x$state$tau2 <- 1 / rgamma(1, a, b)
       }
-    ## }
+
+      ## Compute acceptance probablity.
+      x$state$alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
+
+      return(x$state)
+    }
   }
 
   ## Function for computing starting values with backfitting.
@@ -186,7 +212,7 @@ smooth.IWLS.default <- function(x, ...)
       P <- if(x$fixed) {
         chol2inv(chol(XW %*% x$X))
       } else chol2inv(chol(XW %*% x$X + 0 * x$S[[1]]))
-      x$state$g <- P %*% (XW %*% (z - eta[[id]]))
+      x$state$g <- drop(P %*% (XW %*% (z - eta[[id]])))
 
       ## Compute fitted values.        
       x$state$fit <- drop(x$X %*% x$state$g)
@@ -402,11 +428,29 @@ resultsIWLS <- function(x, samples)
       if(length(obj$smooth)) {
         for(i in 1:length(obj$smooth)) {
           ## Get coefficient samples of smooth term.
-          psamples <- NULL
           k <- ncol(obj$smooth[[i]]$X)
-          pn <- grep(paste(id, "h1", obj$smooth[[i]]$label, sep = ":"), snames, value = TRUE, fixed = TRUE) ## FIXME: hlevels!
+          pn <- grep(paste(id, "h1", obj$smooth[[i]]$label, sep = ":"), snames,
+            value = TRUE, fixed = TRUE) ## FIXME: hlevels!
           pn <- pn[!grepl("tau2", pn) & !grepl("alpha", pn)]
           psamples <- matrix(samples[[j]][, snames %in% pn], ncol = k)
+
+          if(!is.null(obj$smooth[[i]]$Xf)) {
+            kx <- if(is.null(obj$smooth[[i]]$Xf)) 0 else ncol(obj$smooth[[i]]$Xf)
+            if(kx) {
+              pn <- paste(paste(id, ":h1:linear.",
+                paste(paste(obj$smooth[[i]]$term, collapse = "."), "Xf", sep = "."), sep = ""),
+                1:kx, sep = ".")
+              xsamples <- matrix(samples[[j]][, snames %in% pn], ncol = kx)
+              psamples <- cbind("ra" = psamples, "fx" = xsamples)
+              re_trans <- function(g) {
+                g <- obj$smooth[[i]]$trans.D * g
+                if(!is.null(obj$smooth[[i]]$trans.U))
+                  g <- obj$smooth[[i]]$trans.U %*% g
+                g
+              }
+              psamples <- t(apply(psamples, 1, re_trans))
+            }
+          }
 
           ## Possible variance parameter samples.
           vsamples <- NULL

@@ -893,7 +893,7 @@ partial.residuals <- function(effects, response, fitted.values, link = NULL)
   if(!is.null(response)) {
     for(i in seq_along(effects)) {
       if(is.factor(response)) response <- as.integer(response) - 1
-      e <- link$linkfun(response) - fitted.values - attr(effects[[i]], "fit")
+      e <- link$linkfun(response) - fitted.values + attr(effects[[i]], "fit")
       if(is.null(attr(effects[[i]], "specs")$xt$center)) {
         e <- e - mean(e)
       } else {
@@ -1816,11 +1816,14 @@ fitted.bayesr <- function(object, model = NULL, term = NULL, ...)
   elmts <- c("formula", "fake.formula", "model", "param.effects",
     "effects", "fitted.values", "residuals")
 
+  if(any(elmts %in% names(object)))
+    object <- list(object)
+
   rval <- vector(mode = "list", length = length(object))
   names(rval) <- names(object)
   for(j in seq_along(object)) {
     if(!any(elmts %in% names(object[[j]]))) {
-      rval[[j]] <- fitted.bayesr(object[[j]], term = term)
+      rval[[j]] <- fitted.bayesr(object[[j]], term = term, ...)
     } else {
       if(is.null(term))
         rval[[j]] <- object[[j]]$fitted.values
@@ -1840,6 +1843,8 @@ fitted.bayesr <- function(object, model = NULL, term = NULL, ...)
   }
 
   rval <- delete.NULLs(rval)
+  if(length(rval) < 2)
+    rval <- rval[[1]]
 
   rval
 }
