@@ -23,6 +23,19 @@ make.link2 <- function(link)
   if(link %in% c("logit", "probit", "cauchit", "cloglog", "identity",
     "log", "sqrt", "1/mu^2", "inverse")) {
     rval <- make.link(link)
+  } else if(link == "cloglog2") {
+  
+	
+	cloglog2 <- function() {
+        linkfun <- function(mu) log(-log(mu))
+        linkinv <- function(eta) pmax(pmin(1-expm1(-exp(eta)), 
+             .Machine$double.eps), .Machine$double.eps)
+        mu.eta <- function(eta) {
+            eta <- pmin(eta, 700)
+            pmax(-exp(eta) * exp(-exp(eta)), .Machine$double.eps)
+        }
+	}
+	rval <- cloglog2()
   } else {
     stop("unknown link function!")
   }
@@ -126,7 +139,7 @@ beta.BayesR <- function(links = c(mu = "logit", sigma = "log"), ...)
 }
 
 
-betai.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log", tau = "log"), ...)
+betazoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log", tau = "log"), ...)
 {
   rval <- list(
     "family" = "betainflated",
@@ -173,6 +186,8 @@ binomial.BayesR <- function(link = "logit", ...)
   class(rval) <- "family.BayesR"
   rval
 }
+
+
 
 
 gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
@@ -302,6 +317,35 @@ multinomial.BayesR <- function(link = "probit", ...)
       "pi" = c(paste("multinom", link, sep = "_"), "mean", "meanservant")
     )
   )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
+## Count Data distributions
+
+zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
+{
+  links <- parse.links(links, c(lambda = "log", pi = "logit"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+
+  rval <- list(
+    "family" = "zip",
+    "names" = c("lambda", "pi"),
+    "links" = links,
+    bayesx = list(
+      "lambda" = c("zip_lambda", "mean"),
+      "pi" = switch(links["pi"],
+        "logit" = c("zip_pi", "pi"),
+        "cloglog2" = c("zip_pi_cloglog", "pi")
+      )
+	  
+    )
+  )
+  if(rval$bayesx[[2]][[1]] == "zip_pi_cloglog")
+		rval$bayesx[[1]][[1]] <- "zip_lambda_cloglog"
   class(rval) <- "family.BayesR"
   rval
 }

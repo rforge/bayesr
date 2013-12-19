@@ -27,3 +27,13 @@ b0 <- bayesr(yg ~ s(x1) + s(x2) + s(id, bs = "mrf", xt = list(penalty = gm$nmat)
 ## Model with BayesX.
 b1 <- bayesr(yg ~ sx(x1) + sx(x2) + sx(id, bs = "mrf", map = gm$map) +
   sx(id, bs = "re"), id ~ -1, data = dat, family = gaussian, engine = "BayesX")
+
+  
+  
+  
+## Count data.
+require("VGAM")
+dat$yzip <- with(dat, rzipois(n, lambda = exp(eta), pstr0 = 0.5)[id])
+
+b3 <- (bayesr(yzip ~ sx(x1) + sx(x2) + sx(id, bs = "mrf", map = gm$map) +
+  sx(id, bs = "re"), id ~ 1, data = dat, family = zip, engine = "BayesX")
