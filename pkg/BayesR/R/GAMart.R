@@ -61,7 +61,7 @@ simfun <- function(type = "sinus")
 }
 
 ## Function for scaling.
-scale3 <- function(x, lower = -1.5, upper = 1.5)
+scale2 <- function(x, lower = -1.5, upper = 1.5)
 {
   x <- if(length(unique(x)) > 1) {
     (x - min(x, na.rm = TRUE)) / diff(range(x, na.rm = TRUE)) * (upper - lower) + lower
@@ -106,7 +106,7 @@ dgp_eta <- function(nobs = c(500, 100, 10), const = 1.2,
         e <- FUN(1:nobs[j])
         xd[[paste("long", j, sep = "")]] <- e$long
         xd[[paste("lat", j, sep = "")]] <- e$lat
-        fun[[paste("sp", j, sep = "")]] <- scale3(e$f) * if(is.na(scale[[j]][i])) 1 else scale[[j]][i]
+        fun[[paste("sp", j, sep = "")]] <- scale2(e$f) * if(is.na(scale[[j]][i])) 1 else scale[[j]][i]
         m <- pixelmap(lat ~ long, data = e, at.xy = TRUE, size = 0.5, yscale = FALSE)
         names(m$map) <- as.character(xd[[id]])
         m$data$id <- as.integer(as.character(xd[[id]]))
@@ -117,7 +117,7 @@ dgp_eta <- function(nobs = c(500, 100, 10), const = 1.2,
         set.seed(seed0 + j + i)
         x <- sample(rep(seq(min, max, length = nx), length.out = nobs[j]))
         fun[[fn]] <- if(mt != "const") {
-          scale3(FUN(x)) * if(is.na(scale[[j]][i])) 1 else scale[[j]][i]
+          scale2(FUN(x)) * if(is.na(scale[[j]][i])) 1 else scale[[j]][i]
         } else FUN(const = const)
         if(mt != "const") xd[[xn]] <- x
       }
@@ -163,7 +163,7 @@ dgp_gaussian <- function(n = 500, mu = NULL, sigma = NULL, range.sigma = c(0.3, 
   sigma <- do.call("dgp_eta", sigma)
 
   d <- data.frame("mu" = mu, "sigma" = sigma)
-  sd <- scale3(sigma$eta0, range.sigma[1], range.sigma[2])
+  sd <- scale2(sigma$eta0, range.sigma[1], range.sigma[2])
   d$y <- rnorm(nrow(mu), mean = mu$eta0, sd = sd)
 
   d

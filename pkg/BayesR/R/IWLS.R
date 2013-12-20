@@ -56,6 +56,11 @@
 #      Rcpp::Named("P") = p);
 #', plugin = "RcppArmadillo")
 
+propose_default <- function(x = NULL, family = NULL, response = NULL, eta = NULL, id = NULL, ...)
+{
+  .Call("do_propose", x, family, response, eta, id)
+}
+
 
 ## Setup for IWLS sampler, handling
 ## sampling functions.

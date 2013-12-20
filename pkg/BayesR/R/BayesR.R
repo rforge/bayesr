@@ -1973,11 +1973,8 @@ model.frame.bayesr <- function(formula, ...)
 #############################
 ## (10) Utility functions. ##
 #############################
-scale2 <- function(x, lower = 0, upper = 1)
+.First.lib <- function(lib, pkg)
 {
-  x <- if(length(unique(x)) > 1) {
-    (x - min(x, na.rm = TRUE)) / diff(range(x, na.rm = TRUE)) * (upper - lower) + lower
-  } else x
-  x
+  library.dynam("BayesR", pkg, lib)
 }
 
