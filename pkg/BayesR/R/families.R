@@ -23,6 +23,15 @@ make.link2 <- function(link)
   if(link %in% c("logit", "probit", "cauchit", "cloglog", "identity",
     "log", "sqrt", "1/mu^2", "inverse")) {
     rval <- make.link(link)
+  } else if(link == "fisherz") {
+  
+	
+	fisherz <- function() {
+        linkfun <- function(mu) mu/sqrt(1-mu^2)
+        linkinv <- function(eta) eta/sqrt(1+eta^2) 
+        mu.eta <- function(eta)  1/(1+eta^2)^1.5 
+	}
+	rval <- fisherz()
   } else if(link == "cloglog2") {
   
 	
@@ -241,12 +250,12 @@ mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
     "family" = "mvn",
     "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho"),
     "links" = parse.links(links, c(mu1 = "identity", mu2 = "identity",
-       sigma1 = "log", sigma2 = "log", rho = "identity"), ...),
+       sigma1 = "log", sigma2 = "log", rho = "fisherz"), ...),
     bayesx = list(
       "mu1" = c("bivnormal_mu", "mean"),
       "mu2" = c("bivnormal_mu", "mu"),
-      "sigma1" = c("bivnormal_sigma", "scale"),
-      "sigma2" = c("bivnormal_sigma", "scale"),
+      "sigma1" = c("bivnormal_sigma", "scale1"),
+      "sigma2" = c("bivnormal_sigma", "scale2"),
       "rho" = c("bivnormal_rho", "rho"),
       "order" = 5:1,
       "rm.number" = TRUE
