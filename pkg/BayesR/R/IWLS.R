@@ -2,59 +2,59 @@
 ## http://adv-r.had.co.nz/C-interface.html
 ## http://stackoverflow.com/questions/7457635/calling-r-function-from-c
 ## http://gallery.rcpp.org/articles/r-function-from-c++/
-sm_fun0 <- cxxfunction(
-  signature(X = "matrix", W = "numeric", S = "matrix", tau2 = "numeric",
-    Z = "numeric", ETA = "numeric"),
-  body = '
-    arma::mat x = Rcpp::as<arma::mat>(X);
-    arma::mat s = Rcpp::as<arma::mat>(S);
-    arma::vec w = Rcpp::as<arma::vec>(W);
-    arma::vec z = Rcpp::as<arma::vec>(Z);
-    arma::vec eta = Rcpp::as<arma::vec>(ETA);
+#sm_fun0 <- cxxfunction(
+#  signature(X = "matrix", W = "numeric", S = "matrix", tau2 = "numeric",
+#    Z = "numeric", ETA = "numeric"),
+#  body = '
+#    arma::mat x = Rcpp::as<arma::mat>(X);
+#    arma::mat s = Rcpp::as<arma::mat>(S);
+#    arma::vec w = Rcpp::as<arma::vec>(W);
+#    arma::vec z = Rcpp::as<arma::vec>(Z);
+#    arma::vec eta = Rcpp::as<arma::vec>(ETA);
 
-    arma::mat xw = x;
+#    arma::mat xw = x;
 
-    for(int i = 0; i < x.n_rows; i++) {
-      xw.row(i) *= w(i);
-    }
+#    for(int i = 0; i < x.n_rows; i++) {
+#      xw.row(i) *= w(i);
+#    }
 
-    arma::mat txw = xw.t();
-    arma::mat p = arma::inv(txw * x + 1 / REAL(tau2)[0] * s);
-    arma::mat m = p * (txw * (z - eta));
+#    arma::mat txw = xw.t();
+#    arma::mat p = arma::inv(txw * x + 1 / REAL(tau2)[0] * s);
+#    arma::mat m = p * (txw * (z - eta));
 
-    arma::mat g0 = arma::randn(1, x.n_cols);
-    arma::mat g = arma::repmat(m, 1, 1).t() + g0 * arma::chol(p);
+#    arma::mat g0 = arma::randn(1, x.n_cols);
+#    arma::mat g = arma::repmat(m, 1, 1).t() + g0 * arma::chol(p);
 
-    return Rcpp::List::create(Rcpp::Named("g") = g,
-      Rcpp::Named("M") = m,
-      Rcpp::Named("P") = p,
-      Rcpp::Named("tau2") = tau2);
-', plugin = "RcppArmadillo")
+#    return Rcpp::List::create(Rcpp::Named("g") = g,
+#      Rcpp::Named("M") = m,
+#      Rcpp::Named("P") = p,
+#      Rcpp::Named("tau2") = tau2);
+#', plugin = "RcppArmadillo")
 
 
-sm_fun1 <- cxxfunction(
-  signature(X = "matrix", W = "numeric", S = "matrix", tau2 = "numeric",
-    Z = "numeric", ETA = "numeric"),
-  body = '
-    arma::mat x = Rcpp::as<arma::mat>(X);
-    arma::mat s = Rcpp::as<arma::mat>(S);
-    arma::vec w = Rcpp::as<arma::vec>(W);
-    arma::vec z = Rcpp::as<arma::vec>(Z);
-    arma::vec eta = Rcpp::as<arma::vec>(ETA);
+#sm_fun1 <- cxxfunction(
+#  signature(X = "matrix", W = "numeric", S = "matrix", tau2 = "numeric",
+#    Z = "numeric", ETA = "numeric"),
+#  body = '
+#    arma::mat x = Rcpp::as<arma::mat>(X);
+#    arma::mat s = Rcpp::as<arma::mat>(S);
+#    arma::vec w = Rcpp::as<arma::vec>(W);
+#    arma::vec z = Rcpp::as<arma::vec>(Z);
+#    arma::vec eta = Rcpp::as<arma::vec>(ETA);
 
-    arma::mat xw = x;
+#    arma::mat xw = x;
 
-    for(int i = 0; i < x.n_rows; i++) {
-      xw.row(i) *= w(i);
-    }
+#    for(int i = 0; i < x.n_rows; i++) {
+#      xw.row(i) *= w(i);
+#    }
 
-    arma::mat txw = xw.t();
-    arma::mat p = arma::inv(txw * x + 1 / REAL(tau2)[0] * s);
-    arma::mat m = p * (txw * (z - eta));
+#    arma::mat txw = xw.t();
+#    arma::mat p = arma::inv(txw * x + 1 / REAL(tau2)[0] * s);
+#    arma::mat m = p * (txw * (z - eta));
 
-    return Rcpp::List::create(Rcpp::Named("M") = m,
-      Rcpp::Named("P") = p);
-', plugin = "RcppArmadillo")
+#    return Rcpp::List::create(Rcpp::Named("M") = m,
+#      Rcpp::Named("P") = p);
+#', plugin = "RcppArmadillo")
 
 
 ## Setup for IWLS sampler, handling
