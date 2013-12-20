@@ -128,7 +128,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
   family <- attr(x, "family")
   x$call <- x$family <- NULL
   lhs <- family$bayesx$lhs
-  family$bayesx[c("order", "lhs")] <- NULL
+  family$bayesx[c("order", "lhs", "rm.number")] <- NULL
 
   args <- list(...)
   model.name <- control$setup$model.name
@@ -585,7 +585,11 @@ process_mfile <- function(x)
       if(x[2] %in% known_paramaters) x[2] else x[1]
     } else x
   })
+
+  ft <- paste(ft, eqntype, sep = "")
+
   terms <- paste(terms, ft, sep = ":")
+
   if(any(i <- duplicated(terms))) {
     for(j in terms[i]) {
       tt <- grep(j, terms, value = TRUE, fixed = TRUE)
@@ -674,12 +678,20 @@ resultsBayesX <- function(x, samples, ...)
       param.effects <- effects <- effects.hyp <- NULL
       fitted.values <- 0
 
+      ## remove number from id
+      id2 <- id
+      if(!is.null(family$bayesx$rm.number)) {
+        for(i in 1:10)
+          id2 <- gsub(i, "", id2)
+      }
+
       ## Parametric effects.
       if(k <- ncol(obj$X)) {
         nx <- obj$pterms
         nx <- gsub("Intercept", "const", nx, fixed = TRUE)
         pt <- paste(nx, collapse = "+")
-        pt <- paste(pt, id, obj$hlevel, sep = ":")
+        pt <- paste(pt, paste(id2, family$bayesx[[id]][2], sep = ""), obj$hlevel, sep = ":")
+
         if(any(grepl(pt, snames, fixed = TRUE))) {
           samps <- as.matrix(samples[[j]][, grepl(pt, snames, fixed = TRUE)], ncol = k)
           nx <- gsub("const", "(Intercept)", nx, fixed = TRUE)
@@ -698,7 +710,9 @@ resultsBayesX <- function(x, samples, ...)
       ## Smooth terms.
       if(length(i <- grep("sx(", names(mspecs$effects), fixed = TRUE))) {
         sx.smooth <- mspecs$effects[i]
-        if(length(i <- grep(paste(id, obj$hlevel, sep = ":"), names(sx.smooth), fixed = TRUE))) {
+
+        if(length(i <- grep(paste(paste(id2, family$bayesx[[id]][2], sep = ""),
+            obj$hlevel, sep = ":"), names(sx.smooth), fixed = TRUE))) {
           if(!is.list(effects))
             effects <- list()
           sx.smooth <- sx.smooth[i]
@@ -771,7 +785,7 @@ resultsBayesX <- function(x, samples, ...)
               link <- make.link2(link)
             } else link <- NULL
             effects <- partial.residuals(effects, attr(x, "model.frame")[[obj$response]],
-              fitted.values, link)
+              fitted.values, NULL)
           }
         }
       }

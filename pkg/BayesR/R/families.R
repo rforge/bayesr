@@ -238,7 +238,7 @@ mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
   sigma1 = "log", sigma2 = "log", rho = "identity"), ...)
 {
   rval <- list(
-    "family" = "gaussian",
+    "family" = "mvn",
     "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho"),
     "links" = parse.links(links, c(mu1 = "identity", mu2 = "identity",
        sigma1 = "log", sigma2 = "log", rho = "identity"), ...),
@@ -249,7 +249,7 @@ mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
       "sigma2" = c("bivnormal_sigma", "scale"),
       "rho" = c("bivnormal_rho", "rho"),
       "order" = 5:1,
-      "lhs" = c("sigma1" = "sigma1", "sigma2" = "sigma2", "rho" = "rho")
+      "rm.number" = TRUE
     )
   )
   class(rval) <- "family.BayesR"

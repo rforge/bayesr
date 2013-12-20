@@ -245,8 +245,8 @@ if(FALSE) {
   f <- list(
     y1 ~ sx(mu1.x11) + sx(mu1.x12),
     y2 ~ sx(mu2.x11) + sx(mu2.x12),
-    sigma1 ~ sx(sigma1.x11),
-    sigma2 ~ sx(sigma2.x11),
+    y1 ~ sx(sigma1.x11),
+    y2 ~ sx(sigma2.x11),
     rho ~ sx(rho.x11)
   )
 
