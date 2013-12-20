@@ -1973,8 +1973,8 @@ model.frame.bayesr <- function(formula, ...)
 #############################
 ## (10) Utility functions. ##
 #############################
-.First.lib <- function(lib, pkg)
-{
-  library.dynam("BayesR", pkg, lib)
-}
+#.First.lib <- function(lib, pkg)
+#{
+#  library.dynam("BayesR", pkg, lib)
+#}
 
