@@ -251,6 +251,8 @@ if(FALSE) {
   )
 
   b <- bayesr(f, family = mvn, data = d, engine = "BayesX", verbose = TRUE)
+  
+  plot(b)
 }
 
 
