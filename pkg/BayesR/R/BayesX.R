@@ -71,10 +71,10 @@ transformBayesX <- function(x, ...)
   }
 
   names(x) <- rep(family$names, length.out = n)
-  if(!is.null(family$order)) {
+  if(!is.null(family$bayesx$order)) {
     mf <- attr(x, "model.frame")
     class(x) <- "list"
-    x <- x[family$order]
+    x <- x[rev(family$bayesx$order)]
     class(x) <- c("bayesr.input", "list")
     attr(x, "model.frame") <- mf; rm(mf)
   }
@@ -127,6 +127,8 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
 
   family <- attr(x, "family")
   x$call <- x$family <- NULL
+  lhs <- family$bayesx$lhs
+  family$bayesx[c("order", "lhs")] <- NULL
 
   args <- list(...)
   model.name <- control$setup$model.name
@@ -268,17 +270,23 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
     n <- length(x)
     eqn <- NULL
     for(j in n:1) {
-      ctr2 <- if(j != n) FALSE else TRUE
-      if(!is.null(id)) ctr2 <- id != n
       if(!"fake.formula" %in% names(x[[j]])) {
         eqn <- c(eqn, make_eqn(x[[j]], ctr, id = j))
         ctr <- FALSE
       } else {
         teqn <- paste(model.name, '.hregress ',
-          if(family$cat) {
+          if(family$cat | !is.null(lhs)) {
             if(x[[j]]$hlevel > 1) {
               x[[j]]$response
-            } else formula_respname(x[[j]]$cat.formula)
+            } else {
+              if(!is.null(lhs)) {
+                if(nx[if(is.null(id)) j else id] %in% names(lhs)) {
+                  lhs[nx[if(is.null(id)) j else id]]
+                } else {
+                  if(is.null(x[[j]]$response)) response.name else x[[j]]$response
+                }
+              } else formula_respname(x[[j]]$cat.formula)
+            }
           } else {
             if(is.null(x[[j]]$response)) response.name else x[[j]]$response
           }, sep = '')
@@ -316,7 +324,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
                 ok <- FALSE
               }
             }
-            if(x[[j]]$hlevel < 2 & ctr2 & any(grepl("mean", family$bayesx[[nx[if(is.null(id)) j else id]]]))) {
+            if(x[[j]]$hlevel < 2 & any(grepl("mean", family$bayesx[[nx[if(is.null(id)) j else id]]]))) {
               if(any(grepl("predict", names(control$prg)))) {
                 teqn <- paste(teqn, " predict=", control$prg$predict, sep = "")
               }

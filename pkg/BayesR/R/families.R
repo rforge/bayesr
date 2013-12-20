@@ -242,13 +242,14 @@ mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
     "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho"),
     "links" = parse.links(links, c(mu1 = "identity", mu2 = "identity",
        sigma1 = "log", sigma2 = "log", rho = "identity"), ...),
-    "order" = 5:1,
     bayesx = list(
       "mu1" = c("bivnormal_mu", "mean"),
       "mu2" = c("bivnormal_mu", "mu"),
       "sigma1" = c("bivnormal_sigma", "scale"),
       "sigma2" = c("bivnormal_sigma", "scale"),
-      "rho" = c("bivnormal_rho", "rho")
+      "rho" = c("bivnormal_rho", "rho"),
+      "order" = 5:1,
+      "lhs" = c("sigma1" = "sigma1", "sigma2" = "sigma2", "rho" = "rho")
     )
   )
   class(rval) <- "family.BayesR"
@@ -323,7 +324,6 @@ multinomial.BayesR <- function(link = "probit", ...)
 
 
 ## Count Data distributions
-
 zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
 {
   links <- parse.links(links, c(lambda = "log", pi = "logit"), ...)

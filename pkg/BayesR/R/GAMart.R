@@ -250,7 +250,7 @@ if(FALSE) {
     rho ~ sx(rho.x11)
   )
 
-  b <- bayesx2(f, family = mvn, data = d)
+  b <- bayesr(f, family = mvn, data = d, engine = "BayesX", verbose = TRUE)
 }
 
 
@@ -324,8 +324,9 @@ if(FALSE) {
 
   ## Start BayesX sampler.
   ## Set grid = NA, so fitted effects will be returned with original observations.
-  b0 <- bayesx2(f, data = d, family = multinomial.BayesR, reference = 1,
-    n.iter = 12000, burnin = 2000, thin = 10, verbose = TRUE, grid = NA)
+  b0 <- bayesr(f, data = d, family = multinomial, reference = 1,
+    n.iter = 12000, burnin = 2000, thin = 10, verbose = TRUE, grid = NA,
+    engine = "BayesX")
 
   ## Plot. estimated effects.
   plot(b0)
@@ -385,8 +386,9 @@ if(FALSE) {
   )
 
   ## Start BayesX sampler
-  b1 <- bayesx2(f, data = d, family = multinomial.BayesR, reference = 1,
-    n.iter = 12000, burnin = 2000, thin = 10, verbose = TRUE)
+  b1 <- bayesr(f, data = d, family = multinomial, reference = 1,
+    n.iter = 12000, burnin = 2000, thin = 10, verbose = TRUE,
+    engine = "BayesX")
 
   ## Plot effects with corresponding pixel map.
   plot(b1, map = pmap, legend = FALSE, scale = 0)
