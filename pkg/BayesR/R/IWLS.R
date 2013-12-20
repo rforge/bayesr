@@ -1,3 +1,62 @@
+## Some useful links:
+## http://adv-r.had.co.nz/C-interface.html
+## http://stackoverflow.com/questions/7457635/calling-r-function-from-c
+## http://gallery.rcpp.org/articles/r-function-from-c++/
+sm_fun0 <- cxxfunction(
+  signature(X = "matrix", W = "numeric", S = "matrix", tau2 = "numeric",
+    Z = "numeric", ETA = "numeric"),
+  body = '
+    arma::mat x = Rcpp::as<arma::mat>(X);
+    arma::mat s = Rcpp::as<arma::mat>(S);
+    arma::vec w = Rcpp::as<arma::vec>(W);
+    arma::vec z = Rcpp::as<arma::vec>(Z);
+    arma::vec eta = Rcpp::as<arma::vec>(ETA);
+
+    arma::mat xw = x;
+
+    for(int i = 0; i < x.n_rows; i++) {
+      xw.row(i) *= w(i);
+    }
+
+    arma::mat txw = xw.t();
+    arma::mat p = arma::inv(txw * x + 1 / REAL(tau2)[0] * s);
+    arma::mat m = p * (txw * (z - eta));
+
+    arma::mat g0 = arma::randn(1, x.n_cols);
+    arma::mat g = arma::repmat(m, 1, 1).t() + g0 * arma::chol(p);
+
+    return Rcpp::List::create(Rcpp::Named("g") = g,
+      Rcpp::Named("M") = m,
+      Rcpp::Named("P") = p,
+      Rcpp::Named("tau2") = tau2);
+', plugin = "RcppArmadillo")
+
+
+sm_fun1 <- cxxfunction(
+  signature(X = "matrix", W = "numeric", S = "matrix", tau2 = "numeric",
+    Z = "numeric", ETA = "numeric"),
+  body = '
+    arma::mat x = Rcpp::as<arma::mat>(X);
+    arma::mat s = Rcpp::as<arma::mat>(S);
+    arma::vec w = Rcpp::as<arma::vec>(W);
+    arma::vec z = Rcpp::as<arma::vec>(Z);
+    arma::vec eta = Rcpp::as<arma::vec>(ETA);
+
+    arma::mat xw = x;
+
+    for(int i = 0; i < x.n_rows; i++) {
+      xw.row(i) *= w(i);
+    }
+
+    arma::mat txw = xw.t();
+    arma::mat p = arma::inv(txw * x + 1 / REAL(tau2)[0] * s);
+    arma::mat m = p * (txw * (z - eta));
+
+    return Rcpp::List::create(Rcpp::Named("M") = m,
+      Rcpp::Named("P") = p);
+', plugin = "RcppArmadillo")
+
+
 ## Setup for IWLS sampler, handling
 ## sampling functions.
 transformIWLS <- function(x, ...)
@@ -97,14 +156,85 @@ smooth.IWLS.default <- function(x, ...)
     x$state$g <- runif(ncol(x$X), 0.001, 0.002)
     if(!x$fixed)
       x$state$tau2 <- if(is.null(x$sp)) runif(1, 0.001, 0.005) else x$sp
+    else
+      x$state$tau2 <- 0.0001
     x$s.colnames <- if(is.null(x$s.colnames)) {
       c(paste("c", 1:length(x$state$g), sep = ""),
-        if(!x$fixed) "tau2" else NULL)
+        if(!x$fixed) "tau2" else "tau2")
     } else x$s.colnames
     x$np <- length(x$s.colnames)
   }
 
   if(is.null(x$propose)) {
+#    x$propose <- function(x, family, response, eta, id, ...) {
+#      ## Compute weights.
+#      weights <- family$weights[[id]](response, eta)
+
+#      ## Score.
+#      score <- family$score[[id]](response, eta)
+
+#      ## Compute working observations.
+#      z <- eta[[id]] + 1 / weights * score
+
+#      ## Compute old log likelihood and old log coefficients prior.
+#      pibeta <- family$loglik(response, eta)
+#      p1 <- if(x$fixed) {
+#        0
+#      } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+
+#      ## Compute partial predictor.
+#      eta[[id]] <- eta[[id]] - x$state$fit
+
+#      ## Save old coefficients
+#      g0 <- drop(x$state$g)
+
+#      ## C++ fun
+#      x$state <- sm_fun0(x$X, weights, x$S[[1]], x$state$tau2, z, eta[[id]])
+#      x$state$g <- drop(x$state$g)
+
+#      ## Compute log priors.
+#      p2 <- if(x$fixed) {
+#        0
+#      } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+#      qbetaprop <- dmvnorm(x$state$g, mean = x$state$M, sigma = x$state$P, log = TRUE)
+
+#      ## Compute fitted values.        
+#      x$state$fit <- drop(x$X %*% x$state$g)
+
+#      ## Set up new predictor.
+#      eta[[id]] <- eta[[id]] + x$state$fit
+
+#      ## Compute new log likelihood.
+#      pibetaprop <- family$loglik(response, eta)
+
+#      ## Compute new weights
+#      weights <- family$weights[[id]](response, eta)
+
+#      ## New score.
+#      score <- family$score[[id]](response, eta)
+
+#      ## New working observations.
+#      z <- eta[[id]] + 1 / weights * score
+
+#      ## Compute mean and precision.
+#      state2 <- sm_fun1(x$X, weights, x$S[[1]], x$state$tau2, z, eta[[id]] - x$state$fit)
+
+#      ## Get the log prior.
+#      qbeta <- dmvnorm(g0, mean = state2$M, sigma = state2$P, log = TRUE)
+
+#      ## Sample variance parameter.
+#      if(!x$fixed & is.null(x$sp)) {
+#        a <- x$rank / 2 + x$a
+#        b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
+#        x$state$tau2 <- 1 / rgamma(1, a, b)
+#      }
+
+#      ## Compute acceptance probablity.
+#      x$state$alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
+
+#      return(x$state)
+#    }
+
     x$propose <- function(x, family, response, eta, id, ...) {
       ## Compute weights.
       weights <- family$weights[[id]](response, eta)
@@ -144,7 +274,6 @@ smooth.IWLS.default <- function(x, ...)
       p2 <- if(x$fixed) {
         0
       } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
-      g1 <- x$state$g - M
       qbetaprop <- dmvnorm(x$state$g, mean = M, sigma = P, log = TRUE)
 
       ## Compute fitted values.        
