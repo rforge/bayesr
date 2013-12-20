@@ -1380,12 +1380,14 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
   }
   if(which == "scale-samples") {
     for(i in 1:n) {
+      args$main <- NULL
       args$x <- attr(x[[i]]$scale, "samples")
       do.call("plot", args)
     }
   }
   if(which == "param-samples") {
     for(i in 1:n) {
+      args$main <- NULL
       args$x <- attr(x[[i]]$param.effects, "samples")
       do.call("plot", args)
     }
@@ -1402,6 +1404,7 @@ plot.bayesr.effect <- function(x, which = "effects", ...) {
   } else {
     require("coda")
     args <- list(...)
+    args$main <- NULL
     args$x <- attr(x, "samples")
     if(!is.null(attr(x, "samples.scale")))
       args$x <- as.mcmc(cbind(as.matrix(args$x), as.matrix(attr(x, "samples.scale"))))

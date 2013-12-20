@@ -86,7 +86,7 @@ transformBayesX <- function(x, ...)
 
 
 controlBayesX <- function(n.iter = 1200, thin = 1, burnin = 200,
-  seed = NULL, predict = "full", model.name = "bayesr", data.name = "d",
+  seed = NULL, predict = "light", model.name = "bayesr", data.name = "d",
   prg.name = NULL, dir = NULL, verbose = FALSE, cores = NULL, ...)
 {
   if(is.null(seed))
@@ -316,7 +316,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
                 ok <- FALSE
               }
             }
-            if(x[[j]]$hlevel < 2 & ctr2) {
+            if(x[[j]]$hlevel < 2 & ctr2 & any(grepl("mean", family$bayesx[[nx[if(is.null(id)) j else id]]]))) {
               if(any(grepl("predict", names(control$prg)))) {
                 teqn <- paste(teqn, " predict=", control$prg$predict, sep = "")
               }

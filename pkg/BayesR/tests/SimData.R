@@ -35,5 +35,6 @@ b1 <- bayesr(yg ~ sx(x1) + sx(x2) + sx(id, bs = "mrf", map = gm$map) +
 require("VGAM")
 dat$yzip <- with(dat, rzipois(n, lambda = exp(eta), pstr0 = 0.5)[id])
 
-b3 <- (bayesr(yzip ~ sx(x1) + sx(x2) + sx(id, bs = "mrf", map = gm$map) +
-  sx(id, bs = "re"), id ~ 1, data = dat, family = zip, engine = "BayesX")
+b3 <- bayesr(yzip ~ sx(x1) + sx(x2) + sx(id, bs = "mrf", map = gm$map) +
+  sx(id, bs = "re"), id ~ -1, data = dat, family = zip, engine = "BayesX")
+
