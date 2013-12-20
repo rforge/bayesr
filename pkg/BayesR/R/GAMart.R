@@ -192,7 +192,7 @@ dgp_beta <- function(mu = NULL, sigma = NULL, ...)
 
 ## Multivariate normal.
 dgp_mvn <- function(n = 500, mu1 = NULL, mu2 = NULL, sigma1 = NULL, sigma2 = NULL, rho = NULL,
-  range.sigma1 = c(0.3, 1.2), range.sigma2 = c(0.3, 1.2), range.rho = c(0.3, 1.2), ...)
+  range.sigma1 = c(0.3, 1.2), range.sigma2 = c(0.3, 1.2), range.rho = c(-0.7, 0.7), ...)
 {
   require("mvtnorm")
 
@@ -255,6 +255,46 @@ if(FALSE) {
   plot(b)
 }
 
+
+## zip.
+dgp_zip <- function(n = 500, lambda = NULL, p = NULL, 
+			lambda.range = c(-1,1), p.range = c(-1.1), ...)
+{
+  require("VGAM")
+
+  if(is.null(lambda)) {
+    lambda <- list(nobs = n, const = -0.5,
+      type = list(c("unimodal", "quadratic", "const")))
+  }
+  if(is.null(p)) {
+    p <- list(nobs = n, const = 0,
+      type = list(c("linear", "sinus", "const")))
+  }
+
+
+  lambda <- do.call("dgp_eta", lambda)
+  p <- do.call("dgp_eta", p) 
+  ld <- scale2(lambda$eta0, range.lambda[1], range.lambda[2])
+  pi <- scale2(p$eta0, range.p[1], range.p[2])
+  y <- rzipois(n, lambda = ld, pstr0 = pi)
+
+  
+  d <- cbind(y, "lambda" = lambda, "pi" = p)
+  d
+}
+
+if(FALSE) {
+  d <- dgp_zip()
+
+  f <- list(
+    y ~ sx(lambda.x11) + sx(lambda.x12),
+    y ~ sx(lambda.x11) + sx(lambda.x12)
+  )
+
+  b <- bayesr(f, family = zip, data = d, engine = "BayesX", verbose = TRUE)
+  
+  plot(b)
+}
 
 ## Multinomial.
 dgp_multinom <- function(nlevels = 4,
