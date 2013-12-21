@@ -56,9 +56,27 @@
 #      Rcpp::Named("P") = p);
 #', plugin = "RcppArmadillo")
 
-propose_default <- function(x = NULL, family = NULL, response = NULL, eta = NULL, id = NULL, ...)
+propose_default <- function(x, family,
+  response, eta, id, rho = new.env(), ...)
 {
-  .Call("do_propose", x, family, response, eta, id)
+  .Call("do_propose", x, family, response, eta, id, rho)
+}
+
+if(FALSE) {
+  require("mgcv")
+  set.seed(111)
+  n <- 20
+  z <- runif(n, -3, 3)
+  response <- 1.2 + sin(z) + rnorm(n, sd = 0.6)
+  x <- smooth.construct(s(z), list("z" = z), NULL)
+  x$state <- list("g" = runif(ncol(x$X)), "tau2" = 2.33)
+  family <- gaussian.BayesR()
+  eta <- list("mu" = rep(0, n), "sigma" = rep(0, n))
+  id <- "mu"
+
+  a <- propose_default(x, family, response, eta, id)
+
+  system.time(for(i in 1:100) a <- propose_default(x, family, response, eta, id))
 }
 
 

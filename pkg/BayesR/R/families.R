@@ -23,31 +23,26 @@ make.link2 <- function(link)
   if(link %in% c("logit", "probit", "cauchit", "cloglog", "identity",
     "log", "sqrt", "1/mu^2", "inverse")) {
     rval <- make.link(link)
-  } else if(link == "fisherz") {
-  
-	
-	fisherz <- function() {
-        linkfun <- function(mu) mu/sqrt(1-mu^2)
-        linkinv <- function(eta) eta/sqrt(1+eta^2) 
-        mu.eta <- function(eta)  1/(1+eta^2)^1.5 
-	}
-	rval <- fisherz()
-  } else if(link == "cloglog2") {
-  
-	
-	cloglog2 <- function() {
-        linkfun <- function(mu) log(-log(mu))
-        linkinv <- function(eta) pmax(pmin(1-expm1(-exp(eta)), 
-             .Machine$double.eps), .Machine$double.eps)
-        mu.eta <- function(eta) {
-            eta <- pmin(eta, 700)
-            pmax(-exp(eta) * exp(-exp(eta)), .Machine$double.eps)
-        }
-	}
-	rval <- cloglog2()
   } else {
-    stop("unknown link function!")
-  }
+    rval <- switch(link,
+      "fisherz" = list(
+        "linkfun" = function(mu) { mu / sqrt(1 - mu^2) },
+        "linkinv" = function(eta) { eta / sqrt(1 + eta^2) }, 
+        "mu.eta" = function(eta) { 1 / (1 + eta^2)^1.5 }
+      ),
+      "cloglog2" = list(
+        "linkfun" = function(mu) { log(-log(mu)) },
+        "linkinv" = function(eta) {
+          pmax(pmin(1 - expm1(-exp(eta)), .Machine$double.eps), .Machine$double.eps)
+        },
+        "mu.eta" = function(eta) {
+          eta <- pmin(eta, 700)
+          pmax(-exp(eta) * exp(-exp(eta)), .Machine$double.eps)
+        }
+      )
+    )
+	}
+
   rval$name <- link
   rval
 }
@@ -244,7 +239,7 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
 
 
 mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
-  sigma1 = "log", sigma2 = "log", rho = "identity"), ...)
+  sigma1 = "log", sigma2 = "log", rho = "fisherz"), ...)
 {
   rval <- list(
     "family" = "mvn",

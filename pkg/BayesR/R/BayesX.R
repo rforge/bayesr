@@ -778,7 +778,7 @@ resultsBayesX <- function(x, samples, ...)
       scale.m <- scale.samps.m <- NULL
 
       ## Compute partial residuals.
-      if(!is.null(effects)) {
+      if(!is.null(effects) & obj$hlevel < 2) {
         if(length(obj$response)) {
           if(obj$response %in% names(attr(x, "model.frame"))) {
             if(!is.na(link <- family$links[id])) {

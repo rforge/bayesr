@@ -884,16 +884,10 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
 ## Function to compute partial residuals.
 partial.residuals <- function(effects, response, fitted.values, link = NULL)
 {
-  if(is.null(link)) {
-    link <- list(
-      "linkfun" = function(x) { x },
-      "linkinv" = function(x) { x }
-    )
-  }
   if(!is.null(response)) {
     for(i in seq_along(effects)) {
       if(is.factor(response)) response <- as.integer(response) - 1
-      e <- link$linkfun(response) - fitted.values + attr(effects[[i]], "fit")
+      e <- response - fitted.values + attr(effects[[i]], "fit")
       if(is.null(attr(effects[[i]], "specs")$xt$center)) {
         e <- e - mean(e)
       } else {

@@ -20,38 +20,74 @@ SEXP getListElement(SEXP list, const char *str)
 }
 
 
-SEXP iwls_eval(SEXP fun, SEXP response, SEXP eta)
+SEXP iwls_eval(SEXP fun, SEXP response, SEXP eta, SEXP rho)
 {
-  SEXP R_fcall, ans, s;
+  SEXP R_fcall, args, rval;
+
   PROTECT(R_fcall = lang3(fun, response, eta));
-  s = CDR(R_fcall);
-  SET_TAG(s, install("y"));
-  s = CDR(R_fcall);
-  SET_TAG(s, install("eta"));
-  //ans = eval(R_fcall, rho);
-  UNPROTECT(1);
-  return R_fcall;
+  PROTECT(rval = eval(R_fcall, rho));
+
+  UNPROTECT(2);
+
+  return rval;
 }
 
 
-SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id)
+SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 {
   int nProtected;
 
-  SEXP loglik;
+  /* Obtain loglik, weights and score function. */
+  SEXP loglik, weights, score, e_weights, e_score;
   PROTECT(loglik = getListElement(family, "loglik"));
   ++nProtected;
-  SEXP weights;
   PROTECT(weights = getListElement(getListElement(family, "weights"), CHAR(STRING_ELT(id, 0))));
   ++nProtected;
-  SEXP score;
   PROTECT(score = getListElement(getListElement(family, "score"), CHAR(STRING_ELT(id, 0))));
   ++nProtected;
 
-  SEXP e_loglik = iwls_eval(loglik, response, eta);
+  /* Evaluate loglik, weights and score vector. */
+  double pibeta = REAL(iwls_eval(loglik, response, eta, rho))[0];
+  PROTECT(e_weights = iwls_eval(weights, response, eta, rho));
+  ++nProtected;
+  PROTECT(e_score = iwls_eval(score, response, eta, rho));
+  ++nProtected;
+
+  /* Extract design matrix X and penalty matrix S.*/
+  SEXP X, S;
+  PROTECT(X = getListElement(x, "X"));
+  ++nProtected;
+  PROTECT(S = VECTOR_ELT(getListElement(x, "S"), 0));
+  ++nProtected;
+
+  int i, j, n = nrows(X), k = ncols(S);
+  double *Xptr = REAL(X);
+  double *Sptr = REAL(S);
+  double *Wptr = REAL(e_weights);
+  double tau2 = REAL(getListElement(getListElement(x, "state"), "tau2"))[0];
+
+  /* Create weighted matrix */
+  SEXP XW, dim;
+  PROTECT(XW = allocVector(REALSXP, k * n));
+  ++nProtected;
+  PROTECT(dim = allocVector(INTSXP, 2));
+  ++nProtected;
+  INTEGER(dim)[0] = k; 
+  INTEGER(dim)[1] = n;   
+  setAttrib(XW, R_DimSymbol, dim);
+  double *XWptr = REAL(XW);
+
+  /* Compute transpose of weighted design matrix */
+  for(j = 0; j < k; ++i) {
+    for(i = 0; i < n; ++j) {
+      XWptr[j * n + i] = 1; // Xptr[j * n + i] * Wptr[i];
+    }
+  }
+
+Rprintf("ok\n");
 
   UNPROTECT(nProtected);
 
-  return e_loglik;
+  return XW;
 }
 
