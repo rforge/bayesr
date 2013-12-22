@@ -328,6 +328,26 @@ multinomial.BayesR <- function(link = "probit", ...)
 
 
 ## Count Data distributions
+
+poisson.BayesR <- function(links = c(lambda = "log"), ...)
+{
+  links <- parse.links(links, c(lambda = "log"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+
+  rval <- list(
+    "family" = "poisson",
+    "names" = c("lambda"),
+    "links" = links,
+    bayesx = list(
+      "lambda" = c("poisson", "mean")
+      ) 
+    )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
 zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
 {
   links <- parse.links(links, c(lambda = "log", pi = "logit"), ...)
@@ -354,6 +374,48 @@ zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
   rval
 }
 
+
+negbin.BayesR <- function(links = c(mu = "log", delta = "log"), ...)
+{
+  links <- parse.links(links, c(mu = "log", delta = "log"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+
+  rval <- list(
+    "family" = "negbin",
+    "names" = c("mu", "delta"),
+    "links" = links,
+    bayesx = list(
+      "mu" = c("negbin_mu", "mean"),
+      "delta" = c("negbin_delta", "delta")
+      )
+    )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
+zinb.BayesR <- function(links = c(mu = "log", "pi" = "logit", delta = "log"), ...)
+{
+  links <- parse.links(links, c(mu = "log", "pi" = "logit", delta = "log"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+
+  rval <- list(
+    "family" = "zinb",
+    "names" = c("mu", "pi", "delta"),
+    "links" = links,
+    bayesx = list(
+      "mu" = c("zinb_mu", "mean"),
+	  "pi" = c("zinb_pi", "pi"),
+      "delta" = c("zinb_delta", "delta")
+      ) 
+    )
+  class(rval) <- "family.BayesR"
+  rval
+}
 
 ## http://stats.stackexchange.com/questions/17672/quantile-regression-in-jags
 quant.BayesR <- function(links = c(mu = "identity", sigma = "log"), prob = 0.5, ...)
