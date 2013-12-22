@@ -258,7 +258,7 @@ if(FALSE) {
 
 ## zip.
 dgp_zip <- function(n = 500, lambda = NULL, p = NULL, 
-			lambda.range = c(-1,1), p.range = c(-1.1), ...)
+			range.lambda = c(-1,1), range.p = c(-1,1), ...)
 {
   require("VGAM")
 
@@ -274,8 +274,9 @@ dgp_zip <- function(n = 500, lambda = NULL, p = NULL,
 
   lambda <- do.call("dgp_eta", lambda)
   p <- do.call("dgp_eta", p) 
-  ld <- scale2(lambda$eta0, range.lambda[1], range.lambda[2])
-  pi <- scale2(p$eta0, range.p[1], range.p[2])
+  ld <- exp(lambda$eta0)
+  pi <- exp(p$eta0)
+  pi <- pi/(1+pi)
   y <- rzipois(n, lambda = ld, pstr0 = pi)
 
   
@@ -292,8 +293,19 @@ if(FALSE) {
   )
 
   b <- bayesr(f, family = zip, data = d, engine = "BayesX", verbose = TRUE)
+  lambda.f11.est <- predict(b, model = "lambda", term = 1, what = "terms")
+  lambda.f11.est.2p5 <- predict(b, model = "lambda", term = 1, what = "terms", FUN = quantile, 0.025)
+  lambda.f11.est.97p5 <- predict(b, model = "lambda", term = 1, what = "terms", FUN = quantile, 0.975)
+  
+  plot(d$lambda.x11[order(d$lambda.x11)], lambda.f11.est[order(d$lambda.x11)], type = "l", lty = 2)
+  lines(d$lambda.x11[order(d$lambda.x11)], d$lambda.f11[order(d$lambda.x11)]-mean(d$lambda.f11[order(d$lambda.x11)]))
+  lines(d$lambda.x11[order(d$lambda.x11)], lambda.f11.est.2p5[order(d$lambda.x11)], lty = 2)
+  lines(d$lambda.x11[order(d$lambda.x11)], lambda.f11.est.97p5[order(d$lambda.x11)], lty = 2)
+  
   
   plot(b)
+  
+  
 }
 
 ## Multinomial.
