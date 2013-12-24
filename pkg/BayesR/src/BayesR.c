@@ -1,28 +1,121 @@
-#include <R.h>
-#include <Rinternals.h>
-#include <Rmath.h>
-
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <time.h>
 
+#include <R.h>
+#include <Rmath.h>
+#include <Rdefines.h>
+#include <Rinternals.h>
+
+#include <R_ext/Applic.h> /* for dgemm */
+#include <R_ext/RS.h>
+#include <R_ext/BLAS.h>
+#include <R_ext/Lapack.h>
+#include <R_ext/Linpack.h>
+
+
+/* (1) Helper functions. */
 SEXP getListElement(SEXP list, const char *str)
 {
-  SEXP elmt = R_NilValue, names = getAttrib(list, R_NamesSymbol);
+  SEXP elmt, names;
+  PROTECT(elmt = R_NilValue);
+  PROTECT(names = getAttrib(list, R_NamesSymbol));
+
   for(int i = 0; i < length(list); i++) {
-    if(strcmp(CHAR(STRING_ELT(names, i)), str) == 0) {
-      elmt = VECTOR_ELT(list, i);
-      break;
-    }
+	  if(strcmp(CHAR(STRING_ELT(names, i)), str) == 0) {
+	    elmt = VECTOR_ELT(list, i);
+	    break;
+	  }
   }
+
+  UNPROTECT(2);
+
   return elmt;
 }
 
 
+int getListElement_index(SEXP list, const char *str)
+{
+  SEXP names;
+  PROTECT(names = getAttrib(list, R_NamesSymbol));
+
+  int j = -1;
+
+  for(int i = 0; i < length(list); i++) {
+	  if(strcmp(CHAR(STRING_ELT(names, i)), str) == 0) {
+	    j = i;
+	    break;
+	  }
+  }
+
+  UNPROTECT(1);
+
+  return j;
+}
+
+
+void pvec(SEXP vec)
+{
+  int i, n = length(vec);
+  double *vecptr = REAL(vec);
+  for(i = 0; i < n; i++, vecptr++)
+    Rprintf(" %g", *vecptr);
+  Rprintf("\n");
+}
+    
+void pmat(SEXP mat)
+{
+  int i,j,n = nrows(mat), k = ncols(mat);
+  Rprintf("   ");
+  for(j = 0; j < k; ++j)
+    Rprintf("[%d] ", j);
+  Rprintf("\n");
+  for(i = 0; i < n; ++i) {
+    Rprintf("[%d]", i);
+    for(j = 0; j < k; ++j)
+      Rprintf(" %g", REAL(mat)[i + j * n]);
+    Rprintf("\n");
+  }
+  Rprintf("\n");
+}
+
+
+/* Matrix product. */
+SEXP matprod(SEXP x, SEXP y)
+{
+  int nrx, ncx, nry, ncy;
+  double *ansptr, *xptr, *yptr;
+
+  nrx = nrows(x);
+  ncx = ncols(x);
+  nry = nrows(y);
+  ncy = ncols(y);
+
+  //PROTECT(x = coerceVector(x, REALSXP));
+  //PROTECT(y = coerceVector(y, REALSXP));
+  xptr = REAL(x);  yptr = REAL(y);
+
+  SEXP ans;
+  PROTECT(ans = allocMatrix(REALSXP, nrx, ncy));
+  ansptr = REAL(ans);
+
+  char *transa = "N", *transb = "N";
+  double one = 1.0, zero = 0.0;
+  F77_CALL(dgemm)(transa, transb, &nrx, &ncy, &ncx, &one,
+    xptr, &nrx, yptr, &nry, &zero, ansptr, &nrx);
+
+  UNPROTECT(1);
+
+  return(ans);
+}
+
+
+/* (2) Main IWLS functions. */
 SEXP iwls_eval(SEXP fun, SEXP response, SEXP eta, SEXP rho)
 {
-  SEXP R_fcall, args, rval;
+  SEXP R_fcall, rval;
 
   PROTECT(R_fcall = lang3(fun, response, eta));
   PROTECT(rval = eval(R_fcall, rho));
@@ -32,62 +125,70 @@ SEXP iwls_eval(SEXP fun, SEXP response, SEXP eta, SEXP rho)
   return rval;
 }
 
-
+/*https://gist.github.com/Sharpie/323498*/
 SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 {
   int nProtected;
 
-  /* Obtain loglik, weights and score function. */
-  SEXP loglik, weights, score, e_weights, e_score;
-  PROTECT(loglik = getListElement(family, "loglik"));
-  ++nProtected;
-  PROTECT(weights = getListElement(getListElement(family, "weights"), CHAR(STRING_ELT(id, 0))));
-  ++nProtected;
-  PROTECT(score = getListElement(getListElement(family, "score"), CHAR(STRING_ELT(id, 0))));
-  ++nProtected;
-
   /* Evaluate loglik, weights and score vector. */
-  double pibeta = REAL(iwls_eval(loglik, response, eta, rho))[0];
-  PROTECT(e_weights = iwls_eval(weights, response, eta, rho));
+  double pibeta = REAL(iwls_eval(getListElement(family, "loglik"), response, eta, rho))[0];
+  SEXP weights;
+  PROTECT(weights = iwls_eval(getListElement(getListElement(family, "weights"),
+    CHAR(STRING_ELT(id, 0))), response, eta, rho));
   ++nProtected;
-  PROTECT(e_score = iwls_eval(score, response, eta, rho));
+  SEXP score;
+  PROTECT(score = iwls_eval(getListElement(getListElement(family, "score"),
+    CHAR(STRING_ELT(id, 0))), response, eta, rho));
   ++nProtected;
 
   /* Extract design matrix X and penalty matrix S.*/
-  SEXP X, S;
-  PROTECT(X = getListElement(x, "X"));
-  ++nProtected;
-  PROTECT(S = VECTOR_ELT(getListElement(x, "S"), 0));
-  ++nProtected;
+  int X_ind = getListElement_index(x, "X");
+  int S_ind = getListElement_index(x, "S");
+  double *Xptr = REAL(VECTOR_ELT(x, X_ind));
+  double *Sptr = REAL(VECTOR_ELT(VECTOR_ELT(x, S_ind), 0));
+  double *Wptr = REAL(weights);
 
-  int i, j, n = nrows(X), k = ncols(S);
-  double *Xptr = REAL(X);
-  double *Sptr = REAL(S);
-  double *Wptr = REAL(e_weights);
+  int i, j, n = nrows(VECTOR_ELT(x, X_ind)), k = ncols(VECTOR_ELT(x, X_ind));
   double tau2 = REAL(getListElement(getListElement(x, "state"), "tau2"))[0];
 
   /* Create weighted matrix */
-  SEXP XW, dim;
+  SEXP XW;
   PROTECT(XW = allocVector(REALSXP, k * n));
   ++nProtected;
-  PROTECT(dim = allocVector(INTSXP, 2));
-  ++nProtected;
-  INTEGER(dim)[0] = k; 
-  INTEGER(dim)[1] = n;   
-  setAttrib(XW, R_DimSymbol, dim);
   double *XWptr = REAL(XW);
 
   /* Compute transpose of weighted design matrix */
-  for(j = 0; j < k; ++i) {
-    for(i = 0; i < n; ++j) {
-      XWptr[j * n + i] = 1; // Xptr[j * n + i] * Wptr[i];
+  for(i = 0; i < n; ++i) {
+    for(j = 0; j < k; ++j) {
+      XWptr[i * k + j] = Xptr[j * n + i] * Wptr[i];
     }
   }
 
-Rprintf("ok\n");
+  /* Compute X'WX. */
+  SEXP P;
+  PROTECT(P = allocVector(REALSXP, k * k));
+  ++nProtected;
+  double *Pptr = REAL(P);
+  char *transa = "N", *transb = "N";
+  double one = 1.0, zero = 0.0;
+  F77_CALL(dgemm)(transa, transb, &k, &k, &n, &one,
+    XWptr, &k, Xptr, &n, &zero, Pptr, &k);
+
+  /* Add penalty matrix and variance parameter. */
+  for(i = 0; i < k; ++i) {
+    for(j = 0; j < k; ++j) {
+      Pptr[j * k + i] += tau2 * Sptr[j * k + i];
+    }
+  }
+
+  /* Cholesky decompostion of P. */
+  SEXP L;
+  PROTECT(L = allocMatrix(REALSXP, k, k));
+  ++nProtected;
+  double *Lptr = REAL(L);
 
   UNPROTECT(nProtected);
 
-  return XW;
+  return L;
 }
 
