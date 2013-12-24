@@ -10,6 +10,7 @@
 #include <Rinternals.h>
 
 #include <R_ext/Applic.h> /* for dgemm */
+#include <R_ext/Complex.h>
 #include <R_ext/RS.h>
 #include <R_ext/BLAS.h>
 #include <R_ext/Lapack.h>
@@ -153,20 +154,20 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 
   /* Create weighted matrix */
   SEXP XW;
-  PROTECT(XW = allocVector(REALSXP, k * n));
+  PROTECT(XW = allocMatrix(REALSXP, k, n));
   ++nProtected;
   double *XWptr = REAL(XW);
 
   /* Compute transpose of weighted design matrix */
-  for(i = 0; i < n; ++i) {
-    for(j = 0; j < k; ++j) {
-      XWptr[i * k + j] = Xptr[j * n + i] * Wptr[i];
+  for(i = 0; i < n; i++) {
+    for(j = 0; j < k; j++) {
+      XWptr[j + k * i] = Xptr[i + n * j] * Wptr[i];
     }
   }
 
   /* Compute X'WX. */
   SEXP P;
-  PROTECT(P = allocVector(REALSXP, k * k));
+  PROTECT(P = allocMatrix(REALSXP, k, k));
   ++nProtected;
   double *Pptr = REAL(P);
   char *transa = "N", *transb = "N";
@@ -175,9 +176,9 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
     XWptr, &k, Xptr, &n, &zero, Pptr, &k);
 
   /* Add penalty matrix and variance parameter. */
-  for(i = 0; i < k; ++i) {
-    for(j = 0; j < k; ++j) {
-      Pptr[j * k + i] += tau2 * Sptr[j * k + i];
+  for(i = 0; i < k; i++) {
+    for(j = 0; j < k; j++) {
+      Pptr[i + k * j] += tau2 * Sptr[i + k * j];
     }
   }
 
@@ -187,8 +188,66 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   ++nProtected;
   double *Lptr = REAL(L);
 
+  for(i = 0; i < k; i++) {
+	  for(j = 0; j < k; j++) {
+      if(i > j)
+        Lptr[i + k * j] = 0.0;
+      else
+        Lptr[i + k * j] = Pptr[i + k * j];
+    }
+  }
+
+	int info;
+	F77_CALL(dpotrf)("Upper", &k, Lptr, &k, &info);
+
+  /* Compute the inverse precision matrix. */
+  SEXP PINV;
+  PROTECT(PINV = duplicate(L));
+  ++nProtected;
+  double *PINVptr = REAL(PINV);
+
+  F77_CALL(dpotri)("Upper", &k, PINVptr, &k, &info);
+
+	for(j = 0; j < k; j++) {
+	  for(i = j + 1; i < k; i++) {
+		  PINVptr[i + j * k] = PINVptr[j + i * k];
+    }
+  }
+
+  /* Compute the working observations. */
+  SEXP z;
+  PROTECT(z = allocVector(REALSXP, n));
+  ++nProtected;
+  double *zptr = REAL(z);
+  double *etaptr = REAL(getListElement(eta, CHAR(STRING_ELT(id, 0))));
+  double *scoreptr = REAL(score);
+
+  for(i = 0; i < n; i++) {
+    zptr[i] = etaptr[i] + scoreptr[i] / Wptr[i];
+  }
+
+  SEXP rval;
+  PROTECT(rval = allocVector(VECSXP, 4));
+  ++nProtected;
+
+  SET_VECTOR_ELT(rval, 0, P);
+  SET_VECTOR_ELT(rval, 1, L);
+  SET_VECTOR_ELT(rval, 2, PINV);
+  SET_VECTOR_ELT(rval, 3, z);
+
+  SEXP nrval;
+  PROTECT(nrval = allocVector(STRSXP, 4));
+  ++nProtected;
+
+  SET_STRING_ELT(nrval, 0, mkChar("P"));
+  SET_STRING_ELT(nrval, 1, mkChar("L"));
+  SET_STRING_ELT(nrval, 2, mkChar("PINV"));
+  SET_STRING_ELT(nrval, 3, mkChar("z"));
+
+  setAttrib(rval, R_NamesSymbol, nrval);        
+
   UNPROTECT(nProtected);
 
-  return L;
+  return rval;
 }
 
