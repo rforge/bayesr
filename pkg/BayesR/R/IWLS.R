@@ -74,7 +74,7 @@ if(FALSE) {
   eta <- list("mu" = rep(0, n), "sigma" = rep(0, n))
   id <- "mu"
 
-  a <- propose_default(x, family, response, eta, id)
+  a <- try(propose_default(x, family, response, eta, id))
 
   system.time(for(i in 1:100) a <- propose_default(x, family, response, eta, id))
 }
