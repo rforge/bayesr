@@ -113,6 +113,53 @@ SEXP matprod(SEXP x, SEXP y)
 }
 
 
+/* Gamma random numbers. */
+double rand_expo(double lambda)
+{
+  GetRNGstate();
+  double rval = (-1 / lambda) * log(unif_rand());
+  PutRNGstate();
+  return rval;
+}
+
+double rand_gamma(double a, double b)
+{
+  GetRNGstate();
+  if(a > 1) {
+    double h1 = a - 1;         // h1 entspricht b in Devroye (1986)
+    double h2 = 3 * a - 0.75;    // h2 entspricht c in Devroye (1986)
+    double U, V, W, Y, X, Z;
+    int accept = 0;
+    do {
+      U = unif_rand();
+      V = unif_rand();
+      W = U * (1 - U);
+      Y = sqrt(h2 / W) * (U - 0.5);
+      X = h1 + Y;
+      if(X > 0) {
+        Z = 64 * W * W * W * V * V;
+        if(Z <= (1 - (2 * Y * Y) / X))
+          accept = 1;
+        else {
+          if(((X / h1) > 0) &&  (log(Z) <= (2 * (h1 * log(X / h1) - Y))))
+				 		accept = 1;
+        }
+      }
+    }
+    while(accept == 0);
+      return X/b;
+	} else {
+	  if(a == 1)
+      return rand_expo(b);
+	 	else {
+      double X = rand_gamma(a+1,1)*pow(unif_rand(),1/a);
+      return X / b;
+    }
+  }
+	PutRNGstate();
+}
+
+
 /* (2) Main IWLS functions. */
 SEXP iwls_eval(SEXP fun, SEXP response, SEXP eta, SEXP rho)
 {
@@ -222,15 +269,18 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
     }
   }
 
-  /* Compute the working observations. */
+  /* Working observations. */
   SEXP z;
   PROTECT(z = allocVector(REALSXP, n));
   ++nProtected;
   SEXP state;
   PROTECT(state = duplicate(getListElement(x, "state")));
   ++nProtected;
+  SEXP eta2;
+  PROTECT(eta2 = duplicate(getListElement(eta, CHAR(STRING_ELT(id, 0)))));
+  ++nProtected;
   double *zptr = REAL(z);
-  double *etaptr = REAL(getListElement(eta, CHAR(STRING_ELT(id, 0))));
+  double *etaptr = REAL(eta2);
   double *scoreptr = REAL(score);
   double *fitptr = REAL(getListElement(state, "fit"));
 
@@ -272,50 +322,180 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   F77_CALL(dgemm)(transa, transb, &k, &k1, &k, &one,
     PINVLptr, &k, g0ptr, &k, &zero, g1ptr, &k);
 
+  double sdiag0 = 0.0;
   for(j = 0; j < k; j++) {
     g1ptr[j] += mu1ptr[j];
+    sdiag0 += log(pow(Lptr[j + k * j], 2));
   }
 
   /* Log priors. */
   double *gptr = REAL(getListElement(state, "g"));
   double p1 = 0.0;
   double p2 = 0.0;
-  if(fixed < 1) {
-    double tsum = 0.0;
-    double tsum2 = 0.0;
-    for(i = 0; i < k; i++) {
-      tsum = 0.0;
-      tsum2 = 0.0;
-      for(j = 0; j < k; j++) {
-        tsum += g1ptr[j] * Sptr[j + i * k];
+  double qbetaprop = 0.0;
+
+  double tsum1 = 0.0;
+  double tsum2 = 0.0;
+  double tsum3 = 0.0;
+  for(i = 0; i < k; i++) {
+    tsum1 = 0.0;
+    tsum2 = 0.0;
+    tsum3 = 0.0;
+    for(j = 0; j < k; j++) {
+      if(fixed < 1) {
+        tsum1 += g1ptr[j] * Sptr[j + i * k];
         tsum2 += gptr[j] * Sptr[j + i * k];
       }
+      tsum3 += (g1ptr[j] - mu1ptr[j]) * Pptr[j + i * k];
+    }
+    if(fixed < 1) {
       p1 += tsum2 * gptr[i];
-      p2 += tsum * g1ptr[i];
+      p2 += tsum1 * g1ptr[i];
+    }
+    qbetaprop += tsum3 * (g1ptr[i] - mu1ptr[i]);
+  }
+
+  if(fixed < 1) {
+    p1 = -0.5 / tau2 * p1;
+    p2 = -0.5 / tau2 * p2;
+  }
+
+  qbetaprop = 0.5 * sdiag0 - 0.5 * qbetaprop;
+
+  /* Obtain new fitted values and update predictor. */
+  SEXP fit1;
+  PROTECT(fit1 = allocVector(REALSXP, n));
+  ++nProtected;
+  double *fit1ptr = REAL(fit1);
+
+  for(i = 0; i < n; i++) {
+    for(j = 0; j < k; j++) {
+      fit1ptr[i] += Xptr[i + n * j] * g1ptr[j];
+    }
+    etaptr[i] = etaptr[i] - fitptr[i] + fit1ptr[i];
+  }
+
+  /* Weights, score and working observations. */
+  SEXP weights2, score2;
+  PROTECT(weights2 = iwls_eval(getListElement(getListElement(family, "weights"),
+    CHAR(STRING_ELT(id, 0))), response, eta, rho));
+  ++nProtected;
+  PROTECT(score2 = iwls_eval(getListElement(getListElement(family, "score"),
+    CHAR(STRING_ELT(id, 0))), response, eta, rho));
+  ++nProtected;
+  double *W2ptr = REAL(weights2);
+  double *score2ptr = REAL(score2);
+
+  for(i = 0; i < n; i++) {
+    zptr[i] = score2ptr[i] / W2ptr[i] + fit1ptr[i];
+  }
+
+  /* Compute transpose of weighted design matrix */
+  for(i = 0; i < n; i++) {
+    for(j = 0; j < k; j++) {
+      XWptr[j + k * i] = Xptr[i + n * j] * W2ptr[i];
     }
   }
 
-  // qbeta <- 0.5*sum(log((diag(cholprprop)^2)))-0.5*t(coeff-muprop)%*%prprop%*%(coeff-muprop)
+  /* Compute X'WX. */
+  F77_CALL(dgemm)(transa, transb, &k, &k, &n, &one,
+    XWptr, &k, Xptr, &n, &zero, Pptr, &k);
 
+  /* Add penalty matrix and variance parameter. */
+  if(fixed < 1) {
+    for(i = 0; i < k; i++) {
+      for(j = 0; j < k; j++) {
+        Pptr[i + k * j] += tau2 * Sptr[i + k * j];
+      }
+    }
+  }
+
+  /* Cholesky decompostion of P. */
+  for(i = 0; i < k; i++) {
+	  for(j = 0; j < k; j++) {
+      if(i > j)
+        Lptr[i + k * j] = 0.0;
+      else
+        Lptr[i + k * j] = Pptr[i + k * j];
+    }
+  }
+
+	F77_CALL(dpotrf)("Upper", &k, Lptr, &k, &info);
+
+  /* Compute the inverse precision matrix. */
+  PINV = duplicate(L);
+  F77_CALL(dpotri)("Upper", &k, PINVptr, &k, &info);
+
+	for(j = 0; j < k; j++) {
+	  for(i = j + 1; i < k; i++) {
+		  PINVptr[i + j * k] = PINVptr[j + i * k];
+    }
+  }
+
+  /* Compute mu. */
+  F77_CALL(dgemm)(transa, transb, &k, &k1, &n, &one,
+    XWptr, &k, zptr, &n, &zero, mu0ptr, &k);
+  F77_CALL(dgemm)(transa, transb, &k, &k1, &k, &one,
+    PINVptr, &k, mu0ptr, &k, &zero, mu1ptr, &k);
+
+  sdiag0 = 0.0;
+  for(j = 0; j < k; j++) {
+    sdiag0 += log(pow(Lptr[j + k * j], 2));
+  }
+
+  double qbeta = 0.0;
+  double b = 0.0;
+  double tsum4 = 0.0;
+
+  for(i = 0; i < k; i++) {
+    tsum3 = 0.0;
+    tsum4 = 0.0;
+    for(j = 0; j < k; j++) {
+      tsum3 += (gptr[j] - mu1ptr[j]) * Pptr[j + i * k];
+      tsum4 += g1ptr[j] * Pptr[j + i * k];
+    }
+    qbeta += tsum3 * (gptr[i] - mu1ptr[i]);
+    b += tsum4 * g1ptr[j];
+  }
+
+  SEXP tau3;
+  PROTECT(tau3 = allocVector(REALSXP, 1));
+  ++nProtected;
+  if(fixed < 1) {
+    b += REAL(getListElement(x, "b"))[0];
+    REAL(tau3)[0] = 1 / rand_gamma(REAL(getListElement(x, "rank"))[0], b);
+  } else {
+    REAL(tau3)[0] = tau2;
+  }
+
+  qbeta = 0.5 * sdiag0 - 0.5 * qbeta;
+  double pibetaprop = REAL(iwls_eval(getListElement(family, "loglik"), response, eta, rho))[0];
+
+  SEXP alpha;
+  PROTECT(alpha = allocVector(REALSXP, 1));
+  ++nProtected;
+  REAL(alpha)[0] = (pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1);
+
+  /* Stuff everything together. */
   SEXP rval;
   PROTECT(rval = allocVector(VECSXP, 4));
   ++nProtected;
 
-  SET_VECTOR_ELT(rval, 0, P);
-  SET_VECTOR_ELT(rval, 1, L);
-  SET_VECTOR_ELT(rval, 2, g1);
-  SET_VECTOR_ELT(rval, 3, mu1);
+  SET_VECTOR_ELT(rval, 0, g1);
+  SET_VECTOR_ELT(rval, 1, fit1);
+  SET_VECTOR_ELT(rval, 2, tau3);
+  SET_VECTOR_ELT(rval, 3, alpha);
 
   SEXP nrval;
   PROTECT(nrval = allocVector(STRSXP, 4));
   ++nProtected;
 
-  SET_STRING_ELT(nrval, 0, mkChar("P"));
-  SET_STRING_ELT(nrval, 1, mkChar("L"));
-  SET_STRING_ELT(nrval, 2, mkChar("g"));
-  SET_STRING_ELT(nrval, 3, mkChar("mu"));
-
-  setAttrib(rval, R_NamesSymbol, nrval);        
+  SET_STRING_ELT(nrval, 0, mkChar("g"));
+  SET_STRING_ELT(nrval, 1, mkChar("fit"));
+  SET_STRING_ELT(nrval, 2, mkChar("tau2"));
+  SET_STRING_ELT(nrval, 3, mkChar("alpha"));
+        
+  setAttrib(rval, R_NamesSymbol, nrval); 
 
   UNPROTECT(nProtected);
 
