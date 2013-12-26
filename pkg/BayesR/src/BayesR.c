@@ -176,9 +176,12 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
     XWptr, &k, Xptr, &n, &zero, Pptr, &k);
 
   /* Add penalty matrix and variance parameter. */
-  for(i = 0; i < k; i++) {
-    for(j = 0; j < k; j++) {
-      Pptr[i + k * j] += tau2 * Sptr[i + k * j];
+  int fixed = LOGICAL(getListElement(x, "fixed"))[0];
+  if(fixed < 1) {
+    for(i = 0; i < k; i++) {
+      for(j = 0; j < k; j++) {
+        Pptr[i + k * j] += tau2 * Sptr[i + k * j];
+      }
     }
   }
 
@@ -208,6 +211,11 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 
   F77_CALL(dpotri)("Upper", &k, PINVptr, &k, &info);
 
+  SEXP PINVL;
+  PROTECT(PINVL = duplicate(PINV));
+  ++nProtected;
+  double *PINVLptr = REAL(PINVL);
+
 	for(j = 0; j < k; j++) {
 	  for(i = j + 1; i < k; i++) {
 		  PINVptr[i + j * k] = PINVptr[j + i * k];
@@ -218,13 +226,76 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   SEXP z;
   PROTECT(z = allocVector(REALSXP, n));
   ++nProtected;
+  SEXP state;
+  PROTECT(state = duplicate(getListElement(x, "state")));
+  ++nProtected;
   double *zptr = REAL(z);
   double *etaptr = REAL(getListElement(eta, CHAR(STRING_ELT(id, 0))));
   double *scoreptr = REAL(score);
+  double *fitptr = REAL(getListElement(state, "fit"));
 
   for(i = 0; i < n; i++) {
-    zptr[i] = etaptr[i] + scoreptr[i] / Wptr[i];
+    zptr[i] = scoreptr[i] / Wptr[i] + fitptr[i];
   }
+
+  /* Compute mu. */
+  int k1 = 1;
+  SEXP mu0, mu1;
+  PROTECT(mu0 = allocVector(REALSXP, k));
+  ++nProtected;
+  PROTECT(mu1 = allocVector(REALSXP, k));
+  ++nProtected;
+  double *mu0ptr = REAL(mu0);
+  double *mu1ptr = REAL(mu1);
+  F77_CALL(dgemm)(transa, transb, &k, &k1, &n, &one,
+    XWptr, &k, zptr, &n, &zero, mu0ptr, &k);
+  F77_CALL(dgemm)(transa, transb, &k, &k1, &k, &one,
+    PINVptr, &k, mu0ptr, &k, &zero, mu1ptr, &k);
+
+  /* Sample. */
+  SEXP g0;
+  PROTECT(g0 = allocVector(REALSXP, k));
+  ++nProtected;
+  double *g0ptr = REAL(g0);
+
+  GetRNGstate();
+  for(j = 0; j < k; j++) {
+    g0ptr[j] = rnorm(0, 1);
+  }
+  PutRNGstate();
+
+  SEXP g1;
+  PROTECT(g1 = allocVector(REALSXP, k));
+  ++nProtected;
+  double *g1ptr = REAL(g1);
+
+  F77_CALL(dgemm)(transa, transb, &k, &k1, &k, &one,
+    PINVLptr, &k, g0ptr, &k, &zero, g1ptr, &k);
+
+  for(j = 0; j < k; j++) {
+    g1ptr[j] += mu1ptr[j];
+  }
+
+  /* Log priors. */
+  double *gptr = REAL(getListElement(state, "g"));
+  double p1 = 0.0;
+  double p2 = 0.0;
+  if(fixed < 1) {
+    double tsum = 0.0;
+    double tsum2 = 0.0;
+    for(i = 0; i < k; i++) {
+      tsum = 0.0;
+      tsum2 = 0.0;
+      for(j = 0; j < k; j++) {
+        tsum += g1ptr[j] * Sptr[j + i * k];
+        tsum2 += gptr[j] * Sptr[j + i * k];
+      }
+      p1 += tsum2 * gptr[i];
+      p2 += tsum * g1ptr[i];
+    }
+  }
+
+  // qbeta <- 0.5*sum(log((diag(cholprprop)^2)))-0.5*t(coeff-muprop)%*%prprop%*%(coeff-muprop)
 
   SEXP rval;
   PROTECT(rval = allocVector(VECSXP, 4));
@@ -232,8 +303,8 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 
   SET_VECTOR_ELT(rval, 0, P);
   SET_VECTOR_ELT(rval, 1, L);
-  SET_VECTOR_ELT(rval, 2, PINV);
-  SET_VECTOR_ELT(rval, 3, z);
+  SET_VECTOR_ELT(rval, 2, g1);
+  SET_VECTOR_ELT(rval, 3, mu1);
 
   SEXP nrval;
   PROTECT(nrval = allocVector(STRSXP, 4));
@@ -241,8 +312,8 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 
   SET_STRING_ELT(nrval, 0, mkChar("P"));
   SET_STRING_ELT(nrval, 1, mkChar("L"));
-  SET_STRING_ELT(nrval, 2, mkChar("PINV"));
-  SET_STRING_ELT(nrval, 3, mkChar("z"));
+  SET_STRING_ELT(nrval, 2, mkChar("g"));
+  SET_STRING_ELT(nrval, 3, mkChar("mu"));
 
   setAttrib(rval, R_NamesSymbol, nrval);        
 
