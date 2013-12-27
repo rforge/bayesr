@@ -82,6 +82,12 @@ void pmat(SEXP mat)
   Rprintf("\n");
 }
 
+void merr()
+{
+  char *m = "stopped";
+  error(m);
+}
+
 
 /* Matrix product. */
 SEXP matprod(SEXP x, SEXP y)
@@ -173,20 +179,23 @@ SEXP iwls_eval(SEXP fun, SEXP response, SEXP eta, SEXP rho)
   return rval;
 }
 
-/*https://gist.github.com/Sharpie/323498*/
 SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 {
   int nProtected;
 
   /* Evaluate loglik, weights and score vector. */
-  double pibeta = REAL(iwls_eval(getListElement(family, "loglik"), response, eta, rho))[0];
+  SEXP eta2;
+  PROTECT(eta2 = duplicate(eta));
+  ++nProtected;
+  int ll_ind = getListElement_index(family, "loglik");
+  double pibeta = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, eta2, rho))[0];
   SEXP weights;
   PROTECT(weights = iwls_eval(getListElement(getListElement(family, "weights"),
-    CHAR(STRING_ELT(id, 0))), response, eta, rho));
+    CHAR(STRING_ELT(id, 0))), response, eta2, rho));
   ++nProtected;
   SEXP score;
   PROTECT(score = iwls_eval(getListElement(getListElement(family, "score"),
-    CHAR(STRING_ELT(id, 0))), response, eta, rho));
+    CHAR(STRING_ELT(id, 0))), response, eta2, rho));
   ++nProtected;
 
   /* Extract design matrix X and penalty matrix S.*/
@@ -227,23 +236,20 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   if(fixed < 1) {
     for(i = 0; i < k; i++) {
       for(j = 0; j < k; j++) {
-        Pptr[i + k * j] += tau2 * Sptr[i + k * j];
+        Pptr[i + k * j] += 1 / tau2 * Sptr[i + k * j];
       }
     }
   }
 
   /* Cholesky decompostion of P. */
   SEXP L;
-  PROTECT(L = allocMatrix(REALSXP, k, k));
+  PROTECT(L = duplicate(P));
   ++nProtected;
   double *Lptr = REAL(L);
 
-  for(i = 0; i < k; i++) {
-	  for(j = 0; j < k; j++) {
-      if(i > j)
-        Lptr[i + k * j] = 0.0;
-      else
-        Lptr[i + k * j] = Pptr[i + k * j];
+  for(j = 0; j < k; j++) { 	/* Zero the lower triangle. */
+	  for(i = j + 1; i < k; i++) {
+      Lptr[i + k * j] = 0.;
     }
   }
 
@@ -262,6 +268,7 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   PROTECT(PINVL = duplicate(PINV));
   ++nProtected;
   double *PINVLptr = REAL(PINVL);
+	F77_CALL(dpotrf)("Upper", &k, PINVLptr, &k, &info);
 
 	for(j = 0; j < k; j++) {
 	  for(i = j + 1; i < k; i++) {
@@ -270,22 +277,24 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   }
 
   /* Working observations. */
-  SEXP z;
+  SEXP z, z2;
   PROTECT(z = allocVector(REALSXP, n));
+  ++nProtected;
+  PROTECT(z2 = allocVector(REALSXP, n));
   ++nProtected;
   SEXP state;
   PROTECT(state = duplicate(getListElement(x, "state")));
   ++nProtected;
-  SEXP eta2;
-  PROTECT(eta2 = duplicate(getListElement(eta, CHAR(STRING_ELT(id, 0)))));
-  ++nProtected;
   double *zptr = REAL(z);
-  double *etaptr = REAL(eta2);
+  double *z2ptr = REAL(z2);
+  double *etaptr = REAL(getListElement(eta2, CHAR(STRING_ELT(id, 0))));
   double *scoreptr = REAL(score);
   double *fitptr = REAL(getListElement(state, "fit"));
 
   for(i = 0; i < n; i++) {
-    zptr[i] = scoreptr[i] / Wptr[i] + fitptr[i];
+    zptr[i] = etaptr[i] + scoreptr[i] / Wptr[i];
+    etaptr[i] -= fitptr[i];
+    z2ptr[i] = zptr[i] - etaptr[i];
   }
 
   /* Compute mu. */
@@ -298,7 +307,7 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   double *mu0ptr = REAL(mu0);
   double *mu1ptr = REAL(mu1);
   F77_CALL(dgemm)(transa, transb, &k, &k1, &n, &one,
-    XWptr, &k, zptr, &n, &zero, mu0ptr, &k);
+    XWptr, &k, z2ptr, &n, &zero, mu0ptr, &k);
   F77_CALL(dgemm)(transa, transb, &k, &k1, &k, &one,
     PINVptr, &k, mu0ptr, &k, &zero, mu1ptr, &k);
 
@@ -318,7 +327,7 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   PROTECT(g1 = allocVector(REALSXP, k));
   ++nProtected;
   double *g1ptr = REAL(g1);
-
+  
   F77_CALL(dgemm)(transa, transb, &k, &k1, &k, &one,
     PINVLptr, &k, g0ptr, &k, &zero, g1ptr, &k);
 
@@ -327,6 +336,8 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
     g1ptr[j] += mu1ptr[j];
     sdiag0 += log(pow(Lptr[j + k * j], 2));
   }
+
+pvec(g1);
 
   /* Log priors. */
   double *gptr = REAL(getListElement(state, "g"));
@@ -372,22 +383,26 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
     for(j = 0; j < k; j++) {
       fit1ptr[i] += Xptr[i + n * j] * g1ptr[j];
     }
-    etaptr[i] = etaptr[i] - fitptr[i] + fit1ptr[i];
+    etaptr[i] = etaptr[i] + fit1ptr[i];
   }
+
+  double pibetaprop = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, eta2, rho))[0];
 
   /* Weights, score and working observations. */
   SEXP weights2, score2;
   PROTECT(weights2 = iwls_eval(getListElement(getListElement(family, "weights"),
-    CHAR(STRING_ELT(id, 0))), response, eta, rho));
+    CHAR(STRING_ELT(id, 0))), response, eta2, rho));
   ++nProtected;
   PROTECT(score2 = iwls_eval(getListElement(getListElement(family, "score"),
-    CHAR(STRING_ELT(id, 0))), response, eta, rho));
+    CHAR(STRING_ELT(id, 0))), response, eta2, rho));
   ++nProtected;
   double *W2ptr = REAL(weights2);
   double *score2ptr = REAL(score2);
 
   for(i = 0; i < n; i++) {
-    zptr[i] = score2ptr[i] / W2ptr[i] + fit1ptr[i];
+    zptr[i] = etaptr[i] + score2ptr[i] / W2ptr[i];
+    etaptr[i] -= fit1ptr[i];
+    z2ptr[i] = zptr[i] - etaptr[i];
   }
 
   /* Compute transpose of weighted design matrix */
@@ -405,18 +420,17 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   if(fixed < 1) {
     for(i = 0; i < k; i++) {
       for(j = 0; j < k; j++) {
-        Pptr[i + k * j] += tau2 * Sptr[i + k * j];
+        Pptr[i + k * j] += 1 / tau2 * Sptr[i + k * j];
       }
     }
   }
 
   /* Cholesky decompostion of P. */
-  for(i = 0; i < k; i++) {
-	  for(j = 0; j < k; j++) {
-      if(i > j)
-        Lptr[i + k * j] = 0.0;
-      else
-        Lptr[i + k * j] = Pptr[i + k * j];
+  L = duplicate(P);
+  Lptr = REAL(L);
+  for(j = 0; j < k; j++) { 	/* Zero the lower triangle. */
+	  for(i = j + 1; i < k; i++) {
+      Lptr[i + k * j] = 0.;
     }
   }
 
@@ -424,6 +438,7 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 
   /* Compute the inverse precision matrix. */
   PINV = duplicate(L);
+  PINVptr = REAL(PINV);
   F77_CALL(dpotri)("Upper", &k, PINVptr, &k, &info);
 
 	for(j = 0; j < k; j++) {
@@ -434,7 +449,7 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 
   /* Compute mu. */
   F77_CALL(dgemm)(transa, transb, &k, &k1, &n, &one,
-    XWptr, &k, zptr, &n, &zero, mu0ptr, &k);
+    XWptr, &k, z2ptr, &n, &zero, mu0ptr, &k);
   F77_CALL(dgemm)(transa, transb, &k, &k1, &k, &one,
     PINVptr, &k, mu0ptr, &k, &zero, mu1ptr, &k);
 
@@ -469,7 +484,15 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   }
 
   qbeta = 0.5 * sdiag0 - 0.5 * qbeta;
-  double pibetaprop = REAL(iwls_eval(getListElement(family, "loglik"), response, eta, rho))[0];
+
+/*pvec(mu1);*/
+
+/*Rprintf("\npibetaprop %g\n", pibetaprop);*/
+/*Rprintf("qbeta %g\n", qbeta);*/
+/*Rprintf("p2 %g\n", p2);*/
+/*Rprintf("pibeta %g\n", pibeta);*/
+/*Rprintf("qbetaprop %g\n", qbetaprop);*/
+/*Rprintf("p1 %g\n", p1);*/
 
   SEXP alpha;
   PROTECT(alpha = allocVector(REALSXP, 1));
