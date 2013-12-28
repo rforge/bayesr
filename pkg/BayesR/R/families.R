@@ -238,6 +238,28 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
 }
 
 
+invgaussian.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
+{
+  links <- parse.links(links, c(mu = "log", sigma2 = "log"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+
+  rval <- list(
+    "family" = "invgaussian",
+    "names" = c("mu", "sigma2"),
+    "links" = links,
+    bayesx = list(
+      "mu"  = c("invgaussian_mu", "mean"),
+      "sigma" = c("invgaussian_sigma2", "scale")
+      )
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
+
 mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
   sigma1 = "log", sigma2 = "log", rho = "fisherz"), ...)
 {
@@ -253,6 +275,30 @@ mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
       "sigma2" = c("bivnormal_sigma", "scale2"),
       "rho" = c("bivnormal_rho", "rho"),
       "order" = 5:1,
+      "rm.number" = TRUE
+    )
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
+mvt.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
+  sigma1 = "log", sigma2 = "log", rho = "fisherz", df = "log"), ...)
+{
+  rval <- list(
+    "family" = "mvt",
+    "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho", "df"),
+    "links" = parse.links(links, c(mu1 = "identity", mu2 = "identity",
+       sigma1 = "log", sigma2 = "log", rho = "fisherz", df = "log"), ...),
+    bayesx = list(
+      "mu1" = c("bivt_mu", "mean"),
+      "mu2" = c("bivt_mu", "mu"),
+      "sigma1" = c("bivt_sigma", "scale1"),
+      "sigma2" = c("bivt_sigma", "scale2"),
+      "rho" = c("bivt_rho", "rho"),
+	  "df" = c("bivt_df", "df"),
+      "order" = 6:1,
       "rm.number" = TRUE
     )
   )
