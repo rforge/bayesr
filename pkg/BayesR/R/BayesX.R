@@ -140,6 +140,8 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
     rm(weights)
     add.weights <- TRUE
   }
+  if(length(grep("weights", names(attr(x, "model.frame")))))
+    add.weights <- TRUE
 
   family$bayesx[c("order", "lhs", "rm.number", "weights")] <- NULL
 
