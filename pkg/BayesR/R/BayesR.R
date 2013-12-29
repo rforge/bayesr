@@ -741,7 +741,7 @@ c.bayesr <- function(...)
     x <- c(x, objects[i])
   Call <- match.call()
   names(x) <- as.character(Call[-1L])
-  class(x) <- c("bayesr", "bayesx")
+  class(x) <- c("bayesr", "cbayesr")
 
   return(x)
 }
@@ -1226,6 +1226,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
   ask = FALSE, scale = 1, spar = TRUE, ...)
 {
   args <- list(...)
+  cx <- class(x)
 
   if(is.null(args$do_par) & spar) {
     op <- par(no.readonly = TRUE)
@@ -1280,7 +1281,11 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
   if(which == "effects" & kn[1] < 1) on.exit(warning("no terms to plot in model object!"), add = TRUE)
 
   if(is.null(args$do_par) & spar) {
-    if(!ask) par(mfrow = n2mfrow(kn[if(which == "effects") 1 else 2])) else par(ask = ask)
+    if(!ask) {
+      if("cbayesr" %in% cx) {
+        par(mfrow = c(length(x), kn[1] / length(x)))
+      } else par(mfrow = n2mfrow(kn[if(which == "effects") 1 else 2]))
+    } else par(ask = ask)
   }
 
   mmain <- if(any(c("h1", "Chain_1") %in% (nx <- names(x)))) TRUE else FALSE

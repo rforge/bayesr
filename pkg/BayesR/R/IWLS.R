@@ -339,7 +339,6 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
 
   ## Start sampling
   ptm <- proc.time()
-  cat("|", rep(" ", nstep), "|   0%", sep = "")
   for(i in 1:n.iter) {
     if(save <- i %in% iterthin)
       js <- which(iterthin == i)
@@ -368,6 +367,15 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
       }
     }
     if(verbose) {
+      if(i == 10) {
+        elapsed <- c(proc.time() - ptm)[3]
+        rt <- (n.iter - 10) / 10 * elapsed
+        if(rt < 60)
+          cat("Approximate runtime: ", round(rt, 2), "sec\n", sep = "")
+        else
+          cat("Approximate runtime: ", round(rt / 60, 2), "min\n", sep = "")
+        cat("|", rep(" ", nstep), "|   0%", sep = "")
+      }
       if(i %% step == 0) {
         cat("\r")
         p <- i / n.iter
