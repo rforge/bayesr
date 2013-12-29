@@ -2,62 +2,8 @@
 ## http://adv-r.had.co.nz/C-interface.html
 ## http://stackoverflow.com/questions/7457635/calling-r-function-from-c
 ## http://gallery.rcpp.org/articles/r-function-from-c++/
-#sm_fun0 <- cxxfunction(
-#  signature(X = "matrix", W = "numeric", S = "matrix", tau2 = "numeric",
-#    Z = "numeric", ETA = "numeric"),
-#  body = '
-#    arma::mat x = Rcpp::as<arma::mat>(X);
-#    arma::mat s = Rcpp::as<arma::mat>(S);
-#    arma::vec w = Rcpp::as<arma::vec>(W);
-#    arma::vec z = Rcpp::as<arma::vec>(Z);
-#    arma::vec eta = Rcpp::as<arma::vec>(ETA);
-
-#    arma::mat xw = x;
-
-#    for(int i = 0; i < x.n_rows; i++) {
-#      xw.row(i) *= w(i);
-#    }
-
-#    arma::mat txw = xw.t();
-#    arma::mat p = arma::inv(txw * x + 1 / REAL(tau2)[0] * s);
-#    arma::mat m = p * (txw * (z - eta));
-
-#    arma::mat g0 = arma::randn(1, x.n_cols);
-#    arma::mat g = arma::repmat(m, 1, 1).t() + g0 * arma::chol(p);
-
-#    return Rcpp::List::create(Rcpp::Named("g") = g,
-#      Rcpp::Named("M") = m,
-#      Rcpp::Named("P") = p,
-#      Rcpp::Named("tau2") = tau2);
-#', plugin = "RcppArmadillo")
-
-
-#sm_fun1 <- cxxfunction(
-#  signature(X = "matrix", W = "numeric", S = "matrix", tau2 = "numeric",
-#    Z = "numeric", ETA = "numeric"),
-#  body = '
-#    arma::mat x = Rcpp::as<arma::mat>(X);
-#    arma::mat s = Rcpp::as<arma::mat>(S);
-#    arma::vec w = Rcpp::as<arma::vec>(W);
-#    arma::vec z = Rcpp::as<arma::vec>(Z);
-#    arma::vec eta = Rcpp::as<arma::vec>(ETA);
-
-#    arma::mat xw = x;
-
-#    for(int i = 0; i < x.n_rows; i++) {
-#      xw.row(i) *= w(i);
-#    }
-
-#    arma::mat txw = xw.t();
-#    arma::mat p = arma::inv(txw * x + 1 / REAL(tau2)[0] * s);
-#    arma::mat m = p * (txw * (z - eta));
-
-#    return Rcpp::List::create(Rcpp::Named("M") = m,
-#      Rcpp::Named("P") = p);
-#', plugin = "RcppArmadillo")
-
 propose_default <- function(x, family,
-  response, eta, id, rho = new.env(), ...)
+  response, eta, id, rho, ...)
 {
   .Call("do_propose", x, family, response, eta, id, rho)
 }
@@ -65,18 +11,17 @@ propose_default <- function(x, family,
 if(FALSE) {
   require("mgcv")
   set.seed(111)
-  n <- 20
+  n <- 300
   z <- runif(n, -3, 3)
   response <- 1.2 + sin(z) + rnorm(n, sd = 0.6)
   x <- smooth.construct(s(z), list("z" = z), NULL)
-  x$state <- list("g" = runif(ncol(x$X)), "tau2" = 2.33)
+  x$state <- list("g" = runif(ncol(x$X)), "tau2" = 2.33, "fit" = runif(n))
+  x$a <- x$b <- 0.00001
   family <- gaussian.BayesR()
   eta <- list("mu" = rep(0, n), "sigma" = rep(0, n))
   id <- "mu"
 
-  a <- try(propose_default(x, family, response, eta, id))
-
-  system.time(for(i in 1:100) a <- propose_default(x, family, response, eta, id))
+  a <- propose_default(x, family, response, eta, id, new.env())
 }
 
 
@@ -176,9 +121,9 @@ smooth.IWLS.default <- function(x, ...)
   if(is.null(x$state)) {
     x$p.save <- c("g", "tau2")
     x$state <- list()
-    x$state$g <- runif(ncol(x$X), 0.001, 0.002)
+    x$state$g <- rep(1, ncol(x$X)) ##runif(ncol(x$X), 0.001, 0.002)
     if(!x$fixed)
-      x$state$tau2 <- if(is.null(x$sp)) runif(1, 0.001, 0.005) else x$sp
+      x$state$tau2 <- if(is.null(x$sp)) 0.001 else x$sp
     else
       x$state$tau2 <- 0.0001
     x$s.colnames <- if(is.null(x$s.colnames)) {
@@ -189,75 +134,9 @@ smooth.IWLS.default <- function(x, ...)
   }
 
   if(is.null(x$propose)) {
-#    x$propose <- function(x, family, response, eta, id, ...) {
-#      ## Compute weights.
-#      weights <- family$weights[[id]](response, eta)
-
-#      ## Score.
-#      score <- family$score[[id]](response, eta)
-
-#      ## Compute working observations.
-#      z <- eta[[id]] + 1 / weights * score
-
-#      ## Compute old log likelihood and old log coefficients prior.
-#      pibeta <- family$loglik(response, eta)
-#      p1 <- if(x$fixed) {
-#        0
-#      } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
-
-#      ## Compute partial predictor.
-#      eta[[id]] <- eta[[id]] - x$state$fit
-
-#      ## Save old coefficients
-#      g0 <- drop(x$state$g)
-
-#      ## C++ fun
-#      x$state <- sm_fun0(x$X, weights, x$S[[1]], x$state$tau2, z, eta[[id]])
-#      x$state$g <- drop(x$state$g)
-
-#      ## Compute log priors.
-#      p2 <- if(x$fixed) {
-#        0
-#      } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
-#      qbetaprop <- dmvnorm(x$state$g, mean = x$state$M, sigma = x$state$P, log = TRUE)
-
-#      ## Compute fitted values.        
-#      x$state$fit <- drop(x$X %*% x$state$g)
-
-#      ## Set up new predictor.
-#      eta[[id]] <- eta[[id]] + x$state$fit
-
-#      ## Compute new log likelihood.
-#      pibetaprop <- family$loglik(response, eta)
-
-#      ## Compute new weights
-#      weights <- family$weights[[id]](response, eta)
-
-#      ## New score.
-#      score <- family$score[[id]](response, eta)
-
-#      ## New working observations.
-#      z <- eta[[id]] + 1 / weights * score
-
-#      ## Compute mean and precision.
-#      state2 <- sm_fun1(x$X, weights, x$S[[1]], x$state$tau2, z, eta[[id]] - x$state$fit)
-
-#      ## Get the log prior.
-#      qbeta <- dmvnorm(g0, mean = state2$M, sigma = state2$P, log = TRUE)
-
-#      ## Sample variance parameter.
-#      if(!x$fixed & is.null(x$sp)) {
-#        a <- x$rank / 2 + x$a
-#        b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
-#        x$state$tau2 <- 1 / rgamma(1, a, b)
-#      }
-
-#      ## Compute acceptance probablity.
-#      x$state$alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
-
-#      return(x$state)
-#    }
-
+    if(FALSE) {
+      x$propose <- propose_default
+    } else {
     x$propose <- function(x, family, response, eta, id, ...) {
       ## Compute weights.
       weights <- family$weights[[id]](response, eta)
@@ -323,7 +202,7 @@ smooth.IWLS.default <- function(x, ...)
         if(k < 2) {
           1 / (XW %*% x$X)
         } else chol2inv(chol(XW %*% x$X))
-      } else chol2inv(chol(XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
+      } else chol2inv(L <- chol(P0 <- XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
       P2[P2 == Inf] <- 0
       M2 <- P2 %*% (XW %*% (z - (eta[[id]] - x$state$fit)))
 
@@ -341,7 +220,7 @@ smooth.IWLS.default <- function(x, ...)
       x$state$alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
 
       return(x$state)
-    }
+    }}
   }
 
   ## Function for computing starting values with backfitting.
@@ -363,7 +242,7 @@ smooth.IWLS.default <- function(x, ...)
       XW <- t(x$X * weights)
       P <- if(x$fixed) {
         chol2inv(chol(XW %*% x$X))
-      } else chol2inv(chol(XW %*% x$X + 0 * x$S[[1]]))
+      } else chol2inv(chol(XW %*% x$X + 0.0001 * x$S[[1]]))
       x$state$g <- drop(P %*% (XW %*% (z - eta[[id]])))
 
       ## Compute fitted values.        
@@ -454,9 +333,11 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   }
 
   deviance <- rep(0, length(iterthin))
+  rho <- new.env()
 
   ## Start sampling
-  cat("|", rep(" ", nstep), "| 0%", sep = "")
+  ptm <- proc.time()
+  cat("|", rep(" ", nstep), "|   0%", sep = "")
   for(i in 1:n.iter) {
     if(save <- i %in% iterthin)
       js <- which(iterthin == i)
@@ -466,7 +347,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
       ## And all terms.
       for(sj in seq_along(x[[nx[j]]]$smooth)) {
         ## Get proposed states.
-        p.state <- x[[nx[j]]]$smooth[[sj]]$propose(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j])
+        p.state <- x[[nx[j]]]$smooth[[sj]]$propose(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j], rho = rho)
 
         ## If accepted, set current state to proposed state.
         accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
@@ -489,8 +370,15 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
         cat("\r")
         p <- i / n.iter
         p <- paste("|", paste(rep("*", round(nstep * p)), collapse = ""),
-          paste(rep(" ", round(nstep * (1 - p))), collapse = ""), "| ", round(p, 2) * 100, "%", sep = "")
-        cat(p)
+          paste(rep(" ", round(nstep * (1 - p))), collapse = ""), "| ",
+          formatC(round(p, 2) * 100, width = 3), "%", sep = "")
+        elapsed <- c(proc.time() - ptm)[3]
+        elapsed <- if(elapsed < 60) {
+          paste(formatC(format(round(elapsed, 2), nsmall = 2), width = 5), "sec", sep = "")
+        } else {
+          paste(formatC(format(round(elapsed / 60, 2), nsmall = 2), width = 5), "min", sep = "")
+        }
+        cat(p, elapsed, sep = " ")
         if(.Platform$OS.type != "unix") flush.console()
       }
     }

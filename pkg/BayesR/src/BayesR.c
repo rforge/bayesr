@@ -89,83 +89,6 @@ void merr()
 }
 
 
-/* Matrix product. */
-SEXP matprod(SEXP x, SEXP y)
-{
-  int nrx, ncx, nry, ncy;
-  double *ansptr, *xptr, *yptr;
-
-  nrx = nrows(x);
-  ncx = ncols(x);
-  nry = nrows(y);
-  ncy = ncols(y);
-
-  //PROTECT(x = coerceVector(x, REALSXP));
-  //PROTECT(y = coerceVector(y, REALSXP));
-  xptr = REAL(x);  yptr = REAL(y);
-
-  SEXP ans;
-  PROTECT(ans = allocMatrix(REALSXP, nrx, ncy));
-  ansptr = REAL(ans);
-
-  char *transa = "N", *transb = "N";
-  double one = 1.0, zero = 0.0;
-  F77_CALL(dgemm)(transa, transb, &nrx, &ncy, &ncx, &one,
-    xptr, &nrx, yptr, &nry, &zero, ansptr, &nrx);
-
-  UNPROTECT(1);
-
-  return(ans);
-}
-
-
-/* Gamma random numbers. */
-double rand_expo(double lambda)
-{
-  GetRNGstate();
-  double rval = (-1 / lambda) * log(unif_rand());
-  PutRNGstate();
-  return rval;
-}
-
-double rand_gamma(double a, double b)
-{
-  GetRNGstate();
-  if(a > 1) {
-    double h1 = a - 1;         // h1 entspricht b in Devroye (1986)
-    double h2 = 3 * a - 0.75;    // h2 entspricht c in Devroye (1986)
-    double U, V, W, Y, X, Z;
-    int accept = 0;
-    do {
-      U = unif_rand();
-      V = unif_rand();
-      W = U * (1 - U);
-      Y = sqrt(h2 / W) * (U - 0.5);
-      X = h1 + Y;
-      if(X > 0) {
-        Z = 64 * W * W * W * V * V;
-        if(Z <= (1 - (2 * Y * Y) / X))
-          accept = 1;
-        else {
-          if(((X / h1) > 0) &&  (log(Z) <= (2 * (h1 * log(X / h1) - Y))))
-				 		accept = 1;
-        }
-      }
-    }
-    while(accept == 0);
-      return X/b;
-	} else {
-	  if(a == 1)
-      return rand_expo(b);
-	 	else {
-      double X = rand_gamma(a+1,1)*pow(unif_rand(),1/a);
-      return X / b;
-    }
-  }
-	PutRNGstate();
-}
-
-
 /* (2) Main IWLS functions. */
 SEXP iwls_eval(SEXP fun, SEXP response, SEXP eta, SEXP rho)
 {
@@ -228,6 +151,7 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   double *Pptr = REAL(P);
   char *transa = "N", *transb = "N";
   double one = 1.0, zero = 0.0;
+
   F77_CALL(dgemm)(transa, transb, &k, &k, &n, &one,
     XWptr, &k, Xptr, &n, &zero, Pptr, &k);
 
@@ -327,8 +251,9 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   PROTECT(g1 = allocVector(REALSXP, k));
   ++nProtected;
   double *g1ptr = REAL(g1);
+  char *transa2 = "T";
   
-  F77_CALL(dgemm)(transa, transb, &k, &k1, &k, &one,
+  F77_CALL(dgemm)(transa2, transb, &k, &k1, &k, &one,
     PINVLptr, &k, g0ptr, &k, &zero, g1ptr, &k);
 
   double sdiag0 = 0.0;
@@ -337,31 +262,34 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
     sdiag0 += log(pow(Lptr[j + k * j], 2));
   }
 
-pvec(g1);
-
   /* Log priors. */
   double *gptr = REAL(getListElement(state, "g"));
   double p1 = 0.0;
   double p2 = 0.0;
   double qbetaprop = 0.0;
 
+  double b = 0.0;
   double tsum1 = 0.0;
   double tsum2 = 0.0;
   double tsum3 = 0.0;
+  double tsum4 = 0.0;
   for(i = 0; i < k; i++) {
     tsum1 = 0.0;
     tsum2 = 0.0;
     tsum3 = 0.0;
+    tsum4 = 0.0;
     for(j = 0; j < k; j++) {
       if(fixed < 1) {
         tsum1 += g1ptr[j] * Sptr[j + i * k];
         tsum2 += gptr[j] * Sptr[j + i * k];
+        tsum4 += g1ptr[j] * Pptr[j + i * k];
       }
       tsum3 += (g1ptr[j] - mu1ptr[j]) * Pptr[j + i * k];
     }
     if(fixed < 1) {
       p1 += tsum2 * gptr[i];
       p2 += tsum1 * g1ptr[i];
+      b += tsum4 * g1ptr[i];
     }
     qbetaprop += tsum3 * (g1ptr[i] - mu1ptr[i]);
   }
@@ -380,6 +308,7 @@ pvec(g1);
   double *fit1ptr = REAL(fit1);
 
   for(i = 0; i < n; i++) {
+    fit1ptr[i] = 0.0;
     for(j = 0; j < k; j++) {
       fit1ptr[i] += Xptr[i + n * j] * g1ptr[j];
     }
@@ -459,40 +388,28 @@ pvec(g1);
   }
 
   double qbeta = 0.0;
-  double b = 0.0;
-  double tsum4 = 0.0;
 
   for(i = 0; i < k; i++) {
     tsum3 = 0.0;
-    tsum4 = 0.0;
     for(j = 0; j < k; j++) {
       tsum3 += (gptr[j] - mu1ptr[j]) * Pptr[j + i * k];
-      tsum4 += g1ptr[j] * Pptr[j + i * k];
     }
     qbeta += tsum3 * (gptr[i] - mu1ptr[i]);
-    b += tsum4 * g1ptr[j];
   }
+
+  qbeta = 0.5 * sdiag0 - 0.5 * qbeta;
 
   SEXP tau3;
   PROTECT(tau3 = allocVector(REALSXP, 1));
   ++nProtected;
   if(fixed < 1) {
     b += REAL(getListElement(x, "b"))[0];
-    REAL(tau3)[0] = 1 / rand_gamma(REAL(getListElement(x, "rank"))[0], b);
+    GetRNGstate();
+    REAL(tau3)[0] = 1 / rgamma(REAL(getListElement(x, "rank"))[0], 1 / b);
+    PutRNGstate();
   } else {
     REAL(tau3)[0] = tau2;
   }
-
-  qbeta = 0.5 * sdiag0 - 0.5 * qbeta;
-
-/*pvec(mu1);*/
-
-/*Rprintf("\npibetaprop %g\n", pibetaprop);*/
-/*Rprintf("qbeta %g\n", qbeta);*/
-/*Rprintf("p2 %g\n", p2);*/
-/*Rprintf("pibeta %g\n", pibeta);*/
-/*Rprintf("qbetaprop %g\n", qbetaprop);*/
-/*Rprintf("p1 %g\n", p1);*/
 
   SEXP alpha;
   PROTECT(alpha = allocVector(REALSXP, 1));
