@@ -177,11 +177,35 @@ if(FALSE) {
 
 
 ## Gamma.
-dgp_gamma <- function(mu = NULL, sigma = NULL, ...)
+dgp_gamma <- function(n = 500, mu = NULL, sigma = NULL, ...)
 {
+  if(is.null(mu)) {
+    mu <- list(nobs = n, const = 0,
+      type = list(c("unimodal", "quadratic", "const")))
+  }
+  if(is.null(sigma)) {
+    sigma <- list(nobs = n, const = 0,
+      type = list(c("linear", "sinus", "const")))
+  }
 
+
+  mu <- do.call("dgp_eta", mu)
+  sigma <- do.call("dgp_eta", sigma) 
+  m <- exp(mu$eta0)
+  s <- exp(sigma$eta0)
+  y <- rgamma(n, shape = s, scale = m/s)
+
+  
+  d <- cbind(y, "mu" = mu, "sigma" = sigma)
+  d
 }
 
+if(FALSE) {
+  d <- dgp_gamma()
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma.x11)+sx(sigma.x12), 
+		data = d, family = gamma, engine = "BayesX", verbose = TRUE)
+  d$pred_mu <- predict(b, model = "mu", term = c("x11", "x12"))
+}
 
 ## Beta.
 dgp_beta <- function(mu = NULL, sigma = NULL, ...)
