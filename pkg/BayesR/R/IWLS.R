@@ -134,7 +134,7 @@ smooth.IWLS.default <- function(x, ...)
   }
 
   if(is.null(x$propose)) {
-    if(FALSE) {
+    if(TRUE) {
       x$propose <- propose_default
     } else {
     x$propose <- function(x, family, response, eta, id, ...) {
