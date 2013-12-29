@@ -139,6 +139,7 @@ smooth.IWLS.default <- function(x, ...)
     if(TRUE) {
       x$propose <- propose_default
     } else {
+    require("mvtnorm")
     x$propose <- function(x, family, response, eta, id, ...) {
       ## Compute weights.
       weights <- family$weights[[id]](response, eta)
@@ -263,8 +264,6 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   verbose = TRUE, step = 20, svalues = TRUE, eps = 1e-04, maxit = 100,
   tdir = NULL, ...)
 {
-  require("mvtnorm")
-
   family <- attr(x, "family")
   nx <- family$names
   if(!all(nx %in% names(x)))
@@ -369,7 +368,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
     if(verbose) {
       if(i == 10) {
         elapsed <- c(proc.time() - ptm)[3]
-        rt <- (n.iter - 10) / 10 * elapsed
+        rt <- n.iter / 10 * elapsed
         if(rt < 60)
           cat("Approximate runtime: ", round(rt, 2), "sec\n", sep = "")
         else

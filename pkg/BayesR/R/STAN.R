@@ -51,6 +51,7 @@ jags2stan <- function(x)
     d
   }
 
+  attr(x, "is.stan") <- TRUE
   x <- setupJAGS(x)
   
   data <- c(

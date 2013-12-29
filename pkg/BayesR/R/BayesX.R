@@ -128,7 +128,20 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
   family <- attr(x, "family")
   x$call <- x$family <- NULL
   lhs <- family$bayesx$lhs
-  family$bayesx[c("order", "lhs", "rm.number")] <- NULL
+
+  ## Handling of weights.
+  add.weights <- FALSE
+  if(!is.null(family$bayesx$weights)) {
+    rn <- attributes(attr(x, "model.frame"))$response.name
+    weights <- 1 * (attr(x, "model.frame")[[rn]] != 0)
+    if(length(wi <- grep("weights", names(attr(x, "model.frame")), fixed = TRUE))) {
+      attr(x, "model.frame")[, wi] <- attr(x, "model.frame")[, wi] * weights
+    } else attr(x, "model.frame")[["weights"]] <- weights
+    rm(weights)
+    add.weights <- TRUE
+  }
+
+  family$bayesx[c("order", "lhs", "rm.number", "weights")] <- NULL
 
   args <- list(...)
   model.name <- control$setup$model.name
@@ -195,6 +208,10 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         }
         X <- X[order(X[[obj$response]]), , drop = FALSE]
       }
+      if(length(wi <- grep("weights", names(attr(x, "model.frame")), fixed = TRUE))) {
+        if(nrow(X) == nrow(attr(x, "model.frame")))
+          X$ModelWeights <- unlist(attr(x, "model.frame")[, wi])
+      }
     }
     if(h) X <- unique(X)
 
@@ -258,28 +275,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
 	prg
 	)
 
-  prg <- c(paste('logopen using', file.path(dir, paste(model.name, 'log', sep = '.'))), "", prg)
-  
-  if(family[[1]]=="betazi") {
-		prg <- c(prg,
-			paste(dname0, '.generate w = 1 ', sep = ''),	
-			paste(dname0, '.replace w = 0 if ',  response.name,  '= 0 ', sep = '')
-		    )
-  }
-  if(family[[1]]=="betaoi") {
-		prg <- c(prg,
-			paste(dname0, '.generate w = 1 ', sep = ''),	
-			paste(dname0, '.replace w = 0 if ',  response.name,  '= 1 ', sep = '')
-		    )
-  }
-  if(family[[1]]=="betazoi") {
-		prg <- c(prg,
-			paste(dname0, '.generate w = 1 ', sep = ''),	
-			paste(dname0, '.replace w = 0 if ',  response.name,  '= 0 ', sep = ''),
-			paste(dname0, '.replace w = 0 if ',  response.name,  '= 1 ', sep = '')
-		    )
-  }
-	
+  prg <- c(paste('logopen using', file.path(dir, paste(model.name, 'log', sep = '.'))), "", prg)	
   prg <- c(prg, paste('\nmcmcreg', model.name))
   prg <- c(prg, paste(model.name, '.outfile = ',
     if(cores < 2) file.path(dir, model.name) else '##outfile##',
@@ -319,6 +315,9 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         }
         if(length(et))
           teqn <- paste(teqn, '=', paste(et, collapse = ' + '))
+        if(x[[j]]$hlevel < 2 & add.weights) {
+          teqn <- paste(teqn, "weight ModelWeights")
+        }
         if(ctr) {
           ok <- control$setup$main
           c2 <- control$prg[!ok]

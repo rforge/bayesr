@@ -162,7 +162,8 @@ betazoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log",
       "sigma2" = c("betainf_sigma2", "scale"),
       "nu" = c("betainf_nu", "shape"),
       "tau" = c("betainf_tau", "mean"),
-	  "order" = 1:4
+	    "order" = 1:4,
+      "weights" = TRUE
     )
   )
   class(rval) <- "family.BayesR"
@@ -185,7 +186,8 @@ betazi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log"),
       "mu" = c("beta_mu", "location"),
       "sigma2" = c("beta_sigma2", "scale"),
       "nu" = c("betainf0_nu", "mean"),
-	  "order" = 1:3
+	    "order" = 1:3,
+      "weights" = TRUE
     )
   )
   class(rval) <- "family.BayesR"
@@ -208,7 +210,8 @@ betaoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", tau = "log")
       "mu" = c("beta_mu", "location"),
       "sigma2" = c("beta_sigma2", "scale"),
       "tau" = c("betainf1_tau", "mean"),
-	  "order" = 1:3
+	    "order" = 1:3,
+      "weights" = TRUE
     )
   )
   class(rval) <- "family.BayesR"
