@@ -22,7 +22,7 @@ jags2stan <- function(x)
     dtype <- function(type) {
       switch(type,
         'integer' = 'int',
-        'numeric' = 'vector',
+        'numeric' = 'real',
         'logical' = NA
       )
     }
@@ -33,7 +33,12 @@ jags2stan <- function(x)
         tx <- dtype(class(x[[j]]))
         if(tx == 'vector') {
           c(rval, paste(tx, '[', length(x[[j]]), '] ', nx[j], ';', sep = ''))
-        } else c(rval, paste(tx, ' ', nx[j], '[', length(x[[j]]), ']', ';', sep = ''))
+        } else {
+          if(length(x[[j]]) > 1)
+            c(rval, paste(tx, ' ', nx[j], '[', length(x[[j]]), ']', ';', sep = ''))
+          else
+            c(rval, paste(tx, ' ', nx[j], ';', sep = ''))
+        }
       } else c(rval, paste('matrix[', nrow(x[[j]]), ',', ncol(x[[j]]), '] ', nx[j], ';', sep = ''))
     }
 
@@ -46,7 +51,7 @@ jags2stan <- function(x)
     if(length(d)) {
       d <- gsub("[i]", "", d, fixed = TRUE)
       d <- gsub("\\s", "", d)
-      d <- paste("vector[", n, "] ", d, ";", sep = "")
+      d <- paste("  real ", d, "[", n, "]", sep = "")
     } else d <- NULL
     d
   }
@@ -57,7 +62,6 @@ jags2stan <- function(x)
   data <- c(
     'data {',
     paste('  ', STAN_data(x$data), sep = ''),
-    paste('  ', STAN_model_data(x$model, x$data$n), sep = ''),
     '}'
   )
 
@@ -74,6 +78,11 @@ jags2stan <- function(x)
     x <- gsub('dgamma(', 'gamma(', x, fixed = TRUE)
     x
   }
+
+  i <- grep("model {", x$model, fixed = TRUE)
+  x$model <- c(x$model[1:i], STAN_model_data(x$model, x$data$n), x$model[(i + 1):length(x$model)])
+  i <- grepl("{", x$model, fixed = TRUE) |  grepl("}", x$model, fixed = TRUE)
+  x$model[!i] <- paste(x$model[!i], ";", sep = "") 
 
   model <- dist2stan(c(data, parameters, x$model))
   model <- gsub('i in 1:n', paste('i in 1:', x$data$n, sep = ''), model, fixed = TRUE)

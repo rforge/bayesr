@@ -125,7 +125,7 @@ JAGSmodel <- function(x, family, cat = FALSE, is.stan = FALSE, ...) {
 
   model <- "model {"
   for(j in 1:k) {
-    model <- c(model, paste(x[[j]]$start, if(is.stan) ";" else NULL, sep = ""))
+    model <- c(model, x[[j]]$start)
   }
   pn <- family$names
   if(!is.null(family$jagstan$reparam))
@@ -142,7 +142,7 @@ JAGSmodel <- function(x, family, cat = FALSE, is.stan = FALSE, ...) {
     paste("    response[i] ~ ", family$jagstan$dist, "(",
       paste(if(is.null(on)) pn else paste(on, ## if(cat) "n" else NULL,
       "[i, 1:", k, "]", sep = ""),
-      collapse = ", "), ")", if(is.stan) ";" else NULL, sep = ""))
+      collapse = ", "), ")", sep = ""))
 #  if(cat) {
 #    npn <- if(is.null(on)) pn else on
 #    model <- c(model, paste("    ", npn, "n[i, ", 1:k, "] <- ",
@@ -155,12 +155,12 @@ JAGSmodel <- function(x, family, cat = FALSE, is.stan = FALSE, ...) {
       reparam <- c(reparam, paste("    rp", j, "[i] <- ", family$jagstan$reparam[j], sep = ""))
     for(j in family$names)
       reparam <- gsub(j, paste(j, "[i]", sep = ""), reparam)
-    model <- c(model, paste(reparam, if(is.stan) ";" else NULL, sep = ""))
+    model <- c(model, reparam)
     pn[repi] <- paste(family$names[repi], "[i]", sep = "")
   }
   if(!is.null(family$jagstan$addparam)) {
     for(j in family$jagstan$addparam)
-      model <- c(model, paste("    ", j, if(is.stan) ";" else NULL, sep = ""))
+      model <- c(model, paste("   ", j))
   }
   if(!is.null(family$jagstan$addvalues)) {
     for(j in names(family$jagstan$addvalues))
@@ -169,10 +169,10 @@ JAGSmodel <- function(x, family, cat = FALSE, is.stan = FALSE, ...) {
 
   for(j in 1:k) {
     model <- c(model, paste("    ", if(is.null(on)) pn[j] else paste(on, "[i, ", j, "]", sep = ""),
-      " <- ", gsub("eta", x[[j]]$eta, links[[j]]), if(is.stan) ";" else NULL, sep = ""))
+      " <- ", gsub("eta", x[[j]]$eta, links[[j]]), sep = ""))
   }
   for(j in 1:k)
-    model <- c(model, paste(x[[j]]$adds, if(is.stan) ";" else NULL, sep = ""))
+    model <- c(model, x[[j]]$adds)
   for(j in 1:k)
     model <- c(model, x[[j]]$param, x[[j]]$smooth)
   model <- c(model, "  }")
