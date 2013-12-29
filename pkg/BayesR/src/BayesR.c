@@ -137,11 +137,30 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   ++nProtected;
   double *XWptr = REAL(XW);
 
-  /* Compute transpose of weighted design matrix */
+  /* Working observations and other stuff. */
+  SEXP z, z2;
+  PROTECT(z = allocVector(REALSXP, n));
+  ++nProtected;
+  PROTECT(z2 = allocVector(REALSXP, n));
+  ++nProtected;
+  SEXP state;
+  PROTECT(state = duplicate(getListElement(x, "state")));
+  ++nProtected;
+  double *zptr = REAL(z);
+  double *z2ptr = REAL(z2);
+  double *etaptr = REAL(getListElement(eta2, CHAR(STRING_ELT(id, 0))));
+  double *scoreptr = REAL(score);
+  double *fitptr = REAL(getListElement(state, "fit"));
+
+  /* Compute transpose of weighted design matrix, */
+  /* working observations and updated predictor. */
   for(i = 0; i < n; i++) {
     for(j = 0; j < k; j++) {
       XWptr[j + k * i] = Xptr[i + n * j] * Wptr[i];
     }
+    zptr[i] = etaptr[i] + scoreptr[i] / Wptr[i];
+    etaptr[i] -= fitptr[i];
+    z2ptr[i] = zptr[i] - etaptr[i];
   }
 
   /* Compute X'WX. */
@@ -198,27 +217,6 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 	  for(i = j + 1; i < k; i++) {
 		  PINVptr[i + j * k] = PINVptr[j + i * k];
     }
-  }
-
-  /* Working observations. */
-  SEXP z, z2;
-  PROTECT(z = allocVector(REALSXP, n));
-  ++nProtected;
-  PROTECT(z2 = allocVector(REALSXP, n));
-  ++nProtected;
-  SEXP state;
-  PROTECT(state = duplicate(getListElement(x, "state")));
-  ++nProtected;
-  double *zptr = REAL(z);
-  double *z2ptr = REAL(z2);
-  double *etaptr = REAL(getListElement(eta2, CHAR(STRING_ELT(id, 0))));
-  double *scoreptr = REAL(score);
-  double *fitptr = REAL(getListElement(state, "fit"));
-
-  for(i = 0; i < n; i++) {
-    zptr[i] = etaptr[i] + scoreptr[i] / Wptr[i];
-    etaptr[i] -= fitptr[i];
-    z2ptr[i] = zptr[i] - etaptr[i];
   }
 
   /* Compute mu. */
@@ -328,17 +326,14 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   double *W2ptr = REAL(weights2);
   double *score2ptr = REAL(score2);
 
-  for(i = 0; i < n; i++) {
-    zptr[i] = etaptr[i] + score2ptr[i] / W2ptr[i];
-    etaptr[i] -= fit1ptr[i];
-    z2ptr[i] = zptr[i] - etaptr[i];
-  }
-
   /* Compute transpose of weighted design matrix */
   for(i = 0; i < n; i++) {
     for(j = 0; j < k; j++) {
       XWptr[j + k * i] = Xptr[i + n * j] * W2ptr[i];
     }
+    zptr[i] = etaptr[i] + score2ptr[i] / W2ptr[i];
+    etaptr[i] -= fit1ptr[i];
+    z2ptr[i] = zptr[i] - etaptr[i];
   }
 
   /* Compute X'WX. */
@@ -382,12 +377,8 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   F77_CALL(dgemm)(transa, transb, &k, &k1, &k, &one,
     PINVptr, &k, mu0ptr, &k, &zero, mu1ptr, &k);
 
-  sdiag0 = 0.0;
-  for(j = 0; j < k; j++) {
-    sdiag0 += log(pow(Lptr[j + k * j], 2));
-  }
-
   double qbeta = 0.0;
+  sdiag0 = 0.0;
 
   for(i = 0; i < k; i++) {
     tsum3 = 0.0;
@@ -395,6 +386,7 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
       tsum3 += (gptr[j] - mu1ptr[j]) * Pptr[j + i * k];
     }
     qbeta += tsum3 * (gptr[i] - mu1ptr[i]);
+    sdiag0 += log(pow(Lptr[i + k * i], 2));
   }
 
   qbeta = 0.5 * sdiag0 - 0.5 * qbeta;
