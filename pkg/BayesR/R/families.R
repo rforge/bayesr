@@ -80,7 +80,7 @@ beta.BayesR <- function(links = c(mu = "logit", sigma = "log"), ...)
     "names" = c("mu", "sigma"),
     "links" =  links,
     "valid.response" = function(x) {
-      if(ok <- !all(x > 0 & x < 1)) stop("response values not in [0, 1]!", call. = FALSE)
+      if(ok <- !all(x > 0 & x < 1)) stop("response values not in (0, 1)!", call. = FALSE)
       ok
     },
     bayesx = list(
@@ -146,25 +146,72 @@ beta.BayesR <- function(links = c(mu = "logit", sigma = "log"), ...)
 betazoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log", tau = "log"), ...)
 {
   rval <- list(
-    "family" = "betainflated",
+    "family" = "betazoi",
     "names" = c("mu", "sigma2", "nu", "tau"),
     "links" =  parse.links(links, c(mu = "logit", sigma2 = "logit", nu = "log", tau = "log"), ...),
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
-      if(ok <- !all(x > 0 & x < 1)) stop("response values not in [0, 1]!", call. = FALSE)
+      if(ok <- !all(x >= 0 & x <= 1)) stop("response values not in [0, 1]!", call. = FALSE)
       ok
     },
-    "order" = 4:1,
     bayesx = list(
       "mu" = c("betainf_mu", "location"),
       "sigma2" = c("betainf_sigma2", "scale"),
       "nu" = c("betainf_nu", "shape"),
-      "tau" = c("betainf_tau", "mean")
+      "tau" = c("betainf_tau", "mean"),
+	  "order" = 1:4
     )
   )
   class(rval) <- "family.BayesR"
   rval
 }
+
+
+betazi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log"), ...)
+{
+  rval <- list(
+    "family" = "betazi",
+    "names" = c("mu", "sigma2", "nu"),
+    "links" =  parse.links(links, c(mu = "logit", sigma2 = "logit", nu = "log"), ...),
+    "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x >= 0 & x < 1)) stop("response values not in [0, 1)!", call. = FALSE)
+      ok
+    },
+    bayesx = list(
+      "mu" = c("beta_mu", "location"),
+      "sigma2" = c("beta_sigma2", "scale"),
+      "nu" = c("betainf0_nu", "mean"),
+	  "order" = 1:3
+    )
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
+betaoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", tau = "log"), ...)
+{
+  rval <- list(
+    "family" = "betazi",
+    "names" = c("mu", "sigma2", "tau"),
+    "links" =  parse.links(links, c(mu = "logit", sigma2 = "logit", tau = "log"), ...),
+    "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x > 0 & x <= 1)) stop("response values not in (0, 1]!", call. = FALSE)
+      ok
+    },
+    bayesx = list(
+      "mu" = c("beta_mu", "location"),
+      "sigma2" = c("beta_sigma2", "scale"),
+      "tau" = c("betainf1_tau", "mean"),
+	  "order" = 1:3
+    )
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
 
 
 binomial.BayesR <- function(link = "logit", ...)
@@ -274,7 +321,7 @@ mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
       "sigma1" = c("bivnormal_sigma", "scale1"),
       "sigma2" = c("bivnormal_sigma", "scale2"),
       "rho" = c("bivnormal_rho", "rho"),
-      "order" = 5:1,
+      "order" = 1:5,
       "rm.number" = TRUE
     )
   )
@@ -298,7 +345,7 @@ mvt.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
       "sigma2" = c("bivt_sigma", "scale2"),
       "rho" = c("bivt_rho", "rho"),
 	  "df" = c("bivt_df", "df"),
-      "order" = 6:1,
+      "order" = 1:6,
       "rm.number" = TRUE
     )
   )

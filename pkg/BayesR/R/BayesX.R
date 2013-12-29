@@ -250,21 +250,40 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
       x[[j]]$hlevel <- 1
     }
   }
-
+  response.name <- attr(attr(x, "model.frame"), "response.name")
   write.table(d, file = dpath0, quote = FALSE, row.names = FALSE, col.names = TRUE)
   prg <- c(
     paste('dataset', dname0),
     paste(dname0, '.infile using ', dpath0, sep = ''),
-    prg
-  )
+	prg
+	)
 
   prg <- c(paste('logopen using', file.path(dir, paste(model.name, 'log', sep = '.'))), "", prg)
+  
+  if(family[[1]]=="betazi") {
+		prg <- c(prg,
+			paste(dname0, '.generate w = 1 ', sep = ''),	
+			paste(dname0, '.replace w = 0 if ',  response.name,  '= 0 ', sep = '')
+		    )
+  }
+  if(family[[1]]=="betaoi") {
+		prg <- c(prg,
+			paste(dname0, '.generate w = 1 ', sep = ''),	
+			paste(dname0, '.replace w = 0 if ',  response.name,  '= 1 ', sep = '')
+		    )
+  }
+  if(family[[1]]=="betazoi") {
+		prg <- c(prg,
+			paste(dname0, '.generate w = 1 ', sep = ''),	
+			paste(dname0, '.replace w = 0 if ',  response.name,  '= 0 ', sep = ''),
+			paste(dname0, '.replace w = 0 if ',  response.name,  '= 1 ', sep = '')
+		    )
+  }
+	
   prg <- c(prg, paste('\nmcmcreg', model.name))
   prg <- c(prg, paste(model.name, '.outfile = ',
     if(cores < 2) file.path(dir, model.name) else '##outfile##',
     sep = ''))
-
-  response.name <- attr(attr(x, "model.frame"), "response.name")
 
   make_eqn <- function(x, ctr = TRUE, id = NULL) {
     n <- length(x)
