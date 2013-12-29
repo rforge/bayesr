@@ -59,6 +59,8 @@ transformIWLS <- function(x, ...)
       if(length(obj$smooth)) {
         for(j in seq_along(obj$smooth)) {
           obj$smooth[[j]] <- smooth.IWLS(obj$smooth[[j]])
+          if(!is.null(obj$smooth[[j]]$rank))
+            obj$smooth[[j]]$rank <- as.numeric(obj$smooth[[j]]$rank)
           if(!is.null(obj$smooth[[j]]$Xf)) {
             obj$smooth[[j]]$Xfcn <- paste(paste(paste(obj$smooth[[j]]$term, collapse = "."),
               "Xf", sep = "."), 1:ncol(obj$smooth[[j]]$Xf), sep = ".")
