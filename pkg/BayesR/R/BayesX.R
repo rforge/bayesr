@@ -124,6 +124,7 @@ controlBayesX <- function(n.iter = 1200, thin = 1, burnin = 200,
 setupBayesX <- function(x, control = controlBayesX(...), ...)
 {
   names(attr(x, "model.frame")) <- rmf(names(attr(x, "model.frame")))
+  mf.names <- names(attr(x, "model.frame"))
 
   family <- attr(x, "family")
   x$call <- x$family <- NULL
@@ -132,15 +133,18 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
   ## Handling of weights.
   add.weights <- FALSE
   if(!is.null(family$bayesx$weights)) {
+    weights0 <- attr(x, "model.frame")$weights
     rn <- attributes(attr(x, "model.frame"))$response.name
-    weights <- 1 * (attr(x, "model.frame")[[rn]] != 0)
-    if(length(wi <- grep("weights", names(attr(x, "model.frame")), fixed = TRUE))) {
-      attr(x, "model.frame")[, wi] <- attr(x, "model.frame")[, wi] * weights
-    } else attr(x, "model.frame")[["weights"]] <- weights
-    rm(weights)
+    for(j in names(family$bayesx$weights)) {
+      weights1 <- family$bayesx$weights[[j]](attr(x, "model.frame")[[rn]])
+      if(!is.null(weights0)) weights1 <- weights1 * weights0
+      attr(x, "model.frame")[[paste(j, "weights", sep = "")]] <- weights1
+      rm(weights0, weights1)
+    }
+    mf.names <- names(attr(x, "model.frame"))
     add.weights <- TRUE
   }
-  if(length(grep("weights", names(attr(x, "model.frame")))))
+  if(length(grep("weights", mf.names)))
     add.weights <- TRUE
 
   family$bayesx[c("order", "lhs", "rm.number", "weights")] <- NULL
@@ -153,7 +157,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
   cores <- control$setup$cores
   if(is.null(cores)) cores <- 1
 
-  BayesX_data <- function(obj, h = FALSE) {
+  BayesX_data <- function(obj, h = FALSE, id = NULL) {
     if(!is.null(obj$cat.formula) & !h) {
       obj$response <- formula_respname(obj$cat.formula)
       obj$response.vec <- attr(x, "model.frame")[[obj$response]]
@@ -210,9 +214,14 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         }
         X <- X[order(X[[obj$response]]), , drop = FALSE]
       }
-      if(length(wi <- grep("weights", names(attr(x, "model.frame")), fixed = TRUE))) {
-        if(nrow(X) == nrow(attr(x, "model.frame")))
-          X$ModelWeights <- unlist(attr(x, "model.frame")[, wi])
+      if(!h) {
+        wi <- paste(id, "weights", sep = "")
+        if(!is.null(id) & (wi %in% mf.names)) {
+          X[[wi]] <- attr(x, "model.frame")[[wi]]
+        } else {
+          if("weights" %in% mf.names)
+            X$ModelWeights <- attr(x, "model.frame")[["weights"]]
+        }
       }
     }
     if(h) X <- unique(X)
@@ -231,7 +240,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
       for(i in 1:length(x[[j]])) {
         d2 <- NULL
         if(i < 2) {
-          d2 <- BayesX_data(x[[j]][[i]])
+          d2 <- BayesX_data(x[[j]][[i]], id = nx[j])
           if(is.null(d)) {
             d <- d2
           } else {
@@ -256,12 +265,12 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         }
       }
     } else {
-      d2 <- BayesX_data(x[[j]])
+      d2 <- BayesX_data(x[[j]], id = nx[j])
       if(is.null(d)) {
         d <- d2
       } else {
         if(!is.null(d2))
-          d <- cbind(d, BayesX_data(x[[j]]))
+          d <- cbind(d, BayesX_data(x[[j]], id = nx[j]))
       }
       d2 <- NULL
       d <- d[, unique(names(d)), drop = FALSE]
@@ -318,7 +327,13 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         if(length(et))
           teqn <- paste(teqn, '=', paste(et, collapse = ' + '))
         if(x[[j]]$hlevel < 2 & add.weights) {
-          teqn <- paste(teqn, "weight ModelWeights")
+          wi <- paste(nx[if(is.null(id)) j else id], "weights", sep = "")
+          if(wi %in% mf.names) {
+            teqn <- paste(teqn, "weight", wi)
+          } else {
+            if("weights" %in% mf.names)
+              teqn <- paste(teqn, "weight ModelWeights")
+          }
         }
         if(ctr) {
           ok <- control$setup$main

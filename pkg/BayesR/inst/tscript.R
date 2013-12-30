@@ -98,7 +98,7 @@ b2 <- bayesx2(y ~ sx(x1, by = x2), data = dat)
 
 
 ## IWLS test
-n <- 500
+n <- 30
 dat <- data.frame("x" = sort(runif(n, -3, 3)))
 dat$y <- with(dat, 1.2 + sin(x) + rnorm(n, sd = scale2(cos(x), 0.1, 0.8)))
 
