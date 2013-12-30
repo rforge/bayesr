@@ -98,12 +98,9 @@ b2 <- bayesx2(y ~ sx(x1, by = x2), data = dat)
 
 
 ## IWLS test
-n <- 30
+n <- 50
 dat <- data.frame("x" = sort(runif(n, -3, 3)))
 dat$y <- with(dat, 1.2 + sin(x) + rnorm(n, sd = scale2(cos(x), 0.1, 0.8)))
-
-b <- xreg(y ~ s(x), ~ s(x), family = gaussian, data = dat,
-  setup = jags2stan, engine = samplerSTAN, results = function(x, so) { so })
 
 b <- bayesr(y ~ s(x), ~ s(x), family = gaussian, data = dat, engine = "STAN")
 

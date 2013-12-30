@@ -273,7 +273,7 @@ buildJAGS.smooth <- function(smooth, setup, i, zero) {
     setup$priors.coef <- c(setup$priors.coef, tmp)
     setup$loops <- c(setup$loops, kx)
     if(!zero)
-      setup$inits[[paste("b", i, sep = "")]] <- runif(kx)
+      setup$inits[[paste("b", i, sep = "")]] <- runif(kx, 0.1, 0.2)
     setup$psave <- c(setup$psave, paste("b", i, sep = ""))
   }
   if(kr > 0) {
@@ -296,11 +296,11 @@ buildJAGS.smooth <- function(smooth, setup, i, zero) {
           paste("  ", taug, 0, "~ dt(0, 10, 1)", sep = ""))
       }
       if(!zero)
-        	setup$inits[[taug]] <- runif(1, 0.00001, 0.0001)
+        	setup$inits[[taug]] <- runif(1, 0.1, 0.2)
       setup$psave <- c(setup$psave, taug)
     }
     if(!zero)
-      setup$inits[[paste("g", i, sep = "")]] <- runif(kr)
+      setup$inits[[paste("g", i, sep = "")]] <- runif(kr, 0.1, 0.2)
     setup$psave <- c(setup$psave, paste("g", i, sep = ""))
   }
 
@@ -364,7 +364,7 @@ buildJAGS.smooth.special.gc.smooth <- function(smooth, setup, i, zero)
   pn <- paste("g", i, sep = "")
 
   setup$data[[paste("X", pn, sep = "")]] <- as.numeric(smooth$X)
-  setup$inits[[paste(pn, "0", sep = "")]] <- runif(3)
+  setup$inits[[paste(pn, "0", sep = "")]] <- runif(3, 0.1, 0.2)
   setup$psave <- c(setup$psave, pn)
 
   setup$close <- c(setup$close,
@@ -391,8 +391,8 @@ buildJAGS.smooth.special.gc.smooth <- function(smooth, setup, i, zero)
       paste("    taug", i, "[j] ~ dgamma(1.0E-3, 1.0E-3)", sep = "")
     )
     setup$psave <- c(setup$psave, paste(pn, "r", sep = ""), paste("taug", i, sep = ""))
-    setup$inits[[paste(pn, "r0", sep = "")]] <- matrix(runif(length(smooth$by.levels) * 3), ncol = 3)
-    setup$inits[[paste("taug", i, sep = "")]] <- runif(3, 0.0001, 0.001)
+    setup$inits[[paste(pn, "r0", sep = "")]] <- matrix(runif(length(smooth$by.levels) * 3, 0.1, 0.2), ncol = 3)
+    setup$inits[[paste("taug", i, sep = "")]] <- runif(3, 0.1, 0.2)
   }
 
   setup$close <- c(setup$close, "  }")
@@ -425,7 +425,7 @@ buildJAGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
     setup$priors.coef <- c(setup$priors.coef, tmp)
     setup$loops <- c(setup$loops, kx)
     if(!zero)
-      setup$inits[[paste("b", i, sep = "")]] <- runif(kx)
+      setup$inits[[paste("b", i, sep = "")]] <- runif(kx, 0.1, 0.2)
     setup$psave <- c(setup$psave, paste("b", i, sep = ""))
   }
   if(kr > 0) {
@@ -443,7 +443,7 @@ buildJAGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
       setup$priors.scale <- c(setup$priors.scale, paste("  ", taug,
         if(zero) " <- 0.0" else " ~ dgamma(1.0E-6, 1.0E-6)", sep = ""))
       if(!zero)
-        	setup$inits[[taug]] <- runif(1, 0.00001, 0.0001)
+        	setup$inits[[taug]] <- runif(1, 0.1, 0.2)
       setup$psave <- c(setup$psave, taug)
     }
   }
@@ -460,7 +460,7 @@ buildJAGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
   setup$priors.coef <- c(setup$priors.coef, tmp)
   setup$loops <- c(setup$loops, kw)
   if(!zero)
-    setup$inits[[paste("w", i, sep = "")]] <- runif(kw)
+    setup$inits[[paste("w", i, sep = "")]] <- runif(kw, 0.1, 0.2)
   setup$psave <- c(setup$psave, paste("w", i, sep = ""))
 
   fall0 <- paste(fall0, c(1, paste("w", i, "[", 1:(length(fall0) - 1), "]", sep = "")), sep = "*")

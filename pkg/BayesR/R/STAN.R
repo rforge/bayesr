@@ -80,6 +80,16 @@ jags2stan <- function(x)
   }
 
   i <- grep("model {", x$model, fixed = TRUE)
+  for(j in (i + 1):length(x$model)) {
+    if(grepl("}", x$model[j], fixed = TRUE))
+      break
+  }
+
+  i2 <- i + 2; j2 <- j - 1
+  x$model[i2:j2] <- rev(x$model[i2:j2])
+  x$model <- c(x$model[i], x$model[(j + 1):(length(x$model) - 1)],
+    x$model[(i + 1):j], x$model[length(x$model)])
+
   x$model <- c(x$model[1:i], STAN_model_data(x$model, x$data$n), x$model[(i + 1):length(x$model)])
   i <- grepl("{", x$model, fixed = TRUE) |  grepl("}", x$model, fixed = TRUE)
   x$model[!i] <- paste(x$model[!i], ";", sep = "") 
@@ -97,9 +107,8 @@ jags2stan <- function(x)
 ## (3) Interface to the STAN sampler. ##
 ########################################
 samplerSTAN <- function(x, tdir = NULL,
-  n.chains = 1, n.adapt = 100,
-  n.iter = 4000, thin = 2, burnin = 1000,
-  seed = NULL, verbose = TRUE, set.inits = FALSE, ...)
+  n.chains = 1, n.iter = 4000, thin = 2, burnin = 1000,
+  seed = NULL, verbose = FALSE, ...)
 {
   require("rstan")
 
@@ -123,5 +132,10 @@ samplerSTAN <- function(x, tdir = NULL,
   smodel <- stan(mfile, fit = NA, data = x$data, chains = n.chains, iter = n.iter,
     thin = thin, warmup = burnin, seed = seed, verbose = verbose, ...)
 
-  smodel
+  samples <- slot(smodel, "sim")$samples
+  for(j in seq_along(samples))
+    samples[[j]] <- as.mcmc(do.call("cbind", samples[[j]]))
+  samples <- as.mcmc.list(samples)
+
+  samples
 }

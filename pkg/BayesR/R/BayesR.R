@@ -114,7 +114,6 @@ bayesr <- function(formula, family = gaussian, data = NULL, knots = NULL,
   }
 
   if(xengine == "IWLS") {
-
     transform <- transformIWLS
     setup <- FALSE
     engine <- function(x) {

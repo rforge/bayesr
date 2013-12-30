@@ -141,7 +141,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
       attr(x, "model.frame")[[paste(j, "weights", sep = "")]] <- weights1
       rm(weights1)
     }
-	rm(weights0)
+	  rm(weights0)
     mf.names <- names(attr(x, "model.frame"))
     add.weights <- TRUE
   }
@@ -287,14 +287,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
 	prg
 	)
 
-  prg <- c(paste('logopen using', file.path(dir, paste(model.name, 'log', sep = '.'))), "", prg)	
-  
-  #if(length(grep("weights", mf.names))) {
-#	for(j in grep("weights", mf.names)) {
-		
-#	}
-#  }
-  
+  prg <- c(paste('logopen using', file.path(dir, paste(model.name, 'log', sep = '.'))), "", prg) 
   prg <- c(prg, paste('\nmcmcreg', model.name))
   prg <- c(prg, paste(model.name, '.outfile = ',
     if(cores < 2) file.path(dir, model.name) else '##outfile##',
