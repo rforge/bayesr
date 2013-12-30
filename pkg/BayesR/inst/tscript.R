@@ -98,11 +98,11 @@ b2 <- bayesx2(y ~ sx(x1, by = x2), data = dat)
 
 
 ## IWLS test
-n <- 50
+n <- 100
 dat <- data.frame("x" = sort(runif(n, -3, 3)))
 dat$y <- with(dat, 1.2 + sin(x) + rnorm(n, sd = scale2(cos(x), 0.1, 0.8)))
 
-b <- bayesr(y ~ s(x), ~ s(x), family = gaussian, data = dat, engine = "STAN")
+b <- bayesr(y ~ s(x), ~ s(x), family = gaussian, data = dat, engine = "IWLS")
 
 plot(b)
 plot(b, which = "samples")

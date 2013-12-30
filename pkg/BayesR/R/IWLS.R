@@ -368,12 +368,12 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
     if(verbose) {
       if(i == 10) {
         elapsed <- c(proc.time() - ptm)[3]
-        rt <- n.iter / 10 * elapsed
-        if(rt < 60)
-          cat("Approximate runtime: ", round(rt, 2), "sec\n", sep = "")
-        else
-          cat("Approximate runtime: ", round(rt / 60, 2), "min\n", sep = "")
-        cat("|", rep(" ", nstep), "|   0%", sep = "")
+        rt <- elapsed / i * (n.iter - i)
+        rt <- if(rt > 60) {
+          paste(formatC(format(round(rt / 60, 2), nsmall = 2), width = 5), "min", sep = "")
+        } else paste(formatC(format(round(rt, 2), nsmall = 2), width = 5), "sec", sep = "")
+        cat("|", rep(" ", nstep), "|   0% ", rt, sep = "")
+        if(.Platform$OS.type != "unix") flush.console()
       }
       if(i %% step == 0) {
         cat("\r")
@@ -382,12 +382,11 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
           paste(rep(" ", round(nstep * (1 - p))), collapse = ""), "| ",
           formatC(round(p, 2) * 100, width = 3), "%", sep = "")
         elapsed <- c(proc.time() - ptm)[3]
-        elapsed <- if(elapsed < 60) {
-          paste(formatC(format(round(elapsed, 2), nsmall = 2), width = 5), "sec", sep = "")
-        } else {
-          paste(formatC(format(round(elapsed / 60, 2), nsmall = 2), width = 5), "min", sep = "")
-        }
-        cat(p, elapsed, sep = " ")
+        rt <- elapsed / i * (n.iter - i)
+        rt <- if(rt > 60) {
+          paste(formatC(format(round(rt / 60, 2), nsmall = 2), width = 5), "min", sep = "")
+        } else paste(formatC(format(round(rt, 2), nsmall = 2), width = 5), "sec", sep = "")
+        cat(p, rt, sep = " ")
         if(.Platform$OS.type != "unix") flush.console()
       }
     }
