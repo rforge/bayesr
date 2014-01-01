@@ -215,14 +215,14 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         }
         X <- X[order(X[[obj$response]]), , drop = FALSE]
       }
-      if(!h) {
-        wi <- paste(id, "weights", sep = "")
-        if(!is.null(id) & (wi %in% mf.names)) {
-          X[[wi]] <- attr(x, "model.frame")[[wi]]
-        } else {
-          if("weights" %in% mf.names)
-            X$ModelWeights <- attr(x, "model.frame")[["weights"]]
-        }
+    }
+    if(!h) {
+      wi <- paste(id, "weights", sep = "")
+      if(!is.null(id) & (wi %in% mf.names)) {
+        X[[wi]] <- attr(x, "model.frame")[[wi]]
+      } else {
+        if("weights" %in% mf.names)
+          X$ModelWeights <- attr(x, "model.frame")[["weights"]]
       }
     }
     if(h) X <- unique(X)
