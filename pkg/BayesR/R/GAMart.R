@@ -148,22 +148,22 @@ dgp_eta <- function(nobs = c(500, 100, 10), const = 1.2,
 ## (3) Data generating functions. ##
 ####################################
 ## Gaussian.
-dgp_gaussian <- function(n = 500, mu = NULL, sigma = NULL, range.sigma = c(0.3, 1.2), ...)
+dgp_gaussian <- function(n = 500, mu = NULL, sigma2 = NULL, range.sigma2 = c(0.3, 1.2), ...)
 {
   if(is.null(mu)) {
     mu <- list(nobs = n, const = 0.5,
       type = list(c("unimodal", "quadratic", "const")))
   }
-  if(is.null(sigma)) {
-    sigma <- list(nobs = n, const = 0.01,
+  if(is.null(sigma2)) {
+    sigma2 <- list(nobs = n, const = 0.01,
       type = list(c("pick", "const")))
   }
 
   mu <- do.call("dgp_eta", mu)
-  sigma <- do.call("dgp_eta", sigma)
+  sigma2 <- do.call("dgp_eta", sigma2)
 
-  d <- data.frame("mu" = mu, "sigma" = sigma)
-  sd <- scale2(sigma$eta0, range.sigma[1], range.sigma[2])
+  d <- data.frame("mu" = mu, "sigma2" = sigma2)
+  sd <- sqrt(scale2(sigma2$eta0, range.sigma2[1], range.sigma2[2]))
   d$y <- rnorm(nrow(mu), mean = mu$eta0, sd = sd)
 
   d
@@ -171,7 +171,7 @@ dgp_gaussian <- function(n = 500, mu = NULL, sigma = NULL, range.sigma = c(0.3, 
 
 if(FALSE) {
   d <- dgp_gaussian()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma.x11), data = d, engine = "BayesX", verbose = TRUE)
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma2.x11), data = d, engine = "BayesX", verbose = TRUE)
   d$p <- predict(b, model = "mu", term = c("x11", "x12"))
 }
 
@@ -240,33 +240,33 @@ if(FALSE) {
 }
 
 ## Lognormal.
-dgp_lognormal <- function(n = 500, mu = NULL, sigma = NULL, ...)
+dgp_lognormal <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
 {
   if(is.null(mu)) {
     mu <- list(nobs = n, const = 0,
       type = list(c("complicated", "quadratic", "const")))
   }
-  if(is.null(sigma)) {
-    sigma <- list(nobs = n, const = 0,
+  if(is.null(sigma2)) {
+    sigma2 <- list(nobs = n, const = 0,
       type = list(c("quadratic", "linear", "const")))
   }
 
 
   mu <- do.call("dgp_eta", mu)
-  sigma <- do.call("dgp_eta", sigma) 
+  sigma2 <- do.call("dgp_eta", sigma2) 
   m <- exp(mu$eta0)
-  s <- exp(sigma$eta0)
+  s <- exp(sigma2$eta0)
   y <- rlnorm(n, meanlog = m, sdlog = sqrt(s))
 
   
-  d <- cbind(y, "mu" = mu, "sigma2" = sigma)
+  d <- cbind(y, "mu" = mu, "sigma2" = sigma2)
   d
 }
 
 if(FALSE) {
   d <- dgp_lognormal()
   b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma2.x11)+sx(sigma2.x12), 
-		data = d, family = lognormal.BayesR(sd = FALSE), engine = "BayesX", verbose = TRUE)
+		data = d, family = lognormal, engine = "BayesX", verbose = TRUE)
   plot(b)
   summary(b)
   mu.f11.est <- predict(b, model = "mu", term = 1, what = "terms")
