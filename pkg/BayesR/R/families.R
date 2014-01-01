@@ -257,7 +257,7 @@ binomial.BayesR <- function(link = "logit", ...)
 
 
 
-gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
+gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), sd = TRUE, ...)
 {
   links <- parse.links(links, c(mu = "identity", sigma = "log"), ...)
   linkinv <- list()
@@ -270,11 +270,11 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
     "links" = links,
     bayesx = list(
       "mu" = switch(links["mu"],
-        "identity" = c("normal_mu", "mean"),
+        "identity" = c("normal2_mu", "mean"),
         "inverse" = c("normal_mu_inv", "mean")
       ),
       "sigma" = switch(links["sigma"],
-        "log" = c("normal_sigma2", "scale"),
+        "log" = c("normal2_sigma", "scale"),
         "logit" = c("normal_sigma2_logit", "scale")
       )
     ),
@@ -296,6 +296,10 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
       "sigma" = function(y, eta, ...) { rep(0.5, length(y)) }
     )
   )
+  if(sd == FALSE) {
+	rval$bayesx[[1]][[1]] <- "normal_mu"
+	rval$bayesx[[2]][[1]] <- "normal_sigma2"
+  }
   class(rval) <- "family.BayesR"
   rval
 }
@@ -312,15 +316,68 @@ invgaussian.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
     "family" = "invgaussian",
     "names" = c("mu", "sigma2"),
     "links" = links,
+	"valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
     bayesx = list(
       "mu"  = c("invgaussian_mu", "mean"),
-      "sigma" = c("invgaussian_sigma2", "scale")
+      "sigma2" = c("invgaussian_sigma2", "scale")
       )
   )
   class(rval) <- "family.BayesR"
   rval
 }
 
+gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
+{
+  rval <- list(
+    "family" = "gamma",
+    "names" = c("mu", "sigma"),
+    "links" = parse.links(links, c(mu = "log", sigma = "log"), ...),
+	"valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
+    bayesx = list(
+      "mu" = c("gamma_mu", "mean"),
+      "sigma" = c("gamma_sigma", "shape")
+    ),
+    jagstan = list(
+      "dist" = "dgamma",
+      "eta" = JAGSeta,
+      "model" = JAGSmodel
+    )
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
+lognormal.BayesR <- function(links = c(mu = "log", sigma = "log"), sd = TRUE, ...)
+{
+  rval <- list(
+    "family" = "gaussian",
+    "names" = c("mu", "sigma"),
+    "links" = parse.links(links, c(mu = "log", sigma = "log"), ...),
+    "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
+    bayesx = list(
+      "mu" = c("lognormal2_mu", "mean"),
+      "sigma" = c("lognormal2_sigma", "scale")
+    ))
+  if(sd == FALSE) {
+	rval$bayesx[[1]][[1]] <- "lognormal_mu"
+	rval$bayesx[[2]][[1]] <- "lognormal_sigma2"
+  }
+  class(rval) <- "family.BayesR"
+  rval
+}
 
 
 mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
@@ -370,45 +427,6 @@ mvt.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
 }
 
 
-gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
-{
-  rval <- list(
-    "family" = "gamma",
-    "names" = c("mu", "sigma"),
-    "links" = parse.links(links, c(mu = "log", sigma = "log"), ...),
-    bayesx = list(
-      "mu" = c("gamma_mu", "mean"),
-      "sigma" = c("gamma_sigma", "shape")
-    ),
-    jagstan = list(
-      "dist" = "dgamma",
-      "eta" = JAGSeta,
-      "model" = JAGSmodel
-    )
-  )
-  class(rval) <- "family.BayesR"
-  rval
-}
-
-
-lognormal.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
-{
-  rval <- list(
-    "family" = "gaussian",
-    "names" = c("mu", "sigma"),
-    "links" = parse.links(links, c(mu = "log", sigma = "log"), ...),
-    "valid.response" = function(x) {
-      if(is.factor(x)) return(FALSE)
-      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
-      ok
-    },
-    bayesx = list(
-      "mu" = c("lognormal_mu", "mean"),
-      "sigma" = c("lognormal_sigma2", "scale")
-    ))
-  class(rval) <- "family.BayesR"
-  rval
-}
 
 
 multinomial.BayesR <- function(link = "probit", ...)

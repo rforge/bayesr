@@ -171,7 +171,7 @@ dgp_gaussian <- function(n = 500, mu = NULL, sigma = NULL, range.sigma = c(0.3, 
 
 if(FALSE) {
   d <- dgp_gaussian()
-  b <- bayesx2(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma.x11), data = d)
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma.x11), data = d, engine = "BayesX", verbose = TRUE)
   d$p <- predict(b, model = "mu", term = c("x11", "x12"))
 }
 
@@ -206,6 +206,75 @@ if(FALSE) {
 		data = d, family = gamma, engine = "BayesX", verbose = TRUE)
   d$pred_mu <- predict(b, model = "mu", term = c("x11", "x12"))
 }
+
+## Inverse Gaussian.
+dgp_invgaussian <- function(n = 500, mu = NULL, sigma = NULL, ...)
+{
+  require(gamlss)
+  if(is.null(mu)) {
+    mu <- list(nobs = n, const = 0,
+      type = list(c("unimodal", "quadratic", "const")))
+  }
+  if(is.null(sigma)) {
+    sigma <- list(nobs = n, const = 0,
+      type = list(c("linear", "sinus", "const")))
+  }
+
+
+  mu <- do.call("dgp_eta", mu)
+  sigma <- do.call("dgp_eta", sigma) 
+  m <- exp(mu$eta0)
+  s <- exp(sigma$eta0)
+  y <- rIG(n, mu = m, sigma = sqrt(s))
+
+  
+  d <- cbind(y, "mu" = mu, "sigma2" = sigma)
+  d
+}
+
+if(FALSE) {
+  d <- dgp_invgaussian()
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma2.x11)+sx(sigma2.x12), 
+		data = d, family = invgaussian, engine = "BayesX", verbose = TRUE)
+  d$pred_mu <- predict(b, model = "mu", term = c("x11", "x12"))
+}
+
+## Lognormal.
+dgp_lognormal <- function(n = 500, mu = NULL, sigma = NULL, ...)
+{
+  if(is.null(mu)) {
+    mu <- list(nobs = n, const = 0,
+      type = list(c("complicated", "quadratic", "const")))
+  }
+  if(is.null(sigma)) {
+    sigma <- list(nobs = n, const = 0,
+      type = list(c("quadratic", "linear", "const")))
+  }
+
+
+  mu <- do.call("dgp_eta", mu)
+  sigma <- do.call("dgp_eta", sigma) 
+  m <- exp(mu$eta0)
+  s <- exp(sigma$eta0)
+  y <- rlnorm(n, meanlog = m, sdlog = sqrt(s))
+
+  
+  d <- cbind(y, "mu" = mu, "sigma2" = sigma)
+  d
+}
+
+if(FALSE) {
+  d <- dgp_lognormal()
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma2.x11)+sx(sigma2.x12), 
+		data = d, family = lognormal.BayesR(sd = FALSE), engine = "BayesX", verbose = TRUE)
+  plot(b)
+  summary(b)
+  mu.f11.est <- predict(b, model = "mu", term = 1, what = "terms")
+  mu.f11.est.2p5 <- predict(b, model = "mu", term = 1, what = "terms", FUN = quantile, 0.025)
+  mu.f11.est.97p5 <- predict(b, model = "mu", term = 1, what = "terms", FUN = quantile, 0.975)
+}
+
+
 
 ## Beta.
 dgp_beta <- function(mu = NULL, sigma = NULL, ...)
