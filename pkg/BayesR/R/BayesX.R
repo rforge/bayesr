@@ -821,7 +821,7 @@ resultsBayesX <- function(x, samples, ...)
               link <- make.link2(link)
             } else link <- NULL
             effects <- partial.residuals(effects, attr(x, "model.frame")[[obj$response]],
-              fitted.values, NULL)
+              fitted.values, family)
           }
         }
       }
@@ -831,7 +831,9 @@ resultsBayesX <- function(x, samples, ...)
         "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(attr(x, "model.frame")),
         "formula" = obj$formula), "param.effects" = param.effects, "effects" = effects,
         "effects.hyp" = effects.hyp, "scale" = scale.m, "fitted.values" = fitted.values,
-        "residuals" = if(!is.factor(obj$response.vec)) obj$response.vec - fitted.values else NULL
+        "residuals" = if(!is.factor(obj$response.vec)) {
+          obj$response.vec - family$mu(fitted.values)
+        } else NULL
       )
 
       class(rval[[j]]) <- "bayesr"

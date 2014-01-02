@@ -131,6 +131,7 @@ samplerSTAN <- function(x, tdir = NULL,
 
   smodel <- stan(mfile, fit = NA, data = x$data, chains = n.chains, iter = n.iter,
     thin = thin, warmup = burnin, seed = seed, verbose = verbose, ...)
+plot(smodel)
 
   samples <- slot(smodel, "sim")$samples
   for(j in seq_along(samples))

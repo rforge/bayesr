@@ -391,6 +391,8 @@ bayesr.family <- function(family, type = "BayesR")
   }
   if(is.null(family$cat))
     family$cat <- FALSE
+  if(is.null(family$mu))
+    family$mu <- function(x) { x }
   family
 }
 
@@ -881,12 +883,16 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
 
 
 ## Function to compute partial residuals.
-partial.residuals <- function(effects, response, fitted.values, link = NULL)
+partial.residuals <- function(effects, response, fitted.values, family)
 {
   if(!is.null(response)) {
     for(i in seq_along(effects)) {
       if(is.factor(response)) response <- as.integer(response) - 1
-      e <- response - fitted.values + attr(effects[[i]], "fit")
+      e <- response - family$mu(fitted.values) + family$mu(attr(effects[[i]], "fit"))
+      if(length(mulink <- family$links[grep("mu", names(family$links))]) < 1)
+        mulink <- family$links[1]
+      linkfun <- make.link2(mulink)$linkfun
+      e <- linkfun(e)
       if(is.null(attr(effects[[i]], "specs")$xt$center)) {
         e <- e - mean(e)
       } else {
@@ -1965,6 +1971,53 @@ model.frame.bayesr <- function(formula, ...)
     eval(fcall, env)
   }
   else attr(formula, "model.frame")
+}
+
+
+## Scores for model comparison.
+score <- function(x, limits = NULL, FUN = mean, ...)
+{
+  stopifnot(inherits(x, "bayesr"))
+  family <- attr(x, "family")
+  stopifnot(!is.null(family$integrand))
+  y <- model.response(model.frame(x))
+  n <- length(y)
+  eta <- list()
+  for(j in family$names)
+    eta[[j]] <- fitted(x, model = j)
+  eta <- as.data.frame(eta)
+
+  get.norm <- function(eta) {
+    integrand <- function(x) {
+      family$integrand(x, eta)
+    }
+    rval <- if(is.null(limits)) {
+        try(integrate(integrand, lower = -Inf, upper = Inf), silent = TRUE)
+      } else try(integrate(integrand, lower = limits[1], upper = limits[2]), silent = TRUE)
+    if(inherits(rval, "try-error")) {
+      rval <- try(integrate(integrand, lower = min(y, na.rm = TRUE),
+        upper = max(y, na.rm = TRUE)))
+    }
+    rval$value  
+  }
+
+  norm <- rep(0, n)
+  for(i in 1:n) {
+    norm[i] <- get.norm(eta[i, , drop = FALSE])
+  }
+
+  pp <- sqrt(family$integrand(y, eta))
+  loglik <- log(pp)
+  quadratic <- 2 * loglik - norm
+  spherical <- loglik / sqrt(norm)
+
+  res <- list(
+    "loglik" = FUN(loglik),
+    "quadratic" = FUN(quadratic),
+    "spherical" = FUN(spherical)
+  )
+
+  res
 }
 
 

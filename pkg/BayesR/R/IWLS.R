@@ -568,7 +568,7 @@ resultsIWLS <- function(x, samples)
         if(length(obj$response)) {
           if(obj$response %in% names(attr(x, "model.frame"))) {
             effects <- partial.residuals(effects, attr(x, "model.frame")[[obj$response]],
-              fitted.values, NULL)
+              fitted.values, family)
           }
         }
       }
@@ -582,7 +582,7 @@ resultsIWLS <- function(x, samples)
             as.integer(obj$response.vec) - 1
           } else {
             obj$response.vec
-          } - fitted.values
+          } - family$mu(fitted.values)
       )
       
 #      ## Clean.
