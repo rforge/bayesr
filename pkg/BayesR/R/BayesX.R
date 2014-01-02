@@ -658,7 +658,7 @@ resultsBayesX <- function(x, samples, ...)
   rename.p <- function(x) {
     if(family$family %in% c("beta", "gaussian", "lognormal", "binomial", "multinomial")) {
       foo <- switch(family$family,
-        "gaussian" = function(x) gsub("sigma2", "sigma", x),
+        "gaussian" = function(x) gsub("sigma2", "sigma2", x),
         "beta" = function(x) gsub("sigma2", "sigma", x),
         "lognormal" = function(x) gsub("sigma2", "sigma2", x),
         "binomial" = function(x) gsub("binomial", "pi", x),

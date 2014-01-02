@@ -2007,8 +2007,8 @@ score <- function(x, limits = NULL, FUN = mean, ...)
 
   pp <- sqrt(family$integrand(y, eta))
   loglik <- log(pp)
-  quadratic <- 2 * loglik - norm
-  spherical <- loglik / sqrt(norm)
+  quadratic <- 2 * pp - norm
+  spherical <- pp / sqrt(norm)
 
   res <- list(
     "loglik" = FUN(loglik),

@@ -25,7 +25,7 @@ make.link2 <- function(link)
     rval <- make.link(link)
   } else {
     rval <- switch(link,
-      "fisherz" = list(
+      "rhogit" = list(
         "linkfun" = function(mu) { mu / sqrt(1 - mu^2) },
         "linkinv" = function(eta) { eta / sqrt(1 + eta^2) }, 
         "mu.eta" = function(eta) { 1 / (1 + eta^2)^1.5 }
@@ -255,7 +255,62 @@ binomial.BayesR <- function(link = "logit", ...)
 
 
 
-gaussian.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
+gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
+{
+  links <- parse.links(links, c(mu = "identity", sigma = "log"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+
+  rval <- list(
+    "family" = "gaussian",
+    "names" = c("mu", "sigma"),
+    "links" = links,
+    bayesx = list(
+      "mu" = switch(links["mu"],
+        "identity" = c("normal2_mu", "mean"),
+        "inverse" = c("normal_mu_inv", "mean")
+      ),
+      "sigma" = switch(links["sigma"],
+        "log" = c("normal2_sigma", "scale"),
+        "logit" = c("normal_sigma_logit", "scale")
+      )
+    ),
+    jagstan = list(
+      "dist" = "dnorm",
+      "eta" = JAGSeta,
+      "model" = JAGSmodel,
+      "reparam" = c(sigma = "1 / sqrt(sigma)")
+    ),
+    "loglik" = function(y, eta, ...) {
+      sum(dnorm(y, eta$mu, sqrt(linkinv$sigma(eta$sigma)), log = TRUE))
+    },
+    "score" = list(
+      "mu" = function(y, eta, ...) { drop((y - eta$mu) / pow(linkinv$sigma(eta$sigma),2)) },
+      "sigma" = function(y, eta, ...) { drop(-1 + (y - eta$mu)^2 / pow((linkinv$sigma(eta$sigma))),2) }
+    ),
+    "weights" = list(
+      "mu" = function(y, eta, ...) { drop(1 / pow(linkinv$sigma(eta$sigma)),2) },
+      "sigma" = function(y, eta, ...) { rep(4, length(y)) }
+    ),
+    "integrand" = function(y, eta) {
+      dnorm(y, mean = eta$mu, sd = (linkinv$sigma(eta$sigma)))^2
+    }
+  )
+#  if(sd == TRUE) {
+#	rval$bayesx[[1]][[1]] <- "normal2_mu"
+#	rval$bayesx[[2]][[1]] <- "normal2_sigma"
+#	rval$"loglik" <- function(y, eta, ...) {
+#     sum(dnorm(y, eta$mu, (linkinv$sigma(eta$sigma)), log = TRUE))
+#	rval[[7]]
+#    }
+#  }
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
+gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 {
   links <- parse.links(links, c(mu = "identity", sigma2 = "log"), ...)
   linkinv <- list()
@@ -294,7 +349,7 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
       "sigma2" = function(y, eta, ...) { rep(0.5, length(y)) }
     ),
     "integrand" = function(y, eta) {
-      dnorm(y, mean = eta$mu, sd = linkinv$sigma(eta$sigma))^2
+      dnorm(y, mean = eta$mu, sd = sqrt(linkinv$sigma2(eta$sigma2)))^2
     }
   )
 #  if(sd == TRUE) {
@@ -386,13 +441,13 @@ lognormal.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
 
 
 mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
-  sigma1 = "log", sigma2 = "log", rho = "fisherz"), ...)
+  sigma1 = "log", sigma2 = "log", rho = "rhogit"), ...)
 {
   rval <- list(
     "family" = "mvn",
     "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho"),
     "links" = parse.links(links, c(mu1 = "identity", mu2 = "identity",
-       sigma1 = "log", sigma2 = "log", rho = "fisherz"), ...),
+       sigma1 = "log", sigma2 = "log", rho = "rhogit"), ...),
     bayesx = list(
       "mu1" = c("bivnormal_mu", "mean"),
       "mu2" = c("bivnormal_mu", "mu"),
