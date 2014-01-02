@@ -656,10 +656,14 @@ resultsBayesX <- function(x, samples, ...)
     ylevels <- ylevels[ylevels != reference]
 
   rename.p <- function(x) {
-    if(family$family %in% c("beta", "binomial", "multinomial")) {
+    if(family$family %in% c("beta", "binomial", "mvn", "mvt", "multinomial")) {
       foo <- switch(family$family,
         "beta" = function(x) gsub("sigma2", "sigma", x),
         "binomial" = function(x) gsub("binomial", "pi", x),
+		"mvn" = function(x) {
+		gsub("sigma1", "sigma", x)
+		gsub("sigma2", "sigma", x)
+		},
         "multinomial" = function(x) {
           if(any(grepl("):", x, fixed = TRUE))) {
             x <- strsplit(x, "):", fixed = TRUE)

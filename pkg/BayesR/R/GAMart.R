@@ -274,6 +274,45 @@ if(FALSE) {
 }
 
 
+## Dagum.
+dgp_dagum <- function(n = 500, a = NULL, b = NULL, p = NULL, ...)
+{
+  require(VGAM)
+  if(is.null(a)) {
+    a <- list(nobs = n, const = 0,
+      type = list(c("unimodal", "quadratic", "const")))
+  }
+  if(is.null(b)) {
+    b <- list(nobs = n, const = 0,
+      type = list(c("linear", "sinus", "const")))
+  }
+  if(is.null(p)) {
+    p <- list(nobs = n, const = 0,
+      type = list(c("const")))
+  }
+
+  a <- do.call("dgp_eta", a)
+  b <- do.call("dgp_eta", b) 
+  p <- do.call("dgp_eta", p)
+  shape1.a <- exp(a$eta0)
+  scale <- exp(b$eta0)
+  shape2.p <- exp(p$eta0)
+  y <- rdagum(n, shape1.a = shape1.a, scale = scale, shape2.p = shape2.p)
+
+  
+  d <- cbind(y, "a" = a, "b" = b, "p" = p)
+  d
+}
+
+if(FALSE) {
+  d <- dgp_dagum()
+  b <- bayesr(list(y ~ sx(a.x11) + sx(a.x12), y~ sx(b.x11)+sx(b.x12), y~ 1),
+		data = d, family = dagum, engine = "BayesX", verbose = TRUE)
+  summary(b)
+  plot(b)
+}
+
+
 
 ## Beta.
 dgp_beta <- function(mu = NULL, sigma = NULL, ...)
@@ -339,7 +378,7 @@ if(FALSE) {
     y2 ~ sx(mu2.x11) + sx(mu2.x12),
     y1 ~ sx(sigma1.x11),
     y2 ~ sx(sigma2.x11),
-    rho ~ sx(rho.x11)
+    y1 ~ sx(rho.x11)
   )
 
   b <- bayesr(f, family = mvn, data = d, engine = "BayesX", verbose = TRUE)

@@ -443,7 +443,7 @@ lognormal.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
 lognormal2.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
 {
   rval <- list(
-    "family" = "lognormal",
+    "family" = "lognormal2",
     "names" = c("mu", "sigma2"),
     "links" = parse.links(links, c(mu = "log", sigma2 = "log"), ...),
     "valid.response" = function(x) {
@@ -477,7 +477,7 @@ dagum.BayesR <- function(links = c(a = "log", b = "log", p = "log"), ...)
     },
     bayesx = list(
       "a" = c("dagum_a", "mean"),
-      "b" = c("dagum_b", "shape1"),
+      "b" = c("dagum_b", "scale"),
 	  "p" = c("dagum_p", "shape2")
     )
   )
@@ -489,19 +489,24 @@ dagum.BayesR <- function(links = c(a = "log", b = "log", p = "log"), ...)
 
 mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
   sigma1 = "log", sigma2 = "log", rho = "rhogit"), ...)
-{
+{  
+  links <- parse.links(links, c(mu1 = "identity", mu2 = "identity",
+       sigma1 = "log", sigma2 = "log", rho = "rhogit"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+	
   rval <- list(
     "family" = "mvn",
     "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho"),
-    "links" = parse.links(links, c(mu1 = "identity", mu2 = "identity",
-       sigma1 = "log", sigma2 = "log", rho = "rhogit"), ...),
+    "links" = links,
     bayesx = list(
       "mu1" = c("bivnormal_mu", "mean"),
       "mu2" = c("bivnormal_mu", "mu"),
       "sigma1" = c("bivnormal_sigma", "scale1"),
       "sigma2" = c("bivnormal_sigma", "scale2"),
       "rho" = c("bivnormal_rho", "rho"),
-      "order" = 1:5,
+      "order" = 5:1,
       "rm.number" = TRUE
     )
   )
@@ -525,7 +530,7 @@ mvt.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
       "sigma2" = c("bivt_sigma", "scale2"),
       "rho" = c("bivt_rho", "rho"),
 	  "df" = c("bivt_df", "df"),
-      "order" = 1:6,
+      "order" = 6:1,
       "rm.number" = TRUE
     )
   )
