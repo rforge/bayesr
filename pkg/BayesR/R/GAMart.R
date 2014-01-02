@@ -360,8 +360,8 @@ dgp_mvn <- function(n = 500, mu1 = NULL, mu2 = NULL, sigma1 = NULL, sigma2 = NUL
     s1 <- exp(sigma1$eta0[i])
     s2 <- exp(sigma2$eta0[i])
     p <- rho$eta0[i] / sqrt(1 + rho$eta0[i]^2)
-    sm <- cbind(c(s1, p * s1 * s2), c(p * s1 * s2, s2))
-    y <- rbind(y, rmvnorm(1, m, sm, method = "svd"))
+    sm <- matrix(c(s1^2, p * s1 * s2, p * s1 * s2, s2^2), 2, 2)
+    y <- rbind(y, rmvnorm(1,mean = m, sigma = sm))
   }
   colnames(y) <- c("y1", "y2")
   y <- as.data.frame(y)

@@ -661,8 +661,8 @@ resultsBayesX <- function(x, samples, ...)
         "beta" = function(x) gsub("sigma2", "sigma", x),
         "binomial" = function(x) gsub("binomial", "pi", x),
 		"mvn" = function(x) {
-		gsub("sigma1", "sigma", x)
-		gsub("sigma2", "sigma", x)
+		gsub("sigma", "sigma1", x)
+		gsub("sigma", "sigma2", x)
 		},
         "multinomial" = function(x) {
           if(any(grepl("):", x, fixed = TRUE))) {
