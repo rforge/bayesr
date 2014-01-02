@@ -660,7 +660,7 @@ resultsBayesX <- function(x, samples, ...)
       foo <- switch(family$family,
         "gaussian" = function(x) gsub("sigma2", "sigma", x),
         "beta" = function(x) gsub("sigma2", "sigma", x),
-        "lognormal" = function(x) gsub("sigma2", "sigma", x),
+        "lognormal" = function(x) gsub("sigma2", "sigma2", x),
         "binomial" = function(x) gsub("binomial", "pi", x),
         "multinomial" = function(x) {
           if(any(grepl("):", x, fixed = TRUE))) {
@@ -698,7 +698,6 @@ resultsBayesX <- function(x, samples, ...)
       samples <- do.call("c", samples)
     chains <- length(samples)
     rval <- vector(mode = "list", length = chains)
-
     snames <- rename.p(colnames(samples[[1]]))
     if(is.null(snames))
       snames <- attributes(samples[[1]])$dimnames[[2]]

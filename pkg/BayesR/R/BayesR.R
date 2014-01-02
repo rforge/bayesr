@@ -886,13 +886,12 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
 partial.residuals <- function(effects, response, fitted.values, family)
 {
   if(!is.null(response)) {
+    if(length(mulink <- family$links[grep("mu", names(family$links))]) < 1)
+      mulink <- family$links[1]
+    linkfun <- make.link2(mulink)$linkfun
     for(i in seq_along(effects)) {
       if(is.factor(response)) response <- as.integer(response) - 1
-      e <- response - family$mu(fitted.values) + family$mu(attr(effects[[i]], "fit"))
-      if(length(mulink <- family$links[grep("mu", names(family$links))]) < 1)
-        mulink <- family$links[1]
-      linkfun <- make.link2(mulink)$linkfun
-      e <- linkfun(e)
+      e <- linkfun(response) - fitted.values + attr(effects[[i]], "fit")
       if(is.null(attr(effects[[i]], "specs")$xt$center)) {
         e <- e - mean(e)
       } else {
