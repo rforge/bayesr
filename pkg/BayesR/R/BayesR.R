@@ -926,8 +926,9 @@ partial.residuals <- function(effects, response, fitted.values, family)
 ## A prediction method for "bayesr" objects.
 ## Prediction can also be based on multiple chains.
 predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
-  intercept = TRUE, FUN = mean, trans = NULL, ...)
+  intercept = TRUE, FUN = mean, trans = NULL, type = c("link", "response"), ...)
 {
+  family <- attr(object, "family")
   if(missing(newdata))
     newdata <- model.frame(object)
   if(is.character(newdata)) {
@@ -1062,8 +1063,19 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
         rval <- rval + apply(i$samples, 1, function(x) { i$get.mu(i$X, x) })
       }
     }
+    type <- match.arg(type)
+    if(type != "link") {
+      link <- family$links[grep(model, names(family$links))]
+      if(length(link) > 0) {
+        linkinv <- make.link2(link)$linkinv
+        rval <- t(apply(rval, 1, linkinv))
+      } else {
+        warning(paste("could not compute predictions on the scale of parameter",
+          model, ", predictions on the scale of the linear predictor are returned!", sep = ""))
+      }
+    }
     if(!is.null(trans))
-      rval <- apply(rval, 1, trans)
+      rval <- t(apply(rval, 1, trans))
     rval <- apply(rval, 1, FUN)
     if(!is.null(dim(rval))) {
       if(nrow(rval) != nrow(newdata))
@@ -1241,7 +1253,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
 
   ## What should be plotted?
   which.match <- c("effects", "samples", "hist-resid", "qq-resid",
-    "scatter-resid", "scale-resid", "scale-samples", "max-acf", "param-samples")
+    "scatter-resid", "scale-resid", "max-acf", "param-samples")
   if(!is.character(which)) {
     if(any(which > 8L))
       which <- which[which <= 8L]
@@ -1250,63 +1262,123 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
   if(length(which) > length(which.match) || !any(which %in% which.match))
     stop("argument which is specified wrong!")
 
-  ## Get number of plots.
-  get_k_n <- function(x) {
-    kn <- c(0, length(x))
-    ne <- pterms <- list()
-    for(i in 1:kn[2]) {
-      if(!any(c("effects", "param.effects") %in% names(x[[i]]))) {
-        kn <- kn + get_k_n(x[[i]])
-      } else {
-        ne[[i]] <- if(!is.null(names(x[[i]]$effects))) names(x[[i]]$effects) else NA
-        if(is.null(term))
-          pterms[[i]] <- 1:length(ne[[i]])
-        else {
-          if(is.character(term)) {
-            tterm <- NULL
-            for(j in term)
-              tterm <- c(tterm, grep(j, ne[[i]], fixed = TRUE))
-            pterms[[i]] <- if(length(tterm)) tterm else NA
-          } else pterms[[i]] <- term[term <= length(ne[[i]])]
-        }
-        if(!is.null(x[[i]]$effects)) {
-          kn[1] <- kn[1] + length(na.omit(pterms[[i]]))
-        }
+  if(all(which %in% c("hist-resid", "qq-resid", "scatter-resid", "scale-resid"))) {
+    if(is.null(args$do_par) & spar) {
+      if(!ask) {
+        par(mfrow = n2mfrow(length(which)))
+      } else par(ask = ask)
+    }
+
+    res <- residuals.bayesr(x)
+    for(w in which) {
+      args <- args2 <- list(...)
+      if(w == "hist-resid") {
+        rdens <- density(res)
+        rh <- hist(res, plot = FALSE)
+        args2$ylim <- c(0, max(c(rh$density, rdens$y)))
+        args2$freq <- FALSE
+        args2$x <- res
+        args2 <- delete.args("hist.default", args2, package = "graphics")
+        if(is.null(args$xlab)) args2$xlab <- "Residuals"
+        if(is.null(args$ylab)) args2$ylab <- "Density"
+        if(is.null(args$main)) args2$main <- "Histogramm and density"
+        do.call(eval(parse(text = "graphics::hist.default")), args2)
+        lines(rdens)
+        box()
+      }
+      if(w == "qq-resid") {
+        res2 <- (res - mean(res)) / sd(res)
+        args2$y <- res2
+        args2 <- delete.args("qqnorm.default", args2, package = "stats")
+        if(is.null(args$xlab)) args2$xlab <- "Theoretical quantiles"
+        if(is.null(args$ylab)) args2$ylab <- "Standardized residuals"
+        if(is.null(args$main)) args2$main <- "Normal Q-Q Plot"
+        do.call(qqnorm, args2)
+        qqline(res2)
+      }
+      if(w == "scatter-resid") {
+        fit <- fitted.bayesr(x, type = "response")
+        if(is.list(fit)) fit <- fit[[1]]
+        args2$x <- fit
+        args2$y <- res
+        args2 <- delete.args("scatter.smooth", args2, package = "stats")
+        if(is.null(args$xlab)) args2$xlab <- "Fitted values"
+        if(is.null(args$xlab)) args2$ylab <- "Residuals"
+        if(is.null(args$xlab)) args2$main <- "Fitted values vs. residuals"
+        do.call(scatter.smooth, args2)
+        abline(h = 0, lty = 2)
+      }
+      if(w == "scale-resid") {
+        fit <- fitted.bayesr(x, type = "response")
+        if(is.list(fit)) fit <- fit[[1]]
+        args2$x <- fit
+        args2$y <- sqrt(abs((res - mean(res)) / sd(res)))
+        args2 <- delete.args("scatter.smooth", args2, package = "stats")
+        if(is.null(args$xlab)) args2$xlab <- "Fitted values"
+        if(is.null(args$ylab)) args2$ylab <- expression(sqrt(abs("Standardized residuals")))
+        if(is.null(args$main)) args2$main <- "Scale-location"
+        do.call(scatter.smooth, args2)
       }
     }
-    kn
-  }
+  } else {
+    ## Get number of plots.
+    get_k_n <- function(x) {
+      kn <- c(0, length(x))
+      ne <- pterms <- list()
+      for(i in 1:kn[2]) {
+        if(!any(c("effects", "param.effects") %in% names(x[[i]]))) {
+          kn <- kn + get_k_n(x[[i]])
+        } else {
+          ne[[i]] <- if(!is.null(names(x[[i]]$effects))) names(x[[i]]$effects) else NA
+          if(is.null(term))
+            pterms[[i]] <- 1:length(ne[[i]])
+          else {
+            if(is.character(term)) {
+              tterm <- NULL
+              for(j in term)
+                tterm <- c(tterm, grep(j, ne[[i]], fixed = TRUE))
+              pterms[[i]] <- if(length(tterm)) tterm else NA
+            } else pterms[[i]] <- term[term <= length(ne[[i]])]
+          }
+          if(!is.null(x[[i]]$effects)) {
+            kn[1] <- kn[1] + length(na.omit(pterms[[i]]))
+          }
+        }
+      }
+      kn
+    }
 
-  if(any(c("effects", "param.effects") %in% names(x)))
-    x <- list(x)
+    if(any(c("effects", "param.effects") %in% names(x)))
+      x <- list(x)
 
-  kn <- get_k_n(x)
+    kn <- get_k_n(x)
 
-  if(which == "effects" & kn[1] < 1) on.exit(warning("no terms to plot in model object!"), add = TRUE)
+    if(which == "effects" & kn[1] < 1) on.exit(warning("no terms to plot in model object!"), add = TRUE)
 
-  if(is.null(args$do_par) & spar) {
-    if(!ask) {
-      if("cbayesr" %in% cx) {
-        par(mfrow = c(length(x), kn[1] / length(x)))
-      } else par(mfrow = n2mfrow(kn[if(which == "effects") 1 else 2]))
-    } else par(ask = ask)
-  }
+    if(is.null(args$do_par) & spar) {
+      if(!ask) {
+        if("cbayesr" %in% cx) {
+          par(mfrow = c(length(x), kn[1] / length(x)))
+        } else par(mfrow = n2mfrow(kn[if(which == "effects") 1 else 2]))
+      } else par(ask = ask)
+    }
 
-  mmain <- if(any(c("h1", "Chain_1") %in% (nx <- names(x)))) TRUE else FALSE
-  main <- args$main
-  if((is.null(args$main) & mmain) | !is.null(args$mmain)) {
-    main <- if(!is.null(args$main)) paste(args$main, nx, sep = "-") else nx
-    args$mmain <- TRUE
-  }
-  if(!is.null(main)) main <- rep(main, length.out = length(x))
+    mmain <- if(any(c("h1", "Chain_1") %in% (nx <- names(x)))) TRUE else FALSE
+    main <- args$main
+    if((is.null(args$main) & mmain) | !is.null(args$mmain)) {
+      main <- if(!is.null(args$main)) paste(args$main, nx, sep = "-") else nx
+      args$mmain <- TRUE
+    }
+    if(!is.null(main)) main <- rep(main, length.out = length(x))
 
-  for(i in seq_along(x)) {
-    args[c("x", "term", "which", "ask", "scale")] <- list(x[[i]], term, which, ask, scale)
-    args$main <- if(!is.null(main)) main[i] else NULL
-    if(!any(c("effects", "param.effects") %in% names(x[[i]]))) {
-      args$do_par <- FALSE
-      do.call("plot.bayesr", args)
-    } else do.call(".plot.bayesr", args)
+    for(i in seq_along(x)) {
+      args[c("x", "term", "which", "ask", "scale")] <- list(x[[i]], term, which, ask, scale)
+      args$main <- if(!is.null(main)) main[i] else NULL
+      if(!any(c("effects", "param.effects") %in% names(x[[i]]))) {
+        args$do_par <- FALSE
+        do.call("plot.bayesr", args)
+      } else do.call(".plot.bayesr", args)
+    }
   }
 
   invisible(NULL)
@@ -1379,13 +1451,6 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
           if(setlim) args[[lim]] <- NULL
         }
       }
-    }
-  }
-  if(which == "scale-samples") {
-    for(i in 1:n) {
-      args$main <- NULL
-      args$x <- attr(x[[i]]$scale, "samples")
-      do.call("plot", args)
     }
   }
   if(which == "param-samples") {
@@ -1470,8 +1535,10 @@ plot.bayesr.effect.default <- function(x, ...) {
 ##################################
 ## (7) Other helping functions. ##
 ##################################
-delete.args <- function(fun = NULL, args = NULL, not = NULL)
+delete.args <- function(fun = NULL, args = NULL, not = NULL, package = NULL)
 {
+  if(is.character(fun) & !is.null(package))
+    fun <- eval(parse(text = paste(package, paste(rep(":", 3), collapse = ""), fun, sep = "")))
   nf <- names(formals(fun))
   na <- names(args)
   for(elmt in na)
@@ -1481,7 +1548,8 @@ delete.args <- function(fun = NULL, args = NULL, not = NULL)
           args[elmt] <- NULL
       } else args[elmt] <- NULL
     }
-  args
+
+  return(args)
 }
 
 delete.NULLs <- function(x.list) 
@@ -1815,8 +1883,11 @@ get.model <- function(x, model = NULL)
 
 
 ## Fitted values/terms extraction
-fitted.bayesr <- function(object, model = NULL, term = NULL, ...)
+fitted.bayesr <- function(object, model = NULL, term = NULL, type = c("link", "response"), ...)
 {
+  type <- match.arg(type)
+  family <- attr(object, "family")
+
   object <- get.model(object, model)
 
   elmts <- c("formula", "fake.formula", "model", "param.effects",
@@ -1849,6 +1920,16 @@ fitted.bayesr <- function(object, model = NULL, term = NULL, ...)
   }
 
   rval <- delete.NULLs(rval)
+
+  if(is.null(term) & type != "link") {
+    links <- family$links
+    nrval <- names(rval)
+    for(j in seq_along(rval)) {
+      linkinv <- make.link2(family$links[nrval[j]])$linkinv
+      rval[[j]] <- linkinv(rval[[j]])
+    }
+  }
+
   if(length(rval) < 2)
     rval <- rval[[1]]
 
@@ -2015,6 +2096,27 @@ score <- function(x, limits = NULL, FUN = mean, ...)
     "quadratic" = FUN(quadratic),
     "spherical" = FUN(spherical)
   )
+
+  res
+}
+
+
+## Extract model residuals.
+residuals.bayesr <- function(object, ...)
+{
+  elmts <- c("formula", "fake.formula", "model", "param.effects",
+    "effects", "fitted.values", "residuals")
+
+  if(any(elmts %in% names(object)))
+    object <- list(object)
+
+  res <- NULL
+  for(j in seq_along(object)) {
+    if(!is.null(object[[j]]$residuals)) {
+      res <- object[[j]]$residuals
+      break
+    }
+  }
 
   res
 }
