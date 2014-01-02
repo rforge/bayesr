@@ -318,7 +318,7 @@ gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
     linkinv[[j]] <- make.link2(links[[j]])$linkinv
 
   rval <- list(
-    "family" = "gaussian",
+    "family" = "gaussian2",
     "names" = c("mu", "sigma2"),
     "links" = links,
     bayesx = list(
@@ -416,7 +416,31 @@ gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
 }
 
 
-lognormal.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
+lognormal.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
+{
+  rval <- list(
+    "family" = "lognormal",
+    "names" = c("mu", "sigma"),
+    "links" = parse.links(links, c(mu = "log", sigma = "log"), ...),
+    "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
+    bayesx = list(
+      "mu" = c("lognormal2_mu", "mean"),
+      "sigma" = c("lognormal2_sigma", "scale")
+    ),
+    "integrand" = function(y, eta) {
+      dlnorm(y, meanlog = eta$mu, sdlog = (linkinv$sigma(eta$sigma)))^2
+    }
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
+lognormal2.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
 {
   rval <- list(
     "family" = "lognormal",
@@ -438,6 +462,29 @@ lognormal.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
   class(rval) <- "family.BayesR"
   rval
 }
+
+
+dagum.BayesR <- function(links = c(a = "log", b = "log", p = "log"), ...)
+{
+  rval <- list(
+    "family" = "dagum",
+    "names" = c("a", "b", "p"),
+    "links" = parse.links(links, c(a = "log", b = "log", p = "log"), ...),
+	"valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
+    bayesx = list(
+      "a" = c("dagum_a", "mean"),
+      "b" = c("dagum_b", "shape1"),
+	  "p" = c("dagum_p", "shape2")
+    )
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
 
 
 mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",

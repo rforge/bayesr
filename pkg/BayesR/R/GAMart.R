@@ -240,38 +240,37 @@ if(FALSE) {
 }
 
 ## Lognormal.
-dgp_lognormal <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
+dgp_lognormal <- function(n = 500, mu = NULL, sigma = NULL, ...)
 {
   if(is.null(mu)) {
     mu <- list(nobs = n, const = 0,
       type = list(c("complicated", "quadratic", "const")))
   }
-  if(is.null(sigma2)) {
-    sigma2 <- list(nobs = n, const = 0,
+  if(is.null(sigma)) {
+    sigma <- list(nobs = n, const = 0,
       type = list(c("quadratic", "linear", "const")))
   }
 
 
   mu <- do.call("dgp_eta", mu)
-  sigma2 <- do.call("dgp_eta", sigma2) 
+  sigma <- do.call("dgp_eta", sigma) 
   m <- exp(mu$eta0)
-  s <- exp(sigma2$eta0)
-  y <- rlnorm(n, meanlog = m, sdlog = sqrt(s))
+  s <- exp(sigma$eta0)
+  y <- rlnorm(n, meanlog = m, sdlog = (s))
 
   
-  d <- cbind(y, "mu" = mu, "sigma2" = sigma2)
+  d <- cbind(y, "mu" = mu, "sigma" = sigma)
   d
 }
 
 if(FALSE) {
   d <- dgp_lognormal()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma2.x11)+sx(sigma2.x12), 
-		data = d, family = lognormal, engine = "BayesX", verbose = TRUE)
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma.x11)+sx(sigma.x12), 
+		data = d, family = lognormal, engine = "BayesX")
   plot(b)
   summary(b)
   mu.f11.est <- predict(b, model = "mu", term = 1, what = "terms")
-  mu.f11.est.2p5 <- predict(b, model = "mu", term = 1, what = "terms", FUN = quantile, 0.025)
-  mu.f11.est.97p5 <- predict(b, model = "mu", term = 1, what = "terms", FUN = quantile, 0.975)
+  score(b)
 }
 
 
