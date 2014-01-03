@@ -139,7 +139,32 @@ beta.BayesR <- function(links = c(mu = "logit", sigma = "log"), ...)
     ),
     "mu" = function(eta, ...) {
       linkinv$mu(eta)
-    }
+    },
+	"pbeta2" = function (q, mu = 0.5, sigma = 0.1, lower.tail = TRUE, log.p = FALSE) {
+		if (any(mu <= 0) | any(mu >= 1)) 
+			stop(paste("mu must be in (0,1)", "\n", ""))
+		if (any(sigma <= 0) | any(sigma^2 >= 1)) 
+			stop(paste("sigma must be in (0,1)", "\n", ""))
+		if (any(q <= 0) | any(q >= 1)) 
+			stop(paste("y must be in (0,1)", "\n", ""))
+		a <- mu * (1 - sigma) / (sigma)
+		b <- a * (1 - mu) / mu
+		cdf <- pbeta(q, shape1 = a, shape2 = b, ncp = 0, lower.tail = lower.tail, 
+			log.p = log.p)
+		cdf
+	},
+	"dbeta2" = function (x, mu = 0.5, sigma = 0.1, log = FALSE) {
+		if (any(mu <= 0) | any(mu >= 1)) 
+			stop(paste("mu must be in (0,1)", "\n", ""))
+		if (any(sigma <= 0) | any(sigma >= 1)) 
+			stop(paste("sigma must in (0,1)", "\n", ""))
+		if (any(x <= 0) | any(x >= 1)) 
+			stop(paste("x must be in (0,1)", "\n", ""))
+		a <- mu * (1 - sigma) / (sigma)
+		b <- a * (1 - mu) / mu
+		dens <- dbeta(x, shape1 = a, shape2 = b, ncp = 0, log = log)
+		dens
+	}
   )
   class(rval) <- "family.BayesR"
   rval
