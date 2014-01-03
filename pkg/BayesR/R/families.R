@@ -471,13 +471,13 @@ invgaussian.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
 	"d" = function (y, eta) 
 	{
 		mu <- linkinv$mu(eta$mu)
-		sigma <- sqrt(linkinv$sigma(eta$sigma))
+		sigma <- sqrt(linkinv$sigma(eta$sigma2))
 		exp( -0.5 * log(2 * pi) - log(sigma) - (3 / 2) * log(x) - ((x - mu)^2) / (2 * sigma^2 * (mu^2) * x))
 	},
 	"p" = function (y, eta) 
 	{
 		mu <- linkinv$mu(eta$mu)
-		lambda <- 1 / sqrt(linkinv$sigma(eta$sigma))
+		lambda <- 1 / sqrt(linkinv$sigma(eta$sigma2))
 		lq <- sqrt(lambda / y)
 		qm <- y / mu
 		pnorm(lq * (qm - 1)) + exp(2 * lambda / mu) * pnorm(-lq * (qm + 1))
@@ -545,7 +545,7 @@ lognormal.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
       dlnorm(y, meanlog = eta$mu, sdlog = (linkinv$sigma(eta$sigma)))^2
     },
 	"mu" = function(eta, ...) {
-      exp(eta$mu + 0.5 * (linkinv$sigma(eta))^2)
+      exp(eta$mu + 0.5 * (linkinv$sigma(eta$sigma))^2)
     },
     "d" = function(y, eta) {
       dlnorm(y, meanlog = eta$mu, sdlog = linkinv$sigma(eta$sigma))
@@ -575,7 +575,7 @@ lognormal2.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
       "sigma2" = c("lognormal_sigma2", "scale")
     ),
 	"mu" = function(eta, ...) {
-      exp(linkinv$mu(eta) + 0.5 * (linkinv$sigma(eta)))
+      exp(linkinv$mu(eta) + 0.5 * (linkinv$sigma(eta$sigma)))
     },
     "d" = function(y, eta) {
       dlnorm(y, meanlog = eta$mu, sdlog = sqrt(linkinv$sigma(eta$sigma)))

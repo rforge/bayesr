@@ -254,7 +254,7 @@ dgp_lognormal <- function(n = 500, mu = NULL, sigma = NULL, ...)
 
   mu <- do.call("dgp_eta", mu)
   sigma <- do.call("dgp_eta", sigma) 
-  m <- exp(mu$eta0)
+  m <- (mu$eta0)
   s <- exp(sigma$eta0)
   y <- rlnorm(n, meanlog = m, sdlog = (s))
 
