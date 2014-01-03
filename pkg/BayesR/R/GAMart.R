@@ -322,17 +322,16 @@ dgp_beta <- function(mu = NULL, sigma = NULL, ...)
 
 
 ## Multivariate normal.
-dgp_mvn <- function(n = 500, mu1 = NULL, mu2 = NULL, sigma1 = NULL, sigma2 = NULL, rho = NULL,
-  range.sigma1 = c(0.3, 1.2), range.sigma2 = c(0.3, 1.2), range.rho = c(-0.7, 0.7), ...)
+dgp_mvn <- function(n = 1000, mu1 = NULL, mu2 = NULL, sigma1 = NULL, sigma2 = NULL, rho = NULL, ...)
 {
   require("mvtnorm")
 
   if(is.null(mu1)) {
-    mu1 <- list(nobs = n, const = 0.5,
+    mu1 <- list(nobs = n, const = 0,
       type = list(c("unimodal", "quadratic", "const")))
   }
   if(is.null(mu2)) {
-    mu2 <- list(nobs = n, const = 0.1,
+    mu2 <- list(nobs = n, const = 0,
       type = list(c("linear", "sinus", "const")))
   }
   if(is.null(sigma1)) {
