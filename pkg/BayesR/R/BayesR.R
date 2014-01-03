@@ -1241,6 +1241,7 @@ Predict.matrix.rs.smooth <- function(object, data, knots)
 plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
   ask = FALSE, scale = 1, spar = TRUE, ...)
 {
+  family <- attr(x, "family")
   args <- list(...)
   cx <- class(x)
 
@@ -1271,7 +1272,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
 
     res <- residuals.bayesr(x)
     for(w in which) {
-      args <- args2 <- list(...)
+      args2 <- args
       if(w == "hist-resid") {
         rdens <- density(res)
         rh <- hist(res, plot = FALSE)
@@ -1287,21 +1288,20 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
         box()
       }
       if(w == "qq-resid") {
-        res2 <- (res - mean(res)) / sd(res)
-        args2$y <- res2
-        args2 <- delete.args("qqnorm.default", args2, package = "stats")
-        if(is.null(args$xlab)) args2$xlab <- "Theoretical quantiles"
-        if(is.null(args$ylab)) args2$ylab <- "Standardized residuals"
-        if(is.null(args$main)) args2$main <- "Normal Q-Q Plot"
+        nx <- names(x)
+        y <- model.response(model.frame(x))
+        eta <- as.data.frame(fitted(x))
+        args2$y <- qnorm(family$p(y, eta))
+        args2 <- delete.args("qqnorm.default", args2, package = "stats", not = c("col", "pch"))
         do.call(qqnorm, args2)
-        qqline(res2)
+        qqline(args2$y)
       }
       if(w == "scatter-resid") {
         fit <- fitted.bayesr(x, type = "response")
         if(is.list(fit)) fit <- fit[[1]]
         args2$x <- fit
         args2$y <- res
-        args2 <- delete.args("scatter.smooth", args2, package = "stats")
+        args2 <- delete.args("scatter.smooth", args2, package = "stats", not = c("col", "pch"))
         if(is.null(args$xlab)) args2$xlab <- "Fitted values"
         if(is.null(args$xlab)) args2$ylab <- "Residuals"
         if(is.null(args$xlab)) args2$main <- "Fitted values vs. residuals"
@@ -1313,7 +1313,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
         if(is.list(fit)) fit <- fit[[1]]
         args2$x <- fit
         args2$y <- sqrt(abs((res - mean(res)) / sd(res)))
-        args2 <- delete.args("scatter.smooth", args2, package = "stats")
+        args2 <- delete.args("scatter.smooth", args2, package = "stats", not = c("col", "pch"))
         if(is.null(args$xlab)) args2$xlab <- "Fitted values"
         if(is.null(args$ylab)) args2$ylab <- expression(sqrt(abs("Standardized residuals")))
         if(is.null(args$main)) args2$main <- "Scale-location"

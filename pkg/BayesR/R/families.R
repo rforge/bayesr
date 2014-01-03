@@ -140,31 +140,20 @@ beta.BayesR <- function(links = c(mu = "logit", sigma = "log"), ...)
     "mu" = function(eta, ...) {
       linkinv$mu(eta)
     },
-	"pbeta2" = function (q, mu = 0.5, sigma = 0.1, lower.tail = TRUE, log.p = FALSE) {
-		if (any(mu <= 0) | any(mu >= 1)) 
-			stop(paste("mu must be in (0,1)", "\n", ""))
-		if (any(sigma <= 0) | any(sigma^2 >= 1)) 
-			stop(paste("sigma must be in (0,1)", "\n", ""))
-		if (any(q <= 0) | any(q >= 1)) 
-			stop(paste("y must be in (0,1)", "\n", ""))
-		a <- mu * (1 - sigma) / (sigma)
-		b <- a * (1 - mu) / mu
-		cdf <- pbeta(q, shape1 = a, shape2 = b, ncp = 0, lower.tail = lower.tail, 
-			log.p = log.p)
-		cdf
-	},
-	"dbeta2" = function (x, mu = 0.5, sigma = 0.1, log = FALSE) {
-		if (any(mu <= 0) | any(mu >= 1)) 
-			stop(paste("mu must be in (0,1)", "\n", ""))
-		if (any(sigma <= 0) | any(sigma >= 1)) 
-			stop(paste("sigma must in (0,1)", "\n", ""))
-		if (any(x <= 0) | any(x >= 1)) 
-			stop(paste("x must be in (0,1)", "\n", ""))
-		a <- mu * (1 - sigma) / (sigma)
-		b <- a * (1 - mu) / mu
-		dens <- dbeta(x, shape1 = a, shape2 = b, ncp = 0, log = log)
-		dens
-	}
+	  "d" = function(y, eta, log = FALSE, ...) {
+       mu <- linkinv$mu(eta$mu)
+       sigma <- linkinv$sigma(eta$sigma)
+		   a <- mu * (1 - sigma) / (sigma)
+		   b <- a * (1 - mu) / mu
+		   dbeta(y, shape1 = a, shape2 = b, ncp = 0, log = log)
+	  },
+	  "p" = function(y, eta, lower.tail = TRUE, log.p = FALSE, ...) {
+       mu <- linkinv$mu(eta$mu)
+       sigma <- linkinv$sigma(eta$sigma)
+		   a <- mu * (1 - sigma) / (sigma)
+		   b <- a * (1 - mu) / mu
+		   pbeta(y, shape1 = a, shape2 = b, ncp = 0, lower.tail = lower.tail, log.p = log.p)
+	  }
   )
   class(rval) <- "family.BayesR"
   rval
@@ -307,12 +296,12 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
     "links" = links,
     bayesx = list(
       "mu" = switch(links["mu"],
-                    "identity" = c("normal2_mu", "mean"),
-                    "inverse" = c("normal_mu_inv", "mean")
+        "identity" = c("normal2_mu", "mean"),
+        "inverse" = c("normal_mu_inv", "mean")
       ),
       "sigma" = switch(links["sigma"],
-                       "log" = c("normal2_sigma", "scale"),
-                       "logit" = c("normal_sigma_logit", "scale")
+        "log" = c("normal2_sigma", "scale"),
+        "logit" = c("normal_sigma_logit", "scale")
       )
     ),
     jagstan = list(
@@ -322,21 +311,24 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
       "reparam" = c(sigma = "1 / sqrt(sigma)")
     ),
     "loglik" = function(y, eta, ...) {
-      sum(dnorm(y, eta$mu, sqrt(linkinv$sigma(eta$sigma)), log = TRUE))
+      sum(dnorm(y, eta$mu, linkinv$sigma(eta$sigma), log = TRUE))
     },
     "score" = list(
-      "mu" = function(y, eta, ...) { drop((y - eta$mu) / pow(linkinv$sigma(eta$sigma),2)) },
-      "sigma" = function(y, eta, ...) { drop(-1 + (y - eta$mu)^2 / pow((linkinv$sigma(eta$sigma))),2) }
+      "mu" = function(y, eta, ...) { drop((y - eta$mu) / (linkinv$sigma(eta$sigma)^2)) },
+      "sigma" = function(y, eta, ...) { drop(-0.5 + (y - eta$mu)^2 / (linkinv$sigma(eta$sigma)^2)) }
     ),
     "weights" = list(
-      "mu" = function(y, eta, ...) { drop(1 / pow(linkinv$sigma(eta$sigma)),2) },
-      "sigma" = function(y, eta, ...) { rep(4, length(y)) }
+      "mu" = function(y, eta, ...) { drop(1 / (linkinv$sigma(eta$sigma)^2)) },
+      "sigma" = function(y, eta, ...) { rep(0.5, length(y)) }
     ),
-    "integrand" = function(y, eta) {
-      dnorm(y, mean = eta$mu, sd = (linkinv$sigma(eta$sigma)))^2
-    },
     "mu" = function(eta, ...) {
       linkinv$mu(eta)
+    },
+    "d" = function(y, eta) {
+      dnorm(y, mean = eta$mu, sd = linkinv$sigma(eta$sigma))
+    },
+    "p" = function(y, eta) {
+      pnorm(y, mean = eta$mu, sd = linkinv$sigma(eta$sigma))
     }
   )
   
@@ -358,12 +350,12 @@ gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
     "links" = links,
     bayesx = list(
       "mu" = switch(links["mu"],
-                    "identity" = c("normal_mu", "mean"),
-                    "inverse" = c("normal_mu_inv", "mean")
+        "identity" = c("normal_mu", "mean"),
+        "inverse" = c("normal_mu_inv", "mean")
       ),
       "sigma2" = switch(links["sigma2"],
-                        "log" = c("normal_sigma2", "scale"),
-                        "logit" = c("normal_sigma2_logit", "scale")
+        "log" = c("normal_sigma2", "scale"),
+        "logit" = c("normal_sigma2_logit", "scale")
       )
     ),
     jagstan = list(
@@ -383,11 +375,14 @@ gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
       "mu" = function(y, eta, ...) { drop(1 / linkinv$sigma2(eta$sigma2)) },
       "sigma2" = function(y, eta, ...) { rep(0.5, length(y)) }
     ),
-    "integrand" = function(y, eta) {
-      dnorm(y, mean = eta$mu, sd = sqrt(linkinv$sigma2(eta$sigma2)))^2
-    },
     "mu" = function(eta, ...) {
       linkinv$mu(eta) 
+    },
+    "d" = function(y, eta) {
+      dnorm(y, mean = eta$mu, sd = sqrt(linkinv$sigma2(eta$sigma2)))
+    },
+    "p" = function(y, eta) {
+      pnorm(y, mean = eta$mu, sd = sqrt(linkinv$sigma2(eta$sigma2)))
     }
   )
   
