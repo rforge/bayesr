@@ -888,7 +888,7 @@ partial.residuals <- function(effects, response, fitted.values, family)
   if(!is.null(response)) {
     if(length(mulink <- family$links[grep("mu", names(family$links))]) < 1)
       mulink <- family$links[1]
-    linkfun <- make.link2(mulink)$linkfun
+    linkfun <- make.link2(mulink[1])$linkfun
     for(i in seq_along(effects)) {
       if(is.factor(response)) response <- as.integer(response) - 1
       e <- linkfun(response) - fitted.values + attr(effects[[i]], "fit")
