@@ -571,9 +571,6 @@ lognormal.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
       "mu" = c("lognormal2_mu", "mean"),
       "sigma" = c("lognormal2_sigma", "scale")
     ),
-    "integrand" = function(y, eta) {
-      dlnorm(y, meanlog = eta$mu, sdlog = (linkinv$sigma(eta$sigma)))^2
-    },
 	  "mu" = function(eta, ...) {
       exp(eta$mu + 0.5 * (linkinv$sigma(eta$sigma))^2)
     },
@@ -651,8 +648,11 @@ dagum.BayesR <- function(links = c(a = "log", b = "log", p = "log"), ...)
       -(linkinv$b(eta$b)/linkinv$a(eta$a)) * (gamma(- 1 / linkinv$a(eta$a)) * gamma(linkinv$p(eta$p) + 1 / linkinv$a(eta$a))) / (gamma(linkinv$p(eta$p)))
     },
 	  "d" = function(y, eta) {
-		  ap <- linkinv$a(eta$a) * linkinv$p(eta$p)
-		  ap * y^(ap -1) / (b^ap * (1 + (y / linkinv$b(eta$b))^linkinv$a(eta$a))^(linkinv$p(eta$p) + 1))
+      a <- linkinv$a(eta$a)
+      b <- linkinv$b(eta$b)
+      p <- linkinv$p(eta$p)
+		  ap <- a * p
+		  ap * y^(ap -1) / (b^ap * (1 + (y / b)^a)^(p + 1))
 	  },
 	  "p" = function(y, eta) {
 		  ( 1 + (y / linkinv$b(eta$b))^(-linkinv$a(eta$a)))^(-linkinv$p(eta$p))

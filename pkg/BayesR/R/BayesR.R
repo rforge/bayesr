@@ -2058,47 +2058,85 @@ model.frame.bayesr <- function(formula, ...)
 
 
 ## Scores for model comparison.
-score <- function(x, limits = NULL, FUN = mean, ...)
+score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
+  type = c("mean", "samples"), nsamps = NULL, ...)
 {
   stopifnot(inherits(x, "bayesr"))
   family <- attr(x, "family")
-  stopifnot(!is.null(family$integrand))
+  stopifnot(!is.null(family$d))
+  type <- match.arg(type)
   y <- model.response2(x)
   n <- length(y)
-  eta <- list()
-  for(j in family$names)
-    eta[[j]] <- fitted(x, model = j)
-  eta <- as.data.frame(eta)
 
-  get.norm <- function(eta) {
-    integrand <- function(x) {
-      family$integrand(x, eta)
+  if(is.null(family$score.norm)) {
+    score.norm <- function(eta) {
+      integrand <- function(x) {
+        family$d(x, eta)^2
+      }
+      rval <- if(is.null(limits)) {
+          try(integrate(integrand, lower = -Inf, upper = Inf), silent = TRUE)
+        } else try(integrate(integrand, lower = limits[1], upper = limits[2]), silent = TRUE)
+      if(inherits(rval, "try-error")) {
+        rval <- try(integrate(integrand, lower = min(y, na.rm = TRUE),
+          upper = max(y, na.rm = TRUE)))
+      }
+      rval <- if(inherits(rval, "try-error")) NA else rval$value
+      rval
     }
-    rval <- if(is.null(limits)) {
-        try(integrate(integrand, lower = -Inf, upper = Inf), silent = TRUE)
-      } else try(integrate(integrand, lower = limits[1], upper = limits[2]), silent = TRUE)
-    if(inherits(rval, "try-error")) {
-      rval <- try(integrate(integrand, lower = min(y, na.rm = TRUE),
-        upper = max(y, na.rm = TRUE)))
+  } else score.norm <- family$score.norm
+
+  scorefun <- function(eta) {
+    norm <- rep(0, n)
+    for(i in 1:n) {
+      norm[i] <- score.norm(eta[i, , drop = FALSE])
     }
-    rval$value  
+
+    pp <- family$d(y, eta)
+    loglik <- log(pp)
+    if(is.null(family$score.norm2)) {
+      quadratic <- 2 * pp - norm
+    } else {
+      quadratic <- rep(0, n)
+      for(i in 1:n)
+        quadratic[i] <- family$score.norm2(eta[i, , drop = FALSE])
+    }
+    spherical <- pp / sqrt(norm)
+
+    return(data.frame(
+      "logLik" = FUN(loglik),
+      "quadratic" = FUN(quadratic),
+      "spherical" = FUN(spherical)
+    ))
   }
 
-  norm <- rep(0, n)
-  for(i in 1:n) {
-    norm[i] <- get.norm(eta[i, , drop = FALSE])
+  if(type == "mean") {
+    eta <- list()
+    for(j in family$names)
+      eta[[j]] <- fitted(x, model = j)
+    eta <- as.data.frame(eta)
+    res <- unlist(scorefun(eta))
+  } else {
+    nx <- names(x)
+    eta <- list()
+    for(j in nx) {
+      eta[[j]] <- predict.bayesr(x, model = j, FUN = function(x) { x })
+      if(!is.null(nsamps))
+        eta[[j]] <- eta[[j]][, sample(1:ncol(eta[[j]]), nsamps, replace = FALSE)]
+      nsamps <- ncol(eta[[1]])
+      colnames(eta[[j]]) <- paste("i", 1:ncol(eta[[j]]), sep = ".")
+    }
+    nsamps <- ncol(eta[[1]])
+    eta <- as.data.frame(eta)
+    res <- list()
+print(names(eta))
+    for(i in 1:nsamps) {
+      eta2 <- eta[, grep(ni <- paste(".i.", i, sep = ""), names(eta)), drop = FALSE]
+      names(eta2) <- gsub(ni, "", names(eta2))
+print(head(eta2))
+stop()
+      res[[i]] <- scorefun(eta2)
+    }
   }
-
-  pp <- sqrt(family$integrand(y, eta))
-  loglik <- log(pp)
-  quadratic <- 2 * pp - norm
-  spherical <- pp / sqrt(norm)
-
-  res <- list(
-    "loglik" = FUN(loglik),
-    "quadratic" = FUN(quadratic),
-    "spherical" = FUN(spherical)
-  )
 
   res
 }
@@ -2131,7 +2169,7 @@ residuals.bayesr <- function(object, ...)
 ## Extract the model response.
 model.response2 <- function(data, ...)
 {
-  if(inherits(data, "bayesr"))
+  if(!inherits(data, "data.frame"))
     data <- model.frame(data)
   rn <- attr(data, "response.name")
   y <- if(is.null(rn)) {
