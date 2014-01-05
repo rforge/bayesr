@@ -827,10 +827,7 @@ resultsBayesX <- function(x, samples, ...)
       rval[[j]] <- list(
         "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(attr(x, "model.frame")),
         "formula" = obj$formula), "param.effects" = param.effects, "effects" = effects,
-        "effects.hyp" = effects.hyp, "scale" = scale.m, "fitted.values" = fitted.values,
-        "residuals" = if(!is.factor(obj$response.vec)) {
-          obj$response.vec - family$mu(fitted.values)
-        } else NULL
+        "effects.hyp" = effects.hyp, "scale" = scale.m, "fitted.values" = fitted.values
       )
 
       class(rval[[j]]) <- "bayesr"

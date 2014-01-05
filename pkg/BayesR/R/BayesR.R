@@ -1283,18 +1283,20 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
         if(is.null(args$xlab)) args2$xlab <- "Residuals"
         if(is.null(args$ylab)) args2$ylab <- "Density"
         if(is.null(args$main)) args2$main <- "Histogramm and density"
-        do.call(eval(parse(text = "graphics::hist.default")), args2)
-        lines(rdens)
+        ok <- try(do.call(eval(parse(text = "graphics::hist.default")), args2))
+        if(!inherits(ok, "try-error"))
+          lines(rdens)
         box()
       }
       if(w == "qq-resid") {
         nx <- names(x)
-        y <- model.response(model.frame(x))
+        y <- model.response2(x)
         eta <- as.data.frame(fitted(x))
         args2$y <- qnorm(family$p(y, eta))
         args2 <- delete.args("qqnorm.default", args2, package = "stats", not = c("col", "pch"))
-        do.call(qqnorm, args2)
-        qqline(args2$y)
+        ok <- try(do.call(qqnorm, args2))
+        if(!inherits(ok, "try-error"))
+          qqline(args2$y)
       }
       if(w == "scatter-resid") {
         fit <- fitted.bayesr(x, type = "response")
@@ -1305,8 +1307,9 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
         if(is.null(args$xlab)) args2$xlab <- "Fitted values"
         if(is.null(args$xlab)) args2$ylab <- "Residuals"
         if(is.null(args$xlab)) args2$main <- "Fitted values vs. residuals"
-        do.call(scatter.smooth, args2)
-        abline(h = 0, lty = 2)
+        ok <- try(do.call(scatter.smooth, args2))
+        if(!inherits(ok, "try-error"))
+          abline(h = 0, lty = 2)
       }
       if(w == "scale-resid") {
         fit <- fitted.bayesr(x, type = "response")
@@ -1317,7 +1320,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
         if(is.null(args$xlab)) args2$xlab <- "Fitted values"
         if(is.null(args$ylab)) args2$ylab <- expression(sqrt(abs("Standardized residuals")))
         if(is.null(args$main)) args2$main <- "Scale-location"
-        do.call(scatter.smooth, args2)
+        try(do.call(scatter.smooth, args2))
       }
     }
   } else {
@@ -2060,7 +2063,7 @@ score <- function(x, limits = NULL, FUN = mean, ...)
   stopifnot(inherits(x, "bayesr"))
   family <- attr(x, "family")
   stopifnot(!is.null(family$integrand))
-  y <- model.response(model.frame(x))
+  y <- model.response2(x)
   n <- length(y)
   eta <- list()
   for(j in family$names)
@@ -2104,21 +2107,35 @@ score <- function(x, limits = NULL, FUN = mean, ...)
 ## Extract model residuals.
 residuals.bayesr <- function(object, ...)
 {
+  y <- model.response2(object)
+  family <- attr(object, "family")
+
   elmts <- c("formula", "fake.formula", "model", "param.effects",
     "effects", "fitted.values", "residuals")
 
   if(any(elmts %in% names(object)))
     object <- list(object)
 
-  res <- NULL
-  for(j in seq_along(object)) {
-    if(!is.null(object[[j]]$residuals)) {
-      res <- object[[j]]$residuals
-      break
-    }
+  eta <- list()
+  for(j in names(object)) {
+    eta[[j]] <- fitted(object, model = j)
   }
 
+  if(is.factor(y)) y <- as.integer(y) - 1
+  res <- y - family$mu(eta)
+
   res
+}
+
+
+## Extract the model response.
+model.response2 <- function(data, ...)
+{
+  if(inherits(data, "bayesr"))
+    data <- model.frame(data)
+  rn <- attr(data, "response.name")
+  if(is.null(rn)) stop("cannot extract model response, the response name is not available!")
+  data[, rn]
 }
 
 

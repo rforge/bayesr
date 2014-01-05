@@ -575,14 +575,10 @@ resultsIWLS <- function(x, samples)
 
       ## Stuff everything together.
       rval[[j]] <- list(
-        "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(attr(x, "model.frame")), "formula" = obj$formula),
+        "model" = list("DIC" = DIC, "pd" = pd,
+          "N" = nrow(attr(x, "model.frame")), "formula" = obj$formula),
         "param.effects" = param.effects, "effects" = effects,
-        "effects.hyp" = effects.hyp, "fitted.values" = fitted.values,
-        "residuals" = if(is.factor(obj$response.vec)) {
-            as.integer(obj$response.vec) - 1
-          } else {
-            obj$response.vec
-          } - family$mu(fitted.values)
+        "effects.hyp" = effects.hyp, "fitted.values" = fitted.values
       )
       
 #      ## Clean.
