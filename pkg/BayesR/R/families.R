@@ -772,6 +772,12 @@ poisson.BayesR <- function(links = c(lambda = "log"), ...)
     ),
 	  "mu" = function(eta, ...) {
       linkinv$lambda(eta)
+    },
+	"d" = function(y, eta) {
+      dpois(y, lambda = linkinv$lambda(eta$lambda))
+    },
+    "p" = function(y, eta) {
+      ppois(y, lambda = linkinv$lambda(eta$lambda))
     }
   )
 
@@ -799,7 +805,14 @@ zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
       ) 
     ),
 	  "mu" = function(eta, ...) {
-      linkinv$lambda(eta) * (1 - linkinv$pi(eta))
+      linkinv$lambda(eta$lambda) * (1 - linkinv$pi(eta$pi))
+    },
+	"d" = function(y, eta) {
+      ifelse(y == 0, linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * dpois(y, lambda = linkinv$lambda(eta$lambda)), 
+				(1 - linkinv$pi(eta$pi)) * dpois(y, lambda = linkinv$lambda(eta$lambda)))
+    },
+    "p" = function(y, eta) {
+      linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * ppois(y, lambda = linkinv$lambda(eta$lambda))
     }
   )
   if(rval$bayesx[[2]][[1]] == "zip_pi_cloglog")
@@ -826,7 +839,13 @@ negbin.BayesR <- function(links = c(mu = "log", delta = "log"), ...)
       "delta" = c("negbin_delta", "delta")
     ),
 	  "mu" = function(eta, ...) {
-      linkinv$mu(eta)
+      linkinv$mu(eta$mu)
+    },
+	"d" = function(y, eta) {
+      dnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta))
+    },
+    "p" = function(y, eta) {
+      pnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta))
     }
   )
 
@@ -852,7 +871,14 @@ zinb.BayesR <- function(links = c(mu = "log", "pi" = "logit", delta = "log"), ..
       "delta" = c("zinb_delta", "delta")
     ),
 	  "mu" = function(eta, ...) {
-      linkinv$mu(eta) * (1 - linkinv$pi(eta))
+      linkinv$mu(eta$mu) * (1 - linkinv$pi(eta$pi))
+    },
+	"d" = function(y, eta) {
+      ifelse(y == 0, linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * dnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta)), 
+				(1 - linkinv$pi(eta$pi)) * dnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta)))
+    },
+    "p" = function(y, eta) {
+      linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * pnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta))
     } 
   )
 
