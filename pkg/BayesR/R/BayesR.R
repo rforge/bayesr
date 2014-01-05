@@ -2123,19 +2123,21 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
       if(!is.null(nsamps))
         eta[[j]] <- eta[[j]][, sample(1:ncol(eta[[j]]), nsamps, replace = FALSE)]
       nsamps <- ncol(eta[[1]])
-      colnames(eta[[j]]) <- paste("i", 1:ncol(eta[[j]]), sep = ".")
+      colnames(eta[[j]]) <- paste("i",
+        formatC(1:ncol(eta[[j]]), width = nchar(nsamps), flag = "0"),
+        sep = ".")
     }
     nsamps <- ncol(eta[[1]])
     eta <- as.data.frame(eta)
     res <- list()
-print(names(eta))
     for(i in 1:nsamps) {
-      eta2 <- eta[, grep(ni <- paste(".i.", i, sep = ""), names(eta)), drop = FALSE]
+      eta2 <- eta[, grep(ni <- paste(".i.",
+        formatC(i, width = nchar(nsamps), flag = "0"), sep = ""),
+        names(eta)), drop = FALSE]
       names(eta2) <- gsub(ni, "", names(eta2))
-print(head(eta2))
-stop()
       res[[i]] <- scorefun(eta2)
     }
+    res <- do.call("rbind", res)
   }
 
   res
