@@ -2134,8 +2134,10 @@ model.response2 <- function(data, ...)
   if(inherits(data, "bayesr"))
     data <- model.frame(data)
   rn <- attr(data, "response.name")
-  if(is.null(rn)) stop("cannot extract model response, the response name is not available!")
-  data[, rn]
+  y <- if(is.null(rn)) {
+    model.response(data, ...)
+  } else data[, rn]
+  y
 }
 
 
