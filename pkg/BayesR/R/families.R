@@ -464,6 +464,45 @@ gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 }
 
 
+t.BayesR <- function(links = c(mu = "identity", sigma2 = "log", df = "log"), ...)
+{
+  links <- parse.links(links, c(mu = "identity", sigma2 = "log", df = "log"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+  
+  rval <- list(
+    "family" = "t",
+    "names" = c("mu", "sigma2", "df"),
+    "links" = links,
+    bayesx = list(
+      "mu" = c("t_mu", "mean"),
+      "sigma2" =  c("t_sigma2", "scale"),
+	  "df" = c("t_df", "df")
+    ),
+    "mu" = function(eta, ...) {
+	  if(linkinv$df(eta$df) > 1) {
+        eta$mu
+	  } else {
+	    0
+	  }
+    },
+    "d" = function(y, eta) {
+	  arg <- (y - eta$mu) / sqrt(linkinv$sigma2(eta$sigma2))
+      dt(arg, df = linkinv$df(eta$df))
+    },
+    "p" = function(y, eta) {
+      arg <- (y - eta$mu) / sqrt(linkinv$sigma2(eta$sigma2))
+      pt(arg, df = linkinv$df(eta$df))
+    }
+  )
+  
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
+
 invgaussian.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
 {
   links <- parse.links(links, c(mu = "log", sigma2 = "log"), ...)
@@ -645,17 +684,23 @@ dagum.BayesR <- function(links = c(a = "log", b = "log", p = "log"), ...)
       "p" = c("dagum_p", "shape2")
     ),
 	  "mu" = function(eta, ...) {
-      -(linkinv$b(eta$b)/linkinv$a(eta$a)) * (gamma(- 1 / linkinv$a(eta$a)) * gamma(linkinv$p(eta$p) + 1 / linkinv$a(eta$a))) / (gamma(linkinv$p(eta$p)))
+	    a <- linkinv$a(eta$a)
+        b <- linkinv$b(eta$b)
+        p <- linkinv$p(eta$p)
+      -(b/a) * (gamma(- 1 / a) * gamma(p + 1 / a)) / (gamma(p))
     },
 	  "d" = function(y, eta) {
-      a <- linkinv$a(eta$a)
-      b <- linkinv$b(eta$b)
-      p <- linkinv$p(eta$p)
-		  ap <- a * p
-		  ap * y^(ap -1) / (b^ap * (1 + (y / b)^a)^(p + 1))
+		a <- linkinv$a(eta$a)
+		b <- linkinv$b(eta$b)
+		p <- linkinv$p(eta$p)
+		ap <- a * p
+		ap * y^(ap -1) / (b^ap * (1 + (y / b)^a)^(p + 1))
 	  },
 	  "p" = function(y, eta) {
-		  ( 1 + (y / linkinv$b(eta$b))^(-linkinv$a(eta$a)))^(-linkinv$p(eta$p))
+		  a <- linkinv$a(eta$a)
+          b <- linkinv$b(eta$b)
+          p <- linkinv$p(eta$p)
+		  (1 + (y / b)^(-a))^(-p)
 	  }
   )
 

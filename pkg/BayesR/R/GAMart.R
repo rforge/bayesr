@@ -274,6 +274,43 @@ if(FALSE) {
 }
 
 
+## t.
+dgp_t <- function(n = 1000, mu = NULL, sigma2 = NULL, df = NULL, ...)
+{
+  if(is.null(mu)) {
+    mu <- list(nobs = n, const = 0.5,
+      type = list(c("unimodal", "quadratic", "const")))
+  }
+  if(is.null(sigma2)) {
+    sigma2 <- list(nobs = n, const = 0.01,
+      type = list(c("pick", "const")))
+  }
+  if(is.null(df)) {
+    df <- list(nobs = n, const = 0.01,
+      type = list(c("linear", "const")))
+  }
+
+  mu <- do.call("dgp_eta", mu)
+  sigma2 <- do.call("dgp_eta", sigma2)
+  df <- do.call("dgp_eta", df)
+
+  d <- data.frame("mu" = mu, "sigma2" = sigma2, "df" = df)
+  sd <- sqrt(exp(sigma2$eta0))
+  degf <- (exp(df$eta0))
+  ytemp <- rt(n, df = degf)
+  d$y <- mu$eta0 + sd*ytemp
+
+  d
+}
+
+if(FALSE) {
+  d <- dgp_t()
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12),y ~ sx(sigma2.x11), y~ sx(df.x11), data = d, family = t, engine = "BayesX", verbose = TRUE)
+  plot(b)
+}
+
+
+
 ## Dagum.
 dgp_dagum <- function(n = 500, a = NULL, b = NULL, p = NULL, ...)
 {
