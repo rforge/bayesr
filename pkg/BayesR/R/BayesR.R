@@ -1270,7 +1270,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
       } else par(ask = ask)
     }
 
-    res <- residuals.bayesr(x)
+    res <- residuals.bayesr(x, ...)
     for(w in which) {
       args2 <- args
       if(w == "hist-resid") {
@@ -2145,8 +2145,9 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
 
 
 ## Extract model residuals.
-residuals.bayesr <- function(object, ...)
+residuals.bayesr <- function(object, type = c("mean", "quantile"), ...)
 {
+  type <- match.arg(type)
   y <- model.response2(object)
   family <- attr(object, "family")
 
@@ -2161,8 +2162,14 @@ residuals.bayesr <- function(object, ...)
     eta[[j]] <- fitted(object, model = j)
   }
 
-  if(is.factor(y)) y <- as.integer(y) - 1
-  res <- y - family$mu(eta)
+  if(type == "mean") {
+    if(is.factor(y)) y <- as.integer(y) - 1
+    res <- y - family$mu(eta)
+  } else {
+    res <- if(is.null(family$q.residuals)) {
+      qnorm(family$p(y, eta))
+    } else family$q.residuals(y, eta)
+  }
 
   res
 }
