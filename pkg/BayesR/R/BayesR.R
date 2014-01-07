@@ -1224,7 +1224,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     k <- ncol(X)
     w <- c(1, g[(k + 1):(2 * k - 1)])
     g <- g[1:k]
-    drop(X %*% g) / drop(X %*% w)
+    drop(X %*% g) / exp(drop(X %*% w))
   }
   object$class <- class(object)
   class(object) <- if(object$fixed) c("rs.smooth", "no.mgcv") else "rs.smooth"

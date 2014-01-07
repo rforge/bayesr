@@ -465,7 +465,7 @@ buildJAGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
 
   fall0 <- paste(fall0, c(1, paste("w", i, "[", 1:(length(fall0) - 1), "]", sep = "")), sep = "*")
   ## fall <- paste(fall, c(1, paste("w", i, "[", 1:(length(fall) - 1), "]", sep = "")), sep = "*")
-  fall0 <- paste("    sm0", i, "[i] <- 1 / (", paste(fall0, collapse = " + "), ")", sep = "")
+  fall0 <- paste("    sm0", i, "[i] <- 1 / exp(", paste(fall0, collapse = " + "), ")", sep = "")
   fall <- paste("    sm", i, "[i] <- sm0", i, "[i] * (", paste(fall, collapse = " + "), ")", sep = "")
 
   setup$smooth <- c(setup$smooth, fall, fall0)
