@@ -72,18 +72,13 @@ b <- bayesr(mstatus ~ s(age), family = multinomial.BayesR, data = marital.nz)
 
 
 ## pick function
-funpick <- function(x, min = 0, max = 1) { 
-  x <- (x - min) / (max - min)
-  y <- sin(2 * (4 * x - 2)) + 2 * exp(-16^2 * (x - 0.5)^2)
-  return(y - mean(y))
-}
+f <- simfun(type = "complicated")
 
-n <- 500
+n <- 100
 dat <- data.frame("x1" = sort(runif(n, 0, 1)))
-dat$y <- with(dat, 1.2 + funpick(x1) + rnorm(n, sd = 0.1))
+dat$y <- with(dat, 1.2 + f(x1) + rnorm(n, sd = 0.1))
 
-b <- bayesr(y ~ -1 + rs(x1, bs = "ps", k = 5, fx = TRUE, xt = list(center = FALSE)), data = dat,
-  sampler = list(n.iter = 22000, burnin = 12000, thin = 2))
+b <- bayesr(y ~ -1 + rs(x1, bs = "ps", fx = TRUE, xt = list(center = FALSE)), data = dat, engine = "JAGS")
 
 
 

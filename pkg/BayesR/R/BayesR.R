@@ -1210,17 +1210,21 @@ rs <- function(...)
 smooth.construct.rs.smooth.spec <- function(object, data, knots) 
 {
   class(object) <- object$class
-  acons <- TRUE
+  acons <- FALSE
   if(!is.null(object$xt$center))
     acons <- object$xt$center
+  object$xt$center <- acons
+  object$fixed <- TRUE
+  if(!is.null(object$xt$fixed))
+    object$fixed <- object$xt$fixed
+  object$xt$fixed <- object$fixed
   object <- smoothCon(object, data, knots, absorb.cons = acons)[[1]]
   object$by.done <- TRUE
   object$get.mu <- function(X, g) {
     k <- ncol(X)
     w <- c(1, g[(k + 1):(2 * k - 1)])
     g <- g[1:k]
-    R <- diag(1 / drop(X %*% w)) %*% X %*% diag(w)
-    R %*% g
+    drop(X %*% g) / drop(X %*% w)
   }
   object$class <- class(object)
   class(object) <- if(object$fixed) c("rs.smooth", "no.mgcv") else "rs.smooth"
@@ -1289,10 +1293,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
         box()
       }
       if(w == "qq-resid") {
-        nx <- names(x)
-        y <- model.response2(x)
-        eta <- as.data.frame(fitted(x))
-        args2$y <- qnorm(family$p(y, eta))
+        args2$y <- res
         args2 <- delete.args("qqnorm.default", args2, package = "stats", not = c("col", "pch"))
         ok <- try(do.call(qqnorm, args2))
         if(!inherits(ok, "try-error"))
@@ -1990,7 +1991,7 @@ samples.bayesr <- function(x, model = NULL, term = NULL, ...)
 confint.bayesr <- function(object, parm, level = 0.95, model = NULL, ...)
 {
   if(missing(parm))
-    parm <- all.terms(object)
+    parm <- all.terms(object, ne = TRUE)
   samps <- samples(object, model = model, term = parm)
   np <- colnames(samps)
   probs <- c((1 - level) / 2, 1 - (1 - level) / 2)
@@ -2003,7 +2004,7 @@ coef.bayesr <- function(object, model = NULL, term = NULL, FUN = mean, ...)
 {
   object <- get.model(object)
   if(is.null(term))
-    term <- all.terms(object)
+    term <- all.terms(object, ne = TRUE)
   samps <- samples(object, model = model, term = term)
   apply(samps, 2, FUN, ...)
 }
@@ -2167,6 +2168,7 @@ residuals.bayesr <- function(object, type = c("quantile", "mean"), ...)
     res <- y - family$mu(eta)
   } else {
     res <- if(is.null(family$q.residuals)) {
+      stopifnot(!is.null(family$p))
       qnorm(family$p(y, eta))
     } else family$q.residuals(y, eta)
   }
