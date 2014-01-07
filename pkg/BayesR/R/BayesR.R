@@ -2145,7 +2145,7 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
 
 
 ## Extract model residuals.
-residuals.bayesr <- function(object, type = c("mean", "quantile"), ...)
+residuals.bayesr <- function(object, type = c("quantile", "mean"), ...)
 {
   type <- match.arg(type)
   y <- model.response2(object)
