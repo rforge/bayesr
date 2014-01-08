@@ -1297,7 +1297,8 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
         args2 <- delete.args("qqnorm.default", args2, package = "stats", not = c("col", "pch"))
         ok <- try(do.call(qqnorm, args2))
         if(!inherits(ok, "try-error"))
-          qqline(args2$y)
+          #qqline(args2$y)
+		  abline(0,1)
       }
       if(w == "scatter-resid") {
         fit <- fitted.bayesr(x, type = "response")
@@ -2170,7 +2171,9 @@ residuals.bayesr <- function(object, type = c("quantile", "mean"), ...)
     res <- if(is.null(family$q.residuals)) {
       stopifnot(!is.null(family$p))
       qnorm(family$p(y, eta))
-    } else family$q.residuals(y, eta)
+    } else {  #family$q.residuals(y, eta) 
+		qnorm(runif(length(y), min = family$p(y - 1, eta), max = family$p(y, eta)))
+	}
   }
 
   res
