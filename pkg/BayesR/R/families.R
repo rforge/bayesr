@@ -860,7 +860,8 @@ zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
     "p" = function(y, eta) {
       linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * ppois(y, lambda = linkinv$lambda(eta$lambda))
     },
-	"q.residuals" = 1
+	"q.residuals" = 1,
+	"score.norm" = 1
   )
   if(rval$bayesx[[2]][[1]] == "zip_pi_cloglog")
     rval$bayesx[[1]][[1]] <- "zip_lambda_cloglog"

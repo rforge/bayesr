@@ -2069,6 +2069,7 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
   type <- match.arg(type)
   y <- model.response2(x)
   n <- length(y)
+  maxy <- max(y)
 
   if(is.null(family$score.norm)) {
     score.norm <- function(eta) {
@@ -2085,7 +2086,22 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
       rval <- if(inherits(rval, "try-error")) NA else rval$value
       rval
     }
-  } else score.norm <- family$score.norm
+  } else {
+    score.norm <- function(eta) {
+	  integrand <- function(x) {
+         family$d(x, eta)^2
+	  }
+	  rval <- sum(integrand(seq(0, maxy)))
+	  rval
+    }
+	score.norm2 <- function(y, eta) {
+	  integrand <- function(x) {
+         - sum(((x == y) * 1 - family$d(x, eta))^2)
+	  }
+	  rval <- (integrand(seq(0, maxy)))
+	  rval
+    }
+  }
 
   scorefun <- function(eta) {
     norm <- rep(0, n)
@@ -2095,12 +2111,12 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
 
     pp <- family$d(y, eta)
     loglik <- log(pp)
-    if(is.null(family$score.norm2)) {
+    if(is.null(family$score.norm)) {
       quadratic <- 2 * pp - norm
     } else {
       quadratic <- rep(0, n)
       for(i in 1:n)
-        quadratic[i] <- family$score.norm2(eta[i, , drop = FALSE])
+        quadratic[i] <- score.norm2(y[i], eta[i, , drop = FALSE])
     }
     spherical <- pp / sqrt(norm)
 
