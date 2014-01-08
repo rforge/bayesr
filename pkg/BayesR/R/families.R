@@ -824,7 +824,8 @@ poisson.BayesR <- function(links = c(lambda = "log"), ...)
     "p" = function(y, eta) {
       ppois(y, lambda = linkinv$lambda(eta$lambda))
     },
-	"q.residuals" = 1
+	"q.residuals" = 1,
+	"score.norm" = 1
   )
 
   class(rval) <- "family.BayesR"
@@ -895,7 +896,8 @@ negbin.BayesR <- function(links = c(mu = "log", delta = "log"), ...)
     "p" = function(y, eta) {
       pnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta))
     },
-	"q.residuals" = 1
+	"q.residuals" = 1,
+	"score.norm" = 1
   )
 
   class(rval) <- "family.BayesR"
@@ -929,7 +931,8 @@ zinb.BayesR <- function(links = c(mu = "log", "pi" = "logit", delta = "log"), ..
     "p" = function(y, eta) {
       linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * pnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta))
     },
-	"q.residuals" = 1
+	"q.residuals" = 1,
+	"score.norm" = 1
   )
 
   class(rval) <- "family.BayesR"
