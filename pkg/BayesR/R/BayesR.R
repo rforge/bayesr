@@ -945,13 +945,13 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
   k <- length(object)
   enames <- list()
   for(j in 1:k)
-    enames[[j]] <- all.terms(object[[j]], j, ne = TRUE)
+    enames[[j]] <- all.terms(object[[j]], j, ne = TRUE, id = FALSE, intercept = FALSE)
   if(!all(diff(sapply(enames, length)) == 0))
     stop("the number of terms in the models is not identical, cannot compute prediction!")
   enames <- data.frame(enames)
   if(!all(apply(enames, 1, function(x) length(unique(x))) == 1))
     stop("different terms in the supplied models, cannot compute prediction!")
-  enames <- all.terms(object[[1L]], ne = TRUE)
+  enames <- all.terms(object[[1L]], ne = TRUE, id = FALSE, intercept = FALSE)
   term <- if(!is.null(enames)) {
     if(is.null(term)) enames else {
       if(is.character(term)) {
@@ -1019,7 +1019,7 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
             m.samples[[i]] <- cbind(m.samples[[i]],
               matrix(attr(object[[j]]$param.effects, "samples")[, ij, drop = FALSE],
               ncol = length(ij)))
-            if(is.factor(nd[[i]])) {
+            if(is.factor(newdata[[i]])) {
               nl <- nlevels(newdata[[i]]) - if(hi) 1 else 0
               if(nl != ncol(m.samples[[i]]))
                 stop(paste("levels of factor variable", i, "in newdata not identical to model levels!"))
@@ -1888,7 +1888,9 @@ get.model <- function(x, model = NULL)
 
 
 ## Fitted values/terms extraction
-fitted.bayesr <- function(object, model = NULL, term = NULL, type = c("link", "response"), ...)
+fitted.bayesr <- function(object, model = NULL, term = NULL,
+  type = c("link", "parameter"), samples = FALSE, FUN = mean,
+  nsamps = NULL, ...)
 {
   type <- match.arg(type)
   family <- attr(object, "family")
@@ -1903,35 +1905,51 @@ fitted.bayesr <- function(object, model = NULL, term = NULL, type = c("link", "r
 
   rval <- vector(mode = "list", length = length(object))
   names(rval) <- names(object)
-  for(j in seq_along(object)) {
-    if(!any(elmts %in% names(object[[j]]))) {
-      rval[[j]] <- fitted.bayesr(object[[j]], term = term, ...)
-    } else {
-      if(is.null(term))
-        rval[[j]] <- object[[j]]$fitted.values
-      else {
-        if(!is.null(object[[j]]$effects)) {
-          fe <- list()
-          ne <- names(object[[j]]$effects)
-          for(i in seq_along(term)) {
-            if(length(e <- grep(term[i], ne)))
-              fe[[ne[e]]] <- object[[j]]$effects[[e]]
+  nrval <- names(rval)
+
+  if(!samples) {
+    for(j in seq_along(object)) {
+      if(!any(elmts %in% names(object[[j]]))) {
+        rval[[j]] <- fitted.bayesr(object[[j]], term = term, ...)
+      } else {
+        if(is.null(term))
+          rval[[j]] <- object[[j]]$fitted.values
+        else {
+          if(!is.null(object[[j]]$effects)) {
+            fe <- list()
+            ne <- names(object[[j]]$effects)
+            for(i in seq_along(term)) {
+              if(length(e <- grep(term[i], ne)))
+                fe[[ne[e]]] <- object[[j]]$effects[[e]]
+            }
+            if(length(fe))
+              rval[[j]] <- fe
           }
-          if(length(fe))
-            rval[[j]] <- fe
         }
       }
     }
-  }
 
-  rval <- delete.NULLs(rval)
+    rval <- delete.NULLs(rval)
 
-  if(is.null(term) & type != "link") {
-    links <- family$links
-    nrval <- names(rval)
-    for(j in seq_along(rval)) {
-      linkinv <- make.link2(family$links[nrval[j]])$linkinv
-      rval[[j]] <- linkinv(rval[[j]])
+    if(is.null(term) & type != "link") {
+      links <- family$links
+      for(j in seq_along(rval)) {
+        linkinv <- make.link2(family$links[nrval[j]])$linkinv
+        rval[[j]] <- linkinv(rval[[j]])
+      }
+    }
+    if(!is.null(term) & type != "link")
+      stop("cannot not extract fitted values this way, please set argument samples = TRUE!")
+  } else {
+    for(j in seq_along(object)) {
+      rval[[j]] <- predict.bayesr(object, model = j, term = term, FUN = function(x) { x }, ...)
+      if(!is.null(nsamps)) {
+        rval[[j]] <- rval[[j]][, seq.int(1, ncol(rval[[j]]), length = nsamps), drop = FALSE]
+        colnames(rval[[j]]) <- paste("i", 1:ncol(rval[[j]]), sep = ".")
+      }
+      if(type != "link")
+        rval[[j]] <- apply(rval[[j]], 2, make.link2(family$links[nrval[j]])$linkinv)
+      rval[[j]] <- apply(rval[[j]], 1, FUN)
     }
   }
 
@@ -1957,18 +1975,26 @@ samples.bayesr <- function(x, model = NULL, term = NULL, ...)
 {
   x <- get.model(x, model)
   if(!is.null(nx <- names(x))) {
-    if(all(c("effects", "param.effects", "scale") %in% nx))
+    if(all(c("effects", "param.effects") %in% nx))
       x <- list(x)
   }
+  if(is.null(nx))
+    nx <- paste("p", 1:length(x), sep = "")
+  args <- list(...)
+  id <- args$id
   samps <- list(); k <- 1
   for(j in seq_along(x)) {
-    if(!all(c("effects", "param.effects", "scale") %in% names(x[[j]]))) {
-      samps[[j]] <- samples.bayesr(x[[j]], term = term)
+    if(!all(c("effects", "param.effects") %in% names(x[[j]]))) {
+      samps[[j]] <- samples.bayesr(x[[j]], term = term, id = nx[j])
     } else {
       if(!is.null(x[[j]]$param.effects)) {
         if(nrow(x[[j]]$param.effects) > 0) {
           if(length(i <- grep2(term, rownames(x[[j]]$param.effects), fixed = TRUE))) {
             samps[[k]] <- attr(x[[j]]$param.effects, "samples")[, i, drop = FALSE]
+            if(length(x) > 1) {
+              colnames(samps[[k]]) <- paste(colnames(samps[[k]]),
+                if(!is.null(id)) paste(id, ".", sep = ""), ":", nx[j], sep = "")
+            }
             k <- k + 1
           }
         }
@@ -1977,13 +2003,19 @@ samples.bayesr <- function(x, model = NULL, term = NULL, ...)
         if(length(i <- grep2(term, names(x[[j]]$effects), fixed = TRUE))) {
           for(e in i) {
             samps[[k]] <- attr(x[[j]]$effects[[e]], "samples")
+            if(length(x) > 1) {
+              colnames(samps[[k]]) <- paste(colnames(samps[[k]]),
+                if(!is.null(id)) paste(id, ".", sep = ""), ":", nx[j], sep = "")
+            }
             k <- k + 1
           }
         }
       }
     }
   }
+  if(k < 2) stop("no samples could be extracted, please check term and model selection!")
   samps <- if(length(samps) < 1) NULL else as.mcmc(do.call("cbind", samps))
+  samps <- samps[, unique(colnames(samps)), drop = FALSE]
   samps
 }
 
@@ -1991,8 +2023,11 @@ samples.bayesr <- function(x, model = NULL, term = NULL, ...)
 ## Credible intervals of coefficients.
 confint.bayesr <- function(object, parm, level = 0.95, model = NULL, ...)
 {
+  args <- list(...)
+  if(!is.null(args$term))
+    parm <- args$term
   if(missing(parm))
-    parm <- all.terms(object, ne = TRUE)
+    parm <- all.terms(object, ne = TRUE, id = FALSE)
   samps <- samples(object, model = model, term = parm)
   np <- colnames(samps)
   probs <- c((1 - level) / 2, 1 - (1 - level) / 2)
@@ -2005,15 +2040,17 @@ coef.bayesr <- function(object, model = NULL, term = NULL, FUN = mean, ...)
 {
   object <- get.model(object)
   if(is.null(term))
-    term <- all.terms(object, ne = TRUE)
+    term <- all.terms(object, ne = TRUE, id = FALSE)
   samps <- samples(object, model = model, term = term)
   apply(samps, 2, FUN, ...)
 }
 
 
 ## Get all terms names used.
-all.terms <- function(x, model = NULL, ne = FALSE)
+all.terms <- function(x, model = NULL, ne = TRUE, ...)
 {
+  args <- list(...)
+  nx <- names(x)
   if(!ne) {
     tx <- terms.bayesr(x, model)
     if(!inherits(tx, "list"))
@@ -2021,20 +2058,42 @@ all.terms <- function(x, model = NULL, ne = FALSE)
     tl <- NULL
     for(j in tx) {
       if(inherits(j, "list")) {
-        for(i in j)
+        for(i in j) {
+          if(attr(i, "intercept"))
+            tl <- c(tl, "(Intercept)")
           tl <- c(tl, attr(i, "term.labels"))
-      } else tl <- c(tl, attr(j, "term.labels"))
+        }
+      } else {
+        if(attr(j, "intercept"))
+          tl <- c(tl, "(Intercept)")
+        tl <- c(tl, attr(j, "term.labels"))
+      }
     }
   } else {
     x <- get.model(x, model)
+    if(all(c("effects", "param.effects") %in% names(x))) {
+      x <- list(x)
+      if(!is.null(model)) {
+        if(!is.character(model))
+          nx <- nx[as.integer(model)]
+        else nx <- grep(model, nx, value = TRUE)
+      }
+    }
     tl <- NULL
     for(j in seq_along(x)) {
       if(!"effects" %in% names(x[[j]]))
-        tl <- c(tl, all.terms(x[[j]], ne = TRUE))
-      else
+        tl <- c(tl, all.terms(x[[j]], ne = TRUE, ...))
+      else {
+        if(!is.null(x[[j]]$param.effects)) {
+          tl <- c(tl, paste(rownames(x[[j]]$param.effects),
+            if(is.null(args$id)) paste(":", nx[j], sep = ""), sep = ""))
+        }
         tl <- c(tl, names(x[[j]]$effects))
+      }
     }
   }
+  if(!is.null(args$intercept))
+    tl <- tl[!grepl("Intercept", tl)]
 
   tl
 }
