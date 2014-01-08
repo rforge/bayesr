@@ -355,8 +355,9 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
             if(x[[j]]$hlevel > 1) {
               if(!any(grepl("family", fctr))) {
                 teqn <- paste(teqn, " family=", "gaussian_re", sep = "")
-                teqn <- paste(teqn, " equationtype=",
-                  family$bayesx[[nx[if(is.null(id)) j else id]]][eqtj], sep = "")
+                teqn <- ifelse(family == "quant", paste(teqn, " quantile=",
+                  family$bayesx[[nx[if(is.null(id)) j else id]]][eqtj], sep = ""), paste(teqn, " equationtype=",
+                  family$bayesx[[nx[if(is.null(id)) j else id]]][eqtj], sep = ""))
                 ok <- FALSE
               }
             }
@@ -371,7 +372,9 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
           if(!any(grepl("family", fctr)))
             teqn <- paste(teqn, " family=", family$bayesx[[nx[if(is.null(id)) j else id]]][1], sep = "")
           if(!any(grepl("equationtype", fctr)))
-            teqn <- paste(teqn, " equationtype=", family$bayesx[[nx[if(is.null(id)) j else id]]][eqtj], sep = "")
+            teqn <- ifelse(family == "quant", 
+							paste(teqn, " quantile=", family$bayesx[[nx[if(is.null(id)) j else id]]][eqtj], sep = ""),
+							paste(teqn, " equationtype=", family$bayesx[[nx[if(is.null(id)) j else id]]][eqtj], sep = ""))
         }
         if(length(fctr)) {
           fctr <- paste(fctr, collapse = " ")

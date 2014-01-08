@@ -941,15 +941,14 @@ zinb.BayesR <- function(links = c(mu = "log", "pi" = "logit", delta = "log"), ..
 
 
 ## http://stats.stackexchange.com/questions/17672/quantile-regression-in-jags
-quant.BayesR <- function(links = c(mu = "identity", sigma = "log"), prob = 0.5, ...)
+quant.BayesR <- function(links = c(mu = "identity"), prob = 0.5, ...)
 {
   rval <- list(
-    "family" = "gaussian",
-    "names" = c("mu", "sigma"),
-    "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
+    "family" = "quant",
+    "names" = "mu",
+    "links" = parse.links(links, c(mu = "identity"), ...),
     bayesx = list(
-      "mu" = c("normal_mu", "mean"),
-      "sigma" = c("normal_sigma2", "scale")
+      "mu" = c("quantreg", prob)
     ),
     jagstan = list(
       "dist" = "dnorm",
