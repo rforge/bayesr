@@ -824,7 +824,7 @@ poisson.BayesR <- function(links = c(lambda = "log"), ...)
     "p" = function(y, eta) {
       ppois(y, lambda = linkinv$lambda(eta$lambda))
     },
-	"q.residuals" <- TRUE
+	"q.residuals" = 1
   )
 
   class(rval) <- "family.BayesR"
@@ -859,8 +859,8 @@ zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
     },
     "p" = function(y, eta) {
       linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * ppois(y, lambda = linkinv$lambda(eta$lambda))
-    }
-	"q.residuals" <- 1
+    },
+	"q.residuals" = 1
   )
   if(rval$bayesx[[2]][[1]] == "zip_pi_cloglog")
     rval$bayesx[[1]][[1]] <- "zip_lambda_cloglog"
@@ -893,7 +893,8 @@ negbin.BayesR <- function(links = c(mu = "log", delta = "log"), ...)
     },
     "p" = function(y, eta) {
       pnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta))
-    }
+    },
+	"q.residuals" = 1
   )
 
   class(rval) <- "family.BayesR"
@@ -926,7 +927,8 @@ zinb.BayesR <- function(links = c(mu = "log", "pi" = "logit", delta = "log"), ..
     },
     "p" = function(y, eta) {
       linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * pnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta))
-    } 
+    },
+	"q.residuals" = 1
   )
 
   class(rval) <- "family.BayesR"
