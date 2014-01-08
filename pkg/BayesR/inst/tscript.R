@@ -14,9 +14,7 @@ fun <- function(x, theta = c(2, -20, -0.1)) {
 dat$y <- scale2(with(dat, 1.2 + sin(x1) + re + rnorm(n, sd = 0.1)), 0.0001, 2)
 
 ## fit model
-b <- bayesx2(y ~ x1 + fac, family = gaussian.BayesR, data = dat)
-
-b <- bayesx2(y ~ x1 + sx(fac, bs = "re") + fac2, fac ~ - 1 + sx(x2), ~ sx(x1) + sx(fac, bs = "re"), family = gaussian.BayesR, data = dat)
+b <- bayesr(y ~ sx(x1) + sx(fac, bs = "re"), fac ~ - 1 + sx(x2), ~ sx(x1) + sx(fac, bs = "re"), family = gaussian, data = dat, engine = "BayesX")
 
 n <- 50
 nd <- data.frame(x1 = seq(-10, 10, length = n), x2 = seq(-10, 10, length = n))
