@@ -926,7 +926,8 @@ partial.residuals <- function(effects, response, fitted.values, family)
 ## A prediction method for "bayesr" objects.
 ## Prediction can also be based on multiple chains.
 predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
-  intercept = TRUE, FUN = mean, trans = NULL, type = c("link", "response"), ...)
+  intercept = TRUE, FUN = mean, trans = NULL, type = c("link", "response"),
+  nsamps = NULL, ...)
 {
   family <- attr(object, "family")
   if(missing(newdata))
@@ -1029,6 +1030,9 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
             } else m.designs[[i]] <- newdata[[i]]
           }
         }
+        if(!is.null(nsamps)) {
+          m.samples[[i]] <- m.samples[[i]][seq.int(1:ncol(m.samples[[i]]), length = nsamps), , drop = FALSE]
+        }
       }
     }
 
@@ -1036,6 +1040,7 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
       sami <- attr(object[[j]]$param.effects, "samples")
       if(!is.null(sami)) {
         sami <- sami[, grep("(Intercept)", colnames(sami), fixed = TRUE)]
+        if(!is.null(nsamps)) sami <- sami[seq.int(1:length(sami), length = nsamps)]
         if(length(sami)) {
           m.samples$Intercept <- sami
           i <- if(is.null(term)) 1 else {
@@ -1275,6 +1280,12 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
     }
 
     res <- residuals.bayesr(x, ...)
+    if(any(which %in% c("scatter-resid", "scale-resid"))) {
+      fit <- fitted.bayesr(x, type = "parameter", samples = TRUE, model = 1, nsamps = args$nsamps)
+      if(is.list(fit)) fit <- fit[[1]]
+    }
+    rtype <- args$type
+    if(is.null(rtype)) rtype <- "quantile"
     for(w in which) {
       args2 <- args
       if(w == "hist-resid") {
@@ -1293,16 +1304,13 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
         box()
       }
       if(w == "qq-resid") {
-        args2$y <- res
+        args2$y <- if(rtype == "quantile") qnorm(res) else (res - mean(res)) / sd(res)
         args2 <- delete.args("qqnorm.default", args2, package = "stats", not = c("col", "pch"))
         ok <- try(do.call(qqnorm, args2))
         if(!inherits(ok, "try-error"))
-          #qqline(args2$y)
-		  abline(0,1)
+  		    if(rtype == "quantile") abline(0,1) else qqline(args2$y)
       }
       if(w == "scatter-resid") {
-        fit <- fitted.bayesr(x, type = "response")
-        if(is.list(fit)) fit <- fit[[1]]
         args2$x <- fit
         args2$y <- res
         args2 <- delete.args("scatter.smooth", args2, package = "stats", not = c("col", "pch"))
@@ -1314,8 +1322,6 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
           abline(h = 0, lty = 2)
       }
       if(w == "scale-resid") {
-        fit <- fitted.bayesr(x, type = "response")
-        if(is.list(fit)) fit <- fit[[1]]
         args2$x <- fit
         args2$y <- sqrt(abs((res - mean(res)) / sd(res)))
         args2 <- delete.args("scatter.smooth", args2, package = "stats", not = c("col", "pch"))
@@ -1895,7 +1901,8 @@ fitted.bayesr <- function(object, model = NULL, term = NULL,
   type <- match.arg(type)
   family <- attr(object, "family")
 
-  object <- get.model(object, model)
+  if(type != "parameter")
+    object <- get.model(object, model)
 
   elmts <- c("formula", "fake.formula", "model", "param.effects",
     "effects", "fitted.values", "residuals")
@@ -1928,30 +1935,23 @@ fitted.bayesr <- function(object, model = NULL, term = NULL,
         }
       }
     }
-
-    rval <- delete.NULLs(rval)
-
-    if(is.null(term) & type != "link") {
-      links <- family$links
-      for(j in seq_along(rval)) {
-        linkinv <- make.link2(family$links[nrval[j]])$linkinv
-        rval[[j]] <- linkinv(rval[[j]])
-      }
-    }
-    if(!is.null(term) & type != "link")
-      stop("cannot not extract fitted values this way, please set argument samples = TRUE!")
+    if(type != "link")
+      stop("to compute fitted values on the parameter scale use option samples = TRUE!")
   } else {
-    for(j in seq_along(object)) {
-      rval[[j]] <- predict.bayesr(object, model = j, term = term, FUN = function(x) { x }, ...)
-      if(!is.null(nsamps)) {
-        rval[[j]] <- rval[[j]][, seq.int(1, ncol(rval[[j]]), length = nsamps), drop = FALSE]
-        colnames(rval[[j]]) <- paste("i", 1:ncol(rval[[j]]), sep = ".")
-      }
+    if(is.null(model))
+      model <- nrval
+    if(!is.character(model))
+      model <- nrval[model]
+    for(j in seq_along(model)) {
+      rval[[j]] <- predict.bayesr(object, model = j, term = term,
+        FUN = function(x) { x }, nsamps = nsamps, ...)
       if(type != "link")
         rval[[j]] <- apply(rval[[j]], 2, make.link2(family$links[nrval[j]])$linkinv)
-      rval[[j]] <- apply(rval[[j]], 1, FUN)
+      rval[[j]] <- t(apply(rval[[j]], 1, FUN))
     }
   }
+
+  rval <- delete.NULLs(rval)
 
   if(length(rval) < 2)
     rval <- rval[[1]]
@@ -2196,20 +2196,17 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
     nx <- names(x)
     eta <- list()
     for(j in nx) {
-      eta[[j]] <- predict.bayesr(x, model = j, FUN = function(x) { x })
-      if(!is.null(nsamps))
-        eta[[j]] <- eta[[j]][, sample(1:ncol(eta[[j]]), nsamps, replace = FALSE)]
-      nsamps <- ncol(eta[[1]])
+      eta[[j]] <- predict.bayesr(x, model = j, FUN = function(x) { x }, nsamps = nsamps)
       colnames(eta[[j]]) <- paste("i",
-        formatC(1:ncol(eta[[j]]), width = nchar(nsamps), flag = "0"),
+        formatC(1:ncol(eta[[j]]), width = nchar(ncol(eta[[1]])), flag = "0"),
         sep = ".")
     }
-    nsamps <- ncol(eta[[1]])
+    nc <- ncol(eta[[1]])
     eta <- as.data.frame(eta)
     res <- list()
-    for(i in 1:nsamps) {
+    for(i in 1:nc) {
       eta2 <- eta[, grep(ni <- paste(".i.",
-        formatC(i, width = nchar(nsamps), flag = "0"), sep = ""),
+        formatC(i, width = nchar(nc), flag = "0"), sep = ""),
         names(eta)), drop = FALSE]
       names(eta2) <- gsub(ni, "", names(eta2))
       res[[i]] <- scorefun(eta2)
@@ -2222,34 +2219,37 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
 
 
 ## Extract model residuals.
-residuals.bayesr <- function(object, type = c("quantile", "mean"), ...)
+residuals.bayesr <- function(object, type = c("quantile", "ordinary"),
+  FUN = mean, nsamps = NULL)
 {
   type <- match.arg(type)
   y <- model.response2(object)
   family <- attr(object, "family")
-
-  elmts <- c("formula", "fake.formula", "model", "param.effects",
-    "effects", "fitted.values", "residuals")
-
-  if(any(elmts %in% names(object)))
-    object <- list(object)
-
-  eta <- list()
-  for(j in names(object)) {
-    eta[[j]] <- fitted(object, model = j)
-  }
-
-  if(type == "mean") {
+  if(type == "ordinary") {
     if(is.factor(y)) y <- as.integer(y) - 1
-    res <- y - family$mu(eta)
-  } else {
-    res <- if(is.null(family$q.residuals)) {
-      stopifnot(!is.null(family$p))
-      qnorm(family$p(y, eta))
-    } else {  #family$q.residuals(y, eta) 
-		qnorm(runif(length(y), min = family$p(y - 1, eta), max = family$p(y, eta)))
-	}
+  } else stopifnot(!is.null(family$p))
+  res <- fitted(object, type = "link", samples = TRUE, FUN = function(x) { x }, nsamps = nsamps)
+  nc <- ncol(res[[1]])
+  res2 <- matrix(NA, nrow(res[[1]]), nc)
+  for(j in seq_along(res)) {
+    colnames(res[[j]]) <- paste("i",
+      formatC(1:ncol(res[[j]]), width = nchar(nc), flag = "0"),
+      sep = ".")
   }
+  res <- as.data.frame(res)
+  for(i in 1:nc) {
+    eta2 <- res[, grep(ni <- paste(".i.",
+      formatC(i, width = nchar(nc), flag = "0"), sep = ""),
+      names(res)), drop = FALSE]
+    names(eta2) <- gsub(ni, "", names(eta2))
+    res2[, i] <- if(type == "quantile") {
+      family$p(y, eta2)
+    } else family$mu(eta2)
+  }
+  res <- apply(res2, 1, FUN)
+
+  if(type == "ordinary")
+    res <- y - res
 
   res
 }
