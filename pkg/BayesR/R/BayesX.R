@@ -147,8 +147,9 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
   }
   if(length(grep("weights", mf.names)))
     add.weights <- TRUE
+  quantile <- family$bayesx$quantile
 
-  family$bayesx[c("order", "lhs", "rm.number", "weights")] <- NULL
+  family$bayesx[c("order", "lhs", "rm.number", "weights", "quantile")] <- NULL
 
   args <- list(...)
   model.name <- control$setup$model.name
@@ -354,10 +355,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
             teqn <- paste(teqn, " hlevel=", x[[j]]$hlevel, sep = "")
             if(x[[j]]$hlevel > 1) {
               if(!any(grepl("family", fctr))) {
-                teqn <- paste(teqn, " family=", "gaussian_re", sep = "")
-                teqn <- ifelse(family == "quant", paste(teqn, " quantile=",
-                  family$bayesx[[nx[if(is.null(id)) j else id]]][eqtj], sep = ""), paste(teqn, " equationtype=",
-                  family$bayesx[[nx[if(is.null(id)) j else id]]][eqtj], sep = ""))
+                teqn <- paste(teqn, " equationtype=", family$bayesx[[nx[if(is.null(id)) j else id]]][eqtj], sep = "")
                 ok <- FALSE
               }
             }
@@ -372,9 +370,9 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
           if(!any(grepl("family", fctr)))
             teqn <- paste(teqn, " family=", family$bayesx[[nx[if(is.null(id)) j else id]]][1], sep = "")
           if(!any(grepl("equationtype", fctr)))
-            teqn <- ifelse(family == "quant", 
-							paste(teqn, " quantile=", family$bayesx[[nx[if(is.null(id)) j else id]]][eqtj], sep = ""),
-							paste(teqn, " equationtype=", family$bayesx[[nx[if(is.null(id)) j else id]]][eqtj], sep = ""))
+					  teqn <- paste(teqn, " equationtype=", family$bayesx[[nx[if(is.null(id)) j else id]]][eqtj], sep = "")
+          if(!is.null(quantile))
+            teqn <- paste(teqn, " quantile=", quantile, sep = "")
         }
         if(length(fctr)) {
           fctr <- paste(fctr, collapse = " ")
@@ -659,7 +657,7 @@ resultsBayesX <- function(x, samples, ...)
     ylevels <- ylevels[ylevels != reference]
 
   rename.p <- function(x) {
-    if(family$family %in% c("beta", "binomial", "multinomial")) {
+    if(family$family %in% c("beta", "binomial", "multinomial", "quant")) {
       foo <- switch(family$family,
         "beta" = function(x) gsub("sigma2", "sigma", x),
         "binomial" = function(x) gsub("binomial", "pi", x),
@@ -683,7 +681,8 @@ resultsBayesX <- function(x, samples, ...)
             x <- gsub("multinomialprobit:", "", x)
           }
           x
-        }
+        },
+        "quant" = function(x) gsub("quantreg", "mu", x),
       )
       x <- foo(x)
     }

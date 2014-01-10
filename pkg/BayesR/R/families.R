@@ -948,8 +948,21 @@ quant.BayesR <- function(links = c(mu = "identity"), prob = 0.5, ...)
     "names" = "mu",
     "links" = parse.links(links, c(mu = "identity"), ...),
     bayesx = list(
-      "mu" = c("quantreg", prob)
-    ),
+      "mu" = c("quantreg", "mean"),
+      "quantile" = prob
+    )
+  )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
+quant2.BayesR <- function(links = c(mu = "identity", sigma = "log"), prob = 0.5, ...)
+{
+  rval <- list(
+    "family" = "quant",
+    "names" = c("mu", "sigma"),
+    "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
     jagstan = list(
       "dist" = "dnorm",
       "eta" = JAGSeta,
