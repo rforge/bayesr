@@ -104,7 +104,7 @@ SEXP iwls_eval(SEXP fun, SEXP response, SEXP eta, SEXP rho)
 
 SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 {
-  int nProtected;
+  int nProtected = 0;
 
   /* Evaluate loglik, weights and score vector. */
   SEXP eta2;
