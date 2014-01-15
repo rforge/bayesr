@@ -719,6 +719,10 @@ resultsBayesX <- function(x, samples, ...)
         for(i in 1:10)
           id2 <- gsub(i, "", id2)
       }
+      if(!is.null(obj$hlevel)) {
+        if(obj$hlevel > 1)
+          id2 <- "gaussian"
+      }
 
       ## Parametric effects.
       if(k <- ncol(obj$X)) {
@@ -726,7 +730,6 @@ resultsBayesX <- function(x, samples, ...)
         nx <- gsub("Intercept", "const", nx, fixed = TRUE)
         pt <- paste(nx, collapse = "+")
         pt <- paste(pt, paste(id2, family$bayesx[[id]][2], sep = ""), obj$hlevel, sep = ":")
-
         if(any(grepl(pt, snames, fixed = TRUE))) {
           samps <- as.matrix(samples[[j]][, grepl(pt, snames, fixed = TRUE)], ncol = k)
           nx <- gsub("const", "(Intercept)", nx, fixed = TRUE)
