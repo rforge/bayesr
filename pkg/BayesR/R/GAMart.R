@@ -118,13 +118,15 @@ dgp_eta <- function(nobs = c(500, 100, 10), const = 1.2,
         x <- sample(rep(seq(min, max, length = nx), length.out = nobs[j]))
         fun[[fn]] <- if(mt != "const") {
           scale2(FUN(x)) * if(is.na(scale[[j]][i])) 1 else scale[[j]][i]
-        } else FUN(const = const)
+        } else rep(FUN(const = const), length.out = nobs[j])
         if(mt != "const") xd[[xn]] <- x
       }
     }
     eta <- 0
+    fn <- names(fun)
     for(i in seq_along(fun)) {
-      fun[[i]] <- fun[[i]] - mean(fun[[i]])
+      if(fn[i] != "const")
+        fun[[i]] <- fun[[i]] - mean(fun[[i]])
       eta <- eta + fun[[i]]
     }
     fun[[paste("eta", j, sep = "")]] <- eta
