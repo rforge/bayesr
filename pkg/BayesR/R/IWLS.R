@@ -125,9 +125,9 @@ smooth.IWLS.default <- function(x, ...)
     x$state <- list()
     x$state$g <- rep(1, ncol(x$X)) ##runif(ncol(x$X), 0.001, 0.002)
     if(!x$fixed)
-      x$state$tau2 <- if(is.null(x$sp)) 0.001 else x$sp
+      x$state$tau2 <- if(is.null(x$sp)) 10 else x$sp
     else
-      x$state$tau2 <- 0.0001
+      x$state$tau2 <- 10
     x$s.colnames <- if(is.null(x$s.colnames)) {
       c(paste("c", 1:length(x$state$g), sep = ""),
         if(!x$fixed) "tau2" else "tau2")
@@ -262,7 +262,7 @@ smooth.IWLS.default <- function(x, ...)
 ## Sampler based on IWLS proposals.
 samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   verbose = TRUE, step = 20, svalues = TRUE, eps = 1e-04, maxit = 100,
-  tdir = NULL, ...)
+  tdir = NULL, method = "MCMC", ...)
 {
   family <- attr(x, "family")
   nx <- family$names
@@ -336,62 +336,89 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   deviance <- rep(0, length(iterthin))
   rho <- new.env()
 
-  ## Start sampling
-  ptm <- proc.time()
-  for(i in 1:n.iter) {
-    if(save <- i %in% iterthin)
-      js <- which(iterthin == i)
+  if(method == "MCMC") {
+    ## Start sampling
+    ptm <- proc.time()
+    for(i in 1:n.iter) {
+      if(save <- i %in% iterthin)
+        js <- which(iterthin == i)
     
-    ## Cycle through all parameters
-    for(j in 1:np) {
-      ## And all terms.
-      for(sj in seq_along(x[[nx[j]]]$smooth)) {
-        ## Get proposed states.
-        p.state <- x[[nx[j]]]$smooth[[sj]]$propose(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j], rho = rho)
+      ## Cycle through all parameters
+      for(j in 1:np) {
+        ## And all terms.
+        for(sj in seq_along(x[[nx[j]]]$smooth)) {
+          ## Get proposed states.
+          p.state <- x[[nx[j]]]$smooth[[sj]]$propose(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j], rho = rho)
 
-        ## If accepted, set current state to proposed state.
-        accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
+          ## If accepted, set current state to proposed state.
+          accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
 
-        if(accepted) {
-          eta[[nx[j]]] <- eta[[nx[j]]] - x[[nx[j]]]$smooth[[sj]]$state$fit + p.state$fit
-          x[[nx[j]]]$smooth[[sj]]$state <- p.state 
+          if(accepted) {
+            eta[[nx[j]]] <- eta[[nx[j]]] - x[[nx[j]]]$smooth[[sj]]$state$fit + p.state$fit
+            x[[nx[j]]]$smooth[[sj]]$state <- p.state 
+          }
+
+          ## Save the samples and acceptance.
+          if(save) {
+            x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- exp(p.state$alpha)
+            x[[nx[j]]]$smooth[[sj]]$s.samples[js, ] <- unlist(x[[nx[j]]]$smooth[[sj]]$state[x[[nx[j]]]$smooth[[sj]]$p.save])
+            deviance[js] <- -2 * family$loglik(response, eta)
+          }
         }
-
-        ## Save the samples and acceptance.
-        if(save) {
-          x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- exp(p.state$alpha)
-          x[[nx[j]]]$smooth[[sj]]$s.samples[js, ] <- unlist(x[[nx[j]]]$smooth[[sj]]$state[x[[nx[j]]]$smooth[[sj]]$p.save])
-          deviance[js] <- -2 * family$loglik(response, eta)
+      }
+      if(verbose) {
+        if(i == 10) {
+          elapsed <- c(proc.time() - ptm)[3]
+          rt <- elapsed / i * (n.iter - i)
+          rt <- if(rt > 60) {
+            paste(formatC(format(round(rt / 60, 2), nsmall = 2), width = 5), "min", sep = "")
+          } else paste(formatC(format(round(rt, 2), nsmall = 2), width = 5), "sec", sep = "")
+          cat("|", rep(" ", nstep), "|   0% ", rt, sep = "")
+          if(.Platform$OS.type != "unix") flush.console()
+        }
+        if(i %% step == 0) {
+          cat("\r")
+          p <- i / n.iter
+          p <- paste("|", paste(rep("*", round(nstep * p)), collapse = ""),
+            paste(rep(" ", round(nstep * (1 - p))), collapse = ""), "| ",
+            formatC(round(p, 2) * 100, width = 3), "%", sep = "")
+          elapsed <- c(proc.time() - ptm)[3]
+          rt <- elapsed / i * (n.iter - i)
+          rt <- if(rt > 60) {
+            paste(formatC(format(round(rt / 60, 2), nsmall = 2), width = 5), "min", sep = "")
+          } else paste(formatC(format(round(rt, 2), nsmall = 2), width = 5), "sec", sep = "")
+          cat(p, rt, sep = " ")
+          if(.Platform$OS.type != "unix") flush.console()
         }
       }
     }
-    if(verbose) {
-      if(i == 10) {
-        elapsed <- c(proc.time() - ptm)[3]
-        rt <- elapsed / i * (n.iter - i)
-        rt <- if(rt > 60) {
-          paste(formatC(format(round(rt / 60, 2), nsmall = 2), width = 5), "min", sep = "")
-        } else paste(formatC(format(round(rt, 2), nsmall = 2), width = 5), "sec", sep = "")
-        cat("|", rep(" ", nstep), "|   0% ", rt, sep = "")
-        if(.Platform$OS.type != "unix") flush.console()
-      }
-      if(i %% step == 0) {
-        cat("\r")
-        p <- i / n.iter
-        p <- paste("|", paste(rep("*", round(nstep * p)), collapse = ""),
-          paste(rep(" ", round(nstep * (1 - p))), collapse = ""), "| ",
-          formatC(round(p, 2) * 100, width = 3), "%", sep = "")
-        elapsed <- c(proc.time() - ptm)[3]
-        rt <- elapsed / i * (n.iter - i)
-        rt <- if(rt > 60) {
-          paste(formatC(format(round(rt / 60, 2), nsmall = 2), width = 5), "min", sep = "")
-        } else paste(formatC(format(round(rt, 2), nsmall = 2), width = 5), "sec", sep = "")
-        cat(p, rt, sep = " ")
-        if(.Platform$OS.type != "unix") flush.console()
+    cat("\n")
+  } else {
+    if(method == "backfitting") {
+      a <- 1
+    }
+  }
+
+  if(method %in% c("reml", "backfitting")) {
+    eta2 <- eta
+    for(js in seq_along(iterthin)) {
+      for(j in 1:np) {
+        ## And all terms.
+        for(sj in seq_along(x[[nx[j]]]$smooth)) {
+          ## Get proposed states.
+          p.state <- x[[nx[j]]]$smooth[[sj]]$propose(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j], rho = rho)
+
+          ## Save the samples.
+          x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- 1
+          x[[nx[j]]]$smooth[[sj]]$s.samples[js, ] <- unlist(p.state[x[[nx[j]]]$smooth[[sj]]$p.save])
+
+          eta2[[nx[j]]] <- eta[[nx[j]]] - x[[nx[j]]]$smooth[[sj]]$state$fit + p.state$fit
+
+          deviance[js] <- -2 * family$loglik(response, eta2)
+        }
       }
     }
   }
-  cat("\n")
 
   ## Return all samples as mcmc matrix.
   ## (1) Write out all samples to tdir.

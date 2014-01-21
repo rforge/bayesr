@@ -95,7 +95,7 @@ n <- 100
 dat <- data.frame("x" = sort(runif(n, -3, 3)))
 dat$y <- with(dat, 1.2 + sin(x) + rnorm(n, sd = scale2(cos(x), 0.1, 0.8)))
 
-b <- bayesr(y ~ s(x), ~ s(x), family = gaussian, data = dat, engine = "IWLS")
+b <- bayesr(y ~ s(x), family = gaussian, data = dat, engine = "IWLS", method = "backfitting")
 
 plot(b)
 plot(b, which = "samples")
