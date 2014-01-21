@@ -1,0 +1,110 @@
+\documentclass[nojss]{jss}
+% \documentclass[article]{jss}
+\usepackage{amsmath,amssymb,amsfonts,thumbpdf}
+\usepackage{multirow,longtable}
+
+%% additional commands
+\newcommand{\squote}[1]{`{#1}'}
+\newcommand{\dquote}[1]{``{#1}''}
+\newcommand{\fct}[1]{{\texttt{#1()}\index{#1@\texttt{#1()}}}}
+\newcommand{\class}[1]{\dquote{\texttt{#1}}}
+%% for internal use
+\newcommand{\fixme}[1]{\emph{\marginpar{FIXME} (#1)}}
+\newcommand{\readme}[1]{\emph{\marginpar{README} (#1)}}
+
+%% Authors: NU + rest in alphabetical order
+\author{Nikolaus Umlauf\\Universit\"at Innsbruck \And
+        Nadja Klein\\Universit\"at G\"ottingen \AND
+        Stefan Lang\\Universit\"at Innsbruck \And
+        Achim Zeileis\\Universit\"at Innsbruck}
+\Plainauthor{Nikolaus Umlauf, Nadja Klein, Stefan Lang, Achim Zeileis}
+
+\title{Bayesian distributional regression in \proglang{R}}
+\Plaintitle{Bayesian distributional regression in R}
+
+\Keywords{Distributional regression, STAR models, MCMC, \proglang{R}}
+\Plainkeywords{Distributional regression, STAR models, MCMC, R}
+
+\Abstract{
+  \dots
+}
+
+\Address{
+  Nikolaus Umlauf, Stefan Lang, Achim Zeileis\\
+  Department of Statistics\\
+  Faculty of Economics and Statistics\\
+  Universit\"at Innsbruck\\
+  Universit\"atsstr.~15\\
+  6020 Innsbruck, Austria\\
+  E-mail: \email{Nikolaus.Umlauf@uibk.ac.at}, \email{Stefan.Lang@uibk.ac.at},\\
+  \phantom{E-mail: }\email{Achim.Zeileis@R-project.org}\\
+  URL: \url{http://eeecon.uibk.ac.at/~umlauf/},\\
+  \phantom{URL: }\url{http://www.uibk.ac.at/statistics/personal/lang/},\\
+  \phantom{URL: }\url{http://eeecon.uibk.ac.at/~zeileis/}\\
+
+  Nadja Klein\\
+  Department of Statistics and Econometrics\\
+  Georg-August-Universit\"at G\"ottingen\\
+  Platz der G\"ottinger Sieben 5 (MZG)\\
+  37073 G\"ottingen, Germany \\
+  E-mail: \email{nklein@gwdg.de}\\
+  URL: \url{http://www.uni-goettingen.de/en/325353.html}
+}
+
+%% Sweave/vignette information and metadata
+%% need no \usepackage{Sweave}
+\SweaveOpts{engine = R, eps = FALSE, keep.source = TRUE}
+%\VignetteIndexEntry{Bayesian distributional regression in R}
+%\VignetteDepends{colorspace,mgcv,BayesXsrc,akima}
+%\VignetteKeywords{Distributional regression, STAR models, MCMC, R}
+%\VignettePackage{BayesR}
+
+<<preliminaries, echo=FALSE, results=hide>>=
+options(width = 70, prompt = "R> ", continue = "+  ")
+set.seed(1090)
+library("BayesR")
+options("use.akima" = TRUE)
+@
+
+
+\begin{document}
+
+
+\section{Introduction} \label{sec:intro}
+
+\dots \citet{BayesR:Fahrmeir+Lang:2001} \dots
+
+
+\section{Motivating example} \label{sec:motivation}
+
+
+\section{Structured additive distributional regression} \label{sec:model}
+
+
+\section[User interface]{User interface} \label{sec:userinterface}
+
+
+\section{Distributional regression in practice} \label{sec:illustrations}
+
+
+\section{Summary}\label{sec:conclusion}
+
+
+\section*{Acknowledgments}
+
+
+\bibliography{BayesR}
+
+
+\clearpage
+
+
+\begin{appendix}
+
+\dots
+
+\end{appendix}
+
+
+\end{document}
+

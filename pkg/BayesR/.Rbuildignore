@@ -1,3 +1,4 @@
 inst/tscript.R
+int/JSS
 R/devtools.R
 tests
