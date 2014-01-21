@@ -307,7 +307,7 @@ dgp_t <- function(n = 1000, mu = NULL, sigma2 = NULL, df = NULL, ...)
 
 if(FALSE) {
   d <- dgp_t()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12),y ~ sx(sigma2.x11), y~ sx(df.x11), data = d, family = t, engine = "BayesX", verbose = TRUE)
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), y ~ sx(sigma2.x11), y ~ sx(df.x11), data = d, family = t, engine = "BayesX", verbose = TRUE)
   plot(b)
 }
 

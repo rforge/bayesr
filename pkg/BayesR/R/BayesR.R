@@ -1279,7 +1279,9 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
       } else par(ask = ask)
     }
 
-    res <- residuals.bayesr(x, ...)
+    args2 <- args
+    args2$object <- x
+    res <- do.call("residuals.bayesr", delete.args("residuals.bayesr", args2))
     if(any(which %in% c("scatter-resid", "scale-resid"))) {
       fit <- fitted.bayesr(x, type = "parameter", samples = TRUE, model = 1, nsamps = args$nsamps)
       if(is.list(fit)) fit <- fit[[1]]
@@ -2128,7 +2130,7 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
   type <- match.arg(type)
   y <- model.response2(x)
   n <- length(y)
-  maxy <- max(y)
+  maxy <- max(y, na.rm = TRUE)
 
   if(is.null(family$score.norm)) {
     score.norm <- function(eta) {
@@ -2147,18 +2149,19 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
     }
   } else {
     score.norm <- function(eta) {
-	  integrand <- function(x) {
-         family$d(x, eta)^2
-	  }
-	  rval <- sum(integrand(seq(0, maxy)))
-	  rval
+	    integrand <- function(x) {
+        family$d(x, eta)^2
+	    }
+	    rval <- sum(integrand(seq(0, maxy)))
+	    rval
     }
-	score.norm2 <- function(y, eta) {
-	  integrand <- function(x) {
-         - sum(((x == y) * 1 - family$d(x, eta))^2)
-	  }
-	  rval <- (integrand(seq(0, maxy)))
-	  rval
+
+	  score.norm2 <- function(y, eta) {
+	    integrand <- function(x) {
+         -sum(((x == y) * 1 - family$d(x, eta))^2)
+	    }
+	    rval <- (integrand(seq(0, maxy)))
+	    rval
     }
   }
 

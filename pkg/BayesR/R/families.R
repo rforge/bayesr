@@ -109,16 +109,14 @@ beta.BayesR <- function(links = c(mu = "logit", sigma = "log"), ...)
         b <- linkinv$sigma(eta$sigma)
         hilfs <- a * (1 - b) / b
         hilfs2 <- (1 - a) * (1 - b) / b
-        drop(a * hilfs2 * log(y) - a * hilfs2 * log(1 - y) +
-               ((1 - b) / b) * a * (1 - a) * (-digamma(hilfs) + digamma(hilfs2)))
+        drop(a * hilfs2 * log(y) - a * hilfs2 * log(1 - y) + ((1 - b) / b) * a * (1 - a) * (-digamma(hilfs) + digamma(hilfs2)))
       },
       "sigma" = function(y, eta, ...) {
         a <- linkinv$mu(eta$mu)
         b <- linkinv$sigma(eta$sigma)
         hilfs <- a*(1-b)/b
         hilfs2 <- (1-a)*(1-b)/b
-        drop(-(1 - b) / (b) * ( -a * digamma(hilfs) - (1 - a) * digamma(hilfs2) +
-                                  digamma((1 - b) / (b)) + a * log(y) + (1 - a) * log(1 - y)))
+        drop(-(1 - b) / (b) * ( -a * digamma(hilfs) - (1 - a) * digamma(hilfs2) + digamma((1 - b) / (b)) + a * log(y) + (1 - a) * log(1 - y)))
       }
     ),
     "weights" = list(
@@ -191,24 +189,24 @@ betazoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log",
       linkinv$mu(eta$mu) * (1 - (linkinv$nu(eta$nu) + linkinv$tau(eta$tau)) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau))) +
         linkinv$tau(eta$tau) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau))
     },
-	"d" = function(y, eta) {
-		mu <- linkinv$mu(eta$mu)
-		sigma <- linkinv$sigma(eta$sigma)
-		a <- mu * (1 - sigma) / (sigma)
-		b <- a * (1 - mu) / mu
-		d <- ifelse(y == 0, linkinv$nu(eta$nu) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau)), dbeta(y, shape1 = a, shape2 = b, ncp = 0) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau)))
-		ifelse (y==1, linkinv$tau(eta$tau) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau)), d)
-	},
-	"p" = function(y, eta) {
-		mu <- linkinv$mu(eta$mu)
-		sigma <- linkinv$sigma(eta$sigma)
-		a <- mu * (1 - sigma) / (sigma)
-		b <- a * (1 - mu) / mu
-		hilfs <- linkinv$nu(eta$nu) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau))
-		hilfs2 <- linkinv$tau(eta$tau) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau))
-		cdf <- ifelse(y == 0, hilfs, hilfs + (1 - (hilfs + hilfs2)) * pbeta(y, shape1 = a, shape2 = b, ncp = 0))
-		ifelse(y == 1, 1, cdf)
-	}
+	  "d" = function(y, eta) {
+		  mu <- linkinv$mu(eta$mu)
+		  sigma <- linkinv$sigma(eta$sigma)
+		  a <- mu * (1 - sigma) / (sigma)
+		  b <- a * (1 - mu) / mu
+		  d <- ifelse(y == 0, linkinv$nu(eta$nu) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau)), dbeta(y, shape1 = a, shape2 = b, ncp = 0) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau)))
+		  ifelse (y==1, linkinv$tau(eta$tau) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau)), d)
+	  },
+	  "p" = function(y, eta) {
+		  mu <- linkinv$mu(eta$mu)
+		  sigma <- linkinv$sigma(eta$sigma)
+		  a <- mu * (1 - sigma) / (sigma)
+		  b <- a * (1 - mu) / mu
+		  hilfs <- linkinv$nu(eta$nu) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau))
+		  hilfs2 <- linkinv$tau(eta$tau) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau))
+		  cdf <- ifelse(y == 0, hilfs, hilfs + (1 - (hilfs + hilfs2)) * pbeta(y, shape1 = a, shape2 = b, ncp = 0))
+		  ifelse(y == 1, 1, cdf)
+	  }
   )
   class(rval) <- "family.BayesR"
   rval
@@ -244,21 +242,21 @@ betazi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log"),
     "mu" = function(eta, ...) {
       linkinv$mu(eta$mu) * (1 - (linkinv$nu(eta$nu)) / (1 + linkinv$nu(eta$nu)))
     },
-	"d" = function(y, eta) {
-		mu <- linkinv$mu(eta$mu)
-		sigma <- linkinv$sigma(eta$sigma)
-		a <- mu * (1 - sigma) / (sigma)
-		b <- a * (1 - mu) / mu
-		ifelse(y == 0, linkinv$nu(eta$nu) / (1 + linkinv$nu(eta$nu)), dbeta(y, shape1 = a, shape2 = b, ncp = 0) / (1 + linkinv$nu(eta$nu)))
-	},
-	"p" = function(y, eta) {
-		mu <- linkinv$mu(eta$mu)
-		sigma <- linkinv$sigma(eta$sigma)
-		a <- mu * (1 - sigma) / (sigma)
-		b <- a * (1 - mu) / mu
-		hilfs <- linkinv$nu(eta$nu) / (1 + linkinv$nu(eta$nu))
-		ifelse(y == 0, hilfs, hilfs + (1 - hilfs) * pbeta(y, shape1 = a, shape2 = b, ncp = 0))
-	}
+	  "d" = function(y, eta) {
+		  mu <- linkinv$mu(eta$mu)
+		  sigma <- linkinv$sigma(eta$sigma)
+		  a <- mu * (1 - sigma) / (sigma)
+		  b <- a * (1 - mu) / mu
+		  ifelse(y == 0, linkinv$nu(eta$nu) / (1 + linkinv$nu(eta$nu)), dbeta(y, shape1 = a, shape2 = b, ncp = 0) / (1 + linkinv$nu(eta$nu)))
+	  },
+	  "p" = function(y, eta) {
+		  mu <- linkinv$mu(eta$mu)
+		  sigma <- linkinv$sigma(eta$sigma)
+		  a <- mu * (1 - sigma) / (sigma)
+		  b <- a * (1 - mu) / mu
+		  hilfs <- linkinv$nu(eta$nu) / (1 + linkinv$nu(eta$nu))
+		  ifelse(y == 0, hilfs, hilfs + (1 - hilfs) * pbeta(y, shape1 = a, shape2 = b, ncp = 0))
+	  }
   )
   class(rval) <- "family.BayesR"
   rval
@@ -295,21 +293,21 @@ betaoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", tau = "log")
       linkinv$mu(eta$mu) * (1 - linkinv$tau(eta$tau) / (1 + linkinv$tau(eta$tau))) +
         linkinv$tau(eta$tau) / (1 + linkinv$tau(eta$tau))
     },
-	"d" = function(y, eta) {
-		mu <- linkinv$mu(eta$mu)
-		sigma <- linkinv$sigma(eta$sigma)
-		a <- mu * (1 - sigma) / (sigma)
-		b <- a * (1 - mu) / mu
-		ifelse(y == 1, linkinv$tau(eta$tau) / (1 + linkinv$tau(eta$tau)), dbeta(y, shape1 = a, shape2 = b, ncp = 0) / (1 + linkinv$tau(eta$tau)))
-	},
-	"p" = function(y, eta) {
-		mu <- linkinv$mu(eta$mu)
-		sigma <- linkinv$sigma(eta$sigma)
-		a <- mu * (1 - sigma) / (sigma)
-		b <- a * (1 - mu) / mu
-		hilfs <- linkinv$tau(eta$tau) / (1 + linkinv$tau(eta$tau))
-		ifelse(y == 1, hilfs, hilfs + (1 - hilfs) * pbeta(y, shape1 = a, shape2 = b, ncp = 0))
-	}
+    "d" = function(y, eta) {
+      mu <- linkinv$mu(eta$mu)
+      sigma <- linkinv$sigma(eta$sigma)
+      a <- mu * (1 - sigma) / (sigma)
+      b <- a * (1 - mu) / mu
+      ifelse(y == 1, linkinv$tau(eta$tau) / (1 + linkinv$tau(eta$tau)), dbeta(y, shape1 = a, shape2 = b, ncp = 0) / (1 + linkinv$tau(eta$tau)))
+	  },
+    "p" = function(y, eta) {
+      mu <- linkinv$mu(eta$mu)
+      sigma <- linkinv$sigma(eta$sigma)
+      a <- mu * (1 - sigma) / (sigma)
+      b <- a * (1 - mu) / mu
+      hilfs <- linkinv$tau(eta$tau) / (1 + linkinv$tau(eta$tau))
+      ifelse(y == 1, hilfs, hilfs + (1 - hilfs) * pbeta(y, shape1 = a, shape2 = b, ncp = 0))
+	  }
   )
   class(rval) <- "family.BayesR"
   rval
@@ -481,14 +479,12 @@ t.BayesR <- function(links = c(mu = "identity", sigma2 = "log", df = "log"), ...
 	  "df" = c("t_df", "df")
     ),
     "mu" = function(eta, ...) {
-	  if(linkinv$df(eta$df) > 1) {
-        eta$mu
-	  } else {
-	    0
-	  }
+      rval <- eta$mu
+      rval[linkinv$df(eta$df) <= 1] <- 0
+      rval
     },
     "d" = function(y, eta) {
-	  arg <- (y - eta$mu) / sqrt(linkinv$sigma2(eta$sigma2))
+      arg <- (y - eta$mu) / sqrt(linkinv$sigma2(eta$sigma2))
       dt(arg, df = linkinv$df(eta$df))
     },
     "p" = function(y, eta) {
@@ -685,21 +681,21 @@ dagum.BayesR <- function(links = c(a = "log", b = "log", p = "log"), ...)
     ),
 	  "mu" = function(eta, ...) {
 	    a <- linkinv$a(eta$a)
-        b <- linkinv$b(eta$b)
-        p <- linkinv$p(eta$p)
+      b <- linkinv$b(eta$b)
+      p <- linkinv$p(eta$p)
       -(b/a) * (gamma(- 1 / a) * gamma(p + 1 / a)) / (gamma(p))
     },
 	  "d" = function(y, eta) {
-		a <- linkinv$a(eta$a)
-		b <- linkinv$b(eta$b)
-		p <- linkinv$p(eta$p)
-		ap <- a * p
-		ap * y^(ap -1) / (b^ap * (1 + (y / b)^a)^(p + 1))
+		  a <- linkinv$a(eta$a)
+		  b <- linkinv$b(eta$b)
+		  p <- linkinv$p(eta$p)
+		  ap <- a * p
+		  ap * y^(ap -1) / (b^ap * (1 + (y / b)^a)^(p + 1))
 	  },
 	  "p" = function(y, eta) {
 		  a <- linkinv$a(eta$a)
-          b <- linkinv$b(eta$b)
-          p <- linkinv$p(eta$p)
+      b <- linkinv$b(eta$b)
+      p <- linkinv$p(eta$p)
 		  (1 + (y / b)^(-a))^(-p)
 	  }
   )
@@ -824,8 +820,7 @@ poisson.BayesR <- function(links = c(lambda = "log"), ...)
     "p" = function(y, eta) {
       ppois(y, lambda = linkinv$lambda(eta$lambda))
     },
-	"q.residuals" = 1,
-	"score.norm" = 1
+    "score.norm" = TRUE
   )
 
   class(rval) <- "family.BayesR"
@@ -854,15 +849,14 @@ zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
 	  "mu" = function(eta, ...) {
       linkinv$lambda(eta$lambda) * (1 - linkinv$pi(eta$pi))
     },
-	"d" = function(y, eta) {
+    "d" = function(y, eta) {
       ifelse(y == 0, linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * dpois(y, lambda = linkinv$lambda(eta$lambda)), 
 				(1 - linkinv$pi(eta$pi)) * dpois(y, lambda = linkinv$lambda(eta$lambda)))
     },
     "p" = function(y, eta) {
       linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * ppois(y, lambda = linkinv$lambda(eta$lambda))
     },
-	"q.residuals" = 1,
-	"score.norm" = 1
+    "score.norm" = TRUE
   )
   if(rval$bayesx[[2]][[1]] == "zip_pi_cloglog")
     rval$bayesx[[1]][[1]] <- "zip_lambda_cloglog"
@@ -890,14 +884,13 @@ negbin.BayesR <- function(links = c(mu = "log", delta = "log"), ...)
 	  "mu" = function(eta, ...) {
       linkinv$mu(eta$mu)
     },
-	"d" = function(y, eta) {
+    "d" = function(y, eta) {
       dnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta))
     },
     "p" = function(y, eta) {
       pnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta))
     },
-	"q.residuals" = 1,
-	"score.norm" = 1
+    "score.norm" = TRUE
   )
 
   class(rval) <- "family.BayesR"
@@ -924,15 +917,14 @@ zinb.BayesR <- function(links = c(mu = "log", "pi" = "logit", delta = "log"), ..
 	  "mu" = function(eta, ...) {
       linkinv$mu(eta$mu) * (1 - linkinv$pi(eta$pi))
     },
-	"d" = function(y, eta) {
+    "d" = function(y, eta) {
       ifelse(y == 0, linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * dnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta)), 
 				(1 - linkinv$pi(eta$pi)) * dnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta)))
     },
     "p" = function(y, eta) {
       linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * pnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta))
     },
-	"q.residuals" = 1,
-	"score.norm" = 1
+    "score.norm" = TRUE
   )
 
   class(rval) <- "family.BayesR"

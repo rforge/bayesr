@@ -246,7 +246,7 @@ pixelmap <- function(x, y, size = 0.1, width = NULL, data = NULL,
 ## a list() of polygons or objects of class
 ## "SpatialPolygons".
 neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
-  k = 1, id = NULL, ...)
+  k = 1, id = NULL, nb = FALSE, ...)
 {
   require("maptools"); require("spdep")
   type <- match.arg(type)
@@ -276,27 +276,29 @@ neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
     adjmat <- make.sym.nb(adjmat)
   }
 
-  adjmat <- nb2mat(adjmat, style = "B", zero.policy = TRUE)
+  if(!nb) {
+    adjmat <- nb2mat(adjmat, style = "B", zero.policy = TRUE)
 
-  if(is.null(nx))
-    nx <- try(slot(x, "data")$NAME, silent = TRUE)
-  if(is.null(nx))
-    nx <- try(slot(x, "data")$ID, silent = TRUE)
-  if(!is.null(nx) && class(nx) != "try-error") {
-    rownames(adjmat) <- nx
-    colnames(adjmat) <- nx
+    if(is.null(nx))
+      nx <- try(slot(x, "data")$NAME, silent = TRUE)
+    if(is.null(nx))
+      nx <- try(slot(x, "data")$ID, silent = TRUE)
+    if(!is.null(nx) && class(nx) != "try-error") {
+      rownames(adjmat) <- nx
+      colnames(adjmat) <- nx
+    }
+
+    if(!is.null(id)) {
+      id <- as.character(unique(id))
+      i <- nx %in% id
+      adjmat <- adjmat[i, i]
+      nn <- rowSums(adjmat)
+      adjmat[adjmat > 0] <- -1
+      diag(adjmat) <- nn
+    }
+
+    attr(adjmat, "coords") <- coordinates(x)
   }
-
-  if(!is.null(id)) {
-    id <- as.character(unique(id))
-    i <- nx %in% id
-    adjmat <- adjmat[i, i]
-    nn <- rowSums(adjmat)
-    adjmat[adjmat > 0] <- -1
-    diag(adjmat) <- nn
-  }
-
-  attr(adjmat, "coords") <- coordinates(x)
 
   adjmat
 }
@@ -333,5 +335,53 @@ plotneighbors <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
     }
   }
   invisible(NULL)
+}
+
+
+## Function to create a spatial weight matrix
+## of a polygon map.
+spatial.weights <- function(x, ...)
+{
+  require("spdep")
+  nb <- neighbormatrix(x, nb = TRUE, ...)
+  weights <- listw2mat(nb2listw(nb, ...))
+  weights
+}
+
+
+## Function to create spatial weight matrix
+## from xy-coordinates
+spatial.weights2 <- function(x, y = NULL, d1 = 0, d2 = 0.5, W = FALSE, ...)
+{
+  require("spdep")
+  if(!is.null(y))
+    x <- cbind(x, y)
+  if(!is.matrix(x))
+    x <- as.matrix(x)
+  weights <- nb2listw(dnearneigh(x, d1, d2), ...)
+  if(W) {
+    weights <- listw2mat(weights)
+  }
+  weights
+}
+
+
+## Spatial weighted smooth constructor.
+smooth.construct.sws.smooth.spec <- function(object, data, knots) 
+{
+  require("spdep")
+  xt <- object$xt
+  object$xt <- NULL
+  if(!is.null(xt$coords))
+    W <- spatial.weights2(xt$coords, W = FALSE)
+  if(!is.null(xt$weights))
+    W <- xt$weights
+  bs <- if(is.null(xt$bs)) "tp" else xt$bs
+  class(object) <- paste(bs, "smooth.spec", sep = ".")
+  object <- smooth.construct(object, data, knots)
+  object$X <- lag.listw(W, object$X,
+    zero.policy = if(is.null(xt$zero.policy)) TRUE else xt$zero.policy,
+    NAOK = TRUE)
+  object
 }
 
