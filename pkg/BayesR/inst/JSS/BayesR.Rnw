@@ -68,6 +68,7 @@ options("use.akima" = TRUE)
 
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 
 
 \section{Introduction} \label{sec:intro}
@@ -79,6 +80,28 @@ options("use.akima" = TRUE)
 
 
 \section{Structured additive distributional regression} \label{sec:model}
+
+Structured additive distributional regression available through \pkg{BayesR} is based on generalised additive models for location, scale, and shape~\citep[GAMLSS, ][]{BayesR:RigSta2005} and has recently been developed for univariate responses in a Bayesian framework in~\citet{BayesR:KleKneLan2013b} and generalised for multivariate responses in~\citet{BayesR:KleKneKlaLan2013}. The basic idea is to extend the structured additive regression model class~\citep{BayesR:Fahrmeir+Kneib+Lang:2004} by relaxing the usual exponential family assumption for the distribution of the response variable and to estimate the whole distribution in one model by allowing further moments like variance or skewness to depend on covariates. Similar to STAR models structured additive distributional regression covers well known model classes such as generalised
+linear models \citep[GLMs, see e.g., ][]{BayesR:McCullagh+Nelder:1989} generalised
+additive models \citep[GAM, ][]{BayesR:Hastie+Tibshirani:1990}, generalised additive mixed models
+\citep[GAMM, ][]{BayesR:Lin+Zhang:1999}, geoadditive models \citep{BayesR:Kamman+Wand:2003} or
+varying coefficient models \citep{BayesR:Hastie+Tibshirani:1993}. We assume that the conditional distribution of a univariate response variable $y$ or a multivariate response vector $\mathbf{y}$ with known covariate information $\mathbf{x}$ is given by a prespecified class of $K$-parametric distributions $f(y|\vartheta_{1},\ldots,\vartheta_{K})$ / $f(\mathbf{y}|\vartheta_{1},\ldots,\vartheta_{K})$ indexed by the parameters $\vartheta_{1},\ldots,\vartheta_{K}$. Note that $f$ is considered a general density, i.e. we use the same notation for continuous responses, discrete responses and also mixed discrete-continuous responses. Each parameter $\vartheta_{k}$ is linked to a semiparametric regression predictor 
+\begin{equation} \label{eqn:structadd}
+\eta_k = \beta_{0k} + f_{1k}(\mathbf{z}) + \ldots + f_{Jk}(\mathbf{z})
+\end{equation}
+formed of the covariates via a suitable (one-to-one) response function such that $\vartheta_{k}=h_k(\eta_{k})$ and $\eta_{k}=h_k^{-1}(\vartheta_{k})$. The response function is usually chosen to ensure appropriate restrictions on the parameter space such as the exponential function $\vartheta_{k}=\exp(\eta_{k})$, to ensure positivity, the logit link $\vartheta_{k}=\exp(\eta_{k})/(1+\exp(\eta_{k}))$ for parameters representing probabilities or the identity function if the parameter space is unrestricted.
+In~\eqref{eqn:structadd} $\beta_{0k}$ is a constant representing the overall level of the predictor and $f_{1k}, \dots,f_{Jk}$ are possibly smooth generic functions representing various types of effects, e.g.:
+\begin{itemize}
+  \item Linear effects: $f_j(\mathbf{z}) = \mathbf{z}\boldsymbol{\beta}$.
+  \item Nonlinear effects of continuous covariates: $f_j(\mathbf{z}) = f(z_1)$.
+  \item Two-dimensional surfaces: $f_j(\mathbf{z}) = f(z_1, z_2)$.
+  \item Spatially correlated effects: $f_j(\mathbf{z}) = f_{spat}(z_s)$.
+  \item Varying coefficients: $f_j(\mathbf{z}) = z_1f(z_2)$.
+  \item Spatially varying effects: $f_j(\mathbf{z}) = z_1f_{spat}(z_s)$ or
+    $f_j(\mathbf{z}) = z_1f(z_2, z_3)$.
+  \item Random intercepts with cluster index $c$: $f_j(\mathbf{z}) = \beta_c$.
+  \item Random slopes with cluster index $c$: $f_j(\mathbf{z}) = z_1\beta_c$.
+\end{itemize} 
 
 
 \section[User interface]{User interface} \label{sec:userinterface}
