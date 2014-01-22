@@ -525,7 +525,7 @@ invgaussian.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
 	  "d" = function (y, eta) {
 		  mu <- linkinv$mu(eta$mu)
 		  sigma <- sqrt(linkinv$sigma(eta$sigma2))
-		  exp( -0.5 * log(2 * pi) - log(sigma) - (3 / 2) * log(x) - ((x - mu)^2) / (2 * sigma^2 * (mu^2) * x))
+		  exp( -0.5 * log(2 * pi) - log(sigma) - (3 / 2) * log(y) - ((y - mu)^2) / (2 * sigma^2 * (mu^2) * y))
 	  },
 	  "p" = function (y, eta) {
 		  mu <- linkinv$mu(eta$mu)
@@ -536,6 +536,88 @@ invgaussian.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
 	  }
   )
 
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+weibull.BayesR <- function(links = c(lambda = "log", alpha = "log"), ...)
+{
+  links <- parse.links(links, c(lambda = "log", alpha = "log"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+  
+  rval <- list(
+    "family" = "weibull",
+    "names" = c("lambda", "alpha"),
+    "links" = links,
+    "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
+    bayesx = list(
+      "lambda"  = c("weibull_lambda", "mean"),
+      "alpha" = c("weibull_alpha", "shape")
+    ),
+    "mu" = function(eta, ...) {
+      alpha <-  linkinv$alpha(eta$alpha)
+      lambda <- linkinv$lambda(eta$lambda)
+      alpha * gamma(1 + 1 / lambda)
+    },
+    "d" = function (y, eta) {
+      alpha <-  linkinv$alpha(eta$alpha)
+      lambda <- linkinv$lambda(eta$lambda)
+      dweibull(y, scale = lambda, shape = alpha)
+    },
+    "p" = function (y, eta) {
+      alpha <-  linkinv$alpha(eta$alpha)
+      lambda <- linkinv$lambda(eta$lambda)
+      rweibull(y, scale = lambda, shape = alpha)
+    }
+  )
+  
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+pareto.BayesR <- function(links = c(b = "log", p = "log"), ...)
+{
+  links <- parse.links(links, c(b = "log", p = "log"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+  
+  rval <- list(
+    "family" = "pareto",
+    "names" = c("b", "p"),
+    "links" = links,
+    "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
+    bayesx = list(
+      "b"  = c("pareto_b", "mean"),
+      "p" = c("pareto_p", "shape")
+    ),
+    "mu" = function(eta, ...) {
+      p <-  linkinv$p(eta$p)
+      b <- linkinv$b(eta$b)
+      p * gamma(1 + 1 / b)
+    },
+    "d" = function (y, eta) {
+      p <-  linkinv$p(eta$p)
+      b <- linkinv$b(eta$b)
+      p * b^p * (y + b)^(-p - 1)
+    },
+    "p" = function (y, eta) {
+      p <-  linkinv$p(eta$p)
+      b <- linkinv$b(eta$b)
+      1 - ((b/(b + y))^(p))
+    }
+  )
+  
   class(rval) <- "family.BayesR"
   rval
 }
