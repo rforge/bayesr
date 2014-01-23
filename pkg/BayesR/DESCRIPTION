@@ -7,7 +7,7 @@ Authors@R: c(person(given = "Nikolaus", family = "Umlauf", role = c("aut", "cre"
   person(given = "Achim", family = "Zeileis", role = "aut", email = "Achim.Zeileis@R-project.org"),
   person(given = "Stefan", family = "Lang", role = "aut", email = "Stefan.Lang@uibk.ac.at"))
 Description: R infrastructures for Bayesian regression models.
-Depends: R (>= 2.13.0), Formula, R2BayesX, coda, mgcv
+Depends: R (>= 2.13.0), Formula, coda, mgcv
 Suggests: rjags, rstan, parallel
 License: GPL-2 | GPL-3
 LazyLoad: yes
