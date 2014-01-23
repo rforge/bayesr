@@ -462,6 +462,85 @@ gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 }
 
 
+truncgaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
+{
+  links <- parse.links(links, c(mu = "identity", sigma2 = "log"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+  
+  rval <- list(
+    "family" = "truncgaussian2",
+    "names" = c("mu", "sigma2"),
+    "links" = links,
+    bayesx = list(
+      "mu" =  c("truncnormal_mu", "mean"),
+      "sigma2" = c("truncnormal_sigma2", "scale")
+    ),
+    "mu" = function(eta, ...) {
+      mu <-  eta$mu
+	  sigma <- sqrt(linkinv$sigma2(eta$sigma2))
+	  arg <- - mu / sigma
+	  mu + sigma * dnorm(arg) / (1 - pnorm(arg))
+    },
+    "d" = function(y, eta) {
+      mu <-  eta$mu
+	  sigma <- sqrt(linkinv$sigma2(eta$sigma2))
+	  arg <- - mu / sigma
+	  dnorm(y / sigma + arg) / (1 - pnorm(arg))
+    },
+    "p" = function(y, eta) {
+      mu <-  eta$mu
+	  sigma <- sqrt(linkinv$sigma2(eta$sigma2))
+	  arg <- - mu / sigma
+	  2 * (pnorm(y / sigma + arg) - pnorm(arg))
+    }
+  )
+  
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+truncgaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
+{
+  links <- parse.links(links, c(mu = "identity", sigma = "log"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+  
+  rval <- list(
+    "family" = "truncgaussian",
+    "names" = c("mu", "sigma"),
+    "links" = links,
+    bayesx = list(
+      "mu" =  c("truncnormal2_mu", "mean"),
+      "sigma" = c("truncnormal2_sigma", "scale")
+    ),
+    "mu" = function(eta, ...) {
+      mu <-  eta$mu
+	  sigma <- (linkinv$sigma(eta$sigma))
+	  arg <- - mu / sigma
+	  mu + sigma * dnorm(arg) / (1 - pnorm(arg))
+    },
+    "d" = function(y, eta) {
+      mu <-  eta$mu
+	  sigma <- (linkinv$sigma(eta$sigma))
+	  arg <- - mu / sigma
+	  dnorm(y / sigma + arg) / (1 - pnorm(arg))
+    },
+    "p" = function(y, eta) {
+      mu <-  eta$mu
+	  sigma <- (linkinv$sigma(eta$sigma))
+	  arg <- - mu / sigma
+	  2 * (pnorm(y / sigma + arg) - pnorm(arg))
+    }
+  )
+  
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
 t.BayesR <- function(links = c(mu = "identity", sigma2 = "log", df = "log"), ...)
 {
   links <- parse.links(links, c(mu = "identity", sigma2 = "log", df = "log"), ...)
