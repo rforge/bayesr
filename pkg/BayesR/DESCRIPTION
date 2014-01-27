@@ -3,7 +3,7 @@ Version: 0.1-1
 Date: 2013-04-26
 Title: Bayesian Regression in R
 Authors@R: c(person(given = "Nikolaus", family = "Umlauf", role = c("aut", "cre"), email = "Nikolaus.Umlauf@uibk.ac.at"),
-  person(given = "Nadja", family = "Klein", role = "aut", email = "nklein@gwdg.de"),
+  person(given = "Nadja", family = "Klein", role = "aut", email = "nklein@uni-goettingen.de"),
   person(given = "Achim", family = "Zeileis", role = "aut", email = "Achim.Zeileis@R-project.org"),
   person(given = "Stefan", family = "Lang", role = "aut", email = "Stefan.Lang@uibk.ac.at"))
 Description: R infrastructures for Bayesian regression models.

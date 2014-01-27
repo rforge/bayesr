@@ -43,11 +43,11 @@
   \phantom{URL: }\url{http://eeecon.uibk.ac.at/~zeileis/}\\
 
   Nadja Klein\\
-  Department of Statistics and Econometrics\\
+  Chair of Statistics and Econometrics\\
   Georg-August-Universit\"at G\"ottingen\\
   Platz der G\"ottinger Sieben 5 (MZG)\\
   37073 G\"ottingen, Germany \\
-  E-mail: \email{nklein@gwdg.de}\\
+  E-mail: \email{nklein@uni-goettingen.de}\\
   URL: \url{http://www.uni-goettingen.de/en/325353.html}
 }
 
@@ -81,7 +81,7 @@ options("use.akima" = TRUE)
 
 \section{Structured additive distributional regression} \label{sec:model}
 
-Structured additive distributional regression available through \pkg{BayesR} is based on generalised additive models for location, scale, and shape~\citep[GAMLSS, ][]{BayesR:RigSta2005} and has recently been developed for univariate responses in a Bayesian framework in~\citet{BayesR:KleKneLan2013b} and generalised for multivariate responses in~\citet{BayesR:KleKneKlaLan2013}. The basic idea is to extend the structured additive regression model class~\citep{BayesR:Fahrmeir+Kneib+Lang:2004} by relaxing the usual exponential family assumption for the distribution of the response variable and to estimate the whole distribution in one model by allowing further moments like variance or skewness to depend on covariates. Similar to STAR models structured additive distributional regression covers well known model classes such as generalised
+Structured additive distributional regression available through \pkg{BayesR} is based on generalised additive models for location, scale, and shape~\citep[GAMLSS, ][]{BayesR:RigSta2005} and has recently been developed for univariate responses in a Bayesian framework in~\citet{BayesR:KleKneLan2013} and generalised for multivariate responses in~\citet{BayesR:KleKneKlaLan2013}. The basic idea is to extend the structured additive regression model class~\citep{BayesR:Fahrmeir+Kneib+Lang:2004} by relaxing the usual exponential family assumption for the distribution of the response variable and to estimate the whole distribution in one model by allowing further moments like variance or skewness to depend on covariates. Similar to STAR models structured additive distributional regression covers well known model classes such as generalised
 linear models \citep[GLMs, see e.g., ][]{BayesR:McCullagh+Nelder:1989} generalised
 additive models \citep[GAM, ][]{BayesR:Hastie+Tibshirani:1990}, generalised additive mixed models
 \citep[GAMM, ][]{BayesR:Lin+Zhang:1999}, geoadditive models \citep{BayesR:Kamman+Wand:2003} or
