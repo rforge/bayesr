@@ -791,7 +791,7 @@ gengamma.BayesR <- function(links = c(mu = "log", sigma = "log", tau = "log"), .
     },
     bayesx = list(
       "mu" = c("gengamma_mu", "mean"),
-      "sigma" = c("gengamma_sigma", "shape1")
+      "sigma" = c("gengamma_sigma", "shape1"),
 	  "tau" = c("gengamma_tau", "shape2")
     )
   )
