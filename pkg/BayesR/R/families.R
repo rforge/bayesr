@@ -353,6 +353,33 @@ binomial.BayesR <- function(link = "logit", ...)
   rval
 }
 
+cloglog.BayesR <- function(link = "cloglog", ...)
+{
+  links <- parse.links(link, c(pi = "cloglog"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+
+  rval <- list(
+    "family" = "cloglog",
+    "names" = "pi",
+    "links" = links,
+    "valid.response" = function(x) {
+      if(!is.factor(x)) stop("response must be a factor!", call. = FALSE)
+      if(nlevels(x) > 2) stop("more than 2 levels in factor response!", call. = FALSE)
+      TRUE
+    },
+    bayesx = list(
+      "pi" = c(paste("cloglog", link, sep = "_"), "mean")
+    ),
+    "mu" = function(eta, ...) {
+      linkinv$pi(eta$pi)
+    }
+  )
+
+  class(rval) <- "family.BayesR"
+  rval
+}
 
 gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
 {
@@ -746,6 +773,33 @@ gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
   rval
 }
 
+gengamma.BayesR <- function(links = c(mu = "log", sigma = "log", tau = "log"), ...)
+{
+  links <- parse.links(links, c(mu = "log", sigma = "log", tau = "log"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+
+  rval <- list(
+    "family" = "gengamma",
+    "names" = c("mu", "sigma", "tau"),
+    "links" = links,
+    "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
+    bayesx = list(
+      "mu" = c("gengamma_mu", "mean"),
+      "sigma" = c("gengamma_sigma", "shape1")
+	  "tau" = c("gengamma_tau", "shape2")
+    )
+  )
+
+  class(rval) <- "family.BayesR"
+  rval
+}
+
 
 lognormal.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
 {
@@ -865,6 +919,32 @@ dagum.BayesR <- function(links = c(a = "log", b = "log", p = "log"), ...)
   rval
 }
 
+BCCG.BayesR <- function(links = c(mu = "log", sigma = "log", nu = "identity"), ...)
+{
+  links <- parse.links(links, c(mu = "log", sigma = "log", nu = "identity"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+  
+  rval <- list(
+    "family" = "BCCG",
+    "names" = c("mu", "sigma", "nu"),
+    "links" = links,
+	"valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
+    bayesx = list(
+      "mu" = c("BCCG_mu", "mean"),
+      "sigma" =  c("BCCG_sigma", "scale"),
+	  "nu" = c("BCCG_nu", "nu")
+    )
+  )
+  
+  class(rval) <- "family.BayesR"
+  rval
+}
 
 
 mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
@@ -898,6 +978,60 @@ mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
   rval
 }
 
+
+bivprobit.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity", rho = "rhogit"), ...)
+{  
+  links <- parse.links(links, c(mu1 = "identity", mu2 = "identity", rho = "rhogit"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+  
+  rval <- list(
+    "family" = "bivprobit",
+    "names" = c("mu1", "mu2", "rho"),
+    "links" = links,
+    bayesx = list(
+      "mu1" = c("bivprobit_mu", "mean"),
+      "mu2" = c("bivprobit_mu", "mu"),
+      "rho" = c("bivprobit_rho", "rho"),
+      "order" = 3:1,
+      "rm.number" = TRUE
+    ),
+	  "mu" = function(eta, ...) {
+      c(eta$mu1, eta$mu2)
+    }
+  )
+
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+bivlogit.BayesR <- function(links = c(p1 = "logit", p2 = "logit", psi = "log"), ...)
+{  
+  links <- parse.links(links, c(p1 = "logit", p2 = "logit", psi = "log"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+  
+  rval <- list(
+    "family" = "bivlogit",
+    "names" = c("p1", "p2", "psi"),
+    "links" = links,
+    bayesx = list(
+      "mu1" = c("bivlogit_mu", "mean"),
+      "mu2" = c("bivlogit_mu", "mu"),
+      "psi" = c("bivlogit_or", "oddsratio"),
+      "order" = 3:1,
+      "rm.number" = TRUE
+    ),
+	  "mu" = function(eta, ...) {
+      c(eta$mu1, eta$mu2)
+    }
+  )
+
+  class(rval) <- "family.BayesR"
+  rval
+}
 
 mvt.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
   sigma1 = "log", sigma2 = "log", rho = "fisherz", df = "log"), ...)
