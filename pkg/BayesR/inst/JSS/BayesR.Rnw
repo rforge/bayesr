@@ -103,6 +103,9 @@ In~\eqref{eqn:structadd} $\beta_{0k}$ is a constant representing the overall lev
   \item Random slopes with cluster index $c$: $f_j(\mathbf{z}) = z_1\beta_c$.
 \end{itemize} 
 
+\subsection{Choice of the response distribution}\label{sec:modelchoice}
+
+\subsection{Inference}\label{sec:inference}
 
 
 \section[User interface]{User interface} \label{sec:userinterface}
