@@ -113,7 +113,7 @@ controlBayesX <- function(n.iter = 1200, thin = 1, burnin = 200,
       "setseed" = seed, "predict" = predict
     ),
     "setup" = list(
-      "main" = c(rep(FALSE, 4), TRUE), "model.name" = model.name, "data.name" = data.name,
+      "main" = c(rep(FALSE, 3), rep(TRUE, 2)), "model.name" = model.name, "data.name" = data.name,
       "prg.name" = prg.name, "dir" = dir, "verbose" = verbose, "cores" = cores
     )
   )
@@ -361,7 +361,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
             }
             if(x[[j]]$hlevel < 2 & any(grepl("mean", family$bayesx[[nx[if(is.null(id)) j else id]]]))) {
               if(any(grepl("predict", names(control$prg)))) {
-                teqn <- paste(teqn, " predict=", control$prg$predict, sep = "")
+                teqn <- paste(teqn, " predict=", control$prg$predict, " setseed=", control$prg$setseed, sep = "")
               }
             }
           } else ok <- grepl("1", fctr[grepl("hlevel", fctr)])
