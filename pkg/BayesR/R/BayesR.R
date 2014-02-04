@@ -2274,6 +2274,53 @@ model.response2 <- function(data, ...)
 #############################
 ## (10) Utility functions. ##
 #############################
+TODOs <- NA
+class(TODOs) <- "TODOs"
+
+print.TODOs <- function(x, ...)
+{
+  todos <- .TODOs(...)
+  print(todos)
+  invisible(todos)
+}
+
+.TODOs <- function(file = NULL)
+{
+  require("BayesR")
+  if(is.null(file))
+    file <- "~/svn/bayesr/pkg/BayesR/R/families.R"
+  file <- path.expand(file)
+  env <- new.env()
+  source(file, local = env)
+  fun <- grep(".BayesR", ls(env), fixed = TRUE, value = TRUE)
+  fun <- fun[!grepl("print", fun)]
+  tab <- NULL
+  for(i in seq_along(fun)) {
+    fe <- try(eval(parse(text = paste(fun[i], "()", sep = "")), envir = env), silent = TRUE)
+    if(inherits(fe, "family.BayesR")) {
+      if(!is.null(fe$family)) {
+        dgp <- try(get(paste("dgp", fe$family, sep = "_")), silent = TRUE)
+        dgp <- if(!inherits(dgp, "try-error")) "yes" else "no"
+      } else dgp <- "no"
+      tab <- rbind(tab, cbind(
+        "family" = if(!is.null(fe$family)) fe$family else "na",
+        "type" = if(!is.null(fe$type)) fe$type else "na",
+        "loglik" = if(!is.null(fe$loglik)) "yes" else "no",
+        "scorefun" = if(!is.null(fe$score)) "yes" else "no",
+        "weightfun" = if(!is.null(fe$weights)) "yes" else "no",
+        "d" = if(!is.null(fe$d)) "yes" else "no",
+        "p" = if(!is.null(fe$p)) "yes" else "no",
+        "mu" = if(!is.null(fe$mu)) "yes" else "no",
+        "dgp" = dgp,
+        "BayesX" = if(!is.null(fe$bayesx)) "yes" else "no",
+        "JAGS" = if(!is.null(fe$jagstan)) "yes" else "no",
+        "IWLS" = if(!is.null(fe$score) & !is.null(fe$weights) & !is.null(fe$loglik)) "yes" else "no"
+      ))
+    }
+  }
+  as.data.frame(tab)
+}
+
 #.First.lib <- function(lib, pkg)
 #{
 #  library.dynam("BayesR", pkg, lib)
