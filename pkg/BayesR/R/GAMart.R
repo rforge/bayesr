@@ -478,7 +478,7 @@ if(FALSE) {
 }
 
 ## Multinomial.
-dgp_multinom <- function(nlevels = 4,
+dgp_multinomial <- function(nlevels = 4,
   nobs = c(1000, 100, 10),
   specs = list(
     type = list(c("unimodal", "linear"), c("sinus", "spatial"), "const"),
@@ -525,7 +525,7 @@ if(FALSE) {
   ## Example 1:
   ## 3 category 2 level model.
   ## Create the data set.
-  d <- dgp_multinom(nlevels = 3, nobs = c(2000, 400),
+  d <- dgp_multinomial(nlevels = 3, nobs = c(2000, 400),
     specs = list(
       list(
         type = list(c("sinus", "quadratic"), "double"),
@@ -577,7 +577,7 @@ if(FALSE) {
 
   ## Example 2:
   ## Complicated spatial example, does not work for cat2 h2 spatial?!
-  d <- dgp_multinom(nlevels = 3, nobs = c(2000, 400),
+  d <- dgp_multinomial(nlevels = 3, nobs = c(2000, 400),
     specs = list(
       list(
         type = list(c("sinus", "quadratic"), c("double", "spatial")),
