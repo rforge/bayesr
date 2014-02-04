@@ -177,6 +177,33 @@ if(FALSE) {
   d$p <- predict(b, model = "mu", term = c("x11", "x12"))
 }
 
+## Gaussian2.
+dgp_gaussian2 <- function(n = 500, mu = NULL, sigma2 = NULL, range.sigma2 = c(0.3, 1.2), ...)
+{
+  if(is.null(mu)) {
+    mu <- list(nobs = n, const = 0.5,
+      type = list(c("unimodal", "quadratic", "const")))
+  }
+  if(is.null(sigma2)) {
+    sigma2 <- list(nobs = n, const = 0.01,
+      type = list(c("pick", "const")))
+  }
+
+  mu <- do.call("dgp_eta", mu)
+  sigma2 <- do.call("dgp_eta", sigma2)
+
+  d <- data.frame("mu" = mu, "sigma2" = sigma2)
+  sd <- sqrt(scale2(sigma2$eta0, range.sigma2[1], range.sigma2[2]))
+  d$y <- rnorm(nrow(mu), mean = mu$eta0, sd = sd)
+
+  d
+}
+
+if(FALSE) {
+  d <- dgp_gaussian2()
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma2.x11), data = d, engine = "BayesX", verbose = TRUE)
+  d$p <- predict(b, model = "mu", term = c("x11", "x12"))
+}
 
 ## Gamma.
 dgp_gamma <- function(n = 500, mu = NULL, sigma = NULL, ...)
@@ -276,6 +303,39 @@ if(FALSE) {
 }
 
 
+## Lognormal2.
+dgp_lognormal2 <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
+{
+  if(is.null(mu)) {
+    mu <- list(nobs = n, const = 0,
+      type = list(c("complicated", "quadratic", "const")))
+  }
+  if(is.null(sigma2)) {
+    sigma2 <- list(nobs = n, const = 0,
+      type = list(c("quadratic", "linear", "const")))
+  }
+
+
+  mu <- do.call("dgp_eta", mu)
+  sigma2 <- do.call("dgp_eta", sigma2) 
+  m <- (mu$eta0)
+  s <- exp(sigma2$eta0)
+  y <- rlnorm(n, meanlog = m, sdlog = sqrt(s))
+
+  
+  d <- cbind(y, "mu" = mu, "sigma2" = sigma2)
+  d
+}
+
+if(FALSE) {
+  d <- dgp_lognormal2()
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma2.x11)+sx(sigma2.x12), 
+		data = d, family = lognormal2, engine = "BayesX")
+  plot(b, which = 3:6)
+  summary(b)
+  score(b)
+}
+
 ## t.
 dgp_t <- function(n = 1000, mu = NULL, sigma2 = NULL, df = NULL, ...)
 {
@@ -354,11 +414,39 @@ if(FALSE) {
 
 
 ## Beta.
-dgp_beta <- function(mu = NULL, sigma = NULL, ...)
+dgp_beta <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
 {
+	if(is.null(mu)) {
+    mu <- list(nobs = n, const = -0.5,
+      type = list(c("const")))
+  }
+  if(is.null(sigma2)) {
+    sigma2 <- list(nobs = n, const = 0.01,
+      type = list(c("const")))
+  }
+  
+  mu <- do.call("dgp_eta", mu)
+  sigma2 <- do.call("dgp_eta", sigma2)
 
+  d <- data.frame("mu" = mu, "sigma2" = sigma2)
+  b <- exp(sigma2$eta0)
+  b <- b / (1 + b)
+  a <- exp(mu$eta0)
+  a <- a / (1 + a)
+  shape1 <- a * (1 - b) / (b)
+  shape2 <- shape1 * (1 - a) / a
+  y <- rbeta(n, shape1 = shape1, shape2 = shape2)
+  d <- cbind(y, "mu" = mu, "sigma2" = sigma2)
+  d
 }
 
+if(FALSE) {
+  d <- dgp_beta()
+  b <- bayesr(list(y ~ 1, y~ 1),
+		data = d, family = beta, engine = "BayesX", verbose = TRUE)
+  summary(b)
+  plot(b, which = 3:6)
+}
 
 ## Multivariate normal.
 dgp_mvn <- function(n = 1000, mu1 = NULL, mu2 = NULL, sigma1 = NULL, sigma2 = NULL, rho = NULL, ...)

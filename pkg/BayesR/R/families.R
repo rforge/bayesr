@@ -68,16 +68,16 @@ parse.links <- function(links, default.links, ...)
 
 
 ## http://stats.stackexchange.com/questions/41536/how-can-i-model-a-proportion-with-bugs-jags-stan
-beta.BayesR <- function(links = c(mu = "logit", sigma = "log"), ...)
+beta.BayesR <- function(links = c(mu = "logit", sigma2 = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "logit", sigma = "log"), ...)
+  links <- parse.links(links, c(mu = "logit", sigma2 = "log"), ...)
   linkinv <- list()
   for(j in names(links))
     linkinv[[j]] <- make.link2(links[[j]])$linkinv
   
   rval <- list(
     "family" = "beta",
-    "names" = c("mu", "sigma"),
+    "names" = c("mu", "sigma2"),
     "links" =  links,
     "valid.response" = function(x) {
       if(ok <- !all(x > 0 & x < 1)) stop("response values not in (0, 1)!", call. = FALSE)
@@ -85,20 +85,20 @@ beta.BayesR <- function(links = c(mu = "logit", sigma = "log"), ...)
     },
     bayesx = list(
       "mu" = c("beta_mu", "mean"),
-      "sigma" = c("beta_sigma2", "scale")
+      "sigma2" = c("beta_sigma2", "scale")
     ),
     jagstan = list(
       "dist" = "dbeta",
       "eta" = JAGSeta,
       "model" = JAGSmodel,
       "reparam" = c(
-        mu = "mu * (1 / sigma)",
-        sigma = "(1 - mu) * (1 / sigma)"
+        mu = "mu * (1 / sigma2)",
+        sigma2 = "(1 - mu) * (1 / sigma2)"
       )
     ),
     "loglik" = function(y, eta, ...) {
       a <- linkinv$mu(eta$mu)
-      b <- linkinv$sigma(eta$sigma)
+      b <- linkinv$sigma2(eta$sigma2)
       hilfs <- a * (1 - b) / b
       hilfs2 <- (1 - a) * (1 - b) / b
       sum((hilfs - 1) * log(y) + (hilfs2 - 1) * log(1 - y) - lgamma(hilfs) - lgamma(hilfs2) + lgamma((1 - b) / b))
@@ -106,14 +106,14 @@ beta.BayesR <- function(links = c(mu = "logit", sigma = "log"), ...)
     "score" = list(
       "mu" = function(y, eta, ...) {
         a <- linkinv$mu(eta$mu)
-        b <- linkinv$sigma(eta$sigma)
+        b <- linkinv$sigma2(eta$sigma2)
         hilfs <- a * (1 - b) / b
         hilfs2 <- (1 - a) * (1 - b) / b
         drop(a * hilfs2 * log(y) - a * hilfs2 * log(1 - y) + ((1 - b) / b) * a * (1 - a) * (-digamma(hilfs) + digamma(hilfs2)))
       },
-      "sigma" = function(y, eta, ...) {
+      "sigma2" = function(y, eta, ...) {
         a <- linkinv$mu(eta$mu)
-        b <- linkinv$sigma(eta$sigma)
+        b <- linkinv$sigma2(eta$sigma2)
         hilfs <- a*(1-b)/b
         hilfs2 <- (1-a)*(1-b)/b
         drop(-(1 - b) / (b) * ( -a * digamma(hilfs) - (1 - a) * digamma(hilfs2) + digamma((1 - b) / (b)) + a * log(y) + (1 - a) * log(1 - y)))
@@ -122,14 +122,14 @@ beta.BayesR <- function(links = c(mu = "logit", sigma = "log"), ...)
     "weights" = list(
       "mu" = function(y, eta, ...) {
         a <- linkinv$mu(eta$mu)
-        b <- linkinv$sigma(eta$sigma)
+        b <- linkinv$sigma2(eta$sigma2)
         hilfs <- a * (1 - b) / b
         hilfs2 <- (1 - a) * (1 - b) / b
         drop(((1 - b) / b)^2 * a^2 * (1 - a)^2 * (trigamma(hilfs) + trigamma(hilfs2)))
       },
-      "sigma" = function(y, eta, ...) {
+      "sigma2" = function(y, eta, ...) {
         a <- linkinv$mu(eta$mu)
-        b <- linkinv$sigma(eta$sigma)
+        b <- linkinv$sigma2(eta$sigma2)
         hilfs <- a * (1 - b) / b
         hilfs2 <- (1 - a) * (1 - b) / b
         drop(((1 - b) / b)^2 * (a^2 * trigamma(hilfs) + (1 - a)^2 * trigamma(hilfs2) - trigamma((1 - b) / (b))))
@@ -140,15 +140,15 @@ beta.BayesR <- function(links = c(mu = "logit", sigma = "log"), ...)
     },
 	  "d" = function(y, eta) {
        mu <- linkinv$mu(eta$mu)
-       sigma <- linkinv$sigma(eta$sigma)
-		   a <- mu * (1 - sigma) / (sigma)
+       sigma2 <- linkinv$sigma2(eta$sigma2)
+		   a <- mu * (1 - sigma2) / (sigma2)
 		   b <- a * (1 - mu) / mu
 		   dbeta(y, shape1 = a, shape2 = b, ncp = 0)
 	  },
 	  "p" = function(y, eta) {
        mu <- linkinv$mu(eta$mu)
-       sigma <- linkinv$sigma(eta$sigma)
-		   a <- mu * (1 - sigma) / (sigma)
+       sigma2 <- linkinv$sigma2(eta$sigma2)
+		   a <- mu * (1 - sigma2) / (sigma2)
 		   b <- a * (1 - mu) / mu
 		   pbeta(y, shape1 = a, shape2 = b, ncp = 0)
 	  },
@@ -376,7 +376,13 @@ cloglog.BayesR <- function(link = "cloglog", ...)
     ),
     "mu" = function(eta, ...) {
       linkinv$pi(eta$pi)
-    }
+    },
+	  "d" = function(y, eta) {
+		  dbinom(y, size = 1, prob = linkinv$pi(eta$pi))
+	  },
+	  "p" = function(y, eta) {
+		  pbinom(y, size = 1, prob = linkinv$pi(eta$pi))
+	  }
   )
 
   class(rval) <- "family.BayesR"
@@ -865,13 +871,13 @@ lognormal2.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
       "sigma2" = c("lognormal_sigma2", "scale")
     ),
 	  "mu" = function(eta, ...) {
-      exp(linkinv$mu(eta) + 0.5 * (linkinv$sigma(eta$sigma)))
+      exp(linkinv$mu(eta) + 0.5 * (linkinv$sigma2(eta$sigma2)))
     },
     "d" = function(y, eta) {
-      dlnorm(y, meanlog = eta$mu, sdlog = sqrt(linkinv$sigma(eta$sigma)))
+      dlnorm(y, meanlog = eta$mu, sdlog = sqrt(linkinv$sigma2(eta$sigma2)))
     },
     "p" = function(y, eta) {
-      plnorm(y, meanlog = eta$mu, sdlog = sqrt(linkinv$sigma(eta$sigma)))
+      plnorm(y, meanlog = eta$mu, sdlog = sqrt(linkinv$sigma2(eta$sigma2)))
     }
   )
 
