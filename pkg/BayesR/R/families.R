@@ -926,32 +926,6 @@ dagum.BayesR <- function(links = c(a = "log", b = "log", p = "log"), ...)
   rval
 }
 
-BCCG.BayesR <- function(links = c(mu = "log", sigma = "log", nu = "identity"), ...)
-{
-  links <- parse.links(links, c(mu = "log", sigma = "log", nu = "identity"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-  
-  rval <- list(
-    "family" = "BCCG",
-    "names" = c("mu", "sigma", "nu"),
-    "links" = links,
-	"valid.response" = function(x) {
-      if(is.factor(x)) return(FALSE)
-      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
-      ok
-    },
-    bayesx = list(
-      "mu" = c("BCCG_mu", "mean"),
-      "sigma" =  c("BCCG_sigma", "scale"),
-	  "nu" = c("BCCG_nu", "nu")
-    )
-  )
-  
-  class(rval) <- "family.BayesR"
-  rval
-}
 
 
 mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
@@ -1074,6 +1048,25 @@ mvt.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
   rval
 }
 
+dirichlet.BayesR <- function(link = "logit", ...)
+{
+  rval <- list(
+    "family" = "dirichlet",
+    "names" = "alpha",
+    "links" = parse.links(link, c(pi = "logit"), ...),
+    "cat" = 3,
+    "valid.response" = function(x) {
+      if(ok <- !all(rowSums(x) == 1)) stop("response components must sum up to one!", call. = FALSE)
+      ok
+    },
+    bayesx = list(
+      "alpha" = c(paste("dirichlet", link, sep = "_"), "mean", "alpha")
+    )
+  )
+
+  class(rval) <- "family.BayesR"
+  rval
+}
 
 multinomial.BayesR <- function(link = "probit", ...)
 {

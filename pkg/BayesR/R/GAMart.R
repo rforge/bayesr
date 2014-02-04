@@ -477,6 +477,93 @@ if(FALSE) {
   
 }
 
+
+## poisson.
+dgp_poisson <- function(n = 500, lambda = NULL, 
+			range.lambda = c(-1,1), range.p = c(-1,1), ...)
+{
+
+  if(is.null(lambda)) {
+    lambda <- list(nobs = n, const = -0.5,
+      type = list(c("unimodal", "quadratic", "const")))
+  }
+
+  lambda <- do.call("dgp_eta", lambda)
+  ld <- exp(lambda$eta0)
+  y <- rpois(n, lambda = ld)
+
+  
+  d <- cbind(y, "lambda" = lambda)
+  d
+}
+
+if(FALSE) {
+  d <- dgp_poisson()
+
+  f <- list(
+    y ~ sx(lambda.x11) + sx(lambda.x12)
+  )
+
+  b <- bayesr(f, family = poisson, data = d, engine = "BayesX", verbose = TRUE)
+  lambda.f11.est <- predict(b, model = "lambda", term = 1, what = "terms")
+  lambda.f11.est.2p5 <- predict(b, model = "lambda", term = 1, what = "terms", FUN = quantile, 0.025)
+  lambda.f11.est.97p5 <- predict(b, model = "lambda", term = 1, what = "terms", FUN = quantile, 0.975)
+  
+  plot(d$lambda.x11[order(d$lambda.x11)], lambda.f11.est[order(d$lambda.x11)], type = "l", lty = 2)
+  lines(d$lambda.x11[order(d$lambda.x11)], d$lambda.f11[order(d$lambda.x11)]-mean(d$lambda.f11[order(d$lambda.x11)]))
+  lines(d$lambda.x11[order(d$lambda.x11)], lambda.f11.est.2p5[order(d$lambda.x11)], lty = 2)
+  lines(d$lambda.x11[order(d$lambda.x11)], lambda.f11.est.97p5[order(d$lambda.x11)], lty = 2)
+  
+  
+  plot(b)
+  
+  
+}
+
+
+## negbin.
+dgp_negbin <- function(n = 500, mu = NULL, delta = NULL, 
+			range.mu = c(-1,1), range.delta = c(-1,1), ...)
+{
+  require("VGAM")
+
+  if(is.null(mu)) {
+    mu <- list(nobs = n, const = -0.5,
+      type = list(c("unimodal", "quadratic", "const")))
+  }
+  if(is.null(delta)) {
+    delta <- list(nobs = n, const = 0,
+      type = list(c("linear", "const")))
+  }
+
+
+  mu <- do.call("dgp_eta", mu)
+  delta <- do.call("dgp_eta", delta) 
+  ld <- exp(mu$eta0)
+  d <- exp(delta$eta0)
+  y <- rnbinom(n, mu = ld, size = d)
+
+  
+  d <- cbind(y, "mu" = mu, "delta" = d)
+  d
+}
+
+if(FALSE) {
+  d <- dgp_negbin()
+
+  f <- list(
+    y ~ sx(mu.x11) + sx(mu.x12),
+    y ~ sx(mu.x11) + sx(mu.x12)
+  )
+
+  b <- bayesr(f, family = negbin, data = d, engine = "BayesX", verbose = TRUE)
+  
+  plot(b, which = 3:6)
+  
+  
+}
+
+
 ## Multinomial.
 dgp_multinomial <- function(nlevels = 4,
   nobs = c(1000, 100, 10),
