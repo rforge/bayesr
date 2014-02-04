@@ -2280,7 +2280,7 @@ class(TODOs) <- "TODOs"
 print.TODOs <- function(x, ...)
 {
   todos <- .TODOs(...)
-  print(todos)
+  print(todos, row.names = FALSE)
   invisible(todos)
 }
 

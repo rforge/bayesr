@@ -151,7 +151,8 @@ beta.BayesR <- function(links = c(mu = "logit", sigma = "log"), ...)
 		   a <- mu * (1 - sigma) / (sigma)
 		   b <- a * (1 - mu) / mu
 		   pbeta(y, shape1 = a, shape2 = b, ncp = 0)
-	  }
+	  },
+    "type" = 1
   )
   class(rval) <- "family.BayesR"
   rval
@@ -346,7 +347,8 @@ binomial.BayesR <- function(link = "logit", ...)
 	  },
 	  "p" = function(y, eta) {
 		  pbinom(y, size = 1, prob = linkinv$pi(eta$pi))
-	  }
+	  },
+    "type" = 1
   )
 
   class(rval) <- "family.BayesR"
@@ -427,7 +429,8 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
     },
     "p" = function(y, eta) {
       pnorm(y, mean = eta$mu, sd = linkinv$sigma(eta$sigma))
-    }
+    },
+    "type" = 1
   )
   
   class(rval) <- "family.BayesR"
@@ -481,7 +484,8 @@ gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
     },
     "p" = function(y, eta) {
       pnorm(y, mean = eta$mu, sd = sqrt(linkinv$sigma2(eta$sigma2)))
-    }
+    },
+    "type" = 1
   )
   
   class(rval) <- "family.BayesR"
@@ -522,6 +526,7 @@ truncgaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ..
 	  arg <- - mu / sigma
 	  2 * (pnorm(y / sigma + arg) - pnorm(arg))
     }
+
   )
   
   class(rval) <- "family.BayesR"
@@ -766,7 +771,8 @@ gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
 		  a <- linkinv$sigma(eta$sigma) 
 		  s <- linkinv$mu(eta$mu) / linkinv$sigma(eta$sigma) 
 		  pgamma(y, shape = a, scale = s, lower.tail = lower.tail, log.p = log.p)
-	  }
+	  },
+    "type" = 1
   )
 
   class(rval) <- "family.BayesR"
@@ -829,7 +835,8 @@ lognormal.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
     },
     "p" = function(y, eta) {
       plnorm(y, meanlog = eta$mu, sdlog = linkinv$sigma(eta$sigma))
-    }
+    },
+    "type" = 1
   )
 
   class(rval) <- "family.BayesR"
@@ -971,7 +978,8 @@ mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
     ),
 	  "mu" = function(eta, ...) {
       c(eta$mu1, eta$mu2)
-    }
+    },
+    "type" = 2
   )
 
   class(rval) <- "family.BayesR"
@@ -999,7 +1007,8 @@ bivprobit.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity", rho =
     ),
 	  "mu" = function(eta, ...) {
       c(eta$mu1, eta$mu2)
-    }
+    },
+    "type" = 2
   )
 
   class(rval) <- "family.BayesR"
@@ -1058,7 +1067,8 @@ mvt.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
     ),
 	  "mu" = function(eta, ...) {
       c(linkinv$mu1(eta), linkinv$mu2(eta))
-    }
+    },
+    "type" = 2
   )
   class(rval) <- "family.BayesR"
   rval
