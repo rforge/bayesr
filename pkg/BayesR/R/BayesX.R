@@ -657,7 +657,7 @@ resultsBayesX <- function(x, samples, ...)
     ylevels <- ylevels[ylevels != reference]
 
   rename.p <- function(x) {
-    if(family$family %in% c("beta", "binomial", "multinomial", "quant")) {
+    if(family$family %in% c("beta", "binomial", "multinomial", "quant", "poisson")) {
       foo <- switch(family$family,
         "beta" = function(x) gsub("sigma2", "sigma", x),
         "binomial" = function(x) gsub("binomial", "pi", x),
@@ -683,6 +683,7 @@ resultsBayesX <- function(x, samples, ...)
           x
         },
         "quant" = function(x) gsub("quantreg", "mu", x),
+        "poisson" = function(x) gsub("poisson", "lambda", x),
       )
       x <- foo(x)
     }
@@ -1122,6 +1123,22 @@ sx.construct.rsps.smooth.spec <- function(object, data)
   return(term)
 }
 
+construct.shrw <- function(object, data, what)
+{
+  term <- object$term
+  term <- paste(term, "(", what, sep = "")
+  term <- paste(do.xt(term, object, NULL), ")", sep = "")
+  if(object$by != "NA")
+    term <- make_by(term, object, data)
+
+  return(term)
+}
+
+sx.construct.offset.smooth.spec <- function(object, data)
+{
+  return(construct.shrw(object, data, "offset"))
+}
+
 sx.construct.mrf.smooth.spec <- sx.construct.spatial.smooth.spec <- function(object, data)
 {
   if(is.null(object$xt))
@@ -1231,6 +1248,7 @@ sx.construct.mrf.smooth.spec <- sx.construct.spatial.smooth.spec <- function(obj
 
   return(term)
 }
+
 
 make_by <- function(term, object, data)
 {

@@ -957,7 +957,19 @@ mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
       "rm.number" = TRUE
     ),
 	  "mu" = function(eta, ...) {
-      c(eta$mu1, eta$mu2)
+      cbind(eta$mu1, eta$mu2)
+    },
+    "d" = function(y, eta) {
+      cbind(
+        dnorm(y[, 1], mean = eta$mu1, sd = linkinv$sigma1(eta$sigma1)),
+        dnorm(y[, 2], mean = eta$mu2, sd = linkinv$sigma2(eta$sigma2))
+      )
+    },
+    "p" = function(y, eta) {
+      cbind(
+        pnorm(y[, 1], mean = eta$mu1, sd = linkinv$sigma1(eta$sigma1)),
+        pnorm(y[, 2], mean = eta$mu2, sd = linkinv$sigma2(eta$sigma2))
+      )
     },
     "type" = 2
   )
@@ -1124,7 +1136,8 @@ poisson.BayesR <- function(links = c(lambda = "log"), ...)
     "p" = function(y, eta) {
       ppois(y, lambda = linkinv$lambda(eta$lambda))
     },
-    "score.norm" = TRUE
+    "score.norm" = TRUE,
+    "type" = 3
   )
 
   class(rval) <- "family.BayesR"

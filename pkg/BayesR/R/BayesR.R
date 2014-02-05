@@ -194,27 +194,32 @@ parse.input.bayesr <- function(formula, data = NULL, family = gaussian.BayesR,
 
   ## For categorical responses, extend formula object.
   ylevels <- NULL
-  if(is.factor(mf[[response.name]])) {
-    cat <- if(is.null(family$cat)) FALSE else family$cat
-    if(cat & nlevels(mf[[response.name]]) > 1) {
-      if(is.null(reference)) {
-        ty <- table(mf[[response.name]])
-        reference <- c(names(ty)[ty == max(ty)])[1]
+  if(length(response.name) < 2) {
+    if(is.factor(mf[[response.name]])) {
+      cat <- if(is.null(family$cat)) FALSE else family$cat
+      if(cat & nlevels(mf[[response.name]]) > 1) {
+        if(is.null(reference)) {
+          ty <- table(mf[[response.name]])
+          reference <- c(names(ty)[ty == max(ty)])[1]
+        }
+        reference <- rmf(reference)
+        ylevels <- rmf(levels(mf[[response.name]]))
+        ylevels <- ylevels[ylevels != reference]
+        if(length(formula) != (n <- length(ylevels)))
+          formula <- rep(formula, length.out = n)
+        names(formula) <- nf <- paste(response.name, ylevels, sep = "")
+        for(j in seq_along(formula)) {
+          uf <- eval(parse(text = paste(nf[j], " ~ .", sep = "")))
+          if(!all(c("formula", "fake.formula") %in% names(formula[[j]]))) {
+            formula[[j]][[1]]$cat.formula <- update(formula[[j]][[1]]$formula, uf)
+          } else formula[[j]]$cat.formula <- update(formula[[j]]$formula, uf)
+        }
       }
-      reference <- rmf(reference)
-      ylevels <- rmf(levels(mf[[response.name]]))
-      ylevels <- ylevels[ylevels != reference]
-      if(length(formula) != (n <- length(ylevels)))
-        formula <- rep(formula, length.out = n)
-      names(formula) <- nf <- paste(response.name, ylevels, sep = "")
-      for(j in seq_along(formula)) {
-        uf <- eval(parse(text = paste(nf[j], " ~ .", sep = "")))
-        if(!all(c("formula", "fake.formula") %in% names(formula[[j]]))) {
-          formula[[j]][[1]]$cat.formula <- update(formula[[j]][[1]]$formula, uf)
-        } else formula[[j]]$cat.formula <- update(formula[[j]]$formula, uf)
-      }
-    }
-  } else mf[[response.name]] <- as.numeric(mf[[response.name]])
+    } else mf[[response.name]] <- as.numeric(mf[[response.name]])
+  } else {
+    for(y in response.name)
+      mf[[y]] <- as.numeric(mf[[y]])
+  }
 
   ## Assign all design matrices and the hierarchical level, if any.
   rval <- bayesr.design(formula, mf, contrasts, knots, ...)
@@ -233,14 +238,14 @@ parse.input.bayesr <- function(formula, data = NULL, family = gaussian.BayesR,
 }
 
 "[.bayesr.input" <- function(x, ...) {
-  rval <- NextMethod("[")
+  rval <- NextMethod("[", ...)
   xattr <- attributes(x)
   mostattributes(rval) <- attributes(x)
   rval
 }
 
 "[.bayesr" <- function(x, ...) {
-  rval <- NextMethod("[")
+  rval <- NextMethod("[", ...)
   mostattributes(rval) <- attributes(x)
   rval
 }
@@ -337,13 +342,13 @@ bayesr.model.frame <- function(formula, data, family, weights = NULL,
   ## Remove inf values
   mf <- rm_infinite(mf)
 
-  ## assign main response name
-  ok <- all(c("formula", "response", "fake.formula") %in% names(formula[[1]]))
-  rn <- attr(mf, "response.name") <- if(!ok) formula[[1]][[1]]$response else formula[[1]]$response
+  ## assign response names
+  attr(mf, "response.name") <- rn <- all.vars(formula(fF, rhs = 0))
 
   ## Check response.
-  if(!is.null(family$valid.response))
-    family$valid.response(mf[[rn]])
+  if(!is.null(family$valid.response)) {
+    family$valid.response(mf[, rn])
+  }
 
   mf
 }
@@ -926,7 +931,7 @@ partial.residuals <- function(effects, response, fitted.values, family)
 ## A prediction method for "bayesr" objects.
 ## Prediction can also be based on multiple chains.
 predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
-  intercept = TRUE, FUN = mean, trans = NULL, type = c("link", "response"),
+  intercept = TRUE, FUN = mean, trans = NULL, type = c("link", "parameter"),
   nsamps = NULL, ...)
 {
   family <- attr(object, "family")
@@ -1259,7 +1264,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
     on.exit(par(op))
   }
 
-  x <- get.model(x, model)
+  x <- get.model(x, model, drop = FALSE)
 
   ## What should be plotted?
   which.match <- c("effects", "samples", "hist-resid", "qq-resid",
@@ -1273,64 +1278,89 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
     stop("argument which is specified wrong!")
 
   if(all(which %in% c("hist-resid", "qq-resid", "scatter-resid", "scale-resid"))) {
-    if(is.null(args$do_par) & spar) {
-      if(!ask) {
-        par(mfrow = n2mfrow(length(which)))
-      } else par(ask = ask)
-    }
-
     args2 <- args
     args2$object <- x
-    res <- do.call("residuals.bayesr", delete.args("residuals.bayesr", args2))
+    res0 <- do.call("residuals.bayesr", delete.args("residuals.bayesr", args2))
+    ny <- if(is.null(dim(res0))) 1 else ncol(res0)
+    if(is.null(args$do_par) & spar) {
+      if(!ask) {
+        par(mfrow = n2mfrow(length(which) * ny))
+      } else par(ask = ask)
+    }
     if(any(which %in% c("scatter-resid", "scale-resid"))) {
-      fit <- fitted.bayesr(x, type = "parameter", samples = TRUE, model = 1, nsamps = args$nsamps)
-      if(is.list(fit)) fit <- fit[[1]]
+      fit0 <- fitted.bayesr(x, type = "parameter", samples = TRUE,
+        model = if(ny < 2) 1 else NULL, nsamps = args$nsamps)
     }
     rtype <- args$type
     if(is.null(rtype)) rtype <- "quantile"
-    for(w in which) {
-      args2 <- args
-      if(w == "hist-resid") {
-        rdens <- density(res)
-        rh <- hist(res, plot = FALSE)
-        args2$ylim <- c(0, max(c(rh$density, rdens$y)))
-        args2$freq <- FALSE
-        args2$x <- res
-        args2 <- delete.args("hist.default", args2, package = "graphics")
-        if(is.null(args$xlab)) args2$xlab <- "Residuals"
-        if(is.null(args$ylab)) args2$ylab <- "Density"
-        if(is.null(args$main)) args2$main <- "Histogramm and density"
-        ok <- try(do.call(eval(parse(text = "graphics::hist.default")), args2))
-        if(!inherits(ok, "try-error"))
-          lines(rdens)
-        box()
+    for(j in 1:ny) {
+      res <- if(ny > 1) res0[, j] else res0
+      if(any(which %in% c("scatter-resid", "scale-resid"))) {
+        fit <- if(ny < 2) {
+          if(is.list(fit0)) fit0[[1]] else fit0
+        } else fit0[[j]]
       }
-      if(w == "qq-resid") {
-        args2$y <- if(rtype == "quantile") qnorm(res) else (res - mean(res)) / sd(res)
-        args2 <- delete.args("qqnorm.default", args2, package = "stats", not = c("col", "pch"))
-        ok <- try(do.call(qqnorm, args2))
-        if(!inherits(ok, "try-error"))
-  		    if(rtype == "quantile") abline(0,1) else qqline(args2$y)
-      }
-      if(w == "scatter-resid") {
-        args2$x <- fit
-        args2$y <- res
-        args2 <- delete.args("scatter.smooth", args2, package = "stats", not = c("col", "pch"))
-        if(is.null(args$xlab)) args2$xlab <- "Fitted values"
-        if(is.null(args$xlab)) args2$ylab <- "Residuals"
-        if(is.null(args$xlab)) args2$main <- "Fitted values vs. residuals"
-        ok <- try(do.call(scatter.smooth, args2))
-        if(!inherits(ok, "try-error"))
-          abline(h = 0, lty = 2)
-      }
-      if(w == "scale-resid") {
-        args2$x <- fit
-        args2$y <- sqrt(abs((res - mean(res)) / sd(res)))
-        args2 <- delete.args("scatter.smooth", args2, package = "stats", not = c("col", "pch"))
-        if(is.null(args$xlab)) args2$xlab <- "Fitted values"
-        if(is.null(args$ylab)) args2$ylab <- expression(sqrt(abs("Standardized residuals")))
-        if(is.null(args$main)) args2$main <- "Scale-location"
-        try(do.call(scatter.smooth, args2))
+      for(w in which) {
+        args2 <- args
+        if(w == "hist-resid") {
+          rdens <- density(res)
+          rh <- hist(res, plot = FALSE)
+          args2$ylim <- c(0, max(c(rh$density, rdens$y)))
+          args2$freq <- FALSE
+          args2$x <- res
+          args2 <- delete.args("hist.default", args2, package = "graphics")
+          if(is.null(args$xlab)) args2$xlab <- "Residuals"
+          if(is.null(args$ylab)) args2$ylab <- "Density"
+          if(is.null(args$main)) {
+            args2$main <- "Histogramm and density"
+            if(ny > 1)
+              args2$main <- paste(names(res0)[j], args2$main, sep = ": ")
+          }
+          ok <- try(do.call(eval(parse(text = "graphics::hist.default")), args2))
+          if(!inherits(ok, "try-error"))
+            lines(rdens)
+          box()
+        }
+        if(w == "qq-resid") {
+          args2$y <- if(rtype == "quantile") qnorm(res) else (res - mean(res)) / sd(res)
+          args2 <- delete.args("qqnorm.default", args2, package = "stats", not = c("col", "pch"))
+          if(is.null(args$main)) {
+            args2$main <- "Normal Q-Q Plot"
+            if(ny > 1)
+              args2$main <- paste(names(res0)[j], args2$main, sep = ": ")
+          }
+          ok <- try(do.call(qqnorm, args2))
+          if(!inherits(ok, "try-error"))
+  		      if(rtype == "quantile") abline(0,1) else qqline(args2$y)
+        }
+        if(w == "scatter-resid") {
+          args2$x <- fit
+          args2$y <- res
+          args2 <- delete.args("scatter.smooth", args2, package = "stats", not = c("col", "pch"))
+          if(is.null(args$xlab)) args2$xlab <- "Fitted values"
+          if(is.null(args$xlab)) args2$ylab <- "Residuals"
+          if(is.null(args$xlab)) {
+            args2$main <- "Fitted values vs. residuals"
+            if(ny > 1)
+              args2$main <- paste(names(res0)[j], args2$main, sep = ": ")
+          }
+          ok <- try(do.call(scatter.smooth, args2))
+          if(!inherits(ok, "try-error"))
+            abline(h = 0, lty = 2)
+        }
+        if(w == "scale-resid") {
+          args2$x <- fit
+          args2$y <- sqrt(abs((res - mean(res)) / sd(res)))
+          args2 <- delete.args("scatter.smooth", args2, package = "stats", not = c("col", "pch"))
+          if(is.null(args$xlab)) args2$xlab <- "Fitted values"
+          if(is.null(args$ylab)) args2$ylab <- expression(sqrt(abs("Standardized residuals")))
+          if(is.null(args$main)) {
+            args2$main <- "Scale-location"
+            if(ny > 1)
+              args2$main <- paste(names(res0)[j], args2$main, sep = ": ")
+          }
+          try(do.call(scatter.smooth, args2))
+        }
       }
     }
   } else {
@@ -1865,11 +1895,13 @@ terms.bayesr.formula <- function(x)
 
 
 ## Model extractor function.
-get.model <- function(x, model = NULL)
+get.model <- function(x, model = NULL, drop = TRUE)
 {
+  if(!drop)
+    mf <- model.frame(x)
   if(length(model) > 1) {
     for(j in model)
-      x <- get.model(x, j)
+      x <- get.model(x, j, drop = drop)
   } else {
     family <- attr(x, "family")
     cx <- class(x)
@@ -1884,12 +1916,17 @@ get.model <- function(x, model = NULL)
           if(max(model) > length(x) || is.na(model) || min(model) < 1) 
             stop("argument model is specified wrong!")
         }
-        x <- x[[model]]
+        x <- if(drop) x[[model]] else {
+          class(x) <- "list"
+          x[model]
+        }
       }
     } else x <- list(x)
     class(x) <- cx
     attr(x, "family") <- family
   }
+  if(!drop)
+    attr(x, "model.frame") <- mf
 
   return(x)
 }
@@ -1903,18 +1940,22 @@ fitted.bayesr <- function(object, model = NULL, term = NULL,
   type <- match.arg(type)
   family <- attr(object, "family")
 
-  if(type != "parameter")
-    object <- get.model(object, model)
+  if(type != "parameter" & !samples)
+    object <- get.model(object, model, drop = FALSE)
 
   elmts <- c("formula", "fake.formula", "model", "param.effects",
     "effects", "fitted.values", "residuals")
 
-  if(any(elmts %in% names(object)))
-    object <- list(object)
+  one <- FALSE
+  if(any(elmts %in% names(object))) {
+    if(!samples)
+      object <- list(object)
+    one <- TRUE
+  }
 
   rval <- vector(mode = "list", length = length(object))
   names(rval) <- names(object)
-  nrval <- names(rval)
+  nrval <- if(is.null(names(rval))) 1:length(object) else names(rval)
 
   if(!samples) {
     for(j in seq_along(object)) {
@@ -1944,12 +1985,21 @@ fitted.bayesr <- function(object, model = NULL, term = NULL,
       model <- nrval
     if(!is.character(model))
       model <- nrval[model]
-    for(j in seq_along(model)) {
-      rval[[j]] <- predict.bayesr(object, model = j, term = term,
+    ind <- if(one) 1 else seq_along(model)
+    for(j in ind) {
+      rval[[j]] <- predict.bayesr(object, model = if(one) NULL else j, term = term,
         FUN = function(x) { x }, nsamps = nsamps, ...)
       if(type != "link")
-        rval[[j]] <- apply(rval[[j]], 2, make.link2(family$links[nrval[j]])$linkinv)
+        rval[[j]] <- apply(rval[[j]], 2, make.link2(family$links[if(one) 1 else nrval[j]])$linkinv)
       rval[[j]] <- t(apply(rval[[j]], 1, FUN))
+      if(!is.null(dim(rval[[j]]))) {
+        if(nrow(rval[[j]]) == 1) {
+          rval[[j]] <- drop(rval[[j]])
+        } else {
+          if(ncol(rval[[j]]) == 1)
+            rval[[j]] <- drop(rval[[j]])
+        }
+      }
     }
   }
 
@@ -2228,12 +2278,19 @@ residuals.bayesr <- function(object, type = c("quantile", "ordinary"),
   type <- match.arg(type)
   y <- model.response2(object)
   family <- attr(object, "family")
+  if(!is.null(family$type)) family$type <- 1
   if(type == "ordinary") {
     if(is.factor(y)) y <- as.integer(y) - 1
   } else stopifnot(!is.null(family$p))
   res <- fitted(object, type = "link", samples = TRUE, FUN = function(x) { x }, nsamps = nsamps)
+  if(!is.list(res)) {
+    res <- list(res)
+    names(res) <- family$names
+  }
   nc <- ncol(res[[1]])
   res2 <- matrix(NA, nrow(res[[1]]), nc)
+  if(!is.null(dim(y)))
+    res2 <- rep(list(res2), length = ncol(y))
   for(j in seq_along(res)) {
     colnames(res[[j]]) <- paste("i",
       formatC(1:ncol(res[[j]]), width = nchar(nc), flag = "0"),
@@ -2245,14 +2302,38 @@ residuals.bayesr <- function(object, type = c("quantile", "ordinary"),
       formatC(i, width = nchar(nc), flag = "0"), sep = ""),
       names(res)), drop = FALSE]
     names(eta2) <- gsub(ni, "", names(eta2))
-    res2[, i] <- if(type == "quantile") {
-      family$p(y, eta2)
+    tres <- if(type == "quantile") {
+      if(family$type == 3) {
+        le <- family$p(y - 1, eta2)
+        ri <- family$p(y, eta2)
+        qnorm(runif(length(y), min = le, max = ri))
+      } else family$p(y, eta2)
     } else family$mu(eta2)
+    if(is.null(dim(y))) {
+      res2[, i] <- unlist(tres)
+    } else {
+      for(j in 1:ncol(y))
+        res2[[j]][, i] <- tres[, j]
+    }
   }
-  res <- apply(res2, 1, FUN)
 
-  if(type == "ordinary")
-    res <- y - res
+  if(is.null(dim(y))) {
+    res <- apply(res2, 1, FUN)
+  } else {
+    res <- list()
+    for(j in 1:ncol(y))
+      res[[j]] <- apply(res2[[j]], 1, FUN)
+    names(res) <- names(y)
+    res <- as.data.frame(res)
+  }
+  if(type == "ordinary") {
+    if(is.null(dim(y))) {
+      res <- y - res
+    } else {
+      for(j in 1:ncol(y))
+        res[[j]] <- y[, j] - res[[j]]
+    }
+  }
 
   res
 }

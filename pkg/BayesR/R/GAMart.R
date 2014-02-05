@@ -535,8 +535,7 @@ dgp_beta <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
 
 if(FALSE) {
   d <- dgp_beta()
-  b <- bayesr(list(y ~ 1, y~ 1),
-		data = d, family = beta, engine = "BayesX", verbose = TRUE)
+  b <- bayesr(y ~ 1, data = d, family = beta, engine = "BayesX", verbose = TRUE)
   summary(b)
   plot(b, which = 3:6)
 }
