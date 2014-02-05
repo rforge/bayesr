@@ -266,9 +266,9 @@ smooth.IWLS.default <- function(x, ...)
 ## Sampler based on IWLS proposals.
 samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   verbose = TRUE, step = 20, svalues = TRUE, eps = 1e-04, maxit = 100,
-  tdir = NULL, method = "MCMC", criterion = c("AIC", "BIC"),
-  lower = 1e-09, upper = 1e+04, optim.control = list(pgtol = 1e-04, maxit = 5),
-  ...)
+  tdir = NULL, method = c("MCMC", "backfitting", "backfitting2"),
+  criterion = c("AIC", "BIC"), lower = 1e-09, upper = 1e+04,
+  optim.control = list(pgtol = 1e-04, maxit = 5), ...)
 {
   family <- attr(x, "family")
   nx <- family$names
@@ -276,6 +276,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
     stop("parameter names mismatch with family names!")
   response <- attr(x, "response.vec")
   criterion <- match.arg(criterion)
+  method <- match.arg(method)
 
   ## Actual number of samples to save.
   if(n.iter < burnin) stop("argument burnin exceeds n.iter!")
@@ -322,7 +323,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
     eta[[j]] <- rep(0.1, length(response))
 
   ## Find starting values with backfitting.
-  if(svalues | method == "backfitting") {
+  if(svalues | method == "backfitting" | method == "backfitting2") {
     logn <- log(if(is.null(dim(response))) length(response) else nrow(response))
 
     ## The backfitting main function.
@@ -366,7 +367,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
         cat("\n")
       }
 
-      if(method == "backfitting" & i == maxit)
+      if(i == maxit)
         warning("the backfitting algorithm did not converge, please check argument eps and maxit!")
 
       return(list("x" = x, "eta" = eta, "ic" = IC))
