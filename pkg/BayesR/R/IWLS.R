@@ -480,7 +480,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
     if(verbose) cat("\n")
   }
 
-  if(method %in% c("reml", "backfitting")) {
+  if(method %in% c("reml", "backfitting", "backfitting2")) {
     eta2 <- eta
     if(verbose) cat("generating samples\n")
     ptm <- proc.time()
