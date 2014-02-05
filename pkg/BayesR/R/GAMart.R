@@ -173,7 +173,7 @@ dgp_gaussian <- function(n = 500, mu = NULL, sigma = NULL, range.sigma = c(0.3, 
 
 if(FALSE) {
   d <- dgp_gaussian()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma.x11), data = d, engine = "BayesX", verbose = TRUE)
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12),y ~ sx(sigma.x11), data = d, engine = "BayesX", verbose = TRUE)
   d$p <- predict(b, model = "mu", term = c("x11", "x12"))
 }
 
@@ -200,10 +200,71 @@ dgp_gaussian2 <- function(n = 500, mu = NULL, sigma2 = NULL, range.sigma2 = c(0.
 }
 
 if(FALSE) {
-  d <- dgp_gaussian2()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma2.x11), data = d, engine = "BayesX", verbose = TRUE)
+  d <- dgp_gaussian()
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), y ~ sx(sigma2.x11), data = d, engine = "BayesX", verbose = TRUE)
   d$p <- predict(b, model = "mu", term = c("x11", "x12"))
 }
+
+## truncated gaussian2.
+dgp_truncgaussian <- function(n = 500, mu = NULL, sigma = NULL, ...)
+{
+  if(is.null(mu)) {
+    mu <- list(nobs = n, const = 0.5,
+      type = list(c("unimodal", "quadratic", "const")))
+  }
+  if(is.null(sigma)) {
+    sigma <- list(nobs = n, const = 0.01,
+      type = list(c("const")))
+  }
+
+  mu <- do.call("dgp_eta", mu)
+  sigma <- do.call("dgp_eta", sigma)
+
+  d <- data.frame("mu" = mu, "sigma" = sigma)
+  sd <- exp(sigma$eta0)
+  u <- runif(n)
+  d$y <- qnorm(0.5 + 0.5 * u) * sd + mu$eta0
+
+  d
+}
+
+if(FALSE) {
+  d <- dgp_truncgaussian()
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), y ~ 1, data = d, engine = "BayesX", verbose = TRUE, family = truncgaussian)
+  d$p <- predict(b, model = "mu", term = c("x11", "x12"))
+  plot(b, which = 3:6)
+}
+
+## truncated gaussian2.
+dgp_truncgaussian2 <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
+{
+  if(is.null(mu)) {
+    mu <- list(nobs = n, const = 0.5,
+      type = list(c("unimodal", "quadratic", "const")))
+  }
+  if(is.null(sigma2)) {
+    sigma2 <- list(nobs = n, const = 0.01,
+      type = list(c("const")))
+  }
+
+  mu <- do.call("dgp_eta", mu)
+  sigma2 <- do.call("dgp_eta", sigma2)
+
+  d <- data.frame("mu" = mu, "sigma2" = sigma2)
+  sd <- sqrt(exp(sigma2$eta0))
+  u <- runif(n)
+  d$y <- qnorm(0.5 + 0.5 * u) * sd + mu$eta0
+
+  d
+}
+
+if(FALSE) {
+  d <- dgp_truncgaussian2()
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), y ~ 1, data = d, engine = "BayesX", verbose = TRUE, family = truncgaussian)
+  d$p <- predict(b, model = "mu", term = c("x11", "x12"))
+  plot(b, which = 3:6)
+}
+
 
 ## Gamma.
 dgp_gamma <- function(n = 500, mu = NULL, sigma = NULL, ...)
@@ -231,7 +292,7 @@ dgp_gamma <- function(n = 500, mu = NULL, sigma = NULL, ...)
 
 if(FALSE) {
   d <- dgp_gamma()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma.x11)+sx(sigma.x12), 
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), y ~ sx(sigma.x11)+sx(sigma.x12), 
 		data = d, family = gamma, engine = "BayesX", verbose = TRUE)
   d$pred_mu <- predict(b, model = "mu", term = c("x11", "x12"))
 }
@@ -263,7 +324,7 @@ dgp_invgaussian <- function(n = 500, mu = NULL, sigma = NULL, ...)
 
 if(FALSE) {
   d <- dgp_invgaussian()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma2.x11)+sx(sigma2.x12), 
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), y ~ sx(sigma2.x11)+sx(sigma2.x12), 
 		data = d, family = invgaussian, engine = "BayesX", verbose = TRUE)
   d$pred_mu <- predict(b, model = "mu", term = c("x11", "x12"))
 }
@@ -294,7 +355,7 @@ dgp_lognormal <- function(n = 500, mu = NULL, sigma = NULL, ...)
 
 if(FALSE) {
   d <- dgp_lognormal()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma.x11)+sx(sigma.x12), 
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), y ~ sx(sigma.x11)+sx(sigma.x12), 
 		data = d, family = lognormal, engine = "BayesX")
   plot(b)
   summary(b)
@@ -329,11 +390,43 @@ dgp_lognormal2 <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
 
 if(FALSE) {
   d <- dgp_lognormal2()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma2.x11)+sx(sigma2.x12), 
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), y ~ sx(sigma2.x11)+sx(sigma2.x12), 
 		data = d, family = lognormal2, engine = "BayesX")
   plot(b, which = 3:6)
   summary(b)
   score(b)
+}
+
+
+## weibull.
+dgp_weibull <- function(n = 500, lambda = NULL, alpha = NULL, ...)
+{
+  if(is.null(lambda)) {
+    lambda <- list(nobs = n, const = 0,
+      type = list(c("unimodal", "quadratic", "const")))
+  }
+  if(is.null(alpha)) {
+    alpha <- list(nobs = n, const = 0,
+      type = list(c("const")))
+  }
+
+
+  lambda <- do.call("dgp_eta", lambda)
+  alpha <- do.call("dgp_eta", alpha) 
+  m <- exp(lambda$eta0)
+  s <- exp(alpha$eta0)
+  y <- rweibull(n, shape = s, scale = m)
+
+  
+  d <- cbind(y, "lambda" = lambda, "alpha" = alpha)
+  d
+}
+
+if(FALSE) {
+  d <- dgp_weibull()
+  b <- bayesr(y ~ sx(lambda.x11) + sx(lambda.x12), y ~ 1, 
+		data = d, family = weibull, engine = "BayesX", verbose = TRUE)
+  plot(b)
 }
 
 ## t.
