@@ -1698,6 +1698,7 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
         print_dic_pd(x[[i]][[1]], ok = FALSE)
     } else {
       cat("Formula:\n")
+      environment(x[[i]]$formula) <- .GlobalEnv
       print(x[[i]]$formula)
       if(length(x[[i]]$param.effects) > 0) {
         cat("\nParametric coefficients:\n")
