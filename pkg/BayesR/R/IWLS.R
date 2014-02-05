@@ -267,7 +267,7 @@ smooth.IWLS.default <- function(x, ...)
 samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   verbose = TRUE, step = 20, svalues = TRUE, eps = 1e-04, maxit = 100,
   tdir = NULL, method = "MCMC", criterion = c("AIC", "BIC"),
-  lower = 1e-09, upper = 1e+09, optim.control = list(pgtol = 1e-09),
+  lower = 1e-09, upper = 1e+04, optim.control = list(pgtol = 1e-04, maxit = 5),
   ...)
 {
   family <- attr(x, "family")
