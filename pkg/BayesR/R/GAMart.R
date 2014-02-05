@@ -527,7 +527,7 @@ dgp_beta <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
   a <- exp(mu$eta0)
   a <- a / (1 + a)
   shape1 <- a * (1 - b) / (b)
-  shape2 <- shape1 * (1 - a) / a
+  shape2 <- (1 - a) * (1 - b) / (b)
   y <- rbeta(n, shape1 = shape1, shape2 = shape2)
   d <- cbind(y, "mu" = mu, "sigma2" = sigma2)
   d
@@ -638,7 +638,7 @@ if(FALSE) {
 
   f <- list(
     y ~ sx(lambda.x11) + sx(lambda.x12),
-    y ~ sx(lambda.x11) + sx(lambda.x12)
+    y ~ sx(pi.x11) + sx(pi.x12)
   )
 
   b <- bayesr(f, family = zip, data = d, engine = "BayesX", verbose = TRUE)
@@ -705,7 +705,6 @@ if(FALSE) {
 dgp_negbin <- function(n = 500, mu = NULL, delta = NULL, 
 			range.mu = c(-1,1), range.delta = c(-1,1), ...)
 {
-  require("VGAM")
 
   if(is.null(mu)) {
     mu <- list(nobs = n, const = -0.5,
@@ -724,7 +723,7 @@ dgp_negbin <- function(n = 500, mu = NULL, delta = NULL,
   y <- rnbinom(n, mu = ld, size = d)
 
   
-  d <- cbind(y, "mu" = mu, "delta" = d)
+  d <- cbind(y, "mu" = mu, "delta" = delta)
   d
 }
 
@@ -733,10 +732,58 @@ if(FALSE) {
 
   f <- list(
     y ~ sx(mu.x11) + sx(mu.x12),
-    y ~ sx(mu.x11) + sx(mu.x12)
+    y ~ (delta.x11) 
   )
 
   b <- bayesr(f, family = negbin, data = d, engine = "BayesX", verbose = TRUE)
+  
+  plot(b, which = 3:6)
+  
+  
+}
+
+## zinb.
+dgp_zinb <- function(n = 500, mu = NULL, pi = NULL, delta = NULL, ...)
+{
+  require(VGAM)
+  if(is.null(mu)) {
+    mu <- list(nobs = n, const = -0.5,
+      type = list(c("unimodal", "quadratic", "const")))
+  }
+  if(is.null(pi)) {
+    pi <- list(nobs = n, const = 0.1,
+      type = list(c("const")))
+  }
+  if(is.null(delta)) {
+    delta <- list(nobs = n, const = 1,
+      type = list(c("const")))
+  }
+
+
+  mu <- do.call("dgp_eta", mu)
+  pi <- do.call("dgp_eta", pi) 
+  delta <- do.call("dgp_eta", delta) 
+  ld <- exp(mu$eta0)
+  p <- exp(pi$eta0)
+  p <- p / (1 + p)
+  dl <- exp(delta$eta0)
+  y <- rzinegbin(n, munb = ld, size = dl, pstr0 = p)
+
+  
+  d <- cbind(y, "mu" = mu, "pi" = pi, "delta" = delta)
+  d
+}
+
+if(FALSE) {
+  d <- dgp_zinb()
+
+  f <- list(
+    y ~ sx(mu.x11) + sx(mu.x12),
+	y ~ 1,
+    y ~  1
+  )
+
+  b <- bayesr(f, family = zinb, data = d, engine = "BayesX", verbose = TRUE)
   
   plot(b, which = 3:6)
   

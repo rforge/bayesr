@@ -1322,7 +1322,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
           box()
         }
         if(w == "qq-resid") {
-          args2$y <- if(rtype == "quantile") qnorm(res) else (res - mean(res)) / sd(res)
+          args2$y <- if(rtype == "quantile") (res) else (res - mean(res)) / sd(res)
           args2 <- delete.args("qqnorm.default", args2, package = "stats", not = c("col", "pch"))
           if(is.null(args$main)) {
             args2$main <- "Normal Q-Q Plot"
@@ -2308,7 +2308,7 @@ residuals.bayesr <- function(object, type = c("quantile", "ordinary"),
         le <- family$p(y - 1, eta2)
         ri <- family$p(y, eta2)
         qnorm(runif(length(y), min = le, max = ri))
-      } else family$p(y, eta2)
+      } else qnorm(family$p(y, eta2))
     } else family$mu(eta2)
     if(is.null(dim(y))) {
       res2[, i] <- unlist(tres)

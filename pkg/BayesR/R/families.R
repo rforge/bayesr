@@ -143,14 +143,14 @@ beta.BayesR <- function(links = c(mu = "logit", sigma2 = "log"), ...)
        sigma2 <- linkinv$sigma2(eta$sigma2)
 		   a <- mu * (1 - sigma2) / (sigma2)
 		   b <- a * (1 - mu) / mu
-		   dbeta(y, shape1 = a, shape2 = b, ncp = 0)
+		   dbeta(y, shape1 = a, shape2 = b)
 	  },
 	  "p" = function(y, eta) {
        mu <- linkinv$mu(eta$mu)
        sigma2 <- linkinv$sigma2(eta$sigma2)
 		   a <- mu * (1 - sigma2) / (sigma2)
 		   b <- a * (1 - mu) / mu
-		   pbeta(y, shape1 = a, shape2 = b, ncp = 0)
+		   pbeta(y, shape1 = a, shape2 = b)
 	  },
     "type" = 1
   )
@@ -1173,7 +1173,8 @@ zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
     "p" = function(y, eta) {
       linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * ppois(y, lambda = linkinv$lambda(eta$lambda))
     },
-    "score.norm" = TRUE
+    "score.norm" = TRUE,
+    "type" = 3
   )
   if(rval$bayesx[[2]][[1]] == "zip_pi_cloglog")
     rval$bayesx[[1]][[1]] <- "zip_lambda_cloglog"
@@ -1207,7 +1208,8 @@ negbin.BayesR <- function(links = c(mu = "log", delta = "log"), ...)
     "p" = function(y, eta) {
       pnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta))
     },
-    "score.norm" = TRUE
+    "score.norm" = TRUE,
+    "type" = 3
   )
 
   class(rval) <- "family.BayesR"
@@ -1241,7 +1243,8 @@ zinb.BayesR <- function(links = c(mu = "log", "pi" = "logit", delta = "log"), ..
     "p" = function(y, eta) {
       linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * pnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta))
     },
-    "score.norm" = TRUE
+    "score.norm" = TRUE,
+    "type" = 3
   )
 
   class(rval) <- "family.BayesR"
