@@ -51,7 +51,7 @@ n <- 500
 dat <- data.frame("x1" = sort(runif(n, -3, 3)), x2 = runif(n, -3, 3))
 dat$y <- scale2(with(dat, 1.2 + sin(x1) + cos(x2) + rnorm(n, sd = (cos(dat$x1) + 2) / 4)), 0.001, 0.999)
 
-a <- bayesr(y ~ s(x1) + s(x2), ~ s(x1), data = dat, engine = "IWLS", family = beta, n.iter = 1200, burnin = 200, thin = 1)
+a <- bayesr(y ~ s(x1) + s(x2), ~ s(x1), data = dat, engine = "IWLS", family = beta, method = "backfitting")
 
 
 a <- bayesr(y1 | y2 ~ s(x1) + s(x2), data = dat, family = gaussian.BayesR)
@@ -92,10 +92,10 @@ b2 <- bayesx2(y ~ sx(x1, by = x2), data = dat)
 
 ## IWLS test
 n <- 100
-dat <- data.frame("x" = sort(runif(n, -3, 3)))
-dat$y <- with(dat, 1.2 + sin(x) + rnorm(n, sd = scale2(cos(x), 0.1, 0.8)))
+dat <- data.frame("x1" = runif(n, -3, 3), "x2" = runif(n, -3, 3))
+dat$y <- with(dat, 1.2 + sin(x1) * cos(x2) + rnorm(n, sd = scale2(cos(x1 * 3), 0.1, 0.8)))
 
-b <- bayesr(y ~ s(x), family = gaussian, data = dat, engine = "IWLS", method = "backfitting")
+b <- bayesr(y ~ s(x1, x2), ~ s(x1), family = gaussian, data = dat, engine = "IWLS", method = "backfitting")
 
 plot(b)
 plot(b, which = "samples")

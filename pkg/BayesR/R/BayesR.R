@@ -1570,7 +1570,8 @@ plot.bayesr.effect.default <- function(x, ...) {
     }
   } else {
     do.call("plot3d", delete.args("plot3d", args,
-      c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab", "zlab")))
+      c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab",
+      "zlab", "phi", "theta", "r", "d", "scale")))
   }
 }
 

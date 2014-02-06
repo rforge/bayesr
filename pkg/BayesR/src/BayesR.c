@@ -106,6 +106,11 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 {
   int nProtected = 0;
 
+  /* Last try accepted? */
+/*  int accepted = LOGICAL(getListElement(getListElement(x, "state"), "accepted"))[0];*/
+/*  int adaptive = LOGICAL(getListElement(getListElement(x, "xt"), "adaptive"))[0];*/
+/*  int adaptcheck = accepted * adaptive;*/
+
   /* Evaluate loglik, weights and score vector. */
   SEXP eta2;
   PROTECT(eta2 = duplicate(eta));
