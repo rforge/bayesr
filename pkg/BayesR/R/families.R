@@ -68,9 +68,9 @@ parse.links <- function(links, default.links, ...)
 
 
 ## http://stats.stackexchange.com/questions/41536/how-can-i-model-a-proportion-with-bugs-jags-stan
-beta.BayesR <- function(links = c(mu = "logit", sigma2 = "log"), ...)
+beta.BayesR <- function(links = c(mu = "logit", sigma2 = "logit"), ...)
 {
-  links <- parse.links(links, c(mu = "logit", sigma2 = "log"), ...)
+  links <- parse.links(links, c(mu = "logit", sigma2 = "logit"), ...)
   linkinv <- list()
   for(j in names(links))
     linkinv[[j]] <- make.link2(links[[j]])$linkinv

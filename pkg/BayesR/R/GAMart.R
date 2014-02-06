@@ -653,6 +653,11 @@ if(FALSE) {
   
   
   plot(b)
+  plot(b, which = 3:6)
+  lambda <- predict(b, type = "parameter", model = "lambda")
+  pi <- predict(b, type = "parameter", model = "pi")
+  res <- qnorm(runif(length(d$y), min = pzipois(d$y - 1, lambda = lambda, pstr0 = pi), max = pzipois(d$y, lambda = lambda, pstr0 = pi)))
+  qqnorm(res)
   
   
 }
