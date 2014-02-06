@@ -932,6 +932,51 @@ dagum.BayesR <- function(links = c(a = "log", b = "log", p = "log"), ...)
   rval
 }
 
+BCCG.BayesR <- function(links = c(mu = "log", sigma = "log", nu = "identity"), ...)
+{
+  links <- parse.links(links, c(mu = "log", sigma = "log", nu = "identity"), ...)
+  linkinv <- list()
+  for(j in names(links))
+    linkinv[[j]] <- make.link2(links[[j]])$linkinv
+  
+  rval <- list(
+    "family" = "BCCG",
+    "names" = c("mu", "sigma", "nu"),
+    "links" = links,
+	"valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
+    bayesx = list(
+      "mu" = c("BCCG_mu", "mean"),
+      "sigma" =  c("BCCG_sigma", "scale"),
+	  "nu" = c("BCCG_nu", "nu"),
+	  "order" = 3:1
+    ),
+	"d" = function(y, eta) {
+		mu <- linkinv$mu(eta$mu)
+		sigma <- linkinv$sigma(eta$sigma)
+		nu <- linkinv$nu(eta$nu)
+		z <- ifelse(nu == 0, log(y/mu)/sigma, (((y/mu)^nu - 1)/(nu * sigma)))
+		(1 / (sqrt(2 * pi) * sigma)) * (y^(nu - 1) / mu^nu) * exp(-z^2 / 2)
+	},
+	"p" = function(y, eta) {
+		mu <- linkinv$mu(eta$mu)
+		sigma <- linkinv$sigma(eta$sigma)
+		nu <- linkinv$nu(eta$nu)
+		z <- ifelse(nu == 0, log(y/mu)/sigma, (((y/mu)^nu - 1)/(nu * sigma)))
+		FYy1 <- pnorm(z)
+        FYy2 <- ifelse(nu > 0, pnorm(-1/(sigma * abs(nu))), 0)
+		FYy3 <- pnorm(1/(sigma * abs(nu)))
+       (FYy1 - FYy2)/FYy3
+	},
+	"type" = 1
+  )
+  
+  class(rval) <- "family.BayesR"
+  rval
+}
 
 
 mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",

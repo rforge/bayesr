@@ -540,6 +540,49 @@ if(FALSE) {
   plot(b, which = 3:6)
 }
 
+
+## BCCG.
+dgp_BCCG <- function(n = 1000, mu = NULL, sigma = NULL, nu = NULL, ...)
+{
+  require(gamlss)
+  if(is.null(mu)) {
+    mu <- list(nobs = n, const = 0.5,
+      type = list(c("unimodal", "quadratic", "const")))
+  }
+  if(is.null(sigma)) {
+    sigma <- list(nobs = n, const = 0.01,
+      type = list(c("pick", "const")))
+  }
+  if(is.null(nu)) {
+    nu <- list(nobs = n, const = -0.1,
+      type = list(c("const")))
+  }
+
+  mu <- do.call("dgp_eta", mu)
+  sigma <- do.call("dgp_eta", sigma)
+  nu <- do.call("dgp_eta", nu)
+
+  d <- data.frame("mu" = mu, "sigma" = sigma, "nu" = nu)
+  mup <- (exp(mu$eta0))
+  sd <- (exp(sigma$eta0))
+  nup <- (nu$eta0)
+  d$y <- rBCCG(n, mu = mup, sigma = sd, nu = nup)
+
+  d
+}
+
+if(FALSE) {
+  d <- dgp_BCCG()
+  f <- list(
+    y ~ sx(mu.x11) + sx(mu.x12),
+    y ~ sx(sigma.x11),
+	y ~ 1
+  )
+  b <- bayesr(f, data = d, family = BCCG, engine = "BayesX", verbose = TRUE, n.iter = 6000, burnin = 1000, thin = 5)
+  plot(b)
+}
+
+
 ## Multivariate normal.
 dgp_mvn <- function(n = 1000, mu1 = NULL, mu2 = NULL, sigma1 = NULL, sigma2 = NULL, rho = NULL, ...)
 {
