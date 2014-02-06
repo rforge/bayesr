@@ -272,6 +272,7 @@ bayesr.design <- function(x, data, contrasts = NULL, knots = NULL, ...)
           acons <- TRUE
           if(!is.null(tsm$xt$center))
             acons <- tsm$xt$center
+          tsm$xt$center <- acons
           smt <- smoothCon(tsm, mf, knots, absorb.cons = acons)
         } else {
           smt <- smooth.construct(tsm, mf, knots)

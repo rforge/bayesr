@@ -13,7 +13,7 @@ f <- stunting ~ memployment + urban + gender + meducation + s(mbmi) +
 
 b0 <- bayesr(f, family = gaussian, data = ZambiaNutrition, engine = "JAGS")
 b1 <- bayesr(f, f, family = gaussian, data = ZambiaNutrition, engine = "IWLS",
-  n.iter = 200, burnin = 0, thin = 1, method = "backfitting2")
+  n.iter = 200, burnin = 0, thin = 1, method = "backfitting", eps = 0.01)
 
 f <- stunting ~ -1 + memployment + urban + gender + meducation + sx(mbmi) +
   sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) +
