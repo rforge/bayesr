@@ -768,7 +768,7 @@ gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
     "loglik" = function(y, eta, ...) {
       mu <- linkinv$mu(eta$mu)
       sigma <- linkinv$sigma(eta$sigma)
-      sum( sigma * log(sigma) - sigma * log(mu) - log(lgamma(sigma)) +
+      sum( sigma * log(sigma) - sigma * log(mu) - lgamma(sigma) +
         (sigma - 1) * log(y) - sigma / mu * y )
     },
     "score" = list(
@@ -786,7 +786,7 @@ gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
       "mu" = function(y, eta, ...) { linkinv$sigma(eta$sigma) },
       "sigma" = function(y, eta, ...) {
         sigma <- linkinv$sigma(eta$sigma)
-        sigma^2 * digamma(sigma) - 1
+        sigma^2 * trigamma(sigma) - sigma
       }
     ),
     "mu" = function(eta, ...) {
