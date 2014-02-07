@@ -1575,7 +1575,7 @@ plot.bayesr.effect.default <- function(x, ...) {
       }
     } else {
       do.call("plot2d", delete.args("plot2d", args,
-        c("xlim", "ylim", "pch", "main", "xlab", "ylab")))
+        c("xlim", "ylim", "pch", "main", "xlab", "ylab", "lwd")))
     }
   } else {
     do.call("plot3d", delete.args("plot3d", args,

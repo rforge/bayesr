@@ -2,7 +2,7 @@ plot2d <- function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
   col.residuals = NULL, col.lines = NULL, col.polygons = NULL, 
   col.rug = NULL, c.select = NULL, fill.select = NULL, data = NULL,
   sep = "", month = NULL, year = NULL, step = 12,
-  shift = NULL, trans = NULL, ...)
+  shift = NULL, trans = NULL, scheme = 1, s2.col = NULL, grid = 40, ...)
 {
   rugp <- attr(x, "rug")
   if(is.null(x))
@@ -136,6 +136,9 @@ plot2d <- function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
   args$rug <- rug
   args$jitter <- jitter
   args$x <- x
+  args$specs$scheme <- scheme
+  args$specs$s2.col <- s2.col
+  args$specs$grid <- grid
   do.call(plot2d.default, delete.args(plot2d.default, args))
   if(is.null(args$type))
     box()
@@ -226,19 +229,42 @@ plot2d.default <- function(x, residuals, range, col.residuals = "black",
       specs$poly.lwd <- rep(specs$poly.lwd, length.out = nu)
     else
       specs$poly.lwd <- rep(1, nu)
+    if(is.null(specs$scheme))
+      specs$scheme <- 1
     for(k in 1L:nu) {
       check <- fill.select == ufs[k]
       if(length(check) == ncol(x)) {
-        poly <- x[,check]
-        p1 <- poly[,1L]
-        p2 <- poly[,2L]
-        y.co <- c(p1, p2[length(p2):1L])
-        x.co <- x[,1L]
-        x.co <- c(x.co, x.co[length(x.co):1L])
-        graphics::polygon(x = x.co, y = y.co, col = col.polygons[k], 
-          lty = specs$poly.lty[k], border = specs$border[k], 
-          density = specs$density[k], angle = specs$angle[k], 
-          lwd = specs$poly.lwd[k])
+        poly <- x[, check]
+        if(specs$scheme == 1) {
+          p1 <- poly[, 1L]
+          p2 <- poly[, 2L]
+          y.co <- c(p1, p2[length(p2):1L])
+          x.co <- x[,1L]
+          x.co <- c(x.co, x.co[length(x.co):1L])
+          graphics::polygon(x = x.co, y = y.co, col = col.polygons[k], 
+            lty = specs$poly.lty[k], border = specs$border[k], 
+            density = specs$density[k], angle = specs$angle[k], 
+            lwd = specs$poly.lwd[k])
+        } else {
+          grid <- if(is.null(specs$grid)) 30 else specs$grid
+          poly <- apply(poly, 1, function(x) { x <- as.numeric(x); seq(x[1], x[2], length = grid) })
+          if(is.null(specs$s2.col))
+            specs$s2.col <- rev(gray.colors(grid, start = 0, end = 1, gamma = 1))
+          if(is.function(specs$s2.col))
+            specs$s2.col <- specs$s2.col(grid)
+          specs$s2.col <- rep(specs$s2.col, length.out = grid / 2)
+          for(pj in 1:(grid / 2)) {
+            p1 <- poly[pj,]
+            p2 <- poly[grid - pj + 1, ]
+            y.co <- c(p1, p2[length(p2):1L])
+            x.co <- x[,1L]
+            x.co <- c(x.co, x.co[length(x.co):1L])
+            graphics::polygon(x = x.co, y = y.co, col = specs$s2.col[pj], 
+              lty = specs$poly.lty[k], border = specs$border[k], 
+              density = specs$density[k], angle = specs$angle[k], 
+              lwd = specs$poly.lwd[k])
+          }
+        }
       }
     }
   }    
