@@ -1173,7 +1173,7 @@ poisson.BayesR <- function(links = c(lambda = "log"), ...)
       "lambda" = c("poisson", "mean")
     ),
 	  "mu" = function(eta, ...) {
-      linkinv$lambda(eta)
+      linkinv$lambda(eta$lambda)
     },
 	  "d" = function(y, eta) {
       dpois(y, lambda = linkinv$lambda(eta$lambda))

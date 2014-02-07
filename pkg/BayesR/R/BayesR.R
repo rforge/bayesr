@@ -1078,7 +1078,7 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
     }
     type <- match.arg(type)
     if(type != "link") {
-      link <- family$links[grep(model, names(family$links))]
+      link <- family$links[if(!is.null(model)) grep(model, names(family$links)) else 1]
       if(length(link) > 0) {
         linkinv <- make.link2(link)$linkinv
         rval <- t(apply(rval, 1, linkinv))
@@ -1296,6 +1296,8 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
     }
     rtype <- args$type
     if(is.null(rtype)) rtype <- "quantile"
+    if(rtype == "quantile2") rtype <- "quantile"
+    if(rtype == "ordinary2") rtype <- "ordinary"
     for(j in 1:ny) {
       res <- if(ny > 1) res0[, j] else res0
       if(any(which %in% c("scatter-resid", "scale-resid"))) {
@@ -2310,8 +2312,8 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
 
 
 ## Extract model residuals.
-residuals.bayesr <- function(object, type = c("quantile", "ordinary"),
-  FUN = mean, nsamps = NULL)
+residuals.bayesr <- function(object, type = c("quantile", "ordinary", "quantile2", "ordinary2"),
+  samples = FALSE, FUN = mean, nsamps = NULL)
 {
   type <- match.arg(type)
   y <- model.response2(object)
@@ -2320,51 +2322,71 @@ residuals.bayesr <- function(object, type = c("quantile", "ordinary"),
   if(type == "ordinary") {
     if(is.factor(y)) y <- as.integer(y) - 1
   } else stopifnot(!is.null(family$p))
-  res <- fitted(object, type = "link", samples = TRUE, FUN = function(x) { x }, nsamps = nsamps)
+
+  if(type %in% c("quantile2", "ordinary2")) {
+    samples <- TRUE
+    FUN2 <- function(x) { x }
+  } else FUN2 <- FUN
+
+  res <- fitted(object, type = "link", samples = samples, FUN = FUN2, nsamps = nsamps)
   if(!is.list(res)) {
     res <- list(res)
     names(res) <- family$names
   }
-  nc <- ncol(res[[1]])
-  res2 <- matrix(NA, nrow(res[[1]]), nc)
-  if(!is.null(dim(y)))
-    res2 <- rep(list(res2), length = ncol(y))
-  for(j in seq_along(res)) {
-    colnames(res[[j]]) <- paste("i",
-      formatC(1:ncol(res[[j]]), width = nchar(nc), flag = "0"),
-      sep = ".")
-  }
-  res <- as.data.frame(res)
-  for(i in 1:nc) {
-    eta2 <- res[, grep(ni <- paste(".i.",
-      formatC(i, width = nchar(nc), flag = "0"), sep = ""),
-      names(res)), drop = FALSE]
-    names(eta2) <- gsub(ni, "", names(eta2))
-    tres <- if(type == "quantile") {
-      if(family$type == 3) {
-        le <- family$p(y - 1, eta2)
-        ri <- family$p(y, eta2)
-        qnorm(runif(length(y), min = le, max = ri))
-      } else qnorm(family$p(y, eta2))
-    } else family$mu(eta2)
+
+  if(samples & type %in% c("quantile2", "ordinary2")) {
+    nc <- ncol(res[[1]])
+    res2 <- matrix(NA, nrow(res[[1]]), nc)
+    if(!is.null(dim(y)))
+      res2 <- rep(list(res2), length = ncol(y))
+    for(j in seq_along(res)) {
+      colnames(res[[j]]) <- paste("i",
+        formatC(1:ncol(res[[j]]), width = nchar(nc), flag = "0"),
+        sep = ".")
+    }
+    res <- as.data.frame(res)
+    for(i in 1:nc) {
+      eta2 <- res[, grep(ni <- paste(".i.",
+        formatC(i, width = nchar(nc), flag = "0"), sep = ""),
+        names(res)), drop = FALSE]
+      names(eta2) <- gsub(ni, "", names(eta2))
+      tres <- if(type == "quantile2") {
+        if(family$type == 3) {
+          le <- family$p(y - 1, eta2)
+          ri <- family$p(y, eta2)
+          qnorm(runif(length(y), min = le, max = ri))
+        } else qnorm(family$p(y, eta2))
+      } else family$mu(eta2)
+      if(is.null(dim(y))) {
+        res2[, i] <- unlist(tres)
+      } else {
+        for(j in 1:ncol(y))
+          res2[[j]][, i] <- tres[, j]
+      }
+    }
     if(is.null(dim(y))) {
-      res2[, i] <- unlist(tres)
+      res <- apply(res2, 1, FUN)
     } else {
+      res <- list()
       for(j in 1:ncol(y))
-        res2[[j]][, i] <- tres[, j]
+        res[[j]] <- apply(res2[[j]], 1, FUN)
+      names(res) <- names(y)
+      res <- as.data.frame(res)
     }
   }
 
-  if(is.null(dim(y))) {
-    res <- apply(res2, 1, FUN)
-  } else {
-    res <- list()
-    for(j in 1:ncol(y))
-      res[[j]] <- apply(res2[[j]], 1, FUN)
-    names(res) <- names(y)
-    res <- as.data.frame(res)
+  if(type %in% c("quantile", "ordinary")) {
+    eta <- res
+    res <- if(type == "quantile") {
+      if(family$type == 3) {
+        le <- family$p(y - 1, eta)
+        ri <- family$p(y, eta)
+        qnorm(runif(length(y), min = le, max = ri))
+      } else qnorm(family$p(y, eta))
+    } else family$mu(eta)
   }
-  if(type == "ordinary") {
+
+  if(type %in% c("ordinary", "ordinary2")) {
     if(is.null(dim(y))) {
       res <- y - res
     } else {
