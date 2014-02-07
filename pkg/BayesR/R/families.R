@@ -765,6 +765,30 @@ gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
       "eta" = JAGSeta,
       "model" = JAGSmodel
     ),
+    "loglik" = function(y, eta, ...) {
+      mu <- linkinv$mu(eta$mu)
+      sigma <- linkinv$sigma(eta$sigma)
+      sum( sigma * log(sigma) - sigma * log(mu) - log(lgamma(sigma)) +
+        (sigma - 1) * log(y) - sigma / mu * y )
+    },
+    "score" = list(
+      "mu" = function(y, eta, ...) {
+        sigma <- linkinv$sigma(eta$sigma) 
+        -1 * sigma + sigma / linkinv$mu(eta$mu) * y
+      },
+      "sigma" = function(y, eta, ...) {
+        mu <- linkinv$mu(eta$mu)
+        sigma <- linkinv$sigma(eta$sigma)
+        sigma * (log(sigma) + 1 - log(mu) - digamma(sigma) + log(y) - y / mu)
+      }
+    ),
+    "weights" = list(
+      "mu" = function(y, eta, ...) { linkinv$sigma(eta$sigma) },
+      "sigma" = function(y, eta, ...) {
+        sigma <- linkinv$sigma(eta$sigma)
+        sigma^2 * digamma(sigma) - 1
+      }
+    ),
     "mu" = function(eta, ...) {
       linkinv$mu(eta$mu) 
     },
