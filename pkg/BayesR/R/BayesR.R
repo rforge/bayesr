@@ -165,7 +165,7 @@ parse.input.bayesr <- function(formula, data = NULL, family = gaussian.BayesR,
   grid = 100, ...)
 {
   ## Search for additional formulas
-  formula2 <- NULL
+  formula2 <- NULL; formula3 <- list(); k <- 1
   fn <- names(fo <- formals(fun = parse.input.bayesr))[-1]
   fn <- fn[fn != "..."]
   for(f in fn) {
@@ -176,7 +176,9 @@ parse.input.bayesr <- function(formula, data = NULL, family = gaussian.BayesR,
     }
     if(inherits(fe, "formula")) {
       formula2 <- c(formula2, fe)
+      formula3[[k]] <- fe
       eval(parse(text = paste(f, if(is.null(fo[[f]])) "NULL" else fo[[f]], sep = " = ")))
+      k <- k + 1
     }
   }
 
