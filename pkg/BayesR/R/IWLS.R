@@ -133,8 +133,12 @@ smooth.IWLS.default <- function(x, ...)
         if(!x$fixed) "tau2" else "tau2")
     } else x$s.colnames
     x$np <- length(x$s.colnames)
-    x$state$edf <- sum(diag(x$X %*% solve(t(x$X) %*% x$X +
-      1 / (if(is.null(x$state$tau2)) 10 else x$state$tau2) * x$S[[1]]) %*% t(x$X)))
+    x$state$edf <- if(!x$fixed) {
+      sum(diag(x$X %*% solve(t(x$X) %*% x$X +
+        1 / (if(is.null(x$state$tau2)) 10 else x$state$tau2) * x$S[[1]]) %*% t(x$X)))
+    } else {
+      sum(diag(x$X %*% solve(t(x$X) %*% x$X) %*% t(x$X)))
+    }
   }
   if(is.null(x$xt$adaptive))
     x$xt$adaptive <- TRUE
@@ -249,7 +253,7 @@ smooth.IWLS.default <- function(x, ...)
       XW <- t(x$X * weights)
       XWX <- XW %*% x$X
 
-      if(is.null(x$optimize) | x$fixed) {
+      if(is.null(x$optimize) | x$fixed | !is.null(x$sp)) {
         P <- if(x$fixed) {
           chol2inv(chol(XWX))
         } else chol2inv(chol(XWX + 1 / x$state$tau2 * x$S[[1]]))
@@ -301,7 +305,7 @@ smooth.IWLS.default <- function(x, ...)
 ## Sampler based on IWLS proposals.
 samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   verbose = TRUE, step = 20, svalues = TRUE, eps = 1e-04, maxit = 400,
-  tdir = NULL, method = c("MCMC", "backfitting", "backfitting2", "backfitting3"),
+  tdir = NULL, method = c("backfitting", "MCMC", "backfitting2", "backfitting3"),
   n.samples = 200, criterion = c("AIC", "BIC"), lower = 1e-09, upper = 1e+04,
   optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3, ...)
 {
@@ -346,6 +350,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
           obj$smooth[[j]]$s.alpha <- rep(0, nrow = n.save)
           obj$smooth[[j]]$s.samples <- matrix(0, nrow = n.save, ncol = obj$smooth[[j]]$np)
           obj$smooth[[j]]$state$fit <- rep(0, nrow(obj$smooth[[j]]$X))
+          obj$smooth[[j]]$fxsp <- if(!is.null(obj$smooth[[j]]$sp)) TRUE else FALSE
           if(method == "backfitting") {
             obj$smooth[[j]]$optimize <- TRUE
             obj$smooth[[j]]$criterion <- criterion

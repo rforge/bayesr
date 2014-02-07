@@ -201,7 +201,7 @@ dgp_gaussian2 <- function(n = 500, mu = NULL, sigma2 = NULL, range.sigma2 = c(0.
 
 if(FALSE) {
   d <- dgp_gaussian()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), y ~ sx(sigma2.x11), data = d, engine = "BayesX", verbose = TRUE)
+  b <- bayesr(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma.x11), data = d)
   d$p <- predict(b, model = "mu", term = c("x11", "x12"))
 }
 
@@ -292,8 +292,8 @@ dgp_gamma <- function(n = 500, mu = NULL, sigma = NULL, ...)
 
 if(FALSE) {
   d <- dgp_gamma()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), y ~ sx(sigma.x11)+sx(sigma.x12), 
-		data = d, family = gamma, engine = "BayesX", verbose = TRUE)
+  b <- bayesr(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma.x11) + s(sigma.x12), 
+		data = d, family = gamma, engine = "IWLS", method = "MCMC")
   d$pred_mu <- predict(b, model = "mu", term = c("x11", "x12"))
 }
 

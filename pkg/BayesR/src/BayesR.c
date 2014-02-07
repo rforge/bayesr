@@ -105,6 +105,8 @@ SEXP iwls_eval(SEXP fun, SEXP response, SEXP eta, SEXP rho)
 SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 {
   int nProtected = 0;
+  int fixed = LOGICAL(getListElement(x, "fixed"))[0];
+  int fxsp = LOGICAL(getListElement(x, "fxsp"))[0];
 
   /* Last try accepted? */
 /*  int accepted = LOGICAL(getListElement(getListElement(x, "state"), "accepted"))[0];*/
@@ -128,10 +130,14 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 
   /* Extract design matrix X and penalty matrix S.*/
   int X_ind = getListElement_index(x, "X");
-  int S_ind = getListElement_index(x, "S");
   double *Xptr = REAL(VECTOR_ELT(x, X_ind));
-  double *Sptr = REAL(VECTOR_ELT(VECTOR_ELT(x, S_ind), 0));
   double *Wptr = REAL(weights);
+  int S_ind = 0;
+  double * Sptr;
+  if(fixed < 1) {
+    S_ind = getListElement_index(x, "S");
+    Sptr = REAL(VECTOR_ELT(VECTOR_ELT(x, S_ind), 0));
+  }
 
   int i, j, n = nrows(VECTOR_ELT(x, X_ind)), k = ncols(VECTOR_ELT(x, X_ind));
   double tau2 = REAL(getListElement(getListElement(x, "state"), "tau2"))[0];
@@ -180,7 +186,6 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
     XWptr, &k, Xptr, &n, &zero, Pptr, &k);
 
   /* Add penalty matrix and variance parameter. */
-  int fixed = LOGICAL(getListElement(x, "fixed"))[0];
   if(fixed < 1) {
     for(i = 0; i < k; i++) {
       for(j = 0; j < k; j++) {
@@ -399,7 +404,7 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   SEXP tau3;
   PROTECT(tau3 = allocVector(REALSXP, 1));
   ++nProtected;
-  if(fixed < 1) {
+  if(fixed < 1 && fxsp < 1) {
     b += REAL(getListElement(x, "b"))[0];
     GetRNGstate();
     REAL(tau3)[0] = 1 / rgamma(REAL(getListElement(x, "rank"))[0], 1 / b);
