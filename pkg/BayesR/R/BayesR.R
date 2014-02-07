@@ -2283,7 +2283,7 @@ residuals.bayesr <- function(object, type = c("quantile", "ordinary"),
   type <- match.arg(type)
   y <- model.response2(object)
   family <- attr(object, "family")
-  if(!is.null(family$type)) family$type <- 1
+  if(is.null(family$type)) family$type <- 1
   if(type == "ordinary") {
     if(is.factor(y)) y <- as.integer(y) - 1
   } else stopifnot(!is.null(family$p))
