@@ -1312,7 +1312,9 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
           args2$freq <- FALSE
           args2$x <- res
           args2 <- delete.args("hist.default", args2, package = "graphics")
-          if(is.null(args$xlab)) args2$xlab <- "Residuals"
+          if(is.null(args$xlab)) args2$xlab <- paste(if(rtype == "quantile") {
+              "Quantile"
+            } else "Ordinary", "residuals")
           if(is.null(args$ylab)) args2$ylab <- "Density"
           if(is.null(args$main)) {
             args2$main <- "Histogramm and density"
@@ -1341,7 +1343,9 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
           args2$y <- res
           args2 <- delete.args("scatter.smooth", args2, package = "stats", not = c("col", "pch"))
           if(is.null(args$xlab)) args2$xlab <- "Fitted values"
-          if(is.null(args$xlab)) args2$ylab <- "Residuals"
+          if(is.null(args$xlab)) args2$ylab <- paste(if(rtype == "quantile") {
+              "Quantile"
+            } else "Ordinary", "residuals")
           if(is.null(args$xlab)) {
             args2$main <- "Fitted values vs. residuals"
             if(ny > 1)
@@ -1656,6 +1660,15 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
         x <- x[[1]]
     }
     dp <- FALSE
+    if(!is.null(x$IC) & !is.null(x$edf)) {
+      dp <- TRUE
+      if(ok) cat("\n---") else cat("---")
+      cat("\nlog Lik. =", if(is.na(x$IC)) "NA" else {
+            formatC(x$IC, digits = digits, flag = "-")
+          }, "edf =", if(is.na(x$ed)) "NA" else {
+            formatC(x$edf, digits = digits, flag = "-")
+          })
+    }
     if(!is.null(x$DIC) & !is.null(x$pd)) {
       dp <- TRUE
       if(ok) cat("\n---") else cat("---")
@@ -1821,6 +1834,26 @@ DIC.bayesr <- function(object, ...)
     rval <- rbind(rval, data.frame(
       "DIC" = xs[[n]]$DIC,
       "pd" = xs[[n]]$pd
+    ))
+  }
+  Call <- match.call()
+  row.names(rval) <- if(nrow(rval) > 1) as.character(Call[-1L]) else ""
+  rval
+}
+
+
+logLik.bayesr <- function(object, ...)
+{
+  object <- c(object, ...)
+  rval <- NULL
+  for(i in 1:length(object)) {
+    xs <- summary(object[[i]])
+    n <- attr(xs, "n")
+    if(n < 2)
+      xs <- list(xs)
+    rval <- rbind(rval, data.frame(
+      "logLik" = xs[[n]]$IC,
+      "edf" = xs[[n]]$edf
     ))
   }
   Call <- match.call()

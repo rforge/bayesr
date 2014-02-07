@@ -300,10 +300,10 @@ smooth.IWLS.default <- function(x, ...)
 
 ## Sampler based on IWLS proposals.
 samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
-  verbose = TRUE, step = 20, svalues = TRUE, eps = 1e-04, maxit = 100,
+  verbose = TRUE, step = 20, svalues = TRUE, eps = 1e-04, maxit = 400,
   tdir = NULL, method = c("MCMC", "backfitting", "backfitting2", "backfitting3"),
-  n.samples = 100, criterion = c("AIC", "BIC"), lower = 1e-09, upper = 1e+04,
-  optim.control = list(pgtol = 1e-04, maxit = 5), ...)
+  n.samples = 200, criterion = c("AIC", "BIC"), lower = 1e-09, upper = 1e+04,
+  optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3, ...)
 {
   family <- attr(x, "family")
   nx <- family$names
@@ -325,6 +325,11 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   n.save <- length(iterthin)
   nstep <- step
   step <- floor(n.iter / step)
+
+  getDigits <- function(x) {
+    nchar(gsub("(.*\\.)|([0]*$)", "", as.character(x)))
+  }
+  epsdigits <- getDigits(eps)
   
   ## Add accptance rate and fitted values vectors.
   smIWLS <- function(obj, ...) {
@@ -366,8 +371,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   if(svalues | grepl("backfitting", method)) {
     logn <- log(if(is.null(dim(response))) length(response) else nrow(response))
 
-    ## Backfitting main function.
-    backfit <- function(x, eta, verbose) {
+    get_edf <- function(x) {
       edf <- 0
       for(j in 1:np) {
         ## And all terms.
@@ -378,6 +382,12 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
           edf <- edf + sedf
         }
       }
+      edf
+    }
+
+    ## Backfitting main function.
+    backfit <- function(x, eta, verbose) {
+      edf <- get_edf(x)
 
       eps0 <- i <- 1
       while(eps0 > eps & i < maxit) {
@@ -410,9 +420,11 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
           }
 
           cat("\r")
-          cat(criterion, " ", format(round(IC, 3), nsmall = 3), " eps ", eps0, sep = "")
+          cat(criterion, " ", format(round(IC, digits), nsmall = digits),
+            " loglik ", format(round(ll, digits), nsmall = digits),
+            " edf ", format(round(edf, digits), nsmall = digits),
+            " eps ", format(round(eps, epsdigits), nsmall = epsdigits), sep = "")
           if(.Platform$OS.type != "unix") flush.console()
-          cat("\n")
         }
 
         i <- i + 1
@@ -427,7 +439,10 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
 
       if(method %in% c("backfitting", "backfitting2") & verbose) {
         cat("\r")
-        cat(criterion, " ", format(round(IC, 3), nsmall = 3), " eps ", eps0, sep = "")
+        cat(criterion, " ", format(round(IC, digits), nsmall = digits),
+          " loglik ", format(round(ll, digits), nsmall = digits),
+          " edf ", format(round(edf, digits), nsmall = digits),
+          " eps ", format(round(eps, epsdigits), nsmall = epsdigits), sep = "")
         if(.Platform$OS.type != "unix") flush.console()
         cat("\n")
       }
@@ -438,7 +453,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
       return(list("x" = x, "eta" = eta, "ic" = IC))
     }
 
-    bf <- backfit(x, eta, verbose = FALSE)
+    bf <- backfit(x, eta, verbose = if(method != "MCMC") verbose else FALSE)
     x <- bf$x; eta <- bf$eta
     rm(bf)
 
@@ -536,16 +551,21 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
           if(save) {
             x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- exp(p.state$alpha)
             x[[nx[j]]]$smooth[[sj]]$s.samples[js, ] <- unlist(x[[nx[j]]]$smooth[[sj]]$state[x[[nx[j]]]$smooth[[sj]]$p.save])
-            deviance[js] <- -2 * family$loglik(response, eta)
           }
         }
       }
+
+      if(save) deviance[js] <- -2 * family$loglik(response, eta)
+
       if(verbose) barfun(ptm, n.iter, i, step, nstep)
     }
     if(verbose) cat("\n")
   }
 
-  if(method == "reml" | grepl("backfitting", method)) {
+  save.edf <- save.loglik <- NULL
+  if(method != "MCMC") {
+    save.edf <- get_edf(x)
+    save.loglik <- family$loglik(response, eta)
     eta2 <- eta
     if(verbose) cat("generating samples\n")
     ptm <- proc.time()
@@ -560,7 +580,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
           x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- exp(p.state$alpha)
           x[[nx[j]]]$smooth[[sj]]$s.samples[js, ] <- unlist(p.state[x[[nx[j]]]$smooth[[sj]]$p.save])
 
-          eta2[[nx[j]]] <- eta[[nx[j]]] - x[[nx[j]]]$smooth[[sj]]$state$fit + p.state$fit
+          eta2[[nx[j]]] <- eta2[[nx[j]]] - x[[nx[j]]]$smooth[[sj]]$state$fit + p.state$fit
 
           deviance[js] <- -2 * family$loglik(response, eta2)
         }
@@ -609,11 +629,13 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   sf <- grep(".raw", dir(tdir), value = TRUE)
   samples <- NULL
   for(j in sf) {
-    st <- as.matrix(read.table(file.path(tdir, j), header = TRUE))
+    st <- as.matrix(read.table(file.path(tdir, j), header = TRUE, colClasses = "numeric"))
     colnames(st) <- paste(gsub(".raw", "", j), gsub("c", "", colnames(st)), sep = ".")
     samples <- cbind(samples, st)
   }
-  samples <- cbind(samples, "deviance" = deviance)
+  samples <- if(method != "MCMC") {
+    cbind(samples, "log Lik." = save.loglik, "save.edf" = save.edf)
+  } else cbind(samples, "deviance" = deviance)
 
   return(as.mcmc(samples))
 }
@@ -639,10 +661,21 @@ resultsIWLS <- function(x, samples)
     for(j in 1:chains) {
       if(any(grepl("deviance", snames))) {
         DIC <- as.numeric(samples[[j]][, grepl("deviance", snames)])
-        pd <- var(DIC) / 2
-        DIC <- mean(DIC)
+        pd <- var(DIC, na.rm = TRUE) / 2
+        DIC <- mean(DIC, na.rm = TRUE)
       } else {
         DIC <- pd <- NA
+      }
+
+      if(any(grepl("save.edf", snames))) {
+        ic <- grep("save.edf", snames)
+        nic <- snames[(ic - 1):ic]
+        IC <- samples[[j]][, grepl(nic[1], snames)][1]
+        edf <- samples[[j]][, grepl(nic[2], snames)][1]
+        names(IC) <- nic[1]
+        DIC <- pd <- NULL
+      } else {
+        IC <- edf <- NULL
       }
 
       ## Compute model term effects.
@@ -733,6 +766,8 @@ resultsIWLS <- function(x, samples)
             param.effects <- cbind(me, sd, qu)
             rownames(param.effects) <- nx
             colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
+            if(!is.null(asamples))
+              param.effects <- cbind(param.effects, "alpha" = mean(asamples))
             fitted.values <- as.vector(fitted.values + obj$smooth[[i]]$X %*% param.effects[, 1])
             attr(param.effects, "samples") <- as.mcmc(psamples)
             colnames(attr(param.effects, "samples")) <- nx
@@ -753,7 +788,8 @@ resultsIWLS <- function(x, samples)
       ## Stuff everything together.
       rval[[j]] <- list(
         "model" = list("DIC" = DIC, "pd" = pd,
-          "N" = nrow(attr(x, "model.frame")), "formula" = obj$formula),
+          "N" = nrow(attr(x, "model.frame")), "formula" = obj$formula,
+          "IC" = IC, "edf" = edf),
         "param.effects" = param.effects, "effects" = effects,
         "effects.hyp" = effects.hyp, "fitted.values" = fitted.values
       )
