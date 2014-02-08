@@ -766,33 +766,45 @@ gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
       "model" = JAGSmodel
     ),
     "loglik" = function(y, eta, ...) {
-      mu <- linkinv$mu(eta$mu)
-      sigma <- linkinv$sigma(eta$sigma)
-      sum( sigma * log(sigma) - sigma * log(mu) - lgamma(sigma) +
-        (sigma - 1) * log(y) - sigma / mu * y )
+#      mu <- linkinv$mu(eta$mu)
+#      sigma <- linkinv$sigma(eta$sigma)
+#      sum( sigma * log(sigma) - sigma * log(mu) - lgamma(sigma) +
+#        (sigma - 1) * log(y) - sigma / mu * y )
+       b <- linkinv$mu(eta$mu)
+       p <- linkinv$sigma(eta$sigma)
+       sum(-lgamma(p) + (p) * log(y / b) - y / b)
     },
     "score" = list(
       "mu" = function(y, eta, ...) {
-        sigma <- linkinv$sigma(eta$sigma) 
-        -1 * sigma + sigma / linkinv$mu(eta$mu) * y
+#        sigma <- linkinv$sigma(eta$sigma) 
+#        -1 * sigma + sigma / linkinv$mu(eta$mu) * y
+        b <- linkinv$mu(eta$mu)
+        p <- linkinv$sigma(eta$sigma)
+        -p + y / b
       },
       "sigma" = function(y, eta, ...) {
-        mu <- linkinv$mu(eta$mu)
-        sigma <- linkinv$sigma(eta$sigma)
-        sigma * (log(sigma) + 1 - log(mu) - digamma(sigma) + log(y) - y / mu)
+#        mu <- linkinv$mu(eta$mu)
+#        sigma <- linkinv$sigma(eta$sigma)
+#        sigma * (log(sigma) + 1 - log(mu) - digamma(sigma) + log(y) - y / mu)
+        b <- linkinv$mu(eta$mu)
+        p <- linkinv$sigma(eta$sigma)
+        p * (log(y / b) - digamma(p))
       }
     ),
     "weights" = list(
       "mu" = function(y, eta, ...) { linkinv$sigma(eta$sigma) },
       "sigma" = function(y, eta, ...) {
-        sigma <- linkinv$sigma(eta$sigma)
-        sigma^2 * trigamma(sigma) - sigma
+#        sigma <- linkinv$sigma(eta$sigma)
+#        sigma^2 * trigamma(sigma) - sigma
+        b <- linkinv$mu(eta$mu)
+        p <- linkinv$sigma(eta$sigma)
+        p * (log(y / b) - digamma(p))
       }
     ),
     "mu" = function(eta, ...) {
-      linkinv$mu(eta$mu) 
+      linkinv$mu(eta$mu)
     },
-	  "d" = function (y, eta, log = FALSE) {
+	  "d" = function(y, eta, log = FALSE) {
 		  a <- linkinv$sigma(eta$sigma) 
 		  s <- linkinv$mu(eta$mu) / linkinv$sigma(eta$sigma) 
 		  dgamma(y, shape = a, scale = s, log = log)
