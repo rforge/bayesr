@@ -652,7 +652,6 @@ if(FALSE) {
 dgp_zip <- function(n = 500, lambda = NULL, p = NULL, 
 			range.lambda = c(-1,1), range.p = c(-1,1), ...)
 {
-  require("VGAM")
 
   if(is.null(lambda)) {
     lambda <- list(nobs = n, const = -0.5,
@@ -669,7 +668,7 @@ dgp_zip <- function(n = 500, lambda = NULL, p = NULL,
   ld <- exp(lambda$eta0)
   pi <- exp(p$eta0)
   pi <- pi/(1+pi)
-  y <- rzipois(n, lambda = ld, pstr0 = pi)
+  y <- rbinom(n, size = 1, prob = 1 - pi) * rpois(n, lambda = ld)
 
   
   d <- cbind(y, "lambda" = lambda, "pi" = p)
@@ -785,7 +784,7 @@ if(FALSE) {
 
   b <- bayesr(f, family = negbin, data = d, engine = "BayesX", verbose = TRUE)
   
-  plot(b, which = 3:6)
+  plot(b, which = 3:6, type = "quantile2")
   
   
 }
@@ -793,13 +792,13 @@ if(FALSE) {
 ## zinb.
 dgp_zinb <- function(n = 500, mu = NULL, pi = NULL, delta = NULL, ...)
 {
-  require(VGAM)
+
   if(is.null(mu)) {
     mu <- list(nobs = n, const = -0.5,
       type = list(c("unimodal", "quadratic", "const")))
   }
   if(is.null(pi)) {
-    pi <- list(nobs = n, const = 0.1,
+    pi <- list(nobs = n, const = 0,
       type = list(c("const")))
   }
   if(is.null(delta)) {
@@ -815,7 +814,7 @@ dgp_zinb <- function(n = 500, mu = NULL, pi = NULL, delta = NULL, ...)
   p <- exp(pi$eta0)
   p <- p / (1 + p)
   dl <- exp(delta$eta0)
-  y <- rzinegbin(n, munb = ld, size = dl, pstr0 = p)
+  y <- y <- rbinom(n, size = 1, prob = 1 - p) * rnbinom(n, mu = ld, size = dl)
 
   
   d <- cbind(y, "mu" = mu, "pi" = pi, "delta" = delta)

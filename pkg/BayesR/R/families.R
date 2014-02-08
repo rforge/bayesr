@@ -766,39 +766,27 @@ gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
       "model" = JAGSmodel
     ),
     "loglik" = function(y, eta, ...) {
-#      mu <- linkinv$mu(eta$mu)
-#      sigma <- linkinv$sigma(eta$sigma)
-#      sum( sigma * log(sigma) - sigma * log(mu) - lgamma(sigma) +
-#        (sigma - 1) * log(y) - sigma / mu * y )
-       b <- linkinv$mu(eta$mu)
-       p <- linkinv$sigma(eta$sigma)
-       sum(-lgamma(p) + (p) * log(y / b) - y / b)
+      mu <- linkinv$mu(eta$mu)
+      sigma <- linkinv$sigma(eta$sigma)
+      sum( sigma * log(sigma) - sigma * log(mu) - lgamma(sigma) +
+        (sigma - 1) * log(y) - sigma / mu * y )
     },
     "score" = list(
       "mu" = function(y, eta, ...) {
-#        sigma <- linkinv$sigma(eta$sigma) 
-#        -1 * sigma + sigma / linkinv$mu(eta$mu) * y
-        b <- linkinv$mu(eta$mu)
-        p <- linkinv$sigma(eta$sigma)
-        -p + y / b
+        sigma <- linkinv$sigma(eta$sigma) 
+        -1 * sigma + sigma / linkinv$mu(eta$mu) * y
       },
       "sigma" = function(y, eta, ...) {
-#        mu <- linkinv$mu(eta$mu)
-#        sigma <- linkinv$sigma(eta$sigma)
-#        sigma * (log(sigma) + 1 - log(mu) - digamma(sigma) + log(y) - y / mu)
-        b <- linkinv$mu(eta$mu)
-        p <- linkinv$sigma(eta$sigma)
-        p * (log(y / b) - digamma(p))
+        mu <- linkinv$mu(eta$mu)
+        sigma <- linkinv$sigma(eta$sigma)
+        sigma * (log(sigma) + 1 - log(mu) - digamma(sigma) + log(y) - y / mu)
       }
     ),
     "weights" = list(
       "mu" = function(y, eta, ...) { linkinv$sigma(eta$sigma) },
       "sigma" = function(y, eta, ...) {
-#        sigma <- linkinv$sigma(eta$sigma)
-#        sigma^2 * trigamma(sigma) - sigma
-        b <- linkinv$mu(eta$mu)
-        p <- linkinv$sigma(eta$sigma)
-        p * (log(y / b) - digamma(p))
+        sigma <- linkinv$sigma(eta$sigma)
+        sigma^2 * trigamma(sigma) - sigma
       }
     ),
     "mu" = function(eta, ...) {
@@ -1252,7 +1240,7 @@ zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
 				(1 - linkinv$pi(eta$pi)) * dpois(y, lambda = linkinv$lambda(eta$lambda)))
     },
     "p" = function(y, eta) {
-      linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * ppois(y, lambda = linkinv$lambda(eta$lambda))
+      ifelse(y<0, 0, linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * ppois(y, lambda = linkinv$lambda(eta$lambda)))
     },
     "score.norm" = TRUE,
     "type" = 3
@@ -1322,7 +1310,7 @@ zinb.BayesR <- function(links = c(mu = "log", "pi" = "logit", delta = "log"), ..
 				(1 - linkinv$pi(eta$pi)) * dnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta)))
     },
     "p" = function(y, eta) {
-      linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * pnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta))
+      ifelse(y<0, 0, linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * pnbinom(y, size = linkinv$delta(eta$delta), mu = linkinv$mu(eta$mu)))
     },
     "score.norm" = TRUE,
     "type" = 3
