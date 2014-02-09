@@ -469,7 +469,6 @@ if(FALSE) {
 ## Dagum.
 dgp_dagum <- function(n = 500, a = NULL, b = NULL, p = NULL, ...)
 {
-  require(VGAM)
   if(is.null(a)) {
     a <- list(nobs = n, const = 0,
       type = list(c("unimodal", "quadratic", "const")))
@@ -489,8 +488,8 @@ dgp_dagum <- function(n = 500, a = NULL, b = NULL, p = NULL, ...)
   shape1.a <- exp(a$eta0)
   scale <- exp(b$eta0)
   shape2.p <- exp(p$eta0)
-  y <- rdagum(n, shape1.a = shape1.a, scale = scale, shape2.p = shape2.p)
-
+  u <- runif(n)
+  y <- scale * (u^(-1 / shape2.p) - 1)^(-1 / shape1.a)
   
   d <- cbind(y, "a" = a, "b" = b, "p" = p)
   d
