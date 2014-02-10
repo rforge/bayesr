@@ -298,18 +298,13 @@ smooth.IWLS.default <- function(x, ...)
             if(x$xt$center) edf <- edf - 1
           }
           eta2[[id]] <- eta2[[id]] + fit
-          ll <- family$loglik(response, eta2)
-          IC <- if(x$criterion == "AIC") {
-            -2 * ll + 2 * (edf0 + edf)
-          } else {
-            -2 * ll + (edf0 + edf) * log(length(e))
-          }
-          IC
+          IC <- get.ic(family, response, eta2, edf0 + edf, length(e), x$criterion)
+          return(IC)
         }
 
         x$state$tau2 <- optimize2(objfun, interval = x$interval, grid = x$grid)$minimum
         P <- chol2inv(chol(XWX + 1 / x$state$tau2 * x$S[[1]]))
-        x$state$g <- drop(P %*% (XW %*% (z - eta[[id]])))
+        x$state$g <- drop(P %*% (XW %*% e))
       }
 
       ## Compute fitted values.      
@@ -327,11 +322,24 @@ smooth.IWLS.default <- function(x, ...)
 }
 
 
+get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc"))
+{
+  type <- match.arg(type)
+  ll <- family$loglik(response, eta)
+  pen <- switch(type,
+    "AIC" = -2 * ll + 2 * edf,
+    "BIC" = -2 * ll + edf * log(n),
+    "AICc" = -2 * ll + 2 * edf + (2 * edf * (edf + 1)) / (n - edf - 1)
+  )
+  return(pen)
+}
+
+
 ## Sampler based on IWLS proposals.
 samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   verbose = TRUE, step = 20, svalues = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
   tdir = NULL, method = c("backfitting", "MCMC", "backfitting2", "backfitting3"),
-  n.samples = 200, criterion = c("AIC", "BIC"), lower = 1e-09, upper = 1e+04,
+  n.samples = 200, criterion = c("AIC", "BIC", "AICc"), lower = 1e-09, upper = 1e+04,
   optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3, ...)
 {
   family <- attr(x, "family")
@@ -399,7 +407,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
 
   ## Find starting values with backfitting.
   if(svalues | any(grepl("backfitting", method))) {
-    logn <- log(if(is.null(dim(response))) length(response) else nrow(response))
+    nobs <- if(is.null(dim(response))) length(response) else nrow(response)
 
     get_edf <- function(x) {
       edf <- 0
@@ -442,16 +450,11 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
         eps0 <- mean((do.call("cbind", eta) - do.call("cbind", eta0))^2)
 
         if(any(method == "backfitting") & verbose) {
-          ll <- family$loglik(response, eta)
-          IC <- if(criterion == "AIC") {
-            -2 * ll + 2 * edf
-          } else {
-            -2 * ll + edf * logn
-          }
+          IC <- get.ic(family, response, eta, edf, nobs, criterion)
 
           ##cat("\r")
           vtxt <- paste(criterion, " ", format(round(IC, digits), nsmall = digits),
-            " loglik ", format(round(ll, digits), nsmall = digits),
+            " loglik ", format(round(family$loglik(response, eta), digits), nsmall = digits),
             " edf ", format(round(edf, digits), nsmall = digits),
             " eps ", format(round(eps0, epsdigits), nsmall = epsdigits),
             " iteration ", iter, "\n", sep = "")
@@ -463,17 +466,12 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
         iter <- iter + 1
       }
 
-      ll <- family$loglik(response, eta)
-      IC <- if(criterion == "AIC") {
-        -2 * ll + 2 * edf
-      } else {
-        -2 * ll + edf * logn
-      }
+      IC <- get.ic(family, response, eta, edf, nobs, criterion)
 
       if(any(method %in% c("backfitting", "backfitting2")) & verbose) {
         cat("\r")
         cat(criterion, " ", format(round(IC, digits), nsmall = digits),
-          " loglik ", format(round(ll, digits), nsmall = digits),
+          " loglik ", format(round(family$loglik(response, eta), digits), nsmall = digits),
           " edf ", format(round(edf, digits), nsmall = digits),
           " eps ", format(round(eps0, epsdigits), nsmall = epsdigits),
           " iteration ", iter, sep = "")

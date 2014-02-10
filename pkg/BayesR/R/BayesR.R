@@ -1300,6 +1300,8 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
     if(rtype == "ordinary2") rtype <- "ordinary"
     for(j in 1:ny) {
       res <- if(ny > 1) res0[, j] else res0
+      dropi <- !(res %in% c(Inf, -Inf)) & !is.na(res)
+      res <- res[dropi]
       if(any(which %in% c("scatter-resid", "scale-resid"))) {
         fit <- if(ny < 2) {
           if(is.list(fit0)) fit0[[1]] else fit0
@@ -1341,7 +1343,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
   		      if(rtype == "quantile") abline(0,1) else qqline(args2$y)
         }
         if(w == "scatter-resid") {
-          args2$x <- fit
+          args2$x <- fit[dropi]
           args2$y <- res
           args2 <- delete.args("scatter.smooth", args2, package = "stats", not = c("col", "pch"))
           if(is.null(args$xlab)) args2$xlab <- "Fitted values"
@@ -1358,7 +1360,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
             abline(h = 0, lty = 2)
         }
         if(w == "scale-resid") {
-          args2$x <- fit
+          args2$x <- fit[dropi]
           args2$y <- sqrt(abs((res - mean(res)) / sd(res)))
           args2 <- delete.args("scatter.smooth", args2, package = "stats", not = c("col", "pch"))
           if(is.null(args$xlab)) args2$xlab <- "Fitted values"
