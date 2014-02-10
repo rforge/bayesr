@@ -301,7 +301,12 @@ if(FALSE) {
   ## Note that `shape' and `scale' in `rgamma' are almost
   ## opposite terminology to that used with GLM/GAM...
   dat$y <- rgamma(Ey*0,shape=1/scale,scale=Ey*scale)
+
+  ## FIXME: Backfitting
   b <- bayesr(y ~ s(x0) + s(x1) + s(x2) + s(x3), family = gamma, data = dat, method = "backfitting")
+
+  ## Now with BayesX
+  b <- bayesr(y ~ sx(x0) + sx(x1) + sx(x2) + sx(x3), family = gamma, data = dat, engine = "BayesX")
 }
 
 ## Inverse Gaussian.
