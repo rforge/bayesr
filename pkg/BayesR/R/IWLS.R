@@ -102,6 +102,21 @@ transformIWLS <- function(x, ...)
 }
 
 
+optimize2 <- function(f, interval, ...,
+  lower = min(interval), upper = max(interval), 
+  maximum = FALSE, grid = 100)
+{
+  f2 <- function(arg) f(arg, ...)
+  gridvals <- seq(lower, upper, length = grid)
+  fvals <- rep(NA, length = grid)
+  for(i in seq_along(gridvals)) {
+    fvals[i] <- f2(gridvals[i])
+  }
+  val <- gridvals[i <- if(maximum) which.max(fvals) else which.min(fvals)]
+  list(minimum = val, objective = fvals[i])
+}
+
+
 ## Function to setup IWLS smooths.
 smooth.IWLS <- function(x, ...) {
   UseMethod("smooth.IWLS")
@@ -120,6 +135,20 @@ smooth.IWLS.default <- function(x, ...)
   x$a <- if(is.null(x$xt$a)) 1e-04 else x$xt$a
   x$b <- if(is.null(x$xt$b)) 1e-04 else x$xt$b
 
+  tau2interval <- function(x, lower = .Machine$double.eps^0.25, upper = 5000) {
+    XX <- crossprod(x$X)
+    objfun <- function(tau2, value) {
+      df <- sum(diag(chol2inv(chol(XX + 1 / tau2 * x$S[[1]])) %*% XX))
+      return((value - df)^2)
+    }
+    le <- optimize(objfun, c(lower, upper), value = 1)$minimum
+    ri <- optimize(objfun, c(lower, upper), value = ncol(x$X))$minimum
+    return(c(le, ri))
+  }
+
+  x$interval <- if(is.null(x$xt$interval)) tau2_interval(x) else x$xt$interval
+  x$grid <- if(is.null(x$xt$grid)) 40 else x$xt$grid 
+
   if(is.null(x$state)) {
     x$p.save <- c("g", "tau2")
     x$state <- list()
@@ -133,12 +162,8 @@ smooth.IWLS.default <- function(x, ...)
         if(!x$fixed) "tau2" else "tau2")
     } else x$s.colnames
     x$np <- length(x$s.colnames)
-    x$state$edf <- if(!x$fixed) {
-      sum(diag(x$X %*% solve(t(x$X) %*% x$X +
-        1 / (if(is.null(x$state$tau2)) 10 else x$state$tau2) * x$S[[1]]) %*% t(x$X)))
-    } else {
-      sum(diag(x$X %*% solve(t(x$X) %*% x$X) %*% t(x$X)))
-    }
+    XX <- crossprod(x$X)
+    x$state$edf <- sum(diag(chol2inv(chol(XX + if(x$fixed) 0 else 1 / x$state$tau2 * x$S[[1]])) %*% XX))
   }
   if(is.null(x$xt$adaptive))
     x$xt$adaptive <- TRUE
@@ -264,11 +289,11 @@ smooth.IWLS.default <- function(x, ...)
         eta2 <- eta
         e <- z - eta[[id]]
 
-        objfun <- function(tau2) {
+        objfun <- function(tau2, ...) {
           P <- chol2inv(chol(XWX + 1 / tau2 * x$S[[1]]))
           g <- drop(P %*% (XW %*% e))
           fit <- drop(x$X %*% g)
-          edf <- sum(diag((XWX) %*% P))
+          edf <- sum(diag(P %*% XWX))
           if(!is.null(x$xt$center)) {
             if(x$xt$center) edf <- edf - 1
           }
@@ -282,14 +307,14 @@ smooth.IWLS.default <- function(x, ...)
           IC
         }
 
-        x$state$tau2 <- optimize(objfun, interval = c(1e-5, 1e+5))$minimum
+        x$state$tau2 <- optimize2(objfun, interval = x$interval, grid = x$grid)$minimum
         P <- chol2inv(chol(XWX + 1 / x$state$tau2 * x$S[[1]]))
         x$state$g <- drop(P %*% (XW %*% (z - eta[[id]])))
       }
 
       ## Compute fitted values.      
       x$state$fit <- drop(x$X %*% x$state$g)
-      x$state$edf <- sum(diag((XWX) %*% P))
+      x$state$edf <- sum(diag(P %*% XWX))
       if(!is.null(x$xt$center)) {
         if(x$xt$center) x$state$edf <- x$state$edf - 1
       }
@@ -304,7 +329,7 @@ smooth.IWLS.default <- function(x, ...)
 
 ## Sampler based on IWLS proposals.
 samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
-  verbose = TRUE, step = 20, svalues = TRUE, eps = 1e-04, maxit = 400,
+  verbose = TRUE, step = 20, svalues = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
   tdir = NULL, method = c("backfitting", "MCMC", "backfitting2", "backfitting3"),
   n.samples = 200, criterion = c("AIC", "BIC"), lower = 1e-09, upper = 1e+04,
   optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3, ...)
@@ -315,10 +340,10 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
     stop("parameter names mismatch with family names!")
   response <- attr(x, "response.vec")
   criterion <- match.arg(criterion)
-  method <- match.arg(method)
+  method <- match.arg(method, several.ok = TRUE)
 
   ## Actual number of samples to save.
-  if(method != "MCMC") {
+  if(!any(grepl("MCMC", method))) {
     n.iter <- n.samples
     thin = 1
     burnin = 0
@@ -351,7 +376,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
           obj$smooth[[j]]$s.samples <- matrix(0, nrow = n.save, ncol = obj$smooth[[j]]$np)
           obj$smooth[[j]]$state$fit <- rep(0, nrow(obj$smooth[[j]]$X))
           obj$smooth[[j]]$fxsp <- if(!is.null(obj$smooth[[j]]$sp)) TRUE else FALSE
-          if(method == "backfitting") {
+          if("backfitting" %in% method) {
             obj$smooth[[j]]$optimize <- TRUE
             obj$smooth[[j]]$criterion <- criterion
           }
@@ -373,7 +398,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
     eta[[j]] <- rep(0.1, length(response))
 
   ## Find starting values with backfitting.
-  if(svalues | grepl("backfitting", method)) {
+  if(svalues | any(grepl("backfitting", method))) {
     logn <- log(if(is.null(dim(response))) length(response) else nrow(response))
 
     get_edf <- function(x) {
@@ -394,8 +419,8 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
     backfit <- function(x, eta, verbose) {
       edf <- get_edf(x)
 
-      eps0 <- i <- 1
-      while(eps0 > eps & i < maxit) {
+      eps0 <- iter <- 1
+      while(eps0 > eps & iter < maxit) {
         eta0 <- eta
         ## Cycle through all parameters
         for(j in 1:np) {
@@ -416,7 +441,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
 
         eps0 <- mean((do.call("cbind", eta) - do.call("cbind", eta0))^2)
 
-        if(method == "backfitting" & verbose) {
+        if(any(method == "backfitting") & verbose) {
           ll <- family$loglik(response, eta)
           IC <- if(criterion == "AIC") {
             -2 * ll + 2 * edf
@@ -424,15 +449,18 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
             -2 * ll + edf * logn
           }
 
-          cat("\r")
-          cat(criterion, " ", format(round(IC, digits), nsmall = digits),
+          ##cat("\r")
+          vtxt <- paste(criterion, " ", format(round(IC, digits), nsmall = digits),
             " loglik ", format(round(ll, digits), nsmall = digits),
             " edf ", format(round(edf, digits), nsmall = digits),
-            " eps ", format(round(eps, epsdigits), nsmall = epsdigits), sep = "")
+            " eps ", format(round(eps0, epsdigits), nsmall = epsdigits),
+            " iteration ", iter, "\n", sep = "")
+          cat(vtxt)
+
           if(.Platform$OS.type != "unix") flush.console()
         }
 
-        i <- i + 1
+        iter <- iter + 1
       }
 
       ll <- family$loglik(response, eta)
@@ -442,27 +470,32 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
         -2 * ll + edf * logn
       }
 
-      if(method %in% c("backfitting", "backfitting2") & verbose) {
+      if(any(method %in% c("backfitting", "backfitting2")) & verbose) {
         cat("\r")
         cat(criterion, " ", format(round(IC, digits), nsmall = digits),
           " loglik ", format(round(ll, digits), nsmall = digits),
           " edf ", format(round(edf, digits), nsmall = digits),
-          " eps ", format(round(eps, epsdigits), nsmall = epsdigits), sep = "")
+          " eps ", format(round(eps0, epsdigits), nsmall = epsdigits),
+          " iteration ", iter, sep = "")
         if(.Platform$OS.type != "unix") flush.console()
         cat("\n")
       }
 
-      if(i == maxit)
+      if(iter == maxit)
         warning("the backfitting algorithm did not converge, please check argument eps and maxit!")
 
       return(list("x" = x, "eta" = eta, "ic" = IC))
     }
 
-    bf <- backfit(x, eta, verbose = if(method != "MCMC") verbose else FALSE)
+    if(length(method) < 2) {
+      if(method == "MCMC") verbose <- FALSE
+    }
+
+    bf <- backfit(x, eta, verbose = verbose)
     x <- bf$x; eta <- bf$eta
     rm(bf)
 
-    if(method == "backfitting2") {
+    if(any("backfitting2" %in% method)) {
       tau2 <- NULL
       k <- 1
       for(j in 1:np) {
@@ -529,7 +562,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
     }
   }
 
-  if(method == "MCMC") {
+  if(any(grep("MCMC", method))) {
     ## Start sampling
     ptm <- proc.time()
     for(i in 1:n.iter) {
@@ -568,7 +601,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   }
 
   save.edf <- save.loglik <- NULL
-  if(method != "MCMC") {
+  if(!any(grepl("MCMC", method))) {
     save.edf <- get_edf(x)
     save.loglik <- family$loglik(response, eta)
     eta2 <- eta
@@ -638,7 +671,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
     colnames(st) <- paste(gsub(".raw", "", j), gsub("c", "", colnames(st)), sep = ".")
     samples <- cbind(samples, st)
   }
-  samples <- if(method != "MCMC") {
+  samples <- if(!any(grepl("MCMC", method))) {
     cbind(samples, "log Lik." = save.loglik, "save.edf" = save.edf)
   } else cbind(samples, "deviance" = deviance)
 

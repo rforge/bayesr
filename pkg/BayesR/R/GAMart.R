@@ -292,8 +292,11 @@ dgp_gamma <- function(n = 500, mu = NULL, sigma = NULL, ...)
 
 if(FALSE) {
   d <- dgp_gamma()
-  b <- bayesr(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma.x11) + s(sigma.x12), 
-		data = d, family = gamma, engine = "IWLS", method = "MCMC")
+  b <- bayesr(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma.x11) + s(sigma.x12), data = d, family = gamma, engine = "IWLS", method = "backfitting")
+
+  b2 <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma.x11) + sx(sigma.x12), 
+		data = d, family = gamma, engine = "BayesX")
+
   d$pred_mu <- predict(b, model = "mu", term = c("x11", "x12"))
 }
 
