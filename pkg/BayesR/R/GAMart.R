@@ -292,12 +292,16 @@ dgp_gamma <- function(n = 500, mu = NULL, sigma = NULL, ...)
 
 if(FALSE) {
   d <- dgp_gamma()
-  b <- bayesr(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma.x11) + s(sigma.x12), data = d, family = gamma, engine = "IWLS", method = "backfitting")
+  b <- bayesr(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma.x11) + s(sigma.x12), data = d, family = gamma, method = "backfitting")
 
-  b2 <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma.x11) + sx(sigma.x12), 
-		data = d, family = gamma, engine = "BayesX")
-
-  d$pred_mu <- predict(b, model = "mu", term = c("x11", "x12"))
+  ## Example from mgcv.
+  dat <- gamSim(1,n=400,dist="normal",scale=1)
+  dat$f <- dat$f/4 ## true linear predictor 
+  Ey <- exp(dat$f); scale <- .5 ## mean and GLM scale parameter
+  ## Note that `shape' and `scale' in `rgamma' are almost
+  ## opposite terminology to that used with GLM/GAM...
+  dat$y <- rgamma(Ey*0,shape=1/scale,scale=Ey*scale)
+  b <- bayesr(y ~ s(x0) + s(x1) + s(x2) + s(x3), family = gamma, data = dat, method = "backfitting")
 }
 
 ## Inverse Gaussian.

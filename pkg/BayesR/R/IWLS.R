@@ -104,14 +104,12 @@ transformIWLS <- function(x, ...)
 
 optimize2 <- function(f, interval, ...,
   lower = min(interval), upper = max(interval), 
-  maximum = FALSE, grid = 100)
+  maximum = FALSE, grid = 1000)
 {
   f2 <- function(arg) f(arg, ...)
   gridvals <- seq(lower, upper, length = grid)
   fvals <- rep(NA, length = grid)
-  for(i in seq_along(gridvals)) {
-    fvals[i] <- f2(gridvals[i])
-  }
+  fvals <- unlist(sapply(gridvals, f2))
   val <- gridvals[i <- if(maximum) which.max(fvals) else which.min(fvals)]
   list(minimum = val, objective = fvals[i])
 }
@@ -135,7 +133,7 @@ smooth.IWLS.default <- function(x, ...)
   x$a <- if(is.null(x$xt$a)) 1e-04 else x$xt$a
   x$b <- if(is.null(x$xt$b)) 1e-04 else x$xt$b
 
-  tau2interval <- function(x, lower = .Machine$double.eps^0.25, upper = 5000) {
+  tau2interval <- function(x, lower = .Machine$double.eps^0.25, upper = 4000) {
     XX <- crossprod(x$X)
     objfun <- function(tau2, value) {
       df <- sum(diag(chol2inv(chol(XX + 1 / tau2 * x$S[[1]])) %*% XX))
@@ -146,13 +144,13 @@ smooth.IWLS.default <- function(x, ...)
     return(c(le, ri))
   }
 
-  x$interval <- if(is.null(x$xt$interval)) tau2_interval(x) else x$xt$interval
+  x$interval <- if(is.null(x$xt$interval)) tau2interval(x) else x$xt$interval
   x$grid <- if(is.null(x$xt$grid)) 40 else x$xt$grid 
 
   if(is.null(x$state)) {
     x$p.save <- c("g", "tau2")
     x$state <- list()
-    x$state$g <- rep(1, ncol(x$X)) ##runif(ncol(x$X), 0.001, 0.002)
+    x$state$g <- rep(0, ncol(x$X)) ##runif(ncol(x$X), 0.001, 0.002)
     x$state$tau2 <- if(is.null(x$sp)) {
       if(x$fixed) 1e-20 else 10
     } else x$sp
@@ -423,6 +421,10 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
       edf
     }
 
+    fmt <- function(x, width = 8, digits = 2) {
+      formatC(round(x, digits), width = width)
+    }
+
     ## Backfitting main function.
     backfit <- function(x, eta, verbose) {
       edf <- get_edf(x)
@@ -452,12 +454,12 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
         if(any(method == "backfitting") & verbose) {
           IC <- get.ic(family, response, eta, edf, nobs, criterion)
 
-          ##cat("\r")
-          vtxt <- paste(criterion, " ", format(round(IC, digits), nsmall = digits),
-            " loglik ", format(round(family$loglik(response, eta), digits), nsmall = digits),
-            " edf ", format(round(edf, digits), nsmall = digits),
-            " eps ", format(round(eps0, epsdigits), nsmall = epsdigits),
-            " iteration ", iter, "\n", sep = "")
+          cat("\r")
+          vtxt <- paste(criterion, " ", fmt(IC, width = -8, digits = digits),
+            " loglik ", fmt(family$loglik(response, eta), width = -8, digits = digits),
+            " edf ", fmt(edf, width = -6, digits = digits + 2),
+            " eps ", fmt(eps0, width = -5, digits = digits * 2),
+            " iteration ", formatC(iter, width = -1 * nchar(maxit)), sep = "")
           cat(vtxt)
 
           if(.Platform$OS.type != "unix") flush.console()
@@ -470,11 +472,12 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
 
       if(any(method %in% c("backfitting", "backfitting2")) & verbose) {
         cat("\r")
-        cat(criterion, " ", format(round(IC, digits), nsmall = digits),
-          " loglik ", format(round(family$loglik(response, eta), digits), nsmall = digits),
-          " edf ", format(round(edf, digits), nsmall = digits),
-          " eps ", format(round(eps0, epsdigits), nsmall = epsdigits),
-          " iteration ", iter, sep = "")
+        vtxt <- paste(criterion, " ", fmt(IC, width = -8, digits = digits),
+          " loglik ", fmt(family$loglik(response, eta), width = -8, digits = digits),
+          " edf ", fmt(edf, width = -6, digits = digits + 2),
+          " eps ", fmt(eps0, width = -5, digits = digits * 2),
+          " iteration ", formatC(iter, width = -1 * nchar(maxit)), sep = "")
+        cat(vtxt)
         if(.Platform$OS.type != "unix") flush.console()
         cat("\n")
       }
