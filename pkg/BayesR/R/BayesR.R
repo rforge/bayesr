@@ -412,6 +412,8 @@ bayesr.formula <- function(formula, specials, family)
   if(inherits(formula, "bayesr.formula"))
     return(formula)
 
+  specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", specials))
+
   env <- environment(formula)
   if(is.null(env)) env <- .GlobalEnv
   if(!is.list(formula)) formula <- list(formula)
@@ -443,6 +445,7 @@ bayesr.formula <- function(formula, specials, family)
         names(formula0[[j]]) <- paste("h", 1:length(formula0[[j]]), sep = "")
     }
   }
+  attr(formula0, "specials") <- specials
   attr(formula, "formula0") <- formula0
 
   formula
@@ -988,13 +991,13 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
           tmp <- attr(object[[j]]$effects[[i]], "samples")
           if(is.null(dim(tmp))) {
             tmp <- matrix(tmp, ncol = 1)
-          }
+          } else tmp <- as.matrix(tmp)
           if(!is.null(specs$special)) {
             m.specials[[i]] <- list("X" = PredictMat(specs, newdata), ## FIXME: also allow basis()?
               "get.mu" = specs$get.mu, "samples" = tmp)
           } else {
             m.samples[[i]] <- rbind(m.samples[[i]], tmp)
-            if(inherits(object[[j]]$effects[[i]], "linear.bayesx")) {
+            if(inherits(object[[j]]$effects[[i]], "linear.bayesr")) {
               if(specs$is.factor & !is.character(newdata)) {
                 nl <- nlevels(newdata[[i]]) - if(hi) 1 else 0
                 if(nl != ncol(m.samples[[i]]))
@@ -1028,14 +1031,32 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
             m.samples[[i]] <- cbind(m.samples[[i]],
               matrix(attr(object[[j]]$param.effects, "samples")[, ij, drop = FALSE],
               ncol = length(ij)))
-            if(is.factor(newdata[[i]])) {
-              nl <- nlevels(newdata[[i]]) - if(hi) 1 else 0
-              if(nl != ncol(m.samples[[i]]))
-                stop(paste("levels of factor variable", i, "in newdata not identical to model levels!"))
-              f <- as.formula(paste("~", if(hi) "1" else "-1", "+", i))
-              m.designs[[i]] <- model.matrix(f, data = newdata)
-              if(hi) m.designs[[i]] <- m.designs[[i]][, -1]
-            } else m.designs[[i]] <- newdata[[i]]
+            if(is.null(newdata[[i]])) {
+              enames2 <- all.terms(object[[1L]], ne = FALSE, id = FALSE,
+                intercept = FALSE, what = "parametric")
+              tte <- NULL
+              for(en in enames2) {
+                if(grepl(en, i, fixed = TRUE))
+                  tte <- en
+              }
+              if(is.null(tte)) stop(paste("cannot find term", i, "in newdata!"))
+              if(is.factor(newdata[[tte]])) {
+                nl <- nlevels(newdata[[tte]]) - if(hi) 1 else 0
+                f <- as.formula(paste("~", if(hi) "1" else "-1", "+", tte))
+                tmm <- model.matrix(f, data = newdata)
+                m.designs[[i]] <- tmm[, i, drop = FALSE]
+              } else m.designs[[i]] <- newdata[[tte]]
+              if(is.null(dim(m.designs[[i]]))) m.designs[[i]] <- matrix(m.designs[[i]], ncol = 1)
+            } else {
+              if(is.factor(newdata[[i]])) {
+                nl <- nlevels(newdata[[i]]) - if(hi) 1 else 0
+                if(nl != ncol(m.samples[[i]]))
+                  stop(paste("levels of factor variable", i, "in newdata not identical to model levels!"))
+                f <- as.formula(paste("~", if(hi) "1" else "-1", "+", i))
+                m.designs[[i]] <- model.matrix(f, data = newdata)
+                if(hi) m.designs[[i]] <- m.designs[[i]][, -1]
+              } else m.designs[[i]] <- newdata[[i]]
+            }
           }
         }
         if(!is.null(nsamps)) {
@@ -1059,6 +1080,7 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
       }
     }
   }
+
   if(length(m.samples) || length(m.specials)) {
     warn <- getOption("warn")
     options("warn" = -1)
@@ -2141,8 +2163,9 @@ coef.bayesr <- function(object, model = NULL, term = NULL, FUN = mean, ...)
 
 
 ## Get all terms names used.
-all.terms <- function(x, model = NULL, ne = TRUE, ...)
+all.terms <- function(x, model = NULL, ne = TRUE, what = c("parametric", "smooth"), ...)
 {
+  what <- match.arg(what, several.ok = TRUE)
   args <- list(...)
   nx <- names(x)
   if(!ne) {
@@ -2188,6 +2211,20 @@ all.terms <- function(x, model = NULL, ne = TRUE, ...)
   }
   if(!is.null(args$intercept))
     tl <- tl[!grepl("Intercept", tl)]
+  if(!("smooth" %in% what)) {
+    specials <- attr(formula(x), "specials")
+    for(sp in specials) {
+      if(any(dte <- grepl(paste(sp, "(", sep = ""), tl, fixed = TRUE)))
+        tl <- tl[!dte]
+    }
+  }
+  if(!("parametric" %in% what)) {
+    specials <- attr(formula(x), "specials")
+    for(sp in specials) {
+      if(any(dte <- grepl(paste(sp, "(", sep = ""), tl, fixed = TRUE)))
+        tl <- tl[dte]
+    }
+  }
 
   tl
 }
