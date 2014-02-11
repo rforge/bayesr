@@ -579,7 +579,7 @@ resultsJAGS <- function(x, samples)
         attr(param.effects, "samples") <- as.mcmc(samps)
         colnames(attr(param.effects, "samples")) <- nx
       }
-  
+
       ## Smooth terms.
       if(length(obj$smooth)) {
         if(!is.list(effects))

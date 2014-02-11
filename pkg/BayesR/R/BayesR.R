@@ -407,7 +407,7 @@ bayesr.family <- function(family, type = "BayesR")
 
 ## Special formula parser, can deal with multi parameter models
 ## and hierarchical structures.
-bayesr.formula <- function(formula, specials, family)
+bayesr.formula <- function(formula, specials = NULL, family = gaussian.BayesR())
 {
   if(inherits(formula, "bayesr.formula"))
     return(formula)
@@ -447,6 +447,7 @@ bayesr.formula <- function(formula, specials, family)
   }
   attr(formula0, "specials") <- specials
   attr(formula, "formula0") <- formula0
+  attr(formula, "raw.formula") <- TRUE
 
   formula
 }
@@ -1919,12 +1920,14 @@ print.bayesr.formula <- function(x, ...) {
       nx <- as.character(1:length(x))
     for(i in seq_along(x)) {
       cat("Formula ", nx[i], ":\n---\n", sep = "")
-      if(inherits(x[[i]], "list")) {
+      if(inherits(x[[i]], "list") & is.null(attr(x, "raw.formula"))) {
         for(j in seq_along(x[[i]])) {
           cat("h", j, ": ", sep = "")
           print(x[[i]][[j]])
         }
-      } else print(x[[i]])
+      } else {
+        if(is.null(attr(x, "raw.formula"))) print(x[[i]]) else print(x[[i]]$formula)
+      }
       if(i < length(x))
       cat("\n")
     }
