@@ -300,7 +300,8 @@ smooth.IWLS.default <- function(x, ...)
           return(IC)
         }
 
-        x$state$tau2 <- optimize2(objfun, interval = x$interval, grid = x$grid)$minimum
+        x$state$tau2 <- optimize(objfun, interval = c(1, 100), grid = x$grid)$minimum
+        ##x$state$tau2 <- optimize2(objfun, interval = x$interval, grid = x$grid)$minimum
         P <- chol2inv(chol(XWX + 1 / x$state$tau2 * x$S[[1]]))
         x$state$g <- drop(P %*% (XW %*% e))
       }

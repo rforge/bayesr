@@ -303,7 +303,7 @@ if(FALSE) {
   dat$y <- rgamma(Ey*0,shape=1/scale,scale=Ey*scale)
 
   ## FIXME: Backfitting
-  b <- bayesr(y ~ s(x0) + s(x1) + s(x2) + s(x3), family = gamma, data = dat, method = "backfitting")
+  b <- bayesr(y / 10 ~ s(x0) + s(x1) + s(x2) + s(x3), family = gamma, data = dat, method = "backfitting")
 
   ## Now with BayesX
   b <- bayesr(y ~ sx(x0) + sx(x1) + sx(x2) + sx(x3), family = gamma, data = dat, engine = "BayesX")

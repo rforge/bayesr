@@ -346,7 +346,11 @@ bayesr.model.frame <- function(formula, data, family, weights = NULL,
   mf <- rm_infinite(mf)
 
   ## assign response names
-  attr(mf, "response.name") <- rn <- all.vars(formula(fF, rhs = 0))
+  tf <- terms(formula(fF, rhs = 0))
+  rn <- as.character(attr(tf, "variables"))[2]
+  rn <- strsplit(rn, "|", fixed = TRUE)[[1]]
+  rn <- gsub(" ", "", rn)
+  attr(mf, "response.name") <- rn
 
   ## Check response.
   if(!is.null(family$valid.response)) {
@@ -1271,6 +1275,72 @@ Predict.matrix.rs.smooth <- function(object, data, knots)
 {
   class(object) <- object$class
   Predict.matrix(object, data) 
+}
+
+
+## Penalized harmonic smooth.
+smooth.construct.ha.smooth.spec <- function(object, data, knots) 
+{
+  x <- data[[object$term]]
+  freq <- if(is.null(object$xt$frequency)) length(unique(x))
+
+  if(length(object$p.order) < 2) {
+    if(is.na(object$p.order))
+      object$p.order <- c(2, 2)
+    else
+      object$p.order <- c(object$p.order, 2)
+  }
+  object$p.order[is.na(object$p.order)] <- 2
+
+  order <- object$p.order[1]
+  stopifnot(order <= freq / 2)
+  order <- min(freq, order)
+  x <- x / freq
+  X <- outer(2 * pi * x, 1:order)
+  X <- cbind(apply(X, 2, cos), apply(X, 2, sin))
+  colnames(X) <- if(order == 1) {
+    c("cos", "sin")
+  } else {
+    c(paste("cos", 1:order, sep = ""), paste("sin", 1:order, sep = ""))
+  }
+  if((2 * order) == freq) X <- X[, -(2 * order)]
+  object$X <- X
+
+  gsin1 <- function(x) { cos(2 * pi * order * x) * 2 *pi *order }
+  gsin2 <- function(x) { 4 * pi^2 * order^2 * -sin(2 * pi * order * x) }
+  gcos1 <- function(x) { -sin(2 * pi * order * x) * 2 * pi * order }
+  gcos2 <- function(x) { -4 * pi^2 * order^2 * cos(2 * pi * order * x) }
+
+  if(!object$fixed) {
+    S <- outer(2 * pi * x, 1:order)
+    S <- if(object$p.order[2] < 2) {
+      cbind(apply(S, 2, gcos1), apply(S, 2, gsin1))
+    } else cbind(apply(S, 2, gcos2), apply(S, 2, gsin2))
+    object$S <- list(crossprod(S))
+  } else object$S <- list(diag(0, ncol(X)))
+
+  object$frequency <- freq
+  object$bs.dim <- ncol(X)
+  object$rank <- qr(X)$rank
+  class(object) <- "harmon.smooth"
+  object
+}
+
+
+Predict.matrix.harmon.smooth <- function(object, data, knots)
+{
+  x <- data[[object$term]]
+  x <- x / object$frequency
+  order <- object$p.order[1]
+  X <- outer(2 * pi * x, 1:order)
+  X <- cbind(apply(X, 2, cos), apply(X, 2, sin))
+  colnames(X) <- if (order == 1) {
+    c("cos", "sin")
+  } else {
+    c(paste("cos", 1:order, sep = ""), paste("sin", 1:order, sep = ""))
+  }
+  if((2 * order) == object$frequency) X <- X[, -(2 * order)]
+  X
 }
 
 
