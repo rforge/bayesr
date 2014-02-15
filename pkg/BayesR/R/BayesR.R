@@ -405,6 +405,10 @@ bayesr.family <- function(family, type = "BayesR")
     family$cat <- FALSE
   if(is.null(family$mu))
     family$mu <- function(x) { x }
+  if(is.null(family$loglik)) {
+    if(!is.null(family$d))
+      family$loglik <- function(y, eta) { sum(family$d(y, eta, log = TRUE), na.rm = TRUE) }
+  }
   family
 }
 

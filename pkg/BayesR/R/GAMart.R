@@ -303,7 +303,8 @@ if(FALSE) {
   dat$y <- rgamma(Ey*0,shape=1/scale,scale=Ey*scale)
 
   ## FIXME: Backfitting
-  b <- bayesr(y / 10 ~ s(x0) + s(x1) + s(x2) + s(x3), family = gamma, data = dat, method = "backfitting")
+  f <- I(y / 10) ~ s(x0) + s(x1) + s(x2) + s(x3)
+  b <- bayesr(f, f, family = gamma, data = dat, method = "backfitting")
 
   ## Now with BayesX
   b <- bayesr(y ~ sx(x0) + sx(x1) + sx(x2) + sx(x3), family = gamma, data = dat, engine = "BayesX")
@@ -373,6 +374,8 @@ if(FALSE) {
   summary(b)
   mu.f11.est <- predict(b, model = "mu", term = 1, what = "terms")
   score(b)
+
+  b <- bayesr(y2 ~ s(mu.x11) + s(mu.x12), ~ s(sigma.x11) + s(sigma.x12), data = d, family = lognormal, method = "backfitting")
 }
 
 
