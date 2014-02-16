@@ -896,10 +896,10 @@ lognormal.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
       exp(eta$mu + 0.5 * (linkinv$sigma(eta$sigma))^2)
     },
     "d" = function(y, eta, log = FALSE) {
-      dlnorm(y, meanlog = eta$mu, sdlog = linkinv$sigma(eta$sigma), log = log)
+      dlnorm(y, meanlog = linkinv$mu(eta$mu), sdlog = linkinv$sigma(eta$sigma), log = log)
     },
     "p" = function(y, eta) {
-      plnorm(y, meanlog = eta$mu, sdlog = linkinv$sigma(eta$sigma))
+      plnorm(y, meanlog = linkinv$mu(eta$mu), sdlog = linkinv$sigma(eta$sigma))
     },
     "type" = 1
   )
@@ -941,10 +941,10 @@ lognormal2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
       exp(linkinv$mu(eta) + 0.5 * (linkinv$sigma2(eta$sigma2)))
     },
     "d" = function(y, eta, log = FALSE) {
-      dlnorm(y, meanlog = eta$mu, sdlog = sqrt(linkinv$sigma2(eta$sigma2)), log = log)
+      dlnorm(y, meanlog = linkinv$mu(eta$mu), sdlog = sqrt(linkinv$sigma2(eta$sigma2)), log = log)
     },
     "p" = function(y, eta) {
-      plnorm(y, meanlog = eta$mu, sdlog = sqrt(linkinv$sigma2(eta$sigma2)))
+      plnorm(y, meanlog = linkinv$mu(eta$mu), sdlog = sqrt(linkinv$sigma2(eta$sigma2)))
     }
   )
 

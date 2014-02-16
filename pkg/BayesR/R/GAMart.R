@@ -417,6 +417,7 @@ if(FALSE) {
   plot(b, which = 3:6)
   summary(b)
   score(b)
+  b <- bayesr(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma2.x11) + s(sigma2.x12), data = d, family = lognormal2, method = "backfitting2")
 }
 
 
