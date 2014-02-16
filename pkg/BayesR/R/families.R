@@ -649,6 +649,20 @@ invgaussian.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
     "mu" = function(eta, ...) {
       linkinv$mu(eta$mu) 
     },
+    "score" = list(
+      "mu" = function(y, eta, ...) {
+        mu <- linkinv$mu(eta$mu)
+        (y - mu) / (mu^2 * linkinv$sigma2(eta$sigma2))
+      },
+      "sigma2" = function(y, eta, ...) {
+        mu <- linkinv$mu(eta$mu)
+        -0.5 + (y - mu)^2 / (2 * y * mu^2 * linkinv$sigma2(eta$sigma2))
+      }
+    ),
+    "weights" = list(
+      "mu" = function(y, eta, ...) { 1 / (linkinv$mu(eta$mu) * linkinv$sigma2(eta$sigma2)) },
+      "sigma2" = function(y, eta) { rep(0.5, length(y)) }
+    ),
 	  "d" = function (y, eta, log = FALSE) {
 		  mu <- linkinv$mu(eta$mu)
 		  sigma <- sqrt(linkinv$sigma(eta$sigma2))

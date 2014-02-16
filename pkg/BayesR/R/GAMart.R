@@ -337,9 +337,11 @@ dgp_invgaussian <- function(n = 500, mu = NULL, sigma = NULL, ...)
 
 if(FALSE) {
   d <- dgp_invgaussian()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), y ~ sx(sigma2.x11)+sx(sigma2.x12), 
+  b1 <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma2.x11) + sx(sigma2.x12), 
 		data = d, family = invgaussian, engine = "BayesX", verbose = TRUE)
   d$pred_mu <- predict(b, model = "mu", term = c("x11", "x12"))
+
+  b2 <- bayesr(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma2.x11) + s(sigma2.x12), data = d, family = invgaussian, method = "backfitting")
 }
 
 ## Lognormal.

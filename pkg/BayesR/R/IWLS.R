@@ -454,6 +454,12 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
             ## Update predictor and smooth fit.
             eta[[nx[j]]] <- eta[[nx[j]]] - x[[nx[j]]]$smooth[[sj]]$state$fit + p.state$fit
             x[[nx[j]]]$smooth[[sj]]$state <- p.state
+
+            ## Check.
+            if(any(abs(eta[[nx[j]]]) > 10)) {
+              eta[[nx[j]]][eta[[nx[j]]] > 10] <- 10
+              eta[[nx[j]]][eta[[nx[j]]] < -10] <- -10
+            }
           }
         }
 
@@ -496,9 +502,9 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
       return(list("x" = x, "eta" = eta, "ic" = IC))
     }
 
-    if(length(method) < 2) {
-      verbose2 <- if(method == "MCMC")  FALSE else verbose
-    }
+    verbose2 <- if(length(method) < 2) {
+      if(method == "MCMC")  FALSE else verbose
+    } else verbose
 
     bf <- backfit(x, eta, verbose = verbose2)
     x <- bf$x; eta <- bf$eta
@@ -598,6 +604,12 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
           if(save) {
             x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- exp(p.state$alpha)
             x[[nx[j]]]$smooth[[sj]]$s.samples[js, ] <- unlist(x[[nx[j]]]$smooth[[sj]]$state[x[[nx[j]]]$smooth[[sj]]$p.save])
+          }
+
+          ## Check.
+          if(any(abs(eta[[nx[j]]]) > 10)) {
+            eta[[nx[j]]][eta[[nx[j]]] > 10] <- 10
+            eta[[nx[j]]][eta[[nx[j]]] < -10] <- -10
           }
         }
       }
