@@ -801,7 +801,7 @@ gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
     "score" = list(
       "mu" = function(y, eta, ...) {
         sigma <- linkinv$sigma(eta$sigma) 
-        -1 * sigma + sigma / linkinv$mu(eta$mu) * y
+        sigma * (-1 + y / linkinv$mu(eta$mu))
       },
       "sigma" = function(y, eta, ...) {
         mu <- linkinv$mu(eta$mu)
@@ -886,11 +886,11 @@ lognormal.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
     ),
     "score" = list(
       "mu" = function(y, eta, ...) { (log(y) - linkinv$mu(eta$mu)) / (linkinv$sigma(eta$sigma)^2) },
-      "sigma" = function(y, eta, ...) { -0.5 + (log(y) - linkinv$mu(eta$mu))^2 / (2 * linkinv$sigma(eta$sigma)^2) }
+      "sigma" = function(y, eta, ...) { -1 + (log(y) - linkinv$mu(eta$mu))^2 / (2 * linkinv$sigma(eta$sigma)^2) }
     ),
     "weights" = list(
       "mu" = function(y, eta, ...) { 1 / (linkinv$sigma(eta$sigma)^2) },
-      "sigma" = function(y, eta, ...) { rep(0.5, length(y)) }
+      "sigma" = function(y, eta, ...) { rep(2, length(y)) }
     ),
 	  "mu" = function(eta, ...) {
       exp(eta$mu + 0.5 * (linkinv$sigma(eta$sigma))^2)
@@ -928,6 +928,14 @@ lognormal2.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
     bayesx = list(
       "mu" = c("lognormal_mu", "mean"),
       "sigma2" = c("lognormal_sigma2", "scale")
+    ),
+	"score" = list(
+      "mu" = function(y, eta, ...) { (log(y) - linkinv$mu(eta$mu)) / (linkinv$sigma2(eta$sigma2)) },
+      "sigma2" = function(y, eta, ...) { -0.5 + (log(y) - linkinv$mu(eta$mu))^2 / (2 * linkinv$sigma2(eta$sigma2)) }
+    ),
+    "weights" = list(
+      "mu" = function(y, eta, ...) { 1 / (linkinv$sigma2(eta$sigma2)) },
+      "sigma2" = function(y, eta, ...) { rep(0.5, length(y)) }
     ),
 	  "mu" = function(eta, ...) {
       exp(linkinv$mu(eta) + 0.5 * (linkinv$sigma2(eta$sigma2)))
