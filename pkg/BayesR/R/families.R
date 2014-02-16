@@ -850,9 +850,9 @@ gengamma.BayesR <- function(links = c(mu = "log", sigma = "log", tau = "log"), .
 }
 
 
-lognormal.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
+lognormal.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "log", sigma = "log"), ...)
+  links <- parse.links(links, c(mu = "identity", sigma = "log"), ...)
   linkinv <- list()
   for(j in names(links))
     linkinv[[j]] <- make.link2(links[[j]])$linkinv
@@ -871,8 +871,8 @@ lognormal.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
       "sigma" = c("lognormal2_sigma", "scale")
     ),
     "score" = list(
-      "mu" = function(y, eta, ...) { (log(y) - eta$mu) / (linkinv$sigma(eta$sigma)^2) },
-      "sigma" = function(y, eta, ...) { -0.5 + (log(y) - eta$mu)^2 / (2 * linkinv$sigma(eta$sigma)^2) }
+      "mu" = function(y, eta, ...) { (log(y) - linkinv$mu(eta$mu)) / (linkinv$sigma(eta$sigma)^2) },
+      "sigma" = function(y, eta, ...) { -0.5 + (log(y) - linkinv$mu(eta$mu))^2 / (2 * linkinv$sigma(eta$sigma)^2) }
     ),
     "weights" = list(
       "mu" = function(y, eta, ...) { 1 / (linkinv$sigma(eta$sigma)^2) },

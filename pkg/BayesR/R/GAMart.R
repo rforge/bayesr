@@ -304,7 +304,7 @@ if(FALSE) {
 
   ## FIXME: Backfitting
   f <- I(y / 10) ~ s(x0) + s(x1) + s(x2) + s(x3)
-  b <- bayesr(f, f, family = gamma, data = dat, method = "backfitting")
+  b <- bayesr(f, family = gamma, data = dat, method = "backfitting")
 
   ## Now with BayesX
   b <- bayesr(y ~ sx(x0) + sx(x1) + sx(x2) + sx(x3), family = gamma, data = dat, engine = "BayesX")
@@ -375,7 +375,7 @@ if(FALSE) {
   mu.f11.est <- predict(b, model = "mu", term = 1, what = "terms")
   score(b)
 
-  b <- bayesr(y2 ~ s(mu.x11) + s(mu.x12), ~ s(sigma.x11) + s(sigma.x12), data = d, family = lognormal, method = "backfitting")
+  b <- bayesr(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma.x11) + s(sigma.x12), data = d, family = lognormal, method = "backfitting")
 }
 
 

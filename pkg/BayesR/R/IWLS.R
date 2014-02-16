@@ -263,19 +263,22 @@ smooth.IWLS.default <- function(x, ...)
       ## Compute weights.
       weights <- family$weights[[id]](response, eta)
 
+      ## Which obs to take.
+      ok <- !(weights %in% c(NA, -Inf, Inf, 0))
+      weights <- weights[ok]
+
       ## Score.
       score <- family$score[[id]](response, eta)
 
       ## Compute working observations.
-      z <- eta[[id]] + 1 / weights * score
+      z <- eta[[id]][ok] + 1 / weights * score[ok]
 
       ## Compute partial predictor.
-      eta[[id]] <- eta[[id]] - x$state$fit
+      eta[[id]][ok] <- eta[[id]][ok] - x$state$fit[ok]
 
       ## Compute mean and precision.
-      XW <- t(x$X * weights)
-      XWX <- XW %*% x$X
-
+      XW <- t(x$X[ok, ] * weights)
+      XWX <- XW %*% x$X[ok, ]
       if(is.null(x$optimize) | x$fixed | !is.null(x$sp)) {
         P <- if(x$fixed) {
           chol2inv(chol(XWX))
@@ -285,11 +288,13 @@ smooth.IWLS.default <- function(x, ...)
         args <- list(...)
         edf0 <- args$edf - x$state$edf
         eta2 <- eta
-        e <- z - eta[[id]]
+        e <- z - eta[[id]][ok]
 
         objfun <- function(tau2, ...) {
-          P <- chol2inv(chol(XWX + 1 / tau2 * x$S[[1]]))
+          P <- try(chol2inv(chol(XWX + 1 / tau2 * x$S[[1]])), silent = TRUE)
+          if(inherits(P, "try-error")) return(NA)
           g <- drop(P %*% (XW %*% e))
+          if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
           fit <- drop(x$X %*% g)
           edf <- sum(diag(P %*% XWX))
           if(!is.null(x$xt$center)) {
@@ -302,11 +307,13 @@ smooth.IWLS.default <- function(x, ...)
 
         ## x$state$tau2 <- optimize(objfun, interval = x$interval, grid = x$grid)$minimum
         x$state$tau2 <- optimize2(objfun, interval = x$interval, grid = x$grid)$minimum
+        if(!length(x$state$tau2)) x$state$tau2 <- x$interval[1]
         P <- chol2inv(chol(XWX + 1 / x$state$tau2 * x$S[[1]]))
         x$state$g <- drop(P %*% (XW %*% e))
       }
 
-      ## Compute fitted values.      
+      ## Compute fitted values.
+      if(any(is.na(x$state$g)) | any(x$state$g %in% c(-Inf, Inf))) x$state$g <- rep(0, length(x$state$g))
       x$state$fit <- drop(x$X %*% x$state$g)
       x$state$edf <- sum(diag(P %*% XWX))
       if(!is.null(x$xt$center)) {
