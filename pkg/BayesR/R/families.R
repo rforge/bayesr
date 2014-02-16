@@ -874,7 +874,7 @@ lognormal.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
   rval <- list(
     "family" = "lognormal",
     "names" = c("mu", "sigma"),
-    "links" = parse.links(links, c(mu = "log", sigma = "log"), ...),
+    "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
       if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
@@ -886,7 +886,7 @@ lognormal.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
     ),
     "score" = list(
       "mu" = function(y, eta, ...) { (log(y) - linkinv$mu(eta$mu)) / (linkinv$sigma(eta$sigma)^2) },
-      "sigma" = function(y, eta, ...) { -1 + (log(y) - linkinv$mu(eta$mu))^2 / (2 * linkinv$sigma(eta$sigma)^2) }
+      "sigma" = function(y, eta, ...) { -1 + (log(y) - linkinv$mu(eta$mu))^2 / (linkinv$sigma(eta$sigma)^2) }
     ),
     "weights" = list(
       "mu" = function(y, eta, ...) { 1 / (linkinv$sigma(eta$sigma)^2) },
@@ -909,9 +909,9 @@ lognormal.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
 }
 
 
-lognormal2.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
+lognormal2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "log", sigma2 = "log"), ...)
+  links <- parse.links(links, c(mu = "identity", sigma2 = "log"), ...)
   linkinv <- list()
   for(j in names(links))
     linkinv[[j]] <- make.link2(links[[j]])$linkinv
@@ -919,7 +919,7 @@ lognormal2.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
   rval <- list(
     "family" = "lognormal2",
     "names" = c("mu", "sigma2"),
-    "links" = parse.links(links, c(mu = "log", sigma2 = "log"), ...),
+    "links" = parse.links(links, c(mu = "identity", sigma2 = "log"), ...),
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
       if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)

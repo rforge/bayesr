@@ -382,7 +382,7 @@ if(FALSE) {
   mu.f11.est <- predict(b, model = "mu", term = 1, what = "terms")
   score(b)
 
-  b <- bayesr(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma.x11) + s(sigma.x12), data = d, family = lognormal, method = "backfitting")
+  b <- bayesr(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma.x11) + s(sigma.x12), data = d, family = lognormal, method = "backfitting2")
 }
 
 
