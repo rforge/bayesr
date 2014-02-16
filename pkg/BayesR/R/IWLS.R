@@ -305,7 +305,7 @@ smooth.IWLS.default <- function(x, ...)
           return(IC)
         }
 
-        ## x$state$tau2 <- optimize(objfun, interval = x$interval, grid = x$grid)$minimum
+        ##x$state$tau2 <- optimize(objfun, interval = x$interval, grid = x$grid)$minimum
         x$state$tau2 <- optimize2(objfun, interval = x$interval, grid = x$grid)$minimum
         if(!length(x$state$tau2)) x$state$tau2 <- x$interval[1]
         P <- chol2inv(chol(XWX + 1 / x$state$tau2 * x$S[[1]]))
@@ -344,7 +344,7 @@ get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc")
 ## Sampler based on IWLS proposals.
 samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   verbose = TRUE, step = 20, svalues = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
-  tdir = NULL, method = c("backfitting", "MCMC", "backfitting2", "backfitting3"),
+  tdir = NULL, method = c("backfitting", "MCMC", "backfitting2", "backfitting3", "backfitting4"),
   n.samples = 200, criterion = c("AIC", "BIC", "AICc"), lower = 1e-09, upper = 1e+04,
   optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3, ...)
 {
@@ -434,7 +434,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
     }
 
     ## Backfitting main function.
-    backfit <- function(x, eta, verbose) {
+    backfit <- function(x, eta, verbose = TRUE) {
       edf <- get_edf(x)
 
       eps0 <- iter <- 1
@@ -472,7 +472,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
           vtxt <- paste(criterion, " ", fmt(IC, width = -8, digits = digits),
             " loglik ", fmt(family$loglik(response, eta), width = -8, digits = digits),
             " edf ", fmt(edf, width = -6, digits = digits + 2),
-            " eps ", fmt(eps0, width = -5, digits = digits * 2),
+            " eps ", fmt(eps0, width = -6, digits = digits + 2),
             " iteration ", formatC(iter, width = -1 * nchar(maxit)), sep = "")
           cat(vtxt)
 
@@ -484,12 +484,12 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
 
       IC <- get.ic(family, response, eta, edf, nobs, criterion)
 
-      if(any(method %in% c("backfitting", "backfitting2")) & verbose) {
+      if(any(method %in% c("backfitting", "backfitting2", "backfitting4")) & verbose) {
         cat("\r")
         vtxt <- paste(criterion, " ", fmt(IC, width = -8, digits = digits),
           " loglik ", fmt(family$loglik(response, eta), width = -8, digits = digits),
           " edf ", fmt(edf, width = -6, digits = digits + 2),
-          " eps ", fmt(eps0, width = -5, digits = digits * 2),
+          " eps ", fmt(eps0, width = -6, digits = digits + 2),
           " iteration ", formatC(iter, width = -1 * nchar(maxit)), sep = "")
         cat(vtxt)
         if(.Platform$OS.type != "unix") flush.console()
@@ -545,6 +545,33 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
       eta <- bf$eta
       x <- bf$x
       rm(bf)
+    }
+
+    if(any("backfitting4" %in% method)) {
+      objfun <- function(tau2, j, sj, retbf = FALSE) {
+        x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
+        bf <- backfit(x, eta, verbose = verbose2)
+        return(if(retbf) bf else bf$ic)
+      }
+      eps0 <- iter <- 1
+      while(eps0 > eps & iter < 4) {
+        eta0 <- eta
+        for(j in 1:np) {
+          for(sj in seq_along(x[[nx[j]]]$smooth)) {
+            if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
+              tau2 <- optimize(objfun, x[[nx[j]]]$smooth[[sj]]$interval, j = j, sj = sj)$minimum
+              bf <- objfun(tau2, j, sj, retbf = TRUE)
+            } else {
+              bf <- backfit(x, eta, verbose = verbose2)
+            }
+            eta <- bf$eta
+            x <- bf$x
+            rm(bf)
+          }
+        }
+        eps0 <- mean((do.call("cbind", eta) - do.call("cbind", eta0))^2)
+        iter <- iter + 1
+      }
     }
   }
 

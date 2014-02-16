@@ -341,7 +341,7 @@ if(FALSE) {
 		data = d, family = invgaussian, engine = "BayesX", verbose = TRUE)
   d$pred_mu <- predict(b, model = "mu", term = c("x11", "x12"))
 
-  b2 <- bayesr(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma2.x11) + s(sigma2.x12), data = d, family = invgaussian, method = "backfitting")
+  b2 <- bayesr(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma2.x11) + s(sigma2.x12), data = d, family = invgaussian, method = "backfitting2")
 }
 
 ## Lognormal.
