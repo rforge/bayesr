@@ -2599,7 +2599,7 @@ print.TODOs <- function(x, ...)
         "dgp" = dgp,
         "BayesX" = if(!is.null(fe$bayesx)) "yes" else "no",
         "JAGS" = if(!is.null(fe$jagstan)) "yes" else "no",
-        "IWLS" = if(!is.null(fe$score) & !is.null(fe$weights) & !is.null(fe$loglik)) "yes" else "no"
+        "IWLS" = if(!is.null(fe$score) & !is.null(fe$weights) & !is.null(fe$d)) "yes" else "no"
       ))
     }
   }
