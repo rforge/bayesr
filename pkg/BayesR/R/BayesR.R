@@ -945,22 +945,24 @@ add.partial <- function(x, samples = FALSE, nsamps = 100) {
   stopifnot(!is.null(names(x)))
   nx <- names(x)
   family <- attr(x, "family")
-  y <- model.response2(x)
-  eta <- fitted.bayesr(x, samples = samples, nsamps = nsamps)
-  mf <- model.frame(x)
-  for(j in seq_along(x)) {
-    if(!is.null(x[[j]]$effects)) {
-      weights <- family$weights[[nx[j]]](y, eta)
-      score <- family$score[[nx[j]]](y, eta)
-      z <- eta[[nx[j]]] + 1 / weights * score
-      ne <- names(x[[j]]$effects)
-      for(sj in seq_along(ne)) {
-        f <- predict(x, model = nx[j], term = ne[sj], nsamps = nsamps)
-        term <- attr(x[[j]]$effects[[ne[sj]]], "specs")$term
-        e <- z - eta[[nx[j]]] + f
-        e <- data.frame(mf[, term], e)
-        names(e) <- c(term, "partial.resids")
-        attr(x[[j]]$effects[[ne[sj]]], "partial.resids") <- e
+  if(!is.null(family$weights) & !is.null(family$score)) {
+    y <- model.response2(x)
+    eta <- fitted.bayesr(x, samples = samples, nsamps = nsamps)
+    mf <- model.frame(x)
+    for(j in seq_along(x)) {
+      if(!is.null(x[[j]]$effects)) {
+        weights <- family$weights[[nx[j]]](y, eta)
+        score <- family$score[[nx[j]]](y, eta)
+        z <- eta[[nx[j]]] + 1 / weights * score
+        ne <- names(x[[j]]$effects)
+        for(sj in seq_along(ne)) {
+          f <- predict(x, model = nx[j], term = ne[sj], nsamps = nsamps)
+          term <- attr(x[[j]]$effects[[ne[sj]]], "specs")$term
+          e <- z - eta[[nx[j]]] + f
+          e <- data.frame(mf[, term], e)
+          names(e) <- c(term, "partial.resids")
+          attr(x[[j]]$effects[[ne[sj]]], "partial.resids") <- e
+        }
       }
     }
   }
