@@ -737,9 +737,12 @@ resultsIWLS <- function(x, samples)
 
   createIWLSresults <- function(obj, samples, id = NULL)
   {
-    if(inherits(samples[[1]], "mcmc.list"))
+    if(inherits(samples[[1]], "mcmc.list")) {
       samples <- do.call("c", samples)
-    else samples <- as.mcmc.list(list(samples))
+    } else {
+      if(!inherits(samples, "mcmc.list"))
+        samples <- as.mcmc.list(if(!inherits(samples, "list")) list(samples) else samples)
+    }
     chains <- length(samples)
     rval <- vector(mode = "list", length = chains)
     snames <- colnames(samples[[1]])

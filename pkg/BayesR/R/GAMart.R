@@ -527,11 +527,11 @@ dgp_beta <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
 {
 	if(is.null(mu)) {
     mu <- list(nobs = n, const = -0.5,
-      type = list(c("const")))
+      type = list(c("sinus", "const")))
   }
   if(is.null(sigma2)) {
     sigma2 <- list(nobs = n, const = 0.01,
-      type = list(c("const")))
+      type = list(c("double", "const")))
   }
   
   mu <- do.call("dgp_eta", mu)
@@ -545,15 +545,19 @@ dgp_beta <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
   shape1 <- a * (1 - b) / (b)
   shape2 <- (1 - a) * (1 - b) / (b)
   y <- rbeta(n, shape1 = shape1, shape2 = shape2)
+  y[y == 1] <- 0.9999
+  y[y == 0] <- 0.0001
   d <- cbind(y, "mu" = mu, "sigma2" = sigma2)
   d
 }
 
 if(FALSE) {
   d <- dgp_beta()
-  b <- bayesr(y ~ 1, data = d, family = beta, engine = "BayesX", verbose = TRUE)
+  b <- bayesr(y ~ sx(mu.x11), ~ sx(sigma2.x11), data = d, family = beta, engine = "BayesX", verbose = TRUE)
   summary(b)
   plot(b, which = 3:6)
+
+  b <- bayesr(y ~ s(mu.x11), ~ s(sigma2.x11), data = d, family = beta, method = "backfitting")
 }
 
 
