@@ -311,27 +311,32 @@ if(FALSE) {
 }
 
 ## Inverse Gaussian.
-dgp_invgaussian <- function(n = 500, mu = NULL, sigma = NULL, ...)
+dgp_invgaussian <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
 {
-  require(gamlss)
   if(is.null(mu)) {
     mu <- list(nobs = n, const = 0,
       type = list(c("unimodal", "quadratic", "const")))
   }
-  if(is.null(sigma)) {
-    sigma <- list(nobs = n, const = 0,
+  if(is.null(sigma2)) {
+    sigma2 <- list(nobs = n, const = 0,
       type = list(c("linear", "sinus", "const")))
   }
 
 
   mu <- do.call("dgp_eta", mu)
-  sigma <- do.call("dgp_eta", sigma) 
+  sigma2 <- do.call("dgp_eta", sigma2) 
   m <- exp(mu$eta0)
-  s <- exp(sigma$eta0)
-  y <- rIG(n, mu = m, sigma = sqrt(s))
-
+  s <- exp(sigma2$eta0)
+  rnd_invgaussian <- function(n, mu, sigma2) {
+	nu <- rnorm(n)^2
+	arg <- sqrt(4 * mu * nu / sigma2 + mu^2 * nu^2)
+	x <- mu + 0.5 * mu^2 * nu * sigma2 - 0.5 * mu * sigma2 * arg
+	z <- runif(n)
+	ifelse(z <= (mu / (mu + x)), x, mu^2 / x)
+  }
+  y <- rnd_invgaussian(n, mu = m, sigma2 = s)
   
-  d <- cbind(y, "mu" = mu, "sigma2" = sigma)
+  d <- cbind(y, "mu" = mu, "sigma2" = sigma2)
   d
 }
 
