@@ -2553,7 +2553,7 @@ model.response2 <- function(data, ...)
   rn <- attr(data, "response.name")
   y <- if(is.null(rn)) {
     model.response(data, ...)
-  } else data[, rn]
+  } else data[, unique(rn)]
   y
 }
 
