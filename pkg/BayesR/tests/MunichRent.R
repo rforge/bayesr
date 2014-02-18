@@ -24,7 +24,8 @@ f <- list(
     s(area) + s(yoc) + s(x, y)
 )
 
-b2 <- bayesr(f, family = gamma, data = rent99, engine = "IWLS", method = c("backfitting", "MCMC"))
+b1 <- bayesr(f, family = gaussian, data = rent99, engine = "IWLS", method = "backfitting")
+b2 <- bayesr(f, family = gamma, data = rent99, engine = "IWLS", method = "backfitting")
 
 nd <- centroids(MunichBnd)
 nd$fmu <- predict(b2, newdata = nd, model = "mu", term = "s(x,y)", intercept = FALSE)

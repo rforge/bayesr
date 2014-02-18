@@ -2666,6 +2666,23 @@ model.response2 <- function(data, ...)
 }
 
 
+## Create the inverse of a matrix.
+matrix_inv <- function(x)
+{
+  p <- try(chol(x), silent = TRUE)
+  p <- if(inherits(p, "try-error")) {
+    try(solve(x), silent = TRUE)
+  } else {
+    try(chol2inv(p), silent = TRUE)
+  }
+  if(inherits(p, "try-error")) {
+    diag(x) <- jitter(diag(x), amount = 1e-5)
+    p <- try(solve(x), silent = TRUE)
+  }
+  return(p)
+}
+
+
 #############################
 ## (10) Utility functions. ##
 #############################

@@ -281,8 +281,8 @@ smooth.IWLS.default <- function(x, ...)
       XWX <- XW %*% x$X[ok, ]
       if(is.null(x$optimize) | x$fixed | !is.null(x$sp)) {
         P <- if(x$fixed) {
-          chol2inv(chol(XWX))
-        } else chol2inv(chol(XWX + 1 / x$state$tau2 * x$S[[1]]))
+          matrix_inv(XWX)
+        } else matrix_inv(XWX + 1 / x$state$tau2 * x$S[[1]])
         x$state$g <- drop(P %*% (XW %*% (z - eta[[id]])))
       } else {
         args <- list(...)
@@ -291,7 +291,7 @@ smooth.IWLS.default <- function(x, ...)
         e <- z - eta[[id]][ok]
 
         objfun <- function(tau2, ...) {
-          P <- try(chol2inv(chol(XWX + 1 / tau2 * x$S[[1]])), silent = TRUE)
+          P <- matrix_inv(XWX + 1 / tau2 * x$S[[1]])
           if(inherits(P, "try-error")) return(NA)
           g <- drop(P %*% (XW %*% e))
           if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
@@ -306,9 +306,9 @@ smooth.IWLS.default <- function(x, ...)
         }
 
         x$state$tau2 <- optimize(objfun, interval = x$interval, grid = x$grid)$minimum
-        ## x$state$tau2 <- optimize2(objfun, interval = x$interval, grid = x$grid)$minimum
+        ##x$state$tau2 <- optimize2(objfun, interval = x$interval, grid = x$grid)$minimum
         if(!length(x$state$tau2)) x$state$tau2 <- x$interval[1]
-        P <- chol2inv(chol(XWX + 1 / x$state$tau2 * x$S[[1]]))
+        P <- matrix_inv(XWX + 1 / x$state$tau2 * x$S[[1]])
         x$state$g <- drop(P %*% (XW %*% e))
       }
 
