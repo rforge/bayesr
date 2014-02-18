@@ -959,6 +959,12 @@ add.partial <- function(x, samples = FALSE, nsamps = 100) {
           f <- predict(x, model = nx[j], term = ne[sj], nsamps = nsamps)
           term <- attr(x[[j]]$effects[[ne[sj]]], "specs")$term
           e <- z - eta[[nx[j]]] + f
+          if(is.null(attr(x[[j]]$effects[[ne[sj]]], "specs")$xt$center)) {
+            e <- e - mean(e)
+          } else {
+            if(attr(x[[j]]$effects[[ne[sj]]], "specs")$xt$center)
+              e <- e - mean(e)
+          }
           e <- data.frame(mf[, term], e)
           names(e) <- c(term, "partial.resids")
           attr(x[[j]]$effects[[ne[sj]]], "partial.resids") <- e
