@@ -23,7 +23,8 @@ f <- list(
 )
 
 b1 <- bayesr(f, family = gaussian, data = rent99, engine = "IWLS", method = "backfitting")
-b2 <- bayesr(f, family = gamma, data = rent99, engine = "IWLS", method = "MCMC")
+b2 <- bayesr(f, family = gamma, data = rent99, engine = "IWLS",
+  method = c("backfitting", "MCMC"), n.iter = 1200, burnin = 200, thin = 1)
 
 nd <- centroids(MunichBnd)
 nd$fmu <- predict(b2, newdata = nd, model = "mu", term = "s(x,y)", intercept = FALSE)
