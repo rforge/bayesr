@@ -1142,7 +1142,8 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     poly.names <- poly.names[op]
   }
   poly.names.orig <- poly.names.orig[op]
-  if(length(upn <- unique(poly.names)) < length(poly.names)) {
+  map <- map[poly.names.orig]
+  if(length(upn <- unique(poly.names)) < length(poly.names) & FALSE) {
     nn <- NULL
     for(i in upn) {
       j <- poly.names == i
@@ -1152,7 +1153,6 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     }
     names(map) <- poly.names
   }
-
   map <- map[poly.names]
   poly.names <- names(map)
   surrounding <- attr(map, "surrounding")

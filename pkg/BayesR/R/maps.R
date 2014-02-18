@@ -6,8 +6,9 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
   grid = 8, linear = FALSE, extrap = FALSE, duplicate = "mean", xlim = NULL,
   ylim = NULL, boundary = TRUE, interior = TRUE, rivers = FALSE, mcol = NULL,
   contour.data = NULL, k = 30, akima = FALSE, data = NULL, subset = NULL, box = FALSE,
-  ireturn = FALSE, sort = TRUE, ...)
+  ireturn = FALSE, sort = TRUE, proj4string = CRS(as.character(NA)), ...)
 {
+  ## projection = "+proj=longlat +ellps=WGS84 +datum=WGS84"
   require("maps")
   require("sp")
 
@@ -64,7 +65,6 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
     if(ireturn)
       return(data)
   }
-  
   colors <- colorlegend(x = data$z, plot = FALSE, color = color,
     swap = swap, symmetric = symmetric, ...)
   col <- colors$map(data$z)
@@ -73,7 +73,7 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
   } else p.cex
 
   coordinates(data) <- c("x", "y")
-  proj4string(data) <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84")
+  proj4string(data) <- proj4string
 
   if(!add && legend && layout) {
     mar <- par()$mar
@@ -84,7 +84,7 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
     layout(matrix(c(1, 2), nrow = 1), widths = c(1, lcm(w)))
 
   pp <- coordinates(SpatialPoints(coordinates(data),
-    proj4string = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84")))
+    proj4string = proj4string))
   dx <- abs(diff(pp[, 1])); dy <- abs(diff(pp[, 2]))
   dx <- dx[dx != 0]; dy <- dy[dy != 0]
   res <- c(min(dx), min(dy))
@@ -478,5 +478,25 @@ centroidtext <- function(polygon, poly.name = NULL, counter = "NA", cex = 1, ...
   text(pos[1L], pos[2L], txt, cex = cex, ...)
 
   return(invisible(NULL))
+}
+
+
+## Function to drop data outside the polygon area.
+drop2poly <- function(x, y, map)
+{
+  require("maptools")
+  gpclibPermit()
+  class(map) <- "bnd"
+  mapsp <- bnd2sp(map)
+  ob <- unionSpatialPolygons(mapsp, rep(1L, length = length(mapsp)), avoidGEOS  = TRUE)
+
+  nob <- length(slot(slot(ob, "polygons")[[1]], "Polygons"))
+  pip <- NULL
+  for(j in 1:nob) {
+    oco <- slot(slot(slot(ob, "polygons")[[1]], "Polygons")[[j]], "coords")
+    pip <- cbind(pip, point.in.polygon(x, y, oco[, 1L], oco[, 2L], mode.checked = FALSE) < 1L)
+  }
+  pip <- apply(pip, 1, function(x) all(x))
+  return(which(!pip))
 }
 
