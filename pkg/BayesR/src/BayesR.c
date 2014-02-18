@@ -444,3 +444,33 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   return rval;
 }
 
+
+/* Compute the centroid of a polygon. */
+SEXP cpos(SEXP p, SEXP K, SEXP pos)
+{
+  int i, n, k;
+  n = INTEGER(K)[0];
+  k = n + 1;
+    
+  double tmp, *pptr, asum, xsum, ysum;
+    
+  pptr = REAL(p);
+    
+  asum = 0;
+  xsum = 0;
+  ysum = 0;
+    
+  for(i = 0; i < n; ++i) {
+    tmp = pptr[i] * pptr[i + k + 1] - pptr[i + 1] * pptr[i + k];
+    asum += tmp;
+    xsum += (pptr[i] + pptr[i + 1]) * tmp;
+    ysum += (pptr[i + k] + pptr[i + k + 1]) * tmp;
+  }
+        
+  tmp = 1 / (3 * asum);
+  REAL(pos)[0] = tmp * xsum;
+  REAL(pos)[1] = tmp * ysum;
+    
+  return pos;
+}
+

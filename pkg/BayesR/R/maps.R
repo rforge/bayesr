@@ -385,3 +385,98 @@ smooth.construct.sws.smooth.spec <- function(object, data, knots)
   object
 }
 
+
+## Compute centroids of polygons.
+centroids <- function(x, id = NULL)
+{
+  if(inherits(x, "SpatialPolygons"))
+    x <- sp2bnd(x)
+  if(!is.list(x))
+    stop("argument map must be a list() of matrix polygons!")
+
+  n <- length(x)
+  cp <- matrix(0, n, 2L)
+  for(i in 1L:n) {
+    cp[i,] <- centroidpos(na.omit(x[[i]]))
+  }
+  cp  <- as.data.frame(cp)
+  nx <- nx0 <- names(x)
+  if(any(i <- duplicated(nx))) {
+    warning(paste("the following polygons are duplicated:", paste(nx[i], collapse = ", ")))
+    for(j in nx[i]) {
+      dups <- nx[nx == j]
+      nx[nx == j] <- paste(dups, 1:length(dups), sep = ":")
+    }
+  }
+  rownames(cp) <- nx
+  colnames(cp) <- c("x", "y")
+
+  if(!is.null(id)) {
+    id <- as.character(unlist(id))
+    cp2 <- matrix(NA, nrow = length(id), ncol = 2)
+    for(j in unique(id)) {
+      i <- which(nx0 == j)
+      k <- which(id == j)
+      pall <- list()
+      take <- cp[i, ]
+      for(l in 1:nrow(take))
+        pall[[l]] <- as.numeric(take[l, ])
+      pall <- rep(pall, length.out = length(k))
+      pall <- do.call("rbind", pall)
+      for(l in 1:length(k)) {
+        cp2[k[l], ] <- pall[l, ]
+      }
+    }
+    cp <- as.data.frame(cp2)
+    if(any(i <- duplicated(id))) {
+      for(j in id[i]) {
+        dups <- id[id == j]
+        id[id == j] <- paste(dups, 1:length(dups), sep = ":")
+      }
+    }
+    rownames(cp) <- id
+    colnames(cp) <- c("x", "y")
+  }
+
+  return(cp)
+}
+
+
+centroidpos <- function(polygon) 
+{
+  polygon <- na.omit(polygon)
+  p <- polygon
+  np <- (nrow(p) - 1L)
+  if(is.na(p[1L, 1L])) {
+    p <- p[2L:(np + 1L),]
+    np <- np - 1L
+  }
+  if((p[1L, 1L] != p[(np + 1L), 1L]) || (p[1L, 2L] != p[(np + 1L), 2L]))
+    p[(np + 1L),] <- p[1L,]
+	out <- cpos(p, np)
+
+  return(out)
+}
+
+cpos <- function(p, np) 
+{
+  rval <- .Call("cpos",
+    as.numeric(p),
+    as.integer(np),
+    as.numeric(c(0, 0)))
+
+  return(rval)
+}
+
+centroidtext <- function(polygon, poly.name = NULL, counter = "NA", cex = 1, ...) 
+{
+  pos <- centroidpos(polygon)		
+  if(is.null(poly.name))
+    txt <- paste(counter)
+  else
+    txt <- poly.name
+  text(pos[1L], pos[2L], txt, cex = cex, ...)
+
+  return(invisible(NULL))
+}
+

@@ -1230,11 +1230,12 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
 
     cdata <- data.frame(centroids(map), "id" = names(map))
     cdata <- merge(cdata, data.frame("z" = x$x, "id" = x$id), by = "id")
+    cdata <- unique(cdata)
 
     xo <- seq(map.limits$x[1], map.limits$x[2], length = grid)
     yo <- seq(map.limits$y[1], map.limits$y[2], length = grid)
 
-    ico <- with(cdata, interp2(x = xco, y = yco, z = z,
+    ico <- with(cdata, interp2(x = x, y = y, z = z,
       xo = xo,
       yo = yo,
       type = type, linear = linear, extrap = extrap,

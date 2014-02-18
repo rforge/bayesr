@@ -1707,6 +1707,8 @@ plot.bayesr.effect.default <- function(x, ...) {
         c("xlim", "ylim", "pch", "main", "xlab", "ylab", "lwd")))
     }
   } else {
+    if(is.null(args$c.select))
+      args$c.select <- grep("50%", colnames(x), fixed = TRUE)
     do.call("plot3d", delete.args("plot3d", args,
       c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab",
       "zlab", "phi", "theta", "r", "d", "scale")))
@@ -1953,44 +1955,150 @@ DIC <- function(object, ...)
   UseMethod("DIC")
 }
 
-DIC.bayesr <- function(object, ...)
+DIC.bayesr <- function(object, ..., samples = TRUE, nsamps = NULL)
 {
   object <- c(object, ...)
   rval <- NULL
-  for(i in 1:length(object)) {
-    xs <- summary(object[[i]])
-    n <- attr(xs, "n")
-    if(n < 2)
-      xs <- list(xs)
-    rval <- rbind(rval, data.frame(
-      "DIC" = xs[[n]]$DIC,
-      "pd" = xs[[n]]$pd
-    ))
+
+  if(!samples) {
+    for(i in 1:length(object)) {
+      xs <- summary(object[[i]])
+      n <- attr(xs, "n")
+      if(n < 2)
+        xs <- list(xs)
+      rval <- rbind(rval, data.frame(
+        "DIC" = if(is.null(xs[[n]]$DIC)) NA else xs[[n]]$DIC,
+        "pd" = if(is.null(xs[[n]]$DIC)) NA else xs[[n]]$pd
+      ))
+    }
+  } else {
+    for(i in 1:length(object)) {
+      family <- attr(object[[i]], "family")
+      if(is.null(family$d)) stop("no d() function available in model family object!")
+      y <- model.response2(object[[i]])
+      d0 <- -2 * sum(family$d(y, fitted.bayesr(object[[i]], type = "link"), log = TRUE), na.rm = TRUE)
+      eta <- fitted.bayesr(object[[i]], type = "link",
+        samples = TRUE, nsamps = nsamps,
+        FUN = function(x) { x })
+      iter <- ncol(eta[[1]])
+      d1 <- NULL
+      for(j in 1:iter) {
+        teta <- NULL
+        for(ii in 1:length(eta))
+          teta <- cbind(teta, eta[[ii]][, j])
+        teta <- as.data.frame(teta)
+        names(teta) <- names(eta)
+        d1 <- c(d1, -2 * sum(family$d(y, teta, log = TRUE), na.rm = TRUE))
+      }
+      md1 <- mean(d1)
+      pd <- md1 - d0
+      dic <- md1 + 2 * pd
+      rval <- rbind(rval, data.frame(
+        "DIC" = dic,
+        "pd" = pd
+      ))
+    }
   }
+
   Call <- match.call()
   row.names(rval) <- if(nrow(rval) > 1) as.character(Call[-1L]) else ""
   rval
 }
 
 
-logLik.bayesr <- function(object, ...)
+logLik.bayesr <- function(object, ..., type = 1, nsamps = NULL, FUN = NULL)
 {
   object <- c(object, ...)
-  rval <- NULL
-  for(i in 1:length(object)) {
-    xs <- summary(object[[i]])
-    n <- attr(xs, "n")
-    if(n < 2)
-      xs <- list(xs)
-    rval <- rbind(rval, data.frame(
-      "logLik" = xs[[n]]$IC,
-      "edf" = xs[[n]]$edf
-    ))
+  rval <- if(type %in% c(1, 3)) NULL else list()
+
+  if(type == 3) {
+    for(i in 1:length(object)) {
+      xs <- summary(object[[i]])
+      n <- attr(xs, "n")
+      if(n < 2)
+        xs <- list(xs)
+      rval <- rbind(rval, data.frame(
+        "logLik" = if(is.null(xs[[n]]$IC)) NA else xs[[n]]$IC,
+        "edf" = if(is.null(xs[[n]]$edf)) NA else xs[[n]]$edf
+      ))
+    }
   }
+  if(type %in% c(1, 2)) {
+    for(i in 1:length(object)) {
+      family <- attr(object[[i]], "family")
+      if(is.null(family$d)) stop("no d() function available in model family object!")
+      y <- model.response2(object[[i]])
+      if(type == 2) {
+        eta <- fitted.bayesr(object[[i]], type = "link",
+          samples = TRUE, nsamps = nsamps,
+          FUN = function(x) { x })
+        iter <- ncol(eta[[1]])
+        ll <- NULL
+        for(j in 1:iter) {
+          teta <- NULL
+          for(ii in 1:length(eta))
+            teta <- cbind(teta, eta[[ii]][, j])
+          teta <- as.data.frame(teta)
+          names(teta) <- names(eta)
+          ll <- c(ll, sum(family$d(y, teta, log = TRUE), na.rm = TRUE))
+        }
+        if(is.null(FUN)) FUN <- function(x) { x }
+        rval[[i]] <- FUN(ll)
+      } else {
+        eta <- fitted.bayesr(object[[i]], type = "link")
+        ll <- sum(family$d(y, eta, log = TRUE), na.rm = TRUE)
+        rval <- rbind(rval, data.frame(
+          "logLik" = ll,
+          "edf" = NA
+        ))
+      }
+    }
+  }
+
   Call <- match.call()
-  row.names(rval) <- if(nrow(rval) > 1) as.character(Call[-1L]) else ""
+  if(type %in% c(1, 3)) {
+    row.names(rval) <- if(nrow(rval) > 1) as.character(Call[-1L])[1:nrow(rval)] else ""
+  } else {
+    if(length(rval) < 2) {
+      rval <- rval[[1]]
+    } else {
+      names(rval) <- as.character(Call[-1L])[1:length(rval)]
+    }
+  }
+
   rval
 }
+
+
+#edf <- function(x, samples = TRUE, nsamps = NULL)
+#{
+#  family <- attr(x, "family")
+#  if(is.null(family$weights))
+#    stop("cannot compute edf without the weights() function in the model family object!")
+#  nx <- family$names
+#  edf0 <- 0; edf1 <- NULL
+#  y <- model.response2(x)
+#  eta <- fitted(x, type = "link", samples = samples, nsamps = nsamps)
+#  mf <- model.frame(x)
+#  for(j in 1:length(nx)) {
+#    if(!is.null(x[[nx[j]]]$param.effects))
+#      edf0 <- edf0 + ncol(x[[nx[j]]]$param.effects)
+#    if(!is.null(x[[nx[j]]]$effects)) {
+#      weights <- family$weights[[nx[j]]](y, eta)
+#      for(sj in 1:length(x[[nx[j]]]$effects)) {
+#        specs <- attr(x[[nx[j]]]$effects[[sj]], "specs")
+#        X <- if(inherits(specs, "mgcv.smooth")) {
+#          PredictMat(specs, mf)
+#        } else {
+#          if(!is.null(specs$basis)) {
+#            stopifnot(is.function(specs$basis))
+#            specs$basis(mf[, specs$term])
+#          } else stop(paste("cannot compute design matrix for term ", specs$label, "!", sep = ""))
+#        }
+#      }
+#    }
+#  }
+#}
 
 
 ## Extract model formulas.
@@ -2419,7 +2527,7 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
     spherical <- pp / sqrt(norm)
 
     return(data.frame(
-      "logLik" = FUN(loglik),
+      "log" = FUN(loglik),
       "quadratic" = FUN(quadratic),
       "spherical" = FUN(spherical)
     ))

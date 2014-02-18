@@ -173,7 +173,7 @@ dgp_gaussian <- function(n = 500, mu = NULL, sigma = NULL, range.sigma = c(0.3, 
 
 if(FALSE) {
   d <- dgp_gaussian()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12),y ~ sx(sigma.x11), data = d, engine = "BayesX", verbose = TRUE)
+  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma.x11), data = d, engine = "BayesX", verbose = TRUE)
   d$p <- predict(b, model = "mu", term = c("x11", "x12"))
 }
 
