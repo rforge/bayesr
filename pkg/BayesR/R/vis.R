@@ -247,7 +247,20 @@ plot2d.default <- function(x, residuals, range, col.residuals = "black",
             lwd = specs$poly.lwd[k])
         } else {
           grid <- if(is.null(specs$grid)) 30 else specs$grid
-          poly <- apply(poly, 1, function(x) { x <- as.numeric(x); seq(x[1], x[2], length = grid) })
+          mx <- grep("50%", colnames(x), fixed = TRUE)
+          if(!length(mx))
+            mx <- grep("mean", colnames(x), ignore.case = TRUE)
+          if(!length(mx))
+            mx <- grep("estimate", colnames(x), ignore.case = TRUE)
+          if(length(mx)) {
+            poly2 <- cbind(poly[, 1], x[, mx], poly[, 2])
+            poly <- apply(poly2, 1, function(x) {
+              x <- as.numeric(x)
+              c(seq(x[1], x[2], length = ceiling(grid / 2)), seq(x[2], x[3], length = ceiling(grid / 2)))
+            })
+          } else {
+            poly <- apply(poly, 1, function(x) { x <- as.numeric(x); seq(x[1], x[2], length = grid) })
+          }
           if(is.null(specs$s2.col))
             specs$s2.col <- rev(gray.colors(grid, start = 0, end = 1, gamma = 1))
           if(is.function(specs$s2.col))
