@@ -783,7 +783,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
 
   ## New x values for which effect should
   ## be calculated, n = 100.
-  if(!is.na(grid)) {
+  if(!is.na(grid) & FALSE) {
     if(length(x$term) < 2 & !is.factor(data[[x$term[1]]]) & !any(grepl("mrf", class(x))) &
       !any(grepl("re.", class(x), fixed = TRUE)) & !any(grepl("random", class(x)))) {
       xsmall <- TRUE
@@ -796,7 +796,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
         if(!is.factor(data[[x$by]])) {
           xr <- range(data[[x$by]], na.rm = TRUE)
           nd[[x$by]] <- seq(xr[1], xr[2], length = 100)
-        } else nd[[x$by]] <- data[[x$by]]
+        } else nd[[x$by]] <- rep(data[[x$by]], length.out = grid)
       }
       data0 <- data
       data <- as.data.frame(nd)
@@ -807,7 +807,14 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
     xsmall <- if(nrow(data) != nrow(data0)) TRUE else FALSE
   }
 
-  X <- get.X(data)
+  if(is.null(x$special)) {
+    X <- get.X(data)
+  } else {
+    if(x$special)
+      X <- get.X(data[, x$term, drop = FALSE])
+    else
+      X <- get.X(data)
+  }
 
   ## Compute samples of fitted values.
   fsamples <- apply(psamples, 1, function(g) { get.mu(X, g) })
@@ -1104,8 +1111,9 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
             }
           }
         }
-        if(!is.null(nsamps)) {
-          m.samples[[i]] <- m.samples[[i]][seq.int(1:ncol(m.samples[[i]]), length = nsamps), , drop = FALSE]
+        if(!is.null(nsamps) & length(m.samples)) {
+          if(!is.null(dim(m.samples[[i]])))
+            m.samples[[i]] <- m.samples[[i]][seq.int(1:ncol(m.samples[[i]]), length = nsamps), , drop = FALSE]
         }
       }
     }
@@ -1247,7 +1255,7 @@ smooth.construct.gc.smooth.spec <- function(object, data, knots)
   if(is.null(object$xt))
     object$xt <- list("center" = FALSE)
   else
-    object$xt$center <- FALSE
+    object$xt$center <- TRUE
   object$by.done <- TRUE
   if(object$by != "NA") {
     by <- data[[object$by]]
@@ -1290,7 +1298,7 @@ rs <- function(...)
 smooth.construct.rs.smooth.spec <- function(object, data, knots) 
 {
   class(object) <- object$class
-  acons <- FALSE
+  acons <- TRUE
   if(!is.null(object$xt$center))
     acons <- object$xt$center
   object$xt$center <- acons
@@ -1298,8 +1306,8 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
   if(!is.null(object$xt$fixed))
     object$fixed <- object$xt$fixed
   object$xt$fixed <- object$fixed
-  object <- smoothCon(object, data, knots, absorb.cons = acons)[[1]]
   object$by.done <- TRUE
+  object <- smoothCon(object, data, knots, absorb.cons = TRUE)[[1]]
   object$get.mu <- function(X, g) {
     k <- ncol(X)
     w <- c(1, g[(k + 1):(2 * k - 1)])

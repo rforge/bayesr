@@ -177,18 +177,25 @@ JAGSmodel <- function(x, family, cat = FALSE, is.stan = FALSE, ...) {
     model <- c(model, x[[j]]$param, x[[j]]$smooth)
   model <- c(model, "  }")
 
+  for(i in 1:k)
+    model <- c(model, x[[i]]$close1)
+
   for(i in 1:k) {
     lp <- list()
-    for(j in 1:length(x[[i]]$loops))
-      lp[[paste(x[[i]]$loops[j])]] <- c(lp[[paste(x[[i]]$loops[j])]], x[[i]]$priors.coef[j])
-    for(j in names(lp)) {
-      if(j != 1)
-        tmp <- c(paste("  for(j in 1:", j, ") {", sep = ""), lp[[j]], "  }")
-      else
-        tmp <- lp[[j]]
-      model <- c(model, tmp)
+    if(!is.null(x[[i]]$loops)) {
+      for(j in 1:length(x[[i]]$loops))
+        lp[[paste(x[[i]]$loops[j])]] <- c(lp[[paste(x[[i]]$loops[j])]], x[[i]]$priors.coef[j])
     }
-    model <- c(model, x[[i]]$priors.scale, x[[i]]$close, x[[i]]$close2)
+    if(length(lp)) {
+      for(j in names(lp)) {
+        if(j != 1)
+          tmp <- c(paste("  for(j in 1:", j, ") {", sep = ""), lp[[j]], "  }")
+        else
+          tmp <- lp[[j]]
+        model <- c(model, tmp)
+      }
+    }
+    model <- c(model, x[[i]]$priors.scale, x[[i]]$close2, x[[i]]$close3)
   }
   model <- c(model, "}")
 
@@ -361,16 +368,17 @@ buildJAGS.smooth.special.rsc.smooth <- function(smooth, setup, i, zero)
 ## Special code builder for growth curve terms.
 buildJAGS.smooth.special.gc.smooth <- function(smooth, setup, i, zero)
 {
+  center <- if(is.null(smooth$xt$center)) TRUE else smooth$xt$center
   pn <- paste("g", i, sep = "")
 
   setup$data[[paste("X", pn, sep = "")]] <- as.numeric(smooth$X)
   setup$inits[[paste(pn, "0", sep = "")]] <- runif(3, 0.1, 0.2)
   setup$psave <- c(setup$psave, pn)
 
-  setup$close <- c(setup$close,
+  setup$close2 <- c(setup$close2,
     "  for(j in 1:3) {",
     paste("    ", pn, "[j] <- exp(", pn, "0[j])", sep = ""),
-    paste("    ", pn, "0[j] ~ dnorm(0, sigma)", sep = "")
+    paste("    ", pn, "0[j] ~ dnorm(0, 1.0E-6)", sep = "")
   )
 
   ## logistic
@@ -383,7 +391,7 @@ buildJAGS.smooth.special.gc.smooth <- function(smooth, setup, i, zero)
     setup$data[[paste(pn, "id", sep = "")]] <- as.integer(smooth$fid)
     fall <- paste("(", pn, "r[", pn , "id[i], 1] + ", pn, "[1])*exp(-(", pn, "r[", pn,
       "id[i], 2] + ", pn, "[2])*exp(-(", pn, "r[", pn, "id[i], 3] + ", pn, "[3])*X", pn, "[i]))", sep = "")
-    setup$close <- c(setup$close,
+    setup$close2 <- c(setup$close2,
     paste("    for(k in 1:", length(smooth$by.levels), ") {", sep = ""),
       paste("      ", pn, "r[k, j] <- exp(", pn, "r0[k, j])", sep = ""),
       paste("      ", pn, "r0[k, j] ~ dnorm(0, taug", i, "[j])", sep = ""),
@@ -395,11 +403,20 @@ buildJAGS.smooth.special.gc.smooth <- function(smooth, setup, i, zero)
     setup$inits[[paste("taug", i, sep = "")]] <- runif(3, 0.1, 0.2)
   }
 
-  setup$close <- c(setup$close, "  }")
+  setup$close2 <- c(setup$close2, "  }")
 
-  setup$smooth <- c(setup$smooth, paste("    sm", i, "[i] <- ",
-    paste(fall, collapse = " + ", sep = ""), sep = ""))
-  setup$eta <- paste(setup$eta, paste("sm", i, "[i]", sep = ""),
+  prefix <- if(center) "0" else NULL
+  if(!center) {
+    setup$smooth <- c(setup$smooth, paste("    sm", i, "[i] <- ",
+      paste(fall, collapse = " + ", sep = ""), sep = ""))
+  } else {
+    setup$close1 <- c(setup$close1, paste("  sm", i,  1, " <- sm", i, 0, " - mean(sm", i, 0, ")", sep = ""))
+    setup$close1 <- c(setup$close1,
+      paste("  for(i in 1:n) {", sep = ""),
+      paste("    sm", i, 0, "[i] <- ",
+        paste(fall, collapse = " + ", sep = ""), sep = ""), "  }")
+  }
+  setup$eta <- paste(setup$eta, paste("sm", i, if(center) 1 else NULL, "[i]", sep = ""),
     sep = if(length(setup$eta)) " + " else "")
 
   setup
@@ -465,10 +482,22 @@ buildJAGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
 
   fall0 <- paste(fall0, c(1, paste("w", i, "[", 1:(length(fall0) - 1), "]", sep = "")), sep = "*")
   ## fall <- paste(fall, c(1, paste("w", i, "[", 1:(length(fall) - 1), "]", sep = "")), sep = "*")
-  fall0 <- paste("    sm0", i, "[i] <- 1 / exp(", paste(fall0, collapse = " + "), ")", sep = "")
-  fall <- paste("    sm", i, "[i] <- sm0", i, "[i] * (", paste(fall, collapse = " + "), ")", sep = "")
 
-  setup$smooth <- c(setup$smooth, fall, fall0)
+  center <- if(is.null(smooth$xt$center)) TRUE else smooth$xt$center
+
+  if(!center) {
+    fall0 <- paste("    sm0", i, "[i] <- 1 / exp(", paste(fall0, collapse = " + "), ")", sep = "")
+    fall <- paste("    sm", i, "[i] <- sm0", i, "[i] * (", paste(fall, collapse = " + "), ")", sep = "")
+    setup$smooth <- c(setup$smooth, fall, fall0)
+  } else {
+    fall0 <- paste("    sm0", i, "[i] <- 1 / exp(", paste(fall0, collapse = " + "), ")", sep = "")
+    fall <- paste("    sm", i, 0, "[i] <- sm0", i, "[i] * (", paste(fall, collapse = " + "), ")", sep = "")
+    setup$start <- c(setup$start,
+      paste("  sm", i, " <- sm", i, 0, " - mean(sm", i, 0, ")", sep = ""))
+    setup$close <- c(setup$close,
+      paste("  for(i in 1:n) {", sep = ""), fall0, fall, "  }")
+  }
+
   setup$eta <- paste(setup$eta, paste("sm", i, "[i]", sep = ""),
     sep = if(length(setup$eta)) " + " else "")
 
@@ -586,7 +615,7 @@ resultsJAGS <- function(x, samples)
           effects <- list()
         for(i in 1:length(obj$smooth)) {
           if(!is.null(obj$smooth[[i]]$special)) {
-            fst <- resultsJAGS.special(obj$smooth[[i]], samples[[j]], attr(x, "model.frame"), i)
+            fst <- resultsJAGS.special(obj$smooth[[i]], samples[[j]], attr(x, "model.frame"), i, id = id)
             if(is.null(attr(fst, "by"))) {
               effects[[obj$smooth[[i]]$label]] <- fst$term
               effects.hyp <- rbind(effects.hyp, fst$effects.hyp)
@@ -837,9 +866,9 @@ resultsJAGS.special.default <- function(x, samples, data, i, ...)
 
   ## Compute final smooth term object.
   fst <- compute_term(x, get.X = get.X, get.mu = get.mu,
-    psamples = psamples, vsamples = vsamples, asamples = NULL, FUN = NULL,
-    snames = snames, effects.hyp = NULL, fitted.values = NULL,
-    data = data)
+    psamples = psamples, vsamples = vsamples, FUN = NULL, snames = snames,
+    effects.hyp = NULL, fitted.values = NULL,
+    data = data, grid = 100)
 
   attr(fst$term, "specs")$get.mu <- get.mu 
 
@@ -937,9 +966,12 @@ resultsJAGS.special.gc.smooth <- function(x, samples, data, i, ...)
   get.mu <- x$get.mu
   vsamples <- NULL
 
+  args <- list(...)
+  id <- args$id
+
   if(!is.null(x$by.levels)) {
     ## Possible variance parameter samples.
-    taug <- paste("taug", if(is.null(x$id)) i else x$id, sep = "")
+    taug <- paste("taug", if(is.null(x$id)) i else x$id, id, sep = "")
     if(any(grepl(taug, snames, fixed = TRUE))) {
       vsamples <- as.matrix(samples[, grepl(taug, snames, fixed = TRUE)])
     }
@@ -948,16 +980,17 @@ resultsJAGS.special.gc.smooth <- function(x, samples, data, i, ...)
     x$byname <- NULL
     ## by <- as.factor(data[[x$by]])
     for(j in seq_along(x$by.levels)) {
-      pn <- c(paste("g", i, "[", 1:3, "]", sep = ""), paste("g", i, "r[", j, ",", 1:3, "]", sep = ""))
+      pn <- c(paste("g", i, id, "[", 1:3, "]", sep = ""), paste("g", i, id, "r[", j, ",", 1:3, "]", sep = ""))
       psamples <- as.matrix(samples[, snames %in% pn], ncol = length(pn))
-      fsamples <- apply(psamples, 1, function(g) { get.mu(X, g) })
       x2 <- x
       x2$label <- paste(x$label, ":", x$by, x$by.levels[j], sep = "")
       x2$by.levels <- NULL
       x2$by.level <- x$by.levels[j]
-      fst <- compute_term(x2, fsamples = fsamples, psamples = psamples,
-        vsamples = NULL, FUN = NULL, snames = snames,
-        effects.hyp = NULL, fitted.values = NULL, data = data)
+
+      fst <- compute_term(x2, get.X = function(x) { as.matrix(x) }, get.mu = get.mu,
+        psamples = psamples, vsamples = vsamples, FUN = NULL, snames = snames,
+        effects.hyp = NULL, fitted.values = NULL,
+        data = data, grid = NA)
 
       rval[[x2$label]] <- fst
     }
@@ -969,18 +1002,16 @@ resultsJAGS.special.gc.smooth <- function(x, samples, data, i, ...)
 
     psamples <- as.matrix(samples[, snames %in% pn], ncol = length(pn))
 
-    ## Compute samples of fitted values.
-    fsamples <- apply(psamples, 1, function(g) { get.mu(X, g) })
-
     ## Possible variance parameter samples.
     taug <- paste("taug", if(is.null(x$id)) i else x$id, sep = "")
     if(taug %in% snames) {
       vsamples <- as.matrix(samples[, snames %in% taug])
     }
 
-    fst <- compute_term(x, fsamples = fsamples, psamples = psamples,
-      vsamples = vsamples, FUN = NULL, snames = snames,
-      effects.hyp = NULL, fitted.values = NULL, data = data)
+    fst <- compute_term(x, get.X = function(x) { as.matrix(x) }, get.mu = get.mu,
+      psamples = psamples, vsamples = vsamples, FUN = NULL, snames = snames,
+      effects.hyp = NULL, fitted.values = NULL,
+      data = data[, x$term, drop = FALSE], grid = 100)
 
     rval <- list("term" = fst$term, "effects.hyp" = fst$effects.hyp, "fitted.values" = fst$fitted.values)
   }

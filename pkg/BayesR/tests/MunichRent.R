@@ -10,7 +10,7 @@ f <- list(
     sx(area) + sx(yearc) + sx(district, bs = "mrf", map = MunichBnd)
 )
 
-b1 <- bayesr(f, family = gamma, data = rent99, engine = "BayesX", verbose = TRUE)
+b1 <- bayesr(rent ~ 1, family = gamma, data = rent99, engine = "BayesX", verbose = TRUE)
 
 
 rent99 <- cbind(rent99, centroids(MunichBnd, id = rent99$district))

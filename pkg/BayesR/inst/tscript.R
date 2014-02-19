@@ -70,7 +70,7 @@ b <- bayesr(mstatus ~ s(age), family = multinomial.BayesR, data = marital.nz)
 
 
 ## pick function
-f <- simfun(type = "complicated")
+f <- simfun(type = "pick")
 
 n <- 100
 dat <- data.frame("x1" = sort(runif(n, 0, 1)))
