@@ -783,7 +783,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
 
   ## New x values for which effect should
   ## be calculated, n = 100.
-  if(!is.na(grid) & FALSE) {
+  if(!is.na(grid)) {
     if(length(x$term) < 2 & !is.factor(data[[x$term[1]]]) & !any(grepl("mrf", class(x))) &
       !any(grepl("re.", class(x), fixed = TRUE)) & !any(grepl("random", class(x)))) {
       xsmall <- TRUE
