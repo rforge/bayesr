@@ -1,3 +1,26 @@
+## Function to save data in .rda format with
+## minimum storing size.
+save_data <- function(..., file, envir = parent.frame())
+{
+  dir.create(tdir <- tempfile())
+  on.exit(unlink(tdir))
+  bf <- basename(file)
+ 
+  compress <- c("gzip", "bzip2", "xz")
+  size <- NULL
+  for(j in compress) {
+    tf <- file.path(tdir, paste(j, bf, sep = "-"))
+    save(..., file = tf, compress = j, envir = envir)
+    size <- c(size, file.info(tf)$size)
+  }
+
+  print(data.frame("compress" = compress, "size" = size))
+
+  compress <- compress[which.min(size)]
+  save(..., file = file, compress = compress, envir = envir)
+}
+
+
 ## Munich rent index.
 data_MunichRent <- function(dir = NULL)
 {
@@ -41,23 +64,30 @@ data_MunichRent <- function(dir = NULL)
 }
 
 
-save_data <- function(..., file, envir = parent.frame())
+## Patent opposition data.
+data_Patent <- function(dir = NULL)
 {
-  dir.create(tdir <- tempfile())
-  on.exit(unlink(tdir))
-  bf <- basename(file)
- 
-  compress <- c("gzip", "bzip2", "xz")
-  size <- NULL
-  for(j in compress) {
-    tf <- file.path(tdir, paste(j, bf, sep = "-"))
-    save(..., file = tf, compress = j, envir = envir)
-    size <- c(size, file.info(tf)$size)
-  }
+  if(is.null(dir))
+    dir <- "~/svn/bayesr/pkg/BayesR/data"
+  dir <- path.expand(dir)
 
-  print(data.frame("compress" = compress, "size" = size))
+  dpath <- "http://www.stat.uni-muenchen.de/~kneib/regressionsbuch/download/patentdata.raw"
+  dat <- read.table(dpath, header = TRUE)
+  patent <- list()
+  patent$opposition <- factor(dat$opp, levels = c(0, 1), labels = c("no", "yes"))
+  patent$biopharm <- factor(dat$biopharm, levels = c(0, 1), labels = c("no", "yes"))
+  patent$USA2 <- factor(dat$ustwin, levels = c(0, 1), labels = c("no", "yes"))
+  patent$holder <- factor(dat$patus, levels = c(0, 1), labels = c("EU", "USA"))
+  patent$GSGB <- factor(dat$patgsgr, levels = c(0, 1), labels = c("no", "yes"))
+  patent$year <- as.integer(dat$year)
+  patent$ncitations <- as.integer(dat$ncit)
+  patent$ncountry <- as.integer(dat$ncountry)
+  patent$nclaims <- as.integer(dat$nclaims)
 
-  compress <- compress[which.min(size)]
-  save(..., file = file, compress = compress, envir = envir)
+  nenv <- new.env()
+  assign("patent", patent, envir = nenv)
+  save_data(patent, file = file.path(dir, "patent.rda"), envir = nenv)
+
+  invisible(NULL)
 }
 

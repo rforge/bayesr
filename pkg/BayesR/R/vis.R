@@ -1155,8 +1155,8 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     poly.names <- poly.names[op]
   }
   poly.names.orig <- poly.names.orig[op]
-  map <- map[poly.names.orig]
-  if(length(upn <- unique(poly.names)) < length(poly.names) & FALSE) {
+  map <- map[op]
+  if(length(upn <- unique(poly.names)) < length(poly.names)) {
     nn <- NULL
     for(i in upn) {
       j <- poly.names == i
