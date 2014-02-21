@@ -92,3 +92,44 @@ data_Patent <- function(dir = NULL)
   invisible(NULL)
 }
 
+
+## Map of Germany.
+data_Germany(dir = NULL)
+{
+  if(is.null(dir))
+    dir <- "~/svn/bayesr/pkg/BayesR/data"
+  dir <- path.expand(dir)
+  dir.create(tf <- tempfile())
+  on.exit(unlink(tf))
+
+  download.file("http://biogeo.ucdavis.edu/data/gadm2/shp/DEU_adm.zip",
+    zf <- file.path(tf, "germany.zip"))
+  unzip(zf, exdir = gsub("\\.zip$", "", zf))
+
+  g <- readShapePoly(file.path(tf, "germany", "DEU_adm3.shp"))
+  rn <- as.character(d$NAME_3)
+  Encoding(rn) <- "latin1"
+  GermanyBnd <- sp2bnd(g, regionNames = rn)
+  d <- slot(g, "data")
+  d <- data.frame("name" = as.character(d$NAME_3), "id" = as.character(d$ID_3),
+    stringsAsFactors = FALSE)
+  Encoding(d$name) <- "latin1"
+  i <- which(!(d$id %in% names(GermanyBnd)))
+  not <- d[i, ]
+  j <- which(!(names(GermanyBnd) %in% d$id))
+  ng <- names(GermanyBnd)
+  ng[ng == ng[j]] <- not$id
+  names(GermanyBnd) <- ng
+  ng <- data.frame("id" = names(GermanyBnd), stringsAsFactors = FALSE)
+  ok <- merge(d, ng, by = "id")
+  ng2 <- NULL; ng <- unlist(ng)
+  for(j in 1:nrow(ok)) {
+    ng2 <- c(ng2, unique(ok$name[ok$id == ng[j]]))
+  }
+
+  names(GermanyBnd) <- ng2
+  attr(GermanyBnd, "asp") <- 1.6
+
+  invisible(NULL)
+}
+
