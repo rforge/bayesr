@@ -83,6 +83,7 @@ data_Patent <- function(dir = NULL)
   patent$ncitations <- as.integer(dat$ncit)
   patent$ncountry <- as.integer(dat$ncountry)
   patent$nclaims <- as.integer(dat$nclaims)
+  patent <- as.data.frame(patent)
 
   nenv <- new.env()
   assign("patent", patent, envir = nenv)

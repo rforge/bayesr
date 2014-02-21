@@ -1335,9 +1335,9 @@ negbin.BayesR <- function(links = c(mu = "log", delta = "log"), ...)
 }
 
 
-zinb.BayesR <- function(links = c(mu = "log", "pi" = "logit", delta = "log"), ...)
+zinb.BayesR <- function(links = c(mu = "log", pi = "logit", delta = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "log", "pi" = "logit", delta = "log"), ...)
+  links <- parse.links(links, c(mu = "log", pi = "logit", delta = "log"), ...)
   linkinv <- list()
   for(j in names(links))
     linkinv[[j]] <- make.link2(links[[j]])$linkinv
