@@ -94,7 +94,7 @@ data_Patent <- function(dir = NULL)
 
 
 ## Map of Germany.
-data_Germany(dir = NULL)
+data_Germany <- function(dir = NULL)
 {
   if(is.null(dir))
     dir <- "~/svn/bayesr/pkg/BayesR/data"

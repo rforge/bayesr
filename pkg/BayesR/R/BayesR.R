@@ -1692,6 +1692,8 @@ plot.bayesr.effect.default <- function(x, ...) {
         args[[lim]] <- range(c(args[[lim]], attr(x, "partial.resids")[, -1]), na.rm = TRUE)
     }
   }
+  if(!is.null(args$shift))
+    args[[lim]] <- args[[lim]] + args$shift
   if(attr(x, "specs")$dim < 2) {
     if(is.null(args$fill.select))
       args$fill.select <- c(0, 1, 0, 1)
@@ -2658,8 +2660,15 @@ residuals.bayesr <- function(object, type = c("quantile", "ordinary", "quantile2
     if(is.null(dim(y))) {
       res <- y - res
     } else {
+      res <- as.data.frame(res)
+      colnames(res) <- colnames(y)
       for(j in 1:ncol(y))
         res[[j]] <- y[, j] - res[[j]]
+    }
+  } else {
+    if(!is.null(dim(res))) {
+      res <- as.data.frame(res)
+      colnames(res) <- colnames(y)
     }
   }
 
