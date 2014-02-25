@@ -2008,7 +2008,7 @@ DIC.bayesr <- function(object, ..., samples = TRUE, nsamps = NULL)
       }
       md1 <- mean(d1)
       pd <- md1 - d0
-      dic <- md1 + 2 * pd
+      dic <- md1 + pd
       rval <- rbind(rval, data.frame(
         "DIC" = dic,
         "pd" = pd
@@ -2062,6 +2062,7 @@ logLik.bayesr <- function(object, ..., type = 1, nsamps = NULL, FUN = NULL)
         rval[[i]] <- FUN(ll)
       } else {
         eta <- fitted.bayesr(object[[i]], type = "link")
+print(mean(eta$mu))
         ll <- sum(family$d(y, eta, log = TRUE), na.rm = TRUE)
         rval <- rbind(rval, data.frame(
           "logLik" = ll,

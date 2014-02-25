@@ -10,16 +10,16 @@ f <- list(
     sx(area) + sx(yearc) + sx(district, bs = "mrf", map = MunichBnd)
 )
 
-b1 <- bayesr(rent ~ 1, family = gamma, data = rent99, engine = "BayesX", verbose = TRUE)
+b1 <- bayesr(f, family = gamma, data = rent99, engine = "BayesX", verbose = TRUE)
 
 
 rent99 <- cbind(rent99, centroids(MunichBnd, id = rent99$district))
 
 f <- list(
   rent ~ bath + kitchen + location + cheating +
-    s(area) + s(yearc) + s(x, y, k = 50),
+    s(area) + s(yearc),
   sigma ~ bath + kitchen + location + cheating +
-    s(area) + s(yearc) + s(x, y, k = 50)
+    s(area) + s(yearc)
 )
 
 b1 <- bayesr(f, family = gaussian, data = rent99, engine = "IWLS", method = "backfitting")

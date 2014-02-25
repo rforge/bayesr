@@ -1392,7 +1392,7 @@ quant.BayesR <- function(links = c(mu = "identity"), prob = 0.5, ...)
 quant2.BayesR <- function(links = c(mu = "identity", sigma = "log"), prob = 0.5, ...)
 {
   rval <- list(
-    "family" = "quant",
+    "family" = "quant2",
     "names" = c("mu", "sigma"),
     "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
     jagstan = list(

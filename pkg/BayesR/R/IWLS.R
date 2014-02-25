@@ -41,20 +41,22 @@ transformIWLS <- function(x, ...)
         obj[[j]] <- tIWLS(obj[[j]], ...)
     } else {
       if(!is.null(dim(obj$X))) {
-        if(is.null(obj$smooth)) obj$smooth <- list()
-        obj$smooth[["parametric"]] <- list(
-          "X" = obj$X,
-          "S" = list(diag(0, ncol(obj$X))),
-          "rank" = ncol(obj$X),
-          "term" = "linear",
-          "label" = "linear",
-          "bs.dim" = ncol(obj$X),
-          "fixed" = TRUE,
-          "by" = "NA",
-          "is.linear" = TRUE
-        )
-        obj$sterms <- c(obj$strems, "parametric")
-        obj$X <- NULL
+        if(nrow(obj$X) > 0 & !is.na(mean(unlist(obj$X), na.rm = TRUE))) {
+          if(is.null(obj$smooth)) obj$smooth <- list()
+          obj$smooth[["parametric"]] <- list(
+            "X" = obj$X,
+            "S" = list(diag(0, ncol(obj$X))),
+            "rank" = ncol(obj$X),
+            "term" = "linear",
+            "label" = "linear",
+            "bs.dim" = ncol(obj$X),
+            "fixed" = TRUE,
+            "by" = "NA",
+            "is.linear" = TRUE
+          )
+          obj$sterms <- c(obj$strems, "parametric")
+          obj$X <- NULL
+        }
       }
       if(length(obj$smooth)) {
         for(j in seq_along(obj$smooth)) {
@@ -145,7 +147,7 @@ smooth.IWLS.default <- function(x, ...)
   }
 
   x$interval <- if(is.null(x$xt$interval)) tau2interval(x) else x$xt$interval
-  x$grid <- if(is.null(x$xt$grid)) 40 else x$xt$grid 
+  x$grid <- if(is.null(x$xt$grid)) 40 else x$xt$grid
 
   if(is.null(x$state)) {
     x$p.save <- c("g", "tau2")
@@ -815,6 +817,7 @@ resultsIWLS <- function(x, samples)
 
           ## Prediction matrix.
           get.X <- function(x) {
+            acons <- obj$smooth[[i]]$xt$center
             X <- PredictMat(obj$smooth[[i]], x)
             X
           }

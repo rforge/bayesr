@@ -292,7 +292,7 @@ dgp_gamma <- function(n = 500, mu = NULL, sigma = NULL, ...)
 
 if(FALSE) {
   d <- dgp_gamma()
-  b <- bayesr(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma.x11) + s(sigma.x12), data = d, family = gamma, method = "backfitting")
+  b <- bayesr(I(y / 100) ~ s(mu.x11) + s(mu.x12), ~ s(sigma.x11) + s(sigma.x12), data = d, family = gamma, method = "backfitting")
 
   ## Example from mgcv.
   dat <- gamSim(1,n=400,dist="normal",scale=1)
