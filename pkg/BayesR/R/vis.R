@@ -1257,6 +1257,15 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     yco <- rep(yo, each = length(xo))
     xco <- rep(xo, length(yo))
 
+    d4x <- abs(diff(xco))
+    d4x <- min(d4x[d4x != 0], na.rm = TRUE)
+    d4y <- abs(diff(yco))
+    d4y <- min(d4y[d4y != 0], na.rm = TRUE)
+    res <- c(d4x, d4y)
+    pp <- NULL
+    if(length(res))
+      pp <- cbind(xco, yco)
+
     cvals <- as.numeric(ico)
     cvals[cvals < min(cdata$z)] <- min(cdata$z)
     cvals[cvals > max(cdata$z)] <- max(cdata$z)
@@ -1284,7 +1293,12 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
       icolors[is.na(map.where("world", xco, yco))] <- NA
     }
 
-    points(SpatialPoints(cbind(xco, yco)), col = icolors, pch = p.pch, cex = p.cex)
+    if(length(res)) {
+     rect(pp[, 1] - res[1] / 2, pp[, 2] - res[2] / 2, pp[, 1] + res[1] / 2, pp[, 2] + res[2] / 2,
+       col = icolors, border = NA, lwd = 0)
+    } else {
+      points(SpatialPoints(cbind(xco, yco)), col = icolors, pch = p.pch, cex = p.cex)
+    }
     colors <- rep(NA, length = length(colors))
   }
   args$ylab <- args$xlab <- args$main <- ""
