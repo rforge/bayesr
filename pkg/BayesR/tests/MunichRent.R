@@ -62,15 +62,14 @@ bbox <- bbox(bnd2sp(MunichBnd))
 nd <- expand.grid("x" = seq(bbox["x", 1], bbox["x", 2], length = grid),
   "y" = seq(bbox["y", 1], bbox["y", 2], length = grid))
 
-nd$fmu <- predict(b2, newdata = nd, model = "mu", term = "s(x,y)", intercept = FALSE)
-nd$fsigma <- predict(b2, newdata = nd, model = "sigma", term = "s(x,y)", intercept = FALSE)
+nd$fmu <- predict(b2, newdata = nd, model = "mu", term = "s(x,y)")
 
 i <- drop2poly(nd$x, nd$y, MunichBnd)
 nd <- nd[i, ]
 
 par(mfrow = c(1, 2), mar = rep(0, 4))
-xymap(x, y, fmu, data = nd, col = diverge_hcl, symmetric = TRUE,
-  range = c(-0.15, 0.15), swap = FALSE, pos = "bottomleft",
+xymap(x, y, fmu, data = nd, col = heat_hcl, symmetric = FALSE,
+  swap = TRUE, pos = "bottomleft", range = c(0.5, 0.59),
   side.legend = 2, side.ticks = 2, width = 0.25, height = 0.03,
   distance.labels = 0.01, layout = FALSE)
 plot(MunichBnd, add = TRUE)

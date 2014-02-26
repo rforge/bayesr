@@ -1731,7 +1731,7 @@ plot.bayesr.effect.default <- function(x, ...) {
       args$c.select <- grep("50%", colnames(x), fixed = TRUE)
     do.call("plot3d", delete.args("plot3d", args,
       c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab",
-      "zlab", "phi", "theta", "r", "d", "scale")))
+      "zlab", "phi", "theta", "r", "d", "scale", "range", "lrange")))
   }
 }
 
@@ -2066,7 +2066,6 @@ logLik.bayesr <- function(object, ..., type = 1, nsamps = NULL, FUN = NULL)
         rval[[i]] <- FUN(ll)
       } else {
         eta <- fitted.bayesr(object[[i]], type = "link")
-print(mean(eta$mu))
         ll <- sum(family$d(y, eta, log = TRUE), na.rm = TRUE)
         rval <- rbind(rval, data.frame(
           "logLik" = ll,
