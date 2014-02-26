@@ -255,10 +255,19 @@ neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
   if(is.list(x) & !inherits(x, "nb")) {
     nx <- names(x)
     if(any(dups <- duplicated(nx))) {
+      ndups <- paste(nx[dups], collapse = ", ")
       nx <- nx[!dups]
       x <- x[!dups]
       class(x) <- "bnd"
-      warning("duplicated polygon names in map!")
+      warning(paste("duplicated polygon names in map: ", ndups, "!", sep = ""))
+    }
+    dups <- anyDuplicated(coordinates(bnd2sp(x)))
+    if(length(dups)) {
+      ndups <- paste(nx[dups], collapse = ", ")
+      x <- x[-dups]
+      nx <- nx[-dups]
+      class(x) <- "bnd"
+      warning(paste("duplicated coordinates in map, found for region(s): ", ndups, "!", sep = ""))
     }
     x <- bnd2sp(x)
   }

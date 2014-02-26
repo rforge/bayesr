@@ -45,7 +45,7 @@ transformBayesX <- function(x, ...)
       if(length(obj$sterms))
         obj$sterms <- rmf(obj$sterms)
 
-      if(length(obj$smooth)) stop("arbitrary smooths not supported yet!")
+      if(length(obj$smooth)) stop("arbitrary smooths not supported yet, please use sx()!")
       if(length(obj$sx.smooth)) {
         for(j in seq_along(obj$sx.smooth)) {
           obj$sx.smooth[[j]]$term <- rmf(obj$sx.smooth[[j]]$term)

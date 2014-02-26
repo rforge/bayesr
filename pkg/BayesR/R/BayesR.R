@@ -1685,7 +1685,9 @@ plot.bayesr.effect.default <- function(x, ...) {
   args$x <- x
 
   lim <- c("ylim", "zlim")[(attr(x, "specs")$dim > 1) * 1 + 1]
+  limNULL <- FALSE
   if(is.null(args[[lim]])) {
+    limNULL <- TRUE
     args[[lim]] <- range(x[, c("2.5%", "97.5%")], na.rm = TRUE)
     if(!is.null(args$residuals)) {
       if(args$residuals & !is.null(attr(x, "partial.resids")))
@@ -1708,7 +1710,9 @@ plot.bayesr.effect.default <- function(x, ...) {
         if(is.null(args$main))
           args$main <- attr(x, "specs")$label
         args$x <- density(x[, "50%"])
-        do.call("plot", delete.args(stats:::plot.density, args, "main"))
+        if(!limNULL)
+          args$xlim <- args$ylim
+        do.call("plot", delete.args(stats:::plot.density, args, c("main", "xlim")))
       } else {
         if(!is.null(args$map)) {
           args$x <- x[, grepl("50%", colnames(x), fixed = TRUE)]
