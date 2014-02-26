@@ -262,18 +262,24 @@ smooth.IWLS.default <- function(x, ...)
   ## Function for computing starting values with backfitting.
   if(is.null(x$update)) {
     x$update <- function(x, family, response, eta, id, ...) {
-      ## Compute weights.
-      weights <- family$weights[[id]](response, eta)
+      args <- list(...)
+
+      if(is.null(args$weights)) {
+        ## Compute weights.
+        weights <- family$weights[[id]](response, eta)
+      } else weights <- args$weights
 
       ## Which obs to take.
       ok <- !(weights %in% c(NA, -Inf, Inf, 0))
       weights <- weights[ok]
 
-      ## Score.
-      score <- family$score[[id]](response, eta)
+      if(is.null(args$z)) {
+        ## Score.
+        score <- family$score[[id]](response, eta)
 
-      ## Compute working observations.
-      z <- eta[[id]][ok] + 1 / weights * score[ok]
+        ## Compute working observations.
+        z <- eta[[id]][ok] + 1 / weights * score[ok]
+      } else z <- args$z[ok]
 
       ## Compute partial predictor.
       eta[[id]][ok] <- eta[[id]][ok] - x$state$fit[ok]
@@ -347,7 +353,7 @@ get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc")
 samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   verbose = TRUE, step = 20, svalues = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
   tdir = NULL, method = c("backfitting", "MCMC", "backfitting2", "backfitting3", "backfitting4"),
-  n.samples = 200, criterion = c("AIC", "BIC", "AICc"), lower = 1e-09, upper = 1e+04,
+  outer = TRUE, n.samples = 200, criterion = c("AIC", "BIC", "AICc"), lower = 1e-09, upper = 1e+04,
   optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3, ...)
 {
   family <- attr(x, "family")
@@ -444,11 +450,22 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
         eta0 <- eta
         ## Cycle through all parameters
         for(j in 1:np) {
+          if(outer) {
+            ## Compute weights.
+            weights <- family$weights[[nx[j]]](response, eta)
+
+            ## Score.
+            score <- family$score[[nx[j]]](response, eta)
+
+            ## Compute working observations.
+            z <- eta[[nx[j]]] + 1 / weights * score
+          } else z <- weights <- NULL
+
           ## And all terms.
           for(sj in seq_along(x[[nx[j]]]$smooth)) {
             ## Get updated parameters.
             p.state <- x[[nx[j]]]$smooth[[sj]]$update(x[[nx[j]]]$smooth[[sj]],
-              family, response, eta, nx[j], edf = edf)
+              family, response, eta, nx[j], edf = edf, z = z, weights = weights)
 
             ## Compute equivalent degrees of freedom.
             edf <- edf - x[[nx[j]]]$smooth[[sj]]$state$edf + p.state$edf
@@ -654,7 +671,6 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   if(!any(grepl("MCMC", method))) {
     save.edf <- get_edf(x)
     save.loglik <- family$loglik(response, eta)
-    eta2 <- eta
     if(verbose) cat("generating samples\n")
     ptm <- proc.time()
     for(js in seq_along(iterthin)) {
@@ -667,15 +683,12 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
           ## Save the samples.
           x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- exp(p.state$alpha)
           x[[nx[j]]]$smooth[[sj]]$s.samples[js, ] <- unlist(p.state[x[[nx[j]]]$smooth[[sj]]$p.save])
-
-          eta2[[nx[j]]] <- eta2[[nx[j]]] - x[[nx[j]]]$smooth[[sj]]$state$fit + p.state$fit
-
-          deviance[js] <- -2 * family$loglik(response, eta2)
         }
       }
       if(verbose) barfun(ptm, length(iterthin), js, 1, 20, start = FALSE)
     }
     if(verbose) cat("\n")
+    deviance <- rep(-2 * family$loglik(response, eta), length = length(iterthin))
   }
 
   ## Return all samples as mcmc matrix.
