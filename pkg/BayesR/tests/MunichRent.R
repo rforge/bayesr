@@ -18,7 +18,7 @@ f <- list(
   rent ~ bath + kitchen + location + cheating +
     s(area, k = 20) + s(yearc, k = 20) + s(x, y, k = 200),
   sigma ~ bath + kitchen + location + cheating +
-    s(area), k = 20 + s(yearc, k = 20) + s(x, y, k = 200)
+    s(area, k = 20) + s(yearc, k = 20) + s(x, y, k = 200)
 )
 
 b2 <- bayesr(f, family = gamma, data = rent99, engine = "IWLS", method = "backfitting")

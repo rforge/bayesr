@@ -96,10 +96,7 @@ bayesr <- function(formula, family = gaussian, data = NULL, knots = NULL,
 {
   xengine <- match.arg(engine)
   check <- try(!inherits(family, "family.BayesR"), silent = TRUE)
-  if(!inherits(check, "try-error")) {
-    if(!check)
-      family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
-  } else family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
+  family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
 
   if(xengine == "BayesX") {
     require("BayesXsrc")
