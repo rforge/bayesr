@@ -30,6 +30,7 @@ if(FALSE) {
 transformIWLS <- function(x, ...)
 {
   call <- x$call; x$call <- NULL
+  x <- assign.weights(x)
 
   tIWLS <- function(obj, ...) {
     if(!any(c("formula", "fake.formula", "response") %in% names(obj))) {
@@ -642,7 +643,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
 
           ## Save the samples and acceptance.
           if(save) {
-            x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- exp(p.state$alpha)
+            x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- min(c(exp(p.state$alpha), 1), na.rm = TRUE)
             x[[nx[j]]]$smooth[[sj]]$s.samples[js, ] <- unlist(x[[nx[j]]]$smooth[[sj]]$state[x[[nx[j]]]$smooth[[sj]]$p.save])
           }
 
@@ -675,7 +676,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
           p.state <- x[[nx[j]]]$smooth[[sj]]$propose(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j], rho = rho)
 
           ## Save the samples.
-          x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- exp(p.state$alpha)
+          x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- min(c(exp(p.state$alpha), 1), na.rm = TRUE)
           x[[nx[j]]]$smooth[[sj]]$s.samples[js, ] <- unlist(p.state[x[[nx[j]]]$smooth[[sj]]$p.save])
         }
       }
@@ -938,5 +939,25 @@ resultsIWLS <- function(x, samples)
   } else {
     return(createIWLSresults(x, samples))
   }
+}
+
+
+## Numeric derivatives.
+foo <- function() 
+{
+                eta.mu <- eta.old.mu <- family$mu.linkfun(mu)
+                u.mu <- mu.object$dldp(mu = mu)
+                u2.mu <- mu.object$d2ldp2(mu = mu)
+                dr.mu <- family$mu.dr(eta.mu)
+                dr.mu <- 1/dr.mu
+                who.mu <- mu.object$who
+                smooth.frame.mu <- mu.object$smooth.frame
+                s.mu <- if (first.iter) 
+                  mu.object$smooth
+                else s.mu
+                w.mu <- -u2.mu/(dr.mu * dr.mu)
+                z.mu <- (eta.old.mu - mu.offset) + mu.step * 
+                  u.mu/(dr.mu * w.mu)
+
 }
 

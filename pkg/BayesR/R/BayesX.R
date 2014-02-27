@@ -24,6 +24,7 @@ transformBayesX <- function(x, ...)
     attr(x, "grid") <- grid
   }
 
+  attr(attr(x, "model.frame"), "orig.names") <- names(attr(x, "model.frame"))
   names(attr(x, "model.frame")) <- rmf(names(attr(x, "model.frame")))
   attr(attr(x, "model.frame"), "response.name") <- rmf(attr(attr(x, "model.frame"), "response.name"))
 

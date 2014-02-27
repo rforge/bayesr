@@ -42,6 +42,7 @@ xreg <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
   pm$parse.input <- pm$setup <- pm$samples <- pm$results <- NULL
   pm[[1]] <- as.name(functions$parse.input)
   pm <- eval(pm, parent.frame())
+  formula <- attr(pm, "formula0")
 
   ## Transform inputs.
   pm <- functions$transform(pm)
@@ -79,7 +80,7 @@ xreg <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
   if(model)
     attr(rval, "model.frame") <- attr(pm, "model.frame")
   attr(rval, "family") <- attr(pm, "family")
-  attr(rval, "formula") <- attr(pm, "formula0")
+  attr(rval, "formula") <- formula
   attr(rval, "call") <- match.call()
 
   rval
@@ -95,8 +96,15 @@ bayesr <- function(formula, family = gaussian, data = NULL, knots = NULL,
   n.iter = 12000, thin = 10, burnin = 2000, seed = NULL, ...)
 {
   xengine <- match.arg(engine)
-  check <- try(!inherits(family, "family.BayesR"), silent = TRUE)
-  family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
+  ff <- try(inherits(family, "family.BayesR"), silent = TRUE)
+  if(inherits(ff, "try-error")) {
+    family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
+  } else {
+    if(is.function(family)) {
+      if(inherits(try(family(), silent = TRUE), "try-error"))
+        family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
+    }
+  }
 
   if(xengine == "BayesX") {
     require("BayesXsrc")
@@ -352,7 +360,7 @@ bayesr.model.frame <- function(formula, data, family, weights = NULL,
   rn <- as.character(attr(tf, "variables"))[2]
   rn <- strsplit(rn, "|", fixed = TRUE)[[1]]
   rn <- gsub(" ", "", rn)
-  attr(mf, "response.name") <- rn
+  attr(mf, "response.name") <- unique(rn)
 
   ## Check response.
   if(!is.null(family$valid.response)) {
@@ -724,6 +732,39 @@ randomize <- function(x)
           x$smooth[[j]]$rand <- tmp$rand
           x$smooth[[j]]$trans.D <- tmp$trans.D
           x$smooth[[j]]$trans.U <- tmp$trans.U
+        }
+      }
+    }
+  }
+
+  x
+}
+
+
+## Assign weights.
+assign.weights <- function(x, weights = NULL)
+{
+  if(!is.null(attr(x, "model.frame"))) {
+    if(length(i <- grep("(weights)", names(attr(x, "model.frame")))))
+      weights <- attr(x, "model.frame")[, i]
+  }
+
+  if(!is.null(weights)) {
+    if(inherits(x, "bayesr.input") & !any(c("smooth", "response") %in% names(x))) {
+      nx <- names(x)
+      nx <- nx[nx != "call"]
+      if(is.null(nx)) nx <- 1:length(x)
+      if(length(unique(nx)) < length(x)) nx <- 1:length(x)
+      for(j in nx)
+        x[[j]] <- assign.weights(x[[j]], weights = weights)
+    } else {
+      if(!is.null(x$X))
+        x$X <- x$X * weights
+      if(m <- length(x$smooth)) {
+        for(j in 1:m) {
+          if(!inherits(x$smooth[[j]], "no.mgcv")) {
+            x$smooth[[j]]$X <- x$smooth[[j]]$X * weights
+          } 
         }
       }
     }
@@ -2472,7 +2513,7 @@ model.frame.bayesr <- function(formula, ...)
 {
   dots <- list(...)
   nargs <- dots[match(c("data", "na.action", "subset"), names(dots), 0L)]
-  if(length(nargs) || is.null(attr(formula, "model.frame"))) {
+  mf <- if(length(nargs) || is.null(attr(formula, "model.frame"))) {
     fcall <- attr(formula, "call")
     fcall$method <- "model.frame"
     fcall[[1L]] <- quote(bayesr.model.frame)
@@ -2481,14 +2522,16 @@ model.frame.bayesr <- function(formula, ...)
     if(is.null(env)) 
       env <- parent.frame()
     eval(fcall, env)
-  }
-  else attr(formula, "model.frame")
+  } else attr(formula, "model.frame")
+  if(!is.null(attr(mf, "orig.names")))
+    names(mf) <- attr(mf, "orig.names")
+  mf
 }
 
 
 ## Scores for model comparison.
 score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
-  type = c("mean", "samples"), nsamps = NULL, ...)
+  type = c("mean", "samples"), kfitted = TRUE, nsamps = NULL, ...)
 {
   stopifnot(inherits(x, "bayesr"))
   family <- attr(x, "family")
@@ -2556,16 +2599,26 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
   }
 
   if(type == "mean") {
-    eta <- list()
-    for(j in family$names)
-      eta[[j]] <- fitted(x, model = j)
+    eta <- if(kfitted) {
+      kfitted(x, nsamps = nsamps,
+        FUN = function(x) { mean(x, na.rm = TRUE) }, ...)
+    } else fitted(x)
+    if(!inherits(eta, "list")) {
+      eta <- list(eta)
+      names(eta) <- family$names[1]
+    }
     eta <- as.data.frame(eta)
     res <- unlist(scorefun(eta))
   } else {
     nx <- names(x)
-    eta <- list()
+    eta <- if(kfitted) {
+      kfitted(x, FUN = function(x) { x }, nsamps = nsamps, ...)
+    } else fitted(x, samples = TRUE, FUN = function(x) { x }, nsamps = nsamps)
+    if(!inherits(eta, "list")) {
+      eta <- list(eta)
+      names(eta) <- family$names[1]
+    }
     for(j in nx) {
-      eta[[j]] <- predict.bayesr(x, model = j, FUN = function(x) { x }, nsamps = nsamps)
       colnames(eta[[j]]) <- paste("i",
         formatC(1:ncol(eta[[j]]), width = nchar(ncol(eta[[1]])), flag = "0"),
         sep = ".")
@@ -2587,8 +2640,9 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
 }
 
 
-## General purpose cross validation.
-crossvalid <- function(x, k = 5, engine = NULL, random = FALSE, mu = NULL, ...)
+## Compute fitted values with dropping data.
+kfitted <- function(x, k = 5, weighted = FALSE, random = FALSE,
+  engine = NULL, verbose = TRUE, FUN = mean, nsamps = NULL, ...)
 {
   if(!inherits(x, "bayesr")) stop('argument x is not a "bayesr" object!')
   if(is.null(engine))
@@ -2601,20 +2655,50 @@ crossvalid <- function(x, k = 5, engine = NULL, random = FALSE, mu = NULL, ...)
   k <- sort(unique(i))
   f <- formula(x)
   family <- family(x)
-  rval <- model.response2(x)
-  rval$fitted <- if(is.null(dim(rval[[1]]))) rep(NA, nrow(mf)) else matrix(NA, ncol(rval[[1]]))
+  ny <- length(unique(attr(mf, "response.name")))
+  rval <- NULL
   jj <- 1
   for(j in k) {
-    cat("cross validation loop:", jj, "\n")
+    if(verbose) cat("subset:", jj, "\n")
     drop <- mf[i == j, ]
-    take <- mf[i != j, ]
-    b <- bayesr(f, data = take, family = family, engine = engine, ...)
-    p <- fitted(b, samples = TRUE, newdata = drop)
-    rval[i == j, "fitted"] <- if(is.null(family$mu)) {
-      if(is.null(mu)) make.link2(family$links[1])$linkinv(p[[1]]) else mu(p)
-    } else family$mu(p)
+    if(!weighted) {
+      take <- mf[i != j, ]
+      bcv <- bayesr(f, data = take, family = family,
+        engine = engine, verbose = verbose, ...)
+    } else {
+      w <- 1 * (i != j)
+      bcv <- bayesr(f, data = mf, family = family,
+        engine = engine, verbose = verbose, weights = w, ...)
+    }
+    if(!is.null(attr(mf, "orig.names")))
+      names(drop) <- rmf(names(drop))
+    fit <- fitted.bayesr(bcv, newdata = drop, samples = TRUE, FUN = FUN, nsamps = nsamps)
+    if(!inherits(fit, "list")) {
+      fit <- list(fit)
+      names(fit) <- family$names
+    }
+    if(is.null(rval)) {
+      rval <- list()
+      for(ii in names(fit)) {
+        rval[[ii]] <- matrix(NA, nrow = nrow(mf),
+          ncol = if(is.null(dim(fit[[ii]]))) 1 else ncol(fit[[ii]]))
+      }
+    }
+    for(ii in names(fit)) {
+      rval[[ii]][i == j, ] <- fit[[ii]]
+    }
     jj <- jj + 1
   }
+
+  for(ii in names(fit)) {
+    rval[[ii]] <- if(ncol(rval[[ii]]) > 1) {
+      as.data.frame(rval[[ii]])
+    } else drop(rval[[ii]])
+  }
+
+  if(length(rval) < 2)
+    rval <- rval[[1]]
+
   rval
 }
 
@@ -2722,7 +2806,7 @@ model.response2 <- function(data, ...)
   rn <- attr(data, "response.name")
   y <- if(is.null(rn)) {
     model.response(data, ...)
-  } else data[, unique(rn)]
+  } else data[, unique(rn), ...]
   y
 }
 

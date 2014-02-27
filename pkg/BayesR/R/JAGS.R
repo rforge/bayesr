@@ -6,6 +6,8 @@ transformJAGS <- function(x)
   family <- attr(x, "family")
   cat <- if(is.null(family$cat)) FALSE else family$cat
 
+  x <- assign.weights(x)
+
   if(cat) {
     reference <- attr(x, "reference")
 
