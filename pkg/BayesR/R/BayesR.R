@@ -95,7 +95,11 @@ bayesr <- function(formula, family = gaussian, data = NULL, knots = NULL,
   n.iter = 12000, thin = 10, burnin = 2000, seed = NULL, ...)
 {
   xengine <- match.arg(engine)
-  family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
+  check <- try(!inherits(family, "family.BayesR"), silent = TRUE)
+  if(!inherits(check, "try-error")) {
+    if(!check)
+      family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
+  } else family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
 
   if(xengine == "BayesX") {
     require("BayesXsrc")
@@ -150,6 +154,7 @@ bayesr <- function(formula, family = gaussian, data = NULL, knots = NULL,
     setup = setup, engine = engine, results = results, cores = cores,
     combine = combine, sleep = 1, ...)
   
+  attr(rval, "engine") <- xengine
   attr(rval, "call") <- match.call()
   
   rval
@@ -2582,6 +2587,38 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
   }
 
   res
+}
+
+
+## General purpose cross validation.
+crossvalid <- function(x, k = 5, engine = NULL, random = FALSE, mu = NULL, ...)
+{
+  if(!inherits(x, "bayesr")) stop('argument x is not a "bayesr" object!')
+  if(is.null(engine))
+    engine <- attr(x, "engine")
+  if(is.null(engine)) stop("please choose an engine!")
+  mf <- model.frame(x)
+  i <- rep(1:k, length.out = nrow(mf))
+  if(random)
+    i <- sample(i)
+  k <- sort(unique(i))
+  f <- formula(x)
+  family <- family(x)
+  rval <- model.response2(x)
+  rval$fitted <- if(is.null(dim(rval[[1]]))) rep(NA, nrow(mf)) else matrix(NA, ncol(rval[[1]]))
+  jj <- 1
+  for(j in k) {
+    cat("cross validation loop:", jj, "\n")
+    drop <- mf[i == j, ]
+    take <- mf[i != j, ]
+    b <- bayesr(f, data = take, family = family, engine = engine, ...)
+    p <- fitted(b, samples = TRUE, newdata = drop)
+    rval[i == j, "fitted"] <- if(is.null(family$mu)) {
+      if(is.null(mu)) make.link2(family$links[1])$linkinv(p[[1]]) else mu(p)
+    } else family$mu(p)
+    jj <- jj + 1
+  }
+  rval
 }
 
 

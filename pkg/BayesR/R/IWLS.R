@@ -417,7 +417,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   eta <- vector(mode = "list", length = np)
   names(eta) <- nx
   for(j in 1:np)
-    eta[[j]] <- rep(0.1, length(response))
+    eta[[j]] <- rep(0, length(response))
 
   ## Find starting values with backfitting.
   if(svalues | any(grepl("backfitting", method))) {
@@ -473,12 +473,6 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
             ## Update predictor and smooth fit.
             eta[[nx[j]]] <- eta[[nx[j]]] - x[[nx[j]]]$smooth[[sj]]$state$fit + p.state$fit
             x[[nx[j]]]$smooth[[sj]]$state <- p.state
-
-            ## Check.
-            if(any(abs(eta[[nx[j]]]) > 10)) {
-              eta[[nx[j]]][eta[[nx[j]]] > 10] <- 10
-              eta[[nx[j]]][eta[[nx[j]]] < -10] <- -10
-            }
           }
         }
 

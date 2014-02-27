@@ -658,7 +658,7 @@ dgp_mvn <- function(n = 1000, mu1 = NULL, mu2 = NULL, sigma1 = NULL, sigma2 = NU
 }
 
 if(FALSE) {
-  d <- dgp_mvn()
+  d <- dgp_mvn(200)
 
   f <- list(
     y1 ~ sx(mu1.x11) + sx(mu1.x12),

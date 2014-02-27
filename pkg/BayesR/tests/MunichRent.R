@@ -12,19 +12,17 @@ f <- list(
 
 b1 <- bayesr(f, family = gamma, data = rent99, engine = "BayesX", verbose = TRUE)
 
-
 rent99 <- cbind(rent99, centroids(MunichBnd, id = rent99$district))
 
 f <- list(
   rent ~ bath + kitchen + location + cheating +
-    s(area, k = 20) + s(yearc, k = 20) + s(x, y, k = 100),
-  sigma2 ~ bath + kitchen + location + cheating +
-    s(area, k = 20) + s(yearc, k = 20) + s(x, y, k = 100)
+    s(area, k = 20) + s(yearc, k = 20) + s(x, y, k = 200),
+  sigma ~ bath + kitchen + location + cheating +
+    s(area), k = 20 + s(yearc, k = 20) + s(x, y, k = 200)
 )
 
-b2 <- bayesr(f, family = gaussian2, data = rent99, engine = "IWLS", method = "backfitting")
-
 b2 <- bayesr(f, family = gamma, data = rent99, engine = "IWLS", method = "backfitting")
+
 
 nd <- centroids(MunichBnd)
 nd$fmu <- predict(b2, newdata = nd, model = "mu", term = "s(x,y)", intercept = FALSE)
