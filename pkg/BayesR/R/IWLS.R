@@ -314,8 +314,8 @@ smooth.IWLS.default <- function(x, ...)
           return(IC)
         }
 
-        ## x$state$tau2 <- optimize(objfun, interval = x$interval, grid = x$grid)$minimum
-        x$state$tau2 <- optimize2(objfun, interval = x$interval, grid = x$grid)$minimum
+        x$state$tau2 <- optimize(objfun, interval = x$interval, grid = x$grid)$minimum
+        ##x$state$tau2 <- optimize2(objfun, interval = x$interval, grid = x$grid)$minimum
         if(!length(x$state$tau2)) x$state$tau2 <- x$interval[1]
         P <- matrix_inv(XWX + 1 / x$state$tau2 * x$S[[1]])
         x$state$g <- drop(P %*% (XW %*% e))
