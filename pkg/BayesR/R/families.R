@@ -499,7 +499,7 @@ gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
     },
     "type" = 1
   )
-  
+ 
   class(rval) <- "family.BayesR"
   rval
 }
@@ -1407,6 +1407,107 @@ quant2.BayesR <- function(links = c(mu = "identity", sigma = "log"), prob = 0.5,
       "addvalues" = list("prop" = prob)
     )
   )
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
+## Function to transform gamlss.family objects.
+tD <- function(x)
+{
+  if(is.function(x)) x <- x()
+  if(!inherits(x, "gamlss.family")) stop('only "gamlss.family" objects can be transformed!')
+
+  k <- x$nopar
+  nx <- c("mu", "sigma", "nu", "tau")[1:k]
+  nf <- names(x)
+  de <- c("m", "d", "v", "t")[1:k]
+  score <- weights <- list()
+
+  score$mu  <- function(y, eta, ...) {
+    for(i in nx)
+      eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
+    call <- paste('x$dldm(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
+    eval(parse(text = call))
+  }
+  weights$mu <- function(y, eta, ...) {
+    for(i in nx)
+      eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
+    fo <- names(formals(x$d2ldm2))
+    call <- paste('x$d2ldm2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
+    eval(parse(text = call))
+  }
+  if(k > 1) {
+    score$sigma  <- function(y, eta, ...) {
+      for(i in nx)
+        eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
+      call <- paste('x$dldd(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
+      eval(parse(text = call))
+    }
+    weights$sigma <- function(y, eta, ...) {
+      for(i in nx)
+        eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
+      fo <- names(formals(x$d2ldd2))
+      call <- paste('x$d2ldd2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
+      eval(parse(text = call))
+    }
+  }
+  if(k > 2) {
+    score$nu  <- function(y, eta, ...) {
+      for(i in nx)
+        eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
+      call <- paste('x$dldv(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
+      eval(parse(text = call))
+    }
+    weights$nu <- function(y, eta, ...) {
+      for(i in nx)
+        eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
+      fo <- names(formals(x$d2ldv2))
+      call <- paste('x$d2ldv2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
+      eval(parse(text = call))
+    }
+  }
+  if(k > 3) {
+    score$tau  <- function(y, eta, ...) {
+      for(i in nx)
+        eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
+      call <- paste('x$dldt(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
+      eval(parse(text = call))
+    }
+    weights$tau <- function(y, eta, ...) {
+      for(i in nx)
+        eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
+      fo <- names(formals(x$d2ldt2))
+      call <- paste('x$d2ldt2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
+      eval(parse(text = call))
+    }
+  }
+
+  dfun <- get(paste("d", x$family[1], sep = ""))
+  pfun <- get(paste("p", x$family[1], sep = ""))
+
+  rval <- list(
+    "family" = x$family[1],
+    "names" = nx,
+    "links" = unlist(x[paste(nx, "link", sep = ".")]),
+    "score" = score,
+    "weights" = weights,
+    "d" = function(y, eta, log = FALSE, ...) {
+      for(i in nx)
+        eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
+      call <- paste('dfun(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
+      d <- eval(parse(text = call))
+      if(log) d <- log(d)
+      d
+    },
+    "p" = function(y, eta, ...) {
+      for(i in nx)
+        eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
+      call <- paste('pfun(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
+      eval(parse(text = call))
+    }
+  )
+
   class(rval) <- "family.BayesR"
   rval
 }

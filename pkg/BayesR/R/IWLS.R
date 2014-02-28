@@ -292,7 +292,7 @@ smooth.IWLS.default <- function(x, ...)
         P <- if(x$fixed) {
           matrix_inv(XWX)
         } else matrix_inv(XWX + 1 / x$state$tau2 * x$S[[1]])
-        x$state$g <- drop(P %*% (XW %*% (z - eta[[id]])))
+        x$state$g <- drop(P %*% (XW %*% (z - eta[[id]][ok])))
       } else {
         args <- list(...)
         edf0 <- args$edf - x$state$edf
@@ -314,8 +314,8 @@ smooth.IWLS.default <- function(x, ...)
           return(IC)
         }
 
-        x$state$tau2 <- optimize(objfun, interval = x$interval, grid = x$grid)$minimum
-        ##x$state$tau2 <- optimize2(objfun, interval = x$interval, grid = x$grid)$minimum
+        ## x$state$tau2 <- optimize(objfun, interval = x$interval, grid = x$grid)$minimum
+        x$state$tau2 <- optimize2(objfun, interval = x$interval, grid = x$grid)$minimum
         if(!length(x$state$tau2)) x$state$tau2 <- x$interval[1]
         P <- matrix_inv(XWX + 1 / x$state$tau2 * x$S[[1]])
         x$state$g <- drop(P %*% (XW %*% e))
@@ -939,25 +939,5 @@ resultsIWLS <- function(x, samples)
   } else {
     return(createIWLSresults(x, samples))
   }
-}
-
-
-## Numeric derivatives.
-foo <- function() 
-{
-                eta.mu <- eta.old.mu <- family$mu.linkfun(mu)
-                u.mu <- mu.object$dldp(mu = mu)
-                u2.mu <- mu.object$d2ldp2(mu = mu)
-                dr.mu <- family$mu.dr(eta.mu)
-                dr.mu <- 1/dr.mu
-                who.mu <- mu.object$who
-                smooth.frame.mu <- mu.object$smooth.frame
-                s.mu <- if (first.iter) 
-                  mu.object$smooth
-                else s.mu
-                w.mu <- -u2.mu/(dr.mu * dr.mu)
-                z.mu <- (eta.old.mu - mu.offset) + mu.step * 
-                  u.mu/(dr.mu * w.mu)
-
 }
 
