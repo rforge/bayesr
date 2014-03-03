@@ -139,7 +139,7 @@ smooth.IWLS.default <- function(x, ...)
   tau2interval <- function(x, lower = .Machine$double.eps^0.25, upper = 4000) {
     XX <- crossprod(x$X)
     objfun <- function(tau2, value) {
-      df <- sum(diag(chol2inv(chol(XX + 1 / tau2 * x$S[[1]])) %*% XX))
+      df <- sum(diag(chol2inv(chol(XX + if(x$fixed) 0 else 1 / tau2 * x$S[[1]])) %*% XX))
       return((value - df)^2)
     }
     le <- optimize(objfun, c(lower, upper), value = 1)$minimum

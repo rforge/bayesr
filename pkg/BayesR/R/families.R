@@ -1265,7 +1265,7 @@ quant2.BayesR <- function(links = c(mu = "identity", sigma = "log"), prob = 0.5,
 
 
 ## Function to transform gamlss.family objects.
-tD <- function(x)
+tF <- function(x)
 {
   if(is.function(x)) x <- x()
   if(!inherits(x, "gamlss.family")) stop('only "gamlss.family" objects can be transformed!')
@@ -1283,7 +1283,10 @@ tD <- function(x)
   weights$mu <- function(y, eta, ...) {
     fo <- names(formals(x$d2ldm2))
     call <- paste('x$d2ldm2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
-    eval(parse(text = call))
+    weights <- eval(parse(text = call))
+    dlink <- x$mu.dr(eta$mu)
+    weights <- -(weights / (dlink * dlink)) * dlink
+    weights
   }
   if(k > 1) {
     score$sigma  <- function(y, eta, ...) {
@@ -1293,7 +1296,10 @@ tD <- function(x)
     weights$sigma <- function(y, eta, ...) {
       fo <- names(formals(x$d2ldd2))
       call <- paste('x$d2ldd2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
-      eval(parse(text = call))
+      weights <- eval(parse(text = call))
+      dlink <- x$sigma.dr(eta$sigma)
+      weights <- -(weights / (dlink * dlink)) * dlink
+      weights
     }
   }
   if(k > 2) {
@@ -1304,7 +1310,10 @@ tD <- function(x)
     weights$nu <- function(y, eta, ...) {
       fo <- names(formals(x$d2ldv2))
       call <- paste('x$d2ldv2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
-      eval(parse(text = call))
+      weights <- eval(parse(text = call))
+      dlink <- x$nu.dr(eta$sigma)
+      weights <- -(weights / (dlink * dlink)) * dlink
+      weights
     }
   }
   if(k > 3) {
@@ -1315,7 +1324,10 @@ tD <- function(x)
     weights$tau <- function(y, eta, ...) {
       fo <- names(formals(x$d2ldt2))
       call <- paste('x$d2ldt2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
-      eval(parse(text = call))
+      weights <- eval(parse(text = call))
+      dlink <- x$tau.dr(eta$sigma)
+      weights <- -(weights / (dlink * dlink)) * dlink
+      weights
     }
   }
 
@@ -1339,6 +1351,7 @@ tD <- function(x)
       eval(parse(text = call))
     }
   )
+  names(rval$links) <- nx
 
   class(rval) <- "family.BayesR"
   rval
