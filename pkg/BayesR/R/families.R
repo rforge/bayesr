@@ -70,15 +70,10 @@ parse.links <- function(links, default.links, ...)
 ## http://stats.stackexchange.com/questions/41536/how-can-i-model-a-proportion-with-bugs-jags-stan
 beta.BayesR <- function(links = c(mu = "logit", sigma2 = "logit"), ...)
 {
-  links <- parse.links(links, c(mu = "logit", sigma2 = "logit"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-  
   rval <- list(
     "family" = "beta",
     "names" = c("mu", "sigma2"),
-    "links" =  links,
+    "links" =  parse.links(links, c(mu = "logit", sigma2 = "logit"), ...),
     "valid.response" = function(x) {
       if(ok <- !all(x > 0 & x < 1)) stop("response values not in (0, 1)!", call. = FALSE)
       ok
@@ -96,24 +91,17 @@ beta.BayesR <- function(links = c(mu = "logit", sigma2 = "logit"), ...)
         sigma2 = "(1 - mu) * (1 / sigma2)"
       )
     ),
-    "loglik" = function(y, eta, ...) {
-      a <- linkinv$mu(eta$mu)
-      b <- linkinv$sigma2(eta$sigma2)
-      hilfs <- a * (1 - b) / b
-      hilfs2 <- (1 - a) * (1 - b) / b
-      sum((hilfs - 1) * log(y) + (hilfs2 - 1) * log(1 - y) - lgamma(hilfs) - lgamma(hilfs2) + lgamma((1 - b) / b))
-    },
     "score" = list(
       "mu" = function(y, eta, ...) {
-        a <- linkinv$mu(eta$mu)
-        b <- linkinv$sigma2(eta$sigma2)
+        a <- eta$mu
+        b <- eta$sigma2
         hilfs <- a * (1 - b) / b
         hilfs2 <- (1 - a) * (1 - b) / b
         drop(a * hilfs2 * log(y) - a * hilfs2 * log(1 - y) + ((1 - b) / b) * a * (1 - a) * (-digamma(hilfs) + digamma(hilfs2)))
       },
       "sigma2" = function(y, eta, ...) {
-        a <- linkinv$mu(eta$mu)
-        b <- linkinv$sigma2(eta$sigma2)
+        a <- eta$mu
+        b <- eta$sigma2
         hilfs <- a*(1-b)/b
         hilfs2 <- (1-a)*(1-b)/b
         drop(-(1 - b) / (b) * ( -a * digamma(hilfs) - (1 - a) * digamma(hilfs2) + digamma((1 - b) / (b)) + a * log(y) + (1 - a) * log(1 - y)))
@@ -121,33 +109,33 @@ beta.BayesR <- function(links = c(mu = "logit", sigma2 = "logit"), ...)
     ),
     "weights" = list(
       "mu" = function(y, eta, ...) {
-        a <- linkinv$mu(eta$mu)
-        b <- linkinv$sigma2(eta$sigma2)
+        a <- eta$mu
+        b <- eta$sigma2
         hilfs <- a * (1 - b) / b
         hilfs2 <- (1 - a) * (1 - b) / b
         drop(((1 - b) / b)^2 * a^2 * (1 - a)^2 * (trigamma(hilfs) + trigamma(hilfs2)))
       },
       "sigma2" = function(y, eta, ...) {
-        a <- linkinv$mu(eta$mu)
-        b <- linkinv$sigma2(eta$sigma2)
+        a <- eta$mu
+        b <- eta$sigma2
         hilfs <- a * (1 - b) / b
         hilfs2 <- (1 - a) * (1 - b) / b
         drop(((1 - b) / b)^2 * (a^2 * trigamma(hilfs) + (1 - a)^2 * trigamma(hilfs2) - trigamma((1 - b) / (b))))
       }
     ),
     "mu" = function(eta, ...) {
-      linkinv$mu(eta$mu)
+      eta$mu
     },
 	  "d" = function(y, eta, log = FALSE) {
-       mu <- linkinv$mu(eta$mu)
-       sigma2 <- linkinv$sigma2(eta$sigma2)
+       mu <- eta$mu
+       sigma2 <- eta$sigma2
 		   a <- mu * (1 - sigma2) / (sigma2)
 		   b <- a * (1 - mu) / mu
 		   dbeta(y, shape1 = a, shape2 = b, log = log)
 	  },
 	  "p" = function(y, eta) {
-       mu <- linkinv$mu(eta$mu)
-       sigma2 <- linkinv$sigma2(eta$sigma2)
+       mu <- eta$mu
+       sigma2 <- eta$sigma2
 		   a <- mu * (1 - sigma2) / (sigma2)
 		   b <- a * (1 - mu) / mu
 		   pbeta(y, shape1 = a, shape2 = b)
@@ -161,15 +149,10 @@ beta.BayesR <- function(links = c(mu = "logit", sigma2 = "logit"), ...)
 
 betazoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log", tau = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "logit", sigma2 = "logit", nu = "log", tau = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-
   rval <- list(
     "family" = "betazoi",
     "names" = c("mu", "sigma2", "nu", "tau"),
-    "links" =  links,
+    "links" =  parse.links(links, c(mu = "logit", sigma2 = "logit", nu = "log", tau = "log"), ...),
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
       if(ok <- !all(x >= 0 & x <= 1)) stop("response values not in [0, 1]!", call. = FALSE)
@@ -187,26 +170,25 @@ betazoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log",
       )
     ),
     "mu" = function(eta, ...) {
-      linkinv$mu(eta$mu) * (1 - (linkinv$nu(eta$nu) + linkinv$tau(eta$tau)) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau))) +
-        linkinv$tau(eta$tau) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau))
+       eta$mu * (1 - (eta$nu + eta$tau) / (1 + eta$nu + eta$tau)) + eta$tau / (1 + eta$nu + eta$tau)
     },
 	  "d" = function(y, eta, log = FALSE) {
-		  mu <- linkinv$mu(eta$mu)
-		  sigma <- linkinv$sigma(eta$sigma)
+		  mu <- eta$mu
+		  sigma <- eta$sigma
 		  a <- mu * (1 - sigma) / (sigma)
 		  b <- a * (1 - mu) / mu
-		  d <- ifelse(y == 0, linkinv$nu(eta$nu) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau)), dbeta(y, shape1 = a, shape2 = b, ncp = 0) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau)))
-		  ifelse (y==1, linkinv$tau(eta$tau) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau)), d)
+		  d <- ifelse(y == 0, eta$nu / (1 + eta$nu + eta$tau), dbeta(y, shape1 = a, shape2 = b, ncp = 0) / (1 + eta$nu + eta$tau))
+		  ifelse (y==1, eta$tau / (1 + eta$nu + eta$tau), d)
       if(log) d <- log(d)
       d
 	  },
 	  "p" = function(y, eta) {
-		  mu <- linkinv$mu(eta$mu)
-		  sigma <- linkinv$sigma(eta$sigma)
+		  mu <- eta$mu
+		  sigma <- eta$sigma
 		  a <- mu * (1 - sigma) / (sigma)
 		  b <- a * (1 - mu) / mu
-		  hilfs <- linkinv$nu(eta$nu) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau))
-		  hilfs2 <- linkinv$tau(eta$tau) / (1 + linkinv$nu(eta$nu) + linkinv$tau(eta$tau))
+		  hilfs <- eta$nu / (1 + eta$nu + eta$tau)
+		  hilfs2 <- eta$tau / (1 + eta$nu + eta$tau)
 		  cdf <- ifelse(y == 0, hilfs, hilfs + (1 - (hilfs + hilfs2)) * pbeta(y, shape1 = a, shape2 = b, ncp = 0))
 		  ifelse(y == 1, 1, cdf)
 	  }
@@ -218,15 +200,10 @@ betazoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log",
 
 betazi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "logit", sigma2 = "logit", nu = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-
   rval <- list(
     "family" = "betazi",
     "names" = c("mu", "sigma2", "nu"),
-    "links" =  links,
+    "links" =  parse.links(links, c(mu = "logit", sigma2 = "logit", nu = "log"), ...),
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
       if(ok <- !all(x >= 0 & x < 1)) stop("response values not in [0, 1)!", call. = FALSE)
@@ -243,23 +220,23 @@ betazi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log"),
       )
     ),
     "mu" = function(eta, ...) {
-      linkinv$mu(eta$mu) * (1 - (linkinv$nu(eta$nu)) / (1 + linkinv$nu(eta$nu)))
+      eta$mu * (1 - (eta$nu) / (1 + eta$nu))
     },
 	  "d" = function(y, eta, log = FALSE) {
-		  mu <- linkinv$mu(eta$mu)
-		  sigma <- linkinv$sigma(eta$sigma)
+		  mu <- eta$mu
+		  sigma <- eta$sigma
 		  a <- mu * (1 - sigma) / (sigma)
 		  b <- a * (1 - mu) / mu
-		  d <- ifelse(y == 0, linkinv$nu(eta$nu) / (1 + linkinv$nu(eta$nu)), dbeta(y, shape1 = a, shape2 = b, ncp = 0) / (1 + linkinv$nu(eta$nu)))
+		  d <- ifelse(y == 0, eta$nu / (1 + eta$nu), dbeta(y, shape1 = a, shape2 = b, ncp = 0) / (1 + eta$nu))
       if(log) d <- log(d)
       d
 	  },
 	  "p" = function(y, eta) {
-		  mu <- linkinv$mu(eta$mu)
-		  sigma <- linkinv$sigma(eta$sigma)
+		  mu <- eta$mu
+		  sigma <- eta$sigma
 		  a <- mu * (1 - sigma) / (sigma)
 		  b <- a * (1 - mu) / mu
-		  hilfs <- linkinv$nu(eta$nu) / (1 + linkinv$nu(eta$nu))
+		  hilfs <- eta$nu / (1 + eta$nu)
 		  ifelse(y == 0, hilfs, hilfs + (1 - hilfs) * pbeta(y, shape1 = a, shape2 = b, ncp = 0))
 	  }
   )
@@ -270,15 +247,10 @@ betazi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log"),
 
 betaoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", tau = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "logit", sigma2 = "logit", tau = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-
   rval <- list(
     "family" = "betazi",
     "names" = c("mu", "sigma2", "tau"),
-    "links" =  links,
+    "links" =  parse.links(links, c(mu = "logit", sigma2 = "logit", tau = "log"), ...),
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
       if(ok <- !all(x > 0 & x <= 1)) stop("response values not in (0, 1]!", call. = FALSE)
@@ -295,24 +267,24 @@ betaoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", tau = "log")
       )
     ),
     "mu" = function(eta, ...) {
-      linkinv$mu(eta$mu) * (1 - linkinv$tau(eta$tau) / (1 + linkinv$tau(eta$tau))) +
-        linkinv$tau(eta$tau) / (1 + linkinv$tau(eta$tau))
+      eta$mu * (1 - eta$tau / (1 + eta$tau)) +
+        eta$tau / (1 + eta$tau)
     },
     "d" = function(y, eta, log = FALSE) {
-      mu <- linkinv$mu(eta$mu)
-      sigma <- linkinv$sigma(eta$sigma)
+      mu <- eta$mu
+      sigma <- eta$sigma
       a <- mu * (1 - sigma) / (sigma)
       b <- a * (1 - mu) / mu
-      d <- ifelse(y == 1, linkinv$tau(eta$tau) / (1 + linkinv$tau(eta$tau)), dbeta(y, shape1 = a, shape2 = b, ncp = 0) / (1 + linkinv$tau(eta$tau)))
+      d <- ifelse(y == 1, eta$tau / (1 + eta$tau), dbeta(y, shape1 = a, shape2 = b, ncp = 0) / (1 + eta$tau))
       if(log) d <- log(d)
       d
 	  },
     "p" = function(y, eta) {
-      mu <- linkinv$mu(eta$mu)
-      sigma <- linkinv$sigma(eta$sigma)
+      mu <- eta$mu
+      sigma <- eta$sigma
       a <- mu * (1 - sigma) / (sigma)
       b <- a * (1 - mu) / mu
-      hilfs <- linkinv$tau(eta$tau) / (1 + linkinv$tau(eta$tau))
+      hilfs <- eta$tau / (1 + eta$tau)
       ifelse(y == 1, hilfs, hilfs + (1 - hilfs) * pbeta(y, shape1 = a, shape2 = b, ncp = 0))
 	  }
   )
@@ -323,15 +295,10 @@ betaoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", tau = "log")
 
 binomial.BayesR <- function(link = "logit", ...)
 {
-  links <- parse.links(link, c(pi = "logit"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-
   rval <- list(
     "family" = "binomial",
     "names" = "pi",
-    "links" = links,
+    "links" = parse.links(link, c(pi = "logit"), ...),
     "valid.response" = function(x) {
       if(!is.factor(x)) stop("response must be a factor!", call. = FALSE)
       if(nlevels(x) > 2) stop("more than 2 levels in factor response!", call. = FALSE)
@@ -346,13 +313,13 @@ binomial.BayesR <- function(link = "logit", ...)
       "model" = JAGSmodel
     ),
     "mu" = function(eta, ...) {
-      linkinv$pi(eta$pi)
+      eta$pi
     },
 	  "d" = function(y, eta, log = FALSE) {
-		  dbinom(y, size = 1, prob = linkinv$pi(eta$pi), log = log)
+		  dbinom(y, size = 1, prob = eta$pi, log = log)
 	  },
 	  "p" = function(y, eta) {
-		  pbinom(y, size = 1, prob = linkinv$pi(eta$pi))
+		  pbinom(y, size = 1, prob = eta$pi)
 	  },
     "type" = 1
   )
@@ -363,15 +330,10 @@ binomial.BayesR <- function(link = "logit", ...)
 
 cloglog.BayesR <- function(link = "cloglog", ...)
 {
-  links <- parse.links(link, c(pi = "cloglog"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-
   rval <- list(
     "family" = "cloglog",
     "names" = "pi",
-    "links" = links,
+    "links" = parse.links(link, c(pi = "cloglog"), ...),
     "valid.response" = function(x) {
       if(!is.factor(x)) stop("response must be a factor!", call. = FALSE)
       if(nlevels(x) > 2) stop("more than 2 levels in factor response!", call. = FALSE)
@@ -381,13 +343,13 @@ cloglog.BayesR <- function(link = "cloglog", ...)
       "pi" = c(paste("cloglog", link, sep = "_"), "mean")
     ),
     "mu" = function(eta, ...) {
-      linkinv$pi(eta$pi)
+      eta$pi
     },
 	  "d" = function(y, eta, log = FALSE) {
-		  dbinom(y, size = 1, prob = linkinv$pi(eta$pi), log = log)
+		  dbinom(y, size = 1, prob = eta$pi, log = log)
 	  },
 	  "p" = function(y, eta) {
-		  pbinom(y, size = 1, prob = linkinv$pi(eta$pi))
+		  pbinom(y, size = 1, prob = eta$pi)
 	  }
   )
 
@@ -397,15 +359,10 @@ cloglog.BayesR <- function(link = "cloglog", ...)
 
 gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "identity", sigma = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-  
   rval <- list(
     "family" = "gaussian",
     "names" = c("mu", "sigma"),
-    "links" = links,
+    "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
     bayesx = list(
       "mu" = switch(links["mu"],
         "identity" = c("normal2_mu", "mean"),
@@ -423,24 +380,24 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
       "reparam" = c(sigma = "1 / sqrt(sigma)")
     ),
     "loglik" = function(y, eta, ...) {
-      sum(dnorm(y, eta$mu, linkinv$sigma(eta$sigma), log = TRUE))
+      sum(dnorm(y, eta$mu, eta$sigma, log = TRUE))
     },
     "score" = list(
-      "mu" = function(y, eta, ...) { drop((y - eta$mu) / (linkinv$sigma(eta$sigma)^2)) },
-      "sigma" = function(y, eta, ...) { drop(-0.5 + (y - eta$mu)^2 / (linkinv$sigma(eta$sigma)^2)) }
+      "mu" = function(y, eta, ...) { drop((y - eta$mu) / (eta$sigma^2)) },
+      "sigma" = function(y, eta, ...) { drop(-0.5 + (y - eta$mu)^2 / (eta$sigma^2)) }
     ),
     "weights" = list(
-      "mu" = function(y, eta, ...) { drop(1 / (linkinv$sigma(eta$sigma)^2)) },
+      "mu" = function(y, eta, ...) { drop(1 / (eta$sigma^2)) },
       "sigma" = function(y, eta, ...) { rep(0.5, length(y)) }
     ),
     "mu" = function(eta, ...) {
       eta$mu
     },
     "d" = function(y, eta, log = FALSE) {
-      dnorm(y, mean = eta$mu, sd = linkinv$sigma(eta$sigma), log = log)
+      dnorm(y, mean = eta$mu, sd = eta$sigma, log = log)
     },
     "p" = function(y, eta) {
-      pnorm(y, mean = eta$mu, sd = linkinv$sigma(eta$sigma))
+      pnorm(y, mean = eta$mu, sd = eta$sigma)
     },
     "type" = 1
   )
@@ -452,15 +409,10 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
 
 gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "identity", sigma2 = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-  
   rval <- list(
     "family" = "gaussian2",
     "names" = c("mu", "sigma2"),
-    "links" = links,
+    "links" = parse.links(links, c(mu = "identity", sigma2 = "log"), ...),
     bayesx = list(
       "mu" = switch(links["mu"],
         "identity" = c("normal_mu", "mean"),
@@ -478,57 +430,8 @@ gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
       "reparam" = c(sigma2 = "1 / sigma2")
     ),
     "loglik" = function(y, eta, ...) {
-      sum(dnorm(y, eta$mu, sqrt(linkinv$sigma2(eta$sigma2)), log = TRUE))
+      sum(dnorm(y, eta$mu, sqrt(eta$sigma2), log = TRUE))
     },
-    "score" = list(
-      "mu" = function(y, eta, ...) { drop((y - eta$mu) / linkinv$sigma2(eta$sigma2)) },
-      "sigma2" = function(y, eta, ...) { drop(-0.5 + (y - eta$mu)^2 / (2 * linkinv$sigma2(eta$sigma2))) }
-    ),
-    "weights" = list(
-      "mu" = function(y, eta, ...) { drop(1 / linkinv$sigma2(eta$sigma2)) },
-      "sigma2" = function(y, eta, ...) { rep(0.5, length(y)) }
-    ),
-    "mu" = function(eta, ...) {
-      eta$mu 
-    },
-    "d" = function(y, eta, log = FALSE) {
-      dnorm(y, mean = eta$mu, sd = sqrt(linkinv$sigma2(eta$sigma2)), log = log)
-    },
-    "p" = function(y, eta) {
-      pnorm(y, mean = eta$mu, sd = sqrt(linkinv$sigma2(eta$sigma2)))
-    },
-    "type" = 1
-  )
- 
-  class(rval) <- "family.BayesR"
-  rval
-}
-
-
-gaussian3.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
-{
-  links <- parse.links(links, c(mu = "identity", sigma2 = "log"), ...)
-  
-  rval <- list(
-    "family" = "gaussian2",
-    "names" = c("mu", "sigma2"),
-    "links" = links,
-    bayesx = list(
-      "mu" = switch(links["mu"],
-        "identity" = c("normal_mu", "mean"),
-        "inverse" = c("normal_mu_inv", "mean")
-      ),
-      "sigma2" = switch(links["sigma2"],
-        "log" = c("normal_sigma2", "scale"),
-        "logit" = c("normal_sigma2_logit", "scale")
-      )
-    ),
-    jagstan = list(
-      "dist" = "dnorm",
-      "eta" = JAGSeta,
-      "model" = JAGSmodel,
-      "reparam" = c(sigma2 = "1 / sigma2")
-    ),
     "score" = list(
       "mu" = function(y, eta, ...) { drop((y - eta$mu) / eta$sigma2) },
       "sigma2" = function(y, eta, ...) { drop(-0.5 + (y - eta$mu)^2 / (2 * eta$sigma2)) }
@@ -556,28 +459,23 @@ gaussian3.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 
 truncgaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "identity", sigma2 = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-  
   rval <- list(
     "family" = "truncgaussian2",
     "names" = c("mu", "sigma2"),
-    "links" = links,
+    "links" = parse.links(links, c(mu = "identity", sigma2 = "log"), ...),
     bayesx = list(
       "mu" =  c("truncnormal_mu", "mean"),
       "sigma2" = c("truncnormal_sigma2", "scale")
     ),
     "mu" = function(eta, ...) {
       mu <-  eta$mu
-	  sigma <- sqrt(linkinv$sigma2(eta$sigma2))
-	  arg <- - mu / sigma
-	  mu + sigma * dnorm(arg) / (1 - pnorm(arg))
+	    sigma <- sqrt(eta$sigma2)
+	    arg <- - mu / sigma
+	    mu + sigma * dnorm(arg) / (1 - pnorm(arg))
     },
     "d" = function(y, eta, log = FALSE) {
       mu <-  eta$mu
-	    sigma <- sqrt(linkinv$sigma2(eta$sigma2))
+	    sigma <- sqrt(eta$sigma2)
 	    arg <- - mu / sigma
 	    d <- dnorm(y / sigma + arg) / (1 - pnorm(arg))
       if(log) d <- log(d)
@@ -585,7 +483,7 @@ truncgaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ..
     },
     "p" = function(y, eta) {
       mu <-  eta$mu
-	  sigma <- sqrt(linkinv$sigma2(eta$sigma2))
+	  sigma <- sqrt(eta$sigma2)
 	  arg <- - mu / sigma
 	  2 * (pnorm(y / sigma + arg) - pnorm(arg))
     }
@@ -597,29 +495,24 @@ truncgaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ..
 }
 
 truncgaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
-{
-  links <- parse.links(links, c(mu = "identity", sigma = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-  
+{ 
   rval <- list(
     "family" = "truncgaussian",
     "names" = c("mu", "sigma"),
-    "links" = links,
+    "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
     bayesx = list(
       "mu" =  c("truncnormal2_mu", "mean"),
       "sigma" = c("truncnormal2_sigma", "scale")
     ),
     "mu" = function(eta, ...) {
       mu <-  eta$mu
-	  sigma <- (linkinv$sigma(eta$sigma))
-	  arg <- - mu / sigma
-	  mu + sigma * dnorm(arg) / (1 - pnorm(arg))
+	    sigma <- eta$sigma
+	    arg <- - mu / sigma
+	    mu + sigma * dnorm(arg) / (1 - pnorm(arg))
     },
     "d" = function(y, eta, log = FALSE) {
       mu <-  eta$mu
-	    sigma <- (linkinv$sigma(eta$sigma))
+	    sigma <- eta$sigma)
 	    arg <- - mu / sigma
 	    d <- dnorm(y / sigma + arg) / (1 - pnorm(arg))
       if(log) d <- log(d)
@@ -627,7 +520,7 @@ truncgaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
     },
     "p" = function(y, eta) {
       mu <-  eta$mu
-	    sigma <- (linkinv$sigma(eta$sigma))
+	    sigma <- eta$sigma
 	    arg <- - mu / sigma
 	    2 * (pnorm(y / sigma + arg) - pnorm(arg))
     }
@@ -640,15 +533,10 @@ truncgaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
 
 t.BayesR <- function(links = c(mu = "identity", sigma2 = "log", df = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "identity", sigma2 = "log", df = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-  
   rval <- list(
     "family" = "t",
     "names" = c("mu", "sigma2", "df"),
-    "links" = links,
+    "links" = parse.links(links, c(mu = "identity", sigma2 = "log", df = "log"), ...),
     bayesx = list(
       "mu" = c("t_mu", "mean"),
       "sigma2" =  c("t_sigma2", "scale"),
@@ -656,16 +544,16 @@ t.BayesR <- function(links = c(mu = "identity", sigma2 = "log", df = "log"), ...
     ),
     "mu" = function(eta, ...) {
       rval <- eta$mu
-      rval[linkinv$df(eta$df) <= 1] <- 0
+      rval[eta$df <= 1] <- 0
       rval
     },
     "d" = function(y, eta, log = FALSE) {
-      arg <- (y - eta$mu) / sqrt(linkinv$sigma2(eta$sigma2))
-      dt(arg, df = linkinv$df(eta$df), log = log)
+      arg <- (y - eta$mu) / sqrt(eta$sigma2)
+      dt(arg, df = eta$df, log = log)
     },
     "p" = function(y, eta) {
-      arg <- (y - eta$mu) / sqrt(linkinv$sigma2(eta$sigma2))
-      pt(arg, df = linkinv$df(eta$df))
+      arg <- (y - eta$mu) / sqrt(eta$sigma2)
+      pt(arg, df = eta$df)
     }
   )
   
@@ -677,15 +565,10 @@ t.BayesR <- function(links = c(mu = "identity", sigma2 = "log", df = "log"), ...
 
 invgaussian.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "log", sigma2 = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-  
   rval <- list(
     "family" = "invgaussian",
     "names" = c("mu", "sigma2"),
-    "links" = links,
+    "links" = parse.links(links, c(mu = "log", sigma2 = "log"), ...),
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
       if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
@@ -696,32 +579,32 @@ invgaussian.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
       "sigma2" = c("invgaussian_sigma2", "scale")
     ),
     "mu" = function(eta, ...) {
-      linkinv$mu(eta$mu) 
+      eta$mu
     },
     "score" = list(
       "mu" = function(y, eta, ...) {
-        mu <- linkinv$mu(eta$mu)
-        (y - mu) / (mu^2 * linkinv$sigma2(eta$sigma2))
+        mu <- eta$mu
+        (y - mu) / (mu^2 * eta$sigma2)
       },
       "sigma2" = function(y, eta, ...) {
-        mu <- linkinv$mu(eta$mu)
-        -0.5 + (y - mu)^2 / (2 * y * mu^2 * linkinv$sigma2(eta$sigma2))
+        mu <- eta$mu
+        -0.5 + (y - mu)^2 / (2 * y * mu^2 * eta$sigma2)
       }
     ),
     "weights" = list(
-      "mu" = function(y, eta, ...) { 1 / (linkinv$mu(eta$mu) * linkinv$sigma2(eta$sigma2)) },
+      "mu" = function(y, eta, ...) { 1 / (eta$mu * eta$sigma2) },
       "sigma2" = function(y, eta) { rep(0.5, length(y)) }
     ),
 	  "d" = function (y, eta, log = FALSE) {
-		  mu <- linkinv$mu(eta$mu)
-		  sigma <- sqrt(linkinv$sigma(eta$sigma2))
+		  mu <- eta$mu
+		  sigma <- sqrt(eta$sigma2)
 		  d <- exp( -0.5 * log(2 * pi) - log(sigma) - (3 / 2) * log(y) - ((y - mu)^2) / (2 * sigma^2 * (mu^2) * y))
       if(log) d <- log(d)
       d
 	  },
 	  "p" = function (y, eta) {
-		  mu <- linkinv$mu(eta$mu)
-		  lambda <- 1 / sqrt(linkinv$sigma(eta$sigma2))
+		  mu <- eta$mu
+		  lambda <- 1 / sqrt(eta$sigma2)
 		  lq <- sqrt(lambda / y)
 		  qm <- y / mu
 		  pnorm(lq * (qm - 1)) + exp(2 * lambda / mu) * pnorm(-lq * (qm + 1))
@@ -734,15 +617,10 @@ invgaussian.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
 
 weibull.BayesR <- function(links = c(lambda = "log", alpha = "log"), ...)
 {
-  links <- parse.links(links, c(lambda = "log", alpha = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-  
   rval <- list(
     "family" = "weibull",
     "names" = c("lambda", "alpha"),
-    "links" = links,
+    "links" = parse.links(links, c(lambda = "log", alpha = "log"), ...),
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
       if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
@@ -753,18 +631,18 @@ weibull.BayesR <- function(links = c(lambda = "log", alpha = "log"), ...)
       "alpha" = c("weibull_alpha", "shape")
     ),
     "mu" = function(eta, ...) {
-      alpha <-  linkinv$alpha(eta$alpha)
-      lambda <- linkinv$lambda(eta$lambda)
+      alpha <-  eta$alpha
+      lambda <- eta$lambda
       alpha * gamma(1 + 1 / lambda)
     },
     "d" = function (y, eta, log = FALSE) {
-      alpha <-  linkinv$alpha(eta$alpha)
-      lambda <- linkinv$lambda(eta$lambda)
+      alpha <-  eta$alpha
+      lambda <- eta$lambda
       dweibull(y, scale = lambda, shape = alpha, log = log)
     },
     "p" = function (y, eta) {
-      alpha <-  linkinv$alpha(eta$alpha)
-      lambda <- linkinv$lambda(eta$lambda)
+      alpha <- eta$alpha
+      lambda <- eta$lambda
       rweibull(y, scale = lambda, shape = alpha)
     }
   )
@@ -775,15 +653,10 @@ weibull.BayesR <- function(links = c(lambda = "log", alpha = "log"), ...)
 
 pareto.BayesR <- function(links = c(b = "log", p = "log"), ...)
 {
-  links <- parse.links(links, c(b = "log", p = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-  
   rval <- list(
     "family" = "pareto",
     "names" = c("b", "p"),
-    "links" = links,
+    "links" = parse.links(links, c(b = "log", p = "log"), ...),
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
       if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
@@ -794,20 +667,20 @@ pareto.BayesR <- function(links = c(b = "log", p = "log"), ...)
       "p" = c("pareto_p", "shape")
     ),
     "mu" = function(eta, ...) {
-      p <-  linkinv$p(eta$p)
-      b <- linkinv$b(eta$b)
+      p <- eta$p
+      b <- eta$b
       p * gamma(1 + 1 / b)
     },
     "d" = function (y, eta, log = FALSE) {
-      p <-  linkinv$p(eta$p)
-      b <- linkinv$b(eta$b)
+      p <- eta$p
+      b <- eta$b
       d <- p * b^p * (y + b)^(-p - 1)
       if(log) d <- log(d)
       d
     },
     "p" = function (y, eta) {
-      p <-  linkinv$p(eta$p)
-      b <- linkinv$b(eta$b)
+      p <- eta$p
+      b <- eta$b
       1 - ((b/(b + y))^(p))
     }
   )
@@ -819,15 +692,10 @@ pareto.BayesR <- function(links = c(b = "log", p = "log"), ...)
 
 gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "log", sigma = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-
   rval <- list(
     "family" = "gamma",
     "names" = c("mu", "sigma"),
-    "links" = links,
+    "links" = parse.links(links, c(mu = "log", sigma = "log"), ...),
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
       if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
@@ -843,39 +711,39 @@ gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
       "model" = JAGSmodel
     ),
     "loglik" = function(y, eta, ...) {
-		  a <- linkinv$sigma(eta$sigma)
-		  s <- linkinv$mu(eta$mu) / linkinv$sigma(eta$sigma) 
+		  a <- eta$sigma
+		  s <- eta$mu / eta$sigma 
 		  sum(dgamma(y, shape = a, scale = s, log = TRUE), na.rm = TRUE)
     },
     "score" = list(
       "mu" = function(y, eta, ...) {
-        sigma <- linkinv$sigma(eta$sigma) 
-        sigma * (-1 + y / linkinv$mu(eta$mu))
+        sigma <- eta$sigma
+        sigma * (-1 + y / eta$mu)
       },
       "sigma" = function(y, eta, ...) {
-        mu <- linkinv$mu(eta$mu)
-        sigma <- linkinv$sigma(eta$sigma)
+        mu <- eta$mu
+        sigma <- eta$sigma
         sigma * (log(sigma) + 1 - log(mu) - digamma(sigma) + log(y) - y / mu)
       }
     ),
     "weights" = list(
-      "mu" = function(y, eta, ...) { linkinv$sigma(eta$sigma) },
+      "mu" = function(y, eta, ...) { eta$sigma },
       "sigma" = function(y, eta, ...) {
-        sigma <- linkinv$sigma(eta$sigma)
+        sigma <- eta$sigma
         sigma^2 * trigamma(sigma) - sigma
       }
     ),
     "mu" = function(eta, ...) {
-      linkinv$mu(eta$mu)
+      eta$mu
     },
 	  "d" = function(y, eta, log = FALSE) {
-		  a <- linkinv$sigma(eta$sigma) 
-		  s <- linkinv$mu(eta$mu) / linkinv$sigma(eta$sigma) 
+		  a <- eta$sigma
+		  s <- eta$mu / eta$sigma
 		  dgamma(y, shape = a, scale = s, log = log)
 	  },
 	  "p" = function (y, eta, lower.tail = TRUE, log.p = FALSE) {
-		  a <- linkinv$sigma(eta$sigma) 
-		  s <- linkinv$mu(eta$mu) / linkinv$sigma(eta$sigma) 
+		  a <- eta$sigma
+		  s <- eta$mu / eta$sigma
 		  pgamma(y, shape = a, scale = s, lower.tail = lower.tail, log.p = log.p)
 	  },
     "type" = 1
@@ -887,15 +755,10 @@ gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
 
 gengamma.BayesR <- function(links = c(mu = "log", sigma = "log", tau = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "log", sigma = "log", tau = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-
   rval <- list(
     "family" = "gengamma",
     "names" = c("mu", "sigma", "tau"),
-    "links" = links,
+    "links" = parse.links(links, c(mu = "log", sigma = "log", tau = "log"), ...),
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
       if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
@@ -915,11 +778,6 @@ gengamma.BayesR <- function(links = c(mu = "log", sigma = "log", tau = "log"), .
 
 lognormal.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "identity", sigma = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-
   rval <- list(
     "family" = "lognormal",
     "names" = c("mu", "sigma"),
@@ -934,21 +792,21 @@ lognormal.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
       "sigma" = c("lognormal2_sigma", "scale")
     ),
     "score" = list(
-      "mu" = function(y, eta, ...) { (log(y) - linkinv$mu(eta$mu)) / (linkinv$sigma(eta$sigma)^2) },
-      "sigma" = function(y, eta, ...) { -1 + (log(y) - linkinv$mu(eta$mu))^2 / (linkinv$sigma(eta$sigma)^2) }
+      "mu" = function(y, eta, ...) { (log(y) - eta$mu) / (eta$sigma^2) },
+      "sigma" = function(y, eta, ...) { -1 + (log(y) - eta$mu)^2 / (eta$sigma^2) }
     ),
     "weights" = list(
-      "mu" = function(y, eta, ...) { 1 / (linkinv$sigma(eta$sigma)^2) },
+      "mu" = function(y, eta, ...) { 1 / (eta$sigma^2) },
       "sigma" = function(y, eta, ...) { rep(2, length(y)) }
     ),
 	  "mu" = function(eta, ...) {
-      exp(eta$mu + 0.5 * (linkinv$sigma(eta$sigma))^2)
+      exp(eta$mu + 0.5 * (eta$sigma)^2)
     },
     "d" = function(y, eta, log = FALSE) {
-      dlnorm(y, meanlog = linkinv$mu(eta$mu), sdlog = linkinv$sigma(eta$sigma), log = log)
+      dlnorm(y, meanlog = eta$mu, sdlog = eta$sigma, log = log)
     },
     "p" = function(y, eta) {
-      plnorm(y, meanlog = linkinv$mu(eta$mu), sdlog = linkinv$sigma(eta$sigma))
+      plnorm(y, meanlog = eta$mu, sdlog = eta$sigma)
     },
     "type" = 1
   )
@@ -960,11 +818,6 @@ lognormal.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
 
 lognormal2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "identity", sigma2 = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-
   rval <- list(
     "family" = "lognormal2",
     "names" = c("mu", "sigma2"),
@@ -979,21 +832,21 @@ lognormal2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
       "sigma2" = c("lognormal_sigma2", "scale")
     ),
 	"score" = list(
-      "mu" = function(y, eta, ...) { (log(y) - linkinv$mu(eta$mu)) / (linkinv$sigma2(eta$sigma2)) },
-      "sigma2" = function(y, eta, ...) { -0.5 + (log(y) - linkinv$mu(eta$mu))^2 / (2 * linkinv$sigma2(eta$sigma2)) }
+      "mu" = function(y, eta, ...) { (log(y) - eta$mu) / (eta$sigma2) },
+      "sigma2" = function(y, eta, ...) { -0.5 + (log(y) - eta$mu)^2 / (2 * eta$sigma2) }
     ),
     "weights" = list(
-      "mu" = function(y, eta, ...) { 1 / (linkinv$sigma2(eta$sigma2)) },
+      "mu" = function(y, eta, ...) { 1 / (eta$sigma2) },
       "sigma2" = function(y, eta, ...) { rep(0.5, length(y)) }
     ),
 	  "mu" = function(eta, ...) {
-      exp(linkinv$mu(eta) + 0.5 * (linkinv$sigma2(eta$sigma2)))
+      exp(eta$mu + 0.5 * (eta$sigma2))
     },
     "d" = function(y, eta, log = FALSE) {
-      dlnorm(y, meanlog = linkinv$mu(eta$mu), sdlog = sqrt(linkinv$sigma2(eta$sigma2)), log = log)
+      dlnorm(y, meanlog = eta$mu, sdlog = sqrt(eta$sigma2), log = log)
     },
     "p" = function(y, eta) {
-      plnorm(y, meanlog = linkinv$mu(eta$mu), sdlog = sqrt(linkinv$sigma2(eta$sigma2)))
+      plnorm(y, meanlog = eta$mu, sdlog = sqrt(eta$sigma2))
     }
   )
 
@@ -1004,15 +857,10 @@ lognormal2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 
 dagum.BayesR <- function(links = c(a = "log", b = "log", p = "log"), ...)
 {
-  links <- parse.links(links, c(a = "log", b = "log", p = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-
   rval <- list(
     "family" = "dagum",
     "names" = c("a", "b", "p"),
-    "links" = links,
+    "links" = parse.links(links, c(a = "log", b = "log", p = "log"), ...),
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
       if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
@@ -1024,24 +872,24 @@ dagum.BayesR <- function(links = c(a = "log", b = "log", p = "log"), ...)
       "p" = c("dagum_p", "shape2")
     ),
 	  "mu" = function(eta, ...) {
-	    a <- linkinv$a(eta$a)
-      b <- linkinv$b(eta$b)
-      p <- linkinv$p(eta$p)
+	    a <- eta$a
+      b <- eta$b
+      p <- eta$p
       -(b/a) * (gamma(- 1 / a) * gamma(p + 1 / a)) / (gamma(p))
     },
 	  "d" = function(y, eta, log = FALSE) {
-		  a <- linkinv$a(eta$a)
-		  b <- linkinv$b(eta$b)
-		  p <- linkinv$p(eta$p)
+		  a <- eta$a
+		  b <- eta$b
+		  p <- eta$p
 		  ap <- a * p
 		  d <-ap * y^(ap -1) / (b^ap * (1 + (y / b)^a)^(p + 1))
       if(log) d <- log(d)
       d
 	  },
 	  "p" = function(y, eta) {
-		  a <- linkinv$a(eta$a)
-      b <- linkinv$b(eta$b)
-      p <- linkinv$p(eta$p)
+		  a <- eta$a
+      b <- eta$b
+      p <- eta$p
 		  (1 + (y / b)^(-a))^(-p)
 	  }
   )
@@ -1052,15 +900,10 @@ dagum.BayesR <- function(links = c(a = "log", b = "log", p = "log"), ...)
 
 BCCG.BayesR <- function(links = c(mu = "log", sigma = "log", nu = "identity"), ...)
 {
-  links <- parse.links(links, c(mu = "log", sigma = "log", nu = "identity"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-  
   rval <- list(
     "family" = "BCCG",
     "names" = c("mu", "sigma", "nu"),
-    "links" = links,
+    "links" = parse.links(links, c(mu = "log", sigma = "log", nu = "identity"), ...),
 	  "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
       if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
@@ -1073,18 +916,18 @@ BCCG.BayesR <- function(links = c(mu = "log", sigma = "log", nu = "identity"), .
 	    "order" = c("nu", "sigma", "mu")
     ),
 	  "d" = function(y, eta, log = FALSE) {
-		  mu <- linkinv$mu(eta$mu)
-		  sigma <- linkinv$sigma(eta$sigma)
-		  nu <- linkinv$nu(eta$nu)
+		  mu <- eta$mu
+		  sigma <- eta$sigma
+		  nu <- eta$nu
 		  z <- ifelse(nu == 0, log(y/mu)/sigma, (((y/mu)^nu - 1)/(nu * sigma)))
 		  d <- (1 / (sqrt(2 * pi) * sigma)) * (y^(nu - 1) / mu^nu) * exp(-z^2 / 2)
       if(log) d <- log(d)
       d
 	  },
 	  "p" = function(y, eta) {
-		  mu <- linkinv$mu(eta$mu)
-		  sigma <- linkinv$sigma(eta$sigma)
-		  nu <- linkinv$nu(eta$nu)
+		  mu <- eta$mu
+		  sigma <- eta$sigma
+		  nu <- eta$nu
 		  z <- ifelse(nu == 0, log(y/mu)/sigma, (((y/mu)^nu - 1)/(nu * sigma)))
 		  FYy1 <- pnorm(z)
       FYy2 <- ifelse(nu > 0, pnorm(-1/(sigma * abs(nu))), 0)
@@ -1101,17 +944,12 @@ BCCG.BayesR <- function(links = c(mu = "log", sigma = "log", nu = "identity"), .
 
 mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
   sigma1 = "log", sigma2 = "log", rho = "rhogit"), ...)
-{  
-  links <- parse.links(links, c(mu1 = "identity", mu2 = "identity",
-    sigma1 = "log", sigma2 = "log", rho = "rhogit"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-  
+{
   rval <- list(
     "family" = "mvn",
     "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho"),
-    "links" = links,
+    "links" = parse.links(links, c(mu1 = "identity", mu2 = "identity",
+      sigma1 = "log", sigma2 = "log", rho = "rhogit"), ...),
     bayesx = list(
       "mu1" = c("bivnormal_mu", "mean"),
       "mu2" = c("bivnormal_mu", "mu"),
@@ -1126,14 +964,14 @@ mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
     },
     "d" = function(y, eta, log = FALSE) {
       cbind(
-        dnorm(y[, 1], mean = eta$mu1, sd = linkinv$sigma1(eta$sigma1), log = log),
-        dnorm(y[, 2], mean = eta$mu2, sd = linkinv$sigma2(eta$sigma2), log = log)
+        dnorm(y[, 1], mean = eta$mu1, sd = eta$sigma1, log = log),
+        dnorm(y[, 2], mean = eta$mu2, sd = eta$sigma2, log = log)
       )
     },
     "p" = function(y, eta) {
       cbind(
-        pnorm(y[, 1], mean = eta$mu1, sd = linkinv$sigma1(eta$sigma1)),
-        pnorm(y[, 2], mean = eta$mu2, sd = linkinv$sigma2(eta$sigma2))
+        pnorm(y[, 1], mean = eta$mu1, sd = eta$sigma1),
+        pnorm(y[, 2], mean = eta$mu2, sd = eta$sigma2)
       )
     },
     "type" = 2
@@ -1145,16 +983,11 @@ mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
 
 
 bivprobit.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity", rho = "rhogit"), ...)
-{  
-  links <- parse.links(links, c(mu1 = "identity", mu2 = "identity", rho = "rhogit"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-  
+{
   rval <- list(
     "family" = "bivprobit",
     "names" = c("mu1", "mu2", "rho"),
-    "links" = links,
+    "links" = parse.links(links, c(mu1 = "identity", mu2 = "identity", rho = "rhogit"), ...),
     bayesx = list(
       "mu1" = c("bivprobit_mu", "mean"),
       "mu2" = c("bivprobit_mu", "mu"),
@@ -1173,16 +1006,11 @@ bivprobit.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity", rho =
 }
 
 bivlogit.BayesR <- function(links = c(p1 = "logit", p2 = "logit", psi = "log"), ...)
-{  
-  links <- parse.links(links, c(p1 = "logit", p2 = "logit", psi = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-  
+{
   rval <- list(
     "family" = "bivlogit",
     "names" = c("p1", "p2", "psi"),
-    "links" = links,
+    "links" = parse.links(links, c(p1 = "logit", p2 = "logit", psi = "log"), ...),
     bayesx = list(
       "mu1" = c("bivlogit_mu", "mean"),
       "mu2" = c("bivlogit_mu", "mu"),
@@ -1202,16 +1030,11 @@ bivlogit.BayesR <- function(links = c(p1 = "logit", p2 = "logit", psi = "log"), 
 mvt.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
   sigma1 = "log", sigma2 = "log", rho = "fisherz", df = "log"), ...)
 {
-  links <-  parse.links(links, c(mu1 = "identity", mu2 = "identity",
-    sigma1 = "log", sigma2 = "log", rho = "fisherz", df = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-
   rval <- list(
     "family" = "mvt",
     "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho", "df"),
-    "links" = links,
+    "links" = parse.links(links, c(mu1 = "identity", mu2 = "identity",
+      sigma1 = "log", sigma2 = "log", rho = "fisherz", df = "log"), ...),
     bayesx = list(
       "mu1" = c("bivt_mu", "mean"),
       "mu2" = c("bivt_mu", "mu"),
@@ -1223,7 +1046,7 @@ mvt.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
       "rm.number" = TRUE
     ),
 	  "mu" = function(eta, ...) {
-      c(linkinv$mu1(eta), linkinv$mu2(eta))
+      c(eta$mu1, eta$mu2)
     },
     "type" = 2
   )
@@ -1279,27 +1102,22 @@ multinomial.BayesR <- function(link = "probit", ...)
 
 ## Count Data distributions
 poisson.BayesR <- function(links = c(lambda = "log"), ...)
-{
-  links <- parse.links(links, c(lambda = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-  
+{ 
   rval <- list(
     "family" = "poisson",
     "names" = c("lambda"),
-    "links" = links,
+    "links" = parse.links(links, c(lambda = "log"), ...),
     bayesx = list(
       "lambda" = c("poisson", "mean")
     ),
 	  "mu" = function(eta, ...) {
-      linkinv$lambda(eta$lambda)
+       eta$lambda
     },
 	  "d" = function(y, eta, log = FALSE) {
-      dpois(y, lambda = linkinv$lambda(eta$lambda), log = log)
+      dpois(y, lambda = eta$lambda, log = log)
     },
     "p" = function(y, eta) {
-      ppois(y, lambda = linkinv$lambda(eta$lambda))
+      ppois(y, lambda = eta$lambda)
     },
     "score.norm" = TRUE,
     "type" = 3
@@ -1311,16 +1129,11 @@ poisson.BayesR <- function(links = c(lambda = "log"), ...)
 
 
 zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
-{
-  links <- parse.links(links, c(lambda = "log", pi = "logit"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-  
+{ 
   rval <- list(
     "family" = "zip",
     "names" = c("lambda", "pi"),
-    "links" = links,
+    "links" = parse.links(links, c(lambda = "log", pi = "logit"), ...),
     bayesx = list(
       "lambda" = c("zip_lambda", "mean"),
       "pi" = switch(links["pi"],
@@ -1329,16 +1142,16 @@ zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
       ) 
     ),
 	  "mu" = function(eta, ...) {
-      linkinv$lambda(eta$lambda) * (1 - linkinv$pi(eta$pi))
+      eta$lambda * (1 - eta$pi)
     },
     "d" = function(y, eta, log = FALSE) {
-      d <- ifelse(y == 0, linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * dpois(y, lambda = linkinv$lambda(eta$lambda)), 
-				(1 - linkinv$pi(eta$pi)) * dpois(y, lambda = linkinv$lambda(eta$lambda)))
+      d <- ifelse(y == 0, eta$pi + (1 - eta$pi) * dpois(y, lambda = eta$lambda), 
+				(1 - eta$pi) * dpois(y, lambda = eta$lambda))
       if(log) d <- log(d)
       d
     },
     "p" = function(y, eta) {
-      ifelse(y<0, 0, linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * ppois(y, lambda = linkinv$lambda(eta$lambda)))
+      ifelse(y<0, 0, eta$pi + (1 - eta$pi) * ppois(y, lambda = (eta$lambda))
     },
     "score.norm" = TRUE,
     "type" = 3
@@ -1353,27 +1166,22 @@ zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
 
 negbin.BayesR <- function(links = c(mu = "log", delta = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "log", delta = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-  
   rval <- list(
     "family" = "negbin",
     "names" = c("mu", "delta"),
-    "links" = links,
+    "links" = parse.links(links, c(mu = "log", delta = "log"), ...),
     bayesx = list(
       "mu" = c("negbin_mu", "mean"),
       "delta" = c("negbin_delta", "delta")
     ),
 	  "mu" = function(eta, ...) {
-      linkinv$mu(eta$mu)
+      eta$mu
     },
     "d" = function(y, eta, log = FALSE) {
-      dnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta), log = log)
+      dnbinom(y, mu = eta$mu, size = eta$delta, log = log)
     },
     "p" = function(y, eta) {
-      pnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta))
+      pnbinom(y, mu = eta$mu, size = eta$delta)
     },
     "score.norm" = TRUE,
     "type" = 3
@@ -1386,31 +1194,26 @@ negbin.BayesR <- function(links = c(mu = "log", delta = "log"), ...)
 
 zinb.BayesR <- function(links = c(mu = "log", pi = "logit", delta = "log"), ...)
 {
-  links <- parse.links(links, c(mu = "log", pi = "logit", delta = "log"), ...)
-  linkinv <- list()
-  for(j in names(links))
-    linkinv[[j]] <- make.link2(links[[j]])$linkinv
-  
   rval <- list(
     "family" = "zinb",
     "names" = c("mu", "pi", "delta"),
-    "links" = links,
+    "links" = parse.links(links, c(mu = "log", pi = "logit", delta = "log"), ...),
     bayesx = list(
       "mu" = c("zinb_mu", "mean"),
       "pi" = c("zinb_pi", "pi"),
       "delta" = c("zinb_delta", "delta")
     ),
 	  "mu" = function(eta, ...) {
-      linkinv$mu(eta$mu) * (1 - linkinv$pi(eta$pi))
+      eta$mu * (1 - eta$pi)
     },
     "d" = function(y, eta, log = FALSE) {
-      d <- ifelse(y == 0, linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * dnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta)), 
-				(1 - linkinv$pi(eta$pi)) * dnbinom(y, mu = linkinv$mu(eta$mu), size = linkinv$delta(eta$delta)))
+      d <- ifelse(y == 0, eta$pi + (1 - eta$pi) * dnbinom(y, mu = eta$mu, size = eta$delta), 
+				(1 - eta$pi) * dnbinom(y, mu = eta$mu, size = eta$delta))
       if(log) d <- log(d)
       d
     },
     "p" = function(y, eta) {
-      ifelse(y<0, 0, linkinv$pi(eta$pi) + (1 - linkinv$pi(eta$pi)) * pnbinom(y, size = linkinv$delta(eta$delta), mu = linkinv$mu(eta$mu)))
+      ifelse(y<0, 0, eta$pi + (1 - eta$pi) * pnbinom(y, size = eta$delta, mu = eta$mu))
     },
     "score.norm" = TRUE,
     "type" = 3
@@ -1474,28 +1277,20 @@ tD <- function(x)
   score <- weights <- list()
 
   score$mu  <- function(y, eta, ...) {
-    for(i in nx)
-      eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
     call <- paste('x$dldm(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
     eval(parse(text = call))
   }
   weights$mu <- function(y, eta, ...) {
-    for(i in nx)
-      eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
     fo <- names(formals(x$d2ldm2))
     call <- paste('x$d2ldm2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
     eval(parse(text = call))
   }
   if(k > 1) {
     score$sigma  <- function(y, eta, ...) {
-      for(i in nx)
-        eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
       call <- paste('x$dldd(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
       eval(parse(text = call))
     }
     weights$sigma <- function(y, eta, ...) {
-      for(i in nx)
-        eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
       fo <- names(formals(x$d2ldd2))
       call <- paste('x$d2ldd2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
       eval(parse(text = call))
@@ -1503,14 +1298,10 @@ tD <- function(x)
   }
   if(k > 2) {
     score$nu  <- function(y, eta, ...) {
-      for(i in nx)
-        eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
       call <- paste('x$dldv(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
       eval(parse(text = call))
     }
     weights$nu <- function(y, eta, ...) {
-      for(i in nx)
-        eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
       fo <- names(formals(x$d2ldv2))
       call <- paste('x$d2ldv2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
       eval(parse(text = call))
@@ -1518,14 +1309,10 @@ tD <- function(x)
   }
   if(k > 3) {
     score$tau  <- function(y, eta, ...) {
-      for(i in nx)
-        eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
       call <- paste('x$dldt(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
       eval(parse(text = call))
     }
     weights$tau <- function(y, eta, ...) {
-      for(i in nx)
-        eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
       fo <- names(formals(x$d2ldt2))
       call <- paste('x$d2ldt2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
       eval(parse(text = call))
@@ -1542,16 +1329,12 @@ tD <- function(x)
     "score" = score,
     "weights" = weights,
     "d" = function(y, eta, log = FALSE, ...) {
-      for(i in nx)
-        eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
       call <- paste('dfun(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
       d <- eval(parse(text = call))
       if(log) d <- log(d)
       d
     },
     "p" = function(y, eta, ...) {
-      for(i in nx)
-        eta[[i]] <- x[[paste(i, "linkinv", sep = ".")]](eta[[i]])
       call <- paste('pfun(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
       eval(parse(text = call))
     }
