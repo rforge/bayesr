@@ -512,7 +512,7 @@ truncgaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
     },
     "d" = function(y, eta, log = FALSE) {
       mu <-  eta$mu
-	    sigma <- eta$sigma)
+	    sigma <- eta$sigma
 	    arg <- - mu / sigma
 	    d <- dnorm(y / sigma + arg) / (1 - pnorm(arg))
       if(log) d <- log(d)
@@ -1151,7 +1151,7 @@ zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
       d
     },
     "p" = function(y, eta) {
-      ifelse(y<0, 0, eta$pi + (1 - eta$pi) * ppois(y, lambda = (eta$lambda))
+      ifelse(y < 0, 0, eta$pi + (1 - eta$pi) * ppois(y, lambda = eta$lambda))
     },
     "score.norm" = TRUE,
     "type" = 3
