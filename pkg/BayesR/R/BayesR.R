@@ -1011,8 +1011,9 @@ add.partial <- function(x, samples = FALSE, nsamps = 100) {
     mf <- model.frame(x)
     for(j in seq_along(x)) {
       if(!is.null(x[[j]]$effects)) {
-        weights <- family$weights[[nx[j]]](y, eta)
-        score <- family$score[[nx[j]]](y, eta)
+        peta <- family$map2par(eta)
+        weights <- family$weights[[nx[j]]](y, peta)
+        score <- family$score[[nx[j]]](y, peta)
         z <- eta[[nx[j]]] + 1 / weights * score
         ne <- names(x[[j]]$effects)
         for(sj in seq_along(ne)) {
