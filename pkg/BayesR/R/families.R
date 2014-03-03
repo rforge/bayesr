@@ -505,6 +505,55 @@ gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 }
 
 
+gaussian3.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
+{
+  links <- parse.links(links, c(mu = "identity", sigma2 = "log"), ...)
+  
+  rval <- list(
+    "family" = "gaussian2",
+    "names" = c("mu", "sigma2"),
+    "links" = links,
+    bayesx = list(
+      "mu" = switch(links["mu"],
+        "identity" = c("normal_mu", "mean"),
+        "inverse" = c("normal_mu_inv", "mean")
+      ),
+      "sigma2" = switch(links["sigma2"],
+        "log" = c("normal_sigma2", "scale"),
+        "logit" = c("normal_sigma2_logit", "scale")
+      )
+    ),
+    jagstan = list(
+      "dist" = "dnorm",
+      "eta" = JAGSeta,
+      "model" = JAGSmodel,
+      "reparam" = c(sigma2 = "1 / sigma2")
+    ),
+    "score" = list(
+      "mu" = function(y, eta, ...) { drop((y - eta$mu) / eta$sigma2) },
+      "sigma2" = function(y, eta, ...) { drop(-0.5 + (y - eta$mu)^2 / (2 * eta$sigma2)) }
+    ),
+    "weights" = list(
+      "mu" = function(y, eta, ...) { drop(1 / eta$sigma2) },
+      "sigma2" = function(y, eta, ...) { rep(0.5, length(y)) }
+    ),
+    "mu" = function(eta, ...) {
+      eta$mu 
+    },
+    "d" = function(y, eta, log = FALSE) {
+      dnorm(y, mean = eta$mu, sd = sqrt(eta$sigma2), log = log)
+    },
+    "p" = function(y, eta) {
+      pnorm(y, mean = eta$mu, sd = sqrt(eta$sigma2))
+    },
+    "type" = 1
+  )
+ 
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
 truncgaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 {
   links <- parse.links(links, c(mu = "identity", sigma2 = "log"), ...)

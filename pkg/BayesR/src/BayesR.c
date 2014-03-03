@@ -102,6 +102,21 @@ SEXP iwls_eval(SEXP fun, SEXP response, SEXP eta, SEXP rho)
   return rval;
 }
 
+
+/* Map linear predictor to parameter scale */
+SEXP map2par(SEXP fun, SEXP eta, SEXP rho)
+{
+  SEXP R_fcall, rval;
+
+  PROTECT(R_fcall = lang2(fun, eta));
+  PROTECT(rval = eval(R_fcall, rho));
+
+  UNPROTECT(2);
+
+  return rval;
+}
+
+
 SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 {
   int nProtected = 0;
@@ -114,18 +129,20 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 /*  int adaptcheck = accepted * adaptive;*/
 
   /* Evaluate loglik, weights and score vector. */
-  SEXP eta2;
+  SEXP eta2, peta;
   PROTECT(eta2 = duplicate(eta));
   ++nProtected;
+  PROTECT(peta = map2par(getListElement(family, "map2par"), eta2, rho));
+  ++nProtected;
   int ll_ind = getListElement_index(family, "loglik");
-  double pibeta = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, eta2, rho))[0];
+  double pibeta = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, peta, rho))[0];
   SEXP weights;
   PROTECT(weights = iwls_eval(getListElement(getListElement(family, "weights"),
-    CHAR(STRING_ELT(id, 0))), response, eta2, rho));
+    CHAR(STRING_ELT(id, 0))), response, peta, rho));
   ++nProtected;
   SEXP score;
   PROTECT(score = iwls_eval(getListElement(getListElement(family, "score"),
-    CHAR(STRING_ELT(id, 0))), response, eta2, rho));
+    CHAR(STRING_ELT(id, 0))), response, peta, rho));
   ++nProtected;
 
   /* Extract design matrix X and penalty matrix S.*/
@@ -323,15 +340,16 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
     etaptr[i] = etaptr[i] + fit1ptr[i];
   }
 
-  double pibetaprop = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, eta2, rho))[0];
+  peta = map2par(getListElement(family, "map2par"), eta2, rho);
+  double pibetaprop = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, peta, rho))[0];
 
   /* Weights, score and working observations. */
   SEXP weights2, score2;
   PROTECT(weights2 = iwls_eval(getListElement(getListElement(family, "weights"),
-    CHAR(STRING_ELT(id, 0))), response, eta2, rho));
+    CHAR(STRING_ELT(id, 0))), response, peta, rho));
   ++nProtected;
   PROTECT(score2 = iwls_eval(getListElement(getListElement(family, "score"),
-    CHAR(STRING_ELT(id, 0))), response, eta2, rho));
+    CHAR(STRING_ELT(id, 0))), response, peta, rho));
   ++nProtected;
   double *W2ptr = REAL(weights2);
   double *score2ptr = REAL(score2);

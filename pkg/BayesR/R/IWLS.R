@@ -175,17 +175,20 @@ smooth.IWLS.default <- function(x, ...)
     } else {
     require("mvtnorm")
     x$propose <- function(x, family, response, eta, id, ...) {
+      ## Map predictor to parameter scale.
+      peta <- family$map2par(eta)
+
       ## Compute weights.
-      weights <- family$weights[[id]](response, eta)
+      weights <- family$weights[[id]](response, peta)
 
       ## Score.
-      score <- family$score[[id]](response, eta)
+      score <- family$score[[id]](response, peta)
 
       ## Compute working observations.
       z <- eta[[id]] + 1 / weights * score
 
       ## Compute old log likelihood and old log coefficients prior.
-      pibeta <- family$loglik(response, eta)
+      pibeta <- family$loglik(response, peta)
       p1 <- if(x$fixed) {
         0
       } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
@@ -221,14 +224,17 @@ smooth.IWLS.default <- function(x, ...)
       ## Set up new predictor.
       eta[[id]] <- eta[[id]] + x$state$fit
 
+      ## Map predictor to parameter scale.
+      peta <- family$map2par(eta)
+
       ## Compute new log likelihood.
-      pibetaprop <- family$loglik(response, eta)
+      pibetaprop <- family$loglik(response, peta)
 
       ## Compute new weights
-      weights <- family$weights[[id]](response, eta)
+      weights <- family$weights[[id]](response, peta)
 
       ## New score.
-      score <- family$score[[id]](response, eta)
+      score <- family$score[[id]](response, peta)
 
       ## New working observations.
       z <- eta[[id]] + 1 / weights * score
@@ -265,9 +271,11 @@ smooth.IWLS.default <- function(x, ...)
     x$update <- function(x, family, response, eta, id, ...) {
       args <- list(...)
 
+      peta <- family$map2par(eta)
+
       if(is.null(args$weights)) {
         ## Compute weights.
-        weights <- family$weights[[id]](response, eta)
+        weights <- family$weights[[id]](response, peta)
       } else weights <- args$weights
 
       ## Which obs to take.
@@ -276,7 +284,7 @@ smooth.IWLS.default <- function(x, ...)
 
       if(is.null(args$z)) {
         ## Score.
-        score <- family$score[[id]](response, eta)
+        score <- family$score[[id]](response, peta)
 
         ## Compute working observations.
         z <- eta[[id]][ok] + 1 / weights * score[ok]
@@ -310,7 +318,7 @@ smooth.IWLS.default <- function(x, ...)
             if(x$xt$center) edf <- edf - 1
           }
           eta2[[id]] <- eta2[[id]] + fit
-          IC <- get.ic(family, response, eta2, edf0 + edf, length(e), x$criterion)
+          IC <- get.ic(family, response, family$map2par(eta2), edf0 + edf, length(e), x$criterion)
           return(IC)
         }
 
@@ -452,11 +460,13 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
         ## Cycle through all parameters
         for(j in 1:np) {
           if(outer) {
+            peta <- family$map2par(eta)
+
             ## Compute weights.
-            weights <- family$weights[[nx[j]]](response, eta)
+            weights <- family$weights[[nx[j]]](response, peta)
 
             ## Score.
-            score <- family$score[[nx[j]]](response, eta)
+            score <- family$score[[nx[j]]](response, peta)
 
             ## Compute working observations.
             z <- eta[[nx[j]]] + 1 / weights * score
@@ -478,13 +488,14 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
         }
 
         eps0 <- mean((do.call("cbind", eta) - do.call("cbind", eta0))^2)
+        peta <- family$map2par(eta)
 
         if(any(method == "backfitting") & verbose) {
-          IC <- get.ic(family, response, eta, edf, nobs, criterion)
+          IC <- get.ic(family, response, peta, edf, nobs, criterion)
 
           cat("\r")
           vtxt <- paste(criterion, " ", fmt(IC, width = -8, digits = digits),
-            " loglik ", fmt(family$loglik(response, eta), width = -8, digits = digits),
+            " loglik ", fmt(family$loglik(response, peta), width = -8, digits = digits),
             " edf ", fmt(edf, width = -6, digits = digits + 2),
             " eps ", fmt(eps0, width = -6, digits = digits + 2),
             " iteration ", formatC(iter, width = -1 * nchar(maxit)), sep = "")
@@ -496,12 +507,12 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
         iter <- iter + 1
       }
 
-      IC <- get.ic(family, response, eta, edf, nobs, criterion)
+      IC <- get.ic(family, response, peta, edf, nobs, criterion)
 
       if(any(method %in% c("backfitting", "backfitting2", "backfitting4")) & verbose) {
         cat("\r")
         vtxt <- paste(criterion, " ", fmt(IC, width = -8, digits = digits),
-          " loglik ", fmt(family$loglik(response, eta), width = -8, digits = digits),
+          " loglik ", fmt(family$loglik(response, peta), width = -8, digits = digits),
           " edf ", fmt(edf, width = -6, digits = digits + 2),
           " eps ", fmt(eps0, width = -6, digits = digits + 2),
           " iteration ", formatC(iter, width = -1 * nchar(maxit)), sep = "")
@@ -655,7 +666,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
         }
       }
 
-      if(save) deviance[js] <- -2 * family$loglik(response, eta)
+      if(save) deviance[js] <- -2 * family$loglik(response, family$map2par(eta))
 
       if(verbose) barfun(ptm, n.iter, i, step, nstep)
     }
@@ -665,7 +676,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   save.edf <- save.loglik <- NULL
   if(!any(grepl("MCMC", method))) {
     save.edf <- get_edf(x)
-    save.loglik <- family$loglik(response, eta)
+    save.loglik <- family$loglik(response, family$map2par(eta))
     if(verbose) cat("generating samples\n")
     ptm <- proc.time()
     for(js in seq_along(iterthin)) {
@@ -683,7 +694,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
       if(verbose) barfun(ptm, length(iterthin), js, 1, 20, start = FALSE)
     }
     if(verbose) cat("\n")
-    deviance <- rep(-2 * family$loglik(response, eta), length = length(iterthin))
+    deviance <- rep(-2 * family$loglik(response, family$map2par(eta)), length = length(iterthin))
   }
 
   ## Return all samples as mcmc matrix.

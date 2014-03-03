@@ -415,9 +415,19 @@ bayesr.family <- function(family, type = "BayesR")
     family$cat <- FALSE
   if(is.null(family$mu))
     family$mu <- function(x) { x }
+  if(is.null(family$map2par)) {
+    linkinv <- vector(mode = "list", length = length(family$names))
+    for(j in family$names)
+      linkinv[[j]] <- make.link2(family$links[j])$linkinv
+    family$map2par <- function(eta) {
+      for(j in names(eta))
+        eta[[j]] <- linkinv[[j]](eta[[j]])
+      return(eta)
+    }
+  }
   if(is.null(family$loglik)) {
     if(!is.null(family$d))
-      family$loglik <- function(y, eta) { sum(family$d(y, eta, log = TRUE), na.rm = TRUE) }
+      family$loglik <- function(y, eta) { sum(family$d(y, family$map2par(eta), log = TRUE), na.rm = TRUE) }
   }
   family
 }
@@ -2039,7 +2049,7 @@ DIC.bayesr <- function(object, ..., samples = TRUE, nsamps = NULL)
       family <- attr(object[[i]], "family")
       if(is.null(family$d)) stop("no d() function available in model family object!")
       y <- model.response2(object[[i]])
-      d0 <- -2 * sum(family$d(y, fitted.bayesr(object[[i]], type = "link"), log = TRUE), na.rm = TRUE)
+      d0 <- -2 * sum(family$d(y, family$map2par(fitted.bayesr(object[[i]], type = "link")), log = TRUE), na.rm = TRUE)
       eta <- fitted.bayesr(object[[i]], type = "link",
         samples = TRUE, nsamps = nsamps,
         FUN = function(x) { x })
@@ -2051,7 +2061,7 @@ DIC.bayesr <- function(object, ..., samples = TRUE, nsamps = NULL)
           teta <- cbind(teta, eta[[ii]][, j])
         teta <- as.data.frame(teta)
         names(teta) <- names(eta)
-        d1 <- c(d1, -2 * sum(family$d(y, teta, log = TRUE), na.rm = TRUE))
+        d1 <- c(d1, -2 * sum(family$d(y, family$map2par(teta), log = TRUE), na.rm = TRUE))
       }
       md1 <- mean(d1)
       pd <- md1 - d0
@@ -2103,13 +2113,13 @@ logLik.bayesr <- function(object, ..., type = 1, nsamps = NULL, FUN = NULL)
             teta <- cbind(teta, eta[[ii]][, j])
           teta <- as.data.frame(teta)
           names(teta) <- names(eta)
-          ll <- c(ll, sum(family$d(y, teta, log = TRUE), na.rm = TRUE))
+          ll <- c(ll, sum(family$d(y, family$map2par(teta), log = TRUE), na.rm = TRUE))
         }
         if(is.null(FUN)) FUN <- function(x) { x }
         rval[[i]] <- FUN(ll)
       } else {
         eta <- fitted.bayesr(object[[i]], type = "link")
-        ll <- sum(family$d(y, eta, log = TRUE), na.rm = TRUE)
+        ll <- sum(family$d(y, family$map2par(eta), log = TRUE), na.rm = TRUE)
         rval <- rbind(rval, data.frame(
           "logLik" = ll,
           "edf" = NA
@@ -2544,7 +2554,7 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
   if(is.null(family$score.norm)) {
     score.norm <- function(eta) {
       integrand <- function(x) {
-        family$d(x, eta)^2
+        family$d(x, family$map2par(eta))^2
       }
       rval <- if(is.null(limits)) {
           try(integrate(integrand, lower = -Inf, upper = Inf), silent = TRUE)
@@ -2559,7 +2569,7 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
   } else {
     score.norm <- function(eta) {
 	    integrand <- function(x) {
-        family$d(x, eta)^2
+        family$d(x, family$map2par(eta))^2
 	    }
 	    rval <- sum(integrand(seq(0, maxy)))
 	    rval
@@ -2567,7 +2577,7 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
 
 	  score.norm2 <- function(y, eta) {
 	    integrand <- function(x) {
-         -sum(((x == y) * 1 - family$d(x, eta))^2)
+         -sum(((x == y) * 1 - family$d(x, family$map2par(eta)))^2)
 	    }
 	    rval <- (integrand(seq(0, maxy)))
 	    rval
@@ -2580,7 +2590,7 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
       norm[i] <- score.norm(eta[i, , drop = FALSE])
     }
 
-    pp <- family$d(y, eta)
+    pp <- family$d(y, family$map2par(eta))
     loglik <- log(pp)
     if(is.null(family$score.norm)) {
       quadratic <- 2 * pp - norm
@@ -2744,10 +2754,10 @@ residuals.bayesr <- function(object, type = c("quantile", "ordinary", "quantile2
       names(eta2) <- gsub(ni, "", names(eta2))
       tres <- if(type == "quantile2") {
         if(family$type == 3) {
-          le <- family$p(y - 1, eta2)
-          ri <- family$p(y, eta2)
+          le <- family$p(y - 1, family$map2par(eta2))
+          ri <- family$p(y, family$map2par(eta2))
           qnorm(runif(length(y), min = le, max = ri))
-        } else qnorm(family$p(y, eta2))
+        } else qnorm(family$p(y, family$map2par(eta2)))
       } else family$mu(eta2)
       if(is.null(dim(y))) {
         res2[, i] <- unlist(tres)
@@ -2771,10 +2781,10 @@ residuals.bayesr <- function(object, type = c("quantile", "ordinary", "quantile2
     eta <- res
     res <- if(type == "quantile") {
       if(family$type == 3) {
-        le <- family$p(y - 1, eta)
-        ri <- family$p(y, eta)
+        le <- family$p(y - 1, family$map2par(eta))
+        ri <- family$p(y, family$map2par(eta))
         qnorm(runif(length(y), min = le, max = ri))
-      } else qnorm(family$p(y, eta))
+      } else qnorm(family$p(y, family$map2par(eta)))
     } else family$mu(eta)
   }
 
