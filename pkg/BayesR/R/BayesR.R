@@ -2758,7 +2758,7 @@ residuals.bayesr <- function(object, type = c("quantile", "ordinary", "quantile2
           ri <- family$p(y, family$map2par(eta2))
           qnorm(runif(length(y), min = le, max = ri))
         } else qnorm(family$p(y, family$map2par(eta2)))
-      } else family$mu(eta2)
+      } else family$mu(family$map2par(eta2))
       if(is.null(dim(y))) {
         res2[, i] <- unlist(tres)
       } else {
@@ -2785,7 +2785,7 @@ residuals.bayesr <- function(object, type = c("quantile", "ordinary", "quantile2
         ri <- family$p(y, family$map2par(eta))
         qnorm(runif(length(y), min = le, max = ri))
       } else qnorm(family$p(y, family$map2par(eta)))
-    } else family$mu(eta)
+    } else family$mu(family$map2par(eta))
   }
 
   if(type %in% c("ordinary", "ordinary2")) {
