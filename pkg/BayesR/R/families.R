@@ -1284,7 +1284,7 @@ tF <- function(x)
     fo <- names(formals(x$d2ldm2))
     call <- paste('x$d2ldm2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
     weights <- eval(parse(text = call))
-    dlink <- x$mu.dr(eta$mu)
+    dlink <- 1 / x$mu.dr(eta$mu)
     weights <- -(weights / (dlink * dlink)) * dlink
     weights
   }
@@ -1297,7 +1297,7 @@ tF <- function(x)
       fo <- names(formals(x$d2ldd2))
       call <- paste('x$d2ldd2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
       weights <- eval(parse(text = call))
-      dlink <- x$sigma.dr(eta$sigma)
+      dlink <- 1 / x$sigma.dr(eta$sigma)
       weights <- -(weights / (dlink * dlink)) * dlink
       weights
     }
@@ -1311,7 +1311,7 @@ tF <- function(x)
       fo <- names(formals(x$d2ldv2))
       call <- paste('x$d2ldv2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
       weights <- eval(parse(text = call))
-      dlink <- x$nu.dr(eta$sigma)
+      dlink <- 1 / x$nu.dr(eta$sigma)
       weights <- -(weights / (dlink * dlink)) * dlink
       weights
     }
@@ -1325,7 +1325,7 @@ tF <- function(x)
       fo <- names(formals(x$d2ldt2))
       call <- paste('x$d2ldt2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
       weights <- eval(parse(text = call))
-      dlink <- x$tau.dr(eta$sigma)
+      dlink <- 1 / x$tau.dr(eta$sigma)
       weights <- -(weights / (dlink * dlink)) * dlink
       weights
     }
@@ -1342,8 +1342,12 @@ tF <- function(x)
     "weights" = weights,
     "d" = function(y, eta, log = FALSE, ...) {
       call <- paste('dfun(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
-      d <- eval(parse(text = call))
-      if(log) d <- log(d)
+      d <- try(eval(parse(text = call)), silent = TRUE)
+      if(inherits(d, "try-error")) {
+        d <- rep(0, length(y))
+      } else {
+        if(log) d <- log(d)
+      }
       d
     },
     "p" = function(y, eta, ...) {

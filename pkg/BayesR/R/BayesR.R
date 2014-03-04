@@ -420,8 +420,14 @@ bayesr.family <- function(family, type = "BayesR")
     for(j in family$names)
       linkinv[[j]] <- make.link2(family$links[j])$linkinv
     family$map2par <- function(eta) {
-      for(j in names(eta))
+      for(j in names(eta)) {
         eta[[j]] <- linkinv[[j]](eta[[j]])
+        eta[[j]][is.na(eta[[j]])] <- 0
+        if(any(jj <- eta[[j]] == Inf))
+          eta[[j]][jj] <- 10
+        if(any(jj <- eta[[j]] == -Inf))
+          eta[[j]][jj] <- -10
+      }
       return(eta)
     }
   }
@@ -928,9 +934,9 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
       vsamples <- matrix(vsamples, ncol = 1)
     smatfull <- NULL
     for(j in 1:ncol(vsamples)) {
-      qu <- drop(quantile(vsamples[, j], probs = c(0.025, 0.5, 0.975)))
-      sd <- sd(vsamples[, j])
-      me <- mean(vsamples[, j])
+      qu <- drop(quantile(vsamples[, j], probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
+      sd <- sd(vsamples[, j], na.rm = TRUE)
+      me <- mean(vsamples[, j], na.rm = TRUE)
       smat <- matrix(c(me, sd, qu), nrow = 1)
       colnames(smat) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
       rownames(smat) <- x$label

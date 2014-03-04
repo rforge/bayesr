@@ -142,8 +142,10 @@ smooth.IWLS.default <- function(x, ...)
       df <- sum(diag(chol2inv(chol(XX + if(x$fixed) 0 else 1 / tau2 * x$S[[1]])) %*% XX))
       return((value - df)^2)
     }
-    le <- optimize(objfun, c(lower, upper), value = 1)$minimum
-    ri <- optimize(objfun, c(lower, upper), value = ncol(x$X))$minimum
+    le <- try(optimize(objfun, c(lower, upper), value = 1)$minimum, silent = TRUE)
+    ri <- try(optimize(objfun, c(lower, upper), value = ncol(x$X))$minimum, silent = TRUE)
+    if(inherits(le, "try-error")) le <- 0.1
+    if(inherits(ri, "try-error")) ri <- 1000
     return(c(le, ri))
   }
 
@@ -322,8 +324,9 @@ smooth.IWLS.default <- function(x, ...)
           return(IC)
         }
 
-        x$state$tau2 <- optimize(objfun, interval = x$interval, grid = x$grid)$minimum
-        ##x$state$tau2 <- optimize2(objfun, interval = x$interval, grid = x$grid)$minimum
+        x$state$tau2 <- try(optimize(objfun, interval = x$interval, grid = x$grid)$minimum, silent = TRUE)
+        if(inherits(x$state$tau2, "try-error"))
+          x$state$tau2 <- optimize2(objfun, interval = x$interval, grid = x$grid)$minimum
         if(!length(x$state$tau2)) x$state$tau2 <- x$interval[1]
         P <- matrix_inv(XWX + 1 / x$state$tau2 * x$S[[1]])
         x$state$g <- drop(P %*% (XW %*% e))
@@ -359,19 +362,24 @@ get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc")
 
 
 ## Sampler based on IWLS proposals.
-samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
+samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = FALSE,
   verbose = TRUE, step = 20, svalues = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
-  tdir = NULL, method = c("backfitting", "MCMC", "backfitting2", "backfitting3", "backfitting4"),
-  outer = TRUE, n.samples = 200, criterion = c("AIC", "BIC", "AICc"), lower = 1e-09, upper = 1e+04,
+  tdir = NULL, method = "backfitting", outer = TRUE, inner = TRUE, n.samples = 200,
+  criterion = c("AIC", "BIC", "AICc"), lower = 1e-09, upper = 1e+04,
   optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3, ...)
 {
+  known_methods <- c("backfitting", "MCMC", "backfitting2", "backfitting3", "backfitting4")
+  tm <- NULL
+  for(m in method)
+    tm <- c(tm, match.arg(m, known_methods))
+  method <- tm
+
   family <- attr(x, "family")
   nx <- family$names
   if(!all(nx %in% names(x)))
     stop("parameter names mismatch with family names!")
   response <- attr(x, "response.vec")
   criterion <- match.arg(criterion)
-  method <- match.arg(method, several.ok = TRUE)
 
   ## Actual number of samples to save.
   if(!any(grepl("MCMC", method))) {
@@ -404,6 +412,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
       if(length(obj$smooth)) {
         for(j in seq_along(obj$smooth)) {
           obj$smooth[[j]]$s.alpha <- rep(0, nrow = n.save)
+          obj$smooth[[j]]$s.accepted <- rep(0, nrow = n.save)
           obj$smooth[[j]]$s.samples <- matrix(0, nrow = n.save, ncol = obj$smooth[[j]]$np)
           obj$smooth[[j]]$state$fit <- rep(0, nrow(obj$smooth[[j]]$X))
           obj$smooth[[j]]$fxsp <- if(!is.null(obj$smooth[[j]]$sp)) TRUE else FALSE
@@ -426,7 +435,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
   eta <- vector(mode = "list", length = np)
   names(eta) <- nx
   for(j in 1:np)
-    eta[[j]] <- rep(0, length(response))
+    eta[[j]] <- rep(1e-6, length(response))
 
   ## Find starting values with backfitting.
   if(svalues | any(grepl("backfitting", method))) {
@@ -450,7 +459,28 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
       formatC(round(x, digits), width = width)
     }
 
-    ## Backfitting main function.
+    inner_bf <- function(x, response, eta, family, edf, id, ...) {
+      eps0 <- iter <- 1
+      while(eps0 > eps & iter < maxit) {
+        eta0 <- eta
+        for(sj in seq_along(x)) {
+          ## Get updated parameters.
+          p.state <- x[[sj]]$update(x[[sj]], family, response, eta, id, edf = edf, ...)
+
+          ## Compute equivalent degrees of freedom.
+          edf <- edf - x[[sj]]$state$edf + p.state$edf
+
+          ## Update predictor and smooth fit.
+          eta[[id]] <- eta[[id]] - x[[sj]]$state$fit + p.state$fit
+          x[[sj]]$state <- p.state
+        }
+        eps0 <- mean((do.call("cbind", eta) - do.call("cbind", eta0))^2)
+        iter <- iter + 1
+      }
+      return(list("x" = x, "eta" = eta, "edf" = edf))
+    }
+
+    ## 1st backfitting main function.
     backfit <- function(x, eta, verbose = TRUE) {
       edf <- get_edf(x)
 
@@ -473,17 +503,26 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
           } else z <- weights <- NULL
 
           ## And all terms.
-          for(sj in seq_along(x[[nx[j]]]$smooth)) {
-            ## Get updated parameters.
-            p.state <- x[[nx[j]]]$smooth[[sj]]$update(x[[nx[j]]]$smooth[[sj]],
-              family, response, eta, nx[j], edf = edf, z = z, weights = weights)
+          if(inner) {
+            tbf <- inner_bf(x[[nx[j]]]$smooth, response, eta, family,
+              edf = edf, id = nx[j], z = z, weights = weights)
+            x[[nx[j]]]$smooth <- tbf$x
+            edf <- tbf$edf
+            eta <- tbf$eta
+            rm(tbf)
+          } else {
+            for(sj in seq_along(x[[nx[j]]]$smooth)) {
+              ## Get updated parameters.
+              p.state <- x[[nx[j]]]$smooth[[sj]]$update(x[[nx[j]]]$smooth[[sj]],
+                family, response, eta, nx[j], edf = edf, z = z, weights = weights)
 
-            ## Compute equivalent degrees of freedom.
-            edf <- edf - x[[nx[j]]]$smooth[[sj]]$state$edf + p.state$edf
+              ## Compute equivalent degrees of freedom.
+              edf <- edf - x[[nx[j]]]$smooth[[sj]]$state$edf + p.state$edf
 
-            ## Update predictor and smooth fit.
-            eta[[nx[j]]] <- eta[[nx[j]]] - x[[nx[j]]]$smooth[[sj]]$state$fit + p.state$fit
-            x[[nx[j]]]$smooth[[sj]]$state <- p.state
+              ## Update predictor and smooth fit.
+              eta[[nx[j]]] <- eta[[nx[j]]] - x[[nx[j]]]$smooth[[sj]]$state$fit + p.state$fit
+              x[[nx[j]]]$smooth[[sj]]$state <- p.state
+            }
           }
         }
 
@@ -655,6 +694,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
           ## Save the samples and acceptance.
           if(save) {
             x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- min(c(exp(p.state$alpha), 1), na.rm = TRUE)
+            x[[nx[j]]]$smooth[[sj]]$s.accepted[js] <- accepted
             x[[nx[j]]]$smooth[[sj]]$s.samples[js, ] <- unlist(x[[nx[j]]]$smooth[[sj]]$state[x[[nx[j]]]$smooth[[sj]]$p.save])
           }
 
@@ -686,8 +726,11 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
           ## Get proposed states.
           p.state <- x[[nx[j]]]$smooth[[sj]]$propose(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j], rho = rho)
 
+          accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
+
           ## Save the samples.
           x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- min(c(exp(p.state$alpha), 1), na.rm = TRUE)
+          x[[nx[j]]]$smooth[[sj]]$s.accepted[js] <- accepted
           x[[nx[j]]]$smooth[[sj]]$s.samples[js, ] <- unlist(p.state[x[[nx[j]]]$smooth[[sj]]$p.save])
         }
       }
@@ -695,6 +738,16 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000,
     }
     if(verbose) cat("\n")
     deviance <- rep(-2 * family$loglik(response, family$map2par(eta)), length = length(iterthin))
+  }
+
+  if(accept.only) {
+    for(j in 1:np) {
+      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        accepted <- x[[nx[j]]]$smooth[[sj]]$s.accepted
+        accepted <- if(!any(accepted > 0)) 1 else accepted > 0
+        x[[nx[j]]]$smooth[[sj]]$s.samples[!accepted, ]  <- NA
+      }
+    }
   }
 
   ## Return all samples as mcmc matrix.
@@ -801,6 +854,8 @@ resultsIWLS <- function(x, samples)
             value = TRUE, fixed = TRUE) ## FIXME: hlevels!
           pn <- pn[!grepl("tau2", pn) & !grepl("alpha", pn)]
           psamples <- matrix(samples[[j]][, snames %in% pn], ncol = k)
+          nas <- apply(psamples, 1, function(x) { any(is.na(x)) } )
+          psamples <- psamples[!nas, , drop = FALSE]
 
           if(!is.null(obj$smooth[[i]]$Xf)) {
             kx <- if(is.null(obj$smooth[[i]]$Xf)) 0 else ncol(obj$smooth[[i]]$Xf)
@@ -825,6 +880,7 @@ resultsIWLS <- function(x, samples)
           tau2 <- paste(id, "h1", paste(obj$smooth[[i]]$label, "tau2", sep = "."), sep = ":")
           if(length(tau2 <- grep(tau2, snames, fixed = TRUE))) {
             vsamples <- as.numeric(samples[[j]][, tau2])
+            vsamples <- vsamples[!nas]
           }
 
           ## Acceptance probalities.
@@ -832,6 +888,7 @@ resultsIWLS <- function(x, samples)
           alpha <- paste(id, "h1", paste(obj$smooth[[i]]$label, "alpha", sep = "."), sep = ":")
           if(length(alpha <- grep(alpha, snames, fixed = TRUE))) {
             asamples <- as.numeric(samples[[j]][, alpha])
+            asamples <- asamples[!nas]
           }
 
           ## Prediction matrix.
@@ -871,9 +928,9 @@ resultsIWLS <- function(x, samples)
             rm(fst)
           } else {
             nx <- colnames(obj$smooth[[i]]$X)
-            qu <- t(apply(psamples, 2, quantile, probs = c(0.025, 0.5, 0.975)))
-            sd <- drop(apply(psamples, 2, sd))
-            me <- drop(apply(psamples, 2, mean))
+            qu <- t(apply(psamples, 2, quantile, probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
+            sd <- drop(apply(psamples, 2, sd, na.rm = TRUE))
+            me <- drop(apply(psamples, 2, mean, na.rm = TRUE))
             param.effects <- cbind(me, sd, qu)
             rownames(param.effects) <- nx
             colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
