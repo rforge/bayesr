@@ -380,6 +380,9 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     stop("parameter names mismatch with family names!")
   response <- attr(x, "response.vec")
   criterion <- match.arg(criterion)
+  scipen <- getOption("scipen")
+  options("scipen" = 20)
+  on.exit(options("scipen" = 20))
 
   ## Actual number of samples to save.
   if(!any(grepl("MCMC", method))) {
@@ -456,7 +459,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     }
 
     fmt <- function(x, width = 8, digits = 2) {
-      formatC(round(x, digits), width = width)
+      formatC(paste(round(x, digits)), width = width)
     }
 
     inner_bf <- function(x, response, eta, family, edf, id, ...) {
