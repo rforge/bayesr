@@ -6,7 +6,7 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
   grid = 8, linear = FALSE, extrap = FALSE, duplicate = "mean", xlim = NULL,
   ylim = NULL, boundary = TRUE, interior = TRUE, rivers = FALSE, mcol = NULL,
   contour.data = NULL, k = 30, akima = FALSE, data = NULL, subset = NULL, box = FALSE,
-  ireturn = FALSE, sort = TRUE, proj4string = CRS(as.character(NA)), ...)
+  ireturn = FALSE, sort = TRUE, proj4string = CRS(as.character(NA)), eps = 0.0001, ...)
 {
   ## projection = "+proj=longlat +ellps=WGS84 +datum=WGS84"
   require("maps")
@@ -44,6 +44,8 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
 
     pp <- cbind(data$x, data$y)
     dx <- abs(diff(pp[, 1])); dy <- abs(diff(pp[, 2]))
+    dx <- dx[abs(dx) > eps]
+    dy <- dy[abs(dy) > eps]
     dx <- dx[dx != 0]; dy <- dy[dy != 0]
     res <- c(min(dx), min(dy)) / 2
     
@@ -87,6 +89,8 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
     proj4string = proj4string))
   dx <- abs(diff(pp[, 1])); dy <- abs(diff(pp[, 2]))
   dx <- dx[dx != 0]; dy <- dy[dy != 0]
+  dx <- dx[abs(dx) > eps]
+  dy <- dy[abs(dy) > eps]
   res <- c(min(dx), min(dy))
 
   if(!add) {
@@ -509,3 +513,20 @@ drop2poly <- function(x, y, map)
   return(which(!pip))
 }
 
+xy2poly <- function(x, y, map, verbose = TRUE)
+{
+  id <- names(map)
+  rval <- rep(NA, length(x))
+  for(j in 1:length(map)) {
+    if(verbose) {
+      if(j > 1) cat("\r")
+      cat("polygon", j)
+    }
+    tm <- map[j]
+    class(tm) <- "bnd"
+    i <- drop2poly(x, y, tm)
+    rval[i] <- id[j]
+  }
+  if(verbose) cat("\n")
+  rval
+}

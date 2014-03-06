@@ -1606,7 +1606,8 @@ interp2 <- function(x, y, z, xo = NULL, yo = NULL, grid = 30,
   if(is.null(yo))
     yo <- seq(min(y, na.rm = TRUE), max(y, na.rm = TRUE), length = grid)
 
-  grid <- length(xo)
+  xgrid <- length(xo)
+  ygrid <- length(yo)
   x <- as.numeric(x); y <- as.numeric(y); z <- as.numeric(z)
 
   if(type %in% c("mgcv", "gam")) {
@@ -1623,7 +1624,7 @@ interp2 <- function(x, y, z, xo = NULL, yo = NULL, grid = 30,
 
     x2 <- (xo - xr[1]) / diff(xr)
     y2 <- (yo - yr[1]) / diff(yr)
-    nd <- data.frame("x" = rep(x2, grid), "y" = rep(y2, rep(grid, grid)))
+    nd <- data.frame("x" = rep(x2, ygrid), "y" = rep(y2, rep(xgrid, xgrid)))
     fit <- as.vector(predict(b, newdata = nd))
 
     if(!extrap) {
@@ -1636,7 +1637,7 @@ interp2 <- function(x, y, z, xo = NULL, yo = NULL, grid = 30,
   }
   if(type == "mba") {
     stopifnot(require("MBA"))
-    fit <- MBA::mba.surf(data.frame("x" = x, "y" = y, "z" = z), grid, grid)$xyz.est$z
+    fit <- MBA::mba.surf(data.frame("x" = x, "y" = y, "z" = z), xgrid, ygrid)$xyz.est$z
   }
   if(type == "akima") {
     if(isTRUE(getOption("use.akima"))) {
@@ -1661,7 +1662,7 @@ interp2 <- function(x, y, z, xo = NULL, yo = NULL, grid = 30,
     }
   }
 
-  return(matrix(fit, grid, grid))
+  return(matrix(fit, xgrid, ygrid))
 }
 
 

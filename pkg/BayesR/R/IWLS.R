@@ -438,7 +438,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   eta <- vector(mode = "list", length = np)
   names(eta) <- nx
   for(j in 1:np)
-    eta[[j]] <- rep(1e-6, length(response))
+    eta[[j]] <- rep(1e-8, length(response))
 
   ## Find starting values with backfitting.
   if(svalues | any(grepl("backfitting", method))) {

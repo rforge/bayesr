@@ -520,7 +520,7 @@ dgp_dagum <- function(n = 500, a = NULL, b = NULL, p = NULL, ...)
 
 if(FALSE) {
   d <- dgp_dagum()
-  b <- bayesr(list(y ~ sx(a.x11) + sx(a.x12), y~ sx(b.x11)+sx(b.x12), y~ 1),
+  b <- bayesr(list(y ~ sx(a.x11) + sx(a.x12), y ~ sx(b.x11) + sx(b.x12), y ~ 1),
 		data = d, family = dagum, engine = "BayesX", verbose = TRUE)
   summary(b)
   plot(b)
