@@ -197,6 +197,11 @@ write.gra <- function(map, file, replace=FALSE)
   if(!inherits(map, "gra"))
     stop("Argument 'map' is not an object of class 'gra'!")
 
+  if(!any(map == -1)) {
+    map <- map * -1
+    diag(map) <- apply(map, 1, function(x) { sum(x != 0) })
+  }
+
   ## check whether the file exists
   if(replace & file.exists(file))
     test <- file.remove(file)
