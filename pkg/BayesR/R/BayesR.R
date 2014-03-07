@@ -564,7 +564,12 @@ formula_extend <- function(formula, specials = NULL, family)
 ## Get response name.
 formula_respname <- function(formula)
 {
-  if(length(formula) < 3) NA else deparse(formula[[2]])
+  rn <- if(!inherits(formula, "list")) {
+    f <- as.Formula(formula)
+    f <- formula(f, lhs = TRUE, rhs = FALSE)
+    if(length(f) < 3) NA else deparse(f[[2]])
+  } else NA
+  rn
 }
 
 ## Search and process "&"

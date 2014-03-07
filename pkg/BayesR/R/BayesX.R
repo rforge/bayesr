@@ -165,6 +165,8 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
       obj$response <- formula_respname(obj$cat.formula)
       obj$response.vec <- attr(x, "model.frame")[[obj$response]]
     }
+    if(h)
+      obj$response.vec <- attr(x, "model.frame")[[obj$response]]
     X <- NULL
     if(!is.null(obj$X)) {
       if(ncol(obj$X) > 0) {
@@ -353,7 +355,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         eqtj <- if(family$cat & (if(is.null(id)) j else id) != 1) 3 else 2
         if(!is.null(x[[j]]$hlevel)) {
           if(!any(grepl("hlevel", fctr))) {
-            teqn <- paste(teqn, " hlevel=", x[[j]]$hlevel, sep = "")
+            teqn <- paste(teqn, " hlevel=", if(x[[j]]$hlevel > 1) 2 else 1, sep = "")
             if(x[[j]]$hlevel > 1) {
               if(!any(grepl("family", fctr)))
                 teqn <- paste(teqn, " family=gaussian_re", sep = "")
@@ -584,7 +586,9 @@ process_mfile <- function(x)
     }
   }
   for(j in 1:n) {
-    if(grepl("gaussian_re", family[j], fixed = TRUE)) {
+    if(grepl("gaussian_re", family[j], fixed = TRUE) |
+      grepl("Gaussian_random_effect", family[j], fixed = TRUE))
+    {
       i <- grep(eqntype[j], eqntype)
       i <- i[i != j]
       ok <- TRUE
@@ -722,7 +726,7 @@ resultsBayesX <- function(x, samples, ...)
         for(i in 1:10)
           id2 <- gsub(i, "", id2)
       }
-      if(!is.null(obj$hlevel)) {
+      if(!is.null(obj$hlevel) & FALSE) {
         if(obj$hlevel > 1)
           id2 <- "gaussian"
       }
@@ -732,7 +736,8 @@ resultsBayesX <- function(x, samples, ...)
         nx <- obj$pterms
         nx <- gsub("Intercept", "const", nx, fixed = TRUE)
         pt <- paste(nx, collapse = "+")
-        pt <- paste(pt, paste(id2, family$bayesx[[id]][2], sep = ""), obj$hlevel, sep = ":")
+        pt <- paste(pt, paste(id2, family$bayesx[[id]][2], sep = ""), if(obj$hlevel > 1) 2 else 1, sep = ":")
+
         if(any(grepl(pt, snames, fixed = TRUE))) {
           samps <- as.matrix(samples[[j]][, grepl(pt, snames, fixed = TRUE)], ncol = k)
           nx <- gsub("const", "(Intercept)", nx, fixed = TRUE)
@@ -751,66 +756,75 @@ resultsBayesX <- function(x, samples, ...)
       ## Smooth terms.
       if(length(i <- grep("sx(", names(mspecs$effects), fixed = TRUE))) {
         sx.smooth <- mspecs$effects[i]
+        sx.terms <- unlist(lapply(obj$sx.smooth, function(x) { attr(x, "specs")$label }))
+        sx.check <- FALSE
+        if(!is.null(sx.terms)) {
+          nxc <- sapply(strsplit(names(sx.smooth), ":", fixed = TRUE), function(x) { x[1] })
+          if(any(take <- nxc %in% sx.terms)) {
+            sx.check <- TRUE
+            sx.smooth <- sx.smooth[take]
+          }
+        }
+        for(idj in c(id2, "gaussian")) {
+          if(sx.check & length(i <- grep(paste(paste(idj, family$bayesx[[id]][2], sep = ""),
+              if(obj$hlevel > 1) 2 else 1, sep = ":"), names(sx.smooth), fixed = TRUE))) {
+            if(!is.list(effects))
+              effects <- list()
+            for(i in names(sx.smooth[i])) {
+              tn <- grep(i, snames, fixed = TRUE, value = TRUE)
+              psamples <- as.matrix(samples[[j]][, snames %in% tn], ncol = length(tn))
 
-        if(length(i <- grep(paste(paste(id2, family$bayesx[[id]][2], sep = ""),
-            obj$hlevel, sep = ":"), names(sx.smooth), fixed = TRUE))) {
-          if(!is.list(effects))
-            effects <- list()
-          sx.smooth <- sx.smooth[i]
-          for(i in names(sx.smooth)) {
-            tn <- grep(i, snames, fixed = TRUE, value = TRUE)
-            psamples <- as.matrix(samples[[j]][, snames %in% tn], ncol = length(tn))
-
-            ## Possible variance parameter samples.
-            if(length(vs <- grep(":var[", colnames(psamples), fixed = TRUE))) {
-              vsamples <- psamples[, vs[1]]
-              psamples <- psamples[, -vs, drop = FALSE]
-            }
-
-            ## Prediction matrix.
-            tn0 <- strsplit(i, ":")[[1]][1]
-            tn <- gsub(")", "", gsub("sx(", "", tn0, fixed = TRUE), fixed = TRUE)
-            tn <- strsplit(tn, ",", fixed = TRUE)[[1]]
-            tn <- tn[!grepl("by", tn)]
-            tn1 <- eval(parse(text = tn0))
-
-            basis <- sx.smooth[[i]]$basis
-
-            if(tn1$by != "NA") {
-              tn <- c(tn, tn1$by)
-              get.X <- function(data) {
-                diag(data[, ncol(data)]) %*% basis(data[, 1:(ncol(data) - 1)])
+              ## Possible variance parameter samples.
+              if(length(vs <- grep(":var[", colnames(psamples), fixed = TRUE))) {
+                vsamples <- psamples[, vs[1]]
+                psamples <- psamples[, -vs, drop = FALSE]
               }
-            } else {
-              get.X <- basis
-            }
 
-            X <- sx.smooth[[i]]$basis(attr(x, "model.frame")[1, tn, drop = FALSE])
+              ## Prediction matrix.
+              tn0 <- strsplit(i, ":")[[1]][1]
+              tn <- gsub(")", "", gsub("sx(", "", tn0, fixed = TRUE), fixed = TRUE)
+              tn <- strsplit(tn, ",", fixed = TRUE)[[1]]
+              tn <- tn[!grepl("by", tn)]
+              tn1 <- eval(parse(text = tn0))
+
+              basis <- sx.smooth[[i]]$basis
+
+              if(tn1$by != "NA") {
+                tn <- c(tn, tn1$by)
+                get.X <- function(data) {
+                  diag(data[, ncol(data)]) %*% basis(data[, 1:(ncol(data) - 1)])
+                }
+              } else {
+                get.X <- basis
+              }
+
+              X <- sx.smooth[[i]]$basis(attr(x, "model.frame")[1, tn, drop = FALSE])
             
-            get.mu <- function(X, g) {
-              X %*% as.numeric(g)
+              get.mu <- function(X, g) {
+                X %*% as.numeric(g)
+              }
+
+              ## Compute final smooth term object.
+              stype <- attr(X, "type")
+              class(tn1) <- paste(stype, "smooth.spec", sep = ".")
+
+              fst <- compute_term(tn1, get.X = get.X, get.mu = get.mu,
+                psamples = psamples, vsamples = vsamples, asamples = NULL, FUN = NULL,
+                snames = snames, effects.hyp = effects.hyp, fitted.values = fitted.values,
+               data = attr(x, "model.frame")[, tn, drop = FALSE], grid = grid,
+                hlevel = obj$hlevel)
+
+              attr(fst$term, "specs")$get.mu <- get.mu
+              attr(fst$term, "specs")$basis <- get.X ## sx.smooth[[i]]$basis
+              if(sid)
+                attr(fst$term, "specs")$label <- paste(attr(fst$term, "specs")$label, id, sep = ":")
+
+              ## Add term to effects list.
+              effects[[paste(tn0, stype, sep = ":")]] <- fst$term
+              effects.hyp <- fst$effects.hyp
+              fitted.values <- fst$fitted.values
+              rm(fst)
             }
-
-            ## Compute final smooth term object.
-            stype <- attr(X, "type")
-            class(tn1) <- paste(stype, "smooth.spec", sep = ".")
-
-            fst <- compute_term(tn1, get.X = get.X, get.mu = get.mu,
-              psamples = psamples, vsamples = vsamples, asamples = NULL, FUN = NULL,
-              snames = snames, effects.hyp = effects.hyp, fitted.values = fitted.values,
-              data = attr(x, "model.frame")[, tn, drop = FALSE], grid = grid,
-              hlevel = obj$hlevel)
-
-            attr(fst$term, "specs")$get.mu <- get.mu
-            attr(fst$term, "specs")$basis <- get.X ## sx.smooth[[i]]$basis
-            if(sid)
-              attr(fst$term, "specs")$label <- paste(attr(fst$term, "specs")$label, id, sep = ":")
-
-            ## Add term to effects list.
-            effects[[paste(tn0, stype, sep = ":")]] <- fst$term
-            effects.hyp <- fst$effects.hyp
-            fitted.values <- fst$fitted.values
-            rm(fst)
           }
         }
       }
