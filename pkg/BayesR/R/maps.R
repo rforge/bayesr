@@ -250,7 +250,7 @@ pixelmap <- function(x, y, size = 0.1, width = NULL, data = NULL,
 ## a list() of polygons or objects of class
 ## "SpatialPolygons".
 neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
-  k = 1, id = NULL, nb = FALSE, ...)
+  k = 1, id = NULL, nb = FALSE, rm.dups = FALSE, ...)
 {
   require("maptools"); require("spdep")
   type <- match.arg(type)
@@ -260,16 +260,20 @@ neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
     nx <- names(x)
     if(any(dups <- duplicated(nx))) {
       ndups <- paste(nx[dups], collapse = ", ")
-      nx <- nx[!dups]
-      x <- x[!dups]
+      if(rm.dups) {
+        nx <- nx[!dups]
+        x <- x[!dups]
+      }
       class(x) <- "bnd"
       warning(paste("duplicated polygon names in map: ", ndups, "!", sep = ""))
     }
     dups <- anyDuplicated(coordinates(bnd2sp(x)))
-    if(length(dups)) {
+    if(dups > 0) {
       ndups <- paste(nx[dups], collapse = ", ")
-      x <- x[-dups]
-      nx <- nx[-dups]
+      if(rm.dups) {
+        x <- x[-dups]
+        nx <- nx[-dups]
+      }
       class(x) <- "bnd"
       warning(paste("duplicated coordinates in map, found for region(s): ", ndups, "!", sep = ""))
     }
@@ -292,13 +296,16 @@ neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
   if(!nb) {
     adjmat <- nb2mat(adjmat, style = "B", zero.policy = TRUE)
 
+
     if(is.null(nx))
       nx <- try(slot(x, "data")$NAME, silent = TRUE)
     if(is.null(nx))
       nx <- try(slot(x, "data")$ID, silent = TRUE)
     if(!is.null(nx) && class(nx) != "try-error") {
-      rownames(adjmat) <- nx
-      colnames(adjmat) <- nx
+      if(length(nx) == nrow(adjmat)) {
+        rownames(adjmat) <- nx
+        colnames(adjmat) <- nx
+      } else nx <- rownames(adjmat)
     }
 
     if(!is.null(id)) {

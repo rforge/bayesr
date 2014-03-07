@@ -312,12 +312,12 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
                 if(nx[if(is.null(id)) j else id] %in% names(lhs)) {
                   lhs[nx[if(is.null(id)) j else id]]
                 } else {
-                  if(is.null(x[[j]]$response)) response.name else x[[j]]$response
+                  if(is.null(x[[j]]$response)) response.name[1] else x[[j]]$response
                 }
               } else formula_respname(x[[j]]$cat.formula)
             }
           } else {
-            if(is.null(x[[j]]$response)) response.name else x[[j]]$response
+            if(is.null(x[[j]]$response)) response.name[1] else x[[j]]$response
           }, sep = '')
         et <- x[[j]]$pterms
         fctr <- attr(x[[j]]$formula, "control")
@@ -355,6 +355,8 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
           if(!any(grepl("hlevel", fctr))) {
             teqn <- paste(teqn, " hlevel=", x[[j]]$hlevel, sep = "")
             if(x[[j]]$hlevel > 1) {
+              if(!any(grepl("family", fctr)))
+                teqn <- paste(teqn, " family=gaussian_re", sep = "")
               if(!any(grepl("family", fctr))) {
                 teqn <- paste(teqn, " equationtype=", family$bayesx[[nx[if(is.null(id)) j else id]]][eqtj], sep = "")
                 ok <- FALSE

@@ -452,9 +452,11 @@ bayesr.formula <- function(formula, specials = NULL, family = gaussian.BayesR())
   if(is.null(env)) env <- .GlobalEnv
   if(!is.list(formula)) formula <- list(formula)
   if(!length(formula)) stop("formula is specified wrong!")
-  names(formula) <- family$names[1:length(formula)]
 
   complete_formula <- function(formula) {
+    if(length(formula) < length(family$names))
+      formula <- c(formula, rep(list(), length = length(family$names) - length(formula)))
+    names(formula) <- family$names
     if(any(i <- is.na(names(formula))))
       names(formula)[i] <- family$names[i]
     for(j in family$names) {
