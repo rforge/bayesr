@@ -158,7 +158,9 @@ parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, off
       if(is.function(weights)) weights <- NULL
       if(is.function(subset)) subset <- NULL
       if(is.function(offset)) offset <- NULL
-      ml <- list(formula = ff, data = data, weights = if(control$prediction) NULL else weights,
+      ff2 <- eval(parse(text = paste("update(ff,", Yn, "~ .)")))
+      data[[Yn]] <- Y
+      ml <- list(formula = ff2, data = data, weights = if(control$prediction) NULL else weights,
         subset = subset, offset = offset, na.action = na.action, drop.unused.levels = TRUE)
       data <- do.call("model.frame", ml)
       if(control$prediction) {
@@ -195,18 +197,18 @@ parse.bayesx.input <- function(formula, data, weights = NULL, subset = NULL, off
       if(ncol(data) < 2L && names(data) == Yn)
         only <- TRUE
     }
-    if(!is.null(subset))
-      Y <- Y[subset]
-    if(length(Y) != nrow(data)) {
-      Y <- unique(Y)
-      if(length(Y) != nrow(data))
-        stop(paste("variable lengths differ (found for \'",Yn,"\')", sep = ""))
-    }
-    if(!only) {
-      Y <- as.data.frame(Y)
-      names(Y) <- Yn
-      data <- cbind(Y, data)
-    }
+#    if(!is.null(subset))
+#      Y <- Y[subset]
+#    if(length(Y) != nrow(data)) {
+#      Y <- unique(Y)
+#      if(length(Y) != nrow(data))
+#        warning(paste("variable lengths differ (found for \'",Yn,"\')", sep = ""))
+#    }
+#    if(!only) {
+#      Y <- as.data.frame(Y)
+#      names(Y) <- Yn
+#      data <- cbind(Y, data)
+#    }
     if(ncol(data) < 2L) {
       control$order <- order(data[, 1L])
       data[, 1L] <- data[order(data[, 1L]), 1L]
