@@ -146,7 +146,7 @@ plot2d <- function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
     if(args$type != "n")
       box()
   if(is.null(args$axes)) {
-    axis(2L)
+    axis(2L, cex.axis = args$cex.axis)
     if(!is.null(month) & !is.null(year)) {
       start <- min(x[, 1], na.rm = TRUE) - month + 1
       stop <- max(x[, 1] + 1, na.rm=TRUE)
@@ -161,13 +161,13 @@ plot2d <- function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
         start2 <- x[1, 1]
         stop2 <- max(x[, 1], na.rm = TRUE)
         pos2 <- seq(start2, stop2, 1)
-        axis(side = 1, at = pos2, labels = label2)
-      } else axis(side = 1, at = pos, labels = label)
-    } else axis(1L)
+        axis(side = 1, at = pos2, labels = label2, cex.axis = args$cex.axis)
+      } else axis(side = 1, at = pos, labels = label, cex.axis = args$cex.axis)
+    } else axis(1L, cex.axis = args$cex.axis)
   } else {
     if(args$axes) {
-      axis(2L)
-      axis(1L)
+      axis(2L, cex.axis = args$cex.axis)
+      axis(1L, cex.axis = args$cex.axis)
     }
   }
 
