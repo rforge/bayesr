@@ -109,7 +109,7 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
   }
 
   rect(pp[, 1] - res[1] / 2, pp[, 2] - res[2] / 2, pp[, 1] + res[1] / 2, pp[, 2] + res[2] / 2,
-    col = col, border = NA, lwd = 0)
+    col = col, border = col, lwd = 0)
 
   if(!is.null(mcol))
     points(data, col = col, bg = col, pch = pch, cex = p.cex)

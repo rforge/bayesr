@@ -2727,6 +2727,28 @@ kfitted <- function(x, k = 5, weighted = FALSE, random = FALSE,
 }
 
 
+## Modified p() and d() functions.
+create.dp <- function(family)
+{
+  if(is.null(names(family$links)))
+    names(family$links) <- family$names
+  links <- list()
+  for(j in names(family$links))
+    links[[j]] <- make.link2(family$links[j])$linkinv
+  d <- function(y, eta, ...) {
+    for(j in names(eta))
+      eta[[j]] <- links[[j]](eta[[j]])
+    family$d(y, eta, ...)
+  }
+  p <- function(y, eta, ...) {
+    for(j in names(eta))
+      eta[[j]] <- links[[j]](eta[[j]])
+    family$p(y, eta, ...)
+  }
+  return(list("d" = d, "p" = p))
+}
+
+
 ## Extract model residuals.
 residuals.bayesr <- function(object, type = c("quantile", "ordinary", "quantile2", "ordinary2"),
   samples = FALSE, FUN = mean, nsamps = NULL)
