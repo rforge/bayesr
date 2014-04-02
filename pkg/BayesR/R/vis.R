@@ -945,7 +945,7 @@ colorlegend <- function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
           at <- seq(min(lrange), max(lrange), length.out = 3L)
       }
       if(is.null(labels))
-        labels <- round(at, digits = digits)
+        labels <- format(at, digits = digits, nsmall = digits)
       if(side.legend < 2L) {
         at <- obs2legend(at, xlim)
         length.ticks <- length.ticks * height

@@ -186,8 +186,9 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
       colnames(X)[(k1 - k2 + 1):k1] <- obj$sterms
     }
     if(!is.null(X)) {
+      cnX <- colnames(X)
       if(ncol(X) > 0)
-        X <- X[, !grepl("Intercept", colnames(X), fixed = TRUE), drop = FALSE]
+        X <- X[, unique(cnX[!grepl("Intercept", cnX, fixed = TRUE)]), drop = FALSE]
       if(!is.null(obj$response)) {
         X[[obj$response]] <- obj$response.vec
       }
@@ -229,7 +230,11 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
           X$ModelWeights <- attr(x, "model.frame")[["weights"]]
       }
     }
-    if(h) X <- unique(X)
+    if(h) {
+      X <- unique(X)
+      if(!is.null(obj$response))
+        X <- X[order(X[[obj$response]]), ]
+    }
 
     return(X)
   }
@@ -742,9 +747,9 @@ resultsBayesX <- function(x, samples, ...)
           samps <- as.matrix(samples[[j]][, grepl(pt, snames, fixed = TRUE)], ncol = k)
           nx <- gsub("const", "(Intercept)", nx, fixed = TRUE)
           colnames(samps) <- nx
-          qu <- t(apply(samps, 2, quantile, probs = c(0.025, 0.5, 0.975)))
-          sd <- drop(apply(samps, 2, sd))
-          me <- drop(apply(samps, 2, mean))
+          qu <- t(apply(samps, 2, quantile, probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
+          sd <- drop(apply(samps, 2, sd, na.rm = TRUE))
+          me <- drop(apply(samps, 2, mean, na.rm = TRUE))
           param.effects <- cbind(me, sd, qu)
           rownames(param.effects) <- nx
           colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
@@ -756,7 +761,9 @@ resultsBayesX <- function(x, samples, ...)
       ## Smooth terms.
       if(length(i <- grep("sx(", names(mspecs$effects), fixed = TRUE))) {
         sx.smooth <- mspecs$effects[i]
-        sx.terms <- unlist(lapply(obj$sx.smooth, function(x) { attr(x, "specs")$label }))
+        sx.terms <- unlist(lapply(obj$sx.smooth, function(x) {
+          attr(x, "specs")$label
+        }))
         sx.check <- FALSE
         if(!is.null(sx.terms)) {
           nxc <- sapply(strsplit(names(sx.smooth), ":", fixed = TRUE), function(x) { x[1] })
@@ -951,6 +958,8 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
       k <- -1
       m <- NA
       xt <- list(...)
+      if(is.null(xt$lambda))
+        xt$lambda <- 100
       if("m" %in% names(xt))
         stop("argument m is not allowed, please see function s() using this specification!")
       if("k" %in% names(xt))
@@ -1017,7 +1026,8 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
       rval$term <- term
       rval$dim <- length(term)
       rval$by <- by
-      rval$label <- paste("sx(", paste(term, collapse = ",", sep = ""), ")", sep = "")
+      rval$label <- paste("sx(", paste(term, collapse = ",", sep = ""),
+        if(by != "NA") paste(",by=", by, sep = "") else NULL, ")", sep = "")
     }
   }
 
