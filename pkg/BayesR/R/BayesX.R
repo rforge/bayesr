@@ -233,7 +233,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
     if(h) {
       X <- unique(X)
       if(!is.null(obj$response))
-        X <- X[order(X[[obj$response]]), ]
+        X <- X[order(X[[obj$response]]), , drop = FALSE]
     }
 
     return(X)
