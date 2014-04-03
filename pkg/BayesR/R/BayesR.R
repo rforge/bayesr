@@ -1639,7 +1639,10 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
       if(!any(c("effects", "param.effects") %in% names(x[[i]]))) {
         args$do_par <- FALSE
         do.call("plot.bayesr", args)
-      } else do.call(".plot.bayesr", args)
+      } else {
+        args$mmain <- NULL
+        do.call(".plot.bayesr", args)
+      }
     }
   }
 
