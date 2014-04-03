@@ -32,6 +32,7 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     poly.names <- poly.names[op]
   }
   poly.names.orig <- poly.names.orig[op]
+  map <- map[op]
   if(length(upn <- unique(poly.names)) < length(poly.names)) {
     nn <- NULL
     for(i in upn) {
@@ -42,7 +43,6 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     }
     names(map) <- poly.names
   }
-
   map <- map[poly.names]
   poly.names <- names(map)
   surrounding <- attr(map, "surrounding")
@@ -120,11 +120,12 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
 
     cdata <- data.frame(centroids(map), "id" = names(map))
     cdata <- merge(cdata, data.frame("z" = x$x, "id" = x$id), by = "id")
+    cdata <- unique(cdata)
 
     xo <- seq(map.limits$x[1], map.limits$x[2], length = grid)
     yo <- seq(map.limits$y[1], map.limits$y[2], length = grid)
 
-    ico <- with(cdata, interp2(x = xco, y = yco, z = z,
+    ico <- with(cdata, interp2(x = x, y = y, z = z,
       xo = xo,
       yo = yo,
       type = type, linear = linear, extrap = extrap,
@@ -132,6 +133,15 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     
     yco <- rep(yo, each = length(xo))
     xco <- rep(xo, length(yo))
+
+    d4x <- abs(diff(xco))
+    d4x <- min(d4x[d4x != 0], na.rm = TRUE)
+    d4y <- abs(diff(yco))
+    d4y <- min(d4y[d4y != 0], na.rm = TRUE)
+    res <- c(d4x, d4y)
+    pp <- NULL
+    if(length(res))
+      pp <- cbind(xco, yco)
 
     cvals <- as.numeric(ico)
     cvals[cvals < min(cdata$z)] <- min(cdata$z)
@@ -160,7 +170,12 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
       icolors[is.na(map.where("world", xco, yco))] <- NA
     }
 
-    points(SpatialPoints(cbind(xco, yco)), col = icolors, pch = p.pch, cex = p.cex)
+    if(length(res)) {
+     rect(pp[, 1] - res[1] / 2, pp[, 2] - res[2] / 2, pp[, 1] + res[1] / 2, pp[, 2] + res[2] / 2,
+       col = icolors, border = NA, lwd = 0)
+    } else {
+      points(SpatialPoints(cbind(xco, yco)), col = icolors, pch = p.pch, cex = p.cex)
+    }
     colors <- rep(NA, length = length(colors))
   }
   args$ylab <- args$xlab <- args$main <- ""

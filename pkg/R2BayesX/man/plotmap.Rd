@@ -65,7 +65,7 @@ plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     a smooth colored map.}
   \item{grid}{integer. Defines the number of grid cells to be used for interpolation.}
   \item{land.only}{if set to \code{TRUE}, only interpoltated pixels that cover land are drawn,
-    see also function \code{\link[maps]{is.land}}.}
+    see also function \code{\link[maps]{map.where}}.}
   \item{extrap}{logical. Should interpolations be computed outside the observation area
     (i.e., extrapolated)?}
   \item{outside}{logical. Should interpolated values outside the boundaries of the map be plotted.}
