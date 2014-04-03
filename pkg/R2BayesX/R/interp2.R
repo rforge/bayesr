@@ -11,7 +11,6 @@ interp2 <- function(x, y, z, xo = NULL, yo = NULL, grid = 30,
 
   grid <- length(xo)
   x <- as.numeric(x); y <- as.numeric(y); z <- as.numeric(z)
-
   if(type %in% c("mgcv", "gam")) {
     xo <- as.numeric(xo); yo <- as.numeric(yo)
     xr <- range(x, na.rm = TRUE)
