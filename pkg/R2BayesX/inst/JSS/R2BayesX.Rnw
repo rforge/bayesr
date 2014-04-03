@@ -29,7 +29,7 @@
 \Abstract{
 Structured additive regression (STAR) models provide a flexible framework for modeling possible
 nonlinear effects of covariates: They contain the well established frameworks of generalized linear
-models (GLM) and generalized additive models (GAM) as special cases but also allow a wider class of
+models and generalized additive models as special cases but also allow a wider class of
 effects, e.g., for geographical or spatio-temporal data, allowing for specification of complex and
 realistic models. \pkg{BayesX} is standalone software package providing software for fitting general
 class of STAR models. Based on a comprehensive open-source regression toolbox written in \proglang{C++},
@@ -364,8 +364,8 @@ able to
   \item decide whether a particular covariate enters the model,
   \item decide whether a continuous covariate enters the model linearly or nonlinearly,
   \item decide whether a spatial effect enters the model,
-  \item decide whether a unit- or cluster-specific heterogeneity effect enters the model
-  \item select complex interaction effects (two dimensional surfaces, varying coefficient terms)
+  \item decide whether a unit- or cluster-specific heterogeneity effect enters the model,
+  \item select complex interaction effects (two dimensional surfaces, varying coefficient terms),
   \item select the degree of smoothness of nonlinear covariate, spatial or cluster specific
     heterogeneity effects.
 \end{itemize}
