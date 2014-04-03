@@ -1,5 +1,5 @@
-\documentclass[nojss]{jss}
-% \documentclass[article]{jss}
+\documentclass[article]{jss}
+% \documentclass[nojss]{jss}
 \usepackage{amsmath,amssymb,amsfonts,thumbpdf}
 \usepackage{multirow,longtable}
 
