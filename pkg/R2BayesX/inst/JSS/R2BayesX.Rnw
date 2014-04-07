@@ -102,7 +102,7 @@ options("use.akima" = TRUE)
 \section{Introduction} \label{sec:intro}
 
 The free software \pkg{BayesX} \citep[see][]{R2BayesX:Brezger+Kneib+Lang:2005} is a standalone program
-\citep[current version~2.1,][]{R2BayesX:Belitz+Brezger+Kneib+Lang:2011}
+\citep[current version~2.1,][]{R2BayesX:Belitz+Brezger+Kneib+Lang:2012}
 comprising powerful tools for Bayesian, mixed-model-based and stepwise inference in complex semiparametric
 regression models with structured additive predictor. Besides exponential
 family regression, \pkg{BayesX} also supports models for multi-categorical responses, hazard
@@ -110,7 +110,7 @@ regression for continuous survival times, and continuous time multi-state models
 is written in \proglang{C++}, utilizing numerically efficient (sparse) matrix architectures.
 
 To facilitate usage of results from \pkg{BayesX} in subsequent analyses, specifically
-in explorations and visualizations of the fitted models, \cite{R2BayesX:Kneib+Heinzl+Brezger:2011}
+in explorations and visualizations of the fitted models, \cite{R2BayesX:Kneib+Heinzl+Brezger:2013}
 provide a package for \proglang{R} \citep{R2BayesX:R}, also called \pkg{BayesX}, that can
 read and process output files from \pkg{BayesX}. However, in this approach the users still have
 to read their data into \pkg{BayesX}, fit the models of interest and obtain the corresponding
@@ -144,7 +144,7 @@ effects). Internally this leverages smooth term functionality from the \pkg{mgcv
 
 The functionality is made available in package \pkg{R2BayesX}, available from the Comprehensive
 \proglang{R} Archive Network (CRAN) at \url{http://CRAN.R-project.org/package=R2BayesX}. It depends
-on the companion package \pkg{BayesXsrc} \citep[also available from CRAN, see][]{R2BayesX:Adler+Lang+Kneib:2012}
+on the companion package \pkg{BayesXsrc} \citep[also available from CRAN, see][]{R2BayesX:Adler+Lang+Kneib:2014}
 that ships the \pkg{BayesX} \proglang{C++} sources along with flexible \code{Makefile}s so that upon
 installation of the \proglang{R} package a suitable \pkg{BayesX} binary is produced on all platforms.
 
@@ -376,7 +376,7 @@ criteria, e.g., Akaike or Bayes information criterion (AIC or BIC), generalized 
 \end{enumerate}
 
 A thorough introduction into the regression models supported by the program is also provided in the
-\pkg{BayesX} methodology manual \citep{R2BayesX:Belitz+Brezger+Kneib+Lang:2011}. An in depth
+\pkg{BayesX} methodology manual \citep{R2BayesX:Belitz+Brezger+Kneib+Lang:2012}. An in depth
 discussion using a number of empirical examples is also provided in
 \citet{R2BayesX:Fahrmeir+Kneib+Lang+Marx:2013}. Further details on special cases of STAR models are
 also provided in \citet{R2BayesX:Fahrmeir+Kneib+Lang:2004}.
@@ -446,7 +446,7 @@ The second challenge for the interface package \pkg{R2BayesX} is to employ an ob
 methods interface that reflects the workflow typically adapted by \proglang{R} packages
 for fitting GAMs and related models. CRAN packages that implement such models include the
 following prominent ones: One of the first implementations of GAMs in \proglang{R} is the
-\pkg{gam} package \citep{R2BayesX:Hastie+Tibshirani:1990, R2BayesX:Hastie:2011}. The package is
+\pkg{gam} package \citep{R2BayesX:Hastie+Tibshirani:1990, R2BayesX:Hastie:2013}. The package is
 supporting local regression and smoothing splines in combination with a backfitting algorithm and is
 actually a version of the \proglang{S-PLUS} routines for GAMs. The probably best-known and also
 recommended package is \pkg{mgcv} \citep{R2BayesX:Wood:2006,
@@ -457,7 +457,7 @@ GAMs based on GCV, REML and others. Vector generalized additive models (VGAMs,
 not necessarily follow the exponential family and may exhibit heterogeneity, is the \pkg{gamlss}
 suite of packages \citep{R2BayesX:Rigby+Stasinopoulos:2005, R2BayesX:Stasinopoulos:Rigby:2007}. A package based on
 mixed model technologies is \pkg{SemiPar} \citep{R2BayesX:Ruppert+Wand+Carrol:2003,
-R2BayesX:Wand:2010} and, building on top of this, the \pkg{AdaptFit} package for adaptive splines
+R2BayesX:Wand:2013} and, building on top of this, the \pkg{AdaptFit} package for adaptive splines
 \citep{R2BayesX:Krivobokova}. The package \pkg{spikeSlabGAM} applies Bayesian variable selection,
 model choice and regularization for GAMMs \citep{R2BayesX:Scheipl:2011}.
 
@@ -512,7 +512,7 @@ detailed description. The object returned by function \fct{read.bayesx.output} i
 Table~\ref{tab:funmethods}, amongst others, is available. The returned fitted model term objects also
 have suitable classes along with corresponding plotting methods. Particular effort has been given on
 the development of easy-to-use map effect plots using color legends (by default employing HCL-based palettes,
-\citealp{R2BayesX:Zeileis+Hornik+Murrell:2009}, from the \pkg{colorspace} package, \citealp{R2BayesX:Ihaka+Murrell+Hornik:2012}).
+\citealp{R2BayesX:Zeileis+Hornik+Murrell:2009}, from the \pkg{colorspace} package, \citealp{R2BayesX:Ihaka+Murrell+Hornik:2013}).
 See also Section~\ref{sec:userinterface} for more details and Section~\ref{sec:illustrations} for
 some practical applications.
 
@@ -612,7 +612,7 @@ listed in Table~\ref{tab:control}.
                upper bound for the number of iterations. \\\hline
 \code{"STEP"} & \code{algorithm} & Character, specifies the selection
                    algorithm. Possible values are \code{"cdescent1"} (adaptive algorithms see
-                   Section~6.3 in \citealp{R2BayesX:Belitz+Brezger+Kneib+Lang:2011}),
+                   Section~6.3 in \citealp{R2BayesX:Belitz+Brezger+Kneib+Lang:2012}),
                    \code{"cdescent2"} (adaptive algorithms 1 and 2 with backfitting, see remarks 1
                    and 2 of Section~3 in \citealp{R2BayesX:Belitz+Lang:2008}), \code{"cdescent3"}
                    (search according to \code{"cdescent1"} followed by \code{"cdescent2"} using the selected model in
@@ -821,15 +821,15 @@ an argument named \code{map} needs to be provided to \fct{sx}. For example, the
 map of Zambia in the geokriging term in Section~\ref{sec:motivation} is
 included with \code{sx(district, bs = "gk", map = ZambiaBnd)}. The \code{map}
 argument can be an object of class \class{SpatialPolygonsDataFrame}
-\citep{R2BayesX:Pebesma+Bivand:2005,R2BayesX:Bivand+Pebesma+GomezRubio:2008} or
+\citep{R2BayesX:Pebesma+Bivand:2005,R2BayesX:Bivand+Pebesma+GomezRubio:2013} or
 an object of class \class{bnd}. The latter is essentially a named list of the map's polygons
 which is the format required by \pkg{BayesX} for its computations. In case a
 \class{SpatialPolygonsDataFrame} is supplied it is transformed internally to
 such a polygon list which is employed for all further computations. Furthermore,
 \class{bnd} objects can be created directly using functions from the \proglang{R}~package
-\pkg{BayesX} of \cite{R2BayesX:Kneib+Heinzl+Brezger:2011}: \fct{read.bnd} and
+\pkg{BayesX} of \cite{R2BayesX:Kneib+Heinzl+Brezger:2013}: \fct{read.bnd} and
 \fct{shp2bnd} create \class{bnd} objects from text files or shapefiles
-(using package \pkg{shapefiles}, \citealp{R2BayesX:Stabler:2006}), respectively.
+(using package \pkg{shapefiles}, \citealp{R2BayesX:Stabler:2013}), respectively.
 For MRF terms, it is possible to supply the whole map as outlined above but
 it suffices to supply the corresponding neighborhood information. Internally,
 \pkg{BayesX} uses a list specification of neighbors which is captured in objects
