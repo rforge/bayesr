@@ -76,7 +76,7 @@ plot(zm, term = "sx(district):re", map = ZambiaBnd, swap = TRUE,
 
 ## sampling paths of the coefficients of the P-spline
 ## term for the mother's bmi 
-plot(zm, term = "sx(mbmi)", which = "coef-samples")
+plot(zm, term = "sx(mbmi)", which = "coef-samples", ask = TRUE)
 
 ## autocorrelation of sampling paths of the variance parameter
 ## of the P-spline term for the mother's bmi 
@@ -85,6 +85,10 @@ plot(zm, term = "sx(mbmi)", which = "var-samples", acf = TRUE)
 ## plot of the maximum autocorrelation of all parameters
 ## of the Zambia model
 plot(zm, which = "max-acf", main = "")
+
+## estimate model using 2 chains
+zm2 <- bayesx(f, family = "gaussian", method = "MCMC", iterations = 12000,
+  burnin = 2000, step = 10, seed = 123, data = ZambiaNutrition, chains = 2)
 
 ## extract parametric parameter samples 
 zs <- samples(zm2, term = "linear-samples")
