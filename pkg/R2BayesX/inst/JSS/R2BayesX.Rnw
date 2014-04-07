@@ -164,9 +164,6 @@ Section~\ref{sec:conclusion} concludes the paper and further technical details a
 in Appendices~\ref{appendix:BayesXsrc}, \ref{appendix:plotting}, and \ref{appendix:sx}.
 
 
-\newpage
-
-
 \section{Motivating example} \label{sec:motivation}
 
 To give an introductory example of the various features of the interface, we estimate a Bayesian
