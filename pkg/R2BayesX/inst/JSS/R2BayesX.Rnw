@@ -34,7 +34,7 @@ effects, e.g., for geographical or spatio-temporal data, allowing for specificat
 realistic models. \pkg{BayesX} is standalone software package providing software for fitting general
 class of STAR models. Based on a comprehensive open-source regression toolbox written in \proglang{C++},
 \pkg{BayesX} uses Bayesian inference for estimating STAR models based on Markov chain Monte
-Carlo (MCMC) simulation techniques, a mixed model representation of STAR models, or 
+Carlo simulation techniques, a mixed model representation of STAR models, or 
 stepwise regression techniques combining penalized least squares estimation with model selection.
 \pkg{BayesX} not only covers models for responses from univariate exponential families, but also models from less-standard
 regression situations such as models for multi-categorical responses with either ordered or
@@ -80,6 +80,7 @@ particular more complex response types and alternative inferential procedures su
 
 %% Sweave/vignette information and metadata
 %% need no \usepackage{Sweave}
+%% \SweaveOpts{engine = R, eps = FALSE, keep.source = TRUE, prefix.string = Figures/jss931}
 \SweaveOpts{engine = R, eps = FALSE, keep.source = TRUE}
 %\VignetteIndexEntry{Structured Additive Regression Models: An R Interface to BayesX}
 %\VignetteDepends{colorspace,mgcv,BayesX,akima}
