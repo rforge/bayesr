@@ -488,6 +488,9 @@ writeLines(x$prg)
       paste(errl, collapse = "\n", sep = ""), sep = "")
     warning(errm, call. = FALSE)
   }
+  if(length(i <- grep("-nan", ok$log, ignore.case = TRUE))){
+    warning("the BayesX engine returned NA samples, please check your model specification! In some cases it can be helpful to center continuous covariates!", call. = FALSE)
+  }
   samples <- NULL
   mfile <- grep(paste(x$control$setup$model.name, "_R.r", sep = ""), dir(dir), value = TRUE, fixed = TRUE)
   if(length(mfile)) {

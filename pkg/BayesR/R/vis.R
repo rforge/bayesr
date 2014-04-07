@@ -1249,12 +1249,11 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
 
     xo <- seq(map.limits$x[1], map.limits$x[2], length = grid)
     yo <- seq(map.limits$y[1], map.limits$y[2], length = grid)
-
-    ico <- with(cdata, interp2(x = x, y = y, z = z,
+    ico <- interp2(x = cdata[["x"]], y = cdata[["y"]], z = cdata[["z"]],
       xo = xo,
       yo = yo,
       type = type, linear = linear, extrap = extrap,
-      k = if(is.null(k)) ceiling(length(map) * 0.8) else as.integer(k)))
+      k = if(is.null(k)) ceiling(length(map) * 0.8) else as.integer(k))
     
     yco <- rep(yo, each = length(xo))
     xco <- rep(xo, length(yo))
@@ -1319,10 +1318,6 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   angle.p <- if(!is.null(args$angle)) rep(args$angle, length.out = n) else NULL
   if(is.null(angle.p))
     angle.p <- rep(90, length.out = n)
-
-  plot_poly <- function(p, i, args, x, poly) {
-
-  }
 
   for(poly in unique(poly.names.orig)) {
     for(i in which(poly.names.orig == poly)) {
