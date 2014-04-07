@@ -171,6 +171,11 @@ zmsccb <- bayesx(f, family = "gaussian", method = "STEP",
 summary(zms)
 summary(zmsccb)
 
+## model with unconditioal confidence bands
+zmsccb2 <- bayesx(f, family = "gaussian", method = "STEP",
+  CI = "MCMCbootstrap", bootstrapsamples = 99, iterations = 10000,
+  step = 10, seed = 123, data = ZambiaNutrition)
+
 ## show selection frequencies
 term.freqs(zmsccb2, term = "sx(mbmi)")
 
