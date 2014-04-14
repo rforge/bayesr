@@ -261,7 +261,8 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
           d <- d[, unique(names(d)), drop = FALSE]
           x[[j]][[i]]$dname <- dname0
         } else d2 <- BayesX_data(x[[j]][[i]], i > 1)
-        x[[j]][[i]]$hlevel <- i
+        if(is.null(x[[j]][[i]]$hlevel))
+          x[[j]][[i]]$hlevel <- i
         if(!is.null(d2)) {
           dpath <- file.path(dir, paste(dname <- paste(data.name, count, sep = ''),
             "raw", sep = '.'))
@@ -821,7 +822,7 @@ resultsBayesX <- function(x, samples, ...)
               fst <- compute_term(tn1, get.X = get.X, get.mu = get.mu,
                 psamples = psamples, vsamples = vsamples, asamples = NULL, FUN = NULL,
                 snames = snames, effects.hyp = effects.hyp, fitted.values = fitted.values,
-               data = attr(x, "model.frame")[, tn, drop = FALSE], grid = grid,
+                data = attr(x, "model.frame")[, tn, drop = FALSE], grid = grid,
                 hlevel = obj$hlevel)
 
               attr(fst$term, "specs")$get.mu <- get.mu
@@ -897,7 +898,8 @@ resultsBayesX <- function(x, samples, ...)
       if(!all(c("formula", "fake.formula") %in% names(x[[nx[j]]]))) {
         rval[[nx[j]]] <- list()
         for(ii in seq_along(x[[nx[j]]])) {
-          nh <- paste("h", ii, sep = "")
+          nh <- paste("h", if(!is.null(x[[nx[j]]][[ii]]$hlevel)) paste(x[[nx[j]]][[ii]]$hlevel,
+            if(length(x[[nx[j]]]) > 2 & ii > 1) ii else NULL, sep = if(ii > 1) "-" else "") else ii, sep = "")
           rval[[nx[j]]][[nh]] <- createBayesXresults(x[[nx[j]]][[ii]],
             samples, id = fn[j], sid = length(nx) > 1)
         }

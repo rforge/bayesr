@@ -713,15 +713,50 @@ formula_hierarchical <- function(formula)
 
 bayesr.hlevel <- function(x)
 {
-  if(!all(c("formula", "fake.formula", "response") %in% names(x))) {
-    for(j in seq_along(x)) {
-      if(!all(c("formula", "fake.formula", "response") %in% names(x[[j]]))) {
-        for(i in seq_along(x[[j]])) {
-          x[[j]][[i]]$hlevel <- i
+  do <- TRUE
+  while(do) {
+    if(!all(c("formula", "fake.formula", "response") %in% names(x))) {
+      for(j in seq_along(x)) {
+        if(!all(c("formula", "fake.formula", "response") %in% names(x[[j]]))) {
+          for(i in seq_along(x[[j]])) {
+            rn <- formula_respname(x[[j]][[i]]$formula)
+            ind <- seq_along(x[[j]])
+            ind <- ind[ind != i]
+            base <- TRUE
+            for(iii in ind) {
+              if(rn %in% all.vars((x[[j]][[iii]]$formula)))
+                base <- FALSE
+            }
+            if(base) {
+              x[[j]][[i]]$hlevel <- 1
+            } else {
+              for(iii in ind) {
+                if(rn %in% all.vars((x[[j]][[iii]]$formula)) & !is.null(x[[j]][[iii]]$hlevel))
+                  x[[j]][[i]]$hlevel <- x[[j]][[iii]]$hlevel + 1
+              }
+            }
+          }
+        } else x[[j]]$hlevel <- 1
+      }
+    } else x$hlevel <- 1
+
+    do <- drop(unlist(sapply(x, function(x) {
+      rval <- NULL
+      if(!all(c("formula", "fake.formula", "response") %in% names(x))) {
+        for(jj in seq_along(x)) {
+          if(!all(c("formula", "fake.formula", "response") %in% names(x[[jj]]))) {
+            for(ii in seq_along(x[[jj]])) {
+              rval <- c(rval, is.null(x[[jj]][[ii]]$hlevel))
+            }
+          } else rval <- c(rval, is.null(x[[jj]]$hlevel))
         }
-      } else x[[j]]$hlevel <- 1
-    }
-  } else x$hlevel <- 1
+      } else rval <- is.null(x$hlevel)
+      rval
+    })))
+
+    do <- all(do == TRUE)
+  }
+
   x
 }
 
