@@ -840,9 +840,6 @@ resultsBayesX <- function(x, samples, ...)
         }
       }
 
-      ## Scale parameters.
-      scale.m <- scale.samps.m <- NULL
-
       ## Compute partial residuals.
       if(!is.null(effects) & obj$hlevel < 2) {
         if(length(obj$response)) {
@@ -859,8 +856,9 @@ resultsBayesX <- function(x, samples, ...)
       ## Stuff everything together.
       rval[[j]] <- list(
         "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(attr(x, "model.frame")),
-        "formula" = obj$formula), "param.effects" = param.effects, "effects" = effects,
-        "effects.hyp" = effects.hyp, "scale" = scale.m, "fitted.values" = fitted.values
+        "formula" = obj$formula, "hlevel" = obj$hlevel), "param.effects" = param.effects, "effects" = effects,
+        "effects.hyp" = effects.hyp,
+        "fitted.values" = if(length(fitted.values) < 2) NA else fitted.values 
       )
 
       class(rval[[j]]) <- "bayesr"
@@ -897,12 +895,18 @@ resultsBayesX <- function(x, samples, ...)
     for(j in seq_along(nx)) {
       if(!all(c("formula", "fake.formula") %in% names(x[[nx[j]]]))) {
         rval[[nx[j]]] <- list()
+        nh <- NULL
         for(ii in seq_along(x[[nx[j]]])) {
-          nh <- paste("h", if(!is.null(x[[nx[j]]][[ii]]$hlevel)) paste(x[[nx[j]]][[ii]]$hlevel,
-            if(length(x[[nx[j]]]) > 2 & ii > 1) ii else NULL, sep = if(ii > 1) "-" else "") else ii, sep = "")
-          rval[[nx[j]]][[nh]] <- createBayesXresults(x[[nx[j]]][[ii]],
+          nh <- c(nh, x[[nx[j]]][[ii]]$hlevel)
+          rval[[nx[j]]][[ii]] <- createBayesXresults(x[[nx[j]]][[ii]],
             samples, id = fn[j], sid = length(nx) > 1)
         }
+        if(any(dups <- duplicated(nh))) {
+          dups <- nh[dups]
+          for(dn in dups)
+            nh[nh == dn] <- paste(nh[nh == dn], 1:length(nh[nh == dn]), sep = "-")
+        }
+        names(rval[[nx[j]]]) <- paste("h", nh, sep = "")
         attr(rval[[nx[j]]], "hlevel") <- TRUE
       } else {
         rval[[nx[j]]] <- createBayesXresults(x[[nx[j]]], samples, id = fn[j], sid = length(nx) > 1)

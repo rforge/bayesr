@@ -1879,17 +1879,17 @@ summary.bayesr <- function(object, model = NULL, ...)
   rval <- list()
   n <- length(object)
   for(i in 1:n) {
-    if(!any(c("param.effects", "effects.hyp", "scale") %in% names(object[[i]]))) {
+    if(!any(c("param.effects", "effects.hyp") %in% names(object[[i]]))) {
       rval[[i]] <- summary.bayesr(object[[i]])
       attr(rval[[i]], "hlevel") <- TRUE
     } else {
-      for(j in c("param.effects", "effects.hyp", "scale")) {
+      for(j in c("param.effects", "effects.hyp")) {
         if(!is.null(object[[i]][[j]]))
           attr(object[[i]][[j]], "samples") <- NULL
       }
       rval[[i]] <- with(object[[i]],
         c(list("param.effects" = param.effects,
-          "effects.hyp" = effects.hyp, "scale" = scale),
+          "effects.hyp" = effects.hyp),
           model)
       )
     }
@@ -1982,12 +1982,6 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
       if(length(x[[i]]$effects.hyp) > 0) {
         cat("\nSmooth effects variances:\n")
         printCoefmat(x[[i]]$effects, digits = digits, na.print = "NA", ...)
-      }
-      if(!is.function(x[[i]]$scale)) {
-        if(!is.null(x[[i]]$scale)) {
-          cat("\nScale estimate:\n")
-          printCoefmat(x[[i]]$scale, digits = digits, na.print = "NA", ...)
-        }
       }
       if(i == n & !h0) {
         print_dic_pd(x[[1]])
@@ -2343,6 +2337,7 @@ fitted.bayesr <- function(object, model = NULL, term = NULL,
 {
   type <- match.arg(type)
   family <- attr(object, "family")
+  h1check <- any(grepl("h1", names(object)))
 
   if(type != "parameter" & !samples)
     object <- get.model(object, model, drop = FALSE)
@@ -2391,17 +2386,44 @@ fitted.bayesr <- function(object, model = NULL, term = NULL,
       model <- nrval[model]
     ind <- if(one) 1 else seq_along(model)
     for(j in ind) {
-      rval[[j]] <- predict.bayesr(object, model = if(one) NULL else j, term = term,
-        FUN = function(x) { x }, nsamps = nsamps, ...)
-      if(type != "link")
+      if(!one & !all(c("model", "fitted.values") %in% names(object[[j]]))) {
+        rval[[j]] <- 0
+        for(jj in seq_along(object[[j]])) {
+          if(is.null(object[[j]][[jj]]$param.effects) & is.null(object[[j]][[jj]]$effects)) next
+          rval[[j]] <- rval[[j]] + predict.bayesr(object, model = c(j, jj), term = term,
+            FUN = function(x) { x }, nsamps = nsamps, ...)
+        }
+      } else {
+        if(is.null(object[[j]]$param.effects) & is.null(object[[j]]$effects)) next
+        rval[[j]] <- predict.bayesr(object, model = if(one) NULL else j, term = term,
+          FUN = function(x) { x }, nsamps = nsamps, ...)
+      }
+      if(type != "link" & !h1check)
         rval[[j]] <- apply(rval[[j]], 2, make.link2(family$links[if(one) 1 else nrval[j]])$linkinv)
-      rval[[j]] <- t(apply(rval[[j]], 1, FUN))
-      if(!is.null(dim(rval[[j]]))) {
-        if(nrow(rval[[j]]) == 1) {
-          rval[[j]] <- drop(rval[[j]])
+      if(!h1check) {
+        rval[[j]] <- t(apply(rval[[j]], 1, FUN))
+        if(!is.null(dim(rval[[j]]))) {
+          if(nrow(rval[[j]]) == 1) {
+            rval[[j]] <- drop(rval[[j]])
+          } else {
+            if(ncol(rval[[j]]) == 1)
+              rval[[j]] <- drop(rval[[j]])
+          }
+        }
+      }
+    }
+    if(h1check) {
+      rval <- delete.NULLs(rval)
+      rval <- do.call("+", rval)
+      if(type != "link")
+        rval <- apply(rval, 2, make.link2(family$links[1])$linkinv)
+      rval <- t(apply(rval, 1, FUN))
+      if(!is.null(dim(rval))) {
+        if(nrow(rval) == 1) {
+          rval <- drop(rval)
         } else {
           if(ncol(rval[[j]]) == 1)
-            rval[[j]] <- drop(rval[[j]])
+            rval <- drop(rval)
         }
       }
     }
@@ -2639,17 +2661,21 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
   scorefun <- function(eta) {
     norm <- rep(0, n)
     for(i in 1:n) {
-      norm[i] <- score.norm(eta[i, , drop = FALSE])
+      ni <- try(score.norm(eta[i, , drop = FALSE]), silent = TRUE)
+      if(inherits(ni, "try-error")) ni <- NA
+      norm[i] <- ni
     }
-
     pp <- family$d(y, family$map2par(eta))
     loglik <- log(pp)
     if(is.null(family$score.norm)) {
       quadratic <- 2 * pp - norm
     } else {
       quadratic <- rep(0, n)
-      for(i in 1:n)
-        quadratic[i] <- score.norm2(y[i], eta[i, , drop = FALSE])
+      for(i in 1:n) {
+        ni <- try(score.norm2(y[i], eta[i, , drop = FALSE]), silent = TRUE)
+        if(inherits(ni, "try-error")) ni <- NA
+        quadratic[i] <- ni
+      }
     }
     spherical <- pp / sqrt(norm)
 
@@ -2664,7 +2690,7 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
     eta <- if(kfitted) {
       kfitted(x, nsamps = nsamps,
         FUN = function(x) { mean(x, na.rm = TRUE) }, ...)
-    } else fitted(x)
+    } else fitted(x, samples = if(!is.null(h_response(x))) TRUE else FALSE)
     if(!inherits(eta, "list")) {
       eta <- list(eta)
       names(eta) <- family$names[1]
@@ -2793,6 +2819,12 @@ residuals.bayesr <- function(object, type = c("quantile", "ordinary", "quantile2
 {
   type <- match.arg(type)
   y <- model.response2(object)
+  if(!is.null(dim(y))) {
+    if(!is.null(hrn <- h_response(object))) {
+      if(!samples) stop("need to set argument samples = TRUE using hierarchical models!")
+      y <- y[, !(colnames(y) %in% hrn)]
+    }
+  }
   family <- attr(object, "family")
   if(is.null(family$type)) family$type <- 1
   if(type == "ordinary") {
@@ -2892,6 +2924,22 @@ model.response2 <- function(data, ...)
     model.response(data, ...)
   } else data[, unique(rn), ...]
   y
+}
+
+## find hierarchical responses
+h_response <- function(x)
+{
+  rval <- NULL
+  if(!all(c("model", "fitted.values") %in% names(x))) {
+    for(j in seq_along(x))
+      rval <- c(rval, h_response(x[[j]]))
+  } else {
+    if(!is.null(x$model$hlevel)) {
+      if(x$model$hlevel > 1)
+        rval <- formula_respname(x$model$formula)
+    }
+  }
+  rval
 }
 
 
