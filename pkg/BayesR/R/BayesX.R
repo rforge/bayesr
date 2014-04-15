@@ -148,10 +148,11 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
   }
   if(length(grep("weights", mf.names)))
     add.weights <- TRUE
-  if(zero <- family$bayesx$zero) {
+  zero <- family$bayesx$zero
+  if(is.null(zero)) zero <- FALSE
+  if(zero) {
     attr(x, "model.frame")[["ybinom"]] <- 1 * (attr(x, "model.frame")[[rn]] > 0)
   }
-  if(is.null(zero)) zero <- FALSE
   quantile <- family$bayesx$quantile
 
   family$bayesx[c("order", "lhs", "rm.number", "weights", "quantile", "zero")] <- NULL
