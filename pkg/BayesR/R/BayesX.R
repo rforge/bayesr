@@ -148,9 +148,13 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
   }
   if(length(grep("weights", mf.names)))
     add.weights <- TRUE
+  if(zero <- family$bayesx$zero) {
+    attr(x, "model.frame")[["ybinom"]] <- 1 * (attr(x, "model.frame")[[rn]] > 0)
+  }
+  if(is.null(zero)) zero <- FALSE
   quantile <- family$bayesx$quantile
 
-  family$bayesx[c("order", "lhs", "rm.number", "weights", "quantile")] <- NULL
+  family$bayesx[c("order", "lhs", "rm.number", "weights", "quantile", "zero")] <- NULL
 
   args <- list(...)
   model.name <- control$setup$model.name
@@ -164,6 +168,12 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
     if(!is.null(obj$cat.formula) & !h) {
       obj$response <- formula_respname(obj$cat.formula)
       obj$response.vec <- attr(x, "model.frame")[[obj$response]]
+    }
+    if(zero) {
+      if(formula_respname(obj$formula) == "pi" & !h) {
+        obj$response <- "ybinom"
+        obj$response.vec <- attr(x, "model.frame")[["ybinom"]]
+      }
     }
     if(h)
       obj$response.vec <- attr(x, "model.frame")[[obj$response]]
@@ -325,7 +335,11 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
               } else formula_respname(x[[j]]$cat.formula)
             }
           } else {
-            if(is.null(x[[j]]$response)) response.name[1] else x[[j]]$response
+            if(zero & x[[j]]$hlevel < 2 & formula_respname(x[[j]]$formula) == "pi") {
+              "ybinom"
+            } else {
+              if(is.null(x[[j]]$response)) response.name[1] else x[[j]]$response
+            }
           }, sep = '')
         et <- x[[j]]$pterms
         fctr <- attr(x[[j]]$formula, "control")
@@ -371,7 +385,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
               }
             }
             if(x[[j]]$hlevel < 2 & any(grepl("mean", family$bayesx[[nx[if(is.null(id)) j else id]]]))) {
-              if(any(grepl("predict", names(control$prg)))) {
+              if(any(grepl("predict", names(control$prg))) & !zero) {
                 teqn <- paste(teqn, " predict=", control$prg$predict, " setseed=", control$prg$setseed, sep = "")
               }
             }
@@ -424,6 +438,11 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
   }
   
   prg <- c(prg_extras(x), prg, make_eqn(x))
+
+  if(zero) {
+    prg <- c(prg, "", paste(model.name, ".hregress ybinom, family=zero_adjusted setseed=",
+      control$prg$setseed," predict=light using ", x[[1]]$dname, sep = "" ))
+  }
 
   prg <- gsub("(random", "(hrandom", prg, fixed = TRUE)
   for(i in 1:5)
@@ -702,6 +721,9 @@ resultsBayesX <- function(x, samples, ...)
       )
       x <- foo(x)
     }
+    if(grepl("zero-adjusted", family$family)) {
+      x <- gsub("binomial", "pi", x)
+    }
     x
   }
 
@@ -746,7 +768,6 @@ resultsBayesX <- function(x, samples, ...)
         nx <- gsub("Intercept", "const", nx, fixed = TRUE)
         pt <- paste(nx, collapse = "+")
         pt <- paste(pt, paste(id2, family$bayesx[[id]][2], sep = ""), if(obj$hlevel > 1) 2 else 1, sep = ":")
-
         if(any(grepl(pt, snames, fixed = TRUE))) {
           samps <- as.matrix(samples[[j]][, grepl(pt, snames, fixed = TRUE)], ncol = k)
           nx <- gsub("const", "(Intercept)", nx, fixed = TRUE)

@@ -513,7 +513,8 @@ buildJAGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
 samplerJAGS <- function(x, tdir = NULL,
   n.chains = 1, n.adapt = 100,
   n.iter = 4000, thin = 2, burnin = 1000,
-  seed = NULL, verbose = TRUE, set.inits = FALSE, ...)
+  seed = NULL, verbose = TRUE, set.inits = FALSE,
+  save.all = FALSE, ...)
 {
   require("rjags")
 
@@ -541,6 +542,20 @@ samplerJAGS <- function(x, tdir = NULL,
   load.module("dic"); load.module("glm")
   
   if(verbose) writeLines(x$model)
+  
+  if(save.all) {
+    mdata <- x$data
+    vnames <- x$psave
+    save(mdata, vnames, file = file.path(tdir, "msetup.rda"))
+    writeLines(c(
+        'library("rjags")',
+        'load("msetup.rda")',
+        'm <- jags.model("model.txt", data = mdata, inits = inits)',
+        paste('samples <- coda.samples(m, variable.names = vnames, n.iter = ',
+          n.iter, ', thin = ', thin, ')', sep = '')
+      ), con = file.path(tdir, "model.R")
+    )
+  }
   
   if(set.inits) {
     jmodel <- jags.model(mfile, data = x$data, inits = inits,

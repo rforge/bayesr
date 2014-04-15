@@ -408,7 +408,9 @@ bayesr.family <- function(family, type = "BayesR")
       if(is.null(family$family)) stop("family is specidied wrong, no family name available!")
       family <- family$family
     }
-    family <- eval(parse(text = paste(family, type, sep = if(!is.null(type)) "." else "")))
+    txt <- paste(family, type, sep = if(!is.null(type)) "." else "")
+    txt <- gsub("BayesR.BayesR", "BayesR", txt, fixed = TRUE)
+    family <- eval(parse(text = txt))
     family <- family()
   }
   if(is.null(family$cat))
@@ -467,7 +469,6 @@ bayesr.formula <- function(formula, specials = NULL, family = gaussian.BayesR())
     }
     formula
   }
-
   formula <- formula_and(formula, env)
   formula <- formula_at(formula, env)
   formula <- formula0 <- complete_formula(formula_hierarchical(formula))

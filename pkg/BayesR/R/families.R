@@ -300,8 +300,13 @@ binomial.BayesR <- function(link = "logit", ...)
     "names" = "pi",
     "links" = parse.links(link, c(pi = "logit"), ...),
     "valid.response" = function(x) {
-      if(!is.factor(x)) stop("response must be a factor!", call. = FALSE)
-      if(nlevels(x) > 2) stop("more than 2 levels in factor response!", call. = FALSE)
+      if(!is.factor(x)) {
+        if(length(unique(x)) > 2)
+          stop("response has more than 2 levels!", call. = FALSE)
+      } else {
+        if(nlevels(x) > 2)
+          stop("more than 2 levels in factor response!", call. = FALSE)
+      }
       TRUE
     },
     bayesx = list(
@@ -831,7 +836,7 @@ lognormal2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
       "mu" = c("lognormal_mu", "mean"),
       "sigma2" = c("lognormal_sigma2", "scale")
     ),
-	"score" = list(
+	  "score" = list(
       "mu" = function(y, eta, ...) { (log(y) - eta$mu) / (eta$sigma2) },
       "sigma2" = function(y, eta, ...) { -0.5 + (log(y) - eta$mu)^2 / (2 * eta$sigma2) }
     ),
@@ -897,6 +902,7 @@ dagum.BayesR <- function(links = c(a = "log", b = "log", p = "log"), ...)
   class(rval) <- "family.BayesR"
   rval
 }
+
 
 BCCG.BayesR <- function(links = c(mu = "log", sigma = "log", nu = "identity"), ...)
 {
@@ -1054,6 +1060,7 @@ mvt.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
   rval
 }
 
+
 dirichlet.BayesR <- function(link = "logit", ...)
 {
   rval <- list(
@@ -1073,6 +1080,7 @@ dirichlet.BayesR <- function(link = "logit", ...)
   class(rval) <- "family.BayesR"
   rval
 }
+
 
 multinomial.BayesR <- function(link = "probit", ...)
 {
@@ -1109,6 +1117,11 @@ poisson.BayesR <- function(links = c(lambda = "log"), ...)
     "links" = parse.links(links, c(lambda = "log"), ...),
     bayesx = list(
       "lambda" = c("poisson", "mean")
+    ),
+    jagstan = list(
+      "dist" = "dpois",
+      "eta" = JAGSeta,
+      "model" = JAGSmodel
     ),
 	  "mu" = function(eta, ...) {
        eta$lambda
@@ -1261,6 +1274,48 @@ quant2.BayesR <- function(links = c(mu = "identity", sigma = "log"), prob = 0.5,
   )
   class(rval) <- "family.BayesR"
   rval
+}
+
+
+## Zero adjusted families.
+zero.BayesR <- function(pi = "logit", g = invgaussian)
+{
+  gg <- try(inherits(g, "family.BayesR"), silent = TRUE)
+  if(inherits(gg, "try-error")) {
+    g <- deparse(substitute(g), backtick = TRUE, width.cutoff = 500)
+  } else {
+    if(is.function(g)) {
+      if(inherits(try(g(), silent = TRUE), "try-error"))
+        g <- deparse(substitute(g), backtick = TRUE, width.cutoff = 500)
+    }
+  }
+  g <- bayesr.family(g)
+  np <- g$names
+  g$links <- c(g$links, "pi" = pi)
+  g$family <- paste("zero-adjusted | ", g$family, ", ", "binomial", sep = "")
+  g$names <- c(g$names, "pi")
+  g$valid.response <- function(x) {
+    if(any(x < 0)) stop("response includes values smaller than zero!")
+    TRUE
+  }
+  dfun <- g$d
+  g$d <- function(y, eta, log = TRUE) {
+    yb <- 1 * (y > 0)
+    dyb <- dbinom(yb, size = 1, prob = eta$pi, log = log)
+    eta$pi <- NULL
+    dy <- dfun(y, eta, log = log)
+    return(if(log) dy + dyb else dy * dyb)
+  }
+  g$bayesx <- c(g$bayesx, list("pi" = c(paste("binomial", pi, sep = "_"), "meanservant")))
+  g$bayesx$weights <- list()
+  for(j in np) {
+    g$bayesx$weights[[j]] <- function(x) { 1 * (x > 0) }
+    if(grepl("mean", g$bayesx[[j]][2]))
+      g$bayesx[[j]][2] <- "meanservant"
+  }
+  g$bayesx$zero <- TRUE
+  class(g) <- "family.BayesR"
+  g
 }
 
 
