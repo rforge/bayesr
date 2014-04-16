@@ -170,8 +170,8 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
       obj$response <- formula_respname(obj$cat.formula)
       obj$response.vec <- attr(x, "model.frame")[[obj$response]]
     }
-    if(zero) {
-      if(formula_respname(obj$formula) == "pi" & !h) {
+    if(zero & !is.null(attr(obj$formula, "name"))) {
+      if(attr(obj$formula, "name") == "pi" & !h) {
         obj$response <- "ybinom"
         obj$response.vec <- attr(x, "model.frame")[["ybinom"]]
       }
@@ -336,7 +336,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
               } else formula_respname(x[[j]]$cat.formula)
             }
           } else {
-            if(zero & x[[j]]$hlevel < 2 & formula_respname(x[[j]]$formula) == "pi") {
+            if(zero & x[[j]]$hlevel < 2 & attr(x[[j]]$formula, "name") == "pi") {
               "ybinom"
             } else {
               if(is.null(x[[j]]$response)) response.name[1] else x[[j]]$response

@@ -466,6 +466,7 @@ bayesr.formula <- function(formula, specials = NULL, family = gaussian.BayesR())
         formula[[j]] <- as.formula(paste(j, "1", sep = " ~ "))
         environment(formula[[j]]) <- env
       }
+      attr(formula[[j]], "name") <- j
     }
     formula
   }
@@ -1975,6 +1976,7 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
     } else {
       cat("Formula:\n")
       environment(x[[i]]$formula) <- .GlobalEnv
+      attr(x[[i]]$formula, "name") <- NULL
       print(x[[i]]$formula)
       if(length(x[[i]]$param.effects) > 0) {
         cat("\nParametric coefficients:\n")
@@ -2043,6 +2045,7 @@ print.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ...)
     if(!is.null(attr(xs[[i]], "hlevel"))) {
       nh <- names(xs[[i]])
       for(j in seq_along(xs[[i]])) {
+        attr(xs[[i]][[j]]$formula, "name") <- NULL
         cat(nh[j], ": ", sep = ""); print(xs[[i]][[j]]$formula)
       }
       if(i < n) cat("---\n")
@@ -2051,6 +2054,7 @@ print.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ...)
         pdic <- FALSE
       }
     } else {
+      attr(xs[[i]]$formula, "name") <- NULL
       print(xs[[i]]$formula)
       if(i == n & pdic) {
         print_dic_pd(xs[[1]])
@@ -2255,9 +2259,12 @@ print.bayesr.formula <- function(x, ...) {
       if(inherits(x[[i]], "list") & is.null(attr(x, "raw.formula"))) {
         for(j in seq_along(x[[i]])) {
           cat("h", j, ": ", sep = "")
+          attr(x[[i]][[j]], "name") <- NULL
           print(x[[i]][[j]])
         }
       } else {
+        attr(x[[i]], "name") <- NULL
+        attr(x[[i]]$formula, "name") <- NULL
         if(is.null(attr(x, "raw.formula"))) print(x[[i]]) else print(x[[i]]$formula)
       }
       if(i < length(x))
