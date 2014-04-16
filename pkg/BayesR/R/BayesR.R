@@ -2636,7 +2636,9 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
   if(is.null(family$score.norm)) {
     score.norm <- function(eta) {
       integrand <- function(x) {
-        family$d(x, family$map2par(eta))^2
+        int <- family$d(x, family$map2par(eta))^2
+        int[int == Inf | int == -Inf] <- 0
+        int
       }
       rval <- if(is.null(limits)) {
           try(integrate(integrand, lower = -Inf, upper = Inf), silent = TRUE)
@@ -2674,6 +2676,7 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
       norm[i] <- ni
     }
     pp <- family$d(y, family$map2par(eta))
+    pp[pp == Inf | pp == -Inf] <- 0
     loglik <- log(pp)
     if(is.null(family$score.norm)) {
       quadratic <- 2 * pp - norm

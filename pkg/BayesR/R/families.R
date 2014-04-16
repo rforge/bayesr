@@ -133,12 +133,12 @@ beta.BayesR <- function(links = c(mu = "logit", sigma2 = "logit"), ...)
 		   b <- a * (1 - mu) / mu
 		   dbeta(y, shape1 = a, shape2 = b, log = log)
 	  },
-	  "p" = function(y, eta) {
+	  "p" = function(y, eta, ...) {
        mu <- eta$mu
        sigma2 <- eta$sigma2
 		   a <- mu * (1 - sigma2) / (sigma2)
 		   b <- a * (1 - mu) / mu
-		   pbeta(y, shape1 = a, shape2 = b)
+		   pbeta(y, shape1 = a, shape2 = b, ...)
 	  },
     "type" = 1
   )
@@ -182,7 +182,7 @@ betazoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log",
       if(log) d <- log(d)
       d
 	  },
-	  "p" = function(y, eta) {
+	  "p" = function(y, eta, ...) {
 		  mu <- eta$mu
 		  sigma <- eta$sigma
 		  a <- mu * (1 - sigma) / (sigma)
@@ -231,7 +231,7 @@ betazi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log"),
       if(log) d <- log(d)
       d
 	  },
-	  "p" = function(y, eta) {
+	  "p" = function(y, eta, ...) {
 		  mu <- eta$mu
 		  sigma <- eta$sigma
 		  a <- mu * (1 - sigma) / (sigma)
@@ -279,7 +279,7 @@ betaoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", tau = "log")
       if(log) d <- log(d)
       d
 	  },
-    "p" = function(y, eta) {
+    "p" = function(y, eta, ...) {
       mu <- eta$mu
       sigma <- eta$sigma
       a <- mu * (1 - sigma) / (sigma)
@@ -323,8 +323,8 @@ binomial.BayesR <- function(link = "logit", ...)
 	  "d" = function(y, eta, log = FALSE) {
 		  dbinom(y, size = 1, prob = eta$pi, log = log)
 	  },
-	  "p" = function(y, eta) {
-		  pbinom(y, size = 1, prob = eta$pi)
+	  "p" = function(y, eta, ...) {
+		  pbinom(y, size = 1, prob = eta$pi, ...)
 	  },
     "type" = 1
   )
@@ -353,8 +353,8 @@ cloglog.BayesR <- function(link = "cloglog", ...)
 	  "d" = function(y, eta, log = FALSE) {
 		  dbinom(y, size = 1, prob = eta$pi, log = log)
 	  },
-	  "p" = function(y, eta) {
-		  pbinom(y, size = 1, prob = eta$pi)
+	  "p" = function(y, eta, ...) {
+		  pbinom(y, size = 1, prob = eta$pi, ...)
 	  }
   )
 
@@ -401,8 +401,8 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
     "d" = function(y, eta, log = FALSE) {
       dnorm(y, mean = eta$mu, sd = eta$sigma, log = log)
     },
-    "p" = function(y, eta) {
-      pnorm(y, mean = eta$mu, sd = eta$sigma)
+    "p" = function(y, eta, ...) {
+      pnorm(y, mean = eta$mu, sd = eta$sigma, ...)
     },
     "type" = 1
   )
@@ -451,8 +451,8 @@ gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
     "d" = function(y, eta, log = FALSE) {
       dnorm(y, mean = eta$mu, sd = sqrt(eta$sigma2), log = log)
     },
-    "p" = function(y, eta) {
-      pnorm(y, mean = eta$mu, sd = sqrt(eta$sigma2))
+    "p" = function(y, eta, ...) {
+      pnorm(y, mean = eta$mu, sd = sqrt(eta$sigma2), ...)
     },
     "type" = 1
   )
@@ -486,11 +486,11 @@ truncgaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ..
       if(log) d <- log(d)
       d
     },
-    "p" = function(y, eta) {
+    "p" = function(y, eta, ...) {
       mu <-  eta$mu
-	  sigma <- sqrt(eta$sigma2)
-	  arg <- - mu / sigma
-	  2 * (pnorm(y / sigma + arg) - pnorm(arg))
+	    sigma <- sqrt(eta$sigma2)
+	    arg <- - mu / sigma
+	    2 * (pnorm(y / sigma + arg) - pnorm(arg))
     }
 
   )
@@ -523,7 +523,7 @@ truncgaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
       if(log) d <- log(d)
       d
     },
-    "p" = function(y, eta) {
+    "p" = function(y, eta, ...) {
       mu <-  eta$mu
 	    sigma <- eta$sigma
 	    arg <- - mu / sigma
@@ -556,9 +556,9 @@ t.BayesR <- function(links = c(mu = "identity", sigma2 = "log", df = "log"), ...
       arg <- (y - eta$mu) / sqrt(eta$sigma2)
       dt(arg, df = eta$df, log = log)
     },
-    "p" = function(y, eta) {
+    "p" = function(y, eta, ...) {
       arg <- (y - eta$mu) / sqrt(eta$sigma2)
-      pt(arg, df = eta$df)
+      pt(arg, df = eta$df, ...)
     }
   )
   
@@ -607,12 +607,12 @@ invgaussian.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
       if(log) d <- log(d)
       d
 	  },
-	  "p" = function (y, eta) {
+	  "p" = function (y, eta, ...) {
 		  mu <- eta$mu
 		  lambda <- 1 / sqrt(eta$sigma2)
 		  lq <- sqrt(lambda / y)
 		  qm <- y / mu
-		  pnorm(lq * (qm - 1)) + exp(2 * lambda / mu) * pnorm(-lq * (qm + 1))
+		  pnorm(lq * (qm - 1)) + exp(2 * lambda / mu) * pnorm(-lq * (qm + 1), ...)
 	  }
   )
 
@@ -645,10 +645,10 @@ weibull.BayesR <- function(links = c(lambda = "log", alpha = "log"), ...)
       lambda <- eta$lambda
       dweibull(y, scale = lambda, shape = alpha, log = log)
     },
-    "p" = function (y, eta) {
+    "p" = function (y, eta, ...) {
       alpha <- eta$alpha
       lambda <- eta$lambda
-      rweibull(y, scale = lambda, shape = alpha)
+      rweibull(y, scale = lambda, shape = alpha, ...)
     }
   )
   
@@ -683,7 +683,7 @@ pareto.BayesR <- function(links = c(b = "log", p = "log"), ...)
       if(log) d <- log(d)
       d
     },
-    "p" = function (y, eta) {
+    "p" = function (y, eta, ...) {
       p <- eta$p
       b <- eta$b
       1 - ((b/(b + y))^(p))
@@ -746,7 +746,7 @@ gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
 		  s <- eta$mu / eta$sigma
 		  dgamma(y, shape = a, scale = s, log = log)
 	  },
-	  "p" = function (y, eta, lower.tail = TRUE, log.p = FALSE) {
+	  "p" = function(y, eta, lower.tail = TRUE, log.p = FALSE) {
 		  a <- eta$sigma
 		  s <- eta$mu / eta$sigma
 		  pgamma(y, shape = a, scale = s, lower.tail = lower.tail, log.p = log.p)
@@ -810,8 +810,8 @@ lognormal.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
     "d" = function(y, eta, log = FALSE) {
       dlnorm(y, meanlog = eta$mu, sdlog = eta$sigma, log = log)
     },
-    "p" = function(y, eta) {
-      plnorm(y, meanlog = eta$mu, sdlog = eta$sigma)
+    "p" = function(y, eta, ...) {
+      plnorm(y, meanlog = eta$mu, sdlog = eta$sigma, ...)
     },
     "type" = 1
   )
@@ -850,8 +850,8 @@ lognormal2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
     "d" = function(y, eta, log = FALSE) {
       dlnorm(y, meanlog = eta$mu, sdlog = sqrt(eta$sigma2), log = log)
     },
-    "p" = function(y, eta) {
-      plnorm(y, meanlog = eta$mu, sdlog = sqrt(eta$sigma2))
+    "p" = function(y, eta, ...) {
+      plnorm(y, meanlog = eta$mu, sdlog = sqrt(eta$sigma2), ...)
     }
   )
 
@@ -891,7 +891,7 @@ dagum.BayesR <- function(links = c(a = "log", b = "log", p = "log"), ...)
       if(log) d <- log(d)
       d
 	  },
-	  "p" = function(y, eta) {
+	  "p" = function(y, eta, ...) {
 		  a <- eta$a
       b <- eta$b
       p <- eta$p
@@ -930,14 +930,14 @@ BCCG.BayesR <- function(links = c(mu = "log", sigma = "log", nu = "identity"), .
       if(log) d <- log(d)
       d
 	  },
-	  "p" = function(y, eta) {
+	  "p" = function(y, eta, ...) {
 		  mu <- eta$mu
 		  sigma <- eta$sigma
 		  nu <- eta$nu
 		  z <- ifelse(nu == 0, log(y/mu)/sigma, (((y/mu)^nu - 1)/(nu * sigma)))
-		  FYy1 <- pnorm(z)
+		  FYy1 <- pnorm(z, ...)
       FYy2 <- ifelse(nu > 0, pnorm(-1/(sigma * abs(nu))), 0)
-		  FYy3 <- pnorm(1/(sigma * abs(nu)))
+		  FYy3 <- pnorm(1/(sigma * abs(nu)), ...)
       (FYy1 - FYy2)/FYy3
 	  },
 	  "type" = 1
@@ -974,10 +974,10 @@ mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
         dnorm(y[, 2], mean = eta$mu2, sd = eta$sigma2, log = log)
       )
     },
-    "p" = function(y, eta) {
+    "p" = function(y, eta, ...) {
       cbind(
-        pnorm(y[, 1], mean = eta$mu1, sd = eta$sigma1),
-        pnorm(y[, 2], mean = eta$mu2, sd = eta$sigma2)
+        pnorm(y[, 1], mean = eta$mu1, sd = eta$sigma1, ...),
+        pnorm(y[, 2], mean = eta$mu2, sd = eta$sigma2, ...)
       )
     },
     "type" = 2
@@ -1129,8 +1129,8 @@ poisson.BayesR <- function(links = c(lambda = "log"), ...)
 	  "d" = function(y, eta, log = FALSE) {
       dpois(y, lambda = eta$lambda, log = log)
     },
-    "p" = function(y, eta) {
-      ppois(y, lambda = eta$lambda)
+    "p" = function(y, eta, ...) {
+      ppois(y, lambda = eta$lambda, ...)
     },
     "score.norm" = TRUE,
     "type" = 3
@@ -1163,7 +1163,7 @@ zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
       if(log) d <- log(d)
       d
     },
-    "p" = function(y, eta) {
+    "p" = function(y, eta, ...) {
       ifelse(y < 0, 0, eta$pi + (1 - eta$pi) * ppois(y, lambda = eta$lambda))
     },
     "score.norm" = TRUE,
@@ -1193,7 +1193,7 @@ negbin.BayesR <- function(links = c(mu = "log", delta = "log"), ...)
     "d" = function(y, eta, log = FALSE) {
       dnbinom(y, mu = eta$mu, size = eta$delta, log = log)
     },
-    "p" = function(y, eta) {
+    "p" = function(y, eta, ...) {
       pnbinom(y, mu = eta$mu, size = eta$delta)
     },
     "score.norm" = TRUE,
@@ -1225,7 +1225,7 @@ zinb.BayesR <- function(links = c(mu = "log", pi = "logit", delta = "log"), ...)
       if(log) d <- log(d)
       d
     },
-    "p" = function(y, eta) {
+    "p" = function(y, eta, ...) {
       ifelse(y<0, 0, eta$pi + (1 - eta$pi) * pnbinom(y, size = eta$delta, mu = eta$mu))
     },
     "score.norm" = TRUE,
@@ -1290,6 +1290,8 @@ zero.BayesR <- function(pi = "logit", g = invgaussian)
     }
   }
   g <- bayesr.family(g)
+  g[c("mu", "map2par", "loglik")] <- NULL
+  g0 <- g
   np <- g$names
   g$links <- c(g$links, "pi" = pi)
   g$family <- paste("zero-adjusted | ", g$family, ", ", "binomial", sep = "")
@@ -1298,13 +1300,20 @@ zero.BayesR <- function(pi = "logit", g = invgaussian)
     if(any(x < 0)) stop("response includes values smaller than zero!")
     TRUE
   }
-  dfun <- g$d
-  g$d <- function(y, eta, log = TRUE) {
-    yb <- 1 * (y > 0)
-    dyb <- dbinom(yb, size = 1, prob = eta$pi, log = log)
-    eta$pi <- NULL
-    dy <- dfun(y, eta, log = log)
-    return(if(log) dy + dyb else dy * dyb)
+  dfun <- g0$d
+  pfun <- g0$p
+  if(is.function(dfun)) {
+    g$d <- function(y, eta, log = TRUE) {
+      d <- dfun(y, eta, log = FALSE) * eta$pi * (y > 0) + (1 - eta$pi) * (y == 0)
+      if(log)
+        d <- log(d)
+      d
+    }
+  }
+  if(is.function(pfun)) {
+    g$p <- function(y, eta, log = FALSE) {
+      pfun(y, eta, log = log) * eta$pi + (1 - eta$pi)
+    }
   }
   g$bayesx <- c(g$bayesx, list("pi" = c(paste("binomial", pi, sep = "_"), "meanservant")))
   g$bayesx$weights <- list()
