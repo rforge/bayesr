@@ -2,6 +2,7 @@
 ## http://adv-r.had.co.nz/C-interface.html
 ## http://stackoverflow.com/questions/7457635/calling-r-function-from-c
 ## http://gallery.rcpp.org/articles/r-function-from-c++/
+## IWLS propose function in C.
 propose_iwls <- function(x, family,
   response, eta, id, rho, ...)
 {
