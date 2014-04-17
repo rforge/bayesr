@@ -2,7 +2,7 @@
 ## http://adv-r.had.co.nz/C-interface.html
 ## http://stackoverflow.com/questions/7457635/calling-r-function-from-c
 ## http://gallery.rcpp.org/articles/r-function-from-c++/
-propose_default <- function(x, family,
+propose_iwls <- function(x, family,
   response, eta, id, rho, ...)
 {
   .Call("do_propose", x, family, response, eta, id, rho)
@@ -28,24 +28,57 @@ propose_rw <- function(x, family,
   k <- length(x$state$g)
 
   ## Sample new parameters.
-  x$state$g <- x$state$g + rnorm(k, mean = 0, sd = 0.02)
+  do <- TRUE; accepted <- x$state$accepted
+  eta2 <- eta; j <- 0
+  while(do & j < x$state$maxit) {
+    ## Adaptive scales.
+    if(!is.null(x$state$iter)) {
+      aprop <- 0.44
+      if(x$state$iter < x$adapt) {
+        for(i in 1:k) {
+          x$state$scale[i] <- if(accepted) {
+            x$state$scale[i] + (x$state$scale[i] / (aprop * (1 - aprop))) * (1 - aprop) / x$state$iter
+          } else {
+            abs(x$state$scale[i] - (x$state$scale[i] / (aprop * (1 - aprop))) * aprop / x$state$iter)
+          }
+        }
+      }
+    }
 
-  ## Compute log priors.
-  p2 <- if(x$fixed) {
-    dnorm(x$state$g, sd = 10, log = TRUE)
-  } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+    g <- if(TRUE) {
+      theta <- rnorm(k)
+      d <- theta / sqrt(sum(theta * theta))
+      x$state$g + runif(k, 0, x$state$scale) * d
+    } else x$state$g + rnorm(k, mean = 0, sd = x$state$scale)
+
+    ## Compute log priors.
+    p2 <- if(x$fixed) {
+      dnorm(g, sd = 10, log = TRUE)
+    } else drop(-0.5 / x$state$tau2 * crossprod(g, x$S[[1]]) %*% g)
   
-  ## Compute fitted values.        
-  x$state$fit <- drop(x$X %*% x$state$g)
+    ## Compute fitted values.        
+    fit <- drop(x$X %*% g)
 
-  ## Set up new predictor.
-  eta[[id]] <- eta[[id]] + x$state$fit
+    ## Set up new predictor.
+    eta2[[id]] <- eta[[id]] + fit
 
-  ## Map predictor to parameter scale.
-  peta <- family$map2par(eta)
+    ## Map predictor to parameter scale.
+    peta <- family$map2par(eta2)
 
-  ## Compute new log likelihood.
-  pibetaprop <- family$loglik(response, peta)
+    ## Compute new log likelihood.
+    pibetaprop <- family$loglik(response, peta)
+
+    ## Compute log acceptance probablity.
+    x$state$alpha <- drop((pibetaprop + p2) - (pibeta + p1))
+
+    if((accepted <- if(is.na(x$state$alpha)) FALSE else log(runif(1)) <= x$state$alpha) | x$state$maxit < 2) {
+      x$state$g <- g
+      x$state$fit <- fit
+      do <- FALSE
+    }
+
+    j <- j + 1
+  }
 
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp)) {
@@ -53,9 +86,6 @@ propose_rw <- function(x, family,
     b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
     x$state$tau2 <- 1 / rgamma(1, a, b)
   }
-
-  ## Compute log acceptance probablity.
-  x$state$alpha <- drop((pibetaprop + p2) - (pibeta + p1))
 
   return(x$state)
 }
@@ -224,102 +254,8 @@ smooth.IWLS.default <- function(x, ...)
   if(is.null(x$xt$adaptive))
     x$xt$adaptive <- TRUE
 
-  if(is.null(x$propose)) {
-    if(TRUE) {
-      x$propose <- propose_default
-    } else {
-    require("mvtnorm")
-    x$propose <- function(x, family, response, eta, id, ...) {
-      ## Map predictor to parameter scale.
-      peta <- family$map2par(eta)
-
-      ## Compute weights.
-      weights <- family$weights[[id]](response, peta)
-
-      ## Score.
-      score <- family$score[[id]](response, peta)
-
-      ## Compute working observations.
-      z <- eta[[id]] + 1 / weights * score
-
-      ## Compute old log likelihood and old log coefficients prior.
-      pibeta <- family$loglik(response, peta)
-      p1 <- if(x$fixed) {
-        0
-      } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
-
-      ## Compute partial predictor.
-      eta[[id]] <- eta[[id]] - x$state$fit
-
-      ## Compute mean and precision.
-      XW <- t(x$X * weights)
-      P <- if(x$fixed) {
-        if(k <- ncol(x$X) < 2) {
-          1 / (XW %*% x$X)
-        } else chol2inv(chol(XW %*% x$X))
-      } else chol2inv(chol(XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
-      P[P == Inf] <- 0
-      M <- P %*% (XW %*% (z - eta[[id]]))
-
-      ## Save old coefficients
-      g0 <- drop(x$state$g)
-
-      ## Sample new parameters.
-      x$state$g <- drop(rmvnorm(n = 1, mean = M, sigma = P))
-
-      ## Compute log priors.
-      p2 <- if(x$fixed) {
-        0
-      } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
-      qbetaprop <- dmvnorm(x$state$g, mean = M, sigma = P, log = TRUE)
-
-      ## Compute fitted values.        
-      x$state$fit <- drop(x$X %*% x$state$g)
-
-      ## Set up new predictor.
-      eta[[id]] <- eta[[id]] + x$state$fit
-
-      ## Map predictor to parameter scale.
-      peta <- family$map2par(eta)
-
-      ## Compute new log likelihood.
-      pibetaprop <- family$loglik(response, peta)
-
-      ## Compute new weights
-      weights <- family$weights[[id]](response, peta)
-
-      ## New score.
-      score <- family$score[[id]](response, peta)
-
-      ## New working observations.
-      z <- eta[[id]] + 1 / weights * score
-
-      ## Compute mean and precision.
-      XW <- t(x$X * weights)
-      P2 <- if(x$fixed) {
-        if(k < 2) {
-          1 / (XW %*% x$X)
-        } else chol2inv(chol(XW %*% x$X))
-      } else chol2inv(L <- chol(P0 <- XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
-      P2[P2 == Inf] <- 0
-      M2 <- P2 %*% (XW %*% (z - (eta[[id]] - x$state$fit)))
-
-      ## Get the log prior.
-      qbeta <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
-
-      ## Sample variance parameter.
-      if(!x$fixed & is.null(x$sp)) {
-        a <- x$rank / 2 + x$a
-        b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
-        x$state$tau2 <- 1 / rgamma(1, a, b)
-      }
-
-      ## Compute acceptance probablity.
-      x$state$alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
-
-      return(x$state)
-    }}
-  }
+  if(is.null(x$propose))
+    x$propose <- propose_iwls
 
   ## Function for computing starting values with backfitting.
   if(is.null(x$update)) {
@@ -418,8 +354,9 @@ get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc")
 samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = FALSE,
   verbose = TRUE, step = 20, svalues = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
   tdir = NULL, method = "backfitting", outer = TRUE, inner = TRUE, n.samples = 200,
-  criterion = c("AIC", "BIC", "AICc"), lower = 1e-09, upper = 1e+04,
-  optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3, ...)
+  criterion = c("AICc", "BIC", "AIC"), lower = 1e-09, upper = 1e+04,
+  optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3,
+  propose = c("rw", "iwls"), ...)
 {
   known_methods <- c("backfitting", "MCMC", "backfitting2", "backfitting3", "backfitting4")
   tm <- NULL
@@ -454,8 +391,17 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     nchar(gsub("(.*\\.)|([0]*$)", "", as.character(x)))
   }
   epsdigits <- getDigits(eps)
+
+  ## The proposal function to be used for smooth terms.
+  if(!is.function(propose)) {
+    propose <- match.arg(propose)
+    propose <- switch(propose,
+      "iwls" = propose_iwls,
+      "rw" = propose_rw
+    )
+  }
   
-  ## Add accptance rate and fitted values vectors.
+  ## Add acceptance rate and fitted values vectors.
   smIWLS <- function(obj, ...) {
     if(!any(c("formula", "fake.formula", "response") %in% names(obj))) {
       nx <- names(obj)
@@ -471,7 +417,15 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           obj$smooth[[j]]$s.accepted <- rep(0, nrow = n.save)
           obj$smooth[[j]]$s.samples <- matrix(0, nrow = n.save, ncol = obj$smooth[[j]]$np)
           obj$smooth[[j]]$state$fit <- rep(0, nrow(obj$smooth[[j]]$X))
+          obj$smooth[[j]]$state$g <- rep(0, ncol(obj$smooth[[j]]$X))
           obj$smooth[[j]]$fxsp <- if(!is.null(obj$smooth[[j]]$sp)) TRUE else FALSE
+          if(!is.null(propose))
+            obj$smooth[[j]]$propose <- propose
+          obj$smooth[[j]]$state$accepted <- FALSE
+          obj$smooth[[j]]$state$scale <- rep(1, length = obj$smooth[[j]]$np)
+          obj$smooth[[j]]$state$iter <- 1
+          obj$smooth[[j]]$state$maxit <- 50
+          obj$smooth[[j]]$adapt <- burnin
           if("backfitting" %in% method) {
             obj$smooth[[j]]$optimize <- TRUE
             obj$smooth[[j]]$criterion <- criterion
@@ -491,7 +445,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   eta <- vector(mode = "list", length = np)
   names(eta) <- nx
   for(j in 1:np)
-    eta[[j]] <- rep(1e-8, length(response))
+    eta[[j]] <- rep(0, length(response))
 
   ## Find starting values with backfitting.
   if(svalues | any(grepl("backfitting", method))) {
@@ -746,6 +700,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
             x[[nx[j]]]$smooth[[sj]]$state <- p.state 
           }
           x[[nx[j]]]$smooth[[sj]]$state$accepted <- accepted
+          x[[nx[j]]]$smooth[[sj]]$state$iter <- i
 
           ## Save the samples and acceptance.
           if(save) {
@@ -755,10 +710,10 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           }
 
           ## Check.
-          if(any(abs(eta[[nx[j]]]) > 10)) {
-            eta[[nx[j]]][eta[[nx[j]]] > 10] <- 10
-            eta[[nx[j]]][eta[[nx[j]]] < -10] <- -10
-          }
+#          if(any(abs(eta[[nx[j]]]) > 10)) {
+#            eta[[nx[j]]][eta[[nx[j]]] > 10] <- 10
+#            eta[[nx[j]]][eta[[nx[j]]] < -10] <- -10
+#          }
         }
       }
 
@@ -767,6 +722,15 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
       if(verbose) barfun(ptm, n.iter, i, step, nstep)
     }
     if(verbose) cat("\n")
+  }
+
+
+  ## Remove some settings.
+  for(j in 1:np) {
+    for(sj in seq_along(x[[nx[j]]]$smooth)) {
+      x[[nx[j]]]$smooth[[sj]]$state$iter <- NULL
+      x[[nx[j]]]$smooth[[sj]]$state$maxit <- 1
+    }
   }
 
   save.edf <- save.loglik <- NULL

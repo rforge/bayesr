@@ -435,8 +435,9 @@ bayesr.family <- function(family, type = "BayesR")
   }
   if(is.null(family$loglik)) {
     if(!is.null(family$d))
-      family$loglik <- function(y, eta) { sum(family$d(y, family$map2par(eta), log = TRUE), na.rm = TRUE) }
+      family$loglik <- function(y, eta) { sum(family$d(y, eta, log = TRUE), na.rm = TRUE) }
   }
+
   family
 }
 
