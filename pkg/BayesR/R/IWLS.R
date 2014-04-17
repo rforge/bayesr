@@ -8,6 +8,59 @@ propose_default <- function(x, family,
   .Call("do_propose", x, family, response, eta, id, rho)
 }
 
+## Random walk propose function.
+propose_rw <- function(x, family,
+  response, eta, id, ...)
+{
+  ## Map predictor to parameter scale.
+  peta <- family$map2par(eta)
+
+  ## Compute old log likelihood and old log coefficients prior.
+  pibeta <- family$loglik(response, peta)
+  p1 <- if(x$fixed) {
+    dnorm(x$state$g, sd = 10, log = TRUE)
+  } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+
+  ## Compute partial predictor.
+  eta[[id]] <- eta[[id]] - x$state$fit
+
+  ## Number of parameters.
+  k <- length(x$state$g)
+
+  ## Sample new parameters.
+  x$state$g <- x$state$g + rnorm(k, mean = 0, sd = 0.02)
+
+  ## Compute log priors.
+  p2 <- if(x$fixed) {
+    dnorm(x$state$g, sd = 10, log = TRUE)
+  } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+  
+  ## Compute fitted values.        
+  x$state$fit <- drop(x$X %*% x$state$g)
+
+  ## Set up new predictor.
+  eta[[id]] <- eta[[id]] + x$state$fit
+
+  ## Map predictor to parameter scale.
+  peta <- family$map2par(eta)
+
+  ## Compute new log likelihood.
+  pibetaprop <- family$loglik(response, peta)
+
+  ## Sample variance parameter.
+  if(!x$fixed & is.null(x$sp)) {
+    a <- x$rank / 2 + x$a
+    b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
+    x$state$tau2 <- 1 / rgamma(1, a, b)
+  }
+
+  ## Compute log acceptance probablity.
+  x$state$alpha <- drop((pibetaprop + p2) - (pibeta + p1))
+
+  return(x$state)
+}
+
+
 if(FALSE) {
   require("mgcv")
   set.seed(111)
@@ -17,11 +70,11 @@ if(FALSE) {
   x <- smooth.construct(s(z), list("z" = z), NULL)
   x$state <- list("g" = runif(ncol(x$X)), "tau2" = 2.33, "fit" = runif(n))
   x$a <- x$b <- 0.00001
-  family <- gaussian.BayesR()
+  family <- bayesr.family(gaussian.BayesR())
   eta <- list("mu" = rep(0, n), "sigma" = rep(0, n))
   id <- "mu"
 
-  a <- propose_default(x, family, response, eta, id, new.env())
+  a <- propose_rw(x, family, response, eta, id, new.env())
 }
 
 
