@@ -92,6 +92,303 @@ propose_rw <- function(x, family,
 }
 
 
+## t-walk propose function.
+## Functions for the OneMove().
+## see http://www.cimat.mx/~jac/twalk/
+## Author J. Andres Christen
+IntProd <- function(x) { sum(x * x)  }
+DotProd <- function(x, y) { sum(x * y)  }
+
+Simh1 <- function(dim, pphi, x, xp, beta)
+{	
+	phi <- (runif(dim) < pphi) 
+	rt <- NULL 
+	for(i in 1:dim)
+		if(phi[i])
+			rt <- append(rt, xp[i] + beta*(xp[i] - x[i]))
+		else
+			rt <- append(rt, x[i]) 
+	list(rt = rt, nphi = sum(phi)) 
+}
+
+Simfbeta <- function(at)
+{	
+	if(runif(1) < (at - 1) / (2 * at))
+		exp(1 / (at + 1) * log(runif(1)))
+	else
+		exp(1 / (1 - at) * log(runif(1))) 
+}
+
+Simh2 <- function(dim, pphi, aw, x, xp)
+{
+  u <- runif(dim) 
+  phi <- (runif(dim) < pphi)
+  z <- (aw / (1 + aw)) * (aw * u^2 + 2*u - 1) 
+  z <- z * phi
+  list(rt = x + (x - xp) * z, nphi = sum(phi))
+}
+
+Simh3 <- function(dim, pphi, x, xp)
+{
+  phi <- (runif(dim) < pphi)
+  sigma <- max(phi * abs(xp - x))
+  x + sigma * rnorm(dim) * phi
+  list(rt = xp * phi + sigma * rnorm(dim) * phi + x * (1 - phi), nphi = sum(phi), phi = phi)
+}
+
+G3U <- function(nphi, phi, h, x, xp)
+{
+  sigma <- max(phi * abs(xp - x))
+  if(nphi > 0)
+    (nphi / 2) * log(2 * pi) + nphi * log(sigma) + 0.5 * IntProd(h - xp) / (sigma^2)
+  else
+    0 
+}
+
+Simh4 <- function(dim, pphi, x, xp)
+{
+  phi <- (runif(dim) < pphi)
+	sigma <- max(phi * abs(xp - x)) / 3
+	rt <- NULL
+  for(i in 1:dim)
+    if(phi[i])
+      rt <- append(rt, x[i] + sigma * rnorm(1))
+    else
+      rt <- append(rt, x[i])
+  list(rt = rt, nphi = sum(phi), phi = phi) 
+}
+
+log2pi <- log(2 * pi); log3 <- log(3)
+
+G4U <- function(nphi, phi, h, x, xp)
+{
+  sigma <- max(phi * abs(xp - x)) / 3
+  if(nphi > 0)
+    (nphi / 2) * log2pi - nphi * log3 + nphi * log(sigma) + 0.5 * 9 * IntProd((h - x)) / (sigma^2)
+  else
+    0 
+}
+
+OneMove <- function(dim, Supp = function(x) { TRUE },
+  x, U, xp, Up, at = 6, aw = 1.5, pphi = min(dim, 4) / dim,
+  F1 = 0.4918, F2 = 0.9836, F3 = 0.9918,
+  .X, .FAMILY, .RESPONSE, .ETA, .ID)
+{
+  ker <- runif(1)
+
+  if(ker < F1) {	
+    dir <- runif(1) 
+    funh <- 1
+    if((0 <= dir) && (dir < 0.5)) {	
+      beta <- Simfbeta(at) 
+      tmp <- Simh1(dim, pphi, xp, x, beta) 
+      yp <- tmp$rt
+      nphi <- tmp$nphi
+      y  <- x 
+      propU <- U 
+      if(Supp(yp)) {
+        propUp <- log_posterior(yp, .X, .FAMILY, .RESPONSE, .ETA, .ID)
+        if(nphi == 0)
+          A <- 1
+        else
+          A <- exp((U - propU) + (Up - propUp) +  (nphi-2)*log(beta)) 
+      } else {
+        propUp <- NULL
+        A <- 0
+      }
+    }
+    if((0.5 <= dir) && (dir < 1.0)) {
+      beta <- Simfbeta(at)
+      tmp <- Simh1(dim, pphi, x, xp, beta) 
+      y <- tmp$rt
+      nphi <- tmp$nphi
+      yp  <- xp 
+      propUp <- Up 
+      if(Supp(y)) {
+        propU <- log_posterior(y, .X, .FAMILY, .RESPONSE, .ETA, .ID)
+        if(nphi == 0)
+          A <- 1
+        else
+          A <- exp((U - propU) + (Up - propUp) +  (nphi - 2) * log(beta))
+      } else {
+        propU <- NULL
+        A <- 0
+      }
+    }
+  }
+	
+  if((F1 <= ker) && (ker < F2)) {	
+    dir <- runif(1)
+    funh <- 2
+    if((0 <= dir) && (dir < 0.5)) {
+      tmp <- Simh2(dim, pphi, aw, xp, x) 
+      yp <- tmp$rt
+      nphi <- tmp$nphi
+      y  <- x 
+      propU <- U
+      if((Supp(yp)) && (all(abs(yp - y) > 0))) {
+        propUp <- log_posterior(yp, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
+        A <- exp((U - propU) + (Up - propUp))  
+      } else {
+        propUp <- NULL
+        A <- 0
+      }
+    }
+    if((0.5 <= dir) && (dir < 1.0)) {
+      tmp <- Simh2(dim, pphi, aw, x, xp)
+      y <- tmp$rt
+      nphi <- tmp$nphi
+      yp  <- xp 
+      propUp <- Up
+      if((Supp(y)) && (all(abs(yp - y) > 0))) {
+        propU <- log_posterior(y, .X, .FAMILY, .RESPONSE, .ETA, .ID)
+        A <- exp((U - propU) + (Up - propUp))
+      } else {
+        propU <- NULL
+        A <- 0
+      }
+    }
+  }
+
+  if((F2 <= ker) && (ker < F3)) {	
+    dir <- runif(1) 
+    funh <- 3
+    if((0 <= dir) && (dir < 0.5)) {
+      tmp <- Simh3( dim, pphi, xp, x) 
+      yp <- tmp$rt
+      nphi <- tmp$nphi
+      phi <- tmp$phi
+      y  <- x 
+      propU <- U 
+      if((Supp(yp)) && all(yp != x)) {
+        propUp <- log_posterior(yp, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
+        W1 <- G3U(nphi, phi, yp, xp,  x) 
+        W2 <- G3U(nphi, phi, xp, yp,  x)  
+        A <- exp((U - propU) + (Up - propUp) +  (W1 - W2))
+      } else {
+        propUp <- NULL
+        A <- 0
+      }
+    }
+    if((0.5 <= dir) && (dir < 1.0)) {
+      tmp <- Simh3(dim, pphi, x, xp) 
+      y <- tmp$rt
+      nphi <- tmp$nphi
+      phi <- tmp$phi
+      yp  <- xp 
+      propUp <- Up
+      if((Supp(y)) && all(y != xp)) {
+        propU <- log_posterior(y, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
+        W1 <- G3U(nphi, phi, y,  x, xp) 
+        W2 <- G3U(nphi, phi, x,  y, xp) 
+        A <- exp((U - propU) + (Up - propUp) +  (W1 - W2))
+      } else {
+        propU <- NULL
+        A <- 0
+      }
+    }
+  }
+		
+  if(F3 <= ker) {	
+    dir <- runif(1) 
+    funh <- 4
+    if((0 <= dir) && (dir < 0.5)) {
+      tmp <- Simh4(dim, pphi, xp, x) 
+      yp <- tmp$rt
+      nphi <- tmp$nphi
+      phi <- tmp$phi
+      y  <- x 
+      propU <- U
+      if((Supp(yp)) && all(yp != x)) {
+        propUp <- log_posterior(yp, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
+        W1 <- G4U(nphi, phi, yp, xp,  x) 
+        W2 <- G4U(nphi, phi, xp, yp,  x) 
+        A <- exp((U - propU) + (Up - propUp) +  (W1 - W2))
+      } else {
+        propUp <- NULL
+        A <- 0
+      }
+    }
+    if((0.5 <= dir) && (dir < 1.0)) {
+      tmp <- Simh4(dim, pphi, x, xp) 
+      y <- tmp$rt
+      nphi <- tmp$nphi
+      phi <- tmp$phi
+      yp  <- xp 
+      propUp <- Up
+      if((Supp(y)) && all(y != xp)) {
+        propU <- log_posterior(y, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
+        W1 <- G4U(nphi, phi, y,  x, xp) 
+        W2 <- G4U( nphi, phi, x,  y, xp) 
+        A <- exp((U - propU) + (Up - propUp) +  (W1 - W2))
+      } else {
+        propU <- NULL
+        A <- 0
+      }
+    }
+  }
+	
+  return(list(y = y, propU = propU, yp = yp,
+    propUp = propUp, A = A, funh = funh, nphi = nphi))
+}
+
+log_posterior <- function(g, x, family, response, eta, id)
+{
+  ## Set up new predictor.
+  eta[[id]] <- eta[[id]] + drop(x$X %*% g)
+
+  ## Map predictor to parameter scale.
+  peta <- family$map2par(eta)
+
+  ## Compute log likelihood and log coefficients prior.
+  ll <- family$loglik(response, peta)
+  lp <- if(x$fixed) {
+    dnorm(g, sd = 10, log = TRUE)
+  } else drop(-0.5 / x$state$tau2 * crossprod(g, x$S[[1]]) %*% g)
+
+  -1 * (ll + lp)
+}
+
+propose_twalk <- function(x, family,
+  response, eta, id, ...)
+{
+  ## Remove fitted values.
+  eta[[id]] <- eta[[id]] - x$state$fit
+
+  ## Get log posteriors if not available.
+  if(is.null(x$state$U))
+    x$state$U <- log_posterior(x$state$g, x, family, response, eta, id)
+  if(is.null(x$state$sg))
+    x$state$sg <- jitter(x$state$g)
+  if(is.null(x$state$Up))
+    x$state$Up <- log_posterior(x$state$sg, x, family, response, eta, id)
+
+  ## Number of parameters.
+  k <- length(x$state$g)
+
+  ## Do one t-walk step
+  p <- OneMove(dim = k, x = x$state$g, U = x$state$U, xp = x$state$sg, Up = x$state$Up,
+    .X = x, .FAMILY = family, .RESPONSE = response, .ETA = eta, .ID = id)
+
+  ## Setup return state.
+  x$state$alpha <- log(p$A)
+  x$state$g <- p$y
+  x$state$sg <- p$yp
+  x$state$U <- p$propU
+  x$state$Up <- p$propUp
+  x$state$fit <- drop(x$X %*% x$state$g)
+
+  ## Sample variance parameter.
+  if(!x$fixed & is.null(x$sp)) {
+    a <- x$rank / 2 + x$a
+    b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
+    x$state$tau2 <- 1 / rgamma(1, a, b)
+  }
+
+  return(x$state)
+}
+
+
 if(FALSE) {
   require("mgcv")
   set.seed(111)
@@ -357,7 +654,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   tdir = NULL, method = "backfitting", outer = TRUE, inner = TRUE, n.samples = 200,
   criterion = c("AICc", "BIC", "AIC"), lower = 1e-09, upper = 1e+04,
   optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3,
-  propose = c("iwls", "rw"), ...)
+  propose = c("twalk", "iwls", "rw"), ...)
 {
   known_methods <- c("backfitting", "MCMC", "backfitting2", "backfitting3", "backfitting4")
   tm <- NULL
@@ -398,7 +695,8 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     propose <- match.arg(propose)
     propose <- switch(propose,
       "iwls" = propose_iwls,
-      "rw" = propose_rw
+      "rw" = propose_rw,
+      "twalk" = propose_twalk
     )
   }
   
