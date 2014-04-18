@@ -654,7 +654,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   tdir = NULL, method = "backfitting", outer = TRUE, inner = TRUE, n.samples = 200,
   criterion = c("AICc", "BIC", "AIC"), lower = 1e-09, upper = 1e+04,
   optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3,
-  propose = c("twalk", "iwls", "rw"), ...)
+  propose = c("iwls", "rw", "twalk"), ...)
 {
   known_methods <- c("backfitting", "MCMC", "backfitting2", "backfitting3", "backfitting4")
   tm <- NULL
