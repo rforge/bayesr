@@ -1095,7 +1095,7 @@ add.partial <- function(x, samples = FALSE, nsamps = 100) {
 ## Prediction can also be based on multiple chains.
 predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
   intercept = TRUE, FUN = mean, trans = NULL, type = c("link", "parameter"),
-  nsamps = NULL, ...)
+  nsamps = NULL, verbose = TRUE, ...)
 {
   family <- attr(object, "family")
   if(missing(newdata))
@@ -1132,6 +1132,8 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
   } else NULL
   term <- term[!is.na(term)]
   if(!length(term)) term <- NULL
+  if(!is.null(term) & verbose)
+    cat("terms used for prediction:", paste(term, collapse = ", "), "\n")
   rval <- NULL
   m.samples <- m.designs <- m.specials <- list()
   for(j in 1:k) {
@@ -1175,7 +1177,11 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
                 } else {
                   if(!is.null(specs$basis)) {
                     stopifnot(is.function(specs$basis))
-                    specs$basis(newdata[specs$term])
+                    if(specs$by != "NA") {  ## ATTENTION: by variables with basis()!
+                      if(!(specs$by %in% names(newdata)))
+                        stop("cannot find by variable ", specs$by, " in newdata!")
+                      as.numeric(unlist(newdata[specs$by])) * specs$basis(newdata[specs$term])
+                    } else specs$basis(newdata[specs$term])
                   } else stop(paste("cannot compute design matrix for term ", specs$label, "!", sep = ""))
                 }
               }
@@ -1184,7 +1190,7 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
           }
         } else {
           if(any(grepl(i, rownames(object[[j]]$param.effects), fixed = TRUE))) {
-            ij <- grep(i, colnames(attr(object[[j]]$param.effects, "samples")), fixed = TRUE)
+            ij <- which(colnames(attr(object[[j]]$param.effects, "samples")) %in% i)
             m.samples[[i]] <- cbind(m.samples[[i]],
               matrix(attr(object[[j]]$param.effects, "samples")[, ij, drop = FALSE],
               ncol = length(ij)))
@@ -1219,6 +1225,10 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
         if(!is.null(nsamps) & length(m.samples)) {
           if(!is.null(dim(m.samples[[i]])))
             m.samples[[i]] <- m.samples[[i]][seq.int(1:ncol(m.samples[[i]]), length = nsamps), , drop = FALSE]
+        }
+        if(!is.null(m.designs[[i]])) {
+          if(is.null(dim(m.designs[[i]])))
+            m.designs[[i]] <- matrix(m.designs[[i]], ncol = 1)
         }
       }
     }

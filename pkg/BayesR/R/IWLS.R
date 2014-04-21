@@ -355,16 +355,16 @@ propose_twalk <- function(x, family,
   ## Remove fitted values.
   eta[[id]] <- eta[[id]] - x$state$fit
 
+  ## Number of parameters.
+  k <- length(x$state$g)
+
   ## Get log posteriors if not available.
   if(is.null(x$state$U))
     x$state$U <- log_posterior(x$state$g, x, family, response, eta, id)
   if(is.null(x$state$sg))
-    x$state$sg <- jitter(x$state$g)
+    x$state$sg <- rep(0, length = k)
   if(is.null(x$state$Up))
     x$state$Up <- log_posterior(x$state$sg, x, family, response, eta, id)
-
-  ## Number of parameters.
-  k <- length(x$state$g)
 
   ## Do one t-walk step
   p <- OneMove(dim = k, x = x$state$g, U = x$state$U, xp = x$state$sg, Up = x$state$Up,

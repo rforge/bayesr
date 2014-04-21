@@ -336,8 +336,12 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
               } else formula_respname(x[[j]]$cat.formula)
             }
           } else {
-            if(zero & x[[j]]$hlevel < 2 & attr(x[[j]]$formula, "name") == "pi") {
-              "ybinom"
+            if(zero & x[[j]]$hlevel < 2 & !is.null(x[[j]]$formula)) {
+              if(attr(x[[j]]$formula, "name") == "pi") {
+                "ybinom"
+              } else {
+                if(is.null(x[[j]]$response)) response.name[1] else x[[j]]$response
+              }
             } else {
               if(is.null(x[[j]]$response)) response.name[1] else x[[j]]$response
             }
@@ -827,7 +831,7 @@ resultsBayesX <- function(x, samples, ...)
               if(tn1$by != "NA") {
                 tn <- c(tn, tn1$by)
                 get.X <- function(data) {
-                  diag(data[, ncol(data)]) %*% basis(data[, 1:(ncol(data) - 1)])
+                  as.numeric(data[, ncol(data)]) * basis(data[, 1:(ncol(data) - 1), drop = FALSE])
                 }
               } else {
                 get.X <- basis
@@ -850,7 +854,7 @@ resultsBayesX <- function(x, samples, ...)
                 hlevel = obj$hlevel)
 
               attr(fst$term, "specs")$get.mu <- get.mu
-              attr(fst$term, "specs")$basis <- get.X ## sx.smooth[[i]]$basis
+              attr(fst$term, "specs")$basis <- sx.smooth[[i]]$basis
               if(sid)
                 attr(fst$term, "specs")$label <- paste(attr(fst$term, "specs")$label, id, sep = ":")
 
