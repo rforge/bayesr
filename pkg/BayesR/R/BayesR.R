@@ -437,6 +437,28 @@ bayesr.family <- function(family, type = "BayesR")
     if(!is.null(family$d))
       family$loglik <- function(y, eta) { sum(family$d(y, eta, log = TRUE), na.rm = TRUE) }
   }
+  if(is.null(family$score)) {
+    nf <- family$names
+    score <- list()
+    for(j in family$names) {
+      score[[j]] <- function(y, eta, ...) {
+        call <- paste('num_deriv(y, eta, family = family, id = "',  j, '", d = 1)', sep = '')
+        eval(parse(text = call))
+      }
+    }
+    family$score <- score
+  }
+  if(is.null(family$weights)) {
+    nf <- family$names
+    weights <- list()
+    for(j in family$names) {
+      weights[[j]] <- function(y, eta, ...) {
+        call <- paste('num_deriv(y, eta, family = family, id = "',  j, '", d = 2)', sep = '')
+        -1 * eval(parse(text = call))
+      }
+    }
+    family$weights <- weights
+  }
 
   family
 }

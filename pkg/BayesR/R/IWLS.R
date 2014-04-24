@@ -389,6 +389,38 @@ propose_twalk <- function(x, family,
 }
 
 
+## Numerical derivatives.
+num_deriv <- function(y, eta, family, id = NULL,
+  d = 1, method = "Richardson", eps = 1e-4)
+{
+  require("numDeriv")
+
+  nf <- family$names
+  k <- length(nf)
+  if(is.null(id)) id <- nf[1L]
+
+  dfun <- function(x, y, eta) {
+    eta[[id]] <- x
+    dval <- family$d(y, eta, log = TRUE)
+    dval[is.na(dval) | dval == Inf | dval == -Inf] <- 0
+    dval
+  }
+
+  rval <- rep(NA, nrow = length(y))
+
+  rval <- if(d < 2) {
+    grad(dfun, eta[[id]], y = y, eta = eta, method = method, method.args = list("eps" = eps))
+  } else {
+    eta <- as.data.frame(eta)
+    sapply(1:length(y), function(i) {
+      hessian(dfun, eta[i, id], y = y[i], eta = eta[i, , drop = FALSE])
+    })
+  }
+
+  return(rval)
+}
+
+
 if(FALSE) {
   require("mgcv")
   set.seed(111)
