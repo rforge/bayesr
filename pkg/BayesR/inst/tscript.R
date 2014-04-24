@@ -135,6 +135,9 @@ Xr <- X$rand$Xr
 
 
 ## Testing numerical derivatives.
+library("BayesR")
+library("gamlss")
+
 n <- 500
 x <- seq(-3, 3, length = n)
 mu <- sin(x)

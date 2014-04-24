@@ -391,7 +391,7 @@ propose_twalk <- function(x, family,
 
 ## Numerical derivatives.
 num_deriv <- function(y, eta, family, id = NULL,
-  d = 1, method = "Richardson", eps = 1e-4)
+  d = 1, method = "simple", eps = 1e-4)
 {
   require("numDeriv")
 
@@ -399,59 +399,20 @@ num_deriv <- function(y, eta, family, id = NULL,
   k <- length(nf)
   if(is.null(id)) id <- nf[1L]
 
-  dfun <- function(x, y, eta) {
+  d1fun <- function(x, y, eta) {
     eta[[id]] <- x
-    dval <- family$d(y, eta, log = TRUE)
-    dval[is.na(dval) | dval == Inf | dval == -Inf] <- 100
-    dval
+    family$d(y, eta, log = TRUE)
   }
 
-  rval <- if(d < 2) {
-    grad(dfun, eta[[id]], y = y, eta = eta, method = method, method.args = list("eps" = eps))
-  } else {
-    eta <- as.data.frame(eta)
-    sapply(1:length(y), function(i) {
-      hessian(dfun, eta[i, id], y = y[i], eta = eta[i, , drop = FALSE])
-    })
+  d2fun <- function(x, y, eta) {
+    grad(d1fun, x, y = y, eta = eta, method = method, method.args = list("eps" = eps))
   }
 
-  return(rval)
-}
+  dp <- grad(if(d < 2) d1fun else d2fun, eta[[id]],
+    y = y, eta = eta, method = method,
+    method.args = list("eps" = eps))
 
-derivative <- function(f, x, ..., order = 1, delta = 0.0001, sig = 10)
-{
-  vals <- matrix(NA, nrow = order + 1, ncol = order + 1)
-  grid <- seq(x - delta / 2, x + delta / 2, length.out = order + 1)
-  vals[1, ] <- sapply(grid, f, ...) - f(x, ...)
-  for(i in 2:(order + 1)) {
-    for(j in 1:(order - i + 2)) {
-      stepsize <- grid[i + j - 1] - grid[i + j - 2]
-      vals[i, j] <- (vals[i - 1, j + 1] - vals[i - 1, j]) / stepsize
-    }
-  }
-  return(signif(vals[order + 1, 1], sig))
-}
-
-num_deriv2 <- function(y, eta, family, id = NULL, d = 1, eps = 1e-4)
-{
-  nf <- family$names
-  k <- length(nf)
-  if(is.null(id)) id <- nf[1L]
-
-  dfun <- function(x, y, eta) {
-    eta[[id]] <- x
-    dval <- family$d(y, eta, log = TRUE)
-    dval[is.na(dval) | dval == Inf | dval == -Inf] <- 100
-    dval
-  }
-
-  eta <- as.data.frame(eta)
-
-  rval <- sapply(1:length(y), function(i) {
-    derivative(dfun, eta[i, id], y = y[i], eta = eta[i, , drop = FALSE], order = d, delta = eps)
-  })
-
-  return(rval)
+  return(dp)
 }
 
 
