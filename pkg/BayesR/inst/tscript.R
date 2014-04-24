@@ -141,7 +141,7 @@ library("gamlss")
 n <- 500
 x <- seq(-3, 3, length = n)
 mu <- sin(x)
-sigma <- scale2(x^2, 0.2, 0.5)
+sigma <- scale2(x, 0.2, 0.5)
 y <- scale2(rnorm(n, mu, sigma), 0.01, 0.99)
 
 family <- tF(NO2)
