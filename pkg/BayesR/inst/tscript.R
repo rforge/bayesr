@@ -64,10 +64,11 @@ dat <- data.frame("x1" = sort(runif(n, -3, 3)), x2 = runif(n, -3, 3))
 dat$y <- scale2(with(dat, 1.2 + sin(x1) + cos(x2) + rnorm(n, sd = (cos(dat$x1) + 2) / 4)), 0.001, 0.999)
 
 ff <- gaussian2.BayesR()
-ff$score <- NULL
-## ff$weights <- NULL
+## ff$score <- NULL
+ff$weights <- NULL
 
-a <- bayesr(y ~ s(x1) + s(x2), ~ s(x1), data = dat, family = ff, method = "backfitting")
+a <- bayesr(y ~ s(x1) + s(x2), data = dat, family = ff, method = "backfitting")
+plot(a)
 
 
 b <- bayesr(y ~ s(x1) + s(x2), ~ s(x1), data = dat, family = tF(BE), method = "MCMC")
@@ -132,118 +133,15 @@ Xf <- X$Xf
 Xr <- X$rand$Xr
 
 
-library("numDeriv")
 
-f <- gaussian.BayesR()
-dp <- function(x) {
-  eta[[id]] <- x
-  f$d(y, eta)
-}
-
-id <- "mu"
-
-score <- function(y, eta) {
-  eta <- as.data.frame(eta)
-  dx <- function(x) {
-    eta[[id]][i] <- x
-    d(y[i], eta[i, , drop = FALSE])
-  }
-  rval <- rep(NA, length(y))
-  for(i in seq_along(y)) {
-    rval[i] <- grad(dx, eta[[id]][i])
-  }
-  rval
-}
-
-
-
-
-grad <- with(eta, numericDeriv(quote(dfun(y, mu, sigma)), "mu"))
-
-myfun <- function(x, mean, sd) {
-  return(exp(- 0.5 * (x - mean) / sd^2))
-}
-
-
-
-x <- seq(-3, 3, by = 0.01)
-mean <- 0
-sd <- 1
-grad <- numericDeriv(quote(myfun(x, mean, sd)), "mean")
-
-
-
-numeric.deriv <- function(expr, theta, rho = sys.frame(sys.parent()))
-{
-  eps <- sqrt(.Machine$double.eps)
-  ans <- eval(substitute(expr), rho)
-  grad <- matrix(, length(ans), length(theta),
-  dimnames = list(NULL, theta))
-  for (i in seq_along(theta)) {
-    old <- get(theta[i], envir=rho)
-    delta <- eps * max(1, abs(old))
-    assign(theta[i], old+delta, envir=rho)
-    ans1 <- eval(substitute(expr), rho)
-    assign(theta[i], old, envir=rho)
-    grad[, i] <- (ans1 - ans) / delta
-  }
-  attr(ans, "gradient") <- grad
-  ans
-}
-
-
+## Testing numerical derivatives.
 n <- 500
 x <- seq(-3, 3, length = n)
 mu <- sin(x)
 sigma <- scale2(x^2, 0.2, 0.5)
-y <- rnorm(n, mu, sigma)
+y <- scale2(rnorm(n, mu, sigma), 0.01, 0.99)
 
-family <- gaussian.BayesR()
-
-dfun <- paste(c(paste("function(y, ", paste(family$names, collapse = ", "), ")", sep = ""),
-  "{",
-  paste("  eta <- list(", paste(family$names, "=", family$names, collapse = ", "), ")", sep = ""),
-   "  family$d(y, eta, log = TRUE)",
-  "}"
-), collapse = "\n")
-
-dfun <- eval(parse(text = dfun))
-
-d1 <- diag(attr(numericDeriv(quote(dfun(y, mu, sigma)), "sigma"), "gradient"))
-d0 <- family$score$sigma(y, list(mu = mu, sigma = sigma))
-
-plot(d0, d1)
-
-
-num_deriv <- function(y, eta, family, id = NULL,
-  d = 1, method = "Richardson", eps = 1e-4)
-{
-  require("numDeriv")
-
-  nf <- family$names
-  k <- length(nf)
-  if(is.null(id)) id <- nf[1L]
-
-  dfun <- function(x, y, eta) {
-    eta[[id]] <- x
-    family$d(y, eta, log = TRUE)
-  }
-
-  rval <- rep(NA, nrow = length(y))
-
-  rval <- if(d < 2) {
-    grad(dfun, eta[[id]], y = y, eta = eta, method = method, method.args = list("eps" = eps))
-  } else {
-    eta <- as.data.frame(eta)
-    sapply(1:length(y), function(i) {
-      hessian(dfun, eta[i, id], y = y[i], eta = eta[i, , drop = FALSE])
-    })
-  }
-
-  return(rval)
-}
-
-family <- tF(NO)
+family <- tF(NO2)
 
 eta <- list(mu = mu, sigma = sigma)
 
