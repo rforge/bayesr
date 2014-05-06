@@ -9,6 +9,99 @@ propose_iwls <- function(x, family,
   .Call("do_propose", x, family, response, eta, id, rho)
 }
 
+propose_iwls0 <- function(x, family, response, eta, id, ...)
+{
+  ## Map predictor to parameter scale.
+  peta <- family$map2par(eta)
+
+  ## Compute weights.
+  weights <- family$weights[[id]](response, peta)
+
+  ## Score.
+  score <- family$score[[id]](response, peta)
+
+  ## Compute working observations.
+  z <- eta[[id]] + 1 / weights * score
+
+  ## Compute old log likelihood and old log coefficients prior.
+  pibeta <- family$loglik(response, peta)
+  p1 <- if(x$fixed) {
+    0
+  } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+
+  ## Compute partial predictor.
+  eta[[id]] <- eta[[id]] - x$state$fit
+
+  ## Compute mean and precision.
+  XW <- t(x$X * weights)
+  P <- if(x$fixed) {
+    if(k <- ncol(x$X) < 2) {
+      1 / (XW %*% x$X)
+    } else chol2inv(chol(XW %*% x$X))
+  } else chol2inv(chol(XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
+  P[P == Inf] <- 0
+  M <- P %*% (XW %*% (z - eta[[id]]))
+
+  ## Save old coefficients
+  g0 <- drop(x$state$g)
+
+  ## Sample new parameters.
+  x$state$g <- drop(rmvnorm(n = 1, mean = M, sigma = P))
+
+  ## Compute log priors.
+  p2 <- if(x$fixed) {
+    0
+  } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+  qbetaprop <- dmvnorm(x$state$g, mean = M, sigma = P, log = TRUE)
+
+  ## Compute fitted values.        
+  x$state$fit <- drop(x$X %*% x$state$g)
+
+  ## Set up new predictor.
+  eta[[id]] <- eta[[id]] + x$state$fit
+
+  ## Map predictor to parameter scale.
+  peta <- family$map2par(eta)
+
+  ## Compute new log likelihood.
+  pibetaprop <- family$loglik(response, peta)
+
+  ## Compute new weights
+  weights <- family$weights[[id]](response, peta)
+
+  ## New score.
+  score <- family$score[[id]](response, peta)
+
+  ## New working observations.
+  z <- eta[[id]] + 1 / weights * score
+
+  ## Compute mean and precision.
+  XW <- t(x$X * weights)
+  P2 <- if(x$fixed) {
+    if(k < 2) {
+      1 / (XW %*% x$X)
+    } else chol2inv(chol(XW %*% x$X))
+  } else chol2inv(L <- chol(P0 <- XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
+  P2[P2 == Inf] <- 0
+  M2 <- P2 %*% (XW %*% (z - (eta[[id]] - x$state$fit)))
+
+  ## Get the log prior.
+  qbeta <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
+
+  ## Sample variance parameter.
+  if(!x$fixed & is.null(x$sp)) {
+    a <- x$rank / 2 + x$a
+    b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
+    x$state$tau2 <- 1 / rgamma(1, a, b)
+  }
+
+  ## Compute acceptance probablity.
+  x$state$alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
+
+  return(x$state)
+}
+
+
 ## Random walk propose function.
 propose_rw <- function(x, family,
   response, eta, id, ...)
