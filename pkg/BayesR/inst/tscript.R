@@ -64,10 +64,11 @@ dat <- data.frame("x1" = sort(runif(n, -3, 3)), x2 = runif(n, -3, 3))
 dat$y <- scale2(with(dat, 1.2 + sin(x1) + cos(x2) + rnorm(n, sd = (cos(dat$x1) + 2) / 4)), 0.001, 0.999)
 
 ff <- gaussian2.BayesR()
-## ff$score <- NULL
+ff$score <- NULL
 ff$weights <- NULL
 
-a <- bayesr(y ~ s(x1) + s(x2), data = dat, family = ff, method = "backfitting")
+a <- bayesr(y ~ s(x1) + s(x2), data = dat, family = ff, method = "MCMC", propose = "twalk", svalues = FALSE)
+
 plot(a)
 
 
@@ -141,10 +142,10 @@ library("gamlss")
 n <- 500
 x <- seq(-3, 3, length = n)
 mu <- sin(x)
-sigma <- scale2(x, 0.2, 0.5)
+sigma <- scale2(x^2, 0.2, 0.5)
 y <- scale2(rnorm(n, mu, sigma), 0.01, 0.99)
 
-family <- tF(NO2)
+family <- tF(NO)
 
 eta <- list(mu = mu, sigma = sigma)
 

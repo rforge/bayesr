@@ -101,7 +101,6 @@ propose_iwls0 <- function(x, family, response, eta, id, ...)
   return(x$state)
 }
 
-
 ## Random walk propose function.
 propose_rw <- function(x, family,
   response, eta, id, ...)
@@ -889,7 +888,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     }
 
     inner_bf <- function(x, response, eta, family, edf, id, ...) {
-      eps0 <- iter <- 1
+      eps0 <- eps + 1; iter <- 1
       while(eps0 > eps & iter < maxit) {
         eta0 <- eta
         for(sj in seq_along(x)) {
@@ -903,7 +902,9 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           eta[[id]] <- eta[[id]] - x[[sj]]$state$fit + p.state$fit
           x[[sj]]$state <- p.state
         }
-        eps0 <- mean((do.call("cbind", eta) - do.call("cbind", eta0))^2)
+        eps0 <- do.call("cbind", eta)
+        eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
+
         iter <- iter + 1
       }
       return(list("x" = x, "eta" = eta, "edf" = edf))
@@ -913,7 +914,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     backfit <- function(x, eta, verbose = TRUE) {
       edf <- get_edf(x)
 
-      eps0 <- iter <- 1
+      eps0 <- eps + 1; iter <- 1
       while(eps0 > eps & iter < maxit) {
         eta0 <- eta
         ## Cycle through all parameters
@@ -955,7 +956,9 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           }
         }
 
-        eps0 <- mean((do.call("cbind", eta) - do.call("cbind", eta0))^2)
+        eps0 <- do.call("cbind", eta)
+        eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
+
         peta <- family$map2par(eta)
 
         if(any(method == "backfitting") & verbose) {
@@ -1046,7 +1049,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
         bf <- backfit(x, eta, verbose = verbose2)
         return(if(retbf) bf else bf$ic)
       }
-      eps0 <- iter <- 1
+      eps0 <- eps + 1; iter <- 1
       while(eps0 > eps & iter < 4) {
         eta0 <- eta
         for(j in 1:np) {
@@ -1062,7 +1065,8 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
             rm(bf)
           }
         }
-        eps0 <- mean((do.call("cbind", eta) - do.call("cbind", eta0))^2)
+        eps0 <- do.call("cbind", eta)
+        eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
         iter <- iter + 1
       }
     }
