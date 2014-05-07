@@ -651,6 +651,9 @@ smooth.IWLS.default <- function(x, ...)
 
   x$interval <- if(is.null(x$xt$interval)) tau2interval(x) else x$xt$interval
   x$grid <- if(is.null(x$xt$grid)) 40 else x$xt$grid
+  if(is.null(x$fixed)) {
+    x$fixed <- if(!is.null(x$fx))  x$fx[1] else FALSE
+  }
 
   if(is.null(x$state)) {
     x$p.save <- c("g", "tau2")
@@ -1335,7 +1338,7 @@ resultsIWLS <- function(x, samples)
           }
 
           ## Prediction matrix.
-          get.X <- function(x) {
+          get.X <- function(x) { ## FIXME: time(x)
             acons <- obj$smooth[[i]]$xt$center
             X <- PredictMat(obj$smooth[[i]], x)
             X

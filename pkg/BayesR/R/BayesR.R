@@ -932,7 +932,6 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
     data <- unique(data0)
     xsmall <- if(nrow(data) != nrow(data0)) TRUE else FALSE
   }
-
   if(is.null(x$special)) {
     X <- get.X(data)
   } else {
@@ -957,6 +956,8 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   smf <- as.data.frame(smf)
   nt <- length(x$term)
   for(l in nt:1) {
+    if(inherits(data[[x$term[l]]], "ts"))
+      data[[x$term[l]]] <- as.numeric(data[[x$term[l]]])
     smf <- cbind(data[[x$term[l]]], smf)
   }
   names(smf) <- c(x$term, cnames)
@@ -1467,7 +1468,9 @@ Predict.matrix.rs.smooth <- function(object, data, knots)
 smooth.construct.ha.smooth.spec <- function(object, data, knots) 
 {
   x <- data[[object$term]]
-  freq <- if(is.null(object$xt$frequency)) length(unique(x))
+
+  freq <- if(is.null(object$xt$frequency)) as.integer(max(x, na.rm = TRUE))
+  stopifnot(freq > 1 && identical(all.equal(freq, round(freq)), TRUE))
 
   if(length(object$p.order) < 2) {
     if(is.na(object$p.order))
@@ -1478,7 +1481,6 @@ smooth.construct.ha.smooth.spec <- function(object, data, knots)
   object$p.order[is.na(object$p.order)] <- 2
 
   order <- object$p.order[1]
-  stopifnot(order <= freq / 2)
   order <- min(freq, order)
   x <- x / freq
   X <- outer(2 * pi * x, 1:order)
@@ -1497,16 +1499,23 @@ smooth.construct.ha.smooth.spec <- function(object, data, knots)
   gcos2 <- function(x) { -4 * pi^2 * order^2 * cos(2 * pi * order * x) }
 
   if(!object$fixed) {
-    S <- outer(2 * pi * x, 1:order)
-    S <- if(object$p.order[2] < 2) {
-      cbind(apply(S, 2, gcos1), apply(S, 2, gsin1))
-    } else cbind(apply(S, 2, gcos2), apply(S, 2, gsin2))
-    object$S <- list(crossprod(S))
+#    S <- outer(2 * pi * x, 1:order)
+#    S <- if(object$p.order[2] < 2) {
+#      cbind(apply(S, 2, gcos1), apply(S, 2, gsin1))
+#    } else cbind(apply(S, 2, gcos2), apply(S, 2, gsin2))
+#    object$S <- list(diag(rep(order:1, 2)))
+    K <- t(diff(diag(order))) %*% diff(diag(order))
+    K <- rbind(cbind(K, matrix(0, order, order)), cbind(matrix(0, order, order), K))
+    object$S <- list(K)
   } else object$S <- list(diag(0, ncol(X)))
 
   object$frequency <- freq
   object$bs.dim <- ncol(X)
-  object$rank <- qr(X)$rank
+  object$rank <- qr(object$S[[1]])$rank
+  object$null.space.dim <- ncol(X)
+  object$C <- matrix(nrow = 0, ncol = ncol(X))
+#  object$no.rescale <- 1
+#  object$side.constrain <- FALSE
   class(object) <- "harmon.smooth"
   object
 }
