@@ -508,6 +508,127 @@ num_deriv <- function(y, eta, family, id = NULL,
 }
 
 
+## Slice sampling.
+## See: http://www.cs.toronto.edu/~radford/ftp/slice-R-prog
+log_posterior2 <- function(g, x, family, response, eta, id)
+{
+  ## Set up new predictor.
+  eta[[id]] <- eta[[id]] + drop(x$X %*% g)
+
+  ## Map predictor to parameter scale.
+  peta <- family$map2par(eta)
+
+  ## Compute log likelihood and log coefficients prior.
+  ll <- family$loglik(response, peta)
+  lp <- if(x$fixed) {
+    dnorm(g, sd = 10, log = TRUE)
+  } else drop(-0.5 / x$state$tau2 * crossprod(g, x$S[[1]]) %*% g)
+
+  return(ll + lp)
+}
+
+uni.slice <- function(g, x, family, response, eta, id, j, ...,
+  w = 1, m = Inf, lower = -Inf, upper = +Inf)
+{
+  x0 <- g[j]
+  gL <- gR <- g
+
+  gx0 <- log_posterior2(g, x, family, response, eta, id)
+
+  ## Determine the slice level, in log terms.
+  logy <- gx0 - rexp(1)
+
+  ## Find the initial interval to sample from.
+  u <- runif(1, 0, w)
+  gL[j] <- g[j] - u
+  gR[j] <- g[j] + (w - u)  ## should guarantee that g[j] is in [L, R], even with roundoff
+
+  ## Expand the interval until its ends are outside the slice, or until
+  ## the limit on steps is reached.
+  if(is.infinite(m)) {
+    repeat {
+      if(gL[j] <= lower) break
+      if(log_posterior2(gL, x, family, response, eta, id) <= logy) break
+      gL[j] <- gL[j] - w
+    }
+    repeat {
+      if(gR[j] >= upper) break
+      if(log_posterior2(gR, x, family, response, eta, id) <= logy) break
+      gR[j] <- gR[j] + w
+    }
+  } else {
+    if(m > 1) {
+      J <- floor(runif(1, 0, m))
+      K <- (m - 1) - J
+      while(J > 0) {
+        if(gL[j] <= lower) break
+        if(log_posterior2(gL, x, family, response, eta, id) <= logy) break
+        gL[j] <- gL[j] - w
+        J <- J - 1
+      }
+      while(K > 0) {
+        if(gR[j] >= upper) break
+        if(log_posterior2(gR, x, family, response, eta, id) <= logy) break
+        gR[j] <- gR[j] + w
+        K <- K - 1
+      }
+    }
+  }
+
+  ## Shrink interval to lower and upper bounds.
+  if(gL[j] < lower) {
+    L <- lower
+  }
+  if(gR[j] > upper) {
+    R <- upper
+  }
+
+  ## Sample from the interval, shrinking it on each rejection.
+  repeat {
+    g[j] <- runif(1, gL[j], gR[j])
+
+    gx1 <- log_posterior2(g, x, family, response, eta, id)
+
+    if(gx1 >= logy) break
+
+    if(g[j] > x0) {
+      gR[j] <- g[j]
+    } else {
+      gL[j] <- g[j]
+    }
+  }
+
+  ## Return the point sampled
+  return(g)
+}
+
+## Actual univariate slice sampling propose() function.
+propose_slice <- function(x, family,
+  response, eta, id, ...)
+{
+  ## Remove fitted values.
+  eta[[id]] <- eta[[id]] - x$state$fit
+
+  for(j in seq_along(x$state$g)) {
+    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j,
+      w = 1, m = Inf, lower = -Inf, upper = +Inf)
+  }
+
+  ## Setup return state.
+  x$state$alpha <- log(1)
+  x$state$fit <- drop(x$X %*% x$state$g)
+
+  ## Sample variance parameter.
+  if(!x$fixed & is.null(x$sp)) {
+    a <- x$rank / 2 + x$a
+    b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
+    x$state$tau2 <- 1 / rgamma(1, a, b)
+  }
+
+  return(x$state)
+}
+
+
 if(FALSE) {
   require("mgcv")
   set.seed(111)
@@ -776,7 +897,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   tdir = NULL, method = "backfitting", outer = TRUE, inner = TRUE, n.samples = 200,
   criterion = c("AICc", "BIC", "AIC"), lower = 1e-09, upper = 1e+04,
   optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3,
-  propose = c("iwls", "rw", "twalk"), ...)
+  propose = c("iwls", "rw", "twalk", "slice"), ...)
 {
   known_methods <- c("backfitting", "MCMC", "backfitting2", "backfitting3", "backfitting4")
   tm <- NULL
@@ -818,7 +939,8 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     propose <- switch(propose,
       "iwls" = propose_iwls,
       "rw" = propose_rw,
-      "twalk" = propose_twalk
+      "twalk" = propose_twalk,
+      "slice" = propose_slice
     )
   }
   
@@ -1340,6 +1462,8 @@ resultsIWLS <- function(x, samples)
           ## Prediction matrix.
           get.X <- function(x) { ## FIXME: time(x)
             acons <- obj$smooth[[i]]$xt$center
+            for(char in c("(", ")", "[", "]"))
+              obj$smooth[[i]]$term <- gsub(char, ".", obj$smooth[[i]]$term, fixed = TRUE)
             X <- PredictMat(obj$smooth[[i]], x)
             X
           }

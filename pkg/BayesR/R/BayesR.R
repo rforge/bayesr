@@ -901,6 +901,20 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
 {
   require("coda")
 
+  nt <- length(x$term)
+  tterms <- NULL
+  for(l in nt:1) {
+    tterm <- x$term[l]
+    for(char in c("(", ")", "[", "]"))
+      tterm <- gsub(char, ".", tterm, fixed = TRUE)
+    if(inherits(data[[tterm]], "ts"))
+      data[[tterm]] <- as.numeric(data[[tterm]])
+    tterms <- c(tterms, tterm)
+  }
+
+  for(char in c("(", ")", "[", "]"))
+    colnames(data) <- gsub(char, ".", colnames(data), fixed = TRUE)
+
   ## Data for rug plotting.
   rugp <- if(length(x$term) < 2 & rug) data[[x$term]] else NULL
 
@@ -910,11 +924,11 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   ## New x values for which effect should
   ## be calculated, n = 100.
   if(!is.na(grid)) {
-    if(length(x$term) < 2 & !is.factor(data[[x$term[1]]]) & !any(grepl("mrf", class(x))) &
+    if(length(x$term) < 2 & !is.factor(data[[tterms[1]]]) & !any(grepl("mrf", class(x))) &
       !any(grepl("re.", class(x), fixed = TRUE)) & !any(grepl("random", class(x)))) {
       xsmall <- TRUE
       nd <- list()
-      for(j in x$term) {
+      for(j in tterms) {
         xr <- range(data[[j]], na.rm = TRUE)
         nd[[j]] <- seq(xr[1], xr[2], length = grid)
       }
@@ -928,7 +942,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
       data <- as.data.frame(nd)
     } else xsmall <- FALSE
   } else {
-    data0 <- data[, c(x$term, if(x$by != "NA") x$by else NULL), drop = FALSE]
+    data0 <- data[, c(tterms, if(x$by != "NA") x$by else NULL), drop = FALSE]
     data <- unique(data0)
     xsmall <- if(nrow(data) != nrow(data0)) TRUE else FALSE
   }
@@ -936,7 +950,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
     X <- get.X(data)
   } else {
     if(x$special)
-      X <- get.X(data[, x$term, drop = FALSE])
+      X <- get.X(data[, tterms, drop = FALSE])
     else
       X <- get.X(data)
   }
@@ -954,11 +968,8 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   smf <- t(apply(fsamples, 1, FUN))
   cnames <- colnames(smf)
   smf <- as.data.frame(smf)
-  nt <- length(x$term)
   for(l in nt:1) {
-    if(inherits(data[[x$term[l]]], "ts"))
-      data[[x$term[l]]] <- as.numeric(data[[x$term[l]]])
-    smf <- cbind(data[[x$term[l]]], smf)
+    smf <- cbind(data[[tterms[l]]], smf)
   }
   names(smf) <- c(x$term, cnames)
 
@@ -968,7 +979,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
     im <- c(1:ncol(smf))[im]
     fit <- smf[, im[1]]
     if(xsmall)
-      fit <- approx(data[[x$term]], fit, xout = data0[[x$term]])$y
+      fit <- approx(data[[tterms]], fit, xout = data0[[tterms]])$y
   }
   by.drop <- NULL
   if(x$by != "NA") {
@@ -982,7 +993,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
 
   ## Assign class and attributes.
   smf <- unique(smf)
-  if(is.factor(data[, x$term])) {
+  if(is.factor(data[, tterms])) {
     bbb <- 1 ## FIXME: factors!
   }
   class(smf) <- c(class(x), "data.frame")
@@ -991,7 +1002,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   attr(smf, "specs")[c("X", "Xf", "rand", "trans.D", "trans.U")] <- NULL
   class(attr(smf, "specs")) <- class(x)
   attr(smf, "fit") <- fit
-  attr(smf, "x") <- if(xsmall) data0[, x$term] else data[, x$term]
+  attr(smf, "x") <- if(xsmall) data0[, tterms] else data[, tterms]
   attr(smf, "by.drop") <- by.drop
   attr(smf, "rug") <- rugp
   colnames(psamples) <- paste(x$label, 1:ncol(psamples), sep = ".")
