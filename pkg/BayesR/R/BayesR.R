@@ -1129,7 +1129,7 @@ add.partial <- function(x, samples = FALSE, nsamps = 100) {
 ## Prediction can also be based on multiple chains.
 predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
   intercept = TRUE, FUN = mean, trans = NULL, type = c("link", "parameter"),
-  nsamps = NULL, verbose = TRUE, ...)
+  nsamps = NULL, verbose = FALSE, ...)
 {
   family <- attr(object, "family")
   if(missing(newdata))

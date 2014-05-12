@@ -603,7 +603,7 @@ uni.slice <- function(g, x, family, response, eta, id, j, ...,
 }
 
 ## Actual univariate slice sampling propose() function.
-propose_slice <- function(x, family,
+propose_slice0 <- function(x, family,
   response, eta, id, ...)
 {
   ## Remove fitted values.
@@ -616,6 +616,105 @@ propose_slice <- function(x, family,
 
   ## Setup return state.
   x$state$alpha <- log(1)
+  x$state$fit <- drop(x$X %*% x$state$g)
+
+  ## Sample variance parameter.
+  if(!x$fixed & is.null(x$sp)) {
+    a <- x$rank / 2 + x$a
+    b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
+    x$state$tau2 <- 1 / rgamma(1, a, b)
+  }
+
+  return(x$state)
+}
+
+
+propose_slice <- function(x, family,
+  response, eta, id, ...)
+{
+  ## Map predictor to parameter scale.
+  peta <- family$map2par(eta)
+
+  ## Compute weights.
+  weights <- family$weights[[id]](response, peta)
+
+  ## Score.
+  score <- family$score[[id]](response, peta)
+
+  ## Compute working observations.
+  z <- eta[[id]] + 1 / weights * score
+
+  ## Compute partial predictor.
+  eta[[id]] <- eta[[id]] - x$state$fit
+
+  ## Compute mean and precision.
+  XW <- t(x$X * weights)
+  P <- if(x$fixed) {
+    if(k <- ncol(x$X) < 2) {
+      1 / (XW %*% x$X)
+    } else chol2inv(chol(XW %*% x$X))
+  } else chol2inv(chol(XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
+  P[P == Inf] <- 0
+  x$state$g <- drop(P %*% (XW %*% (z - eta[[id]])))
+
+  for(j in seq_along(x$state$g)) {
+    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j,
+      w = 1, m = Inf, lower = -Inf, upper = +Inf)
+  }
+
+  ## Setup return state.
+  x$state$alpha <- log(2)
+  x$state$fit <- drop(x$X %*% x$state$g)
+
+  ## Sample variance parameter.
+  if(!x$fixed & is.null(x$sp)) {
+    a <- x$rank / 2 + x$a
+    b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
+    x$state$tau2 <- 1 / rgamma(1, a, b)
+  }
+
+  return(x$state)
+}
+
+
+#############################
+## Nadja's testing section ##
+#############################
+propose_nadja <- function(x, family,
+  response, eta, id, ...)
+{
+  ## Map predictor to parameter scale.
+  peta <- family$map2par(eta)
+
+  ## Compute weights.
+  weights <- family$weights[[id]](response, peta)
+
+  ## Score.
+  score <- family$score[[id]](response, peta)
+
+  ## Compute working observations.
+  z <- eta[[id]] + 1 / weights * score
+
+  ## Compute partial predictor.
+  eta[[id]] <- eta[[id]] - x$state$fit
+
+  ## Compute mean and precision.
+  XW <- t(x$X * weights)
+  P <- if(x$fixed) {
+    if(k <- ncol(x$X) < 2) {
+      1 / (XW %*% x$X)
+    } else chol2inv(chol(XW %*% x$X))
+  } else chol2inv(chol(XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
+  P[P == Inf] <- 0
+  x$state$g <- drop(P %*% (XW %*% (z - eta[[id]])))
+
+  for(j in seq_along(x$state$g)) {
+    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j,
+      w = 1, m = Inf, lower = -Inf, upper = +Inf)
+  }
+
+  ## Setup return state.
+  x$state$alpha <- log(2)
   x$state$fit <- drop(x$X %*% x$state$g)
 
   ## Sample variance parameter.
@@ -897,7 +996,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   tdir = NULL, method = "backfitting", outer = TRUE, inner = TRUE, n.samples = 200,
   criterion = c("AICc", "BIC", "AIC"), lower = 1e-09, upper = 1e+04,
   optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3,
-  propose = c("iwls", "rw", "twalk", "slice"), ...)
+  propose = c("iwls", "rw", "twalk", "slice", "nadja"), ...)
 {
   known_methods <- c("backfitting", "MCMC", "backfitting2", "backfitting3", "backfitting4")
   tm <- NULL
@@ -940,7 +1039,8 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
       "iwls" = propose_iwls,
       "rw" = propose_rw,
       "twalk" = propose_twalk,
-      "slice" = propose_slice
+      "slice" = propose_slice,
+      "nadja" = propose_slice
     )
   }
   

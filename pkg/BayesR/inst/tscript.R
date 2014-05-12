@@ -63,7 +63,7 @@ n <- 200
 dat <- data.frame("x1" = sort(runif(n, -3, 3)), x2 = runif(n, -3, 3))
 dat$y <- scale2(with(dat, 1.2 + sin(x1) + cos(x2) + rnorm(n, sd = (cos(dat$x1) + 2) / 4)), 0.001, 0.999)
 
-a <- bayesr(y ~ s(x1) + s(x2), data = dat, method = "MCMC")
+a <- bayesr(y ~ s(x1) + s(x2), ~ s(x1), data = dat, method = "MCMC")
 
 plot(a)
 
@@ -114,7 +114,7 @@ n <- 100
 dat <- data.frame("x1" = runif(n, -3, 3), "x2" = runif(n, -3, 3))
 dat$y <- with(dat, 1.2 + sin(x1) * cos(x2) + rnorm(n, sd = scale2(cos(x1), 0.1, 0.8)))
 
-b <- bayesr(y ~ s(x1, x2), ~ s(x1), data = dat, n.iter = 1200, burnin = 200, thin = 1)
+b <- bayesr(y ~ s(x1, x2), ~ s(x1), data = dat, method = "MCMC", svalues = FALSE, n.iter = 1200, burnin = 200, thin = 1, family = gaussian2, propose = "slice")
 
 plot(b)
 plot(b, which = "samples")
