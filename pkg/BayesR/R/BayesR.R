@@ -364,7 +364,7 @@ bayesr.model.frame <- function(formula, data, family, weights = NULL,
 
   ## Check response.
   if(!is.null(family$valid.response)) {
-    family$valid.response(mf[, rn])
+    family$valid.response(mf[, rn[1]])
   }
 
   mf
@@ -1243,7 +1243,9 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
                 tmm <- model.matrix(f, data = newdata)
                 m.designs[[i]] <- tmm[, i, drop = FALSE]
               } else m.designs[[i]] <- newdata[[tte]]
-              if(is.null(dim(m.designs[[i]]))) m.designs[[i]] <- matrix(m.designs[[i]], ncol = 1)
+              if(length(m.designs)) {
+                if(is.null(dim(m.designs[[i]]))) m.designs[[i]] <- matrix(m.designs[[i]], ncol = 1)
+              }
             } else {
               if(is.factor(newdata[[i]])) {
                 nl <- nlevels(newdata[[i]]) - if(hi) 1 else 0
@@ -2398,10 +2400,11 @@ fitted.bayesr <- function(object, model = NULL, term = NULL,
 {
   type <- match.arg(type)
   family <- attr(object, "family")
-  h1check <- any(grepl("h1", names(object)))
 
   if(type != "parameter" & !samples)
     object <- get.model(object, model, drop = FALSE)
+
+  h1check <- any(grepl("h1", names(object)))
 
   elmts <- c("formula", "fake.formula", "model", "param.effects",
     "effects", "fitted.values", "residuals")
