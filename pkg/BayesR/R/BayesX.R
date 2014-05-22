@@ -798,10 +798,15 @@ resultsBayesX <- function(x, samples, ...)
           cx <- class(xs <- attr(x, "specs"))
           if(cx %in% "rps.smooth.spec") {
             return(list(paste("sx(", xs$term, ")", sep = ""), paste("sx(", xs$by, ")", sep = "")))
-          } else return(NULL)
+          } else {
+            if(cx %in% "re.smooth.spec" & xs$by != "NA") {
+              return(list(paste("sx(", xs$by, ")", sep = ""),
+                paste("sx(", xs$term, ",by=", xs$by, ")", sep = ""), xs$by))
+            } else return(NULL)
+          }
         })
         if(length(sx.extras)) {
-          sx.terms <- c(sx.terms, unlist(sapply(sx.extras, function(x) { x[[1]] } )))
+          sx.terms <- unique(c(sx.terms, unlist(sapply(sx.extras, function(x) { x[[1]] } ))))
         }
         sx.check <- FALSE
         if(!is.null(sx.terms)) {
@@ -829,15 +834,27 @@ resultsBayesX <- function(x, samples, ...)
               }
 
               ## Prediction matrix.
-              rps.check <- NULL
+              re.check <- NULL
               if(length(sx.extras)) {
-                rps.check <- unlist(sapply(sx.extras, function(x) {
+                re.check <- unlist(sapply(sx.extras, function(x) {
                   ii <- strsplit(i, ":")[[1]][1]
-                  return(if(ii %in% x[[1]]) x[[2]] else NULL)
+                  return(if(ii %in% x[[1]]) {
+                      if(length(x) > 2) x[2:3] else x[[2]]
+                    } else NULL)
                 }))
               }
 
-              tn0 <- if(is.null(rps.check)) strsplit(i, ":")[[1]][1] else rps.check
+              is.re.slope <- FALSE
+              if(is.null(re.check)) {
+                tn0 <- strsplit(i, ":")[[1]][1]
+              } else {
+                if(length(re.check) < 2) {
+                  tn0 <- re.check[1]
+                } else {
+                  tn0 <- re.check[1]
+                  is.re.slope <- TRUE
+                }
+              }
               tn <- gsub(")", "", gsub("sx(", "", tn0, fixed = TRUE), fixed = TRUE)
               tn <- strsplit(tn, ",", fixed = TRUE)[[1]]
               tn <- tn[!grepl("by", tn)]
@@ -849,7 +866,7 @@ resultsBayesX <- function(x, samples, ...)
                 tn <- c(tn, tn1$by)
                 get.X <- function(data) {
                   X <- if(ncol(data) > 1) {
-                    if(!is.factor(data[, ncol(data)])) {
+                    if(!is.factor(data[, ncol(data)]) & !is.re.slope) {
                       as.numeric(data[, ncol(data)]) * basis(data[, 1:(ncol(data) - 1), drop = FALSE])
                     } else basis(data[, 1:(ncol(data) - 1), drop = FALSE])
                   } else basis(data[, 1, drop = FALSE])
@@ -873,12 +890,16 @@ resultsBayesX <- function(x, samples, ...)
                 psamples = psamples, vsamples = vsamples, asamples = NULL, FUN = NULL,
                 snames = snames, effects.hyp = effects.hyp, fitted.values = fitted.values,
                 data = attr(x, "model.frame")[, tn, drop = FALSE], grid = grid,
-                hlevel = obj$hlevel, sx = TRUE)
+                hlevel = obj$hlevel, sx = TRUE, re.slope = is.re.slope)
 
               attr(fst$term, "specs")$get.mu <- get.mu
               attr(fst$term, "specs")$basis <- sx.smooth[[i]]$basis
               if(sid)
                 attr(fst$term, "specs")$label <- paste(attr(fst$term, "specs")$label, id, sep = ":")
+              if(is.re.slope) {
+                attr(fst$term, "specs")$by <- re.check[2]
+                attr(fst$term, "specs")$re.slope <- TRUE
+              }
 
               ## Add term to effects list.
               effects[[paste(tn0, stype, sep = ":")]] <- fst$term

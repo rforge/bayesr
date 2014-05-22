@@ -898,7 +898,7 @@ c.bayesr <- function(...)
 ## Function to compute statistics from samples of a model term.
 compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   asamples = NULL, FUN = NULL, snames, effects.hyp, fitted.values, data,
-  grid = 100, rug = TRUE, hlevel = 1, sx = FALSE)
+  grid = 100, rug = TRUE, hlevel = 1, sx = FALSE, re.slope = FALSE)
 {
   require("coda")
 
@@ -930,6 +930,9 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
       if(all(data[[x$by]] %% 1 == 0)) {
         if(length(unique(data[[x$by]])) < length(data[[x$by]]))
           x$by <- "NA"
+      }
+      if(re.slope) {
+        x$by <- "NA"
       }
     }
   }
@@ -1227,6 +1230,7 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
                     if(specs$by != "NA") {  ## ATTENTION: by variables with basis()!
                       if(!(specs$by %in% names(newdata)))
                         stop("cannot find by variable ", specs$by, " in newdata!")
+
                       if(!is.factor(unlist(newdata[specs$by]))) {
                         as.numeric(unlist(newdata[specs$by])) * specs$basis(newdata[specs$term])
                       } else specs$basis(newdata[specs$term])
