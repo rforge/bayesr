@@ -17,11 +17,12 @@ dat$x3 <- dat$x2
 
 ## fit model
 f <- list(
-  y ~ -1 + sx(x1) + sx(fac, bs = "re") + sx(fac2, bs = "re"),
+  y ~ -1 + sx(x1) + sx(fac, bs = "re"),
   fac ~ 1 + sx(x2),
-  fac2 ~ -1 + sx(x3),
   sigma2 ~ sx(x1)
 )
+
+w <- round(runif(n))
 
 b <- bayesr(f, family = gaussian2, data = dat, engine = "BayesX")
 

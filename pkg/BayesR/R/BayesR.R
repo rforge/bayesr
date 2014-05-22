@@ -978,7 +978,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   if(any(im <- grepl("50%", tolower(colnames(smf)), fixed = TRUE))) {
     im <- c(1:ncol(smf))[im]
     fit <- smf[, im[1]]
-    if(xsmall)
+    if(xsmall & !all(is.na(fit)))
       fit <- approx(data[[tterms]], fit, xout = data0[[tterms]])$y
   }
   by.drop <- NULL
