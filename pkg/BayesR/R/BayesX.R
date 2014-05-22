@@ -794,6 +794,15 @@ resultsBayesX <- function(x, samples, ...)
         sx.terms <- unlist(lapply(obj$sx.smooth, function(x) {
           attr(x, "specs")$label
         }))
+        sx.extras <- lapply(obj$sx.smooth, function(x) {
+          cx <- class(xs <- attr(x, "specs"))
+          if(cx %in% "rps.smooth.spec") {
+            return(list(paste("sx(", xs$term, ")", sep = ""), paste("sx(", xs$by, ")", sep = "")))
+          } else return(NULL)
+        })
+        if(length(sx.extras)) {
+          sx.terms <- c(sx.terms, unlist(sapply(sx.extras, function(x) { x[[1]] } )))
+        }
         sx.check <- FALSE
         if(!is.null(sx.terms)) {
           for(char in c(".", "_"))
@@ -820,7 +829,15 @@ resultsBayesX <- function(x, samples, ...)
               }
 
               ## Prediction matrix.
-              tn0 <- strsplit(i, ":")[[1]][1]
+              rps.check <- NULL
+              if(length(sx.extras)) {
+                rps.check <- unlist(sapply(sx.extras, function(x) {
+                  ii <- strsplit(i, ":")[[1]][1]
+                  return(if(ii %in% x[[1]]) x[[2]] else NULL)
+                }))
+              }
+
+              tn0 <- if(is.null(rps.check)) strsplit(i, ":")[[1]][1] else rps.check
               tn <- gsub(")", "", gsub("sx(", "", tn0, fixed = TRUE), fixed = TRUE)
               tn <- strsplit(tn, ",", fixed = TRUE)[[1]]
               tn <- tn[!grepl("by", tn)]
@@ -831,7 +848,12 @@ resultsBayesX <- function(x, samples, ...)
               if(tn1$by != "NA") {
                 tn <- c(tn, tn1$by)
                 get.X <- function(data) {
-                  as.numeric(data[, ncol(data)]) * basis(data[, 1:(ncol(data) - 1), drop = FALSE])
+                  X <- if(ncol(data) > 1) {
+                    if(!is.factor(data[, ncol(data)])) {
+                      as.numeric(data[, ncol(data)]) * basis(data[, 1:(ncol(data) - 1), drop = FALSE])
+                    } else basis(data[, 1:(ncol(data) - 1), drop = FALSE])
+                  } else basis(data[, 1, drop = FALSE])
+                  return(X)
                 }
               } else {
                 get.X <- basis
@@ -851,7 +873,7 @@ resultsBayesX <- function(x, samples, ...)
                 psamples = psamples, vsamples = vsamples, asamples = NULL, FUN = NULL,
                 snames = snames, effects.hyp = effects.hyp, fitted.values = fitted.values,
                 data = attr(x, "model.frame")[, tn, drop = FALSE], grid = grid,
-                hlevel = obj$hlevel)
+                hlevel = obj$hlevel, sx = TRUE)
 
               attr(fst$term, "specs")$get.mu <- get.mu
               attr(fst$term, "specs")$basis <- sx.smooth[[i]]$basis
@@ -977,7 +999,7 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
     "cs", "catspecific",
     "offset",
     "generic",
-    "rsps", "hrandom_pspline"
+    "rps", "hrandom_pspline"
   )
   if(!bs %in% available.terms) stop(paste("basis type", sQuote(bs), "not supported by BayesX"))
 
@@ -1177,11 +1199,11 @@ sx.construct.random.smooth.spec <- function(object, data)
   return(term)
 }
 
-sx.construct.rsps.smooth.spec <- function(object, data)
+sx.construct.rps.smooth.spec <- function(object, data)
 {
-  term <- paste(object$by, "(hrandom_pspline,centermethod=meansum2", sep = "")
+  term <- paste(object$term, "(hrandom_pspline,centermethod=meansum2", sep = "")
   term <- paste(do.xt(term, object, NULL), ")", sep = "")
-  term <- paste(object$term, term , sep = "*")
+  term <- paste(object$by, term , sep = "*")
 
   return(term)
 }

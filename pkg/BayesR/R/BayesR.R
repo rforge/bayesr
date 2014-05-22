@@ -306,8 +306,9 @@ bayesr.design <- function(x, data, contrasts = NULL, knots = NULL, ...)
     }
     if(length(obj$sx.smooth)) {
       sx.smooth <- list()
-      for(j in obj$sx.smooth)
+      for(j in obj$sx.smooth) {
         sx.smooth <- c(sx.smooth, list(eval(parse(text = j))))
+      }
       obj$sx.smooth <- sx.smooth
     }
 
@@ -897,7 +898,7 @@ c.bayesr <- function(...)
 ## Function to compute statistics from samples of a model term.
 compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   asamples = NULL, FUN = NULL, snames, effects.hyp, fitted.values, data,
-  grid = 100, rug = TRUE, hlevel = 1)
+  grid = 100, rug = TRUE, hlevel = 1, sx = FALSE)
 {
   require("coda")
 
@@ -920,6 +921,18 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
 
   if(hlevel > 1)
     data <- unique(data)
+
+  ## Handling factor by variables.
+  if(x$by != "NA") {
+    if(nlevels(data[[x$by]]) > 2)
+      x$by <- "NA"
+    if(sx) {
+      if(all(data[[x$by]] %% 1 == 0)) {
+        if(length(unique(data[[x$by]])) < length(data[[x$by]]))
+          x$by <- "NA"
+      }
+    }
+  }
 
   ## New x values for which effect should
   ## be calculated, n = 100.
@@ -1214,7 +1227,9 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
                     if(specs$by != "NA") {  ## ATTENTION: by variables with basis()!
                       if(!(specs$by %in% names(newdata)))
                         stop("cannot find by variable ", specs$by, " in newdata!")
-                      as.numeric(unlist(newdata[specs$by])) * specs$basis(newdata[specs$term])
+                      if(!is.factor(unlist(newdata[specs$by]))) {
+                        as.numeric(unlist(newdata[specs$by])) * specs$basis(newdata[specs$term])
+                      } else specs$basis(newdata[specs$term])
                     } else specs$basis(newdata[specs$term])
                   } else stop(paste("cannot compute design matrix for term ", specs$label, "!", sep = ""))
                 }

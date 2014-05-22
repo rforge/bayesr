@@ -1,30 +1,23 @@
 ## generate data
+set.seed(123)
 n <- 500
 dat <- data.frame("x1" = runif(n, -3, 3))
-dat$fac <- factor(rep(1:50, length.out = n))
-dat$fac2 <- factor(rep(1:5, length.out = n))
-dat$x2 <- with(dat, runif(length(unique(fac)), -3, 3)[fac])
-dat$re <- with(dat, cos(x2) + rnorm(length(unique(fac)), sd = 0.1)[fac])
-dat <- dat[order(as.integer(dat$fac2)), ]
+dat$fac <- factor(rep(1:10, length.out = n))
+rc <- rnorm(nlevels(dat$fac), sd = 0.6) + 1
+dat$y <- with(dat, 1.2 + sin(x1) * rc[fac] + rnorm(n, sd = 0.1))
 
-fun <- function(x, theta = c(2, -20, -0.1)) {
-  theta[1] * exp(theta[2] * exp(theta[3] * x))
-}
-
-## dat$y <- with(dat, 21 + cf + sin(x2) + rnorm(n, sd = 0.1))
-dat$y <- scale2(with(dat, 1.2 + sin(x1) + re + rnorm(n, sd = 0.1)), 0.0001, 2)
-dat$x3 <- dat$x2
 
 ## fit model
 f <- list(
-  y ~ -1 + sx(x1) + sx(fac, bs = "re"),
-  fac ~ 1 + sx(x2),
-  sigma2 ~ sx(x1)
+  y ~ sx(x1, bs = "rps", by = fac, sum2 = 10),
+  fac ~ -1
 )
 
-w <- round(runif(n))
-
 b <- bayesr(f, family = gaussian2, data = dat, engine = "BayesX")
+
+plot(b, residuals = TRUE)
+
+
 
 n <- 50
 nd <- data.frame(x1 = seq(-10, 10, length = n), x2 = seq(-10, 10, length = n))
