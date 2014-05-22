@@ -13,7 +13,7 @@ install.stan <- function() {
 ## (2) STAN helper functions. ##
 ################################
 ## Sets up data and model code for fitting with STAN.
-jags2stan <- function(x)
+bugs2stan <- function(x)
 {
   STAN_data <- function(x)
   {
@@ -125,7 +125,7 @@ samplerSTAN <- function(x, tdir = NULL,
     seed <- floor(runif(n.chains) * .Machine$integer.max)
 
   ## Write the model code.
-  writeLines(paste(x$model, collapse = "\n"), mfile <- file.path(tdir, "model.txt"))
+  writeLines(paste(x$model, collapse = "\n"), mfile <- file.path(tdir, "STANmodel.txt"))
 
   if(verbose) writeLines(x$model)
 

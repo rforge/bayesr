@@ -133,7 +133,7 @@ bayesr <- function(formula, family = gaussian, data = NULL, knots = NULL,
   }
   
   if(xengine %in% c("JAGS", "STAN")) {
-    transform <- transformJAGS
+    transform <- transformBUGS
     if(xengine == "JAGS") {
       require("rjags")
       setup <- setupJAGS
@@ -143,7 +143,7 @@ bayesr <- function(formula, family = gaussian, data = NULL, knots = NULL,
       }
     } else {
       require("rstan")
-      setup <- jags2stan
+      setup <- bugs2stan
       engine <- function(x) {
         samplerSTAN(x, n.iter = n.iter, thin = thin,
           burnin = burnin, seed = seed, ...)

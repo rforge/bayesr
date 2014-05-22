@@ -82,10 +82,10 @@ beta.BayesR <- function(links = c(mu = "logit", sigma2 = "logit"), ...)
       "mu" = c("beta_mu", "mean"),
       "sigma2" = c("beta_sigma2", "scale")
     ),
-    jagstan = list(
+    bugs = list(
       "dist" = "dbeta",
-      "eta" = JAGSeta,
-      "model" = JAGSmodel,
+      "eta" = BUGSeta,
+      "model" = BUGSmodel,
       "reparam" = c(
         mu = "mu * (1 / sigma2)",
         sigma2 = "(1 - mu) * (1 / sigma2)"
@@ -312,10 +312,10 @@ binomial.BayesR <- function(link = "logit", ...)
     bayesx = list(
       "pi" = c(paste("binomial", link, sep = "_"), "mean")
     ),
-    jagstan = list(
+    bugs = list(
       "dist" = "dbern",
-      "eta" = JAGSeta,
-      "model" = JAGSmodel
+      "eta" = BUGSeta,
+      "model" = BUGSmodel
     ),
     "mu" = function(eta, ...) {
       eta$pi
@@ -378,10 +378,10 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
         "logit" = c("normal_sigma_logit", "scale")
       )
     ),
-    jagstan = list(
+    bugs = list(
       "dist" = "dnorm",
-      "eta" = JAGSeta,
-      "model" = JAGSmodel,
+      "eta" = BUGSeta,
+      "model" = BUGSmodel,
       "reparam" = c(sigma = "1 / sqrt(sigma)")
     ),
     "loglik" = function(y, eta, ...) {
@@ -428,10 +428,10 @@ gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
         "logit" = c("normal_sigma2_logit", "scale")
       )
     ),
-    jagstan = list(
+    bugs = list(
       "dist" = "dnorm",
-      "eta" = JAGSeta,
-      "model" = JAGSmodel,
+      "eta" = BUGSeta,
+      "model" = BUGSmodel,
       "reparam" = c(sigma2 = "1 / sigma2")
     ),
     "loglik" = function(y, eta, ...) {
@@ -710,10 +710,10 @@ gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
       "mu" = c("gamma_mu", "mean"),
       "sigma" = c("gamma_sigma", "shape")
     ),
-    jagstan = list(
+    bugs = list(
       "dist" = "dgamma",
-      "eta" = JAGSeta,
-      "model" = JAGSmodel
+      "eta" = BUGSeta,
+      "model" = BUGSmodel
     ),
     "loglik" = function(y, eta, ...) {
 		  a <- eta$sigma
@@ -1093,10 +1093,10 @@ multinomial.BayesR <- function(link = "probit", ...)
       if(!is.factor(x)) stop("response must be a factor!", call. = FALSE)
       TRUE
     },
-    jagstan = list(
+    bugs = list(
       "dist" = "dcat",
-      "eta" = JAGSeta,
-      "model" = JAGSmodel
+      "eta" = BUGSeta,
+      "model" = BUGSmodel
     ),
     bayesx = list(
       "pi" = c(paste("multinom", link, sep = "_"), "mean", "meanservant")
@@ -1118,10 +1118,10 @@ poisson.BayesR <- function(links = c(lambda = "log"), ...)
     bayesx = list(
       "lambda" = c("poisson", "mean")
     ),
-    jagstan = list(
+    bugs = list(
       "dist" = "dpois",
-      "eta" = JAGSeta,
-      "model" = JAGSmodel
+      "eta" = BUGSeta,
+      "model" = BUGSmodel
     ),
 	  "mu" = function(eta, ...) {
        eta$lambda
@@ -1260,10 +1260,10 @@ quant2.BayesR <- function(links = c(mu = "identity", sigma = "log"), prob = 0.5,
     "family" = "quant2",
     "names" = c("mu", "sigma"),
     "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
-    jagstan = list(
+    bugs = list(
       "dist" = "dnorm",
-      "eta" = JAGSeta,
-      "model" = JAGSmodel,
+      "eta" = BUGSeta,
+      "model" = BUGSmodel,
       "reparam" = c(
         mu = "(1 - 2 * prop) / (prop * (1 - prop)) * w[i] + mu",
         sigma = "(prop * (1 - prop) * (1 / sigma)) / (2 * w[i])"

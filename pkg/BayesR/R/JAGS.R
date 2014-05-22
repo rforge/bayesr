@@ -1,7 +1,7 @@
 #########################################
 ## (1) Special JAGS transform function ##
 #########################################
-transformJAGS <- function(x)
+transformBUGS <- function(x)
 {
   family <- attr(x, "family")
   cat <- if(is.null(family$cat)) FALSE else family$cat
@@ -54,7 +54,7 @@ transformJAGS <- function(x)
 ## Examples: http://sourceforge.net/projects/mcmc-jags/files/
 ##           http://www.indiana.edu/~kruschke/DoingBayesianDataAnalysis/Programs/
 ## Default linear predictor and model setup functions.
-JAGSeta <- function(x, id = NULL, zero = FALSE, ...) {
+BUGSeta <- function(x, id = NULL, zero = FALSE, ...) {
   setup <- list()
   if(is.null(zero)) zero <- FALSE
   setup$inits <- list()
@@ -83,9 +83,9 @@ JAGSeta <- function(x, id = NULL, zero = FALSE, ...) {
   if(m <- length(x$smooth)) {
     for(i in 1:m) {
       setup <- if(!is.null(x$smooth[[i]]$special)) {
-        buildJAGS.smooth.special(x$smooth[[i]], setup, paste(i, id, sep = ""), zero)
+        buildBUGS.smooth.special(x$smooth[[i]], setup, paste(i, id, sep = ""), zero)
       } else {
-        buildJAGS.smooth(x$smooth[[i]], setup, paste(i, id, sep = ""), zero)
+        buildBUGS.smooth(x$smooth[[i]], setup, paste(i, id, sep = ""), zero)
       }
     }
   }
@@ -98,7 +98,7 @@ JAGSeta <- function(x, id = NULL, zero = FALSE, ...) {
 }
 
 ## Get link functions.
-JAGSlinks <- function(x)
+BUGSlinks <- function(x)
 {
   switch(x,
     "identity" = "eta",
@@ -113,7 +113,7 @@ JAGSlinks <- function(x)
 }
 
 ## Construct the final model code.
-JAGSmodel <- function(x, family, cat = FALSE, is.stan = FALSE, ...) {
+BUGSmodel <- function(x, family, cat = FALSE, is.stan = FALSE, ...) {
   if(is.function(family))
     family <- family()
   k <- if(all(c("inits", "data", "psave") %in% names(x))) {
@@ -130,8 +130,8 @@ JAGSmodel <- function(x, family, cat = FALSE, is.stan = FALSE, ...) {
     model <- c(model, x[[j]]$start)
   }
   pn <- family$names
-  if(!is.null(family$jagstan$reparam))
-    pn[repi <- match(names(family$jagstan$reparam), pn)] <- paste("rp", 1:length(family$jagstan$reparam), sep = "")
+  if(!is.null(family$bugs$reparam))
+    pn[repi <- match(names(family$bugs$reparam), pn)] <- paste("rp", 1:length(family$bugs$reparam), sep = "")
   if(is.null(pn)) pn <- paste("theta", 1:k, sep = "")
   if(length(pn) < 2 & length(pn) != k)
     pn <- paste(pn, 1:k, sep = "")
@@ -139,9 +139,9 @@ JAGSmodel <- function(x, family, cat = FALSE, is.stan = FALSE, ...) {
   pn[1:k] <- paste(pn[1:k], "[i]", sep = "")
   on <- if(cat) family$names else NULL
   links <- family[[grep("links", names(family), fixed = TRUE, value = TRUE)]]
-  links <- rep(sapply(links, JAGSlinks), length.out = k)
+  links <- rep(sapply(links, BUGSlinks), length.out = k)
   model <- c(model,  "  for(i in 1:n) {",
-    paste("    response[i] ~ ", family$jagstan$dist, "(",
+    paste("    response[i] ~ ", family$bugs$dist, "(",
       paste(if(is.null(on)) pn else paste(on, ## if(cat) "n" else NULL,
       "[i, 1:", k, "]", sep = ""),
       collapse = ", "), ")", sep = ""))
@@ -151,22 +151,22 @@ JAGSmodel <- function(x, family, cat = FALSE, is.stan = FALSE, ...) {
 #      npn, "[i, ", 1:k, "] / sum(", npn, "[i, 1:", k, "])", sep = ""))
 #  }
 
-  if(!is.null(family$jagstan$reparam)) {
+  if(!is.null(family$bugs$reparam)) {
     reparam <- NULL
-    for(j in seq_along(family$jagstan$reparam))
-      reparam <- c(reparam, paste("    rp", j, "[i] <- ", family$jagstan$reparam[j], sep = ""))
+    for(j in seq_along(family$bugs$reparam))
+      reparam <- c(reparam, paste("    rp", j, "[i] <- ", family$bugs$reparam[j], sep = ""))
     for(j in family$names)
       reparam <- gsub(j, paste(j, "[i]", sep = ""), reparam)
     model <- c(model, reparam)
     pn[repi] <- paste(family$names[repi], "[i]", sep = "")
   }
-  if(!is.null(family$jagstan$addparam)) {
-    for(j in family$jagstan$addparam)
+  if(!is.null(family$bugs$addparam)) {
+    for(j in family$bugs$addparam)
       model <- c(model, paste("   ", j))
   }
-  if(!is.null(family$jagstan$addvalues)) {
-    for(j in names(family$jagstan$addvalues))
-      model <- gsub(j, family$jagstan$addvalues[[j]], model)
+  if(!is.null(family$bugs$addvalues)) {
+    for(j in names(family$bugs$addvalues))
+      model <- gsub(j, family$bugs$addvalues[[j]], model)
   }
 
   for(j in 1:k) {
@@ -227,15 +227,15 @@ setupJAGS <- function(x)
     if(length(fn) < length(x))
       fn <- paste(fn, 1:length(nx), sep = "")
     for(i in seq_along(nx)) {
-      rval[[nx[i]]] <- family$jagstan$eta(x[[i]], fn[i],
+      rval[[nx[i]]] <- family$bugs$eta(x[[i]], fn[i],
         zero = if(!is.null(reference)) ylevels[i] == reference else NULL)
     }
   } else {
-    rval <- family$jagstan$eta(x)
+    rval <- family$bugs$eta(x)
   }
   
   ## Create model code.
-  model <- family$jagstan$model(rval, family, cat = !is.null(reference), is.stan)
+  model <- family$bugs$model(rval, family, cat = !is.null(reference), is.stan)
 
   ## Collect data.
   if(all(c("inits", "data", "psave") %in% names(rval)))
@@ -267,7 +267,7 @@ setupJAGS <- function(x)
 
 
 ## Build the JAGS model code for a smooth term. 
-buildJAGS.smooth <- function(smooth, setup, i, zero) {
+buildBUGS.smooth <- function(smooth, setup, i, zero) {
   fall <- NULL
   kr <- if(is.null(smooth$rand$Xr)) 0 else ncol(smooth$rand$Xr)
   kx <- if(is.null(smooth$Xf)) 0 else ncol(smooth$Xf)
@@ -324,24 +324,24 @@ buildJAGS.smooth <- function(smooth, setup, i, zero) {
 
 ## For special terms, e.g. growth curves, this function
 ## builds the model code.
-buildJAGS.smooth.special <- function(smooth, setup, i, zero)
+buildBUGS.smooth.special <- function(smooth, setup, i, zero)
 {
-  UseMethod("buildJAGS.smooth.special")
+  UseMethod("buildBUGS.smooth.special")
 }
 
 
 ## Default special model term builder.
-buildJAGS.smooth.special.default <- function(smooth, setup, i, zero)
+buildBUGS.smooth.special.default <- function(smooth, setup, i, zero)
 {
-  buildJAGS.smooth(smooth, setup, i, zero)
+  buildBUGS.smooth(smooth, setup, i, zero)
 }
 
 
 ## JAGS random scaling model term constructor.
-buildJAGS.smooth.special.rsc.smooth <- function(smooth, setup, i, zero)
+buildBUGS.smooth.special.rsc.smooth <- function(smooth, setup, i, zero)
 {
   smooth$special <- FALSE
-  setup <- buildJAGS.smooth(smooth, setup, i, zero)
+  setup <- buildBUGS.smooth(smooth, setup, i, zero)
 
   if(!is.null(smooth$by.formula)) {
     st <- setup$smooth[si <- grep(paste("sm", i, "[i] <-", sep = ""), setup$smooth, fixed = TRUE)]
@@ -368,7 +368,7 @@ buildJAGS.smooth.special.rsc.smooth <- function(smooth, setup, i, zero)
 
 
 ## Special code builder for growth curve terms.
-buildJAGS.smooth.special.gc.smooth <- function(smooth, setup, i, zero)
+buildBUGS.smooth.special.gc.smooth <- function(smooth, setup, i, zero)
 {
   center <- if(is.null(smooth$xt$center)) TRUE else smooth$xt$center
   pn <- paste("g", i, sep = "")
@@ -426,7 +426,7 @@ buildJAGS.smooth.special.gc.smooth <- function(smooth, setup, i, zero)
 
 
 ## Special code builder for rational splines.
-buildJAGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
+buildBUGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
 {
   fall <- fall0 <- NULL
   kr <- if(is.null(smooth$rand$Xr)) 0 else ncol(smooth$rand$Xr)
