@@ -269,6 +269,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
               d <- cbind(d, d2)
           }
           d2 <- NULL
+          d <- as.data.frame(d)
           d <- d[, unique(names(d)), drop = FALSE]
           x[[j]][[i]]$dname <- dname0
         } else d2 <- BayesX_data(x[[j]][[i]], i > 1)
@@ -295,6 +296,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
           d <- cbind(d, BayesX_data(x[[j]], id = nx[j]))
       }
       d2 <- NULL
+      d <- as.data.frame(d)
       d <- d[, unique(names(d)), drop = FALSE]
       x[[j]]$dname <- dname0
       x[[j]]$hlevel <- 1

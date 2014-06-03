@@ -57,7 +57,7 @@ n <- 200
 dat <- data.frame("x1" = sort(runif(n, -3, 3)), x2 = runif(n, -3, 3))
 dat$y <- scale2(with(dat, 1.2 + sin(x1) + cos(x2) + rnorm(n, sd = (cos(dat$x1) + 2) / 4)), 0.001, 0.999)
 
-a <- bayesr(y ~ s(x1) + s(x2), ~ s(x1), data = dat, method = "MCMC")
+a <- bayesr(y ~ s(x1) + s(x2), ~ s(x1), data = dat, update = "optim", method = "backfitting")
 
 plot(a)
 
@@ -115,13 +115,15 @@ plot(b, which = "samples")
 
 
 ## random test
-n <- 500
+n <- 100
 dat <- data.frame("x" = sort(runif(n, -3, 3)))
 dat$y <- with(dat, 1.2 + sin(x) + rnorm(n, sd = scale3(cos(x), 0.1, 0.8)))
 
 X <- mgcv:::smooth2random(smoothCon(s(x), dat, NULL, absorb.cons = TRUE)[[1]], names(dat), type = 2)
 Xf <- X$Xf
 Xr <- X$rand$Xr
+U <- X$trans.U
+D <- X$trans.D
 
 
 

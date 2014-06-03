@@ -111,7 +111,7 @@ propose_rw <- function(x, family,
   ## Compute old log likelihood and old log coefficients prior.
   pibeta <- family$loglik(response, peta)
   p1 <- if(x$fixed) {
-    dnorm(x$state$g, sd = 10, log = TRUE)
+    sum(dnorm(x$state$g, sd = 10, log = TRUE), na.rm = TRUE)
   } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
 
   ## Compute partial predictor.
@@ -146,7 +146,7 @@ propose_rw <- function(x, family,
 
     ## Compute log priors.
     p2 <- if(x$fixed) {
-      dnorm(g, sd = 10, log = TRUE)
+      sum(dnorm(g, sd = 10, log = TRUE), na.rm = TRUE)
     } else drop(-0.5 / x$state$tau2 * crossprod(g, x$S[[1]]) %*% g)
   
     ## Compute fitted values.        
@@ -279,7 +279,7 @@ OneMove <- function(dim, Supp = function(x) { TRUE },
       y  <- x 
       propU <- U 
       if(Supp(yp)) {
-        propUp <- log_posterior(yp, .X, .FAMILY, .RESPONSE, .ETA, .ID)
+        propUp <- logPost(yp, .X, .FAMILY, .RESPONSE, .ETA, .ID)
         if(nphi == 0)
           A <- 1
         else
@@ -297,7 +297,7 @@ OneMove <- function(dim, Supp = function(x) { TRUE },
       yp  <- xp 
       propUp <- Up 
       if(Supp(y)) {
-        propU <- log_posterior(y, .X, .FAMILY, .RESPONSE, .ETA, .ID)
+        propU <- logPost(y, .X, .FAMILY, .RESPONSE, .ETA, .ID)
         if(nphi == 0)
           A <- 1
         else
@@ -319,7 +319,7 @@ OneMove <- function(dim, Supp = function(x) { TRUE },
       y  <- x 
       propU <- U
       if((Supp(yp)) && (all(abs(yp - y) > 0))) {
-        propUp <- log_posterior(yp, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
+        propUp <- logPost(yp, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
         A <- exp((U - propU) + (Up - propUp))  
       } else {
         propUp <- NULL
@@ -333,7 +333,7 @@ OneMove <- function(dim, Supp = function(x) { TRUE },
       yp  <- xp 
       propUp <- Up
       if((Supp(y)) && (all(abs(yp - y) > 0))) {
-        propU <- log_posterior(y, .X, .FAMILY, .RESPONSE, .ETA, .ID)
+        propU <- logPost(y, .X, .FAMILY, .RESPONSE, .ETA, .ID)
         A <- exp((U - propU) + (Up - propUp))
       } else {
         propU <- NULL
@@ -353,7 +353,7 @@ OneMove <- function(dim, Supp = function(x) { TRUE },
       y  <- x 
       propU <- U 
       if((Supp(yp)) && all(yp != x)) {
-        propUp <- log_posterior(yp, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
+        propUp <- logPost(yp, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
         W1 <- G3U(nphi, phi, yp, xp,  x) 
         W2 <- G3U(nphi, phi, xp, yp,  x)  
         A <- exp((U - propU) + (Up - propUp) +  (W1 - W2))
@@ -370,7 +370,7 @@ OneMove <- function(dim, Supp = function(x) { TRUE },
       yp  <- xp 
       propUp <- Up
       if((Supp(y)) && all(y != xp)) {
-        propU <- log_posterior(y, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
+        propU <- logPost(y, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
         W1 <- G3U(nphi, phi, y,  x, xp) 
         W2 <- G3U(nphi, phi, x,  y, xp) 
         A <- exp((U - propU) + (Up - propUp) +  (W1 - W2))
@@ -392,7 +392,7 @@ OneMove <- function(dim, Supp = function(x) { TRUE },
       y  <- x 
       propU <- U
       if((Supp(yp)) && all(yp != x)) {
-        propUp <- log_posterior(yp, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
+        propUp <- logPost(yp, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
         W1 <- G4U(nphi, phi, yp, xp,  x) 
         W2 <- G4U(nphi, phi, xp, yp,  x) 
         A <- exp((U - propU) + (Up - propUp) +  (W1 - W2))
@@ -409,7 +409,7 @@ OneMove <- function(dim, Supp = function(x) { TRUE },
       yp  <- xp 
       propUp <- Up
       if((Supp(y)) && all(y != xp)) {
-        propU <- log_posterior(y, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
+        propU <- logPost(y, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
         W1 <- G4U(nphi, phi, y,  x, xp) 
         W2 <- G4U( nphi, phi, x,  y, xp) 
         A <- exp((U - propU) + (Up - propUp) +  (W1 - W2))
@@ -424,7 +424,7 @@ OneMove <- function(dim, Supp = function(x) { TRUE },
     propUp = propUp, A = A, funh = funh, nphi = nphi))
 }
 
-log_posterior <- function(g, x, family, response, eta, id)
+logPost <- function(g, x, family, response, eta, id)
 {
   ## Set up new predictor.
   eta[[id]] <- eta[[id]] + drop(x$X %*% g)
@@ -435,7 +435,7 @@ log_posterior <- function(g, x, family, response, eta, id)
   ## Compute log likelihood and log coefficients prior.
   ll <- family$loglik(response, peta)
   lp <- if(x$fixed) {
-    dnorm(g, sd = 10, log = TRUE)
+    sum(dnorm(g, sd = 10, log = TRUE), na.rm = TRUE)
   } else drop(-0.5 / x$state$tau2 * crossprod(g, x$S[[1]]) %*% g)
 
   -1 * (ll + lp)
@@ -452,11 +452,11 @@ propose_twalk <- function(x, family,
 
   ## Get log posteriors if not available.
   if(is.null(x$state$U))
-    x$state$U <- log_posterior(x$state$g, x, family, response, eta, id)
+    x$state$U <- logPost(x$state$g, x, family, response, eta, id)
   if(is.null(x$state$sg))
     x$state$sg <- rep(0, length = k)
   if(is.null(x$state$Up))
-    x$state$Up <- log_posterior(x$state$sg, x, family, response, eta, id)
+    x$state$Up <- logPost(x$state$sg, x, family, response, eta, id)
 
   ## Do one t-walk step
   p <- OneMove(dim = k, x = x$state$g, U = x$state$U, xp = x$state$sg, Up = x$state$Up,
@@ -510,7 +510,7 @@ num_deriv <- function(y, eta, family, id = NULL,
 
 ## Slice sampling.
 ## See: http://www.cs.toronto.edu/~radford/ftp/slice-R-prog
-log_posterior2 <- function(g, x, family, response, eta, id)
+logPost2 <- function(g, x, family, response, eta, id)
 {
   ## Set up new predictor.
   eta[[id]] <- eta[[id]] + drop(x$X %*% g)
@@ -521,19 +521,19 @@ log_posterior2 <- function(g, x, family, response, eta, id)
   ## Compute log likelihood and log coefficients prior.
   ll <- family$loglik(response, peta)
   lp <- if(x$fixed) {
-    dnorm(g, sd = 10, log = TRUE)
+    sum(dnorm(g, sd = 10, log = TRUE), na.rm = TRUE)
   } else drop(-0.5 / x$state$tau2 * crossprod(g, x$S[[1]]) %*% g)
 
   return(ll + lp)
 }
 
 uni.slice <- function(g, x, family, response, eta, id, j, ...,
-  w = 1, m = Inf, lower = -Inf, upper = +Inf)
+  w = 1, m = 100, lower = -Inf, upper = +Inf)
 {
   x0 <- g[j]
   gL <- gR <- g
 
-  gx0 <- log_posterior2(g, x, family, response, eta, id)
+  gx0 <- logPost2(g, x, family, response, eta, id)
 
   ## Determine the slice level, in log terms.
   logy <- gx0 - rexp(1)
@@ -548,12 +548,12 @@ uni.slice <- function(g, x, family, response, eta, id, j, ...,
   if(is.infinite(m)) {
     repeat {
       if(gL[j] <= lower) break
-      if(log_posterior2(gL, x, family, response, eta, id) <= logy) break
+      if(logPost2(gL, x, family, response, eta, id) <= logy) break
       gL[j] <- gL[j] - w
     }
     repeat {
       if(gR[j] >= upper) break
-      if(log_posterior2(gR, x, family, response, eta, id) <= logy) break
+      if(logPost2(gR, x, family, response, eta, id) <= logy) break
       gR[j] <- gR[j] + w
     }
   } else {
@@ -562,13 +562,13 @@ uni.slice <- function(g, x, family, response, eta, id, j, ...,
       K <- (m - 1) - J
       while(J > 0) {
         if(gL[j] <= lower) break
-        if(log_posterior2(gL, x, family, response, eta, id) <= logy) break
+        if(logPost2(gL, x, family, response, eta, id) <= logy) break
         gL[j] <- gL[j] - w
         J <- J - 1
       }
       while(K > 0) {
         if(gR[j] >= upper) break
-        if(log_posterior2(gR, x, family, response, eta, id) <= logy) break
+        if(logPost2(gR, x, family, response, eta, id) <= logy) break
         gR[j] <- gR[j] + w
         K <- K - 1
       }
@@ -587,7 +587,7 @@ uni.slice <- function(g, x, family, response, eta, id, j, ...,
   repeat {
     g[j] <- runif(1, gL[j], gR[j])
 
-    gx1 <- log_posterior2(g, x, family, response, eta, id)
+    gx1 <- logPost2(g, x, family, response, eta, id)
 
     if(gx1 >= logy) break
 
@@ -603,15 +603,14 @@ uni.slice <- function(g, x, family, response, eta, id, j, ...,
 }
 
 ## Actual univariate slice sampling propose() function.
-propose_slice0 <- function(x, family,
+propose_slice <- function(x, family,
   response, eta, id, ...)
 {
   ## Remove fitted values.
   eta[[id]] <- eta[[id]] - x$state$fit
 
   for(j in seq_along(x$state$g)) {
-    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j,
-      w = 1, m = Inf, lower = -Inf, upper = +Inf)
+    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j)
   }
 
   ## Setup return state.
@@ -629,7 +628,7 @@ propose_slice0 <- function(x, family,
 }
 
 
-propose_slice <- function(x, family,
+propose_wslice <- function(x, family,
   response, eta, id, ...)
 {
   ## Map predictor to parameter scale.
@@ -658,8 +657,7 @@ propose_slice <- function(x, family,
   x$state$g <- drop(P %*% (XW %*% (z - eta[[id]])))
 
   for(j in seq_along(x$state$g)) {
-    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j,
-      w = 1, m = Inf, lower = -Inf, upper = +Inf)
+    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j)
   }
 
   ## Setup return state.
@@ -671,6 +669,210 @@ propose_slice <- function(x, family,
     a <- x$rank / 2 + x$a
     b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
     x$state$tau2 <- 1 / rgamma(1, a, b)
+  }
+
+  return(x$state)
+}
+
+
+propose_oslice <- function(x, family,
+  response, eta, id, ...)
+{
+  ## Compute mean.
+  opt <- update_optim2(x, family, response, eta, id, ...)
+  x$state$g <- opt$g
+
+  ## Compute partial predictor.
+  eta[[id]] <- eta[[id]] - x$state$fit
+
+  for(j in seq_along(x$state$g)) {
+    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j)
+  }
+
+  ## Setup return state.
+  x$state$alpha <- log(2)
+  x$state$fit <- drop(x$X %*% x$state$g)
+
+  ## Sample variance parameter.
+  if(!x$fixed & is.null(x$sp)) {
+    a <- x$rank / 2 + x$a
+    b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
+    x$state$tau2 <- 1 / rgamma(1, a, b)
+  }
+
+  return(x$state)
+}
+
+
+## Backfitting updating functions.
+update_iwls <- function(x, family, response, eta, id, ...)
+{
+  args <- list(...)
+
+  peta <- family$map2par(eta)
+
+  if(is.null(args$weights)) {
+    ## Compute weights.
+    weights <- family$weights[[id]](response, peta)
+  } else weights <- args$weights
+
+  ## Which obs to take.
+  ok <- !(weights %in% c(NA, -Inf, Inf, 0))
+  weights <- weights[ok]
+
+  if(is.null(args$z)) {
+    ## Score.
+    score <- family$score[[id]](response, peta)
+
+    ## Compute working observations.
+    z <- eta[[id]][ok] + 1 / weights * score[ok]
+  } else z <- args$z[ok]
+
+  ## Compute partial predictor.
+  eta[[id]][ok] <- eta[[id]][ok] - x$state$fit[ok]
+
+  ## Compute mean and precision.
+  XW <- t(x$X[ok, ] * weights)
+  XWX <- XW %*% x$X[ok, ]
+  if(is.null(x$optimize) | x$fixed | !is.null(x$sp)) {
+    P <- if(x$fixed) {
+      matrix_inv(XWX)
+    } else matrix_inv(XWX + 1 / x$state$tau2 * x$S[[1]])
+    x$state$g <- drop(P %*% (XW %*% (z - eta[[id]][ok])))
+  } else {
+    args <- list(...)
+    edf0 <- args$edf - x$state$edf
+    eta2 <- eta
+    e <- z - eta[[id]][ok]
+
+    objfun <- function(tau2, ...) {
+      P <- matrix_inv(XWX + 1 / tau2 * x$S[[1]])
+      if(inherits(P, "try-error")) return(NA)
+      g <- drop(P %*% (XW %*% e))
+      if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
+      fit <- drop(x$X %*% g)
+      edf <- sum(diag(P %*% XWX))
+      if(!is.null(x$xt$center)) {
+        if(x$xt$center) edf <- edf - 1
+      }
+      eta2[[id]] <- eta2[[id]] + fit
+      IC <- get.ic(family, response, family$map2par(eta2), edf0 + edf, length(e), x$criterion)
+      return(IC)
+    }
+
+    x$state$tau2 <- try(optimize(objfun, interval = x$interval, grid = x$grid)$minimum, silent = TRUE)
+    if(inherits(x$state$tau2, "try-error"))
+      x$state$tau2 <- optimize2(objfun, interval = x$interval, grid = x$grid)$minimum
+    if(!length(x$state$tau2)) x$state$tau2 <- x$interval[1]
+    P <- matrix_inv(XWX + 1 / x$state$tau2 * x$S[[1]])
+    x$state$g <- drop(P %*% (XW %*% e))
+  }
+
+  ## Compute fitted values.
+  if(any(is.na(x$state$g)) | any(x$state$g %in% c(-Inf, Inf))) x$state$g <- rep(0, length(x$state$g))
+  x$state$fit <- drop(x$X %*% x$state$g)
+  x$state$edf <- sum(diag(P %*% XWX))
+  if(!is.null(x$xt$center)) {
+    if(x$xt$center) x$state$edf <- x$state$edf - 1
+  }
+
+  return(x$state)
+}
+
+
+update_optim <- function(x, family, response, eta, id, ...)
+{
+  ## Compute partial predictor.
+  eta[[id]] <- eta[[id]] - x$state$fit
+  eta2 <- eta
+
+  ## Objective function.
+  objfun <- function(theta) {
+    if(x$fixed) {
+      gamma <- theta
+    } else {
+      tau2 <- theta[1]
+      gamma <- theta[-1]
+    }
+    eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
+    peta <- family$map2par(eta2)
+    ll <- family$loglik(response, peta)
+    lp <- if(x$fixed) {
+      sum(dnorm(gamma, sd = 10, log = TRUE), na.rm = TRUE)
+    } else drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma)
+    -1 * (ll + lp)
+  }
+
+  start <- if(x$fixed) {
+    x$state$g
+  } else c(x$state$tau2, x$state$g)
+  if(is.null(x$state$lower)) {
+    x$state$lower <- rep(-Inf, ncol(x$X))
+    x$state$upper <- rep(+Inf, ncol(x$X))
+    if(!x$fixed) {
+      x$state$lower <- c(x$interval[1], x$state$lower)
+      x$state$upper <- c(+Inf, x$state$upper)
+    }
+  }
+
+  opt <- try(optim(start, fn = objfun, method = "L-BFGS-B",
+    lower = x$state$lower, upper = x$state$upper),
+    silent = TRUE)
+
+  if(!inherits(opt, "try-error")) {
+    if(x$fixed) {
+      x$state$g <- opt$par
+    } else {
+      x$state$g <- opt$par[-1]
+      x$state$tau2 <- opt$par[1]
+    }
+    x$state$fit <- drop(x$X %*% x$state$g)
+    if(!x$fixed) {
+      if(is.null(x$state$XX)) x$state$XX <- crossprod(x$X)
+      P <- matrix_inv(x$state$XX + 1 / x$state$tau2 * x$S[[1]])
+      x$state$edf <- sum(diag(P %*% x$state$XX))
+      if(!is.null(x$xt$center)) {
+        if(x$xt$center) x$state$edf <- x$state$edf - 1
+      }
+    }
+  }
+
+  return(x$state)
+}
+
+
+update_optim2 <- function(x, family, response, eta, id, ...)
+{
+  ## Compute partial predictor.
+  eta[[id]] <- eta[[id]] - x$state$fit
+  eta2 <- eta
+
+  ## Objective function.
+  objfun <- function(gamma) {
+    eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
+    peta <- family$map2par(eta2)
+    ll <- family$loglik(response, peta)
+    lp <- if(x$fixed) {
+      sum(dnorm(gamma, sd = 10, log = TRUE))
+    } else drop(-0.5 / x$state$tau2 * crossprod(gamma, x$S[[1]]) %*% gamma)
+    -1 * (ll + lp)
+  }
+
+  suppressWarnings(opt <- try(optim(x$state$g, fn = objfun, method = "BFGS",
+    control = list("reltol" = 0.01)), silent = TRUE))
+
+  if(!inherits(opt, "try-error")) {
+    x$state$g <- opt$par
+    x$state$fit <- drop(x$X %*% x$state$g)
+  }
+
+  if(!x$fixed) {
+    if(is.null(x$state$XX)) x$state$XX <- crossprod(x$X)
+    P <- matrix_inv(x$state$XX + 1 / x$state$tau2 * x$S[[1]])
+    x$state$edf <- sum(diag(P %*% x$state$XX))
+    if(!is.null(x$xt$center)) {
+      if(x$xt$center) x$state$edf <- x$state$edf - 1
+    }
   }
 
   return(x$state)
@@ -709,8 +911,7 @@ propose_nadja <- function(x, family,
   x$state$g <- drop(P %*% (XW %*% (z - eta[[id]])))
 
   for(j in seq_along(x$state$g)) {
-    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j,
-      w = 1, m = Inf, lower = -Inf, upper = +Inf)
+    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j)
   }
 
   ## Setup return state.
@@ -895,83 +1096,11 @@ smooth.IWLS.default <- function(x, ...)
     x$xt$adaptive <- TRUE
 
   if(is.null(x$propose))
-    x$propose <- propose_iwls
+    x$propose <- propose_slice
 
   ## Function for computing starting values with backfitting.
-  if(is.null(x$update)) {
-    x$update <- function(x, family, response, eta, id, ...) {
-      args <- list(...)
-
-      peta <- family$map2par(eta)
-
-      if(is.null(args$weights)) {
-        ## Compute weights.
-        weights <- family$weights[[id]](response, peta)
-      } else weights <- args$weights
-
-      ## Which obs to take.
-      ok <- !(weights %in% c(NA, -Inf, Inf, 0))
-      weights <- weights[ok]
-
-      if(is.null(args$z)) {
-        ## Score.
-        score <- family$score[[id]](response, peta)
-
-        ## Compute working observations.
-        z <- eta[[id]][ok] + 1 / weights * score[ok]
-      } else z <- args$z[ok]
-
-      ## Compute partial predictor.
-      eta[[id]][ok] <- eta[[id]][ok] - x$state$fit[ok]
-
-      ## Compute mean and precision.
-      XW <- t(x$X[ok, ] * weights)
-      XWX <- XW %*% x$X[ok, ]
-      if(is.null(x$optimize) | x$fixed | !is.null(x$sp)) {
-        P <- if(x$fixed) {
-          matrix_inv(XWX)
-        } else matrix_inv(XWX + 1 / x$state$tau2 * x$S[[1]])
-        x$state$g <- drop(P %*% (XW %*% (z - eta[[id]][ok])))
-      } else {
-        args <- list(...)
-        edf0 <- args$edf - x$state$edf
-        eta2 <- eta
-        e <- z - eta[[id]][ok]
-
-        objfun <- function(tau2, ...) {
-          P <- matrix_inv(XWX + 1 / tau2 * x$S[[1]])
-          if(inherits(P, "try-error")) return(NA)
-          g <- drop(P %*% (XW %*% e))
-          if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
-          fit <- drop(x$X %*% g)
-          edf <- sum(diag(P %*% XWX))
-          if(!is.null(x$xt$center)) {
-            if(x$xt$center) edf <- edf - 1
-          }
-          eta2[[id]] <- eta2[[id]] + fit
-          IC <- get.ic(family, response, family$map2par(eta2), edf0 + edf, length(e), x$criterion)
-          return(IC)
-        }
-
-        x$state$tau2 <- try(optimize(objfun, interval = x$interval, grid = x$grid)$minimum, silent = TRUE)
-        if(inherits(x$state$tau2, "try-error"))
-          x$state$tau2 <- optimize2(objfun, interval = x$interval, grid = x$grid)$minimum
-        if(!length(x$state$tau2)) x$state$tau2 <- x$interval[1]
-        P <- matrix_inv(XWX + 1 / x$state$tau2 * x$S[[1]])
-        x$state$g <- drop(P %*% (XW %*% e))
-      }
-
-      ## Compute fitted values.
-      if(any(is.na(x$state$g)) | any(x$state$g %in% c(-Inf, Inf))) x$state$g <- rep(0, length(x$state$g))
-      x$state$fit <- drop(x$X %*% x$state$g)
-      x$state$edf <- sum(diag(P %*% XWX))
-      if(!is.null(x$xt$center)) {
-        if(x$xt$center) x$state$edf <- x$state$edf - 1
-      }
-
-      return(x$state)
-    }
-  }
+  if(is.null(x$update))
+    x$update <- update_optim
 
   x
 }
@@ -993,10 +1122,12 @@ get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc")
 ## Sampler based on IWLS proposals.
 samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = FALSE,
   verbose = TRUE, step = 20, svalues = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
-  tdir = NULL, method = "backfitting", outer = TRUE, inner = TRUE, n.samples = 200,
+  tdir = NULL, method = "backfitting", outer = FALSE, inner = FALSE, n.samples = 200,
   criterion = c("AICc", "BIC", "AIC"), lower = 1e-09, upper = 1e+04,
   optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3,
-  propose = c("iwls", "rw", "twalk", "slice", "nadja"), ...)
+  update = c("optim", "iwls", "optim2"),
+  propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "nadja"),
+  sample = "slice", ...)
 {
   known_methods <- c("backfitting", "MCMC", "backfitting2", "backfitting3", "backfitting4")
   tm <- NULL
@@ -1012,7 +1143,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   criterion <- match.arg(criterion)
   scipen <- getOption("scipen")
   options("scipen" = 20)
-  on.exit(options("scipen" = 20))
+  on.exit(options("scipen" = scipen))
 
   ## Actual number of samples to save.
   if(!any(grepl("MCMC", method))) {
@@ -1032,6 +1163,16 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   }
   epsdigits <- getDigits(eps)
 
+  ## The update function to be used within backfitting.
+  if(!is.function(update)) {
+    update <- match.arg(update)
+    update <- switch(update,
+      "optim" = update_optim,
+      "iwls" = update_iwls,
+      "optim2" = update_optim2
+    )
+  }
+
   ## The proposal function to be used for smooth terms.
   if(!is.function(propose)) {
     propose <- match.arg(propose)
@@ -1040,6 +1181,22 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
       "rw" = propose_rw,
       "twalk" = propose_twalk,
       "slice" = propose_slice,
+      "oslice" = propose_oslice,
+      "wslice" = propose_wslice,
+      "nadja" = propose_slice
+    )
+  }
+
+  ## Function for creating samples when using backfitting.
+  if(!is.function(sample)) {
+    sample <- match.arg(sample)
+    sample <- switch(sample,
+      "iwls" = propose_iwls,
+      "rw" = propose_rw,
+      "twalk" = propose_twalk,
+      "slice" = propose_slice,
+      "oslice" = propose_oslice,
+      "wslice" = propose_wslice,
       "nadja" = propose_slice
     )
   }
@@ -1062,8 +1219,12 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           obj$smooth[[j]]$state$fit <- rep(0, nrow(obj$smooth[[j]]$X))
           obj$smooth[[j]]$state$g <- rep(0, ncol(obj$smooth[[j]]$X))
           obj$smooth[[j]]$fxsp <- if(!is.null(obj$smooth[[j]]$sp)) TRUE else FALSE
+          if(!is.null(update))
+            obj$smooth[[j]]$update <- update
           if(!is.null(propose))
             obj$smooth[[j]]$propose <- propose
+          if(!is.null(sample))
+            obj$smooth[[j]]$sample <- sample
           obj$smooth[[j]]$state$accepted <- FALSE
           obj$smooth[[j]]$state$scale <- rep(1, length = obj$smooth[[j]]$np)
           obj$smooth[[j]]$state$iter <- 1
@@ -1183,6 +1344,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
 
         eps0 <- do.call("cbind", eta)
         eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
+        if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
 
         peta <- family$map2par(eta)
 
@@ -1392,7 +1554,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
         ## And all terms.
         for(sj in seq_along(x[[nx[j]]]$smooth)) {
           ## Get proposed states.
-          p.state <- x[[nx[j]]]$smooth[[sj]]$propose(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j], rho = rho)
+          p.state <- x[[nx[j]]]$smooth[[sj]]$sample(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j], rho = rho)
 
           accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
 

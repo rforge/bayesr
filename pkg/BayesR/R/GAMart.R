@@ -447,9 +447,19 @@ dgp_weibull <- function(n = 500, lambda = NULL, alpha = NULL, ...)
 
 if(FALSE) {
   d <- dgp_weibull()
-  b <- bayesr(y ~ sx(lambda.x11) + sx(lambda.x12), y ~ 1, 
+  b1 <- bayesr(y ~ sx(lambda.x11) + sx(lambda.x12), y ~ 1, 
 		data = d, family = weibull, engine = "BayesX", verbose = TRUE)
-  plot(b)
+
+  f <- list(
+    y ~ s(lambda.x11) + s(lambda.x12),
+    alpha ~ 1
+  )
+
+  b2 <- bayesr(f, data = d, family = weibull, method = "backfitting")
+  b3 <- bayesr(f, data = d, family = weibull, method = c("backfitting", "MCMC"),
+    n.iter = 1200, burnin = 200, thin = 2)
+
+  plot(b2)
 }
 
 ## t.
@@ -483,8 +493,24 @@ dgp_t <- function(n = 1000, mu = NULL, sigma2 = NULL, df = NULL, ...)
 
 if(FALSE) {
   d <- dgp_t()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), y ~ sx(sigma2.x11), y ~ sx(df.x11), data = d, family = t, engine = "BayesX", verbose = TRUE)
-  plot(b)
+
+  f <- list(
+    y ~ sx(mu.x11) + sx(mu.x12),
+    sigma2 ~ sx(sigma2.x11),
+    df ~ sx(df.x11)
+  )
+
+  b1 <- bayesr(f, data = d, family = t, engine = "BayesX", verbose = TRUE)
+
+  f <- list(
+    y ~ s(mu.x11) + s(mu.x12),
+    sigma2 ~ s(sigma2.x11),
+    df ~ s(df.x11)
+  )
+
+  b2 <- bayesr(f, data = d, family = t, method = c("backfitting", "MCMC"))
+
+  plot(c(b1, b2))
 }
 
 
@@ -522,6 +548,15 @@ if(FALSE) {
   d <- dgp_dagum()
   b <- bayesr(list(y ~ sx(a.x11) + sx(a.x12), y ~ sx(b.x11) + sx(b.x12), y ~ 1),
 		data = d, family = dagum, engine = "BayesX", verbose = TRUE)
+
+  f <- list(
+    y ~ s(a.x11) + s(a.x12),
+    b ~ s(b.x11) + s(b.x12),
+    p ~ 1
+  )
+
+  b2 <- bayesr(f, data = d, family = dagum, method = c("backfitting"), update = "optim")
+
   summary(b)
   plot(b)
 }
@@ -705,11 +740,21 @@ if(FALSE) {
   d <- dgp_zip()
 
   f <- list(
-    y ~ sx(lambda.x11) + sx(lambda.x12),
-    y ~ sx(pi.x11) + sx(pi.x12)
+    y ~ s(lambda.x11) + s(lambda.x12),
+    pi ~ s(pi.x11) + s(pi.x12)
   )
 
-  b <- bayesr(f, family = zip, data = d, engine = "BayesX", verbose = TRUE)
+  b1 <- bayesr(f, data = d, method = "backfitting", family = zip)
+  b2 <- bayesr(f, data = d, method = c("backfitting", "MCMC"),
+    propose = "oslice", family = zip, n.iter = 400, burnin = 100, thin = 1)
+
+  f <- list(
+    y ~ sx(lambda.x11) + sx(lambda.x12),
+    pi ~ sx(pi.x11) + sx(pi.x12)
+  )
+
+  b3 <- bayesr(f, family = zip, data = d, engine = "BayesX", verbose = TRUE)
+
   lambda.f11.est <- predict(b, model = "lambda", term = 1, what = "terms")
   lambda.f11.est.2p5 <- predict(b, model = "lambda", term = 1, what = "terms", FUN = quantile, 0.025)
   lambda.f11.est.97p5 <- predict(b, model = "lambda", term = 1, what = "terms", FUN = quantile, 0.975)
