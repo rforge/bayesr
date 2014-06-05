@@ -488,9 +488,7 @@ num_deriv <- function(y, eta, family, id = NULL,
 {
   require("numDeriv")
 
-  nf <- family$names
-  k <- length(nf)
-  if(is.null(id)) id <- nf[1L]
+  if(is.null(id)) id <- family$names[1L]
 
   d1fun <- function(x, y, eta) {
     eta[[id]] <- x
@@ -528,7 +526,14 @@ logPost2 <- function(g, x, family, response, eta, id)
   return(ll + lp)
 }
 
-uni.slice <- function(g, x, family, response, eta, id, j, ...,
+
+uni.slice <- function(g, x, family, response, eta, id, j,
+  w = 1, m = 100, lower = -Inf, upper = +Inf, logPost)
+{
+  .Call("uni_slice", g, x, family, response, eta, id, j, w, m, lower, upper, logPost)
+}
+
+uni.slice2 <- function(g, x, family, response, eta, id, j, ...,
   w = 1, m = 100, lower = -Inf, upper = +Inf)
 {
   x0 <- g[j]
@@ -611,7 +616,7 @@ propose_slice <- function(x, family,
   eta[[id]] <- eta[[id]] - x$state$fit
 
   for(j in seq_along(x$state$g)) {
-    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j)
+    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j, logPost = logPost2)
   }
 
   ## Setup return state.
@@ -658,7 +663,7 @@ propose_wslice <- function(x, family,
   x$state$g <- drop(P %*% (XW %*% (z - eta[[id]])))
 
   for(j in seq_along(x$state$g)) {
-    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j)
+    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j, logPost = logPost2)
   }
 
   ## Setup return state.
@@ -687,7 +692,7 @@ propose_oslice <- function(x, family,
   eta[[id]] <- eta[[id]] - x$state$fit
 
   for(j in seq_along(x$state$g)) {
-    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j)
+    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j, logPost = logPost2)
   }
 
   ## Setup return state.
@@ -948,7 +953,7 @@ propose_nadja <- function(x, family,
   x$state$g <- drop(P %*% (XW %*% (z - eta[[id]])))
 
   for(j in seq_along(x$state$g)) {
-    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j)
+    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j, logPost = logPost2)
   }
 
   ## Setup return state.

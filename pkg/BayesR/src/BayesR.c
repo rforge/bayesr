@@ -463,6 +463,26 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 }
 
 
+/* Univariate slice sampling */
+SEXP uni_slice(SEXP g, SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP j,
+  SEXP w, SEXP m, SEXP lower, SEXP upper, SEXP logPost)
+{
+  int nProtected = 0;
+
+  double x0 = REAL(g)[j - 1];
+  SEXP gL, gR;
+  PROTECT(gL = duplicate(g));
+  ++nProtected;
+  PROTECT(gR = duplicate(g));
+  ++nProtected;
+
+  Rprintf("ok\n");
+  UNPROTECT(nProtected);
+
+  return g;
+}
+
+
 /* Compute the centroid of a polygon. */
 SEXP cpos(SEXP p, SEXP K, SEXP pos)
 {
