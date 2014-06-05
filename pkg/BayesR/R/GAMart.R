@@ -455,6 +455,7 @@ if(FALSE) {
     alpha ~ 1
   )
 
+  b0 <- bayesr(f, data = d, family = weibull, engine = "JAGS")
   b2 <- bayesr(f, data = d, family = weibull, method = "backfitting")
   b3 <- bayesr(f, data = d, family = weibull, method = c("backfitting", "MCMC"),
     n.iter = 1200, burnin = 200, thin = 2)
@@ -504,11 +505,11 @@ if(FALSE) {
 
   f <- list(
     y ~ s(mu.x11) + s(mu.x12),
-    sigma2 ~ s(sigma2.x11),
-    df ~ s(df.x11)
+    sigma ~ s(sigma2.x11),
+    nu ~ s(df.x11)
   )
 
-  b2 <- bayesr(f, data = d, family = t, method = c("backfitting", "MCMC"))
+  b2 <- bayesr(f, data = d, family = tF(TF), update = "optim")
 
   plot(c(b1, b2))
 }
@@ -634,12 +635,24 @@ dgp_BCCG <- function(n = 1000, mu = NULL, sigma = NULL, nu = NULL, ...)
 
 if(FALSE) {
   d <- dgp_BCCG()
+
   f <- list(
     y ~ sx(mu.x11) + sx(mu.x12),
-    y ~ sx(sigma.x11),
-	y ~ 1
+    sigma ~ sx(sigma.x11),
+	  nu ~ 1
   )
-  b <- bayesr(f, data = d, family = BCCG, engine = "BayesX", verbose = TRUE, n.iter = 6000, burnin = 1000, thin = 5)
+
+  b <- bayesr(f, data = d, family = BCCG2, engine = "BayesX", verbose = TRUE, n.iter = 6000, burnin = 1000, thin = 5)
+
+  f <- list(
+    y ~ s(mu.x11) + s(mu.x12),
+    sigma ~ s(sigma.x11),
+	  nu ~ 1
+  )
+
+  b2 <- bayesr(f, data = d, family = tF(BCCGo), update = "optim2", propose = "oslice", method = c("backfitting", "MCMC"), n.iter = 400, burnin = 100, thin = 1)
+
+
   plot(b)
 }
 

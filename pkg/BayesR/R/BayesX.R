@@ -296,8 +296,10 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
           d <- cbind(d, BayesX_data(x[[j]], id = nx[j]))
       }
       d2 <- NULL
-      d <- as.data.frame(d)
-      d <- d[, unique(names(d)), drop = FALSE]
+      if(!is.null(d)) {
+        d <- as.data.frame(d)
+        d <- d[, unique(names(d)), drop = FALSE]
+      }
       x[[j]]$dname <- dname0
       x[[j]]$hlevel <- 1
     }
@@ -940,6 +942,7 @@ resultsBayesX <- function(x, samples, ...)
     if(length(rval) < 2) {
       rval <- rval[[1]]
     }
+    attr(rval, "fixed.names") <- TRUE
     class(rval) <- "bayesr"
     return(rval)
   }
@@ -990,6 +993,7 @@ resultsBayesX <- function(x, samples, ...)
       names(rval) <- fn
     else
       rval <- rval[[1]]
+    attr(rval, "fixed.names") <- TRUE
     class(rval) <- "bayesr"
     return(rval)
   } else {

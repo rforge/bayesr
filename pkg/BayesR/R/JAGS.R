@@ -53,6 +53,7 @@ transformBUGS <- function(x)
 ## to run a JAGS sampler.
 ## Examples: http://sourceforge.net/projects/mcmc-jags/files/
 ##           http://www.indiana.edu/~kruschke/DoingBayesianDataAnalysis/Programs/
+## Families: http://www.jrnold.me/categories/jags.html
 ## Default linear predictor and model setup functions.
 BUGSeta <- function(x, id = NULL, zero = FALSE, ...) {
   setup <- list()
@@ -135,6 +136,8 @@ BUGSmodel <- function(x, family, cat = FALSE, is.stan = FALSE, ...) {
   if(is.null(pn)) pn <- paste("theta", 1:k, sep = "")
   if(length(pn) < 2 & length(pn) != k)
     pn <- paste(pn, 1:k, sep = "")
+  if(!is.null(family$bugs$order))
+    pn <- pn[family$bugs$order]
 
   pn[1:k] <- paste(pn[1:k], "[i]", sep = "")
   on <- if(cat) family$names else NULL

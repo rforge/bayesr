@@ -398,7 +398,7 @@ bayesr.family <- function(family, type = "BayesR")
         if(!grepl(type, family))
           family <- paste(family, type, sep = ".")
       }
-      family <- eval(parse(text = family))
+      family <- eval(parse(text = family[1]))
       if(is.function(family))
         family()
       else family
@@ -411,13 +411,14 @@ bayesr.family <- function(family, type = "BayesR")
     }
     txt <- paste(family, type, sep = if(!is.null(type)) "." else "")
     txt <- gsub("BayesR.BayesR", "BayesR", txt, fixed = TRUE)
-    family <- eval(parse(text = txt))
+    family <- eval(parse(text = txt[1]))
     family <- family()
   }
   if(is.null(family$cat))
     family$cat <- FALSE
-  if(is.null(family$mu))
-    family$mu <- function(x) { x }
+  if(is.null(family$mu)) {
+    family$mu <- function(x) { make.link2(family$links[1])$linkinv(x[[1]]) }
+  }
   if(is.null(family$map2par)) {
     linkinv <- vector(mode = "list", length = length(family$names))
     for(j in family$names)
@@ -1156,6 +1157,8 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
   }
   if(is.matrix(newdata) || is.list(newdata))
     newdata <- as.data.frame(newdata)
+  if(!is.null(attr(object, "fixed.names")))
+    names(newdata) <- rmf(names(newdata))
   nn <- names(newdata)
 
   object <- get.model(object, model)

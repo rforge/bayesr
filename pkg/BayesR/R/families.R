@@ -545,7 +545,12 @@ t.BayesR <- function(links = c(mu = "identity", sigma2 = "log", df = "log"), ...
     bayesx = list(
       "mu" = c("t_mu", "mean"),
       "sigma2" =  c("t_sigma2", "scale"),
-	  "df" = c("t_df", "df")
+	    "df" = c("t_df", "df")
+    ),
+    bugs = list(
+      "dist" = "dt",
+      "eta" = BUGSeta,
+      "model" = BUGSmodel
     ),
     "mu" = function(eta, ...) {
       rval <- eta$mu
@@ -635,6 +640,12 @@ weibull.BayesR <- function(links = c(lambda = "log", alpha = "log"), ...)
       "lambda"  = c("weibull_lambda", "mean"),
       "alpha" = c("weibull_alpha", "shape")
     ),
+    bugs = list(
+      "dist" = "dweib",
+      "eta" = BUGSeta,
+      "model" = BUGSmodel,  ## FIXME: order of parameters?
+      "order" = 2:1
+    ),
     "mu" = function(eta, ...) {
       alpha <-  eta$alpha
       lambda <- eta$lambda
@@ -670,6 +681,11 @@ pareto.BayesR <- function(links = c(b = "log", p = "log"), ...)
     bayesx = list(
       "b"  = c("pareto_b", "mean"),
       "p" = c("pareto_p", "shape")
+    ),
+    bugs = list(
+      "dist" = "dpar",
+      "eta" = BUGSeta,
+      "model" = BUGSmodel
     ),
     "mu" = function(eta, ...) {
       p <- eta$p
@@ -904,7 +920,7 @@ dagum.BayesR <- function(links = c(a = "log", b = "log", p = "log"), ...)
 }
 
 
-BCCG.BayesR <- function(links = c(mu = "log", sigma = "log", nu = "identity"), ...)
+BCCG2.BayesR <- function(links = c(mu = "log", sigma = "log", nu = "identity"), ...)
 {
   rval <- list(
     "family" = "BCCG",

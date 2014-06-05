@@ -101,6 +101,7 @@ propose_iwls0 <- function(x, family, response, eta, id, ...)
   return(x$state)
 }
 
+
 ## Random walk propose function.
 propose_rw <- function(x, family,
   response, eta, id, ...)
@@ -780,60 +781,90 @@ update_iwls <- function(x, family, response, eta, id, ...)
 }
 
 
+## Update function using optim() including smoothing parameter selection.
 update_optim <- function(x, family, response, eta, id, ...)
 {
   ## Compute partial predictor.
   eta[[id]] <- eta[[id]] - x$state$fit
   eta2 <- eta
 
-  ## Objective function.
-  objfun <- function(theta) {
-    if(x$fixed) {
-      gamma <- theta
-    } else {
-      tau2 <- theta[1]
-      gamma <- theta[-1]
+  if(is.null(x$state$XX)) x$state$XX <- crossprod(x$X)
+  if(!x$fixed) {
+    args <- list(...)
+    edf0 <- args$edf - x$state$edf
+  }
+
+  if(!x$fixed) {
+    ## Objective function for variance parameter.
+    objfun2 <- function(tau2) {
+
+      ## Objective for regression coefficients.
+      objfun <- function(gamma) {
+        eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
+        ll <- family$loglik(response, family$map2par(eta2))
+        lp <- drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma)
+        -1 * (ll + lp)
+      }
+
+      suppressWarnings(opt <- try(optim(x$state$g, fn = objfun, method = "BFGS",
+        control = list()), silent = TRUE))
+
+      if(!inherits(opt, "try-error")) {
+        x$state$g <- opt$par
+        x$state$fit <- drop(x$X %*% x$state$g)
+      }
+
+      W <- exp(x$state$fit)
+      ok <- !(W %in% c(NA, -Inf, Inf, 0))
+      XW <- t(x$X[ok, , drop = FALSE] * W[ok])
+      XWX <- XW %*% x$X[ok, , drop = FALSE]
+
+      P <- matrix_inv(XWX + 1 / tau2 * x$S[[1]])
+      if(inherits(P, "try-error")) return(NA)
+      edf <- sum(diag(P %*% XWX))
+      if(!is.null(x$xt$center)) {
+        if(x$xt$center) edf <- edf - 1
+      }
+
+      eta2[[id]] <- eta[[id]] + x$state$fit
+
+      IC <- get.ic(family, response, family$map2par(eta2), edf0 + edf, length(eta2[[id]]), x$criterion)
+      IC
     }
+
+    x$state$tau2 <- try(optimize(objfun2, interval = x$interval, grid = x$grid)$minimum, silent = TRUE)
+    if(inherits(x$state$tau2, "try-error"))
+      x$state$tau2 <- optimize2(objfun2, interval = x$interval, grid = x$grid)$minimum
+    if(!length(x$state$tau2)) x$state$tau2 <- x$interval[1]
+  }
+
+  ## Objective for regression coefficients.
+  objfun <- function(gamma) {
     eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
-    peta <- family$map2par(eta2)
-    ll <- family$loglik(response, peta)
+    ll <- family$loglik(response, family$map2par(eta2))
     lp <- if(x$fixed) {
-      sum(dnorm(gamma, sd = 10, log = TRUE), na.rm = TRUE)
-    } else drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma)
+      sum(dnorm(gamma, sd = 10, log = TRUE))
+    } else drop(-0.5 / x$state$tau2 * crossprod(gamma, x$S[[1]]) %*% gamma)
     -1 * (ll + lp)
   }
 
-  start <- if(x$fixed) {
-    x$state$g
-  } else c(x$state$tau2, x$state$g)
-  if(is.null(x$state$lower)) {
-    x$state$lower <- rep(-Inf, ncol(x$X))
-    x$state$upper <- rep(+Inf, ncol(x$X))
-    if(!x$fixed) {
-      x$state$lower <- c(x$interval[1], x$state$lower)
-      x$state$upper <- c(+Inf, x$state$upper)
-    }
-  }
-
-  opt <- try(optim(start, fn = objfun, method = "L-BFGS-B",
-    lower = x$state$lower, upper = x$state$upper),
-    silent = TRUE)
+  suppressWarnings(opt <- try(optim(x$state$g, fn = objfun, method = "BFGS",
+    control = list()), silent = TRUE))
 
   if(!inherits(opt, "try-error")) {
-    if(x$fixed) {
-      x$state$g <- opt$par
-    } else {
-      x$state$g <- opt$par[-1]
-      x$state$tau2 <- opt$par[1]
-    }
+    x$state$g <- opt$par
     x$state$fit <- drop(x$X %*% x$state$g)
-    if(!x$fixed) {
-      if(is.null(x$state$XX)) x$state$XX <- crossprod(x$X)
-      P <- matrix_inv(x$state$XX + 1 / x$state$tau2 * x$S[[1]])
-      x$state$edf <- sum(diag(P %*% x$state$XX))
-      if(!is.null(x$xt$center)) {
-        if(x$xt$center) x$state$edf <- x$state$edf - 1
-      }
+  }
+
+  if(!x$fixed) {
+    W <- exp(x$state$fit)
+    ok <- !(W %in% c(NA, -Inf, Inf, 0))
+    XW <- t(x$X[ok, , drop = FALSE] * W[ok])
+    XWX <- XW %*% x$X[ok, , drop = FALSE]
+    P <- matrix_inv(XWX + 1 / x$state$tau2 * x$S[[1]])
+    x$state$edf <- sum(diag(P %*% XWX))
+    if(!is.null(x$xt$center)) {
+      if(x$xt$center) x$state$edf <- x$state$edf - 1
     }
   }
 
@@ -841,6 +872,7 @@ update_optim <- function(x, family, response, eta, id, ...)
 }
 
 
+## Simple update function for regression coefficients.
 update_optim2 <- function(x, family, response, eta, id, ...)
 {
   ## Compute partial predictor.
@@ -859,7 +891,7 @@ update_optim2 <- function(x, family, response, eta, id, ...)
   }
 
   suppressWarnings(opt <- try(optim(x$state$g, fn = objfun, method = "BFGS",
-    control = list("reltol" = 0.01)), silent = TRUE))
+    control = list()), silent = TRUE))
 
   if(!inherits(opt, "try-error")) {
     x$state$g <- opt$par
@@ -867,11 +899,16 @@ update_optim2 <- function(x, family, response, eta, id, ...)
   }
 
   if(!x$fixed) {
-    if(is.null(x$state$XX)) x$state$XX <- crossprod(x$X)
-    P <- matrix_inv(x$state$XX + 1 / x$state$tau2 * x$S[[1]])
-    x$state$edf <- sum(diag(P %*% x$state$XX))
-    if(!is.null(x$xt$center)) {
-      if(x$xt$center) x$state$edf <- x$state$edf - 1
+    W <- exp(x$state$fit)
+    ok <- !(W %in% c(NA, -Inf, Inf, 0))
+    XW <- t(x$X[ok, , drop = FALSE] * W[ok])
+    XWX <- XW %*% x$X[ok, , drop = FALSE]
+    P <- matrix_inv(XWX + 1 / x$state$tau2 * x$S[[1]])
+    if(!inherits(P, "try-error")) {
+      x$state$edf <- sum(diag(P %*% XWX))
+      if(!is.null(x$xt$center)) {
+        if(x$xt$center) x$state$edf <- x$state$edf - 1
+      }
     }
   }
 
@@ -1095,13 +1132,6 @@ smooth.IWLS.default <- function(x, ...)
   if(is.null(x$xt$adaptive))
     x$xt$adaptive <- TRUE
 
-  if(is.null(x$propose))
-    x$propose <- propose_slice
-
-  ## Function for computing starting values with backfitting.
-  if(is.null(x$update))
-    x$update <- update_optim
-
   x
 }
 
@@ -1125,7 +1155,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   tdir = NULL, method = "backfitting", outer = FALSE, inner = FALSE, n.samples = 200,
   criterion = c("AICc", "BIC", "AIC"), lower = 1e-09, upper = 1e+04,
   optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3,
-  update = c("optim", "iwls", "optim2"),
+  update = c("optim2", "iwls", "optim"),
   propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "nadja"),
   sample = "slice", ...)
 {
@@ -1219,11 +1249,11 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           obj$smooth[[j]]$state$fit <- rep(0, nrow(obj$smooth[[j]]$X))
           obj$smooth[[j]]$state$g <- rep(0, ncol(obj$smooth[[j]]$X))
           obj$smooth[[j]]$fxsp <- if(!is.null(obj$smooth[[j]]$sp)) TRUE else FALSE
-          if(!is.null(update))
+          if(!is.null(update) & is.null(obj$smooth[[j]]$update))
             obj$smooth[[j]]$update <- update
-          if(!is.null(propose))
+          if(!is.null(propose) & is.null(obj$smooth[[j]]$propose))
             obj$smooth[[j]]$propose <- propose
-          if(!is.null(sample))
+          if(!is.null(sample) & is.null(obj$smooth[[j]]$sample))
             obj$smooth[[j]]$sample <- sample
           obj$smooth[[j]]$state$accepted <- FALSE
           obj$smooth[[j]]$state$scale <- rep(1, length = obj$smooth[[j]]$np)
