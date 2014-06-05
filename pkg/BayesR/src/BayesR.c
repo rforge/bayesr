@@ -468,8 +468,9 @@ SEXP uni_slice(SEXP g, SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SE
   SEXP w, SEXP m, SEXP lower, SEXP upper, SEXP logPost)
 {
   int nProtected = 0;
+  int jj = INTEGER(j)[0] - 1;
 
-  double x0 = REAL(g)[j - 1];
+  double x0 = REAL(g)[jj];
   SEXP gL, gR;
   PROTECT(gL = duplicate(g));
   ++nProtected;
