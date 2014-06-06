@@ -1573,6 +1573,141 @@ Predict.matrix.harmon.smooth <- function(object, data, knots)
 }
 
 
+## Kriging smooth constructor.
+## Evaluate a kriging
+## design and penalty matrix.
+krDesign1D <- function(z, knots = NULL, rho = NULL,
+  phi = NULL, v = NULL, c = NULL)
+{
+  rho <- if(is.null(rho)) {
+    require("geoR")
+    geoR::matern
+  } else rho
+  knots <- if(is.null(knots)) sort(unique(z)) else knots
+  v <- if(is.null(v)) 2.5 else v
+  c <- if(is.null(c)) {
+    optim(1, matern, phi = 1, kappa = v, method = "L-BFGS-B", lower = 1e-10)$par
+  } else c
+  phi <- if(is.null(phi)) max(abs(diff(range(knots)))) / c else phi
+  B <- NULL
+  K <- as.matrix(dist(knots, diag = TRUE))
+  for(j in seq_along(knots)) {
+    h <- abs(z - knots[j])
+    B <- cbind(B, rho(h, phi, v))
+    K[, j] <- rho(K[, j], phi, v)
+  }
+  return(list("B" = B, "K" = K, "phi" = phi, "v" = v, "c" = c, "knots" = knots))
+}
+
+krDesign2D <- function(z1, z2, knots = 10,
+  phi = NULL, v = NULL, c = NULL, psi = NULL,
+  delta = 1, isotropic = TRUE)
+{
+  if(is.null(psi)) psi <- 1
+  if(is.null(delta)) delta <- 1
+  if(is.null(isotropic)) isotropic <- TRUE
+  if(is.null(knots)) knots <- min(c(10, nrow(unique(cbind(z1, z2)))), na.rm = TRUE)
+  knots <- if(length(knots) < 2) {
+    if(knots == length(z1)) {
+      unique(cbind(z1, z2))
+    } else {
+      require("fields")
+      fields::cover.design(R = unique(cbind(z1, z2)), nd = knots)
+    }
+  } else knots
+  v <- if(is.null(v)) 2.5 else v
+  c <- if(is.null(c)) {
+    optim(1, geoR::matern, phi = 1, kappa = v,
+      method = "L-BFGS-B", lower = 1e-10)$par
+  } else c
+  z <- cbind(z1, z2)
+  if(class(knots) == "spatial.design")
+    knots <- knots[, 1:2]
+  if(!is.matrix(knots))
+    knots <- matrix(knots, ncol = 2)
+  nk <- nrow(knots)
+  phi <- if(is.null(phi)) {
+    max(abs(diff(range(knots)))) / c
+  } else phi
+  if(phi == 0)
+    phi <- max(abs(fields::rdist(z1, z2))) / c
+  K <- fields::rdist(knots, knots)
+  if(isotropic) {
+    B <- NULL
+    for(j in 1:nk) {
+      kn <- matrix(knots[j, ], nrow = 1, ncol = 2)
+	    h <- fields::rdist(z, kn)
+		  B <- cbind(B, geoR::matern(h, phi, v))
+    }
+  } else {
+    B <- matrix(0, nrow(z), nk)
+    R <- matrix(c(cos(psi), -1 * sin(psi),
+      sin(psi), cos(psi)), 2, 2)
+    D <- matrix(c(delta^(-1), 0, 0, 1), 2, 2)
+    for(i in 1:nrow(z)) {
+      for(j in 1:nk) {
+        kn <- matrix(knots[j, ], nrow = 1, ncol = 2)
+        h <- as.numeric(z[i, ] - kn)
+        h <- drop(sqrt(t(h) %*% t(R) %*% D %*% R %*% h))
+        B[i, j] <- geoR::matern(h, phi, v)
+      }
+    }
+  }
+
+  return(list("B" = B, "K" = K, "knots" = knots,
+    "phi" = phi, "v" = v, "c" = c, "psi" = psi,
+    "delta" = delta))
+}
+
+
+## Kriging smooth constructor functions.
+smooth.construct.kr.smooth.spec <- function(object, data, knots)
+{
+  if(object$dim > 2) stop("more than 2 covariates not supported using kriging terms!")
+  if(object$bs.dim < 0) object$bs.dim <- 10
+  if(object$dim < 2) {
+    k <- knots[[object$term]]
+    x <- data[[object$term]]
+    if(is.null(k))
+      k <- seq(min(x), max(x), length = object$bs.dim)
+    D <- krDesign1D(x, knots = k, rho = object$xt$rho,
+      phi = object$xt$phi, v = object$xt$v, c = object$xt$c)
+  } else {
+    D <- krDesign2D(data[[object$term[1]]], data[[object$term[2]]],
+      knots = object$xt$knots,
+      phi = object$xt$phi, v = object$xt$v, c = object$xt$c,
+      psi = object$xt$psi, delta = object$xt$delta,
+      isotropic = object$xt$isotropic)
+  }
+
+  X <- D$B
+  object$X <- X
+  object$S <- list(D$K)
+  object$rank <- qr(D$K)$rank
+  object$knots <- D$knots
+  object$null.space.dim <- ncol(D$K)
+ 
+  class(object) <- "kriging.smooth"
+  object
+}
+
+## Predict function for the new kriging smooth.
+Predict.matrix.kriging.smooth <- function(object, data)
+{
+  if(object$dim < 2) {
+    X <- krDesign1D(data[[object$term]], knots = object$knots, rho = object$xt$rho,
+      phi = object$xt$phi, v = object$xt$v, c = object$xt$c)$B
+  } else {
+    X <- krDesign2D(data[[object$term[1]]], data[[object$term[2]]],
+      knots = object$knots,
+      phi = object$xt$phi, v = object$xt$v, c = object$xt$c,
+      psi = object$xt$psi, delta = object$xt$delta,
+      isotropic = object$xt$isotropic)$B
+  }
+  X
+}
+
+
 ###################
 ## (6) Plotting. ##
 ###################

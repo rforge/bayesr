@@ -536,6 +536,80 @@ uni.slice <- function(g, x, family, response, eta, id, j,
      as.integer(j), w, as.integer(m), lower, upper, logPost, rho)
 }
 
+uni.slice2 <- function(g, x, family, response, eta, id, j, ...,
+  w = 1, m = 100, lower = -Inf, upper = +Inf)
+{
+  x0 <- g[j]
+  gL <- gR <- g
+
+  gx0 <- logPost2(g, x, family, response, eta, id)
+
+  ## Determine the slice level, in log terms.
+  logy <- gx0 - rexp(1)
+
+  ## Find the initial interval to sample from.
+  u <- runif(1, 0, w)
+  gL[j] <- g[j] - u
+  gR[j] <- g[j] + (w - u)  ## should guarantee that g[j] is in [L, R], even with roundoff
+
+  ## Expand the interval until its ends are outside the slice, or until
+  ## the limit on steps is reached.
+  if(is.infinite(m)) {
+    repeat {
+      if(gL[j] <= lower) break
+      if(logPost2(gL, x, family, response, eta, id) <= logy) break
+      gL[j] <- gL[j] - w
+    }
+    repeat {
+      if(gR[j] >= upper) break
+      if(logPost2(gR, x, family, response, eta, id) <= logy) break
+      gR[j] <- gR[j] + w
+    }
+  } else {
+    if(m > 1) {
+      J <- floor(runif(1, 0, m))
+      K <- (m - 1) - J
+      while(J > 0) {
+        if(gL[j] <= lower) break
+        if(logPost2(gL, x, family, response, eta, id) <= logy) break
+        gL[j] <- gL[j] - w
+        J <- J - 1
+      }
+      while(K > 0) {
+        if(gR[j] >= upper) break
+        if(logPost2(gR, x, family, response, eta, id) <= logy) break
+        gR[j] <- gR[j] + w
+        K <- K - 1
+      }
+    }
+  }
+
+  ## Shrink interval to lower and upper bounds.
+  if(gL[j] < lower) {
+    gL[j] <- lower
+  }
+  if(gR[j] > upper) {
+    gR[j] <- upper
+  }
+
+  ## Sample from the interval, shrinking it on each rejection.
+  repeat {
+    g[j] <- runif(1, gL[j], gR[j])
+
+    gx1 <- logPost2(g, x, family, response, eta, id)
+
+    if(gx1 >= logy) break
+
+    if(g[j] > x0) {
+      gR[j] <- g[j]
+    } else {
+      gL[j] <- g[j]
+    }
+  }
+
+  ## Return the point sampled
+  return(g)
+}
 
 ## Actual univariate slice sampling propose() function.
 propose_slice <- function(x, family,
@@ -734,6 +808,8 @@ update_optim <- function(x, family, response, eta, id, ...)
   if(!x$fixed) {
     args <- list(...)
     edf0 <- args$edf - x$state$edf
+    if(is.null(x$state$XX))
+      x$state$XX <- crossprod(x$X)
   }
 
   if(!x$fixed) {
@@ -756,14 +832,9 @@ update_optim <- function(x, family, response, eta, id, ...)
         x$state$fit <- drop(x$X %*% x$state$g)
       }
 
-      W <- exp(x$state$fit)
-      ok <- !(W %in% c(NA, -Inf, Inf, 0))
-      XW <- t(x$X[ok, , drop = FALSE] * W[ok])
-      XWX <- XW %*% x$X[ok, , drop = FALSE]
-
-      P <- matrix_inv(XWX + 1 / tau2 * x$S[[1]])
+      P <- matrix_inv(x$state$XX + 1 / tau2 * x$S[[1]])
       if(inherits(P, "try-error")) return(NA)
-      edf <- sum(diag(P %*% XWX))
+      edf <- sum(diag(x$state$XX %*% P))
       if(!is.null(x$xt$center)) {
         if(x$xt$center) edf <- edf - 1
       }
@@ -799,12 +870,8 @@ update_optim <- function(x, family, response, eta, id, ...)
   }
 
   if(!x$fixed) {
-    W <- exp(x$state$fit)
-    ok <- !(W %in% c(NA, -Inf, Inf, 0))
-    XW <- t(x$X[ok, , drop = FALSE] * W[ok])
-    XWX <- XW %*% x$X[ok, , drop = FALSE]
-    P <- matrix_inv(XWX + 1 / x$state$tau2 * x$S[[1]])
-    x$state$edf <- sum(diag(P %*% XWX))
+    P <- matrix_inv(x$state$XX + 1 / x$state$tau2 * x$S[[1]])
+    x$state$edf <- sum(diag(x$state$XX %*% P))
     if(!is.null(x$xt$center)) {
       if(x$xt$center) x$state$edf <- x$state$edf - 1
     }
@@ -841,13 +908,11 @@ update_optim2 <- function(x, family, response, eta, id, ...)
   }
 
   if(!x$fixed) {
-    W <- exp(x$state$fit)
-    ok <- !(W %in% c(NA, -Inf, Inf, 0))
-    XW <- t(x$X[ok, , drop = FALSE] * W[ok])
-    XWX <- XW %*% x$X[ok, , drop = FALSE]
-    P <- matrix_inv(XWX + 1 / x$state$tau2 * x$S[[1]])
+    if(is.null(x$state$XX))
+      x$state$XX <- crossprod(x$X)
+    P <- matrix_inv(x$state$XX + 1 / x$state$tau2 * x$S[[1]])
     if(!inherits(P, "try-error")) {
-      x$state$edf <- sum(diag(P %*% XWX))
+      x$state$edf <- sum(diag(x$state$XX %*% P))
       if(!is.null(x$xt$center)) {
         if(x$xt$center) x$state$edf <- x$state$edf - 1
       }
@@ -1099,7 +1164,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3,
   update = c("optim2", "iwls", "optim"),
   propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "nadja"),
-  sample = "slice", ...)
+  sample = c("slice", "iwls"), ...)
 {
   known_methods <- c("backfitting", "MCMC", "backfitting2", "backfitting3", "backfitting4")
   tm <- NULL
