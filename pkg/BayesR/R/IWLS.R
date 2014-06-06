@@ -528,9 +528,12 @@ logPost2 <- function(g, x, family, response, eta, id)
 
 
 uni.slice <- function(g, x, family, response, eta, id, j,
-  w = 1, m = 100, lower = -Inf, upper = +Inf, logPost)
+  w = 1, m = 100, lower = -Inf, upper = +Inf, logPost, rho)
 {
-  .Call("uni_slice", g, x, family, response, eta, id, j, w, m, lower, upper, logPost)
+  gs <- .Call("uni_slice", g, x, family, response, eta, id, j,
+     w, m, lower, upper, logPost, rho)
+stop()
+  return(gs)
 }
 
 uni.slice2 <- function(g, x, family, response, eta, id, j, ...,
@@ -610,13 +613,14 @@ uni.slice2 <- function(g, x, family, response, eta, id, j, ...,
 
 ## Actual univariate slice sampling propose() function.
 propose_slice <- function(x, family,
-  response, eta, id, ...)
+  response, eta, id, rho, ...)
 {
   ## Remove fitted values.
   eta[[id]] <- eta[[id]] - x$state$fit
 
   for(j in seq_along(x$state$g)) {
-    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j, logPost = logPost2)
+    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j,
+      logPost = logPost2, rho = rho)
   }
 
   ## Setup return state.
@@ -635,7 +639,7 @@ propose_slice <- function(x, family,
 
 
 propose_wslice <- function(x, family,
-  response, eta, id, ...)
+  response, eta, id, rho, ...)
 {
   ## Map predictor to parameter scale.
   peta <- family$map2par(eta)
@@ -663,7 +667,8 @@ propose_wslice <- function(x, family,
   x$state$g <- drop(P %*% (XW %*% (z - eta[[id]])))
 
   for(j in seq_along(x$state$g)) {
-    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j, logPost = logPost2)
+    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j,
+      logPost = logPost2, rho = rho)
   }
 
   ## Setup return state.
@@ -682,7 +687,7 @@ propose_wslice <- function(x, family,
 
 
 propose_oslice <- function(x, family,
-  response, eta, id, ...)
+  response, eta, id, rho, ...)
 {
   ## Compute mean.
   opt <- update_optim2(x, family, response, eta, id, ...)
@@ -692,7 +697,8 @@ propose_oslice <- function(x, family,
   eta[[id]] <- eta[[id]] - x$state$fit
 
   for(j in seq_along(x$state$g)) {
-    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j, logPost = logPost2)
+    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j,
+      logPost = logPost2, rho = rho)
   }
 
   ## Setup return state.

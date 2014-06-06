@@ -463,21 +463,61 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 }
 
 
+/* logPost evaluation */
+double lp_eval(SEXP fun, SEXP g, SEXP x,
+  SEXP family, SEXP response, SEXP eta,
+  SEXP id, SEXP rho)
+{
+  SEXP R_fcall, t, rval;
+
+  PROTECT(t = R_fcall = allocList(7));
+  SET_TYPEOF(R_fcall, LANGSXP);
+
+  SETCAR(R_fcall, fun);
+  t = CDR(t); SETCAR(t, g);
+  t = CDR(t); SETCAR(t, x);
+  t = CDR(t); SETCAR(t, family);
+  t = CDR(t); SETCAR(t, response);
+  t = CDR(t); SETCAR(t, eta);
+  t = CDR(t); SETCAR(t, id);
+
+  PROTECT(rval = eval(R_fcall, rho));
+
+  UNPROTECT(2);
+  return REAL(rval)[0];
+}
+
+
 /* Univariate slice sampling */
 SEXP uni_slice(SEXP g, SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP j,
-  SEXP w, SEXP m, SEXP lower, SEXP upper, SEXP logPost)
+  SEXP W, SEXP m, SEXP lower, SEXP upper, SEXP logPost, SEXP rho)
 {
   int nProtected = 0;
   int jj = INTEGER(j)[0] - 1;
 
   double x0 = REAL(g)[jj];
+  double w = REAL(W)[0];
+
   SEXP gL, gR;
   PROTECT(gL = duplicate(g));
   ++nProtected;
   PROTECT(gR = duplicate(g));
   ++nProtected;
 
+  double gx0 = lp_eval(logPost, g, x, family, response, eta, id, rho);
+
+  GetRNGstate();
+  double logy = gx0 - rexp(1); 
+  double u = runif(0.0, w);
+  PutRNGstate();
+
+  REAL(gL)[jj] = x0 - u;
+  REAL(gR)[jj] = x0 + (w - u);
+
+//Rprintf("%g\n", logy);
+PrintValue(gR);
   Rprintf("ok\n");
+
   UNPROTECT(nProtected);
 
   return g;
