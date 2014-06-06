@@ -509,6 +509,7 @@ num_deriv <- function(y, eta, family, id = NULL,
 
 ## Slice sampling.
 ## See: http://www.cs.toronto.edu/~radford/ftp/slice-R-prog
+## Log-posterior used by propose_slice().
 logPost2 <- function(g, x, family, response, eta, id)
 {
   ## Set up new predictor.
@@ -527,6 +528,7 @@ logPost2 <- function(g, x, family, response, eta, id)
 }
 
 
+## Univariate slice sampling.
 uni.slice <- function(g, x, family, response, eta, id, j,
   w = 1, m = 100, lower = -Inf, upper = +Inf, logPost, rho)
 {
@@ -534,80 +536,6 @@ uni.slice <- function(g, x, family, response, eta, id, j,
      as.integer(j), w, as.integer(m), lower, upper, logPost, rho)
 }
 
-uni.slice2 <- function(g, x, family, response, eta, id, j, ...,
-  w = 1, m = 100, lower = -Inf, upper = +Inf)
-{
-  x0 <- g[j]
-  gL <- gR <- g
-
-  gx0 <- logPost2(g, x, family, response, eta, id)
-
-  ## Determine the slice level, in log terms.
-  logy <- gx0 - rexp(1)
-
-  ## Find the initial interval to sample from.
-  u <- runif(1, 0, w)
-  gL[j] <- g[j] - u
-  gR[j] <- g[j] + (w - u)  ## should guarantee that g[j] is in [L, R], even with roundoff
-
-  ## Expand the interval until its ends are outside the slice, or until
-  ## the limit on steps is reached.
-  if(is.infinite(m)) {
-    repeat {
-      if(gL[j] <= lower) break
-      if(logPost2(gL, x, family, response, eta, id) <= logy) break
-      gL[j] <- gL[j] - w
-    }
-    repeat {
-      if(gR[j] >= upper) break
-      if(logPost2(gR, x, family, response, eta, id) <= logy) break
-      gR[j] <- gR[j] + w
-    }
-  } else {
-    if(m > 1) {
-      J <- floor(runif(1, 0, m))
-      K <- (m - 1) - J
-      while(J > 0) {
-        if(gL[j] <= lower) break
-        if(logPost2(gL, x, family, response, eta, id) <= logy) break
-        gL[j] <- gL[j] - w
-        J <- J - 1
-      }
-      while(K > 0) {
-        if(gR[j] >= upper) break
-        if(logPost2(gR, x, family, response, eta, id) <= logy) break
-        gR[j] <- gR[j] + w
-        K <- K - 1
-      }
-    }
-  }
-
-  ## Shrink interval to lower and upper bounds.
-  if(gL[j] < lower) {
-    gL[j] <- lower
-  }
-  if(gR[j] > upper) {
-    gR[j] <- upper
-  }
-
-  ## Sample from the interval, shrinking it on each rejection.
-  repeat {
-    g[j] <- runif(1, gL[j], gR[j])
-
-    gx1 <- logPost2(g, x, family, response, eta, id)
-
-    if(gx1 >= logy) break
-
-    if(g[j] > x0) {
-      gR[j] <- g[j]
-    } else {
-      gL[j] <- g[j]
-    }
-  }
-
-  ## Return the point sampled
-  return(g)
-}
 
 ## Actual univariate slice sampling propose() function.
 propose_slice <- function(x, family,
