@@ -530,10 +530,8 @@ logPost2 <- function(g, x, family, response, eta, id)
 uni.slice <- function(g, x, family, response, eta, id, j,
   w = 1, m = 100, lower = -Inf, upper = +Inf, logPost, rho)
 {
-  gs <- .Call("uni_slice", g, x, family, response, eta, id, j,
-     w, m, lower, upper, logPost, rho)
-stop()
-  return(gs)
+  .Call("uni_slice", g, x, family, response, eta, id,
+     as.integer(j), w, as.integer(m), lower, upper, logPost, rho)
 }
 
 uni.slice2 <- function(g, x, family, response, eta, id, j, ...,
@@ -586,10 +584,10 @@ uni.slice2 <- function(g, x, family, response, eta, id, j, ...,
 
   ## Shrink interval to lower and upper bounds.
   if(gL[j] < lower) {
-    L <- lower
+    gL[j] <- lower
   }
   if(gR[j] > upper) {
-    R <- upper
+    gR[j] <- upper
   }
 
   ## Sample from the interval, shrinking it on each rejection.
@@ -689,9 +687,14 @@ propose_wslice <- function(x, family,
 propose_oslice <- function(x, family,
   response, eta, id, rho, ...)
 {
-  ## Compute mean.
-  opt <- update_optim2(x, family, response, eta, id, ...)
-  x$state$g <- opt$g
+  args <- list(...)
+  iter <- args$iter  
+
+  if(iter %% 20 == 0) {
+    ## Compute mean.
+    opt <- update_optim2(x, family, response, eta, id, ...)
+    x$state$g <- opt$g
+  }
 
   ## Compute partial predictor.
   eta[[id]] <- eta[[id]] - x$state$fit
@@ -1541,7 +1544,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
         ## And all terms.
         for(sj in seq_along(x[[nx[j]]]$smooth)) {
           ## Get proposed states.
-          p.state <- x[[nx[j]]]$smooth[[sj]]$propose(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j], rho = rho)
+          p.state <- x[[nx[j]]]$smooth[[sj]]$propose(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j], rho = rho, iter = i)
 
           ## If accepted, set current state to proposed state.
           accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha

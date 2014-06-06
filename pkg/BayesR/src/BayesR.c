@@ -490,13 +490,15 @@ double lp_eval(SEXP fun, SEXP g, SEXP x,
 
 /* Univariate slice sampling */
 SEXP uni_slice(SEXP g, SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP j,
-  SEXP W, SEXP m, SEXP lower, SEXP upper, SEXP logPost, SEXP rho)
+  SEXP W, SEXP M, SEXP LOWER, SEXP UPPER, SEXP logPost, SEXP rho)
 {
   int nProtected = 0;
   int jj = INTEGER(j)[0] - 1;
 
-  double x0 = REAL(g)[jj];
+  int m = INTEGER(M)[0] + 1;
   double w = REAL(W)[0];
+  double lower = REAL(LOWER)[0];
+  double upper = REAL(UPPER)[0];
 
   SEXP gL, gR;
   PROTECT(gL = duplicate(g));
@@ -504,6 +506,11 @@ SEXP uni_slice(SEXP g, SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SE
   PROTECT(gR = duplicate(g));
   ++nProtected;
 
+  double *gLptr = REAL(gL);
+  double *gRptr = REAL(gR);
+  double *gptr = REAL(g);
+
+  double x0 = gptr[jj];
   double gx0 = lp_eval(logPost, g, x, family, response, eta, id, rho);
 
   GetRNGstate();
@@ -511,15 +518,57 @@ SEXP uni_slice(SEXP g, SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SE
   double u = runif(0.0, w);
   PutRNGstate();
 
-  REAL(gL)[jj] = x0 - u;
-  REAL(gR)[jj] = x0 + (w - u);
+  gLptr[jj] = x0 - u;
+  gRptr[jj] = x0 + (w - u);
 
-//Rprintf("%g\n", logy);
-PrintValue(gR);
-  Rprintf("ok\n");
+  if(m > 1) {
+    GetRNGstate();
+    int J = floor(runif(0.0, m));
+    PutRNGstate();
+    int K = (m - 1) - J;
+    while(J > 0) {
+      if(gLptr[jj] <= lower)
+        break;
+      if(lp_eval(logPost, gL, x, family, response, eta, id, rho) <= logy)
+        break;
+      gLptr[jj] = gLptr[jj] - w;
+      J = J - 1;
+    }
+    while(K > 0) {
+      if(gRptr[jj] >= upper)
+        break;
+      if(lp_eval(logPost, gR, x, family, response, eta, id, rho) <= logy)
+        break;
+      gRptr[jj] = gRptr[jj] + w;
+      K = K - 1;
+    }
+  }
+
+  if(gLptr[jj] < lower) {
+    gLptr[jj] = lower;
+  }
+  if(gRptr[jj] > upper) {
+    gRptr[jj] = upper;
+  }
+
+  int run = 1;
+  
+  while(run > 0) {
+    gptr[jj] = runif(gLptr[jj], gRptr[jj]);
+
+    double gx1 = lp_eval(logPost, g, x, family, response, eta, id, rho);
+
+    if(gx1 >= logy)
+      run = 0;
+
+    if(gptr[jj] > x0) {
+      gRptr[jj] = gptr[jj];
+    } else {
+      gLptr[jj] = gptr[jj];
+    }
+  }
 
   UNPROTECT(nProtected);
-
   return g;
 }
 
