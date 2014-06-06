@@ -641,30 +641,35 @@ propose_slice <- function(x, family,
 propose_wslice <- function(x, family,
   response, eta, id, rho, ...)
 {
-  ## Map predictor to parameter scale.
-  peta <- family$map2par(eta)
-
-  ## Compute weights.
-  weights <- family$weights[[id]](response, peta)
-
-  ## Score.
-  score <- family$score[[id]](response, peta)
-
-  ## Compute working observations.
-  z <- eta[[id]] + 1 / weights * score
+  args <- list(...)
+  iter <- args$iter  
 
   ## Compute partial predictor.
   eta[[id]] <- eta[[id]] - x$state$fit
 
-  ## Compute mean and precision.
-  XW <- t(x$X * weights)
-  P <- if(x$fixed) {
-    if(k <- ncol(x$X) < 2) {
-      1 / (XW %*% x$X)
-    } else chol2inv(chol(XW %*% x$X))
-  } else chol2inv(chol(XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
-  P[P == Inf] <- 0
-  x$state$g <- drop(P %*% (XW %*% (z - eta[[id]])))
+  if(iter %% 20 == 0) {
+    ## Map predictor to parameter scale.
+    peta <- family$map2par(eta)
+
+    ## Compute weights.
+    weights <- family$weights[[id]](response, peta)
+
+    ## Score.
+    score <- family$score[[id]](response, peta)
+
+    ## Compute working observations.
+    z <- eta[[id]] + 1 / weights * score
+
+    ## Compute mean and precision.
+    XW <- t(x$X * weights)
+    P <- if(x$fixed) {
+      if(k <- ncol(x$X) < 2) {
+        1 / (XW %*% x$X)
+      } else chol2inv(chol(XW %*% x$X))
+    } else chol2inv(chol(XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
+    P[P == Inf] <- 0
+    x$state$g <- drop(P %*% (XW %*% (z - eta[[id]])))
+  }
 
   for(j in seq_along(x$state$g)) {
     x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j,
@@ -716,6 +721,65 @@ propose_oslice <- function(x, family,
     b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
     x$state$tau2 <- 1 / rgamma(1, a, b)
   }
+
+  return(x$state)
+}
+
+
+propose_ogauss <- function(x, family,
+  response, eta, id, rho, ...)
+{
+  args <- list(...)
+  iter <- args$iter  
+
+  if(iter %% 20 == 0) {
+    ## Compute mean.
+    opt <- update_optim2(x, family, response, eta, id, ...)
+    x$state$g <- opt$g
+  }
+
+  ## Compute old log likelihood and old log coefficients prior.
+  pibeta <- family$loglik(response, family$map2par(eta))
+  p1 <- if(x$fixed) {
+    0
+  } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+
+  ## Compute partial predictor.
+  eta[[id]] <- eta[[id]] - x$state$fit
+
+  ## Compute mean and precision.
+  P <- if(x$fixed) {
+    if(k <- ncol(x$X) < 2) {
+      1 / crossprod(x$X)
+    } else chol2inv(chol(crossprod(x$X)))
+  } else chol2inv(chol(crossprod(x$X) + 1 / x$state$tau2 * x$S[[1]]))
+
+  ## Sample new parameters.
+  x$state$g <- drop(rmvnorm(n = 1, mean = x$state$g, sigma = P))
+
+  ## Compute log priors.
+  p2 <- if(x$fixed) {
+    0
+  } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+
+  ## Compute fitted values.        
+  x$state$fit <- drop(x$X %*% x$state$g)
+
+  ## Set up new predictor.
+  eta[[id]] <- eta[[id]] + x$state$fit
+
+  ## Compute new log likelihood.
+  pibetaprop <- family$loglik(response, family$map2par(eta))
+
+  ## Sample variance parameter.
+  if(!x$fixed & is.null(x$sp)) {
+    a <- x$rank / 2 + x$a
+    b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
+    x$state$tau2 <- 1 / rgamma(1, a, b)
+  }
+
+  ## Compute acceptance probablity.
+  x$state$alpha <- drop((pibetaprop + p2) - (pibeta + p1))
 
   return(x$state)
 }
@@ -1157,13 +1221,13 @@ get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc")
 
 
 ## Sampler based on IWLS proposals.
-samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = FALSE,
+samplerIWLS <- function(x, n.iter = 1200, thin = 1, burnin = 0, accept.only = FALSE,
   verbose = TRUE, step = 20, svalues = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
   tdir = NULL, method = "backfitting", outer = FALSE, inner = FALSE, n.samples = 200,
   criterion = c("AICc", "BIC", "AIC"), lower = 1e-09, upper = 1e+04,
   optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3,
   update = c("optim2", "iwls", "optim"),
-  propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "nadja"),
+  propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "nadja", "ogauss"),
   sample = c("slice", "iwls"), ...)
 {
   known_methods <- c("backfitting", "MCMC", "backfitting2", "backfitting3", "backfitting4")
@@ -1220,7 +1284,8 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
       "slice" = propose_slice,
       "oslice" = propose_oslice,
       "wslice" = propose_wslice,
-      "nadja" = propose_slice
+      "nadja" = propose_slice,
+      "ogauss" = propose_ogauss
     )
   }
 
