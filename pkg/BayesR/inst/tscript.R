@@ -56,7 +56,7 @@ n <- 200
 dat <- data.frame("x1" = sort(runif(n, -3, 3)), x2 = runif(n, -3, 3))
 dat$y <- scale2(with(dat, 1.2 + sin(x1) + cos(x2) + rnorm(n, sd = (cos(dat$x1) + 2) / 4)), 0.001, 0.999)
 
-a <- bayesr(y ~ s(x1) + s(x2), ~ s(x1), data = dat, update = "optim", propose = "ogauss", method = c("backfitting", "MCMC"), n.iter = 400, burnin = 100, thin = 1, maxit = 3)
+a <- bayesr(y ~ s(x1, x2, bs = "kr", k = 50), ~ s(x1), data = dat, update = "iwls", propose = "iwls", method = c("backfitting", "MCMC"))
 
 plot(a)
 

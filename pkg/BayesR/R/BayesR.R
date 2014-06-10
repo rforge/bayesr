@@ -1577,7 +1577,7 @@ Predict.matrix.harmon.smooth <- function(object, data, knots)
 ## Evaluate a kriging
 ## design and penalty matrix.
 krDesign1D <- function(z, knots = NULL, rho = NULL,
-  phi = NULL, v = NULL, c = NULL)
+  phi = NULL, v = NULL, c = NULL, ...)
 {
   rho <- if(is.null(rho)) {
     require("geoR")
@@ -1599,10 +1599,14 @@ krDesign1D <- function(z, knots = NULL, rho = NULL,
   return(list("B" = B, "K" = K, "phi" = phi, "v" = v, "c" = c, "knots" = knots))
 }
 
-krDesign2D <- function(z1, z2, knots = 10,
-  phi = NULL, v = NULL, c = NULL, psi = NULL,
-  delta = 1, isotropic = TRUE)
+krDesign2D <- function(z1, z2, knots = 10, rho = NULL,
+  phi = NULL, v = NULL, c = NULL, psi = NULL, delta = 1,
+  isotropic = TRUE, ...)
 {
+  rho <- if(is.null(rho)) {
+    require("geoR")
+    geoR::matern
+  } else rho
   if(is.null(psi)) psi <- 1
   if(is.null(delta)) delta <- 1
   if(is.null(isotropic)) isotropic <- TRUE
@@ -1617,7 +1621,7 @@ krDesign2D <- function(z1, z2, knots = 10,
   } else knots
   v <- if(is.null(v)) 2.5 else v
   c <- if(is.null(c)) {
-    optim(1, geoR::matern, phi = 1, kappa = v,
+    optim(1, rho, phi = 1, kappa = v,
       method = "L-BFGS-B", lower = 1e-10)$par
   } else c
   z <- cbind(z1, z2)
@@ -1631,13 +1635,13 @@ krDesign2D <- function(z1, z2, knots = 10,
   } else phi
   if(phi == 0)
     phi <- max(abs(fields::rdist(z1, z2))) / c
-  K <- fields::rdist(knots, knots)
+  K <- rho(fields::rdist(knots, knots), phi, v)
   if(isotropic) {
     B <- NULL
     for(j in 1:nk) {
       kn <- matrix(knots[j, ], nrow = 1, ncol = 2)
 	    h <- fields::rdist(z, kn)
-		  B <- cbind(B, geoR::matern(h, phi, v))
+		  B <- cbind(B, rho(h, phi, v))
     }
   } else {
     B <- matrix(0, nrow(z), nk)
@@ -1649,7 +1653,7 @@ krDesign2D <- function(z1, z2, knots = 10,
         kn <- matrix(knots[j, ], nrow = 1, ncol = 2)
         h <- as.numeric(z[i, ] - kn)
         h <- drop(sqrt(t(h) %*% t(R) %*% D %*% R %*% h))
-        B[i, j] <- geoR::matern(h, phi, v)
+        B[i, j] <- rho(h, phi, v)
       }
     }
   }
@@ -1673,8 +1677,9 @@ smooth.construct.kr.smooth.spec <- function(object, data, knots)
     D <- krDesign1D(x, knots = k, rho = object$xt$rho,
       phi = object$xt$phi, v = object$xt$v, c = object$xt$c)
   } else {
+    knots <- if(is.null(object$xt$knots)) object$bs.dim else object$xt$knots
     D <- krDesign2D(data[[object$term[1]]], data[[object$term[2]]],
-      knots = object$xt$knots,
+      knots = knots,
       phi = object$xt$phi, v = object$xt$v, c = object$xt$c,
       psi = object$xt$psi, delta = object$xt$delta,
       isotropic = object$xt$isotropic)

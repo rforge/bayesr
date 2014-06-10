@@ -726,65 +726,6 @@ propose_oslice <- function(x, family,
 }
 
 
-propose_ogauss <- function(x, family,
-  response, eta, id, rho, ...)
-{
-  args <- list(...)
-  iter <- args$iter  
-
-  if(iter %% 20 == 0) {
-    ## Compute mean.
-    opt <- update_optim2(x, family, response, eta, id, ...)
-    x$state$g <- opt$g
-  }
-
-  ## Compute old log likelihood and old log coefficients prior.
-  pibeta <- family$loglik(response, family$map2par(eta))
-  p1 <- if(x$fixed) {
-    0
-  } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
-
-  ## Compute partial predictor.
-  eta[[id]] <- eta[[id]] - x$state$fit
-
-  ## Compute mean and precision.
-  P <- if(x$fixed) {
-    if(k <- ncol(x$X) < 2) {
-      1 / crossprod(x$X)
-    } else chol2inv(chol(crossprod(x$X)))
-  } else chol2inv(chol(crossprod(x$X) + 1 / x$state$tau2 * x$S[[1]]))
-
-  ## Sample new parameters.
-  x$state$g <- drop(rmvnorm(n = 1, mean = x$state$g, sigma = P))
-
-  ## Compute log priors.
-  p2 <- if(x$fixed) {
-    0
-  } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
-
-  ## Compute fitted values.        
-  x$state$fit <- drop(x$X %*% x$state$g)
-
-  ## Set up new predictor.
-  eta[[id]] <- eta[[id]] + x$state$fit
-
-  ## Compute new log likelihood.
-  pibetaprop <- family$loglik(response, family$map2par(eta))
-
-  ## Sample variance parameter.
-  if(!x$fixed & is.null(x$sp)) {
-    a <- x$rank / 2 + x$a
-    b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
-    x$state$tau2 <- 1 / rgamma(1, a, b)
-  }
-
-  ## Compute acceptance probablity.
-  x$state$alpha <- drop((pibetaprop + p2) - (pibeta + p1))
-
-  return(x$state)
-}
-
-
 ## Backfitting updating functions.
 update_iwls <- function(x, family, response, eta, id, ...)
 {
@@ -1168,7 +1109,7 @@ smooth.IWLS.default <- function(x, ...)
   tau2interval <- function(x, lower = .Machine$double.eps^0.25, upper = 4000) {
     XX <- crossprod(x$X)
     objfun <- function(tau2, value) {
-      df <- sum(diag(chol2inv(chol(XX + if(x$fixed) 0 else 1 / tau2 * x$S[[1]])) %*% XX))
+      df <- sum(diag(matrix_inv(XX + if(x$fixed) 0 else 1 / tau2 * x$S[[1]]) %*% XX))
       return((value - df)^2)
     }
     le <- try(optimize(objfun, c(lower, upper), value = 1)$minimum, silent = TRUE)
@@ -1198,7 +1139,7 @@ smooth.IWLS.default <- function(x, ...)
     } else x$s.colnames
     x$np <- length(x$s.colnames)
     XX <- crossprod(x$X)
-    x$state$edf <- sum(diag(chol2inv(chol(XX + if(x$fixed) 0 else 1 / x$state$tau2 * x$S[[1]])) %*% XX))
+    x$state$edf <- sum(diag(matrix_inv(XX + if(x$fixed) 0 else 1 / x$state$tau2 * x$S[[1]]) %*% XX))
   }
   if(is.null(x$xt$adaptive))
     x$xt$adaptive <- TRUE
@@ -1221,13 +1162,13 @@ get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc")
 
 
 ## Sampler based on IWLS proposals.
-samplerIWLS <- function(x, n.iter = 1200, thin = 1, burnin = 0, accept.only = FALSE,
+samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = FALSE,
   verbose = TRUE, step = 20, svalues = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
   tdir = NULL, method = "backfitting", outer = FALSE, inner = FALSE, n.samples = 200,
   criterion = c("AICc", "BIC", "AIC"), lower = 1e-09, upper = 1e+04,
   optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3,
   update = c("optim2", "iwls", "optim"),
-  propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "nadja", "ogauss"),
+  propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "nadja"),
   sample = c("slice", "iwls"), ...)
 {
   known_methods <- c("backfitting", "MCMC", "backfitting2", "backfitting3", "backfitting4")
@@ -1284,8 +1225,7 @@ samplerIWLS <- function(x, n.iter = 1200, thin = 1, burnin = 0, accept.only = FA
       "slice" = propose_slice,
       "oslice" = propose_oslice,
       "wslice" = propose_wslice,
-      "nadja" = propose_slice,
-      "ogauss" = propose_ogauss
+      "nadja" = propose_nadja
     )
   }
 
@@ -1299,7 +1239,7 @@ samplerIWLS <- function(x, n.iter = 1200, thin = 1, burnin = 0, accept.only = FA
       "slice" = propose_slice,
       "oslice" = propose_oslice,
       "wslice" = propose_wslice,
-      "nadja" = propose_slice
+      "nadja" = propose_nadja
     )
   }
   
@@ -1372,7 +1312,7 @@ samplerIWLS <- function(x, n.iter = 1200, thin = 1, burnin = 0, accept.only = FA
     }
 
     fmt <- function(x, width = 8, digits = 2) {
-      formatC(paste(round(x, digits)), width = width)
+      format(x, scientific = FALSE, digits = digits, nsmall = digits, width = width)
     }
 
     inner_bf <- function(x, response, eta, family, edf, id, ...) {
@@ -1454,11 +1394,11 @@ samplerIWLS <- function(x, n.iter = 1200, thin = 1, burnin = 0, accept.only = FA
           IC <- get.ic(family, response, peta, edf, nobs, criterion)
 
           cat("\r")
-          vtxt <- paste(criterion, " ", fmt(IC, width = -8, digits = digits),
-            " loglik ", fmt(family$loglik(response, peta), width = -8, digits = digits),
-            " edf ", fmt(edf, width = -6, digits = digits + 2),
-            " eps ", fmt(eps0, width = -6, digits = digits + 2),
-            " iteration ", formatC(iter, width = -1 * nchar(maxit)), sep = "")
+          vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
+            " loglik ", fmt(family$loglik(response, peta), width = 8, digits = digits),
+            " edf ", fmt(edf, width = 6, digits = digits + 2),
+            " eps ", fmt(eps0, width = 6, digits = digits + 2),
+            " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
           cat(vtxt)
 
           if(.Platform$OS.type != "unix") flush.console()
@@ -1472,7 +1412,7 @@ samplerIWLS <- function(x, n.iter = 1200, thin = 1, burnin = 0, accept.only = FA
       if(any(method %in% c("backfitting", "backfitting2", "backfitting4")) & verbose) {
         cat("\r")
         vtxt <- paste(criterion, " ", fmt(IC, width = -8, digits = digits),
-          " loglik ", fmt(family$loglik(response, peta), width = -8, digits = digits),
+          " loglik ", fmt(family$loglik(response, peta), width = -9, digits = digits),
           " edf ", fmt(edf, width = -6, digits = digits + 2),
           " eps ", fmt(eps0, width = -6, digits = digits + 2),
           " iteration ", formatC(iter, width = -1 * nchar(maxit)), sep = "")
