@@ -101,16 +101,18 @@ dgp_eta <- function(nobs = c(500, 100, 10), const = 1.2,
         xd[[id <- paste("id", j, sep = "")]] <- factor(1:nobs[j])
         set.seed(seed1[j])
         fun[[paste("re", j, sep = "")]] <- rnorm(nobs[j], sd = sd[j - 1])
-      }
+      } else id <- NULL
       if(mt == "spatial") {
         e <- FUN(1:nobs[j])
         xd[[paste("long", j, sep = "")]] <- e$long
         xd[[paste("lat", j, sep = "")]] <- e$lat
         fun[[paste("sp", j, sep = "")]] <- scale2(e$f) * if(is.na(scale[[j]][i])) 1 else scale[[j]][i]
-        m <- pixelmap(lat ~ long, data = e, at.xy = TRUE, size = 0.5, yscale = FALSE)
-        names(m$map) <- as.character(xd[[id]])
-        m$data$id <- as.integer(as.character(xd[[id]]))
-        maps[[paste("map", j, sep = "")]] <- m
+        if(!is.null(id)) {
+          m <- pixelmap(lat ~ long, data = e, at.xy = TRUE, size = 0.5, yscale = FALSE)
+          names(m$map) <- as.character(xd[[id]])
+          m$data$id <- as.integer(as.character(xd[[id]]))
+          maps[[paste("map", j, sep = "")]] <- m
+        }
       } else {
         xn <- paste("x", j, i, sep = "")
         fn <- if(mt != "const") paste("f", j, i, sep = "") else "const"
@@ -157,15 +159,15 @@ dgp_gaussian <- function(n = 500, mu = NULL, sigma = NULL, range.sigma = c(0.3, 
       type = list(c("unimodal", "quadratic", "const")))
   }
   if(is.null(sigma)) {
-    sigma <- list(nobs = n, const = 0.01,
-      type = list(c("pick", "const")))
+    sigma <- list(nobs = n, const = log(0.6),
+      type = list(c("const")))
   }
 
   mu <- do.call("dgp_eta", mu)
   sigma <- do.call("dgp_eta", sigma)
 
   d <- data.frame("mu" = mu, "sigma" = sigma)
-  sd <- (scale2(sigma$eta0, range.sigma[1], range.sigma[2]))
+  sd <- (scale2(exp(sigma$eta0), range.sigma[1], range.sigma[2]))
   d$y <- rnorm(nrow(mu), mean = mu$eta0, sd = sd)
 
   d
@@ -569,7 +571,7 @@ dgp_beta <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
 {
 	if(is.null(mu)) {
     mu <- list(nobs = n, const = -0.5,
-      type = list(c("sinus", "const")))
+      type = list(c("sinus", "spatial", "const")))
   }
   if(is.null(sigma2)) {
     sigma2 <- list(nobs = n, const = 0.01,
@@ -599,7 +601,7 @@ if(FALSE) {
   summary(b)
   plot(b, which = 3:6)
 
-  b <- bayesr(y ~ s(mu.x11), ~ s(sigma2.x11), data = d, family = beta, method = "backfitting")
+  b <- bayesr(y ~ s(mu.x11) + s(mu.long1, mu.lat1), ~ s(sigma2.x11), data = d, family = beta, method = "backfitting")
 }
 
 

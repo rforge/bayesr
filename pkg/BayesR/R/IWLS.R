@@ -1312,7 +1312,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     }
 
     fmt <- function(x, width = 8, digits = 2) {
-      format(x, scientific = FALSE, digits = digits, nsmall = digits, width = width)
+      formatC(round(x, digits), format = "f", digits = digits , width = width)
     }
 
     inner_bf <- function(x, response, eta, family, edf, id, ...) {
@@ -1395,7 +1395,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
 
           cat("\r")
           vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
-            " loglik ", fmt(family$loglik(response, peta), width = 8, digits = digits),
+            " logLik ", fmt(family$loglik(response, peta), width = 8, digits = digits),
             " edf ", fmt(edf, width = 6, digits = digits + 2),
             " eps ", fmt(eps0, width = 6, digits = digits + 2),
             " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
@@ -1412,7 +1412,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
       if(any(method %in% c("backfitting", "backfitting2", "backfitting4")) & verbose) {
         cat("\r")
         vtxt <- paste(criterion, " ", fmt(IC, width = -8, digits = digits),
-          " loglik ", fmt(family$loglik(response, peta), width = -9, digits = digits),
+          " logLik ", fmt(family$loglik(response, peta), width = -9, digits = digits),
           " edf ", fmt(edf, width = -6, digits = digits + 2),
           " eps ", fmt(eps0, width = -6, digits = digits + 2),
           " iteration ", formatC(iter, width = -1 * nchar(maxit)), sep = "")

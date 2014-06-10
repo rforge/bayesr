@@ -149,3 +149,8 @@ plot(-1 * num_deriv(y, eta, family, id = "mu", d = 2) ~ family$weights$mu(y, eta
 plot(-1 * num_deriv(y, eta, family, id = "sigma", d = 2) ~ family$weights$sigma(y, eta))
 
 
+d <- dgp_gaussian(mu = list(nobs = 500, const = 0.5, type = list(c("unimodal", "quadratic", "spatial", "const"))))
+
+b <- bayesr(y ~ s(mu.x11) + s(mu.x12) + s(mu.long1, mu.lat1, bs = "kr", k = 50), data = d, method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls", inner = TRUE)
+
+
