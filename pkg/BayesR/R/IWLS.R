@@ -546,20 +546,20 @@ logPost3 <- function(g, x, family, response, eta, id)
 
 
 ## Univariate slice sampling.
-uni.slice <- function(g, x, family, response, eta, id, j,
+uni.slice2 <- function(g, x, family, response, eta, id, j,
   w = 1, m = 100, lower = -Inf, upper = +Inf, logPost, rho)
 {
   .Call("uni_slice", g, x, family, response, eta, id,
      as.integer(j), w, as.integer(m), lower, upper, logPost, rho)
 }
 
-uni.slice2 <- function(g, x, family, response, eta, id, j, ...,
-  w = 1, m = 100, lower = -Inf, upper = +Inf)
+uni.slice <- function(g, x, family, response, eta, id, j, ...,
+  w = 1, m = 100, lower = -Inf, upper = +Inf, logPost)
 {
   x0 <- g[j]
   gL <- gR <- g
 
-  gx0 <- logPost2(g, x, family, response, eta, id)
+  gx0 <- logPost(g, x, family, response, eta, id)
 
   ## Determine the slice level, in log terms.
   logy <- gx0 - rexp(1)
@@ -574,12 +574,12 @@ uni.slice2 <- function(g, x, family, response, eta, id, j, ...,
   if(is.infinite(m)) {
     repeat {
       if(gL[j] <= lower) break
-      if(logPost2(gL, x, family, response, eta, id) <= logy) break
+      if(logPost(gL, x, family, response, eta, id) <= logy) break
       gL[j] <- gL[j] - w
     }
     repeat {
       if(gR[j] >= upper) break
-      if(logPost2(gR, x, family, response, eta, id) <= logy) break
+      if(logPost(gR, x, family, response, eta, id) <= logy) break
       gR[j] <- gR[j] + w
     }
   } else {
@@ -588,13 +588,13 @@ uni.slice2 <- function(g, x, family, response, eta, id, j, ...,
       K <- (m - 1) - J
       while(J > 0) {
         if(gL[j] <= lower) break
-        if(logPost2(gL, x, family, response, eta, id) <= logy) break
+        if(logPost(gL, x, family, response, eta, id) <= logy) break
         gL[j] <- gL[j] - w
         J <- J - 1
       }
       while(K > 0) {
         if(gR[j] >= upper) break
-        if(logPost2(gR, x, family, response, eta, id) <= logy) break
+        if(logPost(gR, x, family, response, eta, id) <= logy) break
         gR[j] <- gR[j] + w
         K <- K - 1
       }
@@ -613,7 +613,7 @@ uni.slice2 <- function(g, x, family, response, eta, id, j, ...,
   repeat {
     g[j] <- runif(1, gL[j], gR[j])
 
-    gx1 <- logPost2(g, x, family, response, eta, id)
+    gx1 <- logPost(g, x, family, response, eta, id)
 
     if(gx1 >= logy) break
 

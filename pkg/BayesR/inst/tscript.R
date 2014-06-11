@@ -84,12 +84,28 @@ b <- bayesr(mstatus ~ s(age), family = multinomial.BayesR, data = marital.nz)
 ## pick function
 f <- simfun(type = "pick")
 
-n <- 100
+n <- 1000
 dat <- data.frame("x1" = sort(runif(n, 0, 1)))
 dat$y <- with(dat, 1.2 + f(x1) + rnorm(n, sd = 0.1))
 
-b <- bayesr(y ~ rs(x1, bs = "ps"), data = dat, method = "backfitting", inner = FALSE, outer = FALSE)
+b <- bayesr(y ~ rs(x1, bs = "ps"), data = dat, method = "backfitting")
 
+g <- coef(b)
+g <- g[grep("s(x1)", names(g), fixed = TRUE)]
+
+X <- smooth.construct(rs(x1, bs = "ps"), dat, NULL)
+
+dat$f <- X$get.mu(X$X, g)
+
+dat$y2 <- with(dat, 1.2 + f + rnorm(n, sd = 0.0001))
+
+b2 <- bayesr(y2 ~ rs(x1, bs = "ps"), data = dat, method = "backfitting", eps = 0.000000001)
+
+g2 <- coef(b2)
+g2 <- g2[grep("s(x1)", names(g2), fixed = TRUE)]
+
+plot(g, g2)
+abline(a = 0, b = 1)
 
 
 ## by variable test
@@ -149,12 +165,18 @@ plot(-1 * num_deriv(y, eta, family, id = "mu", d = 2) ~ family$weights$mu(y, eta
 plot(-1 * num_deriv(y, eta, family, id = "sigma", d = 2) ~ family$weights$sigma(y, eta))
 
 
-d <- dgp_beta(mu = list(nobs = 500, const = -0.5, type = list(c("spatial", "const"))))
 
-b <- bayesr(y ~ s(mu.long1, mu.lat1, k = 20, bs = "kr"), ~ s(sigma2.x11), data = d, method = c("backfitting", "MCMC"), update = "iwls", propose = "wslice")
+## More tests.
+d <- dgp_beta(
+  mu = list(nobs = 500, const = -0.5, type = list(c("double", "spatial", "const"))),
+  sigma = list(nobs = 500, const = 0.01, type = list("quadratic", "const"))
+)
 
+f <- list(
+  y ~ s(mu.x11) + s(mu.long1, mu.lat1, k = 20, bs = "kr"),
+  sigma2 ~ s(sigma2.x11)
+)
 
-X <- smooth.construct(s(mu.long1, mu.lat1, bs = "kr", k = 500), d, NULL)$X
-d$B <- rowSums(X)
-plot3d(B ~ mu.long1 + mu.lat1, data = d, type = "mba")
+b <- bayesr(f, data = d, method = "backfitting", update = "optim2", sample = "slice", family = beta)
+
 

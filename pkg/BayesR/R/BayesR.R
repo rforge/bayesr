@@ -1491,7 +1491,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
   object$p.save <- "g"
   object$state <- list()
   object$state$g <- rep(0, ncol(object$X) * 2 - 1)
-  object$state$edf <- length(object$state$g) + 1
+  object$state$edf <- length(object$state$g)
   object$s.colnames <- paste("c", 1:length(object$state$g), sep = "")
   object$np <- length(object$s.colnames)
   object$update <- function(x, family, response, eta, id, ...) {
@@ -1521,6 +1521,17 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     return(x$state)
   }
   object$propose <- function(x, family, response, eta, id, rho, ...) {
+    args <- list(...)
+    iter <- args$iter
+
+    if(!is.null(iter)) {
+      if(iter %% 20 == 0) {
+        ## Compute mean.
+        opt <- x$update(x, family, response, eta, id, ...)
+        x$state$g <- opt$g
+      }
+    }
+
     ## Remove fitted values.
     eta[[id]] <- eta[[id]] - x$state$fit
 
