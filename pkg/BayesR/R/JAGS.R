@@ -475,8 +475,8 @@ buildBUGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
 #  } else paste("  w", i, if(zero) " <- 0.0" else " ~ dgamma(1.0E-6, 1.0E-6)", sep = "")
 
   tmp <- if((kw <- length(fall)) > 1) {
-    paste("    w", i, if(zero) "[j] <- 0.0" else "[j] ~ dunif(1.0E-6, 1)", sep = "")
-  } else paste("  w", i, if(zero) " <- 0.0" else " ~ dunif(1.0E-6, 1)", sep = "")
+    paste("    w", i, if(zero) "[j] <- 0.0" else "[j] ~ dnorm(0, 1.0E-6)", sep = "")
+  } else paste("  w", i, if(zero) " <- 0.0" else " ~ dnorm(0, 1.0E-6)", sep = "")
 
   ## setup$adds <- paste("  w2", i, " <- 1 / sum(w", i, ")", sep = "")
   setup$priors.coef <- c(setup$priors.coef, tmp)
@@ -499,7 +499,7 @@ buildBUGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
     fall <- paste("    sm", i, 0, "[i] <- sm0", i, "[i] * (", paste(fall, collapse = " + "), ")", sep = "")
     setup$start <- c(setup$start,
       paste("  sm", i, " <- sm", i, 0, " - mean(sm", i, 0, ")", sep = ""))
-    setup$close <- c(setup$close,
+    setup$close1 <- c(setup$close1,
       paste("  for(i in 1:n) {", sep = ""), fall0, fall, "  }")
   }
 
@@ -542,7 +542,7 @@ samplerJAGS <- function(x, tdir = NULL,
   }
 
   ## Sampling.
-  load.module("dic"); load.module("glm")
+  load.module("dic"); ## load.module("glm")
   
   if(verbose) writeLines(x$model)
   
