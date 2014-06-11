@@ -88,7 +88,7 @@ n <- 100
 dat <- data.frame("x1" = sort(runif(n, 0, 1)))
 dat$y <- with(dat, 1.2 + f(x1) + rnorm(n, sd = 0.1))
 
-b <- bayesr(y ~ -1 + rs(x1, bs = "ps", fx = TRUE, xt = list(center = FALSE)), data = dat, engine = "JAGS")
+b <- bayesr(y ~ rs(x1, bs = "ps"), data = dat, method = "backfitting", inner = FALSE, outer = FALSE)
 
 
 
@@ -149,8 +149,12 @@ plot(-1 * num_deriv(y, eta, family, id = "mu", d = 2) ~ family$weights$mu(y, eta
 plot(-1 * num_deriv(y, eta, family, id = "sigma", d = 2) ~ family$weights$sigma(y, eta))
 
 
-d <- dgp_gaussian(mu = list(nobs = 500, const = 0.5, type = list(c("unimodal", "quadratic", "spatial", "const"))))
+d <- dgp_beta(mu = list(nobs = 500, const = -0.5, type = list(c("spatial", "const"))))
 
-b <- bayesr(y ~ s(mu.x11) + s(mu.x12) + s(mu.long1, mu.lat1, bs = "kr", k = 50), data = d, method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls", inner = TRUE)
+b <- bayesr(y ~ s(mu.long1, mu.lat1, k = 20, bs = "kr"), ~ s(sigma2.x11), data = d, method = c("backfitting", "MCMC"), update = "iwls", propose = "wslice")
 
+
+X <- smooth.construct(s(mu.long1, mu.lat1, bs = "kr", k = 500), d, NULL)$X
+d$B <- rowSums(X)
+plot3d(B ~ mu.long1 + mu.lat1, data = d, type = "mba")
 

@@ -527,6 +527,23 @@ logPost2 <- function(g, x, family, response, eta, id)
   return(ll + lp)
 }
 
+logPost3 <- function(g, x, family, response, eta, id)
+{
+  ## Set up new predictor.
+  fit <- x$get.mu(x$X, g)
+  fit <- fit - mean(fit, na.rm = TRUE)
+  eta[[id]] <- eta[[id]] + fit
+
+  ## Map predictor to parameter scale.
+  peta <- family$map2par(eta)
+
+  ## Compute log likelihood and log coefficients prior.
+  ll <- family$loglik(response, peta)
+  lp <- sum(dnorm(g, sd = 10, log = TRUE), na.rm = TRUE)
+
+  return(ll + lp)
+}
+
 
 ## Univariate slice sampling.
 uni.slice <- function(g, x, family, response, eta, id, j,
@@ -1126,18 +1143,18 @@ smooth.IWLS.default <- function(x, ...)
   }
 
   if(is.null(x$state)) {
-    x$p.save <- c("g", "tau2")
+    x$p.save <- c("g", if(!x$fixed) "tau2" else NULL)
     x$state <- list()
-    x$state$g <- rep(0, ncol(x$X)) ##runif(ncol(x$X), 0.001, 0.002)
+    x$state$g <- rep(0, ncol(x$X))
     x$state$tau2 <- if(is.null(x$sp)) {
       if(x$fixed) 1e-20 else 10
     } else x$sp
     if(x$fixed) x$state$tau2 <- 1e-20
     x$s.colnames <- if(is.null(x$s.colnames)) {
       c(paste("c", 1:length(x$state$g), sep = ""),
-        if(!x$fixed) "tau2" else "tau2")
+        if(x$fixed) NULL else rep("tau2", length = length(x$state$tau2)))
     } else x$s.colnames
-    x$np <- length(x$s.colnames)
+    x$np <- c(length(x$state$g), length(x$state$tau2))
     XX <- crossprod(x$X)
     x$state$edf <- sum(diag(matrix_inv(XX + if(x$fixed) 0 else 1 / x$state$tau2 * x$S[[1]]) %*% XX))
   }
@@ -1255,11 +1272,12 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     } else {
       if(length(obj$smooth)) {
         for(j in seq_along(obj$smooth)) {
+          if(!is.null(obj$smooth[[j]]$is.linear)) obj$smooth[[j]]$np <- ncol(obj$smooth[[j]]$X)
           obj$smooth[[j]]$s.alpha <- rep(0, nrow = n.save)
           obj$smooth[[j]]$s.accepted <- rep(0, nrow = n.save)
-          obj$smooth[[j]]$s.samples <- matrix(0, nrow = n.save, ncol = obj$smooth[[j]]$np)
+          obj$smooth[[j]]$s.samples <- matrix(0, nrow = n.save, ncol = sum(obj$smooth[[j]]$np))
           obj$smooth[[j]]$state$fit <- rep(0, nrow(obj$smooth[[j]]$X))
-          obj$smooth[[j]]$state$g <- rep(0, ncol(obj$smooth[[j]]$X))
+          obj$smooth[[j]]$state$g <- rep(0, obj$smooth[[j]]$np[1])
           obj$smooth[[j]]$fxsp <- if(!is.null(obj$smooth[[j]]$sp)) TRUE else FALSE
           if(!is.null(update) & is.null(obj$smooth[[j]]$update))
             obj$smooth[[j]]$update <- update
@@ -1268,7 +1286,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           if(!is.null(sample) & is.null(obj$smooth[[j]]$sample))
             obj$smooth[[j]]$sample <- sample
           obj$smooth[[j]]$state$accepted <- FALSE
-          obj$smooth[[j]]$state$scale <- rep(1, length = obj$smooth[[j]]$np)
+          obj$smooth[[j]]$state$scale <- rep(1, length = obj$smooth[[j]]$np[1])
           obj$smooth[[j]]$state$iter <- 1
           obj$smooth[[j]]$state$maxit <- 50
           obj$smooth[[j]]$adapt <- burnin
@@ -1379,6 +1397,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
 
               ## Update predictor and smooth fit.
               eta[[nx[j]]] <- eta[[nx[j]]] - x[[nx[j]]]$smooth[[sj]]$state$fit + p.state$fit
+
               x[[nx[j]]]$smooth[[sj]]$state <- p.state
             }
           }
@@ -1721,7 +1740,7 @@ resultsIWLS <- function(x, samples)
       if(length(obj$smooth)) {
         for(i in 1:length(obj$smooth)) {
           ## Get coefficient samples of smooth term.
-          k <- ncol(obj$smooth[[i]]$X)
+          k <- obj$smooth[[i]]$np[1]
           pn <- grep(paste(id, "h1", obj$smooth[[i]]$label, sep = ":"), snames,
             value = TRUE, fixed = TRUE) ## FIXME: hlevels!
           pn <- pn[!grepl("tau2", pn) & !grepl("alpha", pn)]

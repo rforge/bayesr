@@ -1480,13 +1480,62 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     object$fixed <- object$xt$fixed
   object$xt$fixed <- object$fixed
   object$by.done <- TRUE
-  object <- smoothCon(object, data, knots, absorb.cons = TRUE)[[1]]
+  object <- smoothCon(object, data, knots, absorb.cons = FALSE)[[1]]
   object$get.mu <- function(X, g) {
     k <- ncol(X)
     w <- c(1, g[(k + 1):(2 * k - 1)])
     g <- g[1:k]
-    drop(X %*% g) / exp(drop(X %*% w))
+    f <- drop(X %*% g) / exp(drop(X %*% w))
+    f <- f - mean(f, na.rm = TRUE)
   }
+  object$p.save <- "g"
+  object$state <- list()
+  object$state$g <- rep(0, ncol(object$X) * 2 - 1)
+  object$state$edf <- length(object$state$g) + 1
+  object$s.colnames <- paste("c", 1:length(object$state$g), sep = "")
+  object$np <- length(object$s.colnames)
+  object$update <- function(x, family, response, eta, id, ...) {
+    ## Compute partial predictor.
+    eta[[id]] <- eta[[id]] - x$state$fit
+    eta2 <- eta
+
+    ## Objective function.
+    objfun <- function(gamma) {
+      fit <- x$get.mu(x$X, gamma)
+      fit <- fit - mean(fit, na.rm = TRUE)
+      eta2[[id]] <- eta[[id]] + fit
+      peta <- family$map2par(eta2)
+      ll <- family$loglik(response, peta)
+      lp <- sum(dnorm(gamma, sd = 10, log = TRUE))
+      -1 * (ll + lp)
+    }
+
+    suppressWarnings(opt <- try(optim(x$state$g, fn = objfun, method = "BFGS",
+      control = list()), silent = TRUE))
+
+    if(!inherits(opt, "try-error")) {
+      x$state$g <- opt$par
+      x$state$fit <- x$get.mu(x$X, x$state$g)
+    }
+
+    return(x$state)
+  }
+  object$propose <- function(x, family, response, eta, id, rho, ...) {
+    ## Remove fitted values.
+    eta[[id]] <- eta[[id]] - x$state$fit
+
+    for(j in seq_along(x$state$g)) {
+      x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j,
+        logPost = logPost3, rho = rho)
+    }
+
+    ## Setup return state.
+    x$state$alpha <- log(1)
+    x$state$fit <- x$get.mu(x$X, x$state$g)
+
+    return(x$state)
+  }
+  object$sample <- object$propose
   object$class <- class(object)
   class(object) <- if(object$fixed) c("rs.smooth", "no.mgcv") else "rs.smooth"
   object
@@ -1635,7 +1684,7 @@ krDesign2D <- function(z1, z2, knots = 10, rho = NULL,
   } else phi
   if(phi == 0)
     phi <- max(abs(fields::rdist(z1, z2))) / c
-  K <- rho(fields::rdist(knots, knots), phi, v)
+  K <- crossprod(rho(fields::rdist(knots, knots), phi, v))
   if(isotropic) {
     B <- NULL
     for(j in 1:nk) {

@@ -45,7 +45,7 @@ simfun <- function(type = "sinus")
     "const" = function(..., const = 1.2) {
       const
     },
-    "spatial" = function(id, f1 = sin, f2 = function(x) sin(x * pi)) {
+    "spatial" = function(id, f1 = sin, f2 = function(x) sin(x * pi * 2)) {
       n <- ceiling(sqrt(length(id)))
       co <- expand.grid("long" = seq(0, 1, length = n), "lat" = seq(0, 1, length = n))
       f <- f1(co[, 1]) * f2(co[, 2])
@@ -107,12 +107,15 @@ dgp_eta <- function(nobs = c(500, 100, 10), const = 1.2,
         xd[[paste("long", j, sep = "")]] <- e$long
         xd[[paste("lat", j, sep = "")]] <- e$lat
         fun[[paste("sp", j, sep = "")]] <- scale2(e$f) * if(is.na(scale[[j]][i])) 1 else scale[[j]][i]
+        m <- pixelmap(lat ~ long, data = e, at.xy = TRUE, size = 0.5, yscale = FALSE)
         if(!is.null(id)) {
-          m <- pixelmap(lat ~ long, data = e, at.xy = TRUE, size = 0.5, yscale = FALSE)
           names(m$map) <- as.character(xd[[id]])
           m$data$id <- as.integer(as.character(xd[[id]]))
-          maps[[paste("map", j, sep = "")]] <- m
+        } else {
+          names(m$map) <- as.character(1:nobs[j])
+          m$data$id <- as.integer(as.character(1:nobs[j]))
         }
+        maps[[paste("map", j, sep = "")]] <- m
       } else {
         xn <- paste("x", j, i, sep = "")
         fn <- if(mt != "const") paste("f", j, i, sep = "") else "const"
