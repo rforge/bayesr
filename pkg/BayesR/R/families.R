@@ -394,11 +394,11 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
       "weights" = list(
         "mu" = function(y, eta, ...) { drop(1 / (eta$sigma^2)) },
         "sigma" = function(y, eta, ...) { rep(0.5, length(y)) }
-      ),
-      "loglik" = function(y, eta, ...) {
-        sum(dnorm(y, eta$mu, eta$sigma, log = TRUE))
-      }
+      )
     ),
+    "loglik" = function(y, eta, ...) {
+      sum(dnorm(y, eta$mu, eta$sigma, log = TRUE))
+    },
     "mu" = function(eta, ...) {
       eta$mu
     },
@@ -446,11 +446,11 @@ gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
       "weights" = list(
         "mu" = function(y, eta, ...) { drop(1 / eta$sigma2) },
         "sigma2" = function(y, eta, ...) { rep(0.5, length(y)) }
-      ),
-      "loglik" = function(y, eta, ...) {
-        sum(dnorm(y, eta$mu, sqrt(eta$sigma2), log = TRUE))
-      }
+      )
     ),
+    "loglik" = function(y, eta, ...) {
+      sum(dnorm(y, eta$mu, sqrt(eta$sigma2), log = TRUE))
+    },
     "mu" = function(eta, ...) {
       eta$mu 
     },
@@ -756,13 +756,13 @@ gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
           sigma <- eta$sigma
           sigma^2 * trigamma(sigma) - sigma
         }
-      ),
-      "loglik" = function(y, eta, ...) {
-		    a <- eta$sigma
-		    s <- eta$mu / eta$sigma 
-		    sum(dgamma(y, shape = a, scale = s, log = TRUE), na.rm = TRUE)
-      }
-    )
+      )
+    ),
+    "loglik" = function(y, eta, ...) {
+		  a <- eta$sigma
+		  s <- eta$mu / eta$sigma 
+		  sum(dgamma(y, shape = a, scale = s, log = TRUE), na.rm = TRUE)
+    },
     "mu" = function(eta, ...) {
       eta$mu
     },
