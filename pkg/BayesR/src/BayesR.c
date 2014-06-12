@@ -137,11 +137,11 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   int ll_ind = getListElement_index(family, "loglik");
   double pibeta = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, peta, rho))[0];
   SEXP weights;
-  PROTECT(weights = iwls_eval(getListElement(getListElement(family, "weights"),
+  PROTECT(weights = iwls_eval(getListElement(getListElement(getListElement(family, "iwls"), "weights"),
     CHAR(STRING_ELT(id, 0))), response, peta, rho));
   ++nProtected;
   SEXP score;
-  PROTECT(score = iwls_eval(getListElement(getListElement(family, "score"),
+  PROTECT(score = iwls_eval(getListElement(getListElement(getListElement(family, "iwls"), "score"),
     CHAR(STRING_ELT(id, 0))), response, peta, rho));
   ++nProtected;
 
@@ -345,10 +345,10 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 
   /* Weights, score and working observations. */
   SEXP weights2, score2;
-  PROTECT(weights2 = iwls_eval(getListElement(getListElement(family, "weights"),
+  PROTECT(weights2 = iwls_eval(getListElement(getListElement(getListElement(family, "iwls"), "weights"),
     CHAR(STRING_ELT(id, 0))), response, peta, rho));
   ++nProtected;
-  PROTECT(score2 = iwls_eval(getListElement(getListElement(family, "score"),
+  PROTECT(score2 = iwls_eval(getListElement(getListElement(getListElement(family, "iwls"), "score"),
     CHAR(STRING_ELT(id, 0))), response, peta, rho));
   ++nProtected;
   double *W2ptr = REAL(weights2);

@@ -15,10 +15,10 @@ propose_iwls0 <- function(x, family, response, eta, id, ...)
   peta <- family$map2par(eta)
 
   ## Compute weights.
-  weights <- family$weights[[id]](response, peta)
+  weights <- family$iwls$weights[[id]](response, peta)
 
   ## Score.
-  score <- family$score[[id]](response, peta)
+  score <- family$iwls$score[[id]](response, peta)
 
   ## Compute working observations.
   z <- eta[[id]] + 1 / weights * score
@@ -67,10 +67,10 @@ propose_iwls0 <- function(x, family, response, eta, id, ...)
   pibetaprop <- family$loglik(response, peta)
 
   ## Compute new weights
-  weights <- family$weights[[id]](response, peta)
+  weights <- family$iwls$weights[[id]](response, peta)
 
   ## New score.
-  score <- family$score[[id]](response, peta)
+  score <- family$iwls$score[[id]](response, peta)
 
   ## New working observations.
   z <- eta[[id]] + 1 / weights * score
@@ -669,10 +669,10 @@ propose_wslice <- function(x, family,
     peta <- family$map2par(eta)
 
     ## Compute weights.
-    weights <- family$weights[[id]](response, peta)
+    weights <- family$iwls$weights[[id]](response, peta)
 
     ## Score.
-    score <- family$score[[id]](response, peta)
+    score <- family$iwls$score[[id]](response, peta)
 
     ## Compute working observations.
     z <- eta[[id]] + 1 / weights * score
@@ -752,7 +752,7 @@ update_iwls <- function(x, family, response, eta, id, ...)
 
   if(is.null(args$weights)) {
     ## Compute weights.
-    weights <- family$weights[[id]](response, peta)
+    weights <- family$iwls$weights[[id]](response, peta)
   } else weights <- args$weights
 
   ## Which obs to take.
@@ -761,7 +761,7 @@ update_iwls <- function(x, family, response, eta, id, ...)
 
   if(is.null(args$z)) {
     ## Score.
-    score <- family$score[[id]](response, peta)
+    score <- family$iwls$score[[id]](response, peta)
 
     ## Compute working observations.
     z <- eta[[id]][ok] + 1 / weights * score[ok]
@@ -955,10 +955,10 @@ propose_nadja <- function(x, family,
   peta <- family$map2par(eta)
 
   ## Compute weights.
-  weights <- family$weights[[id]](response, peta)
+  weights <- family$iwls$weights[[id]](response, peta)
 
   ## Score.
-  score <- family$score[[id]](response, peta)
+  score <- family$iwls$score[[id]](response, peta)
 
   ## Compute working observations.
   z <- eta[[id]] + 1 / weights * score
@@ -1369,10 +1369,10 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
             peta <- family$map2par(eta)
 
             ## Compute weights.
-            weights <- family$weights[[nx[j]]](response, peta)
+            weights <- family$iwls$weights[[nx[j]]](response, peta)
 
             ## Score.
-            score <- family$score[[nx[j]]](response, peta)
+            score <- family$iwls$score[[nx[j]]](response, peta)
 
             ## Compute working observations.
             z <- eta[[nx[j]]] + 1 / weights * score
