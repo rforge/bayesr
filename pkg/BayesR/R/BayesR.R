@@ -439,7 +439,8 @@ bayesr.family <- function(family, type = "BayesR")
     if(!is.null(family$d))
       family$loglik <- function(y, eta) { sum(family$d(y, eta, log = TRUE), na.rm = TRUE) }
   }
-  if(is.null(family$score)) {
+  if(is.null(family$iwls)) family$iwls <- list()
+  if(is.null(family$iwls$score)) {
     nf <- family$names
     score <- list()
     for(j in family$names) {
@@ -448,7 +449,7 @@ bayesr.family <- function(family, type = "BayesR")
         eval(parse(text = call))
       }
     }
-    family$score <- score
+    family$iwls$score <- score
   }
   if(is.null(family$weights)) {
     nf <- family$names
@@ -459,7 +460,7 @@ bayesr.family <- function(family, type = "BayesR")
         -1 * eval(parse(text = call))
       }
     }
-    family$weights <- weights
+    family$iwls$weights <- weights
   }
 
   family
@@ -1107,15 +1108,16 @@ add.partial <- function(x, samples = FALSE, nsamps = 100) {
   stopifnot(!is.null(names(x)))
   nx <- names(x)
   family <- attr(x, "family")
-  if(!is.null(family$weights) & !is.null(family$score)) {
+  if(is.null(family$iwls)) stop("cannot compute partial residuals, no iwls score and weights functions supplied with family object!")
+  if(!is.null(family$iwls$weights) & !is.null(family$iwls$score)) {
     y <- model.response2(x)
     eta <- fitted.bayesr(x, samples = samples, nsamps = nsamps)
     mf <- model.frame(x)
     for(j in seq_along(x)) {
       if(!is.null(x[[j]]$effects)) {
         peta <- family$map2par(eta)
-        weights <- family$weights[[nx[j]]](y, peta)
-        score <- family$score[[nx[j]]](y, peta)
+        weights <- family$iwls$weights[[nx[j]]](y, peta)
+        score <- family$iwls$score[[nx[j]]](y, peta)
         z <- eta[[nx[j]]] + 1 / weights * score
         ne <- names(x[[j]]$effects)
         for(sj in seq_along(ne)) {

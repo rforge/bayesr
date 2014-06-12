@@ -177,7 +177,7 @@ f <- list(
   sigma2 ~ s(sigma2.x11)
 )
 
-b <- bayesr(f, data = d, method = "backfitting", update = "optim2", sample = "slice", family = beta)
+b <- bayesr(f, data = d, method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls", family = beta)
 
 f <- list(
   y ~ sx(mu.x11) + sx(mu.long1, mu.lat1, k = 50, bs = "kr", update = "orthogonal"),
