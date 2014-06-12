@@ -124,7 +124,7 @@ beta.BayesR <- function(links = c(mu = "logit", sigma2 = "logit"), ...)
           drop(((1 - b) / b)^2 * (a^2 * trigamma(hilfs) + (1 - a)^2 * trigamma(hilfs2) - trigamma((1 - b) / (b))))
         }
       )
-    )
+    ),
     "mu" = function(eta, ...) {
       eta$mu
     },
