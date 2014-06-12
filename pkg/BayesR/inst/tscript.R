@@ -179,4 +179,11 @@ f <- list(
 
 b <- bayesr(f, data = d, method = "backfitting", update = "optim2", sample = "slice", family = beta)
 
+f <- list(
+  y ~ sx(mu.x11) + sx(mu.long1, mu.lat1, k = 50, bs = "kr", update = "orthogonal"),
+  sigma2 ~ sx(sigma2.x11)
+)
+
+b <- bayesr(f, data = d, family = beta, engine = "BayesX")
+
 
