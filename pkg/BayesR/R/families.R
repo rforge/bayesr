@@ -1361,6 +1361,8 @@ zero.BayesR <- function(pi = "logit", g = invgaussian)
 ## Function to transform gamlss.family objects.
 tF <- function(x)
 {
+  require("gamlss")
+
   if(is.function(x)) x <- x()
   if(!inherits(x, "gamlss.family")) stop('only "gamlss.family" objects can be transformed!')
 

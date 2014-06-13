@@ -301,7 +301,7 @@ buildBUGS.smooth <- function(smooth, setup, i, zero) {
     if(is.null(setup$priors.scale) || !any(grepl(taug, setup$priors.scale))) {
       if(!hcauchy) {
         setup$priors.scale <- c(setup$priors.scale, paste("  ", taug,
-          if(zero) " <- 0.0" else " ~ dgamma(1.0E-6, 1.0E-6)", sep = ""))
+          if(zero) " <- 0.0" else " ~ dgamma(1.0E-4, 1.0E-4)", sep = ""))
       } else {
         setup$priors.scale <- c(setup$priors.scale, paste("  ", taug,
           if(zero) " <- 0.0" else " <- abs(", taug, 0, ")", sep = ""),
@@ -358,7 +358,7 @@ buildBUGS.smooth.special.rsc.smooth <- function(smooth, setup, i, zero)
       setup$priors.coef <- c(setup$priors.coef, tmp)
       setup$loops <- c(setup$loops, nlevels(smooth$rs.by[[j]]))
       setup$priors.scale <- c(setup$priors.scale,
-        paste("  ", "taugrs", i, j, " ~ dgamma(1.0E-6, 1.0E-6)", sep = ""))
+        paste("  ", "taugrs", i, j, " ~ dgamma(1.0E-4, 1.0E-4)", sep = ""))
       setup$psave <- c(setup$psave, paste("rs", i, j, sep = ""),
         paste("taugrs", i, j, sep = ""))
       setup$data[[paste("rsid", i, j, sep = "")]] <- as.integer(smooth$rs.by[[j]])
@@ -401,7 +401,7 @@ buildBUGS.smooth.special.gc.smooth <- function(smooth, setup, i, zero)
       paste("      ", pn, "r[k, j] <- exp(", pn, "r0[k, j])", sep = ""),
       paste("      ", pn, "r0[k, j] ~ dnorm(0, taug", i, "[j])", sep = ""),
       "    }",
-      paste("    taug", i, "[j] ~ dgamma(1.0E-3, 1.0E-3)", sep = "")
+      paste("    taug", i, "[j] ~ dgamma(1.0E-4, 1.0E-4)", sep = "")
     )
     setup$psave <- c(setup$psave, paste(pn, "r", sep = ""), paste("taug", i, sep = ""))
     setup$inits[[paste(pn, "r0", sep = "")]] <- matrix(runif(length(smooth$by.levels) * 3, 0.1, 0.2), ncol = 3)
@@ -463,7 +463,7 @@ buildBUGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
     setup$loops <- c(setup$loops, kr)
     if(is.null(setup$priors.scale) || !any(grepl(taug, setup$priors.scale))) {
       setup$priors.scale <- c(setup$priors.scale, paste("  ", taug,
-        if(zero) " <- 0.0" else " ~ dgamma(1.0E-6, 1.0E-6)", sep = ""))
+        if(zero) " <- 0.0" else " ~ dgamma(1.0E-4, 1.0E-4)", sep = ""))
       if(!zero)
         	setup$inits[[taug]] <- runif(1, 0.1, 0.2)
       setup$psave <- c(setup$psave, taug)
@@ -471,8 +471,8 @@ buildBUGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
   }
 
 #  tmp <- if((kw <- length(fall)) > 1) {
-#    paste("    w", i, if(zero) "[j] <- 0.0" else "[j] ~ dgamma(1.0E-6, 1.0E-6)", sep = "")
-#  } else paste("  w", i, if(zero) " <- 0.0" else " ~ dgamma(1.0E-6, 1.0E-6)", sep = "")
+#    paste("    w", i, if(zero) "[j] <- 0.0" else "[j] ~ dgamma(1.0E-4, 1.0E-4)", sep = "")
+#  } else paste("  w", i, if(zero) " <- 0.0" else " ~ dgamma(1.0E-4, 1.0E-4)", sep = "")
 
   tmp <- if((kw <- length(fall)) > 1) {
     paste("    w", i, if(zero) "[j] <- 0.0" else "[j] ~ dnorm(0, 1.0E-6)", sep = "")

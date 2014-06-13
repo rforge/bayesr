@@ -173,9 +173,11 @@ d <- dgp_beta(
 )
 
 f <- list(
-  y ~ s(mu.x11) + s(mu.long1, mu.lat1, k = 20, bs = "kr"),
-  sigma2 ~ s(sigma2.x11)
+  y ~ s(mu.x11) + s(mu.long1, mu.lat1),
+  sigma ~ s(sigma2.x11)
 )
+
+b <- bayesr(f, data = d, family = beta, engine = "STAN", n.iter = 1200, burnin = 200, thin = 1)
 
 b <- bayesr(f, data = d, method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls", family = beta)
 

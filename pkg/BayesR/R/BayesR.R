@@ -451,7 +451,7 @@ bayesr.family <- function(family, type = "BayesR")
     }
     family$iwls$score <- score
   }
-  if(is.null(family$weights)) {
+  if(is.null(family$iwls$weights)) {
     nf <- family$names
     weights <- list()
     for(j in family$names) {

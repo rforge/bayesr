@@ -71,11 +71,26 @@ bugs2stan <- function(x)
     '}'
   )
 
+  ## See http://www.jrnold.me/blog/jagsopenbugs-to-stan-distributions.html
   dist2stan <- function(x) {
     x <- gsub('dbeta(', 'beta(', x, fixed = TRUE)
+    x <- gsub('dcat(', 'categorical(', x, fixed = TRUE)
     x <- gsub('dbern(', 'bernoulli(', x, fixed = TRUE)
-    x <- gsub('dnorm(', 'normal(', x, fixed = TRUE)
+    if(length(i <- grep('dnorm(', x, fixed = TRUE))) {
+      for(j in i) {
+        xs <- strsplit(x[j], 'dnorm(', fixed = TRUE)[[1]]
+        ri <- strsplit(xs[2], ',', fixed = TRUE)[[1]]
+        ri[2] <- gsub(';', '', gsub(')', '', ri[2], fixed = TRUE), fixed = TRUE)
+        ri[2] <- gsub(' ', '', ri[2])
+        ri[2] <- paste('pow(', ri[2], ', -0.5)', sep = '')
+        ri <- paste('normal(', ri[1], ', ', ri[2], ');', sep = '')
+        xs <- paste(xs[1], ri, sep = '')
+        x[j] <- xs
+      }
+    }
     x <- gsub('dgamma(', 'gamma(', x, fixed = TRUE)
+    x <- gsub('dpois(', 'poisson(', x, fixed = TRUE)
+    x <- gsub('dunif(', 'uniform(', x, fixed = TRUE)
     x
   }
 
@@ -131,7 +146,6 @@ samplerSTAN <- function(x, tdir = NULL,
 
   smodel <- stan(mfile, fit = NA, data = x$data, chains = n.chains, iter = n.iter,
     thin = thin, warmup = burnin, seed = seed, verbose = verbose, ...)
-plot(smodel)
 
   samples <- slot(smodel, "sim")$samples
   for(j in seq_along(samples))
