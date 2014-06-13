@@ -483,8 +483,8 @@ propose_twalk <- function(x, family,
 
 
 ## Numerical derivatives.
-num_deriv <- function(y, eta, family, id = NULL,
-  d = 1, method = "simple", eps = 1e-4)
+num_deriv2 <- function(y, eta, family, id = NULL,
+  d = 1, method = "simple", eps = 1e-04)
 {
   require("numDeriv")
 
@@ -504,6 +504,36 @@ num_deriv <- function(y, eta, family, id = NULL,
     method.args = list("eps" = eps))
 
   return(dp)
+}
+
+num_deriv <- function(y, eta, family, id = NULL, d = 1, eps = 1e-04)
+{
+  d1 <- function(fn, x) {
+    fn1 <- fn(x + eps)
+    fn2 <- fn(x)
+    d <- (fn1 - fn2) / eps
+    d
+  }
+
+  d2 <- function(fn, x){
+    fn1 <- d1(fn, x + eps)
+    fn2 <- d1(fn, x)
+    d <- (fn1 - fn2) / eps
+    d
+  }
+
+  fun <- function(x) {
+    eta[[id]] <- x
+    family$d(y, eta, log = TRUE)
+  }
+ 
+  d <- if(d < 2) {
+    d1(fun, eta[[id]])
+  } else {
+    optimHess(eta[[id]], fun)
+  }
+
+  return(d) 
 }
 
 
@@ -671,21 +701,25 @@ propose_wslice <- function(x, family,
     ## Compute weights.
     weights <- family$iwls$weights[[id]](response, peta)
 
+    ## Which obs to take.
+    ok <- !(weights %in% c(NA, -Inf, Inf, 0))
+    weights <- weights[ok]
+
     ## Score.
     score <- family$iwls$score[[id]](response, peta)
 
     ## Compute working observations.
-    z <- eta[[id]] + 1 / weights * score
+    z <- eta[[id]][ok] + 1 / weights[ok] * score[ok]
 
     ## Compute mean and precision.
-    XW <- t(x$X * weights)
+    XW <- t(x$X[ok, , drop = FALSE] * weights[ok])
     P <- if(x$fixed) {
       if(k <- ncol(x$X) < 2) {
-        1 / (XW %*% x$X)
-      } else chol2inv(chol(XW %*% x$X))
-    } else chol2inv(chol(XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
+        1 / (XW %*% x$X[ok, , drop = FALSE])
+      } else matrix_inv(XW %*% x$X[ok, , drop = FALSE])
+    } else matrix_inv(XW %*% x$X[ok, , drop = FALSE] + 1 / x$state$tau2 * x$S[[1]])
     P[P == Inf] <- 0
-    x$state$g <- drop(P %*% (XW %*% (z - eta[[id]])))
+    x$state$g <- drop(P %*% (XW %*% (z - eta[[id]][ok])))
   }
 
   for(j in seq_along(x$state$g)) {

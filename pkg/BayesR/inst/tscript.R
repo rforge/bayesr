@@ -146,38 +146,43 @@ D <- X$trans.D
 library("BayesR")
 library("gamlss")
 
-n <- 500
+n <- 50
 x <- seq(-3, 3, length = n)
 mu <- scale2(sin(x), 0.5, 1.5)
 sigma <- scale2(x^2, 0.2, 0.5)
 y <- scale2(rnorm(n, mu, sigma), 0.01, 0.99)
 
-family <- tF(GA)
+family <- tF(NO2)
 
 eta <- list(mu = mu, sigma = sigma)
 
 par(mfrow = c(2, 2))
 
-plot(num_deriv(y, eta, family, id = "mu") ~ family$score$mu(y, eta))
-plot(num_deriv(y, eta, family, id = "sigma") ~ family$score$sigma(y, eta))
+plot(num_deriv(y, eta, family, id = "mu") ~ family$iwls$score$mu(y, eta))
+points(num_deriv2(y, eta, family, id = "mu") ~ family$iwls$score$mu(y, eta), col = 2)
+plot(num_deriv(y, eta, family, id = "sigma") ~ family$iwls$score$sigma(y, eta))
+points(num_deriv2(y, eta, family, id = "sigma") ~ family$iwls$score$sigma(y, eta), col = 2)
 
-plot(-1 * num_deriv(y, eta, family, id = "mu", d = 2) ~ family$weights$mu(y, eta))
-plot(-1 * num_deriv(y, eta, family, id = "sigma", d = 2) ~ family$weights$sigma(y, eta))
+plot(num_deriv(y, eta, family, id = "mu", d = 2) ~ family$iwls$weights$mu(y, eta))
+points(num_deriv2(y, eta, family, id = "mu", d = 2) ~ family$iwls$weights$mu(y, eta), col = 2)
+plot(num_deriv(y, eta, family, id = "sigma", d = 2) ~ family$iwls$weights$sigma(y, eta))
+points(num_deriv2(y, eta, family, id = "sigma", d = 2) ~ family$iwls$weights$sigma(y, eta), col = 2)
 
 
 
 ## More tests.
 d <- dgp_beta(
-  mu = list(nobs = 500, const = -0.5, type = list(c("double", "spatial", "const"))),
-  sigma = list(nobs = 500, const = 0.01, type = list("quadratic", "const"))
+  300,
+  mu = list(const = -0.5, type = list(c("double", "spatial", "const"))),
+  sigma2 = list(const = 0.01, type = list("quadratic", "const"))
 )
 
 f <- list(
-  y ~ s(mu.x11) + s(mu.long1, mu.lat1),
+  y ~ s(mu.x11) + s(mu.long1, mu.lat1, k = 100, bs = "kr"),
   sigma ~ s(sigma2.x11)
 )
 
-b <- bayesr(f, data = d, family = beta, engine = "STAN", n.iter = 1200, burnin = 200, thin = 1)
+b <- bayesr(f, data = d, family = tF(BE), update = "iwls", propose = "iwls", method = c("backfitting", "MCMC"))
 
 b <- bayesr(f, data = d, method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls", family = beta)
 
@@ -187,5 +192,23 @@ f <- list(
 )
 
 b <- bayesr(f, data = d, family = beta, engine = "BayesX")
+
+
+
+d <- dgp_beta(
+  200,
+  mu = list(const = -0.5, type = list(c("pick", "const"))),
+  sigma2 = list(const = 0.01, type = list("quadratic", "const"))
+)
+
+no <- gaussian2.BayesR()
+no$iwls <- NULL
+
+f <- list(
+  y ~ s(mu.x11),
+  sigma ~ s(sigma2.x11)
+)
+
+b <- bayesr(f, data = d, family = tF(BEo), update = "iwls")
 
 

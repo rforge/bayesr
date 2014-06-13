@@ -166,6 +166,12 @@ dgp_gaussian <- function(n = 500, mu = NULL, sigma = NULL, range.sigma = c(0.3, 
       type = list(c("const")))
   }
 
+  stopifnot(is.list(mu))
+  stopifnot(is.list(sigma))
+
+  if(is.null(mu$nobs)) mu$nobs <- n
+  if(is.null(sigma$nobs)) sigma$nobs <- n
+
   mu <- do.call("dgp_eta", mu)
   sigma <- do.call("dgp_eta", sigma)
 
@@ -193,6 +199,12 @@ dgp_gaussian2 <- function(n = 500, mu = NULL, sigma2 = NULL, range.sigma2 = c(0.
     sigma2 <- list(nobs = n, const = 0.01,
       type = list(c("pick", "const")))
   }
+
+  stopifnot(is.list(mu))
+  stopifnot(is.list(sigma2))
+
+  if(is.null(mu$nobs)) mu$nobs <- n
+  if(is.null(sigma2$nobs)) sigma2$nobs <- n
 
   mu <- do.call("dgp_eta", mu)
   sigma2 <- do.call("dgp_eta", sigma2)
@@ -580,6 +592,12 @@ dgp_beta <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
     sigma2 <- list(nobs = n, const = 0.01,
       type = list(c("double", "const")))
   }
+
+  stopifnot(is.list(mu))
+  stopifnot(is.list(sigma2))
+
+  if(is.null(mu$nobs)) mu$nobs <- n
+  if(is.null(sigma2$nobs)) sigma2$nobs <- n
   
   mu <- do.call("dgp_eta", mu)
   sigma2 <- do.call("dgp_eta", sigma2)

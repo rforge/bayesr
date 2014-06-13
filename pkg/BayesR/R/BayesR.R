@@ -1652,7 +1652,7 @@ krDesign1D <- function(z, knots = NULL, rho = NULL,
   } else c
   phi <- if(is.null(phi)) max(abs(diff(range(knots)))) / c else phi
   B <- NULL
-  K <- as.matrix(dist(knots, diag = TRUE))
+  K <- as.matrix(rho(dist(knots, diag = TRUE), phi, v))
   for(j in seq_along(knots)) {
     h <- abs(z - knots[j])
     B <- cbind(B, rho(h, phi, v))
@@ -1697,7 +1697,7 @@ krDesign2D <- function(z1, z2, knots = 10, rho = NULL,
   } else phi
   if(phi == 0)
     phi <- max(abs(fields::rdist(z1, z2))) / c
-  K <- crossprod(rho(fields::rdist(knots, knots), phi, v))
+  K <- rho(fields::rdist(knots, knots), phi, v)
   if(isotropic) {
     B <- NULL
     for(j in 1:nk) {

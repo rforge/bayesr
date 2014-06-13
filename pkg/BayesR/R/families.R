@@ -1372,6 +1372,7 @@ tF <- function(x)
   de <- c("m", "d", "v", "t")[1:k]
   score <- weights <- list()
 
+  mu.linkfun <- make.link.gamlss(x$mu.link)$linkfun
   score$mu  <- function(y, eta, ...) {
     call <- paste('x$dldm(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
     eval(parse(text = call))
@@ -1380,11 +1381,12 @@ tF <- function(x)
     fo <- names(formals(x$d2ldm2))
     call <- paste('x$d2ldm2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
     weights <- eval(parse(text = call))
-    dlink <- 1 / x$mu.dr(eta$mu)
+    dlink <- 1 / x$mu.dr(mu.linkfun(eta$mu))
     weights <- -(weights / (dlink * dlink)) * dlink
     weights
   }
   if(k > 1) {
+    sigma.linkfun <- make.link.gamlss(x$sigma.link)$linkfun
     score$sigma  <- function(y, eta, ...) {
       call <- paste('x$dldd(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
       eval(parse(text = call))
@@ -1393,12 +1395,13 @@ tF <- function(x)
       fo <- names(formals(x$d2ldd2))
       call <- paste('x$d2ldd2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
       weights <- eval(parse(text = call))
-      dlink <- 1 / x$sigma.dr(eta$sigma)
+      dlink <- 1 / x$sigma.dr(sigma.linkfun(eta$sigma))
       weights <- -(weights / (dlink * dlink)) * dlink
       weights
     }
   }
   if(k > 2) {
+    nu.linkfun <- make.link.gamlss(x$nu.link)$linkfun
     score$nu  <- function(y, eta, ...) {
       call <- paste('x$dldv(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
       eval(parse(text = call))
@@ -1407,12 +1410,13 @@ tF <- function(x)
       fo <- names(formals(x$d2ldv2))
       call <- paste('x$d2ldv2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
       weights <- eval(parse(text = call))
-      dlink <- 1 / x$nu.dr(eta$sigma)
+      dlink <- 1 / x$nu.dr(nu.linkfun(eta$sigma))
       weights <- -(weights / (dlink * dlink)) * dlink
       weights
     }
   }
   if(k > 3) {
+    tau.linkfun <- make.link.gamlss(x$tau.link)$linkfun
     score$tau  <- function(y, eta, ...) {
       call <- paste('x$dldt(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
       eval(parse(text = call))
@@ -1421,7 +1425,7 @@ tF <- function(x)
       fo <- names(formals(x$d2ldt2))
       call <- paste('x$d2ldt2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
       weights <- eval(parse(text = call))
-      dlink <- 1 / x$tau.dr(eta$sigma)
+      dlink <- 1 / x$tau.dr(tau.linkfun(eta$sigma))
       weights <- -(weights / (dlink * dlink)) * dlink
       weights
     }
