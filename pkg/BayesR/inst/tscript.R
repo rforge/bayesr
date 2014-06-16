@@ -88,7 +88,7 @@ n <- 200
 dat <- data.frame("x1" = sort(runif(n, 0, 1)))
 dat$y <- with(dat, 1.2 + f(x1) + rnorm(n, sd = 0.2))
 
-b <- bayesr(y ~ rs(x1), data = dat, method = "backfitting")
+b <- bayesr(y ~ rs(x1), data = dat, method = c("backfitting", "MCMC"), n.iter = 1200, burnin = 200)
 
 g <- coef(b)
 g <- g[grep("s(x1)", names(g), fixed = TRUE)]

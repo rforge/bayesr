@@ -432,57 +432,36 @@ buildBUGS.smooth.special.gc.smooth <- function(smooth, setup, i, zero)
 buildBUGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
 {
   fall <- fall0 <- NULL
-  kr <- if(is.null(smooth$rand$Xr)) 0 else ncol(smooth$rand$Xr)
-  kx <- if(is.null(smooth$Xf)) 0 else ncol(smooth$Xf)
-  kx <- if(kr < 1 & kx < 1) ncol(smooth$X) else kx
+  k1 <- ncol(smooth$smooths[[1]]$X)
+  k2 <- ncol(smooth$smooths[[2]]$X)
 
-  if(kx > 0) {
-    fall0 <- c(fall0, paste("Xf", i, "[i, ", 1:kx, "]", sep = ""))
-    fall <- c(fall, paste("b", i, if(kx > 1) paste("[", 1:kx, "]", sep = ""),
-      "*Xf", i, "[i, ", 1:kx, "]", sep = ""))
-    setup$data[[paste("Xf", i, sep = "")]] <- if(smooth$fixed) smooth$X else smooth$Xf
-    tmp <- if(kx > 1) {
-        paste("    b", i, if(zero) "[j] <- 0.0" else "[j] ~ dnorm(0, 1.0E-6)", sep = "")
-    } else paste("  b", i, if(zero) " <- 0.0" else " ~ dnorm(0, 1.0E-6)", sep = "")
-    setup$priors.coef <- c(setup$priors.coef, tmp)
-    setup$loops <- c(setup$loops, kx)
-    if(!zero)
-      setup$inits[[paste("b", i, sep = "")]] <- runif(kx, 0.1, 0.2)
-    setup$psave <- c(setup$psave, paste("b", i, sep = ""))
-  }
-  if(kr > 0) {
-    fall0 <- c(fall0, paste("Xr", i, "[i, ", 1:kr, "]", sep = ""))
-    fall <- c(fall, paste("g", i, if(kr > 1) paste("[", 1:kr, "]", sep = ""), "*Xr",
-      i, "[i, ", 1:kr, "]", sep = ""))
-    setup$data[[paste("Xr", i, sep = "")]] <- smooth$rand$Xr
-    taug <- paste("taug", if(is.null(smooth$id)) i else smooth$id, sep = "")
-    tmp <- if(kr > 1) {
-      paste("    g", i, if(zero) "[j] <- 0.0" else paste("[j] ~ dnorm(0, ", taug, ")", sep = ""), sep = "")
-    } else paste("g", i, if(zero) " <- 0.0" else paste(" ~ dnorm(0, ", taug, ")", sep = ""), sep = "")
-    setup$priors.coef <- c(setup$priors.coef, tmp)
-    setup$loops <- c(setup$loops, kr)
-    if(is.null(setup$priors.scale) || !any(grepl(taug, setup$priors.scale))) {
-      setup$priors.scale <- c(setup$priors.scale, paste("  ", taug,
-        if(zero) " <- 0.0" else " ~ dgamma(1.0E-4, 1.0E-4)", sep = ""))
-      if(!zero)
-        	setup$inits[[taug]] <- runif(1, 0.1, 0.2)
-      setup$psave <- c(setup$psave, taug)
-    }
-  }
+  fall0 <- c(fall0, paste("Z", i, "[i, ", 1:k2, "]", sep = ""))
+  fall <- c(fall, paste("b", i, if(k1 > 1) paste("[", 1:k1, "]", sep = ""),
+    "*X", i, "[i, ", 1:k1, "]", sep = ""))
+  setup$data[[paste("X", i, sep = "")]] <- smooth$smooths[[1]]$X
+  setup$data[[paste("Z", i, sep = "")]] <- smooth$smooths[[2]]$X
+  tmp <- if(k1 > 1) {
+      paste("    b", i, if(zero) "[j] <- 0.0" else "[j] ~ dnorm(0, 1.0E-6)", sep = "")
+  } else paste("  b", i, if(zero) " <- 0.0" else " ~ dnorm(0, 1.0E-6)", sep = "")
+  setup$priors.coef <- c(setup$priors.coef, tmp)
+  setup$loops <- c(setup$loops, k1)
+  if(!zero)
+    setup$inits[[paste("b", i, sep = "")]] <- runif(k1, 0.1, 0.2)
+  setup$psave <- c(setup$psave, paste("b", i, sep = ""))
 
 #  tmp <- if((kw <- length(fall)) > 1) {
 #    paste("    w", i, if(zero) "[j] <- 0.0" else "[j] ~ dgamma(1.0E-4, 1.0E-4)", sep = "")
 #  } else paste("  w", i, if(zero) " <- 0.0" else " ~ dgamma(1.0E-4, 1.0E-4)", sep = "")
 
-  tmp <- if((kw <- length(fall)) > 1) {
+  tmp <- if((kw <- length(fall0)) > 1) {
     paste("    w", i, if(zero) "[j] <- 0.0" else "[j] ~ dnorm(0, 1.0E-6)", sep = "")
   } else paste("  w", i, if(zero) " <- 0.0" else " ~ dnorm(0, 1.0E-6)", sep = "")
 
   ## setup$adds <- paste("  w2", i, " <- 1 / sum(w", i, ")", sep = "")
   setup$priors.coef <- c(setup$priors.coef, tmp)
-  setup$loops <- c(setup$loops, kw)
+  setup$loops <- c(setup$loops, k2)
   if(!zero)
-    setup$inits[[paste("w", i, sep = "")]] <- runif(kw, 0.1, 0.2)
+    setup$inits[[paste("w", i, sep = "")]] <- runif(k2, 0.1, 0.2)
   setup$psave <- c(setup$psave, paste("w", i, sep = ""))
 
   fall0 <- paste(fall0, c(1, paste("w", i, "[", 1:(length(fall0) - 1), "]", sep = "")), sep = "*")
@@ -490,12 +469,14 @@ buildBUGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
 
   center <- if(is.null(smooth$xt$center)) TRUE else smooth$xt$center
 
+  link <- BUGSlinks(smooth$link)
+  
   if(!center) {
-    fall0 <- paste("    sm0", i, "[i] <- 1 / exp(", paste(fall0, collapse = " + "), ")", sep = "")
+    fall0 <- paste("    sm0", i, "[i] <- 1 / (", gsub("eta", paste(fall0, collapse = " + "), link), ")", sep = "")
     fall <- paste("    sm", i, "[i] <- sm0", i, "[i] * (", paste(fall, collapse = " + "), ")", sep = "")
     setup$smooth <- c(setup$smooth, fall, fall0)
   } else {
-    fall0 <- paste("    sm0", i, "[i] <- 1 / exp(", paste(fall0, collapse = " + "), ")", sep = "")
+    fall0 <- paste("    sm0", i, "[i] <- 1 / (", gsub("eta", paste(fall0, collapse = " + "), link), ")", sep = "")
     fall <- paste("    sm", i, 0, "[i] <- sm0", i, "[i] * (", paste(fall, collapse = " + "), ")", sep = "")
     setup$start <- c(setup$start,
       paste("  sm", i, " <- sm", i, 0, " - mean(sm", i, 0, ")", sep = ""))
@@ -517,7 +498,7 @@ samplerJAGS <- function(x, tdir = NULL,
   n.chains = 1, n.adapt = 100,
   n.iter = 4000, thin = 2, burnin = 1000,
   seed = NULL, verbose = TRUE, set.inits = FALSE,
-  save.all = FALSE, ...)
+  save.all = FALSE, modules = NULL, ...)
 {
   require("rjags")
 
@@ -542,7 +523,11 @@ samplerJAGS <- function(x, tdir = NULL,
   }
 
   ## Sampling.
-  load.module("dic"); ## load.module("glm")
+  load.module("dic")
+  if(!is.null(modules)) {
+    for(m in modules)
+      load.module(m)
+  }
   
   if(verbose) writeLines(x$model)
   
@@ -825,34 +810,44 @@ resultsJAGS.special.default <- function(x, samples, data, i, ...)
   snames <- colnames(samples)
 
   ## Get coefficient samples of smooth term.
-  xsamples <- rsamples <- NULL
-  kr <- if(is.null(x$rand$Xr)) 0 else ncol(x$rand$Xr)
-  kx <- if(x$fixed) {
-    ncol(x$X)
-  } else {
-    if(is.null(x$Xf)) 0 else ncol(x$Xf)
-  }
-  if(kx) {
+  if(inherits(x, "rs.smooth")) {
+    pn <- grep(paste("w", i, sep = ""), snames, value = TRUE, fixed = TRUE)
+    pn <- pn[!grepl("tau", pn)]
+    wsamples <- matrix(samples[, snames %in% pn], ncol = x$smooths[[2]]$df)
     pn <- grep(paste("b", i, sep = ""), snames, value = TRUE, fixed = TRUE)
     pn <- pn[!grepl("tau", pn)]
-    xsamples <- matrix(samples[, snames %in% pn], ncol = kx)
-  }
-  if(kr) {
-    pn <- grep(paste("g", i, sep = ""), snames, value = TRUE, fixed = TRUE)
-    pn <- pn[!grepl("tau", pn)]
-    rsamples <- as.matrix(samples[, snames %in% pn], ncol = kr)
-  }
-  psamples <- cbind("ra" = rsamples, "fx" = xsamples)
-  
-  ## Retransform parameter samples.
-  if(kr & !x$fixed) {
-    re_trans <- function(g) {
-      g <- x$trans.D * g
-      if(!is.null(x$trans.U))
-        g <- x$trans.U %*% g
-      g
+    psamples <- matrix(samples[, snames %in% pn], ncol = x$smooths[[1]]$df)
+    psamples <- cbind(psamples, "w" = wsamples)
+  } else {
+    xsamples <- rsamples <- NULL
+    kr <- if(is.null(x$rand$Xr)) 0 else ncol(x$rand$Xr)
+    kx <- if(x$fixed) {
+      ncol(x$X)
+    } else {
+      if(is.null(x$Xf)) 0 else ncol(x$Xf)
     }
-    psamples <- t(apply(psamples, 1, re_trans))
+    if(kx) {
+      pn <- grep(paste("b", i, sep = ""), snames, value = TRUE, fixed = TRUE)
+      pn <- pn[!grepl("tau", pn)]
+      xsamples <- matrix(samples[, snames %in% pn], ncol = kx)
+    }
+    if(kr) {
+      pn <- grep(paste("g", i, sep = ""), snames, value = TRUE, fixed = TRUE)
+      pn <- pn[!grepl("tau", pn)]
+      rsamples <- as.matrix(samples[, snames %in% pn], ncol = kr)
+    }
+    psamples <- cbind("ra" = rsamples, "fx" = xsamples)
+  
+    ## Retransform parameter samples.
+    if(kr & !x$fixed) {
+      re_trans <- function(g) {
+        g <- x$trans.D * g
+        if(!is.null(x$trans.U))
+          g <- x$trans.U %*% g
+        g
+      }
+      psamples <- t(apply(psamples, 1, re_trans))
+    }
   }
 
   ## Prediction matrix.
@@ -874,14 +869,6 @@ resultsJAGS.special.default <- function(x, samples, data, i, ...)
     }
   } else {
     get.mu <- x$get.mu
-  }
-
-  ## Get weight parameters for rational splines.
-  if(inherits(x, "rs.smooth")) {
-    pn <- grep(paste("w", i, sep = ""), snames, value = TRUE, fixed = TRUE)
-    pn <- pn[!grepl("tau", pn)]
-    wsamples <- matrix(samples[, snames %in% pn], ncol = (kx + kr))
-    psamples <- cbind(psamples, "w" = wsamples)
   }
 
   ## Compute final smooth term object.
