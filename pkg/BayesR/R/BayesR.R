@@ -2059,8 +2059,14 @@ plot.bayesr.effect <- function(x, which = "effects", ...) {
       args$x <- as.mcmc(cbind(as.matrix(args$x), as.matrix(attr(x, "samples.scale"))))
     if(!is.null(attr(x, "samples.alpha")))
       args$x <- as.mcmc(cbind(as.matrix(args$x), as.matrix(attr(x, "samples.alpha"))))
-    par(ask = TRUE)
-    do.call("plot", args)
+    acf <- if(is.null(args$acf)) FALSE else args$acf
+    args$acf <- NULL
+    if(is.null(args$ask)) args$ask <- TRUE
+    if(acf) {
+      do.call("autocorr.plot", args)
+    } else {
+      do.call("plot", args)
+    }
   }
 }
 
