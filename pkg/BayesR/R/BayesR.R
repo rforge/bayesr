@@ -276,6 +276,7 @@ bayesr.design <- function(x, data, contrasts = NULL, knots = NULL, ...)
     obj$pterms <- colnames(obj$X)
     rn <- obj$response
     obj$response.vec <- if(!is.null(rn)) mf[[rn]] else NULL
+    no.mgcv <- NULL
     if(length(obj$smooth)) {
       smooth <- list()
       for(j in obj$smooth) {
@@ -288,20 +289,29 @@ bayesr.design <- function(x, data, contrasts = NULL, knots = NULL, ...)
           smt <- smoothCon(tsm, mf, knots, absorb.cons = acons)
         } else {
           smt <- smooth.construct(tsm, mf, knots)
-          class(smt) <- c(class(smt), "mgcv.smooth")
-          smt <- list(smt)
+          if(inherits(smt, "no.mgcv")) {
+            no.mgcv <- c(no.mgcv, list(smt))
+            next
+          } else {
+            class(smt) <- c(class(smt), "mgcv.smooth")
+            smt <- list(smt)
+          }
         }
         smooth <- c(smooth, smt)
       }
-      smooth <- gam.side(smooth, obj$X, tol = .Machine$double.eps^.5)
-      sme <- mgcv:::expand.t2.smooths(smooth)
-      if(is.null(sme)) {
-        original.smooth <- NULL
-      } else {
-        original.smooth <- smooth
-        smooth <- sme
-        rm(sme)
+      if(length(smooth) > 0) {
+        smooth <- gam.side(smooth, obj$X, tol = .Machine$double.eps^.5)
+        sme <- mgcv:::expand.t2.smooths(smooth)
+        if(is.null(sme)) {
+          original.smooth <- NULL
+        } else {
+          original.smooth <- smooth
+          smooth <- sme
+          rm(sme)
+        }
       }
+      if(!is.null(no.mgcv))
+        smooth <- c(smooth, no.mgcv)
       obj$smooth <- smooth
     }
     if(length(obj$sx.smooth)) {
@@ -964,6 +974,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
     data <- unique(data0)
     xsmall <- if(nrow(data) != nrow(data0)) TRUE else FALSE
   }
+
   if(is.null(x$special)) {
     X <- get.X(data)
   } else {
@@ -974,7 +985,9 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   }
 
   ## Compute samples of fitted values.
-  fsamples <- apply(psamples, 1, function(g) { get.mu(X, g) })
+  fsamples <- apply(psamples, 1, function(g) {
+    get.mu(X, g)
+  })
 
   if(is.null(FUN)) {
     FUN <- function(x) {
@@ -1007,6 +1020,15 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
       smf <- smf[by.drop, ]
   }
 
+  if(is.null(x$xt$center)) {
+    mean_fit <- mean(fit, na.rm = TRUE)
+    fit <- fit - mean_fit
+    if(any(grepl("50%", colnames(smf))))
+      smf[, c("2.5%", "50%", "97.5%")] <- smf[, c("2.5%", "50%", "97.5%")] - mean_fit
+  } else {
+    if(x$xt$center)
+      fit <- fit - mean(fit, na.rm = TRUE)
+  }
   fitted.values <- if(!is.null(fitted.values)) fitted.values + fit else fit
 
   ## Assign class and attributes.
@@ -1076,10 +1098,10 @@ partial.residuals <- function(effects, response, fitted.values, family)
       if(is.factor(response)) response <- as.integer(response) - 1
       e <- linkfun(response) - fitted.values + attr(effects[[i]], "fit")
       if(is.null(attr(effects[[i]], "specs")$xt$center)) {
-        e <- e - mean(e)
+        e <- e - mean(e, na.rm = TRUE)
       } else {
         if(attr(effects[[i]], "specs")$xt$center)
-          e <- e - mean(e)
+          e <- e - mean(e, na.rm = TRUE)
       }
       e <- if(is.factor(attr(effects[[i]], "x"))) {
         warn <- getOption("warn")
@@ -1461,41 +1483,113 @@ Predict.matrix.gc.smooth <- function(object, data, knots)
 
 
 ## Rational spline constructor.
-rs <- function(...)
+rs <- function(..., k = -1, bs = "tp", m = NA, xt = NULL, link = "log")
 {
-  rval <- s(...)
-  rval$class <- class(rval)
-  rval$special <- TRUE
+  smooths <- as.list(substitute(list(...)))[-1]
+  if(any(grepl("~", as.character(smooths[[1]]), fixed = TRUE))) {
+    stop("formulae not supported yet!")
+  } else {
+    if(length(smooths) < 2) {
+      term <- deparse(smooths[[1]], backtick = TRUE, width.cutoff = 500)
+      if(!grepl("s(", term, fixed = TRUE)) {
+        smooths <- s(..., k = k, bs = bs, m = m, xt = xt)
+        label <- paste("rs(", term, ")", sep = "")
+      } else {
+        smooths <- eval(smooths[[1]])
+        label <- paste("rs(", smooths$label, ")", sep = "")
+        term <- smooths$term
+      }
+      dim <- smooths$dim
+      smooths <- rep(list(smooths), length.out = 2)
+    } else {
+      if(length(smooths) > 2) stop("more than two terms not allowd in rational spline setup!")
+      sm <- list(); term <- label <- NULL
+      for(j in seq_along(smooths)) {
+        tn <- deparse(smooths[[j]], backtick = TRUE, width.cutoff = 500)
+        if(!grepl("s(", tn, fixed = TRUE)) {
+          sm[[j]] <- list(
+            "term" = tn,
+            "param" = TRUE
+          )
+          dim <- 1
+          term <- c(term, tn)
+          label <- c(label, tn)
+        } else {
+          sm[[j]] <- eval(smooths[[j]])
+          dim <- sm[[j]]$dim
+          term <- c(term, sm[[j]]$term)
+          label <- c(label, sm[[j]]$label)
+        }
+      }
+      label <- paste("rs(", paste(label, collapse = ",", sep = ""), ")", sep = "")
+      smooths <- sm
+    }
+  
+    rval <- list("smooths" = smooths, "special" = TRUE, "term" = unique(term),
+      "label" = label, "dim" = dim, "one" = FALSE, "formula" = FALSE, "link" = link)
+  }
+
   class(rval) <- "rs.smooth.spec"
   rval
 }
 
 smooth.construct.rs.smooth.spec <- function(object, data, knots) 
 {
-  class(object) <- object$class
-  acons <- TRUE
-  if(!is.null(object$xt$center))
-    acons <- object$xt$center
-  object$xt$center <- acons
-  object$fixed <- TRUE
-  if(!is.null(object$xt$fixed))
-    object$fixed <- object$xt$fixed
-  object$xt$fixed <- object$fixed
-  object$by.done <- TRUE
-  object <- smoothCon(object, data, knots, absorb.cons = FALSE)[[1]]
-  object$get.mu <- function(X, g) {
-    k <- ncol(X)
-    w <- c(1, g[(k + 1):(2 * k - 1)])
-    g <- g[1:k]
-    f <- drop(X %*% g) / exp(drop(X %*% w))
-    f <- f - mean(f, na.rm = TRUE)
+  link <- make.link2(object$link)$linkinv
+
+  if(!object$formula) {
+    X <- list()
+    for(j in seq_along(object$smooths)) {
+      if(is.null(object$smooths[[j]]$param))
+        object$smooths[[j]]$param <- FALSE
+      if(object$smooths[[j]]$param) {
+        X[[j]] <- data[[object$smooths[[j]]$term]]
+      } else {
+        stj <- object$smooths[[j]]
+        acons <- TRUE
+        if(!is.null(stj$xt$center))
+          acons <- stj$xt$center
+        stj$xt$center <- acons
+        stj$fixed <- TRUE
+        if(!is.null(object$xt$fixed))
+          stj$fixed <- stj$xt$fixed
+        stj$xt$fixed <- stj$fixed
+        stj$by.done <- TRUE
+        stj <- smoothCon(stj, data, knots, absorb.cons = acons)[[1]]
+        stj$class <- class(stj)
+        X[[j]] <- stj$X
+        object$smooths[[j]] <- stj
+        ## object$smooths[[j]][c("X", "Xf", "rand", "S")] <- NULL
+      }
+    }
+
+    names(X) <- paste("g", 1:length(X), sep = "")
+    X <- as.matrix(as.data.frame(X))
+
+    object$X <- X
+    object$p.save <- "g"
+    object$state <- list()
+    object$state$g <- rep(0, ncol(X) - 1)
+    object$fixed <- TRUE
+
+    object$get.mu <- function(X, g) {
+      nx <- colnames(X)
+      k1 <- length(grep("g1", nx, fixed = TRUE))
+      w <- c(1, g[(k1 + 1):(ncol(X) - 1)])
+      g <- g[1:k1]
+      Z <- X[, -1 * 1:k1, drop = FALSE]
+      X <- X[, 1:k1, drop = FALSE]
+      f <- drop(X %*% g) / link(drop(Z %*% w))
+      f <- f - mean(f, na.rm = TRUE)
+    }
+  } else {
+    stop("formulae no supported yet!")
   }
-  object$p.save <- "g"
-  object$state <- list()
-  object$state$g <- rep(0, ncol(object$X) * 2 - 1)
+
   object$state$edf <- length(object$state$g)
   object$s.colnames <- paste("c", 1:length(object$state$g), sep = "")
   object$np <- length(object$s.colnames)
+
   object$update <- function(x, family, response, eta, id, ...) {
     ## Compute partial predictor.
     eta[[id]] <- eta[[id]] - x$state$fit
@@ -1549,15 +1643,29 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     return(x$state)
   }
   object$sample <- object$propose
-  object$class <- class(object)
-  class(object) <- if(object$fixed) c("rs.smooth", "no.mgcv") else "rs.smooth"
+  object$by <- "NA"
+  object$by.done <- TRUE
+
+  class(object) <- c("rs.smooth", "mgcv.smooth")
   object
 }
 
 Predict.matrix.rs.smooth <- function(object, data, knots)
 {
-  class(object) <- object$class
-  Predict.matrix(object, data) 
+  data <- as.data.frame(data)
+
+  X <- list()
+  for(j in seq_along(object$smooths)) {
+    if(object$smooths[[j]]$param) {
+      X[[j]] <- data[[object$smooths[[j]]$term]]
+    } else {
+      X[[j]] <- PredictMat(object$smooths[[j]], data)
+    }
+  }
+  names(X) <- paste("g", 1:length(X), sep = "")
+  X <- as.matrix(as.data.frame(X))
+
+  X
 }
 
 

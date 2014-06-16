@@ -12,35 +12,43 @@ simfun <- function(type = "sinus")
   f <- switch(type,
     "linear" = function(x, min = 0, max = 1) {
       x <- (x - min) / (max - min)
-      -4.5 * x
+      f <- -4.5 * x
+      return(f - mean(f))
     },
     "quadratic" = function(x, min = 0, max = 1) {
       x <- (x - min) / (max - min)
-      3.5 * (x - 0.5)^2
+      f <- 3.5 * (x - 0.5)^2
+      return(f - mean(f))
     },
     "unimodal" = function(x, min = 0, max = 1) {
       x <- (x - min) / (max - min)
-      120 * x * exp(-10 * x)
+      f <- 120 * x * exp(-10 * x)
+      return(f - mean(f))
     },
     "double" = function(x, min = 0, max = 1) {
       x <- (x - min) / (max - min)
-      1.3 * (120 * x * exp(-10 * x) + 2.75 * x^2)
+      f <- 1.3 * (120 * x * exp(-10 * x) + 2.75 * x^2)
+      return(f - mean(f))
     },
     "sinus" = function(x, min = 0, max = 1) {
       x <- (x - min) / (max - min)
-      sin(2 * pi * x)
+      f <- sin(2 * pi * x)
+      return(f - mean(f))
     },
     "cosinus" = function(x, min = 0, max = 1) {
       x <- (x - min) / (max - min)
-      cos(2 * pi * x)
+      f <- cos(2 * pi * x)
+      return(f - mean(f))
     },
     "pick" = function(x, min = 0, max = 1) { 
       x <- (x - min) / (max - min)
-      sin(2 * (4 * x - 2)) + 2 * exp(-16^2 * (x - 0.5)^2)
+      f <- sin(2 * (4 * x - 2)) + 2 * exp(-16^2 * (x - 0.5)^2)
+      return(f - mean(f))
     },
     "complicated" = function(x, min = 0, max = 1) {
       x <- (x - min) / (max - min)
-      exp(-400 * (x - 0.6)^2) + 5 * exp(-500 * (x - 0.75)^2) / 3 + 2 * exp(-500 * (x - 0.9)^2)
+      f <- exp(-400 * (x - 0.6)^2) + 5 * exp(-500 * (x - 0.75)^2) / 3 + 2 * exp(-500 * (x - 0.9)^2)
+      return(f - mean(f))
     },
     "const" = function(..., const = 1.2) {
       const
@@ -50,7 +58,8 @@ simfun <- function(type = "sinus")
       co <- expand.grid("long" = seq(0, 1, length = n), "lat" = seq(0, 1, length = n))
       f <- f1(co[, 1]) * f2(co[, 2])
       f <- data.frame("long" = co[, 1], "lat" = co[, 2], "f" = f)
-      f[seq_along(id), ]
+      f <- f[seq_along(id), ]
+      return(f - mean(f))
     }
   )
   if(!is.character(type))

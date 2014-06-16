@@ -868,7 +868,7 @@ update_optim <- function(x, family, response, eta, id, ...)
       x$state$XX <- crossprod(x$X)
   }
 
-  if(!x$fixed) {
+  if(!x$fixed & is.null(x$sp)) {
     ## Objective function for variance parameter.
     objfun2 <- function(tau2) {
 
@@ -1170,23 +1170,23 @@ smooth.IWLS.default <- function(x, ...)
     return(c(le, ri))
   }
 
-  x$interval <- if(is.null(x$xt$interval)) tau2interval(x) else x$xt$interval
-  x$grid <- if(is.null(x$xt$grid)) 40 else x$xt$grid
   if(is.null(x$fixed)) {
     x$fixed <- if(!is.null(x$fx))  x$fx[1] else FALSE
   }
-
+  if(!x$fixed) {
+    x$interval <- if(is.null(x$xt$interval)) tau2interval(x) else x$xt$interval
+  }
+  x$grid <- if(is.null(x$xt$grid)) 40 else x$xt$grid
   if(is.null(x$state)) {
-    x$p.save <- c("g", if(!x$fixed) "tau2" else NULL)
+    x$p.save <- c("g", "tau2")
     x$state <- list()
     x$state$g <- rep(0, ncol(x$X))
     x$state$tau2 <- if(is.null(x$sp)) {
       if(x$fixed) 1e-20 else 10
     } else x$sp
-    if(x$fixed) x$state$tau2 <- 1e-20
     x$s.colnames <- if(is.null(x$s.colnames)) {
       c(paste("c", 1:length(x$state$g), sep = ""),
-        if(x$fixed) NULL else rep("tau2", length = length(x$state$tau2)))
+        rep("tau2", length = length(x$state$tau2)))
     } else x$s.colnames
     x$np <- c(length(x$state$g), length(x$state$tau2))
     XX <- crossprod(x$X)
@@ -1306,7 +1306,11 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     } else {
       if(length(obj$smooth)) {
         for(j in seq_along(obj$smooth)) {
-          if(!is.null(obj$smooth[[j]]$is.linear)) obj$smooth[[j]]$np <- ncol(obj$smooth[[j]]$X)
+          if(!is.null(obj$smooth[[j]]$is.linear)) {
+            obj$smooth[[j]]$np <- ncol(obj$smooth[[j]]$X)
+            obj$smooth[[j]]$p.save = "g"
+            obj$smooth[[j]]$s.colnames <- paste("c", 1:ncol(obj$smooth[[j]]$X), sep = "")
+          }
           obj$smooth[[j]]$s.alpha <- rep(0, nrow = n.save)
           obj$smooth[[j]]$s.accepted <- rep(0, nrow = n.save)
           obj$smooth[[j]]$s.samples <- matrix(0, nrow = n.save, ncol = sum(obj$smooth[[j]]$np))
