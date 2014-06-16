@@ -88,18 +88,18 @@ n <- 200
 dat <- data.frame("x1" = sort(runif(n, 0, 1)))
 dat$y <- with(dat, 1.2 + f(x1) + rnorm(n, sd = 0.2))
 
-b <- bayesr(y ~ rs(x1), data = dat, method = c("backfitting", "MCMC"), n.iter = 1200, burnin = 200)
+b <- bayesr(y ~ rs(x1), data = dat, method = "backfitting")
 
 g <- coef(b)
 g <- g[grep("s(x1)", names(g), fixed = TRUE)]
 
-X <- smooth.construct(rs(x1, bs = "ps"), dat, NULL)
+X <- smooth.construct(rs(x1), dat, NULL)
 
 dat$f <- X$get.mu(X$X, g)
 
 dat$y2 <- with(dat, 1.2 + f + rnorm(n, sd = 0.0001))
 
-b2 <- bayesr(y2 ~ rs(x1, bs = "ps"), data = dat, method = "backfitting", eps = 0.000000001)
+b2 <- bayesr(y2 ~ rs(x1), data = dat, method = "backfitting", eps = 0.000000001)
 
 g2 <- coef(b2)
 g2 <- g2[grep("s(x1)", names(g2), fixed = TRUE)]
@@ -209,6 +209,6 @@ f <- list(
   sigma ~ s(sigma2.x11)
 )
 
-b <- bayesr(f, data = d, family = tF(BEo), update = "iwls")
+b <- bayesr(f, data = d, family = tF(BE), update = "iwls")
 
 

@@ -57,9 +57,10 @@ simfun <- function(type = "sinus")
       n <- ceiling(sqrt(length(id)))
       co <- expand.grid("long" = seq(0, 1, length = n), "lat" = seq(0, 1, length = n))
       f <- f1(co[, 1]) * f2(co[, 2])
+      f <- f - mean(f)
       f <- data.frame("long" = co[, 1], "lat" = co[, 2], "f" = f)
       f <- f[seq_along(id), ]
-      return(f - mean(f))
+      return(f)
     }
   )
   if(!is.character(type))
