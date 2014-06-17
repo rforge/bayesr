@@ -88,7 +88,7 @@ n <- 200
 dat <- data.frame("x1" = sort(runif(n, 0, 1)))
 dat$y <- with(dat, 1.2 + f(x1) + rnorm(n, sd = 0.2))
 
-b <- bayesr(y ~ s(x1)/s(x1), data = dat, method = "backfitting")
+b <- bayesr(y ~ rs(x1), data = dat, method = "backfitting")
 
 g <- coef(b)
 g <- g[grep("s(x1)", names(g), fixed = TRUE)]
@@ -99,7 +99,7 @@ dat$f <- X$get.mu(X$X, g)
 
 dat$y2 <- with(dat, 1.2 + f + rnorm(n, sd = 0.0001))
 
-b2 <- bayesr(y2 ~ rs(x1), data = dat, method = "backfitting", eps = 0.000000001)
+b2 <- bayesr(y2 ~ rs(x1), data = dat, method = "backfitting")
 
 g2 <- coef(b2)
 g2 <- g2[grep("s(x1)", names(g2), fixed = TRUE)]
@@ -109,18 +109,15 @@ abline(a = 0, b = 1)
 
 
 f <- simfun(type = "2d")
-
 n <- 200
 dat <- data.frame("x1" = sort(runif(n, 0, 1)), "x2" = runif(n, 0, 1))
 dat$y <- with(dat, 1.2 + f(x1, x2) + rnorm(n, sd = 0.2))
 
-b0 <- bayesr(y ~ s(x1, k = 19):s(x2, k = 19), data = dat)
-b1 <- bayesr(y ~ te(x1, x2, bs = "tp", fx = TRUE, sp = 0, k = 6), data = dat)
-b2 <- bayesr(y ~ s(x1, x2, fx = TRUE, k = 36), data = dat)
+b0 <- bayesr(y ~ rs(s(x1), s(x2), fx = NULL, link = "inverse"), data = dat, method = "backfitting2")
+b1 <- bayesr(y ~ s(x1, x2, k = 20), data = dat)
 
-plot(c(b0, b1, b2), type = "mba")
+plot(c(b0, b1), type = "mba")
 
-plot(b2)
 
 ## by variable test
 n <- 500
@@ -196,7 +193,7 @@ f <- list(
   sigma2 ~ s(sigma2.x11)
 )
 
-b <- bayesr(f, data = d, family = tF(BE), update = "iwls", propose = "wslice", method = c("backfitting", "MCMC"))
+b <- bayesr(f, data = d, family = beta, update = "iwls", method = c("backfitting", "MCMC"))
 
 b <- bayesr(f, data = d, method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls", family = beta)
 

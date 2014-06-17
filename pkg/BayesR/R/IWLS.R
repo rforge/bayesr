@@ -559,17 +559,29 @@ logPost2 <- function(g, x, family, response, eta, id)
 
 logPost3 <- function(g, x, family, response, eta, id)
 {
-  ## Set up new predictor.
+  nx <- colnames(x$X)
+  k1 <- length(grep("g1", nx, fixed = TRUE))
+
   fit <- x$get.mu(x$X, g)
-  fit <- fit - mean(fit, na.rm = TRUE)
   eta[[id]] <- eta[[id]] + fit
-
-  ## Map predictor to parameter scale.
   peta <- family$map2par(eta)
-
-  ## Compute log likelihood and log coefficients prior.
   ll <- family$loglik(response, peta)
-  lp <- sum(dnorm(g, sd = 10, log = TRUE), na.rm = TRUE)
+  lp <- 0
+  gamma <- g
+  g <- gamma[1:k1]
+  w <- c(1, gamma[(k1 + 1):(ncol(x$X) - 1)])
+  lp <- if(!x$smooths[[1]]$fixed) {
+    sp <- x$smooths[[1]]$sp
+    if(is.null(sp))
+      sp <- x$state$tau2["tau2g"]
+    lp + drop(-0.5 / sp * crossprod(g, x$smooths[[1]]$S[[1]]) %*% g)
+  } else lp + sum(dnorm(g, sd = 10, log = TRUE))
+  lp <- if(!x$smooths[[2]]$fixed) {
+    sp <- x$smooths[[2]]$sp
+    if(is.null(sp))
+      sp <- x$state$tau2["tau2w"]
+    lp + drop(-0.5 / sp * crossprod(w, x$smooths[[2]]$S[[1]]) %*% w)
+  } else lp + sum(dnorm(w, sd = 10, log = TRUE))
 
   return(ll + lp)
 }
@@ -1169,9 +1181,8 @@ smooth.IWLS.default <- function(x, ...)
     if(inherits(ri, "try-error")) ri <- 1000
     return(c(le, ri))
   }
-
   if(is.null(x$fixed)) {
-    x$fixed <- if(!is.null(x$fx))  x$fx[1] else FALSE
+    x$fixed <- if(!is.null(x$fx)) x$fx[1] else FALSE
   }
   if(!x$fixed) {
     x$interval <- if(is.null(x$xt$interval)) tau2interval(x) else x$xt$interval
@@ -1236,9 +1247,9 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     stop("parameter names mismatch with family names!")
   response <- attr(x, "response.vec")
   criterion <- match.arg(criterion)
-  scipen <- getOption("scipen")
-  options("scipen" = 20)
-  on.exit(options("scipen" = scipen))
+#  scipen <- getOption("scipen")
+#  options("scipen" = 20)
+#  on.exit(options("scipen" = scipen))
 
   ## Actual number of samples to save.
   if(!any(grepl("MCMC", method))) {
@@ -1455,7 +1466,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           cat("\r")
           vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
             " logLik ", fmt(family$loglik(response, peta), width = 8, digits = digits),
-            " edf ", fmt(edf, width = 6, digits = digits + 2),
+            " edf ", fmt(edf, width = 6, digits = digits),
             " eps ", fmt(eps0, width = 6, digits = digits + 2),
             " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
           cat(vtxt)
@@ -1472,7 +1483,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
         cat("\r")
         vtxt <- paste(criterion, " ", fmt(IC, width = -8, digits = digits),
           " logLik ", fmt(family$loglik(response, peta), width = -9, digits = digits),
-          " edf ", fmt(edf, width = -6, digits = digits + 2),
+          " edf ", fmt(edf, width = -6, digits = digits),
           " eps ", fmt(eps0, width = -6, digits = digits + 2),
           " iteration ", formatC(iter, width = -1 * nchar(maxit)), sep = "")
         cat(vtxt)
@@ -1496,20 +1507,21 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
 
     if(any("backfitting2" %in% method)) {
       tau2 <- NULL
-      k <- 1
       for(j in 1:np) {
         for(sj in seq_along(x[[nx[j]]]$smooth)) {
-          tau2 <- c(tau2, x[[nx[j]]]$smooth[[sj]]$state$tau2)
-          k <- k + 1
+          tmp <- x[[nx[j]]]$smooth[[sj]]$state$tau2
+          names(tmp) <- paste("id", j, sj, ".", 1:length(tmp), sep = "")
+          tau2 <- c(tau2, tmp)
         }
       }
 
       objfun <- function(tau2, retbf = FALSE) {
-        k <- 1
         for(j in 1:np) {
           for(sj in seq_along(x[[nx[j]]]$smooth)) {
-            x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2[k]
-            k <- k + 1
+            id <- paste("id", j, sj, sep = "")
+            tmp <- tau2[grep(id, names(tau2), fixed = TRUE)]
+            names(tmp) <- names(x[[nx[j]]]$smooth[[sj]]$state$tau2)
+            x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tmp
           }
         }
 
@@ -1533,6 +1545,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
 
     if(any("backfitting4" %in% method)) {
       objfun <- function(tau2, j, sj, retbf = FALSE) {
+        if(length(tau2) > 1) stop('only single variances can be updated using "backftting4"!')
         x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
         bf <- backfit(x, eta, verbose = verbose2)
         return(if(retbf) bf else bf$ic)
@@ -1812,8 +1825,8 @@ resultsIWLS <- function(x, samples)
           vsamples <- NULL
           tau2 <- paste(id, "h1", paste(obj$smooth[[i]]$label, "tau2", sep = "."), sep = ":")
           if(length(tau2 <- grep(tau2, snames, fixed = TRUE))) {
-            vsamples <- as.numeric(samples[[j]][, tau2])
-            vsamples <- vsamples[!nas]
+            vsamples <- samples[[j]][, tau2, drop = FALSE]
+            vsamples <- vsamples[!nas, , drop = FALSE]
           }
 
           ## Acceptance probalities.

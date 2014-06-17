@@ -169,7 +169,7 @@ bayesr <- function(formula, family = gaussian, data = NULL, knots = NULL,
 ##########################################################
 ## (2) Parsing all input using package mgcv structures. ##
 ##########################################################
-parse.input.bayesr <- function(formula, data = NULL, family = gaussian.BayesR,
+parse.input.bayesr <- function(formula, data = NULL, family = gaussian2.BayesR,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
   grid = 100, ...)
@@ -1097,6 +1097,11 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
       }
       smatfull <- rbind(smatfull, smat)
     }
+    if(!is.null(smatfull)) {
+      if(any(duplicated(rownames(smatfull)))) {
+        rownames(smatfull) <- paste(rownames(smatfull), 1:nrow(smatfull), sep = ":")
+      }
+    }
     if(!is.null(smf)) {
       attr(smf, "scale") <- smatfull
       attr(smf, "specs")$label <- gsub(")", paste(",",
@@ -1516,7 +1521,7 @@ Predict.matrix.gc.smooth <- function(object, data, knots)
 
 
 ## Rational spline constructor.
-rs <- function(..., k = -1, bs = "tp", m = NA, xt = NULL, link = "log")
+rs <- function(..., k = -1, fx = NULL, bs = "tp", m = NA, xt = NULL, link = "log")
 {
   smooths <- as.list(substitute(list(...)))[-1]
   if(any(grepl("~", as.character(smooths[[1]]), fixed = TRUE))) {
@@ -1525,7 +1530,7 @@ rs <- function(..., k = -1, bs = "tp", m = NA, xt = NULL, link = "log")
     if(length(smooths) < 2) {
       term <- deparse(smooths[[1]], backtick = TRUE, width.cutoff = 500)
       if(!grepl("s(", term, fixed = TRUE)) {
-        smooths <- s(..., k = k, bs = bs, m = m, xt = xt)
+        smooths <- s(..., k = k, fx = fx, bs = bs, m = m, xt = xt)
         label <- paste("rs(", term, ")", sep = "")
       } else {
         smooths <- eval(smooths[[1]])
@@ -1557,6 +1562,15 @@ rs <- function(..., k = -1, bs = "tp", m = NA, xt = NULL, link = "log")
     term <- unique(term)
     dim <- min(c(2, length(term)))
 
+    k <- rep(k, length.out = 2)
+    if(k[1] != -1) smooths[[1]]$bs.dim <- k[1]
+    if(k[2] != -1) smooths[[2]]$bs.dim <- k[2]
+    if(!is.null(fx)) {
+      fx <- rep(fx, length.out = 2)
+      if(!is.null(fx[1])) smooths[[1]]$fixed <- fx[1]
+      if(!is.null(fx[2])) smooths[[2]]$fixed <- fx[2]
+    }
+
     rval <- list("smooths" = smooths, "special" = TRUE,
       "term" = term, "label" = label, "dim" = dim,
       "one" = FALSE, "formula" = FALSE, "link" = link)
@@ -1569,29 +1583,39 @@ rs <- function(..., k = -1, bs = "tp", m = NA, xt = NULL, link = "log")
 smooth.construct.rs.smooth.spec <- function(object, data, knots) 
 {
   link <- make.link2(object$link)$linkinv
-
+  edf <- 0
   if(!object$formula) {
-    X <- list()
+    X <- list(); tau2 <- NULL
     for(j in seq_along(object$smooths)) {
       if(is.null(object$smooths[[j]]$param))
         object$smooths[[j]]$param <- FALSE
       if(object$smooths[[j]]$param) {
         X[[j]] <- data[[object$smooths[[j]]$term]]
+        edf <- edf + ncol(X[[j]])
       } else {
         stj <- object$smooths[[j]]
         acons <- TRUE
         if(!is.null(stj$xt$center))
           acons <- stj$xt$center
         stj$xt$center <- acons
-        stj$fixed <- TRUE
-        if(!is.null(object$xt$fixed))
-          stj$fixed <- stj$xt$fixed
         stj$xt$fixed <- stj$fixed
         stj$by.done <- TRUE
         stj <- smoothCon(stj, data, knots, absorb.cons = acons)[[1]]
         stj$class <- class(stj)
+        stj$a <- if(is.null(stj$xt$a)) 1e-04 else stj$xt$a
+        stj$b <- if(is.null(stj$xt$b)) 1e-04 else stj$xt$b
         X[[j]] <- stj$X
         object$smooths[[j]] <- stj
+        if(!stj$fixed) {
+          sp <- if(is.null(stj$sp)) 1000 else stj$sp
+          names(sp) <- if(j < 2) "tau2g" else "tau2w"
+          tau2 <- c(tau2, sp)
+          XX <- crossprod(X[[j]])
+          edf <- edf + sum(diag(matrix_inv(XX + 1 / sp * stj$S[[1]]) %*% XX))
+        } else {
+          edf <- edf + ncol(X[[j]])
+        }
+        if(acons) edf <- edf -1
         ## object$smooths[[j]][c("X", "Xf", "rand", "S")] <- NULL
       }
     }
@@ -1600,9 +1624,11 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     X <- as.matrix(as.data.frame(X))
 
     object$X <- X
-    object$p.save <- "g"
+    object$p.save <- c("g", if(!is.null(tau2)) "tau2" else NULL)
     object$state <- list()
     object$state$g <- rep(0, ncol(X) - 1)
+    object$state$edf <- edf
+    object$state$tau2 <- tau2
     object$fixed <- TRUE
 
     object$get.mu <- function(X, g) {
@@ -1618,24 +1644,39 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
   } else {
     stop("formulae no supported yet!")
   }
-
-  object$state$edf <- length(object$state$g)
-  object$s.colnames <- paste("c", 1:length(object$state$g), sep = "")
-  object$np <- length(object$s.colnames)
+  object$s.colnames <- c(paste("c", 1:length(object$state$g), sep = ""),
+    if(!is.null(tau2)) paste("tau2", 1:length(tau2), sep = "") else NULL)
+  object$np <- c(length(object$state$g), length(tau2))
 
   object$update <- function(x, family, response, eta, id, ...) {
     ## Compute partial predictor.
     eta[[id]] <- eta[[id]] - x$state$fit
     eta2 <- eta
 
+    nx <- colnames(x$X)
+    k1 <- length(grep("g1", nx, fixed = TRUE))
+
     ## Objective function.
     objfun <- function(gamma) {
       fit <- x$get.mu(x$X, gamma)
-      fit <- fit - mean(fit, na.rm = TRUE)
       eta2[[id]] <- eta[[id]] + fit
       peta <- family$map2par(eta2)
       ll <- family$loglik(response, peta)
-      lp <- sum(dnorm(gamma, sd = 10, log = TRUE))
+      lp <- 0
+      g <- gamma[1:k1]
+      w <- c(1, gamma[(k1 + 1):(ncol(x$X) - 1)])
+      lp <- if(!x$smooths[[1]]$fixed) {
+        sp <- x$smooths[[1]]$sp
+        if(is.null(sp))
+          sp <- x$state$tau2["tau2g"]
+        lp + drop(-0.5 / sp * crossprod(g, x$smooths[[1]]$S[[1]]) %*% g)
+      } else lp + sum(dnorm(g, sd = 10, log = TRUE))
+      lp <- if(!x$smooths[[2]]$fixed) {
+        sp <- x$smooths[[2]]$sp
+        if(is.null(sp))
+          sp <- x$state$tau2["tau2w"]
+        lp + drop(-0.5 / sp * crossprod(w, x$smooths[[2]]$S[[1]]) %*% w)
+      } else lp + sum(dnorm(w, sd = 10, log = TRUE))
       -1 * (ll + lp)
     }
 
@@ -1647,6 +1688,31 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
       x$state$fit <- x$get.mu(x$X, x$state$g)
     }
 
+    edf1 <- edf2 <- NA ##11.387
+    if(!x$smooths[[1]]$fixed) {
+      sp <- x$smooths[[1]]$sp
+      if(is.null(sp))
+        sp <- x$state$tau2["tau2g"]
+      XX <- crossprod(x$X[, 1:k1, drop = FALSE])
+      P <- matrix_inv(XX + 1 / sp * x$smooths[[1]]$S[[1]])
+      if(!inherits(P, "try-error"))
+        edf1 <- sum(diag(XX %*% P))
+    } else edf1 <- k1
+    if(x$smooths[[1]]$xt$center) edf1 <- edf1 - 1
+
+    if(!x$smooths[[2]]$fixed) {
+      sp <- x$smooths[[2]]$sp
+      if(is.null(sp))
+        sp <- x$state$tau2["tau2w"]
+      XX <- crossprod(x$X[, -1 * 1:k1, drop = FALSE])
+      P <- matrix_inv(XX + 1 / sp * x$smooths[[2]]$S[[1]])
+      if(!inherits(P, "try-error"))
+        edf2 <- sum(diag(XX %*% P))
+    } else edf2 <- ncol(x$X) - k1
+    if(x$smooths[[2]]$xt$center) edf2 <- edf2 - 1
+
+    x$state$edf <- edf1 + edf2
+
     return(x$state)
   }
   object$propose <- function(x, family, response, eta, id, rho, ...) {
@@ -1654,7 +1720,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     iter <- args$iter
 
     if(!is.null(iter)) {
-      if(iter %% 20 == 0) {
+      if(iter %% x$xt$step == 0) {
         ## Compute mean.
         opt <- x$update(x, family, response, eta, id, ...)
         x$state$g <- opt$g
@@ -1672,6 +1738,28 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     ## Setup return state.
     x$state$alpha <- log(1)
     x$state$fit <- x$get.mu(x$X, x$state$g)
+
+    nx <- colnames(x$X)
+    k1 <- length(grep("g1", nx, fixed = TRUE))
+
+    if(!x$smooths[[1]]$fixed) {
+      g <- x$state$g[1:k1]
+      sp <- x$smooths[[1]]$sp
+      if(is.null(sp))
+        sp <- x$state$tau2["tau2g"]
+      a <- x$smooths[[1]]$rank / 2 + x$smooths[[1]]$a
+      b <- 0.5 * crossprod(g, x$smooths[[1]]$S[[1]]) %*% g + x$b
+      x$state$tau2["tau2g"] <- 1 / rgamma(1, a, b)
+    }
+    if(!x$smooths[[2]]$fixed) {
+      g <- c(1, x$state$g[(k1 + 1):(ncol(x$X) - 1)])
+      sp <- x$smooths[[2]]$sp
+      if(is.null(sp))
+        sp <- x$state$tau2["tau2w"]
+      a <- x$smooths[[2]]$rank / 2 + x$smooths[[2]]$a
+      b <- 0.5 * crossprod(g, x$smooths[[2]]$S[[1]]) %*% g + x$b
+      x$state$tau2["tau2w"] <- 1 / rgamma(1, a, b)
+    }
 
     return(x$state)
   }
