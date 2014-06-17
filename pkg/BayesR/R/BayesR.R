@@ -569,6 +569,7 @@ formula_extend <- function(formula, specials = NULL, family)
           j2 <- strsplit(j, "/", fixed = TRUE)[[1]]
           for(jj in j2)
             tl <- tl[tl != jj]
+          tl <- tl[tl != gsub("/", ":", j)]
           tl2 <- c(tl2, j)
         }
       }
@@ -1553,11 +1554,12 @@ rs <- function(..., k = -1, bs = "tp", m = NA, xt = NULL, link = "log")
       label <- paste("rs(", paste(label, collapse = ",", sep = ""), ")", sep = "")
       smooths <- sm
     }
-    term <- unique(term)  
+    term <- unique(term)
+    dim <- min(c(2, length(term)))
 
-    rval <- list("smooths" = smooths, "special" = TRUE, "term" = term,
-      "label" = label, "dim" = min(c(2, length(term))), "one" = FALSE,
-      "formula" = FALSE, "link" = link)
+    rval <- list("smooths" = smooths, "special" = TRUE,
+      "term" = term, "label" = label, "dim" = dim,
+      "one" = FALSE, "formula" = FALSE, "link" = link)
   }
 
   class(rval) <- "rs.smooth.spec"
@@ -2213,6 +2215,21 @@ plot.bayesr.effect <- function(x, which = "effects", ...) {
 ## Default model term plotting method.
 plot.bayesr.effect.default <- function(x, ...) {
   args <- list(...)
+
+  if(attr(x, "specs")$dim > 1 & inherits(x, "rs.smooth")) {
+    if(identical(x[, 1], x[, 2])) {
+      cn <- colnames(x)[-2]
+      xattr <- attributes(x)
+      xattr$specs$dim <- 1
+      x <- x[, -2, drop = FALSE]
+      xattr$names <- colnames(x) <- cn
+      cn <- colnames(xattr$partial.resids)[-2]
+      xattr$partial.resids <- xattr$partial.resids[, -2, drop = FALSE]
+      colnames(xattr$partial.resids) <- cn
+      mostattributes(x) <- xattr
+    }
+  }
+
   args$x <- x
 
   lim <- c("ylim", "zlim")[(attr(x, "specs")$dim > 1) * 1 + 1]

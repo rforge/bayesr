@@ -1723,6 +1723,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   for(j in sf) {
     st <- as.matrix(read.table(file.path(tdir, j), header = TRUE, colClasses = "numeric"))
     colnames(st) <- paste(gsub(".raw", "", j), gsub("c", "", colnames(st)), sep = ".")
+    colnames(st) <- gsub("RSdivRS", "/", colnames(st))
     samples <- cbind(samples, st)
   }
   samples <- if(!any(grepl("MCMC", method))) {
