@@ -88,7 +88,7 @@ n <- 200
 dat <- data.frame("x1" = sort(runif(n, 0, 1)))
 dat$y <- with(dat, 1.2 + f(x1) + rnorm(n, sd = 0.2))
 
-b <- bayesr(y ~ rs(x1), data = dat, method = "backfitting")
+b <- bayesr(y ~ s(x1)/s(x1), data = dat, method = "backfitting")
 
 g <- coef(b)
 g <- g[grep("s(x1)", names(g), fixed = TRUE)]
@@ -107,6 +107,20 @@ g2 <- g2[grep("s(x1)", names(g2), fixed = TRUE)]
 plot(g, g2)
 abline(a = 0, b = 1)
 
+
+f <- simfun(type = "2d")
+
+n <- 200
+dat <- data.frame("x1" = sort(runif(n, 0, 1)), "x2" = runif(n, 0, 1))
+dat$y <- with(dat, 1.2 + f(x1, x2) + rnorm(n, sd = 0.2))
+
+b0 <- bayesr(y ~ s(x1, k = 19):s(x2, k = 19), data = dat)
+b1 <- bayesr(y ~ te(x1, x2, bs = "tp", fx = TRUE, sp = 0, k = 6), data = dat)
+b2 <- bayesr(y ~ s(x1, x2, fx = TRUE, k = 36), data = dat)
+
+plot(c(b0, b1, b2), type = "mba")
+
+plot(b2)
 
 ## by variable test
 n <- 500
@@ -173,16 +187,16 @@ points(num_deriv2(y, eta, family, id = "sigma", d = 2) ~ family$iwls$weights$sig
 ## More tests.
 d <- dgp_beta(
   300,
-  mu = list(const = -0.5, type = list(c("double", "spatial", "const"))),
+  mu = list(const = -0.5, type = list(c("double", "linear", "const"))),
   sigma2 = list(const = 0.01, type = list("quadratic", "const"))
 )
 
 f <- list(
-  y ~ s(mu.x11) + s(mu.long1, mu.lat1, k = 100, bs = "kr"),
-  sigma ~ s(sigma2.x11)
+  y ~ s(mu.x11) + s(mu.x12),
+  sigma2 ~ s(sigma2.x11)
 )
 
-b <- bayesr(f, data = d, family = tF(BE), update = "iwls", propose = "iwls", method = c("backfitting", "MCMC"))
+b <- bayesr(f, data = d, family = tF(BE), update = "iwls", propose = "wslice", method = c("backfitting", "MCMC"))
 
 b <- bayesr(f, data = d, method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls", family = beta)
 

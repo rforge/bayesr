@@ -694,7 +694,7 @@ propose_wslice <- function(x, family,
   ## Compute partial predictor.
   eta[[id]] <- eta[[id]] - x$state$fit
 
-  if(iter %% 20 == 0) {
+  if(iter %% x$xt$step == 0) {
     ## Map predictor to parameter scale.
     peta <- family$map2par(eta)
 
@@ -748,7 +748,7 @@ propose_oslice <- function(x, family,
   args <- list(...)
   iter <- args$iter  
 
-  if(iter %% 20 == 0) {
+  if(iter %% x$xt$step == 0) {
     ## Compute mean.
     opt <- update_optim2(x, family, response, eta, id, ...)
     x$state$g <- opt$g
@@ -1194,6 +1194,8 @@ smooth.IWLS.default <- function(x, ...)
   }
   if(is.null(x$xt$adaptive))
     x$xt$adaptive <- TRUE
+  if(is.null(x$xt$step))
+    x$xt$step <- 20
 
   x
 }
@@ -1698,8 +1700,9 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     } else {
       if(length(obj$smooth)) {
         for(j in seq_along(obj$smooth)) {
+          slab <- gsub("/", "RSdivRS", obj$smooth[[j]]$label, fixed = TRUE)
           fn <- file.path(tdir, paste(id, if(!is.null(id)) ":", "h",
-            obj$hlevel, ":", obj$smooth[[j]]$label, ".raw", sep = ""))
+            obj$hlevel, ":", slab, ".raw", sep = ""))
           obj$smooth[[j]]$s.samples <- cbind(obj$smooth[[j]]$s.samples, obj$smooth[[j]]$s.alpha)
           colnames(obj$smooth[[j]]$s.samples) <- c(obj$smooth[[j]]$s.colnames, "alpha")
           write.table(obj$smooth[[j]]$s.samples, file = fn, row.names = FALSE, quote = FALSE)

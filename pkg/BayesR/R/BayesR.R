@@ -280,7 +280,12 @@ bayesr.design <- function(x, data, contrasts = NULL, knots = NULL, ...)
     if(length(obj$smooth)) {
       smooth <- list()
       for(j in obj$smooth) {
-        tsm <- eval(parse(text = j))
+        if((rt <- grepl(":", j, fixed = TRUE)) | grepl("/", j, fixed = TRUE)) {
+          j <- strsplit(j, if(rt) ":" else "/", fixed = TRUE)[[1]]
+          j <- paste('rs(', j[1], ',', j[2], ',link="', if(rt) "inverse" else "log", '")', sep = "")
+          tsm <- eval(parse(text = j))
+          tsm$label <- paste(tsm$smooths[[1]]$label, tsm$smooths[[2]]$label, sep = if(rt) ":" else "/")
+        } else tsm <- eval(parse(text = j))
         if(is.null(tsm$special)) {
           acons <- TRUE
           if(!is.null(tsm$xt$center))
@@ -555,7 +560,23 @@ formula_extend <- function(formula, specials = NULL, family)
   } else {
     specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", specials))
     mt <- terms(formula, specials = specials, keep.order = TRUE)
-    tl <- attr(mt, "term.labels")
+
+    get.term.labels <- function(formula) {
+      tl <- attr(mt, "term.labels")
+      tl2 <- NULL
+      for(j in as.character(formula)) {
+        if(grepl("s(", j , fixed = TRUE) & grepl("/", j, fixed = TRUE)) {
+          j2 <- strsplit(j, "/", fixed = TRUE)[[1]]
+          for(jj in j2)
+            tl <- tl[tl != jj]
+          tl2 <- c(tl2, j)
+        }
+      }
+      c(tl, tl2)
+    }
+
+    tl <- get.term.labels(formula)
+
     sm <- rep(NA, length = length(tl))
     for(j in seq_along(tl)) {
       iss <- FALSE
@@ -570,10 +591,20 @@ formula_extend <- function(formula, specials = NULL, family)
     sterms <- NULL
     if(length(sm <- tl[sm])) {
       for(j in sm) {
-        smj <- eval(parse(text = j))
-        sterms <- c(sterms, smj$term, smj$by)
-        if(!is.null(smj$by.formula)) {
-          sterms <- c(sterms, attr(terms(smj$by.formula, keep.order = TRUE), "term.labels"))
+        if((rt <- grepl(":", j, fixed = TRUE)) | grepl("/", j, fixed = TRUE)) {
+          for(jj in strsplit(j, if(rt) ":" else "/", fixed = TRUE)[[1]]) {
+            smj <- eval(parse(text = jj))
+            sterms <- c(sterms, smj$term, smj$by)
+            if(!is.null(smj$by.formula)) {
+              sterms <- c(sterms, attr(terms(smj$by.formula, keep.order = TRUE), "term.labels"))
+            }
+          }
+        } else {
+          smj <- eval(parse(text = j))
+          sterms <- c(sterms, smj$term, smj$by)
+          if(!is.null(smj$by.formula)) {
+            sterms <- c(sterms, attr(terms(smj$by.formula, keep.order = TRUE), "term.labels"))
+          }
         }
       }
     }
@@ -1051,6 +1082,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   if(!is.null(vsamples)) {
     if(!is.matrix(vsamples))
       vsamples <- matrix(vsamples, ncol = 1)
+    ## edf <- apply(vsamples, 1, function(x) {} )
     smatfull <- NULL
     for(j in 1:ncol(vsamples)) {
       qu <- drop(quantile(vsamples[, j], probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
@@ -1499,7 +1531,6 @@ rs <- function(..., k = -1, bs = "tp", m = NA, xt = NULL, link = "log")
         label <- paste("rs(", smooths$label, ")", sep = "")
         term <- smooths$term
       }
-      dim <- smooths$dim
       smooths <- rep(list(smooths), length.out = 2)
     } else {
       if(length(smooths) > 2) stop("more than two terms not allowd in rational spline setup!")
@@ -1511,12 +1542,10 @@ rs <- function(..., k = -1, bs = "tp", m = NA, xt = NULL, link = "log")
             "term" = tn,
             "param" = TRUE
           )
-          dim <- 1
           term <- c(term, tn)
           label <- c(label, tn)
         } else {
           sm[[j]] <- eval(smooths[[j]])
-          dim <- sm[[j]]$dim
           term <- c(term, sm[[j]]$term)
           label <- c(label, sm[[j]]$label)
         }
@@ -1524,9 +1553,11 @@ rs <- function(..., k = -1, bs = "tp", m = NA, xt = NULL, link = "log")
       label <- paste("rs(", paste(label, collapse = ",", sep = ""), ")", sep = "")
       smooths <- sm
     }
-  
-    rval <- list("smooths" = smooths, "special" = TRUE, "term" = unique(term),
-      "label" = label, "dim" = dim, "one" = FALSE, "formula" = FALSE, "link" = link)
+    term <- unique(term)  
+
+    rval <- list("smooths" = smooths, "special" = TRUE, "term" = term,
+      "label" = label, "dim" = min(c(2, length(term))), "one" = FALSE,
+      "formula" = FALSE, "link" = link)
   }
 
   class(rval) <- "rs.smooth.spec"

@@ -5,7 +5,7 @@ simfun <- function(type = "sinus")
 {
   ## Known function types.
   known_types <- c("linear", "quadratic", "unimodal", "double", "sinus",
-    "cosinus", "pick", "complicated", "const", "spatial")
+    "cosinus", "pick", "complicated", "const", "spatial", "2d")
   if(is.character(type))
     type <- match.arg(type, known_types)
 
@@ -60,6 +60,13 @@ simfun <- function(type = "sinus")
       f <- f - mean(f)
       f <- data.frame("long" = co[, 1], "lat" = co[, 2], "f" = f)
       f <- f[seq_along(id), ]
+      return(f)
+    },
+    "2d" = function(x, y) {
+      x <- scale2(x, -3, 3)
+      y <- scale2(y, -3, 3)
+      f <- sin(x) * cos(y)
+      f <- f - mean(f)
       return(f)
     }
   )
