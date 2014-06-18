@@ -1530,7 +1530,7 @@ rs <- function(..., k = -1, fx = NULL, bs = "tp", m = NA, xt = NULL, link = "log
     if(length(smooths) < 2) {
       term <- deparse(smooths[[1]], backtick = TRUE, width.cutoff = 500)
       if(!grepl("s(", term, fixed = TRUE)) {
-        smooths <- s(..., k = k, fx = fx, bs = bs, m = m, xt = xt)
+        smooths <- s(..., k = k, fx = if(is.null(fx)) FALSE else fx, bs = bs, m = m, xt = xt)
         label <- paste("rs(", term, ")", sep = "")
       } else {
         smooths <- eval(smooths[[1]])

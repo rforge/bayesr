@@ -82,13 +82,13 @@ b <- bayesr(mstatus ~ s(age), family = multinomial.BayesR, data = marital.nz)
 
 
 ## pick function
-f <- simfun(type = "pick")
+f <- simfun(type = "complicated")
 
 n <- 200
 dat <- data.frame("x1" = sort(runif(n, 0, 1)))
 dat$y <- with(dat, 1.2 + f(x1) + rnorm(n, sd = 0.2))
 
-b <- bayesr(y ~ rs(x1), data = dat, method = "backfitting")
+b <- bayesr(y ~ rs(x1,fx=TRUE), data = dat, method = "backfitting")
 
 g <- coef(b)
 g <- g[grep("s(x1)", names(g), fixed = TRUE)]
@@ -97,9 +97,9 @@ X <- smooth.construct(rs(x1), dat, NULL)
 
 dat$f <- X$get.mu(X$X, g)
 
-dat$y2 <- with(dat, 1.2 + f + rnorm(n, sd = 0.0001))
+dat$y2 <- with(dat, 1.2 + f + rnorm(n, sd = 0.5))
 
-b2 <- bayesr(y2 ~ rs(x1), data = dat, method = "backfitting")
+b2 <- bayesr(y2 ~ rs(x1,fx=TRUE), data = dat, method = "backfitting")
 
 g2 <- coef(b2)
 g2 <- g2[grep("s(x1)", names(g2), fixed = TRUE)]
@@ -113,10 +113,18 @@ n <- 200
 dat <- data.frame("x1" = sort(runif(n, 0, 1)), "x2" = runif(n, 0, 1))
 dat$y <- with(dat, 1.2 + f(x1, x2) + rnorm(n, sd = 0.2))
 
-b0 <- bayesr(y ~ s(x1, k = 6):s(x2, k = 6), data = dat, method = c("backfitting2", "MCMC"))
+b0 <- bayesr(y ~ s(x1, k = 6,fx=T):s(x2, k = 6,fx=T), data = dat, method = c("backfitting2", "MCMC"))
 b1 <- bayesr(y ~ s(x1, x2, k = 20), data = dat)
 
 plot(c(b0, b1), type = "mba")
+
+
+
+library("MASS")
+data("mcycle")
+mcycle$accel2 <- scale2(mcycle$accel, -1, 1)
+
+b <- bayesr(accel2 ~ rs(times, k = 20), ~ s(times, bs = "ps"), data = mcycle, method = "backfitting2")
 
 
 ## by variable test

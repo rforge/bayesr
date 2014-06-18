@@ -5,7 +5,8 @@ simfun <- function(type = "sinus")
 {
   ## Known function types.
   known_types <- c("linear", "quadratic", "unimodal", "double", "sinus",
-    "cosinus", "pick", "complicated", "const", "spatial", "2d")
+    "cosinus", "pick", "complicated", "const", "spatial", "2d",
+    "yue1", "yue2", "yue3")
   if(is.character(type))
     type <- match.arg(type, known_types)
 
@@ -66,6 +67,29 @@ simfun <- function(type = "sinus")
       x <- scale2(x, -3, 3)
       y <- scale2(y, -3, 3)
       f <- sin(x) * cos(y)
+      f <- f - mean(f)
+      return(f)
+    },
+    "yue1" = function(x) {
+      require("splines")
+      x <- scale2(x, 0, 1)
+      knots <- c(0.2, 0.6, 0.7)
+      B <- splineDesign(knots, x, ord = 3, outer.ok = TRUE)
+print(dim(B))
+      f <- B %*% c(20, 4, 6, 11, 6)
+      f <- f - mean(f)
+      return(f)
+    },
+    "yue2" = function(x) {
+      x <- scale2(x, -2, 2)
+      f <- sin(x) + 2 * exp(-30 * x^2)
+      f <- f - mean(f)
+      return(f)
+    },
+    "yue3" = function(x) {
+      x <- scale2(x, 0, 1)
+      e <- 0.125
+      f <- sqrt(x * (1 - x)) * sin(2 * pi * (1 + e) / (x + e))
       f <- f - mean(f)
       return(f)
     }
