@@ -1235,6 +1235,28 @@ sx.construct.rps.smooth.spec <- function(object, data)
   return(term)
 }
 
+sx.construct.kr.smooth.spec <- sx.construct.kriging.smooth.spec <- function(object, data)
+{
+  termo <- object$term
+  if(length(termo) < 2L)
+    stop("kriging method needs two terms!")
+  if(object$bs.dim < 0L)
+    object$bs.dim <- 10L
+	nrknots <- object$bs.dim
+  xt <- object$xt
+  if(is.null(xt$full))
+    term <- paste(termo[1L], "*", termo[2L], "(kriging,nrknots=", nrknots, sep = "")
+  else {
+    term <- paste(termo[1L], "*", termo[2L], "(kriging,full", sep = "")    
+    object$xt$full <- NULL
+  }
+  term <- paste(do.xt(term, object, NULL), ")", sep = "")
+  if(object$by != "NA")
+    term <- make_by(term, object, data)
+
+  return(term)
+}
+
 construct.shrw <- function(object, data, what)
 {
   term <- object$term

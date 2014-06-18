@@ -113,7 +113,7 @@ n <- 200
 dat <- data.frame("x1" = sort(runif(n, 0, 1)), "x2" = runif(n, 0, 1))
 dat$y <- with(dat, 1.2 + f(x1, x2) + rnorm(n, sd = 0.2))
 
-b0 <- bayesr(y ~ rs(s(x1), s(x2), fx = NULL, link = "inverse"), data = dat, method = "backfitting2")
+b0 <- bayesr(y ~ s(x1, k = 6):s(x2, k = 6), data = dat, method = c("backfitting2", "MCMC"))
 b1 <- bayesr(y ~ s(x1, x2, k = 20), data = dat)
 
 plot(c(b0, b1), type = "mba")
@@ -182,27 +182,26 @@ points(num_deriv2(y, eta, family, id = "sigma", d = 2) ~ family$iwls$weights$sig
 
 
 ## More tests.
-d <- dgp_beta(
+d <- dgp_gaussian2(
   300,
-  mu = list(const = -0.5, type = list(c("double", "linear", "const"))),
+  mu = list(const = -0.5, type = list(c("double", "spatial", "const"))),
   sigma2 = list(const = 0.01, type = list("quadratic", "const"))
 )
 
 f <- list(
-  y ~ s(mu.x11) + s(mu.x12),
+  y ~ s(mu.x11) + s(mu.long1, mu.lat1, k = 50, bs = "kr"),
   sigma2 ~ s(sigma2.x11)
 )
 
-b <- bayesr(f, data = d, family = beta, update = "iwls", method = c("backfitting", "MCMC"))
-
-b <- bayesr(f, data = d, method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls", family = beta)
+b0 <- bayesr(f, data = d, update = "iwls", propose = "iwls", method = c("backfitting", "MCMC"))
+b1 <- bayesr(f, data = d, update = "iwls", propose = "wslice", method = c("backfitting", "MCMC"))
 
 f <- list(
-  y ~ sx(mu.x11) + sx(mu.long1, mu.lat1, k = 50, bs = "kr", update = "orthogonal"),
+  y ~ sx(mu.x11) + sx(mu.long1, mu.lat1, knots = 50, bs = "kr", update = "orthogonal"),
   sigma2 ~ sx(sigma2.x11)
 )
 
-b <- bayesr(f, data = d, family = beta, engine = "BayesX")
+b2 <- bayesr(f, data = d, engine = "BayesX", family = gaussian2)
 
 
 

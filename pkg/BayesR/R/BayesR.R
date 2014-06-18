@@ -90,7 +90,7 @@ xreg <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
 #########################
 ## (1) BayesR wrapper. ##
 #########################
-bayesr <- function(formula, family = gaussian, data = NULL, knots = NULL,
+bayesr <- function(formula, family = gaussian2, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.fail, contrasts = NULL,
   engine = c("IWLS", "BayesX", "JAGS", "STAN"), cores = NULL, combine = TRUE,
   n.iter = 12000, thin = 10, burnin = 2000, seed = NULL, ...)
@@ -1688,7 +1688,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
       x$state$fit <- x$get.mu(x$X, x$state$g)
     }
 
-    edf1 <- edf2 <- NA ##11.387
+    edf1 <- edf2 <- NA
     if(!x$smooths[[1]]$fixed) {
       sp <- x$smooths[[1]]$sp
       if(is.null(sp))
