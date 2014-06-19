@@ -1215,7 +1215,6 @@ hurdleP.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
     "bayesx" = list(
       "lambda" = c("hurdle_lambda", "mean"),
       "pi" = c("hurdle_pi", "pi")
-      ) 
     ),
 	  "mu" = function(eta, ...) {
       (1 - eta$pi) * eta$lambda / (1 - exp(-eta$lambda))
