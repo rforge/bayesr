@@ -1221,7 +1221,7 @@ hurdleP.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
     },
     "d" = function(y, eta, log = FALSE) {
       d <- ifelse(y == 0, eta$pi, 
-				(1 - eta$pi) * dpois(y, lambda = eta$lambda) / (1 - exp(-eta$lambda))
+				(1 - eta$pi) * dpois(y, lambda = eta$lambda) / (1 - exp(-eta$lambda)))
       if(log) d <- log(d)
       d
     },
