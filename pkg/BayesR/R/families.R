@@ -1214,7 +1214,10 @@ hurdleP.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
     "links" = parse.links(links, c(lambda = "log", pi = "logit"), ...),
     "bayesx" = list(
       "lambda" = c("hurdle_lambda", "mean"),
-      "pi" = c("hurdle_pi", "pi")
+      "pi" = c("hurdle_pi", "pi"),
+	  "weights" = list(
+        "lambda" = function(x) { 1 * ((x != 0)}
+      )
     ),
 	  "mu" = function(eta, ...) {
       (1 - eta$pi) * eta$lambda / (1 - exp(-eta$lambda))
@@ -1307,7 +1310,11 @@ hurdleNB.BayesR <- function(links = c(mu = "log", pi = "logit", delta = "log"), 
     "bayesx" = list(
       "mu" = c("hurdle_mu", "mean"),
       "delta" = c("hurdle_delta", "delta"),
-	  "pi" = c("hurdle_pi", "pi")
+	  "pi" = c("hurdle_pi", "pi"),
+	  "weights" = list(
+        "lambda" = function(x) { 1 * ((x != 0)},
+		"delta" = function(x) { 1 * ((x != 0)}
+      )
     ),
 	  "mu" = function(eta, ...) {
       (1 - eta$pi) * eta$mu / (1 - (eta$delta) / (eta$delta + eta$mu)^eta$delta)
