@@ -1319,8 +1319,8 @@ hurdleNB.BayesR <- function(links = c(mu = "log", pi = "logit", delta = "log"), 
       d
     },
     "p" = function(y, eta, ...) {
-		cdf1 <- pnbinom(y, size = eta$delta, mu = eta$mu))
-		cdf2 <- pnbinom(0, size = eta$delta, mu = eta$mu))
+		cdf1 <- pnbinom(y, size = eta$delta, mu = eta$mu)
+		cdf2 <- pnbinom(0, size = eta$delta, mu = eta$mu)
 		cdf3 <- eta$pi + ((1 - eta$pi) * (cdf1 - cdf2)/(1 - cdf2))
 		cdf <- ifelse((y == 0), eta$pi, cdf3)
     },
