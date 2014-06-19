@@ -1206,6 +1206,39 @@ zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
   rval
 }
 
+hurdleP.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
+{ 
+  rval <- list(
+    "family" = "hurdle",
+    "names" = c("lambda", "pi"),
+    "links" = parse.links(links, c(lambda = "log", pi = "logit"), ...),
+    "bayesx" = list(
+      "lambda" = c("hurdle_lambda", "mean"),
+      "pi" = c("hurdle_pi", "pi")
+      ) 
+    ),
+	  "mu" = function(eta, ...) {
+      (1 - eta$pi) * eta$lambda / (1 - exp(-eta$lambda))
+    },
+    "d" = function(y, eta, log = FALSE) {
+      d <- ifelse(y == 0, eta$pi, 
+				(1 - eta$pi) * dpois(y, lambda = eta$lambda) / (1 - exp(-eta$lambda))
+      if(log) d <- log(d)
+      d
+    },
+    "p" = function(y, eta, ...) {
+		cdf1 <- ppois(y, lambda = eta$lambda)
+		cdf2 <- ppois(0, lambda = eta$lambda)
+		cdf3 <- eta$pi + ((1 - eta$pi) * (cdf1 - cdf2)/(1 - cdf2))
+		cdf <- ifelse((y == 0), eta$pi, cdf3)
+    },
+    "score.norm" = TRUE,
+    "type" = 3
+  )
+ 
+  class(rval) <- "family.BayesR"
+  rval
+}
 
 negbin.BayesR <- function(links = c(mu = "log", delta = "log"), ...)
 {
@@ -1257,6 +1290,40 @@ zinb.BayesR <- function(links = c(mu = "log", pi = "logit", delta = "log"), ...)
     },
     "p" = function(y, eta, ...) {
       ifelse(y<0, 0, eta$pi + (1 - eta$pi) * pnbinom(y, size = eta$delta, mu = eta$mu))
+    },
+    "score.norm" = TRUE,
+    "type" = 3
+  )
+
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+hurdleNB.BayesR <- function(links = c(mu = "log", pi = "logit", delta = "log"), ...)
+{
+  rval <- list(
+    "family" = "hurdleNB",
+    "names" = c("mu", "delta", "pi"),
+    "links" = parse.links(links, c(mu = "log", delta = "log", pi = "logit"), ...),
+    "bayesx" = list(
+      "mu" = c("hurdle_mu", "mean"),
+      "delta" = c("hurdle_delta", "delta"),
+	  "pi" = c("hurdle_pi", "pi")
+    ),
+	  "mu" = function(eta, ...) {
+      (1 - eta$pi) * eta$mu / (1 - (eta$delta) / (eta$delta + eta$mu)^eta$delta)
+    },
+    "d" = function(y, eta, log = FALSE) {
+      d <- ifelse(y == 0, eta$pi + (1 - eta$pi) * dnbinom(y, mu = eta$mu, size = eta$delta), 
+				(1 - eta$pi) * dnbinom(y, mu = eta$mu, size = eta$delta))
+      if(log) d <- log(d)
+      d
+    },
+    "p" = function(y, eta, ...) {
+		cdf1 <- pnbinom(y, size = eta$delta, mu = eta$mu))
+		cdf2 <- pnbinom(0, size = eta$delta, mu = eta$mu))
+		cdf3 <- eta$pi + ((1 - eta$pi) * (cdf1 - cdf2)/(1 - cdf2))
+		cdf <- ifelse((y == 0), eta$pi, cdf3)
     },
     "score.norm" = TRUE,
     "type" = 3
