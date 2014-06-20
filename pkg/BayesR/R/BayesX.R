@@ -137,7 +137,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
     weights0 <- attr(x, "model.frame")$weights
     rn <- attributes(attr(x, "model.frame"))$response.name
     for(j in names(family$bayesx$weights)) {
-      weights1 <- family$bayesx$weights[[j]](attr(x, "model.frame")[[rn]])
+      weights1 <- family$bayesx$weights[[j]](attr(x, "model.frame")[[rn[1]]])
       if(!is.null(weights0)) weights1 <- weights1 * weights0
       attr(x, "model.frame")[[paste(j, "weights", sep = "")]] <- weights1
       rm(weights1)
