@@ -1216,7 +1216,7 @@ hurdleP.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
       "lambda" = c("hurdle_lambda", "mean"),
       "pi" = c("hurdle_pi", "pi"),
 	  "weights" = list(
-        "lambda" = function(x) { 1 * ((x != 0)}
+        "lambda" = function(x) { 1 * (x != 0)}
       )
     ),
 	  "mu" = function(eta, ...) {
@@ -1312,8 +1312,8 @@ hurdleNB.BayesR <- function(links = c(mu = "log", pi = "logit", delta = "log"), 
       "delta" = c("hurdle_delta", "delta"),
 	  "pi" = c("hurdle_pi", "pi"),
 	  "weights" = list(
-        "lambda" = function(x) { 1 * ((x != 0)},
-		"delta" = function(x) { 1 * ((x != 0)}
+        "lambda" = function(x) { 1 * (x != 0)},
+		"delta" = function(x) { 1 * (x != 0)}
       )
     ),
 	  "mu" = function(eta, ...) {
