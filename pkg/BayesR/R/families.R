@@ -1312,7 +1312,7 @@ hurdleNB.BayesR <- function(links = c(mu = "log", pi = "logit", delta = "log"), 
       "delta" = c("hurdle_delta", "delta"),
 	  "pi" = c("hurdle_pi", "pi"),
 	  "weights" = list(
-        "lambda" = function(x) { 1 * (x != 0)},
+        "mu" = function(x) { 1 * (x != 0)},
 		"delta" = function(x) { 1 * (x != 0)}
       )
     ),
