@@ -792,14 +792,13 @@ dgp_zip <- function(n = 500, lambda = NULL, p = NULL,
 {
 
   if(is.null(lambda)) {
-    lambda <- list(nobs = n, const = -0.5,
-      type = list(c("unimodal", "quadratic", "const")))
+    lambda <- list(nobs = c(n, 100), const = -0.5,
+      type = list(c("unimodal", "const"), "spatial"))
   }
   if(is.null(p)) {
-    p <- list(nobs = n, const = 0,
-      type = list(c("linear", "sinus", "const")))
+    p <- list(nobs = c(n, 100), const = 0,
+      type = list(c("linear", "const"), "spatial"))
   }
-
 
   lambda <- do.call("dgp_eta", lambda)
   p <- do.call("dgp_eta", p) 
@@ -817,11 +816,14 @@ if(FALSE) {
   d <- dgp_zip()
 
   f <- list(
-    y ~ s(lambda.x11) + s(lambda.x12),
-    pi ~ s(pi.x11) + s(pi.x12)
+    y ~ sx(lambda.x11) + sx(lambda.id2, bs = "re"),
+    lambda.id2 ~ -1,
+    pi ~ sx(pi.x11) + sx(pi.id2, bs = "re"),
+    pi.id2 ~ -1
   )
 
-  b1 <- bayesr(f, data = d, method = "backfitting", family = zip)
+  b1 <- bayesr(f, data = d, family = zip, engine = "BayesX", verbose = TRUE)
+
   b2 <- bayesr(f, data = d, method = c("backfitting", "MCMC"),
     propose = "oslice", family = zip, n.iter = 400, burnin = 100, thin = 1)
 

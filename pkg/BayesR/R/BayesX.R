@@ -674,15 +674,13 @@ process_mfile <- function(x)
     "a", "b", "p", "df", "rho", "lambda", "alpha", "nu")
 
   ft <- sapply(strsplit(family, "_"), function(x) {
+    x <- gsub("zip", "lambda", x)
     if(length(x) > 1) {
       if(x[2] %in% known_paramaters) x[2] else x[1]
     } else x
   })
 
   ft <- paste(ft, eqntype, sep = "")
-
-print(ft)
-print(terms)
 
   terms <- paste(terms, ft, sep = ":")
 
@@ -742,6 +740,7 @@ resultsBayesX <- function(x, samples, ...)
         },
         "quant" = function(x) gsub("quantreg", "mu", x),
         "poisson" = function(x) gsub("poisson", "lambda", x),
+        "zip" = function(x) gsub("zip", "lambda")
       )
       x <- foo(x)
     }
