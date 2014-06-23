@@ -240,6 +240,8 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         if("weights" %in% mf.names)
           X$ModelWeights <- attr(x, "model.frame")[["weights"]]
       }
+      if("offset" %in% mf.names)
+        X$ModelOffset <- attr(x, "model.frame")[["offset"]]
     }
     if(h) {
       X <- unique(X)
@@ -357,6 +359,10 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
           et[i] <- "const"
         if(length(x[[j]]$sx.smooth)) {
           et <- c(et, x[[j]]$sx.smooth)
+        }
+        if(x[[j]]$hlevel < 2) {
+          if("offset" %in% mf.names)
+            et <- c(et, "ModelOffset(offset)")
         }
         if(length(et))
           teqn <- paste(teqn, '=', paste(et, collapse = ' + '))

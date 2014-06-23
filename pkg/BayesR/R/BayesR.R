@@ -356,11 +356,16 @@ bayesr.model.frame <- function(formula, data, family, weights = NULL,
     na.action <- get(getOption("na.action"))
   if(missing(data))
     data <- environment(formula)
-  if(is.matrix(data))
+  if(!is.data.frame(data))
     data <- as.data.frame(data)
 
   ## Make fake "Formula" object.
   fF <- make_fFormula(formula)
+
+  if(!is.null(offset)) {
+    if(length(offset) != nrow(data))
+      offset <- rep(offset, nrow(data))
+  }
 
   ## Set up the model.frame.
   mf <- list(formula = fF, data = data, weights = weights,
