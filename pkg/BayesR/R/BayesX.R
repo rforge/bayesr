@@ -155,6 +155,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
   }
   quantile <- family$bayesx$quantile
 
+  dirichlet <- family$family == "dirichlet"
   family$bayesx[c("order", "lhs", "rm.number", "weights", "quantile", "zero")] <- NULL
 
   args <- list(...)
@@ -407,12 +408,17 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
           } else ok <- grepl("1", fctr[grepl("hlevel", fctr)])
         }
         if(ok) {
-          if(!any(grepl("family", fctr)))
-            teqn <- paste(teqn, " family=", family$bayesx[[nx[if(is.null(id)) j else id]]][1], sep = "")
-          if(!any(grepl("equationtype", fctr)))
-					  teqn <- paste(teqn, " equationtype=", family$bayesx[[nx[if(is.null(id)) j else id]]][eqtj], sep = "")
-          if(!is.null(quantile))
-            teqn <- paste(teqn, " quantile=", quantile, sep = "")
+          if(dirichlet) {
+            teqn <- paste(teqn, " nrcat=", family$ncat, " family=dirichlet equationtype=",
+              if(j < 2) "mean" else "alpha", sep = "")
+          } else {
+            if(!any(grepl("family", fctr)))
+              teqn <- paste(teqn, " family=", family$bayesx[[nx[if(is.null(id)) j else id]]][1], sep = "")
+            if(!any(grepl("equationtype", fctr)))
+					    teqn <- paste(teqn, " equationtype=", family$bayesx[[nx[if(is.null(id)) j else id]]][eqtj], sep = "")
+            if(!is.null(quantile))
+              teqn <- paste(teqn, " quantile=", quantile, sep = "")
+          }
         }
         if(length(fctr)) {
           fctr <- paste(fctr, collapse = " ")
@@ -674,6 +680,9 @@ process_mfile <- function(x)
   })
 
   ft <- paste(ft, eqntype, sep = "")
+
+print(ft)
+print(terms)
 
   terms <- paste(terms, ft, sep = ":")
 

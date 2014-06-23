@@ -237,6 +237,13 @@ parse.input.bayesr <- function(formula, data = NULL, family = gaussian2.BayesR,
   rval <- bayesr.design(formula, mf, contrasts, knots, ...)
   rval <- bayesr.hlevel(rval)
 
+  ## Dirichlet specials.
+  if(family$family == "dirichlet") {
+    family$ncat <- length(rval)
+    family$names <- paste(family$names, 1:family$ncat, sep = "")
+    names(rval) <- family$names
+  }
+
   attr(rval, "family") <- family
   attr(rval, "reference") <- reference
   attr(rval, "ylevels") <- ylevels
@@ -3165,7 +3172,7 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
   stopifnot(!is.null(family$d))
   type <- match.arg(type)
   y <- model.response2(x)
-  n <- length(y)
+  n <- if(is.null(dim(y))) length(y) else nrow(y)
   maxy <- max(y, na.rm = TRUE)
 
   if(is.null(family$score.norm)) {

@@ -1097,13 +1097,8 @@ dirichlet.BayesR <- function(link = "logit", ...)
     "family" = "dirichlet",
     "names" = "alpha",
     "links" = parse.links(link, c(pi = "logit"), ...),
-    "cat" = 3,
-    "valid.response" = function(x) {
-      if(ok <- !all(rowSums(x) == 1)) stop("response components must sum up to one!", call. = FALSE)
-      ok
-    },
     "bayesx" = list(
-      "alpha" = c(paste("dirichlet", link, sep = "_"), "mean", "alpha")
+      "alpha" = c("dirichlet", "mean", "alpha")
     )
   )
 

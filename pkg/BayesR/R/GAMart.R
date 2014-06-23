@@ -857,7 +857,6 @@ if(FALSE) {
 dgp_poisson <- function(n = 500, lambda = NULL, 
 			range.lambda = c(-1,1), range.p = c(-1,1), ...)
 {
-
   if(is.null(lambda)) {
     lambda <- list(nobs = n, const = -0.5,
       type = list(c("unimodal", "quadratic", "const")))
@@ -866,8 +865,7 @@ dgp_poisson <- function(n = 500, lambda = NULL,
   lambda <- do.call("dgp_eta", lambda)
   ld <- exp(lambda$eta0)
   y <- rpois(n, lambda = ld)
-
-  
+ 
   d <- cbind(y, "lambda" = lambda)
   d
 }
