@@ -4,13 +4,13 @@ n <- 500
 dat <- data.frame("x1" = runif(n, -3, 3))
 dat$fac <- factor(rep(1:10, length.out = n))
 rc <- rnorm(nlevels(dat$fac), sd = 0.3) + 1
-dat$y <- with(dat, 1.2 + sin(x1) * rc[fac] + rnorm(n, sd = 0.1))
+dat$y <- with(dat, 1.2 + x1 * rc[fac] + rnorm(n, sd = 0.1))
 
 
 ## fit model
 f <- list(
-  y ~ sx(x1, bs = "rps", by = fac, sum2 = 10),
-  fac ~ -1
+  y ~ -1 + sx(fac, by = x1, bs = "re"),
+  fac ~ 1
 )
 
 b <- bayesr(f, family = gaussian2, data = dat, engine = "BayesX")

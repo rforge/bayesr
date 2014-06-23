@@ -993,11 +993,12 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
     }
   }
 
+
   ## New x values for which effect should
   ## be calculated, n = 100.
   if(!is.na(grid)) {
     if(length(x$term) < 2 & !is.factor(data[[tterms[1]]]) & !any(grepl("mrf", class(x))) &
-      !any(grepl("re.", class(x), fixed = TRUE)) & !any(grepl("random", class(x)))) {
+      !any(grepl("re.", class(x), fixed = TRUE)) & !any(grepl("random", class(x))) & !re.slope) {
       xsmall <- TRUE
       nd <- list()
       for(j in tterms) {
@@ -1018,7 +1019,6 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
     data <- unique(data0)
     xsmall <- if(nrow(data) != nrow(data0)) TRUE else FALSE
   }
-
   if(is.null(x$special)) {
     X <- get.X(data)
   } else {

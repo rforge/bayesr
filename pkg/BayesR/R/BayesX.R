@@ -634,6 +634,7 @@ process_mfile <- function(x)
 
     }
   }
+
   for(j in 1:n) {
     if(grepl("gaussian_re", family[j], fixed = TRUE) |
       grepl("Gaussian_random_effect", family[j], fixed = TRUE))
@@ -873,6 +874,7 @@ resultsBayesX <- function(x, samples, ...)
                   is.re.slope <- TRUE
                 }
               }
+
               tn <- gsub(")", "", gsub("sx(", "", tn0, fixed = TRUE), fixed = TRUE)
               tn <- strsplit(tn, ",", fixed = TRUE)[[1]]
               tn <- tn[!grepl("by", tn)]
@@ -886,7 +888,9 @@ resultsBayesX <- function(x, samples, ...)
                   X <- if(ncol(data) > 1) {
                     if(!is.factor(data[, ncol(data)]) & !is.re.slope) {
                       as.numeric(data[, ncol(data)]) * basis(data[, 1:(ncol(data) - 1), drop = FALSE])
-                    } else basis(data[, 1:(ncol(data) - 1), drop = FALSE])
+                    } else {
+                      basis(data[, 1:(ncol(data) - 1), drop = FALSE])
+                    }
                   } else basis(data[, 1, drop = FALSE])
                   return(X)
                 }
@@ -904,26 +908,28 @@ resultsBayesX <- function(x, samples, ...)
               stype <- attr(X, "type")
               class(tn1) <- paste(stype, "smooth.spec", sep = ".")
 
-              fst <- compute_term(tn1, get.X = get.X, get.mu = get.mu,
+              fst <- try(compute_term(tn1, get.X = get.X, get.mu = get.mu,
                 psamples = psamples, vsamples = vsamples, asamples = NULL, FUN = NULL,
                 snames = snames, effects.hyp = effects.hyp, fitted.values = fitted.values,
                 data = attr(x, "model.frame")[, tn, drop = FALSE], grid = grid,
-                hlevel = obj$hlevel, sx = TRUE, re.slope = is.re.slope)
+                hlevel = obj$hlevel, sx = TRUE, re.slope = is.re.slope), silent = TRUE)
+           
+              if(!inherits(fst, "try-error")) {
+                attr(fst$term, "specs")$get.mu <- get.mu
+                attr(fst$term, "specs")$basis <- sx.smooth[[i]]$basis
+                if(sid)
+                  attr(fst$term, "specs")$label <- paste(attr(fst$term, "specs")$label, id, sep = ":")
+                if(is.re.slope) {
+                  attr(fst$term, "specs")$by <- re.check[2]
+                  attr(fst$term, "specs")$re.slope <- TRUE
+                }
 
-              attr(fst$term, "specs")$get.mu <- get.mu
-              attr(fst$term, "specs")$basis <- sx.smooth[[i]]$basis
-              if(sid)
-                attr(fst$term, "specs")$label <- paste(attr(fst$term, "specs")$label, id, sep = ":")
-              if(is.re.slope) {
-                attr(fst$term, "specs")$by <- re.check[2]
-                attr(fst$term, "specs")$re.slope <- TRUE
-              }
-
-              ## Add term to effects list.
-              effects[[paste(tn0, stype, sep = ":")]] <- fst$term
-              effects.hyp <- fst$effects.hyp
-              fitted.values <- fst$fitted.values
-              rm(fst)
+                ## Add term to effects list.
+                effects[[paste(tn0, stype, sep = ":")]] <- fst$term
+                effects.hyp <- fst$effects.hyp
+                fitted.values <- fst$fitted.values
+                rm(fst)
+              } else warning(paste("problems computing effect object for term ", tn1$label, "!", sep = ""))
             }
           }
         }
