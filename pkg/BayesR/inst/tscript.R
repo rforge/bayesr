@@ -140,9 +140,22 @@ b2 <- bayesr(y ~ x2 + sx(x1, by = x2), data = dat, engine = "BayesX")
 ## IWLS test
 n <- 100
 dat <- data.frame("x1" = runif(n, -3, 3), "x2" = runif(n, -3, 3))
-dat$y <- with(dat, 1.2 + sin(x1) * cos(x2) + rnorm(n, sd = scale2(cos(x1), 0.1, 0.8)))
+dat$y <- with(dat, 1.2 + sin(x1) + rnorm(n, sd = scale2(cos(x1), 0.1, 0.8)))
 
-b <- bayesr(y ~ s(x1, x2), ~ s(x1), data = dat, method = "MCMC", svalues = FALSE, n.iter = 1200, burnin = 200, thin = 1, family = gaussian2, propose = "slice")
+b0 <- bayesr(y ~ s(x1), ~ s(x1), data = dat, method = c("backfitting", "MCMC"),
+  n.iter = 12000, burnin = 2000, thin = 10, family = gaussian2,
+  update = "iwls", propose = "wslice")
+
+b1 <- bayesr(y ~ s(x1), ~ s(x1), data = dat, method = c("backfitting", "MCMC"),
+  n.iter = 12000, burnin = 2000, thin = 10, family = gaussian2,
+  update = "optim", propose = "oslice")
+
+b2 <- bayesr(y ~ s(x1), ~ s(x1), data = dat, method = c("backfitting", "MCMC"),
+  n.iter = 12000, burnin = 2000, thin = 10, family = gaussian2,
+  update = "optim", propose = "slice")
+
+b3 <- bayesr(y ~ s(x1), ~ s(x1), data = dat, method = c("backfitting", "MCMC"),
+  family = gaussian2, update = "iwls", propose = "iwls")
 
 plot(b)
 plot(b, which = "samples")

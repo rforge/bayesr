@@ -148,7 +148,10 @@ propose_rw <- function(x, family,
     ## Compute log priors.
     p2 <- if(x$fixed) {
       sum(dnorm(g, sd = 10, log = TRUE), na.rm = TRUE)
-    } else drop(-0.5 / x$state$tau2 * crossprod(g, x$S[[1]]) %*% g)
+    } else {
+      drop(-0.5 / x$state$tau2 * crossprod(g, x$S[[1]]) %*% g) +
+        log((x$b^x$a) / gamma(x$a) *  x$state$tau2^(-x$a - 1) * exp(-x$b / x$state$tau2))
+    }
   
     ## Compute fitted values.        
     fit <- drop(x$X %*% g)
@@ -437,7 +440,10 @@ logPost <- function(g, x, family, response, eta, id)
   ll <- family$loglik(response, peta)
   lp <- if(x$fixed) {
     sum(dnorm(g, sd = 10, log = TRUE), na.rm = TRUE)
-  } else drop(-0.5 / x$state$tau2 * crossprod(g, x$S[[1]]) %*% g)
+  } else {
+    drop(-0.5 / x$state$tau2 * crossprod(g, x$S[[1]]) %*% g) +
+      log((x$b^x$a) / gamma(x$a) *  x$state$tau2^(-x$a - 1) * exp(-x$b / x$state$tau2))
+  }
 
   -1 * (ll + lp)
 }
@@ -552,7 +558,10 @@ logPost2 <- function(g, x, family, response, eta, id)
   ll <- family$loglik(response, peta)
   lp <- if(x$fixed) {
     sum(dnorm(g, sd = 10, log = TRUE), na.rm = TRUE)
-  } else drop(-0.5 / x$state$tau2 * crossprod(g, x$S[[1]]) %*% g)
+  } else {
+    drop(-0.5 / x$state$tau2 * crossprod(g, x$S[[1]]) %*% g) +
+      log((x$b^x$a) / gamma(x$a) *  x$state$tau2^(-x$a - 1) * exp(-x$b / x$state$tau2))
+  }
 
   return(ll + lp)
 }
@@ -674,6 +683,16 @@ uni.slice <- function(g, x, family, response, eta, id, j, ...,
 propose_slice <- function(x, family,
   response, eta, id, rho, ...)
 {
+  args <- list(...)
+
+  if(!is.null(args$no.mcmc)) {
+    if(!x$fixed & is.null(x$sp)) {
+      a <- x$rank / 2 + x$a
+      b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
+      x$state$tau2 <- 1 / rgamma(1, a, b)
+    }
+  }
+
   ## Remove fitted values.
   eta[[id]] <- eta[[id]] - x$state$fit
 
@@ -687,7 +706,7 @@ propose_slice <- function(x, family,
   x$state$fit <- drop(x$X %*% x$state$g)
 
   ## Sample variance parameter.
-  if(!x$fixed & is.null(x$sp)) {
+  if(!x$fixed & is.null(x$sp) & is.null(args$no.mcmc)) {
     a <- x$rank / 2 + x$a
     b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
     x$state$tau2 <- 1 / rgamma(1, a, b)
@@ -888,7 +907,8 @@ update_optim <- function(x, family, response, eta, id, ...)
       objfun <- function(gamma) {
         eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
         ll <- family$loglik(response, family$map2par(eta2))
-        lp <- drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma)
+        lp <- drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
+          log((x$b^x$a) / gamma(x$a) * tau2^(-x$a - 1) * exp(-x$b / tau2))
         -1 * (ll + lp)
       }
 
@@ -925,7 +945,10 @@ update_optim <- function(x, family, response, eta, id, ...)
     ll <- family$loglik(response, family$map2par(eta2))
     lp <- if(x$fixed) {
       sum(dnorm(gamma, sd = 10, log = TRUE))
-    } else drop(-0.5 / x$state$tau2 * crossprod(gamma, x$S[[1]]) %*% gamma)
+    } else {
+      drop(-0.5 / x$state$tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
+        log((x$b^x$a) / gamma(x$a) *  x$state$tau2^(-x$a - 1) * exp(-x$b /  x$state$tau2))
+    }
     -1 * (ll + lp)
   }
 
@@ -963,7 +986,10 @@ update_optim2 <- function(x, family, response, eta, id, ...)
     ll <- family$loglik(response, peta)
     lp <- if(x$fixed) {
       sum(dnorm(gamma, sd = 10, log = TRUE))
-    } else drop(-0.5 / x$state$tau2 * crossprod(gamma, x$S[[1]]) %*% gamma)
+    } else {
+      drop(-0.5 / x$state$tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
+        log((x$b^x$a) / gamma(x$a) *  x$state$tau2^(-x$a - 1) * exp(-x$b /  x$state$tau2))
+    }
     -1 * (ll + lp)
   }
 
@@ -1206,7 +1232,7 @@ smooth.IWLS.default <- function(x, ...)
   if(is.null(x$xt$adaptive))
     x$xt$adaptive <- TRUE
   if(is.null(x$xt$step))
-    x$xt$step <- 20
+    x$xt$step <- 40
 
   x
 }
@@ -1235,7 +1261,9 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "nadja"),
   sample = c("slice", "iwls"), ...)
 {
-  known_methods <- c("backfitting", "MCMC", "backfitting2", "backfitting3", "backfitting4")
+  known_methods <- c("backfitting", "MCMC", "backfitting2", "backfitting3", "backfitting4", "mcmc")
+  if(is.integer(method))
+    method <- known_methods[method]
   tm <- NULL
   for(m in method)
     tm <- c(tm, match.arg(m, known_methods))
@@ -1668,7 +1696,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
         ## And all terms.
         for(sj in seq_along(x[[nx[j]]]$smooth)) {
           ## Get proposed states.
-          p.state <- x[[nx[j]]]$smooth[[sj]]$sample(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j], rho = rho)
+          p.state <- x[[nx[j]]]$smooth[[sj]]$sample(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j], rho = rho, no.mcmc = TRUE)
 
           accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
 

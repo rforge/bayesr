@@ -627,11 +627,11 @@ dgp_beta <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
 {
 	if(is.null(mu)) {
     mu <- list(nobs = n, const = -0.5,
-      type = list(c("sinus", "spatial", "const")))
+      type = list(c("sinus", "const")))
   }
   if(is.null(sigma2)) {
     sigma2 <- list(nobs = n, const = 0.01,
-      type = list(c("double", "const")))
+      type = list(c("linear", "const")))
   }
 
   stopifnot(is.list(mu))
@@ -659,7 +659,7 @@ dgp_beta <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
 
 if(FALSE) {
   d <- dgp_beta()
-  b <- bayesr(y ~ sx(mu.x11), ~ sx(sigma2.x11), data = d, family = beta, engine = "BayesX", verbose = TRUE)
+  b <- bayesr(y ~ s(mu.x11), ~ s(sigma2.x11), data = d, family = beta, method = "backfitting")
   summary(b)
   plot(b, which = 3:6)
 
