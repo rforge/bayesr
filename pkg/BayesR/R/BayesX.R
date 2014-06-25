@@ -410,7 +410,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         if(ok) {
           if(dirichlet) {
             teqn <- paste(teqn, " nrcat=", family$ncat, " family=dirichlet equationtype=",
-              if(j < 2) "mean" else "alpha", sep = "")
+              if(j < 2) "mean" else paste("alpha", j, sep = ""), sep = "")
           } else {
             if(!any(grepl("family", fctr)))
               teqn <- paste(teqn, " family=", family$bayesx[[nx[if(is.null(id)) j else id]]][1], sep = "")
@@ -715,7 +715,7 @@ resultsBayesX <- function(x, samples, ...)
     ylevels <- ylevels[ylevels != reference]
 
   rename.p <- function(x) {
-    if(family$family %in% c("binomial", "multinomial", "quant", "poisson")) {
+    if(family$family %in% c("binomial", "multinomial", "quant", "poisson", "zip", "dirichlet")) {
       foo <- switch(family$family,
         "binomial" = function(x) gsub("binomial", "pi", x),
         "multinomial" = function(x) {
@@ -741,7 +741,12 @@ resultsBayesX <- function(x, samples, ...)
         },
         "quant" = function(x) gsub("quantreg", "mu", x),
         "poisson" = function(x) gsub("poisson", "lambda", x),
-        "zip" = function(x) gsub("zip", "lambda")
+        "zip" = function(x) gsub("zip", "lambda"),
+        "dirichlet" = function(x) {
+          x <- gsub("dirichletmean", "dirichletalpha1", x)
+          x <- gsub("dirichletalpha", "alpha", x)
+          x
+        }
       )
       x <- foo(x)
     }
