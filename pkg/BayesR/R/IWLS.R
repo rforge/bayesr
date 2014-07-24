@@ -11,6 +11,18 @@ propose_iwls <- function(x, family,
 
 propose_iwls0 <- function(x, family, response, eta, id, ...)
 {
+  require("mvtnorm")
+
+  args <- list(...)
+
+  if(!is.null(args$no.mcmc)) {
+    if(!x$fixed & is.null(x$sp)) {
+      a <- x$rank / 2 + x$a
+      b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
+      x$state$tau2 <- 1 / rgamma(1, a, b)
+    }
+  }
+
   ## Map predictor to parameter scale.
   peta <- family$map2par(eta)
 
@@ -89,7 +101,7 @@ propose_iwls0 <- function(x, family, response, eta, id, ...)
   qbeta <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
 
   ## Sample variance parameter.
-  if(!x$fixed & is.null(x$sp)) {
+  if(!x$fixed & is.null(x$sp) & is.null(args$no.mcmc)) {
     a <- x$rank / 2 + x$a
     b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
     x$state$tau2 <- 1 / rgamma(1, a, b)
@@ -821,8 +833,10 @@ update_iwls <- function(x, family, response, eta, id, ...)
   } else weights <- args$weights
 
   ## Which obs to take.
-  ok <- !(weights %in% c(NA, -Inf, Inf, 0))
+  ok <- is.finite(weights) & !is.na(weights) & (weights != 0) ##!(weights %in% c(NA, -Inf, Inf, 0))
   weights <- weights[ok]
+
+  if(length(weights) == 0) return(x$state)
 
   if(is.null(args$z)) {
     ## Score.
@@ -1252,14 +1266,14 @@ get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc")
 
 
 ## Sampler based on IWLS proposals.
-samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = FALSE,
+samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TRUE,
   verbose = TRUE, step = 20, svalues = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
   tdir = NULL, method = "backfitting", outer = FALSE, inner = FALSE, n.samples = 200,
   criterion = c("AICc", "BIC", "AIC"), lower = 1e-09, upper = 1e+04,
   optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3,
-  update = c("optim2", "iwls", "optim"),
-  propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "nadja"),
-  sample = c("slice", "iwls"), ...)
+  update = c("optim", "iwls", "optim2"),
+  propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "nadja", "iwls0"),
+  sample = c("slice", "iwls", "iwls0"), ...)
 {
   known_methods <- c("backfitting", "MCMC", "backfitting2", "backfitting3", "backfitting4", "mcmc")
   if(is.integer(method))
@@ -1312,6 +1326,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     propose <- match.arg(propose)
     propose <- switch(propose,
       "iwls" = propose_iwls,
+      "iwls0" = propose_iwls0,
       "rw" = propose_rw,
       "twalk" = propose_twalk,
       "slice" = propose_slice,
@@ -1326,6 +1341,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     sample <- match.arg(sample)
     sample <- switch(sample,
       "iwls" = propose_iwls,
+      "iwls0" = propose_iwls0,
       "rw" = propose_rw,
       "twalk" = propose_twalk,
       "slice" = propose_slice,

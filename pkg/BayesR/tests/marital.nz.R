@@ -8,4 +8,4 @@ b0 <- bayesr(mstatus ~ s(age), family = multinomial,
 
 b1 <- bayesr(mstatus ~ sx(age), family = multinomial,
   data = marital.nz, reference = "Married/Partnered",
-  engine = "BayesX")
+  engine = "BayesX", verbose = TRUE, n.iter = 1200, burnin = 200)

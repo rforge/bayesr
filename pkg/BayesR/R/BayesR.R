@@ -206,20 +206,19 @@ parse.input.bayesr <- function(formula, data = NULL, family = gaussian2.BayesR,
 
   ## For categorical responses, extend formula object.
   ylevels <- NULL
-  if(length(response.name) < 2) {
-    if(is.factor(mf[[response.name]])) {
-      cat <- if(is.null(family$cat)) FALSE else family$cat
-      if(cat & nlevels(mf[[response.name]]) > 1) {
+  if((length(response.name) < 2) | (cat <- if(is.null(family$cat)) FALSE else family$cat)) {
+    if(is.factor(mf[[response.name[1]]])) {
+      if(cat & nlevels(mf[[response.name[1]]]) > 1) {
         if(is.null(reference)) {
-          ty <- table(mf[[response.name]])
+          ty <- table(mf[[response.name[1]]])
           reference <- c(names(ty)[ty == max(ty)])[1]
         }
         reference <- rmf(reference)
-        ylevels <- rmf(levels(mf[[response.name]]))
+        ylevels <- rmf(levels(mf[[response.name[1]]]))
         ylevels <- ylevels[ylevels != reference]
         if(length(formula) != (n <- length(ylevels)))
           formula <- rep(formula, length.out = n)
-        names(formula) <- nf <- paste(response.name, ylevels, sep = "")
+        names(formula) <- nf <- paste(response.name[1], ylevels, sep = "")
         for(j in seq_along(formula)) {
           uf <- eval(parse(text = paste(nf[j], " ~ .", sep = "")))
           if(!all(c("formula", "fake.formula") %in% names(formula[[j]]))) {
@@ -227,7 +226,7 @@ parse.input.bayesr <- function(formula, data = NULL, family = gaussian2.BayesR,
           } else formula[[j]]$cat.formula <- update(formula[[j]]$formula, uf)
         }
       }
-    } else mf[[response.name]] <- as.numeric(mf[[response.name]])
+    } else mf[[response.name[1]]] <- as.numeric(mf[[response.name[1]]])
   } else {
     for(y in response.name)
       mf[[y]] <- as.numeric(mf[[y]])

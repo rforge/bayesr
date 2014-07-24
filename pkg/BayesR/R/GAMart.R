@@ -1057,7 +1057,7 @@ if(FALSE) {
   ## Start BayesX sampler.
   ## Set grid = NA, so fitted effects will be returned with original observations.
   b0 <- bayesr(f, data = d, family = multinomial, reference = 1,
-    n.iter = 12000, burnin = 2000, thin = 10, verbose = TRUE, grid = NA,
+    n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE, grid = NA,
     engine = "BayesX")
 
   ## Plot. estimated effects.

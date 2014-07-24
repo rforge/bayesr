@@ -723,20 +723,22 @@ resultsBayesX <- function(x, samples, ...)
             x <- strsplit(x, "):", fixed = TRUE)
             x <- sapply(x, function(x2) {
               if(length(x2) > 1) {
-                x2[2] <- gsub(response.name, "", gsub("multinom:", "", x2[2]))
+                x2[2] <- gsub(response.name[1], "", gsub("multinom:", "", x2[2]))
                 x2[2] <- gsub("multinomialprobit:", "", x2[2])
                 x2 <- paste(x2, collapse = "):")
               } else {
-                x2 <- gsub(response.name, "", gsub("multinom:", "", x2))
+                x2 <- gsub(response.name[1], "", gsub("multinom:", "", x2))
                 x2 <- gsub("multinomialprobit:", "", x2)
               }
               x2
             })
             x <- unlist(x)
           } else {
-            x <- gsub(response.name, "", gsub("multinom:", "", x))
+            x <- gsub(response.name[1], "", gsub("multinom:", "", x))
             x <- gsub("multinomialprobit:", "", x)
           }
+          x <- gsub("multinommean:", "", x, fixed = TRUE)
+          x <- gsub("multinommeanservant:", "", x, fixed = TRUE)
           x
         },
         "quant" = function(x) gsub("quantreg", "mu", x),

@@ -122,9 +122,9 @@ plot(c(b0, b1), type = "mba")
 
 library("MASS")
 data("mcycle")
-mcycle$accel2 <- scale2(mcycle$accel, -1, 1)
+mcycle$accel2 <- scale(mcycle$accel)
 
-b <- bayesr(accel2 ~ rs(times, k = 20), ~ s(times, bs = "ps"), data = mcycle, method = "backfitting2")
+b <- bayesr(accel2 ~ s(times, k = 20), data = mcycle, method = "backfitting")
 
 
 ## by variable test
