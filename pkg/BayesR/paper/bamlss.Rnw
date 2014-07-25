@@ -1,0 +1,438 @@
+\documentclass[nojss]{jss}
+% \documentclass[article]{jss}
+\usepackage{amsmath,amssymb,amsfonts,thumbpdf}
+\usepackage{multirow,longtable}
+
+\definecolor{darkgray}{rgb}{0.1,0.1,0.1}
+\definecolor{heat1}{rgb}{0.8274510, 0.2470588, 0.4156863}
+\definecolor{heat2}{rgb}{0.8823529, 0.4392157, 0.2980392}
+\definecolor{heat3}{rgb}{0.9137255, 0.6039216, 0.1725490}
+\definecolor{heat4}{rgb}{0.9098039, 0.7647059, 0.2352941}
+\definecolor{heat5}{rgb}{0.8862745, 0.9019608, 0.7411765}
+\definecolor{blue1}{RGB}{0, 126, 255}
+
+
+%% additional commands
+\newcommand{\squote}[1]{`{#1}'}
+\newcommand{\dquote}[1]{``{#1}''}
+\newcommand{\fct}[1]{{\texttt{#1()}\index{#1@\texttt{#1()}}}}
+\newcommand{\class}[1]{\dquote{\texttt{#1}}}
+%% for internal use
+\newcommand{\fixme}[1]{\emph{\marginpar{FIXME} (#1)}}
+\newcommand{\readme}[1]{\emph{\marginpar{README} (#1)}}
+
+%% Authors: NU + rest in alphabetical order
+\author{Nikolaus Umlauf\\Universit\"at Innsbruck \And
+        Achim Zeileis\\Universit\"at Innsbruck}
+\Plainauthor{Nikolaus Umlauf, Achim Zeileis}
+
+\title{BAMLSS: Bayesian additive models for location, scale and shape (and beyond)}
+\Plaintitle{BAMLSS: Bayesian additive models for location, scale and shape (and beyond)}
+
+\Keywords{GAMLSS, distributional regression, MCMC, \proglang{BUGS}, \proglang{R}, software}
+\Plainkeywords{GAMLSS, distributional regression, MCMC, BUGS, R, software}
+
+\Abstract{
+  Bayesian analysis provides a convenient setting for the estimation of complex generalized
+  additive regression models (GAM). Since computational power has tremendously increased in the past
+  decade it is now possible to tackle complicated inferential problems, e.g., with Markov chain
+  Monte Carlo simulation, on virtually any modern computer. This is one of the reasons why
+  Bayesian methods have become quite popular and it has lead to a number of highly specialized and
+  optimized estimation engines. Because of the very general structure of the additive predictor in
+  GAMs, we propose an unified modeling architecture that can deal with a wide range of types of
+  model terms and can benefit from different algorithms in order to estimate Bayesian additive
+  models for location, scale and shape (and beyond).
+}
+
+\Address{
+  Nikolaus Umlauf, Achim Zeileis\\
+  Department of Statistics\\
+  Faculty of Economics and Statistics\\
+  Universit\"at Innsbruck\\
+  Universit\"atsstr.~15\\
+  6020 Innsbruck, Austria\\
+  E-mail: \email{Nikolaus.Umlauf@uibk.ac.at}, \email{Achim.Zeileis@R-project.org}\\
+  URL: \url{http://eeecon.uibk.ac.at/~umlauf/},\\
+  \phantom{URL: }\url{http://eeecon.uibk.ac.at/~zeileis/}
+}
+
+%% Sweave/vignette information and metadata
+%% need no \usepackage{Sweave}
+\SweaveOpts{engine = R, eps = FALSE, keep.source = TRUE}
+
+<<preliminaries, echo=FALSE, results=hide>>=
+options(width = 70, prompt = "R> ", continue = "+  ")
+set.seed(1090)
+library("BayesR")
+options("use.akima" = TRUE)
+@
+
+
+\begin{document}
+
+
+\section{Introduction} \label{sec:intro}
+
+The generalized additive model for location, scale and shape
+(GAMLSS,~\citealp{bamlss:Rigby+Stasinopoulos:2005}) relaxes the distributional assumptions of
+an response variable in a way that allows for modeling the mean (location) as well
+as higher moments (scale and shape) in terms of covariates. This is
+especially useful in cases where, e.g., the response does not follow the exponential family or
+particular interest lies on scale and shape parameters. Moreover, covariate effects can have
+arbitrary forms such as, e.g., linear, nonlinear, spatial or random effects. Hence, each parameter
+of the distribution is linked to an additive predictor in similar fashion as for the well
+established generalized additive model (GAM,~\citealp{bamlss:Hastie+Tibshirani:1990}).
+
+The terms of an additive predictor can be represented by an unified basis function approach, which
+supports a general model architecture. This fact can be further exploited because each term can be
+transformed into a mixed model representation \citep{bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003}, 
+independent on the assumptions about smoothness controlled by a penalty on the regression
+coefficients. In a Bayesian setting, equivalent smooth forms and generality is achieved using, e.g.,
+normal priors on the regression coefficients
+\citep{bamlss:Fahrmeir+Kneib+Lang+Marx:2013, bamlss:Brezger+Lang:2006}.
+
+The Bayesian approach is particularly attractive since it provides valid inference that does not
+rely on asymptotic properties and allows extensions such as variable selection or multilevel models.
+Probably for this reason, and because computational power has tremendously increased in the past
+decade, the number of Bayesian estimation engines that can tackle complicated inferential problems
+has seen a constant rise. As a whole, existing estimation engines already provide infrastructures
+for a number of regression problems exceeding univariate responses, e.g., for multinomial,
+multivariate normal or mixed discrete-continuous distributed variables, and so forth. In addition,
+most of the engines support random effect estimation which in the end can in principle be utilized
+for setting up complex models with additive predictors (see, e.g., \citealp{bamlss:Wood:2006}).
+
+However, the majority of engines (Bayesian and frequentist) use different model setups and output 
+functionalities, which makes it difficult for practitioners, e.g., to compare properties of
+different algorithms or to select the appropriate distribution and variables, etc. The reasons are
+manifold: the use of different model specification languages like
+\proglang{BUGS}~\citep{bamlss:BUGS:2009} or \proglang{R}~\citep{bamlss:R}; different standalone
+statistical software packages like \pkg{BayesX}~\citep{bamlss:Umlauf+Adler+Kneib+Lang+Zeileis:2014,
+bamlss:Belitz+Brezger+Kneib+Lang:2011}, \pkg{JAGS}~\citep{bamlss:Plummer:2013},
+\pkg{Stan}~\citep{bamlss:stan-software:2013} or
+\pkg{WinBUGS}~\citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}; or even differences within the
+same environment.
+
+In order to ease the usage of already existing implementations and code, as well as to facilitate
+the development of new algorithms and extensions, we present an unified and entirely modular
+architecture for models with additive predictors which does not restrict to any type of regression
+problem. Hence, the approach supports more than the GAMLSS statistical model class and is sometimes
+referred to as distributional regression. However, because of the great similarities with GAMLSS we
+call the conceptional framework Bayesian additive models for location, scale and shape (BAMLSS).
+
+The remainder of the paper is as follows. In Section~\ref{sec:models} the models supported by this
+framework are briefly introduced. Section~\ref{sec:arch} then presents the general modeling
+architecture and model specification problem. In Section~\ref{sec:soft} a software implementation of
+the concept is presented briefly together with a couple of examples that are illustrated in
+Section~\ref{sec:ex}.
+
+
+\section{Models} \label{sec:models}
+
+The models discussed in this paper assume conditional independence of the response variable $y_1, 
+\ldots, y_n$ given covariates. Within the GAMLSS model
+class, all parameters of the response distribution can be modeled by explanatory variables such that
+\begin{equation*} \label{eqn:dreg}
+\mathbf{y} \sim \mathbf{\mathcal{D}}\left(h_{1}(\boldsymbol{\theta}_{1}) = \boldsymbol{\eta}_{1}, \,\,
+  h_{2}(\boldsymbol{\theta}_{2}) = \boldsymbol{\eta}_{2}, \dots, \,\, h_{K}(\boldsymbol{\theta}_{K}) =
+  \boldsymbol{\eta}_{K}\right),
+\end{equation*}
+where $\mathbf{\mathcal{D}}$ denotes any distribution available for the response
+variable and $\boldsymbol{\theta}_k$ are parameters that are linked to an additive predictor using
+known monotonic link functions $h_{k}(\cdot)$ \citep{bamlss:Rigby+Stasinopoulos:2005}. 
+The $k$th additive predictor (for simplicity, the
+parameter index $k$ is suppressed in the following) is given by
+\begin{equation} \label{eqn:structadd}
+\eta = f_1(\mathbf{z}) + \ldots + f_p(\mathbf{z}) + \mathbf{x}^{\top}\boldsymbol{\gamma},
+\end{equation}
+where $\mathbf{z}$ represents a generic vector of all nonlinear modeled covariates and
+$\mathbf{x}^{\top}\boldsymbol{\gamma}$ is the usual parametric part. The functions $f_j$ are
+possibly smooth functions encompassing various types of effects, e.g.:
+\begin{itemize}
+  \item Nonlinear effects of continuous covariates: $f_j(\mathbf{z}) = f(z_1)$.
+  \item Two-dimensional surfaces: $f_j(\mathbf{z}) = f(z_1, z_2)$.
+  \item Spatially correlated effects: $f_j(\mathbf{z}) = f_{spat}(z_s)$.
+  \item Varying coefficients: $f_j(\mathbf{z}) = z_1f(z_2)$.
+  \item Spatially varying effects: $f_j(\mathbf{z}) = z_1f_{spat}(z_s)$ or
+    $f_j(\mathbf{z}) = z_1f(z_2, z_3)$.
+  \item Random intercepts with cluster index $c$: $f_j(\mathbf{z}) = \beta_c$.
+  \item Random slopes with cluster index $c$: $f_j(\mathbf{z}) = z_1\beta_c$.
+\end{itemize}
+Because of the general structure of the predictor, i.e., the various terms can be combined
+arbitrarily, the models discussed are embedded within the class of structured additive regression
+(STAR,~\citealp{bamlss:Fahrmeir+Kneib+Lang:2004, bamlss:Brezger+Lang:2006}) models.
+
+For each function $f_j$ the vector of function evaluations
+$\mathbf{f}_j = (f_j(\mathbf{z}_{1}),\ldots,f_j(\mathbf{z}_{n}))^{\top}$ of the $i = 1, \ldots, n$
+observations can be written in matrix notation
+\begin{equation*} \label{eqn:matnot}
+\mathbf{f}_j = \mathbf{Z}_j\boldsymbol{\beta}_j,
+\end{equation*}
+with design matrix $\mathbf{Z}_j$ that depends on the specific term structure chosen for $f_j$
+and $\boldsymbol{\beta}_j$ are unknown regression coefficients to be estimated. Hence, the predictor
+ (\ref{eqn:structadd}) may be rewritten as
+\begin{equation*} \label{eqn:structaddmat}
+\boldsymbol{\eta} = \mathbf{Z}_1\boldsymbol{\beta}_1 + \ldots + \mathbf{Z}_p\boldsymbol{\beta}_p
++ \mathbf{X}\boldsymbol{\gamma},
+\end{equation*}
+where $\mathbf{X}$ corresponds to the usual design matrix for the linear effects.
+
+The individual model components $\mathbf{Z}_j\boldsymbol{\beta}_j$ can be further decomposed
+into a mixed model representation given by
+\begin{equation*} \label{eqn:mixed}
+\mathbf{f}_j = \tilde{\mathbf{X}}_j\tilde{\boldsymbol{\gamma}}_j +
+  \mathbf{U}_j\tilde{\boldsymbol{\beta}}_j
+\end{equation*}
+where $\tilde{\boldsymbol{\gamma}}_j$ represents the fixed effects parameters and 
+$\tilde{\boldsymbol{\beta}}_j \sim N(\mathbf{0}, \tau^2_j\mathbf{I})$ independent and identically
+distributed random effects. The design matrix $\mathbf{U}_j$ is derived from a spectral
+decomposition of the penalty matrix $\mathbf{K}_j$ and $\tilde{\mathbf{X}}_j$ by finding a basis of
+the null space of $\mathbf{K}_j$ such that $\tilde{\mathbf{X}}_j^{\top}\mathbf{K}_j = \mathbf{0}$,
+i.e., parameters $\tilde{\boldsymbol{\gamma}}_j$ are not penalized (see, e.g.,
+\citealp{bamlss:Fahrmeir+Kneib+Lang+Marx:2013, bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003}).
+
+In the Bayesian approach, prior distributions need to be assigned to the regression coefficients.
+A general setup is obtained by using normal priors for $\boldsymbol{\beta}_j$ of the form
+\begin{equation*} \label{eqn:prior}
+p(\boldsymbol{\beta}_j | \tau_j^2) \propto \exp \left(- \frac{1}{2\tau_j^2}
+\boldsymbol{\beta_j}^{\top}\mathbf{K}_j\boldsymbol{\beta}_j\right),
+\end{equation*}
+where $\mathbf{K}_j$ is a quadratic penalty matrix that shrinks parameters towards zero or penalizes
+too abrupt jumps between neighboring parameters, e.g., for random effects
+$\mathbf{K}_j = \mathbf{I}$. In most cases $\mathbf{K}_j$ will be rank deficient
+and the prior for $\boldsymbol{\beta}_j$ is partially improper. The variance parameter $\tau_j^2$ is
+equivalent to the inverse smoothing parameter in a frequentist approach and controls the trade off
+between flexibility and smoothness. A common choice of prior for the variance parameter is a
+weakly informative inverse Gamma hyperprior $\tau_j^2 \sim IG(a_j, b_j)$, with $a_j = b_j = 0.001$
+as a standard option. Small values for $a_j$ and $b_j$ correspond to an approximate uniform
+distribution for $\log \tau_j^2$.
+
+A detailed discussion of the GAMLSS methodological framework is provided in
+\citet{bamlss:Rigby+Stasinopoulos:2005}, on model with STAR predictor in
+\citet{bamlss:Fahrmeir+Kneib+Lang+Marx:2013} and \citet{bamlss:Wood:2006}.
+
+\fixme{Multilevel \citep{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}, multinomial,
+  quantile regression \dots?}
+
+
+\section{General architecture} \label{sec:arch}
+
+The representation of the terms in the structured additive predictor (\ref{eqn:structadd})
+already suggests a general and modular architecture. However, to keep the focus on maximum
+flexibility of the conceptional framework it is useful to list the typical steps needed to estimate
+the models presented in Section~\ref{sec:models}:
+\begin{enumerate}
+\item Choosing an appropriate distribution for the response.
+\item Specification of the model terms the parameters are modeled by.
+\item Setting up the corresponding design and penalty matrices.
+\item Starting the estimation engine.
+\item Processing the results for printing summaries, plotting, etc. 
+\end{enumerate}
+Step 2 thereby requires some type of generic model formula syntax to actually specify the
+dependencies of the parameters on covariates. Choosing an appropriate distribution in step 1 implies
+that the estimation engine used in step 4 includes the corresponding implementation. In addition,
+to compute, e.g., goodness of fit plots using quantile residuals \citep{bamlss:Dunn+Gordon:1996},
+the distribution specification oftentimes needs information beyond the log-likelihood function.
+Moreover, the individual steps should be modular, e.g., changing the estimation engine does not
+require additional adjustments on subsequent infrastructures. The following describes the
+conceptional building blocks in more detail.
+
+\subsection{Family specifications} \label{sec:famspec}
+
+Any statistical software for regression models needs some description system for the supported
+distributions. In practice, only few implementations support an entirely modular setup that can be
+extended by the user. Examples that do support this flexibility are the \proglang{R}
+model fitting functions \fct{glm}, \fct{gam} as well as function \fct{gamlss} of package \pkg{gamlss}
+\citep{bamlss:Stasinopoulos+Rigby:2014}.
+
+To meet the requirements of the BAMLSS concept a setup with similar modularity is necessary.
+For the estimation of a model the exchangeable family objects need the probability density function
+and the link functions as a minimum. However, to fully understand a distribution the distribution
+function, the quantile function and a function for random number generation are additionally
+required.
+
+Moreover, some estimation engines may need information about the score and hessian of the
+likelihood function, or even more specific information, e.g., provided as character strings.
+
+Therefore, the family specification setup of a BAMLSS implementation should be easily extendable and
+flexible enough to allow for interactions with other systems and complete information on
+distributions if necessary.
+
+\subsection{Symbolic descriptions} \label{sec:symdesc}
+
+Based on \citet{bamlss:Wilkinson+Rogers:1973} symbolic descriptions for specifying models have been
+implemented for various computer programs. The statistical environment \proglang{R} provides such
+a syntax (see also \citealp{bamlss:Chambers+Hastie:1992}), which is familiar to almost any common
+\proglang{R} user today. Without such specifications, that in the end translate model formulae into
+model frames, the estimation of regression models is very circumstantial, especially in the case of
+structured additive predictors (\ref{eqn:structadd}). Therefore, the \proglang{R} model formula
+language is also extensible. The recommended package \pkg{mgcv}~\citep{bamlss:Wood:2014} for
+estimating GAMs additionally provides the generic descriptor \code{s()} for smooth terms. However,
+to conveniently specify the models presented in Section~\ref{sec:models}, a slightly enhanced syntax
+is required.
+
+Hereinafter, we follow the notation of the \proglang{R} formula language and denote
+smooth and random effect terms with the \code{s()} descriptor. A typical linear regression with
+covariates \code{x1} and \code{x2} is then represented by
+\begin{center}
+\code{response} $\sim$ \code{x1 + x2}
+\end{center}
+A model with two additional nonlinear modeled terms of covariates \code{z1}, \code{z2} and \code{z3}
+is set up with
+\begin{center}
+\begin{tabular}{l}
+\code{response} $\sim$ \code{x1 + x2 + s(z1) + s(z2, z3)}
+\end{tabular}
+\end{center}
+However, in the context of distributional regression we need formula extensions for multiple
+parameters. A convenient way to specify, e.g., the parameters of a normal model with
+$y~\sim~N(\mu = \eta_{\mu}, log(\sigma) = \eta_{\sigma})$ is given by
+\begin{center}
+{ \renewcommand{\arraystretch}{1}
+\begin{tabular}{l}
+\code{list(} \\
+$\quad$ \code{response} $\sim$ \code{x1 + x2 + s(z1) + s(z2),} \\
+$\quad$ \code{sigma} $\sim$ \code{x1 + x2 + s(z1)} \\
+\code{)}
+\end{tabular}
+}
+\end{center}
+i.e., two formulas are provided where the first represents the description of the mean $\mu$
+and the second of the scale parameter $\sigma$. Furthermore, the two formulas
+are symbolically connected by a list of formulas that is send to the subsequent processor. This way
+any number of parameters can be easily specified, e.g., a four parameter example is
+\begin{center}
+{ \renewcommand{\arraystretch}{1}
+\begin{tabular}{l}
+\code{list(} \\
+$\quad$ \code{response} $\sim$ \code{x1 + x2 + s(z1) + s(z2),} \\
+$\quad$ \code{sigma2} $\sim$ \code{x1 + x2 + s(z1),} \\
+$\quad$ \code{nu} $\sim$ \code{s(z1),} \\
+$\quad$ \code{tau} $\sim$ \code{s(z2)} \\
+\code{)}
+\end{tabular}
+}
+\end{center}
+A convention we make at this point is that
+the mean formula is always the one including the response variable and all other formulas
+have the corresponding parameter name on the left hand side. Hence, a mapping of terms with 
+parameters is provided.
+
+Within this syntax it is also possible to incorporate multilevel models with STAR predictor
+\citep{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}, where a hierarchy of
+units or clusters grouped at different levels is given. Suppose there is data on three levels
+available, where variable \code{id1} denotes the indicator from the individual observations to the
+second level with lower resolution and \code{id2} is another indicator mapping from the second to
+third level. A four parameter model with 3 levels can be specified with
+\begin{center}
+{ \renewcommand{\arraystretch}{1}
+\begin{tabular}{l}
+\code{list(} \\
+$\quad$ \code{response} $\sim$ \code{x1 + x2 + s(z1) + s({\color{heat1}{id1}}),} \\
+$\quad$ {\color{heat1}{\code{id1} $\sim$ \code{x3 + s(z3) + s(}}}\code{\color{blue1}{id2}}\code{\color{heat1})}\code{,} \\
+$\quad$ {\color{blue1}{\code{id2} $\sim$ \code{s(z4)}}}\code{,} \\
+$\quad$ \code{sigma2} $\sim$ \code{x1 + x2 + s(z1),} \\
+$\quad$ \code{nu} $\sim$ \code{s(z1) + s({\color{heat1}{id1}}),} \\
+$\quad$ \code{tau} $\sim$ \code{s(z2)} \\
+\code{)}
+\end{tabular}
+}
+\end{center}
+Note that the mean and \code{nu} parameter include the indicator variable \code{id1}, therefore,
+the level two and three formulas are incorporated in both specifications.
+
+In addition, models with categorical responses can be formulated in a similar fashion. A model
+with three categories within the \code{response} variable, e.g., a multinomial model with some
+reference category can be defined by
+\begin{center}
+{ \renewcommand{\arraystretch}{1}
+\begin{tabular}{l}
+\code{list(} \\
+$\quad$ \code{response} $\sim$ \code{x1 + s(z1) + s(z2),} \\
+$\quad$ $\sim$ \code{x1 + x2 + s(z1) + s(z3)} \\
+\code{)}
+\end{tabular}
+}
+\end{center}
+where all subsequent formulas do not need a left hand side. The only additional assumption here is
+that the order of the formulas represents the order of the categories. Another option is to specify
+the formulas of each category explicitly by
+\begin{center}
+{ \renewcommand{\arraystretch}{1}
+\begin{tabular}{l}
+\code{list(} \\
+$\quad$ \code{response1} $\sim$ \code{x1 + s(z1) + s(z2),} \\
+$\quad$ \code{response2} $\sim$ \code{x1 + x2 + s(z1) + s(z3)} \\
+\code{)}
+\end{tabular}
+}
+\end{center}
+i.e., variable \code{response1} is a dummy variable indicating whether the $i$th observation is in
+category 1 and \code{response2} in category 2, respectively.
+
+In summary, the described model definition syntax does not restrict to any type of regression
+model, number of parameters and hierarchies.
+
+\subsection{Building blocks} \label{sec:blocks}
+
+\begin{figure}[ht!]
+\centering
+\setlength{\unitlength}{1cm}
+\setlength{\fboxsep}{0pt}
+\begin{picture}(10.53, 5.7)(0, 0)
+\put(0, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize Formula}}}
+\put(2.5, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize Family}}}
+\put(5, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize Data}}}
+\put(2.5, 3.5){\fcolorbox{black}{heat4}{\framebox(2, 0.7)[c]{\footnotesize Parser}}}
+\put(2.5, 2.5){\fcolorbox{black}{heat3}{\framebox(2, 0.7)[c]{\footnotesize Transformer}}}
+\put(6, 3.5){\fcolorbox{black}{heat2}{\framebox(2, 0.7)[c]{\footnotesize Setup}}}
+\put(6, 2.5){\fcolorbox{black}{heat1}{\framebox(2, 0.7)[c]{\footnotesize Engine}}}
+\put(6, 1.5){\fcolorbox{black}{heat2}{\framebox(2, 0.7)[c]{\footnotesize Results}}}
+\put(1, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize Summaries}}}
+\put(3.5, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize Plotting}}}
+\put(6, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize Selection}}}
+\put(8.5, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize Prediction}}}
+\put(3.5, 4.2){\line(0, 1){0.8}}
+\put(1, 5){\line(0, -1){0.4}}
+\put(6, 5){\line(0, -1){0.4}}
+\put(1, 4.605){\line(1, 0){5}}
+\put(3.5, 3.2){\line(0, 1){0.3}}
+\put(4.51, 2.85){\line(1, 0){0.8}}
+\put(5.3, 2.85){\line(0, 1){1}}
+\put(5.3, 3.85){\line(1, 0){0.72}}
+\put(2, 0.7){\line(0, 1){0.4}}
+\put(4.5, 0.7){\line(0, 1){0.4}}
+\put(7, 0.7){\line(0, 1){0.8}}
+\put(9.5, 0.7){\line(0, 1){0.4}}
+\put(2, 1.098){\line(1, 0){7.5}}
+\put(7, 2.2){\line(0, 1){0.3}}
+\put(7, 3.2){\line(0, 1){0.3}}
+\end{picture}
+\caption{\label{fig:blocks} Conceptional overview.}
+\end{figure}
+
+
+\section{Software implementation} \label{sec:soft}
+
+
+\section{Examples} \label{sec:ex}
+
+
+\section{Summary}\label{sec:conclusion}
+
+
+\section*{Acknowledgments}
+
+
+\bibliography{bamlss}
+
+
+\clearpage
+
+
+\begin{appendix}
+
+\end{appendix}
+
+
+\end{document}
+
