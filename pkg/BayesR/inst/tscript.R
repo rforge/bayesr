@@ -129,12 +129,12 @@ b <- bayesr(accel2 ~ s(times, k = 20), data = mcycle, method = "backfitting")
 
 ## by variable test
 n <- 500
-dat <- data.frame(x1 = sort(runif(n, -3, 3)), x2 = sort(runif(n)))
+dat <- data.frame(x1 = runif(n, -3, 3), x2 = runif(n))
 dat$y <- with(dat, 1.2 + sin(x1) * x2 + rnorm(n, sd = 0.2))
 
 b0 <- gam(y ~ x2 + s(x1, by = x2), data = dat)
 b1 <- bayesr(y ~ x2 + s(x1, by = x2), data = dat, method = "MCMC")
-b2 <- bayesr(y ~ x2 + sx(x1, by = x2), data = dat, engine = "BayesX")
+b2 <- bayesr(y ~ x2 + sx(x1, by = x2), data = dat, engine = "BayesX", family = gaussian)
 
 
 ## IWLS test

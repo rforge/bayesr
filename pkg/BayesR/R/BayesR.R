@@ -1042,7 +1042,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   smf <- t(apply(fsamples, 1, FUN))
   cnames <- colnames(smf)
   smf <- as.data.frame(smf)
-  for(l in nt:1) {
+  for(l in 1:nt) {
     smf <- cbind(data[[tterms[l]]], smf)
   }
   names(smf) <- c(x$term, cnames)
@@ -2377,7 +2377,7 @@ plot.bayesr.effect.default <- function(x, ...) {
     if(is.null(args$c.select))
       args$c.select <- grep("50%", colnames(x), fixed = TRUE)
     do.call("plot3d", delete.args("plot3d", args,
-      c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab",
+      c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab", "ticktype",
       "zlab", "phi", "theta", "r", "d", "scale", "range", "lrange")))
   }
 }
