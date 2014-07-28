@@ -131,11 +131,11 @@ Section~\ref{sec:ex}.
 The models discussed in this paper assume conditional independence of the response variable $y_1, 
 \ldots, y_n$ given covariates. Within the GAMLSS model
 class, all parameters of the response distribution can be modeled by explanatory variables such that
-\begin{equation*} \label{eqn:dreg}
+\begin{equation} \label{eqn:dreg}
 \mathbf{y} \sim \mathbf{\mathcal{D}}\left(h_{1}(\boldsymbol{\theta}_{1}) = \boldsymbol{\eta}_{1}, \,\,
   h_{2}(\boldsymbol{\theta}_{2}) = \boldsymbol{\eta}_{2}, \dots, \,\, h_{K}(\boldsymbol{\theta}_{K}) =
   \boldsymbol{\eta}_{K}\right),
-\end{equation*}
+\end{equation}
 where $\mathbf{\mathcal{D}}$ denotes any distribution available for the response
 variable and $\boldsymbol{\theta}_k$ are parameters that are linked to an additive predictor using
 known monotonic link functions $h_{k}(\cdot)$ \citep{bamlss:Rigby+Stasinopoulos:2005}. 
@@ -191,20 +191,24 @@ i.e., parameters $\tilde{\boldsymbol{\gamma}}_j$ are not penalized (see, e.g.,
 \citealp{bamlss:Fahrmeir+Kneib+Lang+Marx:2013, bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003}).
 
 In the Bayesian approach, prior distributions need to be assigned to the regression coefficients.
-A general setup is obtained by using normal priors for $\boldsymbol{\beta}_j$ of the form
-\begin{equation*} \label{eqn:prior}
+For the linear part $\mathbf{X}\boldsymbol{\gamma}$, a common choice is to assign improper constant
+priors on $\boldsymbol{\gamma}$. For the smooth terms, a general setup is obtained by using normal priors for $\boldsymbol{\beta}_j$ of the form
+\begin{equation} \label{eqn:prior}
 p(\boldsymbol{\beta}_j | \tau_j^2) \propto \exp \left(- \frac{1}{2\tau_j^2}
 \boldsymbol{\beta_j}^{\top}\mathbf{K}_j\boldsymbol{\beta}_j\right),
-\end{equation*}
+\end{equation}
 where $\mathbf{K}_j$ is a quadratic penalty matrix that shrinks parameters towards zero or penalizes
 too abrupt jumps between neighboring parameters, e.g., for random effects
 $\mathbf{K}_j = \mathbf{I}$. In most cases $\mathbf{K}_j$ will be rank deficient
 and the prior for $\boldsymbol{\beta}_j$ is partially improper. The variance parameter $\tau_j^2$ is
 equivalent to the inverse smoothing parameter in a frequentist approach and controls the trade off
 between flexibility and smoothness. A common choice of prior for the variance parameter is a
-weakly informative inverse Gamma hyperprior $\tau_j^2 \sim IG(a_j, b_j)$, with $a_j = b_j = 0.001$
-as a standard option. Small values for $a_j$ and $b_j$ correspond to an approximate uniform
-distribution for $\log \tau_j^2$.
+weakly informative inverse Gamma hyperprior
+\begin{equation} \label{eqn:ig}
+p(\tau_j^2) = \frac{b_j^{a_j}}{\Gamma(a_j)} (\tau_j^2)^{-(a_j + 1)} \exp(-b_j / \tau_j^2).
+\end{equation}
+with $a_j = b_j = 0.001$ as a standard option. Small values for $a_j$ and $b_j$ correspond to an 
+approximate uniform distribution for $\log \tau_j^2$.
 
 A detailed discussion of the GAMLSS methodological framework is provided in
 \citet{bamlss:Rigby+Stasinopoulos:2005}, on model with STAR predictor in
@@ -239,23 +243,62 @@ conceptional building blocks in more detail.
 \subsection{Family specifications} \label{sec:famspec}
 
 Any statistical software for regression models needs some description system for the supported
-distributions. In practice, only few implementations support an entirely modular setup that can be
-extended by the user. Examples that do support this flexibility are the \proglang{R}
-model fitting functions \fct{glm}, \fct{gam} as well as function \fct{gamlss} of package \pkg{gamlss}
-\citep{bamlss:Stasinopoulos+Rigby:2014}.
+distributions. Since most estimation algorithms have at least one common part, a modular system
+with reusable elements arises naturally from the following characterizations.
 
-To meet the requirements of the BAMLSS concept a setup with similar modularity is necessary.
-For the estimation of a model the exchangeable family objects need the probability density function
-and the link functions as a minimum. However, to fully understand a distribution the distribution
-function, the quantile function and a function for random number generation are additionally
-required.
+The main building block of regression model algorithms is the probability density function
+$f(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$, or for
+computational reasons its logarithm.
+Note that $f$ is considered to be a general density and $\boldsymbol{\theta}_1, \ldots,
+\boldsymbol{\theta}_K$ are parameters that are linked to STAR predictors given in
+equation (\ref{eqn:structadd}). Estimation usually requires to evaluate
+the log-likelihood function
+\begin{equation}
+l(\boldsymbol{\vartheta} | \mathbf{y}) = ln \, p(\boldsymbol{\vartheta} | \mathbf{y}) =
+  \sum_{i = 1}^n ln \, f(y_i | \theta_{i1}(\eta_{i1}(\boldsymbol{\beta}_1, \boldsymbol{\gamma}_1)), \ldots, \theta_{iK}(\eta_{iK}(\boldsymbol{\beta}_K, \boldsymbol{\gamma}_K)))
+\end{equation}
+a number of times, where the vector $\boldsymbol{\vartheta} = (\boldsymbol{\beta}_1, \ldots,
+\boldsymbol{\beta}_K, \boldsymbol{\gamma}_1, \ldots, \boldsymbol{\gamma}_K)^\top$ comprises all
+regression coefficients of the corresponding parameters
+$\boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K$ of the distribution used in (\ref{eqn:dreg}). 
+Furthermore, Bayesian models assign prior distributions to the parameters, e.g., normal priors given 
+by (\ref{eqn:prior}) and inverse gamma priors (\ref{eqn:ig}) for the variance parameters, resulting in the log-posterior
+\begin{equation}
+ln \, p(\boldsymbol{\vartheta}, \boldsymbol{\tau}^2 | \mathbf{y}) =
+  l(\boldsymbol{\vartheta} | \mathbf{y}) +
+  \sum_{k = 1}^K\sum_{j = 1}^{p_k} \left\{ ln \, p(\boldsymbol{\beta}_{jk} | \tau_{jk}^2) +
+  ln \, p(\tau_{jk}^2) \right\}.
+\end{equation}
 
-Moreover, some estimation engines may need information about the score and hessian of the
-likelihood function, or even more specific information, e.g., provided as character strings.
+Maximum likelihood and other gradient based algorithms require the evaluation of the first
+derivative of the log-likelihood or score vector. Within the Bayesian formulation the resulting
+score vectors are
+\begin{equation}
+s(\boldsymbol{\vartheta}, \boldsymbol{\tau}^2) = \begin{pmatrix}
+  \frac{\partial ln \, p(\boldsymbol{\vartheta}, \boldsymbol{\tau}^2 |
+    \mathbf{y})}{\partial \boldsymbol{\vartheta}} \\[1ex]
+  \frac{\partial ln \, p(\boldsymbol{\vartheta}, \boldsymbol{\tau}^2 |
+    \mathbf{y})}{\partial \boldsymbol{\tau}^2} \\
+\end{pmatrix} = \begin{pmatrix}
+  \frac{\partial l(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}} +
+    \frac{\partial \sum_{k = 1}^K\sum_{j = 1}^{p_k} ln \, p(\boldsymbol{\beta}_{jk} |
+    \tau_{jk}^2)}{\partial \boldsymbol{\vartheta}} \\
+  \frac{\partial ln \, p(\tau_{jk}^2)}{\partial \boldsymbol{\tau}^2},
+\end{pmatrix}
+\end{equation}
+that is, for frequentist maximum likelihood estimation only
+$\frac{\partial l(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}}$ needs
+to be computed. The first partial derivatives of $\boldsymbol{\vartheta}$ of the log-likelihood
+are given by
+\begin{equation}
+\frac{\partial l(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}} =
+  \sum_{k = 1}^K 1
+\end{equation}
 
-Therefore, the family specification setup of a BAMLSS implementation should be easily extendable and
-flexible enough to allow for interactions with other systems and complete information on
-distributions if necessary.
+%In practice, only few implementations support an entirely modular setup that can be
+%extended by the user. Examples that do support some flexibility are the \proglang{R}
+%model fitting functions \fct{glm}, \fct{gam} as well as function \fct{gamlss} of package \pkg{gamlss}
+%\citep{bamlss:Stasinopoulos+Rigby:2014}.
 
 \subsection{Symbolic descriptions} \label{sec:symdesc}
 
@@ -271,16 +314,16 @@ to conveniently specify the models presented in Section~\ref{sec:models}, a slig
 is required.
 
 Hereinafter, we follow the notation of the \proglang{R} formula language and denote
-smooth and random effect terms with the \code{s()} descriptor. A typical linear regression with
-covariates \code{x1} and \code{x2} is then represented by
+smooth and random effect terms with the \code{s()} descriptor. A typical linear regression model 
+with a response variable \code{y} and covariates \code{x1} and \code{x2} is then represented by
 \begin{center}
-\code{response} $\sim$ \code{x1 + x2}
+\code{y} $\sim$ \code{x1 + x2}
 \end{center}
 A model with two additional nonlinear modeled terms of covariates \code{z1}, \code{z2} and \code{z3}
 is set up with
 \begin{center}
 \begin{tabular}{l}
-\code{response} $\sim$ \code{x1 + x2 + s(z1) + s(z2, z3)}
+\code{y} $\sim$ \code{x1 + x2 + s(z1) + s(z2, z3)}
 \end{tabular}
 \end{center}
 However, in the context of distributional regression we need formula extensions for multiple
@@ -290,7 +333,7 @@ $y~\sim~N(\mu = \eta_{\mu}, log(\sigma) = \eta_{\sigma})$ is given by
 { \renewcommand{\arraystretch}{1}
 \begin{tabular}{l}
 \code{list(} \\
-$\quad$ \code{response} $\sim$ \code{x1 + x2 + s(z1) + s(z2),} \\
+$\quad$ \code{y} $\sim$ \code{x1 + x2 + s(z1) + s(z2),} \\
 $\quad$ \code{sigma} $\sim$ \code{x1 + x2 + s(z1)} \\
 \code{)}
 \end{tabular}
@@ -304,7 +347,7 @@ any number of parameters can be easily specified, e.g., a four parameter example
 { \renewcommand{\arraystretch}{1}
 \begin{tabular}{l}
 \code{list(} \\
-$\quad$ \code{response} $\sim$ \code{x1 + x2 + s(z1) + s(z2),} \\
+$\quad$ \code{y} $\sim$ \code{x1 + x2 + s(z1) + s(z2),} \\
 $\quad$ \code{sigma2} $\sim$ \code{x1 + x2 + s(z1),} \\
 $\quad$ \code{nu} $\sim$ \code{s(z1),} \\
 $\quad$ \code{tau} $\sim$ \code{s(z2)} \\
@@ -327,7 +370,7 @@ third level. A four parameter model with 3 levels can be specified with
 { \renewcommand{\arraystretch}{1}
 \begin{tabular}{l}
 \code{list(} \\
-$\quad$ \code{response} $\sim$ \code{x1 + x2 + s(z1) + s({\color{heat1}{id1}}),} \\
+$\quad$ \code{y} $\sim$ \code{x1 + x2 + s(z1) + s({\color{heat1}{id1}}),} \\
 $\quad$ {\color{heat1}{\code{id1} $\sim$ \code{x3 + s(z3) + s(}}}\code{\color{blue1}{id2}}\code{\color{heat1})}\code{,} \\
 $\quad$ {\color{blue1}{\code{id2} $\sim$ \code{s(z4)}}}\code{,} \\
 $\quad$ \code{sigma2} $\sim$ \code{x1 + x2 + s(z1),} \\
@@ -341,13 +384,13 @@ Note that the mean and \code{nu} parameter include the indicator variable \code{
 the level two and three formulas are incorporated in both specifications.
 
 In addition, models with categorical responses can be formulated in a similar fashion. A model
-with three categories within the \code{response} variable, e.g., a multinomial model with some
+with three categories within the \code{y} variable, e.g., a multinomial model with some
 reference category can be defined by
 \begin{center}
 { \renewcommand{\arraystretch}{1}
 \begin{tabular}{l}
 \code{list(} \\
-$\quad$ \code{response} $\sim$ \code{x1 + s(z1) + s(z2),} \\
+$\quad$ \code{y} $\sim$ \code{x1 + s(z1) + s(z2),} \\
 $\quad$ $\sim$ \code{x1 + x2 + s(z1) + s(z3)} \\
 \code{)}
 \end{tabular}
