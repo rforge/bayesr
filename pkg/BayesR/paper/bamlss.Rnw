@@ -273,7 +273,7 @@ ln \, p(\boldsymbol{\vartheta} | \mathbf{y}) =
 where $\boldsymbol{\vartheta} = (\boldsymbol{\beta}_1, \ldots,
 \boldsymbol{\beta}_K, \boldsymbol{\gamma}_1, \ldots, \boldsymbol{\gamma}_K,
 \boldsymbol{\tau}^2_1, \ldots, \boldsymbol{\tau}^2_K)^\top$ now includes all variance vectors, too. 
-i.e., from the frequentist perspective (\ref{eqn:posterior}) can be viewed as a penalized
+From a frequentist perspective (\ref{eqn:posterior}) can be viewed as a penalized
 log-likelihood using prior (\ref{eqn:prior}). Maximum likelihood and other gradient based algorithms require the evaluation of the
 first derivative or score vector. Within the Bayesian formulation the resulting score vector is
 \begin{equation}
@@ -284,16 +284,32 @@ s(\boldsymbol{\vartheta}) =
     \tau_{jk}^2)}{\partial \boldsymbol{\vartheta}} +
   \frac{\partial ln \, p(\tau_{jk}^2)}{\partial \boldsymbol{\vartheta}} \right\},
 \end{equation}
-The first partial derivatives of $\boldsymbol{\vartheta}$ of the log-likelihood can be further
-fragmented by
+The first order partial derivatives of the log-likelihood for
+$\boldsymbol{\vartheta}_k = (\boldsymbol{\beta}_k, \boldsymbol{\gamma}_k,
+\boldsymbol{\tau}^2_k)^\top$, i.e., for the $k$th parameter of the distribution, can be further
+fragmented by chain rule to
 \begin{equation}
-\frac{\partial l(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}} =
-  \sum_{i = 1}^n \sum_{k = 1}^K \frac{\partial ln \, l(\boldsymbol{\vartheta} | y_i)}{\partial \theta_{ik}}
-  \frac{\partial \theta_{ik}}{\partial \eta_{ik}}\frac{\partial \eta_{ik}}{\partial \boldsymbol{\vartheta}}.
+\frac{\partial l(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}_k} =
+  \sum_{i = 1}^n \frac{\partial l(\boldsymbol{\vartheta} | y_i)}{\partial \eta_{ik}}
+  \frac{\partial \eta_{ik}}{\partial \boldsymbol{\vartheta}_k} = 
+  \sum_{i = 1}^n \frac{\partial l(\boldsymbol{\vartheta} | y_i)}{\partial \theta_{ik}}
+  \frac{\partial \theta_{ik}}{\partial \eta_{ik}}\frac{\partial \eta_{ik}}{\partial \boldsymbol{\vartheta}_k}.
 \end{equation}
 Hence, for gradient based algorithms the derivates of the log-likelihood with respect to the 
-parameters $\boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_1$, the derivate of the link functions
-and of the linear predictor with respect to the regression coefficients is needed.
+parameters, $\boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K$, the derivate of the 
+corresponding link functions and of the linear predictor with respect to the regression
+coefficients are needed.
+
+Applying, e.g., a Newton-Raphson algorithm additionally requires the second derivatives
+\begin{equation}
+\frac{\partial^2 l(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}_k \partial 
+\boldsymbol{\vartheta}_s^\top} = \frac{\partial s(\boldsymbol{\vartheta})}{\partial
+\boldsymbol{\vartheta}_s^\top} = \sum_{i = 1}^n \frac{\partial \eta_{is}}{
+\partial \boldsymbol{\vartheta}_s}
+\frac{\partial^2 l(\boldsymbol{\vartheta} | y_i)}{\partial \eta_{ik}\partial \eta_{is}}
+\frac{\partial \eta_{ik}}{\partial \boldsymbol{\vartheta}_k}
+\end{equation}
+for $s = 1, \ldots, K$.
 
 %In practice, only few implementations support an entirely modular setup that can be
 %extended by the user. Examples that do support some flexibility are the \proglang{R}
