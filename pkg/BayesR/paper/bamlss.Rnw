@@ -251,49 +251,49 @@ $f(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$, or for
 computational reasons its logarithm.
 Note that $f$ is considered to be a general density and $\boldsymbol{\theta}_1, \ldots,
 \boldsymbol{\theta}_K$ are parameters that are linked to STAR predictors given in
-equation (\ref{eqn:structadd}). Estimation usually requires to evaluate
+equation (\ref{eqn:structadd}). Estimation typically requires to evaluate
 the log-likelihood function
 \begin{equation}
-l(\boldsymbol{\vartheta} | \mathbf{y}) = ln \, p(\boldsymbol{\vartheta} | \mathbf{y}) =
-  \sum_{i = 1}^n ln \, f(y_i | \theta_{i1}(\eta_{i1}(\boldsymbol{\beta}_1, \boldsymbol{\gamma}_1)), \ldots, \theta_{iK}(\eta_{iK}(\boldsymbol{\beta}_K, \boldsymbol{\gamma}_K)))
+l(\boldsymbol{\vartheta} | \mathbf{y}) =
+  \sum_{i = 1}^n ln \, f(y_i | \theta_{i1} = h_1^{-1}(\eta_{i1}), \ldots,
+  \theta_{iK} = h_K^{-1}(\eta_{iK}))
 \end{equation}
 a number of times, where the vector $\boldsymbol{\vartheta} = (\boldsymbol{\beta}_1, \ldots,
 \boldsymbol{\beta}_K, \boldsymbol{\gamma}_1, \ldots, \boldsymbol{\gamma}_K)^\top$ comprises all
-regression coefficients of the corresponding parameters
-$\boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K$ of the distribution used in (\ref{eqn:dreg}). 
-Furthermore, Bayesian models assign prior distributions to the parameters, e.g., normal priors given 
-by (\ref{eqn:prior}) and inverse gamma priors (\ref{eqn:ig}) for the variance parameters, resulting in the log-posterior
-\begin{equation}
-ln \, p(\boldsymbol{\vartheta}, \boldsymbol{\tau}^2 | \mathbf{y}) =
+regression coefficients that should be estimated. 
+Furthermore, Bayesian models assign prior distributions to the parameters, e.g., for the smooth
+and random effect terms normal priors given by (\ref{eqn:prior}) and inverse gamma priors
+(\ref{eqn:ig}) for the variance parameters, resulting in the log-posterior
+\begin{equation} \label{eqn:posterior}
+ln \, p(\boldsymbol{\vartheta} | \mathbf{y}) =
   l(\boldsymbol{\vartheta} | \mathbf{y}) +
   \sum_{k = 1}^K\sum_{j = 1}^{p_k} \left\{ ln \, p(\boldsymbol{\beta}_{jk} | \tau_{jk}^2) +
-  ln \, p(\tau_{jk}^2) \right\}.
+  ln \, p(\tau_{jk}^2) \right\},
 \end{equation}
-
-Maximum likelihood and other gradient based algorithms require the evaluation of the first
-derivative of the log-likelihood or score vector. Within the Bayesian formulation the resulting
-score vectors are
+where $\boldsymbol{\vartheta} = (\boldsymbol{\beta}_1, \ldots,
+\boldsymbol{\beta}_K, \boldsymbol{\gamma}_1, \ldots, \boldsymbol{\gamma}_K,
+\boldsymbol{\tau}^2_1, \ldots, \boldsymbol{\tau}^2_K)^\top$ now includes all variance vectors, too. 
+i.e., from the frequentist perspective (\ref{eqn:posterior}) can be viewed as a penalized
+log-likelihood using prior (\ref{eqn:prior}). Maximum likelihood and other gradient based algorithms require the evaluation of the
+first derivative or score vector. Within the Bayesian formulation the resulting score vector is
 \begin{equation}
-s(\boldsymbol{\vartheta}, \boldsymbol{\tau}^2) = \begin{pmatrix}
-  \frac{\partial ln \, p(\boldsymbol{\vartheta}, \boldsymbol{\tau}^2 |
-    \mathbf{y})}{\partial \boldsymbol{\vartheta}} \\[1ex]
-  \frac{\partial ln \, p(\boldsymbol{\vartheta}, \boldsymbol{\tau}^2 |
-    \mathbf{y})}{\partial \boldsymbol{\tau}^2} \\
-\end{pmatrix} = \begin{pmatrix}
-  \frac{\partial l(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}} +
-    \frac{\partial \sum_{k = 1}^K\sum_{j = 1}^{p_k} ln \, p(\boldsymbol{\beta}_{jk} |
-    \tau_{jk}^2)}{\partial \boldsymbol{\vartheta}} \\
-  \frac{\partial ln \, p(\tau_{jk}^2)}{\partial \boldsymbol{\tau}^2},
-\end{pmatrix}
+s(\boldsymbol{\vartheta}) = 
+  \frac{\partial ln \, p(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}}
+= \frac{\partial l(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}} +
+    \sum_{k = 1}^K\sum_{j = 1}^{p_k} \left\{ \frac{\partial ln \, p(\boldsymbol{\beta}_{jk} |
+    \tau_{jk}^2)}{\partial \boldsymbol{\vartheta}} +
+  \frac{\partial ln \, p(\tau_{jk}^2)}{\partial \boldsymbol{\vartheta}} \right\},
 \end{equation}
-that is, for frequentist maximum likelihood estimation only
-$\frac{\partial l(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}}$ needs
-to be computed. The first partial derivatives of $\boldsymbol{\vartheta}$ of the log-likelihood
-are given by
+The first partial derivatives of $\boldsymbol{\vartheta}$ of the log-likelihood can be further
+fragmented by
 \begin{equation}
 \frac{\partial l(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}} =
-  \sum_{k = 1}^K 1
+  \sum_{i = 1}^n \sum_{k = 1}^K \frac{\partial ln \, l(\boldsymbol{\vartheta} | y_i)}{\partial \theta_{ik}}
+  \frac{\partial \theta_{ik}}{\partial \eta_{ik}}\frac{\partial \eta_{ik}}{\partial \boldsymbol{\vartheta}}.
 \end{equation}
+Hence, for gradient based algorithms the derivates of the log-likelihood with respect to the 
+parameters $\boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_1$, the derivate of the link functions
+and of the linear predictor with respect to the regression coefficients is needed.
 
 %In practice, only few implementations support an entirely modular setup that can be
 %extended by the user. Examples that do support some flexibility are the \proglang{R}
