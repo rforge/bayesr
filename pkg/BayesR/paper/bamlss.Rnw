@@ -211,7 +211,7 @@ with $a_j = b_j = 0.001$ as a standard option. Small values for $a_j$ and $b_j$ 
 approximate uniform distribution for $\log \tau_j^2$.
 
 A detailed discussion of the GAMLSS methodological framework is provided in
-\citet{bamlss:Rigby+Stasinopoulos:2005}, on model with STAR predictor in
+\citet{bamlss:Rigby+Stasinopoulos:2005}, on models with STAR predictor in
 \citet{bamlss:Fahrmeir+Kneib+Lang+Marx:2013} and \citet{bamlss:Wood:2006}.
 
 \fixme{Multilevel \citep{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}, multinomial,
@@ -318,8 +318,8 @@ where the additional term is zero, if we assume a linear functional form, e.g., 
 function construction of the smooth terms.
 
 From this, maximum likelihood estimates can be derived by an iteratively reweighted least squares
-algorithm (see \citealp{bamlss:Rigby+Stasinopoulos:2005}, Appendix~C), where in each iteration $i$
-an adjusted dependent variable
+algorithm (IWLS, see \citealp{bamlss:Rigby+Stasinopoulos:2005}, Appendix~C), where in each
+iteration $i$ an adjusted dependent variable
 \begin{equation} \label{eqn:z}
 \mathbf{z}_k^{[i]} = \boldsymbol{\eta}_k^{[i]} + \left(\mathbf{W}_{kk}^{[i]}\right)^{-1}\mathbf{s}_k^{[i]}
 \end{equation}
@@ -328,20 +328,58 @@ $\mathbf{s}_k = \partial l(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \bold
 and weights
 $\mathbf{W}_{kk} = - \partial^2 l(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top$. Because the working observations follow
 \begin{equation}
-\mathbf{z}_k^{[i]} \sim N\left(\boldsymbol{\eta}_k^{[i]}, \left(\mathbf{W}_{kk}^{[i]}\right)^{-1}\right)
+\mathbf{z}_k^{[i]} \sim N\left(\boldsymbol{\eta}_k^{[i]}, \left(\mathbf{W}_{kk}^{[i]}\right)^{-1}\right),
 \end{equation}
 a simple backfitting algorithm or weighted least squares can be applied to obtain updates for
-$\boldsymbol{\vartheta}_k$ in each iteration. Depending on the type of algorithm different 
-weights are used, e.g.,
-$\mathbf{W}_{kk} = - E\left(\partial^2 l(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top\right)$. In the corresponding Bayesian approach
-property (\ref{eqn:z}) can be utilized to construct multivariate normal proposals for
-$\boldsymbol{\vartheta}_k$, see \citet{bamlss:Klein+Kneib+Lang:2013}.
+$(\boldsymbol{\beta}_k, \boldsymbol{\gamma}_k)^\top$ in each iteration. Depending on the type of 
+algorithm different weights are used, e.g.,
+$\mathbf{W}_{kk} = - E\left(\partial^2 l(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top\right)$.
 
-In summary, candidate estimation algorithms all access the following quantities:
+In the corresponding Bayesian approach
+property (\ref{eqn:z}) can also be utilized to construct multivariate normal IWLS proposals for
+$(\boldsymbol{\beta}_k, \boldsymbol{\gamma}_k)^\top$ to setup a Metropolis-Hastings MCMC sampler,
+see \citet{bamlss:Klein+Kneib+Lang:2013}. Amongst others, the advantage of Bayesian MCMC algorithms 
+is that the variance parameters can be estimated simultaneously with the regression coefficients.
+
+From the above, it can be recognized that the following quantities are repeatedly used within
+BAMLSS candidate algorithms:
 \begin{itemize}
-\item $f()$.
-\item 
-\end{itemize} 
+\item The density function $f(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$.
+\item The first order derivatives
+  $\partial l(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\theta}_k$,
+  $\partial \boldsymbol{\theta}_k / \partial \boldsymbol{\eta}_k$ and
+  $\partial \boldsymbol{\eta}_k / \partial \boldsymbol{\vartheta}_k$.
+\item Second order derivatives
+  $\partial^2 l(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top$.
+\end{itemize}
+Hence, a modular family specification system can in principle be used to implement various
+estimation algorithms. A simple generic algorithm for BAMLSS models is outlined by the 
+following pseudo code:
+\begin{center}
+\begin{minipage}[c]{13cm}
+\code{while(eps >} $\varepsilon\,$ \code{\& i < maxit) \{ } \\
+\hspace*{0.5cm} \code{for(k in 1:K) \{} \\
+\hspace*{1cm} \code{for(j in 1:p) \{} \\
+\hspace*{1.5cm} Compute $\boldsymbol{\eta}^{\texttt{[k]}}_{\texttt{-j}} = \boldsymbol{\eta}^{\texttt{[k]}} - \mathbf{f}_{\texttt{j}}^{\texttt{[k]}}$. \\
+\hspace*{1.5cm} Obtain new $(\boldsymbol{\beta}^{\texttt{[k]}}_{\texttt{j}}, {\tau^2}^{\texttt{[k]}}_{\texttt{j}})^\top = \texttt{u}_{\texttt{j}}^{\texttt{[k]}}(\mathbf{y}, \boldsymbol{\eta}^{\texttt{[k]}}_{\texttt{-j}},
+  \mathbf{Z}^{\texttt{[k]}}_{\texttt{j}}, \boldsymbol{\beta}^{\texttt{[k]}}_{\texttt{j}}, {\tau^2}^{\texttt{[k]}}_{\texttt{j}}, \texttt{family}, \texttt{k})$. \\
+\hspace*{1.5cm} Update $\boldsymbol{\eta}^{\texttt{[k]}}$. \\
+\hspace*{1cm} \code{\}} \\
+\hspace*{0.5cm} \code{\}} \\
+\hspace*{0.5cm} Compute new \code{eps} \\
+\code{\}}
+\end{minipage}
+\end{center}
+The algorithm does not distinguish between the frequentist or Bayesian approach, because the 
+functions $\texttt{u}_{\texttt{j}}^{\texttt{[k]}}( \cdot )$ could either return proposals from
+a MCMC sampler or updates from an optimizing algorithm like the IWLS. Therefore, $\varepsilon$ 
+(e.g., $0.0001$) and \code{eps} represent the stopping mechanism in an optimizer while
+\code{maxit} controls the maximum iterations of a MCMC sampler, too. To achieve this flexibility a
+\code{family} object that contains all distribution specific information to compute the new
+parameters
+$(\boldsymbol{\beta}^{\texttt{[k]}}_{\texttt{j}}, {\tau^2}^{\texttt{[k]}}_{\texttt{j}})^\top$ is
+required, e.g., containing the log-likelihood function, the first and second order derivatives,
+etc., as described in the above.
 
 %In practice, only few implementations support an entirely modular setup that can be
 %extended by the user. Examples that do support some flexibility are the \proglang{R}
