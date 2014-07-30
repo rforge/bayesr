@@ -121,9 +121,8 @@ call the conceptional framework Bayesian additive models for location, scale and
 
 The remainder of the paper is as follows. In Section~\ref{sec:models} the models supported by this
 framework are briefly introduced. Section~\ref{sec:arch} then presents the general modeling
-architecture and model specification problem. In Section~\ref{sec:soft} a software implementation of
-the concept is presented briefly together with a couple of examples that are illustrated in
-Section~\ref{sec:ex}.
+architecture and model specification problem. In Section~\ref{sec:softex} a software implementation
+of the concept is presented briefly together with a couple of examples.
 
 
 \section{Models} \label{sec:models}
@@ -503,6 +502,7 @@ model, number of parameters and hierarchies.
 
 \subsection{Building blocks} \label{sec:blocks}
 
+The architecture of the conceptional framework is illustrated in Figure~\ref{fig:blocks}.
 \begin{figure}[ht!]
 \centering
 \setlength{\unitlength}{1cm}
@@ -538,12 +538,28 @@ model, number of parameters and hierarchies.
 \end{picture}
 \caption{\label{fig:blocks} Conceptional overview.}
 \end{figure}
+The framework can be divided in three parts: First, functions that describe distribution families,
+formulas, together with the data that is used for modeling. Secondly, functions that actually
+compute estimates of parameters, and thirdly, functions for visualization and output statistics.
+
+To set up the necessary model frame, the parser function translates the model formula
+(see Section~\ref{sec:symdesc}) and the data. For some algorithms a modified version of the
+model frame is needed, e.g., using the mixed model representation (\ref{eqn:mixed}) for smooth
+terms. Hence, a transformer function might be required. For using standalone estimation engines
+additional specifications could be required, e.g., the model code when using \proglang{BUGS} 
+implementations. This task is handled by the setup function. The actual estimation function then
+calls the engine, either an external device or code within the same environment. The data obtained
+from the engine are uniformly processed in a results function to be able to plot estimates, 
+create summary statistics, and so forth.
+
+The main advantage of the architecture is that the blocks parser, transformer, setup, engine and 
+results are entirely exchangeable and reusable, i.e., it is relatively easy to incorporate new
+algorithms or engines. The other blocks are assumed to be more or less stable such that no extra
+coding is required. An implementation of this concept together with examples is illustrated in the
+next section.
 
 
-\section{Software implementation} \label{sec:soft}
-
-
-\section{Examples} \label{sec:ex}
+\section{Software implementation and examples} \label{sec:softex}
 
 
 \section{Summary}\label{sec:conclusion}
