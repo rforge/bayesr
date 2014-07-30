@@ -284,17 +284,20 @@ s(\boldsymbol{\vartheta}) =
     \tau_{jk}^2)}{\partial \boldsymbol{\vartheta}} +
   \frac{\partial ln \, p(\tau_{jk}^2)}{\partial \boldsymbol{\vartheta}} \right\},
 \end{equation}
-The first order partial derivatives of the log-likelihood for
+Following \citet{bamlss:Rigby+Stasinopoulos:2005}, the first order partial derivatives of the
+log-likelihood for
 $\boldsymbol{\vartheta}_k = (\boldsymbol{\beta}_k, \boldsymbol{\gamma}_k,
 \boldsymbol{\tau}^2_k)^\top$, i.e., for the $k$th parameter of the distribution, can be further
-fragmented by chain rule to
+fragmented by chain rule
 \begin{equation}
 \frac{\partial l(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}_k} =
-  \sum_{i = 1}^n \frac{\partial l(\boldsymbol{\vartheta} | y_i)}{\partial \eta_{ik}}
-  \frac{\partial \eta_{ik}}{\partial \boldsymbol{\vartheta}_k} = 
-  \sum_{i = 1}^n \frac{\partial l(\boldsymbol{\vartheta} | y_i)}{\partial \theta_{ik}}
-  \frac{\partial \theta_{ik}}{\partial \eta_{ik}}\frac{\partial \eta_{ik}}{\partial \boldsymbol{\vartheta}_k}.
+  \frac{\partial l(\boldsymbol{\vartheta} | y_i)}{\partial \boldsymbol{\eta}_k}
+  \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\vartheta}_k} = 
+  \frac{\partial l(\boldsymbol{\vartheta} | y_i)}{\partial \boldsymbol{\theta}_k}
+  \frac{\partial \boldsymbol{\theta}_k}{\partial \boldsymbol{\eta}_k}
+  \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\vartheta}_k}.
 \end{equation}
+since $\theta_{ik} = h_k^{-1}(\eta_{ik}(\boldsymbol{\vartheta}_k))$. 
 Hence, for gradient based algorithms the derivates of the log-likelihood with respect to the 
 parameters, $\boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K$, the derivate of the 
 corresponding link functions and of the linear predictor with respect to the regression
@@ -302,14 +305,43 @@ coefficients are needed.
 
 Applying, e.g., a Newton-Raphson algorithm additionally requires the second derivatives
 \begin{equation}
-\frac{\partial^2 l(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}_k \partial 
-\boldsymbol{\vartheta}_s^\top} = \frac{\partial s(\boldsymbol{\vartheta})}{\partial
-\boldsymbol{\vartheta}_s^\top} = \sum_{i = 1}^n \frac{\partial \eta_{is}}{
-\partial \boldsymbol{\vartheta}_s}
-\frac{\partial^2 l(\boldsymbol{\vartheta} | y_i)}{\partial \eta_{ik}\partial \eta_{is}}
-\frac{\partial \eta_{ik}}{\partial \boldsymbol{\vartheta}_k}
+\frac{\partial^2 l(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}_k \partial \boldsymbol{\vartheta}_s^\top} =
+\left( \frac{\partial \boldsymbol{\eta}_s}{\partial \boldsymbol{\vartheta}_s} \right)^\top
+\frac{\partial^2 l(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top}
+\frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\vartheta}_k}
+\,\, \underbrace{
+  \, + \, \frac{\partial l(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k}
+    \frac{\partial^2 \boldsymbol{\eta}_k}{\partial^2 \boldsymbol{\vartheta}_k}}_{\text{if } k = s}
+\quad s = 1, \ldots, K,
 \end{equation}
-for $s = 1, \ldots, K$.
+where the additional term is zero, if we assume a linear functional form, e.g., through basis 
+function construction of the smooth terms.
+
+From this, maximum likelihood estimates can be derived by an iteratively reweighted least squares
+algorithm (see \citealp{bamlss:Rigby+Stasinopoulos:2005}, Appendix~C), where in each iteration $i$
+an adjusted dependent variable
+\begin{equation} \label{eqn:z}
+\mathbf{z}_k^{[i]} = \boldsymbol{\eta}_k^{[i]} + \left(\mathbf{W}_{kk}^{[i]}\right)^{-1}\mathbf{s}_k^{[i]}
+\end{equation}
+is computed, with vector
+$\mathbf{s}_k = \partial l(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k$
+and weights
+$\mathbf{W}_{kk} = - \partial^2 l(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top$. Because the working observations follow
+\begin{equation}
+\mathbf{z}_k^{[i]} \sim N\left(\boldsymbol{\eta}_k^{[i]}, \left(\mathbf{W}_{kk}^{[i]}\right)^{-1}\right)
+\end{equation}
+a simple backfitting algorithm or weighted least squares can be applied to obtain updates for
+$\boldsymbol{\vartheta}_k$ in each iteration. Depending on the type of algorithm different 
+weights are used, e.g.,
+$\mathbf{W}_{kk} = - E\left(\partial^2 l(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top\right)$. In the corresponding Bayesian approach
+property (\ref{eqn:z}) can be utilized to construct multivariate normal proposals for
+$\boldsymbol{\vartheta}_k$, see \citet{bamlss:Klein+Kneib+Lang:2013}.
+
+In summary, candidate estimation algorithms all access the following quantities:
+\begin{itemize}
+\item $f()$.
+\item 
+\end{itemize} 
 
 %In practice, only few implementations support an entirely modular setup that can be
 %extended by the user. Examples that do support some flexibility are the \proglang{R}
