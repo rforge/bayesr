@@ -549,7 +549,7 @@ terms. Hence, a transformer function might be required. For using standalone est
 additional specifications could be required, e.g., the model code when using \proglang{BUGS} 
 implementations. This task is handled by the setup function. The actual estimation function then
 calls the engine, either an external device or code within the same environment. The data obtained
-from the engine are uniformly processed in a results function to be able to plot estimates, 
+from the engine is then uniformly processed in a results function to be able to plot estimates, 
 create summary statistics, and so forth.
 
 The main advantage of the architecture is that the blocks parser, transformer, setup, engine and 
