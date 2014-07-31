@@ -350,6 +350,7 @@ BAMLSS candidate algorithms:
   $\partial \boldsymbol{\eta}_k / \partial \boldsymbol{\vartheta}_k$.
 \item Second order derivatives
   $\partial^2 l(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top$.
+\item Derivatives for priors, e.g., $ln \, p(\boldsymbol{\beta}_{jk} | \tau_{jk}^2)$ and $ln \, p(\tau_{jk}^2)$.
 \end{itemize}
 Hence, a modular family specification system can in principle be used to implement various
 estimation algorithms. A simple generic algorithm for BAMLSS models is outlined by the 
