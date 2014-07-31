@@ -578,6 +578,7 @@ logPost2 <- function(g, x, family, response, eta, id)
   return(ll + lp)
 }
 
+## For rational splines.
 logPost3 <- function(g, x, family, response, eta, id)
 {
   nx <- colnames(x$X)
@@ -607,6 +608,19 @@ logPost3 <- function(g, x, family, response, eta, id)
   return(ll + lp)
 }
 
+## For variance parameter sampling.
+logPost4 <- function(tau2, x, family, response, eta, id)
+{
+  ## Map predictor to parameter scale.
+  peta <- family$map2par(eta)
+
+  ## Compute log likelihood and log coefficients prior.
+  ll <- family$loglik(response, peta)
+  lp <- drop(-0.5 / tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g) +
+    log((x$b^x$a) / gamma(x$a) *  tau2^(-x$a - 1) * exp(-x$b / tau2))
+
+  return(ll + lp)
+}
 
 ## Univariate slice sampling.
 uni.slice2 <- function(g, x, family, response, eta, id, j,
@@ -699,9 +713,11 @@ propose_slice <- function(x, family,
 
   if(!is.null(args$no.mcmc)) {
     if(!x$fixed & is.null(x$sp)) {
-      a <- x$rank / 2 + x$a
-      b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
-      x$state$tau2 <- 1 / rgamma(1, a, b)
+#      a <- x$rank / 2 + x$a
+#      b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
+#      x$state$tau2 <- 1 / rgamma(1, a, b)
+      x$state$tau2 <- uni.slice(x$state$tau2, x, family, response, eta, id, j,
+        logPost = logPost4, rho = rho)
     }
   }
 
@@ -719,9 +735,11 @@ propose_slice <- function(x, family,
 
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & is.null(args$no.mcmc)) {
-    a <- x$rank / 2 + x$a
-    b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
-    x$state$tau2 <- 1 / rgamma(1, a, b)
+#    a <- x$rank / 2 + x$a
+#    b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
+#    x$state$tau2 <- 1 / rgamma(1, a, b)
+    x$state$tau2 <- uni.slice(x$state$tau2, x, family, response, eta, id, j,
+      logPost = logPost4, rho = rho)
   }
 
   return(x$state)
@@ -926,8 +944,23 @@ update_optim <- function(x, family, response, eta, id, ...)
         -1 * (ll + lp)
       }
 
-      suppressWarnings(opt <- try(optim(x$state$g, fn = objfun, method = "BFGS",
-        control = list()), silent = TRUE))
+      ## Gradient function.
+      grad <- if(!is.null(family$iwls$score[[id]])) {
+        function(gamma) {
+          eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
+          peta <- family$map2par(eta2)
+          score <- drop(family$iwls$score[[id]](response, peta))
+          grad <- crossprod(x$X, score) - if(x$fixed) {
+            0.0
+          } else {
+            (1 / (2 * tau2) * gamma)
+          }
+          return(drop(-1 * grad))
+        }
+      } else NULL
+
+      suppressWarnings(opt <- try(optim(x$state$g, fn = objfun, gr = grad,
+        method = "BFGS", control = list()), silent = TRUE))
 
       if(!inherits(opt, "try-error")) {
         x$state$g <- opt$par
@@ -966,8 +999,23 @@ update_optim <- function(x, family, response, eta, id, ...)
     -1 * (ll + lp)
   }
 
-  suppressWarnings(opt <- try(optim(x$state$g, fn = objfun, method = "BFGS",
-    control = list()), silent = TRUE))
+  ## Gradient function.
+  grad <- if(!is.null(family$iwls$score[[id]])) {
+    function(gamma) {
+      eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
+      peta <- family$map2par(eta2)
+      score <- drop(family$iwls$score[[id]](response, peta))
+      grad <- crossprod(x$X, score) - if(x$fixed) {
+        0.0
+      } else {
+        (1 / (2 * x$state$tau2) * gamma)
+      }
+      return(drop(-1 * grad))
+    }
+  } else NULL
+
+  a <- suppressWarnings(opt <- try(optim(x$state$g, fn = objfun, gr = grad,
+    method = "BFGS", control = list()), silent = TRUE))
 
   if(!inherits(opt, "try-error")) {
     x$state$g <- opt$par

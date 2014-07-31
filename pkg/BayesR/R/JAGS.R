@@ -547,13 +547,13 @@ samplerJAGS <- function(x, tdir = NULL,
   
   if(set.inits) {
     jmodel <- jags.model(mfile, data = x$data, inits = inits,
-      n.chains = n.chains, n.adapt = n.adapt, ...)
+      n.chains = n.chains, n.adapt = n.adapt)
   } else {
     jmodel <- jags.model(mfile, data = x$data,
-      n.chains = n.chains, n.adapt = n.adapt, ...)
+      n.chains = n.chains, n.adapt = n.adapt)
   }
   jsamples <- coda.samples(jmodel, variable.names = c(x$psave, "deviance"),
-    n.iter = n.iter, thin = thin, ...)
+    n.iter = n.iter, thin = thin)
 
   ## Remove burnin.
   if(is.null(burnin))

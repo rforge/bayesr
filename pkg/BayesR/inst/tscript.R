@@ -138,9 +138,11 @@ b2 <- bayesr(y ~ x2 + sx(x1, by = x2), data = dat, engine = "BayesX", family = g
 
 
 ## IWLS test
-n <- 100
+n <- 500
 dat <- data.frame("x1" = runif(n, -3, 3), "x2" = runif(n, -3, 3))
 dat$y <- with(dat, 1.2 + sin(x1) + rnorm(n, sd = scale2(cos(x1), 0.1, 0.8)))
+
+b0 <- bayesr(y ~ s(x1), ~ s(x1), data = dat, method = "backfitting", family = gaussian2, update = "optim")
 
 b0 <- bayesr(y ~ s(x1), ~ s(x1), data = dat, method = c("backfitting", "MCMC"),
   n.iter = 12000, burnin = 2000, thin = 10, family = gaussian2,
