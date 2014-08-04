@@ -13,6 +13,7 @@ for i in $FILES ; do
 done
 svn update --revision r1321 --username "${USER}" --password "${PASSWD}" structadd/superbayesreg.cpp
 svn update --revision r1321 --username "${USER}" --password "${PASSWD}" structadd/superbayesreg.h
+svn update --revision r1336 --username "${USER}" --password "${PASSWD}" mcmc/fullcond_merror.cpp
 cd ..
 cp dev-Makefile Makefile
 cp dev-Makefile.win Makefile.win
