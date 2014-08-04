@@ -716,8 +716,8 @@ propose_slice <- function(x, family,
 #      a <- x$rank / 2 + x$a
 #      b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
 #      x$state$tau2 <- 1 / rgamma(1, a, b)
-      x$state$tau2 <- uni.slice(x$state$tau2, x, family, response, eta, id, j,
-        logPost = logPost4, rho = rho)
+      x$state$tau2 <- uni.slice(x$state$tau2, x, family, response, eta, id, 1,
+        logPost = logPost4, rho = rho, lower = 0)
     }
   }
 
@@ -738,8 +738,8 @@ propose_slice <- function(x, family,
 #    a <- x$rank / 2 + x$a
 #    b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
 #    x$state$tau2 <- 1 / rgamma(1, a, b)
-    x$state$tau2 <- uni.slice(x$state$tau2, x, family, response, eta, id, j,
-      logPost = logPost4, rho = rho)
+    x$state$tau2 <- uni.slice(x$state$tau2, x, family, response, eta, id, 1,
+      logPost = logPost4, rho = rho, lower = 0)
   }
 
   return(x$state)

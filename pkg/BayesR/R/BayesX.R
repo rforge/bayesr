@@ -743,7 +743,7 @@ resultsBayesX <- function(x, samples, ...)
         },
         "quant" = function(x) gsub("quantreg", "mu", x),
         "poisson" = function(x) gsub("poisson", "lambda", x),
-        "zip" = function(x) gsub("zip", "lambda"),
+        "zip" = function(x) gsub("zip", "lambda", x),
         "dirichlet" = function(x) {
           x <- gsub("dirichletmean", "dirichletalpha1", x)
           x <- gsub("dirichletalpha", "alpha", x)
