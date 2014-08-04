@@ -11,6 +11,8 @@ done
 for i in $FILES ; do
   svn export --username "${USER}" --password "${PASSWD}" $REPOS/$i $i
 done
+svn update --revision r1321 --username "${USER}" --password "${PASSWD}" structadd/superbayesreg.cpp
+svn update --revision r1321 --username "${USER}" --password "${PASSWD}" structadd/superbayesreg.h
 cd ..
 cp dev-Makefile Makefile
 cp dev-Makefile.win Makefile.win
