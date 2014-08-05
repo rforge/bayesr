@@ -468,6 +468,28 @@ gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 }
 
 
+crch.BayesR <- function(links = c(mu = "identity", sigma = "log"),
+  left = 0, right = Inf, ...)
+{
+  rval <- list(
+    "family" = "crch",
+    "names" = c("mu", "sigma"),
+    "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
+    "d" = function(y, eta, log = FALSE, ...) {
+      d <- with(eta, ifelse(y <= left,
+        pnorm(left, mu, sigma, lower.tail = TRUE, log = log),
+        ifelse(y >= right, pnorm(right, mu, sigma, lower.tail = FALSE, log = log),
+        dnorm(y, mu, sigma, log = log))))
+      d
+    },
+    "type" = 1
+  )
+ 
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
 truncgaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 {
   rval <- list(
