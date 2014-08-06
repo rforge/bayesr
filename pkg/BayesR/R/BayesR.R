@@ -466,7 +466,7 @@ bayesr.family <- function(family, type = "BayesR")
       family$loglik <- function(y, eta) { sum(family$d(y, eta, log = TRUE), na.rm = TRUE) }
   }
   if(is.null(family$iwls)) family$iwls <- list()
-  if(is.null(family$iwls$score)) {
+  if(is.null(family$iwls$score) & FALSE) {
     nf <- family$names
     score <- list()
     for(j in family$names) {
@@ -477,7 +477,7 @@ bayesr.family <- function(family, type = "BayesR")
     }
     family$iwls$score <- score
   }
-  if(is.null(family$iwls$weights)) {
+  if(is.null(family$iwls$weights) & FALSE) {
     nf <- family$names
     weights <- list()
     for(j in family$names) {

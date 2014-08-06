@@ -1493,7 +1493,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
         }
         eps0 <- do.call("cbind", eta)
         eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
-
+        if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
         iter <- iter + 1
       }
       return(list("x" = x, "eta" = eta, "edf" = edf))
