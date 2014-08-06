@@ -1323,7 +1323,8 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "nadja", "iwls0"),
   sample = c("slice", "iwls", "iwls0"), ...)
 {
-  known_methods <- c("backfitting", "MCMC", "backfitting2", "backfitting3", "backfitting4", "mcmc")
+  known_methods <- c("backfitting", "MCMC", "backfitting2",
+    "backfitting3", "backfitting4", "mcmc", "MP", "mp")
   if(is.integer(method))
     method <- known_methods[method]
   tm <- NULL
@@ -1445,6 +1446,11 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
 
   x <- smIWLS(x, ...)
 
+  ## Formatting for printing.
+  fmt <- function(x, width = 8, digits = 2) {
+    formatC(round(x, digits), format = "f", digits = digits , width = width)
+  }
+
   ## Number of parameters
   np <- length(nx)
 
@@ -1454,27 +1460,124 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   for(j in 1:np)
     eta[[j]] <- rep(0, length(response))
 
+  ## Posterior optimization.
+  if(grepl("mp", method, ignore.case = TRUE)) {
+    par <- npar <- lower <- upper <- NULL
+    for(j in 1:np) {
+      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        par <- c(par,
+          x[[nx[j]]]$smooth[[sj]]$state$g,
+          if(!x[[nx[j]]]$smooth[[sj]]$fixed) x[[nx[j]]]$smooth[[sj]]$state$tau2 else NULL
+        )
+        ng <- length(x[[nx[j]]]$smooth[[sj]]$state$g)
+        nv <- length(x[[nx[j]]]$smooth[[sj]]$state$tau2)
+        lower <- c(lower,
+          rep(-Inf, ng),
+          if(!x[[nx[j]]]$smooth[[sj]]$fixed) rep(x[[nx[j]]]$smooth[[sj]]$interval[1], nv) else NULL
+        )
+        upper <- c(upper,
+          rep(Inf, ng),
+          if(!x[[nx[j]]]$smooth[[sj]]$fixed) rep(x[[nx[j]]]$smooth[[sj]]$interval[2], nv) else NULL
+        )
+        npar <- c(npar, paste("p", j, "t", sj,
+          c(paste("c", 1:ng, sep = ""),
+          if(!x[[nx[j]]]$smooth[[sj]]$fixed) paste("v", 1:nv, sep = "") else NULL),
+          sep = ""))
+      }
+    }
+    names(par) <- npar
+
+    lpfun <- function(par, rx = FALSE) {
+      lprior <- 0
+      for(j in 1:np) {
+        for(sj in seq_along(x[[nx[j]]]$smooth)) {
+          add_term <- x[[nx[j]]]$smooth[[sj]]$get.mu
+          if(is.null(add_term)) {
+            add_term <- function(X, b) {
+              as.matrix(X) %*% as.numeric(b)
+            }
+          }
+
+          gamma <- par[grep(paste("p", j, "t", sj, "c", sep = ""), names(par))]
+          x[[nx[j]]]$smooth[[sj]]$state$g <- gamma
+          if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
+            tau2 <- par[grep(paste("p", j, "t", sj, "v", sep = ""), names(par))]
+            x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
+          } else tau2 <- NULL
+
+          x[[nx[j]]]$smooth[[sj]]$state$fit <- add_term(x[[nx[j]]]$smooth[[sj]]$X, gamma)
+          eta[[nx[j]]] <- eta[[nx[j]]] + x[[nx[j]]]$smooth[[sj]]$state$fit
+          
+          pfun <- x[[nx[j]]]$smooth[[sj]]$prior
+          if(is.null(pfun)) {
+            pfun <- function(x, gamma, tau2 = NULL) {
+              lp <- if(x$fixed | is.null(tau2)) {
+                sum(dnorm(gamma, sd = 10, log = TRUE))
+              } else {
+                drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
+                  log((x$b^x$a) / gamma(x$a) * tau2^(-x$a - 1) * exp(-x$b / tau2))
+              }
+              return(lp)
+            }
+          }
+
+          if(!x[[nx[j]]]$smooth[[sj]]$fixed & rx) {
+            XX <- crossprod(x[[nx[j]]]$smooth[[sj]]$X)
+            P <- matrix_inv(XX + 1 / tau2 * x[[nx[j]]]$smooth[[sj]]$S[[1]])
+            x[[nx[j]]]$smooth[[sj]]$state$edf <- sum(diag(XX %*% P))
+            if(!is.null(x[[nx[j]]]$smooth[[sj]]$xt$center)) {
+              if(x[[nx[j]]]$smooth[[sj]]$xt$center)
+                x[[nx[j]]]$smooth[[sj]]$state$edf <- x[[nx[j]]]$smooth[[sj]]$state$edf - 1
+            }
+          }
+
+          lprior <- lprior + pfun(x[[nx[j]]]$smooth[[sj]], gamma, tau2)
+        }
+      }
+
+      ll <- family$loglik(response, family$map2par(eta))
+          
+      if(rx) {
+        rval <- list("x" = x, "eta" = eta, "lp" = ll + lprior)
+      } else {
+        rval <- -1 * (ll + lprior)
+        if(!is.finite(rval))
+          rval <- NA
+      }
+
+      if(verbose)
+        cat("logPost", fmt(ll + lprior, width = 8, digits = digits), "\n")
+
+      return(rval)
+    }
+
+    ## Use optim() to find variance parameters.
+    par <- optim(par, fn = lpfun,
+      method = "L-BFGS-B", lower = lower, upper = upper,
+      control = list(factr = eps))$par
+
+    svalues <- FALSE
+    opt <- lpfun(par, rx = TRUE)
+    x <- opt$x; eta <- opt$eta
+    rm(opt)
+  }
+
+  get_edf <- function(x) {
+    edf <- 0
+    for(j in 1:np) {
+      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        sedf <- if(is.null(x[[nx[j]]]$smooth[[sj]]$state$edf)) {
+          ncol(x[[nx[j]]]$smooth[[sj]]$X)
+        } else x[[nx[j]]]$smooth[[sj]]$state$edf
+        edf <- edf + sedf
+      }
+    }
+    edf
+  }
+
   ## Find starting values with backfitting.
   if(svalues | any(grepl("backfitting", method))) {
     nobs <- if(is.null(dim(response))) length(response) else nrow(response)
-
-    get_edf <- function(x) {
-      edf <- 0
-      for(j in 1:np) {
-        ## And all terms.
-        for(sj in seq_along(x[[nx[j]]]$smooth)) {
-          sedf <- if(is.null(x[[nx[j]]]$smooth[[sj]]$state$edf)) {
-            ncol(x[[nx[j]]]$smooth[[sj]]$X)
-          } else x[[nx[j]]]$smooth[[sj]]$state$edf
-          edf <- edf + sedf
-        }
-      }
-      edf
-    }
-
-    fmt <- function(x, width = 8, digits = 2) {
-      formatC(round(x, digits), format = "f", digits = digits , width = width)
-    }
 
     inner_bf <- function(x, response, eta, family, edf, id, ...) {
       eps0 <- eps + 1; iter <- 1
