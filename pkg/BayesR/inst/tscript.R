@@ -109,12 +109,12 @@ abline(a = 0, b = 1)
 
 
 f <- simfun(type = "2d")
-n <- 200
+n <- 500
 dat <- data.frame("x1" = sort(runif(n, 0, 1)), "x2" = runif(n, 0, 1))
 dat$y <- with(dat, 1.2 + f(x1, x2) + rnorm(n, sd = 0.2))
 
-b0 <- bayesr(y ~ s(x1, k = 6,fx=T):s(x2, k = 6,fx=T), data = dat, method = c("backfitting2", "MCMC"))
-b1 <- bayesr(y ~ s(x1, x2, k = 20), data = dat)
+b0 <- bayesr(y ~ s(x1,k=6):s(x2,k=6), data = dat, method = "MP")
+b1 <- bayesr(y ~ s(x1, x2, k = 20), data = dat, method = "MP")
 
 plot(c(b0, b1), type = "mba")
 

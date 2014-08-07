@@ -1300,14 +1300,15 @@ smooth.IWLS.default <- function(x, ...)
 }
 
 
-get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc"))
+get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc", "MP"))
 {
   type <- match.arg(type)
   ll <- family$loglik(response, eta)
   pen <- switch(type,
     "AIC" = -2 * ll + 2 * edf,
     "BIC" = -2 * ll + edf * log(n),
-    "AICc" = -2 * ll + 2 * edf + (2 * edf * (edf + 1)) / (n - edf - 1)
+    "AICc" = -2 * ll + 2 * edf + (2 * edf * (edf + 1)) / (n - edf - 1),
+    "MP" = ll + edf
   )
   return(pen)
 }
@@ -1460,6 +1461,40 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   for(j in 1:np)
     eta[[j]] <- rep(0, length(response))
 
+  ## Extract edf or logpriors.
+  get_edf_lp <- function(x, logprior = FALSE) {
+    rval <- 0
+    for(j in 1:np) {
+      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        if(logprior) {
+          pfun <- x[[nx[j]]]$smooth[[sj]]$prior
+          if(is.null(pfun)) {
+            pfun <- function(x, gamma, tau2 = NULL) {
+              lp <- if(x$fixed | is.null(tau2)) {
+                sum(dnorm(gamma, sd = 10, log = TRUE))
+              } else {
+                a <- x$rank / 2 + x$a
+                b <- 0.5 * crossprod(gamma, x$S[[1]]) %*% gamma + x$b
+                drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) + dgamma(tau2, a, b, log = TRUE)
+                  ##log((x$b^x$a) / gamma(x$a) * tau2^(-x$a - 1) * exp(-x$b / tau2))
+              }
+              return(lp)
+            }
+          }
+          selp <- pfun(x[[nx[j]]]$smooth[[sj]],
+            x[[nx[j]]]$smooth[[sj]]$state$g,
+            x[[nx[j]]]$smooth[[sj]]$state$tau2)
+        } else {
+          selp <- if(is.null(x[[nx[j]]]$smooth[[sj]]$state$edf)) {
+            ncol(x[[nx[j]]]$smooth[[sj]]$X)
+          } else x[[nx[j]]]$smooth[[sj]]$state$edf
+        }
+        rval <- rval + selp
+      }
+    }
+    rval
+  }
+
   ## Posterior optimization.
   if(grepl("mp", method, ignore.case = TRUE)) {
     par <- npar <- lower <- upper <- NULL
@@ -1514,8 +1549,10 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
               lp <- if(x$fixed | is.null(tau2)) {
                 sum(dnorm(gamma, sd = 10, log = TRUE))
               } else {
-                drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
-                  log((x$b^x$a) / gamma(x$a) * tau2^(-x$a - 1) * exp(-x$b / tau2))
+                a <- x$rank / 2 + x$a
+                b <- 0.5 * crossprod(gamma, x$S[[1]]) %*% gamma + x$b
+                drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) + dgamma(tau2, a, b, log = TRUE)
+                  ##log((x$b^x$a) / gamma(x$a) * tau2^(-x$a - 1) * exp(-x$b / tau2))
               }
               return(lp)
             }
@@ -1562,19 +1599,6 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     rm(opt)
   }
 
-  get_edf <- function(x) {
-    edf <- 0
-    for(j in 1:np) {
-      for(sj in seq_along(x[[nx[j]]]$smooth)) {
-        sedf <- if(is.null(x[[nx[j]]]$smooth[[sj]]$state$edf)) {
-          ncol(x[[nx[j]]]$smooth[[sj]]$X)
-        } else x[[nx[j]]]$smooth[[sj]]$state$edf
-        edf <- edf + sedf
-      }
-    }
-    edf
-  }
-
   ## Find starting values with backfitting.
   if(svalues | any(grepl("backfitting", method))) {
     nobs <- if(is.null(dim(response))) length(response) else nrow(response)
@@ -1604,7 +1628,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
 
     ## 1st backfitting main function.
     backfit <- function(x, eta, verbose = TRUE) {
-      edf <- get_edf(x)
+      edf <- get_edf_lp(x, logprior = criterion == "MP")
 
       eps0 <- eps + 1; iter <- 1
       while(eps0 > eps & iter < maxit) {
@@ -1854,7 +1878,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
 
   save.edf <- save.loglik <- NULL
   if(!any(grepl("MCMC", method))) {
-    save.edf <- get_edf(x)
+    save.edf <- get_edf_lp(x)
     save.loglik <- family$loglik(response, family$map2par(eta))
     if(verbose) cat("generating samples\n")
     ptm <- proc.time()
