@@ -1078,6 +1078,73 @@ update_optim2 <- function(x, family, response, eta, id, ...)
   return(x$state)
 }
 
+## 3rd optimzer updater.
+update_optim3 <- function(x, family, response, eta, id, ...)
+{
+  ## Compute partial predictor.
+  eta[[id]] <- eta[[id]] - x$state$fit
+  eta2 <- eta
+
+  if(is.null(x$state$XX)) x$state$XX <- crossprod(x$X)
+  if(!x$fixed) {
+    args <- list(...)
+    edf0 <- args$edf - x$state$edf
+    if(is.null(x$state$XX))
+      x$state$XX <- crossprod(x$X)
+  }
+
+  par <- c(x$state$g, if(!x$fixed) x$state$tau2 else NULL)
+  names(par) <- x$s.colnames
+
+  ## Objective function.
+  objfun <- function(par) {
+    gamma <- par[grep("c", x$s.colnames)]
+    tau2 <- if(x$fixed) {
+      NULL
+    } else {
+      if(!is.null(x$sp)) x$sp else par[grep("tau2", x$s.colnames)]
+    }
+    eta2[[id]] <- eta[[id]] + x$get.mu(x$X, gamma)
+    edf_lp <- if(x$criterion == "MP") {
+      lp <- x$prior(x, gamma, tau2)
+    } else {
+      if(!x$fixed) {
+        P <- matrix_inv(x$state$XX + 1 / x$state$tau2 * x$S[[1]])
+        edf <- sum(diag(x$state$XX %*% P))
+        if(!is.null(x$xt$center)) {
+          if(x$xt$center) edf <- edf - 1
+        }
+      } else edf <- x$state$edf
+      edf0 + edf
+    }
+
+    val <- get.ic(family, response, family$map2par(eta2), edf_lp, length(eta2[[id]]), x$criterion)
+    val
+  }
+
+  a <- suppressWarnings(opt <- try(optim(par, fn = objfun,
+    method = "L-BFGS-B", lower = x$lower, upper = x$upper), silent = TRUE))
+
+  if(!inherits(opt, "try-error")) {
+    par <- opt$par
+    x$state$g <- par[grep("c", x$s.colnames)]
+    x$state$fit <- x$get.mu(x$X, x$state$g)
+    x$state$tau2 <- if(!x$fixed) {
+      if(!is.null(x$sp)) x$sp else par[grep("tau2", x$s.colnames)]
+    }
+  }
+
+  if(!x$fixed) {
+    P <- matrix_inv(x$state$XX + 1 / x$state$tau2 * x$S[[1]])
+    x$state$edf <- sum(diag(x$state$XX %*% P))
+    if(!is.null(x$xt$center)) {
+      if(x$xt$center) x$state$edf <- x$state$edf - 1
+    }
+  }
+
+  return(x$state)
+}
+
 
 #############################
 ## Nadja's testing section ##
@@ -1246,14 +1313,6 @@ smooth.IWLS <- function(x, ...) {
 
 smooth.IWLS.default <- function(x, ...)
 {
-  if(is.null(x$get.mu)) {
-    x$get.mu <- if(is.null(x$get.mu)) {
-      function(X, g) {
-        X %*% as.numeric(g)
-      }
-    } else x$get.mu
-  }
-
   x$a <- if(is.null(x$xt$a)) 1e-04 else x$xt$a
   x$b <- if(is.null(x$xt$b)) 1e-04 else x$xt$b
 
@@ -1275,6 +1334,7 @@ smooth.IWLS.default <- function(x, ...)
   if(!x$fixed) {
     x$interval <- if(is.null(x$xt$interval)) tau2interval(x) else x$xt$interval
   }
+
   x$grid <- if(is.null(x$xt$grid)) 40 else x$xt$grid
   if(is.null(x$state)) {
     x$p.save <- c("g", "tau2")
@@ -1285,7 +1345,7 @@ smooth.IWLS.default <- function(x, ...)
     } else x$sp
     x$s.colnames <- if(is.null(x$s.colnames)) {
       c(paste("c", 1:length(x$state$g), sep = ""),
-        rep("tau2", length = length(x$state$tau2)))
+        if(!x$fixed) paste("tau2", 1:length(x$state$tau2), sep = "") else NULL)
     } else x$s.colnames
     x$np <- c(length(x$state$g), length(x$state$tau2))
     XX <- crossprod(x$X)
@@ -1295,6 +1355,26 @@ smooth.IWLS.default <- function(x, ...)
     x$xt$adaptive <- TRUE
   if(is.null(x$xt$step))
     x$xt$step <- 40
+
+  if(is.null(x$get.mu) | !is.function(x$get.mu)) {
+    x$get.mu <- function(X, b) {
+      as.matrix(X) %*% as.numeric(b)
+    }
+  }
+  if(is.null(x$prior) | !is.function(x$prior)) {
+    x$prior <- function(x, gamma, tau2 = NULL) {
+      lp <- if(x$fixed | is.null(tau2)) {
+        sum(dnorm(gamma, sd = 10, log = TRUE))
+      } else {
+        drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
+          log((x$b^x$a) / gamma(x$a) * tau2^(-x$a - 1) * exp(-x$b / tau2))
+      }
+      return(lp)
+    }
+  }
+  x$lower <- c(rep(-Inf, ncol(x$X)), x$interval[1])
+  x$upper <- c(rep(Inf, ncol(x$X)), x$interval[2])
+  names(x$lower) <- names(x$upper) <- x$s.colnames
 
   x
 }
@@ -1308,7 +1388,7 @@ get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc",
     "AIC" = -2 * ll + 2 * edf,
     "BIC" = -2 * ll + edf * log(n),
     "AICc" = -2 * ll + 2 * edf + (2 * edf * (edf + 1)) / (n - edf - 1),
-    "MP" = ll + edf
+    "MP" = (ll + edf) * -1
   )
   return(pen)
 }
@@ -1318,9 +1398,9 @@ get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc",
 samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TRUE,
   verbose = TRUE, step = 20, svalues = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
   tdir = NULL, method = "backfitting", outer = FALSE, inner = FALSE, n.samples = 200,
-  criterion = c("AICc", "BIC", "AIC"), lower = 1e-09, upper = 1e+04,
+  criterion = c("AICc", "BIC", "AIC", "MP"), lower = 1e-09, upper = 1e+04,
   optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3,
-  update = c("optim", "iwls", "optim2"),
+  update = c("optim", "iwls", "optim2", "optim3"),
   propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "nadja", "iwls0"),
   sample = c("slice", "iwls", "iwls0"), ...)
 {
@@ -1367,7 +1447,8 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     update <- switch(update,
       "optim" = update_optim,
       "iwls" = update_iwls,
-      "optim2" = update_optim2
+      "optim2" = update_optim2,
+      "optim3" = update_optim3
     )
   }
 
@@ -1549,10 +1630,8 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
               lp <- if(x$fixed | is.null(tau2)) {
                 sum(dnorm(gamma, sd = 10, log = TRUE))
               } else {
-                a <- x$rank / 2 + x$a
-                b <- 0.5 * crossprod(gamma, x$S[[1]]) %*% gamma + x$b
-                drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) + dgamma(tau2, a, b, log = TRUE)
-                  ##log((x$b^x$a) / gamma(x$a) * tau2^(-x$a - 1) * exp(-x$b / tau2))
+                drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
+                  log((x$b^x$a) / gamma(x$a) * tau2^(-x$a - 1) * exp(-x$b / tau2))
               }
               return(lp)
             }

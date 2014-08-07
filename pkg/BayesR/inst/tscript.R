@@ -84,11 +84,12 @@ b <- bayesr(mstatus ~ s(age), family = multinomial.BayesR, data = marital.nz)
 ## pick function
 f <- simfun(type = "complicated")
 
+set.seed(111)
 n <- 200
 dat <- data.frame("x1" = sort(runif(n, 0, 1)))
 dat$y <- with(dat, 1.2 + f(x1) + rnorm(n, sd = 0.2))
 
-b <- bayesr(y ~ rs(x1,fx=TRUE), data = dat, method = "backfitting")
+b <- bayesr(y ~ s(x1), data = dat, method = "backfitting", update = "optim")
 
 g <- coef(b)
 g <- g[grep("s(x1)", names(g), fixed = TRUE)]
@@ -97,9 +98,9 @@ X <- smooth.construct(rs(x1), dat, NULL)
 
 dat$f <- X$get.mu(X$X, g)
 
-dat$y2 <- with(dat, 1.2 + f + rnorm(n, sd = 0.5))
+dat$y2 <- with(dat, 1.2 + f + rnorm(n, sd = 0.2))
 
-b2 <- bayesr(y2 ~ rs(x1,fx=TRUE), data = dat, method = "backfitting")
+b2 <- bayesr(y2 ~ rs(x1), data = dat, method = "backfitting")
 
 g2 <- coef(b2)
 g2 <- g2[grep("s(x1)", names(g2), fixed = TRUE)]
@@ -113,8 +114,8 @@ n <- 500
 dat <- data.frame("x1" = sort(runif(n, 0, 1)), "x2" = runif(n, 0, 1))
 dat$y <- with(dat, 1.2 + f(x1, x2) + rnorm(n, sd = 0.2))
 
-b0 <- bayesr(y ~ s(x1,k=6):s(x2,k=6), data = dat, method = "MP")
-b1 <- bayesr(y ~ s(x1, x2, k = 20), data = dat, method = "MP")
+b0 <- bayesr(y ~ s(x1):s(x2), data = dat, method = "backfitting")
+b1 <- bayesr(y ~ s(x1, x2, k = 20), data = dat, method = "backfitting")
 
 plot(c(b0, b1), type = "mba")
 
@@ -142,7 +143,7 @@ n <- 500
 dat <- data.frame("x1" = runif(n, -3, 3), "x2" = runif(n, -3, 3))
 dat$y <- with(dat, 1.2 + sin(x1) + rnorm(n, sd = scale2(cos(x1), 0.1, 0.8)))
 
-b0 <- bayesr(y ~ s(x1), ~ s(x1), data = dat, method = "mp", family = gaussian2)
+b0 <- bayesr(y ~ s(x1), ~ s(x1), data = dat, family = gaussian2, update = "optim")
 
 b0 <- bayesr(y ~ s(x1), ~ s(x1), data = dat, method = c("backfitting", "MCMC"),
   n.iter = 12000, burnin = 2000, thin = 10, family = gaussian2,
