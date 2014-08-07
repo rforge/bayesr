@@ -1463,11 +1463,12 @@ compute.x.id <- function(x, id = NULL, c.select = NULL, range = NULL, symmetric 
       take <- c("mean", "Mean", "MEAN", "estimate", 
         "Estimate", "ESTIMATE", "mean", "pmode", "pmean_tot")
       did.take <- FALSE
-      for(k in take)
-        if(!is.na(pmatch(k, nx))) {
+      for(k in take) {
+        if(!is.na(pmatch(k, nx)) & !did.take) {
           x <- x[[k]]
           did.take <- TRUE
         }
+      }
      if(!did.take && length(x) > 1L)
        x <- x[[2L]]
     } else {
