@@ -74,10 +74,10 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
       if(!is.function(trans)) stop("argument trans must be a function!")
       x$x <- trans(x$x)
     }
-    map_fun <- make_pal(col = col, ncol = ncol, data = x$x, 
+    map_fun <- make_pal(col = col, ncol = ncol, data = as.numeric(x$x), 
       range = range, breaks = breaks, swap = swap, 
       symmetric = symmetric)$map
-    colors <- map_fun(x$x)
+    colors <- map_fun(as.numeric(x$x))
   } else {
     if(is.null(col))
       colors <- rep(NA, length.out = n)
@@ -194,10 +194,6 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   angle.p <- if(!is.null(args$angle)) rep(args$angle, length.out = n) else NULL
   if(is.null(angle.p))
     angle.p <- rep(90, length.out = n)
-
-  plot_poly <- function(p, i, args, x, poly) {
-
-  }
 
   for(poly in unique(poly.names.orig)) {
     for(i in which(poly.names.orig == poly)) {
