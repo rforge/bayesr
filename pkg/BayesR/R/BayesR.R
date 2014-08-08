@@ -1596,7 +1596,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
   link <- make.link2(object$link)$linkinv
   edf <- 0
   if(!object$formula) {
-    X <- list(); tau2 <- NULL
+    X <- interval <- list(); tau2 <- NULL
     for(j in seq_along(object$smooths)) {
       if(is.null(object$smooths[[j]]$param))
         object$smooths[[j]]$param <- FALSE
@@ -1615,6 +1615,9 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
         stj$class <- class(stj)
         stj$a <- if(is.null(stj$xt$a)) 1e-04 else stj$xt$a
         stj$b <- if(is.null(stj$xt$b)) 1e-04 else stj$xt$b
+        if(!stj$fixed) {
+          interval[[j]] <- if(is.null(stj$xt$interval)) tau2interval(stj) else stj$xt$interval
+        }
         X[[j]] <- stj$X
         object$smooths[[j]] <- stj
         if(!stj$fixed) {
@@ -1640,6 +1643,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     object$state$g <- rep(0, ncol(X) - 1)
     object$state$edf <- edf
     object$state$tau2 <- tau2
+    object$interval <- interval
     object$fixed <- TRUE
 
     object$get.mu <- function(X, g) {
@@ -1658,6 +1662,29 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
   object$s.colnames <- c(paste("c", 1:length(object$state$g), sep = ""),
     if(!is.null(tau2)) paste("tau2", 1:length(tau2), sep = "") else NULL)
   object$np <- c(length(object$state$g), length(tau2))
+
+  object$prior <- function(x, gamma, tau2 = NULL) {
+    nx <- colnames(x$X)
+    k1 <- length(grep("g1", nx, fixed = TRUE))
+    lp <- 0
+    g <- gamma[1:k1]
+    w <- c(1, gamma[(k1 + 1):(ncol(x$X) - 1)])
+    lp <- if(!x$smooths[[1]]$fixed) {
+      sp <- x$smooths[[1]]$sp
+      if(is.null(sp))
+        sp <- tau2["tau2g"]
+      lp + drop(-0.5 / sp * crossprod(g, x$smooths[[1]]$S[[1]]) %*% g) +
+        log((x$smooths[[1]]$b^x$smooths[[1]]$a) / gamma(x$smooths[[1]]$a) * sp^(-x$smooths[[1]]$a - 1) * exp(-x$smooths[[1]]$b / sp))
+    } else lp + sum(dnorm(g, sd = 10, log = TRUE))
+    lp <- if(!x$smooths[[2]]$fixed) {
+      sp <- x$smooths[[2]]$sp
+      if(is.null(sp))
+        sp <- tau2["tau2w"]
+      lp + drop(-0.5 / sp * crossprod(w, x$smooths[[2]]$S[[1]]) %*% w) +
+        log((x$smooths[[2]]$b^x$smooths[[2]]$a) / gamma(x$smooths[[2]]$a) * sp^(-x$smooths[[2]]$a - 1) * exp(-x$smooths[[2]]$b / sp))
+    } else lp + sum(dnorm(w, sd = 10, log = TRUE))
+    return(lp)
+  }
 
   object$update <- function(x, family, response, eta, id, ...) {
     ## Compute partial predictor.
@@ -1699,36 +1726,25 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
       x$state$fit <- x$get.mu(x$X, x$state$g)
     }
 
-    edf1 <- edf2 <- NA
-    if(!x$smooths[[1]]$fixed) {
-      sp <- x$smooths[[1]]$sp
-      if(is.null(sp))
-        sp <- x$state$tau2["tau2g"]
-      XX <- crossprod(x$X[, 1:k1, drop = FALSE])
-      P <- matrix_inv(XX + 1 / sp * x$smooths[[1]]$S[[1]])
-      if(!inherits(P, "try-error"))
-        edf1 <- sum(diag(XX %*% P))
-    } else edf1 <- k1
-    if(x$smooths[[1]]$xt$center) edf1 <- edf1 - 1
-
-    if(!x$smooths[[2]]$fixed) {
-      sp <- x$smooths[[2]]$sp
-      if(is.null(sp))
-        sp <- x$state$tau2["tau2w"]
-      XX <- crossprod(x$X[, -1 * 1:k1, drop = FALSE])
-      P <- matrix_inv(XX + 1 / sp * x$smooths[[2]]$S[[1]])
-      if(!inherits(P, "try-error"))
-        edf2 <- sum(diag(XX %*% P))
-    } else edf2 <- ncol(x$X) - k1
-    if(x$smooths[[2]]$xt$center) edf2 <- edf2 - 1
-
-    x$state$edf <- edf1 + edf2
+    x$state$edf <- x$edf(x, x$state$tau2)
 
     return(x$state)
   }
+
   object$propose <- function(x, family, response, eta, id, rho, ...) {
     args <- list(...)
     iter <- args$iter
+
+    if(!is.null(args$no.mcmc)) {
+      for(j in seq_along(x$state$tau2)) {
+        if(!x$smooths[[j]]$fixed) {
+          if(!is.null(x$smooths[[j]]$sp))
+            x$state$tau2[j] <- x$smooths[[j]]$sp
+          x$state$tau2 <- uni.slice(x$state$tau2, x, family, response, eta, id, j,
+            logPost = logPost5, rho = rho, lower = 0)
+        }
+      }
+    }
 
     if(!is.null(iter)) {
       if(iter %% x$xt$step == 0) {
@@ -1750,30 +1766,48 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     x$state$alpha <- log(1)
     x$state$fit <- x$get.mu(x$X, x$state$g)
 
-    nx <- colnames(x$X)
-    k1 <- length(grep("g1", nx, fixed = TRUE))
-
-    if(!x$smooths[[1]]$fixed) {
-      g <- x$state$g[1:k1]
-      sp <- x$smooths[[1]]$sp
-      if(is.null(sp))
-        sp <- x$state$tau2["tau2g"]
-      a <- x$smooths[[1]]$rank / 2 + x$smooths[[1]]$a
-      b <- 0.5 * crossprod(g, x$smooths[[1]]$S[[1]]) %*% g + x$b
-      x$state$tau2["tau2g"] <- 1 / rgamma(1, a, b)
-    }
-    if(!x$smooths[[2]]$fixed) {
-      g <- c(1, x$state$g[(k1 + 1):(ncol(x$X) - 1)])
-      sp <- x$smooths[[2]]$sp
-      if(is.null(sp))
-        sp <- x$state$tau2["tau2w"]
-      a <- x$smooths[[2]]$rank / 2 + x$smooths[[2]]$a
-      b <- 0.5 * crossprod(g, x$smooths[[2]]$S[[1]]) %*% g + x$b
-      x$state$tau2["tau2w"] <- 1 / rgamma(1, a, b)
+    for(j in seq_along(x$state$tau2)) {
+      if(!x$smooths[[j]]$fixed) {
+        if(!is.null(x$smooths[[j]]$sp))
+          x$state$tau2[j] <- x$smooths[[j]]$sp
+        x$state$tau2 <- uni.slice(x$state$tau2, x, family, response, eta, id, j,
+          logPost = logPost5, rho = rho, lower = 0)
+      }
     }
 
     return(x$state)
   }
+
+  object$edf <- function(x, tau2) {
+    nx <- colnames(x$X)
+    k1 <- length(grep("g1", nx, fixed = TRUE))
+
+    edf1 <- edf2 <- NA
+    if(!x$smooths[[1]]$fixed) {
+      sp <- x$smooths[[1]]$sp
+      if(is.null(sp))
+        sp <- tau2["tau2g"]
+      XX <- crossprod(x$X[, 1:k1, drop = FALSE])
+      P <- matrix_inv(XX + 1 / sp * x$smooths[[1]]$S[[1]])
+      if(!inherits(P, "try-error"))
+        edf1 <- sum(diag(XX %*% P))
+    } else edf1 <- k1
+    if(x$smooths[[1]]$xt$center) edf1 <- edf1 - 1
+
+    if(!x$smooths[[2]]$fixed) {
+      sp <- x$smooths[[2]]$sp
+      if(is.null(sp))
+        sp <- tau2["tau2w"]
+      XX <- crossprod(x$X[, -1 * 1:k1, drop = FALSE])
+      P <- matrix_inv(XX + 1 / sp * x$smooths[[2]]$S[[1]])
+      if(!inherits(P, "try-error"))
+        edf2 <- sum(diag(XX %*% P))
+    } else edf2 <- ncol(x$X) - k1
+    if(x$smooths[[2]]$xt$center) edf2 <- edf2 - 1
+
+    return(edf1 + edf2)
+  }
+
   object$sample <- object$propose
   object$by <- "NA"
   object$by.done <- TRUE

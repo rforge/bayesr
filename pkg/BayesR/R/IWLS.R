@@ -581,30 +581,11 @@ logPost2 <- function(g, x, family, response, eta, id)
 ## For rational splines.
 logPost3 <- function(g, x, family, response, eta, id)
 {
-  nx <- colnames(x$X)
-  k1 <- length(grep("g1", nx, fixed = TRUE))
-
   fit <- x$get.mu(x$X, g)
   eta[[id]] <- eta[[id]] + fit
   peta <- family$map2par(eta)
   ll <- family$loglik(response, peta)
-  lp <- 0
-  gamma <- g
-  g <- gamma[1:k1]
-  w <- c(1, gamma[(k1 + 1):(ncol(x$X) - 1)])
-  lp <- if(!x$smooths[[1]]$fixed) {
-    sp <- x$smooths[[1]]$sp
-    if(is.null(sp))
-      sp <- x$state$tau2["tau2g"]
-    lp + drop(-0.5 / sp * crossprod(g, x$smooths[[1]]$S[[1]]) %*% g)
-  } else lp + sum(dnorm(g, sd = 10, log = TRUE))
-  lp <- if(!x$smooths[[2]]$fixed) {
-    sp <- x$smooths[[2]]$sp
-    if(is.null(sp))
-      sp <- x$state$tau2["tau2w"]
-    lp + drop(-0.5 / sp * crossprod(w, x$smooths[[2]]$S[[1]]) %*% w)
-  } else lp + sum(dnorm(w, sd = 10, log = TRUE))
-
+  lp <- x$prior(x, g, x$state$tau2)
   return(ll + lp)
 }
 
@@ -616,9 +597,19 @@ logPost4 <- function(tau2, x, family, response, eta, id)
 
   ## Compute log likelihood and log coefficients prior.
   ll <- family$loglik(response, peta)
-  lp <- drop(-0.5 / tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g) +
-    log((x$b^x$a) / gamma(x$a) *  tau2^(-x$a - 1) * exp(-x$b / tau2))
 
+  lp <- drop(-0.5 / tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g) +
+    log((x$b^x$a) / gamma(x$a) * tau2^(-x$a - 1) * exp(-x$b / tau2))
+
+  return(ll + lp)
+}
+
+## Rational splines variance parameter.
+logPost5 <- function(tau2, x, family, response, eta, id)
+{
+  peta <- family$map2par(eta)
+  ll <- family$loglik(response, peta)
+  lp <- x$prior(x, x$state$g, tau2)
   return(ll + lp)
 }
 
@@ -713,9 +704,6 @@ propose_slice <- function(x, family,
 
   if(!is.null(args$no.mcmc)) {
     if(!x$fixed & is.null(x$sp)) {
-#      a <- x$rank / 2 + x$a
-#      b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
-#      x$state$tau2 <- 1 / rgamma(1, a, b)
       x$state$tau2 <- uni.slice(x$state$tau2, x, family, response, eta, id, 1,
         logPost = logPost4, rho = rho, lower = 0)
     }
@@ -735,9 +723,6 @@ propose_slice <- function(x, family,
 
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & is.null(args$no.mcmc)) {
-#    a <- x$rank / 2 + x$a
-#    b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
-#    x$state$tau2 <- 1 / rgamma(1, a, b)
     x$state$tau2 <- uni.slice(x$state$tau2, x, family, response, eta, id, 1,
       logPost = logPost4, rho = rho, lower = 0)
   }
@@ -939,8 +924,7 @@ update_optim <- function(x, family, response, eta, id, ...)
       objfun <- function(gamma) {
         eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
         ll <- family$loglik(response, family$map2par(eta2))
-        lp <- drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
-          log((x$b^x$a) / gamma(x$a) * tau2^(-x$a - 1) * exp(-x$b / tau2))
+        lp <- x$prior(x, gamma, tau2)
         -1 * (ll + lp)
       }
 
@@ -967,12 +951,7 @@ update_optim <- function(x, family, response, eta, id, ...)
         x$state$fit <- drop(x$X %*% x$state$g)
       }
 
-      P <- matrix_inv(x$state$XX + 1 / tau2 * x$S[[1]])
-      if(inherits(P, "try-error")) return(NA)
-      edf <- sum(diag(x$state$XX %*% P))
-      if(!is.null(x$xt$center)) {
-        if(x$xt$center) edf <- edf - 1
-      }
+      edf <- x$edf(x, tau2)
 
       eta2[[id]] <- eta[[id]] + x$state$fit
 
@@ -990,12 +969,7 @@ update_optim <- function(x, family, response, eta, id, ...)
   objfun <- function(gamma) {
     eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
     ll <- family$loglik(response, family$map2par(eta2))
-    lp <- if(x$fixed) {
-      sum(dnorm(gamma, sd = 10, log = TRUE))
-    } else {
-      drop(-0.5 / x$state$tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
-        log((x$b^x$a) / gamma(x$a) *  x$state$tau2^(-x$a - 1) * exp(-x$b /  x$state$tau2))
-    }
+    lp <- x$prior(x, gamma, x$state$tau2)
     -1 * (ll + lp)
   }
 
@@ -1022,13 +996,8 @@ update_optim <- function(x, family, response, eta, id, ...)
     x$state$fit <- drop(x$X %*% x$state$g)
   }
 
-  if(!x$fixed) {
-    P <- matrix_inv(x$state$XX + 1 / x$state$tau2 * x$S[[1]])
-    x$state$edf <- sum(diag(x$state$XX %*% P))
-    if(!is.null(x$xt$center)) {
-      if(x$xt$center) x$state$edf <- x$state$edf - 1
-    }
-  }
+  if(!x$fixed)
+    x$state$edf <- x$edf(x, x$state$tau2)
 
   return(x$state)
 }
@@ -1046,12 +1015,7 @@ update_optim2 <- function(x, family, response, eta, id, ...)
     eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
     peta <- family$map2par(eta2)
     ll <- family$loglik(response, peta)
-    lp <- if(x$fixed) {
-      sum(dnorm(gamma, sd = 10, log = TRUE))
-    } else {
-      drop(-0.5 / x$state$tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
-        log((x$b^x$a) / gamma(x$a) *  x$state$tau2^(-x$a - 1) * exp(-x$b /  x$state$tau2))
-    }
+    lp <- x$prior(x, gamma, x$state$tau2)
     -1 * (ll + lp)
   }
 
@@ -1066,13 +1030,7 @@ update_optim2 <- function(x, family, response, eta, id, ...)
   if(!x$fixed) {
     if(is.null(x$state$XX))
       x$state$XX <- crossprod(x$X)
-    P <- matrix_inv(x$state$XX + 1 / x$state$tau2 * x$S[[1]])
-    if(!inherits(P, "try-error")) {
-      x$state$edf <- sum(diag(x$state$XX %*% P))
-      if(!is.null(x$xt$center)) {
-        if(x$xt$center) x$state$edf <- x$state$edf - 1
-      }
-    }
+    x$state$edf <- x$edf(x, x$state$tau2)
   }
 
   return(x$state)
@@ -1105,21 +1063,9 @@ update_optim3 <- function(x, family, response, eta, id, ...)
       if(!is.null(x$sp)) x$sp else par[grep("tau2", x$s.colnames)]
     }
     eta2[[id]] <- eta[[id]] + x$get.mu(x$X, gamma)
-    edf_lp <- if(x$criterion == "MP") {
-      lp <- x$prior(x, gamma, tau2)
-    } else {
-      if(!x$fixed) {
-        P <- matrix_inv(x$state$XX + 1 / x$state$tau2 * x$S[[1]])
-        edf <- sum(diag(x$state$XX %*% P))
-        if(!is.null(x$xt$center)) {
-          if(x$xt$center) edf <- edf - 1
-        }
-      } else edf <- x$state$edf
-      edf0 + edf
-    }
-
-    val <- get.ic(family, response, family$map2par(eta2), edf_lp, length(eta2[[id]]), x$criterion)
-    val
+    lp <- x$prior(x, gamma, tau2)
+    ll <- family$loglik(response, family$map2par(eta2))
+    return(-1 * (ll + lp))
   }
 
   a <- suppressWarnings(opt <- try(optim(par, fn = objfun,
@@ -1135,11 +1081,7 @@ update_optim3 <- function(x, family, response, eta, id, ...)
   }
 
   if(!x$fixed) {
-    P <- matrix_inv(x$state$XX + 1 / x$state$tau2 * x$S[[1]])
-    x$state$edf <- sum(diag(x$state$XX %*% P))
-    if(!is.null(x$xt$center)) {
-      if(x$xt$center) x$state$edf <- x$state$edf - 1
-    }
+    x$state$edf <- x$edf(x, x$state$tau2)
   }
 
   return(x$state)
@@ -1311,30 +1253,32 @@ smooth.IWLS <- function(x, ...) {
   UseMethod("smooth.IWLS")
 }
 
+## Function to find tau2 interval according to the
+## effective degrees of freedom
+tau2interval <- function(x, lower = .Machine$double.eps^0.25, upper = 4000) {
+  XX <- crossprod(x$X)
+  objfun <- function(tau2, value) {
+    df <- sum(diag(matrix_inv(XX + if(x$fixed) 0 else 1 / tau2 * x$S[[1]]) %*% XX))
+    return((value - df)^2)
+  }
+  le <- try(optimize(objfun, c(lower, upper), value = 1)$minimum, silent = TRUE)
+  ri <- try(optimize(objfun, c(lower, upper), value = ncol(x$X))$minimum, silent = TRUE)
+  if(inherits(le, "try-error")) le <- 0.1
+  if(inherits(ri, "try-error")) ri <- 1000
+  return(c(le, ri))
+}
+
 smooth.IWLS.default <- function(x, ...)
 {
   x$a <- if(is.null(x$xt$a)) 1e-04 else x$xt$a
   x$b <- if(is.null(x$xt$b)) 1e-04 else x$xt$b
 
-  tau2interval <- function(x, lower = .Machine$double.eps^0.25, upper = 4000) {
-    XX <- crossprod(x$X)
-    objfun <- function(tau2, value) {
-      df <- sum(diag(matrix_inv(XX + if(x$fixed) 0 else 1 / tau2 * x$S[[1]]) %*% XX))
-      return((value - df)^2)
-    }
-    le <- try(optimize(objfun, c(lower, upper), value = 1)$minimum, silent = TRUE)
-    ri <- try(optimize(objfun, c(lower, upper), value = ncol(x$X))$minimum, silent = TRUE)
-    if(inherits(le, "try-error")) le <- 0.1
-    if(inherits(ri, "try-error")) ri <- 1000
-    return(c(le, ri))
-  }
   if(is.null(x$fixed)) {
     x$fixed <- if(!is.null(x$fx)) x$fx[1] else FALSE
   }
   if(!x$fixed) {
     x$interval <- if(is.null(x$xt$interval)) tau2interval(x) else x$xt$interval
   }
-
   x$grid <- if(is.null(x$xt$grid)) 40 else x$xt$grid
   if(is.null(x$state)) {
     x$p.save <- c("g", "tau2")
@@ -1361,6 +1305,8 @@ smooth.IWLS.default <- function(x, ...)
       as.matrix(X) %*% as.numeric(b)
     }
   }
+  if(!is.null(x$xt$prior))
+    x$prior <- x$xt$prior
   if(is.null(x$prior) | !is.function(x$prior)) {
     x$prior <- function(x, gamma, tau2 = NULL) {
       lp <- if(x$fixed | is.null(tau2)) {
@@ -1372,23 +1318,38 @@ smooth.IWLS.default <- function(x, ...)
       return(lp)
     }
   }
-  x$lower <- c(rep(-Inf, ncol(x$X)), x$interval[1])
-  x$upper <- c(rep(Inf, ncol(x$X)), x$interval[2])
+  if(is.null(x$edf)) {
+    x$edf <- function(x, tau2 = 0) {
+      if(x$fixed) return(ncol(x$X))
+      if(is.null(x$state$XX))
+        x$state$XX <- crossprod(x$X)
+      P <- matrix_inv(x$state$XX + 1 / tau2 * x$S[[1]])
+      edf <- sum(diag(x$state$XX %*% P))
+      if(!is.null(x$xt$center)) {
+        if(x$xt$center) edf <- edf - 1
+      }
+      return(edf)
+    }
+  }
+
+  x$lower <- c(rep(-Inf, length(x$state$g)),
+    if(is.list(x$interval)) unlist(sapply(x$interval, function(x) { x[1] })) else x$interval[1])
+  x$upper <- c(rep(Inf, length(x$state$g)),
+    if(is.list(x$interval)) unlist(sapply(x$interval, function(x) { x[2] })) else x$interval[2])
   names(x$lower) <- names(x$upper) <- x$s.colnames
 
   x
 }
 
 
-get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc", "MP"))
+get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc"))
 {
   type <- match.arg(type)
   ll <- family$loglik(response, eta)
   pen <- switch(type,
     "AIC" = -2 * ll + 2 * edf,
     "BIC" = -2 * ll + edf * log(n),
-    "AICc" = -2 * ll + 2 * edf + (2 * edf * (edf + 1)) / (n - edf - 1),
-    "MP" = (ll + edf) * -1
+    "AICc" = -2 * ll + 2 * edf + (2 * edf * (edf + 1)) / (n - edf - 1)
   )
   return(pen)
 }
@@ -1399,7 +1360,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   verbose = TRUE, step = 20, svalues = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
   tdir = NULL, method = "backfitting", outer = FALSE, inner = FALSE, n.samples = 200,
   criterion = c("AICc", "BIC", "AIC", "MP"), lower = 1e-09, upper = 1e+04,
-  optim.control = list(pgtol = 1e-04, maxit = 5), digits = 3,
+  optim.control = NULL, digits = 3,  ## list(pgtol = 1e-04, maxit = 5)
   update = c("optim", "iwls", "optim2", "optim3"),
   propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "nadja", "iwls0"),
   sample = c("slice", "iwls", "iwls0"), ...)
@@ -1548,21 +1509,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     for(j in 1:np) {
       for(sj in seq_along(x[[nx[j]]]$smooth)) {
         if(logprior) {
-          pfun <- x[[nx[j]]]$smooth[[sj]]$prior
-          if(is.null(pfun)) {
-            pfun <- function(x, gamma, tau2 = NULL) {
-              lp <- if(x$fixed | is.null(tau2)) {
-                sum(dnorm(gamma, sd = 10, log = TRUE))
-              } else {
-                a <- x$rank / 2 + x$a
-                b <- 0.5 * crossprod(gamma, x$S[[1]]) %*% gamma + x$b
-                drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) + dgamma(tau2, a, b, log = TRUE)
-                  ##log((x$b^x$a) / gamma(x$a) * tau2^(-x$a - 1) * exp(-x$b / tau2))
-              }
-              return(lp)
-            }
-          }
-          selp <- pfun(x[[nx[j]]]$smooth[[sj]],
+          selp <- x[[nx[j]]]$smooth[[sj]]$prior(x[[nx[j]]]$smooth[[sj]],
             x[[nx[j]]]$smooth[[sj]]$state$g,
             x[[nx[j]]]$smooth[[sj]]$state$tau2)
         } else {
@@ -1587,33 +1534,21 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
         )
         ng <- length(x[[nx[j]]]$smooth[[sj]]$state$g)
         nv <- length(x[[nx[j]]]$smooth[[sj]]$state$tau2)
-        lower <- c(lower,
-          rep(-Inf, ng),
-          if(!x[[nx[j]]]$smooth[[sj]]$fixed) rep(x[[nx[j]]]$smooth[[sj]]$interval[1], nv) else NULL
-        )
-        upper <- c(upper,
-          rep(Inf, ng),
-          if(!x[[nx[j]]]$smooth[[sj]]$fixed) rep(x[[nx[j]]]$smooth[[sj]]$interval[2], nv) else NULL
-        )
+        lower <- c(lower, x[[nx[j]]]$smooth[[sj]]$lower)
+        upper <- c(upper, x[[nx[j]]]$smooth[[sj]]$upper)
         npar <- c(npar, paste("p", j, "t", sj,
           c(paste("c", 1:ng, sep = ""),
           if(!x[[nx[j]]]$smooth[[sj]]$fixed) paste("v", 1:nv, sep = "") else NULL),
           sep = ""))
       }
     }
+print(par)
     names(par) <- npar
 
     lpfun <- function(par, rx = FALSE) {
       lprior <- 0
       for(j in 1:np) {
         for(sj in seq_along(x[[nx[j]]]$smooth)) {
-          add_term <- x[[nx[j]]]$smooth[[sj]]$get.mu
-          if(is.null(add_term)) {
-            add_term <- function(X, b) {
-              as.matrix(X) %*% as.numeric(b)
-            }
-          }
-
           gamma <- par[grep(paste("p", j, "t", sj, "c", sep = ""), names(par))]
           x[[nx[j]]]$smooth[[sj]]$state$g <- gamma
           if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
@@ -1621,33 +1556,14 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
             x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
           } else tau2 <- NULL
 
-          x[[nx[j]]]$smooth[[sj]]$state$fit <- add_term(x[[nx[j]]]$smooth[[sj]]$X, gamma)
+          x[[nx[j]]]$smooth[[sj]]$state$fit <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, gamma)
           eta[[nx[j]]] <- eta[[nx[j]]] + x[[nx[j]]]$smooth[[sj]]$state$fit
-          
-          pfun <- x[[nx[j]]]$smooth[[sj]]$prior
-          if(is.null(pfun)) {
-            pfun <- function(x, gamma, tau2 = NULL) {
-              lp <- if(x$fixed | is.null(tau2)) {
-                sum(dnorm(gamma, sd = 10, log = TRUE))
-              } else {
-                drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
-                  log((x$b^x$a) / gamma(x$a) * tau2^(-x$a - 1) * exp(-x$b / tau2))
-              }
-              return(lp)
-            }
-          }
 
           if(!x[[nx[j]]]$smooth[[sj]]$fixed & rx) {
-            XX <- crossprod(x[[nx[j]]]$smooth[[sj]]$X)
-            P <- matrix_inv(XX + 1 / tau2 * x[[nx[j]]]$smooth[[sj]]$S[[1]])
-            x[[nx[j]]]$smooth[[sj]]$state$edf <- sum(diag(XX %*% P))
-            if(!is.null(x[[nx[j]]]$smooth[[sj]]$xt$center)) {
-              if(x[[nx[j]]]$smooth[[sj]]$xt$center)
-                x[[nx[j]]]$smooth[[sj]]$state$edf <- x[[nx[j]]]$smooth[[sj]]$state$edf - 1
-            }
+            x[[nx[j]]]$smooth[[sj]]$state$edf <- x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]], tau2)
           }
 
-          lprior <- lprior + pfun(x[[nx[j]]]$smooth[[sj]], gamma, tau2)
+          lprior <- lprior + x[[nx[j]]]$smooth[[sj]]$prior(x[[nx[j]]]$smooth[[sj]], gamma, tau2)
         }
       }
 
@@ -1661,8 +1577,10 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           rval <- NA
       }
 
-      if(verbose)
-        cat("logPost", fmt(ll + lprior, width = 8, digits = digits), "\n")
+      if(verbose & !rx) {
+        cat("\r")
+        cat("logPost", fmt(ll + lprior, width = 8, digits = digits))
+      }
 
       return(rval)
     }
@@ -1670,7 +1588,9 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     ## Use optim() to find variance parameters.
     par <- optim(par, fn = lpfun,
       method = "L-BFGS-B", lower = lower, upper = upper,
-      control = list(factr = eps))$par
+      control = optim.control)$par
+
+    if(verbose) cat("\n")
 
     svalues <- FALSE
     opt <- lpfun(par, rx = TRUE)
