@@ -37,9 +37,7 @@ propose_iwls0 <- function(x, family, response, eta, id, ...)
 
   ## Compute old log likelihood and old log coefficients prior.
   pibeta <- family$loglik(response, peta)
-  p1 <- if(x$fixed) {
-    0
-  } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+  p1 <- x$prior(x, x$state$g, x$state$tau2)
 
   ## Compute partial predictor.
   eta[[id]] <- eta[[id]] - x$state$fit
@@ -61,9 +59,7 @@ propose_iwls0 <- function(x, family, response, eta, id, ...)
   x$state$g <- drop(rmvnorm(n = 1, mean = M, sigma = P))
 
   ## Compute log priors.
-  p2 <- if(x$fixed) {
-    0
-  } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+  p2 <- x$prior(x, x$state$g, x$state$tau2)
   qbetaprop <- dmvnorm(x$state$g, mean = M, sigma = P, log = TRUE)
 
   ## Compute fitted values.        
@@ -118,14 +114,22 @@ propose_iwls0 <- function(x, family, response, eta, id, ...)
 propose_rw <- function(x, family,
   response, eta, id, ...)
 {
+  args <- list(...)
+
+  if(!is.null(args$no.mcmc)) {
+    if(!x$fixed & is.null(x$sp)) {
+      a <- x$rank / 2 + x$a
+      b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
+      x$state$tau2 <- 1 / rgamma(1, a, b)
+    }
+  }
+
   ## Map predictor to parameter scale.
   peta <- family$map2par(eta)
 
   ## Compute old log likelihood and old log coefficients prior.
   pibeta <- family$loglik(response, peta)
-  p1 <- if(x$fixed) {
-    sum(dnorm(x$state$g, sd = 10, log = TRUE), na.rm = TRUE)
-  } else drop(-0.5 / x$state$tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g)
+  p1 <- x$prior(x, x$state$g, x$state$tau2)
 
   ## Compute partial predictor.
   eta[[id]] <- eta[[id]] - x$state$fit
@@ -139,7 +143,7 @@ propose_rw <- function(x, family,
   while(do & j < x$state$maxit) {
     ## Adaptive scales.
     if(!is.null(x$state$iter)) {
-      aprop <- 0.44
+      aprop <- 0.9
       if(x$state$iter < x$adapt) {
         for(i in 1:k) {
           x$state$scale[i] <- if(accepted) {
@@ -151,19 +155,14 @@ propose_rw <- function(x, family,
       }
     }
 
-    g <- if(TRUE) {
+    g <- if(FALSE) {
       theta <- rnorm(k)
       d <- theta / sqrt(sum(theta * theta))
       x$state$g + runif(k, 0, x$state$scale) * d
     } else x$state$g + rnorm(k, mean = 0, sd = x$state$scale)
 
     ## Compute log priors.
-    p2 <- if(x$fixed) {
-      sum(dnorm(g, sd = 10, log = TRUE), na.rm = TRUE)
-    } else {
-      drop(-0.5 / x$state$tau2 * crossprod(g, x$S[[1]]) %*% g) +
-        log((x$b^x$a) / gamma(x$a) *  x$state$tau2^(-x$a - 1) * exp(-x$b / x$state$tau2))
-    }
+    p2 <- x$prior(x, x$state$g, x$state$tau2)
   
     ## Compute fitted values.        
     fit <- drop(x$X %*% g)
@@ -450,12 +449,7 @@ logPost <- function(g, x, family, response, eta, id)
 
   ## Compute log likelihood and log coefficients prior.
   ll <- family$loglik(response, peta)
-  lp <- if(x$fixed) {
-    sum(dnorm(g, sd = 10, log = TRUE), na.rm = TRUE)
-  } else {
-    drop(-0.5 / x$state$tau2 * crossprod(g, x$S[[1]]) %*% g) +
-      log((x$b^x$a) / gamma(x$a) *  x$state$tau2^(-x$a - 1) * exp(-x$b / x$state$tau2))
-  }
+  lp <- x$prior(x, x$state$g, x$state$tau2)
 
   -1 * (ll + lp)
 }
@@ -560,21 +554,10 @@ num_deriv <- function(y, eta, family, id = NULL, d = 1, eps = 1e-04)
 ## Log-posterior used by propose_slice().
 logPost2 <- function(g, x, family, response, eta, id)
 {
-  ## Set up new predictor.
   eta[[id]] <- eta[[id]] + drop(x$X %*% g)
-
-  ## Map predictor to parameter scale.
   peta <- family$map2par(eta)
-
-  ## Compute log likelihood and log coefficients prior.
   ll <- family$loglik(response, peta)
-  lp <- if(x$fixed) {
-    sum(dnorm(g, sd = 10, log = TRUE), na.rm = TRUE)
-  } else {
-    drop(-0.5 / x$state$tau2 * crossprod(g, x$S[[1]]) %*% g) +
-      log((x$b^x$a) / gamma(x$a) *  x$state$tau2^(-x$a - 1) * exp(-x$b / x$state$tau2))
-  }
-
+  lp <- x$prior(x, g, x$state$tau2)
   return(ll + lp)
 }
 
@@ -592,15 +575,9 @@ logPost3 <- function(g, x, family, response, eta, id)
 ## For variance parameter sampling.
 logPost4 <- function(tau2, x, family, response, eta, id)
 {
-  ## Map predictor to parameter scale.
   peta <- family$map2par(eta)
-
-  ## Compute log likelihood and log coefficients prior.
   ll <- family$loglik(response, peta)
-
-  lp <- drop(-0.5 / tau2 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g) +
-    log((x$b^x$a) / gamma(x$a) * tau2^(-x$a - 1) * exp(-x$b / tau2))
-
+  lp <- x$prior(x, x$state$g, tau2)
   return(ll + lp)
 }
 
@@ -622,7 +599,7 @@ uni.slice2 <- function(g, x, family, response, eta, id, j,
 }
 
 uni.slice <- function(g, x, family, response, eta, id, j, ...,
-  w = 1, m = 50, lower = -Inf, upper = +Inf, logPost)
+  w = 100, m = Inf, lower = -Inf, upper = +Inf, logPost)
 {
   x0 <- g[j]
   gL <- gR <- g
@@ -692,6 +669,37 @@ uni.slice <- function(g, x, family, response, eta, id, j, ...,
       gL[j] <- g[j]
     }
   }
+
+  ## Return the point sampled
+  return(g)
+}
+
+uni.slice3 <- function(g, X, family, response, eta, id, j, ...,
+  w = 0.1, m = Inf, lower = -Inf, upper = +Inf, logPost)
+{
+  x0 <- g[j]
+  gL <- gR <- g
+
+  gx0 <- logPost(g, X, family, response, eta, id)
+  logy <- log(runif(1, 0, exp(gx0)))
+
+  le <- x0 - 0.5 * abs(x0)
+  ri <- x0 + 0.5 * abs(x0)
+  if(le < lower)
+    le <- lower + 1e-09
+  if(ri > upper)
+    ri <- upper - 1e-09
+
+  x <- seq(0.01, ri, length = 100)
+  y <- NULL
+  for(i in seq_along(x)) {
+    g[j] <- x[i]
+    y <- c(y, exp(logPost(g, X, family, response, eta, id)))
+  }
+  f <- splinefun(x, y)
+  print(uniroot(function(x) { f(x) - exp(logy) } , c(le, x0))$root)
+
+stop("yes!")
 
   ## Return the point sampled
   return(g)
@@ -1092,73 +1100,6 @@ update_optim3 <- function(x, family, response, eta, id, ...)
 }
 
 
-#############################
-## Nadja's testing section ##
-#############################
-propose_nadja <- function(x, family,
-  response, eta, id, ...)
-{
-  ## Map predictor to parameter scale.
-  peta <- family$map2par(eta)
-
-  ## Compute weights.
-  weights <- family$iwls$weights[[id]](response, peta)
-
-  ## Score.
-  score <- family$iwls$score[[id]](response, peta)
-
-  ## Compute working observations.
-  z <- eta[[id]] + 1 / weights * score
-
-  ## Compute partial predictor.
-  eta[[id]] <- eta[[id]] - x$state$fit
-
-  ## Compute mean and precision.
-  XW <- t(x$X * weights)
-  P <- if(x$fixed) {
-    if(k <- ncol(x$X) < 2) {
-      1 / (XW %*% x$X)
-    } else chol2inv(chol(XW %*% x$X))
-  } else chol2inv(chol(XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
-  P[P == Inf] <- 0
-  x$state$g <- drop(P %*% (XW %*% (z - eta[[id]])))
-
-  for(j in seq_along(x$state$g)) {
-    x$state$g <- uni.slice(x$state$g, x, family, response, eta, id, j, logPost = logPost2)
-  }
-
-  ## Setup return state.
-  x$state$alpha <- log(2)
-  x$state$fit <- drop(x$X %*% x$state$g)
-
-  ## Sample variance parameter.
-  if(!x$fixed & is.null(x$sp)) {
-    a <- x$rank / 2 + x$a
-    b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
-    x$state$tau2 <- 1 / rgamma(1, a, b)
-  }
-
-  return(x$state)
-}
-
-
-if(FALSE) {
-  require("mgcv")
-  set.seed(111)
-  n <- 300
-  z <- runif(n, -3, 3)
-  response <- 1.2 + sin(z) + rnorm(n, sd = 0.6)
-  x <- smooth.construct(s(z), list("z" = z), NULL)
-  x$state <- list("g" = runif(ncol(x$X)), "tau2" = 2.33, "fit" = runif(n))
-  x$a <- x$b <- 0.00001
-  family <- bayesr.family(gaussian.BayesR())
-  eta <- list("mu" = rep(0, n), "sigma" = rep(0, n))
-  id <- "mu"
-
-  a <- propose_rw(x, family, response, eta, id, new.env())
-}
-
-
 ## Setup for IWLS sampler, handling
 ## sampling functions.
 transformIWLS <- function(x, ...)
@@ -1371,7 +1312,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   optim.control = NULL, digits = 3,  ## list(pgtol = 1e-04, maxit = 5)
   update = c("optim", "iwls", "optim2", "optim3"),
   propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "nadja", "iwls0"),
-  sample = c("slice", "iwls", "iwls0"), ...)
+  sample = c("slice", "iwls", "iwls0", "rw"), ...)
 {
   known_methods <- c("backfitting", "MCMC", "backfitting2",
     "backfitting3", "backfitting4", "mcmc", "MP", "mp")
