@@ -1276,7 +1276,7 @@ smooth.IWLS.default <- function(x, ...)
   if(is.null(x$fixed)) {
     x$fixed <- if(!is.null(x$fx)) x$fx[1] else FALSE
   }
-  if(!x$fixed) {
+  if(!x$fixed & is.null(x$interval)) {
     x$interval <- if(is.null(x$xt$interval)) tau2interval(x) else x$xt$interval
   }
   x$grid <- if(is.null(x$xt$grid)) 40 else x$xt$grid
@@ -1299,7 +1299,6 @@ smooth.IWLS.default <- function(x, ...)
     x$xt$adaptive <- TRUE
   if(is.null(x$xt$step))
     x$xt$step <- 40
-
   if(is.null(x$get.mu) | !is.function(x$get.mu)) {
     x$get.mu <- function(X, b) {
       as.matrix(X) %*% as.numeric(b)
@@ -1336,6 +1335,7 @@ smooth.IWLS.default <- function(x, ...)
     if(is.list(x$interval)) unlist(sapply(x$interval, function(x) { x[1] })) else x$interval[1])
   x$upper <- c(rep(Inf, length(x$state$g)),
     if(is.list(x$interval)) unlist(sapply(x$interval, function(x) { x[2] })) else x$interval[2])
+
   names(x$lower) <- names(x$upper) <- x$s.colnames
 
   x
@@ -1542,7 +1542,6 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           sep = ""))
       }
     }
-print(par)
     names(par) <- npar
 
     lpfun <- function(par, rx = FALSE) {

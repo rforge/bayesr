@@ -1594,7 +1594,7 @@ rs <- function(..., k = -1, fx = NULL, bs = "tp", m = NA, xt = NULL, link = "log
 smooth.construct.rs.smooth.spec <- function(object, data, knots) 
 {
   link <- make.link2(object$link)$linkinv
-  edf <- 0
+  edf <- 0; fixed <- NULL
   if(!object$formula) {
     X <- interval <- list(); tau2 <- NULL
     for(j in seq_along(object$smooths)) {
@@ -1610,6 +1610,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
           acons <- stj$xt$center
         stj$xt$center <- acons
         stj$xt$fixed <- stj$fixed
+        fixed <- c(fixed, stj$fixed)
         stj$by.done <- TRUE
         stj <- smoothCon(stj, data, knots, absorb.cons = acons)[[1]]
         stj$class <- class(stj)
@@ -1621,7 +1622,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
         X[[j]] <- stj$X
         object$smooths[[j]] <- stj
         if(!stj$fixed) {
-          sp <- if(is.null(stj$sp)) 1000 else stj$sp
+          sp <- if(is.null(stj$sp)) 10 else stj$sp
           names(sp) <- if(j < 2) "tau2g" else "tau2w"
           tau2 <- c(tau2, sp)
           XX <- crossprod(X[[j]])
@@ -1644,7 +1645,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     object$state$edf <- edf
     object$state$tau2 <- tau2
     object$interval <- interval
-    object$fixed <- TRUE
+    object$fixed <- all(fixed)
 
     object$get.mu <- function(X, g) {
       nx <- colnames(X)
@@ -1671,15 +1672,21 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     w <- c(1, gamma[(k1 + 1):(ncol(x$X) - 1)])
     lp <- if(!x$smooths[[1]]$fixed) {
       sp <- x$smooths[[1]]$sp
-      if(is.null(sp))
+      if(is.null(sp)) {
         sp <- tau2["tau2g"]
+        if(is.na(sp))
+          sp <- tau2[1]
+      }
       lp + drop(-0.5 / sp * crossprod(g, x$smooths[[1]]$S[[1]]) %*% g) +
         log((x$smooths[[1]]$b^x$smooths[[1]]$a) / gamma(x$smooths[[1]]$a) * sp^(-x$smooths[[1]]$a - 1) * exp(-x$smooths[[1]]$b / sp))
     } else lp + sum(dnorm(g, sd = 10, log = TRUE))
     lp <- if(!x$smooths[[2]]$fixed) {
       sp <- x$smooths[[2]]$sp
-      if(is.null(sp))
+      if(is.null(sp)) {
         sp <- tau2["tau2w"]
+        if(is.na(sp))
+          sp <- tau2[2]
+      }
       lp + drop(-0.5 / sp * crossprod(w, x$smooths[[2]]$S[[1]]) %*% w) +
         log((x$smooths[[2]]$b^x$smooths[[2]]$a) / gamma(x$smooths[[2]]$a) * sp^(-x$smooths[[2]]$a - 1) * exp(-x$smooths[[2]]$b / sp))
     } else lp + sum(dnorm(w, sd = 10, log = TRUE))
@@ -1926,7 +1933,7 @@ krDesign1D <- function(z, knots = NULL, rho = NULL,
   } else c
   phi <- if(is.null(phi)) max(abs(diff(range(knots)))) / c else phi
   B <- NULL
-  K <- as.matrix(rho(dist(knots, diag = TRUE), phi, v))
+  K <- as.matrix(dist(knots, diag = TRUE, upper = TRUE))
   for(j in seq_along(knots)) {
     h <- abs(z - knots[j])
     B <- cbind(B, rho(h, phi, v))
