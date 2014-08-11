@@ -1677,7 +1677,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
         if(is.na(sp))
           sp <- tau2[1]
       }
-      lp + drop(-0.5 / sp * crossprod(g, x$smooths[[1]]$S[[1]]) %*% g) +
+      lp + log((1 / sp)^(x$smooths[[1]]$rank / 2)) + drop(-0.5 / sp * crossprod(g, x$smooths[[1]]$S[[1]]) %*% g) +
         log((x$smooths[[1]]$b^x$smooths[[1]]$a) / gamma(x$smooths[[1]]$a) * sp^(-x$smooths[[1]]$a - 1) * exp(-x$smooths[[1]]$b / sp))
     } else lp + sum(dnorm(g, sd = 10, log = TRUE))
     lp <- if(!x$smooths[[2]]$fixed) {
@@ -1687,7 +1687,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
         if(is.na(sp))
           sp <- tau2[2]
       }
-      lp + drop(-0.5 / sp * crossprod(w, x$smooths[[2]]$S[[1]]) %*% w) +
+      lp + log((1 / sp)^(x$smooths[[2]]$rank / 2)) + drop(-0.5 / sp * crossprod(w, x$smooths[[2]]$S[[1]]) %*% w) +
         log((x$smooths[[2]]$b^x$smooths[[2]]$a) / gamma(x$smooths[[2]]$a) * sp^(-x$smooths[[2]]$a - 1) * exp(-x$smooths[[2]]$b / sp))
     } else lp + sum(dnorm(w, sd = 10, log = TRUE))
     return(lp)
@@ -1792,8 +1792,11 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     edf1 <- edf2 <- NA
     if(!x$smooths[[1]]$fixed) {
       sp <- x$smooths[[1]]$sp
-      if(is.null(sp))
+      if(is.null(sp)) {
         sp <- tau2["tau2g"]
+        if(is.na(sp))
+          sp <- tau2[1]
+      }
       XX <- crossprod(x$X[, 1:k1, drop = FALSE])
       P <- matrix_inv(XX + 1 / sp * x$smooths[[1]]$S[[1]])
       if(!inherits(P, "try-error"))
@@ -1803,8 +1806,11 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
 
     if(!x$smooths[[2]]$fixed) {
       sp <- x$smooths[[2]]$sp
-      if(is.null(sp))
+      if(is.null(sp)) {
         sp <- tau2["tau2w"]
+        if(is.na(sp))
+          sp <- tau2[2]
+      }
       XX <- crossprod(x$X[, -1 * 1:k1, drop = FALSE])
       P <- matrix_inv(XX + 1 / sp * x$smooths[[2]]$S[[1]])
       if(!inherits(P, "try-error"))
