@@ -82,7 +82,7 @@ b <- bayesr(mstatus ~ s(age), family = multinomial.BayesR, data = marital.nz)
 
 
 ## pick function
-f <- simfun(type = "linear")
+f <- simfun(type = "sinus")
 
 set.seed(111)
 n <- 200

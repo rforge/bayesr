@@ -671,6 +671,82 @@ uni.slice <- function(g, x, family, response, eta, id, j, ...,
 }
 
 
+uni.slice3 <- function(g, j, w = 1, m = 1000, lower = -Inf, upper = +Inf, logPost, ...)
+{
+  x0 <- g[j]
+  gL <- gR <- g
+
+  gx0 <- logPost(g, ...)
+
+  ## Determine the slice level, in log terms.
+  logy <- gx0 - rexp(1)
+
+  ## Find the initial interval to sample from.
+  ## w <- w * abs(x0) ## FIXME???
+  u <- runif(1, 0, w)
+  gL[j] <- g[j] - u
+  gR[j] <- g[j] + (w - u)  ## should guarantee that g[j] is in [L, R], even with roundoff
+
+  ## Expand the interval until its ends are outside the slice, or until
+  ## the limit on steps is reached.
+  if(is.infinite(m)) {
+    repeat {
+      if(gL[j] <= lower) break
+      if(logPost(gL, ...) <= logy) break
+      gL[j] <- gL[j] - w
+    }
+    repeat {
+      if(gR[j] >= upper) break
+      if(logPost(gR, ...) <= logy) break
+      gR[j] <- gR[j] + w
+    }
+  } else {
+    if(m > 1) {
+      J <- floor(runif(1, 0, m))
+      K <- (m - 1) - J
+      while(J > 0) {
+        if(gL[j] <= lower) break
+        if(logPost(gL, ...) <= logy) break
+        gL[j] <- gL[j] - w
+        J <- J - 1
+      }
+      while(K > 0) {
+        if(gR[j] >= upper) break
+        if(logPost(gR, ...) <= logy) break
+        gR[j] <- gR[j] + w
+        K <- K - 1
+      }
+    }
+  }
+
+  ## Shrink interval to lower and upper bounds.
+  if(gL[j] < lower) {
+    gL[j] <- lower
+  }
+  if(gR[j] > upper) {
+    gR[j] <- upper
+  }
+
+  ## Sample from the interval, shrinking it on each rejection.
+  repeat {
+    g[j] <- runif(1, gL[j], gR[j])
+
+    gx1 <- logPost(g, ...)
+
+    if(gx1 >= logy) break
+
+    if(g[j] > x0) {
+      gR[j] <- g[j]
+    } else {
+      gL[j] <- g[j]
+    }
+  }
+
+  ## Return the point sampled
+  return(g[j])
+}
+
+
 ## Actual univariate slice sampling propose() function.
 propose_slice <- function(x, family,
   response, eta, id, rho, ...)
@@ -1437,8 +1513,8 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     rval
   }
 
-  ## Posterior mode estimation.
-  if(any(grepl("mp", method, ignore.case = TRUE))) {
+  ## Function to create full parameter vector.
+  make_par <- function(...) {
     par <- npar <- lower <- upper <- NULL
     for(j in 1:np) {
       for(sj in seq_along(x[[nx[j]]]$smooth)) {
@@ -1457,56 +1533,63 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
       }
     }
     names(par) <- npar
+    return(list("par" = par, "lower" = lower, "upper" = upper))
+  }
 
-    lpfun <- function(par, rx = FALSE) {
-      lprior <- edf2 <- 0
-      for(j in 1:np) {
-        for(sj in seq_along(x[[nx[j]]]$smooth)) {
-          gamma <- par[grep(paste("p", j, "t", sj, "c", sep = ""), names(par))]
-          x[[nx[j]]]$smooth[[sj]]$state$g <- gamma
-          if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
-            tau2 <- par[grep(paste("p", j, "t", sj, "v", sep = ""), names(par))]
-            x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
-          } else tau2 <- NULL
-
-          x[[nx[j]]]$smooth[[sj]]$state$fit <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, gamma)
-          eta[[nx[j]]] <- eta[[nx[j]]] + x[[nx[j]]]$smooth[[sj]]$state$fit
-
-          x[[nx[j]]]$smooth[[sj]]$state$edf <- x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]], tau2)
-
-          lprior <- lprior + x[[nx[j]]]$smooth[[sj]]$prior(x[[nx[j]]]$smooth[[sj]], gamma, tau2)
-          edf2 <- edf2 + x[[nx[j]]]$smooth[[sj]]$state$edf
-        }
+  log_posterior <- function(par, rx = FALSE, type = 2) {
+    lprior <- edf2 <- 0
+    for(j in 1:np) {
+      eta[[nx[j]]] <- 0
+      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        gamma <- par[grep(paste("p", j, "t", sj, "c", sep = ""), names(par))]
+        x[[nx[j]]]$smooth[[sj]]$state$g <- gamma
+        if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
+          tau2 <- par[grep(paste("p", j, "t", sj, "v", sep = ""), names(par))]
+          x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
+        } else tau2 <- NULL
+        x[[nx[j]]]$smooth[[sj]]$state$fit <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, gamma)
+        eta[[nx[j]]] <- eta[[nx[j]]] + x[[nx[j]]]$smooth[[sj]]$state$fit
+        x[[nx[j]]]$smooth[[sj]]$state$edf <- x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]], tau2)
+        lprior <- lprior + x[[nx[j]]]$smooth[[sj]]$prior(x[[nx[j]]]$smooth[[sj]], gamma, tau2)
+        edf2 <- edf2 + x[[nx[j]]]$smooth[[sj]]$state$edf
       }
-
-      ll <- family$loglik(response, family$map2par(eta))
-          
-      if(rx) {
-        rval <- list("x" = x, "eta" = eta, "lp" = ll + lprior)
-      } else {
-        rval <- -1 * (ll + lprior)
-        if(!is.finite(rval))
-          rval <- NA
-      }
-
-      if(verbose & !rx) {
-        cat("\r")
-        cat("logPost", fmt(ll + lprior, width = 8, digits = digits),
-          "edf", fmt(edf2, width = 6, digits = digits))
-      }
-
-      return(rval)
     }
 
+    ll <- family$loglik(response, family$map2par(eta))
+          
+    if(rx) {
+      rval <- list("x" = x, "eta" = eta, "lp" = ll + lprior)
+    } else {
+      rval <- ll + lprior
+      if(type > 1)
+        rval <- -1 * rval
+      if(!is.finite(rval))
+        rval <- NA
+    }
+
+    if(verbose & !rx & type > 1) {
+      cat("\r")
+      cat("logPost", fmt(ll + lprior, width = 8, digits = digits),
+        "edf", fmt(edf2, width = 6, digits = digits))
+    }
+
+    return(rval)
+  }
+
+  ## Posterior mode estimation.
+  if(any(grepl("mp", method, ignore.case = TRUE))) {
+    tpar <- make_par()
+    par <- tpar$par; lower <- tpar$lower; upper <- tpar$upper
+
     ## Use optim() to find variance parameters.
-    par <- optim(par, fn = lpfun,
+    par <- optim(par, fn = log_posterior,
       method = "L-BFGS-B", lower = lower, upper = upper,
       control = optim.control)$par
 
     if(verbose) cat("\n")
 
     svalues <- FALSE
-    opt <- lpfun(par, rx = TRUE)
+    opt <- log_posterior(par, rx = TRUE)
     x <- opt$x; eta <- opt$eta
     rm(opt)
   }
@@ -1788,27 +1871,11 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     stopifnot(require("LaplacesDemon"))
 
     method <- c(method, "MCMC")
-
-    par <- npar <- NULL
-    for(j in 1:np) {
-      for(sj in seq_along(x[[nx[j]]]$smooth)) {
-        par <- c(par,
-          x[[nx[j]]]$smooth[[sj]]$state$g,
-          if(!x[[nx[j]]]$smooth[[sj]]$fixed) x[[nx[j]]]$smooth[[sj]]$state$tau2 else NULL
-        )
-        ng <- length(x[[nx[j]]]$smooth[[sj]]$state$g)
-        nv <- length(x[[nx[j]]]$smooth[[sj]]$state$tau2)
-        npar <- c(npar, paste("p", j, "t", sj,
-          c(paste("c", 1:ng, sep = ""),
-          if(!x[[nx[j]]]$smooth[[sj]]$fixed) paste("v", 1:nv, sep = "") else NULL),
-          sep = ""))
-      }
-    }
-    names(par) <- npar
     
     Model <- function(parm, Data) {
       lprior <- 0
       for(j in 1:np) {
+        eta[[nx[j]]] <- 0
         for(sj in seq_along(x[[nx[j]]]$smooth)) {
           gamma <- parm[grep(paste("p", j, "t", sj, "c", sep = ""), Data$parm.names)]
           x[[nx[j]]]$smooth[[sj]]$state$g <- gamma
@@ -1822,28 +1889,31 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
         }
       }
 
-      ll <- drop(family$loglik(Data$response, family$map2par(eta)))
+      ll <- drop(family$loglik(response, family$map2par(eta)))
       lp <- drop(ll + lprior)
 
-      rval <- list("LP" = lp, "Dev" = -2 * ll, "Monitor" = lp, "yhat" = Data$response, "parm" = parm)
+      rval <- list("LP" = lp, "Dev" = -2 * ll, "Monitor" = lp, "yhat" = NA, "parm" = parm)
 
       return(rval)
     }
 
-    MyData <- list("mon.names" = "LP", "parm.names" = npar,
-      "response" = response, "N" = length(eta[[1]]))
+    par <- make_par()$par
+    MyData <- list("mon.names" = "LP", "parm.names" = names(par), "N" = length(eta[[1]]))
     Initial.Values <- par
 
-    samples <- LaplacesDemon(Model, Data = MyData, Initial.Values,
-      Iterations = n.iter, Thinning = 1, ...)$Posterior1[iterthin, , drop = FALSE]
+    Fit <- LaplacesDemon(Model, Data = MyData, Initial.Values,
+      Iterations = n.iter, Thinning = 1, ...)
+
+    samples <- Fit$Posterior1[iterthin, , drop = FALSE]
+    deviance <- Fit$Deviance[iterthin]
+
+    rm(Fit)
 
     for(j in 1:np) {
       for(sj in seq_along(x[[nx[j]]]$smooth)) {
-        gamma <- samples[, grep(paste("p", j, "t", sj, "c", sep = ""), MyData$parm.names), drop = FALSE]
-        x[[nx[j]]]$smooth[[sj]]$state$g <- gamma
+        gamma <- samples[, grep(paste("p", j, "t", sj, "c", sep = ""), colnames(samples)), drop = FALSE]
         if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
-          tau2 <- samples[, grep(paste("p", j, "t", sj, "v", sep = ""), MyData$parm.names), drop = FALSE]
-          x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
+          tau2 <- samples[, grep(paste("p", j, "t", sj, "v", sep = ""), colnames(samples))]
         } else tau2 <- NULL
         x[[nx[j]]]$smooth[[sj]]$s.samples <- cbind(gamma, tau2)
       }
@@ -1851,7 +1921,6 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
 
     save.edf <- get_edf_lp(x)
     save.loglik <- family$loglik(response, family$map2par(eta))
-    deviance <- rep(-2 * save.loglik, length = length(iterthin))
 
     rm(samples)
   }
@@ -1865,7 +1934,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     }
   }
 
-  if(!any(grepl("MCMC", method))) {
+  if(!any(grepl("MCMC", method)) & FALSE) {
     save.edf <- get_edf_lp(x)
     save.loglik <- family$loglik(response, family$map2par(eta))
     if(verbose) cat("generating samples\n")
@@ -1888,7 +1957,47 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
       if(verbose) barfun(ptm, length(iterthin), js, 1, 20, start = FALSE)
     }
     if(verbose) cat("\n")
-    deviance <- rep(-2 * family$loglik(response, family$map2par(eta)), length = length(iterthin))
+    deviance <- rep(-2 * save.loglik, length = length(iterthin))
+  }
+
+  ## Samples created by slice sampling, only.
+  if(!any(grepl("MCMC", method)) & TRUE) {
+    save.edf <- get_edf_lp(x)
+    save.loglik <- family$loglik(response, family$map2par(eta))
+    mp <- make_par()
+    par <- mp$par; lower <- mp$lower; upper <- mp$upper
+    npar <- names(par)
+    samples <- matrix(NA, nrow = length(iterthin), ncol = length(par))
+    colnames(samples) <- names(par)
+    if(verbose) cat("generating samples\n")
+    ptm <- proc.time()
+    lpfun <- f
+    for(js in seq_along(iterthin)) {
+      par2 <- par
+      if(length(i <- grep("v", npar))) {
+        for(j in i) {
+          par2[j] <- uni.slice3(par, j = j, logPost = log_posterior, type = 1,
+            lower = lower[j], upper = upper[j], w = 1, m = 30)
+        }
+      }
+      for(j in seq_along(par)) {
+        samples[js, j] <- uni.slice3(par2, j = j, logPost = log_posterior, type = 1,
+          lower = lower[j], upper = upper[j], w = 1, m = 30)
+      }
+      if(verbose) barfun(ptm, length(iterthin), js, 1, 20, start = FALSE)
+    }
+    if(verbose) cat("\n")
+    deviance <- rep(-2 * save.loglik, length = length(iterthin))
+
+    for(j in 1:np) {
+      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        gamma <- samples[, grep(paste("p", j, "t", sj, "c", sep = ""), colnames(samples)), drop = FALSE]
+        if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
+          tau2 <- samples[, grep(paste("p", j, "t", sj, "v", sep = ""), colnames(samples))]
+        } else tau2 <- NULL
+        x[[nx[j]]]$smooth[[sj]]$s.samples <- cbind(gamma, tau2)
+      }
+    }
   }
 
   if(accept.only) {
