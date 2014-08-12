@@ -1349,7 +1349,7 @@ get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc",
 ## Sampler based on IWLS proposals.
 samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TRUE,
   verbose = TRUE, step = 20, svalues = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
-  tdir = NULL, method = "backfitting", outer = FALSE, inner = FALSE, n.samples = 200,
+  tdir = NULL, method = "MP", outer = FALSE, inner = FALSE, n.samples = 200,
   criterion = c("AICc", "BIC", "AIC", "MP", "LD"), lower = 1e-09, upper = 1e+04,
   optim.control = NULL, digits = 3,  ## list(pgtol = 1e-04, maxit = 5)
   update = c("optim", "iwls", "optim2", "optim3"),
@@ -1977,12 +1977,12 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
       if(length(i <- grep("v", npar))) {
         for(j in i) {
           par2[j] <- uni.slice3(par, j = j, logPost = log_posterior, type = 1,
-            lower = lower[j], upper = upper[j], w = 1, m = 30)
+            lower = lower[j], upper = upper[j], w = 1, m = Inf)
         }
       }
       for(j in seq_along(par)) {
         samples[js, j] <- uni.slice3(par2, j = j, logPost = log_posterior, type = 1,
-          lower = lower[j], upper = upper[j], w = 1, m = 30)
+          lower = lower[j], upper = upper[j], w = 1, m = Inf)
       }
       if(verbose) barfun(ptm, length(iterthin), js, 1, 20, start = FALSE)
     }
