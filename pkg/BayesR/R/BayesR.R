@@ -286,7 +286,7 @@ bayesr.design <- function(x, data, contrasts = NULL, knots = NULL, ...)
     if(length(obj$smooth)) {
       smooth <- list()
       for(j in obj$smooth) {
-        if((rt <- grepl(":", j, fixed = TRUE)) | grepl("/", j, fixed = TRUE)) {
+        if((rt <- grepl('):s(', j, fixed = TRUE)) | grepl(')/s(', j, fixed = TRUE)) {
           j <- strsplit(j, if(rt) ":" else "/", fixed = TRUE)[[1]]
           j <- paste('rs(', j[1], ',', j[2], ',link="', if(rt) "inverse" else "log", '")', sep = "")
           tsm <- eval(parse(text = j))
@@ -386,7 +386,6 @@ bayesr.model.frame <- function(formula, data, family, weights = NULL,
   tf <- terms(formula(fF, rhs = 0))
   rn <- as.character(attr(tf, "variables"))[2]
   rn <- strsplit(rn, "|", fixed = TRUE)[[1]]
-  rn <- gsub(" ", "", rn)
   attr(mf, "response.name") <- unique(rn)
 
   ## Check response.
@@ -1751,13 +1750,11 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
             logPost = logPost5, rho = rho, lower = 0)
         }
       }
-    }
-
-    if(!is.null(iter)) {
-      if(iter %% x$xt$step == 0) {
-        ## Compute mean.
-        opt <- x$update(x, family, response, eta, id, ...)
-        x$state$g <- opt$g
+    } else {
+      if(!is.null(iter)) {
+        if(iter %% x$xt$step == 0) {
+          x$state <- object$update(x, family, response, eta, id, rho, ...)
+        }
       }
     }
 

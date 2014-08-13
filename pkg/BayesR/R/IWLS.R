@@ -143,7 +143,7 @@ propose_rw <- function(x, family,
   while(do & j < x$state$maxit) {
     ## Adaptive scales.
     if(!is.null(x$state$iter)) {
-      aprop <- 0.9
+      aprop <- 0.1
       if(x$state$iter < x$adapt) {
         for(i in 1:k) {
           x$state$scale[i] <- if(accepted) {
@@ -162,10 +162,10 @@ propose_rw <- function(x, family,
     } else x$state$g + rnorm(k, mean = 0, sd = x$state$scale)
 
     ## Compute log priors.
-    p2 <- x$prior(x, x$state$g, x$state$tau2)
+    p2 <- x$prior(x, g, x$state$tau2)
   
     ## Compute fitted values.        
-    fit <- drop(x$X %*% g)
+    fit <- x$get.mu(x$X, g)
 
     ## Set up new predictor.
     eta2[[id]] <- eta[[id]] + fit
@@ -554,7 +554,7 @@ num_deriv <- function(y, eta, family, id = NULL, d = 1, eps = 1e-04)
 ## Log-posterior used by propose_slice().
 logPost2 <- function(g, x, family, response, eta, id)
 {
-  eta[[id]] <- eta[[id]] + drop(x$X %*% g)
+  eta[[id]] <- eta[[id]] + x$get.mu(x$X, g)
   ll <- family$loglik(response, family$map2par(eta))
   lp <- x$prior(x, g, x$state$tau2)
   return(ll + lp)
@@ -595,7 +595,7 @@ uni.slice2 <- function(g, x, family, response, eta, id, j,
 }
 
 uni.slice <- function(g, x, family, response, eta, id, j, ...,
-  w = 1, m = 1000, lower = -Inf, upper = +Inf, logPost)
+  w = 1, m = 100, lower = -Inf, upper = +Inf, logPost)
 {
   x0 <- g[j]
   gL <- gR <- g
@@ -748,7 +748,7 @@ uni.slice3 <- function(g, j, w = 1, m = 1000, lower = -Inf, upper = +Inf, logPos
 
 
 ## Actual univariate slice sampling propose() function.
-propose_slice <- function(x, family,
+propose_slice2 <- function(x, family,
   response, eta, id, rho, ...)
 {
   args <- list(...)
@@ -779,6 +779,154 @@ propose_slice <- function(x, family,
   }
 
   return(x$state)
+}
+
+
+propose_slice <- function(x, family,
+  response, eta, id, rho, ...)
+{
+  args <- list(...)
+
+  if(!is.null(args$no.mcmc)) {
+    if(!x$fixed & is.null(x$sp)) {
+      x$state$tau2 <- uni.slice(x$state$tau2, x, family, response, eta, id, 1,
+        logPost = logPost4, rho = rho, lower = 0)
+    }
+  }
+
+  ## Remove fitted values.
+  eta[[id]] <- eta[[id]] - x$state$fit
+
+  x$state$g <- stepout.slice.sample(logPost2, x$state$g, sample.size = 2, tuning = 1,
+    step.out = TRUE, limit = length(x$state$g) * 100,
+    response = response, eta = eta, id = id, x = x, family = family)
+
+  ## Setup return state.
+  x$state$alpha <- log(1)
+  x$state$fit <- x$get.mu(x$X, x$state$g)
+
+  ## Sample variance parameter.
+  if(!x$fixed & is.null(x$sp) & is.null(args$no.mcmc)) {
+    x$state$tau2 <- uni.slice(x$state$tau2, x, family, response, eta, id, 1,
+      logPost = logPost4, rho = rho, lower = 0)
+  }
+
+  return(x$state)
+}
+
+
+stepout.slice.sample <- function(logPost, g0, sample.size, tuning = 1,
+  step.out = TRUE, limit = length(g0) * 100, ...) {
+  p <- length(g0)
+  X <- array(NA, c(sample.size, p))
+  X[1, ] <- g0
+  nevals <- 0
+
+  for(obs in 2:sample.size) {
+    ## Set g0 to current state and y.slice to a new slice level.
+    g0 <- X[obs-1,,drop=TRUE]
+    y.slice <- logPost(g0, ...) - rexp(1)
+    nevals <- nevals + 1
+
+    ## Transition each coordinate in turn.
+    for(i in 1:p) {
+      ## If step.out is set, find the boundaries of the slice in
+      ## this coordinate using stepout.one.coord.  Otherwise, choose
+      ## a random interval.
+      if(step.out) {
+	      lr <- stepout.one.coord(logPost, g0, i, y.slice,
+          tuning, limit * sample.size - nevals, ...)
+        nevals <- nevals + lr$nevals
+        if(is.null(lr$left))
+          return(list(X = X[1:(obs - 1), , drop = FALSE], evals = nevals))
+      } else {
+        lr <- list(left = g0[i] - runif(1) * tuning)
+        lr$right <- lr$left + tuning
+      }
+
+      ## Draw proposals, shrinking the slice estimate along the way,
+      ## until a proposal is accepted.
+      repeat {
+	      ## Draw a proposal by modifying the current coordinate of
+	      ## g0 to be uniformly chosen from the current slice estimate..
+        x1 <- g0
+        x1[i] <- lr$left + (lr$right-lr$left) * runif(1)
+
+	      ## If the proposal is in the slice, accept it and move on
+	      ## to the next coordinate.
+        y1 <- logPost(x1, ...)
+        nevals <- nevals + 1
+        if(y1 >= y.slice) {
+          g0 <- x1
+          break
+        }
+
+        ## Otherwise, shrink the slice towards g0.
+        if(x1[i] < g0[i])
+          lr$left <- x1[i]
+        else
+          lr$right <- x1[i]
+      }
+    }
+
+    ## Having updated each coordinate, save the accepted proposal.
+    X[obs, ] <- x1
+
+    ## Make sure we haven't run too long.
+    if(nevals > limit * sample.size) {
+      X <- X[1:obs,,drop=FALSE]
+      break
+    }
+  }
+
+  return(X[nrow(X),])
+}
+
+## stepout.one.coord performs the stepping-out procedure on a single
+## coordinate, returning an estimate of the slice endpoints.  The
+## arguments are:
+##
+##   L           log.density function
+##   x           current point
+##   i           index of coordinate to estimate interval in
+##   y.slice     slice level
+##   w           initial slice size estimate
+##   max.evals   maximum number of times to call L before aborting
+stepout.one.coord <- function(L, g, i, y.slice, w, max.evals = NULL, ...) {
+  ## Choose left and right to be the same as x, but with one coordinate
+  ## changed in each of them so that together they bound a randomly
+  ## positioned interval around g in coordinate i.
+  left <- g
+  left[i] <- left[i] - runif(1) * w
+  right <- g
+  right[i] <- left[i] + w
+
+  ## Compute the log density at each end of the proposed interval.
+  left.y <- L(left, ...)
+  right.y <- L(right, ...)
+  nevals <- 2
+
+  ## Keep expanding as long as either end has log density smaller
+  ## than the slice level.
+  while(left.y > y.slice || right.y > y.slice) {
+    ## Expand each side of the proposed slice with equal probability.
+    if(runif(1) > 0.5) {
+      right <- right + w
+      right.y <- L(right, ...)
+    } else {
+      left <- left - w
+      left.y <- L(left, ...)
+    }
+    nevals <- nevals + 1
+
+    ## Make sure we haven't run too long.  If we have, return without
+    ## an interval.
+    if(!is.null(max.evals) && nevals >= max.evals)
+      return(list(nevals = nevals))
+  }
+
+  ## We found an acceptable interval; return it.
+  return(list(left = left[i], right = right[i], nevals = nevals))
 }
 
 
@@ -1353,8 +1501,8 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   criterion = c("AICc", "BIC", "AIC", "MP", "LD"), lower = 1e-09, upper = 1e+04,
   optim.control = NULL, digits = 3,  ## list(pgtol = 1e-04, maxit = 5)
   update = c("optim", "iwls", "optim2", "optim3"),
-  propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "nadja", "iwls0"),
-  sample = c("slice", "iwls", "iwls0", "rw"), ...)
+  propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "nadja", "iwls0", "rw2"),
+  sample = c("slice", "iwls", "iwls0", "rw", "rw2"), ...)
 {
   known_methods <- c("backfitting", "MCMC", "backfitting2",
     "backfitting3", "backfitting4", "mcmc", "MP", "mp", "LD", "ld")
@@ -1411,6 +1559,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
       "iwls" = propose_iwls,
       "iwls0" = propose_iwls0,
       "rw" = propose_rw,
+      "rw2" = propose_rw2,
       "twalk" = propose_twalk,
       "slice" = propose_slice,
       "oslice" = propose_oslice,
@@ -1426,6 +1575,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
       "iwls" = propose_iwls,
       "iwls0" = propose_iwls0,
       "rw" = propose_rw,
+      "rw2" = propose_rw2,
       "twalk" = propose_twalk,
       "slice" = propose_slice,
       "oslice" = propose_oslice,
@@ -1576,15 +1726,19 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     return(rval)
   }
 
+  hessian <- NULL
   ## Posterior mode estimation.
   if(any(grepl("mp", method, ignore.case = TRUE))) {
     tpar <- make_par()
     par <- tpar$par; lower <- tpar$lower; upper <- tpar$upper
 
     ## Use optim() to find variance parameters.
-    par <- optim(par, fn = log_posterior,
+    opt <- optim(par, fn = log_posterior,
       method = "L-BFGS-B", lower = lower, upper = upper,
-      control = optim.control)$par
+      control = optim.control, hessian = TRUE)
+    par <- opt$par
+    hessian <- opt$hessian
+    rm(opt)
 
     if(verbose) cat("\n")
 
@@ -1903,7 +2057,6 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
 
     Fit <- LaplacesDemon(Model, Data = MyData, Initial.Values,
       Iterations = n.iter, Thinning = 1, ...)
-
     samples <- Fit$Posterior1[iterthin, , drop = FALSE]
     deviance <- Fit$Deviance[iterthin]
 
@@ -1961,7 +2114,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   }
 
   ## Samples created by slice sampling, only.
-  if(!any(grepl("MCMC", method)) & TRUE) {
+  if(!any(grepl("MCMC", method)) & FALSE) {
     save.edf <- get_edf_lp(x)
     save.loglik <- family$loglik(response, family$map2par(eta))
     mp <- make_par()
@@ -1977,12 +2130,12 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
       if(length(i <- grep("v", npar))) {
         for(j in i) {
           par2[j] <- uni.slice3(par, j = j, logPost = log_posterior, type = 1,
-            lower = lower[j], upper = upper[j], w = 1, m = Inf)
+            lower = lower[j], upper = upper[j], w = 1, m = 100)
         }
       }
       for(j in seq_along(par)) {
         samples[js, j] <- uni.slice3(par2, j = j, logPost = log_posterior, type = 1,
-          lower = lower[j], upper = upper[j], w = 1, m = Inf)
+          lower = lower[j], upper = upper[j], w = 1, m = 30)
       }
       if(verbose) barfun(ptm, length(iterthin), js, 1, 20, start = FALSE)
     }
