@@ -2114,7 +2114,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   }
 
   ## Samples created by slice sampling, only.
-  if(!any(grepl("MCMC", method)) & FALSE) {
+  if(!any(grepl("MCMC", method)) & TRUE) {
     save.edf <- get_edf_lp(x)
     save.loglik <- family$loglik(response, family$map2par(eta))
     mp <- make_par()
