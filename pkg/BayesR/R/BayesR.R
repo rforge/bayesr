@@ -1663,31 +1663,31 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     if(!is.null(tau2)) paste("tau2", 1:length(tau2), sep = "") else NULL)
   object$np <- c(length(object$state$g), length(tau2))
 
-  object$prior <- function(x, gamma, tau2 = NULL) {
-    nx <- colnames(x$X)
+  object$prior <- function(gamma, tau2 = NULL) {
+    nx <- colnames(object$X)
     k1 <- length(grep("g1", nx, fixed = TRUE))
     lp <- 0
     g <- gamma[1:k1]
-    w <- c(1, gamma[(k1 + 1):(ncol(x$X) - 1)])
-    lp <- if(!x$smooths[[1]]$fixed) {
-      sp <- x$smooths[[1]]$sp
+    w <- c(1, gamma[(k1 + 1):(ncol(object$X) - 1)])
+    lp <- if(!object$smooths[[1]]$fixed) {
+      sp <- object$smooths[[1]]$sp
       if(is.null(sp)) {
         sp <- tau2["tau2g"]
         if(is.na(sp))
           sp <- tau2[1]
       }
-      lp + log((1 / sp)^(x$smooths[[1]]$rank / 2)) + drop(-0.5 / sp * crossprod(g, x$smooths[[1]]$S[[1]]) %*% g) +
-        log((x$smooths[[1]]$b^x$smooths[[1]]$a) / gamma(x$smooths[[1]]$a) * sp^(-x$smooths[[1]]$a - 1) * exp(-x$smooths[[1]]$b / sp))
+      lp + log((1 / sp)^(object$smooths[[1]]$rank / 2)) + drop(-0.5 / sp * crossprod(g, object$smooths[[1]]$S[[1]]) %*% g) +
+        log((object$smooths[[1]]$b^object$smooths[[1]]$a) / gamma(object$smooths[[1]]$a) * sp^(-object$smooths[[1]]$a - 1) * exp(-object$smooths[[1]]$b / sp))
     } else lp + sum(dnorm(g, sd = 10, log = TRUE))
-    lp <- if(!x$smooths[[2]]$fixed) {
-      sp <- x$smooths[[2]]$sp
+    lp <- if(!object$smooths[[2]]$fixed) {
+      sp <- object$smooths[[2]]$sp
       if(is.null(sp)) {
         sp <- tau2["tau2w"]
         if(is.na(sp))
           sp <- tau2[2]
       }
-      lp + log((1 / sp)^(x$smooths[[2]]$rank / 2)) + drop(-0.5 / sp * crossprod(w, x$smooths[[2]]$S[[1]]) %*% w) +
-        log((x$smooths[[2]]$b^x$smooths[[2]]$a) / gamma(x$smooths[[2]]$a) * sp^(-x$smooths[[2]]$a - 1) * exp(-x$smooths[[2]]$b / sp))
+      lp + log((1 / sp)^(object$smooths[[2]]$rank / 2)) + drop(-0.5 / sp * crossprod(w, object$smooths[[2]]$S[[1]]) %*% w) +
+        log((object$smooths[[2]]$b^object$smooths[[2]]$a) / gamma(object$smooths[[2]]$a) * sp^(-object$smooths[[2]]$a - 1) * exp(-object$smooths[[2]]$b / sp))
     } else lp + sum(dnorm(w, sd = 10, log = TRUE))
     return(lp)
   }
@@ -1736,6 +1736,29 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
 
     return(x$state)
   }
+
+#   object$grad <- function(score, gamma, tau2 = NULL, full = TRUE) {
+##      nx <- colnames(x$X)
+##      k1 <- length(grep("g1", nx, fixed = TRUE))
+##      lp <- 0
+##      g <- gamma[1:k1]
+##      w <- c(1, gamma[(k1 + 1):(ncol(x$X) - 1)])
+
+##      grad2 <- NULL
+##      if(x$smooths[[1]]$fixed) {
+##        grad <- 0
+##      } else {
+##        gS <- crossprod(g, x$smooths[[1]]$S[[1]])
+##        grad <- drop(-0.5 / tau2[1] * gS)
+##        if(full & !is.null(tau2)) {
+##          grad2 <- drop(-x$rank / (2 * tau2[1]) - 1 / (2 * tau2[1]^2) * gS %*% gamma + (-x$a - 1) / tau2[1] + x$b / (tau2[1]^2))
+##        }
+##      }
+##      grad <- drop(crossprod(cbind(x$X, if(!x$fixed & full) 0 else NULL), score)) + c(grad, grad2)
+##      return(grad)
+#      NA
+#    },
+  object$grad <- FALSE
 
   object$propose <- function(x, family, response, eta, id, rho, ...) {
     args <- list(...)

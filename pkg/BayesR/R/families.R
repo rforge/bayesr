@@ -321,6 +321,7 @@ binomial.BayesR <- function(link = "logit", ...)
       eta$pi
     },
 	  "d" = function(y, eta, log = FALSE) {
+      y <- as.integer(y) - 1
 		  dbinom(y, size = 1, prob = eta$pi, log = log)
 	  },
 	  "p" = function(y, eta, ...) {
@@ -1469,25 +1470,30 @@ zero.BayesR <- function(pi = "logit", g = invgaussian)
 
 
 ## Function to transform gamlss.family objects.
-tF <- function(x)
+tF <- function(x, ...)
 {
   require("gamlss")
 
   if(is.function(x)) x <- x()
   if(!inherits(x, "gamlss.family")) stop('only "gamlss.family" objects can be transformed!')
 
+  args <- list(...)
   k <- x$nopar
   nx <- c("mu", "sigma", "nu", "tau")[1:k]
   nf <- names(x)
   de <- c("m", "d", "v", "t")[1:k]
   score <- weights <- list()
 
+  args <- if(!is.null(args)) {
+    paste(', ', paste(names(args), "=", unlist(args), sep = '', collapse = ', '), sep = '')
+  } else ''
+
   mu.linkfun <- make.link.gamlss(x$mu.link)$linkfun
-  score$mu  <- function(y, eta, ...) {
-    call <- paste('x$dldm(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
+  score$mu  <- function(y, eta) {
+    call <- paste('x$dldm(y, ', paste('eta$', nx, sep = '', collapse = ', '), args, ')', sep = "")
     eval(parse(text = call))
   }
-  weights$mu <- function(y, eta, ...) {
+  weights$mu <- function(y, eta) {
     fo <- names(formals(x$d2ldm2))
     call <- paste('x$d2ldm2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
     weights <- eval(parse(text = call))
@@ -1497,11 +1503,11 @@ tF <- function(x)
   }
   if(k > 1) {
     sigma.linkfun <- make.link.gamlss(x$sigma.link)$linkfun
-    score$sigma  <- function(y, eta, ...) {
-      call <- paste('x$dldd(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
+    score$sigma  <- function(y, eta) {
+      call <- paste('x$dldd(y, ', paste('eta$', nx, sep = '', collapse = ', '), ')', sep = "")
       eval(parse(text = call))
     }
-    weights$sigma <- function(y, eta, ...) {
+    weights$sigma <- function(y, eta) {
       fo <- names(formals(x$d2ldd2))
       call <- paste('x$d2ldd2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
       weights <- eval(parse(text = call))
@@ -1512,11 +1518,11 @@ tF <- function(x)
   }
   if(k > 2) {
     nu.linkfun <- make.link.gamlss(x$nu.link)$linkfun
-    score$nu  <- function(y, eta, ...) {
-      call <- paste('x$dldv(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
+    score$nu  <- function(y, eta) {
+      call <- paste('x$dldv(y, ', paste('eta$', nx, sep = '', collapse = ', '), ')', sep = "")
       eval(parse(text = call))
     }
-    weights$nu <- function(y, eta, ...) {
+    weights$nu <- function(y, eta) {
       fo <- names(formals(x$d2ldv2))
       call <- paste('x$d2ldv2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
       weights <- eval(parse(text = call))
@@ -1527,11 +1533,11 @@ tF <- function(x)
   }
   if(k > 3) {
     tau.linkfun <- make.link.gamlss(x$tau.link)$linkfun
-    score$tau  <- function(y, eta, ...) {
-      call <- paste('x$dldt(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
+    score$tau  <- function(y, eta) {
+      call <- paste('x$dldt(y, ', paste('eta$', nx, sep = '', collapse = ', '), ')', sep = "")
       eval(parse(text = call))
     }
-    weights$tau <- function(y, eta, ...) {
+    weights$tau <- function(y, eta) {
       fo <- names(formals(x$d2ldt2))
       call <- paste('x$d2ldt2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
       weights <- eval(parse(text = call))

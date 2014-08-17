@@ -37,7 +37,7 @@ propose_iwls0 <- function(x, family, response, eta, id, ...)
 
   ## Compute old log likelihood and old log coefficients prior.
   pibeta <- family$loglik(response, peta)
-  p1 <- x$prior(x, x$state$g, x$state$tau2)
+  p1 <- x$prior(x$state$g, x$state$tau2)
 
   ## Compute partial predictor.
   eta[[id]] <- eta[[id]] - x$state$fit
@@ -59,7 +59,7 @@ propose_iwls0 <- function(x, family, response, eta, id, ...)
   x$state$g <- drop(rmvnorm(n = 1, mean = M, sigma = P))
 
   ## Compute log priors.
-  p2 <- x$prior(x, x$state$g, x$state$tau2)
+  p2 <- x$prior(x$state$g, x$state$tau2)
   qbetaprop <- dmvnorm(x$state$g, mean = M, sigma = P, log = TRUE)
 
   ## Compute fitted values.        
@@ -129,7 +129,7 @@ propose_rw <- function(x, family,
 
   ## Compute old log likelihood and old log coefficients prior.
   pibeta <- family$loglik(response, peta)
-  p1 <- x$prior(x, x$state$g, x$state$tau2)
+  p1 <- x$prior(x$state$g, x$state$tau2)
 
   ## Compute partial predictor.
   eta[[id]] <- eta[[id]] - x$state$fit
@@ -162,7 +162,7 @@ propose_rw <- function(x, family,
     } else x$state$g + rnorm(k, mean = 0, sd = x$state$scale)
 
     ## Compute log priors.
-    p2 <- x$prior(x, g, x$state$tau2)
+    p2 <- x$prior(g, x$state$tau2)
   
     ## Compute fitted values.        
     fit <- x$get.mu(x$X, g)
@@ -449,7 +449,7 @@ logPost <- function(g, x, family, response, eta, id)
 
   ## Compute log likelihood and log coefficients prior.
   ll <- family$loglik(response, peta)
-  lp <- x$prior(x, x$state$g, x$state$tau2)
+  lp <- x$prior(x$state$g, x$state$tau2)
 
   -1 * (ll + lp)
 }
@@ -556,7 +556,7 @@ logPost2 <- function(g, x, family, response, eta, id)
 {
   eta[[id]] <- eta[[id]] + x$get.mu(x$X, g)
   ll <- family$loglik(response, family$map2par(eta))
-  lp <- x$prior(x, g, x$state$tau2)
+  lp <- x$prior(g, x$state$tau2)
   return(ll + lp)
 }
 
@@ -566,7 +566,7 @@ logPost3 <- function(g, x, family, response, eta, id)
   fit <- x$get.mu(x$X, g)
   eta[[id]] <- eta[[id]] + fit
   ll <- family$loglik(response, family$map2par(eta))
-  lp <- x$prior(x, g, x$state$tau2)
+  lp <- x$prior(g, x$state$tau2)
   return(ll + lp)
 }
 
@@ -574,7 +574,7 @@ logPost3 <- function(g, x, family, response, eta, id)
 logPost4 <- function(tau2, x, family, response, eta, id)
 {
   ll <- family$loglik(response, family$map2par(eta))
-  lp <- x$prior(x, x$state$g, tau2)
+  lp <- x$prior(x$state$g, tau2)
   return(ll + lp)
 }
 
@@ -582,7 +582,7 @@ logPost4 <- function(tau2, x, family, response, eta, id)
 logPost5 <- function(tau2, x, family, response, eta, id)
 {
   ll <- family$loglik(response, family$map2par(eta))
-  lp <- x$prior(x, x$state$g, tau2)
+  lp <- x$prior(x$state$g, tau2)
   return(ll + lp)
 }
 
@@ -1121,12 +1121,12 @@ update_optim <- function(x, family, response, eta, id, ...)
       objfun <- function(gamma) {
         eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
         ll <- family$loglik(response, family$map2par(eta2))
-        lp <- x$prior(x, gamma, tau2)
+        lp <- x$prior(gamma, tau2)
         -1 * (ll + lp)
       }
 
       ## Gradient function.
-      grad <- if(!is.null(family$score[[id]]) & TRUE) {
+      grad <- if(!is.null(family$score[[id]])) {
         function(gamma) {
           eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
           peta <- family$map2par(eta2)
@@ -1162,12 +1162,12 @@ update_optim <- function(x, family, response, eta, id, ...)
   objfun <- function(gamma) {
     eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
     ll <- family$loglik(response, family$map2par(eta2))
-    lp <- x$prior(x, gamma, x$state$tau2)
+    lp <- x$prior(gamma, x$state$tau2)
     -1 * (ll + lp)
   }
 
   ## Gradient function.
-  grad <- if(!is.null(family$score[[id]]) & TRUE) {
+  grad <- if(!is.null(family$score[[id]])) {
     function(gamma) {
       eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
       peta <- family$map2par(eta2)
@@ -1204,7 +1204,7 @@ update_optim2 <- function(x, family, response, eta, id, ...)
     eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
     peta <- family$map2par(eta2)
     ll <- family$loglik(response, peta)
-    lp <- x$prior(x, gamma, x$state$tau2)
+    lp <- x$prior(gamma, x$state$tau2)
     -1 * (ll + lp)
   }
 
@@ -1254,7 +1254,7 @@ update_optim3 <- function(x, family, response, eta, id, ...)
     }
     eta2[[id]] <- eta[[id]] + x$get.mu(x$X, gamma)
     ll <- family$loglik(response, family$map2par(eta2))
-    edf <- if(x$criterion != "MP") (edf0 + x$edf(x, tau2)) else x$prior(x, gamma, tau2)
+    edf <- if(x$criterion != "MP") (edf0 + x$edf(x, tau2)) else x$prior(gamma, tau2)
     val <- switch(x$criterion,
       "AIC" = -1 * (2 * ll + 2 * edf),
       "BIC" = -1 * (2 * ll + edf * log(n)),
@@ -1433,7 +1433,7 @@ smooth.IWLS.default <- function(x, ...)
   if(!is.null(x$xt$prior))
     x$prior <- x$xt$prior
   if(is.null(x$prior) | !is.function(x$prior)) {
-    x$prior <- function(x, gamma, tau2 = NULL) {
+    x$prior <- function(gamma, tau2 = NULL) {
       lp <- if(x$fixed | is.null(tau2)) {
         sum(dnorm(gamma, sd = 10, log = TRUE))
       } else {
@@ -1473,6 +1473,9 @@ smooth.IWLS.default <- function(x, ...)
       grad <- drop(crossprod(cbind(x$X, if(!x$fixed & full) 0 else NULL), score)) + c(grad, grad2)
       return(grad)
     }
+  } else {
+    if(!is.function(x$grad))
+      x$grad <- NULL
   }
 
   x$state$edf <- x$edf(x, x$state$tau2)
@@ -1663,7 +1666,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     for(j in 1:np) {
       for(sj in seq_along(x[[nx[j]]]$smooth)) {
         if(logprior) {
-          selp <- x[[nx[j]]]$smooth[[sj]]$prior(x[[nx[j]]]$smooth[[sj]],
+          selp <- x[[nx[j]]]$smooth[[sj]]$prior(
             x[[nx[j]]]$smooth[[sj]]$state$g,
             x[[nx[j]]]$smooth[[sj]]$state$tau2)
         } else {
@@ -1679,12 +1682,14 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   ## Function to create full parameter vector.
   make_par <- function(...) {
     par <- npar <- lower <- upper <- NULL
+    grad <- TRUE
     for(j in 1:np) {
       for(sj in seq_along(x[[nx[j]]]$smooth)) {
         par <- c(par,
           x[[nx[j]]]$smooth[[sj]]$state$g,
           if(!x[[nx[j]]]$smooth[[sj]]$fixed) x[[nx[j]]]$smooth[[sj]]$state$tau2 else NULL
         )
+        if(is.null(x[[nx[j]]]$smooth[[sj]]$grad)) grad <- FALSE
         ng <- length(x[[nx[j]]]$smooth[[sj]]$state$g)
         nv <- length(x[[nx[j]]]$smooth[[sj]]$state$tau2)
         lower <- c(lower, x[[nx[j]]]$smooth[[sj]]$lower)
@@ -1696,7 +1701,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
       }
     }
     names(par) <- npar
-    return(list("par" = par, "lower" = lower, "upper" = upper))
+    return(list("par" = par, "lower" = lower, "upper" = upper, "grad" = grad))
   }
 
   log_posterior <- function(par, rx = FALSE, type = 2) {
@@ -1713,7 +1718,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
         x[[nx[j]]]$smooth[[sj]]$state$fit <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, gamma)
         eta[[nx[j]]] <- eta[[nx[j]]] + x[[nx[j]]]$smooth[[sj]]$state$fit
         x[[nx[j]]]$smooth[[sj]]$state$edf <- x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]], tau2)
-        lprior <- lprior + x[[nx[j]]]$smooth[[sj]]$prior(x[[nx[j]]]$smooth[[sj]], gamma, tau2)
+        lprior <- lprior + x[[nx[j]]]$smooth[[sj]]$prior(gamma, tau2)
         edf2 <- edf2 + x[[nx[j]]]$smooth[[sj]]$state$edf
       }
     }
@@ -1740,35 +1745,37 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     return(rval)
   }
 
-  grad_posterior <- function(par, type = 1) {
-    grad <- NULL
-    for(j in 1:np) {
-      eta[[nx[j]]] <- 0
-      for(sj in seq_along(x[[nx[j]]]$smooth)) {
-        gamma <- par[grep(paste("p", j, "t", sj, "c", sep = ""), names(par))]
-        eta[[nx[j]]] <- eta[[nx[j]]] + x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, gamma)
-      }
-    }
-    for(j in 1:np) {
-      score <- family$score[[nx[j]]](response, family$map2par(eta))
-      for(sj in seq_along(x[[nx[j]]]$smooth)) {
-        gamma <- par[grep(paste("p", j, "t", sj, "c", sep = ""), names(par))]
-        if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
-          tau2 <- par[grep(paste("p", j, "t", sj, "v", sep = ""), names(par))]
-          x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
-        } else tau2 <- NULL
-        grad <- c(grad, x[[nx[j]]]$smooth[[sj]]$grad(score, gamma, tau2))
-      }
-    }
-    if(type < 2) grad <- grad * -1
-    return(grad)
-  }
-
   hessian <- NULL
   ## Posterior mode estimation.
   if(any(grepl("mp", method, ignore.case = TRUE))) {
     tpar <- make_par()
     par <- tpar$par; lower <- tpar$lower; upper <- tpar$upper
+
+    if(!is.null(family$score) & tpar$grad) {
+      grad_posterior <- function(par, type = 1) {
+        grad <- NULL
+        for(j in 1:np) {
+          eta[[nx[j]]] <- 0
+          for(sj in seq_along(x[[nx[j]]]$smooth)) {
+            gamma <- par[grep(paste("p", j, "t", sj, "c", sep = ""), names(par))]
+            eta[[nx[j]]] <- eta[[nx[j]]] + x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, gamma)
+          }
+        }
+        for(j in 1:np) {
+          score <- family$score[[nx[j]]](response, family$map2par(eta))
+          for(sj in seq_along(x[[nx[j]]]$smooth)) {
+            gamma <- par[grep(paste("p", j, "t", sj, "c", sep = ""), names(par))]
+            if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
+              tau2 <- par[grep(paste("p", j, "t", sj, "v", sep = ""), names(par))]
+              x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
+            } else tau2 <- NULL
+            grad <- c(grad, x[[nx[j]]]$smooth[[sj]]$grad(score, gamma, tau2))
+          }
+        }
+        if(type < 2) grad <- grad * -1
+        return(grad)
+      }
+    } else grad_posterior <- NULL
 
     ## Use optim() to find variance parameters.
     opt <- optim(par, fn = log_posterior, gr = grad_posterior,
@@ -2077,7 +2084,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           } else tau2 <- NULL
           x[[nx[j]]]$smooth[[sj]]$state$fit <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, gamma)
           eta[[nx[j]]] <- eta[[nx[j]]] + x[[nx[j]]]$smooth[[sj]]$state$fit
-          lprior <- lprior + x[[nx[j]]]$smooth[[sj]]$prior(x[[nx[j]]]$smooth[[sj]], gamma, tau2)
+          lprior <- lprior + x[[nx[j]]]$smooth[[sj]]$prior(gamma, tau2)
         }
       }
 
