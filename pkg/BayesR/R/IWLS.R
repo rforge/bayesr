@@ -110,6 +110,39 @@ propose_iwls0 <- function(x, family, response, eta, id, ...)
 }
 
 
+## Nested sampling.
+sample_nested <- function(x, family, response, eta, id, ...)
+{
+  require("mvtnorm")
+
+  args <- list(...)
+  eta[[id]] <- eta[[id]] - x$state$fit
+  eta2 <- eta
+  if(is.null(x$state$llim))
+    x$state$llim <- -Inf
+  P <- matrix_inv(crossprod(x$X) + 1 / x$state$tau2 * x$S[[1]])
+  N <- 0; g <- ll <- NULL
+  while(N <= 1000) {
+    g2 <- drop(rmvnorm(n = 1, mean = x$state$g, sigma = P))
+    eta2[[id]] <- eta[[id]] + x$get.mu(x$X, g2)
+    ll2 <- family$loglik(response, family$map2par(eta2))
+    if(ll2 > x$state$llim) {
+      g <- cbind(g, g2)
+      ll <- c(ll, ll2)
+      N <- N + 1
+    }
+  }
+
+  i <- which.min(ll)
+  x$state$g <- g[, i]
+  x$state$fit <- x$get.mu(x$X, g[, i])
+  x$state$llim <- min(ll)
+  x$state$alpha <- log(1)
+
+  return(x$state)
+}
+
+
 ## Random walk propose function.
 propose_rw <- function(x, family,
   response, eta, id, ...)
@@ -1512,8 +1545,8 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   criterion = c("AICc", "BIC", "AIC", "MP", "LD"), lower = 1e-09, upper = 1e+04,
   optim.control = NULL, digits = 3,  ## list(pgtol = 1e-04, maxit = 5)
   update = c("optim", "iwls", "optim2", "optim3"),
-  propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "nadja", "iwls0", "rw2"),
-  sample = c("slice", "iwls", "iwls0", "rw", "rw2"), ...)
+  propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "iwls0", "rw2"),
+  sample = c("slice", "iwls", "iwls0", "rw", "rw2", "nested"), ...)
 {
   known_methods <- c("backfitting", "MCMC", "backfitting2",
     "backfitting3", "backfitting4", "mcmc", "MP", "mp", "LD", "ld")
@@ -1574,8 +1607,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
       "twalk" = propose_twalk,
       "slice" = propose_slice,
       "oslice" = propose_oslice,
-      "wslice" = propose_wslice,
-      "nadja" = propose_nadja
+      "wslice" = propose_wslice
     )
   }
 
@@ -1591,7 +1623,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
       "slice" = propose_slice,
       "oslice" = propose_oslice,
       "wslice" = propose_wslice,
-      "nadja" = propose_nadja
+      "nested" = sample_nested
     )
   }
   
@@ -2150,6 +2182,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- min(c(exp(p.state$alpha), 1), na.rm = TRUE)
           x[[nx[j]]]$smooth[[sj]]$s.accepted[js] <- accepted
           x[[nx[j]]]$smooth[[sj]]$s.samples[js, ] <- unlist(p.state[x[[nx[j]]]$smooth[[sj]]$p.save])
+          x[[nx[j]]]$smooth[[sj]]$state$llim <- p.state$llim
         }
       }
       if(verbose) barfun(ptm, length(iterthin), js, 1, 20, start = FALSE)
