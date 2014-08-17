@@ -1131,11 +1131,7 @@ update_optim <- function(x, family, response, eta, id, ...)
           eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
           peta <- family$map2par(eta2)
           score <- drop(family$iwls$score[[id]](response, peta))
-          grad <- crossprod(x$X, score) - if(x$fixed) {
-            0.0
-          } else {
-            (1 / (2 * tau2) * gamma)
-          }
+          grad <- x$grad(score, gamma, tau2, full = FALSE)
           return(drop(-1 * grad))
         }
       } else NULL
@@ -1176,11 +1172,7 @@ update_optim <- function(x, family, response, eta, id, ...)
       eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
       peta <- family$map2par(eta2)
       score <- drop(family$iwls$score[[id]](response, peta))
-      grad <- crossprod(x$X, score) - if(x$fixed) {
-        0.0
-      } else {
-        (1 / (2 * x$state$tau2) * gamma)
-      }
+      grad <- x$grad(score, gamma, x$state$tau2, full = FALSE)
       return(drop(-1 * grad))
     }
   } else NULL
@@ -1446,8 +1438,8 @@ smooth.IWLS.default <- function(x, ...)
         sum(dnorm(gamma, sd = 10, log = TRUE))
       } else {
         if(!is.null(x$sp)) tau2 <- x$sp
-        log((1 / tau2)^(x$rank / 2)) + drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
-          log((x$b^x$a) / gamma(x$a) * tau2^(-x$a - 1) * exp(-x$b / tau2))
+        -log(tau2) * x$rank / 2 + drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
+          log((x$b^x$a)) - log(gamma(x$a)) + (-x$a - 1) * log(tau2) - x$b / tau2
       }
       return(lp)
     }
@@ -1464,6 +1456,22 @@ smooth.IWLS.default <- function(x, ...)
         if(x$xt$center) edf <- edf - 1
       }
       return(edf)
+    }
+  }
+  if(is.null(x$grad)) {
+    x$grad <- function(score, gamma, tau2 = NULL, full = TRUE) {
+      grad2 <- NULL
+      if(x$fixed) {
+        grad <- 0
+      } else {
+        gS <- crossprod(gamma, x$S[[1]])
+        grad <- drop(-0.5 / tau2 * gS)
+        if(full & !is.null(tau2)) {
+          grad2 <- drop(-x$rank / (2 * tau2) - 1 / (2 * tau2^2) * gS %*% gamma + (-x$a - 1) / tau2 + x$b / (tau2^2))
+        }
+      }
+      grad <- drop(crossprod(cbind(x$X, if(!x$fixed & full) 0 else NULL), score)) + c(grad, grad2)
+      return(grad)
     }
   }
 
@@ -1632,7 +1640,12 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
 
   ## Formatting for printing.
   fmt <- function(x, width = 8, digits = 2) {
-    formatC(round(x, digits), format = "f", digits = digits , width = width)
+    txt <- formatC(round(x, digits), format = "f", digits = digits , width = width)
+    if(nchar(txt) > width) {
+      txt <- strsplit(txt, "")[[1]]
+      txt <- paste(txt[1:width], collapse = "", sep = "")
+    }
+    txt
   }
 
   ## Number of parameters
@@ -1720,10 +1733,35 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     if(verbose & !rx & type > 1) {
       cat("\r")
       cat("logPost", fmt(ll + lprior, width = 8, digits = digits),
+        "logLik", fmt(ll, width = 8, digits = digits),
         "edf", fmt(edf2, width = 6, digits = digits))
     }
 
     return(rval)
+  }
+
+  grad_posterior <- function(par, type = 1) {
+    grad <- NULL
+    for(j in 1:np) {
+      eta[[nx[j]]] <- 0
+      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        gamma <- par[grep(paste("p", j, "t", sj, "c", sep = ""), names(par))]
+        eta[[nx[j]]] <- eta[[nx[j]]] + x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, gamma)
+      }
+    }
+    for(j in 1:np) {
+      score <- family$iwls$score[[nx[j]]](response, family$map2par(eta))
+      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        gamma <- par[grep(paste("p", j, "t", sj, "c", sep = ""), names(par))]
+        if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
+          tau2 <- par[grep(paste("p", j, "t", sj, "v", sep = ""), names(par))]
+          x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
+        } else tau2 <- NULL
+        grad <- c(grad, x[[nx[j]]]$smooth[[sj]]$grad(score, gamma, tau2))
+      }
+    }
+    if(type < 2) grad <- grad * -1
+    return(grad)
   }
 
   hessian <- NULL
@@ -1733,7 +1771,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     par <- tpar$par; lower <- tpar$lower; upper <- tpar$upper
 
     ## Use optim() to find variance parameters.
-    opt <- optim(par, fn = log_posterior,
+    opt <- optim(par, fn = log_posterior, gr = grad_posterior,
       method = "L-BFGS-B", lower = lower, upper = upper,
       control = optim.control, hessian = TRUE)
     par <- opt$par
@@ -2087,7 +2125,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     }
   }
 
-  if(!any(grepl("MCMC", method)) & FALSE) {
+  if(!any(grepl("MCMC", method)) & TRUE) {
     save.edf <- get_edf_lp(x)
     save.loglik <- family$loglik(response, family$map2par(eta))
     if(verbose) cat("generating samples\n")
@@ -2114,7 +2152,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   }
 
   ## Samples created by slice sampling, only.
-  if(!any(grepl("MCMC", method)) & TRUE) {
+  if(!any(grepl("MCMC", method)) & FALSE) {
     save.edf <- get_edf_lp(x)
     save.loglik <- family$loglik(response, family$map2par(eta))
     mp <- make_par()

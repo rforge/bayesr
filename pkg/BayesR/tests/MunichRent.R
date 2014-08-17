@@ -21,7 +21,7 @@ f <- list(
     s(area) + s(yearc) + s(x, y, k = 100)
 )
 
-b2 <- bayesr(f, family = gamma, data = rent99, engine = "IWLS", method = "backfitting", update = "optim")
+b2 <- bayesr(f, family = gamma, data = rent99, method = "MP")
 
 
 nd <- centroids(MunichBnd)
