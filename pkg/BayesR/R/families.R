@@ -91,39 +91,37 @@ beta.BayesR <- function(links = c(mu = "logit", sigma2 = "logit"), ...)
         sigma2 = "(1 - mu) * (1 / sigma2)"
       )
     ),
-    "iwls" = list(
-      "score" = list(
-        "mu" = function(y, eta, ...) {
-          a <- eta$mu
-          b <- eta$sigma2
-          hilfs <- a * (1 - b) / b
-          hilfs2 <- (1 - a) * (1 - b) / b
-          drop(a * hilfs2 * log(y) - a * hilfs2 * log(1 - y) + ((1 - b) / b) * a * (1 - a) * (-digamma(hilfs) + digamma(hilfs2)))
-        },
-        "sigma2" = function(y, eta, ...) {
-          a <- eta$mu
-          b <- eta$sigma2
-          hilfs <- a*(1-b)/b
-          hilfs2 <- (1-a)*(1-b)/b
-          drop(-(1 - b) / (b) * ( -a * digamma(hilfs) - (1 - a) * digamma(hilfs2) + digamma((1 - b) / (b)) + a * log(y) + (1 - a) * log(1 - y)))
-        }
-      ),
-      "weights" = list(
-        "mu" = function(y, eta, ...) {
-          a <- eta$mu
-          b <- eta$sigma2
-          hilfs <- a * (1 - b) / b
-          hilfs2 <- (1 - a) * (1 - b) / b
-          drop(((1 - b) / b)^2 * a^2 * (1 - a)^2 * (trigamma(hilfs) + trigamma(hilfs2)))
-        },
-        "sigma2" = function(y, eta, ...) {
-          a <- eta$mu
-          b <- eta$sigma2
-          hilfs <- a * (1 - b) / b
-          hilfs2 <- (1 - a) * (1 - b) / b
-          drop(((1 - b) / b)^2 * (a^2 * trigamma(hilfs) + (1 - a)^2 * trigamma(hilfs2) - trigamma((1 - b) / (b))))
-        }
-      )
+    "score" = list(
+      "mu" = function(y, eta, ...) {
+        a <- eta$mu
+        b <- eta$sigma2
+        hilfs <- a * (1 - b) / b
+        hilfs2 <- (1 - a) * (1 - b) / b
+        drop(a * hilfs2 * log(y) - a * hilfs2 * log(1 - y) + ((1 - b) / b) * a * (1 - a) * (-digamma(hilfs) + digamma(hilfs2)))
+      },
+      "sigma2" = function(y, eta, ...) {
+        a <- eta$mu
+        b <- eta$sigma2
+        hilfs <- a*(1-b)/b
+        hilfs2 <- (1-a)*(1-b)/b
+        drop(-(1 - b) / (b) * ( -a * digamma(hilfs) - (1 - a) * digamma(hilfs2) + digamma((1 - b) / (b)) + a * log(y) + (1 - a) * log(1 - y)))
+      }
+    ),
+    "weights" = list(
+      "mu" = function(y, eta, ...) {
+        a <- eta$mu
+        b <- eta$sigma2
+        hilfs <- a * (1 - b) / b
+        hilfs2 <- (1 - a) * (1 - b) / b
+        drop(((1 - b) / b)^2 * a^2 * (1 - a)^2 * (trigamma(hilfs) + trigamma(hilfs2)))
+      },
+      "sigma2" = function(y, eta, ...) {
+        a <- eta$mu
+        b <- eta$sigma2
+        hilfs <- a * (1 - b) / b
+        hilfs2 <- (1 - a) * (1 - b) / b
+        drop(((1 - b) / b)^2 * (a^2 * trigamma(hilfs) + (1 - a)^2 * trigamma(hilfs2) - trigamma((1 - b) / (b))))
+      }
     ),
     "mu" = function(eta, ...) {
       eta$mu
@@ -386,15 +384,13 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
       "model" = BUGSmodel,
       "reparam" = c(sigma = "1 / sqrt(sigma)")
     ),
-    "iwls" = list(
-      "score" = list(
-        "mu" = function(y, eta, ...) { drop((y - eta$mu) / (eta$sigma^2)) },
-        "sigma" = function(y, eta, ...) { drop(-0.5 + (y - eta$mu)^2 / (eta$sigma^2)) }
-      ),
-      "weights" = list(
-        "mu" = function(y, eta, ...) { drop(1 / (eta$sigma^2)) },
-        "sigma" = function(y, eta, ...) { rep(0.5, length(y)) }
-      )
+    "score" = list(
+      "mu" = function(y, eta, ...) { drop((y - eta$mu) / (eta$sigma^2)) },
+      "sigma" = function(y, eta, ...) { drop(-0.5 + (y - eta$mu)^2 / (eta$sigma^2)) }
+    ),
+    "weights" = list(
+      "mu" = function(y, eta, ...) { drop(1 / (eta$sigma^2)) },
+      "sigma" = function(y, eta, ...) { rep(0.5, length(y)) }
     ),
     "loglik" = function(y, eta, ...) {
       sum(dnorm(y, eta$mu, eta$sigma, log = TRUE))
@@ -438,15 +434,13 @@ gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
       "model" = BUGSmodel,
       "reparam" = c(sigma2 = "1 / sigma2")
     ),
-    "iwls" = list(
-      "score" = list(
-        "mu" = function(y, eta, ...) { drop((y - eta$mu) / eta$sigma2) },
-        "sigma2" = function(y, eta, ...) { drop(-0.5 + (y - eta$mu)^2 / (2 * eta$sigma2)) }
-      ),
-      "weights" = list(
-        "mu" = function(y, eta, ...) { drop(1 / eta$sigma2) },
-        "sigma2" = function(y, eta, ...) { rep(0.5, length(y)) }
-      )
+    "score" = list(
+      "mu" = function(y, eta, ...) { drop((y - eta$mu) / eta$sigma2) },
+      "sigma2" = function(y, eta, ...) { drop(-0.5 + (y - eta$mu)^2 / (2 * eta$sigma2)) }
+    ),
+    "weights" = list(
+      "mu" = function(y, eta, ...) { drop(1 / eta$sigma2) },
+      "sigma2" = function(y, eta, ...) { rep(0.5, length(y)) }
     ),
     "loglik" = function(y, eta, ...) {
       sum(dnorm(y, eta$mu, sqrt(eta$sigma2), log = TRUE))
@@ -647,21 +641,19 @@ invgaussian.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
       "mu"  = c("invgaussian_mu", "mean"),
       "sigma2" = c("invgaussian_sigma2", "scale")
     ),
-    "iwls" = list(
-      "score" = list(
-        "mu" = function(y, eta, ...) {
-          mu <- eta$mu
-          (y - mu) / (mu^2 * eta$sigma2)
-        },
-        "sigma2" = function(y, eta, ...) {
-          mu <- eta$mu
-          -0.5 + (y - mu)^2 / (2 * y * mu^2 * eta$sigma2)
-        }
-      ),
-      "weights" = list(
-        "mu" = function(y, eta, ...) { 1 / (eta$mu * eta$sigma2) },
-        "sigma2" = function(y, eta) { rep(0.5, length(y)) }
-      )
+    "score" = list(
+      "mu" = function(y, eta, ...) {
+        mu <- eta$mu
+        (y - mu) / (mu^2 * eta$sigma2)
+      },
+      "sigma2" = function(y, eta, ...) {
+        mu <- eta$mu
+        -0.5 + (y - mu)^2 / (2 * y * mu^2 * eta$sigma2)
+      }
+    ),
+    "weights" = list(
+      "mu" = function(y, eta, ...) { 1 / (eta$mu * eta$sigma2) },
+      "sigma2" = function(y, eta) { rep(0.5, length(y)) }
     ),
     "mu" = function(eta, ...) {
       eta$mu
@@ -793,25 +785,23 @@ gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
       "eta" = BUGSeta,
       "model" = BUGSmodel
     ),
-    "iwls" = list(
-      "score" = list(
-        "mu" = function(y, eta, ...) {
-          sigma <- eta$sigma
-          sigma * (-1 + y / eta$mu)
-        },
-        "sigma" = function(y, eta, ...) {
-          mu <- eta$mu
-          sigma <- eta$sigma
-          sigma * (log(sigma) + 1 - log(mu) - digamma(sigma) + log(y) - y / mu)
-        }
-      ),
-      "weights" = list(
-        "mu" = function(y, eta, ...) { eta$sigma },
-        "sigma" = function(y, eta, ...) {
-          sigma <- eta$sigma
-          sigma^2 * trigamma(sigma) - sigma
-        }
-      )
+    "score" = list(
+      "mu" = function(y, eta, ...) {
+        sigma <- eta$sigma
+        sigma * (-1 + y / eta$mu)
+      },
+      "sigma" = function(y, eta, ...) {
+        mu <- eta$mu
+        sigma <- eta$sigma
+        sigma * (log(sigma) + 1 - log(mu) - digamma(sigma) + log(y) - y / mu)
+      }
+    ),
+    "weights" = list(
+      "mu" = function(y, eta, ...) { eta$sigma },
+      "sigma" = function(y, eta, ...) {
+        sigma <- eta$sigma
+        sigma^2 * trigamma(sigma) - sigma
+      }
     ),
     "loglik" = function(y, eta, ...) {
 		  a <- eta$sigma
@@ -877,15 +867,13 @@ lognormal.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
       "mu" = c("lognormal2_mu", "mean"),
       "sigma" = c("lognormal2_sigma", "scale")
     ),
-    "iwls" = list(
-      "score" = list(
-        "mu" = function(y, eta, ...) { (log(y) - eta$mu) / (eta$sigma^2) },
-        "sigma" = function(y, eta, ...) { -1 + (log(y) - eta$mu)^2 / (eta$sigma^2) }
-      ),
-      "weights" = list(
-        "mu" = function(y, eta, ...) { 1 / (eta$sigma^2) },
-        "sigma" = function(y, eta, ...) { rep(2, length(y)) }
-      )
+    "score" = list(
+      "mu" = function(y, eta, ...) { (log(y) - eta$mu) / (eta$sigma^2) },
+      "sigma" = function(y, eta, ...) { -1 + (log(y) - eta$mu)^2 / (eta$sigma^2) }
+    ),
+    "weights" = list(
+      "mu" = function(y, eta, ...) { 1 / (eta$sigma^2) },
+      "sigma" = function(y, eta, ...) { rep(2, length(y)) }
     ),
 	  "mu" = function(eta, ...) {
       exp(eta$mu + 0.5 * (eta$sigma)^2)
@@ -919,15 +907,13 @@ lognormal2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
       "mu" = c("lognormal_mu", "mean"),
       "sigma2" = c("lognormal_sigma2", "scale")
     ),
-    "iwls" = list(
-	    "score" = list(
-        "mu" = function(y, eta, ...) { (log(y) - eta$mu) / (eta$sigma2) },
-        "sigma2" = function(y, eta, ...) { -0.5 + (log(y) - eta$mu)^2 / (2 * eta$sigma2) }
-      ),
-      "weights" = list(
-        "mu" = function(y, eta, ...) { 1 / (eta$sigma2) },
-        "sigma2" = function(y, eta, ...) { rep(0.5, length(y)) }
-      )
+	  "score" = list(
+      "mu" = function(y, eta, ...) { (log(y) - eta$mu) / (eta$sigma2) },
+      "sigma2" = function(y, eta, ...) { -0.5 + (log(y) - eta$mu)^2 / (2 * eta$sigma2) }
+    ),
+    "weights" = list(
+      "mu" = function(y, eta, ...) { 1 / (eta$sigma2) },
+      "sigma2" = function(y, eta, ...) { rep(0.5, length(y)) }
     ),
 	  "mu" = function(eta, ...) {
       exp(eta$mu + 0.5 * (eta$sigma2))
@@ -1279,10 +1265,11 @@ hurdleP.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
       d
     },
     "p" = function(y, eta, ...) {
-		cdf1 <- ppois(y, lambda = eta$lambda)
-		cdf2 <- ppois(0, lambda = eta$lambda)
-		cdf3 <- eta$pi + ((1 - eta$pi) * (cdf1 - cdf2)/(1 - cdf2))
-		cdf <- ifelse((y == 0), eta$pi, cdf3)
+		  cdf1 <- ppois(y, lambda = eta$lambda)
+		  cdf2 <- ppois(0, lambda = eta$lambda)
+		  cdf3 <- eta$pi + ((1 - eta$pi) * (cdf1 - cdf2)/(1 - cdf2))
+		  cdf <- ifelse((y == 0), eta$pi, cdf3)
+      cdf
     },
     "score.norm" = TRUE,
     "type" = 3
@@ -1376,10 +1363,10 @@ hurdleNB.BayesR <- function(links = c(mu = "log", pi = "logit", delta = "log"), 
       d
     },
     "p" = function(y, eta, ...) {
-		cdf1 <- pnbinom(y, size = eta$delta, mu = eta$mu)
-		cdf2 <- pnbinom(0, size = eta$delta, mu = eta$mu)
-		cdf3 <- eta$pi + ((1 - eta$pi) * (cdf1 - cdf2)/(1 - cdf2))
-		cdf <- ifelse((y == 0), eta$pi, cdf3)
+		  cdf1 <- pnbinom(y, size = eta$delta, mu = eta$mu)
+		  cdf2 <- pnbinom(0, size = eta$delta, mu = eta$mu)
+		  cdf3 <- eta$pi + ((1 - eta$pi) * (cdf1 - cdf2)/(1 - cdf2))
+		  cdf <- ifelse((y == 0), eta$pi, cdf3)
     },
     "score.norm" = TRUE,
     "type" = 3
@@ -1561,10 +1548,8 @@ tF <- function(x)
     "family" = x$family[1],
     "names" = nx,
     "links" = unlist(x[paste(nx, "link", sep = ".")]),
-    "iwls" = list(
-      "score" = score,
-      "weights" = weights
-    ),
+    "score" = score,
+    "weights" = weights,
     "d" = function(y, eta, log = FALSE, ...) {
       call <- paste('dfun(y, ', paste('eta$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
       d <- try(eval(parse(text = call)), silent = TRUE)
