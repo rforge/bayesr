@@ -239,7 +239,7 @@ no <- gaussian2.BayesR()
 no$iwls <- NULL
 
 f <- list(
-  y ~ s(mu.x11),
+  y ~ s(mu.x11, k = 40),
   sigma ~ s(sigma2.x11)
 )
 

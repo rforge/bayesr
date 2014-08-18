@@ -1484,7 +1484,7 @@ tF <- function(x, ...)
   de <- c("m", "d", "v", "t")[1:k]
   score <- weights <- list()
 
-  args <- if(!is.null(args)) {
+  args <- if(!is.null(names(args))) {
     paste(', ', paste(names(args), "=", unlist(args), sep = '', collapse = ', '), sep = '')
   } else ''
 

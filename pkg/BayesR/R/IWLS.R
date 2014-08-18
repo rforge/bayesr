@@ -110,367 +110,62 @@ propose_iwls0 <- function(x, family, response, eta, id, ...)
 }
 
 
-## Nested sampling.
-sample_nested <- function(x, family, response, eta, id, ...)
+## Sampling with multivariate normal proposals.
+propose_mvn <- function(x, family, response, eta, id, ...)
 {
   require("mvtnorm")
-
-  args <- list(...)
-  eta[[id]] <- eta[[id]] - x$state$fit
-  eta2 <- eta
-  if(is.null(x$state$llim))
-    x$state$llim <- -Inf
-  P <- matrix_inv(crossprod(x$X) + 1 / x$state$tau2 * x$S[[1]])
-  N <- 0; g <- ll <- NULL
-  while(N <= 1000) {
-    g2 <- drop(rmvnorm(n = 1, mean = x$state$g, sigma = P))
-    eta2[[id]] <- eta[[id]] + x$get.mu(x$X, g2)
-    ll2 <- family$loglik(response, family$map2par(eta2))
-    if(ll2 > x$state$llim) {
-      g <- cbind(g, g2)
-      ll <- c(ll, ll2)
-      N <- N + 1
-    }
-  }
-
-  i <- which.min(ll)
-  x$state$g <- g[, i]
-  x$state$fit <- x$get.mu(x$X, g[, i])
-  x$state$llim <- min(ll)
-  x$state$alpha <- log(1)
-
-  return(x$state)
-}
-
-
-## Random walk propose function.
-propose_rw <- function(x, family,
-  response, eta, id, ...)
-{
   args <- list(...)
 
-  if(!is.null(args$no.mcmc)) {
-    if(!x$fixed & is.null(x$sp)) {
-      a <- x$rank / 2 + x$a
-      b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
-      x$state$tau2 <- 1 / rgamma(1, a, b)
-    }
-  }
-
-  ## Map predictor to parameter scale.
-  peta <- family$map2par(eta)
-
-  ## Compute old log likelihood and old log coefficients prior.
-  pibeta <- family$loglik(response, peta)
+  ll1 <- family$loglik(response, family$map2par(eta))
   p1 <- x$prior(x$state$g, x$state$tau2)
-
-  ## Compute partial predictor.
   eta[[id]] <- eta[[id]] - x$state$fit
+  P <- matrix_inv(crossprod(x$X) + 1 / x$state$tau2 * x$S[[1]])
 
-  ## Number of parameters.
-  k <- length(x$state$g)
-
-  ## Sample new parameters.
-  do <- TRUE; accepted <- x$state$accepted
-  eta2 <- eta; j <- 0
-  while(do & j < x$state$maxit) {
-    ## Adaptive scales.
-    if(!is.null(x$state$iter)) {
-      aprop <- 0.1
-      if(x$state$iter < x$adapt) {
-        for(i in 1:k) {
-          x$state$scale[i] <- if(accepted) {
-            x$state$scale[i] + (x$state$scale[i] / (aprop * (1 - aprop))) * (1 - aprop) / x$state$iter
-          } else {
-            abs(x$state$scale[i] - (x$state$scale[i] / (aprop * (1 - aprop))) * aprop / x$state$iter)
-          }
-        }
+  if((x$state$iter < x$adapt) & x$xt$adaptive) {
+    eta2 <- eta
+    do <- TRUE
+    while(do) {
+      g <- drop(rmvnorm(n = 1, mean = x$state$g, sigma = x$state$scale[1] * P))
+      eta2[[id]] <- eta[[id]] + x$get.mu(x$X, g)
+      ll2 <- family$loglik(response, family$map2par(eta2))
+      p2 <- x$prior(g, x$state$tau2)
+      alpha <- drop((ll2 + p2) - (ll1 + p1))
+      accepted <- if(is.na(alpha)) FALSE else log(runif(1)) <= alpha
+      x$state$scale[1] <- if(alpha < log(0.5)) {
+        x$state$scale[1] - 0.1 * x$state$scale[1]
+      } else {
+        x$state$scale[1] + 0.1 * x$state$scale[1]
       }
+      if(accepted) do <- FALSE
     }
-
-    g <- if(FALSE) {
-      theta <- rnorm(k)
-      d <- theta / sqrt(sum(theta * theta))
-      x$state$g + runif(k, 0, x$state$scale) * d
-    } else x$state$g + rnorm(k, mean = 0, sd = x$state$scale)
-
-    ## Compute log priors.
-    p2 <- x$prior(g, x$state$tau2)
-  
-    ## Compute fitted values.        
-    fit <- x$get.mu(x$X, g)
-
-    ## Set up new predictor.
-    eta2[[id]] <- eta[[id]] + fit
-
-    ## Map predictor to parameter scale.
-    peta <- family$map2par(eta2)
-
-    ## Compute new log likelihood.
-    pibetaprop <- family$loglik(response, peta)
-
-    ## Compute log acceptance probablity.
-    x$state$alpha <- drop((pibetaprop + p2) - (pibeta + p1))
-
-    if((accepted <- if(is.na(x$state$alpha)) FALSE else log(runif(1)) <= x$state$alpha) | x$state$maxit < 2) {
-      x$state$g <- g
-      x$state$fit <- fit
-      do <- FALSE
-    }
-
-    j <- j + 1
   }
 
-  ## Sample variance parameter.
-  if(!x$fixed & is.null(x$sp)) {
+  if(x$state$iter %% x$xt$step == 0) {
+    if(!is.null(x$state$mode)) {
+      x$state$g <- x$state$mode$g
+    } else {
+      opt <- update_optim2(x, family, response, eta, id, ...)
+      x$state$g <- opt$g
+    }
+  }
+
+  x$state$g <- drop(rmvnorm(n = 1, mean = x$state$g, sigma = x$state$scale[1] * P))
+  x$state$fit <- x$get.mu(x$X, x$state$g)
+  eta[[id]] <- eta[[id]] + x$state$fit
+  ll2 <- family$loglik(response, family$map2par(eta))
+  p2 <- x$prior(x$state$g, x$state$tau2)
+
+  if(!x$fixed & is.null(x$sp) & is.null(args$no.mcmc)) {
     a <- x$rank / 2 + x$a
     b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
     x$state$tau2 <- 1 / rgamma(1, a, b)
   }
 
+  x$state$alpha <- drop((ll2 + p2) - (ll1 + p1))
+
   return(x$state)
 }
 
-
-## t-walk propose function.
-## Functions for the OneMove().
-## see http://www.cimat.mx/~jac/twalk/
-## Author J. Andres Christen
-IntProd <- function(x) { sum(x * x)  }
-DotProd <- function(x, y) { sum(x * y)  }
-
-Simh1 <- function(dim, pphi, x, xp, beta)
-{	
-	phi <- (runif(dim) < pphi) 
-	rt <- NULL 
-	for(i in 1:dim)
-		if(phi[i])
-			rt <- append(rt, xp[i] + beta*(xp[i] - x[i]))
-		else
-			rt <- append(rt, x[i]) 
-	list(rt = rt, nphi = sum(phi)) 
-}
-
-Simfbeta <- function(at)
-{	
-	if(runif(1) < (at - 1) / (2 * at))
-		exp(1 / (at + 1) * log(runif(1)))
-	else
-		exp(1 / (1 - at) * log(runif(1))) 
-}
-
-Simh2 <- function(dim, pphi, aw, x, xp)
-{
-  u <- runif(dim) 
-  phi <- (runif(dim) < pphi)
-  z <- (aw / (1 + aw)) * (aw * u^2 + 2*u - 1) 
-  z <- z * phi
-  list(rt = x + (x - xp) * z, nphi = sum(phi))
-}
-
-Simh3 <- function(dim, pphi, x, xp)
-{
-  phi <- (runif(dim) < pphi)
-  sigma <- max(phi * abs(xp - x))
-  x + sigma * rnorm(dim) * phi
-  list(rt = xp * phi + sigma * rnorm(dim) * phi + x * (1 - phi), nphi = sum(phi), phi = phi)
-}
-
-G3U <- function(nphi, phi, h, x, xp)
-{
-  sigma <- max(phi * abs(xp - x))
-  if(nphi > 0)
-    (nphi / 2) * log(2 * pi) + nphi * log(sigma) + 0.5 * IntProd(h - xp) / (sigma^2)
-  else
-    0 
-}
-
-Simh4 <- function(dim, pphi, x, xp)
-{
-  phi <- (runif(dim) < pphi)
-	sigma <- max(phi * abs(xp - x)) / 3
-	rt <- NULL
-  for(i in 1:dim)
-    if(phi[i])
-      rt <- append(rt, x[i] + sigma * rnorm(1))
-    else
-      rt <- append(rt, x[i])
-  list(rt = rt, nphi = sum(phi), phi = phi) 
-}
-
-log2pi <- log(2 * pi); log3 <- log(3)
-
-G4U <- function(nphi, phi, h, x, xp)
-{
-  sigma <- max(phi * abs(xp - x)) / 3
-  if(nphi > 0)
-    (nphi / 2) * log2pi - nphi * log3 + nphi * log(sigma) + 0.5 * 9 * IntProd((h - x)) / (sigma^2)
-  else
-    0 
-}
-
-OneMove <- function(dim, Supp = function(x) { TRUE },
-  x, U, xp, Up, at = 6, aw = 1.5, pphi = min(dim, 4) / dim,
-  F1 = 0.4918, F2 = 0.9836, F3 = 0.9918,
-  .X, .FAMILY, .RESPONSE, .ETA, .ID)
-{
-  ker <- runif(1)
-
-  if(ker < F1) {	
-    dir <- runif(1) 
-    funh <- 1
-    if((0 <= dir) && (dir < 0.5)) {	
-      beta <- Simfbeta(at) 
-      tmp <- Simh1(dim, pphi, xp, x, beta) 
-      yp <- tmp$rt
-      nphi <- tmp$nphi
-      y  <- x 
-      propU <- U 
-      if(Supp(yp)) {
-        propUp <- logPost(yp, .X, .FAMILY, .RESPONSE, .ETA, .ID)
-        if(nphi == 0)
-          A <- 1
-        else
-          A <- exp((U - propU) + (Up - propUp) +  (nphi-2)*log(beta)) 
-      } else {
-        propUp <- NULL
-        A <- 0
-      }
-    }
-    if((0.5 <= dir) && (dir < 1.0)) {
-      beta <- Simfbeta(at)
-      tmp <- Simh1(dim, pphi, x, xp, beta) 
-      y <- tmp$rt
-      nphi <- tmp$nphi
-      yp  <- xp 
-      propUp <- Up 
-      if(Supp(y)) {
-        propU <- logPost(y, .X, .FAMILY, .RESPONSE, .ETA, .ID)
-        if(nphi == 0)
-          A <- 1
-        else
-          A <- exp((U - propU) + (Up - propUp) +  (nphi - 2) * log(beta))
-      } else {
-        propU <- NULL
-        A <- 0
-      }
-    }
-  }
-	
-  if((F1 <= ker) && (ker < F2)) {	
-    dir <- runif(1)
-    funh <- 2
-    if((0 <= dir) && (dir < 0.5)) {
-      tmp <- Simh2(dim, pphi, aw, xp, x) 
-      yp <- tmp$rt
-      nphi <- tmp$nphi
-      y  <- x 
-      propU <- U
-      if((Supp(yp)) && (all(abs(yp - y) > 0))) {
-        propUp <- logPost(yp, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
-        A <- exp((U - propU) + (Up - propUp))  
-      } else {
-        propUp <- NULL
-        A <- 0
-      }
-    }
-    if((0.5 <= dir) && (dir < 1.0)) {
-      tmp <- Simh2(dim, pphi, aw, x, xp)
-      y <- tmp$rt
-      nphi <- tmp$nphi
-      yp  <- xp 
-      propUp <- Up
-      if((Supp(y)) && (all(abs(yp - y) > 0))) {
-        propU <- logPost(y, .X, .FAMILY, .RESPONSE, .ETA, .ID)
-        A <- exp((U - propU) + (Up - propUp))
-      } else {
-        propU <- NULL
-        A <- 0
-      }
-    }
-  }
-
-  if((F2 <= ker) && (ker < F3)) {	
-    dir <- runif(1) 
-    funh <- 3
-    if((0 <= dir) && (dir < 0.5)) {
-      tmp <- Simh3( dim, pphi, xp, x) 
-      yp <- tmp$rt
-      nphi <- tmp$nphi
-      phi <- tmp$phi
-      y  <- x 
-      propU <- U 
-      if((Supp(yp)) && all(yp != x)) {
-        propUp <- logPost(yp, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
-        W1 <- G3U(nphi, phi, yp, xp,  x) 
-        W2 <- G3U(nphi, phi, xp, yp,  x)  
-        A <- exp((U - propU) + (Up - propUp) +  (W1 - W2))
-      } else {
-        propUp <- NULL
-        A <- 0
-      }
-    }
-    if((0.5 <= dir) && (dir < 1.0)) {
-      tmp <- Simh3(dim, pphi, x, xp) 
-      y <- tmp$rt
-      nphi <- tmp$nphi
-      phi <- tmp$phi
-      yp  <- xp 
-      propUp <- Up
-      if((Supp(y)) && all(y != xp)) {
-        propU <- logPost(y, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
-        W1 <- G3U(nphi, phi, y,  x, xp) 
-        W2 <- G3U(nphi, phi, x,  y, xp) 
-        A <- exp((U - propU) + (Up - propUp) +  (W1 - W2))
-      } else {
-        propU <- NULL
-        A <- 0
-      }
-    }
-  }
-		
-  if(F3 <= ker) {	
-    dir <- runif(1) 
-    funh <- 4
-    if((0 <= dir) && (dir < 0.5)) {
-      tmp <- Simh4(dim, pphi, xp, x) 
-      yp <- tmp$rt
-      nphi <- tmp$nphi
-      phi <- tmp$phi
-      y  <- x 
-      propU <- U
-      if((Supp(yp)) && all(yp != x)) {
-        propUp <- logPost(yp, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
-        W1 <- G4U(nphi, phi, yp, xp,  x) 
-        W2 <- G4U(nphi, phi, xp, yp,  x) 
-        A <- exp((U - propU) + (Up - propUp) +  (W1 - W2))
-      } else {
-        propUp <- NULL
-        A <- 0
-      }
-    }
-    if((0.5 <= dir) && (dir < 1.0)) {
-      tmp <- Simh4(dim, pphi, x, xp) 
-      y <- tmp$rt
-      nphi <- tmp$nphi
-      phi <- tmp$phi
-      yp  <- xp 
-      propUp <- Up
-      if((Supp(y)) && all(y != xp)) {
-        propU <- logPost(y, .X, .FAMILY, .RESPONSE, .ETA, .ID) 
-        W1 <- G4U(nphi, phi, y,  x, xp) 
-        W2 <- G4U( nphi, phi, x,  y, xp) 
-        A <- exp((U - propU) + (Up - propUp) +  (W1 - W2))
-      } else {
-        propU <- NULL
-        A <- 0
-      }
-    }
-  }
-	
-  return(list(y = y, propU = propU, yp = yp,
-    propUp = propUp, A = A, funh = funh, nphi = nphi))
-}
 
 logPost <- function(g, x, family, response, eta, id)
 {
@@ -485,45 +180,6 @@ logPost <- function(g, x, family, response, eta, id)
   lp <- x$prior(x$state$g, x$state$tau2)
 
   -1 * (ll + lp)
-}
-
-propose_twalk <- function(x, family,
-  response, eta, id, ...)
-{
-  ## Remove fitted values.
-  eta[[id]] <- eta[[id]] - x$state$fit
-
-  ## Number of parameters.
-  k <- length(x$state$g)
-
-  ## Get log posteriors if not available.
-  if(is.null(x$state$U))
-    x$state$U <- logPost(x$state$g, x, family, response, eta, id)
-  if(is.null(x$state$sg))
-    x$state$sg <- rep(0, length = k)
-  if(is.null(x$state$Up))
-    x$state$Up <- logPost(x$state$sg, x, family, response, eta, id)
-
-  ## Do one t-walk step
-  p <- OneMove(dim = k, x = x$state$g, U = x$state$U, xp = x$state$sg, Up = x$state$Up,
-    .X = x, .FAMILY = family, .RESPONSE = response, .ETA = eta, .ID = id)
-
-  ## Setup return state.
-  x$state$alpha <- log(p$A)
-  x$state$g <- p$y
-  x$state$sg <- p$yp
-  x$state$U <- p$propU
-  x$state$Up <- p$propUp
-  x$state$fit <- drop(x$X %*% x$state$g)
-
-  ## Sample variance parameter.
-  if(!x$fixed & is.null(x$sp)) {
-    a <- x$rank / 2 + x$a
-    b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
-    x$state$tau2 <- 1 / rgamma(1, a, b)
-  }
-
-  return(x$state)
 }
 
 
@@ -628,7 +284,7 @@ uni.slice2 <- function(g, x, family, response, eta, id, j,
 }
 
 uni.slice <- function(g, x, family, response, eta, id, j, ...,
-  w = 1, m = 100, lower = -Inf, upper = +Inf, logPost)
+  w = 1, m = 30, lower = -Inf, upper = +Inf, logPost)
 {
   x0 <- g[j]
   gL <- gR <- g
@@ -781,7 +437,7 @@ uni.slice3 <- function(g, j, w = 1, m = 1000, lower = -Inf, upper = +Inf, logPos
 
 
 ## Actual univariate slice sampling propose() function.
-propose_slice2 <- function(x, family,
+propose_slice <- function(x, family,
   response, eta, id, rho, ...)
 {
   args <- list(...)
@@ -815,7 +471,7 @@ propose_slice2 <- function(x, family,
 }
 
 
-propose_slice <- function(x, family,
+propose_slice2 <- function(x, family,
   response, eta, id, rho, ...)
 {
   args <- list(...)
@@ -1026,9 +682,12 @@ propose_oslice <- function(x, family,
   iter <- args$iter  
 
   if(iter %% x$xt$step == 0) {
-    ## Compute mean.
-    opt <- update_optim2(x, family, response, eta, id, ...)
-    x$state$g <- opt$g
+    if(!is.null(x$state$mode)) {
+      x$state$g <- x$state$mode$g
+    } else {
+      opt <- update_optim2(x, family, response, eta, id, ...)
+      x$state$g <- opt$g
+    }
   }
 
   ## Compute partial predictor.
@@ -1161,7 +820,7 @@ update_optim <- function(x, family, response, eta, id, ...)
       ## Gradient function.
       grad <- if(!is.null(family$score[[id]])) {
         function(gamma) {
-          eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
+          eta2[[id]] <- eta[[id]] + x$get.mu(x$X, gamma)
           peta <- family$map2par(eta2)
           score <- drop(family$score[[id]](response, peta))
           grad <- x$grad(score, gamma, tau2, full = FALSE)
@@ -1202,7 +861,7 @@ update_optim <- function(x, family, response, eta, id, ...)
   ## Gradient function.
   grad <- if(!is.null(family$score[[id]])) {
     function(gamma) {
-      eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
+      eta2[[id]] <- eta[[id]] + x$get.mu(x$X, gamma)
       peta <- family$map2par(eta2)
       score <- drop(family$score[[id]](response, peta))
       grad <- x$grad(score, gamma, x$state$tau2, full = FALSE)
@@ -1240,6 +899,16 @@ update_optim2 <- function(x, family, response, eta, id, ...)
     lp <- x$prior(gamma, x$state$tau2)
     -1 * (ll + lp)
   }
+
+  grad <- if(!is.null(family$score[[id]])) {
+    function(gamma) {
+      eta2[[id]] <- eta[[id]] + x$get.mu(x$X, gamma)
+      peta <- family$map2par(eta2)
+      score <- drop(family$score[[id]](response, peta))
+      grad <- x$grad(score, gamma, x$state$tau2, full = FALSE)
+      return(drop(-1 * grad))
+    }
+  } else NULL
 
   suppressWarnings(opt <- try(optim(x$state$g, fn = objfun, method = "BFGS",
     control = list()), silent = TRUE))
@@ -1541,12 +1210,12 @@ get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc",
 ## Sampler based on IWLS proposals.
 samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TRUE,
   verbose = TRUE, step = 20, svalues = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
-  tdir = NULL, method = "MP", outer = FALSE, inner = FALSE, n.samples = 200,
+  n.adapt = floor(0.1 * burnin), tdir = NULL, method = "MP", outer = FALSE, inner = FALSE, n.samples = 200,
   criterion = c("AICc", "BIC", "AIC", "MP", "LD"), lower = 1e-09, upper = 1e+04,
   optim.control = NULL, digits = 3,  ## list(pgtol = 1e-04, maxit = 5)
   update = c("optim", "iwls", "optim2", "optim3"),
-  propose = c("oslice", "iwls", "rw", "twalk", "slice", "wslice", "iwls0", "rw2"),
-  sample = c("slice", "iwls", "iwls0", "rw", "rw2", "nested"), ...)
+  propose = c("mvn", "iwls", "slice", "slice2", "oslice", "wslice", "iwls0"),
+  sample = c("slice", "slice2", "iwls", "iwls0"), ...)
 {
   known_methods <- c("backfitting", "MCMC", "backfitting2",
     "backfitting3", "backfitting4", "mcmc", "MP", "mp", "LD", "ld")
@@ -1602,12 +1271,11 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     propose <- switch(propose,
       "iwls" = propose_iwls,
       "iwls0" = propose_iwls0,
-      "rw" = propose_rw,
-      "rw2" = propose_rw2,
-      "twalk" = propose_twalk,
       "slice" = propose_slice,
+      "slice2" = propose_slice2,
       "oslice" = propose_oslice,
-      "wslice" = propose_wslice
+      "wslice" = propose_wslice,
+      "mvn" = propose_mvn
     )
   }
 
@@ -1617,13 +1285,11 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     sample <- switch(sample,
       "iwls" = propose_iwls,
       "iwls0" = propose_iwls0,
-      "rw" = propose_rw,
-      "rw2" = propose_rw2,
-      "twalk" = propose_twalk,
       "slice" = propose_slice,
+      "slice2" = propose_slice2,
       "oslice" = propose_oslice,
       "wslice" = propose_wslice,
-      "nested" = sample_nested
+      "mvn" = propose_mvn
     )
   }
   
@@ -1660,7 +1326,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           obj$smooth[[j]]$state$scale <- rep(1, length = obj$smooth[[j]]$np[1])
           obj$smooth[[j]]$state$iter <- 1
           obj$smooth[[j]]$state$maxit <- 50
-          obj$smooth[[j]]$adapt <- burnin
+          obj$smooth[[j]]$adapt <- n.adapt
           if("backfitting" %in% method) {
             obj$smooth[[j]]$optimize <- TRUE
             obj$smooth[[j]]$criterion <- criterion
@@ -1747,6 +1413,8 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           tau2 <- par[grep(paste("p", j, "t", sj, "v", sep = ""), names(par))]
           x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
         } else tau2 <- NULL
+        if(rx)
+          x[[nx[j]]]$smooth[[sj]]$state$mode <- list("g" = gamma, "tau2" = tau2)
         x[[nx[j]]]$smooth[[sj]]$state$fit <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, gamma)
         eta[[nx[j]]] <- eta[[nx[j]]] + x[[nx[j]]]$smooth[[sj]]$state$fit
         x[[nx[j]]]$smooth[[sj]]$state$edf <- x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]], tau2)
@@ -2167,6 +1835,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   if(!any(grepl("MCMC", method)) & TRUE) {
     save.edf <- get_edf_lp(x)
     save.loglik <- family$loglik(response, family$map2par(eta))
+    llim <- -Inf
     if(verbose) cat("generating samples\n")
     ptm <- proc.time()
     for(js in seq_along(iterthin)) {
@@ -2174,7 +1843,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
         ## And all terms.
         for(sj in seq_along(x[[nx[j]]]$smooth)) {
           ## Get proposed states.
-          p.state <- x[[nx[j]]]$smooth[[sj]]$sample(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j], rho = rho, no.mcmc = TRUE)
+          p.state <- x[[nx[j]]]$smooth[[sj]]$sample(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j], rho = rho, no.mcmc = TRUE, llim = llim)
 
           accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
 
@@ -2182,7 +1851,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- min(c(exp(p.state$alpha), 1), na.rm = TRUE)
           x[[nx[j]]]$smooth[[sj]]$s.accepted[js] <- accepted
           x[[nx[j]]]$smooth[[sj]]$s.samples[js, ] <- unlist(p.state[x[[nx[j]]]$smooth[[sj]]$p.save])
-          x[[nx[j]]]$smooth[[sj]]$state$llim <- p.state$llim
+          llim <- p.state$llim
         }
       }
       if(verbose) barfun(ptm, length(iterthin), js, 1, 20, start = FALSE)
