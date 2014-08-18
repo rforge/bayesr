@@ -1623,7 +1623,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
         X[[j]] <- stj$X
         object$smooths[[j]] <- stj
         if(!stj$fixed) {
-          sp <- if(is.null(stj$sp)) 10 else stj$sp
+          sp <- if(is.null(stj$sp)) mean(interval[[j]]) else stj$sp
           names(sp) <- if(j < 2) "tau2g" else "tau2w"
           tau2 <- c(tau2, sp)
           XX <- crossprod(X[[j]])
@@ -1813,7 +1813,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
             x$state <- object$update(x, family, response, eta, id, rho, ...)
           } else {
             x$state$g <- x$state$mode$g
-            x$state$tau2 <- x$state$mode$tau2
+            ## x$state$tau2 <- x$state$mode$tau2
           }
         }
       }

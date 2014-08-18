@@ -1185,7 +1185,7 @@ smooth.IWLS.default <- function(x, ...)
   x$lower <- c(rep(-Inf, length(x$state$g)),
     if(is.list(x$interval)) unlist(sapply(x$interval, function(x) { x[1] })) else x$interval[1])
   x$upper <- c(rep(Inf, length(x$state$g)),
-    if(is.list(x$interval)) unlist(sapply(x$interval, function(x) { x[2] })) else x$interval[2])
+    if(is.list(x$interval)) unlist(sapply(x$interval, function(x) { x[2] })) else x$interval[1])
 
   names(x$lower) <- names(x$upper) <- x$s.colnames
 
@@ -1511,6 +1511,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           ## Update predictor and smooth fit.
           eta[[id]] <- eta[[id]] - x[[sj]]$state$fit + p.state$fit
           x[[sj]]$state <- p.state
+          x[[sj]]$state$mode <- list("g" = p.state$g, "tau2" = p.state$tau2)
         }
         eps0 <- do.call("cbind", eta)
         eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
@@ -1563,6 +1564,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
               eta[[nx[j]]] <- eta[[nx[j]]] - x[[nx[j]]]$smooth[[sj]]$state$fit + p.state$fit
 
               x[[nx[j]]]$smooth[[sj]]$state <- p.state
+              x[[nx[j]]]$smooth[[sj]]$state$mode <- list("g" = p.state$g, "tau2" = p.state$tau2)
             }
           }
         }
