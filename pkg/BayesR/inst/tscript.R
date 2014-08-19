@@ -89,6 +89,8 @@ n <- 200
 dat <- data.frame("x1" = sort(runif(n, 0, 1)))
 dat$y <- with(dat, 1.2 + f(x1) + rnorm(n, sd = 0.2))
 
+b <- bayesr(y ~ s(x1), data = dat, method = "MP")
+
 b <- bayesr(y ~ s(x1), data = dat, method = "MCMC", sample = "slice", svalues = FALSE, n.iter = 1200, burnin = 200, thin = 1)
 
 g <- coef(b)
@@ -130,10 +132,11 @@ b <- bayesr(accel2 ~ s(times, k = 20), data = mcycle, method = "backfitting")
 
 ## by variable test
 n <- 500
-dat <- data.frame(x1 = runif(n, -3, 3), x2 = runif(n))
-dat$y <- with(dat, 1.2 + sin(x1) * x2 + rnorm(n, sd = 0.2))
+dat <- data.frame(x1 = runif(n, -3, 3), x2 = runif(n),
+  fac = as.factor(sample(1:2, n, replace = TRUE)))
+dat$y <- with(dat, 1.2 + sin(x1) * c(0.1, 4)[fac] + rnorm(n, sd = 0.2))
 
-b0 <- gam(y ~ x2 + s(x1, by = x2), data = dat)
+b0 <- gam(y ~ x2 + s(x1, by = fac), data = dat)
 b1 <- bayesr(y ~ x2 + s(x1, by = x2), data = dat, method = "MCMC")
 b2 <- bayesr(y ~ x2 + sx(x1, by = x2), data = dat, engine = "BayesX", family = gaussian)
 

@@ -125,6 +125,7 @@ controlBayesX <- function(n.iter = 1200, thin = 1, burnin = 200,
 setupBayesX <- function(x, control = controlBayesX(...), ...)
 {
   names(attr(x, "model.frame")) <- rmf(names(attr(x, "model.frame")))
+
   mf.names <- names(attr(x, "model.frame"))
 
   family <- attr(x, "family")
@@ -196,6 +197,14 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
       }
       k1 <- ncol(X)
       colnames(X)[(k1 - k2 + 1):k1] <- obj$sterms
+      for(sj in obj$sterms) {
+        if(is.factor(X[, sj])) {
+          f <- as.formula(paste("~ -1 +", sj))
+          fX <- as.data.frame(model.matrix(f, data = X))
+          X <- cbind(X, fX)
+          X <- X[, unique(colnames(X))]
+        }
+      }
     }
     if(!is.null(X)) {
       cnX <- colnames(X)
@@ -359,7 +368,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         if(length(i <- grep("Intercept", et, fixed = TRUE)))
           et[i] <- "const"
         if(length(x[[j]]$sx.smooth)) {
-          et <- c(et, x[[j]]$sx.smooth)
+          et <- c(et, unlist(x[[j]]$sx.smooth))
         }
         if(x[[j]]$hlevel < 2) {
           if("offset" %in% mf.names)

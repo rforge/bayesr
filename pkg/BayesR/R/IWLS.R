@@ -1114,7 +1114,7 @@ smooth.IWLS.default <- function(x, ...)
     x$state <- list()
     x$state$g <- rep(0, ncol(x$X))
     x$state$tau2 <- if(is.null(x$sp)) {
-      if(x$fixed) 1e-20 else 10
+      if(x$fixed) 1e-20 else if(!is.null(x$xt$tau2)) x$xt$tau2 else 10
     } else x$sp
     x$s.colnames <- if(is.null(x$s.colnames)) {
       c(paste("c", 1:length(x$state$g), sep = ""),
@@ -1185,7 +1185,7 @@ smooth.IWLS.default <- function(x, ...)
   x$lower <- c(rep(-Inf, length(x$state$g)),
     if(is.list(x$interval)) unlist(sapply(x$interval, function(x) { x[1] })) else x$interval[1])
   x$upper <- c(rep(Inf, length(x$state$g)),
-    if(is.list(x$interval)) unlist(sapply(x$interval, function(x) { x[2] })) else x$interval[1])
+    if(is.list(x$interval)) unlist(sapply(x$interval, function(x) { x[2] })) else x$interval[2])
 
   names(x$lower) <- names(x$upper) <- x$s.colnames
 
@@ -1211,14 +1211,14 @@ get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc",
 samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TRUE,
   verbose = TRUE, step = 20, svalues = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
   n.adapt = floor(0.1 * burnin), tdir = NULL, method = "MP", outer = FALSE, inner = FALSE, n.samples = 200,
-  criterion = c("AICc", "BIC", "AIC", "MP", "LD"), lower = 1e-09, upper = 1e+04,
+  criterion = c("AICc", "BIC", "AIC"), lower = 1e-09, upper = 1e+04,
   optim.control = NULL, digits = 3,  ## list(pgtol = 1e-04, maxit = 5)
   update = c("optim", "iwls", "optim2", "optim3"),
   propose = c("mvn", "iwls", "slice", "slice2", "oslice", "wslice", "iwls0"),
   sample = c("slice", "slice2", "iwls", "iwls0"), ...)
 {
   known_methods <- c("backfitting", "MCMC", "backfitting2",
-    "backfitting3", "backfitting4", "mcmc", "MP", "mp", "LD", "ld")
+    "backfitting3", "backfitting4", "mcmc", "MP", "mp", "LD", "ld", "mp2", "MP2")
   if(is.integer(method))
     method <- known_methods[method]
   tm <- NULL
@@ -1377,6 +1377,9 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     rval
   }
 
+  fxMP <- any(grepl("MP2", method, ignore.case = TRUE))
+  nobs <- if(is.null(dim(response))) length(response) else nrow(response)
+
   ## Function to create full parameter vector.
   make_par <- function(...) {
     par <- npar <- lower <- upper <- NULL
@@ -1385,16 +1388,16 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
       for(sj in seq_along(x[[nx[j]]]$smooth)) {
         par <- c(par,
           x[[nx[j]]]$smooth[[sj]]$state$g,
-          if(!x[[nx[j]]]$smooth[[sj]]$fixed) x[[nx[j]]]$smooth[[sj]]$state$tau2 else NULL
+          if(!x[[nx[j]]]$smooth[[sj]]$fixed & !fxMP) x[[nx[j]]]$smooth[[sj]]$state$tau2 else NULL
         )
         if(is.null(x[[nx[j]]]$smooth[[sj]]$grad)) grad <- FALSE
         ng <- length(x[[nx[j]]]$smooth[[sj]]$state$g)
-        nv <- length(x[[nx[j]]]$smooth[[sj]]$state$tau2)
+        nv <- if(fxMP) NULL else length(x[[nx[j]]]$smooth[[sj]]$state$tau2)
         lower <- c(lower, x[[nx[j]]]$smooth[[sj]]$lower)
         upper <- c(upper, x[[nx[j]]]$smooth[[sj]]$upper)
         npar <- c(npar, paste("p", j, "t", sj,
           c(paste("c", 1:ng, sep = ""),
-          if(!x[[nx[j]]]$smooth[[sj]]$fixed) paste("v", 1:nv, sep = "") else NULL),
+          if(!x[[nx[j]]]$smooth[[sj]]$fixed & !fxMP) paste("v", 1:nv, sep = "") else NULL),
           sep = ""))
       }
     }
@@ -1402,7 +1405,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     return(list("par" = par, "lower" = lower, "upper" = upper, "grad" = grad))
   }
 
-  log_posterior <- function(par, rx = FALSE, type = 2) {
+  log_posterior <- function(par, par2 = NULL, rx = FALSE, type = 2) {
     lprior <- edf2 <- 0
     for(j in 1:np) {
       eta[[nx[j]]] <- 0
@@ -1410,11 +1413,24 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
         gamma <- par[grep(paste("p", j, "t", sj, "c", sep = ""), names(par))]
         x[[nx[j]]]$smooth[[sj]]$state$g <- gamma
         if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
-          tau2 <- par[grep(paste("p", j, "t", sj, "v", sep = ""), names(par))]
-          x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
+          if(!fxMP) {
+            tau2 <- par[grep(paste("p", j, "t", sj, "v", sep = ""), names(par))]
+            x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
+          } else {
+            if(!is.null(par2)) {
+              id <- paste("id", j, sj, sep = "")
+              tau2 <- par2[grep(id, names(par2), fixed = TRUE)]
+            } else {
+              tau2 <- x[[nx[j]]]$smooth[[sj]]$state$tau2
+            }
+          }
         } else tau2 <- NULL
-        if(rx)
-          x[[nx[j]]]$smooth[[sj]]$state$mode <- list("g" = gamma, "tau2" = tau2)
+        if(rx) {
+          x[[nx[j]]]$smooth[[sj]]$state$mode <- list(
+            "g" = gamma,
+            "tau2" = x[[nx[j]]]$smooth[[sj]]$state$tau2
+          )
+        }
         x[[nx[j]]]$smooth[[sj]]$state$fit <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, gamma)
         eta[[nx[j]]] <- eta[[nx[j]]] + x[[nx[j]]]$smooth[[sj]]$state$fit
         x[[nx[j]]]$smooth[[sj]]$state$edf <- x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]], tau2)
@@ -1449,10 +1465,10 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   ## Posterior mode estimation.
   if(any(grepl("mp", method, ignore.case = TRUE))) {
     tpar <- make_par()
-    par <- tpar$par; lower <- tpar$lower; upper <- tpar$upper
+    par <- tpar$par; lower2 <- tpar$lower; upper2 <- tpar$upper
 
     if(!is.null(family$score) & tpar$grad) {
-      grad_posterior <- function(par, type = 1) {
+      grad_posterior <- function(par, par2 = NULL, type = 1) {
         grad <- NULL
         for(j in 1:np) {
           eta[[nx[j]]] <- 0
@@ -1466,10 +1482,21 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           for(sj in seq_along(x[[nx[j]]]$smooth)) {
             gamma <- par[grep(paste("p", j, "t", sj, "c", sep = ""), names(par))]
             if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
-              tau2 <- par[grep(paste("p", j, "t", sj, "v", sep = ""), names(par))]
-              x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
+              if(!fxMP) {
+                tau2 <- par[grep(paste("p", j, "t", sj, "v", sep = ""), names(par))]
+                x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
+              } else {
+                if(!is.null(par2)) {
+                  id <- paste("id", j, sj, sep = "")
+                  tau2 <- par2[grep(id, names(par2), fixed = TRUE)]
+                } else {
+                  tau2 <- x[[nx[j]]]$smooth[[sj]]$state$tau2
+                }
+              }
             } else tau2 <- NULL
-            grad <- c(grad, x[[nx[j]]]$smooth[[sj]]$grad(score, gamma, tau2))
+            tgrad <- x[[nx[j]]]$smooth[[sj]]$grad(score, gamma, tau2)
+            if(fxMP) tgrad <- tgrad[1:length(gamma)]
+            grad <- c(grad, tgrad)
           }
         }
         if(type < 2) grad <- grad * -1
@@ -1477,26 +1504,22 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
       }
     } else grad_posterior <- NULL
 
-    ## Use optim() to find variance parameters.
     opt <- optim(par, fn = log_posterior, gr = grad_posterior,
-      method = "L-BFGS-B", lower = lower, upper = upper,
+      method = "L-BFGS-B", lower = lower2, upper = upper2,
       control = optim.control, hessian = TRUE)
     par <- opt$par
     hessian <- opt$hessian
     rm(opt)
-
-    if(verbose) cat("\n")
-
-    svalues <- FALSE
     opt <- log_posterior(par, rx = TRUE)
     x <- opt$x; eta <- opt$eta
     rm(opt)
+
+    if(verbose) cat("\n")
+    svalues <- FALSE
   }
 
   ## Find starting values with backfitting.
   if(svalues | any(grepl("backfitting", method))) {
-    nobs <- if(is.null(dim(response))) length(response) else nrow(response)
-
     inner_bf <- function(x, response, eta, family, edf, id, ...) {
       eps0 <- eps + 1; iter <- 1
       while(eps0 > eps & iter < maxit) {

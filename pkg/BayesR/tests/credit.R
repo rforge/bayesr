@@ -4,7 +4,7 @@ credit <- read.table("http://www.stat.uni-muenchen.de/~kneib/regressionsbuch/dow
   header = TRUE)
 credit$creditw <- with(credit, factor(y, levels = 0:1, labels = c("no", "yes")))
 
-b0 <- bayesr(creditw ~ acc1 + acc2 + moral + intuse + s(duration) + s(amount), family = binomial, data = credit, method = "MP")
+b0 <- bayesr(creditw ~ acc1 + acc2 + moral + intuse + s(duration) + s(amount), family = binomial, data = credit, method = "MP2")
 
 b0 <- bayesr(creditw ~ acc1 + acc2 + moral + intuse +
   s(duration) + s(amount), family = binomial,

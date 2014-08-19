@@ -321,12 +321,25 @@ binomial.BayesR <- function(link = "logit", ...)
       eta$pi
     },
 	  "d" = function(y, eta, log = FALSE) {
-      y <- as.integer(y) - 1
+      if(is.factor(y)) y <- as.integer(y) - 1
 		  dbinom(y, size = 1, prob = eta$pi, log = log)
 	  },
 	  "p" = function(y, eta, ...) {
+      y <- as.integer(y) - 1
 		  pbinom(y, size = 1, prob = eta$pi, ...)
 	  },
+    "score" = list(
+      "pi" = function(y, eta, ...) {
+        if(is.factor(y)) y <- as.integer(y) - 1
+        (eta$pi - y) / ((eta$pi - 1) * eta$pi)
+      }
+    ),
+    "weights" = list(
+      "pi" = function(y, eta, ...) {
+        if(is.factor(y)) y <- as.integer(y) - 1
+        (eta$pi - 2 * eta$pi * y + y) / ((eta$pi - 1)^2 * eta$pi^2)
+      }
+    ),
     "type" = 1
   )
 
@@ -464,7 +477,7 @@ gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 
 
 crch.BayesR <- function(links = c(mu = "identity", sigma = "log", df = "log"),
-  left = 0, right = Inf, dist = "gaussian", ...)
+  left = 0, right = Inf, dist = "student", ...)
 {
   dist <- match.arg(dist, c("student", "gaussian", "logistic"))
 
@@ -487,7 +500,7 @@ crch.BayesR <- function(links = c(mu = "identity", sigma = "log", df = "log"),
       pnorm((x - location) / scale, lower.tail = lower.tail, log.p = TRUE)
     },
     "logistic" = function(x, location, scale, df, lower.tail = TRUE) {
-      plogis((x - location)/scale, lower.tail = lower.tail, log.p = TRUE)
+      plogis((x - location) / scale, lower.tail = lower.tail, log.p = TRUE)
   })
 
   names <- switch(dist,

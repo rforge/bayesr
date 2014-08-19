@@ -956,6 +956,8 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
 {
   require("coda")
 
+  if(x$by != "NA") grid <- NA
+
   nt <- length(x$term)
   tterms <- NULL
   for(l in nt:1) {
@@ -978,7 +980,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
 
   ## Handling factor by variables.
   if(x$by != "NA") {
-    if(nlevels(data[[x$by]]) > 2)
+    if(nlevels(data[[x$by]]) > 2 & FALSE)
       x$by <- "NA"
     if(sx) {
       if(all(data[[x$by]] %% 1 == 0)) {
@@ -990,7 +992,6 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
       }
     }
   }
-
 
   ## New x values for which effect should
   ## be calculated, n = 100.
@@ -3146,6 +3147,15 @@ samples.bayesr <- function(x, model = NULL, term = NULL, ...)
     }
   }
   if(k < 2) stop("no samples could be extracted, please check term and model selection!")
+  n <- max(sapply(samps, length))
+  samps <- lapply(samps, function(sm) {
+    if(nrow(sm) < n) {
+      NAs <- matrix(NA, nrow = n - nrow(sm), ncol = ncol(sm))
+      colnames(NAs) <- colnames(sm)
+      sm <- rbind(sm, NAs)
+    }
+    sm
+  })
   samps <- if(length(samps) < 1) NULL else as.mcmc(do.call("cbind", samps))
   samps <- samps[, unique(colnames(samps)), drop = FALSE]
   samps
@@ -3174,7 +3184,7 @@ coef.bayesr <- function(object, model = NULL, term = NULL, FUN = mean, ...)
   if(is.null(term))
     term <- all.terms(object, ne = TRUE, id = FALSE)
   samps <- samples(object, model = model, term = term)
-  apply(samps, 2, FUN, ...)
+  apply(samps, 2, function(x) { FUN(na.omit(x), ...) })
 }
 
 
