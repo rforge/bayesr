@@ -1629,7 +1629,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
         cat(vtxt)
         if(.Platform$OS.type != "unix") flush.console()
-        cat("\n")
+        if(method %in% "backfitting" )cat("\n")
       }
 
       if(iter == maxit)
@@ -1713,6 +1713,9 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
       }
     }
   }
+
+  if(verbose & any(method %in% c("backfitting2", "backfitting4")))
+    cat("\n")
 
   deviance <- rep(0, length(iterthin))
   rho <- new.env()
