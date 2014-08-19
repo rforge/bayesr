@@ -360,82 +360,6 @@ uni.slice <- function(g, x, family, response, eta, id, j, ...,
 }
 
 
-uni.slice3 <- function(g, j, w = 1, m = 1000, lower = -Inf, upper = +Inf, logPost, ...)
-{
-  x0 <- g[j]
-  gL <- gR <- g
-
-  gx0 <- logPost(g, ...)
-
-  ## Determine the slice level, in log terms.
-  logy <- gx0 - rexp(1)
-
-  ## Find the initial interval to sample from.
-  ## w <- w * abs(x0) ## FIXME???
-  u <- runif(1, 0, w)
-  gL[j] <- g[j] - u
-  gR[j] <- g[j] + (w - u)  ## should guarantee that g[j] is in [L, R], even with roundoff
-
-  ## Expand the interval until its ends are outside the slice, or until
-  ## the limit on steps is reached.
-  if(is.infinite(m)) {
-    repeat {
-      if(gL[j] <= lower) break
-      if(logPost(gL, ...) <= logy) break
-      gL[j] <- gL[j] - w
-    }
-    repeat {
-      if(gR[j] >= upper) break
-      if(logPost(gR, ...) <= logy) break
-      gR[j] <- gR[j] + w
-    }
-  } else {
-    if(m > 1) {
-      J <- floor(runif(1, 0, m))
-      K <- (m - 1) - J
-      while(J > 0) {
-        if(gL[j] <= lower) break
-        if(logPost(gL, ...) <= logy) break
-        gL[j] <- gL[j] - w
-        J <- J - 1
-      }
-      while(K > 0) {
-        if(gR[j] >= upper) break
-        if(logPost(gR, ...) <= logy) break
-        gR[j] <- gR[j] + w
-        K <- K - 1
-      }
-    }
-  }
-
-  ## Shrink interval to lower and upper bounds.
-  if(gL[j] < lower) {
-    gL[j] <- lower
-  }
-  if(gR[j] > upper) {
-    gR[j] <- upper
-  }
-
-  ## Sample from the interval, shrinking it on each rejection.
-  repeat {
-    g[j] <- runif(1, gL[j], gR[j])
-
-    gx1 <- logPost(g, ...)
-
-    if(gx1 >= logy) break
-
-    if(g[j] > x0) {
-      gR[j] <- g[j]
-    } else {
-      gL[j] <- g[j]
-    }
-  }
-
-  ## Return the point sampled
-  return(g[j])
-}
-
-
 ## Actual univariate slice sampling propose() function.
 propose_slice <- function(x, family,
   response, eta, id, rho, ...)
@@ -1886,46 +1810,6 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     }
     if(verbose) cat("\n")
     deviance <- rep(-2 * save.loglik, length = length(iterthin))
-  }
-
-  ## Samples created by slice sampling, only.
-  if(!any(grepl("MCMC", method)) & FALSE) {
-    save.edf <- get_edf_lp(x)
-    save.loglik <- family$loglik(response, family$map2par(eta))
-    mp <- make_par()
-    par <- mp$par; lower <- mp$lower; upper <- mp$upper
-    npar <- names(par)
-    samples <- matrix(NA, nrow = length(iterthin), ncol = length(par))
-    colnames(samples) <- names(par)
-    if(verbose) cat("generating samples\n")
-    ptm <- proc.time()
-    lpfun <- f
-    for(js in seq_along(iterthin)) {
-      par2 <- par
-      if(length(i <- grep("v", npar))) {
-        for(j in i) {
-          par2[j] <- uni.slice3(par, j = j, logPost = log_posterior, type = 1,
-            lower = lower[j], upper = upper[j], w = 1, m = 100)
-        }
-      }
-      for(j in seq_along(par)) {
-        samples[js, j] <- uni.slice3(par2, j = j, logPost = log_posterior, type = 1,
-          lower = lower[j], upper = upper[j], w = 1, m = 30)
-      }
-      if(verbose) barfun(ptm, length(iterthin), js, 1, 20, start = FALSE)
-    }
-    if(verbose) cat("\n")
-    deviance <- rep(-2 * save.loglik, length = length(iterthin))
-
-    for(j in 1:np) {
-      for(sj in seq_along(x[[nx[j]]]$smooth)) {
-        gamma <- samples[, grep(paste("p", j, "t", sj, "c", sep = ""), colnames(samples)), drop = FALSE]
-        if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
-          tau2 <- samples[, grep(paste("p", j, "t", sj, "v", sep = ""), colnames(samples))]
-        } else tau2 <- NULL
-        x[[nx[j]]]$smooth[[sj]]$s.samples <- cbind(gamma, tau2)
-      }
-    }
   }
 
   if(accept.only) {
