@@ -10,19 +10,23 @@ transformBUGS <- function(x)
 
   if(cat) {
     reference <- attr(x, "reference")
+    if(is.null(reference)) {
+      ylevels <- attr(attr(x, "model.frame"), "response.name")
+      names(x) <- ylevels
+    }
 
-    xr <- list(
-      "formula" = as.formula(paste(reference, "~ 1", sep = "")),
-      "fake.formula" = as.formula(paste(reference, "~ 1", sep = "")),
-      "cat.formula" = as.formula(paste(reference, "~ 1", sep = "")),
-      "intercept" = TRUE,
-      "X" = matrix(1, nrow = nrow(attr(x, "model.frame")), ncol = 1)
-    )
+#    xr <- list(
+#      "formula" = as.formula(paste(reference, "~ 1", sep = "")),
+#      "fake.formula" = as.formula(paste(reference, "~ 1", sep = "")),
+#      "cat.formula" = as.formula(paste(reference, "~ 1", sep = "")),
+#      "intercept" = TRUE,
+#      "X" = matrix(1, nrow = nrow(attr(x, "model.frame")), ncol = 1)
+#    )
 
-    nx <- names(x)
-    x[[length(x) + 1]] <- xr
-    names(x) <- c(nx, reference)
-    attr(x, "ylevels") <- c(attr(x, "ylevels"), reference)
+#    nx <- names(x)
+#    x[[length(x) + 1]] <- xr
+#    names(x) <- c(nx, reference)
+#    attr(x, "ylevels") <- c(attr(x, "ylevels"), reference)
 
     tJAGS <- function(obj) {
       if(inherits(obj, "bayesr.input") & !any(c("smooth", "response") %in% names(obj))) {
@@ -121,11 +125,10 @@ BUGSmodel <- function(x, family, cat = FALSE, is.stan = FALSE, ...) {
     x <- list(x)
     1
   } else length(x)
-  if(k > length(family$names) & !cat) {
+  if(k > length(family$names) & !family$cat) {
     stop(paste("more parameters specified than existing in family ",
       family$family, ".BayesR()!", sep = ""), call. = FALSE)
   }
-
   model <- "model {"
   for(j in 1:k) {
     model <- c(model, x[[j]]$start)
@@ -226,7 +229,7 @@ setupJAGS <- function(x)
     fn <- family$names
     cat <- if(!is.null(family$cat)) family$cat else FALSE
     if(cat)
-      fn <- gsub(attr(attr(x, "model.frame"), "response.name"), "", names(x))
+      fn <- names(x)
     if(length(fn) < length(x))
       fn <- paste(fn, 1:length(nx), sep = "")
     for(i in seq_along(nx)) {

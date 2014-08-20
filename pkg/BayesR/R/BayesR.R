@@ -378,6 +378,7 @@ bayesr.model.frame <- function(formula, data, family, weights = NULL,
     subset = subset, offset = offset, na.action = na.action,
     drop.unused.levels = TRUE)
   mf <- do.call("model.frame", mf)
+  rownames(mf) <- NULL
 
   ## Remove inf values
   mf <- rm_infinite(mf)
