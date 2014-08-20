@@ -853,9 +853,11 @@ resultsBayesX <- function(x, samples, ...)
         }
         sx.check <- FALSE
         if(!is.null(sx.terms)) {
-          for(char in c(".", "_"))
-            sx.terms <- gsub(char, "", sx.terms, fixed = TRUE)
           nxc <- sapply(strsplit(names(sx.smooth), ":", fixed = TRUE), function(x) { x[1] })
+          for(char in c(".", "_")) {
+            sx.terms <- gsub(char, "", sx.terms, fixed = TRUE)
+            nxc <- gsub(char, "", nxc, fixed = TRUE)
+          }
           if(any(take <- nxc %in% sx.terms)) {
             sx.check <- TRUE
             sx.smooth <- sx.smooth[take]

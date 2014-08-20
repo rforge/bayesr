@@ -1073,7 +1073,10 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
     if(x$xt$center)
       fit <- fit - mean(fit, na.rm = TRUE)
   }
-  fitted.values <- if(!is.null(fitted.values)) fitted.values + fit else fit
+  fitted.values <- if(!is.null(fitted.values)) {
+    if(length(fit) == length(fitted.values))
+      fitted.values + fit
+  } else fit
 
   ## Assign class and attributes.
   smf <- unique(smf)
