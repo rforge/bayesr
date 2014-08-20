@@ -337,7 +337,7 @@ binomial.BayesR <- function(link = "logit", ...)
     "weights" = list(
       "pi" = function(y, eta, ...) {
         if(is.factor(y)) y <- as.integer(y) - 1
-        (eta$pi - 2 * eta$pi * y + y) / ((eta$pi - 1)^2 * eta$pi^2)
+        -1 * ((eta$pi^2 + y - 2 * eta$pi * y) / ((-1 + eta$pi^2) * eta$pi^2))
       }
     ),
     "type" = 1

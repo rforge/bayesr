@@ -880,12 +880,11 @@ update_optim3 <- function(x, family, response, eta, id, ...)
     }
     eta2[[id]] <- eta[[id]] + x$get.mu(x$X, gamma)
     ll <- family$loglik(response, family$map2par(eta2))
-    edf <- if(x$criterion != "MP") (edf0 + x$edf(x, tau2)) else x$prior(gamma, tau2)
+    edf <- edf0 + x$edf(x, tau2)
     val <- switch(x$criterion,
       "AIC" = -1 * (2 * ll + 2 * edf),
       "BIC" = -1 * (2 * ll + edf * log(n)),
-      "AICc" = -1 * (2 * ll + 2 * edf + (2 * edf * (edf + 1)) / (n - edf - 1)),
-      "MP" = -1 * (ll + edf)
+      "AICc" = -1 * (2 * ll + 2 * edf + (2 * edf * (edf + 1)) / (n - edf - 1))
     )
     return(val)
   }
@@ -1553,7 +1552,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
           " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
         cat(vtxt)
         if(.Platform$OS.type != "unix") flush.console()
-        if(method %in% "backfitting" )cat("\n")
+        if(any(method %in% "backfitting"))cat("\n")
       }
 
       if(iter == maxit)
