@@ -816,11 +816,6 @@ resultsBayesX <- function(x, samples, ...)
         nx <- gsub("Intercept", "const", nx, fixed = TRUE)
         pt <- paste(nx, collapse = "+")
         pt <- paste(pt, paste(id2, family$bayesx[[id]][2], sep = ""), if(obj$hlevel > 1) 2 else 1, sep = ":")
-
-print(snames)
-print(pt)
-cat("\n\n")
-
         if(any(grepl(pt, snames, fixed = TRUE))) {
           samps <- as.matrix(samples[[j]][, grepl(pt, snames, fixed = TRUE)], ncol = k)
           nx <- gsub("const", "(Intercept)", nx, fixed = TRUE)
