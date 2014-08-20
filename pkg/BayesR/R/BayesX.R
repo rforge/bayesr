@@ -11,17 +11,25 @@ transformBayesX <- function(x, ...)
     reference <- attr(x, "reference")
     grid <- attr(x, "grid")
     rn <- attr(attr(x, "model.frame"), "response.name")
-    f <- as.formula(paste("~ -1 +", rn))
-    rm <- as.data.frame(model.matrix(f, data = attr(x, "model.frame")))
-    cn <- colnames(rm) <- rmf(colnames(rm))
-    rm <- rm[, !grepl(reference, cn), drop = FALSE]
-    mf <- cbind(attr(x, "model.frame"), rm)
-    attr(mf, "response.name") <- rn
-    x <- x[ylevels != reference]
+    if(is.null(ylevels)) {
+      ylevels <- rn
+      reference <- "NA"
+      names(x) <- paste(names(x)[1], ylevels, sep = ":")
+      for(j in seq_along(x))
+        x[[j]]$cat.formula <- x[[j]]$formula
+    } else {
+      f <- as.formula(paste("~ -1 +", rn))
+      rm <- as.data.frame(model.matrix(f, data = attr(x, "model.frame")))
+      cn <- colnames(rm) <- rmf(colnames(rm))
+      rm <- rm[, !grepl(reference, cn), drop = FALSE]
+      mf <- cbind(attr(x, "model.frame"), rm)
+      attr(mf, "response.name") <- rn
+      x <- x[ylevels != reference]
+      attr(x, "model.frame") <- mf
+      attr(x, "grid") <- grid
+    }
     attr(x, "ylevels") <- ylevels
     attr(x, "reference") <- reference
-    attr(x, "model.frame") <- mf
-    attr(x, "grid") <- grid
   }
 
   attr(attr(x, "model.frame"), "orig.names") <- names(attr(x, "model.frame"))
@@ -808,6 +816,11 @@ resultsBayesX <- function(x, samples, ...)
         nx <- gsub("Intercept", "const", nx, fixed = TRUE)
         pt <- paste(nx, collapse = "+")
         pt <- paste(pt, paste(id2, family$bayesx[[id]][2], sep = ""), if(obj$hlevel > 1) 2 else 1, sep = ":")
+
+print(snames)
+print(pt)
+cat("\n\n")
+
         if(any(grepl(pt, snames, fixed = TRUE))) {
           samps <- as.matrix(samples[[j]][, grepl(pt, snames, fixed = TRUE)], ncol = k)
           nx <- gsub("const", "(Intercept)", nx, fixed = TRUE)

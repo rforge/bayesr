@@ -1169,10 +1169,6 @@ multinomial.BayesR <- function(link = "probit", ...)
     "names" = "pi",
     "links" = parse.links(link, c(pi = "probit"), ...),
     "cat" = TRUE,
-    "valid.response" = function(x) {
-      if(!is.factor(x)) stop("response must be a factor!", call. = FALSE)
-      TRUE
-    },
     "bugs" = list(
       "dist" = "dcat",
       "eta" = BUGSeta,

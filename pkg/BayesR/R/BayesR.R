@@ -385,7 +385,7 @@ bayesr.model.frame <- function(formula, data, family, weights = NULL,
   ## assign response names
   tf <- terms(formula(fF, rhs = 0))
   rn <- as.character(attr(tf, "variables"))[2]
-  rn <- strsplit(rn, "|", fixed = TRUE)[[1]]
+  rn <- strsplit(rn, " | ", fixed = TRUE)[[1]]
   attr(mf, "response.name") <- unique(rn)
 
   ## Check response.
