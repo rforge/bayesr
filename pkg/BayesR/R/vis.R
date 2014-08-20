@@ -533,10 +533,10 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
     args$y <- zn
     args$zlab <- NULL
     if(image) {
-      mar.orig <- (par.orig <- par(c("mar", "las", "mfrow")))$mar
-      mar <- mar.orig
-      on.exit(par(par.orig))
-      if(legend) {
+      if(legend & is.null(args$pos)) {
+        mar.orig <- (par.orig <- par(c("mar", "las", "mfrow")))$mar
+        mar <- mar.orig
+        on.exit(par(par.orig))
         mar[4L] <- 0
         par(mar = mar)
         w <- (3 + mar[2L]) * par("csi") * 2.54
@@ -567,17 +567,21 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
         contour <- FALSE
       }
       if(legend) {
-        mar <- mar.orig
-        mar[2L] <- 1
-        mar[4L] <- 3.1
-        par(mar = mar, xaxs = "i", yaxs = "i")
+        if(is.null(args$pos)) {
+          mar <- mar.orig
+          mar[2L] <- 1
+          mar[4L] <- 3.1
+          par(mar = mar, xaxs = "i", yaxs = "i")
+        }
         args2 <- args
         if(is.null(args$side.legend))
           args2$side.legend <- 2L
-        if(is.null(args$distance.labels))
-          args2$distance.labels <- 3L
-        if(is.null(args$side.ticks))
-          args2$side.ticks <- 2L
+        if(is.null(args2$pos)) {
+          if(is.null(args$distance.labels))
+            args2$distance.labels <- 3L
+          if(is.null(args$side.ticks))
+            args2$side.ticks <- 2L
+        }
         args2$color <- col.surface
         args2$ncol <- ncol
         args2$x <- args$z
@@ -589,8 +593,14 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
         args2$digits <- digits
         args2$cex <- cex.legend
         args2$range <- range
-        args2$add <- FALSE
-        args2$full <- TRUE
+        if(is.null(args$pos)) {
+          args2$add <- FALSE
+          args2$full <- TRUE
+        } else {
+          args2$add <- TRUE
+          args2$full <- FALSE
+          args2$plot <- FALSE
+        }
         do.call(colorlegend, delete.args(colorlegend, args2, c("font", "cex")))
       }
     }
@@ -1539,8 +1549,9 @@ find.limits <- function(map, mar.min = 2, ...)
     stop("argument map must be a list() of matrix polygons!")
   n <- length(map)
   myrange <- function(x, c.select = 1L, ...) {
-    if(!is.null(dim(x)))
+    if(!is.null(dim(x))) {
       return(na.omit(x[, c.select], ...))
+    }
     else return(na.omit(x))
   }
   xlim <- range(unlist(lapply(map, myrange, c.select = 1L, ...)))

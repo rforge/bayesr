@@ -1384,6 +1384,16 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
     warn <- getOption("warn")
     options("warn" = -1)
     if(length(m.samples)) {
+      sn <- sapply(m.samples, function(x) {
+        if(is.null(dim(x))) length(x) else nrow(x)
+      })
+      if(!all(sn == max(sn))) {
+        sn <- max(sn)
+        m.samples <- lapply(m.samples, function(x) {
+          if(is.null(dim(x))) c(x, rep(NA, sn - length(x))) else rbind(x, matrix(NA, sn - nrow(x), ncol(x)))
+        })
+        warning("different numbers of samples of model terms, please see also argument accept.only!")
+      }
       m.samples <- as.data.frame(m.samples)
       m.designs <- as.data.frame(m.designs)
       options("warn" = warn)
@@ -2484,7 +2494,7 @@ plot.bayesr.effect.default <- function(x, ...) {
       args$c.select <- grep("50%", colnames(x), fixed = TRUE)
     do.call("plot3d", delete.args("plot3d", args,
       c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab", "ticktype",
-      "zlab", "phi", "theta", "r", "d", "scale", "range", "lrange")))
+      "zlab", "phi", "theta", "r", "d", "scale", "range", "lrange", "pos", "image.map")))
   }
 }
 
