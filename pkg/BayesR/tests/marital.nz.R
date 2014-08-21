@@ -35,4 +35,4 @@ b3 <- bayesr(f, family = multinomial, data = marital.nz,
 
 b4 <- bayesr(f, family = multinomial, data = marital.nz,
   method = c("backfitting", "MCMC"), update = "optim2",
-  propose = "oslice", n.iter = 400, burnin = 100, thin = 1)
+  propose = "mvn", n.iter = 12000, burnin = 200, thin = 10)

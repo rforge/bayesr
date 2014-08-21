@@ -1603,55 +1603,64 @@ tF <- function(x, ...)
 ## Categorical distribution.
 dcat <- function(x, p, log=FALSE)
 {
-     if(is.vector(x) & !is.matrix(p))
-          p <- matrix(p, length(x), length(p), byrow=TRUE)
-     if(is.matrix(x) & !is.matrix(p))
-          p <- matrix(p, nrow(x), length(p), byrow=TRUE)
-     if(is.vector(x) & {length(x) == 1}) {
-          temp <- rep(0, ncol(p))
-          temp[x] <- 1
-          x <- t(temp)}
-     else if(is.vector(x) & (length(x) > 1))
-          x <- as.indicator.matrix(x)
-     if(!identical(nrow(x), nrow(p)))
-          stop("The number of rows of x and p differ.")
-     if(!identical(ncol(x), ncol(p))) {
-          x.temp <- matrix(0, nrow(p), ncol(p))
-          x.temp[,as.numeric(colnames(x))] <- x
-          x <- x.temp}
-     dens <- x*p
-     if(log == TRUE) dens <- x*log(p)
-     dens <- as.vector(rowSums(dens))
-     return(dens)
+  if(is.vector(x) & !is.matrix(p))
+    p <- matrix(p, length(x), length(p), byrow = TRUE)
+  if(is.matrix(x) & !is.matrix(p))
+    p <- matrix(p, nrow(x), length(p), byrow = TRUE)
+  if(is.vector(x) & {length(x) == 1}) {
+    temp <- rep(0, ncol(p))
+    temp[x] <- 1
+    x <- t(temp)
+  } else if(is.vector(x) & (length(x) > 1)) x <- as.indicator.matrix(x)
+  if(!identical(nrow(x), nrow(p))) stop("The number of rows of x and p differ.")
+  if(!identical(ncol(x), ncol(p))) {
+    x.temp <- matrix(0, nrow(p), ncol(p))
+    x.temp[,as.numeric(colnames(x))] <- x
+    x <- x.temp
+  }
+  dens <- x*p
+  if(log == TRUE) dens <- x*log(p)
+  dens <- as.vector(rowSums(dens))
+  return(dens)
 }
-qcat <- function(pr, p, lower.tail=TRUE, log.pr=FALSE)
+
+qcat <- function(pr, p, lower.tail = TRUE, log.pr = FALSE)
 {
-     if(!is.vector(pr)) pr <- as.vector(pr)
-     if(!is.vector(p)) p <- as.vector(p)
-     if(log.pr == FALSE) {
-          if(any(pr < 0) | any(pr > 1))
-               stop("pr must be in [0,1].")}
-     else if(any(!is.finite(pr)) | any(pr > 0))
-          stop("pr, as a log, must be in (-Inf,0].")
-     if(sum(p) != 1) stop("sum(p) must be 1.")
-     if(lower.tail == FALSE) pr <- 1 - pr
-     breaks <- c(0, cumsum(p))
-     if(log.pr == TRUE) breaks <- log(breaks)
-     breaks <- matrix(breaks, length(pr), length(breaks), byrow=TRUE)
-     x <- rowSums(pr > breaks)
-     return(x)
+  if(!is.vector(pr)) pr <- as.vector(pr)
+  if(!is.vector(p)) p <- as.vector(p)
+  if(log.pr == FALSE) {
+    if(any(pr < 0) | any(pr > 1))
+      stop("pr must be in [0,1].")
+  } else if(any(!is.finite(pr)) | any(pr > 0)) stop("pr, as a log, must be in (-Inf,0].")
+  if(sum(p) != 1) stop("sum(p) must be 1.")
+  if(lower.tail == FALSE) pr <- 1 - pr
+  breaks <- c(0, cumsum(p))
+  if(log.pr == TRUE) breaks <- log(breaks)
+  breaks <- matrix(breaks, length(pr), length(breaks), byrow = TRUE)
+  x <- rowSums(pr > breaks)
+  return(x)
 }
+
 rcat <- function(n, p)
 {
-     if(is.vector(p)) {
-          x <- as.vector(which(rmultinom(n, size=1, prob=p) == 1,
-               arr.ind=TRUE)[, "row"])}
-     else {
-          n <- nrow(p)
-          x <- apply(p, 1, function(x) {
-               as.vector(which(rmultinom(1, size=1, prob=x) == 1,
-               arr.ind=TRUE)[, "row"])})
-          }
-     return(x)
+  if(is.vector(p)) {
+    x <- as.vector(which(rmultinom(n, size = 1, prob = p) == 1, arr.ind = TRUE)[, "row"])
+  } else {
+    n <- nrow(p)
+    x <- apply(p, 1, function(x) {
+      as.vector(which(rmultinom(1, size = 1, prob = x) == 1, arr.ind = TRUE)[, "row"])
+    })
+  }
+  return(x)
+}
+
+as.indicator.matrix <- function(x)
+{
+  n <- length(x)
+  x <- as.factor(x)
+  X <- matrix(0, n, length(levels(x)))
+  X[(1:n) + n*(unclass(x) - 1)] <- 1
+  dimnames(X) <- list(names(x), levels(x))
+  X
 }
 
