@@ -781,6 +781,16 @@ if(FALSE) {
   )
 
   b <- bayesr(f, family = mvn, data = d, engine = "BayesX", verbose = TRUE)
+
+  f <- list(
+    y1 ~ s(mu1.x11) + s(mu1.x12),
+    y2 ~ s(mu2.x11) + s(mu2.x12),
+    y1 ~ s(sigma1.x11),
+    y2 ~ s(sigma2.x11),
+    y1 ~ s(rho.x11)
+  )
+
+  b <- bayesr(f, family = mvn, data = d, method = "MP", sample = "slice")
   
   plot(b)
 }

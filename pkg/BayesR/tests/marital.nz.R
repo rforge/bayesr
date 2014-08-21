@@ -21,7 +21,7 @@ f <- list(
   Widowed ~ sx(age)
 )
 
-b2 <- bayesr(f, family = multinomial, data = marital.nz,
+b2 <- bayesr(f, family = multinomial.BayesR(link = "probit"), data = marital.nz,
   engine = "BayesX", verbose = FALSE, n.iter = 1200, burnin = 200)
 
 f <- list(
@@ -32,3 +32,7 @@ f <- list(
 
 b3 <- bayesr(f, family = multinomial, data = marital.nz,
   engine = "JAGS", n.iter = 1200, burnin = 200)
+
+b4 <- bayesr(f, family = multinomial, data = marital.nz,
+  method = c("backfitting", "MCMC"), update = "optim2",
+  propose = "oslice", n.iter = 400, burnin = 100, thin = 1)

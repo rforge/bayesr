@@ -914,6 +914,33 @@ transformIWLS <- function(x, ...)
   call <- x$call; x$call <- NULL
   x <- assign.weights(x)
 
+  family <- attr(x, "family")
+  cat <- if(is.null(family$cat)) FALSE else family$cat
+
+  if(cat) {
+    if(length(x) != length(family$names)) {
+      family$names <- paste(family$names[1], 1:length(x), sep = "")
+      names(x) <- family$names
+      family$links <- rep(family$links, length.out = length(x))
+      names(family$links) <- family$names
+      linkinv <- vector(mode = "list", length = length(family$names))
+      for(j in family$names)
+        linkinv[[j]] <- make.link2(family$links[j])$linkinv
+      family$map2par <- function(eta) {
+        for(j in names(eta)) {
+          eta[[j]] <- linkinv[[j]](eta[[j]])
+          eta[[j]][is.na(eta[[j]])] <- 0
+          if(any(jj <- eta[[j]] == Inf))
+            eta[[j]][jj] <- 10
+          if(any(jj <- eta[[j]] == -Inf))
+            eta[[j]][jj] <- -10
+        }
+        return(eta)
+      }
+      attr(x, "family") <- family
+    }
+  }
+
   tIWLS <- function(obj, ...) {
     if(!any(c("formula", "fake.formula", "response") %in% names(obj))) {
       nx <- names(obj)
@@ -982,6 +1009,20 @@ transformIWLS <- function(x, ...)
 
   attr(x, "call") <- call
   attr(x, "response.vec") <- attr(x, "model.frame")[, attr(attr(x, "model.frame"), "response.name")]
+
+  if(cat) {
+    response <- attr(x, "response.vec")
+    if(!is.factor(response)) {
+      if(!is.null(dim(response))) {
+        ref <- apply(response, 1, function(x) { all(x == 0) * 1 })
+        if(all(ref < 1)) stop("too many categories specified in formula!")
+        response <- cbind(response, ref)
+        response <- t(t(response) * 1:ncol(response))
+        response <- drop(apply(response, 1, sum))
+      }
+    } else response <- as.integer(response)
+    attr(x, "response.vec") <- response
+  }
 
   x
 }
@@ -2011,6 +2052,7 @@ resultsIWLS <- function(x, samples)
             colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
             if(!is.null(asamples))
               param.effects <- cbind(param.effects, "alpha" = mean(asamples))
+            if(is.null(fitted.values)) fitted.values <- 0
             fitted.values <- as.vector(fitted.values + obj$smooth[[i]]$X %*% param.effects[, 1])
             attr(param.effects, "samples") <- as.mcmc(psamples)
             colnames(attr(param.effects, "samples")) <- nx
@@ -2056,8 +2098,10 @@ resultsIWLS <- function(x, samples)
     rval <- list()
     fn <- family$names
     cat <- if(!is.null(family$cat)) family$cat else FALSE
-    if(cat)
-      fn <- gsub(attr(attr(x, "model.frame"), "response.name"), "", names(x))
+    if(cat) {
+      if(length(attr(attr(x, "model.frame"), "response.name")) < 2)
+        fn <- gsub(attr(attr(x, "model.frame"), "response.name"), "", names(x))
+    }
     if(length(fn) != length(nx))
       fn <- paste(fn, 1:length(nx), sep = "")
     for(j in seq_along(nx)) {
@@ -2074,7 +2118,10 @@ resultsIWLS <- function(x, samples)
     names(rval) <- fn
     if(cat) {
       reference <- attr(x, "reference")
-      rval <- rval[!grepl(reference, fn)]
+      if(!is.null(reference)) {
+        if(any(reference %in% names(rval)))
+          rval <- rval[!grepl(reference, fn)]
+      }
     }
     attr(rval, "family") <- family
     class(rval) <- "bayesr"
