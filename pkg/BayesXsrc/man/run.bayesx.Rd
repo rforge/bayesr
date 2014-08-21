@@ -32,6 +32,7 @@ run.bayesx(prg = NULL, verbose = TRUE, ...)
 }
 
 \examples{
+\dontrun{
 ## create a temporary directory for this example
 dir <- tempdir()
 prg <- file.path(dir, "demo.prg")
@@ -61,6 +62,7 @@ b.getsample", prg)
 
 ## run the .prg file from R
 run.bayesx(prg)
+}
 }
 
 \keyword{regression}
