@@ -18,6 +18,10 @@ transformBUGS <- function(x)
         function(x) {
           all(x == 0) * 1
       })
+      attr(x, "ycat") <- as.factor(apply(attr(x, "model.frame")[, c(ylevels, "ref")], 1,
+        function(x) {
+          which(x == 1)
+      }))
       if(!any(attr(x, "model.frame")[["ref"]] > 0)) stop("too many categories specified in formula!")
       attr(x, "ylevels") <- ylevels
     }
@@ -265,6 +269,10 @@ setupJAGS <- function(x)
   data$n <- nrow(attr(x, "model.frame"))
   psave <- c(psave, attr(model, "psave"))
 
+  if(cat) {
+    if(!is.null(attr(x, "ycat")))
+      data$response <- attr(x, "ycat")
+  }
   if(is.factor(data$response)) {
     nl <- nlevels(data$response)
     data$response <- as.integer(data$response)

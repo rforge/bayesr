@@ -15,13 +15,19 @@ b1 <- bayesr(mstatus ~ sx(age), family = multinomial,
   engine = "BayesX", verbose = TRUE, n.iter = 1200, burnin = 200)
 
 f <- list(
-  MarriedPartnered ~ sx(age),
+  DivorcedSeparated ~ sx(age),
   Single ~ sx(age),
   Widowed ~ sx(age)
 )
 
 b2 <- bayesr(f, family = multinomial, data = marital.nz,
   engine = "BayesX", verbose = FALSE, n.iter = 1200, burnin = 200)
+
+f <- list(
+  DivorcedSeparated ~ age,
+  Single ~ age,
+  Widowed ~ age
+)
 
 b3 <- bayesr(f, family = multinomial, data = marital.nz,
   engine = "JAGS", n.iter = 1200, burnin = 200)
