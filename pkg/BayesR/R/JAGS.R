@@ -13,20 +13,28 @@ transformBUGS <- function(x)
     if(is.null(reference)) {
       ylevels <- attr(attr(x, "model.frame"), "response.name")
       names(x) <- ylevels
+      reference <- "ref"
+      attr(x, "model.frame")[["ref"]] <- apply(attr(x, "model.frame")[, ylevels], 1,
+        function(x) {
+          all(x == 0) * 1
+      })
+      if(!any(attr(x, "model.frame")[["ref"]] > 0)) stop("too many categories specified in formula!")
+      attr(x, "ylevels") <- ylevels
     }
 
-#    xr <- list(
-#      "formula" = as.formula(paste(reference, "~ 1", sep = "")),
-#      "fake.formula" = as.formula(paste(reference, "~ 1", sep = "")),
-#      "cat.formula" = as.formula(paste(reference, "~ 1", sep = "")),
-#      "intercept" = TRUE,
-#      "X" = matrix(1, nrow = nrow(attr(x, "model.frame")), ncol = 1)
-#    )
+    xr <- list(
+      "formula" = as.formula(paste(reference, "~ 1", sep = "")),
+      "fake.formula" = as.formula(paste(reference, "~ 1", sep = "")),
+      "cat.formula" = as.formula(paste(reference, "~ 1", sep = "")),
+      "intercept" = TRUE,
+      "X" = matrix(1, nrow = nrow(attr(x, "model.frame")), ncol = 1)
+    )
 
-#    nx <- names(x)
-#    x[[length(x) + 1]] <- xr
-#    names(x) <- c(nx, reference)
-#    attr(x, "ylevels") <- c(attr(x, "ylevels"), reference)
+    nx <- names(x)
+    x[[length(x) + 1]] <- xr
+    names(x) <- c(nx, reference)
+    attr(x, "ylevels") <- c(attr(x, "ylevels"), reference)
+    attr(x, "reference") <- reference
 
     tJAGS <- function(obj) {
       if(inherits(obj, "bayesr.input") & !any(c("smooth", "response") %in% names(obj))) {
@@ -219,7 +227,6 @@ setupJAGS <- function(x)
   ylevels <- attr(x, "ylevels")
   if(is.function(family))
     family <- family()
-  ncat <- NULL
   if(!all(c("formula", "fake.formula", "response") %in% names(x))) {
     nx <- names(x)
     nx <- nx[nx != "call"]

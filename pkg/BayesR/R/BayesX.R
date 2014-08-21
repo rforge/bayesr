@@ -739,12 +739,13 @@ resultsBayesX <- function(x, samples, ...)
           if(any(grepl("):", x, fixed = TRUE))) {
             x <- strsplit(x, "):", fixed = TRUE)
             x <- sapply(x, function(x2) {
+              rn <- if(reference == "NA") "" else response.name[1]
               if(length(x2) > 1) {
-                x2[2] <- gsub(response.name[1], "", gsub("multinom:", "", x2[2]))
+                x2[2] <- gsub(rn, "", gsub("multinom:", "", x2[2]))
                 x2[2] <- gsub("multinomialprobit:", "", x2[2])
                 x2 <- paste(x2, collapse = "):")
               } else {
-                x2 <- gsub(response.name[1], "", gsub("multinom:", "", x2))
+                x2 <- gsub(rn, "", gsub("multinom:", "", x2))
                 x2 <- gsub("multinomialprobit:", "", x2)
               }
               x2
