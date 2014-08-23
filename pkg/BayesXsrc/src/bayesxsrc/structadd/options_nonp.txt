@@ -1,0 +1,7 @@
+nr     
+1       degree
+2       numberknots
+3       difforder
+4       lambda
+5       a
+6       b
