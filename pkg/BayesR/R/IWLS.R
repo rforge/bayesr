@@ -1430,7 +1430,6 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   if(any(grepl("mp", method, ignore.case = TRUE))) {
     tpar <- make_par()
     par <- tpar$par; lower2 <- tpar$lower; upper2 <- tpar$upper
-
     if(!is.null(family$score) & tpar$grad) {
       grad_posterior <- function(par, par2 = NULL, type = 1) {
         grad <- NULL

@@ -5,8 +5,8 @@ india <- cbind(india, centroids(india.bnd, id = india$mcdist))
 india$stunting2 <- scale(india$stunting)
 
 f <- list(
-  stunting2 ~ s(cbmi) + s(cage) + s(mbmi) + s(mage) + s(x, y),
-  sigma2 ~ s(cbmi) + s(cage) + s(mbmi) + s(mage) + s(x, y)
+  stunting2 ~ s(cbmi) + s(cage) + s(mbmi) + s(mage) + s(x, y, k = 100),
+  sigma2 ~ s(cbmi) + s(cage) + s(mbmi) + s(mage) + s(x, y, k = 100)
 )
 
 b <- bayesr(f, data = india, method = c("backfitting", "MCMC"),
@@ -16,5 +16,6 @@ b <- bayesr(f, data = india, method = c("backfitting", "MCMC"),
 india$mu.sp <- predict(b, model = "mu", term = "s(x,y)", intercept = FALSE)
 india$sigma2.sp <- predict(b, model = "sigma2", term = "s(x,y)", intercept = FALSE)
 
-plotmap(india.bnd, x = india$mu.sp, id = india$mcdist)
-plotmap(india.bnd, x = india$sigma2.sp, id = india$mcdist)
+par(mfrow = c(1, 2))
+plotmap(india.bnd, x = india$mu.sp, id = india$mcdist, pos = "bottomright")
+plotmap(india.bnd, x = india$sigma2.sp, id = india$mcdist, pos = "bottomright")

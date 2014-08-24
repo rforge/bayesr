@@ -3303,8 +3303,8 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
   n <- if(is.null(dim(y))) length(y) else nrow(y)
   maxy <- max(y, na.rm = TRUE)
 
-  if(is.null(family$score.norm)) {
-    score.norm <- function(eta) {
+  if(is.null(family$nscore)) {
+    nscore <- function(eta) {
       integrand <- function(x) {
         int <- family$d(x, family$map2par(eta))^2
         int[int == Inf | int == -Inf] <- 0
@@ -3321,7 +3321,7 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
       rval
     }
   } else {
-    score.norm <- function(eta) {
+    nscore <- function(eta) {
 	    integrand <- function(x) {
         family$d(x, family$map2par(eta))^2
 	    }
@@ -3329,7 +3329,7 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
 	    rval
     }
 
-	  score.norm2 <- function(y, eta) {
+	  nscore2 <- function(y, eta) {
 	    integrand <- function(x) {
          -sum(((x == y) * 1 - family$d(x, family$map2par(eta)))^2)
 	    }
@@ -3341,19 +3341,19 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
   scorefun <- function(eta) {
     norm <- rep(0, n)
     for(i in 1:n) {
-      ni <- try(score.norm(eta[i, , drop = FALSE]), silent = TRUE)
+      ni <- try(nscore(eta[i, , drop = FALSE]), silent = TRUE)
       if(inherits(ni, "try-error")) ni <- NA
       norm[i] <- ni
     }
     pp <- family$d(y, family$map2par(eta))
     pp[pp == Inf | pp == -Inf] <- 0
     loglik <- log(pp)
-    if(is.null(family$score.norm)) {
+    if(is.null(family$nscore)) {
       quadratic <- 2 * pp - norm
     } else {
       quadratic <- rep(0, n)
       for(i in 1:n) {
-        ni <- try(score.norm2(y[i], eta[i, , drop = FALSE]), silent = TRUE)
+        ni <- try(nscore2(y[i], eta[i, , drop = FALSE]), silent = TRUE)
         if(inherits(ni, "try-error")) ni <- NA
         quadratic[i] <- ni
       }

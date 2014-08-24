@@ -1186,7 +1186,8 @@ multinomial.BayesR <- function(link = "logit", ...)
       eta <- eta / rowSums(eta)
       d <- dcat(y, eta, log = log)
       return(d)
-    }
+    },
+    "probit" = function(...) stop("multinomial probit not supported yet!")
   )
 
   class(rval) <- "family.BayesR"
@@ -1218,7 +1219,7 @@ poisson.BayesR <- function(links = c(lambda = "log"), ...)
     "p" = function(y, eta, ...) {
       ppois(y, lambda = eta$lambda, ...)
     },
-    "score.norm" = TRUE,
+    "nscore" = TRUE,
     "type" = 3
   )
 
@@ -1252,7 +1253,7 @@ zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
     "p" = function(y, eta, ...) {
       ifelse(y < 0, 0, eta$pi + (1 - eta$pi) * ppois(y, lambda = eta$lambda))
     },
-    "score.norm" = TRUE,
+    "nscore" = TRUE,
     "type" = 3
   )
   if(rval$bayesx[[2]][[1]] == "zip_pi_cloglog")
@@ -1291,7 +1292,7 @@ hurdleP.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
 		  cdf <- ifelse((y == 0), eta$pi, cdf3)
       cdf
     },
-    "score.norm" = TRUE,
+    "nscore" = TRUE,
     "type" = 3
   )
  
@@ -1318,7 +1319,7 @@ negbin.BayesR <- function(links = c(mu = "log", delta = "log"), ...)
     "p" = function(y, eta, ...) {
       pnbinom(y, mu = eta$mu, size = eta$delta)
     },
-    "score.norm" = TRUE,
+    "nscore" = TRUE,
     "type" = 3
   )
 
@@ -1350,7 +1351,7 @@ zinb.BayesR <- function(links = c(mu = "log", pi = "logit", delta = "log"), ...)
     "p" = function(y, eta, ...) {
       ifelse(y<0, 0, eta$pi + (1 - eta$pi) * pnbinom(y, size = eta$delta, mu = eta$mu))
     },
-    "score.norm" = TRUE,
+    "nscore" = TRUE,
     "type" = 3
   )
 
@@ -1388,7 +1389,7 @@ hurdleNB.BayesR <- function(links = c(mu = "log", pi = "logit", delta = "log"), 
 		  cdf3 <- eta$pi + ((1 - eta$pi) * (cdf1 - cdf2)/(1 - cdf2))
 		  cdf <- ifelse((y == 0), eta$pi, cdf3)
     },
-    "score.norm" = TRUE,
+    "nscore" = TRUE,
     "type" = 3
   )
 
