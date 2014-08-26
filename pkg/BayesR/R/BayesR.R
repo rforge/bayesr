@@ -226,7 +226,7 @@ parse.input.bayesr <- function(formula, data = NULL, family = gaussian2.BayesR,
           } else formula[[j]]$cat.formula <- update(formula[[j]]$formula, uf)
         }
       }
-    } else mf[[response.name[1]]] <- as.numeric(mf[[response.name[1]]])
+    } else mf[[response.name[1]]] <- as.numeric(mf[[response.name[1]]]) ## FIXME: matrices?
   } else {
     for(y in response.name)
       mf[[y]] <- as.numeric(mf[[y]])
