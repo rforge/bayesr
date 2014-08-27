@@ -957,9 +957,10 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
 {
   require("coda")
 
-  if(x$by != "NA") grid <- NA
-
   nt <- length(x$term)
+
+  if(x$by != "NA" | nt > 1) grid <- NA
+
   tterms <- NULL
   for(l in nt:1) {
     tterm <- x$term[l]
@@ -1016,8 +1017,9 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
     } else xsmall <- FALSE
   } else {
     data0 <- data[, c(tterms, if(x$by != "NA") x$by else NULL), drop = FALSE]
-    data <- unique(data0)
-    xsmall <- if(nrow(data) != nrow(data0)) TRUE else FALSE
+    if(nt < 2)
+      data <- unique(data0)
+    xsmall <- if((nrow(data) != nrow(data0)) & (nt < 2)) TRUE else FALSE
   }
   if(is.null(x$special)) {
     X <- get.X(data)
@@ -1041,6 +1043,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
     }
   }
   smf <- t(apply(fsamples, 1, FUN))
+
   cnames <- colnames(smf)
   smf <- as.data.frame(smf)
   for(l in 1:nt) {
@@ -1057,13 +1060,12 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
       fit <- approx(data[[tterms]], fit, xout = data0[[tterms]])$y
   }
   by.drop <- NULL
-  if(x$by != "NA") {
+  if(x$by != "NA" & !is.null(x$by.level)) {
     by.drop <- (if(xsmall) data0[[x$by]] else data[[x$by]]) == x$by.level
     fit[!by.drop] <- 0
     if(!xsmall)
       smf <- smf[by.drop, ]
   }
-
   if(is.null(x$xt$center)) {
     mean_fit <- mean(fit, na.rm = TRUE)
     fit <- fit - mean_fit
@@ -1089,7 +1091,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   attr(smf, "specs")[c("X", "Xf", "rand", "trans.D", "trans.U")] <- NULL
   class(attr(smf, "specs")) <- class(x)
   attr(smf, "fit") <- fit
-  attr(smf, "x") <- if(xsmall) data0[, tterms] else data[, tterms]
+  attr(smf, "x") <- if(xsmall & nt < 2) data0[, tterms] else data[, tterms]
   attr(smf, "by.drop") <- by.drop
   attr(smf, "rug") <- rugp
   colnames(psamples) <- paste(x$label, 1:ncol(psamples), sep = ".")
@@ -1162,7 +1164,9 @@ partial.residuals <- function(effects, response, fitted.values, family)
         tx <- as.integer(as.character(attr(effects[[i]], "x")))
         options("warn" = warn)
         cbind(if(!any(is.na(tx))) tx else as.integer(attr(effects[[i]], "x")), e)
-      } else cbind(attr(effects[[i]], "x"), e)
+      } else {
+        cbind(attr(effects[[i]], "x"), e)
+      }
       if(!is.null(attr(effects[[i]], "by.drop")))
         e <- e[attr(effects[[i]], "by.drop"), ]
       e <- as.data.frame(e)

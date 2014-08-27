@@ -4,7 +4,9 @@
 ##      free for research purposes)
 ##   - metainformation about the corresponding meteoroligcal stations 
 ##     (provided in a .csv in our data.zip)
-homstart_data <- function(dir = NULL, load = TRUE, tdir = "~/tmp") {
+homstart_data <- function(dir = NULL, load = TRUE, tdir = NULL,
+  stations = NULL, rain = TRUE, elevation = TRUE, tempmin = FALSE, tempmax = FALSE)
+{
   if(is.null(tdir)) {
     tdir <- tempfile()
     dir.create(tdir)
@@ -17,13 +19,13 @@ homstart_data <- function(dir = NULL, load = TRUE, tdir = "~/tmp") {
   stopifnot(file.exists(dir))
 
   ## first specify which series to read in
-  all_stations <- TRUE
-  include_rain <- TRUE
-  include_tempmin <- FALSE
-  include_tempmax <- FALSE
-  include_elevation <- TRUE
+  all_stations <- stations
+  include_rain <- rain
+  include_tempmin <- tempmin
+  include_tempmax <- tempmax
+  include_elevation <- elevation
 
-  savelist <- c("homstart", "rain", "tempmin", "tempmax")[c(TRUE, include_rain, include_tempmin, include_tempmax)]
+  savelist <- c("homstart", "rain", "tempmin", "tempmax", "levels")[c(TRUE, include_rain, include_tempmin, include_tempmax, TRUE)]
 
   if(!file.exists(file.path(dir, "homstart0.rda"))) {
     ## metainformation for meteorological stations
@@ -101,6 +103,7 @@ s964000;Bad Aussee;13,7827777777778;47,6111111111111;660;2;1;2
 s981000;Irdning - Gumpenstein;14,1;47,5;710;0;1;1'
     cat(stations, file = file.path(tdir, "stations.csv"))
     homstart <- read.csv2(file.path(tdir, "stations.csv"))
+    levels <- rownames(homstart)
     unlink(file.path(tdir, "stations.csv"))
    
     ## precipitation data set.
@@ -120,7 +123,15 @@ s981000;Irdning - Gumpenstein;14,1;47,5;710;0;1;1'
 
     ## read in time series and save in .rda format
     ## which set of stations should be used
-    stations <- if(all_stations) homstart$id else homstart$id[homstart$elevation < 2000]
+    stations <- if(is.null(all_stations)) {
+      homstart$id
+    } else {
+      if(all(all_stations %in% homstart$id))
+        all_stations <- which(homstart$id %in% all_stations)
+      if(all(all_stations %in% homstart$name))
+        all_stations <- which(homstart$name %in% all_stations)
+      homstart$id[all_stations]
+    }
   
     ## convenience function to read in the homstart series
     readhomstart <- function(f, which = 2, prefix = "s") {
@@ -131,36 +142,41 @@ s981000;Irdning - Gumpenstein;14,1;47,5;710;0;1;1'
     }
 
     ## read data series
-    cat("extracting data.\n")
+    cat("Extracting data.\n")
     wd <- getwd()
     setwd(tdir)
     on.exit(setwd(wd), add = TRUE)
 
+    stations1 <- stations2 <- stations3 <- NULL
     if(include_rain) {
       rain <- do.call("merge", lapply(Sys.glob("DATEN/Niederschlag/*.txt"), readhomstart))
-      rain <- rain[, names(rain) %in% stations]
-      stations <- names(rain)
+      rain <- rain[, names(rain) %in% stations, drop = FALSE]
+      stations1 <- names(rain)
     }
     if(include_tempmin) {
       tempmin <- do.call("merge", lapply(Sys.glob("DATEN/Tmin/*.txt"), readhomstart))
-      tempmin <- tempmin[, names(tempmin) %in% stations]
-      stations <- names(tempmin)
+      tempmin <- tempmin[, names(tempmin) %in% stations, drop = FALSE]
+      stations2 <- names(tempmin)
     }
     if(include_tempmax) {
       tempmax <- do.call("merge", lapply(Sys.glob("DATEN/Tmax/*.txt"), readhomstart))
-      tempmax <- tempmax[, names(tempmax) %in% stations]
-      stations <- names(tempmax)
+      tempmax <- tempmax[, names(tempmax) %in% stations, drop = FALSE]
+      stations2 <- names(tempmax)
     }
+
+    stations <- if(!is.null(stations2)) intersect(stations1, stations2) else stations1
+  
+    unlink(file.path(tdir, "DATEN"))
 
     ## save all necessary data
     homstart <- homstart[homstart$id %in% stations, ]
-    save(list = savelist, file = file.path(dir, "homstart0.rda"), compress = "bzip2")
+    save(list = savelist, file = file.path(tdir, "homstart0.rda"), compress = "bzip2")
     remove(list = savelist)
   }
 
   if(!file.exists(file.path(dir, "homstart.rda"))) {
     require("zoo")
-    load(file.path(dir, "homstart0.rda"))
+    load(file.path(tdir, "homstart0.rda"))
 
     ## set up matrix with harmonic seasonal regressors
     ## based on x taking values 1:freq
@@ -195,6 +211,7 @@ s981000;Irdning - Gumpenstein;14,1;47,5;710;0;1;1'
       stopifnot(require("zoo"))
   
       ## only use first column of data
+      x0 <- x
       x <- x[, 1L]
 
       ## time scale
@@ -219,7 +236,7 @@ s981000;Irdning - Gumpenstein;14,1;47,5;710;0;1;1'
       }
 
       ## remove Feb 29
-      x <- x[!is_Feb29(tx)]
+      x <- x[i <- !is_Feb29(tx)]
       tx <- time(x)
   
       ## set up return value
@@ -234,51 +251,66 @@ s981000;Irdning - Gumpenstein;14,1;47,5;710;0;1;1'
         day = yday365(tx),                                                               ## day of year (omitting Feb 29)
         weekend = factor(is_weekend(tx), labels = c("no", "yes"))                        ## weekend?
       )
-
-      rval$raw <- x
+      if(include_tempmin)
+        rval$tempmin <- as.numeric(x0[i, "tempmin"])
+      if(include_tempmax)
+        rval$tempmax <- as.numeric(x0[i, "tempmax"])
       rval$harmon <- harmonic(rval$day)                                                  ## harmonic regressor matrix
       return(rval)
     }
 
     k <- 1; K <- length(names(rain))
-    cat("create station number", k, "out of", K, "stations.")
+    cat("Create station number", 1, "out of", K, "stations.")
     for(i in names(rain)) {
-      dat <- na.omit(tspp(rain[, i]))
+      if(!(i %in% homstart$id)) next
+      if(k > 1)
+        cat("\rCreate station number", k, "out of", K, "stations.")
+      tm <- rain[, i]
+      if(include_tempmin)
+        tm <- cbind(tm, "tempmin" = if(i %in% names(tempmin)) tempmin[, i] else rep(NA, length(rain[, i])))
+      if(include_tempmax)
+        tm <- cbind(tm, "tempmax" = if(i %in% names(tempmax)) tempmax[, i] else rep(NA, length(rain[, i])))
+      dat <- tspp(tm)
       dat <- data.frame(
+        raw = dat$raw,
+        cens = dat$cens,
+        bin = as.integer(dat$bin) - 1L,
         cat = as.integer(dat$cat) - 1L,
         trend = dat$trend,
+        month = dat$month,
+        year = dat$year,
+        day = dat$day,
         long = homstart$long[homstart$id == i],
         lat = homstart$lat[homstart$id == i],
-        elevation = homstart$elevation[homstart$id == i],
-        model.matrix(~ 0 + (weekend + cos1 + cos2 + sin1 + sin2) %in% id,
-          data = data.frame(
-            id = factor(rep(rownames(homstart)[homstart$id == i],
-              length = nrow(dat)),
-              levels = rownames(homstart)),
-            trend = dat$trend,
-            as.data.frame(dat$harmon),
-            weekend = as.integer(dat$weekend) - 1L
-          )
-        )
+        id = as.integer(rep(rownames(homstart)[homstart$id == i], length = nrow(dat))),
+        as.data.frame(dat$harmon),
+        weekend = as.integer(dat$weekend) - 1L
       )
+      if(include_elevation)
+        dat$elevation <- homstart$elevation[homstart$id == i]
       for(ch in c(".", ":", "_", "-"))
         names(dat) <- gsub(ch, "", names(dat), fixed = TRUE)
-      append <- if(c(1:length(names(rain)))[names(rain) %in% i] < 2) FALSE else TRUE
+      append <- if(k < 2) FALSE else TRUE
       write.table(dat, file = file.path(tdir, "homstart_rain.raw"),
         quote = FALSE, row.names = FALSE, col.names = !append, append = append)
-      cat("\rcreate station number", k, "out of", K, "stations.")
+      k <- k + 1
     }
 
     cat("\n")
-    cat("creating final object homstart.rda\n")
+    cat("Creating final object homstart.rda\n")
     
     homstart <- read.table(file.path(tdir, "homstart_rain.raw"), header = TRUE)
+    homstart$id = factor(as.integer(homstart$id), levels = as.integer(levels), labels = levels)
+    homstart$weekend = factor(as.integer(homstart$weekend), levels = c(0, 1), labels = c("no", "yes"))
+    homstart$bin = factor(as.integer(homstart$bin), levels = c(0, 1), labels = c("no", "yes"))
+    homstart$cat = factor(as.integer(homstart$cat), levels = c(0, 1, 2, 3), labels = c("none", "low", "medium", "high"))
     save(homstart, file = file.path(dir, "homstart.rda"), compress = "bzip2")
-
     remove(list = savelist)
-    if(!load) remove(homstart)
-  } else {
-    if(load) load(file.path(dir, "homstart.rda"))
+  }
+  if(load) {
+    if("homstart" %in% ls(envir = .GlobalEnv))
+      remove("homstart", envir = .GlobalEnv)
+    load(file.path(dir, "homstart.rda"), envir = .GlobalEnv)
   }
 }
 
