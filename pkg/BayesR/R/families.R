@@ -548,17 +548,15 @@ truncgaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ..
 	    mu + sigma * dnorm(arg) / (1 - pnorm(arg))
     },
     "d" = function(y, eta, log = FALSE) {
-      mu <-  eta$mu
 	    sigma <- sqrt(eta$sigma2)
-	    arg <- - mu / sigma
+	    arg <- - eta$mu / sigma
 	    d <- dnorm(y / sigma + arg) / (1 - pnorm(arg))
       if(log) d <- log(d)
       d
     },
     "p" = function(y, eta, ...) {
-      mu <-  eta$mu
 	    sigma <- sqrt(eta$sigma2)
-	    arg <- - mu / sigma
+	    arg <- - eta$mu / sigma
 	    2 * (pnorm(y / sigma + arg) - pnorm(arg))
     }
   )
@@ -568,7 +566,7 @@ truncgaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ..
 }
 
 truncgaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
-{ 
+{
   rval <- list(
     "family" = "truncgaussian",
     "names" = c("mu", "sigma"),
@@ -596,6 +594,94 @@ truncgaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
 	    sigma <- eta$sigma
 	    arg <- - mu / sigma
 	    2 * (pnorm(y / sigma + arg) - pnorm(arg))
+    }
+  )
+  
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
+truncreg.BayesR <- function(links = c(mu = "identity", sigma = "log"),
+  direction = "left", point = 0, ...)
+{
+  rval <- list(
+    "family" = "truncreg",
+    "names" = c("mu", "sigma"),
+    "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
+    "loglik" = function(y, eta, log = FALSE) {
+      resid <- y - eta$mu
+      if(direction == "left") {
+        trunc <- eta$mu - point
+        sgn <- 1
+      } else {
+        trunc <- point - eta$mu
+        sgn <- -1
+      }
+      ll <- sum(log(dnorm(resid / eta$sigma)) - log(eta$sigma) - log(pnorm(trunc / eta$sigma)))
+      ll
+    }
+#    "score" = list(
+#      "mu" = function(y, eta) {
+#      },
+#      "sigma" = function(y, eta) {
+#      }
+#    )
+  )
+  
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
+## Truncated distributions.
+dtrunc <- function(x, spec, a = 1, b = Inf, ...) {
+  tt <- rep(0, length(x))
+  g <- get(paste("d", spec, sep = ""), mode = "function")
+  G <- get(paste("p", spec, sep = ""), mode = "function")
+  tt[x>=a & x<=b] <- g(x[x>=a&x<=b], ...)/(G(b, ...) - G(a, ...))
+  return(tt)
+}
+
+ptrunc <- function(x, spec, a = -Inf, b = Inf, ...)
+{
+  tt <- x
+  aa <- rep(a, length(x))
+  bb <- rep(b, length(x))
+  G <- get(paste("p", spec, sep = ""), mode = "function")
+  tt <- G(apply(cbind(apply(cbind(x, bb), 1, min), aa), 1, max), ...)
+  tt <- tt - G(aa, ...)
+  tt <- tt/(G(bb, ...) - G(aa, ...))
+  return(tt)
+}
+
+qtrunc <- function(p, spec, a = -Inf, b = Inf, ...)
+{
+  tt <- p
+  G <- get(paste("p", spec, sep = ""), mode = "function")
+  Gin <- get(paste("q", spec, sep = ""), mode = "function")
+  tt <- Gin(G(a, ...) + p*(G(b, ...) - G(a, ...)), ...)
+  return(tt)
+}
+
+truncnorm.BayesR <- function(links = c(mu = "identity", sigma = "log"),
+  a = -Inf, b = Inf, ...)
+{
+  rval <- list(
+    "family" = "truncreg",
+    "names" = c("mu", "sigma"),
+    "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
+    "d" = function(y, eta, log = FALSE) {
+      d <- dtrunc(y, "norm", a = a, b = b, mean = eta$mu, sd = eta$sigma, log = log)
+      return(d)
+    },
+    "p" = function(y, eta, ...) {
+      p <- ptrunc(y, "norm", a = a, b = b, mean = eta$mu, sd = eta$sigma, ...)
+      return(p)
+    },
+    "q" = function(y, eta, ...) {
+      q <- qtrunc(y, "norm", a = a, b = b, mean = eta$mu, sd = eta$sigma, ...)
+      return(q)
     }
   )
   
@@ -1096,6 +1182,7 @@ bivprobit.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity", rho =
   rval
 }
 
+
 bivlogit.BayesR <- function(links = c(p1 = "logit", p2 = "logit", psi = "log"), ...)
 {
   rval <- list(
@@ -1117,6 +1204,7 @@ bivlogit.BayesR <- function(links = c(p1 = "logit", p2 = "logit", psi = "log"), 
   class(rval) <- "family.BayesR"
   rval
 }
+
 
 mvt.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
   sigma1 = "log", sigma2 = "log", rho = "fisherz", df = "log"), ...)
@@ -1229,7 +1317,7 @@ poisson.BayesR <- function(links = c(lambda = "log"), ...)
 
 
 zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
-{ 
+{
   rval <- list(
     "family" = "zip",
     "names" = c("lambda", "pi"),
@@ -1263,6 +1351,7 @@ zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
   rval
 }
 
+
 hurdleP.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
 { 
   rval <- list(
@@ -1272,7 +1361,7 @@ hurdleP.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
     "bayesx" = list(
       "lambda" = c("hurdle_lambda", "mean"),
       "pi" = c("hurdle_pi", "pi"),
-	  "weights" = list(
+	    "weights" = list(
         "lambda" = function(x) { 1 * (x != 0)}
       )
     ),
@@ -1368,11 +1457,11 @@ hurdleNB.BayesR <- function(links = c(mu = "log", pi = "logit", delta = "log"), 
     "bayesx" = list(
       "mu" = c("hurdle_mu", "mean"),
       "delta" = c("hurdle_delta", "delta"),
-	  "pi" = c("hurdle_pi", "pi"),
-	  "weights" = list(
-        "mu" = function(x) { 1 * (x != 0)},
-		"delta" = function(x) { 1 * (x != 0)}
-      )
+	    "pi" = c("hurdle_pi", "pi"),
+	     "weights" = list(
+         "mu" = function(x) { 1 * (x != 0)},
+		     "delta" = function(x) { 1 * (x != 0)}
+       )
     ),
 	  "mu" = function(eta, ...) {
       (1 - eta$pi) * eta$mu / (1 - (eta$delta) / (eta$delta + eta$mu)^eta$delta)
@@ -1486,6 +1575,14 @@ zero.BayesR <- function(pi = "logit", g = invgaussian)
   g$bayesx$zero <- TRUE
   class(g) <- "family.BayesR"
   g
+}
+
+
+## General BayesR family creator.
+gF <- function(name, ...) {
+  name <- deparse(substitute(name), backtick = TRUE, width.cutoff = 500)
+  F <- get(paste(name, "BayesR", sep = "."), mode = "function")
+  F(...)
 }
 
 

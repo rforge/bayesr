@@ -1622,6 +1622,8 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
         object$smooths[[j]]$param <- FALSE
       if(object$smooths[[j]]$param) {
         X[[j]] <- data[[object$smooths[[j]]$term]]
+        object$smooths[[j]]$fixed <- TRUE
+        object$smooths[[j]]$xt <- list("center" = FALSE)
         edf <- edf + ncol(X[[j]])
       } else {
         stj <- object$smooths[[j]]
@@ -1650,7 +1652,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
         } else {
           edf <- edf + ncol(X[[j]])
         }
-        if(acons) edf <- edf -1
+        if(acons) edf <- edf - 1
         ## object$smooths[[j]][c("X", "Xf", "rand", "S")] <- NULL
       }
     }
