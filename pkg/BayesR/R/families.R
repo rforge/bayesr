@@ -613,10 +613,8 @@ truncreg.BayesR <- function(links = c(mu = "identity", sigma = "log"),
       resid <- y - eta$mu
       if(direction == "left") {
         trunc <- eta$mu - point
-        sgn <- 1
       } else {
         trunc <- point - eta$mu
-        sgn <- -1
       }
       ll <- sum(log(dnorm(resid / eta$sigma)) - log(eta$sigma) - log(pnorm(trunc / eta$sigma)))
       ll
@@ -627,6 +625,29 @@ truncreg.BayesR <- function(links = c(mu = "identity", sigma = "log"),
 #      "sigma" = function(y, eta) {
 #      }
 #    )
+  )
+  
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
+tobit.BayesR <- function(links = c(mu = "identity", sigma = "log"), point = 0, ...)
+{
+  rval <- list(
+    "family" = "truncreg",
+    "names" = c("mu", "sigma"),
+    "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
+    "loglik" = function(y, eta, log = FALSE) {
+      ll <- rep(0, length(y))
+      yb <- 1 * (y > 0)
+      i <- yb < 1
+      ll[i] <- pnorm(-eta$mu[i] / eta$sigma[i], log = TRUE)
+      i <- yb > 0
+      ll[i] <- log(1 / eta$sigma[i]) + dnorm((y[i] - eta$mu[i]) / eta$sigma[i], log = TRUE)
+      ll <- sum(ll)
+      ll
+    }
   )
   
   class(rval) <- "family.BayesR"
