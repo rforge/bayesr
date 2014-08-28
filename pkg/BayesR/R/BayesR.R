@@ -4,7 +4,7 @@
 ## Could be interesting: http://people.duke.edu/~neelo003/r/
 ##                       http://www.life.illinois.edu/dietze/Lectures2012/
 xreg <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
-  weights = NULL, subset = NULL, offset = NULL, na.action = na.fail, contrasts = NULL,
+  weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
   reference = NULL, parse.input = parse.input.bayesr, transform = transformJAGS,
   setup = setupJAGS, engine = samplerJAGS, results = resultsJAGS,
   cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, grid = 100, ...)
@@ -91,7 +91,7 @@ xreg <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
 ## (1) BayesR wrapper. ##
 #########################
 bayesr <- function(formula, family = gaussian2, data = NULL, knots = NULL,
-  weights = NULL, subset = NULL, offset = NULL, na.action = na.fail, contrasts = NULL,
+  weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
   engine = c("IWLS", "BayesX", "JAGS", "STAN"), cores = NULL, combine = TRUE,
   n.iter = 12000, thin = 10, burnin = 2000, seed = NULL, ...)
 {
@@ -2451,6 +2451,21 @@ plot.bayesr.effect.default <- function(x, ...) {
       cn <- colnames(xattr$partial.resids)[-2]
       xattr$partial.resids <- xattr$partial.resids[, -2, drop = FALSE]
       colnames(xattr$partial.resids) <- cn
+      mostattributes(x) <- xattr
+    }
+    if(length(terms <- attr(x, "specs")$term) > 2) {
+      if(is.null(args$view)) args$view <- terms[1:2]
+      args$view <- rep(args$view, length.out = 2)
+      cn <- colnames(x)
+      i <- which(cn %in% cn[cn != (td <- terms[!(terms %in% args$view)])])
+      xattr <- attributes(x)
+      xattr$specs$dim <- 2
+      args$cond <- if(is.null(args$cond)) mean(x[, td], na.rm = TRUE) else args$cond
+      args$cond <- x[which.min(abs(x[, td] - args$cond)), td]
+      x <- x[x[, td] == args$cond, ]
+      x <- x[, i]
+      xattr$names <- colnames(x) <- cn[i]
+      ##xattr$partial.resids <- xattr$partial.resids[, -td, drop = FALSE]
       mostattributes(x) <- xattr
     }
   }

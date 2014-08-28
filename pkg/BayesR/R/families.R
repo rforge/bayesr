@@ -477,7 +477,7 @@ gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 
 
 crch.BayesR <- function(links = c(mu = "identity", sigma = "log", df = "log"),
-  left = 0, right = Inf, dist = "student", ...)
+  left = 0, right = Inf, dist = "gaussian", ...)
 {
   dist <- match.arg(dist, c("student", "gaussian", "logistic"))
 
@@ -601,53 +601,56 @@ truncgaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
   rval
 }
 
-
 truncreg.BayesR <- function(links = c(mu = "identity", sigma = "log"),
   direction = "left", point = 0, ...)
 {
+  tgrad <- function(y, eta, what = "mu") {
+    eta$sigma[eta$sigma < 1] <- 1
+    eta$mu[eta$mu < -10] <- -10
+    eta$mu[eta$mu > 10] <- 10
+    resid <- y - eta$mu
+    if(direction == "left") {
+      trunc <- eta$mu - point
+      sgn <- 1
+    } else {
+      trunc <- point - eta$mu
+      sgn <- -1
+    }
+    mills <- dnorm(trunc / eta$sigma) / pnorm(trunc / eta$sigma)
+    g <- if(what == "mu") {
+      resid / eta$sigma^2 - sgn / eta$sigma * mills
+    } else {
+      resid^2 / eta$sigma^3 - 1 / eta$sigma + trunc / eta$sigma^2 * mills
+    }
+    return(g)
+  }
+
   rval <- list(
     "family" = "truncreg",
     "names" = c("mu", "sigma"),
     "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
-    "loglik" = function(y, eta, log = FALSE) {
+    "d" = function(y, eta, log = FALSE) {
+      eta$sigma[eta$sigma < 1] <- 1
+      eta$mu[eta$mu < -10] <- -10
+      eta$mu[eta$mu > 10] <- 10
       resid <- y - eta$mu
       if(direction == "left") {
         trunc <- eta$mu - point
       } else {
         trunc <- point - eta$mu
       }
-      ll <- sum(log(dnorm(resid / eta$sigma)) - log(eta$sigma) - log(pnorm(trunc / eta$sigma)))
+      ll <- log(dnorm(resid / eta$sigma)) - log(eta$sigma) - log(pnorm(trunc / eta$sigma))
+      if(!log) ll <- exp(ll)
       ll
-    }
-#    "score" = list(
-#      "mu" = function(y, eta) {
-#      },
-#      "sigma" = function(y, eta) {
-#      }
-#    )
-  )
-  
-  class(rval) <- "family.BayesR"
-  rval
-}
-
-
-tobit.BayesR <- function(links = c(mu = "identity", sigma = "log"), point = 0, ...)
-{
-  rval <- list(
-    "family" = "truncreg",
-    "names" = c("mu", "sigma"),
-    "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
-    "loglik" = function(y, eta, log = FALSE) {
-      ll <- rep(0, length(y))
-      yb <- 1 * (y > 0)
-      i <- yb < 1
-      ll[i] <- pnorm(-eta$mu[i] / eta$sigma[i], log = TRUE)
-      i <- yb > 0
-      ll[i] <- log(1 / eta$sigma[i]) + dnorm((y[i] - eta$mu[i]) / eta$sigma[i], log = TRUE)
-      ll <- sum(ll)
-      ll
-    }
+    },
+    "score" = list(
+      "mu" = function(y, eta) {
+        as.numeric(tgrad(y, eta, what = "mu"))
+      },
+      "sigma" = function(y, eta) {
+        as.numeric(tgrad(y, eta, what = "sigma"))
+      }
+    )
   )
   
   class(rval) <- "family.BayesR"
@@ -660,7 +663,7 @@ dtrunc <- function(x, spec, a = 1, b = Inf, ...) {
   tt <- rep(0, length(x))
   g <- get(paste("d", spec, sep = ""), mode = "function")
   G <- get(paste("p", spec, sep = ""), mode = "function")
-  tt[x>=a & x<=b] <- g(x[x>=a&x<=b], ...)/(G(b, ...) - G(a, ...))
+  tt[x >= a & x <= b] <- g(x[x >= a & x <= b], ...) / (G(b, ...) - G(a, ...))
   return(tt)
 }
 
@@ -672,7 +675,7 @@ ptrunc <- function(x, spec, a = -Inf, b = Inf, ...)
   G <- get(paste("p", spec, sep = ""), mode = "function")
   tt <- G(apply(cbind(apply(cbind(x, bb), 1, min), aa), 1, max), ...)
   tt <- tt - G(aa, ...)
-  tt <- tt/(G(bb, ...) - G(aa, ...))
+  tt <- tt / (G(bb, ...) - G(aa, ...))
   return(tt)
 }
 
@@ -681,27 +684,27 @@ qtrunc <- function(p, spec, a = -Inf, b = Inf, ...)
   tt <- p
   G <- get(paste("p", spec, sep = ""), mode = "function")
   Gin <- get(paste("q", spec, sep = ""), mode = "function")
-  tt <- Gin(G(a, ...) + p*(G(b, ...) - G(a, ...)), ...)
+  tt <- Gin(G(a, ...) + p * (G(b, ...) - G(a, ...)), ...)
   return(tt)
 }
 
-truncnorm.BayesR <- function(links = c(mu = "identity", sigma = "log"),
-  a = -Inf, b = Inf, ...)
+trunc.BayesR <- function(links = c(mu = "identity", sigma = "log"),
+  name = "norm", a = -Inf, b = Inf, ...)
 {
   rval <- list(
     "family" = "truncreg",
     "names" = c("mu", "sigma"),
     "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
     "d" = function(y, eta, log = FALSE) {
-      d <- dtrunc(y, "norm", a = a, b = b, mean = eta$mu, sd = eta$sigma, log = log)
+      d <- dtrunc(y, name, a = a, b = b, mean = eta$mu, sd = eta$sigma, log = log)
       return(d)
     },
     "p" = function(y, eta, ...) {
-      p <- ptrunc(y, "norm", a = a, b = b, mean = eta$mu, sd = eta$sigma, ...)
+      p <- ptrunc(y, name, a = a, b = b, mean = eta$mu, sd = eta$sigma, ...)
       return(p)
     },
     "q" = function(y, eta, ...) {
-      q <- qtrunc(y, "norm", a = a, b = b, mean = eta$mu, sd = eta$sigma, ...)
+      q <- qtrunc(y, name, a = a, b = b, mean = eta$mu, sd = eta$sigma, ...)
       return(q)
     }
   )

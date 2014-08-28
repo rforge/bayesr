@@ -116,10 +116,12 @@ propose_mvn <- function(x, family, response, eta, id, ...)
   require("mvtnorm")
   args <- list(...)
 
+  if(is.null(x$state$XX)) x$state$XX <- crossprod(x$X)
+
   ll1 <- family$loglik(response, family$map2par(eta))
   p1 <- x$prior(x$state$g, x$state$tau2)
   eta[[id]] <- eta[[id]] - x$state$fit
-  P <- matrix_inv(crossprod(x$X) + 1 / x$state$tau2 * x$S[[1]])
+  P <- matrix_inv(x$state$XX + 1 / x$state$tau2 * x$S[[1]])
 
   if((x$state$iter < x$adapt) & x$xt$adaptive) {
     eta2 <- eta
@@ -1065,7 +1067,6 @@ smooth.IWLS.default <- function(x, ...)
 {
   x$a <- if(is.null(x$xt$a)) 1e-04 else x$xt$a
   x$b <- if(is.null(x$xt$b)) 1e-04 else x$xt$b
-
   if(is.null(x$fixed)) {
     x$fixed <- if(!is.null(x$fx)) x$fx[1] else FALSE
   }
@@ -1404,7 +1405,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     }
 
     ll <- family$loglik(response, family$map2par(eta))
-          
+
     if(rx) {
       rval <- list("x" = x, "eta" = eta, "lp" = ll + lprior)
     } else {
