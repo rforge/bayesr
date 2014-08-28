@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. 
 
 namespace MCMC
 {
-                            
+
 
 void spline_basis::change_K(void)
   {
@@ -1457,7 +1457,7 @@ void spline_basis::add_linearpred_multBS(const bool & current)
     {
     stop = lastnonzero[k];
 //    while (i<lastnonzero[k]+1)
-    while (i <= stop)
+    while (i < stop)
       {
       workbeta = beta.getV() + k;
       for(j=0;j<col;j++,workBS++,workbeta++)
@@ -2522,7 +2522,7 @@ void spline_basis::compute_XWX(const datamatrix & weight)
         workweight = weight.getV() + index(l,0);
         workBS = BS.getV() + BScols**freqwork;
         workupper = upper+j*degree+k-j-1;
-        while(l <= stop)
+        while(l < stop)
           {
           if(j == k)
             *workdiag += *(workBS+j) * *workweight * *(workBS+k);
@@ -2597,7 +2597,7 @@ void spline_basis::compute_XWXenv(const datamatrix & weight, const unsigned & c)
           workupper = XX_env.getEnvIterator() + ( *(xenv+k+1) - (k-j) );
 //          workupper = XX_env.getEnvIterator() + ( *(xenv+i+k+1) - (k-j) );
 //          workupper = XX_env.getEnvIterator() + ( XX_env.getXenv(i+k+1) - (k-j) );
-            while(l <= stop)
+            while(l < stop)
             {
             if(j == k)
               *workdiag += *(workBS+j) * *workweight * *(workBS+k);
@@ -2688,7 +2688,7 @@ void spline_basis::compute_XWXenv_XWtildey(const datamatrix & weight, const doub
             }
           workBS = BS.getV() + BScols**freqwork;
           workupper = XX_env.getEnvIterator() + ( *(xenv+k+1) - (k-j) );
-          while(l <= stop)
+          while(l < stop)
             {
             if(j == k)
               {
@@ -2790,7 +2790,7 @@ void spline_basis::compute_XWtildey(const datamatrix & weight, const double & sc
         workmu = mu.getV() + ind;
         workBS = BS.getV() + BScols**freqwork + j;
         workmuy2 = workmuy + j;
-        while(l <= stop)
+        while(l < stop)
           {
           *workmuy2 += *workBS * *workweight * *workmu;
           l++;
@@ -2823,6 +2823,17 @@ void spline_basis::compute_XWtildey(const datamatrix & weight, const datamatrix 
   vector<int>::iterator freqwork = freq.begin();
   vector<int>::iterator workindex2 = index2.begin();
 
+/*  cout << "index2.length: " << index2.size() << "\n";
+  datamatrix test(index2.size(),1);
+  for(i=0; i<index2.size(); i++)
+    {
+    cout << i << ": " << index2[i] << "\n";
+    test(i,0) = index2[i];
+    }
+  ofstream out("/home/c4031003/Thomas/bayesr/pkg/index2.raw");
+  test.prettyPrint(out);
+  out.close();*/
+
   deque<int>::iterator firstit = firstnonzero.begin();
   deque<int>::iterator lastit = lastnonzero.begin();
 
@@ -2841,24 +2852,40 @@ void spline_basis::compute_XWtildey(const datamatrix & weight, const datamatrix 
   for(i=0;i<nrknots-1;i++,++workmuy,++firstit,++lastit)
     {
     stop = *lastit;
+
     for(j=0;j<BScols;j++)
       {
       l = *firstit;
+
       if(l<=stop)
         {
         ind = index(l,0);
+
         freqwork = freq.begin() + l;
         workindex2 = index2.begin() + l;
         workweight = weight.getV() + c + weightcols*ind;
         workmu = tildey.getV() + ind;
         workBS = BS.getV() + BScols**freqwork + j;
         workmuy2 = workmuy + j;
-        while(l <= stop)
+        while(l < stop)
           {
+
           *workmuy2 += *workBS * *workweight * *workmu;
           l++;
           freqwork++;
           workindex2++;
+
+/*         cout << "i: " << i << "\n";
+         cout << "stop: " << stop << "\n";
+         cout << "j: " << j << "\n";
+         cout << "ind: " << ind << "\n";
+         cout << "c: " << c << "\n";
+         cout << "l: " << l << "\n";
+         cout << "weightcols: " << weightcols << "\n";
+         cout << "workindex2: " << *workindex2 << "\n";
+         cout << "workweight: " << *workweight << "\n";
+         cout << "\n";*/
+
           workweight += *workindex2*weightcols;
           workmu += *workindex2;
           workBS += BScols*(*freqwork - *(freqwork-1));
@@ -3945,7 +3972,7 @@ double spline_basis::outresultsreml(datamatrix & X,datamatrix & Z,
           j++;
           }
         }
-      }  
+      }
     for(j=0; j<nr; j++)
       {
 //      betarefmean(j,0)=betarefmean(j,0)-mean;
