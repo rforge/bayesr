@@ -3813,7 +3813,7 @@ double spline_basis::outresultsreml(datamatrix & X,datamatrix & Z,
     }
   else
     {
-    for(i=0,j=0;i<X.rows();i++,indexit++,freqwork++,k+=*indexit)
+    for(i=0,j=0;i<X.rows();)
       {
       if(freqwork==freqoutput.begin() || *freqwork!=*(freqwork-1))
         {
@@ -3844,6 +3844,13 @@ double spline_basis::outresultsreml(datamatrix & X,datamatrix & Z,
                              );
           }
         j++;
+        i++;
+        if(i<X.rows())
+          {
+          indexit++;
+          freqwork++;
+          k+=*indexit;
+          }
         }
       }
     }

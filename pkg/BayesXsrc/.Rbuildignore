@@ -3,7 +3,6 @@ bootstrap-devel.sh
 bootstrap-release.sh
 bootstrap-release2.sh
 cleanup.win
-tests
 tests/mcmc.Rout.save
 tests/reml.Rout.save
 tests/step.Rout.save
