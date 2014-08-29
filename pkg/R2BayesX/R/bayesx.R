@@ -5,7 +5,6 @@ bayesx <- function(formula, data, weights = NULL, subset = NULL,
 {
   ## multiple core processing
   if(!is.null(cores)) {
-    require("parallel")
     setseed <- round(runif(cores) * .Machine$integer.max)
     control$dir.rm <- if(is.null(control$outfile)) TRUE else control$dir.rm
     bayesx_parallel <- function(j) {
@@ -13,7 +12,7 @@ bayesx <- function(formula, data, weights = NULL, subset = NULL,
       bayesx(formula, data, weights, subset, offset, na.action,
         contrasts, control, model, chains = chains, cores = NULL)
     }
-    rval <- mclapply(1:cores, bayesx_parallel, mc.cores = cores)
+    rval <- parallel::mclapply(1:cores, bayesx_parallel, mc.cores = cores)
     if(inherits(rval[[1]][[1]], "bayesx")) {
       k <- length(rval[[1]])
       rval2 <- list(); mn <- NULL

@@ -116,8 +116,6 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   if(!add)
     do.call(graphics::plot.default, delete.args(graphics::plot.default, args))
   if(interp & !is.null(x)) {
-    stopifnot(require("maptools"))
-
     cdata <- data.frame(centroids(map), "id" = names(map))
     cdata <- merge(cdata, data.frame("z" = x$x, "id" = x$id), by = "id")
     cdata <- unique(cdata)
@@ -149,16 +147,16 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     icolors <- map_fun(cvals)
 
     if(!outside) {
-      gpclibPermit()
+      maptools::gpclibPermit()
       class(map) <- "bnd"
       mapsp <- bnd2sp(map)
-      ob <- unionSpatialPolygons(mapsp, rep(1L, length = length(mapsp)), avoidGEOS  = TRUE)
+      ob <- maptools::unionSpatialPolygons(mapsp, rep(1L, length = length(mapsp)), avoidGEOS  = TRUE)
 
       nob <- length(slot(slot(ob, "polygons")[[1]], "Polygons"))
       pip <- NULL
       for(j in 1:nob) {
         oco <- slot(slot(slot(ob, "polygons")[[1]], "Polygons")[[j]], "coords")
-        pip <- cbind(pip, point.in.polygon(xco, yco, oco[, 1L], oco[, 2L], mode.checked = FALSE) < 1L)
+        pip <- cbind(pip, sp::point.in.polygon(xco, yco, oco[, 1L], oco[, 2L], mode.checked = FALSE) < 1L)
       }
       pip <- apply(pip, 1, function(x) all(x))
     
@@ -166,15 +164,14 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     }
 
     if(land.only) {
-      require("maps")
-      icolors[is.na(map.where("world", xco, yco))] <- NA
+      icolors[is.na(maps::map.where("world", xco, yco))] <- NA
     }
 
     if(length(res)) {
      rect(pp[, 1] - res[1] / 2, pp[, 2] - res[2] / 2, pp[, 1] + res[1] / 2, pp[, 2] + res[2] / 2,
        col = icolors, border = NA, lwd = 0)
     } else {
-      points(SpatialPoints(cbind(xco, yco)), col = icolors, pch = p.pch, cex = p.cex)
+      points(sp::SpatialPoints(cbind(xco, yco)), col = icolors, pch = p.pch, cex = p.cex)
     }
     colors <- rep(NA, length = length(colors))
   }
