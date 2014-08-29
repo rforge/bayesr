@@ -249,3 +249,25 @@ f <- list(
 b <- bayesr(f, data = d, family = tF(BE), update = "iwls")
 
 
+## Tensor tests
+test2<-function(u,v,w,sv=0.3,sw=0.4)  
+{ ((pi**sv*sw)*(1.2*exp(-(v-0.2)^2/sv^2-(w-0.3)^2/sw^2)+
+  0.8*exp(-(v-0.7)^2/sv^2-(w-0.8)^2/sw^2)))*(u-0.5)^2*20
+}
+n <- 500
+v <- runif(n);w<-runif(n);u<-runif(n)
+f <- test2(u,v,w)
+y <- f + rnorm(n)*0.2
+# tensor product of 2D Duchon spline and 1D cr spline
+m <- list(c(1,.5),rep(0,0)) ## example of list form of m
+b <- gam(y~te(v,w,u,k=c(30,5),d=c(2,1),bs=c("ds","cr"),m=m))
+op <- par(mfrow=c(2,2))
+vis.gam(b,cond=list(u=0),color="heat",zlim=c(-0.2,3.5))
+vis.gam(b,cond=list(u=.33),color="heat",zlim=c(-0.2,3.5))
+vis.gam(b,cond=list(u=.67),color="heat",zlim=c(-0.2,3.5))
+vis.gam(b,cond=list(u=1),color="heat",zlim=c(-0.2,3.5))
+par(op)
+
+
+b <- bayesr(y ~ te(v,w,u,k=c(30,5),d=c(2,1),bs=c("ds","cr"),m=m), method = "backfitting", update = "iwls")
+

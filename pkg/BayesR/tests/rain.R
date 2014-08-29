@@ -9,14 +9,19 @@ if(file.exists("~/tmp/homstart.rda")) {
   } else load(file)
 }
 
-rain <- subset(homstart, year >= 2008 & raw > 0)
+homstart$raw[homstart$raw == 0] <- 0.05
+homstart$raw[homstart$raw < 0] <- 0
+
+rain <- subset(homstart, year >= 2008)
+rain2 <- subset(homstart, year >= 2008 & raw > 0)
 
 f <- list(
-  sqrt(raw) ~ s(day, bs = "cc") + s(elevation),
-  ~ s(day, bs = "cc") + s(elevation)
+  sqrt(raw) ~ s(day, bs = "cc") + s(elevation) + s(long, lat),
+  ~ s(day, bs = "cc") + s(elevation) + s(long, lat)
 )
 
-b1 <- bayesr(f, data = rain, method = "MP2", family = gF(truncreg, point = 0), n.samples = 50)
+b1 <- bayesr(f, data = rain2, method = "MP", family = gF(trunc, point = 0), n.samples = 50)
+b2 <- bayesr(f, data = rain, method = "MP2", family = gF(cens, left = 0), n.samples = 50)
 
 
 library("truncreg")

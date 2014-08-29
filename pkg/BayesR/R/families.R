@@ -476,61 +476,6 @@ gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 }
 
 
-crch.BayesR <- function(links = c(mu = "identity", sigma = "log", df = "log"),
-  left = 0, right = Inf, dist = "gaussian", ...)
-{
-  dist <- match.arg(dist, c("student", "gaussian", "logistic"))
-
-  ddist <- switch(dist,
-    "student" = function(x, location, scale, df) {
-      dt((x - location) / scale, df = df, log = TRUE) - log(scale)
-    }, 
-    "gaussian" = function(x, location, scale, ...) {
-      dnorm((x - location) / scale, log = TRUE) - log(scale)
-    },
-    "logistic" = function(x, location, scale, ...) {
-      dlogis((x - location) / scale, log = TRUE) - log(scale)
-  })
-    
-  pdist <- switch(dist,
-    "student" = function(x, location, scale, df, lower.tail = TRUE) {
-      pt((x - location)/scale, df = df, lower.tail = lower.tail, log.p = TRUE)
-    },
-    "gaussian" = function(x, location, scale, df, lower.tail = TRUE) {
-      pnorm((x - location) / scale, lower.tail = lower.tail, log.p = TRUE)
-    },
-    "logistic" = function(x, location, scale, df, lower.tail = TRUE) {
-      plogis((x - location) / scale, lower.tail = lower.tail, log.p = TRUE)
-  })
-
-  names <- switch(dist,
-    "student" = c("mu", "sigma", "df"),
-    "gaussian" = c("mu", "sigma"),
-    "logistic" = c("mu", "sigma")
-  )
-  
-  i <- 1:length(names)
-
-  rval <- list(
-    "family" = "crch",
-    "names" = names,
-    "links" = parse.links(links[i], c(mu = "identity", sigma = "log", df = "log")[i], ...),
-    "loglik" = function(y, eta, ...) {
-      ll <- with(eta, ifelse(y <= left,
-        pdist(left, mu, sigma, df, lower.tail = TRUE),
-        ifelse(y >= right,
-          pdist(right, mu, sigma, df, lower.tail = FALSE),
-          ddist(y, mu, sigma, df))))
-      return(sum(ll))
-    },
-    "type" = 1
-  )
- 
-  class(rval) <- "family.BayesR"
-  rval
-}
-
-
 truncgaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 {
   rval <- list(
@@ -601,7 +546,8 @@ truncgaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
   rval
 }
 
-truncreg.BayesR <- function(links = c(mu = "identity", sigma = "log"),
+
+trunc.BayesR <- function(links = c(mu = "identity", sigma = "log"),
   direction = "left", point = 0, ...)
 {
   tgrad <- function(y, eta, what = "mu") {
@@ -658,6 +604,61 @@ truncreg.BayesR <- function(links = c(mu = "identity", sigma = "log"),
 }
 
 
+cens.BayesR <- function(links = c(mu = "identity", sigma = "log", df = "log"),
+  left = 0, right = Inf, dist = "gaussian", ...)
+{
+  dist <- match.arg(dist, c("student", "gaussian", "logistic"))
+
+  ddist <- switch(dist,
+    "student" = function(x, location, scale, df) {
+      dt((x - location) / scale, df = df, log = TRUE) - log(scale)
+    }, 
+    "gaussian" = function(x, location, scale, ...) {
+      dnorm((x - location) / scale, log = TRUE) - log(scale)
+    },
+    "logistic" = function(x, location, scale, ...) {
+      dlogis((x - location) / scale, log = TRUE) - log(scale)
+  })
+    
+  pdist <- switch(dist,
+    "student" = function(x, location, scale, df, lower.tail = TRUE) {
+      pt((x - location)/scale, df = df, lower.tail = lower.tail, log.p = TRUE)
+    },
+    "gaussian" = function(x, location, scale, df, lower.tail = TRUE) {
+      pnorm((x - location) / scale, lower.tail = lower.tail, log.p = TRUE)
+    },
+    "logistic" = function(x, location, scale, df, lower.tail = TRUE) {
+      plogis((x - location) / scale, lower.tail = lower.tail, log.p = TRUE)
+  })
+
+  names <- switch(dist,
+    "student" = c("mu", "sigma", "df"),
+    "gaussian" = c("mu", "sigma"),
+    "logistic" = c("mu", "sigma")
+  )
+  
+  i <- 1:length(names)
+
+  rval <- list(
+    "family" = "crch",
+    "names" = names,
+    "links" = parse.links(links[i], c(mu = "identity", sigma = "log", df = "log")[i], ...),
+    "loglik" = function(y, eta, ...) {
+      ll <- with(eta, ifelse(y <= left,
+        pdist(left, mu, sigma, df, lower.tail = TRUE),
+        ifelse(y >= right,
+          pdist(right, mu, sigma, df, lower.tail = FALSE),
+          ddist(y, mu, sigma, df))))
+      return(sum(ll))
+    },
+    "type" = 1
+  )
+ 
+  class(rval) <- "family.BayesR"
+  rval
+}
+
+
 ## Truncated distributions.
 dtrunc <- function(x, spec, a = 1, b = Inf, ...) {
   tt <- rep(0, length(x))
@@ -688,7 +689,7 @@ qtrunc <- function(p, spec, a = -Inf, b = Inf, ...)
   return(tt)
 }
 
-trunc.BayesR <- function(links = c(mu = "identity", sigma = "log"),
+trunc2.BayesR <- function(links = c(mu = "identity", sigma = "log"),
   name = "norm", a = -Inf, b = Inf, ...)
 {
   rval <- list(
