@@ -1,0 +1,159 @@
+# Project: BayesX
+# Hybrid GNU/BSD makefile for R package 'bayesxsrc'
+# author: Daniel Adler <dadler@uni-goettingen.de>
+
+include $(R_HOME)/etc${R_ARCH}/Makeconf
+
+all: BayesX
+
+ANDREA_OBJS = \
+	bayesxsrc/andrea/baseline.o\
+	bayesxsrc/andrea/cox.o\
+	bayesxsrc/andrea/IWLS_baseline.o\
+	bayesxsrc/andrea/multibaseline.o\
+	bayesxsrc/andrea/multistate.o
+BIB_OBJS = \
+	bayesxsrc/bib/Random.o\
+	bayesxsrc/bib/adminparse_gnu.o\
+	bayesxsrc/bib/bandmat.o\
+	bayesxsrc/bib/bandmat_penalty.o\
+	bayesxsrc/bib/bayesreg.o\
+	bayesxsrc/bib/bayesreg2.o\
+	bayesxsrc/bib/bayesreg3.o\
+	bayesxsrc/bib/clstring.o\
+	bayesxsrc/bib/command.o\
+	bayesxsrc/bib/data.o\
+	bayesxsrc/bib/dataobj.o\
+	bayesxsrc/bib/envmatrix.o\
+	bayesxsrc/bib/envmatrix_penalty.o\
+	bayesxsrc/bib/graph.o\
+	bayesxsrc/bib/map.o\
+	bayesxsrc/bib/mapobject.o\
+	bayesxsrc/bib/model.o\
+	bayesxsrc/bib/model_remlreg.o\
+	bayesxsrc/bib/model_stepwise.o\
+	bayesxsrc/bib/option.o\
+	bayesxsrc/bib/realobs.o\
+	bayesxsrc/bib/realvar.o\
+	bayesxsrc/bib/remlreg.o\
+	bayesxsrc/bib/sparsemat.o\
+	bayesxsrc/bib/statmat.o\
+	bayesxsrc/bib/statmat_penalty.o\
+	bayesxsrc/bib/statobj.o\
+	bayesxsrc/bib/stepwisereg.o\
+	bayesxsrc/bib/use.o\
+	bayesxsrc/bib/vectorn.o
+DAG_OBJS = \
+	bayesxsrc/dag/adjacency.o\
+	bayesxsrc/dag/dagobject.o\
+	bayesxsrc/dag/fullcond_dag.o\
+	bayesxsrc/dag/fullcond_dag_d.o\
+	bayesxsrc/dag/fullcond_dag_ia.o\
+	bayesxsrc/dag/fullcond_dag_ia_mixed.o\
+	bayesxsrc/dag/fullcond_rj.o\
+	bayesxsrc/dag/fullcond_rj_int.o\
+	bayesxsrc/dag/fullcond_rj_mix.o\
+	bayesxsrc/dag/func_dag.o\
+	bayesxsrc/dag/ia.o\
+	bayesxsrc/dag/ia_mixed.o
+LEYRE_OBJS = \
+	bayesxsrc/leyre/nbinomial.o\
+	bayesxsrc/leyre/zip.o
+MCMC_OBJS = \
+	bayesxsrc/mcmc/baseline_reml.o\
+	bayesxsrc/mcmc/distribution.o\
+	bayesxsrc/mcmc/fullcond.o\
+	bayesxsrc/mcmc/fullcond_merror.o\
+	bayesxsrc/mcmc/fullcond_mult.o\
+	bayesxsrc/mcmc/fullcond_nonp_gaussian.o\
+	bayesxsrc/mcmc/fullcond_nonp_gaussian_stepwise.o\
+	bayesxsrc/mcmc/gaussian_heteroskedastic.o\
+	bayesxsrc/mcmc/hrandom.o\
+	bayesxsrc/mcmc/kriging2.o\
+	bayesxsrc/mcmc/kriging.o\
+	bayesxsrc/mcmc/mcmc.o\
+	bayesxsrc/mcmc/mcmc_const.o\
+	bayesxsrc/mcmc/mcmc_const_stepwise.o\
+	bayesxsrc/mcmc/mcmc_nonp.o\
+	bayesxsrc/mcmc/mcmc_nonpbasis.o\
+	bayesxsrc/mcmc/mcmcsimul.o\
+	bayesxsrc/mcmc/mcmcsimul2.o\
+	bayesxsrc/mcmc/mcmcsimul2_multi.o\
+	bayesxsrc/mcmc/randomeffect.o\
+	bayesxsrc/mcmc/randomeffect_stepwise.o\
+	bayesxsrc/mcmc/remlest.o\
+	bayesxsrc/mcmc/remlest_multi.o\
+	bayesxsrc/mcmc/remlest_multi2.o\
+	bayesxsrc/mcmc/remlest_multi3.o\
+	bayesxsrc/mcmc/tvariance.o\
+	bayesxsrc/mcmc/tvariance2dim.o\
+	bayesxsrc/mcmc/variance_nonp.o\
+	bayesxsrc/mcmc/variance_nonp_vector.o\
+	bayesxsrc/mcmc/variance_nonp_vector_nigmix.o
+PSPLINES_OBJS = \
+	bayesxsrc/psplines/IWLS_pspline.o\
+	bayesxsrc/psplines/bsplinemat.o\
+	bayesxsrc/psplines/fullcond_pspline_gaussian.o\
+	bayesxsrc/psplines/fullcond_pspline_stepwise.o\
+	bayesxsrc/psplines/fullcond_pspline_surf_gaussian.o\
+	bayesxsrc/psplines/fullcond_pspline_surf_stepwise.o\
+	bayesxsrc/psplines/mcmc_pspline.o\
+	bayesxsrc/psplines/mcmc_pspline_surf.o\
+	bayesxsrc/psplines/spline_basis.o\
+	bayesxsrc/psplines/spline_basis_surf.o
+STRUCTADD_OBJS = \
+	bayesxsrc/structadd/FC.o\
+	bayesxsrc/structadd/FC_hrandom.o\
+	bayesxsrc/structadd/FC_hrandom_variance.o\
+	bayesxsrc/structadd/FC_hrandom_variance_vec.o\
+	bayesxsrc/structadd/FC_linear.o\
+	bayesxsrc/structadd/FC_mult.o\
+	bayesxsrc/structadd/FC_nonp.o\
+	bayesxsrc/structadd/FC_nonp_variance.o\
+	bayesxsrc/structadd/FC_nonp_variance_vec.o\
+	bayesxsrc/structadd/FC_predict.o\
+	bayesxsrc/structadd/FC_cv.o\
+	bayesxsrc/structadd/FC_variance_pen_vector.o\
+	bayesxsrc/structadd/GENERAL_OPTIONS.o\
+	bayesxsrc/structadd/MASTER_obj.o\
+	bayesxsrc/structadd/design.o\
+	bayesxsrc/structadd/design_hrandom.o\
+	bayesxsrc/structadd/design_mrf.o\
+	bayesxsrc/structadd/design_pspline.o\
+	bayesxsrc/structadd/distr.o\
+	bayesxsrc/structadd/distr_categorical.o\
+	bayesxsrc/structadd/distr_categorical_mult.o\
+	bayesxsrc/structadd/distr_mixture.o\
+	bayesxsrc/structadd/mcmcsim.o\
+	bayesxsrc/structadd/model_parameters.o\
+	bayesxsrc/structadd/superbayesreg.o\
+	bayesxsrc/structadd/design_kriging.o\
+	bayesxsrc/structadd/FC_predictive_check.o\
+	bayesxsrc/structadd/FC_predict_predictor.o
+OBJS = \
+	${ANDREA_OBJS}\
+	${BIB_OBJS}\
+	${DAG_OBJS}\
+	${LEYRE_OBJS}\
+	${MCMC_OBJS}\
+	${PSPLINES_OBJS}\
+	${STRUCTADD_OBJS}\
+	bayesxsrc/main.o\
+       	bayesxsrc/samson/multgaussian.o\
+	bayesxsrc/adaptiv/fullcond_adaptiv.o\
+	bayesxsrc/alex/mixture.o
+
+# LDFLAGS  += -lreadline -lcurses
+LDFLAGS  += -static-libgcc
+CPPFLAGS +=  -Ibayesxsrc/. -I"bayesxsrc/bib"  -I"bayesxsrc/alex"  -I"bayesxsrc/adaptiv"  -I"bayesxsrc/andrea"  -I"bayesxsrc/dag"  -I"bayesxsrc/graph"  -I"bayesxsrc/mcmc"  -I"bayesxsrc/psplines"  -I"bayesxsrc/samson"  -I"bayesxsrc/leyre"  -I"bayesxsrc/structadd"
+CPPFLAGS += -D__BUILDING_GNU -DTEMPL_INCL_DEF -DNO_TEMPLATE_FRIENDS -DINCLUDE_REML -DINCLUDE_MCMC -D_MSC_VER2
+# CXXFLAGS += -O3 -ansi
+
+BayesX: ${OBJS}
+	${CXX} ${OBJS} ${LDFLAGS} ${TARGET_ARCH} -o BayesX
+
+clean:
+	rm -f ${OBJS}
+
+.PHONY: all clean 
+
