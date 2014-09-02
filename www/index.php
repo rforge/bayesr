@@ -53,6 +53,7 @@ echo $contents; } ?>
 </ul>
 
 <p> The <strong>project summary page</strong> you can find <a href="http://<?php echo $domain; ?>/projects/<?php echo $group_name; ?>/"><strong>here</strong></a>. </p>
+<p> Package checks are available at <a href="http://eeecon.uibk.ac.at/~umlauf/Rpkgs/BayesR_pkg_checks.html"><strong>here</strong></a>. </p>
 
 </body>
 </html>
