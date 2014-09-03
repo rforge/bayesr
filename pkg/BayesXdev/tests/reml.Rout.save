@@ -16,7 +16,7 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 Type 'q()' to quit R.
 
 > ## BayesX REML testing
-> library("BayesXsrc")
+> library("BayesXdev")
 > reml <- run.bayesx("reml.prg", verbose = FALSE)
 > fx1 <- read.table("reml_f_x1_pspline.res", header = TRUE)
 > fx2 <- read.table("reml_f_x2_pspline.res", header = TRUE)

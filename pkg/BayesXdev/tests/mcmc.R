@@ -1,5 +1,5 @@
 ## BayesX MCMC testing
-library("BayesXsrc")
+library("BayesXdev")
 mcmc <- run.bayesx("mcmc.prg", verbose = FALSE)
 fx1 <- read.table("mcmc_f_x1_pspline.res", header = TRUE)
 fx2 <- read.table("mcmc_f_x2_pspline.res", header = TRUE)
