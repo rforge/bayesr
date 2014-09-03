@@ -1,4 +1,4 @@
-citHeader("When using BayesXsrc in publications, please cite both the BayesXsrc interface and BayesX itself:")
+citHeader("When using BayesXdev in publications, please cite both the BayesXdev interface and BayesX itself:")
 
 ## R >= 2.8.0 passes package metadata to citation().
 if(!exists("meta") || is.null(meta)) meta <- packageDescription("BayesXsrc")
@@ -7,7 +7,7 @@ note1 <- sprintf("R package version %s", meta$Version)
 note2 <- sprintf("Version %s", strsplit(meta$Version, "-", fixed = TRUE)[[1]][1])
 
 citEntry(entry = "Manual",
-         title = "{BayesXsrc}: {R} Package Distribution of the {BayesX} {C++} Sources",
+         title = "{BayesXdev}: {R} Package Distribution of the {BayesX} {C++} Development Sources",
          author = personList(as.person("Daniel Adler"), 
 	                     as.person("Thomas Kneib"),
                              as.person("Stefan Lang"),
@@ -15,14 +15,14 @@ citEntry(entry = "Manual",
 			     as.person("Achim Zeileis")),
          year = year,
          note = note1,
-         url = "http://CRAN.R-project.org/package=BayesXsrc",
+         url = "https://R-forge.R-project.org/projects/bayesr/",
 
          textVersion =
          paste("Daniel Adler, Thomas Kneib, Stefan Lang, Nikolaus Umlauf, Achim Zeileis",
    	       sprintf("(%s).", year),	 
-               "BayesXsrc: R Package Distribution of the BayesX C++ Sources.",
+               "BayesXdev: R Package Distribution of the BayesX C++ Development Sources.",
 	       paste(note1, ".", sep = ""),
-               "URL http://CRAN.R-project.org/package=BayesXsrc")
+               "URL https://R-forge.R-project.org/projects/bayesr/")
 )
 
 citEntry(entry = "Manual",
