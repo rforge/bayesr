@@ -3,9 +3,9 @@ function(prg = NULL, verbose = TRUE, ...)
 {
   os.win <- .Platform$OS.type == "windows"
   if(os.win) {
-    bin <- shQuote(system.file(package = "BayesXsrc", "libs", .Platform$r_arch, "BayesX.exe"))
+    bin <- shQuote(system.file(package = "BayesXdev", "libs", .Platform$r_arch, "BayesX.exe"))
   } else {
-    bin <- shQuote(system.file(package = "BayesXsrc", "libs", .Platform$r_arch, "BayesX"))
+    bin <- shQuote(system.file(package = "BayesXdev", "libs", .Platform$r_arch, "BayesX"))
   }
   if(is.null(prg)) {
     output <- file.exists("output")
