@@ -1336,14 +1336,14 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
                 intercept = FALSE, what = "parametric")
               tte <- NULL
               for(en in enames2) {
-                if(grepl(en, i, fixed = TRUE))
+                if(grepl(rmf(en), rmf(i), fixed = TRUE))
                   tte <- en
               }
               if(is.null(tte)) stop(paste("cannot find term", i, "in newdata!"))
               if(is.null(newdata[[tte]])) {
                 f <- as.formula(paste("~", if(hi) "-1" else "1", "+", tte))
                 tmm <- model.matrix(f, data = newdata)
-                m.designs[[i]] <- tmm[, grep(i, colnames(tmm), fixed = TRUE)]
+                m.designs[[i]] <- tmm[, grep(rmf(i), rmf(colnames(tmm)), fixed = TRUE)]
               } else {
                 if(is.factor(newdata[[tte]])) {
                   nl <- nlevels(newdata[[tte]]) - if(hi) 1 else 0
