@@ -2869,7 +2869,7 @@ logLik.bayesr <- function(object, ..., type = 1, nsamps = NULL, FUN = NULL)
         eta <- fitted.bayesr(object[[i]], type = "link",
           samples = TRUE, nsamps = nsamps,
           FUN = function(x) { x })
-        iter <- ncol(eta[[1]])
+        iter <- min(sapply(eta, ncol))
         ll <- NULL
         for(j in 1:iter) {
           teta <- NULL
@@ -2882,7 +2882,8 @@ logLik.bayesr <- function(object, ..., type = 1, nsamps = NULL, FUN = NULL)
         if(is.null(FUN)) FUN <- function(x) { x }
         rval[[i]] <- FUN(ll)
       } else {
-        eta <- fitted.bayesr(object[[i]], type = "link")
+        eta <- fitted.bayesr(object[[i]], type = "link", samples = TRUE,
+          nsamps = nsamps, FUN = function(x) { mean(x, na.rm = TRUE) })
         ll <- sum(family$d(y, family$map2par(eta), log = TRUE), na.rm = TRUE)
         rval <- rbind(rval, data.frame(
           "logLik" = ll,

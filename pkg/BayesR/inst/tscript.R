@@ -268,7 +268,8 @@ vis.gam(b,cond=list(u=.67),color="heat",zlim=c(-0.2,3.5))
 vis.gam(b,cond=list(u=1),color="heat",zlim=c(-0.2,3.5))
 par(op)
 
-b0 <- bayesr(y ~ te(v,w,u,k=c(30,5),d=c(2,1),bs=c("ds","cr"),m=m), method = "MP2")
+b0 <- bayesr(y ~ te(v,w,u,k=c(30,5),d=c(2,1),bs=c("ds","cr"),m=m), method = c("MP2", "MCMC"), propose = "iwls0")
+
 b1 <- bayesr(y ~ te(v,w,u,k=c(30,5),d=c(2,1),bs=c("ds","cr"),m=m), method = "backfitting", update = "iwls")
 b1 <- bayesr(y ~ te(v,w,u,k=c(30,5),d=c(2,1),bs=c("ds","cr"),m=m), method = "backfitting", update = "optim2")
 
