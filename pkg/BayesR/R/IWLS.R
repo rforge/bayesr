@@ -17,9 +17,11 @@ propose_iwls0 <- function(x, family, response, eta, id, ...)
 
   if(!is.null(args$no.mcmc)) {
     if(!x$fixed & is.null(x$sp)) {
-      a <- x$rank / 2 + x$a
-      b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
-      x$state$tau2 <- 1 / rgamma(1, a, b)
+      for(j in seq_along(x$S)) {
+        a <- x$rank[j] / 2 + x$a
+        b <- 0.5 * crossprod(x$state$g, x$S[[j]]) %*% x$state$g + x$b
+        x$state$tau2[j] <- 1 / rgamma(1, a, b)
+      }
     }
   }
 
@@ -43,12 +45,17 @@ propose_iwls0 <- function(x, family, response, eta, id, ...)
   eta[[id]] <- eta[[id]] - x$state$fit
 
   ## Compute mean and precision.
+  S <- 0
   XW <- t(x$X * weights)
   P <- if(x$fixed) {
     if(k <- ncol(x$X) < 2) {
       1 / (XW %*% x$X)
     } else chol2inv(chol(XW %*% x$X))
-  } else chol2inv(chol(XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
+  } else {
+    for(j in seq_along(x$S))
+      S <- S + 1 / x$state$tau2[j] * x$S[[j]]
+    chol2inv(chol(XW %*% x$X + S))
+  }
   P[P == Inf] <- 0
   M <- P %*% (XW %*% (z - eta[[id]]))
 
@@ -89,7 +96,9 @@ propose_iwls0 <- function(x, family, response, eta, id, ...)
     if(k < 2) {
       1 / (XW %*% x$X)
     } else chol2inv(chol(XW %*% x$X))
-  } else chol2inv(L <- chol(P0 <- XW %*% x$X + 1 / x$state$tau2 * x$S[[1]]))
+  } else {
+    chol2inv(L <- chol(P0 <- XW %*% x$X + S))
+  }
   P2[P2 == Inf] <- 0
   M2 <- P2 %*% (XW %*% (z - (eta[[id]] - x$state$fit)))
 
@@ -98,9 +107,13 @@ propose_iwls0 <- function(x, family, response, eta, id, ...)
 
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & is.null(args$no.mcmc)) {
-    a <- x$rank / 2 + x$a
-    b <- 0.5 * crossprod(x$state$g, x$S[[1]]) %*% x$state$g + x$b
-    x$state$tau2 <- 1 / rgamma(1, a, b)
+    if(!x$fixed & is.null(x$sp)) {
+      for(j in seq_along(x$S)) {
+        a <- x$rank[j] / 2 + x$a
+        b <- 0.5 * crossprod(x$state$g, x$S[[j]]) %*% x$state$g + x$b
+        x$state$tau2[j] <- 1 / rgamma(1, a, b)
+      }
+    }
   }
 
   ## Compute acceptance probablity.
