@@ -278,3 +278,25 @@ b2 <- bayesr(y ~ rs(s(v,w,bs="ds",k=30), s(u,bs="cr",k=5)), method = "backfittin
 
 
 
+
+
+library("BayesR")
+
+set.seed(111)
+dat <- gamSim(4)
+dat <- dat[, c("y", "x0", "fac")]
+dat <- cbind(dat, as.data.frame(model.matrix(~ -1 + fac, data = dat)))
+
+b0 <- bayesr(y ~ x0 + x0:fac, data = dat, engine = "BayesX")
+b1 <- gam( y ~ x0 + x0:fac, data = dat)
+
+summary(b0)
+summary(b1)
+
+nd <- data.frame(x0 = rep(0.5, 3), fac = dat$fac[1])
+
+nd$p0 <- predict(b0, newdata = nd, model = "mu")
+nd$p1 <- predict(b1, newdata = nd) 
+
+plot(p1 ~ p0, data = nd)
+

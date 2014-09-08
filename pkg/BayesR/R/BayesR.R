@@ -1237,7 +1237,7 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
       newdata <- read.table(newdata, header = TRUE, ...)
   }
   if(is.matrix(newdata) || is.list(newdata))
-    newdata <- as.data.frame(newdata)
+    newdata <- as.data.frame(newdata)  
   if(!is.null(attr(object, "fixed.names")))
     names(newdata) <- rmf(names(newdata))
   nn <- names(newdata)
@@ -1340,12 +1340,18 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
                   tte <- en
               }
               if(is.null(tte)) stop(paste("cannot find term", i, "in newdata!"))
-              if(is.factor(newdata[[tte]])) {
-                nl <- nlevels(newdata[[tte]]) - if(hi) 1 else 0
-                f <- as.formula(paste("~", if(hi) "1" else "-1", "+", tte))
+              if(is.null(newdata[[tte]])) {
+                f <- as.formula(paste("~", if(hi) "-1" else "1", "+", tte))
                 tmm <- model.matrix(f, data = newdata)
-                m.designs[[i]] <- tmm[, i, drop = FALSE]
-              } else m.designs[[i]] <- newdata[[tte]]
+                m.designs[[i]] <- tmm[, grep(i, colnames(tmm), fixed = TRUE)]
+              } else {
+                if(is.factor(newdata[[tte]])) {
+                  nl <- nlevels(newdata[[tte]]) - if(hi) 1 else 0
+                  f <- as.formula(paste("~", if(hi) "1" else "-1", "+", tte))
+                  tmm <- model.matrix(f, data = newdata)
+                  m.designs[[i]] <- tmm[, i, drop = FALSE]
+                } else m.designs[[i]] <- newdata[[tte]]
+              }
               if(length(m.designs)) {
                 if(is.null(dim(m.designs[[i]]))) m.designs[[i]] <- matrix(m.designs[[i]], ncol = 1)
               }
