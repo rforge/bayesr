@@ -20,8 +20,12 @@ f <- list(
   ~ s(day, bs = "cc") + s(elevation) + s(long, lat)
 )
 
+f <- list(
+  sqrt(raw) ~ te(day, long, lat, bs = c("cc", "tp"), d = c(1, 2)) + s(elevation)
+)
+
 b1 <- bayesr(f, data = rain2, method = "MP", family = gF(trunc, point = 0), n.samples = 50)
-b2 <- bayesr(f, data = rain, method = "MP2", family = gF(cens, left = 0), n.samples = 50)
+b2 <- bayesr(f, data = rain, method = "MP2", family = gF(cens, left = 0), n.samples = 10)
 
 
 library("truncreg")

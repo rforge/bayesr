@@ -802,10 +802,18 @@ update_optim <- function(x, family, response, eta, id, ...)
       IC
     }
 
-    x$state$tau2 <- try(optimize(objfun2, interval = x$interval, grid = x$grid)$minimum, silent = TRUE)
-    if(inherits(x$state$tau2, "try-error"))
-      x$state$tau2 <- optimize2(objfun2, interval = x$interval, grid = x$grid)$minimum
-    if(!length(x$state$tau2)) x$state$tau2 <- x$interval[1]
+    if(length(x$state$tau2) < 2) {
+      x$state$tau2 <- try(optimize(objfun2, interval = x$interval, grid = x$grid)$minimum, silent = TRUE)
+      if(inherits(x$state$tau2, "try-error"))
+        x$state$tau2 <- optimize2(objfun2, interval = x$interval, grid = x$grid)$minimum
+      if(!length(x$state$tau2)) x$state$tau2 <- x$interval[1]
+    } else {
+      i <- grep("tau2", names(x$lower))
+      opt <- try(optim(x$state$tau2, fn = objfun2, method = "L-BFGS-B",
+        lower = x$lower[i], upper = x$upper[i]), silent = TRUE)
+      if(!inherits(opt, "try-error"))
+        x$state$tau2 <- opt$par  
+    }
   }
 
   ## Objective for regression coefficients.
@@ -1175,16 +1183,17 @@ smooth.IWLS.default <- function(x, ...)
       if(x$fixed) {
         grad <- 0
       } else {
-        grad2 <- NULL
+        grad <- 0; grad2 <- NULL
         for(j in seq_along(tau2)) {
           gS <- crossprod(gamma, x$S[[j]])
-          grad <- drop(-0.5 / tau2[j] * gS)
+          grad <- grad + drop(-0.5 / tau2[j] * gS)
           if(full & !is.null(tau2[j])) {
             grad2 <- c(grad2, drop(-x$rank[j] / (2 * tau2[j]) - 1 / (2 * tau2[j]^2) * gS %*% gamma + (-x$a - 1) / tau2[j] + x$b / (tau2[j]^2)))
+            x$X <- cbind(x$X, 0)
           }
         }
       }
-      grad <- drop(crossprod(cbind(x$X, if(!x$fixed & full) 0 else NULL), score)) + c(grad, grad2)
+      grad <- drop(crossprod(x$X, score)) + c(grad, grad2)
       return(grad)
     }
   } else {
@@ -1390,11 +1399,11 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     rval
   }
 
-  fxMP <- any(grepl("MP2", method, ignore.case = TRUE))
+  fxMP <- "mp2" %in% tolower(method)
   nobs <- if(is.null(dim(response))) length(response) else nrow(response)
 
   ## Function to create full parameter vector.
-  make_par <- function(...) {
+  make_par <- function(x) {
     par <- npar <- lower <- upper <- NULL
     grad <- TRUE
     for(j in 1:np) {
@@ -1453,10 +1462,11 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     }
 
     ll <- family$loglik(response, family$map2par(eta))
-
     if(rx) {
-      rval <- list("x" = x, "eta" = eta, "lp" = ll + lprior)
+      rval <- list("x" = x, "eta" = eta, "lp" = ll + lprior, "ll" = ll)
     } else {
+      edf <- get_edf_lp(x, logprior = FALSE)
+      ic <- get.ic(family, response, family$map2par(eta), edf, nobs, criterion)
       rval <- ll + lprior
       if(type > 1)
         rval <- -1 * rval
@@ -1466,7 +1476,8 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
 
     if(verbose & !rx & type > 1) {
       cat("\r")
-      cat("logPost", fmt(ll + lprior, width = 8, digits = digits),
+      cat(criterion, fmt(ic, width = 8, digits = digits),
+        "logPost", fmt(ll + lprior, width = 8, digits = digits),
         "logLik", fmt(ll, width = 8, digits = digits),
         "edf", fmt(edf2, width = 6, digits = digits))
     }
@@ -1477,10 +1488,10 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   hessian <- NULL
   ## Posterior mode estimation.
   if(any(grepl("mp", method, ignore.case = TRUE))) {
-    tpar <- make_par()
+    tpar <- make_par(x = x)
     par <- tpar$par; lower2 <- tpar$lower; upper2 <- tpar$upper
     if(!is.null(family$score) & tpar$grad) {
-      grad_posterior <- function(par, par2 = NULL, type = 1) {
+      grad_posterior <- function(par, par2 = NULL, type = 1, ...) {
         grad <- NULL
         for(j in 1:np) {
           eta[[nx[j]]] <- 0
@@ -1523,6 +1534,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     hessian <- opt$hessian
     rm(opt)
     opt <- log_posterior(par, rx = TRUE)
+
     x <- opt$x; eta <- opt$eta
     rm(opt)
 
@@ -1836,7 +1848,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
       return(rval)
     }
 
-    par <- make_par()$par
+    par <- make_par(x = x)$par
     MyData <- list("mon.names" = "LP", "parm.names" = names(par), "N" = length(eta[[1]]))
     Initial.Values <- par
 

@@ -610,26 +610,67 @@ cens.BayesR <- function(links = c(mu = "identity", sigma = "log", df = "log"),
   dist <- match.arg(dist, c("student", "gaussian", "logistic"))
 
   ddist <- switch(dist,
-    "student" = function(x, location, scale, df) {
-      dt((x - location) / scale, df = df, log = TRUE) - log(scale)
-    }, 
-    "gaussian" = function(x, location, scale, ...) {
-      dnorm((x - location) / scale, log = TRUE) - log(scale)
-    },
-    "logistic" = function(x, location, scale, ...) {
-      dlogis((x - location) / scale, log = TRUE) - log(scale)
-  })
-    
+    "student"  = function(x, location, scale, df, log = TRUE) 
+      dt((x - location)/scale, df = df, log = log)/scale^(1-log) - 
+      log*log(scale),
+    "gaussian" = function(x, location, scale, df, log = TRUE) 
+      dnorm((x - location)/scale, log = log)/scale^(1-log) - 
+      log*log(scale),
+    "logistic" = function(x, location, scale, df, log = TRUE) 
+      dlogis((x - location)/scale, log = log)/scale^(1-log) - 
+      log*log(scale)
+  )
   pdist <- switch(dist,
-    "student" = function(x, location, scale, df, lower.tail = TRUE) {
-      pt((x - location)/scale, df = df, lower.tail = lower.tail, log.p = TRUE)
-    },
-    "gaussian" = function(x, location, scale, df, lower.tail = TRUE) {
-      pnorm((x - location) / scale, lower.tail = lower.tail, log.p = TRUE)
-    },
-    "logistic" = function(x, location, scale, df, lower.tail = TRUE) {
-      plogis((x - location) / scale, lower.tail = lower.tail, log.p = TRUE)
-  })
+    "student"  = function(x, location, scale, df, lower.tail = TRUE, 
+      log.p = TRUE) pt((x - location)/scale, df = df, lower.tail = lower.tail,
+      log.p = log.p),
+    "gaussian" = function(x, location, scale, df, lower.tail = TRUE, 
+      log.p = TRUE) pnorm((x - location)/scale, lower.tail = lower.tail, 
+      log.p = log.p),
+    "logistic" = function(x, location, scale, df, lower.tail = TRUE, 
+      log.p = TRUE) plogis((x - location)/scale, lower.tail = lower.tail, 
+      log.p = log.p)
+  )
+
+  dddist <- switch(dist,
+    "student"  = function(x, location, scale, df) 
+      - ddist(x, location, scale, df, log = FALSE) * 
+      (x - location)/scale^2 * (df + 1) / (df + (x - location)^2/scale^2),
+    "gaussian" = function(x, location, scale, df) 
+      - (x - location) * ddist(x, location, scale, log = FALSE)/scale^2,
+    "logistic" = function(x, location, scale, df) 
+      ddist(x, location, scale, df, log = FALSE)/scale * 
+      (- 1 + 2 * pdist(-x, - location, scale, log.p = FALSE))
+  )
+
+  if(dist == "student") {
+    score <- NULL
+  } else {
+    score <- list(
+      "mu" =  function(y, eta) {
+         gradmu <- with(eta, ifelse(y <= left, 
+          - ddist(left, mu, sigma, df, log = FALSE) /
+            pdist(left, mu, sigma, df, log.p = FALSE),
+          ifelse(y >= right, 
+          ddist(right, mu, sigma, df, log = FALSE) /
+            pdist(right, mu, sigma, df, lower.tail = FALSE, log.p = FALSE),
+          - dddist(y, mu, sigma, df)/ddist(y, mu, sigma, df, log = FALSE))))
+        return(drop(gradmu))
+      },
+      "sigma" =  function(y, eta) {
+        gradsigma <- with(eta, ifelse(y <= left, 
+          - ddist(left, mu, sigma, df, log = FALSE) /
+            pdist(left, mu, sigma, df, log.p = FALSE) * (left - mu),
+          ifelse(y >= right, 
+          ddist(right, mu, sigma, df, log = FALSE)/
+            pdist(right, mu, sigma, df, lower.tail = FALSE, log.p = FALSE)*
+            (right - mu),
+          - dddist(y, mu, sigma, df) * (y - mu)/
+            ddist(y, mu, sigma, df, log = FALSE) - 1)))
+         return(drop(gradsigma))
+      }
+    )
+  }
 
   names <- switch(dist,
     "student" = c("mu", "sigma", "df"),
@@ -640,17 +681,19 @@ cens.BayesR <- function(links = c(mu = "identity", sigma = "log", df = "log"),
   i <- 1:length(names)
 
   rval <- list(
-    "family" = "crch",
+    "family" = "cens",
     "names" = names,
     "links" = parse.links(links[i], c(mu = "identity", sigma = "log", df = "log")[i], ...),
-    "loglik" = function(y, eta, ...) {
+    "d" = function(y, eta, log = FALSE, ...) {
       ll <- with(eta, ifelse(y <= left,
-        pdist(left, mu, sigma, df, lower.tail = TRUE),
+        pdist(left, mu, sigma, df, lower.tail = TRUE, log = TRUE),
         ifelse(y >= right,
-          pdist(right, mu, sigma, df, lower.tail = FALSE),
-          ddist(y, mu, sigma, df))))
-      return(sum(ll))
+          pdist(right, mu, sigma, df, lower.tail = FALSE, log = TRUE),
+          ddist(y, mu, sigma, df, log = TRUE))))
+      if(!log) ll <- exp(ll)
+      return(ll)
     },
+    "score" = score,
     "type" = 1
   )
  

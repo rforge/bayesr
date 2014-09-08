@@ -1678,6 +1678,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
       X <- X[, 1:k1, drop = FALSE]
       f <- drop(X %*% g) / link(drop(Z %*% w))
       f <- f - mean(f, na.rm = TRUE)
+      return(drop(f))
     }
   } else {
     stop("formulae no supported yet!")
@@ -2468,16 +2469,32 @@ plot.bayesr.effect.default <- function(x, ...) {
     specs <- attr(x, "specs")
     newdata <- x[, 1:length(attr(x, "specs")$term), drop = FALSE]
     newdata[[td]] <- args$cond
-    X <- PredictMat(specs, newdata)
+
+    X <- if(inherits(specs, "mgcv.smooth")) {
+      PredictMat(specs, newdata)
+    } else {
+      if(!is.null(specs$basis)) {
+        stopifnot(is.function(specs$basis))
+        if(specs$by != "NA") {  ## ATTENTION: by variables with basis()!
+          if(!(specs$by %in% names(newdata)))
+            stop("cannot find by variable ", specs$by, " in newdata!")
+          if(!is.factor(unlist(newdata[specs$by]))) {
+            as.numeric(unlist(newdata[specs$by])) * specs$basis(newdata[specs$term])
+          } else specs$basis(newdata[specs$term])
+        } else specs$basis(newdata[specs$term])
+      } else stop(paste("cannot compute design matrix for term ", specs$label, "!", sep = ""))
+    }
+
     FUN <- function(x) {
       rval <- as.numeric(quantile(x, probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
       names(rval) <- c("2.5%", "50%", "97.5%")
       rval
     }
     fit <- apply(samps, 1, function(g) {
-      X %*% g
+      specs$get.mu(X, g)
     })
     fit <- t(apply(fit, 1, FUN))
+
     x <- cbind(x[, terms[i]], fit)
     xattr$names <- colnames(x)
     ##xattr$partial.resids <- xattr$partial.resids[, -td, drop = FALSE]
