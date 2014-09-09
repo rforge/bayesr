@@ -589,6 +589,12 @@ trunc.BayesR <- function(links = c(mu = "identity", sigma = "log"),
       if(!log) ll <- exp(ll)
       ll
     },
+    "p" = function(y, eta) {
+      require("msm")
+      ptnorm(y, mean = eta$mu, sd = eta$sigma,
+        lower = if(direction == "left") point else -Inf,
+        upper = if(direction == "right") point else Inf)
+    },
     "score" = list(
       "mu" = function(y, eta) {
         as.numeric(tgrad(y, eta, what = "mu"))
