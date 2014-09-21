@@ -539,6 +539,21 @@ truncgaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
 	    sigma <- eta$sigma
 	    arg <- - mu / sigma
 	    2 * (pnorm(y / sigma + arg) - pnorm(arg))
+    },
+    "score" = list(
+      "mu" = function(y, eta, ...) { drop((y - eta$mu) / (eta$sigma^2) 
+											- (eta$mu / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma))) },
+      "sigma" = function(y, eta, ...) { drop(-0.5 + (y - eta$mu)^2 / (eta$sigma^2) 
+												+ (eta$mu / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma))) }
+    ),
+    "weights" = list(
+      "mu" = function(y, eta, ...) { drop(1 / (eta$sigma^2) - (eta$mu / eta$sigma^2) * (eta$mu / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma))
+											- ((eta$mu / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma)))^2)},
+      "sigma" = function(y, eta, ...) { drop(0.5 - (eta$mu / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma)) * 
+																	(1 + (eta$mu / eta$sigma)^2 + (eta$mu / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma))) ) }
+    ),
+    "loglik" = function(y, eta, ...) {
+      sum(-0.5*log(2*pi) - log(eta$sigma) - (y-eta$mu)^2/(2*eta$sigma^2) - log(pnorm(eta$mu / eta$sigma)))
     }
   )
   
