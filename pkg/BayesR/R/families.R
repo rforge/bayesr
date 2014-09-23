@@ -400,11 +400,11 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
     ),
     "score" = list(
       "mu" = function(y, eta, ...) { drop((y - eta$mu) / (eta$sigma^2)) },
-      "sigma" = function(y, eta, ...) { drop(-0.5 + (y - eta$mu)^2 / (eta$sigma^2)) }
+      "sigma" = function(y, eta, ...) { drop(-1 + (y - eta$mu)^2 / (eta$sigma^2)) }
     ),
     "weights" = list(
       "mu" = function(y, eta, ...) { drop(1 / (eta$sigma^2)) },
-      "sigma" = function(y, eta, ...) { rep(0.5, length(y)) }
+      "sigma" = function(y, eta, ...) { rep(2, length(y)) }
     ),
     "loglik" = function(y, eta, ...) {
       sum(dnorm(y, eta$mu, eta$sigma, log = TRUE))
@@ -543,13 +543,13 @@ truncgaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
     "score" = list(
       "mu" = function(y, eta, ...) { drop((y - eta$mu) / (eta$sigma^2) 
 											- (1 / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma))) },
-      "sigma" = function(y, eta, ...) { drop(-0.5 + (y - eta$mu)^2 / (eta$sigma^2) 
+      "sigma" = function(y, eta, ...) { drop(-1 + (y - eta$mu)^2 / (eta$sigma^2) 
 												+ (eta$mu / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma))) }
     ),
     "weights" = list(
       "mu" = function(y, eta, ...) { drop(1 / (eta$sigma^2) - (eta$mu / eta$sigma^2) * (1 / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma))
 											- ((1 / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma)))^2)},
-      "sigma" = function(y, eta, ...) { drop(0.5 - (eta$mu / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma)) * 
+      "sigma" = function(y, eta, ...) { drop(2 - (eta$mu / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma)) * 
 																	(1 + (eta$mu / eta$sigma)^2 + (eta$mu / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma))) ) }
     ),
     "loglik" = function(y, eta, ...) {
