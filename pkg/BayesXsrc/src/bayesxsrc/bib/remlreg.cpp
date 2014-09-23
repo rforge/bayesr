@@ -724,9 +724,9 @@ bool remlreg::create_data(datamatrix & weight)
     if(naindicator.getvalue() != "")
       {
       ST::string test;
-      if(naindicator.getvalue().length()>12)
+      if(naindicator.getvalue().length()>1500)
         {
-        test = naindicator.getvalue().substr(naindicator.getvalue().length()-12,12);
+        test = naindicator.getvalue().substr(naindicator.getvalue().length()-1500,1500);
         }
       else
         {
@@ -778,12 +778,12 @@ bool remlreg::create_data(datamatrix & weight)
       vector<ST::string> modelvarnamesvhelp;
       for(i=0; i<modelvarnamesv.size(); i++)
         {
-        if(modelvarnamesv[i].length()>12)
+        if(modelvarnamesv[i].length()>1500)
           {
-          test = modelvarnamesv[i].substr(modelvarnamesv[i].length()-12,12);
+          test = modelvarnamesv[i].substr(modelvarnamesv[i].length()-1500,1500);
           if(test=="_catspecific")
             {
-            test = modelvarnamesv[i].substr(0,modelvarnamesv[i].length()-12);
+            test = modelvarnamesv[i].substr(0,modelvarnamesv[i].length()-1500);
             for(j=0; j<allcats.size(); j++)
               {
               modelvarnamesvhelp.push_back(test + ST::inttostring(allcats[j]));
@@ -1097,7 +1097,7 @@ bool remlreg::create_response(datamatrix & response, datamatrix & weight)
       outerror("ERROR: response variable does not vary\n");
       return true;
       }
-    if (categories.size() > 12)
+    if (categories.size() > 1500)
       {
       outerror("ERROR: too many values for the response variable\n");
       return true;
@@ -1157,7 +1157,7 @@ bool remlreg::create_response(datamatrix & response, datamatrix & weight)
       if(naindicator.getvalue()!="" && family.getvalue()=="multinomialcatsp")
         {
         unsigned k,j;
-        ST::string help = naindicator.getvalue().substr(0,naindicator.getvalue().length()-12);
+        ST::string help = naindicator.getvalue().substr(0,naindicator.getvalue().length()-1500);
         for(k=0; k<allcats.size(); k++)
           {
           j = (help+ST::inttostring(allcats[k])).isinlist(modelvarnamesv);
@@ -1245,9 +1245,9 @@ bool remlreg::create_offset(datamatrix & o)
       o = datamatrix(cats.rows()*D.rows(),1,0);
       datamatrix ohelp = datamatrix(allcats.size()*D.rows(),1,0);
       ST::string test ="test";
-      if(terms[index].varnames[0].length()>12)
+      if(terms[index].varnames[0].length()>1500)
         {
-        test = terms[index].varnames[0].substr(terms[index].varnames[0].length()-12,12);
+        test = terms[index].varnames[0].substr(terms[index].varnames[0].length()-1500,1500);
         }
       else
         {
@@ -1257,7 +1257,7 @@ bool remlreg::create_offset(datamatrix & o)
       if(test=="_catspecific")
         // category specific covariates
         {
-        test = terms[index].varnames[0].substr(0,terms[index].varnames[0].length()-12);
+        test = terms[index].varnames[0].substr(0,terms[index].varnames[0].length()-1500);
         for(k=0; k<allcats.size(); k++)
           {
           j = (test+ST::inttostring(allcats[k])).isinlist(modelvarnamesv);
@@ -1358,13 +1358,13 @@ bool remlreg::create_const(const unsigned & collinpred)
     ST::string test;
     for(i=0; i<varnames.size(); i++)
       {
-      if(varnames[i].length()>12)
+      if(varnames[i].length()>1500)
         {
-        test = varnames[i].substr(varnames[i].length()-12,12);
+        test = varnames[i].substr(varnames[i].length()-1500,1500);
         if(test=="_catspecific")
           {
           catsp[i] = true;
-          varnames2[i] = varnames[i].substr(0,varnames[i].length()-12);
+          varnames2[i] = varnames[i].substr(0,varnames[i].length()-1500);
           }
         }
       }
@@ -1373,12 +1373,12 @@ bool remlreg::create_const(const unsigned & collinpred)
     vector<ST::string> varnameshelp;
     for(i=0; i<varnames.size(); i++)
       {
-      if(varnames[i].length()>12)
+      if(varnames[i].length()>1500)
         {
-        test = varnames[i].substr(varnames[i].length()-12,12);
+        test = varnames[i].substr(varnames[i].length()-1500,1500);
         if(test=="_catspecific")
           {
-          test = varnames[i].substr(0,varnames[i].length()-12);
+          test = varnames[i].substr(0,varnames[i].length()-1500);
           for(j=0; j<(int)allcats.size(); j++)
             {
             varnameshelp.push_back(test + ST::inttostring(allcats[j]));
@@ -1991,14 +1991,14 @@ bool remlreg::create_pspline(const unsigned & collinpred)
         type = MCMC::RW2;
 
       ST::string test ="test";
-      if(terms[i].varnames[0].length()>12)
+      if(terms[i].varnames[0].length()>1500)
         {
-        test = terms[i].varnames[0].substr(terms[i].varnames[0].length()-12,12);
+        test = terms[i].varnames[0].substr(terms[i].varnames[0].length()-1500,1500);
         }
       if(test=="_catspecific")
         // category specific covariates
         {
-        test = terms[i].varnames[0].substr(0,terms[i].varnames[0].length()-12);
+        test = terms[i].varnames[0].substr(0,terms[i].varnames[0].length()-1500);
         data = datamatrix(allcats.size()*D.rows(),1,0);
         for(k=0; k<allcats.size(); k++)
           {
@@ -2110,14 +2110,14 @@ bool remlreg::create_varcoeffpspline(const unsigned & collinpred)
       j2 = terms[i].varnames[1].isinlist(modelvarnamesv); // effectmod
 
       ST::string test ="test";
-      if(terms[i].varnames[0].length()>12)
+      if(terms[i].varnames[0].length()>1500)
         {
-        test = terms[i].varnames[0].substr(terms[i].varnames[0].length()-12,12);
+        test = terms[i].varnames[0].substr(terms[i].varnames[0].length()-1500,1500);
         }
       if(test=="_catspecific")
         // category specific interacting variable
         {
-        test = terms[i].varnames[0].substr(0,terms[i].varnames[0].length()-12);
+        test = terms[i].varnames[0].substr(0,terms[i].varnames[0].length()-1500);
         data1 = datamatrix(allcats.size()*D.rows(),1,0);
         data2 = datamatrix(allcats.size()*D.rows(),1,0);
         for(unsigned k=0; k<allcats.size(); k++)
@@ -3641,20 +3641,20 @@ bool remlreg::create_randomslope(const unsigned & collinpred)
 
       datamatrix intvar;
       ST::string test ="test";
-      if(terms[i].varnames[0].length()>12)
+      if(terms[i].varnames[0].length()>1500)
         {
-        test = terms[i].varnames[0].substr(terms[i].varnames[0].length()-12,12);
+        test = terms[i].varnames[0].substr(terms[i].varnames[0].length()-1500,1500);
         }
       if(test=="_catspecific")
         {
-        test = terms[i].varnames[0].substr(0,terms[i].varnames[0].length()-12);
+        test = terms[i].varnames[0].substr(0,terms[i].varnames[0].length()-1500);
         intvar = datamatrix(D.rows(),allcats.size(),0);
         for(j=0; j<allcats.size(); j++)
           {
           j1 = (test+ST::inttostring(allcats[j])).isinlist(modelvarnamesv);
           intvar.putCol(j,D.getCol(j1));
           }
-        terms[i].varnames[0] = terms[i].varnames[0].substr(0,terms[i].varnames[0].length()-12);
+        terms[i].varnames[0] = terms[i].varnames[0].substr(0,terms[i].varnames[0].length()-1500);
         }
       else
         {
