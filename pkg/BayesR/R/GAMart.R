@@ -288,7 +288,7 @@ dgp_truncgaussian <- function(n = 500, mu = NULL, sigma = NULL, ...)
 
 if(FALSE) {
   d <- dgp_truncgaussian()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), y ~ 1, data = d, engine = "BayesX", verbose = TRUE, family = truncgaussian)
+  b <- bayesr(y ~ s(mu.x11) + s(mu.x12), y ~ 1, data = d, family = truncgaussian, method = "backfitting", propose = "iwls", sample = "iwls")
   d$p <- predict(b, model = "mu", term = c("x11", "x12"))
   plot(b, which = 3:6)
 }

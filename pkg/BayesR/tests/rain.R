@@ -7,6 +7,7 @@ if(file.exists("~/tmp/homstart.rda")) {
   if(!file.exists(file <- file.path(dpath, "homstart.rda"))) {
     homstart_data(dir = dirname(file), load = TRUE)
   } else load(file)
+  file.copy(file, file.path("~/tmp/homstart.rda"))
 }
 
 homstart$raw[homstart$raw == 0] <- 0.05
@@ -24,7 +25,9 @@ f <- list(
   sqrt(raw) ~ te(day, long, lat, bs = c("cc", "tp"), d = c(1, 2)) + s(elevation)
 )
 
-b1 <- bayesr(f, data = rain2, method = "MP", family = gF(trunc, point = 0), n.samples = 50)
+b1 <- bayesr(f, data = rain2, method = "backfitting", family = truncgaussian, n.samples = 50,
+  update = "iwls", sample = "iwls")
+
 b2 <- bayesr(f, data = rain, method = "MP2", family = gF(cens, left = 0), n.samples = 10)
 
 
@@ -45,7 +48,7 @@ d$yt <- ifelse(d$y > 1, d$y, NA)
 
 b0 <- truncreg(yt ~ x, data = d, point = 1, direction = "left")
 
-b <- bayesr(yt ~ x, data = d, family = gF(truncreg, point = 1))
+b <- bayesr(yt ~ x, data = d, family = gF(trunc, point = 1))
 mf <- model.frame(b)
 eta <- fitted(b)
 dy <- gF(truncreg, point = 1)$d(mf$yt, eta)

@@ -541,19 +541,30 @@ truncgaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
 	    2 * (pnorm(y / sigma + arg) - pnorm(arg))
     },
     "score" = list(
-      "mu" = function(y, eta, ...) { drop((y - eta$mu) / (eta$sigma^2) 
-											- (1 / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma))) },
-      "sigma" = function(y, eta, ...) { drop(-1 + (y - eta$mu)^2 / (eta$sigma^2) 
-												+ (eta$mu / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma))) }
+      "mu" = function(y, eta, ...) {
+        rval <- with(eta, (y - mu) / (sigma^2) - (1 / sigma)*(dnorm(mu / sigma) / pnorm(mu / sigma)))
+        return(drop(rval))
+      },
+      "sigma" = function(y, eta, ...) {
+        rval <- with(eta, -1 + (y - mu)^2 / (sigma^2) + (mu / sigma)*(dnorm(mu / sigma) / pnorm(mu / sigma)))
+        return(drop(rval))
+      }
     ),
     "weights" = list(
-      "mu" = function(y, eta, ...) { drop(1 / (eta$sigma^2) - (eta$mu / eta$sigma^2) * (1 / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma))
-											- ((1 / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma)))^2)},
-      "sigma" = function(y, eta, ...) { drop(2 - (eta$mu / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma)) * 
-																	(1 + (eta$mu / eta$sigma)^2 + (eta$mu / eta$sigma)*(dnorm(eta$mu / eta$sigma) / pnorm(eta$mu / eta$sigma))) ) }
+      "mu" = function(y, eta, ...) {
+        rval <- with(eta, 1 / (sigma^2) - (mu / sigma^2) * (1 / sigma)*(dnorm(mu / sigma) / pnorm(mu / sigma))
+          - ((1 / sigma)*(dnorm(mu / sigma) / pnorm(mu / sigma)))^2)
+        return(drop(rval))
+      },
+      "sigma" = function(y, eta, ...) {
+        rval <- with(eta, 2 - (mu / sigma)*(dnorm(mu / sigma) / pnorm(mu / sigma)) * 
+          (1 + (mu / sigma)^2 + (mu / sigma)*(dnorm(mu / sigma) / pnorm(mu / sigma))))
+        return(drop(rval))
+      }
     ),
     "loglik" = function(y, eta, ...) {
-      sum(-0.5*log(2*pi) - log(eta$sigma) - (y-eta$mu)^2/(2*eta$sigma^2) - log(pnorm(eta$mu / eta$sigma)))
+      rval <- with(eta, sum(-0.5 * log(2 * pi) - log(sigma) - (y - mu)^2 / (2*sigma^2) - log(pnorm(mu / sigma))))
+      return(rval)
     }
   )
   
@@ -757,15 +768,27 @@ trunc2.BayesR <- function(links = c(mu = "identity", sigma = "log"),
   name = "norm", a = -Inf, b = Inf, ...)
 {
   rval <- list(
-    "family" = "truncreg",
+    "family" = "trunc2",
     "names" = c("mu", "sigma"),
     "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
     "d" = function(y, eta, log = FALSE) {
-      d <- dtrunc(y, name, a = a, b = b, mean = eta$mu, sd = eta$sigma, log = log)
+      if(name == "gamma") {
+		    a2 <- eta$sigma
+		    s2 <- eta$mu / eta$sigma
+        d <- dtrunc(y, name, a = a, b = b, shape = s2, scale = s2, log = log)
+      } else {
+        d <- dtrunc(y, name, a = a, b = b, mean = eta$mu, sd = eta$sigma, log = log)
+      }
       return(d)
     },
     "p" = function(y, eta, ...) {
-      p <- ptrunc(y, name, a = a, b = b, mean = eta$mu, sd = eta$sigma, ...)
+      if(name == "gamma") {
+		    a2 <- eta$sigma
+		    s2 <- eta$mu / eta$sigma
+        p <- ptrunc(y, name, a = a, b = b, shape = a2, scale = s2, ...)
+      } else {
+        p <- ptrunc(y, name, a = a, b = b, mean = eta$mu, sd = eta$sigma, ...)
+      }
       return(p)
     },
     "q" = function(y, eta, ...) {
@@ -1668,9 +1691,9 @@ zero.BayesR <- function(pi = "logit", g = invgaussian)
 
 
 ## General BayesR family creator.
-gF <- function(name, ...) {
-  name <- deparse(substitute(name), backtick = TRUE, width.cutoff = 500)
-  F <- get(paste(name, "BayesR", sep = "."), mode = "function")
+gF <- function(x, ...) {
+  x <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500)
+  F <- get(paste(x, "BayesR", sep = "."), mode = "function")
   F(...)
 }
 
