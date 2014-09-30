@@ -116,7 +116,7 @@ n <- 500
 dat <- data.frame("x1" = sort(runif(n, 0, 1)), "x2" = runif(n, 0, 1))
 dat$y <- with(dat, 1.2 + f(x1, x2) + rnorm(n, sd = 0.2))
 
-b0 <- bayesr(y ~ s(x1):s(x2), data = dat, method = "backfitting")
+b0 <- bayesr(y ~ rs(s(x1), s(x2), link = "inverse"), data = dat, method = "backfitting")
 b1 <- bayesr(y ~ s(x1, x2, k = 20), data = dat, method = "backfitting")
 
 plot(c(b0, b1), type = "mba")

@@ -1556,11 +1556,23 @@ Predict.matrix.gc.smooth <- function(object, data, knots)
 
 
 ## Rational spline constructor.
-rs <- function(..., k = -1, fx = NULL, bs = "tp", m = NA, xt = NULL, link = "log")
+rs <- function(..., k = -1, fx = NULL, bs = "tp", m = NA, xt = NULL, link = "log", specials = NULL)
 {
   smooths <- as.list(substitute(list(...)))[-1]
   if(any(grepl("~", as.character(smooths[[1]]), fixed = TRUE))) {
-    stop("formulae not supported yet!")
+    stop("formulae no supported yet!")
+    specials <- c(specials, "s")
+    if(length(smooths) != 2) stop("there must be exactly 2 formulas!")
+    sm <- list()
+    for(j in seq_along(smooths)) {
+      sm[[j]] <- list()
+      tl <- attr(terms.formula(smooths[[j]], specials = specials), "term.labels")
+      for(i in seq_along(tl)) {
+        if(!grepl("s(", tl[i], fixed = TRUE)) {
+
+        }
+      }
+    }
   } else {
     if(length(smooths) < 2) {
       term <- deparse(smooths[[1]], backtick = TRUE, width.cutoff = 500)
@@ -1574,7 +1586,7 @@ rs <- function(..., k = -1, fx = NULL, bs = "tp", m = NA, xt = NULL, link = "log
       }
       smooths <- rep(list(smooths), length.out = 2)
     } else {
-      if(length(smooths) > 2) stop("more than two terms not allowd in rational spline setup!")
+      if(length(smooths) > 2) stop("more than two terms only possible using formula notation!")
       sm <- list(); term <- label <- NULL
       for(j in seq_along(smooths)) {
         tn <- deparse(smooths[[j]], backtick = TRUE, width.cutoff = 500)
@@ -1594,6 +1606,7 @@ rs <- function(..., k = -1, fx = NULL, bs = "tp", m = NA, xt = NULL, link = "log
       label <- paste("rs(", paste(label, collapse = ",", sep = ""), ")", sep = "")
       smooths <- sm
     }
+
     term <- unique(term)
     dim <- min(c(2, length(term)))
 
@@ -1650,7 +1663,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
         X[[j]] <- stj$X
         object$smooths[[j]] <- stj
         if(!stj$fixed) {
-          sp <- if(is.null(stj$sp)) mean(interval[[j]]) else stj$sp
+          sp <- if(is.null(stj$sp)) min(c(1000, mean(interval[[j]]))) else stj$sp
           names(sp) <- if(j < 2) "tau2g" else "tau2w"
           tau2 <- c(tau2, sp)
           XX <- crossprod(X[[j]])
@@ -1732,8 +1745,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
 
     ## Objective function.
     objfun <- function(gamma) {
-      fit <- x$get.mu(x$X, gamma)
-      eta2[[id]] <- eta[[id]] + fit
+      eta2[[id]] <- eta[[id]] + x$get.mu(x$X, gamma)
       peta <- family$map2par(eta2)
       ll <- family$loglik(response, peta)
       lp <- 0
@@ -1754,8 +1766,19 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
       -1 * (ll + lp)
     }
 
-    suppressWarnings(opt <- try(optim(x$state$g, fn = objfun, method = "BFGS",
-      control = list()), silent = TRUE))
+    ## Gradient function.
+    grad <- if(!is.null(family$score[[id]])) {
+      function(gamma) {
+        eta2[[id]] <- eta[[id]] + x$get.mu(x$X, gamma)
+        peta <- family$map2par(eta2)
+        score <- drop(family$score[[id]](response, peta))
+        grad <- x$grad(score, gamma, tau2, full = FALSE)
+        return(drop(-1 * grad))
+      }
+    } else NULL
+
+    suppressWarnings(opt <- try(optim(x$state$g, fn = objfun, gr = grad,
+      method = "BFGS", control = list()), silent = TRUE))
 
     if(!inherits(opt, "try-error")) {
       x$state$g <- opt$par
@@ -1815,11 +1838,14 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
       }
     }
 
-    gvec <- drop(crossprod(cbind(Xgrad, if(full) rep(0, length(grad2)) else NULL), score)) + c(grad, grad2)
+    gvec <- drop(crossprod(cbind(Xgrad, if(full) {
+      matrix(0, nrow = nrow(Xgrad), ncol = length(tau2))
+    } else NULL), score)) + c(grad, grad2)
+
     return(gvec)
   }
 
-  object$grad <- FALSE
+  ##object$grad <- FALSE
 
   object$propose <- function(x, family, response, eta, id, rho, ...) {
     args <- list(...)
