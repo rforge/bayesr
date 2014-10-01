@@ -55,8 +55,7 @@ sim <- function(nrep = 100,
     } else {
       b1 <- gam(y ~ s(x1,k=sce$k[i]*2,fx=sce$fx[i]), data = d)
       f <- as.formula(paste('y ~ rs(s(x1,k=', sce$k[i], ',sp=', 1/sp,
-        ',fx=', sce$fx[i], '), s(x1,k=', sce$k[i], ',sp=', 1/sp, ',fx=', sce$fx[i],
-        '), link="log")', sep = ''))
+        ',fx=', sce$fx[i], '), link="probit")', sep = ''))
       b2 <- bayesr(f, data = d, method = "backfitting", n.samples = 0, verbose = FALSE)
     }
 
@@ -75,8 +74,9 @@ sim <- function(nrep = 100,
       } else {
         par(mfrow = c(1, 1))
         plot2d(f1 ~ x1, data = d, main = paste("type", sce$type[i]), col.lines = 1, rug = FALSE)
-        plot2d(f2 ~ x1, data = d, add = TRUE, col.lines = 3)
-        plot2d(ftrue ~ x1, data = d, add = TRUE, col.lines = 2)
+        plot2d(f2 ~ x1, data = d, add = TRUE, col.lines = 3, rug = FALSE)
+        plot2d(ftrue ~ x1, data = d, add = TRUE, col.lines = 2, rug = FALSE)
+        legend("topleft", c("truth", "gam", "rs"), col = c(2, 1, 3), lwd = 2)
       }
     }
 
