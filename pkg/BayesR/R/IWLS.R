@@ -776,13 +776,12 @@ update_optim <- function(x, family, response, eta, id, ...)
       x$state$XX <- crossprod(x$X)
   }
 
-  if(!x$fixed & is.null(x$sp)) {
+  if(!x$fixed & is.null(x[["sp"]])) {
     ## Objective function for variance parameter.
     objfun2 <- function(tau2) {
-
       ## Objective for regression coefficients.
       objfun <- function(gamma) {
-        eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
+        eta2[[id]] <- eta[[id]] + x$get.mu(x$X, gamma)
         ll <- family$loglik(response, family$map2par(eta2))
         lp <- x$prior(gamma, tau2)
         -1 * (ll + lp)
@@ -804,7 +803,7 @@ update_optim <- function(x, family, response, eta, id, ...)
 
       if(!inherits(opt, "try-error")) {
         x$state$g <- opt$par
-        x$state$fit <- drop(x$X %*% x$state$g)
+        x$state$fit <- x$get.mu(x$X, x$state$g)
       }
 
       edf <- x$edf(x, tau2)
@@ -831,7 +830,7 @@ update_optim <- function(x, family, response, eta, id, ...)
 
   ## Objective for regression coefficients.
   objfun <- function(gamma) {
-    eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
+    eta2[[id]] <- eta[[id]] + x$get.mu(x$X, gamma)
     ll <- family$loglik(response, family$map2par(eta2))
     lp <- x$prior(gamma, x$state$tau2)
     -1 * (ll + lp)
@@ -853,7 +852,7 @@ update_optim <- function(x, family, response, eta, id, ...)
 
   if(!inherits(opt, "try-error")) {
     x$state$g <- opt$par
-    x$state$fit <- drop(x$X %*% x$state$g)
+    x$state$fit <- x$get.mu(x$X, x$state$g)
   }
 
   if(!x$fixed)
@@ -1132,6 +1131,8 @@ smooth.IWLS.default <- function(x, ...)
   }
   x$grid <- if(is.null(x$xt$grid)) 40 else x$xt$grid
   ntau2 <- length(x$S)
+  if(length(ntau2) < 1)
+    x$sp <- NULL
   if(!is.null(x$sp)) x$sp <- rep(x$sp, length.out = ntau2)
   if(is.null(x$state)) {
     x$p.save <- c("g", "tau2")
@@ -1221,6 +1222,12 @@ smooth.IWLS.default <- function(x, ...)
   x$upper <- c(rep(Inf, length(x$state$g)),
     if(is.list(x$interval)) unlist(sapply(x$interval, function(x) { x[2] })) else x$interval[2])
   names(x$lower) <- names(x$upper) <- x$s.colnames
+  if(!is.null(x$sp)) {
+    if(length(x$sp) < 1)
+      x$sp <- NULL
+    if(is.logical(x$sp))
+      x[["sp"]] <- NULL
+  }
 
   x
 }
@@ -1542,7 +1549,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
 
     opt <- optim(par, fn = log_posterior, gr = grad_posterior,
       method = "L-BFGS-B", lower = lower2, upper = upper2,
-      control = optim.control, hessian = TRUE)
+      control = optim.control)
     par <- opt$par
     hessian <- opt$hessian
     rm(opt)

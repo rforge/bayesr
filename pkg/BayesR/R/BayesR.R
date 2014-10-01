@@ -1663,7 +1663,12 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
         X[[j]] <- stj$X
         object$smooths[[j]] <- stj
         if(!stj$fixed) {
-          sp <- if(is.null(stj$sp)) min(c(1000, mean(interval[[j]]))) else stj$sp
+          sp <- if(is.null(stj$sp)) {
+            if(is.null(stj$xt$lambda))
+              min(c(100, mean(interval[[j]])))
+            else
+              1 / stj$xt$lambda
+          } else stj$sp
           names(sp) <- if(j < 2) "tau2g" else "tau2w"
           tau2 <- c(tau2, sp)
           XX <- crossprod(X[[j]])
@@ -1735,60 +1740,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     return(lp)
   }
 
-  object$update <- function(x, family, response, eta, id, ...) {
-    ## Compute partial predictor.
-    eta[[id]] <- eta[[id]] - x$state$fit
-    eta2 <- eta
-
-    nx <- colnames(x$X)
-    k1 <- length(grep("g1", nx, fixed = TRUE))
-
-    ## Objective function.
-    objfun <- function(gamma) {
-      eta2[[id]] <- eta[[id]] + x$get.mu(x$X, gamma)
-      peta <- family$map2par(eta2)
-      ll <- family$loglik(response, peta)
-      lp <- 0
-      g <- gamma[1:k1]
-      w <- c(1, gamma[(k1 + 1):(ncol(x$X) - 1)])
-      lp <- if(!x$smooths[[1]]$fixed) {
-        sp <- x$smooths[[1]]$sp
-        if(is.null(sp))
-          sp <- x$state$tau2["tau2g"]
-        lp + drop(-0.5 / sp * crossprod(g, x$smooths[[1]]$S[[1]]) %*% g)
-      } else lp + sum(dnorm(g, sd = 10, log = TRUE))
-      lp <- if(!x$smooths[[2]]$fixed) {
-        sp <- x$smooths[[2]]$sp
-        if(is.null(sp))
-          sp <- x$state$tau2["tau2w"]
-        lp + drop(-0.5 / sp * crossprod(w, x$smooths[[2]]$S[[1]]) %*% w)
-      } else lp + sum(dnorm(w, sd = 10, log = TRUE))
-      -1 * (ll + lp)
-    }
-
-    ## Gradient function.
-    grad <- if(!is.null(family$score[[id]])) {
-      function(gamma) {
-        eta2[[id]] <- eta[[id]] + x$get.mu(x$X, gamma)
-        peta <- family$map2par(eta2)
-        score <- drop(family$score[[id]](response, peta))
-        grad <- x$grad(score, gamma, tau2, full = FALSE)
-        return(drop(-1 * grad))
-      }
-    } else NULL
-
-    suppressWarnings(opt <- try(optim(x$state$g, fn = objfun, gr = grad,
-      method = "BFGS", control = list()), silent = TRUE))
-
-    if(!inherits(opt, "try-error")) {
-      x$state$g <- opt$par
-      x$state$fit <- x$get.mu(x$X, x$state$g)
-    }
-
-    x$state$edf <- x$edf(x, x$state$tau2)
-
-    return(x$state)
-  }
+  object$update <- update_optim
 
   object$grad <- function(score, gamma, tau2 = NULL, full = TRUE) {
     nx <- colnames(object$X)
@@ -1844,8 +1796,6 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
 
     return(gvec)
   }
-
-  ##object$grad <- FALSE
 
   object$propose <- function(x, family, response, eta, id, rho, ...) {
     args <- list(...)

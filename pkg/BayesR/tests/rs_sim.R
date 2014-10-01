@@ -2,7 +2,6 @@
 library("BayesR")
 library("lattice")
 
-
 ## Data generating process.
 dgp <- function(n = 500, sd = 0.2, type = c("simple2d", "complicated2d"))
 {
@@ -28,7 +27,6 @@ dgp <- function(n = 500, sd = 0.2, type = c("simple2d", "complicated2d"))
   dat
 }
 
-
 ## Simulation and evaluation.
 sim <- function(nrep = 100,
   n = c(100, 500, 1000),
@@ -42,10 +40,10 @@ sim <- function(nrep = 100,
   sce <- sce[order(sce$rep), ]
 
   res <- NULL; ii <- 1
-  cat("** replication = 1  i = 1", rep(" ", 5))
+  cat("** replication = 1  i = 1", "of", nrow(sce), rep(" ", 5))
   for(i in 1:nrow(sce)) {
     cat("\r")
-    cat(paste("** replication =", sce$rep[i]), "i =", ii, rep(" ", 10))
+    cat(paste("** replication =", sce$rep[i]), "i =", ii, "of", nrow(sce), rep(" ", 5))
     d <- dgp(n = sce$n[i], sd = sce$sd[i], type = sce$type[i])
 
     if(grepl("2d", sce$type[i])) {
