@@ -125,7 +125,7 @@ architecture and model specification problem. In Section~\ref{sec:softex} a soft
 of the concept is presented briefly together with a couple of examples.
 
 
-\section{Models} \label{sec:models}
+\section{Model structure and overview} \label{sec:models}
 
 The models discussed in this paper assume conditional independence of the response variable $y_1, 
 \ldots, y_n$ given covariates. Within the GAMLSS model
@@ -141,41 +141,46 @@ known monotonic link functions $h_{k}(\cdot)$ \citep{bamlss:Rigby+Stasinopoulos:
 The $k$th additive predictor (for simplicity, the
 parameter index $k$ is suppressed in the following) is given by
 \begin{equation} \label{eqn:structadd}
-\eta = f_1(\mathbf{z}) + \ldots + f_p(\mathbf{z}) + \mathbf{x}^{\top}\boldsymbol{\gamma},
+\eta = f_1(\mathbf{x}) + \ldots + f_p(\mathbf{x}),
 \end{equation}
-where $\mathbf{z}$ represents a generic vector of all nonlinear modeled covariates and
-$\mathbf{x}^{\top}\boldsymbol{\gamma}$ is the usual parametric part. The functions $f_j$ are
-possibly smooth functions encompassing various types of effects, e.g.:
+where $\mathbf{x}$ represents a generic vector of all linear and nonlinear modeled covariates. The
+functions $f_j$ are possibly smooth functions encompassing various types of effects, e.g.:
 \begin{itemize}
-  \item Nonlinear effects of continuous covariates: $f_j(\mathbf{z}) = f(z_1)$.
-  \item Two-dimensional surfaces: $f_j(\mathbf{z}) = f(z_1, z_2)$.
-  \item Spatially correlated effects: $f_j(\mathbf{z}) = f_{spat}(z_s)$.
-  \item Varying coefficients: $f_j(\mathbf{z}) = z_1f(z_2)$.
-  \item Spatially varying effects: $f_j(\mathbf{z}) = z_1f_{spat}(z_s)$ or
-    $f_j(\mathbf{z}) = z_1f(z_2, z_3)$.
-  \item Random intercepts with cluster index $c$: $f_j(\mathbf{z}) = \beta_c$.
-  \item Random slopes with cluster index $c$: $f_j(\mathbf{z}) = z_1\beta_c$.
+  \item Linear effects of continuous covariates: $f_j(\mathbf{x}) = x_1$.
+  \item Nonlinear effects of continuous covariates: $f_j(\mathbf{x}) = f(x_1)$.
+  \item Two-dimensional surfaces: $f_j(\mathbf{x}) = f(x_1, x_2)$.
+  \item Spatially correlated effects: $f_j(\mathbf{x}) = f_{spat}(x_s)$.
+  \item Varying coefficients: $f_j(\mathbf{x}) = x_1f(x_2)$.
+  \item Spatially varying effects: $f_j(\mathbf{x}) = x_1f_{spat}(x_s)$ or
+    $f_j(\mathbf{x}) = x_1f(x_2, x_3)$.
+  \item Random intercepts with cluster index $c$: $f_j(\mathbf{x}) = \beta_c$.
+  \item Random slopes with cluster index $c$: $f_j(\mathbf{x}) = x_1\beta_c$.
 \end{itemize}
 Because of the general structure of the predictor, i.e., the various terms can be combined
 arbitrarily, the models discussed are embedded within the class of structured additive regression
 (STAR,~\citealp{bamlss:Fahrmeir+Kneib+Lang:2004, bamlss:Brezger+Lang:2006}) models.
 
+
+\section{A conceptional Lego toolbox} \label{sec:legobox}
+
+\subsection{Terms and priors} \label{sec:termprior}
+
 For each function $f_j$ the vector of function evaluations
-$\mathbf{f}_j = (f_j(\mathbf{z}_{1}),\ldots,f_j(\mathbf{z}_{n}))^{\top}$ of the $i = 1, \ldots, n$
+$\mathbf{f}_j = (f_j(\mathbf{x}_{1}),\ldots,f_j(\mathbf{x}_{n}))^{\top}$ of the $i = 1, \ldots, n$
 observations can be written in matrix notation
 \begin{equation*} \label{eqn:matnot}
-\mathbf{f}_j = \mathbf{Z}_j\boldsymbol{\beta}_j,
+\mathbf{f}_j = \mathbf{x}_j\boldsymbol{\beta}_j,
 \end{equation*}
-with design matrix $\mathbf{Z}_j$ that depends on the specific term structure chosen for $f_j$
+with design matrix $\mathbf{x}_j$ that depends on the specific term structure chosen for $f_j$
 and $\boldsymbol{\beta}_j$ are unknown regression coefficients to be estimated. Hence, the predictor
  (\ref{eqn:structadd}) may be rewritten as
 \begin{equation*} \label{eqn:structaddmat}
-\boldsymbol{\eta} = \mathbf{Z}_1\boldsymbol{\beta}_1 + \ldots + \mathbf{Z}_p\boldsymbol{\beta}_p
+\boldsymbol{\eta} = \mathbf{x}_1\boldsymbol{\beta}_1 + \ldots + \mathbf{x}_p\boldsymbol{\beta}_p
 + \mathbf{X}\boldsymbol{\gamma},
 \end{equation*}
 where $\mathbf{X}$ corresponds to the usual design matrix for the linear effects.
 
-The individual model components $\mathbf{Z}_j\boldsymbol{\beta}_j$ can be further decomposed
+The individual model components $\mathbf{x}_j\boldsymbol{\beta}_j$ can be further decomposed
 into a mixed model representation given by
 \begin{equation*} \label{eqn:mixed}
 \mathbf{f}_j = \tilde{\mathbf{X}}_j\tilde{\boldsymbol{\gamma}}_j +
@@ -216,34 +221,31 @@ A detailed discussion of the GAMLSS methodological framework is provided in
 \fixme{Multilevel \citep{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}, multinomial,
   quantile regression \dots?}
 
+%The representation of the terms in the structured additive predictor (\ref{eqn:structadd})
+%already suggests a general and modular architecture. However, to keep the focus on maximum
+%flexibility of the conceptional framework it is useful to list the typical steps needed to estimate
+%the models presented in Section~\ref{sec:models}:
+%\begin{enumerate}
+%\item Choosing an appropriate distribution for the response.
+%\item Specification of the model terms the parameters are modeled by.
+%\item Setting up the corresponding design and penalty matrices.
+%\item Starting the estimation engine.
+%\item Processing the results for printing summaries, plotting, etc. 
+%\end{enumerate}
+%Step 2 thereby requires some type of generic model formula syntax to actually specify the
+%dependencies of the parameters on covariates. Choosing an appropriate distribution in step 1 implies
+%that the estimation engine used in step 4 includes the corresponding implementation. In addition,
+%to compute, e.g., goodness of fit plots using quantile residuals \citep{bamlss:Dunn+Gordon:1996},
+%the distribution specification oftentimes needs information beyond the log-likelihood function.
+%Moreover, the individual steps should be modular, e.g., changing the estimation engine does not
+%require additional adjustments on subsequent infrastructures. The following describes the
+%conceptional building blocks in more detail.
 
-\section{General architecture} \label{sec:arch}
+\subsection{Density} \label{sec:density}
 
-The representation of the terms in the structured additive predictor (\ref{eqn:structadd})
-already suggests a general and modular architecture. However, to keep the focus on maximum
-flexibility of the conceptional framework it is useful to list the typical steps needed to estimate
-the models presented in Section~\ref{sec:models}:
-\begin{enumerate}
-\item Choosing an appropriate distribution for the response.
-\item Specification of the model terms the parameters are modeled by.
-\item Setting up the corresponding design and penalty matrices.
-\item Starting the estimation engine.
-\item Processing the results for printing summaries, plotting, etc. 
-\end{enumerate}
-Step 2 thereby requires some type of generic model formula syntax to actually specify the
-dependencies of the parameters on covariates. Choosing an appropriate distribution in step 1 implies
-that the estimation engine used in step 4 includes the corresponding implementation. In addition,
-to compute, e.g., goodness of fit plots using quantile residuals \citep{bamlss:Dunn+Gordon:1996},
-the distribution specification oftentimes needs information beyond the log-likelihood function.
-Moreover, the individual steps should be modular, e.g., changing the estimation engine does not
-require additional adjustments on subsequent infrastructures. The following describes the
-conceptional building blocks in more detail.
-
-\subsection{Family specifications} \label{sec:famspec}
-
-Any statistical software for regression models needs some description system for the supported
-distributions. Since most estimation algorithms have at least one common part, a modular system
-with reusable elements arises naturally from the following characterizations.
+%Any statistical software for regression models needs some description system for the supported
+%distributions. Since most estimation algorithms have at least one common part, a modular system
+%with reusable elements arises naturally from the following characterizations.
 
 The main building block of regression model algorithms is the probability density function
 $f(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$, or for
@@ -273,7 +275,14 @@ where $\boldsymbol{\vartheta} = (\boldsymbol{\beta}_1, \ldots,
 \boldsymbol{\beta}_K, \boldsymbol{\gamma}_1, \ldots, \boldsymbol{\gamma}_K,
 \boldsymbol{\tau}^2_1, \ldots, \boldsymbol{\tau}^2_K)^\top$ now includes all variance vectors, too. 
 From a frequentist perspective (\ref{eqn:posterior}) can be viewed as a penalized
-log-likelihood using prior (\ref{eqn:prior}). Maximum likelihood and other gradient based algorithms require the evaluation of the
+log-likelihood using prior (\ref{eqn:prior}).
+
+
+\subsection{Model fitters} \label{sec:modelfit}
+
+\subsubsection{Frequentist}
+
+Maximum likelihood and other gradient based algorithms require the evaluation of the
 first derivative or score vector. Within the Bayesian formulation the resulting score vector is
 \begin{equation}
 s(\boldsymbol{\vartheta}) = 
@@ -320,25 +329,32 @@ From this, maximum likelihood estimates can be derived by an iteratively reweigh
 algorithm (IWLS, see \citealp{bamlss:Rigby+Stasinopoulos:2005}, Appendix~C), where in each
 iteration $t$ an adjusted dependent variable
 \begin{equation} \label{eqn:z}
-\mathbf{z}_k^{[t]} = \boldsymbol{\eta}_k^{[t]} + \left(\mathbf{W}_{kk}^{[t]}\right)^{-1}\mathbf{s}_k^{[t]}
+\mathbf{x}_k^{[t]} = \boldsymbol{\eta}_k^{[t]} + \left(\mathbf{W}_{kk}^{[t]}\right)^{-1}\mathbf{s}_k^{[t]}
 \end{equation}
 is computed, with vector
 $\mathbf{s}_k = \partial l(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k$
 and weights
 $\mathbf{W}_{kk} = - \partial^2 l(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top$. Because the working observations follow
 \begin{equation}
-\mathbf{z}_k^{[t]} \sim N\left(\boldsymbol{\eta}_k^{[t]}, \left(\mathbf{W}_{kk}^{[t]}\right)^{-1}\right),
+\mathbf{x}_k^{[t]} \sim N\left(\boldsymbol{\eta}_k^{[t]}, \left(\mathbf{W}_{kk}^{[t]}\right)^{-1}\right),
 \end{equation}
 a simple backfitting algorithm or weighted least squares can be applied to obtain updates for
 $(\boldsymbol{\beta}_k, \boldsymbol{\gamma}_k)^\top$ in each iteration. Depending on the type of 
 algorithm different weights are used, e.g.,
 $\mathbf{W}_{kk} = - E\left(\partial^2 l(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top\right)$.
 
+\subsubsection{Bayesian}
+
 In the corresponding Bayesian approach
 property (\ref{eqn:z}) can also be utilized to construct multivariate normal IWLS proposals for
 $(\boldsymbol{\beta}_k, \boldsymbol{\gamma}_k)^\top$ to setup a Metropolis-Hastings MCMC sampler,
 see \citet{bamlss:Klein+Kneib+Lang:2013}. Amongst others, the advantage of Bayesian MCMC algorithms 
 is that the variance parameters can be estimated simultaneously with the regression coefficients.
+
+
+\subsection{Inference and prediction} \label{sec:infpred}
+
+\subsection{Lego bricks} \label{sec:leobricks}
 
 From the above, it can be recognized that the following quantities are repeatedly used within
 BAMLSS candidate algorithms:
@@ -362,7 +378,7 @@ following pseudo code:
 \hspace*{1cm} \code{for(j in 1:p) \{} \\
 \hspace*{1.5cm} Compute $\boldsymbol{\eta}^{\texttt{[k]}}_{\texttt{-j}} = \boldsymbol{\eta}^{\texttt{[k]}} - \mathbf{f}_{\texttt{j}}^{\texttt{[k]}}$. \\
 \hspace*{1.5cm} Obtain new $(\boldsymbol{\beta}^{\texttt{[k]}}_{\texttt{j}}, {\tau^2}^{\texttt{[k]}}_{\texttt{j}})^\top = \texttt{u}_{\texttt{j}}^{\texttt{[k]}}(\mathbf{y}, \boldsymbol{\eta}^{\texttt{[k]}}_{\texttt{-j}},
-  \mathbf{Z}^{\texttt{[k]}}_{\texttt{j}}, \boldsymbol{\beta}^{\texttt{[k]}}_{\texttt{j}}, {\tau^2}^{\texttt{[k]}}_{\texttt{j}}, \texttt{family}, \texttt{k})$. \\
+  \mathbf{x}^{\texttt{[k]}}_{\texttt{j}}, \boldsymbol{\beta}^{\texttt{[k]}}_{\texttt{j}}, {\tau^2}^{\texttt{[k]}}_{\texttt{j}}, \texttt{family}, \texttt{k})$. \\
 \hspace*{1.5cm} Update $\boldsymbol{\eta}^{\texttt{[k]}}$. \\
 \hspace*{1cm} \code{\}} \\
 \hspace*{0.5cm} \code{\}} \\
@@ -385,6 +401,9 @@ etc., as described in the above.
 %extended by the user. Examples that do support some flexibility are the \proglang{R}
 %model fitting functions \fct{glm}, \fct{gam} as well as function \fct{gamlss} of package \pkg{gamlss}
 %\citep{bamlss:Stasinopoulos+Rigby:2014}.
+
+
+\section{Computational tools and strategies for implementation} \label{sec:comptools}
 
 \subsection{Symbolic descriptions} \label{sec:symdesc}
 
