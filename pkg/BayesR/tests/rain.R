@@ -17,15 +17,15 @@ rain <- subset(homstart, year >= 2008)
 rain2 <- subset(homstart, year >= 2008 & raw > 0)
 
 f <- list(
-  sqrt(raw) ~ s(day, bs = "cc") + s(elevation) + s(long, lat),
-  ~ s(day, bs = "cc") + s(elevation) + s(long, lat)
+  sqrt(raw) ~ s(day, bs = "cc") + s(elevation) + rs(s(long), s(lat), link = "inverse"),
+  ~ s(day, bs = "cc") + s(elevation) + rs(s(long), s(lat), link = "inverse")
 )
 
 f <- list(
   sqrt(raw) ~ te(day, long, lat, bs = c("cc", "tp"), d = c(1, 2)) + s(elevation)
 )
 
-b1 <- bayesr(f, data = rain2, method = "backfitting", family = truncgaussian, n.samples = 50,
+b1 <- bayesr(f, data = rain2, method = "backfitting", family = truncgaussian, n.samples = 0,
   update = "iwls", sample = "iwls")
 
 b2 <- bayesr(f, data = rain, method = "MP2", family = gF(cens, left = 0), n.samples = 10)

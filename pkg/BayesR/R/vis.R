@@ -1084,7 +1084,8 @@ dopos <- function(pos, limits, width, height, side.legend, shift)
 {
   if(side.legend > 1L)
     limits <- rev(limits)
-  shift <- c(diff(limits[[1]]), diff(limits[[2]])) * shift
+  shift <- rep(shift, length.out = 2)
+  shift <- c(diff(limits[[1]]) * shift[1], diff(limits[[2]]) * shift[2])
   if(pos == "bottomleft") {
     xlim <- c(min(limits[[1L]], na.rm = TRUE), min(limits[[1L]], na.rm = TRUE) + width) + shift[1]
     ylim <- c(min(limits[[2L]], na.rm = TRUE), min(limits[[2L]], na.rm = TRUE) + height) + shift[2]
