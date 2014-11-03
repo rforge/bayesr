@@ -407,7 +407,7 @@ smooth.construct.sws.smooth.spec <- function(object, data, knots)
 
 
 ## Compute centroids of polygons.
-centroids <- function(x, id = NULL)
+centroids <- function(x, id = NULL, verbose = FALSE, check.dups = TRUE)
 {
   if(inherits(x, "SpatialPolygons"))
     x <- sp2bnd(x)
@@ -435,6 +435,9 @@ centroids <- function(x, id = NULL)
     id <- as.character(unlist(id))
     cp2 <- matrix(NA, nrow = length(id), ncol = 2)
     for(j in unique(id)) {
+      if(verbose) {
+        cat("processing polygon:", j, "\n")
+      }
       i <- which(nx0 == j)
       k <- which(id == j)
       pall <- list()
@@ -447,11 +450,15 @@ centroids <- function(x, id = NULL)
         cp2[k[l], ] <- pall[l, ]
       }
     }
+    if(verbose) cat("creating data.frame\n")
     cp <- as.data.frame(cp2)
-    if(any(i <- duplicated(id))) {
-      for(j in id[i]) {
-        dups <- id[id == j]
-        id[id == j] <- paste(dups, 1:length(dups), sep = ":")
+    if(check.dups) {
+      if(any(i <- duplicated(id))) {
+        for(j in id[i]) {
+          if(verbose) cat("managing duplicates for region:", j, "\n")
+          if(length(dups <- id[id == j]))
+            id[id == j] <- paste(dups, 1:length(dups), sep = ":")
+        }
       }
     }
     rownames(cp) <- id
