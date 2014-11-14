@@ -891,6 +891,7 @@ colorlegend <- function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
     width <- height
     height <- wi
   }
+  shift <- rep(shift, length.out = 2)
   if(is.null(pos2)) {
     xlim <- range(c(pos[1L], pos[1L] + width, pos[1L] + width, pos[1L])) + shift[1] * width
     ylim <- range(c(pos[2L], pos[2L], pos[2L] + height, pos[2L] + height)) + shift[2] * height

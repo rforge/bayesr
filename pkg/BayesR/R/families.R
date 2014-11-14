@@ -1397,7 +1397,7 @@ multinomial.BayesR <- function(link = "logit", ...)
 
 ## Count Data distributions
 poisson.BayesR <- function(links = c(lambda = "log"), ...)
-{ 
+{
   rval <- list(
     "family" = "poisson",
     "names" = c("lambda"),
@@ -1419,6 +1419,11 @@ poisson.BayesR <- function(links = c(lambda = "log"), ...)
     "p" = function(y, eta, ...) {
       ppois(y, lambda = eta$lambda, ...)
     },
+	  "score" = list(
+      "lambda" = function(y, eta, ...) {
+        y / eta$lambda - 1
+      }
+    ),
     "nscore" = TRUE,
     "type" = 3
   )

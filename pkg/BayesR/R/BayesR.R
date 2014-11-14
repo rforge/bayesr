@@ -1226,8 +1226,8 @@ add.partial <- function(x, samples = FALSE, nsamps = 100) {
 ## A prediction method for "bayesr" objects.
 ## Prediction can also be based on multiple chains.
 predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
-  intercept = TRUE, FUN = mean, trans = NULL, type = c("link", "parameter"),
-  nsamps = NULL, verbose = FALSE, ...)
+  intercept = TRUE, FUN = mean, trans = NULL, MARGIN = 1,
+  type = c("link", "parameter"), nsamps = NULL, verbose = FALSE, ...)
 {
   family <- attr(object, "family")
   if(missing(newdata))
@@ -1432,8 +1432,11 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
           model, ", predictions on the scale of the linear predictor are returned!", sep = ""))
       }
     }
-    if(!is.null(trans))
-      rval <- t(apply(rval, 1, trans))
+    if(!is.null(trans)) {
+      rval <- apply(rval, MARGIN, trans)
+      if(MARGIN < 2)
+        rval <- t(rval)
+    }
     rval <- apply(rval, 1, FUN)
     if(!is.null(dim(rval))) {
       if(nrow(rval) != nrow(newdata))
