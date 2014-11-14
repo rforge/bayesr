@@ -1,4 +1,4 @@
-library("BayesR")
+library("bamlss")
 
 data("marital.nz", package = "VGAM")
 m <- model.matrix(~ -1 + mstatus, data = marital.nz)
@@ -7,10 +7,10 @@ colnames(m) <- gsub("mstatus", "", colnames(m))
 marital.nz <- cbind(marital.nz, m)
 
 
-b0 <- bayesr(mstatus ~ age, family = multinomial, data = marital.nz,
+b0 <- bamlss(mstatus ~ age, family = multinomial, data = marital.nz,
   reference = "Married/Partnered", engine = "JAGS", n.iter = 1200, burnin = 200)
 
-b1 <- bayesr(mstatus ~ sx(age), family = multinomial,
+b1 <- bamlss(mstatus ~ sx(age), family = multinomial,
   data = marital.nz, reference = "Married/Partnered",
   engine = "BayesX", verbose = TRUE, n.iter = 1200, burnin = 200)
 
@@ -21,7 +21,7 @@ f <- list(
   Widowed ~ sx(age)
 )
 
-b2 <- bayesr(f, family = multinomial.BayesR(link = "probit"), data = marital.nz,
+b2 <- bamlss(f, family = multinomial.bamlss(link = "probit"), data = marital.nz,
   engine = "BayesX", verbose = FALSE, n.iter = 1200, burnin = 200)
 
 f <- list(
@@ -30,9 +30,9 @@ f <- list(
   Widowed ~ s(age)
 )
 
-b3 <- bayesr(f, family = multinomial, data = marital.nz,
+b3 <- bamlss(f, family = multinomial, data = marital.nz,
   engine = "JAGS", n.iter = 1200, burnin = 200)
 
-b4 <- bayesr(f, family = multinomial, data = marital.nz,
+b4 <- bamlss(f, family = multinomial, data = marital.nz,
   method = c("backfitting", "MCMC"), update = "optim2",
   propose = "mvn", n.iter = 12000, burnin = 200, thin = 10)

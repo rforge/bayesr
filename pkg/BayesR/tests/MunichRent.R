@@ -1,6 +1,6 @@
-library("BayesR")
+library("bamlss")
 
-data("rent99", "MunichBnd", package = "BayesR")
+data("rent99", "MunichBnd", package = "bamlss")
 rent99$rent <- rent99$rent / 1000
 
 f <- list(
@@ -10,7 +10,7 @@ f <- list(
     sx(area) + sx(yearc) + sx(district, bs = "mrf", map = MunichBnd)
 )
 
-b1 <- bayesr(f, family = gamma, data = rent99, engine = "BayesX", verbose = TRUE)
+b1 <- bamlss(f, family = gamma, data = rent99, engine = "BayesX", verbose = TRUE)
 
 rent99 <- cbind(rent99, centroids(MunichBnd, id = rent99$district))
 
@@ -21,7 +21,7 @@ f <- list(
     s(area) + s(yearc) + s(x, y, k = 100)
 )
 
-b2 <- bayesr(f, family = gamma, data = rent99, method = c("MP", "MCMC"), propose = "iwls")
+b2 <- bamlss(f, family = gamma, data = rent99, method = c("MP", "MCMC"), propose = "iwls")
 
 
 nd <- centroids(MunichBnd)

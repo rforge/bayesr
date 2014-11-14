@@ -2167,17 +2167,17 @@ resultsIWLS <- function(x, samples)
 #      ## Clean.
 #      rval[[j]] <- delete.NULLs(rval[[j]])
 
-      class(rval[[j]]) <- "bayesr"
+      class(rval[[j]]) <- "bamlss"
     }
     names(rval) <- paste("Chain", 1:chains, sep = "_")
     if(length(rval) < 2) {
       rval <- rval[[1]]
     }
-    class(rval) <- "bayesr"
+    class(rval) <- "bamlss"
     return(rval)
   }
 
-  if(inherits(x, "bayesr.input") & !all(c("formula", "fake.formula", "response") %in% names(x))) {
+  if(inherits(x, "bamlss.input") & !all(c("formula", "fake.formula", "response") %in% names(x))) {
     nx <- names(x)
     nx <- nx[nx != "call"]
     rval <- list()
@@ -2209,7 +2209,7 @@ resultsIWLS <- function(x, samples)
       }
     }
     attr(rval, "family") <- family
-    class(rval) <- "bayesr"
+    class(rval) <- "bamlss"
     return(rval)
   } else {
     return(createIWLSresults(x, samples))

@@ -1,9 +1,9 @@
-library("BayesR")
+library("bamlss")
 
 if(file.exists("~/tmp/homstart.rda")) {
   load("~/tmp/homstart.rda")
 } else {
-  dpath <- system.file(package = "BayesR", "data")
+  dpath <- system.file(package = "bamlss", "data")
   if(!file.exists(file <- file.path(dpath, "homstart.rda"))) {
     homstart_data(dir = dirname(file), load = TRUE)
   } else load(file)
@@ -25,10 +25,10 @@ f <- list(
   sqrt(raw) ~ te(day, long, lat, bs = c("cc", "tp"), d = c(1, 2)) + s(elevation)
 )
 
-b1 <- bayesr(f, data = rain2, method = "backfitting", family = truncgaussian, n.samples = 0,
+b1 <- bamlss(f, data = rain2, method = "backfitting", family = truncgaussian, n.samples = 0,
   update = "iwls", sample = "iwls")
 
-b2 <- bayesr(f, data = rain, method = "MP2", family = gF(cens, left = 0), n.samples = 10)
+b2 <- bamlss(f, data = rain, method = "MP2", family = gF(cens, left = 0), n.samples = 10)
 
 
 library("truncreg")
@@ -48,7 +48,7 @@ d$yt <- ifelse(d$y > 1, d$y, NA)
 
 b0 <- truncreg(yt ~ x, data = d, point = 1, direction = "left")
 
-b <- bayesr(yt ~ x, data = d, family = gF(trunc, point = 1))
+b <- bamlss(yt ~ x, data = d, family = gF(trunc, point = 1))
 mf <- model.frame(b)
 eta <- fitted(b)
 dy <- gF(truncreg, point = 1)$d(mf$yt, eta)

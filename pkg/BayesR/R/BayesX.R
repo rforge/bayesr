@@ -3,7 +3,7 @@
 ####################################
 transformBayesX <- function(x, ...)
 {
-  family <- bayesr.family(attr(x, "family"))
+  family <- bamlss.family(attr(x, "family"))
   call <- x$call; x$call <- NULL
 
   if(family$cat) {
@@ -72,7 +72,7 @@ transformBayesX <- function(x, ...)
 
   x <- tBayesX(x, ...)
 
-  if(inherits(x, "bayesr.input") & !any(c("formula", "fake.formula", "response") %in% names(x))) {
+  if(inherits(x, "bamlss.input") & !any(c("formula", "fake.formula", "response") %in% names(x))) {
     n <- length(x)
   } else {
     x <- list(x)
@@ -84,7 +84,7 @@ transformBayesX <- function(x, ...)
     mf <- attr(x, "model.frame")
     class(x) <- "list"
     x <- x[rev(family$bayesx$order)]
-    class(x) <- c("bayesr.input", "list")
+    class(x) <- c("bamlss.input", "list")
     attr(x, "model.frame") <- mf; rm(mf)
   }
   attr(x, "call") <- call
@@ -95,14 +95,14 @@ transformBayesX <- function(x, ...)
 
 
 controlBayesX <- function(n.iter = 1200, thin = 1, burnin = 200,
-  seed = NULL, predict = "light", model.name = "bayesr", data.name = "d",
+  seed = NULL, predict = "light", model.name = "bamlss", data.name = "d",
   prg.name = NULL, dir = NULL, verbose = FALSE, cores = NULL, ...)
 {
   if(is.null(seed))
     seed <- '##seed##'
   stopifnot(burnin < n.iter)
   if(is.null(model.name))
-    model.name <- 'bayesr'
+    model.name <- 'bamlss'
   if(is.null(data.name))
     data.name <- 'd'
   if(is.null(prg.name))
@@ -487,7 +487,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
     prg <- gsub(paste("(psplinerw", i, sep = ""), "(pspline", prg, fixed = TRUE)
   prg <- c(prg, "", paste(model.name, "getsample", sep = "."))
   prg <- c(
-    paste('%% BayesX program created by BayesR: ', as.character(Sys.time()), sep = ''),
+    paste('%% BayesX program created by bamlss: ', as.character(Sys.time()), sep = ''),
     paste('%% usefile ', file.path(dir, prg.name), sep = ''), "",
     prg
   )
@@ -983,14 +983,14 @@ resultsBayesX <- function(x, samples, ...)
         "fitted.values" = if(length(fitted.values) < 2) NA else fitted.values 
       )
 
-      class(rval[[j]]) <- "bayesr"
+      class(rval[[j]]) <- "bamlss"
     }
     names(rval) <- paste("Chain", 1:chains, sep = "_")
     if(length(rval) < 2) {
       rval <- rval[[1]]
     }
     attr(rval, "fixed.names") <- TRUE
-    class(rval) <- "bayesr"
+    class(rval) <- "bamlss"
     return(rval)
   }
 
@@ -1034,14 +1034,14 @@ resultsBayesX <- function(x, samples, ...)
       } else {
         rval[[nx[j]]] <- createBayesXresults(x[[nx[j]]], samples, id = fn[j], sid = length(nx) > 1)
       }
-      class(rval[[nx[j]]]) <- "bayesr"
+      class(rval[[nx[j]]]) <- "bamlss"
     }
     if(length(nx) > 1)
       names(rval) <- fn
     else
       rval <- rval[[1]]
     attr(rval, "fixed.names") <- TRUE
-    class(rval) <- "bayesr"
+    class(rval) <- "bamlss"
     return(rval)
   } else {
     return(createBayesXresults(x, samples, id = family$names))

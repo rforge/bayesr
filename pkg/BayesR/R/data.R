@@ -25,7 +25,7 @@ save_data <- function(..., file, envir = parent.frame())
 data_MunichRent <- function(dir = NULL)
 {
   if(is.null(dir))
-    dir <- "~/svn/bayesr/pkg/BayesR/data"
+    dir <- "~/svn/bayesr/pkg/bamlss/data"
   dir <- path.expand(dir)
 
   dpath <- "http://www.stat.uni-muenchen.de/~kneib/regressionsbuch/download/mietspiegel99.raw"
@@ -68,7 +68,7 @@ data_MunichRent <- function(dir = NULL)
 data_Patent <- function(dir = NULL)
 {
   if(is.null(dir))
-    dir <- "~/svn/bayesr/pkg/BayesR/data"
+    dir <- "~/svn/bayesr/pkg/bamlss/data"
   dir <- path.expand(dir)
 
   dpath <- "http://www.stat.uni-muenchen.de/~kneib/regressionsbuch/download/patentdata.raw"
@@ -97,7 +97,7 @@ data_Patent <- function(dir = NULL)
 data_Germany <- function(dir = NULL)
 {
   if(is.null(dir))
-    dir <- "~/svn/bayesr/pkg/BayesR/data"
+    dir <- "~/svn/bayesr/pkg/bamlss/data"
   dir <- path.expand(dir)
   dir.create(tf <- tempfile())
   on.exit(unlink(tf))

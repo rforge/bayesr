@@ -1,6 +1,6 @@
-\name{BayesR-package}
-\alias{BayesR-package}
-\alias{BayesR}
+\name{bamlss-package}
+\alias{bamlss-package}
+\alias{bamlss}
 \docType{package}
 
 \title{
@@ -13,7 +13,7 @@
 
 \details{
   \tabular{ll}{
-    Package: \tab BayesR\cr
+    Package: \tab bamlss\cr
     Type: \tab Package\cr
     Version: \tab 0.1-1\cr
     Date: \tab 2013-04-08\cr
@@ -33,10 +33,10 @@
 \keyword{package}
 
 \seealso{
-  \code{\link{bayesr}}
+  \code{\link{bamlss}}
 }
 
 \examples{
-## See the documentation of ?bayesr
+## See the documentation of ?bamlss
 }
 

@@ -1,4 +1,4 @@
-library("BayesR")
+library("bamlss")
 
 ## Create a grid map.
 gm <- pixelmap(n = 15)
@@ -21,11 +21,11 @@ dat$eta <- with(dat, 1.5 + sin(x1) + cos(x2) + sp + re)
 dat$yg <- with(dat, eta + rnorm(n, sd = 0.6))
 
 ## Model with JAGS.
-b0 <- bayesr(yg ~ s(x1) + s(x2) + s(id, bs = "mrf", xt = list(penalty = gm$nmat)) +
+b0 <- bamlss(yg ~ s(x1) + s(x2) + s(id, bs = "mrf", xt = list(penalty = gm$nmat)) +
   s(id, bs = "re"), data = dat, family = gaussian, engine = "JAGS")
 
 ## Model with BayesX.
-b1 <- bayesr(yg ~ sx(x1) + sx(x2) + sx(id, bs = "mrf", map = gm$map) +
+b1 <- bamlss(yg ~ sx(x1) + sx(x2) + sx(id, bs = "mrf", map = gm$map) +
   sx(id, bs = "re"), id ~ -1, data = dat, family = gaussian, engine = "BayesX")
 
   
@@ -35,6 +35,6 @@ b1 <- bayesr(yg ~ sx(x1) + sx(x2) + sx(id, bs = "mrf", map = gm$map) +
 require("VGAM")
 dat$yzip <- with(dat, rzipois(n, lambda = exp(eta), pstr0 = 0.5)[id])
 
-b3 <- bayesr(yzip ~ sx(x1) + sx(x2) + sx(id, bs = "mrf", map = gm$map) +
+b3 <- bamlss(yzip ~ sx(x1) + sx(x2) + sx(id, bs = "mrf", map = gm$map) +
   sx(id, bs = "re"), id ~ -1, data = dat, family = zip, engine = "BayesX")
 

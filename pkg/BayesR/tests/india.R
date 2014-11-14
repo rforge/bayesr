@@ -9,7 +9,7 @@ f <- list(
   sigma2 ~ s(cbmi) + s(cage) + s(mbmi) + s(mage) + s(x, y, k = 100)
 )
 
-b <- bayesr(f, data = india, method = c("backfitting", "MCMC"),
+b <- bamlss(f, data = india, method = c("backfitting", "MCMC"),
   update = "iwls", propose = "iwls", inner = TRUE,
   n.iter = 1200, burnin = 200, thin = 1)
 

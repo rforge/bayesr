@@ -1,5 +1,5 @@
 ## Required packages.
-library("BayesR")
+library("bamlss")
 library("lattice")
 
 ## Data generating process.
@@ -51,12 +51,12 @@ sim <- function(nrep = 100,
       f <- as.formula(paste('y ~ rs(s(x1,k=', sce$k[i], ',sp=', 1/sp,
         ',fx=', sce$fx[i], '), s(x2,k=', sce$k[i], ',sp=', 1/sp, ',fx=', sce$fx[i],
         '), link="inverse")', sep = ''))
-      b2 <- bayesr(f, data = d, method = "backfitting", n.samples = 0, verbose = FALSE)
+      b2 <- bamlss(f, data = d, method = "backfitting", n.samples = 0, verbose = FALSE)
     } else {
       b1 <- gam(y ~ s(x1,k=sce$k[i]*2,fx=sce$fx[i]), data = d)
       f <- as.formula(paste('y ~ rs(s(x1,k=', sce$k[i], ',sp=', 1/sp,
         ',fx=', sce$fx[i], '), link="probit")', sep = ''))
-      b2 <- bayesr(f, data = d, method = "backfitting", n.samples = 0, verbose = FALSE)
+      b2 <- bamlss(f, data = d, method = "backfitting", n.samples = 0, verbose = FALSE)
     }
 
     f1 <- drop(predict(b1, type = "terms"))

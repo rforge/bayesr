@@ -1,4 +1,4 @@
-Package: BayesR
+Package: bamlss
 Version: 0.1-1
 Date: 2013-04-26
 Title: Bayesian Regression in R

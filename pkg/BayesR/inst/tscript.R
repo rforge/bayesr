@@ -13,7 +13,7 @@ f <- list(
   fac ~ 1
 )
 
-b <- bayesr(f, family = gaussian2, data = dat, engine = "BayesX")
+b <- bamlss(f, family = gaussian2, data = dat, engine = "BayesX")
 
 plot(b)
 
@@ -26,7 +26,7 @@ nd$p <- predict(b, nd, model = c("mu", "h1"), term = "sx(x1)")
 nd$p <- predict(b2, nd, model = "mu", term = "sx(x1)")
 
 
-b <- bayesr(y ~ s(x1) + s(fac, bs = "re") | fac ~ s(x2), data = dat)
+b <- bamlss(y ~ s(x1) + s(fac, bs = "re") | fac ~ s(x2), data = dat)
 
 dat <- dat[order(dat$x1), ]
 
@@ -56,28 +56,28 @@ n <- 200
 dat <- data.frame("x1" = sort(runif(n, -3, 3)), x2 = runif(n, -3, 3))
 dat$y <- scale2(with(dat, 1.2 + sin(x1) + cos(x2) + rnorm(n, sd = (cos(dat$x1) + 2) / 4)), 0.001, 0.999)
 
-a <- bayesr(y ~ s(x1, x2, bs = "kr", k = 50), ~ s(x1), data = dat, update = "iwls", propose = "iwls", method = c("backfitting", "MCMC"))
+a <- bamlss(y ~ s(x1, x2, bs = "kr", k = 50), ~ s(x1), data = dat, update = "iwls", propose = "iwls", method = c("backfitting", "MCMC"))
 
 plot(a)
 
 
-b <- bayesr(y ~ s(x1) + s(x2), ~ s(x1), data = dat, family = tF(BE), method = "MCMC")
+b <- bamlss(y ~ s(x1) + s(x2), ~ s(x1), data = dat, family = tF(BE), method = "MCMC")
 
 plot(c(a, b))
 
 
-a <- bayesr(y1 | y2 ~ s(x1) + s(x2), data = dat, family = gaussian.BayesR)
+a <- bamlss(y1 | y2 ~ s(x1) + s(x2), data = dat, family = gaussian.bamlss)
 
 b2 <- bayesx2(y ~ sx(x1) + sx(x2), ~ sx(x1), data = dat)
 
 
 data("GAMart")
-b <- bayesr(cat ~ s(x1) + s(x2) + s(x3) + s(long, lat), family = multinomial.BayesR, data = GAMart)
+b <- bamlss(cat ~ s(x1) + s(x2) + s(x3) + s(long, lat), family = multinomial.bamlss, data = GAMart)
 
 
 
 data("marital.nz", package = "VGAM")
-b <- bayesr(mstatus ~ s(age), family = multinomial.BayesR, data = marital.nz)
+b <- bamlss(mstatus ~ s(age), family = multinomial.bamlss, data = marital.nz)
 
 
 
@@ -89,9 +89,9 @@ n <- 200
 dat <- data.frame("x1" = sort(runif(n, 0, 1)))
 dat$y <- with(dat, 1.2 + f(x1) + rnorm(n, sd = 0.2))
 
-b <- bayesr(y ~ s(x1), data = dat, method = "MP")
+b <- bamlss(y ~ s(x1), data = dat, method = "MP")
 
-b <- bayesr(y ~ s(x1), data = dat, method = "MCMC", sample = "slice", svalues = FALSE, n.iter = 1200, burnin = 200, thin = 1)
+b <- bamlss(y ~ s(x1), data = dat, method = "MCMC", sample = "slice", svalues = FALSE, n.iter = 1200, burnin = 200, thin = 1)
 
 g <- coef(b)
 g <- g[grep("s(x1)", names(g), fixed = TRUE)]
@@ -102,7 +102,7 @@ dat$f <- X$get.mu(X$X, g)
 
 dat$y2 <- with(dat, 1.2 + f + rnorm(n, sd = 0.2))
 
-b2 <- bayesr(y2 ~ rs(x1), data = dat, method = "backfitting")
+b2 <- bamlss(y2 ~ rs(x1), data = dat, method = "backfitting")
 
 g2 <- coef(b2)
 g2 <- g2[grep("s(x1)", names(g2), fixed = TRUE)]
@@ -116,8 +116,8 @@ n <- 500
 dat <- data.frame("x1" = sort(runif(n, 0, 1)), "x2" = runif(n, 0, 1))
 dat$y <- with(dat, 1.2 + f(x1, x2) + rnorm(n, sd = 0.2))
 
-b0 <- bayesr(y ~ rs(s(x1), s(x2), link = "inverse"), data = dat, method = "backfitting")
-b1 <- bayesr(y ~ s(x1, x2, k = 20), data = dat, method = "backfitting")
+b0 <- bamlss(y ~ rs(s(x1), s(x2), link = "inverse"), data = dat, method = "backfitting")
+b1 <- bamlss(y ~ s(x1, x2, k = 20), data = dat, method = "backfitting")
 
 plot(c(b0, b1), type = "mba")
 
@@ -127,7 +127,7 @@ library("MASS")
 data("mcycle")
 mcycle$accel2 <- scale(mcycle$accel)
 
-b <- bayesr(accel2 ~ s(times, k = 20), data = mcycle, method = "backfitting")
+b <- bamlss(accel2 ~ s(times, k = 20), data = mcycle, method = "backfitting")
 
 
 ## by variable test
@@ -137,8 +137,8 @@ dat <- data.frame(x1 = runif(n, -3, 3), x2 = runif(n),
 dat$y <- with(dat, 1.2 + sin(x1) * c(0.1, 4)[fac] + rnorm(n, sd = 0.2))
 
 b0 <- gam(y ~ x2 + s(x1, by = fac), data = dat)
-b1 <- bayesr(y ~ x2 + s(x1, by = x2), data = dat, method = "MCMC")
-b2 <- bayesr(y ~ x2 + sx(x1, by = x2), data = dat, engine = "BayesX", family = gaussian)
+b1 <- bamlss(y ~ x2 + s(x1, by = x2), data = dat, method = "MCMC")
+b2 <- bamlss(y ~ x2 + sx(x1, by = x2), data = dat, engine = "BayesX", family = gaussian)
 
 
 ## IWLS test
@@ -146,21 +146,21 @@ n <- 500
 dat <- data.frame("x1" = runif(n, -3, 3), "x2" = runif(n, -3, 3))
 dat$y <- with(dat, 1.2 + sin(x1) + rnorm(n, sd = scale2(cos(x1), 0.1, 0.8)))
 
-b0 <- bayesr(y ~ s(x1), ~ s(x1), data = dat, family = gaussian2, method = "MP2")
+b0 <- bamlss(y ~ s(x1), ~ s(x1), data = dat, family = gaussian2, method = "MP2")
 
-b0 <- bayesr(y ~ s(x1), ~ s(x1), data = dat, method = c("backfitting", "MCMC"),
+b0 <- bamlss(y ~ s(x1), ~ s(x1), data = dat, method = c("backfitting", "MCMC"),
   n.iter = 12000, burnin = 2000, thin = 10, family = gaussian2,
   update = "iwls", propose = "wslice")
 
-b1 <- bayesr(y ~ s(x1), ~ s(x1), data = dat, method = c("backfitting", "MCMC"),
+b1 <- bamlss(y ~ s(x1), ~ s(x1), data = dat, method = c("backfitting", "MCMC"),
   n.iter = 12000, burnin = 2000, thin = 10, family = gaussian2,
   update = "optim", propose = "oslice")
 
-b2 <- bayesr(y ~ s(x1), ~ s(x1), data = dat, method = c("backfitting", "MCMC"),
+b2 <- bamlss(y ~ s(x1), ~ s(x1), data = dat, method = c("backfitting", "MCMC"),
   n.iter = 12000, burnin = 2000, thin = 10, family = gaussian2,
   update = "optim", propose = "slice")
 
-b3 <- bayesr(y ~ s(x1), ~ s(x1), data = dat, method = c("backfitting", "MCMC"),
+b3 <- bamlss(y ~ s(x1), ~ s(x1), data = dat, method = c("backfitting", "MCMC"),
   family = gaussian2, update = "iwls", propose = "iwls")
 
 plot(b)
@@ -181,7 +181,7 @@ D <- X$trans.D
 
 
 ## Testing numerical derivatives.
-library("BayesR")
+library("bamlss")
 library("gamlss")
 
 n <- 50
@@ -220,15 +220,15 @@ f <- list(
   sigma2 ~ s(sigma2.x11)
 )
 
-b0 <- bayesr(f, data = d, update = "iwls", propose = "iwls", method = c("backfitting", "MCMC"))
-b1 <- bayesr(f, data = d, update = "iwls", propose = "wslice", method = c("backfitting", "MCMC"))
+b0 <- bamlss(f, data = d, update = "iwls", propose = "iwls", method = c("backfitting", "MCMC"))
+b1 <- bamlss(f, data = d, update = "iwls", propose = "wslice", method = c("backfitting", "MCMC"))
 
 f <- list(
   y ~ sx(mu.x11) + sx(mu.long1, mu.lat1, knots = 50, bs = "kr", update = "orthogonal"),
   sigma2 ~ sx(sigma2.x11)
 )
 
-b2 <- bayesr(f, data = d, engine = "BayesX", family = gaussian2)
+b2 <- bamlss(f, data = d, engine = "BayesX", family = gaussian2)
 
 
 
@@ -238,7 +238,7 @@ d <- dgp_beta(
   sigma2 = list(const = 0.01, type = list("quadratic", "const"))
 )
 
-no <- gaussian2.BayesR()
+no <- gaussian2.bamlss()
 no$iwls <- NULL
 
 f <- list(
@@ -246,7 +246,7 @@ f <- list(
   sigma ~ s(sigma2.x11)
 )
 
-b <- bayesr(f, data = d, family = tF(BE), update = "iwls")
+b <- bamlss(f, data = d, family = tF(BE), update = "iwls")
 
 
 ## Tensor tests
@@ -268,27 +268,27 @@ vis.gam(b,cond=list(u=.67),color="heat",zlim=c(-0.2,3.5))
 vis.gam(b,cond=list(u=1),color="heat",zlim=c(-0.2,3.5))
 par(op)
 
-b0 <- bayesr(y ~ te(v,w,u,k=c(30,5),d=c(2,1),bs=c("ds","cr"),m=m), method = c("MP2", "MCMC"), propose = "iwls0")
+b0 <- bamlss(y ~ te(v,w,u,k=c(30,5),d=c(2,1),bs=c("ds","cr"),m=m), method = c("MP2", "MCMC"), propose = "iwls0")
 
-b1 <- bayesr(y ~ te(v,w,u,k=c(30,5),d=c(2,1),bs=c("ds","cr"),m=m), method = "backfitting", update = "iwls")
-b1 <- bayesr(y ~ te(v,w,u,k=c(30,5),d=c(2,1),bs=c("ds","cr"),m=m), method = "backfitting", update = "optim2")
-
-
-b2 <- bayesr(y ~ rs(s(v,w,bs="ds",k=30), s(u,bs="cr",k=5)), method = "backfitting")
+b1 <- bamlss(y ~ te(v,w,u,k=c(30,5),d=c(2,1),bs=c("ds","cr"),m=m), method = "backfitting", update = "iwls")
+b1 <- bamlss(y ~ te(v,w,u,k=c(30,5),d=c(2,1),bs=c("ds","cr"),m=m), method = "backfitting", update = "optim2")
 
 
+b2 <- bamlss(y ~ rs(s(v,w,bs="ds",k=30), s(u,bs="cr",k=5)), method = "backfitting")
 
 
 
-library("BayesR")
+
+
+library("bamlss")
 
 set.seed(111)
 dat <- gamSim(4)
 dat <- dat[, c("y", "x0", "fac")]
 dat <- cbind(dat, as.data.frame(model.matrix(~ -1 + fac, data = dat)))
 
-b0 <- bayesr(y ~ x0 + x0:fac, data = dat, engine = "BayesX")
-b1 <- bayesr(y ~ x0 + x0:fac, data = dat, method = "MP2")
+b0 <- bamlss(y ~ x0 + x0:fac, data = dat, engine = "BayesX")
+b1 <- bamlss(y ~ x0 + x0:fac, data = dat, method = "MP2")
 b2 <- gam( y ~ x0 + x0:fac, data = dat)
 
 summary(b0)

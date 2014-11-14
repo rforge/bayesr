@@ -225,7 +225,7 @@ dgp_gaussian <- function(n = 500, mu = NULL, sigma = NULL, range.sigma = c(0.3, 
 
 if(FALSE) {
   d <- dgp_gaussian()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma.x11), data = d, engine = "BayesX", verbose = TRUE)
+  b <- bamlss(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma.x11), data = d, engine = "BayesX", verbose = TRUE)
   d$p <- predict(b, model = "mu", term = c("x11", "x12"))
 }
 
@@ -259,7 +259,7 @@ dgp_gaussian2 <- function(n = 500, mu = NULL, sigma2 = NULL, range.sigma2 = c(0.
 
 if(FALSE) {
   d <- dgp_gaussian()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), data = d, engine = "BayesX", offset = 1.2, family = gaussian)
+  b <- bamlss(y ~ sx(mu.x11) + sx(mu.x12), data = d, engine = "BayesX", offset = 1.2, family = gaussian)
   d$p <- predict(b, model = "mu", term = c("x11", "x12"))
 }
 
@@ -288,7 +288,7 @@ dgp_truncgaussian <- function(n = 500, mu = NULL, sigma = NULL, ...)
 
 if(FALSE) {
   d <- dgp_truncgaussian()
-  b <- bayesr(y ~ s(mu.x11) + s(mu.x12), y ~ 1, data = d, family = truncgaussian, method = "backfitting", propose = "iwls", sample = "iwls")
+  b <- bamlss(y ~ s(mu.x11) + s(mu.x12), y ~ 1, data = d, family = truncgaussian, method = "backfitting", propose = "iwls", sample = "iwls")
   d$p <- predict(b, model = "mu", term = c("x11", "x12"))
   plot(b, which = 3:6)
 }
@@ -318,7 +318,7 @@ dgp_truncgaussian2 <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
 
 if(FALSE) {
   d <- dgp_truncgaussian2()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), y ~ 1, data = d, engine = "BayesX", verbose = TRUE, family = truncgaussian)
+  b <- bamlss(y ~ sx(mu.x11) + sx(mu.x12), y ~ 1, data = d, engine = "BayesX", verbose = TRUE, family = truncgaussian)
   d$p <- predict(b, model = "mu", term = c("x11", "x12"))
   plot(b, which = 3:6)
 }
@@ -350,7 +350,7 @@ dgp_gamma <- function(n = 500, mu = NULL, sigma = NULL, ...)
 
 if(FALSE) {
   d <- dgp_gamma()
-  b <- bayesr(I(y / 100) ~ s(mu.x11) + s(mu.x12), ~ s(sigma.x11) + s(sigma.x12), data = d, family = gamma, method = "backfitting")
+  b <- bamlss(I(y / 100) ~ s(mu.x11) + s(mu.x12), ~ s(sigma.x11) + s(sigma.x12), data = d, family = gamma, method = "backfitting")
 
   ## Example from mgcv.
   dat <- gamSim(1,n=400,dist="normal",scale=1)
@@ -362,10 +362,10 @@ if(FALSE) {
 
   ## FIXME: Backfitting
   f <- I(y / 10) ~ s(x0) + s(x1) + s(x2) + s(x3)
-  b <- bayesr(f, family = gamma, data = dat, method = "backfitting")
+  b <- bamlss(f, family = gamma, data = dat, method = "backfitting")
 
   ## Now with BayesX
-  b <- bayesr(y ~ sx(x0) + sx(x1) + sx(x2) + sx(x3), family = gamma, data = dat, engine = "BayesX")
+  b <- bamlss(y ~ sx(x0) + sx(x1) + sx(x2) + sx(x3), family = gamma, data = dat, engine = "BayesX")
 }
 
 ## Inverse Gaussian.
@@ -400,11 +400,11 @@ dgp_invgaussian <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
 
 if(FALSE) {
   d <- dgp_invgaussian()
-  b1 <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma2.x11) + sx(sigma2.x12), 
+  b1 <- bamlss(y ~ sx(mu.x11) + sx(mu.x12), ~ sx(sigma2.x11) + sx(sigma2.x12), 
 		data = d, family = invgaussian, engine = "BayesX", verbose = TRUE)
   d$pred_mu <- predict(b, model = "mu", term = c("x11", "x12"))
 
-  b2 <- bayesr(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma2.x11) + s(sigma2.x12), data = d, family = invgaussian, method = "backfitting2")
+  b2 <- bamlss(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma2.x11) + s(sigma2.x12), data = d, family = invgaussian, method = "backfitting2")
 }
 
 ## Lognormal.
@@ -433,14 +433,14 @@ dgp_lognormal <- function(n = 500, mu = NULL, sigma = NULL, ...)
 
 if(FALSE) {
   d <- dgp_lognormal()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), y ~ sx(sigma.x11)+sx(sigma.x12), 
+  b <- bamlss(y ~ sx(mu.x11) + sx(mu.x12), y ~ sx(sigma.x11)+sx(sigma.x12), 
 		data = d, family = lognormal, engine = "BayesX")
   plot(b)
   summary(b)
   mu.f11.est <- predict(b, model = "mu", term = 1, what = "terms")
   score(b)
 
-  b <- bayesr(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma.x11) + s(sigma.x12), data = d, family = lognormal, method = "backfitting2")
+  b <- bamlss(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma.x11) + s(sigma.x12), data = d, family = lognormal, method = "backfitting2")
 }
 
 
@@ -470,12 +470,12 @@ dgp_lognormal2 <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
 
 if(FALSE) {
   d <- dgp_lognormal2()
-  b <- bayesr(y ~ sx(mu.x11) + sx(mu.x12), y ~ sx(sigma2.x11)+sx(sigma2.x12), 
+  b <- bamlss(y ~ sx(mu.x11) + sx(mu.x12), y ~ sx(sigma2.x11)+sx(sigma2.x12), 
 		data = d, family = lognormal2, engine = "BayesX")
   plot(b, which = 3:6)
   summary(b)
   score(b)
-  b <- bayesr(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma2.x11) + s(sigma2.x12), data = d, family = lognormal2, method = "backfitting2")
+  b <- bamlss(y ~ s(mu.x11) + s(mu.x12), ~ s(sigma2.x11) + s(sigma2.x12), data = d, family = lognormal2, method = "backfitting2")
 }
 
 
@@ -505,7 +505,7 @@ dgp_weibull <- function(n = 500, lambda = NULL, alpha = NULL, ...)
 
 if(FALSE) {
   d <- dgp_weibull()
-  b1 <- bayesr(y ~ sx(lambda.x11) + sx(lambda.x12), y ~ 1, 
+  b1 <- bamlss(y ~ sx(lambda.x11) + sx(lambda.x12), y ~ 1, 
 		data = d, family = weibull, engine = "BayesX", verbose = TRUE)
 
   f <- list(
@@ -513,9 +513,9 @@ if(FALSE) {
     alpha ~ 1
   )
 
-  b0 <- bayesr(f, data = d, family = weibull, engine = "JAGS")
-  b2 <- bayesr(f, data = d, family = weibull, method = "backfitting")
-  b3 <- bayesr(f, data = d, family = weibull, method = c("backfitting", "MCMC"),
+  b0 <- bamlss(f, data = d, family = weibull, engine = "JAGS")
+  b2 <- bamlss(f, data = d, family = weibull, method = "backfitting")
+  b3 <- bamlss(f, data = d, family = weibull, method = c("backfitting", "MCMC"),
     n.iter = 1200, burnin = 200, thin = 2)
 
   plot(b2)
@@ -559,7 +559,7 @@ if(FALSE) {
     df ~ sx(df.x11)
   )
 
-  b1 <- bayesr(f, data = d, family = t, engine = "BayesX", verbose = TRUE)
+  b1 <- bamlss(f, data = d, family = t, engine = "BayesX", verbose = TRUE)
 
   f <- list(
     y ~ s(mu.x11) + s(mu.x12),
@@ -567,7 +567,7 @@ if(FALSE) {
     nu ~ s(df.x11)
   )
 
-  b2 <- bayesr(f, data = d, family = tF(TF), update = "optim")
+  b2 <- bamlss(f, data = d, family = tF(TF), update = "optim")
 
   plot(c(b1, b2))
 }
@@ -605,7 +605,7 @@ dgp_dagum <- function(n = 500, a = NULL, b = NULL, p = NULL, ...)
 
 if(FALSE) {
   d <- dgp_dagum()
-  b <- bayesr(list(y ~ sx(a.x11) + sx(a.x12), y ~ sx(b.x11) + sx(b.x12), y ~ 1),
+  b <- bamlss(list(y ~ sx(a.x11) + sx(a.x12), y ~ sx(b.x11) + sx(b.x12), y ~ 1),
 		data = d, family = dagum, engine = "BayesX", verbose = TRUE)
 
   f <- list(
@@ -614,7 +614,7 @@ if(FALSE) {
     p ~ 1
   )
 
-  b2 <- bayesr(f, data = d, family = dagum, method = c("backfitting"), update = "optim")
+  b2 <- bamlss(f, data = d, family = dagum, method = c("backfitting"), update = "optim")
 
   summary(b)
   plot(b)
@@ -659,11 +659,11 @@ dgp_beta <- function(n = 500, mu = NULL, sigma2 = NULL, ...)
 
 if(FALSE) {
   d <- dgp_beta()
-  b <- bayesr(y ~ s(mu.x11), ~ s(sigma2.x11), data = d, family = beta, method = "backfitting")
+  b <- bamlss(y ~ s(mu.x11), ~ s(sigma2.x11), data = d, family = beta, method = "backfitting")
   summary(b)
   plot(b, which = 3:6)
 
-  b <- bayesr(y ~ s(mu.x11) + s(mu.long1, mu.lat1), ~ s(sigma2.x11), data = d, family = beta, method = "backfitting")
+  b <- bamlss(y ~ s(mu.x11) + s(mu.long1, mu.lat1), ~ s(sigma2.x11), data = d, family = beta, method = "backfitting")
 }
 
 
@@ -706,7 +706,7 @@ if(FALSE) {
 	  nu ~ 1
   )
 
-  b <- bayesr(f, data = d, family = BCCG2, engine = "BayesX", verbose = TRUE, n.iter = 6000, burnin = 1000, thin = 5)
+  b <- bamlss(f, data = d, family = BCCG2, engine = "BayesX", verbose = TRUE, n.iter = 6000, burnin = 1000, thin = 5)
 
   f <- list(
     y ~ s(mu.x11) + s(mu.x12),
@@ -714,7 +714,7 @@ if(FALSE) {
 	  nu ~ 1
   )
 
-  b2 <- bayesr(f, data = d, family = tF(BCCGo), update = "optim2", propose = "oslice", method = c("backfitting", "MCMC"), n.iter = 400, burnin = 100, thin = 1)
+  b2 <- bamlss(f, data = d, family = tF(BCCGo), update = "optim2", propose = "oslice", method = c("backfitting", "MCMC"), n.iter = 400, burnin = 100, thin = 1)
 
 
   plot(b)
@@ -780,7 +780,7 @@ if(FALSE) {
     y1 ~ sx(rho.x11)
   )
 
-  b <- bayesr(f, family = mvn, data = d, engine = "BayesX", verbose = TRUE)
+  b <- bamlss(f, family = mvn, data = d, engine = "BayesX", verbose = TRUE)
 
   f <- list(
     y1 ~ s(mu1.x11) + s(mu1.x12),
@@ -790,7 +790,7 @@ if(FALSE) {
     y1 ~ s(rho.x11)
   )
 
-  b <- bayesr(f, family = mvn, data = d, method = "MP", sample = "slice")
+  b <- bamlss(f, family = mvn, data = d, method = "MP", sample = "slice")
   
   plot(b)
 }
@@ -832,9 +832,9 @@ if(FALSE) {
     pi.id2 ~ -1
   )
 
-  b1 <- bayesr(f, data = d, family = zip, engine = "BayesX", verbose = TRUE)
+  b1 <- bamlss(f, data = d, family = zip, engine = "BayesX", verbose = TRUE)
 
-  b2 <- bayesr(f, data = d, method = c("backfitting", "MCMC"),
+  b2 <- bamlss(f, data = d, method = c("backfitting", "MCMC"),
     propose = "oslice", family = zip, n.iter = 400, burnin = 100, thin = 1)
 
   f <- list(
@@ -842,7 +842,7 @@ if(FALSE) {
     pi ~ sx(pi.x11) + sx(pi.x12)
   )
 
-  b3 <- bayesr(f, family = zip, data = d, engine = "BayesX", verbose = TRUE)
+  b3 <- bamlss(f, family = zip, data = d, engine = "BayesX", verbose = TRUE)
 
   lambda.f11.est <- predict(b, model = "lambda", term = 1, what = "terms")
   lambda.f11.est.2p5 <- predict(b, model = "lambda", term = 1, what = "terms", FUN = quantile, 0.025)
@@ -889,7 +889,7 @@ if(FALSE) {
     y ~ sx(lambda.x11) + sx(lambda.x12)
   )
 
-  b <- bayesr(f, family = poisson, data = d, engine = "BayesX", verbose = TRUE)
+  b <- bamlss(f, family = poisson, data = d, engine = "BayesX", verbose = TRUE)
   lambda.f11.est <- predict(b, model = "lambda", term = 1, what = "terms")
   lambda.f11.est.2p5 <- predict(b, model = "lambda", term = 1, what = "terms", FUN = quantile, 0.025)
   lambda.f11.est.97p5 <- predict(b, model = "lambda", term = 1, what = "terms", FUN = quantile, 0.975)
@@ -940,7 +940,7 @@ if(FALSE) {
     y ~ (delta.x11) 
   )
 
-  b <- bayesr(f, family = negbin, data = d, engine = "BayesX", verbose = TRUE)
+  b <- bamlss(f, family = negbin, data = d, engine = "BayesX", verbose = TRUE)
   
   plot(b, which = 3:6, type = "quantile2")
   
@@ -988,7 +988,7 @@ if(FALSE) {
     y ~  1
   )
 
-  b <- bayesr(f, family = zinb, data = d, engine = "BayesX", verbose = TRUE)
+  b <- bamlss(f, family = zinb, data = d, engine = "BayesX", verbose = TRUE)
   
   plot(b, which = 3:6)
   
@@ -1066,7 +1066,7 @@ if(FALSE) {
 
   ## Start BayesX sampler.
   ## Set grid = NA, so fitted effects will be returned with original observations.
-  b0 <- bayesr(f, data = d, family = multinomial, reference = 1,
+  b0 <- bamlss(f, data = d, family = multinomial, reference = 1,
     n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE, grid = NA,
     engine = "BayesX")
 
@@ -1128,7 +1128,7 @@ if(FALSE) {
   )
 
   ## Start BayesX sampler
-  b1 <- bayesr(f, data = d, family = multinomial, reference = 1,
+  b1 <- bamlss(f, data = d, family = multinomial, reference = 1,
     n.iter = 12000, burnin = 2000, thin = 10, verbose = TRUE,
     engine = "BayesX")
 

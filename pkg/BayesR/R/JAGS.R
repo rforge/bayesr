@@ -41,7 +41,7 @@ transformBUGS <- function(x)
     attr(x, "reference") <- reference
 
     tJAGS <- function(obj) {
-      if(inherits(obj, "bayesr.input") & !any(c("smooth", "response") %in% names(obj))) {
+      if(inherits(obj, "bamlss.input") & !any(c("smooth", "response") %in% names(obj))) {
         no <- names(obj)
         no <- no[no != "call"]
         if(is.null(no)) no <- 1:length(obj)
@@ -139,7 +139,7 @@ BUGSmodel <- function(x, family, cat = FALSE, is.stan = FALSE, ...) {
   } else length(x)
   if(k > length(family$names) & !family$cat) {
     stop(paste("more parameters specified than existing in family ",
-      family$family, ".BayesR()!", sep = ""), call. = FALSE)
+      family$family, ".bamlss()!", sep = ""), call. = FALSE)
   }
   model <- "model {"
   for(j in 1:k) {
@@ -587,7 +587,7 @@ samplerJAGS <- function(x, tdir = NULL,
 ##     samples returned the JAGS sampler.                        ##
 ###################################################################
 ## Function to extract all results obtained by running the JAGS
-## sampler. The function uses BayesR structures to represent fitted
+## sampler. The function uses bamlss structures to represent fitted
 ## model terms etc.
 resultsJAGS <- function(x, samples)
 {
@@ -770,17 +770,17 @@ resultsJAGS <- function(x, samples)
 #      ## Clean.
 #      rval[[j]] <- delete.NULLs(rval[[j]])
 
-      class(rval[[j]]) <- "bayesr"
+      class(rval[[j]]) <- "bamlss"
     }
     names(rval) <- paste("Chain", 1:chains, sep = "_")
     if(length(rval) < 2) {
       rval <- rval[[1]]
     }
-    class(rval) <- "bayesr"
+    class(rval) <- "bamlss"
     return(rval)
   }
 
-  if(inherits(x, "bayesr.input") & !all(c("formula", "fake.formula", "response") %in% names(x))) {
+  if(inherits(x, "bamlss.input") & !all(c("formula", "fake.formula", "response") %in% names(x))) {
     nx <- names(x)
     nx <- nx[nx != "call"]
     rval <- list()
@@ -807,7 +807,7 @@ resultsJAGS <- function(x, samples)
       rval <- rval[!grepl(reference, fn)]
     }
     attr(rval, "family") <- family
-    class(rval) <- "bayesr"
+    class(rval) <- "bamlss"
     return(rval)
   } else {
     return(createJAGSresults(x, samples))

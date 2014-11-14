@@ -1,11 +1,11 @@
 ################################################
-## (0) BayesR main model fitting constructor. ##
+## (0) BAMLSS main model fitting constructor. ##
 ################################################
 ## Could be interesting: http://people.duke.edu/~neelo003/r/
 ##                       http://www.life.illinois.edu/dietze/Lectures2012/
-xreg <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
+xreg <- function(formula, family = gaussian.bamlss, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
-  reference = NULL, parse.input = parse.input.bayesr, transform = transformJAGS,
+  reference = NULL, parse.input = parse.input.bamlss, transform = transformJAGS,
   setup = setupJAGS, engine = samplerJAGS, results = resultsJAGS,
   cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, grid = 100, ...)
 {
@@ -35,7 +35,7 @@ xreg <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
   functions$parse.input <- if(!is.null(parse.input)) {
     stopifnot(is.function(parse.input))
     deparse(substitute(parse.input), backtick = TRUE, width.cutoff = 500)
-  } else "parse.input.bayesr"
+  } else "parse.input.bamlss"
 
   ## Parse input.
   pm <- match.call(expand.dots = FALSE)
@@ -88,15 +88,15 @@ xreg <- function(formula, family = gaussian.BayesR, data = NULL, knots = NULL,
 
 
 #########################
-## (1) BayesR wrapper. ##
+## (1) BAMLSS wrapper. ##
 #########################
-bayesr <- function(formula, family = gaussian2, data = NULL, knots = NULL,
+bamlss <- function(formula, family = gaussian2, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
   engine = c("IWLS", "BayesX", "JAGS", "STAN"), cores = NULL, combine = TRUE,
   n.iter = 12000, thin = 10, burnin = 2000, seed = NULL, ...)
 {
   xengine <- match.arg(engine)
-  ff <- try(inherits(family, "family.BayesR"), silent = TRUE)
+  ff <- try(inherits(family, "family.bamlss"), silent = TRUE)
   if(inherits(ff, "try-error")) {
     family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
   } else {
@@ -155,7 +155,7 @@ bayesr <- function(formula, family = gaussian2, data = NULL, knots = NULL,
 
   rval <- xreg(formula, family = family, data = data, knots = knots,
     weights = weights, subset = subset, offset = offset, na.action = na.action,
-    contrasts = contrasts, parse.input = parse.input.bayesr, transform = transform,
+    contrasts = contrasts, parse.input = parse.input.bamlss, transform = transform,
     setup = setup, engine = engine, results = results, cores = cores,
     combine = combine, sleep = 1, ...)
   
@@ -169,14 +169,14 @@ bayesr <- function(formula, family = gaussian2, data = NULL, knots = NULL,
 ##########################################################
 ## (2) Parsing all input using package mgcv structures. ##
 ##########################################################
-parse.input.bayesr <- function(formula, data = NULL, family = gaussian2.BayesR,
+parse.input.bamlss <- function(formula, data = NULL, family = gaussian2.bamlss,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
   grid = 100, ...)
 {
   ## Search for additional formulas
   formula2 <- NULL; formula3 <- list(); k <- 1
-  fn <- names(fo <- formals(fun = parse.input.bayesr))[-1]
+  fn <- names(fo <- formals(fun = parse.input.bamlss))[-1]
   fn <- fn[fn != "..."]
   for(f in fn) {
     fe <- eval(parse(text = f))
@@ -193,14 +193,14 @@ parse.input.bayesr <- function(formula, data = NULL, family = gaussian2.BayesR,
   }
 
   ## Parse family object.
-  family <- bayesr.family(family)
+  family <- bamlss.family(family)
 
   ## Parse formula
-  formula <- bayesr.formula(c(formula, formula2), specials, family)
+  formula <- bamlss.formula(c(formula, formula2), specials, family)
   formula0 <- attr(formula, "formula0")
 
   ## Create the model frame.
-  mf <- bayesr.model.frame(formula, data, family, weights,
+  mf <- bamlss.model.frame(formula, data, family, weights,
     subset, offset, na.action, specials)
   response.name <- attr(mf, "response.name")
 
@@ -233,8 +233,8 @@ parse.input.bayesr <- function(formula, data = NULL, family = gaussian2.BayesR,
   }
 
   ## Assign all design matrices and the hierarchical level, if any.
-  rval <- bayesr.design(formula, mf, contrasts, knots, ...)
-  rval <- bayesr.hlevel(rval)
+  rval <- bamlss.design(formula, mf, contrasts, knots, ...)
+  rval <- bamlss.hlevel(rval)
 
   ## Dirichlet specials.
   if(family$family == "dirichlet") {
@@ -250,19 +250,19 @@ parse.input.bayesr <- function(formula, data = NULL, family = gaussian2.BayesR,
   attr(rval, "model.frame") <- mf
   attr(rval, "formula0") <- formula0
 
-  class(rval) <- c("bayesr.input", "list")
+  class(rval) <- c("bamlss.input", "list")
 
   rval
 }
 
-"[.bayesr.input" <- function(x, ...) {
+"[.bamlss.input" <- function(x, ...) {
   rval <- NextMethod("[", ...)
   xattr <- attributes(x)
   mostattributes(rval) <- attributes(x)
   rval
 }
 
-"[.bayesr" <- function(x, ...) {
+"[.bamlss" <- function(x, ...) {
   rval <- NextMethod("[", ...)
   mostattributes(rval) <- attributes(x)
   rval
@@ -270,7 +270,7 @@ parse.input.bayesr <- function(formula, data = NULL, family = gaussian2.BayesR,
 
 
 ## Assign all designs matrices.
-bayesr.design <- function(x, data, contrasts = NULL, knots = NULL, ...)
+bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, ...)
 {
   assign.design <- function(obj, mf) {
     if(!all(c("formula", "fake.formula", "response") %in% names(obj)))
@@ -352,11 +352,11 @@ bayesr.design <- function(x, data, contrasts = NULL, knots = NULL, ...)
 
 
 ## Create the model.frame.
-bayesr.model.frame <- function(formula, data, family, weights = NULL,
+bamlss.model.frame <- function(formula, data, family, weights = NULL,
   subset = NULL, offset = NULL, na.action = na.omit, specials = NULL)
 {
-  family <- bayesr.family(family)
-  formula <- bayesr.formula(formula, specials, family)
+  family <- bamlss.family(family)
+  formula <- bamlss.formula(formula, specials, family)
 
   if(is.null(na.action))
     na.action <- get(getOption("na.action"))
@@ -416,7 +416,7 @@ rm_infinite <- function(x) {
 
 
 ## Parse families and get correct family object, depending on type.
-bayesr.family <- function(family, type = "BayesR")
+bamlss.family <- function(family, type = "bamlss")
 {
   family <- if(is.function(family)) family() else {
     if(is.character(family)) {
@@ -430,13 +430,13 @@ bayesr.family <- function(family, type = "BayesR")
       else family
     } else family
   }
-  if(!inherits(family, "family.BayesR")) {
+  if(!inherits(family, "family.bamlss")) {
     if(!is.character(family)) {
       if(is.null(family$family)) stop("family is specidied wrong, no family name available!")
       family <- family$family
     }
     txt <- paste(family, type, sep = if(!is.null(type)) "." else "")
-    txt <- gsub("BayesR.BayesR", "BayesR", txt, fixed = TRUE)
+    txt <- gsub("bamlss.bamlss", "bamlss", txt, fixed = TRUE)
     family <- eval(parse(text = txt[1]))
     family <- family()
   }
@@ -495,9 +495,9 @@ bayesr.family <- function(family, type = "BayesR")
 
 ## Special formula parser, can deal with multi parameter models
 ## and hierarchical structures.
-bayesr.formula <- function(formula, specials = NULL, family = gaussian.BayesR())
+bamlss.formula <- function(formula, specials = NULL, family = gaussian.bamlss())
 {
-  if(inherits(formula, "bayesr.formula"))
+  if(inherits(formula, "bamlss.formula"))
     return(formula)
 
   specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", specials))
@@ -528,7 +528,7 @@ bayesr.formula <- function(formula, specials = NULL, family = gaussian.BayesR())
   formula <- formula_extend(formula, specials, family)
 
   environment(formula) <- environment(formula0) <- env
-  class(formula) <- class(formula0) <- c("bayesr.formula", "list")
+  class(formula) <- class(formula0) <- c("bamlss.formula", "list")
   for(j in seq_along(formula0)) {
     if(!inherits(formula0[[j]], "formula")) {
       if(is.null(names(formula0[[j]])))
@@ -792,7 +792,7 @@ formula_hierarchical <- function(formula)
   formula
 }
 
-bayesr.hlevel <- function(x)
+bamlss.hlevel <- function(x)
 {
   do <- TRUE
   while(do) {
@@ -848,7 +848,7 @@ bayesr.hlevel <- function(x)
 ## Transform smooth terms to mixed model representation.
 randomize <- function(x)
 {
-  if(inherits(x, "bayesr.input") & !any(c("smooth", "response") %in% names(x))) {
+  if(inherits(x, "bamlss.input") & !any(c("smooth", "response") %in% names(x))) {
     nx <- names(x)
     nx <- nx[nx != "call"]
     if(is.null(nx)) nx <- 1:length(x)
@@ -889,7 +889,7 @@ assign.weights <- function(x, weights = NULL)
   }
 
   if(!is.null(weights)) {
-    if(inherits(x, "bayesr.input") & !any(c("smooth", "response") %in% names(x))) {
+    if(inherits(x, "bamlss.input") & !any(c("smooth", "response") %in% names(x))) {
       nx <- names(x)
       nx <- nx[nx != "call"]
       if(is.null(nx)) nx <- 1:length(x)
@@ -935,8 +935,8 @@ combine_chains <- function(x)
 }
 
 
-## Combine method for "bayesr" objects.
-c.bayesr <- function(...)
+## Combine method for "bamlss" objects.
+c.bamlss <- function(...)
 {
   objects <- list(...)
   x <- NULL
@@ -944,7 +944,7 @@ c.bayesr <- function(...)
     x <- c(x, objects[i])
   Call <- match.call()
   names(x) <- as.character(Call[-1L])
-  class(x) <- c("bayesr", "cbayesr")
+  class(x) <- c("bamlss", "cbamlss")
 
   return(x)
 }
@@ -1190,7 +1190,7 @@ add.partial <- function(x, samples = FALSE, nsamps = 100) {
   if(is.null(family)) stop("cannot compute partial residuals, no iwls score and weights functions supplied with family object!")
   if(!is.null(family$weights) & !is.null(family$score)) {
     y <- model.response2(x)
-    eta <- fitted.bayesr(x, samples = samples, nsamps = nsamps)
+    eta <- fitted.bamlss(x, samples = samples, nsamps = nsamps)
     mf <- model.frame(x)
     for(j in seq_along(x)) {
       if(!is.null(x[[j]]$effects)) {
@@ -1223,9 +1223,9 @@ add.partial <- function(x, samples = FALSE, nsamps = 100) {
 #####################
 ## (4) Prediction. ##
 #####################
-## A prediction method for "bayesr" objects.
+## A prediction method for "bamlss" objects.
 ## Prediction can also be based on multiple chains.
-predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
+predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   intercept = TRUE, FUN = mean, trans = NULL, MARGIN = 1,
   type = c("link", "parameter"), nsamps = NULL, verbose = FALSE, ...)
 {
@@ -1290,7 +1290,7 @@ predict.bayesr <- function(object, newdata, model = NULL, term = NULL,
               "get.mu" = specs$get.mu, "samples" = tmp)
           } else {
             m.samples[[i]] <- rbind(m.samples[[i]], tmp)
-            if(inherits(object[[j]]$effects[[i]], "linear.bayesr")) {
+            if(inherits(object[[j]]$effects[[i]], "linear.bamlss")) {
               if(specs$is.factor & !is.character(newdata)) {
                 nl <- nlevels(newdata[[i]]) - if(hi) 1 else 0
                 if(nl != ncol(m.samples[[i]]))
@@ -2130,8 +2130,8 @@ Predict.matrix.kriging.smooth <- function(object, data)
 ###################
 ## (6) Plotting. ##
 ###################
-## Plotting method for "bayesr" objects.
-plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
+## Plotting method for "bamlss" objects.
+plot.bamlss <- function(x, model = NULL, term = NULL, which = 1,
   ask = FALSE, scale = 1, spar = TRUE, ...)
 {
   family <- attr(x, "family")
@@ -2159,7 +2159,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
   if(all(which %in% c("hist-resid", "qq-resid", "scatter-resid", "scale-resid"))) {
     args2 <- args
     args2$object <- x
-    res0 <- do.call("residuals.bayesr", delete.args("residuals.bayesr", args2))
+    res0 <- do.call("residuals.bamlss", delete.args("residuals.bamlss", args2))
     ny <- if(is.null(dim(res0))) 1 else ncol(res0)
     if(is.null(args$do_par) & spar) {
       if(!ask) {
@@ -2167,7 +2167,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
       } else par(ask = ask)
     }
     if(any(which %in% c("scatter-resid", "scale-resid"))) {
-      fit0 <- fitted.bayesr(x, type = "parameter", samples = TRUE,
+      fit0 <- fitted.bamlss(x, type = "parameter", samples = TRUE,
         model = if(ny < 2) 1 else NULL, nsamps = args$nsamps)
     }
     rtype <- args$type
@@ -2287,7 +2287,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
 
     if(is.null(args$do_par) & spar) {
       if(!ask) {
-        if("cbayesr" %in% cx) {
+        if("cbamlss" %in% cx) {
           par(mfrow = c(length(x), kn[1] / length(x)))
         } else par(mfrow = n2mfrow(kn[if(which == "effects") 1 else 2]))
       } else par(ask = ask)
@@ -2306,10 +2306,10 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
       args$main <- if(!is.null(main)) main[i] else NULL
       if(!any(c("effects", "param.effects") %in% names(x[[i]]))) {
         args$do_par <- FALSE
-        do.call("plot.bayesr", args)
+        do.call("plot.bamlss", args)
       } else {
         args$mmain <- NULL
-        do.call(".plot.bayesr", args)
+        do.call(".plot.bamlss", args)
       }
     }
   }
@@ -2317,7 +2317,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
   invisible(NULL)
 }
 
-.plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
+.plot.bamlss <- function(x, model = NULL, term = NULL, which = 1,
   ask = FALSE, scale = 1, spar = TRUE, ...)
 {
   x <- get.model(x, model)
@@ -2380,7 +2380,7 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
             setlim <- TRUE
           }
           args$x <- x[[i]]$effects[[e]]
-          do.call("plot.bayesr.effect", args)
+          do.call("plot.bamlss.effect", args)
           if(setlim) args[[lim]] <- NULL
         }
       }
@@ -2399,9 +2399,9 @@ plot.bayesr <- function(x, model = NULL, term = NULL, which = 1,
 
 
 ## Generic plotting method for model terms.
-plot.bayesr.effect <- function(x, which = "effects", ...) {
+plot.bamlss.effect <- function(x, which = "effects", ...) {
   if(which == "effects") {
-    UseMethod("plot.bayesr.effect")
+    UseMethod("plot.bamlss.effect")
   } else {
     require("coda")
     args <- list(...)
@@ -2424,7 +2424,7 @@ plot.bayesr.effect <- function(x, which = "effects", ...) {
 
 
 ## Default model term plotting method.
-plot.bayesr.effect.default <- function(x, ...) {
+plot.bamlss.effect.default <- function(x, ...) {
   args <- list(...)
 
   if(attr(x, "specs")$dim > 1 & inherits(x, "rs.smooth")) {
@@ -2571,7 +2571,7 @@ delete.NULLs <- function(x.list)
 ##################################
 ## (8) Model summary functions. ##
 ##################################
-summary.bayesr <- function(object, model = NULL, ...)
+summary.bamlss <- function(object, model = NULL, ...)
 {
   call <- attr(object, "call")
   family <- attr(object, "family")
@@ -2580,7 +2580,7 @@ summary.bayesr <- function(object, model = NULL, ...)
   n <- length(object)
   for(i in 1:n) {
     if(!any(c("param.effects", "effects.hyp") %in% names(object[[i]]))) {
-      rval[[i]] <- summary.bayesr(object[[i]])
+      rval[[i]] <- summary.bamlss(object[[i]])
       attr(rval[[i]], "hlevel") <- TRUE
     } else {
       for(j in c("param.effects", "effects.hyp")) {
@@ -2601,11 +2601,11 @@ summary.bayesr <- function(object, model = NULL, ...)
   attr(rval, "n") <- n
   attr(rval, "call") <- call
   attr(rval, "family") <- family
-  class(rval) <- "summary.bayesr"
+  class(rval) <- "summary.bamlss"
   rval
 }
 
-print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ...)
+print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ...)
 {
   on.exit(return(invisible(x)))
   h0 <- !is.null(attr(x, "hlevel"))
@@ -2668,7 +2668,7 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
       if(h1) cat("---") else cat("---\n")
     }
     if(h1) {
-      print.summary.bayesr(x[[i]], digits = digits, dic_out = FALSE, ...)
+      print.summary.bamlss(x[[i]], digits = digits, dic_out = FALSE, ...)
       if(i == n & dic_out)
         print_dic_pd(x[[i]][[1]], ok = FALSE)
     } else {
@@ -2692,8 +2692,8 @@ print.summary.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ..
 }
 
 
-## Simple "bayesr" print method.
-print.bayesr <- function(x, digits = max(3, getOption("digits") - 3), ...) 
+## Simple "bamlss" print method.
+print.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ...) 
 {
   on.exit(return(invisible(x)))
   xs <- summary(x)
@@ -2777,7 +2777,7 @@ DIC <- function(object, ...)
   UseMethod("DIC")
 }
 
-DIC.bayesr <- function(object, ..., samples = TRUE, nsamps = NULL)
+DIC.bamlss <- function(object, ..., samples = TRUE, nsamps = NULL)
 {
   object <- c(object, ...)
   rval <- NULL
@@ -2798,8 +2798,8 @@ DIC.bayesr <- function(object, ..., samples = TRUE, nsamps = NULL)
       family <- attr(object[[i]], "family")
       if(is.null(family$d)) stop("no d() function available in model family object!")
       y <- model.response2(object[[i]])
-      d0 <- -2 * sum(family$d(y, family$map2par(fitted.bayesr(object[[i]], type = "link")), log = TRUE), na.rm = TRUE)
-      eta <- fitted.bayesr(object[[i]], type = "link",
+      d0 <- -2 * sum(family$d(y, family$map2par(fitted.bamlss(object[[i]], type = "link")), log = TRUE), na.rm = TRUE)
+      eta <- fitted.bamlss(object[[i]], type = "link",
         samples = TRUE, nsamps = nsamps,
         FUN = function(x) { x })
       iter <- ncol(eta[[1]])
@@ -2828,7 +2828,7 @@ DIC.bayesr <- function(object, ..., samples = TRUE, nsamps = NULL)
 }
 
 
-logLik.bayesr <- function(object, ..., type = 1, nsamps = NULL, FUN = NULL)
+logLik.bamlss <- function(object, ..., type = 1, nsamps = NULL, FUN = NULL)
 {
   object <- c(object, ...)
   rval <- if(type %in% c(1, 3)) NULL else list()
@@ -2851,7 +2851,7 @@ logLik.bayesr <- function(object, ..., type = 1, nsamps = NULL, FUN = NULL)
       if(is.null(family$d)) stop("no d() function available in model family object!")
       y <- model.response2(object[[i]])
       if(type == 2) {
-        eta <- fitted.bayesr(object[[i]], type = "link",
+        eta <- fitted.bamlss(object[[i]], type = "link",
           samples = TRUE, nsamps = nsamps,
           FUN = function(x) { x })
         iter <- min(sapply(eta, ncol))
@@ -2867,7 +2867,7 @@ logLik.bayesr <- function(object, ..., type = 1, nsamps = NULL, FUN = NULL)
         if(is.null(FUN)) FUN <- function(x) { x }
         rval[[i]] <- FUN(ll)
       } else {
-        eta <- fitted.bayesr(object[[i]], type = "link", samples = TRUE,
+        eta <- fitted.bamlss(object[[i]], type = "link", samples = TRUE,
           nsamps = nsamps, FUN = function(x) { mean(x, na.rm = TRUE) })
         ll <- sum(family$d(y, family$map2par(eta), log = TRUE), na.rm = TRUE)
         rval <- rbind(rval, data.frame(
@@ -2925,7 +2925,7 @@ logLik.bayesr <- function(object, ..., type = 1, nsamps = NULL, FUN = NULL)
 
 
 ## Extract model formulas.
-formula.bayesr <- function(x, model = NULL, ...)
+formula.bamlss <- function(x, model = NULL, ...)
 {
   if(all(c("model", "effects") %in% names(x))) {
     f <- x$model$formula
@@ -2946,7 +2946,7 @@ formula.bayesr <- function(x, model = NULL, ...)
   f
 }
 
-print.bayesr.formula <- function(x, ...) {
+print.bamlss.formula <- function(x, ...) {
   if(!inherits(x, "list")) {
     print(x)
   } else {
@@ -2975,11 +2975,11 @@ print.bayesr.formula <- function(x, ...) {
 
 
 ## Extract formula terms.
-terms.bayesr <- function(x, ...) {
-  terms.bayesr.formula(formula(x, ...))
+terms.bamlss <- function(x, ...) {
+  terms.bamlss.formula(formula(x, ...))
 }
 
-terms.bayesr.formula <- function(x)
+terms.bamlss.formula <- function(x)
 {
   if(!inherits(x, "list")) {
     tx <- terms(x)
@@ -2987,7 +2987,7 @@ terms.bayesr.formula <- function(x)
     tx <- list()
     for(i in seq_along(x)) {
       if(inherits(x[[i]], "list")) {
-        tx[[i]] <- terms.bayesr.formula(x[[i]])
+        tx[[i]] <- terms.bamlss.formula(x[[i]])
         names(tx[[i]]) <- paste("h", 1:length(x[[i]]), sep = "")
       } else tx[[i]] <- terms(x[[i]])
     }
@@ -3038,7 +3038,7 @@ get.model <- function(x, model = NULL, drop = TRUE)
 
 
 ## Fitted values/terms extraction
-fitted.bayesr <- function(object, model = NULL, term = NULL,
+fitted.bamlss <- function(object, model = NULL, term = NULL,
   type = c("link", "parameter"), samples = FALSE, FUN = mean,
   nsamps = NULL, ...)
 {
@@ -3067,7 +3067,7 @@ fitted.bayesr <- function(object, model = NULL, term = NULL,
   if(!samples) {
     for(j in seq_along(object)) {
       if(!any(elmts %in% names(object[[j]]))) {
-        rval[[j]] <- fitted.bayesr(object[[j]], term = term, ...)
+        rval[[j]] <- fitted.bamlss(object[[j]], term = term, ...)
       } else {
         if(is.null(term))
           rval[[j]] <- object[[j]]$fitted.values
@@ -3098,12 +3098,12 @@ fitted.bayesr <- function(object, model = NULL, term = NULL,
         rval[[j]] <- 0
         for(jj in seq_along(object[[j]])) {
           if(is.null(object[[j]][[jj]]$param.effects) & is.null(object[[j]][[jj]]$effects)) next
-          rval[[j]] <- rval[[j]] + predict.bayesr(object, model = c(j, jj), term = term,
+          rval[[j]] <- rval[[j]] + predict.bamlss(object, model = c(j, jj), term = term,
             FUN = function(x) { x }, nsamps = nsamps, ...)
         }
       } else {
         if(is.null(object[[j]]$param.effects) & is.null(object[[j]]$effects)) next
-        rval[[j]] <- predict.bayesr(object, model = if(one) NULL else j, term = term,
+        rval[[j]] <- predict.bamlss(object, model = if(one) NULL else j, term = term,
           FUN = function(x) { x }, nsamps = nsamps, ...)
       }
       if(type != "link" & !h1check)
@@ -3157,7 +3157,7 @@ grep2 <- function(pattern, x, ...) {
   sort(i)
 }
 
-samples.bayesr <- function(x, model = NULL, term = NULL, ...)
+samples.bamlss <- function(x, model = NULL, term = NULL, ...)
 {
   x <- get.model(x, model)
   if(!is.null(nx <- names(x))) {
@@ -3171,7 +3171,7 @@ samples.bayesr <- function(x, model = NULL, term = NULL, ...)
   samps <- list(); k <- 1
   for(j in seq_along(x)) {
     if(!all(c("effects", "param.effects") %in% names(x[[j]]))) {
-      samps[[j]] <- samples.bayesr(x[[j]], term = term, id = nx[j])
+      samps[[j]] <- samples.bamlss(x[[j]], term = term, id = nx[j])
     } else {
       if(!is.null(x[[j]]$param.effects)) {
         if(nrow(x[[j]]$param.effects) > 0) {
@@ -3216,7 +3216,7 @@ samples.bayesr <- function(x, model = NULL, term = NULL, ...)
 
 
 ## Credible intervals of coefficients.
-confint.bayesr <- function(object, parm, level = 0.95, model = NULL, ...)
+confint.bamlss <- function(object, parm, level = 0.95, model = NULL, ...)
 {
   args <- list(...)
   if(!is.null(args$term))
@@ -3231,7 +3231,7 @@ confint.bayesr <- function(object, parm, level = 0.95, model = NULL, ...)
 
 
 ## Extract model coefficients.
-coef.bayesr <- function(object, model = NULL, term = NULL, FUN = mean, ...)
+coef.bamlss <- function(object, model = NULL, term = NULL, FUN = mean, ...)
 {
   object <- get.model(object)
   if(is.null(term))
@@ -3248,7 +3248,7 @@ all.terms <- function(x, model = NULL, ne = TRUE, what = c("parametric", "smooth
   args <- list(...)
   nx <- names(x)
   if(!ne) {
-    tx <- terms.bayesr(x, model)
+    tx <- terms.bamlss(x, model)
     if(!inherits(tx, "list"))
       tx <- list(tx)
     tl <- NULL
@@ -3310,14 +3310,14 @@ all.terms <- function(x, model = NULL, ne = TRUE, what = c("parametric", "smooth
 
 
 ## Get the model.frame.
-model.frame.bayesr <- function(formula, ...) 
+model.frame.bamlss <- function(formula, ...) 
 {
   dots <- list(...)
   nargs <- dots[match(c("data", "na.action", "subset"), names(dots), 0L)]
   mf <- if(length(nargs) || is.null(attr(formula, "model.frame"))) {
     fcall <- attr(formula, "call")
     fcall$method <- "model.frame"
-    fcall[[1L]] <- quote(bayesr.model.frame)
+    fcall[[1L]] <- quote(bamlss.model.frame)
     fcall[names(nargs)] <- nargs
     env <- environment(attr(formula, "formula"))
     if(is.null(env)) 
@@ -3334,7 +3334,7 @@ model.frame.bayesr <- function(formula, ...)
 score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
   type = c("mean", "samples"), kfitted = TRUE, nsamps = NULL, ...)
 {
-  stopifnot(inherits(x, "bayesr"))
+  stopifnot(inherits(x, "bamlss"))
   family <- attr(x, "family")
   stopifnot(!is.null(family$d))
   type <- match.arg(type)
@@ -3452,7 +3452,7 @@ score <- function(x, limits = NULL, FUN = function(x) { mean(x, na.rm = TRUE) },
 kfitted <- function(x, k = 5, weighted = FALSE, random = FALSE,
   engine = NULL, verbose = TRUE, FUN = mean, nsamps = NULL, ...)
 {
-  if(!inherits(x, "bayesr")) stop('argument x is not a "bayesr" object!')
+  if(!inherits(x, "bamlss")) stop('argument x is not a "bamlss" object!')
   if(is.null(engine))
     engine <- attr(x, "engine")
   if(is.null(engine)) stop("please choose an engine!")
@@ -3471,16 +3471,16 @@ kfitted <- function(x, k = 5, weighted = FALSE, random = FALSE,
     drop <- mf[i == j, ]
     if(!weighted) {
       take <- mf[i != j, ]
-      bcv <- bayesr(f, data = take, family = family,
+      bcv <- bamlss(f, data = take, family = family,
         engine = engine, verbose = verbose, ...)
     } else {
       w <- 1 * (i != j)
-      bcv <- bayesr(f, data = mf, family = family,
+      bcv <- bamlss(f, data = mf, family = family,
         engine = engine, verbose = verbose, weights = w, ...)
     }
     if(!is.null(attr(mf, "orig.names")))
       names(drop) <- rmf(names(drop))
-    fit <- fitted.bayesr(bcv, newdata = drop, samples = TRUE, FUN = FUN, nsamps = nsamps)
+    fit <- fitted.bamlss(bcv, newdata = drop, samples = TRUE, FUN = FUN, nsamps = nsamps)
     if(!inherits(fit, "list")) {
       fit <- list(fit)
       names(fit) <- family$names
@@ -3534,7 +3534,7 @@ create.dp <- function(family)
 
 
 ## Extract model residuals.
-residuals.bayesr <- function(object, type = c("quantile", "ordinary", "quantile2", "ordinary2"),
+residuals.bamlss <- function(object, type = c("quantile", "ordinary", "quantile2", "ordinary2"),
   samples = FALSE, FUN = mean, nsamps = NULL)
 {
   type <- match.arg(type)
@@ -3695,18 +3695,18 @@ print.TODOs <- function(x, ...)
 
 .TODOs <- function(file = NULL)
 {
-  require("BayesR")
+  require("bamlss")
   if(is.null(file))
-    file <- "~/svn/bayesr/pkg/BayesR/R/families.R"
+    file <- "~/svn/bayesr/pkg/bamlss/R/families.R"
   file <- path.expand(file)
   env <- new.env()
   source(file, local = env)
-  fun <- grep(".BayesR", ls(env), fixed = TRUE, value = TRUE)
+  fun <- grep(".bamlss", ls(env), fixed = TRUE, value = TRUE)
   fun <- fun[!grepl("print", fun)]
   tab <- NULL
   for(i in seq_along(fun)) {
     fe <- try(eval(parse(text = paste(fun[i], "()", sep = "")), envir = env), silent = TRUE)
-    if(inherits(fe, "family.BayesR")) {
+    if(inherits(fe, "family.bamlss")) {
       if(!is.null(fe$family)) {
         dgp <- try(get(paste("dgp", fe$family, sep = "_")), silent = TRUE)
         dgp <- if(!inherits(dgp, "try-error")) "yes" else "no"
@@ -3732,6 +3732,6 @@ print.TODOs <- function(x, ...)
 
 #.First.lib <- function(lib, pkg)
 #{
-#  library.dynam("BayesR", pkg, lib)
+#  library.dynam("bamlss", pkg, lib)
 #}
 

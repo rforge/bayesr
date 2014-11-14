@@ -1,8 +1,8 @@
 ######################
-## BayesR Families. ##
+## BAMLSS Families. ##
 ######################
 ## Print method.
-print.family.BayesR <- function(x, ...)
+print.family.bamlss <- function(x, ...)
 {
   cat("Family:", x$family, "\n")
   links <- paste(names(x$links), x$links, sep = " = ")
@@ -12,7 +12,7 @@ print.family.BayesR <- function(x, ...)
 }
 
 ## Extract method.
-family.bayesr <- function(object, ...)
+family.bamlss <- function(object, ...)
 {
   attr(object, "family")
 }
@@ -68,7 +68,7 @@ parse.links <- function(links, default.links, ...)
 
 
 ## http://stats.stackexchange.com/questions/41536/how-can-i-model-a-proportion-with-bugs-jags-stan
-beta.BayesR <- function(links = c(mu = "logit", sigma2 = "logit"), ...)
+beta.bamlss <- function(links = c(mu = "logit", sigma2 = "logit"), ...)
 {
   rval <- list(
     "family" = "beta",
@@ -142,12 +142,12 @@ beta.BayesR <- function(links = c(mu = "logit", sigma2 = "logit"), ...)
 	  },
     "type" = 1
   )
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-betazoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log", tau = "log"), ...)
+betazoi.bamlss <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log", tau = "log"), ...)
 {
   rval <- list(
     "family" = "betazoi",
@@ -193,12 +193,12 @@ betazoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log",
 		  ifelse(y == 1, 1, cdf)
 	  }
   )
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-betazi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log"), ...)
+betazi.bamlss <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log"), ...)
 {
   rval <- list(
     "family" = "betazi",
@@ -240,12 +240,12 @@ betazi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log"),
 		  ifelse(y == 0, hilfs, hilfs + (1 - hilfs) * pbeta(y, shape1 = a, shape2 = b, ncp = 0))
 	  }
   )
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-betaoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", tau = "log"), ...)
+betaoi.bamlss <- function(links = c(mu = "logit", sigma2 = "logit", tau = "log"), ...)
 {
   rval <- list(
     "family" = "betazi",
@@ -288,12 +288,12 @@ betaoi.BayesR <- function(links = c(mu = "logit", sigma2 = "logit", tau = "log")
       ifelse(y == 1, hilfs, hilfs + (1 - hilfs) * pbeta(y, shape1 = a, shape2 = b, ncp = 0))
 	  }
   )
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-binomial.BayesR <- function(link = "logit", ...)
+binomial.bamlss <- function(link = "logit", ...)
 {
   rval <- list(
     "family" = "binomial",
@@ -343,11 +343,11 @@ binomial.BayesR <- function(link = "logit", ...)
     "type" = 1
   )
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
-cloglog.BayesR <- function(link = "cloglog", ...)
+cloglog.bamlss <- function(link = "cloglog", ...)
 {
   rval <- list(
     "family" = "cloglog",
@@ -372,11 +372,11 @@ cloglog.BayesR <- function(link = "cloglog", ...)
 	  }
   )
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
-gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
+gaussian.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
 {
   rval <- list(
     "family" = "gaussian",
@@ -421,12 +421,12 @@ gaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
     "type" = 1
   )
   
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
+gaussian2.bamlss <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 {
   rval <- list(
     "family" = "gaussian2",
@@ -471,12 +471,12 @@ gaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
     "type" = 1
   )
  
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-truncgaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
+truncgaussian2.bamlss <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 {
   rval <- list(
     "family" = "truncgaussian2",
@@ -506,11 +506,11 @@ truncgaussian2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ..
     }
   )
   
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
-truncgaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
+truncgaussian.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
 {
   rval <- list(
     "family" = "truncgaussian",
@@ -568,12 +568,12 @@ truncgaussian.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
     }
   )
   
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-trunc.BayesR <- function(links = c(mu = "identity", sigma = "log"),
+trunc.bamlss <- function(links = c(mu = "identity", sigma = "log"),
   direction = "left", point = 0, ...)
 {
   tgrad <- function(y, eta, what = "mu") {
@@ -631,12 +631,12 @@ trunc.BayesR <- function(links = c(mu = "identity", sigma = "log"),
     )
   )
   
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-cens.BayesR <- function(links = c(mu = "identity", sigma = "log", df = "log"),
+cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
   left = 0, right = Inf, dist = "gaussian", ...)
 {
   dist <- match.arg(dist, c("student", "gaussian", "logistic"))
@@ -729,7 +729,7 @@ cens.BayesR <- function(links = c(mu = "identity", sigma = "log", df = "log"),
     "type" = 1
   )
  
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
@@ -764,7 +764,7 @@ qtrunc <- function(p, spec, a = -Inf, b = Inf, ...)
   return(tt)
 }
 
-trunc2.BayesR <- function(links = c(mu = "identity", sigma = "log"),
+trunc2.bamlss <- function(links = c(mu = "identity", sigma = "log"),
   name = "norm", a = -Inf, b = Inf, ...)
 {
   rval <- list(
@@ -797,12 +797,12 @@ trunc2.BayesR <- function(links = c(mu = "identity", sigma = "log"),
     }
   )
   
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-t.BayesR <- function(links = c(mu = "identity", sigma2 = "log", df = "log"), ...)
+t.bamlss <- function(links = c(mu = "identity", sigma2 = "log", df = "log"), ...)
 {
   rval <- list(
     "family" = "t",
@@ -833,12 +833,12 @@ t.BayesR <- function(links = c(mu = "identity", sigma2 = "log", df = "log"), ...
     }
   )
   
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-invgaussian.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
+invgaussian.bamlss <- function(links = c(mu = "log", sigma2 = "log"), ...)
 {
   rval <- list(
     "family" = "invgaussian",
@@ -886,11 +886,11 @@ invgaussian.BayesR <- function(links = c(mu = "log", sigma2 = "log"), ...)
 	  }
   )
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
-weibull.BayesR <- function(links = c(lambda = "log", alpha = "log"), ...)
+weibull.bamlss <- function(links = c(lambda = "log", alpha = "log"), ...)
 {
   rval <- list(
     "family" = "weibull",
@@ -928,12 +928,12 @@ weibull.BayesR <- function(links = c(lambda = "log", alpha = "log"), ...)
     }
   )
   
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-pareto.BayesR <- function(links = c(b = "log", p = "log"), ...)
+pareto.bamlss <- function(links = c(b = "log", p = "log"), ...)
 {
   rval <- list(
     "family" = "pareto",
@@ -972,12 +972,12 @@ pareto.BayesR <- function(links = c(b = "log", p = "log"), ...)
     }
   )
   
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
+gamma.bamlss <- function(links = c(mu = "log", sigma = "log"), ...)
 {
   rval <- list(
     "family" = "gamma",
@@ -1036,12 +1036,12 @@ gamma.BayesR <- function(links = c(mu = "log", sigma = "log"), ...)
     "type" = 1
   )
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-gengamma.BayesR <- function(links = c(mu = "log", sigma = "log", tau = "log"), ...)
+gengamma.bamlss <- function(links = c(mu = "log", sigma = "log", tau = "log"), ...)
 {
   rval <- list(
     "family" = "gengamma",
@@ -1059,12 +1059,12 @@ gengamma.BayesR <- function(links = c(mu = "log", sigma = "log", tau = "log"), .
     )
   )
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-lognormal.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
+lognormal.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
 {
   rval <- list(
     "family" = "lognormal",
@@ -1099,12 +1099,12 @@ lognormal.BayesR <- function(links = c(mu = "identity", sigma = "log"), ...)
     "type" = 1
   )
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-lognormal2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
+lognormal2.bamlss <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 {
   rval <- list(
     "family" = "lognormal2",
@@ -1138,12 +1138,12 @@ lognormal2.BayesR <- function(links = c(mu = "identity", sigma2 = "log"), ...)
     }
   )
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-dagum.BayesR <- function(links = c(a = "log", b = "log", p = "log"), ...)
+dagum.bamlss <- function(links = c(a = "log", b = "log", p = "log"), ...)
 {
   rval <- list(
     "family" = "dagum",
@@ -1182,12 +1182,12 @@ dagum.BayesR <- function(links = c(a = "log", b = "log", p = "log"), ...)
 	  }
   )
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-BCCG2.BayesR <- function(links = c(mu = "log", sigma = "log", nu = "identity"), ...)
+BCCG2.bamlss <- function(links = c(mu = "log", sigma = "log", nu = "identity"), ...)
 {
   rval <- list(
     "family" = "BCCG",
@@ -1226,12 +1226,12 @@ BCCG2.BayesR <- function(links = c(mu = "log", sigma = "log", nu = "identity"), 
 	  "type" = 1
   )
   
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
+mvn.bamlss <- function(links = c(mu1 = "identity", mu2 = "identity",
   sigma1 = "log", sigma2 = "log", rho = "rhogit"), ...)
 {
   rval <- list(
@@ -1266,12 +1266,12 @@ mvn.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
     "type" = 2
   )
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-bivprobit.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity", rho = "rhogit"), ...)
+bivprobit.bamlss <- function(links = c(mu1 = "identity", mu2 = "identity", rho = "rhogit"), ...)
 {
   rval <- list(
     "family" = "bivprobit",
@@ -1290,12 +1290,12 @@ bivprobit.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity", rho =
     "type" = 2
   )
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-bivlogit.BayesR <- function(links = c(p1 = "logit", p2 = "logit", psi = "log"), ...)
+bivlogit.bamlss <- function(links = c(p1 = "logit", p2 = "logit", psi = "log"), ...)
 {
   rval <- list(
     "family" = "bivlogit",
@@ -1313,12 +1313,12 @@ bivlogit.BayesR <- function(links = c(p1 = "logit", p2 = "logit", psi = "log"), 
     }
   )
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-mvt.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
+mvt.bamlss <- function(links = c(mu1 = "identity", mu2 = "identity",
   sigma1 = "log", sigma2 = "log", rho = "fisherz", df = "log"), ...)
 {
   rval <- list(
@@ -1341,12 +1341,12 @@ mvt.BayesR <- function(links = c(mu1 = "identity", mu2 = "identity",
     },
     "type" = 2
   )
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-dirichlet.BayesR <- function(link = "logit", ...)
+dirichlet.bamlss <- function(link = "logit", ...)
 {
   rval <- list(
     "family" = "dirichlet",
@@ -1357,12 +1357,12 @@ dirichlet.BayesR <- function(link = "logit", ...)
     )
   )
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-multinomial.BayesR <- function(link = "logit", ...)
+multinomial.bamlss <- function(link = "logit", ...)
 {
   rval <- list(
     "family" = "multinomial",
@@ -1390,13 +1390,13 @@ multinomial.BayesR <- function(link = "logit", ...)
     "probit" = function(...) stop("multinomial probit not supported yet!")
   )
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
 ## Count Data distributions
-poisson.BayesR <- function(links = c(lambda = "log"), ...)
+poisson.bamlss <- function(links = c(lambda = "log"), ...)
 {
   rval <- list(
     "family" = "poisson",
@@ -1428,12 +1428,12 @@ poisson.BayesR <- function(links = c(lambda = "log"), ...)
     "type" = 3
   )
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
+zip.bamlss <- function(links = c(lambda = "log", pi = "logit"), ...)
 {
   rval <- list(
     "family" = "zip",
@@ -1464,12 +1464,12 @@ zip.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
   if(rval$bayesx[[2]][[1]] == "zip_pi_cloglog")
     rval$bayesx[[1]][[1]] <- "zip_lambda_cloglog"
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-hurdleP.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
+hurdleP.bamlss <- function(links = c(lambda = "log", pi = "logit"), ...)
 { 
   rval <- list(
     "family" = "hurdle",
@@ -1502,11 +1502,11 @@ hurdleP.BayesR <- function(links = c(lambda = "log", pi = "logit"), ...)
     "type" = 3
   )
  
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
-negbin.BayesR <- function(links = c(mu = "log", delta = "log"), ...)
+negbin.bamlss <- function(links = c(mu = "log", delta = "log"), ...)
 {
   rval <- list(
     "family" = "negbin",
@@ -1529,12 +1529,12 @@ negbin.BayesR <- function(links = c(mu = "log", delta = "log"), ...)
     "type" = 3
   )
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-zinb.BayesR <- function(links = c(mu = "log", pi = "logit", delta = "log"), ...)
+zinb.bamlss <- function(links = c(mu = "log", pi = "logit", delta = "log"), ...)
 {
   rval <- list(
     "family" = "zinb",
@@ -1561,11 +1561,11 @@ zinb.BayesR <- function(links = c(mu = "log", pi = "logit", delta = "log"), ...)
     "type" = 3
   )
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
-hurdleNB.BayesR <- function(links = c(mu = "log", pi = "logit", delta = "log"), ...)
+hurdleNB.bamlss <- function(links = c(mu = "log", pi = "logit", delta = "log"), ...)
 {
   rval <- list(
     "family" = "hurdleNB",
@@ -1599,13 +1599,13 @@ hurdleNB.BayesR <- function(links = c(mu = "log", pi = "logit", delta = "log"), 
     "type" = 3
   )
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
 ## http://stats.stackexchange.com/questions/17672/quantile-regression-in-jags
-quant.BayesR <- function(links = c(mu = "identity"), prob = 0.5, ...)
+quant.bamlss <- function(links = c(mu = "identity"), prob = 0.5, ...)
 {
   rval <- list(
     "family" = "quant",
@@ -1616,12 +1616,12 @@ quant.BayesR <- function(links = c(mu = "identity"), prob = 0.5, ...)
       "quantile" = prob
     )
   )
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
-quant2.BayesR <- function(links = c(mu = "identity", sigma = "log"), prob = 0.5, ...)
+quant2.bamlss <- function(links = c(mu = "identity", sigma = "log"), prob = 0.5, ...)
 {
   rval <- list(
     "family" = "quant2",
@@ -1639,15 +1639,15 @@ quant2.BayesR <- function(links = c(mu = "identity", sigma = "log"), prob = 0.5,
       "addvalues" = list("prop" = prob)
     )
   )
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 
 
 ## Zero adjusted families.
-zero.BayesR <- function(pi = "logit", g = invgaussian)
+zero.bamlss <- function(pi = "logit", g = invgaussian)
 {
-  gg <- try(inherits(g, "family.BayesR"), silent = TRUE)
+  gg <- try(inherits(g, "family.bamlss"), silent = TRUE)
   if(inherits(gg, "try-error")) {
     g <- deparse(substitute(g), backtick = TRUE, width.cutoff = 500)
   } else {
@@ -1656,7 +1656,7 @@ zero.BayesR <- function(pi = "logit", g = invgaussian)
         g <- deparse(substitute(g), backtick = TRUE, width.cutoff = 500)
     }
   }
-  g <- bayesr.family(g)
+  g <- bamlss.family(g)
   g[c("mu", "map2par", "loglik")] <- NULL
   g0 <- g
   np <- g$names
@@ -1690,15 +1690,15 @@ zero.BayesR <- function(pi = "logit", g = invgaussian)
       g$bayesx[[j]][2] <- "meanservant"
   }
   g$bayesx$zero <- TRUE
-  class(g) <- "family.BayesR"
+  class(g) <- "family.bamlss"
   g
 }
 
 
-## General BayesR family creator.
+## General bamlss family creator.
 gF <- function(x, ...) {
   x <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500)
-  F <- get(paste(x, "BayesR", sep = "."), mode = "function")
+  F <- get(paste(x, "bamlss", sep = "."), mode = "function")
   F(...)
 }
 
@@ -1807,7 +1807,7 @@ tF <- function(x, ...)
   )
   names(rval$links) <- nx
 
-  class(rval) <- "family.BayesR"
+  class(rval) <- "family.bamlss"
   rval
 }
 

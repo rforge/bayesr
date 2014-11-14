@@ -18,5 +18,5 @@ f <- list(
   sigma2 ~ sx(x1)
 )
 
-b <- bayesr(f, family = gaussian2, data = dat, engine = "BayesX")
+b <- bamlss(f, family = gaussian2, data = dat, engine = "BayesX")
 plot(b)
