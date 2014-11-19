@@ -2,7 +2,7 @@
 ## http://adv-r.had.co.nz/C-interface.html
 ## http://stackoverflow.com/questions/7457635/calling-r-function-from-c
 ## http://gallery.rcpp.org/articles/r-function-from-c++/
-## IWLS propose function in C.
+## BayesG propose function in C.
 propose_iwls <- function(x, family,
   response, eta, id, rho, ...)
 {
@@ -961,9 +961,9 @@ update_optim3 <- function(x, family, response, eta, id, ...)
 }
 
 
-## Setup for IWLS sampler, handling
+## Setup for BayesG engine, handling
 ## sampling functions.
-transformIWLS <- function(x, ...)
+transformBayesG <- function(x, ...)
 {
   call <- x$call; x$call <- NULL
   x <- assign.weights(x)
@@ -995,14 +995,14 @@ transformIWLS <- function(x, ...)
     }
   }
 
-  tIWLS <- function(obj, ...) {
+  tBayesG <- function(obj, ...) {
     if(!any(c("formula", "fake.formula", "response") %in% names(obj))) {
       nx <- names(obj)
       nx <- nx[nx != "call"]
       if(is.null(nx)) nx <- 1:length(obj)
       if(length(unique(nx)) < length(obj)) nx <- 1:length(obj)
       for(j in nx)
-        obj[[j]] <- tIWLS(obj[[j]], ...)
+        obj[[j]] <- tBayesG(obj[[j]], ...)
     } else {
       if(!is.null(dim(obj$X))) {
         if(nrow(obj$X) > 0 & !is.na(mean(unlist(obj$X), na.rm = TRUE))) {
@@ -1024,7 +1024,7 @@ transformIWLS <- function(x, ...)
       }
       if(length(obj$smooth)) {
         for(j in seq_along(obj$smooth)) {
-          obj$smooth[[j]] <- smooth.IWLS(obj$smooth[[j]])
+          obj$smooth[[j]] <- smooth.BayesG(obj$smooth[[j]])
           if(!is.null(obj$smooth[[j]]$rank))
             obj$smooth[[j]]$rank <- as.numeric(obj$smooth[[j]]$rank)
           if(!is.null(obj$smooth[[j]]$Xf)) {
@@ -1059,7 +1059,7 @@ transformIWLS <- function(x, ...)
     obj
   }
 
-  x <- tIWLS(x, ...)
+  x <- tBayesG(x, ...)
 
   attr(x, "call") <- call
   attr(x, "response.vec") <- attr(x, "model.frame")[, attr(attr(x, "model.frame"), "response.name")]
@@ -1095,9 +1095,9 @@ optimize2 <- function(f, interval, ...,
 }
 
 
-## Function to setup IWLS smooths.
-smooth.IWLS <- function(x, ...) {
-  UseMethod("smooth.IWLS")
+## Function to setup BayesG smooths.
+smooth.BayesG <- function(x, ...) {
+  UseMethod("smooth.BayesG")
 }
 
 ## Function to find tau2 interval according to the
@@ -1119,7 +1119,7 @@ tau2interval <- function(x, lower = .Machine$double.eps^0.25, upper = 10000) {
   }
 }
 
-smooth.IWLS.default <- function(x, ...)
+smooth.BayesG.default <- function(x, ...)
 {
   x$a <- if(is.null(x$xt$a)) 1e-04 else x$xt$a
   x$b <- if(is.null(x$xt$b)) 1e-04 else x$xt$b
@@ -1247,8 +1247,8 @@ get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc",
 }
 
 
-## Sampler based on IWLS proposals.
-samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TRUE,
+## The generic Bayes engine.
+BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TRUE,
   verbose = TRUE, step = 20, svalues = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
   n.adapt = floor(0.1 * burnin), tdir = NULL, method = "MP", outer = FALSE, inner = FALSE, n.samples = 200,
   criterion = c("AICc", "BIC", "AIC"), lower = 1e-09, upper = 1e+04,
@@ -1336,14 +1336,14 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   }
   
   ## Add acceptance rate and fitted values vectors.
-  smIWLS <- function(obj, ...) {
+  smBayesG <- function(obj, ...) {
     if(!any(c("formula", "fake.formula", "response") %in% names(obj))) {
       nx <- names(obj)
       nx <- nx[nx != "call"]
       if(is.null(nx)) nx <- 1:length(obj)
       if(length(unique(nx)) < length(obj)) nx <- 1:length(obj)
       for(j in nx)
-        obj[[j]] <- smIWLS(obj[[j]], ...)
+        obj[[j]] <- smBayesG(obj[[j]], ...)
     } else {
       if(length(obj$smooth)) {
         for(j in seq_along(obj$smooth)) {
@@ -1379,7 +1379,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     obj
   }
 
-  x <- smIWLS(x, ...)
+  x <- smBayesG(x, ...)
 
   ## Formatting for printing.
   fmt <- function(x, width = 8, digits = 2) {
@@ -1955,14 +1955,14 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
   }
   tdir <- path.expand(tdir)
 
-  samplesIWLS <- function(obj, id = NULL, ...) {
+  samplesBayesG <- function(obj, id = NULL, ...) {
     if(!any(c("formula", "fake.formula", "response") %in% names(obj))) {
       nx <- names(obj)
       nx <- nx[nx != "call"]
       if(is.null(nx)) nx <- paste("p", 1:length(obj), sep = "")
       if(length(unique(nx)) < length(obj)) nx <- paste("p", 1:length(obj), sep = "")
       for(j in nx)
-        samplesIWLS(obj[[j]], id = j, ...)
+        samplesBayesG(obj[[j]], id = j, ...)
     } else {
       if(length(obj$smooth)) {
         for(j in seq_along(obj$smooth)) {
@@ -1978,7 +1978,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
     NULL
   }
 
-  samplesIWLS(x)
+  samplesBayesG(x)
 
   ## (2) Remove old object.
   rm(x)
@@ -2000,7 +2000,7 @@ samplerIWLS <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only
 }
 
 
-resultsIWLS <- function(x, samples)
+resultsBayesG <- function(x, samples)
 {
   family <- attr(x, "family")
   grid <- attr(x, "grid")
@@ -2008,7 +2008,7 @@ resultsIWLS <- function(x, samples)
   if(is.function(family))
     family <- family()
 
-  createIWLSresults <- function(obj, samples, id = NULL)
+  createBayesGresults <- function(obj, samples, id = NULL)
   {
     if(inherits(samples[[1]], "mcmc.list")) {
       samples <- do.call("c", samples)
@@ -2190,7 +2190,7 @@ resultsIWLS <- function(x, samples)
     if(length(fn) != length(nx))
       fn <- paste(fn, 1:length(nx), sep = "")
     for(j in seq_along(nx)) {
-      rval[[nx[j]]] <- createIWLSresults(x[[nx[j]]], samples, id = fn[j])
+      rval[[nx[j]]] <- createBayesGresults(x[[nx[j]]], samples, id = fn[j])
       if(!is.null(rval[[nx[j]]]$effects)) {
         for(i in seq_along(rval[[nx[j]]]$effects)) {
           specs <- attr(rval[[nx[j]]]$effects[[i]], "specs")
@@ -2212,7 +2212,7 @@ resultsIWLS <- function(x, samples)
     class(rval) <- "bamlss"
     return(rval)
   } else {
-    return(createIWLSresults(x, samples))
+    return(createBayesGresults(x, samples))
   }
 }
 

@@ -12,8 +12,7 @@ f <- stunting ~ memployment + urban + gender + meducation + s(mbmi) +
   s(district2, bs = "re")
 
 b0 <- bamlss(f, family = gaussian, data = ZambiaNutrition, engine = "JAGS")
-b1 <- bamlss(f, family = gaussian, data = ZambiaNutrition,
-  engine = "IWLS", method = "backfitting")
+b1 <- bamlss(f, family = gaussian, data = ZambiaNutrition, method = "backfitting", update = "optim")
 
 f <- stunting ~ -1 + memployment + urban + gender + meducation + sx(mbmi) +
   sx(agechild) + sx(district, bs = "mrf", map = ZambiaBnd) +

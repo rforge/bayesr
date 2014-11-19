@@ -92,7 +92,7 @@ xreg <- function(formula, family = gaussian.bamlss, data = NULL, knots = NULL,
 #########################
 bamlss <- function(formula, family = gaussian2, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
-  engine = c("IWLS", "BayesX", "JAGS", "STAN"), cores = NULL, combine = TRUE,
+  engine = c("BayesG", "BayesX", "JAGS", "STAN"), cores = NULL, combine = TRUE,
   n.iter = 12000, thin = 10, burnin = 2000, seed = NULL, ...)
 {
   xengine <- match.arg(engine)
@@ -122,14 +122,14 @@ bamlss <- function(formula, family = gaussian2, data = NULL, knots = NULL,
     results <- resultsBayesX
   }
 
-  if(xengine == "IWLS") {
-    transform <- transformIWLS
+  if(xengine == "BayesG") {
+    transform <- transformBayesG
     setup <- FALSE
     engine <- function(x) {
-      samplerIWLS(x, n.iter = n.iter, thin = thin,
+      BayesG(x, n.iter = n.iter, thin = thin,
         burnin = burnin, seed = seed, ...)
     }
-    results <- resultsIWLS
+    results <- resultsBayesG
   }
   
   if(xengine %in% c("JAGS", "STAN")) {
