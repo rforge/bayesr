@@ -2128,7 +2128,7 @@ Predict.matrix.kriging.smooth <- function(object, data)
 
 
 ## Smooth constructor for lag function.
-## C Viola Obermeier.
+## (C) Viola Obermeier.
 smooth.construct.fdl.smooth.spec <- function(object, data, knots)
 {
   ## Modify object so that it's fitted as a p-spline signal regression term.
