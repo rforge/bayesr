@@ -2161,7 +2161,6 @@ smooth.construct.fdl.smooth.spec <- function(object, data, knots)
 }
 
 
-
 ###################
 ## (6) Plotting. ##
 ###################
