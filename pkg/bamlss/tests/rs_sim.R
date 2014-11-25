@@ -53,9 +53,9 @@ sim <- function(nrep = 100,
         '), link="inverse")', sep = ''))
       b2 <- bamlss(f, data = d, method = "backfitting", n.samples = 0, verbose = FALSE)
     } else {
-      b1 <- gam(y ~ s(x1,k=sce$k[i]*2,fx=sce$fx[i]), data = d)
+      b1 <- gam(y ~ s(x1,k=sce$k[i]*2,fx=sce$fx[i],bs="ps"), data = d)
       f <- as.formula(paste('y ~ rs(s(x1,k=', sce$k[i], ',sp=', 1/sp,
-        ',fx=', sce$fx[i], '), link="probit")', sep = ''))
+        ',fx=', sce$fx[i], ',bs="ps"), link="log")', sep = ''))
       b2 <- bamlss(f, data = d, method = "backfitting", n.samples = 0, verbose = FALSE)
     }
 
