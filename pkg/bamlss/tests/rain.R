@@ -63,7 +63,7 @@ RainIbk$sqrtenssd <- apply(sqrt(RainIbk[,grep('^rainfc',names(RainIbk))]), 1, sd
 b0 <- crch(sqrt(rain) ~ sqrtensmean|sqrtenssd, data = RainIbk, dist = "gaussian",  left = 0)
 
 ## now with bamlss
-b2 <- bamlss(sqrt(rain) ~ s(sqrtensmean), ~ s(sqrtenssd), data = RainIbk, family = cens,
+b1 <- bamlss(sqrt(rain) ~ sqrtensmean, ~ sqrtenssd, data = RainIbk, family = cens,
   method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls",
   n.iter = 1200, burnin = 200, thin = 2)
 
@@ -71,6 +71,7 @@ RainIbk$f_crch <- predict(b0)
 RainIbk$f_bamlss <- predict(b1, model = "mu", intercept = TRUE)
 
 plot(sqrt(rain) ~ sqrtensmean, data = RainIbk, pch = ".") 
-plot2d(f_crch + f_bamlss ~ sqrtensmean, data = RainIbk, add = TRUE, col.lines = c("red", "green"))
+plot2d(f_crch + f_bamlss ~ sqrtensmean, data = RainIbk, add = TRUE,
+  col.lines = c("red", "green"), lwd = c(6, 3))
 legend("topleft", c("crch", "bamlss"), lwd = 1, col = c("red", "green"))
 
