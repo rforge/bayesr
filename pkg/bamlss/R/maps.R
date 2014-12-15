@@ -4,7 +4,7 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
   swap = TRUE, p.cex = 0.01, pch = 22, legend = TRUE, add = FALSE, domar = TRUE,
   layout = TRUE, mmar = c(0, 0, 0, 0), lmar = c(1.3, 3, 1.3, 2), interp = FALSE,
   grid = 8, linear = FALSE, extrap = FALSE, duplicate = "mean", xlim = NULL,
-  ylim = NULL, boundary = TRUE, interior = TRUE, rivers = FALSE, mcol = NULL,
+  ylim = NULL, map = TRUE, boundary = TRUE, interior = TRUE, rivers = FALSE, mcol = NULL,
   contour.data = NULL, k = 30, akima = FALSE, data = NULL, subset = NULL, box = FALSE,
   ireturn = FALSE, sort = TRUE, proj4string = CRS(as.character(NA)), eps = 0.0001, ...)
 {
@@ -99,9 +99,11 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
       box()
   }
 
-  m <- map("world", add = TRUE, xlim = if(!add) NULL else xlim, ylim = if(!add) NULL else ylim,
-    fill = if(is.null(mcol)) FALSE else TRUE, col = if(is.null(mcol)) gray(0.6) else mcol,
-    boundary = boundary, interior = interior)
+  if(map) {
+    m <- map("world", add = TRUE, xlim = if(!add) NULL else xlim, ylim = if(!add) NULL else ylim,
+      fill = if(is.null(mcol)) FALSE else TRUE, col = if(is.null(mcol)) gray(0.6) else mcol,
+      boundary = boundary, interior = interior)
+  }
 
   if(rivers) {
     require("mapdata")
