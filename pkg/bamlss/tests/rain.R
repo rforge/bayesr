@@ -17,19 +17,13 @@ rain <- subset(homstart, year >= 2008)
 rain2 <- subset(homstart, year >= 2008 & raw > 0)
 
 f <- list(
-  sqrt(raw) ~ s(day, bs = "cc") + s(elevation) + rs(s(long), s(lat), link = "inverse"),
-  ~ s(day, bs = "cc") + s(elevation) + rs(s(long), s(lat), link = "inverse")
+  sqrt(raw) ~ s(day, bs = "cc") + s(elevation) + s(long, lat),
+  ~ s(day, bs = "cc") + s(elevation) + s(long, lat)
 )
 
-f <- list(
-  sqrt(raw) ~ te(day, long, lat, bs = c("cc", "tp"), d = c(1, 2)) + s(elevation)
-)
-
-b1 <- bamlss(f, data = rain2, method = "backfitting", family = truncgaussian, n.samples = 0,
-  update = "iwls", sample = "iwls")
-
-b2 <- bamlss(f, data = rain, method = "MP2", family = gF(cens, left = 0), n.samples = 10)
-
+b1 <- bamlss(f, data = rain2, family = gF(cens, left = 0),
+  method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls",
+  n.iter = 5000, burnin = 1000, thin = 10, cores = 3)
 
 library("truncreg")
 
@@ -54,4 +48,29 @@ eta <- fitted(b)
 dy <- gF(truncreg, point = 1)$d(mf$yt, eta)
 hist(mf$yt, freq = FALSE)
 lines(dy[order(mf$yt)] ~ mf$yt[order(mf$yt)], col = 2)
+
+
+## CRCH tests
+library("crch")
+data("RainIbk")
+
+## mean and standard deviation of square root transformed ensemble forecasts
+RainIbk$sqrtensmean <- apply(sqrt(RainIbk[,grep('^rainfc',names(RainIbk))]), 1, mean)
+RainIbk$sqrtenssd <- apply(sqrt(RainIbk[,grep('^rainfc',names(RainIbk))]), 1, sd)
+   
+## left censored regression model with censoring point 0 and 
+## conditional heteroscedasticy:
+b0 <- crch(sqrt(rain) ~ sqrtensmean|sqrtenssd, data = RainIbk, dist = "gaussian",  left = 0)
+
+## now with bamlss
+b2 <- bamlss(sqrt(rain) ~ s(sqrtensmean), ~ s(sqrtenssd), data = RainIbk, family = cens,
+  method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls",
+  n.iter = 1200, burnin = 200, thin = 2)
+
+RainIbk$f_crch <- predict(b0)
+RainIbk$f_bamlss <- predict(b1, model = "mu", intercept = TRUE)
+
+plot(sqrt(rain) ~ sqrtensmean, data = RainIbk, pch = ".") 
+plot2d(f_crch + f_bamlss ~ sqrtensmean, data = RainIbk, add = TRUE, col.lines = c("red", "green"))
+legend("topleft", c("crch", "bamlss"), lwd = 1, col = c("red", "green"))
 

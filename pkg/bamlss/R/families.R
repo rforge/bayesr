@@ -692,7 +692,7 @@ cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
         - 1/sigma^2,
       "logistic" = function(x)  
         - 2/sigma * ddist(x, mu, sigma, log = FALSE))
-    )     
+    )    
     
     ## d^2density/dsigma^2
     d5 <- with(eta, switch(dist,

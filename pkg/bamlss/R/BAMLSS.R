@@ -1226,7 +1226,7 @@ add.partial <- function(x, samples = FALSE, nsamps = 100) {
 ## A prediction method for "bamlss" objects.
 ## Prediction can also be based on multiple chains.
 predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
-  intercept = TRUE, FUN = mean, trans = NULL, MARGIN = 1,
+  intercept = TRUE, FUN = function(x) { mean(x, na.rm = TRUE) }, trans = NULL, MARGIN = 1,
   type = c("link", "parameter"), nsamps = NULL, verbose = FALSE, ...)
 {
   family <- attr(object, "family")
