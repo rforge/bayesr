@@ -13,7 +13,6 @@ if(file.exists("~/tmp/homstart.rda")) {
 homstart$raw[homstart$raw == 0] <- 0.05
 homstart$raw[homstart$raw < 0] <- 0
 
-rain <- subset(homstart, year >= 2008)
 rain2 <- subset(homstart, year >= 2008 & raw > 0)
 
 f <- list(
@@ -21,7 +20,7 @@ f <- list(
   ~ s(day, bs = "cc") + s(elevation) + s(long, lat)
 )
 
-b1 <- bamlss(f, data = rain2, family = gF(cens, left = 0),
+b1 <- bamlss(f, data = homstart, family = gF(cens, left = 0),
   method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls",
   n.iter = 5000, burnin = 1000, thin = 10, cores = 3)
 

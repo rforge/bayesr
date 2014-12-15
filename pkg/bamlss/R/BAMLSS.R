@@ -1,5 +1,5 @@
 ################################################
-## (0) BAMLSS main model fitting constructor. ##
+## (1) BAMLSS main model fitting constructor. ##
 ################################################
 ## Could be interesting: http://people.duke.edu/~neelo003/r/
 ##                       http://www.life.illinois.edu/dietze/Lectures2012/
@@ -88,8 +88,79 @@ xreg <- function(formula, family = gaussian.bamlss, data = NULL, knots = NULL,
 
 
 #########################
-## (1) BAMLSS wrapper. ##
+## (2) Engine stacker. ##
 #########################
+stacker <- function(x, optimizer = bfit0, sampler = samplerJAGS,
+  cores = NULL, sleep = NULL, ...)
+{
+  if(is.function(optimizer) | is.character(optimizer))
+    optimizer <- list(optimizer)
+  if(is.function(sampler) | is.character(sampler))
+    sampler <- list(sampler)
+  for(j in optimizer) {
+    if(is.character(j) j <- eval(parse(text = j))
+    if(!is.function(j)) stop("the optimizer must be a function!")
+    x <- j(x, ...)
+  }
+  for(j in sampler) {
+    if(is.character(j) j <- eval(parse(text = j))
+    if(!is.function(j)) stop("the sampler must be a function!")
+    if(is.null(cores)) {
+      x <- j(x, ...)
+    } else {
+      require("parallel")
+      parallel_fun <- function(i) {
+        if(i > 1 & !is.null(sleep)) Sys.sleep(sleep)
+        j(x, ...)
+      }
+      x <- mclapply(1:cores, parallel_fun, mc.cores = cores)
+    }
+  }
+
+  x
+}
+
+
+#########################
+## (3) BAMLSS wrapper. ##
+#########################
+## Using the stacker.
+bamlss0 <- function(formula, family = gaussian2, data = NULL, knots = NULL,
+  weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
+  optimizer = "bfit0", sampler = "iwls0", cores = NULL, combine = TRUE,
+  n.iter = 12000, thin = 10, burnin = 2000, seed = NULL, ...)
+{
+  ff <- try(inherits(family, "family.bamlss"), silent = TRUE)
+  if(inherits(ff, "try-error")) {
+    family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
+  } else {
+    if(is.function(family)) {
+      if(inherits(try(family(), silent = TRUE), "try-error"))
+        family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
+    }
+  }
+
+  transform <- transform_stacker
+  engine <- function(x) {
+    stacker(x, optimizer = optimizer, sampler = sampler, mc.cores = cores,
+      n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, ...)
+  }
+  results <- results_stacker
+
+  rval <- xreg(formula, family = family, data = data, knots = knots,
+    weights = weights, subset = subset, offset = offset, na.action = na.action,
+    contrasts = contrasts, parse.input = parse.input.bamlss, transform = transform,
+    setup = FALSE, engine = engine, results = results, cores = NULL,
+    combine = combine, sleep = 1, ...)
+  
+  attr(rval, "engine") <- "stacker"
+  attr(rval, "call") <- match.call()
+  
+  rval
+}
+
+
+## First version, no stacking.
 bamlss <- function(formula, family = gaussian2, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
   engine = c("BayesG", "BayesX", "JAGS", "STAN"), cores = NULL, combine = TRUE,
@@ -167,7 +238,7 @@ bamlss <- function(formula, family = gaussian2, data = NULL, knots = NULL,
 
 
 ##########################################################
-## (2) Parsing all input using package mgcv structures. ##
+## (4) Parsing all input using package mgcv structures. ##
 ##########################################################
 parse.input.bamlss <- function(formula, data = NULL, family = gaussian2.bamlss,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
@@ -843,7 +914,7 @@ bamlss.hlevel <- function(x)
 
 
 ###########################
-## (3) Utility functions ##
+## (5) Utility functions ##
 ###########################
 ## Transform smooth terms to mixed model representation.
 randomize <- function(x)
@@ -1221,7 +1292,7 @@ add.partial <- function(x, samples = FALSE, nsamps = 100) {
 
 
 #####################
-## (4) Prediction. ##
+## (6) Prediction. ##
 #####################
 ## A prediction method for "bamlss" objects.
 ## Prediction can also be based on multiple chains.
@@ -1449,7 +1520,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
 
 
 ####################################
-## (5) Creating new smooth terms. ##
+## (8) Creating new smooth terms. ##
 ####################################
 ## Setup function for handling "special" model terms.
 s2 <- function(...)
@@ -2162,7 +2233,7 @@ smooth.construct.fdl.smooth.spec <- function(object, data, knots)
 
 
 ###################
-## (6) Plotting. ##
+## (9) Plotting. ##
 ###################
 ## Plotting method for "bamlss" objects.
 plot.bamlss <- function(x, model = NULL, term = NULL, which = 1,
@@ -2575,9 +2646,9 @@ plot.bamlss.effect.default <- function(x, ...) {
 }
 
 
-##################################
-## (7) Other helping functions. ##
-##################################
+###################################
+## (10) Other helping functions. ##
+###################################
 delete.args <- function(fun = NULL, args = NULL, not = NULL, package = NULL)
 {
   if(is.character(fun) & !is.null(package))
@@ -2602,9 +2673,9 @@ delete.NULLs <- function(x.list)
 
 
 
-##################################
-## (8) Model summary functions. ##
-##################################
+###################################
+## (11) Model summary functions. ##
+###################################
 summary.bamlss <- function(object, model = NULL, ...)
 {
   call <- attr(object, "call")
@@ -2803,9 +2874,9 @@ print.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ...)
 }
 
 
-###################################
-## (9) More extractor functions. ##
-###################################
+####################################
+## (12) More extractor functions. ##
+####################################
 DIC <- function(object, ...)
 {
   UseMethod("DIC")
@@ -3715,7 +3786,7 @@ matrix_inv <- function(x)
 
 
 #############################
-## (10) Utility functions. ##
+## (13) Utility functions. ##
 #############################
 TODOs <- NA
 class(TODOs) <- "TODOs"
