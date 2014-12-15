@@ -98,12 +98,12 @@ stacker <- function(x, optimizer = bfit0, sampler = samplerJAGS,
   if(is.function(sampler) | is.character(sampler))
     sampler <- list(sampler)
   for(j in optimizer) {
-    if(is.character(j) j <- eval(parse(text = j))
+    if(is.character(j)) j <- eval(parse(text = j))
     if(!is.function(j)) stop("the optimizer must be a function!")
     x <- j(x, ...)
   }
   for(j in sampler) {
-    if(is.character(j) j <- eval(parse(text = j))
+    if(is.character(j)) j <- eval(parse(text = j))
     if(!is.function(j)) stop("the sampler must be a function!")
     if(is.null(cores)) {
       x <- j(x, ...)
