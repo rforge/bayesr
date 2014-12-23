@@ -1153,7 +1153,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   }
 
   if(!is.null(fitted.values)) {
-    if((length(fit) == length(fitted.values)) | (length(fitted.values) < 2 & fitted.values == 0))
+    if((length(fit) == length(fitted.values)) | (length(fitted.values) < 2 & fitted.values[1] == 0))
       fitted.values <- fitted.values + fit
   } else fitted.values <- fit
 
