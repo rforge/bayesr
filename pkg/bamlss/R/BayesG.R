@@ -1016,7 +1016,7 @@ transformBayesG <- function(x, ...)
             "bs.dim" = ncol(obj$X),
             "fixed" = TRUE,
             "by" = "NA",
-            "is.linear" = TRUE
+            "is.parametric" = TRUE
           )
           obj$sterms <- c(obj$strems, "parametric")
           obj$X <- NULL
@@ -1041,7 +1041,7 @@ transformBayesG <- function(x, ...)
                 "bs.dim" = ncol(obj$smooth[[j]]$Xf),
                 "fixed" = TRUE,
                 "by" = "NA",
-                "is.linear" = TRUE
+                "is.parametric" = TRUE
               )
               obj$sterms <- c(obj$strems, "parametric")
             } else {
@@ -1098,25 +1098,6 @@ optimize2 <- function(f, interval, ...,
 ## Function to setup BayesG smooths.
 smooth.BayesG <- function(x, ...) {
   UseMethod("smooth.BayesG")
-}
-
-## Function to find tau2 interval according to the
-## effective degrees of freedom
-tau2interval <- function(x, lower = .Machine$double.eps^0.25, upper = 10000) {
-  XX <- crossprod(x$X)
-  if(length(x$S) < 2) {
-    objfun <- function(tau2, value) {
-      df <- sum(diag(matrix_inv(XX + if(x$fixed) 0 else 1 / tau2 * x$S[[1]]) %*% XX))
-      return((value - df)^2)
-    }
-    le <- try(optimize(objfun, c(lower, upper), value = 1)$minimum, silent = TRUE)
-    ri <- try(optimize(objfun, c(lower, upper), value = ncol(x$X))$minimum, silent = TRUE)
-    if(inherits(le, "try-error")) le <- 0.1
-    if(inherits(ri, "try-error")) ri <- 1000
-    return(c(le, ri))
-  } else {
-    return(rep(list(c(lower, upper)), length.out = length(x$S)))
-  }
 }
 
 smooth.BayesG.default <- function(x, ...)
@@ -1347,7 +1328,7 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
     } else {
       if(length(obj$smooth)) {
         for(j in seq_along(obj$smooth)) {
-          if(!is.null(obj$smooth[[j]]$is.linear)) {
+          if(!is.null(obj$smooth[[j]]$is.parametric)) {
             obj$smooth[[j]]$np <- ncol(obj$smooth[[j]]$X)
             obj$smooth[[j]]$p.save = "g"
             obj$smooth[[j]]$s.colnames <- paste("c", 1:ncol(obj$smooth[[j]]$X), sep = "")
@@ -2048,10 +2029,10 @@ resultsBayesG <- function(x, samples)
       if(length(obj$smooth)) {
         for(i in 1:length(obj$smooth)) {
           ## Get coefficient samples of smooth term.
-          k <- obj$smooth[[i]]$np[1]
           pn <- grep(paste(id, "h1", obj$smooth[[i]]$label, sep = ":"), snames,
             value = TRUE, fixed = TRUE) ## FIXME: hlevels!
           pn <- pn[!grepl("tau2", pn) & !grepl("alpha", pn)]
+          k <- sum(snames %in% pn)
           psamples <- matrix(samples[[j]][, snames %in% pn], ncol = k)
           nas <- apply(psamples, 1, function(x) { any(is.na(x)) } )
           psamples <- psamples[!nas, , drop = FALSE]
@@ -2077,6 +2058,7 @@ resultsBayesG <- function(x, samples)
           ## Possible variance parameter samples.
           vsamples <- NULL
           tau2 <- paste(id, "h1", paste(obj$smooth[[i]]$label, "tau2", sep = "."), sep = ":")
+
           if(length(tau2 <- grep(tau2, snames, fixed = TRUE))) {
             vsamples <- samples[[j]][, tau2, drop = FALSE]
             vsamples <- vsamples[!nas, , drop = FALSE]
@@ -2102,7 +2084,7 @@ resultsBayesG <- function(x, samples)
           ## Compute final smooth term object.
           tn <- c(obj$smooth[[i]]$term, if(obj$smooth[[i]]$by != "NA") obj$smooth[[i]]$by else NULL)
 
-          if(is.null(obj$smooth[[i]]$is.linear)) {
+          if(is.null(obj$smooth[[i]]$is.parametric)) {
             if(!is.list(effects))
               effects <- list()
             if(length(effects)) {
@@ -2110,6 +2092,11 @@ resultsBayesG <- function(x, samples)
                 ct <- gsub(".smooth.spec", "", class(obj$smooth[[i]]))[1]
                 if(ct == "random.effect") ct <- "re"
                 obj$smooth[[i]]$label <- paste(obj$smooth[[i]]$label, ct, sep = ":")
+              }
+            }
+            if(is.null(obj$smooth[[i]]$get.mu)) {
+              obj$smooth[[i]]$get.mu <- function(X, b) {
+                drop(X %*% b)
               }
             }
 
@@ -2137,7 +2124,6 @@ resultsBayesG <- function(x, samples)
             colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
             if(!is.null(asamples))
               param.effects <- cbind(param.effects, "alpha" = mean(asamples))
-            if(is.null(fitted.values)) fitted.values <- 0
             fitted.values <- as.vector(fitted.values + obj$smooth[[i]]$X %*% param.effects[, 1])
             attr(param.effects, "samples") <- as.mcmc(psamples)
             colnames(attr(param.effects, "samples")) <- nx

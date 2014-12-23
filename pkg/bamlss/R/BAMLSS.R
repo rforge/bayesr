@@ -97,23 +97,27 @@ stacker <- function(x, optimizer = bfit0, sampler = samplerJAGS,
     optimizer <- list(optimizer)
   if(is.function(sampler) | is.character(sampler))
     sampler <- list(sampler)
-  for(j in optimizer) {
-    if(is.character(j)) j <- eval(parse(text = j))
-    if(!is.function(j)) stop("the optimizer must be a function!")
-    x <- j(x, ...)
-  }
-  for(j in sampler) {
-    if(is.character(j)) j <- eval(parse(text = j))
-    if(!is.function(j)) stop("the sampler must be a function!")
-    if(is.null(cores)) {
+  if(length(optimizer)) {
+    for(j in optimizer) {
+      if(is.character(j)) j <- eval(parse(text = j))
+      if(!is.function(j)) stop("the optimizer must be a function!")
       x <- j(x, ...)
-    } else {
-      require("parallel")
-      parallel_fun <- function(i) {
-        if(i > 1 & !is.null(sleep)) Sys.sleep(sleep)
-        j(x, ...)
+    }
+  }
+  if(length(sampler)) {
+    for(j in sampler) {
+      if(is.character(j)) j <- eval(parse(text = j))
+      if(!is.function(j)) stop("the sampler must be a function!")
+      if(is.null(cores)) {
+        x <- j(x, ...)
+      } else {
+        require("parallel")
+        parallel_fun <- function(i) {
+          if(i > 1 & !is.null(sleep)) Sys.sleep(sleep)
+          j(x, ...)
+        }
+        x <- mclapply(1:cores, parallel_fun, mc.cores = cores)
       }
-      x <- mclapply(1:cores, parallel_fun, mc.cores = cores)
     }
   }
 
@@ -127,7 +131,7 @@ stacker <- function(x, optimizer = bfit0, sampler = samplerJAGS,
 ## Using the stacker.
 bamlss0 <- function(formula, family = gaussian2, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
-  optimizer = "bfit0", sampler = "iwls0", cores = NULL, combine = TRUE,
+  optimizer = list(opt0), sampler = list(MCMCpack), cores = NULL, combine = TRUE,
   n.iter = 12000, thin = 10, burnin = 2000, seed = NULL, ...)
 {
   ff <- try(inherits(family, "family.bamlss"), silent = TRUE)
@@ -140,12 +144,12 @@ bamlss0 <- function(formula, family = gaussian2, data = NULL, knots = NULL,
     }
   }
 
-  transform <- transform_stacker
+  transform <- optimizer.setup
   engine <- function(x) {
     stacker(x, optimizer = optimizer, sampler = sampler, mc.cores = cores,
       n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, ...)
   }
-  results <- results_stacker
+  results <- resultsBayesG
 
   rval <- xreg(formula, family = family, data = data, knots = knots,
     weights = weights, subset = subset, offset = offset, na.action = na.action,
@@ -647,7 +651,7 @@ formula_extend <- function(formula, specials = NULL, family)
       tl <- attr(mt, "term.labels")
       tl2 <- NULL
       for(j in as.character(formula)) {
-        if(grepl("s(", j , fixed = TRUE) & grepl("/", j, fixed = TRUE)) {
+        if(FALSE & grepl("s(", j , fixed = TRUE) & grepl("/", j, fixed = TRUE)) {
           j2 <- strsplit(j, "/", fixed = TRUE)[[1]]
           for(jj in j2)
             tl <- tl[tl != jj]
@@ -674,7 +678,7 @@ formula_extend <- function(formula, specials = NULL, family)
     sterms <- NULL
     if(length(sm <- tl[sm])) {
       for(j in sm) {
-        if((rt <- grepl(":", j, fixed = TRUE)) | grepl("/", j, fixed = TRUE)) {
+        if(FALSE & ((rt <- grepl(":", j, fixed = TRUE)) | grepl("/", j, fixed = TRUE))) {
           for(jj in strsplit(j, if(rt) ":" else "/", fixed = TRUE)[[1]]) {
             smj <- eval(parse(text = jj))
             sterms <- c(sterms, smj$term, smj$by)
@@ -1130,6 +1134,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
     if(xsmall & !all(is.na(fit)))
       fit <- approx(data[[tterms]], fit, xout = data0[[tterms]])$y
   }
+
   by.drop <- NULL
   if(x$by != "NA" & !is.null(x$by.level)) {
     by.drop <- (if(xsmall) data0[[x$by]] else data[[x$by]]) == x$by.level
@@ -1146,10 +1151,11 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
     if(x$xt$center)
       fit <- fit - mean(fit, na.rm = TRUE)
   }
-  fitted.values <- if(!is.null(fitted.values)) {
-    if(length(fit) == length(fitted.values))
-      fitted.values + fit
-  } else fit
+
+  if(!is.null(fitted.values)) {
+    if((length(fit) == length(fitted.values)) | (length(fitted.values) < 2 & fitted.values == 0))
+      fitted.values <- fitted.values + fit
+  } else fitted.values <- fit
 
   ## Assign class and attributes.
   smf <- unique(smf)
