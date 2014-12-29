@@ -74,3 +74,22 @@ plot2d(f_crch + f_bamlss ~ sqrtensmean, data = RainIbk, add = TRUE,
   col.lines = c("red", "green"), lwd = c(6, 3))
 legend("topleft", c("crch", "bamlss"), lwd = 1, col = c("red", "green"))
 
+
+
+load("~/svn/SnowSafeFX/data/ehyddata.rda")
+
+dat$obs[dat$obs == 0] <- 0.01
+dat$yday <- as.POSIXlt(dat$date)$yday
+
+f <- list(
+  sqrt(obs) ~ s(yday, bs = "cc") + s(alt) + s(lon, lat),
+            ~ s(yday, bs = "cc") + s(alt) + s(lon, lat)
+)
+
+b1 <- bamlss(f, data = dat, family = gF(cens, left = 0),
+  method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls",
+  n.iter = 100, burnin = 0, thin = 1)
+
+
+
+
