@@ -146,7 +146,7 @@ propose_mvn <- function(x, family, response, eta, id, ...)
       p2 <- x$prior(g, x$state$tau2)
       alpha <- drop((ll2 + p2) - (ll1 + p1))
       accepted <- if(is.na(alpha)) FALSE else log(runif(1)) <= alpha
-      x$state$scale[1] <- if(alpha < log(0.5)) {
+      x$state$scale[1] <- if(alpha < log(0.23)) {
         x$state$scale[1] - 0.1 * x$state$scale[1]
       } else {
         x$state$scale[1] + 0.1 * x$state$scale[1]
@@ -398,7 +398,7 @@ propose_slice <- function(x, family,
 
   ## Setup return state.
   x$state$alpha <- log(1)
-  x$state$fit <- drop(x$X %*% x$state$g)
+  x$state$fit <- drop(x$X  %*% x$state$g)
 
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & is.null(args$no.mcmc)) {
