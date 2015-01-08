@@ -1876,6 +1876,27 @@ gF <- function(x, ...) {
   F(...)
 }
 
+gF2 <- function(x, ...) {
+  x <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500)
+  F <- get(paste(x, "bamlss", sep = "."), mode = "function")
+  x <- F(...)
+  linkinv <- vector(mode = "list", length = length(x$names))
+  for(j in x$names)
+    linkinv[[j]] <- make.link2(x$links[j])$linkinv
+  x$map2par <- function(eta) {
+    for(j in names(eta)) {
+      eta[[j]] <- linkinv[[j]](eta[[j]])
+      eta[[j]][is.na(eta[[j]])] <- 0
+      if(any(jj <- eta[[j]] == Inf))
+        eta[[j]][jj] <- 10
+      if(any(jj <- eta[[j]] == -Inf))
+        eta[[j]][jj] <- -10
+    }
+    return(eta)
+  }
+  x
+}
+
 
 ## Function to transform gamlss.family objects.
 tF <- function(x, ...)

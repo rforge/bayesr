@@ -14,6 +14,48 @@ MCMCpack <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100, ..
 }
 
 
+GMCMC <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100, ...)
+{
+  family <- attr(x, "family")
+  nx <- family$names
+  if(!all(nx %in% names(x)))
+    stop("parameter names mismatch with family names!")
+  np <- length(nx)
+  rval <- list()
+  for(j in 1:np) {
+    for(sj in seq_along(x[[nx[j]]]$smooth)) {
+      tn <- paste(nx[j], "h1", x[[nx[j]]]$smooth[[sj]]$label, sep = ":")
+      rval[[tn]] <- x[[nx[j]]]$smooth[[sj]]
+    }
+  }
+  response <- attr(x, "response.vec")
+  x <- rval
+  theta <- vector(mode = "list", length = length(x))
+  names(theta) <- names(x)
+
+  get_eta <- function(x) {
+    nx0 <- names(x)
+    nx <- unique(sapply(strsplit(nx0, ":"), function(x) { x[1] }))
+    eta <- list()
+    for(j in nx) {
+      eta[[j]] <- 0
+      for(i in grep(paste(j, ":", sep = ""), nx0, fixed = TRUE)) {
+        eta[[j]] <- eta[[j]] + x[[i]]$get.mu(x[[i]]$X, get.state(x[[i]], "gamma"))
+      }
+    }
+    return(eta)
+  }
+
+  
+
+
+print(names(x))
+stop()
+
+  post.samp
+}
+
+
 gmcmc <- function(fun, theta, priors = NULL,
   propose = NULL, data = NULL, n.iter = 12000,
   burnin = 2000, thin = 10, verbose = TRUE, step = 20, ...)
@@ -348,9 +390,10 @@ gmcmc_slice <- function(fun, theta, id, prior, ...)
 }
 
 
-gmcmc_fs <- function(fun, theta, id, prior, ...)
+gmcmc_iwls <- function(fun, theta, id, prior, ...)
 {
-  args <- list(...)
-  theta[[id]] <- theta[[id]] + args$I[[id]](theta[[id]]) %*% args$S[[id]](theta[[id]])
+  ## propose_iwls0 <- function(x, family, response, eta, id, ...)
+  ## require("mvtnorm")
+  stop()
 }
 
