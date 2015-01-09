@@ -14,22 +14,26 @@ d <- list("mu" = cbind(1, dat$x1), "sigma" = cbind(1, dat$x1))
 b <- bamlss0(y ~ s(x1), ~ s(x1), data = dat)
 
 logLik <- function(mu, sigma, ...) {
+  mu <- unlist(mu)
+  sigma <- unlist(sigma)
   dnorm(dat$y, mean = d$mu %*% mu, sd = exp(d$sigma %*% sigma), log = TRUE)
 }
 
-b0 <- gmcmc(logLik, theta = theta, propose = gmcmc_propose_default)
+b0 <- gmcmc(logLik, theta = theta, propose = gmcmc_mvnorm)
 b1 <- gmcmc(logLik, theta = theta, propose = gmcmc_slice)
-b2 <- gmcmc(logLik, theta = theta, propose = c(gmcmc_slice, gmcmc_propose_default))
+b2 <- gmcmc(logLik, theta = theta, propose = c(gmcmc_slice, gmcmc_mvnorm))
 
-apply(b0, 2, mean)
-apply(b1, 2, mean)
-apply(b2, 2, mean)
+rbind(
+  apply(b0, 2, mean),
+  apply(b1, 2, mean),
+  apply(b2, 2, mean)
+)
 
 
 library("MCMCpack")
 
 logitfun <- function(beta, y, X){
-  eta <- X %*% beta
+  eta <- X %*% unlist(beta)
   p <- 1.0/(1.0+exp(-eta))
   sum( y * log(p) + (1-y)*log(1-p) )
 }
@@ -52,9 +56,10 @@ b <- gmcmc(logitfun, theta = list(beta = c(0, 0, 0)),
   propose = gmcmc_slice)
 
 
-##  negative binomial regression with an improper unform prior
+## negative binomial regression with an improper unform prior
 ## X and y are passed as args to MCMCmetrop1R
-negbinfun <- function(theta, y, X){
+negbinfun <- function(theta, y, X) {
+  theta <- unlist(theta)
   k <- length(theta)
   beta <- theta[1:(k - 1)]
   alpha <- exp(theta[k])
@@ -80,5 +85,5 @@ post.samp <- MCMCmetrop1R(negbinfun, theta.init = c(0, 0, 0, 0), y = yy, X = XX,
 
 b <- gmcmc(negbinfun, theta = list(theta = c(0, 0, 0, 0)),
   y = yy, X = XX,
-  n.iter = 35000, burnin = 1000, thin = 1)
+  n.iter = 35000, burnin = 6000, thin = 1)
 
