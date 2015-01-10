@@ -271,7 +271,9 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
           }
           theta.save[[i]][[j]]$alpha[js] <- min(c(exp(state$alpha), 1), na.rm = TRUE)
           theta.save[[i]][[j]]$accepted[js] <- accepted
-          ll[js] <- if(!is.null(logLik)) logLik(eta) else sum(do.call(fun, theta), na.rm = TRUE)
+          ll[js] <- if(!is.null(logLik)) {
+            logLik(eta)
+          } else sum(do.call(fun, c(theta, list(...))[names(formals(fun))]), na.rm = TRUE)
         }
       }
     }

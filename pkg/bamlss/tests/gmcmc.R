@@ -87,3 +87,8 @@ b <- gmcmc(negbinfun, theta = list(theta = c(0, 0, 0, 0)),
   y = yy, X = XX,
   n.iter = 35000, burnin = 6000, thin = 1)
 
+logfun <- function(x) {
+  dnorm(unlist(x), mean = 5, sd = 0.1, log = TRUE)
+}
+b <- gmcmc(logfun, theta = list(x = 5.3), n.iter = 1200, burnin = 200, thin = 1)
+
