@@ -4,14 +4,14 @@ library("bamlss")
 f <- simfun(type = "complicated")
 
 set.seed(111)
-n <- 50
+n <- 1000
 dat <- data.frame("x1" = sort(runif(n, 0, 1)))
 dat$y <- with(dat, 1.2 + 0.4 * x1 + rnorm(n, sd = exp(-1 + 0.3 * x1)))
 
-theta <- list("mu" = rep(0, 2), "sigma" = rep(0, 2))
+theta <- list("mu" = c(-10, 20), "sigma" = rep(0, 2))
 d <- list("mu" = cbind(1, dat$x1), "sigma" = cbind(1, dat$x1))
 
-b <- bamlss0(y ~ s(x1), ~ s(x1), data = dat)
+## b <- bamlss0(y ~ s(x1), ~ s(x1), data = dat)
 
 logLik <- function(mu, sigma, ...) {
   mu <- unlist(mu)

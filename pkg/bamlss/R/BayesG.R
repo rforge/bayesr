@@ -2002,12 +2002,16 @@ resultsBayesG <- function(x, samples)
     snames <- colnames(samples[[1]])
 
     for(j in 1:chains) {
+      DIC <- pd <- NA
       if(any(grepl("deviance", snames))) {
         DIC <- as.numeric(samples[[j]][, grepl("deviance", snames)])
         pd <- var(DIC, na.rm = TRUE) / 2
         DIC <- mean(DIC, na.rm = TRUE)
-      } else {
-        DIC <- pd <- NA
+      }
+      if(any(grepl("logLik", snames))) {
+        DIC <- -2 * as.numeric(samples[[j]][, grepl("logLik", snames)])
+        pd <- var(DIC, na.rm = TRUE) / 2
+        DIC <- mean(DIC, na.rm = TRUE)
       }
 
       if(any(grepl("save.edf", snames))) {
@@ -2029,9 +2033,14 @@ resultsBayesG <- function(x, samples)
       if(length(obj$smooth)) {
         for(i in 1:length(obj$smooth)) {
           ## Get coefficient samples of smooth term.
-          pn <- grep(paste(id, "h1", obj$smooth[[i]]$label, sep = ":"), snames,
-            value = TRUE, fixed = TRUE) ## FIXME: hlevels!
-          pn <- pn[!grepl("tau2", pn) & !grepl("alpha", pn)]
+          if(any(grepl("h1", snames))) {
+            pn <- grep(paste(id, "h1", obj$smooth[[i]]$label, sep = ":"), snames,
+              value = TRUE, fixed = TRUE) ## FIXME: hlevels!
+          } else {
+            pn <- grep(paste(id, obj$smooth[[i]]$label, sep = "."), snames,
+              value = TRUE, fixed = TRUE)
+          }
+          pn <- pn[!grepl("tau2", pn) & !grepl("alpha", pn) & !grepl("accepted", pn)]
           k <- sum(snames %in% pn)
           psamples <- matrix(samples[[j]][, snames %in% pn], ncol = k)
           nas <- apply(psamples, 1, function(x) { any(is.na(x)) } )

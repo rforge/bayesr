@@ -2883,11 +2883,6 @@ print.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ...)
 ####################################
 ## (12) More extractor functions. ##
 ####################################
-DIC <- function(object, ...)
-{
-  UseMethod("DIC")
-}
-
 DIC.bamlss <- function(object, ..., samples = TRUE, nsamps = NULL)
 {
   object <- c(object, ...)

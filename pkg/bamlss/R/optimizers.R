@@ -250,6 +250,8 @@ smooth.backfitting.default <- function(x, ...)
   }
   if(is.null(x$get.mu) | !is.function(x$get.mu)) {
     x$get.mu <- function(X, b) {
+      if(!is.null(names(b)))
+        b <- get.par(b, "gamma")
       drop(X %*% b)
     }
   }
