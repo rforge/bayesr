@@ -60,8 +60,10 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
 {
   require("coda")
 
-  if(!is.list(theta))
+  if(!is.list(theta)) {
     theta <- list(theta)
+    names(theta) <- names(formals(fun))[1]
+  }
   if(is.null(names(theta)))
     names(theta) <- paste("theta[", 1:length(theta), "]", sep = "")
   ntheta <- names(theta)
@@ -73,7 +75,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
       names(theta[[i]]) <- paste("term[", 1:length(theta[[i]]), "]", sep = "")
     for(j in seq_along(theta[[i]])) {
       if(is.null(names(theta[[i]][[j]])))
-        names(theta[[i]][[j]]) <- paste("p[", 1:length(theta[[i]][[j]]), "]", sep = "")
+        names(theta[[i]][[j]]) <- paste("[", 1:length(theta[[i]][[j]]), "]", sep = "")
     }
   }
 
@@ -197,15 +199,16 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
           "] must return a vector 'parameters' with the same length of initial parameters in theta!",
           sep = ""))
       }
-      psave <- if(is.null(p0$save)) p0$parameters else p0$save
-      if(is.null(names(psave)))
-        names(psave) <- paste("p[", 1:length(psave), "]", sep = "")
+      if(is.null(names(p0$parameters)))
+        names(p0$parameters) <- paste("[", 1:length(p0$parameters), "]", sep = "")
+      if(length(p0$parameters) < 2)
+        names(p0$parameters) <- NULL
       theta.save[[i]][[j]] <- list(
-        "samples" = matrix(NA, nrow = length(iterthin), ncol = length(psave)),
+        "samples" = matrix(NA, nrow = length(iterthin), ncol = length(p0$parameters)),
         "alpha" = rep(NA, length = length(iterthin)),
         "accepted" = rep(NA, length = length(iterthin))
       )
-      colnames(theta.save[[i]][[j]]$samples) <- names(psave)
+      colnames(theta.save[[i]][[j]]$samples) <- names(p0$parameters)
     }
   }
   ll <- rep(NA, length = length(iterthin))
@@ -264,11 +267,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
 
         ## Save the samples.
         if(save) {
-          theta.save[[i]][[j]]$samples[js, ] <- if(accepted) {
-            unlist(if(is.null(state$save)) state$parameters else state$save)
-          } else {
-            theta.save[[i]][[j]]$samples[if(js > 1) js - 1 else 1, ]
-          }
+          theta.save[[i]][[j]]$samples[js, ] <- theta[[i]][[j]]
           theta.save[[i]][[j]]$alpha[js] <- min(c(exp(state$alpha), 1), na.rm = TRUE)
           theta.save[[i]][[j]]$accepted[js] <- accepted
           ll[js] <- if(!is.null(logLik)) {
@@ -289,7 +288,13 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
       cn <- i
       if(length(theta.save[[i]]) > 1 | !simplify)
         cn <- paste(cn, j, sep = ".")
-      cn <- paste(cn, colnames(theta.save[[i]][[j]]), sep = ".")
+      cn2 <- colnames(theta.save[[i]][[j]])
+      for(k in seq_along(cn2)) {
+        cn2[k] <- if(grepl("[", cn2[k], fixed = TRUE)) {
+          paste(if(strsplit(cn2[k], "[", fixed = TRUE)[[1]][1] != "") "." else NULL, cn2[k], sep = "")
+        } else paste(if(cn2[k] != "") "." else NULL, cn2[k], sep = "")
+      }
+      cn <- paste(cn, cn2, sep = "")
       colnames(theta.save[[i]][[j]]) <- cn
     }
     theta.save[[i]] <- if(length(theta.save[[i]]) < 2 & simplify) {

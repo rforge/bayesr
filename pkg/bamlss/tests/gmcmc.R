@@ -83,7 +83,7 @@ post.samp <- MCMCmetrop1R(negbinfun, theta.init = c(0, 0, 0, 0), y = yy, X = XX,
   tune = 1.5, verbose = 500, logfun = TRUE,
   seed = list(NA, 1))
 
-b <- gmcmc(negbinfun, theta = list(theta = c(0, 0, 0, 0)),
+b <- gmcmc(negbinfun, theta = c(0, 0, 0, 0),
   y = yy, X = XX,
   n.iter = 35000, burnin = 6000, thin = 1)
 
