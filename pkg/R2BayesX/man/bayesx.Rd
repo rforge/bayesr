@@ -151,8 +151,6 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 }
 
 \references{
-  For methodological and reference details see:
-  
   Belitz C, Brezger A, Kneib T, Lang S (2011). \pkg{BayesX} - Software for Bayesian Inference in 
     Structured Additive Regression Models. Version 2.0.1. 
     URL \url{http://www.BayesX.org}.
@@ -170,6 +168,11 @@ bayesx(formula, data, weights = NULL, subset = NULL,
 
   Fahrmeir L, Kneib T, Lang S (2004). Penalized Structured Additive Regression for Space Time Data: 
     A Bayesian Perspective. \emph{Statistica Sinica}, \bold{14}, 731--761.
+
+  Umlauf N, Adler D, Kneib T, Lang S, Zeileis A (2015).
+    Structured Additive Regression Models: An R Interface to BayesX.
+    \emph{Journal of Statistical Software}, \bold{63}(21), 1--46.
+    \url{http://www.jstatsoft.org/v63/i21/}
 }
 
 \seealso{
