@@ -141,7 +141,10 @@ propose_mvn <- function(x, family, response, eta, id, ...)
     do <- TRUE
     while(do) {
       g <- drop(rmvnorm(n = 1, mean = x$state$g, sigma = x$state$scale[1] * P))
-      eta2[[id]] <- eta[[id]] + x$get.mu(x$X, g)
+      f <- x$get.mu(x$X, g)
+      if(!is.null(x$xbin.ind))
+        f <- f[x$xbin.ind]
+      eta2[[id]] <- eta[[id]] + f
       ll2 <- family$loglik(response, family$map2par(eta2))
       p2 <- x$prior(g, x$state$tau2)
       alpha <- drop((ll2 + p2) - (ll1 + p1))
@@ -185,7 +188,10 @@ propose_mvn <- function(x, family, response, eta, id, ...)
 logPost <- function(g, x, family, response, eta, id)
 {
   ## Set up new predictor.
-  eta[[id]] <- eta[[id]] + x$get.mu(x$X, g)
+  f <- x$get.mu(x$X, g)
+  if(!is.null(x$xbin.ind))
+    f <- f[x$xbin.ind]
+  eta[[id]] <- eta[[id]] + f
 
   ## Map predictor to parameter scale.
   peta <- family$map2par(eta)
@@ -258,7 +264,10 @@ num_deriv <- function(y, eta, family, id = NULL, d = 1, eps = 1e-04)
 ## Log-posterior used by propose_slice().
 logPost2 <- function(g, x, family, response, eta, id)
 {
-  eta[[id]] <- eta[[id]] + x$get.mu(x$X, g)
+  f <- x$get.mu(x$X, g)
+  if(!is.null(x$xbin.ind))
+    f <- f[x$xbin.ind]
+  eta[[id]] <- eta[[id]] + f
   ll <- family$loglik(response, family$map2par(eta))
   lp <- x$prior(g, x$state$tau2)
   return(ll + lp)
@@ -267,8 +276,10 @@ logPost2 <- function(g, x, family, response, eta, id)
 ## For rational splines.
 logPost3 <- function(g, x, family, response, eta, id)
 {
-  fit <- x$get.mu(x$X, g)
-  eta[[id]] <- eta[[id]] + fit
+  f <- x$get.mu(x$X, g)
+  if(!is.null(x$xbin.ind))
+    f <- f[x$xbin.ind]
+  eta[[id]] <- eta[[id]] + f
   ll <- family$loglik(response, family$map2par(eta))
   lp <- x$prior(g, x$state$tau2)
   return(ll + lp)
@@ -433,7 +444,10 @@ propose_slice2 <- function(x, family,
 
   ## Setup return state.
   x$state$alpha <- log(1)
-  x$state$fit <- x$get.mu(x$X, x$state$g)
+  f <- x$get.mu(x$X, x$state$g)
+  if(!is.null(x$xbin.ind))
+    f <- f[x$xbin.ind]
+  x$state$fit <- f
 
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & is.null(args$no.mcmc)) {
@@ -1102,6 +1116,8 @@ smooth.BayesG <- function(x, ...) {
 
 smooth.BayesG.default <- function(x, ...)
 {
+  if(!is.null(x$xbin.ind))
+    x$X <- unique(x$X)
   x$a <- if(is.null(x$xt$a)) 1e-04 else x$xt$a
   x$b <- if(is.null(x$xt$b)) 1e-04 else x$xt$b
   if(is.null(x$fixed)) {
@@ -1135,7 +1151,7 @@ smooth.BayesG.default <- function(x, ...)
     x$xt$step <- 40
   if(is.null(x$get.mu) | !is.function(x$get.mu)) {
     x$get.mu <- function(X, b) {
-      as.matrix(X) %*% as.numeric(b)
+      drop(as.matrix(X) %*% as.numeric(b))
     }
   }
   if(!is.null(x$xt$prior))
@@ -1188,6 +1204,8 @@ smooth.BayesG.default <- function(x, ...)
           }
         }
       }
+      if(!is.null(x$xbin.ind))
+        x$X <- x$X[x$xbin.ind, , drop = FALSE]
       grad <- drop(crossprod(x$X, score)) + c(grad, grad2)
       return(grad)
     }
@@ -1428,7 +1446,7 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
     return(list("par" = par, "lower" = lower, "upper" = upper, "grad" = grad))
   }
 
-  log_posterior <- function(par, par2 = NULL, rx = FALSE, type = 2) {
+  log_posterior_BayesG <- function(par, par2 = NULL, rx = FALSE, type = 2) {
     lprior <- edf2 <- 0
     for(j in 1:np) {
       eta[[nx[j]]] <- 0
@@ -1455,6 +1473,8 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
           )
         }
         x[[nx[j]]]$smooth[[sj]]$state$fit <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, gamma)
+        if(!is.null(x[[nx[j]]]$smooth[[sj]]$xbin.ind))
+          x[[nx[j]]]$smooth[[sj]]$state$fit <- x[[nx[j]]]$smooth[[sj]]$state$fit[x[[nx[j]]]$smooth[[sj]]$xbin.ind]
         eta[[nx[j]]] <- eta[[nx[j]]] + x[[nx[j]]]$smooth[[sj]]$state$fit
         x[[nx[j]]]$smooth[[sj]]$state$edf <- x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]], tau2)
         lprior <- lprior + x[[nx[j]]]$smooth[[sj]]$prior(gamma, tau2)
@@ -1492,13 +1512,16 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
     tpar <- make_par(x = x)
     par <- tpar$par; lower2 <- tpar$lower; upper2 <- tpar$upper
     if(!is.null(family$score) & tpar$grad) {
-      grad_posterior <- function(par, par2 = NULL, type = 1, ...) {
+      grad_posterior_BayesG <- function(par, par2 = NULL, type = 1, ...) {
         grad <- NULL
         for(j in 1:np) {
           eta[[nx[j]]] <- 0
           for(sj in seq_along(x[[nx[j]]]$smooth)) {
             gamma <- par[grep(paste("p", j, "t", sj, "c", sep = ""), names(par))]
-            eta[[nx[j]]] <- eta[[nx[j]]] + x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, gamma)
+            f <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, gamma)
+            if(!is.null(x[[nx[j]]]$smooth[[sj]]$xbin.ind))
+              f <- f[x[[nx[j]]]$smooth[[sj]]$xbin.ind]
+            eta[[nx[j]]] <- eta[[nx[j]]] + f
           }
         }
         for(j in 1:np) {
@@ -1526,15 +1549,15 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
         if(type < 2) grad <- grad * -1
         return(grad)
       }
-    } else grad_posterior <- NULL
+    } else grad_posterior_BayesG <- NULL
 
-    opt <- optim(par, fn = log_posterior, gr = grad_posterior,
+    opt <- optim(par, fn = log_posterior_BayesG, gr = grad_posterior_BayesG,
       method = "L-BFGS-B", lower = lower2, upper = upper2,
       control = optim.control)
     par <- opt$par
     hessian <- opt$hessian
     rm(opt)
-    opt <- log_posterior(par, rx = TRUE)
+    opt <- log_posterior_BayesG(par, rx = TRUE)
 
     x <- opt$x; eta <- opt$eta
     rm(opt)
@@ -1664,7 +1687,7 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
     }
 
     verbose2 <- if(length(method) < 2) {
-      if(method == "MCMC")  FALSE else verbose
+      if(method == "MCMC") FALSE else verbose
     } else verbose
 
     bf <- backfit(x, eta, verbose = verbose2)

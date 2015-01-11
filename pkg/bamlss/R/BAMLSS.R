@@ -38,7 +38,7 @@ xreg <- function(formula, family = gaussian.bamlss, data = NULL, knots = NULL,
   } else "parse.input.bamlss"
 
   ## Parse input.
-  pm <- match.call(expand.dots = FALSE)
+  pm <- match.call(expand.dots = TRUE)
   pm$parse.input <- pm$setup <- pm$samples <- pm$results <- NULL
   pm[[1]] <- as.name(functions$parse.input)
   pm <- eval(pm, parent.frame())
@@ -247,7 +247,7 @@ bamlss <- function(formula, family = gaussian2, data = NULL, knots = NULL,
 parse.input.bamlss <- function(formula, data = NULL, family = gaussian2.bamlss,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
-  grid = 100, ...)
+  grid = 100, binning = FALSE, ...)
 {
   ## Search for additional formulas
   formula2 <- NULL; formula3 <- list(); k <- 1
@@ -308,7 +308,7 @@ parse.input.bamlss <- function(formula, data = NULL, family = gaussian2.bamlss,
   }
 
   ## Assign all design matrices and the hierarchical level, if any.
-  rval <- bamlss.design(formula, mf, contrasts, knots, ...)
+  rval <- bamlss.design(formula, mf, contrasts, knots, binning, ...)
   rval <- bamlss.hlevel(rval)
 
   ## Dirichlet specials.
@@ -345,7 +345,7 @@ parse.input.bamlss <- function(formula, data = NULL, family = gaussian2.bamlss,
 
 
 ## Assign all designs matrices.
-bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, ...)
+bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FALSE, ...)
 {
   assign.design <- function(obj, mf) {
     if(!all(c("formula", "fake.formula", "response") %in% names(obj)))
@@ -361,6 +361,17 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, ...)
     if(length(obj$smooth)) {
       smooth <- list()
       for(j in obj$smooth) {
+        tsm <- eval(parse(text = j))
+        if(is.null(tsm$xt))
+          tsm$xt <- list()
+        if(is.null(tsm$xt$xbin))
+          tsm$xt$xbin <- binning
+        if(!is.null(tsm$xt$xbin)) {
+          if(!is.logical(tsm$xt$xbin) & !any(apply(mf[tsm$term], 2, is.factor)))
+            mf[tsm$term] <- round(mf[tsm$term], digits = tsm$xt$xbin)
+        }
+      }
+      for(j in obj$smooth) {
         if((rt <- grepl('):s(', j, fixed = TRUE)) | grepl(')/s(', j, fixed = TRUE)) {
           j <- strsplit(j, if(rt) ":" else "/", fixed = TRUE)[[1]]
           j <- paste('rs(', j[1], ',', j[2], ',link="', if(rt) "inverse" else "log", '")', sep = "")
@@ -368,10 +379,26 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, ...)
           tsm$label <- paste(tsm$smooths[[1]]$label, tsm$smooths[[2]]$label, sep = if(rt) ":" else "/")
         } else tsm <- eval(parse(text = j))
         if(is.null(tsm$special)) {
+          if(is.null(tsm$xt))
+            tsm$xt <- list()
+          if(is.null(tsm$xt$xbin))
+            tsm$xt$xbin <- binning
           acons <- TRUE
           if(!is.null(tsm$xt$center))
             acons <- tsm$xt$center
           tsm$xt$center <- acons
+          if(!is.null(tsm$xt$xbin) & !any(apply(mf[tsm$term], 2, is.factor))) {
+            if(tsm$xt$xbin) {
+              xdata <- as.data.frame(mf[tsm$term])
+              ind <- apply(xdata, 1, function(x) {
+                paste(x, collapse = ",", sep = "")
+              })
+              uind <- unique(ind)
+              tsm$xbin.ind <- rep(NA, nrow(xdata))
+              for(ii in seq_along(uind))
+                tsm$xbin.ind[ind == uind[ii]] <- ii
+            }
+          }
           smt <- smoothCon(tsm, mf, knots, absorb.cons = acons)
         } else {
           smt <- smooth.construct(tsm, mf, knots)

@@ -56,8 +56,8 @@ b <- gmcmc(logitfun, theta = list(beta = c(0, 0, 0)),
   propose = gmcmc_slice)
 
 
-## negative binomial regression with an improper unform prior
-## X and y are passed as args to MCMCmetrop1R
+## Negative binomial regression with an improper unform prior
+## X and y are passed as args to MCMCmetrop1R.
 negbinfun <- function(theta, y, X) {
   theta <- unlist(theta)
   k <- length(theta)
@@ -91,4 +91,33 @@ logfun <- function(x) {
   dnorm(unlist(x), mean = 5, sd = 0.1, log = TRUE)
 }
 b <- gmcmc(logfun, theta = list(x = 5.3), n.iter = 1200, burnin = 200, thin = 1)
+
+
+## Example taken from
+## http://www.dme.ufrj.br/mcmc/Example73-R.txt
+loglik = function(theta) {
+  theta <- unlist(theta)
+  mu <- theta[1] / (1 + exp(theta[2]) * (exp(theta[3]) / (1 + exp(theta[3])))^t)
+  sigma <- exp(theta[4])
+  sum(dnorm(y, mean = mu, sd = sigma, log = TRUE))
+}
+
+n = 15
+t = 1:n
+y = c(16.08, 33.83, 65.80, 97.20, 191.55, 326.20, 386.87, 520.53, 590.03,
+  651.92, 724.93, 699.56, 689.96, 637.56, 717.41)
+
+theta <- c(700, 36, 0.5946)
+theta <- c(theta, sd(y - theta[1] / (1 + theta[2] * theta[3]^t)))
+
+b <- gmcmc(loglik, theta = theta, n.iter = 100000, burnin = 80000, thin = 40)
+apply(b, 2, mean)
+theta
+
+fit <- apply(b[, 1:4], 1, function(theta) {
+  theta[1] / (1 + exp(theta[2]) * (exp(theta[3]) / (1 + exp(theta[3])))^t)
+})
+
+matplot(t, fit, type = "l", col = rgb(0.1, 0.1, 0.1, alpha = 0.01))
+points(t, y, col = "blue", lwd = 2)
 
