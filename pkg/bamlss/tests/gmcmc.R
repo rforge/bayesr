@@ -110,7 +110,7 @@ y = c(16.08, 33.83, 65.80, 97.20, 191.55, 326.20, 386.87, 520.53, 590.03,
 theta <- c(700, 36, 0.5946)
 theta <- c(theta, sd(y - theta[1] / (1 + theta[2] * theta[3]^t)))
 
-b <- gmcmc(loglik, theta = theta, n.iter = 100000, burnin = 80000, thin = 40)
+b <- gmcmc(loglik, theta = theta, propose = gmcmc_slice)
 apply(b, 2, mean)
 theta
 

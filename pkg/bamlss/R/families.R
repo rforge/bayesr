@@ -800,6 +800,9 @@ cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
       if(!log) ll <- exp(ll)
       return(ll)
     },
+    "p" = function(y, eta, log = FALSE, ...) {
+      with(eta, pdist(left, mu, sigma, df, lower.tail = TRUE, log = log))
+    },
     "score" = score,
     "weights" = weights,
     "type" = 1
