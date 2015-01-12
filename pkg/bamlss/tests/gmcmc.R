@@ -121,3 +121,38 @@ fit <- apply(b[, 1:4], 1, function(theta) {
 matplot(t, fit, type = "l", col = rgb(0.1, 0.1, 0.1, alpha = 0.01))
 points(t, y, col = "blue", lwd = 2)
 
+
+## Spline example.
+n <- 300
+d <- data.frame("x" = runif(n, -3, 3))
+d$y <- sin(d$x) + rnorm(n, sd = 0.3)
+S <- smooth.construct(s(x, k = 10), d, NULL)
+X <- S$X
+K <- S$S[[1]]
+a <- b <- 0.0001
+
+logpost = function(gamma, tau2, sigma) {
+  gamma <- unlist(gamma)
+  tau2 <- exp(unlist(tau2))
+  sigma <- exp(unlist(sigma))
+
+  f <- X %*% gamma
+
+  ll <- sum(dnorm(d$y, mean = f, sd = sigma, log = TRUE))
+  lp <- -log(tau2) * S$rank / 2 + drop(-0.5 / tau2 * crossprod(gamma, K) %*% gamma) +
+            log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2) - b / tau2
+
+  ll + lp
+}
+
+theta <- list("gamma" = rep(0, ncol(X)), "tau2" = 0, "sigma" = 0)
+b <- gmcmc(logpost, theta = theta, propose = gmcmc_slice)
+
+fit <- apply(b[, 1:ncol(X)], 1, function(g) {
+  X %*% g
+})
+
+i <- order(d$x)
+plot(d, col = "blue", lwd = 2)
+matplot(d$x[i], fit[i, ], type = "l", col = rgb(0.1, 0.1, 0.1, alpha = 0.01), add = TRUE)
+

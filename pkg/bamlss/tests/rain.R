@@ -51,6 +51,9 @@ lines(dy[order(mf$yt)] ~ mf$yt[order(mf$yt)], col = 2)
 
 ## CRCH tests
 library("crch")
+library("gamlss")
+library("gamlss.cens")
+
 data("RainIbk")
 
 ## mean and standard deviation of square root transformed ensemble forecasts
@@ -64,6 +67,12 @@ b0 <- crch(sqrt(rain) ~ sqrtensmean|sqrtenssd, data = RainIbk, dist = "gaussian"
 ## now with bamlss
 b1 <- bamlss(sqrt(rain) ~ sqrtensmean, ~ sqrtenssd, data = RainIbk, family = cens,
   method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls",
+  n.iter = 1200, burnin = 200, thin = 2)
+
+b2 <- gamlss(sqrt(rain) ~ sqrtensmean, ~ sqrtenssd, data = RainIbk, family = gen.cens(type = "left"))
+
+b3 <- bamlss(sqrt(rain) ~ sqrtensmean, ~ sqrtenssd, data = RainIbk, family = tF(cens(type = "left")),
+  method = c("backfitting", "MCMC"), update = "optim", propose = "slice",
   n.iter = 1200, burnin = 200, thin = 2)
 
 RainIbk$f_crch <- predict(b0)
@@ -91,5 +100,15 @@ b1 <- bamlss(f, data = dat, family = gF(cens, left = 0),
   n.iter = 100, burnin = 0, thin = 1)
 
 
+set.seed(111)
 
+n <- 300
+d <- data.frame("x" = runif(n))
+d$y <- -0.2 + 0.4 * d$x + rnorm(n, sd = 0.3)
+d$yobs <- ifelse(d$y <= 0, 0, d$y)
+
+b <- bamlss(yobs ~ x, data = d, family = gF(cens, left = 0))
+
+coef(b)
+plot(b, which = 3:4)
 
