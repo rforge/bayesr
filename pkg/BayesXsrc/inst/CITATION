@@ -1,4 +1,4 @@
-citHeader("When using BayesXsrc in publications, please cite both the BayesXsrc interface and BayesX itself:")
+citHeader("When using R2BayesX/BayesXsrc in publications, please cite both the R interface and BayesX itself:")
 
 ## R >= 2.8.0 passes package metadata to citation().
 if(!exists("meta") || is.null(meta)) meta <- packageDescription("BayesXsrc")
@@ -6,23 +6,25 @@ year <- sub("-.*", "", meta$Date)
 note1 <- sprintf("R package version %s", meta$Version)
 note2 <- sprintf("Version %s", strsplit(meta$Version, "-", fixed = TRUE)[[1]][1])
 
-citEntry(entry = "Manual",
-         title = "{BayesXsrc}: {R} Package Distribution of the {BayesX} {C++} Sources",
-         author = personList(as.person("Daniel Adler"), 
-	                     as.person("Thomas Kneib"),
-                             as.person("Stefan Lang"),
-			     as.person("Nikolaus Umlauf"),
-			     as.person("Achim Zeileis")),
-         year = year,
-         note = note1,
-         url = "http://CRAN.R-project.org/package=BayesXsrc",
+citEntry(entry = "Article",
+  title        = "Structured Additive Regression Models: An {R} Interface to {BayesX}",
+  author       = personList(as.person("Nikolaus Umlauf"),
+                   as.person("Daniel Adler"),
+                   as.person("Thomas Kneib"),
+                   as.person("Stefan Lang"),
+                   as.person("Achim Zeileis")),
+  journal      = "Journal of Statistical Software",
+  year         = "2015",
+  volume       = "63",
+  number       = "21",
+  pages        = "1--46",
+  url          = "http://www.jstatsoft.org/v63/i21/",
 
-         textVersion =
-         paste("Daniel Adler, Thomas Kneib, Stefan Lang, Nikolaus Umlauf, Achim Zeileis",
-   	       sprintf("(%s).", year),	 
-               "BayesXsrc: R Package Distribution of the BayesX C++ Sources.",
-	       paste(note1, ".", sep = ""),
-               "URL http://CRAN.R-project.org/package=BayesXsrc")
+  textVersion  =
+  paste("Nikolaus Umlauf, Daniel Adler, Thomas Kneib, Stefan Lang, Achim Zeileis (2015).",
+        "Structured Additive Regression Models: An R Interface to BayesX.",
+        "Journal of Statistical Software, 63(21), 1-46.",
+        "URL http://www.jstatsoft.org/v63/i21/.")
 )
 
 citEntry(entry = "Manual",
