@@ -1,6 +1,6 @@
 Package: R2BayesX
-Version: 0.3-2
-Date: 2014-08-24
+Version: 1.0-0
+Date: 2015-01-12
 Title: Estimate Structured Additive Regression Models with BayesX
 Authors@R: c(person(given = "Nikolaus", family = "Umlauf", role = c("aut", "cre"), email = "Nikolaus.Umlauf@uibk.ac.at"),
         person(given = "Thomas", family = "Kneib", role = "aut", email = "tkneib@uni-goettingen.de"),
