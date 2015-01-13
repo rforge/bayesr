@@ -6,3 +6,4 @@ cleanup.win
 tests/mcmc.Rout.save
 tests/reml.Rout.save
 tests/step.Rout.save
+tests
