@@ -1,6 +1,7 @@
-Changes in Version 2.1-3
+Changes in Version 3.0-0
 
-  o Fixed many ASAN/USBAN errors in the C++ code.
+  o New release of BayesXsrc accompanying the forthcoming release of
+    BayesX. This includes many fixed errors in the C++ code.
 
 
 Changes in Version 2.1-2
