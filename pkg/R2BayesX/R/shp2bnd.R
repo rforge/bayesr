@@ -12,7 +12,7 @@ shp2bnd <- function(shpname, regionnames, check.is.in = TRUE)
     
     ## now read the shapefile information
     ## (FIXME: shapefiles actually needs to be on the search path for read.shapefil(), argh...)
-    stopifnot(require("shapefiles"))
+    stopifnot(requireNamespace("shapefiles"))
     shp <- shapefiles::read.shapefile(shpname)
     dbf <- shapefiles::read.dbf(paste(shpname,".dbf",sep=""))
 
