@@ -259,7 +259,7 @@ num_deriv <- function(y, eta, family, id = NULL, d = 1, eps = 1e-04)
 }
 
 
-## Slice sampling.
+## Slice sampling
 ## See: http://www.cs.toronto.edu/~radford/ftp/slice-R-prog
 ## Log-posterior used by propose_slice().
 logPost2 <- function(g, x, family, response, eta, id)
@@ -409,7 +409,7 @@ propose_slice <- function(x, family,
 
   ## Setup return state.
   x$state$alpha <- log(1)
-  x$state$fit <- drop(x$X  %*% x$state$g)
+  x$state$fit <- x$get.mu(x$X, x$state$g)
 
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & is.null(args$no.mcmc)) {
@@ -885,14 +885,14 @@ update_optim2 <- function(x, family, response, eta, id, ...)
 
   ## Objective function.
   objfun <- function(gamma) {
-    eta2[[id]] <- eta[[id]] + drop(x$X %*% gamma)
+    eta2[[id]] <- eta[[id]] + x$get.mu(x$X, gamma)
     peta <- family$map2par(eta2)
     ll <- family$loglik(response, peta)
     lp <- x$prior(gamma, x$state$tau2)
     -1 * (ll + lp)
   }
 
-  grad <- if(!is.null(family$score[[id]])) {
+  grad <- if(!is.null(family$score[[id]]) & !is.null(x$grad)) {
     function(gamma) {
       eta2[[id]] <- eta[[id]] + x$get.mu(x$X, gamma)
       peta <- family$map2par(eta2)
@@ -907,7 +907,7 @@ update_optim2 <- function(x, family, response, eta, id, ...)
 
   if(!inherits(opt, "try-error")) {
     x$state$g <- opt$par
-    x$state$fit <- drop(x$X %*% x$state$g)
+    x$state$fit <- x$get.mu(x$X, x$state$g)
   }
 
   if(!x$fixed) {
@@ -1134,7 +1134,7 @@ smooth.BayesG.default <- function(x, ...)
   if(is.null(x$state)) {
     x$p.save <- c("g", "tau2")
     x$state <- list()
-    x$state$g <- rep(0, ncol(x$X))
+    x$state$g <- rep(0, if(is.null(x$np)) ncol(x$X) else x$np)
     x$state$tau2 <- if(is.null(x$sp)) {
       if(x$fixed) 1e-20 else rep(if(!is.null(x$xt$tau2)) x$xt$tau2 else 10, length.out = ntau2)
     } else rep(x$sp, length.out = ntau2)
@@ -1171,7 +1171,7 @@ smooth.BayesG.default <- function(x, ...)
       return(lp)
     }
   }
-  if(is.null(x$edf)) {
+  if(is.null(x$edf) | !is.function(x$edf)) {
     x$edf <- function(x, tau2 = 0) {
       if(x$fixed) return(ncol(x$X))
       if(is.null(x$state$XX))
@@ -1188,7 +1188,7 @@ smooth.BayesG.default <- function(x, ...)
       return(edf)
     }
   }
-  if(is.null(x$grad)) {
+  if(is.null(x$grad) | !is.function(x$grad)) {
     x$grad <- function(score, gamma, tau2 = NULL, full = TRUE) {
       grad2 <- NULL
       if(x$fixed) {
@@ -1551,7 +1551,7 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
       }
     } else grad_posterior_BayesG <- NULL
 
-    opt <- optim(par, fn = log_posterior_BayesG, gr = grad_posterior_BayesG,
+    opt <- optim(par, fn = log_posterior_BayesG, gr = NULL, ##grad_posterior_BayesG,
       method = "L-BFGS-B", lower = lower2, upper = upper2,
       control = optim.control)
     par <- opt$par

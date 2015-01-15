@@ -1647,8 +1647,23 @@ smooth.construct.gc.smooth.spec <- function(object, data, knots)
     }
   } else {
     object$get.mu <- function(X, g) {
-      g[1] * exp(-g[2] * exp(-g[3] * X))
+      f <- g[1] / (1 + exp(g[2]) * (exp(g[3]) / (1 + exp(g[3])))^(drop(X)))
+      if(object$xt$center)
+        f <- f - mean(f)
+      f
     }
+    object$update <- update_optim2
+    object$propose <- propose_slice
+    object$prior <- function(gamma, tau2 = NULL) {
+      sum(dnorm(gamma, sd = 1000, log = TRUE))
+    }
+    object$grad <- FALSE
+    object$edf <- function(...) { 3 }
+    object$fixed <- TRUE
+    object$np <- 3
+    object$p.save <- "g"
+    object$state <- list("g" = rep(0, 3))
+    object$s.colnames = c("c1", "c2", "c3")
   }
   class(object) <- c("gc.smooth", "no.mgcv")
   object

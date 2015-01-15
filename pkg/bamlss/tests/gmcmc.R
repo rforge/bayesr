@@ -121,6 +121,17 @@ fit <- apply(b[, 1:4], 1, function(theta) {
 matplot(t, fit, type = "l", col = rgb(0.1, 0.1, 0.1, alpha = 0.01))
 points(t, y, col = "blue", lwd = 2)
 
+b1 <- bamlss(I(y / 100) ~ -1 + s2(t, bs = "gc"), ~ 1 + t, method = "MCMC")
+b2 <- bamlss(I(y / 100) ~ -1 + s2(t, bs = "gc"), ~ 1 + t, engine = "JAGS",
+  n.iter = 12000, burnin = 2000, thin = 10)
+
+nd <- data.frame("y" = y / 100, "t" = t)
+nd$p1 <- predict(b1, model = 1, FUN = function(x) { quantile(x, probs = c(0.025, 0.975)) })
+nd$p2 <- predict(b2, model = 1, FUN = function(x) { quantile(x, probs = c(0.025, 0.975)) })
+
+plot(y ~ t, data = nd)
+plot2d(as.matrix(p1) ~ t, data = nd, add = TRUE)
+plot2d(as.matrix(p2) ~ t, data = nd, add = TRUE, col.lines = 2)
 
 ## Spline example.
 n <- 300
@@ -146,7 +157,7 @@ logpost = function(gamma, tau2, sigma) {
 }
 
 theta <- list("gamma" = rep(0, ncol(X)), "tau2" = 0, "sigma" = 0)
-b <- gmcmc(logpost, theta = theta, propose = gmcmc_slice)
+b <- gmcmc(logpost, theta = theta, propose = gmcmc_slice, n.iter = 500, burnin = 100, thin = 2)
 
 fit <- apply(b[, 1:ncol(X)], 1, function(g) {
   X %*% g
@@ -155,4 +166,6 @@ fit <- apply(b[, 1:ncol(X)], 1, function(g) {
 i <- order(d$x)
 plot(d, col = "blue", lwd = 2)
 matplot(d$x[i], fit[i, ], type = "l", col = rgb(0.1, 0.1, 0.1, alpha = 0.01), add = TRUE)
+f <- t(apply(fit, 1, quantile, probs = c(0.05, 0.5, 0.95)))
+matplot(d$x[i], f[i, ], type = "l", lty = c(2, 1, 2), col = 1, add = TRUE)
 

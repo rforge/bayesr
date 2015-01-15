@@ -395,40 +395,19 @@ buildBUGS.smooth.special.gc.smooth <- function(smooth, setup, i, zero)
   pn <- paste("g", i, sep = "")
 
   setup$data[[paste("X", pn, sep = "")]] <- as.numeric(smooth$X)
-  setup$inits[[paste(pn, "0", sep = "")]] <- runif(3, 0.1, 0.2)
+  setup$inits[[paste(pn, sep = "")]] <- runif(3, 0.1, 0.2)
   setup$psave <- c(setup$psave, pn)
 
   setup$close2 <- c(setup$close2,
     "  for(j in 1:3) {",
-    paste("    ", pn, "[j] <- exp(", pn, "0[j])", sep = ""),
-    paste("    ", pn, "0[j] ~ dnorm(0, 1.0E-6)", sep = "")
+    paste("    ", pn, "[j] ~ dnorm(0, 1.0E-6)", sep = ""),
+    "  }"
   )
 
-  ## logistic
-  ## fall <- paste("g", i, "[1] / (1 + g", i, "[2]*exp(g", i, "[3]*Xgc", i, "[i]))", sep = "")
+  fall <- paste(pn, "[1] / (1 + exp(", pn, "[2]) * (exp(",
+    pn, "[3]) / (1 + exp(", pn, "[3])))^(X", pn, "[i]))", sep = "")
+  ##fall <- paste(pn, "[1] * X[i]", sep = "")
 
-  ## Gompertz growth function.
-  if(is.null(smooth$by.levels)) {
-    fall <- paste(pn, "[1]*exp(-", pn, "[2]*exp(-", pn, "[3]*X", pn, "[i]))", sep = "")
-  } else {
-    setup$data[[paste(pn, "id", sep = "")]] <- as.integer(smooth$fid)
-    fall <- paste("(", pn, "r[", pn , "id[i], 1] + ", pn, "[1])*exp(-(", pn, "r[", pn,
-      "id[i], 2] + ", pn, "[2])*exp(-(", pn, "r[", pn, "id[i], 3] + ", pn, "[3])*X", pn, "[i]))", sep = "")
-    setup$close2 <- c(setup$close2,
-    paste("    for(k in 1:", length(smooth$by.levels), ") {", sep = ""),
-      paste("      ", pn, "r[k, j] <- exp(", pn, "r0[k, j])", sep = ""),
-      paste("      ", pn, "r0[k, j] ~ dnorm(0, taug", i, "[j])", sep = ""),
-      "    }",
-      paste("    taug", i, "[j] ~ dgamma(1.0E-4, 1.0E-4)", sep = "")
-    )
-    setup$psave <- c(setup$psave, paste(pn, "r", sep = ""), paste("taug", i, sep = ""))
-    setup$inits[[paste(pn, "r0", sep = "")]] <- matrix(runif(length(smooth$by.levels) * 3, 0.1, 0.2), ncol = 3)
-    setup$inits[[paste("taug", i, sep = "")]] <- runif(3, 0.1, 0.2)
-  }
-
-  setup$close2 <- c(setup$close2, "  }")
-
-  prefix <- if(center) "0" else NULL
   if(!center) {
     setup$smooth <- c(setup$smooth, paste("    sm", i, "[i] <- ",
       paste(fall, collapse = " + ", sep = ""), sep = ""))
