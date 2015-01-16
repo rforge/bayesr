@@ -39,14 +39,12 @@
 }
 
 \examples{
-\dontrun{
 ## read shapefile into bnd object
 shpname <- file.path(find.package("R2BayesX"), "examples", "Northamerica")
 north <- shp2bnd(shpname = shpname, regionnames = "COUNTRY")
 
 ## draw the map
 plotmap(north)
-}
 }
 
 \keyword{spatial}
