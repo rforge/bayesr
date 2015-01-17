@@ -801,7 +801,7 @@ cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
       return(ll)
     },
     "p" = function(y, eta, log = FALSE, ...) {
-      with(eta, pdist(left, mu, sigma, df, lower.tail = TRUE, log = log))
+      with(eta, pdist(y, mu, sigma, df, lower.tail = TRUE, log = log))
     },
     "score" = score,
     "weights" = weights,

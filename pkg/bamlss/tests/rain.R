@@ -40,18 +40,19 @@ d <- data.frame(y = y, x = x)
 d$yt <- ifelse(d$y > 1, d$y, NA)
 
 b0 <- truncreg(yt ~ x, data = d, point = 1, direction = "left")
-
 b <- bamlss(yt ~ x, data = d, family = gF(trunc, point = 1))
+
 mf <- model.frame(b)
 eta <- fitted(b)
-dy <- gF(trunc, point = 1)$d(mf$yt, eta)
+ff <- gF2(trunc, point = 1)
+dy <- ff$d(mf$yt, ff$map2par(eta))
 hist(mf$yt, freq = FALSE)
 lines(dy[order(mf$yt)] ~ mf$yt[order(mf$yt)], col = 2)
 
 
 ## CRCH tests
 library("crch")
-library("gamlss")
+library("bamlss")
 
 data("RainIbk")
 
@@ -64,15 +65,7 @@ RainIbk$sqrtenssd <- apply(sqrt(RainIbk[,grep('^rainfc',names(RainIbk))]), 1, sd
 b0 <- crch(sqrt(rain) ~ sqrtensmean|sqrtenssd, data = RainIbk, dist = "gaussian",  left = 0)
 
 ## now with bamlss
-b1 <- bamlss(sqrt(rain) ~ sqrtensmean, ~ sqrtenssd, data = RainIbk, family = cens,
-  method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls",
-  n.iter = 1200, burnin = 200, thin = 2)
-
-b2 <- gamlss(sqrt(rain) ~ sqrtensmean, ~ sqrtenssd, data = RainIbk, family = gen.cens(type = "left"))
-
-b3 <- bamlss(sqrt(rain) ~ sqrtensmean, ~ sqrtenssd, data = RainIbk, family = tF(cens(type = "left")),
-  method = c("backfitting", "MCMC"), update = "optim", propose = "slice",
-  n.iter = 1200, burnin = 200, thin = 2)
+b1 <- bamlss(sqrt(rain) ~ s(sqrtensmean), ~ s(sqrtenssd), data = RainIbk, family = cens, n.samples = 0)
 
 RainIbk$f_crch <- predict(b0)
 RainIbk$f_bamlss <- predict(b1, model = "mu", intercept = TRUE)
