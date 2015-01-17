@@ -710,7 +710,7 @@ update_iwls <- function(x, family, response, eta, id, ...)
   ## Compute mean and precision.
   XW <- t(x$X[ok, ] * weights)
   XWX <- XW %*% x$X[ok, ]
-  if(is.null(x$optimize) | x$fixed | !is.null(x$sp)) {
+  if(!x$optimize | x$fixed | !is.null(x$sp)) {
     if(x$fixed) {
       P <- matrix_inv(XWX)
     } else {
@@ -1369,10 +1369,8 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
           obj$smooth[[j]]$state$iter <- 1
           obj$smooth[[j]]$state$maxit <- 50
           obj$smooth[[j]]$adapt <- n.adapt
-          if("backfitting" %in% method) {
-            obj$smooth[[j]]$optimize <- optimize
-            obj$smooth[[j]]$criterion <- criterion
-          }
+          obj$smooth[[j]]$optimize <- optimize
+          obj$smooth[[j]]$criterion <- criterion
         }
       }
     }
