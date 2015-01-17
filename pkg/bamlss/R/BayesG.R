@@ -1134,6 +1134,7 @@ smooth.BayesG.default <- function(x, ...)
   if(is.null(x$state)) {
     x$p.save <- c("g", "tau2")
     x$state <- list()
+    if(is.logical(x$np)) x$np <- NULL
     x$state$g <- rep(0, if(is.null(x$np)) ncol(x$X) else x$np)
     x$state$tau2 <- if(is.null(x$sp)) {
       if(x$fixed) 1e-20 else rep(if(!is.null(x$xt$tau2)) x$xt$tau2 else 10, length.out = ntau2)
@@ -1254,7 +1255,7 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
   optim.control = NULL, digits = 3,  ## list(pgtol = 1e-04, maxit = 5)
   update = c("optim", "iwls", "optim2", "optim3"),
   propose = c("mvn", "iwls", "slice", "slice2", "oslice", "wslice", "iwls0"),
-  sample = c("slice", "slice2", "iwls", "iwls0"), ...)
+  sample = c("slice", "slice2", "iwls", "iwls0"), optimize = TRUE, ...)
 {
   known_methods <- c("backfitting", "MCMC", "backfitting2",
     "backfitting3", "backfitting4", "mcmc", "MP", "mp", "LD", "ld", "mp2", "MP2")
@@ -1369,7 +1370,7 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
           obj$smooth[[j]]$state$maxit <- 50
           obj$smooth[[j]]$adapt <- n.adapt
           if("backfitting" %in% method) {
-            obj$smooth[[j]]$optimize <- TRUE
+            obj$smooth[[j]]$optimize <- optimize
             obj$smooth[[j]]$criterion <- criterion
           }
         }
@@ -1646,7 +1647,7 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
 
         peta <- family$map2par(eta)
 
-        if(any(method == "backfitting") & verbose) {
+        if(any(method == "backfitting") | verbose) {
           IC <- get.ic(family, response, peta, edf, nobs, criterion)
           edf2 <- get_edf_lp(x, logprior = FALSE)
           cat("\r")
@@ -1668,7 +1669,7 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
       IC <- get.ic(family, response, peta, edf, nobs, criterion)
       edf2 <- get_edf_lp(x, logprior = FALSE)
 
-      if(any(method %in% c("backfitting", "backfitting2", "backfitting4")) & verbose) {
+      if(any(method %in% c("backfitting", "backfitting2", "backfitting4")) | verbose) {
         cat("\r")
         vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
           " logLik ", fmt(family$loglik(response, peta), width = 8, digits = digits),
@@ -1686,11 +1687,7 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
       return(list("x" = x, "eta" = eta, "ic" = IC))
     }
 
-    verbose2 <- if(length(method) < 2) {
-      if(method == "MCMC") FALSE else verbose
-    } else verbose
-
-    bf <- backfit(x, eta, verbose = verbose2)
+    bf <- backfit(x, eta, verbose = verbose)
     x <- bf$x; eta <- bf$eta
     rm(bf)
 
@@ -1714,7 +1711,7 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
           }
         }
 
-        bf <- backfit(x, eta, verbose = verbose2)
+        bf <- backfit(x, eta, verbose = verbose)
         return(if(retbf) bf else bf$ic)
       }
 
@@ -1736,7 +1733,7 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
       objfun <- function(tau2, j, sj, retbf = FALSE) {
         if(length(tau2) > 1) stop('only single variances can be updated using "backftting4"!')
         x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
-        bf <- backfit(x, eta, verbose = verbose2)
+        bf <- backfit(x, eta, verbose = verbose)
         return(if(retbf) bf else bf$ic)
       }
       eps0 <- eps + 1; iter <- 1
@@ -1748,7 +1745,7 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
               tau2 <- optimize(objfun, x[[nx[j]]]$smooth[[sj]]$interval, j = j, sj = sj)$minimum
               bf <- objfun(tau2, j, sj, retbf = TRUE)
             } else {
-              bf <- backfit(x, eta, verbose = verbose2)
+              bf <- backfit(x, eta, verbose = verbose)
             }
             eta <- bf$eta
             x <- bf$x

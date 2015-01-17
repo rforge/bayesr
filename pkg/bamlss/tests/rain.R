@@ -44,7 +44,7 @@ b0 <- truncreg(yt ~ x, data = d, point = 1, direction = "left")
 b <- bamlss(yt ~ x, data = d, family = gF(trunc, point = 1))
 mf <- model.frame(b)
 eta <- fitted(b)
-dy <- gF(truncreg, point = 1)$d(mf$yt, eta)
+dy <- gF(trunc, point = 1)$d(mf$yt, eta)
 hist(mf$yt, freq = FALSE)
 lines(dy[order(mf$yt)] ~ mf$yt[order(mf$yt)], col = 2)
 
@@ -52,7 +52,6 @@ lines(dy[order(mf$yt)] ~ mf$yt[order(mf$yt)], col = 2)
 ## CRCH tests
 library("crch")
 library("gamlss")
-library("gamlss.cens")
 
 data("RainIbk")
 
@@ -111,4 +110,13 @@ b <- bamlss(yobs ~ x, data = d, family = gF(cens, left = 0))
 
 coef(b)
 plot(b, which = 3:4)
+
+
+n <- 1000
+d <- data.frame("time" = rep(1:365, length.out = n),
+  "lon" = runif(n), "lat" = runif(n), alt = runif(n, 500, 2500)
+)
+d$rain <- with(d, 10 + sin(scale2(time, 0, pi)) * cos(lon) * log(lat) + 0.01 * alt + rnorm(n, sd = 3))
+
+b <- bamlss(rain ~ te(time, lon, lat, bs = c("cc", "tp"), d = c(1, 2)), data = d, method = "backfitting", update = "iwls")
 
