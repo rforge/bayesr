@@ -11,6 +11,7 @@ Description: BayesX performs Bayesian inference in structured additive regressio
 	The R package BayesXsrc provides the BayesX command line tool for easy installation.
 	A convenient R interface is provided in package R2BayesX.
 Depends: R (>= 2.7.0)
+SystemRequirements: GNU make
 Suggests: R2BayesX
 License: GPL-2 | GPL-3
 URL: http://www.BayesX.org/
