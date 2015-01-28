@@ -426,6 +426,47 @@ gaussian.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
 }
 
 
+gaussian3.bamlss <- function(links = c(mu = "identity", sigma2 = "log"), ...)
+{
+  links <- parse.links(links, c(mu = "identity", sigma2 = "log"), ...)
+  mu.eta <- linkfun <- list()
+  for(j in names(links)) {
+    mu.eta[[j]] <- make.link2(links[j])$mu.eta
+    linkfun[[j]] <- make.link2(links[j])$linkfun
+  }
+  
+  rval <- list(
+    "family" = "gaussian3",
+    "names" = c("mu", "sigma2"),
+    "links" = links,
+    "score" = list(
+      "mu" = function(y, eta, ...) {
+        with(eta, drop((y - mu) / sigma2) * mu.eta$mu(linkfun$mu(mu)))
+       },
+      "sigma2" = function(y, eta, ...) {
+        dlink <- mu.eta$sigma2(linkfun$sigma2(eta$sigma2))
+        with(eta, (dlink * ((y - mu)^2 - sigma2)) / (2 * sigma2^2))
+      }
+    ),
+    "weights" = list(
+      "mu" = function(y, eta, ...) { drop(1 / eta$sigma2) },
+      "sigma2" = function(y, eta, ...) { rep(0.5, length(y)) }
+    ),
+    "d" = function(y, eta, log = FALSE, ...) {
+      dnorm(y, mean = eta$mu, sd = sqrt(eta$sigma2), log = log, ...)
+    },
+    "p" = function(y, eta, ...) {
+      pnorm(y, mean = eta$mu, sd = sqrt(eta$sigma2), ...)
+    },
+    "type" = 1
+  )
+ 
+  class(rval) <- "family.bamlss"
+
+  rval
+}
+
+
 gaussian2.bamlss <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 {
   rval <- list(
@@ -1166,8 +1207,8 @@ gamma.bamlss <- function(links = c(mu = "log", sigma = "log"), ...)
       ok
     },
     "bayesx" = list(
-      "mu" = c("gamma_mu", "mean"),
-      "sigma" = c("gamma_sigma", "shape")
+      "mu" = c("gamma", "mu"),
+      "sigma" = c("gamma", "sigma")
     ),
     "bugs" = list(
       "dist" = "dgamma",

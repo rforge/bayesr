@@ -99,7 +99,7 @@ loglik = function(theta) {
   theta <- unlist(theta)
   mu <- theta[1] / (1 + exp(theta[2]) * (exp(theta[3]) / (1 + exp(theta[3])))^t)
   sigma <- exp(theta[4])
-  sum(dnorm(y, mean = mu, sd = sigma, log = TRUE))
+  ll <- sum(dnorm(y, mean = mu, sd = sigma, log = TRUE))
 }
 
 n = 15
@@ -110,7 +110,7 @@ y = c(16.08, 33.83, 65.80, 97.20, 191.55, 326.20, 386.87, 520.53, 590.03,
 theta <- c(700, 36, 0.5946)
 theta <- c(theta, sd(y - theta[1] / (1 + theta[2] * theta[3]^t)))
 
-b <- gmcmc(loglik, theta = theta, propose = gmcmc_slice)
+b <- gmcmc(loglik, theta = theta, propose = gmcmc_mvnorm2)
 apply(b, 2, mean)
 theta
 
@@ -157,7 +157,8 @@ logpost = function(gamma, tau2, sigma) {
 }
 
 theta <- list("gamma" = rep(0, ncol(X)), "tau2" = 0, "sigma" = 0)
-b <- gmcmc(logpost, theta = theta, propose = gmcmc_slice, n.iter = 500, burnin = 100, thin = 2)
+b <- gmcmc(logpost, theta = theta, propose = gmcmc_mvnorm2, n.iter = 12000, burnin = 2000, thin = 10,
+  adapt = 100)
 
 fit <- apply(b[, 1:ncol(X)], 1, function(g) {
   X %*% g
@@ -165,7 +166,7 @@ fit <- apply(b[, 1:ncol(X)], 1, function(g) {
 
 i <- order(d$x)
 plot(d, col = "blue", lwd = 2)
-matplot(d$x[i], fit[i, ], type = "l", col = rgb(0.1, 0.1, 0.1, alpha = 0.01), add = TRUE)
+matplot(d$x[i], fit[i, ], type = "l", col = rgb(0.1, 0.1, 0.1, alpha = 0.1), add = TRUE)
 f <- t(apply(fit, 1, quantile, probs = c(0.05, 0.5, 0.95)))
 matplot(d$x[i], f[i, ], type = "l", lty = c(2, 1, 2), col = 1, add = TRUE)
 

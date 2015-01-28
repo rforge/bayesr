@@ -1550,7 +1550,7 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
       }
     } else grad_posterior_BayesG <- NULL
 
-    opt <- optim(par, fn = log_posterior_BayesG, gr = NULL, ##grad_posterior_BayesG,
+    opt <- optim(par, fn = log_posterior_BayesG, gr = grad_posterior_BayesG,
       method = "L-BFGS-B", lower = lower2, upper = upper2,
       control = optim.control)
     par <- opt$par

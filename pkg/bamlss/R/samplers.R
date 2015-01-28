@@ -181,7 +181,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
     for(j in names(theta[[i]])) {
       p0 <- propose[[i]][[j]](fun, theta, id = c(i, j),
         prior = priors[[i]][[j]], data = data[[i]][[j]], eta = eta,
-        iteration = 1, n.iter = n.iter, ...)
+        iteration = 1, n.iter = n.iter, burnin = burnin, ...)
       if(!is.list(p0)) {
         stop(paste("the propose() function for block [", i, "][", j,
           "] must return a named list()!", sep = ""))
@@ -209,6 +209,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
         "accepted" = rep(NA, length = length(iterthin))
       )
       colnames(theta.save[[i]][[j]]$samples) <- names(p0$parameters)
+      theta[[i]][[j]] <- p0$parameters
     }
   }
   ll <- rep(NA, length = length(iterthin))
@@ -254,7 +255,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
         ## Get proposed states.
         state <- propose[[i]][[j]](fun, theta, id = c(i, j),
           prior = priors[[i]][[j]], data = data[[i]][[j]], eta = eta,
-          iteration = iter, n.iter = n.iter, ...)
+          iteration = iter, n.iter = n.iter, burnin = burnin, ...)
 
         ## If accepted, set current state to proposed state.
         accepted <- if(is.na(state$alpha)) FALSE else log(runif(1)) <= state$alpha
@@ -617,5 +618,66 @@ gmcmc_iwls <- function(family, theta, id, prior, eta, response, data, ...)
   alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
 
   return(list("parameters" = theta, "alpha" = alpha))
+}
+
+
+gmcmc_mvnorm2 <- function(fun, theta, id, prior, ...)
+{
+  require("mvtnorm")
+
+  args <- list(...)
+  iteration <- args$iteration
+
+  ll0 <- sum(do.call(fun, c(theta, args)[names(formals(fun))]), na.rm = TRUE)
+  p0 <- if(is.null(prior)) {
+    sum(dnorm(theta[[id[1]]][[id[2]]], sd = 1000, log = TRUE), na.rm = TRUE)
+  } else sum(do.call(prior, c(theta, args)[names(formals(prior))]), na.rm = TRUE)
+
+  adapt <- if(is.null(args$adapt)) args$burnin else args$adapt 
+  if(iteration <= adapt) {
+    eps <- attr(theta[[id[1]]][[id[2]]], "eps")
+print(eps)
+    if(is.null(eps))
+      eps <- 1
+    if(eps > 0.001) {
+      objfun <- function(par) {
+        theta[[id[1]]][[id[2]]] <- par
+        ll <- sum(do.call(fun, c(theta, args)[names(formals(fun))]), na.rm = TRUE)
+        lp <- if(is.null(prior)) {
+          sum(dnorm(theta[[id[1]]][[id[2]]], sd = 1000, log = TRUE), na.rm = TRUE)
+        } else sum(do.call(prior, c(theta, args)[names(formals(prior))]), na.rm = TRUE)
+        return(-1 * (ll + lp))
+      }
+      start <- attr(theta[[id[1]]][[id[2]]], "mode")
+      if(is.null(start))
+        start <- theta[[id[1]]][[id[2]]]
+      opt <- optim(start, fn = objfun, method = "L-BFGS-B", hessian = TRUE,
+        control = list(maxit = 30))
+      theta[[id[1]]][[id[2]]] <- opt$par
+      attr(theta[[id[1]]][[id[2]]], "sigma") <- chol2inv(chol(opt$hessian))
+      attr(theta[[id[1]]][[id[2]]], "scale") <- 1
+      attr(theta[[id[1]]][[id[2]]], "eps") <- mean(abs((start - opt$par) / start), na.rm = TRUE)
+      attr(theta[[id[1]]][[id[2]]], "mode") <- opt$par
+    }
+  }
+
+  theta.attr <- attributes(theta[[id[1]]][[id[2]]])
+
+  scale <- theta.attr$scale
+  sigma <- theta.attr$sigma
+
+  theta[[id[1]]][[id[2]]] <- drop(rmvnorm(n = 1, mean = theta[[id[1]]][[id[2]]], sigma = scale * sigma))
+
+  ll1 <- sum(do.call(fun, c(theta, args)[names(formals(fun))]), na.rm = TRUE)
+  p1 <- if(is.null(prior)) {
+    sum(dnorm(theta[[id[1]]][[id[2]]], sd = 1000, log = TRUE), na.rm = TRUE)
+  } else sum(do.call(prior, c(theta, args)[names(formals(prior))]), na.rm = TRUE)
+
+  alpha <- drop((ll1 + p1) - (ll0 + p0))
+
+  rval <- list("parameters" = theta[[id[1]]][[id[2]]], "alpha" = alpha)
+  attributes(rval$parameters) <- theta.attr
+
+  rval
 }
 
