@@ -384,11 +384,11 @@ gaussian.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
     "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
     "bayesx" = list(
       "mu" = switch(links["mu"],
-        "identity" = c("normal2_mu", "mean"),
+        "identity" = c("normal2", "mu"),
         "inverse" = c("normal_mu_inv", "mean")
       ),
       "sigma" = switch(links["sigma"],
-        "log" = c("normal2_sigma", "scale"),
+        "log" = c("normal2", "sigma"),
         "logit" = c("normal_sigma_logit", "scale")
       )
     ),
@@ -475,11 +475,11 @@ gaussian2.bamlss <- function(links = c(mu = "identity", sigma2 = "log"), ...)
     "links" = parse.links(links, c(mu = "identity", sigma2 = "log"), ...),
     "bayesx" = list(
       "mu" = switch(links["mu"],
-        "identity" = c("normal_mu", "mean"),
+        "identity" = c("normal", "mu"),
         "inverse" = c("normal_mu_inv", "mean")
       ),
       "sigma2" = switch(links["sigma2"],
-        "log" = c("normal_sigma2", "scale"),
+        "log" = c("normal", "sigma2"),
         "logit" = c("normal_sigma2_logit", "scale")
       )
     ),

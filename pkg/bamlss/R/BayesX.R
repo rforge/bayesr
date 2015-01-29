@@ -816,7 +816,7 @@ resultsBayesX <- function(x, samples, ...)
         nx <- obj$pterms
         nx <- gsub("Intercept", "const", nx, fixed = TRUE)
         pt <- paste(nx, collapse = "+")
-        pt <- paste(pt, paste(id2, family$bayesx[[id]][2], sep = ""), if(obj$hlevel > 1) 2 else 1, sep = ":")
+        pt <- paste(pt, paste(family$bayesx[[id]][1], id2, sep = ""), if(obj$hlevel > 1) 2 else 1, sep = ":")
         if(any(grepl(pt, snames, fixed = TRUE))) {
           samps <- as.matrix(samples[[j]][, grepl(pt, snames, fixed = TRUE)], ncol = k)
           nx <- gsub("const", "(Intercept)", nx, fixed = TRUE)
@@ -865,7 +865,7 @@ resultsBayesX <- function(x, samples, ...)
           }
         }
         for(idj in c(id2, "gaussian")) {
-          if(sx.check & length(i <- grep(paste(paste(idj, family$bayesx[[id]][2], sep = ""),
+          if(sx.check & length(i <- grep(paste(paste(family$bayesx[[id]][1], idj, sep = ""),
               if(obj$hlevel > 1) 2 else 1, sep = ":"), names(sx.smooth), fixed = TRUE))) {
             if(!is.list(effects))
               effects <- list()

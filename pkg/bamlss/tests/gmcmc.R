@@ -136,27 +136,31 @@ plot2d(as.matrix(p2) ~ t, data = nd, add = TRUE, col.lines = 2)
 ## Spline example.
 n <- 300
 d <- data.frame("x" = runif(n, -3, 3))
-d$y <- sin(d$x) + rnorm(n, sd = 0.3)
+d$y <- sin(d$x) + rnorm(n, sd = scale2(cos(d$x), 0.1, 0.7))
 S <- smooth.construct(s(x, k = 10), d, NULL)
 X <- S$X
 K <- S$S[[1]]
 a <- b <- 0.0001
 
-logpost = function(gamma, tau2, sigma) {
-  gamma <- unlist(gamma)
-  tau2 <- exp(unlist(tau2))
-  sigma <- exp(unlist(sigma))
+logpost = function(gamma1, tau21, gamma2, tau22) {
+  gamma1 <- unlist(gamma1)
+  gamma2 <- unlist(gamma2)
+  tau21 <- exp(unlist(tau21))
+  tau22 <- exp(unlist(tau22))
 
-  f <- X %*% gamma
+  f1 <- X %*% gamma1
+  f2 <- exp(X %*% gamma2)
 
-  ll <- sum(dnorm(d$y, mean = f, sd = sigma, log = TRUE))
-  lp <- -log(tau2) * S$rank / 2 + drop(-0.5 / tau2 * crossprod(gamma, K) %*% gamma) +
-            log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2) - b / tau2
+  ll <- sum(dnorm(d$y, mean = f1, sd = f2, log = TRUE))
+  lp1 <- -log(tau21) * S$rank / 2 + drop(-0.5 / tau21 * crossprod(gamma1, K) %*% gamma1) +
+            log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau21) - b / tau21
+  lp2 <- -log(tau22) * S$rank / 2 + drop(-0.5 / tau22 * crossprod(gamma2, K) %*% gamma2) +
+            log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau22) - b / tau22
 
-  ll + lp
+  ll + lp1 + lp2
 }
 
-theta <- list("gamma" = rep(0, ncol(X)), "tau2" = 0, "sigma" = 0)
+theta <- list("gamma1" = rep(0, ncol(X)), "tau21" = 0, "gamma2" = rep(0, ncol(X)), "tau22" = 0)
 b <- gmcmc(logpost, theta = theta, propose = gmcmc_mvnorm2, n.iter = 12000, burnin = 2000, thin = 10,
   adapt = 100)
 
