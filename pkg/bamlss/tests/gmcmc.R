@@ -142,35 +142,45 @@ X <- S$X
 K <- S$S[[1]]
 a <- b <- 0.0001
 
-logpost = function(gamma1, tau21, gamma2, tau22) {
-  gamma1 <- unlist(gamma1)
-  gamma2 <- unlist(gamma2)
-  tau21 <- exp(unlist(tau21))
-  tau22 <- exp(unlist(tau22))
+logpost = function(mu, sigma) {
+  tau21 <- exp(mu$tau2)
+  tau22 <- exp(sigma$tau2)
 
-  f1 <- X %*% gamma1
-  f2 <- exp(X %*% gamma2)
+  f1 <- X %*% mu$gamma
+  f2 <- exp(X %*% sigma$gamma)
 
   ll <- sum(dnorm(d$y, mean = f1, sd = f2, log = TRUE))
-  lp1 <- -log(tau21) * S$rank / 2 + drop(-0.5 / tau21 * crossprod(gamma1, K) %*% gamma1) +
+  lp1 <- -log(tau21) * S$rank / 2 + drop(-0.5 / tau21 * crossprod(mu$gamma, K) %*% mu$gamma) +
             log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau21) - b / tau21
-  lp2 <- -log(tau22) * S$rank / 2 + drop(-0.5 / tau22 * crossprod(gamma2, K) %*% gamma2) +
+  lp2 <- -log(tau22) * S$rank / 2 + drop(-0.5 / tau22 * crossprod(sigma$gamma, K) %*% sigma$gamma) +
             log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau22) - b / tau22
 
   ll + lp1 + lp2
 }
 
-theta <- list("gamma1" = rep(0, ncol(X)), "tau21" = 0, "gamma2" = rep(0, ncol(X)), "tau22" = 0)
+theta <- list(
+  mu = list("gamma" = rep(0, ncol(X)), "tau2" = 0),
+  sigma = list("gamma" = rep(0, ncol(X)), "tau2" = 0)
+)
+
 b <- gmcmc(logpost, theta = theta, propose = gmcmc_mvnorm2, n.iter = 12000, burnin = 2000, thin = 10,
   adapt = 100)
 
-fit <- apply(b[, 1:ncol(X)], 1, function(g) {
+nb <- colnames(b)
+fit1 <- apply(b[, grep("mu.gamma[", nb, fixed = TRUE)], 1, function(g) {
+  X %*% g
+})
+fit2 <- apply(b[, grep("sigma.gamma[", nb, fixed = TRUE)], 1, function(g) {
   X %*% g
 })
 
+par(mfrow = c(2, 1))
 i <- order(d$x)
 plot(d, col = "blue", lwd = 2)
-matplot(d$x[i], fit[i, ], type = "l", col = rgb(0.1, 0.1, 0.1, alpha = 0.1), add = TRUE)
-f <- t(apply(fit, 1, quantile, probs = c(0.05, 0.5, 0.95)))
+matplot(d$x[i], fit1[i, ], type = "l", col = rgb(0.1, 0.1, 0.1, alpha = 0.01), add = TRUE)
+f <- t(apply(fit1, 1, quantile, probs = c(0.05, 0.5, 0.95)))
+matplot(d$x[i], f[i, ], type = "l", lty = c(2, 1, 2), col = 1, add = TRUE)
+matplot(d$x[i], fit2[i, ], type = "l", col = rgb(0.1, 0.1, 0.1, alpha = 0.01))
+f <- t(apply(fit2, 1, quantile, probs = c(0.05, 0.5, 0.95)))
 matplot(d$x[i], f[i, ], type = "l", lty = c(2, 1, 2), col = 1, add = TRUE)
 
