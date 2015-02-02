@@ -134,10 +134,10 @@ plot2d(as.matrix(p1) ~ t, data = nd, add = TRUE)
 plot2d(as.matrix(p2) ~ t, data = nd, add = TRUE, col.lines = 2)
 
 ## Spline example.
-n <- 300
-d <- data.frame("x" = runif(n, -3, 3))
-d$y <- sin(d$x) + rnorm(n, sd = scale2(cos(d$x), 0.1, 0.7))
-S <- smooth.construct(s(x, k = 10), d, NULL)
+library("MASS")
+data("mcycle")
+
+S <- smooth.construct(s(times, k = 10), mcycle, NULL)
 X <- S$X
 K <- S$S[[1]]
 a <- b <- 0.0001
@@ -149,7 +149,7 @@ logpost = function(mu, sigma) {
   f1 <- X %*% mu$gamma
   f2 <- exp(X %*% sigma$gamma)
 
-  ll <- sum(dnorm(d$y, mean = f1, sd = f2, log = TRUE))
+  ll <- sum(dnorm(mcycle$accel, mean = f1, sd = f2, log = TRUE))
   lp1 <- -log(tau21) * S$rank / 2 + drop(-0.5 / tau21 * crossprod(mu$gamma, K) %*% mu$gamma) +
             log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau21) - b / tau21
   lp2 <- -log(tau22) * S$rank / 2 + drop(-0.5 / tau22 * crossprod(sigma$gamma, K) %*% sigma$gamma) +
@@ -163,7 +163,7 @@ theta <- list(
   sigma = list("gamma" = rep(0, ncol(X)), "tau2" = 0)
 )
 
-b <- gmcmc(logpost, theta = theta, propose = gmcmc_mvnorm2, n.iter = 12000, burnin = 2000, thin = 10,
+b <- gmcmc(logpost, theta = theta, propose = gmcmc_slice, n.iter = 12000, burnin = 2000, thin = 10,
   adapt = 100)
 
 nb <- colnames(b)
@@ -175,12 +175,26 @@ fit2 <- apply(b[, grep("sigma.gamma[", nb, fixed = TRUE)], 1, function(g) {
 })
 
 par(mfrow = c(2, 1))
-i <- order(d$x)
-plot(d, col = "blue", lwd = 2)
-matplot(d$x[i], fit1[i, ], type = "l", col = rgb(0.1, 0.1, 0.1, alpha = 0.01), add = TRUE)
+plot(mcycle, col = "blue", lwd = 2)
+matplot(mcycle$times, fit1, type = "l", col = rgb(0.1, 0.1, 0.1, alpha = 0.01), add = TRUE)
 f <- t(apply(fit1, 1, quantile, probs = c(0.05, 0.5, 0.95)))
-matplot(d$x[i], f[i, ], type = "l", lty = c(2, 1, 2), col = 1, add = TRUE)
-matplot(d$x[i], fit2[i, ], type = "l", col = rgb(0.1, 0.1, 0.1, alpha = 0.01))
+matplot(mcycle$times, f, type = "l", lty = c(2, 1, 2), col = 1, add = TRUE)
+matplot(mcycle$times, fit2, type = "l", col = rgb(0.1, 0.1, 0.1, alpha = 0.01))
 f <- t(apply(fit2, 1, quantile, probs = c(0.05, 0.5, 0.95)))
-matplot(d$x[i], f[i, ], type = "l", lty = c(2, 1, 2), col = 1, add = TRUE)
+matplot(mcycle$times, f, type = "l", lty = c(2, 1, 2), col = 1, add = TRUE)
+
+
+## Simple example.
+y <- rnorm(100, mean = 1)
+
+logpost = function(mu, sigma) {
+  ll <- sum(dnorm(y, mean = unlist(mu), sd = exp(unlist(sigma)), log = TRUE))
+}
+
+theta <- list(
+  mu = 0,
+  sigma = 0
+)
+
+b <- gmcmc(logpost, theta = theta, propose = gmcmc_mvnorm3)
 

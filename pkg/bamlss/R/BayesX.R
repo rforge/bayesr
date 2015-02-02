@@ -417,7 +417,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
                 ok <- FALSE
               }
             }
-            if(x[[j]]$hlevel < 2 & any(grepl("mean", family$bayesx[[nx[if(is.null(id)) j else id]]]))) {
+            if(x[[j]]$hlevel < 2 & any(grepl("mu", family$bayesx[[nx[if(is.null(id)) j else id]]]))) {
               if(any(grepl("predict", names(control$prg))) & !zero) {
                 teqn <- paste(teqn, " predict=", control$prg$predict, " setseed=", control$prg$setseed, sep = "")
               }
@@ -427,7 +427,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
         if(ok) {
           if(dirichlet) {
             teqn <- paste(teqn, " nrcat=", family$ncat, " family=dirichlet equationtype=",
-              if(j < 2) "mean" else paste("alpha", j, sep = ""), sep = "")
+              if(j < 2) "mu" else paste("alpha", j, sep = ""), sep = "")
           } else {
             if(!any(grepl("family", fctr)))
               teqn <- paste(teqn, " family=", family$bayesx[[nx[if(is.null(id)) j else id]]][1], sep = "")

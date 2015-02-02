@@ -680,3 +680,68 @@ gmcmc_mvnorm2 <- function(fun, theta, id, prior, ...)
   rval
 }
 
+
+eval_fun <- function(fun, theta, prior, id, args)
+{
+  ll <- sum(do.call(fun, c(theta, args)[names(formals(fun))]), na.rm = TRUE)
+  lp <- if(is.null(prior)) {
+    sum(dnorm(theta[[id[1]]][[id[2]]], sd = 1000, log = TRUE), na.rm = TRUE)
+  } else sum(do.call(prior, c(theta, args)[names(formals(prior))]), na.rm = TRUE)
+  ll + lp
+}
+
+
+grad <- function(fun, theta, prior, id, args, eps = .Machine$double.eps^0.5)
+{
+  gfun <- function(theta, j) {
+    theta2 <- theta
+    theta2[[id[1]]][[id[2]]][j] <- theta2[[id[1]]][[id[2]]][j] + eps
+    theta[[id[1]]][[id[2]]][j] <- theta[[id[1]]][[id[2]]][j] - eps
+    lp1 <- eval_fun(fun, theta2, prior, id, args)
+    lp2 <- eval_fun(fun, theta, prior, id, args)
+    drop((lp1 - lp2) / (2 * eps))
+  }
+
+  k <- length(theta[[id[1]]][[id[2]]])
+  grad.theta <- rep(NA, k)
+  for(j in 1:k) {
+    grad.theta[j] <- gfun(theta, j)
+  }
+
+  names(grad.theta) <- names(theta[[id[1]]][[id[2]]])
+  grad.theta
+}
+
+hess <- function(fun, theta, prior, id, args, eps = .Machine$double.eps^0.5)
+{
+  k <- length(theta[[id[1]]][[id[2]]])
+  H <- matrix(NA, k, k)
+  for(j in 1:k) {
+    
+  }
+}
+
+
+gmcmc_mvnorm3 <- function(fun, theta, id, prior, ...)
+{
+  args <- list(...)
+
+  ll0 <- eval_fun(fun, theta, prior, id, args)
+  grad.theta <- grad(fun, theta, prior, id, args)
+  hess.theta <- hess(fun, theta, prior, id, args)
+
+  leapfrog <- function(theta, r, grad, epsilon) {
+    rprime <- r + 0.5 * epsilon * grad
+    thetaprime <-  theta + epsilon * rprime
+
+    theta[[id[1]]][[id[2]]] <- thetaprime
+    lp <- eval_fun(fun, theta, prior, id, args)
+
+    gradprime <- grad(fun, theta, prior, id, args)
+    rprime <- rprime + 0.5 * epsilon * gradprime
+
+    retrun(list("thetaprime" = thetaprime, "rprime" = rprime,
+      "gradprime" = gradprime, lp = lp))
+  }
+}
+
