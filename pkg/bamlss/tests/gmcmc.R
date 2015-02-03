@@ -110,7 +110,7 @@ y = c(16.08, 33.83, 65.80, 97.20, 191.55, 326.20, 386.87, 520.53, 590.03,
 theta <- c(700, 36, 0.5946)
 theta <- c(theta, sd(y - theta[1] / (1 + theta[2] * theta[3]^t)))
 
-b <- gmcmc(loglik, theta = theta, propose = gmcmc_mvnorm2)
+b <- gmcmc(loglik, theta = theta, propose = gmcmc_mvnorm3)
 apply(b, 2, mean)
 theta
 
@@ -185,16 +185,16 @@ matplot(mcycle$times, f, type = "l", lty = c(2, 1, 2), col = 1, add = TRUE)
 
 
 ## Simple example.
-y <- rnorm(100, mean = 1)
+y <- rnorm(500, mean = 1)
 
-logpost = function(mu, sigma) {
-  ll <- sum(dnorm(y, mean = unlist(mu), sd = exp(unlist(sigma)), log = TRUE))
+logpost = function(theta) {
+  theta <- unlist(theta)
+  ll <- sum(dnorm(y, mean = theta[1], sd = exp(theta[2]), log = TRUE))
 }
 
-theta <- list(
-  mu = 0,
-  sigma = 0
-)
+theta <- c("mu" = -100, "sigma" = 10)
 
-b <- gmcmc(logpost, theta = theta, propose = gmcmc_mvnorm3)
+b <- gmcmc(logpost, theta = theta, propose = gmcmc_mvnorm3, n.iter = 1200, burnin = 0, thin = 1)
+
+apply(b, 2, mean)
 
