@@ -110,7 +110,7 @@ y = c(16.08, 33.83, 65.80, 97.20, 191.55, 326.20, 386.87, 520.53, 590.03,
 theta <- c(700, 36, 0.5946)
 theta <- c(theta, sd(y - theta[1] / (1 + theta[2] * theta[3]^t)))
 
-b <- gmcmc(loglik, theta = theta, propose = gmcmc_mvnorm3)
+b <- gmcmc(loglik, theta = theta, propose = gmcmc_newton)
 apply(b, 2, mean)
 theta
 
@@ -189,12 +189,38 @@ y <- rnorm(500, mean = 1)
 
 logpost = function(theta) {
   theta <- unlist(theta)
-  ll <- sum(dnorm(y, mean = theta[1], sd = exp(theta[2]), log = TRUE))
+  ll <- sum(dnorm(y, mean = theta[1], sd = sqrt(theta[2]), log = TRUE))
 }
 
-theta <- c("mu" = -100, "sigma" = 10)
+gnorm <- list("theta" = function(theta) {
+  theta <- unlist(theta)
+  n <- length(y)
+  mu <- theta[1]
+  sigma2 <- theta[2]
+  g <- c(
+    "dmu" = (sum(y) - n * mu) / sigma2,
+    "dsigma2" = -1 * n / (2 * sigma2) + 1 / (2 * sigma2^2) * sum((y - mu)^2)
+  )
+  return(g)
+})
 
-b <- gmcmc(logpost, theta = theta, propose = gmcmc_mvnorm3, n.iter = 1200, burnin = 0, thin = 1)
+hnorm <- list("theta" = function(theta) {
+  theta <- unlist(theta)
+  n <- length(y)
+  mu <- theta[1]
+  sigma2 <- exp(theta[2])
+  symu <- sum(y - mu) / sigma2
+  H = cbind(
+    c(n, symu),
+    c(symu, 1 / (sigma2^2) * sum((y - mu)^2) - n / (2 * sigma2))
+  )
+  rownames(H) <- colnames(H) <- c("mu", "sigma2")
+  H
+})
+
+theta <- c("mu" = 1, "sigma2" = 1)
+
+b <- gmcmc(logpost, theta = theta, propose = gmcmc_newton, gradient = gnorm) ##, hessian = hnorm)
 
 apply(b, 2, mean)
 

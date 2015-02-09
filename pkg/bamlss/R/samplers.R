@@ -692,127 +692,126 @@ eval_fun <- function(fun, theta, prior, id, args)
 }
 
 
-grad <- function(fun, theta, prior, id, args, eps = .Machine$double.eps^0.5)
+grad <- function(fun, theta, prior, id, args, eps = .Machine$double.eps^0.5, ...)
 {
-  gfun <- function(theta, j) {
-    theta2 <- theta
-    theta2[[id[1]]][[id[2]]][j] <- theta2[[id[1]]][[id[2]]][j] + eps
-    theta[[id[1]]][[id[2]]][j] <- theta[[id[1]]][[id[2]]][j] - eps
-    lp1 <- eval_fun(fun, theta2, prior, id, args)
-    lp2 <- eval_fun(fun, theta, prior, id, args)
-    drop((lp1 - lp2) / (2 * eps))
-  }
+  args2 <- list(...)
+  if(!is.null(args2$gradient)) {
+    gfun <- args2$gradient[[id[1]]]
+    grad.theta <- do.call(gfun, c(theta, args)[names(formals(gfun))])
+  } else {
+    gfun <- function(theta, j) {
+      theta2 <- theta
+      theta2[[id[1]]][[id[2]]][j] <- theta2[[id[1]]][[id[2]]][j] + eps
+      theta[[id[1]]][[id[2]]][j] <- theta[[id[1]]][[id[2]]][j] - eps
+      lp1 <- eval_fun(fun, theta2, prior, id, args)
+      lp2 <- eval_fun(fun, theta, prior, id, args)
+      drop((lp1 - lp2) / (2 * eps))
+    }
 
-  k <- length(theta[[id[1]]][[id[2]]])
-  grad.theta <- rep(NA, k)
-  for(j in 1:k) {
-    grad.theta[j] <- gfun(theta, j)
+    k <- length(theta[[id[1]]][[id[2]]])
+    grad.theta <- rep(NA, k)
+    for(j in 1:k) {
+      grad.theta[j] <- gfun(theta, j)
+    }
   }
 
   names(grad.theta) <- names(theta[[id[1]]][[id[2]]])
   grad.theta
 }
 
-hess <- function(fun, theta, prior, id, args, eps = .Machine$double.eps^0.5, type = 2)
+hess <- function(fun, theta, prior, id, args, eps = .Machine$double.eps^0.5, type = 2, ...)
 {
-  if(type < 2) {
-    k <- length(theta[[id[1]]][[id[2]]])
-    H <- matrix(NA, k, k)
-    for(i in 1:k) {
-      for(j in 1:k) {
-        theta2 <- theta
-        theta2[[id[1]]][[id[2]]][i] <- theta2[[id[1]]][[id[2]]][i] + eps
-        theta2[[id[1]]][[id[2]]][j] <- theta2[[id[1]]][[id[2]]][j] + eps
-        lp1 <- eval_fun(fun, theta2, prior, id, args)
-
-        theta2 <- theta
-        theta2[[id[1]]][[id[2]]][i] <- theta2[[id[1]]][[id[2]]][i] + eps
-        theta2[[id[1]]][[id[2]]][j] <- theta2[[id[1]]][[id[2]]][j] - eps
-        lp2 <- eval_fun(fun, theta2, prior, id, args)
-
-        theta2 <- theta
-        theta2[[id[1]]][[id[2]]][i] <- theta2[[id[1]]][[id[2]]][i] - eps
-        theta2[[id[1]]][[id[2]]][j] <- theta2[[id[1]]][[id[2]]][j] + eps
-        lp3 <- eval_fun(fun, theta2, prior, id, args)
-
-        theta2 <- theta
-        theta2[[id[1]]][[id[2]]][i] <- theta2[[id[1]]][[id[2]]][i] - eps
-        theta2[[id[1]]][[id[2]]][j] <- theta2[[id[1]]][[id[2]]][j] - eps
-        lp4 <- eval_fun(fun, theta2, prior, id, args)
-
-        H[i, j] <- (lp1 - lp2 - lp3 + lp4) / (4 * eps * eps)
-      }
-    }
-    H[lower.tri(H)] <- t(H)[lower.tri(H)]
+  args2 <- list(...)
+  if(!is.null(args2$hessian)) {
+    hfun <- args2$hessian[[id[1]]]
+    H <- do.call(hfun, c(theta, args)[names(formals(hfun))])
   } else {
-    theta2 <- theta
-    objfun <- function(par) {
-      theta2[[id[1]]][[id[2]]] <- par
-      -1 * eval_fun(fun, theta2, prior, id, args)
+    if(type < 2) {
+      k <- length(theta[[id[1]]][[id[2]]])
+      H <- matrix(NA, k, k)
+      for(i in 1:k) {
+        for(j in 1:k) {
+          theta2 <- theta
+          theta2[[id[1]]][[id[2]]][i] <- theta2[[id[1]]][[id[2]]][i] + eps
+          theta2[[id[1]]][[id[2]]][j] <- theta2[[id[1]]][[id[2]]][j] + eps
+          lp1 <- eval_fun(fun, theta2, prior, id, args)
+
+          theta2 <- theta
+          theta2[[id[1]]][[id[2]]][i] <- theta2[[id[1]]][[id[2]]][i] + eps
+          theta2[[id[1]]][[id[2]]][j] <- theta2[[id[1]]][[id[2]]][j] - eps
+          lp2 <- eval_fun(fun, theta2, prior, id, args)
+
+          theta2 <- theta
+          theta2[[id[1]]][[id[2]]][i] <- theta2[[id[1]]][[id[2]]][i] - eps
+          theta2[[id[1]]][[id[2]]][j] <- theta2[[id[1]]][[id[2]]][j] + eps
+          lp3 <- eval_fun(fun, theta2, prior, id, args)
+
+          theta2 <- theta
+          theta2[[id[1]]][[id[2]]][i] <- theta2[[id[1]]][[id[2]]][i] - eps
+          theta2[[id[1]]][[id[2]]][j] <- theta2[[id[1]]][[id[2]]][j] - eps
+          lp4 <- eval_fun(fun, theta2, prior, id, args)
+
+          H[i, j] <- (lp1 - lp2 - lp3 + lp4) / (4 * eps * eps)
+        }
+      }
+      H[lower.tri(H)] <- t(H)[lower.tri(H)]
+    } else {
+      theta2 <- theta
+      objfun <- function(par) {
+        theta2[[id[1]]][[id[2]]] <- par
+        -1 * eval_fun(fun, theta2, prior, id, args)
+      }
+      gfun <- NULL
+      if(!is.null(args2$gradient)) {
+        gfun2 <- args2$gradient[[id[1]]]
+        gfun <- function(par) {
+          theta2[[id[1]]][[id[2]]] <- par
+          do.call(gfun2, c(theta2, args)[names(formals(gfun2))])
+        }
+      }
+      H <- optimHess(theta[[id[1]]][[id[2]]], fn = objfun, gr = gfun)
+      if(!is.null(gfun))
+        H <- -1 * H
     }
-    H <- optimHess(theta[[id[1]]][[id[2]]], objfun)
   }
-  if(type < 2)
-    H <- -1 * H
   rownames(H) <- colnames(H) <- names(theta[[id[1]]][[id[2]]])
   H
 }
 
-hess_inv <- function(x, hmin = 1, force.pd = TRUE)
-{
-  hinv <- if(ncol(x) < 2) {
-    matrix(if(x != 0) 1 / x else hmin, 1, 1)
-  } else matrix_inv(x)
-  if(any((dhinv <- diag(hinv)) <= 0)) {
-    dhinv[dhinv <= 0] <- 1
-    diag(hinv) <- dhinv
-  }
-  if(force.pd)
-    hinv <- as.matrix(Matrix::nearPD(hinv)$mat)
 
-  hinv
-}
-
-
-gmcmc_mvnorm3 <- function(fun, theta, id, prior, ...)
+gmcmc_newton <- function(fun, theta, id, prior, ...)
 {
   require("mvtnorm")
+
   args <- list(...)
   maxit <- if(args$iteration < args$burnin) 100 else 1
 
   p.old <- eval_fun(fun, theta, prior, id, args)
   theta2 <- theta
 
-  objfun <- function(par) {
-    theta2[[id[1]]][[id[2]]] <- par
-    lp <- -1 * eval_fun(fun, theta2, prior, id, args)
-  }
-  opt <- optim(theta[[id[1]]][[id[2]]], fn = objfun, method = "BFGS", control = list(maxit = maxit))
-  mu <- opt$par
+  grad.theta <- grad(fun, theta, prior, id, args, ...)
+  hess.theta <- hess(fun, theta, prior, id, args, ...)
 
-  if(args$iteration < args$burnin) {
-    rval <- list("parameters" = mu, "alpha" = log(1))
-  } else {
-    theta2[[id[1]]][[id[2]]] <- mu
-    hess.theta <- hess(fun, theta2, prior, id, args)
-    sigma <- hess_inv(hess.theta)
-    q.prop <- dmvnorm(theta[[id[1]]][[id[2]]], mean = mu, sigma = sigma, log = TRUE)
+  Sigma <- matrix_inv(hess.theta)
+  mu <- drop(theta[[id[1]]][[id[2]]] + Sigma %*% grad.theta)
 
-    theta2[[id[1]]][[id[2]]] <- drop(rmvnorm(n = 1, mean = mu, sigma = sigma))
+  q.prop <- dmvnorm(theta[[id[1]]][[id[2]]], mean = mu, sigma = Sigma, log = TRUE)
 
-    p.prop <- eval_fun(fun, theta2, prior, id, args)
-    hess.theta <- hess(fun, theta2, prior, id, args)
-    sigma <- hess_inv(hess.theta)
+  theta2[[id[1]]][[id[2]]] <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma))
 
-    opt <- optim(theta2[[id[1]]][[id[2]]], fn = objfun, method = "BFGS", control = list(maxit = maxit))
-    mu2 <- opt$par
+  grad.theta2 <- grad(fun, theta2, prior, id, args, ...)
+  hess.theta2 <- hess(fun, theta2, prior, id, args, ...)
 
-    q.old <- dmvnorm(theta[[id[1]]][[id[2]]], mean = mu2, sigma = sigma, log = TRUE)
+  Sigma2 <- matrix_inv(hess.theta2)
+  mu2 <- drop(theta2[[id[1]]][[id[2]]] + Sigma2 %*% grad.theta2)
 
-    alpha <- (p.prop - p.old) + (q.old - q.prop)
+  p.prop <- eval_fun(fun, theta2, prior, id, args)
 
-    rval <- list("parameters" = theta2[[id[1]]][[id[2]]], "alpha" = alpha)
-  }
+  q.old <- dmvnorm(theta[[id[1]]][[id[2]]], mean = mu2, sigma = Sigma2, log = TRUE)
+
+  alpha <- (p.prop - p.old) + (q.old - q.prop)
+
+  rval <- list("parameters" = theta2[[id[1]]][[id[2]]], "alpha" = alpha)
 
   rval
 }
