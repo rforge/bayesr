@@ -98,8 +98,7 @@ b <- gmcmc(logfun, theta = list(x = 5.3), n.iter = 1200, burnin = 200, thin = 1)
 loglik = function(theta) {
   theta <- unlist(theta)
   mu <- theta[1] / (1 + exp(theta[2]) * (exp(theta[3]) / (1 + exp(theta[3])))^t)
-  sigma <- exp(theta[4])
-  ll <- sum(dnorm(y, mean = mu, sd = sigma, log = TRUE))
+  ll <- sum(dnorm(y, mean = mu, sd = exp(theta[4]), log = TRUE))
 }
 
 n = 15
@@ -110,7 +109,7 @@ y = c(16.08, 33.83, 65.80, 97.20, 191.55, 326.20, 386.87, 520.53, 590.03,
 theta <- c(700, 36, 0.5946)
 theta <- c(theta, sd(y - theta[1] / (1 + theta[2] * theta[3]^t)))
 
-b <- gmcmc(loglik, theta = theta, propose = gmcmc_newton)
+b <- gmcmc(loglik, theta = theta, propose = gmcmc_newton, n.iter = 12000, burnin = 2000, thin = 10)
 apply(b, 2, mean)
 theta
 
@@ -163,8 +162,8 @@ theta <- list(
   sigma = list("gamma" = rep(0, ncol(X)), "tau2" = 0)
 )
 
-b <- gmcmc(logpost, theta = theta, propose = gmcmc_slice, n.iter = 12000, burnin = 2000, thin = 10,
-  adapt = 100)
+b <- gmcmc(logpost, theta = theta, propose = gmcmc_newton, n.iter = 1200, burnin = 200, thin = 10,
+  adapt = 5)
 
 nb <- colnames(b)
 fit1 <- apply(b[, grep("mu.gamma[", nb, fixed = TRUE)], 1, function(g) {
@@ -189,19 +188,37 @@ y <- rnorm(500, mean = 1)
 
 logpost = function(theta) {
   theta <- unlist(theta)
-  ll <- sum(dnorm(y, mean = theta[1], sd = sqrt(theta[2]), log = TRUE))
+  ll <- sum(dnorm(y, mean = theta[1], sd = exp(theta[2]), log = TRUE))
+}
+
+snorm <- function(x, mean = 0, sd = 1, which = c("mu", "sigma"), log = TRUE)
+{
+  if(!is.character(which))
+    which <- c("mu", "sigma")[as.integer(which)]
+  which <- tolower(which)
+  score <- NULL
+  dxm <- x - mean
+  sd2 <- sd^2
+  for(w in which) {
+    if(w == "mu")
+      score <- cbind(score, dxm / sd2)
+    if(w == "sigma")
+      score <- cbind(score, 0.5 * (dxm^2 / sd2 - 1))
+  }
+  if(is.null(dim(score)))
+    score <- matrix(score, ncol = 1)
+  if(!log)
+    score <- exp(score)
+  colnames(score) <- paste("d", which, sep = "")
+  score
 }
 
 gnorm <- list("theta" = function(theta) {
   theta <- unlist(theta)
-  n <- length(y)
   mu <- theta[1]
-  sigma2 <- theta[2]
-  g <- c(
-    "dmu" = (sum(y) - n * mu) / sigma2,
-    "dsigma2" = -1 * n / (2 * sigma2) + 1 / (2 * sigma2^2) * sum((y - mu)^2)
-  )
-  return(g)
+  sigma <- exp(theta[2])
+  score <- apply(snorm(y, mean = mu, sd = sigma), 2, sum)
+  return(score)
 })
 
 hnorm <- list("theta" = function(theta) {
@@ -218,9 +235,21 @@ hnorm <- list("theta" = function(theta) {
   H
 })
 
-theta <- c("mu" = 1, "sigma2" = 1)
+fnorm <- list("theta" = function(theta) {
+  theta <- unlist(theta)
+  n <- length(y)
+  sigma2 <- exp(theta[2])
+  F = cbind(
+    c(n / sigma2, 0),
+    c(0, n / (2 * sigma2))
+  )
+  rownames(F) <- colnames(F) <- c("mu", "sigma2")
+  F
+})
 
-b <- gmcmc(logpost, theta = theta, propose = gmcmc_newton, gradient = gnorm) ##, hessian = hnorm)
+theta <- c("mu" = 0, "sigma2" = 0)
+
+b <- gmcmc(logpost, theta = theta, propose = gmcmc_newton, gradient = gnorm)
 
 apply(b, 2, mean)
 
