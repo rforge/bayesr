@@ -79,8 +79,8 @@ beta.bamlss <- function(links = c(mu = "logit", sigma2 = "logit"), ...)
       ok
     },
     "bayesx" = list(
-      "mu" = c("beta_mu", "mean"),
-      "sigma2" = c("beta_sigma2", "scale")
+      "mu" = c("beta", "mean"),
+      "sigma2" = c("beta", "sigma2")
     ),
     "bugs" = list(
       "dist" = "dbeta",
@@ -159,10 +159,10 @@ betazoi.bamlss <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log",
       ok
     },
     "bayesx" = list(
-      "mu" = c("betainf_mu", "location"),
-      "sigma2" = c("betainf_sigma2", "scale"),
-      "nu" = c("betainf_nu", "shape"),
-      "tau" = c("betainf_tau", "mean"),
+      "mu" = c("betainf", "mu"),
+      "sigma2" = c("betainf", "sigma2"),
+      "nu" = c("betainf", "nu"),
+      "tau" = c("betainf", "tau"),
       "order" = 1:4,
       "weights" = list(
         "mu" = function(x) { 1 * ((x != 1) & (x != 0)) },
@@ -210,9 +210,9 @@ betazi.bamlss <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log"),
       ok
     },
     "bayesx" = list(
-      "mu" = c("beta_mu", "location"),
-      "sigma2" = c("beta_sigma2", "scale"),
-      "nu" = c("betainf0_nu", "mean"),
+      "mu" = c("betainf0", "mu"),
+      "sigma2" = c("betainf0", "sigma2"),
+      "nu" = c("betainf0", "nu"),
       "order" = 1:3,
       "weights" = list(
         "mu" = function(x) { 1 * ((x != 0)) },
@@ -257,9 +257,9 @@ betaoi.bamlss <- function(links = c(mu = "logit", sigma2 = "logit", tau = "log")
       ok
     },
     "bayesx" = list(
-      "mu" = c("beta_mu", "location"),
-      "sigma2" = c("beta_sigma2", "scale"),
-      "tau" = c("betainf1_tau", "mean"),
+      "mu" = c("betainf1", "mu"),
+      "sigma2" = c("betainf1", "sigma2"),
+      "tau" = c("betainf1", "tau"),
       "order" = 1:3,
       "weights" = list(
         "mu" = function(x) { 1 * ((x != 1)) },
@@ -310,7 +310,7 @@ binomial.bamlss <- function(link = "logit", ...)
       TRUE
     },
     "bayesx" = list(
-      "pi" = c(paste("binomial", link, sep = "_"), "mean")
+      "pi" = c(paste("binomial", link, sep = "_"), "mu")
     ),
     "bugs" = list(
       "dist" = "dbern",
@@ -524,8 +524,8 @@ truncgaussian2.bamlss <- function(links = c(mu = "identity", sigma2 = "log"), ..
     "names" = c("mu", "sigma2"),
     "links" = parse.links(links, c(mu = "identity", sigma2 = "log"), ...),
     "bayesx" = list(
-      "mu" =  c("truncnormal_mu", "mean"),
-      "sigma2" = c("truncnormal_sigma2", "scale")
+      "mu" =  c("truncnormal", "mu"),
+      "sigma2" = c("truncnormal", "sigma2")
     ),
     "mu" = function(eta, ...) {
       mu <-  eta$mu
@@ -558,8 +558,8 @@ truncgaussian.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
     "names" = c("mu", "sigma"),
     "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
     "bayesx" = list(
-      "mu" =  c("truncnormal2_mu", "mean"),
-      "sigma" = c("truncnormal2_sigma", "scale")
+      "mu" =  c("truncnormal2", "mu"),
+      "sigma" = c("truncnormal2", "sigma")
     ),
     "mu" = function(eta, ...) {
       mu <-  eta$mu
@@ -1027,9 +1027,9 @@ t.bamlss <- function(links = c(mu = "identity", sigma2 = "log", df = "log"), ...
     "names" = c("mu", "sigma2", "df"),
     "links" = parse.links(links, c(mu = "identity", sigma2 = "log", df = "log"), ...),
     "bayesx" = list(
-      "mu" = c("t_mu", "mean"),
-      "sigma2" =  c("t_sigma2", "scale"),
-	    "df" = c("t_df", "df")
+      "mu" = c("t", "mu"),
+      "sigma2" =  c("t", "sigma2"),
+	    "df" = c("t", "df")
     ),
     "bugs" = list(
       "dist" = "dt",
@@ -1068,8 +1068,8 @@ invgaussian.bamlss <- function(links = c(mu = "log", sigma2 = "log"), ...)
       ok
     },
     "bayesx" = list(
-      "mu"  = c("invgaussian_mu", "mean"),
-      "sigma2" = c("invgaussian_sigma2", "scale")
+      "mu"  = c("invgaussian", "mu"),
+      "sigma2" = c("invgaussian", "sigma2")
     ),
     "score" = list(
       "mu" = function(y, eta, ...) {
@@ -1120,8 +1120,8 @@ weibull.bamlss <- function(links = c(lambda = "log", alpha = "log"), ...)
       ok
     },
     "bayesx" = list(
-      "lambda"  = c("weibull_lambda", "mean"),
-      "alpha" = c("weibull_alpha", "shape")
+      "lambda"  = c("weibull", "lambda"),
+      "alpha" = c("weibull", "alpha")
     ),
     "bugs" = list(
       "dist" = "dweib",
@@ -1163,8 +1163,8 @@ pareto.bamlss <- function(links = c(b = "log", p = "log"), ...)
       ok
     },
     "bayesx" = list(
-      "b"  = c("pareto_b", "mean"),
-      "p" = c("pareto_p", "shape")
+      "b"  = c("pareto", "b"),
+      "p" = c("pareto", "p")
     ),
     "bugs" = list(
       "dist" = "dpar",
@@ -1271,9 +1271,9 @@ gengamma.bamlss <- function(links = c(mu = "log", sigma = "log", tau = "log"), .
       ok
     },
     "bayesx" = list(
-      "mu" = c("gengamma_mu", "mean"),
-      "sigma" = c("gengamma_sigma", "shape1"),
-	    "tau" = c("gengamma_tau", "shape2")
+      "mu" = c("gengamma", "mu"),
+      "sigma" = c("gengamma", "sigma"),
+	    "tau" = c("gengamma", "tau")
     )
   )
 
@@ -1294,8 +1294,8 @@ lognormal.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
       ok
     },
     "bayesx" = list(
-      "mu" = c("lognormal2_mu", "mean"),
-      "sigma" = c("lognormal2_sigma", "scale")
+      "mu" = c("lognormal2", "mu"),
+      "sigma" = c("lognormal2", "sigma")
     ),
     "score" = list(
       "mu" = function(y, eta, ...) { (log(y) - eta$mu) / (eta$sigma^2) },
@@ -1334,8 +1334,8 @@ lognormal2.bamlss <- function(links = c(mu = "identity", sigma2 = "log"), ...)
       ok
     },
     "bayesx" = list(
-      "mu" = c("lognormal_mu", "mean"),
-      "sigma2" = c("lognormal_sigma2", "scale")
+      "mu" = c("lognormal", "mu"),
+      "sigma2" = c("lognormal", "sigma2")
     ),
 	  "score" = list(
       "mu" = function(y, eta, ...) { (log(y) - eta$mu) / (eta$sigma2) },
@@ -1373,9 +1373,9 @@ dagum.bamlss <- function(links = c(a = "log", b = "log", p = "log"), ...)
       ok
     },
     "bayesx" = list(
-      "a" = c("dagum_a", "mean"),
-      "b" = c("dagum_b", "scale"),
-      "p" = c("dagum_p", "shape2")
+      "a" = c("dagum", "a"),
+      "b" = c("dagum", "b"),
+      "p" = c("dagum", "p")
     ),
 	  "mu" = function(eta, ...) {
 	    a <- eta$a
@@ -1417,9 +1417,9 @@ BCCG2.bamlss <- function(links = c(mu = "log", sigma = "log", nu = "identity"), 
       ok
     },
     "bayesx" = list(
-      "mu" = c("BCCG_mu", "mean"),
-      "sigma" =  c("BCCG_sigma", "scale"),
-	    "nu" = c("BCCG_nu", "nu"),
+      "mu" = c("BCCG", "mu"),
+      "sigma" =  c("BCCG", "sigma"),
+	    "nu" = c("BCCG", "nu"),
 	    "order" = c("nu", "sigma", "mu")
     ),
 	  "d" = function(y, eta, log = FALSE) {
@@ -1496,9 +1496,9 @@ bivprobit.bamlss <- function(links = c(mu1 = "identity", mu2 = "identity", rho =
     "names" = c("mu1", "mu2", "rho"),
     "links" = parse.links(links, c(mu1 = "identity", mu2 = "identity", rho = "rhogit"), ...),
     "bayesx" = list(
-      "mu1" = c("bivprobit_mu", "mean"),
-      "mu2" = c("bivprobit_mu", "mu"),
-      "rho" = c("bivprobit_rho", "rho"),
+      "mu1" = c("bivprobit", "mu"),
+      "mu2" = c("bivprobit", "mu"),
+      "rho" = c("bivprobit", "rho"),
       "order" = 3:1,
       "rm.number" = TRUE
     ),
@@ -1520,9 +1520,9 @@ bivlogit.bamlss <- function(links = c(p1 = "logit", p2 = "logit", psi = "log"), 
     "names" = c("p1", "p2", "psi"),
     "links" = parse.links(links, c(p1 = "logit", p2 = "logit", psi = "log"), ...),
     "bayesx" = list(
-      "mu1" = c("bivlogit_mu", "mean"),
-      "mu2" = c("bivlogit_mu", "mu"),
-      "psi" = c("bivlogit_or", "oddsratio"),
+      "mu1" = c("bivlogit", "mu"),
+      "mu2" = c("bivlogit", "mu"),
+      "psi" = c("bivlogit", "oddsratio"),
       "order" = 3:1,
       "rm.number" = TRUE
     ),
@@ -1545,12 +1545,12 @@ mvt.bamlss <- function(links = c(mu1 = "identity", mu2 = "identity",
     "links" = parse.links(links, c(mu1 = "identity", mu2 = "identity",
       sigma1 = "log", sigma2 = "log", rho = "fisherz", df = "log"), ...),
     "bayesx" = list(
-      "mu1" = c("bivt_mu", "mean"),
-      "mu2" = c("bivt_mu", "mu"),
-      "sigma1" = c("bivt_sigma", "scale1"),
-      "sigma2" = c("bivt_sigma", "scale2"),
-      "rho" = c("bivt_rho", "rho"),
-      "df" = c("bivt_df", "df"),
+      "mu1" = c("bivt", "mu"),
+      "mu2" = c("bivt", "mu"),
+      "sigma1" = c("bivt", "sigma"),
+      "sigma2" = c("bivt", "sigma"),
+      "rho" = c("bivt", "rho"),
+      "df" = c("bivt", "df"),
       "order" = 6:1,
       "rm.number" = TRUE
     ),
@@ -1571,7 +1571,7 @@ dirichlet.bamlss <- function(link = "logit", ...)
     "names" = "alpha",
     "links" = parse.links(link, c(pi = "logit"), ...),
     "bayesx" = list(
-      "alpha" = c("dirichlet", "mean", "alpha")
+      "alpha" = c("dirichlet", "mu", "alpha")
     )
   )
 
@@ -1593,7 +1593,7 @@ multinomial.bamlss <- function(link = "logit", ...)
       "model" = BUGSmodel
     ),
     "bayesx" = list(
-      "pi" = c(paste("multinom", link, sep = "_"), "mean", "meanservant")
+      "pi" = c(paste("multinom", link, sep = "_"), "mu", "meanservant")
     )
   )
 
@@ -1621,7 +1621,7 @@ poisson.bamlss <- function(links = c(lambda = "log"), ...)
     "names" = c("lambda"),
     "links" = parse.links(links, c(lambda = "log"), ...),
     "bayesx" = list(
-      "lambda" = c("poisson", "mean")
+      "lambda" = c("poisson", "mu")
     ),
     "bugs" = list(
       "dist" = "dpois",
@@ -1658,10 +1658,10 @@ zip.bamlss <- function(links = c(lambda = "log", pi = "logit"), ...)
     "names" = c("lambda", "pi"),
     "links" = parse.links(links, c(lambda = "log", pi = "logit"), ...),
     "bayesx" = list(
-      "lambda" = c("zip_lambda", "mean"),
+      "lambda" = c("zip", "mu"),
       "pi" = switch(links["pi"],
-        "logit" = c("zip_pi", "pi"),
-        "cloglog2" = c("zip_pi_cloglog", "pi")
+        "logit" = c("zip", "pi"),
+        "cloglog2" = c("zip", "pi")
       ) 
     ),
 	  "mu" = function(eta, ...) {
@@ -1694,8 +1694,8 @@ hurdleP.bamlss <- function(links = c(lambda = "log", pi = "logit"), ...)
     "names" = c("lambda", "pi"),
     "links" = parse.links(links, c(lambda = "log", pi = "logit"), ...),
     "bayesx" = list(
-      "lambda" = c("hurdle_lambda", "mean"),
-      "pi" = c("hurdle_pi", "pi"),
+      "lambda" = c("hurdle", "lambda"),
+      "pi" = c("hurdle", "pi"),
 	    "weights" = list(
         "lambda" = function(x) { 1 * (x != 0)}
       )
@@ -1731,8 +1731,8 @@ negbin.bamlss <- function(links = c(mu = "log", delta = "log"), ...)
     "names" = c("mu", "delta"),
     "links" = parse.links(links, c(mu = "log", delta = "log"), ...),
     "bayesx" = list(
-      "mu" = c("negbin_mu", "mean"),
-      "delta" = c("negbin_delta", "delta")
+      "mu" = c("negbin", "mu"),
+      "delta" = c("negbin", "delta")
     ),
 	  "mu" = function(eta, ...) {
       eta$mu
@@ -1759,9 +1759,9 @@ zinb.bamlss <- function(links = c(mu = "log", pi = "logit", delta = "log"), ...)
     "names" = c("mu", "pi", "delta"),
     "links" = parse.links(links, c(mu = "log", pi = "logit", delta = "log"), ...),
     "bayesx" = list(
-      "mu" = c("zinb_mu", "mean"),
-      "pi" = c("zinb_pi", "pi"),
-      "delta" = c("zinb_delta", "delta")
+      "mu" = c("zinb", "mu"),
+      "pi" = c("zinb", "pi"),
+      "delta" = c("zinb", "delta")
     ),
 	  "mu" = function(eta, ...) {
       eta$mu * (1 - eta$pi)
@@ -1790,9 +1790,9 @@ hurdleNB.bamlss <- function(links = c(mu = "log", pi = "logit", delta = "log"), 
     "names" = c("mu", "delta", "pi"),
     "links" = parse.links(links, c(mu = "log", delta = "log", pi = "logit"), ...),
     "bayesx" = list(
-      "mu" = c("hurdle_mu", "mean"),
-      "delta" = c("hurdle_delta", "delta"),
-	    "pi" = c("hurdle_pi", "pi"),
+      "mu" = c("hurdle", "mu"),
+      "delta" = c("hurdle", "delta"),
+	    "pi" = c("hurdle", "pi"),
 	     "weights" = list(
          "mu" = function(x) { 1 * (x != 0)},
 		     "delta" = function(x) { 1 * (x != 0)}
