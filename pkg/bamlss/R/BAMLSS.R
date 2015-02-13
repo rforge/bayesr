@@ -2687,9 +2687,14 @@ plot.bamlss.effect.default <- function(x, ...) {
   } else {
     if(is.null(args$c.select))
       args$c.select <- grep("50%", colnames(x), fixed = TRUE)
-    do.call("plot3d", delete.args("plot3d", args,
-      c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab", "ticktype",
-      "zlab", "phi", "theta", "r", "d", "scale", "range", "lrange", "pos", "image.map")))
+    if(!is.null(args$slice)) {
+      do.call("sliceplot", delete.args("sliceplot", args,
+        c("xlim", "ylim", "zlim", "main", "xlab", "ylab", "col", "lwd", "lty")))
+    } else {
+      do.call("plot3d", delete.args("plot3d", args,
+        c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab", "ticktype",
+        "zlab", "phi", "theta", "r", "d", "scale", "range", "lrange", "pos", "image.map")))
+    }
   }
 }
 

@@ -1727,6 +1727,7 @@ sliceplot <- function(x, y = NULL, z = NULL, view = 1, c.select = NULL,
     c.select <- if(c.select < 2) 3 else 4 
   if(c.select > ncol(x))
     stop("column number selected in c.select is larger than the number of existing columns in x!")
+  view <- view[1]
   if(is.character(view))
     view <- grep(view, nx, ignore.case = TRUE)
   x <- x[order(x[, view]), ]

@@ -173,7 +173,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
   for(i in ntheta) {
     eta[[i]] <- 0
     for(j in names(theta[[i]]))
-      eta[[i]] <- fitfun[[i]][[j]](data[[i]][[j]], theta[[i]][[j]])
+      eta[[i]] <- eta[[i]] + fitfun[[i]][[j]](data[[i]][[j]], theta[[i]][[j]])
   }
   for(i in ntheta) {
     theta.save[[i]] <- vector(mode = "list", length = length(theta[[i]]))
@@ -201,7 +201,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
       }
       if(is.null(names(p0$parameters)))
         names(p0$parameters) <- paste("[", 1:length(p0$parameters), "]", sep = "")
-      if(length(p0$parameters) < 2)
+      if(length(p0$parameters) < 2 & FALSE) ## FIXME!!!
         names(p0$parameters) <- NULL
       theta.save[[i]][[j]] <- list(
         "samples" = matrix(NA, nrow = length(iterthin), ncol = length(p0$parameters)),
@@ -212,6 +212,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
       theta[[i]][[j]] <- p0$parameters
     }
   }
+
   ll <- rep(NA, length = length(iterthin))
 
   nstep <- step
@@ -612,6 +613,7 @@ gmcmc_iwls <- function(family, theta, id, prior, eta, response, data, ...)
       theta <- set.par(theta, tau2, "tau2")
     }
   }
+
   theta <- set.par(theta, g, "gamma")
 
   ## Compute acceptance probablity.
@@ -759,6 +761,8 @@ gmcmc_newton <- function(fun, theta, id, prior, ...)
   if(args$iteration <= adapt) {
     eps <- attr(theta[[id[1]]][[id[2]]], "eps")
     if(is.null(eps))
+      eps <- 1
+    if(is.na(eps))
       eps <- 1
     if(eps > eps0) {
       theta2 <- theta

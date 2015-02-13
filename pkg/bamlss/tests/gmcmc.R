@@ -16,17 +16,38 @@ d <- list("mu" = cbind(1, dat$x1), "sigma" = cbind(1, dat$x1))
 logLik <- function(mu, sigma, ...) {
   mu <- unlist(mu)
   sigma <- unlist(sigma)
-  dnorm(dat$y, mean = d$mu %*% mu, sd = exp(d$sigma %*% sigma), log = TRUE)
+  ll <- dnorm(dat$y, mean = d$mu %*% mu, sd = exp(d$sigma %*% sigma), log = TRUE)
 }
 
 b0 <- gmcmc(logLik, theta = theta, propose = gmcmc_mvnorm)
 b1 <- gmcmc(logLik, theta = theta, propose = gmcmc_slice)
 b2 <- gmcmc(logLik, theta = theta, propose = c(gmcmc_slice, gmcmc_mvnorm))
+b3 <- gmcmc(logLik, theta = theta, propose = gmcmc_newton)
+
+g <- list(
+  "mu" = function(mu, sigma) {
+    mu <- d$mu %*% unlist(mu)
+    sigma <- exp(d$sigma %*% unlist(sigma))
+    score <- snorm(dat$y, mean = mu, sd = sigma, which = "mu")
+    drop(t(d$mu) %*% score)
+  },
+  "sigma" = function(mu, sigma) {
+    mu <- d$mu %*% unlist(mu)
+    sigma <- exp(d$sigma %*% unlist(sigma))
+    score <- snorm(dat$y, mean = mu, sd = sigma, which = "sigma")
+    score <- score * sigma
+    drop(t(d$sigma) %*% score)
+  }
+)
+
+b4 <- gmcmc(logLik, theta = theta, propose = gmcmc_newton, gradient = g)
 
 rbind(
   apply(b0, 2, mean),
   apply(b1, 2, mean),
-  apply(b2, 2, mean)
+  apply(b2, 2, mean),
+  apply(b3, 2, mean),
+  apply(b4, 2, mean)
 )
 
 
@@ -123,6 +144,7 @@ points(t, y, col = "blue", lwd = 2)
 b1 <- bamlss(I(y / 100) ~ -1 + s2(t, bs = "gc"), ~ 1 + t, method = "MCMC")
 b2 <- bamlss(I(y / 100) ~ -1 + s2(t, bs = "gc"), ~ 1 + t, engine = "JAGS",
   n.iter = 12000, burnin = 2000, thin = 10)
+b3 <- bamlss0(I(y / 100) ~ s(t), ~ 1 + t)
 
 nd <- data.frame("y" = y / 100, "t" = t)
 nd$p1 <- predict(b1, model = 1, FUN = function(x) { quantile(x, probs = c(0.025, 0.975)) })
@@ -184,14 +206,14 @@ matplot(mcycle$times, f, type = "l", lty = c(2, 1, 2), col = 1, add = TRUE)
 
 
 ## Simple example.
-y <- rnorm(500, mean = 1)
+y <- rnorm(500, mean = 10, sd = 2)
 
 logpost = function(theta) {
   theta <- unlist(theta)
   ll <- sum(dnorm(y, mean = theta[1], sd = exp(theta[2]), log = TRUE))
 }
 
-snorm <- function(x, mean = 0, sd = 1, which = c("mu", "sigma"), log = TRUE)
+snorm <- function(x, mean = 0, sd = 1, which = c("mu", "sigma"))
 {
   if(!is.character(which))
     which <- c("mu", "sigma")[as.integer(which)]
@@ -203,53 +225,104 @@ snorm <- function(x, mean = 0, sd = 1, which = c("mu", "sigma"), log = TRUE)
     if(w == "mu")
       score <- cbind(score, dxm / sd2)
     if(w == "sigma")
-      score <- cbind(score, 0.5 * (dxm^2 / sd2 - 1))
+      score <- cbind(score, (dxm^2 - sd2) / sd^3)
   }
   if(is.null(dim(score)))
     score <- matrix(score, ncol = 1)
-  if(!log)
-    score <- exp(score)
   colnames(score) <- paste("d", which, sep = "")
   score
 }
 
-gnorm <- list("theta" = function(theta) {
+hnorm <- function(x, mean = 0, sd = 1, which = c("mu", "sigma"))
+{
+  if(!is.character(which))
+    which <- c("mu", "sigma", "mu.sigma", "sigma.mu")[as.integer(which)]
+  which <- tolower(which)
+  n <- length(x)
+  hess <- list()
+  sd2 <- sd^2
+  for(w in which) {
+    if(w == "mu")
+      hess[[w]] <- rep(-1 / sd2, length.out = n)
+    if(w == "sigma")
+      hess[[w]] <- (sd2 - 3 * (x - mean)^2) / sd2^2
+    if(w == "mu.sigma")
+      hess[[w]] <- -2 * (x - mean) / sd^3
+    if(w == "sigma.mu")
+      hess[[w]] <- 2 * (mean - x) / sd^3
+  }
+  hess <- do.call("cbind", hess)
+  colnames(hess) <- gsub("mu", "dmu", colnames(hess))
+  colnames(hess) <- gsub("sigma", "dsigma", colnames(hess))
+  colnames(hess)[colnames(hess) == "dmu"] <- "d2mu"
+  colnames(hess)[colnames(hess) == "dsigma"] <- "d2sigma"
+  hess
+}
+
+fnorm <- function(x, mean = 0, sd = 1, which = c("mu", "sigma"))
+{
+  if(!is.character(which))
+    which <- c("mu", "sigma", "mu.sigma", "sigma.mu")[as.integer(which)]
+  which <- tolower(which)
+  n <- length(x)
+  fish <- list()
+  sd2 <- sd^2
+  for(w in which) {
+    if(w == "mu")
+      fish[[w]] <- rep(1 / sd2, length.out = n)
+    if(w == "sigma")
+      fish[[w]] <- rep(2 / sd2, length.out = n)
+    if(w %in% c("mu.sigma", "sigma.mu"))
+      fish[[w]] <- 0
+  }
+  fish <- do.call("cbind", fish)
+  colnames(fish) <- gsub("mu", "dmu", colnames(fish))
+  colnames(fish) <- gsub("sigma", "dsigma", colnames(fish))
+  colnames(fish)[colnames(fish) == "dmu"] <- "d2mu"
+  colnames(fish)[colnames(fish) == "dsigma"] <- "d2sigma"
+  fish
+}
+
+g <- list("theta" = function(theta) {
   theta <- unlist(theta)
   mu <- theta[1]
   sigma <- exp(theta[2])
-  score <- apply(snorm(y, mean = mu, sd = sigma), 2, sum)
+  score <- snorm(y, mean = mu, sd = sigma)
+  score[, "dsigma"] <- score[, "dsigma"] * sigma
+  score <- colSums(score)
   return(score)
 })
 
-hnorm <- list("theta" = function(theta) {
+h <- list("theta" = function(theta) {
   theta <- unlist(theta)
-  n <- length(y)
   mu <- theta[1]
-  sigma2 <- exp(theta[2])
-  symu <- sum(y - mu) / sigma2
-  H = cbind(
-    c(n, symu),
-    c(symu, 1 / (sigma2^2) * sum((y - mu)^2) - n / (2 * sigma2))
-  )
-  rownames(H) <- colnames(H) <- c("mu", "sigma2")
-  H
+  sigma <- exp(theta[2])
+  hess <- hnorm(y, mean = mu, sd = sigma,
+    which = c("mu", "mu.sigma", "sigma.mu", "sigma"))
+  hess[, "dmu.dsigma"] <- hess[, "dsigma.dmu"] * sigma
+  hess[, "d2sigma"] <- hess[, "d2sigma"] * sigma^2
+  hess <- colSums(hess)
+  hess <- matrix(hess, 2, 2, byrow = TRUE)
+  rownames(hess) <- colnames(hess) <- c("mu", "sigma")
+  return(-1 * hess)
 })
 
-fnorm <- list("theta" = function(theta) {
+f <- list("theta" = function(theta) {
   theta <- unlist(theta)
-  n <- length(y)
-  sigma2 <- exp(theta[2])
-  F = cbind(
-    c(n / sigma2, 0),
-    c(0, n / (2 * sigma2))
-  )
-  rownames(F) <- colnames(F) <- c("mu", "sigma2")
-  F
+  mu <- theta[1]
+  sigma <- exp(theta[2])
+  fish <- fnorm(y, mean = mu, sd = sigma,
+    which = c("mu", "mu.sigma", "sigma.mu", "sigma"))
+  fish[, "d2sigma"] <- fish[, "d2sigma"] * sigma^2
+  fish <- colSums(fish)
+  fish <- matrix(fish, 2, 2, byrow = TRUE)
+  rownames(fish) <- colnames(fish) <- c("mu", "sigma")
+  return(fish)
 })
 
-theta <- c("mu" = 0, "sigma2" = 0)
+theta <- c("mu" = 10, "sigma" = 0.6)
 
-b <- gmcmc(logpost, theta = theta, propose = gmcmc_newton, gradient = gnorm)
+b <- gmcmc(logpost, theta = theta, propose = gmcmc_newton, gradient = g, hessian = f)
 
 apply(b, 2, mean)
 
