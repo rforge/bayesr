@@ -1,17 +1,17 @@
 library("bamlss")
 
 ## pick function
-f <- simfun(type = "complicated")
+f <- simfun(type = "pick")
 
 set.seed(111)
 n <- 1000
 dat <- data.frame("x1" = sort(runif(n, 0, 1)))
-dat$y <- with(dat, 1.2 + 0.4 * x1 + rnorm(n, sd = exp(-1 + 0.3 * x1)))
+dat$y <- with(dat, 1.2 + f(x1) + rnorm(n, sd = exp(-1 + 0.3 * x1)))
 
 theta <- list("mu" = c(-10, 20), "sigma" = rep(0, 2))
 d <- list("mu" = cbind(1, dat$x1), "sigma" = cbind(1, dat$x1))
 
-## b <- bamlss0(y ~ s(x1), ~ s(x1), data = dat)
+## b <- bamlss0(y ~ s(x1), ~ s(x1), data = dat, n.iter = 1200, burnin = 200, thin = 1)
 
 logLik <- function(mu, sigma, ...) {
   mu <- unlist(mu)
@@ -213,76 +213,6 @@ logpost = function(theta) {
   ll <- sum(dnorm(y, mean = theta[1], sd = exp(theta[2]), log = TRUE))
 }
 
-snorm <- function(x, mean = 0, sd = 1, which = c("mu", "sigma"))
-{
-  if(!is.character(which))
-    which <- c("mu", "sigma")[as.integer(which)]
-  which <- tolower(which)
-  score <- NULL
-  dxm <- x - mean
-  sd2 <- sd^2
-  for(w in which) {
-    if(w == "mu")
-      score <- cbind(score, dxm / sd2)
-    if(w == "sigma")
-      score <- cbind(score, (dxm^2 - sd2) / sd^3)
-  }
-  if(is.null(dim(score)))
-    score <- matrix(score, ncol = 1)
-  colnames(score) <- paste("d", which, sep = "")
-  score
-}
-
-hnorm <- function(x, mean = 0, sd = 1, which = c("mu", "sigma"))
-{
-  if(!is.character(which))
-    which <- c("mu", "sigma", "mu.sigma", "sigma.mu")[as.integer(which)]
-  which <- tolower(which)
-  n <- length(x)
-  hess <- list()
-  sd2 <- sd^2
-  for(w in which) {
-    if(w == "mu")
-      hess[[w]] <- rep(-1 / sd2, length.out = n)
-    if(w == "sigma")
-      hess[[w]] <- (sd2 - 3 * (x - mean)^2) / sd2^2
-    if(w == "mu.sigma")
-      hess[[w]] <- -2 * (x - mean) / sd^3
-    if(w == "sigma.mu")
-      hess[[w]] <- 2 * (mean - x) / sd^3
-  }
-  hess <- do.call("cbind", hess)
-  colnames(hess) <- gsub("mu", "dmu", colnames(hess))
-  colnames(hess) <- gsub("sigma", "dsigma", colnames(hess))
-  colnames(hess)[colnames(hess) == "dmu"] <- "d2mu"
-  colnames(hess)[colnames(hess) == "dsigma"] <- "d2sigma"
-  hess
-}
-
-fnorm <- function(x, mean = 0, sd = 1, which = c("mu", "sigma"))
-{
-  if(!is.character(which))
-    which <- c("mu", "sigma", "mu.sigma", "sigma.mu")[as.integer(which)]
-  which <- tolower(which)
-  n <- length(x)
-  fish <- list()
-  sd2 <- sd^2
-  for(w in which) {
-    if(w == "mu")
-      fish[[w]] <- rep(1 / sd2, length.out = n)
-    if(w == "sigma")
-      fish[[w]] <- rep(2 / sd2, length.out = n)
-    if(w %in% c("mu.sigma", "sigma.mu"))
-      fish[[w]] <- 0
-  }
-  fish <- do.call("cbind", fish)
-  colnames(fish) <- gsub("mu", "dmu", colnames(fish))
-  colnames(fish) <- gsub("sigma", "dsigma", colnames(fish))
-  colnames(fish)[colnames(fish) == "dmu"] <- "d2mu"
-  colnames(fish)[colnames(fish) == "dsigma"] <- "d2sigma"
-  fish
-}
-
 g <- list("theta" = function(theta) {
   theta <- unlist(theta)
   mu <- theta[1]
@@ -297,10 +227,11 @@ h <- list("theta" = function(theta) {
   theta <- unlist(theta)
   mu <- theta[1]
   sigma <- exp(theta[2])
+  score <- snorm(y, mean = mu, sd = sigma, which = "sigma")
   hess <- hnorm(y, mean = mu, sd = sigma,
     which = c("mu", "mu.sigma", "sigma.mu", "sigma"))
   hess[, "dmu.dsigma"] <- hess[, "dsigma.dmu"] * sigma
-  hess[, "d2sigma"] <- hess[, "d2sigma"] * sigma^2
+  hess[, "d2sigma"] <- hess[, "d2sigma"] * sigma^2 + sigma * score
   hess <- colSums(hess)
   hess <- matrix(hess, 2, 2, byrow = TRUE)
   rownames(hess) <- colnames(hess) <- c("mu", "sigma")
@@ -322,7 +253,7 @@ f <- list("theta" = function(theta) {
 
 theta <- c("mu" = 10, "sigma" = 0.6)
 
-b <- gmcmc(logpost, theta = theta, propose = gmcmc_newton, gradient = g, hessian = f)
+b <- gmcmc(logpost, theta = theta, propose = gmcmc_newton, gradient = g, hessian = h)
 
 apply(b, 2, mean)
 

@@ -20,6 +20,19 @@ family.bamlss <- function(object, ...)
 ## Second make.link function.
 make.link2 <- function(link)
 {
+  link0 <- link
+  dlinks <- function(x) {
+    if(link0 == "identity") {
+      x$d2link <- function(mu) rep.int(0, length(mu))
+      return(x)
+    }
+    if(link0 == "log") {
+      x$d2link <- function(mu) exp(mu)
+      return(x)
+    }
+    stop(paste('higher derivatives of link "', link, '" not available!', sep = ''), call. = FALSE)
+  }
+
   if(link %in% c("logit", "probit", "cauchit", "cloglog", "identity",
                  "log", "sqrt", "1/mu^2", "inverse")) {
     rval <- make.link(link)
@@ -43,6 +56,7 @@ make.link2 <- function(link)
     )
   }
   
+  rval <- dlinks(rval)
   rval$name <- link
   rval
 }
@@ -422,47 +436,6 @@ gaussian.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
   )
   
   class(rval) <- "family.bamlss"
-  rval
-}
-
-
-gaussian3.bamlss <- function(links = c(mu = "identity", sigma2 = "log"), ...)
-{
-  links <- parse.links(links, c(mu = "identity", sigma2 = "log"), ...)
-  mu.eta <- linkfun <- list()
-  for(j in names(links)) {
-    mu.eta[[j]] <- make.link2(links[j])$mu.eta
-    linkfun[[j]] <- make.link2(links[j])$linkfun
-  }
-  
-  rval <- list(
-    "family" = "gaussian3",
-    "names" = c("mu", "sigma2"),
-    "links" = links,
-    "score" = list(
-      "mu" = function(y, eta, ...) {
-        with(eta, drop((y - mu) / sigma2) * mu.eta$mu(linkfun$mu(mu)))
-       },
-      "sigma2" = function(y, eta, ...) {
-        dlink <- mu.eta$sigma2(linkfun$sigma2(eta$sigma2))
-        with(eta, (dlink * ((y - mu)^2 - sigma2)) / (2 * sigma2^2))
-      }
-    ),
-    "weights" = list(
-      "mu" = function(y, eta, ...) { drop(1 / eta$sigma2) },
-      "sigma2" = function(y, eta, ...) { rep(0.5, length(y)) }
-    ),
-    "d" = function(y, eta, log = FALSE, ...) {
-      dnorm(y, mean = eta$mu, sd = sqrt(eta$sigma2), log = log, ...)
-    },
-    "p" = function(y, eta, ...) {
-      pnorm(y, mean = eta$mu, sd = sqrt(eta$sigma2), ...)
-    },
-    "type" = 1
-  )
- 
-  class(rval) <- "family.bamlss"
-
   rval
 }
 
@@ -2116,5 +2089,167 @@ as.indicator.matrix <- function(x)
   X[(1:n) + n*(unclass(x) - 1)] <- 1
   dimnames(X) <- list(names(x), levels(x))
   X
+}
+
+
+#####################################
+## New family specifictaion setup. ##
+#####################################
+##############################################
+## (1) Score, hessian and fisher functions. ##
+##############################################
+##########################
+## Normal distribution. ##
+##########################
+snorm <- function(x, mean = 0, sd = 1, which = c("mu", "sigma"))
+{
+  if(!is.character(which))
+    which <- c("mu", "sigma")[as.integer(which)]
+  which <- tolower(which)
+  score <- NULL
+  dxm <- x - mean
+  sd2 <- sd^2
+  for(w in which) {
+    if(w == "mu")
+      score <- cbind(score, dxm / sd2)
+    if(w == "sigma")
+      score <- cbind(score, (dxm^2 - sd2) / sd^3)
+  }
+  if(is.null(dim(score)))
+    score <- matrix(score, ncol = 1)
+  colnames(score) <- paste("d", which, sep = "")
+  score
+}
+
+hnorm <- function(x, mean = 0, sd = 1, which = c("mu", "sigma"))
+{
+  if(!is.character(which))
+    which <- c("mu", "sigma", "mu.sigma", "sigma.mu")[as.integer(which)]
+  which <- tolower(which)
+  n <- length(x)
+  hess <- list()
+  sd2 <- sd^2
+  for(w in which) {
+    if(w == "mu")
+      hess[[w]] <- rep(-1 / sd2, length.out = n)
+    if(w == "sigma")
+      hess[[w]] <- (sd2 - 3 * (x - mean)^2) / sd2^2
+    if(w == "mu.sigma")
+      hess[[w]] <- -2 * (x - mean) / sd^3
+    if(w == "sigma.mu")
+      hess[[w]] <- 2 * (mean - x) / sd^3
+  }
+  hess <- do.call("cbind", hess)
+  colnames(hess) <- gsub("mu", "dmu", colnames(hess))
+  colnames(hess) <- gsub("sigma", "dsigma", colnames(hess))
+  colnames(hess)[colnames(hess) == "dmu"] <- "d2mu"
+  colnames(hess)[colnames(hess) == "dsigma"] <- "d2sigma"
+  hess
+}
+
+fnorm <- function(x, mean = 0, sd = 1, which = c("mu", "sigma"))
+{
+  if(!is.character(which))
+    which <- c("mu", "sigma", "mu.sigma", "sigma.mu")[as.integer(which)]
+  which <- tolower(which)
+  n <- length(x)
+  fish <- list()
+  sd2 <- sd^2
+  for(w in which) {
+    if(w == "mu")
+      fish[[w]] <- rep(1 / sd2, length.out = n)
+    if(w == "sigma")
+      fish[[w]] <- rep(2 / sd2, length.out = n)
+    if(w %in% c("mu.sigma", "sigma.mu"))
+      fish[[w]] <- 0
+  }
+  fish <- do.call("cbind", fish)
+  colnames(fish) <- gsub("mu", "dmu", colnames(fish))
+  colnames(fish) <- gsub("sigma", "dsigma", colnames(fish))
+  colnames(fish)[colnames(fish) == "dmu"] <- "d2mu"
+  colnames(fish)[colnames(fish) == "dsigma"] <- "d2sigma"
+  fish
+}
+
+
+###################################
+## (2) Family creator functions. ##
+###################################
+get.dist <- function(distribution = "norm")
+{
+  ddist <- get(paste("d", distribution, sep = ""))
+  pdist <- try(get(paste("p", distribution, sep = "")), silent = TRUE)
+  if(inherits(pdist, "try-error"))
+    pdist <- NULL
+  qdist <- try(get(paste("q", distribution, sep = "")), silent = TRUE)
+  if(inherits(qdist, "try-error"))
+    qdist <- NULL
+  rdist <- try(get(paste("r", distribution, sep = "")), silent = TRUE)
+  if(inherits(pdist, "try-error"))
+    rdist <- NULL
+  sdist <- try(get(paste("s", distribution, sep = "")), silent = TRUE)
+  if(inherits(sdist, "try-error"))
+    sdist <- NULL
+  hdist <- try(get(paste("h", distribution, sep = "")), silent = TRUE)
+  if(inherits(hdist, "try-error"))
+    hdist <- NULL
+  fdist <- try(get(paste("f", distribution, sep = "")), silent = TRUE)
+  if(inherits(fdist, "try-error"))
+    fdist <- NULL
+  dist <- list("d" = ddist, "p" = pdist, "q" = qdist, "r" = rdist,
+    "s" = sdist, "h" = hdist, "f" = fdist)
+  return(dist)
+}
+
+
+gaussian5.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
+{
+  links <- parse.links(links, c(mu = "identity", sigma = "log"), ...)
+  lfun <- list()
+  for(j in names(links))
+    lfun[[j]] <- make.link2(links[j])
+
+  rval <- list(
+    "family" = "gaussian",
+    "names" = c("mu", "sigma"),
+    "links" = links,
+    "score" = list(
+      "mu" = function(y, eta, ...) {
+        mu <- lfun$mu$linkfun(eta$mu)
+        drop(snorm(y, mean = eta$mu, sd = eta$sigma, which = 1) * lfun$mu$mu.eta(mu))
+      },
+      "sigma" = function(y, eta, ...) {
+        sigma <- lfun$sigma$linkfun(eta$sigma)
+        drop(snorm(y, mean = eta$mu, sd = eta$sigma, which = 2) * lfun$sigma$mu.eta(sigma))
+      }
+    ),
+    "weights" = list(
+      "mu" = function(y, eta, ...) {
+        mu <- lfun$mu$linkfun(eta$mu)
+        w <- -1 * drop(snorm(y, mean = eta$mu, sd = eta$sigma, which = 1) * lfun$mu$d2link(mu) +
+          hnorm(y, mean = eta$mu, sd = eta$sigma, which = 1) * lfun$mu$mu.eta(mu)^2)
+        w
+      },
+      "sigma" = function(y, eta, ...) {
+        sigma <- lfun$sigma$linkfun(eta$sigma)
+        w <- -1 * drop(snorm(y, mean = eta$mu, sd = eta$sigma, which = 2) * lfun$sigma$d2link(sigma) +
+          hnorm(y, mean = eta$mu, sd = eta$sigma, which = 2) * lfun$sigma$mu.eta(sigma)^2)
+        w
+      }
+    ),
+    "mu" = function(eta, ...) {
+      eta$mu
+    },
+    "d" = function(y, eta, log = FALSE) {
+      dnorm(y, mean = eta$mu, sd = eta$sigma, log = log)
+    },
+    "p" = function(y, eta, ...) {
+      pnorm(y, mean = eta$mu, sd = eta$sigma, ...)
+    },
+    "type" = 1
+  )
+  
+  class(rval) <- "family.bamlss"
+  rval
 }
 

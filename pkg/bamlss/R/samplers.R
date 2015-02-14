@@ -797,7 +797,13 @@ gmcmc_newton <- function(fun, theta, id, prior, ...)
     theta2 <- theta
 
     grad.theta <- grad(fun, theta, prior, id, args)
-    hess.theta <- hess(fun, theta, prior, id, args, diag = TRUE)
+    hess.theta <- hess(fun, theta, prior, id, args, diag = FALSE)
+args$hessian <- NULL
+    hess.theta2 <- hess(fun, theta, prior, id, args, diag = FALSE)
+
+print(hess.theta)
+print(hess.theta2)
+stop()
 
     Sigma <- matrix_inv(hess.theta)
     mu <- drop(theta[[id[1]]][[id[2]]] + Sigma %*% grad.theta)
