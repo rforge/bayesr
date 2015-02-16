@@ -21,13 +21,42 @@ family.bamlss <- function(object, ...)
 make.link2 <- function(link)
 {
   link0 <- link
-  dlinks <- function(x) {
+  mu.eta2 <- function(x) {
     if(link0 == "identity") {
-      x$d2link <- function(mu) rep.int(0, length(mu))
+      x$mu.eta2 <- function(eta) rep.int(0, length(eta))
       return(x)
     }
     if(link0 == "log") {
-      x$d2link <- function(mu) exp(mu)
+      x$mu.eta2 <- function(eta) exp(eta)
+      return(x)
+    }
+    if(link0 == "logit") {
+      x$mu.eta2 <- function(eta) {
+        eta <- exp(eta)
+        return(-eta * (eta - 1) / (eta + 1)^3)
+      }
+      return(x)
+    }
+    if(link0 == "probit") {
+      x$mu.eta2 <- function(eta) {
+        -eta * dnorm(eta, mean = 0, sd = 1)
+      }
+      return(x)
+    }
+    if(link0 == "inverse") {
+      x$mu.eta2 <- function(eta) {
+        2 / (eta^3)
+      }
+      return(x)
+    }
+    if(link0 == "1/mu^2") {
+      x$mu.eta2 <- function(eta) {
+        0.75 / eta^(2.5)
+      }
+      return(x)
+    }
+    if(link0 == "sqrt") {
+      x$mu.eta2 <- function(eta) { rep(2, length = length(eta)) }
       return(x)
     }
     stop(paste('higher derivatives of link "', link, '" not available!', sep = ''), call. = FALSE)
@@ -56,7 +85,7 @@ make.link2 <- function(link)
     )
   }
   
-  rval <- dlinks(rval)
+  rval <- mu.eta2(rval)
   rval$name <- link
   rval
 }
@@ -2226,13 +2255,13 @@ gaussian5.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
     "weights" = list(
       "mu" = function(y, eta, ...) {
         mu <- lfun$mu$linkfun(eta$mu)
-        w <- -1 * drop(snorm(y, mean = eta$mu, sd = eta$sigma, which = 1) * lfun$mu$d2link(mu) +
+        w <- -1 * drop(snorm(y, mean = eta$mu, sd = eta$sigma, which = 1) * lfun$mu$mu.eta2(mu) +
           hnorm(y, mean = eta$mu, sd = eta$sigma, which = 1) * lfun$mu$mu.eta(mu)^2)
         w
       },
       "sigma" = function(y, eta, ...) {
         sigma <- lfun$sigma$linkfun(eta$sigma)
-        w <- -1 * drop(snorm(y, mean = eta$mu, sd = eta$sigma, which = 2) * lfun$sigma$d2link(sigma) +
+        w <- -1 * drop(snorm(y, mean = eta$mu, sd = eta$sigma, which = 2) * lfun$sigma$mu.eta2(sigma) +
           hnorm(y, mean = eta$mu, sd = eta$sigma, which = 2) * lfun$sigma$mu.eta(sigma)^2)
         w
       }

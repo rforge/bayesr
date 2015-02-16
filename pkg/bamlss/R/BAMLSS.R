@@ -523,8 +523,9 @@ bamlss.family <- function(family, type = "bamlss")
   family <- if(is.function(family)) family() else {
     if(is.character(family)) {
       if(!is.null(type)) {
-        if(!grepl(type, family))
-          family <- paste(family, type, sep = ".")
+        if(!grepl("gF(", family, fixed = TRUE) & !grepl("gF2(", family, fixed = TRUE))
+          if(!grepl(type, family))
+            family <- paste(family, type, sep = ".")
       }
       family <- eval(parse(text = family[1]))
       if(is.function(family))
