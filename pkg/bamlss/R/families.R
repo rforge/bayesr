@@ -1660,7 +1660,7 @@ zip.bamlss <- function(links = c(lambda = "log", pi = "logit"), ...)
     "names" = c("lambda", "pi"),
     "links" = parse.links(links, c(lambda = "log", pi = "logit"), ...),
     "bayesx" = list(
-      "lambda" = c("zip", "mu"),
+      "lambda" = c("zip", "lambda"),
       "pi" = switch(links["pi"],
         "logit" = c("zip", "pi"),
         "cloglog2" = c("zip", "pi")

@@ -417,7 +417,7 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
                 ok <- FALSE
               }
             }
-            if(x[[j]]$hlevel < 2 & any(grepl("mu", family$bayesx[[nx[if(is.null(id)) j else id]]]))) {
+            if(x[[j]]$hlevel < 2 & (if(is.null(id)) j else id)  < 2) {
               if(any(grepl("predict", names(control$prg))) & !zero) {
                 teqn <- paste(teqn, " predict=", control$prg$predict, " setseed=", control$prg$setseed, sep = "")
               }
@@ -692,7 +692,6 @@ process_mfile <- function(x)
     "a", "b", "p", "df", "rho", "lambda", "alpha", "nu")
 
   ft <- sapply(strsplit(family, "_"), function(x) {
-    x <- gsub("zip", "lambda", x)
     if(length(x) > 1) {
       if(x[2] %in% known_paramaters) x[2] else x[1]
     } else x
@@ -763,7 +762,10 @@ resultsBayesX <- function(x, samples, ...)
         "poisson" = function(x) {
           gsub("poissonmu", "poissonlambda", x)
         },
-        "zip" = function(x) gsub("zip", "lambda", x),
+        "zip" = function(x) {
+          ## gsub("zip", "lambda", x)
+          x
+        },
         "dirichlet" = function(x) {
           x <- gsub("dirichletmean", "dirichletalpha1", x)
           x <- gsub("dirichletalpha", "alpha", x)
@@ -1038,10 +1040,11 @@ resultsBayesX <- function(x, samples, ...)
       }
       class(rval[[nx[j]]]) <- "bamlss"
     }
-    if(length(nx) > 1)
-      names(rval) <- fn
-    else
-      rval <- rval[[1]]
+#    if(length(nx) > 1)
+#      names(rval) <- fn
+#    else
+#      rval <- rval[[1]]
+    names(rval) <- fn
     attr(rval, "fixed.names") <- TRUE
     class(rval) <- "bamlss"
     return(rval)

@@ -3292,7 +3292,6 @@ fitted.bamlss <- function(object, model = NULL, term = NULL,
   }
 
   rval <- delete.NULLs(rval)
-
   if(length(rval) < 2)
     rval <- rval[[1]]
 
