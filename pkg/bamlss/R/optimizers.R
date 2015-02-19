@@ -96,7 +96,8 @@ optimizer.setup <- function(x, update = "iwls2", ...)
             "bs.dim" = ncol(x$X),
             "fixed" = TRUE,
             "is.parametric" = TRUE,
-            "by" = "NA"
+            "by" = "NA",
+            "xt" = list("xbin" = x$binning)
           )
           x$sterms <- c(x$strems, "parametric")
           x$X <- NULL
@@ -213,11 +214,27 @@ set.par <- function(x, replacement, what) {
 ## The default method.
 smooth.bamlss.default <- function(x, ...)
 {
+  if(is.null(x$xbin.ind) & !is.null(x$xt$xbin)) {
+    x$xbin.order <- order(x$X)
+    ind <- apply(x$X[x$xbin.order, , drop = FALSE], 1, function(num) {
+      paste(format(num, digits = x$xt$xbin, nsmall = x$xt$xbin), collapse = ",", sep = "")
+    })
+    uind <- unique(ind)
+    x$xbin.ind <- rep(NA, nrow(x$X))
+    xbin.uind <- seq_along(uind)
+    for(ii in xbin.uind)
+      x$xbin.ind[ind == uind[ii]] <- ii
+    x$xbin.k <- length(xbin.uind)
+    x$xbin.sind <- x$xbin.ind
+    x$xbin.ind <- x$xbin.ind[order(x$xbin.order)]
+  }
   if(!is.null(x$xbin.ind)) {
     x$X <- unique(x$X[x$xbin.order, , drop = FALSE])
   } else {
     x$xbin.k <- nrow(x$X)
     x$xbin.ind <- 1:x$xbin.k
+    x$xbin.sind <- 1:x$xbin.k
+    x$xbin.order <- 1:x$xbin.k
   }
   x$weights <- rep(0, length = x$xbin.k)
   x$rres <- rep(0, length = x$xbin.k)
@@ -621,7 +638,13 @@ update_iwls2 <- function(x, family, response, eta, id, ...)
 
   ## Compute reduced residuals.
   e <- z - eta[[id]]
-  xbin.fun(x$xbin.sind, weights, e, x$weights, x$rres)
+
+  xbin.fun(x$xbin.sind, weights, e, x$weights, x$rres, x$xbin.order)
+#  for(i in 1:x$xbin.k) {
+#    j <- which(x$xbin.ind == i)
+#    x$weights[i] <- sum(weights[j], na.rm = TRUE)
+#    x$rres[i] <- sum(weights[j] * e[j], na.rm = TRUE)
+#  }
 
   ## Compute mean and precision.
   XWX <- crossprod(x$X, x$X * x$weights)
@@ -791,10 +814,11 @@ opt0 <- function(x, ...)
 }
 
 
-xbin.fun <- function(ind, weights, e, xweights, xrres)
+xbin.fun <- function(ind, weights, e, xweights, xrres, oind)
 {
   .Call("xbin_fun", as.integer(ind), as.numeric(weights), 
-    as.numeric(e), as.numeric(xweights), as.numeric(xrres))
+    as.numeric(e), as.numeric(xweights), as.numeric(xrres),
+    as.integer(oind))
   invisible(NULL)
 }
 

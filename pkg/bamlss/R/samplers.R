@@ -542,8 +542,7 @@ gmcmc_iwls <- function(family, theta, id, prior, eta, response, data, ...)
 
   ## Compute reduced residuals.
   e <- z - eta2
-  xbin.fun(data$xbin.sind, weights, e, data$weights, data$rres)
-
+  xbin.fun(data$xbin.sind, weights, e, data$weights, data$rres, data$xbin.order)
 #  for(i in 1:data$xbin.k) {
 #    j <- which(data$xbin.ind == i)
 #    data$weights[i] <- sum(www <- weights[j], na.rm = TRUE)
@@ -598,7 +597,7 @@ gmcmc_iwls <- function(family, theta, id, prior, eta, response, data, ...)
 
   ## Compute reduced residuals.
   e <- z - eta2
-  xbin.fun(data$xbin.sind, weights, e, data$weights, data$rres)
+  xbin.fun(data$xbin.sind, weights, e, data$weights, data$rres, data$xbin.order)
 #  for(i in 1:data$xbin.k) {
 #    j <- which(data$xbin.ind == i)
 #    data$weights[i] <- sum(www <- weights[j], na.rm = TRUE)

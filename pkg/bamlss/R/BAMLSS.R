@@ -347,6 +347,7 @@ parse.input.bamlss <- function(formula, data = NULL, family = gaussian2.bamlss,
 ## Assign all designs matrices.
 bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FALSE, ...)
 {
+  binning <- if(!binning) NULL else as.integer(binning)
   assign.design <- function(obj, mf) {
     if(!all(c("formula", "fake.formula", "response") %in% names(obj)))
       return(obj)
@@ -355,6 +356,7 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
     obj$X <- model.matrix(as.formula(pf),
       data = mf, contrasts.arg = contrasts, ...)
     obj$pterms <- colnames(obj$X)
+    obj$binning <- binning
     rn <- obj$response
     obj$response.vec <- if(!is.null(rn)) mf[[rn]] else NULL
     no.mgcv <- NULL
@@ -388,21 +390,19 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
             acons <- tsm$xt$center
           tsm$xt$center <- acons
           if(!is.null(tsm$xt$xbin) & !any(apply(mf[tsm$term], 2, is.factor))) {
-            if(tsm$xt$xbin) {
-              xdata <- as.data.frame(mf[tsm$term])
-              tsm$xbin.order <- order(xdata)
-              ind <- apply(xdata[tsm$xbin.order, , drop = FALSE], 1, function(x) {
-                paste(format(x, digits = tsm$xt$xbin, nsmall = tsm$xt$xbin), collapse = ",", sep = "")
-              })
-              uind <- unique(ind)
-              tsm$xbin.ind <- rep(NA, nrow(xdata))
-              xbin.uind <- seq_along(uind)
-              for(ii in xbin.uind)
-                tsm$xbin.ind[ind == uind[ii]] <- ii
-              tsm$xbin.k <- length(xbin.uind)
-              tsm$xbin.sind <- tsm$xbin.ind
-              tsm$xbin.ind <- tsm$xbin.ind[order(tsm$xbin.order)]
-            }
+            xdata <- as.data.frame(mf[tsm$term])
+            tsm$xbin.order <- order(xdata)
+            ind <- apply(xdata[tsm$xbin.order, , drop = FALSE], 1, function(x) {
+              paste(format(x, digits = tsm$xt$xbin, nsmall = tsm$xt$xbin), collapse = ",", sep = "")
+            })
+            uind <- unique(ind)
+            tsm$xbin.ind <- rep(NA, nrow(xdata))
+            xbin.uind <- seq_along(uind)
+            for(ii in xbin.uind)
+              tsm$xbin.ind[ind == uind[ii]] <- ii
+            tsm$xbin.k <- length(xbin.uind)
+            tsm$xbin.sind <- tsm$xbin.ind
+            tsm$xbin.ind <- tsm$xbin.ind[order(tsm$xbin.order)]
           }
           smt <- smoothCon(tsm, mf, knots, absorb.cons = acons)
         } else {

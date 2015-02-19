@@ -604,23 +604,32 @@ SEXP cpos(SEXP p, SEXP K, SEXP pos)
 
 
 /* Compute reduced weights and residuals. */
-void xbin_fun(SEXP ind, SEXP weights, SEXP e, SEXP xweights, SEXP xrres)
+void xbin_fun(SEXP ind, SEXP weights, SEXP e, SEXP xweights, SEXP xrres, SEXP order)
 {
   int i;
   int j = 0;
   int n = length(ind);
+  int k = 0;
 
   double *weightsptr = REAL(weights);
   double *eptr = REAL(e);
   double *xweightsptr = REAL(xweights);
   double *xrresptr = REAL(xrres);
   int *indptr = INTEGER(ind);
+  int *orderptr = INTEGER(order);
+
+  xweightsptr[0] = 0;
+  xrresptr[0] = 0;
 
   for(i = 0; i < n; i++) {
-    if(indptr[i] > (j + 1))
+    if(indptr[i] > (j + 1)) {
       ++j;
-    xweightsptr[j] += weightsptr[i];
-    xrresptr[j] += weightsptr[i] * eptr[i];
+      xweightsptr[j] = 0;
+      xrresptr[j] = 0;
+    }
+    k = orderptr[i] - 1;
+    xweightsptr[j] += weightsptr[k];
+    xrresptr[j] += weightsptr[k] * eptr[k];
   }
 }
 
