@@ -931,7 +931,7 @@ resultsBayesX <- function(x, samples, ...)
 
               X <- sx.smooth[[i]]$basis(attr(x, "model.frame")[1, tn, drop = FALSE])
             
-              get.mu <- function(X, g) {
+              get.mu <- function(X, g, ...) {
                 X %*% as.numeric(g)
               }
 
