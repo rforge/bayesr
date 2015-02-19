@@ -538,22 +538,32 @@ gmcmc_iwls <- function(family, theta, id, prior, eta, response, data, ...)
   p1 <- data$prior(theta)
 
   ## Compute partial predictor.
-  eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values")
+  eta2 <- eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values")
+
+  ## Compute reduced residuals.
+  e <- z - eta2
+  xbin.fun(data$xbin.sind, weights, e, data$weights, data$rres)
+
+#  for(i in 1:data$xbin.k) {
+#    j <- which(data$xbin.ind == i)
+#    data$weights[i] <- sum(www <- weights[j], na.rm = TRUE)
+#    data$rres[i] <- sum(www * e[j], na.rm = TRUE)
+#  }
 
   ## Compute mean and precision.
+  XWX <- crossprod(data$X, data$X * data$weights)
   S <- 0
-  XW <- t(data$X * weights)
   P <- if(data$fixed) {
     if(k <- ncol(data$X) < 2) {
-      1 / (XW %*% data$X)
-    } else chol2inv(chol(XW %*% data$X))
+      1 / XWX
+    } else chol2inv(chol(XWX))
   } else {
     for(j in seq_along(data$S))
       S <- S + 1 / get.par(theta, "tau2")[j] * data$S[[j]]
-    chol2inv(chol(XW %*% data$X + S))
+    chol2inv(chol(XWX + S))
   }
   P[P == Inf] <- 0
-  M <- P %*% (XW %*% (z - eta[[id[1]]]))
+  M <- P %*% crossprod(data$X, data$rres)
 
   ## Save old coefficients
   g0 <- drop(get.par(theta, "gamma"))
@@ -586,17 +596,26 @@ gmcmc_iwls <- function(family, theta, id, prior, eta, response, data, ...)
   ## New working observations.
   z <- eta[[id[1]]] + 1 / weights * score
 
+  ## Compute reduced residuals.
+  e <- z - eta2
+  xbin.fun(data$xbin.sind, weights, e, data$weights, data$rres)
+#  for(i in 1:data$xbin.k) {
+#    j <- which(data$xbin.ind == i)
+#    data$weights[i] <- sum(www <- weights[j], na.rm = TRUE)
+#    data$rres[i] <- sum(www * e[j], na.rm = TRUE)
+#  }
+
   ## Compute mean and precision.
-  XW <- t(data$X * weights)
+  XWX <- crossprod(data$X, data$X * data$weights)
   P2 <- if(data$fixed) {
     if(k < 2) {
-      1 / (XW %*% data$X)
-    } else chol2inv(chol(XW %*% data$X))
+      1 / (XWX)
+    } else chol2inv(chol(XWX))
   } else {
-    chol2inv(L <- chol(P0 <- XW %*% data$X + S))
+    chol2inv(L <- chol(P0 <- XWX + S))
   }
   P2[P2 == Inf] <- 0
-  M2 <- P2 %*% (XW %*% (z - (eta[[id[1]]] - attr(theta, "fitted.values"))))
+  M2 <- P2 %*% crossprod(data$X, data$rres)
 
   ## Get the log prior.
   qbeta <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)

@@ -36,7 +36,7 @@
 ## possible parametric terms to the smooth term list in x, also
 ## adds parametric terms of a random effect presentation of smooth
 ## terms to the "parametric" term. It calls the generic function
-## smooth.backfitting(), which adds additional parts to the
+## smooth.bamlss(), which adds additional parts to the
 ## state list, as this could vary for special terms. A default
 ## method is provided.
 optimizer.setup <- function(x, update = "iwls2", ...)
@@ -104,7 +104,7 @@ optimizer.setup <- function(x, update = "iwls2", ...)
       }
       if(length(x$smooth)) {
         for(j in seq_along(x$smooth)) {
-          x$smooth[[j]] <- smooth.backfitting(x$smooth[[j]])
+          x$smooth[[j]] <- smooth.bamlss(x$smooth[[j]])
           if(is.null(x$smooth[[j]]$update))
             x$smooth[[j]]$update <- eval(parse(text = paste("update", update, sep = "_")))
           if(is.null(x$smooth[[j]]$state$optimize))
@@ -170,8 +170,8 @@ optimizer.setup <- function(x, update = "iwls2", ...)
 
 
 ## Generic additional setup function for smooth terms.
-smooth.backfitting <- function(x, ...) {
-  UseMethod("smooth.backfitting")
+smooth.bamlss <- function(x, ...) {
+  UseMethod("smooth.bamlss")
 }
 
 ## Simple extractor function.
@@ -211,8 +211,16 @@ set.par <- function(x, replacement, what) {
 }
 
 ## The default method.
-smooth.backfitting.default <- function(x, ...)
+smooth.bamlss.default <- function(x, ...)
 {
+  if(!is.null(x$xbin.ind)) {
+    x$X <- unique(x$X[x$xbin.order, , drop = FALSE])
+  } else {
+    x$xbin.k <- nrow(x$X)
+    x$xbin.ind <- 1:x$xbin.k
+  }
+  x$weights <- rep(0, length = x$xbin.k)
+  x$rres <- rep(0, length = x$xbin.k)
   state <- if(is.null(x$xt$state)) list() else x$xt$state
   if(is.null(x$fixed))
     x$fixed <- if(!is.null(x$fx)) x$fx[1] else FALSE
@@ -249,10 +257,13 @@ smooth.backfitting.default <- function(x, ...)
     }
   }
   if(is.null(x$get.mu) | !is.function(x$get.mu)) {
-    x$get.mu <- function(X, b) {
+    x$get.mu <- function(X, b, expand = TRUE) {
       if(!is.null(names(b)))
         b <- get.par(b, "gamma")
-      drop(X %*% b)
+      f <- drop(X %*% b)
+      if(!is.null(x$xbin.ind) & expand)
+        f <- f[x$xbin.ind]
+      return(f)
     }
   }
   if(!is.null(x$xt$prior))
@@ -310,7 +321,9 @@ smooth.backfitting.default <- function(x, ...)
           }
         }
       }
-      grad <- drop(crossprod(x$X, score)) + c(grad, grad2)
+      grad <- if(!is.null(x$xbin.ind)) {
+        drop(crossprod(x$X[x$xbin.ind, , drop = FALSE], score)) + c(grad, grad2)
+      } else drop(crossprod(x$X, score)) + c(grad, grad2)
       return(grad)
     }
   } else {
@@ -595,27 +608,25 @@ update_iwls2 <- function(x, family, response, eta, id, ...)
     weights <- family$weights[[id]](response, peta)
   } else weights <- args$weights
 
-  ## Which obs to take.
-  ok <- is.finite(weights) & !is.na(weights) & (weights != 0) ##!(weights %in% c(NA, -Inf, Inf, 0))
-  weights <- weights[ok]
-
-  if(length(weights) == 0) return(x$state)
-
   if(is.null(args$z)) {
     ## Score.
     score <- family$score[[id]](response, peta)
 
     ## Compute working observations.
-    z <- eta[[id]][ok] + 1 / weights * score[ok]
-  } else z <- args$z[ok]
+    z <- eta[[id]] + 1 / weights * score
+  } else z <- args$z
 
   ## Compute partial predictor.
-  eta[[id]][ok] <- eta[[id]][ok] - fitted(x$state)[ok]
+  eta[[id]] <- eta[[id]] - fitted(x$state)
+
+  ## Compute reduced residuals.
+  e <- z - eta[[id]]
+  xbin.fun(x$xbin.sind, weights, e, x$weights, x$rres)
 
   ## Compute mean and precision.
-  XW <- t(x$X[ok, ] * weights)
-  XWX <- XW %*% x$X[ok, ]
-  if(is.null(x$state$optimize) | x$fixed | !is.null(x$sp)) {
+  XWX <- crossprod(x$X, x$X * x$weights)
+
+  if(is.null(x$state$optimize) | x$fixed | !is.null(x$sp) & TRUE) {
     if(x$fixed) {
       P <- matrix_inv(XWX)
     } else {
@@ -625,28 +636,26 @@ update_iwls2 <- function(x, family, response, eta, id, ...)
         S <- S + 1 / tau2[j] * x$S[[j]]
       P <- matrix_inv(XWX + S)
     }
-    x$state$parameters <- set.par(x$state$parameters, drop(P %*% (XW %*% (z - eta[[id]][ok]))), "g")
+    x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "g")
   } else {
     args <- list(...)
     edf0 <- args$edf - x$state$edf
     eta2 <- eta
-    e <- z - eta[[id]][ok]
-
     objfun <- function(tau2, ...) {
       S <- 0
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * x$S[[j]]
       P <- matrix_inv(XWX + S)
       if(inherits(P, "try-error")) return(NA)
-      g <- drop(P %*% (XW %*% e))
+      g <- drop(P %*% crossprod(x$X, x$rres))
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
-      fit <- drop(x$X %*% g)
+      fit <- x$get.mu(x$X, g)
       edf <- sum(diag(P %*% XWX))
       if(!is.null(x$xt$center)) {
         if(x$xt$center) edf <- edf - 1
       }
       eta2[[id]] <- eta2[[id]] + fit
-      IC <- get.ic(family, response, family$map2par(eta2), edf0 + edf, length(e), x$criterion)
+      IC <- get.ic(family, response, family$map2par(eta2), edf0 + edf, length(z), x$criterion)
       return(IC)
     }
     if(length(get.par(x$state, "tau2")) < 2) {
@@ -666,14 +675,14 @@ update_iwls2 <- function(x, family, response, eta, id, ...)
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * x$S[[j]]
     P <- matrix_inv(XWX + S)
-    x$state$parameters <- set.par(x$state$parameters, drop(P %*% (XW %*% e)), "g")
+    x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "g")
   }
 
   ## Compute fitted values.
   g <- get.state(x, "g")
   if(any(is.na(g)) | any(g %in% c(-Inf, Inf)))
     x$state$parameters <- set.par(x$state$parameters, rep(0, length(x$state$g)), "g")
-  x$state$fitted.values <- drop(x$X %*% get.state(x, "g"))
+  x$state$fitted.values <- x$get.mu(x$X, get.state(x, "g"))
   x$state$edf <- sum(diag(P %*% XWX))
   if(!is.null(x$xt$center)) {
     if(x$xt$center) x$state$edf <- x$state$edf - 1
@@ -779,5 +788,13 @@ opt0 <- function(x, ...)
   attr(x, "converged") <- opt$convergence < 1
 
   x
+}
+
+
+xbin.fun <- function(ind, weights, e, xweights, xrres)
+{
+  .Call("xbin_fun", as.integer(ind), as.numeric(weights), 
+    as.numeric(e), as.numeric(xweights), as.numeric(xrres))
+  invisible(NULL)
 }
 

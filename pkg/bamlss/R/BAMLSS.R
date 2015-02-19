@@ -390,13 +390,18 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
           if(!is.null(tsm$xt$xbin) & !any(apply(mf[tsm$term], 2, is.factor))) {
             if(tsm$xt$xbin) {
               xdata <- as.data.frame(mf[tsm$term])
-              ind <- apply(xdata, 1, function(x) {
-                paste(x, collapse = ",", sep = "")
+              tsm$xbin.order <- order(xdata)
+              ind <- apply(xdata[tsm$xbin.order, , drop = FALSE], 1, function(x) {
+                paste(format(x, digits = tsm$xt$xbin, nsmall = tsm$xt$xbin), collapse = ",", sep = "")
               })
               uind <- unique(ind)
               tsm$xbin.ind <- rep(NA, nrow(xdata))
-              for(ii in seq_along(uind))
+              xbin.uind <- seq_along(uind)
+              for(ii in xbin.uind)
                 tsm$xbin.ind[ind == uind[ii]] <- ii
+              tsm$xbin.k <- length(xbin.uind)
+              tsm$xbin.sind <- tsm$xbin.ind
+              tsm$xbin.ind <- tsm$xbin.ind[order(tsm$xbin.order)]
             }
           }
           smt <- smoothCon(tsm, mf, knots, absorb.cons = acons)
@@ -1135,7 +1140,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
 
   ## Compute samples of fitted values.
   fsamples <- apply(psamples, 1, function(g) {
-    get.mu(X, g)
+    get.mu(X, g, expand = FALSE)
   })
 
   if(is.null(FUN)) {
@@ -1516,14 +1521,14 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
       m.samples <- as.data.frame(m.samples)
       m.designs <- as.data.frame(m.designs)
       options("warn" = warn)
-      get.mu <- function(X, b) {
+      get.mu <- function(X, b, ...) {
         as.matrix(X) %*% as.numeric(b)
       }
-      rval <- apply(m.samples, 1, function(x) { get.mu(m.designs, x) })
+      rval <- apply(m.samples, 1, function(x) { get.mu(m.designs, x, expand = FALSE) })
     } else rval <- 0
     if(length(m.specials)) {
       for(i in m.specials) {
-        rval <- rval + apply(i$samples, 1, function(x) { i$get.mu(i$X, x) })
+        rval <- rval + apply(i$samples, 1, function(x) { i$get.mu(i$X, x, expand = FALSE) })
       }
     }
     type <- match.arg(type)
@@ -1615,7 +1620,7 @@ smooth.construct.rsc.smooth.spec <- function(object, data, knots) {
       rval$one <- attr(ft, "intercept")
     }
   } else {
-    rval$get.mu <- function(X, g) {
+    rval$get.mu <- function(X, g, ...) {
       X %*% as.numeric(g)
     }
   }
@@ -1643,11 +1648,11 @@ smooth.construct.gc.smooth.spec <- function(object, data, knots)
     object$fid <- as.integer(by)
     object$byname <- object$by
     object$by <- "NA"
-    object$get.mu <- function(X, g) {
+    object$get.mu <- function(X, g, ...) {
       (g[4] + g[1]) * exp(-(g[5] + g[2]) * exp(-(g[6] + g[3]) * X))
     }
   } else {
-    object$get.mu <- function(X, g) {
+    object$get.mu <- function(X, g, ...) {
       f <- g[1] / (1 + exp(g[2]) * (exp(g[3]) / (1 + exp(g[3])))^(drop(X)))
       if(object$xt$center)
         f <- f - mean(f)
@@ -1816,7 +1821,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     object$interval <- interval
     object$fixed <- all(fixed)
 
-    object$get.mu <- function(X, g) {
+    object$get.mu <- function(X, g, ...) {
       nx <- colnames(X)
       k1 <- length(grep("g1", nx, fixed = TRUE))
       w <- c(1, g[(k1 + 1):(ncol(X) - 1)])
@@ -2630,7 +2635,7 @@ plot.bamlss.effect.default <- function(x, ...) {
       rval
     }
     fit <- apply(samps, 1, function(g) {
-      specs$get.mu(X, g)
+      specs$get.mu(X, g, expand = FALSE)
     })
     fit <- t(apply(fit, 1, FUN))
 

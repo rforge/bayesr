@@ -1151,7 +1151,7 @@ smooth.BayesG.default <- function(x, ...)
   if(is.null(x$xt$step))
     x$xt$step <- 40
   if(is.null(x$get.mu) | !is.function(x$get.mu)) {
-    x$get.mu <- function(X, b) {
+    x$get.mu <- function(X, b, ...) {
       drop(as.matrix(X) %*% as.numeric(b))
     }
   }
@@ -2122,7 +2122,7 @@ resultsBayesG <- function(x, samples)
               }
             }
             if(is.null(obj$smooth[[i]]$get.mu)) {
-              obj$smooth[[i]]$get.mu <- function(X, b) {
+              obj$smooth[[i]]$get.mu <- function(X, b, ...) {
                 drop(X %*% b)
               }
             }

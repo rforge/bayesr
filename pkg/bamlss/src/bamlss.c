@@ -588,7 +588,7 @@ SEXP cpos(SEXP p, SEXP K, SEXP pos)
   xsum = 0;
   ysum = 0;
     
-  for(i = 0; i < n; ++i) {
+  for(i = 0; i < n; i++) {
     tmp = pptr[i] * pptr[i + k + 1] - pptr[i + 1] * pptr[i + k];
     asum += tmp;
     xsum += (pptr[i] + pptr[i + 1]) * tmp;
@@ -600,5 +600,27 @@ SEXP cpos(SEXP p, SEXP K, SEXP pos)
   REAL(pos)[1] = tmp * ysum;
     
   return pos;
+}
+
+
+/* Compute reduced weights and residuals. */
+void xbin_fun(SEXP ind, SEXP weights, SEXP e, SEXP xweights, SEXP xrres)
+{
+  int i;
+  int j = 0;
+  int n = length(ind);
+
+  double *weightsptr = REAL(weights);
+  double *eptr = REAL(e);
+  double *xweightsptr = REAL(xweights);
+  double *xrresptr = REAL(xrres);
+  int *indptr = INTEGER(ind);
+
+  for(i = 0; i < n; i++) {
+    if(indptr[i] > (j + 1))
+      ++j;
+    xweightsptr[j] += weightsptr[i];
+    xrresptr[j] += weightsptr[i] * eptr[i];
+  }
 }
 

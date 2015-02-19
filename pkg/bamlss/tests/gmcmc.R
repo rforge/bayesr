@@ -1,6 +1,5 @@
 library("bamlss")
 
-## pick function
 f <- simfun(type = "pick")
 f2 <- simfun(type = "sinus")
 
