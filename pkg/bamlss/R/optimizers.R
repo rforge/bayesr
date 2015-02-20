@@ -215,22 +215,26 @@ set.par <- function(x, replacement, what) {
 smooth.bamlss.default <- function(x, ...)
 {
   if(is.null(x$xbin.ind) & !is.null(x$xt$xbin)) {
-    x$xbin.order <- order(x$X)
-    ind <- apply(x$X[x$xbin.order, , drop = FALSE], 1, function(num) {
-      paste(format(num, digits = x$xt$xbin, nsmall = x$xt$xbin), collapse = ",", sep = "")
-    })
+    ind <- as.vector(apply(x$X, 1, function(x2) {
+      if(!is.character(x2) & !is.factor(x2)) {
+        if(!is.logical(x$xt$xbin))
+          rval <- format(x2, digits = x$xt$xbin, nsmall = x$xt$xbin)
+        else rval <- sprintf("%.48f", x2)
+      } else rval <- x2
+      paste(rval, collapse = ",", sep = "")
+    }))
     uind <- unique(ind)
+    x$xbin.take <- !duplicated(ind)
     x$xbin.ind <- rep(NA, nrow(x$X))
     xbin.uind <- seq_along(uind)
     for(ii in xbin.uind)
       x$xbin.ind[ind == uind[ii]] <- ii
+    x$xbin.order <- order(x$xbin.ind)
     x$xbin.k <- length(xbin.uind)
-    x$xbin.sind <- x$xbin.ind
-    x$xbin.ind <- x$xbin.ind[order(x$xbin.order)]
+    x$xbin.sind <- x$xbin.ind[x$xbin.order]
+    x$X <- x$X[x$xbin.take, , drop = FALSE]
   }
-  if(!is.null(x$xbin.ind)) {
-    x$X <- unique(x$X[x$xbin.order, , drop = FALSE])
-  } else {
+  if(is.null(x$xbin.ind)) {
     x$xbin.k <- nrow(x$X)
     x$xbin.ind <- 1:x$xbin.k
     x$xbin.sind <- 1:x$xbin.k
@@ -245,8 +249,15 @@ smooth.bamlss.default <- function(x, ...)
     state$interval <- if(is.null(x$xt$interval)) tau2interval(x) else x$xt$interval
   state$grid <- if(is.null(x$xt$grid)) 40 else x$xt$grid
   ntau2 <- length(x$S)
-  if(length(ntau2) < 1)
-    x$sp <- NULL
+  if(length(ntau2) < 1) {
+    if(x$fixed) {
+      x$sp <- 1e+20
+      ntau <- 1
+      x$S <- list(diag(ncol(x$X)))
+    } else {
+      x$sp <- NULL
+    }
+  }
   if(!is.null(x$sp)) {
     x$sp <- rep(x$sp, length.out = ntau2)
     for(j in seq_along(x$sp))
@@ -256,21 +267,23 @@ smooth.bamlss.default <- function(x, ...)
     state$parameters <- rep(0, ncol(x$X))
     names(state$parameters) <- paste("g", 1:length(state$parameters), sep = "")
     if(is.null(x$is.parametric)) {
-      tau2 <- if(is.null(x$sp)) {
-        if(x$fixed) {
-          rep(1e-20, length.out = ntau2)
-        } else {
-          rep(if(!is.null(x$xt$tau2)) {
-            x$xt$tau2
+      if(ntau2 > 0) {
+        tau2 <- if(is.null(x$sp)) {
+          if(x$fixed) {
+            rep(1e+20, length.out = ntau2)
           } else {
-            if(!is.null(x$xt$lambda)) 1 / x$xt$lambda else 100
-          }, length.out = ntau2)
-        }
-      } else rep(x$sp, length.out = ntau2)
-      names(tau2) <- paste("tau2", 1:ntau2, sep = "")
-      state$parameters <- c(state$parameters, tau2)
-      x$a <- if(is.null(x$xt$a)) 1e-04 else x$xt$a
-      x$b <- if(is.null(x$xt$b)) 1e-04 else x$xt$b
+            rep(if(!is.null(x$xt$tau2)) {
+              x$xt$tau2
+            } else {
+              if(!is.null(x$xt$lambda)) 1 / x$xt$lambda else 100
+            }, length.out = ntau2)
+          }
+        } else rep(x$sp, length.out = ntau2)
+        names(tau2) <- paste("tau2", 1:ntau2, sep = "")
+        state$parameters <- c(state$parameters, tau2)
+        x$a <- if(is.null(x$xt$a)) 1e-04 else x$xt$a
+        x$b <- if(is.null(x$xt$b)) 1e-04 else x$xt$b
+      }
     }
   }
   if(is.null(x$get.mu) | !is.function(x$get.mu)) {
@@ -681,7 +694,7 @@ update_iwls2 <- function(x, family, response, eta, id, ...)
       IC <- get.ic(family, response, family$map2par(eta2), edf0 + edf, length(z), x$criterion)
       return(IC)
     }
-    if(length(get.par(x$state, "tau2")) < 2) {
+    if(length(get.state(x, "tau2")) < 2) {
       tau2 <- try(optimize(objfun, interval = x$state$interval, grid = x$state$grid)$minimum, silent = TRUE)
       if(inherits(tau2, "try-error"))
         tau2 <- optimize2(objfun, interval = x$state$interval, grid = x$state$grid)$minimum

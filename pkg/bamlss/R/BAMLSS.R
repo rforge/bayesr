@@ -347,7 +347,8 @@ parse.input.bamlss <- function(formula, data = NULL, family = gaussian2.bamlss,
 ## Assign all designs matrices.
 bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FALSE, ...)
 {
-  binning <- if(!binning) NULL else as.integer(binning)
+  if(!binning)
+    binning <- NULL
   assign.design <- function(obj, mf) {
     if(!all(c("formula", "fake.formula", "response") %in% names(obj)))
       return(obj)
@@ -369,8 +370,12 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
         if(is.null(tsm$xt$xbin))
           tsm$xt$xbin <- binning
         if(!is.null(tsm$xt$xbin)) {
-          if(!is.logical(tsm$xt$xbin) & !any(apply(mf[tsm$term], 2, is.factor)))
-            mf[tsm$term] <- round(mf[tsm$term], digits = tsm$xt$xbin)
+          if(!is.logical(tsm$xt$xbin)) {
+            for(tsmt in tsm$term) {
+              if(!is.factor(mf[[tsmt]]))
+                mf[[tsmt]] <- round(mf[[tsmt]], digits = tsm$xt$xbin)
+            }
+          }
         }
       }
       for(j in obj$smooth) {
@@ -389,22 +394,30 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
           if(!is.null(tsm$xt$center))
             acons <- tsm$xt$center
           tsm$xt$center <- acons
-          if(!is.null(tsm$xt$xbin) & !any(apply(mf[tsm$term], 2, is.factor))) {
-            xdata <- as.data.frame(mf[tsm$term])
-            tsm$xbin.order <- order(xdata)
-            ind <- apply(xdata[tsm$xbin.order, , drop = FALSE], 1, function(x) {
-              paste(format(x, digits = tsm$xt$xbin, nsmall = tsm$xt$xbin), collapse = ",", sep = "")
+          if(!is.null(tsm$xt$xbin)) {
+            term.names <- c(tsm$term, if(tsm$by != "NA") tsm$by else NULL)
+            ind <- lapply(mf[, term.names, drop = FALSE], function(x) {
+              if(!is.character(x) & !is.factor(x)) {
+                if(!is.logical(tsm$xt$xbin))
+                  rval <- format(x, digits = tsm$xt$xbin, nsmall = tsm$xt$xbin)
+                else rval <- sprintf("%.48f", x)
+              } else rval <- x
+              rval
             })
+            ind <- as.vector(apply(do.call("cbind", ind), 1, paste, collapse = ",", sep = ""))
             uind <- unique(ind)
-            tsm$xbin.ind <- rep(NA, nrow(xdata))
+            tsm$xbin.take <- !duplicated(ind)
+            tsm$xbin.ind <- rep(NA, nrow(mf))
             xbin.uind <- seq_along(uind)
             for(ii in xbin.uind)
               tsm$xbin.ind[ind == uind[ii]] <- ii
+            tsm$xbin.order <- order(tsm$xbin.ind)
             tsm$xbin.k <- length(xbin.uind)
-            tsm$xbin.sind <- tsm$xbin.ind
-            tsm$xbin.ind <- tsm$xbin.ind[order(tsm$xbin.order)]
+            tsm$xbin.sind <- tsm$xbin.ind[tsm$xbin.order]
+            smt <- smoothCon(tsm, mf[tsm$xbin.take, term.names, drop = FALSE], knots, absorb.cons = acons)
+          } else {
+            smt <- smoothCon(tsm, mf, knots, absorb.cons = acons)
           }
-          smt <- smoothCon(tsm, mf, knots, absorb.cons = acons)
         } else {
           smt <- smooth.construct(tsm, mf, knots)
           if(inherits(smt, "no.mgcv")) {

@@ -30,6 +30,7 @@ GMCMC <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
     nt <- NULL
     for(j in seq_along(x[[i]]$smooth)) {
       theta[[i]][[j]] <- x[[i]]$smooth[[j]]$state$parameters
+      attr(theta[[i]][[j]], "fitted.values") <- fitted(x[[i]]$smooth[[j]]$state)
       nt <- c(nt, x[[i]]$smooth[[j]]$label)
       smooths[[i]][[j]] <- x[[i]]$smooth[[j]]
       propose2[[i]][[j]] <- if(!is.null(propose)) propose else x[[i]]$smooth[[j]]$propose
@@ -167,6 +168,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
   if(burnin < 1) burnin <- 1
   iterthin <- as.integer(seq(burnin, n.iter, by = thin))
 
+  rho <- new.env()
   theta.save <- vector(mode = "list", length = length(theta))
   names(theta.save) <- names(theta)
   eta <- theta.save
@@ -181,7 +183,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
     for(j in names(theta[[i]])) {
       p0 <- propose[[i]][[j]](fun, theta, id = c(i, j),
         prior = priors[[i]][[j]], data = data[[i]][[j]], eta = eta,
-        iteration = 1, n.iter = n.iter, burnin = burnin, ...)
+        iteration = 1, n.iter = n.iter, burnin = burnin, rho = rho, ...)
       if(!is.list(p0)) {
         stop(paste("the propose() function for block [", i, "][", j,
           "] must return a named list()!", sep = ""))
@@ -256,7 +258,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
         ## Get proposed states.
         state <- propose[[i]][[j]](fun, theta, id = c(i, j),
           prior = priors[[i]][[j]], data = data[[i]][[j]], eta = eta,
-          iteration = iter, n.iter = n.iter, burnin = burnin, ...)
+          iteration = iter, n.iter = n.iter, burnin = burnin, rho = rho, ...)
 
         ## If accepted, set current state to proposed state.
         accepted <- if(is.na(state$alpha)) FALSE else log(runif(1)) <= state$alpha
@@ -512,12 +514,20 @@ gmcmc_slice <- function(fun, theta, id, prior, ...)
   return(list("parameters" = theta[[id[1]]][[id[2]]], "alpha" = log(1)))
 }
 
-
-gmcmc_iwls <- function(family, theta, id, prior, eta, response, data, ...)
+gmcmc_iwls <- function(family, theta, id, prior, eta, response, data, rho, ...)
 {
+  .Call("gmcmc_iwls", family, theta, as.character(id), prior, eta, response, data,
+    attr(theta, "fitted.values"), rho)
+}
+
+gmcmc_iwls2 <- function(family, theta, id, prior, eta, response, data, ...)
+{
+print(attr(theta, "fitted.values"))
   require("mvtnorm")
 
   theta <- theta[[id[1]]][[id[2]]]
+print(attributes(theta))
+stop()
   if(is.null(attr(theta, "fitted.values")))
     attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
 

@@ -37,6 +37,24 @@ SEXP getListElement(SEXP list, const char *str)
 }
 
 
+SEXP getListElement2(SEXP list, SEXP str)
+{
+  SEXP elmt, names;
+  PROTECT(elmt = R_NilValue);
+  PROTECT(names = getAttrib(list, R_NamesSymbol));
+  for(int i = 0; i < length(list); i++) {
+	  if(strcmp(CHAR(STRING_ELT(names, i)), CHAR(str)) == 0) {
+	    elmt = VECTOR_ELT(list, i);
+	    break;
+	  }
+  }
+
+  UNPROTECT(2);
+
+  return elmt;
+}
+
+
 int getListElement_index(SEXP list, const char *str)
 {
   SEXP names;
@@ -631,5 +649,61 @@ void xbin_fun(SEXP ind, SEXP weights, SEXP e, SEXP xweights, SEXP xrres, SEXP or
     xweightsptr[j] += weightsptr[k];
     xrresptr[j] += weightsptr[k] * eptr[k];
   }
+}
+
+
+/* Efficient IWLS sampling */
+SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
+  SEXP prior, SEXP eta, SEXP response, SEXP x, SEXP fitted,
+  SEXP rho)
+{
+  int nProtected = 0;
+  int fixed = LOGICAL(getListElement(x, "fixed"))[0];
+  theta = getListElement2(getListElement2(theta, STRING_ELT(id, 0)), STRING_ELT(id, 1));
+
+  SEXP S;
+  PROTECT(S = getListElement(x, "S"));
+  ++nProtected;
+  int ntau2 = length(S);
+
+  SEXP gamma0, gamma1, tau2;
+  PROTECT(gamma0 = allocVector(REALSXP, length(theta) - ntau2));
+  ++nProtected;
+  PROTECT(gamma1 = allocVector(REALSXP, length(theta) - ntau2));
+  ++nProtected;
+  PROTECT(tau2 = allocVector(REALSXP, ntau2));
+  ++nProtected;
+
+  double *g0ptr = REAL(gamma0);
+  double *g1ptr = REAL(gamma1);
+  double *tau2ptr = REAL(tau2);
+
+  // int fxsp = LOGICAL(getListElement(x, "sp"))[0];
+
+Rprintf("%d\n", fixed);
+error("here");
+
+  /* Last try accepted? */
+/*  int accepted = LOGICAL(getListElement(getListElement(x, "state"), "accepted"))[0];*/
+/*  int adaptive = LOGICAL(getListElement(getListElement(x, "xt"), "adaptive"))[0];*/
+/*  int adaptcheck = accepted * adaptive;*/
+
+  /* Evaluate loglik, weights and score vector. */
+  SEXP eta2, peta;
+  PROTECT(eta2 = duplicate(eta));
+  ++nProtected;
+  PROTECT(peta = map2par(getListElement(family, "map2par"), eta2, rho));
+  ++nProtected;
+  int ll_ind = getListElement_index(family, "loglik");
+  double pibeta = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, peta, rho))[0];
+  SEXP weights;
+  PROTECT(weights = iwls_eval(getListElement(getListElement(family, "weights"),
+    CHAR(STRING_ELT(id, 0))), response, peta, rho));
+  ++nProtected;
+  SEXP score;
+  PROTECT(score = iwls_eval(getListElement(getListElement(family, "score"),
+    CHAR(STRING_ELT(id, 0))), response, peta, rho));
+  ++nProtected;
+  error("here");
 }
 

@@ -2051,15 +2051,21 @@ resultsBayesG <- function(x, samples)
       if(length(obj$smooth)) {
         for(i in 1:length(obj$smooth)) {
           ## Get coefficient samples of smooth term.
+
           if(any(grepl("h1", snames))) {
-            pn <- grep(paste(id, "h1", obj$smooth[[i]]$label, sep = ":"), snames,
-              value = TRUE, fixed = TRUE) ## FIXME: hlevels!
+            pn <- paste(id, "h1", obj$smooth[[i]]$label, sep = ":") ## FIXME: hlevels!
           } else {
-            pn <- grep(paste(id, obj$smooth[[i]]$label, sep = "."), snames,
-              value = TRUE, fixed = TRUE)
+            pn <- paste(id, obj$smooth[[i]]$label, sep = ".")
           }
+          nch <- nchar(pn) + 1
+          pn <- paste(pn, ".", sep = "")
+          snames2 <- sapply(snames, function(x) {
+            paste(strsplit(x, "")[[1]][1:nch], collapse = "", sep = "")
+          })
+          pn <- snames[snames2 == pn]
           pn <- pn[!grepl("tau2", pn) & !grepl("alpha", pn) & !grepl("accepted", pn)]
           k <- sum(snames %in% pn)
+
           psamples <- matrix(samples[[j]][, snames %in% pn], ncol = k)
           nas <- apply(psamples, 1, function(x) { any(is.na(x)) } )
           psamples <- psamples[!nas, , drop = FALSE]
@@ -2151,7 +2157,10 @@ resultsBayesG <- function(x, samples)
             colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
             if(!is.null(asamples))
               param.effects <- cbind(param.effects, "alpha" = mean(asamples))
-            fitted.values <- as.vector(fitted.values + obj$smooth[[i]]$X %*% param.effects[, 1])
+            xfit <- obj$smooth[[i]]$X %*% param.effects[, 1]
+            if(!is.null(obj$smooth[[i]]$xbin.ind))
+              xfit <- xfit[obj$smooth[[i]]$xbin.ind]
+            fitted.values <- as.vector(fitted.values + xfit)
             attr(param.effects, "samples") <- as.mcmc(psamples)
             colnames(attr(param.effects, "samples")) <- nx
           }

@@ -10,15 +10,18 @@ if(file.exists("~/tmp/homstart.rda")) {
   file.copy(file, file.path("~/tmp/homstart.rda"))
 }
 
-homstart$raw[homstart$raw == 0] <- 0.05
 homstart$raw[homstart$raw < 0] <- 0
 
-rain2 <- subset(homstart, year >= 2008 & raw > 0)
+rain2 <- subset(homstart, year >= 2008)
 
 f <- list(
   sqrt(raw) ~ s(day, bs = "cc") + s(elevation) + s(long, lat),
   ~ s(day, bs = "cc") + s(elevation) + s(long, lat)
 )
+
+b1 <- bamlss0(f, data = rain2, family = gF(cens, left = 0),
+  n.iter = 20, burnin = 0, thin = 1, binning = TRUE)
+
 
 b1 <- bamlss(f, data = homstart, family = gF(cens, left = 0),
   method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls",
