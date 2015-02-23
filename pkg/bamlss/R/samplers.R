@@ -517,7 +517,7 @@ gmcmc_slice <- function(fun, theta, id, prior, ...)
 gmcmc_iwls <- function(family, theta, id, prior, eta, response, data, rho, ...)
 {
   .Call("gmcmc_iwls", family, theta, as.character(id), prior, eta, response, data,
-    attr(theta, "fitted.values"), rho)
+    attr(theta[[id[1]]][[id[2]]], "fitted.values"), rho)
 }
 
 gmcmc_iwls2 <- function(family, theta, id, prior, eta, response, data, ...)
