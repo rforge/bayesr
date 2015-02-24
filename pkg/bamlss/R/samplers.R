@@ -516,18 +516,26 @@ gmcmc_slice <- function(fun, theta, id, prior, ...)
 
 gmcmc_iwls <- function(family, theta, id, prior, eta, response, data, rho, ...)
 {
-  .Call("gmcmc_iwls", family, theta, as.character(id), prior, eta, response, data,
-    attr(theta[[id[1]]][[id[2]]], "fitted.values"), rho)
+plot(eta$mu[order(d$x)] ~ d$x[order(d$x)], type = "l", main = paste(id, collapse = ", "))
+  rval <- try(.Call("gmcmc_iwls", family, theta, as.character(id), prior, eta, response, data,
+    attr(theta[[id[1]]][[id[2]]], "fitted.values"), rho, FALSE))
+  rval$parameters <- as.numeric(rval$parameters)
+  names(rval$parameters) <- names(theta[[id[1]]][[id[2]]])
+  attr(rval$parameters, "fitted.values") <- rval$fitted
+lines(eta$mu[order(d$x)] ~ d$x[order(d$x)], col = 2)
+if(id[2] == "s(x)")
+  lines(data$get.mu(data$X, rval$parameters)[order(d$x)] + 1.2 ~ d$x[order(d$x)], col = 3)
+Sys.sleep(0.1)
+print(round(exp(rval$alpha), 4))
+
+  return(list("parameters" = rval$parameters, "alpha" = rval$alpha))
 }
 
 gmcmc_iwls2 <- function(family, theta, id, prior, eta, response, data, ...)
 {
-print(attr(theta, "fitted.values"))
   require("mvtnorm")
 
   theta <- theta[[id[1]]][[id[2]]]
-print(attributes(theta))
-stop()
   if(is.null(attr(theta, "fitted.values")))
     attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
 
@@ -571,6 +579,7 @@ stop()
       S <- S + 1 / get.par(theta, "tau2")[j] * data$S[[j]]
     chol2inv(chol(XWX + S))
   }
+
   P[P == Inf] <- 0
   M <- P %*% crossprod(data$X, data$rres)
 
