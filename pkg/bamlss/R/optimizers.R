@@ -240,6 +240,7 @@ smooth.bamlss.default <- function(x, ...)
     x$xbin.sind <- 1:x$xbin.k
     x$xbin.order <- 1:x$xbin.k
   }
+  x$nobs <- length(x$xbin.ind)
   x$weights <- rep(0, length = x$xbin.k)
   x$rres <- rep(0, length = x$xbin.k)
   state <- if(is.null(x$xt$state)) list() else x$xt$state

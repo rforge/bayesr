@@ -654,11 +654,11 @@ void xbin_fun(SEXP ind, SEXP weights, SEXP e, SEXP xweights, SEXP xrres, SEXP or
 
 /* Efficient IWLS sampling. */
 SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
-  SEXP eta, SEXP response, SEXP x, SEXP fitted, SEXP rho)
+  SEXP eta, SEXP response, SEXP x, SEXP rho)
 {
   int i, j, k, nProtected = 0;
 
-  int n = length(fitted);
+  int n = INTEGER(getListElement(x, "nobs"))[0];
   int fixed = LOGICAL(getListElement(x, "fixed"))[0];
   SEXP theta2;
   PROTECT(theta2 = duplicate(getListElement2(getListElement2(theta, STRING_ELT(id, 0)), STRING_ELT(id, 1))));
@@ -714,12 +714,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   PROTECT(XWX = allocMatrix(REALSXP, nc, nc));
   ++nProtected;
 
-  /* More copies. */
-  SEXP fitted2;
-  PROTECT(fitted2 = duplicate(fitted));
-  ++nProtected;
-
-  /* All pointers needed. */
+  /* More pointers needed. */
   double *thetaptr = REAL(theta2);
   double *gamma0ptr = REAL(gamma0);
   double *gamma1ptr = REAL(gamma1);
@@ -729,7 +724,6 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   double *scoreptr = REAL(score);
   double *zptr = REAL(z);
   double *eptr = REAL(e);
-  double *fitptr = REAL(fitted2);
   double *xweightsptr = REAL(getListElement(x, "weights"));
   double *xrresptr = REAL(getListElement(x, "rres"));
   double *XWptr = REAL(XW);
@@ -740,6 +734,25 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   int *indptr = INTEGER(getListElement(x, "xbin.sind"));
   int *orderptr = INTEGER(getListElement(x, "xbin.order"));
 
+  /* Vectors for fitted.values. */
+  SEXP fit1;
+  PROTECT(fit1 = allocVector(REALSXP, nr));
+  ++nProtected;
+  double *fitptr = REAL(getListElement(getListElement(x, "state"), "fitted.values"));
+  double *fit1ptr = REAL(fit1);
+  for(i = 0; i < nr; i++) {
+    fit1ptr[i] = 0.0;
+    for(j = 0; j < nc; j++) {
+      fit1ptr[i] += Xptr[i + nr * j] * thetaptr[j];
+    }
+  }
+
+  for(i = 0; i < n; i++) {
+    k = idptr[i] - 1;
+    fitptr[i] = fit1ptr[k];
+  }
+
+  /* Start. */
   xweightsptr[0] = 0;
   xrresptr[0] = 0;
 
@@ -897,11 +910,6 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 
   /* Part 2. */
   /* Obtain new fitted values and update predictor. */
-  SEXP fit1;
-  PROTECT(fit1 = allocVector(REALSXP, nr));
-  ++nProtected;
-  double *fit1ptr = REAL(fit1);
-
   for(i = 0; i < nr; i++) {
     fit1ptr[i] = 0.0;
     for(j = 0; j < nc; j++) {
@@ -1056,7 +1064,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 
   /* Stuff everything together. */
   SEXP rval;
-  PROTECT(rval = allocVector(VECSXP, 3));
+  PROTECT(rval = allocVector(VECSXP, 2));
   ++nProtected;
 
   for(j = 0; j < nc; j++) {
@@ -1065,15 +1073,13 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 
   SET_VECTOR_ELT(rval, 0, theta2);
   SET_VECTOR_ELT(rval, 1, alpha);
-  SET_VECTOR_ELT(rval, 2, fitted2);
 
   SEXP nrval;
-  PROTECT(nrval = allocVector(STRSXP, 3));
+  PROTECT(nrval = allocVector(STRSXP, 2));
   ++nProtected;
 
   SET_STRING_ELT(nrval, 0, mkChar("parameters"));
   SET_STRING_ELT(nrval, 1, mkChar("alpha"));
-  SET_STRING_ELT(nrval, 2, mkChar("fitted"));
         
   setAttrib(rval, R_NamesSymbol, nrval); 
 

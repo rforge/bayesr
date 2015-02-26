@@ -30,7 +30,6 @@ GMCMC <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
     nt <- NULL
     for(j in seq_along(x[[i]]$smooth)) {
       theta[[i]][[j]] <- x[[i]]$smooth[[j]]$state$parameters
-      attr(theta[[i]][[j]], "fitted.values") <- fitted(x[[i]]$smooth[[j]]$state)
       nt <- c(nt, x[[i]]$smooth[[j]]$label)
       smooths[[i]][[j]] <- x[[i]]$smooth[[j]]
       propose2[[i]][[j]] <- if(!is.null(propose)) propose else x[[i]]$smooth[[j]]$propose
@@ -517,17 +516,8 @@ gmcmc_slice <- function(fun, theta, id, prior, ...)
 
 gmcmc_iwls <- function(family, theta, id, prior, eta, response, data, rho, ...)
 {
-  fit0 <- attr(theta[[id[1]]][[id[2]]], "fitted.values")
-  attr(theta[[id[1]]][[id[2]]], "fitted.values") <- NULL
-  rval <- try(.Call("gmcmc_iwls", family, theta, as.character(id), eta, response, data, fit0, rho))
-if(inherits(rval, "try-error")) {
-  cat("theta\n")
-  print(str(theta))
-}
-  rval$parameters <- as.numeric(rval$parameters)
-  names(rval$parameters) <- names(theta[[id[1]]][[id[2]]])
-  attr(rval$parameters, "fitted.values") <- rval$fitted
-  return(list("parameters" = rval$parameters, "alpha" = rval$alpha))
+  rval <- .Call("gmcmc_iwls", family, theta, id, eta, response, data, rho)
+  return(rval)
 }
 
 gmcmc_iwls2 <- function(family, theta, id, prior, eta, response, data, ...)
