@@ -654,11 +654,8 @@ void xbin_fun(SEXP ind, SEXP weights, SEXP e, SEXP xweights, SEXP xrres, SEXP or
 
 /* Efficient IWLS sampling. */
 SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
-  SEXP prior, SEXP eta, SEXP response, SEXP x, SEXP fitted,
-  SEXP rho, SEXP DEBUG)
+  SEXP eta, SEXP response, SEXP x, SEXP fitted, SEXP rho)
 {
-  int debug = LOGICAL(DEBUG)[0];
-
   int i, j, k, nProtected = 0;
 
   int n = length(fitted);
@@ -853,6 +850,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   double sdiag0 = 0.0;
   for(j = 0; j < nc; j++) {
     gamma1ptr[j] += mu1ptr[j];
+//gamma1ptr[j] = 1.2;
     sdiag0 += log(pow(Lptr[j + nc * j], 2));
   }
 
@@ -888,7 +886,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   } else {
     for(i = 0; i < nc; i++) {
       tsum1 = 0.0;
-      p2 += dnorm(gamma1ptr[i], 0, 1, 1);
+      p2 += dnorm(gamma1ptr[i], 0, 1000, 1);
       for(j = 0; j < nc; j++) {
         tsum1 += (gamma1ptr[j] - mu1ptr[j]) * XWXptr[j + i * nc];
       }
@@ -971,7 +969,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   }
 
   /* Cholesky decompostion of XWX. */
-  L = XWX;
+  L = duplicate(XWX);
   Lptr = REAL(L);
   for(j = 0; j < nc; j++) { 	/* Zero the lower triangle. */
 	  for(i = j + 1; i < nc; i++) {
@@ -982,7 +980,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 	F77_CALL(dpotrf)("Upper", &nc, Lptr, &nc, &info);
 
   /* Compute the inverse precision matrix. */
-  PINV = L;
+  PINV = duplicate(L);
   PINVptr = REAL(PINV);
 
   F77_CALL(dpotri)("Upper", &nc, PINVptr, &nc, &info);
@@ -1033,11 +1031,11 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   } else {
     for(i = 0; i < nc; i++) {
       tsum1 = 0.0;
-      p1 += dnorm(thetaptr[i], 0, 1, 1);
+      p1 += dnorm(thetaptr[i], 0, 1000, 1);
       for(j = 0; j < nc; j++) {
-        tsum1 += (gamma1ptr[j] - mu1ptr[j]) * XWXptr[j + i * nc];
+        tsum1 += (thetaptr[j] - mu1ptr[j]) * XWXptr[j + i * nc];
       }
-      qbeta += tsum1 * (gamma1ptr[i] - mu1ptr[i]);
+      qbeta += tsum1 * (thetaptr[i] - mu1ptr[i]);
     }
   }
   qbeta = 0.5 * sdiag0 - 0.5 * qbeta;
@@ -1046,6 +1044,15 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   PROTECT(alpha = allocVector(REALSXP, 1));
   ++nProtected;
   REAL(alpha)[0] = (pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1);
+
+/*Rprintf("qbeta: %g\n", qbeta);*/
+/*Rprintf("qbetaprop: %g\n", qbetaprop);*/
+/*Rprintf("pibetaprop: %g\n", pibetaprop);*/
+/*Rprintf("pibeta: %g\n", pibeta);*/
+/*Rprintf("p1: %g\n", p1);*/
+/*Rprintf("p2: %g\n", p2);*/
+/*Rprintf("alpha: %g\n", exp(REAL(alpha)[0]));*/
+/*Rprintf("next.............................\n");*/
 
   /* Stuff everything together. */
   SEXP rval;
@@ -1071,6 +1078,19 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   setAttrib(rval, R_NamesSymbol, nrval); 
 
   UNPROTECT(nProtected);
+  return rval;
+}
+
+SEXP dnorm2(SEXP x, SEXP mu, SEXP sd, SEXP LOG)
+{
+  int i, n = length(x);
+  int logme = LOGICAL(LOG)[0];
+  SEXP rval;
+  PROTECT(rval = allocVector(REALSXP, n));
+  for(i = 0; i < n; i++) {
+    REAL(rval)[i] = dnorm(REAL(x)[i], REAL(mu)[i], REAL(sd)[i], logme);
+  }
+  UNPROTECT(1);
   return rval;
 }
 

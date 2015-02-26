@@ -516,19 +516,47 @@ gmcmc_slice <- function(fun, theta, id, prior, ...)
 
 gmcmc_iwls <- function(family, theta, id, prior, eta, response, data, rho, ...)
 {
-plot(eta$mu[order(d$x)] ~ d$x[order(d$x)], type = "l", main = paste(id, collapse = ", "))
-  rval <- try(.Call("gmcmc_iwls", family, theta, as.character(id), prior, eta, response, data,
-    attr(theta[[id[1]]][[id[2]]], "fitted.values"), rho, FALSE))
+  fit0 <- attr(theta[[id[1]]][[id[2]]], "fitted.values")
+  attr(theta[[id[1]]][[id[2]]], "fitted.values") <- NULL
+  rval <- .Call("gmcmc_iwls", family, theta, as.character(id), eta, response, data, fit0, rho)
+  rval$parameters <- as.numeric(rval$parameters)
+  names(rval$parameters) <- names(theta[[id[1]]][[id[2]]])
+if(id[2] == "s(x)") {
+  args <- list(...)
+  add <- args$iteration > 1
+  plot2d(data$get.mu(data$X, rval$parameters) ~ d$x, rug = FALSE, add = add, ylim = c(-2, 2),
+    col.lines = rgb(0.1, 0.1, 0.1, alpha = 0.3))
+print(exp(rval$alpha))
+Sys.sleep(1)
+}
+  attr(rval$parameters, "fitted.values") <- rval$fitted
+  return(list("parameters" = rval$parameters, "alpha" = rval$alpha))
+}
+
+gmcmc_iwls3 <- function(family, theta, id, prior, eta, response, data, rho, ...)
+{
+print(id)
+cat("iwls_C\n")
+  fit0 <- attr(theta[[id[1]]][[id[2]]], "fitted.values")
+  attr(theta[[id[1]]][[id[2]]], "fitted.values") <- NULL
+  rval <- .Call("gmcmc_iwls", family, theta, as.character(id), eta, response, data, fit0, rho)
   rval$parameters <- as.numeric(rval$parameters)
   names(rval$parameters) <- names(theta[[id[1]]][[id[2]]])
   attr(rval$parameters, "fitted.values") <- rval$fitted
-lines(eta$mu[order(d$x)] ~ d$x[order(d$x)], col = 2)
-if(id[2] == "s(x)")
-  lines(data$get.mu(data$X, rval$parameters)[order(d$x)] + 1.2 ~ d$x[order(d$x)], col = 3)
-Sys.sleep(0.1)
-print(round(exp(rval$alpha), 4))
+rval$alpha <- log(0)
+cat("iwls_R\n")
+  ##return(list("parameters" = rval$parameters, "alpha" = rval$alpha))
+rval <- gmcmc_iwls2(family, theta, id, prior, eta, response, data, ...)
+cat("-----------\n")
+Sys.sleep(2)
+rval
+}
 
-  return(list("parameters" = rval$parameters, "alpha" = rval$alpha))
+dnorm2 <- function(x, mean = 0, sd = 1, log = FALSE)
+{
+  mean <- rep(mean, length.out = length(x))
+  sd <- rep(sd, length.out = length(x))
+  .Call("dnorm2", x, mean, sd, log)
 }
 
 gmcmc_iwls2 <- function(family, theta, id, prior, eta, response, data, ...)
@@ -536,6 +564,7 @@ gmcmc_iwls2 <- function(family, theta, id, prior, eta, response, data, ...)
   require("mvtnorm")
 
   theta <- theta[[id[1]]][[id[2]]]
+
   if(is.null(attr(theta, "fitted.values")))
     attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
 
@@ -571,13 +600,13 @@ gmcmc_iwls2 <- function(family, theta, id, prior, eta, response, data, ...)
   XWX <- crossprod(data$X, data$X * data$weights)
   S <- 0
   P <- if(data$fixed) {
-    if(k <- ncol(data$X) < 2) {
+    if((k <- ncol(data$X)) < 2) {
       1 / XWX
-    } else chol2inv(chol(XWX))
+    } else chol2inv(L1 <- chol(P01 <- XWX))
   } else {
     for(j in seq_along(data$S))
       S <- S + 1 / get.par(theta, "tau2")[j] * data$S[[j]]
-    chol2inv(chol(XWX + S))
+    chol2inv(L1 <- chol(P01 <- XWX + S))
   }
 
   P[P == Inf] <- 0
@@ -588,6 +617,7 @@ gmcmc_iwls2 <- function(family, theta, id, prior, eta, response, data, ...)
 
   ## Sample new parameters.
   g <- drop(rmvnorm(n = 1, mean = M, sigma = P))
+g <- rep(1.2, length(M))
 
   ## Compute log priors.
   p2 <- data$prior(c("g" = g, get.par(theta, "tau2")))
@@ -628,15 +658,31 @@ gmcmc_iwls2 <- function(family, theta, id, prior, eta, response, data, ...)
   P2 <- if(data$fixed) {
     if(k < 2) {
       1 / (XWX)
-    } else chol2inv(chol(XWX))
+    } else chol2inv(L2 <- chol(P02 <- XWX))
   } else {
-    chol2inv(L <- chol(P0 <- XWX + S))
+    chol2inv(L2 <- chol(P02 <- XWX + S))
   }
   P2[P2 == Inf] <- 0
   M2 <- P2 %*% crossprod(data$X, data$rres)
 
   ## Get the log prior.
   qbeta <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
+
+if(TRUE) {
+  pr <- P01
+  prprop <- P02
+  cholpr <- L1
+  cholprprop <- L2
+  qbeta <- 0.5*sum(log((diag(cholprprop)^2)))-0.5*t(g0-M2)%*%prprop%*%(g0-M2)
+  qbetaprop <- 0.5*sum(log((diag(cholpr)^2)))-0.5*t(g-M)%*%pr%*%(g-M)
+cat("qbeta:", qbeta, "\n")
+cat("qbetaprop:", qbetaprop, "\n")
+cat("pibetaprop:", pibetaprop, "\n")
+cat("pibeta:", pibeta, "\n")
+cat("p1:", p1, "\n")
+cat("p2:", p2, "\n")
+cat("alpha:", exp(drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))), "\n")
+}
 
   ## Sample variance parameter.
   if(!data$fixed & is.null(data$sp)) {

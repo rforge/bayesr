@@ -303,7 +303,7 @@ smooth.bamlss.default <- function(x, ...)
       gamma <- parameters[grep("g", names(parameters))]
       tau2 <-  parameters[grep("tau", names(parameters))]
       if(x$fixed | !length(tau2)) {
-        lp <- sum(dnorm(gamma, sd = 10, log = TRUE))
+        lp <- sum(dnorm(gamma, sd = 1000, log = TRUE))
       } else {
         if(!is.null(x$sp)) tau2 <- x$sp
         lp <- 0
