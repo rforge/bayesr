@@ -1065,7 +1065,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 
   SET_VECTOR_ELT(rval, 0, theta2);
   SET_VECTOR_ELT(rval, 1, alpha);
-  SET_VECTOR_ELT(rval, 2, fitted);
+  SET_VECTOR_ELT(rval, 2, fitted2);
 
   SEXP nrval;
   PROTECT(nrval = allocVector(STRSXP, 3));

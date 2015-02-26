@@ -514,49 +514,20 @@ gmcmc_slice <- function(fun, theta, id, prior, ...)
   return(list("parameters" = theta[[id[1]]][[id[2]]], "alpha" = log(1)))
 }
 
+
 gmcmc_iwls <- function(family, theta, id, prior, eta, response, data, rho, ...)
 {
   fit0 <- attr(theta[[id[1]]][[id[2]]], "fitted.values")
   attr(theta[[id[1]]][[id[2]]], "fitted.values") <- NULL
-  rval <- .Call("gmcmc_iwls", family, theta, as.character(id), eta, response, data, fit0, rho)
+  rval <- try(.Call("gmcmc_iwls", family, theta, as.character(id), eta, response, data, fit0, rho))
+if(inherits(rval, "try-error")) {
+  cat("theta\n")
+  print(str(theta))
+}
   rval$parameters <- as.numeric(rval$parameters)
   names(rval$parameters) <- names(theta[[id[1]]][[id[2]]])
-if(id[2] == "s(x)") {
-  args <- list(...)
-  add <- args$iteration > 1
-  plot2d(data$get.mu(data$X, rval$parameters) ~ d$x, rug = FALSE, add = add, ylim = c(-2, 2),
-    col.lines = rgb(0.1, 0.1, 0.1, alpha = 0.3))
-print(exp(rval$alpha))
-Sys.sleep(1)
-}
   attr(rval$parameters, "fitted.values") <- rval$fitted
   return(list("parameters" = rval$parameters, "alpha" = rval$alpha))
-}
-
-gmcmc_iwls3 <- function(family, theta, id, prior, eta, response, data, rho, ...)
-{
-print(id)
-cat("iwls_C\n")
-  fit0 <- attr(theta[[id[1]]][[id[2]]], "fitted.values")
-  attr(theta[[id[1]]][[id[2]]], "fitted.values") <- NULL
-  rval <- .Call("gmcmc_iwls", family, theta, as.character(id), eta, response, data, fit0, rho)
-  rval$parameters <- as.numeric(rval$parameters)
-  names(rval$parameters) <- names(theta[[id[1]]][[id[2]]])
-  attr(rval$parameters, "fitted.values") <- rval$fitted
-rval$alpha <- log(0)
-cat("iwls_R\n")
-  ##return(list("parameters" = rval$parameters, "alpha" = rval$alpha))
-rval <- gmcmc_iwls2(family, theta, id, prior, eta, response, data, ...)
-cat("-----------\n")
-Sys.sleep(2)
-rval
-}
-
-dnorm2 <- function(x, mean = 0, sd = 1, log = FALSE)
-{
-  mean <- rep(mean, length.out = length(x))
-  sd <- rep(sd, length.out = length(x))
-  .Call("dnorm2", x, mean, sd, log)
 }
 
 gmcmc_iwls2 <- function(family, theta, id, prior, eta, response, data, ...)
@@ -590,11 +561,6 @@ gmcmc_iwls2 <- function(family, theta, id, prior, eta, response, data, ...)
   ## Compute reduced residuals.
   e <- z - eta2
   xbin.fun(data$xbin.sind, weights, e, data$weights, data$rres, data$xbin.order)
-#  for(i in 1:data$xbin.k) {
-#    j <- which(data$xbin.ind == i)
-#    data$weights[i] <- sum(www <- weights[j], na.rm = TRUE)
-#    data$rres[i] <- sum(www * e[j], na.rm = TRUE)
-#  }
 
   ## Compute mean and precision.
   XWX <- crossprod(data$X, data$X * data$weights)
@@ -617,7 +583,6 @@ gmcmc_iwls2 <- function(family, theta, id, prior, eta, response, data, ...)
 
   ## Sample new parameters.
   g <- drop(rmvnorm(n = 1, mean = M, sigma = P))
-g <- rep(1.2, length(M))
 
   ## Compute log priors.
   p2 <- data$prior(c("g" = g, get.par(theta, "tau2")))
@@ -647,11 +612,6 @@ g <- rep(1.2, length(M))
   ## Compute reduced residuals.
   e <- z - eta2
   xbin.fun(data$xbin.sind, weights, e, data$weights, data$rres, data$xbin.order)
-#  for(i in 1:data$xbin.k) {
-#    j <- which(data$xbin.ind == i)
-#    data$weights[i] <- sum(www <- weights[j], na.rm = TRUE)
-#    data$rres[i] <- sum(www * e[j], na.rm = TRUE)
-#  }
 
   ## Compute mean and precision.
   XWX <- crossprod(data$X, data$X * data$weights)
@@ -667,22 +627,6 @@ g <- rep(1.2, length(M))
 
   ## Get the log prior.
   qbeta <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
-
-if(TRUE) {
-  pr <- P01
-  prprop <- P02
-  cholpr <- L1
-  cholprprop <- L2
-  qbeta <- 0.5*sum(log((diag(cholprprop)^2)))-0.5*t(g0-M2)%*%prprop%*%(g0-M2)
-  qbetaprop <- 0.5*sum(log((diag(cholpr)^2)))-0.5*t(g-M)%*%pr%*%(g-M)
-cat("qbeta:", qbeta, "\n")
-cat("qbetaprop:", qbetaprop, "\n")
-cat("pibetaprop:", pibetaprop, "\n")
-cat("pibeta:", pibeta, "\n")
-cat("p1:", p1, "\n")
-cat("p2:", p2, "\n")
-cat("alpha:", exp(drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))), "\n")
-}
 
   ## Sample variance parameter.
   if(!data$fixed & is.null(data$sp)) {
