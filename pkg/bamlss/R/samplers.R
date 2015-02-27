@@ -32,11 +32,13 @@ GMCMC <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
       theta[[i]][[j]] <- x[[i]]$smooth[[j]]$state$parameters
       attr(theta[[i]][[j]], "fitted.values") <- x[[i]]$smooth[[j]]$state$fitted.values
       x[[i]]$smooth[[j]]$state$fitted.values <- NULL
+      x[[i]]$smooth[[j]]$XW <- t(x[[i]]$smooth[[j]]$X)
+      x[[i]]$smooth[[j]]$XWX <- crossprod(x[[i]]$smooth[[j]]$X)
+      x[[i]]$smooth[[j]]$fit.reduced <- as.numeric(rep(0, nrow(x[[i]]$smooth[[j]]$X)))
       nt <- c(nt, x[[i]]$smooth[[j]]$label)
       smooths[[i]][[j]] <- x[[i]]$smooth[[j]]
       propose2[[i]][[j]] <- if(!is.null(propose)) propose else x[[i]]$smooth[[j]]$propose
       fitfun[[i]][[j]] <- function(x, p) {
-        ## x$get.mu(x$X, p)
         attr(p, "fitted.values")
       }
     }
@@ -48,9 +50,14 @@ GMCMC <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
     family$loglik(response, family$map2par(eta))
   }
 
+  n <- if(!is.null(dim(response))) nrow(response) else length(response)
+  zworking <- as.numeric(rep(0, length = n))
+  resids <- as.numeric(rep(0, length = n))
+
   samps <- gmcmc(fun = family, theta = theta, fitfun = fitfun, data = smooths,
     propose = propose2, logLik = logLik, n.iter = n.iter, burnin = burnin,
-    response = response, simplify = FALSE, ...)
+    response = response, simplify = FALSE, zworking = zworking, resids = resids,
+    ...)
 
   samps
 }
@@ -517,20 +524,16 @@ gmcmc_slice <- function(fun, theta, id, prior, ...)
 }
 
 
-gmcmc_iwls <- function(family, theta, id, prior, eta, response, data, rho, ...)
+gmcmc_iwls <- function(family, theta, id, prior,
+  eta, response, data, zworking, resids, rho, ...)
 {
-  rval <- .Call("gmcmc_iwls", family, theta, id, eta, response, data, rho)
-  if(FALSE & inherits(rval, "try-error")) {
-    cat("theta\n")
-    print(str(theta))
-    cat("eta\n")
-    print(str(eta))
-    cat("response\n")
-    print(str(response))
-    cat("data\n")
-    print(str(data))
+  rval <- try(.Call("gmcmc_iwls", family, theta, id, eta,
+    response, data, zworking, resids, rho), silent = TRUE)
+  if(inherits(rval, "try-error")) {
+    warning(paste('problems in C function "gmcmc_iwls", message:', as.character(rval)), call. = FALSE)
+    rval <- list(parameters = theta[[id[1]]][[id[2]]], alpha = log(0))
   }
-  return(rval)
+  rval
 }
 
 gmcmc_iwls2 <- function(family, theta, id, prior, eta, response, data, ...)

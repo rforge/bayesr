@@ -2648,6 +2648,7 @@ plot.bamlss.effect.default <- function(x, ...) {
       rval
     }
     fit <- apply(samps, 1, function(g) {
+      names(g) <- NULL
       specs$get.mu(X, g, expand = FALSE)
     })
     fit <- t(apply(fit, 1, FUN))

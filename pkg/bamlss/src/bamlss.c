@@ -37,24 +37,6 @@ SEXP getListElement(SEXP list, const char *str)
 }
 
 
-SEXP getListElement2(SEXP list, SEXP str)
-{
-  SEXP elmt, names;
-  PROTECT(elmt = R_NilValue);
-  PROTECT(names = getAttrib(list, R_NamesSymbol));
-  for(int i = 0; i < length(list); i++) {
-	  if(strcmp(CHAR(STRING_ELT(names, i)), CHAR(str)) == 0) {
-	    elmt = VECTOR_ELT(list, i);
-	    break;
-	  }
-  }
-
-  UNPROTECT(2);
-
-  return elmt;
-}
-
-
 int getListElement_index(SEXP list, const char *str)
 {
   SEXP names;
@@ -653,28 +635,8 @@ void xbin_fun(SEXP ind, SEXP weights, SEXP e, SEXP xweights, SEXP xrres, SEXP or
 
 
 /* Efficient IWLS sampling. */
-SEXP gmcmc_iwls2(SEXP family, SEXP theta, SEXP id,
-  SEXP eta, SEXP response, SEXP x, SEXP rho)
-{
-  SEXP theta2;
-  PROTECT(theta2 = duplicate(getListElement2(getListElement2(theta, STRING_ELT(id, 0)), STRING_ELT(id, 1))));
-
-  SEXP fitname;
-  PROTECT(fitname = allocVector(STRSXP, 1));
-  SET_STRING_ELT(fitname, 0, mkChar("fitted.values"));
-
-  SEXP fit;
-  PROTECT(fit = duplicate(getAttrib(theta2, fitname)));
-  UNPROTECT(3);
-
-double *fitptr = REAL(getAttrib(getListElement2(getListElement2(theta, STRING_ELT(id, 0)), STRING_ELT(id, 1)), fitname));
-Rprintf("fit: %g\n", fitptr[0]);
-
-  return fit;
-}
-
 SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
-  SEXP eta, SEXP response, SEXP x, SEXP rho)
+  SEXP eta, SEXP response, SEXP x, SEXP z, SEXP e, SEXP rho)
 {
   int i, j, k, nProtected = 0;
   int n = INTEGER(getListElement(x, "nobs"))[0];
@@ -682,7 +644,8 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   int fxsp = LOGICAL(getListElement(x, "fxsp"))[0];
 
   SEXP theta2;
-  PROTECT(theta2 = duplicate(getListElement2(getListElement2(theta, STRING_ELT(id, 0)), STRING_ELT(id, 1))));
+  PROTECT(theta2 = duplicate(getListElement(getListElement(theta,
+    CHAR(STRING_ELT(id, 0))), CHAR(STRING_ELT(id, 1)))));
   ++nProtected;
 
   int S_ind = getListElement_index(x, "S");
@@ -718,23 +681,9 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   PROTECT(eta2 = duplicate(eta));
   ++nProtected;
 
-  /* Compute working observations, reduced weights and residuals. */
-  SEXP z;
-  PROTECT(z = allocVector(REALSXP, n));
-  ++nProtected;
-  SEXP e;
-  PROTECT(e = allocVector(REALSXP, n));
-  ++nProtected;
-
   /* Create weighted matrix */
   int X_ind = getListElement_index(x, "X");
   int nr = nrows(VECTOR_ELT(x, X_ind));
-  SEXP XW;
-  PROTECT(XW = allocMatrix(REALSXP, nc, nr));
-  ++nProtected;
-  SEXP XWX;
-  PROTECT(XWX = allocMatrix(REALSXP, nc, nc));
-  ++nProtected;
 
   /* More pointers needed. */
   double *thetaptr = REAL(theta2);
@@ -748,8 +697,8 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   double *eptr = REAL(e);
   double *xweightsptr = REAL(getListElement(x, "weights"));
   double *xrresptr = REAL(getListElement(x, "rres"));
-  double *XWptr = REAL(XW);
-  double *XWXptr = REAL(XWX);
+  double *XWptr = REAL(getListElement(x, "XW"));
+  double *XWXptr = REAL(getListElement(x, "XWX"));
   double *Xptr = REAL(VECTOR_ELT(x, X_ind));
   double *Sptr;
   int *idptr = INTEGER(getListElement(x, "xbin.ind"));
@@ -762,11 +711,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   ++nProtected;
   SET_STRING_ELT(fitname, 0, mkChar("fitted.values"));
   double *fitptr = REAL(getAttrib(theta2, fitname));
-
-  SEXP fit1;
-  PROTECT(fit1 = allocVector(REALSXP, nr));
-  ++nProtected;
-  double *fit1ptr = REAL(fit1);
+  double *fitrptr = REAL(getListElement(x, "fit.reduced"));
 
   /* Start. */
   xweightsptr[0] = 0;
@@ -818,7 +763,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 
   /* Cholesky decompostion of XWX. */
   SEXP L;
-  PROTECT(L = duplicate(XWX));
+  PROTECT(L = duplicate(getListElement(x, "XWX")));
   ++nProtected;
   double *Lptr = REAL(L);
 
@@ -926,15 +871,15 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   /* Part 2. */
   /* Obtain new fitted values and update predictor. */
   for(i = 0; i < nr; i++) {
-    fit1ptr[i] = 0.0;
+    fitrptr[i] = 0.0;
     for(j = 0; j < nc; j++) {
-      fit1ptr[i] += Xptr[i + nr * j] * gamma1ptr[j];
+      fitrptr[i] += Xptr[i + nr * j] * gamma1ptr[j];
     }
   }
 
   for(i = 0; i < n; i++) {
     k = idptr[i] - 1;
-    fitptr[i] = fit1ptr[k];
+    fitptr[i] = fitrptr[k];
     etaptr[i] += fitptr[i];
   }
 
@@ -992,8 +937,10 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   }
 
   /* Cholesky decompostion of XWX. */
-  L = duplicate(XWX);
-  Lptr = REAL(L);
+  SEXP L2;
+  PROTECT(L2 = duplicate(getListElement(x, "XWX")));
+  ++nProtected;
+  Lptr = REAL(L2);
   for(j = 0; j < nc; j++) { 	/* Zero the lower triangle. */
 	  for(i = j + 1; i < nc; i++) {
       Lptr[i + nc * j] = 0.0;
@@ -1003,8 +950,10 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 	F77_CALL(dpotrf)("Upper", &nc, Lptr, &nc, &info);
 
   /* Compute the inverse precision matrix. */
-  PINV = duplicate(L);
-  PINVptr = REAL(PINV);
+  SEXP PINV2;
+  PROTECT(PINV2 = duplicate(L2));
+  ++nProtected;
+  PINVptr = REAL(PINV2);
 
   F77_CALL(dpotri)("Upper", &nc, PINVptr, &nc, &info);
 	F77_CALL(dpotrf)("Upper", &nc, PINVLptr, &nc, &info);

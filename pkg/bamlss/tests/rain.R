@@ -19,7 +19,7 @@ f <- list(
   ~ s(day, bs = "cc") + s(elevation) + s(long, lat)
 )
 
-b1 <- bamlss0(f, data = rain2, family = gF(cens, left = 0),
+b1 <- bamlss0(f, data = homstart, family = gF(cens, left = 0),
   n.iter = 20, burnin = 0, thin = 1, binning = TRUE)
 
 
@@ -102,7 +102,7 @@ d <- data.frame("x" = runif(n))
 d$y <- -0.2 + 0.4 * d$x + rnorm(n, sd = 0.3)
 d$yobs <- ifelse(d$y <= 0, 0, d$y)
 
-b <- bamlss(yobs ~ x, data = d, family = gF(cens, left = 0))
+b <- bamlss0(yobs ~ x, data = d, family = gF(cens, left = 0))
 
 coef(b)
 plot(b, which = 3:4)
@@ -114,5 +114,6 @@ d <- data.frame("time" = rep(1:365, length.out = n),
 )
 d$rain <- with(d, 10 + sin(scale2(time, 0, pi)) * cos(lon) * log(lat) + 0.01 * alt + rnorm(n, sd = 3))
 
-b <- bamlss(rain ~ te(time, lon, lat, bs = c("cc", "tp"), d = c(1, 2)), data = d, method = "backfitting", update = "iwls")
+b <- bamlss0(rain ~ te(time, lon, lat, bs = c("cc", "tp"), d = c(1, 2)), data = d)
+
 
