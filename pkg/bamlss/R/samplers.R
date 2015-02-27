@@ -30,11 +30,14 @@ GMCMC <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
     nt <- NULL
     for(j in seq_along(x[[i]]$smooth)) {
       theta[[i]][[j]] <- x[[i]]$smooth[[j]]$state$parameters
+      attr(theta[[i]][[j]], "fitted.values") <- x[[i]]$smooth[[j]]$state$fitted.values
+      x[[i]]$smooth[[j]]$state$fitted.values <- NULL
       nt <- c(nt, x[[i]]$smooth[[j]]$label)
       smooths[[i]][[j]] <- x[[i]]$smooth[[j]]
       propose2[[i]][[j]] <- if(!is.null(propose)) propose else x[[i]]$smooth[[j]]$propose
       fitfun[[i]][[j]] <- function(x, p) {
-        x$get.mu(x$X, p)
+        ## x$get.mu(x$X, p)
+        attr(p, "fitted.values")
       }
     }
     names(theta[[i]]) <- names(smooths[[i]]) <- names(propose2[[i]]) <- names(fitfun[[i]]) <- nt
@@ -118,8 +121,8 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
       stop(paste("fitfun list() names for parameter", i, "different from the theta list() names!"))
     for(j in names(fitfun[[i]])) {
       if(!is.function(fitfun[[i]][[j]])) {
-        stop(paste("the prior for block [", i, "][", j,
-          "] must return a function!", sep = ""))
+        stop(paste("the fitfun function for block [", i, "][", j,
+          "] must be a function!", sep = ""))
       }
     }
   }
@@ -210,7 +213,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
         "accepted" = rep(NA, length = length(iterthin))
       )
       colnames(theta.save[[i]][[j]]$samples) <- names(p0$parameters)
-      theta[[i]][[j]] <- p0$parameters
+      names(theta[[i]][[j]]) <- names(p0$parameters)
     }
   }
 
@@ -517,6 +520,16 @@ gmcmc_slice <- function(fun, theta, id, prior, ...)
 gmcmc_iwls <- function(family, theta, id, prior, eta, response, data, rho, ...)
 {
   rval <- .Call("gmcmc_iwls", family, theta, id, eta, response, data, rho)
+  if(FALSE & inherits(rval, "try-error")) {
+    cat("theta\n")
+    print(str(theta))
+    cat("eta\n")
+    print(str(eta))
+    cat("response\n")
+    print(str(response))
+    cat("data\n")
+    print(str(data))
+  }
   return(rval)
 }
 

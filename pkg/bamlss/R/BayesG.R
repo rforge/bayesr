@@ -2090,8 +2090,11 @@ resultsBayesG <- function(x, samples)
 
           ## Possible variance parameter samples.
           vsamples <- NULL
-          tau2 <- paste(id, "h1", paste(obj$smooth[[i]]$label, "tau2", sep = "."), sep = ":")
-
+          if(any(grepl("h1", snames))) {
+            tau2 <- paste(id, "h1", paste(obj$smooth[[i]]$label, "tau2", sep = "."), sep = ":")
+          } else {
+            tau2 <- paste(id, paste(obj$smooth[[i]]$label, "tau2", sep = "."), sep = ".")
+          }
           if(length(tau2 <- grep(tau2, snames, fixed = TRUE))) {
             vsamples <- samples[[j]][, tau2, drop = FALSE]
             vsamples <- vsamples[!nas, , drop = FALSE]

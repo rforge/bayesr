@@ -653,13 +653,34 @@ void xbin_fun(SEXP ind, SEXP weights, SEXP e, SEXP xweights, SEXP xrres, SEXP or
 
 
 /* Efficient IWLS sampling. */
+SEXP gmcmc_iwls2(SEXP family, SEXP theta, SEXP id,
+  SEXP eta, SEXP response, SEXP x, SEXP rho)
+{
+  SEXP theta2;
+  PROTECT(theta2 = duplicate(getListElement2(getListElement2(theta, STRING_ELT(id, 0)), STRING_ELT(id, 1))));
+
+  SEXP fitname;
+  PROTECT(fitname = allocVector(STRSXP, 1));
+  SET_STRING_ELT(fitname, 0, mkChar("fitted.values"));
+
+  SEXP fit;
+  PROTECT(fit = duplicate(getAttrib(theta2, fitname)));
+  UNPROTECT(3);
+
+double *fitptr = REAL(getAttrib(getListElement2(getListElement2(theta, STRING_ELT(id, 0)), STRING_ELT(id, 1)), fitname));
+Rprintf("fit: %g\n", fitptr[0]);
+
+  return fit;
+}
+
 SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   SEXP eta, SEXP response, SEXP x, SEXP rho)
 {
   int i, j, k, nProtected = 0;
-
   int n = INTEGER(getListElement(x, "nobs"))[0];
   int fixed = LOGICAL(getListElement(x, "fixed"))[0];
+  int fxsp = LOGICAL(getListElement(x, "fxsp"))[0];
+
   SEXP theta2;
   PROTECT(theta2 = duplicate(getListElement2(getListElement2(theta, STRING_ELT(id, 0)), STRING_ELT(id, 1))));
   ++nProtected;
@@ -670,7 +691,8 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   if(fixed < 1) {
     nc -= ntau2;
   }
-  SEXP gamma0, gamma1, help, tau2;
+
+  SEXP gamma0, gamma1, tau2;
   PROTECT(gamma0 = allocVector(REALSXP, nc));
   ++nProtected;
   PROTECT(gamma1 = allocVector(REALSXP, nc));
@@ -734,23 +756,17 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   int *indptr = INTEGER(getListElement(x, "xbin.sind"));
   int *orderptr = INTEGER(getListElement(x, "xbin.order"));
 
-  /* Vectors for fitted.values. */
+  /* Handling fitted.values. */
+  SEXP fitname;
+  PROTECT(fitname = allocVector(STRSXP, 1));
+  ++nProtected;
+  SET_STRING_ELT(fitname, 0, mkChar("fitted.values"));
+  double *fitptr = REAL(getAttrib(theta2, fitname));
+
   SEXP fit1;
   PROTECT(fit1 = allocVector(REALSXP, nr));
   ++nProtected;
-  double *fitptr = REAL(getListElement(getListElement(x, "state"), "fitted.values"));
   double *fit1ptr = REAL(fit1);
-  for(i = 0; i < nr; i++) {
-    fit1ptr[i] = 0.0;
-    for(j = 0; j < nc; j++) {
-      fit1ptr[i] += Xptr[i + nr * j] * thetaptr[j];
-    }
-  }
-
-  for(i = 0; i < n; i++) {
-    k = idptr[i] - 1;
-    fitptr[i] = fit1ptr[k];
-  }
 
   /* Start. */
   xweightsptr[0] = 0;
@@ -863,7 +879,6 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   double sdiag0 = 0.0;
   for(j = 0; j < nc; j++) {
     gamma1ptr[j] += mu1ptr[j];
-//gamma1ptr[j] = 1.2;
     sdiag0 += log(pow(Lptr[j + nc * j], 2));
   }
 
@@ -1030,11 +1045,13 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
       }
       p1 += -log(tau2ptr[jj]) * rankptr[jj] / 2 + -0.5 / tau2ptr[jj] * gSg +
         log(pow(b, a)) - gamma(a) + (-a - 1) * log(tau2ptr[jj]) - b / tau2ptr[jj];
-      a2 = rankptr[jj] / 2 + a;
-      b2 = 0.5 * gSg + b;
-      GetRNGstate();
-      tau2ptr[jj] = 1 / rgamma(a2, 1 / b2);
-      PutRNGstate();
+      if(fxsp < 1) {
+        a2 = rankptr[jj] / 2 + a;
+        b2 = 0.5 * gSg + b;
+        GetRNGstate();
+        tau2ptr[jj] = 1 / rgamma(a2, 1 / b2);
+        PutRNGstate();
+      }
     }
   } else {
     for(i = 0; i < nc; i++) {
@@ -1053,15 +1070,6 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   ++nProtected;
   REAL(alpha)[0] = (pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1);
 
-/*Rprintf("qbeta: %g\n", qbeta);*/
-/*Rprintf("qbetaprop: %g\n", qbetaprop);*/
-/*Rprintf("pibetaprop: %g\n", pibetaprop);*/
-/*Rprintf("pibeta: %g\n", pibeta);*/
-/*Rprintf("p1: %g\n", p1);*/
-/*Rprintf("p2: %g\n", p2);*/
-/*Rprintf("alpha: %g\n", exp(REAL(alpha)[0]));*/
-/*Rprintf("next.............................\n");*/
-
   /* Stuff everything together. */
   SEXP rval;
   PROTECT(rval = allocVector(VECSXP, 2));
@@ -1069,6 +1077,11 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 
   for(j = 0; j < nc; j++) {
     thetaptr[j] = gamma1ptr[j];
+  }
+  if(fxsp < 1 && fixed < 1) {
+    for(jj = 0; jj < ntau2; jj++) {
+      thetaptr[nc + jj] = tau2ptr[jj];
+    }
   }
 
   SET_VECTOR_ELT(rval, 0, theta2);
@@ -1081,22 +1094,9 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   SET_STRING_ELT(nrval, 0, mkChar("parameters"));
   SET_STRING_ELT(nrval, 1, mkChar("alpha"));
         
-  setAttrib(rval, R_NamesSymbol, nrval); 
+  setAttrib(rval, R_NamesSymbol, nrval);
 
   UNPROTECT(nProtected);
-  return rval;
-}
-
-SEXP dnorm2(SEXP x, SEXP mu, SEXP sd, SEXP LOG)
-{
-  int i, n = length(x);
-  int logme = LOGICAL(LOG)[0];
-  SEXP rval;
-  PROTECT(rval = allocVector(REALSXP, n));
-  for(i = 0; i < n; i++) {
-    REAL(rval)[i] = dnorm(REAL(x)[i], REAL(mu)[i], REAL(sd)[i], logme);
-  }
-  UNPROTECT(1);
   return rval;
 }
 

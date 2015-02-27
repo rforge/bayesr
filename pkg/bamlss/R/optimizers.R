@@ -253,7 +253,7 @@ smooth.bamlss.default <- function(x, ...)
   if(length(ntau2) < 1) {
     if(x$fixed) {
       x$sp <- 1e+20
-      ntau <- 1
+      ntau2 <- 1
       x$S <- list(diag(ncol(x$X)))
     } else {
       x$sp <- NULL
@@ -263,7 +263,8 @@ smooth.bamlss.default <- function(x, ...)
     x$sp <- rep(x$sp, length.out = ntau2)
     for(j in seq_along(x$sp))
       if(x$sp[j] == 0) x$sp[j] <- .Machine$double.eps^0.5
-  }
+    x$fxsp <- TRUE
+  } else x$fxsp <- FALSE
   if(is.null(state$parameters)) {
     state$parameters <- rep(0, ncol(x$X))
     names(state$parameters) <- paste("g", 1:length(state$parameters), sep = "")
