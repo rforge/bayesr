@@ -39,7 +39,7 @@
 ## smooth.bamlss(), which adds additional parts to the
 ## state list, as this could vary for special terms. A default
 ## method is provided.
-optimizer.setup <- function(x, update = "iwls2", ...)
+optimizer.setup <- function(x, update = "iwls2", optimize = NULL, ...)
 {
   if(!is.null(attr(x, "optimizer.setup"))) return(x)
 
@@ -108,8 +108,12 @@ optimizer.setup <- function(x, update = "iwls2", ...)
           x$smooth[[j]] <- smooth.bamlss(x$smooth[[j]])
           if(is.null(x$smooth[[j]]$update))
             x$smooth[[j]]$update <- eval(parse(text = paste("update", update, sep = "_")))
-          if(is.null(x$smooth[[j]]$state$optimize))
-            x$smooth[[j]]$state$optimize <- TRUE
+          if(is.null(x$smooth[[j]]$state$optimize)) {
+            if(is.null(optimize))
+              x$smooth[[j]]$state$optimize <- TRUE
+            else
+              x$smooth[[j]]$state$optimize <- optimize
+          }
           if(!is.null(x$smooth[[j]]$rank))
             x$smooth[[j]]$rank <- as.numeric(x$smooth[[j]]$rank)
           if(!is.null(x$smooth[[j]]$Xf)) {
@@ -653,13 +657,7 @@ update_iwls2 <- function(x, family, response, eta, id, ...)
 
   ## Compute reduced residuals.
   e <- z - eta[[id]]
-
   xbin.fun(x$xbin.sind, weights, e, x$weights, x$rres, x$xbin.order)
-#  for(i in 1:x$xbin.k) {
-#    j <- which(x$xbin.ind == i)
-#    x$weights[i] <- sum(weights[j], na.rm = TRUE)
-#    x$rres[i] <- sum(weights[j] * e[j], na.rm = TRUE)
-#  }
 
   ## Compute mean and precision.
   XWX <- crossprod(x$X, x$X * x$weights)

@@ -20,8 +20,7 @@ f <- list(
 )
 
 b1 <- bamlss0(f, data = homstart, family = gF(cens, left = 0),
-  n.iter = 20, burnin = 0, thin = 1, binning = TRUE)
-
+  n.iter = 5000, burnin = 1000, thin = 10, binning = TRUE)
 
 b1 <- bamlss(f, data = homstart, family = gF(cens, left = 0),
   method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls",
