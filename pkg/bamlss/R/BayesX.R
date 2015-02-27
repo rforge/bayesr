@@ -758,7 +758,9 @@ resultsBayesX <- function(x, samples, ...)
           x <- gsub("multinommeanservant:", "", x, fixed = TRUE)
           x
         },
-        "quant" = function(x) gsub("quantreg", "mu", x),
+        "quant" = function(x) {
+          gsub("quantregmean", "quantregmu", x)
+        },
         "poisson" = function(x) {
           gsub("poissonmu", "poissonlambda", x)
         },
