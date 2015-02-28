@@ -530,7 +530,7 @@ gmcmc_iwls <- function(family, theta, id, prior,
   rval <- try(.Call("gmcmc_iwls", family, theta, id, eta,
     response, data, zworking, resids, rho), silent = TRUE)
   if(inherits(rval, "try-error")) {
-    warning(paste('problems in C function "gmcmc_iwls", message:', as.character(rval)), call. = FALSE)
+    ## warning(paste('problems in C function "gmcmc_iwls", message:', as.character(rval)), call. = FALSE)
     rval <- list(parameters = theta[[id[1]]][[id[2]]], alpha = log(0))
   }
   rval

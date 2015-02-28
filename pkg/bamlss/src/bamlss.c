@@ -649,7 +649,12 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   ++nProtected;
 
   int S_ind = getListElement_index(x, "S");
-  int ntau2 = length(VECTOR_ELT(x, S_ind));
+  int ntau2;
+  if(fixed > 0) {
+    ntau2 = 0;
+  } else {
+    ntau2 = length(VECTOR_ELT(x, S_ind));
+  }
   int nc = length(theta2);
   if(fixed < 1) {
     nc -= ntau2;
@@ -868,14 +873,21 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   }
   qbetaprop = 0.5 * sdiag0 - 0.5 * qbetaprop;
 
+  /* Compute edf. */
+/*  F77_CALL(dgemm)(transa, transb, &nc, &k1, &nc, &one,*/
+/*    XWXptr, &nc, PINVptr, &nc, &zero, mu1ptr, &nc);*/
+
   /* Part 2. */
   /* Obtain new fitted values and update predictor. */
-  for(i = 0; i < nr; i++) {
-    fitrptr[i] = 0.0;
-    for(j = 0; j < nc; j++) {
-      fitrptr[i] += Xptr[i + nr * j] * gamma1ptr[j];
-    }
-  }
+  F77_CALL(dgemm)(transa, transb, &nr, &k1, &nc, &one,
+    Xptr, &nr, gamma1ptr, &nr, &zero, fitrptr, &nr);
+
+/*  for(i = 0; i < nr; i++) {*/
+/*    fitrptr[i] = 0.0;*/
+/*    for(j = 0; j < nc; j++) {*/
+/*      fitrptr[i] += Xptr[i + nr * j] * gamma1ptr[j];*/
+/*    }*/
+/*  }*/
 
   for(i = 0; i < n; i++) {
     k = idptr[i] - 1;

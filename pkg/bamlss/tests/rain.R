@@ -106,13 +106,13 @@ b <- bamlss0(yobs ~ x, data = d, family = gF(cens, left = 0))
 coef(b)
 plot(b, which = 3:4)
 
-
-n <- 1000
-d <- data.frame("time" = rep(1:365, length.out = n),
-  "lon" = runif(n), "lat" = runif(n), alt = runif(n, 500, 2500)
-)
+n <- 100
+d <- expand.grid("lon" = seq(0, 1, length = n), "lat" = seq(0, 1, length = n))
+d$time <- rep(1:365, length.out = nrow(d))
+d$alt <- rep(runif(n*n, 500, 2500), length.out = nrow(d))
 d$rain <- with(d, 10 + sin(scale2(time, 0, pi)) * cos(lon) * log(lat) + 0.01 * alt + rnorm(n, sd = 3))
 
-b <- bamlss0(rain ~ te(time, lon, lat, bs = c("cc", "tp"), d = c(1, 2)), data = d)
+b <- bamlss0(rain ~ te(time,lon,lat, bs=c("cc","tp"), d=c(1, 2), k=c(10,15)) + s(alt) + s(lon,lat),
+  data = d, binning = TRUE, before = FALSE, n.iter = 1200, burnin = 200, thin = 1)
 
 

@@ -2052,11 +2052,9 @@ resultsBayesG <- function(x, samples)
         for(i in 1:length(obj$smooth)) {
           ## Get coefficient samples of smooth term.
 
-          if(any(grepl("h1", snames))) {
-            pn <- paste(id, "h1", obj$smooth[[i]]$label, sep = ":") ## FIXME: hlevels!
-          } else {
-            pn <- paste(id, obj$smooth[[i]]$label, sep = ".")
-          }
+          pn <- if(any(grepl("h1", snames))) {
+            paste(id, "h1", obj$smooth[[i]]$label, sep = ":") ## FIXME: hlevels!
+          } else paste(id, obj$smooth[[i]]$label, sep = ".")
           nch <- nchar(pn) + 1
           pn <- paste(pn, ".", sep = "")
           snames2 <- sapply(snames, function(x) {
@@ -2090,19 +2088,22 @@ resultsBayesG <- function(x, samples)
 
           ## Possible variance parameter samples.
           vsamples <- NULL
-          if(any(grepl("h1", snames))) {
+          tau2 <- if(any(grepl("h1", snames))) {
             tau2 <- paste(id, "h1", paste(obj$smooth[[i]]$label, "tau2", sep = "."), sep = ":")
-          } else {
-            tau2 <- paste(id, paste(obj$smooth[[i]]$label, "tau2", sep = "."), sep = ".")
-          }
+          } else paste(id, paste(obj$smooth[[i]]$label, "tau2", sep = "."), sep = ".")
           if(length(tau2 <- grep(tau2, snames, fixed = TRUE))) {
             vsamples <- samples[[j]][, tau2, drop = FALSE]
             vsamples <- vsamples[!nas, , drop = FALSE]
+          } else {
+            if(obj$smooth[[i]]$fixed)
+              vsamples <- rep(.Machine$double.eps, nrow(samples[[j]]))
           }
 
           ## Acceptance probalities.
           asamples <- NULL
-          alpha <- paste(id, "h1", paste(obj$smooth[[i]]$label, "alpha", sep = "."), sep = ":")
+          alpha <- if(any(grepl("h1", snames))) {
+            paste(id, "h1", paste(obj$smooth[[i]]$label, "alpha", sep = "."), sep = ":")
+          } else paste(id, paste(obj$smooth[[i]]$label, "alpha", sep = "."), sep = ".")
           if(length(alpha <- grep(alpha, snames, fixed = TRUE))) {
             asamples <- as.numeric(samples[[j]][, alpha])
             asamples <- asamples[!nas]

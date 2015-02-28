@@ -39,7 +39,7 @@
 ## smooth.bamlss(), which adds additional parts to the
 ## state list, as this could vary for special terms. A default
 ## method is provided.
-optimizer.setup <- function(x, update = "iwls2", optimize = NULL, ...)
+optimizer.setup <- function(x, update = "iwls2", do.optim = NULL, ...)
 {
   if(!is.null(attr(x, "optimizer.setup"))) return(x)
 
@@ -109,10 +109,10 @@ optimizer.setup <- function(x, update = "iwls2", optimize = NULL, ...)
           if(is.null(x$smooth[[j]]$update))
             x$smooth[[j]]$update <- eval(parse(text = paste("update", update, sep = "_")))
           if(is.null(x$smooth[[j]]$state$optimize)) {
-            if(is.null(optimize))
+            if(is.null(do.optim))
               x$smooth[[j]]$state$optimize <- TRUE
             else
-              x$smooth[[j]]$state$optimize <- optimize
+              x$smooth[[j]]$state$optimize <- do.optim
           }
           if(!is.null(x$smooth[[j]]$rank))
             x$smooth[[j]]$rank <- as.numeric(x$smooth[[j]]$rank)
@@ -236,6 +236,11 @@ smooth.bamlss.default <- function(x, ...)
     x$xbin.order <- order(x$xbin.ind)
     x$xbin.k <- length(xbin.uind)
     x$xbin.sind <- x$xbin.ind[x$xbin.order]
+    x$X <- x$X[x$xbin.take, , drop = FALSE]
+    x$before <- TRUE
+  }
+  if(is.null(x$before)) x$before <- FALSE
+  if(!is.null(x$xbin.ind) & !x$before) {
     x$X <- x$X[x$xbin.take, , drop = FALSE]
   }
   if(is.null(x$xbin.ind)) {
@@ -384,6 +389,8 @@ smooth.bamlss.default <- function(x, ...)
   }
   state$fitted.values <- x$get.mu(x$X, get.par(state$parameters, "g"))
   x$state <- state
+  if(!is.null(x$xt$optimize))
+    x$state$optimize <- x$xt$optimize
   x$state$edf <- x$edf(x)
 
   x
@@ -661,8 +668,7 @@ update_iwls2 <- function(x, family, response, eta, id, ...)
 
   ## Compute mean and precision.
   XWX <- crossprod(x$X, x$X * x$weights)
-
-  if(is.null(x$state$optimize) | x$fixed | !is.null(x$sp) & TRUE) {
+  if(!x$state$optimize | x$fixed | !is.null(x$sp)) {
     if(x$fixed) {
       P <- matrix_inv(XWX)
     } else {
@@ -810,7 +816,7 @@ grad_posterior <- function(par, x, ...)
 
 opt0 <- function(x, ...)
 {
-  x <- optimizer.setup(x)
+  x <- optimizer.setup(x, ...)
 
   par <- make_par(x)
   family <- attr(x, "family")

@@ -144,7 +144,7 @@ bamlss0 <- function(formula, family = gaussian2, data = NULL, knots = NULL,
     }
   }
 
-  transform <- optimizer.setup
+  transform <- function(x) { optimizer.setup(x, ...) }
   engine <- function(x) {
     stacker(x, optimizer = optimizer, sampler = sampler, mc.cores = cores,
       n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, ...)
@@ -345,7 +345,8 @@ parse.input.bamlss <- function(formula, data = NULL, family = gaussian2.bamlss,
 
 
 ## Assign all designs matrices.
-bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FALSE, ...)
+bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FALSE,
+  before = TRUE, ...)
 {
   if(!binning)
     binning <- NULL
@@ -394,6 +395,7 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
           if(!is.null(tsm$xt$center))
             acons <- tsm$xt$center
           tsm$xt$center <- acons
+          tsm$before <- before
           if(!is.null(tsm$xt$xbin)) {
             term.names <- c(tsm$term, if(tsm$by != "NA") tsm$by else NULL)
             ind <- lapply(mf[, term.names, drop = FALSE], function(x) {
@@ -414,7 +416,7 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
             tsm$xbin.order <- order(tsm$xbin.ind)
             tsm$xbin.k <- length(xbin.uind)
             tsm$xbin.sind <- tsm$xbin.ind[tsm$xbin.order]
-            smt <- smoothCon(tsm, mf[tsm$xbin.take, term.names, drop = FALSE], knots, absorb.cons = acons)
+            smt <- smoothCon(tsm, if(before) mf[tsm$xbin.take, term.names, drop = FALSE] else mf, knots, absorb.cons = acons)
           } else {
             smt <- smoothCon(tsm, mf, knots, absorb.cons = acons)
           }
@@ -431,7 +433,9 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
         smooth <- c(smooth, smt)
       }
       if(length(smooth) > 0) {
-        smooth <- gam.side(smooth, obj$X, tol = .Machine$double.eps^.5)
+        smooth <- try(gam.side(smooth, obj$X, tol = .Machine$double.eps^.5), silent = TRUE)
+        if(inherits(smooth, "try-error"))
+          stop("gam.side() produces an error when binning, try to set before = FALSE!?")
         sme <- mgcv:::expand.t2.smooths(smooth)
         if(is.null(sme)) {
           original.smooth <- NULL
@@ -525,7 +529,7 @@ rm_infinite <- function(x) {
     for(j in 1:ncol(x)) {
       if(class(x[, j]) %in% c("numeric", "integer")) {
         if(any(!is.finite(x[, j]))) {
-          warning("infinite values in data, removing these observations in model frame!")
+          warning("infinite values in data, removing these observations in model.frame!")
           x <- x[is.finite(x[, j]), ]
         }
       }
