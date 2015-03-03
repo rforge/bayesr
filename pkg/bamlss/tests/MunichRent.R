@@ -62,6 +62,7 @@ nd <- expand.grid("x" = seq(bbox["x", 1], bbox["x", 2], length = grid),
   "y" = seq(bbox["y", 1], bbox["y", 2], length = grid))
 
 nd$fmu <- predict(b2, newdata = nd, model = "mu", term = "s(x,y)")
+nd$fsigma <- predict(b2, newdata = nd, model = "sigma", term = "s(x,y)")
 
 i <- drop2poly(nd$x, nd$y, MunichBnd)
 nd <- nd[i, ]

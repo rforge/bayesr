@@ -96,7 +96,7 @@ b1 <- bamlss(f, data = dat, family = gF(cens, left = 0),
 
 set.seed(111)
 
-n <- 300
+n <- 100
 d <- data.frame("x" = runif(n))
 d$y <- -0.2 + 0.4 * d$x + rnorm(n, sd = 0.3)
 d$yobs <- ifelse(d$y <= 0, 0, d$y)
@@ -106,13 +106,13 @@ b <- bamlss0(yobs ~ x, data = d, family = gF(cens, left = 0))
 coef(b)
 plot(b, which = 3:4)
 
-n <- 100
-d <- expand.grid("lon" = seq(0, 1, length = n), "lat" = seq(0, 1, length = n))
+n <- 50
+d <- expand.grid("lon" = seq(0.001, 1, length = n), "lat" = seq(0.001, 1, length = n))
 d$time <- rep(1:365, length.out = nrow(d))
 d$alt <- rep(runif(n*n, 500, 2500), length.out = nrow(d))
-d$rain <- with(d, 10 + sin(scale2(time, 0, pi)) * cos(lon) * log(lat) + 0.01 * alt + rnorm(n, sd = 3))
+d$rain <- with(d, 10 + sin(scale2(time, 0, pi)) * cos(lon) * log(lat) + 0.001 * alt + rnorm(n, sd = 3))
 
-b <- bamlss0(rain ~ te(time,lon,lat, bs=c("cc","tp"), d=c(1, 2), k=c(10,15)) + s(alt) + s(lon,lat),
-  data = d, binning = TRUE, before = FALSE, n.iter = 1200, burnin = 200, thin = 1)
+b <- bamlss0(rain ~ te(time,lon,lat, bs=c("cc","tp"), d=c(1, 2)) + s(alt) + s(lon,lat),
+  data = d, binning = TRUE, before = FALSE, n.iter = 120, burnin = 20, thin = 1)
 
 

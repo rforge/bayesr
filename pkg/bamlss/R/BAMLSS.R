@@ -144,7 +144,8 @@ bamlss0 <- function(formula, family = gaussian2, data = NULL, knots = NULL,
     }
   }
 
-  transform <- function(x) { optimizer.setup(x, ...) }
+  transform <- function(x) { bamlss.setup(x, ...) }
+  if(is.null(sampler)) sampler <- function(x, ...) { mvn.sampler(x, ...) }
   engine <- function(x) {
     stacker(x, optimizer = optimizer, sampler = sampler, mc.cores = cores,
       n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, ...)
@@ -1078,7 +1079,7 @@ c.bamlss <- function(...)
 ## Function to compute statistics from samples of a model term.
 compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   asamples = NULL, FUN = NULL, snames, effects.hyp, fitted.values, data,
-  grid = 100, rug = TRUE, hlevel = 1, sx = FALSE, re.slope = FALSE)
+  grid = 100, rug = TRUE, hlevel = 1, sx = FALSE, re.slope = FALSE, edfsamples = NULL)
 {
   require("coda")
 
@@ -1224,6 +1225,8 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   colnames(psamples) <- paste(x$label, 1:ncol(psamples), sep = ".")
 
   ## Get samples of the variance parameter.
+  if(!is.null(edfsamples))
+    vsamples <- edfsamples
   if(!is.null(vsamples)) {
     if(!is.matrix(vsamples))
       vsamples <- matrix(vsamples, ncol = 1)
@@ -1251,8 +1254,8 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
       attr(smf, "specs")$label <- gsub(")", paste(",",
         paste(formatC(me, digits = 2), collapse = ","), ")",
         sep = ""), x$label)
-      colnames(vsamples) <- paste(x$label, "tau", 1:nrow(smatfull), sep = ".")
-      attr(smf, "samples.scale") <- as.mcmc(vsamples)
+      colnames(vsamples) <- paste(x$label, if(is.null(edfsamples)) "tau" else "edf", 1:nrow(smatfull), sep = ".")
+      attr(smf, if(is.null(edfsamples)) "samples.scale" else "samples.edf") <- as.mcmc(vsamples)
       if(!is.null(asamples)) {
         asamples <- matrix(asamples, ncol = 1)
         colnames(asamples) <- paste(x$label, "alpha", sep = ".")
@@ -2585,6 +2588,8 @@ plot.bamlss.effect <- function(x, which = "effects", ...) {
     args$x <- attr(x, "samples")
     if(!is.null(attr(x, "samples.scale")))
       args$x <- as.mcmc(cbind(as.matrix(args$x), as.matrix(attr(x, "samples.scale"))))
+    if(!is.null(attr(x, "samples.edf")))
+      args$x <- as.mcmc(cbind(as.matrix(args$x), as.matrix(attr(x, "samples.edf"))))
     if(!is.null(attr(x, "samples.alpha")))
       args$x <- as.mcmc(cbind(as.matrix(args$x), as.matrix(attr(x, "samples.alpha"))))
     acf <- if(is.null(args$acf)) FALSE else args$acf
@@ -2863,7 +2868,7 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
         printCoefmat(x[[i]]$param.effects, digits = digits, na.print = "NA", ...)
       }
       if(length(x[[i]]$effects.hyp) > 0) {
-        cat("\nSmooth effects variances:\n")
+        cat("\nSmooth terms:\n")
         printCoefmat(x[[i]]$effects, digits = digits, na.print = "NA", ...)
       }
       if(i == n & !h0) {

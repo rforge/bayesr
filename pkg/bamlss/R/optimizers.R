@@ -32,16 +32,18 @@
 ##       list is "parametric", for later identifyng the pure parametric
 ##       modeled effects.
 ##
-## optimizer.setup() sets up the basic structure, i.e., adds
+## bamlss.setup() sets up the basic structure, i.e., adds
 ## possible parametric terms to the smooth term list in x, also
 ## adds parametric terms of a random effect presentation of smooth
 ## terms to the "parametric" term. It calls the generic function
 ## smooth.bamlss(), which adds additional parts to the
 ## state list, as this could vary for special terms. A default
 ## method is provided.
-optimizer.setup <- function(x, update = "iwls2", do.optim = NULL, ...)
+bamlss.setup <- function(x, update = "optim1", do.optim = NULL, criterion = c("AICc", "BIC", "AIC"), ...)
 {
-  if(!is.null(attr(x, "optimizer.setup"))) return(x)
+  if(!is.null(attr(x, "bamlss.setup"))) return(x)
+
+  criterion <- match.arg(criterion)
 
   call <- x$call; x$call <- NULL
   x <- assign.weights(x)
@@ -116,6 +118,7 @@ optimizer.setup <- function(x, update = "iwls2", do.optim = NULL, ...)
           }
           if(!is.null(x$smooth[[j]]$rank))
             x$smooth[[j]]$rank <- as.numeric(x$smooth[[j]]$rank)
+          x$smooth[[j]]$criterion <- criterion
           if(!is.null(x$smooth[[j]]$Xf)) {
             x$smooth[[j]]$Xfcn <- paste(paste(paste(x$smooth[[j]]$term, collapse = "."),
               "Xf", sep = "."), 1:ncol(x$smooth[[j]]$Xf), sep = ".")
@@ -140,7 +143,7 @@ optimizer.setup <- function(x, update = "iwls2", do.optim = NULL, ...)
               x$smooth[["parametric"]]$S <- list(diag(0, ncol(x$smooth[["parametric"]]$X)))
               x$smooth[["parametric"]]$bs.dim <- list(diag(0, ncol(x$smooth[["parametric"]]$X)))
               cn <- gsub("Intercept.", "Intercept", gsub("X.", "", c(cn , x$smooth[[j]]$Xfcn), fixed = TRUE))
-              x$smooth[["parametric"]]$s.colnames <- colnames(x$smooth[["parametric"]]$X) <- cn 
+              x$smooth[["parametric"]]$s.colnames <- colnames(x$smooth[["parametric"]]$X) <- cn
             }
           }
         }
@@ -168,7 +171,7 @@ optimizer.setup <- function(x, update = "iwls2", do.optim = NULL, ...)
     attr(x, "response.vec") <- response
   }
 
-  attr(x, "optimizer.setup") <- TRUE
+  attr(x, "bamlss.setup") <- TRUE
 
   x
 }
@@ -461,7 +464,9 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   eps = .Machine$double.eps^0.25, maxit = 400, outer = FALSE, inner = FALSE,
   verbose = TRUE, digits = 4, ...)
 {
-  x <- optimizer.setup(x, ...)
+  criterion <- match.arg(criterion)
+
+  x <- bamlss.setup(x, criterion = criterion, ...)
 
   family <- attr(x, "family")
   nx <- family$names
@@ -640,7 +645,7 @@ make_par <- function(x, type = 1) {
 
 
 ## Backfitting updating functions.
-update_iwls2 <- function(x, family, response, eta, id, ...)
+update_iwls1 <- function(x, family, response, eta, id, ...)
 {
   args <- list(...)
 
@@ -701,7 +706,7 @@ update_iwls2 <- function(x, family, response, eta, id, ...)
       return(IC)
     }
     if(length(get.state(x, "tau2")) < 2) {
-      tau2 <- try(optimize(objfun, interval = x$state$interval, grid = x$state$grid)$minimum, silent = TRUE)
+      tau2 <- try(optimize(objfun, interval = x$state$interval)$minimum, silent = TRUE)
       if(inherits(tau2, "try-error"))
         tau2 <- optimize2(objfun, interval = x$state$interval, grid = x$state$grid)$minimum
       x$state$parameters <- set.par(x$state$parameters, if(!length(tau2)) x$interval[1] else tau2, "tau2")
@@ -734,6 +739,91 @@ update_iwls2 <- function(x, family, response, eta, id, ...)
 }
 
 
+## Updating based on optim.
+update_optim1 <- function(x, family, response, eta, id, ...)
+{
+  ## Compute partial predictor.
+  eta[[id]] <- eta[[id]] - fitted(x$state)
+  eta2 <- eta
+
+  if(is.null(x$state$XX)) x$state$XX <- crossprod(x$X)
+  if(!x$fixed) {
+    args <- list(...)
+    edf0 <- args$edf - x$state$edf
+  }
+
+  tpar <- x$state$parameters
+
+  ## Objective for regression coefficients.
+  objfun <- function(gamma, tau2 = NULL) {
+    tpar <- set.par(tpar, gamma, "g")
+    if(!is.null(tau2) & !x$fixed)
+      tpar <- set.par(tpar, tau2, "tau2")
+    eta2[[id]] <- eta[[id]] + x$get.mu(x$X, tpar)
+    ll <- family$loglik(response, family$map2par(eta2))
+    lp <- x$prior(tpar)
+    -1 * (ll + lp)
+  }
+
+  ## Gradient function.
+  grad <- if(!is.null(family$score[[id]]) & is.function(x$grad)) {
+    function(gamma, tau2 = NULL) {
+      tpar <- set.par(tpar, gamma, "g")
+      if(!is.null(tau2) & !x$fixed)
+        tpar <- set.par(tpar, tau2, "tau2")
+      eta2[[id]] <- eta[[id]] + x$get.mu(x$X, tpar)
+      peta <- family$map2par(eta2)
+      score <- drop(family$score[[id]](response, peta))
+      grad <- x$grad(score, tpar, full = FALSE)
+      return(drop(-1 * grad))
+    }
+  } else NULL
+
+  if(!x$fixed & x$state$optimize & is.null(x$sp)) {
+    objfun2 <- function(tau2) {
+      tpar <- set.par(tpar, tau2, "tau2")
+      suppressWarnings(opt <- try(optim(get.par(tpar, "g"), fn = objfun, gr = grad,
+        method = "BFGS", control = list(), tau2 = tau2), silent = TRUE))
+      if(!inherits(opt, "try-error")) {
+        tpar <- set.par(tpar, opt$par, "g")
+        x$state$fitted.values <- x$get.mu(x$X, tpar)
+      }
+      x$state$parameters <- tpar
+      edf <- x$edf(x)
+      eta2[[id]] <- eta[[id]] + fitted(x$state)
+      IC <- get.ic(family, response, family$map2par(eta2), edf0 + edf, length(eta2[[id]]), x$criterion)
+      IC
+    }
+    if(length(get.state(x, "tau2")) < 2) {
+      tau2 <- try(optimize(objfun2, interval = x$state$interval)$minimum, silent = TRUE)
+      if(inherits(tau2, "try-error"))
+        tau2 <- optimize2(objfun2, interval = x$state$interval, grid = x$state$grid)$minimum
+      tpar <- set.par(tpar, if(!length(tau2)) x$interval[1] else tau2, "tau2")
+    } else {
+      i <- grep("tau2", names(x$lower))
+      opt <- try(optim(get.state(x, "tau2"), fn = objfun2, method = "L-BFGS-B",
+        lower = x$lower[i], upper = x$upper[i]), silent = TRUE)
+      if(!inherits(opt, "try-error"))
+        tpar <- set.par(tpar, opt$par, "tau2")
+    }
+  }
+
+  suppressWarnings(opt <- try(optim(get.par(tpar, "g"), fn = objfun, gr = grad,
+    method = "BFGS", control = list(), tau2 = get.par(tpar, "tau2")), silent = TRUE))
+
+  if(!inherits(opt, "try-error")) {
+    tpar <- set.par(tpar, opt$par, "g")
+    x$state$fitted.values <- x$get.mu(x$X, tpar)
+    x$state$parameters <- tpar
+  }
+
+  if(!x$fixed)
+    x$state$edf <- x$edf(x)
+
+  return(x$state)
+}
+
+
 set.all.par <- function(par, x)
 {
   nx <- names(x)
@@ -750,13 +840,14 @@ set.all.par <- function(par, x)
 }
 
 
-log_posterior <- function(par, x)
+log_posterior <- function(par, x, verbose = TRUE, criterion = "AICc", digits = 3)
 {
   eta <- get.eta(x)
   nx <- names(eta)
   np <- length(eta)
   family <- attr(x, "family")
   lprior <- 0
+  edf <- 0
   start <- 1
   for(j in 1:np) {
     eta[[nx[j]]] <- 0
@@ -775,10 +866,26 @@ log_posterior <- function(par, x)
         get.par(tpar, "g"))
       eta[[nx[j]]] <- eta[[nx[j]]] + fitted(x[[nx[j]]]$smooth[[sj]]$state)
       lprior <- lprior + x[[nx[j]]]$smooth[[sj]]$prior(tpar)
+      edf <- edf + x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]])
     }
   }
   ll <- family$loglik(attr(x, "response.vec"), family$map2par(eta))
-  return(as.numeric(ll + lprior))
+  lp <- as.numeric(ll + lprior)
+
+  if(verbose) {
+    nobs <- if(is.null(dim(attr(x, "response.vec")))) {
+      length(attr(x, "response.vec"))
+    } else nrow(attr(x, "response.vec"))
+    IC <- get.ic(family, attr(x, "response.vec"), family$map2par(eta), edf, nobs, criterion)
+    cat("\r")
+    vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
+      " logPost ", fmt(lp, width = 8, digits = digits),
+      " edf ", fmt(edf, width = 6, digits = digits), sep = "")
+    cat(vtxt)
+    if(.Platform$OS.type != "unix") flush.console()
+  }
+
+  return(lp)
 }
 
 grad_posterior <- function(par, x, ...)
@@ -814,16 +921,20 @@ grad_posterior <- function(par, x, ...)
 }
 
 
-opt0 <- function(x, ...)
+opt0 <- function(x, criterion = c("AICc", "BIC", "AIC"), verbose = TRUE, digits = 3, ...)
 {
-  x <- optimizer.setup(x, ...)
+  x <- bamlss.setup(x, ...)
+
+  criterion = match.arg(criterion)
 
   par <- make_par(x)
   family <- attr(x, "family")
 
   opt <- optim(par$par, fn = log_posterior, gr = if(!is.null(family$score)) grad_posterior else NULL,
-    x = x, method = "L-BFGS-B", lower = par$lower, upper = par$upper,
-    control = list(fnscale = -1))
+    x = x, method = "L-BFGS-B", lower = par$lower, upper = par$upper, verbose = verbose,
+    criterion = criterion, digits = digits, control = list(fnscale = -1))
+ 
+  if(verbose) cat("\n")
 
   x <- set.all.par(opt$par, x)
   attr(x, "hessian") <- opt$hessian

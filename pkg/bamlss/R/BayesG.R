@@ -315,7 +315,7 @@ uni.slice <- function(g, x, family, response, eta, id, j, ...,
   x0 <- g[j]
   gL <- gR <- g
 
-  gx0 <- logPost(g, x, family, response, eta, id)
+  gx0 <- logPost(g, x, family, response, eta, id, ...)
 
   ## Determine the slice level, in log terms.
   logy <- gx0 - rexp(1)
@@ -331,12 +331,12 @@ uni.slice <- function(g, x, family, response, eta, id, j, ...,
   if(is.infinite(m)) {
     repeat {
       if(gL[j] <= lower) break
-      if(logPost(gL, x, family, response, eta, id) <= logy) break
+      if(logPost(gL, x, family, response, eta, id, ...) <= logy) break
       gL[j] <- gL[j] - w
     }
     repeat {
       if(gR[j] >= upper) break
-      if(logPost(gR, x, family, response, eta, id) <= logy) break
+      if(logPost(gR, x, family, response, eta, id, ...) <= logy) break
       gR[j] <- gR[j] + w
     }
   } else {
@@ -345,13 +345,13 @@ uni.slice <- function(g, x, family, response, eta, id, j, ...,
       K <- (m - 1) - J
       while(J > 0) {
         if(gL[j] <= lower) break
-        if(logPost(gL, x, family, response, eta, id) <= logy) break
+        if(logPost(gL, x, family, response, eta, id, ...) <= logy) break
         gL[j] <- gL[j] - w
         J <- J - 1
       }
       while(K > 0) {
         if(gR[j] >= upper) break
-        if(logPost(gR, x, family, response, eta, id) <= logy) break
+        if(logPost(gR, x, family, response, eta, id, ...) <= logy) break
         gR[j] <- gR[j] + w
         K <- K - 1
       }
@@ -370,7 +370,7 @@ uni.slice <- function(g, x, family, response, eta, id, j, ...,
   repeat {
     g[j] <- runif(1, gL[j], gR[j])
 
-    gx1 <- logPost(g, x, family, response, eta, id)
+    gx1 <- logPost(g, x, family, response, eta, id, ...)
 
     if(gx1 >= logy) break
 
@@ -2061,7 +2061,7 @@ resultsBayesG <- function(x, samples)
             paste(strsplit(x, "")[[1]][1:nch], collapse = "", sep = "")
           })
           pn <- snames[snames2 == pn]
-          pn <- pn[!grepl("tau2", pn) & !grepl("alpha", pn) & !grepl("accepted", pn)]
+          pn <- pn[!grepl("tau2", pn) & !grepl("alpha", pn) & !grepl("accepted", pn) & !grepl("edf", pn)]
           k <- sum(snames %in% pn)
 
           psamples <- matrix(samples[[j]][, snames %in% pn], ncol = k)
@@ -2086,7 +2086,7 @@ resultsBayesG <- function(x, samples)
             }
           }
 
-          ## Possible variance parameter samples.
+          ## Possible variance/edf parameter samples.
           vsamples <- NULL
           tau2 <- if(any(grepl("h1", snames))) {
             tau2 <- paste(id, "h1", paste(obj$smooth[[i]]$label, "tau2", sep = "."), sep = ":")
@@ -2097,6 +2097,14 @@ resultsBayesG <- function(x, samples)
           } else {
             if(obj$smooth[[i]]$fixed)
               vsamples <- rep(.Machine$double.eps, nrow(samples[[j]]))
+          }
+          edfsamples <- NULL
+          edf <- if(any(grepl("h1", snames))) {
+            edf <- paste(id, "h1", paste(obj$smooth[[i]]$label, "edf", sep = "."), sep = ":")
+          } else paste(id, paste(obj$smooth[[i]]$label, "edf", sep = "."), sep = ".")
+          if(length(edf <- grep(edf, snames, fixed = TRUE))) {
+            edfsamples <- samples[[j]][, edf, drop = FALSE]
+            edfsamples <- edfsamples[!nas, , drop = FALSE]
           }
 
           ## Acceptance probalities.
@@ -2141,7 +2149,7 @@ resultsBayesG <- function(x, samples)
               psamples = psamples, vsamples = vsamples, asamples = asamples,
               FUN = NULL, snames = snames, effects.hyp = effects.hyp,
               fitted.values = fitted.values, data = attr(x, "model.frame")[, tn, drop = FALSE],
-              grid = grid)
+              grid = grid, edfsamples = edfsamples)
 
             attr(fst$term, "specs")$get.mu <- obj$smooth[[i]]$get.mu
 

@@ -2282,3 +2282,27 @@ gaussian5.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
   rval
 }
 
+
+#################
+## Joint model ##
+#################
+jm.bamlss <- JM.bamlss <- function(links = c(mu = "identity", sigma = "log", lambda = "log", surv = "log"), ...)
+{
+  rval <- list(
+    "family" = "joint-model",
+    "names" = c("mu", "sigma", "lambda" = "surv"),
+    "links" = parse.links(links, c(mu = "identity", sigma = "log", lambda = "identity"), ...),
+    "loglik" = function(y, eta, ...) {
+      ll1 <- sum(dnorm(y, eta$mu, eta$sigma, log = TRUE))
+      ll2 <- sum(hazard(eta$lambda), na.rm = TRUE)
+      ll3 <- sum(survfun(eta$surv + eta$mu), na.rm = TRUE)
+      ll1 + ll2 + ll3
+    }
+  )
+}
+
+
+surv.bamlss <- function()
+{
+  
+}
