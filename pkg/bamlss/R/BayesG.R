@@ -2036,11 +2036,11 @@ resultsBayesG <- function(x, samples)
         ic <- grep("save.edf", snames)
         nic <- snames[(ic - 1):ic]
         IC <- samples[[j]][, grepl(nic[1], snames)][1]
-        edf <- samples[[j]][, grepl(nic[2], snames)][1]
+        edf00 <- samples[[j]][, grepl(nic[2], snames)][1]
         names(IC) <- nic[1]
         DIC <- pd <- NULL
       } else {
-        IC <- edf <- NULL
+        IC <- edf00 <- NULL
       }
 
       ## Compute model term effects.
@@ -2193,7 +2193,7 @@ resultsBayesG <- function(x, samples)
       rval[[j]] <- list(
         "model" = list("DIC" = DIC, "pd" = pd,
           "N" = nrow(attr(x, "model.frame")), "formula" = obj$formula,
-          "IC" = IC, "edf" = edf),
+          "IC" = IC, "edf" = edf00),
         "param.effects" = param.effects, "effects" = effects,
         "effects.hyp" = effects.hyp, "fitted.values" = fitted.values
       )

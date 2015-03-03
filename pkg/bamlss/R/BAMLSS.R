@@ -145,7 +145,7 @@ bamlss0 <- function(formula, family = gaussian2, data = NULL, knots = NULL,
   }
 
   transform <- function(x) { bamlss.setup(x, ...) }
-  if(is.null(sampler)) sampler <- function(x, ...) { mvn.sampler(x, ...) }
+  if(is.null(sampler)) sampler <- function(x, ...) { null.sampler(x, ...) }
   engine <- function(x) {
     stacker(x, optimizer = optimizer, sampler = sampler, mc.cores = cores,
       n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, ...)
@@ -2808,11 +2808,12 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
     if(!is.null(x$IC) & !is.null(x$edf)) {
       dp <- TRUE
       if(ok) cat("\n---") else cat("---")
-      cat("\nlog Lik. =", if(is.na(x$IC)) "NA" else {
+      cat(if(is.null(names(x$IC))) "\nlog Lik. =" else paste("\n", names(x$IC), " =", sep = ""),
+        if(is.na(x$IC)) "NA" else {
             formatC(x$IC, digits = digits, flag = "-")
-          }, "edf =", if(is.na(x$ed)) "NA" else {
+          }, "edf =", if(is.na(x$edf)) "NA" else {
             formatC(x$edf, digits = digits, flag = "-")
-          })
+      })
     }
     if(!is.null(x$DIC) & !is.null(x$pd)) {
       dp <- TRUE

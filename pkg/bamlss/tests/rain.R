@@ -15,12 +15,12 @@ homstart$raw[homstart$raw < 0] <- 0
 rain2 <- subset(homstart, year >= 2008)
 
 f <- list(
-  sqrt(raw) ~ s(day, bs = "cc") + s(elevation) + s(long, lat),
-  ~ s(day, bs = "cc") + s(elevation) + s(long, lat)
+  sqrt(raw) ~ te(day,long,lat, bs=c("cc","tp"), d=c(1,2)) + s(elevation,k=4) + s(long,lat),
+  ~ te(day,long,lat, bs=c("cc","tp"), d=c(1,2)) + s(elevation,k=4) + s(long,lat)
 )
 
-b1 <- bamlss0(f, data = homstart, family = gF(cens, left = 0),
-  n.iter = 5000, burnin = 1000, thin = 10, binning = TRUE)
+b1 <- bamlss0(f, data = rain2, family = gF(cens, left = 0),
+  binning = TRUE, sampler = NULL, do.optim = TRUE, before = FALSE, maxit = 10)
 
 b1 <- bamlss(f, data = homstart, family = gF(cens, left = 0),
   method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls",
@@ -113,6 +113,6 @@ d$alt <- rep(runif(n*n, 500, 2500), length.out = nrow(d))
 d$rain <- with(d, 10 + sin(scale2(time, 0, pi)) * cos(lon) * log(lat) + 0.001 * alt + rnorm(n, sd = 3))
 
 b <- bamlss0(rain ~ te(time,lon,lat, bs=c("cc","tp"), d=c(1, 2)) + s(alt) + s(lon,lat),
-  data = d, binning = TRUE, before = FALSE, n.iter = 120, burnin = 20, thin = 1)
+  data = d, binning = TRUE, before = FALSE, sampler = NULL, optimizer = bfit0, do.optim = FALSE)
 
 

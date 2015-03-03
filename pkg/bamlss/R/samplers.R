@@ -914,7 +914,7 @@ gmcmc_newton <- function(fun, theta, id, prior, ...)
     theta2[[id[1]]][[id[2]]] <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma))
 
     grad.theta2 <- grad(fun, theta2, prior, id, args)
-    hess.theta2 <- hess(fun, theta2, prior, id, args, diag = TRUE)
+    hess.theta2 <- hess(fun, theta2, prior, id, args, diag = FALSE)
 
     Sigma2 <- matrix_inv(hess.theta2)
     mu2 <- drop(theta2[[id[1]]][[id[2]]] + Sigma2 %*% grad.theta2)
@@ -932,37 +932,51 @@ gmcmc_newton <- function(fun, theta, id, prior, ...)
 }
 
 
-mvn.sampler <- function(x, n.iter = 300, n.samples = 0, ...)
+null.sampler <- function(x, criterion = c("AICc", "BIC", "AIC"), ...)
 {
-  if(!is.null(n.samples))
-    n.iter <- n.samples
+  criterion <- match.arg(criterion)
 
   par <- make_par(x)
   family <- attr(x, "family")
-
-  if(is.null(attr(x, "hessian"))) {
-    opt <- optimHess(par$par, fn = log_posterior, gr = if(!is.null(family$score)) grad_posterior else NULL,
-      x = x, method = "L-BFGS-B", lower = par$lower, upper = par$upper, verbose = FALSE,
-      control = list(fnscale = -1))
-    hessian <- diag(opt)
-  } else {
-    hessian <- diag(attr(x, "hessian"))
-  }
-  hessian <- -1 / hessian
  
   nx <- family$names
   np <- length(nx)
 
-  samps <- matrix(NA, nrow = n.iter, ncol = length(hessian))
+  nh <- names(par$par)
+  samps <- matrix(NA, 1L, length(nh))
+  colnames(samps) <- nh
   sn <- NULL
 
+  eta <- vector(mode = "list", length = np)
+  names(eta) <- nx
+  edf <- 0
+
   for(j in 1:np) {
+    eta[[j]] <- 0
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
-      tsd <- hessian[grep(paste("p", j, ".t", sj, ".", sep = ""), names(hessian), fixed = TRUE)]
-print(tsd)
-      sn <- c(sn, paste(x[[nx[j]]]$smooth[[sj]]$label))
+      nh2 <- grep(paste("p", j, ".t", sj, ".", sep = ""), nh, fixed = TRUE, value = TRUE)
+      nhg <- nh2[!grepl("tau2", nh2)]
+      g <- get.state(x[[nx[j]]]$smooth[[sj]], "gamma")
+      samps[1L, nhg] <- g
+      eta[[j]] <- eta[[j]] + x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, g)
+      sn <- c(sn, paste(nx[j], x[[nx[j]]]$smooth[[sj]]$label, paste("g", 1:length(nhg), sep = ""), sep = "."))
+      if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
+        nhtau2 <- nh2[grepl("tau2", nh2)]
+        tedf <- x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]])
+        samps[1L, nhtau2] <- tedf
+        edf <- edf + tedf
+        sn <- c(sn, paste(nx[j], x[[nx[j]]]$smooth[[sj]]$label, paste("tau2", 1:length(nhtau2), sep = ""), sep = "."))
+      } else {
+        edf <- edf + ncol(x[[nx[j]]]$smooth[[sj]]$X)
+      }
     }
   }
-print(sn)
+
+  colnames(samps) <- sn
+  IC <- as.numeric(get.ic(family, attr(x, "response.vec"), family$map2par(eta), edf, length(eta[[1L]]), criterion))
+  samps <- cbind(samps, IC, edf)
+  colnames(samps)[(ncol(samps) - 1):ncol(samps)] <- c(criterion, "save.edf")
+
+  as.mcmc(samps)
 }
 

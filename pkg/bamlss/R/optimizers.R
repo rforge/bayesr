@@ -39,7 +39,7 @@
 ## smooth.bamlss(), which adds additional parts to the
 ## state list, as this could vary for special terms. A default
 ## method is provided.
-bamlss.setup <- function(x, update = "optim1", do.optim = NULL, criterion = c("AICc", "BIC", "AIC"), ...)
+bamlss.setup <- function(x, update = "iwls1", do.optim = NULL, criterion = c("AICc", "BIC", "AIC"), ...)
 {
   if(!is.null(attr(x, "bamlss.setup"))) return(x)
 
@@ -840,7 +840,7 @@ set.all.par <- function(par, x)
 }
 
 
-log_posterior <- function(par, x, verbose = TRUE, criterion = "AICc", digits = 3)
+log_posterior <- function(par, x, verbose = TRUE, criterion = "AICc", digits = 3, scale = 1)
 {
   eta <- get.eta(x)
   nx <- names(eta)
@@ -885,7 +885,7 @@ log_posterior <- function(par, x, verbose = TRUE, criterion = "AICc", digits = 3
     if(.Platform$OS.type != "unix") flush.console()
   }
 
-  return(lp)
+  return(lp * scale)
 }
 
 grad_posterior <- function(par, x, ...)
@@ -932,7 +932,7 @@ opt0 <- function(x, criterion = c("AICc", "BIC", "AIC"), verbose = TRUE, digits 
 
   opt <- optim(par$par, fn = log_posterior, gr = if(!is.null(family$score)) grad_posterior else NULL,
     x = x, method = "L-BFGS-B", lower = par$lower, upper = par$upper, verbose = verbose,
-    criterion = criterion, digits = digits, control = list(fnscale = -1))
+    criterion = criterion, digits = digits, control = list(fnscale = -1), hessian = TRUE)
  
   if(verbose) cat("\n")
 
