@@ -963,7 +963,7 @@ null.sampler <- function(x, criterion = c("AICc", "BIC", "AIC"), ...)
       if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
         nhtau2 <- nh2[grepl("tau2", nh2)]
         tedf <- x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]])
-        samps[1L, nhtau2] <- tedf
+        samps[1L, nhtau2] <- get.state(x[[nx[j]]]$smooth[[sj]], "tau2") ##tedf
         edf <- edf + tedf
         sn <- c(sn, paste(nx[j], x[[nx[j]]]$smooth[[sj]]$label, paste("tau2", 1:length(nhtau2), sep = ""), sep = "."))
       } else {

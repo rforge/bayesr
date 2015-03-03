@@ -19,8 +19,8 @@ f <- list(
   ~ te(day,long,lat, bs=c("cc","tp"), d=c(1,2)) + s(elevation,k=4) + s(long,lat)
 )
 
-b1 <- bamlss0(f, data = rain2, family = gF(cens, left = 0),
-  binning = TRUE, sampler = NULL, do.optim = TRUE, before = FALSE, maxit = 10)
+b2 <- bamlss0(f, data = rain2, family = gF(cens, left = 0),
+  binning = FALSE, sampler = NULL, do.optim = TRUE, before = FALSE, maxit = 2)
 
 b1 <- bamlss(f, data = homstart, family = gF(cens, left = 0),
   method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls",
