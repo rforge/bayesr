@@ -667,7 +667,7 @@ resultsJAGS <- function(x, samples)
               vsamples <- as.numeric(samples[[j]][, snames %in% taug])
             }
 
-            get.mu <- function(X, g) {
+            get.mu <- function(X, g, ...) {
               X %*% as.numeric(g)
             }
 
@@ -861,7 +861,7 @@ resultsJAGS.special.default <- function(x, samples, data, i, ...)
   }
 
   if(is.null(x$get.mu)) {
-    get.mu <- function(X, g) {
+    get.mu <- function(X, g, ...) {
       X %*% as.numeric(g)
     }
   } else {

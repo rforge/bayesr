@@ -128,49 +128,12 @@ stacker <- function(x, optimizer = bfit0, sampler = samplerJAGS,
 #########################
 ## (3) BAMLSS wrapper. ##
 #########################
-## Using the stacker.
-bamlss0 <- function(formula, family = gaussian2, data = NULL, knots = NULL,
-  weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
-  optimizer = list(bfit0), sampler = list(GMCMC), results = resultsBayesG, cores = NULL, combine = TRUE,
-  n.iter = 12000, thin = 10, burnin = 2000, seed = NULL, ...)
-{
-  ff <- try(inherits(family, "family.bamlss"), silent = TRUE)
-  if(inherits(ff, "try-error")) {
-    family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
-  } else {
-    if(is.function(family)) {
-      if(inherits(try(family(), silent = TRUE), "try-error"))
-        family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
-    }
-  }
-
-  transform <- function(x) { bamlss.setup(x, ...) }
-  if(is.null(sampler)) sampler <- function(x, ...) { null.sampler(x, ...) }
-  engine <- function(x) {
-    stacker(x, optimizer = optimizer, sampler = sampler, mc.cores = cores,
-      n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, ...)
-  }
-
-  rval <- xreg(formula, family = family, data = data, knots = knots,
-    weights = weights, subset = subset, offset = offset, na.action = na.action,
-    contrasts = contrasts, parse.input = parse.input.bamlss, transform = transform,
-    setup = FALSE, engine = engine, results = results, cores = NULL,
-    combine = combine, sleep = 1, ...)
-  
-  attr(rval, "engine") <- "stacker"
-  attr(rval, "call") <- match.call()
-  
-  rval
-}
-
-
-## First version, no stacking.
 bamlss <- function(formula, family = gaussian2, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
-  engine = c("BayesG", "BayesX", "JAGS", "STAN"), cores = NULL, combine = TRUE,
+  optimizer = list(bfit0), sampler = list(GMCMC), results = resultsBayesG,
+  engine = NULL, cores = NULL, combine = TRUE,
   n.iter = 12000, thin = 10, burnin = 2000, seed = NULL, ...)
 {
-  xengine <- match.arg(engine)
   ff <- try(inherits(family, "family.bamlss"), silent = TRUE)
   if(inherits(ff, "try-error")) {
     family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
@@ -181,51 +144,66 @@ bamlss <- function(formula, family = gaussian2, data = NULL, knots = NULL,
     }
   }
 
-  if(xengine == "BayesX") {
-    require("BayesXsrc")
-
-    data.name <- if(!is.null(data)) {
-      deparse(substitute(data), backtick = TRUE, width.cutoff = 500)
-    } else "d"
-
-    transform <- transformBayesX
-    setup <- function(x) {
-      setupBayesX(x, n.iter = n.iter, thin = thin, burnin = burnin,
-        seed = seed, data.name = data.name, cores = cores, ...)
-    }
-    engine <- samplerBayesX
-    results <- resultsBayesX
-  }
-
-  if(xengine == "BayesG") {
-    transform <- transformBayesG
-    setup <- FALSE
+  if(is.null(engine)) {
+    transform <- function(x) { bamlss.setup(x, ...) }
+    if(is.null(sampler)) sampler <- function(x, ...) { null.sampler(x, ...) }
     engine <- function(x) {
-      BayesG(x, n.iter = n.iter, thin = thin,
-        burnin = burnin, seed = seed, ...)
+      stacker(x, optimizer = optimizer, sampler = sampler, mc.cores = cores,
+        n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, ...)
     }
-    results <- resultsBayesG
-  }
-  
-  if(xengine %in% c("JAGS", "STAN")) {
-    transform <- transformBUGS
-    if(xengine == "JAGS") {
-      require("rjags")
-      setup <- setupJAGS
+    setup <- FALSE
+    cores <- NULL
+    xengine <- "stacker"
+  } else {
+    xengine <- c("BayesG", "BayesX", "JAGS", "STAN")
+    xengine <- xengine[pmatch(engine, xengine)]
+
+    if(xengine == "BayesX") {
+      require("BayesXsrc")
+
+      data.name <- if(!is.null(data)) {
+        deparse(substitute(data), backtick = TRUE, width.cutoff = 500)
+      } else "d"
+
+      transform <- transformBayesX
+      setup <- function(x) {
+        setupBayesX(x, n.iter = n.iter, thin = thin, burnin = burnin,
+          seed = seed, data.name = data.name, cores = cores, ...)
+      }
+      engine <- samplerBayesX
+      results <- resultsBayesX
+    }
+
+    if(xengine == "BayesG") {
+      transform <- transformBayesG
+      setup <- FALSE
       engine <- function(x) {
-        samplerJAGS(x, n.iter = n.iter, thin = thin,
+        BayesG(x, n.iter = n.iter, thin = thin,
           burnin = burnin, seed = seed, ...)
       }
-    } else {
-      require("rstan")
-      setup <- bugs2stan
-      engine <- function(x) {
-        samplerSTAN(x, n.iter = n.iter, thin = thin,
-          burnin = burnin, seed = seed, ...)
-      }  
+      results <- resultsBayesG
     }
+  
+    if(xengine %in% c("JAGS", "STAN")) {
+      transform <- transformBUGS
+      if(xengine == "JAGS") {
+        require("rjags")
+        setup <- setupJAGS
+        engine <- function(x) {
+          samplerJAGS(x, n.iter = n.iter, thin = thin,
+            burnin = burnin, seed = seed, ...)
+        }
+      } else {
+        require("rstan")
+        setup <- bugs2stan
+        engine <- function(x) {
+          samplerSTAN(x, n.iter = n.iter, thin = thin,
+            burnin = burnin, seed = seed, ...)
+        }  
+      }
 
-    results <- resultsJAGS
+      results <- resultsJAGS
+    }
   }
 
   rval <- xreg(formula, family = family, data = data, knots = knots,
@@ -234,7 +212,7 @@ bamlss <- function(formula, family = gaussian2, data = NULL, knots = NULL,
     setup = setup, engine = engine, results = results, cores = cores,
     combine = combine, sleep = 1, ...)
   
-  attr(rval, "engine") <- xengine
+  attr(rval, "engine") <- "stacker"
   attr(rval, "call") <- match.call()
   
   rval
@@ -1224,8 +1202,11 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   colnames(psamples) <- paste(x$label, 1:ncol(psamples), sep = ".")
 
   ## Get samples of the variance parameter.
-  if(!is.null(edfsamples))
+  edf <- FALSE
+  if(!is.null(edfsamples)) {
     vsamples <- edfsamples
+    edf <- TRUE
+  }
   if(!is.null(vsamples)) {
     if(!is.matrix(vsamples))
       vsamples <- matrix(vsamples, ncol = 1)
@@ -1262,6 +1243,8 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
       }
     }
     effects.hyp <- rbind(effects.hyp, smatfull)
+    if(edf)
+      attr(effects.hyp, "edf") <- TRUE
   }
 
   ## Assign samples.
@@ -2868,7 +2851,10 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
         printCoefmat(x[[i]]$param.effects, digits = digits, na.print = "NA", ...)
       }
       if(length(x[[i]]$effects.hyp) > 0) {
-        cat("\nSmooth terms:\n")
+        if(is.null(attr(x[[i]]$effects.hyp, "edf")))
+          cat("\nSmooth terms (variances):\n")
+        else
+          cat("\nSmooth terms (edf):\n")
         printCoefmat(x[[i]]$effects, digits = digits, na.print = "NA", ...)
       }
       if(i == n & !h0) {

@@ -123,7 +123,7 @@ bugs2stan <- function(x)
 ########################################
 samplerSTAN <- function(x, tdir = NULL,
   n.chains = 1, n.iter = 4000, thin = 2, burnin = 1000,
-  seed = NULL, verbose = FALSE, ...)
+  seed = NULL, verbose = FALSE, show.model = TRUE, ...)
 {
   require("rstan")
 
@@ -142,6 +142,8 @@ samplerSTAN <- function(x, tdir = NULL,
   ## Write the model code.
   writeLines(paste(x$model, collapse = "\n"), mfile <- file.path(tdir, "STANmodel.txt"))
 
+  if(show.model) writeLines(paste(x$model, collapse = "\n"))
+
   if(verbose) writeLines(x$model)
 
   smodel <- stan(mfile, fit = NA, data = x$data, chains = n.chains, iter = n.iter,
@@ -151,6 +153,7 @@ samplerSTAN <- function(x, tdir = NULL,
   for(j in seq_along(samples))
     samples[[j]] <- as.mcmc(do.call("cbind", samples[[j]]))
   samples <- as.mcmc.list(samples)
+  samples <- window(samples, start = ceiling(burnin / thin))
 
   samples
 }
