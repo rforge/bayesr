@@ -39,7 +39,7 @@
 ## smooth.bamlss(), which adds additional parts to the
 ## state list, as this could vary for special terms. A default
 ## method is provided.
-bamlss.setup <- function(x, update = "iwls1", do.optim = NULL, criterion = c("AICc", "BIC", "AIC"), ...)
+bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AICc", "BIC", "AIC"), ...)
 {
   if(!is.null(attr(x, "bamlss.setup"))) return(x)
 
@@ -109,8 +109,14 @@ bamlss.setup <- function(x, update = "iwls1", do.optim = NULL, criterion = c("AI
       if(length(x$smooth)) {
         for(j in seq_along(x$smooth)) {
           x$smooth[[j]] <- smooth.bamlss(x$smooth[[j]])
-          if(is.null(x$smooth[[j]]$update))
-            x$smooth[[j]]$update <- eval(parse(text = paste("update", update, sep = "_")))
+          if(is.null(x$smooth[[j]]$update)) {
+            if(is.character(update)) {
+              if(!grepl("bfit0_", update))
+                update <- paste("bfit0", update, sep = "_")
+              update <- eval(parse(text = update))
+            }
+            x$smooth[[j]]$update <- update
+          }
           if(is.null(x$smooth[[j]]$state$optimize)) {
             if(is.null(do.optim))
               x$smooth[[j]]$state$optimize <- TRUE
@@ -646,7 +652,7 @@ make_par <- function(x, type = 1) {
 
 
 ## Backfitting updating functions.
-update_iwls1 <- function(x, family, response, eta, id, ...)
+bfit0_iwls <- function(x, family, response, eta, id, ...)
 {
   args <- list(...)
 
@@ -741,7 +747,7 @@ update_iwls1 <- function(x, family, response, eta, id, ...)
 
 
 ## Updating based on optim.
-update_optim1 <- function(x, family, response, eta, id, ...)
+bfit0_optim <- function(x, family, response, eta, id, ...)
 {
   ## Compute partial predictor.
   eta[[id]] <- eta[[id]] - fitted(x$state)
