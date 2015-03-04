@@ -131,7 +131,7 @@ stacker <- function(x, optimizer = bfit0, sampler = samplerJAGS,
 ## Using the stacker.
 bamlss0 <- function(formula, family = gaussian2, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
-  optimizer = list(bfit0), sampler = list(GMCMC), cores = NULL, combine = TRUE,
+  optimizer = list(bfit0), sampler = list(GMCMC), results = resultsBayesG, cores = NULL, combine = TRUE,
   n.iter = 12000, thin = 10, burnin = 2000, seed = NULL, ...)
 {
   ff <- try(inherits(family, "family.bamlss"), silent = TRUE)
@@ -150,7 +150,6 @@ bamlss0 <- function(formula, family = gaussian2, data = NULL, knots = NULL,
     stacker(x, optimizer = optimizer, sampler = sampler, mc.cores = cores,
       n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, ...)
   }
-  results <- resultsBayesG
 
   rval <- xreg(formula, family = family, data = data, knots = knots,
     weights = weights, subset = subset, offset = offset, na.action = na.action,

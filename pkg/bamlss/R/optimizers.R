@@ -101,6 +101,7 @@ bamlss.setup <- function(x, update = "iwls1", do.optim = NULL, criterion = c("AI
             "by" = "NA",
             "xt" = list("xbin" = x$binning)
           )
+          class(x$smooth[["parametric"]]) <- c(class(x$smooth[["parametric"]]), "no.mgcv")
           x$sterms <- c(x$strems, "parametric")
           x$X <- NULL
         }
