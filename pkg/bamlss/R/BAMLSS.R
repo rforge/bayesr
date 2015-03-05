@@ -131,7 +131,7 @@ stacker <- function(x, optimizer = bfit0, sampler = samplerJAGS,
 bamlss <- function(formula, family = gaussian2, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
   optimizer = list(bfit0), sampler = list(GMCMC), results = resultsBayesG,
-  engine = NULL, cores = NULL, combine = TRUE,
+  engine = NULL, cores = NULL, sleep = 1, combine = TRUE,
   n.iter = 12000, thin = 10, burnin = 2000, seed = NULL, ...)
 {
   ff <- try(inherits(family, "family.bamlss"), silent = TRUE)
@@ -145,11 +145,12 @@ bamlss <- function(formula, family = gaussian2, data = NULL, knots = NULL,
   }
 
   if(is.null(engine)) {
+    mc.cores <- cores
     transform <- function(x) { bamlss.setup(x, ...) }
     if(is.null(sampler)) sampler <- function(x, ...) { null.sampler(x, ...) }
     engine <- function(x) {
-      stacker(x, optimizer = optimizer, sampler = sampler, mc.cores = cores,
-        n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, ...)
+      stacker(x, optimizer = optimizer, sampler = sampler, cores = mc.cores,
+        n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, sleep = sleep, ...)
     }
     setup <- FALSE
     cores <- NULL
@@ -210,7 +211,7 @@ bamlss <- function(formula, family = gaussian2, data = NULL, knots = NULL,
     weights = weights, subset = subset, offset = offset, na.action = na.action,
     contrasts = contrasts, parse.input = parse.input.bamlss, transform = transform,
     setup = setup, engine = engine, results = results, cores = cores,
-    combine = combine, sleep = 1, ...)
+    combine = combine, sleep = sleep, ...)
   
   attr(rval, "engine") <- "stacker"
   attr(rval, "call") <- match.call()
