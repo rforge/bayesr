@@ -185,7 +185,7 @@ propose_mvn <- function(x, family, response, eta, id, ...)
 }
 
 
-logPost <- function(g, x, family, response, eta, id)
+logPost <- function(g, x, family, response, eta, id, ...)
 {
   ## Set up new predictor.
   f <- x$get.mu(x$X, g)
@@ -262,7 +262,7 @@ num_deriv <- function(y, eta, family, id = NULL, d = 1, eps = 1e-04)
 ## Slice sampling
 ## See: http://www.cs.toronto.edu/~radford/ftp/slice-R-prog
 ## Log-posterior used by propose_slice().
-logPost2 <- function(g, x, family, response, eta, id)
+logPost2 <- function(g, x, family, response, eta, id, ...)
 {
   f <- x$get.mu(x$X, g)
   if(!is.null(x$xbin.ind))
@@ -274,7 +274,7 @@ logPost2 <- function(g, x, family, response, eta, id)
 }
 
 ## For rational splines.
-logPost3 <- function(g, x, family, response, eta, id)
+logPost3 <- function(g, x, family, response, eta, id, ...)
 {
   f <- x$get.mu(x$X, g)
   if(!is.null(x$xbin.ind))
@@ -286,7 +286,7 @@ logPost3 <- function(g, x, family, response, eta, id)
 }
 
 ## For variance parameter sampling.
-logPost4 <- function(tau2, x, family, response, eta, id)
+logPost4 <- function(tau2, x, family, response, eta, id, ...)
 {
   ll <- family$loglik(response, family$map2par(eta))
   lp <- x$prior(x$state$g, tau2)
@@ -294,7 +294,7 @@ logPost4 <- function(tau2, x, family, response, eta, id)
 }
 
 ## Rational splines variance parameter.
-logPost5 <- function(tau2, x, family, response, eta, id)
+logPost5 <- function(tau2, x, family, response, eta, id, ...)
 {
   ll <- family$loglik(response, family$map2par(eta))
   lp <- x$prior(x$state$g, tau2)

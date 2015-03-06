@@ -19,7 +19,7 @@ logLik <- function(mu, sigma, ...) {
   ll <- dnorm(dat$y, mean = d$mu %*% mu, sd = exp(d$sigma %*% sigma), log = TRUE)
 }
 
-b0 <- gmcmc(logLik, theta = theta, propose = gmcmc_mvnorm)
+b0 <- gmcmc(logLik, theta = theta, propose = gmcmc_mvnorm, cores = 3)
 b1 <- gmcmc(logLik, theta = theta, propose = gmcmc_slice)
 b2 <- gmcmc(logLik, theta = theta, propose = c(gmcmc_slice, gmcmc_mvnorm))
 b3 <- gmcmc(logLik, theta = theta, propose = gmcmc_newton)

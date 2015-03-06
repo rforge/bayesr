@@ -15,7 +15,7 @@ MCMCpack <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100, ..
 
 
 GMCMC <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
-  propose = "iwls", ...)
+  propose = "iwls", cores = NULL, chains = NULL, ...)
 {
   family <- attr(x, "family")
   nx <- family$names
@@ -68,7 +68,7 @@ GMCMC <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
   samps <- gmcmc(fun = family, theta = theta, fitfun = fitfun, data = smooths,
     propose = propose2, logLik = logLik, n.iter = n.iter, burnin = burnin,
     response = response, simplify = FALSE, zworking = zworking, resids = resids,
-    ...)
+    cores = cores, chains = chains, combine = FALSE, ...)
 
   samps
 }
@@ -77,7 +77,8 @@ GMCMC <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
 gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
   fitfun = NULL, logLik = NULL, data = NULL,
   n.iter = 12000, burnin = 2000, thin = 10, verbose = TRUE, step = 20,
-  simplify = TRUE,  ...)
+  simplify = TRUE, chains = NULL, cores = NULL, combine = TRUE, sleep = 1,
+  compile = TRUE, ...)
 {
   require("coda")
 
@@ -273,72 +274,112 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
     }
   }
 
-  ptm <- proc.time()
-  for(iter in 1:n.iter) {
-    if(save <- iter %in% iterthin)
-      js <- which(iterthin == iter)
-    for(i in ntheta) {
-      for(j in names(theta[[i]])) {
-        ## Get proposed states.
-        state <- propose[[i]][[j]](fun, theta, id = c(i, j),
-          prior = priors[[i]][[j]], data = data[[i]][[j]], eta = eta,
-          iteration = iter, n.iter = n.iter, burnin = burnin, rho = rho, ...)
+  sampler <- function(...) {
+    ptm <- proc.time()
+    for(iter in 1:n.iter) {
+      if(save <- iter %in% iterthin)
+        js <- which(iterthin == iter)
+      for(i in ntheta) {
+        for(j in names(theta[[i]])) {
+          ## Get proposed states.
+          state <- propose[[i]][[j]](fun, theta, id = c(i, j),
+            prior = priors[[i]][[j]], data = data[[i]][[j]], eta = eta,
+            iteration = iter, n.iter = n.iter, burnin = burnin, rho = rho, ...)
 
-        ## If accepted, set current state to proposed state.
-        accepted <- if(is.na(state$alpha)) FALSE else log(runif(1)) <= state$alpha
+          ## If accepted, set current state to proposed state.
+          accepted <- if(is.na(state$alpha)) FALSE else log(runif(1)) <= state$alpha
 
-        if(accepted) {
-          eta[[i]] <- eta[[i]] - fitfun[[i]][[j]](data[[i]][[j]], theta[[i]][[j]])
-          theta[[i]][[j]] <- state$parameters
-          eta[[i]] <- eta[[i]] + fitfun[[i]][[j]](data[[i]][[j]], theta[[i]][[j]])
-        }
-
-        ## Save the samples.
-        if(save) {
-          theta.save[[i]][[j]]$samples[js, ] <- theta[[i]][[j]]
-          theta.save[[i]][[j]]$alpha[js] <- min(c(exp(state$alpha), 1), na.rm = TRUE)
-          theta.save[[i]][[j]]$accepted[js] <- accepted
-          if(!is.null(state$extra) & accepted) {
-            theta.save[[i]][[j]]$extra[js, ] <- state$extra
+          if(accepted) {
+            eta[[i]] <- eta[[i]] - fitfun[[i]][[j]](data[[i]][[j]], theta[[i]][[j]])
+            theta[[i]][[j]] <- state$parameters
+            eta[[i]] <- eta[[i]] + fitfun[[i]][[j]](data[[i]][[j]], theta[[i]][[j]])
           }
-          ll[js] <- if(!is.null(logLik)) {
-            logLik(eta)
-          } else sum(do.call(fun, c(theta, list(...))[names(formals(fun))]), na.rm = TRUE)
+
+          ## Save the samples.
+          if(save) {
+            theta.save[[i]][[j]]$samples[js, ] <- theta[[i]][[j]]
+            theta.save[[i]][[j]]$alpha[js] <- min(c(exp(state$alpha), 1), na.rm = TRUE)
+            theta.save[[i]][[j]]$accepted[js] <- accepted
+            if(!is.null(state$extra) & accepted) {
+              theta.save[[i]][[j]]$extra[js, ] <- state$extra
+            }
+            ll[js] <- if(!is.null(logLik)) {
+              logLik(eta)
+            } else sum(do.call(fun, c(theta, list(...))[names(formals(fun))]), na.rm = TRUE)
+          }
         }
       }
+
+      if(verbose) barfun(ptm, n.iter, iter, step, nstep)
     }
 
-    if(verbose) barfun(ptm, n.iter, iter, step, nstep)
-  }
+    if(verbose) cat("\n")
 
-  if(verbose) cat("\n")
-
-  for(i in ntheta) {
-    theta.save[[i]] <- lapply(theta.save[[i]], function(x) { do.call("cbind", x) })
-    for(j in names(theta.save[[i]])) {
-      cn <- i
-      if(length(theta.save[[i]]) > 1 | !simplify)
-        cn <- paste(cn, j, sep = ".")
-      cn2 <- colnames(theta.save[[i]][[j]])
-      for(k in seq_along(cn2)) {
-        cn2[k] <- if(grepl("[", cn2[k], fixed = TRUE)) {
-          paste(if(strsplit(cn2[k], "[", fixed = TRUE)[[1]][1] != "") "." else NULL, cn2[k], sep = "")
-        } else paste(if(cn2[k] != "") "." else NULL, cn2[k], sep = "")
+    for(i in ntheta) {
+      theta.save[[i]] <- lapply(theta.save[[i]], function(x) { do.call("cbind", x) })
+      for(j in names(theta.save[[i]])) {
+        cn <- i
+        if(length(theta.save[[i]]) > 1 | !simplify)
+          cn <- paste(cn, j, sep = ".")
+        cn2 <- colnames(theta.save[[i]][[j]])
+        for(k in seq_along(cn2)) {
+          cn2[k] <- if(grepl("[", cn2[k], fixed = TRUE)) {
+            paste(if(strsplit(cn2[k], "[", fixed = TRUE)[[1]][1] != "") "." else NULL, cn2[k], sep = "")
+          } else paste(if(cn2[k] != "") "." else NULL, cn2[k], sep = "")
+        }
+        cn <- paste(cn, cn2, sep = "")
+        colnames(theta.save[[i]][[j]]) <- cn
       }
-      cn <- paste(cn, cn2, sep = "")
-      colnames(theta.save[[i]][[j]]) <- cn
+      theta.save[[i]] <- if(length(theta.save[[i]]) < 2 & simplify) {
+        theta.save[[i]][[1]]
+      } else do.call("cbind", theta.save[[i]])
     }
-    theta.save[[i]] <- if(length(theta.save[[i]]) < 2 & simplify) {
-      theta.save[[i]][[1]]
-    } else do.call("cbind", theta.save[[i]])
+    theta.save <- if(length(theta.save) < 2) theta.save[[1]] else do.call("cbind", theta.save)
+    theta.save <- cbind(theta.save, "logLik" = ll)
+
+    theta.save <- mcmc(theta.save, start = burnin, end = n.iter, thin = thin)
+    class(theta.save) <- c("gmcmc", class(theta.save))
+
+    return(theta.save)
   }
-  theta.save <- if(length(theta.save) < 2) theta.save[[1]] else do.call("cbind", theta.save)
-  theta.save <- cbind(theta.save, "logLik" = ll)
 
-  theta.save <- mcmc(theta.save, start = burnin, end = n.iter, thin = thin)
-  class(theta.save) <- c("gmcmc", class(theta.save))
+  if(compile) {
+    require("compiler")
+    sampler <- cmpfun(sampler)
+  }
 
-  return(theta.save)
+  sampling <- function(chains, ...) {
+    if(is.null(chains))  chains <- 1
+    if(chains < 2) {
+      return(sampler(...))
+    } else {
+      samps <- list()
+      for(j in 1:chains)
+        samps[[j]] <- sampler(...)
+      samps <- as.mcmc.list(samps)
+      return(samps)
+    }
+  }
+
+  if(is.null(cores)) cores <- 1
+  if(cores < 2) {
+    rval <- sampling(chains, ...)
+  } else {
+    require("parallel")
+    parallel_fun <- function(j) {
+      if(j > 1 & !is.null(sleep)) Sys.sleep(sleep)
+      sampling(chains, ...)
+    }
+    rval <- mclapply(1:cores, parallel_fun, mc.cores = cores)
+    if(!inherits(rval, "mcmc.list") & inherits(rval[[1L]], "mcmc.list"))
+      rval <- as.mcmc.list(do.call("c", rval))
+    if(!inherits(rval, "mcmc.list"))
+      rval <- as.mcmc.list(rval)
+    if(combine)
+      rval <- combine_chains(rval)
+  }
+
+  return(rval)
 }
 
 
