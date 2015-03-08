@@ -270,10 +270,15 @@ parse.input.bamlss <- function(formula, data = NULL, family = gaussian2.bamlss,
           } else formula[[j]]$cat.formula <- update(formula[[j]]$formula, uf)
         }
       }
-    } else mf[[response.name[1]]] <- as.numeric(mf[[response.name[1]]]) ## FIXME: matrices?
+    } else {
+      if(is.null(dim(mf[[response.name[1]]])))
+        mf[[response.name[1]]] <- as.numeric(mf[[response.name[1]]]) ## FIXME: matrices?
+    }
   } else {
-    for(y in response.name)
-      mf[[y]] <- as.numeric(mf[[y]])
+    for(y in response.name) {
+      if(is.null(dim(mf[[y]])))
+        mf[[y]] <- as.numeric(mf[[y]])
+    }
   }
 
   ## Assign all design matrices and the hierarchical level, if any.
@@ -1248,6 +1253,8 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
 ## Function to compute partial residuals.
 partial.residuals <- function(effects, response, fitted.values, family)
 {
+  if(inherits(response, "Surv"))
+    return(effects)
   if(!is.null(response)) {
     if(length(mulink <- family$links[grep("mu", names(family$links))]) < 1)
       mulink <- family$links[1]

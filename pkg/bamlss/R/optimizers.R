@@ -769,7 +769,9 @@ bfit0_optim <- function(x, family, response, eta, id, ...)
     eta2[[id]] <- eta[[id]] + x$get.mu(x$X, tpar)
     ll <- family$loglik(response, family$map2par(eta2))
     lp <- x$prior(tpar)
-    -1 * (ll + lp)
+    val <- -1 * (ll + lp)
+    if(!is.finite(val)) val <- NA
+    val
   }
 
   ## Gradient function.
@@ -939,7 +941,7 @@ opt0 <- function(x, criterion = c("AICc", "BIC", "AIC"), verbose = TRUE, digits 
 
   opt <- optim(par$par, fn = log_posterior, gr = if(!is.null(family$score)) grad_posterior else NULL,
     x = x, method = "L-BFGS-B", lower = par$lower, upper = par$upper, verbose = verbose,
-    criterion = criterion, digits = digits, control = list(fnscale = -1), hessian = TRUE)
+    criterion = criterion, digits = digits, control = list(fnscale = -1, maxit = 5), hessian = TRUE)
  
   if(verbose) cat("\n")
 
