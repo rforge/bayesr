@@ -2302,15 +2302,15 @@ jm.bamlss <- JM.bamlss <- function(links = c(mu = "identity", sigma = "log", lam
 }
 
 
-cox.bamlss <- function(links = c(hazard = "log", mu = "identity"), ...)
+cox.bamlss <- function(links = c(hazard = "identity", mu = "identity"), ...)
 {
   rval <- list(
     "family" = "cox",
     "names" = c("hazard", "mu"),
     "links" = parse.links(links, c(hazard = "log", mu = "identity"), ...),
     "loglik" = function(y, eta) {
-      ll <- (log(eta$hazard) + eta$mu) * y[, "status"] +
-        exp(eta$mu) * survfun(eta$hazard, y[, "time"])
+      ll <- (eta$hazard + eta$mu) * y[, "status"] +
+        exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
       sum(ll)
     },
     "type" = 1
