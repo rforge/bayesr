@@ -599,7 +599,7 @@ bamlss.formula <- function(formula, specials = NULL, family = gaussian.bamlss())
   if(inherits(formula, "bamlss.formula"))
     return(formula)
 
-  specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", specials))
+  specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", specials))
 
   env <- environment(formula)
   if(is.null(env)) env <- .GlobalEnv
@@ -668,7 +668,7 @@ formula_extend <- function(formula, specials = NULL, family)
       formula[[j]] <- formula_extend(formula[[j]], specials, family)
     return(formula)
   } else {
-    specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", specials))
+    specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", specials))
     mt <- terms(formula, specials = specials, keep.order = TRUE)
 
     get.term.labels <- function(formula) {

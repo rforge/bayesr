@@ -106,13 +106,34 @@ b <- bamlss0(yobs ~ x, data = d, family = gF(cens, left = 0))
 coef(b)
 plot(b, which = 3:4)
 
-n <- 50
-d <- expand.grid("lon" = seq(0.001, 1, length = n), "lat" = seq(0.001, 1, length = n))
-d$time <- rep(1:365, length.out = nrow(d))
-d$alt <- rep(runif(n*n, 500, 2500), length.out = nrow(d))
-d$rain <- with(d, 10 + sin(scale2(time, 0, pi)) * cos(lon) * log(lat) + 0.001 * alt + rnorm(n, sd = 3))
+n <- 4
+years <- 2
+co <- expand.grid("lon" = seq(0.001, 1, length = n), "lat" = seq(0.001, 1, length = n))
+d <- NULL
+for(j in 1:years) {
+  for(i in 1:nrow(co)) {
+    d <- rbind(d, data.frame(
+      "year" = j,
+      "time" = 1:365,
+      "lon" = co$lon[i],
+      "lat" = co$lat[i],
+      "id" = i
+    ))
+  }
+}
 
-b <- bamlss0(rain ~ te(time,lon,lat, bs=c("cc","tp"), d=c(1, 2)) + s(alt) + s(lon,lat),
-  data = d, binning = TRUE, before = FALSE, sampler = NULL, optimizer = bfit0, do.optim = FALSE)
+
+d$rain <- with(d, sin(scale2(time, -pi, pi)) * scale2(sin(lon), 0.3, 0.5) * scale2(lat, 0.1, 0.5))
+co <- unique(d[, c("lon", "lat")])
+plot(rain ~ time, data = d, type = "n")
+for(j in unique(d$id)) {
+  d2 <- subset(d, id == j)
+  lines(rain ~ time, data = d2)
+}
+
+d$rain <- d$rain + rnorm(n, sd = 0.3)
+
+b <- bamlss(rain ~ te(time,lon,lat, bs=c("cc","tp"), d=c(1, 2), k = c(4,10)),
+  data = d, n.iter = 1200, burnin = 200, thin = 1, propose = "iwls0")
 
 

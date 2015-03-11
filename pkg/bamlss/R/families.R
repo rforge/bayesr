@@ -2321,10 +2321,28 @@ cox.bamlss <- function(links = c(hazard = "identity", mu = "identity"), ...)
 
 survfun <- function(hazard, time)
 {
-  f0 <- splinefun(time, hazard)
+  i <- order(time)
+  f0 <- splinefun(time[i], hazard[i])
   rval <- sapply(seq_along(time), function(i) {
     -1 * integrate(f0, 0, time[i], subdivisions = 1000)$value
   })
+  rval
+}
+
+cox2.bamlss <- function(links = c(hazard = "identity", mu = "identity"), ...)
+{
+  rval <- list(
+    "family" = "cox",
+    "names" = c("hazard", "mu"),
+    "links" = parse.links(links, c(hazard = "log", mu = "identity"), ...),
+    "loglik" = function(y, eta) {
+      ll <- eta$hazard * y[, "status"] + eta$mu * y[, "status"] +
+        exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
+      sum(ll)
+    },
+    "type" = 1
+  )
+  class(rval) <- "family.bamlss"
   rval
 }
 

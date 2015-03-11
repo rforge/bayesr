@@ -720,6 +720,93 @@ gmcmc_sm.iwls0 <- function(family, theta, id, prior, eta, response, data, ...)
 }
 
 
+gmcmc_sm.mvn <- function(family, theta, id, prior, eta, response, data, ...)
+{
+  theta <- theta[[id[1]]][[id[2]]]
+
+  if(is.null(attr(theta, "fitted.values")))
+    attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
+
+  ll1 <- family$loglik(response, family$map2par(eta))
+  p1 <- data$prior(theta)
+
+  eta2 <- eta
+  eta2[[id[1]]] <- eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values")
+
+  if(!is.null(data$state)) {
+    if(is.null(attr(theta, "hess"))) {
+      tpar <- data$state$parameters
+
+      objfun <- function(gamma, tau2 = NULL) {
+        tpar <- set.par(tpar, gamma, "g")
+        if(!is.null(tau2) & !data$fixed)
+          tpar <- set.par(tpar, tau2, "tau2")
+        eta2[[id[1]]] <- eta[[id[1]]] + data$get.mu(data$X, tpar)
+        ll <- family$loglik(response, family$map2par(eta2))
+        lp <- data$prior(tpar)
+        val <- -1 * (ll + lp)
+        if(!is.finite(val)) val <- NA
+        val
+      }
+
+      grad <- if(!is.null(family$score[[id[1]]]) & is.function(data$grad)) {
+        function(gamma, tau2 = NULL) {
+          tpar <- set.par(tpar, gamma, "g")
+          if(!is.null(tau2) & !data$fixed)
+            tpar <- set.par(tpar, tau2, "tau2")
+          eta2[[id[1]]] <- eta[[id[1]]] + data$get.mu(data$X, tpar)
+          peta <- family$map2par(eta2)
+          score <- drop(family$score[[id[1]]](response, peta))
+          grad <- data$grad(score, tpar, full = FALSE)
+          return(drop(-1 * grad))
+        }
+      } else NULL
+
+      suppressWarnings(hess <- try(optimHess(get.par(tpar, "g"), fn = objfun, gr = grad,
+        tau2 = get.par(tpar, "tau2")), silent = TRUE))
+
+      if(!inherits(hess, "try-error")) {
+        hess <- 1 / diag(hess) ## matrix_inv(hess)
+        hess <- if(length(hess) < 2) matrix(hess, 1, 1) else diag(hess)
+      } else hess <- diag(length(get.par(tpar, "gamma")))
+
+      attr(theta, "hess") <- hess
+    }
+  }
+
+  g <- drop(rmvnorm(n = 1, mean = drop(get.par(theta, "gamma")), sigma = attr(theta, "hess")))
+  theta <- set.par(theta, g, "gamma")
+
+  attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
+
+  eta[[id[1]]] <- eta[[id[1]]] + attr(theta, "fitted.values")
+  ll2 <- family$loglik(response, family$map2par(eta))
+  p2 <- data$prior(theta)
+
+  ## Sample variance parameter.
+  if(!data$fixed & is.null(data$sp)) {
+    if(!data$fixed & is.null(data$sp)) {
+      tau2 <- NULL
+      for(j in seq_along(data$S)) {
+        a <- data$rank[j] / 2 + data$a
+        b <- 0.5 * crossprod(g, data$S[[j]]) %*% g + data$b
+        tau2 <- c(tau2, 1 / rgamma(1, a, b))
+      }
+      theta <- set.par(theta, tau2, "tau2")
+    }
+  }
+
+  data$state$parameters <- as.numeric(theta)
+  names(data$state$parameters) <- names(theta)
+
+  ## Compute acceptance probablity.
+  alpha <- drop((ll2 + p2) - (ll1 + p1))
+
+  rval <- list("parameters" = theta, "alpha" = alpha, "extra" = c("edf" = data$edf(data)))
+  rval
+}
+
+
 gmcmc_logPost <- function(g, x, family, response = NULL, eta = NULL, id, ll = NULL)
 {
   if(is.null(ll)) {
