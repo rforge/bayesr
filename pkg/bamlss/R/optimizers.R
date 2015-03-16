@@ -109,6 +109,8 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
       if(length(x$smooth)) {
         for(j in seq_along(x$smooth)) {
           x$smooth[[j]] <- smooth.bamlss(x$smooth[[j]])
+          if(!is.null(x$smooth[[j]]$xt$update))
+            x$smooth[[j]]$update <- x$smooth[[j]]$xt$update
           if(is.null(x$smooth[[j]]$update)) {
             if(is.character(update)) {
               if(!grepl("bfit0_", update))
@@ -117,6 +119,8 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
             }
             x$smooth[[j]]$update <- update
           }
+          if(!is.null(x$smooth[[j]]$do.optim))
+            x$smooth[[j]]$state$optimize <- x$smooth[[j]]$do.optim
           if(is.null(x$smooth[[j]]$state$optimize)) {
             if(is.null(do.optim))
               x$smooth[[j]]$state$optimize <- TRUE

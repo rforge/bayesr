@@ -2702,7 +2702,8 @@ plot.bamlss.effect.default <- function(x, ...) {
     } else {
       do.call("plot3d", delete.args("plot3d", args,
         c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab", "ticktype",
-        "zlab", "phi", "theta", "r", "d", "scale", "range", "lrange", "pos", "image.map")))
+        "zlab", "phi", "theta", "r", "d", "scale", "range", "lrange", "pos", "image.map",
+        "symmetric")))
     }
   }
 }

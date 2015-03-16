@@ -48,7 +48,9 @@ GMCMC <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
       x[[i]]$smooth[[j]]$fit.reduced <- as.numeric(rep(0, nrow(x[[i]]$smooth[[j]]$X)))
       nt <- c(nt, x[[i]]$smooth[[j]]$label)
       smooths[[i]][[j]] <- x[[i]]$smooth[[j]]
-      propose2[[i]][[j]] <- if(!is.null(propose)) propose else x[[i]]$smooth[[j]]$propose
+      if(!is.null(x[[i]]$smooth[[j]]$xt$propose))
+        x[[i]]$smooth[[j]]$propose <- x[[i]]$smooth[[j]]$xt$propose
+      propose2[[i]][[j]] <- if(is.null(x[[i]]$smooth[[j]]$propose)) propose else x[[i]]$smooth[[j]]$propose
       fitfun[[i]][[j]] <- function(x, p) {
         attr(p, "fitted.values")
       }
@@ -78,7 +80,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
   fitfun = NULL, logLik = NULL, data = NULL,
   n.iter = 12000, burnin = 2000, thin = 10, verbose = TRUE, step = 20,
   simplify = TRUE, chains = NULL, cores = NULL, combine = TRUE, sleep = 1,
-  compile = TRUE, ...)
+  compile = FALSE, ...)
 {
   require("coda")
 
@@ -722,6 +724,8 @@ gmcmc_sm.iwls0 <- function(family, theta, id, prior, eta, response, data, ...)
 
 gmcmc_sm.mvn <- function(family, theta, id, prior, eta, response, data, ...)
 {
+  require("mvtnorm")
+
   theta <- theta[[id[1]]][[id[2]]]
 
   if(is.null(attr(theta, "fitted.values")))
