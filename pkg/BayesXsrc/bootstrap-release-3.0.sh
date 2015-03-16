@@ -13,4 +13,4 @@ for i in $FILES ; do
 done
 cd ..
 cp dev-Makefile Makefile
-cp dev-Makefile.win Makefile.win
+cp dev-Makefile.win Makefile.win 
