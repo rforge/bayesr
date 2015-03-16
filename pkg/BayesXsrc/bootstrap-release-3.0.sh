@@ -6,7 +6,7 @@ FILES="export_type.h main.cpp values.h"
 mkdir -p src/bayesxsrc
 cd src/bayesxsrc
 for i in $DIRS ; do
-  svn checkout -r1472 --username "${USER}" --password "${PASSWD}" $REPOS/$i $i
+  svn checkout -r1473 --username "${USER}" --password "${PASSWD}" $REPOS/$i $i
 done
 for i in $FILES ; do
   svn export --username "${USER}" --password "${PASSWD}" $REPOS/$i $i
