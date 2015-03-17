@@ -2320,7 +2320,7 @@ cox.bamlss <- function(links = c(hazard = "identity", mu = "identity"), ...)
     ),
     "weights" = list(
       "mu" = function(y, eta, ...) {
-        -1 * exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
+        exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
       }
     ),
     "type" = 1
@@ -2329,15 +2329,22 @@ cox.bamlss <- function(links = c(hazard = "identity", mu = "identity"), ...)
   rval
 }
 
-survfun <- function(hazard, time)
+survfun2 <- function(hazard, time)
 {
   i <- order(time)
   f0 <- splinefun(time[i], hazard[i])
   rval <- sapply(seq_along(time), function(i) {
-    ## -1 * integrate2(f0, 0, time[i])
     integrate(f0, 0, time[i], subdivisions = 1000)$value
   })
   rval
+}
+
+survfun <- function(hazard, time)
+{
+  i <- order(time)
+  f0 <- splinefun(time[i], hazard[i])
+  f1 <- integrate3(f0, min(time), max(time), ret.fun = TRUE)
+  f1(time) - f1(0)
 }
 
 cox2.bamlss <- function(links = c(hazard = "identity", mu = "identity"), ...)
@@ -2573,3 +2580,39 @@ integrate2 <- function(f, a, b, ...)
   sum(fn(nodes) * weights)
 }
 
+
+integrate3 <- function(f, a, b, m = 2, n = 40, nx = 1000, ret.fun = FALSE, plot = FALSE) {
+  require("splines")
+  xl <- a
+  xu <- b
+  xr <- xu - xl
+  xl <- xl - xr * 0.001
+  xu <- xu + xr * 0.001
+  dx <- (xu - xl)/(n - 1)
+  k <- seq(xl - dx * (m + 1), xu + dx * (m + 1), length = n + 2 * m + 2)
+  x <- seq(a, b, length = nx)
+  X <- spline.des(k, x, m + 2, rep(0, nx))$design
+  X1 <- spline.des(k, x, m + 2, rep(1, nx))$design
+  X <- X[, -1]
+  X1 <- X1[, -1]
+  y <- f(x)
+  bf <- lm.fit(X1, y)
+  y2 <- drop(X %*% coef(bf))
+  f2 <- splinefun(x, y2)
+  if(plot) {
+    x2 <- abs(f(x))
+    i <- which(x2 <= quantile(x2, prob = 0.01))
+    par(mfrow = c(2, 1))
+    plot(x, f2(x), type = "l", ylab = "int(f(x))")
+    abline(v = x[i], lty = 2)
+    plot(x, f(x), type = "l", col = "red", lwd = 2, ylab = "f(x)")
+    lines(x, drop(X1 %*% coef(bf)), col = "black")
+    abline(h = 0, lty = 2)
+    abline(v = x[i], lty = 2)
+  }
+  if(ret.fun) {
+    return(f2)
+  } else {
+    return(f2(b) - f2(a))
+  }
+}
