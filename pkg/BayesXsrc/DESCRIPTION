@@ -1,6 +1,6 @@
 Package: BayesXsrc
 Version: 3.0-0
-Date: 2015-03-13
+Date: 2015-03-17
 Title: R Package Distribution of the BayesX C++ Sources
 Authors@R: c(person(given = "Nikolaus", family = "Umlauf", role = c("aut", "cre"), email = "Nikolaus.Umlauf@uibk.ac.at"),
         person(given = "Daniel", family = "Adler", role = "aut", email = "dadler1@gwdg.de"),
