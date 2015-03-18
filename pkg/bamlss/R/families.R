@@ -2314,9 +2314,6 @@ cox.bamlss <- function(links = c(hazard = "identity", mu = "identity"), ...)
       sum(ll)
     },
     "score" = list(
-      "hazard" = function(y, eta, ...) {
-        y[, "status"] - exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
-      },
       "mu" = function(y, eta, ...) {
         y[, "status"] - exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
       }

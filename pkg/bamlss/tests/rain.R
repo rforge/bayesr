@@ -106,7 +106,7 @@ b <- bamlss0(yobs ~ x, data = d, family = gF(cens, left = 0))
 coef(b)
 plot(b, which = 3:4)
 
-n <- 4
+n <- 6
 years <- 2
 co <- expand.grid("lon" = seq(0.001, 1, length = n), "lat" = seq(0.001, 1, length = n))
 d <- NULL
@@ -133,7 +133,7 @@ for(j in unique(d$id)) {
 
 d$rain <- d$rain + rnorm(n, sd = 0.3)
 
-b <- bamlss(rain ~ te(time,lon,lat, bs=c("cc","tp"), d=c(1, 2), k = c(4,10)),
-  data = d, n.iter = 1200, burnin = 200, thin = 1, propose = "iwls0")
+b <- bamlss(rain ~ ti(time,bs="cc") + ti(lon,lat) + ti(time,lon,lat,bs=c("cc","tp"),d=c(1,2)),
+  data = d, n.iter = 200, burnin = 0, thin = 1, propose = "iwls0")
 
 
