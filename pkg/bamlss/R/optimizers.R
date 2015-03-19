@@ -656,6 +656,24 @@ make_par <- function(x, type = 1) {
 
 
 ## Backfitting updating functions.
+#bfit0_survival <- function(x, family, response, eta, id, ...)
+#{
+#  grad.gamma <- t(response[, "status"]) %*% x$X
+
+#  i <- order(response[, "time"])
+#  f0 <- splinefun(time[i], exp(eta$hazard))
+#  f1 <- function(x) {
+#    
+#  }
+
+#  rval <- sapply(seq_along(response[, "time"]), function(i) {
+#    integrate(f0, 0, time[i], subdivisions = 1000)$value
+#  })
+
+#    Sigma <- matrix_inv(hess.theta)
+#    mu <- drop(theta[[id[1]]][[id[2]]] + Sigma %*% grad.theta)
+#}
+
 bfit0_iwls <- function(x, family, response, eta, id, ...)
 {
   args <- list(...)

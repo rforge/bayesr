@@ -249,6 +249,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
 
   barfun <- function(ptm, n.iter, i, step, nstep, start = TRUE) {
     if(i == 10 & start) {
+      cat("\r")
       elapsed <- c(proc.time() - ptm)[3]
       rt <- elapsed / i * (n.iter - i)
       rt <- if(rt > 60) {
@@ -277,6 +278,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
   }
 
   sampler <- function(...) {
+    cat2("Starting the sampler...")
     ptm <- proc.time()
     for(iter in 1:n.iter) {
       if(save <- iter %in% iterthin)
@@ -1110,5 +1112,18 @@ null.sampler <- function(x, criterion = c("AICc", "BIC", "AIC"), ...)
   colnames(samps)[(ncol(samps) - 1):ncol(samps)] <- c(criterion, "save.edf")
 
   as.mcmc(samps)
+}
+
+
+cat2 <- function(x, sleep = 0.05) {
+  x <- strsplit(x, "")[[1]]
+  add <- ""
+  for(i in seq_along(x)) {
+    if(i > 1) {
+      Sys.sleep(sleep)
+      cat("\r")
+    }
+    cat(paste(x[1:i], collapse = ""))
+  }
 }
 

@@ -2319,20 +2319,16 @@ cox.bamlss <- function(links = c(hazard = "identity", mu = "identity"), ...)
       }
     ),
     "weights" = list(
-      "hazard" = function(y, eta, ...) {
-        exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
-      },
       "mu" = function(y, eta, ...) {
         exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
       }
-    ),
-    "type" = 1
+    )
   )
   class(rval) <- "family.bamlss"
   rval
 }
 
-survfun2 <- function(hazard, time)
+survfun <- function(hazard, time)
 {
   i <- order(time)
   f0 <- splinefun(time[i], hazard[i])
@@ -2342,7 +2338,7 @@ survfun2 <- function(hazard, time)
   rval
 }
 
-survfun <- function(hazard, time)
+survfun2 <- function(hazard, time)
 {
   i <- order(time)
   f0 <- splinefun(time[i], hazard[i])
