@@ -1,7 +1,5 @@
 citHeader("When using R2BayesX/BayesXsrc in publications, please cite both the R interface and BayesX itself:")
 
-## R >= 2.8.0 passes package metadata to citation().
-if(!exists("meta") || is.null(meta)) meta <- packageDescription("BayesXsrc")
 year <- sub("-.*", "", meta$Date)
 note1 <- sprintf("R package version %s", meta$Version)
 note2 <- sprintf("Version %s", strsplit(meta$Version, "-", fixed = TRUE)[[1]][1])

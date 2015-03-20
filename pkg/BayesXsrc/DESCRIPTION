@@ -10,7 +10,7 @@ Authors@R: c(person(given = "Nikolaus", family = "Umlauf", role = c("aut", "cre"
 Description: BayesX performs Bayesian inference in structured additive regression (STAR) models.
 	The R package BayesXsrc provides the BayesX command line tool for easy installation.
 	A convenient R interface is provided in package R2BayesX.
-Depends: R (>= 2.7.0)
+Depends: R (>= 2.8.0)
 Suggests: R2BayesX
 SystemRequirements: GNU make
 License: GPL-2 | GPL-3
