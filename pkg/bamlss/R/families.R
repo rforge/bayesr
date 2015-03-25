@@ -1623,7 +1623,7 @@ poisson.bamlss <- function(links = c(lambda = "log"), ...)
     "names" = c("lambda"),
     "links" = parse.links(links, c(lambda = "log"), ...),
     "bayesx" = list(
-      "lambda" = c("poisson", "mu")
+      "lambda" = c("poisson", "lambda")
     ),
     "bugs" = list(
       "dist" = "dpois",
