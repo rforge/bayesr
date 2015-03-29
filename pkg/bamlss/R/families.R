@@ -1644,6 +1644,11 @@ poisson.bamlss <- function(links = c(lambda = "log"), ...)
         y / eta$lambda - 1
       }
     ),
+	  "weights" = list(
+      "lambda" = function(y, eta, ...) {
+        1 / eta$lambda
+      }
+    ),
     "nscore" = TRUE,
     "type" = 3
   )
@@ -2286,22 +2291,6 @@ gaussian5.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
 #################
 ## Joint model ##
 #################
-jm.bamlss <- JM.bamlss <- function(links = c(mu = "identity", sigma = "log", lambda = "log", surv = "log"), ...)
-{
-  rval <- list(
-    "family" = "joint-model",
-    "names" = c("mu", "sigma", "lambda" = "surv"),
-    "links" = parse.links(links, c(mu = "identity", sigma = "log", lambda = "identity"), ...),
-    "loglik" = function(y, eta, ...) {
-      ll1 <- sum(dnorm(y, eta$mu, eta$sigma, log = TRUE))
-      ll2 <- sum(hazard(eta$lambda), na.rm = TRUE)
-      ll3 <- sum(survfun(eta$surv + eta$mu), na.rm = TRUE)
-      ll1 + ll2 + ll3
-    }
-  )
-}
-
-
 cox.bamlss <- function(links = c(hazard = "identity", mu = "identity"), ...)
 {
   rval <- list(
@@ -2346,22 +2335,56 @@ survfun2 <- function(hazard, time)
   f1(time) - f1(0)
 }
 
-cox2.bamlss <- function(links = c(hazard = "identity", mu = "identity"), ...)
+
+Surv2 <- function(obs = NULL, ...)
 {
+  require("survival")
+  rval <- cbind(as.matrix(Surv(...)), "obs" = obs)
+  rval
+}
+
+
+jm.bamlss <- function(...)
+{
+  links = c(lambda = "identity", mu = "identity",
+    alpha = "identity", beta = "identity", sigma = "log")
+
   rval <- list(
-    "family" = "cox",
-    "names" = c("hazard", "mu"),
-    "links" = parse.links(links, c(hazard = "log", mu = "identity"), ...),
+    "family" = "jm",
+    "names" = c("lambda", "mu", "alpha", "beta", "sigma"),
+    "links" = parse.links(links, links, ...),
     "loglik" = function(y, eta) {
-      ll <- eta$hazard * y[, "status"] + eta$mu * y[, "status"] +
-        exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
+      teta <- eta$lambda + eta$alpha * eta$mu
+      ll <- y[, "status"] * (teta + eta$beta) - exp(eta$beta) * survfun(exp(teta), y[, "time"])
+      ll <- ll + dnorm(y[, "obs"], mean = eta$mu, sd = eta$sigma, log = TRUE)
       sum(ll)
     },
-    "type" = 1
+    "score" = list(
+      "lambda" = function(y, eta, ...) {
+        (y[, "obs"] - eta$mu) / (eta$sigma^2) + y[, "status"] * eta$alpha -
+          exp(eta$beta) * survfun(exp(eta$lambda + eta$alpha * eta$mu), y[, "time"])
+      },
+      "mu" = function(y, eta, ...) {
+
+      },
+      "alpha" = function(y, eta, ...) {
+
+      },
+      "beta" = function(y, eta, ...) {
+
+      },
+      "sigma" = function(y, eta, ...) {
+
+      }
+    )
   )
+
+rval$score <- NULL
+
   class(rval) <- "family.bamlss"
   rval
 }
+
 
 
 integrate2 <- function(f, a, b, ...)

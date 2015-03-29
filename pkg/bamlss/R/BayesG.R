@@ -2051,7 +2051,6 @@ resultsBayesG <- function(x, samples)
       if(length(obj$smooth)) {
         for(i in 1:length(obj$smooth)) {
           ## Get coefficient samples of smooth term.
-
           pn <- if(any(grepl("h1", snames))) {
             paste(id, "h1", obj$smooth[[i]]$label, sep = ":") ## FIXME: hlevels!
           } else paste(id, obj$smooth[[i]]$label, sep = ".")
@@ -2061,7 +2060,7 @@ resultsBayesG <- function(x, samples)
             paste(strsplit(x, "")[[1]][1:nch], collapse = "", sep = "")
           })
           pn <- snames[snames2 == pn]
-          pn <- pn[!grepl("tau2", pn) & !grepl("alpha", pn) & !grepl("accepted", pn) & !grepl("edf", pn)]
+          pn <- pn[!grepl(".tau2", pn) & !grepl(".alpha", pn) & !grepl(".accepted", pn) & !grepl(".edf", pn)]
           k <- sum(snames %in% pn)
 
           psamples <- matrix(samples[[j]][, snames %in% pn], ncol = k)
