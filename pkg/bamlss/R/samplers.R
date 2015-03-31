@@ -927,37 +927,69 @@ gmcmc_mvnorm2 <- function(fun, theta, id, prior, ...)
 
 eval_fun <- function(fun, theta, prior, id, args)
 {
-  ll <- sum(do.call(fun, c(theta, args)[names(formals(fun))]), na.rm = TRUE)
+  ll <- if(is.list(theta)) {
+    sum(do.call(fun, c(theta, args)[names(formals(fun))]), na.rm = TRUE)
+  } else sum(fun(theta), na.rm = TRUE)
   lp <- if(is.null(prior)) {
-    sum(dnorm(theta[[id[1]]][[id[2]]], sd = 1000, log = TRUE), na.rm = TRUE)
-  } else sum(do.call(prior, c(theta, args)[names(formals(prior))]), na.rm = TRUE)
+    if(is.list(theta)) {
+      if(is.list(theta[[id[1]]])) {
+        sum(dnorm(theta[[id[1]]][[id[2]]], sd = 1000, log = TRUE), na.rm = TRUE)
+      } else {
+        sum(dnorm(theta[[id[1]]], sd = 1000, log = TRUE), na.rm = TRUE)
+      }
+    } else {
+      sum(dnorm(theta, sd = 1000, log = TRUE), na.rm = TRUE)
+    }
+  } else {
+    if(is.list(theta)) {
+      sum(do.call(prior, c(theta, args)[names(formals(prior))]), na.rm = TRUE)
+    } else {
+      sum(prior(theta), na.rm = TRUE)
+    }
+  }
   ll + lp
 }
 
 
 grad <- function(fun, theta, prior, id, args, eps = .Machine$double.eps^0.5)
 {
-  if(!is.null(args$gradient)) {
+  if(!is.null(args$gradient[[id[1]]])) {
     gfun <- args$gradient[[id[1]]]
     grad.theta <- do.call(gfun, c(theta, args)[names(formals(gfun))])
   } else {
     gfun <- function(theta, j) {
       theta2 <- theta
-      theta2[[id[1]]][[id[2]]][j] <- theta2[[id[1]]][[id[2]]][j] + eps
-      theta[[id[1]]][[id[2]]][j] <- theta[[id[1]]][[id[2]]][j] - eps
+      if(is.list(theta)) {
+        if(is.list(theta[[id[1]]])) {
+          theta2[[id[1]]][[id[2]]][j] <- theta2[[id[1]]][[id[2]]][j] + eps
+          theta[[id[1]]][[id[2]]][j] <- theta[[id[1]]][[id[2]]][j] - eps
+        } else {
+          theta2[[id[1]]][j] <- theta2[[id[1]]][j] + eps
+          theta[[id[1]]][j] <- theta[[id[1]]][j] - eps
+        }
+      } else {
+        theta2[j] <- theta2[j] + eps
+        theta[j] <- theta[j] - eps
+      }
       lp1 <- eval_fun(fun, theta2, prior, id, args)
       lp2 <- eval_fun(fun, theta, prior, id, args)
       drop((lp1 - lp2) / (2 * eps))
     }
-
-    k <- length(theta[[id[1]]][[id[2]]])
+    k <- if(is.list(theta)) {
+      if(is.list(theta[[id[1]]])) {
+        length(theta[[id[1]]][[id[2]]])
+      } else length(theta[[id[1]]])
+    } else length(theta)
     grad.theta <- rep(NA, k)
     for(j in 1:k) {
       grad.theta[j] <- gfun(theta, j)
     }
   }
-
-  names(grad.theta) <- names(theta[[id[1]]][[id[2]]])
+  names(grad.theta) <- if(is.list(theta)) {
+    if(is.list(theta[[id[1]]])) {
+      names(theta[[id[1]]][[id[2]]])
+    } else names(theta[[id[1]]])
+  } else names(theta)
   grad.theta
 }
 
@@ -969,22 +1001,42 @@ hess <- function(fun, theta, prior, id, args, diag = FALSE)
   } else {
     theta2 <- theta
     objfun <- function(par) {
-      theta2[[id[1]]][[id[2]]] <- par
-      -1 * eval_fun(fun, theta2, prior, id, args)
+      if(is.list(theta)) {
+        if(is.list(theta[[id[1]]])) {
+          theta2[[id[1]]][[id[2]]] <- par
+        } else theta2[[id[1]]] <- par
+        return(-1 * eval_fun(fun, theta2, prior, id, args))
+      } else {
+        return(-1 * eval_fun(fun, par, prior, id, args))
+      }
     }
     gfun <- NULL
     if(!is.null(args$gradient)) {
       gfun2 <- args$gradient[[id[1]]]
       gfun <- function(par) {
-        theta2[[id[1]]][[id[2]]] <- par
-        -1 * do.call(gfun2, c(theta2, args)[names(formals(gfun2))])
+        if(is.list(theta)) {
+          if(is.list(theta[[id[1]]])) {
+            theta2[[id[1]]][[id[2]]] <- par
+          } else theta2[[id[1]]] <- par
+          return(-1 * do.call(gfun2, c(theta2, args)[names(formals(gfun2))]))
+        } else return(-1 * gfun2(par))
       }
     }
-    H <- optimHess(theta[[id[1]]][[id[2]]], fn = objfun, gr = gfun)
+    start <- if(is.list(theta)) {
+      if(is.list(theta[[id[1]]])) {
+        theta[[id[1]]][[id[2]]]
+      } else theta[[id[1]]]
+    } else theta
+    H <- optimHess(start, fn = objfun, gr = gfun)
   }
   if(diag)
     H <- diag(diag(H))
-  rownames(H) <- colnames(H) <- names(theta[[id[1]]][[id[2]]])
+  nh <- if(is.list(theta)) {
+    if(is.list(theta[[id[1]]])) {
+      names(theta[[id[1]]][[id[2]]])
+    } else names(theta[[id[1]]])
+  } else names(theta)
+  rownames(H) <- colnames(H) <- nh
   H
 }
 

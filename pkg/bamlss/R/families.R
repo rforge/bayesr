@@ -2305,10 +2305,16 @@ cox.bamlss <- function(links = c(hazard = "identity", mu = "identity"), ...)
     "score" = list(
       "mu" = function(y, eta, ...) {
         y[, "status"] - exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
+      },
+      "hazard" = function(y, eta, ...) {
+        y[, "status"] - exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
       }
     ),
     "weights" = list(
       "mu" = function(y, eta, ...) {
+        exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
+      },
+      "hazard" = function(y, eta, ...) {
         exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
       }
     )
@@ -2316,6 +2322,23 @@ cox.bamlss <- function(links = c(hazard = "identity", mu = "identity"), ...)
   class(rval) <- "family.bamlss"
   rval
 }
+
+
+cox2.bamlss <- function(links = c(lambda= "identity"), ...)
+{
+  rval <- list(
+    "family" = "cox",
+    "names" = c("lambda"),
+    "links" = parse.links(links, c(lambda = "identity"), ...),
+    "loglik" = function(y, eta) {
+      ll <- eta$lambda * y[, "status"] - survfun(exp(eta$lambda), y[, "time"])
+      sum(ll)
+    }
+  )
+  class(rval) <- "family.bamlss"
+  rval
+}
+
 
 survfun <- function(hazard, time)
 {
@@ -2361,25 +2384,24 @@ jm.bamlss <- function(...)
     },
     "score" = list(
       "lambda" = function(y, eta, ...) {
+        y[, "status"] - exp(eta$beta) * survfun(exp(eta$lambda + eta$alpha * eta$mu), y[, "time"])
+      },
+      "mu" = function(y, eta, ...) {
         (y[, "obs"] - eta$mu) / (eta$sigma^2) + y[, "status"] * eta$alpha -
           exp(eta$beta) * survfun(exp(eta$lambda + eta$alpha * eta$mu), y[, "time"])
       },
-      "mu" = function(y, eta, ...) {
-
-      },
       "alpha" = function(y, eta, ...) {
-
+        y[, "status"] * eta$mu -
+          exp(eta$beta) * survfun(exp(eta$lambda + eta$alpha * eta$mu), y[, "time"])
       },
       "beta" = function(y, eta, ...) {
-
+        y[, "status"] - exp(eta$beta) * survfun(exp(eta$lambda + eta$alpha * eta$mu), y[, "time"])
       },
       "sigma" = function(y, eta, ...) {
-
+        (y[, "obs"] - eta$mu)^2 / (eta$sigma^2) - 1
       }
     )
   )
-
-rval$score <- NULL
 
   class(rval) <- "family.bamlss"
   rval

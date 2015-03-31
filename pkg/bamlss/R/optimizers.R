@@ -656,23 +656,41 @@ make_par <- function(x, type = 1) {
 
 
 ## Backfitting updating functions.
-#bfit0_survival <- function(x, family, response, eta, id, ...)
-#{
-#  grad.gamma <- t(response[, "status"]) %*% x$X
+bfit0_newton <- function(x, family, response, eta, id, ...)
+{
+  args <- list(...)
 
-#  i <- order(response[, "time"])
-#  f0 <- splinefun(time[i], exp(eta$hazard))
-#  f1 <- function(x) {
-#    
-#  }
+  eta[[id]] <- eta[[id]] <- fitted(x$state)
 
-#  rval <- sapply(seq_along(response[, "time"]), function(i) {
-#    integrate(f0, 0, time[i], subdivisions = 1000)$value
-#  })
+  loglik <- function(g) {
+    eta[[id]] <- eta[[id]] + x$get.mu(x$X, g)
+    family$loglik(response, family$map2par(eta))
+  }
 
-#    Sigma <- matrix_inv(hess.theta)
-#    mu <- drop(theta[[id[1]]][[id[2]]] + Sigma %*% grad.theta)
-#}
+  lp <- function(g) {
+    par2 <- c(g, get.par(x$state$parameters, "tau2"))
+    x$prior(par2)
+  }
+
+  g <- get.par(x$state$parameters, "gamma")
+
+  g.grad <- grad(fun = loglik, theta = g,
+    id = id, prior = lp, args = family)
+
+  g.hess <- hess(fun = loglik, theta = get.par(x$state$parameters, "gamma"),
+    id = id, prior = lp, args = family)
+
+  Sigma <- matrix_inv(g.hess)
+
+  step <- if(is.null(args$step)) 0.2 else args$step
+  g <- drop(g + step * Sigma %*% g.grad)
+
+  x$state$parameters <- set.par(x$state$parameters, g, "g")
+  x$state$fitted.values <- x$get.mu(x$X, get.state(x, "g"))
+
+  return(x$state)
+}
+
 
 bfit0_iwls <- function(x, family, response, eta, id, ...)
 {
