@@ -449,6 +449,14 @@ gaussian.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
       "mu" = function(y, eta, ...) { drop(1 / (eta$sigma^2)) },
       "sigma" = function(y, eta, ...) { rep(2, length(y)) }
     ),
+    "gradient" = list(
+      "mu" = function(g, y, eta, X, ...) {
+        t(X) %*% drop((y - eta$mu) / (eta$sigma^2))
+      },
+      "sigma" = function(g, y, eta, X, ...) {
+        t(X) %*% rep(2, length(y))
+      }
+    ),
     "loglik" = function(y, eta, ...) {
       sum(dnorm(y, eta$mu, eta$sigma, log = TRUE))
     },

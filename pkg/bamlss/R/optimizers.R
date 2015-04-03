@@ -675,10 +675,10 @@ bfit0_newton <- function(x, family, response, eta, id, ...)
   g <- get.par(x$state$parameters, "gamma")
 
   g.grad <- grad(fun = loglik, theta = g,
-    id = id, prior = lp, args = family)
+    id = id, prior = lp, args = c(family, list("X" = x$X, "y" = response, "eta" = eta)))
 
   g.hess <- hess(fun = loglik, theta = get.par(x$state$parameters, "gamma"),
-    id = id, prior = lp, args = family)
+    id = id, prior = lp, args = c(family, list("X" = x$X, "y" = response, "eta" = eta)))
 
   Sigma <- matrix_inv(g.hess)
 

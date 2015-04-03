@@ -93,31 +93,49 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
   ntheta <- names(theta)
   k <- length(theta)
   for(i in 1:k) {
-    if(!is.list(theta[[i]]))
-      theta[[i]] <- list(theta[[i]])
-    if(is.null(names(theta[[i]])))
-      names(theta[[i]]) <- paste("term[", 1:length(theta[[i]]), "]", sep = "")
-    for(j in seq_along(theta[[i]])) {
-      if(is.null(names(theta[[i]][[j]])))
-        names(theta[[i]][[j]]) <- paste("[", 1:length(theta[[i]][[j]]), "]", sep = "")
+    if(is.list(theta[[i]])) {
+      if(is.null(names(theta[[i]])))
+        names(theta[[i]]) <- paste("term[", 1:length(theta[[i]]), "]", sep = "")
+      for(j in seq_along(theta[[i]])) {
+        if(is.null(names(theta[[i]][[j]])))
+          names(theta[[i]][[j]]) <- paste("[", 1:length(theta[[i]][[j]]), "]", sep = "")
+      }
     }
   }
+  class(theta) <- c("gmcmc.theta", "list")
 
-  if(is.null(propose))
-    propose <- gmcmc_mvnorm
-  if(!is.list(propose))
-    propose <- rep(list(propose), length.out = k)
-  if(is.null(names(propose)))
-    names(propose) <- names(theta)
-  if(!all(names(propose) %in% names(theta)))
-    stop("the 'propose' list() names are different from theta!")
-  for(i in ntheta) {
-    if(!is.list(propose[[i]]))
-      propose[[i]] <- rep(list(propose[[i]]), length.out = length(theta[[i]]))
-    if(is.null(names(propose[[i]])))
-      names(propose[[i]]) <- names(theta[[i]])
-    if(!all(names(propose[[i]]) %in% names(theta[[i]])))
-      stop(paste("propose list() names for parameter", i, "different from the theta list() names!"))
+  parse_input <- function(input = NULL, default, type) {
+    ninput <- deparse(substitute(input), backtick = TRUE, width.cutoff = 500)
+    if(is.null(input))
+      input <- default
+    if(!is.list(input))
+      input <- rep(list(input), length.out = k)
+    if(is.null(names(input)))
+      names(input) <- names(theta)
+    if(!all(names(input) %in% names(theta)))
+      stop(paste("the '", ninput,"' list() names are different from theta!", sep = ""))
+    for(i in names(theta)) {
+      if(!is.list(input[[i]]) & is.list(theta[[i]]))
+        input[[i]] <- rep(list(input[[i]]), length.out = length(theta[[i]]))
+      if(is.list(theta[[i]])) {
+        if(is.null(names(input[[i]])))
+          names(input[[i]]) <- names(theta[[i]])
+        if(!all(names(input[[i]]) %in% names(theta[[i]])))
+          stop(paste(ninput, "list() names for parameter", i, "different from the theta list() names!"))
+        for(j in names(input[[i]])) {
+          if(!inherits(input[[i]][[j]], type)) {
+            stop(paste("the '", ninput, "' object for block [", i, "][", j,
+              "] is not a ", type,"!", sep = ""), call. = FALSE)
+          }
+        }
+      } else {
+        if(!inherits(input[[i]], type)) {
+          stop(paste("the '", ninput, "' object for block [", i,
+            "] is not a ", type,"!", sep = ""), call. = FALSE)
+        }
+      }
+    }
+    return(input)
   }
 
   if(is.null(fitfun)) {
@@ -127,66 +145,13 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
       } else return(drop(x %*% p))
     }
   }
-  if(!is.list(fitfun))
-    fitfun <- rep(list(fitfun), length.out = k)
-  if(is.null(names(fitfun)))
-    names(fitfun) <- names(theta)
-  if(!all(names(fitfun) %in% names(theta)))
-    stop("the 'fitfun' list() names are different from theta!")
-  for(i in ntheta) {
-    if(!is.list(fitfun[[i]]))
-      fitfun[[i]] <- rep(list(fitfun[[i]]), length.out = length(theta[[i]]))
-    if(is.null(names(fitfun[[i]])))
-      names(fitfun[[i]]) <- names(theta[[i]])
-    if(!all(names(fitfun[[i]]) %in% names(theta[[i]])))
-      stop(paste("fitfun list() names for parameter", i, "different from the theta list() names!"))
-    for(j in names(fitfun[[i]])) {
-      if(!is.function(fitfun[[i]][[j]])) {
-        stop(paste("the fitfun function for block [", i, "][", j,
-          "] must be a function!", sep = ""))
-      }
-    }
-  }
 
-  if(!is.null(data)) {
-    if(!is.list(data))
-      data <- list(data)
-    if(is.null(names(data)))
-      names(data) <- names(theta)
-    if(!all(names(data) %in% names(theta)))
-      stop("the 'data' list() names are different from theta!")
-    for(i in ntheta) {
-      if(!is.list(data[[i]]))
-        data[[i]] <- rep(list(data[[i]]), length.out = length(theta[[i]]))
-      if(is.null(names(data[[i]])))
-        names(data[[i]]) <- names(theta[[i]])
-      if(!all(names(data[[i]]) %in% names(theta[[i]])))
-        stop(paste("data list() names for parameter", i, "different from the theta list() names!"))
-    }
-  }
-
-  if(!is.null(priors)) {
-    if(!is.list(priors))
-      priors <- rep(list(priors), length.out = k)
-    if(is.null(names(priors)))
-      names(priors) <- names(theta)
-    if(!all(names(priors) %in% names(theta)))
-      stop("the 'priors' list() names are different from theta!")
-    for(i in ntheta) {
-      if(!is.list(priors[[i]]))
-        priors[[i]] <- rep(list(priors[[i]]), length.out = length(theta[[i]]))
-      if(!is.null(names(priors)))
-        names(priors[[i]]) <- names(theta[[i]])
-      if(!all(names(priors[[i]]) %in% names(theta[[i]])))
-        stop(paste("priors list() names for parameter", i, "different from the theta list() names!"))
-      for(j in names(priors[[i]])) {
-        if(!is.function(priors[[i]][[j]])) {
-          stop(paste("the prior for block [", i, "][", j,
-            "] must return a function!", sep = ""))
-        }
-      }
-    }
-  }
+  propose <- parse_input(propose, gmcmc_mvnorm, "function")
+  fitfun <- parse_input(fitfun, NULL, "function")
+  if(!is.null(data))
+    data <- parse_input(data, NULL, "data.frame")
+  if(!is.null(priors))
+    priors <- parse_input(priors, NULL, "function")
 
   if(burnin < 1) burnin <- 1
   iterthin <- as.integer(seq(burnin, n.iter, by = thin))
@@ -197,30 +162,73 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
   eta <- theta.save
   for(i in ntheta) {
     eta[[i]] <- 0
-    for(j in names(theta[[i]]))
-      eta[[i]] <- eta[[i]] + fitfun[[i]][[j]](data[[i]][[j]], theta[[i]][[j]])
+    if(is.list(theta[[i]])) {
+      for(j in names(theta[[i]]))
+        eta[[i]] <- eta[[i]] + fitfun[[i]][[j]](data[[i]][[j]], theta[[i]][[j]])
+    } else {
+      eta[[i]] <- eta[[i]] + fitfun[[i]](data[[i]], theta[[i]])
+    }
   }
+
   for(i in ntheta) {
-    theta.save[[i]] <- vector(mode = "list", length = length(theta[[i]]))
-    names(theta.save[[i]]) <- names(theta[[i]])
-    for(j in names(theta[[i]])) {
-      p0 <- propose[[i]][[j]](fun, theta, id = c(i, j),
-        prior = priors[[i]][[j]], data = data[[i]][[j]], eta = eta,
+    if(is.list(theta[[i]])) {
+      theta.save[[i]] <- vector(mode = "list", length = length(theta[[i]]))
+      names(theta.save[[i]]) <- names(theta[[i]])
+      for(j in names(theta[[i]])) {
+        p0 <- propose[[i]][[j]](fun, theta, id = c(i, j),
+          prior = priors[[i]][[j]], data = data[[i]][[j]], eta = eta,
+          iteration = 1, n.iter = n.iter, burnin = burnin, rho = rho, ...)
+        if(!is.list(p0)) {
+          stop(paste("the propose() function for block [", i, "][", j,
+            "] must return a named list()!", sep = ""))
+        }
+        if(is.null(p0$alpha)) {
+          stop(paste("the propose() function for block [", i, "][", j,
+            "] must return the acceptance probability 'alpha'!", sep = ""))
+        }
+        if(is.null(p0$parameters)) {
+          stop(paste("the propose() function for block [", i, "][", j,
+            "] must return a vector 'parameters'!", sep = ""))
+        }
+        if(length(p0$parameters) != length(theta[[i]][[j]])) {
+          stop(paste("the propose() function for block [", i, "][", j,
+            "] must return a vector 'parameters' with the same length of initial parameters in theta!",
+            sep = ""))
+        }
+        if(is.null(names(p0$parameters)))
+          names(p0$parameters) <- paste("[", 1:length(p0$parameters), "]", sep = "")
+        if(length(p0$parameters) < 2 & FALSE) ## FIXME!!!
+          names(p0$parameters) <- NULL
+        theta.save[[i]][[j]] <- list(
+          "samples" = matrix(NA, nrow = length(iterthin), ncol = length(p0$parameters)),
+          "alpha" = rep(NA, length = length(iterthin)),
+          "accepted" = rep(NA, length = length(iterthin))
+        )
+        colnames(theta.save[[i]][[j]]$samples) <- names(p0$parameters)
+        if(!is.null(p0$extra)) {
+          theta.save[[i]][[j]]$extra <- matrix(NA, nrow = length(iterthin), ncol = length(p0$extra))
+          colnames(theta.save[[i]][[j]]$extra) <- names(p0$extra)
+        }
+        names(theta[[i]][[j]]) <- names(p0$parameters)
+      }
+    } else {
+      p0 <- propose[[i]](fun, theta, id = i,
+        prior = priors[[i]], data = data[[i]], eta = eta,
         iteration = 1, n.iter = n.iter, burnin = burnin, rho = rho, ...)
       if(!is.list(p0)) {
-        stop(paste("the propose() function for block [", i, "][", j,
+        stop(paste("the propose() function for block [", i,
           "] must return a named list()!", sep = ""))
       }
       if(is.null(p0$alpha)) {
-        stop(paste("the propose() function for block [", i, "][", j,
+        stop(paste("the propose() function for block [", i,
           "] must return the acceptance probability 'alpha'!", sep = ""))
       }
       if(is.null(p0$parameters)) {
-        stop(paste("the propose() function for block [", i, "][", j,
+        stop(paste("the propose() function for block [", i,
           "] must return a vector 'parameters'!", sep = ""))
       }
-      if(length(p0$parameters) != length(theta[[i]][[j]])) {
-        stop(paste("the propose() function for block [", i, "][", j,
+      if(length(p0$parameters) != length(theta[[i]])) {
+        stop(paste("the propose() function for block [", i,
           "] must return a vector 'parameters' with the same length of initial parameters in theta!",
           sep = ""))
       }
@@ -228,17 +236,17 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
         names(p0$parameters) <- paste("[", 1:length(p0$parameters), "]", sep = "")
       if(length(p0$parameters) < 2 & FALSE) ## FIXME!!!
         names(p0$parameters) <- NULL
-      theta.save[[i]][[j]] <- list(
+      theta.save[[i]] <- list(
         "samples" = matrix(NA, nrow = length(iterthin), ncol = length(p0$parameters)),
         "alpha" = rep(NA, length = length(iterthin)),
         "accepted" = rep(NA, length = length(iterthin))
       )
-      colnames(theta.save[[i]][[j]]$samples) <- names(p0$parameters)
+      colnames(theta.save[[i]]$samples) <- names(p0$parameters)
       if(!is.null(p0$extra)) {
-        theta.save[[i]][[j]]$extra <- matrix(NA, nrow = length(iterthin), ncol = length(p0$extra))
-        colnames(theta.save[[i]][[j]]$extra) <- names(p0$extra)
+        theta.save[[i]]$extra <- matrix(NA, nrow = length(iterthin), ncol = length(p0$extra))
+        colnames(theta.save[[i]]$extra) <- names(p0$extra)
       }
-      names(theta[[i]][[j]]) <- names(p0$parameters)
+      names(theta[[i]]) <- names(p0$parameters)
     }
   }
 
@@ -284,28 +292,57 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
       if(save <- iter %in% iterthin)
         js <- which(iterthin == iter)
       for(i in ntheta) {
-        for(j in names(theta[[i]])) {
+        if(is.list(theta[[i]])) {
+          for(j in names(theta[[i]])) {
+            ## Get proposed states.
+            state <- propose[[i]][[j]](fun, theta, id = c(i, j),
+              prior = priors[[i]][[j]], data = data[[i]][[j]], eta = eta,
+              iteration = iter, n.iter = n.iter, burnin = burnin, rho = rho, ...)
+
+            ## If accepted, set current state to proposed state.
+            accepted <- if(is.na(state$alpha)) FALSE else log(runif(1)) <= state$alpha
+
+            if(accepted) {
+              eta[[i]] <- eta[[i]] - fitfun[[i]][[j]](data[[i]][[j]], theta[[i]][[j]])
+              theta[[i]][[j]] <- state$parameters
+              eta[[i]] <- eta[[i]] + fitfun[[i]][[j]](data[[i]][[j]], theta[[i]][[j]])
+            }
+
+            ## Save the samples.
+            if(save) {
+              theta.save[[i]][[j]]$samples[js, ] <- theta[[i]][[j]]
+              theta.save[[i]][[j]]$alpha[js] <- min(c(exp(state$alpha), 1), na.rm = TRUE)
+              theta.save[[i]][[j]]$accepted[js] <- accepted
+              if(!is.null(state$extra) & accepted) {
+                theta.save[[i]][[j]]$extra[js, ] <- state$extra
+              }
+              ll[js] <- if(!is.null(logLik)) {
+                logLik(eta)
+              } else sum(do.call(fun, c(theta, list(...))[names(formals(fun))]), na.rm = TRUE)
+            }
+          }
+        } else {
           ## Get proposed states.
-          state <- propose[[i]][[j]](fun, theta, id = c(i, j),
-            prior = priors[[i]][[j]], data = data[[i]][[j]], eta = eta,
+          state <- propose[[i]](fun, theta, id = i,
+            prior = priors[[i]], data = data[[i]], eta = eta,
             iteration = iter, n.iter = n.iter, burnin = burnin, rho = rho, ...)
 
           ## If accepted, set current state to proposed state.
           accepted <- if(is.na(state$alpha)) FALSE else log(runif(1)) <= state$alpha
 
           if(accepted) {
-            eta[[i]] <- eta[[i]] - fitfun[[i]][[j]](data[[i]][[j]], theta[[i]][[j]])
-            theta[[i]][[j]] <- state$parameters
-            eta[[i]] <- eta[[i]] + fitfun[[i]][[j]](data[[i]][[j]], theta[[i]][[j]])
+            eta[[i]] <- eta[[i]] - fitfun[[i]](data[[i]], theta[[i]])
+            theta[[i]] <- state$parameters
+            eta[[i]] <- eta[[i]] + fitfun[[i]](data[[i]], theta[[i]])
           }
 
           ## Save the samples.
           if(save) {
-            theta.save[[i]][[j]]$samples[js, ] <- theta[[i]][[j]]
-            theta.save[[i]][[j]]$alpha[js] <- min(c(exp(state$alpha), 1), na.rm = TRUE)
-            theta.save[[i]][[j]]$accepted[js] <- accepted
+            theta.save[[i]]$samples[js, ] <- theta[[i]]
+            theta.save[[i]]$alpha[js] <- min(c(exp(state$alpha), 1), na.rm = TRUE)
+            theta.save[[i]]$accepted[js] <- accepted
             if(!is.null(state$extra) & accepted) {
-              theta.save[[i]][[j]]$extra[js, ] <- state$extra
+              theta.save[[i]]$extra[js, ] <- state$extra
             }
             ll[js] <- if(!is.null(logLik)) {
               logLik(eta)
@@ -320,23 +357,38 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
     if(verbose) cat("\n")
 
     for(i in ntheta) {
-      theta.save[[i]] <- lapply(theta.save[[i]], function(x) { do.call("cbind", x) })
-      for(j in names(theta.save[[i]])) {
-        cn <- i
-        if(length(theta.save[[i]]) > 1 | !simplify)
-          cn <- paste(cn, j, sep = ".")
-        cn2 <- colnames(theta.save[[i]][[j]])
-        for(k in seq_along(cn2)) {
-          cn2[k] <- if(grepl("[", cn2[k], fixed = TRUE)) {
-            paste(if(strsplit(cn2[k], "[", fixed = TRUE)[[1]][1] != "") "." else NULL, cn2[k], sep = "")
-          } else paste(if(cn2[k] != "") "." else NULL, cn2[k], sep = "")
+      theta.save[[i]] <- if(is.list(theta[[i]])) {
+        lapply(theta.save[[i]], function(x) { do.call("cbind", x) })
+      } else do.call("cbind", theta.save[[i]])
+      if(is.list(theta[[i]])) {
+        for(j in names(theta.save[[i]])) {
+          cn <- i
+          if(length(theta.save[[i]]) > 1 | !simplify)
+            cn <- paste(cn, j, sep = ".")
+          cn2 <- colnames(theta.save[[i]][[j]])
+          for(k in seq_along(cn2)) {
+            cn2[k] <- if(grepl("[", cn2[k], fixed = TRUE)) {
+              paste(if(strsplit(cn2[k], "[", fixed = TRUE)[[1]][1] != "") "." else NULL, cn2[k], sep = "")
+            } else paste(if(cn2[k] != "") "." else NULL, cn2[k], sep = "")
+          }
+          cn <- paste(cn, cn2, sep = "")
+          colnames(theta.save[[i]][[j]]) <- cn
         }
-        cn <- paste(cn, cn2, sep = "")
-        colnames(theta.save[[i]][[j]]) <- cn
+      } else {
+        cn <- colnames(theta.save[[i]])
+        sep <- c(".", "")[as.integer(grepl("[", cn, fixed = TRUE)) + 1L]
+        for(j in seq_along(cn)) {
+          cn[j] <- paste(if(length(theta) > 1) i else NULL,
+            if(length(theta[[i]]) > 1) cn[j] else NULL,
+            sep = if(length(theta) > 1) sep[j] else "")
+        }
+        colnames(theta.save[[i]]) <- cn
       }
       theta.save[[i]] <- if(length(theta.save[[i]]) < 2 & simplify) {
-        theta.save[[i]][[1]]
-      } else do.call("cbind", theta.save[[i]])
+        if(is.list(theta[[i]])) theta.save[[i]][[1]] else theta.save[[i]]
+      } else {
+        if(is.list(theta[[i]])) do.call("cbind", theta.save[[i]]) else theta.save[[i]]
+      }
     }
     theta.save <- if(length(theta.save) < 2) theta.save[[1]] else do.call("cbind", theta.save)
     theta.save <- cbind(theta.save, "logLik" = ll)
@@ -413,6 +465,20 @@ plot.gmcmc <- function(x, ...)
   plot(x, ...)
 }
 
+"[.gmcmc.theta" <- function(x, i) {
+  if(length(i) < 2)
+    return(x[[i]])
+  else
+    return(x[[i[1]]][[i[2]]])
+}
+
+"[<-.gmcmc.theta" <- function(x, i, value) {
+  if(length(i) < 2)
+    x[[i]] <- value
+  else
+    x[[i[1]]][[i[2]]] <- value
+  return(x)
+}
 
 gmcmc_mvnorm <- function(fun, theta, id, prior, ...)
 {
@@ -421,28 +487,28 @@ gmcmc_mvnorm <- function(fun, theta, id, prior, ...)
   args <- list(...)
   iteration <- args$iteration
 
-  if(is.null(attr(theta[[id[1]]][[id[2]]], "scale")))
-    attr(theta[[id[1]]][[id[2]]], "scale") <- 1
-  if(is.null(attr(theta[[id[1]]][[id[2]]], "P")))
-    attr(theta[[id[1]]][[id[2]]], "sigma") <- diag(length(theta[[id[1]]][[id[2]]]))
+  if(is.null(attr(theta[id], "scale")))
+    attr(theta[id], "scale") <- 1
+  if(is.null(attr(theta[id], "P")))
+    attr(theta[id], "sigma") <- diag(length(theta[id]))
 
   if(iteration < floor(0.15 * args$n.iter)) {
-    scale <- attr(theta[[id[1]]][[id[2]]], "scale")
-    sigma <- attr(theta[[id[1]]][[id[2]]], "sigma")
+    scale <- attr(theta[id], "scale")
+    sigma <- attr(theta[id], "sigma")
 
     k <- 1
     do <- TRUE
     while(do & k < 100) {
       ll0 <- sum(do.call(fun, c(theta, args)[names(formals(fun))]), na.rm = TRUE)
       p0 <- if(is.null(prior)) {
-        sum(dnorm(theta[[id[1]]][[id[2]]], sd = 1000, log = TRUE), na.rm = TRUE)
+        sum(dnorm(theta[id], sd = 1000, log = TRUE), na.rm = TRUE)
       } else sum(do.call(prior, c(theta, args)[names(formals(prior))]), na.rm = TRUE)
 
-      theta[[id[1]]][[id[2]]] <- drop(rmvnorm(n = 1, mean = theta[[id[1]]][[id[2]]], sigma = scale * sigma))
+      theta[id] <- drop(rmvnorm(n = 1, mean = theta[id], sigma = scale * sigma))
 
       ll1 <- sum(do.call(fun, c(theta, args)[names(formals(fun))]), na.rm = TRUE)
       p1 <- if(is.null(prior)) {
-        sum(dnorm(theta[[id[1]]][[id[2]]], sd = 1000, log = TRUE), na.rm = TRUE)
+        sum(dnorm(theta[id], sd = 1000, log = TRUE), na.rm = TRUE)
       } else sum(do.call(prior, c(theta, args)[names(formals(prior))]), na.rm = TRUE)
 
       alpha <- drop((ll1 + p1) - (ll0 + p0))
@@ -462,28 +528,28 @@ gmcmc_mvnorm <- function(fun, theta, id, prior, ...)
       k <- k + 1
     }
 
-    attr(theta[[id[1]]][[id[2]]], "scale") <- scale
-    attr(theta[[id[1]]][[id[2]]], "sigma") <- sigma
+    attr(theta[id], "scale") <- scale
+    attr(theta[id], "sigma") <- sigma
   }
 
-  scale <- attr(theta[[id[1]]][[id[2]]], "scale")
-  sigma <- attr(theta[[id[1]]][[id[2]]], "sigma")
+  scale <- attr(theta[id], "scale")
+  sigma <- attr(theta[id], "sigma")
 
   ll0 <- sum(do.call(fun, c(theta, args)[names(formals(fun))]), na.rm = TRUE)
   p0 <- if(is.null(prior)) {
-    sum(dnorm(theta[[id[1]]][[id[2]]], sd = 1000, log = TRUE), na.rm = TRUE)
+    sum(dnorm(theta[id], sd = 1000, log = TRUE), na.rm = TRUE)
   } else sum(do.call(prior, c(theta, args)[names(formals(prior))]), na.rm = TRUE)
 
-  theta[[id[1]]][[id[2]]] <- drop(rmvnorm(n = 1, mean = theta[[id[1]]][[id[2]]], sigma = scale * sigma))
+  theta[id] <- drop(rmvnorm(n = 1, mean = theta[id], sigma = scale * sigma))
 
   ll1 <- sum(do.call(fun, c(theta, args)[names(formals(fun))]), na.rm = TRUE)
   p1 <- if(is.null(prior)) {
-    sum(dnorm(theta[[id[1]]][[id[2]]], sd = 1000, log = TRUE), na.rm = TRUE)
+    sum(dnorm(theta[id], sd = 1000, log = TRUE), na.rm = TRUE)
   } else sum(do.call(prior, c(theta, args)[names(formals(prior))]), na.rm = TRUE)
 
   alpha <- drop((ll1 + p1) - (ll0 + p0))
 
-  rval <- list("parameters" = theta[[id[1]]][[id[2]]], "alpha" = alpha)
+  rval <- list("parameters" = theta[id], "alpha" = alpha)
 
   attr(rval$parameters, "scale") <- scale
   attr(rval$parameters, "sigma") <- sigma
@@ -955,6 +1021,7 @@ grad <- function(fun, theta, prior, id, args, eps = .Machine$double.eps^0.5)
 {
   if(!is.null(args$gradient[[id[1]]])) {
     gfun <- args$gradient[[id[1]]]
+print(c(theta, args)[names(formals(gfun))])
     grad.theta <- do.call(gfun, c(theta, args)[names(formals(gfun))])
   } else {
     gfun <- function(theta, j) {

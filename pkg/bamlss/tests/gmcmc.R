@@ -14,8 +14,6 @@ d <- list("mu" = cbind(1, dat$x1), "sigma" = cbind(1, dat$x1))
 ## b <- bamlss0(y ~ s(x1), ~ s(x1), data = dat, n.iter = 1200, burnin = 200, thin = 1)
 
 logLik <- function(mu, sigma, ...) {
-  mu <- unlist(mu)
-  sigma <- unlist(sigma)
   ll <- dnorm(dat$y, mean = d$mu %*% mu, sd = exp(d$sigma %*% sigma), log = TRUE)
 }
 
@@ -209,7 +207,6 @@ matplot(mcycle$times, f, type = "l", lty = c(2, 1, 2), col = 1, add = TRUE)
 y <- rnorm(500, mean = 10, sd = 2)
 
 logpost = function(theta) {
-  theta <- unlist(theta)
   ll <- sum(dnorm(y, mean = theta[1], sd = exp(theta[2]), log = TRUE))
 }
 
