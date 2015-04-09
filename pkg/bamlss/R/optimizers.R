@@ -39,7 +39,8 @@
 ## smooth.bamlss(), which adds additional parts to the
 ## state list, as this could vary for special terms. A default
 ## method is provided.
-bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AICc", "BIC", "AIC"), ...)
+bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AICc", "BIC", "AIC"),
+  step = 0.1, ...)
 {
   if(!is.null(attr(x, "bamlss.setup"))) return(x)
 
@@ -130,6 +131,7 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
           if(!is.null(x$smooth[[j]]$rank))
             x$smooth[[j]]$rank <- as.numeric(x$smooth[[j]]$rank)
           x$smooth[[j]]$criterion <- criterion
+          x$smooth[[j]]$step <- step
           if(!is.null(x$smooth[[j]]$Xf)) {
             x$smooth[[j]]$Xfcn <- paste(paste(paste(x$smooth[[j]]$term, collapse = "."),
               "Xf", sep = "."), 1:ncol(x$smooth[[j]]$Xf), sep = ".")
@@ -145,7 +147,8 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
                 "bs.dim" = ncol(x$smooth[[j]]$Xf),
                 "fixed" = TRUE,
                 "is.parametric" = TRUE,
-                "by" = "NA"
+                "by" = "NA",
+                "step" = step
               )
               x$sterms <- c(x$strems, "parametric")
             } else {
@@ -359,7 +362,7 @@ smooth.bamlss.default <- function(x, ...)
     }
   }
   if(is.null(x$grad)) {
-    x$grad <- function(score, parameters, full = TRUE) {
+    x$grad <- function(score = NULL, parameters, full = TRUE) {
       gamma <- get.par(parameters, "g")
       tau2 <-  get.par(parameters, "tau2")
       grad2 <- NULL
@@ -376,9 +379,11 @@ smooth.bamlss.default <- function(x, ...)
           }
         }
       }
-      grad <- if(!is.null(x$xbin.ind)) {
-        drop(crossprod(x$X[x$xbin.ind, , drop = FALSE], score)) + c(grad, grad2)
-      } else drop(crossprod(x$X, score)) + c(grad, grad2)
+      if(!is.null(score)) {
+        grad <- if(!is.null(x$xbin.ind)) {
+          drop(crossprod(x$X[x$xbin.ind, , drop = FALSE], score)) + c(grad, grad2)
+        } else drop(crossprod(x$X, score)) + c(grad, grad2)
+      } else grad <- c(grad, grad2)
       return(grad)
     }
   } else {
@@ -658,31 +663,52 @@ make_par <- function(x, type = 1) {
 ## Backfitting updating functions.
 bfit0_newton <- function(x, family, response, eta, id, ...)
 {
-  args <- list(...)
+  eta[[id]] <- eta[[id]] - fitted(x$state)
 
-  eta[[id]] <- eta[[id]] <- fitted(x$state)
-
-  loglik <- function(g) {
-    eta[[id]] <- eta[[id]] + x$get.mu(x$X, g)
-    family$loglik(response, family$map2par(eta))
-  }
+  tau2 <- if(!x$fixed) get.par(x$state$parameters, "tau2") else NULL
 
   lp <- function(g) {
-    par2 <- c(g, get.par(x$state$parameters, "tau2"))
-    x$prior(par2)
+    eta[[id]] <- eta[[id]] + x$get.mu(x$X, g)
+    family$loglik(response, family$map2par(eta)) + x$prior(c(g, tau2))
+  }
+
+  if(is.null(family$gradient[[id]])) {
+    gfun <- NULL
+  } else {
+    gfun <- list()
+    gfun[[id]] <- function(g, y, eta, x, ...) {
+      gg <- family$gradient[[id]](g, y, eta, x)
+      if(!is.null(x$grad)) {
+        gg <- gg + x$grad(score = NULL, c(g, tau2), full = FALSE)
+      }
+      drop(gg)
+    }
+  }
+
+  if(is.null(family$hessian[[id]])) {
+    hfun <- NULL
+  } else {
+    hfun <- list()
+    hfun[[id]] <- function(g, y, eta, x, ...) {
+      hg <- family$hessian[[id]](g, y, eta, x)
+      if(!is.null(x$hess)) {
+        hg <- hg + x$hess(score = NULL, c(g, tau2), full = FALSE)
+      }
+      hg
+    }
   }
 
   g <- get.par(x$state$parameters, "gamma")
+  step <- if(is.null(x$step)) 0.1 else x$step
 
-  g.grad <- grad(fun = loglik, theta = g,
-    id = id, prior = lp, args = c(family, list("X" = x$X, "y" = response, "eta" = eta)))
+  g.grad <- grad(fun = lp, theta = g, id = id, prior = NULL,
+    args = list("gradient" = gfun, "x" = x, "y" = response, "eta" = eta))
 
-  g.hess <- hess(fun = loglik, theta = get.par(x$state$parameters, "gamma"),
-    id = id, prior = lp, args = c(family, list("X" = x$X, "y" = response, "eta" = eta)))
+  g.hess <- hess(fun = lp, theta = g, id = id, prior = NULL,
+    args = list("gradient" = gfun, "hessian" = hfun, "x" = x, "y" = response, "eta" = eta))
 
   Sigma <- matrix_inv(g.hess)
 
-  step <- if(is.null(args$step)) 0.2 else args$step
   g <- drop(g + step * Sigma %*% g.grad)
 
   x$state$parameters <- set.par(x$state$parameters, g, "g")

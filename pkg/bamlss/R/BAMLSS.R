@@ -118,7 +118,7 @@ stacker <- function(x, optimizer = bfit0, sampler = samplerJAGS, ...)
 #########################
 ## (3) BAMLSS wrapper. ##
 #########################
-bamlss <- function(formula, family = gaussian2, data = NULL, knots = NULL,
+bamlss <- function(formula, family = gaussian, data = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
   optimizer = list(bfit0), sampler = list(GMCMC), results = resultsBayesG,
   engine = NULL, cores = NULL, sleep = 1, combine = TRUE,

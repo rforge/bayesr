@@ -24,21 +24,33 @@ b3 <- gmcmc(logLik, theta = theta, propose = gmcmc_newton)
 
 g <- list(
   "mu" = function(mu, sigma) {
-    mu <- d$mu %*% unlist(mu)
-    sigma <- exp(d$sigma %*% unlist(sigma))
+    mu <- d$mu %*% mu
+    sigma <- exp(d$sigma %*% sigma)
     score <- snorm(dat$y, mean = mu, sd = sigma, which = "mu")
     drop(t(d$mu) %*% score)
   },
   "sigma" = function(mu, sigma) {
-    mu <- d$mu %*% unlist(mu)
-    sigma <- exp(d$sigma %*% unlist(sigma))
+    mu <- d$mu %*% mu
+    sigma <- exp(d$sigma %*% sigma)
     score <- snorm(dat$y, mean = mu, sd = sigma, which = "sigma")
     score <- score * sigma
     drop(t(d$sigma) %*% score)
   }
 )
 
-b4 <- gmcmc(logLik, theta = theta, propose = gmcmc_newton, gradient = g)
+h <- list(
+  "mu" = function(mu, sigma) {
+    mu <- d$mu %*% mu
+    sigma <- exp(d$sigma %*% sigma)
+    score <- snorm(dat$y, mean = mu, sd = sigma, which = "mu")
+    hess <- hnorm(dat$y, mean = mu, sd = sigma, which = "mu")
+    hess <- diag(drop(t(d$mu) %*% (score + hess)))
+    return(hess)
+  }
+)
+h <- NULL
+
+b4 <- gmcmc(logLik, theta = theta, propose = gmcmc_newton, gradient = g, hessian = h, adapt = 0)
 
 rbind(
   apply(b0, 2, mean),

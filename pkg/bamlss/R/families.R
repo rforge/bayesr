@@ -450,11 +450,22 @@ gaussian.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
       "sigma" = function(y, eta, ...) { rep(2, length(y)) }
     ),
     "gradient" = list(
-      "mu" = function(g, y, eta, X, ...) {
-        t(X) %*% drop((y - eta$mu) / (eta$sigma^2))
+      "mu" = function(g, y, eta, x, ...) {
+        eta$mu <- eta$mu + x$get.mu(x$X, g)
+        crossprod(x$X, drop((y - eta$mu) / (exp(eta$sigma)^2)))
       },
-      "sigma" = function(g, y, eta, X, ...) {
-        t(X) %*% rep(2, length(y))
+      "sigma" = function(g, y, eta, x, ...) {
+        eta$sigma <- eta$sigma + x$get.mu(x$X, g)
+        crossprod(x$X, drop(-1 + (y - eta$mu)^2 / (exp(eta$sigma)^2)))
+      }
+    ),
+    "hessian" = list(
+      "mu" = function(g, y, eta, x, ...) {
+        crossprod(x$X, x$X * drop(1 / exp(eta$sigma)^2))
+      },
+      "sigma" = function(g, y, eta, x, ...) {
+        eta$sigma <- eta$sigma + x$get.mu(x$X, g)
+        crossprod(x$X * drop((y - eta$mu)^2 / (exp(eta$sigma))), x$X)
       }
     ),
     "loglik" = function(y, eta, ...) {
@@ -2313,16 +2324,10 @@ cox.bamlss <- function(links = c(hazard = "identity", mu = "identity"), ...)
     "score" = list(
       "mu" = function(y, eta, ...) {
         y[, "status"] - exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
-      },
-      "hazard" = function(y, eta, ...) {
-        y[, "status"] - exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
       }
     ),
     "weights" = list(
       "mu" = function(y, eta, ...) {
-        exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
-      },
-      "hazard" = function(y, eta, ...) {
         exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
       }
     )

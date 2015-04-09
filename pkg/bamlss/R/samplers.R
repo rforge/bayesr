@@ -883,6 +883,75 @@ gmcmc_sm.mvn <- function(family, theta, id, prior, eta, response, data, ...)
 }
 
 
+gmcmc_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
+{
+  theta <- theta[id]
+
+  if(is.null(attr(theta, "fitted.values")))
+    attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
+
+  p.old <- family$loglik(response, family$map2par(eta)) + data$prior(theta)
+
+  eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values")
+
+  ll <- function(g) {
+    eta[[id[1]]] <- eta[[id[1]]] + data$get.mu(data$X, g)
+    family$loglik(response, family$map2par(eta))
+  }
+
+  g <- get.par(theta, "g")
+
+  g.grad <- grad(fun = ll, theta = g, id = id, prior = NULL,
+    args = c(family, list("x" = data, "y" = response, "eta" = eta)))
+
+  g.hess <- hess(fun = ll, theta = g, id = id, prior = NULL,
+    args = c(family, list("x" = data, "y" = response, "eta" = eta)))
+
+  Sigma <- matrix_inv(g.hess)
+  mu <- drop(g + Sigma %*% g.grad)
+
+  q.prop <- dmvnorm(matrix(g, nrow = 1), mean = mu, sigma = Sigma, log = TRUE)
+
+  g2 <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma))
+  names(g2) <- names(g)
+
+  g.grad2 <- grad(fun = ll, theta = g2, id = id, prior = NULL,
+    args = c(family, list("x" = data, "y" = response, "eta" = eta)))
+
+  g.hess2 <- hess(fun = ll, theta = g2, id = id, prior = NULL,
+    args = c(family, list("x" = data, "y" = response, "eta" = eta)))
+
+  Sigma2 <- matrix_inv(g.hess2)
+  mu2 <- drop(g2 + Sigma2 %*% g.grad2)
+
+  ## Sample variance parameter.
+  if(!data$fixed & is.null(data$sp)) {
+    if(!data$fixed & is.null(data$sp)) {
+      tau2 <- NULL
+      for(j in seq_along(data$S)) {
+        a <- data$rank[j] / 2 + data$a
+        b <- 0.5 * crossprod(g2, data$S[[j]]) %*% g2 + data$b
+        tau2 <- c(tau2, 1 / rgamma(1, a, b))
+      }
+      theta <- set.par(theta, tau2, "tau2")
+    }
+  }
+
+  theta <- set.par(theta, g2, "g")
+
+  attr(theta, "fitted.values") <- data$get.mu(data$X, g2)
+  eta[[id[1]]] <- eta[[id[1]]] + attr(theta, "fitted.values")
+
+  p.prop <- family$loglik(response, family$map2par(eta)) + data$prior(c(g2, get.par(theta, "tau2")))
+
+  q.old <- dmvnorm(matrix(g2, nrow = 1), mean = mu2, sigma = Sigma2, log = TRUE)
+
+  alpha <- (p.prop - p.old) + (q.old - q.prop)
+
+  rval <- list("parameters" = theta, "alpha" = alpha)
+}
+
+
 gmcmc_logPost <- function(g, x, family, response = NULL, eta = NULL, id, ll = NULL)
 {
   if(is.null(ll)) {
@@ -1021,11 +1090,12 @@ eval_fun <- function(fun, theta, prior, id, args)
 }
 
 
-grad <- function(fun, theta, prior, id, args, eps = .Machine$double.eps^0.5)
+grad <- function(fun, theta, prior, id, args, eps = .Machine$double.eps^0.25)
 {
   if(!is.null(args$gradient[[id[1]]])) {
     gfun <- args$gradient[[id[1]]]
-    grad.theta <- do.call(gfun, c(theta, args)[names(formals(gfun))])
+    args[[names(formals(gfun))[1]]] <- theta
+    grad.theta <- do.call(gfun, args[names(formals(gfun))])
   } else {
     gfun <- function(theta, j) {
       theta2 <- theta
@@ -1067,7 +1137,8 @@ hess <- function(fun, theta, prior, id, args, diag = FALSE)
 {
   if(!is.null(args$hessian)) {
     hfun <- args$hessian[[id[1]]]
-    H <- do.call(hfun, c(theta, args)[names(formals(hfun))])
+    args[[names(formals(hfun))[1]]] <- theta
+    H <- do.call(hfun, args[names(formals(hfun))])
   } else {
     theta2 <- theta
     objfun <- function(par) {
@@ -1075,9 +1146,9 @@ hess <- function(fun, theta, prior, id, args, diag = FALSE)
         if(is.list(theta[[id[1]]])) {
           theta2[[id[1]]][[id[2]]] <- par
         } else theta2[[id[1]]] <- par
-        return(-1 * eval_fun(fun, theta2, prior, id, args))
+        return(eval_fun(fun, theta2, prior, id, args))
       } else {
-        return(-1 * eval_fun(fun, par, prior, id, args))
+        return(eval_fun(fun, par, prior, id, args))
       }
     }
     gfun <- NULL
@@ -1088,8 +1159,11 @@ hess <- function(fun, theta, prior, id, args, diag = FALSE)
           if(is.list(theta[[id[1]]])) {
             theta2[[id[1]]][[id[2]]] <- par
           } else theta2[[id[1]]] <- par
-          return(-1 * do.call(gfun2, c(theta2, args)[names(formals(gfun2))]))
-        } else return(-1 * gfun2(par))
+          return(do.call(gfun2, c(theta2, args)[names(formals(gfun2))]))
+        } else {
+          args[[names(formals(gfun2))[1]]] <- par
+          return(do.call(gfun2, args[names(formals(gfun2))]))
+        }
       }
     }
     start <- if(is.list(theta)) {
@@ -1097,7 +1171,7 @@ hess <- function(fun, theta, prior, id, args, diag = FALSE)
         theta[[id[1]]][[id[2]]]
       } else theta[[id[1]]]
     } else theta
-    H <- optimHess(start, fn = objfun, gr = gfun)
+    H <- -1 * optimHess(start, fn = objfun, gr = gfun, control = list(fnscale = -1))
   }
   if(diag)
     H <- diag(diag(H))
@@ -1237,7 +1311,7 @@ null.sampler <- function(x, criterion = c("AICc", "BIC", "AIC"), ...)
 }
 
 
-cat2 <- function(x, sleep = 0.05) {
+cat2 <- function(x, sleep = 0.03) {
   x <- strsplit(x, "")[[1]]
   add <- ""
   for(i in seq_along(x)) {
