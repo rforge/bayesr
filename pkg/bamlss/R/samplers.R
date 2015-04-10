@@ -936,8 +936,8 @@ gmcmc_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
   g.hess <- hess(fun = lp, theta = g, id = id[1], prior = NULL,
     args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = response, "eta" = eta))
 
-  Sigma <- step * matrix_inv(g.hess)
-  mu <- drop(g + Sigma %*% g.grad)
+  Sigma <- matrix_inv(g.hess)
+  mu <- drop(g + step * Sigma %*% g.grad)
 
   q.prop <- dmvnorm(matrix(g, nrow = 1), mean = mu, sigma = Sigma, log = TRUE)
 
@@ -950,8 +950,8 @@ gmcmc_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
   g.hess2 <- hess(fun = lp, theta = g2, id = id[1], prior = NULL,
     args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = response, "eta" = eta))
 
-  Sigma2 <- step * matrix_inv(g.hess2)
-  mu2 <- drop(g2 + Sigma2 %*% g.grad2)
+  Sigma2 <- matrix_inv(g.hess2)
+  mu2 <- drop(g2 + step * Sigma2 %*% g.grad2)
 
   theta <- set.par(theta, g2, "g")
 
