@@ -213,7 +213,7 @@ bamlss <- function(formula, family = gaussian, data = NULL, knots = NULL,
 ##########################################################
 ## (4) Parsing all input using package mgcv structures. ##
 ##########################################################
-parse.input.bamlss <- function(formula, data = NULL, family = gaussian2.bamlss,
+parse.input.bamlss <- function(formula, data = NULL, family = gaussian.bamlss,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
   grid = 100, binning = FALSE, ...)

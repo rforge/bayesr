@@ -885,29 +885,58 @@ gmcmc_sm.mvn <- function(family, theta, id, prior, eta, response, data, ...)
 
 gmcmc_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
 {
+  require("mvtnorm")
+
   theta <- theta[id]
+  g <- get.par(theta, "g")
+  tau2 <- if(!data$fixed) get.par(theta, "tau2") else NULL
+  step <- if(is.null(data$step.size)) 0.1 else data$step.size
+
+  p.old <- family$loglik(response, family$map2par(eta)) + data$prior(theta)
 
   if(is.null(attr(theta, "fitted.values")))
     attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
 
-  p.old <- family$loglik(response, family$map2par(eta)) + data$prior(theta)
-
   eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values")
 
-  ll <- function(g) {
+  lp <- function(g) {
     eta[[id[1]]] <- eta[[id[1]]] + data$get.mu(data$X, g)
-    family$loglik(response, family$map2par(eta))
+    family$loglik(response, family$map2par(eta)) + data$prior(c(g, tau2))
   }
 
-  g <- get.par(theta, "g")
+  if(is.null(family$gradient[[id[1]]])) {
+    gfun <- NULL
+  } else {
+    gfun <- list()
+    gfun[[id[1]]] <- function(g, y, eta, x, ...) {
+      gg <- family$gradient[[id[1]]](g, y, eta, x)
+      if(!is.null(data$grad)) {
+        gg <- gg + data$grad(score = NULL, c(g, tau2), full = FALSE)
+      }
+      drop(gg)
+    }
+  }
 
-  g.grad <- grad(fun = ll, theta = g, id = id, prior = NULL,
-    args = c(family, list("x" = data, "y" = response, "eta" = eta)))
+  if(is.null(family$hessian[[id[1]]])) {
+    hfun <- NULL
+  } else {
+    hfun <- list()
+    hfun[[id[1]]] <- function(g, y, eta, x, ...) {
+      hg <- family$hessian[[id[1]]](g, y, eta, x)
+      if(!is.null(data$hess)) {
+        hg <- hg + data$hess(score = NULL, c(g, tau2), full = FALSE)
+      }
+      hg
+    }
+  }
 
-  g.hess <- hess(fun = ll, theta = g, id = id, prior = NULL,
-    args = c(family, list("x" = data, "y" = response, "eta" = eta)))
+  g.grad <- grad(fun = lp, theta = g, id = id[1], prior = NULL,
+    args = list("gradient" = gfun, "x" = data, "y" = response, "eta" = eta))
 
-  Sigma <- matrix_inv(g.hess)
+  g.hess <- hess(fun = lp, theta = g, id = id[1], prior = NULL,
+    args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = response, "eta" = eta))
+
+  Sigma <- step * matrix_inv(g.hess)
   mu <- drop(g + Sigma %*% g.grad)
 
   q.prop <- dmvnorm(matrix(g, nrow = 1), mean = mu, sigma = Sigma, log = TRUE)
@@ -915,14 +944,25 @@ gmcmc_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
   g2 <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma))
   names(g2) <- names(g)
 
-  g.grad2 <- grad(fun = ll, theta = g2, id = id, prior = NULL,
-    args = c(family, list("x" = data, "y" = response, "eta" = eta)))
+  g.grad2 <- grad(fun = lp, theta = g2, id = id[1], prior = NULL,
+    args = list("gradient" = gfun, "x" = data, "y" = response, "eta" = eta))
 
-  g.hess2 <- hess(fun = ll, theta = g2, id = id, prior = NULL,
-    args = c(family, list("x" = data, "y" = response, "eta" = eta)))
+  g.hess2 <- hess(fun = lp, theta = g2, id = id[1], prior = NULL,
+    args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = response, "eta" = eta))
 
-  Sigma2 <- matrix_inv(g.hess2)
+  Sigma2 <- step * matrix_inv(g.hess2)
   mu2 <- drop(g2 + Sigma2 %*% g.grad2)
+
+  theta <- set.par(theta, g2, "g")
+
+  attr(theta, "fitted.values") <- data$get.mu(data$X, g2)
+  eta[[id[1]]] <- eta[[id[1]]] + attr(theta, "fitted.values")
+
+  p.prop <- family$loglik(response, family$map2par(eta)) + data$prior(c(g2, tau2))
+
+  q.old <- dmvnorm(matrix(g2, nrow = 1), mean = mu2, sigma = Sigma2, log = TRUE)
+
+  alpha <- (p.prop - p.old) + (q.old - q.prop)
 
   ## Sample variance parameter.
   if(!data$fixed & is.null(data$sp)) {
@@ -936,17 +976,6 @@ gmcmc_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
       theta <- set.par(theta, tau2, "tau2")
     }
   }
-
-  theta <- set.par(theta, g2, "g")
-
-  attr(theta, "fitted.values") <- data$get.mu(data$X, g2)
-  eta[[id[1]]] <- eta[[id[1]]] + attr(theta, "fitted.values")
-
-  p.prop <- family$loglik(response, family$map2par(eta)) + data$prior(c(g2, get.par(theta, "tau2")))
-
-  q.old <- dmvnorm(matrix(g2, nrow = 1), mean = mu2, sigma = Sigma2, log = TRUE)
-
-  alpha <- (p.prop - p.old) + (q.old - q.prop)
 
   rval <- list("parameters" = theta, "alpha" = alpha)
 }

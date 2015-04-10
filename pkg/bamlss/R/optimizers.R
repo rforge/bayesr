@@ -40,7 +40,7 @@
 ## state list, as this could vary for special terms. A default
 ## method is provided.
 bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AICc", "BIC", "AIC"),
-  step = 0.1, ...)
+  step.size = 0.1, ...)
 {
   if(!is.null(attr(x, "bamlss.setup"))) return(x)
 
@@ -131,7 +131,7 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
           if(!is.null(x$smooth[[j]]$rank))
             x$smooth[[j]]$rank <- as.numeric(x$smooth[[j]]$rank)
           x$smooth[[j]]$criterion <- criterion
-          x$smooth[[j]]$step <- step
+          x$smooth[[j]]$step.size <- step.size
           if(!is.null(x$smooth[[j]]$Xf)) {
             x$smooth[[j]]$Xfcn <- paste(paste(paste(x$smooth[[j]]$term, collapse = "."),
               "Xf", sep = "."), 1:ncol(x$smooth[[j]]$Xf), sep = ".")
@@ -148,7 +148,7 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
                 "fixed" = TRUE,
                 "is.parametric" = TRUE,
                 "by" = "NA",
-                "step" = step
+                "step.size" = step.size
               )
               x$sterms <- c(x$strems, "parametric")
             } else {
@@ -389,6 +389,23 @@ smooth.bamlss.default <- function(x, ...)
   } else {
     if(!is.function(x$grad))
       x$grad <- NULL
+  }
+  if(is.null(x$hess)) {
+    x$hess <- function(score = NULL, parameters, full = FALSE) {
+      tau2 <- get.par(parameters, "tau2")
+      if(x$fixed | !length(tau2)) {
+        hx <- 0
+      } else {
+        hx <- 0
+        for(j in seq_along(tau2)) {
+          hx <- hx + (0.5 / tau2[j]) * x$S[[j]]
+        }
+      }
+      return(hx)
+    }
+  } else {
+    if(!is.function(x$hess))
+      x$hess <- NULL
   }
   ng <- length(get.par(state$parameters, "g"))
   x$lower <- c(rep(-Inf, ng),
@@ -699,7 +716,7 @@ bfit0_newton <- function(x, family, response, eta, id, ...)
   }
 
   g <- get.par(x$state$parameters, "gamma")
-  step <- if(is.null(x$step)) 0.1 else x$step
+  step <- if(is.null(x$step.size)) 0.1 else x$step.size
 
   g.grad <- grad(fun = lp, theta = g, id = id, prior = NULL,
     args = list("gradient" = gfun, "x" = x, "y" = response, "eta" = eta))

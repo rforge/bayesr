@@ -464,8 +464,9 @@ gaussian.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
         crossprod(x$X, x$X * drop(1 / exp(eta$sigma)^2))
       },
       "sigma" = function(g, y, eta, x, ...) {
-        eta$sigma <- eta$sigma + x$get.mu(x$X, g)
-        crossprod(x$X * drop((y - eta$mu)^2 / (exp(eta$sigma))), x$X)
+#        eta$sigma <- eta$sigma + x$get.mu(x$X, g)
+#        crossprod(x$X * drop((y - eta$mu)^2 / (exp(eta$sigma))), x$X)
+        crossprod(x$X)
       }
     ),
     "loglik" = function(y, eta, ...) {
