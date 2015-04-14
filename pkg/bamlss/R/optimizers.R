@@ -40,7 +40,7 @@
 ## state list, as this could vary for special terms. A default
 ## method is provided.
 bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AICc", "BIC", "AIC"),
-  step.size = 0.1, ...)
+  nu = 0.1, ...)
 {
   if(!is.null(attr(x, "bamlss.setup"))) return(x)
 
@@ -131,7 +131,7 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
           if(!is.null(x$smooth[[j]]$rank))
             x$smooth[[j]]$rank <- as.numeric(x$smooth[[j]]$rank)
           x$smooth[[j]]$criterion <- criterion
-          x$smooth[[j]]$step.size <- step.size
+          x$smooth[[j]]$nu <- nu
           if(!is.null(x$smooth[[j]]$Xf)) {
             x$smooth[[j]]$Xfcn <- paste(paste(paste(x$smooth[[j]]$term, collapse = "."),
               "Xf", sep = "."), 1:ncol(x$smooth[[j]]$Xf), sep = ".")
@@ -148,7 +148,7 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
                 "fixed" = TRUE,
                 "is.parametric" = TRUE,
                 "by" = "NA",
-                "step.size" = step.size
+                "nu" = nu
               )
               x$sterms <- c(x$strems, "parametric")
             } else {
@@ -716,7 +716,7 @@ bfit0_newton <- function(x, family, response, eta, id, ...)
   }
 
   g <- get.par(x$state$parameters, "gamma")
-  step <- if(is.null(x$step.size)) 0.1 else x$step.size
+  nu <- if(is.null(x$nu)) 0.1 else x$nu
 
   g.grad <- grad(fun = lp, theta = g, id = id, prior = NULL,
     args = list("gradient" = gfun, "x" = x, "y" = response, "eta" = eta))
@@ -726,7 +726,7 @@ bfit0_newton <- function(x, family, response, eta, id, ...)
 
   Sigma <- matrix_inv(g.hess)
 
-  g <- drop(g + step * Sigma %*% g.grad)
+  g <- drop(g + nu * Sigma %*% g.grad)
 
   x$state$parameters <- set.par(x$state$parameters, g, "g")
   x$state$fitted.values <- x$get.mu(x$X, get.state(x, "g"))

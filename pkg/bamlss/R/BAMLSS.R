@@ -2691,7 +2691,7 @@ plot.bamlss.effect.default <- function(x, ...) {
       }
     } else {
       do.call("plot2d", delete.args("plot2d", args,
-        c("xlim", "ylim", "pch", "main", "xlab", "ylab", "lwd", "axes")))
+        c("xlim", "ylim", "pch", "main", "xlab", "ylab", "lwd", "axes", "add")))
     }
   } else {
     if(is.null(args$c.select))

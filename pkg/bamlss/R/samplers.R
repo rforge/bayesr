@@ -94,11 +94,13 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
   k <- length(theta)
   for(i in 1:k) {
     if(is.list(theta[[i]])) {
-      if(is.null(names(theta[[i]])))
+      if(is.null(names(theta[[i]])) & length(theta[[i]]))
         names(theta[[i]]) <- paste("term[", 1:length(theta[[i]]), "]", sep = "")
-      for(j in seq_along(theta[[i]])) {
-        if(is.null(names(theta[[i]][[j]])))
-          names(theta[[i]][[j]]) <- paste("[", 1:length(theta[[i]][[j]]), "]", sep = "")
+      if(length(theta[[i]])) {
+        for(j in seq_along(theta[[i]])) {
+          if(is.null(names(theta[[i]][[j]])) & length(theta[[i]][[j]]))
+            names(theta[[i]][[j]]) <- paste("[", 1:length(theta[[i]][[j]]), "]", sep = "")
+        }
       }
     }
   }
@@ -890,7 +892,7 @@ gmcmc_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
   theta <- theta[id]
   g <- get.par(theta, "g")
   tau2 <- if(!data$fixed) get.par(theta, "tau2") else NULL
-  step <- if(is.null(data$step.size)) 0.1 else data$step.size
+  nu <- if(is.null(data$nu)) 0.1 else data$nu
 
   p.old <- family$loglik(response, family$map2par(eta)) + data$prior(theta)
 
@@ -937,7 +939,7 @@ gmcmc_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
     args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = response, "eta" = eta))
 
   Sigma <- matrix_inv(g.hess)
-  mu <- drop(g + step * Sigma %*% g.grad)
+  mu <- drop(g + nu * Sigma %*% g.grad)
 
   q.prop <- dmvnorm(matrix(g, nrow = 1), mean = mu, sigma = Sigma, log = TRUE)
 
@@ -951,7 +953,7 @@ gmcmc_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
     args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = response, "eta" = eta))
 
   Sigma2 <- matrix_inv(g.hess2)
-  mu2 <- drop(g2 + step * Sigma2 %*% g.grad2)
+  mu2 <- drop(g2 + nu * Sigma2 %*% g.grad2)
 
   theta <- set.par(theta, g2, "g")
 

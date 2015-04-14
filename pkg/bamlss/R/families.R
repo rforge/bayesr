@@ -2332,6 +2332,11 @@ cox.bamlss <- function(links = c(hazard = "identity", mu = "identity"), ...)
         exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
       }
     )
+#    "gradient" = list(
+#      "hazard" = function(g, y, eta, x, ...) {
+#        exp(eta$mu) 
+#      }
+#    )
   )
   class(rval) <- "family.bamlss"
   rval
@@ -2373,11 +2378,53 @@ survfun2 <- function(hazard, time)
 }
 
 
-Surv2 <- function(obs = NULL, ...)
+Surv2 <- function(..., obs = NULL, subdivisions = 100)
 {
   require("survival")
   rval <- cbind(as.matrix(Surv(...)), "obs" = obs)
+
+  n = nrow(rval)
+  grid <- function(upper, length){
+    seq(from = 0, to = upper, length = length)
+  }
+  grid <- lapply(rval[, "time"], grid, length = subdivisions)
+  width <- rep(NA, n)
+  for(i in 1:n)
+    width[i] <- grid[[i]][2]
+  attr(rval, "grid") <- grid
+  attr(rval, "width") <- width
+
   rval
+}
+
+
+rSurvTime2 <- function (lambda, x, cens_fct, upper = 1000, ..., file = NULL,
+  subdivisions = 1000) 
+{
+  if(!is.matrix(x)) 
+    x <- cbind(x)
+  time <- rep(NA, nrow(x))
+  Lambda <- function(lambda, x, time) {
+    integrate(lambda, 0, time, x = x, subdivisions = subdivisions)$value
+  }
+  InvLambda <- function(Lambda, lambda, x) {
+    negLogU <- -log(runif(1, 0, 1))
+    rootfct <- function(time) {
+      negLogU - Lambda(lambda, x, time)
+    }
+    return(uniroot(rootfct, interval = c(0, upper))$root)
+  }
+  for(i in 1:nrow(x)) {
+    time[i] = InvLambda(Lambda, lambda, x[i, ])
+  }
+  time_event = cens_fct(time, ...)
+  data = data.frame(time = time_event[, 1], event = time_event[, 2], x = x)
+  if(!is.null(file)) {
+    save(data, file = file)
+    invisible(data)
+  } else {
+    return(data)
+  }
 }
 
 
