@@ -133,20 +133,20 @@ bamlss <- function(formula, family = gaussian, data = NULL, knots = NULL,
         family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
     }
   }
-  ffspecs <- family()
+  family.bamlss <- if(is.function(family)) family() else family
 
   if(is.null(engine)) {
     mc.cores <- cores
-    transform <- if(!is.null(ffspecs$transform)) {
-      function(x) { ffspecs$transform(x, ...) }
+    transform <- if(!is.null(family.bamlss$transform)) {
+      function(x) { family.bamlss$transform(x, ...) }
     } else function(x) { bamlss.setup(x, ...) }
-    if(!is.null(ffspecs$sampler))
-      sampler <- function(x, ...) { ffspecs$sampler(x, ...) }
+    if(!is.null(family.bamlss$sampler))
+      sampler <- function(x, ...) { family.bamlss$sampler(x, ...) }
     if(is.null(sampler))
       sampler <- function(x, ...) { null.sampler(x, ...) }
-    if(!is.null(ffspecs$engine)) {
+    if(!is.null(family.bamlss$engine)) {
       engine <- function(x) {
-        ffspecs$engine(x, optimizer = optimizer, sampler = sampler, cores = mc.cores,
+        family.bamlss$engine(x, cores = mc.cores,
           n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, sleep = sleep, ...)
       }
     } else {
@@ -344,6 +344,8 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
       if(length(obj$pterms)) paste(" +", paste(obj$pterms, collapse = " + ")), sep = "")
     obj$X <- model.matrix(as.formula(pf),
       data = mf, contrasts.arg = contrasts, ...)
+    obj$param.formula <- as.formula(pf)
+    obj$param.contrasts <- contrasts
     obj$pterms <- colnames(obj$X)
     obj$binning <- binning
     rn <- obj$response

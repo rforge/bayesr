@@ -102,7 +102,7 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
             "by" = "NA",
             "xt" = list("xbin" = x$binning)
           )
-          class(x$smooth[["parametric"]]) <- c(class(x$smooth[["parametric"]]), "no.mgcv")
+          class(x$smooth[["parametric"]]) <- c(class(x$smooth[["parametric"]]), "no.mgcv", "parametric")
           x$sterms <- c(x$strems, "parametric")
           x$X <- NULL
         }
@@ -511,6 +511,11 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   response <- attr(x, "response.vec")
   nobs <- length(response)
   eta <- get.eta(x)
+  eta.special <- list()
+  for(j in nx) {
+    if(!is.null(x[[j]]$eta.special))
+      eta.special[[j]] <- x[[j]]$eta.special
+  }
   
   inner_bf <- function(x, response, eta, family, edf, id, ...) {
     eps0 <- eps + 1; iter <- 1
@@ -518,13 +523,16 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
       eta0 <- eta
       for(sj in seq_along(x)) {
         ## Get updated parameters.
-        p.state <- x[[sj]]$update(x[[sj]], family, response, eta, id, edf = edf, ...)
+        p.state <- x[[sj]]$update(x[[sj]], family, response, eta, id, edf = edf,
+          eta.special = eta.special...)
 
         ## Compute equivalent degrees of freedom.
         edf <- edf - x[[sj]]$state$edf + p.state$edf
 
         ## Update predictor and smooth fit.
         eta[[id]] <- eta[[id]] - fitted(x[[sj]]$state) + fitted(p.state)
+        if(!is.null(eta.special[[id]]))
+          eta.special[[id]]  <- eta.special[[id]] - x[[sj]]$state$special.fit + p.state$special.fit
         x[[sj]]$state <- p.state
       }
       eps0 <- do.call("cbind", eta)
@@ -568,13 +576,16 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
           for(sj in seq_along(x[[nx[j]]]$smooth)) {
             ## Get updated parameters.
             p.state <- x[[nx[j]]]$smooth[[sj]]$update(x[[nx[j]]]$smooth[[sj]],
-              family, response, eta, nx[j], edf = edf, z = z, weights = weights)
+              family, response, eta, nx[j], edf = edf, z = z, weights = weights,
+              eta.special = eta.special)
 
             ## Compute equivalent degrees of freedom.
             edf <- edf - x[[nx[j]]]$smooth[[sj]]$state$edf + p.state$edf
 
             ## Update predictor and smooth fit.
             eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth[[sj]]$state) + fitted(p.state)
+            if(!is.null(eta.special[[id]]))
+              eta.special[[id]]  <- eta.special[[id]] - x[[sj]]$state$special.fit + p.state$special.fit
 
             x[[nx[j]]]$smooth[[sj]]$state <- p.state
           }
@@ -1042,5 +1053,73 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind)
     as.numeric(e), as.numeric(xweights), as.numeric(xrres),
     as.integer(oind))
   invisible(NULL)
+}
+
+
+## Cox model transformer function.
+cox.transform <- function(x, subdivisions = 100, ...)
+{
+  ## The basic setup.
+  x <- bamlss.setup(x, ...)
+
+  ## Create the time grid.
+  response <- attr(x, "response.vec")
+  if(!inherits(response, "Surv"))
+    stop("the response variable is not a 'Surv' object, use function Surv() or Surv2()!")
+  nobs <- nrow(response)
+  grid <- function(upper, length){
+    seq(from = 0, to = upper, length = length)
+  }
+  grid <- lapply(response[, "time"], grid, length = subdivisions)
+  width <- rep(NA, nobs)
+  for(i in 1:nobs)
+    width[i] <- grid[[i]][2]
+  grid <- matrix(unlist(grid), nrow = nobs, ncol = subdivisions, byrow = TRUE)
+
+  ## Assign time grid predict functions
+  ## and create time dependant predictor.
+  x$lambda$eta.special <- 0
+  if(!is.null(x$lambda$pterms)) {
+    x$lambda$smooth$parametric <- param_time_transform(x$lambda$smooth$parametric,
+      x$lambda$param.formula, attr(x, "model.frame"), x$lambda$param.contrasts, grid)
+    x$lambda$eta.special <- x$lambda$eta.special + x$lambda$smooth$parametric$state$special
+  }
+  if(length(x$lambda$smooth)) {
+    for(i in seq_along(x$lambda$smooth)) {
+      if(is.null(x$lambda$smooth[[i]]$is.parametric)) {
+        xterm <- x$lambda$smooth[[i]]$term
+        x$lambda$smooth[[i]] <- sm_time_transform(x$lambda$smooth[[i]],
+          attr(x, "model.frame")[, c(xterm, "time")], grid)
+        x$lambda$eta.special <- x$lambda$eta.special + x$lambda$smooth[[i]]$state$special
+      }
+    }
+  }
+  x
+}
+
+param_time_transform <- function(x, formula, data, contrasts, grid)
+{
+  x$predict_td <- function(g) {
+    apply(grid, 2, function(itime) {
+      data$time <- itime
+      X <- model.matrix(formula, data = data, contrasts.arg = contrasts)
+      drop(X %*% g)
+    })
+  }
+  x$state$special <- x$predict_td(get.state(x, "gamma"))
+  x
+}
+
+sm_time_transform <- function(x, data, grid)
+{
+  x$predict_td <- function(g) {
+    apply(grid, 2, function(itime) {
+      data$time <- itime
+      X <- PredictMat(x, data)
+      x$get.mu(X, g)
+    })
+  }
+  x$state$special <- x$predict_td(get.state(x, "gamma"))
+  x
 }
 

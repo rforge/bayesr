@@ -2311,29 +2311,30 @@ gaussian5.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
 #################
 ## Joint model ##
 #################
-cox.bamlss <- function(links = c(hazard = "identity", mu = "identity"), ...)
+cox.bamlss <- function(links = c(lambda = "identity", mu = "identity"), ...)
 {
   rval <- list(
     "family" = "cox",
-    "names" = c("hazard", "mu"),
-    "links" = parse.links(links, c(hazard = "log", mu = "identity"), ...),
+    "names" = c("lambda", "mu"),
+    "links" = parse.links(links, c(lambda = "log", mu = "identity"), ...),
+    "transform" = cox.transform,
     "loglik" = function(y, eta) {
-      ll <- (eta$hazard + eta$mu) * y[, "status"] -
-        exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
+      ll <- (eta$lambda + eta$mu) * y[, "status"] -
+        exp(eta$mu) * survfun(exp(eta$lambda), y[, "time"])
       sum(ll)
     },
     "score" = list(
       "mu" = function(y, eta, ...) {
-        y[, "status"] - exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
+        y[, "status"] - exp(eta$mu) * survfun(exp(eta$lambda), y[, "time"])
       }
     ),
     "weights" = list(
       "mu" = function(y, eta, ...) {
-        exp(eta$mu) * survfun(exp(eta$hazard), y[, "time"])
+        exp(eta$mu) * survfun(exp(eta$lambda), y[, "time"])
       }
     )
 #    "gradient" = list(
-#      "hazard" = function(g, y, eta, x, ...) {
+#      "lambda" = function(g, y, eta, x, ...) {
 #        exp(eta$mu) 
 #      }
 #    )
@@ -2382,18 +2383,7 @@ Surv2 <- function(..., obs = NULL, subdivisions = 100)
 {
   require("survival")
   rval <- cbind(as.matrix(Surv(...)), "obs" = obs)
-
-  n = nrow(rval)
-  grid <- function(upper, length){
-    seq(from = 0, to = upper, length = length)
-  }
-  grid <- lapply(rval[, "time"], grid, length = subdivisions)
-  width <- rep(NA, n)
-  for(i in 1:n)
-    width[i] <- grid[[i]][2]
-  attr(rval, "grid") <- grid
-  attr(rval, "width") <- width
-
+  class(rval) <- c("Surv")
   rval
 }
 
