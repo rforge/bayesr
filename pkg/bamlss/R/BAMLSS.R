@@ -133,18 +133,31 @@ bamlss <- function(formula, family = gaussian, data = NULL, knots = NULL,
         family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
     }
   }
+  ffspecs <- family()
 
   if(is.null(engine)) {
     mc.cores <- cores
-    transform <- function(x) { bamlss.setup(x, ...) }
-    if(is.null(sampler)) sampler <- function(x, ...) { null.sampler(x, ...) }
-    engine <- function(x) {
-      stacker(x, optimizer = optimizer, sampler = sampler, cores = mc.cores,
-        n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, sleep = sleep, ...)
+    transform <- if(!is.null(ffspecs$transform)) {
+      function(x) { ffspecs$transform(x, ...) }
+    } else function(x) { bamlss.setup(x, ...) }
+    if(!is.null(ffspecs$sampler))
+      sampler <- function(x, ...) { ffspecs$sampler(x, ...) }
+    if(is.null(sampler))
+      sampler <- function(x, ...) { null.sampler(x, ...) }
+    if(!is.null(ffspecs$engine)) {
+      engine <- function(x) {
+        ffspecs$engine(x, optimizer = optimizer, sampler = sampler, cores = mc.cores,
+          n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, sleep = sleep, ...)
+      }
+    } else {
+      engine <- function(x) {
+        stacker(x, optimizer = optimizer, sampler = sampler, cores = mc.cores,
+          n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, sleep = sleep, ...)
+      }
+      setup <- FALSE
+      cores <- NULL
+      xengine <- "stacker"
     }
-    setup <- FALSE
-    cores <- NULL
-    xengine <- "stacker"
   } else {
     xengine <- c("BayesG", "BayesX", "JAGS", "STAN")
     xengine <- xengine[pmatch(engine, xengine)]
@@ -320,7 +333,7 @@ parse.input.bamlss <- function(formula, data = NULL, family = gaussian.bamlss,
 
 ## Assign all designs matrices.
 bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FALSE,
-  before = TRUE, ...)
+  before = TRUE, gam.side = TRUE, ...)
 {
   if(!binning)
     binning <- NULL
@@ -407,9 +420,11 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
         smooth <- c(smooth, smt)
       }
       if(length(smooth) > 0) {
-        smooth <- try(gam.side(smooth, obj$X, tol = .Machine$double.eps^.5), silent = TRUE)
-        if(inherits(smooth, "try-error"))
-          stop("gam.side() produces an error when binning, try to set before = FALSE!?")
+        if(gam.side) {
+          smooth <- try(mgcv:::gam.side(smooth, obj$X, tol = .Machine$double.eps^.5), silent = TRUE)
+          if(inherits(smooth, "try-error"))
+            stop("gam.side() produces an error when binning, try to set before = FALSE!?")
+        }
         sme <- mgcv:::expand.t2.smooths(smooth)
         if(is.null(sme)) {
           original.smooth <- NULL
