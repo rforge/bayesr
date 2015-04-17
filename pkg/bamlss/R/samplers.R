@@ -1311,6 +1311,11 @@ null.sampler <- function(x, criterion = c("AICc", "BIC", "AIC"), ...)
   eta <- vector(mode = "list", length = np)
   names(eta) <- nx
   edf <- 0
+  eeta <- list()
+  for(j in nx) {
+    if(!is.null(x[[j]]$eeta))
+      eeta[[j]] <- 0
+  }
 
   for(j in 1:np) {
     eta[[j]] <- 0
@@ -1330,11 +1335,13 @@ null.sampler <- function(x, criterion = c("AICc", "BIC", "AIC"), ...)
       } else {
         edf <- edf + ncol(x[[nx[j]]]$smooth[[sj]]$X)
       }
+      if(!is.null(eeta[[nx[j]]]))
+        eeta[[nx[j]]]  <- eeta[[nx[j]]] + x[[nx[j]]]$smooth[[sj]]$state$extra.fit
     }
   }
 
   colnames(samps) <- sn
-  IC <- as.numeric(get.ic(family, attr(x, "response.vec"), family$map2par(eta), edf, length(eta[[1L]]), criterion))
+  IC <- as.numeric(get.ic(family, attr(x, "response.vec"), family$map2par(eta), edf, length(eta[[1L]]), criterion, eeta))
   samps <- cbind(samps, IC, edf)
   colnames(samps)[(ncol(samps) - 1):ncol(samps)] <- c(criterion, "save.edf")
 

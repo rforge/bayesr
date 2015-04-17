@@ -579,7 +579,7 @@ bamlss.family <- function(family, type = "bamlss")
   }
   if(is.null(family$loglik)) {
     if(!is.null(family$d))
-      family$loglik <- function(y, eta) { sum(family$d(y, eta, log = TRUE), na.rm = TRUE) }
+      family$loglik <- function(y, eta, ...) { sum(family$d(y, eta, log = TRUE), na.rm = TRUE) }
   }
   if(is.null(family)) family <- list()
   if(is.null(family$score) & FALSE) {

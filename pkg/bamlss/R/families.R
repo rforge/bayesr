@@ -2318,26 +2318,48 @@ cox.bamlss <- function(links = c(lambda = "identity", mu = "identity"), ...)
     "names" = c("lambda", "mu"),
     "links" = parse.links(links, c(lambda = "log", mu = "identity"), ...),
     "transform" = cox.transform,
-    "loglik" = function(y, eta) {
-      ll <- (eta$lambda + eta$mu) * y[, "status"] -
-        exp(eta$mu) * survfun(exp(eta$lambda), y[, "time"])
+    "loglik" = function(y, eta, eeta, ...) {
+      n <- attr(y, "subdivisions")
+      eeta <- exp(eeta$lambda)
+      int <- attr(y, "width") * (0.5 * (eeta[, 1] + eeta[, n]) + apply(eeta[, 2:(n - 1)], 1, sum))
+      ll <- (eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int
       sum(ll)
     },
     "score" = list(
-      "mu" = function(y, eta, ...) {
-        y[, "status"] - exp(eta$mu) * survfun(exp(eta$lambda), y[, "time"])
+      "mu" = function(y, eta, eeta, ...) {
+        n <- attr(y, "subdivisions")
+        eeta <- exp(eeta$lambda)
+        int <- attr(y, "width") * (0.5 * (eeta[, 1] + eeta[, n]) + apply(eeta[, 2:(n - 1)], 1, sum))
+        y[, "status"] - exp(eta$mu) * int
       }
     ),
     "weights" = list(
-      "mu" = function(y, eta, ...) {
-        exp(eta$mu) * survfun(exp(eta$lambda), y[, "time"])
+      "mu" = function(y, eta, eeta, ...) {
+        n <- attr(y, "subdivisions")
+        eeta <- exp(eeta$lambda)
+        int <- attr(y, "width") * (0.5 * (eeta[, 1] + eeta[, n]) + apply(eeta[, 2:(n - 1)], 1, sum))
+        exp(eta$mu) * int
+      }
+    ),
+    "gradient" = list(
+      "lambda" = function(g, y, eta, x, eeta, ...) {
+        n <- attr(y, "subdivisions")
+        X <- x$extra.get.mu(NULL)
+        eeta$lambda <- eeta$lambda + x$extra.get.mu(g)
+        eeta <- exp(eeta$lambda)
+        dummy <- vector("list", ncol(x$X))
+        for(i in 1:ncol(x$X)){
+          dummy[[i]] <- matrix(X[, i], nrow = nrow(eeta), ncol = ncol(eeta), byrow = TRUE)
+          dummy[[i]] <- dummy[[i]] * eeta  # component-wise multiplication of matrices
+        }
+        for(i in 1:ncol(x$X))
+          dummy[[i]] <- attr(y, "width") * (0.5 * (dummy[[i]][, 1] + dummy[[i]][, n]) + apply(dummy[[i]][, 2:(n - 1)], 1, sum))
+        dummy <- sapply(dummy, cbind)
+        int <- apply(dummy, 2, sum)
+        xgrad <- drop(t(y[, "status"]) %*% x$X - int)
+        return(xgrad)
       }
     )
-#    "gradient" = list(
-#      "lambda" = function(g, y, eta, x, ...) {
-#        exp(eta$mu) 
-#      }
-#    )
   )
   class(rval) <- "family.bamlss"
   rval
@@ -2350,7 +2372,7 @@ cox2.bamlss <- function(links = c(lambda= "identity"), ...)
     "family" = "cox",
     "names" = c("lambda"),
     "links" = parse.links(links, c(lambda = "identity"), ...),
-    "loglik" = function(y, eta) {
+    "loglik" = function(y, eta, ...) {
       ll <- eta$lambda * y[, "status"] - survfun(exp(eta$lambda), y[, "time"])
       sum(ll)
     }
@@ -2427,7 +2449,7 @@ jm.bamlss <- function(...)
     "family" = "jm",
     "names" = c("lambda", "mu", "alpha", "beta", "sigma"),
     "links" = parse.links(links, links, ...),
-    "loglik" = function(y, eta) {
+    "loglik" = function(y, eta, ...) {
       teta <- eta$lambda + eta$alpha * eta$mu
       ll <- y[, "status"] * (teta + eta$beta) - exp(eta$beta) * survfun(exp(teta), y[, "time"])
       ll <- ll + dnorm(y[, "obs"], mean = eta$mu, sd = eta$sigma, log = TRUE)

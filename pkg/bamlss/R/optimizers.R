@@ -511,28 +511,28 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   response <- attr(x, "response.vec")
   nobs <- length(response)
   eta <- get.eta(x)
-  eta.special <- list()
+  eeta <- list()
   for(j in nx) {
-    if(!is.null(x[[j]]$eta.special))
-      eta.special[[j]] <- x[[j]]$eta.special
+    if(!is.null(x[[j]]$eeta))
+      eeta[[j]] <- x[[j]]$eeta
   }
   
-  inner_bf <- function(x, response, eta, family, edf, id, ...) {
+  inner_bf <- function(x, response, eta, family, edf, id, eeta, ...) {
     eps0 <- eps + 1; iter <- 1
     while(eps0 > eps & iter < maxit) {
       eta0 <- eta
       for(sj in seq_along(x)) {
         ## Get updated parameters.
         p.state <- x[[sj]]$update(x[[sj]], family, response, eta, id, edf = edf,
-          eta.special = eta.special...)
+          eeta = eeta...)
 
         ## Compute equivalent degrees of freedom.
         edf <- edf - x[[sj]]$state$edf + p.state$edf
 
         ## Update predictor and smooth fit.
         eta[[id]] <- eta[[id]] - fitted(x[[sj]]$state) + fitted(p.state)
-        if(!is.null(eta.special[[id]]))
-          eta.special[[id]]  <- eta.special[[id]] - x[[sj]]$state$special.fit + p.state$special.fit
+        if(!is.null(eeta[[id]]))
+          eeta[[id]]  <- eeta[[id]] - x[[sj]]$state$extra.fit + p.state$extra.fit
         x[[sj]]$state <- p.state
       }
       eps0 <- do.call("cbind", eta)
@@ -540,7 +540,7 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
       if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
       iter <- iter + 1
     }
-    return(list("x" = x, "eta" = eta, "edf" = edf))
+    return(list("x" = x, "eta" = eta, "edf" = edf, "eeta" = eeta))
   }
 
   ## Backfitting main function.
@@ -555,10 +555,10 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
           peta <- family$map2par(eta)
 
           ## Compute weights.
-          weights <- family$weights[[nx[j]]](response, peta)
+          weights <- family$weights[[nx[j]]](response, peta, eeta)
 
           ## Score.
-          score <- family$score[[nx[j]]](response, peta)
+          score <- family$score[[nx[j]]](response, peta, eeta)
 
           ## Compute working observations.
           z <- eta[[nx[j]]] + 1 / weights * score
@@ -567,25 +567,26 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
         ## And all terms.
         if(inner) {
           tbf <- inner_bf(x[[nx[j]]]$smooth, response, eta, family,
-            edf = edf, id = nx[j], z = z, weights = weights)
+            edf = edf, id = nx[j], z = z, weights = weights, eeta)
           x[[nx[j]]]$smooth <- tbf$x
           edf <- tbf$edf
           eta <- tbf$eta
+          eeta <- tbf$eeta
           rm(tbf)
         } else {
           for(sj in seq_along(x[[nx[j]]]$smooth)) {
             ## Get updated parameters.
             p.state <- x[[nx[j]]]$smooth[[sj]]$update(x[[nx[j]]]$smooth[[sj]],
               family, response, eta, nx[j], edf = edf, z = z, weights = weights,
-              eta.special = eta.special)
+              eeta = eeta)
 
             ## Compute equivalent degrees of freedom.
             edf <- edf - x[[nx[j]]]$smooth[[sj]]$state$edf + p.state$edf
 
             ## Update predictor and smooth fit.
             eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth[[sj]]$state) + fitted(p.state)
-            if(!is.null(eta.special[[id]]))
-              eta.special[[id]]  <- eta.special[[id]] - x[[sj]]$state$special.fit + p.state$special.fit
+            if(!is.null(eeta[[nx[j]]]))
+              eeta[[nx[j]]]  <- eeta[[nx[j]]] - x[[nx[j]]]$smooth[[sj]]$state$extra.fit + p.state$extra.fit
 
             x[[nx[j]]]$smooth[[sj]]$state <- p.state
           }
@@ -599,10 +600,10 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
       peta <- family$map2par(eta)
 
       if(verbose) {
-        IC <- get.ic(family, response, peta, edf, nobs, criterion)
+        IC <- get.ic(family, response, peta, edf, nobs, criterion, eeta)
         cat("\r")
         vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
-          " logLik ", fmt(family$loglik(response, peta), width = 8, digits = digits),
+          " logLik ", fmt(family$loglik(response, peta, eeta), width = 8, digits = digits),
           " edf ", fmt(edf, width = 6, digits = digits),
           " eps ", fmt(eps0, width = 6, digits = digits + 2),
           " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
@@ -614,12 +615,12 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
       iter <- iter + 1
     }
 
-    IC <- get.ic(family, response, peta, edf, nobs, criterion)
+    IC <- get.ic(family, response, peta, edf, nobs, criterion, eeta)
 
     if(verbose) {
       cat("\r")
       vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
-        " logLik ", fmt(family$loglik(response, peta), width = 8, digits = digits),
+        " logLik ", fmt(family$loglik(response, peta, eeta), width = 8, digits = digits),
         " edf ", fmt(edf, width = 6, digits = digits),
         " eps ", fmt(eps0, width = 6, digits = digits + 2),
         " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
@@ -643,10 +644,10 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
 
 ## Extract information criteria.
-get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc", "MP"))
+get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc", "MP"), eeta = NULL, ...)
 {
   type <- match.arg(type)
-  ll <- family$loglik(response, eta)
+  ll <- family$loglik(response, eta, eeta)
   pen <- switch(type,
     "AIC" = -2 * ll + 2 * edf,
     "BIC" = -2 * ll + edf * log(n),
@@ -689,23 +690,29 @@ make_par <- function(x, type = 1) {
 
 
 ## Backfitting updating functions.
-bfit0_newton <- function(x, family, response, eta, id, ...)
+bfit0_newton <- function(x, family, response, eta, id, eeta, ...)
 {
+  args <- list(...)
+
   eta[[id]] <- eta[[id]] - fitted(x$state)
+  if(!is.null(eeta[[id]]))
+    eeta[[id]] <- eeta[[id]] - x$state$extra.fit
 
   tau2 <- if(!x$fixed) get.par(x$state$parameters, "tau2") else NULL
 
   lp <- function(g) {
     eta[[id]] <- eta[[id]] + x$get.mu(x$X, g)
-    family$loglik(response, family$map2par(eta)) + x$prior(c(g, tau2))
+    if(!is.null(eeta[[id]]))
+      eeta[[id]] <- eeta[[id]] + x$extra.get.mu(g)
+    family$loglik(response, family$map2par(eta), eeta) + x$prior(c(g, tau2))
   }
 
   if(is.null(family$gradient[[id]])) {
     gfun <- NULL
   } else {
     gfun <- list()
-    gfun[[id]] <- function(g, y, eta, x, ...) {
-      gg <- family$gradient[[id]](g, y, eta, x)
+    gfun[[id]] <- function(g, y, eta, x, eeta, ...) {
+      gg <- family$gradient[[id]](g, y, eta, x, eeta, ...)
       if(!is.null(x$grad)) {
         gg <- gg + x$grad(score = NULL, c(g, tau2), full = FALSE)
       }
@@ -730,10 +737,12 @@ bfit0_newton <- function(x, family, response, eta, id, ...)
   nu <- if(is.null(x$nu)) 0.1 else x$nu
 
   g.grad <- grad(fun = lp, theta = g, id = id, prior = NULL,
-    args = list("gradient" = gfun, "x" = x, "y" = response, "eta" = eta))
+    args = list("gradient" = gfun, "x" = x, "y" = response,
+    "eta" = eta, "eeta" = eeta))
 
   g.hess <- hess(fun = lp, theta = g, id = id, prior = NULL,
-    args = list("gradient" = gfun, "hessian" = hfun, "x" = x, "y" = response, "eta" = eta))
+    args = list("gradient" = gfun, "hessian" = hfun, "x" = x, "y" = response,
+    "eta" = eta, "eeta" = eeta))
 
   Sigma <- matrix_inv(g.hess)
 
@@ -741,25 +750,26 @@ bfit0_newton <- function(x, family, response, eta, id, ...)
 
   x$state$parameters <- set.par(x$state$parameters, g, "g")
   x$state$fitted.values <- x$get.mu(x$X, get.state(x, "g"))
+  if(!is.null(x$state$extra.fit))
+    x$state$extra.fit <- x$extra.get.mu(get.state(x, "g"))
 
   return(x$state)
 }
 
 
-bfit0_iwls <- function(x, family, response, eta, id, ...)
+bfit0_iwls <- function(x, family, response, eta, id, eeta, ...)
 {
   args <- list(...)
 
   peta <- family$map2par(eta)
-
   if(is.null(args$weights)) {
     ## Compute weights.
-    weights <- family$weights[[id]](response, peta)
+    weights <- family$weights[[id]](response, peta, eeta, ...)
   } else weights <- args$weights
 
   if(is.null(args$z)) {
     ## Score.
-    score <- family$score[[id]](response, peta)
+    score <- family$score[[id]](response, peta, eeta, ...)
 
     ## Compute working observations.
     z <- eta[[id]] + 1 / weights * score
@@ -803,7 +813,7 @@ bfit0_iwls <- function(x, family, response, eta, id, ...)
         if(x$xt$center) edf <- edf - 1
       }
       eta2[[id]] <- eta2[[id]] + fit
-      IC <- get.ic(family, response, family$map2par(eta2), edf0 + edf, length(z), x$criterion)
+      IC <- get.ic(family, response, family$map2par(eta2), edf0 + edf, length(z), x$criterion, ...)
       return(IC)
     }
     if(length(get.state(x, "tau2")) < 2) {
@@ -894,7 +904,7 @@ bfit0_optim <- function(x, family, response, eta, id, ...)
       x$state$parameters <- tpar
       edf <- x$edf(x)
       eta2[[id]] <- eta[[id]] + fitted(x$state)
-      IC <- get.ic(family, response, family$map2par(eta2), edf0 + edf, length(eta2[[id]]), x$criterion)
+      IC <- get.ic(family, response, family$map2par(eta2), edf0 + edf, length(eta2[[id]]), x$criterion, ...)
       IC
     }
     if(length(get.state(x, "tau2")) < 2) {
@@ -1074,52 +1084,81 @@ cox.transform <- function(x, subdivisions = 100, ...)
   width <- rep(NA, nobs)
   for(i in 1:nobs)
     width[i] <- grid[[i]][2]
-  grid <- matrix(unlist(grid), nrow = nobs, ncol = subdivisions, byrow = TRUE)
+  ## grid <- matrix(unlist(grid), nrow = nobs, ncol = subdivisions, byrow = TRUE)
+  attr(response, "width") <- width
+  attr(response, "subdivisions") <- subdivisions
+  attr(response, "grid") <- grid
+  attr(x, "response.vec") <- response
+  yname <- all.names(x$lambda$formula[2])[2]
 
   ## Assign time grid predict functions
   ## and create time dependant predictor.
-  x$lambda$eta.special <- 0
+  x$lambda$eeta <- 0
   if(!is.null(x$lambda$pterms)) {
     x$lambda$smooth$parametric <- param_time_transform(x$lambda$smooth$parametric,
-      x$lambda$param.formula, attr(x, "model.frame"), x$lambda$param.contrasts, grid)
-    x$lambda$eta.special <- x$lambda$eta.special + x$lambda$smooth$parametric$state$special
+      x$lambda$param.formula, attr(x, "model.frame"),
+      x$lambda$param.contrasts, grid, yname)
+    x$lambda$eeta <- x$lambda$eeta + x$lambda$smooth$parametric$state$extra.fit
   }
   if(length(x$lambda$smooth)) {
     for(i in seq_along(x$lambda$smooth)) {
       if(is.null(x$lambda$smooth[[i]]$is.parametric)) {
         xterm <- x$lambda$smooth[[i]]$term
         x$lambda$smooth[[i]] <- sm_time_transform(x$lambda$smooth[[i]],
-          attr(x, "model.frame")[, c(xterm, "time")], grid)
-        x$lambda$eta.special <- x$lambda$eta.special + x$lambda$smooth[[i]]$state$special
+          attr(x, "model.frame")[, unique(c(xterm, yname))], grid, yname)
+        x$lambda$eeta <- x$lambda$eeta + x$lambda$smooth[[i]]$state$extra.fit
       }
     }
   }
   x
 }
 
-param_time_transform <- function(x, formula, data, contrasts, grid)
+param_time_transform <- function(x, formula, data, contrasts, grid, yname)
 {
-  x$predict_td <- function(g) {
-    apply(grid, 2, function(itime) {
-      data$time <- itime
-      X <- model.matrix(formula, data = data, contrasts.arg = contrasts)
-      drop(X %*% g)
-    })
+  X <- Xn <- NULL
+  for(j in names(data)) {
+    if(!grepl("Surv(", j, fixed = TRUE) & (j != yname)) {
+      X <- cbind(X, rep(data[[j]], each = length(grid[[1]])))
+      Xn <- c(Xn, j)
+    }
   }
-  x$state$special <- x$predict_td(get.state(x, "gamma"))
+  colnames(X) <- Xn
+  X <- as.data.frame(cbind(X, unlist(grid)))
+  names(X)[ncol(X)] <- yname
+  X <- model.matrix(formula, data = X, contrasts.arg = contrasts)
+  gdim <- c(length(grid), length(grid[[1]]))
+
+  x$extra.get.mu <- function(g) {
+    if(is.null(g)) return(X)
+    f <- drop(X %*% g)
+    f <- matrix(f, nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
+    f
+  }
+  x$state$extra.fit <- x$extra.get.mu(get.state(x, "gamma"))
+
   x
 }
 
-sm_time_transform <- function(x, data, grid)
+sm_time_transform <- function(x, data, grid, yname)
 {
-  x$predict_td <- function(g) {
-    apply(grid, 2, function(itime) {
-      data$time <- itime
-      X <- PredictMat(x, data)
-      x$get.mu(X, g)
-    })
+  X <- NULL
+  for(j in x$term) {
+    if(j != yname)
+      X <- cbind(X, rep(data[[j]], each = length(grid[[1]])))
   }
-  x$state$special <- x$predict_td(get.state(x, "gamma"))
+  X <- as.data.frame(cbind(X, unlist(grid)))
+  names(X)[ncol(X)] <- yname
+  X <- PredictMat(x, X)
+  gdim <- c(length(grid), length(grid[[1]]))
+
+  x$extra.get.mu <- function(g) {
+    if(is.null(g)) return(X)
+    f <- x$get.mu(X, g, expand = FALSE)
+    f <- matrix(f, nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
+    f
+  }
+  x$state$extra.fit <- x$extra.get.mu(get.state(x, "gamma"))
+
   x
 }
 
