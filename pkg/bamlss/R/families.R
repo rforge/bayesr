@@ -2350,11 +2350,11 @@ cox.bamlss <- function(links = c(lambda = "identity", mu = "identity"), ...)
         dummy <- vector("list", ncol(x$X))
         for(i in 1:ncol(x$X)){
           dummy[[i]] <- matrix(X[, i], nrow = nrow(eeta), ncol = ncol(eeta), byrow = TRUE)
-          dummy[[i]] <- dummy[[i]] * eeta  # component-wise multiplication of matrices
-        }
-        for(i in 1:ncol(x$X))
+          dummy[[i]] <- dummy[[i]] * eeta
           dummy[[i]] <- attr(y, "width") * (0.5 * (dummy[[i]][, 1] + dummy[[i]][, n]) + apply(dummy[[i]][, 2:(n - 1)], 1, sum))
+        }
         dummy <- sapply(dummy, cbind)
+        dummy <- dummy * exp(eta$mu)
         int <- apply(dummy, 2, sum)
         xgrad <- drop(t(y[, "status"]) %*% x$X - int)
         return(xgrad)
