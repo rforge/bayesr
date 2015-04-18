@@ -2318,37 +2318,37 @@ cox.bamlss <- function(links = c(lambda = "identity", mu = "identity"), ...)
     "names" = c("lambda", "mu"),
     "links" = parse.links(links, c(lambda = "log", mu = "identity"), ...),
     "transform" = cox.transform,
-    "loglik" = function(y, eta, eeta, ...) {
+    "loglik" = function(y, eta, ...) {
       n <- attr(y, "subdivisions")
-      eeta <- exp(eeta$lambda)
+      eeta <- exp(eta_Surv_timegrid)
       int <- attr(y, "width") * (0.5 * (eeta[, 1] + eeta[, n]) + apply(eeta[, 2:(n - 1)], 1, sum))
       ll <- (eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int
       sum(ll)
     },
     "score" = list(
-      "mu" = function(y, eta, eeta, ...) {
+      "mu" = function(y, eta, ...) {
         n <- attr(y, "subdivisions")
-        eeta <- exp(eeta$lambda)
+        eeta <- exp(eta_Surv_timegrid)
         int <- attr(y, "width") * (0.5 * (eeta[, 1] + eeta[, n]) + apply(eeta[, 2:(n - 1)], 1, sum))
         y[, "status"] - exp(eta$mu) * int
       }
     ),
     "weights" = list(
-      "mu" = function(y, eta, eeta, ...) {
+      "mu" = function(y, eta, ...) {
         n <- attr(y, "subdivisions")
-        eeta <- exp(eeta$lambda)
+        eeta <- exp(eta_Surv_timegrid)
         int <- attr(y, "width") * (0.5 * (eeta[, 1] + eeta[, n]) + apply(eeta[, 2:(n - 1)], 1, sum))
         exp(eta$mu) * int
       }
     ),
     "gradient" = list(
-      "lambda" = function(g, y, eta, x, eeta, ...) {
+      "lambda" = function(g, y, eta, x, ...) {
         n <- attr(y, "subdivisions")
         X <- x$extra.get.mu(NULL)
-        eeta$lambda <- eeta$lambda + x$extra.get.mu(g)
-        eeta <- exp(eeta$lambda)
+        eeta <- (eta_Surv_timegrid - x$state$extra.fit) + x$extra.get.mu(g)
+        eeta <- exp(eeta)
         dummy <- vector("list", ncol(x$X))
-        for(i in 1:ncol(x$X)){
+        for(i in 1:ncol(x$X)) {
           dummy[[i]] <- matrix(X[, i], nrow = nrow(eeta), ncol = ncol(eeta), byrow = TRUE)
           dummy[[i]] <- dummy[[i]] * eeta
           dummy[[i]] <- attr(y, "width") * (0.5 * (dummy[[i]][, 1] + dummy[[i]][, n]) + apply(dummy[[i]][, 2:(n - 1)], 1, sum))
@@ -2358,6 +2358,33 @@ cox.bamlss <- function(links = c(lambda = "identity", mu = "identity"), ...)
         int <- apply(dummy, 2, sum)
         xgrad <- drop(t(y[, "status"]) %*% x$X - int)
         return(xgrad)
+      }
+    ),
+    "hessian" = list(
+      "lambda" = function(g, y, eta, x, ...) {
+        n <- attr(y, "subdivisions")
+        X <- x$extra.get.mu(NULL)
+        eeta <- (eta_Surv_timegrid - x$state$extra.fit) + x$extra.get.mu(g)
+        eeta <- exp(eeta)
+        nobs <- nrow(y)
+        dummy <- vector("list", nobs)
+        width <- attr(y, "width")
+        xhess <- matrix(0, ncol = ncol(x$X), nrow = ncol(x$X))
+        for(i in 1:nobs) {
+          forward <- n * (i - 1)
+          dummy[[i]] <- matrix(0, ncol = ncol(X), nrow = ncol(X))
+          for(j in 1:n) {
+            MAT <- X[j + forward,] %o% X[j + forward,] * eeta[i, j]
+            if(j == 1 || j == n){
+              dummy[[i]] <- dummy[[i]] + 0.5 * MAT
+            } else {
+              dummy[[i]] <- dummy[[i]] + MAT
+            }
+          }
+          dummy[[i]] <- dummy[[i]] * width[i]
+          xhess <- xhess + exp(eta$mu[i]) * dummy[[i]]
+        }
+        return(xhess)
       }
     )
   )
