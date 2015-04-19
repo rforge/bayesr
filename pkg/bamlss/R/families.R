@@ -685,10 +685,10 @@ trunc.bamlss <- function(links = c(mu = "identity", sigma = "log"),
         upper = if(direction == "right") point else Inf)
     },
     "score" = list(
-      "mu" = function(y, eta) {
+      "mu" = function(y, eta, ...) {
         as.numeric(tgrad(y, eta, what = "mu"))
       },
-      "sigma" = function(y, eta) {
+      "sigma" = function(y, eta, ...) {
         as.numeric(tgrad(y, eta, what = "sigma"))
       }
     )
@@ -821,22 +821,22 @@ cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
   }
 
   score <- list(
-    "mu" =  function(y, eta) {
+    "mu" =  function(y, eta, ...) {
       gradmu <- gradfun(y, eta, type = "gradient", name = "mu")
       return(drop(gradmu))
     },
-    "sigma" =  function(y, eta) {
+    "sigma" =  function(y, eta, ...) {
       gradsigma <- gradfun(y, eta, type = "gradient", name = "sigma")
       return(drop(gradsigma))
     }
   )
 
   weights <- list(
-    "mu" =  function(y, eta) {
+    "mu" =  function(y, eta, ...) {
       wmu <- -1 * gradfun(y, eta, type = "weights", name = "mu")
       return(drop(wmu))
     },
-    "sigma" =  function(y, eta) {
+    "sigma" =  function(y, eta, ...) {
       wsigma <- -1 * gradfun(y, eta, type = "weights", name = "sigma")
       return(drop(wsigma))
     }
