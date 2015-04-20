@@ -152,6 +152,10 @@ bamlss <- function(formula, family = gaussian, data = NULL, knots = NULL,
     } else function(x) { bamlss.setup(x, ...) }
     if(!is.null(family.bamlss$sampler))
       sampler <- function(x, ...) { family.bamlss$sampler(x, ...) }
+    if(!is.null(family.bamlss$setup))
+      setup <- function(x, ...) { family.bamlss$setup(x, ...) }
+    else
+      setup <- FALSE
     if(is.null(sampler))
       sampler <- function(x, ...) { null.sampler(x, ...) }
     if(!is.null(family.bamlss$engine)) {

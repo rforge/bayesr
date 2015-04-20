@@ -509,7 +509,7 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
   np <- length(nx)
   response <- attr(x, "response.vec")
-  nobs <- length(response)
+  nobs <- if(is.null(dim(response))) length(response) else nrow(response)
   eta <- get.eta(x)
   
   inner_bf <- function(x, response, eta, family, edf, id, ...) {
