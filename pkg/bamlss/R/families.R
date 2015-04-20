@@ -2313,6 +2313,7 @@ gaussian5.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
 #################
 cox.bamlss <- function(links = c(lambda = "identity", mu = "identity"), ...)
 {
+  require("survival")
   rval <- list(
     "family" = "cox",
     "names" = c("lambda", "mu"),
