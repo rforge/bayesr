@@ -874,11 +874,11 @@ gmcmc_sm.mvn <- function(family, theta, id, prior, eta, response, data, ...)
     }
   }
 
-  data$state$parameters <- as.numeric(theta)
-  names(data$state$parameters) <- names(theta)
-
   ## Compute acceptance probablity.
   alpha <- drop((ll2 + p2) - (ll1 + p1))
+
+  data$state$parameters <- as.numeric(theta)
+  names(data$state$parameters) <- names(theta)
 
   rval <- list("parameters" = theta, "alpha" = alpha, "extra" = c("edf" = data$edf(data)))
   rval
@@ -979,7 +979,10 @@ gmcmc_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
     }
   }
 
-  rval <- list("parameters" = theta, "alpha" = alpha)
+  data$state$parameters <- as.numeric(theta)
+  names(data$state$parameters) <- names(theta)
+
+  rval <- list("parameters" = theta, "alpha" = alpha, "extra" = c("edf" = data$edf(data)))
 }
 
 
@@ -1359,5 +1362,193 @@ cat2 <- function(x, sleep = 0.03) {
     }
     cat(paste(x[1:i], collapse = ""))
   }
+}
+
+
+## Survival propose() functions.
+gmcmc_surv_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
+{
+  require("mvtnorm")
+
+  args <- list(...)
+  eta_Surv_timegrid0 <- eta_Surv_timegrid
+
+  theta <- theta[id]
+  g <- get.par(theta, "g")
+  tau2 <- if(!data$fixed) get.par(theta, "tau2") else NULL
+  nu <- if(is.null(data$nu)) 0.1 else data$nu
+
+  p.old <- family$loglik(response, family$map2par(eta)) + data$prior(theta)
+
+  if(is.null(attr(theta, "fitted.values")))
+    attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
+  if(is.null(attr(theta, "fitted_timegrid")))
+    attr(theta, "fitted_timegrid") <- data$get.mu_timegrid(theta)
+
+  eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values")
+  eta_Surv_timegrid <<- eta_Surv_timegrid - attr(theta, "fitted_timegrid")
+
+  lp <- function(g) {
+    eta[[id[1]]] <- eta[[id[1]]] + data$get.mu(data$X, g)
+    family$loglik(response, family$map2par(eta)) + data$prior(c(g, tau2))
+  }
+
+  if(is.null(family$gradient[[id[1]]])) {
+    gfun <- NULL
+  } else {
+    gfun <- list()
+    gfun[[id[1]]] <- function(g, y, eta, x, ...) {
+      gg <- family$gradient[[id[1]]](g, y, eta, x)
+      if(!is.null(data$grad)) {
+        gg <- gg + data$grad(score = NULL, c(g, tau2), full = FALSE)
+      }
+      drop(gg)
+    }
+  }
+
+  if(is.null(family$hessian[[id[1]]])) {
+    hfun <- NULL
+  } else {
+    hfun <- list()
+    hfun[[id[1]]] <- function(g, y, eta, x, ...) {
+      hg <- family$hessian[[id[1]]](g, y, eta, x)
+      if(!is.null(data$hess)) {
+        hg <- hg + data$hess(score = NULL, c(g, tau2), full = FALSE)
+      }
+      hg
+    }
+  }
+
+  g.grad <- grad(fun = lp, theta = g, id = id[1], prior = NULL,
+    args = list("gradient" = gfun, "x" = data, "y" = response, "eta" = eta))
+
+  g.hess <- hess(fun = lp, theta = g, id = id[1], prior = NULL,
+    args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = response, "eta" = eta))
+
+  Sigma <- matrix_inv(g.hess)
+  mu <- drop(g + nu * Sigma %*% g.grad)
+
+  q.prop <- dmvnorm(matrix(g, nrow = 1), mean = mu, sigma = Sigma, log = TRUE)
+
+  g2 <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma))
+  names(g2) <- names(g)
+
+  g.grad2 <- grad(fun = lp, theta = g2, id = id[1], prior = NULL,
+    args = list("gradient" = gfun, "x" = data, "y" = response, "eta" = eta))
+
+  g.hess2 <- hess(fun = lp, theta = g2, id = id[1], prior = NULL,
+    args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = response, "eta" = eta))
+
+  Sigma2 <- matrix_inv(g.hess2)
+  mu2 <- drop(g2 + nu * Sigma2 %*% g.grad2)
+
+  theta <- set.par(theta, g2, "g")
+
+  attr(theta, "fitted.values") <- data$get.mu(data$X, g2)
+  attr(theta, "fitted_timegrid") <- data$get.mu_timegrid(g2)
+  eta[[id[1]]] <- eta[[id[1]]] + attr(theta, "fitted.values")
+  eta_Surv_timegrid <<- eta_Surv_timegrid + attr(theta, "fitted_timegrid")
+
+  p.prop <- family$loglik(response, family$map2par(eta)) + data$prior(c(g2, tau2))
+
+  q.old <- dmvnorm(matrix(g2, nrow = 1), mean = mu2, sigma = Sigma2, log = TRUE)
+
+  alpha <- (p.prop - p.old) + (q.old - q.prop)
+
+  ## Sample variance parameter.
+  if(!data$fixed & is.null(data$sp)) {
+    if(!data$fixed & is.null(data$sp)) {
+      tau2 <- NULL
+      for(j in seq_along(data$S)) {
+        a <- data$rank[j] / 2 + data$a
+        b <- 0.5 * crossprod(g2, data$S[[j]]) %*% g2 + data$b
+        tau2 <- c(tau2, 1 / rgamma(1, a, b))
+      }
+      theta <- set.par(theta, tau2, "tau2")
+    }
+  }
+
+  accepted <- if(is.na(alpha)) FALSE else log(runif(1)) <= alpha
+  if(args$iteration < 2 | !accepted)
+    eta_Surv_timegrid <<- eta_Surv_timegrid0
+
+  alpha <- if(accepted) 1 else -Inf
+
+  data$state$parameters <- as.numeric(theta)
+  names(data$state$parameters) <- names(theta)
+
+  rval <- list("parameters" = theta, "alpha" = alpha, "extra" = c("edf" = data$edf(data)))
+}
+
+gmcmc_surv_sm.mvn <- function(family, theta, id, prior, eta, response, data, ...)
+{
+  require("mvtnorm")
+
+  args <- list(...)
+  eta_Surv_timegrid0 <- eta_Surv_timegrid
+
+  theta <- theta[id]
+
+  if(is.null(attr(theta, "fitted.values")))
+    attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
+  if(is.null(attr(theta, "fitted_timegrid")))
+    attr(theta, "fitted_timegrid") <- data$get.mu_timegrid(theta)
+
+  ll1 <- family$loglik(response, family$map2par(eta))
+  p1 <- data$prior(theta)
+
+  eta2 <- eta
+  eta2[[id[1]]] <- eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values")
+  eta_Surv_timegrid <<- eta_Surv_timegrid - attr(theta, "fitted_timegrid")
+
+  if(is.null(attr(theta, "hess"))) {
+    g_opt <- get.par(data$state$parameters, "gamma")
+    tau2_opt <- get.par(data$state$parameters, "tau2")
+    hess <- family$hessian$lambda(g_opt, response, eta, data)
+    if(!is.null(data$hess))
+      hess <- hess + data$hess(score = NULL, c(g_opt, tau2_opt), full = FALSE)
+    hess <- matrix_inv(hess)
+    attr(theta, "hess") <- hess
+  }
+
+  g <- drop(rmvnorm(n = 1, mean = drop(get.par(theta, "gamma")), sigma = attr(theta, "hess")))
+  theta <- set.par(theta, g, "gamma")
+
+  attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
+  attr(theta, "fitted_timegrid") <- data$get.mu_timegrid(theta)
+
+  eta[[id[1]]] <- eta[[id[1]]] + attr(theta, "fitted.values")
+  eta_Surv_timegrid <<- eta_Surv_timegrid + attr(theta, "fitted_timegrid")
+  ll2 <- family$loglik(response, family$map2par(eta))
+  p2 <- data$prior(theta)
+
+  ## Sample variance parameter.
+  if(!data$fixed & is.null(data$sp)) {
+    if(!data$fixed & is.null(data$sp)) {
+      tau2 <- NULL
+      for(j in seq_along(data$S)) {
+        a <- data$rank[j] / 2 + data$a
+        b <- 0.5 * crossprod(g, data$S[[j]]) %*% g + data$b
+        tau2 <- c(tau2, 1 / rgamma(1, a, b))
+      }
+      theta <- set.par(theta, tau2, "tau2")
+    }
+  }
+
+  ## Compute acceptance probablity.
+  alpha <- drop((ll2 + p2) - (ll1 + p1))
+
+  accepted <- if(is.na(alpha)) FALSE else log(runif(1)) <= alpha
+
+  if(args$iteration < 2 | !accepted)
+    eta_Surv_timegrid <<- eta_Surv_timegrid0
+
+  alpha <- if(accepted) 1 else -Inf
+
+  data$state$parameters <- as.numeric(theta)
+  names(data$state$parameters) <- names(theta)
+
+  rval <- list("parameters" = theta, "alpha" = alpha, "extra" = c("edf" = data$edf(data)))
+  rval
 }
 
