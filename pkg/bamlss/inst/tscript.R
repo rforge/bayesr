@@ -134,9 +134,15 @@ b <- bamlss(accel2 ~ s(times, k = 20), data = mcycle, method = "backfitting")
 n <- 500
 dat <- data.frame(x1 = runif(n, -3, 3), x2 = runif(n),
   fac = as.factor(sample(1:2, n, replace = TRUE)))
-dat$y <- with(dat, 1.2 + sin(x1) * c(0.1, 4)[fac] + rnorm(n, sd = 0.2))
+dat$y <- with(dat, 1.2 + sin(x1) * x2 + rnorm(n, sd = 0.2))
 
-b0 <- gam(y ~ x2 + s(x1, by = fac), data = dat)
+X <- smooth.construct(s(x1, by = x2), dat, NULL)$X
+b <- solve(crossprod(X)) %*% t(X) %*% dat$y
+f <- X %*% b
+plot2d(f ~ dat$x1)
+
+
+b0 <- bamlss(y ~ s(x1, by = x2), data = dat)
 b1 <- bamlss(y ~ x2 + s(x1, by = x2), data = dat, method = "MCMC")
 b2 <- bamlss(y ~ x2 + sx(x1, by = x2), data = dat, engine = "BayesX", family = gaussian)
 

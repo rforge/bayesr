@@ -133,7 +133,17 @@ bamlss <- function(formula, family = gaussian, data = NULL, knots = NULL,
         family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
     }
   }
-  family.bamlss <- if(is.function(family)) family() else family
+  family.bamlss <- if(is.function(family)) family() else {
+    if(is.character(family)) {
+      if(!grepl("gF(", family, fixed = TRUE) & !grepl("gF2(", family, fixed = TRUE))
+          if(!grepl("bamlss", family))
+            family <- paste(family, "bamlss", sep = ".")
+      family <- eval(parse(text = family[1]))
+      if(is.function(family))
+        family()
+      else family
+    } else family
+  }
 
   if(is.null(engine)) {
     mc.cores <- cores
@@ -1174,6 +1184,25 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
     fit <- smf[, im[1]]
     if(xsmall & !all(is.na(fit)))
       fit <- approx(data[[tterms]], fit, xout = data0[[tterms]])$y
+  }
+
+  if(x$by != "NA") { ## FIXME: hard coded fix for plotting varying coefficient terms!
+    if(!is.factor(data[[x$by]])) {
+      X <- X / data[[x$by]]
+
+      fsamples <- apply(psamples, 1, function(g) {
+        get.mu(X, g, expand = FALSE)
+      })
+
+      smf <- t(apply(fsamples, 1, FUN))
+
+      cnames <- colnames(smf)
+      smf <- as.data.frame(smf)
+      for(l in 1:nt) {
+        smf <- cbind(data[[tterms[l]]], smf)
+      }
+      names(smf) <- c(x$term, cnames)
+    }
   }
 
   by.drop <- NULL

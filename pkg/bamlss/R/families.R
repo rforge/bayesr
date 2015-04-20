@@ -2344,8 +2344,8 @@ cox.bamlss <- function(links = c(lambda = "identity", mu = "identity"), ...)
     "gradient" = list(
       "lambda" = function(g, y, eta, x, ...) {
         n <- attr(y, "subdivisions")
-        X <- x$extra.get.mu(NULL)
-        eeta <- (eta_Surv_timegrid - x$state$extra.fit) + x$extra.get.mu(g)
+        X <- x$get.mu_timegrid(NULL)
+        eeta <- eta_Surv_timegrid + x$get.mu_timegrid(g)
         eeta <- exp(eeta)
         dummy <- vector("list", ncol(x$X))
         for(i in 1:ncol(x$X)) {
@@ -2363,8 +2363,8 @@ cox.bamlss <- function(links = c(lambda = "identity", mu = "identity"), ...)
     "hessian" = list(
       "lambda" = function(g, y, eta, x, ...) {
         n <- attr(y, "subdivisions")
-        X <- x$extra.get.mu(NULL)
-        eeta <- (eta_Surv_timegrid - x$state$extra.fit) + x$extra.get.mu(g)
+        X <- x$get.mu_timegrid(NULL)
+        eeta <- eta_Surv_timegrid + x$get.mu_timegrid(g)
         eeta <- exp(eeta)
         nobs <- nrow(y)
         dummy <- vector("list", nobs)
@@ -2390,41 +2390,6 @@ cox.bamlss <- function(links = c(lambda = "identity", mu = "identity"), ...)
   )
   class(rval) <- "family.bamlss"
   rval
-}
-
-
-cox2.bamlss <- function(links = c(lambda= "identity"), ...)
-{
-  rval <- list(
-    "family" = "cox",
-    "names" = c("lambda"),
-    "links" = parse.links(links, c(lambda = "identity"), ...),
-    "loglik" = function(y, eta, ...) {
-      ll <- eta$lambda * y[, "status"] - survfun(exp(eta$lambda), y[, "time"])
-      sum(ll)
-    }
-  )
-  class(rval) <- "family.bamlss"
-  rval
-}
-
-
-survfun <- function(hazard, time)
-{
-  i <- order(time)
-  f0 <- splinefun(time[i], hazard[i])
-  rval <- sapply(seq_along(time), function(i) {
-    integrate(f0, 0, time[i], subdivisions = 1000)$value
-  })
-  rval
-}
-
-survfun2 <- function(hazard, time)
-{
-  i <- order(time)
-  f0 <- splinefun(time[i], hazard[i])
-  f1 <- integrate3(f0, min(time), max(time), ret.fun = TRUE)
-  f1(time) - f1(0)
 }
 
 
@@ -2458,6 +2423,7 @@ rSurvTime2 <- function (lambda, x, cens_fct, upper = 1000, ..., file = NULL,
   }
   time_event = cens_fct(time, ...)
   data = data.frame(time = time_event[, 1], event = time_event[, 2], x = x)
+  names(data) <- gsub("x.", "x", names(data), fixed = TRUE)
   if(!is.null(file)) {
     save(data, file = file)
     invisible(data)
