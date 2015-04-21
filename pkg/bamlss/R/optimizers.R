@@ -1048,7 +1048,7 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind)
 
 
 ## Survival models transformer function.
-surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", ...)
+surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", globalgrid = TRUE, ...)
 {
   ntd <- timedependent
   if(!all(ntd %in% names(x)))
@@ -1078,13 +1078,13 @@ surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", ...)
 
   ## Assign time grid predict functions
   ## and create time dependant predictor.
-  eta_Surv_timegrid <<- 0
+  eta_Surv_timegrid <- 0
   for(i in seq_along(ntd)) {
     if(!is.null(x[[ntd[i]]]$pterms)) {
       x[[ntd[i]]]$smooth$parametric <- param_time_transform(x[[ntd[i]]]$smooth$parametric,
         x[[ntd[i]]]$param.formula, attr(x, "model.frame"),
         x[[ntd[i]]]$param.contrasts, grid, yname)
-      eta_Surv_timegrid <<- eta_Surv_timegrid + x[[ntd[i]]]$smooth$parametric$state$fitted_timegrid
+      eta_Surv_timegrid <- eta_Surv_timegrid + x[[ntd[i]]]$smooth$parametric$state$fitted_timegrid
     }
     if(length(x[[ntd[i]]]$smooth)) {
       for(j in seq_along(x[[ntd[i]]]$smooth)) {
@@ -1093,11 +1093,15 @@ surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", ...)
           by <- if(x[[ntd[i]]]$smooth[[j]]$by != "NA") x[[ntd[i]]]$smooth[[j]]$by else NULL
           x[[ntd[i]]]$smooth[[j]] <- sm_time_transform(x[[ntd[i]]]$smooth[[j]],
             attr(x, "model.frame")[, unique(c(xterm, yname, by))], grid, yname)
-          eta_Surv_timegrid <<- eta_Surv_timegrid + x[[ntd[i]]]$smooth[[j]]$state$fitted_timegrid
+          eta_Surv_timegrid <- eta_Surv_timegrid + x[[ntd[i]]]$smooth[[j]]$state$fitted_timegrid
         }
       }
     }
   }
+
+  if(globalgrid)
+    eta_Surv_timegrid <<- eta_Surv_timegrid
+
   if(FALSE) {
     nx <- names(x)
     nx <- nx[!(nx %in% ntd)]
