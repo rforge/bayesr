@@ -487,8 +487,6 @@ bamlss.model.frame <- function(formula, data, family, weights = NULL,
   family <- bamlss.family(family)
   formula <- bamlss.formula(formula, specials, family)
 
-print(formula)
-
   if(is.null(na.action))
     na.action <- get(getOption("na.action"))
   if(missing(data))
@@ -503,8 +501,6 @@ print(formula)
     if(length(offset) != nrow(data))
       offset <- rep(offset, nrow(data))
   }
-
-print(fF)
 
   ## Set up the model.frame.
   mf <- list(formula = fF, data = data, weights = weights,
