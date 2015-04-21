@@ -1099,9 +1099,6 @@ surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", glob
     }
   }
 
-  if(globalgrid)
-    eta_Surv_timegrid <<- eta_Surv_timegrid
-
   if(FALSE) {
     nx <- names(x)
     nx <- nx[!(nx %in% ntd)]
@@ -1116,6 +1113,11 @@ surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", glob
       }
     }
   }
+
+  if(globalgrid)
+    eta_Surv_timegrid <<- eta_Surv_timegrid
+  else
+    attr(x, "eta_Surv_timegrid") <- eta_Surv_timegrid
 
   x
 }
