@@ -1135,7 +1135,7 @@ param_time_transform <- function(x, formula, data, contrasts, grid, yname)
 {
   X <- Xn <- NULL
   for(j in names(data)) {
-    if(!grepl("Surv(", j, fixed = TRUE) & (j != yname)) {
+    if((!grepl("Surv(", j, fixed = TRUE) & !grepl("Surv2(", j, fixed = TRUE)) & (j != yname)) {
       X <- cbind(X, rep(data[[j]], each = length(grid[[1]])))
       Xn <- c(Xn, j)
     }
