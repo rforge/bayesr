@@ -1147,8 +1147,12 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
     } else xsmall <- FALSE
   } else {
     data0 <- data[, c(tterms, if(x$by != "NA") x$by else NULL), drop = FALSE]
-    if(nt < 2)
-      data <- unique(data0)
+    if(nt < 2) {
+      if(x$by != "NA") {
+        if(!is.factor(data[[x$by]]))
+          data <- unique(data0)
+      } else data <- unique(data0)
+    }
     xsmall <- if((nrow(data) != nrow(data0)) & (nt < 2)) TRUE else FALSE
   }
   if(is.null(x$special)) {
