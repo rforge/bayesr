@@ -2434,48 +2434,6 @@ rSurvTime2 <- function (lambda, x, cens_fct, upper = 1000, ..., file = NULL,
 }
 
 
-jm.bamlss <- function(...)
-{
-  links = c(lambda = "identity", mu = "identity",
-    alpha = "identity", beta = "identity", sigma = "log")
-
-  rval <- list(
-    "family" = "jm",
-    "names" = c("lambda", "mu", "alpha", "beta", "sigma"),
-    "links" = parse.links(links, links, ...),
-    "loglik" = function(y, eta, ...) {
-      teta <- eta$lambda + eta$alpha * eta$mu
-      ll <- y[, "status"] * (teta + eta$beta) - exp(eta$beta) * survfun(exp(teta), y[, "time"])
-      ll <- ll + dnorm(y[, "obs"], mean = eta$mu, sd = eta$sigma, log = TRUE)
-      sum(ll)
-    },
-    "score" = list(
-      "lambda" = function(y, eta, ...) {
-        y[, "status"] - exp(eta$beta) * survfun(exp(eta$lambda + eta$alpha * eta$mu), y[, "time"])
-      },
-      "mu" = function(y, eta, ...) {
-        (y[, "obs"] - eta$mu) / (eta$sigma^2) + y[, "status"] * eta$alpha -
-          exp(eta$beta) * survfun(exp(eta$lambda + eta$alpha * eta$mu), y[, "time"])
-      },
-      "alpha" = function(y, eta, ...) {
-        y[, "status"] * eta$mu -
-          exp(eta$beta) * survfun(exp(eta$lambda + eta$alpha * eta$mu), y[, "time"])
-      },
-      "beta" = function(y, eta, ...) {
-        y[, "status"] - exp(eta$beta) * survfun(exp(eta$lambda + eta$alpha * eta$mu), y[, "time"])
-      },
-      "sigma" = function(y, eta, ...) {
-        (y[, "obs"] - eta$mu)^2 / (eta$sigma^2) - 1
-      }
-    )
-  )
-
-  class(rval) <- "family.bamlss"
-  rval
-}
-
-
-
 integrate2 <- function(f, a, b, ...)
 {
   nodes <- c(
