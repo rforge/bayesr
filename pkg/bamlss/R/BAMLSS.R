@@ -3286,7 +3286,7 @@ fitted.bamlss <- function(object, model = NULL, term = NULL,
   nrval <- if(is.null(names(rval))) 1:length(object) else names(rval)
 
   if(!samples) {
-    for(j in seq_along(object)) {
+    for(j in nrval) {
       if(!any(elmts %in% names(object[[j]]))) {
         rval[[j]] <- fitted.bamlss(object[[j]], term = term, ...)
       } else {
@@ -3297,8 +3297,8 @@ fitted.bamlss <- function(object, model = NULL, term = NULL,
             fe <- list()
             ne <- names(object[[j]]$effects)
             for(i in seq_along(term)) {
-              if(length(e <- grep(term[i], ne)))
-                fe[[ne[e]]] <- object[[j]]$effects[[e]]
+              if(length(e <- grep(term[i], ne, fixed = TRUE)))
+                fe[[ne[e[1]]]] <- object[[j]]$effects[[e[1]]]
             }
             if(length(fe))
               rval[[j]] <- fe
