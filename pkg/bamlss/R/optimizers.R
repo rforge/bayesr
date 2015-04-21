@@ -1047,9 +1047,13 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind)
 }
 
 
-## Cox model transformer function.
-cox.transform <- function(x, subdivisions = 100, ...)
+## Survival models transformer function.
+surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", ...)
 {
+  ntd <- timedependent
+  if(!all(ntd %in% names(x)))
+    stop("the time dependent predictors specified are different from family object names!")
+
   ## The basic setup.
   x <- bamlss.setup(x, ...)
 
@@ -1070,36 +1074,40 @@ cox.transform <- function(x, subdivisions = 100, ...)
   attr(response, "subdivisions") <- subdivisions
   attr(response, "grid") <- grid
   attr(x, "response.vec") <- response
-  yname <- all.names(x$lambda$formula[2])[2]
+  yname <- all.names(x[[ntd[1]]]$formula[2])[2]
 
   ## Assign time grid predict functions
   ## and create time dependant predictor.
   eta_Surv_timegrid <<- 0
-  if(!is.null(x$lambda$pterms)) {
-    x$lambda$smooth$parametric <- param_time_transform(x$lambda$smooth$parametric,
-      x$lambda$param.formula, attr(x, "model.frame"),
-      x$lambda$param.contrasts, grid, yname)
-    eta_Surv_timegrid <<- eta_Surv_timegrid + x$lambda$smooth$parametric$state$fitted_timegrid
-  }
-  if(length(x$lambda$smooth)) {
-    for(i in seq_along(x$lambda$smooth)) {
-      if(is.null(x$lambda$smooth[[i]]$is.parametric)) {
-        xterm <- x$lambda$smooth[[i]]$term
-        by <- if(x$lambda$smooth[[i]]$by != "NA") x$lambda$smooth[[i]]$by else NULL
-        x$lambda$smooth[[i]] <- sm_time_transform(x$lambda$smooth[[i]],
-          attr(x, "model.frame")[, unique(c(xterm, yname, by))], grid, yname)
-        eta_Surv_timegrid <<- eta_Surv_timegrid + x$lambda$smooth[[i]]$state$fitted_timegrid
+  for(i in seq_along(ntd)) {
+    if(!is.null(x[[ntd[i]]]$pterms)) {
+      x[[ntd[i]]]$smooth$parametric <- param_time_transform(x[[ntd[i]]]$smooth$parametric,
+        x[[ntd[i]]]$param.formula, attr(x, "model.frame"),
+        x[[ntd[i]]]$param.contrasts, grid, yname)
+      eta_Surv_timegrid <<- eta_Surv_timegrid + x[[ntd[i]]]$smooth$parametric$state$fitted_timegrid
+    }
+    if(length(x[[ntd[i]]]$smooth)) {
+      for(j in seq_along(x[[ntd[i]]]$smooth)) {
+        if(is.null(x[[ntd[i]]]$smooth[[j]]$is.parametric)) {
+          xterm <- x[[ntd[i]]]$smooth[[j]]$term
+          by <- if(x[[ntd[i]]]$smooth[[j]]$by != "NA") x[[ntd[i]]]$smooth[[j]]$by else NULL
+          x[[ntd[i]]]$smooth[[j]] <- sm_time_transform(x[[ntd[i]]]$smooth[[j]],
+            attr(x, "model.frame")[, unique(c(xterm, yname, by))], grid, yname)
+          eta_Surv_timegrid <<- eta_Surv_timegrid + x[[ntd[i]]]$smooth[[j]]$state$fitted_timegrid
+        }
       }
     }
   }
-  nx <- names(x)
-  nx <- nx[nx != "lambda"]
-  if(length(nx)) {
-    for(i in seq_along(nx)) {
-      if(length(x[[nx[i]]]$smooth)) {
-        for(j in seq_along(x[[nx[i]]]$smooth)) {
-          x[[nx[i]]]$smooth[[j]]$update <- bfit0_iwls
-          x[[nx[i]]]$smooth[[j]]$propose <- gmcmc_sm.iwls0
+  if(FALSE) {
+    nx <- names(x)
+    nx <- nx[!(nx %in% ntd)]
+    if(length(nx)) {
+      for(i in seq_along(nx)) {
+        if(length(x[[nx[i]]]$smooth)) {
+          for(j in seq_along(x[[nx[i]]]$smooth)) {
+            x[[nx[i]]]$smooth[[j]]$update <- bfit0_iwls
+            x[[nx[i]]]$smooth[[j]]$propose <- gmcmc_sm.iwls0
+          }
         }
       }
     }

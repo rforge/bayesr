@@ -2318,7 +2318,7 @@ cox.bamlss <- function(links = c(lambda = "identity", mu = "identity"), ...)
     "family" = "cox",
     "names" = c("lambda", "mu"),
     "links" = parse.links(links, c(lambda = "log", mu = "identity"), ...),
-    "transform" = cox.transform,
+    "transform" = surv.transform,
     "loglik" = function(y, eta, ...) {
       n <- attr(y, "subdivisions")
       eeta <- exp(eta_Surv_timegrid)
