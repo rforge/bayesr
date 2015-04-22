@@ -42,6 +42,7 @@ GMCMC <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
     for(j in seq_along(x[[i]]$smooth)) {
       theta[[i]][[j]] <- x[[i]]$smooth[[j]]$state$parameters
       attr(theta[[i]][[j]], "fitted.values") <- x[[i]]$smooth[[j]]$state$fitted.values
+      attr(theta[[i]][[j]], "hess") <- x[[i]]$smooth[[j]]$state$hessian
       x[[i]]$smooth[[j]]$state$fitted.values <- NULL
       x[[i]]$smooth[[j]]$XW <- t(x[[i]]$smooth[[j]]$X)
       x[[i]]$smooth[[j]]$XWX <- crossprod(x[[i]]$smooth[[j]]$X)
@@ -1296,8 +1297,11 @@ gmcmc_newton <- function(fun, theta, id, prior, ...)
 }
 
 
-null.sampler <- function(x, criterion = c("AICc", "BIC", "AIC"), ...)
+null.sampler <- function(x, criterion = c("AICc", "BIC", "AIC"), n.samples = 200, ...)
 {
+  if(n.samples > 1)
+    require("mvtnorm")
+
   criterion <- match.arg(criterion)
 
   par <- make_par(x)
@@ -1307,27 +1311,25 @@ null.sampler <- function(x, criterion = c("AICc", "BIC", "AIC"), ...)
   np <- length(nx)
 
   nh <- names(par$par)
-  samps <- matrix(NA, 1L, length(nh))
+  samps <- matrix(NA, n.samples, length(nh))
   colnames(samps) <- nh
   sn <- NULL
 
-  eta <- vector(mode = "list", length = np)
-  names(eta) <- nx
+  response <- attr(x, "response.vec")
+  eta <- get.eta(x)
   edf <- 0
-  eeta <- list()
-  for(j in nx) {
-    if(!is.null(x[[j]]$eeta))
-      eeta[[j]] <- 0
-  }
 
   for(j in 1:np) {
-    eta[[j]] <- 0
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
       nh2 <- grep(paste("p", j, ".t", sj, ".", sep = ""), nh, fixed = TRUE, value = TRUE)
       nhg <- nh2[!grepl("tau2", nh2)]
       g <- get.state(x[[nx[j]]]$smooth[[sj]], "gamma")
-      samps[1L, nhg] <- g
-      eta[[j]] <- eta[[j]] + x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, g)
+      if(n.samples > 1) {
+        x[[nx[j]]]$smooth[[sj]] <- add_hess(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j])
+        g <- rmvnorm(n = n.samples, mean = g, sigma = x[[nx[j]]]$smooth[[sj]]$state$hessian)
+        colnames(g) <- nhg
+        samps[, nhg] <- g
+      } else samps[1L, nhg] <- g
       sn <- c(sn, paste(nx[j], x[[nx[j]]]$smooth[[sj]]$label, paste("g", 1:length(nhg), sep = ""), sep = "."))
       if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
         nhtau2 <- nh2[grepl("tau2", nh2)]
@@ -1338,17 +1340,39 @@ null.sampler <- function(x, criterion = c("AICc", "BIC", "AIC"), ...)
       } else {
         edf <- edf + ncol(x[[nx[j]]]$smooth[[sj]]$X)
       }
-      if(!is.null(eeta[[nx[j]]]))
-        eeta[[nx[j]]]  <- eeta[[nx[j]]] + x[[nx[j]]]$smooth[[sj]]$state$extra.fit
     }
   }
 
   colnames(samps) <- sn
-  IC <- as.numeric(get.ic(family, attr(x, "response.vec"), family$map2par(eta), edf, length(eta[[1L]]), criterion, eeta))
+  IC <- as.numeric(get.ic(family, response, family$map2par(eta), edf, length(eta[[1L]]), criterion))
   samps <- cbind(samps, IC, edf)
   colnames(samps)[(ncol(samps) - 1):ncol(samps)] <- c(criterion, "save.edf")
 
   as.mcmc(samps)
+}
+
+add_hess <- function(x, family, response, eta, id)
+{
+  if(is.null(x$state$hessian)) {
+    eta[[id]] <- eta[[id]] - fitted(x$state)
+
+    tau2 <- get.state(x, "tau2")
+
+    lp <- function(g) {
+      eta[[id]] <- eta[[id]] + x$get.mu(x$X, g)
+      family$loglik(response, family$map2par(eta)) + x$prior(c(g, tau2))
+    }
+
+    xhess <- hess(fun = lp, theta = get.state(x, "g"), id = id, prior = NULL,
+      args = list("gradient" = NULL, "hessian" = NULL, "x" = x, "y" = response, "eta" = eta))
+
+    xhess <- 1 / diag(xhess) ## matrix_inv(hess)
+    xhess <- if(length(xhess) < 2) matrix(xhess, 1, 1) else diag(xhess)
+
+    x$state$hessian <- xhess
+  }
+
+  x
 }
 
 

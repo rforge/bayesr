@@ -733,6 +733,7 @@ bfit0_newton <- function(x, family, response, eta, id, ...)
 
   x$state$parameters <- set.par(x$state$parameters, g, "g")
   x$state$fitted.values <- x$get.mu(x$X, get.state(x, "g"))
+  x$state$hessian <- Sigma
 
   return(x$state)
 }
