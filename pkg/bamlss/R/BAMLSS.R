@@ -506,6 +506,7 @@ bamlss.model.frame <- function(formula, data, family, weights = NULL,
   mf <- list(formula = fF, data = data, weights = weights,
     subset = subset, offset = offset, na.action = na.action,
     drop.unused.levels = TRUE)
+
   mf <- do.call("model.frame", mf)
   rownames(mf) <- NULL
 
