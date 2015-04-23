@@ -708,7 +708,7 @@ cgauss.bamlss <- function(...)
   f$score <- list(
     "mu" = function(y, eta, ...) { gradfun(y, eta, type = "gradient", name = "mu") },
     "sigma" = function(y, eta, ...) { gradfun(y, eta, type = "gradient", name = "sigma") }
-  ),
+  )
   f$weights <- list(
     "mu" = function(y, eta, ...) { hessfun(y, eta, type = "gradient", name = "mu") },
     "sigma" = function(y, eta, ...) { hessfun(y, eta, type = "gradient", name = "sigma") }
