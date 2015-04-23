@@ -1191,3 +1191,72 @@ sm_time_transform <- function(x, data, grid, yname)
   x
 }
 
+
+bfit_cgauss <- function(x, criterion = c("AICc", "BIC", "AIC"),
+  eps = .Machine$double.eps^0.25, maxit = 400, outer = FALSE, inner = FALSE,
+  verbose = TRUE, digits = 4, ...)
+{
+  criterion <- match.arg(criterion)
+
+  x <- bamlss.setup(x, criterion = criterion, ...)
+
+  family <- attr(x, "family")
+  nx <- family$names
+  if(!all(nx %in% names(x)))
+    stop("parameter names mismatch with family names!")
+  criterion <- match.arg(criterion)
+
+  np <- length(nx)
+  response <- attr(x, "response.vec")
+  nobs <- if(is.null(dim(response))) length(response) else nrow(response)
+  eta <- get.eta(x)
+  edf <- get.edf(x)
+
+  ## Start the backfitting algorithm.
+  eps0 <- eps + 1; iter <- 1
+  while(eps0 > eps & iter < maxit) {
+    eta0 <- eta
+    ## Cycle through all parameters
+    for(j in 1:np) {
+      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        ## Get updated parameters.
+        p.state <- x[[nx[j]]]$smooth[[sj]]$update(x[[nx[j]]]$smooth[[sj]],
+          family, response, eta, nx[j], edf = edf)
+
+        ## Compute equivalent degrees of freedom.
+        edf <- edf - x[[nx[j]]]$smooth[[sj]]$state$edf + p.state$edf
+
+        ## Update predictor and smooth fit.
+        eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth[[sj]]$state) + fitted(p.state)
+
+        x[[nx[j]]]$smooth[[sj]]$state <- p.state
+      }
+    }
+
+    eps0 <- do.call("cbind", eta)
+    eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
+    if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
+
+    peta <- family$map2par(eta)
+
+    if(verbose) {
+      IC <- get.ic(family, response, peta, edf, nobs, criterion)
+      cat("\r")
+      vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
+        " logLik ", fmt(family$loglik(response, peta), width = 8, digits = digits),
+        " edf ", fmt(edf, width = 6, digits = digits),
+        " eps ", fmt(eps0, width = 6, digits = digits + 2),
+        " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
+      cat(vtxt)
+
+      if(.Platform$OS.type != "unix") flush.console()
+    }
+
+    iter <- iter + 1
+  }
+
+  if(verbose) cat("\n")
+
+  return(x)
+}
+

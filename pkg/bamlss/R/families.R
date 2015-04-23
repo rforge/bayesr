@@ -699,6 +699,15 @@ trunc.bamlss <- function(links = c(mu = "identity", sigma = "log"),
 }
 
 
+cgauss.bamlss <- function(...)
+{
+  f <- cens.bamlss(left = 0)
+  f$engine <- function(x, ...) {
+    stacker(x, optimizer = bfit_cgauss, sampler = null.sampler, ...)
+  }
+  f
+}
+
 cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
   left = 0, right = Inf, dist = "gaussian", ...)
 {
@@ -2308,9 +2317,9 @@ gaussian5.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
 }
 
 
-#################
-## Joint model ##
-#################
+###############
+##  Survival ##
+###############
 cox.bamlss <- function(links = c(lambda = "identity", mu = "identity"), ...)
 {
   require("survival")
