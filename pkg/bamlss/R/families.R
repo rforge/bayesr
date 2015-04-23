@@ -705,6 +705,14 @@ cgauss.bamlss <- function(...)
   f$engine <- function(x, ...) {
     stacker(x, optimizer = bfit_cgauss, sampler = null.sampler, ...)
   }
+  f$score <- list(
+    "mu" = function(y, eta, ...) { gradfun(y, eta, type = "gradient", name = "mu") },
+    "sigma" = function(y, eta, ...) { gradfun(y, eta, type = "gradient", name = "sigma") }
+  ),
+  f$weights <- list(
+    "mu" = function(y, eta, ...) { hessfun(y, eta, type = "gradient", name = "mu") },
+    "sigma" = function(y, eta, ...) { hessfun(y, eta, type = "gradient", name = "sigma") }
+  )
   f
 }
 
