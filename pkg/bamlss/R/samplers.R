@@ -1325,8 +1325,8 @@ null.sampler <- function(x, criterion = c("AICc", "BIC", "AIC"), n.samples = 200
       nhg <- nh2[!grepl("tau2", nh2)]
       g <- get.state(x[[nx[j]]]$smooth[[sj]], "gamma")
       if(n.samples > 1) {
-        x[[nx[j]]]$smooth[[sj]] <- add_hess(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j])
-        g <- rmvnorm(n = n.samples, mean = g, sigma = x[[nx[j]]]$smooth[[sj]]$state$hessian)
+        sigma <- get.sigma(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j])
+        g <- rmvnorm(n = n.samples, mean = g, sigma = sigma)
         colnames(g) <- nhg
         samps[, nhg] <- g
       } else samps[1L, nhg] <- g
@@ -1351,28 +1351,51 @@ null.sampler <- function(x, criterion = c("AICc", "BIC", "AIC"), n.samples = 200
   as.mcmc(samps)
 }
 
-add_hess <- function(x, family, response, eta, id)
+get.sigma <- function(x, family, response, eta, id)
 {
   if(is.null(x$state$hessian)) {
-    eta[[id]] <- eta[[id]] - fitted(x$state)
+    if(!is.null(family$hessian[[id]])) {
+      xhess <- family$hessian[[id]](get.state(x, "g"), response, eta, x)
+      xhess <- xhess + x$hess(score = NULL, x$state$parameters, full = FALSE)
+    } else {
+      eta[[id]] <- eta[[id]] - fitted(x$state)
 
-    tau2 <- get.state(x, "tau2")
+      tau2 <- get.state(x, "tau2")
 
-    lp <- function(g) {
-      eta[[id]] <- eta[[id]] + x$get.mu(x$X, g)
-      family$loglik(response, family$map2par(eta)) + x$prior(c(g, tau2))
+      lp <- function(g) {
+        eta[[id]] <- eta[[id]] + x$get.mu(x$X, g)
+        family$loglik(response, family$map2par(eta)) + x$prior(c(g, tau2))
+      }
+
+      if(is.null(family$gradient[[id]])) {
+        if(!is.null(family$score[[id]]) & !is.null(x$grad)) {
+          gfun <- function(g, ...) {
+            eta[[id]] <- eta[[id]] + x$get.mu(x$X, g)
+            x$grad(family$score[[id]](response, family$map2par(eta)), g, full = FALSE)
+          }
+        } else gfun <- NULL
+      } else {
+        gfun <- function(g, ...) {
+          gg <- family$gradient[[id]](g, response, eta, x)
+          if(!is.null(x$grad)) {
+            gg <- gg + x$grad(score = NULL, c(g, tau2), full = FALSE)
+          }
+          drop(gg)
+        }
+      }
+
+      xhess <- -1 * optimHess(get.state(x, "g"), fn = lp, gr = gfun, control = list("fnscale" = -1))
     }
 
-    xhess <- hess(fun = lp, theta = get.state(x, "g"), id = id, prior = NULL,
-      args = list("gradient" = NULL, "hessian" = NULL, "x" = x, "y" = response, "eta" = eta))
+    if(length(xhess) < 2) {
+      xhess <- matrix(1 / xhess, 1, 1)
+    } else {
+      ## xhess <- chol2inv(chol(xhess))
+      xhess <- diag(1 / diag(xhess))
+    }
 
-    xhess <- 1 / diag(xhess) ## matrix_inv(hess)
-    xhess <- if(length(xhess) < 2) matrix(xhess, 1, 1) else diag(xhess)
-
-    x$state$hessian <- xhess
-  }
-
-  x
+    return(xhess)
+  } else return(x$state$hessian)
 }
 
 
