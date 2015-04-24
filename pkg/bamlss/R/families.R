@@ -711,7 +711,7 @@ cnorm.bamlss <- function(...)
     x
   }
   f$engine <- function(x, ...) {
-    sampler <- function(x, ...) { GMCMC(x, propose = "iwls", ...) }
+    sampler <- function(x, ...) { GMCMC(x, propose = "iwls0", ...) }
     stacker(x, optimizer = bfit_cnorm, sampler = sampler, ...)
   }
   f$score <- list(
