@@ -1192,7 +1192,7 @@ sm_time_transform <- function(x, data, grid, yname)
 }
 
 
-bfit_cgauss <- function(x, criterion = c("AICc", "BIC", "AIC"),
+bfit_cnorm <- function(x, criterion = c("AICc", "BIC", "AIC"),
   eps = .Machine$double.eps^0.25, maxit = 400, outer = FALSE, inner = FALSE,
   verbose = TRUE, digits = 4, ...)
 {

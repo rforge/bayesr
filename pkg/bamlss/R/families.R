@@ -699,20 +699,49 @@ trunc.bamlss <- function(links = c(mu = "identity", sigma = "log"),
 }
 
 
-cgauss.bamlss <- function(...)
+cnorm.bamlss <- function(...)
 {
   f <- cens.bamlss(left = 0)
+  f$transform <- function(x, ...) {
+    x <- bamlss.setup(x, ...)
+    y <- attr(x, "response.vec")
+    check <- as.integer(y <= 0)
+    attr(y, "check") <- check
+    attr(x, "response.vec") <- y
+    x
+  }
   f$engine <- function(x, ...) {
-    stacker(x, optimizer = bfit_cgauss, sampler = null.sampler, ...)
+    stacker(x, optimizer = bfit_cnorm, sampler = null.sampler, ...)
   }
   f$score <- list(
-    "mu" = function(y, eta, ...) { gradfun(y, eta, type = "gradient", name = "mu") },
-    "sigma" = function(y, eta, ...) { gradfun(y, eta, type = "gradient", name = "sigma") }
+    "mu" = function(y, eta, ...) {
+      .Call("cnorm_score_mu",
+        as.numeric(y), as.numeric(eta$mu), as.numeric(eta$sigma),
+        as.integer(attr(y, "check")))
+    },
+    "sigma" = function(y, eta, ...) {
+      .Call("cnorm_score_sigma",
+        as.numeric(y), as.numeric(eta$mu), as.numeric(eta$sigma),
+        as.integer(attr(y, "check")))
+    }
   )
   f$weights <- list(
-    "mu" = function(y, eta, ...) { hessfun(y, eta, type = "gradient", name = "mu") },
-    "sigma" = function(y, eta, ...) { hessfun(y, eta, type = "gradient", name = "sigma") }
+    "mu" = function(y, eta, ...) {
+      .Call("cnorm_weights_mu",
+        as.numeric(y), as.numeric(eta$mu), as.numeric(eta$sigma),
+        as.integer(attr(y, "check")))
+    },
+    "sigma" = function(y, eta, ...) {
+      .Call("cnorm_weights_sigma",
+        as.numeric(y), as.numeric(eta$mu), as.numeric(eta$sigma),
+        as.integer(attr(y, "check")))
+    }
   )
+  f$loglik <- function(y, eta, ...) {
+    .Call("cnorm_loglik",
+      as.numeric(y), as.numeric(eta$mu), as.numeric(eta$sigma),
+      as.integer(attr(y, "check")))
+  }
   f
 }
 
@@ -1982,6 +2011,8 @@ gF2 <- function(x, ...) {
     }
     return(eta)
   }
+  if(is.null(x$loglik))
+    x$loglik <- function(y, eta, ...) { sum(x$d(y, eta, log = TRUE), na.rm = TRUE) }
   x
 }
 
