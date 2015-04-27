@@ -1031,13 +1031,13 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   ++nProtected;
   REAL(alpha)[0] = (pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1);
 
-Rprintf("pibetaprop %g\n", pibetaprop);
-Rprintf("qbeta %g\n", qbeta);
-Rprintf("p2 %g\n", p2);
-Rprintf("pibeta %g\n", pibeta);
-Rprintf("qbetaprop %g\n", qbetaprop);
-Rprintf("p1 %g\n", p1);
-Rprintf("alpha %g\n", exp(REAL(alpha)[0]));
+/*Rprintf("pibetaprop %g\n", pibetaprop);*/
+/*Rprintf("qbeta %g\n", qbeta);*/
+/*Rprintf("p2 %g\n", p2);*/
+/*Rprintf("pibeta %g\n", pibeta);*/
+/*Rprintf("qbetaprop %g\n", qbetaprop);*/
+/*Rprintf("p1 %g\n", p1);*/
+/*Rprintf("alpha %g\n", exp(REAL(alpha)[0]));*/
 
   /* Stuff everything together. */
   SEXP rval;
@@ -1070,7 +1070,7 @@ Rprintf("alpha %g\n", exp(REAL(alpha)[0]));
 }
 
 
-/* Censored gaussian */
+/* Censored normal: left = 0, right = Inf. */
 SEXP cnorm_loglik(SEXP y, SEXP mu, SEXP sigma, SEXP check)
 {
   SEXP rval;
