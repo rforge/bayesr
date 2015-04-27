@@ -355,9 +355,6 @@ smooth.bamlss.default <- function(x, ...)
         S <- S + 1 / tau2[j] * x$S[[j]]
       P <- matrix_inv(x$state$XX + S)
       edf <- sum(diag(x$state$XX %*% P))
-      if(!is.null(x$xt$center)) {
-        if(x$xt$center) edf <- edf - 1
-      }
       return(edf)
     }
   }
@@ -791,9 +788,6 @@ bfit0_iwls <- function(x, family, response, eta, id, ...)
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
       fit <- x$get.mu(x$X, g)
       edf <- sum(diag(P %*% XWX))
-      if(!is.null(x$xt$center)) {
-        if(x$xt$center) edf <- edf - 1
-      }
       eta2[[id]] <- eta2[[id]] + fit
       IC <- get.ic(family, response, family$map2par(eta2), edf0 + edf, length(z), x$criterion, ...)
       return(IC)
@@ -824,9 +818,6 @@ bfit0_iwls <- function(x, family, response, eta, id, ...)
     x$state$parameters <- set.par(x$state$parameters, rep(0, length(x$state$g)), "g")
   x$state$fitted.values <- x$get.mu(x$X, get.state(x, "g"))
   x$state$edf <- sum(diag(P %*% XWX))
-  if(!is.null(x$xt$center)) {
-    if(x$xt$center) x$state$edf <- x$state$edf - 1
-  }
 
   return(x$state)
 }

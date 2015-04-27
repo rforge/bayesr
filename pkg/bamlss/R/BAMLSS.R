@@ -1246,9 +1246,9 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
     bbb <- 1 ## FIXME: factors!
   }
   class(smf) <- c(class(x), "data.frame")
-  x["X"] <- NULL
+  x[c("X", "state", "update", "propose", "hess", "grad", "edf", "criterion", "nu", "prior",
+    "X", "Xf", "rand", "trans.D", "trans.U")] <- NULL
   attr(smf, "specs") <- x
-  attr(smf, "specs")[c("X", "Xf", "rand", "trans.D", "trans.U")] <- NULL
   class(attr(smf, "specs")) <- class(x)
   attr(smf, "fit") <- fit
   attr(smf, "x") <- if(xsmall & nt < 2) data0[, tterms] else data[, tterms]
@@ -3070,6 +3070,7 @@ logLik.bamlss <- function(object, ..., type = 1, nsamps = NULL, FUN = NULL)
         "edf" = if(is.null(xs[[n]]$edf)) NA else xs[[n]]$edf
       ))
     }
+    names(rval)[1] <- names(xs[[n]]$IC)[1]
   }
   if(type %in% c(1, 2)) {
     for(i in 1:length(object)) {
@@ -3119,35 +3120,32 @@ logLik.bamlss <- function(object, ..., type = 1, nsamps = NULL, FUN = NULL)
 }
 
 
-#edf <- function(x, samples = TRUE, nsamps = NULL)
-#{
-#  family <- attr(x, "family")
-#  if(is.null(family$weights))
-#    stop("cannot compute edf without the weights() function in the model family object!")
-#  nx <- family$names
-#  edf0 <- 0; edf1 <- NULL
-#  y <- model.response2(x)
-#  eta <- fitted(x, type = "link", samples = samples, nsamps = nsamps)
-#  mf <- model.frame(x)
-#  for(j in 1:length(nx)) {
-#    if(!is.null(x[[nx[j]]]$param.effects))
-#      edf0 <- edf0 + ncol(x[[nx[j]]]$param.effects)
-#    if(!is.null(x[[nx[j]]]$effects)) {
-#      weights <- family$weights[[nx[j]]](y, eta)
-#      for(sj in 1:length(x[[nx[j]]]$effects)) {
-#        specs <- attr(x[[nx[j]]]$effects[[sj]], "specs")
-#        X <- if(inherits(specs, "mgcv.smooth")) {
-#          PredictMat(specs, mf)
-#        } else {
-#          if(!is.null(specs$basis)) {
-#            stopifnot(is.function(specs$basis))
-#            specs$basis(mf[, specs$term])
-#          } else stop(paste("cannot compute design matrix for term ", specs$label, "!", sep = ""))
-#        }
-#      }
-#    }
-#  }
-#}
+edf <- function (object, ...) { 
+  UseMethod("edf")
+}
+
+edf.bamlss <- function(object, FUN = mean, ...)
+{
+  family <- attr(object, "family")
+  nx <- family$names
+  edf0 <- 0; edf1 <- NULL
+  for(j in 1:length(nx)) {
+    if(!is.null(object[[nx[j]]]$param.effects))
+      edf0 <- edf0 + nrow(object[[nx[j]]]$param.effects)
+    if(!is.null(object[[nx[j]]]$effects)) {
+      for(sj in 1:length(object[[nx[j]]]$effects)) {
+        if(!is.null(attr(object[[nx[j]]]$effects[[sj]], "samples.edf"))) {
+          edf1 <- cbind(edf1, attr(object[[nx[j]]]$effects[[sj]], "samples.edf"))
+        } else {
+          stop(paste("equivalent degrees of freedom not available for term ",
+            object[[nx[j]]]$effects[[sj]]$label, "!", sep = ""))
+        }
+      }
+    }
+  }
+  rval <- apply(edf1, 1, sum, na.rm = TRUE) + edf0
+  FUN(rval, ...)
+}
 
 
 ## Extract model formulas.
