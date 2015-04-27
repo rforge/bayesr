@@ -150,8 +150,12 @@ bamlss <- function(formula, family = gaussian, data = NULL, knots = NULL,
     transform <- if(!is.null(family.bamlss$transform)) {
       function(x) { family.bamlss$transform(x, ...) }
     } else function(x) { bamlss.setup(x, ...) }
-    if(!is.null(family.bamlss$sampler))
-      sampler <- function(x, ...) { family.bamlss$sampler(x, ...) }
+    if(!is.null(family.bamlss$sampler)) {
+      sampler <- function(x, ...) {
+        family.bamlss$sampler(x, cores = mc.cores,
+          n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, sleep = sleep, ...)
+      }
+    }
     if(!is.null(family.bamlss$setup))
       setup <- function(x, ...) { family.bamlss$setup(x, ...) }
     else

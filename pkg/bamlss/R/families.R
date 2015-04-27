@@ -711,8 +711,8 @@ cnorm.bamlss <- function(...)
     x
   }
   f$engine <- function(x, ...) {
-    sampler <- function(x, ...) { GMCMC(x, propose = "iwls0", ...) }
-    stacker(x, optimizer = bfit_cnorm, sampler = sampler, ...)
+    ## sampler <- function(x, ...) { GMCMC(x, propose = "iwls0", ...) }
+    stacker(x, optimizer = bfit_cnorm, sampler = null.sampler, ...)
   }
   f$score <- list(
     "mu" = function(y, eta, ...) {
@@ -742,6 +742,21 @@ cnorm.bamlss <- function(...)
     .Call("cnorm_loglik",
       as.numeric(y), as.numeric(eta$mu), as.numeric(eta$sigma),
       as.integer(attr(y, "check")))
+  }
+  f$d <- function(y, eta, log = FALSE) {
+    ifelse(y <= 0, pnorm(-eta$mu / eta$sigma, log.p = log),
+      dnorm((y - eta$mu) / eta$sigma, log = log) / eta$sigma^(1 - log) - log(eta$sigma) * log)
+  }
+  f$p <- function(y, eta, log = FALSE) {
+    ifelse(y < 0, 0, pnorm((y - eta$mu) / eta$sigma, log = log))
+  }
+  f$q <- function(y, eta, ...) {
+    rval <- qnorm(y) * eta$sigma + eta$mu
+    pmax(pmin(rval, Inf), 0)
+  }
+  f$r <- function(n, y, eta) {
+    rval <- rnorm(n) * eta$sigma + eta$mu
+    pmax(pmin(rval, Inf), 0)
   }
   f
 }

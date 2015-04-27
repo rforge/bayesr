@@ -133,7 +133,6 @@ for(j in unique(d$id)) {
 
 d$rain <- d$rain + rnorm(n, sd = 0.3)
 
-b <- bamlss(rain ~ ti(time,bs="cc") + ti(lon,lat) + ti(time,lon,lat,bs=c("cc","tp"),d=c(1,2)),
-  data = d, n.iter = 200, burnin = 0, thin = 1, propose = "iwls0")
+b <- bamlss(rain ~ te(time,lon,lat,bs=c("cc","tp"),d=c(1,2), k = c(5, 10)), data = d, n.iter = 200, burnin = 0, thin = 1, propose = "iwls", gam.side = FALSE, binning = TRUE)
 
 

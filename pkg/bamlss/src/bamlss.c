@@ -1031,6 +1031,14 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   ++nProtected;
   REAL(alpha)[0] = (pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1);
 
+Rprintf("pibetaprop %g\n", pibetaprop);
+Rprintf("qbeta %g\n", qbeta);
+Rprintf("p2 %g\n", p2);
+Rprintf("pibeta %g\n", pibeta);
+Rprintf("qbetaprop %g\n", qbetaprop);
+Rprintf("p1 %g\n", p1);
+Rprintf("alpha %g\n", exp(REAL(alpha)[0]));
+
   /* Stuff everything together. */
   SEXP rval;
   PROTECT(rval = allocVector(VECSXP, 2));
@@ -1109,7 +1117,6 @@ SEXP cnorm_score_mu(SEXP y, SEXP mu, SEXP sigma, SEXP check)
       pdist = pnorm5(-muptr[i] / sigmaptr[i], 0.0, 1.0, 1, 0);
       mills = sigmaptr[i] * ddist / pdist;
       rvalptr[i] = -1 * mills / sigmaptr[i];
-      //rvalptr[i] = -1 * dnorm(0.0, muptr[i], sigmaptr[i], 0) / pnorm5(0.0, muptr[i], sigmaptr[i], 1, 0);
     } else {
       rvalptr[i] = (yptr[i] - muptr[i]) / pow(sigmaptr[i], 2.0);
     }

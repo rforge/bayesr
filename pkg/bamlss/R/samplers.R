@@ -69,7 +69,7 @@ GMCMC <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
   resids <- as.numeric(rep(0, length = n))
 
   samps <- gmcmc(fun = family, theta = theta, fitfun = fitfun, data = smooths,
-    propose = propose2, logLik = logLik, n.iter = n.iter, burnin = burnin,
+    propose = propose2, logLik = logLik, n.iter = n.iter, burnin = burnin, thin = thin,
     response = response, simplify = FALSE, zworking = zworking, resids = resids,
     cores = cores, chains = chains, combine = FALSE, ...)
 
@@ -660,22 +660,17 @@ gmcmc_slice <- function(fun, theta, id, prior, ...)
 }
 
 
-gmcmc_sm.iwls <- function(family, theta, id, prior,
+gmcmc_sm.iwls1 <- function(family, theta, id, prior,
   eta, response, data, zworking, resids, rho, ...)
 {
-  rval <- try(.Call("gmcmc_iwls", family, theta, id, eta,
-    response, data, zworking, resids, rho), silent = TRUE)
-  if(inherits(rval, "try-error")) {
-    ## warning(paste('problems in C function "gmcmc_iwls", message:', as.character(rval)), call. = FALSE)
-    rval <- list(parameters = theta[[id[1]]][[id[2]]], alpha = log(0))
-  }
+  rval <- .Call("gmcmc_iwls", family, theta, id, eta, response, data, zworking, resids, rho)
   data$state$parameters <- as.numeric(rval$parameters)
   names(data$state$parameters) <- names(rval$parameters)
   rval$extra <- c("edf" = data$edf(data))
   rval
 }
 
-gmcmc_sm.iwls0 <- function(family, theta, id, prior, eta, response, data, ...)
+gmcmc_sm.iwls0 <- gmcmc_sm.iwls <- function(family, theta, id, prior, eta, response, data, ...)
 {
   require("mvtnorm")
 
@@ -1318,6 +1313,7 @@ null.sampler <- function(x, criterion = c("AICc", "BIC", "AIC"), n.samples = 200
   response <- attr(x, "response.vec")
   eta <- get.eta(x)
   edf <- 0
+  edf_sm <- edf_sm_n <- NULL
 
   for(j in 1:np) {
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
@@ -1334,6 +1330,8 @@ null.sampler <- function(x, criterion = c("AICc", "BIC", "AIC"), n.samples = 200
       if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
         nhtau2 <- nh2[grepl("tau2", nh2)]
         tedf <- x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]])
+        edf_sm <- cbind(edf_sm, rep(tedf, length = n.samples))
+        edf_sm_n <- c(edf_sm_n, paste(nx[j], x[[nx[j]]]$smooth[[sj]]$label, "edf", sep = "."))
         samps[1L, nhtau2] <- get.state(x[[nx[j]]]$smooth[[sj]], "tau2") ##tedf
         edf <- edf + tedf
         sn <- c(sn, paste(nx[j], x[[nx[j]]]$smooth[[sj]]$label, paste("tau2", 1:length(nhtau2), sep = ""), sep = "."))
@@ -1343,7 +1341,9 @@ null.sampler <- function(x, criterion = c("AICc", "BIC", "AIC"), n.samples = 200
     }
   }
 
+  colnames(edf_sm) <- edf_sm_n
   colnames(samps) <- sn
+  samps <- cbind(samps, edf_sm)
   IC <- as.numeric(get.ic(family, response, family$map2par(eta), edf, length(eta[[1L]]), criterion))
   samps <- cbind(samps, IC, edf)
   colnames(samps)[(ncol(samps) - 1):ncol(samps)] <- c(criterion, "save.edf")
