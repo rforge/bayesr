@@ -452,20 +452,22 @@ gaussian.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
     "gradient" = list(
       "mu" = function(g, y, eta, x, ...) {
         eta$mu <- eta$mu + x$get.mu(x$X, g)
-        crossprod(x$X, drop((y - eta$mu) / (exp(eta$sigma)^2)))
+        crossprod(if(!is.null(x$xbin.ind)) x$X[x$xbin.ind, , drop = FALSE] else x$X, drop((y - eta$mu) / (exp(eta$sigma)^2)))
       },
       "sigma" = function(g, y, eta, x, ...) {
         eta$sigma <- eta$sigma + x$get.mu(x$X, g)
-        crossprod(x$X, drop(-1 + (y - eta$mu)^2 / (exp(eta$sigma)^2)))
+        crossprod(if(!is.null(x$xbin.ind)) x$X[x$xbin.ind, , drop = FALSE] else x$X, drop(-1 + (y - eta$mu)^2 / (exp(eta$sigma)^2)))
       }
     ),
     "hessian" = list(
       "mu" = function(g, y, eta, x, ...) {
-        crossprod(x$X, x$X * drop(1 / exp(eta$sigma)^2))
+        if(!is.null(x$xbin.ind)) {
+          return(crossprod(x$X[x$xbin.ind, , drop = FALSE], x$X[x$xbin.ind, , drop = FALSE] * drop(1 / exp(eta$sigma)^2)))
+        } else {
+          return(crossprod(x$X, x$X * drop(1 / exp(eta$sigma)^2)))
+        }
       },
       "sigma" = function(g, y, eta, x, ...) {
-#        eta$sigma <- eta$sigma + x$get.mu(x$X, g)
-#        crossprod(x$X * drop((y - eta$mu)^2 / (exp(eta$sigma))), x$X)
         if(is.null(x$XX)) return(crossprod(x$X)) else return(x$XX)
       }
     ),
@@ -711,8 +713,8 @@ cnorm.bamlss <- function(...)
     x
   }
   f$engine <- function(x, ...) {
-    ## sampler <- function(x, ...) { GMCMC(x, propose = "iwls0", ...) }
-    stacker(x, optimizer = bfit_cnorm, sampler = null.sampler, ...)
+    sampler <- function(x, ...) { GMCMC(x, propose = "iwls", ...) }
+    stacker(x, optimizer = bfit_cnorm, sampler = sampler, ...)
   }
   f$score <- list(
     "mu" = function(y, eta, ...) {

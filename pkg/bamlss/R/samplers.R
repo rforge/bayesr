@@ -660,7 +660,7 @@ gmcmc_slice <- function(fun, theta, id, prior, ...)
 }
 
 
-gmcmc_sm.iwls1 <- function(family, theta, id, prior,
+gmcmc_sm.00iwls <- function(family, theta, id, prior,
   eta, response, data, zworking, resids, rho, ...)
 {
   rval <- .Call("gmcmc_iwls", family, theta, id, eta, response, data, zworking, resids, rho)

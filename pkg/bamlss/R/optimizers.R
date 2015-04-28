@@ -1040,7 +1040,8 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind)
 
 
 ## Survival models transformer function.
-surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", globalgrid = TRUE, ...)
+surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", globalgrid = TRUE,
+  timevar = NULL, idvar = NULL, ...)
 {
   ntd <- timedependent
   if(!all(ntd %in% names(x)))
@@ -1051,22 +1052,35 @@ surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", glob
 
   ## Create the time grid.
   response <- attr(x, "response.vec")
+
   if(!inherits(response, "Surv"))
     stop("the response variable is not a 'Surv' object, use function Surv() or Surv2()!")
-  nobs <- nrow(response)
-  grid <- function(upper, length){
-    seq(from = 0, to = upper, length = length)
+
+  if(!is.null(idvar)) {
+print(names(attr(x, "model.frame")))
+print(idvar %in% names(attr(x, "model.frame")))
+    if(!(idvar %in% names(attr(x, "model.frame"))))
+      stop(paste("variable", idvar, "not in supplied data set!"))
+    response2 <- cbind(response[, "time"], attr(x, "model.frame")[[idvar]])
+print(response2)
+stop("ok")
+  } else {
+    nobs <- nrow(response)
+    grid <- function(upper, length){
+      seq(from = 0, to = upper, length = length)
+    }
+    grid <- lapply(response[, "time"], grid, length = subdivisions)
   }
-  grid <- lapply(response[, "time"], grid, length = subdivisions)
   width <- rep(NA, nobs)
   for(i in 1:nobs)
     width[i] <- grid[[i]][2]
-  ## grid <- matrix(unlist(grid), nrow = nobs, ncol = subdivisions, byrow = TRUE)
   attr(response, "width") <- width
   attr(response, "subdivisions") <- subdivisions
   attr(response, "grid") <- grid
   attr(x, "response.vec") <- response
   yname <- all.names(x[[ntd[1]]]$formula[2])[2]
+  if(is.null(timevar))
+    timevar <- yname
 
   ## Assign time grid predict functions
   ## and create time dependant predictor.
@@ -1075,7 +1089,7 @@ surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", glob
     if(!is.null(x[[ntd[i]]]$pterms)) {
       x[[ntd[i]]]$smooth$parametric <- param_time_transform(x[[ntd[i]]]$smooth$parametric,
         x[[ntd[i]]]$param.formula, attr(x, "model.frame"),
-        x[[ntd[i]]]$param.contrasts, grid, yname)
+        x[[ntd[i]]]$param.contrasts, grid, yname, timevar)
       eta_Surv_timegrid <- eta_Surv_timegrid + x[[ntd[i]]]$smooth$parametric$state$fitted_timegrid
     }
     if(length(x[[ntd[i]]]$smooth)) {
@@ -1084,7 +1098,7 @@ surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", glob
           xterm <- x[[ntd[i]]]$smooth[[j]]$term
           by <- if(x[[ntd[i]]]$smooth[[j]]$by != "NA") x[[ntd[i]]]$smooth[[j]]$by else NULL
           x[[ntd[i]]]$smooth[[j]] <- sm_time_transform(x[[ntd[i]]]$smooth[[j]],
-            attr(x, "model.frame")[, unique(c(xterm, yname, by))], grid, yname)
+            attr(x, "model.frame")[, unique(c(xterm, yname, by, timevar))], grid, yname, timevar)
           eta_Surv_timegrid <- eta_Surv_timegrid + x[[ntd[i]]]$smooth[[j]]$state$fitted_timegrid
         }
       }
@@ -1123,11 +1137,11 @@ bfit0_surv_newton <- function(x, family, response, eta, id, ...)
   return(state)
 }
 
-param_time_transform <- function(x, formula, data, contrasts, grid, yname)
+param_time_transform <- function(x, formula, data, contrasts, grid, yname, timevar)
 {
   X <- Xn <- NULL
   for(j in names(data)) {
-    if((!grepl("Surv(", j, fixed = TRUE) & !grepl("Surv2(", j, fixed = TRUE)) & (j != yname)) {
+    if((!grepl("Surv(", j, fixed = TRUE) & !grepl("Surv2(", j, fixed = TRUE)) & (j != yname) & (j != timevar)) {
       X <- cbind(X, rep(data[[j]], each = length(grid[[1]])))
       Xn <- c(Xn, j)
     }
@@ -1152,7 +1166,7 @@ param_time_transform <- function(x, formula, data, contrasts, grid, yname)
   x
 }
 
-sm_time_transform <- function(x, data, grid, yname)
+sm_time_transform <- function(x, data, grid, yname, timevar)
 {
   X <- NULL
   for(j in x$term) {

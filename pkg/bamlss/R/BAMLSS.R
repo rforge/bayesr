@@ -2735,7 +2735,7 @@ plot.bamlss.effect.default <- function(x, ...) {
         args$density <- NULL
         if(is.null(args$main))
           args$main <- attr(x, "specs")$label
-        args$x <- density(x[, "50%"])
+        args$x <- density(x[, "50%"], na.rm = TRUE)
         if(!limNULL)
           args$xlim <- args$ylim
         do.call("plot", delete.args(stats:::plot.density, args, c("main", "xlim")))
