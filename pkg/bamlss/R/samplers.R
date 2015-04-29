@@ -1292,14 +1292,19 @@ gmcmc_newton <- function(fun, theta, id, prior, ...)
 }
 
 
-null.sampler <- function(x, criterion = c("AICc", "BIC", "AIC"), n.samples = 200, ...)
+null.sampler <- function(x, n.samples = 200, criterion = c("AICc", "BIC", "AIC"), ...)
 {
-  if(n.samples > 1)
-    require("mvtnorm")
-
   criterion <- match.arg(criterion)
 
-  par <- make_par(x)
+  if(n.samples > 1) {
+    require("mvtnorm")
+    hessian <- if(is.null(attr(x, "hessian"))) {
+      opt0(x, hessian = TRUE, verbose = FALSE, ...)
+    } else attr(x, "hessian")
+    hessian <- solve(-1 * hessian)
+  }
+
+  par <- make_par(x, add.tau2 = TRUE)
   family <- attr(x, "family")
  
   nx <- family$names
@@ -1321,7 +1326,8 @@ null.sampler <- function(x, criterion = c("AICc", "BIC", "AIC"), n.samples = 200
       nhg <- nh2[!grepl("tau2", nh2)]
       g <- get.state(x[[nx[j]]]$smooth[[sj]], "gamma")
       if(n.samples > 1) {
-        sigma <- get.sigma(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j])
+        ## sigma <- get.sigma(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j])
+        sigma <- hessian[nhg, nhg, drop = FALSE]
         g <- rmvnorm(n = n.samples, mean = g, sigma = sigma)
         colnames(g) <- nhg
         samps[, nhg] <- g

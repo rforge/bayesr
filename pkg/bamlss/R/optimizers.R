@@ -645,7 +645,7 @@ get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc",
 
 
 ## Function to create full parameter vector.
-make_par <- function(x, type = 1) {
+make_par <- function(x, type = 1, add.tau2 = FALSE) {
   family <- attr(x, "family")
   nx <- family$names
   if(!all(nx %in% names(x)))
@@ -657,6 +657,11 @@ make_par <- function(x, type = 1) {
       tpar <- x[[nx[j]]]$smooth[[sj]]$state$parameters
       tlower <- x[[nx[j]]]$smooth[[sj]]$lower
       tupper <- x[[nx[j]]]$smooth[[sj]]$upper
+      if(!add.tau2) {
+        tlower <- tlower[!grepl("tau2", names(tlower))]
+        tupper <- tupper[!grepl("tau2", names(tupper))]
+        tpar <- tpar[!grepl("tau2", names(tpar))]
+      }
       g <- get.par(tpar, "g")
       npar <- paste(paste(nx[j], "h1", x[[nx[j]]]$smooth[[sj]]$label, sep = ":"), 1:length(g), sep = ".")
       if(length(tau2 <- get.par(tpar, "tau2"))) {
@@ -877,7 +882,7 @@ bfit0_optim <- function(x, family, response, eta, id, ...)
       x$state$parameters <- tpar
       edf <- x$edf(x)
       eta2[[id]] <- eta[[id]] + fitted(x$state)
-      IC <- get.ic(family, response, family$map2par(eta2), edf0 + edf, length(eta2[[id]]), x$criterion, ...)
+      IC <- get.ic(family, response, family$map2par(eta2), edf0 + edf, length(eta2[[id]]), type = x$criterion, ...)
       IC
     }
     if(length(get.state(x, "tau2")) < 2) {
@@ -917,7 +922,10 @@ set.all.par <- function(par, x)
   for(j in 1:np) {
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
       tpar <- par[grep(paste("p", j, ".t", sj, ".", sep = ""), names(par), fixed = TRUE)]
-      x[[nx[j]]]$smooth[[sj]]$state$parameters <- tpar
+      x[[nx[j]]]$smooth[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth[[sj]]$state$parameters, get.par(tpar, "g"), "g")
+      if(any(grepl("tau2", tpar))) {
+        x[[nx[j]]]$smooth[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth[[sj]]$state$parameters, get.par(tpar, "tau2"), "tau2")
+      }
       x[[nx[j]]]$smooth[[sj]]$state$fitted.values <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X,
         get.par(tpar, "g"))
     }
@@ -928,30 +936,28 @@ set.all.par <- function(par, x)
 
 log_posterior <- function(par, x, verbose = TRUE, criterion = "AICc", digits = 3, scale = 1)
 {
-  eta <- get.eta(x)
-  nx <- names(eta)
-  np <- length(eta)
+  nx <- names(x)
+  np <- length(nx)
+  eta <- vector(mode = "list", length = np)
+  names(eta) <- nx
   family <- attr(x, "family")
-  lprior <- 0
-  edf <- 0
+  lprior <- 0.0
+  edf <- 0.0
   start <- 1
   for(j in 1:np) {
-    eta[[nx[j]]] <- 0
+    eta[[nx[j]]] <- 0.0
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
-      end <- length(x[[nx[j]]]$smooth[[sj]]$state$parameters) + start - 1
+      g <- get.state(x[[nx[j]]]$smooth[[sj]], "g")
+      end <- length(g) + start - 1
       i <- start:end
       tpar <- par[i]
-      names(tpar) <- names(x[[nx[j]]]$smooth[[sj]]$state$parameters)
+      names(tpar) <- names(g)
       start <- max(i) + 1
-      if(any((tau2 <- get.par(tpar, "tau2")) < 0)) {
-        tau2[tau2 < 0] <- rep(.Machine$double.eps^0.25, sum(tau2 < 0))
-        tpar <- set.par(tpar, tau2, "tau2")
-      }
-      x[[nx[j]]]$smooth[[sj]]$state$parameters <- tpar
+      x[[nx[j]]]$smooth[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth[[sj]]$state$parameters, tpar, "g")
       x[[nx[j]]]$smooth[[sj]]$state$fitted.values <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X,
         get.par(tpar, "g"))
       eta[[nx[j]]] <- eta[[nx[j]]] + fitted(x[[nx[j]]]$smooth[[sj]]$state)
-      lprior <- lprior + x[[nx[j]]]$smooth[[sj]]$prior(tpar)
+      lprior <- lprior + x[[nx[j]]]$smooth[[sj]]$prior(c(tpar, get.state(x[[nx[j]]]$smooth[[sj]], "tau2")))
       edf <- edf + x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]])
     }
   }
@@ -959,13 +965,8 @@ log_posterior <- function(par, x, verbose = TRUE, criterion = "AICc", digits = 3
   lp <- as.numeric(ll + lprior)
 
   if(verbose) {
-    nobs <- if(is.null(dim(attr(x, "response.vec")))) {
-      length(attr(x, "response.vec"))
-    } else nrow(attr(x, "response.vec"))
-    IC <- get.ic(family, attr(x, "response.vec"), family$map2par(eta), edf, nobs, criterion)
     cat("\r")
-    vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
-      " logPost ", fmt(lp, width = 8, digits = digits),
+    vtxt <- paste(" logPost ", fmt(lp, width = 8, digits = digits),
       " edf ", fmt(edf, width = 6, digits = digits), sep = "")
     cat(vtxt)
     if(.Platform$OS.type != "unix") flush.console()
@@ -976,20 +977,17 @@ log_posterior <- function(par, x, verbose = TRUE, criterion = "AICc", digits = 3
 
 grad_posterior <- function(par, x, ...)
 {
-  eta <- get.eta(x)
-  nx <- names(eta)
-  np <- length(eta)
+  nx <- names(x)
+  np <- length(nx)
+  eta <- vector(mode = "list", length = np)
+  names(eta) <- nx
   family <- attr(x, "family")
   grad <- NULL
   for(j in 1:np) {
     eta[[nx[j]]] <- 0
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
       tpar <- par[grep(paste("p", j, ".t", sj, ".", sep = ""), names(par), fixed = TRUE)]
-      if(any((tau2 <- get.par(tpar, "tau2")) < 0)) {
-        tau2[tau2 < 0] <- rep(.Machine$double.eps^0.25, sum(tau2 < 0))
-        tpar <- set.par(tpar, tau2, "tau2")
-      }
-      x[[nx[j]]]$smooth[[sj]]$state$parameters <- tpar
+      x[[nx[j]]]$smooth[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth[[sj]]$state$parameters, tpar, "g")
       x[[nx[j]]]$smooth[[sj]]$state$fitted.values <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X,
         get.par(tpar, "g"))
       eta[[nx[j]]] <- eta[[nx[j]]] + fitted(x[[nx[j]]]$smooth[[sj]]$state)
@@ -999,7 +997,7 @@ grad_posterior <- function(par, x, ...)
     score <- family$score[[nx[j]]](attr(x, "response.vec"), family$map2par(eta))
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
       tpar <- par[grep(paste("p", j, ".t", sj, ".", sep = ""), names(par), fixed = TRUE)]
-      tgrad <- x[[nx[j]]]$smooth[[sj]]$grad(score, tpar)
+      tgrad <- x[[nx[j]]]$smooth[[sj]]$grad(score, tpar, full = FALSE)
       grad <- c(grad, tgrad)
     }
   }
@@ -1007,26 +1005,33 @@ grad_posterior <- function(par, x, ...)
 }
 
 
-opt0 <- function(x, criterion = c("AICc", "BIC", "AIC"), verbose = TRUE, digits = 3, ...)
+opt0 <- function(x, verbose = TRUE, digits = 3, hessian = FALSE, ...)
 {
   x <- bamlss.setup(x, ...)
 
-  criterion = match.arg(criterion)
-
-  par <- make_par(x)
+  par <- make_par(x, add.tau2 = FALSE)
   family <- attr(x, "family")
 
-  opt <- optim(par$par, fn = log_posterior, gr = if(!is.null(family$score)) grad_posterior else NULL,
-    x = x, method = "L-BFGS-B", lower = par$lower, upper = par$upper, verbose = verbose,
-    criterion = criterion, digits = digits, control = list(fnscale = -1, maxit = 5), hessian = TRUE)
+  if(!hessian) {
+    opt <- optim(par$par, fn = log_posterior,
+      gr = if(!is.null(family$score)) grad_posterior else NULL,
+      x = x, method = "BFGS", verbose = verbose,
+      digits = digits, control = list(fnscale = -1), hessian = TRUE)
  
-  if(verbose) cat("\n")
+    if(verbose) cat("\n")
 
-  x <- set.all.par(opt$par, x)
-  attr(x, "hessian") <- opt$hessian
-  attr(x, "converged") <- opt$convergence < 1
+    x <- set.all.par(opt$par, x)
+    attr(x, "hessian") <- opt$hessian
+    attr(x, "converged") <- opt$convergence < 1
 
-  x
+    return(x)
+  } else {
+    opt <- optimHess(par$par, fn = log_posterior,
+      gr = if(!is.null(family$score)) grad_posterior else NULL,
+      x = x, verbose = verbose, digits = digits,
+      control = list(fnscale = -1))
+    return(opt)
+  }
 }
 
 
