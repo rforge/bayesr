@@ -966,10 +966,12 @@ log_posterior <- function(par, x, verbose = TRUE, criterion = "AICc", digits = 3
 
   if(verbose) {
     cat("\r")
-    vtxt <- paste(" logPost ", fmt(lp, width = 8, digits = digits),
-      " edf ", fmt(edf, width = 6, digits = digits), sep = "")
+    vtxt <- paste("logPost ", fmt(lp, width = 8, digits = digits),
+      " edf ", fmt(edf, width = 6, digits = digits),
+      " iteration ", formatC(bamlss_log_posterior_iteration, width = 4), sep = "")
     cat(vtxt)
     if(.Platform$OS.type != "unix") flush.console()
+    bamlss_log_posterior_iteration <<- bamlss_log_posterior_iteration + 1
   }
 
   return(lp * scale)
@@ -1005,7 +1007,8 @@ grad_posterior <- function(par, x, ...)
 }
 
 
-opt0 <- function(x, verbose = TRUE, digits = 3, hessian = FALSE, ...)
+opt0 <- function(x, verbose = TRUE, digits = 3, hessian = FALSE,
+  eps = .Machine$double.eps^0.25, maxit = 100, ...)
 {
   x <- bamlss.setup(x, ...)
 
@@ -1013,12 +1016,19 @@ opt0 <- function(x, verbose = TRUE, digits = 3, hessian = FALSE, ...)
   family <- attr(x, "family")
 
   if(!hessian) {
+    if(verbose)
+      bamlss_log_posterior_iteration <<- 1
+
     opt <- optim(par$par, fn = log_posterior,
-      gr = if(!is.null(family$score)) grad_posterior else NULL,
+      gr = if(!is.null(family$score)) NULL else NULL,
       x = x, method = "BFGS", verbose = verbose,
-      digits = digits, control = list(fnscale = -1), hessian = TRUE)
+      digits = digits, control = list(fnscale = -1, reltol = eps, maxit = maxit),
+      hessian = TRUE)
  
-    if(verbose) cat("\n")
+    if(verbose) {
+      cat("\n")
+      rm(bamlss_log_posterior_iteration, envir = .GlobalEnv)
+    }
 
     x <- set.all.par(opt$par, x)
     attr(x, "hessian") <- opt$hessian
@@ -1029,7 +1039,7 @@ opt0 <- function(x, verbose = TRUE, digits = 3, hessian = FALSE, ...)
     opt <- optimHess(par$par, fn = log_posterior,
       gr = if(!is.null(family$score)) grad_posterior else NULL,
       x = x, verbose = verbose, digits = digits,
-      control = list(fnscale = -1))
+      control = list(fnscale = -1, reltol = eps, maxit = maxit))
     return(opt)
   }
 }

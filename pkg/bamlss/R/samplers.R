@@ -1326,8 +1326,17 @@ null.sampler <- function(x, n.samples = 200, criterion = c("AICc", "BIC", "AIC")
       nhg <- nh2[!grepl("tau2", nh2)]
       g <- get.state(x[[nx[j]]]$smooth[[sj]], "gamma")
       if(n.samples > 1) {
-        ## sigma <- get.sigma(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j])
         sigma <- hessian[nhg, nhg, drop = FALSE]
+        if(any(eigen(sigma, symmetric = TRUE)$values <= 0)) {
+          require("Matrix")
+          sigma2 <- try(nearPD(sigma)$mat, silent = TRUE)
+          if(inherits(sigma2, "try-error")) {
+            sigma2 <- diag(sigma)
+            sigma2 <- if(length(sigma2) < 2) matrix(sigma2, 1, 1) else diag(sigma2)
+          }
+          sigma <- as.matrix(sigma2)
+        }
+        if(length(sigma) < 2) sigma <- matrix(sigma, 1, 1)
         g <- rmvnorm(n = n.samples, mean = g, sigma = sigma)
         colnames(g) <- nhg
         samps[, nhg] <- g
