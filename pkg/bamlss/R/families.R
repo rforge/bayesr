@@ -712,10 +712,10 @@ cnorm.bamlss <- function(...)
     attr(x, "response.vec") <- y
     x
   }
-  f$engine <- function(x, ...) {
-    sampler <- function(x, ...) { GMCMC(x, propose = "iwls", ...) }
-    stacker(x, optimizer = bfit_cnorm, sampler = sampler, ...)
-  }
+#  f$engine <- function(x, ...) {
+#    sampler <- function(x, ...) { GMCMC(x, propose = "iwls", ...) }
+#    stacker(x, optimizer = bfit_cnorm, sampler = sampler, ...)
+#  }
   f$score <- list(
     "mu" = function(y, eta, ...) {
       .Call("cnorm_score_mu",

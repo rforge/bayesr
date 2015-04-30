@@ -81,17 +81,17 @@ legend("topleft", c("crch", "bamlss"), lwd = 1, col = c("red", "green"))
 
 load("~/svn/SnowSafeFX/data/ehyddata.rda")
 
-dat$obs[dat$obs == 0] <- 0.01
+dat$obs[dat$obs < 0] <- 0
 dat$yday <- as.POSIXlt(dat$date)$yday
+dat$year <- as.POSIXlt(dat$date)$year + 1900
+dat <- subset(dat, year >= 2011)
 
 f <- list(
   sqrt(obs) ~ s(yday, bs = "cc") + s(alt) + s(lon, lat),
             ~ s(yday, bs = "cc") + s(alt) + s(lon, lat)
 )
 
-b1 <- bamlss(f, data = dat, family = gF(cens, left = 0),
-  method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls",
-  n.iter = 100, burnin = 0, thin = 1)
+b1 <- bamlss(f, data = dat, optimizer = opt0, family = cnorm, sampler = NULL)
 
 
 set.seed(111)

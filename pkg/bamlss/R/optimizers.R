@@ -199,14 +199,18 @@ smooth.bamlss <- function(x, ...) {
 ## Simple extractor function.
 get.state <- function(x, what = NULL) {
   if(is.null(what)) return(x$state)
-  if(what %in% c("tau2", "tau", "lambda")) {
-    p <- x$state$parameters
-    return(p[grep("tau", names(p))])
+  if(what %in% c("par", "parameters")) {
+    return(x$state$parameters)
   } else {
-    if(what %in% c("g", "gamma")) {
+    if(what %in% c("tau2", "tau", "lambda")) {
       p <- x$state$parameters
-      return(p[grep("g", names(p))])
-    } else return(x$state[[what]])
+      return(p[grep("tau", names(p))])
+    } else {
+      if(what %in% c("g", "gamma")) {
+        p <- x$state$parameters
+        return(p[grep("g", names(p))])
+      } else return(x$state[[what]])
+    }
   }
 }
 
@@ -966,7 +970,8 @@ log_posterior <- function(par, x, verbose = TRUE, criterion = "AICc", digits = 3
 
   if(verbose) {
     cat("\r")
-    vtxt <- paste("logPost ", fmt(lp, width = 8, digits = digits),
+    vtxt <- paste("logLik ", fmt(ll, width = 8, digits = digits),
+      " logPost ", fmt(lp, width = 8, digits = digits),
       " edf ", fmt(edf, width = 6, digits = digits),
       " iteration ", formatC(bamlss_log_posterior_iteration, width = 4), sep = "")
     cat(vtxt)
@@ -996,11 +1001,21 @@ grad_posterior <- function(par, x, ...)
     }
   }
   for(j in 1:np) {
-    score <- family$score[[nx[j]]](attr(x, "response.vec"), family$map2par(eta))
-    for(sj in seq_along(x[[nx[j]]]$smooth)) {
-      tpar <- par[grep(paste("p", j, ".t", sj, ".", sep = ""), names(par), fixed = TRUE)]
-      tgrad <- x[[nx[j]]]$smooth[[sj]]$grad(score, tpar, full = FALSE)
-      grad <- c(grad, tgrad)
+    if(!is.null(family$gradient[[nx[j]]])) {
+      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        tp <- get.state(x[[nx[j]]]$smooth[[sj]], "par")
+        tgrad <- drop(family$gradient[[nx[j]]](get.par(tp, "g"), attr(x, "response.vec"), eta, x[[nx[j]]]$smooth[[sj]]))
+        if(!is.null(x[[nx[j]]]$smooth[[sj]]$grad)) {
+          tgrad <- tgrad + drop(x[[nx[j]]]$smooth[[sj]]$grad(score = NULL, tp, full = FALSE))
+        }
+        grad <- c(grad, tgrad)
+      }
+    } else {
+      score <- family$score[[nx[j]]](attr(x, "response.vec"), family$map2par(eta))
+      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        tgrad <- x[[nx[j]]]$smooth[[sj]]$grad(score, x[[nx[j]]]$smooth[[sj]]$state$parameters, full = FALSE)
+        grad <- c(grad, tgrad)
+      }
     }
   }
   return(grad)
@@ -1020,7 +1035,7 @@ opt0 <- function(x, verbose = TRUE, digits = 3, hessian = FALSE,
       bamlss_log_posterior_iteration <<- 1
 
     opt <- optim(par$par, fn = log_posterior,
-      gr = if(!is.null(family$score)) NULL else NULL,
+      gr = if(!is.null(family$score)) grad_posterior else NULL,
       x = x, method = "BFGS", verbose = verbose,
       digits = digits, control = list(fnscale = -1, reltol = eps, maxit = maxit),
       hessian = TRUE)
