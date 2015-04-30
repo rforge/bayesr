@@ -320,7 +320,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
               theta.save[[i]][[j]]$samples[js, ] <- theta[[i]][[j]]
               theta.save[[i]][[j]]$alpha[js] <- min(c(exp(state$alpha), 1), na.rm = TRUE)
               theta.save[[i]][[j]]$accepted[js] <- accepted
-              if(!is.null(state$extra) & accepted) {
+              if(!is.null(state$extra)) {
                 theta.save[[i]][[j]]$extra[js, ] <- state$extra
               }
               ll[js] <- if(!is.null(logLik)) {
@@ -348,7 +348,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
             theta.save[[i]]$samples[js, ] <- theta[[i]]
             theta.save[[i]]$alpha[js] <- min(c(exp(state$alpha), 1), na.rm = TRUE)
             theta.save[[i]]$accepted[js] <- accepted
-            if(!is.null(state$extra) & accepted) {
+            if(!is.null(state$extra)) {
               theta.save[[i]]$extra[js, ] <- state$extra
             }
             ll[js] <- if(!is.null(logLik)) {
@@ -806,8 +806,9 @@ gmcmc_sm.mvn <- function(family, theta, id, prior, eta, response, data, ...)
 
   eta2 <- eta
   eta2[[id[1]]] <- eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values")
-
   if(!is.null(data$state)) {
+    if(!is.null(data$state$hessian))
+      attr(theta, "hess") <- data$state$hessian
     if(is.null(attr(theta, "hess"))) {
       tpar <- data$state$parameters
 

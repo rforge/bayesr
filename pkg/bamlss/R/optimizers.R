@@ -919,8 +919,10 @@ bfit0_optim <- function(x, family, response, eta, id, ...)
 }
 
 
-set.all.par <- function(par, x)
+set.all.par <- function(par, x, hessian = NULL)
 {
+  if(!is.null(hessian))
+    hessian <- solve(-1 * hessian)
   nx <- names(x)
   np <- length(x)
   for(j in 1:np) {
@@ -932,6 +934,21 @@ set.all.par <- function(par, x)
       }
       x[[nx[j]]]$smooth[[sj]]$state$fitted.values <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X,
         get.par(tpar, "g"))
+      if(!is.null(hessian)) {
+        ntpar <- names(tpar)[!grepl("tau2", names(tpar))]
+        sigma <- hessian[ntpar, ntpar]
+        if(any(eigen(sigma, symmetric = TRUE)$values <= 0)) {
+          require("Matrix")
+          sigma2 <- try(nearPD(sigma)$mat, silent = TRUE)
+          if(inherits(sigma2, "try-error")) {
+            sigma2 <- diag(sigma)
+            sigma2 <- if(length(sigma2) < 2) matrix(sigma2, 1, 1) else diag(sigma2)
+          }
+          sigma <- as.matrix(sigma2)
+        }
+        if(length(sigma) < 2) sigma <- matrix(sigma, 1, 1)
+        x[[nx[j]]]$smooth[[sj]]$state$hessian <- sigma
+      }
     }
   }
   return(x)
@@ -1045,7 +1062,7 @@ opt0 <- function(x, verbose = TRUE, digits = 3, hessian = FALSE,
       rm(bamlss_log_posterior_iteration, envir = .GlobalEnv)
     }
 
-    x <- set.all.par(opt$par, x)
+    x <- set.all.par(opt$par, x, opt$hessian)
     attr(x, "hessian") <- opt$hessian
     attr(x, "converged") <- opt$convergence < 1
 

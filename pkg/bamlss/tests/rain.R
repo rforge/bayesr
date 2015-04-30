@@ -84,14 +84,14 @@ load("~/svn/SnowSafeFX/data/ehyddata.rda")
 dat$obs[dat$obs < 0] <- 0
 dat$yday <- as.POSIXlt(dat$date)$yday
 dat$year <- as.POSIXlt(dat$date)$year + 1900
-dat <- subset(dat, year >= 2011)
+dat <- subset(dat, year >= 2009 & year <= 2011)
 
 f <- list(
-  sqrt(obs) ~ s(yday, bs = "cc") + s(alt) + s(lon, lat),
+  sqrt(obs) ~ te(yday,lon,lat, bs=c("cc","tp"), d=c(1, 2)) + s(alt) + s(lon, lat),
             ~ s(yday, bs = "cc") + s(alt) + s(lon, lat)
 )
 
-b1 <- bamlss(f, data = dat, optimizer = opt0, family = cnorm, sampler = NULL)
+b1 <- bamlss(f, data = dat, optimizer = opt0, family = ff, sampler = NULL)
 
 
 set.seed(111)
