@@ -1103,19 +1103,22 @@ surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", glob
   if(!inherits(response, "Surv"))
     stop("the response variable is not a 'Surv' object, use function Surv() or Surv2()!")
 
+  grid <- function(upper, length){
+    seq(from = 0, to = upper, length = length)
+  }
+
+  take <- NULL
   if(!is.null(idvar)) {
-print(names(attr(x, "model.frame")))
-print(idvar %in% names(attr(x, "model.frame")))
     if(!(idvar %in% names(attr(x, "model.frame"))))
       stop(paste("variable", idvar, "not in supplied data set!"))
     response2 <- cbind(response[, "time"], attr(x, "model.frame")[[idvar]])
-print(response2)
-stop("ok")
+    colnames(response2) <- c("time", idvar)
+    take <- !duplicated(response2)
+    response2 <- response2[take, , drop = FALSE]
+    nobs <- nrow(response2)
+    grid <- lapply(response2[, "time"], grid, length = subdivisions)
   } else {
     nobs <- nrow(response)
-    grid <- function(upper, length){
-      seq(from = 0, to = upper, length = length)
-    }
     grid <- lapply(response[, "time"], grid, length = subdivisions)
   }
   width <- rep(NA, nobs)
@@ -1124,7 +1127,8 @@ stop("ok")
   attr(response, "width") <- width
   attr(response, "subdivisions") <- subdivisions
   attr(response, "grid") <- grid
-  attr(x, "response.vec") <- response
+  attr(response, "nobs") <- nobs
+  attr(response, "take") <- take
   yname <- all.names(x[[ntd[1]]]$formula[2])[2]
   if(is.null(timevar))
     timevar <- yname
@@ -1135,8 +1139,7 @@ stop("ok")
   for(i in seq_along(ntd)) {
     if(!is.null(x[[ntd[i]]]$pterms)) {
       x[[ntd[i]]]$smooth$parametric <- param_time_transform(x[[ntd[i]]]$smooth$parametric,
-        x[[ntd[i]]]$param.formula, attr(x, "model.frame"),
-        x[[ntd[i]]]$param.contrasts, grid, yname, timevar)
+        x[[ntd[i]]]$param.formula, attr(x, "model.frame"), x[[ntd[i]]]$param.contrasts, grid, yname, timevar, take)
       eta_Surv_timegrid <- eta_Surv_timegrid + x[[ntd[i]]]$smooth$parametric$state$fitted_timegrid
     }
     if(length(x[[ntd[i]]]$smooth)) {
@@ -1145,7 +1148,7 @@ stop("ok")
           xterm <- x[[ntd[i]]]$smooth[[j]]$term
           by <- if(x[[ntd[i]]]$smooth[[j]]$by != "NA") x[[ntd[i]]]$smooth[[j]]$by else NULL
           x[[ntd[i]]]$smooth[[j]] <- sm_time_transform(x[[ntd[i]]]$smooth[[j]],
-            attr(x, "model.frame")[, unique(c(xterm, yname, by, timevar))], grid, yname, timevar)
+            attr(x, "model.frame")[, unique(c(xterm, yname, by, timevar, idvar)), drop = FALSE], grid, yname, timevar, take)
           eta_Surv_timegrid <- eta_Surv_timegrid + x[[ntd[i]]]$smooth[[j]]$state$fitted_timegrid
         }
       }
@@ -1171,6 +1174,7 @@ stop("ok")
     eta_Surv_timegrid <<- eta_Surv_timegrid
   else
     attr(x, "eta_Surv_timegrid") <- eta_Surv_timegrid
+  attr(x, "response.vec") <- response
 
   x
 }
@@ -1184,18 +1188,27 @@ bfit0_surv_newton <- function(x, family, response, eta, id, ...)
   return(state)
 }
 
-param_time_transform <- function(x, formula, data, contrasts, grid, yname, timevar)
+param_time_transform <- function(x, formula, data, contrasts, grid, yname, timevar, take)
 {
+  if(!is.null(take))
+    data <- data[take, , drop = FALSE]
   X <- Xn <- NULL
   for(j in names(data)) {
     if((!grepl("Surv(", j, fixed = TRUE) & !grepl("Surv2(", j, fixed = TRUE)) & (j != yname) & (j != timevar)) {
-      X <- cbind(X, rep(data[[j]], each = length(grid[[1]])))
+      df <- data.frame(rep(data[[j]], each = length(grid[[1]])))
+      names(df) <- j
+      X <- if(is.null(X)) df else cbind(X, df)
       Xn <- c(Xn, j)
     }
   }
-  colnames(X) <- Xn
-  X <- as.data.frame(cbind(X, unlist(grid)))
-  names(X)[ncol(X)] <- yname
+  if(!is.null(X))
+    colnames(X) <- Xn
+  X <- if(is.null(X)) data.frame(unlist(grid)) else cbind(X, unlist(grid))
+  colnames(X)[ncol(X)] <- yname
+  if(timevar != yname) {
+    X <- cbind(X, unlist(grid))
+    colnames(X)[ncol(X)] <- timevar
+  }
   X <- model.matrix(formula, data = X, contrasts.arg = contrasts)
   gdim <- c(length(grid), length(grid[[1]]))
 
@@ -1213,17 +1226,26 @@ param_time_transform <- function(x, formula, data, contrasts, grid, yname, timev
   x
 }
 
-sm_time_transform <- function(x, data, grid, yname, timevar)
+sm_time_transform <- function(x, data, grid, yname, timevar, take)
 {
+  if(!is.null(take))
+    data <- data[take, , drop = FALSE]
   X <- NULL
   for(j in x$term) {
-    if(j != yname)
-      X <- cbind(X, rep(data[[j]], each = length(grid[[1]])))
+    if((j != yname) & (j != timevar)) {
+      df <- data.frame(rep(data[[j]], each = length(grid[[1]])))
+      names(df) <- j
+      X <- if(is.null(X)) df else cbind(X, df)
+    }
   }
   if(!is.null(X))
     colnames(X) <- x$term
-  X <- as.data.frame(cbind(X, unlist(grid)))
-  names(X)[ncol(X)] <- yname
+  X <- if(is.null(X)) data.frame(unlist(grid)) else cbind(X, unlist(grid))
+  colnames(X)[ncol(X)] <- yname
+  if(timevar != yname) {
+    X <- cbind(X, unlist(grid))
+    colnames(X)[ncol(X)] <- timevar
+  }
   if(x$by != "NA" & x$by != yname)
     X[[x$by]] <- rep(data[[x$by]], each = length(grid[[1]]))
   X <- PredictMat(x, X)
