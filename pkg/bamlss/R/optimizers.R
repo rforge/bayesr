@@ -955,7 +955,7 @@ set.all.par <- function(par, x, hessian = NULL)
 }
 
 
-log_posterior <- function(par, x, verbose = TRUE, criterion = "AICc", digits = 3, scale = 1)
+log_posterior <- function(par, x, verbose = TRUE, show.edf = TRUE, digits = 3, scale = NULL)
 {
   nx <- names(x)
   np <- length(nx)
@@ -989,14 +989,17 @@ log_posterior <- function(par, x, verbose = TRUE, criterion = "AICc", digits = 3
     cat("\r")
     vtxt <- paste("logLik ", fmt(ll, width = 8, digits = digits),
       " logPost ", fmt(lp, width = 8, digits = digits),
-      " edf ", fmt(edf, width = 6, digits = digits),
+      if(show.edf) paste(" edf ", fmt(edf, width = 6, digits = digits), sep = "") else NULL,
       " iteration ", formatC(bamlss_log_posterior_iteration, width = 4), sep = "")
     cat(vtxt)
     if(.Platform$OS.type != "unix") flush.console()
     bamlss_log_posterior_iteration <<- bamlss_log_posterior_iteration + 1
   }
 
-  return(lp * scale)
+  if(!is.null(scale))
+    lp <- lp * scale
+
+  return(lp)
 }
 
 grad_posterior <- function(par, x, ...)
@@ -1053,7 +1056,7 @@ opt0 <- function(x, verbose = TRUE, digits = 3, hessian = FALSE,
 
     opt <- optim(par$par, fn = log_posterior,
       gr = if(!is.null(family$score)) grad_posterior else NULL,
-      x = x, method = "BFGS", verbose = verbose,
+      x = x, method = "BFGS", verbose = verbose, show.edf = FALSE,
       digits = digits, control = list(fnscale = -1, reltol = eps, maxit = maxit),
       hessian = TRUE)
  
