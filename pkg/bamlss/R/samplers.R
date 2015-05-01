@@ -1293,31 +1293,48 @@ gmcmc_newton <- function(fun, theta, id, prior, ...)
 }
 
 
-null.sampler <- function(x, n.samples = 200, criterion = c("AICc", "BIC", "AIC"), ...)
+null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC"), ...)
 {
-  criterion <- match.arg(criterion)
+  family <- attr(x, "family")
+  nx <- family$names
+  np <- length(nx)
+  par <- make_par(x, add.tau2 = TRUE)
+  nh <- names(par$par)
+  response <- attr(x, "response.vec")
+  eta <- get.eta(x)
 
   if(n.samples > 1) {
     require("mvtnorm")
-    hessian <- if(is.null(attr(x, "hessian"))) {
-      opt0(x, hessian = TRUE, verbose = FALSE, ...)
-    } else attr(x, "hessian")
+    if(!is.null(family$hessian) & is.null(attr(x, "hessian"))) {
+      hessian <- list(); i <- 1
+      nh3 <- NULL
+      for(j in 1:np) {
+        for(sj in seq_along(x[[nx[j]]]$smooth)) {
+          nh2 <- grep(paste("p", j, ".t", sj, ".", sep = ""), nh, fixed = TRUE, value = TRUE)
+          nhg <- nh2[!grepl("tau2", nh2)]
+          g <- get.state(x[[nx[j]]]$smooth[[sj]], "gamma")
+          hessian[[i]] <- family$hessian[[nx[j]]](g, response, eta, x[[nx[j]]]$smooth[[sj]])
+          nh3 <- c(nh3, nhg)
+          i <- i + 1
+        }
+      }
+      require("Matrix")
+      hessian <- -1 * as.matrix(do.call("bdiag", hessian))
+      rownames(hessian) <- colnames(hessian) <- nh3
+    } else {
+      hessian <- if(is.null(attr(x, "hessian"))) {
+        opt0(x, hessian = TRUE, verbose = FALSE, ...)
+      } else attr(x, "hessian")
+    }
     hessian <- solve(-1 * hessian)
   }
 
-  par <- make_par(x, add.tau2 = TRUE)
-  family <- attr(x, "family")
- 
-  nx <- family$names
-  np <- length(nx)
+  criterion <- match.arg(criterion)
 
-  nh <- names(par$par)
   samps <- matrix(NA, n.samples, length(nh))
   colnames(samps) <- nh
   sn <- NULL
 
-  response <- attr(x, "response.vec")
-  eta <- get.eta(x)
   edf <- 0
   edf_sm <- edf_sm_n <- NULL
 
