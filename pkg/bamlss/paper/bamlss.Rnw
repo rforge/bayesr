@@ -127,38 +127,42 @@ of the concept is presented briefly together with a couple of examples.
 
 \section{Model structure and overview} \label{sec:models}
 
-The models discussed in this paper assume conditional independence of the response variable $y_1, 
-\ldots, y_n$ given covariates. Within the GAMLSS model
-class, all parameters of the response distribution can be modeled by explanatory variables such that
+Consider data of $i = 1, \ldots, n$ observations is available, the models discussed in this paper
+assume conditional independence of individual response observations $\mathbf{y}_i$ given covariates.
+Within the GAMLSS model class all parameters of the response distribution can be modeled by
+explanatory variables such that
 \begin{equation} \label{eqn:dreg}
-\mathbf{y} \sim \mathbf{\mathcal{D}}\left(h_{1}(\boldsymbol{\theta}_{1}) = \boldsymbol{\eta}_{1}, \,\,
-  h_{2}(\boldsymbol{\theta}_{2}) = \boldsymbol{\eta}_{2}, \dots, \,\, h_{K}(\boldsymbol{\theta}_{K}) =
-  \boldsymbol{\eta}_{K}\right),
+\mathbf{y}_i \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{i1}) = \eta_{i1}, \,\,
+  h_{2}(\theta_{i2}) = \eta_{i2}, \dots, \,\, h_{K}(\theta_{iK}) =
+  \eta_{iK}\right),
 \end{equation}
 where $\mathbf{\mathcal{D}}$ denotes any distribution available for the response
-variable and $\boldsymbol{\theta}_k$ are parameters that are linked to an additive predictor using
-known monotonic link functions $h_{k}(\cdot)$ \citep{bamlss:Rigby+Stasinopoulos:2005}. 
-The $k$th additive predictor (for simplicity, the
-parameter index $k$ is suppressed in the following) is given by
+variable and $\theta_k$, $k = 1, \ldots, K$, are parameters that are linked to an additive predictor
+using known monotonic and twice differentiable functions
+$h_{k}(\cdot)$ \citep{bamlss:Rigby+Stasinopoulos:2005}. Note that the response may be a
+q-dimensional vector ($q \geq 1$), e.g., when $\mathbf{\mathcal{D}}$ is a multivariate normal
+density (see, e.g., \citealp{bamlss:Klein+Kneib+Klasen+Lang:2014}). The $k$th additive predictor
+(for simplicity, the parameter index $k$ is suppressed in the following) is given by
 \begin{equation} \label{eqn:structadd}
-\eta = f_1(\mathbf{x}) + \ldots + f_p(\mathbf{x}),
+\eta_i = f_1(\mathbf{x}_i) + \ldots + f_p(\mathbf{x}_i),
 \end{equation}
-where $\mathbf{x}$ represents a generic vector of all linear and nonlinear modeled covariates. The
+where $\mathbf{x}_i$ represents a generic vector of all linear and nonlinear modeled covariates. The
 functions $f_j$ are possibly smooth functions encompassing various types of effects, e.g.:
 \begin{itemize}
-  \item Linear effects of continuous covariates: $f_j(\mathbf{x}) = x_1$.
-  \item Nonlinear effects of continuous covariates: $f_j(\mathbf{x}) = f(x_1)$.
-  \item Two-dimensional surfaces: $f_j(\mathbf{x}) = f(x_1, x_2)$.
-  \item Spatially correlated effects: $f_j(\mathbf{x}) = f_{spat}(x_s)$.
-  \item Varying coefficients: $f_j(\mathbf{x}) = x_1f(x_2)$.
-  \item Spatially varying effects: $f_j(\mathbf{x}) = x_1f_{spat}(x_s)$ or
-    $f_j(\mathbf{x}) = x_1f(x_2, x_3)$.
-  \item Random intercepts with cluster index $c$: $f_j(\mathbf{x}) = \beta_c$.
-  \item Random slopes with cluster index $c$: $f_j(\mathbf{x}) = x_1\beta_c$.
+  \item Linear effects of continuous covariates: $f_j(\mathbf{x}_i) = x_{i1}$.
+  \item Nonlinear effects of continuous covariates: $f_j(\mathbf{x}_i) = f(x_{i1})$.
+  \item Two-dimensional surfaces: $f_j(\mathbf{x}_i) = f(x_{i1}, x_{i2})$.
+  \item Spatially correlated effects of locations index $s$: $f_j(\mathbf{x}_i) = f_{spat}(x_{is})$.
+  \item Varying coefficients: $f_j(\mathbf{x}_i) = f(x_{i2}) \cdot x_{i1}$.
+  \item Spatially varying effects: $f_j(\mathbf{x}_i) = f_{spat}(x_{is}) \cdot x_{i1}$ or
+    $f_j(\mathbf{x}_i) = f(x_{i2}, x_{i3}) \cdot x_{i1}$.
+  \item Random intercepts with cluster index $c$: $f_j(\mathbf{x}_i) = \beta_c$.
+  \item Random slopes with cluster index $c$: $f_j(\mathbf{x}_i) = x_1\beta_c$.
 \end{itemize}
-Because of the general structure of the predictor, i.e., the various terms can be combined
-arbitrarily, the models discussed are embedded within the class of structured additive regression
-(STAR,~\citealp{bamlss:Fahrmeir+Kneib+Lang:2004, bamlss:Brezger+Lang:2006}) models.
+Also note that each predictor in (\ref{eqn:dreg}) may contain a different set of covariate effects, 
+resulting in a very general structure with arbitrary combinations. This general framework is also
+known as structured additive regression
+(STAR,~\citealp{bamlss:Fahrmeir+Kneib+Lang:2004, bamlss:Brezger+Lang:2006}).
 
 
 \section{A conceptional Lego toolbox} \label{sec:legobox}
