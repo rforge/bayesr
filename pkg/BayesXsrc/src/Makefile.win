@@ -106,7 +106,7 @@ STRUCTADD_OBJS = \
 	bayesxsrc/structadd/FC_hrandom.o\
 	bayesxsrc/structadd/FC_hrandom_variance.o\
 	bayesxsrc/structadd/FC_hrandom_variance_vec.o\
-  bayesxsrc/structadd/FC_hrandom_variance_vec_nmig.o\
+        bayesxsrc/structadd/FC_hrandom_variance_vec_nmig.o\
 	bayesxsrc/structadd/FC_linear.o\
 	bayesxsrc/structadd/FC_mult.o\
 	bayesxsrc/structadd/FC_nonp.o\
@@ -126,8 +126,9 @@ STRUCTADD_OBJS = \
 	bayesxsrc/structadd/distr_categorical.o\
 	bayesxsrc/structadd/distr_categorical_mult.o\
 	bayesxsrc/structadd/distr_gamlss.o\
-  bayesxsrc/structadd/distr_gamlss_nadja.o\
-  bayesxsrc/structadd/distr_zeroadjusted.o\
+        bayesxsrc/structadd/distr_gamlss_nadja.o\
+        bayesxsrc/structadd/distr_gamlss_copula.o\
+        bayesxsrc/structadd/distr_zeroadjusted.o\
 	bayesxsrc/structadd/distr_mixture.o\
 	bayesxsrc/structadd/mcmcsim.o\
 	bayesxsrc/structadd/model_parameters.o\
