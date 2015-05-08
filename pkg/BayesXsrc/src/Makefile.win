@@ -133,8 +133,8 @@ STRUCTADD_OBJS = \
 	bayesxsrc/structadd/mcmcsim.o\
 	bayesxsrc/structadd/model_parameters.o\
 	bayesxsrc/structadd/superbayesreg.o\
-	bayesxsrc/structadd/design_kriging.o\
 	bayesxsrc/structadd/design_userdefined.o\
+	bayesxsrc/structadd/design_kriging.o\
 	bayesxsrc/structadd/FC_predictive_check.o\
 	bayesxsrc/structadd/FC_predict_predictor.o
 OBJS = \
