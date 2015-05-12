@@ -1237,9 +1237,9 @@ SEXP cnorm_power_loglik(SEXP y, SEXP mu, SEXP sigma, SEXP alpha, SEXP check)
   double ll = 0.0;
   for(i = 0; i < n; i++) {
     if(checkptr[i]) {
-      ll += pnorm5((-1.0 * muptr[i]) / sigmaptr[i], 0.0, 1.0, 1, 1);
+      ll += pnorm5(0.0 , muptr[i], sigmaptr[i], 1, 1);
     } else {
-      ll += dnorm((pow(yptr[i], 1.0 / alphaptr[i]) - muptr[i]) / sigmaptr[i], 0.0, 1.0, 1) - log(sigmaptr[i]) -
+      ll += dnorm(pow(yptr[i], 1.0 / alphaptr[i]), muptr[i], sigmaptr[i], 1) -
         log(alphaptr[i]) - (1.0 / alphaptr[i] - 1.0) * log(yptr[i]);
     }
   }

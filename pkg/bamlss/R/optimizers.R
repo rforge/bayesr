@@ -941,7 +941,7 @@ set.all.par <- function(par, x, hessian = NULL)
           require("Matrix")
           sigma2 <- try(nearPD(sigma)$mat, silent = TRUE)
           if(inherits(sigma2, "try-error")) {
-            sigma2 <- diag(sigma)
+            sigma2 <- if(length(sigma) < 2) as.numeric(sigma) else diag(sigma)
             sigma2 <- if(length(sigma2) < 2) matrix(sigma2, 1, 1) else diag(sigma2)
           }
           sigma <- as.matrix(sigma2)

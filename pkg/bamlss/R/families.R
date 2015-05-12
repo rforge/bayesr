@@ -786,9 +786,9 @@ pcnorm.bamlss <- function(alpha = NULL, ...)
   }
   f$engine <- function(x, ...) {
     optimizer <- if(is.null(alpha)) {
-      function(x, ...) { opt0(x, gradient = FALSE, ...) }
+      function(x, ...) { opt0(x, gradient = TRUE, ...) }
     } else {
-      function(x, ...) { bfit0(x, ...) }
+      function(x, ...) { opt0(x, ...) }
     }
     sampler <- function(x, ...) { GMCMC(x, propose = "iwls", ...) }
     stacker(x, optimizer = optimizer, sampler = null.sampler, ...)
@@ -807,6 +807,14 @@ pcnorm.bamlss <- function(alpha = NULL, ...)
       .Call("cnorm_score_sigma",
         as.numeric(y^(1 / eta$alpha)), as.numeric(eta$mu), as.numeric(eta$sigma),
         as.integer(attr(y, "check")))
+    },
+    "alpha" = function(y, eta, ...) {
+      x <- log(eta$alpha)
+      score <- ifelse(y <= 0,
+        0,
+        (exp(-x) * y^(exp(-x)) * log(y) * (y^(exp(-x)) - eta$mu)) / eta$sigma^2 + exp(-x) * log(y) - 1
+      )
+      score
     }
   )
   f$weights <- list(
@@ -823,6 +831,14 @@ pcnorm.bamlss <- function(alpha = NULL, ...)
       .Call("cnorm_weights_sigma",
         as.numeric(y^(1 / eta$alpha)), as.numeric(eta$mu), as.numeric(eta$sigma),
         as.integer(attr(y, "check")))
+    },
+    "alpha" = function(y, eta, ...) {
+      x <- log(eta$alpha)
+      w <- ifelse(y <= 0,
+        0,
+        -(exp(-2*x)*y^(2*exp(-x))*log2(y))/eta$sigma^2 - (exp(-2*x)*y^(exp(-x))*log2(y)*(y^(exp(-x))-eta$mu))/eta$sigma^2 - (exp(-x)*y^(exp(-x))*log(y)*(y^(exp(-x))-eta$mu))/eta$sigma^2 - exp(-x)*log(y)
+      )
+      -1 * w
     }
   )
   f$loglik <- function(y, eta, ...) {
@@ -835,14 +851,16 @@ pcnorm.bamlss <- function(alpha = NULL, ...)
   f$d <- function(y, eta, log = FALSE) {
     if(!is.null(alpha))
       eta$alpha <- rep(alpha, length = length(y))
-    ifelse(y <= 0, pnorm(-eta$mu / eta$sigma, log.p = log),
-      dnorm((y^(1 / eta$alpha) - eta$mu) / eta$sigma, log = log) / eta$sigma^(1 - log) - log(eta$sigma) * log
-      -1 * log(eta$alpha) - (1 / eta$alpha - 1) * log(y))
+    dy <- ifelse(y <= 0, pnorm(0, eta$mu, eta$sigma, log.p = TRUE),
+      dnorm(y^(1 / eta$alpha), eta$mu, eta$sigma, log = TRUE) - log(eta$alpha) - (1.0 / eta$alpha - 1.0) * log(y))
+    if(!log)
+      dy <- exp(dy)
+    dy
   }
   f$p <- function(y, eta, log = FALSE) {
     if(!is.null(alpha))
       eta$alpha <- rep(alpha, length = length(y))
-    ifelse(y < 0, 0, pnorm((y^(1 / eta$alpha) - eta$mu) / eta$sigma, log = log))
+    ifelse(y <= 0, 0, pnorm((y^(1 / eta$alpha) - eta$mu) / eta$sigma, log = log))
   }
   f$q <- function(y, eta, ...) {
     if(!is.null(alpha))

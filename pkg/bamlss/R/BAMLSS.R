@@ -167,6 +167,7 @@ bamlss <- function(formula, family = gaussian, data = NULL, knots = NULL,
         family.bamlss$engine(x, cores = mc.cores,
           n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, sleep = sleep, ...)
       }
+      cores <- NULL
     } else {
       engine <- function(x) {
         stacker(x, optimizer = optimizer, sampler = sampler, cores = mc.cores,
