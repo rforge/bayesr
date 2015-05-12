@@ -763,6 +763,97 @@ cnorm.bamlss <- function(...)
   f
 }
 
+pcnorm.bamlss <- function(alpha = NULL, ...)
+{
+  f <- cens.bamlss(left = 0)
+  if(is.null(alpha)) {
+    f$names <- c(f$names, "alpha")
+    f$links <- c(f$links, "alpha" = "log")
+  }
+  f$transform <- function(x, ...) {
+    x <- bamlss.setup(x, ...)
+    y <- attr(x, "response.vec")
+    check <- as.integer(y <= 0)
+    attr(y, "check") <- check
+    attr(x, "response.vec") <- y
+    if("alpha" %in% names(x)) {
+      if(length(x$alpha$smooth)) {
+        for(j in seq_along(x$alpha$smooth))
+          x$alpha$smooth[[j]]$propose <- gmcmc_sm.slice
+      }
+    }
+    x
+  }
+  f$engine <- function(x, ...) {
+    optimizer <- function(x, ...) { opt0(x, gradient = FALSE, ...) }
+    sampler <- function(x, ...) { GMCMC(x, propose = "iwls", ...) }
+    stacker(x, optimizer = optimizer, sampler = sampler, ...)
+  }
+  f$score <- list(
+    "mu" = function(y, eta, ...) {
+      if(!is.null(alpha))
+        eta$alpha <- rep(alpha, length = length(y))
+      .Call("cnorm_score_mu",
+        as.numeric(y^(1 / eta$alpha)), as.numeric(eta$mu), as.numeric(eta$sigma),
+        as.integer(attr(y, "check")))
+    },
+    "sigma" = function(y, eta, ...) {
+      if(!is.null(alpha))
+        eta$alpha <- rep(alpha, length = length(y))
+      .Call("cnorm_score_sigma",
+        as.numeric(y^(1 / eta$alpha)), as.numeric(eta$mu), as.numeric(eta$sigma),
+        as.integer(attr(y, "check")))
+    }
+  )
+  f$weights <- list(
+    "mu" = function(y, eta, ...) {
+      if(!is.null(alpha))
+        eta$alpha <- rep(alpha, length = length(y))
+      .Call("cnorm_weights_mu",
+        as.numeric(y^(1 / eta$alpha)), as.numeric(eta$mu), as.numeric(eta$sigma),
+        as.integer(attr(y, "check")))
+    },
+    "sigma" = function(y, eta, ...) {
+      if(!is.null(alpha))
+        eta$alpha <- rep(alpha, length = length(y))
+      .Call("cnorm_weights_sigma",
+        as.numeric(y^(1 / eta$alpha)), as.numeric(eta$mu), as.numeric(eta$sigma),
+        as.integer(attr(y, "check")))
+    }
+  )
+  f$loglik <- function(y, eta, ...) {
+    if(!is.null(alpha))
+      eta$alpha <- rep(alpha, length = length(y))
+    .Call("cnorm_power_loglik",
+      as.numeric(y), as.numeric(eta$mu), as.numeric(eta$sigma), as.numeric(eta$alpha),
+      as.integer(attr(y, "check")))
+  }
+  f$d <- function(y, eta, log = FALSE) {
+    if(!is.null(alpha))
+      eta$alpha <- rep(alpha, length = length(y))
+    ifelse(y <= 0, pnorm(-eta$mu / eta$sigma, log.p = log),
+      dnorm((y^(1 / eta$alpha) - eta$mu) / eta$sigma, log = log) / eta$sigma^(1 - log) - log(eta$sigma) * log
+      -1 * log(eta$alpha) - (1 / eta$alpha - 1) * log(y))
+  }
+  f$p <- function(y, eta, log = FALSE) {
+    if(!is.null(alpha))
+      eta$alpha <- rep(alpha, length = length(y))
+    ifelse(y < 0, 0, pnorm((y^(1 / eta$alpha) - eta$mu) / eta$sigma, log = log))
+  }
+  f$q <- function(y, eta, ...) {
+    if(!is.null(alpha))
+      eta$alpha <- rep(alpha, length = length(y))
+    rval <- qnorm(y^(1 / eta$alpha)) * eta$sigma + eta$mu
+    pmax(pmin(rval, Inf), 0)
+  }
+  f$r <- function(n, y, eta) {
+    rval <- rnorm(n) * eta$sigma + eta$mu
+    pmax(pmin(rval, Inf), 0)
+  }
+  f
+}
+
+
 cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
   left = 0, right = Inf, dist = "gaussian", ...)
 {

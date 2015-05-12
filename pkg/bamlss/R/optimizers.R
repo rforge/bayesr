@@ -1042,7 +1042,7 @@ grad_posterior <- function(par, x, ...)
 }
 
 
-opt0 <- function(x, verbose = TRUE, digits = 3, hessian = FALSE,
+opt0 <- function(x, verbose = TRUE, digits = 3, gradient = TRUE, hessian = FALSE,
   eps = .Machine$double.eps^0.25, maxit = 100, ...)
 {
   x <- bamlss.setup(x, ...)
@@ -1055,7 +1055,7 @@ opt0 <- function(x, verbose = TRUE, digits = 3, hessian = FALSE,
       bamlss_log_posterior_iteration <<- 1
 
     opt <- optim(par$par, fn = log_posterior,
-      gr = if(!is.null(family$score)) grad_posterior else NULL,
+      gr = if(!is.null(family$score) & gradient) grad_posterior else NULL,
       x = x, method = "BFGS", verbose = verbose, show.edf = FALSE,
       digits = digits, control = list(fnscale = -1, reltol = eps, maxit = maxit),
       hessian = TRUE)
@@ -1072,7 +1072,7 @@ opt0 <- function(x, verbose = TRUE, digits = 3, hessian = FALSE,
     return(x)
   } else {
     opt <- optimHess(par$par, fn = log_posterior,
-      gr = if(!is.null(family$score)) grad_posterior else NULL,
+      gr = if(!is.null(family$score) & gradient) grad_posterior else NULL,
       x = x, verbose = verbose, digits = digits,
       control = list(fnscale = -1, reltol = eps, maxit = maxit))
     return(opt)

@@ -584,9 +584,9 @@ SEXP cpos(SEXP p, SEXP K, SEXP pos)
     
   pptr = REAL(p);
     
-  asum = 0;
-  xsum = 0;
-  ysum = 0;
+  asum = 0.0;
+  xsum = 0.0;
+  ysum = 0.0;
     
   for(i = 0; i < n; i++) {
     tmp = pptr[i] * pptr[i + k + 1] - pptr[i + 1] * pptr[i + k];
@@ -1216,6 +1216,35 @@ SEXP cnorm_weights_sigma(SEXP y, SEXP mu, SEXP sigma, SEXP check)
     }
   }
 
+  UNPROTECT(1);
+  return rval;
+}
+
+
+/* Censored normal, left = 0, right - Inf, with power parameter. */
+SEXP cnorm_power_loglik(SEXP y, SEXP mu, SEXP sigma, SEXP alpha, SEXP check)
+{
+  SEXP rval;
+  PROTECT(rval = allocVector(REALSXP, 1));
+  int i;
+  int n = length(y);
+  double *yptr = REAL(y);
+  double *muptr = REAL(mu);
+  double *sigmaptr = REAL(sigma);
+  double *alphaptr = REAL(alpha);
+  int *checkptr = INTEGER(check);
+
+  double ll = 0.0;
+  for(i = 0; i < n; i++) {
+    if(checkptr[i]) {
+      ll += pnorm5((-1.0 * muptr[i]) / sigmaptr[i], 0.0, 1.0, 1, 1);
+    } else {
+      ll += dnorm((pow(yptr[i], 1.0 / alphaptr[i]) - muptr[i]) / sigmaptr[i], 0.0, 1.0, 1) - log(sigmaptr[i]) -
+        log(alphaptr[i]) - (1.0 / alphaptr[i] - 1.0) * log(yptr[i]);
+    }
+  }
+
+  REAL(rval)[0] = ll;
   UNPROTECT(1);
   return rval;
 }

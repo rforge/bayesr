@@ -2762,7 +2762,7 @@ plot.bamlss.effect.default <- function(x, ...) {
       do.call("plot3d", delete.args("plot3d", args,
         c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab", "ticktype",
         "zlab", "phi", "theta", "r", "d", "scale", "range", "lrange", "pos", "image.map",
-        "symmetric")))
+        "symmetric", "border")))
     }
   }
 }

@@ -68,6 +68,7 @@ b0 <- crch(sqrt(rain) ~ sqrtensmean|sqrtenssd, data = RainIbk, dist = "gaussian"
 
 ## now with bamlss
 b1 <- bamlss(sqrt(rain) ~ s(sqrtensmean), ~ s(sqrtenssd), data = RainIbk, family = cnorm)
+b2 <- bamlss(rain ~ s(sqrtensmean), ~ s(sqrtenssd), data = RainIbk, family = gF(pcnorm), n.iter = 1200, burnin = 200, thin = 1)
 
 RainIbk$f_crch <- predict(b0)
 RainIbk$f_bamlss <- predict(b1, model = "mu", intercept = TRUE)
