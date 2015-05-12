@@ -831,14 +831,6 @@ pcnorm.bamlss <- function(alpha = NULL, ...)
       .Call("cnorm_weights_sigma",
         as.numeric(y^(1 / eta$alpha)), as.numeric(eta$mu), as.numeric(eta$sigma),
         as.integer(attr(y, "check")))
-    },
-    "alpha" = function(y, eta, ...) {
-      x <- log(eta$alpha)
-      w <- ifelse(y <= 0,
-        0,
-        -(exp(-2*x)*y^(2*exp(-x))*log2(y))/eta$sigma^2 - (exp(-2*x)*y^(exp(-x))*log2(y)*(y^(exp(-x))-eta$mu))/eta$sigma^2 - (exp(-x)*y^(exp(-x))*log(y)*(y^(exp(-x))-eta$mu))/eta$sigma^2 - exp(-x)*log(y)
-      )
-      -1 * w
     }
   )
   f$loglik <- function(y, eta, ...) {
