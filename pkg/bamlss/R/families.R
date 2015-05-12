@@ -785,9 +785,13 @@ pcnorm.bamlss <- function(alpha = NULL, ...)
     x
   }
   f$engine <- function(x, ...) {
-    optimizer <- function(x, ...) { opt0(x, gradient = FALSE, ...) }
+    optimizer <- if(is.null(alpha)) {
+      function(x, ...) { opt0(x, gradient = FALSE, ...) }
+    } else {
+      function(x, ...) { bfit0(x, ...) }
+    }
     sampler <- function(x, ...) { GMCMC(x, propose = "iwls", ...) }
-    stacker(x, optimizer = optimizer, sampler = sampler, ...)
+    stacker(x, optimizer = optimizer, sampler = null.sampler, ...)
   }
   f$score <- list(
     "mu" = function(y, eta, ...) {
