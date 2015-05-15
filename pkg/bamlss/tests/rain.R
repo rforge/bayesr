@@ -79,7 +79,7 @@ f <- list(
   sigma ~ s(sqrtenssd),
   alpha ~ s(sqrtensmean) + s(sqrtenssd)
 )
-b2 <- bamlss(f[1:2], data = RainIbk, family = gF(cnorm))
+b2 <- bamlss(f[1:2], data = RainIbk, family = gF(cnorm), n.iter = 1200, burnin = 200, thin = 1)
 
 f1 <- gF2(pcnorm)
 f2 <- gF2(cnorm)
@@ -87,6 +87,8 @@ f2 <- gF2(cnorm)
 sum(f1$d(RainIbk$rain, f1$map2par(fitted(b1)), log = TRUE))
 a <- ifelse(RainIbk$rain <= 0, 0 , - log(2) + (1 / 2 - 1) * log(RainIbk$rain))
 sum(f2$d(RainIbk$rain^(1/2), f2$map2par(fitted(b2)), log = TRUE) + a)
+
+plot(c(b1, b2))
 
 
 RainIbk$p <- exp(predict(b1, model = "alpha"))

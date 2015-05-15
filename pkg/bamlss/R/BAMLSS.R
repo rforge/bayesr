@@ -3930,6 +3930,10 @@ h_response <- function(x)
 ## Create the inverse of a matrix.
 matrix_inv <- function(x)
 {
+  if(length(x) < 2)
+    return(1 / x)
+  rn <- rownames(x)
+  cn <- colnames(x)
   p <- try(chol(x), silent = TRUE)
   p <- if(inherits(p, "try-error")) {
     try(solve(x), silent = TRUE)
@@ -3940,6 +3944,8 @@ matrix_inv <- function(x)
     diag(x) <- jitter(diag(x), amount = 1e-5)
     p <- try(solve(x), silent = TRUE)
   }
+  rownames(p) <- rn
+  colnames(p) <- cn
   return(p)
 }
 

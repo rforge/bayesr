@@ -764,6 +764,7 @@ cnorm.bamlss <- function(...)
     rval <- rnorm(n) * eta$sigma + eta$mu
     pmax(pmin(rval, Inf), 0)
   }
+  class(f) <- "family.bamlss"
   f
 }
 
@@ -868,6 +869,7 @@ pcnorm.bamlss <- function(alpha = NULL, ...)
     rval <- rnorm(n, eta$mu, eta$sigma)
     pmax(pmin(rval, Inf), 0)
   }
+  class(f) <- "family.bamlss"
   f
 }
 
