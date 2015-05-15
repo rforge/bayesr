@@ -1230,7 +1230,7 @@ SEXP cnorm_power_loglik(SEXP y, SEXP mu, SEXP sigma, SEXP alpha, SEXP check)
   int n = length(y);
   double *yptr = REAL(y);
   double *muptr = REAL(mu);
-  double *sigmaptr = REAL(sigma);
+  double * sigmaptr = REAL(sigma);
   double *alphaptr = REAL(alpha);
   int *checkptr = INTEGER(check);
 
@@ -1240,11 +1240,42 @@ SEXP cnorm_power_loglik(SEXP y, SEXP mu, SEXP sigma, SEXP alpha, SEXP check)
       ll += pnorm5(0.0 , muptr[i], sigmaptr[i], 1, 1);
     } else {
       ll += dnorm(pow(yptr[i], 1.0 / alphaptr[i]), muptr[i], sigmaptr[i], 1) -
-        log(alphaptr[i]) - (1.0 / alphaptr[i] - 1.0) * log(yptr[i]);
+        log(alphaptr[i]) + (1.0 / alphaptr[i] - 1.0) * log(yptr[i]);
     }
   }
 
   REAL(rval)[0] = ll;
+  UNPROTECT(1);
+  return rval;
+}
+
+
+SEXP cnorm_power_score_alpha(SEXP y, SEXP mu, SEXP sigma, SEXP alpha, SEXP check)
+{
+  SEXP rval;
+  PROTECT(rval = allocVector(REALSXP, length(y)));
+  int i;
+  int n = length(y);
+  double *yptr = REAL(y);
+  double *muptr = REAL(mu);
+  double * sigmaptr = REAL(sigma);
+  double *rvalptr = REAL(rval);
+  double *alphaptr = REAL(alpha);
+  int *checkptr = INTEGER(check);
+
+  double tmp, tmp2, tmp3;
+
+  for(i = 0; i < n; i++) {
+    if(checkptr[i]) {
+      rvalptr[i] = 0.0;
+    } else {
+      tmp = exp(-log(alphaptr[i]));
+      tmp2 = log(yptr[i]);
+      tmp3 = pow(yptr[i], tmp);
+      rvalptr[i] = (tmp * tmp3 * tmp2 * (tmp3 - muptr[i])) / pow(sigmaptr[i], 2.0) - tmp * tmp2 - 1.0;
+    }
+  }
+
   UNPROTECT(1);
   return rval;
 }

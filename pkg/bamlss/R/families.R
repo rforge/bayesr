@@ -763,6 +763,7 @@ cnorm.bamlss <- function(...)
   f
 }
 
+
 pcnorm.bamlss <- function(alpha = NULL, ...)
 {
   f <- cens.bamlss(left = 0)
@@ -785,13 +786,10 @@ pcnorm.bamlss <- function(alpha = NULL, ...)
     x
   }
   f$engine <- function(x, ...) {
-    optimizer <- if(is.null(alpha)) {
-      function(x, ...) { opt0(x, gradient = TRUE, ...) }
-    } else {
-      function(x, ...) { opt0(x, ...) }
-    }
-    sampler <- function(x, ...) { GMCMC(x, propose = "iwls", ...) }
-    stacker(x, optimizer = optimizer, sampler = null.sampler, ...)
+    sampler <- if(is.null(list(...)$no.mcmc)) {
+      function(x, ...) { GMCMC(x, propose = "iwls", ...) }
+    } else null.sampler
+    stacker(x, optimizer = opt0, sampler = sampler, ...)
   }
   f$score <- list(
     "mu" = function(y, eta, ...) {
@@ -809,12 +807,9 @@ pcnorm.bamlss <- function(alpha = NULL, ...)
         as.integer(attr(y, "check")))
     },
     "alpha" = function(y, eta, ...) {
-      x <- log(eta$alpha)
-      score <- ifelse(y <= 0,
-        0,
-        (exp(-x) * y^(exp(-x)) * log(y) * (y^(exp(-x)) - eta$mu)) / eta$sigma^2 + exp(-x) * log(y) - 1
-      )
-      score
+      .Call("cnorm_power_score_alpha",
+        as.numeric(y), as.numeric(eta$mu), as.numeric(eta$sigma),
+        as.numeric(eta$alpha), as.integer(attr(y, "check")))
     }
   )
   f$weights <- list(
@@ -844,7 +839,8 @@ pcnorm.bamlss <- function(alpha = NULL, ...)
     if(!is.null(alpha))
       eta$alpha <- rep(alpha, length = length(y))
     dy <- ifelse(y <= 0, pnorm(0, eta$mu, eta$sigma, log.p = TRUE),
-      dnorm(y^(1 / eta$alpha), eta$mu, eta$sigma, log = TRUE) - log(eta$alpha) - (1.0 / eta$alpha - 1.0) * log(y))
+      dnorm(y^(1 / eta$alpha), eta$mu, eta$sigma, log = TRUE) -
+      log(eta$alpha) + (1 / eta$alpha - 1) * log(y))
     if(!log)
       dy <- exp(dy)
     dy
@@ -852,20 +848,21 @@ pcnorm.bamlss <- function(alpha = NULL, ...)
   f$p <- function(y, eta, log = FALSE) {
     if(!is.null(alpha))
       eta$alpha <- rep(alpha, length = length(y))
-    ifelse(y <= 0, 0, pnorm((y^(1 / eta$alpha) - eta$mu) / eta$sigma, log = log))
+    ifelse(y <= 0, 0, pnorm(y^(1 / eta$alpha), eta$mu, eta$sigma, log = log))
   }
   f$q <- function(y, eta, ...) {
     if(!is.null(alpha))
       eta$alpha <- rep(alpha, length = length(y))
-    rval <- qnorm(y^(1 / eta$alpha)) * eta$sigma + eta$mu
+    rval <- qnorm(y^(1 / eta$alpha), eta$mu, eta$sigma)
     pmax(pmin(rval, Inf), 0)
   }
   f$r <- function(n, y, eta) {
-    rval <- rnorm(n) * eta$sigma + eta$mu
+    rval <- rnorm(n, eta$mu, eta$sigma)
     pmax(pmin(rval, Inf), 0)
   }
   f
 }
+
 
 
 cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
@@ -875,13 +872,13 @@ cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
 
   ddist <- switch(dist,
     "student"  = function(x, location, scale, df, log = TRUE) 
-      dt((x - location)/scale, df = df, log = log)/scale^(1-log) - 
+      dt((x - location)/scale, df = df, log = log)/scalexp(1-log) - 
       log*log(scale),
     "gaussian" = function(x, location, scale, df, log = TRUE) 
-      dnorm((x - location)/scale, log = log)/scale^(1-log) - 
+      dnorm((x - location)/scale, log = log)/scalexp(1-log) - 
       log*log(scale),
     "logistic" = function(x, location, scale, df, log = TRUE) 
-      dlogis((x - location)/scale, log = log)/scale^(1-log) - 
+      dlogis((x - location)/scale, log = log)/scalexp(1-log) - 
       log*log(scale)
   )
   pdist <- switch(dist,
@@ -1052,13 +1049,13 @@ cens0.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
 
   ddist <- switch(dist,
     "student"  = function(x, location, scale, df, log = TRUE) 
-      dt((x - location)/scale, df = df, log = log)/scale^(1-log) - 
+      dt((x - location)/scale, df = df, log = log)/scalexp(1-log) - 
       log*log(scale),
     "gaussian" = function(x, location, scale, df, log = TRUE) 
-      dnorm((x - location)/scale, log = log)/scale^(1-log) - 
+      dnorm((x - location)/scale, log = log)/scalexp(1-log) - 
       log*log(scale),
     "logistic" = function(x, location, scale, df, log = TRUE) 
-      dlogis((x - location)/scale, log = log)/scale^(1-log) - 
+      dlogis((x - location)/scale, log = log)/scalexp(1-log) - 
       log*log(scale)
   )
   pdist <- switch(dist,

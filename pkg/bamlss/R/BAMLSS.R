@@ -94,6 +94,8 @@ stacker <- function(x, optimizer = bfit0, sampler = samplerJAGS, ...)
 {
   if(is.function(optimizer) | is.character(optimizer))
     optimizer <- list(optimizer)
+  if(is.null(sampler))
+    sampler <- null.sampler
   if(is.function(sampler) | is.character(sampler))
     sampler <- list(sampler)
   if(length(optimizer)) {

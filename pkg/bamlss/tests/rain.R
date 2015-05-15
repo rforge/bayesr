@@ -68,11 +68,41 @@ b0 <- crch(sqrt(rain) ~ sqrtensmean|sqrtenssd, data = RainIbk, dist = "gaussian"
 
 ## now with bamlss
 f <- list(
-  rain ~ 1,
-  sigma ~ 1,
-  alpha ~ 1
+  rain ~ s(sqrtensmean),
+  sigma ~ s(sqrtenssd),
+  alpha ~ s(sqrtensmean) + s(sqrtenssd)
 )
-b1 <- bamlss(f, data = RainIbk, family = gF(pcnorm))
+b1 <- bamlss(f[1:2], data = RainIbk, family = gF(pcnorm))
+b2 <- bamlss(f, data = RainIbk, family = gF(pcnorm))
+
+RainIbk$p <- exp(predict(b1, model = "alpha"))
+
+b2 <- bamlss(I(rain^(1/p)) ~ s(sqrtensmean), ~ s(sqrtenssd), data = RainIbk, family = cnorm,
+  n.iter = 1200, burnin = 200, thin = 10)
+b3 <- bamlss(I(rain^(1/2)) ~ s(sqrtensmean), ~ s(sqrtenssd), data = RainIbk, family = cnorm,
+  n.iter = 1200, burnin = 200, thin = 1)
+
+f <- gF(cnorm)
+bf <- fitted(b2)
+sum(with(RainIbk, ifelse(rain <= 0,
+  pnorm(0, bf$mu, bf$sigma),
+  dnorm(rain^(1/p), bf$mu, bf$sigma, log = TRUE) - log(p) + (1/p-1) * log(rain))))
+bf <- fitted(b3)
+sum(with(RainIbk, ifelse(rain <= 0,
+  pnorm(0, bf$mu, bf$sigma),
+  dnorm(rain^(1/p), bf$mu, bf$sigma, log = TRUE) - log(p) + (1/p-1) * log(rain))))
+
+par(mfrow = c(1, 2))
+with(subset(RainIbk, rain > 0), hist(rain^(1/p), freq = FALSE))
+with(subset(RainIbk, rain > 0), hist(rain^(1/2), freq = FALSE))
+
+
+boxcox <- function(x, lambda = 1)
+{
+  i <- x > 0
+  x[i] <- if(lambda != 0) (x[i]^lambda - 1) / lambda else log(x[i])
+  x
+}
 
 alpha <- predict(b2, model = "alpha", type = "parameter")
 
