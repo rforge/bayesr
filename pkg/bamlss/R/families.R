@@ -703,7 +703,11 @@ trunc.bamlss <- function(links = c(mu = "identity", sigma = "log"),
 
 cnorm.bamlss <- function(...)
 {
-  f <- cens.bamlss(left = 0)
+  f <- list(
+    "family" = "cnorm",
+    "names" = c("mu", "sigma"),
+    "links" = c("mu" = "identity", "sigma" = "log")
+  )
   f$transform <- function(x, ...) {
     x <- bamlss.setup(x, ...)
     y <- attr(x, "response.vec")
@@ -766,7 +770,11 @@ cnorm.bamlss <- function(...)
 
 pcnorm.bamlss <- function(alpha = NULL, ...)
 {
-  f <- cens.bamlss(left = 0)
+  f <- list(
+    "family" = "pcnorm",
+    "names" = c("mu", "sigma"),
+    "links" = c("mu" = "identity", "sigma" = "log")
+  )
   if(is.null(alpha)) {
     f$names <- c(f$names, "alpha")
     f$links <- c(f$links, "alpha" = "log")

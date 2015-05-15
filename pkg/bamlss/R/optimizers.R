@@ -922,7 +922,7 @@ bfit0_optim <- function(x, family, response, eta, id, ...)
 set.all.par <- function(par, x, hessian = NULL)
 {
   if(!is.null(hessian))
-    hessian <- solve(-1 * hessian)
+    hessian <- matrix_inv(-1 * hessian)
   nx <- names(x)
   np <- length(x)
   for(j in 1:np) {
@@ -1043,7 +1043,7 @@ grad_posterior <- function(par, x, ...)
 
 
 opt0 <- function(x, verbose = TRUE, digits = 3, gradient = TRUE, hessian = FALSE,
-  eps = .Machine$double.eps^0.25, maxit = 100, ...)
+  eps = .Machine$double.eps^0.5, maxit = 100, ...)
 {
   x <- bamlss.setup(x, ...)
 

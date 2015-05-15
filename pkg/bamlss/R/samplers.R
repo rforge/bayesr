@@ -1326,7 +1326,7 @@ null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC")
         opt0(x, hessian = TRUE, verbose = FALSE, ...)
       } else attr(x, "hessian")
     }
-    hessian <- solve(-1 * hessian)
+    hessian <- matrix_inv(-1 * hessian)
   }
 
   criterion <- match.arg(criterion)
