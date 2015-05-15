@@ -717,8 +717,11 @@ cnorm.bamlss <- function(...)
     x
   }
   f$engine <- function(x, ...) {
-    sampler <- function(x, ...) { GMCMC(x, propose = "iwls", ...) }
-    stacker(x, optimizer = bfit_cnorm, sampler = sampler, ...)
+    sampler <- if(is.null(list(...)$no.mcmc)) {
+      function(x, ...) { GMCMC(x, propose = "iwls", ...) }
+    } else null.sampler
+    optimizer <- if(is.null(list(...)$no.bfit)) bfit0 else opt0
+    stacker(x, optimizer = optimizer, sampler = sampler, ...)
   }
   f$score <- list(
     "mu" = function(y, eta, ...) {
@@ -769,7 +772,7 @@ cnorm.bamlss <- function(...)
 }
 
 
-pcnorm.bamlss <- function(alpha = NULL, ...)
+pcnorm.bamlss <- function(alpha = NULL, start = 1.5, ...)
 {
   f <- list(
     "family" = "pcnorm",
@@ -790,6 +793,10 @@ pcnorm.bamlss <- function(alpha = NULL, ...)
       if(length(x$alpha$smooth)) {
         for(j in seq_along(x$alpha$smooth))
           x$alpha$smooth[[j]]$propose <- gmcmc_sm.slice
+        if(!is.null(x$alpha$smooth$parametric)) {
+          x$alpha$smooth$parametric$state$parameters["g1"] <- log(start)
+          x$alpha$smooth$parametric$state$fitted.values <- x$alpha$smooth$parametric$get.mu(x$alpha$smooth$parametric$X, x$alpha$smooth$parametric$state$parameters)
+        }
       }
     }
     x

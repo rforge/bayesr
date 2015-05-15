@@ -1302,6 +1302,7 @@ null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC")
   nh <- names(par$par)
   response <- attr(x, "response.vec")
   eta <- get.eta(x)
+  if(n.samples < 1) n.samples <- 1
 
   if(n.samples > 1) {
     require("mvtnorm")
