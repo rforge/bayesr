@@ -743,6 +743,7 @@ gmcmc_sm.iwls0 <- gmcmc_sm.iwls <- function(family, theta, id, prior, eta, respo
   ## Compute new weights
   weights <- family$weights[[id[1]]](response, peta)
 
+
   ## New score.
   score <- family$score[[id[1]]](response, peta)
 

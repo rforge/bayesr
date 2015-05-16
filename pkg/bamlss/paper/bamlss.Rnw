@@ -252,7 +252,7 @@ where $\tilde{\boldsymbol{\gamma}}_j$ represents the fixed effects parameters an
 $\tilde{\boldsymbol{\beta}}_j \sim N(\mathbf{0}, \tau^2_j\mathbf{I})$ i.i.d.\ random effects.
 The design matrix $\mathbf{U}_j$ is derived from a spectral decomposition of the penalty matrix
 $\mathbf{K}_j$ and $\tilde{\mathbf{X}}_j$ by finding a basis of the null space of $\mathbf{K}_j$
-such that $\tilde{\mathbf{X}}_j^{\top}\mathbf{K}_j = \mathbf{0}$,i.e., parameters
+such that $\tilde{\mathbf{X}}_j^{\top}\mathbf{K}_j = \mathbf{0}$, i.e., parameters
 $\tilde{\boldsymbol{\gamma}}_j$ are not penalized (see, e.g.,
 \citealp{bamlss:Fahrmeir+Kneib+Lang+Marx:2013, bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003}).
 
@@ -300,13 +300,12 @@ available for the covariate(s).
 The main building block of regression model algorithms is the probability density function
 $f(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$, or for
 computational reasons its logarithm.
-Note that $f$ is considered to be a general density and $\boldsymbol{\theta}_1, \ldots,
-\boldsymbol{\theta}_K$ are parameters that are linked to STAR predictors given in
-equation (\ref{eqn:structadd}). Estimation typically requires to evaluate
-the log-likelihood function
+Note that $f$ is considered to be a general density and $\boldsymbol{\theta}_k$, $k = 1, \ldots, K$,
+are parameters that are linked to STAR predictors given in equation (\ref{eqn:structadd}).
+Estimation typically requires to evaluate the log-likelihood function
 \begin{equation}
 \ell(\boldsymbol{\vartheta} | \mathbf{y}) =
-  \sum_{i = 1}^n ln \, f(y_i | \theta_{i1} = h_1^{-1}(\eta_{i1}), \ldots,
+  \sum_{i = 1}^n ln \, f(\mathbf{y}_i | \theta_{i1} = h_1^{-1}(\eta_{i1}), \ldots,
   \theta_{iK} = h_K^{-1}(\eta_{iK}))
 \end{equation}
 a number of times, where the vector
@@ -330,6 +329,8 @@ fixed variance parameters $\boldsymbol{\tau}_{jk}^2$.
 
 
 \subsection{Model fitters} \label{sec:modelfit}
+
+
 
 \subsubsection{Frequentist}
 

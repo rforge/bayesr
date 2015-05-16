@@ -1278,7 +1278,7 @@ bfit_cnorm <- function(x, criterion = c("AICc", "BIC", "AIC"),
   x <- bamlss.setup(x, criterion = criterion, ...)
 
   family <- attr(x, "family")
-  nx <- family$names
+  nx <- family$names[1:2]
   if(!all(nx %in% names(x)))
     stop("parameter names mismatch with family names!")
   criterion <- match.arg(criterion)

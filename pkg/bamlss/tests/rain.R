@@ -72,7 +72,7 @@ f <- list(
   sigma ~ s(sqrtenssd),
   alpha ~ s(sqrtensmean) + s(sqrtenssd)
 )
-b1 <- bamlss(f[1:2], data = RainIbk, family = gF(pcnorm), no.mcmc = TRUE, n.samples = 0)
+b1 <- bamlss(f[1:2], data = RainIbk, family = gF(pcnorm), no.opt = TRUE, no.mcmc = TRUE)
 
 f <- list(
   I(rain^(1/2)) ~ s(sqrtensmean),

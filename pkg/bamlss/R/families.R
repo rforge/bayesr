@@ -802,10 +802,11 @@ pcnorm.bamlss <- function(alpha = NULL, start = 1.5, ...)
     x
   }
   f$engine <- function(x, ...) {
+    optimizer <- if(is.null(list(...)$no.opt)) opt0 else bfit_cnorm
     sampler <- if(is.null(list(...)$no.mcmc)) {
       function(x, ...) { GMCMC(x, propose = "iwls", ...) }
     } else null.sampler
-    stacker(x, optimizer = opt0, sampler = sampler, ...)
+    stacker(x, optimizer = optimizer, sampler = sampler, ...)
   }
   f$score <- list(
     "mu" = function(y, eta, ...) {
