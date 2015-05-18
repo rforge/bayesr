@@ -179,9 +179,9 @@ and geographically weighted regression \citep{bamlss:Fotheringham+Brunsdon+Charl
 In the following, we assume that for each function $f_j$ the vector of function evaluations
 $\mathbf{f}_j = (f_j(\mathbf{x}_{1}),\ldots,f_j(\mathbf{x}_{n}))^{\top}$ of the $i = 1, \ldots, n$
 observations is a composition of
-$$
+\begin{equation} \label{eqn:functions}
 \mathbf{f}_j = f_j(\mathbf{X}_j, \boldsymbol{\beta}_j),
-$$
+\end{equation}
 where $\mathbf{X}_j$ ($n \times m_j$) is a design matrix and the structure of $\mathbf{X}_j$ only
 depends on the type of covariate(s) and prior assumptions. The vector $\boldsymbol{\beta}_j$
 ($q_j \times 1$) are regression coefficients that need to be estimated. Hence, the predictor
@@ -346,7 +346,7 @@ The mode of the posterior distribution is the mode of the log-posterior (\ref{eq
   \underset{\boldsymbol{\vartheta}}{\text{arg max }} ln \, p(\boldsymbol{\vartheta} | \mathbf{y})
 \end{equation}
 and equals the maximum likelihood estimator assigning uniform priors
-$p_{jk}(\boldsymbol{\vartheta}_{jk}) \propto 1$, $k = 1, \ldots, K$, $j = 1, \ldots, p_k$.
+$p_{jk}(\boldsymbol{\vartheta}_{jk}) \propto 1$, $j = 1, \ldots, p_k$, $k = 1, \ldots, K$.
 For models involving shrinkage priors, e.g., given by (\ref{eqn:shrinkprior}), the posterior mode is
 equivalent to a penalized maximum likelihood estimator for fixed variance parameters
 $\boldsymbol{\tau}_{jk}^2$ and $p(\boldsymbol{\tau}_{jk}^2) \propto 1$. Moreover, the structure of
@@ -384,7 +384,21 @@ the derivatives of the log-likelihood for the $k$th parameter can be further dec
   \frac{\partial \boldsymbol{\theta}_k}{\partial \boldsymbol{\eta}_k}
   \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\vartheta}_k},
 \end{equation}
-
+including the derivatives of the log-likelihood with respect to parameters $\boldsymbol{\theta}_k$,
+the derivative of the link functions and the derivative of the STAR predictor
+$\boldsymbol{\eta}_k$ with respect to coefficients $\boldsymbol{\vartheta}_k$. In similar fashion
+components of $\mathbf{H}_{ks}$ including $\ell(\boldsymbol{\vartheta} | \mathbf{y})$ can be written as
+\begin{equation} \label{hessian2}
+\frac{\partial^2 \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}_k \partial \boldsymbol{\vartheta}_s^\top} =
+\left( \frac{\partial \boldsymbol{\eta}_s}{\partial \boldsymbol{\vartheta}_s} \right)^\top
+\frac{\partial^2 \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top}
+\frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\vartheta}_k}
+\,\, \underbrace{
+  \, + \, \frac{\partial \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k}
+    \frac{\partial^2 \boldsymbol{\eta}_k}{\partial^2 \boldsymbol{\vartheta}_k}}_{\text{if } k = s},
+\end{equation}
+for $k = 1, \dots, K$ and $s = 1, \dots, K$, where the second term drops if functions
+(\ref{eqn:functions}) can be written as a linear combination of a design matrix and coefficients.
 
 \bigskip\bigskip\bigskip
 
