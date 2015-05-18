@@ -225,7 +225,7 @@ number of basis functions is provided, e.g., in \citet{bamlss:Fahrmeir+Kneib+Lan
 
 The elegance of the approach is that regularization of the possibly very complex functions is
 accomplished by placing a generic multivariate normal prior
-\begin{equation} \label{eqn:prior}
+\begin{equation} \label{eqn:shrinkprior}
 p(\boldsymbol{\beta}_j) \propto \left( \frac{1}{\tau_j^2} \right)^{rk(\mathbf{K}_j) / 2} \exp \left(- \frac{1}{2\tau_j^2}
 \boldsymbol{\beta_j}^{\top}\mathbf{K}_j\boldsymbol{\beta}_j\right)
 \end{equation}
@@ -240,7 +240,7 @@ p(\tau_j^2) = \frac{b_j^{a_j}}{\Gamma(a_j)} (\tau_j^2)^{-(a_j + 1)} \exp(-b_j / 
 with $a_j = b_j = 0.001$ as a standard option. Small values for $a_j$ and $b_j$ correspond to an 
 approximate uniform distribution for $\log(\tau_j^2)$. Note that within this notion a ridge penalty
 on linear effects can be obtained by $\mathbf{K}_j = \mathbf{I}$, similarly independent and
-identically distributed (i.i.d.) random effects can be incorporated using prior (\ref{eqn:prior}).
+identically distributed (i.i.d.) random effects can be incorporated using prior (\ref{eqn:shrinkprior}).
 
 In addition, the individual model components $\mathbf{X}_j\boldsymbol{\beta}_j$ for any basis
 function specification can be further decomposed into a mixed model representation given by
@@ -303,7 +303,7 @@ computational reasons its logarithm.
 Note that $f$ is considered to be a general density and $\boldsymbol{\theta}_k$, $k = 1, \ldots, K$,
 are parameters that are linked to STAR predictors given in equation (\ref{eqn:structadd}).
 Estimation typically requires to evaluate the log-likelihood function
-\begin{equation}
+\begin{equation} \label{eqn:density}
 \ell(\boldsymbol{\vartheta} | \mathbf{y}) =
   \sum_{i = 1}^n ln \, f(\mathbf{y}_i | \theta_{i1} = h_1^{-1}(\eta_{i1}), \ldots,
   \theta_{iK} = h_K^{-1}(\eta_{iK}))
@@ -315,24 +315,79 @@ of length $n$. Note that in the simplest case $\boldsymbol{\vartheta}_k =
 (\boldsymbol{\vartheta}_{1k}, \ldots, \boldsymbol{\vartheta}_{p_kk})^\top =
 (\boldsymbol{\beta}_{1k}, \ldots, \boldsymbol{\beta}_{p_kk})^\top$ for $k = 1, \ldots, K$.
 Assigning prior distributions to the individual model components, e.g., given by the normal
-prior (\ref{eqn:prior}) and the inverse gamma prior (\ref{eqn:ig}), results in the log-posterior
-\begin{equation} \label{eqn:posterior}
-ln \, p(\boldsymbol{\vartheta} | \mathbf{y}) =
+prior (\ref{eqn:shrinkprior}) and the inverse gamma prior (\ref{eqn:ig}), results in the log-posterior
+\begin{equation} \label{eqn:logpost}
+ln \, p(\boldsymbol{\vartheta} | \mathbf{y}) \propto
   \ell(\boldsymbol{\vartheta} | \mathbf{y}) +
   \sum_{k = 1}^K\sum_{j = 1}^{p_k} \left\{ ln \, p_{jk}(\boldsymbol{\vartheta}_{jk}) \right\},
 \end{equation}
 where, e.g., $\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}, \boldsymbol{\tau}^2_{jk})^\top$
 now includes all variances associated with this term, too, and prior $p_{jk}(\cdot)$ denotes the
-combination of all assigned priors. Also note that from a frequentist perspective
-(\ref{eqn:posterior}) can be viewed as a penalized log-likelihood using prior (\ref{eqn:prior}) for
-fixed variance parameters $\boldsymbol{\tau}_{jk}^2$.
+combination of all assigned priors on parameters $\boldsymbol{\vartheta}_{jk}$. Also note that from a
+frequentist perspective (\ref{eqn:logpost}) can be viewed as a penalized log-likelihood using
+prior (\ref{eqn:shrinkprior}) for fixed variance parameters $\boldsymbol{\tau}_{jk}^2$.
 
 
 \subsection{Model fitters} \label{sec:modelfit}
 
+Bayesian point estimates of $\boldsymbol{\vartheta}$ are obtained by posterior mode, mean or median
+estimation. While posterior mode estimation requires maximization of the log-posterior
+(\ref{eqn:logpost}), which has an unique (sometimes analytical) solution in a lot of cases,
+posterior mean and median estimation involves solving (possibly) high-dimensional integrals, usually
+requiring computer intensive techniques such as Markov chain Monte Carlo (MCMC) simulation. The
+following describes the quantities needed for generic iterative algorithms for estimating Bayesian
+distributional regression models.
+
+\subsubsection{Posterior mode}
+
+The mode of the posterior distribution is the mode of the log-posterior (\ref{eqn:logpost}) given by
+\begin{equation}
+\text{Mod}(\boldsymbol{\vartheta} | \mathbf{y}) =
+  \underset{\boldsymbol{\vartheta}}{\text{arg max }} ln \, p(\boldsymbol{\vartheta} | \mathbf{y})
+\end{equation}
+and equals the maximum likelihood estimator assigning uniform priors
+$p_{jk}(\boldsymbol{\vartheta}_{jk}) \propto 1$, $k = 1, \ldots, K$, $j = 1, \ldots, p_k$.
+For models involving shrinkage priors, e.g., given by (\ref{eqn:shrinkprior}), the posterior mode is
+equivalent to a penalized maximum likelihood estimator for fixed variance parameters
+$\boldsymbol{\tau}_{jk}^2$ and $p(\boldsymbol{\tau}_{jk}^2) \propto 1$. Moreover, the structure of
+(\ref{eqn:logpost}) prohibits simultaneous estimation of $\boldsymbol{\beta}_{jk}$ and
+$\boldsymbol{\tau}^2_{jk}$ and $\hat{\boldsymbol{\tau}}^2_{jk}$ is usually derived by additionally
+minimizing an information criterion such as the Akaike information criterion (AIC) or the Bayesian
+information criterion (BIC) (see also \citealp{bamlss:Rigby+Stasinopoulos:2005} Appendix~A.2. for
+a more detailed discussion on variance/hyperparameter estimation). Estimation of
+$\boldsymbol{\vartheta}$ requires solving equations
+$\partial (ln \, p(\boldsymbol{\vartheta} | \mathbf{y})) / \partial \boldsymbol{\vartheta} = \mathbf{0}$
+and a particularly convenient way to maximize (\ref{eqn:logpost}) is the method of scoring
+\begin{equation} \label{eqn:scoring}
+\boldsymbol{\vartheta}^{(t + 1)} = \boldsymbol{\vartheta}^{(t)} -
+  \mathbf{H}\left( \boldsymbol{\vartheta}^{(t)} \right)^{-1}\mathbf{s}\left( \boldsymbol{\vartheta}^{(t)} \right)
+\end{equation}
+with score vector
+\begin{equation} \label{eqn:score}
+\mathbf{s}(\boldsymbol{\vartheta}) = 
+  \frac{\partial ln \, p(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}}
+= \frac{\partial \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}} +
+    \sum_{k = 1}^K\sum_{j = 1}^{p_k} \left\{ \frac{\partial ln \, p_{jk}(\boldsymbol{\vartheta}_{jk})}{\partial \boldsymbol{\vartheta}} \right\}.
+\end{equation}
+and hessian matrix $\mathbf{H}(\boldsymbol{\vartheta})$ with components
+\begin{equation} \label{eqn:hessian}
+\mathbf{H}_{ks} = 
+\frac{\partial^2 ln \, p(\boldsymbol{\vartheta})}{\partial \boldsymbol{\vartheta}_k \partial \boldsymbol{\vartheta}_s^\top} = \frac{\partial \mathbf{s}(\boldsymbol{\vartheta}_k)}{\partial \boldsymbol{\vartheta}_s^\top},
+\end{equation}
+for $k = 1, \dots, K$ and $s = 1, \dots, K$. By chain rule, the part of the score vector involving
+the derivatives of the log-likelihood for the $k$th parameter can be further decomposed to
+\begin{equation} \label{eqn:score2}
+\frac{\partial \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}_k} =
+  \frac{\partial \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k}
+  \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\vartheta}_k} = 
+  \frac{\partial \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\theta}_k}
+  \frac{\partial \boldsymbol{\theta}_k}{\partial \boldsymbol{\eta}_k}
+  \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\vartheta}_k},
+\end{equation}
 
 
-\subsubsection{Frequentist}
+\bigskip\bigskip\bigskip
+
 
 Maximum likelihood and other gradient based algorithms require the evaluation of the
 first derivative or score vector. Within the Bayesian formulation the resulting score vector is
