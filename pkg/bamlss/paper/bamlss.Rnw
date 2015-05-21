@@ -481,6 +481,10 @@ and $\mathbf{u}_k = \partial \ell(\boldsymbol{\vartheta}_k | \mathbf{y}) /
   \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{1k}\boldsymbol{\vartheta}_{1k}^{(t)} - \ldots -
   \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t)}
 \end{eqnarray*}
+\begin{eqnarray*}
+\mathbf{G}_{1k}(\boldsymbol{\vartheta}_{1k}^{(t+1)} - \boldsymbol{\vartheta}_{1k}^{(t)}) +
+  \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}(\tilde{\boldsymbol{\eta}}_k^{(t+1)} - \tilde{\boldsymbol{\eta}}_k^{(t)}) 
+\end{eqnarray*}
 
 \newpage
 
