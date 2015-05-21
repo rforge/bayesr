@@ -435,7 +435,7 @@ be an partitioned updating scheme with updating functions $U_k(\cdot)$, i.e., in
 one parameter is maximized holding the other parameters fixed. Then, applying a Newton-Raphson
 algorithm, the updating scheme for parameter $k$ can be written as
 \begin{equation} \label{eqn:blocknewton}
-\boldsymbol{\vartheta}_k^{(t + 1)} = U_k(\boldsymbol{\vartheta}^{(t)}) = \boldsymbol{\vartheta}_k^{(t)} -
+\boldsymbol{\vartheta}_k^{(t + 1)} = U_k(\boldsymbol{\vartheta}^{(t)} | \cdot) = \boldsymbol{\vartheta}_k^{(t)} -
   \mathbf{H}_{kk}\left( \boldsymbol{\vartheta}_k^{(t)} \right)^{-1}\mathbf{s}_k\left( \boldsymbol{\vartheta}_k^{(t)} \right).
 \end{equation}
 Moreover, note that this updating scheme can be further partitioned for each function within
@@ -448,7 +448,7 @@ $$
 \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{1k} + \mathbf{G}_{1k} &
   \cdots & \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{p_kk} \\
 \vdots & \ddots & \vdots \\
-\mathbf{Z}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{Z}_{p_kk} & \cdots & \mathbf{Z}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{Z}_{p_kk} + \mathbf{G}_{p_kk}
+\mathbf{Z}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{Z}_{1k} & \cdots & \mathbf{Z}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{Z}_{p_kk} + \mathbf{G}_{p_kk}
 \end{pmatrix},
 $$
 with diagonal weight matrix $\mathbf{W}_{kk} = -diag(\partial^2 \ell(\boldsymbol{\vartheta}_k | \mathbf{y}) /
@@ -462,11 +462,25 @@ $$
 \mathbf{Z}_{1k}^\top \mathbf{u}_k^{(t)} + \mathbf{Q}_{1k} \\
 \vdots \\
 \mathbf{Z}_{p_kk}^\top \mathbf{u}_k^{(t)} + \mathbf{Q}_{p_kk} \\
-\end{pmatrix},
+\end{pmatrix}
 $$
-where $\mathbf{u}_k = \partial \ell(\boldsymbol{\vartheta}_k | \mathbf{y}) /
-\partial \boldsymbol{\eta}_k$ and $\mathbf{Q}_{jk} = \partial p_{jk}(\boldsymbol{\vartheta}_{jk}) /
+and $\mathbf{u}_k = \partial \ell(\boldsymbol{\vartheta}_k | \mathbf{y}) /
+\partial \boldsymbol{\eta}_k$ with $\mathbf{Q}_{jk} = \partial p_{jk}(\boldsymbol{\vartheta}_{jk}) /
 \partial \boldsymbol{\vartheta}_{jk}$.
+
+\begin{eqnarray*}
+(\mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{1k} + \mathbf{G}_{1k})\boldsymbol{\vartheta}_{1k}^{(t+1)} +
+\ldots + \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t + 1)} - \\
+(\mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{1k} + \mathbf{G}_{1k})\boldsymbol{\vartheta}_{1k}^{(t)} -
+\ldots - \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t)}
+\end{eqnarray*}
+\begin{eqnarray*}
+\mathbf{G}_{1k}(\boldsymbol{\vartheta}_{1k}^{(t+1)} - \boldsymbol{\vartheta}_{1k}^{(t)}) +
+  \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{1k}\boldsymbol{\vartheta}_{1k}^{(t+1)} + \ldots +
+  \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t+1)} - \\
+  \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{1k}\boldsymbol{\vartheta}_{1k}^{(t)} - \ldots -
+  \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t)}
+\end{eqnarray*}
 
 \newpage
 
