@@ -332,7 +332,7 @@ prior (\ref{eqn:shrinkprior}) for fixed variance parameters $\boldsymbol{\tau}_{
 
 Bayesian point estimates of $\boldsymbol{\vartheta}$ are obtained by posterior mode, mean or median
 estimation. While posterior mode estimation requires maximization of the log-posterior
-(\ref{eqn:logpost}), which has an unique (sometimes analytical) solution in a lot of cases,
+(\ref{eqn:logpost}), which has an unique (sometimes analytical) solution in a number of cases,
 posterior mean and median estimation involves solving (possibly) high-dimensional integrals, usually
 requiring computer intensive techniques such as Markov chain Monte Carlo (MCMC) simulation. The
 following describes the quantities needed for generic iterative algorithms for estimating Bayesian
@@ -350,16 +350,22 @@ $p_{jk}(\boldsymbol{\vartheta}_{jk}) \propto 1$, $j = 1, \ldots, p_k$, $k = 1, \
 For models involving shrinkage priors, e.g., given by (\ref{eqn:shrinkprior}), the posterior mode is
 equivalent to a penalized maximum likelihood estimator for fixed variance parameters
 $\boldsymbol{\tau}_{jk}^2$ and $p(\boldsymbol{\tau}_{jk}^2) \propto 1$. Moreover, the structure of
-(\ref{eqn:logpost}) prohibits simultaneous estimation of $\boldsymbol{\beta}_{jk}$ and
-$\boldsymbol{\tau}^2_{jk}$ and $\hat{\boldsymbol{\tau}}^2_{jk}$ is usually derived by additionally
+(\ref{eqn:logpost}) prohibits simultaneous estimation of
+$\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}, \boldsymbol{\tau}^2_{jk})^\top$ and the
+estimator $\hat{\boldsymbol{\tau}}^2_{jk}$ is usually derived by additionally
 minimizing an information criterion such as the Akaike information criterion (AIC) or the Bayesian
 information criterion (BIC) (see also \citealp{bamlss:Rigby+Stasinopoulos:2005} Appendix~A.2. for
 a more detailed discussion on variance/hyperparameter estimation). Estimation of
 $\boldsymbol{\vartheta}$ requires solving equations
 $\partial (ln \, p(\boldsymbol{\vartheta} | \mathbf{y})) / \partial \boldsymbol{\vartheta} = \mathbf{0}$
-and a particularly convenient way to maximize (\ref{eqn:logpost}) is the method of scoring
-\begin{equation} \label{eqn:scoring}
-\boldsymbol{\vartheta}^{(t + 1)} = \boldsymbol{\vartheta}^{(t)} -
+and usually the problem is solved with an iterative updating scheme of the form
+\begin{equation} \label{eqn:updating}
+\boldsymbol{\vartheta}^{(t + 1)} = U(\boldsymbol{\vartheta}^{(t)}),
+\end{equation}
+with updating function $U(\cdot)$ and $\hat{\boldsymbol{\vartheta}}$ as a fixed point of the iteration.
+A particularly convenient way to maximize (\ref{eqn:logpost}) is a Newton-Raphson type updating
+\begin{equation} \label{eqn:newton}
+\boldsymbol{\vartheta}^{(t + 1)} = U(\boldsymbol{\vartheta}^{(t)}) = \boldsymbol{\vartheta}^{(t)} -
   \mathbf{H}\left( \boldsymbol{\vartheta}^{(t)} \right)^{-1}\mathbf{s}\left( \boldsymbol{\vartheta}^{(t)} \right)
 \end{equation}
 with score vector
@@ -386,8 +392,9 @@ the derivatives of the log-likelihood for the $k$th parameter can be further dec
 \end{equation}
 including the derivatives of the log-likelihood with respect to parameters $\boldsymbol{\theta}_k$,
 the derivative of the link functions and the derivative of the STAR predictor
-$\boldsymbol{\eta}_k$ with respect to coefficients $\boldsymbol{\vartheta}_k$. In similar fashion
-components of $\mathbf{H}_{ks}$ including $\ell(\boldsymbol{\vartheta} | \mathbf{y})$ can be written as
+$\boldsymbol{\eta}_k$ with respect to coefficients $\boldsymbol{\vartheta}_k$. Again by chain rule,
+the components of $\mathbf{H}_{ks}$ including $\ell(\boldsymbol{\vartheta} | \mathbf{y})$ can be
+written as
 \begin{equation} \label{hessian2}
 \frac{\partial^2 \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}_k \partial \boldsymbol{\vartheta}_s^\top} =
 \left( \frac{\partial \boldsymbol{\eta}_s}{\partial \boldsymbol{\vartheta}_s} \right)^\top
@@ -397,10 +404,63 @@ components of $\mathbf{H}_{ks}$ including $\ell(\boldsymbol{\vartheta} | \mathbf
   \, + \, \frac{\partial \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k}
     \frac{\partial^2 \boldsymbol{\eta}_k}{\partial^2 \boldsymbol{\vartheta}_k}}_{\text{if } k = s},
 \end{equation}
-for $k = 1, \dots, K$ and $s = 1, \dots, K$, where the second term drops if functions
-(\ref{eqn:functions}) can be written as a linear combination of a design matrix and coefficients.
+where the second term drops if all functions (\ref{eqn:functions}) can be written as a linear
+combination of a design matrix and coefficients, e.g., when using a basis function approach. Within
+the first term, the second derivatives of the log-likelihood involving the predictors can be written
+as
+\begin{equation} \label{hessian3}
+\frac{\partial^2 \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top} =
+  \frac{\partial \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\theta}_k}
+  \frac{\partial^2 \boldsymbol{\theta}_k}{\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_s^\top} + 
+  \frac{\partial^2 \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\theta}_k \partial \boldsymbol{\theta}_s^\top}
+  \frac{\partial \boldsymbol{\theta}_k}{\partial \boldsymbol{\eta}_k}
+  \frac{\partial \boldsymbol{\theta}_s}{\partial \boldsymbol{\eta}_s}
+\end{equation}
+involving the second derivatives of the link functions.
 
-\bigskip\bigskip\bigskip
+Although solving the updating scheme (\ref{eqn:newton}) is feasible, from the computational
+perspective of the model class it is still a bit unhandy. Fortunately, the problem of iteratively
+finding the roots for $\boldsymbol{\vartheta}$ can be partitioned into separate updating equations
+using leapfrog or zigzag iteration \citep{bamlss:Smyth:1996}. Now let
+\begin{eqnarray}
+\boldsymbol{\vartheta}_1^{(t + 1)} &=& U_1(\boldsymbol{\vartheta}_1^{(t)}, \boldsymbol{\vartheta}_2^{(t)},
+  \ldots, \boldsymbol{\vartheta}_K^{(t)}) \nonumber \\
+\boldsymbol{\vartheta}_2^{(t + 1)} &=& U_2(\boldsymbol{\vartheta}_1^{(t+1)}, \boldsymbol{\vartheta}_2^{(t)},
+  \ldots, \boldsymbol{\vartheta}_K^{(t)}) \nonumber \\
+  &\vdots& \nonumber \\
+\boldsymbol{\vartheta}_K^{(t + 1)} &=& U_K(\boldsymbol{\vartheta}_1^{(t+1)}, \boldsymbol{\vartheta}_2^{(t+1)},
+  \ldots, \boldsymbol{\vartheta}_K^{(t)})
+\end{eqnarray}
+be an partitioned updating scheme with updating functions $U_k(\cdot)$, i.e., in each iteration
+one parameter is maximized holding the other parameters fixed. Then, applying a Newton-Raphson
+algorithm, the updating scheme for parameter $k$ can be written as
+\begin{equation} \label{eqn:blocknewton}
+\boldsymbol{\vartheta}_k^{(t + 1)} = U_k(\boldsymbol{\vartheta}^{(t)}) = \boldsymbol{\vartheta}_k^{(t)} -
+  \mathbf{H}_{kk}\left( \boldsymbol{\vartheta}_k^{(t)} \right)^{-1}\mathbf{s}_k\left( \boldsymbol{\vartheta}_k^{(t)} \right).
+\end{equation}
+Moreover, note that this updating scheme can be further partitioned for each function within
+parameter block $k$, leading to a highly modular system.
+
+Assuming a basis function approach, updating equation (\ref{eqn:blocknewton}) can be written as
+\begin{equation*} \label{eqn:newton2}
+\begin{pmatrix}
+\mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} + \mathbf{G}_{1k} & \cdots & \mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} \\
+\vdots & \ddots & \vdots \\
+\mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} & \cdots & \mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} + \mathbf{G}_{p_kk}
+\end{pmatrix}^{(t)}
+\begin{pmatrix}
+\boldsymbol{\vartheta}_{1k}^{(t + 1)} - \boldsymbol{\vartheta}_{1k}^{(t)} \\
+\vdots \\
+\boldsymbol{\vartheta}_{p_kk}^{(t + 1)} - \boldsymbol{\vartheta}_{p_kk}^{(t)}
+\end{pmatrix}
+= \begin{pmatrix}
+\mathbf{s}(\boldsymbol{\vartheta}_{1k}) \\
+\vdots \\
+\mathbf{s}(\boldsymbol{\vartheta}_{p_kk})
+\end{pmatrix}^{(t)}
+\end{equation*}
+
+\newpage
 
 
 Maximum likelihood and other gradient based algorithms require the evaluation of the

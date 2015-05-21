@@ -1230,7 +1230,7 @@ SEXP cnorm_power_loglik(SEXP y, SEXP mu, SEXP sigma, SEXP alpha, SEXP check)
   int n = length(y);
   double *yptr = REAL(y);
   double *muptr = REAL(mu);
-  double * sigmaptr = REAL(sigma);
+  double *sigmaptr = REAL(sigma);
   double *alphaptr = REAL(alpha);
   int *checkptr = INTEGER(check);
 
