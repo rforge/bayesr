@@ -441,8 +441,36 @@ algorithm, the updating scheme for parameter $k$ can be written as
 Moreover, note that this updating scheme can be further partitioned for each function within
 parameter block $k$, leading to a highly modular system.
 
-Assuming a basis function approach with multivariate normal priors given by (\ref{eqn:shrinkprior}),
-updating equation (\ref{eqn:blocknewton}) can be written as
+The hessian matrix in (\ref{eqn:blocknewton}) can be written as
+$$
+\mathbf{H}_{kk}\left( \boldsymbol{\vartheta}_k^{(t)} \right) =
+\begin{pmatrix}
+\mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{1k} + \mathbf{G}_{1k} &
+  \cdots & \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{p_kk} \\
+\vdots & \ddots & \vdots \\
+\mathbf{Z}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{Z}_{p_kk} & \cdots & \mathbf{Z}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{Z}_{p_kk} + \mathbf{G}_{p_kk}
+\end{pmatrix},
+$$
+with diagonal weight matrix $\mathbf{W}_{kk} = -diag(\partial^2 \ell(\boldsymbol{\vartheta}_k | \mathbf{y}) /
+\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ derivatives
+$\mathbf{Z}_{jk} = \partial \boldsymbol{\eta}_k / \partial \boldsymbol{\vartheta}_{jk}$, where
+$\mathbf{G}_{jk}$ is the derivative resulting from priors $p_{jk}(\cdot)$ and specific functional
+types (second term in \ref{hessian2}). Similarly, the score is
+$$
+\mathbf{s}_k\left( \boldsymbol{\vartheta}_k^{(t)} \right) =
+\begin{pmatrix}
+\mathbf{Z}_{1k}^\top \mathbf{u}_k^{(t)} + \mathbf{Q}_{1k} \\
+\vdots \\
+\mathbf{Z}_{p_kk}^\top \mathbf{u}_k^{(t)} + \mathbf{Q}_{p_kk} \\
+\end{pmatrix},
+$$
+where $\mathbf{u}_k = \partial \ell(\boldsymbol{\vartheta}_k | \mathbf{y}) /
+\partial \boldsymbol{\eta}_k$ and $\mathbf{Q}_{jk} = \partial p_{jk}(\boldsymbol{\vartheta}_{jk}) /
+\partial \boldsymbol{\vartheta}_{jk}$.
+
+\newpage
+
+
 $$
 \begin{pmatrix}
 \mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} + \frac{1}{\tau_{p_kk}^2}\mathbf{K}_{1k} &
@@ -462,8 +490,6 @@ $$
 \end{pmatrix},
 $$
 where $\mathbf{s}_k = \partial \ell(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k$.
-
-\newpage
 
 
 Maximum likelihood and other gradient based algorithms require the evaluation of the
