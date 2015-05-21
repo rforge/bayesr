@@ -1,13 +1,13 @@
 library("bamlss")
 
-if(file.exists("~/tmp/homstart.rda")) {
-  load("~/tmp/homstart.rda")
+if(file.exists("~/data/homstart.rda")) {
+  load("~/data/homstart.rda")
 } else {
   dpath <- system.file(package = "bamlss", "data")
   if(!file.exists(file <- file.path(dpath, "homstart.rda"))) {
     homstart_data(dir = dirname(file), load = TRUE)
   } else load(file)
-  file.copy(file, file.path("~/tmp/homstart.rda"))
+  file.copy(file, file.path("~/data/homstart.rda"))
 }
 
 homstart$raw[homstart$raw < 0] <- 0
@@ -19,12 +19,9 @@ f <- list(
   ~ te(day,long,lat, bs=c("cc","tp"), d=c(1,2)) + s(elevation,k=4) + s(long,lat)
 )
 
-b2 <- bamlss0(f, data = rain2, family = gF(cens, left = 0),
-  binning = FALSE, sampler = NULL, do.optim = TRUE, before = FALSE, maxit = 2)
+b1 <- bamlss(f, data = rain2, family = gF(cnorm), binning = TRUE,
+  before = TRUE, gam.side = FALSE, do.optim = FALSE, n.iter = 300, burnin = 0, thin = 1)
 
-b1 <- bamlss(f, data = homstart, family = gF(cens, left = 0),
-  method = c("backfitting", "MCMC"), update = "iwls", propose = "iwls",
-  n.iter = 5000, burnin = 1000, thin = 10, cores = 3)
 
 library("truncreg")
 

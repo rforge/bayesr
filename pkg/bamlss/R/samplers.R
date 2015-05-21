@@ -660,7 +660,7 @@ gmcmc_slice <- function(fun, theta, id, prior, ...)
 }
 
 
-gmcmc_sm.iwls <- function(family, theta, id, prior,
+gmcmc_sm.iwlsC <- function(family, theta, id, prior,
   eta, response, data, zworking, resids, rho, ...)
 {
   rval <- .Call("gmcmc_iwls", family, theta, id, eta, response, data, zworking, resids, rho)
@@ -670,7 +670,7 @@ gmcmc_sm.iwls <- function(family, theta, id, prior,
   rval
 }
 
-gmcmc_sm.iwls.R <- function(family, theta, id, prior, eta, response, data, ...)
+gmcmc_sm.iwls <- function(family, theta, id, prior, eta, response, data, ...)
 {
   require("mvtnorm")
 

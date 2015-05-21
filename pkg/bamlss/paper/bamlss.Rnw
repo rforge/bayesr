@@ -445,10 +445,10 @@ Assuming a basis function approach with multivariate normal priors given by (\re
 updating equation (\ref{eqn:blocknewton}) can be written as
 $$
 \begin{pmatrix}
-\mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} - \mathbf{K}_{1k} &
+\mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} + \frac{1}{\tau_{p_kk}^2}\mathbf{K}_{1k} &
   \cdots & \mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} \\
 \vdots & \ddots & \vdots \\
-\mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} & \cdots & \mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} - \mathbf{K}_{p_kk}
+\mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} & \cdots & \mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} + \frac{1}{\tau_{p_kk}^2}\mathbf{K}_{p_kk}
 \end{pmatrix}^{(t)}
 \begin{pmatrix}
 \boldsymbol{\vartheta}_{1k}^{(t + 1)} - \boldsymbol{\vartheta}_{1k}^{(t)} \\
@@ -456,9 +456,9 @@ $$
 \boldsymbol{\vartheta}_{p_kk}^{(t + 1)} - \boldsymbol{\vartheta}_{p_kk}^{(t)}
 \end{pmatrix}
 = \begin{pmatrix}
-\mathbf{X}_{1k}^\top\mathbf{s}_k - \boldsymbol{\beta}_{1k}^{(t)}\frac{1}{2\tau_{1k}^2}\mathbf{K}_{1k} \\
+\mathbf{X}_{1k}^\top\mathbf{s}_k - \frac{1}{2\tau_{1k}^2}\mathbf{K}_{1k}\boldsymbol{\beta}_{1k}^{(t)} \\
 \vdots \\
-\mathbf{X}_{p_kk}^\top\mathbf{s}_k - \boldsymbol{\beta}_{p_kk}^{(t)}\frac{1}{2\tau_{p_kk}^2}\mathbf{K}_{p_kk}
+\mathbf{X}_{p_kk}^\top\mathbf{s}_k - \frac{1}{2\tau_{p_kk}^2}\mathbf{K}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t)}
 \end{pmatrix},
 $$
 where $\mathbf{s}_k = \partial \ell(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k$.
