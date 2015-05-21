@@ -377,7 +377,7 @@ with score vector
 \end{equation}
 and hessian matrix $\mathbf{H}(\boldsymbol{\vartheta})$ with components
 \begin{equation} \label{eqn:hessian}
-\mathbf{H}_{ks} = 
+\mathbf{H}_{ks}(\boldsymbol{\vartheta}) = 
 \frac{\partial^2 ln \, p(\boldsymbol{\vartheta})}{\partial \boldsymbol{\vartheta}_k \partial \boldsymbol{\vartheta}_s^\top} = \frac{\partial \mathbf{s}(\boldsymbol{\vartheta}_k)}{\partial \boldsymbol{\vartheta}_s^\top},
 \end{equation}
 for $k = 1, \dots, K$ and $s = 1, \dots, K$. By chain rule, the part of the score vector involving
@@ -441,12 +441,14 @@ algorithm, the updating scheme for parameter $k$ can be written as
 Moreover, note that this updating scheme can be further partitioned for each function within
 parameter block $k$, leading to a highly modular system.
 
-Assuming a basis function approach, updating equation (\ref{eqn:blocknewton}) can be written as
-\begin{equation*} \label{eqn:newton2}
+Assuming a basis function approach with multivariate normal priors given by (\ref{eqn:shrinkprior}),
+updating equation (\ref{eqn:blocknewton}) can be written as
+$$
 \begin{pmatrix}
-\mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} + \mathbf{G}_{1k} & \cdots & \mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} \\
+\mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} - \mathbf{K}_{1k} &
+  \cdots & \mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} \\
 \vdots & \ddots & \vdots \\
-\mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} & \cdots & \mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} + \mathbf{G}_{p_kk}
+\mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} & \cdots & \mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} - \mathbf{K}_{p_kk}
 \end{pmatrix}^{(t)}
 \begin{pmatrix}
 \boldsymbol{\vartheta}_{1k}^{(t + 1)} - \boldsymbol{\vartheta}_{1k}^{(t)} \\
@@ -454,11 +456,12 @@ Assuming a basis function approach, updating equation (\ref{eqn:blocknewton}) ca
 \boldsymbol{\vartheta}_{p_kk}^{(t + 1)} - \boldsymbol{\vartheta}_{p_kk}^{(t)}
 \end{pmatrix}
 = \begin{pmatrix}
-\mathbf{s}(\boldsymbol{\vartheta}_{1k}) \\
+\mathbf{X}_{1k}^\top\mathbf{s}_k - \boldsymbol{\beta}_{1k}^{(t)}\frac{1}{2\tau_{1k}^2}\mathbf{K}_{1k} \\
 \vdots \\
-\mathbf{s}(\boldsymbol{\vartheta}_{p_kk})
-\end{pmatrix}^{(t)}
-\end{equation*}
+\mathbf{X}_{p_kk}^\top\mathbf{s}_k - \boldsymbol{\beta}_{p_kk}^{(t)}\frac{1}{2\tau_{p_kk}^2}\mathbf{K}_{p_kk}
+\end{pmatrix},
+$$
+where $\mathbf{s}_k = \partial \ell(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k$.
 
 \newpage
 

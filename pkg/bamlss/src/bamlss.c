@@ -677,10 +677,12 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   SEXP weights;
   PROTECT(weights = iwls_eval(getListElement(getListElement(family, "weights"),
     CHAR(STRING_ELT(id, 0))), response, peta, rho));
+  double *weightsptr = REAL(weights);
   ++nProtected;
   SEXP score;
   PROTECT(score = iwls_eval(getListElement(getListElement(family, "score"),
     CHAR(STRING_ELT(id, 0))), response, peta, rho));
+  double *scoreptr = REAL(score);
   ++nProtected;
   SEXP eta2;
   PROTECT(eta2 = duplicate(eta));
@@ -696,8 +698,6 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   double *gamma1ptr = REAL(gamma1);
   double *tau2ptr = REAL(tau2);
   double *etaptr = REAL(getListElement(eta2, CHAR(STRING_ELT(id, 0))));
-  double *weightsptr = REAL(weights);
-  double *scoreptr = REAL(score);
   double *zptr = REAL(z);
   double *eptr = REAL(e);
   double *xweightsptr = REAL(getListElement(x, "weights"));
@@ -900,10 +900,9 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   double pibetaprop = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, peta, rho))[0];
   weights = iwls_eval(getListElement(getListElement(family, "weights"),
     CHAR(STRING_ELT(id, 0))), response, peta, rho);
+  weightsptr = REAL(weights);
   score = iwls_eval(getListElement(getListElement(family, "score"),
     CHAR(STRING_ELT(id, 0))), response, peta, rho);
-
-  weightsptr = REAL(weights);
   scoreptr = REAL(score);
 
   xweightsptr[0] = 0;
