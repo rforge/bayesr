@@ -372,7 +372,7 @@ smooth.bamlss.default <- function(x, ...)
       } else {
         grad <- 0; grad2 <- NULL
         for(j in seq_along(tau2)) {
-          gS <- crossprod(gamma, x$S[[j]])
+          gS <- x$S[[j]] %*% gamma
           grad <- grad + drop(-0.5 / tau2[j] * gS)
           if(full & !is.null(tau2[j])) {
             grad2 <- c(grad2, drop(-x$rank[j] / (2 * tau2[j]) - 1 / (2 * tau2[j]^2) * gS %*% gamma + (-x$a - 1) / tau2[j] + x$b / (tau2[j]^2)))
@@ -890,7 +890,7 @@ bfit0_optim <- function(x, family, response, eta, id, ...)
       IC
     }
     if(length(get.state(x, "tau2")) < 2) {
-      tau2 <- try(optimize(objfun2, interval = x$state$interval)$minimum, silent = TRUE)
+      tau2 <- try(optimize(objfun2, interval = c(0.1, 1000))$minimum, silent = TRUE)
       if(inherits(tau2, "try-error"))
         tau2 <- optimize2(objfun2, interval = x$state$interval, grid = x$state$grid)$minimum
       tpar <- set.par(tpar, if(!length(tau2)) x$interval[1] else tau2, "tau2")

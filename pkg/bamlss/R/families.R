@@ -485,6 +485,9 @@ gaussian.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
     },
     "type" = 1
   )
+
+rval$gradient <- NULL
+rval$hessian <- NULL
   
   class(rval) <- "family.bamlss"
   rval

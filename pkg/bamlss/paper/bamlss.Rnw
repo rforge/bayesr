@@ -432,144 +432,128 @@ using leapfrog or zigzag iteration \citep{bamlss:Smyth:1996}. Now let
   \ldots, \boldsymbol{\vartheta}_K^{(t)})
 \end{eqnarray}
 be an partitioned updating scheme with updating functions $U_k(\cdot)$, i.e., in each iteration
-one parameter is maximized holding the other parameters fixed. Then, applying a Newton-Raphson
-algorithm, the updating scheme for parameter $k$ can be written as
+one parameter is maximized holding the other parameters fixed. Note that this updating scheme can be
+further partitioned for each function within parameter block $k$, leading to a highly modular
+system.
+
+For orthogonal parameters $\boldsymbol{\vartheta}_k$, the updating scheme can be written as
+a simplified Newton-Raphson iteration
 \begin{equation} \label{eqn:blocknewton}
-\boldsymbol{\vartheta}_k^{(t + 1)} = U_k(\boldsymbol{\vartheta}^{(t)} | \cdot) = \boldsymbol{\vartheta}_k^{(t)} -
+\boldsymbol{\vartheta}_k^{(t + 1)} = U_k(\boldsymbol{\vartheta}_k^{(t)} | \cdot) = \boldsymbol{\vartheta}_k^{(t)} -
   \mathbf{H}_{kk}\left( \boldsymbol{\vartheta}_k^{(t)} \right)^{-1}\mathbf{s}_k\left( \boldsymbol{\vartheta}_k^{(t)} \right).
 \end{equation}
-Moreover, note that this updating scheme can be further partitioned for each function within
-parameter block $k$, leading to a highly modular system.
-
-The hessian matrix in (\ref{eqn:blocknewton}) can be written as
+Assuming a basis function approach for functions (\ref{eqn:functions}) with multivariate normal
+priors (\ref{eqn:shrinkprior}), the hessian matrix in (\ref{eqn:blocknewton}) can be written as
 $$
 \mathbf{H}_{kk}\left( \boldsymbol{\vartheta}_k^{(t)} \right) =
 \begin{pmatrix}
-\mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{1k} + \mathbf{G}_{1k} &
-  \cdots & \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{p_kk} \\
+\mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} + \mathbf{G}_{1k} &
+  \cdots & \mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} \\
 \vdots & \ddots & \vdots \\
-\mathbf{Z}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{Z}_{1k} & \cdots & \mathbf{Z}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{Z}_{p_kk} + \mathbf{G}_{p_kk}
-\end{pmatrix},
+\mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} & \cdots & \mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} + \mathbf{G}_{p_kk}
+\end{pmatrix}^{(t)},
 $$
 with diagonal weight matrix $\mathbf{W}_{kk} = -diag(\partial^2 \ell(\boldsymbol{\vartheta}_k | \mathbf{y}) /
-\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ derivatives
-$\mathbf{Z}_{jk} = \partial \boldsymbol{\eta}_k / \partial \boldsymbol{\vartheta}_{jk}$, where
-$\mathbf{G}_{jk}$ is the derivative resulting from priors $p_{jk}(\cdot)$ and specific functional
-types (second term in \ref{hessian2}). Similarly, the score is
+\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and penalty matrix
+$\mathbf{G}_{jk} = 0.5\tau_{jk}^{-2}\mathbf{K}_{jk}$. Similarly, the score vector is
 $$
 \mathbf{s}_k\left( \boldsymbol{\vartheta}_k^{(t)} \right) =
 \begin{pmatrix}
-\mathbf{Z}_{1k}^\top \mathbf{u}_k^{(t)} + \mathbf{Q}_{1k} \\
+\mathbf{X}_{1k}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{1k}\boldsymbol{\vartheta}_{1k}^{(t)} \\
 \vdots \\
-\mathbf{Z}_{p_kk}^\top \mathbf{u}_k^{(t)} + \mathbf{Q}_{p_kk} \\
+\mathbf{X}_{p_kk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t)} \\
 \end{pmatrix}
 $$
-and $\mathbf{u}_k = \partial \ell(\boldsymbol{\vartheta}_k | \mathbf{y}) /
-\partial \boldsymbol{\eta}_k$ with $\mathbf{Q}_{jk} = \partial p_{jk}(\boldsymbol{\vartheta}_{jk}) /
-\partial \boldsymbol{\vartheta}_{jk}$.
-
+and derivatives $\mathbf{u}_k = \partial \ell(\boldsymbol{\vartheta}_k | \mathbf{y}) /
+\partial \boldsymbol{\eta}_k$. Focusing on the $j$th row of (\ref{eqn:blocknewton}) gives
 \begin{eqnarray*}
-(\mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{1k} + \mathbf{G}_{1k})\boldsymbol{\vartheta}_{1k}^{(t+1)} +
-\ldots + \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t + 1)} - \\
-(\mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{1k} + \mathbf{G}_{1k})\boldsymbol{\vartheta}_{1k}^{(t)} -
-\ldots - \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t)}
+(\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\vartheta}_{jk}^{(t+1)} +
+\ldots + \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t + 1)} - \\
+(\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\vartheta}_{jk}^{(t)} -
+\ldots - \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t)}
+  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{jk}\boldsymbol{\vartheta}_{jk}^{(t)}
 \end{eqnarray*}
 \begin{eqnarray*}
-\mathbf{G}_{1k}(\boldsymbol{\vartheta}_{1k}^{(t+1)} - \boldsymbol{\vartheta}_{1k}^{(t)}) +
-  \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{1k}\boldsymbol{\vartheta}_{1k}^{(t+1)} + \ldots +
-  \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t+1)} - \\
-  \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{1k}\boldsymbol{\vartheta}_{1k}^{(t)} - \ldots -
-  \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}\mathbf{Z}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t)}
+\mathbf{G}_{jk}(\boldsymbol{\vartheta}_{jk}^{(t+1)} - \boldsymbol{\vartheta}_{jk}^{(t)}) +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\vartheta}_{jk}^{(t+1)} + \ldots +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t+1)} - \\
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\vartheta}_{jk}^{(t)} - \ldots -
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t)}
+  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{jk}\boldsymbol{\vartheta}_{jk}^{(t)}
 \end{eqnarray*}
 \begin{eqnarray*}
-\mathbf{G}_{1k}(\boldsymbol{\vartheta}_{1k}^{(t+1)} - \boldsymbol{\vartheta}_{1k}^{(t)}) +
-  \mathbf{Z}_{1k}^\top\mathbf{W}_{kk}(\tilde{\boldsymbol{\eta}}_k^{(t+1)} - \tilde{\boldsymbol{\eta}}_k^{(t)}) 
+\mathbf{G}_{jk}\boldsymbol{\vartheta}_{jk}^{(t)} +
+  \mathbf{G}_{jk}(\boldsymbol{\vartheta}_{jk}^{(t+1)} - \boldsymbol{\vartheta}_{jk}^{(t)}) +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\vartheta}_{jk}^{(t+1)} + \ldots +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t+1)} - \\
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\vartheta}_{jk}^{(t)} - \ldots -
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t)}
+  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)}
 \end{eqnarray*}
+\begin{eqnarray*}
+\mathbf{G}_{jk}\boldsymbol{\vartheta}_{jk}^{(t+1)} +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\vartheta}_{jk}^{(t+1)} + \ldots +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t+1)} - \\
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\vartheta}_{jk}^{(t)} - \ldots -
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t)}
+  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)}
+\end{eqnarray*}
+\begin{eqnarray*}
+\mathbf{G}_{jk}\boldsymbol{\vartheta}_{jk}^{(t+1)} +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\vartheta}_{jk}^{(t+1)} + 
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)} -
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)}
+  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)}
+\end{eqnarray*}
+\begin{eqnarray*}
+(\mathbf{G}_{jk} +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk})\boldsymbol{\vartheta}_{jk}^{(t+1)}
+  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} + \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
+    \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)}
+\end{eqnarray*}
+\begin{eqnarray*}
+  \boldsymbol{\vartheta}_{jk}^{(t+1)}
+  &=& (\mathbf{G}_{jk} +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk})^{-1}(\mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} +
+    \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
+    \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)})
+\end{eqnarray*}
+\begin{eqnarray*}
+  \boldsymbol{\vartheta}_{jk}^{(t+1)}
+  &=& (\mathbf{G}_{jk} +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk})^{-1}\mathbf{X}_{jk}^\top(\mathbf{u}_k^{(t)} +
+    \mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
+    \mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)})
+\end{eqnarray*}
+\begin{eqnarray*}
+  \boldsymbol{\vartheta}_{jk}^{(t+1)}
+  &=& (\mathbf{G}_{jk} +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk})^{-1}\mathbf{X}_{jk}^\top(
+    \mathbf{W}_{kk}\mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)} +
+    \mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
+    \mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)})
+\end{eqnarray*}
+\begin{eqnarray*}
+  \boldsymbol{\vartheta}_{jk}^{(t+1)}
+  &=& (\mathbf{G}_{jk} +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk})^{-1}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}(
+    \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)} +
+    \boldsymbol{\eta}_{k}^{(t)} -
+    \boldsymbol{\eta}_{k, -j}^{(t+1)})
+\end{eqnarray*}
+\begin{eqnarray} \label{eqn:blockbackfit}
+  \boldsymbol{\vartheta}_{jk}^{(t+1)}
+  &=& (\mathbf{G}_{jk} +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk})^{-1}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}(
+    \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)})
+\end{eqnarray}
+with working observations
+$\mathbf{z}_k = \boldsymbol{\eta}_{k}^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$.
+Hence, this leads to a backfitting algorithm and cycling through (\ref{eqn:blockbackfit}) for
+terms $j = 1, \ldots, p_k$ and parameters $k = 1, \ldots, K$ is equivalent to a single
+Newton-Raphson step of (\ref{eqn:newton}). Note that this is a slightly simplified version of the
+backfitting algorithm in \citet{bamlss:Rigby+Stasinopoulos:2005} Appendix~C.2.
 
-\newpage
-
-
-$$
-\begin{pmatrix}
-\mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} + \frac{1}{\tau_{p_kk}^2}\mathbf{K}_{1k} &
-  \cdots & \mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} \\
-\vdots & \ddots & \vdots \\
-\mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} & \cdots & \mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} + \frac{1}{\tau_{p_kk}^2}\mathbf{K}_{p_kk}
-\end{pmatrix}^{(t)}
-\begin{pmatrix}
-\boldsymbol{\vartheta}_{1k}^{(t + 1)} - \boldsymbol{\vartheta}_{1k}^{(t)} \\
-\vdots \\
-\boldsymbol{\vartheta}_{p_kk}^{(t + 1)} - \boldsymbol{\vartheta}_{p_kk}^{(t)}
-\end{pmatrix}
-= \begin{pmatrix}
-\mathbf{X}_{1k}^\top\mathbf{s}_k - \frac{1}{2\tau_{1k}^2}\mathbf{K}_{1k}\boldsymbol{\beta}_{1k}^{(t)} \\
-\vdots \\
-\mathbf{X}_{p_kk}^\top\mathbf{s}_k - \frac{1}{2\tau_{p_kk}^2}\mathbf{K}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t)}
-\end{pmatrix},
-$$
-where $\mathbf{s}_k = \partial \ell(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k$.
-
-
-Maximum likelihood and other gradient based algorithms require the evaluation of the
-first derivative or score vector. Within the Bayesian formulation the resulting score vector is
-\begin{equation}
-s(\boldsymbol{\vartheta}) = 
-  \frac{\partial ln \, p(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}}
-= \frac{\partial \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}} +
-    \sum_{k = 1}^K\sum_{j = 1}^{p_k} \left\{ \frac{\partial ln \, p(\boldsymbol{\beta}_{jk} |
-    \tau_{jk}^2)}{\partial \boldsymbol{\vartheta}} +
-  \frac{\partial ln \, p(\tau_{jk}^2)}{\partial \boldsymbol{\vartheta}} \right\},
-\end{equation}
-Following \citet{bamlss:Rigby+Stasinopoulos:2005}, the first order partial derivatives of the
-log-likelihood for
-$\boldsymbol{\vartheta}_k = (\boldsymbol{\beta}_k, \boldsymbol{\gamma}_k,
-\boldsymbol{\tau}^2_k)^\top$, i.e., for the $k$th parameter of the distribution, can be further
-fragmented by chain rule
-\begin{equation}
-\frac{\partial \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}_k} =
-  \frac{\partial \ell(\boldsymbol{\vartheta} | y_i)}{\partial \boldsymbol{\eta}_k}
-  \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\vartheta}_k} = 
-  \frac{\partial \ell(\boldsymbol{\vartheta} | y_i)}{\partial \boldsymbol{\theta}_k}
-  \frac{\partial \boldsymbol{\theta}_k}{\partial \boldsymbol{\eta}_k}
-  \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\vartheta}_k}.
-\end{equation}
-since $\theta_{ik} = h_k^{-1}(\eta_{ik}(\boldsymbol{\vartheta}_k))$. 
-Hence, for gradient based algorithms the derivates of the log-likelihood with respect to the 
-parameters, $\boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K$, the derivate of the 
-corresponding link functions and of the linear predictor with respect to the regression
-coefficients are needed.
-
-Applying, e.g., a Newton-Raphson algorithm additionally requires the second derivatives
-\begin{equation}
-\frac{\partial^2 \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}_k \partial \boldsymbol{\vartheta}_s^\top} =
-\left( \frac{\partial \boldsymbol{\eta}_s}{\partial \boldsymbol{\vartheta}_s} \right)^\top
-\frac{\partial^2 \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top}
-\frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\vartheta}_k}
-\,\, \underbrace{
-  \, + \, \frac{\partial \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k}
-    \frac{\partial^2 \boldsymbol{\eta}_k}{\partial^2 \boldsymbol{\vartheta}_k}}_{\text{if } k = s}
-\quad s = 1, \ldots, K,
-\end{equation}
-where the additional term is zero, if we assume a linear functional form, e.g., through basis 
-function construction of the smooth terms.
-
-From this, maximum likelihood estimates can be derived by an iteratively reweighted least squares
-algorithm (IWLS, see \citealp{bamlss:Rigby+Stasinopoulos:2005}, Appendix~C), where in each
-iteration $t$ an adjusted dependent variable
-\begin{equation} \label{eqn:z}
-\mathbf{x}_k^{[t]} = \boldsymbol{\eta}_k^{[t]} + \left(\mathbf{W}_{kk}^{[t]}\right)^{-1}\mathbf{s}_k^{[t]}
-\end{equation}
-is computed, with vector
-$\mathbf{s}_k = \partial \ell(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k$
-and weights
-$\mathbf{W}_{kk} = - \partial^2 \ell(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top$. Because the working observations follow
-\begin{equation}
-\mathbf{x}_k^{[t]} \sim N\left(\boldsymbol{\eta}_k^{[t]}, \left(\mathbf{W}_{kk}^{[t]}\right)^{-1}\right),
-\end{equation}
-a simple backfitting algorithm or weighted least squares can be applied to obtain updates for
-$(\boldsymbol{\beta}_k, \boldsymbol{\gamma}_k)^\top$ in each iteration. Depending on the type of 
-algorithm different weights are used, e.g.,
-$\mathbf{W}_{kk} = - E\left(\partial^2 \ell(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top\right)$.
 
 \subsubsection{Bayesian}
 
