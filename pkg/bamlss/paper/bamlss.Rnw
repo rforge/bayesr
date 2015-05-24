@@ -355,8 +355,10 @@ $\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}, \boldsymbol{\tau}^2_{jk
 estimator $\hat{\boldsymbol{\tau}}^2_{jk}$ is usually derived by additionally
 minimizing an information criterion such as the Akaike information criterion (AIC) or the Bayesian
 information criterion (BIC) (see also \citealp{bamlss:Rigby+Stasinopoulos:2005} Appendix~A.2. for
-a more detailed discussion on variance/hyperparameter estimation). Estimation of
-$\boldsymbol{\vartheta}$ requires solving equations
+a more detailed discussion on variance/hyperparameter estimation). In the following we assume that
+variance parameters are held fix and $\boldsymbol{\vartheta}_{jk} = \boldsymbol{\beta}_{jk}$ for
+$j = 1, \ldots, p_k$ and $k = 1, \ldots, K$.
+Estimation of $\boldsymbol{\vartheta}$ requires solving equations
 $\partial (ln \, p(\boldsymbol{\vartheta} | \mathbf{y})) / \partial \boldsymbol{\vartheta} = \mathbf{0}$
 and usually the problem is solved with an iterative updating scheme of the form
 \begin{equation} \label{eqn:updating}
@@ -437,7 +439,7 @@ further partitioned for each function within parameter block $k$, leading to a h
 system.
 
 For orthogonal parameters $\boldsymbol{\vartheta}_k$, the updating scheme can be written as
-a simplified Newton-Raphson iteration
+a $k$-partitioned Newton-Raphson iteration
 \begin{equation} \label{eqn:blocknewton}
 \boldsymbol{\vartheta}_k^{(t + 1)} = U_k(\boldsymbol{\vartheta}_k^{(t)} | \cdot) = \boldsymbol{\vartheta}_k^{(t)} -
   \mathbf{H}_{kk}\left( \boldsymbol{\vartheta}_k^{(t)} \right)^{-1}\mathbf{s}_k\left( \boldsymbol{\vartheta}_k^{(t)} \right).
@@ -506,62 +508,65 @@ and derivatives $\mathbf{u}_k = \partial \ell(\boldsymbol{\vartheta}_k | \mathbf
   &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)}
 \end{eqnarray*}
 \begin{eqnarray*}
-(\mathbf{G}_{jk} +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk})\boldsymbol{\vartheta}_{jk}^{(t+1)}
+(\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\vartheta}_{jk}^{(t+1)}
   &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} + \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
     \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)}
 \end{eqnarray*}
 \begin{eqnarray*}
   \boldsymbol{\vartheta}_{jk}^{(t+1)}
-  &=& (\mathbf{G}_{jk} +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk})^{-1}(\mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} +
+  &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})^{-1}(\mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} +
     \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
     \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)})
 \end{eqnarray*}
 \begin{eqnarray*}
   \boldsymbol{\vartheta}_{jk}^{(t+1)}
-  &=& (\mathbf{G}_{jk} +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk})^{-1}\mathbf{X}_{jk}^\top(\mathbf{u}_k^{(t)} +
+  &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})^{-1}\mathbf{X}_{jk}^\top(\mathbf{u}_k^{(t)} +
     \mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
     \mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)})
 \end{eqnarray*}
 \begin{eqnarray*}
   \boldsymbol{\vartheta}_{jk}^{(t+1)}
-  &=& (\mathbf{G}_{jk} +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk})^{-1}\mathbf{X}_{jk}^\top(
+  &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})^{-1}\mathbf{X}_{jk}^\top(
     \mathbf{W}_{kk}\mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)} +
     \mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
     \mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)})
 \end{eqnarray*}
 \begin{eqnarray*}
   \boldsymbol{\vartheta}_{jk}^{(t+1)}
-  &=& (\mathbf{G}_{jk} +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk})^{-1}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}(
+  &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})^{-1}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}(
     \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)} +
     \boldsymbol{\eta}_{k}^{(t)} -
     \boldsymbol{\eta}_{k, -j}^{(t+1)})
 \end{eqnarray*}
 \begin{eqnarray} \label{eqn:blockbackfit}
   \boldsymbol{\vartheta}_{jk}^{(t+1)}
-  &=& (\mathbf{G}_{jk} +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk})^{-1}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}(
+  &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})^{-1}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}(
     \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)})
 \end{eqnarray}
 with working observations
 $\mathbf{z}_k = \boldsymbol{\eta}_{k}^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$.
 Hence, this leads to a backfitting algorithm and cycling through (\ref{eqn:blockbackfit}) for
 terms $j = 1, \ldots, p_k$ and parameters $k = 1, \ldots, K$ is equivalent to a single
-Newton-Raphson step of (\ref{eqn:newton}). Note that this is a slightly simplified version of the
-backfitting algorithm in \citet{bamlss:Rigby+Stasinopoulos:2005} Appendix~C.2.
+Newton-Raphson step in (\ref{eqn:newton}). Note that this is a slightly simplified version of the
+backfitting algorithm developed in \citet{bamlss:Rigby+Stasinopoulos:2005} Appendix~C.2.
 
 
-\subsubsection{Bayesian}
+\subsubsection{Posterior mean}
 
-In the corresponding Bayesian approach
-property (\ref{eqn:z}) can also be utilized to construct multivariate normal IWLS proposals for
-$(\boldsymbol{\beta}_k, \boldsymbol{\gamma}_k)^\top$ to setup a Metropolis-Hastings MCMC sampler,
-see \citet{bamlss:Klein+Kneib+Lang:2013}. Amongst others, the advantage of Bayesian MCMC algorithms 
-is that the variance parameters can be estimated simultaneously with the regression coefficients.
+The mean of the posterior distribution is
+\begin{equation} \label{eqn:postmean}
+\text{Mean}(\boldsymbol{\vartheta} | \mathbf{y}) = E(\boldsymbol{\vartheta} | \mathbf{y}) =
+  \int \boldsymbol{\vartheta} p(\boldsymbol{\vartheta} | \mathbf{y})d\boldsymbol{\vartheta}.
+\end{equation}
+Clearly, the problem in deriving the expectation relies in the computation of the usually
+high-dimensional integral, which can be rarely solved analytically and needs to be approximated
+by numerical techniques. 
+
+MCMC simulation is commonly used in such situations as it provides an extendable framework that can 
+adapt to almost any type of problem. Moreover, computational power has increases tremendously in the
+past decade and even computer intensive algorithms are feasible on simple desktop computers.
+In the following we summarize sampling techniques that are especially suited for this modeling
+framework, i.e., techniques that can be used for a highly modular and extendable system.
 
 
 \subsection{Inference and prediction} \label{sec:infpred}
