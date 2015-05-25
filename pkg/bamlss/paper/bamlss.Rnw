@@ -219,9 +219,9 @@ of the design matrix $\mathbf{X}_j$ hold the so called basis functions which are
 the type of the function chosen. More specifically, for functions of a single covariate commonly
 used basis functions are B-splines or thin plate splines, which are also capable to estimate higher
 dimensional functions. Moreover, higher dimensional functions can always be obtained by tensor
-product basis construction of marginal basis of an arbitrary number of covariates. An overview of a
-number of basis functions is provided, e.g., in \citet{bamlss:Fahrmeir+Kneib+Lang+Marx:2013} and
-\citet{bamlss:Wood:2006}.
+product basis construction of marginal basis of an arbitrary number of covariates. A detailed
+overview of smooth functions constructed from various basis functions is provided in
+\citet{bamlss:Fahrmeir+Kneib+Lang+Marx:2013} and \citet{bamlss:Wood:2006}.
 
 The elegance of the approach is that regularization of the possibly very complex functions is
 accomplished by placing a generic multivariate normal prior
@@ -338,7 +338,7 @@ requiring computer intensive techniques such as Markov chain Monte Carlo (MCMC) 
 following describes the quantities needed for generic iterative algorithms for estimating Bayesian
 distributional regression models.
 
-\subsubsection{Posterior mode}
+\subsubsection{Posterior mode} \label{sec:postmode}
 
 The mode of the posterior distribution is the mode of the log-posterior (\ref{eqn:logpost}) given by
 \begin{equation}
@@ -424,7 +424,7 @@ Although solving the updating scheme (\ref{eqn:newton}) is feasible, from the co
 perspective of the model class it is still a bit unhandy. Fortunately, the problem of iteratively
 finding the roots for $\boldsymbol{\vartheta}$ can be partitioned into separate updating equations
 using leapfrog or zigzag iteration \citep{bamlss:Smyth:1996}. Now let
-\begin{eqnarray}
+\begin{eqnarray} \label{eqn:pupdate}
 \boldsymbol{\vartheta}_1^{(t + 1)} &=& U_1(\boldsymbol{\vartheta}_1^{(t)}, \boldsymbol{\vartheta}_2^{(t)},
   \ldots, \boldsymbol{\vartheta}_K^{(t)}) \nonumber \\
 \boldsymbol{\vartheta}_2^{(t + 1)} &=& U_2(\boldsymbol{\vartheta}_1^{(t+1)}, \boldsymbol{\vartheta}_2^{(t)},
@@ -433,7 +433,7 @@ using leapfrog or zigzag iteration \citep{bamlss:Smyth:1996}. Now let
 \boldsymbol{\vartheta}_K^{(t + 1)} &=& U_K(\boldsymbol{\vartheta}_1^{(t+1)}, \boldsymbol{\vartheta}_2^{(t+1)},
   \ldots, \boldsymbol{\vartheta}_K^{(t)})
 \end{eqnarray}
-be an partitioned updating scheme with updating functions $U_k(\cdot)$, i.e., in each iteration
+be a partitioned updating scheme with updating functions $U_k(\cdot)$, i.e., in each iteration
 one parameter is maximized holding the other parameters fixed. Note that this updating scheme can be
 further partitioned for each function within parameter block $k$, leading to a highly modular
 system.
@@ -551,7 +551,7 @@ Newton-Raphson step in (\ref{eqn:newton}). Note that this is a slightly simplifi
 backfitting algorithm developed in \citet{bamlss:Rigby+Stasinopoulos:2005} Appendix~C.2.
 
 
-\subsubsection{Posterior mean}
+\subsubsection{Posterior mean} \label{sec:postmean}
 
 The mean of the posterior distribution is
 \begin{equation} \label{eqn:postmean}
@@ -564,9 +564,30 @@ by numerical techniques.
 
 MCMC simulation is commonly used in such situations as it provides an extendable framework that can 
 adapt to almost any type of problem. Moreover, computational power has increases tremendously in the
-past decade and even computer intensive algorithms are feasible on simple desktop computers.
-In the following we summarize sampling techniques that are especially suited for this modeling
-framework, i.e., techniques that can be used for a highly modular and extendable system.
+past decade and even computer intensive algorithms are feasible on simple desktop computers today.
+In the following we summarize a number of sampling techniques that are especially suited for this
+modeling framework, i.e., techniques that can be used for a highly modular and extendable system.
+Similarly to updating scheme (\ref{eqn:pupdate}) we consider samples that are drawn for blocks of
+parameters, more specifically, the sampling schemes successively update the parameters of a single
+function (\ref{eqn:functions}). Note that for some models there exist full conditionals that can
+be derived in closed form from the log-posterior (\ref{eqn:logpost}), however, we especially focus
+on situations were this is not generally the case.
+
+\subsubsection{* Random walk Metropolis-Hastings} \label{sec:rwmh}
+One of the most popular sampling schemes is random walk Metropolis-Hastings (RWMH). The sampler
+proceeds by sampling a new $\boldsymbol{\vartheta}_{jk}^{(t+1)}$ from a symmetric jumping
+distribution $q(\boldsymbol{\vartheta}_{jk}^{(t)}, \boldsymbol{\vartheta}_{jk}^{(t+1)})$ which
+is accepted with probability
+\begin{equation} \label{eqn:accprob}
+\alpha\left( \boldsymbol{\vartheta}_{jk}^{(t)}, \boldsymbol{\vartheta}_{jk}^{(t+1)}\right) =
+\text{min} \left( \frac{p(\boldsymbol{\vartheta}_{jk}^{(t+1)})}{p(\boldsymbol{\vartheta}_{jk}^{(t)})}, 1 \right).
+\end{equation}
+
+\subsubsection{* Derivative based Metropolis-Hastings} \label{sec:dmh}
+
+\subsubsection{* Hamiltonian Monte Carlo} \label{sec:hmcmc}
+
+\subsubsection{* Slice sampling} \label{sec:smcmc}
 
 
 \subsection{Inference and prediction} \label{sec:infpred}
