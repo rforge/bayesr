@@ -130,10 +130,10 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
               label <- x$smooth[[j]]$label
               if(any(take <- grepl(label, names(coefficients), fixed = TRUE))) {
                 tcoef <- grep(id, names(coefficients)[take], fixed = TRUE, value = TRUE)
-                tcoef <- tcoef[!grepl("edf", tcoef)]
-                tcoef <- tcoef[!grepl("alpha", tcoef)]
-                tau2 <- tcoef[grepl("tau2", tcoef)]
-                tcoef <- tcoef[!grepl("tau2", tcoef)]
+                tcoef <- tcoef[!grepl("edf", tcoef, fixed = TRUE)]
+                tcoef <- tcoef[!grepl("alpha", tcoef, fixed = TRUE)]
+                tau2 <- tcoef[grepl("tau2", tcoef, fixed = TRUE)]
+                tcoef <- tcoef[!grepl("tau2", tcoef, fixed = TRUE)]
                 x$smooth[[j]]$xt$state <- list("parameters" = coefficients[tcoef])
                 names(x$smooth[[j]]$xt$state$parameters) <- paste("g", 1:length(x$smooth[[j]]$xt$state$parameters), sep = "")
                 if(length(tau2)) {
