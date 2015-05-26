@@ -321,7 +321,7 @@ ln \, p(\boldsymbol{\vartheta} | \mathbf{y}) \propto
   \ell(\boldsymbol{\vartheta} | \mathbf{y}) +
   \sum_{k = 1}^K\sum_{j = 1}^{p_k} \left\{ ln \, p_{jk}(\boldsymbol{\vartheta}_{jk}) \right\},
 \end{equation}
-where, e.g., $\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}^\top, \boldsymbol{\tau}^2_{jk}^\top)^\top$
+where, e.g., $\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}^\top, (\boldsymbol{\tau}^2_{jk})^\top)^\top$
 now includes all variances associated with this term, too, and prior $p_{jk}(\cdot)$ denotes the
 combination of all assigned priors on parameters $\boldsymbol{\vartheta}_{jk}$. Also note that from a
 frequentist perspective (\ref{eqn:logpost}) can be viewed as a penalized log-likelihood using
@@ -351,7 +351,7 @@ For models involving shrinkage priors, e.g., given by (\ref{eqn:shrinkprior}), t
 equivalent to a penalized maximum likelihood estimator for fixed variance parameters
 $\boldsymbol{\tau}_{jk}^2$ and $p(\boldsymbol{\tau}_{jk}^2) \propto 1$. Moreover, the structure of
 (\ref{eqn:logpost}) prohibits simultaneous estimation of
-$\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}^\top, \boldsymbol{\tau}^2_{jk}^\top)^\top$ and the
+$\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}^\top, (\boldsymbol{\tau}^2_{jk})^\top)^\top$ and the
 estimator $\hat{\boldsymbol{\tau}}^2_{jk}$ is usually derived by additionally
 minimizing an information criterion such as the Akaike information criterion (AIC) or the Bayesian
 information criterion (BIC) (see also \citealp{bamlss:Rigby+Stasinopoulos:2005} Appendix~A.2. for
@@ -555,7 +555,7 @@ backfitting algorithm developed in \citet{bamlss:Rigby+Stasinopoulos:2005} Appen
 
 The mean of the posterior distribution is
 \begin{equation} \label{eqn:postmean}
-\text{Mean}(\boldsymbol{\vartheta} | \mathbf{y}) = E(\boldsymbol{\vartheta} | \mathbf{y}) =
+E(\boldsymbol{\vartheta} | \mathbf{y}) =
   \int \boldsymbol{\vartheta} p(\boldsymbol{\vartheta} | \mathbf{y})d\boldsymbol{\vartheta}.
 \end{equation}
 Clearly, the problem in deriving the expectation relies on the computation of the usually
@@ -565,7 +565,7 @@ by numerical techniques.
 MCMC simulation is commonly used in such situations as it provides an extendable framework that can 
 adapt to almost any type of problem. Moreover, computational power has increases tremendously in the
 past decade and even computer intensive algorithms are feasible on simple desktop computers today.
-In the following we summarize a number of sampling techniques that are especially suited for this
+In the following we summarize four sampling techniques that are especially suited for this
 modeling framework, i.e., techniques that can be used for a highly modular and extendable system.
 Similarly to updating scheme (\ref{eqn:pupdate}) we consider samples that are drawn for blocks of
 parameters, more specifically, the sampling schemes successively update the parameters of a single
@@ -575,22 +575,31 @@ on situations were this is not generally the case.
 \begin{itemize}
 \item \emph{Random walk Metropolis}: \label{sec:rwm} \\
   Probably the most important algorithm is random walk Metropolis (RWM). The sampler
-  proceeds by drawing a new $\boldsymbol{\vartheta}_{jk}^{(t+1)}$ from a symmetric jumping
-  distribution $q(\boldsymbol{\vartheta}_{jk}^{(t)}, \boldsymbol{\vartheta}_{jk}^{(t+1)})$, the
+  proceeds by drawing a candidate $\boldsymbol{\vartheta}_{jk}^{\star}$ from a symmetric jumping
+  distribution $q(\boldsymbol{\vartheta}_{jk}^{\star}| \boldsymbol{\vartheta}_{jk}^{(t-1)})$, the
   candidate is then accepted as the new state of the Markov chain with probability
   \begin{equation} \label{eqn:accprob}
-  \alpha\left( \boldsymbol{\vartheta}_{jk}^{(t)}, \boldsymbol{\vartheta}_{jk}^{(t+1)}\right) =
-  \text{min} \left( \frac{p(\boldsymbol{\vartheta}_{jk}^{(t+1)} | \mathbf{y})}{
-    p(\boldsymbol{\vartheta}_{jk}^{(t)} | \mathbf{y})}, 1 \right).
+  \alpha\left( \boldsymbol{\vartheta}_{jk}^{\star} | \boldsymbol{\vartheta}_{jk}^{(t-1)}\right) =
+  \text{min} \left\{ \frac{p(\boldsymbol{\vartheta}_{jk}^{\star} | \mathbf{y})}{
+    p(\boldsymbol{\vartheta}_{jk}^{(t-1)} | \mathbf{y})}, 1 \right\}.
   \end{equation}
-  \citet{bamlss:Gelman+Roberts+Gilks:1996}
+  Commonly, the jumping distribution is a normal distribution $N(\boldsymbol{\vartheta}_{jk}^{(t-1)}, \boldsymbol{\Sigma}_{jk})$ centered at the current iterate and fixed covariance matrix. Although this algorithm
+  is theoretically working for any distribution, the actual sampling performance depends heavily on
+  the scaling of $\boldsymbol{\Sigma}_{jk}$. Therefore, numerous methods that try to optimize the
+  behavior of the Markov chain in an adaptive phase (burnin phase) have been developed. In the
+  seminal paper of \citet{bamlss:Gelman+Roberts+Gilks:1996}, strategies that optimize the acceptance
+  rate to roughly $1/4$ are suggested to obtain a good mixing. Similarly, within the presented
+  modeling framework and a basis function approach with multivariate normal prior
+  (\ref{eqn:shrinkprior}), a convenient way is to set
+  $\boldsymbol{\Sigma}_{jk} = \sigma_{jk}\mathbf{K}_{jk}^{-1}$ and optimize $\sigma_{jk}$ to the
+  desired properties in the adaptive phase.
 
 
-\item Derivative based Metropolis-Hastings \label{sec:dmh}
+\item \emph{Derivative based Metropolis-Hastings}: \label{sec:dmh} \\
 
-\item Hamiltonian Monte Carlo \label{sec:hmcmc}
+\item \emph{Hamiltonian Monte Carlo}: \label{sec:hmcmc} \\
 
-\item Slice sampling \label{sec:smcmc}
+\item \emph{Slice sampling}: \label{sec:smcmc} \\
 \end{itemize}
 
 
