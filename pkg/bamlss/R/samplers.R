@@ -78,7 +78,7 @@ GMCMC <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
 
 
 gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
-  fitfun = NULL, logLik = NULL, data = NULL,
+  fitfun = NULL, logLik = NULL, data = NULL, attr.copy = "hess",
   n.iter = 12000, burnin = 2000, thin = 10, verbose = TRUE, step = 20,
   simplify = TRUE, chains = NULL, cores = NULL, combine = TRUE, sleep = 1,
   compile = FALSE, ...)
@@ -217,6 +217,10 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
           colnames(theta.save[[i]][[j]]$extra) <- names(p0$extra)
         }
         names(theta[[i]][[j]]) <- names(p0$parameters)
+        if(!is.null(attr.copy)) {
+          for(a in attr.copy)
+            attr(theta[[i]][[j]], a) <- attr(p0$parameters, a)
+        }
       }
     } else {
       p0 <- propose[[i]](fun, theta, id = i,
@@ -254,6 +258,10 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
         colnames(theta.save[[i]]$extra) <- names(p0$extra)
       }
       names(theta[[i]]) <- names(p0$parameters)
+      if(!is.null(attr.copy)) {
+        for(a in attr.copy)
+          attr(theta[[i]], a) <- attr(p0$parameters, a)
+      }
     }
   }
 
@@ -811,42 +819,47 @@ gmcmc_sm.mvn <- function(family, theta, id, prior, eta, response, data, ...)
     if(!is.null(data$state$hessian))
       attr(theta, "hess") <- data$state$hessian
     if(is.null(attr(theta, "hess"))) {
-      tpar <- data$state$parameters
+      g <- get.par(data$state$parameters, "gamma")
+      tau2 <- if(!data$fixed) get.par(data$state$parameters, "tau2") else NULL
 
-      objfun <- function(gamma, tau2 = NULL) {
-        tpar <- set.par(tpar, gamma, "g")
-        if(!is.null(tau2) & !data$fixed)
-          tpar <- set.par(tpar, tau2, "tau2")
-        eta2[[id[1]]] <- eta[[id[1]]] + data$get.mu(data$X, tpar)
-        ll <- family$loglik(response, family$map2par(eta2))
-        lp <- data$prior(tpar)
-        val <- -1 * (ll + lp)
-        if(!is.finite(val)) val <- NA
-        val
+      lp <- function(g) {
+        eta[[id[1]]] <- eta[[id[1]]] + data$get.mu(data$X, g)
+        family$loglik(response, family$map2par(eta)) + data$prior(c(g, tau2))
       }
 
-      grad <- if(!is.null(family$score[[id[1]]]) & is.function(data$grad)) {
-        function(gamma, tau2 = NULL) {
-          tpar <- set.par(tpar, gamma, "g")
-          if(!is.null(tau2) & !data$fixed)
-            tpar <- set.par(tpar, tau2, "tau2")
-          eta2[[id[1]]] <- eta[[id[1]]] + data$get.mu(data$X, tpar)
-          peta <- family$map2par(eta2)
-          score <- drop(family$score[[id[1]]](response, peta))
-          grad <- data$grad(score, tpar, full = FALSE)
-          return(drop(-1 * grad))
+      if(is.null(family$gradient[[id[1]]])) {
+        gfun <- NULL
+      } else {
+        gfun <- list()
+        gfun[[id[1]]] <- function(g, y, eta, x, ...) {
+          gg <- family$gradient[[id[1]]](g, y, eta, x)
+          if(!is.null(data$grad)) {
+            gg <- gg + data$grad(score = NULL, c(g, tau2), full = FALSE)
+          }
+          drop(gg)
+       }
+      }
+
+      if(is.null(family$hessian[[id[1]]])) {
+        hfun <- NULL
+      } else {
+        hfun <- list()
+        hfun[[id[1]]] <- function(g, y, eta, x, ...) {
+          hg <- family$hessian[[id[1]]](g, y, eta, x)
+          if(!is.null(data$hess)) {
+            hg <- hg + data$hess(score = NULL, c(g, tau2), full = FALSE)
+          }
+          hg
         }
-      } else NULL
+      }
 
-      suppressWarnings(hess <- try(optimHess(get.par(tpar, "g"), fn = objfun, gr = grad,
-        tau2 = get.par(tpar, "tau2")), silent = TRUE))
+      g.grad <- grad(fun = lp, theta = g, id = id[1], prior = NULL,
+        args = list("gradient" = gfun, "x" = data, "y" = response, "eta" = eta))
 
-      if(!inherits(hess, "try-error")) {
-        hess <- 1 / diag(hess) ## matrix_inv(hess)
-        hess <- if(length(hess) < 2) matrix(hess, 1, 1) else diag(hess)
-      } else hess <- diag(length(get.par(tpar, "gamma")))
+      g.hess <- hess(fun = lp, theta = g, id = id[1], prior = NULL,
+        args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = response, "eta" = eta))
 
-      attr(theta, "hess") <- hess
+      attr(theta, "hess") <- matrix_inv(g.hess)
     }
   }
 

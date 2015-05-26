@@ -40,7 +40,7 @@
 ## state list, as this could vary for special terms. A default
 ## method is provided.
 bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AICc", "BIC", "AIC"),
-  nu = 0.1, ...)
+  nu = 0.1, coefficients = NULL, ...)
 {
   if(!is.null(attr(x, "bamlss.setup"))) return(x)
 
@@ -75,15 +75,16 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
     }
   }
 
-  foo <- function(x) {
+  foo <- function(x, id = NULL) {
     if(!any(c("formula", "fake.formula", "response") %in% names(x))) {
       nx <- names(x)
       nx <- nx[nx != "call"]
       if(is.null(nx)) nx <- 1:length(x)
       if(length(unique(nx)) < length(x)) nx <- 1:length(x)
       for(j in nx)
-        x[[j]] <- foo(x[[j]])
+        x[[j]] <- foo(x[[j]], id = j)
     } else {
+      if(is.null(id)) id <- ""
       if(!is.null(dim(x$X))) {
         if(nrow(x$X) > 0 & !is.na(mean(unlist(x$X), na.rm = TRUE))) {
           if(is.null(x$smooth)) x$smooth <- list()
@@ -102,6 +103,19 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
             "by" = "NA",
             "xt" = list("xbin" = x$binning)
           )
+          if(!is.null(coefficients)) {
+            if(any(grepl(id, names(coefficients)))) {
+              label <- strsplit(x$smooth$parametric$label, "+", fixed = TRUE)[[1]]
+              label <- paste(label, id, sep = ":")
+              if(!all(label %in% names(coefficients))) {
+                nlabel <- label[!(label %in% names(coefficients))]
+                stop(paste("cannot find the following coefficients: ",
+                  paste(nlabel, collapse = ", "), "!", sep = ""))
+              }
+              x$smooth$parametric$xt$state <- list("parameters" = coefficients[label])
+              names(x$smooth$parametric$xt$state$parameters) <- paste("g", 1:length(x$smooth$parametric$xt$state$parameters), sep = "")
+            } else stop(paste("coefficients for parameter", id, "are missing!"))
+          }
           class(x$smooth[["parametric"]]) <- c(class(x$smooth[["parametric"]]), "no.mgcv", "parametric")
           x$sterms <- c(x$strems, "parametric")
           x$X <- NULL
@@ -109,6 +123,27 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
       }
       if(length(x$smooth)) {
         for(j in seq_along(x$smooth)) {
+          if(!is.null(coefficients)) {
+            if(!any(grepl(id, names(coefficients))))
+              stop(paste("coefficients for parameter", id, "are missing!"))
+            if(any(grepl(id, names(coefficients))) & is.null(x$smooth[[j]]$is.parametric)) {
+              label <- x$smooth[[j]]$label
+              if(any(take <- grepl(label, names(coefficients), fixed = TRUE))) {
+                tcoef <- grep(id, names(coefficients)[take], fixed = TRUE, value = TRUE)
+                tcoef <- tcoef[!grepl("edf", tcoef)]
+                tcoef <- tcoef[!grepl("alpha", tcoef)]
+                tau2 <- tcoef[grepl("tau2", tcoef)]
+                tcoef <- tcoef[!grepl("tau2", tcoef)]
+                x$smooth[[j]]$xt$state <- list("parameters" = coefficients[tcoef])
+                names(x$smooth[[j]]$xt$state$parameters) <- paste("g", 1:length(x$smooth[[j]]$xt$state$parameters), sep = "")
+                if(length(tau2)) {
+                  tau2 <- coefficients[tau2]
+                  names(tau2) <- paste("tau2", 1:length(tau2), sep = "")
+                  x$smooth[[j]]$xt$state$parameters <- c(x$smooth[[j]]$xt$state$parameters, tau2)
+                }
+              } else stop(paste("cannot find coefficients for term ", label, " for parameter", id, "!", sep = ""))
+            }
+          }
           x$smooth[[j]] <- smooth.bamlss(x$smooth[[j]])
           if(!is.null(x$smooth[[j]]$xt$update))
             x$smooth[[j]]$update <- x$smooth[[j]]$xt$update
@@ -313,11 +348,26 @@ smooth.bamlss.default <- function(x, ...)
         } else rep(x$sp, length.out = ntau2)
         names(tau2) <- paste("tau2", 1:ntau2, sep = "")
         state$parameters <- c(state$parameters, tau2)
-        x$a <- if(is.null(x$xt$a)) 1e-04 else x$xt$a
-        x$b <- if(is.null(x$xt$b)) 1e-04 else x$xt$b
       }
     }
   }
+  if((ntau2 > 0) & !any(grepl("tau2", names(state$parameters))) & is.null(x$is.parametric)) {
+    tau2 <- if(is.null(x$sp)) {
+      if(x$fixed) {
+        rep(1e+20, length.out = ntau2)
+      } else {
+        rep(if(!is.null(x$xt$tau2)) {
+          x$xt$tau2
+        } else {
+          if(!is.null(x$xt$lambda)) 1 / x$xt$lambda else 100
+        }, length.out = ntau2)
+      }
+    } else rep(x$sp, length.out = ntau2)
+    names(tau2) <- paste("tau2", 1:ntau2, sep = "")
+    state$parameters <- c(state$parameters, tau2)
+  }
+  x$a <- if(is.null(x$xt$a)) 1e-04 else x$xt$a
+  x$b <- if(is.null(x$xt$b)) 1e-04 else x$xt$b
   if(is.null(x$get.mu) | !is.function(x$get.mu)) {
     x$get.mu <- function(X, b, expand = TRUE) {
       if(!is.null(names(b)))

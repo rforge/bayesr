@@ -309,11 +309,11 @@ Estimation typically requires to evaluate the log-likelihood function
   \theta_{iK} = h_K^{-1}(\eta_{iK}))
 \end{equation}
 a number of times, where the vector
-$\boldsymbol{\vartheta} = (\boldsymbol{\vartheta}_1, \ldots, \boldsymbol{\vartheta}_K)^\top$ 
+$\boldsymbol{\vartheta} = (\boldsymbol{\vartheta}_1^\top, \ldots, \boldsymbol{\vartheta}_K^\top)^\top$ 
 comprises all model coefficients that should be estimated and $\boldsymbol{\theta}_k$ are vectors
 of length $n$. Note that in the simplest case $\boldsymbol{\vartheta}_k =
-(\boldsymbol{\vartheta}_{1k}, \ldots, \boldsymbol{\vartheta}_{p_kk})^\top =
-(\boldsymbol{\beta}_{1k}, \ldots, \boldsymbol{\beta}_{p_kk})^\top$ for $k = 1, \ldots, K$.
+(\boldsymbol{\vartheta}_{1k}^\top, \ldots, \boldsymbol{\vartheta}_{p_kk}^\top)^\top =
+(\boldsymbol{\beta}_{1k}^\top, \ldots, \boldsymbol{\beta}_{p_kk}^\top)^\top$ for $k = 1, \ldots, K$.
 Assigning prior distributions to the individual model components, e.g., given by the normal
 prior (\ref{eqn:shrinkprior}) and the inverse gamma prior (\ref{eqn:ig}), results in the log-posterior
 \begin{equation} \label{eqn:logpost}
@@ -321,7 +321,7 @@ ln \, p(\boldsymbol{\vartheta} | \mathbf{y}) \propto
   \ell(\boldsymbol{\vartheta} | \mathbf{y}) +
   \sum_{k = 1}^K\sum_{j = 1}^{p_k} \left\{ ln \, p_{jk}(\boldsymbol{\vartheta}_{jk}) \right\},
 \end{equation}
-where, e.g., $\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}, \boldsymbol{\tau}^2_{jk})^\top$
+where, e.g., $\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}^\top, \boldsymbol{\tau}^2_{jk}^\top)^\top$
 now includes all variances associated with this term, too, and prior $p_{jk}(\cdot)$ denotes the
 combination of all assigned priors on parameters $\boldsymbol{\vartheta}_{jk}$. Also note that from a
 frequentist perspective (\ref{eqn:logpost}) can be viewed as a penalized log-likelihood using
@@ -351,7 +351,7 @@ For models involving shrinkage priors, e.g., given by (\ref{eqn:shrinkprior}), t
 equivalent to a penalized maximum likelihood estimator for fixed variance parameters
 $\boldsymbol{\tau}_{jk}^2$ and $p(\boldsymbol{\tau}_{jk}^2) \propto 1$. Moreover, the structure of
 (\ref{eqn:logpost}) prohibits simultaneous estimation of
-$\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}, \boldsymbol{\tau}^2_{jk})^\top$ and the
+$\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}^\top, \boldsymbol{\tau}^2_{jk}^\top)^\top$ and the
 estimator $\hat{\boldsymbol{\tau}}^2_{jk}$ is usually derived by additionally
 minimizing an information criterion such as the Akaike information criterion (AIC) or the Bayesian
 information criterion (BIC) (see also \citealp{bamlss:Rigby+Stasinopoulos:2005} Appendix~A.2. for
@@ -558,7 +558,7 @@ The mean of the posterior distribution is
 \text{Mean}(\boldsymbol{\vartheta} | \mathbf{y}) = E(\boldsymbol{\vartheta} | \mathbf{y}) =
   \int \boldsymbol{\vartheta} p(\boldsymbol{\vartheta} | \mathbf{y})d\boldsymbol{\vartheta}.
 \end{equation}
-Clearly, the problem in deriving the expectation relies in the computation of the usually
+Clearly, the problem in deriving the expectation relies on the computation of the usually
 high-dimensional integral, which can be rarely solved analytically and needs to be approximated
 by numerical techniques. 
 
@@ -572,22 +572,26 @@ parameters, more specifically, the sampling schemes successively update the para
 function (\ref{eqn:functions}). Note that for some models there exist full conditionals that can
 be derived in closed form from the log-posterior (\ref{eqn:logpost}), however, we especially focus
 on situations were this is not generally the case.
+\begin{itemize}
+\item \emph{Random walk Metropolis}: \label{sec:rwm} \\
+  Probably the most important algorithm is random walk Metropolis (RWM). The sampler
+  proceeds by drawing a new $\boldsymbol{\vartheta}_{jk}^{(t+1)}$ from a symmetric jumping
+  distribution $q(\boldsymbol{\vartheta}_{jk}^{(t)}, \boldsymbol{\vartheta}_{jk}^{(t+1)})$, the
+  candidate is then accepted as the new state of the Markov chain with probability
+  \begin{equation} \label{eqn:accprob}
+  \alpha\left( \boldsymbol{\vartheta}_{jk}^{(t)}, \boldsymbol{\vartheta}_{jk}^{(t+1)}\right) =
+  \text{min} \left( \frac{p(\boldsymbol{\vartheta}_{jk}^{(t+1)} | \mathbf{y})}{
+    p(\boldsymbol{\vartheta}_{jk}^{(t)} | \mathbf{y})}, 1 \right).
+  \end{equation}
+  \citet{bamlss:Gelman+Roberts+Gilks:1996}
 
-\subsubsection{* Random walk Metropolis-Hastings} \label{sec:rwmh}
-One of the most popular sampling schemes is random walk Metropolis-Hastings (RWMH). The sampler
-proceeds by sampling a new $\boldsymbol{\vartheta}_{jk}^{(t+1)}$ from a symmetric jumping
-distribution $q(\boldsymbol{\vartheta}_{jk}^{(t)}, \boldsymbol{\vartheta}_{jk}^{(t+1)})$ which
-is accepted with probability
-\begin{equation} \label{eqn:accprob}
-\alpha\left( \boldsymbol{\vartheta}_{jk}^{(t)}, \boldsymbol{\vartheta}_{jk}^{(t+1)}\right) =
-\text{min} \left( \frac{p(\boldsymbol{\vartheta}_{jk}^{(t+1)})}{p(\boldsymbol{\vartheta}_{jk}^{(t)})}, 1 \right).
-\end{equation}
 
-\subsubsection{* Derivative based Metropolis-Hastings} \label{sec:dmh}
+\item Derivative based Metropolis-Hastings \label{sec:dmh}
 
-\subsubsection{* Hamiltonian Monte Carlo} \label{sec:hmcmc}
+\item Hamiltonian Monte Carlo \label{sec:hmcmc}
 
-\subsubsection{* Slice sampling} \label{sec:smcmc}
+\item Slice sampling \label{sec:smcmc}
+\end{itemize}
 
 
 \subsection{Inference and prediction} \label{sec:infpred}

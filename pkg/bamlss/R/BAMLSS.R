@@ -1261,7 +1261,9 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
 
   ## Get samples of the variance parameter.
   edf <- FALSE
+  vsamples0 <- NULL
   if(!is.null(edfsamples)) {
+    vsamples0 <- vsamples
     vsamples <- edfsamples
     edf <- TRUE
   }
@@ -1294,6 +1296,8 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
         sep = ""), x$label)
       colnames(vsamples) <- paste(x$label, if(is.null(edfsamples)) "tau" else "edf", 1:nrow(smatfull), sep = ".")
       attr(smf, if(is.null(edfsamples)) "samples.scale" else "samples.edf") <- as.mcmc(vsamples)
+      if(!is.null(vsamples0))
+        attr(smf, "samples.scale") <- as.mcmc(vsamples0)
       if(!is.null(asamples)) {
         asamples <- matrix(asamples, ncol = 1)
         colnames(asamples) <- paste(x$label, "alpha", sep = ".")
