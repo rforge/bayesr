@@ -304,7 +304,7 @@ Note that $f$ is considered to be a general density and $\boldsymbol{\theta}_k$,
 are parameters that are linked to STAR predictors given in equation (\ref{eqn:structadd}).
 Estimation typically requires to evaluate the log-likelihood function
 \begin{equation} \label{eqn:density}
-\ell(\boldsymbol{\vartheta} | \mathbf{y}) =
+\ell(\mathbf{y} | \boldsymbol{\vartheta}) =
   \sum_{i = 1}^n ln \, f(\mathbf{y}_i | \theta_{i1} = h_1^{-1}(\eta_{i1}), \ldots,
   \theta_{iK} = h_K^{-1}(\eta_{iK}))
 \end{equation}
@@ -318,7 +318,7 @@ Assigning prior distributions to the individual model components, e.g., given by
 prior (\ref{eqn:shrinkprior}) and the inverse gamma prior (\ref{eqn:ig}), results in the log-posterior
 \begin{equation} \label{eqn:logpost}
 ln \, p(\boldsymbol{\vartheta} | \mathbf{y}) \propto
-  \ell(\boldsymbol{\vartheta} | \mathbf{y}) +
+  \ell(\mathbf{y} | \boldsymbol{\vartheta}) +
   \sum_{k = 1}^K\sum_{j = 1}^{p_k} \left\{ ln \, p_{jk}(\boldsymbol{\vartheta}_{jk}) \right\},
 \end{equation}
 where, e.g., $\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}^\top, (\boldsymbol{\tau}^2_{jk})^\top)^\top$
@@ -374,7 +374,7 @@ with score vector
 \begin{equation} \label{eqn:score}
 \mathbf{s}(\boldsymbol{\vartheta}) = 
   \frac{\partial ln \, p(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}}
-= \frac{\partial \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}} +
+= \frac{\partial \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\vartheta}} +
     \sum_{k = 1}^K\sum_{j = 1}^{p_k} \left\{ \frac{\partial ln \, p_{jk}(\boldsymbol{\vartheta}_{jk})}{\partial \boldsymbol{\vartheta}} \right\}.
 \end{equation}
 and hessian matrix $\mathbf{H}(\boldsymbol{\vartheta})$ with components
@@ -385,25 +385,25 @@ and hessian matrix $\mathbf{H}(\boldsymbol{\vartheta})$ with components
 for $k = 1, \dots, K$ and $s = 1, \dots, K$. By chain rule, the part of the score vector involving
 the derivatives of the log-likelihood for the $k$th parameter can be further decomposed to
 \begin{equation} \label{eqn:score2}
-\frac{\partial \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}_k} =
-  \frac{\partial \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k}
+\frac{\partial \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\vartheta}_k} =
+  \frac{\partial \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\eta}_k}
   \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\vartheta}_k} = 
-  \frac{\partial \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\theta}_k}
+  \frac{\partial \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\theta}_k}
   \frac{\partial \boldsymbol{\theta}_k}{\partial \boldsymbol{\eta}_k}
   \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\vartheta}_k},
 \end{equation}
 including the derivatives of the log-likelihood with respect to parameters $\boldsymbol{\theta}_k$,
 the derivative of the link functions and the derivative of the STAR predictor
 $\boldsymbol{\eta}_k$ with respect to coefficients $\boldsymbol{\vartheta}_k$. Again by chain rule,
-the components of $\mathbf{H}_{ks}$ including $\ell(\boldsymbol{\vartheta} | \mathbf{y})$ can be
+the components of $\mathbf{H}_{ks}$ including $\ell(\mathbf{y} | \boldsymbol{\vartheta})$ can be
 written as
 \begin{equation} \label{hessian2}
-\frac{\partial^2 \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}_k \partial \boldsymbol{\vartheta}_s^\top} =
+\frac{\partial^2 \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\vartheta}_k \partial \boldsymbol{\vartheta}_s^\top} =
 \left( \frac{\partial \boldsymbol{\eta}_s}{\partial \boldsymbol{\vartheta}_s} \right)^\top
-\frac{\partial^2 \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top}
+\frac{\partial^2 \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top}
 \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\vartheta}_k}
 \,\, \underbrace{
-  \, + \, \frac{\partial \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k}
+  \, + \, \frac{\partial \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\eta}_k}
     \frac{\partial^2 \boldsymbol{\eta}_k}{\partial^2 \boldsymbol{\vartheta}_k}}_{\text{if } k = s},
 \end{equation}
 where the second term drops if all functions (\ref{eqn:functions}) can be written as a linear
@@ -411,10 +411,10 @@ combination of a design matrix and coefficients, e.g., when using a basis functi
 the first term, the second derivatives of the log-likelihood involving the predictors can be written
 as
 \begin{equation} \label{hessian3}
-\frac{\partial^2 \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top} =
-  \frac{\partial \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\theta}_k}
+\frac{\partial^2 \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top} =
+  \frac{\partial \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\theta}_k}
   \frac{\partial^2 \boldsymbol{\theta}_k}{\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_s^\top} + 
-  \frac{\partial^2 \ell(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\theta}_k \partial \boldsymbol{\theta}_s^\top}
+  \frac{\partial^2 \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\theta}_k \partial \boldsymbol{\theta}_s^\top}
   \frac{\partial \boldsymbol{\theta}_k}{\partial \boldsymbol{\eta}_k}
   \frac{\partial \boldsymbol{\theta}_s}{\partial \boldsymbol{\eta}_s}
 \end{equation}
@@ -608,7 +608,7 @@ on situations were this is not generally the case.
   Markov chain especially when iterates move into regions with low probability mass of the
   posterior distribution. A solution is to construct full conditionals
   $$
-  p(\boldsymbol{\vartheta}_{jk} | \cdot) \propto \ell(\boldsymbol{\vartheta}_{jk}, \mathbf{y}) \cdot
+  p(\boldsymbol{\vartheta}_{jk} | \cdot) \propto \ell(\mathbf{y} | \boldsymbol{\vartheta}_{jk}) \cdot
     p_{jk}(\boldsymbol{\vartheta}_{jk})
   $$
   which approximate the posterior at the current iterate. A second order Taylor series expansion of
@@ -632,11 +632,11 @@ BAMLSS candidate algorithms:
 \begin{itemize}
 \item The density function $f(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$.
 \item The first order derivatives
-  $\partial \ell(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\theta}_k$,
+  $\partial \ell(\mathbf{y} | \boldsymbol{\vartheta}) / \partial \boldsymbol{\theta}_k$,
   $\partial \boldsymbol{\theta}_k / \partial \boldsymbol{\eta}_k$ and
   $\partial \boldsymbol{\eta}_k / \partial \boldsymbol{\vartheta}_k$.
 \item Second order derivatives
-  $\partial^2 \ell(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top$.
+  $\partial^2 \ell(\mathbf{y} | \boldsymbol{\vartheta}) / \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top$.
 \item Derivatives for priors, e.g., $ln \, p(\boldsymbol{\beta}_{jk} | \tau_{jk}^2)$ and $ln \, p(\tau_{jk}^2)$.
 \end{itemize}
 Hence, a modular family specification system can in principle be used to implement various
