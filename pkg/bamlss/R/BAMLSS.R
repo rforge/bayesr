@@ -1297,7 +1297,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
       colnames(vsamples) <- paste(x$label, if(is.null(edfsamples)) "tau2" else "edf", 1:nrow(smatfull), sep = ".")
       attr(smf, if(is.null(edfsamples)) "samples.scale" else "samples.edf") <- as.mcmc(vsamples)
       if(!is.null(vsamples0)) {
-        colnames(vsamples0) <- paste(x$label, "tau2", 1:nrow(smatfull), sep = ".")
+        colnames(vsamples0) <- paste(x$label, "tau2", 1:ncol(vsamples0), sep = ".")
         attr(smf, "samples.scale") <- as.mcmc(vsamples0)
       }
       if(!is.null(asamples)) {

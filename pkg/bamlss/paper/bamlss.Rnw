@@ -574,28 +574,48 @@ be derived in closed form from the log-posterior (\ref{eqn:logpost}), however, w
 on situations were this is not generally the case.
 \begin{itemize}
 \item \emph{Random walk Metropolis}: \label{sec:rwm} \\
-  Probably the most important algorithm is random walk Metropolis (RWM). The sampler
+  Probably the most important algorithm, because of its generality and easy implementation, is
+  random walk Metropolis (RWM). The sampler
   proceeds by drawing a candidate $\boldsymbol{\vartheta}_{jk}^{\star}$ from a symmetric jumping
   distribution $q(\boldsymbol{\vartheta}_{jk}^{\star}| \boldsymbol{\vartheta}_{jk}^{(t-1)})$, the
   candidate is then accepted as the new state of the Markov chain with probability
-  \begin{equation} \label{eqn:accprob}
+  $$
   \alpha\left( \boldsymbol{\vartheta}_{jk}^{\star} | \boldsymbol{\vartheta}_{jk}^{(t-1)}\right) =
   \text{min} \left\{ \frac{p(\boldsymbol{\vartheta}_{jk}^{\star} | \mathbf{y})}{
     p(\boldsymbol{\vartheta}_{jk}^{(t-1)} | \mathbf{y})}, 1 \right\}.
-  \end{equation}
+  $$
   Commonly, the jumping distribution is a normal distribution $N(\boldsymbol{\vartheta}_{jk}^{(t-1)}, \boldsymbol{\Sigma}_{jk})$ centered at the current iterate and fixed covariance matrix. Although this algorithm
   is theoretically working for any distribution, the actual sampling performance depends heavily on
-  the scaling of $\boldsymbol{\Sigma}_{jk}$. Therefore, numerous methods that try to optimize the
-  behavior of the Markov chain in an adaptive phase (burnin phase) have been developed. In the
-  seminal paper of \citet{bamlss:Gelman+Roberts+Gilks:1996}, strategies that optimize the acceptance
-  rate to roughly $1/4$ are suggested to obtain a good mixing. Similarly, within the presented
-  modeling framework and a basis function approach with multivariate normal prior
-  (\ref{eqn:shrinkprior}), a convenient way is to set
+  starting values and the scaling of $\boldsymbol{\Sigma}_{jk}$. Therefore, numerous methods that
+  try to optimize the behavior of the Markov chain in an adaptive phase (burnin phase) have been
+  developed. In the seminal paper of \citet{bamlss:Gelman+Roberts+Gilks:1996}, strategies that
+  optimize the acceptance rate to roughly $1/4$ are suggested to obtain a good mixing. Similarly,
+  within the presented modeling framework and a basis function approach with multivariate normal
+  prior (\ref{eqn:shrinkprior}), a convenient way is to set
   $\boldsymbol{\Sigma}_{jk} = \sigma_{jk}\mathbf{K}_{jk}^{-1}$ and optimize $\sigma_{jk}$ to the
   desired properties in the adaptive phase.
 
-
 \item \emph{Derivative based Metropolis-Hastings}: \label{sec:dmh} \\
+  A commonly used alternative for the covariance matrix of the jumping distribution
+  $N(\boldsymbol{\vartheta}_{jk}^{(t-1)}, \boldsymbol{\Sigma}_{jk})$ is to use the local curvature
+  information
+  $$
+  \boldsymbol{\Sigma}_{jk} = \frac{\partial^2 p(\boldsymbol{\vartheta} | \mathbf{y})}{
+    \partial \boldsymbol{\vartheta}_{jk}\boldsymbol{\vartheta}_{jk}^\top}
+  $$
+  computed at the posterior mode estimate $\hat{\boldsymbol{\vartheta}}_{jk}$. However, fixing
+  $\boldsymbol{\Sigma}_{jk}$ during MCMC simulation might still lead to slow convergence of the
+  Markov chain especially when iterates move into regions with low probability mass of the
+  posterior distribution. A solution is to construct full conditionals
+  $$
+  p(\boldsymbol{\vartheta}_{jk} | \cdot) \propto \ell(\boldsymbol{\vartheta}_{jk}, \mathbf{y}) \cdot
+    p_{jk}(\boldsymbol{\vartheta}_{jk})
+  $$
+  which approximate the posterior at the current iterate. A second order Taylor series expansion of
+  the posterior yields
+  $$
+  p(\boldsymbol{\vartheta}_{jk}) \approx 
+  $$
 
 \item \emph{Hamiltonian Monte Carlo}: \label{sec:hmcmc} \\
 
