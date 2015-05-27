@@ -445,7 +445,7 @@ a $k$-partitioned Newton-Raphson iteration
   \mathbf{H}_{kk}\left( \boldsymbol{\vartheta}_k^{(t)} \right)^{-1}\mathbf{s}_k\left( \boldsymbol{\vartheta}_k^{(t)} \right).
 \end{equation}
 Assuming a basis function approach for functions (\ref{eqn:functions}) with multivariate normal
-priors (\ref{eqn:shrinkprior}), the hessian matrix in (\ref{eqn:blocknewton}) can be written as
+priors (\ref{eqn:shrinkprior}), the hessian matrix in (\ref{eqn:blocknewton}) is given by
 $$
 \mathbf{H}_{kk}\left( \boldsymbol{\vartheta}_k^{(t)} \right) =
 \begin{pmatrix}
@@ -573,18 +573,18 @@ function (\ref{eqn:functions}). Note that for some models there exist full condi
 be derived in closed form from the log-posterior (\ref{eqn:logpost}), however, we especially focus
 on situations were this is not generally the case.
 \begin{itemize}
-\item \emph{Random walk Metropolis}: \label{sec:rwm} \\
+\item \emph{Random-walk Metropolis}: \label{sec:rwm} \\
   Probably the most important algorithm, because of its generality and easy implementation, is
-  random walk Metropolis (RWM). The sampler
+  random-walk Metropolis. The sampler
   proceeds by drawing a candidate $\boldsymbol{\vartheta}_{jk}^{\star}$ from a symmetric jumping
-  distribution $q(\boldsymbol{\vartheta}_{jk}^{\star}| \boldsymbol{\vartheta}_{jk}^{(t-1)})$, the
+  distribution $q(\boldsymbol{\vartheta}_{jk}^{\star}| \boldsymbol{\vartheta}_{jk}^{(t)})$, the
   candidate is then accepted as the new state of the Markov chain with probability
   $$
-  \alpha\left( \boldsymbol{\vartheta}_{jk}^{\star} | \boldsymbol{\vartheta}_{jk}^{(t-1)}\right) =
+  \alpha\left( \boldsymbol{\vartheta}_{jk}^{\star} | \boldsymbol{\vartheta}_{jk}^{(t)}\right) =
   \text{min} \left\{ \frac{p(\boldsymbol{\vartheta}_{jk}^{\star} | \mathbf{y})}{
-    p(\boldsymbol{\vartheta}_{jk}^{(t-1)} | \mathbf{y})}, 1 \right\}.
+    p(\boldsymbol{\vartheta}_{jk}^{(t)} | \mathbf{y})}, 1 \right\}.
   $$
-  Commonly, the jumping distribution is a normal distribution $N(\boldsymbol{\vartheta}_{jk}^{(t-1)}, \boldsymbol{\Sigma}_{jk})$ centered at the current iterate and fixed covariance matrix. Although this algorithm
+  Commonly, the jumping distribution is a normal distribution $N(\boldsymbol{\vartheta}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk})$ centered at the current iterate and fixed covariance matrix. Although this algorithm
   is theoretically working for any distribution, the actual sampling performance depends heavily on
   starting values and the scaling of $\boldsymbol{\Sigma}_{jk}$. Therefore, numerous methods that
   try to optimize the behavior of the Markov chain in an adaptive phase (burnin phase) have been
@@ -597,24 +597,53 @@ on situations were this is not generally the case.
 
 \item \emph{Derivative based Metropolis-Hastings}: \label{sec:dmh} \\
   A commonly used alternative for the covariance matrix of the jumping distribution
-  $N(\boldsymbol{\vartheta}_{jk}^{(t-1)}, \boldsymbol{\Sigma}_{jk})$ is to use the local curvature
+  $N(\boldsymbol{\vartheta}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk})$ is to use the local curvature
   information
   $$
-  \boldsymbol{\Sigma}_{jk} = \frac{\partial^2 p(\boldsymbol{\vartheta} | \mathbf{y})}{
-    \partial \boldsymbol{\vartheta}_{jk}\boldsymbol{\vartheta}_{jk}^\top}
+  \boldsymbol{\Sigma}_{jk} = -\left( \frac{\partial^2 p(\boldsymbol{\vartheta} | \mathbf{y})}{
+    \partial \boldsymbol{\vartheta}_{jk}\boldsymbol{\vartheta}_{jk}^\top} \right)^{-1}
   $$
   computed at the posterior mode estimate $\hat{\boldsymbol{\vartheta}}_{jk}$. However, fixing
   $\boldsymbol{\Sigma}_{jk}$ during MCMC simulation might still lead to slow convergence of the
   Markov chain especially when iterates move into regions with low probability mass of the
   posterior distribution. A solution is to construct full conditionals
+  $p(\boldsymbol{\vartheta}_{jk} | \cdot)$
+  which approximate the posterior at the current iterate and minimize the risk of slow traversing.
+  The construction of the full conditional is based on a second order Taylor series expansion
+  of the log-posterior around the current iterate
+  \begin{eqnarray*}
+  p(\boldsymbol{\vartheta}_{jk}^\star | \cdot) &\propto& \exp\left\{
+    ln\,p\left(\boldsymbol{\vartheta}_{jk}^{(t)} | \cdot\right) +
+    \left(\boldsymbol{\vartheta}_{jk}^\star - \boldsymbol{\vartheta}_{jk}^{(t)}\right)^\top s\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) + \right.\\
+  && \left. \frac{1}{2}\left(\boldsymbol{\vartheta}_{jk}^\star - \boldsymbol{\vartheta}_{jk}^{(t)}\right)^\top
+    \mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)
+    \left(\boldsymbol{\vartheta}_{jk}^\star - \boldsymbol{\vartheta}_{jk}^{(t)}\right)\right\} \\
+  &\propto& \exp\left\{(\boldsymbol{\vartheta}_{jk}^\star)^\top s\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) +
+    \left(\frac{1}{2}(\boldsymbol{\vartheta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) - \right.\right. \\
+  && \qquad\qquad\left.\left. \frac{1}{2}(\boldsymbol{\vartheta}_{jk}^{(t)})^\top\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) \right)\left(\boldsymbol{\vartheta}_{jk}^\star - \boldsymbol{\vartheta}_{jk}^{(t)}\right)\right\} \\
+  &\propto& \exp\left\{(\boldsymbol{\vartheta}_{jk}^\star)^\top s\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) +
+    \frac{1}{2}(\boldsymbol{\vartheta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^\star - \right. \\
+  && \left. \qquad\qquad \frac{1}{2}(\boldsymbol{\vartheta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^{(t)} -
+    \frac{1}{2}(\boldsymbol{\vartheta}_{jk}^{(t)})^\top\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^\star \right\} \\
+  &=& \exp\left\{
+    \frac{1}{2}(\boldsymbol{\vartheta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^\star +
+    (\boldsymbol{\vartheta}_{jk}^\star)^\top s\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) -
+    (\boldsymbol{\vartheta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^{(t)} \right\} \\
+  &=& \exp\left\{
+    -\frac{1}{2}(\boldsymbol{\vartheta}_{jk}^\star)^\top-\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^\star +
+    (\boldsymbol{\vartheta}_{jk}^\star)^\top \left(s\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) - \mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^{(t)}\right) \right\}
+  \end{eqnarray*}
+  which is proportional to a multivariate normal distribution with precision matrix and mean
   $$
-  p(\boldsymbol{\vartheta}_{jk} | \cdot) \propto \ell(\mathbf{y} | \boldsymbol{\vartheta}_{jk}) \cdot
-    p_{jk}(\boldsymbol{\vartheta}_{jk})
+  \mathbf{P}_{jk} = -\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right),
+  \qquad \mathbf{m}_{jk} = \mathbf{P}^{-1}_{jk}\left( s\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) -
+    \mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^{(t)} \right).
   $$
-  which approximate the posterior at the current iterate. A second order Taylor series expansion of
-  the posterior yields
+  Hence, the proposal density for $\boldsymbol{\vartheta}_{jk}$ is
+  $N(\mathbf{m}_{jk}, \mathbf{P}_{jk}^{-1})$. Again, assuming a basis function approach with
+  multivariate normal priors (\ref{eqn:shrinkprior}) we obtain
   $$
-  p(\boldsymbol{\vartheta}_{jk}) \approx 
+  \mathbf{P}_{jk} = \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}
   $$
 
 \item \emph{Hamiltonian Monte Carlo}: \label{sec:hmcmc} \\
