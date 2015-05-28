@@ -668,7 +668,7 @@ on situations were this is not generally the case.
   the computation of the mean is equivalent to a full Newton step for parameter
   $\boldsymbol{\vartheta}_{jk}$ in each iteration of the MCMC sampler, which is known as the
   iteratively reweighted least squares (IWLS) proposal
-  \citep{bamlss:Gamerman:1997, bamlss:Brezger+Lang:2006}.
+  \citep{bamlss:Gamerman:1997, bamlss:Brezger+Lang:2006, bamlss:Klein+Kneib+Klasen+Lang:2014}.
 
 \item \emph{Hamiltonian Monte Carlo}: \label{sec:hmcmc} \\
 
