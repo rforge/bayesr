@@ -635,16 +635,39 @@ on situations were this is not generally the case.
   \end{eqnarray*}
   which is proportional to a multivariate normal distribution with precision matrix and mean
   $$
-  \mathbf{P}_{jk} = -\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right),
-  \qquad \mathbf{m}_{jk} = \mathbf{P}^{-1}_{jk}\left( s\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) -
-    \mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^{(t)} \right).
+  (\boldsymbol{\Sigma}_{jk}^{-1})^{(t)} = -\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right),
+  \qquad \boldsymbol{\mu}_{jk}^{(t)} = \boldsymbol{\Sigma}_{jk}^{(t)}\left\{ s\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) -
+    \mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^{(t)} \right\}.
   $$
   Hence, the proposal density for $\boldsymbol{\vartheta}_{jk}$ is
-  $N(\mathbf{m}_{jk}, \mathbf{P}_{jk}^{-1})$. Again, assuming a basis function approach with
-  multivariate normal priors (\ref{eqn:shrinkprior}) we obtain
+  $N(\boldsymbol{\mu}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk}^{(t)})$. Again, assuming a basis function approach with
+  multivariate normal priors (\ref{eqn:shrinkprior}) the precision matrix is
   $$
-  \mathbf{P}_{jk} = \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}
+  (\boldsymbol{\Sigma}_{jk}^{-1})^{(t)} = \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}
   $$
+  with weights $\mathbf{W}_{kk} = -diag(\partial^2 \ell(\boldsymbol{\vartheta}_k | \mathbf{y}) /
+\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and the mean can be written as
+  \begin{eqnarray*}
+  \boldsymbol{\mu}_{jk}^{(t)} &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left\{
+  \mathbf{X}_{jk}^\top\mathbf{u}_k^{(t)} - \mathbf{G}_{jk}\boldsymbol{\vartheta}_{jk}^{(t)} +
+  (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\vartheta}_{jk}^{(t)}\right\} \\
+  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left\{
+  \mathbf{X}_{jk}^\top\mathbf{u}_k^{(t)} +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\vartheta}_{jk}^{(t)}\right\} \\
+  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left\{
+  \mathbf{X}_{jk}^\top\mathbf{u}_k^{(t)} +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left(\boldsymbol{\eta}_k^{(t)} - \boldsymbol{\eta}^{(t)}_{k,-j}\right)\right\} \\
+  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\left\{
+  \mathbf{u}_k^{(t)} + \mathbf{W}_{kk}\left(\boldsymbol{\eta}_k^{(t)} - \boldsymbol{\eta}^{(t)}_{k,-j}\right)\right\} \\
+  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left\{
+  \boldsymbol{\eta}_k^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}  - \boldsymbol{\eta}^{(t)}_{k,-j}\right\} \\
+  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left\{\mathbf{z}_k  - \boldsymbol{\eta}^{(t)}_{k,-j}\right\}
+  \end{eqnarray*}
+  with working observations
+  $\mathbf{z}_k = \boldsymbol{\eta}_k^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$, therefore,
+  the computation of the mean is equivalent to a full Newton step. This is known as the
+  iteratively reweighted least squares (IWLS) proposal
+  \citep{bamlss:Gamerman:1997, bamlss:Brezger+Lang:2006}.
 
 \item \emph{Hamiltonian Monte Carlo}: \label{sec:hmcmc} \\
 
