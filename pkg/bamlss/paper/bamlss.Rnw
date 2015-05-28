@@ -635,7 +635,7 @@ on situations were this is not generally the case.
   \end{eqnarray*}
   which is proportional to a multivariate normal distribution with precision matrix and mean
   $$
-  (\boldsymbol{\Sigma}_{jk}^{-1})^{(t)} = -\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right),
+  \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = -\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right),
   \qquad \boldsymbol{\mu}_{jk}^{(t)} = \boldsymbol{\Sigma}_{jk}^{(t)}\left\{ s\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) -
     \mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^{(t)} \right\}.
   $$
@@ -643,7 +643,7 @@ on situations were this is not generally the case.
   $N(\boldsymbol{\mu}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk}^{(t)})$. Again, assuming a basis function approach with
   multivariate normal priors (\ref{eqn:shrinkprior}) the precision matrix is
   $$
-  (\boldsymbol{\Sigma}_{jk}^{-1})^{(t)} = \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}
+  \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}
   $$
   with weights $\mathbf{W}_{kk} = -diag(\partial^2 \ell(\boldsymbol{\vartheta}_k | \mathbf{y}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and the mean can be written as
@@ -664,8 +664,9 @@ on situations were this is not generally the case.
   &=& \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left\{\mathbf{z}_k  - \boldsymbol{\eta}^{(t)}_{k,-j}\right\}
   \end{eqnarray*}
   with working observations
-  $\mathbf{z}_k = \boldsymbol{\eta}_k^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$, therefore,
-  the computation of the mean is equivalent to a full Newton step. This is known as the
+  $\mathbf{z}_k = \boldsymbol{\eta}_k^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$. Therefore,
+  the computation of the mean is equivalent to a full Newton step for parameter
+  $\boldsymbol{\vartheta}_{jk}$ in each iteration of the MCMC sampler, which is known as the
   iteratively reweighted least squares (IWLS) proposal
   \citep{bamlss:Gamerman:1997, bamlss:Brezger+Lang:2006}.
 
