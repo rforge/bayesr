@@ -615,7 +615,7 @@ following methods:
   $N(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk})$ is to use the local curvature
   information
   $$
-  \boldsymbol{\Sigma}_{jk} = -\left( \frac{\partial^2 p(\boldsymbol{\beta}_{jk} | \cdot)}{
+  \boldsymbol{\Sigma}_{jk} = -\left( \frac{\partial^2 p(\boldsymbol{\vartheta} | \mathbf{y})}{
     \partial \boldsymbol{\beta}_{jk}\boldsymbol{\beta}_{jk}^\top} \right)^{-1}
   $$
   computed at the posterior mode estimate $\hat{\boldsymbol{\beta}}_{jk}$. However, fixing
