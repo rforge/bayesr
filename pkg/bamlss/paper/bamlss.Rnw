@@ -455,7 +455,7 @@ $$
 \mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} & \cdots & \mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} + \mathbf{G}_{p_kk}
 \end{pmatrix}^{(t)},
 $$
-with diagonal weight matrix $\mathbf{W}_{kk} = -diag(\partial^2 \ell(\boldsymbol{\beta}_k | \mathbf{y}) /
+with diagonal weight matrix $\mathbf{W}_{kk} = -diag(\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and penalty matrix
 $\mathbf{G}_{jk} = 0.5\tau_{jk}^{-2}\mathbf{K}_{jk}$. Similarly, the score vector is
 $$
@@ -466,7 +466,7 @@ $$
 \mathbf{X}_{p_kk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t)} \\
 \end{pmatrix}
 $$
-and derivatives $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta}_k | \mathbf{y}) /
+and derivatives $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta} | \mathbf{y}) /
 \partial \boldsymbol{\eta}_k$. Focusing on the $j$th row of (\ref{eqn:blocknewton}) gives
 \begin{eqnarray*}
 (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\beta}_{jk}^{(t+1)} +
@@ -557,7 +557,7 @@ i.e., theoretically any smoother function $\mathbf{S}_{jk}( \cdot )$ applied on 
 ``partial residuals'' can be used.
 
 Note that for numerical reasons it is oftentimes better to replace the hessian by the expected
-Fisher information with weights $\mathbf{W}_{kk} = -diag(E(\partial^2 \ell(\boldsymbol{\beta}_k | \mathbf{y}) /
+Fisher information with weights $\mathbf{W}_{kk} = -diag(E(\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top))$.
 
 \newpage
@@ -615,7 +615,7 @@ following methods:
   $N(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk})$ is to use the local curvature
   information
   $$
-  \boldsymbol{\Sigma}_{jk} = -\left( \frac{\partial^2 p(\boldsymbol{\beta} | \mathbf{y})}{
+  \boldsymbol{\Sigma}_{jk} = -\left( \frac{\partial^2 p(\boldsymbol{\beta}_{jk} | \cdot)}{
     \partial \boldsymbol{\beta}_{jk}\boldsymbol{\beta}_{jk}^\top} \right)^{-1}
   $$
   computed at the posterior mode estimate $\hat{\boldsymbol{\beta}}_{jk}$. However, fixing
@@ -668,7 +668,7 @@ following methods:
   $$
   \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk},
   $$
-  with weights $\mathbf{W}_{kk} = -diag(\partial^2 \ell(\boldsymbol{\beta}_k | \mathbf{y}) /
+  with weights $\mathbf{W}_{kk} = -diag(\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and the mean can be written as
   \begin{eqnarray*}
   \boldsymbol{\mu}_{jk}^{(t)} &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left\{
@@ -689,23 +689,24 @@ following methods:
   with working observations
   $\mathbf{z}_k = \boldsymbol{\eta}_k^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$. Therefore,
   the computation of the mean is equivalent to a full Newton step, or Fisher scoring when using
-  $-E(\partial^2 \ell(\boldsymbol{\beta}_k | \mathbf{y}) /
+  $-E(\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y}) /
     \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$,
   in each iteration of the MCMC sampler using iteratively reweighted least squares (IWLS)
   \citep{bamlss:Gamerman:1997, bamlss:Brezger+Lang:2006, bamlss:Klein+Kneib+Klasen+Lang:2014}.
-  In similar fashion the full conditionals $p(\tau_{jk} | \cdot)$ for smoothing variances using
-  priors (\ref{eqn:shrinkprior}) and (\ref{eqn:ig}) are again an inverse gamma distribution
-  with
-  $$
-  \tilde{a}_{jk} = \frac{1}{2}rk(\mathbf{K}_{jk}) + a_{jk}, \qquad
-    \tilde{b}_{jk} = \frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{K}_{jk}
-    \boldsymbol{\beta}_{jk}^\star + b_{jk}.
-  $$
 
 \item \emph{Hamiltonian Monte Carlo}: \label{sec:hmcmc} \\
 
 \item \emph{Slice sampling}: \label{sec:smcmc} \\
 \end{itemize}
+
+In similar fashion the full conditionals $p(\tau_{jk} | \cdot)$ for smoothing variances using
+priors (\ref{eqn:shrinkprior}) and (\ref{eqn:ig}) are again an inverse gamma distribution
+with
+$$
+\tilde{a}_{jk} = \frac{1}{2}rk(\mathbf{K}_{jk}) + a_{jk}, \qquad
+  \tilde{b}_{jk} = \frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{K}_{jk}
+  \boldsymbol{\beta}_{jk}^\star + b_{jk}.
+$$
 
 
 \subsection{Inference and prediction} \label{sec:infpred}
