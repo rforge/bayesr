@@ -304,9 +304,9 @@ Note that $f$ is considered to be a general density and $\boldsymbol{\theta}_k$,
 are parameters that are linked to STAR predictors given in equation (\ref{eqn:structadd}).
 Estimation typically requires to evaluate the log-likelihood function
 \begin{equation} \label{eqn:density}
-\ell(\mathbf{y} | \boldsymbol{\vartheta}) =
-  \sum_{i = 1}^n ln \, f(\mathbf{y}_i | \theta_{i1} = h_1^{-1}(\eta_{i1}), \ldots,
-  \theta_{iK} = h_K^{-1}(\eta_{iK}))
+\ell(\boldsymbol{\vartheta} | \mathbf{y}) =
+  \sum_{i = 1}^n ln \, f(\mathbf{y}_i | \theta_{i1} = h_1^{-1}(\eta_{i1}(\boldsymbol{\vartheta}_1)), \ldots,
+  \theta_{iK} = h_K^{-1}(\eta_{iK}(\boldsymbol{\vartheta}_K)))
 \end{equation}
 a number of times, where the vector
 $\boldsymbol{\vartheta} = (\boldsymbol{\vartheta}_1^\top, \ldots, \boldsymbol{\vartheta}_K^\top)^\top$ 
@@ -318,7 +318,7 @@ Assigning prior distributions to the individual model components, e.g., given by
 prior (\ref{eqn:shrinkprior}) and the inverse gamma prior (\ref{eqn:ig}), results in the log-posterior
 \begin{equation} \label{eqn:logpost}
 ln \, p(\boldsymbol{\vartheta} | \mathbf{y}) \propto
-  \ell(\mathbf{y} | \boldsymbol{\vartheta}) +
+  \ell(\boldsymbol{\vartheta} | \mathbf{y}) +
   \sum_{k = 1}^K\sum_{j = 1}^{p_k} \left\{ ln \, p_{jk}(\boldsymbol{\vartheta}_{jk}) \right\},
 \end{equation}
 where, e.g., $\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}^\top, (\boldsymbol{\tau}^2_{jk})^\top)^\top$
@@ -358,63 +358,64 @@ information criterion (BIC) (see also \citealp{bamlss:Rigby+Stasinopoulos:2005} 
 a more detailed discussion on variance/hyperparameter estimation). In the following we assume that
 variance parameters are held fix and $\boldsymbol{\vartheta}_{jk} = \boldsymbol{\beta}_{jk}$ for
 $j = 1, \ldots, p_k$ and $k = 1, \ldots, K$.
-Estimation of $\boldsymbol{\vartheta}$ requires solving equations
-$\partial (ln \, p(\boldsymbol{\vartheta} | \mathbf{y})) / \partial \boldsymbol{\vartheta} = \mathbf{0}$
+Estimation of $\boldsymbol{\beta} = (\boldsymbol{\beta}_1^\top, \ldots, \boldsymbol{\beta}_K^\top)^\top$
+requires solving equations
+$\partial (ln \, p(\boldsymbol{\beta} | \mathbf{y})) / \partial \boldsymbol{\beta} = \mathbf{0}$
 and usually the problem is solved with an iterative updating scheme of the form
 \begin{equation} \label{eqn:updating}
-\boldsymbol{\vartheta}^{(t + 1)} = U(\boldsymbol{\vartheta}^{(t)}),
+\boldsymbol{\beta}^{(t + 1)} = U(\boldsymbol{\beta}^{(t)}),
 \end{equation}
-with updating function $U(\cdot)$ and $\hat{\boldsymbol{\vartheta}}$ as a fixed point of the iteration.
+with updating function $U(\cdot)$ and $\hat{\boldsymbol{\beta}}$ as a fixed point of the iteration.
 A particularly convenient way to maximize (\ref{eqn:logpost}) is a Newton-Raphson type updating
 \begin{equation} \label{eqn:newton}
-\boldsymbol{\vartheta}^{(t + 1)} = U(\boldsymbol{\vartheta}^{(t)}) = \boldsymbol{\vartheta}^{(t)} -
-  \mathbf{H}\left( \boldsymbol{\vartheta}^{(t)} \right)^{-1}\mathbf{s}\left( \boldsymbol{\vartheta}^{(t)} \right)
+\boldsymbol{\beta}^{(t + 1)} = U(\boldsymbol{\beta}^{(t)}) = \boldsymbol{\beta}^{(t)} -
+  \mathbf{H}\left( \boldsymbol{\beta}^{(t)} \right)^{-1}\mathbf{s}\left( \boldsymbol{\beta}^{(t)} \right)
 \end{equation}
 with score vector
 \begin{equation} \label{eqn:score}
-\mathbf{s}(\boldsymbol{\vartheta}) = 
-  \frac{\partial ln \, p(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\vartheta}}
-= \frac{\partial \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\vartheta}} +
-    \sum_{k = 1}^K\sum_{j = 1}^{p_k} \left\{ \frac{\partial ln \, p_{jk}(\boldsymbol{\vartheta}_{jk})}{\partial \boldsymbol{\vartheta}} \right\}.
+\mathbf{s}(\boldsymbol{\beta}) = 
+  \frac{\partial ln \, p(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\beta}}
+= \frac{\partial \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\beta}} +
+    \sum_{k = 1}^K\sum_{j = 1}^{p_k} \left\{ \frac{\partial ln \, p_{jk}(\boldsymbol{\beta}_{jk})}{\partial \boldsymbol{\beta}} \right\}.
 \end{equation}
-and hessian matrix $\mathbf{H}(\boldsymbol{\vartheta})$ with components
+and hessian matrix $\mathbf{H}(\boldsymbol{\beta})$ with components
 \begin{equation} \label{eqn:hessian}
-\mathbf{H}_{ks}(\boldsymbol{\vartheta}) = 
-\frac{\partial^2 ln \, p(\boldsymbol{\vartheta})}{\partial \boldsymbol{\vartheta}_k \partial \boldsymbol{\vartheta}_s^\top} = \frac{\partial \mathbf{s}(\boldsymbol{\vartheta}_k)}{\partial \boldsymbol{\vartheta}_s^\top},
+\mathbf{H}_{ks}(\boldsymbol{\beta}) = 
+\frac{\partial^2 ln \, p(\boldsymbol{\beta})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top} = \frac{\partial \mathbf{s}(\boldsymbol{\beta}_k)}{\partial \boldsymbol{\beta}_s^\top},
 \end{equation}
 for $k = 1, \dots, K$ and $s = 1, \dots, K$. By chain rule, the part of the score vector involving
 the derivatives of the log-likelihood for the $k$th parameter can be further decomposed to
 \begin{equation} \label{eqn:score2}
-\frac{\partial \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\vartheta}_k} =
-  \frac{\partial \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\eta}_k}
-  \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\vartheta}_k} = 
-  \frac{\partial \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\theta}_k}
+\frac{\partial \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\beta}_k} =
+  \frac{\partial \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k}
+  \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_k} = 
+  \frac{\partial \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\theta}_k}
   \frac{\partial \boldsymbol{\theta}_k}{\partial \boldsymbol{\eta}_k}
-  \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\vartheta}_k},
+  \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_k},
 \end{equation}
 including the derivatives of the log-likelihood with respect to parameters $\boldsymbol{\theta}_k$,
 the derivative of the link functions and the derivative of the STAR predictor
-$\boldsymbol{\eta}_k$ with respect to coefficients $\boldsymbol{\vartheta}_k$. Again by chain rule,
-the components of $\mathbf{H}_{ks}$ including $\ell(\mathbf{y} | \boldsymbol{\vartheta})$ can be
+$\boldsymbol{\eta}_k$ with respect to coefficients $\boldsymbol{\beta}_k$. Again by chain rule,
+the components of $\mathbf{H}_{ks}$ including $\ell(\boldsymbol{\beta} | \mathbf{y})$ can be
 written as
 \begin{equation} \label{hessian2}
-\frac{\partial^2 \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\vartheta}_k \partial \boldsymbol{\vartheta}_s^\top} =
-\left( \frac{\partial \boldsymbol{\eta}_s}{\partial \boldsymbol{\vartheta}_s} \right)^\top
-\frac{\partial^2 \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top}
-\frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\vartheta}_k}
+\frac{\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top} =
+\left( \frac{\partial \boldsymbol{\eta}_s}{\partial \boldsymbol{\beta}_s} \right)^\top
+\frac{\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top}
+\frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_k}
 \,\, \underbrace{
-  \, + \, \frac{\partial \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\eta}_k}
-    \frac{\partial^2 \boldsymbol{\eta}_k}{\partial^2 \boldsymbol{\vartheta}_k}}_{\text{if } k = s},
+  \, + \, \frac{\partial \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k}
+    \frac{\partial^2 \boldsymbol{\eta}_k}{\partial^2 \boldsymbol{\beta}_k}}_{\text{if } k = s},
 \end{equation}
 where the second term drops if all functions (\ref{eqn:functions}) can be written as a linear
 combination of a design matrix and coefficients, e.g., when using a basis function approach. Within
 the first term, the second derivatives of the log-likelihood involving the predictors can be written
 as
 \begin{equation} \label{hessian3}
-\frac{\partial^2 \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top} =
-  \frac{\partial \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\theta}_k}
+\frac{\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top} =
+  \frac{\partial \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\theta}_k}
   \frac{\partial^2 \boldsymbol{\theta}_k}{\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_s^\top} + 
-  \frac{\partial^2 \ell(\mathbf{y} | \boldsymbol{\vartheta})}{\partial \boldsymbol{\theta}_k \partial \boldsymbol{\theta}_s^\top}
+  \frac{\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\theta}_k \partial \boldsymbol{\theta}_s^\top}
   \frac{\partial \boldsymbol{\theta}_k}{\partial \boldsymbol{\eta}_k}
   \frac{\partial \boldsymbol{\theta}_s}{\partial \boldsymbol{\eta}_s}
 \end{equation}
@@ -422,32 +423,32 @@ involving the second derivatives of the link functions.
 
 Although solving the updating scheme (\ref{eqn:newton}) is feasible, from the computational
 perspective of the model class it is still a bit unhandy. Fortunately, the problem of iteratively
-finding the roots for $\boldsymbol{\vartheta}$ can be partitioned into separate updating equations
+finding the roots for $\boldsymbol{\beta}$ can be partitioned into separate updating equations
 using leapfrog or zigzag iteration \citep{bamlss:Smyth:1996}. Now let
 \begin{eqnarray} \label{eqn:pupdate}
-\boldsymbol{\vartheta}_1^{(t + 1)} &=& U_1(\boldsymbol{\vartheta}_1^{(t)}, \boldsymbol{\vartheta}_2^{(t)},
-  \ldots, \boldsymbol{\vartheta}_K^{(t)}) \nonumber \\
-\boldsymbol{\vartheta}_2^{(t + 1)} &=& U_2(\boldsymbol{\vartheta}_1^{(t+1)}, \boldsymbol{\vartheta}_2^{(t)},
-  \ldots, \boldsymbol{\vartheta}_K^{(t)}) \nonumber \\
+\boldsymbol{\beta}_1^{(t + 1)} &=& U_1(\boldsymbol{\beta}_1^{(t)}, \boldsymbol{\beta}_2^{(t)},
+  \ldots, \boldsymbol{\beta}_K^{(t)}) \nonumber \\
+\boldsymbol{\beta}_2^{(t + 1)} &=& U_2(\boldsymbol{\beta}_1^{(t+1)}, \boldsymbol{\beta}_2^{(t)},
+  \ldots, \boldsymbol{\beta}_K^{(t)}) \nonumber \\
   &\vdots& \nonumber \\
-\boldsymbol{\vartheta}_K^{(t + 1)} &=& U_K(\boldsymbol{\vartheta}_1^{(t+1)}, \boldsymbol{\vartheta}_2^{(t+1)},
-  \ldots, \boldsymbol{\vartheta}_K^{(t)})
+\boldsymbol{\beta}_K^{(t + 1)} &=& U_K(\boldsymbol{\beta}_1^{(t+1)}, \boldsymbol{\beta}_2^{(t+1)},
+  \ldots, \boldsymbol{\beta}_K^{(t)})
 \end{eqnarray}
 be a partitioned updating scheme with updating functions $U_k(\cdot)$, i.e., in each iteration
 one parameter is maximized holding the other parameters fixed. Note that this updating scheme can be
 further partitioned for each function within parameter block $k$, leading to a highly modular
 system.
 
-For orthogonal parameters $\boldsymbol{\vartheta}_k$, the updating scheme can be written as
+For orthogonal parameters $\boldsymbol{\beta}_k$, the updating scheme can be written as
 a $k$-partitioned Newton-Raphson iteration
 \begin{equation} \label{eqn:blocknewton}
-\boldsymbol{\vartheta}_k^{(t + 1)} = U_k(\boldsymbol{\vartheta}_k^{(t)} | \cdot) = \boldsymbol{\vartheta}_k^{(t)} -
-  \mathbf{H}_{kk}\left( \boldsymbol{\vartheta}_k^{(t)} \right)^{-1}\mathbf{s}_k\left( \boldsymbol{\vartheta}_k^{(t)} \right).
+\boldsymbol{\beta}_k^{(t + 1)} = U_k(\boldsymbol{\beta}_k^{(t)} | \cdot) = \boldsymbol{\beta}_k^{(t)} -
+  \mathbf{H}_{kk}\left( \boldsymbol{\beta}_k^{(t)} \right)^{-1}\mathbf{s}_k\left( \boldsymbol{\beta}_k^{(t)} \right).
 \end{equation}
 Assuming a basis function approach for functions (\ref{eqn:functions}) with multivariate normal
 priors (\ref{eqn:shrinkprior}), the hessian matrix in (\ref{eqn:blocknewton}) is given by
 $$
-\mathbf{H}_{kk}\left( \boldsymbol{\vartheta}_k^{(t)} \right) =
+\mathbf{H}_{kk}\left( \boldsymbol{\beta}_k^{(t)} \right) =
 \begin{pmatrix}
 \mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} + \mathbf{G}_{1k} &
   \cdots & \mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} \\
@@ -455,91 +456,91 @@ $$
 \mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} & \cdots & \mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} + \mathbf{G}_{p_kk}
 \end{pmatrix}^{(t)},
 $$
-with diagonal weight matrix $\mathbf{W}_{kk} = -diag(\partial^2 \ell(\boldsymbol{\vartheta}_k | \mathbf{y}) /
+with diagonal weight matrix $\mathbf{W}_{kk} = -diag(\partial^2 \ell(\boldsymbol{\beta}_k | \mathbf{y}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and penalty matrix
 $\mathbf{G}_{jk} = 0.5\tau_{jk}^{-2}\mathbf{K}_{jk}$. Similarly, the score vector is
 $$
-\mathbf{s}_k\left( \boldsymbol{\vartheta}_k^{(t)} \right) =
+\mathbf{s}_k\left( \boldsymbol{\beta}_k^{(t)} \right) =
 \begin{pmatrix}
-\mathbf{X}_{1k}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{1k}\boldsymbol{\vartheta}_{1k}^{(t)} \\
+\mathbf{X}_{1k}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{1k}\boldsymbol{\beta}_{1k}^{(t)} \\
 \vdots \\
-\mathbf{X}_{p_kk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t)} \\
+\mathbf{X}_{p_kk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t)} \\
 \end{pmatrix}
 $$
-and derivatives $\mathbf{u}_k = \partial \ell(\boldsymbol{\vartheta}_k | \mathbf{y}) /
+and derivatives $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta}_k | \mathbf{y}) /
 \partial \boldsymbol{\eta}_k$. Focusing on the $j$th row of (\ref{eqn:blocknewton}) gives
 \begin{eqnarray*}
-(\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\vartheta}_{jk}^{(t+1)} +
-\ldots + \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t + 1)} - \\
-(\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\vartheta}_{jk}^{(t)} -
-\ldots - \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t)}
-  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{jk}\boldsymbol{\vartheta}_{jk}^{(t)}
+(\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\beta}_{jk}^{(t+1)} +
+\ldots + \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t + 1)} - \\
+(\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\beta}_{jk}^{(t)} -
+\ldots - \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t)}
+  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{jk}\boldsymbol{\beta}_{jk}^{(t)}
 \end{eqnarray*}
 \begin{eqnarray*}
-\mathbf{G}_{jk}(\boldsymbol{\vartheta}_{jk}^{(t+1)} - \boldsymbol{\vartheta}_{jk}^{(t)}) +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\vartheta}_{jk}^{(t+1)} + \ldots +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t+1)} - \\
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\vartheta}_{jk}^{(t)} - \ldots -
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t)}
-  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{jk}\boldsymbol{\vartheta}_{jk}^{(t)}
+\mathbf{G}_{jk}(\boldsymbol{\beta}_{jk}^{(t+1)} - \boldsymbol{\beta}_{jk}^{(t)}) +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} + \ldots +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t+1)} - \\
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t)} - \ldots -
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t)}
+  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{jk}\boldsymbol{\beta}_{jk}^{(t)}
 \end{eqnarray*}
 \begin{eqnarray*}
-\mathbf{G}_{jk}\boldsymbol{\vartheta}_{jk}^{(t)} +
-  \mathbf{G}_{jk}(\boldsymbol{\vartheta}_{jk}^{(t+1)} - \boldsymbol{\vartheta}_{jk}^{(t)}) +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\vartheta}_{jk}^{(t+1)} + \ldots +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t+1)} - \\
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\vartheta}_{jk}^{(t)} - \ldots -
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t)}
+\mathbf{G}_{jk}\boldsymbol{\beta}_{jk}^{(t)} +
+  \mathbf{G}_{jk}(\boldsymbol{\beta}_{jk}^{(t+1)} - \boldsymbol{\beta}_{jk}^{(t)}) +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} + \ldots +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t+1)} - \\
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t)} - \ldots -
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t)}
   &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)}
 \end{eqnarray*}
 \begin{eqnarray*}
-\mathbf{G}_{jk}\boldsymbol{\vartheta}_{jk}^{(t+1)} +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\vartheta}_{jk}^{(t+1)} + \ldots +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t+1)} - \\
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\vartheta}_{jk}^{(t)} - \ldots -
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\vartheta}_{p_kk}^{(t)}
+\mathbf{G}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} + \ldots +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t+1)} - \\
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t)} - \ldots -
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t)}
   &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)}
 \end{eqnarray*}
 \begin{eqnarray*}
-\mathbf{G}_{jk}\boldsymbol{\vartheta}_{jk}^{(t+1)} +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\vartheta}_{jk}^{(t+1)} + 
+\mathbf{G}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} + 
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)} -
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)}
   &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)}
 \end{eqnarray*}
 \begin{eqnarray*}
-(\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\vartheta}_{jk}^{(t+1)}
+(\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\beta}_{jk}^{(t+1)}
   &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} + \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
     \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)}
 \end{eqnarray*}
 \begin{eqnarray*}
-  \boldsymbol{\vartheta}_{jk}^{(t+1)}
+  \boldsymbol{\beta}_{jk}^{(t+1)}
   &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})^{-1}(\mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} +
     \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
     \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)})
 \end{eqnarray*}
 \begin{eqnarray*}
-  \boldsymbol{\vartheta}_{jk}^{(t+1)}
+  \boldsymbol{\beta}_{jk}^{(t+1)}
   &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})^{-1}\mathbf{X}_{jk}^\top(\mathbf{u}_k^{(t)} +
     \mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
     \mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)})
 \end{eqnarray*}
 \begin{eqnarray*}
-  \boldsymbol{\vartheta}_{jk}^{(t+1)}
+  \boldsymbol{\beta}_{jk}^{(t+1)}
   &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})^{-1}\mathbf{X}_{jk}^\top(
     \mathbf{W}_{kk}\mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)} +
     \mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
     \mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)})
 \end{eqnarray*}
 \begin{eqnarray*}
-  \boldsymbol{\vartheta}_{jk}^{(t+1)}
+  \boldsymbol{\beta}_{jk}^{(t+1)}
   &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})^{-1}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}(
     \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)} +
     \boldsymbol{\eta}_{k}^{(t)} -
     \boldsymbol{\eta}_{k, -j}^{(t+1)})
 \end{eqnarray*}
 \begin{eqnarray} \label{eqn:blockbackfit}
-  \boldsymbol{\vartheta}_{jk}^{(t+1)}
+  \boldsymbol{\beta}_{jk}^{(t+1)}
   &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})^{-1}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}(
     \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)})
 \end{eqnarray}
@@ -549,7 +550,18 @@ Hence, this leads to a backfitting algorithm and cycling through (\ref{eqn:block
 terms $j = 1, \ldots, p_k$ and parameters $k = 1, \ldots, K$ is equivalent to a single
 Newton-Raphson step in (\ref{eqn:newton}). Note that this is a slightly simplified version of the
 backfitting algorithm developed in \citet{bamlss:Rigby+Stasinopoulos:2005} Appendix~C.2.
+The updating scheme (\ref{eqn:blockbackfit}) can be further generalized to
+$$
+\mathbf{f}_{jk}^{(t)} = \mathbf{S}_{jk}\left(\mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}\right)
+$$
+i.e., theoretically any smoother function $\mathbf{S}_{jk}( \cdot )$ applied on the
+``partial residuals'' can be used.
 
+Note that for numerical reasons it is oftentimes better to replace the hessian by the expected
+Fisher information with weights $\mathbf{W}_{kk} = -diag(E(\partial^2 \ell(\boldsymbol{\beta}_k | \mathbf{y}) /
+\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top))$.
+
+\newpage
 
 \subsubsection{Posterior mean} \label{sec:postmean}
 
@@ -612,7 +624,7 @@ on situations were this is not generally the case.
   $p(\boldsymbol{\vartheta}_{jk} | \cdot)$
   which approximate the posterior at the current iterate and minimize the risk of slow traversing.
   The construction of the full conditional is based on a second order Taylor series expansion
-  of the log-posterior centered at the latest position
+  of the log-posterior centered at the last state
   \begin{eqnarray*}
   p(\boldsymbol{\vartheta}_{jk}^\star | \cdot) &\propto& \exp\left\{
     ln\,p\left(\boldsymbol{\vartheta}_{jk}^{(t)} | \cdot\right) +
@@ -643,20 +655,27 @@ on situations were this is not generally the case.
   $$
   Hence, the proposal density for $\boldsymbol{\vartheta}_{jk}$ is
   $q(\boldsymbol{\vartheta}_{jk}^\star | \boldsymbol{\vartheta}_{jk}^{(t)}) =
-    N(\boldsymbol{\mu}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk}^{(t)})$. Again, assuming a basis
+    N(\boldsymbol{\mu}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk}^{(t)})$ and the acceptance probability
+  of the candidate is then computed by
+  $$
+  \alpha\left( \boldsymbol{\vartheta}_{jk}^{\star} | \boldsymbol{\vartheta}_{jk}^{(t)}\right) =
+  \text{min} \left\{ \frac{p(\boldsymbol{\vartheta}_{jk}^{\star} | \cdot)q(\boldsymbol{\vartheta}_{jk}^{(t)} | \boldsymbol{\vartheta}_{jk}^\star)}{
+    p(\boldsymbol{\vartheta}_{jk}^{(t)} | \cdot)q(\boldsymbol{\vartheta}_{jk}^\star | \boldsymbol{\vartheta}_{jk}^{(t)})  }, 1 \right\}.
+  $$
+  Again, assuming a basis
   function approach with multivariate normal priors (\ref{eqn:shrinkprior}) the precision matrix is
   $$
-  \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}
+  \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk},
   $$
-  with weights $\mathbf{W}_{kk} = -diag(\partial^2 \ell(\boldsymbol{\vartheta}_k | \mathbf{y}) /
+  with weights $\mathbf{W}_{kk} = -diag(\partial^2 \ell(\boldsymbol{\beta}_k | \mathbf{y}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and the mean can be written as
   \begin{eqnarray*}
   \boldsymbol{\mu}_{jk}^{(t)} &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left\{
-  \mathbf{X}_{jk}^\top\mathbf{u}_k^{(t)} - \mathbf{G}_{jk}\boldsymbol{\vartheta}_{jk}^{(t)} +
-  (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\vartheta}_{jk}^{(t)}\right\} \\
+  \mathbf{X}_{jk}^\top\mathbf{u}_k^{(t)} - \mathbf{G}_{jk}\boldsymbol{\beta}_{jk}^{(t)} +
+  (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\beta}_{jk}^{(t)}\right\} \\
   &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left\{
   \mathbf{X}_{jk}^\top\mathbf{u}_k^{(t)} +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\vartheta}_{jk}^{(t)}\right\} \\
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t)}\right\} \\
   &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left\{
   \mathbf{X}_{jk}^\top\mathbf{u}_k^{(t)} +
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left(\boldsymbol{\eta}_k^{(t)} - \boldsymbol{\eta}^{(t)}_{k,-j}\right)\right\} \\
@@ -668,15 +687,18 @@ on situations were this is not generally the case.
   \end{eqnarray*}
   with working observations
   $\mathbf{z}_k = \boldsymbol{\eta}_k^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$. Therefore,
-  the computation of the mean is equivalent to a full Newton step for parameter
-  $\boldsymbol{\vartheta}_{jk}$ in each iteration of the MCMC sampler, which is known as the
-  iteratively reweighted least squares (IWLS) proposal
+  the computation of the mean is equivalent to a full Newton step, or Fisher scoring when using
+  $-E(\partial^2 \ell(\boldsymbol{\beta}_k | \mathbf{y}) /
+    \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$,
+  in each iteration of the MCMC sampler using iteratively reweighted least squares (IWLS)
   \citep{bamlss:Gamerman:1997, bamlss:Brezger+Lang:2006, bamlss:Klein+Kneib+Klasen+Lang:2014}.
-  The acceptance probability of the candidate is then computed by
+  In similar fashion the full conditionals $p(\tau_{jk} | \cdot)$ for smoothing variances using
+  priors (\ref{eqn:shrinkprior}) and (\ref{eqn:ig}) are again an inverse gamma distribution
+  with
   $$
-  \alpha\left( \boldsymbol{\vartheta}_{jk}^{\star} | \boldsymbol{\vartheta}_{jk}^{(t)}\right) =
-  \text{min} \left\{ \frac{p(\boldsymbol{\vartheta}_{jk}^{\star} | \cdot)q(\boldsymbol{\vartheta}_{jk}^\star | \boldsymbol{\vartheta}_{jk}^{(t)})}{
-    p(\boldsymbol{\vartheta}_{jk}^{(t)} | \cdot)q(\boldsymbol{\vartheta}_{jk}^{(t)} | \boldsymbol{\vartheta}_{jk}^\star)  }, 1 \right\}
+  \tilde{a}_{jk} = \frac{1}{2}rk(\mathbf{K}_{jk}) + a_{jk}, \qquad
+    \tilde{b}_{jk} = \frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{K}_{jk}
+    \boldsymbol{\beta}_{jk}^\star + b_{jk}.
   $$
 
 \item \emph{Hamiltonian Monte Carlo}: \label{sec:hmcmc} \\
@@ -694,11 +716,11 @@ BAMLSS candidate algorithms:
 \begin{itemize}
 \item The density function $f(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$.
 \item The first order derivatives
-  $\partial \ell(\mathbf{y} | \boldsymbol{\vartheta}) / \partial \boldsymbol{\theta}_k$,
+  $\partial \ell(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\theta}_k$,
   $\partial \boldsymbol{\theta}_k / \partial \boldsymbol{\eta}_k$ and
   $\partial \boldsymbol{\eta}_k / \partial \boldsymbol{\vartheta}_k$.
 \item Second order derivatives
-  $\partial^2 \ell(\mathbf{y} | \boldsymbol{\vartheta}) / \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top$.
+  $\partial^2 \ell(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top$.
 \item Derivatives for priors, e.g., $ln \, p(\boldsymbol{\beta}_{jk} | \tau_{jk}^2)$ and $ln \, p(\tau_{jk}^2)$.
 \end{itemize}
 Hence, a modular family specification system can in principle be used to implement various
