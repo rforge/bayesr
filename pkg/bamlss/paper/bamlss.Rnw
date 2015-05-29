@@ -304,28 +304,27 @@ Note that $f$ is considered to be a general density and $\boldsymbol{\theta}_k$,
 are parameters that are linked to STAR predictors given in equation (\ref{eqn:structadd}).
 Estimation typically requires to evaluate the log-likelihood function
 \begin{equation} \label{eqn:density}
-\ell(\boldsymbol{\vartheta} | \mathbf{y}) =
-  \sum_{i = 1}^n ln \, f(\mathbf{y}_i | \theta_{i1} = h_1^{-1}(\eta_{i1}(\boldsymbol{\vartheta}_1)), \ldots,
-  \theta_{iK} = h_K^{-1}(\eta_{iK}(\boldsymbol{\vartheta}_K)))
+\ell(\boldsymbol{\beta} | \mathbf{y}) =
+  \sum_{i = 1}^n ln \, f(\mathbf{y}_i | \theta_{i1} = h_1^{-1}(\eta_{i1}(\boldsymbol{\beta}_1)), \ldots,
+  \theta_{iK} = h_K^{-1}(\eta_{iK}(\boldsymbol{\beta}_K)))
 \end{equation}
 a number of times, where the vector
-$\boldsymbol{\vartheta} = (\boldsymbol{\vartheta}_1^\top, \ldots, \boldsymbol{\vartheta}_K^\top)^\top$ 
+$\boldsymbol{\beta} = (\boldsymbol{\beta}_1^\top, \ldots, \boldsymbol{\beta}_K^\top)^\top$ 
 comprises all model coefficients that should be estimated and $\boldsymbol{\theta}_k$ are vectors
-of length $n$. Note that in the simplest case $\boldsymbol{\vartheta}_k =
-(\boldsymbol{\vartheta}_{1k}^\top, \ldots, \boldsymbol{\vartheta}_{p_kk}^\top)^\top =
-(\boldsymbol{\beta}_{1k}^\top, \ldots, \boldsymbol{\beta}_{p_kk}^\top)^\top$ for $k = 1, \ldots, K$.
+of length $n$.
 Assigning prior distributions to the individual model components, e.g., given by the normal
 prior (\ref{eqn:shrinkprior}) and the inverse gamma prior (\ref{eqn:ig}), results in the log-posterior
 \begin{equation} \label{eqn:logpost}
 ln \, p(\boldsymbol{\vartheta} | \mathbf{y}) \propto
-  \ell(\boldsymbol{\vartheta} | \mathbf{y}) +
+  \ell(\boldsymbol{\beta} | \mathbf{y}) +
   \sum_{k = 1}^K\sum_{j = 1}^{p_k} \left\{ ln \, p_{jk}(\boldsymbol{\vartheta}_{jk}) \right\},
 \end{equation}
 where, e.g., $\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}^\top, (\boldsymbol{\tau}^2_{jk})^\top)^\top$
-now includes all variances associated with this term, too, and prior $p_{jk}(\cdot)$ denotes the
-combination of all assigned priors on parameters $\boldsymbol{\vartheta}_{jk}$. Also note that from a
-frequentist perspective (\ref{eqn:logpost}) can be viewed as a penalized log-likelihood using
-prior (\ref{eqn:shrinkprior}) for fixed variance parameters $\boldsymbol{\tau}_{jk}^2$.
+is a vector of all parameters associated to the $jk$-th term and includes all variances, too, and
+prior $p_{jk}(\cdot)$ denotes the combination of all assigned priors on parameters
+$\boldsymbol{\vartheta}_{jk}$. Also note that from a frequentist perspective (\ref{eqn:logpost}) can
+be viewed as a penalized log-likelihood using prior (\ref{eqn:shrinkprior}) for fixed variance
+parameters $\boldsymbol{\tau}_{jk}^2$.
 
 
 \subsection{Model fitters} \label{sec:modelfit}
@@ -584,21 +583,23 @@ parameters, more specifically, the sampling schemes successively update the para
 function (\ref{eqn:functions}). Note that for some models there exist full conditionals that can
 be derived in closed form from the log-posterior (\ref{eqn:logpost}), however, we especially focus
 on situations were this is not generally the case.
+MCMC samples for the regression coefficients $\boldsymbol{\beta}_{jk}$ can be derived by each of the
+following methods:
 \begin{itemize}
 \item \emph{Random-walk Metropolis}: \label{sec:rwm} \\
   Probably the most important algorithm, because of its generality and easy implementation, is
   random-walk Metropolis. The sampler
-  proceeds by drawing a candidate $\boldsymbol{\vartheta}_{jk}^{\star}$ from a symmetric jumping
-  distribution $q(\boldsymbol{\vartheta}_{jk}^{\star}| \boldsymbol{\vartheta}_{jk}^{(t)})$, the
+  proceeds by drawing a candidate $\boldsymbol{\beta}_{jk}^{\star}$ from a symmetric jumping
+  distribution $q(\boldsymbol{\beta}_{jk}^{\star}| \boldsymbol{\beta}_{jk}^{(t)})$, the
   candidate is then accepted as the new state of the Markov chain with probability
   $$
-  \alpha\left( \boldsymbol{\vartheta}_{jk}^{\star} | \boldsymbol{\vartheta}_{jk}^{(t)}\right) =
-  \text{min} \left\{ \frac{p(\boldsymbol{\vartheta}_{jk}^{\star} | \cdot)}{
-    p(\boldsymbol{\vartheta}_{jk}^{(t)} | \cdot)}, 1 \right\}
+  \alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \boldsymbol{\beta}_{jk}^{(t)}\right) =
+  \text{min} \left\{ \frac{p(\boldsymbol{\beta}_{jk}^{\star} | \cdot)}{
+    p(\boldsymbol{\beta}_{jk}^{(t)} | \cdot)}, 1 \right\}
   $$
-  with the log-posterior $p(\boldsymbol{\vartheta}_{jk} | \cdot)$ evaluated at the proposed and
+  with the log-posterior $p(\boldsymbol{\beta}_{jk} | \cdot)$ evaluated at the proposed and
   current value.
-  Commonly, the jumping distribution is a normal distribution $N(\boldsymbol{\vartheta}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk})$ centered at the current iterate and fixed covariance matrix. Although this algorithm
+  Commonly, the jumping distribution is a normal distribution $N(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk})$ centered at the current iterate and fixed covariance matrix. Although this algorithm
   is theoretically working for any distribution, the actual sampling performance depends heavily on
   starting values and the scaling of $\boldsymbol{\Sigma}_{jk}$. Therefore, numerous methods that
   try to optimize the behavior of the Markov chain in an adaptive phase (burnin phase) have been
@@ -611,56 +612,56 @@ on situations were this is not generally the case.
 
 \item \emph{Derivative based Metropolis-Hastings}: \label{sec:dmh} \\
   A commonly used alternative for the covariance matrix of the jumping distribution
-  $N(\boldsymbol{\vartheta}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk})$ is to use the local curvature
+  $N(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk})$ is to use the local curvature
   information
   $$
-  \boldsymbol{\Sigma}_{jk} = -\left( \frac{\partial^2 p(\boldsymbol{\vartheta} | \mathbf{y})}{
-    \partial \boldsymbol{\vartheta}_{jk}\boldsymbol{\vartheta}_{jk}^\top} \right)^{-1}
+  \boldsymbol{\Sigma}_{jk} = -\left( \frac{\partial^2 p(\boldsymbol{\beta} | \mathbf{y})}{
+    \partial \boldsymbol{\beta}_{jk}\boldsymbol{\beta}_{jk}^\top} \right)^{-1}
   $$
-  computed at the posterior mode estimate $\hat{\boldsymbol{\vartheta}}_{jk}$. However, fixing
+  computed at the posterior mode estimate $\hat{\boldsymbol{\beta}}_{jk}$. However, fixing
   $\boldsymbol{\Sigma}_{jk}$ during MCMC simulation might still lead to undesired behavior of the
   Markov chain especially when iterates move into regions with low probability mass of the
   posterior distribution. A solution is to construct full conditionals
-  $p(\boldsymbol{\vartheta}_{jk} | \cdot)$
+  $p(\boldsymbol{\beta}_{jk} | \cdot)$
   which approximate the posterior at the current iterate and minimize the risk of slow traversing.
   The construction of the full conditional is based on a second order Taylor series expansion
   of the log-posterior centered at the last state
   \begin{eqnarray*}
-  p(\boldsymbol{\vartheta}_{jk}^\star | \cdot) &\propto& \exp\left\{
-    ln\,p\left(\boldsymbol{\vartheta}_{jk}^{(t)} | \cdot\right) +
-    \left(\boldsymbol{\vartheta}_{jk}^\star - \boldsymbol{\vartheta}_{jk}^{(t)}\right)^\top s\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) + \right.\\
-  && \left. \frac{1}{2}\left(\boldsymbol{\vartheta}_{jk}^\star - \boldsymbol{\vartheta}_{jk}^{(t)}\right)^\top
-    \mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)
-    \left(\boldsymbol{\vartheta}_{jk}^\star - \boldsymbol{\vartheta}_{jk}^{(t)}\right)\right\} \\
-  &\propto& \exp\left\{(\boldsymbol{\vartheta}_{jk}^\star)^\top s\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) +
-    \left(\frac{1}{2}(\boldsymbol{\vartheta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) - \right.\right. \\
-  && \qquad\qquad\left.\left. \frac{1}{2}(\boldsymbol{\vartheta}_{jk}^{(t)})^\top\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) \right)\left(\boldsymbol{\vartheta}_{jk}^\star - \boldsymbol{\vartheta}_{jk}^{(t)}\right)\right\} \\
-  &\propto& \exp\left\{(\boldsymbol{\vartheta}_{jk}^\star)^\top s\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) +
-    \frac{1}{2}(\boldsymbol{\vartheta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^\star - \right. \\
-  && \left. \qquad\qquad \frac{1}{2}(\boldsymbol{\vartheta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^{(t)} -
-    \frac{1}{2}(\boldsymbol{\vartheta}_{jk}^{(t)})^\top\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^\star \right\} \\
+  p(\boldsymbol{\beta}_{jk}^\star | \cdot) &\propto& \exp\left\{
+    ln\,p\left(\boldsymbol{\beta}_{jk}^{(t)} | \cdot\right) +
+    \left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)^\top s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) + \right.\\
+  && \left. \frac{1}{2}\left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)^\top
+    \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)
+    \left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)\right\} \\
+  &\propto& \exp\left\{(\boldsymbol{\beta}_{jk}^\star)^\top s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) +
+    \left(\frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) - \right.\right. \\
+  && \qquad\qquad\left.\left. \frac{1}{2}(\boldsymbol{\beta}_{jk}^{(t)})^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) \right)\left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)\right\} \\
+  &\propto& \exp\left\{(\boldsymbol{\beta}_{jk}^\star)^\top s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) +
+    \frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^\star - \right. \\
+  && \left. \qquad\qquad \frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)} -
+    \frac{1}{2}(\boldsymbol{\beta}_{jk}^{(t)})^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^\star \right\} \\
   &=& \exp\left\{
-    \frac{1}{2}(\boldsymbol{\vartheta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^\star +
-    (\boldsymbol{\vartheta}_{jk}^\star)^\top s\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) -
-    (\boldsymbol{\vartheta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^{(t)} \right\} \\
+    \frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^\star +
+    (\boldsymbol{\beta}_{jk}^\star)^\top s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) -
+    (\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)} \right\} \\
   &=& \exp\left\{
-    -\frac{1}{2}(\boldsymbol{\vartheta}_{jk}^\star)^\top-\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^\star +
-    (\boldsymbol{\vartheta}_{jk}^\star)^\top \left(s\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) - \mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^{(t)}\right) \right\}
+    -\frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top-\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^\star +
+    (\boldsymbol{\beta}_{jk}^\star)^\top \left(s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) - \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)}\right) \right\}
   \end{eqnarray*}
   which is proportional to a multivariate normal distribution with precision matrix and mean
   $$
-  \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = -\mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right),
-  \qquad \boldsymbol{\mu}_{jk}^{(t)} = \boldsymbol{\Sigma}_{jk}^{(t)}\left\{ s\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right) -
-    \mathbf{H}_{kk}\left(\boldsymbol{\vartheta}_{jk}^{(t)}\right)\boldsymbol{\vartheta}_{jk}^{(t)} \right\}.
+  \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = -\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right),
+  \qquad \boldsymbol{\mu}_{jk}^{(t)} = \boldsymbol{\Sigma}_{jk}^{(t)}\left\{ s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) -
+    \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)} \right\}.
   $$
-  Hence, the proposal density for $\boldsymbol{\vartheta}_{jk}$ is
-  $q(\boldsymbol{\vartheta}_{jk}^\star | \boldsymbol{\vartheta}_{jk}^{(t)}) =
+  Hence, the proposal density for $\boldsymbol{\beta}_{jk}$ is
+  $q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)}) =
     N(\boldsymbol{\mu}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk}^{(t)})$ and the acceptance probability
   of the candidate is then computed by
   $$
-  \alpha\left( \boldsymbol{\vartheta}_{jk}^{\star} | \boldsymbol{\vartheta}_{jk}^{(t)}\right) =
-  \text{min} \left\{ \frac{p(\boldsymbol{\vartheta}_{jk}^{\star} | \cdot)q(\boldsymbol{\vartheta}_{jk}^{(t)} | \boldsymbol{\vartheta}_{jk}^\star)}{
-    p(\boldsymbol{\vartheta}_{jk}^{(t)} | \cdot)q(\boldsymbol{\vartheta}_{jk}^\star | \boldsymbol{\vartheta}_{jk}^{(t)})  }, 1 \right\}.
+  \alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \boldsymbol{\beta}_{jk}^{(t)}\right) =
+  \text{min} \left\{ \frac{p(\boldsymbol{\beta}_{jk}^{\star} | \cdot)q(\boldsymbol{\beta}_{jk}^{(t)} | \boldsymbol{\beta}_{jk}^\star)}{
+    p(\boldsymbol{\beta}_{jk}^{(t)} | \cdot)q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)})  }, 1 \right\}.
   $$
   Again, assuming a basis
   function approach with multivariate normal priors (\ref{eqn:shrinkprior}) the precision matrix is
