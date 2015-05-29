@@ -320,7 +320,7 @@ ln \, p(\boldsymbol{\vartheta} | \mathbf{y}) \propto
   \sum_{k = 1}^K\sum_{j = 1}^{p_k} \left\{ ln \, p_{jk}(\boldsymbol{\vartheta}_{jk}) \right\},
 \end{equation}
 where, e.g., $\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}^\top, (\boldsymbol{\tau}^2_{jk})^\top)^\top$
-is a vector of all parameters associated to the $jk$-th term and includes all variances, too, and
+is a vector of all parameters associated to the $jk$th term and includes all variances, too, and
 prior $p_{jk}(\cdot)$ denotes the combination of all assigned priors on parameters
 $\boldsymbol{\vartheta}_{jk}$. Also note that from a frequentist perspective (\ref{eqn:logpost}) can
 be viewed as a penalized log-likelihood using prior (\ref{eqn:shrinkprior}) for fixed variance
@@ -359,7 +359,7 @@ variance parameters are held fix and $\boldsymbol{\vartheta}_{jk} = \boldsymbol{
 $j = 1, \ldots, p_k$ and $k = 1, \ldots, K$.
 Estimation of $\boldsymbol{\beta} = (\boldsymbol{\beta}_1^\top, \ldots, \boldsymbol{\beta}_K^\top)^\top$
 requires solving equations
-$\partial (ln \, p(\boldsymbol{\beta} | \mathbf{y})) / \partial \boldsymbol{\beta} = \mathbf{0}$
+$\partial (ln \, p(\boldsymbol{\vartheta} | \mathbf{y})) / \partial \boldsymbol{\beta} = \mathbf{0}$
 and usually the problem is solved with an iterative updating scheme of the form
 \begin{equation} \label{eqn:updating}
 \boldsymbol{\beta}^{(t + 1)} = U(\boldsymbol{\beta}^{(t)}),
@@ -373,14 +373,15 @@ A particularly convenient way to maximize (\ref{eqn:logpost}) is a Newton-Raphso
 with score vector
 \begin{equation} \label{eqn:score}
 \mathbf{s}(\boldsymbol{\beta}) = 
-  \frac{\partial ln \, p(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\beta}}
+  \frac{\partial ln \, p(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\beta}}
 = \frac{\partial \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\beta}} +
     \sum_{k = 1}^K\sum_{j = 1}^{p_k} \left\{ \frac{\partial ln \, p_{jk}(\boldsymbol{\beta}_{jk})}{\partial \boldsymbol{\beta}} \right\}.
 \end{equation}
 and hessian matrix $\mathbf{H}(\boldsymbol{\beta})$ with components
 \begin{equation} \label{eqn:hessian}
-\mathbf{H}_{ks}(\boldsymbol{\beta}) = 
-\frac{\partial^2 ln \, p(\boldsymbol{\beta})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top} = \frac{\partial \mathbf{s}(\boldsymbol{\beta}_k)}{\partial \boldsymbol{\beta}_s^\top},
+\mathbf{H}_{ks}(\boldsymbol{\beta}) =
+\frac{\partial \mathbf{s}(\boldsymbol{\beta}_k)}{\partial \boldsymbol{\beta}_s^\top} =
+\frac{\partial^2 ln \, p(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top},
 \end{equation}
 for $k = 1, \dots, K$ and $s = 1, \dots, K$. By chain rule, the part of the score vector involving
 the derivatives of the log-likelihood for the $k$th parameter can be further decomposed to
