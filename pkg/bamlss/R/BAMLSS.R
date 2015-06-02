@@ -1173,18 +1173,27 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   }
 
   ## Compute samples of fitted values.
-  fsamples <- apply(psamples, 1, function(g) {
-    get.mu(X, g, expand = FALSE)
-  })
+  if(nt < 2) {
+    fsamples <- apply(psamples, 1, function(g) {
+      get.mu(X, g, expand = FALSE)
+    })
 
-  if(is.null(FUN)) {
-    FUN <- function(x) {
-      rval <- as.numeric(quantile(x, probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
-      names(rval) <- c("2.5%", "50%", "97.5%")
-      rval
+    if(is.null(FUN)) {
+      FUN <- function(x) {
+        rval <- as.numeric(quantile(x, probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
+        names(rval) <- c("2.5%", "50%", "97.5%")
+        rval
+      }
     }
+    smf <- t(apply(fsamples, 1, FUN))
+  } else {
+    smf <- 0
+    for(i in 1:nrow(psamples)) {
+      smf <- smf + drop(get.mu(X, psamples[i, ], expand = FALSE))
+    }
+    smf <- as.matrix(smf / nrow(psamples), ncol = 1)
+    colnames(smf) <- "50%"
   }
-  smf <- t(apply(fsamples, 1, FUN))
 
   cnames <- colnames(smf)
   smf <- as.data.frame(smf)

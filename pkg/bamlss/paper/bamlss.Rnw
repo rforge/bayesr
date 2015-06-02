@@ -605,7 +605,8 @@ following methods:
   starting values and the scaling of $\boldsymbol{\Sigma}_{jk}$. Therefore, numerous methods that
   try to optimize the behavior of the Markov chain in an adaptive phase (burnin phase) have been
   developed. In the seminal paper of \citet{bamlss:Gelman+Roberts+Gilks:1996}, strategies that
-  optimize the acceptance rate to roughly $1/4$ are suggested to obtain a good mixing. Similarly,
+  optimize the acceptance rate to roughly $1/4$ are suggested to obtain a good mixing (see also
+  \citealp{bamlss:Gareth+Roberts+Jeffrey+Rosenthal:2009}). Similarly,
   within the presented modeling framework and a basis function approach with multivariate normal
   prior (\ref{eqn:shrinkprior}), a convenient way is to set
   $\boldsymbol{\Sigma}_{jk} = \sigma_{jk}\mathbf{K}_{jk}^{-1}$ and optimize $\sigma_{jk}$ to the
