@@ -200,7 +200,11 @@ and corresponding priors for parameters within STAR predictors (\ref{eqn:structa
 
 Linear or parametric effects can be written as a simple matrix product
 $\mathbf{f}_j = \mathbf{X}_j\boldsymbol{\beta}_j$. A common choice of $p(\boldsymbol{\beta}_j)$
-is to use a non-informative uniform prior $p(\boldsymbol{\beta}_j) \propto 1$. One of the simplest
+is to use a non-informative uniform prior
+\begin{equation} \label{eqn:uniprior}
+p(\boldsymbol{\beta}_j) \propto 1.
+\end{equation}
+One of the simplest
 informative priors is a normal prior given by
 \begin{equation} \label{eqn:linprior}
 p(\boldsymbol{\beta}_j) \propto \exp \left(- \frac{1}{2}
@@ -256,7 +260,7 @@ such that $\tilde{\mathbf{X}}_j^{\top}\mathbf{K}_j = \mathbf{0}$, i.e., paramete
 $\tilde{\boldsymbol{\gamma}}_j$ are not penalized (see, e.g.,
 \citealp{bamlss:Fahrmeir+Kneib+Lang+Marx:2013, bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003}).
 
-\subsubsection{Non-standard effects}
+\subsubsection{Further effects}
 
 Within the scope of the presented framework we allow for functions of covariates that cannot
 necessarily be written by a matrix product $\mathbf{X}_j\boldsymbol{\beta}_j$. As an
@@ -266,10 +270,10 @@ $$
   \mathbf{X}_j\beta_{j2} \right) \right)
 $$
 and particular interest may lie on the parameters describing the growth rate, lag phase, etc.
-As a standard option one can put normal priors (\ref{eqn:linprior}) or non-informative uniform
-priors on $\boldsymbol{\beta}$. To generalize this, the framework allows for any functions
-$f_j(\mathbf{X}_j, \boldsymbol{\beta}_j)$ and prior(s) $p(\boldsymbol{\beta}_j)$ that are
-available for the covariate(s).
+As a standard option one can put non-informative uniform priors (\ref{eqn:uniprior}) or normal
+priors (\ref{eqn:linprior}) on $\boldsymbol{\beta}$. To generalize this, the framework allows for
+any functions $f_j(\mathbf{X}_j, \boldsymbol{\beta}_j)$ and prior(s) $p(\boldsymbol{\beta}_j)$ that
+are available for the covariate(s).
 
 %The representation of the terms in the structured additive predictor (\ref{eqn:structadd})
 %already suggests a general and modular architecture. However, to keep the focus on maximum
@@ -291,7 +295,7 @@ available for the covariate(s).
 %require additional adjustments on subsequent infrastructures. The following describes the
 %conceptional building blocks in more detail.
 
-\subsection{Density} \label{sec:density}
+\subsection{Response distribution} \label{sec:density}
 
 %Any statistical software for regression models needs some description system for the supported
 %distributions. Since most estimation algorithms have at least one common part, a modular system
@@ -305,7 +309,7 @@ are parameters that are linked to STAR predictors given in equation (\ref{eqn:st
 Estimation typically requires to evaluate the log-likelihood function
 \begin{equation} \label{eqn:density}
 \ell(\boldsymbol{\beta} | \mathbf{y}) =
-  \sum_{i = 1}^n ln \, f(\mathbf{y}_i | \theta_{i1} = h_1^{-1}(\eta_{i1}(\boldsymbol{\beta}_1)), \ldots,
+  \sum_{i = 1}^n \log \, f(\mathbf{y}_i | \theta_{i1} = h_1^{-1}(\eta_{i1}(\boldsymbol{\beta}_1)), \ldots,
   \theta_{iK} = h_K^{-1}(\eta_{iK}(\boldsymbol{\beta}_K)))
 \end{equation}
 a number of times, where the vector
@@ -315,9 +319,9 @@ of length $n$.
 Assigning prior distributions to the individual model components, e.g., given by the normal
 prior (\ref{eqn:shrinkprior}) and the inverse gamma prior (\ref{eqn:ig}), results in the log-posterior
 \begin{equation} \label{eqn:logpost}
-ln \, p(\boldsymbol{\vartheta} | \mathbf{y}) \propto
+\log \, p(\boldsymbol{\vartheta} | \mathbf{y}) \propto
   \ell(\boldsymbol{\beta} | \mathbf{y}) +
-  \sum_{k = 1}^K\sum_{j = 1}^{p_k} \left\{ ln \, p_{jk}(\boldsymbol{\vartheta}_{jk}) \right\},
+  \sum_{k = 1}^K\sum_{j = 1}^{J_k} \left\{ \log \, p_{jk}(\boldsymbol{\vartheta}_{jk}) \right\},
 \end{equation}
 where, e.g., $\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}^\top, (\boldsymbol{\tau}^2_{jk})^\top)^\top$
 is a vector of all parameters associated to the $jk$th term and includes all variances, too, and
@@ -342,10 +346,10 @@ distributional regression models.
 The mode of the posterior distribution is the mode of the log-posterior (\ref{eqn:logpost}) given by
 \begin{equation}
 \text{Mod}(\boldsymbol{\vartheta} | \mathbf{y}) =
-  \underset{\boldsymbol{\vartheta}}{\text{arg max }} ln \, p(\boldsymbol{\vartheta} | \mathbf{y})
+  \underset{\boldsymbol{\vartheta}}{\text{arg max }} \log \, p(\boldsymbol{\vartheta} | \mathbf{y})
 \end{equation}
-and equals the maximum likelihood estimator assigning uniform priors
-$p_{jk}(\boldsymbol{\vartheta}_{jk}) \propto 1$, $j = 1, \ldots, p_k$, $k = 1, \ldots, K$.
+and equals the maximum likelihood estimator assigning uniform priors (\ref{eqn:uniprior})
+for $j = 1, \ldots, J_k$, $k = 1, \ldots, K$.
 For models involving shrinkage priors, e.g., given by (\ref{eqn:shrinkprior}), the posterior mode is
 equivalent to a penalized maximum likelihood estimator for fixed variance parameters
 $\boldsymbol{\tau}_{jk}^2$ and $p(\boldsymbol{\tau}_{jk}^2) \propto 1$. Moreover, the structure of
@@ -356,10 +360,10 @@ minimizing an information criterion such as the Akaike information criterion (AI
 information criterion (BIC) (see also \citealp{bamlss:Rigby+Stasinopoulos:2005} Appendix~A.2. for
 a more detailed discussion on variance/hyperparameter estimation). In the following we assume that
 variance parameters are held fix and $\boldsymbol{\vartheta}_{jk} = \boldsymbol{\beta}_{jk}$ for
-$j = 1, \ldots, p_k$ and $k = 1, \ldots, K$.
+$j = 1, \ldots, J_k$ and $k = 1, \ldots, K$.
 Estimation of $\boldsymbol{\beta} = (\boldsymbol{\beta}_1^\top, \ldots, \boldsymbol{\beta}_K^\top)^\top$
 requires solving equations
-$\partial (ln \, p(\boldsymbol{\vartheta} | \mathbf{y})) / \partial \boldsymbol{\beta} = \mathbf{0}$
+$\partial (\log \, p(\boldsymbol{\vartheta} | \mathbf{y})) / \partial \boldsymbol{\beta} = \mathbf{0}$
 and usually the problem is solved with an iterative updating scheme of the form
 \begin{equation} \label{eqn:updating}
 \boldsymbol{\beta}^{(t + 1)} = U(\boldsymbol{\beta}^{(t)}),
@@ -373,15 +377,15 @@ A particularly convenient way to maximize (\ref{eqn:logpost}) is a Newton-Raphso
 with score vector
 \begin{equation} \label{eqn:score}
 \mathbf{s}(\boldsymbol{\beta}) = 
-  \frac{\partial ln \, p(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\beta}}
+  \frac{\partial \log \, p(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\beta}}
 = \frac{\partial \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\beta}} +
-    \sum_{k = 1}^K\sum_{j = 1}^{p_k} \left\{ \frac{\partial ln \, p_{jk}(\boldsymbol{\beta}_{jk})}{\partial \boldsymbol{\beta}} \right\}.
+    \sum_{k = 1}^K\sum_{j = 1}^{J_k} \left\{ \frac{\partial \log \, p_{jk}(\boldsymbol{\beta}_{jk})}{\partial \boldsymbol{\beta}} \right\}.
 \end{equation}
 and hessian matrix $\mathbf{H}(\boldsymbol{\beta})$ with components
 \begin{equation} \label{eqn:hessian}
 \mathbf{H}_{ks}(\boldsymbol{\beta}) =
 \frac{\partial \mathbf{s}(\boldsymbol{\beta}_k)}{\partial \boldsymbol{\beta}_s^\top} =
-\frac{\partial^2 ln \, p(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top},
+\frac{\partial^2 \log \, p(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top},
 \end{equation}
 for $k = 1, \dots, K$ and $s = 1, \dots, K$. By chain rule, the part of the score vector involving
 the derivatives of the log-likelihood for the $k$th parameter can be further decomposed to
@@ -451,12 +455,12 @@ $$
 \mathbf{H}_{kk}\left( \boldsymbol{\beta}_k^{(t)} \right) =
 \begin{pmatrix}
 \mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} + \mathbf{G}_{1k} &
-  \cdots & \mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} \\
+  \cdots & \mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk} \\
 \vdots & \ddots & \vdots \\
-\mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} & \cdots & \mathbf{X}_{p_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk} + \mathbf{G}_{p_kk}
+\mathbf{X}_{J_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} & \cdots & \mathbf{X}_{J_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk} + \mathbf{G}_{J_kk}
 \end{pmatrix}^{(t)},
 $$
-with diagonal weight matrix $\mathbf{W}_{kk} = -diag(\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y}) /
+with diagonal weight matrix $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and penalty matrix
 $\mathbf{G}_{jk} = 0.5\tau_{jk}^{-2}\mathbf{K}_{jk}$. Similarly, the score vector is
 $$
@@ -464,41 +468,41 @@ $$
 \begin{pmatrix}
 \mathbf{X}_{1k}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{1k}\boldsymbol{\beta}_{1k}^{(t)} \\
 \vdots \\
-\mathbf{X}_{p_kk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t)} \\
+\mathbf{X}_{J_kk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t)} \\
 \end{pmatrix}
 $$
 and derivatives $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta} | \mathbf{y}) /
 \partial \boldsymbol{\eta}_k$. Focusing on the $j$th row of (\ref{eqn:blocknewton}) gives
 \begin{eqnarray*}
 (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\beta}_{jk}^{(t+1)} +
-\ldots + \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t + 1)} - \\
+\ldots + \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t + 1)} - \\
 (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\beta}_{jk}^{(t)} -
-\ldots - \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t)}
+\ldots - \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t)}
   &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{jk}\boldsymbol{\beta}_{jk}^{(t)}
 \end{eqnarray*}
 \begin{eqnarray*}
 \mathbf{G}_{jk}(\boldsymbol{\beta}_{jk}^{(t+1)} - \boldsymbol{\beta}_{jk}^{(t)}) +
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} + \ldots +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t+1)} - \\
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t+1)} - \\
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t)} - \ldots -
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t)}
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t)}
   &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{jk}\boldsymbol{\beta}_{jk}^{(t)}
 \end{eqnarray*}
 \begin{eqnarray*}
 \mathbf{G}_{jk}\boldsymbol{\beta}_{jk}^{(t)} +
   \mathbf{G}_{jk}(\boldsymbol{\beta}_{jk}^{(t+1)} - \boldsymbol{\beta}_{jk}^{(t)}) +
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} + \ldots +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t+1)} - \\
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t+1)} - \\
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t)} - \ldots -
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t)}
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t)}
   &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)}
 \end{eqnarray*}
 \begin{eqnarray*}
 \mathbf{G}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} +
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} + \ldots +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t+1)} - \\
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t+1)} - \\
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t)} - \ldots -
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{p_kk}\boldsymbol{\beta}_{p_kk}^{(t)}
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t)}
   &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)}
 \end{eqnarray*}
 \begin{eqnarray*}
@@ -547,7 +551,7 @@ and derivatives $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta} | \mathbf{y}) /
 with working observations
 $\mathbf{z}_k = \boldsymbol{\eta}_{k}^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$.
 Hence, this leads to a backfitting algorithm and cycling through (\ref{eqn:blockbackfit}) for
-terms $j = 1, \ldots, p_k$ and parameters $k = 1, \ldots, K$ is equivalent to a single
+terms $j = 1, \ldots, J_k$ and parameters $k = 1, \ldots, K$ is equivalent to a single
 Newton-Raphson step in (\ref{eqn:newton}). Note that this is a slightly simplified version of the
 backfitting algorithm developed in \citet{bamlss:Rigby+Stasinopoulos:2005} Appendix~C.2.
 The updating scheme (\ref{eqn:blockbackfit}) can be further generalized to
@@ -558,7 +562,7 @@ i.e., theoretically any smoother function $\mathbf{S}_{jk}( \cdot )$ applied on 
 ``partial residuals'' can be used.
 
 Note that for numerical reasons it is oftentimes better to replace the hessian by the expected
-Fisher information with weights $\mathbf{W}_{kk} = -diag(E(\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y}) /
+Fisher information with weights $\mathbf{W}_{kk} = -\mathrm{diag}(E(\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top))$.
 
 \newpage
@@ -670,7 +674,7 @@ following methods:
   $$
   \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk},
   $$
-  with weights $\mathbf{W}_{kk} = -diag(\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y}) /
+  with weights $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and the mean can be written as
   \begin{eqnarray*}
   \boldsymbol{\mu}_{jk}^{(t)} &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left\{
@@ -725,7 +729,7 @@ BAMLSS candidate algorithms:
   $\partial \boldsymbol{\eta}_k / \partial \boldsymbol{\vartheta}_k$.
 \item Second order derivatives
   $\partial^2 \ell(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top$.
-\item Derivatives for priors, e.g., $ln \, p(\boldsymbol{\beta}_{jk} | \tau_{jk}^2)$ and $ln \, p(\tau_{jk}^2)$.
+\item Derivatives for priors, e.g., $\log \, p(\boldsymbol{\beta}_{jk} | \tau_{jk}^2)$ and $\log \, p(\tau_{jk}^2)$.
 \end{itemize}
 Hence, a modular family specification system can in principle be used to implement various
 estimation algorithms. A simple generic algorithm for BAMLSS models is outlined by the 
