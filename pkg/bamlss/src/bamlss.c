@@ -859,7 +859,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
         qbetaprop += tsum2 * (gamma1ptr[i] - mu1ptr[i]);
       }
       p2 += -log(tau2ptr[jj]) * rankptr[jj] / 2 - 0.5 / tau2ptr[jj] * gSg +
-        log(pow(b, a)) - gamma(a) + (-a - 1) * log(tau2ptr[jj]) - b / tau2ptr[jj];
+        log(pow(b, a)) - exp(lgamma(a)) + (-a - 1) * log(tau2ptr[jj]) - b / tau2ptr[jj];
     }
   } else {
     for(i = 0; i < nc; i++) {
@@ -1004,7 +1004,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
         qbeta += tsum2 * (thetaptr[i] - mu1ptr[i]);
       }
       p1 += -log(tau2ptr[jj]) * rankptr[jj] / 2 + -0.5 / tau2ptr[jj] * gSg +
-        log(pow(b, a)) - gamma(a) + (-a - 1) * log(tau2ptr[jj]) - b / tau2ptr[jj];
+        log(pow(b, a)) - exp(lgamma(a)) + (-a - 1) * log(tau2ptr[jj]) - b / tau2ptr[jj];
       if(fxsp < 1) {
         a2 = rankptr[jj] / 2 + a;
         b2 = 0.5 * gSg + b;
