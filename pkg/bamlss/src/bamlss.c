@@ -1279,3 +1279,132 @@ SEXP cnorm_power_score_alpha(SEXP y, SEXP mu, SEXP sigma, SEXP alpha, SEXP check
   return rval;
 }
 
+
+/* Fast quantile computation */
+void swapd(double *a, double *b)      
+{ 
+  double temp;
+  temp = *a;
+  *a = *b;
+  *b = temp;
+} 
+    
+void quicksort_body(double *x, int up, int down)
+{ 
+  int start, end;
+  start = up;              
+  end = down;                
+  while(up < down) {            
+    while(x[down] >= x[up] && up < down)      
+      down--;              
+    if(up != down) {                    
+      swapd(&x[up], &x[down]);   
+      up++;    
+    }
+    while(x[up] <= x[down] && up < down)        
+      up++;                 
+    if(up != down) {                    
+      swapd(&x[up], &x[down]);   
+      down--;   
+    } 
+  }       
+  if(start < up)   
+    quicksort_body(x, start, up - 1); 
+  if(end > down)  
+    quicksort_body(x, down + 1, end);  
+}
+
+void quicksort(int n, double *x)
+{ 
+  quicksort_body(x, 0, n - 1);    
+}
+
+
+SEXP quick_quantiles(SEXP X, SEXP samples)
+{
+  int i, j, ii;
+  int iter, nr, nc, nProtected = 0;
+  SEXP out, TMP, q1, q2, q3, names;
+    
+  nr = nrows(X);
+  nc = ncols(X);
+  iter = ncols(samples);
+    
+  PROTECT(names = allocVector(STRSXP, 3));
+  ++nProtected;
+        
+  PROTECT(out = allocVector(VECSXP, 3));
+  ++nProtected;
+
+  PROTECT(TMP = allocVector(REALSXP, iter));
+  ++nProtected;
+    
+  PROTECT(q1 = allocVector(REALSXP, nr));
+  ++nProtected;
+    
+  PROTECT(q2 = allocVector(REALSXP, nr));
+  ++nProtected;
+    
+  PROTECT(q3 = allocVector(REALSXP, nr));
+  ++nProtected;
+    
+  double np11 = iter * 0.025;
+  double np12 = iter * 0.5;
+  double np13 = iter * 0.975;
+    
+  int np1 = iter - np11;
+  int np2 = iter - np12;
+  int np3 = iter - np13;
+    
+  double *Xptr, *sptr, *tptr, *q1ptr,*q2ptr, *q3ptr;
+  Xptr = REAL(X);
+  sptr = REAL(samples);
+  tptr = REAL(TMP);
+  q1ptr = REAL(q1);
+  q2ptr = REAL(q2);
+  q3ptr = REAL(q3);
+
+  double tmp = 0.0;
+    
+  for(i = 0; i < nr; ++i) {
+    for(ii = 0; ii < iter; ++ii) {
+      tmp = 0.0;
+      for(j = 0; j < nc; ++j) {
+        tmp += Xptr[i + j * nr] * sptr[j + nc * ii];
+      }
+      tptr[ii] = tmp;
+    }
+
+    quicksort(iter, tptr);
+              
+    if((np11 - floor(np11)) == 0.0) {
+      q1ptr[i] = (tptr[np1 - 1] + tptr[np1]) / 2.0;
+    } else {
+      q1ptr[i] = tptr[np1 - 1];
+    }
+    if((np12 - floor(np12)) == 0.0) { 
+      q2ptr[i] = (tptr[np2 - 1] + tptr[np2]) / 2.0;
+    } else {
+      q2ptr[i] = tptr[np2 - 1];
+    }
+    if((np13 - floor(np13)) == 0.0) { 
+      q3ptr[i] = (tptr[np3 - 1] + tptr[np3]) / 2.0;
+    } else {
+      q3ptr[i] = tptr[np3 - 1];
+    }
+  }
+        
+  SET_VECTOR_ELT(out, 0, q1);
+  SET_VECTOR_ELT(out, 1, q2);
+  SET_VECTOR_ELT(out, 2, q3);
+    
+  SET_STRING_ELT(names, 0, mkChar("lo"));
+  SET_STRING_ELT(names, 1, mkChar("med"));
+  SET_STRING_ELT(names, 2, mkChar("up"));
+    
+  setAttrib(out, R_NamesSymbol, names);
+    
+  UNPROTECT(nProtected);
+  return out;
+}
+

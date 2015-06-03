@@ -1088,6 +1088,16 @@ c.bamlss <- function(...)
 }
 
 
+## Fast computation of quantiles.
+quick_quantiles <- function(X, samples)
+{
+  rval <- .Call("quick_quantiles", X, t(samples))
+  rval <- as.data.frame(rval)
+  names(rval) <- c("2.5%", "50%", "97.5%")
+  rval
+}
+
+
 ## Function to compute statistics from samples of a model term.
 compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   asamples = NULL, FUN = NULL, snames, effects.hyp, fitted.values, data,
@@ -1173,26 +1183,30 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   }
 
   ## Compute samples of fitted values.
-  if(nt < 2) {
-    fsamples <- apply(psamples, 1, function(g) {
-      get.mu(X, g, expand = FALSE)
-    })
-
-    if(is.null(FUN)) {
-      FUN <- function(x) {
-        rval <- as.numeric(quantile(x, probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
-        names(rval) <- c("2.5%", "50%", "97.5%")
-        rval
-      }
-    }
-    smf <- t(apply(fsamples, 1, FUN))
+  if(inherits(x, "mgcv.smooth")) {
+    smf <- quick_quantiles(X, psamples)
   } else {
-    smf <- 0
-    for(i in 1:nrow(psamples)) {
-      smf <- smf + drop(get.mu(X, psamples[i, ], expand = FALSE))
+    if(nt < 2) {
+      fsamples <- apply(psamples, 1, function(g) {
+        get.mu(X, g, expand = FALSE)
+      })
+
+      if(is.null(FUN)) {
+        FUN <- function(x) {
+          rval <- as.numeric(quantile(x, probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
+          names(rval) <- c("2.5%", "50%", "97.5%")
+          rval
+        }
+      }
+      smf <- t(apply(fsamples, 1, FUN))
+    } else {
+      smf <- 0
+      for(i in 1:nrow(psamples)) {
+        smf <- smf + drop(get.mu(X, psamples[i, ], expand = FALSE))
+      }
+      smf <- as.matrix(smf / nrow(psamples), ncol = 1)
+      colnames(smf) <- "50%"
     }
-    smf <- as.matrix(smf / nrow(psamples), ncol = 1)
-    colnames(smf) <- "50%"
   }
 
   cnames <- colnames(smf)
