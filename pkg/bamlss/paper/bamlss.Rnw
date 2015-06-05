@@ -143,24 +143,24 @@ $h_{k}(\cdot)$ \citep{bamlss:Rigby+Stasinopoulos:2005}. Note that the response m
 q-dimensional vector $\mathbf{y} = (y_{1}, \ldots, y_{q})^\top$, e.g., when
 $\mathbf{\mathcal{D}}$ is a multivariate normal density
 (see, e.g., \citealp{bamlss:Klein+Kneib+Klasen+Lang:2014}).
-The $k$th additive predictor (for simplicity, the parameter index $k$ is suppressed in the
-following) is given by
+The $k$-th additive predictor is given by
 \begin{equation} \label{eqn:structadd}
-\eta = f_1(\mathbf{x}) + \ldots + f_p(\mathbf{x}),
+\eta_k = \eta_k(\mathbf{x}, \boldsymbol{\beta}_k) =
+  f_{1k}(\mathbf{x}, \boldsymbol{\beta}_{1k}) + \ldots + f_{J_kk}(\mathbf{x}, \boldsymbol{\beta}_{J_kk}),
 \end{equation}
-where $\mathbf{x}$ represents a generic vector of all linear and nonlinear modeled covariates. The
-functions $f_j$ are possibly smooth functions encompassing various types of effects, e.g.:
-\begin{itemize}
-  \item Linear effects of continuous covariates: $f_j(\mathbf{x}) = x_{1}\beta$.
-  \item Nonlinear effects of continuous covariates: $f_j(\mathbf{x}) = f(x_{1})$.
-  \item Two-dimensional surfaces: $f_j(\mathbf{x}) = f(x_{1}, x_{2})$.
-  \item Spatially correlated effects of locations index $x_s$: $f_j(\mathbf{x}) = f_{spat}(x_{s})$.
-  \item Varying coefficients: $f_j(\mathbf{x}) = f(x_{2}) \cdot x_{1}$.
-  \item Spatially varying effects: $f_j(\mathbf{x}) = f_{spat}(x_{s}) \cdot x_{1}$ or
-    $f_j(\mathbf{x}) = f(x_{2}, x_{3}) \cdot x_{1}$.
-  \item Random intercepts with cluster index $c$: $f_j(\mathbf{x}) = \beta_c$.
-  \item Random slopes with cluster index $c$: $f_j(\mathbf{x}) = x_1\beta_c$.
-\end{itemize}
+with possibly linear or nonlinear functions $f_{jk}(\cdot)$, $j = 1, \ldots, J_k$ and $k = 1, \ldots, K$,
+of the covariates that are represented by the generic vector $\mathbf{x}$. In
+the following, we only assume that each function $f_{jk}(\cdot)$ is a composition of covariate data
+$\mathbf{x}$ and regression coefficients $\boldsymbol{\beta}_{jk}$, hence, $f_{jk}(\cdot)$ are not
+necessarily linear functions or functions that have a linear representation. More specifically,
+a simple linear effect of one continuous covariate could be given by
+$f_{jk}(\mathbf{x}, \boldsymbol{\beta}_{jk}) = x_{1}\beta$, whereas
+a nonlinear effect $f_{jk}(\mathbf{x}, \boldsymbol{\beta}_{jk}) = f(x_{1})$
+could, e.g., be modeled by regression splines or other techniques that are nonlinear in the
+parameters. More examples that are covered by this framework are: Spatially correlated effects of some
+discrete location index, varying coefficients, spatially varying effects, random intercepts and
+slopes, etc.
+
 Also note that each predictor in (\ref{eqn:dreg}) may contain a different set of covariate effects 
 supporting very complex structures with arbitrary combinations. This general framework is also
 known as structured additive regression
@@ -176,50 +176,50 @@ and geographically weighted regression \citep{bamlss:Fotheringham+Brunsdon+Charl
 
 \subsection{Terms and priors} \label{sec:termprior}
 
-In the following, we assume that for each function $f_j$ the vector of function evaluations
-$\mathbf{f}_j = (f_j(\mathbf{x}_{1}),\ldots,f_j(\mathbf{x}_{n}))^{\top}$ of the $i = 1, \ldots, n$
-observations is a composition of
+In the following, we assume that for each function $f_{jk}(\cdot)$ the vector of function evaluations
+$\mathbf{f}_{jk} = (f_{jk}(\mathbf{x}_{1}),\ldots,f_{jk}(\mathbf{x}_{n}))^{\top}$ of the
+$i = 1, \ldots, n$ observations is a composition of
 \begin{equation} \label{eqn:functions}
-\mathbf{f}_j = f_j(\mathbf{X}_j, \boldsymbol{\beta}_j),
+\mathbf{f}_{jk} = f_{jk}(\mathbf{X}_{jk}, \boldsymbol{\beta}_{jk}),
 \end{equation}
-where $\mathbf{X}_j$ ($n \times m_j$) is a design matrix and the structure of $\mathbf{X}_j$ only
-depends on the type of covariate(s) and prior assumptions. The vector $\boldsymbol{\beta}_j$
-($q_j \times 1$) are regression coefficients that need to be estimated. Hence, the predictor
-(\ref{eqn:structadd}) may be written as $\boldsymbol{\eta} = \mathbf{f}_1 + \ldots + \mathbf{f}_p$.
-The computation of the vector $\mathbf{f}_j$ is in most cases a matrix product of the design matrix
-and the coefficients, however, the framework presented here allows for arbitrary functional types
-that may not have this structure, e.g., nonlinear growth curve estimation of covariates.
+where $\mathbf{X}_{jk}$ ($n \times m_{jk}$) is a design matrix and the structure of $\mathbf{X}_{jk}$
+only depends on the type of covariate(s) and prior assumptions. The vector $\boldsymbol{\beta}_{jk}$
+($q_{jk} \times 1$) are regression coefficients that need to be estimated. Hence, the predictor
+(\ref{eqn:structadd}) may be written as $\boldsymbol{\eta}_k = \mathbf{f}_{1k} + \ldots + \mathbf{f}_{J_kk}$.
+The computation of the vector $\mathbf{f}_{jk}$ is in most cases a matrix product of the design matrix
+and the coefficients, however as already noted, the framework presented here allows for arbitrary
+functional types that may not have this structure, e.g., nonlinear growth curve estimation of covariates.
 In the frequentist setting, to ensure regularization, e.g., for penalizing too abrupt jumps using a
-P(enalised)-spline representation of $f_j$ \citep{bamlss:Eilers+Marx:1996}, it is common to add a
-penalty $\text{pen}(\mathbf{f}_j) = \text{pen}(\boldsymbol{\beta}_j)$ to the regression problem.
+P(enalised)-spline representation of $f_{jk}$ \citep{bamlss:Eilers+Marx:1996}, it is common to add a
+penalty $\text{pen}(\mathbf{f}_{jk}) = \text{pen}(\boldsymbol{\beta}_{jk})$ to the regression problem.
 Within the Bayesian formulation, the equivalent is to put prior distributions $p(\cdot)$ on
-the regression coefficients $\boldsymbol{\beta}_j$. The following outlines frequently used terms
+the regression coefficients $\boldsymbol{\beta}_{jk}$. The following outlines frequently used terms
 and corresponding priors for parameters within STAR predictors (\ref{eqn:structadd}).
 
 \subsubsection{Linear effects}
 
 Linear or parametric effects can be written as a simple matrix product
-$\mathbf{f}_j = \mathbf{X}_j\boldsymbol{\beta}_j$. A common choice of $p(\boldsymbol{\beta}_j)$
+$\mathbf{f}_{jk} = \mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$. A common choice of $p(\boldsymbol{\beta}_{jk})$
 is to use a non-informative uniform prior
 \begin{equation} \label{eqn:uniprior}
-p(\boldsymbol{\beta}_j) \propto 1.
+p(\boldsymbol{\beta}_{jk}) \propto 1.
 \end{equation}
 One of the simplest
 informative priors is a normal prior given by
 \begin{equation} \label{eqn:linprior}
-p(\boldsymbol{\beta}_j) \propto \exp \left(- \frac{1}{2}
-  (\boldsymbol{\beta_j} - \mathbf{m}_j)^{\top}\mathbf{M}_j^{-1}(\boldsymbol{\beta}_j -
-  \mathbf{m}_j)\right),
+p(\boldsymbol{\beta}_{jk}) \propto \exp \left(- \frac{1}{2}
+  (\boldsymbol{\beta}_{jk} - \mathbf{m}_{jk})^{\top}\mathbf{M}_{jk}^{-1}(\boldsymbol{\beta}_{jk} -
+  \mathbf{m}_{jk})\right),
 \end{equation}
-with prior mean $\mathbf{m}_j$ and prior covariance matrix $\mathbf{M}_j$. In a lot of applications
-a vague prior specification is used with $\mathbf{m}_j = \mathbf{0}$ and a large variance.
+with prior mean $\mathbf{m}_{jk}$ and prior covariance matrix $\mathbf{M}_{jk}$. In a lot of applications
+a vague prior specification is used with $\mathbf{m}_{jk} = \mathbf{0}$ and a large variance.
 
 \subsubsection{Nonlinear effects}
 
 Although the functional forms may be rather complex within predictor (\ref{eqn:structadd}),
 sometimes including more than one covariate, it is again possible to obtain a linear representation
-$\mathbf{f}_j = \mathbf{X}_j\boldsymbol{\beta}_j$ using a basis function approach. Here, the columns
-of the design matrix $\mathbf{X}_j$ hold the so called basis functions which are predetermined by
+$\mathbf{f}_{jk} = \mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$ using a basis function approach. Here, the columns
+of the design matrix $\mathbf{X}_{jk}$ hold the so called basis functions which are predetermined by
 the type of the function chosen. More specifically, for functions of a single covariate commonly
 used basis functions are B-splines or thin plate splines, which are also capable to estimate higher
 dimensional functions. Moreover, higher dimensional functions can always be obtained by tensor
@@ -230,50 +230,50 @@ overview of smooth functions constructed from various basis functions is provide
 The elegance of the approach is that regularization of the possibly very complex functions is
 accomplished by placing a generic multivariate normal prior
 \begin{equation} \label{eqn:shrinkprior}
-p(\boldsymbol{\beta}_j) \propto \left( \frac{1}{\tau_j^2} \right)^{rk(\mathbf{K}_j) / 2} \exp \left(- \frac{1}{2\tau_j^2}
-\boldsymbol{\beta_j}^{\top}\mathbf{K}_j\boldsymbol{\beta}_j\right)
+p(\boldsymbol{\beta}_{jk}) \propto \left( \frac{1}{\tau_{jk}^2} \right)^{rk(\mathbf{K}_{jk}) / 2} \exp \left(- \frac{1}{2\tau_{jk}^2}
+\boldsymbol{\beta}_{jk}^{\top}\mathbf{K}_{jk}\boldsymbol{\beta}_{jk}\right)
 \end{equation}
-on the regression coefficients $\boldsymbol{\beta}_j$, where the precision matrix $\mathbf{K}_j$
+on the regression coefficients $\boldsymbol{\beta}_{jk}$, where the precision matrix $\mathbf{K}_{jk}$
 corresponds to the frequentist's penalty matrix and depends on the type of function
-associated with the term. The variance parameter $\tau_j^2$ is equivalent to the inverse smoothing
+associated with the term. The variance parameter $\tau_{jk}^2$ is equivalent to the inverse smoothing
 parameter in a frequentist approach and controls the trade off between flexibility and smoothness.
 A common choice of prior for the variance parameter is a weakly informative inverse Gamma hyperprior
 \begin{equation} \label{eqn:ig}
-p(\tau_j^2) = \frac{b_j^{a_j}}{\Gamma(a_j)} (\tau_j^2)^{-(a_j + 1)} \exp(-b_j / \tau_j^2).
+p(\tau_{jk}^2) = \frac{b_{jk}^{a_{jk}}}{\Gamma(a_{jk})} (\tau_{jk}^2)^{-(a_{jk} + 1)} \exp(-b_{jk} / \tau_{jk}^2).
 \end{equation}
-with $a_j = b_j = 0.001$ as a standard option. Small values for $a_j$ and $b_j$ correspond to an 
-approximate uniform distribution for $\log(\tau_j^2)$. Note that within this notion a ridge penalty
-on linear effects can be obtained by $\mathbf{K}_j = \mathbf{I}$, similarly independent and
+with $a_{jk} = b_{jk} = 0.001$ as a standard option. Small values for $a_{jk}$ and $b_{jk}$ correspond to an 
+approximate uniform distribution for $\log(\tau_{jk}^2)$. Note that within this notion a ridge penalty
+on linear effects can be obtained by $\mathbf{K}_{jk} = \mathbf{I}$, similarly independent and
 identically distributed (i.i.d.) random effects can be incorporated using prior (\ref{eqn:shrinkprior}).
 
-In addition, the individual model components $\mathbf{X}_j\boldsymbol{\beta}_j$ for any basis
+In addition, the individual model components $\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$ for any basis
 function specification can be further decomposed into a mixed model representation given by
 \begin{equation*} \label{eqn:mixed}
-\mathbf{f}_j = \tilde{\mathbf{X}}_j\tilde{\boldsymbol{\gamma}}_j +
-  \mathbf{U}_j\tilde{\boldsymbol{\beta}}_j,
+\mathbf{f}_{jk} = \tilde{\mathbf{X}}_{jk}\tilde{\boldsymbol{\gamma}}_{jk} +
+  \mathbf{U}_{jk}\tilde{\boldsymbol{\beta}}_{jk},
 \end{equation*}
-where $\tilde{\boldsymbol{\gamma}}_j$ represents the fixed effects parameters and 
-$\tilde{\boldsymbol{\beta}}_j \sim N(\mathbf{0}, \tau^2_j\mathbf{I})$ i.i.d.\ random effects.
-The design matrix $\mathbf{U}_j$ is derived from a spectral decomposition of the penalty matrix
-$\mathbf{K}_j$ and $\tilde{\mathbf{X}}_j$ by finding a basis of the null space of $\mathbf{K}_j$
-such that $\tilde{\mathbf{X}}_j^{\top}\mathbf{K}_j = \mathbf{0}$, i.e., parameters
-$\tilde{\boldsymbol{\gamma}}_j$ are not penalized (see, e.g.,
+where $\tilde{\boldsymbol{\gamma}}_{jk}$ represents the fixed effects parameters and 
+$\tilde{\boldsymbol{\beta}}_{jk} \sim N(\mathbf{0}, \tau^2_{jk}\mathbf{I})$ i.i.d.\ random effects.
+The design matrix $\mathbf{U}_{jk}$ is derived from a spectral decomposition of the penalty matrix
+$\mathbf{K}_{jk}$ and $\tilde{\mathbf{X}}_{jk}$ by finding a basis of the null space of $\mathbf{K}_{jk}$
+such that $\tilde{\mathbf{X}}_{jk}^{\top}\mathbf{K}_{jk} = \mathbf{0}$, i.e., parameters
+$\tilde{\boldsymbol{\gamma}}_{jk}$ are not penalized (see, e.g.,
 \citealp{bamlss:Fahrmeir+Kneib+Lang+Marx:2013, bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003}).
 
 \subsubsection{Further effects}
 
 Within the scope of the presented framework we allow for functions of covariates that cannot
-necessarily be written by a matrix product $\mathbf{X}_j\boldsymbol{\beta}_j$. As an
+necessarily be written by a matrix product $\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$. As an
 example, nonlinear growth curve estimation with the Gompertz function requires the evaluation of
 $$
-\mathbf{f}_j = \beta_{j1} \cdot \exp \left( -\exp\left( \beta_{j2} +
-  \mathbf{X}_j\beta_{j2} \right) \right)
+\mathbf{f}_{jk} = \beta_{1} \cdot \exp \left( -\exp\left( \beta_{2} +
+  \mathbf{X}_{jk}\beta_{3} \right) \right)
 $$
 and particular interest may lie on the parameters describing the growth rate, lag phase, etc.
 As a standard option one can put non-informative uniform priors (\ref{eqn:uniprior}) or normal
 priors (\ref{eqn:linprior}) on $\boldsymbol{\beta}$. To generalize this, the framework allows for
-any functions $f_j(\mathbf{X}_j, \boldsymbol{\beta}_j)$ and prior(s) $p(\boldsymbol{\beta}_j)$ that
-are available for the covariate(s).
+any functions $f_{jk}(\mathbf{X}_{jk}, \boldsymbol{\beta}_{jk})$ and prior(s) $p(\boldsymbol{\beta}_{jk})$
+that are available for the covariate(s).
 
 %The representation of the terms in the structured additive predictor (\ref{eqn:structadd})
 %already suggests a general and modular architecture. However, to keep the focus on maximum
@@ -308,23 +308,24 @@ Note that $f$ is considered to be a general density and $\boldsymbol{\theta}_k$,
 are parameters that are linked to STAR predictors given in equation (\ref{eqn:structadd}).
 Estimation typically requires to evaluate the log-likelihood function
 \begin{equation} \label{eqn:density}
-\ell(\boldsymbol{\beta} | \mathbf{y}) =
-  \sum_{i = 1}^n \log \, f(\mathbf{y}_i | \theta_{i1} = h_1^{-1}(\eta_{i1}(\boldsymbol{\beta}_1)), \ldots,
-  \theta_{iK} = h_K^{-1}(\eta_{iK}(\boldsymbol{\beta}_K)))
+\ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X}) =
+  \sum_{i = 1}^n \log \, f(y_i ; \theta_{i1} = h_1^{-1}(\eta_{i1}(\mathbf{x}_i, \boldsymbol{\beta}_1)), \ldots,
+  \theta_{iK} = h_K^{-1}(\eta_{iK}(\mathbf{x}_i, \boldsymbol{\beta}_K)))
 \end{equation}
 a number of times, where the vector
 $\boldsymbol{\beta} = (\boldsymbol{\beta}_1^\top, \ldots, \boldsymbol{\beta}_K^\top)^\top$ 
-comprises all model coefficients that should be estimated and $\boldsymbol{\theta}_k$ are vectors
-of length $n$.
+comprises all model coefficients that should be estimated, $\mathbf{X} = (\mathbf{X}_1, \ldots, \mathbf{X}_K)$
+are the respective covariate matrices with $\mathbf{x}_i$ as the $i$-th row of $\mathbf{X}$ and
+$\boldsymbol{\theta}_k$ are vectors of length $n$.
 Assigning prior distributions to the individual model components, e.g., given by the normal
 prior (\ref{eqn:shrinkprior}) and the inverse gamma prior (\ref{eqn:ig}), results in the log-posterior
 \begin{equation} \label{eqn:logpost}
-\log \, p(\boldsymbol{\vartheta} | \mathbf{y}) \propto
-  \ell(\boldsymbol{\beta} | \mathbf{y}) +
+\log \, p(\boldsymbol{\vartheta} ; \mathbf{y}, \mathbf{X}) \propto
+  \ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X}) +
   \sum_{k = 1}^K\sum_{j = 1}^{J_k} \left\{ \log \, p_{jk}(\boldsymbol{\vartheta}_{jk}) \right\},
 \end{equation}
 where, e.g., $\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}^\top, (\boldsymbol{\tau}^2_{jk})^\top)^\top$
-is a vector of all parameters associated to the $jk$th term and includes all variances, too, and
+is a vector of all parameters associated to the $jk$-th term and includes all variances, too, and
 prior $p_{jk}(\cdot)$ denotes the combination of all assigned priors on parameters
 $\boldsymbol{\vartheta}_{jk}$. Also note that from a frequentist perspective (\ref{eqn:logpost}) can
 be viewed as a penalized log-likelihood using prior (\ref{eqn:shrinkprior}) for fixed variance
@@ -581,7 +582,7 @@ by numerical techniques.
 MCMC simulation is commonly used in such situations as it provides an extendable framework that can 
 adapt to almost any type of problem. Moreover, computational power has increases tremendously in the
 past decade and even computer intensive algorithms are feasible on simple desktop computers today.
-In the following we summarize four sampling techniques that are especially suited for this
+In the following we summarize three sampling techniques that are especially suited for this
 modeling framework, i.e., techniques that can be used for a highly modular and extendable system.
 Similarly to updating scheme (\ref{eqn:pupdate}) we consider samples that are drawn for blocks of
 parameters, more specifically, the sampling schemes successively update the parameters of a single
@@ -654,12 +655,20 @@ following methods:
     -\frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top-\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^\star +
     (\boldsymbol{\beta}_{jk}^\star)^\top \left(s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) - \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)}\right) \right\}
   \end{eqnarray*}
-  which is proportional to a multivariate normal distribution with precision matrix and mean
+  which is proportional to a multivariate normal distribution with precision matrix
   $$
-  \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = -\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right),
-  \qquad \boldsymbol{\mu}_{jk}^{(t)} = \boldsymbol{\Sigma}_{jk}^{(t)}\left\{ s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) -
-    \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)} \right\}.
+  \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = -\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)
   $$
+  and mean
+  \begin{eqnarray*}
+  \boldsymbol{\mu}_{jk}^{(t)} &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left\{
+    s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) -
+    \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)} \right\} \\
+  &=& \boldsymbol{\beta}_{jk}^{(t)} -
+    \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)^{-1}
+    s\left(\boldsymbol{\beta}_{jk}^{(t)}\right).
+  \end{eqnarray*}
+  Note that the mean is simply one Newton or Fisher scoring iteration towards the posterior mode.
   Hence, the proposal density for $\boldsymbol{\beta}_{jk}$ is
   $q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)}) =
     N(\boldsymbol{\mu}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk}^{(t)})$ and the acceptance probability
@@ -699,8 +708,6 @@ following methods:
     \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$,
   in each iteration of the MCMC sampler using iteratively reweighted least squares (IWLS)
   \citep{bamlss:Gamerman:1997, bamlss:Brezger+Lang:2006, bamlss:Klein+Kneib+Klasen+Lang:2014}.
-
-\item \emph{Hamiltonian Monte Carlo}: \label{sec:hmcmc} \\
 
 \item \emph{Slice sampling}: \label{sec:smcmc} \\
 \end{itemize}

@@ -905,7 +905,8 @@ gmcmc_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
   tau2 <- if(!data$fixed) get.par(theta, "tau2") else NULL
   nu <- if(is.null(data$nu)) 0.1 else data$nu
 
-  p.old <- family$loglik(response, family$map2par(eta)) + data$prior(theta)
+  pibeta <- family$loglik(response, family$map2par(eta))
+  p1 <- data$prior(theta)
 
   if(is.null(attr(theta, "fitted.values")))
     attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
@@ -952,10 +953,11 @@ gmcmc_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
   Sigma <- matrix_inv(g.hess)
   mu <- drop(g + nu * Sigma %*% g.grad)
 
-  q.prop <- dmvnorm(matrix(g, nrow = 1), mean = mu, sigma = Sigma, log = TRUE)
-
   g2 <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma))
   names(g2) <- names(g)
+
+  p2 <- data$prior(c("g" = g2, tau2))
+  qbetaprop <- dmvnorm(g2, mean = mu, sigma = Sigma, log = TRUE)
 
   g.grad2 <- grad(fun = lp, theta = g2, id = id[1], prior = NULL,
     args = list("gradient" = gfun, "x" = data, "y" = response, "eta" = eta))
@@ -971,11 +973,11 @@ gmcmc_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
   attr(theta, "fitted.values") <- data$get.mu(data$X, g2)
   eta[[id[1]]] <- eta[[id[1]]] + attr(theta, "fitted.values")
 
-  p.prop <- family$loglik(response, family$map2par(eta)) + data$prior(c(g2, tau2))
+  pibetaprop <- family$loglik(response, family$map2par(eta))
 
-  q.old <- dmvnorm(matrix(g2, nrow = 1), mean = mu2, sigma = Sigma2, log = TRUE)
+  qbeta <- dmvnorm(matrix(g, nrow = 1), mean = mu2, sigma = Sigma2, log = TRUE)
 
-  alpha <- (p.prop - p.old) + (q.old - q.prop)
+  alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
 
   ## Sample variance parameter.
   if(!data$fixed & is.null(data$sp)) {
