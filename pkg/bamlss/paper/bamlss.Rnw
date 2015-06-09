@@ -145,23 +145,22 @@ $\mathbf{\mathcal{D}}$ is a multivariate normal density
 (see, e.g., \citealp{bamlss:Klein+Kneib+Klasen+Lang:2014}).
 The $k$-th additive predictor is given by
 \begin{equation} \label{eqn:structadd}
-\eta_k = \eta_k(\mathbf{x}, \boldsymbol{\beta}_k) =
-  f_{1k}(\mathbf{x}, \boldsymbol{\beta}_{1k}) + \ldots + f_{J_kk}(\mathbf{x}, \boldsymbol{\beta}_{J_kk}),
+\eta_k = \eta_k(\mathbf{x}; \boldsymbol{\beta}_k) =
+  f_{1k}(\mathbf{x}; \boldsymbol{\beta}_{1k}) + \ldots + f_{J_kk}(\mathbf{x}; \boldsymbol{\beta}_{J_kk}),
 \end{equation}
-with possibly linear or nonlinear functions $f_{jk}(\cdot)$, $j = 1, \ldots, J_k$ and $k = 1, \ldots, K$,
-of the covariates that are represented by the generic vector $\mathbf{x}$. In
-the following, we only assume that each function $f_{jk}(\cdot)$ is a composition of covariate data
-$\mathbf{x}$ and regression coefficients $\boldsymbol{\beta}_{jk}$, hence, $f_{jk}(\cdot)$ are not
-necessarily linear functions or functions that have a linear representation. More specifically,
-a simple linear effect of one continuous covariate could be given by
-$f_{jk}(\mathbf{x}, \boldsymbol{\beta}_{jk}) = x_{1}\beta$, whereas
-a nonlinear effect $f_{jk}(\mathbf{x}, \boldsymbol{\beta}_{jk}) = f(x_{1})$
-could, e.g., be modeled by regression splines or other techniques that are nonlinear in the
-parameters. More examples that are covered by this framework are: Spatially correlated effects of some
-discrete location index, varying coefficients, spatially varying effects, random intercepts and
-slopes, etc.
-
-Also note that each predictor in (\ref{eqn:dreg}) may contain a different set of covariate effects 
+with unspecified (possibly nonlinear) functions $f_{jk}(\cdot)$ of a generic covariate vector
+$\mathbf{x}$, $j = 1, \ldots, J_k$ and $k = 1, \ldots, K$. In the following, we only assume that
+each function $f_{jk}(\cdot)$ is a composition of covariate data $\mathbf{x}$ and regression
+coefficients $\boldsymbol{\beta}_{jk}$, hence, $f_{jk}(\cdot)$ are not necessarily linear
+functions or functions that have a linear representation, only. More specifically, a simple linear
+effect of one continuous covariate could be given by
+$f_{jk}(\mathbf{x}, \boldsymbol{\beta}_{jk}) = x_{1}\beta$, whereas a nonlinear effect
+$f_{jk}(\mathbf{x}, \boldsymbol{\beta}_{jk}) = f(x_{1})$
+could, e.g., be modeled by regression splines or a technique that is nonlinear in the
+parameters like growth curves, amongst others. More examples that are covered by this framework are:
+Spatially correlated effects of some discrete location index, varying coefficients, spatially
+varying effects, random intercepts and slopes, etc. Also note that each predictor in
+(\ref{eqn:dreg}) may contain a different set of covariate effects 
 supporting very complex structures with arbitrary combinations. This general framework is also
 known as structured additive regression
 (STAR,~\citealp{bamlss:Fahrmeir+Kneib+Lang:2004, bamlss:Brezger+Lang:2006}) and covers a number of
@@ -190,7 +189,7 @@ The computation of the vector $\mathbf{f}_{jk}$ is in most cases a matrix produc
 and the coefficients, however as already noted, the framework presented here allows for arbitrary
 functional types that may not have this structure, e.g., nonlinear growth curve estimation of covariates.
 In the frequentist setting, to ensure regularization, e.g., for penalizing too abrupt jumps using a
-P(enalised)-spline representation of $f_{jk}$ \citep{bamlss:Eilers+Marx:1996}, it is common to add a
+P(enalised)-spline representation of $f_{jk}(\cdot)$ \citep{bamlss:Eilers+Marx:1996}, it is common to add a
 penalty $\text{pen}(\mathbf{f}_{jk}) = \text{pen}(\boldsymbol{\beta}_{jk})$ to the regression problem.
 Within the Bayesian formulation, the equivalent is to put prior distributions $p(\cdot)$ on
 the regression coefficients $\boldsymbol{\beta}_{jk}$. The following outlines frequently used terms
@@ -346,10 +345,15 @@ distributional regression models.
 
 The mode of the posterior distribution is the mode of the log-posterior (\ref{eqn:logpost}) given by
 \begin{equation}
-\text{Mod}(\boldsymbol{\vartheta} | \mathbf{y}) =
-  \underset{\boldsymbol{\vartheta}}{\text{arg max }} \log \, p(\boldsymbol{\vartheta} | \mathbf{y})
+\text{Mod}(\boldsymbol{\vartheta} ; \mathbf{y}, \mathbf{X}) =
+  \underset{\boldsymbol{\vartheta}}{\text{arg max }} \log \, p(\boldsymbol{\vartheta} ; \mathbf{y}. \mathbf{X})
 \end{equation}
-and equals the maximum likelihood estimator assigning uniform priors (\ref{eqn:uniprior})
+and equals the maximum likelihood estimator
+\begin{equation}
+\text{ML}(\boldsymbol{\vartheta} ; \mathbf{y}, \mathbf{X}) =
+  \underset{\boldsymbol{\vartheta}}{\text{arg max }} \ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X})
+\end{equation}
+assigning uniform priors (\ref{eqn:uniprior})
 for $j = 1, \ldots, J_k$, $k = 1, \ldots, K$.
 For models involving shrinkage priors, e.g., given by (\ref{eqn:shrinkprior}), the posterior mode is
 equivalent to a penalized maximum likelihood estimator for fixed variance parameters
@@ -359,8 +363,9 @@ $\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}^\top, (\boldsymbol{\tau}
 estimator $\hat{\boldsymbol{\tau}}^2_{jk}$ is usually derived by additionally
 minimizing an information criterion such as the Akaike information criterion (AIC) or the Bayesian
 information criterion (BIC) (see also \citealp{bamlss:Rigby+Stasinopoulos:2005} Appendix~A.2. for
-a more detailed discussion on variance/hyperparameter estimation). In the following we assume that
-variance parameters are held fix and $\boldsymbol{\vartheta}_{jk} = \boldsymbol{\beta}_{jk}$ for
+a more detailed discussion on variance/hyperparameter estimation). In the following we describe
+posterior mode estimation for the case of fixed and known parameters $\boldsymbol{\tau}_{jk}^2$,
+i.e., $\boldsymbol{\vartheta}_{jk} = \boldsymbol{\beta}_{jk}$ for
 $j = 1, \ldots, J_k$ and $k = 1, \ldots, K$.
 Estimation of $\boldsymbol{\beta} = (\boldsymbol{\beta}_1^\top, \ldots, \boldsymbol{\beta}_K^\top)^\top$
 requires solving equations
@@ -378,38 +383,38 @@ A particularly convenient way to maximize (\ref{eqn:logpost}) is a Newton-Raphso
 with score vector
 \begin{equation} \label{eqn:score}
 \mathbf{s}(\boldsymbol{\beta}) = 
-  \frac{\partial \log \, p(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\beta}}
-= \frac{\partial \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\beta}} +
+  \frac{\partial \log \, p(\boldsymbol{\vartheta} ; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}}
+= \frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}} +
     \sum_{k = 1}^K\sum_{j = 1}^{J_k} \left\{ \frac{\partial \log \, p_{jk}(\boldsymbol{\beta}_{jk})}{\partial \boldsymbol{\beta}} \right\}.
 \end{equation}
 and hessian matrix $\mathbf{H}(\boldsymbol{\beta})$ with components
 \begin{equation} \label{eqn:hessian}
 \mathbf{H}_{ks}(\boldsymbol{\beta}) =
 \frac{\partial \mathbf{s}(\boldsymbol{\beta}_k)}{\partial \boldsymbol{\beta}_s^\top} =
-\frac{\partial^2 \log \, p(\boldsymbol{\vartheta} | \mathbf{y})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top},
+\frac{\partial^2 \log \, p(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top},
 \end{equation}
 for $k = 1, \dots, K$ and $s = 1, \dots, K$. By chain rule, the part of the score vector involving
 the derivatives of the log-likelihood for the $k$th parameter can be further decomposed to
 \begin{equation} \label{eqn:score2}
-\frac{\partial \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\beta}_k} =
-  \frac{\partial \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k}
+\frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_k} =
+  \frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\eta}_k}
   \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_k} = 
-  \frac{\partial \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\theta}_k}
+  \frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\theta}_k}
   \frac{\partial \boldsymbol{\theta}_k}{\partial \boldsymbol{\eta}_k}
   \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_k},
 \end{equation}
 including the derivatives of the log-likelihood with respect to parameters $\boldsymbol{\theta}_k$,
 the derivative of the link functions and the derivative of the STAR predictor
 $\boldsymbol{\eta}_k$ with respect to coefficients $\boldsymbol{\beta}_k$. Again by chain rule,
-the components of $\mathbf{H}_{ks}$ including $\ell(\boldsymbol{\beta} | \mathbf{y})$ can be
+the components of $\mathbf{H}_{ks}$ including $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$ can be
 written as
 \begin{equation} \label{hessian2}
-\frac{\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top} =
+\frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top} =
 \left( \frac{\partial \boldsymbol{\eta}_s}{\partial \boldsymbol{\beta}_s} \right)^\top
-\frac{\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top}
+\frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top}
 \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_k}
 \,\, \underbrace{
-  \, + \, \frac{\partial \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k}
+  \, + \, \frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\eta}_k}
     \frac{\partial^2 \boldsymbol{\eta}_k}{\partial^2 \boldsymbol{\beta}_k}}_{\text{if } k = s},
 \end{equation}
 where the second term drops if all functions (\ref{eqn:functions}) can be written as a linear
@@ -417,10 +422,10 @@ combination of a design matrix and coefficients, e.g., when using a basis functi
 the first term, the second derivatives of the log-likelihood involving the predictors can be written
 as
 \begin{equation} \label{hessian3}
-\frac{\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top} =
-  \frac{\partial \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\theta}_k}
+\frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top} =
+  \frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\theta}_k}
   \frac{\partial^2 \boldsymbol{\theta}_k}{\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_s^\top} + 
-  \frac{\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y})}{\partial \boldsymbol{\theta}_k \partial \boldsymbol{\theta}_s^\top}
+  \frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\theta}_k \partial \boldsymbol{\theta}_s^\top}
   \frac{\partial \boldsymbol{\theta}_k}{\partial \boldsymbol{\eta}_k}
   \frac{\partial \boldsymbol{\theta}_s}{\partial \boldsymbol{\eta}_s}
 \end{equation}
@@ -572,8 +577,8 @@ Fisher information with weights $\mathbf{W}_{kk} = -\mathrm{diag}(E(\partial^2 \
 
 The mean of the posterior distribution is
 \begin{equation} \label{eqn:postmean}
-E(\boldsymbol{\vartheta} | \mathbf{y}) =
-  \int \boldsymbol{\vartheta} p(\boldsymbol{\vartheta} | \mathbf{y})d\boldsymbol{\vartheta}.
+E(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X}) =
+  \int \boldsymbol{\vartheta} p(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X})d\boldsymbol{\vartheta}.
 \end{equation}
 Clearly, the problem in deriving the expectation relies on the computation of the usually
 high-dimensional integral, which can be rarely solved analytically and needs to be approximated
@@ -622,7 +627,7 @@ following methods:
   $N(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk})$ is to use the local curvature
   information
   $$
-  \boldsymbol{\Sigma}_{jk} = -\left( \frac{\partial^2 p(\boldsymbol{\vartheta} | \mathbf{y})}{
+  \boldsymbol{\Sigma}_{jk} = -\left( \frac{\partial^2 p(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X})}{
     \partial \boldsymbol{\beta}_{jk}\boldsymbol{\beta}_{jk}^\top} \right)^{-1}
   $$
   computed at the posterior mode estimate $\hat{\boldsymbol{\beta}}_{jk}$. However, fixing
@@ -683,7 +688,7 @@ following methods:
   $$
   \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk},
   $$
-  with weights $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y}) /
+  with weights $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and the mean can be written as
   \begin{eqnarray*}
   \boldsymbol{\mu}_{jk}^{(t)} &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left\{
@@ -704,7 +709,7 @@ following methods:
   with working observations
   $\mathbf{z}_k = \boldsymbol{\eta}_k^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$. Therefore,
   the computation of the mean is equivalent to a full Newton step, or Fisher scoring when using
-  $-E(\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y}) /
+  $-E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
     \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$,
   in each iteration of the MCMC sampler using iteratively reweighted least squares (IWLS)
   \citep{bamlss:Gamerman:1997, bamlss:Brezger+Lang:2006, bamlss:Klein+Kneib+Klasen+Lang:2014}.
