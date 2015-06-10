@@ -274,6 +274,8 @@ set.par <- function(x, replacement, what) {
 ## The default method.
 smooth.bamlss.default <- function(x, ...)
 {
+  if(inherits(x, "special"))
+    return(x)
   if(is.null(x$xbin.ind) & !is.null(x$xt$xbin)) {
     ind <- as.vector(apply(x$X, 1, function(x2) {
       if(!is.character(x2) & !is.factor(x2)) {
@@ -479,6 +481,8 @@ smooth.bamlss.default <- function(x, ...)
   if(!is.null(x$xt$optimize))
     x$state$optimize <- x$xt$optimize
   x$state$edf <- x$edf(x)
+  if(!inherits(x, "parametric"))
+    colnames(x$X) <- NULL
 
   x
 }
@@ -894,7 +898,6 @@ bfit0_optim <- function(x, family, response, eta, id, ...)
     args <- list(...)
     edf0 <- args$edf - x$state$edf
   }
-
   tpar <- x$state$parameters
 
   ## Objective for regression coefficients.

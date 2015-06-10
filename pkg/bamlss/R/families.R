@@ -111,8 +111,10 @@ parse.links <- function(links, default.links, ...)
 
 
 ## http://stats.stackexchange.com/questions/41536/how-can-i-model-a-proportion-with-bugs-jags-stan
-beta.bamlss <- function(links = c(mu = "logit", sigma2 = "logit"), ...)
+beta.bamlss <- function(...)
 {
+  links <- c(mu = "logit", sigma2 = "logit")
+
   rval <- list(
     "family" = "beta",
     "names" = c("mu", "sigma2"),
@@ -190,8 +192,10 @@ beta.bamlss <- function(links = c(mu = "logit", sigma2 = "logit"), ...)
 }
 
 
-betazoi.bamlss <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log", tau = "log"), ...)
+betazoi.bamlss <- function(...)
 {
+  links <- c(mu = "logit", sigma2 = "logit", nu = "log", tau = "log")
+
   rval <- list(
     "family" = "betazoi",
     "names" = c("mu", "sigma2", "nu", "tau"),
@@ -241,8 +245,10 @@ betazoi.bamlss <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log",
 }
 
 
-betazi.bamlss <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log"), ...)
+betazi.bamlss <- function(...)
 {
+  links <- c(mu = "logit", sigma2 = "logit", nu = "log")
+
   rval <- list(
     "family" = "betazi",
     "names" = c("mu", "sigma2", "nu"),
@@ -288,8 +294,10 @@ betazi.bamlss <- function(links = c(mu = "logit", sigma2 = "logit", nu = "log"),
 }
 
 
-betaoi.bamlss <- function(links = c(mu = "logit", sigma2 = "logit", tau = "log"), ...)
+betaoi.bamlss <- function(...)
 {
+  links <- c(mu = "logit", sigma2 = "logit", tau = "log")
+
   rval <- list(
     "family" = "betazi",
     "names" = c("mu", "sigma2", "tau"),
@@ -336,8 +344,10 @@ betaoi.bamlss <- function(links = c(mu = "logit", sigma2 = "logit", tau = "log")
 }
 
 
-binomial.bamlss <- function(link = "logit", ...)
+binomial.bamlss <- function(...)
 {
+  link <- "logit"
+
   rval <- list(
     "family" = "binomial",
     "names" = "pi",
@@ -390,8 +400,10 @@ binomial.bamlss <- function(link = "logit", ...)
   rval
 }
 
-cloglog.bamlss <- function(link = "cloglog", ...)
+cloglog.bamlss <- function(...)
 {
+  link <- "cloglog"
+
   rval <- list(
     "family" = "cloglog",
     "names" = "pi",
@@ -419,8 +431,10 @@ cloglog.bamlss <- function(link = "cloglog", ...)
   rval
 }
 
-gaussian.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
+gaussian.bamlss <- function(...)
 {
+  links <- c(mu = "identity", sigma = "log")
+
   rval <- list(
     "family" = "gaussian",
     "names" = c("mu", "sigma"),
@@ -491,8 +505,10 @@ gaussian.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
 }
 
 
-gaussian2.bamlss <- function(links = c(mu = "identity", sigma2 = "log"), ...)
+gaussian2.bamlss <- function(...)
 {
+  links <- c(mu = "identity", sigma2 = "log")
+
   rval <- list(
     "family" = "gaussian2",
     "names" = c("mu", "sigma2"),
@@ -541,8 +557,10 @@ gaussian2.bamlss <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 }
 
 
-truncgaussian2.bamlss <- function(links = c(mu = "identity", sigma2 = "log"), ...)
+truncgaussian2.bamlss <- function(...)
 {
+  links <- c(mu = "identity", sigma2 = "log")
+
   rval <- list(
     "family" = "truncgaussian2",
     "names" = c("mu", "sigma2"),
@@ -575,8 +593,10 @@ truncgaussian2.bamlss <- function(links = c(mu = "identity", sigma2 = "log"), ..
   rval
 }
 
-truncgaussian.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
+truncgaussian.bamlss <- function(...)
 {
+  links <- c(mu = "identity", sigma = "log")
+
   rval <- list(
     "family" = "truncgaussian",
     "names" = c("mu", "sigma"),
@@ -638,9 +658,10 @@ truncgaussian.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
 }
 
 
-trunc.bamlss <- function(links = c(mu = "identity", sigma = "log"),
-  direction = "left", point = 0, ...)
+trunc.bamlss <- function(direction = "left", point = 0, ...)
 {
+  links <- c(mu = "identity", sigma = "log")
+
   tgrad <- function(y, eta, what = "mu") {
     eta$sigma[eta$sigma < 1] <- 1
     eta$mu[eta$mu < -10] <- -10
@@ -1226,8 +1247,10 @@ trunc2.bamlss <- function(links = c(mu = "identity", sigma = "log"),
 }
 
 
-t.bamlss <- function(links = c(mu = "identity", sigma2 = "log", df = "log"), ...)
+t.bamlss <- function(...)
 {
+  links <- c(mu = "identity", sigma2 = "log", df = "log")
+
   rval <- list(
     "family" = "t",
     "names" = c("mu", "sigma2", "df"),
@@ -1262,8 +1285,10 @@ t.bamlss <- function(links = c(mu = "identity", sigma2 = "log", df = "log"), ...
 }
 
 
-invgaussian.bamlss <- function(links = c(mu = "log", sigma2 = "log"), ...)
+invgaussian.bamlss <- function(...)
 {
+  links <- c(mu = "log", sigma2 = "log")
+
   rval <- list(
     "family" = "invgaussian",
     "names" = c("mu", "sigma2"),
@@ -1314,8 +1339,10 @@ invgaussian.bamlss <- function(links = c(mu = "log", sigma2 = "log"), ...)
   rval
 }
 
-weibull.bamlss <- function(links = c(lambda = "log", alpha = "log"), ...)
+weibull.bamlss <- function(...)
 {
+  links <- c(lambda = "log", alpha = "log")
+
   rval <- list(
     "family" = "weibull",
     "names" = c("lambda", "alpha"),
@@ -1357,8 +1384,10 @@ weibull.bamlss <- function(links = c(lambda = "log", alpha = "log"), ...)
 }
 
 
-pareto.bamlss <- function(links = c(b = "log", p = "log"), ...)
+pareto.bamlss <- function(...)
 {
+  links <- c(b = "log", p = "log")
+
   rval <- list(
     "family" = "pareto",
     "names" = c("b", "p"),
@@ -1401,8 +1430,10 @@ pareto.bamlss <- function(links = c(b = "log", p = "log"), ...)
 }
 
 
-gamma.bamlss <- function(links = c(mu = "log", sigma = "log"), ...)
+gamma.bamlss <- function(...)
 {
+  links <- c(mu = "log", sigma = "log")
+
   rval <- list(
     "family" = "gamma",
     "names" = c("mu", "sigma"),
@@ -1465,8 +1496,10 @@ gamma.bamlss <- function(links = c(mu = "log", sigma = "log"), ...)
 }
 
 
-gengamma.bamlss <- function(links = c(mu = "log", sigma = "log", tau = "log"), ...)
+gengamma.bamlss <- function(...)
 {
+  links <- c(mu = "log", sigma = "log", tau = "log")
+
   rval <- list(
     "family" = "gengamma",
     "names" = c("mu", "sigma", "tau"),
@@ -1488,8 +1521,10 @@ gengamma.bamlss <- function(links = c(mu = "log", sigma = "log", tau = "log"), .
 }
 
 
-lognormal.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
+lognormal.bamlss <- function(...)
 {
+  links <- c(mu = "identity", sigma = "log")
+
   rval <- list(
     "family" = "lognormal",
     "names" = c("mu", "sigma"),
@@ -1528,8 +1563,10 @@ lognormal.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
 }
 
 
-lognormal2.bamlss <- function(links = c(mu = "identity", sigma2 = "log"), ...)
+lognormal2.bamlss <- function(...)
 {
+  links <- c(mu = "identity", sigma2 = "log")
+
   rval <- list(
     "family" = "lognormal2",
     "names" = c("mu", "sigma2"),
@@ -1567,8 +1604,10 @@ lognormal2.bamlss <- function(links = c(mu = "identity", sigma2 = "log"), ...)
 }
 
 
-dagum.bamlss <- function(links = c(a = "log", b = "log", p = "log"), ...)
+dagum.bamlss <- function(...)
 {
+  links <- c(a = "log", b = "log", p = "log")
+
   rval <- list(
     "family" = "dagum",
     "names" = c("a", "b", "p"),
@@ -1594,7 +1633,7 @@ dagum.bamlss <- function(links = c(a = "log", b = "log", p = "log"), ...)
 		  b <- eta$b
 		  p <- eta$p
 		  ap <- a * p
-		  d <-ap * y^(ap -1) / (b^ap * (1 + (y / b)^a)^(p + 1))
+		  d <- ap * y^(ap - 1) / (b^ap * (1 + (y / b)^a)^(p + 1))
       if(log) d <- log(d)
       d
 	  },
@@ -1611,8 +1650,10 @@ dagum.bamlss <- function(links = c(a = "log", b = "log", p = "log"), ...)
 }
 
 
-BCCG2.bamlss <- function(links = c(mu = "log", sigma = "log", nu = "identity"), ...)
+BCCG2.bamlss <- function(...)
 {
+  links <- c(mu = "log", sigma = "log", nu = "identity")
+
   rval <- list(
     "family" = "BCCG",
     "names" = c("mu", "sigma", "nu"),
@@ -1655,9 +1696,11 @@ BCCG2.bamlss <- function(links = c(mu = "log", sigma = "log", nu = "identity"), 
 }
 
 
-mvn.bamlss <- function(links = c(mu1 = "identity", mu2 = "identity",
-  sigma1 = "log", sigma2 = "log", rho = "rhogit"), ...)
+mvn.bamlss <- function(...)
 {
+  links <- c(mu1 = "identity", mu2 = "identity",
+    sigma1 = "log", sigma2 = "log", rho = "rhogit")
+
   rval <- list(
     "family" = "mvn",
     "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho"),
@@ -1695,8 +1738,10 @@ mvn.bamlss <- function(links = c(mu1 = "identity", mu2 = "identity",
 }
 
 
-bivprobit.bamlss <- function(links = c(mu1 = "identity", mu2 = "identity", rho = "rhogit"), ...)
+bivprobit.bamlss <- function(...)
 {
+  links <- c(mu1 = "identity", mu2 = "identity", rho = "rhogit")
+
   rval <- list(
     "family" = "bivprobit",
     "names" = c("mu1", "mu2", "rho"),
@@ -1719,8 +1764,10 @@ bivprobit.bamlss <- function(links = c(mu1 = "identity", mu2 = "identity", rho =
 }
 
 
-bivlogit.bamlss <- function(links = c(p1 = "logit", p2 = "logit", psi = "log"), ...)
+bivlogit.bamlss <- function(...)
 {
+  links <- c(p1 = "logit", p2 = "logit", psi = "log")
+
   rval <- list(
     "family" = "bivlogit",
     "names" = c("p1", "p2", "psi"),
@@ -1742,9 +1789,10 @@ bivlogit.bamlss <- function(links = c(p1 = "logit", p2 = "logit", psi = "log"), 
 }
 
 
-mvt.bamlss <- function(links = c(mu1 = "identity", mu2 = "identity",
-  sigma1 = "log", sigma2 = "log", rho = "fisherz", df = "log"), ...)
+mvt.bamlss <- function(...)
 {
+  links <- c(mu1 = "identity", mu2 = "identity",
+    sigma1 = "log", sigma2 = "log", rho = "fisherz", df = "log")
   rval <- list(
     "family" = "mvt",
     "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho", "df"),
@@ -1770,8 +1818,10 @@ mvt.bamlss <- function(links = c(mu1 = "identity", mu2 = "identity",
 }
 
 
-dirichlet.bamlss <- function(link = "logit", ...)
+dirichlet.bamlss <- function(...)
 {
+  link <- "logit"
+
   rval <- list(
     "family" = "dirichlet",
     "names" = "alpha",
@@ -1786,7 +1836,7 @@ dirichlet.bamlss <- function(link = "logit", ...)
 }
 
 
-multinomial.bamlss <- function(link = "logit", ...)
+multinomial.bamlss <- multinom.bamlss <- function(...)
 {
   rval <- list(
     "family" = "multinomial",
@@ -1820,8 +1870,10 @@ multinomial.bamlss <- function(link = "logit", ...)
 
 
 ## Count Data distributions
-poisson.bamlss <- function(links = c(lambda = "log"), ...)
+poisson.bamlss <- function(...)
 {
+  links <- c(lambda = "log")
+
   rval <- list(
     "family" = "poisson",
     "names" = c("lambda"),
@@ -1862,8 +1914,10 @@ poisson.bamlss <- function(links = c(lambda = "log"), ...)
 }
 
 
-zip.bamlss <- function(links = c(lambda = "log", pi = "logit"), ...)
+zip.bamlss <- function(...)
 {
+  links <- c(lambda = "log", pi = "logit")
+
   rval <- list(
     "family" = "zip",
     "names" = c("lambda", "pi"),
@@ -1898,8 +1952,10 @@ zip.bamlss <- function(links = c(lambda = "log", pi = "logit"), ...)
 }
 
 
-hurdleP.bamlss <- function(links = c(lambda = "log", pi = "logit"), ...)
-{ 
+hurdleP.bamlss <- function(...)
+{
+  links <- c(lambda = "log", pi = "logit")
+
   rval <- list(
     "family" = "hurdle",
     "names" = c("lambda", "pi"),
@@ -1935,8 +1991,10 @@ hurdleP.bamlss <- function(links = c(lambda = "log", pi = "logit"), ...)
   rval
 }
 
-negbin.bamlss <- function(links = c(mu = "log", delta = "log"), ...)
+negbin.bamlss <- function(...)
 {
+  links <- c(mu = "log", delta = "log")
+
   rval <- list(
     "family" = "negbin",
     "names" = c("mu", "delta"),
@@ -1963,8 +2021,10 @@ negbin.bamlss <- function(links = c(mu = "log", delta = "log"), ...)
 }
 
 
-zinb.bamlss <- function(links = c(mu = "log", pi = "logit", delta = "log"), ...)
+zinb.bamlss <- function(...)
 {
+  links <- c(mu = "log", pi = "logit", delta = "log")
+
   rval <- list(
     "family" = "zinb",
     "names" = c("mu", "pi", "delta"),
@@ -1994,8 +2054,10 @@ zinb.bamlss <- function(links = c(mu = "log", pi = "logit", delta = "log"), ...)
   rval
 }
 
-hurdleNB.bamlss <- function(links = c(mu = "log", pi = "logit", delta = "log"), ...)
+hurdleNB.bamlss <- function(...)
 {
+  links <- c(mu = "log", pi = "logit", delta = "log")
+
   rval <- list(
     "family" = "hurdleNB",
     "names" = c("mu", "delta", "pi"),
@@ -2034,8 +2096,9 @@ hurdleNB.bamlss <- function(links = c(mu = "log", pi = "logit", delta = "log"), 
 
 
 ## http://stats.stackexchange.com/questions/17672/quantile-regression-in-jags
-quant.bamlss <- function(links = c(mu = "identity"), prob = 0.5, ...)
+quant.bamlss <- function(prob = 0.5, ...)
 {
+  links <- c(mu = "identity")
   rval <- list(
     "family" = "quant",
     "names" = "mu",
@@ -2050,8 +2113,9 @@ quant.bamlss <- function(links = c(mu = "identity"), prob = 0.5, ...)
 }
 
 
-quant2.bamlss <- function(links = c(mu = "identity", sigma = "log"), prob = 0.5, ...)
+quant2.bamlss <- function(prob = 0.5, ...)
 {
+  links <- c(mu = "identity", sigma = "log")
   rval <- list(
     "family" = "quant2",
     "names" = c("mu", "sigma"),
@@ -2074,8 +2138,9 @@ quant2.bamlss <- function(links = c(mu = "identity", sigma = "log"), prob = 0.5,
 
 
 ## Zero adjusted families.
-zero.bamlss <- function(pi = "logit", g = invgaussian)
+zero.bamlss <- function(g = invgaussian)
 {
+  pi <- "logit"
   gg <- try(inherits(g, "family.bamlss"), silent = TRUE)
   if(inherits(gg, "try-error")) {
     g <- deparse(substitute(g), backtick = TRUE, width.cutoff = 500)
@@ -2333,7 +2398,7 @@ as.indicator.matrix <- function(x)
 
 
 #####################################
-## New family specifictaion setup. ##
+## New family specification setup. ##
 #####################################
 ##############################################
 ## (1) Score, hessian and fisher functions. ##

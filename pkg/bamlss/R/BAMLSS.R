@@ -540,7 +540,7 @@ rm_infinite <- function(x) {
   if(is.null(dim(x))) return(x)
   if(ncol(x) > 0) {
     for(j in 1:ncol(x)) {
-      if(class(x[, j]) %in% c("numeric", "integer")) {
+      if(any(class(x[, j]) %in% c("numeric", "integer"))) {
         if(any(!is.finite(x[, j]))) {
           warning("infinite values in data, removing these observations in model.frame!")
           x <- x[is.finite(x[, j]), ]
@@ -1319,6 +1319,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
       colnames(vsamples) <- paste(x$label, if(is.null(edfsamples)) "tau2" else "edf", 1:nrow(smatfull), sep = ".")
       attr(smf, if(is.null(edfsamples)) "samples.scale" else "samples.edf") <- as.mcmc(vsamples)
       if(!is.null(vsamples0)) {
+        if(!is.matrix(vsamples0)) vsamples0 <- matrix(vsamples0, ncol = 1)
         colnames(vsamples0) <- paste(x$label, "tau2", 1:ncol(vsamples0), sep = ".")
         attr(smf, "samples.scale") <- as.mcmc(vsamples0)
       }
@@ -1730,38 +1731,32 @@ smooth.construct.gc.smooth.spec <- function(object, data, knots)
   else
     object$xt$center <- TRUE
   object$by.done <- TRUE
-  if(object$by != "NA") {
-    by <- data[[object$by]]
-    if(!is.factor(by))
-      by <- as.factor(data[[object$by]])
-    object$by.levels <- levels(by)
-    object$fid <- as.integer(by)
-    object$byname <- object$by
-    object$by <- "NA"
-    object$get.mu <- function(X, g, ...) {
-      (g[4] + g[1]) * exp(-(g[5] + g[2]) * exp(-(g[6] + g[3]) * X))
-    }
-  } else {
-    object$get.mu <- function(X, g, ...) {
-      f <- g[1] / (1 + exp(g[2]) * (exp(g[3]) / (1 + exp(g[3])))^(drop(X)))
-      if(object$xt$center)
-        f <- f - mean(f)
-      f
-    }
-    object$update <- update_optim2
-    object$propose <- propose_slice
-    object$prior <- function(gamma, tau2 = NULL) {
-      sum(dnorm(gamma, sd = 1000, log = TRUE))
-    }
-    object$grad <- FALSE
-    object$edf <- function(...) { 3 }
-    object$fixed <- TRUE
-    object$np <- 3
-    object$p.save <- "g"
-    object$state <- list("g" = rep(0, 3))
-    object$s.colnames = c("c1", "c2", "c3")
+  if(object$by != "NA")
+    stop("by variables not implemented yet!")
+
+  object$get.mu <- function(X, g, ...) {
+    f <- g[1] * exp(-g[2] * exp(-g[3] * drop(X)))
+    if(object$xt$center)
+      f <- f - mean(f)
+    f
   }
-  class(object) <- c("gc.smooth", "no.mgcv")
+  object$update <- bfit0_optim
+  object$propose <- gmcmc_sm.slice
+  object$prior <- function(gamma) {
+    sum(dnorm(gamma, sd = 1000, log = TRUE))
+  }
+  object$edf <- function(x) { 3 }
+  object$fixed <- TRUE
+  object$np <- 3
+  object$state$parameters <- rep(0, 3)
+  names(object$state$parameters) <- paste("g", 1:3, sep = "")
+  object$state$fitted.values <- object$get.mu(object$X, object$state$parameters)
+  object$state$edf <- 3
+  object$lower <- rep(-Inf, 3)
+  object$upper <- rep(Inf, 3)
+  names(object$lower) <- names(object$upper) <- names(object$state$parameters)
+
+  class(object) <- c("gc.smooth", "no.mgcv", "special")
   object
 }
 

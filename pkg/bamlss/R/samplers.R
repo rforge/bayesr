@@ -1002,7 +1002,7 @@ gmcmc_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
 gmcmc_logPost <- function(g, x, family, response = NULL, eta = NULL, id, ll = NULL)
 {
   if(is.null(ll)) {
-    eta[[id]] <- eta[[id]] + x$get.mu(x$X, g)
+    eta[[id[1]]] <- eta[[id[1]]] + x$get.mu(x$X, g)
     ll <- family$loglik(response, family$map2par(eta))
   }
   lp <- x$prior(g)
@@ -1322,7 +1322,14 @@ null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC")
 
   if(n.samples > 1) {
     require("mvtnorm")
-    if(!is.null(family$hessian) & is.null(attr(x, "hessian"))) {
+    no.special <- TRUE
+    for(j in 1:np) {
+      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        if(inherits(x[[nx[j]]]$smooth[[sj]], "special"))
+          no.special <- FALSE
+      }
+    }
+    if(!is.null(family$hessian) & is.null(attr(x, "hessian")) & no.special) {
       hessian <- list(); i <- 1
       nh3 <- NULL
       for(j in 1:np) {
