@@ -1735,7 +1735,9 @@ smooth.construct.gc.smooth.spec <- function(object, data, knots)
     stop("by variables not implemented yet!")
 
   object$get.mu <- function(X, g, ...) {
-    f <- g[1] * exp(-g[2] * exp(-g[3] * drop(X)))
+    ##f <- g[1] * exp(-g[2] * exp(-g[3] * drop(X)))
+    f <- log(g[1]) - g[2] * exp(-g[3] * drop(X))
+    f <- exp(f)
     if(object$xt$center)
       f <- f - mean(f)
     f

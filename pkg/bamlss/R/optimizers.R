@@ -91,7 +91,7 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
           label <- if(is.null(colnames(x$X))) {
             paste("b", 1:ncol(x$X), sep = "", collapse = "+")
           } else paste(colnames(x$X), collapse = "+")
-          x$smooth[["parametric"]] <- list(
+          x$smooth <- c(list("parametric" = list(
             "X" = x$X,
             "S" = list(diag(0, ncol(x$X))),
             "rank" = ncol(x$X),
@@ -102,7 +102,7 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
             "is.parametric" = TRUE,
             "by" = "NA",
             "xt" = list("xbin" = x$binning)
-          )
+          )), x$smooth)
           if(!is.null(coefficients)) {
             if(any(grepl(id, names(coefficients)))) {
               label <- strsplit(x$smooth$parametric$label, "+", fixed = TRUE)[[1]]
