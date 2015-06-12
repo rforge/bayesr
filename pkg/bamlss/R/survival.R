@@ -13,7 +13,7 @@ cox.bamlss <- function(...)
     "family" = "cox",
     "names" = c("lambda", "mu"),
     "links" = c(lambda = "log", mu = "identity"),
-    "transform" = function(x, ...) { surv.transform(x, globalgrid = FALSE, ...) },
+    "transform" = function(x, ...) { surv.transform(x, globalgrid = FALSE, is.cox = TRUE, ...) },
     "engine" = cox.engine,
     "loglik" = function(y, eta, ...) {
       n <- attr(y, "subdivisions")
@@ -628,7 +628,7 @@ cox2.bamlss <- function(links = c(lambda = "identity", mu = "identity"), ...)
 
 ## Survival models transformer function.
 surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", globalgrid = TRUE,
-  timevar = NULL, idvar = NULL, ...)
+  timevar = NULL, idvar = NULL, is.cox = FALSE, ...)
 {
   ntd <- timedependent
   if(!all(ntd %in% names(x)))
@@ -636,6 +636,26 @@ surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", glob
 
   ## The basic setup.
   x <- bamlss.setup(x, ...)
+  
+  ## Remove intercept if Cox.
+  if(is.cox) {
+    if(!is.null(x$mu$smooth$parametric)) {
+      cn <- colnames(x$mu$smooth$parametric$X)
+      if("(Intercept)" %in% cn)
+        x$mu$smooth$parametric$X <- x$mu$smooth$parametric$X[, cn != "(Intercept)", drop = FALSE]
+      if(ncol(x$mu$smooth$parametric$X) < 1) {
+        x$mu$smooth$parametric <- NULL
+        x$mu$pterms <- NULL
+        x$mu$param.formula <- ~ -1
+      } else {
+        x$mu$pterms <- x$mu$pterms[x$mu$pterms != "(Intercept)"]
+        x$mu$param.formula <- update(x$mu$param.formula, . ~ . -1)
+        x$mu$smooth$parametric$term <- gsub("(Intercept)+", "", x$mu$smooth$parametric$term, fixed = TRUE)
+        x$mu$smooth$parametric$state$parameters <- x$mu$smooth$parametric$state$parameters[-1]
+        names(x$mu$smooth$parametric$state$parameters) <- paste("g", 1:length(x$mu$smooth$parametric$state$parameters), sep = "")
+      }
+    }
+  }
 
   ## Create the time grid.
   response <- attr(x, "response.vec")
@@ -779,7 +799,7 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take)
     }
   }
   if(!is.null(X))
-    colnames(X) <- x$term[x$term != timevar]
+    colnames(X) <- x$term[!(x$term %in% c(yname, timevar))]
   X <- if(is.null(X)) data.frame(unlist(grid)) else cbind(X, unlist(grid))
   colnames(X)[ncol(X)] <- yname
   if(timevar != yname) {
@@ -804,3 +824,4 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take)
 
   x
 }
+
