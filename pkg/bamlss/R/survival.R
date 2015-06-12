@@ -628,7 +628,7 @@ cox2.bamlss <- function(links = c(lambda = "identity", mu = "identity"), ...)
 
 ## Survival models transformer function.
 surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", globalgrid = TRUE,
-  timevar = NULL, idvar = NULL, is.cox = FALSE, ...)
+  timevar = NULL, idvar = NULL, is.cox = FALSE, alpha = 1, ...)
 {
   ntd <- timedependent
   if(!all(ntd %in% names(x)))
@@ -655,6 +655,10 @@ surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", glob
         names(x$mu$smooth$parametric$state$parameters) <- paste("g", 1:length(x$mu$smooth$parametric$state$parameters), sep = "")
       }
     }
+  }
+  if(any("alpha" %in% names(x))) {
+    x$alpha$smooth$parametric$state$parameters[1] <- alpha
+    x$alpha$smooth$parametric$state$fitted.values <- x$alpha$smooth$parametric$X %*% x$alpha$smooth$parametric$state$parameters
   }
 
   ## Create the time grid.

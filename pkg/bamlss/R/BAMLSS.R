@@ -2774,7 +2774,9 @@ plot.bamlss.effect.default <- function(x, ...) {
           args$xlim <- args$ylim <- NULL
           do.call("plotmap", delete.args("plotmap", args,
             not = c("border", "lwd", "lty", names(formals("colorlegend")), "main")))
-        } else do.call("plotblock", args)
+        } else {
+          do.call("plotblock", args)
+        }
       }
     } else {
       do.call("plot2d", delete.args("plot2d", args,
@@ -2787,11 +2789,31 @@ plot.bamlss.effect.default <- function(x, ...) {
       do.call("sliceplot", delete.args("sliceplot", args,
         c("xlim", "ylim", "zlim", "main", "xlab", "ylab", "col", "lwd", "lty")))
     } else {
-      do.call("plot3d", delete.args("plot3d", args,
-        c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab", "ticktype",
-        "zlab", "phi", "theta", "r", "d", "scale", "range", "lrange", "pos", "image.map",
-        "symmetric", "border")))
+      if(inherits(x, "random.effect")) {
+        do.call("bamlss_random_plot", args)
+      } else {
+        do.call("plot3d", delete.args("plot3d", args,
+          c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab", "ticktype",
+          "zlab", "phi", "theta", "r", "d", "scale", "range", "lrange", "pos", "image.map",
+          "symmetric", "border")))
+      }
     }
+  }
+}
+
+
+bamlss_random_plot <- function(x, ...)
+{
+  cn <- colnames(x)
+  plot(x[, "50%"] ~ x[, 2], type = "n", xlab = cn[2], ylab = attr(x, "specs")$label)
+  id <- x[, 1]
+  col <- rainbow_hcl(length(unique(id)))
+  ii <- 1
+  for(j in unique(id)) {
+    d <- subset(x, x[, 1] == j)
+    i <- order(d[, 2])
+    lines(d[i, "50%"] ~ d[i, 2], col = col[ii])
+    ii <- ii + 1
   }
 }
 
