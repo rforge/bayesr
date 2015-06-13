@@ -1211,3 +1211,126 @@ bfit_cnorm <- function(x, criterion = c("AICc", "BIC", "AIC"),
   return(x)
 }
 
+
+## Likelihood based boosting.
+boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
+  nu = 0.1, maxit = 400, mstop = NULL,
+  verbose = TRUE, digits = 4, ...)
+{
+  if(!is.null(mstop))
+    maxit <- mstop
+
+  criterion <- match.arg(criterion)
+
+  x <- bamlss.setup(x, criterion = criterion, ...)
+
+  family <- attr(x, "family")
+  nx <- family$names[1:2]
+  if(!all(nx %in% names(x)))
+    stop("parameter names mismatch with family names!")
+  criterion <- match.arg(criterion)
+
+  np <- length(nx)
+  response <- attr(x, "response.vec")
+  nobs <- if(is.null(dim(response))) length(response) else nrow(response)
+  eta <- get.eta(x)
+
+  ## Initialize select indicator.
+  sn <- NULL
+  states <- list()
+  for(j in 1:np) {
+    states[[j]] <- list()
+    for(sj in seq_along(x[[nx[j]]]$smooth)) {
+      sn <- c(sn, paste(j, sj, sep = "."))
+      if(is.null(x[[nx[j]]]$smooth[[sj]]$sp) & !x[[nx[j]]]$smooth[[sj]]$fixed) {
+        x[[nx[j]]]$smooth[[sj]]$old.optimize <- x[[nx[j]]]$smooth[[sj]]$state$optimize
+        x[[nx[j]]]$smooth[[sj]]$state$optimize <- FALSE
+        x[[nx[j]]]$smooth[[sj]]$optimize <- FALSE
+      }
+      states[[j]][[sj]] <- list()
+    }
+  }
+  select <- rep(0, length(sn))
+  names(select) <- sn
+
+  ## Start boosting.
+  eps <-  .Machine$double.eps^0.25
+  eps0 <- 1; iter <- 1
+  save.ic <- save.ll <- NULL
+  ll <- family$loglik(response, family$map2par(eta))
+  while(iter < maxit) {
+    eta0 <- eta
+
+    ## Cycle through all parameters
+    for(j in 1:np) {
+      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        ## Get updated parameters.
+        states[[j]][[sj]] <- x[[nx[j]]]$smooth[[sj]]$update(x[[nx[j]]]$smooth[[sj]],
+          family, response, eta, nx[j])
+
+        ## Compute likelihood contribution.
+        eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth[[sj]]$state) + fitted(states[[j]][[sj]])
+        select[paste(j, sj, sep = ".")] <- -2 * (ll - family$loglik(response, family$map2par(eta)))
+        eta[[nx[j]]] <- eta0[[nx[j]]]
+      }
+    }
+
+    ## Which term to update.
+    take <- as.integer(strsplit(sn[which.max(select)], ".", fixed = TRUE)[[1]])
+
+    ## Update selected base learner.
+    eta[[take[1]]] <- eta[[take[1]]] - fitted(x[[take[1]]]$smooth[[take[2]]]$state)
+    x[[take[1]]]$smooth[[take[2]]]$state <- increase(x[[take[1]]]$smooth[[take[2]]],
+      states[[take[1]]][[take[2]]], nu)
+    eta[[take[1]]] <- eta[[take[1]]] + fitted(x[[take[1]]]$smooth[[take[2]]]$state)
+
+    edf <- get.edf(x)
+
+    eps0 <- do.call("cbind", eta)
+    eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
+    if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
+
+    peta <- family$map2par(eta)
+    IC <- get.ic(family, response, peta, edf, nobs, criterion)
+    ll <- family$loglik(response, peta)
+
+    save.ic <- c(save.ic, IC)
+    save.ll <- c(save.ll, ll)
+
+    if(verbose) {
+      cat("\r")
+      vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
+        " logLik ", fmt(ll, width = 8, digits = digits),
+        " edf ", fmt(edf, width = 6, digits = digits),
+        " eps ", fmt(eps0, width = 6, digits = digits + 2),
+        " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
+      cat(vtxt)
+
+      if(.Platform$OS.type != "unix") flush.console()
+    }
+
+    iter <- iter + 1
+  }
+
+  if(verbose) cat("\n")
+
+  plot(save.ic, type = "l", xlab = "iteration", ylab = criterion,
+    main = paste("mstop =", which.min(save.ic)))
+
+  return(x)
+}
+
+
+## Boosting updating increaser.
+increase <- function(x, state, nu)
+{
+  g0 <- get.par(x$state$parameters, "gamma")
+  g1 <- get.par(state$parameters, "gamma")
+  g <- g0 + nu * g1
+  x$state$parameters <- set.par(x$state$parameters, g, "g")
+  x$state$edf <- x$edf(x)
+  x$state$selected <- c(x$state$selected, 1)
+  x$state$fitted.values <- x$get.mu(x$X, g)
+  return(x$state)
+}
+
