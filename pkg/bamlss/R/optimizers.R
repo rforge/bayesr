@@ -1314,18 +1314,24 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
   if(verbose) cat("\n")
 
+  par(mfrow = c(2, 1))
   plot(save.ic, type = "l", xlab = "iteration", ylab = criterion,
     main = paste("mstop =", which.min(save.ic)))
+  plot(save.ll, type = "l", xlab = "iteration", ylab = "Log. Lik")
 
   cat("\nFrequencies:\n---\n")
   for(j in 1:np) {
-    cat("Parameter -", nx[j], "\n")
+    fmat <- rn <- NULL
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
-      cat("  ", x[[nx[j]]]$smooth[[sj]]$label, " :",
-        fmt(length(x[[nx[j]]]$smooth[[sj]]$state$selected) / maxit, width = 4, digits = 2),
-        sep = "")
-      cat("\n")
+      rn <- c(rn, x[[nx[j]]]$smooth[[sj]]$label)
+      fmat <- rbind(fmat,
+        length(x[[nx[j]]]$smooth[[sj]]$state$selected) / maxit * 100)
     }
+    rownames(fmat) <- rn
+    colnames(fmat) <- paste(nx[j], "% selected")
+    if(length(fmat) < 2) print(fmat) else printCoefmat(fmat, digits = 2)
+    if(j != np)
+      cat("---\n")
   }
   cat("\n")
 
