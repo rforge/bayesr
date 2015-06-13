@@ -1317,6 +1317,18 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   plot(save.ic, type = "l", xlab = "iteration", ylab = criterion,
     main = paste("mstop =", which.min(save.ic)))
 
+  cat("\nFrequencies:\n---\n")
+  for(j in 1:np) {
+    cat("Parameter -", nx[j], "\n")
+    for(sj in seq_along(x[[nx[j]]]$smooth)) {
+      cat("  ", x[[nx[j]]]$smooth[[sj]]$label, " :",
+        fmt(length(x[[nx[j]]]$smooth[[sj]]$state$selected) / maxit, width = 4, digits = 2),
+        sep = "")
+      cat("\n")
+    }
+  }
+  cat("\n")
+
   return(x)
 }
 
