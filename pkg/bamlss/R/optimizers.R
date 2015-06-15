@@ -1214,7 +1214,7 @@ bfit_cnorm <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
 ## Likelihood based boosting.
 boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
-  nu = 0.1, maxit = 400, mstop = NULL,
+  nu = 1, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, ...)
 {
   if(!is.null(mstop))
@@ -1233,11 +1233,11 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   np <- length(nx)
   response <- attr(x, "response.vec")
   nobs <- if(is.null(dim(response))) length(response) else nrow(response)
-  eta <- get.eta(x)
 
-  ## Initialize select indicator.
+  ## Initialize select indicator and intercepts.
   sn <- NULL
   states <- list()
+  eta <- get.eta(x)
   for(j in 1:np) {
     states[[j]] <- list()
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
@@ -1247,6 +1247,7 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
         x[[nx[j]]]$smooth[[sj]]$state$optimize <- FALSE
         x[[nx[j]]]$smooth[[sj]]$optimize <- FALSE
       }
+      x[[nx[j]]]$smooth[[sj]]$selected <- rep(0, length = maxit)
       states[[j]][[sj]] <- list()
     }
   }
@@ -1263,13 +1264,27 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
     ## Cycle through all parameters
     for(j in 1:np) {
+      peta <- family$map2par(eta)
+
+      ## Compute weights.
+      weights <- family$weights[[nx[j]]](response, peta)
+
+      ## Score.
+      score <- family$score[[nx[j]]](response, peta)
+
+      ## Compute working observations.
+      z <- eta[[nx[j]]] + 1 / weights * score
+
+      ## Residuals.
+      e <- z - eta[[nx[j]]]
+
       for(sj in seq_along(x[[nx[j]]]$smooth)) {
         ## Get updated parameters.
-        states[[j]][[sj]] <- x[[nx[j]]]$smooth[[sj]]$update(x[[nx[j]]]$smooth[[sj]],
-          family, response, eta, nx[j])
+        states[[j]][[sj]] <- boost0_iwls(x[[nx[j]]]$smooth[[sj]],
+          family, response, eta, nx[j], weights, z, e, nu)
 
         ## Compute likelihood contribution.
-        eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth[[sj]]$state) + fitted(states[[j]][[sj]])
+        eta[[nx[j]]] <- eta[[nx[j]]] + fitted(states[[j]][[sj]])
         select[paste(j, sj, sep = ".")] <- -2 * (ll - family$loglik(response, family$map2par(eta)))
         eta[[nx[j]]] <- eta0[[nx[j]]]
       }
@@ -1278,10 +1293,11 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
     ## Which term to update.
     take <- as.integer(strsplit(sn[which.max(select)], ".", fixed = TRUE)[[1]])
 
+    ## Write to x.
+    x[[take[1]]]$smooth[[take[2]]]$state <- states[[take[1]]][[take[2]]]
+    x[[take[1]]]$smooth[[take[2]]]$selected[iter] <- 1
+
     ## Update selected base learner.
-    eta[[take[1]]] <- eta[[take[1]]] - fitted(x[[take[1]]]$smooth[[take[2]]]$state)
-    x[[take[1]]]$smooth[[take[2]]]$state <- increase(x[[take[1]]]$smooth[[take[2]]],
-      states[[take[1]]][[take[2]]], nu)
     eta[[take[1]]] <- eta[[take[1]]] + fitted(x[[take[1]]]$smooth[[take[2]]]$state)
 
     edf <- get.edf(x)
@@ -1314,18 +1330,17 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
   if(verbose) cat("\n")
 
-  par(mfrow = c(2, 1))
-  plot(save.ic, type = "l", xlab = "iteration", ylab = criterion,
-    main = paste("mstop =", which.min(save.ic)))
-  plot(save.ll, type = "l", xlab = "iteration", ylab = "Log. Lik")
+  mstop <- which.min(save.ic)
 
-  cat("\nFrequencies:\n---\n")
+  cat("\nMstop =", mstop, "\n---\n")
+  cat("Frequencies\n---\n")
+  labels <- NULL
   for(j in 1:np) {
     fmat <- rn <- NULL
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
+      labels <- c(labels, paste(x[[nx[j]]]$smooth[[sj]]$label, nx[j], sep = ":"))
       rn <- c(rn, x[[nx[j]]]$smooth[[sj]]$label)
-      fmat <- rbind(fmat,
-        length(x[[nx[j]]]$smooth[[sj]]$state$selected) / maxit * 100)
+      fmat <- rbind(fmat, sum(x[[nx[j]]]$smooth[[sj]]$selected) / maxit * 100)
     }
     rownames(fmat) <- rn
     colnames(fmat) <- paste(nx[j], "% selected")
@@ -1335,20 +1350,69 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   }
   cat("\n")
 
+  par(mfrow = c(2, 1), mar = c(4.1, 4.1, 4.1, 4.1))
+  col <- rainbow_hcl(2)
+  plot(save.ic, type = "l", xlab = "Iteration", ylab = criterion,
+    main = paste("mstop =", mstop), col = col[1], lwd = 1.5)
+  par(new = TRUE)
+  plot(save.ll, type = "l", xlab = "iteration", ylab = "", col = col[2], lwd = 1.5, axes = FALSE)
+  axis(4)
+  box()
+  mtext("Log. Lik", side = 4, line = 2.5)
+  legend("right", c(criterion, "Log. Lik"), col = col, lwd = 1.5, bg = NA, box.col = NA)
+  plot(c(0, length(select) + 1), c(0, maxit + 1), type = "n", axes = FALSE,
+    xlab = "Term", ylab = "Iteration")
+  axis(1, at = 1:length(select), labels = labels)
+  i <- 1
+  for(j in 1:np) {
+    for(sj in seq_along(x[[nx[j]]]$smooth)) {
+      if(length(yp <- which(x[[nx[j]]]$smooth[[sj]]$selected > 0))) {
+        xp <- rep(i, length = length(yp))
+        points(xp, yp, pch = 4)
+      }
+      i <- i + 1
+    }
+  }
+  axis(2)
+  box()
+
   return(x)
 }
 
 
-## Boosting updating increaser.
-increase <- function(x, state, nu)
+## Boosting iwls.
+boost0_iwls <- function(x, family, response, eta, id, weights, z, e, nu, ...)
 {
+  args <- list(...)
+
+  ## Old parameters.
   g0 <- get.par(x$state$parameters, "gamma")
-  g1 <- get.par(state$parameters, "gamma")
-  g <- g0 + nu * g1
-  x$state$parameters <- set.par(x$state$parameters, g, "g")
-  x$state$edf <- x$edf(x)
-  x$state$selected <- c(x$state$selected, 1)
-  x$state$fitted.values <- x$get.mu(x$X, g)
+
+  ## Compute reduced residuals.
+  xbin.fun(x$xbin.sind, weights, e, x$weights, x$rres, x$xbin.order)
+
+  ## Compute mean and precision.
+  XWX <- crossprod(x$X, x$X * x$weights)
+  if(x$fixed) {
+    P <- matrix_inv(XWX)
+  } else {
+    S <- 0
+    tau2 <- get.state(x, "tau2")
+    for(j in seq_along(x$S))
+      S <- S + 1 / tau2[j] * x$S[[j]]
+    P <- matrix_inv(XWX + S)
+  }
+
+  ## New parameters
+  g <- g0 + nu * drop(P %*% crossprod(x$X, x$rres))
+
+  ## Finalize.
+  if(!(any(is.na(g)) | any(g %in% c(-Inf, Inf)))) {
+    x$state$parameters <- set.par(x$state$parameters, g, "g")
+    x$state$fitted.values <- x$get.mu(x$X, get.state(x, "g"))
+    x$state$edf <- sum(diag(P %*% XWX))
+  }
+
   return(x$state)
 }
 
