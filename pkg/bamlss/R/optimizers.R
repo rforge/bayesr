@@ -1215,7 +1215,7 @@ bfit_cnorm <- function(x, criterion = c("AICc", "BIC", "AIC"),
 ## Likelihood based boosting.
 boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   nu = 1, maxit = 400, mstop = NULL,
-  verbose = TRUE, digits = 4, ...)
+  verbose = TRUE, digits = 4, tau2 = 10, ...)
 {
   if(!is.null(mstop))
     maxit <- mstop
@@ -1235,20 +1235,59 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   nobs <- if(is.null(dim(response))) length(response) else nrow(response)
 
   ## Initialize select indicator and intercepts.
-  sn <- NULL
-  states <- list()
+  states <- save.parametric <- list()
   eta <- get.eta(x)
   for(j in 1:np) {
     states[[j]] <- list()
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
-      sn <- c(sn, paste(j, sj, sep = "."))
       if(is.null(x[[nx[j]]]$smooth[[sj]]$sp) & !x[[nx[j]]]$smooth[[sj]]$fixed) {
         x[[nx[j]]]$smooth[[sj]]$old.optimize <- x[[nx[j]]]$smooth[[sj]]$state$optimize
         x[[nx[j]]]$smooth[[sj]]$state$optimize <- FALSE
         x[[nx[j]]]$smooth[[sj]]$optimize <- FALSE
       }
-      x[[nx[j]]]$smooth[[sj]]$selected <- rep(0, length = maxit)
+      if(inherits(x[[nx[j]]]$smooth[[sj]], "parametric")) {
+        parametric <- list()
+        cn <- colnames(x[[nx[j]]]$smooth[[sj]]$X)
+        g0 <- get.par(x[[nx[j]]]$smooth[[sj]]$state$parameters, "g")
+        for(pj in 1:ncol(x[[nx[j]]]$smooth[[sj]]$X)) {
+          parametric[[pj]] <- list()
+          parametric[[pj]]$label <- cn[pj]
+          parametric[[pj]]$term <- cn[pj]
+          parametric[[pj]]$X <- x[[nx[j]]]$smooth[[sj]]$X[, pj, drop = FALSE]
+          parametric[[pj]]$xbin.ind <- x[[nx[j]]]$smooth[[sj]]$xbin.ind
+          parametric[[pj]]$xbin.sind <- x[[nx[j]]]$smooth[[sj]]$xbin.sind
+          parametric[[pj]]$xbin.k <- x[[nx[j]]]$smooth[[sj]]$xbin.k
+          parametric[[pj]]$xbin.order <- x[[nx[j]]]$smooth[[sj]]$xbin.order
+          parametric[[pj]]$nobs <- x[[nx[j]]]$smooth[[sj]]$nobs
+          parametric[[pj]]$fixed <- TRUE
+          parametric[[pj]]$weights <- x[[nx[j]]]$smooth[[sj]]$weights
+          parametric[[pj]]$rres <- x[[nx[j]]]$smooth[[sj]]$rres
+          parametric[[pj]]$get.mu <- x[[nx[j]]]$smooth[[sj]]$get.mu
+          parametric[[pj]]$edf <- function(X, g) { return(1) }
+          parametric[[pj]]$state <- list("parameters" = g0[pj])
+          names(parametric[[pj]]$state$parameters) <- "g1"
+          parametric[[pj]]$state$fitted.values <- drop(parametric[[pj]]$X %*% g0[pj])
+          parametric[[pj]]$state$edf <- 1
+          parametric[[pj]]$is.parametric <- TRUE
+          parametric[[pj]]$selected <- rep(0, length = maxit)
+          parametric[[pj]]$upper <- Inf
+          parametric[[pj]]$lower <- -Inf
+        }
+        save.parametric[[j]] <- x[[nx[j]]]$smooth[[sj]]
+        x[[nx[j]]]$smooth[[sj]] <- NULL
+        x[[nx[j]]]$smooth <- c(parametric, x[[nx[j]]]$smooth)
+      }
       states[[j]][[sj]] <- list()
+    }
+  }
+  sn <- NULL
+  for(j in 1:np) {
+    for(sj in seq_along(x[[nx[j]]]$smooth)) {
+      sn <- c(sn, paste(j, sj, sep = "."))
+      x[[nx[j]]]$smooth[[sj]]$selected <- rep(0, length = maxit)
+      if(length(i <- grep("tau2", names(x[[nx[j]]]$smooth[[sj]]$state$parameters)))) {
+        x[[nx[j]]]$smooth[[sj]]$state$parameters[i] <- rep(tau2, length = length(i))
+      }
     }
   }
   select <- rep(0, length(sn))
@@ -1276,14 +1315,14 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
       z <- eta[[nx[j]]] + 1 / weights * score
 
       ## Residuals.
-      e <- z - eta[[nx[j]]]
+      resids <- z - eta[[nx[j]]]
 
       for(sj in seq_along(x[[nx[j]]]$smooth)) {
         eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth[[sj]]$state)
 
         ## Get updated parameters.
         states[[j]][[sj]] <- boost0_iwls(x[[nx[j]]]$smooth[[sj]],
-          family, response, eta, nx[j], weights, z, e, nu)
+          family, response, eta, nx[j], weights, resids, nu)
 
         ## Compute likelihood contribution.
         eta[[nx[j]]] <- eta[[nx[j]]] + fitted(states[[j]][[sj]])
@@ -1335,7 +1374,8 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
   mstop <- which.min(save.ic)
 
-  cat("\nMstop =", mstop, "\n---\n")
+  cat("\n")
+  cat(criterion, "=", save.ic[mstop], "-> at mstop =", mstop, "\n---\n")
   cat("Frequencies\n---\n")
   labels <- NULL
   for(j in 1:np) {
@@ -1379,12 +1419,30 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   axis(2)
   box()
 
+  ## Collect parametric effects.
+  for(j in 1:np) {
+    g <- drop <- NULL
+    for(sj in seq_along(x[[nx[j]]]$smooth)) {
+      if(!is.null(x[[nx[j]]]$smooth[[sj]]$is.parametric)) {
+        g <- c(g, x[[nx[j]]]$smooth[[sj]]$state$parameters)
+        drop <- c(drop, sj)
+      }
+    }
+    if(!is.null(g)) {
+      x[[nx[j]]]$smooth[drop] <- NULL
+      names(g) <- paste("g", 1:length(g), sep = "")
+      save.parametric[[j]]$state$fitted.values <- drop(save.parametric[[j]]$X %*% g)
+      save.parametric[[j]]$state$parameters <- g
+      x[[nx[j]]]$smooth <- c(list(save.parametric[[j]]), x[[nx[j]]]$smooth)
+    }
+  }
+
   return(x)
 }
 
 
 ## Boosting iwls.
-boost0_iwls <- function(x, family, response, eta, id, weights, z, e, nu, ...)
+boost0_iwls <- function(x, family, response, eta, id, weights, resids, nu, ...)
 {
   args <- list(...)
 
@@ -1392,7 +1450,7 @@ boost0_iwls <- function(x, family, response, eta, id, weights, z, e, nu, ...)
   g0 <- get.par(x$state$parameters, "gamma")
 
   ## Compute reduced residuals.
-  xbin.fun(x$xbin.sind, weights, e, x$weights, x$rres, x$xbin.order)
+  xbin.fun(x$xbin.sind, weights, resids, x$weights, x$rres, x$xbin.order)
 
   ## Compute mean and precision.
   XWX <- crossprod(x$X, x$X * x$weights)
