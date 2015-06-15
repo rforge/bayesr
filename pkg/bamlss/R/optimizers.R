@@ -1279,6 +1279,8 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
       e <- z - eta[[nx[j]]]
 
       for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth[[sj]]$state)
+
         ## Get updated parameters.
         states[[j]][[sj]] <- boost0_iwls(x[[nx[j]]]$smooth[[sj]],
           family, response, eta, nx[j], weights, z, e, nu)
@@ -1294,6 +1296,7 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
     take <- as.integer(strsplit(sn[which.max(select)], ".", fixed = TRUE)[[1]])
 
     ## Write to x.
+    eta[[take[1]]] <- eta[[take[1]]] - fitted(x[[take[1]]]$smooth[[take[2]]]$state)
     x[[take[1]]]$smooth[[take[2]]]$state <- states[[take[1]]][[take[2]]]
     x[[take[1]]]$smooth[[take[2]]]$selected[iter] <- 1
 
