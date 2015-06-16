@@ -1355,7 +1355,7 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
         ## Get updated parameters.
         states[[j]][[sj]] <- boost0_iwls(x[[nx[j]]]$smooth[[sj]],
-          family, response, weights, resids, nu)
+          family, response, weights, resids + eta[[nx[j]]], nu)
 
         ## Compute likelihood contribution.
         eta[[nx[j]]] <- eta[[nx[j]]] + fitted(states[[j]][[sj]])
