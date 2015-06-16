@@ -1216,7 +1216,7 @@ bfit_cnorm <- function(x, criterion = c("AICc", "BIC", "AIC"),
 boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   nu = 1, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, tau2 = 10,
-    eps = .Machine$double.eps^0.25, ...)
+  eps = .Machine$double.eps^0.25, ...)
 {
   if(!is.null(mstop))
     maxit <- mstop
@@ -1353,7 +1353,7 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
         ## Get updated parameters.
         states[[j]][[sj]] <- boost0_iwls(x[[nx[j]]]$smooth[[sj]],
-          family, response, eta, nx[j], weights, resids, nu)
+          family, response, weights, resids, nu)
 
         ## Compute likelihood contribution.
         eta[[nx[j]]] <- eta[[nx[j]]] + fitted(states[[j]][[sj]])
@@ -1473,7 +1473,7 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
 
 ## Boosting iwls.
-boost0_iwls <- function(x, family, response, eta, id, weights, resids, nu, ...)
+boost0_iwls <- function(x, family, response, weights, resids, nu, ...)
 {
   args <- list(...)
 
