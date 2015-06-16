@@ -1215,7 +1215,8 @@ bfit_cnorm <- function(x, criterion = c("AICc", "BIC", "AIC"),
 ## Likelihood based boosting.
 boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   nu = 1, maxit = 400, mstop = NULL,
-  verbose = TRUE, digits = 4, tau2 = 10, ...)
+  verbose = TRUE, digits = 4, tau2 = 10,
+    eps = .Machine$double.eps^0.25, ...)
 {
   if(!is.null(mstop))
     maxit <- mstop
@@ -1268,10 +1269,13 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
           names(parametric[[pj]]$state$parameters) <- "g1"
           parametric[[pj]]$state$fitted.values <- drop(parametric[[pj]]$X %*% g0[pj])
           parametric[[pj]]$state$edf <- 1
+          parametric[[pj]]$state$optimize <- FALSE
+          parametric[[pj]]$fixed <- TRUE
           parametric[[pj]]$is.parametric <- TRUE
           parametric[[pj]]$selected <- rep(0, length = maxit)
           parametric[[pj]]$upper <- Inf
           parametric[[pj]]$lower <- -Inf
+          class(parametric[[pj]]) <- class(x[[nx[j]]]$smooth[[sj]])
         }
         save.parametric[[j]] <- x[[nx[j]]]$smooth[[sj]]
         x[[nx[j]]]$smooth[[sj]] <- NULL
@@ -1280,6 +1284,8 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
       states[[j]][[sj]] <- list()
     }
   }
+
+  ## Selector help vector.
   sn <- NULL
   for(j in 1:np) {
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
@@ -1293,8 +1299,33 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   select <- rep(0, length(sn))
   names(select) <- sn
 
+  ## Initialize intercepts.
+  eps0 <- eps + 1; iter <- 1
+  while(eps0 > eps & iter < maxit) {
+    eta0 <- eta
+    ## Cycle through all parameters
+    for(j in 1:np) {
+      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        if(inherits(x[[nx[j]]]$smooth[[sj]], "parametric") & x[[nx[j]]]$smooth[[sj]]$label == "(Intercept)") {
+          ## Get updated parameters.
+          p.state <- bfit0_iwls(x[[nx[j]]]$smooth[[sj]],
+            family, response, eta, nx[j], edf = edf)
+
+          ## Update predictor and smooth fit.
+          eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth[[sj]]$state) + fitted(p.state)
+
+          x[[nx[j]]]$smooth[[sj]]$state <- p.state
+        }
+      }
+    }
+
+    eps0 <- do.call("cbind", eta)
+    eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
+    if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
+    iter <- iter + 1
+  }
+
   ## Start boosting.
-  eps <-  .Machine$double.eps^0.25
   eps0 <- 1; iter <- 1
   save.ic <- save.ll <- NULL
   ll <- family$loglik(response, family$map2par(eta))
