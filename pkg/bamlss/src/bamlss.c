@@ -723,7 +723,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   xrresptr[0] = 0;
 
   j = 0;
-  int ii, jj;
+  int jj;
   for(i = 0; i < n; i++) {
     if(indptr[i] > (j + 1)) {
       for(jj = 0; jj < nc; jj++) {
