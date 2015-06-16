@@ -1246,42 +1246,44 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
         x[[nx[j]]]$smooth[[sj]]$state$optimize <- FALSE
         x[[nx[j]]]$smooth[[sj]]$optimize <- FALSE
       }
-      if(inherits(x[[nx[j]]]$smooth[[sj]], "parametric")) {
-        parametric <- list()
-        cn <- colnames(x[[nx[j]]]$smooth[[sj]]$X)
-        g0 <- get.par(x[[nx[j]]]$smooth[[sj]]$state$parameters, "g")
-        for(pj in 1:ncol(x[[nx[j]]]$smooth[[sj]]$X)) {
-          parametric[[pj]] <- list()
-          parametric[[pj]]$label <- cn[pj]
-          parametric[[pj]]$term <- cn[pj]
-          parametric[[pj]]$X <- x[[nx[j]]]$smooth[[sj]]$X[, pj, drop = FALSE]
-          parametric[[pj]]$xbin.ind <- x[[nx[j]]]$smooth[[sj]]$xbin.ind
-          parametric[[pj]]$xbin.sind <- x[[nx[j]]]$smooth[[sj]]$xbin.sind
-          parametric[[pj]]$xbin.k <- x[[nx[j]]]$smooth[[sj]]$xbin.k
-          parametric[[pj]]$xbin.order <- x[[nx[j]]]$smooth[[sj]]$xbin.order
-          parametric[[pj]]$nobs <- x[[nx[j]]]$smooth[[sj]]$nobs
-          parametric[[pj]]$fixed <- TRUE
-          parametric[[pj]]$weights <- x[[nx[j]]]$smooth[[sj]]$weights
-          parametric[[pj]]$rres <- x[[nx[j]]]$smooth[[sj]]$rres
-          parametric[[pj]]$get.mu <- x[[nx[j]]]$smooth[[sj]]$get.mu
-          parametric[[pj]]$edf <- function(X, g) { return(1) }
-          parametric[[pj]]$state <- list("parameters" = g0[pj])
-          names(parametric[[pj]]$state$parameters) <- "g1"
-          parametric[[pj]]$state$fitted.values <- drop(parametric[[pj]]$X %*% g0[pj])
-          parametric[[pj]]$state$edf <- 1
-          parametric[[pj]]$state$optimize <- FALSE
-          parametric[[pj]]$fixed <- TRUE
-          parametric[[pj]]$is.parametric <- TRUE
-          parametric[[pj]]$selected <- rep(0, length = maxit)
-          parametric[[pj]]$upper <- Inf
-          parametric[[pj]]$lower <- -Inf
-          class(parametric[[pj]]) <- class(x[[nx[j]]]$smooth[[sj]])
-        }
-        save.parametric[[j]] <- x[[nx[j]]]$smooth[[sj]]
-        x[[nx[j]]]$smooth[[sj]] <- NULL
-        x[[nx[j]]]$smooth <- c(parametric, x[[nx[j]]]$smooth)
-      }
       states[[j]][[sj]] <- list()
+    }
+    ii <- sapply(x[[nx[j]]]$smooth, function(x) { inherits(x, "parametric") })
+    if(any(ii)) {
+      ii <- which(ii)[1]
+      parametric <- list()
+      cn <- colnames(x[[nx[j]]]$smooth[[ii]]$X)
+      g0 <- get.par(x[[nx[j]]]$smooth[[ii]]$state$parameters, "g")
+      for(pj in 1:ncol(x[[nx[j]]]$smooth[[ii]]$X)) {
+        parametric[[pj]] <- list()
+        parametric[[pj]]$label <- cn[pj]
+        parametric[[pj]]$term <- cn[pj]
+        parametric[[pj]]$X <- x[[nx[j]]]$smooth[[ii]]$X[, pj, drop = FALSE]
+        parametric[[pj]]$xbin.ind <- x[[nx[j]]]$smooth[[ii]]$xbin.ind
+        parametric[[pj]]$xbin.sind <- x[[nx[j]]]$smooth[[ii]]$xbin.sind
+        parametric[[pj]]$xbin.k <- x[[nx[j]]]$smooth[[ii]]$xbin.k
+        parametric[[pj]]$xbin.order <- x[[nx[j]]]$smooth[[ii]]$xbin.order
+        parametric[[pj]]$nobs <- x[[nx[j]]]$smooth[[ii]]$nobs
+        parametric[[pj]]$fixed <- TRUE
+        parametric[[pj]]$weights <- x[[nx[j]]]$smooth[[ii]]$weights
+        parametric[[pj]]$rres <- x[[nx[j]]]$smooth[[ii]]$rres
+        parametric[[pj]]$get.mu <- x[[nx[j]]]$smooth[[ii]]$get.mu
+        parametric[[pj]]$edf <- function(X, g) { return(1) }
+        parametric[[pj]]$state <- list("parameters" = g0[pj])
+        names(parametric[[pj]]$state$parameters) <- "g1"
+        parametric[[pj]]$state$fitted.values <- drop(parametric[[pj]]$X %*% g0[pj])
+        parametric[[pj]]$state$edf <- 1
+        parametric[[pj]]$state$optimize <- FALSE
+        parametric[[pj]]$fixed <- TRUE
+        parametric[[pj]]$is.parametric <- TRUE
+        parametric[[pj]]$selected <- rep(0, length = maxit)
+        parametric[[pj]]$upper <- Inf
+        parametric[[pj]]$lower <- -Inf
+        class(parametric[[pj]]) <- class(x[[nx[j]]]$smooth[[ii]])
+      }
+      save.parametric[[j]] <- x[[nx[j]]]$smooth[[ii]]
+      x[[nx[j]]]$smooth[[ii]] <- NULL
+      x[[nx[j]]]$smooth <- c(parametric, x[[nx[j]]]$smooth)
     }
   }
 
