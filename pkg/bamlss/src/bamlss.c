@@ -1164,7 +1164,7 @@ SEXP cnorm_weights_mu(SEXP y, SEXP mu, SEXP sigma, SEXP check)
   int n = length(y);
   double *yptr = REAL(y);
   double *muptr = REAL(mu);
-  double * sigmaptr = REAL(sigma);
+  double *sigmaptr = REAL(sigma);
   double *rvalptr = REAL(rval);
   int *checkptr = INTEGER(check);
 
