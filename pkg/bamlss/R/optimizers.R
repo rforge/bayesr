@@ -508,7 +508,7 @@ tau2interval <- function(x, lower = .Machine$double.eps^0.25, upper = 1e+10) {
 }
 
 
-get.eta <- function(x)
+get.eta <- function(x, expand = TRUE)
 {
   nx <- names(x)
   np <- length(nx)
@@ -518,7 +518,7 @@ get.eta <- function(x)
     eta[[j]] <- 0
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
       g <- get.state(x[[nx[j]]]$smooth[[sj]], "g")
-      eta[[j]] <- eta[[j]] + as.numeric(x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, g))
+      eta[[j]] <- eta[[j]] + as.numeric(x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, g, expand))
     }
   }
   eta

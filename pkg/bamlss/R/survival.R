@@ -251,7 +251,7 @@ Surv2 <- function(..., obs = NULL, subdivisions = 100)
 {
   require("survival")
   rval <- cbind(as.matrix(Surv(...)), "obs" = obs)
-  class(rval) <- c("Surv")
+  class(rval) <- c("matrix", "Surv2")
   rval
 }
 
@@ -628,7 +628,7 @@ cox2.bamlss <- function(links = c(lambda = "identity", mu = "identity"), ...)
 
 ## Survival models transformer function.
 surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", globalgrid = TRUE,
-  timevar = NULL, idvar = NULL, is.cox = FALSE, alpha = 1, ...)
+  timevar = NULL, idvar = NULL, is.cox = FALSE, alpha = 0.1, ...)
 {
   ntd <- timedependent
   if(!all(ntd %in% names(x)))
@@ -664,7 +664,7 @@ surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", glob
   ## Create the time grid.
   response <- attr(x, "response.vec")
 
-  if(!inherits(response, "Surv"))
+  if(!inherits(response, c("Surv", "Surv2")))
     stop("the response variable is not a 'Surv' object, use function Surv() or Surv2()!")
 
   grid <- function(upper, length){
