@@ -1351,11 +1351,9 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
       resids <- z - eta[[nx[j]]]
 
       for(sj in seq_along(x[[nx[j]]]$smooth)) {
-        eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth[[sj]]$state)
-
         ## Get updated parameters.
         states[[j]][[sj]] <- boost0_iwls(x[[nx[j]]]$smooth[[sj]],
-          family, response, weights, resids + eta[[nx[j]]], nu)
+          family, response, weights, resids, nu)
 
         ## Compute likelihood contribution.
         eta[[nx[j]]] <- eta[[nx[j]]] + fitted(states[[j]][[sj]])
@@ -1367,13 +1365,12 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
     ## Which term to update.
     take <- as.integer(strsplit(sn[which.max(select)], ".", fixed = TRUE)[[1]])
 
-    ## Write to x.
-    eta[[take[1]]] <- eta[[take[1]]] - fitted(x[[take[1]]]$smooth[[take[2]]]$state)
-    x[[take[1]]]$smooth[[take[2]]]$state <- states[[take[1]]][[take[2]]]
-    x[[take[1]]]$smooth[[take[2]]]$selected[iter] <- 1
-
     ## Update selected base learner.
-    eta[[take[1]]] <- eta[[take[1]]] + fitted(x[[take[1]]]$smooth[[take[2]]]$state)
+    eta[[take[1]]] <- eta[[take[1]]] + fitted(states[[take[1]]][[take[2]]])
+
+    ## Write to x.
+    x[[take[1]]]$smooth[[take[2]]]$state <- increase(x[[take[1]]]$smooth[[take[2]]]$state, states[[take[1]]][[take[2]]])
+    x[[take[1]]]$smooth[[take[2]]]$selected[iter] <- 1
 
     edf <- get.edf(x)
 
@@ -1498,7 +1495,7 @@ boost0_iwls <- function(x, family, response, weights, resids, nu, ...)
   }
 
   ## New parameters
-  g <- g0 + nu * drop(P %*% crossprod(x$X, x$rres))
+  g <- nu * drop(P %*% crossprod(x$X, x$rres))
 
   ## Finalize.
   if(!(any(is.na(g)) | any(g %in% c(-Inf, Inf)))) {
@@ -1508,5 +1505,14 @@ boost0_iwls <- function(x, family, response, weights, resids, nu, ...)
   }
 
   return(x$state)
+}
+
+
+increase <- function(state0, state1)
+{
+  g <- get.par(state0$parameters, "g") + get.par(state1$parameters, "g")
+  state0$fitted.values <- fitted(state0) + fitted(state1)
+  state0$parameters <- set.par(state0$parameters, g, "g")
+  state0
 }
 
