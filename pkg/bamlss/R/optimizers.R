@@ -400,7 +400,11 @@ smooth.bamlss.default <- function(x, ...)
     }
   }
   if(is.null(x$edf)) {
-    x$edf <- function(x) {
+    x$edf <- function(x, type = 1) {
+      if(type > 1) {
+        if(!is.null(x$state$edf))
+          return(x$state$edf)
+      }
       tau2 <- get.state(x, "tau2")
       if(x$fixed | !length(tau2)) return(ncol(x$X))
       if(is.null(x$state$XX))
@@ -524,17 +528,34 @@ get.eta <- function(x, expand = TRUE)
   eta
 }
 
-get.edf <- function(x)
+get.edf <- function(x, type = 1)
 {
   nx <- names(x)
   np <- length(nx)
   edf <- 0
   for(j in 1:np) {
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
-      edf <- edf + x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]])
+      edf <- edf + if(type < 2) {
+        x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]])
+      } else x[[nx[j]]]$smooth[[sj]]$state$edf
     }
   }
   edf
+}
+
+get.all.par <- function(x)
+{
+  nx <- names(x)
+  np <- length(nx)
+  edf <- 0
+  par <- list()
+  for(j in 1:np) {
+    par[[j]] <- list()
+    for(sj in seq_along(x[[nx[j]]]$smooth)) {
+      par[[j]][[sj]] <- x[[nx[j]]]$smooth[[sj]]$state$parameters
+    }
+  }
+  par
 }
 
 
@@ -1215,8 +1236,8 @@ bfit_cnorm <- function(x, criterion = c("AICc", "BIC", "AIC"),
 ## Likelihood based boosting.
 boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   nu = 1, maxit = 400, mstop = NULL,
-  verbose = TRUE, digits = 4, tau2 = 10,
-  eps = .Machine$double.eps^0.25, ...)
+  verbose = TRUE, digits = 4, tau2 = 0.01,
+  eps = .Machine$double.eps^0.25, plot = TRUE, ...)
 {
   if(!is.null(mstop))
     maxit <- mstop
@@ -1268,7 +1289,7 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
         parametric[[pj]]$weights <- x[[nx[j]]]$smooth[[ii]]$weights
         parametric[[pj]]$rres <- x[[nx[j]]]$smooth[[ii]]$rres
         parametric[[pj]]$get.mu <- x[[nx[j]]]$smooth[[ii]]$get.mu
-        parametric[[pj]]$edf <- function(X, g) { return(1) }
+        parametric[[pj]]$edf <- function(x, ...) { return(1) }
         parametric[[pj]]$state <- list("parameters" = g0[pj])
         names(parametric[[pj]]$state$parameters) <- "g1"
         parametric[[pj]]$state$fitted.values <- drop(parametric[[pj]]$X %*% g0[pj])
@@ -1293,6 +1314,8 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
       sn <- c(sn, paste(j, sj, sep = "."))
       x[[nx[j]]]$smooth[[sj]]$selected <- rep(0, length = maxit)
+      x[[nx[j]]]$smooth[[sj]]$loglik <- rep(0, length = maxit)
+      x[[nx[j]]]$smooth[[sj]]$state$edf <- 0
       if(length(i <- grep("tau2", names(x[[nx[j]]]$smooth[[sj]]$state$parameters)))) {
         x[[nx[j]]]$smooth[[sj]]$state$parameters[i] <- rep(tau2, length = length(i))
       }
@@ -1327,11 +1350,14 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
     iter <- iter + 1
   }
 
+  ## Initial parameters.
+  parameters <- get.all.par(x)
+
   ## Start boosting.
   eps0 <- 1; iter <- 1
   save.ic <- save.ll <- NULL
   ll <- family$loglik(response, family$map2par(eta))
-  while(iter < maxit) {
+  while(iter <= maxit) {
     eta0 <- eta
 
     ## Cycle through all parameters
@@ -1371,8 +1397,9 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
     ## Write to x.
     x[[take[1]]]$smooth[[take[2]]]$state <- increase(x[[take[1]]]$smooth[[take[2]]]$state, states[[take[1]]][[take[2]]])
     x[[take[1]]]$smooth[[take[2]]]$selected[iter] <- 1
+    x[[take[1]]]$smooth[[take[2]]]$loglik[iter] <- max(select)
 
-    edf <- get.edf(x)
+    edf <- get.edf(x, type = 2)
 
     eps0 <- do.call("cbind", eta)
     eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
@@ -1380,6 +1407,10 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
     peta <- family$map2par(eta)
     IC <- get.ic(family, response, peta, edf, nobs, criterion)
+    if(!is.null(save.ic)) {
+      if(all(IC < save.ic))
+        parameters <- get.all.par(x)
+    }
     ll <- family$loglik(response, peta)
 
     save.ic <- c(save.ic, IC)
@@ -1408,46 +1439,40 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   cat(criterion, "=", save.ic[mstop], "-> at mstop =", mstop, "\n---\n")
   cat("Frequencies\n---\n")
   labels <- NULL
+  ll.contrib <- NULL
   for(j in 1:np) {
     fmat <- rn <- NULL
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
+      x[[nx[j]]]$smooth[[sj]]$state$parameters <- parameters[[j]][[sj]]
       labels <- c(labels, paste(x[[nx[j]]]$smooth[[sj]]$label, nx[j], sep = ":"))
       rn <- c(rn, x[[nx[j]]]$smooth[[sj]]$label)
       fmat <- rbind(fmat, sum(x[[nx[j]]]$smooth[[sj]]$selected) / maxit * 100)
+      ll.contrib <- cbind(ll.contrib, cumsum(x[[nx[j]]]$smooth[[sj]]$loglik))
     }
     rownames(fmat) <- rn
     colnames(fmat) <- paste(nx[j], "% selected")
-    if(length(fmat) < 2) print(fmat) else printCoefmat(fmat, digits = 2)
+    if(length(fmat) < 2) print(round(fmat, digits = 4)) else printCoefmat(fmat, digits = 4)
     if(j != np)
       cat("---\n")
   }
   cat("\n")
 
-  par(mfrow = c(2, 1), mar = c(4.1, 4.1, 4.1, 4.1))
-  col <- rainbow_hcl(2)
-  plot(save.ic, type = "l", xlab = "Iteration", ylab = criterion,
-    main = paste("mstop =", mstop), col = col[1], lwd = 1.5)
-  par(new = TRUE)
-  plot(save.ll, type = "l", xlab = "iteration", ylab = "", col = col[2], lwd = 1.5, axes = FALSE)
-  axis(4)
-  box()
-  mtext("Log. Lik", side = 4, line = 2.5)
-  legend("right", c(criterion, "Log. Lik"), col = col, lwd = 1.5, bg = NA, box.col = NA)
-  plot(c(0, length(select) + 1), c(0, maxit + 1), type = "n", axes = FALSE,
-    xlab = "Term", ylab = "Iteration")
-  axis(1, at = 1:length(select), labels = labels)
-  i <- 1
-  for(j in 1:np) {
-    for(sj in seq_along(x[[nx[j]]]$smooth)) {
-      if(length(yp <- which(x[[nx[j]]]$smooth[[sj]]$selected > 0))) {
-        xp <- rep(i, length = length(yp))
-        points(xp, yp, pch = 4)
-      }
-      i <- i + 1
-    }
+  bamlss.boost.plot <<- function(...) {
+    op <- par(no.readonly = TRUE)
+    on.exit(par(op))
+    par(mfrow = c(1, 2), mar = c(5.1, 4.1, 2.1, 2.1))
+    plot(save.ic, type = "l", xlab = "Iteration", ylab = criterion)
+    abline(v = mstop, lwd = 3, col = "lightgray")
+    axis(3, at = mstop, labels = paste("mstop =", mstop))
+    par(mar = c(5.1, 4.1, 2.1, 10.1))
+    matplot(1:nrow(ll.contrib), ll.contrib, type = "l", lty = 1,
+      xlab = "Iteration", ylab = "LogLik contribution", col = "black")
+    abline(v = mstop, lwd = 3, col = "lightgray")
+    axis(4, at = ll.contrib[nrow(ll.contrib), ], labels = labels, las = 1)
+    axis(3, at = mstop, labels = paste("mstop =", mstop))
   }
-  axis(2)
-  box()
+  if(plot)
+    bamlss.boost.plot()
 
   ## Collect parametric effects.
   for(j in 1:np) {
@@ -1513,6 +1538,7 @@ increase <- function(state0, state1)
   g <- get.par(state0$parameters, "g") + get.par(state1$parameters, "g")
   state0$fitted.values <- fitted(state0) + fitted(state1)
   state0$parameters <- set.par(state0$parameters, g, "g")
+  state0$edf <- state1$edf
   state0
 }
 

@@ -1386,7 +1386,7 @@ null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC")
       sn <- c(sn, paste(nx[j], x[[nx[j]]]$smooth[[sj]]$label, paste("g", 1:length(nhg), sep = ""), sep = "."))
       if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
         nhtau2 <- nh2[grepl("tau2", nh2)]
-        tedf <- x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]])
+        tedf <- x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]], type = 2)
         edf_sm <- cbind(edf_sm, rep(tedf, length = n.samples))
         edf_sm_n <- c(edf_sm_n, paste(nx[j], x[[nx[j]]]$smooth[[sj]]$label, "edf", sep = "."))
         samps[1L, nhtau2] <- get.state(x[[nx[j]]]$smooth[[sj]], "tau2") ##tedf
