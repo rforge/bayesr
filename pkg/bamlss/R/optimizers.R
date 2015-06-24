@@ -1437,20 +1437,22 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
   cat("\n")
   cat(criterion, "=", save.ic[mstop], "-> at mstop =", mstop, "\n---\n")
-  cat("Frequencies\n---\n")
   labels <- NULL
   ll.contrib <- NULL
   for(j in 1:np) {
-    fmat <- rn <- NULL
+    fmat <- rn <- lmat <- NULL
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
       x[[nx[j]]]$smooth[[sj]]$state$parameters <- parameters[[j]][[sj]]
       labels <- c(labels, paste(x[[nx[j]]]$smooth[[sj]]$label, nx[j], sep = ":"))
       rn <- c(rn, x[[nx[j]]]$smooth[[sj]]$label)
-      fmat <- rbind(fmat, sum(x[[nx[j]]]$smooth[[sj]]$selected) / maxit * 100)
+      fmat <- rbind(fmat, sum(x[[nx[j]]]$smooth[[sj]]$selected[1:mstop]) / mstop * 100)
+      lmat <- rbind(lmat, sum(x[[nx[j]]]$smooth[[sj]]$loglik[1:mstop]))
       ll.contrib <- cbind(ll.contrib, cumsum(x[[nx[j]]]$smooth[[sj]]$loglik))
     }
-    rownames(fmat) <- rn
-    colnames(fmat) <- paste(nx[j], "% selected")
+    rownames(fmat) <- rownames(lmat) <- rn
+    fmat <- cbind(fmat, lmat)
+    fmat <- fmat[order(fmat[, 2], decreasing = TRUE), ]
+    colnames(fmat) <- c(paste(nx[j], "% selected"), "LogLik contrib.")
     if(length(fmat) < 2) print(round(fmat, digits = 4)) else printCoefmat(fmat, digits = 4)
     if(j != np)
       cat("---\n")
