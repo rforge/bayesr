@@ -1452,10 +1452,12 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
       lmat[[j]] <- rbind(lmat[[j]], sum(x[[nx[j]]]$smooth[[sj]]$loglik[1:mstop]))
       ll.contrib <- cbind(ll.contrib, cumsum(x[[nx[j]]]$smooth[[sj]]$loglik))
     }
-    rownames(bsum[[j]]) <- rownames(lmat[[j]]) <- rn
+    if(!is.matrix(bsum[[j]])) bsum[[j]] <- matrix(bsum[[j]], nrow = 1)
     bsum[[j]] <- cbind(bsum[[j]], lmat[[j]])
     bsum[[j]] <- bsum[[j]][order(bsum[[j]][, 2], decreasing = TRUE), ]
+    if(!is.matrix(bsum[[j]])) bsum[[j]] <- matrix(bsum[[j]], nrow = 1)
     colnames(bsum[[j]]) <- c(paste(nx[j], "% selected"), "LogLik contrib.")
+    rownames(bsum[[j]]) <- rownames(lmat[[j]]) <- rn
     if(verbose) {
       if(length(bsum[[j]]) < 2) print(round(bsum[[j]], digits = 4)) else printCoefmat(bsum[[j]], digits = 4)
       if(j != np)
