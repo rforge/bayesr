@@ -99,6 +99,10 @@ stacker <- function(x, optimizer = bfit0, sampler = samplerJAGS, ...)
 {
   if(is.function(optimizer) | is.character(optimizer))
     optimizer <- list(optimizer)
+  if(is.integer(sampler) | is.numeric(sampler)) {
+    n.samples <- as.integer(sampler)
+    sampler <- function(x, ...) { null.sampler(x, n.samples = n.samples) }
+  }
   if(is.null(sampler))
     sampler <- null.sampler
   if(is.function(sampler) | is.character(sampler))
@@ -278,8 +282,21 @@ parse.input.bamlss <- function(formula, data = NULL, family = gaussian.bamlss,
   ## Parse family object.
   family <- bamlss.family(family)
 
+  ## Complete dot in formula.
+  formula <- c(formula, formula2)
+  if(!is.null(data)) {
+    for(j in 1:length(formula)) {
+      fc <- as.character(if(length(formula[[j]]) > 2) formula[[j]][3] else formula[[j]][2])
+      if(fc == ".") {
+        rhs <- paste(names(data)[names(data) != as.character(formula[[1]][2])], collapse = "+")
+        fc <- as.character(if(length(formula[[j]]) > 2) formula[[j]][2] else "")
+        formula[[j]] <- as.formula(paste(fc, rhs, sep = "~"))
+      }
+    }
+  }
+
   ## Parse formula
-  formula <- bamlss.formula(c(formula, formula2), specials, family)
+  formula <- bamlss.formula(formula, specials, family)
   formula0 <- attr(formula, "formula0")
 
   ## Create the model frame.
