@@ -9,6 +9,9 @@ xreg <- function(formula, family = gaussian.bamlss, data = NULL, knots = NULL,
   setup = setupJAGS, engine = samplerJAGS, results = resultsJAGS,
   cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, grid = 100, ...)
 {
+  ## The environment.
+  ef <- environment(if(is.list(formula)) formula[[1]] else formula)
+
   ## Setup all processing functions.
   if(is.null(transform))
     transform <- function(x) { x }
@@ -42,6 +45,7 @@ xreg <- function(formula, family = gaussian.bamlss, data = NULL, knots = NULL,
   pm$parse.input <- pm$setup <- pm$samples <- pm$results <- NULL
   pm[[1]] <- as.name(functions$parse.input)
   pm <- eval(pm, parent.frame())
+  attr(pm, "environment") <- new.env(parent = ef)
   formula <- attr(pm, "formula0")
 
   ## Transform inputs.
@@ -82,6 +86,7 @@ xreg <- function(formula, family = gaussian.bamlss, data = NULL, knots = NULL,
   attr(rval, "family") <- attr(pm, "family")
   attr(rval, "formula") <- formula
   attr(rval, "call") <- match.call()
+  attr(rval, "environment") <- attr(pm, "environment")
 
   rval
 }
@@ -332,6 +337,7 @@ parse.input.bamlss <- function(formula, data = NULL, family = gaussian.bamlss,
   attr(rval, "grid") <- grid
   attr(rval, "model.frame") <- mf
   attr(rval, "formula0") <- formula0
+  attr(rval, "environment") <- new.env(parent = .GlobalEnv)
 
   class(rval) <- c("bamlss.input", "list")
 

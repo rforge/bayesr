@@ -1236,7 +1236,7 @@ bfit_cnorm <- function(x, criterion = c("AICc", "BIC", "AIC"),
 ## Likelihood based boosting.
 boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   nu = 1, maxit = 400, mstop = NULL,
-  verbose = TRUE, digits = 4, tau2 = 0.01,
+  verbose = TRUE, digits = 4, tau2 = 100,
   eps = .Machine$double.eps^0.25, plot = TRUE, ...)
 {
   if(!is.null(mstop))
@@ -1435,31 +1435,42 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
   mstop <- which.min(save.ic)
 
-  cat("\n")
-  cat(criterion, "=", save.ic[mstop], "-> at mstop =", mstop, "\n---\n")
+  if(verbose) {
+    cat("\n")
+    cat(criterion, "=", save.ic[mstop], "-> at mstop =", mstop, "\n---\n")
+  }
   labels <- NULL
   ll.contrib <- NULL
+  bsum <- lmat <- vector(mode = "list", length = np)
   for(j in 1:np) {
-    fmat <- rn <- lmat <- NULL
+    rn <- NULL
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
       x[[nx[j]]]$smooth[[sj]]$state$parameters <- parameters[[j]][[sj]]
       labels <- c(labels, paste(x[[nx[j]]]$smooth[[sj]]$label, nx[j], sep = ":"))
       rn <- c(rn, x[[nx[j]]]$smooth[[sj]]$label)
-      fmat <- rbind(fmat, sum(x[[nx[j]]]$smooth[[sj]]$selected[1:mstop]) / mstop * 100)
-      lmat <- rbind(lmat, sum(x[[nx[j]]]$smooth[[sj]]$loglik[1:mstop]))
+      bsum[[j]] <- rbind(bsum[[j]], sum(x[[nx[j]]]$smooth[[sj]]$selected[1:mstop]) / mstop * 100)
+      lmat[[j]] <- rbind(lmat[[j]], sum(x[[nx[j]]]$smooth[[sj]]$loglik[1:mstop]))
       ll.contrib <- cbind(ll.contrib, cumsum(x[[nx[j]]]$smooth[[sj]]$loglik))
     }
-    rownames(fmat) <- rownames(lmat) <- rn
-    fmat <- cbind(fmat, lmat)
-    fmat <- fmat[order(fmat[, 2], decreasing = TRUE), ]
-    colnames(fmat) <- c(paste(nx[j], "% selected"), "LogLik contrib.")
-    if(length(fmat) < 2) print(round(fmat, digits = 4)) else printCoefmat(fmat, digits = 4)
-    if(j != np)
-      cat("---\n")
+    rownames(bsum[[j]]) <- rownames(lmat[[j]]) <- rn
+    bsum[[j]] <- cbind(bsum[[j]], lmat[[j]])
+    bsum[[j]] <- bsum[[j]][order(bsum[[j]][, 2], decreasing = TRUE), ]
+    colnames(bsum[[j]]) <- c(paste(nx[j], "% selected"), "LogLik contrib.")
+    if(verbose) {
+      if(length(bsum[[j]]) < 2) print(round(bsum[[j]], digits = 4)) else printCoefmat(bsum[[j]], digits = 4)
+      if(j != np)
+        cat("---\n")
+    }
   }
-  cat("\n")
+  if(verbose) cat("\n")
 
-  bamlss.boost.plot <<- function(...) {
+  colnames(ll.contrib) <- labels
+  names(bsum) <- nx
+  bsum <- list("summary" = bsum, "mstop" = mstop, "criterion" = criterion,
+    "ic" = save.ic, "loglik" = ll.contrib)
+  assign("boost.summary", bsum, envir = attr(x, "environment"))
+
+  if(plot) {
     op <- par(no.readonly = TRUE)
     on.exit(par(op))
     par(mfrow = c(1, 2), mar = c(5.1, 4.1, 2.1, 2.1))
@@ -1473,8 +1484,6 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
     axis(4, at = ll.contrib[nrow(ll.contrib), ], labels = labels, las = 1)
     axis(3, at = mstop, labels = paste("mstop =", mstop))
   }
-  if(plot)
-    bamlss.boost.plot()
 
   ## Collect parametric effects.
   for(j in 1:np) {
@@ -1535,6 +1544,7 @@ boost0_iwls <- function(x, family, response, weights, resids, nu, ...)
 }
 
 
+## Increase coeffiecients.
 increase <- function(state0, state1)
 {
   g <- get.par(state0$parameters, "g") + get.par(state1$parameters, "g")
@@ -1542,5 +1552,41 @@ increase <- function(state0, state1)
   state0$parameters <- set.par(state0$parameters, g, "g")
   state0$edf <- state1$edf
   state0
+}
+
+
+## Smallish summary function.
+sboost <- function(object, plot = TRUE, ...)
+{
+  bs <- get("boost.summary", envir = attr(object, "environment"))
+  np <- length(bs$summary)
+
+  cat("\n")
+  cat(bs$criterion, "=", bs$ic[bs$mstop], "-> at mstop =", bs$mstop, "\n---\n")
+  for(j in 1:np) {
+    if(length(bs$summary[[j]]) < 2) {
+      print(round(bs$summary[[j]], digits = 4))
+    } else printCoefmat(bs$summary[[j]], digits = 4)
+    if(j != np)
+      cat("---\n")
+  }
+  cat("\n")
+
+  if(plot) {
+    op <- par(no.readonly = TRUE)
+    on.exit(par(op))
+    par(mfrow = c(1, 2), mar = c(5.1, 4.1, 2.1, 2.1))
+    plot(bs$ic, type = "l", xlab = "Iteration", ylab = bs$criterion)
+    abline(v = bs$mstop, lwd = 3, col = "lightgray")
+    axis(3, at = bs$mstop, labels = paste("mstop =", bs$mstop))
+    par(mar = c(5.1, 4.1, 2.1, 10.1))
+    matplot(1:nrow(bs$loglik), bs$loglik, type = "l", lty = 1,
+      xlab = "Iteration", ylab = "LogLik contribution", col = "black")
+    abline(v = bs$mstop, lwd = 3, col = "lightgray")
+    axis(4, at = bs$loglik[nrow(bs$loglik), ], labels = colnames(bs$loglik), las = 1)
+    axis(3, at = bs$mstop, labels = paste("mstop =", bs$mstop))
+  }
+
+  return(invisible(bs))
 }
 
