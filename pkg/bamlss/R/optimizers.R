@@ -1235,7 +1235,7 @@ bfit_cnorm <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
 ## Likelihood based boosting.
 boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
-  nu = 1, maxit = 400, mstop = NULL,
+  nu = 1, maxit = 400, mstop = NULL, best = TRUE,
   verbose = TRUE, digits = 4, tau2 = 100,
   eps = .Machine$double.eps^0.25, plot = TRUE, ...)
 {
@@ -1407,7 +1407,7 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
     peta <- family$map2par(eta)
     IC <- get.ic(family, response, peta, edf, nobs, criterion)
-    if(!is.null(save.ic)) {
+    if(!is.null(save.ic) & best) {
       if(all(IC < save.ic))
         parameters <- get.all.par(x)
     }
@@ -1434,6 +1434,8 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   if(verbose) cat("\n")
 
   mstop <- which.min(save.ic)
+  if(!best)
+    parameters <- get.all.par(x)
 
   if(verbose) {
     cat("\n")
