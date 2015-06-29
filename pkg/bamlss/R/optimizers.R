@@ -40,7 +40,7 @@
 ## state list, as this could vary for special terms. A default
 ## method is provided.
 bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AICc", "BIC", "AIC"),
-  nu = 0.1, coefficients = NULL, ...)
+  nu = 0.1, coefficients = NULL, df = NULL, ...)
 {
   if(!is.null(attr(x, "bamlss.setup"))) return(x)
 
@@ -145,6 +145,7 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
             }
           }
           x$smooth[[j]] <- smooth.bamlss(x$smooth[[j]])
+          x$smooth[[j]] <- assign.df(x$smooth[[j]], df)
           if(!is.null(x$smooth[[j]]$xt$update))
             x$smooth[[j]]$update <- x$smooth[[j]]$xt$update
           if(is.null(x$smooth[[j]]$update)) {
@@ -498,7 +499,7 @@ tau2interval <- function(x, lower = .Machine$double.eps^0.25, upper = 1e+10) {
   XX <- crossprod(x$X)
   if(length(x$S) < 2) {
     objfun <- function(tau2, value) {
-      df <- sum(diag(matrix_inv(XX + if(x$fixed) 0 else 1 / tau2 * x$S[[1]]) %*% XX))
+      df <- sum(diag(XX %*% matrix_inv(XX + if(x$fixed) 0 else 1 / tau2 * x$S[[1]])))
       return((value - df)^2)
     }
     le <- try(optimize(objfun, c(lower, upper), value = 1)$minimum, silent = TRUE)
@@ -509,6 +510,33 @@ tau2interval <- function(x, lower = .Machine$double.eps^0.25, upper = 1e+10) {
   } else {
     return(rep(list(c(lower, upper)), length.out = length(x$S)))
   }
+}
+
+
+## Assign degrees of freedom.
+assign.df <- function(x, df) {
+  tau2 <- get.par(x$state$parameters, "tau2")
+  if(x$fixed | !length(tau2))
+    return(x)
+  df <- if(is.null(x$xt$df)) df else x$xt$df
+  if(is.null(df))
+    return(x)
+  if(length(tau2) > 1)
+    return(x)
+  if(df > ncol(x$X))
+    df <- ncol(x$X)
+  if(df < 1)
+    df <- 1
+  XX <- crossprod(x$X)
+  objfun <- function(tau2) {
+    edf <- sum(diag(XX %*% matrix_inv(XX + 1 / tau2 * x$S[[1]])))
+    return((df - edf)^2)
+  }
+  tau2 <- try(optimize(objfun, c(.Machine$double.eps^0.25, 1e+10))$minimum, silent = TRUE)
+  if(inherits(tau2, "try-error"))
+    return(x)
+  x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
+  return(x)
 }
 
 
@@ -901,7 +929,7 @@ bfit0_iwls <- function(x, family, response, eta, id, ...)
   if(any(is.na(g)) | any(g %in% c(-Inf, Inf)))
     x$state$parameters <- set.par(x$state$parameters, rep(0, length(x$state$g)), "g")
   x$state$fitted.values <- x$get.mu(x$X, get.state(x, "g"))
-  x$state$edf <- sum(diag(P %*% XWX))
+  x$state$edf <- sum(diag(XWX %*% P))
 
   return(x$state)
 }
@@ -1289,7 +1317,6 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
         parametric[[pj]]$weights <- x[[nx[j]]]$smooth[[ii]]$weights
         parametric[[pj]]$rres <- x[[nx[j]]]$smooth[[ii]]$rres
         parametric[[pj]]$get.mu <- x[[nx[j]]]$smooth[[ii]]$get.mu
-        parametric[[pj]]$edf <- function(x, ...) { return(1) }
         parametric[[pj]]$state <- list("parameters" = g0[pj])
         names(parametric[[pj]]$state$parameters) <- "g1"
         parametric[[pj]]$state$fitted.values <- drop(parametric[[pj]]$X %*% g0[pj])
@@ -1316,6 +1343,9 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
       x[[nx[j]]]$smooth[[sj]]$selected <- rep(0, length = maxit)
       x[[nx[j]]]$smooth[[sj]]$loglik <- rep(0, length = maxit)
       x[[nx[j]]]$smooth[[sj]]$state$edf <- 0
+      x[[nx[j]]]$smooth[[sj]]$state$S <- diag(0, nrow(x[[nx[j]]]$smooth[[sj]]$X))
+      x[[nx[j]]]$smooth[[sj]]$state$H <- diag(0, nrow(x[[nx[j]]]$smooth[[sj]]$X))
+      x[[nx[j]]]$smooth[[sj]]$state$S0 <- diag(nrow(x[[nx[j]]]$smooth[[sj]]$X))
       if(length(i <- grep("tau2", names(x[[nx[j]]]$smooth[[sj]]$state$parameters)))) {
         x[[nx[j]]]$smooth[[sj]]$state$parameters[i] <- rep(tau2, length = length(i))
       }
@@ -1383,7 +1413,7 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
         ## Compute likelihood contribution.
         eta[[nx[j]]] <- eta[[nx[j]]] + fitted(states[[j]][[sj]])
-        select[paste(j, sj, sep = ".")] <- -2 * (ll - family$loglik(response, family$map2par(eta)))
+        select[paste(j, sj, sep = ".")] <- -1 * (ll - family$loglik(response, family$map2par(eta)))
         eta[[nx[j]]] <- eta0[[nx[j]]]
       }
     }
@@ -1456,10 +1486,10 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
     }
     if(!is.matrix(bsum[[j]])) bsum[[j]] <- matrix(bsum[[j]], nrow = 1)
     bsum[[j]] <- cbind(bsum[[j]], lmat[[j]])
-    bsum[[j]] <- bsum[[j]][order(bsum[[j]][, 2], decreasing = TRUE), ]
     if(!is.matrix(bsum[[j]])) bsum[[j]] <- matrix(bsum[[j]], nrow = 1)
     colnames(bsum[[j]]) <- c(paste(nx[j], "% selected"), "LogLik contrib.")
     rownames(bsum[[j]]) <- rownames(lmat[[j]]) <- rn
+    bsum[[j]] <- bsum[[j]][order(bsum[[j]][, 2], decreasing = TRUE), , drop = FALSE]
     if(verbose) {
       if(length(bsum[[j]]) < 2) print(round(bsum[[j]], digits = 4)) else printCoefmat(bsum[[j]], digits = 4)
       if(j != np)
@@ -1516,14 +1546,12 @@ boost0_iwls <- function(x, family, response, weights, resids, nu, ...)
 {
   args <- list(...)
 
-  ## Old parameters.
-  g0 <- get.par(x$state$parameters, "gamma")
-
   ## Compute reduced residuals.
   xbin.fun(x$xbin.sind, weights, resids, x$weights, x$rres, x$xbin.order)
 
   ## Compute mean and precision.
-  XWX <- crossprod(x$X, x$X * x$weights)
+  XW <- x$X * x$weights
+  XWX <- crossprod(x$X, XW)
   if(x$fixed) {
     P <- matrix_inv(XWX)
   } else {
@@ -1537,12 +1565,15 @@ boost0_iwls <- function(x, family, response, weights, resids, nu, ...)
   ## New parameters
   g <- nu * drop(P %*% crossprod(x$X, x$rres))
 
+  ## Actual smoother matrix.
+  x$state$S0 <- x$state$S0 * (diag(nrow(x$X)) - x$state$S)
+  x$state$S <- XW %*% P %*% t(XW) %*% x$state$S0
+  x$state$H <- x$state$H + x$state$S
+
   ## Finalize.
-  if(!(any(is.na(g)) | any(g %in% c(-Inf, Inf)))) {
-    x$state$parameters <- set.par(x$state$parameters, g, "g")
-    x$state$fitted.values <- x$get.mu(x$X, get.state(x, "g"))
-    x$state$edf <- sum(diag(P %*% XWX))
-  }
+  x$state$parameters <- set.par(x$state$parameters, g, "g")
+  x$state$fitted.values <- x$get.mu(x$X, get.state(x, "g"))
+  x$state$edf <- sum(diag(x$state$H))
 
   return(x$state)
 }

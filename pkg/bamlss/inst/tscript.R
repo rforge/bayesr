@@ -309,3 +309,29 @@ nd$p2 <- predict(b2, newdata = nd)
 
 print(nd)
 
+
+
+## Boost
+     set.seed(1907)
+     x1 <- rnorm(1000)
+     x2 <- rnorm(1000)
+     x3 <- rnorm(1000)
+     x4 <- rnorm(1000)
+     x5 <- rnorm(1000)
+     x6 <- rnorm(1000)
+     mu    <- 1.5 +1 * x1 +0.5 * x2 -0.5 * x3 -1 * x4
+     sigma <- exp(-0.4 * x3 -0.2 * x4 +0.2 * x5 +0.4 * x6)
+     y <- numeric(1000)
+     for( i in 1:1000)
+         y[i] <- rnorm(1, mean = mu[i], sd = sigma[i])
+     dat <- data.frame(x1, x2, x3, x4, x5, x6, y)
+     
+     ### linear model with y ~ . for both components: 400 boosting iterations
+     model <- glmboostLSS(y ~ ., families = GaussianLSS(), data = dat,
+                          control = boost_control(mstop = 400),
+                          center = TRUE)
+
+b <- bamlss(y ~ ., ~., data = dat, sampler = NULL, optimizer = boost0)
+
+
+
