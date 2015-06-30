@@ -3406,7 +3406,8 @@ fitted.bamlss <- function(object, model = NULL, term = NULL,
       if(type != "link" & !h1check)
         rval[[j]] <- apply(rval[[j]], 2, make.link2(family$links[if(one) 1 else nrval[j]])$linkinv)
       if(!h1check) {
-        rval[[j]] <- t(apply(rval[[j]], 1, FUN))
+        if(!is.null(dim(rval[[j]])))
+          rval[[j]] <- t(apply(rval[[j]], 1, FUN))
         if(!is.null(dim(rval[[j]]))) {
           if(nrow(rval[[j]]) == 1) {
             rval[[j]] <- drop(rval[[j]])
