@@ -1475,14 +1475,13 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
       x[[nx[j]]]$smooth[[sj]]$state$parameters <- parameters[[j]][[sj]]
       g <- get.par(x[[nx[j]]]$smooth[[sj]]$state$parameters, "g")
-      if(all(g == 0)) {
-        x[[nx[j]]]$smooth[[sj]]$state$edf <- 0
-      }
       if(!is.null(tau2 <- attr(x[[nx[j]]]$smooth[[sj]]$state$parameters, "true.tau2"))) {
         x[[nx[j]]]$smooth[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth[[sj]]$state$parameters,
           tau2, "tau2")
       }
       x[[nx[j]]]$smooth[[sj]]$state$edf <- attr(x[[nx[j]]]$smooth[[sj]]$state$parameters, "edf")
+      if(is.null(x[[nx[j]]]$smooth[[sj]]$state$edf))
+        x[[nx[j]]]$smooth[[sj]]$state$edf <- 0
       labels <- c(labels, paste(x[[nx[j]]]$smooth[[sj]]$label, nx[j], sep = ":"))
       rn <- c(rn, x[[nx[j]]]$smooth[[sj]]$label)
       bsum[[j]] <- rbind(bsum[[j]], sum(x[[nx[j]]]$smooth[[sj]]$selected[1:mstop]) / mstop * 100)

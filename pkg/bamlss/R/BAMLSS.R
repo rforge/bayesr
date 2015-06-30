@@ -1213,7 +1213,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
       rval
     }
   }
-  if(inherits(x, "mgcv.smooth")) {
+  if(inherits(x, "mgcv.smooth") & nrow(psamples) > 39L) {
     smf <- quick_quantiles(X, psamples)
   } else {
     if(nt < 2) {
