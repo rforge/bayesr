@@ -1401,7 +1401,9 @@ null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC")
   colnames(edf_sm) <- edf_sm_n
   colnames(samps) <- sn
   samps <- cbind(samps, edf_sm)
-  IC <- as.numeric(get.ic(family, response, family$map2par(eta), edf, length(eta[[1L]]), criterion))
+  IC <- try(as.numeric(get.ic(family, response, family$map2par(eta), edf, length(eta[[1L]]), criterion)))
+  if(inherits(IC, "try-error"))
+    IC <- NA
   samps <- cbind(samps, IC, edf)
   colnames(samps)[(ncol(samps) - 1):ncol(samps)] <- c(criterion, "save.edf")
 
