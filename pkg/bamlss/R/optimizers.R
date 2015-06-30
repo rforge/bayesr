@@ -536,6 +536,7 @@ assign.df <- function(x, df) {
   if(inherits(tau2, "try-error"))
     return(x)
   x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
+  x$state$edf <- df
   return(x)
 }
 
@@ -1263,8 +1264,8 @@ bfit_cnorm <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
 ## Likelihood based boosting.
 boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
-  nu = 1, maxit = 400, mstop = NULL, best = TRUE,
-  verbose = TRUE, digits = 4, tau2 = 100,
+  nu = 1, df = 4, maxit = 100, mstop = NULL, best = TRUE,
+  verbose = TRUE, digits = 4,
   eps = .Machine$double.eps^0.25, plot = TRUE, ...)
 {
   if(!is.null(mstop))
@@ -1290,6 +1291,7 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   for(j in 1:np) {
     states[[j]] <- list()
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
+      x[[nx[j]]]$smooth[[sj]] <- assign.df(x[[nx[j]]]$smooth[[sj]], df)
       if(is.null(x[[nx[j]]]$smooth[[sj]]$sp) & !x[[nx[j]]]$smooth[[sj]]$fixed) {
         x[[nx[j]]]$smooth[[sj]]$old.optimize <- x[[nx[j]]]$smooth[[sj]]$state$optimize
         x[[nx[j]]]$smooth[[sj]]$state$optimize <- FALSE
@@ -1320,7 +1322,7 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
         parametric[[pj]]$state <- list("parameters" = g0[pj])
         names(parametric[[pj]]$state$parameters) <- "g1"
         parametric[[pj]]$state$fitted.values <- drop(parametric[[pj]]$X %*% g0[pj])
-        parametric[[pj]]$state$edf <- 1
+        parametric[[pj]]$state$edf <- 0
         parametric[[pj]]$state$optimize <- FALSE
         parametric[[pj]]$fixed <- TRUE
         parametric[[pj]]$is.parametric <- TRUE
@@ -1343,12 +1345,6 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
       x[[nx[j]]]$smooth[[sj]]$selected <- rep(0, length = maxit)
       x[[nx[j]]]$smooth[[sj]]$loglik <- rep(0, length = maxit)
       x[[nx[j]]]$smooth[[sj]]$state$edf <- 0
-      x[[nx[j]]]$smooth[[sj]]$state$S <- diag(0, nrow(x[[nx[j]]]$smooth[[sj]]$X))
-      x[[nx[j]]]$smooth[[sj]]$state$H <- diag(0, nrow(x[[nx[j]]]$smooth[[sj]]$X))
-      x[[nx[j]]]$smooth[[sj]]$state$S0 <- diag(nrow(x[[nx[j]]]$smooth[[sj]]$X))
-      if(length(i <- grep("tau2", names(x[[nx[j]]]$smooth[[sj]]$state$parameters)))) {
-        x[[nx[j]]]$smooth[[sj]]$state$parameters[i] <- rep(tau2, length = length(i))
-      }
     }
   }
   select <- rep(0, length(sn))
@@ -1478,6 +1474,15 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
     rn <- NULL
     for(sj in seq_along(x[[nx[j]]]$smooth)) {
       x[[nx[j]]]$smooth[[sj]]$state$parameters <- parameters[[j]][[sj]]
+      g <- get.par(x[[nx[j]]]$smooth[[sj]]$state$parameters, "g")
+      if(all(g == 0)) {
+        x[[nx[j]]]$smooth[[sj]]$state$edf <- 0
+      }
+      if(!is.null(tau2 <- attr(x[[nx[j]]]$smooth[[sj]]$state$parameters, "true.tau2"))) {
+        x[[nx[j]]]$smooth[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth[[sj]]$state$parameters,
+          tau2, "tau2")
+      }
+      x[[nx[j]]]$smooth[[sj]]$state$edf <- attr(x[[nx[j]]]$smooth[[sj]]$state$parameters, "edf")
       labels <- c(labels, paste(x[[nx[j]]]$smooth[[sj]]$label, nx[j], sep = ":"))
       rn <- c(rn, x[[nx[j]]]$smooth[[sj]]$label)
       bsum[[j]] <- rbind(bsum[[j]], sum(x[[nx[j]]]$smooth[[sj]]$selected[1:mstop]) / mstop * 100)
@@ -1544,7 +1549,9 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 ## Boosting iwls.
 boost0_iwls <- function(x, family, response, weights, resids, nu, ...)
 {
-  args <- list(...)
+  ## Initial parameters and fit.
+  g0 <- get.par(x$state$parameters, "g")
+  fit0 <- fitted(x$state)
 
   ## Compute reduced residuals.
   xbin.fun(x$xbin.sind, weights, resids, x$weights, x$rres, x$xbin.order)
@@ -1562,18 +1569,58 @@ boost0_iwls <- function(x, family, response, weights, resids, nu, ...)
     P <- matrix_inv(XWX + S)
   }
 
-  ## New parameters
+  ## New parameters.
   g <- nu * drop(P %*% crossprod(x$X, x$rres))
-
-  ## Actual smoother matrix.
-  x$state$S0 <- x$state$S0 * (diag(nrow(x$X)) - x$state$S)
-  x$state$S <- XW %*% P %*% t(XW) %*% x$state$S0
-  x$state$H <- x$state$H + x$state$S
 
   ## Finalize.
   x$state$parameters <- set.par(x$state$parameters, g, "g")
   x$state$fitted.values <- x$get.mu(x$X, get.state(x, "g"))
-  x$state$edf <- sum(diag(x$state$H))
+
+  ## Find edf.
+  xbin.fun(x$xbin.sind, weights, resids + fit0 + fitted(x$state), x$weights, x$rres, x$xbin.order)
+
+  XW <- x$X * x$weights
+  XWX <- crossprod(x$X, XW)
+  if(x$fixed) {
+    P <- matrix_inv(XWX)
+  } else {
+    g0 <- g0 + g
+
+    objfun <- function(tau2) {
+      S <- 0
+      for(j in seq_along(x$S))
+        S <- S + 1 / tau2[j] * x$S[[j]]
+      P <- matrix_inv(XWX + S)
+      g1 <- drop(P %*% crossprod(x$X, x$rres))
+      sum((g1 - g0)^2)
+    }
+
+    if(length(get.state(x, "tau2")) < 2) {
+      tau2 <- try(optimize(objfun, interval = x$state$interval)$minimum, silent = TRUE)
+      if(inherits(tau2, "try-error"))
+        tau2 <- optimize2(objfun, interval = x$state$interval, grid = x$state$grid)$minimum
+    } else {
+      i <- grep("tau2", names(x$lower))
+      tau2 <- if(!is.null(x$state$true.tau2)) x$state$true.tau2 else get.state(x, "tau2")
+      opt <- try(optim(tau2, fn = objfun, method = "L-BFGS-B",
+        lower = x$lower[i], upper = x$upper[i]), silent = TRUE)
+      if(!inherits(opt, "try-error"))
+        tau2 <- opt$par
+    }
+    if(inherits(tau2, "try-error"))
+      stop(paste("problem in finding optimum smoothing parameter for term ", x$label, "!", sep = ""))
+
+    attr(x$state$parameters, "true.tau2") <- tau2
+
+    S <- 0
+    for(j in seq_along(x$S))
+      S <- S + 1 / tau2[j] * x$S[[j]]
+    P <- matrix_inv(XWX + S)
+  }
+
+  ## Assign degrees of freedom.
+  x$state$edf <- sum(diag(XWX %*% P))
+  attr(x$state$parameters, "edf") <- x$state$edf
 
   return(x$state)
 }
@@ -1586,6 +1633,8 @@ increase <- function(state0, state1)
   state0$fitted.values <- fitted(state0) + fitted(state1)
   state0$parameters <- set.par(state0$parameters, g, "g")
   state0$edf <- state1$edf
+  attr(state0$parameters, "true.tau2") <- attr(state1$parameters, "true.tau2")
+  attr(state0$parameters, "edf") <- attr(state1$parameters, "edf")
   state0
 }
 
