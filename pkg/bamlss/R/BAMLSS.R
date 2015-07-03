@@ -2798,7 +2798,10 @@ plot.bamlss.effect.default <- function(x, ...) {
           do.call("plotmap", delete.args("plotmap", args,
             not = c("border", "lwd", "lty", names(formals("colorlegend")), "main")))
         } else {
-          do.call("plotblock", args)
+          if(is.null(args$ylab))
+            args$ylab <- attr(x, "specs")$label
+          do.call("plotblock", delete.args("plotblock", args,
+            c("xlim", "ylim", "pch", "main", "xlab", "ylab", "lwd", "axes", "add")))
         }
       }
     } else {
@@ -2818,7 +2821,7 @@ plot.bamlss.effect.default <- function(x, ...) {
         do.call("plot3d", delete.args("plot3d", args,
           c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab", "ticktype",
           "zlab", "phi", "theta", "r", "d", "scale", "range", "lrange", "pos", "image.map",
-          "symmetric", "border")))
+          "symmetric", "border", "lwd")))
       }
     }
   }

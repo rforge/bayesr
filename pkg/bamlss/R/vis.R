@@ -623,7 +623,7 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
 plotblock <- function(x, residuals = FALSE, range = c(0.3, 0.3), 
   col.residuals = "black", col.lines = "black", c.select = NULL, 
   fill.select = NULL , col.polygons = NULL, data = NULL,
-  shift = NULL, trans = NULL, ...)
+  shift = NULL, trans = NULL, labels = NULL, ...)
 {
   if(is.null(x))
     return(invisible(NULL))
@@ -642,8 +642,10 @@ plotblock <- function(x, residuals = FALSE, range = c(0.3, 0.3),
       stop("formula is specified wrong!")
   }
   is.bayesx <- grepl(".bayesx", class(x))[1L]
-  if(is.data.frame(x))
-    x <- df2m(x)
+  if(is.data.frame(x)) {
+    labels <- as.character(x[, 1])
+    x <- cbind(as.integer(x[, 1]), as.matrix(x[, -1]))
+  }
   if(!is.list(x) && !is.matrix(x))
     stop("x must be a matrix!")
   if(!is.list(x) && ncol(x) < 2L)
@@ -698,10 +700,10 @@ plotblock <- function(x, residuals = FALSE, range = c(0.3, 0.3),
     if(is.null(e <- attr(x, "partial.resids")))
       residuals <- FALSE
     xu <- unique(x[,1L])
-    n <- length(xu)
+    n <- length(xu)      
     effects <- vector("list", n)
     for(i in 1L:n) {
-      effects[[i]] <- x[x[,1L] == xu[i], c.select]
+      effects[[i]] <- x[x[,1L] == xu[i], c.select, drop = FALSE]
       if(!is.matrix(effects[[i]]))
         effects[[i]] <- matrix(effects[[i]], nrow = 1L)
       if(!is.matrix(effects[[i]]))
@@ -767,6 +769,8 @@ plotblock <- function(x, residuals = FALSE, range = c(0.3, 0.3),
       ylim <- c(ylim, x[[i]][,2L:ncol(x[[i]])])
     }
   }
+  if(!is.null(labels))
+    labels <- rep(labels, length.out = length(x))
   if(is.null(args$xlim))
     args$xlim <- c(0.5, n + 0.5)
   if(is.null(args$ylim))
@@ -792,11 +796,15 @@ plotblock <- function(x, residuals = FALSE, range = c(0.3, 0.3),
   args$pb <- TRUE
   for(i in 1L:n) {
     args$x.co <- i
+    if(length(unique(x[[i]][, -1])) < 2) {
+      xvals <- sort(jitter(x[[i]][, -1], factor = .Machine$double.eps^0.5))
+      x[[i]][, 2:ncol(x[[i]])] <- xvals
+    }
     args$x <- x[[i]]
     if(!is.null(attr(args$x, "partial.resids")))
       attr(args$x, "partial.resids")[,1L] <- i
     do.call(plot2d.default, delete.args(plot2d.default, args))
-    axn[i] <- colnames(x[[i]])[1L]
+    axn[i] <- if(is.null(labels)) colnames(x[[i]])[1L] else labels[i]
   }
   if(is.null(args$type))
     box()
