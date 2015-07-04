@@ -671,7 +671,14 @@ bamlss.formula <- function(formula, specials = NULL, family = gaussian.bamlss())
   complete_formula <- function(formula) {
     if(length(formula) < length(family$names))
       formula <- c(formula, rep(list(), length = length(family$names) - length(formula)))
-    names(formula) <- family$names
+    fn <- NULL
+    for(j in seq_along(formula))
+      fn <- c(fn, as.character(formula[[j]])[2])
+    fn[fn %in% c("1", "-1")] <- NA
+    nas <- which(is.na(fn))
+    fn[nas] <- family$names[nas]
+    fn[1] <- family$names[1]
+    names(formula) <- fn
     if(any(i <- is.na(names(formula))))
       names(formula)[i] <- family$names[i]
     for(j in family$names) {
