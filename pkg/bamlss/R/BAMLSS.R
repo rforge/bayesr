@@ -2825,10 +2825,33 @@ plot.bamlss.effect.default <- function(x, ...) {
       if(inherits(x, "random.effect")) {
         do.call("bamlss_random_plot", args)
       } else {
-        do.call("plot3d", delete.args("plot3d", args,
-          c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab", "ticktype",
-          "zlab", "phi", "theta", "r", "d", "scale", "range", "lrange", "pos", "image.map",
-          "symmetric", "border", "lwd")))
+        specs <- attr(x, "specs")
+        isf <- sapply(args$x[, specs$term], is.factor)
+        if(any(isf)) {
+          xd <- args$x[, specs$term]
+          fx <- unlist(args$x[, grepl("50%", colnames(args$x), fixed = TRUE)])
+          isf <- isf[1:length(specs$term)]
+          xlab <- colnames(xd)[!isf]
+          ylab <- specs$label
+          id <- xd[, isf]
+          xd <- xd[, !isf]
+          plot(1, 1, type = "n",
+            xlim = range(xd), ylim = range(fx),
+            xlab = xlab, ylab = ylab)
+          col <- rainbow_hcl(nlevels(id))
+          i <- 1
+          for(j in levels(id)) {
+            fid <- fx[id == j]
+            tid <- xd[id == j]
+            lines(fid ~ tid, col = col[i])
+            i <- i + 1
+          }
+        } else {
+          do.call("plot3d", delete.args("plot3d", args,
+            c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab", "ticktype",
+            "zlab", "phi", "theta", "r", "d", "scale", "range", "lrange", "pos", "image.map",
+            "symmetric", "border", "lwd")))
+        }
       }
     }
   }
