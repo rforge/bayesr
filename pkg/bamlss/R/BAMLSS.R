@@ -2831,19 +2831,28 @@ plot.bamlss.effect.default <- function(x, ...) {
           xd <- args$x[, specs$term]
           fx <- unlist(args$x[, grepl("50%", colnames(args$x), fixed = TRUE)])
           isf <- isf[1:length(specs$term)]
-          xlab <- colnames(xd)[!isf]
-          ylab <- specs$label
+          xlab <- if(is.null(args$xlab)) colnames(xd)[!isf] else args$xlab
+          ylab <- if(is.null(args$ylab)) specs$label else args$ylab
           id <- xd[, isf]
           xd <- xd[, !isf]
+          xlim <- if(is.null(args$xlim)) range(xd) else args$xlim
+          ylim <- if(is.null(args$ylim)) range(fx) else args$ylim
           plot(1, 1, type = "n",
-            xlim = range(xd), ylim = range(fx),
-            xlab = xlab, ylab = ylab)
-          col <- rainbow_hcl(nlevels(id))
+            xlim = xlim, ylim = ylim,
+            xlab = xlab, ylab = ylab, main = args$main)
+          col <- if(is.null(args$col)) rainbow_hcl(nlevels(id)) else args$col
+          if(is.function(col))
+            col <- col(nlevels(id))
+          lwd <- if(is.null(args$lwd)) 1 else args$lwd
+          lty <- if(is.null(args$lty)) 1 else args$lty
+          col <- rep(col, length.out = nlevels(id))
+          lwd <- rep(lwd, length.out = nlevels(id))
+          lty <- rep(lty, length.out = nlevels(id))
           i <- 1
           for(j in levels(id)) {
             fid <- fx[id == j]
             tid <- xd[id == j]
-            lines(fid ~ tid, col = col[i])
+            lines(fid ~ tid, col = col[i], lwd = lwd[i], lty = lty[i])
             i <- i + 1
           }
         } else {
