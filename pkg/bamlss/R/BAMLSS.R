@@ -2855,6 +2855,13 @@ plot.bamlss.effect.default <- function(x, ...) {
             lines(fid ~ tid, col = col[i], lwd = lwd[i], lty = lty[i])
             i <- i + 1
           }
+          rug <- if(is.null(args$rug)) TRUE else args$rug
+          if(rug) {
+            jitter <- if(is.null(args$jitter)) TRUE else args$jitter
+            if(jitter)
+              xd <- jitter(xd)
+            rug(xd, col = args$rug.col)
+          }    
         } else {
           do.call("plot3d", delete.args("plot3d", args,
             c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab", "ticktype",
