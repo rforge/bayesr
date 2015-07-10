@@ -773,13 +773,13 @@ param_time_transform <- function(x, formula, data, contrasts, grid, yname, timev
     X <- cbind(X, unlist(grid))
     colnames(X)[ncol(X)] <- timevar
   }
-  X <- model.matrix(formula, data = X, contrasts.arg = contrasts)
+  x$X_timegrid <- model.matrix(formula, data = X, contrasts.arg = contrasts)
   gdim <- c(length(grid), length(grid[[1]]))
 
   x$get.mu_timegrid <- function(g) {
-    if(is.null(g)) return(X)
+    if(is.null(g)) return(x$X_timegrid)
     g <- get.par(g, "gamma")
-    f <- drop(X %*% g)
+    f <- drop(x$X_timegrid %*% g)
     f <- matrix(f, nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
     f
   }
@@ -812,12 +812,12 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take)
   }
   if(x$by != "NA" & x$by != yname)
     X[[x$by]] <- rep(data[[x$by]], each = length(grid[[1]]))
-  X <- PredictMat(x, X)
+  x$X_timegrid <- PredictMat(x, X)
   gdim <- c(length(grid), length(grid[[1]]))
 
   x$get.mu_timegrid <- function(g) {
-    if(is.null(g)) return(X)
-    f <- x$get.mu(X, g, expand = FALSE)
+    if(is.null(g)) return(x$X_timegrid)
+    f <- x$get.mu(x$X_timegrid, g, expand = FALSE)
     f <- matrix(f, nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
     f
   }
