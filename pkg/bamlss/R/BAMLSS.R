@@ -2876,15 +2876,17 @@ plot.bamlss.effect.default <- function(x, ...) {
 
 bamlss_random_plot <- function(x, ...)
 {
+  term <- attr(x, "specs")$term
   cn <- colnames(x)
-  plot(x[, "50%"] ~ x[, 2], type = "n", xlab = cn[2], ylab = attr(x, "specs")$label)
-  id <- x[, 1]
+  isf <- sapply(x[, term], is.factor)
+  plot(x[, "50%"] ~ x[, term[!isf]], type = "n", xlab = term[!isf], ylab = attr(x, "specs")$label)
+  id <- x[, term[isf]]
   col <- rainbow_hcl(length(unique(id)))
   ii <- 1
   for(j in unique(id)) {
-    d <- subset(x, x[, 1] == j)
-    i <- order(d[, 2])
-    lines(d[i, "50%"] ~ d[i, 2], col = col[ii])
+    d <- subset(x, x[, term[isf]] == j)
+    i <- order(d[, term[!isf]])
+    lines(d[i, "50%"] ~ d[i, term[!isf]], col = col[ii])
     ii <- ii + 1
   }
 }
