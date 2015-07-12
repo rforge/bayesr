@@ -81,40 +81,12 @@ cox.mode <- function(x, nu = 1, eps = .Machine$double.eps^0.25, maxit = 400,
       ## Timegrid lambda.
       eeta <- exp(eta_timegrid)
 
-      ## Dimension of the design matrix.
-      xdim <- dim(x$lambda$smooth[[sj]]$X)
-
-      ## Compute the gradient.
-      tint <- vector("list", xdim[2])
-      for(i in 1:ncol(X)) {
-        tint[[i]] <- matrix(X[, i], nrow = nrow(eeta), ncol = ncol(eeta), byrow = TRUE)
-        tint[[i]] <- tint[[i]] * eeta
-        tint[[i]] <- width * (0.5 * (tint[[i]][, 1] + tint[[i]][, sub]) + apply(tint[[i]][, 2:(sub - 1)], 1, sum))
-      }
-      tint <- sapply(tint, cbind)
-      tint <- tint * exp(eta$mu)
-      int <- apply(tint, 2, sum)
-      xgrad <- drop(t(response[, "status"]) %*% x$lambda$smooth[[sj]]$X - int)
+      ## Compute gradient and hessian integrals.
+      int <- survint(X, eeta, width, exp(eta$mu))
+      ##xgrad <- drop((response[, "status"]) %*% x$lambda$smooth[[sj]]$X - int$grad)
+      xgrad <- drop(t(response[, "status"]) %*% int$XT - int$grad)
       xgrad <- xgrad + x$lambda$smooth[[sj]]$grad(score = NULL, x$lambda$smooth[[sj]]$state$parameters, full = FALSE)
-      
-      ## Compute the hessian.
-      tint <- vector("list", nobs)
-      xhess <- matrix(0, nrow = xdim[2], ncol = xdim[2])
-      for(i in 1:nobs) {
-        forward <- sub * (i - 1)
-        tint[[i]] <- matrix(0, nrow = xdim[2], ncol = xdim[2])
-        for(j in 1:sub) {
-          MAT <- X[j + forward,] %o% X[j + forward,] * eeta[i, j]
-          if(j == 1 || j == sub) {
-            tint[[i]] <- tint[[i]] + 0.5 * MAT
-          } else {
-            tint[[i]] <- tint[[i]] + MAT
-          }
-        }
-        tint[[i]] <- tint[[i]] * width[i]
-        xhess <- xhess + exp(eta$mu[i]) * tint[[i]]
-      }
-      xhess <- xhess + x$lambda$smooth[[sj]]$hess(score = NULL, x$lambda$smooth[[sj]]$state$parameters, full = FALSE)
+      xhess <- int$hess + x$lambda$smooth[[sj]]$hess(score = NULL, x$lambda$smooth[[sj]]$state$parameters, full = FALSE)
 
       ## Compute the inverse of the hessian.
       hessian[[paste("p", 1, ".t", sj, ".", sep = "")]] <- xhess
@@ -827,5 +799,14 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take)
   x$state$optimize <- FALSE
 
   x
+}
+
+
+## Survival integrals.
+survint <- function(X, eta, width, gamma, eta2 = NULL)
+{
+  if(check <- is.null(eta2))
+    eta2 <- as.numeric(0.0)
+  .Call("survint", X, eta, width, gamma, eta2, as.integer(check))
 }
 
