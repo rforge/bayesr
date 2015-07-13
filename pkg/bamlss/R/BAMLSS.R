@@ -2840,7 +2840,7 @@ plot.bamlss.effect.default <- function(x, ...) {
     if(is.null(args$col.lines))
       args$col.lines <- c(NA, "black", NA)
     if(inherits(x, "random.effect") | inherits(x, "re.smooth.spec") |
-       inherits(x, "mrf.smooth.spec") | inherits(x, "mrf.smooth")) {
+       inherits(x, "mrf.smooth.spec") | inherits(x, "mrf.smooth") | is.factor(x[[1]])) {
       if(if(!is.null(args$density)) args$density else FALSE) {
         args$density <- NULL
         if(is.null(args$main))
