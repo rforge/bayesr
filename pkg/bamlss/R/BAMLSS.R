@@ -2880,41 +2880,7 @@ plot.bamlss.effect.default <- function(x, ...) {
         specs <- attr(x, "specs")
         isf <- sapply(args$x[, specs$term], is.factor)
         if(any(isf)) {
-          xd <- args$x[, specs$term]
-          fx <- unlist(args$x[, grepl("50%", colnames(args$x), fixed = TRUE)])
-          isf <- isf[1:length(specs$term)]
-          xlab <- if(is.null(args$xlab)) colnames(xd)[!isf] else args$xlab
-          ylab <- if(is.null(args$ylab)) specs$label else args$ylab
-          id <- xd[, isf]
-          xd <- xd[, !isf]
-          args$ylim <- args$zlim
-          xlim <- if(is.null(args$xlim)) range(xd) else args$xlim
-          ylim <- if(is.null(args$ylim)) range(fx) else args$ylim
-          plot(1, 1, type = "n",
-            xlim = xlim, ylim = ylim,
-            xlab = xlab, ylab = ylab, main = args$main)
-          col <- if(is.null(args$col)) rainbow_hcl(nlevels(id)) else args$col
-          if(is.function(col))
-            col <- col(nlevels(id))
-          lwd <- if(is.null(args$lwd)) 1 else args$lwd
-          lty <- if(is.null(args$lty)) 1 else args$lty
-          col <- rep(col, length.out = nlevels(id))
-          lwd <- rep(lwd, length.out = nlevels(id))
-          lty <- rep(lty, length.out = nlevels(id))
-          i <- 1
-          for(j in levels(id)) {
-            fid <- fx[id == j]
-            tid <- xd[id == j]
-            lines(fid ~ tid, col = col[i], lwd = lwd[i], lty = lty[i])
-            i <- i + 1
-          }
-          rug <- if(is.null(args$rug)) TRUE else args$rug
-          if(rug) {
-            jitter <- if(is.null(args$jitter)) TRUE else args$jitter
-            if(jitter)
-              xd <- jitter(xd)
-            rug(xd, col = args$rug.col)
-          }    
+          do.call("bamlss_factor2d_plot", args)
         } else {
           do.call("plot3d", delete.args("plot3d", args,
             c("xlim", "ylim", "zlim", "pch", "main", "xlab", "ylab", "ticktype",
@@ -2942,6 +2908,54 @@ bamlss_random_plot <- function(x, ...)
     lines(d[i, "50%"] ~ d[i, term[!isf]], col = col[ii])
     ii <- ii + 1
   }
+  return(invisible(NULL))   
+}
+
+bamlss_factor2d_plot <- function(x, ...)
+{
+  args <- list(...)
+  specs <- attr(x, "specs")
+  if(is.null(specs)) {
+    specs <- list("term" = colnames(x)[1:2],
+      label = paste("f(", colnames(x)[1], ",", colnames(x)[2], ")", sep = ""))
+  }
+  isf <- sapply(x[, specs$term], is.factor)
+  xd <- x[, specs$term]
+  fx <- unlist(x[, grepl("50", colnames(x), fixed = TRUE)])
+  isf <- isf[1:length(specs$term)]
+  xlab <- if(is.null(args$xlab)) colnames(xd)[!isf] else args$xlab
+  ylab <- if(is.null(args$ylab)) specs$label else args$ylab
+  id <- xd[, isf]
+  xd <- xd[, !isf]
+  args$ylim <- args$zlim
+  xlim <- if(is.null(args$xlim)) range(xd) else args$xlim
+  ylim <- if(is.null(args$ylim)) range(fx) else args$ylim
+  plot(1, 1, type = "n",
+    xlim = xlim, ylim = ylim,
+    xlab = xlab, ylab = ylab, main = args$main)
+  col <- if(is.null(args$col)) rainbow_hcl(nlevels(id)) else args$col
+  if(is.function(col))
+     col <- col(nlevels(id))
+  lwd <- if(is.null(args$lwd)) 1 else args$lwd
+  lty <- if(is.null(args$lty)) 1 else args$lty
+  col <- rep(col, length.out = nlevels(id))
+  lwd <- rep(lwd, length.out = nlevels(id))
+  lty <- rep(lty, length.out = nlevels(id))
+  i <- 1
+  for(j in levels(id)) {
+    fid <- fx[id == j]
+    tid <- xd[id == j]
+    lines(fid ~ tid, col = col[i], lwd = lwd[i], lty = lty[i])
+    i <- i + 1
+  }
+  rug <- if(is.null(args$rug)) TRUE else args$rug
+  if(rug) {
+    jitter <- if(is.null(args$jitter)) TRUE else args$jitter
+    if(jitter)
+      xd <- jitter(xd)
+    rug(xd, col = args$rug.col)
+  }
+  return(invisible(NULL))   
 }
 
 
