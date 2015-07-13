@@ -2370,53 +2370,23 @@ Predict.matrix.kriging.smooth <- function(object, data)
 
 
 ## Smooth varying random effect.
-smooth.construct.sre.smooth.spec <- function(object, data, knots)
+smooth.construct.re2.smooth.spec <- function(object, data, knots)
 {
-  if(object$dim != 2) stop('for bs="sre" terms two covariates must be supplied!')
-  if(object$bs.dim < 0) object$bs.dim <- 10
-
-  isf <- sapply(data[object$term], is.factor)
-  if(!any(isf)) stop("a factor variable must be supplied for this smooth term!")
-
-  id <- data[[object$term[isf]]]
-  x <- data[[object$term[!isf]]]
-
-  X <- smooth.construct(s(x,bs="ps",k=object$bs.dim))
-
-  X <- matrix(0, nrow = length(x), ncol = 0)
-  S <- list()
-  for(j in levels(id)) {
-print(x[id == j])
-    so <- smooth.construct(s(x,bs="ps",k=object$bs.dim), list("x" = x[id == j]), NULL)
-##print(so)
-  }
-##print(X)
-stop()
-
-  if(object$dim < 2) {
-    k <- knots[[object$term]]
-    x <- data[[object$term]]
-    if(is.null(k))
-      k <- seq(min(x), max(x), length = object$bs.dim)
-    D <- krDesign1D(x, knots = k, rho = object$xt$rho,
-      phi = object$xt$phi, v = object$xt$v, c = object$xt$c)
-  } else {
-    knots <- if(is.null(object$xt$knots)) object$bs.dim else object$xt$knots
-    D <- krDesign2D(data[[object$term[1]]], data[[object$term[2]]],
-      knots = knots,
-      phi = object$xt$phi, v = object$xt$v, c = object$xt$c,
-      psi = object$xt$psi, delta = object$xt$delta,
-      isotropic = object$xt$isotropic)
-  }
-
-  X <- D$B
-  object$X <- X
-  object$S <- list(D$K)
-  object$rank <- qr(D$K)$rank
-  object$knots <- D$knots
-  object$null.space.dim <- ncol(D$K)
- 
-  class(object) <- "smooth.random.effect"
+  if (!is.null(object$id)) 
+    stop("random effects don't work with ids.")
+  form <- as.formula(paste("~", object$term[1], "+", paste(object$term, collapse = ":"), "-1"))
+  object$X <- model.matrix(form, data)
+  object$bs.dim <- ncol(object$X)
+  object$S <- list(diag(object$bs.dim))
+  object$rank <- object$bs.dim
+  object$null.space.dim <- 0
+  object$C <- matrix(0, 0, ncol(object$X))
+  object$form <- form
+  object$side.constrain <- FALSE
+  object$plot.me <- TRUE
+  object$te.ok <- 2
+  object$random <- TRUE
+  class(object) <- "random.effect"
   object
 }
 
