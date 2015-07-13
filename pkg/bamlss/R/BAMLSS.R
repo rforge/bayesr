@@ -2881,9 +2881,10 @@ bamlss_random_plot <- function(x, ...)
   return(invisible(NULL))   
 }
 
-bamlss_factor2d_plot <- function(x, ...)
+bamlss_factor2d_plot <- function(x, ids = NULL, add = FALSE, ...)
 {
   args <- list(...)
+  y <- args$response
   specs <- attr(x, "specs")
   if(is.null(specs)) {
     specs <- list("term" = colnames(x)[1:2],
@@ -2897,12 +2898,24 @@ bamlss_factor2d_plot <- function(x, ...)
   ylab <- if(is.null(args$ylab)) specs$label else args$ylab
   id <- xd[, isf]
   xd <- xd[, !isf]
+  if(!is.null(ids)) {
+    if(!is.character(ids))
+      ids <- levels(id)[as.integer(ids)]
+    i <- id %in% ids
+    id <- droplevels(id[i])
+    xd <- xd[i]
+    fx <- fx[i]
+    if(!is.null(y))
+      y <- y[i]
+  }
   args$ylim <- args$zlim
   xlim <- if(is.null(args$xlim)) range(xd) else args$xlim
   ylim <- if(is.null(args$ylim)) range(fx) else args$ylim
-  plot(1, 1, type = "n",
-    xlim = xlim, ylim = ylim,
-    xlab = xlab, ylab = ylab, main = args$main)
+  if(!add) {
+    plot(1, 1, type = "n",
+      xlim = xlim, ylim = ylim,
+      xlab = xlab, ylab = ylab, main = args$main)
+  }
   col <- if(is.null(args$col)) rainbow_hcl(nlevels(id)) else args$col
   if(is.function(col))
      col <- col(nlevels(id))
@@ -2916,6 +2929,8 @@ bamlss_factor2d_plot <- function(x, ...)
     fid <- fx[id == j]
     tid <- xd[id == j]
     lines(fid ~ tid, col = col[i], lwd = lwd[i], lty = lty[i])
+    if(!is.null(y))
+      points(tid, y[id == j], col = col[i])
     i <- i + 1
   }
   rug <- if(is.null(args$rug)) TRUE else args$rug
