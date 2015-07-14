@@ -179,6 +179,7 @@ bamlss <- function(formula, family = gaussian, data = NULL, knots = NULL,
           n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, sleep = sleep, ...)
       }
       cores <- NULL
+      xengine <- "in.family"
     } else {
       engine <- function(x) {
         stacker(x, optimizer = optimizer, sampler = sampler, cores = mc.cores,
@@ -2370,25 +2371,51 @@ Predict.matrix.kriging.smooth <- function(object, data)
 
 
 ## Smooth varying random effect.
-smooth.construct.re2.smooth.spec <- function(object, data, knots)
+smooth.construct.Re.smooth.spec <- function(object, data, knots)
 {
-  if (!is.null(object$id)) 
-    stop("random effects don't work with ids.")
-  form <- as.formula(paste("~", object$term[1], "+", paste(object$term, collapse = ":"), "-1"))
-  object$X <- model.matrix(form, data)
+  require("Matrix")
+  isf <- sapply(data[object$term], is.factor)
+  id <- data[[object$term[isf]]]
+  xd <- data[[object$term[!isf]]]
+  if(object$bs.dim < 0)
+    object$bs.dim <- 5
+  xobj <- eval(as.call(c(as.symbol("s"),
+    as.symbol(object$term[!isf]),
+    k=object$bs.dim,xt=list(object$xt),
+    bs="ps")))
+  xobj <- smooth.construct(xobj, data, knots)
+  xl <- levels(id)
+  object$X <- list()
+  for(j in seq_along(xl))
+    object$X[[j]] <- xobj$X[id == xl[j], , drop = FALSE]
+  object$X <- as.matrix(do.call("bdiag", object$X))
+  object$isf <- isf
   object$bs.dim <- ncol(object$X)
   object$S <- list(diag(object$bs.dim))
   object$rank <- object$bs.dim
   object$null.space.dim <- 0
   object$C <- matrix(0, 0, ncol(object$X))
-  object$form <- form
   object$side.constrain <- FALSE
   object$plot.me <- TRUE
   object$te.ok <- 2
   object$random <- TRUE
-  class(object) <- "random.effect"
+  object$xobj <- xobj
+  class(object) <- "Random.effect"
   object
 }
+
+Predict.matrix.Random.effect <- function(object, data) 
+{
+  id <- data[[object$term[object$isf]]]
+  Xd <- PredictMat(object$xobj, data, n = length(id))
+  X <- list()
+  xl <- levels(id)
+  for(j in seq_along(xl))
+    X[[j]] <- Xd[id == xl[j], , drop = FALSE]
+  X <- as.matrix(do.call("bdiag", X))
+  X
+}
+
 
 
 ## Smooth constructor for lag function.
