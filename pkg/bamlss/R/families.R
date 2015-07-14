@@ -1886,21 +1886,21 @@ poisson.bamlss <- function(...)
       "eta" = BUGSeta,
       "model" = BUGSmodel
     ),
-	  "mu" = function(eta, ...) {
+    "mu" = function(eta, ...) {
        eta$lambda
     },
-	  "d" = function(y, eta, log = FALSE) {
+    "d" = function(y, eta, log = FALSE) {
       dpois(y, lambda = eta$lambda, log = log)
     },
     "p" = function(y, eta, ...) {
       ppois(y, lambda = eta$lambda, ...)
     },
-	  "score" = list(
+    "score" = list(
       "lambda" = function(y, eta, ...) {
         y / eta$lambda - 1
       }
     ),
-	  "weights" = list(
+    "weights" = list(
       "lambda" = function(y, eta, ...) {
         1 / eta$lambda
       }
@@ -2240,11 +2240,11 @@ tF <- function(x, ...)
   } else ''
 
   mu.linkfun <- make.link.gamlss(x$mu.link)$linkfun
-  score$mu  <- function(y, eta) {
+  score$mu  <- function(y, eta, ...) {
     call <- paste('x$dldm(y, ', paste('eta$', nx, sep = '', collapse = ', '), args, ')', sep = "")
     eval(parse(text = call))
   }
-  weights$mu <- function(y, eta) {
+  weights$mu <- function(y, eta, ...) {
     fo <- names(formals(x$d2ldm2))
     call <- paste('x$d2ldm2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
     weights <- eval(parse(text = call))
@@ -2254,11 +2254,11 @@ tF <- function(x, ...)
   }
   if(k > 1) {
     sigma.linkfun <- make.link.gamlss(x$sigma.link)$linkfun
-    score$sigma  <- function(y, eta) {
+    score$sigma  <- function(y, eta, ...) {
       call <- paste('x$dldd(y, ', paste('eta$', nx, sep = '', collapse = ', '), ')', sep = "")
       eval(parse(text = call))
     }
-    weights$sigma <- function(y, eta) {
+    weights$sigma <- function(y, eta, ...) {
       fo <- names(formals(x$d2ldd2))
       call <- paste('x$d2ldd2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
       weights <- eval(parse(text = call))
@@ -2269,11 +2269,11 @@ tF <- function(x, ...)
   }
   if(k > 2) {
     nu.linkfun <- make.link.gamlss(x$nu.link)$linkfun
-    score$nu  <- function(y, eta) {
+    score$nu  <- function(y, eta, ...) {
       call <- paste('x$dldv(y, ', paste('eta$', nx, sep = '', collapse = ', '), ')', sep = "")
       eval(parse(text = call))
     }
-    weights$nu <- function(y, eta) {
+    weights$nu <- function(y, eta, ...) {
       fo <- names(formals(x$d2ldv2))
       call <- paste('x$d2ldv2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
       weights <- eval(parse(text = call))
@@ -2284,11 +2284,11 @@ tF <- function(x, ...)
   }
   if(k > 3) {
     tau.linkfun <- make.link.gamlss(x$tau.link)$linkfun
-    score$tau  <- function(y, eta) {
+    score$tau  <- function(y, eta, ...) {
       call <- paste('x$dldt(y, ', paste('eta$', nx, sep = '', collapse = ', '), ')', sep = "")
       eval(parse(text = call))
     }
-    weights$tau <- function(y, eta) {
+    weights$tau <- function(y, eta, ...) {
       fo <- names(formals(x$d2ldt2))
       call <- paste('x$d2ldt2(', paste('eta$', fo, sep = '', collapse = ', '), ')', sep = "")
       weights <- eval(parse(text = call))
