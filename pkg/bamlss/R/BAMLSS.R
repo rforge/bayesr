@@ -246,7 +246,7 @@ bamlss <- function(formula, family = gaussian, data = NULL, knots = NULL,
     setup = setup, engine = engine, results = results, cores = cores,
     combine = combine, sleep = sleep, ...)
   
-  attr(rval, "engine") <- "stacker"
+  attr(rval, "engine") <- xengine
   attr(rval, "call") <- match.call()
   
   rval
