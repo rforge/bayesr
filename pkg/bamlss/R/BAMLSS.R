@@ -2389,6 +2389,8 @@ smooth.construct.Re.smooth.spec <- function(object, data, knots)
   for(j in seq_along(xl))
     object$X[[j]] <- xobj$X[id == xl[j], , drop = FALSE]
   object$X <- as.matrix(do.call("bdiag", object$X))
+  object$zeros <- apply(object$X, 2, function(x) { all(x == 0) })
+  object$X <- object$X[, !object$zeros]
   object$isf <- isf
   object$bs.dim <- ncol(object$X)
   object$S <- list(diag(object$bs.dim))
@@ -2413,6 +2415,7 @@ Predict.matrix.Random.effect <- function(object, data)
   for(j in seq_along(xl))
     X[[j]] <- Xd[id == xl[j], , drop = FALSE]
   X <- as.matrix(do.call("bdiag", X))
+  X <- X[, !object$zeros]
   X
 }
 
