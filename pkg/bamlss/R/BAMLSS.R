@@ -2376,14 +2376,14 @@ smooth.construct.Re.smooth.spec <- function(object, data, knots)
   require("Matrix")
   isf <- sapply(data[object$term], is.factor)
   id <- data[[object$term[isf]]]
-  xd <- data[[object$term[!isf]]]
   if(object$bs.dim < 0)
     object$bs.dim <- 5
   xobj <- eval(as.call(c(as.symbol("s"),
     as.symbol(object$term[!isf]),
     k=object$bs.dim,xt=list(object$xt),
     bs="ps")))
-  xobj <- smooth.construct(xobj, data, knots)
+  ##xobj <- smooth.construct(xobj, data, knots)
+  xobj <- smoothCon(xobj, data, knots, absorb.cons = FALSE, n = length(id))[[1]]
   xl <- levels(id)
   object$X <- list()
   for(j in seq_along(xl))
