@@ -673,8 +673,10 @@ bamlss.formula <- function(formula, specials = NULL, family = gaussian.bamlss())
     if(length(formula) < length(family$names))
       formula <- c(formula, rep(list(), length = length(family$names) - length(formula)))
     fn <- NULL
-    for(j in seq_along(formula))
-      fn <- c(fn, as.character(formula[[j]])[2])
+    for(j in seq_along(formula)) {
+      ft <- as.character(formula[[j]])
+      fn <- c(fn, if(length(ft) > 2) ft[2] else NULL)
+    }
     fn[fn %in% c("1", "-1")] <- NA
     nas <- which(is.na(fn))
     fn[nas] <- family$names[nas]
@@ -4108,8 +4110,23 @@ model.response2 <- function(data, hierarchical = FALSE, ...)
   if(!inherits(data, "data.frame")) {
     f <- if(inherits(data, "bamlss")) formula(data) else NULL
     data <- model.frame(data)
-    if(!is.null(f))
-      print(f)
+    if(!is.null(f)) {
+      if("h1" %in% names(f)) {
+        rn <- all.vars(f$h1)[1]
+        attr(data, "response.name") <- rn
+      } else {
+        rn <- NULL
+        for(j in seq_along(f)) {
+          if(is.list(f[[j]])) {
+            if("h1" %in% names(f[[j]]))
+              rn <- c(rn, all.vars(f[[j]]$h1)[1])
+          }
+        }
+        rn <- rn[rn %in% names(data)]
+        if(length(rn))
+          attr(data, "response.name") <- rn
+      }
+    }
   }
   rn <- attr(data, "response.name")
   y <- if(is.null(rn)) {

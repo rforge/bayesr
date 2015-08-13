@@ -2003,7 +2003,7 @@ negbin.bamlss <- function(...)
       "mu" = c("negbin", "mu"),
       "delta" = c("negbin", "delta")
     ),
-	  "mu" = function(eta, ...) {
+    "mu" = function(eta, ...) {
       eta$mu
     },
     "d" = function(y, eta, log = FALSE) {
