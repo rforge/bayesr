@@ -4103,10 +4103,14 @@ residuals.bamlss <- function(object, type = c("quantile", "ordinary", "quantile2
 
 
 ## Extract the model response.
-model.response2 <- function(data, ...)
+model.response2 <- function(data, hierarchical = FALSE, ...)
 {
-  if(!inherits(data, "data.frame"))
+  if(!inherits(data, "data.frame")) {
+    f <- if(inherits(data, "bamlss")) formula(data) else NULL
     data <- model.frame(data)
+    if(!is.null(f))
+      print(f)
+  }
   rn <- attr(data, "response.name")
   y <- if(is.null(rn)) {
     model.response(data, ...)

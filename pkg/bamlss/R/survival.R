@@ -803,10 +803,15 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take)
 
 
 ## Survival integrals.
-survint <- function(X, eta, width, gamma, eta2 = NULL)
+survint <- function(X, eta, width, gamma, eta2 = NULL, index = NULL)
 {
   if(check <- is.null(eta2))
     eta2 <- as.numeric(0.0)
-  .Call("survint", X, eta, width, gamma, eta2, as.integer(check))
+  int <- if(is.null(index)) {
+    .Call("survint", X, eta, width, gamma, eta2, as.integer(check))
+  } else {
+    .Call("survint_index", X, eta, width, gamma, eta2, as.integer(check), index)
+  }
+  return(int)
 }
 
