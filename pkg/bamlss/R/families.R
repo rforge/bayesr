@@ -662,7 +662,7 @@ trunc.bamlss <- function(direction = "left", point = 0, ...)
 {
   links <- c(mu = "identity", sigma = "log")
 
-  tgrad <- function(y, par what = "mu") {
+  tgrad <- function(y, par, what = "mu") {
     par$sigma[par$sigma < 1] <- 1
     par$mu[par$mu < -10] <- -10
     par$mu[par$mu > 10] <- 10
