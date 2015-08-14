@@ -260,7 +260,7 @@ bamlss <- function(formula, family = gaussian, data = NULL, knots = NULL,
 parse.input.bamlss <- function(formula, data = NULL, family = gaussian.bamlss,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
-  grid = 100, binning = FALSE, ...)
+  grid = 100, binning = FALSE, type = c("data.frame", "design.matrix"), ...)
 {
   ## Search for additional formulas
   formula2 <- NULL; formula3 <- list(); k <- 1
@@ -708,7 +708,6 @@ bamlss.formula <- function(formula, specials = NULL, family = gaussian.bamlss())
   }
   attr(formula0, "specials") <- specials
   attr(formula, "formula0") <- formula0
-  attr(formula, "raw.formula") <- TRUE
 
   formula
 }
@@ -743,6 +742,7 @@ formula_extend <- function(formula, specials = NULL, family)
     specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", specials))
     mt <- terms(formula, specials = specials, keep.order = TRUE)
 
+    ## rs() specials, not supported anymore!
     get.term.labels <- function(formula) {
       tl <- attr(mt, "term.labels")
       tl2 <- NULL
@@ -797,19 +797,8 @@ formula_extend <- function(formula, specials = NULL, family)
     fake.formula <- as.formula(paste(response, "~ 1", if(length(c(pterms, sterms))) " + " else NULL,
       paste(c(pterms, sterms), collapse = " + ")), env = environment(formula))
 
-    smooth <- sx.smooth <- NULL
-    if(length(sm)) {
-      for(j in sm) {
-        if("sx(" == paste(strsplit(j, "")[[1]][1:3], collapse = ""))
-          sx.smooth <- c(sx.smooth, j)
-        else
-          smooth <- c(smooth, j)
-      }
-    }
-
     return(list("formula" = formula, "intercept" = intercept, "fake.formula" = fake.formula,
-      "response" = response, "pterms" = pterms, "sterms" = sterms, "smooth" = smooth,
-      "sx.smooth" = sx.smooth))
+      "response" = response, "pterms" = pterms, "sterms" = sterms, "smooth" = sm))
   }
 }
 
@@ -3387,7 +3376,7 @@ print.bamlss.formula <- function(x, ...) {
       nx <- as.character(1:length(x))
     for(i in seq_along(x)) {
       cat("Formula ", nx[i], ":\n---\n", sep = "")
-      if(inherits(x[[i]], "list") & is.null(attr(x, "raw.formula"))) {
+      if(inherits(x[[i]], "list") & "h1" %in% names(x[[i]])) {
         for(j in seq_along(x[[i]])) {
           cat("h", j, ": ", sep = "")
           attr(x[[i]][[j]], "name") <- NULL
@@ -3396,7 +3385,7 @@ print.bamlss.formula <- function(x, ...) {
       } else {
         attr(x[[i]], "name") <- NULL
         attr(x[[i]]$formula, "name") <- NULL
-        if(is.null(attr(x, "raw.formula"))) print(x[[i]]) else print(x[[i]]$formula)
+        if("formula" %in% names(x[[i]])) print(x[[i]]$formula) else print(x[[i]])
       }
       if(i < length(x))
       cat("\n")
