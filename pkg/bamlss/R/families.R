@@ -171,7 +171,7 @@ beta.bamlss <- function(...)
     "mu" = function(par, ...) {
       par$mu
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
        mu <- par$mu
        sigma2 <- par$sigma2
        a <- mu * (1 - sigma2) / (sigma2)
@@ -219,7 +219,7 @@ betazoi.bamlss <- function(...)
     "mu" = function(par, ...) {
        par$mu * (1 - (par$nu + par$tau) / (1 + par$nu + par$tau)) + par$tau / (1 + par$nu + par$tau)
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       mu <- par$mu
       sigma <- par$sigma
       a <- mu * (1 - sigma) / (sigma)
@@ -271,7 +271,7 @@ betazi.bamlss <- function(...)
     "mu" = function(par, ...) {
       par$mu * (1 - (par$nu) / (1 + par$nu))
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       mu <- par$mu
       sigma <- par$sigma
       a <- mu * (1 - sigma) / (sigma)
@@ -321,7 +321,7 @@ betaoi.bamlss <- function(...)
       par$mu * (1 - par$tau / (1 + par$tau)) +
         par$tau / (1 + par$tau)
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       mu <- par$mu
       sigma <- par$sigma
       a <- mu * (1 - sigma) / (sigma)
@@ -373,7 +373,7 @@ binomial.bamlss <- function(...)
     "mu" = function(par, ...) {
       par$pi
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       if(is.factor(y)) y <- as.integer(y) - 1
       dbinom(y, size = 1, prob = par$pi, log = log)
     },
@@ -419,7 +419,7 @@ cloglog.bamlss <- function(...)
     "mu" = function(par, ...) {
       par$pi
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       dbinom(y, size = 1, prob = par$pi, log = log)
     },
     "p" = function(y, par, ...) {
@@ -491,7 +491,7 @@ gaussian.bamlss <- function(...)
     "mu" = function(par, ...) {
       par$mu
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       dnorm(y, mean = par$mu, sd = par$sigma, log = log)
     },
     "p" = function(y, par, ...) {
@@ -543,7 +543,7 @@ gaussian2.bamlss <- function(...)
     "mu" = function(par, ...) {
       par$mu 
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       dnorm(y, mean = par$mu, sd = sqrt(par$sigma2), log = log)
     },
     "p" = function(y, par, ...) {
@@ -575,7 +575,7 @@ truncgaussian2.bamlss <- function(...)
 	    arg <- - mu / sigma
 	    mu + sigma * dnorm(arg) / (1 - pnorm(arg))
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
 	    sigma <- sqrt(par$sigma2)
 	    arg <- - par$mu / sigma
 	    d <- dnorm(y / sigma + arg) / (1 - pnorm(arg))
@@ -611,7 +611,7 @@ truncgaussian.bamlss <- function(...)
 	    arg <- - mu / sigma
 	    mu + sigma * dnorm(arg) / (1 - pnorm(arg))
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       mu <-  par$mu
 	    sigma <- par$sigma
 	    arg <- - mu / sigma
@@ -687,7 +687,7 @@ trunc.bamlss <- function(direction = "left", point = 0, ...)
     "family" = "truncreg",
     "names" = c("mu", "sigma"),
     "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       par$sigma[par$sigma < 1] <- 1
       par$mu[par$mu < -10] <- -10
       par$mu[par$mu > 10] <- 10
@@ -773,11 +773,11 @@ cnorm.bamlss <- function(...)
       as.numeric(y), as.numeric(par$mu), as.numeric(par$sigma),
       as.integer(attr(y, "check")))
   }
-  f$d <- function(y, par log = FALSE) {
+  f$d <- function(y, par, log = FALSE) {
     ifelse(y <= 0, pnorm(-par$mu / par$sigma, log.p = log),
       dnorm((y - par$mu) / par$sigma, log = log) / par$sigma^(1 - log) - log(par$sigma) * log)
   }
-  f$p <- function(y, par log = FALSE) {
+  f$p <- function(y, par, log = FALSE) {
     ifelse(y < 0, 0, pnorm((y - par$mu) / par$sigma, log = log))
   }
   f$q <- function(y, par, ...) {
@@ -873,7 +873,7 @@ pcnorm.bamlss <- function(alpha = NULL, start = 1.5, ...)
       as.numeric(y), as.numeric(par$mu), as.numeric(par$sigma), as.numeric(par$alpha),
       as.integer(attr(y, "check")))
   }
-  f$d <- function(y, par log = FALSE) {
+  f$d <- function(y, par, log = FALSE) {
     if(!is.null(alpha))
       par$alpha <- rep(alpha, length = length(y))
     dy <- ifelse(y <= 0, pnorm(0, par$mu, par$sigma, log.p = TRUE),
@@ -883,7 +883,7 @@ pcnorm.bamlss <- function(alpha = NULL, start = 1.5, ...)
       dy <- exp(dy)
     dy
   }
-  f$p <- function(y, par log = FALSE) {
+  f$p <- function(y, par, log = FALSE) {
     if(!is.null(alpha))
       par$alpha <- rep(alpha, length = length(y))
     ifelse(y <= 0, 0, pnorm(y^(1 / par$alpha), par$mu, par$sigma, log = log))
@@ -1059,7 +1059,7 @@ cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
     "family" = "cens",
     "names" = names,
     "links" = parse.links(links[i], c(mu = "identity", sigma = "log", df = "log")[i], ...),
-    "d" = function(y, par log = FALSE, ...) {
+    "d" = function(y, par, log = FALSE, ...) {
       ll <- with(par, ifelse(y <= left,
         pdist(left, mu, sigma, df, lower.tail = TRUE, log = TRUE),
         ifelse(y >= right,
@@ -1068,7 +1068,7 @@ cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
       if(!log) ll <- exp(ll)
       return(ll)
     },
-    "p" = function(y, par log = FALSE, ...) {
+    "p" = function(y, par, log = FALSE, ...) {
       with(par, pdist(y, mu, sigma, df, lower.tail = TRUE, log = log))
     },
     "score" = score,
@@ -1161,7 +1161,7 @@ cens0.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
     "family" = "cens",
     "names" = names,
     "links" = parse.links(links[i], c(mu = "identity", sigma = "log", df = "log")[i], ...),
-    "d" = function(y, par log = FALSE, ...) {
+    "d" = function(y, par, log = FALSE, ...) {
       ll <- with(par, ifelse(y <= left,
         pdist(left, mu, sigma, df, lower.tail = TRUE, log = TRUE),
         ifelse(y >= right,
@@ -1216,7 +1216,7 @@ trunc2.bamlss <- function(links = c(mu = "identity", sigma = "log"),
     "family" = "trunc2",
     "names" = c("mu", "sigma"),
     "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       if(name == "gamma") {
 		    a2 <- par$sigma
 		    s2 <- par$mu / par$sigma
@@ -1270,7 +1270,7 @@ t.bamlss <- function(...)
       rval[par$df <= 1] <- 0
       rval
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       arg <- (y - par$mu) / sqrt(par$sigma2)
       dt(arg, df = par$df, log = log)
     },
@@ -1478,7 +1478,7 @@ gamma.bamlss <- function(...)
     "mu" = function(par, ...) {
       par$mu
     },
-	  "d" = function(y, par log = FALSE) {
+	  "d" = function(y, par, log = FALSE) {
 		  a <- par$sigma
 		  s <- par$mu / par$sigma
 		  dgamma(y, shape = a, scale = s, log = log)
@@ -1549,7 +1549,7 @@ lognormal.bamlss <- function(...)
 	  "mu" = function(par, ...) {
       exp(par$mu + 0.5 * (par$sigma)^2)
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       dlnorm(y, meanlog = par$mu, sdlog = par$sigma, log = log)
     },
     "p" = function(y, par, ...) {
@@ -1591,7 +1591,7 @@ lognormal2.bamlss <- function(...)
 	  "mu" = function(par, ...) {
       exp(par$mu + 0.5 * (par$sigma2))
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       dlnorm(y, meanlog = par$mu, sdlog = sqrt(par$sigma2), log = log)
     },
     "p" = function(y, par, ...) {
@@ -1628,7 +1628,7 @@ dagum.bamlss <- function(...)
       p <- par$p
       -(b/a) * (gamma(- 1 / a) * gamma(p + 1 / a)) / (gamma(p))
     },
-	  "d" = function(y, par log = FALSE) {
+	  "d" = function(y, par, log = FALSE) {
 		  a <- par$a
 		  b <- par$b
 		  p <- par$p
@@ -1669,7 +1669,7 @@ BCCG2.bamlss <- function(...)
 	    "nu" = c("BCCG", "nu"),
 	    "order" = c("nu", "sigma", "mu")
     ),
-	  "d" = function(y, par log = FALSE) {
+	  "d" = function(y, par, log = FALSE) {
 		  mu <- par$mu
 		  sigma <- par$sigma
 		  nu <- par$nu
@@ -1718,7 +1718,7 @@ mvn.bamlss <- function(...)
 	  "mu" = function(par, ...) {
       cbind(par$mu1, par$mu2)
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       cbind(
         dnorm(y[, 1], mean = par$mu1, sd = par$sigma1, log = log),
         dnorm(y[, 2], mean = par$mu2, sd = par$sigma2, log = log)
@@ -1854,7 +1854,7 @@ multinomial.bamlss <- multinom.bamlss <- function(...)
   )
 
   rval$d <- switch(link,
-    "logit" = function(y, par log = FALSE) {
+    "logit" = function(y, par, log = FALSE) {
       par <- as.matrix(as.data.frame(par))
       par <- cbind(par, exp(0))
       par <- par / rowSums(par)
@@ -1889,7 +1889,7 @@ poisson.bamlss <- function(...)
     "mu" = function(par, ...) {
        par$lambda
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       dpois(y, lambda = par$lambda, log = log)
     },
     "p" = function(y, par, ...) {
@@ -1932,7 +1932,7 @@ zip.bamlss <- function(...)
 	  "mu" = function(par, ...) {
       par$lambda * (1 - par$pi)
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       d <- ifelse(y == 0, par$pi + (1 - par$pi) * dpois(y, lambda = par$lambda), 
 				(1 - par$pi) * dpois(y, lambda = par$lambda))
       if(log) d <- log(d)
@@ -1970,7 +1970,7 @@ hurdleP.bamlss <- function(...)
 	  "mu" = function(par, ...) {
       (1 - par$pi) * par$lambda / (1 - exp(-par$lambda))
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       d <- ifelse(y == 0, par$pi, 
 				(1 - par$pi) * dpois(y, lambda = par$lambda) / (1 - exp(-par$lambda)))
       if(log) d <- log(d)
@@ -2006,7 +2006,7 @@ negbin.bamlss <- function(...)
     "mu" = function(par, ...) {
       par$mu
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       dnbinom(y, mu = par$mu, size = par$delta, log = log)
     },
     "p" = function(y, par, ...) {
@@ -2037,7 +2037,7 @@ zinb.bamlss <- function(...)
 	  "mu" = function(par, ...) {
       par$mu * (1 - par$pi)
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       d <- ifelse(y == 0, par$pi + (1 - par$pi) * dnbinom(y, mu = par$mu, size = par$delta), 
 				(1 - par$pi) * dnbinom(y, mu = par$mu, size = par$delta))
       if(log) d <- log(d)
@@ -2074,7 +2074,7 @@ hurdleNB.bamlss <- function(...)
 	  "mu" = function(par, ...) {
       (1 - par$pi) * par$mu / (1 - (par$delta) / (par$delta + par$mu)^par$delta)
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       d <- ifelse(y == 0, par$pi + (1 - par$pi) * dnbinom(y, mu = par$mu, size = par$delta), 
 				(1 - par$pi) * dnbinom(y, mu = par$mu, size = par$delta))
       if(log) d <- log(d)
@@ -2164,7 +2164,7 @@ zero.bamlss <- function(g = invgaussian)
   dfun <- g0$d
   pfun <- g0$p
   if(is.function(dfun)) {
-    g$d <- function(y, par log = TRUE) {
+    g$d <- function(y, par, log = TRUE) {
       d <- dfun(y, par, log = FALSE) * par$pi * (y > 0) + (1 - par$pi) * (y == 0)
       if(log)
         d <- log(d)
@@ -2172,7 +2172,7 @@ zero.bamlss <- function(g = invgaussian)
     }
   }
   if(is.function(pfun)) {
-    g$p <- function(y, par log = FALSE) {
+    g$p <- function(y, par, log = FALSE) {
       pfun(y, par, log = log) * par$pi + (1 - par$pi)
     }
   }
@@ -2307,7 +2307,7 @@ tF <- function(x, ...)
     "links" = unlist(x[paste(nx, "link", sep = ".")]),
     "score" = score,
     "weights" = weights,
-    "d" = function(y, par log = FALSE, ...) {
+    "d" = function(y, par, log = FALSE, ...) {
       call <- paste('dfun(y, ', paste('par$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
       d <- try(eval(parse(text = call)), silent = TRUE)
       if(inherits(d, "try-error")) {
@@ -2545,7 +2545,7 @@ gaussian5.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
     "mu" = function(par, ...) {
       par$mu
     },
-    "d" = function(y, par log = FALSE) {
+    "d" = function(y, par, log = FALSE) {
       dnorm(y, mean = par$mu, sd = par$sigma, log = log)
     },
     "p" = function(y, par, ...) {
