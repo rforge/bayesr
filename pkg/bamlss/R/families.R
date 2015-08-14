@@ -932,7 +932,7 @@ cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
       log.p = log.p)
   )
 
-  gradfun <- function(y, par type = "gradient", name = "mu") {
+  gradfun <- function(y, par, type = "gradient", name = "mu") {
     ## functions used to evaluate gradient and hessian
     mills <- function(y, lower.tail = TRUE) {
       with(par, sigma * ddist(y, mu, sigma, df, log = FALSE)/
@@ -1483,7 +1483,7 @@ gamma.bamlss <- function(...)
 		  s <- par$mu / par$sigma
 		  dgamma(y, shape = a, scale = s, log = log)
 	  },
-	  "p" = function(y, par lower.tail = TRUE, log.p = FALSE) {
+	  "p" = function(y, par, lower.tail = TRUE, log.p = FALSE) {
 		  a <- par$sigma
 		  s <- par$mu / par$sigma
 		  pgamma(y, shape = a, scale = s, lower.tail = lower.tail, log.p = log.p)
