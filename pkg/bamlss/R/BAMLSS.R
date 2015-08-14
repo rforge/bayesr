@@ -260,8 +260,13 @@ bamlss <- function(formula, family = gaussian, data = NULL, knots = NULL,
 parse.input.bamlss <- function(formula, data = NULL, family = gaussian.bamlss,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
-  grid = 100, binning = FALSE, type = c("data.frame", "design.matrix"), ...)
+  grid = 100, binning = FALSE, ytype = c("vector", "data.frame", "matrix"),
+  xtype = c("matrix", "data.frame"), ...)
 {
+  ## Data return types.
+  ytype <- match.arg(ytype)
+  xtype <- match.arg(xtype)
+
   ## Search for additional formulas
   formula2 <- NULL; formula3 <- list(); k <- 1
   fn <- names(fo <- formals(fun = parse.input.bamlss))[-1]
@@ -269,7 +274,7 @@ parse.input.bamlss <- function(formula, data = NULL, family = gaussian.bamlss,
   for(f in fn) {
     fe <- eval(parse(text = f))
     if(is.character(fe)) {
-      if(grepl("~", fe, fixed = TRUE))
+      if(any(grepl("~", fe, fixed = TRUE)))
         fe <- as.formula(fe)
     }
     if(inherits(fe, "formula")) {
@@ -305,9 +310,32 @@ parse.input.bamlss <- function(formula, data = NULL, family = gaussian.bamlss,
     subset, offset, na.action, specials)
   response.name <- attr(mf, "response.name")
 
+  ## Assign all design matrices and the hierarchical level, if any.
+  rval <- bamlss.design(formula, mf, contrasts, knots, binning, xtype, ...)
+  rval <- bamlss.hlevel(rval)
+
+  ## FIXME: Process responses.
+  ## y <- mf[response.name]
+
+  attr(rval, "family") <- family
+  attr(rval, "reference") <- reference
+  ##attr(rval, "ylevels") <- ylevels
+  attr(rval, "grid") <- grid
+  attr(rval, "model.frame") <- mf
+  attr(rval, "formula0") <- formula0
+  attr(rval, "environment") <- new.env(parent = .GlobalEnv)
+
+  class(rval) <- c("bamlss.input", "list")
+
+  rval
+}
+
+
+## FIXME: old cat stuff!
+if(FALSE) {
   ## For categorical responses, extend formula object.
   ylevels <- NULL
-  if((length(response.name) < 2) | (cat <- if(is.null(family$cat)) FALSE else family$cat)) {
+  if(length(response.name) < 2) {
     if(is.factor(mf[[response.name[1]]])) {
       if(cat & nlevels(mf[[response.name[1]]]) > 1) {
         if(is.null(reference)) {
@@ -338,28 +366,12 @@ parse.input.bamlss <- function(formula, data = NULL, family = gaussian.bamlss,
     }
   }
 
-  ## Assign all design matrices and the hierarchical level, if any.
-  rval <- bamlss.design(formula, mf, contrasts, knots, binning, ...)
-  rval <- bamlss.hlevel(rval)
-
   ## Dirichlet specials.
   if(family$family == "dirichlet") {
     family$ncat <- length(rval)
     family$names <- paste(family$names, 1:family$ncat, sep = "")
     names(rval) <- family$names
   }
-
-  attr(rval, "family") <- family
-  attr(rval, "reference") <- reference
-  attr(rval, "ylevels") <- ylevels
-  attr(rval, "grid") <- grid
-  attr(rval, "model.frame") <- mf
-  attr(rval, "formula0") <- formula0
-  attr(rval, "environment") <- new.env(parent = .GlobalEnv)
-
-  class(rval) <- c("bamlss.input", "list")
-
-  rval
 }
 
 "[.bamlss.input" <- function(x, ...) {
@@ -378,7 +390,7 @@ parse.input.bamlss <- function(formula, data = NULL, family = gaussian.bamlss,
 
 ## Assign all designs matrices.
 bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FALSE,
-  before = TRUE, gam.side = TRUE, ...)
+  xtype, before = TRUE, gam.side = TRUE, ...)
 {
   if(!binning)
     binning <- NULL
@@ -450,12 +462,28 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
             tsm$xbin.order <- order(tsm$xbin.ind)
             tsm$xbin.k <- length(xbin.uind)
             tsm$xbin.sind <- tsm$xbin.ind[tsm$xbin.order]
-            smt <- smoothCon(tsm, if(before) mf[tsm$xbin.take, term.names, drop = FALSE] else mf, knots, absorb.cons = acons)
+            if(xtype == "matrix") {
+              smt <- smoothCon(tsm, if(before) mf[tsm$xbin.take, term.names, drop = FALSE] else mf,
+                knots, absorb.cons = acons)
+            } else {
+              tsm$data <- mf[tsm$term]
+              smt <- list(tsm)
+            }
           } else {
-            smt <- smoothCon(tsm, mf, knots, absorb.cons = acons)
+            if(xtype == "matrix") {
+              smt <- smoothCon(tsm, mf, knots, absorb.cons = acons)
+            } else {
+              tsm$data <- mf[tsm$term]
+              smt <- list(tsm)
+            }
           }
         } else {
-          smt <- smooth.construct(tsm, mf, knots)
+          if(xtype == "matrix") {
+            smt <- smooth.construct(tsm, mf, knots)
+          } else {
+            tsm$data <- mf[tsm$term]
+            smt <- tsm
+          }
           if(inherits(smt, "no.mgcv")) {
             no.mgcv <- c(no.mgcv, list(smt))
             next
@@ -467,12 +495,14 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
         smooth <- c(smooth, smt)
       }
       if(length(smooth) > 0) {
-        if(gam.side) {
+        if(gam.side & xtype == "matrix") {
           smooth <- try(mgcv:::gam.side(smooth, obj$X, tol = .Machine$double.eps^.5), silent = TRUE)
           if(inherits(smooth, "try-error"))
             stop("gam.side() produces an error when binning, try to set before = FALSE!?")
         }
-        sme <- mgcv:::expand.t2.smooths(smooth)
+        sme <- NULL
+        if(xtype == "matrix")
+          sme <- mgcv:::expand.t2.smooths(smooth)
         if(is.null(sme)) {
           original.smooth <- NULL
         } else {
@@ -484,13 +514,6 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
       if(!is.null(no.mgcv))
         smooth <- c(smooth, no.mgcv)
       obj$smooth <- smooth
-    }
-    if(length(obj$sx.smooth)) {
-      sx.smooth <- list()
-      for(j in obj$sx.smooth) {
-        sx.smooth <- c(sx.smooth, list(eval(parse(text = j))))
-      }
-      obj$sx.smooth <- sx.smooth
     }
 
     obj
@@ -639,7 +662,7 @@ bamlss.family <- function(family, type = "bamlss")
     }
     family$score <- score
   }
-  if(is.null(family$weights) & FALSE) {
+  if(is.null(family$hess) & FALSE) {
     nf <- family$names
     weights <- list()
     for(j in family$names) {
@@ -648,7 +671,7 @@ bamlss.family <- function(family, type = "bamlss")
         -1 * eval(parse(text = call))
       }
     }
-    family$weights <- weights
+    family$hess <- weights
   }
 
   family
@@ -1411,14 +1434,14 @@ add.partial <- function(x, samples = FALSE, nsamps = 100) {
   nx <- names(x)
   family <- attr(x, "family")
   if(is.null(family)) stop("cannot compute partial residuals, no iwls score and weights functions supplied with family object!")
-  if(!is.null(family$weights) & !is.null(family$score)) {
+  if(!is.null(family$hess) & !is.null(family$score)) {
     y <- model.response2(x)
     eta <- fitted.bamlss(x, samples = samples, nsamps = nsamps)
     mf <- model.frame(x)
     for(j in seq_along(x)) {
       if(!is.null(x[[j]]$effects)) {
         peta <- family$map2par(eta)
-        weights <- family$weights[[nx[j]]](y, peta)
+        weights <- family$hess[[nx[j]]](y, peta)
         score <- family$score[[nx[j]]](y, peta)
         z <- eta[[nx[j]]] + 1 / weights * score
         ne <- names(x[[j]]$effects)

@@ -653,7 +653,7 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
           peta <- family$map2par(eta)
 
           ## Compute weights.
-          weights <- family$weights[[nx[j]]](response, peta)
+          weights <- family$hess[[nx[j]]](response, peta)
 
           ## Score.
           score <- family$score[[nx[j]]](response, peta)
@@ -856,7 +856,7 @@ bfit0_iwls <- function(x, family, response, eta, id, ...)
   peta <- family$map2par(eta)
   if(is.null(args$weights)) {
     ## Compute weights.
-    weights <- family$weights[[id]](response, peta, ...)
+    weights <- family$hess[[id]](response, peta, ...)
   } else weights <- args$weights
 
   if(is.null(args$z)) {
@@ -1391,7 +1391,7 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
       peta <- family$map2par(eta)
 
       ## Compute weights.
-      weights <- family$weights[[nx[j]]](response, peta)
+      weights <- family$hess[[nx[j]]](response, peta)
 
       ## Score.
       score <- family$score[[nx[j]]](response, peta)

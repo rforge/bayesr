@@ -137,7 +137,7 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
   int ll_ind = getListElement_index(family, "loglik");
   double pibeta = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, peta, rho))[0];
   SEXP weights;
-  PROTECT(weights = iwls_eval(getListElement(getListElement(family, "weights"),
+  PROTECT(weights = iwls_eval(getListElement(getListElement(family, "hess"),
     CHAR(STRING_ELT(id, 0))), response, peta, rho));
   ++nProtected;
   SEXP score;
@@ -345,7 +345,7 @@ SEXP do_propose(SEXP x, SEXP family, SEXP response, SEXP eta, SEXP id, SEXP rho)
 
   /* Weights, score and working observations. */
   SEXP weights2, score2;
-  PROTECT(weights2 = iwls_eval(getListElement(getListElement(family, "weights"),
+  PROTECT(weights2 = iwls_eval(getListElement(getListElement(family, "hess"),
     CHAR(STRING_ELT(id, 0))), response, peta, rho));
   ++nProtected;
   PROTECT(score2 = iwls_eval(getListElement(getListElement(family, "score"),
@@ -675,7 +675,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   int ll_ind = getListElement_index(family, "loglik");
   double pibeta = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, peta, rho))[0];
   SEXP weights;
-  PROTECT(weights = iwls_eval(getListElement(getListElement(family, "weights"),
+  PROTECT(weights = iwls_eval(getListElement(getListElement(family, "hess"),
     CHAR(STRING_ELT(id, 0))), response, peta, rho));
   double *weightsptr = REAL(weights);
   ++nProtected;
@@ -700,7 +700,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   double *etaptr = REAL(getListElement(eta2, CHAR(STRING_ELT(id, 0))));
   double *zptr = REAL(z);
   double *eptr = REAL(e);
-  double *xweightsptr = REAL(getListElement(x, "weights"));
+  double *xweightsptr = REAL(getListElement(x, "hess"));
   double *xrresptr = REAL(getListElement(x, "rres"));
   double *XWptr = REAL(getListElement(x, "XW"));
   double *XWXptr = REAL(getListElement(x, "XWX"));
@@ -898,7 +898,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   /* Evaluate loglik, weights and score vector. */
   peta = map2par(getListElement(family, "map2par"), eta2, rho);
   double pibetaprop = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, peta, rho))[0];
-  weights = iwls_eval(getListElement(getListElement(family, "weights"),
+  weights = iwls_eval(getListElement(getListElement(family, "hess"),
     CHAR(STRING_ELT(id, 0))), response, peta, rho);
   weightsptr = REAL(weights);
   score = iwls_eval(getListElement(getListElement(family, "score"),
@@ -1156,7 +1156,7 @@ SEXP cnorm_score_sigma(SEXP y, SEXP mu, SEXP sigma, SEXP check)
 }
 
 
-SEXP cnorm_weights_mu(SEXP y, SEXP mu, SEXP sigma, SEXP check)
+SEXP cnorm_hess_mu(SEXP y, SEXP mu, SEXP sigma, SEXP check)
 {
   SEXP rval;
   PROTECT(rval = allocVector(REALSXP, length(y)));
@@ -1188,7 +1188,7 @@ SEXP cnorm_weights_mu(SEXP y, SEXP mu, SEXP sigma, SEXP check)
 }
 
 
-SEXP cnorm_weights_sigma(SEXP y, SEXP mu, SEXP sigma, SEXP check)
+SEXP cnorm_hess_sigma(SEXP y, SEXP mu, SEXP sigma, SEXP check)
 {
   SEXP rval;
   PROTECT(rval = allocVector(REALSXP, length(y)));

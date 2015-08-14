@@ -152,7 +152,7 @@ beta.bamlss <- function(...)
         drop(-(1 - b) / (b) * ( -a * digamma(h1) - (1 - a) * digamma(h2) + digamma((1 - b) / (b)) + a * log(y) + (1 - a) * log(1 - y)))
       }
     ),
-    "weights" = list(
+    "hess" = list(
       "mu" = function(y, par, ...) {
         a <- par$mu
         b <- par$sigma2
@@ -211,7 +211,7 @@ betazoi.bamlss <- function(...)
       "nu" = c("betainf", "nu"),
       "tau" = c("betainf", "tau"),
       "order" = 1:4,
-      "weights" = list(
+      "hess" = list(
         "mu" = function(x) { 1 * ((x != 1) & (x != 0)) },
         "sigma2" = function(x) { 1 * ((x != 1) & (x != 0)) }
       )
@@ -263,7 +263,7 @@ betazi.bamlss <- function(...)
       "sigma2" = c("betainf0", "sigma2"),
       "nu" = c("betainf0", "nu"),
       "order" = 1:3,
-      "weights" = list(
+      "hess" = list(
         "mu" = function(x) { 1 * ((x != 0)) },
         "sigma2" = function(x) { 1 * ((x != 0)) }
       )
@@ -312,7 +312,7 @@ betaoi.bamlss <- function(...)
       "sigma2" = c("betainf1", "sigma2"),
       "tau" = c("betainf1", "tau"),
       "order" = 1:3,
-      "weights" = list(
+      "hess" = list(
         "mu" = function(x) { 1 * ((x != 1)) },
         "sigma2" = function(x) { 1 * ((x != 1)) }
       )
@@ -387,7 +387,7 @@ binomial.bamlss <- function(...)
         (par$pi - y) / ((par$pi - 1) * par$pi)
       }
     ),
-    "weights" = list(
+    "hess" = list(
       "pi" = function(y, par, ...) {
         if(is.factor(y)) y <- as.integer(y) - 1
         -1 * ((par$pi^2 + y - 2 * par$pi * y) / ((-1 + par$pi^2) * par$pi^2))
@@ -459,7 +459,7 @@ gaussian.bamlss <- function(...)
       "mu" = function(y, par, ...) { drop((y - par$mu) / (par$sigma^2)) },
       "sigma" = function(y, par, ...) { drop(-1 + (y - par$mu)^2 / (par$sigma^2)) }
     ),
-    "weights" = list(
+    "hess" = list(
       "mu" = function(y, par, ...) { drop(1 / (par$sigma^2)) },
       "sigma" = function(y, par, ...) { rep(2, length(y)) }
     ),
@@ -533,7 +533,7 @@ gaussian2.bamlss <- function(...)
       "mu" = function(y, par, ...) { drop((y - par$mu) / par$sigma2) },
       "sigma2" = function(y, par, ...) { drop(-0.5 + (y - par$mu)^2 / (2 * par$sigma2)) }
     ),
-    "weights" = list(
+    "hess" = list(
       "mu" = function(y, par, ...) { drop(1 / par$sigma2) },
       "sigma2" = function(y, par, ...) { rep(0.5, length(y)) }
     ),
@@ -635,7 +635,7 @@ truncgaussian.bamlss <- function(...)
         return(drop(rval))
       }
     ),
-    "weights" = list(
+    "hess" = list(
       "mu" = function(y, par, ...) {
         rval <- with(par, 1 / (sigma^2) - (mu / sigma^2) * (1 / sigma)*(dnorm(mu / sigma) / pnorm(mu / sigma))
           - ((1 / sigma)*(dnorm(mu / sigma) / pnorm(mu / sigma)))^2)
@@ -756,14 +756,14 @@ cnorm.bamlss <- function(...)
         as.integer(attr(y, "check")))
     }
   )
-  f$weights <- list(
+  f$hess <- list(
     "mu" = function(y, par, ...) {
-      .Call("cnorm_weights_mu",
+      .Call("cnorm_hess_mu",
         as.numeric(y), as.numeric(par$mu), as.numeric(par$sigma),
         as.integer(attr(y, "check")))
     },
     "sigma" = function(y, par, ...) {
-      .Call("cnorm_weights_sigma",
+      .Call("cnorm_hess_sigma",
         as.numeric(y), as.numeric(par$mu), as.numeric(par$sigma),
         as.integer(attr(y, "check")))
     }
@@ -850,18 +850,18 @@ pcnorm.bamlss <- function(alpha = NULL, start = 1.5, ...)
         as.numeric(par$alpha), as.integer(attr(y, "check")))
     }
   )
-  f$weights <- list(
+  f$hess <- list(
     "mu" = function(y, par, ...) {
       if(!is.null(alpha))
         par$alpha <- rep(alpha, length = length(y))
-      .Call("cnorm_weights_mu",
+      .Call("cnorm_hess_mu",
         as.numeric(y^(1 / par$alpha)), as.numeric(par$mu), as.numeric(par$sigma),
         as.integer(attr(y, "check")))
     },
     "sigma" = function(y, par, ...) {
       if(!is.null(alpha))
         par$alpha <- rep(alpha, length = length(y))
-      .Call("cnorm_weights_sigma",
+      .Call("cnorm_hess_sigma",
         as.numeric(y^(1 / par$alpha)), as.numeric(par$mu), as.numeric(par$sigma),
         as.integer(attr(y, "check")))
     }
@@ -1036,13 +1036,13 @@ cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
     }
   )
 
-  weights <- list(
+  hess <- list(
     "mu" =  function(y, par, ...) {
-      wmu <- -1 * gradfun(y, par, type = "weights", name = "mu")
+      wmu <- -1 * gradfun(y, par, type = "hess", name = "mu")
       return(drop(wmu))
     },
     "sigma" =  function(y, par, ...) {
-      wsigma <- -1 * gradfun(y, par, type = "weights", name = "sigma")
+      wsigma <- -1 * gradfun(y, par, type = "hess", name = "sigma")
       return(drop(wsigma))
     }
   )
@@ -1072,7 +1072,7 @@ cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
       with(par, pdist(y, mu, sigma, df, lower.tail = TRUE, log = log))
     },
     "score" = score,
-    "weights" = weights,
+    "hess" = hess,
     "type" = 1
   )
  
@@ -1312,7 +1312,7 @@ invgaussian.bamlss <- function(...)
         -0.5 + (y - mu)^2 / (2 * y * mu^2 * par$sigma2)
       }
     ),
-    "weights" = list(
+    "hess" = list(
       "mu" = function(y, par, ...) { 1 / (par$mu * par$sigma2) },
       "sigma2" = function(y, par, ...) { rep(0.5, length(y)) }
     ),
@@ -1463,7 +1463,7 @@ gamma.bamlss <- function(...)
         sigma * (log(sigma) + 1 - log(mu) - digamma(sigma) + log(y) - y / mu)
       }
     ),
-    "weights" = list(
+    "hess" = list(
       "mu" = function(y, par, ...) { par$sigma },
       "sigma" = function(y, par, ...) {
         sigma <- par$sigma
@@ -1542,7 +1542,7 @@ lognormal.bamlss <- function(...)
       "mu" = function(y, par, ...) { (log(y) - par$mu) / (par$sigma^2) },
       "sigma" = function(y, par, ...) { -1 + (log(y) - par$mu)^2 / (par$sigma^2) }
     ),
-    "weights" = list(
+    "hess" = list(
       "mu" = function(y, par, ...) { 1 / (par$sigma^2) },
       "sigma" = function(y, par, ...) { rep(2, length(y)) }
     ),
@@ -1584,11 +1584,11 @@ lognormal2.bamlss <- function(...)
       "mu" = function(y, par, ...) { (log(y) - par$mu) / (par$sigma2) },
       "sigma2" = function(y, par, ...) { -0.5 + (log(y) - par$mu)^2 / (2 * par$sigma2) }
     ),
-    "weights" = list(
+    "hess" = list(
       "mu" = function(y, par, ...) { 1 / (par$sigma2) },
       "sigma2" = function(y, par, ...) { rep(0.5, length(y)) }
     ),
-	  "mu" = function(par, ...) {
+    "mu" = function(par, ...) {
       exp(par$mu + 0.5 * (par$sigma2))
     },
     "d" = function(y, par, log = FALSE) {
@@ -1900,7 +1900,7 @@ poisson.bamlss <- function(...)
         y / par$lambda - 1
       }
     ),
-    "weights" = list(
+    "hess" = list(
       "lambda" = function(y, par, ...) {
         1 / par$lambda
       }
@@ -1963,24 +1963,24 @@ hurdleP.bamlss <- function(...)
     "bayesx" = list(
       "lambda" = c("hurdle", "lambda"),
       "pi" = c("hurdle", "pi"),
-	    "weights" = list(
+      "hess" = list(
         "lambda" = function(x) { 1 * (x != 0)}
       )
     ),
-	  "mu" = function(par, ...) {
+    "mu" = function(par, ...) {
       (1 - par$pi) * par$lambda / (1 - exp(-par$lambda))
     },
     "d" = function(y, par, log = FALSE) {
       d <- ifelse(y == 0, par$pi, 
-				(1 - par$pi) * dpois(y, lambda = par$lambda) / (1 - exp(-par$lambda)))
+        (1 - par$pi) * dpois(y, lambda = par$lambda) / (1 - exp(-par$lambda)))
       if(log) d <- log(d)
       d
     },
     "p" = function(y, par, ...) {
-		  cdf1 <- ppois(y, lambda = par$lambda)
-		  cdf2 <- ppois(0, lambda = par$lambda)
-		  cdf3 <- par$pi + ((1 - par$pi) * (cdf1 - cdf2)/(1 - cdf2))
-		  cdf <- ifelse((y == 0), par$pi, cdf3)
+      cdf1 <- ppois(y, lambda = par$lambda)
+      cdf2 <- ppois(0, lambda = par$lambda)
+      cdf3 <- par$pi + ((1 - par$pi) * (cdf1 - cdf2)/(1 - cdf2))
+      cdf <- ifelse((y == 0), par$pi, cdf3)
       cdf
     },
     "nscore" = TRUE,
@@ -2065,26 +2065,26 @@ hurdleNB.bamlss <- function(...)
     "bayesx" = list(
       "mu" = c("hurdle", "mu"),
       "delta" = c("hurdle", "delta"),
-	    "pi" = c("hurdle", "pi"),
-	     "weights" = list(
+      "pi" = c("hurdle", "pi"),
+      "hess" = list(
          "mu" = function(x) { 1 * (x != 0)},
-		     "delta" = function(x) { 1 * (x != 0)}
-       )
+         "delta" = function(x) { 1 * (x != 0)}
+      )
     ),
-	  "mu" = function(par, ...) {
+    "mu" = function(par, ...) {
       (1 - par$pi) * par$mu / (1 - (par$delta) / (par$delta + par$mu)^par$delta)
     },
     "d" = function(y, par, log = FALSE) {
       d <- ifelse(y == 0, par$pi + (1 - par$pi) * dnbinom(y, mu = par$mu, size = par$delta), 
-				(1 - par$pi) * dnbinom(y, mu = par$mu, size = par$delta))
+        (1 - par$pi) * dnbinom(y, mu = par$mu, size = par$delta))
       if(log) d <- log(d)
       d
     },
     "p" = function(y, par, ...) {
-		  cdf1 <- pnbinom(y, size = par$delta, mu = par$mu)
-		  cdf2 <- pnbinom(0, size = par$delta, mu = par$mu)
-		  cdf3 <- par$pi + ((1 - par$pi) * (cdf1 - cdf2)/(1 - cdf2))
-		  cdf <- ifelse((y == 0), par$pi, cdf3)
+      cdf1 <- pnbinom(y, size = par$delta, mu = par$mu)
+      cdf2 <- pnbinom(0, size = par$delta, mu = par$mu)
+      cdf3 <- par$pi + ((1 - par$pi) * (cdf1 - cdf2)/(1 - cdf2))
+      cdf <- ifelse((y == 0), par$pi, cdf3)
     },
     "nscore" = TRUE,
     "type" = 3
@@ -2177,9 +2177,9 @@ zero.bamlss <- function(g = invgaussian)
     }
   }
   g$bayesx <- c(g$bayesx, list("pi" = c(paste("binomial", pi, sep = "_"), "meanservant")))
-  g$bayesx$weights <- list()
+  g$bayesx$hess <- list()
   for(j in np) {
-    g$bayesx$weights[[j]] <- function(x) { 1 * (x > 0) }
+    g$bayesx$hess[[j]] <- function(x) { 1 * (x > 0) }
     if(grepl("mean", g$bayesx[[j]][2]))
       g$bayesx[[j]][2] <- "meanservant"
   }
@@ -2233,7 +2233,7 @@ tF <- function(x, ...)
   nx <- c("mu", "sigma", "nu", "tau")[1:k]
   nf <- names(x)
   de <- c("m", "d", "v", "t")[1:k]
-  score <- weights <- list()
+  score <- hess <- list()
 
   args <- if(!is.null(names(args))) {
     paste(', ', paste(names(args), "=", unlist(args), sep = '', collapse = ', '), sep = '')
@@ -2244,13 +2244,13 @@ tF <- function(x, ...)
     call <- paste('x$dldm(y, ', paste('par$', nx, sep = '', collapse = ', '), args, ')', sep = "")
     eval(parse(text = call))
   }
-  weights$mu <- function(y, par, ...) {
+  hess$mu <- function(y, par, ...) {
     fo <- names(formals(x$d2ldm2))
     call <- paste('x$d2ldm2(', paste('par$', fo, sep = '', collapse = ', '), ')', sep = "")
-    weights <- eval(parse(text = call))
+    hess <- eval(parse(text = call))
     dlink <- 1 / x$mu.dr(mu.linkfun(par$mu))
-    weights <- -(weights / (dlink * dlink)) * dlink
-    weights
+    hess <- -(hess / (dlink * dlink)) * dlink
+    hess
   }
   if(k > 1) {
     sigma.linkfun <- make.link.gamlss(x$sigma.link)$linkfun
@@ -2258,13 +2258,13 @@ tF <- function(x, ...)
       call <- paste('x$dldd(y, ', paste('par$', nx, sep = '', collapse = ', '), ')', sep = "")
       eval(parse(text = call))
     }
-    weights$sigma <- function(y, par, ...) {
+    hess$sigma <- function(y, par, ...) {
       fo <- names(formals(x$d2ldd2))
       call <- paste('x$d2ldd2(', paste('par$', fo, sep = '', collapse = ', '), ')', sep = "")
-      weights <- eval(parse(text = call))
+      hess <- eval(parse(text = call))
       dlink <- 1 / x$sigma.dr(sigma.linkfun(par$sigma))
-      weights <- -(weights / (dlink * dlink)) * dlink
-      weights
+      hess <- -(hess / (dlink * dlink)) * dlink
+      hess
     }
   }
   if(k > 2) {
@@ -2273,13 +2273,13 @@ tF <- function(x, ...)
       call <- paste('x$dldv(y, ', paste('par$', nx, sep = '', collapse = ', '), ')', sep = "")
       eval(parse(text = call))
     }
-    weights$nu <- function(y, par, ...) {
+    hess$nu <- function(y, par, ...) {
       fo <- names(formals(x$d2ldv2))
       call <- paste('x$d2ldv2(', paste('par$', fo, sep = '', collapse = ', '), ')', sep = "")
-      weights <- eval(parse(text = call))
+      hess <- eval(parse(text = call))
       dlink <- 1 / x$nu.dr(nu.linkfun(par$sigma))
-      weights <- -(weights / (dlink * dlink)) * dlink
-      weights
+      hess <- -(hess / (dlink * dlink)) * dlink
+      hess
     }
   }
   if(k > 3) {
@@ -2288,13 +2288,13 @@ tF <- function(x, ...)
       call <- paste('x$dldt(y, ', paste('par$', nx, sep = '', collapse = ', '), ')', sep = "")
       eval(parse(text = call))
     }
-    weights$tau <- function(y, par, ...) {
+    hess$tau <- function(y, par, ...) {
       fo <- names(formals(x$d2ldt2))
       call <- paste('x$d2ldt2(', paste('par$', fo, sep = '', collapse = ', '), ')', sep = "")
-      weights <- eval(parse(text = call))
+      hess <- eval(parse(text = call))
       dlink <- 1 / x$tau.dr(tau.linkfun(par$sigma))
-      weights <- -(weights / (dlink * dlink)) * dlink
-      weights
+      hess <- -(hess / (dlink * dlink)) * dlink
+      hess
     }
   }
 
@@ -2306,7 +2306,7 @@ tF <- function(x, ...)
     "names" = nx,
     "links" = unlist(x[paste(nx, "link", sep = ".")]),
     "score" = score,
-    "weights" = weights,
+    "hess" = hess,
     "d" = function(y, par, log = FALSE, ...) {
       call <- paste('dfun(y, ', paste('par$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
       d <- try(eval(parse(text = call)), silent = TRUE)
@@ -2528,7 +2528,7 @@ gaussian5.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
         drop(snorm(y, mean = par$mu, sd = par$sigma, which = 2) * lfun$sigma$mu.eta(sigma))
       }
     ),
-    "weights" = list(
+    "hess" = list(
       "mu" = function(y, par, ...) {
         mu <- lfun$mu$linkfun(par$mu)
         w <- -1 * drop(snorm(y, mean = par$mu, sd = par$sigma, which = 1) * lfun$mu$mu.eta2(mu) +

@@ -29,7 +29,7 @@ propose_iwls0 <- function(x, family, response, eta, id, ...)
   peta <- family$map2par(eta)
 
   ## Compute weights.
-  weights <- family$weights[[id]](response, peta)
+  weights <- family$hess[[id]](response, peta)
 
   ## Score.
   score <- family$score[[id]](response, peta)
@@ -82,7 +82,7 @@ propose_iwls0 <- function(x, family, response, eta, id, ...)
   pibetaprop <- family$loglik(response, peta)
 
   ## Compute new weights
-  weights <- family$weights[[id]](response, peta)
+  weights <- family$hess[[id]](response, peta)
 
   ## New score.
   score <- family$score[[id]](response, peta)
@@ -590,7 +590,7 @@ propose_wslice <- function(x, family,
     peta <- family$map2par(eta)
 
     ## Compute weights.
-    weights <- family$weights[[id]](response, peta)
+    weights <- family$hess[[id]](response, peta)
 
     ## Which obs to take.
     ok <- !(weights %in% c(NA, -Inf, Inf, 0))
@@ -687,7 +687,7 @@ update_iwls <- function(x, family, response, eta, id, ...)
 
   if(is.null(args$weights)) {
     ## Compute weights.
-    weights <- family$weights[[id]](response, peta)
+    weights <- family$hess[[id]](response, peta)
   } else weights <- args$weights
 
   ## Which obs to take.
@@ -1595,7 +1595,7 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
             peta <- family$map2par(eta)
 
             ## Compute weights.
-            weights <- family$weights[[nx[j]]](response, peta)
+            weights <- family$hess[[nx[j]]](response, peta)
 
             ## Score.
             score <- family$score[[nx[j]]](response, peta)

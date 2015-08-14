@@ -161,6 +161,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
     priors <- parse_input(priors, NULL, "function")
 
   if(burnin < 1) burnin <- 1
+  if(burnin > n.iter) burnin <- floor(n.iter * 0.1)
   iterthin <- as.integer(seq(burnin, n.iter, by = thin))
 
   rho <- new.env()
@@ -691,7 +692,7 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, response, data, ...)
   peta <- family$map2par(eta)
 
   ## Compute weights.
-  weights <- family$weights[[id[1]]](response, peta)
+  weights <- family$hess[[id[1]]](response, peta)
 
   ## Score.
   score <- family$score[[id[1]]](response, peta)
@@ -749,8 +750,7 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, response, data, ...)
   pibetaprop <- family$loglik(response, peta)
 
   ## Compute new weights
-  weights <- family$weights[[id[1]]](response, peta)
-
+  weights <- family$hess[[id[1]]](response, peta)
 
   ## New score.
   score <- family$score[[id[1]]](response, peta)
