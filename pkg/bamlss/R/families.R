@@ -1512,7 +1512,7 @@ gengamma.bamlss <- function(...)
     "bayesx" = list(
       "mu" = c("gengamma", "mu"),
       "sigma" = c("gengamma", "sigma"),
-	    "tau" = c("gengamma", "tau")
+      "tau" = c("gengamma", "tau")
     )
   )
 
@@ -1622,27 +1622,27 @@ dagum.bamlss <- function(...)
       "b" = c("dagum", "b"),
       "p" = c("dagum", "p")
     ),
-	  "mu" = function(par, ...) {
-	    a <- par$a
+    "mu" = function(par, ...) {
+      a <- par$a
       b <- par$b
       p <- par$p
       -(b/a) * (gamma(- 1 / a) * gamma(p + 1 / a)) / (gamma(p))
     },
-	  "d" = function(y, par, log = FALSE) {
-		  a <- par$a
-		  b <- par$b
-		  p <- par$p
-		  ap <- a * p
-		  d <- ap * y^(ap - 1) / (b^ap * (1 + (y / b)^a)^(p + 1))
-      if(log) d <- log(d)
-      d
-	  },
-	  "p" = function(y, par, ...) {
-		  a <- par$a
+    "d" = function(y, par, log = FALSE) {
+      a <- par$a
       b <- par$b
       p <- par$p
-		  (1 + (y / b)^(-a))^(-p)
-	  }
+      ap <- a * p
+      d <- ap * y^(ap - 1) / (b^ap * (1 + (y / b)^a)^(p + 1))
+      if(log) d <- log(d)
+      d
+    },
+    "p" = function(y, par, ...) {
+      a <- par$a
+      b <- par$b
+      p <- par$p
+      (1 + (y / b)^(-a))^(-p)
+    }
   )
 
   class(rval) <- "family.bamlss"
@@ -1666,29 +1666,29 @@ BCCG2.bamlss <- function(...)
     "bayesx" = list(
       "mu" = c("BCCG", "mu"),
       "sigma" =  c("BCCG", "sigma"),
-	    "nu" = c("BCCG", "nu"),
-	    "order" = c("nu", "sigma", "mu")
+      "nu" = c("BCCG", "nu"),
+      "order" = c("nu", "sigma", "mu")
     ),
-	  "d" = function(y, par, log = FALSE) {
-		  mu <- par$mu
-		  sigma <- par$sigma
-		  nu <- par$nu
-		  z <- ifelse(nu == 0, log(y/mu)/sigma, (((y/mu)^nu - 1)/(nu * sigma)))
-		  d <- (1 / (sqrt(2 * pi) * sigma)) * (y^(nu - 1) / mu^nu) * exp(-z^2 / 2)
+    "d" = function(y, par, log = FALSE) {
+      mu <- par$mu
+      sigma <- par$sigma
+      nu <- par$nu
+      z <- ifelse(nu == 0, log(y/mu)/sigma, (((y/mu)^nu - 1)/(nu * sigma)))
+      d <- (1 / (sqrt(2 * pi) * sigma)) * (y^(nu - 1) / mu^nu) * exp(-z^2 / 2)
       if(log) d <- log(d)
       d
-	  },
-	  "p" = function(y, par, ...) {
-		  mu <- par$mu
-		  sigma <- par$sigma
-		  nu <- par$nu
-		  z <- ifelse(nu == 0, log(y/mu)/sigma, (((y/mu)^nu - 1)/(nu * sigma)))
-		  FYy1 <- pnorm(z, ...)
+    },
+    "p" = function(y, par, ...) {
+      mu <- par$mu
+      sigma <- par$sigma
+      nu <- par$nu
+      z <- ifelse(nu == 0, log(y/mu)/sigma, (((y/mu)^nu - 1)/(nu * sigma)))
+      FYy1 <- pnorm(z, ...)
       FYy2 <- ifelse(nu > 0, pnorm(-1/(sigma * abs(nu))), 0)
-		  FYy3 <- pnorm(1/(sigma * abs(nu)), ...)
+      FYy3 <- pnorm(1/(sigma * abs(nu)), ...)
       (FYy1 - FYy2)/FYy3
-	  },
-	  "type" = 1
+    },
+    "type" = 1
   )
   
   class(rval) <- "family.bamlss"
@@ -1715,7 +1715,7 @@ mvn.bamlss <- function(...)
       "order" = 5:1,
       "rm.number" = TRUE
     ),
-	  "mu" = function(par, ...) {
+    "mu" = function(par, ...) {
       cbind(par$mu1, par$mu2)
     },
     "d" = function(y, par, log = FALSE) {
@@ -1753,7 +1753,7 @@ bivprobit.bamlss <- function(...)
       "order" = 3:1,
       "rm.number" = TRUE
     ),
-	  "mu" = function(par, ...) {
+    "mu" = function(par, ...) {
       c(par$mu1, par$mu2)
     },
     "type" = 2
@@ -1779,7 +1779,7 @@ bivlogit.bamlss <- function(...)
       "order" = 3:1,
       "rm.number" = TRUE
     ),
-	  "mu" = function(par, ...) {
+    "mu" = function(par, ...) {
       c(par$mu1, par$mu2)
     }
   )
@@ -1808,7 +1808,7 @@ mvt.bamlss <- function(...)
       "order" = 6:1,
       "rm.number" = TRUE
     ),
-	  "mu" = function(par, ...) {
+    "mu" = function(par, ...) {
       c(par$mu1, par$mu2)
     },
     "type" = 2
