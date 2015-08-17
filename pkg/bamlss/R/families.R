@@ -1838,10 +1838,12 @@ dirichlet.bamlss <- function(...)
 
 multinomial.bamlss <- multinom.bamlss <- function(...)
 {
+  link <- "logit"
+
   rval <- list(
     "family" = "multinomial",
-    "names" = "pi",
-    "links" = parse.links(link, c(pi = "probit"), ...),
+    "names" = NA,
+    "links" = link,
     "cat" = TRUE,
     "bugs" = list(
       "dist" = "dcat",
@@ -1850,7 +1852,15 @@ multinomial.bamlss <- multinom.bamlss <- function(...)
     ),
     "bayesx" = list(
       "pi" = c(paste("multinom", link, sep = "_"), "mu", "meanservant")
-    )
+    ),
+    "score" = function(y, par, yvec, ...) {
+      id <- list(...)$id
+      return(yvec - par[[id]])
+    },
+    "hess" = function(y, par, yvec, ...) {
+      id <- list(...)$id
+      return(-1 * par[[id]] * (1 - par[[id]]))
+    }
   )
 
   rval$d <- switch(link,

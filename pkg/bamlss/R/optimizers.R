@@ -665,7 +665,8 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
         ## And all terms.
         if(inner) {
           tbf <- inner_bf(x[[nx[j]]]$smooth, response, eta, family,
-            edf = edf, id = nx[j], z = z, weights = weights)
+            edf = edf, id = nx[j], z = z, weights = weights,
+            yvec = x[[nx[j]]]$response.vec)
           x[[nx[j]]]$smooth <- tbf$x
           edf <- tbf$edf
           eta <- tbf$eta
@@ -674,7 +675,8 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
           for(sj in seq_along(x[[nx[j]]]$smooth)) {
             ## Get updated parameters.
             p.state <- x[[nx[j]]]$smooth[[sj]]$update(x[[nx[j]]]$smooth[[sj]],
-              family, response, eta, nx[j], edf = edf, z = z, weights = weights)
+              family, response, eta, nx[j], edf = edf, z = z, weights = weights,
+              yvec = x[[nx[j]]]$response.vec)
 
             ## Compute equivalent degrees of freedom.
             edf <- edf - x[[nx[j]]]$smooth[[sj]]$state$edf + p.state$edf
@@ -856,12 +858,12 @@ bfit0_iwls <- function(x, family, response, eta, id, ...)
   peta <- family$map2par(eta)
   if(is.null(args$weights)) {
     ## Compute weights.
-    weights <- family$hess[[id]](response, peta, ...)
+    weights <- family$hess[[id]](response, peta, id = id, ...)
   } else weights <- args$weights
 
   if(is.null(args$z)) {
     ## Score.
-    score <- family$score[[id]](response, peta, ...)
+    score <- family$score[[id]](response, peta, id = id, ...)
 
     ## Compute working observations.
     z <- eta[[id]] + 1 / weights * score

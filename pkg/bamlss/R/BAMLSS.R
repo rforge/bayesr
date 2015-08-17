@@ -301,7 +301,7 @@ parse.input.bamlss <- function(formula, data = NULL, family = gaussian.bamlss,
     }
   }
 
-  ## Parse formula
+  ## Parse formula.
   formula <- bamlss.formula(formula, specials, family)
   formula0 <- attr(formula, "formula0")
 
@@ -310,24 +310,47 @@ parse.input.bamlss <- function(formula, data = NULL, family = gaussian.bamlss,
     subset, offset, na.action, specials)
   response.name <- attr(mf, "response.name")
 
+  ## Process categorical responses.
+  cf <- bamlss.formula.cat(formula, mf, reference)
+  if(!is.null(cf)) {
+    formula <- cf$formula
+    reference <- cf$reference
+    family$names <- names(formula)
+    family$links <- rep(family$links, length.out = length(formula))
+    names(family$links) <- names(formula)
+    score <- family$score
+    if(!is.null(score)) {
+      if(is.function(score))
+        score <- list(score)
+      family$score <- rep(score, length.out = length(formula))
+      names(family$score) <- names(formula)
+    }
+    hess <- family$hess
+    if(!is.null(family$hess)) {
+      if(is.function(hess))
+        hess <- list(hess)
+      family$hess <- rep(hess, length.out = length(formula))
+      names(family$hess) <- names(formula)
+    }
+  }
+
   ## Assign all design matrices and the hierarchical level, if any.
   rval <- bamlss.design(formula, mf, contrasts, knots, binning, xtype, ...)
   rval <- bamlss.hlevel(rval)
 
-  ## FIXME: Process responses.
-  ## y <- mf[response.name]
+  ## Add more functions to family object.
+  family <- complete.bamlss.family(family)
 
+  ## Setup return object.
   attr(rval, "family") <- family
   attr(rval, "reference") <- reference
-  ##attr(rval, "ylevels") <- ylevels
   attr(rval, "grid") <- grid
   attr(rval, "model.frame") <- mf
   attr(rval, "formula0") <- formula0
   attr(rval, "environment") <- new.env(parent = .GlobalEnv)
-
   class(rval) <- c("bamlss.input", "list")
 
-  rval
+  return(rval)
 }
 
 
@@ -372,6 +395,31 @@ if(FALSE) {
     family$names <- paste(family$names, 1:family$ncat, sep = "")
     names(rval) <- family$names
   }
+
+
+  ## Old family stuff.
+  if(is.null(family$score) & FALSE) {
+    nf <- family$names
+    score <- list()
+    for(j in family$names) {
+      score[[j]] <- function(y, eta, ...) {
+        call <- paste('num_deriv(y, eta, family = family, id = "',  j, '", d = 1)', sep = '')
+        eval(parse(text = call))
+      }
+    }
+    family$score <- score
+  }
+  if(is.null(family$hess) & FALSE) {
+    nf <- family$names
+    weights <- list()
+    for(j in family$names) {
+      weights[[j]] <- function(y, eta, ...) {
+        call <- paste('num_deriv(y, eta, family = family, id = "',  j, '", d = 2)', sep = '')
+        -1 * eval(parse(text = call))
+      }
+    }
+    family$hess <- weights
+  }
 }
 
 "[.bamlss.input" <- function(x, ...) {
@@ -406,7 +454,8 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
     obj$pterms <- colnames(obj$X)
     obj$binning <- binning
     rn <- obj$response
-    obj$response.vec <- if(!is.null(rn)) mf[[rn]] else NULL
+    if(is.null(obj$response.vec))
+      obj$response.vec <- if(!is.null(rn)) mf[[rn]] else NULL
     no.mgcv <- NULL
     if(length(obj$smooth)) {
       smooth <- list()
@@ -625,11 +674,14 @@ bamlss.family <- function(family, type = "bamlss")
     family <- eval(parse(text = txt[1]))
     family <- family()
   }
-  if(is.null(family$cat))
-    family$cat <- FALSE
-  if(is.null(family$mu)) {
-    family$mu <- function(x) { make.link2(family$links[1])$linkinv(x[[1]]) }
-  }
+  if(is.null(family)) family <- list()
+
+  family
+}
+
+
+complete.bamlss.family <- function(family)
+{
   if(is.null(family$map2par)) {
     linkinv <- vector(mode = "list", length = length(family$names))
     for(j in family$names)
@@ -646,35 +698,15 @@ bamlss.family <- function(family, type = "bamlss")
       return(eta)
     }
   }
+  if(is.null(family$mu)) {
+    family$mu <- function(par) { make.link2(family$links[1])$linkinv(par[[1]]) }
+  }
   if(is.null(family$loglik)) {
     if(!is.null(family$d))
-      family$loglik <- function(y, eta, ...) { sum(family$d(y, eta, log = TRUE), na.rm = TRUE) }
-  }
-  if(is.null(family)) family <- list()
-  if(is.null(family$score) & FALSE) {
-    nf <- family$names
-    score <- list()
-    for(j in family$names) {
-      score[[j]] <- function(y, eta, ...) {
-        call <- paste('num_deriv(y, eta, family = family, id = "',  j, '", d = 1)', sep = '')
-        eval(parse(text = call))
-      }
-    }
-    family$score <- score
-  }
-  if(is.null(family$hess) & FALSE) {
-    nf <- family$names
-    weights <- list()
-    for(j in family$names) {
-      weights[[j]] <- function(y, eta, ...) {
-        call <- paste('num_deriv(y, eta, family = family, id = "',  j, '", d = 2)', sep = '')
-        -1 * eval(parse(text = call))
-      }
-    }
-    family$hess <- weights
+      family$loglik <- function(y, par, ...) { sum(family$d(y, par, log = TRUE), na.rm = TRUE) }
   }
 
-  family
+  return(family)
 }
 
 
@@ -684,6 +716,7 @@ bamlss.formula <- function(formula, specials = NULL, family = gaussian.bamlss())
 {
   if(inherits(formula, "bamlss.formula"))
     return(formula)
+  family <- bamlss.family(family)
 
   specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", specials))
 
@@ -697,13 +730,21 @@ bamlss.formula <- function(formula, specials = NULL, family = gaussian.bamlss())
       formula <- c(formula, rep(list(), length = length(family$names) - length(formula)))
     fn <- NULL
     for(j in seq_along(formula)) {
-      ft <- as.character(formula[[j]])
-      fn <- c(fn, if(length(ft) > 2) ft[2] else NULL)
+      ft <- if(!inherits(formula[[j]], "formula")) formula[[j]][[1]] else formula[[j]]
+      if(!is.null(ft)) {
+        yok <- attr(terms(ft, specials = specials), "response") > 0
+        fn <- c(fn, if(yok) all.vars(ft)[1] else NULL)
+      }
     }
     fn[fn %in% c("1", "-1")] <- NA
     nas <- which(is.na(fn))
     fn[nas] <- family$names[nas]
-    fn[1] <- family$names[1]
+    if(is.null(family$names))
+      family$names <- NA
+    if(!is.na(family$names[1]))
+      fn[1] <- family$names[1]
+    else
+      family$names <- fn
     names(formula) <- fn
     if(any(i <- is.na(names(formula))))
       names(formula)[i] <- family$names[i]
@@ -713,6 +754,12 @@ bamlss.formula <- function(formula, specials = NULL, family = gaussian.bamlss())
         environment(formula[[j]]) <- env
       }
       attr(formula[[j]], "name") <- j
+    }
+    for(j in seq_along(formula)) {
+      if(!inherits(formula[[j]], "formula")) {
+        if(is.null(names(formula[[j]])))
+          names(formula[[j]]) <- paste("h", 1:length(formula[[j]]), sep = "")
+      }
     }
     formula
   }
@@ -733,6 +780,97 @@ bamlss.formula <- function(formula, specials = NULL, family = gaussian.bamlss())
   attr(formula, "formula0") <- formula0
 
   formula
+}
+
+
+## Process categorical responses.
+bamlss.formula.cat <- function(formula, data, reference)
+{
+  specials <- attr(attr(formula, "formula0"), "specials")
+
+  rn <- y <- NULL
+  for(j in seq_along(formula)) {
+    ft <- if(!inherits(formula[[j]]$formula, "formula")) {
+      formula[[j]][[1]]$formula
+    } else formula[[j]]$formula
+    yok <- attr(terms(ft, specials = specials), "response") > 0
+    if(yok)
+      rn <- c(rn, all.vars(ft)[1])
+  }
+  rn2 <- rn[rn %in% names(data)]
+  if(is.factor(data[[rn2[1]]])) {
+    if(nlevels(data[[rn2[1]]]) > 2) {
+      ft <- as.formula(paste("~ -1 +", rn2[1]))
+      y <- model.matrix(ft, data = data)
+      if(is.null(reference)) {
+        ty <- table(data[[rn2[1]]])
+        reference <- c(names(ty)[ty == max(ty)])[1]
+      } else {
+        ld <- levels(data[[rn2[1]]])
+        reference <- ld[match(gsub(rn2[1], "", reference), ld)]
+      }
+      if(is.na(reference))
+        stop(paste("cannot find reference category within response levels!"))
+      reference <- rmf(reference)
+      ylevels <- rmf(levels(data[[rn2[1]]]))
+      ylevels <- paste(rn2[1], ylevels[ylevels != reference], sep = "")
+      y <- as.data.frame(y[, rmf(colnames(y)) %in% ylevels, drop = FALSE])
+      if(length(formula) < ncol(y)) {
+        formula <- c(formula, rep(list(list("formula" = ~ 1, "intercept" = TRUE,
+          "fake.formula" = ~ 1)), length = ncol(y) - length(formula)))
+      }
+      if(!(names(formula)[[1]] %in% names(y))) {
+        names(formula)[[1]] <- names(y)[1]
+        ft <- if(!inherits(formula[[1]]$formula, "formula")) {
+          formula[[1]][[1]]$formula
+        } else formula[[1]]$formula
+        env <- environment(ft)
+        ft <- update(ft, as.formula(paste(names(y)[1], ".", sep = "~")))
+        environment(ft) <- env
+        if(!inherits(formula[[1]]$formula, "formula")) {
+          formula[[1]][[1]]$formula <- ft
+        } else formula[[1]]$formula <- ft
+        formula[[1]]$response <- names(y)[1]
+        ft <- if(!inherits(formula[[1]]$formula, "formula")) {
+          formula[[1]][[1]]$fake.formula
+        } else formula[[1]]$fake.formula
+        ft <- update(ft, as.formula(paste(names(y)[1], ".", sep = "~")))
+        if(!inherits(formula[[1]]$formula, "formula")) {
+          formula[[1]][[1]]$fake.formula <- ft
+          formula[[1]][[1]]$response.vec <- y[, names(y)[1]]
+        } else {
+          formula[[1]]$fake.formula <- ft
+          formula[[1]]$response.vec <- y[, names(y)[1]]
+        }
+      }
+      if(length(i <- !(names(formula) %in% ylevels))) {
+        k <- 1
+        ynot <- ylevels[!(ylevels %in% names(formula))]
+        for(j in which(i)) {
+          names(formula)[[j]] <- ynot[k]
+          ft <- if(!inherits(formula[[j]], "formula")) formula[[j]][[1]] else formula[[j]]
+          env <- environment(ft)
+          ft <- update(ft, as.formula(paste(ynot[k], "~ .")))
+          environment(ft) <- env
+          if(!inherits(formula[[j]]$formula, "formula")) {
+            formula[[j]][[1]]$formula <- ft
+            formula[[j]][[1]]$response.vec <- y[, ynot[k]]
+          } else {
+            formula[[j]]$formula <- ft
+            formula[[j]]$response.vec <- y[, ynot[k]]
+          }
+          attr(formula[[j]], "name") <- ynot[k]
+          formula[[j]]$response <- ynot[k]
+          k <- k + 1
+        }
+      }
+    }
+  }
+
+  rval <- if(!is.null(y)) {
+    list("data" = cbind(data, y), "formula" = formula, "reference" = reference)
+  } else NULL
+  rval
 }
 
 
@@ -3403,7 +3541,7 @@ print.bamlss.formula <- function(x, ...) {
         for(j in seq_along(x[[i]])) {
           cat("h", j, ": ", sep = "")
           attr(x[[i]][[j]], "name") <- NULL
-          print(x[[i]][[j]])
+          print(x[[i]][[j]]$formula)
         }
       } else {
         attr(x[[i]], "name") <- NULL
