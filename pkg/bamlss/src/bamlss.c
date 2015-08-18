@@ -1473,7 +1473,7 @@ SEXP survint(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP check)
       XTptr[i + j * tnr] = Xptr[(tnc - 1) + i * tnc + nr * j];
 
       if(j < 1) {
-        forward = tnc * i - (i > 0);
+        forward = tnc * i;
         for(jj = 0; jj < nc; jj++) {
           for(ii = 0; ii <= jj; ii++) {
             tmatptr[jj + ii * nc] = 0.0;
@@ -1483,7 +1483,7 @@ SEXP survint(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP check)
         for(k = 0; k < tnc; k++) {
           for(jj = 0; jj < nc; jj++) {
             for(ii = 0; ii <= jj; ii++) {
-              tmp = Xptr[k + forward + jj * nr + 1] * Xptr[k + forward + ii * nr + 1];
+              tmp = Xptr[k + forward + jj * nr] * Xptr[k + forward + ii * nr];
               if(ok < 1) {
                 tmp *= eta2ptr[i + k * tnr];
               } else {
@@ -1531,7 +1531,7 @@ SEXP survint(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP check)
 }
 
 
-/* Fast integrals with indices. */
+/* Survival integrals with index matrix. */
 SEXP survint_index(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP check, SEXP index)
 {
   double *Xptr = REAL(X);
@@ -1567,7 +1567,7 @@ SEXP survint_index(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP che
   ++nProtected;
   double *XTptr = REAL(XT);
 
-  int i, ii, j, jj, k, forward;
+  int i, ii, j, jj, k, forward, m;
   double sum = 0.0;
   double tmp = 0.0;
 
@@ -1583,51 +1583,54 @@ SEXP survint_index(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP che
   ++nProtected;
   double *tmatptr = REAL(tmat);
 
-  for(j = 0; j < nc; j++) {
-    gradptr[j] = 0.0;
-    for(i = 0; i < tnr; i++) {
+  for(i = 0; i < tnr; i++) {
+    forward = tnc * i;
+    for(jj = 0; jj < nc; jj++) {
+      for(ii = 0; ii <= jj; ii++) {
+        tmatptr[jj + ii * nc] = 0.0;
+        tmatptr[ii + jj * nc] = 0.0;
+      }
+    }
+
+    for(k = 0; k < tnc; k++) {
+      for(j = 0; j < nc_index; j++) {
+        jj = indexptr[i + j * tnr] - 1;
+        if(jj < 0) continue;
+        ii = indexptr[i] - 1;
+        while(ii <= jj) {
+          tmp = Xptr[k + forward + jj * nr] * Xptr[k + forward + ii * nr];
+          if(ok < 1) {
+            tmp *= eta2ptr[i + k * tnr];
+          } else {
+            tmp *= etaptr[i + k * tnr];
+          }
+          if(k == 0 || k == (tnc - 1)) {
+            tmatptr[jj + ii * nc] += tmp * 0.5;
+          } else {
+            tmatptr[jj + ii * nc] += tmp;
+          }
+          ii++;
+        }
+      }
+    }
+
+    for(m = 0; m < nc_index; m++) {
+      j = indexptr[i + m * tnr] - 1;
+      if(j < 0) continue;
       sum = 0.0;
       for(k = 1; k < (tnc - 1); k++) {
         sum += Xptr[k + i * tnc + nr * j] * etaptr[i + k * tnr];
       }
-      sum += 0.5 * (Xptr[i * tnc + nr * j] * etaptr[i] +
+      sum += 0.5 * (Xptr[1 + i * tnc + nr * j] * etaptr[i] +
         Xptr[(tnc - 1) + i * tnc + nr * j] * etaptr[i + (tnc - 1) * tnr]);
       sum *= widthptr[i] * gammaptr[i];
-      gradptr[j] += sum;
       XTptr[i + j * tnr] = Xptr[(tnc - 1) + i * tnc + nr * j];
-
-      if(j < 1) {
-        forward = tnc * i - (i > 0);
-        for(jj = 0; jj < nc; jj++) {
-          for(ii = 0; ii <= jj; ii++) {
-            tmatptr[jj + ii * nc] = 0.0;
-            tmatptr[ii + jj * nc] = 0.0;
-          }
-        }
-        for(k = 0; k < tnc; k++) {
-          for(jj = 0; jj < nc; jj++) {
-            for(ii = 0; ii <= jj; ii++) {
-              tmp = Xptr[k + forward + jj * nr + 1] * Xptr[k + forward + ii * nr + 1];
-              if(ok < 1) {
-                tmp *= eta2ptr[i + k * tnr];
-              } else {
-                tmp *= etaptr[i + k * tnr];
-              }
-              if(k == 0 || k == (tnc - 1)) {
-                tmatptr[jj + ii * nc] += tmp * 0.5;
-              } else {
-                tmatptr[jj + ii * nc] += tmp;
-              }
-            }
-          }
-        }
-        for(jj = 0; jj < nc; jj++) {
-          for(ii = 0; ii <= jj; ii++) {
-            tmp = tmatptr[jj + ii * nc] * widthptr[i];
-            hessptr[jj + ii * nc] += tmp * gammaptr[i];
-            hessptr[ii + jj * nc] = hessptr[jj + ii * nc];
-          }
-        }
+      ii = indexptr[i] - 1;
+      while(ii <= j) {
+        tmp = tmatptr[j + ii * nc] * widthptr[i];
+        hessptr[j + ii * nc] += tmp * gammaptr[i];
+        hessptr[ii + j * nc] = hessptr[j + ii * nc];
+        ii++;
       }
     }
   }
