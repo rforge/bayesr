@@ -692,10 +692,10 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, response, data, ...)
   peta <- family$map2par(eta)
 
   ## Compute weights.
-  weights <- family$hess[[id[1]]](response, peta, id = id)
+  weights <- family$hess[[id[1]]](response, peta, id = id[1])
 
   ## Score.
-  score <- family$score[[id[1]]](response, peta, id = id)
+  score <- family$score[[id[1]]](response, peta, id = id[1])
 
   ## Compute working observations.
   z <- eta[[id[1]]] + 1 / weights * score
@@ -750,10 +750,10 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, response, data, ...)
   pibetaprop <- family$loglik(response, peta)
 
   ## Compute new weights
-  weights <- family$hess[[id[1]]](response, peta, id = id)
+  weights <- family$hess[[id[1]]](response, peta, id = id[1])
 
   ## New score.
-  score <- family$score[[id[1]]](response, peta, id = id)
+  score <- family$score[[id[1]]](response, peta, id = id[1])
 
   ## New working observations.
   z <- eta[[id[1]]] + 1 / weights * score
