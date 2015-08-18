@@ -318,11 +318,10 @@ parse.input.bamlss <- function(formula, data = NULL, family = gaussian.bamlss,
     if(ytype == "matrix") {
       f <- as.formula(paste("~ -1 +", response.name))
       y <- model.matrix(f, data = mf)
-      colnames(y) <- paste(rep(family$names, length = ncol(y)),
-        rmf(gsub(response.name, "", colnames(y))), sep = ":")
+      colnames(y) <- rmf(gsub(response.name, "", colnames(y)))
+      y <- y[, c(names(formula), reference)]
       mf[[response.name]] <- y
     }
-    names(formula) <- paste(rep(family$names, length = length(formula)), names(formula), sep = ":")
     family$names <- names(formula)
     family$links <- rep(family$links, length.out = length(formula))
     names(family$links) <- names(formula)

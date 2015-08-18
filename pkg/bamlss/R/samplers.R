@@ -727,6 +727,9 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, response, data, ...)
   P[P == Inf] <- 0
   M <- P %*% crossprod(data$X, data$rres)
 
+  ## Degrees of freedom.
+  edf <- sum(diag(XWX %*% P))
+
   ## Save old coefficients
   g0 <- drop(get.par(theta, "gamma"))
 
@@ -797,7 +800,7 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, response, data, ...)
   ## Compute acceptance probablity.
   alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
 
-  return(list("parameters" = theta, "alpha" = alpha, "extra" = c("edf" = data$edf(data))))
+  return(list("parameters" = theta, "alpha" = alpha, "extra" = c("edf" = edf)))
 }
 
 

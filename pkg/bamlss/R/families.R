@@ -1853,7 +1853,7 @@ multinomial.bamlss <- multinom.bamlss <- function(...)
       "pi" = c(paste("multinom", link, sep = "_"), "mu", "meanservant")
     ),
     "score" = function(y, par, id, ...) {
-      pi <- par[[id]] / (1 + apply(as.data.frame(par), 1, sum))
+      pi <- par[[id]] / (1 + rowSums(do.call("cbind", par)))
       return(y[, id] - pi)
     },
     "hess" = function(y, par, id, ...) {
@@ -1861,13 +1861,20 @@ multinomial.bamlss <- multinom.bamlss <- function(...)
       return(pi * (1 - pi))
     },
     "d" = function(y, par, log = FALSE) {
-      par <- do.call("cbind", par)
-      par <- cbind(par, exp(0))
-      par <- par / rowSums(par)
-      d <- dcat(y, par, log = log)
-      if(log)
-        d <- -1 * d
+      par <- cbind(do.call("cbind", par), 1)
+      d1 <- rowSums(y * log(par))
+      d2 <- log(rowSums(par))
+      d <- d1 - d2
+      if(!log)
+        d <- exp(d)
       return(d)
+    },
+    "loglik" = function(y, par, ...) {
+      par <- cbind(do.call("cbind", par), 1)
+      d1 <- rowSums(y * log(par))
+      d2 <- log(rowSums(par))
+      d <- d1 - d2
+      return(sum(d, na.rm = TRUE))
     }
   )
 
@@ -2340,7 +2347,7 @@ tF <- function(x, ...)
 ### http://staff.washington.edu/lorenc2/bayesian/ologit.R
 
 ## Categorical distribution.
-dcat <- function(x, p, log = FALSE)
+dcat <- function(x, p, log=FALSE)
 {
   if(is.vector(x) & !is.matrix(p))
     p <- matrix(p, length(x), length(p), byrow = TRUE)
@@ -2357,8 +2364,8 @@ dcat <- function(x, p, log = FALSE)
     x.temp[,as.numeric(colnames(x))] <- x
     x <- x.temp
   }
-  dens <- x*p
-  if(log == TRUE) dens <- x*log(p)
+  dens <- x * p
+  if(log) dens <- x * log(p)
   dens <- as.vector(rowSums(dens))
   return(dens)
 }
