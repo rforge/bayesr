@@ -260,7 +260,7 @@ bamlss <- function(formula, family = gaussian, data = NULL, knots = NULL,
 parse.input.bamlss <- function(formula, data = NULL, family = gaussian.bamlss,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
-  grid = 100, binning = FALSE, ytype = c("vector", "data.frame", "matrix"),
+  grid = 100, binning = FALSE, ytype = c("matrix", "vector", "data.frame"),
   xtype = c("matrix", "data.frame"), ...)
 {
   ## Data return types.
@@ -315,6 +315,14 @@ parse.input.bamlss <- function(formula, data = NULL, family = gaussian.bamlss,
   if(!is.null(cf)) {
     formula <- cf$formula
     reference <- cf$reference
+    if(ytype == "matrix") {
+      f <- as.formula(paste("~ -1 +", response.name))
+      y <- model.matrix(f, data = mf)
+      colnames(y) <- paste(rep(family$names, length = ncol(y)),
+        rmf(gsub(response.name, "", colnames(y))), sep = ":")
+      mf[[response.name]] <- y
+    }
+    names(formula) <- paste(rep(family$names, length = length(formula)), names(formula), sep = ":")
     family$names <- names(formula)
     family$links <- rep(family$links, length.out = length(formula))
     names(family$links) <- names(formula)
@@ -802,6 +810,7 @@ bamlss.formula.cat <- function(formula, data, reference)
     if(nlevels(data[[rn2[1]]]) > 2) {
       ft <- as.formula(paste("~ -1 +", rn2[1]))
       y <- model.matrix(ft, data = data)
+      colnames(y) <- rmf(gsub(rn2[1], "", colnames(y), fixed = TRUE))
       if(is.null(reference)) {
         ty <- table(data[[rn2[1]]])
         reference <- c(names(ty)[ty == max(ty)])[1]
@@ -813,34 +822,33 @@ bamlss.formula.cat <- function(formula, data, reference)
         stop(paste("cannot find reference category within response levels!"))
       reference <- rmf(reference)
       ylevels <- rmf(levels(data[[rn2[1]]]))
-      ylevels <- paste(rn2[1], ylevels[ylevels != reference], sep = "")
-      y <- as.data.frame(y[, rmf(colnames(y)) %in% ylevels, drop = FALSE])
+      ylevels <- ylevels[ylevels != reference]
+      y <- y[, colnames(y) %in% ylevels, drop = FALSE]
       if(length(formula) < ncol(y)) {
-        formula <- c(formula, rep(list(list("formula" = ~ 1, "intercept" = TRUE,
-          "fake.formula" = ~ 1)), length = ncol(y) - length(formula)))
+        formula <- c(formula, rep(formula, length = ncol(y) - length(formula)))
       }
-      if(!(names(formula)[[1]] %in% names(y))) {
-        names(formula)[[1]] <- names(y)[1]
+      if(!(names(formula)[[1]] %in% colnames(y))) {
+        names(formula)[[1]] <- colnames(y)[1]
         ft <- if(!inherits(formula[[1]]$formula, "formula")) {
           formula[[1]][[1]]$formula
         } else formula[[1]]$formula
         env <- environment(ft)
-        ft <- update(ft, as.formula(paste(names(y)[1], ".", sep = "~")))
+        ft <- update(ft, as.formula(paste(colnames(y)[1], ".", sep = "~")))
         environment(ft) <- env
         if(!inherits(formula[[1]]$formula, "formula")) {
           formula[[1]][[1]]$formula <- ft
         } else formula[[1]]$formula <- ft
-        formula[[1]]$response <- names(y)[1]
+        formula[[1]]$response <- colnames(y)[1]
         ft <- if(!inherits(formula[[1]]$formula, "formula")) {
           formula[[1]][[1]]$fake.formula
         } else formula[[1]]$fake.formula
-        ft <- update(ft, as.formula(paste(names(y)[1], ".", sep = "~")))
+        ft <- update(ft, as.formula(paste(colnames(y)[1], ".", sep = "~")))
         if(!inherits(formula[[1]]$formula, "formula")) {
           formula[[1]][[1]]$fake.formula <- ft
-          formula[[1]][[1]]$response.vec <- y[, names(y)[1]]
+          formula[[1]][[1]]$response.vec <- y[, colnames(y)[1]]
         } else {
           formula[[1]]$fake.formula <- ft
-          formula[[1]]$response.vec <- y[, names(y)[1]]
+          formula[[1]]$response.vec <- y[, colnames(y)[1]]
         }
       }
       if(length(i <- !(names(formula) %in% ylevels))) {
@@ -868,7 +876,7 @@ bamlss.formula.cat <- function(formula, data, reference)
   }
 
   rval <- if(!is.null(y)) {
-    list("data" = cbind(data, y), "formula" = formula, "reference" = reference)
+    list("formula" = formula, "reference" = reference)
   } else NULL
   rval
 }

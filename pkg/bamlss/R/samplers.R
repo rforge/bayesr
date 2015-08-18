@@ -1337,7 +1337,7 @@ null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC")
           nh2 <- grep(paste("p", j, ".t", sj, ".", sep = ""), nh, fixed = TRUE, value = TRUE)
           nhg <- nh2[!grepl("tau2", nh2)]
           g <- get.state(x[[nx[j]]]$smooth[[sj]], "gamma")
-          hessian[[i]] <- family$hessian[[nx[j]]](g, response, eta, x[[nx[j]]]$smooth[[sj]])
+          hessian[[i]] <- family$hessian[[nx[j]]](g, response, eta, x[[nx[j]]]$smooth[[sj]], id = nx[j])
           nh3 <- c(nh3, nhg)
           i <- i + 1
         }

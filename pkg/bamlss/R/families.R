@@ -1838,13 +1838,12 @@ dirichlet.bamlss <- function(...)
 
 multinomial.bamlss <- multinom.bamlss <- function(...)
 {
-  link <- "logit"
+  link <- "log"
 
   rval <- list(
     "family" = "multinomial",
-    "names" = NA,
+    "names" = "pi",
     "links" = link,
-    "cat" = TRUE,
     "bugs" = list(
       "dist" = "dcat",
       "eta" = BUGSeta,
@@ -1853,25 +1852,23 @@ multinomial.bamlss <- multinom.bamlss <- function(...)
     "bayesx" = list(
       "pi" = c(paste("multinom", link, sep = "_"), "mu", "meanservant")
     ),
-    "score" = function(y, par, yvec, ...) {
-      id <- list(...)$id
-      return(yvec - par[[id]])
+    "score" = function(y, par, id, ...) {
+      pi <- par[[id]] / (1 + apply(as.data.frame(par), 1, sum))
+      return(y[, id] - pi)
     },
-    "hess" = function(y, par, yvec, ...) {
-      id <- list(...)$id
-      return(-1 * par[[id]] * (1 - par[[id]]))
-    }
-  )
-
-  rval$d <- switch(link,
-    "logit" = function(y, par, log = FALSE) {
-      par <- as.matrix(as.data.frame(par))
+    "hess" = function(y, par, id, ...) {
+      pi <- par[[id]] / (1 + rowSums(do.call("cbind", par)))
+      return(pi * (1 - pi))
+    },
+    "d" = function(y, par, log = FALSE) {
+      par <- do.call("cbind", par)
       par <- cbind(par, exp(0))
       par <- par / rowSums(par)
       d <- dcat(y, par, log = log)
+      if(log)
+        d <- -1 * d
       return(d)
-    },
-    "probit" = function(...) stop("multinomial probit not supported yet!")
+    }
   )
 
   class(rval) <- "family.bamlss"
@@ -2343,7 +2340,7 @@ tF <- function(x, ...)
 ### http://staff.washington.edu/lorenc2/bayesian/ologit.R
 
 ## Categorical distribution.
-dcat <- function(x, p, log=FALSE)
+dcat <- function(x, p, log = FALSE)
 {
   if(is.vector(x) & !is.matrix(p))
     p <- matrix(p, length(x), length(p), byrow = TRUE)

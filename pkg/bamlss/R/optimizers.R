@@ -49,31 +49,6 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
   call <- x$call; x$call <- NULL
   x <- assign.weights(x)
   family <- attr(x, "family")
-  cat <- if(is.null(family$cat)) FALSE else family$cat
-
-  if(cat) {
-    if(length(x) != length(family$names)) {
-      family$names <- paste(family$names[1], 1:length(x), sep = "")
-      names(x) <- family$names
-      family$links <- rep(family$links, length.out = length(x))
-      names(family$links) <- family$names
-      linkinv <- vector(mode = "list", length = length(family$names))
-      for(j in family$names)
-        linkinv[[j]] <- make.link2(family$links[j])$linkinv
-      family$map2par <- function(eta) {
-        for(j in names(eta)) {
-          eta[[j]] <- linkinv[[j]](eta[[j]])
-          eta[[j]][is.na(eta[[j]])] <- 0
-          if(any(jj <- eta[[j]] == Inf))
-            eta[[j]][jj] <- 10
-          if(any(jj <- eta[[j]] == -Inf))
-            eta[[j]][jj] <- -10
-        }
-        return(eta)
-      }
-      attr(x, "family") <- family
-    }
-  }
 
   foo <- function(x, id = NULL) {
     if(!any(c("formula", "fake.formula", "response") %in% names(x))) {
@@ -206,21 +181,6 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
 
   attr(x, "call") <- call
   attr(x, "response.vec") <- attr(x, "model.frame")[, attr(attr(x, "model.frame"), "response.name")]
-
-  if(cat) {
-    response <- attr(x, "response.vec")
-    if(!is.factor(response)) {
-      if(!is.null(dim(response))) {
-        ref <- apply(response, 1, function(x) { all(x == 0) * 1 })
-        if(all(ref < 1)) stop("too many categories specified in formula!")
-        response <- cbind(response, ref)
-        response <- t(t(response) * 1:ncol(response))
-        response <- drop(apply(response, 1, sum))
-      }
-    } else response <- as.integer(response)
-    attr(x, "response.vec") <- response
-  }
-
   attr(x, "bamlss.setup") <- TRUE
 
   x
@@ -345,7 +305,7 @@ smooth.bamlss.default <- function(x, ...)
             rep(if(!is.null(x$xt$tau2)) {
               x$xt$tau2
             } else {
-              if(!is.null(x$xt$lambda)) 1 / x$xt$lambda else 100
+              if(!is.null(x$xt$lambda)) 1 / x$xt$lambda else 1000
             }, length.out = ntau2)
           }
         } else rep(x$sp, length.out = ntau2)
@@ -665,8 +625,7 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
         ## And all terms.
         if(inner) {
           tbf <- inner_bf(x[[nx[j]]]$smooth, response, eta, family,
-            edf = edf, id = nx[j], z = z, weights = weights,
-            yvec = x[[nx[j]]]$response.vec)
+            edf = edf, id = nx[j], z = z, weights = weights)
           x[[nx[j]]]$smooth <- tbf$x
           edf <- tbf$edf
           eta <- tbf$eta
@@ -675,8 +634,7 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
           for(sj in seq_along(x[[nx[j]]]$smooth)) {
             ## Get updated parameters.
             p.state <- x[[nx[j]]]$smooth[[sj]]$update(x[[nx[j]]]$smooth[[sj]],
-              family, response, eta, nx[j], edf = edf, z = z, weights = weights,
-              yvec = x[[nx[j]]]$response.vec)
+              family, response, eta, nx[j], edf = edf, z = z, weights = weights)
 
             ## Compute equivalent degrees of freedom.
             edf <- edf - x[[nx[j]]]$smooth[[sj]]$state$edf + p.state$edf
@@ -740,10 +698,10 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
 
 ## Extract information criteria.
-get.ic <- function(family, response, eta, edf, n, type = c("AIC", "BIC", "AICc", "MP"), ...)
+get.ic <- function(family, response, par, edf, n, type = c("AIC", "BIC", "AICc", "MP"), ...)
 {
   type <- match.arg(type)
-  ll <- family$loglik(response, eta)
+  ll <- family$loglik(response, par)
   pen <- switch(type,
     "AIC" = -2 * ll + 2 * edf,
     "BIC" = -2 * ll + edf * log(n),
@@ -1136,7 +1094,7 @@ grad_posterior <- function(par, x, ...)
         grad <- c(grad, tgrad)
       }
     } else {
-      score <- family$score[[nx[j]]](attr(x, "response.vec"), family$map2par(eta))
+      score <- family$score[[nx[j]]](attr(x, "response.vec"), family$map2par(eta), id = nx[j])
       for(sj in seq_along(x[[nx[j]]]$smooth)) {
         tgrad <- x[[nx[j]]]$smooth[[sj]]$grad(score, x[[nx[j]]]$smooth[[sj]]$state$parameters, full = FALSE)
         grad <- c(grad, tgrad)

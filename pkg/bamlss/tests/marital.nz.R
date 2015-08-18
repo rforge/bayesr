@@ -7,8 +7,7 @@ colnames(m) <- gsub("mstatus", "", colnames(m))
 marital.nz <- cbind(marital.nz, m)
 
 
-b0 <- bamlss(mstatus ~ age, family = multinomial, data = marital.nz,
-  reference = "Married/Partnered", engine = "JAGS", n.iter = 1200, burnin = 200)
+b0 <- bamlss(mstatus ~ s(age), family = multinomial, data = marital.nz, reference = "Married/Partnered", sampler = NULL)
 
 b1 <- bamlss(mstatus ~ sx(age), family = multinomial,
   data = marital.nz, reference = "Married/Partnered",
