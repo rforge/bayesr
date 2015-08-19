@@ -2529,57 +2529,6 @@ Predict.matrix.kriging.smooth <- function(object, data)
 }
 
 
-## Smooth varying random effect.
-smooth.construct.Re.smooth.spec <- function(object, data, knots)
-{
-  require("Matrix")
-  isf <- sapply(data[object$term], is.factor)
-  id <- data[[object$term[isf]]]
-  if(object$bs.dim < 0)
-    object$bs.dim <- 5
-  xobj <- eval(as.call(c(as.symbol("s"),
-    as.symbol(object$term[!isf]),
-    k=object$bs.dim,xt=list(object$xt),
-    bs="ps")))
-  ##xobj <- smooth.construct(xobj, data, knots)
-  xobj <- smoothCon(xobj, data, knots, absorb.cons = FALSE, n = length(id))[[1]]
-  xl <- levels(id)
-  object$X <- list()
-  for(j in seq_along(xl))
-    object$X[[j]] <- xobj$X[id == xl[j], , drop = FALSE]
-  object$X <- as.matrix(do.call("bdiag", object$X))
-  object$zeros <- apply(object$X, 2, function(x) { all(x == 0) })
-  object$X <- object$X[, !object$zeros]
-  object$isf <- isf
-  object$bs.dim <- ncol(object$X)
-  object$S <- list(diag(object$bs.dim))
-  object$rank <- object$bs.dim
-  object$null.space.dim <- 0
-  object$C <- matrix(0, 0, ncol(object$X))
-  object$side.constrain <- FALSE
-  object$plot.me <- TRUE
-  object$te.ok <- 2
-  object$random <- TRUE
-  object$xobj <- xobj
-  class(object) <- "Random.effect"
-  object
-}
-
-Predict.matrix.Random.effect <- function(object, data) 
-{
-  id <- data[[object$term[object$isf]]]
-  Xd <- PredictMat(object$xobj, data, n = length(id))
-  X <- list()
-  xl <- levels(id)
-  for(j in seq_along(xl))
-    X[[j]] <- Xd[id == xl[j], , drop = FALSE]
-  X <- as.matrix(do.call("bdiag", X))
-  X <- X[, !object$zeros]
-  X
-}
-
-
-
 ## Smooth constructor for lag function.
 ## (C) Viola Obermeier.
 smooth.construct.fdl.smooth.spec <- function(object, data, knots)

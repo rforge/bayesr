@@ -83,8 +83,7 @@ cox.mode <- function(x, nu = 1, eps = .Machine$double.eps^0.25, maxit = 400,
 
       ## Compute gradient and hessian integrals.
       int <- survint(X, eeta, width, exp(eta$mu))
-      ##xgrad <- drop((response[, "status"]) %*% x$lambda$smooth[[sj]]$X - int$grad)
-      xgrad <- drop(t(response[, "status"]) %*% int$XT - int$grad)
+      xgrad <- drop(t(response[, "status"]) %*% x$lambda$smooth[[sj]]$XT - int$grad)
       xgrad <- xgrad + x$lambda$smooth[[sj]]$grad(score = NULL, x$lambda$smooth[[sj]]$state$parameters, full = FALSE)
       xhess <- int$hess + x$lambda$smooth[[sj]]$hess(score = NULL, x$lambda$smooth[[sj]]$state$parameters, full = FALSE)
 
@@ -748,6 +747,8 @@ param_time_transform <- function(x, formula, data, contrasts, grid, yname, timev
   X <- model.matrix(formula, data = X, contrasts.arg = contrasts)
   gdim <- c(length(grid), length(grid[[1]]))
 
+  x$XT <- extract_XT(X, gdim[1], gdim[2])
+
   x$get.mu_timegrid <- function(g) {
     if(is.null(g)) return(X)
     g <- get.par(g, "gamma")
@@ -787,6 +788,8 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take)
   X <- PredictMat(x, X)
   gdim <- c(length(grid), length(grid[[1]]))
 
+  x$XT <- extract_XT(X, gdim[1], gdim[2])
+
   x$get.mu_timegrid <- function(g) {
     if(is.null(g)) return(X)
     f <- x$get.mu(X, g, expand = FALSE)
@@ -799,6 +802,13 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take)
   x$state$optimize <- FALSE
 
   x
+}
+
+
+## Extract the XT matrix.
+extract_XT <- function(X, tnr, tnc)
+{
+  .Call("extract_XT", X, as.integer(tnr), as.integer(tnc))
 }
 
 

@@ -1438,11 +1438,6 @@ SEXP survint(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP check)
   ++nProtected;
   double *hessptr = REAL(hess);
 
-  SEXP XT;
-  PROTECT(XT = allocMatrix(REALSXP, tnr, nc));
-  ++nProtected;
-  double *XTptr = REAL(XT);
-
   int i, ii, j, jj, k, forward;
   double sum = 0.0;
   double tmp = 0.0;
@@ -1470,7 +1465,6 @@ SEXP survint(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP check)
         Xptr[(tnc - 1) + i * tnc + nr * j] * etaptr[i + (tnc - 1) * tnr]);
       sum *= widthptr[i] * gammaptr[i];
       gradptr[j] += sum;
-      XTptr[i + j * tnr] = Xptr[(tnc - 1) + i * tnc + nr * j];
 
       if(j < 1) {
         forward = tnc * i;
@@ -1509,20 +1503,18 @@ SEXP survint(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP check)
   }
 
   SEXP rval;
-  PROTECT(rval = allocVector(VECSXP, 3));
+  PROTECT(rval = allocVector(VECSXP, 2));
   ++nProtected;
 
   SEXP nrval;
-  PROTECT(nrval = allocVector(STRSXP, 3));
+  PROTECT(nrval = allocVector(STRSXP, 2));
   ++nProtected;
 
   SET_VECTOR_ELT(rval, 0, grad);
   SET_VECTOR_ELT(rval, 1, hess);
-  SET_VECTOR_ELT(rval, 2, XT);
 
   SET_STRING_ELT(nrval, 0, mkChar("grad"));
   SET_STRING_ELT(nrval, 1, mkChar("hess"));
-  SET_STRING_ELT(nrval, 2, mkChar("XT"));
         
   setAttrib(rval, R_NamesSymbol, nrval); 
 
@@ -1546,7 +1538,6 @@ SEXP survint_index(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP che
   int nr = nrows(X);
   int nc = ncols(X);
   int nc_index = ncols(index);
-
   int tnr = nrows(eta);
   int tnc = ncols(eta);
 
@@ -1562,16 +1553,12 @@ SEXP survint_index(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP che
   ++nProtected;
   double *hessptr = REAL(hess);
 
-  SEXP XT;
-  PROTECT(XT = allocMatrix(REALSXP, tnr, nc));
-  ++nProtected;
-  double *XTptr = REAL(XT);
-
   int i, ii, j, jj, k, forward, m;
   double sum = 0.0;
   double tmp = 0.0;
 
   for(j = 0; j < nc; j++) {
+    gradptr[j] = 0.0;
     for(jj = 0; jj <= j; jj++) {
       hessptr[j + jj * nc] = 0.0;
       hessptr[jj + j * nc] = 0.0;
@@ -1585,6 +1572,7 @@ SEXP survint_index(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP che
 
   for(i = 0; i < tnr; i++) {
     forward = tnc * i;
+
     for(jj = 0; jj < nc; jj++) {
       for(ii = 0; ii <= jj; ii++) {
         tmatptr[jj + ii * nc] = 0.0;
@@ -1621,10 +1609,10 @@ SEXP survint_index(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP che
       for(k = 1; k < (tnc - 1); k++) {
         sum += Xptr[k + i * tnc + nr * j] * etaptr[i + k * tnr];
       }
-      sum += 0.5 * (Xptr[1 + i * tnc + nr * j] * etaptr[i] +
+      sum += 0.5 * (Xptr[i * tnc + nr * j] * etaptr[i] +
         Xptr[(tnc - 1) + i * tnc + nr * j] * etaptr[i + (tnc - 1) * tnr]);
       sum *= widthptr[i] * gammaptr[i];
-      XTptr[i + j * tnr] = Xptr[(tnc - 1) + i * tnc + nr * j];
+      gradptr[j] += sum;
       ii = indexptr[i] - 1;
       while(ii <= j) {
         tmp = tmatptr[j + ii * nc] * widthptr[i];
@@ -1636,24 +1624,48 @@ SEXP survint_index(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP che
   }
 
   SEXP rval;
-  PROTECT(rval = allocVector(VECSXP, 3));
+  PROTECT(rval = allocVector(VECSXP, 2));
   ++nProtected;
 
   SEXP nrval;
-  PROTECT(nrval = allocVector(STRSXP, 3));
+  PROTECT(nrval = allocVector(STRSXP, 2));
   ++nProtected;
 
   SET_VECTOR_ELT(rval, 0, grad);
   SET_VECTOR_ELT(rval, 1, hess);
-  SET_VECTOR_ELT(rval, 2, XT);
 
   SET_STRING_ELT(nrval, 0, mkChar("grad"));
   SET_STRING_ELT(nrval, 1, mkChar("hess"));
-  SET_STRING_ELT(nrval, 2, mkChar("XT"));
         
   setAttrib(rval, R_NamesSymbol, nrval); 
 
   UNPROTECT(nProtected);
   return rval;
+}
+
+
+/* Extract the XT matrix. */
+SEXP extract_XT(SEXP X, SEXP TNR, SEXP TNC)
+{
+  int nr = nrows(X);
+  int nc = ncols(X);
+  int tnr = INTEGER(TNR)[0];
+  int tnc = INTEGER(TNC)[0];
+  int i, j;
+
+  double *Xptr = REAL(X);
+
+  SEXP XT;
+  PROTECT(XT = allocMatrix(REALSXP, tnr, nc));
+  double *XTptr = REAL(XT);
+
+  for(i = 0; i < tnr; i++) {
+    for(j = 0; j < nc; j++) {
+      XTptr[i + j * tnr] = Xptr[(tnc - 1) + i * tnc + nr * j];
+    }
+  }
+
+  UNPROTECT(1);
+  return XT;
 }
 
