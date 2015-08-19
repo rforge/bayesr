@@ -1572,18 +1572,17 @@ SEXP survint_index(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP che
 
   for(i = 0; i < tnr; i++) {
     forward = tnc * i;
-
     for(jj = 0; jj < nc; jj++) {
       for(ii = 0; ii <= jj; ii++) {
         tmatptr[jj + ii * nc] = 0.0;
         tmatptr[ii + jj * nc] = 0.0;
       }
     }
-
-    for(k = 0; k < tnc; k++) {
-      for(j = 0; j < nc_index; j++) {
-        jj = indexptr[i + j * tnr] - 1;
-        if(jj < 0) continue;
+    for(j = 0; j < nc_index; j++) {
+      jj = indexptr[i + j * tnr] - 1;
+      if(jj < 0) continue;
+      sum = 0.0;
+      for(k = 0; k < tnc; k++) {
         ii = indexptr[i] - 1;
         while(ii <= jj) {
           tmp = Xptr[k + forward + jj * nr] * Xptr[k + forward + ii * nr];
@@ -1599,25 +1598,19 @@ SEXP survint_index(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP che
           }
           ii++;
         }
+        if((k > 0) & (k < (tnc - 1))) {
+          sum += Xptr[k + i * tnc + nr * jj] * etaptr[i + k * tnr];
+        }
       }
-    }
-
-    for(m = 0; m < nc_index; m++) {
-      j = indexptr[i + m * tnr] - 1;
-      if(j < 0) continue;
-      sum = 0.0;
-      for(k = 1; k < (tnc - 1); k++) {
-        sum += Xptr[k + i * tnc + nr * j] * etaptr[i + k * tnr];
-      }
-      sum += 0.5 * (Xptr[i * tnc + nr * j] * etaptr[i] +
-        Xptr[(tnc - 1) + i * tnc + nr * j] * etaptr[i + (tnc - 1) * tnr]);
+      sum += 0.5 * (Xptr[i * tnc + nr * jj] * etaptr[i] +
+        Xptr[(tnc - 1) + i * tnc + nr * jj] * etaptr[i + (tnc - 1) * tnr]);
       sum *= widthptr[i] * gammaptr[i];
-      gradptr[j] += sum;
+      gradptr[jj] += sum;
       ii = indexptr[i] - 1;
-      while(ii <= j) {
-        tmp = tmatptr[j + ii * nc] * widthptr[i];
-        hessptr[j + ii * nc] += tmp * gammaptr[i];
-        hessptr[ii + j * nc] = hessptr[j + ii * nc];
+      while(ii <= jj) {
+        tmp = tmatptr[jj + ii * nc] * widthptr[i];
+        hessptr[jj + ii * nc] += tmp * gammaptr[i];
+        hessptr[ii + jj * nc] = hessptr[jj + ii * nc];
         ii++;
       }
     }
@@ -1642,6 +1635,7 @@ SEXP survint_index(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP che
   UNPROTECT(nProtected);
   return rval;
 }
+
 
 
 /* Extract the XT matrix. */
