@@ -849,7 +849,7 @@ check.imat <- function(X, take, id)
 
 
 ## Fast block diagonal crossproduct with weights.
-do.XWX <- function(x, w = 1.0, index = NULL)
+do.XWX <- function(x, w, index = NULL)
 {
   if(is.null(index)) {
     rval <- crossprod(x / w, x)
