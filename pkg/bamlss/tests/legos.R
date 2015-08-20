@@ -1,25 +1,25 @@
 library("bamlss")
-data("ZambiaNutrition", package = "R2BayesX")
+data("GAMart", package = "R2BayesX")
 
 ## (1) Model formulae.
-bamlss.formula(stunting ~ s(mbmi) + meducation)
+bamlss.formula(num ~ s(x1) + id)
 
 f <- list(
-  stunting ~ s(mbmi) + meducation,
-  sigma ~ s(mbmi)
+  num ~ s(x1) + id,
+  sigma ~ s(x2)
 )
 
 bamlss.formula(f)
 bamlss.formula(f, family = gamma.bamlss())
 
 ## Automatic filling with intercept.
-bamlss.formula(stunting ~ mbmi, family = zinb.bamlss())
+bamlss.formula(num ~ x1, family = zinb.bamlss())
 bamlss.formula(f, family = zinb.bamlss())
 
 
 ## (2) Parsing model input.
-pm <- parse.input.bamlss(f, data = ZambiaNutrition, family = gaussian)
-names(pm)
+bf <- bamlss.frame(f, data = GAMart, family = gaussian)
+names(bf)
 
 ## Note that parse.input.bamlss() may handle special user defined smooths
 ## in addition to mgcv user defined smooths, one just needs to add a specials = TRUE

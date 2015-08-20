@@ -254,13 +254,115 @@ bamlss <- function(formula, family = gaussian, data = NULL, knots = NULL,
 }
 
 
+##################################
+## (4) Create the bamlss frame. ##
+##################################
+bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss,
+  weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
+  contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
+  model.matrix = TRUE, smooth.construct = TRUE, binning = FALSE, ...)
+{
+  ## Search for additional formulas
+  formula2 <- NULL; formula3 <- list(); k <- 1
+  fn <- names(fo <- formals(fun = bamlss.frame))[-1]
+  fn <- fn[fn != "..."]
+  for(f in fn) {
+    fe <- eval(parse(text = f))
+    if(is.character(fe)) {
+      if(any(grepl("~", fe, fixed = TRUE)))
+        fe <- as.formula(fe)
+    }
+    if(inherits(fe, "formula")) {
+      formula2 <- c(formula2, fe)
+      formula3[[k]] <- fe
+      eval(parse(text = paste(f, if(is.null(fo[[f]])) "NULL" else fo[[f]], sep = " = ")))
+      k <- k + 1
+    }
+  }
+
+  ## Parse family object.
+  family <- bamlss.family(family)
+
+  ## Complete dot in formula.
+  formula <- c(formula, formula2)
+  if(!is.null(data)) {
+    if(!inherits(data, "data.frame"))
+      data <- as.data.frame(data)
+    for(j in 1:length(formula)) {
+      fc <- as.character(if(length(formula[[j]]) > 2) formula[[j]][3] else formula[[j]][2])
+      if(fc == ".") {
+        rhs <- paste(names(data)[names(data) != as.character(formula[[1]][2])], collapse = "+")
+        fc <- as.character(if(length(formula[[j]]) > 2) formula[[j]][2] else "")
+        formula[[j]] <- as.formula(paste(fc, rhs, sep = "~"))
+      }
+    }
+  }
+
+  ## Parse formula.
+  formula <- bamlss.formula(formula, specials, family)
+  formula0 <- attr(formula, "formula0")
+
+  ## Setup return object.
+  bf <- list()
+
+  ## Create the model frame.
+  bf$model.frame <- bamlss.model.frame(formula, data, family, weights,
+    subset, offset, na.action, specials)
+  response.name <- attr(bf$model.frame, "response.name")
+
+  ## Process categorical responses.
+  cf <- bamlss.formula.cat(formula, bf$model.frame, reference)
+  if(!is.null(cf)) {
+    formula <- cf$formula
+    reference <- cf$reference
+    f <- as.formula(paste("~ -1 +", response.name))
+    y <- model.matrix(f, data = bf$model.frame)
+    colnames(y) <- rmf(gsub(response.name, "", colnames(y)))
+    y <- y[, c(names(formula), reference)]
+    bf$model.frame[[response.name]] <- y
+    family$names <- names(formula)
+    family$links <- rep(family$links, length.out = length(formula))
+    names(family$links) <- names(formula)
+  }
+  bf$formula <- formula
+  attr(bf$formula, "formula0") <- formula0
+
+  ## Process possible score and hess functions.
+  if(!is.null(score <- family$score)) {
+    if(is.function(score))
+      score <- list(score)
+    family$score <- rep(score, length.out = length(formula))
+    names(family$score) <- names(formula)
+  }
+  if(!is.null(hess <- family$hess)) {
+    if(is.function(hess))
+      hess <- list(hess)
+    family$hess <- rep(hess, length.out = length(formula))
+    names(family$hess) <- names(formula)
+  }
+
+  ## Add more functions to family object.
+  bf$family <- complete.bamlss.family(family)
+
+  ## Assign all design matrices and the hierarchical level, if any.
+  bf$terms <- bamlss.terms(formula, bf$model.frame, contrasts, knots,
+    model.matrix, smooth.construct, binning, ...)
+  bf$terms <- bamlss.hlevel(bf$terms)
+
+  ## Assign class and return.
+  class(bf) <- c("bamlss.frame", "list")
+
+  return(bf)
+}
+
+
 ##########################################################
 ## (4) Parsing all input using package mgcv structures. ##
 ##########################################################
 parse.input.bamlss <- function(formula, data = NULL, family = gaussian.bamlss,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
-  grid = 100, binning = FALSE, ytype = c("matrix", "vector", "data.frame"),
+  grid = 100, ytype = c("matrix", "vector", "data.frame"),
   xtype = c("matrix", "data.frame"), ...)
 {
   ## Data return types.
@@ -342,7 +444,7 @@ parse.input.bamlss <- function(formula, data = NULL, family = gaussian.bamlss,
   }
 
   ## Assign all design matrices and the hierarchical level, if any.
-  rval <- bamlss.design(formula, mf, contrasts, knots, binning, xtype, ...)
+  rval <- bamlss.terms(formula, mf, contrasts, knots, ...)
   rval <- bamlss.hlevel(rval)
 
   ## Add more functions to family object.
@@ -444,30 +546,23 @@ if(FALSE) {
 
 
 ## Assign all designs matrices.
-bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FALSE,
-  xtype, before = TRUE, gam.side = TRUE, ...)
+bamlss.terms <- function(x, data, contrasts = NULL, knots = NULL,
+  model.matrix = TRUE, smooth.construct = TRUE, binning = FALSE,
+  before = TRUE, gam.side = TRUE, ...)
 {
   if(!binning)
     binning <- NULL
   assign.design <- function(obj, mf) {
     if(!all(c("formula", "fake.formula", "response") %in% names(obj)))
       return(obj)
-    pf <- paste("~ ", if(obj$intercept) 1 else -1,
-      if(length(obj$pterms)) paste(" +", paste(obj$pterms, collapse = " + ")), sep = "")
-    obj$X <- model.matrix(as.formula(pf),
-      data = mf, contrasts.arg = contrasts, ...)
-    obj$param.formula <- as.formula(pf)
-    obj$param.contrasts <- contrasts
-    obj$pterms <- colnames(obj$X)
+    if(model.matrix)
+      obj$X <- model.matrix(obj$pterms, data = mf, contrasts.arg = contrasts, ...)
+    obj$contrasts <- contrasts
     obj$binning <- binning
-    rn <- obj$response
-    if(is.null(obj$response.vec))
-      obj$response.vec <- if(!is.null(rn)) mf[[rn]] else NULL
     no.mgcv <- NULL
-    if(length(obj$smooth)) {
+    if(length(obj$sterms)) {
       smooth <- list()
-      for(j in obj$smooth) {
-        tsm <- eval(parse(text = j))
+      for(tsm in obj$sterms) {
         if(is.null(tsm$xt))
           tsm$xt <- list()
         if(is.null(tsm$xt$xbin))
@@ -481,13 +576,7 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
           }
         }
       }
-      for(j in obj$smooth) {
-        if((rt <- grepl('):s(', j, fixed = TRUE)) | grepl(')/s(', j, fixed = TRUE)) {
-          j <- strsplit(j, if(rt) ":" else "/", fixed = TRUE)[[1]]
-          j <- paste('rs(', j[1], ',', j[2], ',link="', if(rt) "inverse" else "log", '")', sep = "")
-          tsm <- eval(parse(text = j))
-          tsm$label <- paste(tsm$smooths[[1]]$label, tsm$smooths[[2]]$label, sep = if(rt) ":" else "/")
-        } else tsm <- eval(parse(text = j))
+      for(tsm in obj$sterms) {
         if(is.null(tsm$special)) {
           if(is.null(tsm$xt))
             tsm$xt <- list()
@@ -518,26 +607,23 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
             tsm$xbin.order <- order(tsm$xbin.ind)
             tsm$xbin.k <- length(xbin.uind)
             tsm$xbin.sind <- tsm$xbin.ind[tsm$xbin.order]
-            if(xtype == "matrix") {
+            if(smooth.construct) {
               smt <- smoothCon(tsm, if(before) mf[tsm$xbin.take, term.names, drop = FALSE] else mf,
                 knots, absorb.cons = acons)
             } else {
-              tsm$data <- mf[tsm$term]
               smt <- list(tsm)
             }
           } else {
-            if(xtype == "matrix") {
+            if(smooth.construct) {
               smt <- smoothCon(tsm, mf, knots, absorb.cons = acons)
             } else {
-              tsm$data <- mf[tsm$term]
               smt <- list(tsm)
             }
           }
         } else {
-          if(xtype == "matrix") {
+          if(smooth.construct) {
             smt <- smooth.construct(tsm, mf, knots)
           } else {
-            tsm$data <- mf[tsm$term]
             smt <- tsm
           }
           if(inherits(smt, "no.mgcv")) {
@@ -551,13 +637,13 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
         smooth <- c(smooth, smt)
       }
       if(length(smooth) > 0) {
-        if(gam.side & xtype == "matrix") {
+        if(gam.side & smooth.construct) {
           smooth <- try(mgcv:::gam.side(smooth, obj$X, tol = .Machine$double.eps^.5), silent = TRUE)
           if(inherits(smooth, "try-error"))
             stop("gam.side() produces an error when binning, try to set before = FALSE!?")
         }
         sme <- NULL
-        if(xtype == "matrix")
+        if(smooth.construct)
           sme <- mgcv:::expand.t2.smooths(smooth)
         if(is.null(sme)) {
           original.smooth <- NULL
@@ -569,7 +655,13 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
       }
       if(!is.null(no.mgcv))
         smooth <- c(smooth, no.mgcv)
-      obj$smooth <- smooth
+      if(length(smooth)) {
+        stl <- NULL
+        for(j in seq_along(smooth))
+          stl <- c(stl, smooth[[j]]$label)
+        names(smooth) <- stl
+      }
+      obj$sterms <- smooth
     }
 
     obj
@@ -585,6 +677,9 @@ bamlss.design <- function(x, data, contrasts = NULL, knots = NULL, binning = FAL
       } else x[[j]] <- assign.design(x[[j]], data)
     }
   } else x <- assign.design(x, data)
+
+  attr(x, "formula0") <- attr(x, ".Environment") <- NULL
+  class(x) <- "list"
 
   x
 }
@@ -620,10 +715,10 @@ bamlss.model.frame <- function(formula, data, family, weights = NULL,
   mf <- do.call("model.frame", mf)
   rownames(mf) <- NULL
 
-  ## Remove inf values
+  ## Remove inf values.
   mf <- rm_infinite(mf)
 
-  ## assign response names
+  ## Assign response names.
   tf <- terms(formula(fF, rhs = 0))
   rn <- as.character(attr(tf, "variables"))[2]
   rn <- strsplit(rn, " | ", fixed = TRUE)[[1]]
@@ -631,7 +726,7 @@ bamlss.model.frame <- function(formula, data, family, weights = NULL,
 
   ## Check response.
   if(!is.null(family$valid.response)) {
-    family$valid.response(mf[, rn[1]])
+    family$valid.response(mf[[rn[1]]])
   }
 
   mf
@@ -909,64 +1004,47 @@ formula_extend <- function(formula, specials = NULL, family)
   } else {
     specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", specials))
     mt <- terms(formula, specials = specials, keep.order = TRUE)
-
-    ## rs() specials, not supported anymore!
-    get.term.labels <- function(formula) {
-      tl <- attr(mt, "term.labels")
-      tl2 <- NULL
-      for(j in as.character(formula)) {
-        if(FALSE & grepl("s(", j , fixed = TRUE) & grepl("/", j, fixed = TRUE)) {
-          j2 <- strsplit(j, "/", fixed = TRUE)[[1]]
-          for(jj in j2)
-            tl <- tl[tl != jj]
-          tl <- tl[tl != gsub("/", ":", j)]
-          tl2 <- c(tl2, j)
-        }
-      }
-      c(tl, tl2)
+    sid <- unlist(attr(mt, "specials"))
+    tl <- attr(mt, "term.labels")
+    if(!is.null(sid)) {
+      sterms <- tl[sid - 1L]
+      pterms <- tl[-1 * (sid - 1L)]
+    } else {
+      sterms <- character(0)
+      pterms <- tl
     }
-
-    tl <- get.term.labels(formula)
-
-    sm <- rep(NA, length = length(tl))
-    for(j in seq_along(tl)) {
-      iss <- FALSE
-      for(i in specials) {
-        if(grepl(paste(i, "(", sep = ""), tl[j], fixed = TRUE))
-          iss <- TRUE
-      }
-      sm[j] <- iss
-    }
-    pterms <- if(length(tl[!sm])) tl[!sm] else NULL
     intercept <- attr(mt, "intercept") > 0
-    sterms <- NULL
-    if(length(sm <- tl[sm])) {
-      for(j in sm) {
-        if(FALSE & ((rt <- grepl(":", j, fixed = TRUE)) | grepl("/", j, fixed = TRUE))) {
-          for(jj in strsplit(j, if(rt) ":" else "/", fixed = TRUE)[[1]]) {
-            smj <- eval(parse(text = jj))
-            sterms <- c(sterms, smj$term, smj$by)
-            if(!is.null(smj$by.formula)) {
-              sterms <- c(sterms, attr(terms(smj$by.formula, keep.order = TRUE), "term.labels"))
-            }
-          }
-        } else {
-          smj <- eval(parse(text = j))
-          sterms <- c(sterms, smj$term, smj$by)
-          if(!is.null(smj$by.formula)) {
-            sterms <- c(sterms, attr(terms(smj$by.formula, keep.order = TRUE), "term.labels"))
-          }
+
+    sm <- if(length(sterms)) {
+      lapply(sterms, function(x) { eval(parse(text = x)) })
+    } else NULL
+    if(!is.null(sm)) {
+      sterms <- sapply(sm, function(x) {
+        stl <- x$term
+        if(x$by != "NA") {
+          stl <- if(grepl("~", x$by, fixed = TRUE)) {
+            x$by <- as.formula(x$by, env = environment(formula))
+            c(stl, attr(terms(x$by, keep.order = TRUE), "term.labels"))
+          } else c(stl, as.character(x$by))
         }
-      }
+        stl
+      })
+      sterms <- unique(sterms)
     }
-    sterms <- unique(sterms[sterms != "NA"])
+    if(length(pterms))
+      pterms <- unique(pterms)
     response <- formula_respname(formula)
     if(is.na(response) | response %in% family$names) response <- NULL
-    fake.formula <- as.formula(paste(response, "~ 1", if(length(c(pterms, sterms))) " + " else NULL,
-      paste(c(pterms, sterms), collapse = " + ")), env = environment(formula))
+    av <- unique(unlist(c(pterms, sterms)))
+    fake.formula <- as.formula(paste(response, "~1", if(length(av)) "+" else NULL,
+      paste(av, collapse = "+")), env = environment(formula))
+    ffp <- as.formula(paste(response, "~", if(intercept) "1" else "-1", if(length(pterms)) " + " else NULL,
+      paste(pterms, collapse = " + ")), env = environment(formula))
+    pterms <- terms(ffp)
 
-    return(list("formula" = formula, "intercept" = intercept, "fake.formula" = fake.formula,
-      "response" = response, "pterms" = pterms, "sterms" = sterms, "smooth" = sm))
+    return(list("formula" = formula, "fake.formula" = fake.formula,
+      "response" = response, "pterms" = pterms, "sterms" = sm,
+      "intercept" = intercept))
   }
 }
 
