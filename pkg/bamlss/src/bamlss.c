@@ -1468,12 +1468,6 @@ SEXP survint(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP check)
 
       if(j < 1) {
         forward = tnc * i;
-        for(jj = 0; jj < nc; jj++) {
-          for(ii = 0; ii <= jj; ii++) {
-            tmatptr[jj + ii * nc] = 0.0;
-            tmatptr[ii + jj * nc] = 0.0;
-          }
-        }
         for(k = 0; k < tnc; k++) {
           for(jj = 0; jj < nc; jj++) {
             for(ii = 0; ii <= jj; ii++) {
@@ -1496,6 +1490,7 @@ SEXP survint(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP check)
             tmp = tmatptr[jj + ii * nc] * widthptr[i];
             hessptr[jj + ii * nc] += tmp * gammaptr[i];
             hessptr[ii + jj * nc] = hessptr[jj + ii * nc];
+            tmatptr[jj + ii * nc] = 0.0;
           }
         }
       }
@@ -1572,12 +1567,6 @@ SEXP survint_index(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP che
 
   for(i = 0; i < tnr; i++) {
     forward = tnc * i;
-    for(jj = 0; jj < nc; jj++) {
-      for(ii = 0; ii <= jj; ii++) {
-        tmatptr[jj + ii * nc] = 0.0;
-        tmatptr[ii + jj * nc] = 0.0;
-      }
-    }
     for(j = 0; j < nc_index; j++) {
       jj = indexptr[i + j * tnr] - 1;
       if(jj < 0) continue;
@@ -1611,6 +1600,7 @@ SEXP survint_index(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP che
         tmp = tmatptr[jj + ii * nc] * widthptr[i];
         hessptr[jj + ii * nc] += tmp * gammaptr[i];
         hessptr[ii + jj * nc] = hessptr[jj + ii * nc];
+        tmatptr[jj + ii * nc] = 0.0;
         ii++;
       }
     }
@@ -1635,7 +1625,6 @@ SEXP survint_index(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP che
   UNPROTECT(nProtected);
   return rval;
 }
-
 
 
 /* Extract the XT matrix. */
