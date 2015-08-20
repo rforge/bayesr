@@ -848,6 +848,20 @@ check.imat <- function(X, take, id)
 }
 
 
+## Fast block diagonal crossproduct with weights.
+do.XWX <- function(x, w = 1.0, index = NULL)
+{
+  if(is.null(index)) {
+    rval <- crossprod(x / w, x)
+  } else {
+    if(is.null(dim(index)))
+      index <- matrix(index, ncol = 1)
+    rval <- .Call("do_XWX", x, w, index)
+  }
+  rval
+}
+
+
 ## Extract the XT matrix.
 extract_XT <- function(X, tnr, tnc)
 {
