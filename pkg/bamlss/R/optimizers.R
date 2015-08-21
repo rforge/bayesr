@@ -47,7 +47,6 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
   criterion <- match.arg(criterion)
 
   call <- x$call; x$call <- NULL
-  x <- assign.weights(x)
   family <- attr(x, "family")
 
   foo <- function(x, id = NULL) {

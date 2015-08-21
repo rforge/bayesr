@@ -78,11 +78,9 @@ xreg <- function(formula, family = gaussian.bamlss, data = NULL, knots = NULL,
   rval <- functions$results(pm, so)
   rm(so)
 
-  ## Assign more model information.
-  attr(rval, "functions") <- functions
-  if(model)
-    attr(rval, "model.frame") <- attr(pm, "model.frame")
-  attr(rval, "call") <- match.call()
+  ## Save the model frame?
+  if(!model)
+    rval$model.frame <- NULL
 
   rval
 }
@@ -239,12 +237,12 @@ bamlss <- function(formula, family = gaussian, data = NULL, knots = NULL,
 
   rval <- xreg(formula, family = family, data = data, knots = knots,
     weights = weights, subset = subset, offset = offset, na.action = na.action,
-    contrasts = contrasts, parse.input = parse.input.bamlss, transform = transform,
+    contrasts = contrasts, parse.input = bamlss.frame, transform = transform,
     setup = setup, engine = engine, results = results, cores = cores,
     combine = combine, sleep = sleep, ...)
   
-  attr(rval, "engine") <- xengine
-  attr(rval, "call") <- match.call()
+  rval$call <- match.call()
+  rval$engine <- xengine
   
   rval
 }
@@ -297,6 +295,7 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss,
 
   ## Setup return object.
   bf <- list()
+  bf$call <- match.call()
 
   ## Create the model frame.
   bf$model.frame <- bamlss.model.frame(formula, data, family, weights,
@@ -347,181 +346,7 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss,
 }
 
 
-##########################################################
-## (4) Parsing all input using package mgcv structures. ##
-##########################################################
-parse.input.bamlss <- function(formula, data = NULL, family = gaussian.bamlss,
-  weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
-  contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
-  grid = 100, ytype = c("matrix", "vector", "data.frame"),
-  xtype = c("matrix", "data.frame"), ...)
-{
-  ## Data return types.
-  ytype <- match.arg(ytype)
-  xtype <- match.arg(xtype)
-
-  ## Search for additional formulas
-  formula2 <- NULL; formula3 <- list(); k <- 1
-  fn <- names(fo <- formals(fun = parse.input.bamlss))[-1]
-  fn <- fn[fn != "..."]
-  for(f in fn) {
-    fe <- eval(parse(text = f))
-    if(is.character(fe)) {
-      if(any(grepl("~", fe, fixed = TRUE)))
-        fe <- as.formula(fe)
-    }
-    if(inherits(fe, "formula")) {
-      formula2 <- c(formula2, fe)
-      formula3[[k]] <- fe
-      eval(parse(text = paste(f, if(is.null(fo[[f]])) "NULL" else fo[[f]], sep = " = ")))
-      k <- k + 1
-    }
-  }
-
-  ## Parse family object.
-  family <- bamlss.family(family)
-
-  ## Complete dot in formula.
-  formula <- c(formula, formula2)
-  if(!is.null(data)) {
-    for(j in 1:length(formula)) {
-      fc <- as.character(if(length(formula[[j]]) > 2) formula[[j]][3] else formula[[j]][2])
-      if(fc == ".") {
-        rhs <- paste(names(data)[names(data) != as.character(formula[[1]][2])], collapse = "+")
-        fc <- as.character(if(length(formula[[j]]) > 2) formula[[j]][2] else "")
-        formula[[j]] <- as.formula(paste(fc, rhs, sep = "~"))
-      }
-    }
-  }
-
-  ## Parse formula.
-  formula <- bamlss.formula(formula, specials, family)
-  formula0 <- attr(formula, "formula0")
-
-  ## Create the model frame.
-  mf <- bamlss.model.frame(formula, data, family, weights,
-    subset, offset, na.action, specials)
-  response.name <- attr(mf, "response.name")
-
-  ## Process categorical responses.
-  cf <- bamlss.formula.cat(formula, mf, reference)
-  if(!is.null(cf)) {
-    formula <- cf$formula
-    reference <- cf$reference
-    if(ytype == "matrix") {
-      f <- as.formula(paste("~ -1 +", response.name))
-      y <- model.matrix(f, data = mf)
-      colnames(y) <- rmf(gsub(response.name, "", colnames(y)))
-      y <- y[, c(names(formula), reference)]
-      mf[[response.name]] <- y
-    }
-    family$names <- names(formula)
-    family$links <- rep(family$links, length.out = length(formula))
-    names(family$links) <- names(formula)
-    score <- family$score
-    if(!is.null(score)) {
-      if(is.function(score))
-        score <- list(score)
-      family$score <- rep(score, length.out = length(formula))
-      names(family$score) <- names(formula)
-    }
-    hess <- family$hess
-    if(!is.null(family$hess)) {
-      if(is.function(hess))
-        hess <- list(hess)
-      family$hess <- rep(hess, length.out = length(formula))
-      names(family$hess) <- names(formula)
-    }
-  }
-
-  ## Assign all design matrices and the hierarchical level, if any.
-  rval <- bamlss.terms(formula, mf, contrasts, knots, ...)
-
-  ## Add more functions to family object.
-  family <- complete.bamlss.family(family)
-
-  ## Setup return object.
-  attr(rval, "family") <- family
-  attr(rval, "reference") <- reference
-  attr(rval, "grid") <- grid
-  attr(rval, "model.frame") <- mf
-  attr(rval, "formula0") <- formula0
-  attr(rval, "environment") <- new.env(parent = .GlobalEnv)
-  class(rval) <- c("bamlss.input", "list")
-
-  return(rval)
-}
-
-
-## FIXME: old cat stuff!
-if(FALSE) {
-  ## For categorical responses, extend formula object.
-  ylevels <- NULL
-  if(length(response.name) < 2) {
-    if(is.factor(mf[[response.name[1]]])) {
-      if(cat & nlevels(mf[[response.name[1]]]) > 1) {
-        if(is.null(reference)) {
-          ty <- table(mf[[response.name[1]]])
-          reference <- c(names(ty)[ty == max(ty)])[1]
-        }
-        reference <- rmf(reference)
-        ylevels <- rmf(levels(mf[[response.name[1]]]))
-        ylevels <- ylevels[ylevels != reference]
-        if(length(formula) != (n <- length(ylevels)))
-          formula <- rep(formula, length.out = n)
-        names(formula) <- nf <- paste(response.name[1], ylevels, sep = "")
-        for(j in seq_along(formula)) {
-          uf <- eval(parse(text = paste(nf[j], " ~ .", sep = "")))
-          if(!all(c("formula", "fake.formula") %in% names(formula[[j]]))) {
-            formula[[j]][[1]]$cat.formula <- update(formula[[j]][[1]]$formula, uf)
-          } else formula[[j]]$cat.formula <- update(formula[[j]]$formula, uf)
-        }
-      }
-    } else {
-      if(is.null(dim(mf[[response.name[1]]])))
-        mf[[response.name[1]]] <- as.numeric(mf[[response.name[1]]]) ## FIXME: matrices?
-    }
-  } else {
-    for(y in response.name) {
-      if(is.null(dim(mf[[y]])))
-        mf[[y]] <- as.numeric(mf[[y]])
-    }
-  }
-
-  ## Dirichlet specials.
-  if(family$family == "dirichlet") {
-    family$ncat <- length(rval)
-    family$names <- paste(family$names, 1:family$ncat, sep = "")
-    names(rval) <- family$names
-  }
-
-
-  ## Old family stuff.
-  if(is.null(family$score) & FALSE) {
-    nf <- family$names
-    score <- list()
-    for(j in family$names) {
-      score[[j]] <- function(y, eta, ...) {
-        call <- paste('num_deriv(y, eta, family = family, id = "',  j, '", d = 1)', sep = '')
-        eval(parse(text = call))
-      }
-    }
-    family$score <- score
-  }
-  if(is.null(family$hess) & FALSE) {
-    nf <- family$names
-    weights <- list()
-    for(j in family$names) {
-      weights[[j]] <- function(y, eta, ...) {
-        call <- paste('num_deriv(y, eta, family = family, id = "',  j, '", d = 2)', sep = '')
-        -1 * eval(parse(text = call))
-      }
-    }
-    family$hess <- weights
-  }
-}
-
-"[.bamlss.input" <- function(x, ...) {
+"[.bamlss.frame" <- function(x, ...) {
   rval <- NextMethod("[", ...)
   xattr <- attributes(x)
   mostattributes(rval) <- attributes(x)
@@ -542,6 +367,7 @@ bamlss.terms <- function(x, data, contrasts = NULL, knots = NULL,
 {
   if(!binning)
     binning <- NULL
+
   assign.design <- function(obj, mf) {
     if(!all(c("formula", "fake.formula", "response") %in% names(obj)))
       return(obj)
@@ -662,7 +488,7 @@ bamlss.terms <- function(x, data, contrasts = NULL, knots = NULL,
       if(!all(c("formula", "fake.formula", "response") %in% names(x[[j]]))) {
         for(i in seq_along(x[[j]])) {
           x[[j]][[i]] <- assign.design(x[[j]][[i]],
-            if(i > 1) unique(data[all.vars(x[[j]][[i]]$fake.formula)]) else data)
+            if(i > 1) unique(data[, all.vars(x[[j]][[i]]$fake.formula), drop = FALSE]) else data)
         }
       } else x[[j]] <- assign.design(x[[j]], data)
     }
@@ -679,8 +505,19 @@ bamlss.terms <- function(x, data, contrasts = NULL, knots = NULL,
 bamlss.model.frame <- function(formula, data, family, weights = NULL,
   subset = NULL, offset = NULL, na.action = na.omit, specials = NULL)
 {
-  family <- bamlss.family(family)
-  formula <- bamlss.formula(formula, specials, family)
+  if(inherits(formula, "bamlss.frame")) {
+    if(!is.null(formula$model.frame))
+      return(formula$model.frame)
+    fcall <- formula$call
+    fcall[[1L]] <- quote(bamlss.model.frame)
+    env <- environment(formula$formula)
+    if(is.null(env))
+      env <- parent.frame()
+    return(eval(fcall, env))
+  } else {
+    family <- bamlss.family(family)
+    formula <- bamlss.formula(formula, specials, family)
+  }
 
   if(is.null(na.action))
     na.action <- get(getOption("na.action"))
@@ -829,10 +666,24 @@ bamlss.formula <- function(formula, specials = NULL, family = gaussian.bamlss())
 
   specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", specials))
 
-  env <- environment(formula)
-  if(is.null(env)) env <- .GlobalEnv
   if(!is.list(formula)) formula <- list(formula)
   if(!length(formula)) stop("formula is specified wrong!")
+  
+  env <- environment(formula)
+  if(is.null(env)) {
+    get_env <- function(x) {
+      if(inherits(x, "list")) {
+        env <- NULL
+        for(j in x)
+          env <- c(env, get_env(j))
+        return(env)
+      } else return(environment(x))
+    }
+    env <- get_env(formula)
+  }
+  if(is.null(env)) env <- .GlobalEnv
+  if(is.list(env))
+    env <- env[[1]]
 
   complete_formula <- function(formula) {
     if(length(formula) < length(family$names))
@@ -1062,15 +913,26 @@ formula_extend <- function(formula, specials = NULL, family)
 ## Get response name.
 response.name <- function(formula)
 {
+  rn <- NA
   if(inherits(formula, "bamlss.frame"))
     formula <- attr(formula$model.frame, "terms")
   if(!is.null(attr(formula, "terms")))
     formula <- attr(formula, "terms")
-  rn <- if(!inherits(formula, "list")) {
+  if(inherits(formula, "formula")) {
     f <- as.Formula(formula)
     f <- formula(f, lhs = TRUE, rhs = FALSE)
-    all.vars(f)
-  } else NA
+    rn <- all.vars(f)
+  } else {
+    if(inherits(formula, "list")) {
+      rn <- NULL
+      for(j in seq_along(formula)) {
+        tf <- if(is.null(formula[[j]]$formula)) {
+          formula[[j]]
+        } else formula[[j]]$formula
+        rn <- c(rn , response.name(tf))
+      }
+    }
+  }
   rn
 }
 
@@ -1220,62 +1082,29 @@ formula_hierarchical <- function(formula)
 ## Transform smooth terms to mixed model representation.
 randomize <- function(x)
 {
-  if(inherits(x, "bamlss.input") & !any(c("smooth", "response") %in% names(x))) {
+  if(inherits(x, "bamlss.frame")) {
     nx <- names(x)
     nx <- nx[nx != "call"]
     if(is.null(nx)) nx <- 1:length(x)
     if(length(unique(nx)) < length(x)) nx <- 1:length(x)
-    for(j in nx)
-      x[[j]] <- randomize(x[[j]])
+    for(j in seq_along(x$terms))
+      x$terms[[j]] <- randomize(x$terms[[j]])
   } else {
-    if(m <- length(x$smooth)) {
+    if(m <- length(x$sterms)) {
       for(j in 1:m) {
-        if(!inherits(x$smooth[[j]], "no.mgcv")) {
-          tmp <- mgcv:::smooth2random(x$smooth[[j]], names(attr(x, "model.frame")), type = 2)
-          if(is.null(x$smooth[[j]]$xt$nolin))
-            x$smooth[[j]]$Xf <- tmp$Xf
-#          if(inherits(x$smooth[[j]], "random.effect")) {
+        if(!inherits(x$sterms[[j]], "no.mgcv")) {
+          tmp <- mgcv:::smooth2random(x$sterms[[j]], names(attr(x, "model.frame")), type = 2)
+          if(is.null(x$sterms[[j]]$xt$nolin))
+            x$sterms[[j]]$Xf <- tmp$Xf
+#          if(inherits(x$sterms[[j]], "random.effect")) {
 #            tmp$rand$Xr[tmp$rand$Xr > 0] <- 1
 #            tmp$rand$Xr <- scale(tmp$rand$Xr)
 #            tmp$trans.D <- rep(1, ncol(tmp$rand$Xr))
 #            tmp$trans.U <- diag(1, ncol(tmp$rand$Xr))
 #          }
-          x$smooth[[j]]$rand <- tmp$rand
-          x$smooth[[j]]$trans.D <- tmp$trans.D
-          x$smooth[[j]]$trans.U <- tmp$trans.U
-        }
-      }
-    }
-  }
-
-  x
-}
-
-
-## Assign weights.
-assign.weights <- function(x, weights = NULL)
-{
-  if(!is.null(attr(x, "model.frame"))) {
-    if(length(i <- grep("(weights)", names(attr(x, "model.frame")))))
-      weights <- attr(x, "model.frame")[, i]
-  }
-
-  if(!is.null(weights)) {
-    if(inherits(x, "bamlss.input") & !any(c("smooth", "response") %in% names(x))) {
-      nx <- names(x)
-      nx <- nx[nx != "call"]
-      if(is.null(nx)) nx <- 1:length(x)
-      if(length(unique(nx)) < length(x)) nx <- 1:length(x)
-      for(j in nx)
-        x[[j]] <- assign.weights(x[[j]], weights = weights)
-    } else {
-      if(!is.null(x$X))
-        x$X <- x$X * weights
-      if(m <- length(x$smooth)) {
-        for(j in 1:m) {
-          if(!inherits(x$smooth[[j]], "no.mgcv")) {
-            x$smooth[[j]]$X <- x$smooth[[j]]$X * weights
-          } 
+          x$sterms[[j]]$rand <- tmp$rand
+          x$sterms[[j]]$trans.D <- tmp$trans.D
+          x$sterms[[j]]$trans.U <- tmp$trans.U
         }
       }
     }
@@ -1677,7 +1506,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
     names(newdata) <- rmf(names(newdata))
   nn <- names(newdata)
 
-  object <- get.model(object, model)
+  object <- model.terms(object, model)
   if(any(c("effects", "param.effects") %in% names(object)))
     object <- list(object)
   k <- length(object)
@@ -2623,7 +2452,7 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = 1,
     on.exit(par(op))
   }
 
-  x <- get.model(x, model, drop = FALSE)
+  x <- model.terms(x, model, drop = FALSE)
 
   ## What should be plotted?
   which.match <- c("effects", "samples", "hist-resid", "qq-resid",
@@ -2800,7 +2629,7 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = 1,
 .plot.bamlss <- function(x, model = NULL, term = NULL, which = 1,
   ask = FALSE, scale = 1, spar = TRUE, ...)
 {
-  x <- get.model(x, model)
+  x <- model.terms(x, model)
   n <- length(x)
   args <- list(...)
 
@@ -3160,7 +2989,7 @@ summary.bamlss <- function(object, model = NULL, ...)
 {
   call <- attr(object, "call")
   family <- attr(object, "family")
-  object <- get.model(object, model)
+  object <- model.terms(object, model)
   rval <- list()
   n <- length(object)
   for(i in 1:n) {
@@ -3581,40 +3410,26 @@ terms.bamlss.formula <- function(x)
 }
 
 
-## Model extractor function.
-get.model <- function(x, model = NULL, drop = TRUE)
+## Model terms extractor function.
+model.terms <- function(x, model = NULL)
 {
-  if(!drop)
-    mf <- model.frame(x)
-  if(length(model) > 1) {
-    for(j in model)
-      x <- get.model(x, j, drop = drop)
-  } else {
-    family <- attr(x, "family")
-    cx <- class(x)
-    elmts <- c("formula", "fake.formula", "model", "param.effects",
-      "effects", "fitted.values", "residuals")
-    if(!any(names(x) %in% elmts)) {
-      if(!is.null(model)) {
-        if(is.character(model)) {
-          if(all(is.na(model <- pmatch(model, names(x)))))
-            stop("argument model is specified wrong!")
-        } else {
-          if(max(model) > length(x) || is.na(model) || min(model) < 1) 
-            stop("argument model is specified wrong!")
-        }
-        x <- if(drop) x[[model]] else {
-          class(x) <- "list"
-          x[model]
-        }
+  if(inherits(x, "bamlss.frame"))
+    x <- x$terms
+  elmts <- c("formula", "fake.formula")
+  if(!any(names(x) %in% elmts)) {
+    if(!is.null(model)) {
+      if(is.character(model)) {
+        if(all(is.na(pmatch(model, names(x)))))
+          stop("argument model is specified wrong!")
+      } else {
+        if(max(model) > length(x) || is.na(model) || min(model) < 1) 
+          stop("argument model is specified wrong!")
       }
-    } else x <- list(x)
-    class(x) <- cx
-    attr(x, "family") <- family
-  }
-  if(!drop)
-    attr(x, "model.frame") <- mf
-
+      x <- if(length(model) == 2 & any(paste("h", 1:100, sep = "") %in% model)) {
+        x[[model[1]]][model[2]]
+      } else x[model]
+    }
+  } else x <- list(x)
   return(x)
 }
 
@@ -3628,7 +3443,7 @@ fitted.bamlss <- function(object, model = NULL, term = NULL,
   family <- attr(object, "family")
 
   if(type != "parameter" & !samples)
-    object <- get.model(object, model, drop = FALSE)
+    object <- model.terms(object, model, drop = FALSE)
 
   h1check <- any(grepl("h1", names(object)))
 
@@ -3742,7 +3557,7 @@ grep2 <- function(pattern, x, ...) {
 samples.bamlss <- function(x, model = NULL, term = NULL, ...)
 {
   nx0 <- names(x)
-  x <- get.model(x, model)
+  x <- model.terms(x, model)
   if(!is.null(nx <- names(x))) {
     if(all(c("effects", "param.effects") %in% nx)) {
       x <- list(x)
@@ -3853,7 +3668,7 @@ confint.bamlss <- function(object, parm, level = 0.95, model = NULL, ...)
 ## Extract model coefficients.
 coef.bamlss <- function(object, model = NULL, term = NULL, FUN = mean, ...)
 {
-  object <- get.model(object)
+  object <- model.terms(object)
   if(is.null(term))
     term <- all.terms(object, ne = TRUE, id = FALSE)
   samps <- samples(object, model = model, term = term)
@@ -3886,7 +3701,7 @@ all.terms <- function(x, model = NULL, ne = TRUE, what = c("parametric", "smooth
       }
     }
   } else {
-    x <- get.model(x, model)
+    x <- model.terms(x, model)
     if(all(c("effects", "param.effects") %in% names(x))) {
       x <- list(x)
       if(!is.null(model)) {
@@ -3930,23 +3745,41 @@ all.terms <- function(x, model = NULL, ne = TRUE, what = c("parametric", "smooth
 
 
 ## Get the model.frame.
-model.frame.bamlss <- function(formula, ...) 
+model.frame.bamlss <- model.frame.bamlss.frame <- function(formula, ...) 
 {
   dots <- list(...)
   nargs <- dots[match(c("data", "na.action", "subset"), names(dots), 0L)]
-  mf <- if(length(nargs) || is.null(attr(formula, "model.frame"))) {
-    fcall <- attr(formula, "call")
-    fcall$method <- "model.frame"
+  mf <- if(length(nargs) || is.null(formula$model.frame)) {
+    fcall <- formula$call
     fcall[[1L]] <- quote(bamlss.model.frame)
     fcall[names(nargs)] <- nargs
-    env <- environment(attr(formula, "formula"))
-    if(is.null(env)) 
+    env <- environment(formula$formula)
+    if(is.null(env))
       env <- parent.frame()
     eval(fcall, env)
-  } else attr(formula, "model.frame")
-  if(!is.null(attr(mf, "orig.names")))
-    names(mf) <- attr(mf, "orig.names")
+  } else formula$model.frame
   mf
+}
+
+
+model.matrix.bamlss.frame <- function(object, model = NULL, ...)
+{
+  mt <- model.terms(object, model)
+  elmts <- c("formula", "fake.formula")
+  for(j in seq_along(mt)) {
+    if(!all(elmts %in% names(mt[[j]]))) {
+      for(k in seq_along(mt[[j]])) {
+        mt[[j]][[k]] <- if(is.null(mt[[j]][[k]]$X)) {
+          model.matrix(mt[[j]][[k]]$pterms, data = model.frame(object, ...))
+        } else mt[[j]][[k]]$X
+      }
+    } else {
+      mt[[j]] <- if(is.null(mt[[j]]$X)) {
+        model.matrix(mt[[j]]$pterms, data = model.frame(object, ...))
+      } else mt[[j]]$X
+    }
+  }
+  return(mt)
 }
 
 

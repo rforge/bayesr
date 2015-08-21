@@ -974,7 +974,6 @@ update_optim3 <- function(x, family, response, eta, id, ...)
 transformBayesG <- function(x, ...)
 {
   call <- x$call; x$call <- NULL
-  x <- assign.weights(x)
 
   family <- attr(x, "family")
   cat <- if(is.null(family$cat)) FALSE else family$cat

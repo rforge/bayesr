@@ -7,6 +7,7 @@ bamlss.formula(num ~ s(x1) + id)
 f <- list(
   num ~ s(x1) + id,
   sigma ~ s(x2)
+  id ~ s(x3)
 )
 
 bamlss.formula(f)
@@ -17,9 +18,14 @@ bamlss.formula(num ~ x1, family = zinb.bamlss())
 bamlss.formula(f, family = zinb.bamlss())
 
 
-## (2) Parsing model input.
+## (2) Get the bamlss frame.
 bf <- bamlss.frame(f, data = GAMart, family = gaussian)
 names(bf)
+head(model.frame(bf))
+model.response(model.frame(bf))
+response.name(bf)
+response.name(model.frame(bf))
+model.matrix(bf)
 
 ## Note that parse.input.bamlss() may handle special user defined smooths
 ## in addition to mgcv user defined smooths, one just needs to add a specials = TRUE
