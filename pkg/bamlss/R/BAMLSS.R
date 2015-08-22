@@ -299,7 +299,7 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss,
 
   ## Create the model frame.
   bf$model.frame <- bamlss.model.frame(formula, data, family, weights,
-    subset, offset, na.action, specials)
+    subset, offset, na.action, specials, contrasts)
 
   ## Process categorical responses.
   cf <- bamlss.formula.cat(formula, bf$model.frame, reference)
@@ -336,8 +336,8 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss,
   bf$family <- complete.bamlss.family(family)
 
   ## Assign all design matrices and the hierarchical level, if any.
-  bf$terms <- bamlss.terms(formula, bf$model.frame, contrasts, knots,
-    model.matrix, smooth.construct, binning, ...)
+  bf$terms <- bamlss.terms(formula, bf$model.frame, knots,
+    model.matrix, smooth.construct, binning)
 
   ## Assign class and return.
   class(bf) <- c("bamlss.frame", "list")
@@ -361,9 +361,9 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss,
 
 
 ## Assign all designs matrices.
-bamlss.terms <- function(x, data, contrasts = NULL, knots = NULL,
+bamlss.terms <- function(x, data, knots = NULL,
   model.matrix = TRUE, smooth.construct = TRUE, binning = FALSE,
-  before = TRUE, gam.side = TRUE, ...)
+  before = TRUE, gam.side = TRUE)
 {
   if(!binning)
     binning <- NULL
@@ -372,8 +372,7 @@ bamlss.terms <- function(x, data, contrasts = NULL, knots = NULL,
     if(!all(c("formula", "fake.formula", "response") %in% names(obj)))
       return(obj)
     if(model.matrix)
-      obj$X <- model.matrix(obj$pterms, data = mf, contrasts.arg = contrasts, ...)
-    obj$contrasts <- contrasts
+      obj$X <- model.matrix(obj$pterms, data = mf)
     obj$binning <- binning
     no.mgcv <- NULL
     if(length(obj$sterms)) {
@@ -503,7 +502,8 @@ bamlss.terms <- function(x, data, contrasts = NULL, knots = NULL,
 
 ## Create the model.frame.
 bamlss.model.frame <- function(formula, data, family, weights = NULL,
-  subset = NULL, offset = NULL, na.action = na.omit, specials = NULL)
+  subset = NULL, offset = NULL, na.action = na.omit, specials = NULL,
+  contrasts = NULL)
 {
   if(inherits(formula, "bamlss.frame")) {
     if(!is.null(formula$model.frame))
@@ -535,6 +535,8 @@ bamlss.model.frame <- function(formula, data, family, weights = NULL,
 
   mf <- do.call("model.frame", mf)
   rownames(mf) <- NULL
+
+  ## FIXME: contrasts here!!!
 
   ## Process weights and offset.
   if(!is.null(weights)) {
@@ -3762,24 +3764,58 @@ model.frame.bamlss <- model.frame.bamlss.frame <- function(formula, ...)
 }
 
 
+## Model matrix extractor.
 model.matrix.bamlss.frame <- function(object, model = NULL, ...)
 {
-  mt <- model.terms(object, model)
+  object <- model.terms(object, model)
   elmts <- c("formula", "fake.formula")
-  for(j in seq_along(mt)) {
-    if(!all(elmts %in% names(mt[[j]]))) {
-      for(k in seq_along(mt[[j]])) {
-        mt[[j]][[k]] <- if(is.null(mt[[j]][[k]]$X)) {
-          model.matrix(mt[[j]][[k]]$pterms, data = model.frame(object, ...))
-        } else mt[[j]][[k]]$X
+  for(j in seq_along(object)) {
+    if(!all(elmts %in% names(object[[j]]))) {
+      for(k in seq_along(object[[j]])) {
+        object[[j]][[k]] <- if(is.null(object[[j]][[k]]$X)) {
+          model.matrix(object[[j]][[k]]$pterms, data = model.frame(object, ...))
+        } else object[[j]][[k]]$X
       }
     } else {
-      mt[[j]] <- if(is.null(mt[[j]]$X)) {
-        model.matrix(mt[[j]]$pterms, data = model.frame(object, ...))
-      } else mt[[j]]$X
+      object[[j]] <- if(is.null(object[[j]]$X)) {
+        model.matrix(object[[j]]$pterms, data = model.frame(object, ...))
+      } else object[[j]]$X
     }
   }
-  return(mt)
+  return(object)
+}
+
+
+## New model.part() for bamlss.frame.
+model.part.bamlss.frame <- function(object, model = NULL,
+  pterms = TRUE, sterms = TRUE,
+  model.matrix = TRUE, smooth.construct = TRUE)
+{
+  object <- model.terms(object, model)
+  elmts <- c("formula", "fake.formula")
+  for(j in seq_along(object)) {
+    if(!all(elmts %in% names(object[[j]]))) {
+      for(k in seq_along(object[[j]])) {
+        if(model.matrix) {
+          object[[j]][[k]]$X <- if(is.null(object[[j]][[k]]$X)) {
+            model.matrix(object[[j]][[k]]$pterms, data = model.frame(object, ...))
+          } else object[[j]][[k]]$X
+        }
+        object[[j]][[k]] <- object[[j]][[k]][c("X", "pterms")[c(model.matrix, pterms)]]
+      }
+    } else {
+      if(model.matrix) {
+        object[[j]]$X <- if(is.null(object[[j]]$X)) {
+          model.matrix(object[[j]]$pterms, data = model.frame(object, ...))
+        } else object[[j]]$X
+      }
+      object[[j]] <- object[[j]][c("X", "pterms")[c(model.matrix, pterms)]]
+      if(smooth.construct) {
+        
+      }
+    }
+  }
+  return(object)
 }
 
 

@@ -6,7 +6,7 @@ bamlss.formula(num ~ s(x1) + id)
 
 f <- list(
   num ~ s(x1) + id,
-  sigma ~ s(x2)
+  sigma ~ s(x2),
   id ~ s(x3)
 )
 
@@ -25,7 +25,10 @@ head(model.frame(bf))
 model.response(model.frame(bf))
 response.name(bf)
 response.name(model.frame(bf))
+
+## (3) model.matrix() and smooth.construct()
 model.matrix(bf)
+smooth.construct(bf)
 
 ## Note that parse.input.bamlss() may handle special user defined smooths
 ## in addition to mgcv user defined smooths, one just needs to add a specials = TRUE
