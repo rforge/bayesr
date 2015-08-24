@@ -58,41 +58,11 @@ samps <- GMCMC(bf, n.iter = 1200)
 plot(samps)
 
 ## (7) Process results.
-b <- resultsBayesG(bf, samps)
+b <- results(bf, samps)
 
-## Setup the model code and write out data.
-sm <- setupBayesX(tpm)
+## (8) Plot and summaries.
+plot(b)
+summary(b)
 
-## Start sampling.
-ms <- samplerBayesX(sm)
-plot(ms)
-
-## Get results, returns object of class "bamlss".
-mr <- resultsBayesX(tpm, ms)
-plot(mr)
-summary(mr)
-
-## Now with JAGS.
-tpm <- transformJAGS(pm)
-sm <- setupJAGS(tpm)
-ms <- samplerJAGS(sm)
-mr <- resultsJAGS(tpm, ms)
-plot(mr)
-summary(mr)
-
-## Try STAN, uses same transformer and results as JAGS.
-## WARNING: takes very very long!
-tpm <- transformJAGS(pm)
-sm <- jags2stan(tpm)
-ms <- samplerSTAN(sm, n.iter = 1200, burnin = 200, thin = 1)
-mr <- resultsJAGS(tpm, ms)
-plot(mr)
-summary(mr)
-
-## With IWLS, does not need a setup function (work in progress).
-tpm <- transformIWLS(pm)
-ms <- samplerIWLS(tpm, method = c("backfitting", "MCMC"), maxit = 100)
-mr <- resultsIWLS(tpm, ms)
-plot(mr)
-summary(mr)
+## TODOs: predict, fitted, residuals, ..., JAGS, BayesX!
 
