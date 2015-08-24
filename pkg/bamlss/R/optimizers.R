@@ -46,13 +46,9 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
 
   criterion <- match.arg(criterion)
 
-  call <- x$call; x$call <- NULL
-  family <- attr(x, "family")
-
   foo <- function(x, id = NULL) {
     if(!any(c("formula", "fake.formula", "response") %in% names(x))) {
       nx <- names(x)
-      nx <- nx[nx != "call"]
       if(is.null(nx)) nx <- 1:length(x)
       if(length(unique(nx)) < length(x)) nx <- 1:length(x)
       for(j in nx)
@@ -91,7 +87,6 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
             } else stop(paste("coefficients for parameter", id, "are missing!"))
           }
           class(x$sterms[["parametric"]]) <- c(class(x$sterms[["parametric"]]), "no.mgcv", "parametric")
-          x$sterms <- c(x$strems, "parametric")
           x$X <- NULL
         }
       }
@@ -177,9 +172,6 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
   }
 
   x <- foo(x)
-
-  attr(x, "call") <- call
-  attr(x, "response.vec") <- attr(x, "model.frame")[, attr(attr(x, "model.frame"), "response.name")]
   attr(x, "bamlss.setup") <- TRUE
 
   x
