@@ -51,7 +51,7 @@ data("marital.nz", package = "VGAM")
 bf <- bamlss.frame(mstatus ~ s(age), data = marital.nz,
   family = "multinomial", reference = "Married/Partnered")
 
-bf <- bfit0(bf)
+bf <- bfit0(bf, do.optim = FALSE)
 
 ## (6) Run MCMC.
 samps <- GMCMC(bf, n.iter = 1200)
@@ -63,6 +63,19 @@ b <- results(bf, samps)
 ## (8) Plot and summaries.
 plot(b)
 summary(b)
+
+## (9) No with JAGS.
+sm <- setupJAGS(bf)
+samps <- samplerJAGS(sm)
+
+
+f <- list(num ~ s(x1) + s(x2) + s(x3))
+bf <- bamlss.frame(f, data = GAMart)
+bf <- bfit0(bf)
+sm <- setupJAGS(bf)
+samps <- samplerJAGS(sm)
+
+
 
 ## TODOs: predict, fitted, residuals, ..., JAGS, BayesX!
 

@@ -1116,31 +1116,51 @@ formula_hierarchical <- function(formula)
 ## Transform smooth terms to mixed model representation.
 randomize <- function(x)
 {
-  if(inherits(x, "bamlss.frame")) {
-    nx <- names(x)
-    nx <- nx[nx != "call"]
-    if(is.null(nx)) nx <- 1:length(x)
-    if(length(unique(nx)) < length(x)) nx <- 1:length(x)
-    for(j in seq_along(x$terms))
-      x$terms[[j]] <- randomize(x$terms[[j]])
-  } else {
+  nd <- names(model.frame(x))
+
+  rand_fun <- function(x)
+  {
     if(m <- length(x$sterms)) {
       for(j in 1:m) {
         if(!inherits(x$sterms[[j]], "no.mgcv")) {
-          tmp <- mgcv:::smooth2random(x$sterms[[j]], names(attr(x, "model.frame")), type = 2)
-          if(is.null(x$sterms[[j]]$xt$nolin))
-            x$sterms[[j]]$Xf <- tmp$Xf
+          if(is.null(x$sterms[[j]]$rand) & is.null(x$sterms[[j]]$Xf)) {
+            tmp <- mgcv:::smooth2random(x$sterms[[j]], nd, type = 2)
+            if(is.null(x$sterms[[j]]$xt$nolin))
+              x$sterms[[j]]$Xf <- tmp$Xf
 #          if(inherits(x$sterms[[j]], "random.effect")) {
 #            tmp$rand$Xr[tmp$rand$Xr > 0] <- 1
 #            tmp$rand$Xr <- scale(tmp$rand$Xr)
 #            tmp$trans.D <- rep(1, ncol(tmp$rand$Xr))
 #            tmp$trans.U <- diag(1, ncol(tmp$rand$Xr))
 #          }
-          x$sterms[[j]]$rand <- tmp$rand
-          x$sterms[[j]]$trans.D <- tmp$trans.D
-          x$sterms[[j]]$trans.U <- tmp$trans.U
+            x$sterms[[j]]$rand <- tmp$rand
+            x$sterms[[j]]$trans.D <- tmp$trans.D
+            x$sterms[[j]]$trans.U <- tmp$trans.U
+            if(!is.null(x$sterms[[j]]$state$parameters)) {
+              g2 <- get.par(x$sterms[[j]]$state$parameters, "g")
+              if(!is.null(x$sterms[[j]]$trans.U))
+                g2 <- solve(x$sterms[[j]]$trans.U) %*% g2
+              g2 <- drop(g2 / x$sterms[[j]]$trans.D)
+              x$sterms[[j]]$state$parameters <- set.par(x$sterms[[j]]$state$parameters, g2, "g")
+            }
+          }
         }
       }
+    }
+    x
+  }
+
+  if(inherits(x, "bamlss.frame")) {
+    nx <- names(x)
+    nx <- nx[nx != "call"]
+    if(is.null(nx)) nx <- 1:length(x)
+    if(length(unique(nx)) < length(x)) nx <- 1:length(x)
+    elmts <- c("formula", "fake.formula")
+    for(j in seq_along(x$terms)) {
+      if(!any(names(x$terms[[j]]) %in% elmts)) {
+        for(i in seq_along(x$terms[[j]]))
+          x$terms[[j]][[i]] <- rand_fun(x$terms[[j]][[i]])
+      } else x$terms[[j]] <- rand_fun(x$terms[[j]])
     }
   }
 
@@ -1438,81 +1458,45 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
 }
 
 
-## Function to compute partial residuals.
-partial.residuals <- function(effects, response, fitted.values, family)
-{
-  if(inherits(response, "Surv"))
-    return(effects)
-  if(!is.null(response)) {
-    if(length(mulink <- family$links[grep("mu", names(family$links))]) < 1)
-      mulink <- family$links[1]
-    linkfun <- make.link2(mulink[1])$linkfun
-    for(i in seq_along(effects)) {
-      if(is.factor(response)) response <- as.integer(response) - 1
-      e <- linkfun(response) - fitted.values + attr(effects[[i]], "fit")
-      if(is.null(attr(effects[[i]], "specs")$xt$center)) {
-        e <- e - mean(e, na.rm = TRUE)
-      } else {
-        if(attr(effects[[i]], "specs")$xt$center)
-          e <- e - mean(e, na.rm = TRUE)
-      }
-      e <- if(is.factor(attr(effects[[i]], "x"))) {
-        warn <- getOption("warn")
-        options(warn = -1)
-        tx <- as.integer(as.character(attr(effects[[i]], "x")))
-        options("warn" = warn)
-        cbind(if(!any(is.na(tx))) tx else as.integer(attr(effects[[i]], "x")), e)
-      } else {
-        cbind(attr(effects[[i]], "x"), e)
-      }
-      if(!is.null(attr(effects[[i]], "by.drop")))
-        e <- e[attr(effects[[i]], "by.drop"), ]
-      e <- as.data.frame(e)
-      try(names(e) <- c(attr(effects[[i]], "specs")$term, "partial.resids"))
-      attr(effects[[i]], "partial.resids") <- e
-      attr(effects[[i]], "fit") <- NULL
-      attr(effects[[i]], "x") <- NULL
-      attr(effects[[i]], "by.drop") <- NULL
-    }
-  }
-  
-  effects
-}
-
-
 ## Function to add partial residuals based on weights() and score() function.
-add.partial <- function(x, samples = FALSE, nsamps = 100) {
-  stopifnot(!is.null(names(x)))
-  nx <- names(x)
-  family <- attr(x, "family")
-  if(is.null(family)) stop("cannot compute partial residuals, no iwls score and weights functions supplied with family object!")
+add.partial <- function(x, samples = FALSE, nsamps = 100)
+{
+  if(!inherits(x, "bamlss"))
+    stop("x must be a 'bamlss' object!")
+
+  nx <- names(x$terms)
+  family <- x$family
+
   if(!is.null(family$hess) & !is.null(family$score)) {
-    y <- model.response2(x)
+    y <- model.response(model.frame(x))
     eta <- fitted.bamlss(x, samples = samples, nsamps = nsamps)
-    mf <- model.frame(x)
-    for(j in seq_along(x)) {
-      if(!is.null(x[[j]]$effects)) {
+    if(is.null(x$model.frame))
+      x$model.frame <- model.frame(x)
+    for(j in seq_along(x$terms)) {
+      if(!is.null(x$terms[[j]]$effects)) {
         peta <- family$map2par(eta)
-        weights <- family$hess[[nx[j]]](y, peta)
-        score <- family$score[[nx[j]]](y, peta)
+        weights <- family$hess[[nx[j]]](y, peta, id = nx[j])
+        score <- family$score[[nx[j]]](y, peta, id = nx[j])
         z <- eta[[nx[j]]] + 1 / weights * score
-        ne <- names(x[[j]]$effects)
+        ne <- names(x$terms[[j]]$effects)
         for(sj in seq_along(ne)) {
-          f <- predict(x, model = nx[j], term = ne[sj], nsamps = nsamps)
-          term <- attr(x[[j]]$effects[[ne[sj]]], "specs")$term
+          f <- predict.bamlss(x, model = nx[j], term = ne[sj], nsamps = nsamps)
+          term <- attr(x$terms[[j]]$effects[[ne[sj]]], "specs")$term
           e <- z - eta[[nx[j]]] + f
-          if(is.null(attr(x[[j]]$effects[[ne[sj]]], "specs")$xt$center)) {
+          if(is.null(attr(x$terms[[j]]$effects[[ne[sj]]], "specs")$xt$center)) {
             e <- e - mean(e)
           } else {
-            if(attr(x[[j]]$effects[[ne[sj]]], "specs")$xt$center)
+            if(attr(x$terms[[j]]$effects[[ne[sj]]], "specs")$xt$center)
               e <- e - mean(e)
           }
           e <- data.frame(mf[, term], e)
           names(e) <- c(term, "partial.resids")
-          attr(x[[j]]$effects[[ne[sj]]], "partial.resids") <- e
+          attr(x$terms[[j]]$effects[[ne[sj]]], "partial.resids") <- e
         }
       }
     }
+  } else {
+    stop("cannot compute partial residuals, no score() and hess() function in family object!")
   }
   x
 }
@@ -1527,7 +1511,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   intercept = TRUE, FUN = function(x) { mean(x, na.rm = TRUE) }, trans = NULL, MARGIN = 1,
   type = c("link", "parameter"), nsamps = NULL, verbose = FALSE, ...)
 {
-  family <- attr(object, "family")
+  family <- object$family
   if(missing(newdata))
     newdata <- model.frame(object)
   if(is.character(newdata)) {
@@ -3651,16 +3635,6 @@ results.bamlss.frame <- function(x, samples, model.frame = TRUE, grid = 100, ...
             fitted.values <- as.vector(fitted.values + xfit)
             attr(param.effects, "samples") <- as.mcmc(psamples)
             colnames(attr(param.effects, "samples")) <- nx
-          }
-        }
-      }
-
-      ## Compute partial residuals.
-      if(!is.null(effects)) {
-        if(length(obj$response)) {
-          if(obj$response %in% names(x$model.frame)) {
-            effects <- partial.residuals(effects, x$model.frame,
-              fitted.values, family)
           }
         }
       }

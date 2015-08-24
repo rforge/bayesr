@@ -1854,13 +1854,18 @@ multinomial.bamlss <- multinom.bamlss <- function(...)
     ),
     "score" = function(y, par, id, ...) {
       pi <- par[[id]] / (1 + rowSums(do.call("cbind", par)))
-      return(y[, id] - pi)
+      if(is.factor(y))
+        1 * (y == id)
+      else
+        return(y[, id] - pi)
     },
     "hess" = function(y, par, id, ...) {
       pi <- par[[id]] / (1 + rowSums(do.call("cbind", par)))
       return(pi * (1 - pi))
     },
     "d" = function(y, par, log = FALSE) {
+      if(is.factor(y))
+        y <- model.matrix(~ y - 1)
       par <- cbind(do.call("cbind", par), 1)
       d1 <- rowSums(y * log(par))
       d2 <- log(rowSums(par))
@@ -1870,6 +1875,8 @@ multinomial.bamlss <- multinom.bamlss <- function(...)
       return(d)
     },
     "loglik" = function(y, par, ...) {
+      if(is.factor(y))
+        y <- model.matrix(~ y - 1)
       par <- cbind(do.call("cbind", par), 1)
       d1 <- rowSums(y * log(par))
       d2 <- log(rowSums(par))

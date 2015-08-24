@@ -1,66 +1,5 @@
-#########################################
-## (1) Special JAGS transform function ##
-#########################################
-transformBUGS <- function(x)
-{
-  family <- attr(x, "family")
-  cat <- if(is.null(family$cat)) FALSE else family$cat
-
-  if(cat) {
-    reference <- attr(x, "reference")
-    if(is.null(reference)) {
-      ylevels <- attr(attr(x, "model.frame"), "response.name")
-      names(x) <- ylevels
-      reference <- "ref"
-      attr(x, "model.frame")[["ref"]] <- apply(attr(x, "model.frame")[, ylevels], 1,
-        function(x) {
-          all(x == 0) * 1
-      })
-      attr(x, "ycat") <- as.factor(apply(attr(x, "model.frame")[, c(ylevels, "ref")], 1,
-        function(x) {
-          which(x == 1)
-      }))
-      if(!any(attr(x, "model.frame")[["ref"]] > 0)) stop("too many categories specified in formula!")
-      attr(x, "ylevels") <- ylevels
-    }
-
-    xr <- list(
-      "formula" = as.formula(paste(reference, "~ 1", sep = "")),
-      "fake.formula" = as.formula(paste(reference, "~ 1", sep = "")),
-      "cat.formula" = as.formula(paste(reference, "~ 1", sep = "")),
-      "intercept" = TRUE,
-      "X" = matrix(1, nrow = nrow(attr(x, "model.frame")), ncol = 1)
-    )
-
-    nx <- names(x)
-    x[[length(x) + 1]] <- xr
-    names(x) <- c(nx, reference)
-    attr(x, "ylevels") <- c(attr(x, "ylevels"), reference)
-    attr(x, "reference") <- reference
-
-    tJAGS <- function(obj) {
-      if(inherits(obj, "bamlss.input") & !any(c("smooth", "response") %in% names(obj))) {
-        no <- names(obj)
-        no <- no[no != "call"]
-        if(is.null(no)) no <- 1:length(obj)
-        if(length(unique(no)) < length(obj)) no <- 1:length(obj)
-        for(j in no)
-          obj[[j]] <- tJAGS(obj[[j]])
-      }
-      obj
-    }
-
-    x <- tJAGS(x)
-  }
-
-  x <- randomize(x)
-  
-  x
-}
-
-
 ######################################################################
-## (2) General JAGS setup functions, model code, initials and data. ##
+## (1) General JAGS setup functions, model code, initials and data. ##
 ######################################################################
 ## Setup the model structure needed for the sampler.
 ## These functions create the model code, initials and data
@@ -69,13 +8,13 @@ transformBUGS <- function(x)
 ##           http://www.indiana.edu/~kruschke/DoingBayesianDataAnalysis/Programs/
 ## Families: http://www.jrnold.me/categories/jags.html
 ## Default linear predictor and model setup functions.
-BUGSeta <- function(x, id = NULL, zero = FALSE, ...) {
+BUGSeta <- function(x, id = NULL, ...)
+{
   setup <- list()
-  if(is.null(zero)) zero <- FALSE
-  setup$inits <- list()
+  setup$inits <- setup$data <- list()
 
   ## Parametric part.
-  if(k <- ncol(x$X)) {
+  if(FALSE) {
     id2 <- if(is.null(id)) 1 else id
     setup$data[[paste("X", id2, sep = "")]] <- x$X
     for(j in 1:k) {
@@ -86,31 +25,27 @@ BUGSeta <- function(x, id = NULL, zero = FALSE, ...) {
     setup$param <- paste("    param", id2, "[i] <- ", setup$param, sep = "")
     setup$loops <- k
     setup$priors.coef <- if(k > 1) {
-      paste("    beta", id2, if(zero) "[j] <- 0.0" else "[j] ~ dnorm(0, 1.0E-6)", sep = "")
-    } else paste("  beta", id2, if(zero) " <- 0.0" else " ~ dnorm(0, 1.0E-6)", sep = "")
-    if(!zero)
-      setup$inits[[paste("beta", id2, sep = "")]] <- runif(k)
+      paste("    beta", id2, "[j] ~ dnorm(0, 1.0E-6)", sep = "")
+    } else paste("  beta", id2, " ~ dnorm(0, 1.0E-6)", sep = "")
+    setup$inits[[paste("beta", id2, sep = "")]] <- runif(k)
     setup$psave <- c(setup$psave, paste("beta", id2, sep = ""))
     setup$eta <- paste("param", id2, "[i]", sep = "")
   }
 
-  ## Smooth part.
-  if(m <- length(x$smooth)) {
+  ## Cycle through all terms.
+  if(m <- length(x$sterms)) {
     for(i in 1:m) {
-      setup <- if(!is.null(x$smooth[[i]]$special)) {
-        buildBUGS.smooth.special(x$smooth[[i]], setup, paste(i, id, sep = ""), zero)
+      setup <- if(!is.null(x$sterms[[i]]$special)) {
+        buildBUGS.smooth.special(x$sterms[[i]], setup, paste(i, id, sep = ""))
       } else {
-        buildBUGS.smooth(x$smooth[[i]], setup, paste(i, id, sep = ""), zero)
+        buildBUGS.smooth(x$sterms[[i]], setup, paste(i, id, sep = ""))
       }
     }
   }
 
-  ## Final touch ups.
-  if(!is.null(x$response.vec))
-    setup$data$response <- x$response.vec
-
   setup
 }
+
 
 ## Get link functions.
 BUGSlinks <- function(x)
@@ -128,14 +63,14 @@ BUGSlinks <- function(x)
 }
 
 ## Construct the final model code.
-BUGSmodel <- function(x, family, cat = FALSE, is.stan = FALSE, ...) {
+BUGSmodel <- function(x, family, is.stan = FALSE, reference = NULL, ...) {
   if(is.function(family))
     family <- family()
   k <- if(all(c("inits", "data", "psave") %in% names(x))) {
     x <- list(x)
     1
   } else length(x)
-  if(k > length(family$names) & !family$cat) {
+  if(k > length(family$names)) {
     stop(paste("more parameters specified than existing in family ",
       family$family, ".bamlss()!", sep = ""), call. = FALSE)
   }
@@ -153,46 +88,47 @@ BUGSmodel <- function(x, family, cat = FALSE, is.stan = FALSE, ...) {
     pn <- pn[family$bugs$order]
 
   pn[1:k] <- paste(pn[1:k], "[i]", sep = "")
-  on <- if(cat) family$names else NULL
+  on <- NULL
   links <- family[[grep("links", names(family), fixed = TRUE, value = TRUE)]]
   links <- rep(sapply(links, BUGSlinks), length.out = k)
-  model <- c(model,  "  for(i in 1:n) {",
+  model2 <- c(
     paste("    response[i] ~ ", family$bugs$dist, "(",
-      paste(if(is.null(on)) pn else paste(on, ## if(cat) "n" else NULL,
-      "[i, 1:", k, "]", sep = ""),
-      collapse = ", "), ")", sep = ""))
-#  if(cat) {
-#    npn <- if(is.null(on)) pn else on
-#    model <- c(model, paste("    ", npn, "n[i, ", 1:k, "] <- ",
-#      npn, "[i, ", 1:k, "] / sum(", npn, "[i, 1:", k, "])", sep = ""))
-#  }
-
+      paste(if(!is.null(reference)) paste("probs[i, 1:", k + 1, "]", sep = "") else pn, collapse = ", "), ")", sep = ""))
+  if(!is.null(reference)) {
+    for(j in 1:k) {
+      model2 <- c(model2,
+        paste("    probs[i, ", j, "] <- ", pn[j], sep = "")
+      )
+    }
+  }
   if(!is.null(family$bugs$reparam)) {
     reparam <- NULL
     for(j in seq_along(family$bugs$reparam))
       reparam <- c(reparam, paste("    rp", j, "[i] <- ", family$bugs$reparam[j], sep = ""))
     for(j in family$names)
       reparam <- gsub(j, paste(j, "[i]", sep = ""), reparam)
-    model <- c(model, reparam)
+    model2 <- c(model2, reparam)
     pn[repi] <- paste(family$names[repi], "[i]", sep = "")
   }
   if(!is.null(family$bugs$addparam)) {
     for(j in family$bugs$addparam)
-      model <- c(model, paste("   ", j))
+      model2 <- c(model2, paste("   ", j))
   }
   if(!is.null(family$bugs$addvalues)) {
     for(j in names(family$bugs$addvalues))
-      model <- gsub(j, family$bugs$addvalues[[j]], model)
+      model2 <- gsub(j, family$bugs$addvalues[[j]], model2)
   }
 
   for(j in 1:k) {
-    model <- c(model, paste("    ", if(is.null(on)) pn[j] else paste(on, "[i, ", j, "]", sep = ""),
+    model2 <- c(model2, paste("    ", if(is.null(on)) pn[j] else paste(on, "[i, ", j, "]", sep = ""),
       " <- ", gsub("eta", x[[j]]$eta, links[[j]]), sep = ""))
   }
   for(j in 1:k)
-    model <- c(model, x[[j]]$adds)
+    model2 <- c(model2, x[[j]]$adds)
   for(j in 1:k)
-    model <- c(model, x[[j]]$param, x[[j]]$smooth)
+    model2 <- c(model2, x[[j]]$param, x[[j]]$sterms)
+  model2 <- rev(model2)
+  model <- c(model, "  for(i in 1:n) {", model2)
   model <- c(model, "  }")
 
   for(i in 1:k)
@@ -223,34 +159,49 @@ BUGSmodel <- function(x, family, cat = FALSE, is.stan = FALSE, ...) {
 ## Create final model setup.
 setupJAGS <- function(x)
 {
+  if(!inherits(x, "bamlss.frame"))
+    stop("x must be a 'bamlss.frame'!")
+
+  x$terms <- bamlss.setup(x$terms)
+  x <- randomize(x)
+
   is.stan <- if(is.null(attr(x, "is.stan"))) FALSE else TRUE
-  family <- attr(x, "family")
-  reference <- attr(x, "reference")
-  ylevels <- attr(x, "ylevels")
-  if(is.function(family))
-    family <- family()
-  if(!all(c("formula", "fake.formula", "response") %in% names(x))) {
-    nx <- names(x)
-    nx <- nx[nx != "call"]
-    if(is.null(nx))
-      nx <- 1:length(x)
-    rval <- list()
-    fn <- family$names
-    cat <- if(!is.null(family$cat)) family$cat else FALSE
-    if(cat)
-      fn <- names(x)
-    if(length(fn) < length(x))
-      fn <- paste(fn, 1:length(nx), sep = "")
-    for(i in seq_along(nx)) {
-      rval[[nx[i]]] <- family$bugs$eta(x[[i]], fn[i],
-        zero = if(!is.null(reference)) ylevels[i] == reference else NULL)
-    }
-  } else {
-    rval <- family$bugs$eta(x)
+  family <- x$family
+
+  nx <- names(x$terms)
+  if(is.null(nx))
+    nx <- 1:length(x)
+  rval <- list()
+  fn <- family$names
+  if(length(fn) < length(x$terms))
+    fn <- paste(fn, 1:length(nx), sep = "")
+  for(i in seq_along(nx)) {
+    rval[[nx[i]]] <- family$bugs$eta(x$terms[[i]], i)
   }
-  
+
+  ## Special factor responses.
+  response <- model.response(model.frame(x))
+
+  reference <- NULL
+  if(is.factor(response)) {
+    nl <- nlevels(response)
+    response <- as.integer(response)
+    if(nl < 3)
+      response <- response - 1
+  }
+  if(is.matrix(response)) {
+    if(length(nx) < ncol(response)) {
+      cn <- colnames(response)
+      reference <- cn[!(cn %in% nx)]
+      response <- drop(apply(response, 1, function(x) {
+        which(x != 0)
+      }))
+      response <- as.integer(response)
+    }
+  }
+
   ## Create model code.
-  model <- family$bugs$model(rval, family, cat = !is.null(reference), is.stan)
+  model <- family$bugs$model(rval, family, is.stan, reference)
 
   ## Collect data.
   if(all(c("inits", "data", "psave") %in% names(rval)))
@@ -264,19 +215,11 @@ setupJAGS <- function(x)
   data <- data[unique(names(data))]
   inits <- inits[unique(names(inits))]
   psave <- unique(psave)
-  data$n <- nrow(attr(x, "model.frame"))
+  data$n <- nrow(model.frame(x))
   psave <- c(psave, attr(model, "psave"))
-
-  if(cat) {
-    if(!is.null(attr(x, "ycat")))
-      data$response <- attr(x, "ycat")
-  }
-  if(is.factor(data$response)) {
-    nl <- nlevels(data$response)
-    data$response <- as.integer(data$response)
-    if(nl < 3)
-      data$response <- data$response - 1
-  }
+  data$response <- response
+  if(!is.null(reference))
+    data$probs <- matrix(1.0, nrow = length(data$response), ncol = length(nx) + 1)
 
   rval <- list("model" = model, "data" = data,
     "inits" = inits, "psave" = psave)
@@ -286,22 +229,38 @@ setupJAGS <- function(x)
 
 
 ## Build the JAGS model code for a smooth term. 
-buildBUGS.smooth <- function(smooth, setup, i, zero) {
+buildBUGS.smooth <- function(smooth, setup, i)
+{
   fall <- NULL
   kr <- if(is.null(smooth$rand$Xr)) 0 else ncol(smooth$rand$Xr)
   kx <- if(is.null(smooth$Xf)) 0 else ncol(smooth$Xf)
+  if(kr < 1 & kx < 1) {
+    if(!is.null(smooth$X)) {
+      smooth$Xf <- smooth$X
+      kx <- ncol(smooth$Xf)
+    }
+  }
   hcauchy <- if(is.null(smooth$xt$hcauchy)) FALSE else smooth$xt$hcauchy
+  ig <- itau2 <- NULL
+  if(!is.null(smooth$state)) {
+    ig <- get.par(smooth$state$parameters, "g")
+    itau2 <- get.par(smooth$state$parameters, "tau2")
+  }
   if(kx > 0) {
     fall <- c(fall, paste("b", i, if(kx > 1) paste("[", 1:kx, "]", sep = ""),
       "*Xf", i, "[i, ", 1:kx, "]", sep = ""))
     setup$data[[paste("Xf", i, sep = "")]] <- smooth$Xf
     tmp <- if(kx > 1) {
-        paste("    b", i, if(zero) "[j] <- 0.0" else "[j] ~ dnorm(0, 1.0E-6)", sep = "")
-    } else paste("  b", i, if(zero) " <- 0.0" else " ~ dnorm(0, 1.0E-6)", sep = "")
+        paste("    b", i, "[j] ~ dnorm(0, 1.0E-6)", sep = "")
+    } else paste("  b", i, " ~ dnorm(0, 1.0E-6)", sep = "")
     setup$priors.coef <- c(setup$priors.coef, tmp)
     setup$loops <- c(setup$loops, kx)
-    if(!zero)
-      setup$inits[[paste("b", i, sep = "")]] <- runif(kx, 0.1, 0.2)
+    setup$inits[[paste("b", i, sep = "")]] <- if(!is.null(ig)) {
+      if(kr > 0)
+        ig[-1 * (1:kr)]
+      else
+        ig
+    } else runif(kx, 0.1, 0.2)
     setup$psave <- c(setup$psave, paste("b", i, sep = ""))
   }
   if(kr > 0) {
@@ -310,29 +269,31 @@ buildBUGS.smooth <- function(smooth, setup, i, zero) {
     setup$data[[paste("Xr", i, sep = "")]] <- smooth$rand$Xr
     taug <- paste("taug", if(is.null(smooth$id)) i else smooth$id, sep = "")
     tmp <- if(kr > 1) {
-      paste("    g", i, if(zero) "[j] <- 0.0" else paste("[j] ~ dnorm(0, ", taug, ")", sep = ""), sep = "")
-    } else paste("g", i, if(zero) " <- 0.0" else paste(" ~ dnorm(0, ", taug, ")", sep = ""), sep = "")
+      paste("    g", i, paste("[j] ~ dnorm(0, ", taug, ")", sep = ""), sep = "")
+    } else paste("g", i, paste(" ~ dnorm(0, ", taug, ")", sep = ""), sep = "")
     setup$priors.coef <- c(setup$priors.coef, tmp)
     setup$loops <- c(setup$loops, kr)
     if(is.null(setup$priors.scale) || !any(grepl(taug, setup$priors.scale))) {
       if(!hcauchy) {
         setup$priors.scale <- c(setup$priors.scale, paste("  ", taug,
-          if(zero) " <- 0.0" else " ~ dgamma(1.0E-4, 1.0E-4)", sep = ""))
+          " ~ dgamma(1.0E-4, 1.0E-4)", sep = ""))
       } else {
         setup$priors.scale <- c(setup$priors.scale, paste("  ", taug,
-          if(zero) " <- 0.0" else " <- abs(", taug, 0, ")", sep = ""),
+          " <- abs(", taug, 0, ")", sep = ""),
           paste("  ", taug, 0, "~ dt(0, 10, 1)", sep = ""))
       }
-      if(!zero)
-        	setup$inits[[taug]] <- runif(1, 0.1, 0.2)
+      setup$inits[[taug]] <- if(!is.null(itau2)) {
+        itau2[1]
+      } else runif(1, 0.1, 0.2)
       setup$psave <- c(setup$psave, taug)
     }
-    if(!zero)
-      setup$inits[[paste("g", i, sep = "")]] <- runif(kr, 0.1, 0.2)
+    setup$inits[[paste("g", i, sep = "")]] <- if(!is.null(ig)) {
+      ig[1:kr]
+    } else runif(kr, 0.1, 0.2)
     setup$psave <- c(setup$psave, paste("g", i, sep = ""))
   }
 
-  setup$smooth <- c(setup$smooth, paste("    sm", i, "[i] <- ",
+  setup$sterms <- c(setup$sterms, paste("    sm", i, "[i] <- ",
     paste(fall, collapse = " + ", sep = ""), sep = ""))
   setup$eta <- paste(setup$eta, paste("sm", i, "[i]", sep = ""),
     sep = if(length(setup$eta)) " + " else "")
@@ -363,12 +324,12 @@ buildBUGS.smooth.special.rsc.smooth <- function(smooth, setup, i, zero)
   setup <- buildBUGS.smooth(smooth, setup, i, zero)
 
   if(!is.null(smooth$by.formula)) {
-    st <- setup$smooth[si <- grep(paste("sm", i, "[i] <-", sep = ""), setup$smooth, fixed = TRUE)]
+    st <- setup$sterms[si <- grep(paste("sm", i, "[i] <-", sep = ""), setup$sterms, fixed = TRUE)]
     st <- strsplit(st, " <- ", fixed = TRUE)[[1]]
     n <- length(smooth$rs.by)
     rs <- paste("rs", i, 1:n, "[rsid", i, 1:n, "[i]]", sep = "", collapse = " + ")
     st[2] <- paste("(", if(smooth$one) "1 + ", rs, ")*(", st[2], ")", sep = "")
-    setup$smooth[si] <- paste(st[1], "<-", st[2])
+    setup$sterms[si] <- paste(st[1], "<-", st[2])
     for(j in 1:n) {
       tmp <- paste("    rs", i, j, "[j] ~ dnorm(0, taugrs", i, j, ")", sep = "")
       setup$priors.coef <- c(setup$priors.coef, tmp)
@@ -407,7 +368,7 @@ buildBUGS.smooth.special.gc.smooth <- function(smooth, setup, i, zero)
   ##fall <- paste(pn, "[1] * X[i]", sep = "")
 
   if(!center) {
-    setup$smooth <- c(setup$smooth, paste("    sm", i, "[i] <- ",
+    setup$sterms <- c(setup$sterms, paste("    sm", i, "[i] <- ",
       paste(fall, collapse = " + ", sep = ""), sep = ""))
   } else {
     setup$close1 <- c(setup$close1, paste("  sm", i,  1, " <- sm", i, 0, " - mean(sm", i, 0, ")", sep = ""))
@@ -427,14 +388,14 @@ buildBUGS.smooth.special.gc.smooth <- function(smooth, setup, i, zero)
 buildBUGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
 {
   fall <- fall0 <- NULL
-  k1 <- ncol(smooth$smooths[[1]]$X)
-  k2 <- ncol(smooth$smooths[[2]]$X)
+  k1 <- ncol(smooth$stermss[[1]]$X)
+  k2 <- ncol(smooth$stermss[[2]]$X)
 
   fall0 <- c(fall0, paste("Z", i, "[i, ", 1:k2, "]", sep = ""))
   fall <- c(fall, paste("b", i, if(k1 > 1) paste("[", 1:k1, "]", sep = ""),
     "*X", i, "[i, ", 1:k1, "]", sep = ""))
-  setup$data[[paste("X", i, sep = "")]] <- smooth$smooths[[1]]$X
-  setup$data[[paste("Z", i, sep = "")]] <- smooth$smooths[[2]]$X
+  setup$data[[paste("X", i, sep = "")]] <- smooth$stermss[[1]]$X
+  setup$data[[paste("Z", i, sep = "")]] <- smooth$stermss[[2]]$X
   tmp <- if(k1 > 1) {
       paste("    b", i, if(zero) "[j] <- 0.0" else "[j] ~ dnorm(0, 1.0E-6)", sep = "")
   } else paste("  b", i, if(zero) " <- 0.0" else " ~ dnorm(0, 1.0E-6)", sep = "")
@@ -469,7 +430,7 @@ buildBUGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
   if(!center) {
     fall0 <- paste("    sm0", i, "[i] <- 1 / (", gsub("eta", paste(fall0, collapse = " + "), link), ")", sep = "")
     fall <- paste("    sm", i, "[i] <- sm0", i, "[i] * (", paste(fall, collapse = " + "), ")", sep = "")
-    setup$smooth <- c(setup$smooth, fall, fall0)
+    setup$sterms <- c(setup$sterms, fall, fall0)
   } else {
     fall0 <- paste("    sm0", i, "[i] <- 1 / (", gsub("eta", paste(fall0, collapse = " + "), link), ")", sep = "")
     fall <- paste("    sm", i, 0, "[i] <- sm0", i, "[i] * (", paste(fall, collapse = " + "), ")", sep = "")
@@ -492,7 +453,7 @@ buildBUGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
 samplerJAGS <- function(x, tdir = NULL,
   n.chains = 1, n.adapt = 100,
   n.iter = 4000, thin = 2, burnin = 1000,
-  seed = NULL, verbose = TRUE, set.inits = FALSE,
+  seed = NULL, verbose = TRUE, set.inits = TRUE,
   save.all = FALSE, modules = NULL, ...)
 {
   require("rjags")
@@ -610,14 +571,14 @@ resultsJAGS <- function(x, samples)
       }
 
       ## Smooth terms.
-      if(length(obj$smooth)) {
+      if(length(obj$sterms)) {
         if(!is.list(effects))
           effects <- list()
-        for(i in 1:length(obj$smooth)) {
-          if(!is.null(obj$smooth[[i]]$special)) {
-            fst <- resultsJAGS.special(obj$smooth[[i]], samples[[j]], attr(x, "model.frame"), i, id = id)
+        for(i in 1:length(obj$sterms)) {
+          if(!is.null(obj$sterms[[i]]$special)) {
+            fst <- resultsJAGS.special(obj$sterms[[i]], samples[[j]], attr(x, "model.frame"), i, id = id)
             if(is.null(attr(fst, "by"))) {
-              effects[[obj$smooth[[i]]$label]] <- fst$term
+              effects[[obj$sterms[[i]]$label]] <- fst$term
               effects.hyp <- rbind(effects.hyp, fst$effects.hyp)
               fitted.values <- fitted.values + fst$fitted.values
             } else {
@@ -632,8 +593,8 @@ resultsJAGS <- function(x, samples)
           } else {
             ## Get coefficient samples of smooth term.
             xsamples <- rsamples <- NULL
-            kr <- if(is.null(obj$smooth[[i]]$rand$Xr)) 0 else ncol(obj$smooth[[i]]$rand$Xr)
-            kx <- if(is.null(obj$smooth[[i]]$Xf)) 0 else ncol(obj$smooth[[i]]$Xf)
+            kr <- if(is.null(obj$sterms[[i]]$rand$Xr)) 0 else ncol(obj$sterms[[i]]$rand$Xr)
+            kx <- if(is.null(obj$sterms[[i]]$Xf)) 0 else ncol(obj$sterms[[i]]$Xf)
             kw <- 0
             if(kx) {
               pn <- grep(paste("b", i, id, sep = ""), snames, value = TRUE, fixed = TRUE)
@@ -650,9 +611,9 @@ resultsJAGS <- function(x, samples)
             ## Retransform parameter samples.
             if(kr) {
               re_trans <- function(g) {
-                g <- obj$smooth[[i]]$trans.D * g
-                if(!is.null(obj$smooth[[i]]$trans.U))
-                  g <- obj$smooth[[i]]$trans.U %*% g
+                g <- obj$sterms[[i]]$trans.D * g
+                if(!is.null(obj$sterms[[i]]$trans.U))
+                  g <- obj$sterms[[i]]$trans.U %*% g
                 g
               }
               psamples <- t(apply(psamples, 1, re_trans))
@@ -660,7 +621,7 @@ resultsJAGS <- function(x, samples)
 
             ## Possible variance parameter samples.
             vsamples <- NULL
-            taug <- paste("taug", if(is.null(obj$smooth[[i]]$id)) i else obj$smooth[[i]]$id, id, sep = "")
+            taug <- paste("taug", if(is.null(obj$sterms[[i]]$id)) i else obj$sterms[[i]]$id, id, sep = "")
             if(taug %in% snames) {
               vsamples <- as.numeric(samples[[j]][, snames %in% taug])
             }
@@ -671,22 +632,22 @@ resultsJAGS <- function(x, samples)
 
             ## Prediction matrix.
             get.X <- function(x) {
-              X <- PredictMat(obj$smooth[[i]], x)
+              X <- PredictMat(obj$sterms[[i]], x)
               X
             }
 
             ## Compute final smooth term object.
-            tn <- c(obj$smooth[[i]]$term, if(obj$smooth[[i]]$by != "NA") obj$smooth[[i]]$by else NULL)
+            tn <- c(obj$sterms[[i]]$term, if(obj$sterms[[i]]$by != "NA") obj$sterms[[i]]$by else NULL)
 
             if(length(effects)) {
-              if(obj$smooth[[i]]$label %in% names(effects)) {
-                ct <- gsub(".smooth.spec", "", class(obj$smooth[[i]]))[1]
+              if(obj$sterms[[i]]$label %in% names(effects)) {
+                ct <- gsub(".smooth.spec", "", class(obj$sterms[[i]]))[1]
                 if(ct == "random.effect") ct <- "re"
-                obj$smooth[[i]]$label <- paste(obj$smooth[[i]]$label, ct, sep = ":")
+                obj$sterms[[i]]$label <- paste(obj$sterms[[i]]$label, ct, sep = ":")
               }
             }
 
-            fst <- compute_term(obj$smooth[[i]], get.X = get.X, get.mu = get.mu,
+            fst <- compute_term(obj$sterms[[i]], get.X = get.X, get.mu = get.mu,
               psamples = psamples, vsamples = vsamples, FUN = NULL, snames = snames,
               effects.hyp = effects.hyp, fitted.values = fitted.values,
               data = attr(x, "model.frame")[, tn, drop = FALSE], grid = grid)
@@ -694,7 +655,7 @@ resultsJAGS <- function(x, samples)
             attr(fst$term, "specs")$get.mu <- get.mu 
 
             ## Add term to effects list.
-            effects[[obj$smooth[[i]]$label]] <- fst$term
+            effects[[obj$sterms[[i]]$label]] <- fst$term
             effects.hyp <- fst$effects.hyp
 
             fitted.values <- fst$fitted.values
@@ -808,10 +769,10 @@ resultsJAGS.special.default <- function(x, samples, data, i, ...)
   if(inherits(x, "rs.smooth")) {
     pn <- grep(paste("w", i, sep = ""), snames, value = TRUE, fixed = TRUE)
     pn <- pn[!grepl("tau", pn)]
-    wsamples <- matrix(samples[, snames %in% pn], ncol = x$smooths[[2]]$df)
+    wsamples <- matrix(samples[, snames %in% pn], ncol = x$stermss[[2]]$df)
     pn <- grep(paste("b", i, sep = ""), snames, value = TRUE, fixed = TRUE)
     pn <- pn[!grepl("tau", pn)]
-    psamples <- matrix(samples[, snames %in% pn], ncol = x$smooths[[1]]$df)
+    psamples <- matrix(samples[, snames %in% pn], ncol = x$stermss[[1]]$df)
     psamples <- cbind(psamples, "w" = wsamples)
   } else {
     xsamples <- rsamples <- NULL
