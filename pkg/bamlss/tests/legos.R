@@ -45,8 +45,20 @@ head(model.response(model.frame(bf)))
 ## in addition to mgcv user defined smooths, one just needs to add a specials = TRUE
 ## within an smooth.construct() call. This is usefull to e.g. estimate NURBS with JAGS.
 
-## Run backfitting optimizer on bamlss.frame.
-bf2 <- bfit0(bf)
+## (5) Run backfitting optimizer on bamlss.frame.
+data("marital.nz", package = "VGAM")
+
+bf <- bamlss.frame(mstatus ~ s(age), data = marital.nz,
+  family = "multinomial", reference = "Married/Partnered")
+
+bf <- bfit0(bf)
+
+## (6) Run MCMC.
+samps <- GMCMC(bf, n.iter = 1200)
+plot(samps)
+
+## (7) Process results.
+b <- resultsBayesG(bf, samps)
 
 ## Setup the model code and write out data.
 sm <- setupBayesX(tpm)

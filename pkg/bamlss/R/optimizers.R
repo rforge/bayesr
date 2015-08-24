@@ -569,8 +569,6 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
   nobs <- if(is.null(dim(response))) length(response) else nrow(response)
   eta <- get.eta(x$terms)
-print(eta)
-stop()
   
   inner_bf <- function(x, response, eta, family, edf, id, ...) {
     eps0 <- eps + 1; iter <- 1
@@ -619,7 +617,7 @@ stop()
 
         ## And all terms.
         if(inner) {
-          tbf <- inner_bf(x$terms[[nx[j]]]$sterms, response, eta, family,
+          tbf <- inner_bf(x[[nx[j]]]$sterms, response, eta, family,
             edf = edf, id = nx[j], z = z, weights = weights)
           x[[nx[j]]]$sterms <- tbf$x
           edf <- tbf$edf
@@ -681,12 +679,10 @@ stop()
     if(iter == maxit)
       warning("the backfitting algorithm did not converge, please check argument eps and maxit!")
 
-    return(list("x" = x, "eta" = eta, "ic" = IC))
+    return(x)
   }
 
-  bf <- backfit(x, eta, verbose = verbose)
-  x <- bf$x; eta <- bf$eta
-  rm(bf)
+  x$terms <- backfit(x$terms, eta, verbose = verbose)
 
   return(x)
 }

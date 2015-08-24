@@ -503,7 +503,7 @@ bamlss.terms <- function(x, data, knots = NULL,
 ## Create the model.frame.
 bamlss.model.frame <- function(formula, data, family, weights = NULL,
   subset = NULL, offset = NULL, na.action = na.omit, specials = NULL,
-  contrasts.arg = NULL)
+  contrasts.arg = NULL, ...)
 {
   if(inherits(formula, "bamlss.frame")) {
     if(!is.null(formula$model.frame))
@@ -2477,7 +2477,6 @@ smooth.construct.fdl.smooth.spec <- function(object, data, knots)
 plot.bamlss <- function(x, model = NULL, term = NULL, which = 1,
   ask = FALSE, scale = 1, spar = TRUE, ...)
 {
-  family <- attr(x, "family")
   args <- list(...)
   cx <- class(x)
 
@@ -2486,7 +2485,7 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = 1,
     on.exit(par(op))
   }
 
-  x <- model.terms(x, model, drop = FALSE)
+  x <- model.terms(x, model)
 
   ## What should be plotted?
   which.match <- c("effects", "samples", "hist-resid", "qq-resid",
@@ -2643,9 +2642,8 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = 1,
       args$mmain <- TRUE
     }
     if(!is.null(main)) main <- rep(main, length.out = length(x))
-
     for(i in seq_along(x)) {
-      args[c("x", "term", "which", "ask", "scale")] <- list(x[[i]], term, which, ask, scale)
+      args[c("x", "term", "which", "ask", "scale")] <- list(x[i], term, which, ask, scale)
       args$main <- if(!is.null(main)) main[i] else NULL
       if(!any(c("effects", "param.effects") %in% names(x[[i]]))) {
         args$do_par <- FALSE
@@ -2663,7 +2661,6 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = 1,
 .plot.bamlss <- function(x, model = NULL, term = NULL, which = 1,
   ask = FALSE, scale = 1, spar = TRUE, ...)
 {
-  x <- model.terms(x, model)
   n <- length(x)
   args <- list(...)
 
@@ -3021,8 +3018,8 @@ delete.NULLs <- function(x.list)
 ###################################
 summary.bamlss <- function(object, model = NULL, ...)
 {
-  call <- attr(object, "call")
-  family <- attr(object, "family")
+  call <- object$call
+  family <- object$family
   object <- model.terms(object, model)
   rval <- list()
   n <- length(object)
@@ -3447,7 +3444,7 @@ terms.bamlss.formula <- function(x)
 ## Model terms extractor function.
 model.terms <- function(x, model = NULL)
 {
-  if(inherits(x, "bamlss.frame"))
+  if(inherits(x, "bamlss.frame") | ("terms" %in% names(x)))
     x <- x$terms
   elmts <- c("formula", "fake.formula")
   if(!any(names(x) %in% elmts)) {
@@ -3468,18 +3465,264 @@ model.terms <- function(x, model = NULL)
 }
 
 
+## Generic results function.
+results <- function(x, ...) {
+  UseMethod("results")
+}
+
+## Process samples/'bamlss.frame' results
+results.bamlss.frame <- function(x, samples, model.frame = TRUE, grid = 100, ...)
+{
+  if(!inherits(x, "bamlss.frame"))
+    stop("x must be a 'bamlss.frame' object")
+  if(missing(samples) | is.null(samples))
+    stop("parameter samples are missing, cannot compute results!")
+
+  if(is.null(x$model.frame))
+    x$model.frame <- model.frame(x)
+
+  family <- x$family
+  if(is.null(grid)) grid <- 100
+
+  if(inherits(samples[[1]], "mcmc.list")) {
+    samples <- do.call("c", samples)
+  } else {
+    if(!inherits(samples, "mcmc.list"))
+      samples <- as.mcmc.list(if(!inherits(samples, "list")) list(samples) else samples)
+  }
+  chains <- length(samples)
+  snames <- colnames(samples[[1]])
+
+  make_results <- function(obj, samples, id = NULL)
+  {
+    rval <- vector(mode = "list", length = chains)
+    for(j in 1:chains) {
+      DIC <- pd <- NA
+      if(any(grepl("deviance", snames))) {
+        DIC <- as.numeric(samples[[j]][, grepl("deviance", snames)])
+        pd <- var(DIC, na.rm = TRUE) / 2
+        DIC <- mean(DIC, na.rm = TRUE)
+      }
+      if(any(grepl("logLik", snames))) {
+        DIC <- -2 * as.numeric(samples[[j]][, grepl("logLik", snames)])
+        pd <- var(DIC, na.rm = TRUE) / 2
+        DIC <- mean(DIC, na.rm = TRUE)
+      }
+
+      if(any(grepl("save.edf", snames))) {
+        ic <- grep("save.edf", snames)
+        nic <- snames[(ic - 1):ic]
+        IC <- samples[[j]][, grepl(nic[1], snames)][1]
+        edf00 <- samples[[j]][, grepl(nic[2], snames)][1]
+        names(IC) <- nic[1]
+        DIC <- pd <- NULL
+      } else {
+        IC <- edf00 <- NULL
+      }
+
+      ## Compute model term effects.
+      param.effects <- effects <- effects.hyp <- NULL
+      fitted.values <- 0
+
+      ## Smooth terms.
+      if(length(obj$sterms)) {
+        for(i in 1:length(obj$sterms)) {
+          ## Get coefficient samples of smooth term.
+          pn <- if(any(grepl("h1", snames))) {
+            paste(id, "h1", obj$sterms[[i]]$label, sep = ":") ## FIXME: hlevels!
+          } else paste(id, obj$sterms[[i]]$label, sep = ".")
+          nch <- nchar(pn) + 1
+          pn <- paste(pn, ".", sep = "")
+          snames2 <- sapply(snames, function(x) {
+            paste(strsplit(x, "")[[1]][1:nch], collapse = "", sep = "")
+          })
+          pn <- snames[snames2 == pn]
+          pn <- pn[!grepl(".tau2", pn) & !grepl(".alpha", pn) & !grepl(".accepted", pn) & !grepl(".edf", pn)]
+          k <- sum(snames %in% pn)
+
+          psamples <- matrix(samples[[j]][, snames %in% pn], ncol = k)
+          nas <- apply(psamples, 1, function(x) { any(is.na(x)) } )
+          psamples <- psamples[!nas, , drop = FALSE]
+
+          if(!is.null(obj$sterms[[i]]$Xf)) {
+            kx <- if(is.null(obj$sterms[[i]]$Xf)) 0 else ncol(obj$sterms[[i]]$Xf)
+            if(kx) {
+              pn <- paste(paste(id, ":h1:linear.",
+                paste(paste(obj$sterms[[i]]$term, collapse = "."), "Xf", sep = "."), sep = ""),
+                1:kx, sep = ".")
+              xsamples <- matrix(samples[[j]][, snames %in% pn], ncol = kx)
+              psamples <- cbind("ra" = psamples, "fx" = xsamples)
+              re_trans <- function(g) {
+                g <- obj$sterms[[i]]$trans.D * g
+                if(!is.null(obj$sterms[[i]]$trans.U))
+                  g <- obj$sterms[[i]]$trans.U %*% g
+                g
+              }
+              psamples <- t(apply(psamples, 1, re_trans))
+            }
+          }
+
+          ## Possible variance/edf parameter samples.
+          vsamples <- NULL
+          tau2 <- if(any(grepl("h1", snames))) {
+            tau2 <- paste(id, "h1", paste(obj$sterms[[i]]$label, "tau2", sep = "."), sep = ":")
+          } else paste(id, paste(obj$sterms[[i]]$label, "tau2", sep = "."), sep = ".")
+          if(length(tau2 <- grep(tau2, snames, fixed = TRUE))) {
+            vsamples <- samples[[j]][, tau2, drop = FALSE]
+            vsamples <- vsamples[!nas, , drop = FALSE]
+          } else {
+            if(obj$sterms[[i]]$fixed)
+              vsamples <- rep(.Machine$double.eps, nrow(samples[[j]]))
+          }
+          edfsamples <- NULL
+          edf <- if(any(grepl("h1", snames))) {
+            edf <- paste(id, "h1", paste(obj$sterms[[i]]$label, "edf", sep = "."), sep = ":")
+          } else paste(id, paste(obj$sterms[[i]]$label, "edf", sep = "."), sep = ".")
+          if(length(edf <- grep(edf, snames, fixed = TRUE))) {
+            edfsamples <- samples[[j]][, edf, drop = FALSE]
+            edfsamples <- edfsamples[!nas, , drop = FALSE]
+          }
+
+          ## Acceptance probalities.
+          asamples <- NULL
+          alpha <- if(any(grepl("h1", snames))) {
+            paste(id, "h1", paste(obj$sterms[[i]]$label, "alpha", sep = "."), sep = ":")
+          } else paste(id, paste(obj$sterms[[i]]$label, "alpha", sep = "."), sep = ".")
+          if(length(alpha <- grep(alpha, snames, fixed = TRUE))) {
+            asamples <- as.numeric(samples[[j]][, alpha])
+            asamples <- asamples[!nas]
+          }
+
+          ## Prediction matrix.
+          get.X <- function(x) { ## FIXME: time(x)
+            acons <- obj$sterms[[i]]$xt$center
+            for(char in c("(", ")", "[", "]"))
+              obj$sterms[[i]]$term <- gsub(char, ".", obj$sterms[[i]]$term, fixed = TRUE)
+            X <- PredictMat(obj$sterms[[i]], x)
+            X
+          }
+
+          ## Compute final smooth term object.
+          tn <- c(obj$sterms[[i]]$term, if(obj$sterms[[i]]$by != "NA") obj$sterms[[i]]$by else NULL)
+
+          if(is.null(obj$sterms[[i]]$is.parametric)) {
+            if(!is.list(effects))
+              effects <- list()
+            if(length(effects)) {
+              if(obj$sterms[[i]]$label %in% names(effects)) {
+                ct <- gsub(".smooth.spec", "", class(obj$sterms[[i]]))[1]
+                if(ct == "random.effect") ct <- "re"
+                obj$sterms[[i]]$label <- paste(obj$sterms[[i]]$label, ct, sep = ":")
+              }
+            }
+            if(is.null(obj$sterms[[i]]$get.mu)) {
+              obj$sterms[[i]]$get.mu <- function(X, b, ...) {
+                drop(X %*% b)
+              }
+            }
+
+            fst <- compute_term(obj$sterms[[i]], get.X = get.X, get.mu = obj$sterms[[i]]$get.mu,
+              psamples = psamples, vsamples = vsamples, asamples = asamples,
+              FUN = NULL, snames = snames, effects.hyp = effects.hyp,
+              fitted.values = fitted.values, data = x$model.frame[, tn, drop = FALSE],
+              grid = grid, edfsamples = edfsamples)
+
+            attr(fst$term, "specs")$get.mu <- obj$sterms[[i]]$get.mu
+
+            ## Add term to effects list.
+            effects[[obj$sterms[[i]]$label]] <- fst$term
+            effects.hyp <- fst$effects.hyp
+
+            fitted.values <- fst$fitted.values
+            rm(fst)
+          } else {
+            nx <- colnames(obj$sterms[[i]]$X)
+            qu <- t(apply(psamples, 2, quantile, probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
+            sd <- drop(apply(psamples, 2, sd, na.rm = TRUE))
+            me <- drop(apply(psamples, 2, mean, na.rm = TRUE))
+            param.effects <- cbind(me, sd, qu)
+            rownames(param.effects) <- nx
+            colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
+            if(!is.null(asamples))
+              param.effects <- cbind(param.effects, "alpha" = mean(asamples))
+            xfit <- obj$sterms[[i]]$X %*% param.effects[, 1]
+            if(!is.null(obj$sterms[[i]]$xbin.ind))
+              xfit <- xfit[obj$sterms[[i]]$xbin.ind]
+            fitted.values <- as.vector(fitted.values + xfit)
+            attr(param.effects, "samples") <- as.mcmc(psamples)
+            colnames(attr(param.effects, "samples")) <- nx
+          }
+        }
+      }
+
+      ## Compute partial residuals.
+      if(!is.null(effects)) {
+        if(length(obj$response)) {
+          if(obj$response %in% names(x$model.frame)) {
+            effects <- partial.residuals(effects, x$model.frame,
+              fitted.values, family)
+          }
+        }
+      }
+
+      ## Stuff everything together.
+      rval[[j]] <- list(
+        "model" = list("DIC" = DIC, "pd" = pd,
+          "N" = nrow(x$model.frame), "formula" = obj$formula,
+          "IC" = IC, "edf" = edf00),
+        "param.effects" = param.effects, "effects" = effects,
+        "effects.hyp" = effects.hyp, "fitted.values" = fitted.values
+      )
+
+      class(rval[[j]]) <- "bamlss"
+    }
+    names(rval) <- paste("Chain", 1:chains, sep = "_")
+    if(length(rval) < 2) {
+      rval <- rval[[1]]
+    }
+    class(rval) <- "bamlss"
+    return(rval)
+  }
+
+  nx <- names(x$terms)
+  rval <- list()
+  fn <- family$names
+  if(length(fn) != length(nx))
+    fn <- paste(fn, 1:length(nx), sep = "")
+  for(j in seq_along(nx)) {
+    rval[[nx[j]]] <- make_results(x$terms[[nx[j]]], samples, id = fn[j])
+    if(!is.null(rval[[nx[j]]]$effects)) {
+      for(i in seq_along(rval[[nx[j]]]$effects)) {
+        specs <- attr(rval[[nx[j]]]$effects[[i]], "specs")
+        specs$label <- paste(specs$label, fn[j], sep = ":")
+        attr(rval[[nx[j]]]$effects[[i]], "specs") <- specs
+      }
+      names(rval[[nx[j]]]$effects) <- paste(names(rval[[nx[j]]]$effects), fn[j], sep = ":")
+    }
+  }
+  names(rval) <- fn
+
+  x$terms <- rval
+  if(!model.frame)
+    x$model.frame <- NULL
+  class(x) <- "bamlss"
+
+  return(x)
+}
+
+
 ## Fitted values/terms extraction
 fitted.bamlss <- function(object, model = NULL, term = NULL,
   type = c("link", "parameter"), samples = FALSE, FUN = mean,
   nsamps = NULL, ...)
 {
   type <- match.arg(type)
-  family <- attr(object, "family")
+  family <- object$family
 
   if(type != "parameter" & !samples)
-    object <- model.terms(object, model, drop = FALSE)
+    object <- model.terms(object, model)
 
-  h1check <- any(grepl("h1", names(object)))
+  h1check <- any(grepl("h1", names(object$terms)))
 
   elmts <- c("formula", "fake.formula", "model", "param.effects",
     "effects", "fitted.values", "residuals")

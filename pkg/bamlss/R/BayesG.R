@@ -1013,8 +1013,8 @@ transformBayesG <- function(x, ...)
     } else {
       if(!is.null(dim(obj$X))) {
         if(nrow(obj$X) > 0 & !is.na(mean(unlist(obj$X), na.rm = TRUE))) {
-          if(is.null(obj$smooth)) obj$smooth <- list()
-          obj$smooth[["parametric"]] <- list(
+          if(is.null(obj$sterms)) obj$sterms <- list()
+          obj$sterms[["parametric"]] <- list(
             "X" = obj$X,
             "S" = list(diag(0, ncol(obj$X))),
             "rank" = ncol(obj$X),
@@ -1029,35 +1029,35 @@ transformBayesG <- function(x, ...)
           obj$X <- NULL
         }
       }
-      if(length(obj$smooth)) {
-        for(j in seq_along(obj$smooth)) {
-          obj$smooth[[j]] <- smooth.BayesG(obj$smooth[[j]])
-          if(!is.null(obj$smooth[[j]]$rank))
-            obj$smooth[[j]]$rank <- as.numeric(obj$smooth[[j]]$rank)
-          if(!is.null(obj$smooth[[j]]$Xf)) {
-            obj$smooth[[j]]$Xfcn <- paste(paste(paste(obj$smooth[[j]]$term, collapse = "."),
-              "Xf", sep = "."), 1:ncol(obj$smooth[[j]]$Xf), sep = ".")
-            colnames(obj$smooth[[j]]$Xf) <- obj$smooth[[j]]$Xfcn
-            if(is.null(obj$smooth[["parametric"]])) {
-              obj$smooth[["parametric"]] <- list(
-                "X" = obj$smooth[[j]]$Xf,
+      if(length(obj$sterms)) {
+        for(j in seq_along(obj$sterms)) {
+          obj$sterms[[j]] <- smooth.BayesG(obj$sterms[[j]])
+          if(!is.null(obj$sterms[[j]]$rank))
+            obj$sterms[[j]]$rank <- as.numeric(obj$sterms[[j]]$rank)
+          if(!is.null(obj$sterms[[j]]$Xf)) {
+            obj$sterms[[j]]$Xfcn <- paste(paste(paste(obj$sterms[[j]]$term, collapse = "."),
+              "Xf", sep = "."), 1:ncol(obj$sterms[[j]]$Xf), sep = ".")
+            colnames(obj$sterms[[j]]$Xf) <- obj$sterms[[j]]$Xfcn
+            if(is.null(obj$sterms[["parametric"]])) {
+              obj$sterms[["parametric"]] <- list(
+                "X" = obj$sterms[[j]]$Xf,
                 "S" = list(diag(0, ncol(obj$X))),
-                "rank" = ncol(obj$smooth[[j]]$Xf),
+                "rank" = ncol(obj$sterms[[j]]$Xf),
                 "term" = "linear",
                 "label" = "linear",
-                "bs.dim" = ncol(obj$smooth[[j]]$Xf),
+                "bs.dim" = ncol(obj$sterms[[j]]$Xf),
                 "fixed" = TRUE,
                 "by" = "NA",
                 "is.parametric" = TRUE
               )
               obj$sterms <- c(obj$strems, "parametric")
             } else {
-              cn <- colnames(obj$smooth[["parametric"]]$X)
-              obj$smooth[["parametric"]]$X <- cbind(obj$smooth[["parametric"]]$X, obj$smooth[[j]]$Xf)
-              obj$smooth[["parametric"]]$S <- list(diag(0, ncol(obj$smooth[["parametric"]]$X)))
-              obj$smooth[["parametric"]]$bs.dim <- list(diag(0, ncol(obj$smooth[["parametric"]]$X)))
-              cn <- gsub("Intercept.", "Intercept", gsub("X.", "", c(cn , obj$smooth[[j]]$Xfcn), fixed = TRUE))
-              obj$smooth[["parametric"]]$s.colnames <- colnames(obj$smooth[["parametric"]]$X) <- cn 
+              cn <- colnames(obj$sterms[["parametric"]]$X)
+              obj$sterms[["parametric"]]$X <- cbind(obj$sterms[["parametric"]]$X, obj$sterms[[j]]$Xf)
+              obj$sterms[["parametric"]]$S <- list(diag(0, ncol(obj$sterms[["parametric"]]$X)))
+              obj$sterms[["parametric"]]$bs.dim <- list(diag(0, ncol(obj$sterms[["parametric"]]$X)))
+              cn <- gsub("Intercept.", "Intercept", gsub("X.", "", c(cn , obj$sterms[[j]]$Xfcn), fixed = TRUE))
+              obj$sterms[["parametric"]]$s.colnames <- colnames(obj$sterms[["parametric"]]$X) <- cn 
             }
           }
         }
@@ -1335,32 +1335,32 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
       for(j in nx)
         obj[[j]] <- smBayesG(obj[[j]], ...)
     } else {
-      if(length(obj$smooth)) {
-        for(j in seq_along(obj$smooth)) {
-          if(!is.null(obj$smooth[[j]]$is.parametric)) {
-            obj$smooth[[j]]$np <- ncol(obj$smooth[[j]]$X)
-            obj$smooth[[j]]$p.save = "g"
-            obj$smooth[[j]]$s.colnames <- paste("c", 1:ncol(obj$smooth[[j]]$X), sep = "")
+      if(length(obj$sterms)) {
+        for(j in seq_along(obj$sterms)) {
+          if(!is.null(obj$sterms[[j]]$is.parametric)) {
+            obj$sterms[[j]]$np <- ncol(obj$sterms[[j]]$X)
+            obj$sterms[[j]]$p.save = "g"
+            obj$sterms[[j]]$s.colnames <- paste("c", 1:ncol(obj$sterms[[j]]$X), sep = "")
           }
-          obj$smooth[[j]]$s.alpha <- rep(0, nrow = n.save)
-          obj$smooth[[j]]$s.accepted <- rep(0, nrow = n.save)
-          obj$smooth[[j]]$s.samples <- matrix(0, nrow = n.save, ncol = sum(obj$smooth[[j]]$np))
-          obj$smooth[[j]]$state$fit <- rep(0, nrow(obj$smooth[[j]]$X))
-          obj$smooth[[j]]$state$g <- rep(0, obj$smooth[[j]]$np[1])
-          obj$smooth[[j]]$fxsp <- if(!is.null(obj$smooth[[j]]$sp)) TRUE else FALSE
-          if(!is.null(update) & is.null(obj$smooth[[j]]$update))
-            obj$smooth[[j]]$update <- update
-          if(!is.null(propose) & is.null(obj$smooth[[j]]$propose))
-            obj$smooth[[j]]$propose <- propose
-          if(!is.null(sample) & is.null(obj$smooth[[j]]$sample))
-            obj$smooth[[j]]$sample <- sample
-          obj$smooth[[j]]$state$accepted <- FALSE
-          obj$smooth[[j]]$state$scale <- rep(1, length = obj$smooth[[j]]$np[1])
-          obj$smooth[[j]]$state$iter <- 1
-          obj$smooth[[j]]$state$maxit <- 50
-          obj$smooth[[j]]$adapt <- n.adapt
-          obj$smooth[[j]]$optimize <- optimize
-          obj$smooth[[j]]$criterion <- criterion
+          obj$sterms[[j]]$s.alpha <- rep(0, nrow = n.save)
+          obj$sterms[[j]]$s.accepted <- rep(0, nrow = n.save)
+          obj$sterms[[j]]$s.samples <- matrix(0, nrow = n.save, ncol = sum(obj$sterms[[j]]$np))
+          obj$sterms[[j]]$state$fit <- rep(0, nrow(obj$sterms[[j]]$X))
+          obj$sterms[[j]]$state$g <- rep(0, obj$sterms[[j]]$np[1])
+          obj$sterms[[j]]$fxsp <- if(!is.null(obj$sterms[[j]]$sp)) TRUE else FALSE
+          if(!is.null(update) & is.null(obj$sterms[[j]]$update))
+            obj$sterms[[j]]$update <- update
+          if(!is.null(propose) & is.null(obj$sterms[[j]]$propose))
+            obj$sterms[[j]]$propose <- propose
+          if(!is.null(sample) & is.null(obj$sterms[[j]]$sample))
+            obj$sterms[[j]]$sample <- sample
+          obj$sterms[[j]]$state$accepted <- FALSE
+          obj$sterms[[j]]$state$scale <- rep(1, length = obj$sterms[[j]]$np[1])
+          obj$sterms[[j]]$state$iter <- 1
+          obj$sterms[[j]]$state$maxit <- 50
+          obj$sterms[[j]]$adapt <- n.adapt
+          obj$sterms[[j]]$optimize <- optimize
+          obj$sterms[[j]]$criterion <- criterion
         }
       }
     }
@@ -1392,14 +1392,14 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
   get_edf_lp <- function(x, logprior = FALSE) {
     rval <- 0
     for(j in 1:np) {
-      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+      for(sj in seq_along(x[[nx[j]]]$sterms)) {
         if(logprior) {
-          selp <- x[[nx[j]]]$smooth[[sj]]$prior(
-            x[[nx[j]]]$smooth[[sj]]$state$g,
-            x[[nx[j]]]$smooth[[sj]]$state$tau2)
+          selp <- x[[nx[j]]]$sterms[[sj]]$prior(
+            x[[nx[j]]]$sterms[[sj]]$state$g,
+            x[[nx[j]]]$sterms[[sj]]$state$tau2)
         } else {
-          selp <- x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]],
-            x[[nx[j]]]$smooth[[sj]]$state$tau2)
+          selp <- x[[nx[j]]]$sterms[[sj]]$edf(x[[nx[j]]]$sterms[[sj]],
+            x[[nx[j]]]$sterms[[sj]]$state$tau2)
         }
         rval <- rval + selp
       }
@@ -1415,19 +1415,19 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
     par <- npar <- lower <- upper <- NULL
     grad <- TRUE
     for(j in 1:np) {
-      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+      for(sj in seq_along(x[[nx[j]]]$sterms)) {
         par <- c(par,
-          x[[nx[j]]]$smooth[[sj]]$state$g,
-          if(!x[[nx[j]]]$smooth[[sj]]$fixed & !fxMP) x[[nx[j]]]$smooth[[sj]]$state$tau2 else NULL
+          x[[nx[j]]]$sterms[[sj]]$state$g,
+          if(!x[[nx[j]]]$sterms[[sj]]$fixed & !fxMP) x[[nx[j]]]$sterms[[sj]]$state$tau2 else NULL
         )
-        if(is.null(x[[nx[j]]]$smooth[[sj]]$grad)) grad <- FALSE
-        ng <- length(x[[nx[j]]]$smooth[[sj]]$state$g)
-        nv <- if(fxMP) NULL else length(x[[nx[j]]]$smooth[[sj]]$state$tau2)
-        lower <- c(lower, x[[nx[j]]]$smooth[[sj]]$lower)
-        upper <- c(upper, x[[nx[j]]]$smooth[[sj]]$upper)
+        if(is.null(x[[nx[j]]]$sterms[[sj]]$grad)) grad <- FALSE
+        ng <- length(x[[nx[j]]]$sterms[[sj]]$state$g)
+        nv <- if(fxMP) NULL else length(x[[nx[j]]]$sterms[[sj]]$state$tau2)
+        lower <- c(lower, x[[nx[j]]]$sterms[[sj]]$lower)
+        upper <- c(upper, x[[nx[j]]]$sterms[[sj]]$upper)
         npar <- c(npar, paste("p", j, "t", sj,
           c(paste("c", 1:ng, sep = ""),
-          if(!x[[nx[j]]]$smooth[[sj]]$fixed & !fxMP) paste("v", 1:nv, sep = "") else NULL),
+          if(!x[[nx[j]]]$sterms[[sj]]$fixed & !fxMP) paste("v", 1:nv, sep = "") else NULL),
           sep = ""))
       }
     }
@@ -1439,35 +1439,35 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
     lprior <- edf2 <- 0
     for(j in 1:np) {
       eta[[nx[j]]] <- 0
-      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+      for(sj in seq_along(x[[nx[j]]]$sterms)) {
         gamma <- par[grep(paste("p", j, "t", sj, "c", sep = ""), names(par))]
-        x[[nx[j]]]$smooth[[sj]]$state$g <- gamma
-        if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
+        x[[nx[j]]]$sterms[[sj]]$state$g <- gamma
+        if(!x[[nx[j]]]$sterms[[sj]]$fixed) {
           if(!fxMP) {
             tau2 <- par[grep(paste("p", j, "t", sj, "v", sep = ""), names(par))]
-            x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
+            x[[nx[j]]]$sterms[[sj]]$state$tau2 <- tau2
           } else {
             if(!is.null(par2)) {
               id <- paste("id", j, sj, sep = "")
               tau2 <- par2[grep(id, names(par2), fixed = TRUE)]
             } else {
-              tau2 <- x[[nx[j]]]$smooth[[sj]]$state$tau2
+              tau2 <- x[[nx[j]]]$sterms[[sj]]$state$tau2
             }
           }
         } else tau2 <- NULL
         if(rx) {
-          x[[nx[j]]]$smooth[[sj]]$state$mode <- list(
+          x[[nx[j]]]$sterms[[sj]]$state$mode <- list(
             "g" = gamma,
-            "tau2" = x[[nx[j]]]$smooth[[sj]]$state$tau2
+            "tau2" = x[[nx[j]]]$sterms[[sj]]$state$tau2
           )
         }
-        x[[nx[j]]]$smooth[[sj]]$state$fit <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, gamma)
-        if(!is.null(x[[nx[j]]]$smooth[[sj]]$xbin.ind))
-          x[[nx[j]]]$smooth[[sj]]$state$fit <- x[[nx[j]]]$smooth[[sj]]$state$fit[x[[nx[j]]]$smooth[[sj]]$xbin.ind]
-        eta[[nx[j]]] <- eta[[nx[j]]] + x[[nx[j]]]$smooth[[sj]]$state$fit
-        x[[nx[j]]]$smooth[[sj]]$state$edf <- x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]], tau2)
-        lprior <- lprior + x[[nx[j]]]$smooth[[sj]]$prior(gamma, tau2)
-        edf2 <- edf2 + x[[nx[j]]]$smooth[[sj]]$state$edf
+        x[[nx[j]]]$sterms[[sj]]$state$fit <- x[[nx[j]]]$sterms[[sj]]$get.mu(x[[nx[j]]]$sterms[[sj]]$X, gamma)
+        if(!is.null(x[[nx[j]]]$sterms[[sj]]$xbin.ind))
+          x[[nx[j]]]$sterms[[sj]]$state$fit <- x[[nx[j]]]$sterms[[sj]]$state$fit[x[[nx[j]]]$sterms[[sj]]$xbin.ind]
+        eta[[nx[j]]] <- eta[[nx[j]]] + x[[nx[j]]]$sterms[[sj]]$state$fit
+        x[[nx[j]]]$sterms[[sj]]$state$edf <- x[[nx[j]]]$sterms[[sj]]$edf(x[[nx[j]]]$sterms[[sj]], tau2)
+        lprior <- lprior + x[[nx[j]]]$sterms[[sj]]$prior(gamma, tau2)
+        edf2 <- edf2 + x[[nx[j]]]$sterms[[sj]]$state$edf
       }
     }
 
@@ -1505,32 +1505,32 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
         grad <- NULL
         for(j in 1:np) {
           eta[[nx[j]]] <- 0
-          for(sj in seq_along(x[[nx[j]]]$smooth)) {
+          for(sj in seq_along(x[[nx[j]]]$sterms)) {
             gamma <- par[grep(paste("p", j, "t", sj, "c", sep = ""), names(par))]
-            f <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, gamma)
-            if(!is.null(x[[nx[j]]]$smooth[[sj]]$xbin.ind))
-              f <- f[x[[nx[j]]]$smooth[[sj]]$xbin.ind]
+            f <- x[[nx[j]]]$sterms[[sj]]$get.mu(x[[nx[j]]]$sterms[[sj]]$X, gamma)
+            if(!is.null(x[[nx[j]]]$sterms[[sj]]$xbin.ind))
+              f <- f[x[[nx[j]]]$sterms[[sj]]$xbin.ind]
             eta[[nx[j]]] <- eta[[nx[j]]] + f
           }
         }
         for(j in 1:np) {
           score <- family$score[[nx[j]]](response, family$map2par(eta))
-          for(sj in seq_along(x[[nx[j]]]$smooth)) {
+          for(sj in seq_along(x[[nx[j]]]$sterms)) {
             gamma <- par[grep(paste("p", j, "t", sj, "c", sep = ""), names(par))]
-            if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
+            if(!x[[nx[j]]]$sterms[[sj]]$fixed) {
               if(!fxMP) {
                 tau2 <- par[grep(paste("p", j, "t", sj, "v", sep = ""), names(par))]
-                x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
+                x[[nx[j]]]$sterms[[sj]]$state$tau2 <- tau2
               } else {
                 if(!is.null(par2)) {
                   id <- paste("id", j, sj, sep = "")
                   tau2 <- par2[grep(id, names(par2), fixed = TRUE)]
                 } else {
-                  tau2 <- x[[nx[j]]]$smooth[[sj]]$state$tau2
+                  tau2 <- x[[nx[j]]]$sterms[[sj]]$state$tau2
                 }
               }
             } else tau2 <- NULL
-            tgrad <- x[[nx[j]]]$smooth[[sj]]$grad(score, gamma, tau2)
+            tgrad <- x[[nx[j]]]$sterms[[sj]]$grad(score, gamma, tau2)
             if(fxMP) tgrad <- tgrad[1:length(gamma)]
             grad <- c(grad, tgrad)
           }
@@ -1605,26 +1605,26 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
 
           ## And all terms.
           if(inner) {
-            tbf <- inner_bf(x[[nx[j]]]$smooth, response, eta, family,
+            tbf <- inner_bf(x[[nx[j]]]$sterms, response, eta, family,
               edf = edf, id = nx[j], z = z, weights = weights)
-            x[[nx[j]]]$smooth <- tbf$x
+            x[[nx[j]]]$sterms <- tbf$x
             edf <- tbf$edf
             eta <- tbf$eta
             rm(tbf)
           } else {
-            for(sj in seq_along(x[[nx[j]]]$smooth)) {
+            for(sj in seq_along(x[[nx[j]]]$sterms)) {
               ## Get updated parameters.
-              p.state <- x[[nx[j]]]$smooth[[sj]]$update(x[[nx[j]]]$smooth[[sj]],
+              p.state <- x[[nx[j]]]$sterms[[sj]]$update(x[[nx[j]]]$sterms[[sj]],
                 family, response, eta, nx[j], edf = edf, z = z, weights = weights)
 
               ## Compute equivalent degrees of freedom.
-              edf <- edf - x[[nx[j]]]$smooth[[sj]]$state$edf + p.state$edf
+              edf <- edf - x[[nx[j]]]$sterms[[sj]]$state$edf + p.state$edf
 
               ## Update predictor and smooth fit.
-              eta[[nx[j]]] <- eta[[nx[j]]] - x[[nx[j]]]$smooth[[sj]]$state$fit + p.state$fit
+              eta[[nx[j]]] <- eta[[nx[j]]] - x[[nx[j]]]$sterms[[sj]]$state$fit + p.state$fit
 
-              x[[nx[j]]]$smooth[[sj]]$state <- p.state
-              x[[nx[j]]]$smooth[[sj]]$state$mode <- list("g" = p.state$g, "tau2" = p.state$tau2)
+              x[[nx[j]]]$sterms[[sj]]$state <- p.state
+              x[[nx[j]]]$sterms[[sj]]$state$mode <- list("g" = p.state$g, "tau2" = p.state$tau2)
             }
           }
         }
@@ -1682,8 +1682,8 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
     if(any("backfitting2" %in% method)) {
       tau2 <- NULL
       for(j in 1:np) {
-        for(sj in seq_along(x[[nx[j]]]$smooth)) {
-          tmp <- x[[nx[j]]]$smooth[[sj]]$state$tau2
+        for(sj in seq_along(x[[nx[j]]]$sterms)) {
+          tmp <- x[[nx[j]]]$sterms[[sj]]$state$tau2
           names(tmp) <- paste("id", j, sj, ".", 1:length(tmp), sep = "")
           tau2 <- c(tau2, tmp)
         }
@@ -1691,11 +1691,11 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
 
       objfun <- function(tau2, retbf = FALSE) {
         for(j in 1:np) {
-          for(sj in seq_along(x[[nx[j]]]$smooth)) {
+          for(sj in seq_along(x[[nx[j]]]$sterms)) {
             id <- paste("id", j, sj, sep = "")
             tmp <- tau2[grep(id, names(tau2), fixed = TRUE)]
-            names(tmp) <- names(x[[nx[j]]]$smooth[[sj]]$state$tau2)
-            x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tmp
+            names(tmp) <- names(x[[nx[j]]]$sterms[[sj]]$state$tau2)
+            x[[nx[j]]]$sterms[[sj]]$state$tau2 <- tmp
           }
         }
 
@@ -1720,7 +1720,7 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
     if(any("backfitting4" %in% method)) {
       objfun <- function(tau2, j, sj, retbf = FALSE) {
         if(length(tau2) > 1) stop('only single variances can be updated using "backftting4"!')
-        x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
+        x[[nx[j]]]$sterms[[sj]]$state$tau2 <- tau2
         bf <- backfit(x, eta, verbose = verbose)
         return(if(retbf) bf else bf$ic)
       }
@@ -1728,9 +1728,9 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
       while(eps0 > eps & iter < 4) {
         eta0 <- eta
         for(j in 1:np) {
-          for(sj in seq_along(x[[nx[j]]]$smooth)) {
-            if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
-              tau2 <- optimize(objfun, x[[nx[j]]]$smooth[[sj]]$interval, j = j, sj = sj)$minimum
+          for(sj in seq_along(x[[nx[j]]]$sterms)) {
+            if(!x[[nx[j]]]$sterms[[sj]]$fixed) {
+              tau2 <- optimize(objfun, x[[nx[j]]]$sterms[[sj]]$interval, j = j, sj = sj)$minimum
               bf <- objfun(tau2, j, sj, retbf = TRUE)
             } else {
               bf <- backfit(x, eta, verbose = verbose)
@@ -1789,25 +1789,25 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
       ## Cycle through all parameters
       for(j in 1:np) {
         ## And all terms.
-        for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        for(sj in seq_along(x[[nx[j]]]$sterms)) {
           ## Get proposed states.
-          p.state <- x[[nx[j]]]$smooth[[sj]]$propose(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j], rho = rho, iter = i)
+          p.state <- x[[nx[j]]]$sterms[[sj]]$propose(x[[nx[j]]]$sterms[[sj]], family, response, eta, nx[j], rho = rho, iter = i)
 
           ## If accepted, set current state to proposed state.
           accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
 
           if(accepted) {
-            eta[[nx[j]]] <- eta[[nx[j]]] - x[[nx[j]]]$smooth[[sj]]$state$fit + p.state$fit
-            x[[nx[j]]]$smooth[[sj]]$state <- p.state 
+            eta[[nx[j]]] <- eta[[nx[j]]] - x[[nx[j]]]$sterms[[sj]]$state$fit + p.state$fit
+            x[[nx[j]]]$sterms[[sj]]$state <- p.state 
           }
-          x[[nx[j]]]$smooth[[sj]]$state$accepted <- accepted
-          x[[nx[j]]]$smooth[[sj]]$state$iter <- i
+          x[[nx[j]]]$sterms[[sj]]$state$accepted <- accepted
+          x[[nx[j]]]$sterms[[sj]]$state$iter <- i
 
           ## Save the samples and acceptance.
           if(save) {
-            x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- min(c(exp(p.state$alpha), 1), na.rm = TRUE)
-            x[[nx[j]]]$smooth[[sj]]$s.accepted[js] <- accepted
-            x[[nx[j]]]$smooth[[sj]]$s.samples[js, ] <- unlist(x[[nx[j]]]$smooth[[sj]]$state[x[[nx[j]]]$smooth[[sj]]$p.save])
+            x[[nx[j]]]$sterms[[sj]]$s.alpha[js] <- min(c(exp(p.state$alpha), 1), na.rm = TRUE)
+            x[[nx[j]]]$sterms[[sj]]$s.accepted[js] <- accepted
+            x[[nx[j]]]$sterms[[sj]]$s.samples[js, ] <- unlist(x[[nx[j]]]$sterms[[sj]]$state[x[[nx[j]]]$sterms[[sj]]$p.save])
           }
 
           ## Check.
@@ -1836,16 +1836,16 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
       lprior <- 0
       for(j in 1:np) {
         eta[[nx[j]]] <- 0
-        for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        for(sj in seq_along(x[[nx[j]]]$sterms)) {
           gamma <- parm[grep(paste("p", j, "t", sj, "c", sep = ""), Data$parm.names)]
-          x[[nx[j]]]$smooth[[sj]]$state$g <- gamma
-          if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
+          x[[nx[j]]]$sterms[[sj]]$state$g <- gamma
+          if(!x[[nx[j]]]$sterms[[sj]]$fixed) {
             tau2 <- parm[grep(paste("p", j, "t", sj, "v", sep = ""), Data$parm.names)]
-            x[[nx[j]]]$smooth[[sj]]$state$tau2 <- tau2
+            x[[nx[j]]]$sterms[[sj]]$state$tau2 <- tau2
           } else tau2 <- NULL
-          x[[nx[j]]]$smooth[[sj]]$state$fit <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, gamma)
-          eta[[nx[j]]] <- eta[[nx[j]]] + x[[nx[j]]]$smooth[[sj]]$state$fit
-          lprior <- lprior + x[[nx[j]]]$smooth[[sj]]$prior(gamma, tau2)
+          x[[nx[j]]]$sterms[[sj]]$state$fit <- x[[nx[j]]]$sterms[[sj]]$get.mu(x[[nx[j]]]$sterms[[sj]]$X, gamma)
+          eta[[nx[j]]] <- eta[[nx[j]]] + x[[nx[j]]]$sterms[[sj]]$state$fit
+          lprior <- lprior + x[[nx[j]]]$sterms[[sj]]$prior(gamma, tau2)
         }
       }
 
@@ -1869,12 +1869,12 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
     rm(Fit)
 
     for(j in 1:np) {
-      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+      for(sj in seq_along(x[[nx[j]]]$sterms)) {
         gamma <- samples[, grep(paste("p", j, "t", sj, "c", sep = ""), colnames(samples)), drop = FALSE]
-        if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
+        if(!x[[nx[j]]]$sterms[[sj]]$fixed) {
           tau2 <- samples[, grep(paste("p", j, "t", sj, "v", sep = ""), colnames(samples))]
         } else tau2 <- NULL
-        x[[nx[j]]]$smooth[[sj]]$s.samples <- cbind(gamma, tau2)
+        x[[nx[j]]]$sterms[[sj]]$s.samples <- cbind(gamma, tau2)
       }
     }
 
@@ -1887,9 +1887,9 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
 
   ## Remove some settings.
   for(j in 1:np) {
-    for(sj in seq_along(x[[nx[j]]]$smooth)) {
-      x[[nx[j]]]$smooth[[sj]]$state$iter <- NULL
-      x[[nx[j]]]$smooth[[sj]]$state$maxit <- 1
+    for(sj in seq_along(x[[nx[j]]]$sterms)) {
+      x[[nx[j]]]$sterms[[sj]]$state$iter <- NULL
+      x[[nx[j]]]$sterms[[sj]]$state$maxit <- 1
     }
   }
 
@@ -1902,21 +1902,21 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
     for(js in seq_along(iterthin)) {
       for(j in 1:np) {
         ## And all terms.
-        for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        for(sj in seq_along(x[[nx[j]]]$sterms)) {
           ## Get proposed states.
           p.state <- if(nosamp) {
-            x[[nx[j]]]$smooth[[sj]]$state$alpha <- 1
-            x[[nx[j]]]$smooth[[sj]]$state
+            x[[nx[j]]]$sterms[[sj]]$state$alpha <- 1
+            x[[nx[j]]]$sterms[[sj]]$state
           } else {
-            x[[nx[j]]]$smooth[[sj]]$sample(x[[nx[j]]]$smooth[[sj]], family, response, eta, nx[j], rho = rho, no.mcmc = TRUE, llim = llim)
+            x[[nx[j]]]$sterms[[sj]]$sample(x[[nx[j]]]$sterms[[sj]], family, response, eta, nx[j], rho = rho, no.mcmc = TRUE, llim = llim)
           }
 
           accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
 
           ## Save the samples.
-          x[[nx[j]]]$smooth[[sj]]$s.alpha[js] <- min(c(exp(p.state$alpha), 1), na.rm = TRUE)
-          x[[nx[j]]]$smooth[[sj]]$s.accepted[js] <- accepted
-          x[[nx[j]]]$smooth[[sj]]$s.samples[js, ] <- unlist(p.state[x[[nx[j]]]$smooth[[sj]]$p.save])
+          x[[nx[j]]]$sterms[[sj]]$s.alpha[js] <- min(c(exp(p.state$alpha), 1), na.rm = TRUE)
+          x[[nx[j]]]$sterms[[sj]]$s.accepted[js] <- accepted
+          x[[nx[j]]]$sterms[[sj]]$s.samples[js, ] <- unlist(p.state[x[[nx[j]]]$sterms[[sj]]$p.save])
           llim <- p.state$llim
         }
       }
@@ -1928,10 +1928,10 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
 
   if(accept.only) {
     for(j in 1:np) {
-      for(sj in seq_along(x[[nx[j]]]$smooth)) {
-        accepted <- x[[nx[j]]]$smooth[[sj]]$s.accepted
+      for(sj in seq_along(x[[nx[j]]]$sterms)) {
+        accepted <- x[[nx[j]]]$sterms[[sj]]$s.accepted
         accepted <- if(!any(accepted > 0)) 1 else accepted > 0
-        x[[nx[j]]]$smooth[[sj]]$s.samples[!accepted, ]  <- NA
+        x[[nx[j]]]$sterms[[sj]]$s.samples[!accepted, ]  <- NA
       }
     }
   }
@@ -1953,14 +1953,14 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
       for(j in nx)
         samplesBayesG(obj[[j]], id = j, ...)
     } else {
-      if(length(obj$smooth)) {
-        for(j in seq_along(obj$smooth)) {
-          slab <- gsub("/", "RSdivRS", obj$smooth[[j]]$label, fixed = TRUE)
+      if(length(obj$sterms)) {
+        for(j in seq_along(obj$sterms)) {
+          slab <- gsub("/", "RSdivRS", obj$sterms[[j]]$label, fixed = TRUE)
           fn <- file.path(tdir, paste(id, if(!is.null(id)) ":", "h",
             obj$hlevel, ":", slab, ".raw", sep = ""))
-          obj$smooth[[j]]$s.samples <- cbind(obj$smooth[[j]]$s.samples, obj$smooth[[j]]$s.alpha)
-          colnames(obj$smooth[[j]]$s.samples) <- c(obj$smooth[[j]]$s.colnames, "alpha")
-          write.table(obj$smooth[[j]]$s.samples, file = fn, row.names = FALSE, quote = FALSE)
+          obj$sterms[[j]]$s.samples <- cbind(obj$sterms[[j]]$s.samples, obj$sterms[[j]]$s.alpha)
+          colnames(obj$sterms[[j]]$s.samples) <- c(obj$sterms[[j]]$s.colnames, "alpha")
+          write.table(obj$sterms[[j]]$s.samples, file = fn, row.names = FALSE, quote = FALSE)
         }
       }
     }
@@ -1988,254 +1988,4 @@ BayesG <- function(x, n.iter = 12000, thin = 10, burnin = 2000, accept.only = TR
   return(as.mcmc(samples))
 }
 
-
-resultsBayesG <- function(x, samples)
-{
-  family <- attr(x, "family")
-  grid <- attr(x, "grid")
-  if(is.null(grid)) grid <- 100
-  if(is.function(family))
-    family <- family()
-
-  createBayesGresults <- function(obj, samples, id = NULL)
-  {
-    if(inherits(samples[[1]], "mcmc.list")) {
-      samples <- do.call("c", samples)
-    } else {
-      if(!inherits(samples, "mcmc.list"))
-        samples <- as.mcmc.list(if(!inherits(samples, "list")) list(samples) else samples)
-    }
-    chains <- length(samples)
-    rval <- vector(mode = "list", length = chains)
-    snames <- colnames(samples[[1]])
-
-    for(j in 1:chains) {
-      DIC <- pd <- NA
-      if(any(grepl("deviance", snames))) {
-        DIC <- as.numeric(samples[[j]][, grepl("deviance", snames)])
-        pd <- var(DIC, na.rm = TRUE) / 2
-        DIC <- mean(DIC, na.rm = TRUE)
-      }
-      if(any(grepl("logLik", snames))) {
-        DIC <- -2 * as.numeric(samples[[j]][, grepl("logLik", snames)])
-        pd <- var(DIC, na.rm = TRUE) / 2
-        DIC <- mean(DIC, na.rm = TRUE)
-      }
-
-      if(any(grepl("save.edf", snames))) {
-        ic <- grep("save.edf", snames)
-        nic <- snames[(ic - 1):ic]
-        IC <- samples[[j]][, grepl(nic[1], snames)][1]
-        edf00 <- samples[[j]][, grepl(nic[2], snames)][1]
-        names(IC) <- nic[1]
-        DIC <- pd <- NULL
-      } else {
-        IC <- edf00 <- NULL
-      }
-
-      ## Compute model term effects.
-      param.effects <- effects <- effects.hyp <- NULL
-      fitted.values <- 0
-
-      ## Smooth terms.
-      if(length(obj$smooth)) {
-        for(i in 1:length(obj$smooth)) {
-          ## Get coefficient samples of smooth term.
-          pn <- if(any(grepl("h1", snames))) {
-            paste(id, "h1", obj$smooth[[i]]$label, sep = ":") ## FIXME: hlevels!
-          } else paste(id, obj$smooth[[i]]$label, sep = ".")
-          nch <- nchar(pn) + 1
-          pn <- paste(pn, ".", sep = "")
-          snames2 <- sapply(snames, function(x) {
-            paste(strsplit(x, "")[[1]][1:nch], collapse = "", sep = "")
-          })
-          pn <- snames[snames2 == pn]
-          pn <- pn[!grepl(".tau2", pn) & !grepl(".alpha", pn) & !grepl(".accepted", pn) & !grepl(".edf", pn)]
-          k <- sum(snames %in% pn)
-
-          psamples <- matrix(samples[[j]][, snames %in% pn], ncol = k)
-          nas <- apply(psamples, 1, function(x) { any(is.na(x)) } )
-          psamples <- psamples[!nas, , drop = FALSE]
-
-          if(!is.null(obj$smooth[[i]]$Xf)) {
-            kx <- if(is.null(obj$smooth[[i]]$Xf)) 0 else ncol(obj$smooth[[i]]$Xf)
-            if(kx) {
-              pn <- paste(paste(id, ":h1:linear.",
-                paste(paste(obj$smooth[[i]]$term, collapse = "."), "Xf", sep = "."), sep = ""),
-                1:kx, sep = ".")
-              xsamples <- matrix(samples[[j]][, snames %in% pn], ncol = kx)
-              psamples <- cbind("ra" = psamples, "fx" = xsamples)
-              re_trans <- function(g) {
-                g <- obj$smooth[[i]]$trans.D * g
-                if(!is.null(obj$smooth[[i]]$trans.U))
-                  g <- obj$smooth[[i]]$trans.U %*% g
-                g
-              }
-              psamples <- t(apply(psamples, 1, re_trans))
-            }
-          }
-
-          ## Possible variance/edf parameter samples.
-          vsamples <- NULL
-          tau2 <- if(any(grepl("h1", snames))) {
-            tau2 <- paste(id, "h1", paste(obj$smooth[[i]]$label, "tau2", sep = "."), sep = ":")
-          } else paste(id, paste(obj$smooth[[i]]$label, "tau2", sep = "."), sep = ".")
-          if(length(tau2 <- grep(tau2, snames, fixed = TRUE))) {
-            vsamples <- samples[[j]][, tau2, drop = FALSE]
-            vsamples <- vsamples[!nas, , drop = FALSE]
-          } else {
-            if(obj$smooth[[i]]$fixed)
-              vsamples <- rep(.Machine$double.eps, nrow(samples[[j]]))
-          }
-          edfsamples <- NULL
-          edf <- if(any(grepl("h1", snames))) {
-            edf <- paste(id, "h1", paste(obj$smooth[[i]]$label, "edf", sep = "."), sep = ":")
-          } else paste(id, paste(obj$smooth[[i]]$label, "edf", sep = "."), sep = ".")
-          if(length(edf <- grep(edf, snames, fixed = TRUE))) {
-            edfsamples <- samples[[j]][, edf, drop = FALSE]
-            edfsamples <- edfsamples[!nas, , drop = FALSE]
-          }
-
-          ## Acceptance probalities.
-          asamples <- NULL
-          alpha <- if(any(grepl("h1", snames))) {
-            paste(id, "h1", paste(obj$smooth[[i]]$label, "alpha", sep = "."), sep = ":")
-          } else paste(id, paste(obj$smooth[[i]]$label, "alpha", sep = "."), sep = ".")
-          if(length(alpha <- grep(alpha, snames, fixed = TRUE))) {
-            asamples <- as.numeric(samples[[j]][, alpha])
-            asamples <- asamples[!nas]
-          }
-
-          ## Prediction matrix.
-          get.X <- function(x) { ## FIXME: time(x)
-            acons <- obj$smooth[[i]]$xt$center
-            for(char in c("(", ")", "[", "]"))
-              obj$smooth[[i]]$term <- gsub(char, ".", obj$smooth[[i]]$term, fixed = TRUE)
-            X <- PredictMat(obj$smooth[[i]], x)
-            X
-          }
-
-          ## Compute final smooth term object.
-          tn <- c(obj$smooth[[i]]$term, if(obj$smooth[[i]]$by != "NA") obj$smooth[[i]]$by else NULL)
-
-          if(is.null(obj$smooth[[i]]$is.parametric)) {
-            if(!is.list(effects))
-              effects <- list()
-            if(length(effects)) {
-              if(obj$smooth[[i]]$label %in% names(effects)) {
-                ct <- gsub(".smooth.spec", "", class(obj$smooth[[i]]))[1]
-                if(ct == "random.effect") ct <- "re"
-                obj$smooth[[i]]$label <- paste(obj$smooth[[i]]$label, ct, sep = ":")
-              }
-            }
-            if(is.null(obj$smooth[[i]]$get.mu)) {
-              obj$smooth[[i]]$get.mu <- function(X, b, ...) {
-                drop(X %*% b)
-              }
-            }
-
-            fst <- compute_term(obj$smooth[[i]], get.X = get.X, get.mu = obj$smooth[[i]]$get.mu,
-              psamples = psamples, vsamples = vsamples, asamples = asamples,
-              FUN = NULL, snames = snames, effects.hyp = effects.hyp,
-              fitted.values = fitted.values, data = attr(x, "model.frame")[, tn, drop = FALSE],
-              grid = grid, edfsamples = edfsamples)
-
-            attr(fst$term, "specs")$get.mu <- obj$smooth[[i]]$get.mu
-
-            ## Add term to effects list.
-            effects[[obj$smooth[[i]]$label]] <- fst$term
-            effects.hyp <- fst$effects.hyp
-
-            fitted.values <- fst$fitted.values
-            rm(fst)
-          } else {
-            nx <- colnames(obj$smooth[[i]]$X)
-            qu <- t(apply(psamples, 2, quantile, probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
-            sd <- drop(apply(psamples, 2, sd, na.rm = TRUE))
-            me <- drop(apply(psamples, 2, mean, na.rm = TRUE))
-            param.effects <- cbind(me, sd, qu)
-            rownames(param.effects) <- nx
-            colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
-            if(!is.null(asamples))
-              param.effects <- cbind(param.effects, "alpha" = mean(asamples))
-            xfit <- obj$smooth[[i]]$X %*% param.effects[, 1]
-            if(!is.null(obj$smooth[[i]]$xbin.ind))
-              xfit <- xfit[obj$smooth[[i]]$xbin.ind]
-            fitted.values <- as.vector(fitted.values + xfit)
-            attr(param.effects, "samples") <- as.mcmc(psamples)
-            colnames(attr(param.effects, "samples")) <- nx
-          }
-        }
-      }
-
-      ## Compute partial residuals.
-      if(!is.null(effects)) {
-        if(length(obj$response)) {
-          if(obj$response %in% names(attr(x, "model.frame"))) {
-            effects <- partial.residuals(effects, attr(x, "model.frame")[[obj$response]],
-              fitted.values, family)
-          }
-        }
-      }
-
-      ## Stuff everything together.
-      rval[[j]] <- list(
-        "model" = list("DIC" = DIC, "pd" = pd,
-          "N" = nrow(attr(x, "model.frame")), "formula" = obj$formula,
-          "IC" = IC, "edf" = edf00),
-        "param.effects" = param.effects, "effects" = effects,
-        "effects.hyp" = effects.hyp, "fitted.values" = fitted.values
-      )
-      
-#      ## Clean.
-#      rval[[j]] <- delete.NULLs(rval[[j]])
-
-      class(rval[[j]]) <- "bamlss"
-    }
-    names(rval) <- paste("Chain", 1:chains, sep = "_")
-    if(length(rval) < 2) {
-      rval <- rval[[1]]
-    }
-    class(rval) <- "bamlss"
-    return(rval)
-  }
-
-  if(inherits(x, "bamlss.input") & !all(c("formula", "fake.formula", "response") %in% names(x))) {
-    nx <- names(x)
-    nx <- nx[nx != "call"]
-    rval <- list()
-    fn <- family$names
-    cat <- if(!is.null(family$cat)) family$cat else FALSE
-    if(cat) {
-      if(length(attr(attr(x, "model.frame"), "response.name")) < 2)
-        fn <- gsub(attr(attr(x, "model.frame"), "response.name"), "", names(x))
-    }
-    if(length(fn) != length(nx))
-      fn <- paste(fn, 1:length(nx), sep = "")
-    for(j in seq_along(nx)) {
-      rval[[nx[j]]] <- createBayesGresults(x[[nx[j]]], samples, id = fn[j])
-      if(!is.null(rval[[nx[j]]]$effects)) {
-        for(i in seq_along(rval[[nx[j]]]$effects)) {
-          specs <- attr(rval[[nx[j]]]$effects[[i]], "specs")
-          specs$label <- paste(specs$label, fn[j], sep = ":")
-          attr(rval[[nx[j]]]$effects[[i]], "specs") <- specs
-        }
-        names(rval[[nx[j]]]$effects) <- paste(names(rval[[nx[j]]]$effects), fn[j], sep = ":")
-      }
-    }
-    names(rval) <- fn
-    if(cat) {
-      reference <- attr(x, "reference")
-      if(!is.null(reference)) {
-        if(any(reference %in% names(rval)))
-          rval <- rval[!grepl(reference, fn)]
-      }
-    }
-    attr(rval, "family") <- family
-    class(rval) <- "bamlss"
-    return(rval)
-  } else {
-    return(createBayesGresults(x, samples))
-  }
-}
 

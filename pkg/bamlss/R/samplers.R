@@ -17,12 +17,12 @@ MCMCpack <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100, ..
 GMCMC <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
   propose = "iwls", cores = NULL, chains = NULL, ...)
 {
-  family <- attr(x, "family")
+  family <- x$family
   nx <- family$names
-  if(!all(nx %in% names(x)))
+  if(!all(nx %in% names(x$terms)))
     stop("parameter names mismatch with family names!")
   np <- length(nx)
-  response <- attr(x, "response.vec")
+  response <- model.response(model.frame(x))
 
   if(is.character(propose)) {
     propose <- if(grepl("gmcmc_", propose)) {
@@ -36,22 +36,22 @@ GMCMC <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
   }
 
   theta <- smooths <- propose2 <- fitfun <- list()
-  for(i in names(x)) {
+  for(i in names(x$terms)) {
     theta[[i]] <- smooths[[i]] <- propose2[[i]] <- fitfun[[i]] <- list()
     nt <- NULL
-    for(j in seq_along(x[[i]]$smooth)) {
-      theta[[i]][[j]] <- x[[i]]$smooth[[j]]$state$parameters
-      attr(theta[[i]][[j]], "fitted.values") <- x[[i]]$smooth[[j]]$state$fitted.values
-      attr(theta[[i]][[j]], "hess") <- x[[i]]$smooth[[j]]$state$hessian
-      x[[i]]$smooth[[j]]$state$fitted.values <- NULL
-      x[[i]]$smooth[[j]]$XW <- t(x[[i]]$smooth[[j]]$X)
-      x[[i]]$smooth[[j]]$XWX <- crossprod(x[[i]]$smooth[[j]]$X)
-      x[[i]]$smooth[[j]]$fit.reduced <- as.numeric(rep(0, nrow(x[[i]]$smooth[[j]]$X)))
-      nt <- c(nt, x[[i]]$smooth[[j]]$label)
-      smooths[[i]][[j]] <- x[[i]]$smooth[[j]]
-      if(!is.null(x[[i]]$smooth[[j]]$xt$propose))
-        x[[i]]$smooth[[j]]$propose <- x[[i]]$smooth[[j]]$xt$propose
-      propose2[[i]][[j]] <- if(is.null(x[[i]]$smooth[[j]]$propose)) propose else x[[i]]$smooth[[j]]$propose
+    for(j in seq_along(x$terms[[i]]$sterms)) {
+      theta[[i]][[j]] <- x$terms[[i]]$sterms[[j]]$state$parameters
+      attr(theta[[i]][[j]], "fitted.values") <- x$terms[[i]]$sterms[[j]]$state$fitted.values
+      attr(theta[[i]][[j]], "hess") <- x$terms[[i]]$sterms[[j]]$state$hessian
+      x$terms[[i]]$sterms[[j]]$state$fitted.values <- NULL
+      x$terms[[i]]$sterms[[j]]$XW <- t(x$terms[[i]]$sterms[[j]]$X)
+      x$terms[[i]]$sterms[[j]]$XWX <- crossprod(x$terms[[i]]$sterms[[j]]$X)
+      x$terms[[i]]$sterms[[j]]$fit.reduced <- as.numeric(rep(0, nrow(x$terms[[i]]$sterms[[j]]$X)))
+      nt <- c(nt, x$terms[[i]]$sterms[[j]]$label)
+      smooths[[i]][[j]] <- x$terms[[i]]$sterms[[j]]
+      if(!is.null(x$terms[[i]]$sterms[[j]]$xt$propose))
+        x$terms[[i]]$sterms[[j]]$propose <- x$terms[[i]]$sterms[[j]]$xt$propose
+      propose2[[i]][[j]] <- if(is.null(x$terms[[i]]$sterms[[j]]$propose)) propose else x$terms[[i]]$sterms[[j]]$propose
       fitfun[[i]][[j]] <- function(x, p) {
         attr(p, "fitted.values")
       }
@@ -1327,8 +1327,8 @@ null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC")
     require("mvtnorm")
     no.special <- TRUE
     for(j in 1:np) {
-      for(sj in seq_along(x[[nx[j]]]$smooth)) {
-        if(inherits(x[[nx[j]]]$smooth[[sj]], "special"))
+      for(sj in seq_along(x[[nx[j]]]$sterms)) {
+        if(inherits(x[[nx[j]]]$sterms[[sj]], "special"))
           no.special <- FALSE
       }
     }
@@ -1336,11 +1336,11 @@ null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC")
       hessian <- list(); i <- 1
       nh3 <- NULL
       for(j in 1:np) {
-        for(sj in seq_along(x[[nx[j]]]$smooth)) {
+        for(sj in seq_along(x[[nx[j]]]$sterms)) {
           nh2 <- grep(paste("p", j, ".t", sj, ".", sep = ""), nh, fixed = TRUE, value = TRUE)
           nhg <- nh2[!grepl("tau2", nh2)]
-          g <- get.state(x[[nx[j]]]$smooth[[sj]], "gamma")
-          hessian[[i]] <- family$hessian[[nx[j]]](g, response, eta, x[[nx[j]]]$smooth[[sj]], id = nx[j])
+          g <- get.state(x[[nx[j]]]$sterms[[sj]], "gamma")
+          hessian[[i]] <- family$hessian[[nx[j]]](g, response, eta, x[[nx[j]]]$sterms[[sj]], id = nx[j])
           nh3 <- c(nh3, nhg)
           i <- i + 1
         }
@@ -1366,10 +1366,10 @@ null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC")
   edf_sm <- edf_sm_n <- NULL
 
   for(j in 1:np) {
-    for(sj in seq_along(x[[nx[j]]]$smooth)) {
+    for(sj in seq_along(x[[nx[j]]]$sterms)) {
       nh2 <- grep(paste("p", j, ".t", sj, ".", sep = ""), nh, fixed = TRUE, value = TRUE)
       nhg <- nh2[!grepl("tau2", nh2)]
-      g <- get.state(x[[nx[j]]]$smooth[[sj]], "gamma")
+      g <- get.state(x[[nx[j]]]$sterms[[sj]], "gamma")
       if(n.samples > 1) {
         sigma <- hessian[nhg, nhg, drop = FALSE]
         if(any(eigen(sigma, symmetric = TRUE)$values <= 0)) {
@@ -1386,17 +1386,17 @@ null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC")
         colnames(g) <- nhg
         samps[, nhg] <- g
       } else samps[1L, nhg] <- g
-      sn <- c(sn, paste(nx[j], x[[nx[j]]]$smooth[[sj]]$label, paste("g", 1:length(nhg), sep = ""), sep = "."))
-      if(!x[[nx[j]]]$smooth[[sj]]$fixed) {
+      sn <- c(sn, paste(nx[j], x[[nx[j]]]$sterms[[sj]]$label, paste("g", 1:length(nhg), sep = ""), sep = "."))
+      if(!x[[nx[j]]]$sterms[[sj]]$fixed) {
         nhtau2 <- nh2[grepl("tau2", nh2)]
-        tedf <- x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]], type = 2)
+        tedf <- x[[nx[j]]]$sterms[[sj]]$edf(x[[nx[j]]]$sterms[[sj]], type = 2)
         edf_sm <- cbind(edf_sm, rep(tedf, length = n.samples))
-        edf_sm_n <- c(edf_sm_n, paste(nx[j], x[[nx[j]]]$smooth[[sj]]$label, "edf", sep = "."))
-        samps[1L, nhtau2] <- get.state(x[[nx[j]]]$smooth[[sj]], "tau2") ##tedf
+        edf_sm_n <- c(edf_sm_n, paste(nx[j], x[[nx[j]]]$sterms[[sj]]$label, "edf", sep = "."))
+        samps[1L, nhtau2] <- get.state(x[[nx[j]]]$sterms[[sj]], "tau2") ##tedf
         edf <- edf + tedf
-        sn <- c(sn, paste(nx[j], x[[nx[j]]]$smooth[[sj]]$label, paste("tau2", 1:length(nhtau2), sep = ""), sep = "."))
+        sn <- c(sn, paste(nx[j], x[[nx[j]]]$sterms[[sj]]$label, paste("tau2", 1:length(nhtau2), sep = ""), sep = "."))
       } else {
-        edf <- edf + ncol(x[[nx[j]]]$smooth[[sj]]$X)
+        edf <- edf + ncol(x[[nx[j]]]$sterms[[sj]]$X)
       }
     }
   }
