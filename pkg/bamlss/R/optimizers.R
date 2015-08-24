@@ -61,11 +61,11 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
       if(is.null(id)) id <- ""
       if(!is.null(dim(x$X))) {
         if(nrow(x$X) > 0 & !is.na(mean(unlist(x$X), na.rm = TRUE))) {
-          if(is.null(x$smooth)) x$smooth <- list()
+          if(is.null(x$sterms)) x$sterms <- list()
           label <- if(is.null(colnames(x$X))) {
             paste("b", 1:ncol(x$X), sep = "", collapse = "+")
           } else paste(colnames(x$X), collapse = "+")
-          x$smooth <- c(list("parametric" = list(
+          x$sterms <- c(list("parametric" = list(
             "X" = x$X,
             "S" = list(diag(0, ncol(x$X))),
             "rank" = ncol(x$X),
@@ -76,85 +76,85 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
             "is.parametric" = TRUE,
             "by" = "NA",
             "xt" = list("xbin" = x$binning)
-          )), x$smooth)
+          )), x$sterms)
           if(!is.null(coefficients)) {
             if(any(grepl(id, names(coefficients)))) {
-              label <- strsplit(x$smooth$parametric$label, "+", fixed = TRUE)[[1]]
+              label <- strsplit(x$sterms$parametric$label, "+", fixed = TRUE)[[1]]
               label <- paste(label, id, sep = ":")
               if(!all(label %in% names(coefficients))) {
                 nlabel <- label[!(label %in% names(coefficients))]
                 stop(paste("cannot find the following coefficients: ",
                   paste(nlabel, collapse = ", "), "!", sep = ""))
               }
-              x$smooth$parametric$xt$state <- list("parameters" = coefficients[label])
-              names(x$smooth$parametric$xt$state$parameters) <- paste("g", 1:length(x$smooth$parametric$xt$state$parameters), sep = "")
+              x$sterms$parametric$xt$state <- list("parameters" = coefficients[label])
+              names(x$sterms$parametric$xt$state$parameters) <- paste("g", 1:length(x$sterms$parametric$xt$state$parameters), sep = "")
             } else stop(paste("coefficients for parameter", id, "are missing!"))
           }
-          class(x$smooth[["parametric"]]) <- c(class(x$smooth[["parametric"]]), "no.mgcv", "parametric")
+          class(x$sterms[["parametric"]]) <- c(class(x$sterms[["parametric"]]), "no.mgcv", "parametric")
           x$sterms <- c(x$strems, "parametric")
           x$X <- NULL
         }
       }
-      if(length(x$smooth)) {
-        for(j in seq_along(x$smooth)) {
+      if(length(x$sterms)) {
+        for(j in seq_along(x$sterms)) {
           if(!is.null(coefficients)) {
             if(!any(grepl(id, names(coefficients))))
               stop(paste("coefficients for parameter", id, "are missing!"))
-            if(any(grepl(id, names(coefficients))) & is.null(x$smooth[[j]]$is.parametric)) {
-              label <- x$smooth[[j]]$label
+            if(any(grepl(id, names(coefficients))) & is.null(x$sterms[[j]]$is.parametric)) {
+              label <- x$sterms[[j]]$label
               if(any(take <- grepl(label, names(coefficients), fixed = TRUE))) {
                 tcoef <- grep(id, names(coefficients)[take], fixed = TRUE, value = TRUE)
                 tcoef <- tcoef[!grepl("edf", tcoef, fixed = TRUE)]
                 tcoef <- tcoef[!grepl("alpha", tcoef, fixed = TRUE)]
                 tau2 <- tcoef[grepl("tau2", tcoef, fixed = TRUE)]
                 tcoef <- tcoef[!grepl("tau2", tcoef, fixed = TRUE)]
-                x$smooth[[j]]$xt$state <- list("parameters" = coefficients[tcoef])
-                names(x$smooth[[j]]$xt$state$parameters) <- paste("g", 1:length(x$smooth[[j]]$xt$state$parameters), sep = "")
+                x$sterms[[j]]$xt$state <- list("parameters" = coefficients[tcoef])
+                names(x$sterms[[j]]$xt$state$parameters) <- paste("g", 1:length(x$sterms[[j]]$xt$state$parameters), sep = "")
                 if(length(tau2)) {
                   tau2 <- coefficients[tau2]
                   names(tau2) <- paste("tau2", 1:length(tau2), sep = "")
-                  x$smooth[[j]]$xt$state$parameters <- c(x$smooth[[j]]$xt$state$parameters, tau2)
+                  x$sterms[[j]]$xt$state$parameters <- c(x$sterms[[j]]$xt$state$parameters, tau2)
                 }
               } else stop(paste("cannot find coefficients for term ", label, " for parameter", id, "!", sep = ""))
             }
           }
-          x$smooth[[j]] <- smooth.bamlss(x$smooth[[j]])
-          x$smooth[[j]] <- assign.df(x$smooth[[j]], df)
-          if(!is.null(x$smooth[[j]]$xt$update))
-            x$smooth[[j]]$update <- x$smooth[[j]]$xt$update
-          if(is.null(x$smooth[[j]]$update)) {
+          x$sterms[[j]] <- smooth.bamlss(x$sterms[[j]])
+          x$sterms[[j]] <- assign.df(x$sterms[[j]], df)
+          if(!is.null(x$sterms[[j]]$xt$update))
+            x$sterms[[j]]$update <- x$sterms[[j]]$xt$update
+          if(is.null(x$sterms[[j]]$update)) {
             if(is.character(update)) {
               if(!grepl("bfit0_", update))
                 update <- paste("bfit0", update, sep = "_")
               update <- eval(parse(text = update))
             }
-            x$smooth[[j]]$update <- update
+            x$sterms[[j]]$update <- update
           }
-          if(!is.null(x$smooth[[j]]$do.optim))
-            x$smooth[[j]]$state$optimize <- x$smooth[[j]]$do.optim
-          if(is.null(x$smooth[[j]]$state$optimize)) {
+          if(!is.null(x$sterms[[j]]$do.optim))
+            x$sterms[[j]]$state$optimize <- x$sterms[[j]]$do.optim
+          if(is.null(x$sterms[[j]]$state$optimize)) {
             if(is.null(do.optim))
-              x$smooth[[j]]$state$optimize <- TRUE
+              x$sterms[[j]]$state$optimize <- TRUE
             else
-              x$smooth[[j]]$state$optimize <- do.optim
+              x$sterms[[j]]$state$optimize <- do.optim
           }
-          if(!is.null(x$smooth[[j]]$rank))
-            x$smooth[[j]]$rank <- as.numeric(x$smooth[[j]]$rank)
-          x$smooth[[j]]$criterion <- criterion
-          x$smooth[[j]]$nu <- nu
-          if(!is.null(x$smooth[[j]]$Xf)) {
-            x$smooth[[j]]$Xfcn <- paste(paste(paste(x$smooth[[j]]$term, collapse = "."),
-              "Xf", sep = "."), 1:ncol(x$smooth[[j]]$Xf), sep = ".")
-            colnames(x$smooth[[j]]$Xf) <- x$smooth[[j]]$Xfcn
-            if(is.null(x$smooth[["parametric"]])) {
-              label <- paste(x$smooth[[j]]$Xfcn, collapse = "+")
-              x$smooth[["parametric"]] <- list(
-                "X" = x$smooth[[j]]$Xf,
+          if(!is.null(x$sterms[[j]]$rank))
+            x$sterms[[j]]$rank <- as.numeric(x$sterms[[j]]$rank)
+          x$sterms[[j]]$criterion <- criterion
+          x$sterms[[j]]$nu <- nu
+          if(!is.null(x$sterms[[j]]$Xf)) {
+            x$sterms[[j]]$Xfcn <- paste(paste(paste(x$sterms[[j]]$term, collapse = "."),
+              "Xf", sep = "."), 1:ncol(x$sterms[[j]]$Xf), sep = ".")
+            colnames(x$sterms[[j]]$Xf) <- x$sterms[[j]]$Xfcn
+            if(is.null(x$sterms[["parametric"]])) {
+              label <- paste(x$sterms[[j]]$Xfcn, collapse = "+")
+              x$sterms[["parametric"]] <- list(
+                "X" = x$sterms[[j]]$Xf,
                 "S" = list(diag(0, ncol(x$Xf))),
-                "rank" = ncol(x$smooth[[j]]$Xf),
+                "rank" = ncol(x$sterms[[j]]$Xf),
                 "term" = label,
                 "label" = label,
-                "bs.dim" = ncol(x$smooth[[j]]$Xf),
+                "bs.dim" = ncol(x$sterms[[j]]$Xf),
                 "fixed" = TRUE,
                 "is.parametric" = TRUE,
                 "by" = "NA",
@@ -162,12 +162,12 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
               )
               x$sterms <- c(x$strems, "parametric")
             } else {
-              cn <- colnames(x$smooth[["parametric"]]$X)
-              x$smooth[["parametric"]]$X <- cbind(x$smooth[["parametric"]]$X, x$smooth[[j]]$Xf)
-              x$smooth[["parametric"]]$S <- list(diag(0, ncol(x$smooth[["parametric"]]$X)))
-              x$smooth[["parametric"]]$bs.dim <- list(diag(0, ncol(x$smooth[["parametric"]]$X)))
-              cn <- gsub("Intercept.", "Intercept", gsub("X.", "", c(cn , x$smooth[[j]]$Xfcn), fixed = TRUE))
-              x$smooth[["parametric"]]$s.colnames <- colnames(x$smooth[["parametric"]]$X) <- cn
+              cn <- colnames(x$sterms[["parametric"]]$X)
+              x$sterms[["parametric"]]$X <- cbind(x$sterms[["parametric"]]$X, x$sterms[[j]]$Xf)
+              x$sterms[["parametric"]]$S <- list(diag(0, ncol(x$sterms[["parametric"]]$X)))
+              x$sterms[["parametric"]]$bs.dim <- list(diag(0, ncol(x$sterms[["parametric"]]$X)))
+              cn <- gsub("Intercept.", "Intercept", gsub("X.", "", c(cn , x$sterms[[j]]$Xfcn), fixed = TRUE))
+              x$sterms[["parametric"]]$s.colnames <- colnames(x$sterms[["parametric"]]$X) <- cn
             }
           }
         }
@@ -255,10 +255,10 @@ smooth.bamlss.default <- function(x, ...)
     x$xbin.k <- length(xbin.uind)
     x$xbin.sind <- x$xbin.ind[x$xbin.order]
     x$X <- x$X[x$xbin.take, , drop = FALSE]
-    x$before <- TRUE
+    x$xbin.before <- TRUE
   }
-  if(is.null(x$before)) x$before <- FALSE
-  if(!is.null(x$xbin.ind) & !x$before) {
+  if(is.null(x$xbin.before)) x$xbin.before <- FALSE
+  if(!is.null(x$xbin.ind) & !x$xbin.before) {
     x$X <- x$X[x$xbin.take, , drop = FALSE]
   }
   if(is.null(x$xbin.ind)) {
@@ -508,9 +508,9 @@ get.eta <- function(x, expand = TRUE)
   names(eta) <- nx
   for(j in 1:np) {
     eta[[j]] <- 0
-    for(sj in seq_along(x[[nx[j]]]$smooth)) {
-      g <- get.state(x[[nx[j]]]$smooth[[sj]], "g")
-      eta[[j]] <- eta[[j]] + as.numeric(x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X, g, expand))
+    for(sj in seq_along(x[[nx[j]]]$sterms)) {
+      g <- get.state(x[[nx[j]]]$sterms[[sj]], "g")
+      eta[[j]] <- eta[[j]] + as.numeric(x[[nx[j]]]$sterms[[sj]]$get.mu(x[[nx[j]]]$sterms[[sj]]$X, g, expand))
     }
   }
   eta
@@ -522,10 +522,10 @@ get.edf <- function(x, type = 1)
   np <- length(nx)
   edf <- 0
   for(j in 1:np) {
-    for(sj in seq_along(x[[nx[j]]]$smooth)) {
+    for(sj in seq_along(x[[nx[j]]]$sterms)) {
       edf <- edf + if(type < 2) {
-        x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]])
-      } else x[[nx[j]]]$smooth[[sj]]$state$edf
+        x[[nx[j]]]$sterms[[sj]]$edf(x[[nx[j]]]$sterms[[sj]])
+      } else x[[nx[j]]]$sterms[[sj]]$state$edf
     }
   }
   edf
@@ -539,8 +539,8 @@ get.all.par <- function(x)
   par <- list()
   for(j in 1:np) {
     par[[j]] <- list()
-    for(sj in seq_along(x[[nx[j]]]$smooth)) {
-      par[[j]][[sj]] <- x[[nx[j]]]$smooth[[sj]]$state$parameters
+    for(sj in seq_along(x[[nx[j]]]$sterms)) {
+      par[[j]][[sj]] <- x[[nx[j]]]$sterms[[sj]]$state$parameters
     }
   }
   par
@@ -563,18 +563,22 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 {
   criterion <- match.arg(criterion)
 
-  x <- bamlss.setup(x, criterion = criterion, ...)
+  x$terms <- bamlss.setup(x$terms, criterion = criterion, ...)
 
-  family <- attr(x, "family")
+  family <- x$family
   nx <- family$names
-  if(!all(nx %in% names(x)))
+
+  if(!all(nx %in% names(x$terms)))
     stop("parameter names mismatch with family names!")
   criterion <- match.arg(criterion)
 
   np <- length(nx)
-  response <- attr(x, "response.vec")
+  response <- model.response(x$model.frame)
+
   nobs <- if(is.null(dim(response))) length(response) else nrow(response)
-  eta <- get.eta(x)
+  eta <- get.eta(x$terms)
+print(eta)
+stop()
   
   inner_bf <- function(x, response, eta, family, edf, id, ...) {
     eps0 <- eps + 1; iter <- 1
@@ -623,25 +627,25 @@ bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
         ## And all terms.
         if(inner) {
-          tbf <- inner_bf(x[[nx[j]]]$smooth, response, eta, family,
+          tbf <- inner_bf(x$terms[[nx[j]]]$sterms, response, eta, family,
             edf = edf, id = nx[j], z = z, weights = weights)
-          x[[nx[j]]]$smooth <- tbf$x
+          x[[nx[j]]]$sterms <- tbf$x
           edf <- tbf$edf
           eta <- tbf$eta
           rm(tbf)
         } else {
-          for(sj in seq_along(x[[nx[j]]]$smooth)) {
+          for(sj in seq_along(x[[nx[j]]]$sterms)) {
             ## Get updated parameters.
-            p.state <- x[[nx[j]]]$smooth[[sj]]$update(x[[nx[j]]]$smooth[[sj]],
+            p.state <- x[[nx[j]]]$sterms[[sj]]$update(x[[nx[j]]]$sterms[[sj]],
               family, response, eta, nx[j], edf = edf, z = z, weights = weights)
 
             ## Compute equivalent degrees of freedom.
-            edf <- edf - x[[nx[j]]]$smooth[[sj]]$state$edf + p.state$edf
+            edf <- edf - x[[nx[j]]]$sterms[[sj]]$state$edf + p.state$edf
 
             ## Update predictor and smooth fit.
-            eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth[[sj]]$state) + fitted(p.state)
+            eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$sterms[[sj]]$state) + fitted(p.state)
 
-            x[[nx[j]]]$smooth[[sj]]$state <- p.state
+            x[[nx[j]]]$sterms[[sj]]$state <- p.state
           }
         }
       }
@@ -720,19 +724,19 @@ make_par <- function(x, type = 1, add.tau2 = FALSE) {
   np <- length(nx)
   par <- lower <- upper <- NULL
   for(j in 1:np) {
-    for(sj in seq_along(x[[nx[j]]]$smooth)) {
-      tpar <- x[[nx[j]]]$smooth[[sj]]$state$parameters
-      tlower <- x[[nx[j]]]$smooth[[sj]]$lower
-      tupper <- x[[nx[j]]]$smooth[[sj]]$upper
+    for(sj in seq_along(x[[nx[j]]]$sterms)) {
+      tpar <- x[[nx[j]]]$sterms[[sj]]$state$parameters
+      tlower <- x[[nx[j]]]$sterms[[sj]]$lower
+      tupper <- x[[nx[j]]]$sterms[[sj]]$upper
       if(!add.tau2) {
         tlower <- tlower[!grepl("tau2", names(tlower))]
         tupper <- tupper[!grepl("tau2", names(tupper))]
         tpar <- tpar[!grepl("tau2", names(tpar))]
       }
       g <- get.par(tpar, "g")
-      npar <- paste(paste(nx[j], "h1", x[[nx[j]]]$smooth[[sj]]$label, sep = ":"), 1:length(g), sep = ".")
+      npar <- paste(paste(nx[j], "h1", x[[nx[j]]]$sterms[[sj]]$label, sep = ":"), 1:length(g), sep = ".")
       if(length(tau2 <- get.par(tpar, "tau2"))) {
-        npar <- c(npar, paste(nx[j], "h1", paste(x[[nx[j]]]$smooth[[sj]]$label,
+        npar <- c(npar, paste(nx[j], "h1", paste(x[[nx[j]]]$sterms[[sj]]$label,
           paste("tau2", 1:length(tau2), sep = ""), sep = "."), sep = ":"))
       }
       names(tpar) <- names(tlower) <- names(tupper) <- if(type < 2) {
@@ -988,13 +992,13 @@ set.all.par <- function(par, x, hessian = NULL)
   nx <- names(x)
   np <- length(x)
   for(j in 1:np) {
-    for(sj in seq_along(x[[nx[j]]]$smooth)) {
+    for(sj in seq_along(x[[nx[j]]]$sterms)) {
       tpar <- par[grep(paste("p", j, ".t", sj, ".", sep = ""), names(par), fixed = TRUE)]
-      x[[nx[j]]]$smooth[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth[[sj]]$state$parameters, get.par(tpar, "g"), "g")
+      x[[nx[j]]]$sterms[[sj]]$state$parameters <- set.par(x[[nx[j]]]$sterms[[sj]]$state$parameters, get.par(tpar, "g"), "g")
       if(any(grepl("tau2", tpar))) {
-        x[[nx[j]]]$smooth[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth[[sj]]$state$parameters, get.par(tpar, "tau2"), "tau2")
+        x[[nx[j]]]$sterms[[sj]]$state$parameters <- set.par(x[[nx[j]]]$sterms[[sj]]$state$parameters, get.par(tpar, "tau2"), "tau2")
       }
-      x[[nx[j]]]$smooth[[sj]]$state$fitted.values <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X,
+      x[[nx[j]]]$sterms[[sj]]$state$fitted.values <- x[[nx[j]]]$sterms[[sj]]$get.mu(x[[nx[j]]]$sterms[[sj]]$X,
         get.par(tpar, "g"))
       if(!is.null(hessian)) {
         ntpar <- names(tpar)[!grepl("tau2", names(tpar))]
@@ -1009,7 +1013,7 @@ set.all.par <- function(par, x, hessian = NULL)
           sigma <- as.matrix(sigma2)
         }
         if(length(sigma) < 2) sigma <- matrix(sigma, 1, 1)
-        x[[nx[j]]]$smooth[[sj]]$state$hessian <- sigma
+        x[[nx[j]]]$sterms[[sj]]$state$hessian <- sigma
       }
     }
   }
@@ -1029,19 +1033,19 @@ log_posterior <- function(par, x, verbose = TRUE, show.edf = TRUE, digits = 3, s
   start <- 1
   for(j in 1:np) {
     eta[[nx[j]]] <- 0.0
-    for(sj in seq_along(x[[nx[j]]]$smooth)) {
-      g <- get.state(x[[nx[j]]]$smooth[[sj]], "g")
+    for(sj in seq_along(x[[nx[j]]]$sterms)) {
+      g <- get.state(x[[nx[j]]]$sterms[[sj]], "g")
       end <- length(g) + start - 1
       i <- start:end
       tpar <- par[i]
       names(tpar) <- names(g)
       start <- max(i) + 1
-      x[[nx[j]]]$smooth[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth[[sj]]$state$parameters, tpar, "g")
-      x[[nx[j]]]$smooth[[sj]]$state$fitted.values <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X,
+      x[[nx[j]]]$sterms[[sj]]$state$parameters <- set.par(x[[nx[j]]]$sterms[[sj]]$state$parameters, tpar, "g")
+      x[[nx[j]]]$sterms[[sj]]$state$fitted.values <- x[[nx[j]]]$sterms[[sj]]$get.mu(x[[nx[j]]]$sterms[[sj]]$X,
         get.par(tpar, "g"))
-      eta[[nx[j]]] <- eta[[nx[j]]] + fitted(x[[nx[j]]]$smooth[[sj]]$state)
-      lprior <- lprior + x[[nx[j]]]$smooth[[sj]]$prior(c(tpar, get.state(x[[nx[j]]]$smooth[[sj]], "tau2")))
-      edf <- edf + x[[nx[j]]]$smooth[[sj]]$edf(x[[nx[j]]]$smooth[[sj]])
+      eta[[nx[j]]] <- eta[[nx[j]]] + fitted(x[[nx[j]]]$sterms[[sj]]$state)
+      lprior <- lprior + x[[nx[j]]]$sterms[[sj]]$prior(c(tpar, get.state(x[[nx[j]]]$sterms[[sj]], "tau2")))
+      edf <- edf + x[[nx[j]]]$sterms[[sj]]$edf(x[[nx[j]]]$sterms[[sj]])
     }
   }
   ll <- family$loglik(attr(x, "response.vec"), family$map2par(eta))
@@ -1074,28 +1078,28 @@ grad_posterior <- function(par, x, ...)
   grad <- NULL
   for(j in 1:np) {
     eta[[nx[j]]] <- 0
-    for(sj in seq_along(x[[nx[j]]]$smooth)) {
+    for(sj in seq_along(x[[nx[j]]]$sterms)) {
       tpar <- par[grep(paste("p", j, ".t", sj, ".", sep = ""), names(par), fixed = TRUE)]
-      x[[nx[j]]]$smooth[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth[[sj]]$state$parameters, tpar, "g")
-      x[[nx[j]]]$smooth[[sj]]$state$fitted.values <- x[[nx[j]]]$smooth[[sj]]$get.mu(x[[nx[j]]]$smooth[[sj]]$X,
+      x[[nx[j]]]$sterms[[sj]]$state$parameters <- set.par(x[[nx[j]]]$sterms[[sj]]$state$parameters, tpar, "g")
+      x[[nx[j]]]$sterms[[sj]]$state$fitted.values <- x[[nx[j]]]$sterms[[sj]]$get.mu(x[[nx[j]]]$sterms[[sj]]$X,
         get.par(tpar, "g"))
-      eta[[nx[j]]] <- eta[[nx[j]]] + fitted(x[[nx[j]]]$smooth[[sj]]$state)
+      eta[[nx[j]]] <- eta[[nx[j]]] + fitted(x[[nx[j]]]$sterms[[sj]]$state)
     }
   }
   for(j in 1:np) {
     if(!is.null(family$gradient[[nx[j]]])) {
-      for(sj in seq_along(x[[nx[j]]]$smooth)) {
-        tp <- get.state(x[[nx[j]]]$smooth[[sj]], "par")
-        tgrad <- drop(family$gradient[[nx[j]]](get.par(tp, "g"), attr(x, "response.vec"), eta, x[[nx[j]]]$smooth[[sj]]))
-        if(!is.null(x[[nx[j]]]$smooth[[sj]]$grad)) {
-          tgrad <- tgrad + drop(x[[nx[j]]]$smooth[[sj]]$grad(score = NULL, tp, full = FALSE))
+      for(sj in seq_along(x[[nx[j]]]$sterms)) {
+        tp <- get.state(x[[nx[j]]]$sterms[[sj]], "par")
+        tgrad <- drop(family$gradient[[nx[j]]](get.par(tp, "g"), attr(x, "response.vec"), eta, x[[nx[j]]]$sterms[[sj]]))
+        if(!is.null(x[[nx[j]]]$sterms[[sj]]$grad)) {
+          tgrad <- tgrad + drop(x[[nx[j]]]$sterms[[sj]]$grad(score = NULL, tp, full = FALSE))
         }
         grad <- c(grad, tgrad)
       }
     } else {
       score <- family$score[[nx[j]]](attr(x, "response.vec"), family$map2par(eta), id = nx[j])
-      for(sj in seq_along(x[[nx[j]]]$smooth)) {
-        tgrad <- x[[nx[j]]]$smooth[[sj]]$grad(score, x[[nx[j]]]$smooth[[sj]]$state$parameters, full = FALSE)
+      for(sj in seq_along(x[[nx[j]]]$sterms)) {
+        tgrad <- x[[nx[j]]]$sterms[[sj]]$grad(score, x[[nx[j]]]$sterms[[sj]]$state$parameters, full = FALSE)
         grad <- c(grad, tgrad)
       }
     }
@@ -1178,18 +1182,18 @@ bfit_cnorm <- function(x, criterion = c("AICc", "BIC", "AIC"),
     eta0 <- eta
     ## Cycle through all parameters
     for(j in 1:np) {
-      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+      for(sj in seq_along(x[[nx[j]]]$sterms)) {
         ## Get updated parameters.
-        p.state <- x[[nx[j]]]$smooth[[sj]]$update(x[[nx[j]]]$smooth[[sj]],
+        p.state <- x[[nx[j]]]$sterms[[sj]]$update(x[[nx[j]]]$sterms[[sj]],
           family, response, eta, nx[j], edf = edf)
 
         ## Compute equivalent degrees of freedom.
-        edf <- edf - x[[nx[j]]]$smooth[[sj]]$state$edf + p.state$edf
+        edf <- edf - x[[nx[j]]]$sterms[[sj]]$state$edf + p.state$edf
 
         ## Update predictor and smooth fit.
-        eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth[[sj]]$state) + fitted(p.state)
+        eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$sterms[[sj]]$state) + fitted(p.state)
 
-        x[[nx[j]]]$smooth[[sj]]$state <- p.state
+        x[[nx[j]]]$sterms[[sj]]$state <- p.state
       }
     }
 
@@ -1249,35 +1253,35 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   eta <- get.eta(x)
   for(j in 1:np) {
     states[[j]] <- list()
-    for(sj in seq_along(x[[nx[j]]]$smooth)) {
-      x[[nx[j]]]$smooth[[sj]] <- assign.df(x[[nx[j]]]$smooth[[sj]], df)
-      if(is.null(x[[nx[j]]]$smooth[[sj]]$sp) & !x[[nx[j]]]$smooth[[sj]]$fixed) {
-        x[[nx[j]]]$smooth[[sj]]$old.optimize <- x[[nx[j]]]$smooth[[sj]]$state$optimize
-        x[[nx[j]]]$smooth[[sj]]$state$optimize <- FALSE
-        x[[nx[j]]]$smooth[[sj]]$optimize <- FALSE
+    for(sj in seq_along(x[[nx[j]]]$sterms)) {
+      x[[nx[j]]]$sterms[[sj]] <- assign.df(x[[nx[j]]]$sterms[[sj]], df)
+      if(is.null(x[[nx[j]]]$sterms[[sj]]$sp) & !x[[nx[j]]]$sterms[[sj]]$fixed) {
+        x[[nx[j]]]$sterms[[sj]]$old.optimize <- x[[nx[j]]]$sterms[[sj]]$state$optimize
+        x[[nx[j]]]$sterms[[sj]]$state$optimize <- FALSE
+        x[[nx[j]]]$sterms[[sj]]$optimize <- FALSE
       }
       states[[j]][[sj]] <- list()
     }
-    ii <- sapply(x[[nx[j]]]$smooth, function(x) { inherits(x, "parametric") })
+    ii <- sapply(x[[nx[j]]]$sterms, function(x) { inherits(x, "parametric") })
     if(any(ii)) {
       ii <- which(ii)[1]
       parametric <- list()
-      cn <- colnames(x[[nx[j]]]$smooth[[ii]]$X)
-      g0 <- get.par(x[[nx[j]]]$smooth[[ii]]$state$parameters, "g")
-      for(pj in 1:ncol(x[[nx[j]]]$smooth[[ii]]$X)) {
+      cn <- colnames(x[[nx[j]]]$sterms[[ii]]$X)
+      g0 <- get.par(x[[nx[j]]]$sterms[[ii]]$state$parameters, "g")
+      for(pj in 1:ncol(x[[nx[j]]]$sterms[[ii]]$X)) {
         parametric[[pj]] <- list()
         parametric[[pj]]$label <- cn[pj]
         parametric[[pj]]$term <- cn[pj]
-        parametric[[pj]]$X <- x[[nx[j]]]$smooth[[ii]]$X[, pj, drop = FALSE]
-        parametric[[pj]]$xbin.ind <- x[[nx[j]]]$smooth[[ii]]$xbin.ind
-        parametric[[pj]]$xbin.sind <- x[[nx[j]]]$smooth[[ii]]$xbin.sind
-        parametric[[pj]]$xbin.k <- x[[nx[j]]]$smooth[[ii]]$xbin.k
-        parametric[[pj]]$xbin.order <- x[[nx[j]]]$smooth[[ii]]$xbin.order
-        parametric[[pj]]$nobs <- x[[nx[j]]]$smooth[[ii]]$nobs
+        parametric[[pj]]$X <- x[[nx[j]]]$sterms[[ii]]$X[, pj, drop = FALSE]
+        parametric[[pj]]$xbin.ind <- x[[nx[j]]]$sterms[[ii]]$xbin.ind
+        parametric[[pj]]$xbin.sind <- x[[nx[j]]]$sterms[[ii]]$xbin.sind
+        parametric[[pj]]$xbin.k <- x[[nx[j]]]$sterms[[ii]]$xbin.k
+        parametric[[pj]]$xbin.order <- x[[nx[j]]]$sterms[[ii]]$xbin.order
+        parametric[[pj]]$nobs <- x[[nx[j]]]$sterms[[ii]]$nobs
         parametric[[pj]]$fixed <- TRUE
-        parametric[[pj]]$weights <- x[[nx[j]]]$smooth[[ii]]$weights
-        parametric[[pj]]$rres <- x[[nx[j]]]$smooth[[ii]]$rres
-        parametric[[pj]]$get.mu <- x[[nx[j]]]$smooth[[ii]]$get.mu
+        parametric[[pj]]$weights <- x[[nx[j]]]$sterms[[ii]]$weights
+        parametric[[pj]]$rres <- x[[nx[j]]]$sterms[[ii]]$rres
+        parametric[[pj]]$get.mu <- x[[nx[j]]]$sterms[[ii]]$get.mu
         parametric[[pj]]$state <- list("parameters" = g0[pj])
         names(parametric[[pj]]$state$parameters) <- "g1"
         parametric[[pj]]$state$fitted.values <- drop(parametric[[pj]]$X %*% g0[pj])
@@ -1288,22 +1292,22 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
         parametric[[pj]]$selected <- rep(0, length = maxit)
         parametric[[pj]]$upper <- Inf
         parametric[[pj]]$lower <- -Inf
-        class(parametric[[pj]]) <- class(x[[nx[j]]]$smooth[[ii]])
+        class(parametric[[pj]]) <- class(x[[nx[j]]]$sterms[[ii]])
       }
-      save.parametric[[j]] <- x[[nx[j]]]$smooth[[ii]]
-      x[[nx[j]]]$smooth[[ii]] <- NULL
-      x[[nx[j]]]$smooth <- c(parametric, x[[nx[j]]]$smooth)
+      save.parametric[[j]] <- x[[nx[j]]]$sterms[[ii]]
+      x[[nx[j]]]$sterms[[ii]] <- NULL
+      x[[nx[j]]]$sterms <- c(parametric, x[[nx[j]]]$sterms)
     }
   }
 
   ## Selector help vector.
   sn <- NULL
   for(j in 1:np) {
-    for(sj in seq_along(x[[nx[j]]]$smooth)) {
+    for(sj in seq_along(x[[nx[j]]]$sterms)) {
       sn <- c(sn, paste(j, sj, sep = "."))
-      x[[nx[j]]]$smooth[[sj]]$selected <- rep(0, length = maxit)
-      x[[nx[j]]]$smooth[[sj]]$loglik <- rep(0, length = maxit)
-      x[[nx[j]]]$smooth[[sj]]$state$edf <- 0
+      x[[nx[j]]]$sterms[[sj]]$selected <- rep(0, length = maxit)
+      x[[nx[j]]]$sterms[[sj]]$loglik <- rep(0, length = maxit)
+      x[[nx[j]]]$sterms[[sj]]$state$edf <- 0
     }
   }
   select <- rep(0, length(sn))
@@ -1315,16 +1319,16 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
     eta0 <- eta
     ## Cycle through all parameters
     for(j in 1:np) {
-      for(sj in seq_along(x[[nx[j]]]$smooth)) {
-        if(inherits(x[[nx[j]]]$smooth[[sj]], "parametric") & x[[nx[j]]]$smooth[[sj]]$label == "(Intercept)") {
+      for(sj in seq_along(x[[nx[j]]]$sterms)) {
+        if(inherits(x[[nx[j]]]$sterms[[sj]], "parametric") & x[[nx[j]]]$sterms[[sj]]$label == "(Intercept)") {
           ## Get updated parameters.
-          p.state <- bfit0_iwls(x[[nx[j]]]$smooth[[sj]],
+          p.state <- bfit0_iwls(x[[nx[j]]]$sterms[[sj]],
             family, response, eta, nx[j], edf = edf)
 
           ## Update predictor and smooth fit.
-          eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth[[sj]]$state) + fitted(p.state)
+          eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$sterms[[sj]]$state) + fitted(p.state)
 
-          x[[nx[j]]]$smooth[[sj]]$state <- p.state
+          x[[nx[j]]]$sterms[[sj]]$state <- p.state
         }
       }
     }
@@ -1361,9 +1365,9 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
       ## Residuals.
       resids <- z - eta[[nx[j]]]
 
-      for(sj in seq_along(x[[nx[j]]]$smooth)) {
+      for(sj in seq_along(x[[nx[j]]]$sterms)) {
         ## Get updated parameters.
-        states[[j]][[sj]] <- boost0_iwls(x[[nx[j]]]$smooth[[sj]],
+        states[[j]][[sj]] <- boost0_iwls(x[[nx[j]]]$sterms[[sj]],
           family, response, weights, resids, nu)
 
         ## Compute likelihood contribution.
@@ -1380,9 +1384,9 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
     eta[[take[1]]] <- eta[[take[1]]] + fitted(states[[take[1]]][[take[2]]])
 
     ## Write to x.
-    x[[take[1]]]$smooth[[take[2]]]$state <- increase(x[[take[1]]]$smooth[[take[2]]]$state, states[[take[1]]][[take[2]]])
-    x[[take[1]]]$smooth[[take[2]]]$selected[iter] <- 1
-    x[[take[1]]]$smooth[[take[2]]]$loglik[iter] <- max(select)
+    x[[take[1]]]$sterms[[take[2]]]$state <- increase(x[[take[1]]]$sterms[[take[2]]]$state, states[[take[1]]][[take[2]]])
+    x[[take[1]]]$sterms[[take[2]]]$selected[iter] <- 1
+    x[[take[1]]]$sterms[[take[2]]]$loglik[iter] <- max(select)
 
     edf <- get.edf(x, type = 2)
 
@@ -1431,21 +1435,21 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   bsum <- lmat <- vector(mode = "list", length = np)
   for(j in 1:np) {
     rn <- NULL
-    for(sj in seq_along(x[[nx[j]]]$smooth)) {
-      x[[nx[j]]]$smooth[[sj]]$state$parameters <- parameters[[j]][[sj]]
-      g <- get.par(x[[nx[j]]]$smooth[[sj]]$state$parameters, "g")
-      if(!is.null(tau2 <- attr(x[[nx[j]]]$smooth[[sj]]$state$parameters, "true.tau2"))) {
-        x[[nx[j]]]$smooth[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth[[sj]]$state$parameters,
+    for(sj in seq_along(x[[nx[j]]]$sterms)) {
+      x[[nx[j]]]$sterms[[sj]]$state$parameters <- parameters[[j]][[sj]]
+      g <- get.par(x[[nx[j]]]$sterms[[sj]]$state$parameters, "g")
+      if(!is.null(tau2 <- attr(x[[nx[j]]]$sterms[[sj]]$state$parameters, "true.tau2"))) {
+        x[[nx[j]]]$sterms[[sj]]$state$parameters <- set.par(x[[nx[j]]]$sterms[[sj]]$state$parameters,
           tau2, "tau2")
       }
-      x[[nx[j]]]$smooth[[sj]]$state$edf <- attr(x[[nx[j]]]$smooth[[sj]]$state$parameters, "edf")
-      if(is.null(x[[nx[j]]]$smooth[[sj]]$state$edf))
-        x[[nx[j]]]$smooth[[sj]]$state$edf <- 0
-      labels <- c(labels, paste(x[[nx[j]]]$smooth[[sj]]$label, nx[j], sep = ":"))
-      rn <- c(rn, x[[nx[j]]]$smooth[[sj]]$label)
-      bsum[[j]] <- rbind(bsum[[j]], sum(x[[nx[j]]]$smooth[[sj]]$selected[1:mstop]) / mstop * 100)
-      lmat[[j]] <- rbind(lmat[[j]], sum(x[[nx[j]]]$smooth[[sj]]$loglik[1:mstop]))
-      ll.contrib <- cbind(ll.contrib, cumsum(x[[nx[j]]]$smooth[[sj]]$loglik))
+      x[[nx[j]]]$sterms[[sj]]$state$edf <- attr(x[[nx[j]]]$sterms[[sj]]$state$parameters, "edf")
+      if(is.null(x[[nx[j]]]$sterms[[sj]]$state$edf))
+        x[[nx[j]]]$sterms[[sj]]$state$edf <- 0
+      labels <- c(labels, paste(x[[nx[j]]]$sterms[[sj]]$label, nx[j], sep = ":"))
+      rn <- c(rn, x[[nx[j]]]$sterms[[sj]]$label)
+      bsum[[j]] <- rbind(bsum[[j]], sum(x[[nx[j]]]$sterms[[sj]]$selected[1:mstop]) / mstop * 100)
+      lmat[[j]] <- rbind(lmat[[j]], sum(x[[nx[j]]]$sterms[[sj]]$loglik[1:mstop]))
+      ll.contrib <- cbind(ll.contrib, cumsum(x[[nx[j]]]$sterms[[sj]]$loglik))
     }
     if(!is.matrix(bsum[[j]])) bsum[[j]] <- matrix(bsum[[j]], nrow = 1)
     bsum[[j]] <- cbind(bsum[[j]], lmat[[j]])
@@ -1485,18 +1489,18 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   ## Collect parametric effects.
   for(j in 1:np) {
     g <- drop <- NULL
-    for(sj in seq_along(x[[nx[j]]]$smooth)) {
-      if(!is.null(x[[nx[j]]]$smooth[[sj]]$is.parametric)) {
-        g <- c(g, x[[nx[j]]]$smooth[[sj]]$state$parameters)
+    for(sj in seq_along(x[[nx[j]]]$sterms)) {
+      if(!is.null(x[[nx[j]]]$sterms[[sj]]$is.parametric)) {
+        g <- c(g, x[[nx[j]]]$sterms[[sj]]$state$parameters)
         drop <- c(drop, sj)
       }
     }
     if(!is.null(g)) {
-      x[[nx[j]]]$smooth[drop] <- NULL
+      x[[nx[j]]]$sterms[drop] <- NULL
       names(g) <- paste("g", 1:length(g), sep = "")
       save.parametric[[j]]$state$fitted.values <- drop(save.parametric[[j]]$X %*% g)
       save.parametric[[j]]$state$parameters <- g
-      x[[nx[j]]]$smooth <- c(list(save.parametric[[j]]), x[[nx[j]]]$smooth)
+      x[[nx[j]]]$sterms <- c(list(save.parametric[[j]]), x[[nx[j]]]$sterms)
     }
   }
 

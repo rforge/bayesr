@@ -19,7 +19,7 @@ bamlss.formula(f, family = zinb.bamlss())
 
 
 ## (2) Get the bamlss frame.
-bf <- bamlss.frame(f, data = GAMart, family = gaussian)
+bf <- bamlss.frame(f, data = GAMart, family = "gaussian")
 names(bf)
 head(model.frame(bf))
 model.response(model.frame(bf))
@@ -30,25 +30,23 @@ response.name(model.frame(bf))
 model.matrix(bf)
 smooth.construct(bf)
 
+## (4) Complex multilevel structures.
+f <- list(
+  cat ~ s(x1) + id,
+  id ~ s(x3)
+)
+
+bf <- bamlss.frame(f, data = GAMart, family = "multinomial")
+names(bf$terms)
+names(bf$terms$low)
+head(model.response(model.frame(bf)))
+
 ## Note that parse.input.bamlss() may handle special user defined smooths
 ## in addition to mgcv user defined smooths, one just needs to add a specials = TRUE
 ## within an smooth.construct() call. This is usefull to e.g. estimate NURBS with JAGS.
 
-
-## (3) Different engines in use.
-##     These steps are all combined in bamlss()/xreg().
-##     To ease formulae specifictaion within bamlss(), one only needs
-##     to write e.g. zinb instead of zinb.bamlss or zinb.bamlss().
-
-## BayesX, needs sx().
-f2 <- list(
-  stunting ~ sx(mbmi) + meducation,
-  sigma ~ sx(mbmi)
-)
-pm2 <- parse.input.bamlss(f2, data = ZambiaNutrition, family = gaussian)
-
-## Transformer to parse sx() smooths correctly.
-tpm <- transformBayesX(pm2)
+## Run backfitting optimizer on bamlss.frame.
+bf2 <- bfit0(bf)
 
 ## Setup the model code and write out data.
 sm <- setupBayesX(tpm)

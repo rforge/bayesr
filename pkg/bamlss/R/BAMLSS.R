@@ -401,7 +401,7 @@ bamlss.terms <- function(x, data, knots = NULL,
           if(!is.null(tsm$xt$center))
             acons <- tsm$xt$center
           tsm$xt$center <- acons
-          tsm$before <- before
+          tsm$xbin.before <- before
           if(!is.null(tsm$xt$xbin)) {
             term.names <- c(tsm$term, if(tsm$by != "NA") tsm$by else NULL)
             ind <- lapply(mf[, term.names, drop = FALSE], function(x) {
@@ -503,7 +503,7 @@ bamlss.terms <- function(x, data, knots = NULL,
 ## Create the model.frame.
 bamlss.model.frame <- function(formula, data, family, weights = NULL,
   subset = NULL, offset = NULL, na.action = na.omit, specials = NULL,
-  contrasts = NULL)
+  contrasts.arg = NULL)
 {
   if(inherits(formula, "bamlss.frame")) {
     if(!is.null(formula$model.frame))
@@ -529,14 +529,47 @@ bamlss.model.frame <- function(formula, data, family, weights = NULL,
   ## Make fake "Formula" object.
   fF <- make_fFormula(formula)
 
+  ## Resulting terms object.
+  mterms <- terms(formula(fF))
+
   ## Set up the model.frame.
-  mf <- list(formula = fF, data = data, subset = subset,
+  data <- list(formula = fF, data = data, subset = subset,
     na.action = na.action, drop.unused.levels = TRUE)
 
-  mf <- do.call("model.frame", mf)
-  rownames(mf) <- NULL
+  data <- do.call("model.frame", data)
+  rownames(data) <- NULL
 
-  ## FIXME: contrasts here!!!
+  ## Code from stats model.matrix()
+  contr.funs <- as.character(getOption("contrasts"))
+  namD <- names(data)
+  for(i in namD) {
+    if(is.character(data[[i]])) 
+      data[[i]] <- factor(data[[i]])
+  }
+  isF <- vapply(data, function(x) is.factor(x) || is.logical(x), NA)
+  isF[attr(mterms, "response")] <- FALSE
+  isOF <- vapply(data, is.ordered, NA)
+  for(nn in namD[isF]) {
+    if(is.null(attr(data[[nn]], "contrasts"))) {
+      contrasts(data[[nn]]) <- contr.funs[1 + isOF[nn]]
+    }
+  }
+  if(!is.null(contrasts.arg) && is.list(contrasts.arg)) {
+    if(is.null(namC <- names(contrasts.arg))) 
+      stop("invalid 'contrasts' argument")
+    for(nn in namC) {
+      if(is.na(ni <- match(nn, namD))) 
+        warning(gettextf("variable '%s' is absent, its contrast will be ignored", nn), domain = NA)
+      else {
+        ca <- contrasts.arg[[nn]]
+        if(is.matrix(ca)) {
+          contrasts(data[[ni]], ncol(ca)) <- ca
+        } else {
+          contrasts(data[[ni]]) <- contrasts.arg[[nn]]
+        }
+      }
+    }
+  }
 
   ## Process weights and offset.
   if(!is.null(weights)) {
@@ -549,7 +582,7 @@ bamlss.model.frame <- function(formula, data, family, weights = NULL,
         weights[subset, , drop = FALSE]
       } else subset(weights, subset)
     }
-    mf[["(weights)"]] <- weights
+    data[["(weights)"]] <- weights
   }
   if(!is.null(offset)) {
     if(!is.list(offset))
@@ -561,21 +594,21 @@ bamlss.model.frame <- function(formula, data, family, weights = NULL,
         offset[subset, , drop = FALSE]
       } else subset(offset, subset)
     }
-    mf[["(offset)"]] <- offset
+    data[["(offset)"]] <- offset
   }
 
   ## Remove inf values.
-  mf <- rm_infinite(mf)
+  data <- rm_infinite(data)
 
   ## Assign terms object.
-  attr(mf, "terms") <- terms(formula(fF))
+  attr(data, "terms") <- mterms
 
   ## Check response.
   if(!is.null(family$valid.response)) {
-    family$valid.response(model.response(mf))
+    family$valid.response(model.response(data))
   }
 
-  mf
+  data
 }
 
 
@@ -1022,13 +1055,12 @@ formula_hcheck <- function(formula)
 {
   if(!is.list(formula))
     return(formula)
-  nf <- sapply(formula, response.name)
-  snf <- seq_along(nf)
   check <- vector(mode = "list", length = length(formula))
-  for(j in snf) {
-      for(i in snf) {
+  for(j in seq_along(formula)) {
+      for(i in seq_along(formula)) {
         if(j != i) {
           fi <- if(!is.list(formula[[i]])) list(formula[[i]]) else formula[[i]]
+          rnj <- response.name(formula[[j]])
           for(jj in seq_along(fi)) {
             av <- all.vars(fi[[jj]])
             rn <- response.name(fi[[jj]])
@@ -1037,7 +1069,7 @@ formula_hcheck <- function(formula)
             if(attr(terms(fi[[jj]]), "intercept") < 1) {
               av <- c(av, "-1")
             }
-            if(any(av %in% nf[j])) {
+            if(any(av %in% rnj)) {
               check[[j]] <- c(check[[j]], i)
             }
           }
