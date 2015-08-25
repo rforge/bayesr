@@ -41,6 +41,10 @@ names(bf$terms)
 names(bf$terms$low)
 head(model.response(model.frame(bf)))
 
+terms(bf)
+terms(formula(bf))
+terms(bf, model = c(2, 1))
+
 ## Note that bamlss.frame() may handle special user defined smooths
 ## in addition to mgcv user defined smooths, one just needs to add a specials = TRUE
 ## within an smooth.construct() call. This is usefull to e.g. estimate NURBS with JAGS.
