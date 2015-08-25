@@ -372,7 +372,7 @@ bamlss.terms <- function(x, data, knots = NULL,
     if(!all(c("formula", "fake.formula", "response") %in% names(obj)))
       return(obj)
     if(model.matrix)
-      obj$X <- model.matrix(obj$pterms, data = mf)
+      obj$model.matrix <- model.matrix(obj$pterms, data = mf)
     obj$binning <- binning
     no.mgcv <- NULL
     if(length(obj$sterms)) {
@@ -476,7 +476,8 @@ bamlss.terms <- function(x, data, knots = NULL,
           stl <- c(stl, smooth[[j]]$label)
         names(smooth) <- stl
       }
-      obj$sterms <- smooth
+      if(smooth.construct)
+        obj$smooth.construct <- smooth
     }
 
     obj
@@ -3401,27 +3402,87 @@ print.bamlss.formula <- function(x, ...) {
 
 
 ## Extract formula terms.
-terms.bamlss <- function(x, ...) {
-  terms.bamlss.formula(formula(x, ...))
-}
-
-terms.bamlss.formula <- function(x)
+terms.bamlss <- terms.bamlss.frame <- terms.bamlss.formula <- function(x, model = NULL, pterms = TRUE, sterms = TRUE, drop = TRUE, ...)
 {
-  if(!inherits(x, "list")) {
-    tx <- terms(x)
-  } else {
-    tx <- list()
-    for(i in seq_along(x)) {
-      if(inherits(x[[i]], "list")) {
-        tx[[i]] <- terms.bamlss.formula(x[[i]])
-        names(tx[[i]]) <- paste("h", 1:length(x[[i]]), sep = "")
-      } else tx[[i]] <- terms(x[[i]])
+  f <- formula(x, ...)
+  specials <- attr(attr(f, "formula0"), "specials")
+  elmts <- c("formula", "fake.formula")
+  if(!any(names(f) %in% elmts)) {
+    if(!is.null(model)) {
+      if(is.character(model)) {
+        if(all(is.na(pmatch(model[1], names(f)))))
+          stop("argument model is specified wrong!")
+      } else {
+        if(max(model[1]) > length(f) || is.na(model[1]) || min(model[1]) < 1) 
+          stop("argument model is specified wrong!")
+      }
+      if(length(model) > 1)
+        model <- model[1:2]
+      if(length(model) < 2) {
+        f <- f[model]
+      } else {
+        f <- f[[model[1]]]
+        if(is.character(model)) {
+          if(all(is.na(pmatch(model[2], names(f)))))
+            stop("argument model is specified wrong!")
+        } else {
+          if(max(model[2]) > length(f) || is.na(model[2]) || min(model[2]) < 1) 
+            stop("argument model is specified wrong!")
+        }
+        f <- f[model[2]]
+      }
     }
-    names(tx) <- names(x)
-    if(length(tx) < 2)
-      tx <- tx[[1]]
+  } else f <- list(f)
+
+  get_terms <- function(x) {
+    tx <- terms(x, specials = specials, keep.order = TRUE)
+    sid <- unlist(attr(tx, "specials"))
+    tl <- attr(tx, "term.labels")
+    if(!is.null(sid)) {
+      st <- tl[sid - 1L]
+      pt <- tl[-1 * (sid - 1L)]
+    } else {
+      st <- character(0)
+      pt <- tl
+    }
+    if(!sterms & length(st)) {
+      st <- paste("-", st, collapse = "")
+      st <- as.formula(paste(". ~ .", st))
+      tx <- terms(update(tx, st), specials = specials, keep.order = TRUE)
+    }
+    if(!pterms & length(pt)) {
+      tl <- attr(tx, "term.labels")
+      sid <- unlist(attr(tx, "specials"))
+      if(!is.null(sid)) {
+        st <- tl[sid - 1L]
+        pt <- tl[-1 * (sid - 1L)]
+      } else {
+        st <- character(0)
+        pt <- tl
+      }
+      pt <- paste("-", pt, collapse = "")
+      pt <- as.formula(paste(". ~ .", pt))
+      tx <- terms(update(tx, pt), specials = specials, keep.order = TRUE)
+    }
+    tx
   }
-  tx
+
+  rval <- list()
+  for(i in seq_along(f)) {
+    if(!any(names(f[[i]]) %in% elmts)) {
+      rval[[i]] <- list()
+      for(j in seq_along(f[[i]]))
+        rval[[i]][[j]] <- get_terms(f[[i]][[j]]$formula)
+      names(rval[[i]]) <- names(f[[i]])
+    } else {
+      rval[[i]] <- get_terms(f[[i]]$formula)
+    }
+  }
+  names(rval) <- names(f)
+
+  if(drop & (length(rval) < 2))
+    rval <- rval[[1]]
+  rval
 }
 
 
@@ -3434,15 +3495,27 @@ model.terms <- function(x, model = NULL)
   if(!any(names(x) %in% elmts)) {
     if(!is.null(model)) {
       if(is.character(model)) {
-        if(all(is.na(pmatch(model, names(x)))))
+        if(all(is.na(pmatch(model[1], names(x)))))
           stop("argument model is specified wrong!")
       } else {
-        if(max(model) > length(x) || is.na(model) || min(model) < 1) 
+        if(max(model[1]) > length(x) || is.na(model[1]) || min(model[1]) < 1) 
           stop("argument model is specified wrong!")
       }
-      x <- if(length(model) == 2 & any(paste("h", 1:100, sep = "") %in% model)) {
-        x[[model[1]]][model[2]]
-      } else x[model]
+      if(length(model) > 1)
+        model <- model[1:2]
+      if(length(model) < 2) {
+        x <- x[model]
+      } else {
+        x <- x[[model[1]]]
+        if(is.character(model)) {
+          if(all(is.na(pmatch(model[2], names(x)))))
+            stop("argument model is specified wrong!")
+        } else {
+          if(max(model[2]) > length(x) || is.na(model[2]) || min(model[2]) < 1) 
+            stop("argument model is specified wrong!")
+        }
+        x <- x[model[2]]
+      }
     }
   } else x <- list(x)
   return(x)
@@ -3454,7 +3527,7 @@ results <- function(x, ...) {
   UseMethod("results")
 }
 
-## Process samples/'bamlss.frame' results
+## Process results with samples and bamlss.frame.
 results.bamlss.frame <- function(x, samples, model.frame = TRUE, grid = 100, ...)
 {
   if(!inherits(x, "bamlss.frame"))
@@ -4014,7 +4087,7 @@ model.frame.bamlss <- model.frame.bamlss.frame <- function(formula, ...)
 
 
 ## Model matrix extractor.
-model.matrix.bamlss.frame <- function(object, model = NULL, ...)
+model.matrix.bamlss.frame <- function(object, model = NULL, drop = TRUE, ...)
 {
   object <- model.terms(object, model)
   elmts <- c("formula", "fake.formula")
@@ -4031,8 +4104,75 @@ model.matrix.bamlss.frame <- function(object, model = NULL, ...)
       } else object[[j]]$X
     }
   }
+  if(drop & (length(object) < 2))
+    object <- object[[1]]
   return(object)
 }
+
+
+## Extract smooth constructs.
+smooth.construct <- function(object, data, knots, ...)
+{
+  UseMethod("smooth.construct")
+}
+
+smooth.construct.bamlss.frame <- function(object, model = NULL, drop = TRUE, ...)
+{
+  elmts <- c("formula", "fake.formula")
+
+  has_X <- function(object) {
+    check <- FALSE
+    if(!is.null(object$X))
+      check <- TRUE
+    if(!is.null(object$Xf))
+      check <- TRUE
+    if(!is.null(object$rand))
+      check <- TRUE
+    check
+  }
+
+  for(i in seq_along(object$terms)) {
+    dx <- NULL
+    if(!all(elmts %in% names(object$terms[[i]]))) {
+      for(j in seq_along(object$terms[[i]])) {
+        for(k in seq_along(object$terms[[i]][[j]]$sterms)) {
+          dx <- c(dx, has_X(object$terms[[i]][[j]]$sterms[[k]]))
+        }
+      }
+    } else {
+      for(j in seq_along(object$terms[[i]]$sterms)) {
+        dx <- c(dx, has_X(object$terms[[i]]$sterms[[j]]))
+      }
+    }
+    if(!all(dx)) {
+      object[[i]] <- bamlss.terms(object[[i]], data = model.frame(object),
+        model.matrix = FALSE, smooth.construct = TRUE, ...)
+    }
+  }
+
+  object <- model.terms(object, model)
+  for(i in seq_along(object)) {
+    if(!all(elmts %in% names(object[[i]]))) {
+      for(j in seq_along(object[[i]])) {
+        object[[i]][[j]] <- object[[i]][[j]]$sterms
+      }
+    } else {
+      object[[i]] <- object[[i]]$sterms
+    }
+  }
+
+  if(drop & (length(object) < 2))
+    object <- object[[1]]
+  return(object)
+}
+
+
+## Extract/initiallize parameters.
+parameters <- function(object, model = NULL, term = NULL)
+{
+  a <- 1
+}
+
 
 
 ## New model.part() for bamlss.frame.
