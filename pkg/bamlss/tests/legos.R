@@ -17,10 +17,19 @@ bamlss.formula(f, family = gamma.bamlss())
 bamlss.formula(num ~ x1, family = zinb.bamlss())
 bamlss.formula(f, family = zinb.bamlss())
 
+## Terms object from bamlss.formula().
+terms(bamlss.formula(f))
+terms.bamlss(f)
+terms(bamlss.formula(f), model = c(1, 1), sterms = FALSE)
+terms(bamlss.formula(f), model = c(1, 1), sterms = FALSE, pterms = FALSE)
+
 
 ## (2) Get the bamlss frame.
 bf <- bamlss.frame(f, data = GAMart, family = "gaussian")
 names(bf)
+print(bf)
+head(model.frame(bf))
+bf$model.frame <- NULL
 head(model.frame(bf))
 model.response(model.frame(bf))
 response.name(bf)
@@ -28,6 +37,17 @@ response.name(model.frame(bf))
 
 ## (3) model.matrix() and smooth.construct()
 model.matrix(bf)
+head(model.matrix(bf, model = c(1, 1)))
+smooth.construct(bf)
+bf$model.frame <- NULL
+head(model.matrix(bf, model = c(1, 1)))
+str(smooth.construct(bf))
+str(smooth.construct(bf, model = c(1, 1)))
+
+bf <- bamlss.frame(f, data = GAMart, family = "gaussian",
+  model.matrix = FALSE, smooth.construct = FALSE)
+model.matrix(bf)
+head(model.matrix(bf, model = c(1, 1)))
 smooth.construct(bf)
 
 ## (4) Complex multilevel structures.
@@ -37,17 +57,17 @@ f <- list(
 )
 
 bf <- bamlss.frame(f, data = GAMart, family = "multinomial")
-names(bf$terms)
-names(bf$terms$low)
+print(bf)
 head(model.response(model.frame(bf)))
 
 terms(bf)
 terms(formula(bf))
 terms(bf, model = c(2, 1))
+terms(bf, model = c(2, 1), sterms = FALSE)
+terms(bf, model = c(2, 1), pterms = FALSE)
 
-## Note that bamlss.frame() may handle special user defined smooths
-## in addition to mgcv user defined smooths, one just needs to add a specials = TRUE
-## within an smooth.construct() call. This is usefull to e.g. estimate NURBS with JAGS.
+## Extract or initiallize parameters.
+p <- parameters(bf)
 
 ## (5) Run backfitting optimizer on bamlss.frame.
 data("marital.nz", package = "VGAM")

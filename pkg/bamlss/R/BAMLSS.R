@@ -254,7 +254,7 @@ bamlss <- function(formula, family = gaussian, data = NULL, knots = NULL,
 bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
-  model.matrix = TRUE, smooth.construct = TRUE, binning = FALSE, ...)
+  model.matrix = TRUE, smooth.construct = TRUE, ...)
 {
   ## Search for additional formulas.
   formula2 <- NULL; formula3 <- list(); k <- 1
@@ -335,9 +335,9 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss,
   ## Add more functions to family object.
   bf$family <- complete.bamlss.family(family)
 
-  ## Assign all design matrices and the hierarchical level, if any.
-  bf$terms <- bamlss.terms(formula, bf$model.frame, knots,
-    model.matrix, smooth.construct, binning)
+  ## Assign design matrices.
+  bf$terms <- design.construct(bf$formula, data = bf$model.frame, knots = knots,
+    model.matrix = model.matrix, smooth.construct = smooth.construct, model = NULL, ...)
 
   ## Assign class and return.
   class(bf) <- c("bamlss.frame", "list")
@@ -360,144 +360,217 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss,
 }
 
 
-## Assign all designs matrices.
-bamlss.terms <- function(x, data, knots = NULL,
-  model.matrix = TRUE, smooth.construct = TRUE, binning = FALSE,
-  before = TRUE, gam.side = TRUE)
+print.bamlss.frame <- function(x, ...)
 {
-  if(!binning)
-    binning <- NULL
-
-  assign.design <- function(obj, mf) {
-    if(!all(c("formula", "fake.formula", "response") %in% names(obj)))
-      return(obj)
-    if(model.matrix)
-      obj$model.matrix <- model.matrix(obj$pterms, data = mf)
-    obj$binning <- binning
-    no.mgcv <- NULL
-    if(length(obj$sterms)) {
-      smooth <- list()
-      for(tsm in obj$sterms) {
-        if(is.null(tsm$xt))
-          tsm$xt <- list()
-        if(is.null(tsm$xt$xbin))
-          tsm$xt$xbin <- binning
-        if(!is.null(tsm$xt$xbin)) {
-          if(!is.logical(tsm$xt$xbin)) {
-            for(tsmt in tsm$term) {
-              if(!is.factor(mf[[tsmt]]))
-                mf[[tsmt]] <- round(mf[[tsmt]], digits = tsm$xt$xbin)
+  cat("\n'bamlss.frame' structure:", "\n")  
+  nx <- c("call", "model.frame", "formula", "family", "terms")
+  for(i in nx) {
+    if(!is.null(x[[i]])) {
+      cat("  ..$", i, "\n")
+      if(i == "terms") {
+        for(j in names(x[[i]])) {
+          cat("  .. ..$", j, "\n")
+          if(!all(c("formula", "fake.formula") %in% names(x[[i]][[j]]))) {
+            for(k in names(x[[i]][[j]])) {
+              cat("  .. .. ..$", k, "\n")
+              for(d in names(x[[i]][[j]][[k]])) {
+               cat("  .. .. .. ..$", d, "\n")
+              }
             }
+          } else {
+            for(k in names(x[[i]][[j]]))
+              cat("  .. .. ..$", k, "\n")
           }
         }
       }
-      for(tsm in obj$sterms) {
-        if(is.null(tsm$special)) {
+    }
+  }
+  cat("\n")
+  invisible(NULL)
+}
+
+
+## Assign all designs matrices.
+design.construct <- function(formula, data = NULL, knots = NULL,
+  model.matrix = TRUE, smooth.construct = TRUE, binning = FALSE,
+  before = TRUE, gam.side = TRUE, model = NULL, drop = FALSE)
+{
+  if(!model.matrix & !smooth.construct)
+    return(NULL)
+
+  if(inherits(formula, "bamlss.frame")) {
+    data <- model.frame(formula)
+    formula <- formula(formula)
+  }
+  if(!inherits(formula, "bamlss.formula"))
+    stop("formula must be a 'bamlss.formula'")
+  if(is.null(data))
+    stop("data needs to be supplied!")
+  if(!inherits(data, "data.frame"))
+    data <- as.data.frame(data)
+
+  if(!is.null(model))
+    formula <- model.terms(formula, model)
+
+  if(!binning)
+    binning <- NULL
+
+  assign.design <- function(obj, dups = NULL)
+  {
+    if(!is.null(dups)) {
+      if(any(dups)) {
+        obj$match.index <- match.index(data[, all.vars(obj$fake.formula), drop = FALSE])
+        data <- subset(data, !dups)
+      }
+    }
+    obj$binning <- binning
+    if(!all(c("formula", "fake.formula") %in% names(obj)))
+      return(obj)
+    if(model.matrix) {
+      obj$model.matrix <- model.matrix(drop.terms.bamlss(obj$terms,
+        sterms = FALSE, keep.response = FALSE), data = data)
+    }
+    if(smooth.construct) {
+      tx <- drop.terms.bamlss(obj$terms,
+        pterms = FALSE, keep.response = FALSE)
+      sid <- unlist(attr(tx, "specials"))
+      if(!length(sid))
+        sid <- NULL
+      if(!is.null(sid)) {
+        sterms <- attr(tx, "term.labels")[sid]
+        sterms <- lapply(sterms, function(x) { eval(parse(text = x)) })
+        nst <- NULL
+        for(j in seq_along(sterms)) {
+          sl <- sterms[[j]]$label
+          if(is.null(sl))
+            sl <- paste("sterm", j, sep = ".")
+          nst <- c(nst, sl)
+        }
+        names(sterms) <- nst
+        for(tsm in sterms) {
           if(is.null(tsm$xt))
             tsm$xt <- list()
           if(is.null(tsm$xt$xbin))
             tsm$xt$xbin <- binning
-          acons <- TRUE
-          if(!is.null(tsm$xt$center))
-            acons <- tsm$xt$center
-          tsm$xt$center <- acons
-          tsm$xbin.before <- before
           if(!is.null(tsm$xt$xbin)) {
-            term.names <- c(tsm$term, if(tsm$by != "NA") tsm$by else NULL)
-            ind <- lapply(mf[, term.names, drop = FALSE], function(x) {
-              if(!is.character(x) & !is.factor(x)) {
-                if(!is.logical(tsm$xt$xbin))
-                  rval <- format(x, digits = tsm$xt$xbin, nsmall = tsm$xt$xbin)
-                else rval <- sprintf("%.48f", x)
-              } else rval <- x
-              rval
-            })
-            ind <- as.vector(apply(do.call("cbind", ind), 1, paste, collapse = ",", sep = ""))
-            uind <- unique(ind)
-            tsm$xbin.take <- !duplicated(ind)
-            tsm$xbin.ind <- rep(NA, nrow(mf))
-            xbin.uind <- seq_along(uind)
-            for(ii in xbin.uind)
-              tsm$xbin.ind[ind == uind[ii]] <- ii
-            tsm$xbin.order <- order(tsm$xbin.ind)
-            tsm$xbin.k <- length(xbin.uind)
-            tsm$xbin.sind <- tsm$xbin.ind[tsm$xbin.order]
-            if(smooth.construct) {
-              smt <- smoothCon(tsm, if(before) mf[tsm$xbin.take, term.names, drop = FALSE] else mf,
+            if(!is.logical(tsm$xt$xbin)) {
+              for(tsmt in tsm$term) {
+                if(!is.factor(data[[tsmt]]))
+                  data[[tsmt]] <- round(data[[tsmt]], digits = tsm$xt$xbin)
+              }
+            }
+          }
+        }
+        no.mgcv <- NULL
+        smooth <- list()
+        for(tsm in sterms) {
+          if(is.null(tsm$special)) {
+            if(is.null(tsm$xt))
+              tsm$xt <- list()
+            if(is.null(tsm$xt$xbin))
+              tsm$xt$xbin <- binning
+            acons <- TRUE
+            if(!is.null(tsm$xt$center))
+              acons <- tsm$xt$center
+            tsm$xt$center <- acons
+            tsm$xbin.before <- before
+            if(!is.null(tsm$xt$xbin)) {
+              term.names <- c(tsm$term, if(tsm$by != "NA") tsm$by else NULL)
+              tsm$match.index <- match.index(data[, term.names, drop = FALSE])
+              tsm$nodups <- which(!duplicated(data[, term.names, drop = FALSE]))
+## FIXME: binning!
+              ind <- lapply(data[, term.names, drop = FALSE], function(x) {
+                if(!is.character(x) & !is.factor(x)) {
+                  if(!is.logical(tsm$xt$xbin))
+                    rval <- format(x, digits = tsm$xt$xbin, nsmall = tsm$xt$xbin)
+                  else rval <- sprintf("%.48f", x)
+                } else rval <- x
+                rval
+              })
+              ind <- as.vector(apply(do.call("cbind", ind), 1, paste, collapse = ",", sep = ""))
+              uind <- unique(ind)
+              tsm$xbin.take <- !duplicated(ind)
+              tsm$xbin.ind <- rep(NA, nrow(data))
+              xbin.uind <- seq_along(uind)
+              for(ii in xbin.uind)
+                tsm$xbin.ind[ind == uind[ii]] <- ii
+              tsm$xbin.order <- order(tsm$xbin.ind)
+              tsm$xbin.k <- length(xbin.uind)
+              tsm$xbin.sind <- tsm$xbin.ind[tsm$xbin.order]
+              smt <- smoothCon(tsm, if(before) data[tsm$xbin.take, term.names, drop = FALSE] else data,
                 knots, absorb.cons = acons)
             } else {
-              smt <- list(tsm)
+              smt <- smoothCon(tsm, data, knots, absorb.cons = acons)
             }
           } else {
-            if(smooth.construct) {
-              smt <- smoothCon(tsm, mf, knots, absorb.cons = acons)
+            smt <- smooth.construct(tsm, data, knots)
+            if(inherits(smt, "no.mgcv")) {
+              no.mgcv <- c(no.mgcv, list(smt))
+              next
             } else {
-              smt <- list(tsm)
+              class(smt) <- c(class(smt), "mgcv.smooth")
+              smt <- list(smt)
             }
           }
-        } else {
-          if(smooth.construct) {
-            smt <- smooth.construct(tsm, mf, knots)
-          } else {
-            smt <- tsm
+          smooth <- c(smooth, smt)
+        }
+        if(length(smooth) > 0) {
+          if(gam.side) {
+            if(is.null(obj$model.matrix)) {
+              Xp <- model.matrix(drop.terms.bamlss(obj$terms,
+                sterms = FALSE, keep.response = FALSE), data = data)
+              smooth <- try(gam.side(smooth, Xp, tol = .Machine$double.eps^.5), silent = TRUE)
+            } else {
+              smooth <- try(gam.side(smooth, obj$model.matrix, tol = .Machine$double.eps^.5), silent = TRUE)
+            }
+            if(inherits(smooth, "try-error"))
+              stop("gam.side() produces an error when binning, try to set before = FALSE!")
           }
-          if(inherits(smt, "no.mgcv")) {
-            no.mgcv <- c(no.mgcv, list(smt))
-            next
+          sme <- NULL
+          if(smooth.construct)
+            sme <- mgcv:::expand.t2.smooths(smooth)
+          if(is.null(sme)) {
+            original.smooth <- NULL
           } else {
-            class(smt) <- c(class(smt), "mgcv.smooth")
-            smt <- list(smt)
+            original.smooth <- smooth
+            smooth <- sme
+            rm(sme)
           }
-        }
-        smooth <- c(smooth, smt)
-      }
-      if(length(smooth) > 0) {
-        if(gam.side & smooth.construct) {
-          smooth <- try(mgcv:::gam.side(smooth, obj$X, tol = .Machine$double.eps^.5), silent = TRUE)
-          if(inherits(smooth, "try-error"))
-            stop("gam.side() produces an error when binning, try to set before = FALSE!?")
-        }
-        sme <- NULL
-        if(smooth.construct)
-          sme <- mgcv:::expand.t2.smooths(smooth)
-        if(is.null(sme)) {
-          original.smooth <- NULL
-        } else {
-          original.smooth <- smooth
-          smooth <- sme
-          rm(sme)
+          if(!is.null(no.mgcv))
+            smooth <- c(smooth, no.mgcv)
+          if(length(smooth)) {
+            stl <- NULL
+            for(j in seq_along(smooth))
+              stl <- c(stl, smooth[[j]]$label)
+            names(smooth) <- stl
+          }
+          obj$smooth.construct <- smooth
         }
       }
-      if(!is.null(no.mgcv))
-        smooth <- c(smooth, no.mgcv)
-      if(length(smooth)) {
-        stl <- NULL
-        for(j in seq_along(smooth))
-          stl <- c(stl, smooth[[j]]$label)
-        names(smooth) <- stl
-      }
-      if(smooth.construct)
-        obj$smooth.construct <- smooth
     }
+    if(drop)
+      obj <- obj[c("model.matrix", "smooth.construct")[c(model.matrix, smooth.construct)]]
 
     obj
   }
 
-  if(!all(c("formula", "fake.formula", "response") %in% names(x))) {
-    for(j in seq_along(x)) {
-      if(!all(c("formula", "fake.formula", "response") %in% names(x[[j]]))) {
-        for(i in seq_along(x[[j]])) {
-          x[[j]][[i]] <- assign.design(x[[j]][[i]],
-            if(i > 1) unique(data[, all.vars(x[[j]][[i]]$fake.formula), drop = FALSE]) else data)
+  if(!all(c("formula", "fake.formula") %in% names(formula))) {
+    for(j in seq_along(formula)) {
+      if(!all(c("formula", "fake.formula") %in% names(formula[[j]]))) {
+        for(i in seq_along(formula[[j]])) {
+          formula[[j]][[i]] <- assign.design(formula[[j]][[i]],
+            if(i > 1) duplicated(data[, all.vars(formula[[j]][[i]]$fake.formula), drop = FALSE]) else NULL)
         }
-      } else x[[j]] <- assign.design(x[[j]], data)
+      } else formula[[j]] <- assign.design(formula[[j]])
     }
-  } else x <- assign.design(x, data)
+  } else formula <- assign.design(formula)
 
-  attr(x, "formula0") <- attr(x, ".Environment") <- NULL
-  class(x) <- "list"
-
-  x
+  attr(formula, "specials") <- NULL
+  attr(formula, ".Environment") <- NULL
+  class(formula) <- "list"
+  if(drop & (length(formula) < 2))
+    formula <- formula[[1]]
+  return(formula)
 }
 
 
@@ -749,7 +822,6 @@ bamlss.formula <- function(formula, specials = NULL, family = gaussian.bamlss())
         formula[[j]] <- as.formula(paste(j, "1", sep = " ~ "))
         environment(formula[[j]]) <- env
       }
-      attr(formula[[j]], "name") <- j
     }
     for(j in seq_along(formula)) {
       if(!inherits(formula[[j]], "formula")) {
@@ -761,19 +833,12 @@ bamlss.formula <- function(formula, specials = NULL, family = gaussian.bamlss())
   }
   formula <- formula_and(formula, env)
   formula <- formula_at(formula, env)
-  formula <- formula0 <- complete_formula(formula_hierarchical(formula))
+  formula <- complete_formula(formula_hierarchical(formula))
   formula <- formula_extend(formula, specials, family)
 
-  environment(formula) <- environment(formula0) <- env
-  class(formula) <- class(formula0) <- c("bamlss.formula", "list")
-  for(j in seq_along(formula0)) {
-    if(!inherits(formula0[[j]], "formula")) {
-      if(is.null(names(formula0[[j]])))
-        names(formula0[[j]]) <- paste("h", 1:length(formula0[[j]]), sep = "")
-    }
-  }
-  attr(formula0, "specials") <- specials
-  attr(formula, "formula0") <- formula0
+  environment(formula) <- env
+  class(formula) <- c("bamlss.formula", "list")
+  attr(formula, "specials") <- specials
 
   formula
 }
@@ -782,8 +847,7 @@ bamlss.formula <- function(formula, specials = NULL, family = gaussian.bamlss())
 ## Process categorical responses.
 bamlss.formula.cat <- function(formula, data, reference)
 {
-  f0 <- attr(formula, "formula0")
-  specials <- attr(f0, "specials")
+  specials <- attr(formula, "specials")
 
   rn <- y <- NULL
   for(j in seq_along(formula)) {
@@ -867,7 +931,6 @@ bamlss.formula.cat <- function(formula, data, reference)
   }
 
   rval <- if(!is.null(y)) {
-    attr(formula, "formula0") <- f0
     class(formula) <- "bamlss.formula"
     list("formula" = formula, "reference" = reference)
   } else NULL
@@ -880,7 +943,7 @@ make_fFormula <- function(formula)
 {
   fF <- NULL
   for(j in seq_along(formula)) {
-    if(!all(c("formula", "intercept", "fake.formula") %in% names(formula[[j]]))) {
+    if(!all(c("formula", "fake.formula") %in% names(formula[[j]]))) {
       for(i in seq_along(formula[[j]]))
         fF <- c(fF, formula[[j]][[i]]$fake.formula)
     } else {
@@ -903,57 +966,20 @@ formula_extend <- function(formula, specials = NULL, family)
   } else {
     specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", specials))
     mt <- terms(formula, specials = specials, keep.order = TRUE)
-    sid <- unlist(attr(mt, "specials"))
-    tl <- attr(mt, "term.labels")
-    if(!is.null(sid)) {
-      sterms <- tl[sid - 1L]
-      pterms <- tl[-1 * (sid - 1L)]
-    } else {
-      sterms <- character(0)
-      pterms <- tl
-    }
-    intercept <- attr(mt, "intercept") > 0
-
-    sm <- if(length(sterms)) {
-      lapply(sterms, function(x) { eval(parse(text = x)) })
-    } else NULL
-    if(!is.null(sm)) {
-      sterms <- sapply(sm, function(x) {
-        stl <- x$term
-        if(x$by != "NA") {
-          stl <- if(grepl("~", x$by, fixed = TRUE)) {
-            x$by <- as.formula(x$by, env = environment(formula))
-            c(stl, attr(terms(x$by, keep.order = TRUE), "term.labels"))
-          } else c(stl, as.character(x$by))
-        }
-        stl
-      })
-      sterms <- unique(sterms)
-    }
-    if(length(pterms))
-      pterms <- unique(pterms)
+    vars <- all.vars(formula)
     response <- response.name(formula)
-    if(is.na(response) | response %in% family$names) response <- NULL
-    av <- unique(unlist(c(pterms, sterms)))
-    fake.formula <- as.formula(paste(response, "~1", if(length(av)) "+" else NULL,
-      paste(av, collapse = "+")), env = environment(formula))
-    ffp <- as.formula(paste(response, "~", if(intercept) "1" else "-1", if(length(pterms)) " + " else NULL,
-      paste(pterms, collapse = " + ")), env = environment(formula))
-    pterms <- terms(ffp)
-    if(!is.null(sm)) {
-      nsm <- NULL
-      for(i in seq_along(sm)) {
-        sl <- sm[[i]]$label
-        if(is.null(sl))
-          sl <- paste("smooth", i, sep = "")
-        nsm <- c(nsm, sl)
+    if(is.na(response))
+      response <- NULL
+    if(!is.null(response)) {
+      if(response %in% family$names) {
+        response <- NULL
+        vars <- vars[-1]
       }
-      names(sm) <- nsm
     }
-
+    fake.formula <- as.formula(paste(response, "~1", if(length(vars)) "+" else NULL,
+      paste(vars, collapse = "+")), env = environment(formula))
     return(list("formula" = formula, "fake.formula" = fake.formula,
-      "response" = response, "pterms" = pterms, "sterms" = sm,
-      "intercept" = intercept))
+      "terms" = mt, "response" = response))
   }
 }
 
@@ -962,7 +988,7 @@ response.name <- function(formula)
 {
   rn <- NA
   if(inherits(formula, "bamlss.frame"))
-    formula <- attr(formula$model.frame, "terms")
+    formula <- terms(model.frame(formula))
   if(!is.null(attr(formula, "terms")))
     formula <- attr(formula, "terms")
   if(inherits(formula, "formula")) {
@@ -980,6 +1006,8 @@ response.name <- function(formula)
       }
     }
   }
+  if(!length(rn))
+    rn <- NA
   rn
 }
 
@@ -3413,14 +3441,65 @@ print.bamlss.formula <- function(x, ...) {
 
 
 ## Extract formula terms.
+drop.terms.bamlss <- function(f, pterms = TRUE, sterms = TRUE, specials = NULL, keep.response = TRUE)
+{
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti"))
+  if(!inherits(f, "formula")) {
+    if(!is.null(f$terms)) {
+      f <- f$terms
+    } else {
+      if(!is.null(f$formula))
+        f <- f$formula
+    }
+  }
+  tx <- if(!inherits(f, "terms")) {
+    terms.formula(f, specials = specials, keep.order = TRUE)
+  } else f
+  specials <- unique(c(names(attr(tx, "specials")), specials))
+  sid <- unlist(attr(tx, "specials"))
+  tl <- attr(tx, "term.labels")
+  if(!is.null(sid)) {
+    st <- tl[sid - 1L]
+    pt <- tl[-1 * (sid - 1L)]
+  } else {
+    st <- character(0)
+    pt <- tl
+  }
+  if(!sterms & length(st)) {
+    st <- paste("-", st, collapse = "")
+    st <- as.formula(paste(". ~ .", st))
+    tx <- terms.formula(update(tx, st), specials = specials, keep.order = TRUE)
+  }
+  if(!pterms & length(pt)) {
+    tl <- attr(tx, "term.labels")
+    sid <- unlist(attr(tx, "specials"))
+    if(!is.null(sid)) {
+      st <- tl[sid - 1L]
+      pt <- tl[-1 * (sid - 1L)]
+    } else {
+      st <- character(0)
+      pt <- tl
+    }
+    pt <- paste("-", pt, collapse = "")
+    pt <- as.formula(paste(". ~ .", pt))
+    tx <- terms.formula(update(tx, pt), specials = specials, keep.order = TRUE)
+  }
+  class(tx) <- c("formula", "terms")
+  environment(tx) <- environment(f)
+  if(!keep.response)
+    tx <- delete.response(tx)
+  tx
+}
+
 terms.bamlss <- terms.bamlss.frame <- terms.bamlss.formula <- function(x,
   model = NULL, pterms = TRUE, sterms = TRUE, drop = TRUE, ...)
 {
   if(inherits(x, "bamlss.frame"))
     x <- formula(x, ...)
-  specials <- attr(attr(x, "formula0"), "specials")
+  env <- environment(x)
+  specials <- attr(x, "specials")
   elmts <- c("formula", "fake.formula")
-  if(!any(names(x) %in% elmts)) {
+  if(!any(names(x) %in% elmts) & !inherits(x, "formula")) {
     if(!is.null(model)) {
       if(is.character(model)) {
         if(all(is.na(pmatch(model[1], names(x)))))
@@ -3447,95 +3526,70 @@ terms.bamlss <- terms.bamlss.frame <- terms.bamlss.formula <- function(x,
     }
   } else x <- list(x)
 
-  get_terms <- function(f) {
-    if(!inherits(f, "formula")) {
-      if(!is.null(f$formula))
-        f <- f$formula
-      else
-        return(NULL)
-    }
-    tx <- terms.formula(f, specials = specials, keep.order = TRUE)
-    sid <- unlist(attr(tx, "specials"))
-    tl <- attr(tx, "term.labels")
-    if(!is.null(sid)) {
-      st <- tl[sid - 1L]
-      pt <- tl[-1 * (sid - 1L)]
-    } else {
-      st <- character(0)
-      pt <- tl
-    }
-    if(!sterms & length(st)) {
-      st <- paste("-", st, collapse = "")
-      st <- as.formula(paste(". ~ .", st))
-      tx <- terms.formula(update(tx, st), specials = specials, keep.order = TRUE)
-    }
-    if(!pterms & length(pt)) {
-      tl <- attr(tx, "term.labels")
-      sid <- unlist(attr(tx, "specials"))
-      if(!is.null(sid)) {
-        st <- tl[sid - 1L]
-        pt <- tl[-1 * (sid - 1L)]
-      } else {
-        st <- character(0)
-        pt <- tl
-      }
-      pt <- paste("-", pt, collapse = "")
-      pt <- as.formula(paste(". ~ .", pt))
-      tx <- terms.formula(update(tx, pt), specials = specials, keep.order = TRUE)
-    }
-    tx
-  }
-
   rval <- list()
-  nx <- names(x)
+  if(is.null(nx <- names(x))) {
+    nx <- paste("formula", 1:length(x), sep = ".")
+    names(x) <- nx
+  }
   for(i in seq_along(nx)) {
-    if(!any(names(x[[nx[i]]]) %in% elmts)) {
+    if(!any(names(x[[nx[i]]]) %in% elmts) & !inherits(x[[nx[i]]], "formula")) {
       rval[[nx[i]]] <- list()
       nx2 <- names(x[[nx[i]]])
       for(j in seq_along(nx2)) {
-        rval[[nx[i]]][[nx2[j]]] <- get_terms(x[[nx[i]]][[nx2[j]]])
+        rval[[nx[i]]][[nx2[j]]] <- drop.terms.bamlss(x[[nx[i]]][[nx2[j]]], pterms, sterms, specials)
       }
     } else {
-      rval[[nx[i]]] <- get_terms(x[[nx[i]]])
+      rval[[nx[i]]] <- drop.terms.bamlss(x[[nx[i]]], pterms, sterms, specials)
     }
   }
 
-  if(drop & (length(rval) < 2))
+  if(drop & (length(rval) < 2)) {
     rval <- rval[[1]]
+    class(rval) <- c("bamlss.terms", "terms", "list")
+  } else {
+    class(rval) <- c("bamlss.terms", "list")
+  }
+
   rval
 }
 
 
-## Model terms extractor function.
-model.terms <- function(x, model = NULL)
+## Model terms extractor function for formulas and 'bamlss.frame'.
+model.terms <- function(x, model = NULL, part = c("terms", "formula"))
 {
-  if(inherits(x, "bamlss.frame") | ("terms" %in% names(x)))
-    x <- x$terms
+  if(!inherits(x, "bamlss.formula")) {
+    if(inherits(x, "bamlss.frame")) {
+      part <- match.arg(part)
+      if(is.null(x[[part]]))
+        stop(paste("cannot find object", part, "in 'bamlss.frame' object!"))
+      x <- x[[part]]
+    } else stop(paste("cannot extract parts from object of class '", class(x), "'!", sep = ""))
+  }
+  if(is.null(model))
+    return(x)
   elmts <- c("formula", "fake.formula")
   if(!any(names(x) %in% elmts)) {
-    if(!is.null(model)) {
+    if(is.character(model)) {
+      if(all(is.na(pmatch(model[1], names(x)))))
+        stop("argument model is specified wrong!")
+    } else {
+      if(max(model[1]) > length(x) || is.na(model[1]) || min(model[1]) < 1) 
+        stop("argument model is specified wrong!")
+    }
+    if(length(model) > 1)
+      model <- model[1:2]
+    if(length(model) < 2) {
+      x <- x[model]
+    } else {
+      x <- x[[model[1]]]
       if(is.character(model)) {
-        if(all(is.na(pmatch(model[1], names(x)))))
+        if(all(is.na(pmatch(model[2], names(x)))))
           stop("argument model is specified wrong!")
       } else {
-        if(max(model[1]) > length(x) || is.na(model[1]) || min(model[1]) < 1) 
+        if(max(model[2]) > length(x) || is.na(model[2]) || min(model[2]) < 1) 
           stop("argument model is specified wrong!")
       }
-      if(length(model) > 1)
-        model <- model[1:2]
-      if(length(model) < 2) {
-        x <- x[model]
-      } else {
-        x <- x[[model[1]]]
-        if(is.character(model)) {
-          if(all(is.na(pmatch(model[2], names(x)))))
-            stop("argument model is specified wrong!")
-        } else {
-          if(max(model[2]) > length(x) || is.na(model[2]) || min(model[2]) < 1) 
-            stop("argument model is specified wrong!")
-        }
-        x <- x[model[2]]
-      }
+      x <- x[model[2]]
     }
   } else x <- list(x)
   return(x)
@@ -4107,27 +4161,114 @@ model.frame.bamlss <- model.frame.bamlss.frame <- function(formula, ...)
 
 
 ## Model matrix extractor.
-model.matrix.bamlss.frame <- function(object, model = NULL, drop = TRUE, ...)
+model.matrix.bamlss.frame <- function(object, data = NULL, model = NULL, drop = TRUE, ...)
 {
-  mf <- model.frame(object, ...)
-  object <- model.terms(object, model)
-  elmts <- c("formula", "fake.formula")
-  for(j in seq_along(object)) {
-    if(!all(elmts %in% names(object[[j]]))) {
-      for(k in seq_along(object[[j]])) {
-        object[[j]][[k]] <- if(is.null(object[[j]][[k]]$X)) {
-          model.matrix(object[[j]][[k]]$pterms, data = mf)
-        } else object[[j]][[k]]$X
-      }
+  if(!is.null(data)) {
+    object$model.frame <- NULL
+    object$model.frame <- model.frame(object, data = data)
+    object <- design.construct(object, model.matrix = TRUE,
+      smooth.construct = FALSE, model = model, drop = TRUE)
+  } else {
+    if(!all(model.search(object, "model.matrix", model))) {
+      object <- design.construct(object, model.matrix = TRUE,
+        smooth.construct = FALSE, model = model, drop = TRUE)
     } else {
-      object[[j]] <- if(is.null(object[[j]]$X)) {
-        model.matrix(object[[j]]$pterms, data = mf)
-      } else object[[j]]$X
+      object <- model.search(object, "model.matrix", model, extract = TRUE, drop = drop)
     }
   }
   if(drop & (length(object) < 2))
     object <- object[[1]]
   return(object)
+}
+
+
+## Search for parts in models.
+model.search <- function(x, what, model = NULL, part = c("terms", "formula"),
+  extract = FALSE, drop = FALSE)
+{
+  if(!inherits(x, "bamlss.formula") & !inherits(x, "bamlss.frame"))
+    stop("x must be a 'bamlss.formula' or 'bamlss.frame' object!")
+  part <- match.arg(part)
+  if(is.null(x[[part]]))
+    return(FALSE)
+  x <- model.terms(x, model = model, part = part)
+  elmts <- c("formula", "fake.formula")
+  nx <- names(x)
+  rval <- list()
+  for(i in nx) {
+    if(!all(elmts %in% names(x[[i]]))) {
+      rval[[i]] <- list()
+      for(j in names(x[[i]])) {
+        rval[[i]][[j]] <- if(is.null(x[[i]][[j]][[what]])) FALSE else TRUE
+        if(extract & rval[[i]][[j]])
+          rval[[i]][[j]] <- x[[i]][[j]][[what]]
+      }
+    } else {
+      rval[[i]] <- if(is.null(x[[i]][[what]])) FALSE else TRUE
+      if(extract & rval[[i]])
+        rval[[i]] <- x[[i]][[what]]
+    }
+  }
+  if(!extract) {
+    rval <- unlist(rval)
+  } else {
+    if(drop & (length(rval) < 2))
+      rval <- rval[[1]]
+  }
+  rval
+}
+
+model.matrix.bamlss.terms <- function(object, data, model = NULL, drop = TRUE)
+{
+  if(inherits(object, "bamlss.formula"))
+    object <- terms(object)
+  if(!inherits(object, "bamlss.terms"))
+    stop("need a 'bamlss.formula' or 'bamlss.terms' object to compute the model matrices!")
+  for(i in seq_along(object)) {
+    if(!inherits(object[[i]], "terms")) {
+      for(j in seq_along(object[[i]])) {
+        object[[i]][[j]] <- delete.response(drop.terms.bamlss(object[[i]][[j]], pterms = TRUE, sterms = FALSE))
+        object[[i]][[j]] <- model.matrix(object[[i]][[j]], data = data)
+      }
+    } else {
+      object[[i]] <- delete.response(drop.terms.bamlss(object[[i]], pterms = TRUE, sterms = FALSE))
+      object[[i]] <- model.matrix(object[[i]], data = data)
+    }
+  }
+  
+  if(!is.null(model)) {
+    if(is.list(object)) {
+      if(!is.null(model)) {
+        if(is.character(model)) {
+          if(all(is.na(pmatch(model[1], names(object)))))
+            stop("argument model is specified wrong!")
+        } else {
+          if(max(model[1]) > length(object) || is.na(model[1]) || min(model[1]) < 1) 
+            stop("argument model is specified wrong!")
+        }
+        if(length(model) > 1)
+          model <- model[1:2]
+        if(length(model) < 2) {
+          object <- object[model]
+        } else {
+          object <- object[[model[1]]]
+          if(is.character(model)) {
+            if(all(is.na(pmatch(model[2], names(object)))))
+              stop("argument model is specified wrong!")
+          } else {
+            if(max(model[2]) > length(object) || is.na(model[2]) || min(model[2]) < 1) 
+              stop("argument model is specified wrong!")
+          }
+          object <- object[model[2]]
+        }
+      }
+    } else object <- list(object)
+  }
+  class(object) <- "list"
+  if(drop & (length(object) < 2))
+    object <- object[[1]]
+
+  object
 }
 
 
@@ -4139,45 +4280,39 @@ smooth.construct <- function(object, data, knots, ...)
 
 smooth.construct.bamlss.frame <- function(object, model = NULL, drop = TRUE, ...)
 {
-  elmts <- c("formula", "fake.formula")
-
-  for(i in seq_along(object$terms)) {
-    if(!all(elmts %in% names(object$terms[[i]]))) {
-      for(j in seq_along(object$terms[[i]])) {
-        if(is.null(object$terms[[i]][[j]]$smooth.construct)) {
-          object$terms[[i]][[j]] <- bamlss.terms(object$terms[[i]][[j]],
-            data = model.frame(object), model.matrix = FALSE, smooth.construct = TRUE, ...)
-        }
-      }
-    } else {
-      if(is.null(object$terms[[i]]$smooth.construct)) {
-        object$terms[[i]] <- bamlss.terms(object$terms[[i]], data = model.frame(object),
-          model.matrix = FALSE, smooth.construct = TRUE, ...)
-      }
-    }
-  }
-
-  object <- model.terms(object, model)
-  for(i in seq_along(object)) {
-    if(!all(elmts %in% names(object[[i]]))) {
-      for(j in seq_along(object[[i]])) {
-        object[[i]][[j]] <- object[[i]][[j]]$smooth.construct
-      }
-    } else {
-      object[[i]] <- object[[i]]$smooth.construct
-    }
-  }
-
+  object <- design.construct(object, model.matrix = FALSE, smooth.construct = TRUE, model = model)
   if(drop & (length(object) < 2))
     object <- object[[1]]
   return(object)
 }
 
+smooth.construct.bamlss.terms <- function(object, data, model = NULL, drop = TRUE, knots = NULL, ...)
+{
+  if(inherits(object, "bamlss.formula"))
+    object <- terms(object)
+  if(!inherits(object, "bamlss.terms"))
+    stop("need a 'bamlss.formula' or 'bamlss.terms' object to compute the model matrices!")
+  for(i in seq_along(object)) {
+    if(!inherits(object[[i]], "terms")) {
+      for(j in seq_along(object[[i]])) {
+        object[[i]][[j]] <- delete.response(drop.terms.bamlss(object[[i]][[j]], pterms = TRUE, sterms = FALSE))
+        object[[i]][[j]] <- model.matrix(object[[i]][[j]], data = data)
+      }
+    } else {
+      object[[i]] <- delete.response(drop.terms.bamlss(object[[i]], pterms = TRUE, sterms = FALSE))
+      object[[i]] <- model.matrix(object[[i]], data = data)
+    }
+  }
+  object
+}
+
 
 ## Extract/initiallize parameters.
-parameters <- function(object, model = NULL, term = NULL)
+parameters <- function(object, model = NULL, init = NULL)
 {
-  a <- 1
+  if(!inherits(object, "bamlss.frame"))
+    stop("object must be a 'bamlss.frame'!")
+  
 }
 
 
@@ -4187,6 +4322,7 @@ model.part.bamlss.frame <- function(object, model = NULL,
   pterms = TRUE, sterms = TRUE,
   model.matrix = TRUE, smooth.construct = TRUE)
 {
+  mf <- model.frame(object)
   object <- model.terms(object, model)
   elmts <- c("formula", "fake.formula")
   for(j in seq_along(object)) {
@@ -4194,7 +4330,7 @@ model.part.bamlss.frame <- function(object, model = NULL,
       for(k in seq_along(object[[j]])) {
         if(model.matrix) {
           object[[j]][[k]]$X <- if(is.null(object[[j]][[k]]$X)) {
-            model.matrix(object[[j]][[k]]$pterms, data = model.frame(object, ...))
+            model.matrix(object[[j]][[k]]$pterms, data = mf)
           } else object[[j]][[k]]$X
         }
         object[[j]][[k]] <- object[[j]][[k]][c("X", "pterms")[c(model.matrix, pterms)]]
@@ -4202,12 +4338,14 @@ model.part.bamlss.frame <- function(object, model = NULL,
     } else {
       if(model.matrix) {
         object[[j]]$X <- if(is.null(object[[j]]$X)) {
-          model.matrix(object[[j]]$pterms, data = model.frame(object, ...))
+          model.matrix(object[[j]]$pterms, data = mf)
         } else object[[j]]$X
       }
       object[[j]] <- object[[j]][c("X", "pterms")[c(model.matrix, pterms)]]
       if(smooth.construct) {
-        
+        object[[j]]$smooth.construct <- if(is.null(object[[j]]$smooth.construct)) {
+          NULL
+        } else a <- 1
       }
     }
   }
@@ -4587,6 +4725,101 @@ matrix_inv <- function(x)
   rownames(p) <- rn
   colnames(p) <- cn
   return(p)
+}
+
+
+## Compute matching index for duplicates in data.
+match.index <- function(x)
+{
+  if(!is.vector(x)) {
+    if(!inherits(x, "matrix") & !inherits(x, "data.frame"))
+      stop("x must be a matrix or a data.frame!")
+    x <- do.call("paste", c(x, sep = "\r"))
+    ux <- unique(x)
+  } else {
+    ux <- unique(x)
+  }
+  ind <- match(x, ux)
+  ind
+}
+
+
+XinY <-
+    function(x, y, by = intersect(names(x), names(y)), by.x = by, by.y = by,
+             notin = FALSE, incomparables = NULL,
+             ...)
+{
+    fix.by <- function(by, df)
+    {
+        ## fix up 'by' to be a valid set of cols by number: 0 is row.names
+        if(is.null(by)) by <- numeric(0L)
+        by <- as.vector(by)
+        nc <- ncol(df)
+        if(is.character(by))
+            by <- match(by, c("row.names", names(df))) - 1L
+        else if(is.numeric(by)) {
+            if(any(by < 0L) || any(by > nc))
+                stop("'by' must match numbers of columns")
+        } else if(is.logical(by)) {
+            if(length(by) != nc) stop("'by' must match number of columns")
+            by <- seq_along(by)[by]
+        } else stop("'by' must specify column(s) as numbers, names or logical")
+        if(any(is.na(by))) stop("'by' must specify valid column(s)")
+        unique(by)
+    }
+
+    nx <- nrow(x <- as.data.frame(x)); ny <- nrow(y <- as.data.frame(y))
+    by.x <- fix.by(by.x, x)
+    by.y <- fix.by(by.y, y)
+    if((l.b <- length(by.x)) != length(by.y))
+        stop("'by.x' and 'by.y' specify different numbers of columns")
+    if(l.b == 0L) {
+        ## was: stop("no columns to match on")
+        ## returns x
+        return(x)
+    }
+    else {
+        if(any(by.x == 0L)) {
+            x <- cbind(Row.names = I(row.names(x)), x)
+            by.x <- by.x + 1L
+        }
+        if(any(by.y == 0L)) {
+            y <- cbind(Row.names = I(row.names(y)), y)
+            by.y <- by.y + 1L
+        }
+        ## create keys from 'by' columns:
+        if(l.b == 1L) {                  # (be faster)
+            bx <- x[, by.x]; if(is.factor(bx)) bx <- as.character(bx)
+            by <- y[, by.y]; if(is.factor(by)) by <- as.character(by)
+        } else {
+            ## Do these together for consistency in as.character.
+            ## Use same set of names.
+            bx <- x[, by.x, drop=FALSE]; by <- y[, by.y, drop=FALSE]
+            names(bx) <- names(by) <- paste("V", seq_len(ncol(bx)), sep="")
+            bz <- do.call("paste", c(rbind(bx, by), sep = "\r"))
+            bx <- bz[seq_len(nx)]
+            by <- bz[nx + seq_len(ny)]
+        }
+        comm <- match(bx, by, 0L)
+        if (notin) {
+            res <- x[comm == 0,]
+        } else {
+            res <- x[comm > 0,]
+        }
+    }
+    ## avoid a copy
+    ## row.names(res) <- NULL
+    attr(res, "row.names") <- .set_row_names(nrow(res))
+    res
+}
+
+
+XnotinY <-
+    function(x, y, by = intersect(names(x), names(y)), by.x = by, by.y = by,
+             notin = TRUE, incomparables = NULL,
+             ...)
+{
+    XinY(x,y,by,by.x,by.y,notin,incomparables)
 }
 
 
