@@ -407,7 +407,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
     return(NULL)
 
   if(inherits(formula, "bamlss.frame")) {
-    data <- model.frame(formula)
+    data <- if(is.null(data)) model.frame(formula) else data
     formula <- formula(formula)
   }
   if(inherits(formula, "bamlss.terms"))
@@ -860,6 +860,7 @@ bamlss.formula <- function(formula, specials = NULL, family = gaussian.bamlss())
 bamlss.formula.cat <- function(formula, data, reference)
 {
   specials <- attr(formula, "specials")
+  env <- environment(formula)
 
   rn <- y <- NULL
   for(j in seq_along(formula)) {
@@ -944,6 +945,7 @@ bamlss.formula.cat <- function(formula, data, reference)
 
   rval <- if(!is.null(y)) {
     class(formula) <- "bamlss.formula"
+    environment(formula) <- env
     list("formula" = formula, "reference" = reference)
   } else NULL
   rval
@@ -4206,7 +4208,8 @@ model.frame.bamlss <- model.frame.bamlss.frame <- function(formula, ...)
     env <- environment(formula$formula)
     if(is.null(env))
       env <- parent.frame()
-    if(!is.null(attr(formula$formula, "orig.formula"))) {
+    ft <- eval(fcall[["formula"]], env)
+    if(!is.null(attr(ft, "orig.formula"))) {
       fcall["formula"] <- parse(text = paste("attr(", fcall["formula"], ", 'orig.formula')", sep = ""))
     }
     eval(fcall, env)
@@ -4215,30 +4218,7 @@ model.frame.bamlss <- model.frame.bamlss.frame <- function(formula, ...)
 }
 
 
-## Model matrix extractor.
-model.matrix.bamlss.frame <- function(object, data = NULL, model = NULL, drop = TRUE, ...)
-{
-  if(!is.null(data)) {
-    object$model.frame <- NULL
-    object$model.frame <- model.frame(object, data = data)
-    object <- design.construct(object, model.matrix = TRUE,
-      smooth.construct = FALSE, model = model, drop = TRUE)
-  } else {
-    if(!all(model.search(object, "model.matrix", model))) {
-      object <- design.construct(object, model.matrix = TRUE,
-        smooth.construct = FALSE, model = model, drop = TRUE)
-    } else {
-      object <- model.search(object, "model.matrix", model, extract = TRUE, drop = drop)
-    }
-  }
-  if(drop & (length(object) < 2))
-    object <- object[[1]]
-  mostattributes(object) <- NULL
-  return(object)
-}
-
-
-## Search for parts in models.
+## Search for parts in models, optionally extract.
 model.search <- function(x, what, model = NULL, part = c("terms", "formula"),
   extract = FALSE, drop = FALSE)
 {
@@ -4274,18 +4254,51 @@ model.search <- function(x, what, model = NULL, part = c("terms", "formula"),
   rval
 }
 
-model.matrix.bamlss.terms <- model.matrix.bamlss.formula <- function(object, data, model = NULL, drop = TRUE)
+
+## Wrapper for design construct extraction.
+extract.design.construct <- function(object, data = NULL,
+  knots = NULL, model = NULL, drop = TRUE, what = c("model.matrix", "smooth.construct"))
 {
-  if(!inherits(object, "bamlss.formula") & !inherits(object, "bamlss.frame") & !inherits(object, "bamlss.terms"))
-    stop("object must be a 'bamlss.formula', 'bamlss.trems'!")
-  object <- design.construct(object, data = data, model.matrix = TRUE,
-    smooth.construct = FALSE, model = model, drop = drop)
+  if(!inherits(object, "bamlss.frame") & !inherits(object, "bamlss.formula") & !inherits(object, "bamlss.terms"))
+    stop("object must be a 'bamlss.frame', 'bamlss.formula' or 'bamlss.terms' object!")
+  what <- match.arg(what)
+  model.matrix <- what == "model.matrix"
+  smooth.construct <- what == "smooth.construct"
+  if(inherits(object, "bamlss.frame")) {
+    if(!is.null(data)) {
+      object$model.frame <- NULL
+      object <- design.construct(object, data = data, knots = knots,
+        model.matrix = model.matrix, smooth.construct = smooth.construct,
+        model = model, drop = drop)
+    } else {
+      if(!all(model.search(object, what, model))) {
+        object <- design.construct(object, model.matrix = model.matrix,
+          smooth.construct = smooth.construct, model = model, drop = TRUE)
+      } else {
+        object <- model.search(object, what, model, extract = TRUE, drop = drop)
+      }
+    }
+  } else {
+    if(is.null(data))
+      stop("argument data is missing!")
+    object <- design.construct(object, data = data, knots = knots,
+      model.matrix = model.matrix, smooth.construct = smooth.construct, model = model, drop = drop)
+  }
   if(!is.null(drop)) {
     if(drop & (length(object) < 2))
       object <- object[[1]]
   }
   mostattributes(object) <- NULL
+  attr(object, "orig.formula") <- NULL
   return(object)
+}
+
+
+## Model matrix extractor.
+model.matrix.bamlss.frame <- model.matrix.bamlss.formula <- model.matrix.bamlss.terms <- function(object, data = NULL, model = NULL, drop = TRUE, ...)
+{
+  extract.design.construct(object, data = data,
+    knots = NULL, model = model, drop = drop, what = "model.matrix")
 }
 
 
@@ -4295,73 +4308,18 @@ smooth.construct <- function(object, data, knots, ...)
   UseMethod("smooth.construct")
 }
 
-smooth.construct.bamlss.frame <- function(object, model = NULL, drop = TRUE, ...)
+smooth.construct.bamlss.frame <- smooth.construct.bamlss.formula <- smooth.construct.bamlss.terms <- function(object, data = NULL, knots = NULL, model = NULL, drop = TRUE, ...)
 {
-  object <- design.construct(object, model.matrix = FALSE, smooth.construct = TRUE, model = model)
-  if(drop & (length(object) < 2))
-    object <- object[[1]]
-  mostattributes(object) <- NULL
-  return(object)
-}
-
-smooth.construct.bamlss.formula <- smooth.construct.bamlss.terms <- function(object, data, model = NULL, drop = TRUE, knots = NULL, ...)
-{
-  if(!inherits(object, "bamlss.formula") & !inherits(object, "bamlss.frame") & !inherits(object, "bamlss.terms"))
-    stop("object must be a 'bamlss.formula', 'bamlss.trems'!")
-  object <- design.construct(object, data = data, model.matrix = FALSE,
-    smooth.construct = TRUE, model = model, drop = drop)
-  if(!is.null(drop)) {
-    if(drop & (length(object) < 2))
-      object <- object[[1]]
-  }
-  mostattributes(object) <- NULL
-  return(object)
+  extract.design.construct(object, data = data,
+    knots = knots, model = model, drop = drop, what = "smooth.construct")
 }
 
 
-## Extract/initiallize parameters.
+## Extract/initialize parameters.
 parameters <- function(object, model = NULL, init = NULL)
 {
   if(!inherits(object, "bamlss.frame"))
     stop("object must be a 'bamlss.frame'!")
-  
-}
-
-
-
-## New model.part() for bamlss.frame.
-model.part.bamlss.frame <- function(object, model = NULL,
-  pterms = TRUE, sterms = TRUE,
-  model.matrix = TRUE, smooth.construct = TRUE)
-{
-  mf <- model.frame(object)
-  object <- model.terms(object, model)
-  elmts <- c("formula", "fake.formula")
-  for(j in seq_along(object)) {
-    if(!all(elmts %in% names(object[[j]]))) {
-      for(k in seq_along(object[[j]])) {
-        if(model.matrix) {
-          object[[j]][[k]]$X <- if(is.null(object[[j]][[k]]$X)) {
-            model.matrix(object[[j]][[k]]$pterms, data = mf)
-          } else object[[j]][[k]]$X
-        }
-        object[[j]][[k]] <- object[[j]][[k]][c("X", "pterms")[c(model.matrix, pterms)]]
-      }
-    } else {
-      if(model.matrix) {
-        object[[j]]$X <- if(is.null(object[[j]]$X)) {
-          model.matrix(object[[j]]$pterms, data = mf)
-        } else object[[j]]$X
-      }
-      object[[j]] <- object[[j]][c("X", "pterms")[c(model.matrix, pterms)]]
-      if(smooth.construct) {
-        object[[j]]$smooth.construct <- if(is.null(object[[j]]$smooth.construct)) {
-          NULL
-        } else a <- 1
-      }
-    }
-  }
-  return(object)
 }
 
 

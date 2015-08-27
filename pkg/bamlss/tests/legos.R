@@ -5,7 +5,7 @@ data("GAMart", package = "R2BayesX")
 bamlss.formula(num ~ s(x1) + id)
 
 f <- list(
-  num ~ s(x1) + id,
+  num ~ s(x1) + s(x3) + id,
   sigma ~ s(x2),
   id ~ s(x3)
 )
@@ -47,9 +47,11 @@ str(smooth.construct(bf, model = c(1, 1)))
 
 bf <- bamlss.frame(f, data = GAMart, family = "gaussian",
   model.matrix = FALSE, smooth.construct = FALSE)
+print(bf)
 model.matrix(bf)
 head(model.matrix(bf, model = c(1, 1)))
 smooth.construct(bf)
+names(smooth.construct(bf, model = c(1, 1)))
 
 
 ## (4) Complex multilevel structures.
@@ -68,15 +70,18 @@ terms(bf, model = c(2, 1))
 terms(bf, model = c(2, 1), sterms = FALSE)
 terms(bf, model = c(2, 1), pterms = FALSE)
 
-model.matrix(formula(bf), data = GAMart)
-head(model.matrix(formula(bf), data = GAMart, model = c(1, 1)))
-head(model.matrix(formula(bf, model = c(1, 1)), data = GAMart))
-head(model.matrix(terms(bf, model = c(1, 1), drop = FALSE), data = GAMart))
+d <- GAMart[1:30, ]
 
-smooth.construct(formula(bf), data = GAMart)
-smooth.construct(terms(bf), data = GAMart)
-smooth.construct(formula(bf), data = GAMart, model = c(1, 1))
-smooth.construct(formula(bf, model = c(1, 1)), data = GAMart)
+model.matrix(formula(bf), data = d)
+head(model.matrix(formula(bf), data = d, model = c(1, 1)))
+head(model.matrix(formula(bf, model = c(1, 1)), data = d))
+head(model.matrix(terms(bf, model = c(1, 1), drop = FALSE), data = d))
+
+smooth.construct(formula(bf), data = d)
+smooth.construct(terms(bf), data = d)
+smooth.construct(formula(bf), data = d, model = c(1, 1))
+smooth.construct(formula(bf, model = c(1, 1)), data = d)
+smooth.construct(terms(bf, model = c(1, 1), drop = FALSE), data = d)
 
 ## Extract or initiallize parameters.
 p <- parameters(bf)
