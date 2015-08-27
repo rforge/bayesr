@@ -35,6 +35,7 @@ model.response(model.frame(bf))
 response.name(bf)
 response.name(model.frame(bf))
 
+
 ## (3) model.matrix() and smooth.construct()
 model.matrix(bf)
 head(model.matrix(bf, model = c(1, 1)))
@@ -49,6 +50,7 @@ bf <- bamlss.frame(f, data = GAMart, family = "gaussian",
 model.matrix(bf)
 head(model.matrix(bf, model = c(1, 1)))
 smooth.construct(bf)
+
 
 ## (4) Complex multilevel structures.
 f <- list(
@@ -65,6 +67,16 @@ terms(formula(bf))
 terms(bf, model = c(2, 1))
 terms(bf, model = c(2, 1), sterms = FALSE)
 terms(bf, model = c(2, 1), pterms = FALSE)
+
+model.matrix(formula(bf), data = GAMart)
+head(model.matrix(formula(bf), data = GAMart, model = c(1, 1)))
+head(model.matrix(formula(bf, model = c(1, 1)), data = GAMart))
+head(model.matrix(terms(bf, model = c(1, 1), drop = FALSE), data = GAMart))
+
+smooth.construct(formula(bf), data = GAMart)
+smooth.construct(terms(bf), data = GAMart)
+smooth.construct(formula(bf), data = GAMart, model = c(1, 1))
+smooth.construct(formula(bf, model = c(1, 1)), data = GAMart)
 
 ## Extract or initiallize parameters.
 p <- parameters(bf)

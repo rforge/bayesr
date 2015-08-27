@@ -251,47 +251,54 @@ bamlss <- function(formula, family = gaussian, data = NULL, knots = NULL,
 ##################################
 ## (4) Create the bamlss frame. ##
 ##################################
-bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss,
+bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
   model.matrix = TRUE, smooth.construct = TRUE, ...)
 {
-  ## Search for additional formulas.
-  formula2 <- NULL; formula3 <- list(); k <- 1
-  fn <- names(fo <- formals(fun = bamlss.frame))[-1]
-  fn <- fn[fn != "..."]
-  for(f in fn) {
-    fe <- paste("deparse(substitute(", f, "), backtick = TRUE, width.cutoff = 500)", sep = "")
-    fe <- eval(parse(text = fe))
-    if(any(grepl("~", fe, fixed = TRUE))) {
-      fe <- as.formula(fe, env = environment(if(is.list(formula)) formula[[1]] else formula))
-      formula2 <- c(formula2, as.formula(fe))
-      formula3[[k]] <- fe
-      eval(parse(text = paste(f, if(is.null(fo[[f]])) "NULL" else fo[[f]], sep = " = ")))
-      k <- k + 1
-    }
-  }
-  formula <- c(formula, formula2)
-
-  ## Complete dot in formula.
-  if(!is.null(data)) {
-    if(!inherits(data, "data.frame"))
-      data <- as.data.frame(data)
-    for(j in 1:length(formula)) {
-      fc <- as.character(if(length(formula[[j]]) > 2) formula[[j]][3] else formula[[j]][2])
-      if(fc == ".") {
-        rhs <- paste(names(data)[names(data) != as.character(formula[[1]][2])], collapse = "+")
-        fc <- as.character(if(length(formula[[j]]) > 2) formula[[j]][2] else "")
-        formula[[j]] <- as.formula(paste(fc, rhs, sep = "~"))
+  ## Parse formula.
+  if(!inherits(formula, "bamlss.formula")) {
+    ## Search for additional formulas.
+    formula2 <- NULL; formula3 <- list(); k <- 1
+    fn <- names(fo <- formals(fun = bamlss.frame))[-1]
+    fn <- fn[fn != "..."]
+    for(f in fn) {
+      fe <- paste("deparse(substitute(", f, "), backtick = TRUE, width.cutoff = 500)", sep = "")
+      fe <- eval(parse(text = fe))
+      if(any(grepl("~", fe, fixed = TRUE))) {
+        fe <- as.formula(fe, env = environment(if(is.list(formula)) formula[[1]] else formula))
+        formula2 <- c(formula2, as.formula(fe))
+        formula3[[k]] <- fe
+        eval(parse(text = paste(f, if(is.null(fo[[f]])) "NULL" else fo[[f]], sep = " = ")))
+        k <- k + 1
       }
     }
+    formula <- c(formula, formula2)
+
+    ## Complete dot in formula.
+    if(!is.null(data)) {
+      if(!inherits(data, "data.frame"))
+        data <- as.data.frame(data)
+      for(j in 1:length(formula)) {
+        fc <- as.character(if(length(formula[[j]]) > 2) formula[[j]][3] else formula[[j]][2])
+        if(fc == ".") {
+          rhs <- paste(names(data)[names(data) != as.character(formula[[1]][2])], collapse = "+")
+          fc <- as.character(if(length(formula[[j]]) > 2) formula[[j]][2] else "")
+          formula[[j]] <- as.formula(paste(fc, rhs, sep = "~"))
+        }
+      }
+    }
+
+    ## Parse family object.
+    family <- bamlss.family(family)
+
+    ## Parse formula.
+    formula <- bamlss.formula(formula, specials, family)
+  } else {
+    family <- bamlss.family(family)
   }
-
-  ## Parse family object.
-  family <- bamlss.family(family)
-
-  ## Parse formula.
-  formula <- bamlss.formula(formula, specials, family)
+  if(!is.null(attr(formula, "orig.formula")))
+    formula <- attr(formula, "orig.formula")
 
   ## Setup return object.
   bf <- list()
@@ -305,6 +312,7 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss,
   cf <- bamlss.formula.cat(formula, bf$model.frame, reference)
   if(!is.null(cf)) {
     rn <- response.name(terms(bf$model.frame))[1]
+    orig.formula <- formula
     formula <- cf$formula
     reference <- cf$reference
     f <- as.formula(paste("~ -1 +", rn))
@@ -315,6 +323,7 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss,
     family$names <- names(formula)
     family$links <- rep(family$links, length.out = length(formula))
     names(family$links) <- names(formula)
+    attr(formula, "orig.formula") <- orig.formula
   }
   bf$formula <- formula
 
@@ -362,7 +371,7 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss,
 
 print.bamlss.frame <- function(x, ...)
 {
-  cat("\n'bamlss.frame' structure:", "\n")  
+  cat("'bamlss.frame' structure:", "\n")  
   nx <- c("call", "model.frame", "formula", "family", "terms")
   for(i in nx) {
     if(!is.null(x[[i]])) {
@@ -385,7 +394,6 @@ print.bamlss.frame <- function(x, ...)
       }
     }
   }
-  cat("\n")
   invisible(NULL)
 }
 
@@ -393,7 +401,7 @@ print.bamlss.frame <- function(x, ...)
 ## Assign all designs matrices.
 design.construct <- function(formula, data = NULL, knots = NULL,
   model.matrix = TRUE, smooth.construct = TRUE, binning = FALSE,
-  before = TRUE, gam.side = TRUE, model = NULL, drop = FALSE)
+  before = TRUE, gam.side = TRUE, model = NULL, drop = NULL)
 {
   if(!model.matrix & !smooth.construct)
     return(NULL)
@@ -402,16 +410,16 @@ design.construct <- function(formula, data = NULL, knots = NULL,
     data <- model.frame(formula)
     formula <- formula(formula)
   }
+  if(inherits(formula, "bamlss.terms"))
+    formula <- formula.bamlss.terms(formula)
   if(!inherits(formula, "bamlss.formula"))
     stop("formula must be a 'bamlss.formula'")
   if(is.null(data))
     stop("data needs to be supplied!")
   if(!inherits(data, "data.frame"))
     data <- as.data.frame(data)
-
   if(!is.null(model))
     formula <- model.terms(formula, model)
-
   if(!binning)
     binning <- NULL
 
@@ -548,8 +556,10 @@ design.construct <- function(formula, data = NULL, knots = NULL,
         }
       }
     }
-    if(drop)
-      obj <- obj[c("model.matrix", "smooth.construct")[c(model.matrix, smooth.construct)]]
+    if(!is.null(drop)) {
+      take <- c("model.matrix", "smooth.construct")[c(model.matrix, smooth.construct)]
+      obj[!(names(obj) %in% take)] <- NULL
+    }
 
     obj
   }
@@ -568,8 +578,10 @@ design.construct <- function(formula, data = NULL, knots = NULL,
   attr(formula, "specials") <- NULL
   attr(formula, ".Environment") <- NULL
   class(formula) <- "list"
-  if(drop & (length(formula) < 2))
-    formula <- formula[[1]]
+  if(!is.null(drop)) {
+    if(drop & (length(formula) < 2))
+      formula <- formula[[1]]
+  }
   return(formula)
 }
 
@@ -3391,25 +3403,62 @@ edf.bamlss <- function(object, FUN = mean, ...)
 
 
 ## Extract model formulas.
-formula.bamlss <- function(x, model = NULL, ...)
+formula.bamlss.frame <- formula.bamlss <- function(x, model = NULL, ...)
 {
-  if(all(c("model", "effects") %in% names(x))) {
-    f <- x$model$formula
-  } else {
-    f <- attr(x, "formula")
-    if(inherits(f, "list")) {
-      if(length(f) < 2) {
-        f <- f[[1]]
-      } else {
-        if(!is.null(model)) {
-          for(j in model) {
-            f <- f[[j]]
-          }
+  f <- model.terms(x$formula, model)
+  class(f) <- "bamlss.formula"
+  return(f)
+}
+
+formula.bamlss.terms <- function(x, model, ...)
+{
+  if(!inherits(x, "list")) {
+    x <- list(x)
+    names(x) <- "formula.1"
+  }
+  f <- list()
+  for(i in names(x)) {
+    f[[i]] <- list()
+    if(!inherits(x[[i]], "terms")) {
+      for(j in names(x[[i]])) {
+        f[[i]][[j]] <- list()
+        f[[i]][[j]]$formula <- x[[i]][[j]]
+        env <- environment(x[[i]][[j]])
+        attributes(f[[i]][[j]]$formula) <- NULL
+        environment(f[[i]][[j]]$formula) <- env
+        vars <- all.vars(x[[i]][[j]])
+        response <- response.name(x[[i]][[j]])
+        if(is.na(response))
+          response <- NULL
+        if(!is.null(response)) {
+          response <- NULL
+          vars <- vars[-1]
         }
+        f[[i]][[j]]$fake.formula <- as.formula(paste(response, "~1", if(length(vars)) "+" else NULL,
+          paste(vars, collapse = "+")), env = environment(x[[i]][[j]]))
+        f[[i]][[j]]$terms <- x[[i]][[j]]
       }
+    } else {
+      f[[i]]$formula <- x[[i]]
+      env <- environment(x[[i]])
+      attributes(f[[i]]$formula) <- NULL
+      environment(f[[i]]$formula) <- env
+      vars <- all.vars(x[[i]])
+      response <- response.name(x[[i]])
+      if(is.na(response))
+        response <- NULL
+      if(!is.null(response)) {
+        response <- NULL
+        vars <- vars[-1]
+      }
+      f[[i]]$fake.formula <- as.formula(paste(response, "~1", if(length(vars)) "+" else NULL,
+        paste(vars, collapse = "+")), env = environment(x[[i]]))
+      f[[i]]$terms <- x[[i]]
     }
   }
-  f
+  class(f) <- c("bamlss.formula", "list")
+  environment(f) <- environment(x)
+  return(f)
 }
 
 print.bamlss.formula <- function(x, ...) {
@@ -3425,12 +3474,14 @@ print.bamlss.formula <- function(x, ...) {
         for(j in seq_along(x[[i]])) {
           cat("h", j, ": ", sep = "")
           attr(x[[i]][[j]], "name") <- NULL
-          print(x[[i]][[j]]$formula)
+          attr(x[[i]][[j]]$formula, ".Environment") <- NULL
+          print(x[[i]][[j]]$formula, showEnv = FALSE)
         }
       } else {
         attr(x[[i]], "name") <- NULL
         attr(x[[i]]$formula, "name") <- NULL
-        if("formula" %in% names(x[[i]])) print(x[[i]]$formula) else print(x[[i]])
+        attr(x[[i]]$formula, ".Environment") <- NULL
+        if("formula" %in% names(x[[i]])) print(x[[i]]$formula, showEnv = FALSE) else print(x[[i]])
       }
       if(i < length(x))
       cat("\n")
@@ -3545,10 +3596,11 @@ terms.bamlss <- terms.bamlss.frame <- terms.bamlss.formula <- function(x,
 
   if(drop & (length(rval) < 2)) {
     rval <- rval[[1]]
-    class(rval) <- c("bamlss.terms", "terms", "list")
+    class(rval) <- c("bamlss.terms", "terms")
   } else {
     class(rval) <- c("bamlss.terms", "list")
   }
+  environment(rval) <- env
 
   rval
 }
@@ -4154,6 +4206,9 @@ model.frame.bamlss <- model.frame.bamlss.frame <- function(formula, ...)
     env <- environment(formula$formula)
     if(is.null(env))
       env <- parent.frame()
+    if(!is.null(attr(formula$formula, "orig.formula"))) {
+      fcall["formula"] <- parse(text = paste("attr(", fcall["formula"], ", 'orig.formula')", sep = ""))
+    }
     eval(fcall, env)
   } else formula$model.frame
   mf
@@ -4178,6 +4233,7 @@ model.matrix.bamlss.frame <- function(object, data = NULL, model = NULL, drop = 
   }
   if(drop & (length(object) < 2))
     object <- object[[1]]
+  mostattributes(object) <- NULL
   return(object)
 }
 
@@ -4218,57 +4274,18 @@ model.search <- function(x, what, model = NULL, part = c("terms", "formula"),
   rval
 }
 
-model.matrix.bamlss.terms <- function(object, data, model = NULL, drop = TRUE)
+model.matrix.bamlss.terms <- model.matrix.bamlss.formula <- function(object, data, model = NULL, drop = TRUE)
 {
-  if(inherits(object, "bamlss.formula"))
-    object <- terms(object)
-  if(!inherits(object, "bamlss.terms"))
-    stop("need a 'bamlss.formula' or 'bamlss.terms' object to compute the model matrices!")
-  for(i in seq_along(object)) {
-    if(!inherits(object[[i]], "terms")) {
-      for(j in seq_along(object[[i]])) {
-        object[[i]][[j]] <- delete.response(drop.terms.bamlss(object[[i]][[j]], pterms = TRUE, sterms = FALSE))
-        object[[i]][[j]] <- model.matrix(object[[i]][[j]], data = data)
-      }
-    } else {
-      object[[i]] <- delete.response(drop.terms.bamlss(object[[i]], pterms = TRUE, sterms = FALSE))
-      object[[i]] <- model.matrix(object[[i]], data = data)
-    }
+  if(!inherits(object, "bamlss.formula") & !inherits(object, "bamlss.frame") & !inherits(object, "bamlss.terms"))
+    stop("object must be a 'bamlss.formula', 'bamlss.trems'!")
+  object <- design.construct(object, data = data, model.matrix = TRUE,
+    smooth.construct = FALSE, model = model, drop = drop)
+  if(!is.null(drop)) {
+    if(drop & (length(object) < 2))
+      object <- object[[1]]
   }
-  
-  if(!is.null(model)) {
-    if(is.list(object)) {
-      if(!is.null(model)) {
-        if(is.character(model)) {
-          if(all(is.na(pmatch(model[1], names(object)))))
-            stop("argument model is specified wrong!")
-        } else {
-          if(max(model[1]) > length(object) || is.na(model[1]) || min(model[1]) < 1) 
-            stop("argument model is specified wrong!")
-        }
-        if(length(model) > 1)
-          model <- model[1:2]
-        if(length(model) < 2) {
-          object <- object[model]
-        } else {
-          object <- object[[model[1]]]
-          if(is.character(model)) {
-            if(all(is.na(pmatch(model[2], names(object)))))
-              stop("argument model is specified wrong!")
-          } else {
-            if(max(model[2]) > length(object) || is.na(model[2]) || min(model[2]) < 1) 
-              stop("argument model is specified wrong!")
-          }
-          object <- object[model[2]]
-        }
-      }
-    } else object <- list(object)
-  }
-  class(object) <- "list"
-  if(drop & (length(object) < 2))
-    object <- object[[1]]
-
-  object
+  mostattributes(object) <- NULL
+  return(object)
 }
 
 
@@ -4283,27 +4300,22 @@ smooth.construct.bamlss.frame <- function(object, model = NULL, drop = TRUE, ...
   object <- design.construct(object, model.matrix = FALSE, smooth.construct = TRUE, model = model)
   if(drop & (length(object) < 2))
     object <- object[[1]]
+  mostattributes(object) <- NULL
   return(object)
 }
 
-smooth.construct.bamlss.terms <- function(object, data, model = NULL, drop = TRUE, knots = NULL, ...)
+smooth.construct.bamlss.formula <- smooth.construct.bamlss.terms <- function(object, data, model = NULL, drop = TRUE, knots = NULL, ...)
 {
-  if(inherits(object, "bamlss.formula"))
-    object <- terms(object)
-  if(!inherits(object, "bamlss.terms"))
-    stop("need a 'bamlss.formula' or 'bamlss.terms' object to compute the model matrices!")
-  for(i in seq_along(object)) {
-    if(!inherits(object[[i]], "terms")) {
-      for(j in seq_along(object[[i]])) {
-        object[[i]][[j]] <- delete.response(drop.terms.bamlss(object[[i]][[j]], pterms = TRUE, sterms = FALSE))
-        object[[i]][[j]] <- model.matrix(object[[i]][[j]], data = data)
-      }
-    } else {
-      object[[i]] <- delete.response(drop.terms.bamlss(object[[i]], pterms = TRUE, sterms = FALSE))
-      object[[i]] <- model.matrix(object[[i]], data = data)
-    }
+  if(!inherits(object, "bamlss.formula") & !inherits(object, "bamlss.frame") & !inherits(object, "bamlss.terms"))
+    stop("object must be a 'bamlss.formula', 'bamlss.trems'!")
+  object <- design.construct(object, data = data, model.matrix = FALSE,
+    smooth.construct = TRUE, model = model, drop = drop)
+  if(!is.null(drop)) {
+    if(drop & (length(object) < 2))
+      object <- object[[1]]
   }
-  object
+  mostattributes(object) <- NULL
+  return(object)
 }
 
 
