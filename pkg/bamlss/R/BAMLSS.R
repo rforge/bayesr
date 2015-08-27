@@ -347,6 +347,7 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
   ## Assign design matrices.
   bf$terms <- design.construct(bf$formula, data = bf$model.frame, knots = knots,
     model.matrix = model.matrix, smooth.construct = smooth.construct, model = NULL, ...)
+  bf$knots <- knots
 
   ## Assign class and return.
   class(bf) <- c("bamlss.frame", "list")
@@ -1168,34 +1169,37 @@ formula_hierarchical <- function(formula)
 ## (5) Utility functions ##
 ###########################
 ## Transform smooth terms to mixed model representation.
-randomize <- function(x)
+randomize <- function(x, vnames = NULL)
 {
-  nd <- names(model.frame(x))
+  if(inherits(x, "bamlss.frame"))
+    vnames <- names(model.frame(x))
+  if(is.null(vnames))
+    stop("argument vnames is empty!")
 
   rand_fun <- function(x)
   {
-    if(m <- length(x$sterms)) {
+    if(m <- length(x$smooth.construct)) {
       for(j in 1:m) {
-        if(!inherits(x$sterms[[j]], "no.mgcv")) {
-          if(is.null(x$sterms[[j]]$rand) & is.null(x$sterms[[j]]$Xf)) {
-            tmp <- mgcv:::smooth2random(x$sterms[[j]], nd, type = 2)
-            if(is.null(x$sterms[[j]]$xt$nolin))
-              x$sterms[[j]]$Xf <- tmp$Xf
-#          if(inherits(x$sterms[[j]], "random.effect")) {
+        if(!inherits(x$smooth.construct[[j]], "no.mgcv")) {
+          if(is.null(x$smooth.construct[[j]]$rand) & is.null(x$smooth.construct[[j]]$Xf)) {
+            tmp <- mgcv:::smooth2random(x$smooth.construct[[j]], vnames, type = 2)
+            if(is.null(x$smooth.construct[[j]]$xt$nolin))
+              x$smooth.construct[[j]]$Xf <- tmp$Xf
+#          if(inherits(x$smooth.construct[[j]], "random.effect")) {
 #            tmp$rand$Xr[tmp$rand$Xr > 0] <- 1
 #            tmp$rand$Xr <- scale(tmp$rand$Xr)
 #            tmp$trans.D <- rep(1, ncol(tmp$rand$Xr))
 #            tmp$trans.U <- diag(1, ncol(tmp$rand$Xr))
 #          }
-            x$sterms[[j]]$rand <- tmp$rand
-            x$sterms[[j]]$trans.D <- tmp$trans.D
-            x$sterms[[j]]$trans.U <- tmp$trans.U
-            if(!is.null(x$sterms[[j]]$state$parameters)) {
-              g2 <- get.par(x$sterms[[j]]$state$parameters, "g")
-              if(!is.null(x$sterms[[j]]$trans.U))
-                g2 <- solve(x$sterms[[j]]$trans.U) %*% g2
-              g2 <- drop(g2 / x$sterms[[j]]$trans.D)
-              x$sterms[[j]]$state$parameters <- set.par(x$sterms[[j]]$state$parameters, g2, "g")
+            x$smooth.construct[[j]]$rand <- tmp$rand
+            x$smooth.construct[[j]]$trans.D <- tmp$trans.D
+            x$smooth.construct[[j]]$trans.U <- tmp$trans.U
+            if(!is.null(x$smooth.construct[[j]]$state$parameters)) {
+              g2 <- get.par(x$smooth.construct[[j]]$state$parameters, "g")
+              if(!is.null(x$smooth.construct[[j]]$trans.U))
+                g2 <- solve(x$smooth.construct[[j]]$trans.U) %*% g2
+              g2 <- drop(g2 / x$smooth.construct[[j]]$trans.D)
+              x$smooth.construct[[j]]$state$parameters <- set.par(x$smooth.construct[[j]]$state$parameters, g2, "g")
             }
           }
         }
@@ -1204,17 +1208,22 @@ randomize <- function(x)
     x
   }
 
+  elmts <- c("formula", "fake.formula")
   if(inherits(x, "bamlss.frame")) {
-    nx <- names(x)
-    nx <- nx[nx != "call"]
-    if(is.null(nx)) nx <- 1:length(x)
-    if(length(unique(nx)) < length(x)) nx <- 1:length(x)
-    elmts <- c("formula", "fake.formula")
+    if(is.null(x$terms))
+      stop("no terms to randomize in 'bamlss.frame'!")
     for(j in seq_along(x$terms)) {
-      if(!any(names(x$terms[[j]]) %in% elmts)) {
+      if(!all(elmts %in% names(x$terms[[j]]))) {
         for(i in seq_along(x$terms[[j]]))
           x$terms[[j]][[i]] <- rand_fun(x$terms[[j]][[i]])
       } else x$terms[[j]] <- rand_fun(x$terms[[j]])
+    }
+  } else {
+    for(j in seq_along(x)) {
+      if(!all(elmts %in% names(x[[j]]))) {
+        for(i in seq_along(x[[j]]))
+          x[[j]][[i]] <- rand_fun(x[[j]][[i]])
+      } else x[[j]] <- rand_fun(x[[j]])
     }
   }
 
@@ -4316,10 +4325,81 @@ smooth.construct.bamlss.frame <- smooth.construct.bamlss.formula <- smooth.const
 
 
 ## Extract/initialize parameters.
-parameters <- function(object, model = NULL, init = NULL)
+parameters <- function(object, model = NULL, b.init = 0, tau2.init = 0.0001)
 {
   if(!inherits(object, "bamlss.frame"))
     stop("object must be a 'bamlss.frame'!")
+  if(is.null(object$terms)) {
+    object$terms <- design.construct(object, data = object$model.frame,
+      knots = object$knots, model.matrix = TRUE, smooth.construct = TRUE, model = NULL)
+  }
+  par <- list()
+  for(i in names(object$terms)) {
+    par[[i]] <- list()
+    if(!all(c("formula", "fake.formula") %in% names(object$terms[[i]]))) {
+      for(j in names(object$terms[[i]])) {
+        par[[i]][[j]] <- list()
+        if(!is.null(object$terms[[i]][[j]]$model.matrix)) {
+          par[[i]][[j]]$lin <- rep(b.init, length = ncol(object$terms[[i]][[j]]$model.matrix))
+          names(par[[i]][[j]]$lin) <- paste("b", 1:length(par[[i]][[j]]$lin), sep = "")
+        }
+        if(!is.null(object$terms[[i]][[j]]$smooth.construct)) {
+          par[[i]][[j]]$sm <- list()
+          for(k in names(object$terms[[i]][[j]]$smooth.construct)) {
+            if(!is.null(object$terms[[i]][[j]]$smooth.construct[[k]]$rand)) {
+              tpar1 <- rep(b.init, ncol(object$terms[[i]][[j]]$smooth.construct[[k]]$rand$Xr))
+              tpar2 <- rep(b.init, ncol(object$terms[[i]][[j]]$smooth.construct[[k]]$Xf))
+              names(tpar1) <- paste("b", 1:length(tpar1), ".re", sep = "")
+              names(tpar2) <- paste("b", 1:length(tpar2), ".lin", sep = "")
+              tpar <- c(tpar1, tpar2)
+            } else {
+              tpar <- rep(b.init, ncol(object$terms[[i]][[j]]$smooth.construct[[k]]$X))
+              names(tpar) <- paste("b", 1:length(tpar), sep = "")
+            }
+            if(length(object$terms[[i]][[j]]$smooth.construct[[k]]$S)) {
+              tpar3 <- NULL
+              for(kk in seq_along(object$terms[[i]][[j]]$smooth.construct[[k]]$S)) {
+                tpar3 <- c(tpar3, tau2.init)
+              }
+              names(tpar3) <- paste("tau2", 1:length(tpar3), sep = "")
+              tpar <- c(tpar, tpar3)
+            }
+            par[[i]][[j]]$sm[[k]] <- tpar
+          }
+        }
+      }
+    } else {
+      if(!is.null(object$terms[[i]]$model.matrix)) {
+        par[[i]]$lin <- rep(b.init, length = ncol(object$terms[[i]]$model.matrix))
+        names(par[[i]]$lin) <- paste("b", 1:length(par[[i]]$lin), sep = "")
+      }
+      if(!is.null(object$terms[[i]]$smooth.construct)) {
+        par[[i]]$sm <- list()
+        for(k in names(object$terms[[i]]$smooth.construct)) {
+          if(!is.null(object$terms[[i]]$smooth.construct[[k]]$rand)) {
+            tpar1 <- rep(b.init, ncol(object$terms[[i]]$smooth.construct[[k]]$rand$Xr))
+            tpar2 <- rep(b.init, ncol(object$terms[[i]]$smooth.construct[[k]]$Xf))
+            names(tpar1) <- paste("b", 1:length(tpar1), ".re", sep = "")
+            names(tpar2) <- paste("b", 1:length(tpar2), ".lin", sep = "")
+            tpar <- c(tpar1, tpar2)
+          } else {
+            tpar <- rep(b.init, ncol(object$terms[[i]]$smooth.construct[[k]]$X))
+            names(tpar) <- paste("b", 1:length(tpar), sep = "")
+          }
+          if(length(object$terms[[i]]$smooth.construct[[k]]$S)) {
+            tpar3 <- NULL
+            for(kk in seq_along(object$terms[[i]]$smooth.construct[[k]]$S)) {
+              tpar3 <- c(tpar3, tau2.init)
+            }
+            names(tpar3) <- paste("tau2", 1:length(tpar3), sep = "")
+            tpar <- c(tpar, tpar3)
+          }
+          par[[i]]$sm[[k]] <- tpar
+        }
+      }
+    }
+  }
+  return(par)
 }
 
 

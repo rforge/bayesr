@@ -85,6 +85,8 @@ smooth.construct(terms(bf, model = c(1, 1), drop = FALSE), data = d)
 
 ## Extract or initiallize parameters.
 p <- parameters(bf)
+unlist(p)
+unlist(parameters(randomize(bf)))
 
 ## (5) Run backfitting optimizer on bamlss.frame.
 data("marital.nz", package = "VGAM")
