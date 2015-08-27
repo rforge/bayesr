@@ -275,25 +275,11 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
     }
     formula <- c(formula, formula2)
 
-    ## Complete dot in formula.
-    if(!is.null(data)) {
-      if(!inherits(data, "data.frame"))
-        data <- as.data.frame(data)
-      for(j in 1:length(formula)) {
-        fc <- as.character(if(length(formula[[j]]) > 2) formula[[j]][3] else formula[[j]][2])
-        if(fc == ".") {
-          rhs <- paste(names(data)[names(data) != as.character(formula[[1]][2])], collapse = "+")
-          fc <- as.character(if(length(formula[[j]]) > 2) formula[[j]][2] else "")
-          formula[[j]] <- as.formula(paste(fc, rhs, sep = "~"))
-        }
-      }
-    }
-
     ## Parse family object.
     family <- bamlss.family(family)
 
     ## Parse formula.
-    formula <- bamlss.formula(formula, specials, family)
+    formula <- bamlss.formula(formula, family)
   } else {
     family <- bamlss.family(family)
   }
@@ -327,6 +313,9 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
   }
   bf$formula <- formula
 
+  ## Add the terms object.
+  bf$terms <- terms.bamlss.formula(formula, data = data, ...)
+
   ## Process possible score and hess functions.
   if(!is.null(score <- family$score)) {
     if(is.function(score))
@@ -345,7 +334,7 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
   bf$family <- complete.bamlss.family(family)
 
   ## Assign design matrices.
-  bf$terms <- design.construct(bf$formula, data = bf$model.frame, knots = knots,
+  bf$x <- design.construct(bf$terms, data = bf$model.frame, knots = knots,
     model.matrix = model.matrix, smooth.construct = smooth.construct, model = NULL, ...)
   bf$knots <- knots
 
@@ -373,11 +362,11 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
 print.bamlss.frame <- function(x, ...)
 {
   cat("'bamlss.frame' structure:", "\n")  
-  nx <- c("call", "model.frame", "formula", "family", "terms")
+  nx <- c("call", "model.frame", "formula", "family", "terms", "x", "y", "knots")
   for(i in nx) {
     if(!is.null(x[[i]])) {
       cat("  ..$", i, "\n")
-      if(i == "terms") {
+      if(i == "x") {
         for(j in names(x[[i]])) {
           cat("  .. ..$", j, "\n")
           if(!all(c("formula", "fake.formula") %in% names(x[[i]][[j]]))) {
@@ -603,7 +592,7 @@ bamlss.model.frame <- function(formula, data, family, weights = NULL,
     return(eval(fcall, env))
   } else {
     family <- bamlss.family(family)
-    formula <- bamlss.formula(formula, specials, family)
+    formula <- bamlss.formula(formula, family)
   }
 
   if(is.null(na.action))
@@ -734,7 +723,7 @@ bamlss.family <- function(family, type = "bamlss")
   }
   if(!inherits(family, "family.bamlss")) {
     if(!is.character(family)) {
-      if(is.null(family$family)) stop("family is specidied wrong, no family name available!")
+      if(is.null(family$family)) stop("family is specified wrong, no family name available!")
       family <- family$family
     }
     txt <- paste(family, type, sep = if(!is.null(type)) "." else "")
@@ -780,13 +769,12 @@ complete.bamlss.family <- function(family)
 
 ## Special formula parser, can deal with multi parameter models
 ## and hierarchical structures.
-bamlss.formula <- function(formula, specials = NULL, family = gaussian.bamlss())
+bamlss.formula <- function(formula, family = NULL)
 {
   if(inherits(formula, "bamlss.formula"))
     return(formula)
-  family <- bamlss.family(family)
-
-  specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", specials))
+  if(!is.null(family))
+    family <- bamlss.family(family)
 
   if(!is.list(formula)) formula <- list(formula)
   if(!length(formula)) stop("formula is specified wrong!")
@@ -808,32 +796,45 @@ bamlss.formula <- function(formula, specials = NULL, family = gaussian.bamlss())
     env <- env[[1]]
 
   complete_formula <- function(formula) {
-    if(length(formula) < length(family$names))
-      formula <- c(formula, rep(list(), length = length(family$names) - length(formula)))
+    if(!is.null(family)) {
+      if(length(formula) < length(family$names))
+        formula <- c(formula, rep(list(), length = length(family$names) - length(formula)))
+    }
     fn <- NULL
     for(j in seq_along(formula)) {
       ft <- if(!inherits(formula[[j]], "formula")) formula[[j]][[1]] else formula[[j]]
       if(!is.null(ft)) {
-        yok <- attr(terms(ft, specials = specials), "response") > 0
+        yok <- attr(terms(ft), "response") > 0
         fn <- c(fn, if(yok) all.vars(ft)[1] else NULL)
       }
     }
     fn[fn %in% c("1", "-1")] <- NA
     nas <- which(is.na(fn))
-    fn[nas] <- family$names[nas]
-    if(is.null(family$names))
-      family$names <- NA
-    if(!is.na(family$names[1]))
-      fn[1] <- family$names[1]
-    else
-      family$names <- fn
+    if(!is.null(family)) {
+      fn[nas] <- family$names[nas]
+      if(is.null(family$names))
+        family$names <- NA
+      if(!is.na(family$names[1]))
+        fn[1] <- family$names[1]
+      else
+        family$names <- fn
+    } else fn[nas] <- paste("par", 1:length(fn[nas]), sep = ".")
+    if(length(fn) < length(formula)) {
+      k <- length(formula) - length(fn)
+      if(k > 1)
+        fn <- c(fn, paste("?par", 1:k, sep = ""))
+      else
+        fn <- c(fn, "?par")
+    }
     names(formula) <- fn
-    if(any(i <- is.na(names(formula))))
-      names(formula)[i] <- family$names[i]
-    for(j in family$names) {
-      if(is.null(formula[[j]])) {
-        formula[[j]] <- as.formula(paste(j, "1", sep = " ~ "))
-        environment(formula[[j]]) <- env
+    if(!is.null(family)) {
+      if(any(i <- is.na(names(formula))))
+        names(formula)[i] <- family$names[i]
+      for(j in family$names) {
+        if(is.null(formula[[j]])) {
+          formula[[j]] <- as.formula(paste(j, "1", sep = " ~ "))
+          environment(formula[[j]]) <- env
+        }
       }
     }
     for(j in seq_along(formula)) {
@@ -847,11 +848,10 @@ bamlss.formula <- function(formula, specials = NULL, family = gaussian.bamlss())
   formula <- formula_and(formula, env)
   formula <- formula_at(formula, env)
   formula <- complete_formula(formula_hierarchical(formula))
-  formula <- formula_extend(formula, specials, family)
+  formula <- formula_extend(formula, family)
 
   environment(formula) <- env
   class(formula) <- c("bamlss.formula", "list")
-  attr(formula, "specials") <- specials
 
   formula
 }
@@ -860,7 +860,6 @@ bamlss.formula <- function(formula, specials = NULL, family = gaussian.bamlss())
 ## Process categorical responses.
 bamlss.formula.cat <- function(formula, data, reference)
 {
-  specials <- attr(formula, "specials")
   env <- environment(formula)
 
   rn <- y <- NULL
@@ -868,7 +867,7 @@ bamlss.formula.cat <- function(formula, data, reference)
     ft <- if(!inherits(formula[[j]]$formula, "formula")) {
       formula[[j]][[1]]$formula
     } else formula[[j]]$formula
-    yok <- attr(terms(ft, specials = specials), "response") > 0
+    yok <- attr(terms(ft), "response") > 0
     if(yok)
       rn <- c(rn, all.vars(ft)[1])
   }
@@ -972,20 +971,18 @@ make_fFormula <- function(formula)
 
 ## Extend formula by a fake formula with all variables
 ## to compute a model.frame, create smooth objects.
-formula_extend <- function(formula, specials = NULL, family)
+formula_extend <- function(formula, family)
 {
   if(is.list(formula)) {
     for(j in seq_along(formula))
-      formula[[j]] <- formula_extend(formula[[j]], specials, family)
+      formula[[j]] <- formula_extend(formula[[j]], family)
     return(formula)
   } else {
-    specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", specials))
-    mt <- terms(formula, specials = specials, keep.order = TRUE)
     vars <- all.vars(formula)
     response <- response.name(formula)
     if(is.na(response))
       response <- NULL
-    if(!is.null(response)) {
+    if(!is.null(response) & !is.null(family)) {
       if(response %in% family$names) {
         response <- NULL
         vars <- vars[-1]
@@ -993,10 +990,10 @@ formula_extend <- function(formula, specials = NULL, family)
     }
     fake.formula <- as.formula(paste(response, "~1", if(length(vars)) "+" else NULL,
       paste(vars, collapse = "+")), env = environment(formula))
-    return(list("formula" = formula, "fake.formula" = fake.formula,
-      "terms" = mt, "response" = response))
+    return(list("formula" = formula, "fake.formula" = fake.formula))
   }
 }
+
 
 ## Get response name.
 response.name <- function(formula)
