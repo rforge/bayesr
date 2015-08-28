@@ -803,7 +803,8 @@ bamlss.formula <- function(formula, family = NULL)
   if(!is.list(formula)) {
     if(!inherits(formula, "Formula"))
       formula <- as.Formula(formula)
-    formula <- as.list.Formula(formula)
+    if(inherits(formula, "Formula"))
+      formula <- as.list.Formula(formula)
   }
   if(!is.null(family))
     family <- bamlss.family(family)
@@ -850,12 +851,14 @@ bamlss.formula <- function(formula, family = NULL)
       else
         family$names <- fn
     } else fn[nas] <- paste("par", 1:length(fn[nas]), sep = ".")
-    if(length(fn) < length(formula)) {
-      k <- length(formula) - length(fn)
-      if(k > 1)
-        fn <- c(fn, paste("?par", 1:k, sep = ""))
-      else
-        fn <- c(fn, "?par")
+    if(is.null(family)) {
+      if(length(fn) < length(formula)) {
+        k <- length(formula) - length(fn)
+        if(k > 1)
+          fn <- c(fn, paste("?par", 1:k, sep = ""))
+        else
+          fn <- c(fn, "?par")
+      }
     }
     names(formula) <- fn
     if(!is.null(family)) {
