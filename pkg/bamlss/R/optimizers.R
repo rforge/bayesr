@@ -549,25 +549,25 @@ fmt <- function(x, width = 8, digits = 2) {
   txt
 }
 
-bfit0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
-  eps = .Machine$double.eps^0.25, maxit = 400, outer = FALSE, inner = FALSE,
+bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
+  criterion = c("AICc", "BIC", "AIC"), eps = .Machine$double.eps^0.25,
+  maxit = 400, outer = FALSE, inner = FALSE,
   verbose = TRUE, digits = 4, ...)
 {
   criterion <- match.arg(criterion)
 
-  x$terms <- bamlss.setup(x$terms, criterion = criterion, ...)
+  par <- parameters(x, start = start, ...)
+print(par)
+stop()
 
-  family <- x$family
   nx <- family$names
 
-  if(!all(nx %in% names(x$terms)))
+  if(!all(nx %in% names(x)))
     stop("parameter names mismatch with family names!")
   criterion <- match.arg(criterion)
 
   np <- length(nx)
-  response <- model.response(x$model.frame)
-
-  nobs <- if(is.null(dim(response))) length(response) else nrow(response)
+  nobs <- nrow(y)
   eta <- get.eta(x$terms)
   
   inner_bf <- function(x, response, eta, family, edf, id, ...) {

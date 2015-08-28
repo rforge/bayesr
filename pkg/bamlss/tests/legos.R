@@ -7,7 +7,8 @@ bamlss.formula(num ~ s(x1) + id)
 f <- list(
   num ~ s(x1) + s(x3) + id,
   sigma ~ s(x2),
-  id ~ s(x3)
+  id ~ s(x3) + long,
+  long ~ te(x1, x2)
 )
 
 bamlss.formula(f)
@@ -84,6 +85,7 @@ smooth.construct(formula(bf, model = c(1, 1)), data = d)
 smooth.construct(terms(bf, model = c(1, 1), drop = FALSE), data = d)
 
 ## Extract or initiallize parameters.
+bf <- bamlss.frame(num|sigma ~ s(x1) + s(x2)|s(x3), data = GAMart)
 p <- parameters(bf)
 unlist(p)
 unlist(parameters(randomize(bf)))
