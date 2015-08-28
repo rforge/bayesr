@@ -556,7 +556,8 @@ parameters <- function(x, start = NULL, fill = c(0, 0.0001), list = TRUE)
             if(length(ii <- grep(paste(i, "s", k, sep = "."), names(start), fixed = TRUE))) {
               spar <- start[ii]
               cn <- names(par[[i]]$s[[k]])
-              if(length(tau2 <- grep("tau2", names(spar)))
+              if(length(tau2 <- grep("tau2", names(spar))))
+                a <- 1
 print(cn)
 print(spar)
 stop()
