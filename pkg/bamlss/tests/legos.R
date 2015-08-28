@@ -56,7 +56,7 @@ names(smooth.construct(bf, model = c(1, 1)))
 
 ## (4) Complex multilevel structures.
 f <- list(
-  cat ~ s(x1) + id,
+  cat ~ s(x1) + s(x2) + id,
   id ~ s(x3)
 )
 
