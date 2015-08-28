@@ -767,15 +767,46 @@ complete.bamlss.family <- function(family)
 }
 
 
+## Formula to list().
+as.list.Formula <- function(x)
+{
+  if(!inherits(x, "Formula"))
+    x <- as.Formula(x)
+  env <- environment(x)
+  lhs <- attr(x, "lhs")
+  rhs <- attr(x, "rhs")
+  nl <- length(lhs)
+  nr <- length(rhs)
+  if(nl < nr)
+    lhs <- c(lhs, rep(list(NA), length = nr - nl))
+  if(nr < nl)
+    rhs <- c(rhs, rep(list(1), length = nl - nr))
+  x <- mapply(c, lhs, rhs, SIMPLIFY = FALSE)
+  formula <- list()
+  for(i in seq_along(x)) {
+    f <- if(!inherits(x[[i]][[1]], "call")) {
+      as.call(c(as.symbol("~"), x[[i]]))
+    } else as.call(c(as.symbol("~"), x[[i]][[2]]))
+    formula[[i]] <- eval(f, envir = env)
+  }
+  environment(formula) <- env
+  formula
+}
+
+
 ## Special formula parser, can deal with multi parameter models
 ## and hierarchical structures.
 bamlss.formula <- function(formula, family = NULL)
 {
   if(inherits(formula, "bamlss.formula"))
     return(formula)
+  if(!is.list(formula)) {
+    if(!inherits(formula, "Formula"))
+      formula <- as.Formula(formula)
+    formula <- as.list.Formula(formula)
+  }
   if(!is.null(family))
     family <- bamlss.family(family)
-
   if(!is.list(formula)) formula <- list(formula)
   if(!length(formula)) stop("formula is specified wrong!")
   
