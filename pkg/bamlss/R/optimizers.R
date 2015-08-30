@@ -47,7 +47,7 @@ bamlss.setup <- function(x, update = "iwls", do.optim = NULL, criterion = c("AIC
   criterion <- match.arg(criterion)
 
   foo <- function(x, id = NULL) {
-    if(!any(c("formula", "fake.formula", "response") %in% names(x))) {
+    if(!any(c("formula", "fake.formula") %in% names(x))) {
       nx <- names(x)
       if(is.null(nx)) nx <- 1:length(x)
       if(length(unique(nx)) < length(x)) nx <- 1:length(x)
@@ -228,40 +228,32 @@ smooth.bamlss.default <- function(x, ...)
 {
   if(inherits(x, "special"))
     return(x)
-  if(is.null(x$xbin.ind) & !is.null(x$xt$xbin)) {
-    ind <- as.vector(apply(x$X, 1, function(x2) {
-      if(!is.character(x2) & !is.factor(x2)) {
-        if(!is.logical(x$xt$xbin))
-          rval <- format(x2, digits = x$xt$xbin, nsmall = x$xt$xbin)
-        else rval <- sprintf("%.48f", x2)
-      } else rval <- x2
-      paste(rval, collapse = ",", sep = "")
-    }))
-    uind <- unique(ind)
-    x$xbin.take <- !duplicated(ind)
-    x$xbin.ind <- rep(NA, nrow(x$X))
-    xbin.uind <- seq_along(uind)
-    for(ii in xbin.uind)
-      x$xbin.ind[ind == uind[ii]] <- ii
-    x$xbin.order <- order(x$xbin.ind)
-    x$xbin.k <- length(xbin.uind)
-    x$xbin.sind <- x$xbin.ind[x$xbin.order]
-    x$X <- x$X[x$xbin.take, , drop = FALSE]
-    x$xbin.before <- TRUE
+  before <- NULL
+  if(is.null(x$binning) & !is.null(x$xt$binning)) {
+    x$binning <- match.index(x$X)
+    x$binning$order <- order(x$binning$match.index)
+    x$binning$sorted.index <- x$binning$match.index[x$binning$order]
+    x$X <- x$X[x$binning$nodups, , drop = FALSE]
+    before <- TRUE
   }
-  if(is.null(x$xbin.before)) x$xbin.before <- FALSE
-  if(!is.null(x$xbin.ind) & !x$xbin.before) {
-    x$X <- x$X[x$xbin.take, , drop = FALSE]
+  if(is.null(before)) before <- FALSE
+  if(!is.null(x$binning) & !before) {
+    x$X <- x$X[x$binning$nodups, , drop = FALSE]
   }
-  if(is.null(x$xbin.ind)) {
-    x$xbin.k <- nrow(x$X)
-    x$xbin.ind <- 1:x$xbin.k
-    x$xbin.sind <- 1:x$xbin.k
-    x$xbin.order <- 1:x$xbin.k
+  if(is.null(x$binning)) {
+    nr <- nrow(x$X)
+    x$binning <- list(
+      "match.index" = 1:nr,
+      "nodups" = 1:nr,
+      "order" = 1:nr,
+      "sorted.index" = 1:nr
+    )
   }
-  x$nobs <- length(x$xbin.ind)
-  x$weights <- rep(0, length = x$xbin.k)
-  x$rres <- rep(0, length = x$xbin.k)
+  x$binning$nobs <- length(x$binning$match.index)
+  k <- length(x$binning$nodups)
+  x$binning$weights <- rep(0, length = k)
+  x$binning$rres <- rep(0, length = k)
+
   state <- if(is.null(x$xt$state)) list() else x$xt$state
   if(is.null(x$fixed))
     x$fixed <- if(!is.null(x$fx)) x$fx[1] else FALSE
@@ -556,27 +548,23 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 {
   criterion <- match.arg(criterion)
 
-  par <- parameters(x, start = start, ...)
-print(par)
-stop()
-
   nx <- family$names
-
   if(!all(nx %in% names(x)))
-    stop("parameter names mismatch with family names!")
-  criterion <- match.arg(criterion)
+    stop("design construct names mismatch with family names!")
 
   np <- length(nx)
   nobs <- nrow(y)
-  eta <- get.eta(x$terms)
+  eta <- get.eta(x)
+  par <- parameters(x, start = start, ...)
+  edf <- parameters(x, simple.list = TRUE)
   
-  inner_bf <- function(x, response, eta, family, edf, id, ...) {
+  inner_bf <- function(x, y, eta, family, edf, id, ...) {
     eps0 <- eps + 1; iter <- 1
     while(eps0 > eps & iter < maxit) {
       eta0 <- eta
       for(sj in seq_along(x)) {
         ## Get updated parameters.
-        p.state <- x[[sj]]$update(x[[sj]], family, response, eta, id, edf = edf, ...)
+        p.state <- x[[sj]]$update(x[[sj]], family, y, eta, id, edf = edf, ...)
 
         ## Compute equivalent degrees of freedom.
         edf <- edf - x[[sj]]$state$edf + p.state$edf
@@ -596,7 +584,6 @@ stop()
 
   ## Backfitting main function.
   backfit <- function(x, eta, verbose = TRUE) {
-    edf <- get.edf(x)
     eps0 <- eps + 1; iter <- 1
     while(eps0 > eps & iter < maxit) {
       eta0 <- eta

@@ -179,7 +179,8 @@ design.construct <- function(formula, data = NULL, knots = NULL,
   {
     if(!is.null(dups)) {
       if(any(dups)) {
-        obj$match.index <- match.index(data[, all.vars(obj$fake.formula), drop = FALSE])
+        mi <- match.index(data[, all.vars(obj$fake.formula), drop = FALSE])
+        obj[names(mi)] <- mi
         data <- subset(data, !dups)
       }
     }
@@ -210,13 +211,13 @@ design.construct <- function(formula, data = NULL, knots = NULL,
         for(tsm in sterms) {
           if(is.null(tsm$xt))
             tsm$xt <- list()
-          if(is.null(tsm$xt$xbin))
-            tsm$xt$xbin <- binning
-          if(!is.null(tsm$xt$xbin)) {
-            if(!is.logical(tsm$xt$xbin)) {
+          if(is.null(tsm$xt$binning))
+            tsm$xt$binning <- binning
+          if(!is.null(tsm$xt$binning)) {
+            if(!is.logical(tsm$xt$binning)) {
               for(tsmt in tsm$term) {
                 if(!is.factor(data[[tsmt]]))
-                  data[[tsmt]] <- round(data[[tsmt]], digits = tsm$xt$xbin)
+                  data[[tsmt]] <- round(data[[tsmt]], digits = tsm$xt$binning)
               }
             }
           }
@@ -227,37 +228,19 @@ design.construct <- function(formula, data = NULL, knots = NULL,
           if(is.null(tsm$special)) {
             if(is.null(tsm$xt))
               tsm$xt <- list()
-            if(is.null(tsm$xt$xbin))
-              tsm$xt$xbin <- binning
+            if(is.null(tsm$xt$binning))
+              tsm$xt$binning <- binning
             acons <- TRUE
             if(!is.null(tsm$xt$center))
               acons <- tsm$xt$center
             tsm$xt$center <- acons
-            tsm$xbin.before <- before
-            if(!is.null(tsm$xt$xbin)) {
+            tsm$xt$before <- before
+            if(!is.null(tsm$xt$binning)) {
               term.names <- c(tsm$term, if(tsm$by != "NA") tsm$by else NULL)
-              tsm$match.index <- match.index(data[, term.names, drop = FALSE])
-              tsm$nodups <- which(!duplicated(data[, term.names, drop = FALSE]))
-## FIXME: binning!
-              ind <- lapply(data[, term.names, drop = FALSE], function(x) {
-                if(!is.character(x) & !is.factor(x)) {
-                  if(!is.logical(tsm$xt$xbin))
-                    rval <- format(x, digits = tsm$xt$xbin, nsmall = tsm$xt$xbin)
-                  else rval <- sprintf("%.48f", x)
-                } else rval <- x
-                rval
-              })
-              ind <- as.vector(apply(do.call("cbind", ind), 1, paste, collapse = ",", sep = ""))
-              uind <- unique(ind)
-              tsm$xbin.take <- !duplicated(ind)
-              tsm$xbin.ind <- rep(NA, nrow(data))
-              xbin.uind <- seq_along(uind)
-              for(ii in xbin.uind)
-                tsm$xbin.ind[ind == uind[ii]] <- ii
-              tsm$xbin.order <- order(tsm$xbin.ind)
-              tsm$xbin.k <- length(xbin.uind)
-              tsm$xbin.sind <- tsm$xbin.ind[tsm$xbin.order]
-              smt <- smoothCon(tsm, if(before) data[tsm$xbin.take, term.names, drop = FALSE] else data,
+              tsm$binning <- match.index(data[, term.names, drop = FALSE])
+              tsm$binning$order <- order(tsm$binning$match.index)
+              tsm$binning$sorted.index <- tsm$binning$match.index[tsm$binning$order]
+              smt <- smoothCon(tsm, if(before) data[tsm$binning$nodups, term.names, drop = FALSE] else data,
                 knots, absorb.cons = acons)
             } else {
               smt <- smoothCon(tsm, data, knots, absorb.cons = acons)
@@ -460,7 +443,7 @@ smooth.construct.bamlss.frame <- smooth.construct.bamlss.formula <- smooth.const
 
 
 ## Extract/initialize parameters.
-parameters <- function(x, start = NULL, fill = c(0, 0.0001), list = TRUE)
+parameters <- function(x, start = NULL, fill = c(0, 0.0001), list = TRUE, simple.list = FALSE)
 {
   if(inherits(x, "bamlss.frame")) {
     if(is.null(x$x)) {
@@ -481,91 +464,137 @@ parameters <- function(x, start = NULL, fill = c(0, 0.0001), list = TRUE)
         par[[i]][[j]] <- list()
         if(!is.null(x[[i]][[j]]$model.matrix)) {
           nc <- ncol(x[[i]][[j]]$model.matrix)
-          par[[i]][[j]]$p <- rep(fill[1], length = nc)
-          if(is.null(cn <- colnames(x[[i]][[j]]$model.matrix)))
-            cn <- paste("b", 1:nc, sep = "")
-          names(par[[i]][[j]]$p) <- cn
+          if(simple.list) {
+            par[[i]][[j]]$p <- fill[1]
+          } else {
+            par[[i]][[j]]$p <- rep(fill[1], length = nc)
+            if(is.null(cn <- colnames(x[[i]][[j]]$model.matrix)))
+              cn <- paste("b", 1:nc, sep = "")
+            names(par[[i]][[j]]$p) <- cn
+            if(!is.null(start)) {
+              if(length(ii <- grep(paste(i, j, "p", sep = "."), names(start), fixed = TRUE))) {
+                spar <- start[ii]
+                spn <- names(spar)
+                cn2 <- paste(i, j, "p", cn, sep = ".")
+                take <- which(spn %in% cn2)
+                if(length(take)) {
+                  par[[i]][[j]]$p[which(cn2 %in% spn)] <- spar[take]
+                }
+              }
+            }
+          }
         }
         if(!is.null(x[[i]][[j]]$smooth.construct)) {
           par[[i]][[j]]$s <- list()
           for(k in names(x[[i]][[j]]$smooth.construct)) {
-            if(!is.null(x[[i]][[j]]$smooth.construct[[k]]$rand)) {
-              tpar1 <- rep(fill[1], ncol(x[[i]][[j]]$smooth.construct[[k]]$rand$Xr))
-              tpar2 <- rep(fill[1], ncol(x[[i]][[j]]$smooth.construct[[k]]$Xf))
-              names(tpar1) <- paste("b", 1:length(tpar1), ".re", sep = "")
-              names(tpar2) <- paste("b", 1:length(tpar2), ".fx", sep = "")
-              tpar <- c(tpar1, tpar2)
+            if(simple.list) {
+              par[[i]][[j]]$s[[k]] <- fill[1]
             } else {
-              tpar <- rep(fill[1], ncol(x[[i]][[j]]$smooth.construct[[k]]$X))
-              names(tpar) <- paste("b", 1:length(tpar), sep = "")
-            }
-            if(length(x[[i]][[j]]$smooth.construct[[k]]$S)) {
-              tpar3 <- NULL
-              for(kk in seq_along(x[[i]][[j]]$smooth.construct[[k]]$S)) {
-                tpar3 <- c(tpar3, fill[2])
+              if(!is.null(x[[i]][[j]]$smooth.construct[[k]]$rand)) {
+                tpar1 <- rep(fill[1], ncol(x[[i]][[j]]$smooth.construct[[k]]$rand$Xr))
+                tpar2 <- rep(fill[1], ncol(x[[i]][[j]]$smooth.construct[[k]]$Xf))
+                names(tpar1) <- paste("b", 1:length(tpar1), ".re", sep = "")
+                names(tpar2) <- paste("b", 1:length(tpar2), ".fx", sep = "")
+                tpar <- c(tpar1, tpar2)
+              } else {
+                tpar <- rep(fill[1], ncol(x[[i]][[j]]$smooth.construct[[k]]$X))
+                names(tpar) <- paste("b", 1:length(tpar), sep = "")
               }
-              names(tpar3) <- paste("tau2", 1:length(tpar3), sep = ".")
-              tpar <- c(tpar, tpar3)
+              if(length(x[[i]][[j]]$smooth.construct[[k]]$S)) {
+                tpar3 <- NULL
+                for(kk in seq_along(x[[i]][[j]]$smooth.construct[[k]]$S)) {
+                  tpar3 <- c(tpar3, fill[2])
+                }
+                names(tpar3) <- paste("tau2", 1:length(tpar3), sep = ".")
+                tpar <- c(tpar, tpar3)
+              }
+              par[[i]][[j]]$s[[k]] <- tpar
+              if(!is.null(start)) {
+                if(length(ii <- grep(paste(i, j, "s", k, sep = "."), names(start), fixed = TRUE))) {
+                  spar <- start[ii]
+                  cn <- names(par[[i]][[j]]$s[[k]])
+                  if(length(tau2 <- grep("tau2", names(spar)))) {
+                    tau2 <- spar[tau2]
+                    if(length(jj <- grep("tau2", cn, fixed = TRUE))) {
+                      tau2 <- rep(tau2, length.out = length(jj))
+                      par[[i]][[j]]$s[[k]][jj] <- tau2
+                    }
+                  }
+                  if(length(b <- grep("b", names(spar)))) {
+                    b <- spar[b]
+                    if(length(jj <- grep("b", cn, fixed = TRUE))) {
+                      b <- rep(b, length.out = length(jj))
+                      par[[i]][[j]]$s[[k]][jj] <- b
+                    }
+                  }
+                }
+              }
             }
-            par[[i]][[j]]$s[[k]] <- tpar
           }
         }
       }
     } else {
       if(!is.null(x[[i]]$model.matrix)) {
-        nc <- ncol(x[[i]]$model.matrix)
-        par[[i]]$p <- rep(fill[1], length = nc)
-        if(is.null(cn <- colnames(x[[i]]$model.matrix)))
-          cn <- paste("b", 1:nc, sep = "")
-        names(par[[i]]$p) <- cn
-        if(!is.null(start)) {
-          if(length(ii <- grep(paste(i, "p", sep = "."), names(start), fixed = TRUE))) {
-            spar <- start[ii]
-            spn <- names(spar)
-            cn2 <- paste(i, "p", cn, sep = ".")
-            take <- which(spn %in% cn2)
-            if(length(take)) {
-              par[[i]]$p[which(cn2 %in% spn)] <- spar[take]
-            }
-          }
-        }
-      }
-      if(!is.null(x[[i]]$smooth.construct)) {
-        par[[i]]$s <- list()
-        for(k in names(x[[i]]$smooth.construct)) {
-          if(!is.null(x[[i]]$smooth.construct[[k]]$rand)) {
-            tpar1 <- rep(fill[1], ncol(x[[i]]$smooth.construct[[k]]$rand$Xr))
-            tpar2 <- rep(fill[1], ncol(x[[i]]$smooth.construct[[k]]$Xf))
-            names(tpar1) <- paste("b", 1:length(tpar1), ".re", sep = "")
-            names(tpar2) <- paste("b", 1:length(tpar2), ".fx", sep = "")
-            tpar <- c(tpar1, tpar2)
-          } else {
-            tpar <- rep(fill[1], ncol(x[[i]]$smooth.construct[[k]]$X))
-            names(tpar) <- paste("b", 1:length(tpar), sep = "")
-          }
-          if(length(x[[i]]$smooth.construct[[k]]$S)) {
-            tpar3 <- NULL
-            for(kk in seq_along(x[[i]]$smooth.construct[[k]]$S)) {
-              tpar3 <- c(tpar3, fill[2])
-            }
-            names(tpar3) <- paste("tau2", 1:length(tpar3), sep = ".")
-            tpar <- c(tpar, tpar3)
-          }
-          par[[i]]$s[[k]] <- tpar
+        if(simple.list) {
+          par[[i]]$p <- fill[1]
+        } else {
+          nc <- ncol(x[[i]]$model.matrix)
+          par[[i]]$p <- rep(fill[1], length = nc)
+          if(is.null(cn <- colnames(x[[i]]$model.matrix)))
+            cn <- paste("b", 1:nc, sep = "")
+          names(par[[i]]$p) <- cn
           if(!is.null(start)) {
-            if(length(ii <- grep(paste(i, "s", k, sep = "."), names(start), fixed = TRUE))) {
+            if(length(ii <- grep(paste(i, "p", sep = "."), names(start), fixed = TRUE))) {
               spar <- start[ii]
-              cn <- names(par[[i]]$s[[k]])
-              if(length(tau2 <- grep("tau2", names(spar))))
-                a <- 1
-print(cn)
-print(spar)
-stop()
               spn <- names(spar)
               cn2 <- paste(i, "p", cn, sep = ".")
               take <- which(spn %in% cn2)
               if(length(take)) {
                 par[[i]]$p[which(cn2 %in% spn)] <- spar[take]
+              }
+            }
+          }
+        }
+        if(!is.null(x[[i]]$smooth.construct)) {
+          par[[i]]$s <- list()
+          for(k in names(x[[i]]$smooth.construct)) {
+            if(!is.null(x[[i]]$smooth.construct[[k]]$rand)) {
+              tpar1 <- rep(fill[1], ncol(x[[i]]$smooth.construct[[k]]$rand$Xr))
+              tpar2 <- rep(fill[1], ncol(x[[i]]$smooth.construct[[k]]$Xf))
+              names(tpar1) <- paste("b", 1:length(tpar1), ".re", sep = "")
+              names(tpar2) <- paste("b", 1:length(tpar2), ".fx", sep = "")
+              tpar <- c(tpar1, tpar2)
+            } else {
+              tpar <- rep(fill[1], ncol(x[[i]]$smooth.construct[[k]]$X))
+              names(tpar) <- paste("b", 1:length(tpar), sep = "")
+            }
+            if(length(x[[i]]$smooth.construct[[k]]$S)) {
+              tpar3 <- NULL
+              for(kk in seq_along(x[[i]]$smooth.construct[[k]]$S)) {
+                tpar3 <- c(tpar3, fill[2])
+              }
+              names(tpar3) <- paste("tau2", 1:length(tpar3), sep = ".")
+              tpar <- c(tpar, tpar3)
+            }
+            par[[i]]$s[[k]] <- tpar
+            if(!is.null(start)) {
+              if(length(ii <- grep(paste(i, "s", k, sep = "."), names(start), fixed = TRUE))) {
+                spar <- start[ii]
+                cn <- names(par[[i]]$s[[k]])
+                if(length(tau2 <- grep("tau2", names(spar)))) {
+                  tau2 <- spar[tau2]
+                  if(length(jj <- grep("tau2", cn, fixed = TRUE))) {
+                    tau2 <- rep(tau2, length.out = length(jj))
+                    par[[i]]$s[[k]][jj] <- tau2
+                  }
+                }
+                if(length(b <- grep("b", names(spar)))) {
+                  b <- spar[b]
+                  if(length(jj <- grep("b", cn, fixed = TRUE))) {
+                    b <- rep(b, length.out = length(jj))
+                    par[[i]]$s[[k]][jj] <- b
+                  }
+                }
               }
             }
           }
@@ -589,8 +618,6 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
   env <- get_formula_envir(formula)
 
   ## Setup all processing functions.
-  if(is.null(transform))
-    transform <- function(x) { x }
   foo <- list("transform" = transform, "optimizer" = optimizer, "sampler" = sampler, "results" = results)
   nf <- names(foo)
   default_fun <- c("no.transform", "bfit", "GMCMC", "results.bamlss.default")
@@ -665,8 +692,8 @@ stop()
 
 
 ## No transform function.
-no.transform <- function(x) { x }
-results.bamlss.default <- function(x) { x }
+no.transform <- function(x, ...) { x }
+results.bamlss.default <- function(x, ...) { x }
 
 
 
@@ -4988,12 +5015,10 @@ match.index <- function(x)
     if(!inherits(x, "matrix") & !inherits(x, "data.frame"))
       stop("x must be a matrix or a data.frame!")
     x <- do.call("paste", c(x, sep = "\r"))
-    ux <- unique(x)
-  } else {
-    ux <- unique(x)
   }
-  ind <- match(x, ux)
-  ind
+  nodups <- which(!duplicated(x))
+  ind <- match(x, x[nodups])
+  return(list("match.index" = ind, "nodups" = nodups))
 }
 
 
