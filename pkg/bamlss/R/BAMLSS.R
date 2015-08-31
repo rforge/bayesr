@@ -310,6 +310,35 @@ design.construct <- function(formula, data = NULL, knots = NULL,
     }
   } else formula <- assign.design(formula)
 
+  if(!all(c("formula", "fake.formula") %in% names(formula))) {
+    for(i in seq_along(formula)) {
+      if(!all(c("formula", "fake.formula") %in% names(formula[[i]]))) {
+        for(j in seq_along(formula[[i]])) {
+          if(!is.null(formula[[i]][[j]]$smooth.construct)) {
+            for(k in seq_along(formula[[i]][[j]]$smooth.construct)) {
+              if(is.null(formula[[i]][[j]]$smooth.construct[[k]]$fit.fun))
+                formula[[i]][[j]]$smooth.construct[[k]]$fit.fun <- make.fit.fun(formula[[i]][[j]]$smooth.construct[[k]])
+            }
+          }
+        }
+      } else {
+        if(!is.null(formula[[i]]$smooth.construct)) {
+          for(j in seq_along(formula[[i]]$smooth.construct)) {
+            if(is.null(formula[[i]]$smooth.construct[[j]]$fit.fun))
+              formula[[i]]$smooth.construct[[j]]$fit.fun <- make.fit.fun(formula[[i]]$smooth.construct[[j]])
+          }
+        }
+      }
+    }
+  } else {
+    if(!is.null(formula$smooth.construct)) {
+      for(j in seq_along(formula$smooth.construct)) {
+        if(is.null(formula$smooth.construct[[j]]$fit.fun))
+          formula$smooth.construct[[j]]$fit.fun <- make.fit.fun(formula$smooth.construct[[j]])
+      }
+    }
+  }
+
   attr(formula, "specials") <- NULL
   attr(formula, ".Environment") <- NULL
   class(formula) <- "list"
@@ -318,6 +347,21 @@ design.construct <- function(formula, data = NULL, knots = NULL,
       formula <- formula[[1]]
   }
   return(formula)
+}
+
+
+## The model term fitting function.
+make.fit.fun <- function(x)
+{
+  ff <- function(X, b, expand = TRUE) {
+    if(!is.null(names(b)))
+      b <- get.par(b, "b")
+    f <- drop(X %*% b)
+    if(!is.null(x$binning$match.index) & expand)
+      f <- f[x$binning$match.index]
+    return(as.numeric(f))
+  }
+  return(ff)
 }
 
 
@@ -1711,7 +1755,7 @@ quick_quantiles <- function(X, samples)
 
 
 ## Function to compute statistics from samples of a model term.
-compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
+compute_term <- function(x, get.X, fit.fun, psamples, vsamples = NULL,
   asamples = NULL, FUN = NULL, snames, effects.hyp, fitted.values, data,
   grid = 100, rug = TRUE, hlevel = 1, sx = FALSE, re.slope = FALSE, edfsamples = NULL)
 {
@@ -1807,13 +1851,13 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
   } else {
     if(nt < 2) {
       fsamples <- apply(psamples, 1, function(g) {
-        get.mu(X, g, expand = FALSE)
+        fit.fun(X, g, expand = FALSE)
       })
       smf <- t(apply(fsamples, 1, FUN))
     } else {
       smf <- 0
       for(i in 1:nrow(psamples)) {
-        smf <- smf + drop(get.mu(X, psamples[i, ], expand = FALSE))
+        smf <- smf + drop(fit.fun(X, psamples[i, ], expand = FALSE))
       }
       smf <- as.matrix(smf / nrow(psamples), ncol = 1)
       colnames(smf) <- "50%"
@@ -1841,7 +1885,7 @@ compute_term <- function(x, get.X, get.mu, psamples, vsamples = NULL,
       X <- X / data[[x$by]]
 
       fsamples <- apply(psamples, 1, function(g) {
-        get.mu(X, g, expand = FALSE)
+        fit.fun(X, g, expand = FALSE)
       })
 
       smf <- t(apply(fsamples, 1, FUN))
@@ -2061,7 +2105,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
           } else tmp <- as.matrix(tmp)
           if(!is.null(specs$special)) {
             m.specials[[i]] <- list("X" = PredictMat(specs, newdata), ## FIXME: also allow basis()?
-              "get.mu" = specs$get.mu, "samples" = tmp)
+              "fit.fun" = specs$fit.fun, "samples" = tmp)
           } else {
             m.samples[[i]] <- rbind(m.samples[[i]], tmp)
             if(inherits(object[[j]]$effects[[i]], "linear.bamlss")) {
@@ -2185,14 +2229,14 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
       m.samples <- as.data.frame(m.samples)
       m.designs <- as.data.frame(m.designs)
       options("warn" = warn)
-      get.mu <- function(X, b, ...) {
+      fit.fun <- function(X, b, ...) {
         as.matrix(X) %*% as.numeric(b)
       }
-      rval <- apply(m.samples, 1, function(x) { get.mu(m.designs, x, expand = FALSE) })
+      rval <- apply(m.samples, 1, function(x) { fit.fun(m.designs, x, expand = FALSE) })
     } else rval <- 0
     if(length(m.specials)) {
       for(i in m.specials) {
-        rval <- rval + apply(i$samples, 1, function(x) { i$get.mu(i$X, x, expand = FALSE) })
+        rval <- rval + apply(i$samples, 1, function(x) { i$fit.fun(i$X, x, expand = FALSE) })
       }
     }
     type <- match.arg(type)
@@ -2274,14 +2318,14 @@ smooth.construct.rsc.smooth.spec <- function(object, data, knots) {
       g <- paste("g[", 1:n, "]", sep = "", collapse = " + ")
       fun <- paste("function(X, g) { ", "(", if(attr(ft, "intercept")) "1 + ",
         g, ") * (X %*% ", if(n > 1) paste("g[-(1:", n, ")]", sep = "") else "g[-1]", ") }", sep = "")
-      rval$get.mu <- eval(parse(text = fun))
+      rval$fit.fun <- eval(parse(text = fun))
       rval$rs.by <- rs.by
       rval$by.vars <- vars
       rval$by.formula <- object$by.formula
       rval$one <- attr(ft, "intercept")
     }
   } else {
-    rval$get.mu <- function(X, g, ...) {
+    rval$fit.fun <- function(X, g, ...) {
       X %*% as.numeric(g)
     }
   }
@@ -2304,7 +2348,7 @@ smooth.construct.gc.smooth.spec <- function(object, data, knots)
   if(object$by != "NA")
     stop("by variables not implemented yet!")
 
-  object$get.mu <- function(X, g, ...) {
+  object$fit.fun <- function(X, g, ...) {
     ##f <- g[1] * exp(-g[2] * exp(-g[3] * drop(X)))
     f <- log(g[1]) - g[2] * exp(-g[3] * drop(X))
     f <- exp(f)
@@ -2322,7 +2366,7 @@ smooth.construct.gc.smooth.spec <- function(object, data, knots)
   object$np <- 3
   object$state$parameters <- rep(0, 3)
   names(object$state$parameters) <- paste("g", 1:3, sep = "")
-  object$state$fitted.values <- object$get.mu(object$X, object$state$parameters)
+  object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
   object$state$edf <- 3
   object$lower <- rep(-Inf, 3)
   object$upper <- rep(Inf, 3)
@@ -2478,7 +2522,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     object$interval <- interval
     object$fixed <- all(fixed)
 
-    object$get.mu <- function(X, g, ...) {
+    object$fit.fun <- function(X, g, ...) {
       nx <- colnames(X)
       k1 <- length(grep("g1", nx, fixed = TRUE))
       w <- c(1, g[(k1 + 1):(ncol(X) - 1)])
@@ -2618,7 +2662,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
 
     ## Setup return state.
     x$state$alpha <- log(1)
-    x$state$fit <- x$get.mu(x$X, x$state$g)
+    x$state$fit <- x$fit.fun(x$X, x$state$g)
 
     for(j in seq_along(x$state$tau2)) {
       if(!x$smooths[[j]]$fixed) {
@@ -3289,7 +3333,7 @@ plot.bamlss.effect.default <- function(x, ...) {
     }
     fit <- apply(samps, 1, function(g) {
       names(g) <- NULL
-      specs$get.mu(X, g, expand = FALSE)
+      specs$fit.fun(X, g, expand = FALSE)
     })
     fit <- t(apply(fit, 1, FUN))
 
@@ -4237,19 +4281,19 @@ results.bamlss.frame <- function(x, samples, model.frame = TRUE, grid = 100, ...
                 obj$sterms[[i]]$label <- paste(obj$sterms[[i]]$label, ct, sep = ":")
               }
             }
-            if(is.null(obj$sterms[[i]]$get.mu)) {
-              obj$sterms[[i]]$get.mu <- function(X, b, ...) {
+            if(is.null(obj$sterms[[i]]$fit.fun)) {
+              obj$sterms[[i]]$fit.fun <- function(X, b, ...) {
                 drop(X %*% b)
               }
             }
 
-            fst <- compute_term(obj$sterms[[i]], get.X = get.X, get.mu = obj$sterms[[i]]$get.mu,
+            fst <- compute_term(obj$sterms[[i]], get.X = get.X, fit.fun = obj$sterms[[i]]$fit.fun,
               psamples = psamples, vsamples = vsamples, asamples = asamples,
               FUN = NULL, snames = snames, effects.hyp = effects.hyp,
               fitted.values = fitted.values, data = x$model.frame[, tn, drop = FALSE],
               grid = grid, edfsamples = edfsamples)
 
-            attr(fst$term, "specs")$get.mu <- obj$sterms[[i]]$get.mu
+            attr(fst$term, "specs")$fit.fun <- obj$sterms[[i]]$fit.fun
 
             ## Add term to effects list.
             effects[[obj$sterms[[i]]$label]] <- fst$term
@@ -5014,7 +5058,9 @@ match.index <- function(x)
   if(!is.vector(x)) {
     if(!inherits(x, "matrix") & !inherits(x, "data.frame"))
       stop("x must be a matrix or a data.frame!")
-    x <- do.call("paste", c(x, sep = "\r"))
+    x <- if(inherits(x, "matrix")) {
+      apply(x, 1, paste, sep = "\r")
+    } else do.call("paste", c(x, sep = "\r"))
   }
   nodups <- which(!duplicated(x))
   ind <- match(x, x[nodups])
