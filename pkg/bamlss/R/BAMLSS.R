@@ -267,11 +267,11 @@ design.construct <- function(formula, data = NULL, knots = NULL,
               smooth <- try(gam.side(smooth, obj$model.matrix, tol = .Machine$double.eps^.5), silent = TRUE)
             }
             if(inherits(smooth, "try-error"))
-              stop("gam.side() produces an error when binning, try to set before = FALSE!")
+              stop("gam.side() produces an error when binning, try to set before = FALSE or set gam.side = FALSE!")
           }
           sme <- NULL
           if(smooth.construct)
-            sme <- mgcv:::expand.t2.smooths(smooth)
+            sme <- expand.t2.smooths(smooth)
           if(is.null(sme)) {
             original.smooth <- NULL
           } else {
@@ -1614,7 +1614,7 @@ randomize <- function(x, vnames = NULL)
       for(j in 1:m) {
         if(!inherits(x$smooth.construct[[j]], "no.mgcv")) {
           if(is.null(x$smooth.construct[[j]]$rand) & is.null(x$smooth.construct[[j]]$Xf)) {
-            tmp <- mgcv:::smooth2random(x$smooth.construct[[j]], vnames, type = 2)
+            tmp <- smooth2random(x$smooth.construct[[j]], vnames, type = 2)
             if(is.null(x$smooth.construct[[j]]$xt$nolin))
               x$smooth.construct[[j]]$Xf <- tmp$Xf
 #          if(inherits(x$smooth.construct[[j]], "random.effect")) {
@@ -3330,7 +3330,7 @@ plot.bamlss.effect.default <- function(x, ...) {
         args$x <- density(x[, "50%"], na.rm = TRUE)
         if(!limNULL)
           args$xlim <- args$ylim
-        do.call("plot", delete.args(stats:::plot.density, args, c("main", "xlim")))
+        do.call("plot", delete.args(plot.density, args, c("main", "xlim")))
       } else {
         if(!is.null(args$map)) {
           args$x <- x[, grepl("50%", colnames(x), fixed = TRUE)]

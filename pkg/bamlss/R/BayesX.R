@@ -1087,12 +1087,12 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
   if(bs %in% c("rsps", "hrandom_pspline")) {
     bs <- "rsps"
     x <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500)
-    rcall <- paste("R2BayesX:::r(x = ", by, ", bs = ", sQuote(bs), ", by = ", x, ", ...)", sep = "")
+    rcall <- paste("r(x = ", by, ", bs = ", sQuote(bs), ", by = ", x, ", ...)", sep = "")
     rval <- eval(parse(text = rcall))
   } else {
     if(length(grep("~", term <- deparse(call$x))) && bs %in% c("re", "ra", "random")) {
       x <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500)
-      rcall <- paste("R2BayesX:::r(x = ", x, ", by = ", by, ", ...)", sep = "")
+      rcall <- paste("r(x = ", x, ", by = ", by, ", ...)", sep = "")
       rval <- eval(parse(text = rcall))
     } else {
       k <- -1
@@ -1162,7 +1162,7 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
         xt <- NULL
       if(!is.null(call$z)) 
         term <- c(term, deparse(call$z))
-      rval <- mgcv::s(x, z, k = k, bs = bs, m = m, xt = xt)
+      rval <- s(x, z, k = k, bs = bs, m = m, xt = xt)
       rval$term <- term
       rval$dim <- length(term)
       rval$by <- by

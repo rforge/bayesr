@@ -253,7 +253,6 @@ smooth.bamlss.default <- function(x, ...)
   k <- length(x$binning$nodups)
   x$binning$weights <- rep(0, length = k)
   x$binning$rres <- rep(0, length = k)
-
   state <- if(is.null(x$xt$state)) list() else x$xt$state
   if(is.null(x$fixed))
     x$fixed <- if(!is.null(x$fx)) x$fx[1] else FALSE
