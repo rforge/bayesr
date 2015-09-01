@@ -155,7 +155,7 @@ get.state <- function(x, what = NULL) {
     } else {
       if(what %in% "b") {
         p <- x$state$parameters
-        return(p[grep("b", names(p))])
+        return(p[!grepl("tau", names(p))])
       } else return(x$state[[what]])
     }
   }
@@ -167,7 +167,7 @@ get.par <- function(x, what = NULL) {
     return(x[grep("tau", names(x))])
   } else {
     if(what %in% "b") {
-      return(x[grep("b", names(x))])
+      return(x[!grepl("tau", names(x))])
     } else return(x[what])
   }
 }
@@ -177,7 +177,7 @@ set.par <- function(x, replacement, what) {
     x[grep("tau", names(x))] <- replacement
   } else {
     if(what %in% "b") {
-      x[grep("b", names(x))] <- replacement
+      x[!grepl("tau", names(x))] <- replacement
     } else x[what] <- replacement
   }
   x
@@ -237,7 +237,9 @@ bamlss.engine.setup.smooth.default <- function(x, ...)
   } else x$fxsp <- FALSE
   if(is.null(state$parameters)) {
     state$parameters <- rep(0, ncol(x$X))
-    names(state$parameters) <- paste("b", 1:length(state$parameters), sep = "")
+    names(state$parameters) <- if(is.null(colnames(x$X))) {
+      paste("b", 1:length(state$parameters), sep = "")
+    } else colnames(x$X)
     if(is.null(x$is.model.matrix)) {
       if(ntau2 > 0) {
         tau2 <- if(is.null(x$sp)) {
@@ -277,8 +279,8 @@ bamlss.engine.setup.smooth.default <- function(x, ...)
     x$prior <- x$xt$prior
   if(is.null(x$prior) | !is.function(x$prior)) {
     x$prior <- function(parameters) {
-      gamma <- parameters[grep("b", names(parameters))]
-      tau2 <-  parameters[grep("tau", names(parameters))]
+      gamma <- parameters[!grepl("tau", names(parameters))]
+      tau2 <-  parameters[grepl("tau", names(parameters))]
       if(x$fixed | !length(tau2)) {
         lp <- sum(dnorm(gamma, sd = 1000, log = TRUE))
       } else {
@@ -469,16 +471,55 @@ get.edf <- function(x, type = 1)
   edf
 }
 
+get.log.prior <- function(x, type = 1)
+{
+  nx <- names(x)
+  np <- length(nx)
+  lp <- 0
+  for(j in 1:np) {
+    for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
+      lp <- lp + if(type < 2) {
+        x[[nx[j]]]$smooth.construct[[sj]]$prior(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters)
+      } else x[[nx[j]]]$smooth.construct[[sj]]$state$log.prior
+    }
+  }
+  lp
+}
+
 get.all.par <- function(x)
 {
   nx <- names(x)
   np <- length(nx)
-  edf <- 0
   par <- list()
-  for(j in 1:np) {
-    par[[j]] <- list()
-    for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-      par[[j]][[sj]] <- x[[nx[j]]]$smooth.construct[[sj]]$state$parameters
+  for(i in nx) {
+    par[[i]] <- list()
+    if(!all(c("formula", "fake.formula") %in% names(x[[i]]))) {
+      for(k in names(x[[i]])) {
+        if(!is.null(x[[i]][[k]]$smooth.construct)) {
+          par[[i]][[k]]$s <- list()
+          for(j in names(x[[i]][[k]]$smooth.construct)) {
+            if(j == "model.matrix") {
+              par[[i]][[k]]$p <- x[[i]][[k]]$smooth.construct[[j]]$state$parameters
+            } else {
+              if(is.null(par[[i]][[k]]$s))
+                par[[i]][[k]]$s <- list()
+              par[[i]][[k]]$s[[j]] <- x[[i]][[k]]$smooth.construct[[j]]$state$parameters
+            }
+          }
+        }
+      }
+    } else {
+      if(!is.null(x[[i]]$smooth.construct)) {
+        for(j in names(x[[i]]$smooth.construct)) {
+          if(j == "model.matrix") {
+            par[[i]]$p <- x[[i]]$smooth.construct[[j]]$state$parameters
+          } else {
+            if(is.null(par[[i]]$s))
+              par[[i]]$s <- list()
+            par[[i]]$s[[j]] <- x[[i]]$smooth.construct[[j]]$state$parameters
+          }
+        }
+      }
     }
   }
   par
@@ -512,12 +553,12 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       if(!is.null(x[[id]]$smooth.construct)) {
         if(!is.null(x[[id]]$smooth.construct$model.matrix)) {
           if(length(take <- grep(paste(id, "p", sep = "."), names(start), fixed = TRUE, value = TRUE))) {
-            take <- grepl(take, colnames(x[[id]]$smooth.construct$model.matrix), fixed = TRUE, value = TRUE)
+            take <- grepl(take, colnames(x[[id]]$smooth.construct$model.matrix), fixed = TRUE)
             if(length(take))
               x[[id]]$smooth.construct$model.matrix$xt$state <- list("parameters" = start[take])
           }
         }
-        for(j in seq_long(x[[id]]$smooth.construct)) {
+        for(j in seq_along(x[[id]]$smooth.construct)) {
           take <- grep(paste(id, "s", x[[id]]$smooth.construct[[j]]$label, sep = "."),
             names(start), fixed = TRUE, value = TRUE)
           if(length(take))
@@ -571,7 +612,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   }
 
   ## Backfitting main function.
-  backfit <- function(x, eta, verbose = TRUE) {
+  backfit <- function(verbose = TRUE) {
     eps0 <- eps + 1; iter <- 1
     edf <- get.edf(x, type = 2)
     while(eps0 > eps & iter < maxit) {
@@ -626,7 +667,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         IC <- get.ic(family, y, peta, edf, nobs, criterion)
         cat("\r")
         vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
-          " logLik ", fmt(family$loglik(y, peta), width = 8, digits = digits),
+          " logPost ", fmt(family$loglik(y, peta) + get.log.prior(x), width = 8, digits = digits),
           " edf ", fmt(edf, width = 6, digits = digits),
           " eps ", fmt(eps0, width = 6, digits = digits + 2),
           " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
@@ -639,11 +680,12 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     }
 
     IC <- get.ic(family, y, peta, edf, nobs, criterion)
+    logPost <- as.numeric(family$loglik(y, peta) + get.log.prior(x))
 
     if(verbose) {
       cat("\r")
       vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
-        " logLik ", fmt(family$loglik(y, peta), width = 8, digits = digits),
+        " logPost ", fmt(logPost, width = 8, digits = digits),
         " edf ", fmt(edf, width = 6, digits = digits),
         " eps ", fmt(eps0, width = 6, digits = digits + 2),
         " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
@@ -655,14 +697,13 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     if(iter == maxit)
       warning("the backfitting algorithm did not converge!")
 
-    return(x)
+    names(IC) <- criterion
+
+    return(list("fitted.values" = eta, "parameters" = get.all.par(x), "edf" = edf,
+      "logPost" = logPost, "IC" = IC))
   }
 
-  x <- backfit(x, eta, verbose = verbose)
-
-stop("here")
-
-  return(x)
+  backfit(verbose = verbose)
 }
 
 
@@ -863,6 +904,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
     x$state$parameters <- set.par(x$state$parameters, rep(0, length(x$state$g)), "b")
   x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
   x$state$edf <- sum(diag(XWX %*% P))
+  x$state$log.prior <- x$prior(x$state$parameters)
 
   return(x$state)
 }

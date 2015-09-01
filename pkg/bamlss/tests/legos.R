@@ -90,6 +90,10 @@ p <- parameters(bf)
 unlist(p)
 unlist(parameters(randomize(bf)))
 
+## Estimate model
+data("GAMart", package = "R2BayesX")
+b <- bamlss(num|sigma ~ s(x1) + s(x2)|s(x3), data = GAMart)
+
 ## (5) Run backfitting optimizer on bamlss.frame.
 data("marital.nz", package = "VGAM")
 

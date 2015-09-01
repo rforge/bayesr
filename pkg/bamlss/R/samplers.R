@@ -14,15 +14,45 @@ MCMCpack <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100, ..
 }
 
 
-GMCMC <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
-  propose = "iwls", cores = NULL, chains = NULL, ...)
+GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
+  n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
+  propose = "iwls", ...)
 {
-  family <- x$family
   nx <- family$names
-  if(!all(nx %in% names(x$terms)))
+  if(!all(nx %in% names(x)))
     stop("parameter names mismatch with family names!")
   np <- length(nx)
-  response <- model.response(model.frame(x))
+
+  if(is.null(attr(x, "bamlss.engine.setup")))
+    x <- bamlss.engine.setup(x, ...)
+
+  nobs <- nrow(y)
+  if(is.data.frame(y)) {
+    if(ncol(y) < 2)
+      y <- y[[1]]
+  }
+
+  if(!is.null(start)) {
+    for(id in nx) {
+      if(!is.null(x[[id]]$smooth.construct)) {
+        if(!is.null(x[[id]]$smooth.construct$model.matrix)) {
+          if(length(take <- grep(paste(id, "p", sep = "."), names(start), fixed = TRUE, value = TRUE))) {
+            cn <- paste(id, "p", colnames(x[[id]]$smooth.construct$model.matrix$X), sep = ".")
+            i <- grep(take, cn, fixed = TRUE)
+            if(length(i))
+              x[[id]]$smooth.construct$model.matrix$state <- list("parameters" = start[take[i]])
+          }
+        }
+        for(j in seq_along(x[[id]]$smooth.construct)) {
+          take <- grep(paste(id, "s", x[[id]]$smooth.construct[[j]]$label, sep = "."),
+            names(start), fixed = TRUE, value = TRUE)
+          if(length(take)) {
+            x[[id]]$smooth.construct[[j]]$state <- list("parameters" = start[take])
+          }
+        }
+      }
+    }
+  }
 
   if(is.character(propose)) {
     propose <- if(grepl("gmcmc_", propose)) {
@@ -35,43 +65,40 @@ GMCMC <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
     }
   }
 
-  theta <- smooths <- propose2 <- fitfun <- list()
-  for(i in names(x$terms)) {
-    theta[[i]] <- smooths[[i]] <- propose2[[i]] <- fitfun[[i]] <- list()
+  theta <- propose2 <- fitfun <- list()
+  for(i in nx) {
+    theta[[i]] <- propose2[[i]] <- fitfun[[i]] <- list()
     nt <- NULL
-    for(j in seq_along(x$terms[[i]]$sterms)) {
-      theta[[i]][[j]] <- x$terms[[i]]$sterms[[j]]$state$parameters
-      attr(theta[[i]][[j]], "fitted.values") <- x$terms[[i]]$sterms[[j]]$state$fitted.values
-      attr(theta[[i]][[j]], "hess") <- x$terms[[i]]$sterms[[j]]$state$hessian
-      x$terms[[i]]$sterms[[j]]$state$fitted.values <- NULL
-      x$terms[[i]]$sterms[[j]]$XW <- t(x$terms[[i]]$sterms[[j]]$X)
-      x$terms[[i]]$sterms[[j]]$XWX <- crossprod(x$terms[[i]]$sterms[[j]]$X)
-      x$terms[[i]]$sterms[[j]]$fit.reduced <- as.numeric(rep(0, nrow(x$terms[[i]]$sterms[[j]]$X)))
-      nt <- c(nt, x$terms[[i]]$sterms[[j]]$label)
-      smooths[[i]][[j]] <- x$terms[[i]]$sterms[[j]]
-      if(!is.null(x$terms[[i]]$sterms[[j]]$xt$propose))
-        x$terms[[i]]$sterms[[j]]$propose <- x$terms[[i]]$sterms[[j]]$xt$propose
-      propose2[[i]][[j]] <- if(is.null(x$terms[[i]]$sterms[[j]]$propose)) propose else x$terms[[i]]$sterms[[j]]$propose
+    x[[i]] <- x[[i]]$smooth.construct
+    for(j in names(x[[i]])) {
+      theta[[i]][[j]] <- x[[i]][[j]]$state$parameters
+      attr(theta[[i]][[j]], "fitted.values") <- x[[i]][[j]]$fit.fun(x[[i]][[j]]$X, x[[i]][[j]]$state$parameters)
+      attr(theta[[i]][[j]], "hess") <- x[[i]][[j]]$state$hessian
+      x[[i]][[j]]$state$fitted.values <- NULL
+      x[[i]][[j]]$XW <- t(x[[i]][[j]]$X)
+      x[[i]][[j]]$XWX <- crossprod(x[[i]][[j]]$X)
+      nt <- c(nt, if(j == "model.matrix") "p" else paste("s", j, sep = "."))
+      if(!is.null(x[[i]][[j]]$xt$propose))
+        x[[i]][[j]]$propose <- x[[i]][[j]]$xt$propose
+      propose2[[i]][[j]] <- if(is.null(x[[i]][[j]]$propose)) propose else x[[i]][[j]]$propose
       fitfun[[i]][[j]] <- function(x, p) {
         attr(p, "fitted.values")
       }
     }
-    names(theta[[i]]) <- names(smooths[[i]]) <- names(propose2[[i]]) <- names(fitfun[[i]]) <- nt
+    names(theta[[i]]) <- names(propose2[[i]]) <- names(fitfun[[i]]) <- names(x[[i]]) <- nt
   }
-  rm(x)
 
   logLik <- function(eta) {
-    family$loglik(response, family$map2par(eta))
+    family$loglik(y, family$map2par(eta))
   }
 
-  n <- if(!is.null(dim(response))) nrow(response) else length(response)
-  zworking <- as.numeric(rep(0, length = n))
-  resids <- as.numeric(rep(0, length = n))
+  zworking <- as.numeric(rep(0, length = nobs))
+  resids <- as.numeric(rep(0, length = nobs))
 
-  samps <- gmcmc(fun = family, theta = theta, fitfun = fitfun, data = smooths,
+  samps <- gmcmc(fun = family, theta = theta, fitfun = fitfun, data = x,
     propose = propose2, logLik = logLik, n.iter = n.iter, burnin = burnin, thin = thin,
-    response = response, simplify = FALSE, zworking = zworking, resids = resids,
-    cores = cores, chains = chains, combine = FALSE, ...)
+    y = y, simplify = FALSE, zworking = zworking, resids = resids,
+    cores = 1, chains = NULL, combine = FALSE, ...)
 
   samps
 }
@@ -450,7 +477,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
     if(combine)
       rval <- combine_chains(rval)
   }
-
+  
   return(rval)
 }
 
@@ -670,38 +697,38 @@ gmcmc_slice <- function(fun, theta, id, prior, ...)
 
 
 gmcmc_sm.iwlsC <- function(family, theta, id, prior,
-  eta, response, data, zworking, resids, rho, ...)
+  eta, y, data, zworking, resids, rho, ...)
 {
-  rval <- .Call("gmcmc_iwls", family, theta, id, eta, response, data, zworking, resids, rho)
+  rval <- .Call("gmcmc_iwls", family, theta, id, eta, y, data, zworking, resids, rho)
   data$state$parameters <- as.numeric(rval$parameters)
   names(data$state$parameters) <- names(rval$parameters)
   rval$extra <- c("edf" = data$edf(data))
   rval
 }
 
-gmcmc_sm.iwls <- function(family, theta, id, prior, eta, response, data, ...)
+gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
 {
   require("mvtnorm")
 
   theta <- theta[[id[1]]][[id[2]]]
 
   if(is.null(attr(theta, "fitted.values")))
-    attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
+    attr(theta, "fitted.values") <- data$fit.fun(data$X, theta)
 
   ## Map predictor to parameter scale.
   peta <- family$map2par(eta)
 
   ## Compute weights.
-  weights <- family$hess[[id[1]]](response, peta, id = id[1])
+  weights <- family$hess[[id[1]]](y, peta, id = id[1])
 
   ## Score.
-  score <- family$score[[id[1]]](response, peta, id = id[1])
+  score <- family$score[[id[1]]](y, peta, id = id[1])
 
   ## Compute working observations.
   z <- eta[[id[1]]] + 1 / weights * score
 
   ## Compute old log likelihood and old log coefficients prior.
-  pibeta <- family$loglik(response, peta)
+  pibeta <- family$loglik(y, peta)
   p1 <- data$prior(theta)
 
   ## Compute partial predictor.
@@ -709,7 +736,7 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, response, data, ...)
 
   ## Compute reduced residuals.
   e <- z - eta2
-  xbin.fun(data$xbin.sind, weights, e, data$weights, data$rres, data$xbin.order)
+  xbin.fun(data$binning$sorted.index, weights, e, data$weights, data$rres, data$binning$order)
 
   ## Compute mean and precision.
   XWX <- crossprod(data$X, data$X * data$weights)
@@ -719,8 +746,9 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, response, data, ...)
       1 / XWX
     } else chol2inv(L1 <- chol(P01 <- XWX))
   } else {
+    tau2 <- get.par(theta, "tau2")
     for(j in seq_along(data$S))
-      S <- S + 1 / get.par(theta, "tau2")[j] * data$S[[j]]
+      S <- S + 1 / tau2[j] * data$S[[j]]
     chol2inv(L1 <- chol(P01 <- XWX + S))
   }
 
@@ -731,17 +759,17 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, response, data, ...)
   edf <- sum(diag(XWX %*% P))
 
   ## Save old coefficients
-  g0 <- drop(get.par(theta, "gamma"))
+  g0 <- drop(get.par(theta, "b"))
 
   ## Sample new parameters.
   g <- drop(rmvnorm(n = 1, mean = M, sigma = P))
 
   ## Compute log priors.
-  p2 <- data$prior(c("g" = g, get.par(theta, "tau2")))
+  p2 <- data$prior(c("b" = g, get.par(theta, "tau2")))
   qbetaprop <- dmvnorm(g, mean = M, sigma = P, log = TRUE)
 
   ## Compute fitted values.        
-  attr(theta, "fitted.values") <- data$get.mu(data$X, g)
+  attr(theta, "fitted.values") <- data$fit.fun(data$X, g)
 
   ## Set up new predictor.
   eta[[id[1]]] <- eta[[id[1]]] + attr(theta, "fitted.values")
@@ -750,20 +778,20 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, response, data, ...)
   peta <- family$map2par(eta)
 
   ## Compute new log likelihood.
-  pibetaprop <- family$loglik(response, peta)
+  pibetaprop <- family$loglik(y, peta)
 
   ## Compute new weights
-  weights <- family$hess[[id[1]]](response, peta, id = id[1])
+  weights <- family$hess[[id[1]]](y, peta, id = id[1])
 
   ## New score.
-  score <- family$score[[id[1]]](response, peta, id = id[1])
+  score <- family$score[[id[1]]](y, peta, id = id[1])
 
   ## New working observations.
   z <- eta[[id[1]]] + 1 / weights * score
 
   ## Compute reduced residuals.
   e <- z - eta2
-  xbin.fun(data$xbin.sind, weights, e, data$weights, data$rres, data$xbin.order)
+  xbin.fun(data$binning$sorted.index, weights, e, data$weights, data$rres, data$binning$order)
 
   ## Compute mean and precision.
   XWX <- crossprod(data$X, data$X * data$weights)
@@ -793,7 +821,7 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, response, data, ...)
     }
   }
 
-  theta <- set.par(theta, g, "gamma")
+  theta <- set.par(theta, g, "b")
   data$state$parameters <- as.numeric(theta)
   names(data$state$parameters) <- names(theta)
 
@@ -804,16 +832,16 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, response, data, ...)
 }
 
 
-gmcmc_sm.mvn <- function(family, theta, id, prior, eta, response, data, ...)
+gmcmc_sm.mvn <- function(family, theta, id, prior, eta, y, data, ...)
 {
   require("mvtnorm")
 
   theta <- theta[[id[1]]][[id[2]]]
 
   if(is.null(attr(theta, "fitted.values")))
-    attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
+    attr(theta, "fitted.values") <- data$fit.fun(data$X, theta)
 
-  ll1 <- family$loglik(response, family$map2par(eta))
+  ll1 <- family$loglik(y, family$map2par(eta))
   p1 <- data$prior(theta)
 
   eta2 <- eta
@@ -822,12 +850,12 @@ gmcmc_sm.mvn <- function(family, theta, id, prior, eta, response, data, ...)
     if(!is.null(data$state$hessian))
       attr(theta, "hess") <- data$state$hessian
     if(is.null(attr(theta, "hess"))) {
-      g <- get.par(data$state$parameters, "gamma")
+      g <- get.par(data$state$parameters, "b")
       tau2 <- if(!data$fixed) get.par(data$state$parameters, "tau2") else NULL
 
       lp <- function(g) {
-        eta[[id[1]]] <- eta[[id[1]]] + data$get.mu(data$X, g)
-        family$loglik(response, family$map2par(eta)) + data$prior(c(g, tau2))
+        eta[[id[1]]] <- eta[[id[1]]] + data$fit.fun(data$X, g)
+        family$loglik(y, family$map2par(eta)) + data$prior(c(g, tau2))
       }
 
       if(is.null(family$gradient[[id[1]]])) {
@@ -857,22 +885,22 @@ gmcmc_sm.mvn <- function(family, theta, id, prior, eta, response, data, ...)
       }
 
       g.grad <- grad(fun = lp, theta = g, id = id[1], prior = NULL,
-        args = list("gradient" = gfun, "x" = data, "y" = response, "eta" = eta))
+        args = list("gradient" = gfun, "x" = data, "y" = y, "eta" = eta))
 
       g.hess <- hess(fun = lp, theta = g, id = id[1], prior = NULL,
-        args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = response, "eta" = eta))
+        args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = y, "eta" = eta))
 
       attr(theta, "hess") <- matrix_inv(g.hess)
     }
   }
 
-  g <- drop(rmvnorm(n = 1, mean = drop(get.par(theta, "gamma")), sigma = attr(theta, "hess")))
-  theta <- set.par(theta, g, "gamma")
+  g <- drop(rmvnorm(n = 1, mean = drop(get.par(theta, "b")), sigma = attr(theta, "hess")))
+  theta <- set.par(theta, g, "b")
 
-  attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
+  attr(theta, "fitted.values") <- data$fit.fun(data$X, theta)
 
   eta[[id[1]]] <- eta[[id[1]]] + attr(theta, "fitted.values")
-  ll2 <- family$loglik(response, family$map2par(eta))
+  ll2 <- family$loglik(y, family$map2par(eta))
   p2 <- data$prior(theta)
 
   ## Sample variance parameter.
@@ -899,26 +927,26 @@ gmcmc_sm.mvn <- function(family, theta, id, prior, eta, response, data, ...)
 }
 
 
-gmcmc_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
+gmcmc_sm.newton <- function(family, theta, id, prior, eta, y, data, ...)
 {
   require("mvtnorm")
 
   theta <- theta[id]
-  g <- get.par(theta, "g")
+  g <- get.par(theta, "b")
   tau2 <- if(!data$fixed) get.par(theta, "tau2") else NULL
   nu <- if(is.null(data$nu)) 0.1 else data$nu
 
-  pibeta <- family$loglik(response, family$map2par(eta))
+  pibeta <- family$loglik(y, family$map2par(eta))
   p1 <- data$prior(theta)
 
   if(is.null(attr(theta, "fitted.values")))
-    attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
+    attr(theta, "fitted.values") <- data$fit.fun(data$X, theta)
 
   eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values")
 
   lp <- function(g) {
-    eta[[id[1]]] <- eta[[id[1]]] + data$get.mu(data$X, g)
-    family$loglik(response, family$map2par(eta)) + data$prior(c(g, tau2))
+    eta[[id[1]]] <- eta[[id[1]]] + data$fit.fun(data$X, g)
+    family$loglik(y, family$map2par(eta)) + data$prior(c(g, tau2))
   }
 
   if(is.null(family$gradient[[id[1]]])) {
@@ -948,10 +976,10 @@ gmcmc_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
   }
 
   g.grad <- grad(fun = lp, theta = g, id = id[1], prior = NULL,
-    args = list("gradient" = gfun, "x" = data, "y" = response, "eta" = eta))
+    args = list("gradient" = gfun, "x" = data, "y" = y, "eta" = eta))
 
   g.hess <- hess(fun = lp, theta = g, id = id[1], prior = NULL,
-    args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = response, "eta" = eta))
+    args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = y, "eta" = eta))
 
   Sigma <- matrix_inv(g.hess)
   mu <- drop(g + nu * Sigma %*% g.grad)
@@ -959,24 +987,24 @@ gmcmc_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
   g2 <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma))
   names(g2) <- names(g)
 
-  p2 <- data$prior(c("g" = g2, tau2))
+  p2 <- data$prior(c("b" = g2, tau2))
   qbetaprop <- dmvnorm(g2, mean = mu, sigma = Sigma, log = TRUE)
 
   g.grad2 <- grad(fun = lp, theta = g2, id = id[1], prior = NULL,
-    args = list("gradient" = gfun, "x" = data, "y" = response, "eta" = eta))
+    args = list("gradient" = gfun, "x" = data, "y" = y, "eta" = eta))
 
   g.hess2 <- hess(fun = lp, theta = g2, id = id[1], prior = NULL,
-    args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = response, "eta" = eta))
+    args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = y, "eta" = eta))
 
   Sigma2 <- matrix_inv(g.hess2)
   mu2 <- drop(g2 + nu * Sigma2 %*% g.grad2)
 
-  theta <- set.par(theta, g2, "g")
+  theta <- set.par(theta, g2, "b")
 
-  attr(theta, "fitted.values") <- data$get.mu(data$X, g2)
+  attr(theta, "fitted.values") <- data$fit.fun(data$X, g2)
   eta[[id[1]]] <- eta[[id[1]]] + attr(theta, "fitted.values")
 
-  pibetaprop <- family$loglik(response, family$map2par(eta))
+  pibetaprop <- family$loglik(y, family$map2par(eta))
 
   qbeta <- dmvnorm(matrix(g, nrow = 1), mean = mu2, sigma = Sigma2, log = TRUE)
 
@@ -1002,42 +1030,42 @@ gmcmc_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
 }
 
 
-gmcmc_logPost <- function(g, x, family, response = NULL, eta = NULL, id, ll = NULL)
+gmcmc_logPost <- function(g, x, family, y = NULL, eta = NULL, id, ll = NULL)
 {
   if(is.null(ll)) {
-    eta[[id[1]]] <- eta[[id[1]]] + x$get.mu(x$X, g)
-    ll <- family$loglik(response, family$map2par(eta))
+    eta[[id[1]]] <- eta[[id[1]]] + x$fit.fun(x$X, g)
+    ll <- family$loglik(y, family$map2par(eta))
   }
   lp <- x$prior(g)
   return(ll + lp)
 }
 
 
-gmcmc_sm.slice <- function(family, theta, id, prior, eta, response, data, ...)
+gmcmc_sm.slice <- function(family, theta, id, prior, eta, y, data, ...)
 {
   theta <- theta[[id[1]]][[id[2]]]
 
   if(is.null(attr(theta, "fitted.values")))
-    attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
+    attr(theta, "fitted.values") <- data$fit.fun(data$X, theta)
 
   ## Remove fitted values.
   eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values")
 
   ## Sample coefficients.
-  data$state$parameters <- set.par(data$state$parameters, get.par(theta, "g"), "g")
-  for(j in seq_along(get.par(theta, "gamma"))) {
-    data$state$parameters <- uni.slice(data$state$parameters, data, family, response,
+  data$state$parameters <- set.par(data$state$parameters, get.par(theta, "b"), "b")
+  for(j in seq_along(get.par(theta, "b"))) {
+    data$state$parameters <- uni.slice(data$state$parameters, data, family, y,
       eta, id[1], j, logPost = gmcmc_logPost)
   }
 
   ## New fitted values.
-  fit <- data$get.mu(data$X, data$state$parameters)
+  fit <- data$fit.fun(data$X, data$state$parameters)
 
   ## Sample variance parameter.
   if(!data$fixed & is.null(data$sp)) {
     if(length(i <- grep("tau2", names(theta)))) {
       eta[[id[1]]] <- eta[[id[1]]] + fit
-      ll <- family$loglik(response, family$map2par(eta))
+      ll <- family$loglik(y, family$map2par(eta))
       for(j in i) {
         data$state$parameters <- uni.slice(data$state$parameters, data, family, NULL,
           NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = ll)
@@ -1319,7 +1347,7 @@ null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC")
   np <- length(nx)
   par <- make_par(x, add.tau2 = TRUE)
   nh <- names(par$par)
-  response <- attr(x, "response.vec")
+  y <- attr(x, "response.vec")
   eta <- get.eta(x)
   if(n.samples < 1) n.samples <- 1
 
@@ -1327,8 +1355,8 @@ null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC")
     require("mvtnorm")
     no.special <- TRUE
     for(j in 1:np) {
-      for(sj in seq_along(x[[nx[j]]]$sterms)) {
-        if(inherits(x[[nx[j]]]$sterms[[sj]], "special"))
+      for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
+        if(inherits(x[[nx[j]]]$smooth.construct[[sj]], "special"))
           no.special <- FALSE
       }
     }
@@ -1336,11 +1364,11 @@ null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC")
       hessian <- list(); i <- 1
       nh3 <- NULL
       for(j in 1:np) {
-        for(sj in seq_along(x[[nx[j]]]$sterms)) {
+        for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
           nh2 <- grep(paste("p", j, ".t", sj, ".", sep = ""), nh, fixed = TRUE, value = TRUE)
           nhg <- nh2[!grepl("tau2", nh2)]
-          g <- get.state(x[[nx[j]]]$sterms[[sj]], "gamma")
-          hessian[[i]] <- family$hessian[[nx[j]]](g, response, eta, x[[nx[j]]]$sterms[[sj]], id = nx[j])
+          g <- get.state(x[[nx[j]]]$smooth.construct[[sj]], "b")
+          hessian[[i]] <- family$hessian[[nx[j]]](g, y, eta, x[[nx[j]]]$smooth.construct[[sj]], id = nx[j])
           nh3 <- c(nh3, nhg)
           i <- i + 1
         }
@@ -1366,10 +1394,10 @@ null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC")
   edf_sm <- edf_sm_n <- NULL
 
   for(j in 1:np) {
-    for(sj in seq_along(x[[nx[j]]]$sterms)) {
+    for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
       nh2 <- grep(paste("p", j, ".t", sj, ".", sep = ""), nh, fixed = TRUE, value = TRUE)
       nhg <- nh2[!grepl("tau2", nh2)]
-      g <- get.state(x[[nx[j]]]$sterms[[sj]], "gamma")
+      g <- get.state(x[[nx[j]]]$smooth.construct[[sj]], "b")
       if(n.samples > 1) {
         sigma <- hessian[nhg, nhg, drop = FALSE]
         if(any(eigen(sigma, symmetric = TRUE)$values <= 0)) {
@@ -1386,17 +1414,17 @@ null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC")
         colnames(g) <- nhg
         samps[, nhg] <- g
       } else samps[1L, nhg] <- g
-      sn <- c(sn, paste(nx[j], x[[nx[j]]]$sterms[[sj]]$label, paste("g", 1:length(nhg), sep = ""), sep = "."))
-      if(!x[[nx[j]]]$sterms[[sj]]$fixed) {
+      sn <- c(sn, paste(nx[j], x[[nx[j]]]$smooth.construct[[sj]]$label, paste("b", 1:length(nhg), sep = ""), sep = "."))
+      if(!x[[nx[j]]]$smooth.construct[[sj]]$fixed) {
         nhtau2 <- nh2[grepl("tau2", nh2)]
-        tedf <- x[[nx[j]]]$sterms[[sj]]$edf(x[[nx[j]]]$sterms[[sj]], type = 2)
+        tedf <- x[[nx[j]]]$smooth.construct[[sj]]$edf(x[[nx[j]]]$smooth.construct[[sj]], type = 2)
         edf_sm <- cbind(edf_sm, rep(tedf, length = n.samples))
-        edf_sm_n <- c(edf_sm_n, paste(nx[j], x[[nx[j]]]$sterms[[sj]]$label, "edf", sep = "."))
-        samps[1L, nhtau2] <- get.state(x[[nx[j]]]$sterms[[sj]], "tau2") ##tedf
+        edf_sm_n <- c(edf_sm_n, paste(nx[j], x[[nx[j]]]$smooth.construct[[sj]]$label, "edf", sep = "."))
+        samps[1L, nhtau2] <- get.state(x[[nx[j]]]$smooth.construct[[sj]], "tau2") ##tedf
         edf <- edf + tedf
-        sn <- c(sn, paste(nx[j], x[[nx[j]]]$sterms[[sj]]$label, paste("tau2", 1:length(nhtau2), sep = ""), sep = "."))
+        sn <- c(sn, paste(nx[j], x[[nx[j]]]$smooth.construct[[sj]]$label, paste("tau2", 1:length(nhtau2), sep = ""), sep = "."))
       } else {
-        edf <- edf + ncol(x[[nx[j]]]$sterms[[sj]]$X)
+        edf <- edf + ncol(x[[nx[j]]]$smooth.construct[[sj]]$X)
       }
     }
   }
@@ -1404,18 +1432,18 @@ null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC")
   colnames(edf_sm) <- edf_sm_n
   colnames(samps) <- sn
   samps <- cbind(samps, edf_sm)
-  IC <- as.numeric(get.ic(family, response, family$map2par(eta), edf, length(eta[[1L]]), criterion))
+  IC <- as.numeric(get.ic(family, y, family$map2par(eta), edf, length(eta[[1L]]), criterion))
   samps <- cbind(samps, IC, edf)
   colnames(samps)[(ncol(samps) - 1):ncol(samps)] <- c(criterion, "save.edf")
 
   as.mcmc(samps)
 }
 
-get.sigma <- function(x, family, response, eta, id)
+get.sigma <- function(x, family, y, eta, id)
 {
   if(is.null(x$state$hessian)) {
     if(!is.null(family$hessian[[id]])) {
-      xhess <- family$hessian[[id]](get.state(x, "g"), response, eta, x)
+      xhess <- family$hessian[[id]](get.state(x, "b"), y, eta, x)
       xhess <- xhess + x$hess(score = NULL, x$state$parameters, full = FALSE)
     } else {
       eta[[id]] <- eta[[id]] - fitted(x$state)
@@ -1423,20 +1451,20 @@ get.sigma <- function(x, family, response, eta, id)
       tau2 <- get.state(x, "tau2")
 
       lp <- function(g) {
-        eta[[id]] <- eta[[id]] + x$get.mu(x$X, g)
-        family$loglik(response, family$map2par(eta)) + x$prior(c(g, tau2))
+        eta[[id]] <- eta[[id]] + x$fit.fun(x$X, g)
+        family$loglik(y, family$map2par(eta)) + x$prior(c(g, tau2))
       }
 
       if(is.null(family$gradient[[id]])) {
         if(!is.null(family$score[[id]]) & !is.null(x$grad)) {
           gfun <- function(g, ...) {
-            eta[[id]] <- eta[[id]] + x$get.mu(x$X, g)
-            x$grad(family$score[[id]](response, family$map2par(eta)), g, full = FALSE)
+            eta[[id]] <- eta[[id]] + x$fit.fun(x$X, g)
+            x$grad(family$score[[id]](y, family$map2par(eta)), g, full = FALSE)
           }
         } else gfun <- NULL
       } else {
         gfun <- function(g, ...) {
-          gg <- family$gradient[[id]](g, response, eta, x)
+          gg <- family$gradient[[id]](g, y, eta, x)
           if(!is.null(x$grad)) {
             gg <- gg + x$grad(score = NULL, c(g, tau2), full = FALSE)
           }
@@ -1444,7 +1472,7 @@ get.sigma <- function(x, family, response, eta, id)
         }
       }
 
-      xhess <- -1 * optimHess(get.state(x, "g"), fn = lp, gr = gfun, control = list("fnscale" = -1))
+      xhess <- -1 * optimHess(get.state(x, "b"), fn = lp, gr = gfun, control = list("fnscale" = -1))
     }
 
     if(length(xhess) < 2) {
@@ -1473,7 +1501,7 @@ cat2 <- function(x, sleep = 0.03) {
 
 
 ## Survival propose() functions.
-gmcmc_surv_sm.newton <- function(family, theta, id, prior, eta, response, data, ...)
+gmcmc_surv_sm.newton <- function(family, theta, id, prior, eta, y, data, ...)
 {
   require("mvtnorm")
 
@@ -1481,23 +1509,23 @@ gmcmc_surv_sm.newton <- function(family, theta, id, prior, eta, response, data, 
   eta_Surv_timegrid0 <- eta_Surv_timegrid
 
   theta <- theta[id]
-  g <- get.par(theta, "g")
+  g <- get.par(theta, "b")
   tau2 <- if(!data$fixed) get.par(theta, "tau2") else NULL
   nu <- if(is.null(data$nu)) 0.1 else data$nu
 
-  p.old <- family$loglik(response, family$map2par(eta)) + data$prior(theta)
+  p.old <- family$loglik(y, family$map2par(eta)) + data$prior(theta)
 
   if(is.null(attr(theta, "fitted.values")))
-    attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
+    attr(theta, "fitted.values") <- data$fit.fun(data$X, theta)
   if(is.null(attr(theta, "fitted_timegrid")))
-    attr(theta, "fitted_timegrid") <- data$get.mu_timegrid(theta)
+    attr(theta, "fitted_timegrid") <- data$fit.fun_timegrid(theta)
 
   eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values")
   eta_Surv_timegrid <<- eta_Surv_timegrid - attr(theta, "fitted_timegrid")
 
   lp <- function(g) {
-    eta[[id[1]]] <- eta[[id[1]]] + data$get.mu(data$X, g)
-    family$loglik(response, family$map2par(eta)) + data$prior(c(g, tau2))
+    eta[[id[1]]] <- eta[[id[1]]] + data$fit.fun(data$X, g)
+    family$loglik(y, family$map2par(eta)) + data$prior(c(g, tau2))
   }
 
   if(is.null(family$gradient[[id[1]]])) {
@@ -1527,10 +1555,10 @@ gmcmc_surv_sm.newton <- function(family, theta, id, prior, eta, response, data, 
   }
 
   g.grad <- grad(fun = lp, theta = g, id = id[1], prior = NULL,
-    args = list("gradient" = gfun, "x" = data, "y" = response, "eta" = eta))
+    args = list("gradient" = gfun, "x" = data, "y" = y, "eta" = eta))
 
   g.hess <- hess(fun = lp, theta = g, id = id[1], prior = NULL,
-    args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = response, "eta" = eta))
+    args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = y, "eta" = eta))
 
   Sigma <- matrix_inv(g.hess)
   mu <- drop(g + nu * Sigma %*% g.grad)
@@ -1541,22 +1569,22 @@ gmcmc_surv_sm.newton <- function(family, theta, id, prior, eta, response, data, 
   names(g2) <- names(g)
 
   g.grad2 <- grad(fun = lp, theta = g2, id = id[1], prior = NULL,
-    args = list("gradient" = gfun, "x" = data, "y" = response, "eta" = eta))
+    args = list("gradient" = gfun, "x" = data, "y" = y, "eta" = eta))
 
   g.hess2 <- hess(fun = lp, theta = g2, id = id[1], prior = NULL,
-    args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = response, "eta" = eta))
+    args = list("gradient" = gfun, "hessian" = hfun, "x" = data, "y" = y, "eta" = eta))
 
   Sigma2 <- matrix_inv(g.hess2)
   mu2 <- drop(g2 + nu * Sigma2 %*% g.grad2)
 
-  theta <- set.par(theta, g2, "g")
+  theta <- set.par(theta, g2, "b")
 
-  attr(theta, "fitted.values") <- data$get.mu(data$X, g2)
-  attr(theta, "fitted_timegrid") <- data$get.mu_timegrid(g2)
+  attr(theta, "fitted.values") <- data$fit.fun(data$X, g2)
+  attr(theta, "fitted_timegrid") <- data$fit.fun_timegrid(g2)
   eta[[id[1]]] <- eta[[id[1]]] + attr(theta, "fitted.values")
   eta_Surv_timegrid <<- eta_Surv_timegrid + attr(theta, "fitted_timegrid")
 
-  p.prop <- family$loglik(response, family$map2par(eta)) + data$prior(c(g2, tau2))
+  p.prop <- family$loglik(y, family$map2par(eta)) + data$prior(c(g2, tau2))
 
   q.old <- dmvnorm(matrix(g2, nrow = 1), mean = mu2, sigma = Sigma2, log = TRUE)
 
@@ -1587,7 +1615,7 @@ gmcmc_surv_sm.newton <- function(family, theta, id, prior, eta, response, data, 
   rval <- list("parameters" = theta, "alpha" = alpha, "extra" = c("edf" = data$edf(data)))
 }
 
-gmcmc_surv_sm.mvn <- function(family, theta, id, prior, eta, response, data, ...)
+gmcmc_surv_sm.mvn <- function(family, theta, id, prior, eta, y, data, ...)
 {
   require("mvtnorm")
 
@@ -1597,11 +1625,11 @@ gmcmc_surv_sm.mvn <- function(family, theta, id, prior, eta, response, data, ...
   theta <- theta[id]
 
   if(is.null(attr(theta, "fitted.values")))
-    attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
+    attr(theta, "fitted.values") <- data$fit.fun(data$X, theta)
   if(is.null(attr(theta, "fitted_timegrid")))
-    attr(theta, "fitted_timegrid") <- data$get.mu_timegrid(theta)
+    attr(theta, "fitted_timegrid") <- data$fit.fun_timegrid(theta)
 
-  ll1 <- family$loglik(response, family$map2par(eta))
+  ll1 <- family$loglik(y, family$map2par(eta))
   p1 <- data$prior(theta)
 
   eta2 <- eta
@@ -1609,24 +1637,24 @@ gmcmc_surv_sm.mvn <- function(family, theta, id, prior, eta, response, data, ...
   eta_Surv_timegrid <<- eta_Surv_timegrid - attr(theta, "fitted_timegrid")
 
   if(is.null(attr(theta, "hess"))) {
-    g_opt <- get.par(data$state$parameters, "gamma")
+    g_opt <- get.par(data$state$parameters, "b")
     tau2_opt <- get.par(data$state$parameters, "tau2")
-    hess <- family$hessian$lambda(g_opt, response, eta, data)
+    hess <- family$hessian$lambda(g_opt, y, eta, data)
     if(!is.null(data$hess))
       hess <- hess + data$hess(score = NULL, c(g_opt, tau2_opt), full = FALSE)
     hess <- matrix_inv(hess)
     attr(theta, "hess") <- hess
   }
 
-  g <- drop(rmvnorm(n = 1, mean = drop(get.par(theta, "gamma")), sigma = attr(theta, "hess")))
-  theta <- set.par(theta, g, "gamma")
+  g <- drop(rmvnorm(n = 1, mean = drop(get.par(theta, "b")), sigma = attr(theta, "hess")))
+  theta <- set.par(theta, g, "b")
 
-  attr(theta, "fitted.values") <- data$get.mu(data$X, theta)
-  attr(theta, "fitted_timegrid") <- data$get.mu_timegrid(theta)
+  attr(theta, "fitted.values") <- data$fit.fun(data$X, theta)
+  attr(theta, "fitted_timegrid") <- data$fit.fun_timegrid(theta)
 
   eta[[id[1]]] <- eta[[id[1]]] + attr(theta, "fitted.values")
   eta_Surv_timegrid <<- eta_Surv_timegrid + attr(theta, "fitted_timegrid")
-  ll2 <- family$loglik(response, family$map2par(eta))
+  ll2 <- family$loglik(y, family$map2par(eta))
   p2 <- data$prior(theta)
 
   ## Sample variance parameter.

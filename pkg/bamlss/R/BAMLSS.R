@@ -489,6 +489,11 @@ smooth.construct.bamlss.frame <- smooth.construct.bamlss.formula <- smooth.const
 ## Extract/initialize parameters.
 parameters <- function(x, start = NULL, fill = c(0, 0.0001), list = TRUE, simple.list = FALSE)
 {
+  if(inherits(x, "bamlss")) {
+    if(!is.null(x$parameters)) {
+      if(list) return(x$parameters) else return(unlist(x$parameters))
+    }
+  }
   if(inherits(x, "bamlss.frame")) {
     if(is.null(x$x)) {
       x <- design.construct(x, data = x$model.frame,
@@ -703,42 +708,64 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
       start = start, weights = model.weights(bf$model.frame),
       offset = model.offset(bf$model.frame), ...)
     bf[names(opt)] <- opt[names(opt)]
-print(opt)
-stop()
   }
-stop()
 
   ## Start sampling.
-  if(is.null(cores)) {
-    so <- functions$engine(if(sc) ms else pm)
-  } else {
-    require("parallel")
-    parallel_fun <- function(j) {
-      if(j > 1 & !is.null(sleep)) Sys.sleep(sleep)
-      functions$engine(if(sc) ms else pm)
+  if(is.function(functions$sampler)) {
+    if(is.null(cores)) {
+      bf$samples <- functions$sampler(x = bf$x, y = bf$y, family = bf$family,
+        weights = model.weights(bf$model.frame),
+        offset = model.offset(bf$model.frame),
+        start = if(is.null(bf$parameters)) start else unlist(bf$parameters), ...)
+    } else {
+      require("parallel")
+      parallel_fun <- function(j) {
+        if(j > 1 & !is.null(sleep)) Sys.sleep(sleep)
+        functions$sampler(x = bf$x, y = bf$y, family = bf$family,
+          weights = model.weights(bf$model.frame),
+          offset = model.offset(bf$model.frame),
+          start = if(is.null(bf$parameters)) start else unlist(bf$parameters), ...)
+      }
+      bf$samples <- mclapply(1:cores, parallel_fun, mc.cores = cores)
     }
-    so <- mclapply(1:cores, parallel_fun, mc.cores = cores)
+    ## Combine samples.
+    if(combine) {
+      bf$samples <- combine_chains(bf$samples)
+    } else {
+      if(is.list(bf$samples))
+        bf$samples <- as.mcmc.list(bf$samples)
+    }
   }
 
-  ## Combine samples.
-  if(combine)
-    so <- combine_chains(so)
-
   ## Compute results.
-  rval <- functions$results(pm, so)
-  rm(so)
+  if(is.function(functions$results))
+    bf$results <- functions$results(x = bf$x, y = bf$y, family = bf$family, data = bf$model.frame)
 
   ## Save the model frame?
   if(!model)
-    rval$model.frame <- NULL
+    bf$model.frame <- NULL
 
-  rval
+  ## Save 'x' master object?
+  if(!x)
+    bf$x <- NULL
+
+  bf$call <- match.call()
+  class(bf) <- c("bamlss", "bamlss.frame", "list")
+
+  bf
 }
 
 
 ## No transform function.
 no.transform <- function(x, ...) { x }
 results.bamlss.default <- function(x, ...) { x }
+
+
+## family extractor.
+family.bamlss <- family.bamlss.frame <- function(object, ...)
+{
+  return(object$family)
+}
 
 
 
@@ -3659,77 +3686,27 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
 ## Simple "bamlss" print method.
 print.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ...) 
 {
-  on.exit(return(invisible(x)))
-  xs <- summary(x)
-
-  h0 <- !is.null(attr(x, "hlevel"))
-
-  print_dic_pd <- function(x, ok = TRUE) {
-    if(is.list(x)) {
-      if(any(c("DIC", "pd") %in% names(x[[1]])))
-        x <- x[[1]]
+  print(family(x))
+  cat("*---\n")
+  print(formula(x))
+  if(any(c("logPost", "IC", "edf") %in% names(x))) {
+    cat("*---\n")
+    sep <- ""
+    if(!is.null(x$logPost)) {
+      cat("logPost =", fmt(x$logPost, width = digits, digits = digits))
+      sep <- " "
     }
-    dp <- FALSE
-    if(!is.null(x$DIC) & !is.null(x$pd)) {
-      dp <- TRUE
-      cat("---\n")
-      cat("DIC =", if(is.na(x$DIC)) "NA" else {
-          formatC(x$DIC, digits = digits, flag = "-")
-        }, "pd =", if(is.na(x$pd)) "NA" else {
-          formatC(x$pd, digits = digits, flag = "-")
-        })
+    if(!is.null(x$IC)) {
+      if(!is.null(names(x$IC))) {
+        cat(sep, names(x$IC), "=", fmt(x$IC, width = digits, digits = digits))
+        sep <- " "
+      }
     }
-    if(!is.null(x$N)) {
-      if(!dp) cat("---\n")
-      dp <- TRUE
-      cat(" N =", if(is.na(x$N)) "NA" else formatC(x$N, digits = digits, flag = "-"))
-    }
-    if(ok & dp) cat("\n\n")
+    if(!is.null(x$edf))
+      cat(sep, "edf =", fmt(x$edf, width = 4, digits = digits))
+    cat("\n")
   }
-
-  family <- attr(x, "family")
-  n <- attr(xs, "n")
-  nx <- NULL
-  if(n < 2)
-    xs <- list(xs)
-  else
-    nx <- names(xs)
-
-  pdic <- TRUE
-  
-  cat("\n")
-  print(if(is.function(family)) family() else family)
-  cat("---\n")
-  for(i in 1:n) {
-    if(!is.null(nx)) {
-      cat("Formula ", nx[i], ":\n", sep = "")
-    } else cat("Formula:\n")
-    if(!is.null(attr(xs[[i]], "hlevel"))) {
-      nh <- names(xs[[i]])
-      for(j in seq_along(xs[[i]])) {
-        attr(xs[[i]][[j]]$formula, "name") <- NULL
-        cat(nh[j], ": ", sep = ""); print(xs[[i]][[j]]$formula)
-      }
-      if(i < n) cat("---\n")
-      if(i == n & pdic) {
-        print_dic_pd(xs[[i]][[1]])
-        pdic <- FALSE
-      }
-    } else {
-      attr(xs[[i]]$formula, "name") <- NULL
-      print(xs[[i]]$formula)
-      if(i == n & pdic) {
-        print_dic_pd(xs[[1]])
-        pdic <- FALSE
-      }
-    }
-
-    if(i < n & h0) cat("---\n")
-
-    if(i == n & h0 & pdic) {
-      print_dic_pd(xs[[1]])
-    }
-  }
+  return(invisible(NULL))
 }
 
 

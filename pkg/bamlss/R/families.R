@@ -11,11 +11,6 @@ print.family.bamlss <- function(x, ...)
   cat("\n")
 }
 
-## Extract method.
-family.bamlss <- function(object, ...)
-{
-  attr(object, "family")
-}
 
 ## Second make.link function.
 make.link2 <- function(link)
@@ -2321,6 +2316,8 @@ tF <- function(x, ...)
 
   dfun <- get(paste("d", x$family[1], sep = ""))
   pfun <- get(paste("p", x$family[1], sep = ""))
+  qfun <- get(paste("q", x$family[1], sep = ""))
+  rfun <- get(paste("r", x$family[1], sep = ""))
 
   rval <- list(
     "family" = x$family[1],
@@ -2341,9 +2338,18 @@ tF <- function(x, ...)
     "p" = function(y, par, ...) {
       call <- paste('pfun(y, ', paste('par$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
       eval(parse(text = call))
+    },
+    "q" = function(y, par, ...) {
+      call <- paste('qfun(y, ', paste('par$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
+      eval(parse(text = call))
+    },
+    "r" = function(y, par, ...) {
+      call <- paste('rfun(y, ', paste('par$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
+      eval(parse(text = call))
     }
   )
   names(rval$links) <- nx
+  rval$valid.response <- x$y.valid
 
   class(rval) <- "family.bamlss"
   rval
