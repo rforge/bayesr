@@ -700,7 +700,8 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
   ## Start optimizer.
   if(is.function(functions$optimizer)) {
     opt <- functions$optimizer(x = bf$x, y = bf$y, family = bf$family,
-      start = start, weights = model.weights(bf), offset = model.offset(bf))
+      start = start, weights = model.weights(bf$model.frame),
+      offset = model.offset(bf$model.frame), ...)
     bf[names(opt)] <- opt[names(opt)]
 print(opt)
 stop()
@@ -1019,6 +1020,7 @@ bamlss.model.frame <- function(formula, data, family, weights = NULL,
   } else {
     family <- bamlss.family(family)
     formula <- bamlss.formula(formula, family)
+    env <- environment(formula)
   }
 
   if(is.null(na.action))
@@ -1084,6 +1086,8 @@ bamlss.model.frame <- function(formula, data, family, weights = NULL,
         weights[subset, , drop = FALSE]
       } else subset(weights, subset)
     }
+    if(nrow(weights) < 2)
+      weights <- do.call(rbind, replicate(nrow(data), weights, simplify = FALSE))
     data[["(weights)"]] <- weights
   }
   if(!is.null(offset)) {
@@ -1096,6 +1100,8 @@ bamlss.model.frame <- function(formula, data, family, weights = NULL,
         offset[subset, , drop = FALSE]
       } else subset(offset, subset)
     }
+    if(nrow(offset) < 2)
+      offset <- do.call(rbind, replicate(nrow(data), offset, simplify = FALSE))
     data[["(offset)"]] <- offset
   }
 

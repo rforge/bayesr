@@ -416,7 +416,7 @@ assign.df <- function(x, df) {
     return(x)
   df <- if(is.null(x$xt$df)) df else x$xt$df
   if(is.null(df))
-    return(x)
+    df <- ceiling(length(get.par(x$state$parameters, "b")) / 2)
   if(length(tau2) > 1)
     return(x)
   if(df > ncol(x$X))
@@ -505,7 +505,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     stop("design construct names mismatch with family names!")
 
   if(is.null(attr(x, "bamlss.engine.setup")))
-    x <- bamlss.engine.setup(x)
+    x <- bamlss.engine.setup(x, ...)
 
   if(!is.null(start)) {
     for(id in nx) {
@@ -535,7 +535,17 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     if(ncol(y) < 2)
       y <- y[[1]]
   }
-  
+
+  if(!is.null(weights))
+    weights <- as.data.frame(weights)
+  if(!is.null(offset)) {
+    offset <- as.data.frame(offset)
+    for(j in nx) {
+      if(!is.null(offset[[j]]))
+        eta[[j]] <- eta[[j]] + offset[[j]]
+    }
+  }
+
   inner_bf <- function(x, y, eta, family, edf, id, ...) {
     eps0 <- eps + 1; iter <- 1
     while(eps0 > eps & iter < maxit) {
@@ -563,7 +573,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   ## Backfitting main function.
   backfit <- function(x, eta, verbose = TRUE) {
     eps0 <- eps + 1; iter <- 1
-    edf <- get.edf(x)
+    edf <- get.edf(x, type = 2)
     while(eps0 > eps & iter < maxit) {
       eta0 <- eta
       ## Cycle through all parameters
@@ -768,7 +778,7 @@ bfit_newton <- function(x, family, y, eta, id, ...)
 }
 
 
-bfit_iwls <- function(x, family, y, eta, id, ...)
+bfit_iwls <- function(x, family, y, eta, id, weights, ...)
 {
   args <- list(...)
 
@@ -777,6 +787,9 @@ bfit_iwls <- function(x, family, y, eta, id, ...)
     ## Compute weights.
     hess <- family$hess[[id]](y, peta, id = id, ...)
   } else hess <- args$hess
+
+  if(!is.null(weights))
+    hess <- hess * weights
 
   if(is.null(args$z)) {
     ## Score.
