@@ -728,13 +728,8 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
       }
       bf$samples <- mclapply(1:cores, parallel_fun, mc.cores = cores)
     }
-    ## Combine samples.
-    if(combine) {
-      bf$samples <- combine_chains(bf$samples)
-    } else {
-      if(is.list(bf$samples))
-        bf$samples <- as.mcmc.list(bf$samples)
-    }
+    ## Process samples.
+    bf$samples <- process.chains(bf$samples, combine)
   }
 
   ## Compute results.
@@ -847,7 +842,7 @@ xreg <- function(formula, family = gaussian.bamlss, data = NULL, knots = NULL,
 
   ## Combine samples.
   if(combine)
-    so <- combine_chains(so)
+    so <- process.chains(so)
 
   ## Compute results.
   rval <- functions$results(pm, so)
@@ -1741,10 +1736,10 @@ randomize <- function(x, vnames = NULL)
 
 
 ## Combine sample chains.
-combine_chains <- function(x)
+process.chains <- function(x, combine = TRUE, drop = FALSE)
 {
   if(!is.list(x))
-    return(x)
+    x <- list(x)
   model.specs <- attr(x[[1]], "model.specs")
   if(inherits(x[[1]], "mcmc.list")) {
     x <- as.mcmc.list(do.call("c", x))
@@ -1752,13 +1747,14 @@ combine_chains <- function(x)
     stopifnot(inherits(x[[1]], "mcmc"))
     x <- as.mcmc.list(x)
   }
-  rval <- NULL
-  for(j in 1:length(x)) {
-    rval <- rbind(rval, x[[j]])
+  if(combine) {
+    x <- do.call("rbind", x)
+    x <- as.mcmc.list(list(as.mcmc(x)))
   }
-  rval <- as.mcmc.list(list(as.mcmc(rval)))
-  attr(rval, "model.specs") <- model.specs
-  rval
+  if(drop & (length(x) < 2))
+    x <- x[[1]]
+  attr(x, "model.specs") <- model.specs
+  return(x)
 }
 
 
@@ -3689,11 +3685,15 @@ print.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ...)
   print(family(x))
   cat("*---\n")
   print(formula(x))
-  if(any(c("logPost", "IC", "edf") %in% names(x))) {
+  if(any(c("logLik", "logPost", "IC", "edf") %in% names(x))) {
     cat("*---\n")
     sep <- ""
+    if(!is.null(x$logLik)) {
+      cat("logLik =", fmt(x$logLik, width = digits, digits = digits))
+      sep <- " "
+    }
     if(!is.null(x$logPost)) {
-      cat("logPost =", fmt(x$logPost, width = digits, digits = digits))
+      cat(sep, "logPost =", fmt(x$logPost, width = digits, digits = digits))
       sep <- " "
     }
     if(!is.null(x$IC)) {
@@ -4459,10 +4459,6 @@ fitted.bamlss <- function(object, model = NULL, term = NULL,
 }
 
 ## Functions for model samples
-samples <- function(x, ...) {
-  UseMethod("samples")
-}
-
 grep2 <- function(pattern, x, ...) {
   i <- NULL
   for(p in pattern)
@@ -4470,99 +4466,74 @@ grep2 <- function(pattern, x, ...) {
   sort(i)
 }
 
-samples.bamlss <- function(x, model = NULL, term = NULL, ...)
+samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE, ...)
 {
-  nx0 <- names(x)
-  x <- model.terms(x, model)
-  if(!is.null(nx <- names(x))) {
-    if(all(c("effects", "param.effects") %in% nx)) {
-      x <- list(x)
-      nx <- if(!is.character(model)) nx0[model] else model
-      names(x) <- nx
-    }
+  if(!inherits(x, "bamlss"))
+    stop("x is not a 'bamlss' object!")
+  if(is.null(x$samples))
+    stop("no samples to extract!")
+  tx <- terms(x)
+  x <- x$samples
+
+  x <- process.chains(x, combine, drop = FALSE)
+
+  if(is.null(model) & is.null(term)) {
+    if(length(x) < 2)
+      x <- x[[1]]
+    return(x)
   }
-  if(is.null(nx)) {
-    nx <- paste("p", 1:length(x), sep = "")
-    names(x) <- nx
-  }
-  args <- list(...)
-  id <- args$id
-  samps <- list(); k <- 1
-  term0 <- term
-  for(j in seq_along(x)) {
-    if(!all(c("effects", "param.effects") %in% names(x[[j]]))) {
-      samps[[j]] <- samples.bamlss(x[[j]], term = term, id = nx[j])
+
+  snames <- colnames(x[[1]])
+  nx <- names(tx)
+
+  if(!is.null(model)) {
+    model <- model[1]
+    i <- if(is.character(model)) {
+      pmatch(model, nx)
     } else {
-      if(!is.null(x[[j]]$param.effects)) {
-        term2 <- rownames(x[[j]]$param.effects)
-        if(!is.null(term0)) {
-          if(is.character(term) & (length(term) < 2)) {
-            if(!is.null(tm <- pmatch(term, "param-effects"))) {
-              if(!is.na(tm))
-                term <- term2
-            }
-          }
-          if(!is.null(term)) {
-            if(!is.character(term))
-              term2 <- term2[as.integer(term)]
-            else
-              term2 <- term
-          }
-        }
-        if(nrow(x[[j]]$param.effects) > 0) {
-          if(length(i <- grep2(term2, rownames(x[[j]]$param.effects), fixed = TRUE))) {
-            samps[[k]] <- attr(x[[j]]$param.effects, "samples")[, i, drop = FALSE]
-            if(length(x) > 1) {
-              colnames(samps[[k]]) <- paste(colnames(samps[[k]]),
-                if(!is.null(id)) paste(id, ".", sep = ""), ":", nx[j], sep = "")
-            }
-            k <- k + 1
-          }
-        }
-      }
-      if(!is.null(x[[j]]$effects)) {
-        term2 <- names(x[[j]]$effects)
-        if(!is.null(term0)) {
-          if(!is.character(term))
-            term2 <- term2[as.integer(term)]
-          else
-            term2 <- term
-        }
-        if(length(i <- grep2(term2, names(x[[j]]$effects), fixed = TRUE))) {
-          for(e in i) {
-            samps[[k]] <- as.matrix(attr(x[[j]]$effects[[e]], "samples"))
-            if(!is.null(attr(x[[j]]$effects[[e]], "samples.edf")))
-              samps[[k]] <- cbind(samps[[k]], as.matrix(attr(x[[j]]$effects[[e]], "samples.edf")))
-            if(!is.null(attr(x[[j]]$effects[[e]], "samples.scale")))
-              samps[[k]] <- cbind(samps[[k]], as.matrix(attr(x[[j]]$effects[[e]], "samples.scale")))
-            if(!is.null(attr(x[[j]]$effects[[e]], "samples.alpha")))
-              samps[[k]] <- cbind(samps[[k]], as.matrix(attr(x[[j]]$effects[[e]], "samples.alpha")))
-            if(length(x) > 1) {
-              colnames(samps[[k]]) <- paste(colnames(samps[[k]]),
-                if(!is.null(id)) paste(id, ".", sep = ""), ":", nx[j], sep = "")
-            }
-            samps[[k]] <- as.mcmc(samps[[k]])
-            k <- k + 1
-          }
-        }
-      }
+      if(length(model) > length(tx)) NA else model
     }
+    if(is.na(i))
+      stop("cannot find model!")
+    j <- grep(nx[i], snames, fixed = TRUE, value = TRUE)
+    for(i in seq_along(x)) {
+      x[[i]] <- x[[i]][, j]
+    }
+    tx <- tx[nx[i]]
   }
-  if(k < 2) stop("no samples could be extracted, please check term and model selection!")
-  n <- max(sapply(samps, function(x) {
-    nrow(as.matrix(x))
-  }))
-  samps <- lapply(samps, function(sm) {
-    if(nrow(sm) < n) {
-      NAs <- matrix(NA, nrow = n - nrow(sm), ncol = ncol(sm))
-      colnames(NAs) <- colnames(sm)
-      sm <- rbind(sm, NAs)
+
+  if(!is.null(term)) {
+    term <- term[1]
+    rval <- list()
+    nx <- names(tx)
+    for(i in seq_along(tx)) {
+      tl <- attr(tx[[i]], "term.labels")
+      j <- if(is.character(term)) {
+        pmatch(term, tl)
+      } else {
+        if(length(term) > length(tl)) NA else term
+      }
+      if(is.na(j))
+        stop("cannot find term!")
+      specials <- unlist(attr(tx[[i]], "specials"))
+      if(!is.null(specials)) {
+        sub <- if(attr(tx[[i]], "response") > 0) 1 else 0
+        tl[specials - sub] <- paste(nx[i], "s", tl[specials - sub], sep = ".")
+        tl[-1 * c(specials - sub)] <- paste(nx[i], "p", tl[-1 * c(specials - sub)], sep = ".")
+      }
+      jj <- grep(tl[j], snames, fixed = TRUE, value = TRUE)
+print(jj)
+      for(k in seq_along(x)) {
+        rval[[k]] <- cbind(rval[[k]], x[[k]][, jj])
+      }
     }
-    sm
-  })
-  samps <- if(length(samps) < 1) NULL else as.mcmc(do.call("cbind", samps))
-  samps <- samps[, unique(colnames(samps)), drop = FALSE]
-  samps
+    rval <- as.mcmc.list(rval)
+  }
+
+  if(drop & (length(x) < 2))
+    x <- x[[1]]
+  
+  return(x)
 }
 
 

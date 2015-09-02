@@ -16,7 +16,7 @@ MCMCpack <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100, ..
 
 GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
-  propose = "iwls", ...)
+  propose = "iwls", chains = NULL, ...)
 {
   nx <- family$names
   if(!all(nx %in% names(x)))
@@ -38,7 +38,7 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         if(!is.null(x[[id]]$smooth.construct$model.matrix)) {
           if(length(take <- grep(paste(id, "p", sep = "."), names(start), fixed = TRUE, value = TRUE))) {
             cn <- paste(id, "p", colnames(x[[id]]$smooth.construct$model.matrix$X), sep = ".")
-            i <- grep(take, cn, fixed = TRUE)
+            i <- grep2(take, cn, fixed = TRUE)
             if(length(i))
               x[[id]]$smooth.construct$model.matrix$state <- list("parameters" = start[take[i]])
           }
@@ -98,7 +98,7 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   samps <- gmcmc(fun = family, theta = theta, fitfun = fitfun, data = x,
     propose = propose2, logLik = logLik, n.iter = n.iter, burnin = burnin, thin = thin,
     y = y, simplify = FALSE, zworking = zworking, resids = resids,
-    cores = 1, chains = NULL, combine = FALSE, ...)
+    cores = 1, chains = chains, combine = FALSE, ...)
 
   samps
 }

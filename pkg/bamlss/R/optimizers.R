@@ -680,7 +680,8 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     }
 
     IC <- get.ic(family, y, peta, edf, nobs, criterion)
-    logPost <- as.numeric(family$loglik(y, peta) + get.log.prior(x))
+    logLik <- family$loglik(y, peta)
+    logPost <- as.numeric(logLik + get.log.prior(x))
 
     if(verbose) {
       cat("\r")
@@ -700,7 +701,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     names(IC) <- criterion
 
     return(list("fitted.values" = eta, "parameters" = get.all.par(x), "edf" = edf,
-      "logPost" = logPost, "IC" = IC))
+      "logLik" = logLik, "logPost" = logPost, "IC" = IC))
   }
 
   backfit(verbose = verbose)
