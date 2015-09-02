@@ -381,6 +381,7 @@ model.frame.bamlss <- model.frame.bamlss.frame <- function(formula, ...)
     if(!is.null(attr(ft, "orig.formula"))) {
       fcall["formula"] <- parse(text = paste("attr(", fcall["formula"], ", 'orig.formula')", sep = ""))
     }
+    fcall["start"] <- NULL
     eval(fcall, env)
   } else formula$model.frame
   mf
@@ -1026,9 +1027,9 @@ bamlss99 <- function(formula, family = gaussian, data = NULL, knots = NULL,
 
 
 ## Create the model.frame.
-bamlss.model.frame <- function(formula, data, family, weights = NULL,
-  subset = NULL, offset = NULL, na.action = na.omit, specials = NULL,
-  contrasts.arg = NULL, ...)
+bamlss.model.frame <- function(formula, data, family = gaussian.bamlss(),
+  weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
+  specials = NULL, contrasts.arg = NULL, ...)
 {
   if(inherits(formula, "bamlss.frame")) {
     if(!is.null(formula$model.frame))
@@ -2077,17 +2078,22 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   type = c("link", "parameter"), nsamps = NULL, verbose = FALSE, ...)
 {
   family <- object$family
-  if(missing(newdata))
+  if(missing(newdata)) {
     newdata <- model.frame(object)
-  if(is.character(newdata)) {
-    if(file.exists(newdata <- path.expand(newdata)))
-      newdata <- read.table(newdata, header = TRUE, ...)
+  } else {
+    if(is.character(newdata)) {
+      if(file.exists(newdata <- path.expand(newdata)))
+        newdata <- read.table(newdata, header = TRUE, ...)
+      else stop("cannot find newdata")
+    }
+    if(is.matrix(newdata) || is.list(newdata))
+      newdata <- as.data.frame(newdata)
+    newdata <- model.frame(object, data = newdata)
   }
-  if(is.matrix(newdata) || is.list(newdata))
-    newdata <- as.data.frame(newdata)  
   if(!is.null(attr(object, "fixed.names")))
     names(newdata) <- rmf(names(newdata))
   nn <- names(newdata)
+
 
   object <- model.terms(object, model)
   if(any(c("effects", "param.effects") %in% names(object)))
