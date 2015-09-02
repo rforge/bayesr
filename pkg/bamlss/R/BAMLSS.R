@@ -4504,7 +4504,7 @@ samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE, .
 
   if(!is.null(term)) {
     term <- term[1]
-    rval <- list()
+    rval <- vector(mode = "list", length = length(x))
     nx <- names(tx)
     for(i in seq_along(tx)) {
       tl <- attr(tx[[i]], "term.labels")
@@ -4522,12 +4522,12 @@ samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE, .
         tl[-1 * c(specials - sub)] <- paste(nx[i], "p", tl[-1 * c(specials - sub)], sep = ".")
       }
       jj <- grep(tl[j], snames, fixed = TRUE, value = TRUE)
-print(jj)
-      for(k in seq_along(x)) {
+      for(k in seq_along(x))
         rval[[k]] <- cbind(rval[[k]], x[[k]][, jj])
-      }
     }
-    rval <- as.mcmc.list(rval)
+    for(k in seq_along(x))
+      rval[[k]] <- as.mcmc(rval[[k]], start = start(x[[k]]), end = end(x[[k]]))
+    x <- as.mcmc.list(rval)
   }
 
   if(drop & (length(x) < 2))

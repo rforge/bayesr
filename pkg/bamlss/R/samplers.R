@@ -39,15 +39,20 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           if(length(take <- grep(paste(id, "p", sep = "."), names(start), fixed = TRUE, value = TRUE))) {
             cn <- paste(id, "p", colnames(x[[id]]$smooth.construct$model.matrix$X), sep = ".")
             i <- grep2(take, cn, fixed = TRUE)
-            if(length(i))
-              x[[id]]$smooth.construct$model.matrix$state <- list("parameters" = start[take[i]])
+            if(length(i)) {
+              tpar <- start[take[i]]
+              names(tpar) <- gsub(paste(id, "p.", sep = "."), "", names(tpar), fixed = TRUE)
+              x[[id]]$smooth.construct$model.matrix$state <- list("parameters" = tpar)
+            }
           }
         }
         for(j in seq_along(x[[id]]$smooth.construct)) {
-          take <- grep(paste(id, "s", x[[id]]$smooth.construct[[j]]$label, sep = "."),
+          take <- grep(tl <- paste(id, "s", x[[id]]$smooth.construct[[j]]$label, sep = "."),
             names(start), fixed = TRUE, value = TRUE)
           if(length(take)) {
-            x[[id]]$smooth.construct[[j]]$state <- list("parameters" = start[take])
+            tpar <- start[take]
+            names(tpar) <- gsub(paste(tl, ".", sep = ""), "", names(tpar), fixed = TRUE)
+            x[[id]]$smooth.construct[[j]]$state <- list("parameters" = tpar)
           }
         }
       }
