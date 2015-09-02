@@ -4496,18 +4496,25 @@ samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE, .
     if(is.na(i))
       stop("cannot find model!")
     j <- grep(nx[i], snames, fixed = TRUE, value = TRUE)
-    for(i in seq_along(x)) {
-      x[[i]] <- x[[i]][, j]
+    for(k in seq_along(x)) {
+      x[[k]] <- x[[k]][, j]
     }
     tx <- tx[nx[i]]
+    snames <- colnames(x[[1]])
   }
 
   if(!is.null(term)) {
     term <- term[1]
+    if(!is.character(term)) {
+      if(term < 1)
+        term <- "(Intercept)"
+    }
     rval <- vector(mode = "list", length = length(x))
     nx <- names(tx)
     for(i in seq_along(tx)) {
       tl <- attr(tx[[i]], "term.labels")
+      if(attr(tx[[i]], "intercept") > 0)
+        tl <- c(tl, "(Intercept)")
       j <- if(is.character(term)) {
         pmatch(term, tl)
       } else {
@@ -4520,10 +4527,14 @@ samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE, .
         sub <- if(attr(tx[[i]], "response") > 0) 1 else 0
         tl[specials - sub] <- paste(nx[i], "s", tl[specials - sub], sep = ".")
         tl[-1 * c(specials - sub)] <- paste(nx[i], "p", tl[-1 * c(specials - sub)], sep = ".")
+      } else {
+        tl <- paste(nx[i], "p", tl, sep = ".")
       }
       jj <- grep(tl[j], snames, fixed = TRUE, value = TRUE)
-      for(k in seq_along(x))
-        rval[[k]] <- cbind(rval[[k]], x[[k]][, jj])
+      for(ii in jj) {
+        for(k in seq_along(x))
+          rval[[k]] <- cbind(rval[[k]], x[[k]][, ii, drop = FALSE])
+      }
     }
     for(k in seq_along(x))
       rval[[k]] <- as.mcmc(rval[[k]], start = start(x[[k]]), end = end(x[[k]]))
