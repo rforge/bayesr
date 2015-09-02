@@ -3017,7 +3017,47 @@ smooth.construct.fdl.smooth.spec <- function(object, data, knots)
 
 
 ## Plotting method for "bamlss" objects.
-plot.bamlss <- function(x, model = NULL, term = NULL, which = 1,
+plot.bamlss <- function(x, model = NULL, term = NULL, which = "samples",
+  ask = dev.interactive(), ...)
+{
+  op <- par(no.readonly = TRUE)
+  on.exit(par(op))
+
+  ## What should be plotted?
+  which.match <- c("effects", "samples", "hist-resid", "qq-resid",
+    "scatter-resid", "scale-resid", "max-acf", "param-samples")
+  if(!is.character(which)) {
+    if(any(which > 8L))
+      which <- which[which <= 8L]
+    which <- which.match[which]
+  } else which <- which.match[pmatch(tolower(which), which.match)]
+  if(length(which) > length(which.match) || !any(which %in% which.match))
+    stop("argument which is specified wrong!")
+
+  if(which == "samples") {
+    par <- if(is.null(x$parameters)) NULL else unlist(x$parameters)
+    samps <- samples(x, model = model, term = term, drop = TRUE)
+    np <- ncol(samps)
+    par(mfrow = if(np <= 4) c(np, 2) else c(4, 2))
+    snames <- colnames(samps)
+    devAskNewPage(ask)
+    tx <- as.vector(time(samps))
+    for(j in 1:np) {
+      traceplot(samps[, j, drop = FALSE], main = paste("Trace of", snames[j]))
+      lines(lowess(tx, samps[, j]), col = "red")
+      if(!is.null(par)) {
+        if(snames[j] %in% names(par))
+          abline(h = par[snames[j]], col = "blue")
+      }
+      densplot(samps[, j, drop = FALSE], main = paste("Density of", snames[j]))
+    }
+  }
+
+  return(invisible(NULL))
+}
+
+
+plot.bamlss2 <- function(x, model = NULL, term = NULL, which = 1,
   ask = FALSE, scale = 1, spar = TRUE, ...)
 {
   args <- list(...)

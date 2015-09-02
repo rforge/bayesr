@@ -553,16 +553,27 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       if(!is.null(x[[id]]$smooth.construct)) {
         if(!is.null(x[[id]]$smooth.construct$model.matrix)) {
           if(length(take <- grep(paste(id, "p", sep = "."), names(start), fixed = TRUE, value = TRUE))) {
-            take <- grepl(take, colnames(x[[id]]$smooth.construct$model.matrix), fixed = TRUE)
-            if(length(take))
-              x[[id]]$smooth.construct$model.matrix$xt$state <- list("parameters" = start[take])
+            cn <- paste(id, "p", colnames(x[[id]]$smooth.construct$model.matrix$X), sep = ".")
+            i <- grep2(take, cn, fixed = TRUE)
+            if(length(i)) {
+              tpar <- start[take[i]]
+              names(tpar) <- gsub(paste(id, "p.", sep = "."), "", names(tpar), fixed = TRUE)
+              i <- grep2(c("edf", "accepted", "alpha"), names(tpar))
+              x[[id]]$smooth.construct$model.matrix$state$parameters <- if(length(i)) tpar[-i] else tpar
+              x[[id]]$smooth.construct$model.matrix$state$fitted.values <- x[[id]]$smooth.construct$model.matrix$fit.fun(x[[id]]$smooth.construct$model.matrix$X, x[[id]]$smooth.construct$model.matrix$state$parameters)
+            }
           }
         }
         for(j in seq_along(x[[id]]$smooth.construct)) {
-          take <- grep(paste(id, "s", x[[id]]$smooth.construct[[j]]$label, sep = "."),
+          take <- grep(tl <- paste(id, "s", x[[id]]$smooth.construct[[j]]$label, sep = "."),
             names(start), fixed = TRUE, value = TRUE)
-          if(length(take))
-            x[[id]]$smooth.construct[[j]]$xt$state <- list("parameters" = start[take])
+          if(length(take)) {
+            tpar <- start[take]
+            names(tpar) <- gsub(paste(tl, ".", sep = ""), "", names(tpar), fixed = TRUE)
+            i <- grep2(c("edf", "accepted", "alpha"), names(tpar))
+            x[[id]]$smooth.construct[[j]]$state$parameters <- if(length(i)) tpar[-i] else tpar
+            x[[id]]$smooth.construct[[j]]$state$fitted.values <- x[[id]]$smooth.construct[[j]]$fit.fun(x[[id]]$smooth.construct[[j]]$X, x[[id]]$smooth.construct[[j]]$state$parameters)
+          }
         }
       }
     }
