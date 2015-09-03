@@ -67,7 +67,7 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
     names(family$links) <- names(formula)
     attr(formula, "orig.formula") <- orig.formula
   } else {
-    rn <- response.name(formula, hierarchical = FALSE)
+    rn <- response.name(formula, hierarchical = FALSE, keep.functions = TRUE)
     rn <- rn[rn %in% names(bf$model.frame)]
     bf$y <- bf$model.frame[rn]
     for(j in rn) {
@@ -488,11 +488,15 @@ smooth.construct.bamlss.frame <- smooth.construct.bamlss.formula <- smooth.const
 
 
 ## Extract/initialize parameters.
-parameters <- function(x, start = NULL, fill = c(0, 0.0001), list = TRUE, simple.list = FALSE)
+parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001), list = TRUE, simple.list = FALSE)
 {
   if(inherits(x, "bamlss")) {
     if(!is.null(x$parameters)) {
-      if(list) return(x$parameters) else return(unlist(x$parameters))
+      if(is.null(model)) {
+        if(list) return(x$parameters) else return(unlist(x$parameters))
+      } else {
+        if(list) return(x$parameters[model]) else return(unlist(x$parameters[model]))
+      }
     }
   }
   if(inherits(x, "bamlss.frame")) {
@@ -652,6 +656,8 @@ parameters <- function(x, start = NULL, fill = c(0, 0.0001), list = TRUE, simple
       }
     }
   }
+  if(!is.null(model))
+    par <- par[model]
   if(!list)
     par <- unlist(par)
   return(par)
@@ -1239,7 +1245,8 @@ as.list.Formula <- function(x)
   x <- mapply(c, lhs, rhs, SIMPLIFY = FALSE)
   formula <- list()
   for(i in seq_along(x)) {
-    f <- if(!inherits(x[[i]][[1]], "call")) {
+    check <- inherits(x[[i]][[1]], "call") | inherits(x[[i]][[1]], "name")
+    f <- if(check) {
       as.call(c(as.symbol("~"), x[[i]]))
     } else as.call(c(as.symbol("~"), x[[i]][[2]]))
     formula[[i]] <- eval(f, envir = env)
@@ -1468,6 +1475,53 @@ make_fFormula <- function(formula)
 }
 
 
+all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL)
+{
+  env <- environment(formula)
+  tf <- terms(formula, specials = unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", specials)),
+    keep.order = TRUE)
+  sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
+  tl <- attr(tf, "term.labels")
+  vars <- NULL
+  if(rhs) {
+    if(length(sid)) {
+      vars <- tl[-sid]
+      if(!length(vars))
+        vars <- NULL
+      for(j in tl[sid]) {
+        st <- try(eval(parse(text = j), envir = env), silent = TRUE)
+        if(inherits(st, "try-error"))
+          st <- eval(parse(text = j), enclos = env, envir = loadNamespace("mgcv"))
+        vars <- c(vars, st$term)
+        if(st$by != "NA") {
+          vars <- if(grepl("~", st$by)) {
+            c(vars, all.vars.formula(as.formula(st$by, env = env)))
+          } else c(vars, st$by)
+        }
+      }
+    } else vars <- tl
+  }
+  if(lhs & (attr(tf, "response") > 0))
+    vars <- c(vars, response.name(formula, keep.functions = TRUE))
+  unique(vars)
+}
+
+
+fake.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL)
+{
+  if(!lhs & !rhs)
+    return(0 ~ 0)
+  if(rhs)
+    f <- paste(all.vars.formula(formula, lhs = FALSE, rhs = TRUE, specials), collapse = "+")
+  if(lhs)
+    f <- paste(all.vars.formula(formula, lhs = TRUE, rhs = FALSE), "~", if(!is.null(f)) f else 0)
+  else
+    f <- paste("~", if(!is.null(f)) f else 0)
+  f <- as.formula(f, env = environment(formula))
+  f
+}
+
+
 ## Extend formula by a fake formula with all variables
 ## to compute a model.frame, create smooth objects.
 formula_extend <- function(formula, family)
@@ -1477,25 +1531,15 @@ formula_extend <- function(formula, family)
       formula[[j]] <- formula_extend(formula[[j]], family)
     return(formula)
   } else {
-    vars <- all.vars(formula)
-    response <- response.name(formula)
-    if(all(is.na(response)))
-      response <- NULL
-    if(!is.null(response) & !is.null(family)) {
-      if(response %in% family$names) {
-        response <- NULL
-        vars <- vars[-1]
-      }
-    }
-    fake.formula <- as.formula(paste(response, "~1", if(length(vars)) "+" else NULL,
-      paste(vars, collapse = "+")), env = environment(formula))
-    return(list("formula" = formula, "fake.formula" = fake.formula))
+    rn <- response.name(formula)
+    ff <- fake.formula(formula, lhs = !(rn %in% family$names))
+    return(list("formula" = formula, "fake.formula" = ff))
   }
 }
 
 
 ## Get response name.
-response.name <- function(formula, hierarchical = TRUE)
+response.name <- function(formula, hierarchical = TRUE, keep.functions = FALSE)
 {
   rn <- NA
   if(inherits(formula, "bamlss.frame"))
@@ -1505,7 +1549,12 @@ response.name <- function(formula, hierarchical = TRUE)
   if(inherits(formula, "formula")) {
     f <- as.Formula(formula)
     f <- formula(f, lhs = TRUE, rhs = FALSE)
-    rn <- all.vars(f)
+    if(keep.functions) {
+      cf <- as.character(formula)
+      rn <- if(length(cf) < 3) character(0) else cf[2]
+    } else {
+      rn <- all.vars(f)
+    }
   } else {
     if(inherits(formula, "list")) {
       rn <- NULL
@@ -1518,11 +1567,11 @@ response.name <- function(formula, hierarchical = TRUE)
               tf <- if(is.null(formula[[i]][[j]]$formula)) {
                 formula[[i]][[j]]
               } else formula[[i]][[j]]$formula
-              rn <- c(rn, response.name(tf))
+              rn <- c(rn, response.name(tf, keep.functions = keep.functions))
             }
           }
         } else {
-          rn <- c(rn , response.name(formula[[i]]$formula))
+          rn <- c(rn , response.name(formula[[i]]$formula, keep.functions = keep.functions))
         }
       }
     }
@@ -2075,7 +2124,7 @@ add.partial <- function(x, samples = FALSE, nsamps = 100)
 ## Prediction can also be based on multiple chains.
 predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   intercept = TRUE, FUN = function(x) { mean(x, na.rm = TRUE) }, trans = NULL, MARGIN = 1,
-  type = c("link", "parameter"), nsamps = NULL, verbose = FALSE, ...)
+  type = c("link", "parameter"), par.type = c("parameters", "samples"), nsamps = NULL, verbose = FALSE, ...)
 {
   family <- object$family
   if(missing(newdata)) {
@@ -2088,12 +2137,51 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
     }
     if(is.matrix(newdata) || is.list(newdata))
       newdata <- as.data.frame(newdata)
-    newdata <- model.frame(object, data = newdata)
   }
   if(!is.null(attr(object, "fixed.names")))
     names(newdata) <- rmf(names(newdata))
   nn <- names(newdata)
+  rn <- response.name(object, keep.functions = TRUE)
+  nn <- nn[nn != rn]
+  tl <- term.labels2(object, model = model, intercept = intercept)
+  nx <- names(tl)
+  vars <- NULL
+  if(!is.null(term)) {
+    for(j in term) {
+      for(i in seq_along(tl)) {
+        if(!is.character(j)) {
+          if(j > length(tl[i]) | j < 1)
+            stop(paste("cannot find term", j, "in model ", nx[i], "!", sep = ""))
+          vars <- c(vars, tl[[i]][j])
+        } else {
+          k <- pmatch(j, tl[[i]])
+          if(is.na(k))
+            stop(paste("cannot find term", j, "in model ", nx[i], "!", sep = ""))
+          vars <- c(vars, tl[[i]][k])
+        }
+      }
+    }
+  } else vars <- unlist(tl)
+  ff <- as.formula(paste("~", paste(unlist(vars), collapse = "+")))
+  vars <- all.vars.formula(ff)
+  if(!all(vars[vars != "Intercept"] %in% nn))
+    stop("cannot compute prediction, variables missing in newdata!")
+  type <- match.arg(type)
+  par.type <- match.arg(par.type)
+  if(!is.null(object$samples) & par.type == "samples") {
+    samps <- samples(object, model = model)
+  } else {
+    if(is.null(object$parameters))
+      stop("cannot find any parameters!")
+    samps <- parameters(object, model = model, list = FALSE)
+    cn <- names(samps)
+    samps <- matrix(samps, nrow = 1)
+    colnames(samps) <- cn
+    samps <- as.mcmc(samps)
+  }
 
+print(head(samps))
+  stop("ok")
 
   object <- model.terms(object, model)
   if(any(c("effects", "param.effects") %in% names(object)))
@@ -2101,13 +2189,13 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   k <- length(object)
   enames <- list()
   for(j in 1:k)
-    enames[[j]] <- all.terms(object[[j]], j, ne = TRUE, id = FALSE, intercept = FALSE)
+    enames[[j]] <- term.labels(object[[j]], j, ne = TRUE, id = FALSE, intercept = FALSE)
   if(!all(diff(sapply(enames, length)) == 0))
     stop("the number of terms in the models is not identical, cannot compute prediction!")
   enames <- data.frame(enames)
   if(!all(apply(enames, 1, function(x) length(unique(x))) == 1))
     stop("different terms in the supplied models, cannot compute prediction!")
-  enames <- all.terms(object[[1L]], ne = TRUE, id = FALSE, intercept = FALSE)
+  enames <- term.labels(object[[1L]], ne = TRUE, id = FALSE, intercept = FALSE)
   term <- if(!is.null(enames)) {
     if(is.null(term)) enames else {
       if(is.character(term)) {
@@ -2185,7 +2273,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
               matrix(attr(object[[j]]$param.effects, "samples")[, ij, drop = FALSE],
               ncol = length(ij)))
             if(is.null(newdata[[i]])) {
-              enames2 <- all.terms(object[[1L]], ne = FALSE, id = FALSE,
+              enames2 <- term.labels(object[[1L]], ne = FALSE, id = FALSE,
                 intercept = FALSE, what = "parametric")
               tte <- NULL
               for(en in enames2) {
@@ -2274,7 +2362,6 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
         rval <- rval + apply(i$samples, 1, function(x) { i$fit.fun(i$X, x, expand = FALSE) })
       }
     }
-    type <- match.arg(type)
     if(type != "link") {
       link <- family$links[if(!is.null(model)) grep(model, names(family$links)) else 1]
       if(length(link) > 0) {
@@ -3055,7 +3142,15 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "samples",
         if(snames[j] %in% names(par))
           abline(h = par[snames[j]], col = "blue")
       }
+      if(snames[j] %in% names(par))
+        abline(h = mean(samps[, j], na.rm = TRUE), col = "green")
       densplot(samps[, j, drop = FALSE], main = paste("Density of", snames[j]))
+      if(!is.null(par)) {
+        if(snames[j] %in% names(par))
+          abline(v = par[snames[j]], col = "blue")
+      }
+      if(snames[j] %in% names(par))
+        abline(v = mean(samps[, j], na.rm = TRUE), col = "green")
     }
   }
 
@@ -4010,9 +4105,10 @@ drop.terms.bamlss <- function(f, pterms = TRUE, sterms = TRUE,
   specials <- unique(c(names(attr(tx, "specials")), specials))
   sid <- unlist(attr(tx, "specials"))
   tl <- attr(tx, "term.labels")
+  sub <- attr(tx, "response")
   if(!is.null(sid)) {
-    st <- tl[sid - 1L]
-    pt <- tl[-1 * (sid - 1L)]
+    st <- tl[sid - sub]
+    pt <- tl[-1 * (sid - sub)]
   } else {
     st <- character(0)
     pt <- tl
@@ -4569,7 +4665,7 @@ samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE, .
       if(is.na(j))
         stop("cannot find term!")
       specials <- unlist(attr(tx[[i]], "specials"))
-      if(!is.null(specials)) {
+      if(length(specials)) {
         sub <- if(attr(tx[[i]], "response") > 0) 1 else 0
         tl[specials - sub] <- paste(nx[i], "s", tl[specials - sub], sep = ".")
         tl[-1 * c(specials - sub)] <- paste(nx[i], "p", tl[-1 * c(specials - sub)], sep = ".")
@@ -4601,7 +4697,7 @@ confint.bamlss <- function(object, parm, level = 0.95, model = NULL, ...)
   if(!is.null(args$term))
     parm <- args$term
   if(missing(parm))
-    parm <- all.terms(object, ne = TRUE, id = FALSE)
+    parm <- term.labels(object, ne = TRUE, id = FALSE)
   samps <- samples(object, model = model, term = parm)
   np <- colnames(samps)
   probs <- c((1 - level) / 2, 1 - (1 - level) / 2)
@@ -4614,77 +4710,110 @@ coef.bamlss <- function(object, model = NULL, term = NULL, FUN = mean, ...)
 {
   object <- model.terms(object)
   if(is.null(term))
-    term <- all.terms(object, ne = TRUE, id = FALSE)
+    term <- term.labels(object, ne = TRUE, id = FALSE)
   samps <- samples(object, model = model, term = term)
   apply(samps, 2, function(x) { FUN(na.omit(x), ...) })
 }
 
 
 ## Get all terms names used.
-all.terms <- function(x, model = NULL, ne = TRUE, what = c("parametric", "smooth"), ...)
+term.labels <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
+  intercept = TRUE, list = TRUE, ...)
 {
-  what <- match.arg(what, several.ok = TRUE)
-  args <- list(...)
-  nx <- names(x)
-  if(!ne) {
-    tx <- terms.bamlss(x, model)
-    if(!inherits(tx, "list"))
-      tx <- list(tx)
-    tl <- NULL
-    for(j in tx) {
-      if(inherits(j, "list")) {
-        for(i in j) {
-          if(attr(i, "intercept"))
-            tl <- c(tl, "(Intercept)")
-          tl <- c(tl, attr(i, "term.labels"))
-        }
-      } else {
-        if(attr(j, "intercept"))
-          tl <- c(tl, "(Intercept)")
-        tl <- c(tl, attr(j, "term.labels"))
-      }
-    }
+  if(inherits(x, "bamlss") | inherits(x, "bamlss.frame")) {
+    x <- terms(x)
   } else {
-    x <- model.terms(x, model)
-    if(all(c("effects", "param.effects") %in% names(x))) {
-      x <- list(x)
-      if(!is.null(model)) {
-        if(!is.character(model))
-          nx <- nx[as.integer(model)]
-        else nx <- grep(model, nx, value = TRUE)
-      }
-    }
-    tl <- NULL
-    for(j in seq_along(x)) {
-      if(!"effects" %in% names(x[[j]]))
-        tl <- c(tl, all.terms(x[[j]], ne = TRUE, ...))
-      else {
-        if(!is.null(x[[j]]$param.effects)) {
-          tl <- c(tl, paste(rownames(x[[j]]$param.effects),
-            if(is.null(args$id)) paste(":", nx[j], sep = ""), sep = ""))
-        }
-        tl <- c(tl, names(x[[j]]$effects))
-      }
-    }
-  }
-  if(!is.null(args$intercept))
-    tl <- tl[!grepl("Intercept", tl)]
-  if(!("smooth" %in% what)) {
-    specials <- attr(formula(x), "specials")
-    for(sp in specials) {
-      if(any(dte <- grepl(paste(sp, "(", sep = ""), tl, fixed = TRUE)))
-        tl <- tl[!dte]
-    }
-  }
-  if(!("parametric" %in% what)) {
-    specials <- attr(formula(x), "specials")
-    for(sp in specials) {
-      if(any(dte <- grepl(paste(sp, "(", sep = ""), tl, fixed = TRUE)))
-        tl <- tl[dte]
+    if(!inherits(x, "bamlss.terms")) {
+      if(inherits(x, "terms")) {
+        x <- list("p" = x)
+      } else stop("x must be a 'terms' or 'bamlss.terms' object!")
     }
   }
 
-  tl
+  nx <- names(x)
+
+  if(is.null(model)) {
+    model <- nx
+  } else {
+    if(!is.character(model)) {
+      if(max(model) > length(nx) | min(model) < 1)
+        stop("model is specified wrong")
+    } else {
+      for(j in seq_along(model)) {
+        mm <- pmatch(model[j], nx)
+        if(is.na(mm))
+          stop("model is specified wrong")
+        model[j] <- nx[mm]
+      }
+    }
+  }
+
+  x <- x[model]
+  nx <- names(x)
+  rval <- vector(mode = "list", length = length(nx))
+  for(j in seq_along(x)) {
+    rval[[j]] <- list()
+    txj <- drop.terms.bamlss(x[[j]], pterms = pterms, sterms = sterms, keep.response = FALSE)
+    tl <- attr(txj, "term.labels")
+    specials <- unlist(attr(txj, "specials"))
+    if(length(specials)) {
+      sub <- if(attr(txj, "response") > 0) 1 else 0
+      rval[[j]]$p <- tl[-1 * c(specials - sub)]
+      rval[[j]]$s <- tl[specials - sub]
+    } else {
+      rval[[j]]$p <- tl
+    }
+    if(intercept & (attr(x[[j]], "intercept") > 0)) {
+      rval[[j]]$p <- if(!length(tl)) "(Intercept)" else c("(Intercept)", rval[[j]]$p)
+    }
+  }
+  names(rval) <- nx
+  if(!list)
+    rval <- unlist(rval)
+
+  rval
+}
+
+term.labels2 <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
+  intercept = TRUE, list = TRUE, ...)
+{
+  if(inherits(x, "bamlss") | inherits(x, "bamlss.frame")) {
+    x <- terms(x)
+  } else {
+    if(!inherits(x, "bamlss.terms")) {
+      if(inherits(x, "terms")) {
+        x <- list("p" = x)
+      } else stop("x must be a 'terms' or 'bamlss.terms' object!")
+    }
+  }
+
+  nx <- names(x)
+
+  if(is.null(model)) {
+    model <- nx
+  } else {
+    if(!is.character(model)) {
+      if(max(model) > length(nx) | min(model) < 1)
+        stop("model is specified wrong")
+    } else {
+      for(j in seq_along(model)) {
+        mm <- pmatch(model[j], nx)
+        if(is.na(mm))
+          stop("model is specified wrong")
+        model[j] <- nx[mm]
+      }
+    }
+  }
+
+  x <- x[model]
+  nx <- names(x)
+  rval <- vector(mode = "list", length = length(nx))
+  for(j in seq_along(x)) {
+    txj <- drop.terms.bamlss(x[[j]], pterms = TRUE, sterms = TRUE, keep.response = FALSE)
+    rval[[j]] <- attr(txj, "term.labels")
+  }
+  names(rval) <- nx
+  rval
 }
 
 
