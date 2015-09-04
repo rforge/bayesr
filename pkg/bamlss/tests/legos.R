@@ -92,11 +92,33 @@ unlist(parameters(randomize(bf)))
 
 ## Estimate model
 data("GAMart", package = "R2BayesX")
-b <- bamlss(num|sigma ~ s(x1) + s(x2) + x3| s(x1) + x2, data = GAMart, cores = 3, chains = 2)
+b <- bamlss(num|sigma ~ s(x1) + s(x2) + x3 + id | s(x1) + x2, data = GAMart, cores = 3, chains = 2)
 samps <- samples(b)
 samps <- samples(b, model = 1, term = 1)
 head(samps)
 plot(b, model = 1, term = 1, which = "samples")
+
+## Predict.
+b <- bamlss(num|sigma ~ s(x1) + s(x2) + x3 + id| s(x1) + x2, data = GAMart, cores = 3, chains = 2)
+p <- predict(b, model = "mu", term = "s(x2)")
+plot2d(p ~ x2, data = GAMart)
+p <- predict(b, model = "mu", term = "s(x2)", FUN = quantile, probs = c(0.025, 0.5, 0.975))
+plot2d(p ~ x2, data = GAMart)
+p <- predict(b, model = 1, term = "(Intercept)")
+p <- predict(b)
+names(p)
+p <- predict(b, model = "mu", term = "id", intercept = FALSE)
+plotblock(p ~ id, data = GAMart)
+
+nd <- data.frame("x2" = seq(0, 1, length = 100))
+nd$p <- predict(b, newdata = nd, model = "mu", term = "s(x2)")
+plot(nd, type = "l")
+
+nd <- data.frame("x2" = seq(0, 1, length = 100), "x3" = seq(0, 1, length = 100))
+p <- predict(b, newdata = nd, model = 1, term = c("x2", "x3"), FUN = quantile)
+print(head(p))
+
+p <- predict(b, term = 1:2)
 
 ## (5) Run backfitting optimizer on bamlss.frame.
 data("marital.nz", package = "VGAM")

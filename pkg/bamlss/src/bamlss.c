@@ -1409,6 +1409,36 @@ SEXP quick_quantiles(SEXP X, SEXP samples)
 }
 
 
+SEXP fitted_matrix(SEXP X, SEXP samples)
+{
+  int i, j, ii;    
+  int nr = nrows(X);
+  int nc = ncols(X);
+  int iter = nrows(samples);
+    
+  SEXP out;
+  PROTECT(out = allocMatrix(REALSXP, nr, iter));
+  double *outptr = REAL(out);
+    
+  double *Xptr = REAL(X);
+  double *sptr = REAL(samples);
+  double tmp = 0.0;
+    
+  for(i = 0; i < nr; i++) {
+    for(ii = 0; ii < iter; ii++) {
+      tmp = 0.0;
+      for(j = 0; j < nc; ++j) {
+        tmp += Xptr[i + j * nr] * sptr[ii + j * iter];
+      }
+      outptr[i + ii * nr] = tmp;
+    }
+  }
+
+  UNPROTECT(1);
+  return out;
+}
+
+
 /* Survival integrals. */
 SEXP survint(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP check)
 {
