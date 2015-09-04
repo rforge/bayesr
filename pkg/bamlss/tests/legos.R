@@ -99,7 +99,6 @@ head(samps)
 plot(b, model = 1, term = 1, which = "samples")
 
 ## Predict.
-b <- bamlss(num|sigma ~ s(x1) + s(x2) + x3 + id| s(x1) + x2, data = GAMart, cores = 3, chains = 2)
 p <- predict(b, model = "mu", term = "s(x2)")
 plot2d(p ~ x2, data = GAMart)
 p <- predict(b, model = "mu", term = "s(x2)", FUN = quantile, probs = c(0.025, 0.5, 0.975))
@@ -123,8 +122,8 @@ p <- predict(b, term = 1:2)
 ## (5) Run backfitting optimizer on bamlss.frame.
 data("marital.nz", package = "VGAM")
 
-bf <- bamlss.frame(mstatus ~ s(age), data = marital.nz,
-  family = "multinomial", reference = "Married/Partnered")
+b <- bamlss(mstatus ~ s(age), data = marital.nz,
+  family = "multinomial", reference = "Married/Partnered", cores = 4)
 
 bf <- bfit0(bf, do.optim = FALSE)
 
