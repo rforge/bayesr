@@ -744,7 +744,7 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
 
   ## Compute results.
   if(is.function(functions$results))
-    bf$results <- functions$results(x, ...)
+    bf$results <- functions$results(bf, ...)
 
   ## Save the model frame?
   if(!model)
@@ -1961,7 +1961,7 @@ compute_term <- function(x, get.X, fit.fun, psamples, vsamples = NULL,
       rval
     }
   }
-  if(inherits(x, "mgcv.smooth") & nrow(psamples) > 39L) {
+  if(inherits(x, "mgcv.smooth") & nrow(psamples) > 39L & FALSE) {
     smf <- quick_quantiles(X, psamples)
   } else {
     if(nt < 2) {
@@ -1986,15 +1986,6 @@ compute_term <- function(x, get.X, fit.fun, psamples, vsamples = NULL,
   }
   names(smf) <- c(x$term, cnames)
 
-  ## Compute new linear predictor.
-  fit <- rep(0, nrow(smf))
-  if(any(im <- grepl("50%", tolower(colnames(smf)), fixed = TRUE))) {
-    im <- c(1:ncol(smf))[im]
-    fit <- smf[, im[1]]
-    if(xsmall & !all(is.na(fit)))
-      fit <- approx(data[[tterms]], fit, xout = data0[[tterms]])$y
-  }
-
   if(x$by != "NA") { ## FIXME: hard coded fix for plotting varying coefficient terms!
     if(!is.factor(data[[x$by]])) {
       X <- X / data[[x$by]]
@@ -2017,18 +2008,8 @@ compute_term <- function(x, get.X, fit.fun, psamples, vsamples = NULL,
   by.drop <- NULL
   if(x$by != "NA" & !is.null(x$by.level)) {
     by.drop <- (if(xsmall) data0[[x$by]] else data[[x$by]]) == x$by.level
-    fit[!by.drop] <- 0
     if(!xsmall)
       smf <- smf[by.drop, ]
-  }
-  if(is.null(x$xt$center)) {
-    mean_fit <- mean(fit, na.rm = TRUE)
-    fit <- fit - mean_fit
-    if(any(grepl("50%", colnames(smf))))
-      smf[, c("2.5%", "50%", "97.5%")] <- smf[, c("2.5%", "50%", "97.5%")] - mean_fit
-  } else {
-    if(x$xt$center)
-      fit <- fit - mean(fit, na.rm = TRUE)
   }
 
   ## Assign class and attributes.
@@ -2037,11 +2018,9 @@ compute_term <- function(x, get.X, fit.fun, psamples, vsamples = NULL,
     bbb <- 1 ## FIXME: factors!
   }
   class(smf) <- c(class(x), "data.frame")
-  x[c("X", "state", "update", "propose", "hess", "grad", "edf", "criterion", "nu", "prior",
-    "X", "Xf", "rand", "trans.D", "trans.U")] <- NULL
+  x[!(names(x) %in% c("term", "bs.dim", "dim"))] <- NULL
   attr(smf, "specs") <- x
   class(attr(smf, "specs")) <- class(x)
-  attr(smf, "fit") <- fit
   attr(smf, "x") <- if(xsmall & nt < 2) data0[, tterms] else data[, tterms]
   attr(smf, "by.drop") <- by.drop
   attr(smf, "rug") <- rugp
@@ -3092,9 +3071,9 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "samples",
   }
 
   if(which == "effects") {
-    if(is.null(x$effects)) {
+    if(is.null(x$results)) {
       plot(results.bamlss.default(x), ...)
-    } else plot(x$effects, ...)
+    } else plot(x$results, ...)
   }
 
   return(invisible(NULL))
@@ -4250,6 +4229,12 @@ get_sterms_labels <- function(x, specials = NULL)
 }
 
 
+list2mat <- function(x)
+{
+  do.call("cbind", x)
+}
+
+
 ## Process results with samples and bamlss.frame.
 results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 100, nsamps = NULL, ...)
 {
@@ -4310,12 +4295,12 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
       sn <- paste(id, "p", tl, sep = ".")
       i <- grep2(sn, snames, fixed = TRUE)
       if(length(i)) {
-        psamps <- as.matrix(samps[, snames[i], drop = FALSE])
-        nas <- apply(psamps, 1, function(x) { any(is.na(x)) } )
-        psamps <- psamps[!nas, , drop = FALSE]
-        qu <- t(apply(psamps, 2, quantile, probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
-        sd <- drop(apply(psamps, 2, sd, na.rm = TRUE))
-        me <- drop(apply(psamps, 2, mean, na.rm = TRUE))
+        psamples <- as.matrix(samps[, snames[i], drop = FALSE])
+        nas <- apply(psamples, 1, function(x) { any(is.na(x)) } )
+        psamples <- psamples[!nas, , drop = FALSE]
+        qu <- t(apply(psamples, 2, quantile, probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
+        sd <- drop(apply(psamples, 2, sd, na.rm = TRUE))
+        me <- drop(apply(psamples, 2, mean, na.rm = TRUE))
         p.effects <- cbind(me, sd, qu)
         rownames(p.effects) <- gsub(paste(id, "p.", sep = "."), "", snames[i], fixed = TRUE)
         colnames(p.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
@@ -4330,12 +4315,12 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
       if(length(i)) {
         for(j in tl) {
           sn <- paste(id, "s", j, sep = ".")
-          ssamps <- as.matrix(samps[, snames[grep2(sn, snames, fixed = TRUE)], drop = FALSE])
-          nas <- apply(ssamps, 1, function(x) { any(is.na(x)) } )
-          ssamps <- ssamps[!nas, , drop = FALSE]
+          psamples <- as.matrix(samps[, snames[grep2(sn, snames, fixed = TRUE)], drop = FALSE])
+          nas <- apply(psamples, 1, function(x) { any(is.na(x)) } )
+          psamples <- psamples[!nas, , drop = FALSE]
        
           ## FIXME: retransform!
-          if(!is.null(obj$smooth.construct[[j]]$Xf)) {
+          if(!is.null(obj$smooth.construct[[j]]$Xf) & FALSE) {
             stop("no randomized terms supported yet!")
             kx <- ncol(obj$smooth.construct[[j]]$Xf)
             if(kx) {
@@ -4343,14 +4328,14 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
                 paste(paste(obj$smooth.construct[[j]]$term, collapse = "."), "Xf", sep = "."), sep = ""),
                 1:kx, sep = ".")
               xsamps <- matrix(samples[[j]][, snames %in% pn], ncol = kx)
-              ssamps <- cbind("ra" = ssamps, "fx" = xsamps)
+              psamples <- cbind("ra" = psamples, "fx" = xsamps)
               re_trans <- function(g) {
                 g <- obj$smooth.construct[[j]]$trans.D * g
                 if(!is.null(obj$smooth.construct[[j]]$trans.U))
                   g <- obj$smooth.construct[[j]]$trans.U %*% g
                 g
               }
-              ssamps <- t(apply(ssamps, 1, re_trans))
+              psamples <- t(apply(psamples, 1, re_trans))
             }
           }
 
@@ -4401,9 +4386,11 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
             }
           }
 
+          b <- grep2(paste(id, "s", j, "b", sep = "."), colnames(psamples), fixed = TRUE)
+
           fst <- compute_term(obj$smooth.construct[[j]], get.X = get.X,
             fit.fun = obj$smooth.construct[[j]]$fit.fun,
-            psamples = ssamps, vsamples = vsamples, asamples = asamples,
+            psamples = psamples[, b, drop = FALSE], vsamples = vsamples, asamples = asamples,
             FUN = NULL, snames = snames, s.effects.resmat = s.effects.resmat,
             data = mf[, obj$smooth.construct[[j]]$term, drop = FALSE],
             grid = grid, edfsamples = edfsamples)
@@ -4559,7 +4546,7 @@ grep2 <- function(pattern, x, ...) {
 
 samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE, ...)
 {
-  if(!inherits(x, "bamlss"))
+  if(!inherits(x, "bamlss") & !inherits(x, "bamlss.frame"))
     stop("x is not a 'bamlss' object!")
   if(is.null(x$samples))
     stop("no samples to extract!")

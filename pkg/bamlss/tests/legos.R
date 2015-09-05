@@ -1,7 +1,7 @@
 library("bamlss")
 data("GAMart", package = "R2BayesX")
 
-## (1) Model formulae.
+## Model formulae.
 bamlss.formula(num ~ s(x1) + id)
 
 f <- list(
@@ -25,7 +25,7 @@ terms(bamlss.formula(f), model = c(1, 1), sterms = FALSE)
 terms(bamlss.formula(f), model = c(1, 1), sterms = FALSE, pterms = FALSE)
 
 
-## (2) Get the bamlss frame.
+## Get the bamlss frame.
 bf <- bamlss.frame(f, data = GAMart, family = "gaussian")
 names(bf)
 print(bf)
@@ -37,7 +37,7 @@ response.name(bf)
 response.name(model.frame(bf))
 
 
-## (3) model.matrix() and smooth.construct()
+## model.matrix() and smooth.construct()
 model.matrix(bf)
 head(model.matrix(bf, model = c(1, 1)))
 smooth.construct(bf)
@@ -55,7 +55,7 @@ smooth.construct(bf)
 names(smooth.construct(bf, model = c(1, 1)))
 
 
-## (4) Complex multilevel structures.
+## Complex multilevel structures.
 f <- list(
   cat ~ s(x1) + s(x2) + id,
   id ~ s(x3)
@@ -119,13 +119,21 @@ print(head(p))
 
 p <- predict(b, term = 1:2)
 
-## (5) Run backfitting optimizer on bamlss.frame.
+## Multinomial example.
 data("marital.nz", package = "VGAM")
 
 b <- bamlss(mstatus ~ s(age), data = marital.nz,
   family = "multinomial", reference = "Married/Partnered", cores = 4)
 
-bf <- bfit0(bf, do.optim = FALSE)
+plot(b)
+
+nd <- data.frame("age" = seq(0, 100, length = 100))
+pi <- predict(b, newdata = nd, type = "parameter")
+pi <- cbind(as.data.frame(pi), "MarriedPartnered" = 1)
+pi <- pi / rowSums(pi)
+with(nd, matplot(age, pi, type = "l", lty = 1))
+legend("topright", names(pi), lwd = 1, col = 1:ncol(pi))
+
 
 ## (6) Run MCMC.
 samps <- GMCMC(bf, n.iter = 1200)
