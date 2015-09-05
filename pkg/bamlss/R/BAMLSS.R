@@ -491,9 +491,10 @@ smooth.construct.bamlss.frame <- smooth.construct.bamlss.formula <- smooth.const
 
 
 ## Extract/initialize parameters.
-parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001), list = TRUE, simple.list = FALSE)
+parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
+  list = TRUE, simple.list = FALSE, extract = FALSE)
 {
-  if(inherits(x, "bamlss")) {
+  if(inherits(x, "bamlss") | extract) {
     if(!is.null(x$parameters)) {
       if(is.null(model)) {
         if(list) return(x$parameters) else return(unlist(x$parameters))
@@ -1552,11 +1553,11 @@ all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
 
 fake.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL)
 {
-  if(!lhs & !rhs)
+  if(all(!lhs & !rhs))
     return(0 ~ 0)
-  if(rhs)
+  if(all(rhs))
     f <- paste(all.vars.formula(formula, lhs = FALSE, rhs = TRUE, specials, intercept = TRUE), collapse = "+")
-  if(lhs)
+  if(all(lhs))
     f <- paste(all.vars.formula(formula, lhs = TRUE, rhs = FALSE), "~", if(!is.null(f)) f else 0)
   else
     f <- paste("~", if(!is.null(f)) f else 0)
@@ -1717,8 +1718,8 @@ formula_hcheck <- function(formula)
           for(jj in seq_along(fi)) {
             av <- all.vars(fi[[jj]])
             rn <- response.name(fi[[jj]])
-            if(!is.na(rn))
-              av <- av[av != rn]
+            if(!any(is.na(rn)))
+              av <- av[av != rn[is.na(rn)]]
             if(!has_dot(fi[[jj]])) {
               if(attr(terms(fi[[jj]]), "intercept") < 1) {
                 av <- c(av, "-1")
@@ -3993,7 +3994,7 @@ print.bamlss.formula <- function(x, ...) {
 
 ## Drop terms from "bamlss.terms'.
 drop.terms.bamlss <- function(f, pterms = TRUE, sterms = TRUE,
-  specials = NULL, keep.response = TRUE, data = NULL)
+  specials = NULL, keep.response = TRUE, keep.intercept = TRUE, data = NULL)
 {
   specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti"))
   if(!inherits(f, "formula")) {
@@ -4041,6 +4042,10 @@ drop.terms.bamlss <- function(f, pterms = TRUE, sterms = TRUE,
   environment(tx) <- environment(f)
   if(!keep.response)
     tx <- delete.response(tx)
+  if(!keep.intercept) {
+    if(attr(tx, "intercept") > 0)
+      tx <- terms.formula(update(tx, . ~ -1 + ., specials = specials, keep.order = TRUE, data = data))
+  }
   tx
 }
 
@@ -4264,11 +4269,12 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
       warning("nothing to do!")
       return(NULL)
     }
-    samps <- parameters(object, model = model, list = FALSE)
+    samps <- parameters(x, extract = TRUE, list = FALSE)
     cn <- names(samps)
     samps <- matrix(samps, nrow = 1)
     colnames(samps) <- cn
     samps <- as.mcmc(samps)
+print(samps)
   }
 
   family <- x$family

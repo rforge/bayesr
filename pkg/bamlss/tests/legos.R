@@ -148,7 +148,7 @@ legend("topright", names(pi), lwd = 1, col = 1:ncol(pi))
 
 
 ## Survival example.
-n <- 1000
+n <- 300
 X <- matrix(NA, nrow = n, ncol = 3)
 X[, 1] <- runif(n, -1, 1)
 X[, 2] <- runif(n, -3, 3)
@@ -178,9 +178,7 @@ f <- list(
 )
 
 ## Posterior mode estimation without sampling.
-b <- bamlss(f, family = cox,
-  data = d, nu = 0.5, subdivisions = 15,
-  sampler = NULL)
+b <- bamlss(f, family = "cox", data = d, nu = 0.5, subdivisions = 15)
 
 
 ## JAGS.
