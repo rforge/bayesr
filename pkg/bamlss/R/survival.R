@@ -13,8 +13,9 @@ cox.bamlss <- function(...)
     "family" = "cox",
     "names" = c("lambda", "mu"),
     "links" = c(lambda = "log", mu = "identity"),
-    "transform" = function(x, ...) { surv.transform(x, globalgrid = FALSE, is.cox = TRUE, ...) },
-    "engine" = cox.engine,
+    "transform" = function(x, ...) { surv.transform(x$x, x$y, globalgrid = FALSE, is.cox = TRUE, ...) },
+    "optimizer" = cox.engine,
+    "sampler" = FALSE,
     "loglik" = function(y, eta, ...) {
       n <- attr(y, "subdivisions")
       eeta <- exp(eta_Surv_timegrid)
@@ -74,40 +75,40 @@ cox.mode <- function(x, nu = 1, eps = .Machine$double.eps^0.25, maxit = 400,
     ########################################
     ## Cycle through time-dependent part. ##
     ########################################
-    for(sj in seq_along(x$lambda$smooth)) {
+    for(sj in seq_along(x$lambda$smooth.construct)) {
       ## The time-dependent design matrix for the grid.
-      X <- x$lambda$smooth[[sj]]$get.mu_timegrid(NULL)
+      X <- x$lambda$smooth.construct[[sj]]$get.mu_timegrid(NULL)
 
       ## Timegrid lambda.
       eeta <- exp(eta_timegrid)
 
       ## Compute gradient and hessian integrals.
       int <- survint(X, eeta, width, exp(eta$mu))
-      xgrad <- drop(t(response[, "status"]) %*% x$lambda$smooth[[sj]]$XT - int$grad)
-      xgrad <- xgrad + x$lambda$smooth[[sj]]$grad(score = NULL, x$lambda$smooth[[sj]]$state$parameters, full = FALSE)
-      xhess <- int$hess + x$lambda$smooth[[sj]]$hess(score = NULL, x$lambda$smooth[[sj]]$state$parameters, full = FALSE)
+      xgrad <- drop(t(response[, "status"]) %*% x$lambda$smooth.construct[[sj]]$XT - int$grad)
+      xgrad <- xgrad + x$lambda$smooth.construct[[sj]]$grad(score = NULL, x$lambda$smooth.construct[[sj]]$state$parameters, full = FALSE)
+      xhess <- int$hess + x$lambda$smooth.construct[[sj]]$hess(score = NULL, x$lambda$smooth.construct[[sj]]$state$parameters, full = FALSE)
 
       ## Compute the inverse of the hessian.
       hessian[[paste("p", 1, ".t", sj, ".", sep = "")]] <- xhess
       Sigma <- matrix_inv(xhess)
 
       ## Update regression coefficients.
-      g <- get.state(x$lambda$smooth[[sj]], "gamma")
+      g <- get.state(x$lambda$smooth.construct[[sj]], "gamma")
       g2 <- drop(g + nu * Sigma %*% xgrad)
       names(g2) <- names(g)
-      x$lambda$smooth[[sj]]$state$parameters <- set.par(x$lambda$smooth[[sj]]$state$parameters, g2, "g")
+      x$lambda$smooth.construct[[sj]]$state$parameters <- set.par(x$lambda$smooth.construct[[sj]]$state$parameters, g2, "g")
 
       ## Update additive predictors.
-      fit_timegrid <- x$lambda$smooth[[sj]]$get.mu_timegrid(g2)
-      eta_timegrid <- eta_timegrid - x$lambda$smooth[[sj]]$state$fitted_timegrid + fit_timegrid
-      x$lambda$smooth[[sj]]$state$fitted_timegrid <- fit_timegrid
+      fit_timegrid <- x$lambda$smooth.construct[[sj]]$get.mu_timegrid(g2)
+      eta_timegrid <- eta_timegrid - x$lambda$smooth.construct[[sj]]$state$fitted_timegrid + fit_timegrid
+      x$lambda$smooth.construct[[sj]]$state$fitted_timegrid <- fit_timegrid
 
-      fit <- x$lambda$smooth[[sj]]$get.mu(x$lambda$smooth[[sj]]$X, g2)
-      eta$lambda <- eta$lambda - fitted(x$lambda$smooth[[sj]]$state) + fit
-      x$lambda$smooth[[sj]]$state$fitted.values <- fit
+      fit <- x$lambda$smooth.construct[[sj]]$get.mu(x$lambda$smooth.construct[[sj]]$X, g2)
+      eta$lambda <- eta$lambda - fitted(x$lambda$smooth.construct[[sj]]$state) + fit
+      x$lambda$smooth.construct[[sj]]$state$fitted.values <- fit
 
       ## Save Sigma.
-      x$lambda$smooth[[sj]]$state$hessian <- Sigma
+      x$lambda$smooth.construct[[sj]]$state$hessian <- Sigma
     }
 
     ###########################################
@@ -119,7 +120,7 @@ cox.mode <- function(x, nu = 1, eps = .Machine$double.eps^0.25, maxit = 400,
     ##########################################
     ## Cycle through time-independent part. ##
     ##########################################
-    for(sj in seq_along(x$mu$smooth)) {
+    for(sj in seq_along(x$mu$smooth.construct)) {
       ## Compute weights.
       weights <- exp(eta$mu) * int
 
@@ -130,44 +131,44 @@ cox.mode <- function(x, nu = 1, eps = .Machine$double.eps^0.25, maxit = 400,
       z <- eta$mu + 1 / weights * score
 
       ## Compute partial predictor.
-      eta$mu <- eta$mu - fitted(x$mu$smooth[[sj]]$state)
+      eta$mu <- eta$mu - fitted(x$mu$smooth.construct[[sj]]$state)
 
       ## Compute reduced residuals.
       e <- z - eta$mu
-      xbin.fun(x$mu$smooth[[sj]]$xbin.sind, weights, e,
-        x$mu$smooth[[sj]]$weights, x$mu$smooth[[sj]]$rres,
-        x$mu$smooth[[sj]]$xbin.order)
+      xbin.fun(x$mu$smooth.construct[[sj]]$xbin.sind, weights, e,
+        x$mu$smooth.construct[[sj]]$weights, x$mu$smooth.construct[[sj]]$rres,
+        x$mu$smooth.construct[[sj]]$xbin.order)
 
       ## Compute mean and precision.
-      XWX <- crossprod(x$mu$smooth[[sj]]$X, x$mu$smooth[[sj]]$X * x$mu$smooth[[sj]]$weights)
-      if(x$mu$smooth[[sj]]$fixed) {
+      XWX <- crossprod(x$mu$smooth.construct[[sj]]$X, x$mu$smooth.construct[[sj]]$X * x$mu$smooth.construct[[sj]]$weights)
+      if(x$mu$smooth.construct[[sj]]$fixed) {
         hessian[[paste("p", 2, ".t", sj, ".", sep = "")]] <- XWX
         P <- matrix_inv(XWX)
       } else {
         S <- 0
-        tau2 <- get.state(x$mu$smooth[[sj]], "tau2")
-        for(j in seq_along(x$mu$smooth[[sj]]$S))
-          S <- S + 1 / tau2[j] * x$mu$smooth[[sj]]$S[[j]]
+        tau2 <- get.state(x$mu$smooth.construct[[sj]], "tau2")
+        for(j in seq_along(x$mu$smooth.construct[[sj]]$S))
+          S <- S + 1 / tau2[j] * x$mu$smooth.construct[[sj]]$S[[j]]
         hessian[[paste("p", 2, ".t", sj, ".", sep = "")]] <- XWX + S
         P <- matrix_inv(XWX + S)
       }
-      g <- drop(P %*% crossprod(x$mu$smooth[[sj]]$X, x$mu$smooth[[sj]]$rres))
-      x$mu$smooth[[sj]]$state$parameters <- set.par(x$mu$smooth[[sj]]$state$parameters, g, "g")
+      g <- drop(P %*% crossprod(x$mu$smooth.construct[[sj]]$X, x$mu$smooth.construct[[sj]]$rres))
+      x$mu$smooth.construct[[sj]]$state$parameters <- set.par(x$mu$smooth.construct[[sj]]$state$parameters, g, "g")
 
       ## Compute fitted values.
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) {
-        x$mu$smooth[[sj]]$state$parameters <- set.par(x$mu$smooth[[sj]]$state$parameters,
-          rep(0, length(x$mu$smooth[[sj]]$state$g)), "g")
+        x$mu$smooth.construct[[sj]]$state$parameters <- set.par(x$mu$smooth.construct[[sj]]$state$parameters,
+          rep(0, length(x$mu$smooth.construct[[sj]]$state$g)), "g")
       }
-      x$mu$smooth[[sj]]$state$fitted.values <- x$mu$smooth[[sj]]$get.mu(x$mu$smooth[[sj]]$X,
-        get.state(x$mu$smooth[[sj]], "g"))
-      x$mu$smooth[[sj]]$state$edf <- sum(diag(P %*% XWX))
-      if(!is.null(x$mu$smooth[[sj]]$xt$center)) {
-        if(x$mu$smooth[[sj]]$xt$center) x$mu$smooth[[sj]]$state$edf <- x$mu$smooth[[sj]]$state$edf - 1
+      x$mu$smooth.construct[[sj]]$state$fitted.values <- x$mu$smooth.construct[[sj]]$get.mu(x$mu$smooth.construct[[sj]]$X,
+        get.state(x$mu$smooth.construct[[sj]], "g"))
+      x$mu$smooth.construct[[sj]]$state$edf <- sum(diag(P %*% XWX))
+      if(!is.null(x$mu$smooth.construct[[sj]]$xt$center)) {
+        if(x$mu$smooth.construct[[sj]]$xt$center) x$mu$smooth.construct[[sj]]$state$edf <- x$mu$smooth.construct[[sj]]$state$edf - 1
       }
 
       ## Update additive predictor.
-      eta$mu <- eta$mu + fitted(x$mu$smooth[[sj]]$state)
+      eta$mu <- eta$mu + fitted(x$mu$smooth.construct[[sj]]$state)
     }
 
     eps0 <- do.call("cbind", eta)
@@ -598,7 +599,7 @@ cox2.bamlss <- function(links = c(lambda = "identity", mu = "identity"), ...)
 
 
 ## Survival models transformer function.
-surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", globalgrid = TRUE,
+surv.transform <- function(x, y, subdivisions = 100, timedependent = "lambda", globalgrid = TRUE,
   timevar = NULL, idvar = NULL, is.cox = FALSE, alpha = 0.1, ...)
 {
   ntd <- timedependent
@@ -606,36 +607,35 @@ surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", glob
     stop("the time dependent predictors specified are different from family object names!")
 
   ## The basic setup.
-  x <- bamlss.setup(x, ...)
+  if(is.null(attr(x, "bamlss.engine.setup")))
+    x <- bamlss.engine.setup(x, ...)
   
   ## Remove intercept if Cox.
   if(is.cox) {
-    if(!is.null(x$mu$smooth$parametric)) {
-      cn <- colnames(x$mu$smooth$parametric$X)
+    if(!is.null(x$mu$smooth.construct$model.matrix)) {
+      cn <- colnames(x$mu$smooth.construct$model.matrix$X)
       if("(Intercept)" %in% cn)
-        x$mu$smooth$parametric$X <- x$mu$smooth$parametric$X[, cn != "(Intercept)", drop = FALSE]
-      if(ncol(x$mu$smooth$parametric$X) < 1) {
-        x$mu$smooth$parametric <- NULL
+        x$mu$smooth.construct$model.matrix$X <- x$mu$smooth.construct$model.matrix$X[, cn != "(Intercept)", drop = FALSE]
+      if(ncol(x$mu$smooth.construct$model.matrix$X) < 1) {
+        x$mu$smooth.construct$model.matrix <- NULL
         x$mu$pterms <- NULL
         x$mu$param.formula <- ~ -1
       } else {
         x$mu$pterms <- x$mu$pterms[x$mu$pterms != "(Intercept)"]
         x$mu$param.formula <- update(x$mu$param.formula, . ~ . -1)
-        x$mu$smooth$parametric$term <- gsub("(Intercept)+", "", x$mu$smooth$parametric$term, fixed = TRUE)
-        x$mu$smooth$parametric$state$parameters <- x$mu$smooth$parametric$state$parameters[-1]
-        names(x$mu$smooth$parametric$state$parameters) <- paste("g", 1:length(x$mu$smooth$parametric$state$parameters), sep = "")
+        x$mu$smooth.construct$model.matrix$term <- gsub("(Intercept)+", "", x$mu$smooth.construct$model.matrix$term, fixed = TRUE)
+        x$mu$smooth.construct$model.matrix$state$parameters <- x$mu$smooth.construct$model.matrix$state$parameters[-1]
+        names(x$mu$smooth.construct$model.matrix$state$parameters) <- paste("g", 1:length(x$mu$smooth.construct$model.matrix$state$parameters), sep = "")
       }
     }
   }
   if(any("alpha" %in% names(x))) {
-    x$alpha$smooth$parametric$state$parameters[1] <- alpha
-    x$alpha$smooth$parametric$state$fitted.values <- x$alpha$smooth$parametric$X %*% x$alpha$smooth$parametric$state$parameters
+    x$alpha$smooth.construct$model.matrix$state$parameters[1] <- alpha
+    x$alpha$smooth.construct$model.matrix$state$fitted.values <- x$alpha$smooth.construct$model.matrix$X %*% x$alpha$smooth.construct$model.matrix$state$parameters
   }
 
   ## Create the time grid.
-  response <- attr(x, "response.vec")
-
-  if(!inherits(response, c("Surv", "Surv2")))
+  if(!inherits(y, c("Surv", "Surv2")))
     stop("the response variable is not a 'Surv' object, use function Surv() or Surv2()!")
 
   grid <- function(upper, length){
@@ -646,24 +646,24 @@ surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", glob
   if(!is.null(idvar)) {
     if(!(idvar %in% names(attr(x, "model.frame"))))
       stop(paste("variable", idvar, "not in supplied data set!"))
-    response2 <- cbind(response[, "time"], attr(x, "model.frame")[[idvar]])
-    colnames(response2) <- c("time", idvar)
-    take <- !duplicated(response2)
-    response2 <- response2[take, , drop = FALSE]
-    nobs <- nrow(response2)
-    grid <- lapply(response2[, "time"], grid, length = subdivisions)
+    y2 <- cbind(y[, "time"], attr(x, "model.frame")[[idvar]])
+    colnames(y2) <- c("time", idvar)
+    take <- !duplicated(y2)
+    y2 <- y2[take, , drop = FALSE]
+    nobs <- nrow(y2)
+    grid <- lapply(y2[, "time"], grid, length = subdivisions)
   } else {
-    nobs <- nrow(response)
-    grid <- lapply(response[, "time"], grid, length = subdivisions)
+    nobs <- nrow(y)
+    grid <- lapply(y[, "time"], grid, length = subdivisions)
   }
   width <- rep(NA, nobs)
   for(i in 1:nobs)
     width[i] <- grid[[i]][2]
-  attr(response, "width") <- width
-  attr(response, "subdivisions") <- subdivisions
-  attr(response, "grid") <- grid
-  attr(response, "nobs") <- nobs
-  attr(response, "take") <- take
+  attr(y, "width") <- width
+  attr(y, "subdivisions") <- subdivisions
+  attr(y, "grid") <- grid
+  attr(y, "nobs") <- nobs
+  attr(y, "take") <- take
   yname <- all.names(x[[ntd[1]]]$formula[2])[2]
   if(is.null(timevar))
     timevar <- yname
@@ -673,18 +673,18 @@ surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", glob
   eta_Surv_timegrid <- 0
   for(i in seq_along(ntd)) {
     if(!is.null(x[[ntd[i]]]$pterms)) {
-      x[[ntd[i]]]$smooth$parametric <- param_time_transform(x[[ntd[i]]]$smooth$parametric,
+      x[[ntd[i]]]$smooth.construct$model.matrix <- param_time_transform(x[[ntd[i]]]$smooth.construct$model.matrix,
         x[[ntd[i]]]$param.formula, attr(x, "model.frame"), x[[ntd[i]]]$param.contrasts, grid, yname, timevar, take)
-      eta_Surv_timegrid <- eta_Surv_timegrid + x[[ntd[i]]]$smooth$parametric$state$fitted_timegrid
+      eta_Surv_timegrid <- eta_Surv_timegrid + x[[ntd[i]]]$smooth.construct$model.matrix$state$fitted_timegrid
     }
-    if(length(x[[ntd[i]]]$smooth)) {
-      for(j in seq_along(x[[ntd[i]]]$smooth)) {
-        if(is.null(x[[ntd[i]]]$smooth[[j]]$is.parametric)) {
-          xterm <- x[[ntd[i]]]$smooth[[j]]$term
-          by <- if(x[[ntd[i]]]$smooth[[j]]$by != "NA") x[[ntd[i]]]$smooth[[j]]$by else NULL
-          x[[ntd[i]]]$smooth[[j]] <- sm_time_transform(x[[ntd[i]]]$smooth[[j]],
+    if(length(x[[ntd[i]]]$smooth.construct)) {
+      for(j in seq_along(x[[ntd[i]]]$smooth.construct)) {
+        if(is.null(x[[ntd[i]]]$smooth.construct[[j]]$is.parametric)) {
+          xterm <- x[[ntd[i]]]$smooth.construct[[j]]$term
+          by <- if(x[[ntd[i]]]$smooth.construct[[j]]$by != "NA") x[[ntd[i]]]$smooth.construct[[j]]$by else NULL
+          x[[ntd[i]]]$smooth.construct[[j]] <- sm_time_transform(x[[ntd[i]]]$smooth.construct[[j]],
             attr(x, "model.frame")[, unique(c(xterm, yname, by, timevar, idvar)), drop = FALSE], grid, yname, timevar, take)
-          eta_Surv_timegrid <- eta_Surv_timegrid + x[[ntd[i]]]$smooth[[j]]$state$fitted_timegrid
+          eta_Surv_timegrid <- eta_Surv_timegrid + x[[ntd[i]]]$smooth.construct[[j]]$state$fitted_timegrid
         }
       }
     }
@@ -695,10 +695,10 @@ surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", glob
     nx <- nx[!(nx %in% ntd)]
     if(length(nx)) {
       for(i in seq_along(nx)) {
-        if(length(x[[nx[i]]]$smooth)) {
-          for(j in seq_along(x[[nx[i]]]$smooth)) {
-            x[[nx[i]]]$smooth[[j]]$update <- bfit0_iwls
-            x[[nx[i]]]$smooth[[j]]$propose <- gmcmc_sm.iwls0
+        if(length(x[[nx[i]]]$smooth.construct)) {
+          for(j in seq_along(x[[nx[i]]]$smooth.construct)) {
+            x[[nx[i]]]$smooth.construct[[j]]$update <- bfit0_iwls
+            x[[nx[i]]]$smooth.construct[[j]]$propose <- gmcmc_sm.iwls0
           }
         }
       }
@@ -707,8 +707,8 @@ surv.transform <- function(x, subdivisions = 100, timedependent = "lambda", glob
 
   ## Assign index matrices for fast computation of integrals.
   for(j in ntd) {
-    for(sj in seq_along(x[[j]]$smooth)) {
-      x[[j]]$smooth[[sj]]$imat <- index_mat(x[[j]]$smooth[[sj]]$X)
+    for(sj in seq_along(x[[j]]$smooth.construct)) {
+      x[[j]]$smooth.construct[[sj]]$imat <- index_mat(x[[j]]$smooth.construct[[sj]]$X)
     }
   }
 

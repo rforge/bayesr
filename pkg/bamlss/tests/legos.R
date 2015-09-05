@@ -147,7 +147,43 @@ with(nd, matplot(age, pi, type = "l", lty = 1))
 legend("topright", names(pi), lwd = 1, col = 1:ncol(pi))
 
 
-## No with JAGS.
+## Survival example.
+n <- 1000
+X <- matrix(NA, nrow = n, ncol = 3)
+X[, 1] <- runif(n, -1, 1)
+X[, 2] <- runif(n, -3, 3)
+X[, 3] <- runif(n, -1, 1)
+
+## Specify censoring function.
+cens_fct <- function(time, mean_cens) {
+  ## Censoring times are independent exponentially distributed.
+  censor_time <- rexp(n = length(time), rate = 1 / mean_cens)
+  event <- (time <= censor_time)
+  t_obs <- apply(cbind(time, censor_time), 1, min)
+  ## Return matrix of observed survival times and event indicator.
+  return(cbind(t_obs, event))
+}
+
+## log(time) is the baseline hazard.
+lambda <-  function(time, x) {
+  exp(log(time) + 0.7 * x[1] + sin(x[2]) + sin(time * 2) * x[3])
+}
+
+## Simulate data with lambda() and cens_fct().
+d <- rSurvTime2(lambda, X, cens_fct, mean_cens = 5)
+
+f <- list(
+  Surv(time, event) ~ s(time) + s(time,by=x3),
+  mu ~ s(x1) + s(x2)
+)
+
+## Posterior mode estimation without sampling.
+b <- bamlss(f, family = cox,
+  data = d, nu = 0.5, subdivisions = 15,
+  sampler = NULL)
+
+
+## JAGS.
 if(FALSE) {
   sm <- setupJAGS(bf)
   samps <- samplerJAGS(sm)

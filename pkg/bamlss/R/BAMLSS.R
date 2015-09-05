@@ -676,6 +676,17 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
   ## The environment.
   env <- get_formula_envir(formula)
 
+  ## Search for functions in family object.
+  family <- bamlss.family(family)
+  if(!is.null(family$transform))
+    transform <- family$transform
+  if(!is.null(family$optimizer))
+    optimizer <- family$optimizer
+  if(!is.null(family$sampler))
+    sampler <- family$sampler
+  if(!is.null(family$results))
+    results <- family$results
+
   ## Setup all processing functions.
   foo <- list("transform" = transform, "optimizer" = optimizer, "sampler" = sampler, "results" = results)
   nf <- names(foo)
@@ -706,10 +717,11 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
   bf[[1]] <- as.name("bamlss.frame")
   bf <- eval(bf, envir = env)
 
-  ## Transform 'x' object.
+  ## Transform.
   if(is.function(functions$transform)) {
-    if(!is.null(bf$x))
-      bf[["x"]] <- functions$transform(bf)
+    tbf <- functions$transform(bf)
+    bf[names(tbf)] <- tbf
+    rm(tbf)
   }
 
   ## Start optimizer.
@@ -718,6 +730,7 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
       start = start, weights = model.weights(bf$model.frame),
       offset = model.offset(bf$model.frame), ...)
     bf[names(opt)] <- opt[names(opt)]
+    rm(opt)
   }
 
   ## Start sampling.
@@ -1753,12 +1766,15 @@ formula_hierarchical <- function(formula)
 
 
 ## Transform smooth terms to mixed model representation.
-randomize <- function(x, vnames = NULL)
+randomize <- function(x)
 {
-  if(inherits(x, "bamlss.frame"))
-    vnames <- names(model.frame(x))
-  if(is.null(vnames))
-    stop("argument vnames is empty!")
+  if(!inherits(x, "bamlss.frame"))
+    stop("object must be a 'bamlss.frame'!")
+  if(is.null(x$x))
+    stop("no 'x' object to randomize in 'bamlss.frame'!")
+
+  vnames <- names(model.frame(x))
+  x <- x$x
 
   rand_fun <- function(x)
   {
@@ -1794,25 +1810,13 @@ randomize <- function(x, vnames = NULL)
   }
 
   elmts <- c("formula", "fake.formula")
-  if(inherits(x, "bamlss.frame")) {
-    if(is.null(x$x))
-      stop("no 'x' object to randomize in 'bamlss.frame'!")
-    for(j in seq_along(x$x)) {
-      if(!all(elmts %in% names(x$x[[j]]))) {
-        for(i in seq_along(x$x[[j]]))
-          x$x[[j]][[i]] <- rand_fun(x$x[[j]][[i]])
-      } else x$x[[j]] <- rand_fun(x$x[[j]])
-    }
-    return(x$x)
-  } else {
-    for(j in seq_along(x)) {
-      if(!all(elmts %in% names(x[[j]]))) {
-        for(i in seq_along(x[[j]]))
-          x[[j]][[i]] <- rand_fun(x[[j]][[i]])
-      } else x[[j]] <- rand_fun(x[[j]])
-    }
-    return(x)
+  for(j in seq_along(x)) {
+    if(!all(elmts %in% names(x[[j]]))) {
+      for(i in seq_along(x[[j]]))
+        x[[j]][[i]] <- rand_fun(x[[j]][[i]])
+    } else x[[j]] <- rand_fun(x[[j]])
   }
+  return(list("x" = x))
 }
 
 
