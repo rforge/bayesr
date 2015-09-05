@@ -1857,7 +1857,7 @@ c.bamlss <- function(...)
 ## Fast computation of quantiles.
 quick_quantiles <- function(X, samples)
 {
-  rval <- .Call("quick_quantiles", X, t(samples))
+  rval <- .Call("quick_quantiles", X, samples)
   rval <- as.data.frame(rval)
   names(rval) <- c("2.5%", "50%", "97.5%")
   rval
@@ -1961,7 +1961,7 @@ compute_term <- function(x, get.X, fit.fun, psamples, vsamples = NULL,
       rval
     }
   }
-  if(inherits(x, "mgcv.smooth") & nrow(psamples) > 39L & FALSE) {
+  if(inherits(x, "mgcv.smooth") & nrow(psamples) > 39L) {
     smf <- quick_quantiles(X, psamples)
   } else {
     if(nt < 2) {
@@ -2018,7 +2018,7 @@ compute_term <- function(x, get.X, fit.fun, psamples, vsamples = NULL,
     bbb <- 1 ## FIXME: factors!
   }
   class(smf) <- c(class(x), "data.frame")
-  x[!(names(x) %in% c("term", "bs.dim", "dim"))] <- NULL
+  x[!(names(x) %in% c("term", "label", "bs.dim", "dim"))] <- NULL
   attr(smf, "specs") <- x
   class(attr(smf, "specs")) <- class(x)
   attr(smf, "x") <- if(xsmall & nt < 2) data0[, tterms] else data[, tterms]
@@ -3072,8 +3072,8 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "samples",
 
   if(which == "effects") {
     if(is.null(x$results)) {
-      plot(results.bamlss.default(x), ...)
-    } else plot(x$results, ...)
+      plot(results.bamlss.default(x), model = model, term = term, ...)
+    } else plot(x$results, model = model, term = term, ...)
   }
 
   return(invisible(NULL))
@@ -3242,7 +3242,7 @@ plot.bamlss.results <- function(x, model = NULL, term = NULL,
 
     kn <- get_k_n(x)
 
-    if(kn[1] < 1) on.exit(warning("no terms to plot in model object!"), add = TRUE)
+    if(kn[1] < 1) on.exit(warning("no terms to plot!"), add = TRUE)
 
     if(is.null(args$do_par) & spar) {
       if(!ask) {
@@ -4416,11 +4416,15 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
 
   rval <- list()
   nx <- names(x$terms)
-  fn <- family$names
-  if(length(fn) != length(nx))
-    fn <- paste(fn, 1:length(nx), sep = "")
   for(j in nx) {
     rval[[j]] <- make_results(x$x[[j]], id = j)
+    if(!is.null(rval[[j]]$s.effects)) {
+      for(i in seq_along(rval[[j]]$s.effects)) {
+        specs <- attr(rval[[j]]$s.effects[[i]], "specs")
+        specs$label <- paste(specs$label, j, sep = ".")
+        attr(rval[[j]]$s.effects[[i]], "specs") <- specs
+      }
+    }
   }
 
   class(rval) <- "bamlss.results"

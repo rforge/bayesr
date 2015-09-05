@@ -14,9 +14,11 @@ f <- list(
 bamlss.formula(f)
 bamlss.formula(f, family = gamma.bamlss())
 
+
 ## Automatic filling with intercept.
 bamlss.formula(num ~ x1, family = zinb.bamlss())
 bamlss.formula(f, family = zinb.bamlss())
+
 
 ## Terms object from bamlss.formula().
 terms(bamlss.formula(f))
@@ -84,11 +86,13 @@ smooth.construct(formula(bf), data = d, model = c(1, 1))
 smooth.construct(formula(bf, model = c(1, 1)), data = d)
 smooth.construct(terms(bf, model = c(1, 1), drop = FALSE), data = d)
 
+
 ## Extract or initiallize parameters.
 bf <- bamlss.frame(num|sigma ~ s(x1) + s(x2)|s(x3), data = GAMart)
 p <- parameters(bf)
 unlist(p)
 unlist(parameters(randomize(bf)))
+
 
 ## Estimate model
 data("GAMart", package = "R2BayesX")
@@ -97,6 +101,7 @@ samps <- samples(b)
 samps <- samples(b, model = 1, term = 1)
 head(samps)
 plot(b, model = 1, term = 1, which = "samples")
+
 
 ## Predict.
 p <- predict(b, model = "mu", term = "s(x2)")
@@ -119,6 +124,7 @@ print(head(p))
 
 p <- predict(b, term = 1:2)
 
+
 ## Multinomial example.
 data("marital.nz", package = "VGAM")
 
@@ -126,6 +132,12 @@ b <- bamlss(mstatus ~ s(age), data = marital.nz,
   family = "multinomial", reference = "Married/Partnered", cores = 4)
 
 plot(b)
+plot(b, which = "effects")
+plot(b, which = "effects", model = 1)
+plot(b, which = "effects", model = c(1, 3))
+
+a <- results.bamlss.default(b)
+plot(a)
 
 nd <- data.frame("age" = seq(0, 100, length = 100))
 pi <- predict(b, newdata = nd, type = "parameter")
@@ -135,29 +147,14 @@ with(nd, matplot(age, pi, type = "l", lty = 1))
 legend("topright", names(pi), lwd = 1, col = 1:ncol(pi))
 
 
-## (6) Run MCMC.
-samps <- GMCMC(bf, n.iter = 1200)
-plot(samps)
-
-## (7) Process results.
-b <- results(bf, samps)
-
-## (8) Plot and summaries.
-plot(b)
-summary(b)
-
-## (9) No with JAGS.
-sm <- setupJAGS(bf)
-samps <- samplerJAGS(sm)
-
-
-f <- list(num ~ s(x1) + s(x2) + s(x3))
-bf <- bamlss.frame(f, data = GAMart)
-bf <- bfit0(bf)
-sm <- setupJAGS(bf)
-samps <- samplerJAGS(sm)
-
-
-
-## TODOs: predict, fitted, residuals, ..., JAGS, BayesX!
+## No with JAGS.
+if(FALSE) {
+  sm <- setupJAGS(bf)
+  samps <- samplerJAGS(sm)
+  f <- list(num ~ s(x1) + s(x2) + s(x3))
+  bf <- bamlss.frame(f, data = GAMart)
+  bf <- bfit0(bf)
+  sm <- setupJAGS(bf)
+  samps <- samplerJAGS(sm)
+}
 

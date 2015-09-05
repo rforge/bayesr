@@ -1328,7 +1328,7 @@ SEXP quick_quantiles(SEXP X, SEXP samples)
     
   nr = nrows(X);
   nc = ncols(X);
-  iter = ncols(samples);
+  iter = nrows(samples);
     
   PROTECT(names = allocVector(STRSXP, 3));
   ++nProtected;
@@ -1366,11 +1366,11 @@ SEXP quick_quantiles(SEXP X, SEXP samples)
 
   double tmp = 0.0;
     
-  for(i = 0; i < nr; ++i) {
-    for(ii = 0; ii < iter; ++ii) {
+  for(i = 0; i < nr; i++) {
+    for(ii = 0; ii < iter; ii++) {
       tmp = 0.0;
-      for(j = 0; j < nc; ++j) {
-        tmp += Xptr[i + j * nr] * sptr[j + nc * ii];
+      for(j = 0; j < nc; j++) {
+        tmp += Xptr[i + j * nr] * sptr[ii + j * iter];
       }
       tptr[ii] = tmp;
     }
