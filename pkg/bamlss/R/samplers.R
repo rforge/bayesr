@@ -32,36 +32,8 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       y <- y[[1]]
   }
 
-  if(!is.null(start)) {
-    for(id in nx) {
-      if(!is.null(x[[id]]$smooth.construct)) {
-        if(!is.null(x[[id]]$smooth.construct$model.matrix)) {
-          if(length(take <- grep(paste(id, "p", sep = "."), names(start), fixed = TRUE, value = TRUE))) {
-            cn <- paste(id, "p", colnames(x[[id]]$smooth.construct$model.matrix$X), sep = ".")
-            i <- grep2(take, cn, fixed = TRUE)
-            if(length(i)) {
-              tpar <- start[take[i]]
-              names(tpar) <- gsub(paste(id, "p.", sep = "."), "", names(tpar), fixed = TRUE)
-              i <- grep2(c("edf", "accepted", "alpha"), names(tpar))
-              x[[id]]$smooth.construct$model.matrix$state$parameters <- if(length(i)) tpar[-i] else tpar
-              x[[id]]$smooth.construct$model.matrix$state$fitted.values <- x[[id]]$smooth.construct$model.matrix$fit.fun(x[[id]]$smooth.construct$model.matrix$X, x[[id]]$smooth.construct$model.matrix$state$parameters)
-            }
-          }
-        }
-        for(j in seq_along(x[[id]]$smooth.construct)) {
-          take <- grep(tl <- paste(id, "s", x[[id]]$smooth.construct[[j]]$label, sep = "."),
-            names(start), fixed = TRUE, value = TRUE)
-          if(length(take)) {
-            tpar <- start[take]
-            names(tpar) <- gsub(paste(tl, ".", sep = ""), "", names(tpar), fixed = TRUE)
-            i <- grep2(c("edf", "accepted", "alpha"), names(tpar))
-            x[[id]]$smooth.construct[[j]]$state$parameters <- if(length(i)) tpar[-i] else tpar
-            x[[id]]$smooth.construct[[j]]$state$fitted.values <- x[[id]]$smooth.construct[[j]]$fit.fun(x[[id]]$smooth.construct[[j]]$X, x[[id]]$smooth.construct[[j]]$state$parameters)
-          }
-        }
-      }
-    }
-  }
+  if(!is.null(start))
+    x <- add.starting.values(x, start)
 
   if(is.character(propose)) {
     propose <- if(grepl("gmcmc_", propose)) {

@@ -613,45 +613,45 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
             }
           }
         }
-        if(!is.null(x[[i]]$smooth.construct)) {
-          par[[i]]$s <- list()
-          for(k in names(x[[i]]$smooth.construct)) {
-            if(!is.null(x[[i]]$smooth.construct[[k]]$rand)) {
-              tpar1 <- rep(fill[1], ncol(x[[i]]$smooth.construct[[k]]$rand$Xr))
-              tpar2 <- rep(fill[1], ncol(x[[i]]$smooth.construct[[k]]$Xf))
-              names(tpar1) <- paste("b", 1:length(tpar1), ".re", sep = "")
-              names(tpar2) <- paste("b", 1:length(tpar2), ".fx", sep = "")
-              tpar <- c(tpar1, tpar2)
-            } else {
-              tpar <- rep(fill[1], ncol(x[[i]]$smooth.construct[[k]]$X))
-              names(tpar) <- paste("b", 1:length(tpar), sep = "")
+      }
+      if(!is.null(x[[i]]$smooth.construct)) {
+        par[[i]]$s <- list()
+        for(k in names(x[[i]]$smooth.construct)) {
+          if(!is.null(x[[i]]$smooth.construct[[k]]$rand)) {
+            tpar1 <- rep(fill[1], ncol(x[[i]]$smooth.construct[[k]]$rand$Xr))
+            tpar2 <- rep(fill[1], ncol(x[[i]]$smooth.construct[[k]]$Xf))
+            names(tpar1) <- paste("b", 1:length(tpar1), ".re", sep = "")
+            names(tpar2) <- paste("b", 1:length(tpar2), ".fx", sep = "")
+            tpar <- c(tpar1, tpar2)
+          } else {
+            tpar <- rep(fill[1], ncol(x[[i]]$smooth.construct[[k]]$X))
+            names(tpar) <- paste("b", 1:length(tpar), sep = "")
+          }
+          if(length(x[[i]]$smooth.construct[[k]]$S)) {
+            tpar3 <- NULL
+            for(kk in seq_along(x[[i]]$smooth.construct[[k]]$S)) {
+              tpar3 <- c(tpar3, fill[2])
             }
-            if(length(x[[i]]$smooth.construct[[k]]$S)) {
-              tpar3 <- NULL
-              for(kk in seq_along(x[[i]]$smooth.construct[[k]]$S)) {
-                tpar3 <- c(tpar3, fill[2])
-              }
-              names(tpar3) <- paste("tau2", 1:length(tpar3), sep = ".")
-              tpar <- c(tpar, tpar3)
-            }
-            par[[i]]$s[[k]] <- tpar
-            if(!is.null(start)) {
-              if(length(ii <- grep(paste(i, "s", k, sep = "."), names(start), fixed = TRUE))) {
-                spar <- start[ii]
-                cn <- names(par[[i]]$s[[k]])
-                if(length(tau2 <- grep("tau2", names(spar)))) {
-                  tau2 <- spar[tau2]
-                  if(length(jj <- grep("tau2", cn, fixed = TRUE))) {
-                    tau2 <- rep(tau2, length.out = length(jj))
-                    par[[i]]$s[[k]][jj] <- tau2
-                  }
+            names(tpar3) <- paste("tau2", 1:length(tpar3), sep = ".")
+            tpar <- c(tpar, tpar3)
+          }
+          par[[i]]$s[[k]] <- tpar
+          if(!is.null(start)) {
+            if(length(ii <- grep(paste(i, "s", k, sep = "."), names(start), fixed = TRUE))) {
+              spar <- start[ii]
+              cn <- names(par[[i]]$s[[k]])
+              if(length(tau2 <- grep("tau2", names(spar)))) {
+                tau2 <- spar[tau2]
+                if(length(jj <- grep("tau2", cn, fixed = TRUE))) {
+                  tau2 <- rep(tau2, length.out = length(jj))
+                  par[[i]]$s[[k]][jj] <- tau2
                 }
-                if(length(b <- grep("b", names(spar)))) {
-                  b <- spar[b]
-                  if(length(jj <- grep("b", cn, fixed = TRUE))) {
-                    b <- rep(b, length.out = length(jj))
-                    par[[i]]$s[[k]][jj] <- b
-                  }
+              }
+              if(length(b <- grep("b", names(spar)))) {
+                b <- spar[b]
+                if(length(jj <- grep("b", cn, fixed = TRUE))) {
+                  b <- rep(b, length.out = length(jj))
+                  par[[i]]$s[[k]][jj] <- b
                 }
               }
             }

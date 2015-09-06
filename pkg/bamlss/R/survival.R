@@ -17,7 +17,7 @@ cox.bamlss <- function(...)
       surv.transform(x = x$x, y = x$y, data = model.frame(x), is.cox = TRUE, ...)
     },
     "optimizer" = cox.mode,
-    "sampler" = FALSE,
+    "sampler" = cox.mcmc,
     "loglik" = function(y, eta, ...) {
       n <- attr(y, "subdivisions")
       eeta <- exp(eta_Surv_timegrid)
@@ -191,10 +191,176 @@ cox.mode <- function(x, y, weights, offset,
   return(x)
 }
 
-## (4) The MCMC sampling engine.
-cox.mcmc <- function(x, n.iter = 1200, burnin = 200, thin = 1, ...)
+## The MCMC sampling engine.
+## Posterior mode estimation.
+cox.mcmc <- function(x, y, start, weights, offset,
+  n.iter = 1200, burnin = 200, thin = 1, nu = 1,
+  verbose = TRUE, digits = 4, ...)
 {
-  null.sampler(x, ...)
+  if(!is.null(start))
+    x <- add.starting.values(x, start)
+
+  ## Names of parameters/predictors.
+  nx <- names(x)
+  
+  ## Compute additive predictors.
+  eta <- get.eta(x)
+
+  ## For the time dependent part, compute
+  ## predictor based on the time grid.
+  eta_timegrid <- 0
+  for(sj in seq_along(x$lambda$smooth.construct)) {
+    g <- get.state(x$lambda$smooth.construct[[sj]], "b")
+    eta_timegrid <- eta_timegrid + x$lambda$smooth.construct[[sj]]$fit.fun_timegrid(g)
+  }
+
+  ## Extract y.
+  y <- y[[1]]
+
+  ## Number of observations.
+  nobs <- nrow(y)
+
+  ## Number of subdivions used for the time grid.
+  sub <- attr(y, "subdivisions")
+
+  ## The interval width from subdivisons.
+  width <- attr(y, "width")
+
+  ## Porcess iterations.
+  if(burnin < 1) burnin <- 1
+  if(burnin > n.iter) burnin <- floor(n.iter * 0.1)
+  iterthin <- as.integer(seq(burnin, n.iter, by = thin))
+
+  ## Samples.
+  samps <- list()
+  for(i in nx) {
+    samps[[i]] <- list()
+    for(j in names(x[[i]]$smooth.construct)) {
+      samps[j]] <- list(
+        "samples" = matrix(NA, nrow = length(iterthin), ncol = length(p0$parameters)),
+        "alpha" = rep(NA, length = length(iterthin)),
+        "accepted" = rep(NA, length = length(iterthin))
+      )
+    }
+  }
+  logLik.samps <- logPost.samps <- rep(NA, length = length(iterthin))
+
+  ## Start sampling.
+  cat2("Starting the sampler...")
+  ptm <- proc.time()
+  for(iter in 1:n.iter) {
+    ########################################
+    ## Cycle through time-dependent part. ##
+    ########################################
+    for(sj in seq_along(x$lambda$smooth.construct)) {
+      ## The time-dependent design matrix for the grid.
+      X <- x$lambda$smooth.construct[[sj]]$fit.fun_timegrid(NULL)
+
+      ## Timegrid lambda.
+      eeta <- exp(eta_timegrid)
+
+      ## Compute gradient and hessian integrals.
+      int <- survint(X, eeta, width, exp(eta$mu))
+      xgrad <- drop(t(y[, "status"]) %*% x$lambda$smooth.construct[[sj]]$XT - int$grad)
+      xgrad <- xgrad + x$lambda$smooth.construct[[sj]]$grad(score = NULL, x$lambda$smooth.construct[[sj]]$state$parameters, full = FALSE)
+      xhess <- int$hess + x$lambda$smooth.construct[[sj]]$hess(score = NULL, x$lambda$smooth.construct[[sj]]$state$parameters, full = FALSE)
+
+      ## Compute the inverse of the hessian.
+      Sigma <- matrix_inv(xhess)
+
+      ## Update regression coefficients.
+      g <- get.state(x$lambda$smooth.construct[[sj]], "b")
+      g2 <- drop(g + nu * Sigma %*% xgrad)
+      names(g2) <- names(g)
+      x$lambda$smooth.construct[[sj]]$state$parameters <- set.par(x$lambda$smooth.construct[[sj]]$state$parameters, g2, "b")
+
+      ## Update additive predictors.
+      fit_timegrid <- x$lambda$smooth.construct[[sj]]$fit.fun_timegrid(g2)
+      eta_timegrid <- eta_timegrid - x$lambda$smooth.construct[[sj]]$state$fitted_timegrid + fit_timegrid
+      x$lambda$smooth.construct[[sj]]$state$fitted_timegrid <- fit_timegrid
+
+      fit <- x$lambda$smooth.construct[[sj]]$fit.fun(x$lambda$smooth.construct[[sj]]$X, g2)
+      eta$lambda <- eta$lambda - fitted(x$lambda$smooth.construct[[sj]]$state) + fit
+      x$lambda$smooth.construct[[sj]]$state$fitted.values <- fit
+    }
+
+    ###########################################
+    ## Actual integral of survivor function. ##
+    ###########################################
+    eeta <- exp(eta_timegrid)
+    int <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
+
+    ##########################################
+    ## Cycle through time-independent part. ##
+    ##########################################
+    for(sj in seq_along(x$mu$smooth.construct)) {
+      ## Compute weights.
+      weights <- exp(eta$mu) * int
+
+      ## Compute score.
+      score <- y[, "status"] - exp(eta$mu) * int
+
+      ## Compute working observations.
+      z <- eta$mu + 1 / weights * score
+
+      ## Compute partial predictor.
+      eta$mu <- eta$mu - fitted(x$mu$smooth.construct[[sj]]$state)
+
+      ## Compute reduced residuals.
+      e <- z - eta$mu
+      xbin.fun(x$mu$smooth.construct[[sj]]$binning$sorted.index, weights, e,
+        x$mu$smooth.construct[[sj]]$weights, x$mu$smooth.construct[[sj]]$rres,
+        x$mu$smooth.construct[[sj]]$binning$order)
+
+      ## Compute mean and precision.
+      XWX <- crossprod(x$mu$smooth.construct[[sj]]$X, x$mu$smooth.construct[[sj]]$X * x$mu$smooth.construct[[sj]]$weights)
+      if(x$mu$smooth.construct[[sj]]$fixed) {
+        P <- matrix_inv(XWX)
+      } else {
+        S <- 0
+        tau2 <- get.state(x$mu$smooth.construct[[sj]], "tau2")
+        for(j in seq_along(x$mu$smooth.construct[[sj]]$S))
+          S <- S + 1 / tau2[j] * x$mu$smooth.construct[[sj]]$S[[j]]
+        P <- matrix_inv(XWX + S)
+      }
+      g <- drop(P %*% crossprod(x$mu$smooth.construct[[sj]]$X, x$mu$smooth.construct[[sj]]$rres))
+      x$mu$smooth.construct[[sj]]$state$parameters <- set.par(x$mu$smooth.construct[[sj]]$state$parameters, g, "b")
+
+      ## Compute fitted values.
+      if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) {
+        x$mu$smooth.construct[[sj]]$state$parameters <- set.par(x$mu$smooth.construct[[sj]]$state$parameters,
+          rep(0, length(x$mu$smooth.construct[[sj]]$state$g)), "b")
+      }
+      x$mu$smooth.construct[[sj]]$state$fitted.values <- x$mu$smooth.construct[[sj]]$fit.fun(x$mu$smooth.construct[[sj]]$X,
+        get.state(x$mu$smooth.construct[[sj]], "b"))
+
+      ## Update additive predictor.
+      eta$mu <- eta$mu + fitted(x$mu$smooth.construct[[sj]]$state)
+    }
+
+    logLik <- sum((eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int, na.rm = TRUE)
+    logPost <- as.numeric(logLik + get.log.prior(x))
+
+    if(verbose) {
+      cat("\r")
+      vtxt <- paste(
+        "logPost ", fmt(logPost, width = 8, digits = digits),
+        " iteration ", formatC(iter, width = nchar(maxit)), sep = ""
+      )
+      cat(vtxt)
+      if(.Platform$OS.type != "unix") flush.console()
+    }
+  }
+
+  if(verbose) cat("\n")
+
+  logLik <- sum((eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int, na.rm = TRUE)
+  logPost <- as.numeric(logLik + get.log.prior(x))
+
+  return(list("fitted.values" = eta, "parameters" = get.all.par(x),
+    "edf" = get.edf(x, type = 2), "logLik" = logLik, "logPost" = logPost))
+
+  return(x)
 }
 
 
