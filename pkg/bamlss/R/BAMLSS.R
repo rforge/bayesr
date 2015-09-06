@@ -1879,8 +1879,6 @@ compute_term <- function(x, get.X, fit.fun, psamples, vsamples = NULL,
   asamples = NULL, FUN = NULL, snames, s.effects.resmat, data,
   grid = 100, rug = TRUE, hlevel = 1, sx = FALSE, re.slope = FALSE, edfsamples = NULL)
 {
-  require("coda")
-
   nt <- length(x$term)
 
   if(x$by != "NA" | nt > 1) grid <- NA
@@ -4044,7 +4042,7 @@ drop.terms.bamlss <- function(f, pterms = TRUE, sterms = TRUE,
     tx <- delete.response(tx)
   if(!keep.intercept) {
     if(attr(tx, "intercept") > 0)
-      tx <- terms.formula(update(tx, . ~ -1 + ., specials = specials, keep.order = TRUE, data = data))
+      tx <- terms.formula(update(tx, . ~ -1 + .), specials = specials, keep.order = TRUE, data = data)
   }
   tx
 }
@@ -4231,6 +4229,8 @@ get_sterms_labels <- function(x, specials = NULL)
       st <- try(eval(parse(text = j), envir = env), silent = TRUE)
       if(inherits(st, "try-error"))
         st <- eval(parse(text = j), enclos = env, envir = loadNamespace("mgcv"))
+      if(st$by != "NA")
+        st$label <- paste(st$label, st$by, sep = ":")
       tl <- c(tl, st$label)
     }
   } else tl <- character(0)
@@ -4274,7 +4274,6 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
     samps <- matrix(samps, nrow = 1)
     colnames(samps) <- cn
     samps <- as.mcmc(samps)
-print(samps)
   }
 
   family <- x$family
@@ -4314,7 +4313,7 @@ print(samps)
         p.effects <- cbind(me, sd, qu)
         rownames(p.effects) <- gsub(paste(id, "p.", sep = "."), "", snames[i], fixed = TRUE)
         colnames(p.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
-      } else stop(paste("cannot find samples for terms: ", paste(tl, sep = ", "), "!", sep = ""))
+      }
     }
 
     ## Smooth effects.
@@ -4397,12 +4396,15 @@ print(samps)
           }
 
           b <- grep2(paste(id, "s", j, "b", sep = "."), colnames(psamples), fixed = TRUE)
+          tn <- c(obj$smooth.construct[[j]]$term, if(obj$smooth.construct[[j]]$by != "NA") {
+            obj$smooth.construct[[j]]$by
+          } else NULL)
 
           fst <- compute_term(obj$smooth.construct[[j]], get.X = get.X,
             fit.fun = obj$smooth.construct[[j]]$fit.fun,
             psamples = psamples[, b, drop = FALSE], vsamples = vsamples, asamples = asamples,
             FUN = NULL, snames = snames, s.effects.resmat = s.effects.resmat,
-            data = mf[, obj$smooth.construct[[j]]$term, drop = FALSE],
+            data = mf[, tn, drop = FALSE],
             grid = grid, edfsamples = edfsamples)
 
           ## Add term to effects list.
@@ -4410,7 +4412,7 @@ print(samps)
           s.effects.resmat <- fst$s.effects.resmat
           remove(fst)
         }
-      } else stop(paste("cannot find samples for terms: ", paste(tl, sep = ", "), "!", sep = ""))
+      }
     }
 
     rval <- list(
