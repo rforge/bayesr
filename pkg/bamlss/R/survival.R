@@ -236,11 +236,12 @@ cox.mcmc <- function(x, y, start, weights, offset,
   for(i in nx) {
     samps[[i]] <- list()
     for(j in names(x[[i]]$smooth.construct)) {
-      samps[j]] <- list(
-        "samples" = matrix(NA, nrow = length(iterthin), ncol = length(p0$parameters)),
+      samps[[j]] <- list(
+        "samples" = matrix(NA, nrow = length(iterthin), ncol = length(x[[i]]$smooth.construct[[j]]$state$parameters)),
         "alpha" = rep(NA, length = length(iterthin)),
         "accepted" = rep(NA, length = length(iterthin))
       )
+      colnames(samps[[j]]$samples) <- names(x[[i]]$smooth.construct[[j]]$state$parameters)
     }
   }
   logLik.samps <- logPost.samps <- rep(NA, length = length(iterthin))
@@ -249,39 +250,30 @@ cox.mcmc <- function(x, y, start, weights, offset,
   cat2("Starting the sampler...")
   ptm <- proc.time()
   for(iter in 1:n.iter) {
+    if(save <- i %in% iterthin)
+      js <- which(iterthin == i)
     ########################################
     ## Cycle through time-dependent part. ##
     ########################################
-    for(sj in seq_along(x$lambda$smooth.construct)) {
-      ## The time-dependent design matrix for the grid.
-      X <- x$lambda$smooth.construct[[sj]]$fit.fun_timegrid(NULL)
+    for(sj in rev(seq_along(x$lambda$smooth.construct))) {
+      p.state <- propose_surv_lambda(x$lambda$smooth.construct[[sj]], y, eta, eta_timegrid, width, sub, nu)
 
-      ## Timegrid lambda.
-      eeta <- exp(eta_timegrid)
+      ## If accepted, set current state to proposed state.
+      accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
 
-      ## Compute gradient and hessian integrals.
-      int <- survint(X, eeta, width, exp(eta$mu))
-      xgrad <- drop(t(y[, "status"]) %*% x$lambda$smooth.construct[[sj]]$XT - int$grad)
-      xgrad <- xgrad + x$lambda$smooth.construct[[sj]]$grad(score = NULL, x$lambda$smooth.construct[[sj]]$state$parameters, full = FALSE)
-      xhess <- int$hess + x$lambda$smooth.construct[[sj]]$hess(score = NULL, x$lambda$smooth.construct[[sj]]$state$parameters, full = FALSE)
+      if(accepted) {
+        eta_timegrid <- eta_timegrid - x$lambda$smooth.construct[[sj]]$state$fitted_timegrid + p.state$fit_timegrid
+        eta$lambda <- eta$lambda - fitted(x$lambda$smooth.construct[[sj]]$state) + fitted(p.state)
+        x$lambda$smooth.construct[[sj]]$state <- p.state 
+      }
 
-      ## Compute the inverse of the hessian.
-      Sigma <- matrix_inv(xhess)
-
-      ## Update regression coefficients.
-      g <- get.state(x$lambda$smooth.construct[[sj]], "b")
-      g2 <- drop(g + nu * Sigma %*% xgrad)
-      names(g2) <- names(g)
-      x$lambda$smooth.construct[[sj]]$state$parameters <- set.par(x$lambda$smooth.construct[[sj]]$state$parameters, g2, "b")
-
-      ## Update additive predictors.
-      fit_timegrid <- x$lambda$smooth.construct[[sj]]$fit.fun_timegrid(g2)
-      eta_timegrid <- eta_timegrid - x$lambda$smooth.construct[[sj]]$state$fitted_timegrid + fit_timegrid
-      x$lambda$smooth.construct[[sj]]$state$fitted_timegrid <- fit_timegrid
-
-      fit <- x$lambda$smooth.construct[[sj]]$fit.fun(x$lambda$smooth.construct[[sj]]$X, g2)
-      eta$lambda <- eta$lambda - fitted(x$lambda$smooth.construct[[sj]]$state) + fit
-      x$lambda$smooth.construct[[sj]]$state$fitted.values <- fit
+      ## Save the samples and acceptance.
+      if(save) {
+        samps$lambda[[sj]]$samples[js, ] <- x$lambda$smooth.construct[[sj]]$state$parameters
+        samps$lambda[[sj]]$alpha[js] <- p.state$alpha
+        samps$lambda[[sj]]$accepted[js] <- accepted
+      }
+stop()
     }
 
     ###########################################
@@ -361,6 +353,87 @@ cox.mcmc <- function(x, y, start, weights, offset,
     "edf" = get.edf(x, type = 2), "logLik" = logLik, "logPost" = logPost))
 
   return(x)
+}
+
+
+## MCMC propose functions.
+propose_surv_lambda <- function(x, y, eta, eta_timegrid, width, sub, nu)
+{
+  ## The time-dependent design matrix for the grid.
+  X <- x$fit.fun_timegrid(NULL)
+
+  ## Timegrid lambda.
+  eeta <- exp(eta_timegrid)
+
+  ## Old logLik and prior.
+  int <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
+  pibeta <- sum((eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int, na.rm = TRUE)
+  p1 <- x$prior(x$state$parameters)
+
+  ## Compute gradient and hessian integrals.
+  int <- survint(X, eeta, width, exp(eta$mu))
+  xgrad <- drop(t(y[, "status"]) %*% x$XT - int$grad)
+  xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
+  xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
+
+  ## Compute the inverse of the hessian.
+  Sigma <- matrix_inv(xhess)
+
+  ## Save old coefficients.
+  g0 <- get.state(x, "b")
+
+  ## Get new position.
+  mu <- drop(g0 + nu * Sigma %*% xgrad)
+
+  ## Sample new parameters.
+  g <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma))
+  x$state$parameters <- set.par(x$state$parameters, g, "b")
+
+  ## Compute log priors.
+  p2 <- x$prior(x$state$parameters)
+  qbetaprop <- dmvnorm(g, mean = mu, sigma = Sigma, log = TRUE)
+
+  ## Update additive predictors.
+  fit_timegrid <- x$fit.fun_timegrid(g)
+  eta_timegrid <- eta_timegrid - x$state$fitted_timegrid + fit_timegrid
+  x$state$fitted_timegrid <- fit_timegrid
+
+  fit <- x$fit.fun(x$X, g)
+  eta$lambda <- eta$lambda - fitted(x$state) + fit
+  x$state$fitted.values <- fit
+
+  ## New logLik.
+  eeta <- exp(eta_timegrid)
+  int <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
+  pibetaprop <- sum((eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int, na.rm = TRUE)
+
+  ## Prior prob.
+  int <- survint(X, eeta, width, exp(eta$mu))
+  xgrad <- drop(t(y[, "status"]) %*% x$XT - int$grad)
+  xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
+  xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
+
+  Sigma2 <- matrix_inv(xhess)
+  mu2 <- drop(g + nu * Sigma %*% xgrad)
+  qbeta <- dmvnorm(g0, mean = mu2, sigma = Sigma2, log = TRUE)
+
+  ## Sample variance parameter.
+  if(!x$fixed & is.null(x$sp)) {
+    if(!x$fixed & is.null(x$sp)) {
+      tau2 <- NULL
+      for(j in seq_along(x$S)) {
+        a <- x$rank[j] / 2 + x$a
+        b <- 0.5 * crossprod(g, x$S[[j]]) %*% g + x$b
+        tau2 <- c(tau2, 1 / rgamma(1, a, b))
+      }
+      x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
+    }
+  }
+
+  ## Compute acceptance probablity.
+  x$state$alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
+
+  return(x$state)
 }
 
 
