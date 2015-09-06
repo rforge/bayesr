@@ -262,7 +262,7 @@ cox.mcmc <- function(x, y, start, weights, offset,
       accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
 
       if(accepted) {
-        eta_timegrid <- eta_timegrid - x$lambda$smooth.construct[[sj]]$state$fitted_timegrid + p.state$fit_timegrid
+        eta_timegrid <- eta_timegrid - x$lambda$smooth.construct[[sj]]$state$fitted_timegrid + p.state$fitted_timegrid
         eta$lambda <- eta$lambda - fitted(x$lambda$smooth.construct[[sj]]$state) + fitted(p.state)
         x$lambda$smooth.construct[[sj]]$state <- p.state 
       }
@@ -273,6 +273,7 @@ cox.mcmc <- function(x, y, start, weights, offset,
         samps$lambda[[sj]]$alpha[js] <- p.state$alpha
         samps$lambda[[sj]]$accepted[js] <- accepted
       }
+print(samps$lambda)
 stop()
     }
 
