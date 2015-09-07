@@ -720,7 +720,7 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
 
   ## Transform.
   if(is.function(functions$transform)) {
-    tbf <- functions$transform(bf)
+    tbf <- functions$transform(bf, ...)
     bf[names(tbf)] <- tbf
     rm(tbf)
   }
