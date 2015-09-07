@@ -3043,7 +3043,7 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "samples",
     par <- if(is.null(x$parameters)) NULL else unlist(x$parameters)
     samps <- samples(x, model = model, term = term, drop = TRUE)
     snames <- colnames(samps)
-    snames <- snames[!grepl(".p.edf", snames, fixed = TRUE)]
+    snames <- snames[!grepl(".p.edf", snames, fixed = TRUE) & !grepl(".accepted", snames, fixed = TRUE)]
     samps <- samps[, snames, drop = FALSE]
     np <- ncol(samps)
     par(mfrow = if(np <= 4) c(np, 2) else c(4, 2))

@@ -177,8 +177,8 @@ f <- list(
   mu ~ s(x1) + s(x2)
 )
 
-## Posterior mode estimation without sampling.
-b <- bamlss(f, family = "cox", data = d, nu = 0.5, subdivisions = 15)
+## Cox model with continuous time.
+b <- bamlss(f, family = "cox", data = d, nu = 1, subdivisions = 50)
 
 
 ## JAGS.

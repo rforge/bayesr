@@ -213,6 +213,8 @@ cox.mcmc <- function(x, y, start, weights, offset,
   eta_timegrid <- 0
   for(sj in seq_along(x$lambda$smooth.construct)) {
     g <- get.state(x$lambda$smooth.construct[[sj]], "b")
+    fit_timegrid <- x$lambda$smooth.construct[[sj]]$fit.fun_timegrid(g)
+    x$lambda$smooth.construct[[sj]]$state$fitted_timegrid <- fit_timegrid
     eta_timegrid <- eta_timegrid + x$lambda$smooth.construct[[sj]]$fit.fun_timegrid(g)
   }
 
@@ -248,6 +250,15 @@ cox.mcmc <- function(x, y, start, weights, offset,
   }
   logLik.samps <- logPost.samps <- rep(NA, length = length(iterthin))
 
+  foo <- function(x) {
+    x <- exp(x)
+    if(x < 0)
+      x <- 0
+    if(x > 1)
+      x <- 1
+    x
+  }
+
   ## Start sampling.
   cat2("Starting the sampler...")
 
@@ -276,7 +287,7 @@ cox.mcmc <- function(x, y, start, weights, offset,
       ## Save the samples and acceptance.
       if(save) {
         samps$lambda[[sj]]$samples[js, ] <- x$lambda$smooth.construct[[sj]]$state$parameters
-        samps$lambda[[sj]]$alpha[js] <- exp(p.state$alpha)
+        samps$lambda[[sj]]$alpha[js] <- foo(p.state$alpha)
         samps$lambda[[sj]]$accepted[js] <- accepted
       }
     }
@@ -304,7 +315,7 @@ cox.mcmc <- function(x, y, start, weights, offset,
       ## Save the samples and acceptance.
       if(save) {
         samps$mu[[sj]]$samples[js, ] <- x$mu$smooth.construct[[sj]]$state$parameters
-        samps$mu[[sj]]$alpha[js] <- exp(p.state$alpha)
+        samps$mu[[sj]]$alpha[js] <- foo(p.state$alpha)
         samps$mu[[sj]]$accepted[js] <- accepted
       }
     }
@@ -592,17 +603,18 @@ surv.transform <- function(x, y, data,
   
   ## Remove intercept if Cox.
   if(is.cox) {
-    if(!is.null(x$mu$smooth.construct$model.matrix)) {
-      cn <- colnames(x$mu$smooth.construct$model.matrix$X)
+    if(!is.null(x$lambda$smooth.construct$model.matrix)) {
+      cn <- colnames(x$lambda$smooth.construct$model.matrix$X)
       if("(Intercept)" %in% cn)
-        x$mu$smooth.construct$model.matrix$X <- x$mu$smooth.construct$model.matrix$X[, cn != "(Intercept)", drop = FALSE]
-      if(ncol(x$mu$smooth.construct$model.matrix$X) < 1) {
-        x$mu$smooth.construct$model.matrix <- NULL
-        x$mu$terms <- drop.terms.bamlss(x$mu$terms, pterms = FALSE, keep.intercept = FALSE)
+        x$lambda$smooth.construct$model.matrix$X <- x$lambda$smooth.construct$model.matrix$X[, cn != "(Intercept)", drop = FALSE]
+      if(ncol(x$lambda$smooth.construct$model.matrix$X) < 1) {
+        x$lambda$smooth.construct$model.matrix <- NULL
+        x$lambda$terms <- drop.terms.bamlss(x$lambda$terms, pterms = FALSE, keep.intercept = FALSE)
       } else {
-        x$mu$smooth.construct$model.matrix$term <- gsub("(Intercept)+", "",
-          x$mu$smooth.construct$model.matrix$term, fixed = TRUE)
-        x$mu$smooth.construct$model.matrix$state$parameters <- x$mu$smooth.construct$model.matrix$state$parameters[-1]
+        x$lambda$smooth.construct$model.matrix$term <- gsub("(Intercept)+", "",
+          x$lambda$smooth.construct$model.matrix$term, fixed = TRUE)
+        x$lambda$smooth.construct$model.matrix$state$parameters <- x$lambda$smooth.construct$model.matrix$state$parameters[-1]
+        attr(x$lambda$terms, "intercept") <- 0
       }
     }
   }
