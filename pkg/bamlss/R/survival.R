@@ -199,6 +199,8 @@ cox.mcmc <- function(x, y, start, weights, offset,
 {
   require("mvtnorm")
 
+  nu <- 1
+
   if(!is.null(start))
     x <- add.starting.values(x, start)
 
@@ -242,6 +244,7 @@ cox.mcmc <- function(x, y, start, weights, offset,
     for(j in names(x[[i]]$smooth.construct)) {
       samps[[i]][[j]] <- list(
         "samples" = matrix(NA, nrow = length(iterthin), ncol = length(x[[i]]$smooth.construct[[j]]$state$parameters)),
+        "edf" = rep(NA, length = length(iterthin)),
         "alpha" = rep(NA, length = length(iterthin)),
         "accepted" = rep(NA, length = length(iterthin))
       )
@@ -287,6 +290,7 @@ cox.mcmc <- function(x, y, start, weights, offset,
       ## Save the samples and acceptance.
       if(save) {
         samps$lambda[[sj]]$samples[js, ] <- x$lambda$smooth.construct[[sj]]$state$parameters
+        samps$lambda[[sj]]$edf[js] <- x$lambda$smooth.construct[[sj]]$state$edf
         samps$lambda[[sj]]$alpha[js] <- foo(p.state$alpha)
         samps$lambda[[sj]]$accepted[js] <- accepted
       }
@@ -315,6 +319,7 @@ cox.mcmc <- function(x, y, start, weights, offset,
       ## Save the samples and acceptance.
       if(save) {
         samps$mu[[sj]]$samples[js, ] <- x$mu$smooth.construct[[sj]]$state$parameters
+        samps$mu[[sj]]$edf[js] <- x$mu$smooth.construct[[sj]]$state$edf
         samps$mu[[sj]]$alpha[js] <- foo(p.state$alpha)
         samps$mu[[sj]]$accepted[js] <- accepted
       }
@@ -342,6 +347,8 @@ cox.mcmc <- function(x, y, start, weights, offset,
     }
     samps[[i]] <- do.call("cbind", samps[[i]])
   }
+  samps$logLik <- logLik.samps
+  samps$logPost <- logPost.samps
   samps <- as.mcmc(do.call("cbind", samps))
 
   return(samps)
@@ -411,6 +418,9 @@ propose_surv_td <- function(x, y, eta, eta_timegrid, width, sub, nu)
   mu2 <- drop(g + nu * Sigma2 %*% xgrad)
   qbeta <- dmvnorm(g0, mean = mu2, sigma = Sigma2, log = TRUE)
 
+  ## Save edf.
+  x$state$edf <- sum(diag(int$hess %*% Sigma2))
+
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp)) {
     if(!x$fixed & is.null(x$sp)) {
@@ -472,7 +482,7 @@ propose_surv_tc <- function(x, y, eta, int)
   M <- P %*% crossprod(x$X, x$rres)
 
   ## Degrees of freedom.
-  edf <- sum(diag(XWX %*% P))
+  x$state$edf <- sum(diag(XWX %*% P))
 
   ## Save old coefficients
   g0 <- drop(get.par(x$state$parameters, "b"))

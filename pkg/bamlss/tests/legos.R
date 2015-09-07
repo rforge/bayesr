@@ -148,7 +148,10 @@ legend("topright", names(pi), lwd = 1, col = 1:ncol(pi))
 
 
 ## Survival example.
-n <- 300
+set.seed(111)
+
+## Sample covariates first.
+n <- 600
 X <- matrix(NA, nrow = n, ncol = 3)
 X[, 1] <- runif(n, -1, 1)
 X[, 2] <- runif(n, -3, 3)
@@ -166,19 +169,20 @@ cens_fct <- function(time, mean_cens) {
 
 ## log(time) is the baseline hazard.
 lambda <-  function(time, x) {
-  exp(log(time) + 0.7 * x[1] + sin(x[2]))
+  exp(log(time) + 0.7 * x[1] + sin(x[2]) + sin(time * 2) * x[3])
 }
 
 ## Simulate data with lambda() and cens_fct().
 d <- rSurvTime2(lambda, X, cens_fct, mean_cens = 5)
 
 f <- list(
-  Surv(time, event) ~ s(time),
+  Surv(time, event) ~ s(time) + s(time, by = x3),
   mu ~ s(x1) + s(x2)
 )
 
 ## Cox model with continuous time.
-b <- bamlss(f, family = "cox", data = d, nu = 1, subdivisions = 50)
+b <- bamlss(f, family = "cox", data = d, nu = 0.5, subdivisions = 50, cores = 4,
+  n.iter = 4000, burnin = 1000, thin = 5)
 
 
 ## JAGS.
