@@ -279,36 +279,6 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
   nstep <- step
   step <- floor(n.iter / step)
 
-  barfun <- function(ptm, n.iter, i, step, nstep, start = TRUE) {
-    if(i == 10 & start) {
-      cat("\r")
-      elapsed <- c(proc.time() - ptm)[3]
-      rt <- elapsed / i * (n.iter - i)
-      rt <- if(rt > 60) {
-        paste(formatC(format(round(rt / 60, 2), nsmall = 2), width = 5), "min", sep = "")
-      } else paste(formatC(format(round(rt, 2), nsmall = 2), width = 5), "sec", sep = "")
-      cat("|", rep(" ", nstep), "|   0% ", rt, sep = "")
-      if(.Platform$OS.type != "unix") flush.console()
-    }
-    if(i %% step == 0) {
-      cat("\r")
-      p <- i / n.iter
-      p <- paste("|", paste(rep("*", round(nstep * p)), collapse = ""),
-        paste(rep(" ", round(nstep * (1 - p))), collapse = ""), "| ",
-        formatC(round(p, 2) * 100, width = 3), "%", sep = "")
-      elapsed <- c(proc.time() - ptm)[3]
-      rt <- elapsed / i * (n.iter - i)
-      rt <- if(rt > 60) {
-        paste(formatC(format(round(rt / 60, 2), nsmall = 2), width = 5), "min", sep = "")
-      } else paste(formatC(format(round(rt, 2), nsmall = 2), width = 5), "sec", sep = "")
-      elapsed <- if(elapsed > 60) {
-        paste(formatC(format(round(elapsed / 60, 2), nsmall = 2), width = 5), "min", sep = "")
-      } else paste(formatC(format(round(elapsed, 2), nsmall = 2), width = 5), "sec", sep = "")
-      cat(p, rt, elapsed, sep = " ")
-      if(.Platform$OS.type != "unix") flush.console()
-    }
-  }
-
   sampler <- function(...) {
     cat2("Starting the sampler...")
     ptm <- proc.time()
@@ -460,6 +430,39 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
   }
   
   return(rval)
+}
+
+
+## Print info.
+barfun <- function(ptm, n.iter, i, step, nstep, start = TRUE)
+{
+  if(i == 10 & start) {
+    cat("\r")
+    elapsed <- c(proc.time() - ptm)[3]
+    rt <- elapsed / i * (n.iter - i)
+    rt <- if(rt > 60) {
+      paste(formatC(format(round(rt / 60, 2), nsmall = 2), width = 5), "min", sep = "")
+    } else paste(formatC(format(round(rt, 2), nsmall = 2), width = 5), "sec", sep = "")
+    cat("|", rep(" ", nstep), "|   0% ", rt, sep = "")
+    if(.Platform$OS.type != "unix") flush.console()
+  }
+  if(i %% step == 0) {
+    cat("\r")
+    p <- i / n.iter
+    p <- paste("|", paste(rep("*", round(nstep * p)), collapse = ""),
+      paste(rep(" ", round(nstep * (1 - p))), collapse = ""), "| ",
+      formatC(round(p, 2) * 100, width = 3), "%", sep = "")
+    elapsed <- c(proc.time() - ptm)[3]
+    rt <- elapsed / i * (n.iter - i)
+    rt <- if(rt > 60) {
+      paste(formatC(format(round(rt / 60, 2), nsmall = 2), width = 5), "min", sep = "")
+    } else paste(formatC(format(round(rt, 2), nsmall = 2), width = 5), "sec", sep = "")
+    elapsed <- if(elapsed > 60) {
+      paste(formatC(format(round(elapsed / 60, 2), nsmall = 2), width = 5), "min", sep = "")
+    } else paste(formatC(format(round(elapsed, 2), nsmall = 2), width = 5), "sec", sep = "")
+    cat(p, rt, elapsed, sep = " ")
+    if(.Platform$OS.type != "unix") flush.console()
+  }
 }
 
 

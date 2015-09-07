@@ -162,7 +162,7 @@ get.state <- function(x, what = NULL) {
 }
 
 get.par <- function(x, what = NULL) {
-  if(is.null(what)) return(x)
+  if(is.null(what) | is.null(names(x))) return(x)
   if(what %in% c("tau2", "tau", "lambda")) {
     return(x[grep("tau", names(x))])
   } else {

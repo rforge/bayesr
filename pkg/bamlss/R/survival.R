@@ -195,10 +195,14 @@ cox.mode <- function(x, y, weights, offset,
 ## Posterior mode estimation.
 cox.mcmc <- function(x, y, start, weights, offset,
   n.iter = 1200, burnin = 200, thin = 1, nu = 1,
-  verbose = TRUE, digits = 4, ...)
+  verbose = TRUE, digits = 4, step = 20, ...)
 {
+  require("mvtnorm")
+
   if(!is.null(start))
     x <- add.starting.values(x, start)
+
+  nu <- 1
 
   ## Names of parameters/predictors.
   nx <- names(x)
@@ -236,27 +240,31 @@ cox.mcmc <- function(x, y, start, weights, offset,
   for(i in nx) {
     samps[[i]] <- list()
     for(j in names(x[[i]]$smooth.construct)) {
-      samps[[j]] <- list(
+      samps[[i]][[j]] <- list(
         "samples" = matrix(NA, nrow = length(iterthin), ncol = length(x[[i]]$smooth.construct[[j]]$state$parameters)),
         "alpha" = rep(NA, length = length(iterthin)),
         "accepted" = rep(NA, length = length(iterthin))
       )
-      colnames(samps[[j]]$samples) <- names(x[[i]]$smooth.construct[[j]]$state$parameters)
+      colnames(samps[[i]][[j]]$samples) <- names(x[[i]]$smooth.construct[[j]]$state$parameters)
     }
   }
   logLik.samps <- logPost.samps <- rep(NA, length = length(iterthin))
 
   ## Start sampling.
   cat2("Starting the sampler...")
+
+  nstep <- step
+  step <- floor(n.iter / step)
+
   ptm <- proc.time()
   for(iter in 1:n.iter) {
-    if(save <- i %in% iterthin)
-      js <- which(iterthin == i)
+    if(save <- iter %in% iterthin)
+      js <- which(iterthin == iter)
     ########################################
     ## Cycle through time-dependent part. ##
     ########################################
-    for(sj in rev(seq_along(x$lambda$smooth.construct))) {
-      p.state <- propose_surv_lambda(x$lambda$smooth.construct[[sj]], y, eta, eta_timegrid, width, sub, nu)
+    for(sj in names(x$lambda$smooth.construct)) {
+      p.state <- propose_surv_td(x$lambda$smooth.construct[[sj]], y, eta, eta_timegrid, width, sub, nu)
 
       ## If accepted, set current state to proposed state.
       accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
@@ -270,11 +278,9 @@ cox.mcmc <- function(x, y, start, weights, offset,
       ## Save the samples and acceptance.
       if(save) {
         samps$lambda[[sj]]$samples[js, ] <- x$lambda$smooth.construct[[sj]]$state$parameters
-        samps$lambda[[sj]]$alpha[js] <- p.state$alpha
+        samps$lambda[[sj]]$alpha[js] <- exp(p.state$alpha)
         samps$lambda[[sj]]$accepted[js] <- accepted
       }
-print(samps$lambda)
-stop()
     }
 
     ###########################################
@@ -286,79 +292,56 @@ stop()
     ##########################################
     ## Cycle through time-independent part. ##
     ##########################################
-    for(sj in seq_along(x$mu$smooth.construct)) {
-      ## Compute weights.
-      weights <- exp(eta$mu) * int
+    for(sj in names(x$mu$smooth.construct)) {
+      p.state <- propose_surv_tc(x$mu$smooth.construct[[sj]], y, eta, int)
 
-      ## Compute score.
-      score <- y[, "status"] - exp(eta$mu) * int
+      ## If accepted, set current state to proposed state.
+      accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
 
-      ## Compute working observations.
-      z <- eta$mu + 1 / weights * score
-
-      ## Compute partial predictor.
-      eta$mu <- eta$mu - fitted(x$mu$smooth.construct[[sj]]$state)
-
-      ## Compute reduced residuals.
-      e <- z - eta$mu
-      xbin.fun(x$mu$smooth.construct[[sj]]$binning$sorted.index, weights, e,
-        x$mu$smooth.construct[[sj]]$weights, x$mu$smooth.construct[[sj]]$rres,
-        x$mu$smooth.construct[[sj]]$binning$order)
-
-      ## Compute mean and precision.
-      XWX <- crossprod(x$mu$smooth.construct[[sj]]$X, x$mu$smooth.construct[[sj]]$X * x$mu$smooth.construct[[sj]]$weights)
-      if(x$mu$smooth.construct[[sj]]$fixed) {
-        P <- matrix_inv(XWX)
-      } else {
-        S <- 0
-        tau2 <- get.state(x$mu$smooth.construct[[sj]], "tau2")
-        for(j in seq_along(x$mu$smooth.construct[[sj]]$S))
-          S <- S + 1 / tau2[j] * x$mu$smooth.construct[[sj]]$S[[j]]
-        P <- matrix_inv(XWX + S)
+      if(accepted) {
+        eta$mu <- eta$mu - fitted(x$mu$smooth.construct[[sj]]$state) + fitted(p.state)
+        x$mu$smooth.construct[[sj]]$state <- p.state 
       }
-      g <- drop(P %*% crossprod(x$mu$smooth.construct[[sj]]$X, x$mu$smooth.construct[[sj]]$rres))
-      x$mu$smooth.construct[[sj]]$state$parameters <- set.par(x$mu$smooth.construct[[sj]]$state$parameters, g, "b")
 
-      ## Compute fitted values.
-      if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) {
-        x$mu$smooth.construct[[sj]]$state$parameters <- set.par(x$mu$smooth.construct[[sj]]$state$parameters,
-          rep(0, length(x$mu$smooth.construct[[sj]]$state$g)), "b")
+      ## Save the samples and acceptance.
+      if(save) {
+        samps$mu[[sj]]$samples[js, ] <- x$mu$smooth.construct[[sj]]$state$parameters
+        samps$mu[[sj]]$alpha[js] <- exp(p.state$alpha)
+        samps$mu[[sj]]$accepted[js] <- accepted
       }
-      x$mu$smooth.construct[[sj]]$state$fitted.values <- x$mu$smooth.construct[[sj]]$fit.fun(x$mu$smooth.construct[[sj]]$X,
-        get.state(x$mu$smooth.construct[[sj]], "b"))
-
-      ## Update additive predictor.
-      eta$mu <- eta$mu + fitted(x$mu$smooth.construct[[sj]]$state)
     }
 
-    logLik <- sum((eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int, na.rm = TRUE)
-    logPost <- as.numeric(logLik + get.log.prior(x))
-
-    if(verbose) {
-      cat("\r")
-      vtxt <- paste(
-        "logPost ", fmt(logPost, width = 8, digits = digits),
-        " iteration ", formatC(iter, width = nchar(maxit)), sep = ""
-      )
-      cat(vtxt)
-      if(.Platform$OS.type != "unix") flush.console()
+    if(save) {
+      logLik.samps[js] <- sum((eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int, na.rm = TRUE)
+      logPost.samps[js] <- as.numeric(logLik.samps[js] + get.log.prior(x))
     }
+
+    if(verbose) barfun(ptm, n.iter, iter, step, nstep)
   }
 
   if(verbose) cat("\n")
 
-  logLik <- sum((eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int, na.rm = TRUE)
-  logPost <- as.numeric(logLik + get.log.prior(x))
+  for(i in names(samps)){
+    for(j in names(samps[[i]])) {
+      samps[[i]][[j]] <- do.call("cbind", samps[[i]][[j]])
+      cn <- if(j == "model.matrix") {
+        paste(i, "p", j, colnames(samps[[i]][[j]]), sep = ".")
+      } else {
+        paste(i, "s", j, colnames(samps[[i]][[j]]), sep = ".")
+      }
+      colnames(samps[[i]][[j]]) <- cn
+    }
+    samps[[i]] <- do.call("cbind", samps[[i]])
+  }
+  samps <- as.mcmc(do.call("cbind", samps))
 
-  return(list("fitted.values" = eta, "parameters" = get.all.par(x),
-    "edf" = get.edf(x, type = 2), "logLik" = logLik, "logPost" = logPost))
-
-  return(x)
+  return(samps)
 }
 
 
 ## MCMC propose functions.
-propose_surv_lambda <- function(x, y, eta, eta_timegrid, width, sub, nu)
+## Time-varying propose function.
+propose_surv_td <- function(x, y, eta, eta_timegrid, width, sub, nu)
 {
   ## The time-dependent design matrix for the grid.
   X <- x$fit.fun_timegrid(NULL)
@@ -388,6 +371,7 @@ propose_surv_lambda <- function(x, y, eta, eta_timegrid, width, sub, nu)
 
   ## Sample new parameters.
   g <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma))
+  names(g) <- names(g0)
   x$state$parameters <- set.par(x$state$parameters, g, "b")
 
   ## Compute log priors.
@@ -415,7 +399,7 @@ propose_surv_lambda <- function(x, y, eta, eta_timegrid, width, sub, nu)
   xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
 
   Sigma2 <- matrix_inv(xhess)
-  mu2 <- drop(g + nu * Sigma %*% xgrad)
+  mu2 <- drop(g + nu * Sigma2 %*% xgrad)
   qbeta <- dmvnorm(g0, mean = mu2, sigma = Sigma2, log = TRUE)
 
   ## Sample variance parameter.
@@ -430,6 +414,118 @@ propose_surv_lambda <- function(x, y, eta, eta_timegrid, width, sub, nu)
       x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
     }
   }
+
+  ## Compute acceptance probablity.
+  x$state$alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
+
+  return(x$state)
+}
+
+
+## Time-constant propose function.
+propose_surv_tc <- function(x, y, eta, int)
+{
+  ## Compute weights.
+  weights <- exp(eta$mu) * int
+
+  ## Compute score.
+  score <- y[, "status"] - exp(eta$mu) * int
+
+  ## Compute working observations.
+  z <- eta$mu + 1 / weights * score
+
+  ## Compute old log likelihood and old log coefficients prior.
+  pibeta <- sum((eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int, na.rm = TRUE)
+  p1 <- x$prior(x$state$parameters)
+
+  ## Compute partial predictor.
+  eta2 <- eta$mu <- eta$mu - fitted(x$state)
+
+  ## Compute reduced residuals.
+  e <- z - eta2
+  xbin.fun(x$binning$sorted.index, weights, e, x$weights, x$rres, x$binning$order)
+
+  ## Compute mean and precision.
+  XWX <- crossprod(x$X, x$X * x$weights)
+  S <- 0
+  P <- if(x$fixed) {
+    if((k <- ncol(x$X)) < 2) {
+      1 / XWX
+    } else chol2inv(L1 <- chol(P01 <- XWX))
+  } else {
+    tau2 <- get.par(x$state$parameters, "tau2")
+    for(j in seq_along(x$S))
+      S <- S + 1 / tau2[j] * x$S[[j]]
+    chol2inv(L1 <- chol(P01 <- XWX + S))
+  }
+
+  P[P == Inf] <- 0
+  M <- P %*% crossprod(x$X, x$rres)
+
+  ## Degrees of freedom.
+  edf <- sum(diag(XWX %*% P))
+
+  ## Save old coefficients
+  g0 <- drop(get.par(x$state$parameters, "b"))
+
+  ## Sample new parameters.
+  g <- drop(rmvnorm(n = 1, mean = M, sigma = P))
+
+  ## Compute log priors.
+  p2 <- x$prior(c("b" = g, get.par(x$state$parameters, "tau2")))
+  qbetaprop <- dmvnorm(g, mean = M, sigma = P, log = TRUE)
+
+  ## Compute fitted values.        
+  x$state$fitted.values <- x$fit.fun(x$X, g)
+
+  ## Set up new predictor.
+  eta$mu <- eta$mu + x$state$fitted.values
+
+  ## Compute new log likelihood.
+  pibetaprop <- sum((eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int, na.rm = TRUE)
+
+  ## Compute weights.
+  weights <- exp(eta$mu) * int
+
+  ## Compute score.
+  score <- y[, "status"] - exp(eta$mu) * int
+
+  ## Compute working observations.
+  z <- eta$mu + 1 / weights * score
+
+  ## Compute reduced residuals.
+  e <- z - eta2
+  xbin.fun(x$binning$sorted.index, weights, e, x$weights, x$rres, x$binning$order)
+
+  ## Compute mean and precision.
+  XWX <- crossprod(x$X, x$X * x$weights)
+  P2 <- if(x$fixed) {
+    if(k < 2) {
+      1 / (XWX)
+    } else chol2inv(L2 <- chol(P02 <- XWX))
+  } else {
+    chol2inv(L2 <- chol(P02 <- XWX + S))
+  }
+  P2[P2 == Inf] <- 0
+  M2 <- P2 %*% crossprod(x$X, x$rres)
+
+  ## Get the log prior.
+  qbeta <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
+
+  ## Sample variance parameter.
+  if(!x$fixed & is.null(x$sp)) {
+    if(!x$fixed & is.null(x$sp)) {
+      tau2 <- NULL
+      for(j in seq_along(x$S)) {
+        a <- x$rank[j] / 2 + x$a
+        b <- 0.5 * crossprod(g, x$S[[j]]) %*% g + x$b
+        tau2 <- c(tau2, 1 / rgamma(1, a, b))
+      }
+      x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
+    }
+  }
+
+  x$state$parameters <- set.par(x$state$parameters, g, "b")
 
   ## Compute acceptance probablity.
   x$state$alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
@@ -477,259 +573,6 @@ rSurvTime2 <- function (lambda, x, cens_fct, upper = 1000, ..., file = NULL,
     invisible(data)
   } else {
     return(data)
-  }
-}
-
-
-integrate2 <- function(f, a, b, ...)
-{
-  nodes <- c(
-    -0.999713726773441,
-    -0.998491950639596,
-    -0.996295134733125,
-    -0.993124937037443,
-    -0.988984395242991,
-    -0.983877540706057,
-    -0.977809358486919,
-    -0.970785775763707,
-    -0.962813654255816,
-    -0.953900782925493,
-    -0.944055870136256,
-    -0.93328853504308,
-    -0.921609298145334,
-    -0.90902957098253,
-    -0.895561644970728,
-    -0.881218679385019,
-    -0.866014688497165,
-    -0.849964527879591,
-    -0.833083879888401,
-    -0.815389238339177,
-    -0.796897892390315,
-    -0.777627909649496,
-    -0.757598118519707,
-    -0.73682808980202,
-    -0.715338117573057,
-    -0.693149199355802,
-    -0.670283015603141,
-    -0.64676190851413,
-    -0.622608860203708,
-    -0.597847470247179,
-    -0.572501932621382,
-    -0.546597012065094,
-    -0.520158019881763,
-    -0.493210789208192,
-    -0.465781649773359,
-    -0.437897402172032,
-    -0.409585291678302,
-    -0.38087298162463,
-    -0.351788526372422,
-    -0.32236034390053,
-    -0.292617188038472,
-    -0.262588120371503,
-    -0.232302481844974,
-    -0.201789864095736,
-    -0.171080080538604,
-    -0.140203137236114,
-    -0.109189203580061,
-    -0.0780685828134366,
-    -0.0468716824215914,
-    -0.0156289844215428,
-    0.0156289844215435,
-    0.0468716824215913,
-    0.0780685828134369,
-    0.109189203580061,
-    0.140203137236114,
-    0.171080080538603,
-    0.201789864095736,
-    0.232302481844974,
-    0.262588120371504,
-    0.292617188038472,
-    0.322360343900529,
-    0.351788526372422,
-    0.38087298162463,
-    0.409585291678302,
-    0.437897402172032,
-    0.465781649773358,
-    0.493210789208191,
-    0.520158019881763,
-    0.546597012065094,
-    0.572501932621381,
-    0.597847470247179,
-    0.622608860203708,
-    0.64676190851413,
-    0.670283015603142,
-    0.693149199355802,
-    0.715338117573057,
-    0.736828089802021,
-    0.757598118519707,
-    0.777627909649496,
-    0.796897892390315,
-    0.815389238339176,
-    0.833083879888401,
-    0.849964527879592,
-    0.866014688497164,
-    0.881218679385019,
-    0.895561644970727,
-    0.90902957098253,
-    0.921609298145334,
-    0.93328853504308,
-    0.944055870136256,
-    0.953900782925492,
-    0.962813654255816,
-    0.970785775763707,
-    0.977809358486919,
-    0.983877540706057,
-    0.988984395242992,
-    0.993124937037444,
-    0.996295134733125,
-    0.998491950639596,
-    0.999713726773442
-  )
-
-  weights <- c(
-    0.000734634490505196,
-    0.00170939265351828,
-    0.00268392537155396,
-    0.00365596120132663,
-    0.00462445006342169,
-    0.00558842800386553,
-    0.00654694845084563,
-    0.00749907325546386,
-    0.00844387146966807,
-    0.00938041965369529,
-    0.0103078025748694,
-    0.0112251140231855,
-    0.0121314576629791,
-    0.0130259478929708,
-    0.0139077107037196,
-    0.0147758845274415,
-    0.015629621077546,
-    0.0164680861761455,
-    0.0172904605683233,
-    0.0180959407221274,
-    0.0188837396133761,
-    0.019653087494435,
-    0.0204032326462095,
-    0.0211334421125275,
-    0.0218430024162464,
-    0.0225312202563371,
-    0.0231974231852537,
-    0.0238409602659681,
-    0.0244612027079576,
-    0.0250575444815794,
-    0.0256294029102085,
-    0.0261762192395456,
-    0.0266974591835708,
-    0.0271926134465774,
-    0.0276611982207921,
-    0.0281027556591007,
-    0.0285168543223954,
-    0.0289030896011252,
-    0.0292610841106386,
-    0.0295904880599137,
-    0.0298909795933315,
-    0.0301622651051686,
-    0.0304040795264544,
-    0.0306161865839809,
-    0.030798379031153,
-    0.0309504788504913,
-    0.0310723374275658,
-    0.03116383569621,
-    0.0312248842548494,
-    0.0312554234538637,
-    0.0312554234538625,
-    0.0312248842548495,
-    0.0311638356962099,
-    0.0310723374275674,
-    0.030950478850491,
-    0.0307983790311533,
-    0.0306161865839802,
-    0.0304040795264556,
-    0.0301622651051682,
-    0.0298909795933326,
-    0.0295904880599136,
-    0.0292610841106384,
-    0.0289030896011253,
-    0.0285168543223953,
-    0.0281027556591007,
-    0.0276611982207923,
-    0.0271926134465769,
-    0.0266974591835716,
-    0.0261762192395464,
-    0.025629402910208,
-    0.0250575444815787,
-    0.024461202707957,
-    0.0238409602659674,
-    0.0231974231852531,
-    0.0225312202563353,
-    0.0218430024162472,
-    0.0211334421125276,
-    0.0204032326462092,
-    0.0196530874944354,
-    0.0188837396133751,
-    0.0180959407221291,
-    0.0172904605683237,
-    0.0164680861761457,
-    0.0156296210775464,
-    0.0147758845274413,
-    0.0139077107037179,
-    0.0130259478929714,
-    0.0121314576629803,
-    0.011225114023186,
-    0.0103078025748689,
-    0.00938041965369477,
-    0.00844387146966944,
-    0.00749907325546371,
-    0.00654694845084634,
-    0.00558842800386576,
-    0.00462445006342231,
-    0.00365596120132682,
-    0.00268392537155354,
-    0.00170939265351811,
-    0.000734634490505862
-  )
-
-  fn <- function(x) {
-    (b - a) / 2 * f((b - a) / 2 * x + (a + b) / 2, ...)
-  }
-
-  sum(fn(nodes) * weights)
-}
-
-
-integrate3 <- function(f, a, b, m = 2, n = 40, nx = 1000, ret.fun = FALSE, plot = FALSE) {
-  require("splines")
-  xl <- a
-  xu <- b
-  xr <- xu - xl
-  xl <- xl - xr * 0.001
-  xu <- xu + xr * 0.001
-  dx <- (xu - xl)/(n - 1)
-  k <- seq(xl - dx * (m + 1), xu + dx * (m + 1), length = n + 2 * m + 2)
-  x <- seq(a, b, length = nx)
-  X <- spline.des(k, x, m + 2, rep(0, nx))$design
-  X1 <- spline.des(k, x, m + 2, rep(1, nx))$design
-  X <- X[, -1]
-  X1 <- X1[, -1]
-  y <- f(x)
-  bf <- lm.fit(X1, y)
-  y2 <- drop(X %*% coef(bf))
-  f2 <- splinefun(x, y2)
-  if(plot) {
-    x2 <- abs(f(x))
-    i <- which(x2 <= quantile(x2, prob = 0.01))
-    par(mfrow = c(2, 1))
-    plot(x, f2(x), type = "l", ylab = "int(f(x))")
-    abline(v = x[i], lty = 2)
-    plot(x, f(x), type = "l", col = "red", lwd = 2, ylab = "f(x)")
-    lines(x, drop(X1 %*% coef(bf)), col = "black")
-    abline(h = 0, lty = 2)
-    abline(v = x[i], lty = 2)
-  }
-  if(ret.fun) {
-    return(f2)
-  } else {
-    return(f2(b) - f2(a))
   }
 }
 
@@ -910,8 +753,6 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take)
     f
   }
   x$state$fitted_timegrid <- x$fit.fun_timegrid(get.state(x, "b"))
-  x$update <- bfit0_surv_newton
-  x$propose <- gmcmc_surv_sm.newton ## gmcmc_surv_sm.mvn
   x$state$optimize <- FALSE
 
   x
