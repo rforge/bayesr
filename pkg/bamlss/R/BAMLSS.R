@@ -3022,7 +3022,7 @@ smooth.construct.fdl.smooth.spec <- function(object, data, knots)
 
 
 ## Plotting method for "bamlss" objects.
-plot.bamlss <- function(x, model = NULL, term = NULL, which = "samples",
+plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
   ask = dev.interactive(), ...)
 {
   op <- par(no.readonly = TRUE)
@@ -4245,7 +4245,8 @@ list2mat <- function(x)
 
 
 ## Process results with samples and bamlss.frame.
-results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 100, nsamps = NULL, ...)
+results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 100, nsamps = NULL,
+  burnin = NULL, thin = NULL, ...)
 {
   if(!inherits(x, "bamlss.frame") & !inherits(x, "bamlss"))
     stop("x must be a 'bamlss' object!")
@@ -4259,7 +4260,7 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
 
   what <- match.arg(what)
   if(!is.null(x$samples) & what == "samples") {
-    samps <- samples(x)
+    samps <- samples(x, burnin = burnin, thin = thin)
     if(!is.null(nsamps)) {
       i <- seq(1, nrow(samps), length = nsamps)
       samps <- samps[i, , drop = FALSE]
@@ -4560,7 +4561,8 @@ grep2 <- function(pattern, x, ...) {
   sort(unique(i))
 }
 
-samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE, ...)
+samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE,
+  burnin = NULL, thin = NULL, ...)
 {
   if(!inherits(x, "bamlss") & !inherits(x, "bamlss.frame"))
     stop("x is not a 'bamlss' object!")
@@ -4570,12 +4572,6 @@ samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE, .
   x <- x$samples
 
   x <- process.chains(x, combine, drop = FALSE)
-
-  if(is.null(model) & is.null(term)) {
-    if(length(x) < 2)
-      x <- x[[1]]
-    return(x)
-  }
 
   snames <- colnames(x[[1]])
   nx <- names(tx)
@@ -4629,6 +4625,20 @@ samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE, .
       rval[[k]] <- as.mcmc(rval[[k]], start = start(x[[k]]), end = end(x[[k]]))
     x <- as.mcmc.list(rval)
   }
+
+  if(!is.null(burnin)) {
+    for(i in seq_along(x)) {
+      x[[i]] <- mcmc(x[[i]][burnin:nrow(x[[i]]), , drop = FALSE], start = burnin)
+    }
+  }
+  if(!is.null(thin)) {
+    iterthin <- as.integer(seq(1, nrow(x[[1]]), by = thin))
+    for(i in seq_along(x)) {
+      x[[i]] <- mcmc(x[[i]][iterthin, , drop = FALSE],
+        start = if(!is.null(burnin)) burnin else 1, thin = thin)
+    }
+  }
+
 
   if(drop & (length(x) < 2))
     x <- x[[1]]
