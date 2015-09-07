@@ -166,14 +166,14 @@ cens_fct <- function(time, mean_cens) {
 
 ## log(time) is the baseline hazard.
 lambda <-  function(time, x) {
-  exp(log(time) + 0.7 * x[1] + sin(x[2]) + sin(time * 2) * x[3])
+  exp(log(time) + 0.7 * x[1] + sin(x[2]))
 }
 
 ## Simulate data with lambda() and cens_fct().
 d <- rSurvTime2(lambda, X, cens_fct, mean_cens = 5)
 
 f <- list(
-  Surv(time, event) ~ s(time) + s(time,by=x3),
+  Surv(time, event) ~ s(time),
   mu ~ s(x1) + s(x2)
 )
 
