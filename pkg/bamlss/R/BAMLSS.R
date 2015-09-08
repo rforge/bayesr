@@ -1689,13 +1689,11 @@ formula_hierarchical <- function(formula)
 ## Transform smooth terms to mixed model representation.
 randomize <- function(x)
 {
-  if(!inherits(x, "bamlss.frame"))
-    stop("object must be a 'bamlss.frame'!")
-  if(is.null(x$x))
-    stop("no 'x' object to randomize in 'bamlss.frame'!")
-
-  vnames <- names(model.frame(x))
-  x <- x$x
+  if(bframe <- inherits(x, "bamlss.frame")) {
+    if(is.null(x$x))
+      stop("no 'x' object to randomize in 'bamlss.frame'!")
+    x <- x$x
+  }
 
   rand_fun <- function(x)
   {
@@ -1703,7 +1701,10 @@ randomize <- function(x)
       for(j in 1:m) {
         if(!inherits(x$smooth.construct[[j]], "no.mgcv")) {
           if(is.null(x$smooth.construct[[j]]$rand) & is.null(x$smooth.construct[[j]]$Xf)) {
-            tmp <- smooth2random(x$smooth.construct[[j]], vnames, type = 2)
+            vnames <- x$smooth.construct[[j]]$term
+            if(x$smooth.construct[[j]]$by != "NA")
+              vnames <- c(vnames, x$smooth.construct[[j]]$by)
+            tmp <- smooth2random(x$smooth.construct[[j]], vnames = vnames, type = 2)
             if(is.null(x$smooth.construct[[j]]$xt$nolin))
               x$smooth.construct[[j]]$Xf <- tmp$Xf
 #          if(inherits(x$smooth.construct[[j]], "random.effect")) {
@@ -1712,16 +1713,15 @@ randomize <- function(x)
 #            tmp$trans.D <- rep(1, ncol(tmp$rand$Xr))
 #            tmp$trans.U <- diag(1, ncol(tmp$rand$Xr))
 #          }
-            x$smooth.construct[[j]]$Xnore <- x$smooth.construct[[j]]$X
-            x$smooth.construct[[j]]$X <- tmp$rand$Xr
+            x$smooth.construct[[j]]$rand <- tmp$rand
             x$smooth.construct[[j]]$trans.D <- tmp$trans.D
             x$smooth.construct[[j]]$trans.U <- tmp$trans.U
             if(!is.null(x$smooth.construct[[j]]$state$parameters)) {
-              g2 <- get.par(x$smooth.construct[[j]]$state$parameters, "g")
+              b2 <- get.par(x$smooth.construct[[j]]$state$parameters, "b")
               if(!is.null(x$smooth.construct[[j]]$trans.U))
-                g2 <- solve(x$smooth.construct[[j]]$trans.U) %*% g2
-              g2 <- drop(g2 / x$smooth.construct[[j]]$trans.D)
-              x$smooth.construct[[j]]$state$parameters <- set.par(x$smooth.construct[[j]]$state$parameters, g2, "g")
+                b2 <- solve(x$smooth.construct[[j]]$trans.U) %*% b2
+              b2 <- drop(b2 / x$smooth.construct[[j]]$trans.D)
+              x$smooth.construct[[j]]$state$parameters <- set.par(x$smooth.construct[[j]]$state$parameters, b2, "b")
             }
           }
         }
@@ -1737,7 +1737,12 @@ randomize <- function(x)
         x[[j]][[i]] <- rand_fun(x[[j]][[i]])
     } else x[[j]] <- rand_fun(x[[j]])
   }
-  return(list("x" = x))
+ 
+  if(bframe) {
+    return(list("x" = x))
+  } else {
+    return(x)
+  }
 }
 
 

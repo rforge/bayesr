@@ -186,13 +186,7 @@ b <- bamlss(f, family = "cox", data = d, nu = 0.5, subdivisions = 50, cores = 4,
 
 
 ## JAGS.
-if(FALSE) {
-  sm <- setupJAGS(bf)
-  samps <- samplerJAGS(sm)
-  f <- list(num ~ s(x1) + s(x2) + s(x3))
-  bf <- bamlss.frame(f, data = GAMart)
-  bf <- bfit0(bf)
-  sm <- setupJAGS(bf)
-  samps <- samplerJAGS(sm)
-}
+data("GAMart", package = "R2BayesX")
+b <- bamlss(num|sigma ~ s(x1) + s(x2) + x3 + id | s(x1) + x2, data = GAMart, transform = randomize, sampler = FALSE)
+samps <- samples(b)
 
