@@ -691,7 +691,7 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
   ## Setup all processing functions.
   foo <- list("transform" = transform, "optimizer" = optimizer, "sampler" = sampler, "results" = results)
   nf <- names(foo)
-  default_fun <- c("no.transform", "bfit", "GMCMC", "results.bamlss.default")
+  default_fun <- c("bamlss.setup", "bfit", "GMCMC", "results.bamlss.default")
   functions <- list()
   for(j in 1:length(foo)) {
     if(is.null(foo[[j]]))
@@ -775,8 +775,11 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
 }
 
 
-## No transform function.
-no.transform <- TRUE
+## Basic engine setup transformer.
+bamlss.setup <- function(x, ...)
+{
+  list("x" = bamlss.engine.setup(x$x, ...))
+}
 
 ## family extractor.
 family.bamlss <- family.bamlss.frame <- function(object, ...)
@@ -795,89 +798,6 @@ family.bamlss <- family.bamlss.frame <- function(object, ...)
 #### -----------------------------------------------------------------------------------------------
 ## Could be interesting: http://people.duke.edu/~neelo003/r/
 ##                       http://www.life.illinois.edu/dietze/Lectures2012/
-xreg <- function(formula, family = gaussian.bamlss, data = NULL, knots = NULL,
-  weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
-  reference = NULL, parse.input = bamlss.frame, transform = transformJAGS,
-  setup = setupJAGS, engine = samplerJAGS, results = resultsJAGS,
-  cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, grid = 100, ...)
-{
-  ## The environment.
-  ef <- environment(if(is.list(formula)) formula[[1]] else formula)
-
-  ## Setup all processing functions.
-  if(is.null(transform))
-    transform <- function(x) { x }
-  foo <- list("transform" = transform, "setup" = setup, "engine" = engine, "results" = results)
-  nf <- names(foo)
-  default_fun <- c("randomize", "setupJAGS", "samplerJAGS", "resultsJAGS")
-  functions <- list()
-  for(j in 1:length(foo)) {
-    if(is.list(foo[[j]])) {
-      args <- foo[[j]]
-      fun <- default_fun[j]
-      functions[[j]] <- function(x, ...) {
-        args <- c(args, list(...))
-        args$x <- x
-        do.call(fun, args)
-      }
-    } else functions[[j]] <- foo[[j]]
-    if(!is.function(functions[[j]])) {
-      if(!is.logical(functions[[j]]))
-        stop(paste("argument", nf[j], "is not a function!"))
-    }
-  }
-  names(functions) <- names(foo)
-  functions$parse.input <- if(!is.null(parse.input)) {
-    stopifnot(is.function(parse.input))
-    deparse(substitute(parse.input), backtick = TRUE, width.cutoff = 500)
-  } else "bamlss.frame"
-
-  ## Parse input.
-  pm <- match.call(expand.dots = TRUE)
-  pm$parse.input <- pm$setup <- pm$samples <- pm$results <- NULL
-  pm[[1]] <- as.name(functions$parse.input)
-  pm <- eval(pm, parent.frame())
-  attr(pm, "environment") <- new.env(parent = ef)
-
-  ## Transform inputs.
-  pm <- functions$transform(pm)
-
-  ## Sampling setup.
-  if(is.logical(functions$setup)) {
-    sc <- FALSE
-  } else {
-    sc <- TRUE
-    ms <- functions$setup(pm)
-  }
-
-  ## Start sampling.
-  if(is.null(cores)) {
-    so <- functions$engine(if(sc) ms else pm)
-  } else {
-    require("parallel")
-    parallel_fun <- function(j) {
-      if(j > 1 & !is.null(sleep)) Sys.sleep(sleep)
-      functions$engine(if(sc) ms else pm)
-    }
-    so <- mclapply(1:cores, parallel_fun, mc.cores = cores)
-  }
-
-  ## Combine samples.
-  if(combine)
-    so <- process.chains(so)
-
-  ## Compute results.
-  rval <- functions$results(pm, so)
-  rm(so)
-
-  ## Save the model frame?
-  if(!model)
-    rval$model.frame <- NULL
-
-  rval
-}
-
-
 #########################
 ## (2) Engine stacker. ##
 #########################

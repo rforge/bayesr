@@ -418,21 +418,36 @@ assign.df <- function(x, df) {
     return(x)
   df <- if(is.null(x$xt$df)) df else x$xt$df
   if(is.null(df))
-    df <- ceiling(length(get.par(x$state$parameters, "b")) / 2)
-  if(length(tau2) > 1)
-    return(x)
+    df <- ceiling(ncol(x$X) * 0.5)
   if(df > ncol(x$X))
     df <- ncol(x$X)
   if(df < 1)
     df <- 1
   XX <- crossprod(x$X)
-  objfun <- function(tau2) {
-    edf <- sum(diag(XX %*% matrix_inv(XX + 1 / tau2 * x$S[[1]])))
-    return((df - edf)^2)
+  if(length(tau2) > 1) {
+    df.part <- df / length(tau2)
+    for(j in seq_along(tau2)) {
+      objfun <- function(val) {
+        tau2[j] <- val
+        S <- 0
+        for(i in seq_along(x$S))
+          S <- S + 1 / tau2[i] * x$S[[i]]
+        edf <- sum(diag(XX %*% matrix_inv(XX + S)))
+        return((df - edf)^2)
+      }
+      opt <- try(optimize(objfun, c(.Machine$double.eps^0.25, 1e+10))$minimum, silent = TRUE)
+      if(!inherits(opt, "try-error"))
+        tau2[j] <- opt
+    }
+  } else {
+    objfun <- function(tau2) {
+      edf <- sum(diag(XX %*% matrix_inv(XX + 1 / tau2 * x$S[[1]])))
+      return((df - edf)^2)
+    }
+    tau2 <- try(optimize(objfun, c(.Machine$double.eps^0.25, 1e+10))$minimum, silent = TRUE)
+    if(inherits(tau2, "try-error"))
+      return(x)
   }
-  tau2 <- try(optimize(objfun, c(.Machine$double.eps^0.25, 1e+10))$minimum, silent = TRUE)
-  if(inherits(tau2, "try-error"))
-    return(x)
   x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
   x$state$edf <- df
   return(x)
