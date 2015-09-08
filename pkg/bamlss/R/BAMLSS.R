@@ -4163,12 +4163,6 @@ get_sterms_labels <- function(x, specials = NULL)
 }
 
 
-list2mat <- function(x)
-{
-  do.call("cbind", x)
-}
-
-
 ## Process results with samples and bamlss.frame.
 results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 100, nsamps = NULL,
   burnin = NULL, thin = NULL, ...)
