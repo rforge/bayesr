@@ -11,8 +11,8 @@ cox.bamlss <- function(...)
 
   rval <- list(
     "family" = "cox",
-    "names" = c("lambda", "mu"),
-    "links" = c(lambda = "log", mu = "identity"),
+    "names" = c("lambda", "gamma"),
+    "links" = c(lambda = "log", gamma = "identity"),
     "transform" = function(x, ...) {
       surv.transform(x = x$x, y = x$y, data = model.frame(x), is.cox = TRUE, ...)
     },
@@ -22,7 +22,7 @@ cox.bamlss <- function(...)
       n <- attr(y, "subdivisions")
       eeta <- exp(eta_Surv_timegrid)
       int <- attr(y, "width") * (0.5 * (eeta[, 1] + eeta[, n]) + apply(eeta[, 2:(n - 1)], 1, sum))
-      ll <- (eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int
+      ll <- (eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int
       sum(ll)
     }
   )
@@ -79,7 +79,7 @@ cox.mode <- function(x, y, weights, offset,
       eeta <- exp(eta_timegrid)
 
       ## Compute gradient and hessian integrals.
-      int <- survint(X, eeta, width, exp(eta$mu))
+      int <- survint(X, eeta, width, exp(eta$gamma))
       xgrad <- drop(t(y[, "status"]) %*% x$lambda$smooth.construct[[sj]]$XT - int$grad)
       xgrad <- xgrad + x$lambda$smooth.construct[[sj]]$grad(score = NULL, x$lambda$smooth.construct[[sj]]$state$parameters, full = FALSE)
       xhess <- int$hess + x$lambda$smooth.construct[[sj]]$hess(score = NULL, x$lambda$smooth.construct[[sj]]$state$parameters, full = FALSE)
@@ -112,49 +112,49 @@ cox.mode <- function(x, y, weights, offset,
     ##########################################
     ## Cycle through time-independent part. ##
     ##########################################
-    for(sj in seq_along(x$mu$smooth.construct)) {
+    for(sj in seq_along(x$gamma$smooth.construct)) {
       ## Compute weights.
-      weights <- exp(eta$mu) * int
+      weights <- exp(eta$gamma) * int
 
       ## Compute score.
-      score <- y[, "status"] - exp(eta$mu) * int
+      score <- y[, "status"] - exp(eta$gamma) * int
 
       ## Compute working observations.
-      z <- eta$mu + 1 / weights * score
+      z <- eta$gamma + 1 / weights * score
 
       ## Compute partial predictor.
-      eta$mu <- eta$mu - fitted(x$mu$smooth.construct[[sj]]$state)
+      eta$gamma <- eta$gamma - fitted(x$gamma$smooth.construct[[sj]]$state)
 
       ## Compute reduced residuals.
-      e <- z - eta$mu
-      xbin.fun(x$mu$smooth.construct[[sj]]$binning$sorted.index, weights, e,
-        x$mu$smooth.construct[[sj]]$weights, x$mu$smooth.construct[[sj]]$rres,
-        x$mu$smooth.construct[[sj]]$binning$order)
+      e <- z - eta$gamma
+      xbin.fun(x$gamma$smooth.construct[[sj]]$binning$sorted.index, weights, e,
+        x$gamma$smooth.construct[[sj]]$weights, x$gamma$smooth.construct[[sj]]$rres,
+        x$gamma$smooth.construct[[sj]]$binning$order)
 
       ## Compute mean and precision.
-      XWX <- crossprod(x$mu$smooth.construct[[sj]]$X, x$mu$smooth.construct[[sj]]$X * x$mu$smooth.construct[[sj]]$weights)
-      if(x$mu$smooth.construct[[sj]]$fixed) {
+      XWX <- crossprod(x$gamma$smooth.construct[[sj]]$X, x$gamma$smooth.construct[[sj]]$X * x$gamma$smooth.construct[[sj]]$weights)
+      if(x$gamma$smooth.construct[[sj]]$fixed) {
         P <- matrix_inv(XWX)
       } else {
         S <- 0
-        tau2 <- get.state(x$mu$smooth.construct[[sj]], "tau2")
-        for(j in seq_along(x$mu$smooth.construct[[sj]]$S))
-          S <- S + 1 / tau2[j] * x$mu$smooth.construct[[sj]]$S[[j]]
+        tau2 <- get.state(x$gamma$smooth.construct[[sj]], "tau2")
+        for(j in seq_along(x$gamma$smooth.construct[[sj]]$S))
+          S <- S + 1 / tau2[j] * x$gamma$smooth.construct[[sj]]$S[[j]]
         P <- matrix_inv(XWX + S)
       }
-      g <- drop(P %*% crossprod(x$mu$smooth.construct[[sj]]$X, x$mu$smooth.construct[[sj]]$rres))
-      x$mu$smooth.construct[[sj]]$state$parameters <- set.par(x$mu$smooth.construct[[sj]]$state$parameters, g, "b")
+      g <- drop(P %*% crossprod(x$gamma$smooth.construct[[sj]]$X, x$gamma$smooth.construct[[sj]]$rres))
+      x$gamma$smooth.construct[[sj]]$state$parameters <- set.par(x$gamma$smooth.construct[[sj]]$state$parameters, g, "b")
 
       ## Compute fitted values.
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) {
-        x$mu$smooth.construct[[sj]]$state$parameters <- set.par(x$mu$smooth.construct[[sj]]$state$parameters,
-          rep(0, length(x$mu$smooth.construct[[sj]]$state$g)), "b")
+        x$gamma$smooth.construct[[sj]]$state$parameters <- set.par(x$gamma$smooth.construct[[sj]]$state$parameters,
+          rep(0, length(x$gamma$smooth.construct[[sj]]$state$g)), "b")
       }
-      x$mu$smooth.construct[[sj]]$state$fitted.values <- x$mu$smooth.construct[[sj]]$fit.fun(x$mu$smooth.construct[[sj]]$X,
-        get.state(x$mu$smooth.construct[[sj]], "b"))
+      x$gamma$smooth.construct[[sj]]$state$fitted.values <- x$gamma$smooth.construct[[sj]]$fit.fun(x$gamma$smooth.construct[[sj]]$X,
+        get.state(x$gamma$smooth.construct[[sj]], "b"))
 
       ## Update additive predictor.
-      eta$mu <- eta$mu + fitted(x$mu$smooth.construct[[sj]]$state)
+      eta$gamma <- eta$gamma + fitted(x$gamma$smooth.construct[[sj]]$state)
     }
 
     eps0 <- do.call("cbind", eta)
@@ -162,7 +162,7 @@ cox.mode <- function(x, y, weights, offset,
     if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
 
     if(verbose) {
-      logLik <- sum((eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int, na.rm = TRUE)
+      logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
       logPost <- as.numeric(logLik + get.log.prior(x))
       cat("\r")
       vtxt <- paste(
@@ -182,7 +182,7 @@ cox.mode <- function(x, y, weights, offset,
 
   if(verbose) cat("\n")
 
-  logLik <- sum((eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int, na.rm = TRUE)
+  logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
   logPost <- as.numeric(logLik + get.log.prior(x))
 
   return(list("fitted.values" = eta, "parameters" = get.all.par(x),
@@ -305,28 +305,28 @@ cox.mcmc <- function(x, y, start, weights, offset,
     ##########################################
     ## Cycle through time-independent part. ##
     ##########################################
-    for(sj in names(x$mu$smooth.construct)) {
-      p.state <- propose_surv_tc(x$mu$smooth.construct[[sj]], y, eta, int)
+    for(sj in names(x$gamma$smooth.construct)) {
+      p.state <- propose_surv_tc(x$gamma$smooth.construct[[sj]], y, eta, int)
 
       ## If accepted, set current state to proposed state.
       accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
 
       if(accepted) {
-        eta$mu <- eta$mu - fitted(x$mu$smooth.construct[[sj]]$state) + fitted(p.state)
-        x$mu$smooth.construct[[sj]]$state <- p.state 
+        eta$gamma <- eta$gamma - fitted(x$gamma$smooth.construct[[sj]]$state) + fitted(p.state)
+        x$gamma$smooth.construct[[sj]]$state <- p.state 
       }
 
       ## Save the samples and acceptance.
       if(save) {
-        samps$mu[[sj]]$samples[js, ] <- x$mu$smooth.construct[[sj]]$state$parameters
-        samps$mu[[sj]]$edf[js] <- x$mu$smooth.construct[[sj]]$state$edf
-        samps$mu[[sj]]$alpha[js] <- foo(p.state$alpha)
-        samps$mu[[sj]]$accepted[js] <- accepted
+        samps$gamma[[sj]]$samples[js, ] <- x$gamma$smooth.construct[[sj]]$state$parameters
+        samps$gamma[[sj]]$edf[js] <- x$gamma$smooth.construct[[sj]]$state$edf
+        samps$gamma[[sj]]$alpha[js] <- foo(p.state$alpha)
+        samps$gamma[[sj]]$accepted[js] <- accepted
       }
     }
 
     if(save) {
-      logLik.samps[js] <- sum((eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int, na.rm = TRUE)
+      logLik.samps[js] <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
       logPost.samps[js] <- as.numeric(logLik.samps[js] + get.log.prior(x))
     }
 
@@ -367,11 +367,11 @@ propose_surv_td <- function(x, y, eta, eta_timegrid, width, sub, nu)
 
   ## Old logLik and prior.
   int <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
-  pibeta <- sum((eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int, na.rm = TRUE)
+  pibeta <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
   p1 <- x$prior(x$state$parameters)
 
   ## Compute gradient and hessian integrals.
-  int <- survint(X, eeta, width, exp(eta$mu))
+  int <- survint(X, eeta, width, exp(eta$gamma))
   xgrad <- drop(t(y[, "status"]) %*% x$XT - int$grad)
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
@@ -406,10 +406,10 @@ propose_surv_td <- function(x, y, eta, eta_timegrid, width, sub, nu)
   ## New logLik.
   eeta <- exp(eta_timegrid)
   int <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
-  pibetaprop <- sum((eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int, na.rm = TRUE)
+  pibetaprop <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
 
   ## Prior prob.
-  int <- survint(X, eeta, width, exp(eta$mu))
+  int <- survint(X, eeta, width, exp(eta$gamma))
   xgrad <- drop(t(y[, "status"]) %*% x$XT - int$grad)
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
@@ -445,20 +445,20 @@ propose_surv_td <- function(x, y, eta, eta_timegrid, width, sub, nu)
 propose_surv_tc <- function(x, y, eta, int)
 {
   ## Compute weights.
-  weights <- exp(eta$mu) * int
+  weights <- exp(eta$gamma) * int
 
   ## Compute score.
-  score <- y[, "status"] - exp(eta$mu) * int
+  score <- y[, "status"] - exp(eta$gamma) * int
 
   ## Compute working observations.
-  z <- eta$mu + 1 / weights * score
+  z <- eta$gamma + 1 / weights * score
 
   ## Compute old log likelihood and old log coefficients prior.
-  pibeta <- sum((eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int, na.rm = TRUE)
+  pibeta <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
   p1 <- x$prior(x$state$parameters)
 
   ## Compute partial predictor.
-  eta2 <- eta$mu <- eta$mu - fitted(x$state)
+  eta2 <- eta$gamma <- eta$gamma - fitted(x$state)
 
   ## Compute reduced residuals.
   e <- z - eta2
@@ -498,19 +498,19 @@ propose_surv_tc <- function(x, y, eta, int)
   x$state$fitted.values <- x$fit.fun(x$X, g)
 
   ## Set up new predictor.
-  eta$mu <- eta$mu + x$state$fitted.values
+  eta$gamma <- eta$gamma + x$state$fitted.values
 
   ## Compute new log likelihood.
-  pibetaprop <- sum((eta$lambda + eta$mu) * y[, "status"] - exp(eta$mu) * int, na.rm = TRUE)
+  pibetaprop <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
 
   ## Compute weights.
-  weights <- exp(eta$mu) * int
+  weights <- exp(eta$gamma) * int
 
   ## Compute score.
-  score <- y[, "status"] - exp(eta$mu) * int
+  score <- y[, "status"] - exp(eta$gamma) * int
 
   ## Compute working observations.
-  z <- eta$mu + 1 / weights * score
+  z <- eta$gamma + 1 / weights * score
 
   ## Compute reduced residuals.
   e <- z - eta2
