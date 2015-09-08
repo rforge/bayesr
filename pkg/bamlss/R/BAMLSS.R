@@ -758,7 +758,7 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
 
   ## Compute results.
   if(is.function(functions$results))
-    bf$results <- functions$results(bf, ...)
+    bf$results <- functions$results(bf, bamlss = TRUE,  ...)
 
   ## Save the model frame?
   if(!model)
@@ -4185,6 +4185,9 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
 
   what <- match.arg(what)
   if(!is.null(x$samples) & what == "samples") {
+    if(!is.null(list(...)$bamlss)) {
+      burnin = NULL; thin <- NULL
+    }
     samps <- samples(x, burnin = burnin, thin = thin)
     if(!is.null(nsamps)) {
       i <- seq(1, nrow(samps), length = nsamps)
