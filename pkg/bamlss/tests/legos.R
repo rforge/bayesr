@@ -187,11 +187,9 @@ b <- bamlss(f, family = "cox", data = d, nu = 0.5, subdivisions = 50, cores = 4,
 
 ## JAGS.
 data("GAMart", package = "R2BayesX")
-b <- bamlss(num|sigma ~ s(x1) + s(x2) + x3 + id | s(x1) + x2, data = GAMart, transform = randomize, sampler = FALSE)
-samps <- samples(b)
+b <- bamlss(num|sigma ~ s(x1) + s(x2) + x3 + id | s(x1) + x2, data = GAMart, sampler = JAGS)
 
 data("marital.nz", package = "VGAM")
-
 b <- bamlss(mstatus ~ s(age), data = marital.nz,
   family = "multinomial", reference = "Married/Partnered",
   sampler = JAGS, cores = 4)
