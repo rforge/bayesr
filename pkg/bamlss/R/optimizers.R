@@ -1393,6 +1393,128 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
 }
 
 
+## 2nd booster.
+boost99 <- function(x, y, family, weights = NULL, offset = NULL,
+  criterion = c("AICc", "BIC", "AIC"),
+  nu = 0.1, df = 4, maxit = 100, mstop = NULL, best = TRUE,
+  verbose = TRUE, digits = 4,
+  eps = .Machine$double.eps^0.25, plot = TRUE, ...)
+{
+  if(!is.null(mstop))
+    maxit <- mstop
+
+  if(is.null(attr(x, "bamlss.engine.setup")))
+    x <- bamlss.engine.setup(x, ...)
+
+  nx <- family$names
+  if(!all(nx %in% names(x)))
+    stop("parameter names mismatch with family names!")
+  criterion <- match.arg(criterion)
+
+  np <- length(nx)
+  y <- y[[1]]
+  nobs <- if(is.null(dim(y))) length(y) else nrow(y)
+
+  ## Setup boosting structure, i.e, all parametric
+  ## terms get an entry in $smooth.construct object.
+  ## Intercepts are initalized.
+  x <- boost.transform(x, y, df, family, weights, offset, maxit, eps, ...)
+
+
+  ## Create a list() that saves the states for
+  ## all parameters and model terms.
+  states <- make.state.list(x)
+
+  ## Term selector help vectors.
+  select <- rep(NA, length = length(nx))
+  names(select) <- nx
+  loglik <- select
+
+  ## Save rss in list().
+  rss <- make.state.list(x, type = 2)
+
+
+  ## Extract actual predictor.
+  eta <- get.eta(x)
+
+  ## Start boosting.
+  eps0 <- 1; iter <- 1
+  save.ll <- NULL
+  ll <- family$loglik(y, family$map2par(eta))
+  while(iter <= maxit) {
+    eta0 <- eta
+
+    ## Cycle through all parameters
+    for(i in nx) {
+      peta <- family$map2par(eta)
+
+      ## Actual gradient.
+      grad <- family$score[[i]](y, peta, id = i)
+
+      ## Fit to gradient.
+      for(j in names(x[[i]]$smooth.construct)) {
+        ## Get updated parameters.
+        states[[i]][[j]] <- boost_fit(x[[i]]$smooth.construct[[j]], grad, nu)
+
+        ## Get rss.
+        rss[[i]][j] <- states[[i]][[j]]$rss
+      }
+
+      ## Which one is best?
+      select[i] <- which.min(rss[[i]])
+
+      ## Compute likelihood contribution.
+      eta[[i]] <- eta[[i]] + fitted(states[[i]][[j]])
+      loglik[i] <- -1 * (ll - family$loglik(y, family$map2par(eta)))
+      eta[[i]] <- eta0[[i]]
+    }
+
+    i <- which.max(loglik)
+
+    ## Which term to update.
+    take <- c(nx[i], names(rss[[i]])[select[i]])
+
+    ## Update selected base learner.
+    eta[[take[1]]] <- eta[[take[1]]] + fitted(states[[take[1]]][[take[2]]])
+
+    ## Write to x.
+    x[[take[1]]]$smooth.construct[[take[2]]]$state <- increase(x[[take[1]]]$smooth.construct[[take[2]]]$state, states[[take[1]]][[take[2]]])
+    x[[take[1]]]$smooth.construct[[take[2]]]$selected[iter] <- 1
+    x[[take[1]]]$smooth.construct[[take[2]]]$loglik[iter] <- loglik[i]
+
+    eps0 <- do.call("cbind", eta)
+    eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
+    if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
+
+    peta <- family$map2par(eta)
+    ll <- family$loglik(y, peta)
+
+    save.ll <- c(save.ll, ll)
+
+    if(verbose) {
+      cat("\r")
+      vtxt <- paste(
+        " logLik ", fmt(ll, width = 8, digits = digits),
+        " eps ", fmt(eps0, width = 6, digits = digits + 2),
+        " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
+      cat(vtxt)
+
+      if(.Platform$OS.type != "unix") flush.console()
+    }
+
+    iter <- iter + 1
+  }
+
+  if(verbose) cat("\n")
+
+  bsum <- boost.summary(x, maxit, "logLik", save.ll)
+  x <- boost.retransform(x)
+
+  list("parameters" = get.all.par(x), "fitted.values" = get.eta(x), "boost.summary" = bsum)
+}
+
+
+
 ## Boost setup.
 boost.transform <- function(x, y, df, family, weights = NULL, offset = NULL,
   maxit = 100, eps = .Machine$double.eps^0.25, ...)
@@ -1422,6 +1544,12 @@ boost.transform <- function(x, y, df, family, weights = NULL, offset = NULL,
         model.matrix[[pj]]$label <- cn[pj]
         model.matrix[[pj]]$term <- cn[pj]
         model.matrix[[pj]]$X <- x[[nx[j]]]$smooth.construct[[ii]]$X[, pj, drop = FALSE]
+        if(cn[pj] != "(Intercept)") {
+          mx <- mean(model.matrix[[pj]]$X)
+          sdx <- sd(model.matrix[[pj]]$X)
+          model.matrix[[pj]]$X <- (model.matrix[[pj]]$X - mx) / sdx
+          model.matrix[[pj]]$boost.scale <- list("mean" = mx, "sd" = sdx)
+        }
         model.matrix[[pj]]$binning <- x[[nx[j]]]$smooth.construct[[ii]]$binning
         model.matrix[[pj]]$nobs <- x[[nx[j]]]$smooth.construct[[ii]]$nobs
         model.matrix[[pj]]$fixed <- TRUE
@@ -1485,7 +1613,7 @@ boost.transform <- function(x, y, df, family, weights = NULL, offset = NULL,
 
 ## Simple list() generator for
 ## saving states of model terms.
-make.state.list <- function(x)
+make.state.list <- function(x, type = 1)
 {
   elmts <- c("formula", "fake.formula")
   if(all(elmts %in% names(x))) {
@@ -1496,10 +1624,12 @@ make.state.list <- function(x)
       for(j in names(x$smooth.construct))
         rval[[j]] <- NA
     }
+    if(type > 1)
+      rval <- unlist(rval)
   } else {
     rval <- list()
     for(j in names(x)) {
-      rval[[j]] <- make.state.list(x[[j]])
+      rval[[j]] <- make.state.list(x[[j]], type)
     }
   }
   return(rval)
@@ -1618,6 +1748,37 @@ boost_iwls <- function(x, hess, resids, nu)
   ## Assign degrees of freedom.
   x$state$edf <- sum(diag(XWX %*% P))
   attr(x$state$parameters, "edf") <- x$state$edf
+
+  return(x$state)
+}
+
+
+## Boosting gradient fit.
+boost_fit <- function(x, y, nu)
+{
+  ## Compute reduced residuals.
+  xbin.fun(x$binning$sorted.index, rep(1, length = length(y)), y, x$weights, x$rres, x$binning$order)
+
+  ## Compute mean and precision.
+  XW <- x$X * x$weights
+  XWX <- crossprod(x$X, XW)
+  if(x$fixed) {
+    P <- matrix_inv(XWX)
+  } else {
+    S <- 0
+    tau2 <- get.state(x, "tau2")
+    for(j in seq_along(x$S))
+      S <- S + 1 / tau2[j] * x$S[[j]]
+    P <- matrix_inv(XWX + S)
+  }
+
+  ## New parameters.
+  g <- nu * drop(P %*% crossprod(x$X, x$rres))
+
+  ## Finalize.
+  x$state$parameters <- set.par(x$state$parameters, g, "b")
+  x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
+  x$state$rss <- sum((x$state$fitted.values - y)^2)
 
   return(x$state)
 }

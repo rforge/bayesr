@@ -3263,7 +3263,7 @@ plot.bamlss.results <- function(x, model = NULL, term = NULL,
         lim <- c("ylim", "zlim")[(attr(x[[i]]$s.effects[[e]], "specs")$dim > 1) * 1 + 1]
         setlim <- FALSE
         if(!is.null(ylim) & is.null(args[[lim]])) {
-          args[[lim]]<- ylim
+          args[[lim]] <- ylim
           setlim <- TRUE
         }
         args$x <- x[[i]]$s.effects[[e]]
@@ -3354,11 +3354,21 @@ plot.bamlss.effect.default <- function(x, ...) {
   limNULL <- FALSE
   if(is.null(args[[lim]])) {
     limNULL <- TRUE
-    args[[lim]] <- range(x[, c("2.5%", "97.5%")], na.rm = TRUE)
+    if(all(c("2.5%", "97.5%") %in% names(x)))
+      args[[lim]] <- range(x[, c("2.5%", "97.5%")], na.rm = TRUE)
+    else {
+      if(all("50%" %in% names(x))) {
+        args[[lim]] <- range(x[, "50%"], na.rm = TRUE)
+      }
+    }
     if(!is.null(args$residuals)) {
       if(args$residuals & !is.null(attr(x, "partial.resids")))
         args[[lim]] <- range(c(args[[lim]], attr(x, "partial.resids")[, -1]), na.rm = TRUE)
     }
+  }
+  if((length(unique(args[[lim]])) < 2) & lim == "zlim") {
+    add <- if(args[[lim]][1] == 0) 0.01 else 0.01 * abs(args[[lim]][1])
+    args[[lim]] <- c(args[[lim]][1] - add, args[[lim]][1] + add)
   }
   if(!is.null(args$shift))
     args[[lim]] <- args[[lim]] + args$shift
