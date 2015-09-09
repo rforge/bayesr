@@ -1255,7 +1255,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   if(is.null(attr(x, "bamlss.engine.setup")))
     x <- bamlss.engine.setup(x, ...)
 
-  nx <- family$names[1:2]
+  nx <- family$names
   if(!all(nx %in% names(x)))
     stop("parameter names mismatch with family names!")
   criterion <- match.arg(criterion)
@@ -1292,10 +1292,10 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       peta <- family$map2par(eta)
 
       ## Compute weights.
-      hess <- family$hess[[i]](y, peta)
+      hess <- family$hess[[i]](y, peta, id = i)
 
       ## Score.
-      score <- family$score[[i]](y, peta)
+      score <- family$score[[i]](y, peta, id = i)
 
       ## Compute working observations.
       z <- eta[[i]] + 1 / hess * score
@@ -1367,6 +1367,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     cat("\n")
     cat(criterion, "=", save.ic[mstop], "-> at mstop =", mstop, "\n---\n")
   }
+
   labels <- NULL
   ll.contrib <- NULL
   bsum <- lmat <- list()
@@ -1673,38 +1674,43 @@ increase <- function(state0, state1)
 
 
 ## Smallish summary function.
-print.boost.summary <- function(object, plot = TRUE, ...)
+print.boost.summary <- function(object, summary = TRUE, plot = FALSE, ...)
 {
-  bs <- object$boost.summary
-  np <- length(bs$summary)
-
-  cat("\n")
-  cat(bs$criterion, "=", bs$ic[bs$mstop], "-> at mstop =", bs$mstop, "\n---\n")
-  for(j in 1:np) {
-    if(length(bs$summary[[j]]) < 2) {
-      print(round(bs$summary[[j]], digits = 4))
-    } else printCoefmat(bs$summary[[j]], digits = 4)
-    if(j != np)
-      cat("---\n")
+  if(summary) {
+    np <- length(object$summary)
+    cat("\n")
+    cat(object$criterion, "=", object$ic[bs$mstop], "-> at mstop =", object$mstop, "\n---\n")
+    for(j in 1:np) {
+      if(length(object$summary[[j]]) < 2) {
+        print(round(object$summary[[j]], digits = 4))
+      } else printCoefmat(object$summary[[j]], digits = 4)
+      if(j != np)
+        cat("---\n")
+    }
+    cat("\n")
   }
-  cat("\n")
 
   if(plot) {
     op <- par(no.readonly = TRUE)
     on.exit(par(op))
     par(mfrow = c(1, 2), mar = c(5.1, 4.1, 2.1, 2.1))
-    plot(bs$ic, type = "l", xlab = "Iteration", ylab = bs$criterion)
-    abline(v = bs$mstop, lwd = 3, col = "lightgray")
-    axis(3, at = bs$mstop, labels = paste("mstop =", bs$mstop))
+    plot(object$ic, type = "l", xlab = "Iteration", ylab = object$criterion)
+    abline(v = object$mstop, lwd = 3, col = "lightgray")
+    axis(3, at = object$mstop, labels = paste("mstop =", object$mstop))
     par(mar = c(5.1, 4.1, 2.1, 10.1))
-    matplot(1:nrow(bs$loglik), bs$loglik, type = "l", lty = 1,
+    matplot(1:nrow(object$loglik), object$loglik, type = "l", lty = 1,
       xlab = "Iteration", ylab = "LogLik contribution", col = "black")
-    abline(v = bs$mstop, lwd = 3, col = "lightgray")
-    axis(4, at = bs$loglik[nrow(bs$loglik), ], labels = colnames(bs$loglik), las = 1)
-    axis(3, at = bs$mstop, labels = paste("mstop =", bs$mstop))
+    abline(v = object$mstop, lwd = 3, col = "lightgray")
+    axis(4, at = object$loglik[nrow(object$loglik), ], labels = colnames(object$loglik), las = 1)
+    axis(3, at = object$mstop, labels = paste("mstop =", object$mstop))
   }
 
   return(invisible(bs))
+}
+
+plot.boost.summary <- function(x, ...)
+{
+  print.boost.summary(x, summary = FALSE, plot = TRUE) 
 }
 
 

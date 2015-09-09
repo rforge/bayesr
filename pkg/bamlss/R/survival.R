@@ -202,7 +202,7 @@ cox.mcmc <- function(x, y, start, weights, offset,
   nu <- 1
 
   if(!is.null(start))
-    x <- add.starting.values(x, start)
+    x <- set.starting.values(x, start)
 
   ## Names of parameters/predictors.
   nx <- names(x)

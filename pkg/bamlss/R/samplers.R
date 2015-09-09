@@ -33,7 +33,7 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   }
 
   if(!is.null(start))
-    x <- add.starting.values(x, start)
+    x <- set.starting.values(x, start)
 
   if(is.character(propose)) {
     propose <- if(grepl("gmcmc_", propose)) {

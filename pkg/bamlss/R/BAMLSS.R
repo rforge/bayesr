@@ -2955,7 +2955,7 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
 
   ## What should be plotted?
   which.match <- c("effects", "samples", "hist-resid", "qq-resid",
-    "scatter-resid", "scale-resid", "max-acf", "param-samples")
+    "scatter-resid", "scale-resid", "max-acf", "param-samples", "boost.summary")
   if(!is.character(which)) {
     if(any(which > 8L))
       which <- which[which <= 8L]
@@ -3002,6 +3002,11 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
     if(is.null(x$results)) {
       plot(results.bamlss.default(x), model = model, term = term, ...)
     } else plot(x$results, model = model, term = term, ...)
+  }
+
+  if(which == "boost.summary") {
+    if(!is.null(x$boost.summary))
+      plot(x$boost.summary, ...)
   }
 
   return(invisible(NULL))

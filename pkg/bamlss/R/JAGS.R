@@ -517,7 +517,7 @@ JAGS <- function(x, y, family, start = NULL,
   save.all = FALSE, modules = NULL, ...)
 {
   if(!is.null(start))
-    x <- add.starting.values(x, start)
+    x <- set.starting.values(x, start)
   x <- randomize(x)
   ms <- setupJAGS(x, y, family)
   samps <- samplerJAGS(ms, tdir, n.chains, n.adapt,
