@@ -194,3 +194,15 @@ b <- bamlss(mstatus ~ s(age), data = marital.nz,
   family = "multinomial", reference = "Married/Partnered",
   sampler = JAGS, cores = 4)
 
+
+## Boosting.
+data("GAMart", package = "R2BayesX")
+
+f <- list(
+  num ~ x1 + x2 + x3 + s(x1) + s(x2) + s(x3) + id,
+  sigma ~ x1 + x2 + x3 + s(x1) + s(x2) + s(x3) + id
+)
+
+b1 <- bamlss(f, data = GAMart, optimizer = boost, sampler = FALSE)
+b2 <- bamlss(f, data = GAMart, optimizer = boost, sampler = FALSE, best = FALSE)
+

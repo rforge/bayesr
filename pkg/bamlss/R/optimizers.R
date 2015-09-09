@@ -155,7 +155,7 @@ get.state <- function(x, what = NULL) {
     } else {
       if(what %in% "b") {
         p <- x$state$parameters
-        return(p[!grepl("tau", names(p))])
+        return(p[!grepl("tau", names(p)) & !grepl("edf", names(p))])
       } else return(x$state[[what]])
     }
   }
@@ -167,7 +167,7 @@ get.par <- function(x, what = NULL) {
     return(x[grep("tau", names(x))])
   } else {
     if(what %in% "b") {
-      return(x[!grepl("tau", names(x))])
+      return(x[!grepl("tau", names(x)) & !grepl("edf", names(x))])
     } else return(x[what])
   }
 }
@@ -177,7 +177,7 @@ set.par <- function(x, replacement, what) {
     x[grep("tau", names(x))] <- replacement
   } else {
     if(what %in% "b") {
-      x[!grepl("tau", names(x))] <- replacement
+      x[!grepl("tau", names(x)) & !grepl("edf", names(x))] <- replacement
     } else x[what] <- replacement
   }
   x
@@ -519,6 +519,8 @@ get.all.par <- function(x)
               if(is.null(par[[i]][[k]]$s))
                 par[[i]][[k]]$s <- list()
               par[[i]][[k]]$s[[j]] <- x[[i]][[k]]$smooth.construct[[j]]$state$parameters
+              if(!is.null(edf <- x[[i]][[k]]$smooth.construct[[j]]$state$edf))
+                par[[i]][[k]]$s[[j]] <- c(par[[i]][[k]]$s[[j]], "edf" = edf)
             }
           }
         }
@@ -532,6 +534,8 @@ get.all.par <- function(x)
             if(is.null(par[[i]]$s))
               par[[i]]$s <- list()
             par[[i]]$s[[j]] <- x[[i]]$smooth.construct[[j]]$state$parameters
+            if(!is.null(edf <- x[[i]]$smooth.construct[[j]]$state$edf))
+              par[[i]]$s[[j]] <- c(par[[i]]$s[[j]], "edf" = edf)
           }
         }
       }
@@ -903,7 +907,10 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
     x$state$parameters <- set.par(x$state$parameters, rep(0, length(x$state$g)), "b")
   x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
   x$state$edf <- sum(diag(XWX %*% P))
-  x$state$log.prior <- x$prior(x$state$parameters)
+  if(!is.null(x$prior)) {
+    if(is.function(x$prior))
+      x$state$log.prior <- x$prior(x$state$parameters)
+  }
 
   return(x$state)
 }
@@ -1236,7 +1243,8 @@ bfit_cnorm <- function(x, criterion = c("AICc", "BIC", "AIC"),
 
 
 ## Likelihood based boosting.
-boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
+boost <- function(x, y, family, weights = NULL, offset = NULL,
+  criterion = c("AICc", "BIC", "AIC"),
   nu = 1, df = 4, maxit = 100, mstop = NULL, best = TRUE,
   verbose = TRUE, digits = 4,
   eps = .Machine$double.eps^0.25, plot = TRUE, ...)
@@ -1244,113 +1252,33 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   if(!is.null(mstop))
     maxit <- mstop
 
-  criterion <- match.arg(criterion)
+  if(is.null(attr(x, "bamlss.engine.setup")))
+    x <- bamlss.engine.setup(x, ...)
 
-  x <- bamlss.engine.setup(x, criterion = criterion, ...)
-
-  family <- attr(x, "family")
   nx <- family$names[1:2]
   if(!all(nx %in% names(x)))
     stop("parameter names mismatch with family names!")
   criterion <- match.arg(criterion)
 
   np <- length(nx)
-  y <- attr(x, "y.vec")
+  y <- y[[1]]
   nobs <- if(is.null(dim(y))) length(y) else nrow(y)
 
-  ## Initialize select indicator and intercepts.
-  states <- save.model.matrix <- list()
+  ## Setup boosting structure, i.e, all parametric
+  ## terms get an entry in $smooth.construct object.
+  ## Intercepts are initalized.
+  x <- boost.transform(x, y, df, family, weights, offset, maxit, eps, ...)
+
+  ## Create a list() that saves the states for
+  ## all parameters and model terms.
+  states <- make.state.list(x)
+
+  ## Term selector help vectors.
+  select <- unlist(states)
+  term.names <- names(select)
+
+  ## Extract actual predictor.
   eta <- get.eta(x)
-  for(j in 1:np) {
-    states[[j]] <- list()
-    for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-      x[[nx[j]]]$smooth.construct[[sj]] <- assign.df(x[[nx[j]]]$smooth.construct[[sj]], df)
-      if(is.null(x[[nx[j]]]$smooth.construct[[sj]]$sp) & !x[[nx[j]]]$smooth.construct[[sj]]$fixed) {
-        x[[nx[j]]]$smooth.construct[[sj]]$old.optimize <- x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim
-        x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim <- FALSE
-        x[[nx[j]]]$smooth.construct[[sj]]$do.optim <- FALSE
-      }
-      states[[j]][[sj]] <- list()
-    }
-    ii <- sapply(x[[nx[j]]]$smooth.construct, function(x) { inherits(x, "model.matrix") })
-    if(any(ii)) {
-      ii <- which(ii)[1]
-      model.matrix <- list()
-      cn <- colnames(x[[nx[j]]]$smooth.construct[[ii]]$X)
-      g0 <- get.par(x[[nx[j]]]$smooth.construct[[ii]]$state$parameters, "b")
-      for(pj in 1:ncol(x[[nx[j]]]$smooth.construct[[ii]]$X)) {
-        model.matrix[[pj]] <- list()
-        model.matrix[[pj]]$label <- cn[pj]
-        model.matrix[[pj]]$term <- cn[pj]
-        model.matrix[[pj]]$X <- x[[nx[j]]]$smooth.construct[[ii]]$X[, pj, drop = FALSE]
-        model.matrix[[pj]]$xbin.ind <- x[[nx[j]]]$smooth.construct[[ii]]$xbin.ind
-        model.matrix[[pj]]$xbin.sind <- x[[nx[j]]]$smooth.construct[[ii]]$xbin.sind
-        model.matrix[[pj]]$xbin.k <- x[[nx[j]]]$smooth.construct[[ii]]$xbin.k
-        model.matrix[[pj]]$xbin.order <- x[[nx[j]]]$smooth.construct[[ii]]$xbin.order
-        model.matrix[[pj]]$nobs <- x[[nx[j]]]$smooth.construct[[ii]]$nobs
-        model.matrix[[pj]]$fixed <- TRUE
-        model.matrix[[pj]]$weights <- x[[nx[j]]]$smooth.construct[[ii]]$weights
-        model.matrix[[pj]]$rres <- x[[nx[j]]]$smooth.construct[[ii]]$rres
-        model.matrix[[pj]]$fit.fun <- x[[nx[j]]]$smooth.construct[[ii]]$fit.fun
-        model.matrix[[pj]]$state <- list("parameters" = g0[pj])
-        names(model.matrix[[pj]]$state$parameters) <- "g1"
-        model.matrix[[pj]]$state$fitted.values <- drop(model.matrix[[pj]]$X %*% g0[pj])
-        model.matrix[[pj]]$state$edf <- 0
-        model.matrix[[pj]]$state$do.optim <- FALSE
-        model.matrix[[pj]]$fixed <- TRUE
-        model.matrix[[pj]]$is.model.matrix <- TRUE
-        model.matrix[[pj]]$selected <- rep(0, length = maxit)
-        model.matrix[[pj]]$upper <- Inf
-        model.matrix[[pj]]$lower <- -Inf
-        class(model.matrix[[pj]]) <- class(x[[nx[j]]]$smooth.construct[[ii]])
-      }
-      save.model.matrix[[j]] <- x[[nx[j]]]$smooth.construct[[ii]]
-      x[[nx[j]]]$smooth.construct[[ii]] <- NULL
-      x[[nx[j]]]$smooth.construct <- c(model.matrix, x[[nx[j]]]$smooth.construct)
-    }
-  }
-
-  ## Selector help vector.
-  sn <- NULL
-  for(j in 1:np) {
-    for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-      sn <- c(sn, paste(j, sj, sep = "."))
-      x[[nx[j]]]$smooth.construct[[sj]]$selected <- rep(0, length = maxit)
-      x[[nx[j]]]$smooth.construct[[sj]]$loglik <- rep(0, length = maxit)
-      x[[nx[j]]]$smooth.construct[[sj]]$state$edf <- 0
-    }
-  }
-  select <- rep(0, length(sn))
-  names(select) <- sn
-
-  ## Initialize intercepts.
-  eps0 <- eps + 1; iter <- 1
-  while(eps0 > eps & iter < maxit) {
-    eta0 <- eta
-    ## Cycle through all parameters
-    for(j in 1:np) {
-      for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-        if(inherits(x[[nx[j]]]$smooth.construct[[sj]], "model.matrix") & x[[nx[j]]]$smooth.construct[[sj]]$label == "(Intercept)") {
-          ## Get updated parameters.
-          p.state <- bfit_iwls(x[[nx[j]]]$smooth.construct[[sj]],
-            family, y, eta, nx[j], edf = edf)
-
-          ## Update predictor and smooth fit.
-          eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth.construct[[sj]]$state) + fitted(p.state)
-
-          x[[nx[j]]]$smooth.construct[[sj]]$state <- p.state
-        }
-      }
-    }
-
-    eps0 <- do.call("cbind", eta)
-    eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
-    if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
-    iter <- iter + 1
-  }
-
-  ## Initial parameters.
-  parameters <- get.all.par(x)
 
   ## Start boosting.
   eps0 <- 1; iter <- 1
@@ -1360,35 +1288,34 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
     eta0 <- eta
 
     ## Cycle through all parameters
-    for(j in 1:np) {
+    for(i in nx) {
       peta <- family$map2par(eta)
 
       ## Compute weights.
-      weights <- family$hess[[nx[j]]](y, peta)
+      hess <- family$hess[[i]](y, peta)
 
       ## Score.
-      score <- family$score[[nx[j]]](y, peta)
+      score <- family$score[[i]](y, peta)
 
       ## Compute working observations.
-      z <- eta[[nx[j]]] + 1 / weights * score
+      z <- eta[[i]] + 1 / hess * score
 
       ## Residuals.
-      resids <- z - eta[[nx[j]]]
+      resids <- z - eta[[i]]
 
-      for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
+      for(j in names(x[[i]]$smooth.construct)) {
         ## Get updated parameters.
-        states[[j]][[sj]] <- boost0_iwls(x[[nx[j]]]$smooth.construct[[sj]],
-          family, y, weights, resids, nu)
+        states[[i]][[j]] <- boost_iwls(x[[i]]$smooth.construct[[j]], hess, resids, nu)
 
         ## Compute likelihood contribution.
-        eta[[nx[j]]] <- eta[[nx[j]]] + fitted(states[[j]][[sj]])
-        select[paste(j, sj, sep = ".")] <- -1 * (ll - family$loglik(y, family$map2par(eta)))
-        eta[[nx[j]]] <- eta0[[nx[j]]]
+        eta[[i]] <- eta[[i]] + fitted(states[[i]][[j]])
+        select[paste(i, j, sep = ".")] <- -1 * (ll - family$loglik(y, family$map2par(eta)))
+        eta[[i]] <- eta0[[i]]
       }
     }
 
     ## Which term to update.
-    take <- as.integer(strsplit(sn[which.max(select)], ".", fixed = TRUE)[[1]])
+    take <- strsplit(term.names[which.max(select)], ".", fixed = TRUE)[[1]]
 
     ## Update selected base learner.
     eta[[take[1]]] <- eta[[take[1]]] + fitted(states[[take[1]]][[take[2]]])
@@ -1442,33 +1369,33 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   }
   labels <- NULL
   ll.contrib <- NULL
-  bsum <- lmat <- vector(mode = "list", length = np)
-  for(j in 1:np) {
+  bsum <- lmat <- list()
+  for(i in nx) {
     rn <- NULL
-    for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-      x[[nx[j]]]$smooth.construct[[sj]]$state$parameters <- parameters[[j]][[sj]]
-      g <- get.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, "b")
-      if(!is.null(tau2 <- attr(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, "true.tau2"))) {
-        x[[nx[j]]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters,
+    for(j in names(x[[i]]$smooth.construct)) {
+      x[[i]]$smooth.construct[[j]]$state$parameters <- parameters[[i]]$s[[j]]
+      g <- get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "b")
+      if(!is.null(tau2 <- attr(parameters[[i]]$s[[j]], "true.tau2"))) {
+        x[[i]]$smooth.construct[[j]]$state$parameters <- set.par(x[[i]]$smooth.construct[[j]]$state$parameters,
           tau2, "tau2")
       }
-      x[[nx[j]]]$smooth.construct[[sj]]$state$edf <- attr(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, "edf")
-      if(is.null(x[[nx[j]]]$smooth.construct[[sj]]$state$edf))
-        x[[nx[j]]]$smooth.construct[[sj]]$state$edf <- 0
-      labels <- c(labels, paste(x[[nx[j]]]$smooth.construct[[sj]]$label, nx[j], sep = ":"))
-      rn <- c(rn, x[[nx[j]]]$smooth.construct[[sj]]$label)
-      bsum[[j]] <- rbind(bsum[[j]], sum(x[[nx[j]]]$smooth.construct[[sj]]$selected[1:mstop]) / mstop * 100)
-      lmat[[j]] <- rbind(lmat[[j]], sum(x[[nx[j]]]$smooth.construct[[sj]]$loglik[1:mstop]))
-      ll.contrib <- cbind(ll.contrib, cumsum(x[[nx[j]]]$smooth.construct[[sj]]$loglik))
+      x[[i]]$smooth.construct[[j]]$state$edf <- attr(parameters[[i]]$s[[j]], "edf")
+      if(is.null(x[[i]]$smooth.construct[[j]]$state$edf))
+        x[[i]]$smooth.construct[[j]]$state$edf <- 0
+      labels <- c(labels, paste(x[[i]]$smooth.construct[[j]]$label, i, sep = "."))
+      rn <- c(rn, x[[i]]$smooth.construct[[j]]$label)
+      bsum[[i]] <- rbind(bsum[[i]], sum(x[[i]]$smooth.construct[[j]]$selected[1:mstop]) / mstop * 100)
+      lmat[[i]] <- rbind(lmat[[i]], sum(x[[i]]$smooth.construct[[j]]$loglik[1:mstop]))
+      ll.contrib <- cbind(ll.contrib, cumsum(x[[i]]$smooth.construct[[j]]$loglik))
     }
-    if(!is.matrix(bsum[[j]])) bsum[[j]] <- matrix(bsum[[j]], nrow = 1)
-    bsum[[j]] <- cbind(bsum[[j]], lmat[[j]])
-    if(!is.matrix(bsum[[j]])) bsum[[j]] <- matrix(bsum[[j]], nrow = 1)
-    colnames(bsum[[j]]) <- c(paste(nx[j], "% selected"), "LogLik contrib.")
-    rownames(bsum[[j]]) <- rownames(lmat[[j]]) <- rn
-    bsum[[j]] <- bsum[[j]][order(bsum[[j]][, 2], decreasing = TRUE), , drop = FALSE]
+    if(!is.matrix(bsum[[i]])) bsum[[i]] <- matrix(bsum[[i]], nrow = 1)
+    bsum[[i]] <- cbind(bsum[[i]], lmat[[i]])
+    if(!is.matrix(bsum[[i]])) bsum[[i]] <- matrix(bsum[[i]], nrow = 1)
+    colnames(bsum[[i]]) <- c(paste(i, "% selected"), "LogLik contrib.")
+    rownames(bsum[[i]]) <- rownames(lmat[[i]]) <- rn
+    bsum[[i]] <- bsum[[i]][order(bsum[[i]][, 2], decreasing = TRUE), , drop = FALSE]
     if(verbose) {
-      if(length(bsum[[j]]) < 2) print(round(bsum[[j]], digits = 4)) else printCoefmat(bsum[[j]], digits = 4)
+      if(length(bsum[[i]]) < 2) print(round(bsum[[i]], digits = 4)) else printCoefmat(bsum[[i]], digits = 4)
       if(j != np)
         cat("---\n")
     }
@@ -1479,7 +1406,7 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
   names(bsum) <- nx
   bsum <- list("summary" = bsum, "mstop" = mstop, "criterion" = criterion,
     "ic" = save.ic, "loglik" = ll.contrib)
-  assign("boost.summary", bsum, envir = attr(x, "environment"))
+  class(bsum) <- "boost.summary"
 
   if(plot) {
     op <- par(no.readonly = TRUE)
@@ -1496,37 +1423,171 @@ boost0 <- function(x, criterion = c("AICc", "BIC", "AIC"),
     axis(3, at = mstop, labels = paste("mstop =", mstop))
   }
 
-  ## Collect model.matrix effects.
+  x <- boost.retransform(x)
+
+  list("parameters" = get.all.par(x), "fitted.values" = get.eta(x), "boost.summary" = bsum)
+}
+
+
+## Boost setup.
+boost.transform <- function(x, y, df, family, weights = NULL, offset = NULL,
+  maxit = 100, eps = .Machine$double.eps^0.25, ...)
+{
+  np <- length(x)
+  nx <- names(x)
+
+  ## Initialize select indicator and intercepts.
+  eta <- get.eta(x)
   for(j in 1:np) {
-    g <- drop <- NULL
     for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-      if(!is.null(x[[nx[j]]]$smooth.construct[[sj]]$is.model.matrix)) {
-        g <- c(g, x[[nx[j]]]$smooth.construct[[sj]]$state$parameters)
-        drop <- c(drop, sj)
+      x[[nx[j]]]$smooth.construct[[sj]] <- assign.df(x[[nx[j]]]$smooth.construct[[sj]], df)
+      if(is.null(x[[nx[j]]]$smooth.construct[[sj]]$sp) & !x[[nx[j]]]$smooth.construct[[sj]]$fixed) {
+        x[[nx[j]]]$smooth.construct[[sj]]$old.optimize <- x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim
+        x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim <- FALSE
+        x[[nx[j]]]$smooth.construct[[sj]]$do.optim <- FALSE
       }
     }
-    if(!is.null(g)) {
-      x[[nx[j]]]$smooth.construct[drop] <- NULL
-      names(g) <- paste("b", 1:length(g), sep = "")
-      save.model.matrix[[j]]$state$fitted.values <- drop(save.model.matrix[[j]]$X %*% g)
-      save.model.matrix[[j]]$state$parameters <- g
-      x[[nx[j]]]$smooth.construct <- c(list(save.model.matrix[[j]]), x[[nx[j]]]$smooth.construct)
+    if(has_pterms(x[[nx[j]]]$terms)) {
+      ii <- which(names(x[[nx[j]]]$smooth.construct) == "model.matrix")
+      model.matrix <- list()
+      cn <- colnames(x[[nx[j]]]$smooth.construct[[ii]]$X)
+      g0 <- get.par(x[[nx[j]]]$smooth.construct[[ii]]$state$parameters, "b")
+      nm <- NULL
+      for(pj in 1:ncol(x[[nx[j]]]$smooth.construct[[ii]]$X)) {
+        model.matrix[[pj]] <- list()
+        model.matrix[[pj]]$label <- cn[pj]
+        model.matrix[[pj]]$term <- cn[pj]
+        model.matrix[[pj]]$X <- x[[nx[j]]]$smooth.construct[[ii]]$X[, pj, drop = FALSE]
+        model.matrix[[pj]]$binning <- x[[nx[j]]]$smooth.construct[[ii]]$binning
+        model.matrix[[pj]]$nobs <- x[[nx[j]]]$smooth.construct[[ii]]$nobs
+        model.matrix[[pj]]$fixed <- TRUE
+        model.matrix[[pj]]$weights <- x[[nx[j]]]$smooth.construct[[ii]]$weights
+        model.matrix[[pj]]$rres <- x[[nx[j]]]$smooth.construct[[ii]]$rres
+        model.matrix[[pj]]$fit.fun <- x[[nx[j]]]$smooth.construct[[ii]]$fit.fun
+        model.matrix[[pj]]$state <- list("parameters" = g0[pj])
+        model.matrix[[pj]]$state$fitted.values <- drop(model.matrix[[pj]]$X %*% g0[pj])
+        model.matrix[[pj]]$state$edf <- 0
+        model.matrix[[pj]]$state$do.optim <- FALSE
+        model.matrix[[pj]]$is.model.matrix <- TRUE
+        model.matrix[[pj]]$selected <- rep(0, length = maxit)
+        model.matrix[[pj]]$upper <- Inf
+        model.matrix[[pj]]$lower <- -Inf
+        class(model.matrix[[pj]]) <- class(x[[nx[j]]]$smooth.construct[[ii]])
+      }
+      names(model.matrix) <- cn
+      x[[nx[j]]]$smooth.construct[[ii]] <- NULL
+      x[[nx[j]]]$smooth.construct <- c(model.matrix, x[[nx[j]]]$smooth.construct)
     }
+  }
+
+  ## Save more info.
+  for(j in 1:np) {
+    for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
+      x[[nx[j]]]$smooth.construct[[sj]]$selected <- rep(0, length = maxit)
+      x[[nx[j]]]$smooth.construct[[sj]]$loglik <- rep(0, length = maxit)
+      x[[nx[j]]]$smooth.construct[[sj]]$state$edf <- 0
+    }
+  }
+
+  ## Initialize intercepts.
+  eps0 <- eps + 1; iter <- 1
+  while(eps0 > eps & iter < maxit) {
+    eta0 <- eta
+    ## Cycle through all parameters
+    for(j in 1:np) {
+      for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
+        if(inherits(x[[nx[j]]]$smooth.construct[[sj]], "model.matrix") & x[[nx[j]]]$smooth.construct[[sj]]$label == "(Intercept)") {
+          ## Get updated parameters.
+          p.state <- bfit_iwls(x[[nx[j]]]$smooth.construct[[sj]],
+            family, y, eta, nx[j], weights = weights[[nx[j]]], offset = offset[[nx[j]]], ...)
+
+          ## Update predictor and smooth fit.
+          eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth.construct[[sj]]$state) + fitted(p.state)
+
+          x[[nx[j]]]$smooth.construct[[sj]]$state <- p.state
+        }
+      }
+    }
+
+    eps0 <- do.call("cbind", eta)
+    eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
+    if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
+    iter <- iter + 1
   }
 
   return(x)
 }
 
 
+## Simple list() generator for
+## saving states of model terms.
+make.state.list <- function(x)
+{
+  elmts <- c("formula", "fake.formula")
+  if(all(elmts %in% names(x))) {
+    rval <- list()
+    if(!is.null(x$model.matrix))
+      rval$model.matrix <- NA
+    if(!is.null(x$smooth.construct)) {
+      for(j in names(x$smooth.construct))
+        rval[[j]] <- NA
+    }
+  } else {
+    rval <- list()
+    for(j in names(x)) {
+      rval[[j]] <- make.state.list(x[[j]])
+    }
+  }
+  return(rval)
+}
+
+
+## Retransform 'x' to 'bamlss.frame' structure.
+boost.retransform <- function(x) {
+  for(i in names(x)) {
+    if(has_pterms(x[[i]]$terms)) {
+      state <- list()
+      X <- drop <- NULL
+      for(j in names(x[[i]]$smooth.construct)) {
+        if(inherits(x[[i]]$smooth.construct[[j]], "model.matrix")) {
+          drop <- c(drop, j)
+          X <- cbind(X, x[[i]]$smooth.construct[[j]]$X)
+          state$parameters <- c(state$parameters, get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "b"))
+        }
+      }
+      label <- paste(drop, collapse = "+")
+      binning <- x[[i]]$smooth.construct[[drop[1]]]$binning
+      state$fitted.values <- drop(X %*% state$parameters)
+      x[[i]]$smooth.construct[drop] <- NULL
+      x[[i]]$smooth.construct$model.matrix <- list(
+        "X" = X,
+        "S" = list(diag(0, ncol(X))),
+        "rank" = ncol(X),
+        "term" = label,
+        "label" = label,
+        "bs.dim" = ncol(X),
+        "fixed" = TRUE,
+        "is.model.matrix" = TRUE,
+        "by" = "NA",
+        "xt" = list("binning" = binning),
+        "state" = state
+      )
+      x[[i]]$smooth.construct$model.matrix$fit.fun <- make.fit.fun(x[[i]]$smooth.construct$model.matrix)
+    }
+  }
+  return(x)
+}
+
+
 ## Boosting iwls.
-boost0_iwls <- function(x, family, y, weights, resids, nu, ...)
+boost_iwls <- function(x, hess, resids, nu)
 {
   ## Initial parameters and fit.
   g0 <- get.par(x$state$parameters, "b")
   fit0 <- fitted(x$state)
 
   ## Compute reduced residuals.
-  xbin.fun(x$xbin.sind, weights, resids, x$weights, x$rres, x$xbin.order)
+  xbin.fun(x$binning$sorted.index, hess, resids, x$weights, x$rres, x$binning$order)
 
   ## Compute mean and precision.
   XW <- x$X * x$weights
@@ -1549,7 +1610,7 @@ boost0_iwls <- function(x, family, y, weights, resids, nu, ...)
   x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
 
   ## Find edf.
-  xbin.fun(x$xbin.sind, weights, resids + fit0 + fitted(x$state), x$weights, x$rres, x$xbin.order)
+  xbin.fun(x$binning$sorted.index, hess, resids + fit0 + fitted(x$state), x$weights, x$rres, x$binning$order)
 
   XW <- x$X * x$weights
   XWX <- crossprod(x$X, XW)
@@ -1612,9 +1673,9 @@ increase <- function(state0, state1)
 
 
 ## Smallish summary function.
-sboost <- function(object, plot = TRUE, ...)
+print.boost.summary <- function(object, plot = TRUE, ...)
 {
-  bs <- get("boost.summary", envir = attr(object, "environment"))
+  bs <- object$boost.summary
   np <- length(bs$summary)
 
   cat("\n")
