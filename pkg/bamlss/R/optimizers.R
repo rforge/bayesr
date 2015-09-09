@@ -1280,6 +1280,9 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   ## Extract actual predictor.
   eta <- get.eta(x)
 
+  ## Initial parameters.
+  parameters <- get.all.par(x)
+
   ## Start boosting.
   eps0 <- 1; iter <- 1
   save.ic <- save.ll <- NULL
@@ -1360,70 +1363,30 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   if(verbose) cat("\n")
 
   mstop <- which.min(save.ic)
-  if(!best)
-    parameters <- get.all.par(x)
+
+  ## Overwrite parameter state.
+  if(best) {
+    for(i in nx) {
+      rn <- NULL
+      for(j in names(x[[i]]$smooth.construct)) {
+        x[[i]]$smooth.construct[[j]]$state$parameters <- parameters[[i]]$s[[j]]
+        g <- get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "b")
+        if(!is.null(tau2 <- attr(parameters[[i]]$s[[j]], "true.tau2"))) {
+          x[[i]]$smooth.construct[[j]]$state$parameters <- set.par(x[[i]]$smooth.construct[[j]]$state$parameters,
+            tau2, "tau2")
+        }
+        x[[i]]$smooth.construct[[j]]$state$edf <- attr(parameters[[i]]$s[[j]], "edf")
+        if(is.null(x[[i]]$smooth.construct[[j]]$state$edf))
+          x[[i]]$smooth.construct[[j]]$state$edf <- 0
+      }
+    }
+  }
 
   if(verbose) {
-    cat("\n")
-    cat(criterion, "=", save.ic[mstop], "-> at mstop =", mstop, "\n---\n")
+    cat("---\n", criterion, "=", save.ic[mstop], "-> at mstop =", mstop, "\n---\n")
   }
 
-  labels <- NULL
-  ll.contrib <- NULL
-  bsum <- lmat <- list()
-  for(i in nx) {
-    rn <- NULL
-    for(j in names(x[[i]]$smooth.construct)) {
-      x[[i]]$smooth.construct[[j]]$state$parameters <- parameters[[i]]$s[[j]]
-      g <- get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "b")
-      if(!is.null(tau2 <- attr(parameters[[i]]$s[[j]], "true.tau2"))) {
-        x[[i]]$smooth.construct[[j]]$state$parameters <- set.par(x[[i]]$smooth.construct[[j]]$state$parameters,
-          tau2, "tau2")
-      }
-      x[[i]]$smooth.construct[[j]]$state$edf <- attr(parameters[[i]]$s[[j]], "edf")
-      if(is.null(x[[i]]$smooth.construct[[j]]$state$edf))
-        x[[i]]$smooth.construct[[j]]$state$edf <- 0
-      labels <- c(labels, paste(x[[i]]$smooth.construct[[j]]$label, i, sep = "."))
-      rn <- c(rn, x[[i]]$smooth.construct[[j]]$label)
-      bsum[[i]] <- rbind(bsum[[i]], sum(x[[i]]$smooth.construct[[j]]$selected[1:mstop]) / mstop * 100)
-      lmat[[i]] <- rbind(lmat[[i]], sum(x[[i]]$smooth.construct[[j]]$loglik[1:mstop]))
-      ll.contrib <- cbind(ll.contrib, cumsum(x[[i]]$smooth.construct[[j]]$loglik))
-    }
-    if(!is.matrix(bsum[[i]])) bsum[[i]] <- matrix(bsum[[i]], nrow = 1)
-    bsum[[i]] <- cbind(bsum[[i]], lmat[[i]])
-    if(!is.matrix(bsum[[i]])) bsum[[i]] <- matrix(bsum[[i]], nrow = 1)
-    colnames(bsum[[i]]) <- c(paste(i, "% selected"), "LogLik contrib.")
-    rownames(bsum[[i]]) <- rownames(lmat[[i]]) <- rn
-    bsum[[i]] <- bsum[[i]][order(bsum[[i]][, 2], decreasing = TRUE), , drop = FALSE]
-    if(verbose) {
-      if(length(bsum[[i]]) < 2) print(round(bsum[[i]], digits = 4)) else printCoefmat(bsum[[i]], digits = 4)
-      if(j != np)
-        cat("---\n")
-    }
-  }
-  if(verbose) cat("\n")
-
-  colnames(ll.contrib) <- labels
-  names(bsum) <- nx
-  bsum <- list("summary" = bsum, "mstop" = mstop, "criterion" = criterion,
-    "ic" = save.ic, "loglik" = ll.contrib)
-  class(bsum) <- "boost.summary"
-
-  if(plot) {
-    op <- par(no.readonly = TRUE)
-    on.exit(par(op))
-    par(mfrow = c(1, 2), mar = c(5.1, 4.1, 2.1, 2.1))
-    plot(save.ic, type = "l", xlab = "Iteration", ylab = criterion)
-    abline(v = mstop, lwd = 3, col = "lightgray")
-    axis(3, at = mstop, labels = paste("mstop =", mstop))
-    par(mar = c(5.1, 4.1, 2.1, 10.1))
-    matplot(1:nrow(ll.contrib), ll.contrib, type = "l", lty = 1,
-      xlab = "Iteration", ylab = "LogLik contribution", col = "black")
-    abline(v = mstop, lwd = 3, col = "lightgray")
-    axis(4, at = ll.contrib[nrow(ll.contrib), ], labels = labels, las = 1)
-    axis(3, at = mstop, labels = paste("mstop =", mstop))
-  }
-
+  bsum <- boost.summary(x, mstop, criterion, save.ic)
   x <- boost.retransform(x)
 
   list("parameters" = get.all.par(x), "fitted.values" = get.eta(x), "boost.summary" = bsum)
@@ -1673,13 +1636,45 @@ increase <- function(state0, state1)
 }
 
 
-## Smallish summary function.
+## Extract summary for boosting.
+boost.summary <- function(x, mstop, criterion, save.ic)
+{
+  nx <- names(x)
+  labels <- NULL
+  ll.contrib <- NULL
+  bsum <- lmat <- list()
+  for(i in nx) {
+    rn <- NULL
+    for(j in names(x[[i]]$smooth.construct)) {
+      labels <- c(labels, paste(x[[i]]$smooth.construct[[j]]$label, i, sep = "."))
+      rn <- c(rn, x[[i]]$smooth.construct[[j]]$label)
+      bsum[[i]] <- rbind(bsum[[i]], sum(x[[i]]$smooth.construct[[j]]$selected[1:mstop]) / mstop * 100)
+      lmat[[i]] <- rbind(lmat[[i]], sum(x[[i]]$smooth.construct[[j]]$loglik[1:mstop]))
+      ll.contrib <- cbind(ll.contrib, cumsum(x[[i]]$smooth.construct[[j]]$loglik))
+    }
+    if(!is.matrix(bsum[[i]])) bsum[[i]] <- matrix(bsum[[i]], nrow = 1)
+    bsum[[i]] <- cbind(bsum[[i]], lmat[[i]])
+    if(!is.matrix(bsum[[i]])) bsum[[i]] <- matrix(bsum[[i]], nrow = 1)
+    colnames(bsum[[i]]) <- c(paste(i, "% selected"), "LogLik contrib.")
+    rownames(bsum[[i]]) <- rownames(lmat[[i]]) <- rn
+    bsum[[i]] <- bsum[[i]][order(bsum[[i]][, 2], decreasing = TRUE), , drop = FALSE]
+  }
+  colnames(ll.contrib) <- labels
+  names(bsum) <- nx
+  bsum <- list("summary" = bsum, "mstop" = mstop, "criterion" = criterion,
+    "ic" = save.ic, "loglik" = ll.contrib)
+  class(bsum) <- "boost.summary"
+  return(bsum)
+}
+
+
+## Smallish print function for boost summaries.
 print.boost.summary <- function(object, summary = TRUE, plot = FALSE, ...)
 {
   if(summary) {
     np <- length(object$summary)
     cat("\n")
-    cat(object$criterion, "=", object$ic[bs$mstop], "-> at mstop =", object$mstop, "\n---\n")
+    cat(object$criterion, "=", object$ic[object$mstop], "-> at mstop =", object$mstop, "\n---\n")
     for(j in 1:np) {
       if(length(object$summary[[j]]) < 2) {
         print(round(object$summary[[j]], digits = 4))
@@ -1705,7 +1700,7 @@ print.boost.summary <- function(object, summary = TRUE, plot = FALSE, ...)
     axis(3, at = object$mstop, labels = paste("mstop =", object$mstop))
   }
 
-  return(invisible(bs))
+  return(invisible(object))
 }
 
 plot.boost.summary <- function(x, ...)
