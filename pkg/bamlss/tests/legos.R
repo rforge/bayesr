@@ -203,6 +203,5 @@ f <- list(
   sigma ~ x1 + x2 + x3 + s(x1) + s(x2) + s(x3) + id
 )
 
-b1 <- bamlss(f, data = GAMart, optimizer = boost, sampler = FALSE)
-b2 <- bamlss(f, data = GAMart, optimizer = boost, sampler = FALSE, best = FALSE)
+b <- bamlss(f, data = GAMart, optimizer = boost, sampler = FALSE)
 
