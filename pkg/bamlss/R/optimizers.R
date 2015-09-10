@@ -1636,19 +1636,61 @@ make.state.list <- function(x, type = 1)
 }
 
 
+#	for(i in seq_along(coefs))
+#	{
+#		curname<-names(coefs)[i]
+#		cpos<-match(curname, colnames(dfr))
+#		usedScale<-attr(dfr[[cpos]], "scaled:scale")
+#		usedCenter<-attr(dfr[[cpos]], "scaled:center")
+#		if(! is.null(usedScale))
+#		{
+#			catwif(verbosity > 0, "Scaling back for variable", curname)
+#			catwif(verbosity >1, "usedScale structure")
+#			if(verbosity > 1) str(usedScale)
+#			catwif(verbosity >1, "usedCenter structure")
+#			if(verbosity > 1) str(usedCenter)
+#			oldcoef<-coefs[i]
+#			itc<-itc - ((oldcoef * usedCenter)/usedScale)
+#			coefs[i]<-oldcoef / usedScale
+#		}
+#	}
+#	coefs<-c(itc, coefs)
+#	names(coefs)[1]<-itcname
+#	return(coefs)
+
+
 ## Retransform 'x' to 'bamlss.frame' structure.
 boost.retransform <- function(x) {
   for(i in names(x)) {
     if(has_pterms(x[[i]]$terms)) {
       state <- list()
-      X <- drop <- NULL
+      X <- drop <- xscales <- NULL
+      scaled <- FALSE
+      intercept <- NULL
+      for(j in names(x[[i]]$smooth.construct)) {
+        if(inherits(x[[i]]$smooth.construct[[j]], "model.matrix")) {
+          if(j == "(Intercept)")
+            intercept <- get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "b")
+        }
+      }
       for(j in names(x[[i]]$smooth.construct)) {
         if(inherits(x[[i]]$smooth.construct[[j]], "model.matrix")) {
           drop <- c(drop, j)
+          b <- get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "b")
+          if(!is.null(x[[i]]$smooth.construct[[j]]$boost.scale)) {
+            mx <- x[[i]]$smooth.construct[[j]]$boost.scale$mean
+            sdx <- x[[i]]$smooth.construct[[j]]$boost.scale$sd
+            x[[i]]$smooth.construct[[j]]$X <- x[[i]]$smooth.construct[[j]]$X * sdx + mx
+            if(!is.null(intercept))
+              intercept <- intercept - ((b * mx) / sdx)
+            b <- b / sdx
+          }
           X <- cbind(X, x[[i]]$smooth.construct[[j]]$X)
-          state$parameters <- c(state$parameters, get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "b"))
+          state$parameters <- c(state$parameters, b)
         }
       }
+      if(!is.null(intercept))
+        state$parameters <- set.par(state$parameters, intercept, "(Intercept)")
       label <- paste(drop, collapse = "+")
       binning <- x[[i]]$smooth.construct[[drop[1]]]$binning
       state$fitted.values <- drop(X %*% state$parameters)

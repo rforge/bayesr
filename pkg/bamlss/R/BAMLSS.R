@@ -691,7 +691,7 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
   ## Setup all processing functions.
   foo <- list("transform" = transform, "optimizer" = optimizer, "sampler" = sampler, "results" = results)
   nf <- names(foo)
-  default_fun <- c("bamlss.setup", "bfit", "GMCMC", "results.bamlss.default")
+  default_fun <- c("no.transform", "bfit", "GMCMC", "results.bamlss.default")
   functions <- list()
   for(j in 1:length(foo)) {
     if(is.null(foo[[j]]))
@@ -787,7 +787,8 @@ family.bamlss <- family.bamlss.frame <- function(object, ...)
   return(object$family)
 }
 
-
+## Nothing to transform.
+no.transform <- FALSE
 
 
 #### -----------------------------------------------------------------------------------------------
