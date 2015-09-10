@@ -3,7 +3,7 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
   model.matrix = TRUE, smooth.construct = TRUE, ytype = c("matrix", "vector"),
-  scale.x = FALSE, scale.y = FALSE, ...)
+  scale.x = TRUE, scale.y = TRUE, ...)
 {
   ## Parse formula.
   if(!inherits(formula, "bamlss.formula")) {
@@ -121,6 +121,8 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
     model.matrix = model.matrix, smooth.construct = smooth.construct, model = NULL,
     scale.x = scale.x, ...)
   bf$knots <- knots
+  bf$scale.x <- scale.x
+  bf$scale.y <- scale.y
 
   ## Assign class and return.
   class(bf) <- c("bamlss.frame", "list")
@@ -209,20 +211,8 @@ design.construct <- function(formula, data = NULL, knots = NULL,
     if(model.matrix) {
       obj$model.matrix <- model.matrix(drop.terms.bamlss(obj$terms,
         sterms = FALSE, keep.response = FALSE, data = data), data = data)
-      if(scale.x) {
-        if(has_intercept(obj$terms) & (ncol(obj$model.matrix) > 1)) {
-          xcenter <- apply(obj$model.matrix[, -1, drop = FALSE], 2, mean, na.rm = TRUE)
-          xscale <- apply(obj$model.matrix[, -1, drop = FALSE], 2, sd, na.rm = TRUE)
-          xcenter <- c(0, xcenter)
-          xscale <- c(1, xscale)
-        } else {
-          xcenter <- apply(obj$model.matrix, 2, mean, na.rm = TRUE)
-          xscale <- apply(obj$model.matrix, 2, sd, na.rm = TRUE)
-        }
-        for(j in 1:ncol(obj$model.matrix))
-          obj$model.matrix[, j] <- (obj$model.matrix[, j] - xcenter[j]) / xscale[j]
-        attr(obj$model.matrix, "scaling") <- list("center" = xcenter, "scale" = xscale)
-      }
+      if(scale.x)
+        obj$model.matrix <- scale.model.matrix(obj$model.matrix)
     }
     if(smooth.construct) {
       tx <- drop.terms.bamlss(obj$terms,
@@ -5214,6 +5204,24 @@ XnotinY <-
              ...)
 {
     XinY(x,y,by,by.x,by.y,notin,incomparables)
+}
+
+
+## Small helper function to scale the model.matrix.
+scale.model.matrix <- function(x)
+{
+  if(!is.matrix(x))
+    x <- as.matrix(x)
+  cn <- colnames(x)
+  center <- as.numeric(colMeans(x, na.rm = TRUE))
+  scale <- as.numeric(apply(x, 2, sd, na.rm = TRUE))
+  if(length(i <- grep("(Intercept)", cn, fixed = TRUE))) {
+    center[i] <- 0.0
+    scale[i] <- 1.0
+  }
+  x <- .Call("scale_matrix", x, center, scale)
+  attr(x, "scale") <- list("center" = center, "scale" = scale)
+  x
 }
 
 

@@ -1720,3 +1720,25 @@ SEXP do_XWX(SEXP x, SEXP w, SEXP index)
   return rval;
 }
 
+
+SEXP scale_matrix(SEXP x, SEXP center, SEXP scale)
+{
+  int nr = nrows(x); 
+  int nc = ncols(x);
+  int i, j;
+
+  double *xptr = REAL(x);
+  double *centerptr = REAL(center);
+  double *scaleptr = REAL(scale);
+
+  for(i = 0; i < nr; i++) {
+    for(j = 0; j < nc; j++) {
+      xptr[i + nr * j] = (xptr[i + nr * j] - centerptr[j]) / scaleptr[j];
+    }
+  }
+
+  return x;
+}
+
+
+

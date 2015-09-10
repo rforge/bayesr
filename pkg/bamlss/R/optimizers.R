@@ -1420,7 +1420,6 @@ boost99 <- function(x, y, family, weights = NULL, offset = NULL,
   ## Intercepts are initalized.
   x <- boost.transform(x, y, df, family, weights, offset, maxit, eps, ...)
 
-
   ## Create a list() that saves the states for
   ## all parameters and model terms.
   states <- make.state.list(x)

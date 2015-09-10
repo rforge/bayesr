@@ -199,8 +199,8 @@ b <- bamlss(mstatus ~ s(age), data = marital.nz,
 data("GAMart", package = "R2BayesX")
 
 f <- list(
-  num ~ x1 + x2 + x3 + s(x1) + s(x2) + s(x3) + s(long, lat),
-  sigma ~ x1 + x2 + x3 + s(x1) + s(x2) + s(x3) + s(long, lat)
+  num ~ x1 + x2 + x3 + s(x1) + s(x2) + s(x3) + s(long, lat) + id,
+  sigma ~ x1 + x2 + x3 + s(x1) + s(x2) + s(x3) + s(long, lat) + id
 )
 
 b <- bamlss(f, data = GAMart, optimizer = boost99, sampler = FALSE)
