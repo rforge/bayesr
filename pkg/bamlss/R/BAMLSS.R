@@ -2,7 +2,8 @@
 bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
-  model.matrix = TRUE, smooth.construct = TRUE, ytype = c("matrix", "vector"), ...)
+  model.matrix = TRUE, smooth.construct = TRUE, ytype = c("matrix", "vector"),
+  scale.x = FALSE, scale.y = FALSE, ...)
 {
   ## Parse formula.
   if(!inherits(formula, "bamlss.formula")) {
@@ -76,6 +77,22 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
         bf$y[j] <- model.matrix(f, data = bf$model.frame)
       }
     }
+    if(scale.y) {
+      if(inherits(bf$y[[rn[1]]], "numeric")) {
+        if(!is.matrix(bf$y[[rn[1]]])) {
+          ry <- range(bf$y[[rn[1]]], na.rm = TRUE)
+          if(!(all(ry > 0) | all(ry < 0))) {
+            ycenter <- mean(bf$y[[rn[1]]], na.rm = TRUE)
+            yscale <- sd(bf$y[[rn[1]]], na.rm = TRUE)
+          } else {
+            ycenter <- 0
+            yscale <- max(bf$y[[rn[1]]], na.rm = TRUE)
+          }
+          bf$y[[rn[1]]] <- (bf$y[[rn[1]]] - ycenter) / yscale
+          attr(bf$y[[rn[1]]], "scale") <- list("center" = ycenter, "yscale" = yscale)
+        }
+      }
+    }
   }
   bf$formula <- formula
 
@@ -101,7 +118,8 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
 
   ## Assign the 'x' master object.
   bf$x <- design.construct(bf$terms, data = bf$model.frame, knots = knots,
-    model.matrix = model.matrix, smooth.construct = smooth.construct, model = NULL, ...)
+    model.matrix = model.matrix, smooth.construct = smooth.construct, model = NULL,
+    scale.x = scale.x, ...)
   bf$knots <- knots
 
   ## Assign class and return.
@@ -150,7 +168,8 @@ print.bamlss.frame <- function(x, ...)
 ## Compute the 'bamlss.frame' 'x' master object.
 design.construct <- function(formula, data = NULL, knots = NULL,
   model.matrix = TRUE, smooth.construct = TRUE, binning = FALSE,
-  before = TRUE, gam.side = TRUE, model = NULL, drop = NULL, ...)
+  before = TRUE, gam.side = TRUE, model = NULL, drop = NULL,
+  scale.x = TRUE, ...)
 {
   if(!model.matrix & !smooth.construct)
     return(NULL)
@@ -190,6 +209,20 @@ design.construct <- function(formula, data = NULL, knots = NULL,
     if(model.matrix) {
       obj$model.matrix <- model.matrix(drop.terms.bamlss(obj$terms,
         sterms = FALSE, keep.response = FALSE, data = data), data = data)
+      if(scale.x) {
+        if(has_intercept(obj$terms) & (ncol(obj$model.matrix) > 1)) {
+          xcenter <- apply(obj$model.matrix[, -1, drop = FALSE], 2, mean, na.rm = TRUE)
+          xscale <- apply(obj$model.matrix[, -1, drop = FALSE], 2, sd, na.rm = TRUE)
+          xcenter <- c(0, xcenter)
+          xscale <- c(1, xscale)
+        } else {
+          xcenter <- apply(obj$model.matrix, 2, mean, na.rm = TRUE)
+          xscale <- apply(obj$model.matrix, 2, sd, na.rm = TRUE)
+        }
+        for(j in 1:ncol(obj$model.matrix))
+          obj$model.matrix[, j] <- (obj$model.matrix[, j] - xcenter[j]) / xscale[j]
+        attr(obj$model.matrix, "scaling") <- list("center" = xcenter, "scale" = xscale)
+      }
     }
     if(smooth.construct) {
       tx <- drop.terms.bamlss(obj$terms,

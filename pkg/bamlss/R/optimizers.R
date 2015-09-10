@@ -568,7 +568,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     x <- bamlss.engine.setup(x, ...)
 
   if(!is.null(start))
-    x <- add.starting.values(x, start)
+    x <- set.starting.values(x, start)
 
   criterion <- match.arg(criterion)
   np <- length(nx)
@@ -1659,38 +1659,30 @@ make.state.list <- function(x, type = 1)
 #	return(coefs)
 
 
+#          if(!is.null(x[[i]]$smooth.construct[[j]]$boost.scale)) {
+#            mx <- x[[i]]$smooth.construct[[j]]$boost.scale$mean
+#            sdx <- x[[i]]$smooth.construct[[j]]$boost.scale$sd
+#            x[[i]]$smooth.construct[[j]]$X <- x[[i]]$smooth.construct[[j]]$X * sdx + mx
+#            if(!is.null(intercept))
+#              intercept <- intercept - ((b * mx) / sdx)
+#            b <- b / sdx
+#          }
+
+
 ## Retransform 'x' to 'bamlss.frame' structure.
 boost.retransform <- function(x) {
   for(i in names(x)) {
     if(has_pterms(x[[i]]$terms)) {
       state <- list()
       X <- drop <- xscales <- NULL
-      scaled <- FALSE
-      intercept <- NULL
-      for(j in names(x[[i]]$smooth.construct)) {
-        if(inherits(x[[i]]$smooth.construct[[j]], "model.matrix")) {
-          if(j == "(Intercept)")
-            intercept <- get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "b")
-        }
-      }
       for(j in names(x[[i]]$smooth.construct)) {
         if(inherits(x[[i]]$smooth.construct[[j]], "model.matrix")) {
           drop <- c(drop, j)
           b <- get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "b")
-          if(!is.null(x[[i]]$smooth.construct[[j]]$boost.scale)) {
-            mx <- x[[i]]$smooth.construct[[j]]$boost.scale$mean
-            sdx <- x[[i]]$smooth.construct[[j]]$boost.scale$sd
-            x[[i]]$smooth.construct[[j]]$X <- x[[i]]$smooth.construct[[j]]$X * sdx + mx
-            if(!is.null(intercept))
-              intercept <- intercept - ((b * mx) / sdx)
-            b <- b / sdx
-          }
           X <- cbind(X, x[[i]]$smooth.construct[[j]]$X)
           state$parameters <- c(state$parameters, b)
         }
       }
-      if(!is.null(intercept))
-        state$parameters <- set.par(state$parameters, intercept, "(Intercept)")
       label <- paste(drop, collapse = "+")
       binning <- x[[i]]$smooth.construct[[drop[1]]]$binning
       state$fitted.values <- drop(X %*% state$parameters)
@@ -1913,7 +1905,7 @@ plot.boost.summary <- function(x, ...)
 
 
 ## Assign starting values.
-add.starting.values <- function(x, start)
+set.starting.values <- function(x, start)
 {
   if(!is.null(start)) {
     nx <- names(x)
