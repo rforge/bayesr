@@ -3,7 +3,7 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
   model.matrix = TRUE, smooth.construct = TRUE, ytype = c("matrix", "vector"),
-  scale.x = TRUE, scale.y = TRUE, ...)
+  scale.x = FALSE, scale.y = FALSE, ...)
 {
   ## Parse formula.
   if(!inherits(formula, "bamlss.formula")) {
@@ -89,7 +89,7 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
             yscale <- max(bf$y[[rn[1]]], na.rm = TRUE)
           }
           bf$y[[rn[1]]] <- (bf$y[[rn[1]]] - ycenter) / yscale
-          attr(bf$y[[rn[1]]], "scale") <- list("center" = ycenter, "yscale" = yscale)
+          attr(bf$y[[rn[1]]], "scale") <- list("center" = ycenter, "scale" = yscale)
         }
       }
     }
@@ -695,7 +695,7 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
 bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
   reference = NULL, transform = NULL, optimizer = NULL, sampler = NULL, results = NULL,
-  cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, x = TRUE, ...)
+  cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, x = TRUE, rescale = FALSE, ...)
 {
   ## The environment.
   env <- get_formula_envir(formula)
@@ -779,6 +779,12 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
     bf$samples <- process.chains(bf$samples, combine)
   }
 
+  if(rescale & (bf$scale.y | bf$scale.x)) {
+    rs <- rescale.bamlss(bf)
+    bf[names(rs)] <- rs
+    rm(rs)
+  }
+
   ## Compute results.
   if(is.function(functions$results))
     bf$results <- functions$results(bf, bamlss = TRUE,  ...)
@@ -812,6 +818,15 @@ family.bamlss <- family.bamlss.frame <- function(object, ...)
 
 ## Nothing to transform.
 no.transform <- FALSE
+
+
+## Rescale fun.
+rescale.bamlss <- function(x)
+{
+  if(is.null(ys <- attr(x$y[[1]], "scale")))
+    ys <- list("center" = 0, "scale" = 1)
+  return(x)
+}
 
 
 #### -----------------------------------------------------------------------------------------------
