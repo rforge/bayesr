@@ -702,13 +702,13 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
 
   ## Search for functions in family object.
   family <- bamlss.family(family)
-  if(!is.null(family$transform))
+  if(!is.null(family$transform) & is.null(transform))
     transform <- family$transform
-  if(!is.null(family$optimizer))
+  if(!is.null(family$optimizer) & is.null(optimizer))
     optimizer <- family$optimizer
-  if(!is.null(family$sampler))
+  if(!is.null(family$sampler) & is.null(sampler))
     sampler <- family$sampler
-  if(!is.null(family$results))
+  if(!is.null(family$results) & is.null(results))
     results <- family$results
 
   ## Setup all processing functions.
@@ -4301,10 +4301,8 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
         for(j in tl) {
           sn <- paste(id, "s", j, sep = ".")
           psamples <- as.matrix(samps[, snames[grep2(sn, snames, fixed = TRUE)], drop = FALSE])
-          if(nrow(psamples) > 1) {
-            nas <- apply(psamples, 1, function(x) { any(is.na(x)) } )
-            psamples <- psamples[!nas, , drop = FALSE]
-          }
+          nas <- apply(psamples, 1, function(x) { any(is.na(x)) } )
+          psamples <- psamples[!nas, , drop = FALSE]
        
           ## FIXME: retransform!
           if(!is.null(obj$smooth.construct[[j]]$Xf) & FALSE) {
