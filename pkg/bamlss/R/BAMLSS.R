@@ -1844,7 +1844,6 @@ compute_term <- function(x, get.X, fit.fun, psamples, vsamples = NULL,
   grid = 100, rug = TRUE, hlevel = 1, sx = FALSE, re.slope = FALSE, edfsamples = NULL)
 {
   nt <- length(x$term)
-
   if(x$by != "NA" | nt > 1) grid <- NA
 
   tterms <- NULL
@@ -4302,8 +4301,10 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
         for(j in tl) {
           sn <- paste(id, "s", j, sep = ".")
           psamples <- as.matrix(samps[, snames[grep2(sn, snames, fixed = TRUE)], drop = FALSE])
-          nas <- apply(psamples, 1, function(x) { any(is.na(x)) } )
-          psamples <- psamples[!nas, , drop = FALSE]
+          if(nrow(psamples) > 1) {
+            nas <- apply(psamples, 1, function(x) { any(is.na(x)) } )
+            psamples <- psamples[!nas, , drop = FALSE]
+          }
        
           ## FIXME: retransform!
           if(!is.null(obj$smooth.construct[[j]]$Xf) & FALSE) {
@@ -4372,7 +4373,8 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
             }
           }
 
-          b <- grep2(paste(id, "s", j, "b", sep = "."), colnames(psamples), fixed = TRUE)
+          b <- colnames(psamples)
+          b <- b[!grepl("tau2", b) & !grepl("edf", b) & !grepl("alpha", b)]
           tn <- c(obj$smooth.construct[[j]]$term, if(obj$smooth.construct[[j]]$by != "NA") {
             obj$smooth.construct[[j]]$by
           } else NULL)
