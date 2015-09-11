@@ -2119,7 +2119,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   nn <- names(newdata)
   rn <- response.name(object, keep.functions = TRUE)
   nn <- nn[nn != rn]
-  tl <- term.labels2(object, model = model, intercept = intercept)
+  tl <- term.labels2(object, model = model, intercept = intercept, type = 2)
   nx <- names(tl)
   if(!is.null(term)) {
     enames <- vector(mode = "list", length = length(nx))
@@ -4708,7 +4708,7 @@ term.labels <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
 }
 
 term.labels2 <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
-  intercept = TRUE, list = TRUE, ...)
+  intercept = TRUE, list = TRUE, type = 1, ...)
 {
   if(inherits(x, "bamlss") | inherits(x, "bamlss.frame")) {
     x <- terms(x)
@@ -4743,7 +4743,11 @@ term.labels2 <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
   rval <- vector(mode = "list", length = length(nx))
   for(j in seq_along(x)) {
     txj <- drop.terms.bamlss(x[[j]], pterms = TRUE, sterms = TRUE, keep.response = FALSE)
-    rval[[j]] <- attr(txj, "term.labels")
+    if(type < 2) {
+      rval[[j]] <- attr(txj, "term.labels")
+    } else {
+      rval[[j]] <- all.labels.formula(txj)
+    }
     if(intercept & (attr(txj, "intercept") > 0))
       rval[[j]] <- c(rval[[j]], "(Intercept)")
   }
