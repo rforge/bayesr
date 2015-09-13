@@ -1721,6 +1721,37 @@ SEXP do_XWX(SEXP x, SEXP w, SEXP index)
 }
 
 
+/* Fast computation of fitted values with index matrix. */
+SEXP index_mat_fit(SEXP x, SEXP b, SEXP index)
+{
+  double *xptr = REAL(x);
+  double *bptr = REAL(b);
+  int *iptr = INTEGER(index);
+
+  int nr = nrows(x);
+  int nc = ncols(x);
+  int nc_index = ncols(index);
+  int i, j;
+
+  SEXP rval;
+  PROTECT(rval = allocVector(REALSXP, nr));
+  double *rvalptr = REAL(rval);
+
+  for(i = 0; i < nr; i++) {
+    rvalptr[i] = 0.0;
+    for(j = 0; j < nc_index; j++) {
+      if((iptr[i + j * nr] < 0) || (iptr[i + j * nr] > nc))
+        continue;
+      rvalptr[i] += xptr[i + (iptr[i + j * nr] - 1) * nr] * bptr[(iptr[i + j * nr] - 1)];
+    }
+  }
+
+  UNPROTECT(1);
+  return rval;
+}
+
+
+/* Fast matrix scaling. */
 SEXP scale_matrix(SEXP x, SEXP center, SEXP scale)
 {
   int nr = nrows(x); 

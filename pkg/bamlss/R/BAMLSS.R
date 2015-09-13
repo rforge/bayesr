@@ -373,13 +373,48 @@ design.construct <- function(formula, data = NULL, knots = NULL,
 }
 
 
+## Functions for index matrices.
+index_mat <- function(x)
+{
+  if(is.null(dim(x)))
+    return(NULL)
+  index <- apply(x, 1, function(x) {
+    which(x != 0)
+  })
+  if(is.list(index)) {
+    n <- max(sapply(index, length))
+    index <- lapply(index, function(x) {
+      if((nx <- length(x)) < n)
+        x <- c(x, rep(-1L, length = n - nx))
+      x
+    })
+    index <- do.call("rbind", index)
+  } else {
+    index <- if(is.null(dim(index))) {
+      matrix(index, ncol = 1)
+    } else t(index)
+    if(ncol(index) == ncol(x))
+      return(NULL)
+  }
+  storage.mode(index) <- "integer"
+  index
+}
+
+
+## Computation of fitted values with index matrices.
+index_mat_fit <- function(X, b, index)
+{
+  .Call("index_mat_fit", X, b, index)
+}
+
+
 ## The model term fitting function.
 make.fit.fun <- function(x)
 {
   ff <- function(X, b, expand = TRUE) {
     if(!is.null(names(b)))
       b <- get.par(b, "b")
-    f <- drop(X %*% b)
+    f <- if(is.null(x$imat)) drop(X %*% b) else index_mat_fit(X, b, x$imat)
     if(!is.null(x$binning$match.index) & expand)
       f <- f[x$binning$match.index]
     return(as.numeric(f))
@@ -5109,10 +5144,29 @@ h_response <- function(x)
 
 
 ## Create the inverse of a matrix.
-matrix_inv <- function(x)
+matrix_inv <- function(x, index = NULL)
 {
   if(length(x) < 2)
     return(1 / x)
+  if(!is.null(index) & FALSE) {
+    xinv <- lapply(1:nrow(index), function(i) {
+      tmp <- index[i,]
+      tmp <- tmp[tmp > 0]
+      m <- min(tmp)
+      M <- max(tmp)
+      x[m:M, m:M]
+    })
+    xinv <- lapply(1:nrow(index), function(i) {
+      matrix_inv(xinv[[i]])
+    })
+    xinv <- as.matrix(bdiag(xinv))
+    return(xinv)
+
+    if(ncol(index) < 2 & FALSE) {
+      p <- diag(1 / diag(x))
+      return(p)
+    }
+  }
   rn <- rownames(x)
   cn <- colnames(x)
   p <- try(chol(x), silent = TRUE)
@@ -5138,7 +5192,7 @@ match.index <- function(x)
     if(!inherits(x, "matrix") & !inherits(x, "data.frame"))
       stop("x must be a matrix or a data.frame!")
     x <- if(inherits(x, "matrix")) {
-      apply(x, 1, paste, sep = "\r")
+      apply(x, 1, paste, sep = "\r", collapse = ";")
     } else do.call("paste", c(x, sep = "\r"))
   }
   nodups <- which(!duplicated(x))

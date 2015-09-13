@@ -779,32 +779,6 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take)
 }
 
 
-## Functions for index matrices.
-index_mat <- function(x)
-{
-  if(is.null(dim(x)))
-    return(NULL)
-  index <- apply(x, 1, function(x) {
-    which(x != 0)
-  })
-  if(is.list(index)) {
-    n <- max(sapply(index, length))
-    index <- lapply(index, function(x) {
-      if((nx <- length(x)) < n)
-        x <- c(x, rep(-1L, length = n - nx))
-      x
-    })
-    index <- do.call("rbind", index)
-  } else {
-    index <- if(is.null(dim(index))) {
-      matrix(index, ncol = 1)
-    } else t(index)
-    if(ncol(index) == ncol(x))
-      return(NULL)
-  }
-  index
-}
-
 check.imat <- function(X, take, id)
 {
   if(is.null(X)) {

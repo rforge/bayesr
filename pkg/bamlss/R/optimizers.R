@@ -40,12 +40,16 @@
 ## state list, as this could vary for special terms. A default
 ## method is provided.
 bamlss.engine.setup <- function(x, update = "iwls",
-  do.optim = NULL, criterion = c("AICc", "BIC", "AIC"),
+  do.optim = NULL, grid.optim = NULL, criterion = c("AICc", "BIC", "AIC"),
   nu = 0.1, start = NULL, df = NULL, ...)
 {
   if(!is.null(attr(x, "bamlss.engine.setup"))) return(x)
 
   criterion <- match.arg(criterion)
+  if(!is.null(grid.optim)) {
+    if(!grid.optim)
+      grid.optim <- NULL
+  }
 
   foo <- function(x, id = NULL) {
     if(!any(c("formula", "fake.formula") %in% names(x))) {
@@ -78,8 +82,9 @@ bamlss.engine.setup <- function(x, update = "iwls",
       }
       if(length(x$smooth.construct)) {
         for(j in seq_along(x$smooth.construct)) {
-          x$smooth.construct[[j]] <- bamlss.engine.setup.smooth(x$smooth.construct[[j]])
+          x$smooth.construct[[j]] <- bamlss.engine.setup.smooth(x$smooth.construct[[j]], ...)
           x$smooth.construct[[j]] <- assign.df(x$smooth.construct[[j]], df)
+          x$smooth.construct[[j]]$grid.optim <- grid.optim
           if(!is.null(x$smooth.construct[[j]]$xt$update))
             x$smooth.construct[[j]]$update <- x$smooth.construct[[j]]$xt$update
           if(is.null(x$smooth.construct[[j]]$update)) {
@@ -188,17 +193,15 @@ bamlss.engine.setup.smooth.default <- function(x, ...)
 {
   if(inherits(x, "special"))
     return(x)
-  before <- NULL
   if(is.null(x$binning) & !is.null(x$xt$binning)) {
     x$binning <- match.index(x$X)
     x$binning$order <- order(x$binning$match.index)
     x$binning$sorted.index <- x$binning$match.index[x$binning$order]
     x$X <- x$X[x$binning$nodups, , drop = FALSE]
-    before <- TRUE
   }
-  if(is.null(before)) before <- FALSE
-  if(!is.null(x$binning) & !before) {
-    x$X <- x$X[x$binning$nodups, , drop = FALSE]
+  if(!is.null(x$binning)) {
+    if(nrow(x$X) != length(x$binning$nodups))
+      x$X <- x$X[x$binning$nodups, , drop = FALSE]
   }
   if(is.null(x$binning)) {
     nr <- nrow(x$X)
@@ -218,7 +221,7 @@ bamlss.engine.setup.smooth.default <- function(x, ...)
     x$fixed <- if(!is.null(x$fx)) x$fx[1] else FALSE
   if(!x$fixed & is.null(state$interval))
     state$interval <- if(is.null(x$xt$interval)) tau2interval(x) else x$xt$interval
-  state$grid <- if(is.null(x$xt$grid)) 40 else x$xt$grid
+  state$grid <- if(is.null(x$xt$grid)) 10 else x$xt$grid
   ntau2 <- length(x$S)
   if(length(ntau2) < 1) {
     if(x$fixed) {
@@ -384,6 +387,9 @@ bamlss.engine.setup.smooth.default <- function(x, ...)
   x$state$edf <- x$edf(x)
   if(!inherits(x, "model.matrix"))
     colnames(x$X) <- NULL
+  x$imat <- index_mat(x$X)
+  x$fit.fun <- make.fit.fun(x)
+  x$state$fitted.values <- x$fit.fun(x$X, get.par(x$state$parameters, "b"))
   x$added <- c("nobs", "weights", "rres", "state", "grid", "a", "b", "prior", "edf",
     "grad", "hess", "lower", "upper")
 
@@ -851,16 +857,17 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
   xbin.fun(x$binning$sorted.index, hess, e, x$weights, x$rres, x$binning$order)
 
   ## Compute mean and precision.
-  XWX <- crossprod(x$X, x$X * x$weights)
+  XWX <- do.XWX(x$X, 1 / x$weights, x$imat)
+
   if(!x$state$do.optim | x$fixed | !is.null(x$sp)) {
     if(x$fixed) {
-      P <- matrix_inv(XWX)
+      P <- matrix_inv(XWX, index = x$imat)
     } else {
       S <- 0
       tau2 <- get.state(x, "tau2")
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * x$S[[j]]
-      P <- matrix_inv(XWX + S)
+      P <- matrix_inv(XWX + S, index = x$imat)
     }
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
   } else {
@@ -871,7 +878,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
       S <- 0
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * x$S[[j]]
-      P <- matrix_inv(XWX + S)
+      P <- matrix_inv(XWX + S, index = x$imat)
       if(inherits(P, "try-error")) return(NA)
       g <- drop(P %*% crossprod(x$X, x$rres))
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
@@ -882,9 +889,13 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
       return(IC)
     }
     if(length(get.state(x, "tau2")) < 2) {
-      tau2 <- try(optimize(objfun, interval = x$state$interval)$minimum, silent = TRUE)
-      if(inherits(tau2, "try-error"))
+      if(is.null(x$grid.optim)) {
+        tau2 <- try(optimize(objfun, interval = x$state$interval)$minimum, silent = TRUE)
+        if(inherits(tau2, "try-error"))
+          tau2 <- optimize2(objfun, interval = x$state$interval, grid = x$state$grid)$minimum
+      } else {
         tau2 <- optimize2(objfun, interval = x$state$interval, grid = x$state$grid)$minimum
+      }
       x$state$parameters <- set.par(x$state$parameters, if(!length(tau2)) x$interval[1] else tau2, "tau2")
     } else {
       i <- grep("tau2", names(x$lower))
@@ -897,7 +908,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
     tau2 <- get.state(x, "tau2")
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * x$S[[j]]
-    P <- matrix_inv(XWX + S)
+    P <- matrix_inv(XWX + S, index = x$imat)
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
   }
 
@@ -1700,6 +1711,7 @@ boost.retransform <- function(x) {
         "state" = state
       )
       x[[i]]$smooth.construct$model.matrix$fit.fun <- make.fit.fun(x[[i]]$smooth.construct$model.matrix)
+      
     }
   }
   return(x)
