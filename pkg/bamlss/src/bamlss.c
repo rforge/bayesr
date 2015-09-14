@@ -1772,4 +1772,24 @@ SEXP scale_matrix(SEXP x, SEXP center, SEXP scale)
 }
 
 
+/* Fast computation of sum of diagonal. */
+SEXP sum_diag(SEXP x, SEXP N)
+{
+  int i;
+  int n = INTEGER(N)[0];
+
+  double *xptr = REAL(x);
+  double sum = 0.0;
+
+  for(i = 0; i < n; i++) {
+    sum += xptr[i + n * i];
+  }
+
+  SEXP rval;
+  PROTECT(rval = allocVector(REALSXP, 1));
+  REAL(rval)[0] = sum;
+  UNPROTECT(1);
+
+  return rval;
+}
 

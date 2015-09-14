@@ -207,3 +207,18 @@ b <- bamlss(f, data = GAMart, optimizer = boost99, sampler = FALSE)
 plot(b)
 plot(b, which = "boost.summary")
 
+
+data("india", "india.bnd", package = "gamboostLSS")
+
+india$stunting_rs <- india$stunting / 600
+K <- neighbormatrix(india.bnd, id = india$mcdist)
+
+xt <- list("penalty" = K, "center" = FALSE, "force.center" = TRUE)
+
+f <- list(
+  stunting_rs ~ s(mage) + s(mbmi) + s(cage) + s(cbmi) + s(mcdist,bs="mrf",xt=xt),
+  sigma ~ s(mage) + s(mbmi) + s(cage) + s(cbmi) + s(mcdist,bs="mrf",xt=xt)
+)
+
+b <- bamlss(f, data = india, sampler = FALSE, optimizer = boost99, mstop = 1000)
+

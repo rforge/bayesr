@@ -740,7 +740,7 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
   M <- P %*% crossprod(data$X, data$rres)
 
   ## Degrees of freedom.
-  edf <- sum(diag(XWX %*% P))
+  edf <- sum.diag(XWX %*% P)
 
   ## Save old coefficients
   g0 <- drop(get.par(theta, "b"))

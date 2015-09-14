@@ -318,8 +318,8 @@ bamlss.engine.setup.smooth.default <- function(x, ...)
       S <- 0
       for(j in seq_along(tau2))
         S <- S + 1 / tau2[j] * x$S[[j]]
-      P <- matrix_inv(x$state$XX + S)
-      edf <- sum(diag(x$state$XX %*% P))
+      P <- matrix_inv(x$state$XX + S, index = x$imat)
+      edf <- sum.diag(x$state$XX %*% P)
       return(edf)
     }
   }
@@ -410,7 +410,7 @@ tau2interval <- function(x, lower = .Machine$double.eps^0.25, upper = 1e+10) {
   XX <- crossprod(x$X)
   if(length(x$S) < 2) {
     objfun <- function(tau2, value) {
-      df <- sum(diag(XX %*% matrix_inv(XX + if(x$fixed) 0 else 1 / tau2 * x$S[[1]])))
+      df <- sum.diag(XX %*% matrix_inv(XX + if(x$fixed) 0 else 1 / tau2 * x$S[[1]], index = x$imat))
       return((value - df)^2)
     }
     le <- try(optimize(objfun, c(lower, upper), value = 1)$minimum, silent = TRUE)
@@ -445,7 +445,7 @@ assign.df <- function(x, df) {
         S <- 0
         for(i in seq_along(x$S))
           S <- S + 1 / tau2[i] * x$S[[i]]
-        edf <- sum(diag(XX %*% matrix_inv(XX + S)))
+        edf <- sum.diag(XX %*% matrix_inv(XX + S, index = x$imat))
         return((df - edf)^2)
       }
       opt <- try(optimize(objfun, c(.Machine$double.eps^0.25, 1e+10))$minimum, silent = TRUE)
@@ -454,7 +454,7 @@ assign.df <- function(x, df) {
     }
   } else {
     objfun <- function(tau2) {
-      edf <- sum(diag(XX %*% matrix_inv(XX + 1 / tau2 * x$S[[1]])))
+      edf <- sum.diag(XX %*% matrix_inv(XX + 1 / tau2 * x$S[[1]], index = x$imat))
       return((df - edf)^2)
     }
     tau2 <- try(optimize(objfun, c(.Machine$double.eps^0.25, 1e+10))$minimum, silent = TRUE)
@@ -830,7 +830,7 @@ bfit_newton <- function(x, family, y, eta, id, ...)
   g.hess <- hess(fun = lp, theta = g, id = id, prior = NULL,
     args = list("gradient" = gfun, "hessian" = hfun, "x" = x, "y" = y, "eta" = eta))
 
-  Sigma <- matrix_inv(g.hess)
+  Sigma <- matrix_inv(g.hess, index = x$imat)
 
   g <- drop(g + nu * Sigma %*% g.grad)
 
@@ -897,7 +897,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
       g <- drop(P %*% crossprod(x$X, x$rres))
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
       fit <- x$fit.fun(x$X, g)
-      edf <- sum(diag(P %*% XWX))
+      edf <- sum.diag(P %*% XWX)
       eta2[[id]] <- eta2[[id]] + fit
       IC <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), x$criterion, ...)
       return(IC)
@@ -931,7 +931,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
   if(any(is.na(g)) | any(g %in% c(-Inf, Inf)))
     x$state$parameters <- set.par(x$state$parameters, rep(0, length(x$state$g)), "b")
   x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
-  x$state$edf <- sum(diag(XWX %*% P))
+  x$state$edf <- sum.diag(XWX %*% P)
   if(!is.null(x$prior)) {
     if(is.function(x$prior))
       x$state$log.prior <- x$prior(x$state$parameters)
@@ -1027,42 +1027,7 @@ bfit_optim <- function(x, family, y, eta, id, ...)
 }
 
 
-set.all.par <- function(par, x, hessian = NULL)
-{
-  if(!is.null(hessian))
-    hessian <- matrix_inv(-1 * hessian)
-  nx <- names(x)
-  np <- length(x)
-  for(j in 1:np) {
-    for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-      tpar <- par[grep(paste("p", j, ".t", sj, ".", sep = ""), names(par), fixed = TRUE)]
-      x[[nx[j]]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, get.par(tpar, "b"), "b")
-      if(any(grepl("tau2", tpar))) {
-        x[[nx[j]]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, get.par(tpar, "tau2"), "tau2")
-      }
-      x[[nx[j]]]$smooth.construct[[sj]]$state$fitted.values <- x[[nx[j]]]$smooth.construct[[sj]]$fit.fun(x[[nx[j]]]$smooth.construct[[sj]]$X,
-        get.par(tpar, "b"))
-      if(!is.null(hessian)) {
-        ntpar <- names(tpar)[!grepl("tau2", names(tpar))]
-        sigma <- hessian[ntpar, ntpar]
-        if(any(eigen(sigma, symmetric = TRUE)$values <= 0)) {
-          require("Matrix")
-          sigma2 <- try(nearPD(sigma)$mat, silent = TRUE)
-          if(inherits(sigma2, "try-error")) {
-            sigma2 <- if(length(sigma) < 2) as.numeric(sigma) else diag(sigma)
-            sigma2 <- if(length(sigma2) < 2) matrix(sigma2, 1, 1) else diag(sigma2)
-          }
-          sigma <- as.matrix(sigma2)
-        }
-        if(length(sigma) < 2) sigma <- matrix(sigma, 1, 1)
-        x[[nx[j]]]$smooth.construct[[sj]]$state$hessian <- sigma
-      }
-    }
-  }
-  return(x)
-}
-
-
+## The log-posterior.
 log_posterior <- function(par, x, y, family, verbose = TRUE, digits = 3, scale = NULL)
 {
   nx <- names(x)
@@ -1100,6 +1065,8 @@ log_posterior <- function(par, x, y, family, verbose = TRUE, digits = 3, scale =
   return(lp)
 }
 
+
+## Gradient vecor of the log-posterior.
 grad_posterior <- function(par, x, y, family, ...)
 {
   nx <- names(x)
@@ -1128,6 +1095,7 @@ grad_posterior <- function(par, x, y, family, ...)
 }
 
 
+## Optimizer based on optim().
 opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
   gradient = TRUE, hessian = FALSE, eps = .Machine$double.eps^0.5, maxit = 100, ...)
 {
@@ -1169,6 +1137,7 @@ opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
 }
 
 
+## Fast computation of weights and residuals when binning.
 xbin.fun <- function(ind, weights, e, xweights, xrres, oind)
 {
   .Call("xbin_fun", as.integer(ind), as.numeric(weights), 
@@ -1654,16 +1623,15 @@ boost_iwls <- function(x, hess, resids, nu)
   xbin.fun(x$binning$sorted.index, hess, resids, x$weights, x$rres, x$binning$order)
 
   ## Compute mean and precision.
-  XW <- x$X * x$weights
-  XWX <- crossprod(x$X, XW)
+  XWX <- do.XWX(x$X, 1 / x$weights, x$imat)
   if(x$fixed) {
-    P <- matrix_inv(XWX)
+    P <- matrix_inv(XWX, index = x$imat)
   } else {
     S <- 0
     tau2 <- get.state(x, "tau2")
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * x$S[[j]]
-    P <- matrix_inv(XWX + S)
+    P <- matrix_inv(XWX + S, index = x$imat)
   }
 
   ## New parameters.
@@ -1676,10 +1644,9 @@ boost_iwls <- function(x, hess, resids, nu)
   ## Find edf.
   xbin.fun(x$binning$sorted.index, hess, resids + fit0 + fitted(x$state), x$weights, x$rres, x$binning$order)
 
-  XW <- x$X * x$weights
-  XWX <- crossprod(x$X, XW)
+  XWX <- do.XWX(x$X, 1 / x$weights, x$imat)
   if(x$fixed) {
-    P <- matrix_inv(XWX)
+    P <- matrix_inv(XWX, index = x$imat)
   } else {
     g0 <- g0 + g
 
@@ -1687,7 +1654,7 @@ boost_iwls <- function(x, hess, resids, nu)
       S <- 0
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * x$S[[j]]
-      P <- matrix_inv(XWX + S)
+      P <- matrix_inv(XWX + S, index = x$imat)
       g1 <- drop(P %*% crossprod(x$X, x$rres))
       sum((g1 - g0)^2)
     }
@@ -1712,11 +1679,11 @@ boost_iwls <- function(x, hess, resids, nu)
     S <- 0
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * x$S[[j]]
-    P <- matrix_inv(XWX + S)
+    P <- matrix_inv(XWX + S, index = x$imat)
   }
 
   ## Assign degrees of freedom.
-  x$state$edf <- sum(diag(XWX %*% P))
+  x$state$edf <- sum.diag(XWX %*% P)
   attr(x$state$parameters, "edf") <- x$state$edf
 
   return(x$state)
@@ -1730,16 +1697,15 @@ boost_fit <- function(x, y, nu)
   xbin.fun(x$binning$sorted.index, rep(1, length = length(y)), y, x$weights, x$rres, x$binning$order)
 
   ## Compute mean and precision.
-  XW <- x$X * x$weights
-  XWX <- crossprod(x$X, XW)
+  XWX <- do.XWX(x$X, 1 / x$weights, x$imat)
   if(x$fixed) {
-    P <- matrix_inv(XWX)
+    P <- matrix_inv(XWX, index = x$imat)
   } else {
     S <- 0
     tau2 <- get.state(x, "tau2")
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * x$S[[j]]
-    P <- matrix_inv(XWX + S)
+    P <- matrix_inv(XWX + S, index = x$imat)
   }
 
   ## New parameters.

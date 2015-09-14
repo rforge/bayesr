@@ -419,7 +419,7 @@ propose_surv_td <- function(x, y, eta, eta_timegrid, width, sub, nu)
   qbeta <- dmvnorm(g0, mean = mu2, sigma = Sigma2, log = TRUE)
 
   ## Save edf.
-  x$state$edf <- sum(diag(int$hess %*% Sigma2))
+  x$state$edf <- sum.diag(int$hess %*% Sigma2)
 
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp)) {
@@ -482,7 +482,7 @@ propose_surv_tc <- function(x, y, eta, int)
   M <- P %*% crossprod(x$X, x$rres)
 
   ## Degrees of freedom.
-  x$state$edf <- sum(diag(XWX %*% P))
+  x$state$edf <- sum.diag(XWX %*% P)
 
   ## Save old coefficients
   g0 <- drop(get.par(x$state$parameters, "b"))

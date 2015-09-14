@@ -735,7 +735,7 @@ update_iwls <- function(x, family, response, eta, id, ...)
       g <- drop(P %*% (XW %*% e))
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
       fit <- drop(x$X %*% g)
-      edf <- sum(diag(P %*% XWX))
+      edf <- sum.diag(P %*% XWX)
       eta2[[id]] <- eta2[[id]] + fit
       IC <- get.ic(family, response, family$map2par(eta2), edf0 + edf, length(e), x$criterion)
       return(IC)
@@ -763,7 +763,7 @@ update_iwls <- function(x, family, response, eta, id, ...)
   ## Compute fitted values.
   if(any(is.na(x$state$g)) | any(x$state$g %in% c(-Inf, Inf))) x$state$g <- rep(0, length(x$state$g))
   x$state$fit <- drop(x$X %*% x$state$g)
-  x$state$edf <- sum(diag(P %*% XWX))
+  x$state$edf <- sum.diag(P %*% XWX)
 
   return(x$state)
 }
@@ -1175,7 +1175,7 @@ smooth.BayesG.default <- function(x, ...)
       for(j in seq_along(tau2))
         S <- S + 1 / tau2[j] * x$S[[j]]
       P <- matrix_inv(x$state$XX + S)
-      edf <- sum(diag(x$state$XX %*% P))
+      edf <- sum.diag(x$state$XX %*% P)
       return(edf)
     }
   }

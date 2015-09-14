@@ -3,7 +3,7 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
   model.matrix = TRUE, smooth.construct = TRUE, ytype = c("matrix", "vector"),
-  scale.x = FALSE, scale.y = FALSE, ...)
+  scale.x = FALSE, ...)
 {
   ## Parse formula.
   if(!inherits(formula, "bamlss.formula")) {
@@ -77,22 +77,6 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
         bf$y[j] <- model.matrix(f, data = bf$model.frame)
       }
     }
-    if(scale.y) {
-      if(inherits(bf$y[[rn[1]]], "numeric")) {
-        if(!is.matrix(bf$y[[rn[1]]])) {
-          ry <- range(bf$y[[rn[1]]], na.rm = TRUE)
-          if(!(all(ry > 0) | all(ry < 0))) {
-            ycenter <- mean(bf$y[[rn[1]]], na.rm = TRUE)
-            yscale <- sd(bf$y[[rn[1]]], na.rm = TRUE)
-          } else {
-            ycenter <- 0
-            yscale <- max(bf$y[[rn[1]]], na.rm = TRUE)
-          }
-          bf$y[[rn[1]]] <- (bf$y[[rn[1]]] - ycenter) / yscale
-          attr(bf$y[[rn[1]]], "scale") <- list("center" = ycenter, "scale" = yscale)
-        }
-      }
-    }
   }
   bf$formula <- formula
 
@@ -122,7 +106,6 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
     scale.x = scale.x, ...)
   bf$knots <- knots
   bf$scale.x <- scale.x
-  bf$scale.y <- scale.y
 
   ## Assign class and return.
   class(bf) <- c("bamlss.frame", "list")
@@ -420,6 +403,8 @@ make.fit.fun <- function(x)
     f <- if(is.null(x$imat)) drop(X %*% b) else index_mat_fit(X, b, x$imat)
     if(!is.null(x$binning$match.index) & expand)
       f <- f[x$binning$match.index]
+    if(!is.null(x$xt$force.center))
+      f <- f - mean(f, na.rm = TRUE)
     return(as.numeric(f))
   }
   return(ff)
@@ -842,7 +827,7 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
     bf$samples <- process.chains(bf$samples, combine)
   }
 
-  if(rescale & (bf$scale.y | bf$scale.x)) {
+  if(rescale & bf$scale.x) {
     rs <- rescale.bamlss(bf)
     bf[names(rs)] <- rs
     rm(rs)
@@ -2562,7 +2547,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
           names(sp) <- if(j < 2) "tau2g" else "tau2w"
           tau2 <- c(tau2, sp)
           XX <- crossprod(X[[j]])
-          edf <- edf + sum(diag(matrix_inv(XX + 1 / sp * stj$S[[1]]) %*% XX))
+          edf <- edf + sum.diag(matrix_inv(XX + 1 / sp * stj$S[[1]]) %*% XX)
         } else {
           edf <- edf + ncol(X[[j]])
         }
@@ -2752,7 +2737,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
       XX <- crossprod(x$X[, 1:k1, drop = FALSE])
       P <- matrix_inv(XX + 1 / sp * x$smooths[[1]]$S[[1]])
       if(!inherits(P, "try-error"))
-        edf1 <- sum(diag(XX %*% P))
+        edf1 <- sum.diag(XX %*% P)
     } else edf1 <- k1
     if(x$smooths[[1]]$xt$center) edf1 <- edf1 - 1
 
@@ -2766,7 +2751,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
       XX <- crossprod(x$X[, -1 * 1:k1, drop = FALSE])
       P <- matrix_inv(XX + 1 / sp * x$smooths[[2]]$S[[1]])
       if(!inherits(P, "try-error"))
-        edf2 <- sum(diag(XX %*% P))
+        edf2 <- sum.diag(XX %*% P)
     } else edf2 <- ncol(x$X) - k1
     if(x$smooths[[2]]$xt$center) edf2 <- edf2 - 1
 
@@ -5140,7 +5125,7 @@ matrix_inv <- function(x, index = NULL)
     return(1 / x)
   if(!is.null(index)) {
     if(ncol(index) < 2) {
-      if(all(index == 1:length(index))) {
+      if(all(index %in% 0:length(index))) {
         p <- diag(1 / diag(x))
         return(p)
       }
@@ -5277,6 +5262,17 @@ scale.model.matrix <- function(x)
   x <- .Call("scale_matrix", x, center, scale)
   attr(x, "scale") <- list("center" = center, "scale" = scale)
   x
+}
+
+
+## Sum of diagonal elements.
+sum.diag <- function(x)
+{
+  if(is.null(dx <- dim(x)))
+    stop("x must be a matrix!")
+  if(dx[1] != dx[2])
+    stop("x must be symmetric!")
+  .Call("sum_diag", x, dx[1])
 }
 
 
