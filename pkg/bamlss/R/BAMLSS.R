@@ -5178,8 +5178,10 @@ matrix_inv <- function(x, index = NULL)
     return(1 / x)
   if(!is.null(index)) {
     if(ncol(index) < 2) {
-      p <- diag(1 / diag(x))
-      return(p)
+      if(all(index == 1:length(index))) {
+        p <- diag(1 / diag(x))
+        return(p)
+      }
     }
     if(inherits(x, "dgCMatrix")) {
       return(solve(x))
