@@ -406,18 +406,10 @@ bamlss.engine.setup.smooth.default <- function(x, ...)
 
 ## Function to find tau2 interval according to the
 ## effective degrees of freedom
-tau2interval <- function(x, lower = .Machine$double.eps^0.25, upper = 1e+10) {
-  XX <- crossprod(x$X)
+tau2interval <- function(x, lower = .Machine$double.eps^0.25, upper = 1e+10)
+{
   if(length(x$S) < 2) {
-    objfun <- function(tau2, value) {
-      df <- sum.diag(XX %*% matrix_inv(XX + if(x$fixed) 0 else 1 / tau2 * x$S[[1]], index = x$imat))
-      return((value - df)^2)
-    }
-    le <- try(optimize(objfun, c(lower, upper), value = 1)$minimum, silent = TRUE)
-    ri <- try(optimize(objfun, c(lower, upper), value = ncol(x$X))$minimum, silent = TRUE)
-    if(inherits(le, "try-error")) le <- 0.1
-    if(inherits(ri, "try-error")) ri <- 1e+04
-    return(c(le, ri))
+    return(c(lower, upper))
   } else {
     return(rep(list(c(lower, upper)), length.out = length(x$S)))
   }
@@ -425,7 +417,8 @@ tau2interval <- function(x, lower = .Machine$double.eps^0.25, upper = 1e+10) {
 
 
 ## Assign degrees of freedom.
-assign.df <- function(x, df) {
+assign.df <- function(x, df)
+{
   tau2 <- get.par(x$state$parameters, "tau2")
   if(x$fixed | !length(tau2))
     return(x)
@@ -436,6 +429,7 @@ assign.df <- function(x, df) {
     df <- ncol(x$X)
   if(df < 1)
     df <- 1
+  int <- c(.Machine$double.eps^0.25, 1e+10)
   XX <- crossprod(x$X)
   if(length(tau2) > 1) {
     df.part <- df / length(tau2)
@@ -448,7 +442,7 @@ assign.df <- function(x, df) {
         edf <- sum.diag(XX %*% matrix_inv(XX + S, index = x$imat))
         return((df - edf)^2)
       }
-      opt <- try(optimize(objfun, c(.Machine$double.eps^0.25, 1e+10))$minimum, silent = TRUE)
+      opt <- try(optimize(objfun, int)$minimum, silent = TRUE)
       if(!inherits(opt, "try-error"))
         tau2[j] <- opt
     }
@@ -457,7 +451,7 @@ assign.df <- function(x, df) {
       edf <- sum.diag(XX %*% matrix_inv(XX + 1 / tau2 * x$S[[1]], index = x$imat))
       return((df - edf)^2)
     }
-    tau2 <- try(optimize(objfun, c(.Machine$double.eps^0.25, 1e+10))$minimum, silent = TRUE)
+    tau2 <- try(optimize(objfun, int)$minimum, silent = TRUE)
     if(inherits(tau2, "try-error"))
       return(x)
   }
