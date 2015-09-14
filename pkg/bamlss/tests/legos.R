@@ -220,5 +220,5 @@ f <- list(
   sigma ~ s(mage) + s(mbmi) + s(cage) + s(cbmi) + s(mcdist,bs="mrf",xt=xt)
 )
 
-b <- bamlss(f, data = india, sampler = FALSE, optimizer = boost99, mstop = 1000)
+b <- bamlss(f, data = india, sampler = FALSE, optimizer = boost99)
 

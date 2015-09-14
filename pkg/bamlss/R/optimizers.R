@@ -1331,7 +1331,6 @@ boost99 <- function(x, y, family, weights = NULL, offset = NULL,
   ## Save rss in list().
   rss <- make.state.list(x, type = 2)
 
-
   ## Extract actual predictor.
   eta <- get.eta(x)
 
