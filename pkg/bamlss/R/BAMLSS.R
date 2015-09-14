@@ -2048,6 +2048,7 @@ compute_term <- function(x, get.X, fit.fun, psamples, vsamples = NULL,
   }
   class(smf) <- c(class(x), "data.frame")
   x[!(names(x) %in% c("term", "label", "bs.dim", "dim"))] <- NULL
+  attr(x, "qrc") <- NULL
   attr(smf, "specs") <- x
   class(attr(smf, "specs")) <- class(x)
   attr(smf, "x") <- if(xsmall & nt < 2) data0[, tterms] else data[, tterms]
@@ -3403,50 +3404,11 @@ plot.bamlss.effect.default <- function(x, ...) {
   }
 
   if(length(terms <- attr(x, "specs")$term) > 2) {
-    if(is.null(args$view)) args$view <- terms[1:2]
-    args$view <- rep(args$view, length.out = 2)
-    cn <- colnames(x)
-    td <- terms[!(i <- (terms %in% args$view))]
-    xattr <- attributes(x)
-    xattr$specs$dim <- 2
-    args$cond <- if(is.null(args$cond)) mean(x[, td], na.rm = TRUE) else args$cond
-    args$cond <- x[which.min(abs(x[, td] - args$cond)), td]
-    samps <- attr(x, "samples")
-    specs <- attr(x, "specs")
-    newdata <- x[, 1:length(attr(x, "specs")$term), drop = FALSE]
-    newdata[[td]] <- args$cond
-
-    X <- if(inherits(specs, "mgcv.smooth")) {
-      PredictMat(specs, newdata)
-    } else {
-      if(!is.null(specs$basis)) {
-        stopifnot(is.function(specs$basis))
-        if(specs$by != "NA") {  ## ATTENTION: by variables with basis()!
-          if(!(specs$by %in% names(newdata)))
-            stop("cannot find by variable ", specs$by, " in newdata!")
-          if(!is.factor(unlist(newdata[specs$by]))) {
-            as.numeric(unlist(newdata[specs$by])) * specs$basis(newdata[specs$term])
-          } else specs$basis(newdata[specs$term])
-        } else specs$basis(newdata[specs$term])
-      } else stop(paste("cannot compute design matrix for term ", specs$label, "!", sep = ""))
-    }
-
-    FUN <- function(x) {
-      rval <- as.numeric(quantile(x, probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
-      names(rval) <- c("2.5%", "50%", "97.5%")
-      rval
-    }
-    fit <- apply(samps, 1, function(g) {
-      names(g) <- NULL
-      specs$fit.fun(X, g, expand = FALSE)
-    })
-    fit <- t(apply(fit, 1, FUN))
-
-    x <- cbind(x[, terms[i]], fit)
-    xattr$names <- colnames(x)
-    ##xattr$partial.resids <- xattr$partial.resids[, -td, drop = FALSE]
-    mostattributes(x) <- xattr
-    attr(x, "specs")$dim <- 2
+    plot(c(0,1), c(0,1), type = "n", axes = FALSE, xlab = "", ylab = "")
+    text(0.5, 0.5, paste("use predict() to plot ", attr(x, "specs")$label, "!", sep = ""))
+    box()
+    warning(paste("use predict() to plot ", attr(x, "specs")$label, "!", sep = ""))
+    return(NULL)
   }
 
   args$x <- x

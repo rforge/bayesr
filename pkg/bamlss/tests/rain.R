@@ -12,15 +12,14 @@ if(file.exists("~/data/homstart.rda")) {
 
 homstart$raw[homstart$raw < 0] <- 0
 
-rain2 <- subset(homstart, year >= 2008)
+d <- subset(homstart, year >= 2009)
 
 f <- list(
-  sqrt(raw) ~ te(day,long,lat, bs=c("cc","tp"), d=c(1,2)) + s(elevation,k=4) + s(long,lat),
-  sigma ~ te(day,long,lat, bs=c("cc","tp"), d=c(1,2)) + s(elevation,k=4) + s(long,lat)
+  sqrt(raw) ~ te(day,long,lat, bs=c("cc","tp"), d=c(1,2)) + s(long,lat) + s(elevation,k=4),
+  sigma ~ 1
 )
 
-b1 <- bamlss(f, data = rain2, family = "cnorm", binning = TRUE,
-  before = TRUE, gam.side = FALSE, do.optim = FALSE, n.iter = 300, burnin = 0, thin = 1)
+b <- bamlss(f, data = d, family = "cnorm", binning = TRUE, do.optim = FALSE, gam.side = FALSE, n.iter = 200, cores = 3, burnin = 0, thin = 1)
 
 
 library("truncreg")
