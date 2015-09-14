@@ -723,7 +723,7 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
   xbin.fun(data$binning$sorted.index, weights, e, data$weights, data$rres, data$binning$order)
 
   ## Compute mean and precision.
-  XWX <- crossprod(data$X, data$X * data$weights)
+  XWX <- do.XWX(data$X, 1 / data$weights, data$imat)
   S <- 0
   P <- if(data$fixed) {
     if((k <- ncol(data$X)) < 2) {
@@ -778,7 +778,7 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
   xbin.fun(data$binning$sorted.index, weights, e, data$weights, data$rres, data$binning$order)
 
   ## Compute mean and precision.
-  XWX <- crossprod(data$X, data$X * data$weights)
+  XWX <- do.XWX(data$X, 1 / data$weights, data$imat)
   P2 <- if(data$fixed) {
     if(k < 2) {
       1 / (XWX)

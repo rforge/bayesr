@@ -16,10 +16,10 @@ rain2 <- subset(homstart, year >= 2008)
 
 f <- list(
   sqrt(raw) ~ te(day,long,lat, bs=c("cc","tp"), d=c(1,2)) + s(elevation,k=4) + s(long,lat),
-  ~ te(day,long,lat, bs=c("cc","tp"), d=c(1,2)) + s(elevation,k=4) + s(long,lat)
+  sigma ~ te(day,long,lat, bs=c("cc","tp"), d=c(1,2)) + s(elevation,k=4) + s(long,lat)
 )
 
-b1 <- bamlss(f, data = rain2, family = gF(cnorm), binning = TRUE,
+b1 <- bamlss(f, data = rain2, family = "cnorm", binning = TRUE,
   before = TRUE, gam.side = FALSE, do.optim = FALSE, n.iter = 300, burnin = 0, thin = 1)
 
 

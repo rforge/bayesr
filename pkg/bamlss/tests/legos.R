@@ -94,7 +94,7 @@ unlist(p)
 unlist(parameters(randomize(bf)))
 
 
-## Estimate model
+## Estimate model.
 data("GAMart", package = "R2BayesX")
 b <- bamlss(num|sigma ~ s(x1) + s(x2) + x3 + id | s(x1) + x2, data = GAMart, cores = 3, chains = 2)
 samps <- samples(b)
@@ -122,7 +122,7 @@ nd <- data.frame("x2" = seq(0, 1, length = 100), "x3" = seq(0, 1, length = 100))
 p <- predict(b, newdata = nd, model = 1, term = c("x2", "x3"), FUN = quantile)
 print(head(p))
 
-p <- predict(b, term = 1:2)
+str(predict(b, term = 1:2))
 
 
 ## Multinomial example.
@@ -132,9 +132,9 @@ b <- bamlss(mstatus ~ s(age), data = marital.nz,
   family = "multinomial", reference = "Married/Partnered", cores = 4)
 
 plot(b)
-plot(b, which = "effects")
-plot(b, which = "effects", model = 1)
-plot(b, which = "effects", model = c(1, 3))
+plot(b, which = "samples")
+plot(b, model = 1)
+plot(b, model = c(1, 3))
 
 a <- results.bamlss.default(b)
 plot(a)

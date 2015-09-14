@@ -724,20 +724,9 @@ cnorm.bamlss <- function(...)
     "names" = c("mu", "sigma"),
     "links" = c("mu" = "identity", "sigma" = "log")
   )
-  f$transform <- function(x, ...) {
-    x <- bamlss.setup(x, ...)
-    y <- attr(x, "response.vec")
-    check <- as.integer(y <= 0)
-    attr(y, "check") <- check
-    attr(x, "response.vec") <- y
-    x
-  }
-  f$engine <- function(x, ...) {
-    sampler <- if(is.null(list(...)$no.mcmc)) {
-      function(x, ...) { GMCMC(x, propose = "iwls", ...) }
-    } else null.sampler
-    optimizer <- if(is.null(list(...)$no.bfit)) bfit0 else opt0
-    stacker(x, optimizer = optimizer, sampler = sampler, ...)
+  f$transform = function(x, ...) {
+    attr(x$y[[1]], "check") <- as.integer(x$y[[1]] <= 0)
+    list("y" = x$y)
   }
   f$score <- list(
     "mu" = function(y, par, ...) {
