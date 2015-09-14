@@ -514,7 +514,7 @@ get.log.prior <- function(x, type = 1)
   lp
 }
 
-get.all.par <- function(x)
+get.all.par <- function(x, drop = FALSE, list = TRUE)
 {
   nx <- names(x)
   np <- length(nx)
@@ -552,6 +552,13 @@ get.all.par <- function(x)
           }
         }
       }
+    }
+  }
+  if(!list) {
+    par <- unlist(par)
+    if(drop) {
+      for(j in c("edf", "tau2", "alpha"))
+        par <- par[!grepl(j, names(par), fixed = TRUE)]
     }
   }
   par
@@ -1056,41 +1063,31 @@ set.all.par <- function(par, x, hessian = NULL)
 }
 
 
-log_posterior <- function(par, x, verbose = TRUE, show.edf = TRUE, digits = 3, scale = NULL)
+log_posterior <- function(par, x, y, family, verbose = TRUE, digits = 3, scale = NULL)
 {
   nx <- names(x)
-  np <- length(nx)
-  eta <- vector(mode = "list", length = np)
+  eta <- vector(mode = "list", length = length(nx))
   names(eta) <- nx
-  family <- attr(x, "family")
   lprior <- 0.0
-  edf <- 0.0
-  start <- 1
-  for(j in 1:np) {
-    eta[[nx[j]]] <- 0.0
-    for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-      g <- get.state(x[[nx[j]]]$smooth.construct[[sj]], "b")
-      end <- length(g) + start - 1
-      i <- start:end
-      tpar <- par[i]
-      names(tpar) <- names(g)
-      start <- max(i) + 1
-      x[[nx[j]]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, tpar, "b")
-      x[[nx[j]]]$smooth.construct[[sj]]$state$fitted.values <- x[[nx[j]]]$smooth.construct[[sj]]$fit.fun(x[[nx[j]]]$smooth.construct[[sj]]$X,
+  for(j in nx) {
+    eta[[j]] <- 0.0
+    for(sj in names(x[[j]]$smooth.construct)) {
+      xl <- paste(j, if(sj != "model.matrix") "s" else "p", x[[j]]$smooth.construct[[sj]]$label, sep = ".")
+      tpar <- par[grep(xl, names(par), fixed = TRUE)]
+      x[[j]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[j]]$smooth.construct[[sj]]$state$parameters, tpar, "b")
+      x[[j]]$smooth.construct[[sj]]$state$fitted.values <- x[[j]]$smooth.construct[[sj]]$fit.fun(x[[j]]$smooth.construct[[sj]]$X,
         get.par(tpar, "b"))
-      eta[[nx[j]]] <- eta[[nx[j]]] + fitted(x[[nx[j]]]$smooth.construct[[sj]]$state)
-      lprior <- lprior + x[[nx[j]]]$smooth.construct[[sj]]$prior(c(tpar, get.state(x[[nx[j]]]$smooth.construct[[sj]], "tau2")))
-      edf <- edf + x[[nx[j]]]$smooth.construct[[sj]]$edf(x[[nx[j]]]$smooth.construct[[sj]])
+      eta[[j]] <- eta[[j]] + fitted(x[[j]]$smooth.construct[[sj]]$state)
+      lprior <- lprior + x[[j]]$smooth.construct[[sj]]$prior(c(tpar, get.state(x[[j]]$smooth.construct[[sj]], "tau2")))
     }
   }
-  ll <- family$loglik(attr(x, "y.vec"), family$map2par(eta))
+  ll <- family$loglik(y, family$map2par(eta))
   lp <- as.numeric(ll + lprior)
 
   if(verbose) {
     cat("\r")
     vtxt <- paste("logLik ", fmt(ll, width = 8, digits = digits),
       " logPost ", fmt(lp, width = 8, digits = digits),
-      if(show.edf) paste(" edf ", fmt(edf, width = 6, digits = digits), sep = "") else NULL,
       " iteration ", formatC(bamlss_log_posterior_iteration, width = 4), sep = "")
     cat(vtxt)
     if(.Platform$OS.type != "unix") flush.console()
@@ -1103,61 +1100,56 @@ log_posterior <- function(par, x, verbose = TRUE, show.edf = TRUE, digits = 3, s
   return(lp)
 }
 
-grad_posterior <- function(par, x, ...)
+grad_posterior <- function(par, x, y, family, ...)
 {
   nx <- names(x)
-  np <- length(nx)
-  eta <- vector(mode = "list", length = np)
+  eta <- vector(mode = "list", length = length(nx))
   names(eta) <- nx
-  family <- attr(x, "family")
   grad <- NULL
-  for(j in 1:np) {
-    eta[[nx[j]]] <- 0
-    for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-      tpar <- par[grep(paste("p", j, ".t", sj, ".", sep = ""), names(par), fixed = TRUE)]
-      x[[nx[j]]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, tpar, "b")
-      x[[nx[j]]]$smooth.construct[[sj]]$state$fitted.values <- x[[nx[j]]]$smooth.construct[[sj]]$fit.fun(x[[nx[j]]]$smooth.construct[[sj]]$X,
+  for(j in nx) {
+    eta[[j]] <- 0
+    for(sj in names(x[[j]]$smooth.construct)) {
+      xl <- paste(j, if(sj != "model.matrix") "s" else "p", x[[j]]$smooth.construct[[sj]]$label, sep = ".")
+      tpar <- par[grep(xl, names(par), fixed = TRUE)]
+      x[[j]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[j]]$smooth.construct[[sj]]$state$parameters, tpar, "b")
+      x[[j]]$smooth.construct[[sj]]$state$fitted.values <- x[[j]]$smooth.construct[[sj]]$fit.fun(x[[j]]$smooth.construct[[sj]]$X,
         get.par(tpar, "b"))
-      eta[[nx[j]]] <- eta[[nx[j]]] + fitted(x[[nx[j]]]$smooth.construct[[sj]]$state)
+      eta[[j]] <- eta[[j]] + fitted(x[[j]]$smooth.construct[[sj]]$state)
     }
   }
-  for(j in 1:np) {
-    if(!is.null(family$gradient[[nx[j]]])) {
-      for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-        tp <- get.state(x[[nx[j]]]$smooth.construct[[sj]], "par")
-        tgrad <- drop(family$gradient[[nx[j]]](get.par(tp, "b"), attr(x, "y.vec"), eta, x[[nx[j]]]$smooth.construct[[sj]]))
-        if(!is.null(x[[nx[j]]]$smooth.construct[[sj]]$grad)) {
-          tgrad <- tgrad + drop(x[[nx[j]]]$smooth.construct[[sj]]$grad(score = NULL, tp, full = FALSE))
-        }
-        grad <- c(grad, tgrad)
-      }
-    } else {
-      score <- family$score[[nx[j]]](attr(x, "y.vec"), family$map2par(eta), id = nx[j])
-      for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-        tgrad <- x[[nx[j]]]$smooth.construct[[sj]]$grad(score, x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, full = FALSE)
-        grad <- c(grad, tgrad)
-      }
+  for(j in nx) {
+    score <- family$score[[j]](y, family$map2par(eta), id = j)
+    for(sj in names(x[[j]]$smooth.construct)) {
+      tgrad <- x[[j]]$smooth.construct[[sj]]$grad(score, x[[j]]$smooth.construct[[sj]]$state$parameters, full = FALSE)
+      grad <- c(grad, tgrad)
     }
   }
   return(grad)
 }
 
 
-opt0 <- function(x, verbose = TRUE, digits = 3, gradient = TRUE, hessian = FALSE,
-  eps = .Machine$double.eps^0.5, maxit = 100, ...)
+opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
+  gradient = TRUE, hessian = FALSE, eps = .Machine$double.eps^0.5, maxit = 100, ...)
 {
-  x <- bamlss.engine.setup(x, ...)
+  nx <- family$names
+  if(!all(nx %in% names(x)))
+    stop("design construct names mismatch with family names!")
 
-  par <- make_par(x, add.tau2 = FALSE)
-  family <- attr(x, "family")
+  if(is.null(attr(x, "bamlss.engine.setup")))
+    x <- bamlss.engine.setup(x, ...)
+
+  if(!is.null(start))
+    x <- set.starting.values(x, start)
+
+  par <- get.all.par(x, list = FALSE, drop = TRUE)
 
   if(!hessian) {
     if(verbose)
       bamlss_log_posterior_iteration <<- 1
 
-    opt <- optim(par$par, fn = log_posterior,
+    opt <- optim(par, fn = log_posterior,
       gr = if(!is.null(family$score) & gradient) grad_posterior else NULL,
-      x = x, method = "BFGS", verbose = verbose, show.edf = FALSE,
+      x = x, y = y[[1]], family = family, method = "BFGS", verbose = verbose,
       digits = digits, control = list(fnscale = -1, reltol = eps, maxit = maxit),
       hessian = TRUE)
  
@@ -1166,15 +1158,11 @@ opt0 <- function(x, verbose = TRUE, digits = 3, gradient = TRUE, hessian = FALSE
       rm(bamlss_log_posterior_iteration, envir = .GlobalEnv)
     }
 
-    x <- set.all.par(opt$par, x, opt$hessian)
-    attr(x, "hessian") <- opt$hessian
-    attr(x, "converged") <- opt$convergence < 1
-
-    return(x)
+    return(list("parameters" = opt$par, "hessian" = opt$hessian, "converged" = opt$convergence < 1))
   } else {
-    opt <- optimHess(par$par, fn = log_posterior,
+    opt <- optimHess(par, fn = log_posterior,
       gr = if(!is.null(family$score) & gradient) grad_posterior else NULL,
-      x = x, verbose = verbose, digits = digits,
+      x = x, y = y[[1]], family = family, verbose = verbose, digits = digits,
       control = list(fnscale = -1, reltol = eps, maxit = maxit))
     return(opt)
   }
@@ -1187,76 +1175,6 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind)
     as.numeric(e), as.numeric(xweights), as.numeric(xrres),
     as.integer(oind))
   invisible(NULL)
-}
-
-
-## Censored normal backfitting.
-bfit_cnorm <- function(x, criterion = c("AICc", "BIC", "AIC"),
-  eps = .Machine$double.eps^0.25, maxit = 400, outer = FALSE, inner = FALSE,
-  verbose = TRUE, digits = 4, ...)
-{
-  criterion <- match.arg(criterion)
-
-  x <- bamlss.engine.setup(x, criterion = criterion, ...)
-
-  family <- attr(x, "family")
-  nx <- family$names[1:2]
-  if(!all(nx %in% names(x)))
-    stop("parameter names mismatch with family names!")
-  criterion <- match.arg(criterion)
-
-  np <- length(nx)
-  y <- attr(x, "y.vec")
-  nobs <- if(is.null(dim(y))) length(y) else nrow(y)
-  eta <- get.eta(x)
-  edf <- get.edf(x)
-
-  ## Start the backfitting algorithm.
-  eps0 <- eps + 1; iter <- 1
-  while(eps0 > eps & iter < maxit) {
-    eta0 <- eta
-    ## Cycle through all parameters
-    for(j in 1:np) {
-      for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-        ## Get updated parameters.
-        p.state <- x[[nx[j]]]$smooth.construct[[sj]]$update(x[[nx[j]]]$smooth.construct[[sj]],
-          family, y, eta, nx[j], edf = edf)
-
-        ## Compute equivalent degrees of freedom.
-        edf <- edf - x[[nx[j]]]$smooth.construct[[sj]]$state$edf + p.state$edf
-
-        ## Update predictor and smooth fit.
-        eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth.construct[[sj]]$state) + fitted(p.state)
-
-        x[[nx[j]]]$smooth.construct[[sj]]$state <- p.state
-      }
-    }
-
-    eps0 <- do.call("cbind", eta)
-    eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
-    if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
-
-    peta <- family$map2par(eta)
-
-    if(verbose) {
-      IC <- get.ic(family, y, peta, edf, nobs, criterion)
-      cat("\r")
-      vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
-        " logLik ", fmt(family$loglik(y, peta), width = 8, digits = digits),
-        " edf ", fmt(edf, width = 6, digits = digits),
-        " eps ", fmt(eps0, width = 6, digits = digits + 2),
-        " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
-      cat(vtxt)
-
-      if(.Platform$OS.type != "unix") flush.console()
-    }
-
-    iter <- iter + 1
-  }
-
-  if(verbose) cat("\n")
-
-  return(x)
 }
 
 
