@@ -374,7 +374,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
 
 
 ## Functions for index matrices.
-index_mat <- function(x)
+index_mat <- function(x, outer = TRUE)
 {
   if(is.null(dim(x)))
     return(NULL)
@@ -404,7 +404,10 @@ index_mat <- function(x)
 ## Computation of fitted values with index matrices.
 index_mat_fit <- function(X, b, index)
 {
-  .Call("index_mat_fit", X, b, index)
+  fit <- if(inherits(X, "dgCMatrix")) {
+    drop(X %*% b)
+  } else .Call("index_mat_fit", X, b, index)
+  return(fit)
 }
 
 
@@ -421,6 +424,31 @@ make.fit.fun <- function(x)
   }
   return(ff)
 }
+
+
+check.imat <- function(X, take, id)
+{
+  if(is.null(X)) {
+    return(NULL)
+  } else {
+    X[take, , drop = FALSE]
+  }
+}
+
+
+## Fast block diagonal crossproduct with weights.
+do.XWX <- function(x, w, index = NULL)
+{
+  if(is.null(index) | inherits(x, "dgCMatrix")) {
+    rval <- crossprod(x / w, x)
+  } else {
+    if(is.null(dim(index)))
+      index <- matrix(index, ncol = 1)
+    rval <- .Call("do_XWX", x, w, index)
+  }
+  rval
+}
+
 
 
 ## Get the model.frame.
@@ -5148,23 +5176,13 @@ matrix_inv <- function(x, index = NULL)
 {
   if(length(x) < 2)
     return(1 / x)
-  if(!is.null(index) & FALSE) {
-    xinv <- lapply(1:nrow(index), function(i) {
-      tmp <- index[i,]
-      tmp <- tmp[tmp > 0]
-      m <- min(tmp)
-      M <- max(tmp)
-      x[m:M, m:M]
-    })
-    xinv <- lapply(1:nrow(index), function(i) {
-      matrix_inv(xinv[[i]])
-    })
-    xinv <- as.matrix(bdiag(xinv))
-    return(xinv)
-
-    if(ncol(index) < 2 & FALSE) {
+  if(!is.null(index)) {
+    if(ncol(index) < 2) {
       p <- diag(1 / diag(x))
       return(p)
+    }
+    if(inherits(x, "dgCMatrix")) {
+      return(solve(x))
     }
   }
   rn <- rownames(x)

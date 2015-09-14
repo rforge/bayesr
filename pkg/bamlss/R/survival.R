@@ -779,30 +779,6 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take)
 }
 
 
-check.imat <- function(X, take, id)
-{
-  if(is.null(X)) {
-    return(NULL)
-  } else {
-    X[take, , drop = FALSE]
-  }
-}
-
-
-## Fast block diagonal crossproduct with weights.
-do.XWX <- function(x, w, index = NULL)
-{
-  if(is.null(index)) {
-    rval <- crossprod(x / w, x)
-  } else {
-    if(is.null(dim(index)))
-      index <- matrix(index, ncol = 1)
-    rval <- .Call("do_XWX", x, w, index)
-  }
-  rval
-}
-
-
 ## Extract the XT matrix.
 extract_XT <- function(X, tnr, tnc)
 {
