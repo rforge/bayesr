@@ -83,7 +83,14 @@ bamlss.engine.setup <- function(x, update = "iwls",
       if(length(x$smooth.construct)) {
         for(j in seq_along(x$smooth.construct)) {
           x$smooth.construct[[j]] <- bamlss.engine.setup.smooth(x$smooth.construct[[j]], ...)
-          x$smooth.construct[[j]] <- assign.df(x$smooth.construct[[j]], df)
+          tdf <- NULL
+          if(!is.null(df)) {
+            if(!is.null(names(df))) {
+              if((x$smooth.construct[[j]]$label %in% names(df)))
+                tdf <- df[x$smooth.construct[[j]]$label]
+            } else tdf <- df[1]
+          }
+          x$smooth.construct[[j]] <- assign.df(x$smooth.construct[[j]], tdf)
           x$smooth.construct[[j]]$grid.optim <- grid.optim
           if(!is.null(x$smooth.construct[[j]]$xt$update))
             x$smooth.construct[[j]]$update <- x$smooth.construct[[j]]$xt$update
