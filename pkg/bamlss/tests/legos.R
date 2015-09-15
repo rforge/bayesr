@@ -238,8 +238,8 @@ LondonFire$month <- as.integer(format(as.yearmon(d$DateOfCall), "%m"))
 LondonFire$day <- as.integer(format(as.yearmon(d$DateOfCall), "%d"))
 time <- as.POSIXlt(d$TimeOfCall, format = "%H:%M:%S")
 LondonFire$daytime <- time$hour + time$min / 60 + time$sec / (60^2)
-LondonFire$lon <- as.numeric(d$Easting_rounded)
-LondonFire$lat <- as.numeric(d$Northing_rounded)
+LondonFire$east <- as.numeric(d$Easting_rounded)
+LondonFire$north <- as.numeric(d$Northing_rounded)
 LondonFire$arrivaltime <- as.numeric(d$FirstPumpArriving_AttendanceTime) / 60
 LondonFire$id <- as.factor(d$IncidentNumber)
 LondonFire <- na.omit(as.data.frame(LondonFire))
@@ -247,28 +247,31 @@ LondonFire <- na.omit(as.data.frame(LondonFire))
 d <- subset(LondonFire, year == 2014)
 
 f <- list(
-  Surv(arrivaltime) ~ ti(arrivaltime) + ti(lon, lat, arrivaltime, d = c(2, 1)),
-  gamma ~ s(daytime, bs = "cc") + s(lon, lat, k = 100)
+  Surv(arrivaltime) ~ ti(arrivaltime, k = 20) + ti(east, north, arrivaltime, d = c(2, 1), k = c(30, 5)),
+  gamma ~ s(daytime, bs = "cc") + s(east, north, k = 100)
 )
 
 b <- bamlss(f, data = d, family = "cox", subdivisions = 10, sampler = FALSE)
 
-k <- 10
-nd0 <- expand.grid(
-  "lon" = seq(min(d$lon), max(d$lon), length = k),
-  "lat" = seq(min(d$lat), max(d$lat), length = k)
-)
+k <- 100
+nd0 <- d[sample(i:nrow(d), size = k), c("east", "north")]
 nd <- NULL
 k <- 100
 for(i in 1:nrow(nd0)) {
   dtmp <- data.frame("arrivaltime" = seq(min(d$arrivaltime), max(d$arrivaltime), length = k))
-  dtmp$lon <- nd0$lon[i]
-  dtmp$lat = nd0$lat[i]
+  dtmp$east <- nd0$east[i]
+  dtmp$north = nd0$north[i]
   dtmp$id <- i
   nd <- rbind(nd, dtmp)
 }
 nd$id <- as.factor(nd$id)
-nd$p50 <- predict(b, newdata = nd, model = "lambda")
+nd$p50 <- predict(b, newdata = nd, model = "lambda", term = "ti(east,north,arrivaltime)", intercept = FALSE)
 
 bamlss_factor2d_plot(nd[, c("id", "arrivaltime", "p50")])
+abline(v = 6)
+
+nd <- d
+nd$arrivaltime <- 6
+nd$p50 <- predict(b, newdata = nd, model = "lambda", term = "ti(east,north,arrivaltime)", intercept = FALSE)
+plot3d(p50 ~ east + north, data = nd, image = TRUE, grid = 200, contour = TRUE, swap = TRUE)
 
