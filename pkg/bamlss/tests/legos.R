@@ -222,3 +222,53 @@ f <- list(
 
 b <- bamlss(f, data = india, sampler = FALSE, optimizer = boost99)
 
+
+## Another survival example.
+## Paper: http://arxiv.org/pdf/1503.07709.pdf
+## Data: http://data.london.gov.uk/dataset/london-fire-brigade-incident-records
+library("zoo")
+d <- read.csv("/home/nik/data/LondonFire/data2012-2015.csv",
+  header = TRUE, stringsAsFactors = FALSE)
+d <- subset(d, PropertyCategory == "Dwelling" & IncidentGroup == "Fire")
+d$DateOfCall <- as.Date(d$DateOfCall, "%d-%b-%y")
+
+LondonFire <- list()
+LondonFire$year <- as.integer(format(as.yearmon(d$DateOfCall), "%Y"))
+LondonFire$month <- as.integer(format(as.yearmon(d$DateOfCall), "%m"))
+LondonFire$day <- as.integer(format(as.yearmon(d$DateOfCall), "%d"))
+time <- as.POSIXlt(d$TimeOfCall, format = "%H:%M:%S")
+LondonFire$daytime <- time$hour + time$min / 60 + time$sec / (60^2)
+LondonFire$lon <- as.numeric(d$Easting_rounded)
+LondonFire$lat <- as.numeric(d$Northing_rounded)
+LondonFire$arrivaltime <- as.numeric(d$FirstPumpArriving_AttendanceTime) / 60
+LondonFire$id <- as.factor(d$IncidentNumber)
+LondonFire <- na.omit(as.data.frame(LondonFire))
+
+d <- subset(LondonFire, year == 2014)
+
+f <- list(
+  Surv(arrivaltime) ~ ti(arrivaltime) + ti(lon, lat, arrivaltime, d = c(2, 1)),
+  gamma ~ s(daytime, bs = "cc") + s(lon, lat, k = 100)
+)
+
+b <- bamlss(f, data = d, family = "cox", subdivisions = 10, sampler = FALSE)
+
+k <- 10
+nd0 <- expand.grid(
+  "lon" = seq(min(d$lon), max(d$lon), length = k),
+  "lat" = seq(min(d$lat), max(d$lat), length = k)
+)
+nd <- NULL
+k <- 100
+for(i in 1:nrow(nd0)) {
+  dtmp <- data.frame("arrivaltime" = seq(min(d$arrivaltime), max(d$arrivaltime), length = k))
+  dtmp$lon <- nd0$lon[i]
+  dtmp$lat = nd0$lat[i]
+  dtmp$id <- i
+  nd <- rbind(nd, dtmp)
+}
+nd$id <- as.factor(nd$id)
+nd$p50 <- predict(b, newdata = nd, model = "lambda")
+
+bamlss_factor2d_plot(nd[, c("id", "arrivaltime", "p50")])
+

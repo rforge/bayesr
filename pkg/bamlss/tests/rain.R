@@ -16,10 +16,12 @@ d <- subset(homstart, year >= 2009)
 
 f <- list(
   sqrt(raw) ~ te(day,long,lat, bs=c("cc","tp"), d=c(1,2)) + s(long,lat) + s(elevation,k=4),
-  sigma ~ 1
+  sigma ~ te(day,long,lat, bs=c("cc","tp"), d=c(1,2)) + s(long,lat) + s(elevation,k=4)
 )
 
-b <- bamlss(f, data = d, family = "cnorm", binning = TRUE, do.optim = FALSE, gam.side = FALSE, n.iter = 200, cores = 3, burnin = 0, thin = 1)
+b <- bamlss(f, data = d, family = "cnorm",
+  binning = TRUE, do.optim = FALSE, gam.side = FALSE,
+  n.iter = 200, cores = 3, burnin = 0, thin = 1)
 
 
 library("truncreg")

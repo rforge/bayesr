@@ -773,13 +773,13 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   double *Lptr = REAL(L);
 
   for(j = 0; j < nc; j++) { 	/* Zero the lower triangle. */
-	  for(i = j + 1; i < nc; i++) {
+    for(i = j + 1; i < nc; i++) {
       Lptr[i + nc * j] = 0.0;
     }
   }
 
-	int info;
-	F77_CALL(dpotrf)("Upper", &nc, Lptr, &nc, &info);
+  int info;
+  F77_CALL(dpotrf)("Upper", &nc, Lptr, &nc, &info);
 
   /* Compute the inverse precision matrix. */
   SEXP PINV;
@@ -793,11 +793,11 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   PROTECT(PINVL = duplicate(PINV));
   ++nProtected;
   double *PINVLptr = REAL(PINVL);
-	F77_CALL(dpotrf)("Upper", &nc, PINVLptr, &nc, &info);
+  F77_CALL(dpotrf)("Upper", &nc, PINVLptr, &nc, &info);
 
-	for(j = 0; j < nc; j++) {
-	  for(i = j + 1; i < nc; i++) {
-		  PINVptr[i + j * nc] = PINVptr[j + i * nc];
+  for(j = 0; j < nc; j++) {
+    for(i = j + 1; i < nc; i++) {
+      PINVptr[i + j * nc] = PINVptr[j + i * nc];
     }
   }
 
@@ -953,7 +953,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   ++nProtected;
   Lptr = REAL(L2);
   for(j = 0; j < nc; j++) { 	/* Zero the lower triangle. */
-	  for(i = j + 1; i < nc; i++) {
+    for(i = j + 1; i < nc; i++) {
       Lptr[i + nc * j] = 0.0;
     }
   }
@@ -970,10 +970,10 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 	F77_CALL(dpotrf)("Upper", &nc, PINVLptr, &nc, &info);
 
   sdiag0 = 0.0;
-	for(j = 0; j < nc; j++) {
+  for(j = 0; j < nc; j++) {
     sdiag0 += log(pow(Lptr[j + nc * j], 2.0));
-	  for(i = j + 1; i < nc; i++) {
-		  PINVptr[i + j * nc] = PINVptr[j + i * nc];
+    for(i = j + 1; i < nc; i++) {
+      PINVptr[i + j * nc] = PINVptr[j + i * nc];
     }
   }
 

@@ -34,7 +34,7 @@ cox.bamlss <- function(...)
 
 ## Posterior mode estimation.
 cox.mode <- function(x, y, weights, offset,
-  nu = 1, eps = .Machine$double.eps^0.25, maxit = 400,
+  nu = 0.1, eps = .Machine$double.eps^0.25, maxit = 400,
   verbose = TRUE, digits = 4, ...)
 {
   ## Names of parameters/predictors.
@@ -605,7 +605,7 @@ surv.transform <- function(x, y, data,
   y <- y[[rn]]
   ntd <- timedependent
   if(!all(ntd %in% names(x)))
-    stop("the time dependent predictors specified are different from family object names!")
+    stop("the predictor names are different from family object names!")
 
   ## The basic setup.
   if(is.null(attr(x, "bamlss.engine.setup")))
@@ -636,6 +636,11 @@ surv.transform <- function(x, y, data,
   ## Create the time grid.
   if(!inherits(y, c("Surv", "Surv2")))
     stop("the response is not a 'Surv' object, use function Surv() or Surv2()!")
+
+  if(is.null(dim(y))) {
+    y <- cbind("time" = y, "status" = rep(1, length(y)))
+    class(y) <- "Surv"
+  }
 
   grid <- function(upper, length){
     seq(from = 0, to = upper, length = length)
