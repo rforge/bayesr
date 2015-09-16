@@ -357,7 +357,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
 
 
 ## Functions for index matrices.
-index_mat <- function(x, outer = TRUE)
+index_mat <- function(x)
 {
   if(is.null(dim(x)))
     return(NULL)
@@ -385,9 +385,9 @@ index_mat <- function(x, outer = TRUE)
 
 
 ## Computation of fitted values with index matrices.
-index_mat_fit <- function(X, b, index)
+index_mat_fit <- function(X, b, index = NULL)
 {
-  fit <- if(inherits(X, "dgCMatrix")) {
+  fit <- if(inherits(X, "dgCMatrix") | is.null(index)) {
     drop(X %*% b)
   } else .Call("index_mat_fit", X, b, index)
   return(fit)
@@ -395,12 +395,13 @@ index_mat_fit <- function(X, b, index)
 
 
 ## The model term fitting function.
-make.fit.fun <- function(x)
+make.fit.fun <- function(x, type = 1)
 {
   ff <- function(X, b, expand = TRUE) {
     if(!is.null(names(b)))
       b <- get.par(b, "b")
-    f <- if(is.null(x$imat)) drop(X %*% b) else index_mat_fit(X, b, x$imat)
+    index <- if(type < 2) "imat" else "grid.imat"
+    f <- if(is.null(x[[index]])) drop(X %*% b) else index_mat_fit(X, b, x[[index]])
     if(!is.null(x$binning$match.index) & expand)
       f <- f[x$binning$match.index]
     if(!is.null(x$xt$force.center))
@@ -411,7 +412,7 @@ make.fit.fun <- function(x)
 }
 
 
-check.imat <- function(X, take, id)
+check.imat <- function(X, take)
 {
   if(is.null(X)) {
     return(NULL)
@@ -4381,8 +4382,10 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
             }
           }
 
-          b <- colnames(psamples)
-          b <- b[!grepl("tau2", b) & !grepl("edf", b) & !grepl("alpha", b)]
+          b <- paste(id, "s", j,
+            if(is.null(colnames(obj$smooth.construct[[j]]$X))) {
+              paste("b", 1:ncol(obj$smooth.construct[[j]]$X), sep = "")
+            } else colnames(obj$smooth.construct[[j]]$X), sep = ".")
           tn <- c(obj$smooth.construct[[j]]$term, if(obj$smooth.construct[[j]]$by != "NA") {
             obj$smooth.construct[[j]]$by
           } else NULL)

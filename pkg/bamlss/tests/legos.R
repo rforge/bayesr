@@ -176,12 +176,12 @@ lambda <-  function(time, x) {
 d <- rSurvTime2(lambda, X, cens_fct, mean_cens = 5)
 
 f <- list(
-  Surv(time, event) ~ s(time) + s(time, by = x3),
-  mu ~ s(x1) + s(x2)
+  Surv(time, event) ~ s(time, bs = "ps", k = 20) + s(time, by = x3),
+  gamma ~ s(x1) + s(x2)
 )
 
 ## Cox model with continuous time.
-b <- bamlss(f, family = "cox", data = d, nu = 0.5, subdivisions = 50, cores = 4,
+b <- bamlss(f, family = "cox", data = d, nu = 0.1, subdivisions = 50, cores = 4,
   n.iter = 4000, burnin = 1000, thin = 5)
 
 
@@ -247,31 +247,10 @@ LondonFire <- na.omit(as.data.frame(LondonFire))
 d <- subset(LondonFire, year == 2014)
 
 f <- list(
-  Surv(arrivaltime) ~ ti(arrivaltime, k = 20) + ti(east, north, arrivaltime, d = c(2, 1), k = c(30, 5)),
-  gamma ~ s(daytime, bs = "cc") + s(east, north, k = 100)
+  Surv(arrivaltime) ~ s(arrivaltime),
+  gamma ~ s(daytime, bs = "cc", k = 20) + s(east, north, k = 100)
 )
 
 b <- bamlss(f, data = d, family = "cox", subdivisions = 10, sampler = FALSE)
-
-k <- 100
-nd0 <- d[sample(i:nrow(d), size = k), c("east", "north")]
-nd <- NULL
-k <- 100
-for(i in 1:nrow(nd0)) {
-  dtmp <- data.frame("arrivaltime" = seq(min(d$arrivaltime), max(d$arrivaltime), length = k))
-  dtmp$east <- nd0$east[i]
-  dtmp$north = nd0$north[i]
-  dtmp$id <- i
-  nd <- rbind(nd, dtmp)
-}
-nd$id <- as.factor(nd$id)
-nd$p50 <- predict(b, newdata = nd, model = "lambda", term = "ti(east,north,arrivaltime)", intercept = FALSE)
-
-bamlss_factor2d_plot(nd[, c("id", "arrivaltime", "p50")])
-abline(v = 6)
-
-nd <- d
-nd$arrivaltime <- 6
-nd$p50 <- predict(b, newdata = nd, model = "lambda", term = "ti(east,north,arrivaltime)", intercept = FALSE)
-plot3d(p50 ~ east + north, data = nd, image = TRUE, grid = 200, contour = TRUE, swap = TRUE)
+plot(b, model = 2, term = 2, image = TRUE, grid = 200, swap = TRUE)
 

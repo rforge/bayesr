@@ -34,9 +34,12 @@ cox.bamlss <- function(...)
 
 ## Posterior mode estimation.
 cox.mode <- function(x, y, weights, offset,
-  nu = 0.1, eps = .Machine$double.eps^0.25, maxit = 400,
+  nu = 0.1, update.nu = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
   verbose = TRUE, digits = 4, ...)
 {
+  if(nu < 0 | nu > 1)
+    stop("nu must be 0 < nu < 1!")
+
   ## Names of parameters/predictors.
   nx <- names(x)
   
@@ -64,6 +67,7 @@ cox.mode <- function(x, y, weights, offset,
   width <- attr(y, "width")
 
   ## Start the backfitting algorithm.
+  logPost0 <- NA
   eps0 <- eps + 1; iter <- 1
   while(eps0 > eps & iter < maxit) {
     eta0 <- eta
@@ -161,9 +165,18 @@ cox.mode <- function(x, y, weights, offset,
     eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
     if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
 
+    logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
+    logPost <- as.numeric(logLik + get.log.prior(x))
+
+    if(iter > 1 & update.nu) {
+      if(logPost < logPost0) {
+        nu <- nu * 0.9
+        if(verbose)
+          cat("\nupdated nu to:", nu, "\n")
+      }
+    }
+
     if(verbose) {
-      logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
-      logPost <- as.numeric(logLik + get.log.prior(x))
       cat("\r")
       vtxt <- paste(
         "logPost ", fmt(logPost, width = 8, digits = digits),
@@ -173,6 +186,8 @@ cox.mode <- function(x, y, weights, offset,
       cat(vtxt)
       if(.Platform$OS.type != "unix") flush.console()
     }
+
+    logPost0 <- logPost
 
     iter <- iter + 1
   }
@@ -771,9 +786,12 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take)
 
   x$XT <- extract_XT(X, gdim[1], gdim[2])
 
+  x$grid.imat <- index_mat(X)
+  ff <- make.fit.fun(x, type = 2)
+
   x$fit.fun_timegrid <- function(g) {
     if(is.null(g)) return(X)
-    f <- x$fit.fun(X, g, expand = FALSE)
+    f <- ff(X, g, expand = FALSE)
     f <- matrix(f, nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
     f
   }

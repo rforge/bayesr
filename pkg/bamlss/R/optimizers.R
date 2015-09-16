@@ -392,8 +392,6 @@ bamlss.engine.setup.smooth.default <- function(x, ...)
   if(!is.null(x$xt$do.optim))
     x$state$do.optim <- x$xt$do.optim
   x$state$edf <- x$edf(x)
-  if(!inherits(x, "model.matrix"))
-    colnames(x$X) <- NULL
   x$imat <- index_mat(x$X)
   x$fit.fun <- make.fit.fun(x)
   x$state$fitted.values <- x$fit.fun(x$X, get.par(x$state$parameters, "b"))
