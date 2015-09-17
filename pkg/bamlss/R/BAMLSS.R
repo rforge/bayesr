@@ -564,7 +564,7 @@ smooth.construct.bamlss.frame <- smooth.construct.bamlss.formula <- smooth.const
 
 ## Extract/initialize parameters.
 parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
-  list = TRUE, simple.list = FALSE, extract = FALSE)
+  list = FALSE, simple.list = FALSE, extract = FALSE)
 {
   if(inherits(x, "bamlss") | extract) {
     if(!is.null(x$parameters)) {
@@ -4652,13 +4652,71 @@ confint.bamlss <- function(object, parm, level = 0.95, model = NULL, ...)
 
 
 ## Extract model coefficients.
-coef.bamlss <- function(object, model = NULL, term = NULL, FUN = mean, ...)
+coef.bamlss <- function(object, model = NULL, term = NULL,
+  FUN = mean, parameters = NULL, pterms = TRUE, sterms = TRUE,
+  list = FALSE, full.names = TRUE, ...)
 {
-  object <- model.terms(object)
-  if(is.null(term))
-    term <- term.labels(object, ne = TRUE, id = FALSE)
-  samps <- samples(object, model = model, term = term)
-  apply(samps, 2, function(x) { FUN(na.omit(x), ...) })
+  if(is.null(object$samples) & is.null(object$parameters))
+    stop("no coefficients to extract!")
+  if(is.null(parameters))
+    parameters <- is.null(object$samples)
+  drop <- c("tau2", "lambda", "edf", "accepted", "alpha", "logLik", "logPost", "AIC", "BIC", "DIC")
+  if(!pterms)
+    drop <- c(drop, ".p.")
+  if(!sterms)
+    drop <- c(drop, ".s.") 
+  par <- samps <- NULL
+  rval <- list()
+  if(!is.null(object$samples)) {
+    rval$samples <- samples(object, model = model, term = term)
+    rval$samples <- rval$samples[, -grep2(drop, colnames(rval$samples), fixed = TRUE), drop = FALSE]
+    rval$samples <- apply(rval$samples, 2, function(x) { FUN(na.omit(x), ...) })
+    rval$samples <- if(!is.null(dim(rval$samples))) {
+      t(rval$samples)
+    } else {
+      as.matrix(rval$samples, ncol = 1)
+    }
+    if(is.null(colnames(rval$samples))) {
+      fn <- deparse(substitute(FUN), backtick = TRUE, width.cutoff = 500)
+      colnames(rval$samples) <- rep(fn, length = ncol(rval$samples))
+    }
+  }
+  if(!is.null(object$parameters) & parameters) {
+    rval$parameters <- parameters(object, list = FALSE)
+    rval$parameters <- rval$parameters[-grep2(drop, names(rval$parameters), fixed = TRUE)]
+    rval$parameters <- as.matrix(rval$parameters, ncol = 1)
+    colnames(rval$parameters) <- "parameters"
+  }
+  rval <- if(length(rval) < 2) as.matrix(rval[[1]], ncol = 1) else do.call("cbind", rval)
+  if(list) {
+    if(!length(rval)) return(numeric(0))
+    nx <- sapply(strsplit(rownames(rval), ".", fixed = TRUE), function(x) { x[1] })
+    rval2 <- list()
+    for(i in unique(nx)) {
+      rval2[[i]] <- rval[nx == i, , drop = FALSE]
+      if(!full.names) {
+        rownames(rval2[[i]]) <- gsub(paste(i, "p.", sep = "."), "", rownames(rval2[[i]]), fixed = TRUE)
+        rownames(rval2[[i]]) <- gsub(paste(i, "s.", sep = "."), "", rownames(rval2[[i]]), fixed = TRUE)
+      }
+      if(ncol(rval2[[i]]) < 2) {
+        rn <- rownames(rval2[[i]])
+        rval2[[i]] <- rval2[[i]][, 1]
+        names(rval2[[i]]) <- rn
+      }
+    }
+    rval <- rval2
+  } else {
+    if(!full.names) {
+      rownames(rval) <- gsub("p.", "", rownames(rval), fixed = TRUE)
+      rownames(rval) <- gsub("s.", "", rownames(rval), fixed = TRUE)
+    } 
+    if(ncol(rval) < 2) {
+      rn <- rownames(rval)
+      rval <- rval[, 1]
+      names(rval) <- rn
+    }
+  }
+  rval
 }
 
 
