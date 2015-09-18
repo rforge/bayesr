@@ -714,8 +714,10 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
     names(IC) <- criterion
 
-    return(list("fitted.values" = eta, "parameters" = get.all.par(x), "edf" = edf,
-      "logLik" = logLik, "logPost" = logPost, "IC" = IC))
+    rval <- list("fitted.values" = eta, "parameters" = get.all.par(x), "edf" = edf,
+      "logLik" = logLik, "logPost" = logPost, "converged" = iter < maxit)
+    rval[[names(IC)]] <- IC
+    rval
   }
 
   backfit(verbose = verbose)
@@ -1019,6 +1021,32 @@ bfit_optim <- function(x, family, y, eta, id, ...)
 }
 
 
+## Compute fitted.values from set of parameters.
+get.eta.par <- function(par, x)
+{
+  nx <- names(x)
+  eta <- vector(mode = "list", length = length(nx))
+  names(eta) <- nx
+  for(j in nx) {
+    eta[[j]] <- 0.0
+    for(sj in names(x[[j]]$smooth.construct)) {
+      xl <- paste(j, if(sj != "model.matrix") "s" else "p", x[[j]]$smooth.construct[[sj]]$label, sep = ".")
+      tpar <- par[grep(xl, names(par), fixed = TRUE)]
+      x[[j]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[j]]$smooth.construct[[sj]]$state$parameters, tpar, "b")
+      x[[j]]$smooth.construct[[sj]]$state$fitted.values <- x[[j]]$smooth.construct[[sj]]$fit.fun(x[[j]]$smooth.construct[[sj]]$X,
+        get.par(tpar, "b"))
+      eta[[j]] <- eta[[j]] + fitted(x[[j]]$smooth.construct[[sj]]$state)
+    }
+    if(!is.null(x[[j]]$model.matrix)) {
+      xl <- paste(j, "p", colnames(x[[j]]$model.matrix), sep = ".")
+      tpar <- par[grep(xl, names(par), fixed = TRUE)]
+      eta[[j]] <- eta[[j]] + drop(x[[j]]$model.matrix %*% tpar)
+    }
+  }
+  return(eta)
+}
+
+
 ## The log-posterior.
 log_posterior <- function(par, x, y, family, verbose = TRUE, digits = 3, scale = NULL)
 {
@@ -1118,7 +1146,11 @@ opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
       rm(bamlss_log_posterior_iteration, envir = .GlobalEnv)
     }
 
-    return(list("parameters" = opt$par, "hessian" = opt$hessian, "converged" = opt$convergence < 1))
+    eta <- get.eta.par(opt$par, x)
+
+    return(list("parameters" = opt$par, "fitted.values" = eta,
+      "logPost" = opt$value, "logLik" = family$loglik(y[[1]], family$map2par(eta)),
+      "hessian" = opt$hessian, "converged" = opt$convergence < 1))
   } else {
     opt <- optimHess(par, fn = log_posterior,
       gr = if(!is.null(family$score) & gradient) grad_posterior else NULL,
