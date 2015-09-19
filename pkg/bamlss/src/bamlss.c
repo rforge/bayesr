@@ -700,15 +700,15 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   double *etaptr = REAL(getListElement(eta2, CHAR(STRING_ELT(id, 0))));
   double *zptr = REAL(z);
   double *eptr = REAL(e);
-  double *xweightsptr = REAL(getListElement(x, "hess"));
+  double *xweightsptr = REAL(getListElement(x, "weights"));
   double *xrresptr = REAL(getListElement(x, "rres"));
   double *XWptr = REAL(getListElement(x, "XW"));
   double *XWXptr = REAL(getListElement(x, "XWX"));
   double *Xptr = REAL(VECTOR_ELT(x, X_ind));
   double *Sptr;
-  int *idptr = INTEGER(getListElement(x, "xbin.ind"));
-  int *indptr = INTEGER(getListElement(x, "xbin.sind"));
-  int *orderptr = INTEGER(getListElement(x, "xbin.order"));
+  int *idptr = INTEGER(getListElement(getListElement(x, "binning"), "match.index"));
+  int *indptr = INTEGER(getListElement(getListElement(x, "binning"), "sorted.index"));
+  int *orderptr = INTEGER(getListElement(getListElement(x, "binning"), "order"));
 
   /* Handling fitted.values. */
   SEXP fitname;

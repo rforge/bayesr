@@ -728,12 +728,12 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
   P <- if(data$fixed) {
     if((k <- ncol(data$X)) < 2) {
       1 / XWX
-    } else chol2inv(L1 <- chol(P01 <- XWX))
+    } else matrix_inv(XWX, data$imat)
   } else {
     tau2 <- get.par(theta, "tau2")
     for(j in seq_along(data$S))
       S <- S + 1 / tau2[j] * data$S[[j]]
-    chol2inv(L1 <- chol(P01 <- XWX + S))
+    matrix_inv(XWX + S, data$imat)
   }
 
   P[P == Inf] <- 0
@@ -782,9 +782,9 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
   P2 <- if(data$fixed) {
     if(k < 2) {
       1 / (XWX)
-    } else chol2inv(L2 <- chol(P02 <- XWX))
+    } else matrix_inv(XWX, data$imat)
   } else {
-    chol2inv(L2 <- chol(P02 <- XWX + S))
+    matrix_inv(XWX + S, data$imat)
   }
   P2[P2 == Inf] <- 0
   M2 <- P2 %*% crossprod(data$X, data$rres)

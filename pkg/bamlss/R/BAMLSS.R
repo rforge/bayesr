@@ -194,8 +194,10 @@ design.construct <- function(formula, data = NULL, knots = NULL,
     if(model.matrix) {
       obj$model.matrix <- model.matrix(drop.terms.bamlss(obj$terms,
         sterms = FALSE, keep.response = FALSE, data = data), data = data)
-      if(scale.x)
-        obj$model.matrix <- scale.model.matrix(obj$model.matrix)
+      if(ncol(obj$model.matrix) > 0) {
+        if(scale.x)
+          obj$model.matrix <- scale.model.matrix(obj$model.matrix)
+      } else obj$model.matrix <- NULL
     }
     if(smooth.construct) {
       tx <- drop.terms.bamlss(obj$terms,
@@ -332,6 +334,8 @@ design.construct <- function(formula, data = NULL, knots = NULL,
       } else {
         if(!is.null(formula[[i]]$smooth.construct)) {
           for(j in seq_along(formula[[i]]$smooth.construct)) {
+            if(is.null(formula[[i]]$smooth.construct[[j]]$fixed))
+              formula[[i]]$smooth.construct[[j]]$fixed <- FALSE
             if(is.null(formula[[i]]$smooth.construct[[j]]$fit.fun))
               formula[[i]]$smooth.construct[[j]]$fit.fun <- make.fit.fun(formula[[i]]$smooth.construct[[j]])
             if(is.null(formula[[i]]$smooth.construct[[j]]$prior))
@@ -343,6 +347,8 @@ design.construct <- function(formula, data = NULL, knots = NULL,
   } else {
     if(!is.null(formula$smooth.construct)) {
       for(j in seq_along(formula$smooth.construct)) {
+        if(is.null(formula$smooth.construct[[j]]$fixed))
+          formula$smooth.construct[[j]]$fixed <- FALSE
         if(is.null(formula$smooth.construct[[j]]$fit.fun))
           formula$smooth.construct[[j]]$fit.fun <- make.fit.fun(formula$smooth.construct[[j]])
         if(is.null(formula$smooth.construct[[j]]$prior))
@@ -430,11 +436,12 @@ make.prior <- function(x) {
     b <- if(is.null(x$xt[["b"]])) {
       if(is.null(x[["b"]])) 1e-04 else x[["b"]]
     } else x$xt[["b"]]
+    fixed <- if(is.null(x$fixed)) FALSE else x$fixed
 
     prior <- function(parameters) {
       gamma <- parameters[!grepl("tau", names(parameters))]
       tau2 <-  parameters[grepl("tau", names(parameters))]
-      if(x$fixed | !length(tau2)) {
+      if(fixed | !length(tau2)) {
         lp <- sum(dnorm(gamma, sd = 1000, log = TRUE))
       } else {
         if(!is.null(x$sp)) tau2 <- x$sp
@@ -704,22 +711,24 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
       }
     } else {
       if(!is.null(x[[i]]$model.matrix)) {
-        if(simple.list) {
-          par[[i]]$p <- fill[1]
-        } else {
-          nc <- ncol(x[[i]]$model.matrix)
-          par[[i]]$p <- rep(fill[1], length = nc)
-          if(is.null(cn <- colnames(x[[i]]$model.matrix)))
-            cn <- paste("b", 1:nc, sep = "")
-          names(par[[i]]$p) <- cn
-          if(!is.null(start)) {
-            if(length(ii <- grep(paste(i, "p", sep = "."), names(start), fixed = TRUE))) {
-              spar <- start[ii]
-              spn <- names(spar)
-              cn2 <- paste(i, "p", cn, sep = ".")
-              take <- which(spn %in% cn2)
-              if(length(take)) {
-                par[[i]]$p[which(cn2 %in% spn)] <- spar[take]
+        if(ncol(x[[i]]$model.matrix) > 0) {
+          if(simple.list) {
+            par[[i]]$p <- fill[1]
+          } else {
+            nc <- ncol(x[[i]]$model.matrix)
+            par[[i]]$p <- rep(fill[1], length = nc)
+            if(is.null(cn <- colnames(x[[i]]$model.matrix)))
+              cn <- paste("b", 1:nc, sep = "")
+            names(par[[i]]$p) <- cn
+            if(!is.null(start)) {
+              if(length(ii <- grep(paste(i, "p", sep = "."), names(start), fixed = TRUE))) {
+                spar <- start[ii]
+                spn <- names(spar)
+                cn2 <- paste(i, "p", cn, sep = ".")
+                take <- which(spn %in% cn2)
+                if(length(take)) {
+                  par[[i]]$p[which(cn2 %in% spn)] <- spar[take]
+                }
               }
             }
           }
@@ -887,9 +896,13 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
 
     ## Optionally, compute more model stats from samples.
     ms <- sample.stats(samples = bf$samples, x = bf$x, y = bf$y, family = bf$family)
-    if(is.null(bf$model.stats))
-      bf$model.stats <- list()
-    bf$model.stats[names(ms)] <- ms
+    if(is.null(bf$model.stats)) {
+      bf$model.stats <- list("sampler" = list())
+      bf$model.stats$sampler[names(ms)] <- ms
+    } else {
+      bf$model.stats <- list("optimizer" = bf$model.stats, "sampler" = list())
+      bf$model.stats$sampler[names(ms)] <- ms
+    }
   }
 
   if(rescale & bf$scale.x) {
@@ -987,12 +1000,26 @@ sample.stats <- function(samples, x = NULL, y = NULL, family = NULL)
     family <- samples$family
     samples <- samples$samples
   }
-  what <- c("logLik", "logPost", "DIC")
+  what <- c("logLik", "logPost", "DIC", "smooth.construct")
   if(inherits(samples, "mcmc.list"))
     samples <- process.chains(samples)
   samples <- as.matrix(samples)
   sn <- colnames(samples)
   stats <- NULL
+  if("smooth.construct" %in% what) {
+    what <- what[what != "smooth.construct"]
+    pn <- get.all.parnames(x)
+    pn <- grep(".s.", pn, fixed = TRUE, value = TRUE)
+    pn <- grep("tau2", pn, fixed = TRUE, value = TRUE)
+    if(length(pn)) {
+      smooth.construct <- NULL
+      for(j in pn) {
+        if(any(grepl(j, sn, fixed = TRUE))) {
+a <- 1
+        }
+      }
+    }
+  }
   taken <- what[what %in% sn]
   if(length(taken)) {
     what <- what[what != taken]
@@ -2475,10 +2502,12 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   snames <- snames[-grep2(c("alpha", "edf", "tau2", "accepted"), snames)]
   eta <- 0
   if(!is.null(x$model.matrix)) {
-    sn <- paste(id, "p", if(is.null(colnames(x$model.matrix))) {
-      paste("b", 1:ncol(x$model.matrix))
-    } else colnames(x$model.matrix), sep = ".")
-    eta <- eta + fitted_matrix(x$model.matrix, samps[, sn, drop = FALSE])
+    if(ncol(x$model.matrix) > 0) {
+      sn <- paste(id, "p", if(is.null(colnames(x$model.matrix))) {
+        paste("b", 1:ncol(x$model.matrix))
+      } else colnames(x$model.matrix), sep = ".")
+      eta <- eta + fitted_matrix(x$model.matrix, samps[, sn, drop = FALSE])
+    }
   }
   if(!is.null(x$smooth.construct)) {
     for(j in names(x$smooth.construct)) {
@@ -3769,23 +3798,85 @@ delete.NULLs <- function(x.list)
 
 
 ## Model summary functions.
-summary.bamlss <- function(object, model = NULL, ...)
+summary.bamlss <- function(object, model = NULL, FUN = NULL, parameters = TRUE, ...)
 {
-  call <- object$call
-  family <- object$family
-  foo <- function(x) {
-    c("Mean" = mean(x, na.rm = TRUE),
-      "Sd" = sd(x, na.rm = TRUE),
-     quantile(x, probs = c(0.025, 0.5, 0.975)))
+  rval <- list()
+  rval$call <- object$call
+  rval$family <- object$family
+  rval$formula <- object$formula
+  if(is.null(FUN)) {
+    FUN <- function(x) {
+      c("Mean" = mean(x, na.rm = TRUE),
+         quantile(x, probs = c(0.025, 0.5, 0.975)))
+    }
   }
-  rval <- coef.bamlss(object, model = model, FUN = foo, sterms = FALSE, full.names = FALSE, list = TRUE)
+  rval$model.matrix <- coef.bamlss(object, model = model, FUN = FUN,
+     sterms = FALSE, full.names = FALSE, list = TRUE, parameters = parameters)
+  rval$model.stats <- object$model.stats
+  class(rval) <- "summary.bamlss"
   rval
 }
 
 print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ...)
 {
-  print(rval)
-  invisible(rval)
+  cat("\nCall:\n")
+  print(x$call)
+  cat("---\n")
+  print(x$family)
+  cat("*---\n")
+  for(i in names(x$formula)) {
+    print.bamlss.formula(x$formula[i])
+    if(!is.null(x$model.matrix[[i]])) {
+      cat("-\n")
+      cat("Parametric coefficients:\n")
+      print(x$model.matrix[[i]])
+    }
+    if(!is.null(x$smooth.construct)) {
+      cat("-\n")
+      cat("Parametric coefficients:\n")
+      print(x$smooth.construct[[i]])
+    }
+    cat("---\n")
+  }
+  if(!is.null(x$model.stats)) {
+    if(!is.null(x$model.stats$sampler)) {
+      cat("Sampler summary:\n-\n")
+      k <- 1
+      for(j in sort(names(x$model.stats$sampler))) {
+        ok <- TRUE
+        cat(if(k > 1) " " else "", j, " = ", round(x$model.stats$sampler[[j]], digits), sep = "")
+        if(k %% 3 == 0) {
+          k <- 1
+          cat("\n")
+          ok <- FALSE
+        }
+        k <- k + 1
+      }
+      if(ok) {
+        cat("\n---\n")
+      } else {
+        if(!is.null(x$model.stats$optimizer))
+          cat("---\n")
+      }
+    }
+    if(!is.null(x$model.stats$optimizer)) {
+      cat("Optimizer summary:\n-\n")
+      k <- 1
+      for(j in sort(names(x$model.stats$optimizer))) {
+        ok <- TRUE
+        cat(if(k > 1) " " else "", j, " = ", round(x$model.stats$optimizer[[j]], digits), sep = "")
+        if(k %% 3 == 0) {
+          k <- 1
+          cat("\n")
+          ok <- FALSE
+        }
+        k <- k + 1
+      }
+      if(ok) cat("\n---\n")
+    }
+  }
+  cat("\n")
+  return(invisible(x))
 }
 
 

@@ -200,7 +200,7 @@ bamlss.engine.setup.smooth.default <- function(x, ...)
 {
   if(inherits(x, "special"))
     return(x)
-  if(is.null(x$binning) & !is.null(x$xt$binning)) {
+  if(is.null(x$binning) & !is.null(x$xt[["binning"]])) {
     x$binning <- match.index(x$X)
     x$binning$order <- order(x$binning$match.index)
     x$binning$sorted.index <- x$binning$match.index[x$binning$order]
@@ -223,12 +223,13 @@ bamlss.engine.setup.smooth.default <- function(x, ...)
   k <- length(x$binning$nodups)
   x$weights <- rep(0, length = k)
   x$rres <- rep(0, length = k)
-  state <- if(is.null(x$xt$state)) list() else x$xt$state
+  x$fit.reduced <- rep(0, length = k)
+  state <- if(is.null(x$xt[["state"]])) list() else x$xt[["state"]]
   if(is.null(x$fixed))
     x$fixed <- if(!is.null(x$fx)) x$fx[1] else FALSE
   if(!x$fixed & is.null(state$interval))
-    state$interval <- if(is.null(x$xt$interval)) tau2interval(x) else x$xt$interval
-  state$grid <- if(is.null(x$xt$grid)) 10 else x$xt$grid
+    state$interval <- if(is.null(x$xt[["interval"]])) tau2interval(x) else x$xt[["interval"]]
+  state$grid <- if(is.null(x$xt[["grid"]])) 10 else x$xt[["grid"]]
   ntau2 <- length(x$S)
   if(length(ntau2) < 1) {
     if(x$fixed) {
@@ -256,10 +257,10 @@ bamlss.engine.setup.smooth.default <- function(x, ...)
           if(x$fixed) {
             rep(1e+20, length.out = ntau2)
           } else {
-            rep(if(!is.null(x$xt$tau2)) {
-              x$xt$tau2
+            rep(if(!is.null(x$xt[["tau2"]])) {
+              x$xt[["tau2"]]
             } else {
-              if(!is.null(x$xt$lambda)) 1 / x$xt$lambda else 1000
+              if(!is.null(x$xt[["lambda"]])) 1 / x$xt[["lambda"]] else 1000
             }, length.out = ntau2)
           }
         } else rep(x$sp, length.out = ntau2)
@@ -273,20 +274,20 @@ bamlss.engine.setup.smooth.default <- function(x, ...)
       if(x$fixed) {
         rep(1e+20, length.out = ntau2)
       } else {
-        rep(if(!is.null(x$xt$tau2)) {
-          x$xt$tau2
+        rep(if(!is.null(x$xt[["tau2"]])) {
+          x$xt[["tau2"]]
         } else {
-          if(!is.null(x$xt$lambda)) 1 / x$xt$lambda else 100
+          if(!is.null(x$xt[["lambda"]])) 1 / x$xt[["lambda"]] else 100
         }, length.out = ntau2)
       }
     } else rep(x$sp, length.out = ntau2)
     names(tau2) <- paste("tau2", 1:ntau2, sep = "")
     state$parameters <- c(state$parameters, tau2)
   }
-  x$a <- if(is.null(x$xt$a)) 1e-04 else x$xt$a
-  x$b <- if(is.null(x$xt$b)) 1e-04 else x$xt$b
-  if(!is.null(x$xt$prior))
-    x$prior <- x$xt$prior
+  x$a <- if(is.null(x$xt[["a"]])) 1e-04 else x$xt[["a"]]
+  x$b <- if(is.null(x$xt[["b"]])) 1e-04 else x$xt[["b"]]
+  if(!is.null(x$xt[["prior"]]))
+    x$prior <- x$xt[["prior"]]
   if(is.null(x$prior) | !is.function(x$prior)) {
     x$prior <- function(parameters) {
       gamma <- parameters[!grepl("tau", names(parameters))]
@@ -389,8 +390,8 @@ bamlss.engine.setup.smooth.default <- function(x, ...)
     x$fit.fun <- make.fit.fun(x)
   state$fitted.values <- x$fit.fun(x$X, get.par(state$parameters, "b"))
   x$state <- state
-  if(!is.null(x$xt$do.optim))
-    x$state$do.optim <- x$xt$do.optim
+  if(!is.null(x$xt[["do.optim"]]))
+    x$state$do.optim <- x$xt[["do.optim"]]
   x$state$edf <- x$edf(x)
   x$imat <- index_mat(x$X)
   x$fit.fun <- make.fit.fun(x)
@@ -1030,8 +1031,12 @@ get.eta.par <- function(par, x)
   for(j in nx) {
     eta[[j]] <- 0.0
     for(sj in names(x[[j]]$smooth.construct)) {
-      xl <- paste(j, if(sj != "model.matrix") "s" else "p", x[[j]]$smooth.construct[[sj]]$label, sep = ".")
-      tpar <- par[grep(xl, names(par), fixed = TRUE)]
+      xl <- if(sj != "model.matrix") {
+        paste(j, "s", x[[j]]$smooth.construct[[sj]]$label, sep = ".")
+      } else {
+        paste(j, "p", strsplit(x[[j]]$smooth.construct[[sj]]$label, "+", fixed = TRUE)[[1]], sep = ".")
+      }
+      tpar <- par[grep2(xl, names(par), fixed = TRUE)]
       x[[j]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[j]]$smooth.construct[[sj]]$state$parameters, tpar, "b")
       x[[j]]$smooth.construct[[sj]]$state$fitted.values <- x[[j]]$smooth.construct[[sj]]$fit.fun(x[[j]]$smooth.construct[[sj]]$X,
         get.par(tpar, "b"))
@@ -1057,8 +1062,12 @@ log_posterior <- function(par, x, y, family, verbose = TRUE, digits = 3, scale =
   for(j in nx) {
     eta[[j]] <- 0.0
     for(sj in names(x[[j]]$smooth.construct)) {
-      xl <- paste(j, if(sj != "model.matrix") "s" else "p", x[[j]]$smooth.construct[[sj]]$label, sep = ".")
-      tpar <- par[grep(xl, names(par), fixed = TRUE)]
+      xl <- if(sj != "model.matrix") {
+        paste(j, "s", x[[j]]$smooth.construct[[sj]]$label, sep = ".")
+      } else {
+        paste(j, "p", strsplit(x[[j]]$smooth.construct[[sj]]$label, "+", fixed = TRUE)[[1]], sep = ".")
+      }
+      tpar <- par[grep2(xl, names(par), fixed = TRUE)]
       x[[j]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[j]]$smooth.construct[[sj]]$state$parameters, tpar, "b")
       x[[j]]$smooth.construct[[sj]]$state$fitted.values <- x[[j]]$smooth.construct[[sj]]$fit.fun(x[[j]]$smooth.construct[[sj]]$X,
         get.par(tpar, "b"))
@@ -1096,8 +1105,12 @@ grad_posterior <- function(par, x, y, family, ...)
   for(j in nx) {
     eta[[j]] <- 0
     for(sj in names(x[[j]]$smooth.construct)) {
-      xl <- paste(j, if(sj != "model.matrix") "s" else "p", x[[j]]$smooth.construct[[sj]]$label, sep = ".")
-      tpar <- par[grep(xl, names(par), fixed = TRUE)]
+      xl <- if(sj != "model.matrix") {
+        paste(j, "s", x[[j]]$smooth.construct[[sj]]$label, sep = ".")
+      } else {
+        paste(j, "p", strsplit(x[[j]]$smooth.construct[[sj]]$label, "+", fixed = TRUE)[[1]], sep = ".")
+      }
+      tpar <- par[grep2(xl, names(par), fixed = TRUE)]
       x[[j]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[j]]$smooth.construct[[sj]]$state$parameters, tpar, "b")
       x[[j]]$smooth.construct[[sj]]$state$fitted.values <- x[[j]]$smooth.construct[[sj]]$fit.fun(x[[j]]$smooth.construct[[sj]]$X,
         get.par(tpar, "b"))
@@ -1482,6 +1495,7 @@ boost.transform <- function(x, y, df, family, weights = NULL, offset = NULL,
         model.matrix[[pj]]$fixed <- TRUE
         model.matrix[[pj]]$weights <- x[[nx[j]]]$smooth.construct[[ii]]$weights
         model.matrix[[pj]]$rres <- x[[nx[j]]]$smooth.construct[[ii]]$rres
+        model.matrix[[pj]]$fit.reduced <- x[[nx[j]]]$smooth.construct[[ii]]$fit.reduced
         model.matrix[[pj]]$fit.fun <- x[[nx[j]]]$smooth.construct[[ii]]$fit.fun
         model.matrix[[pj]]$state <- list("parameters" = g0[pj])
         model.matrix[[pj]]$state$fitted.values <- drop(model.matrix[[pj]]$X %*% g0[pj])
@@ -1862,7 +1876,12 @@ set.starting.values <- function(x, start)
             tpar <- start[take]
             names(tpar) <- gsub(paste(tl, ".", sep = ""), "", names(tpar), fixed = TRUE)
             i <- grep2(c("edf", "accepted", "alpha"), names(tpar))
-            x[[id]]$smooth.construct[[j]]$state$parameters <- if(length(i)) tpar[-i] else tpar
+            tpar <- if(length(i)) tpar[-i] else tpar
+            spar <- x[[id]]$smooth.construct[[j]]$state$parameters
+            spar <- set.par(spar, get.par(tpar, "b"), "b")
+            if(any(grepl("tau2", tpar)))
+              spar <- set.par(spar, get.par(tpar, "tau2"), "tau2")
+            x[[id]]$smooth.construct[[j]]$state$parameters <- spar
             x[[id]]$smooth.construct[[j]]$state$fitted.values <- x[[id]]$smooth.construct[[j]]$fit.fun(x[[id]]$smooth.construct[[j]]$X, x[[id]]$smooth.construct[[j]]$state$parameters)
           }
         }
