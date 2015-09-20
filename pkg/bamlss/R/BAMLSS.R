@@ -1000,26 +1000,12 @@ sample.stats <- function(samples, x = NULL, y = NULL, family = NULL)
     family <- samples$family
     samples <- samples$samples
   }
-  what <- c("logLik", "logPost", "DIC", "smooth.construct")
+  what <- c("logLik", "logPost", "DIC")
   if(inherits(samples, "mcmc.list"))
     samples <- process.chains(samples)
   samples <- as.matrix(samples)
   sn <- colnames(samples)
   stats <- NULL
-  if("smooth.construct" %in% what) {
-    what <- what[what != "smooth.construct"]
-    pn <- get.all.parnames(x)
-    pn <- grep(".s.", pn, fixed = TRUE, value = TRUE)
-    pn <- grep("tau2", pn, fixed = TRUE, value = TRUE)
-    if(length(pn)) {
-      smooth.construct <- NULL
-      for(j in pn) {
-        if(any(grepl(j, sn, fixed = TRUE))) {
-a <- 1
-        }
-      }
-    }
-  }
   taken <- what[what %in% sn]
   if(length(taken)) {
     what <- what[what != taken]
@@ -1719,7 +1705,7 @@ all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
 {
   env <- environment(formula)
   tf <- terms(formula, specials = unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", specials)),
-    keep.order = TRUE)
+    keep.order = FALSE)
   sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
   labs <- NULL
@@ -1730,12 +1716,17 @@ all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
       labs <- paste("p", labs, sep = ".")
     if(!length(labs))
       labs <- NULL
+    else
+      tl[-sid] <- labs
+    labs2 <- NULL
     for(j in tl[sid]) {
       st <- try(eval(parse(text = j), envir = env), silent = TRUE)
       if(inherits(st, "try-error"))
         st <- eval(parse(text = j), enclos = env, envir = loadNamespace("mgcv"))
-      labs <- c(labs, if(full.names) paste("s", st$label, sep = ".") else st$label)
+      labs2 <- c(labs2, if(full.names) paste("s", st$label, sep = ".") else st$label)
     }
+    tl[sid] <- labs2
+    labs <- tl
   } else labs <- if(full.names) paste("p", tl, sep = ".") else tl
 
   unique(labs)
@@ -3812,6 +3803,8 @@ summary.bamlss <- function(object, model = NULL, FUN = NULL, parameters = TRUE, 
   }
   rval$model.matrix <- coef.bamlss(object, model = model, FUN = FUN,
      sterms = FALSE, full.names = FALSE, list = TRUE, parameters = parameters)
+  rval$smooth.construct <- coef.bamlss(object, model = model, FUN = FUN,
+     sterms = TRUE, full.names = FALSE, list = TRUE, parameters = FALSE, hyper.parameters = TRUE)
   rval$model.stats <- object$model.stats
   class(rval) <- "summary.bamlss"
   rval
@@ -3831,9 +3824,9 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
       cat("Parametric coefficients:\n")
       print(x$model.matrix[[i]])
     }
-    if(!is.null(x$smooth.construct)) {
+    if(!is.null(x$smooth.construct[[i]])) {
       cat("-\n")
-      cat("Parametric coefficients:\n")
+      cat("Smooth terms:\n")
       print(x$smooth.construct[[i]])
     }
     cat("---\n")
@@ -3845,12 +3838,12 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
       for(j in sort(names(x$model.stats$sampler))) {
         ok <- TRUE
         cat(if(k > 1) " " else "", j, " = ", round(x$model.stats$sampler[[j]], digits), sep = "")
-        if(k %% 3 == 0) {
+        k <- k + 1
+        if(k == 4) {
           k <- 1
           cat("\n")
           ok <- FALSE
         }
-        k <- k + 1
       }
       if(ok) {
         cat("\n---\n")
@@ -3865,12 +3858,12 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
       for(j in sort(names(x$model.stats$optimizer))) {
         ok <- TRUE
         cat(if(k > 1) " " else "", j, " = ", round(x$model.stats$optimizer[[j]], digits), sep = "")
-        if(k %% 3 == 0) {
+        k <- k + 1
+        if(k == 4) {
           k <- 1
           cat("\n")
           ok <- FALSE
         }
-        k <- k + 1
       }
       if(ok) cat("\n---\n")
     }
@@ -4676,7 +4669,6 @@ samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE,
       }
       if(is.na(j))
         next
-      specials <- unlist(attr(tx[[i]], "specials"))
       jj <- grep(tl[j], snames, fixed = TRUE, value = TRUE)
       for(ii in jj) {
         for(k in seq_along(x))
@@ -4704,36 +4696,53 @@ samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE,
 
   if(drop & (length(x) < 2))
     x <- x[[1]]
-  
+
   return(x)
 }
 
 
 ## Credible intervals of coefficients.
-confint.bamlss <- function(object, parm, level = 0.95, model = NULL, ...)
+confint.bamlss <- function(object, parm, level = 0.95, model = NULL,
+  pterms = TRUE, sterms = FALSE, full.names = FALSE, hyper.parameters = FALSE, ...)
 {
   args <- list(...)
   if(!is.null(args$term))
     parm <- args$term
   if(missing(parm))
-    parm <- term.labels(object, ne = TRUE, id = FALSE)
-  samps <- samples(object, model = model, term = parm)
-  np <- colnames(samps)
+    parm <- NULL
   probs <- c((1 - level) / 2, 1 - (1 - level) / 2)
-  apply(samps, 2, quantile, probs = probs)
+  FUN <- function(x) {
+    quantile(x, probs = probs, na.rm = TRUE)
+  }
+  return(coef.bamlss(object, model = model, term = parm,
+    FUN = FUN, parameters = FALSE, pterms = pterms, sterms = sterms,
+    full.names = full.names, hyper.parameters = hyper.parameters))
 }
 
 
 ## Extract model coefficients.
 coef.bamlss <- function(object, model = NULL, term = NULL,
-  FUN = mean, parameters = NULL, pterms = TRUE, sterms = TRUE,
-  list = FALSE, full.names = TRUE, ...)
+  FUN = NULL, parameters = NULL, pterms = TRUE, sterms = TRUE,
+  hyper.parameters = FALSE, list = FALSE, full.names = TRUE, ...)
 {
   if(is.null(object$samples) & is.null(object$parameters))
     stop("no coefficients to extract!")
   if(is.null(parameters))
     parameters <- is.null(object$samples)
-  drop <- c("tau2", "lambda", "edf", "accepted", "alpha", "logLik", "logPost", "AIC", "BIC", "DIC")
+  if(hyper.parameters) {
+    pterms <- parameters <- FALSE
+    drop <- c("accepted", "logLik", "logPost", "AIC", "BIC", "DIC")
+    if(is.null(FUN)) {
+      FUN <- function(x) {
+        c("Mean" = mean(x, na.rm = TRUE),
+          quantile(x, probs = c(0.025, 0.5, 0.975)))
+      }
+    }
+  } else {
+    drop <- c("tau2", "lambda", "edf", "accepted", "alpha", "logLik", "logPost", "AIC", "BIC", "DIC")
+    if(is.null(FUN))
+      FUN <- function(x) { mean(x, na.rm = TRUE) }
+  }
   if(!pterms)
     drop <- c(drop, ".p.")
   if(!sterms)
@@ -4742,7 +4751,15 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
   rval <- list()
   if(!is.null(object$samples)) {
     rval$samples <- samples(object, model = model, term = term)
-    rval$samples <- rval$samples[, -grep2(drop, colnames(rval$samples), fixed = TRUE), drop = FALSE]
+    tdrop <- grep2(drop, colnames(rval$samples), fixed = TRUE)
+    if(length(tdrop))
+      rval$samples <- rval$samples[, -tdrop, drop = FALSE]
+    if(hyper.parameters) {
+      ttake <- grep2(c("tau2", "lambda", "edf", "alpha"), colnames(rval$samples), fixed = TRUE)
+      if(length(ttake)) {
+        rval$samples <- rval$samples[, ttake, drop = FALSE]
+      } else return(numeric(0))
+    }
     rval$samples <- apply(rval$samples, 2, function(x) { FUN(na.omit(x), ...) })
     rval$samples <- if(!is.null(dim(rval$samples))) {
       t(rval$samples)
@@ -4761,9 +4778,9 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
     colnames(rval$parameters) <- "parameters"
   }
   rval <- if(length(rval) < 2) as.matrix(rval[[1]], ncol = 1) else do.call("cbind", rval)
+  if(!length(rval)) return(numeric(0))
+  nx <- sapply(strsplit(rownames(rval), ".", fixed = TRUE), function(x) { x[1] })
   if(list) {
-    if(!length(rval)) return(numeric(0))
-    nx <- sapply(strsplit(rownames(rval), ".", fixed = TRUE), function(x) { x[1] })
     rval2 <- list()
     for(i in unique(nx)) {
       rval2[[i]] <- rval[nx == i, , drop = FALSE]
@@ -4782,6 +4799,10 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
     if(!full.names) {
       rownames(rval) <- gsub("p.", "", rownames(rval), fixed = TRUE)
       rownames(rval) <- gsub("s.", "", rownames(rval), fixed = TRUE)
+      if(!is.null(model) & (length(model) < 2)) {
+        for(i in nx)
+          rownames(rval) <- gsub(paste(i, ".", sep = ""), "", rownames(rval), fixed = TRUE)
+      }
     } 
     if(ncol(rval) < 2) {
       rn <- rownames(rval)
