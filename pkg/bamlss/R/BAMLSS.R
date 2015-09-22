@@ -369,7 +369,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
 
 
 ## Functions for index matrices.
-index_mat <- function(x, crossprod = TRUE, S = NULL)
+index_mat <- function(x, crossprod = FALSE, S = NULL)
 {
   if(is.null(dim(x)))
     return(NULL)
@@ -394,8 +394,8 @@ index_mat <- function(x, crossprod = TRUE, S = NULL)
   storage.mode(index) <- "integer"
   if(crossprod) {
     require("spam")
-    x <- crossprod.spam(x)
-    i <- index_mat_precmat(x)
+    x <- crossprod.spam(as.spam(x))
+    i <- index_mat_precmat(x, S = S)
     attr(index, "crossprod") <- list(
       "ordering" = i,
       "index" = index_mat(as.matrix(x[i, i]), crossprod = FALSE)
@@ -409,12 +409,12 @@ index_mat_precmat <- function(x, S = NULL)
 {
   require("spam")
   x <- as.spam(x)
-  if(is.null(S))
-    S <- list(diag(ncol(x)))
-  if(!is.list(S))
-    S <- list(S)
-  for(j in seq_along(S))
-    x <- x + as.spam(S[[j]])
+  if(!is.null(S)) {
+    if(!is.list(S))
+      S <- list(S)
+    for(j in seq_along(S))
+      x <- x + as.spam(S[[j]])
+  }
   return(ordering(chol.spam(x)))
 }
 
@@ -439,11 +439,11 @@ cholesky2 <- function(a, order, index) {
   n <- nrow(a)
   l <- matrix(0, nrow = n, ncol = n)
   for(j in 1:n) {
-    l[j, j] <- (a[j, j] - sum(l[j, 1:(j - 1)]^2))^0.5
+    l[order[j], order[j]] <- (a[order[j], order[j]] - sum(l[order[j], 1:(order[j] - 1)]^2))^0.5
     if(j < n) {
       for(i in (j + 1):n) {
-        l[i, j] <- (a[i, j] -
-          sum(l[i, 1:(j - 1)] * l[j, 1:(j - 1)])) / l[j, j]
+        l[order[i], order[j]] <- (a[order[i], order[j]] -
+          sum(l[order[i], 1:(order[j] - 1)] * l[order[j], 1:(order[j] - 1)])) / l[order[j], order[j]]
       }
     }
   }

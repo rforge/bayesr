@@ -14,7 +14,7 @@ cox.bamlss <- function(...)
     "names" = c("lambda", "gamma"),
     "links" = c(lambda = "log", gamma = "identity"),
     "transform" = function(x, ...) {
-      surv.transform(x = x$x, y = x$y, data = model.frame(x), is.cox = TRUE, ...)
+      surv.transform(x = x$x, y = x$y, data = model.frame(x), family = x$family, is.cox = TRUE, ...)
     },
     "optimizer" = cox.mode,
     "sampler" = cox.mcmc,
@@ -206,9 +206,10 @@ cox.mode <- function(x, y, weights, offset,
   return(x)
 }
 
+
 ## The MCMC sampling engine.
 ## Posterior mode estimation.
-cox.mcmc <- function(x, y, start, weights, offset,
+cox.mcmc <- function(x, y, family, start, weights, offset,
   n.iter = 1200, burnin = 200, thin = 1,
   verbose = TRUE, digits = 4, step = 20, ...)
 {
@@ -224,7 +225,6 @@ cox.mcmc <- function(x, y, start, weights, offset,
   
   ## Compute additive predictors.
   eta <- get.eta(x)
-  meta <- eta
 
   ## For the time dependent part, compute
   ## predictor based on the time grid.
@@ -235,7 +235,6 @@ cox.mcmc <- function(x, y, start, weights, offset,
     x$lambda$smooth.construct[[sj]]$state$fitted_timegrid <- fit_timegrid
     eta_timegrid <- eta_timegrid + x$lambda$smooth.construct[[sj]]$fit.fun_timegrid(g)
   }
-  meta_timegrid <- eta_timegrid
 
   ## Extract y.
   y <- y[[1]]
@@ -345,9 +344,6 @@ cox.mcmc <- function(x, y, start, weights, offset,
     if(save) {
       logLik.samps[js] <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
       logPost.samps[js] <- as.numeric(logLik.samps[js] + get.log.prior(x))
-      meta$lambda <- meta$lambda + eta$lambda
-      meta$gamma <- meta$gamma + eta$gamma
-      meta_timegrid <- meta_timegrid + eta_timegrid
     }
 
     if(verbose) barfun(ptm, n.iter, iter, step, nstep)
@@ -369,24 +365,20 @@ cox.mcmc <- function(x, y, start, weights, offset,
   }
   samps$logLik <- logLik.samps
   samps$logPost <- logPost.samps
+  samps <- do.call("cbind", samps)
 
   ## Compute DIC.
-  meta$lambda <- meta$lambda / length(iterthin)
-  meta$gamma <- meta$gamma / length(iterthin)
-  meta_timegrid <- meta_timegrid / length(iterthin)
-  meeta <- exp(meta_timegrid)
-  int <- width * (0.5 * (meeta[, 1] + meeta[, sub]) + apply(meeta[, 2:(sub - 1)], 1, sum))
-  logLik.meta <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
   dev <- -2 * logLik.samps
-  mdev <- -2 * logLik.meta
+  mpar <- apply(samps, 2, mean, na.rm = TRUE)
+  names(mpar) <- colnames(samps)
+  ll <- sum(family$p2d(mpar, log = TRUE), na.rm = TRUE)
+  mdev <- -2 * ll
   pd <- mean(dev) - mdev
   DIC <- mdev + 2 * pd
-  samps$DIC <- DIC
-  samps$pd <- pd
 
-  samps <- as.mcmc(do.call("cbind", samps))
+  samps <- cbind(samps, "DIC" = DIC, "pd" = pd)
 
-  return(samps)
+  return(as.mcmc(samps))
 }
 
 
@@ -632,7 +624,7 @@ rSurvTime2 <- function (lambda, x, cens_fct, upper = 1000, ..., file = NULL,
 
 
 ## Survival models transformer function.
-surv.transform <- function(x, y, data,
+surv.transform <- function(x, y, data, family,
   subdivisions = 100, timedependent = "lambda",
   timevar = NULL, idvar = NULL, is.cox = FALSE, alpha = 0.1, ...)
 {
@@ -736,7 +728,25 @@ surv.transform <- function(x, y, data,
   y <- data.frame(y)
   names(y) <- rn
 
-  return(list("x" = x, "y" = y))
+  family$p2d <- function(par, log = FALSE, ...) {
+    x <- set.starting.values(x, par)
+    eta <- get.eta(x)
+    eta_timegrid <- 0
+    for(sj in seq_along(x$lambda$smooth.construct)) {
+      g <- get.state(x$lambda$smooth.construct[[sj]], "b")
+      fit_timegrid <- x$lambda$smooth.construct[[sj]]$fit.fun_timegrid(g)
+      x$lambda$smooth.construct[[sj]]$state$fitted_timegrid <- fit_timegrid
+      eta_timegrid <- eta_timegrid + x$lambda$smooth.construct[[sj]]$fit.fun_timegrid(g)
+    }
+    eeta <- exp(eta_timegrid)
+    int <- width * (0.5 * (eeta[, 1] + eeta[, subdivisions]) + apply(eeta[, 2:(subdivisions - 1)], 1, sum))
+    d <- (eta$lambda + eta$gamma) * y[[1]][, "status"] - exp(eta$gamma) * int
+    if(!log)
+      d <- exp(d)
+    return(d)
+  }
+
+  return(list("x" = x, "y" = y, "family" = family))
 }
 
 
