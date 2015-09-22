@@ -209,7 +209,7 @@ cox.mode <- function(x, y, weights, offset,
 ## The MCMC sampling engine.
 ## Posterior mode estimation.
 cox.mcmc <- function(x, y, start, weights, offset,
-  n.iter = 1200, burnin = 200, thin = 1, nu = 1,
+  n.iter = 1200, burnin = 200, thin = 1,
   verbose = TRUE, digits = 4, step = 20, ...)
 {
   require("mvtnorm")
@@ -406,13 +406,13 @@ propose_surv_td <- function(x, y, eta, eta_timegrid, width, sub, nu)
   p1 <- x$prior(x$state$parameters)
 
   ## Compute gradient and hessian integrals.
-  int <- survint(X, eeta, width, exp(eta$gamma))
+  int <- survint(X, eeta, width, exp(eta$gamma), index = x$imat)
   xgrad <- drop(t(y[, "status"]) %*% x$XT - int$grad)
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
 
   ## Compute the inverse of the hessian.
-  Sigma <- matrix_inv(xhess)
+  Sigma <- matrix_inv(xhess, index = x$imat)
 
   ## Save old coefficients.
   g0 <- get.state(x, "b")
@@ -444,12 +444,12 @@ propose_surv_td <- function(x, y, eta, eta_timegrid, width, sub, nu)
   pibetaprop <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
 
   ## Prior prob.
-  int <- survint(X, eeta, width, exp(eta$gamma))
+  int <- survint(X, eeta, width, exp(eta$gamma), index = x$imat)
   xgrad <- drop(t(y[, "status"]) %*% x$XT - int$grad)
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
 
-  Sigma2 <- matrix_inv(xhess)
+  Sigma2 <- matrix_inv(xhess, index = x$imat)
   mu2 <- drop(g + nu * Sigma2 %*% xgrad)
   qbeta <- dmvnorm(g0, mean = mu2, sigma = Sigma2, log = TRUE)
 
@@ -500,7 +500,7 @@ propose_surv_tc <- function(x, y, eta, int)
   xbin.fun(x$binning$sorted.index, weights, e, x$weights, x$rres, x$binning$order)
 
   ## Compute mean and precision.
-  XWX <- crossprod(x$X, x$X * x$weights)
+  XWX <- do.XWX(x$X, 1 / x$weights, x$imat)
   S <- 0
   P <- if(x$fixed) {
     if((k <- ncol(x$X)) < 2) {
@@ -552,7 +552,7 @@ propose_surv_tc <- function(x, y, eta, int)
   xbin.fun(x$binning$sorted.index, weights, e, x$weights, x$rres, x$binning$order)
 
   ## Compute mean and precision.
-  XWX <- crossprod(x$X, x$X * x$weights)
+  XWX <- do.XWX(x$X, 1 / x$weights, x$imat)
   P2 <- if(x$fixed) {
     if(k < 2) {
       1 / (XWX)
