@@ -895,13 +895,13 @@ cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
 
   ddist <- switch(dist,
     "student"  = function(x, location, scale, df, log = TRUE) 
-      dt((x - location)/scale, df = df, log = log)/scalexp(1-log) - 
+      dt((x - location)/scale, df = df, log = log)/(scale^(1-log)) - 
       log*log(scale),
     "gaussian" = function(x, location, scale, df, log = TRUE) 
-      dnorm((x - location)/scale, log = log)/scalexp(1-log) - 
+      dnorm((x - location)/scale, log = log)/(scale^(1-log)) - 
       log*log(scale),
     "logistic" = function(x, location, scale, df, log = TRUE) 
-      dlogis((x - location)/scale, log = log)/scalexp(1-log) - 
+      dlogis((x - location)/scale, log = log)/(scale^(1-log)) - 
       log*log(scale)
   )
   pdist <- switch(dist,
@@ -1057,104 +1057,6 @@ cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
     },
     "score" = score,
     "hess" = hess,
-    "type" = 1
-  )
- 
-  class(rval) <- "family.bamlss"
-  rval
-}
-
-
-cens0.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
-  left = 0, right = Inf, dist = "gaussian", ...)
-{
-  dist <- match.arg(dist, c("student", "gaussian", "logistic"))
-
-  ddist <- switch(dist,
-    "student"  = function(x, location, scale, df, log = TRUE) 
-      dt((x - location)/scale, df = df, log = log)/scalexp(1-log) - 
-      log*log(scale),
-    "gaussian" = function(x, location, scale, df, log = TRUE) 
-      dnorm((x - location)/scale, log = log)/scalexp(1-log) - 
-      log*log(scale),
-    "logistic" = function(x, location, scale, df, log = TRUE) 
-      dlogis((x - location)/scale, log = log)/scalexp(1-log) - 
-      log*log(scale)
-  )
-  pdist <- switch(dist,
-    "student"  = function(x, location, scale, df, lower.tail = TRUE, 
-      log.p = TRUE) pt((x - location)/scale, df = df, lower.tail = lower.tail,
-      log.p = log.p),
-    "gaussian" = function(x, location, scale, df, lower.tail = TRUE, 
-      log.p = TRUE) pnorm((x - location)/scale, lower.tail = lower.tail, 
-      log.p = log.p),
-    "logistic" = function(x, location, scale, df, lower.tail = TRUE, 
-      log.p = TRUE) plogis((x - location)/scale, lower.tail = lower.tail, 
-      log.p = log.p)
-  )
-
-  dddist <- switch(dist,
-    "student"  = function(x, location, scale, df) 
-      - ddist(x, location, scale, df, log = FALSE) * 
-      (x - location)/scale^2 * (df + 1) / (df + (x - location)^2/scale^2),
-    "gaussian" = function(x, location, scale, df) 
-      - (x - location) * ddist(x, location, scale, log = FALSE)/scale^2,
-    "logistic" = function(x, location, scale, df) 
-      ddist(x, location, scale, df, log = FALSE)/scale * 
-      (- 1 + 2 * pdist(-x, - location, scale, log.p = FALSE))
-  )
-
-  if(dist == "student") {
-    score <- NULL
-  } else {
-    score <- list(
-      "mu" =  function(y, par, ...) {
-         gradmu <- with(par, ifelse(y <= left, 
-          - ddist(left, mu, sigma, df, log = FALSE) /
-            pdist(left, mu, sigma, df, log.p = FALSE),
-          ifelse(y >= right, 
-          ddist(right, mu, sigma, df, log = FALSE) /
-            pdist(right, mu, sigma, df, lower.tail = FALSE, log.p = FALSE),
-          - dddist(y, mu, sigma, df)/ddist(y, mu, sigma, df, log = FALSE))))
-        return(drop(gradmu))
-      },
-      "sigma" =  function(y, par, ...) {
-        gradsigma <- with(par, ifelse(y <= left, 
-          - ddist(left, mu, sigma, df, log = FALSE) /
-            pdist(left, mu, sigma, df, log.p = FALSE) * (left - mu),
-          ifelse(y >= right, 
-          ddist(right, mu, sigma, df, log = FALSE)/
-            pdist(right, mu, sigma, df, lower.tail = FALSE, log.p = FALSE)*
-            (right - mu),
-          - dddist(y, mu, sigma, df) * (y - mu)/
-            ddist(y, mu, sigma, df, log = FALSE) - 1)))
-         return(drop(gradsigma))
-      }
-    )
-  }
-
-  names <- switch(dist,
-    "student" = c("mu", "sigma", "df"),
-    "gaussian" = c("mu", "sigma"),
-    "logistic" = c("mu", "sigma")
-  )
-  
-  i <- 1:length(names)
-
-  rval <- list(
-    "family" = "cens",
-    "names" = names,
-    "links" = parse.links(links[i], c(mu = "identity", sigma = "log", df = "log")[i], ...),
-    "d" = function(y, par, log = FALSE, ...) {
-      ll <- with(par, ifelse(y <= left,
-        pdist(left, mu, sigma, df, lower.tail = TRUE, log = TRUE),
-        ifelse(y >= right,
-          pdist(right, mu, sigma, df, lower.tail = FALSE, log = TRUE),
-          ddist(y, mu, sigma, df, log = TRUE))))
-      if(!log) ll <- exp(ll)
-      return(ll)
-    },
-    "score" = score,
     "type" = 1
   )
  

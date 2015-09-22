@@ -224,6 +224,7 @@ cox.mcmc <- function(x, y, start, weights, offset,
   
   ## Compute additive predictors.
   eta <- get.eta(x)
+  meta <- eta
 
   ## For the time dependent part, compute
   ## predictor based on the time grid.
@@ -234,6 +235,7 @@ cox.mcmc <- function(x, y, start, weights, offset,
     x$lambda$smooth.construct[[sj]]$state$fitted_timegrid <- fit_timegrid
     eta_timegrid <- eta_timegrid + x$lambda$smooth.construct[[sj]]$fit.fun_timegrid(g)
   }
+  meta_timegrid <- eta_timegrid
 
   ## Extract y.
   y <- y[[1]]
@@ -343,6 +345,9 @@ cox.mcmc <- function(x, y, start, weights, offset,
     if(save) {
       logLik.samps[js] <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
       logPost.samps[js] <- as.numeric(logLik.samps[js] + get.log.prior(x))
+      meta$lambda <- meta$lambda + eta$lambda
+      meta$gamma <- meta$gamma + eta$gamma
+      meta_timegrid <- meta_timegrid + eta_timegrid
     }
 
     if(verbose) barfun(ptm, n.iter, iter, step, nstep)
@@ -364,6 +369,21 @@ cox.mcmc <- function(x, y, start, weights, offset,
   }
   samps$logLik <- logLik.samps
   samps$logPost <- logPost.samps
+
+  ## Compute DIC.
+  meta$lambda <- meta$lambda / length(iterthin)
+  meta$gamma <- meta$gamma / length(iterthin)
+  meta_timegrid <- meta_timegrid / length(iterthin)
+  meeta <- exp(meta_timegrid)
+  int <- width * (0.5 * (meeta[, 1] + meeta[, sub]) + apply(meeta[, 2:(sub - 1)], 1, sum))
+  logLik.meta <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
+  dev <- -2 * logLik.samps
+  mdev <- -2 * logLik.meta
+  pd <- mean(dev) - mdev
+  DIC <- mdev + 2 * pd
+  samps$DIC <- DIC
+  samps$pd <- pd
+
   samps <- as.mcmc(do.call("cbind", samps))
 
   return(samps)

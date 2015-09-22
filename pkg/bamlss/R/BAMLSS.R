@@ -369,7 +369,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
 
 
 ## Functions for index matrices.
-index_mat <- function(x)
+index_mat <- function(x, crossprod = TRUE, S = NULL)
 {
   if(is.null(dim(x)))
     return(NULL)
@@ -392,7 +392,70 @@ index_mat <- function(x)
       return(NULL)
   }
   storage.mode(index) <- "integer"
+  if(crossprod) {
+    require("spam")
+    x <- crossprod.spam(x)
+    i <- index_mat_precmat(x)
+    attr(index, "crossprod") <- list(
+      "ordering" = i,
+      "index" = index_mat(as.matrix(x[i, i]), crossprod = FALSE)
+    )
+  }
   index
+}
+
+
+index_mat_precmat <- function(x, S = NULL)
+{
+  require("spam")
+  x <- as.spam(x)
+  if(is.null(S))
+    S <- list(diag(ncol(x)))
+  if(!is.list(S))
+    S <- list(S)
+  for(j in seq_along(S))
+    x <- x + as.spam(S[[j]])
+  return(ordering(chol.spam(x)))
+}
+
+
+cholesky <- function(a, ...) {
+  n <- nrow(a)
+  l <- matrix(0, nrow = n, ncol = n)
+  for(j in 1:n) {
+    l[j, j] <- (a[j, j] - sum(l[j, 1:(j - 1)]^2))^0.5
+    if(j < n) {
+      for(i in (j + 1):n) {
+        l[i, j] <- (a[i, j] -
+          sum(l[i, 1:(j - 1)] * l[j, 1:(j - 1)])) / l[j, j]
+      }
+    }
+  }
+  return(l)
+}
+
+
+cholesky2 <- function(a, order, index) {
+  n <- nrow(a)
+  l <- matrix(0, nrow = n, ncol = n)
+  for(j in 1:n) {
+    l[j, j] <- (a[j, j] - sum(l[j, 1:(j - 1)]^2))^0.5
+    if(j < n) {
+      for(i in (j + 1):n) {
+        l[i, j] <- (a[i, j] -
+          sum(l[i, 1:(j - 1)] * l[j, 1:(j - 1)])) / l[j, j]
+      }
+    }
+  }
+  return(l)
+}
+
+
+## Cuthill-McKee.
+spam.inv <- function(x)
+{
+  x <- as.spam(x)
+  chol2inv(chol(x))
 }
 
 
@@ -669,12 +732,21 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
               if(!is.null(x[[i]][[j]]$smooth.construct[[k]]$rand)) {
                 tpar1 <- rep(fill[1], ncol(x[[i]][[j]]$smooth.construct[[k]]$rand$Xr))
                 tpar2 <- rep(fill[1], ncol(x[[i]][[j]]$smooth.construct[[k]]$Xf))
-                names(tpar1) <- paste("b", 1:length(tpar1), ".re", sep = "")
-                names(tpar2) <- paste("b", 1:length(tpar2), ".fx", sep = "")
+                cn1 <- colnames(x[[i]][[j]]$smooth.construct[[k]]$rand$Xr)
+                cn2 <- colnames(x[[i]][[j]]$smooth.construct[[k]]$Xf)
+                if(is.null(cn1))
+                  cn1 <- paste("b", 1:length(tpar1), ".re", sep = "")
+                if(is.null(cn2))
+                  cn2 <- paste("b", 1:length(tpar2), ".fx", sep = "")
+                names(tpar1) <- cn1
+                names(tpar2) <- cn2
                 tpar <- c(tpar1, tpar2)
               } else {
                 tpar <- rep(fill[1], ncol(x[[i]][[j]]$smooth.construct[[k]]$X))
-                names(tpar) <- paste("b", 1:length(tpar), sep = "")
+                cn <- colnames(x[[i]][[j]]$smooth.construct[[k]]$X)
+                if(is.null(cn))
+                  cn <- paste("b", 1:length(tpar), sep = "")
+                names(tpar) <- cn
               }
               if(length(x[[i]][[j]]$smooth.construct[[k]]$S)) {
                 tpar3 <- NULL
@@ -696,10 +768,10 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
                       par[[i]][[j]]$s[[k]][jj] <- tau2
                     }
                   }
-                  if(length(b <- grep("b", names(spar)))) {
+                  if(any(b <- !grepl("tau2", names(spar)))) {
                     b <- spar[b]
-                    if(length(jj <- grep("b", cn, fixed = TRUE))) {
-                      b <- rep(b, length.out = length(jj))
+                    if(any(jj <- !grepl("tau2", cn, fixed = TRUE))) {
+                      b <- rep(b, length.out = sum(jj))
                       par[[i]][[j]]$s[[k]][jj] <- b
                     }
                   }
@@ -740,12 +812,21 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
           if(!is.null(x[[i]]$smooth.construct[[k]]$rand)) {
             tpar1 <- rep(fill[1], ncol(x[[i]]$smooth.construct[[k]]$rand$Xr))
             tpar2 <- rep(fill[1], ncol(x[[i]]$smooth.construct[[k]]$Xf))
-            names(tpar1) <- paste("b", 1:length(tpar1), ".re", sep = "")
-            names(tpar2) <- paste("b", 1:length(tpar2), ".fx", sep = "")
+            cn1 <- colnames(x[[i]]$smooth.construct[[k]]$rand$Xr)
+            cn2 <- colnames(x[[i]]$smooth.construct[[k]]$Xf)
+            if(is.null(cn1))
+              cn1 <- paste("b", 1:length(tpar1), ".re", sep = "")
+            if(is.null(cn2))
+              cn2 <- paste("b", 1:length(tpar2), ".fx", sep = "")
+            names(tpar1) <- cn1
+            names(tpar2) <- cn2
             tpar <- c(tpar1, tpar2)
           } else {
             tpar <- rep(fill[1], ncol(x[[i]]$smooth.construct[[k]]$X))
-            names(tpar) <- paste("b", 1:length(tpar), sep = "")
+            cn <- colnames(x[[i]]$smooth.construct[[k]]$X)
+            if(is.null(cn))
+              cn <- paste("b", 1:length(tpar), sep = "")
+            names(tpar) <- cn
           }
           if(length(x[[i]]$smooth.construct[[k]]$S)) {
             tpar3 <- NULL
@@ -767,10 +848,10 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
                   par[[i]]$s[[k]][jj] <- tau2
                 }
               }
-              if(length(b <- grep("b", names(spar)))) {
+              if(any(b <- !grepl("tau2", names(spar)))) {
                 b <- spar[b]
-                if(length(jj <- grep("b", cn, fixed = TRUE))) {
-                  b <- rep(b, length.out = length(jj))
+                if(any(jj <- !grepl("tau2", cn, fixed = TRUE))) {
+                  b <- rep(b, length.out = sum(jj))
                   par[[i]]$s[[k]][jj] <- b
                 }
               }
@@ -956,10 +1037,14 @@ rescale.bamlss <- function(x)
 
 
 ## Extract all parameter names.
-get.all.parnames <- function(x)
+get.all.parnames <- function(x, rename.p = TRUE)
 {
-  names(parameters(if(inherits(x, "bamlss.frame")) x$x else x))
+  pn <- names(parameters(if(inherits(x, "bamlss.frame")) x$x else x, list = FALSE))
+  if(rename.p)
+    pn <- gsub("s.model.matrix", "p.model.matrix", pn, fixed = TRUE)
+  pn
 }
+
 
 ## Extract logLik and logPriors.
 eta.logLik.logPriors <- function(par, x, y, family)
@@ -1000,7 +1085,7 @@ sample.stats <- function(samples, x = NULL, y = NULL, family = NULL)
     family <- samples$family
     samples <- samples$samples
   }
-  what <- c("logLik", "logPost", "DIC")
+  what <- c("logLik", "logPost", "DIC", "pd")
   if(inherits(samples, "mcmc.list"))
     samples <- process.chains(samples)
   samples <- as.matrix(samples)
@@ -1008,39 +1093,49 @@ sample.stats <- function(samples, x = NULL, y = NULL, family = NULL)
   stats <- NULL
   taken <- what[what %in% sn]
   if(length(taken)) {
-    what <- what[what != taken]
+    what <- what[!(what %in% taken)]
     stats <- samples[, taken, drop = FALSE]
     stats <- as.list(apply(stats, 2, mean, na.rm = TRUE))
   }
   if(length(what)) {
-    pn <- get.all.parnames(x)
-    samples <- samples[, pn, drop = FALSE]
-    nx <- names(x)
-    par <- rep(list(0), length = length(x))
-    names(par) <- nx
-    mpar <- par
-    for(i in nx)
-      par[[i]] <- .fitted.bamlss(i, x[[i]], samples)
-    par <- family$map2par(par)
-    msamples <- matrix(apply(samples, 2, mean, na.rm = TRUE), nrow = 1)
-    colnames(msamples) <- pn
-    for(i in nx)
-      mpar[[i]] <- .fitted.bamlss(i, x[[i]], msamples)
-    mpar <- family$map2par(mpar)
-    tpar <- mpar
-    dev <- rep(NA, ncol(par[[1]]))
-    for(j in 1:ncol(par[[1]])) {
+    pn <- get.all.parnames(x, rename.p = TRUE)
+    pn <- pn[pn %in% colnames(samples)]
+    if(length(pn) & ("DIC" %in% what)) {
+      samples <- samples[, pn, drop = FALSE]
+      nx <- names(x)
+      par <- rep(list(0), length = length(x))
+      names(par) <- nx
+      mpar <- par
       for(i in nx)
-        tpar[[i]] <- par[[i]][, j]
-      dev[j] <- -2 * family$loglik(y[[1]], tpar)
+        par[[i]] <- .fitted.bamlss(i, x[[i]], samples)
+      par <- family$map2par(par)
+      msamples <- matrix(apply(samples, 2, mean, na.rm = TRUE), nrow = 1)
+      colnames(msamples) <- pn
+      for(i in nx)
+        mpar[[i]] <- .fitted.bamlss(i, x[[i]], msamples)
+      mpar <- family$map2par(mpar)
+      tpar <- mpar
+      dev <- rep(NA, ncol(par[[1]]))
+      for(j in 1:ncol(par[[1]])) {
+        for(i in nx)
+          tpar[[i]] <- par[[i]][, j]
+        ll <- try(family$loglik(y[[1]], tpar), silent = TRUE)
+        if(!inherits(ll, "try-error"))
+          dev[j] <- -2 * ll
+      }
+      ll <- try(family$loglik(y[[1]], mpar), silent = TRUE)
+      if(!inherits(ll, "try-error")) {
+        mdev <- -2 * ll
+        pd <- mean(dev) - mdev
+        DIC <- mdev + 2 * pd
+        if(is.null(stats))
+          stats <- list()
+        stats$DIC <- DIC
+        stats$pd <- pd
+      } else {
+        warning("no DIC, cannot evaluate the $loglik() function in .bamlss family object!")
+      }
     }
-    mdev <- -2 * family$loglik(y[[1]], mpar)
-    pd <- mean(dev) - mdev
-    DIC <- mdev + 2 * pd
-    if(is.null(stats))
-      stats <- list()
-    stats$DIC <- DIC
-    stats$pd <- pd
   }
   
   return(stats)
@@ -2502,11 +2597,16 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   }
   if(!is.null(x$smooth.construct)) {
     for(j in names(x$smooth.construct)) {
-      sn <- grep(paste(id, "s", j, sep = "."), snames, fixed = TRUE, value = TRUE)
-      if(!inherits(x$smooth.construct[[j]], "no.mgcv") & !inherits(x$smooth.construct[[j]], "special")) {
-        eta <- eta + fitted_matrix(x$smooth.construct[[j]]$X, samps[, sn, drop = FALSE])
+      sn <- grep(paste(id, if(j != "model.matrix") "s" else "p", j, sep = "."), snames,
+        fixed = TRUE, value = TRUE)
+      if(j != "model.matrix") {
+        if(!inherits(x$smooth.construct[[j]], "no.mgcv") & !inherits(x$smooth.construct[[j]], "special")) {
+          eta <- eta + fitted_matrix(x$smooth.construct[[j]]$X, samps[, sn, drop = FALSE])
+        } else {
+          stop("no fitted values for special terms available yet!")
+        }
       } else {
-        stop("no fitted values for special terms available yet!")
+        eta <- eta + fitted_matrix(x$smooth.construct[[j]]$X, samps[, sn, drop = FALSE])
       }
     }
   }
@@ -3258,6 +3358,7 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
     samps <- samples(x, model = model, term = term, drop = TRUE)
     snames <- colnames(samps)
     snames <- snames[!grepl(".p.edf", snames, fixed = TRUE) & !grepl(".accepted", snames, fixed = TRUE)]
+    snames <- snames[!grepl("DIC", snames, fixed = TRUE) & !grepl("pd", snames, fixed = TRUE)]
     samps <- samps[, snames, drop = FALSE]
     np <- ncol(samps)
     par(mfrow = if(np <= 4) c(np, 2) else c(4, 2))
@@ -3956,69 +4057,9 @@ DIC.bamlss <- function(object, ..., samples = TRUE, nsamps = NULL)
 }
 
 
-logLik.bamlss <- function(object, ..., type = 1, nsamps = NULL, FUN = NULL)
+logLik.bamlss <- function(object, ..., FUN = NULL)
 {
-  object <- c(object, ...)
-  rval <- if(type %in% c(1, 3)) NULL else list()
-
-  if(type == 3) {
-    for(i in 1:length(object)) {
-      xs <- summary(object[[i]])
-      n <- attr(xs, "n")
-      if(n < 2)
-        xs <- list(xs)
-      rval <- rbind(rval, data.frame(
-        "logLik" = if(is.null(xs[[n]]$IC)) NA else xs[[n]]$IC,
-        "edf" = if(is.null(xs[[n]]$edf)) NA else xs[[n]]$edf
-      ))
-    }
-    names(rval)[1] <- names(xs[[n]]$IC)[1]
-  }
-  if(type %in% c(1, 2)) {
-    for(i in 1:length(object)) {
-      family <- attr(object[[i]], "family")
-      if(is.null(family$d)) stop("no d() function available in model family object!")
-      y <- model.response2(object[[i]])
-      if(type == 2) {
-        eta <- fitted.bamlss(object[[i]], type = "link",
-          samples = TRUE, nsamps = nsamps,
-          FUN = function(x) { x })
-        iter <- min(sapply(eta, ncol))
-        ll <- NULL
-        for(j in 1:iter) {
-          teta <- NULL
-          for(ii in 1:length(eta))
-            teta <- cbind(teta, eta[[ii]][, j])
-          teta <- as.data.frame(teta)
-          names(teta) <- names(eta)
-          ll <- c(ll, sum(family$d(y, family$map2par(teta), log = TRUE), na.rm = TRUE))
-        }
-        if(is.null(FUN)) FUN <- function(x) { x }
-        rval[[i]] <- FUN(ll)
-      } else {
-        eta <- fitted.bamlss(object[[i]], type = "link", samples = TRUE,
-          nsamps = nsamps, FUN = function(x) { mean(x, na.rm = TRUE) })
-        ll <- sum(family$d(y, family$map2par(eta), log = TRUE), na.rm = TRUE)
-        rval <- rbind(rval, data.frame(
-          "logLik" = ll,
-          "edf" = NA
-        ))
-      }
-    }
-  }
-
-  Call <- match.call()
-  if(type %in% c(1, 3)) {
-    row.names(rval) <- if(nrow(rval) > 1) as.character(Call[-1L])[1:nrow(rval)] else ""
-  } else {
-    if(length(rval) < 2) {
-      rval <- rval[[1]]
-    } else {
-      names(rval) <- as.character(Call[-1L])[1:length(rval)]
-    }
-  }
-
-  rval
+  NULL
 }
 
 
@@ -4028,25 +4069,7 @@ edf <- function (object, ...) {
 
 edf.bamlss <- function(object, FUN = mean, ...)
 {
-  family <- attr(object, "family")
-  nx <- family$names
-  edf0 <- 0; edf1 <- NULL
-  for(j in 1:length(nx)) {
-    if(!is.null(object[[nx[j]]]$p.effects))
-      edf0 <- edf0 + nrow(object[[nx[j]]]$p.effects)
-    if(!is.null(object[[nx[j]]]$effects)) {
-      for(sj in 1:length(object[[nx[j]]]$effects)) {
-        if(!is.null(attr(object[[nx[j]]]$effects[[sj]], "samples.edf"))) {
-          edf1 <- cbind(edf1, attr(object[[nx[j]]]$effects[[sj]], "samples.edf"))
-        } else {
-          stop(paste("equivalent degrees of freedom not available for term ",
-            object[[nx[j]]]$effects[[sj]]$label, "!", sep = ""))
-        }
-      }
-    }
-  }
-  rval <- apply(edf1, 1, sum, na.rm = TRUE) + edf0
-  FUN(rval, ...)
+  NULL
 }
 
 
@@ -4731,7 +4754,7 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
     parameters <- is.null(object$samples)
   if(hyper.parameters) {
     pterms <- parameters <- FALSE
-    drop <- c("accepted", "logLik", "logPost", "AIC", "BIC", "DIC")
+    drop <- c(".accepted", "logLik", "logPost", "AIC", "BIC", "DIC", "pd")
     if(is.null(FUN)) {
       FUN <- function(x) {
         c("Mean" = mean(x, na.rm = TRUE),
@@ -4739,7 +4762,8 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
       }
     }
   } else {
-    drop <- c("tau2", "lambda", "edf", "accepted", "alpha", "logLik", "logPost", "AIC", "BIC", "DIC")
+    drop <- c(".tau2", ".lambda", ".edf", ".accepted",
+      ".alpha", "logLik", "logPost", "AIC", "BIC", "DIC", "pd")
     if(is.null(FUN))
       FUN <- function(x) { mean(x, na.rm = TRUE) }
   }
@@ -4755,7 +4779,7 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
     if(length(tdrop))
       rval$samples <- rval$samples[, -tdrop, drop = FALSE]
     if(hyper.parameters) {
-      ttake <- grep2(c("tau2", "lambda", "edf", "alpha"), colnames(rval$samples), fixed = TRUE)
+      ttake <- grep2(c(".tau2", ".lambda", ".edf", ".alpha"), colnames(rval$samples), fixed = TRUE)
       if(length(ttake)) {
         rval$samples <- rval$samples[, ttake, drop = FALSE]
       } else return(numeric(0))
@@ -4784,6 +4808,7 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
     rval2 <- list()
     for(i in unique(nx)) {
       rval2[[i]] <- rval[nx == i, , drop = FALSE]
+      rownames(rval2[[i]]) <- gsub("model.matrix.", "", rownames(rval2[[i]]), fixed = TRUE)
       if(!full.names) {
         rownames(rval2[[i]]) <- gsub(paste(i, "p.", sep = "."), "", rownames(rval2[[i]]), fixed = TRUE)
         rownames(rval2[[i]]) <- gsub(paste(i, "s.", sep = "."), "", rownames(rval2[[i]]), fixed = TRUE)
@@ -4796,6 +4821,7 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
     }
     rval <- rval2
   } else {
+    rownames(rval) <- gsub("model.matrix.", "", rownames(rval), fixed = TRUE)
     if(!full.names) {
       rownames(rval) <- gsub("p.", "", rownames(rval), fixed = TRUE)
       rownames(rval) <- gsub("s.", "", rownames(rval), fixed = TRUE)
@@ -5281,8 +5307,8 @@ matrix_inv <- function(x, index = NULL)
   if(!is.null(index)) {
     if(ncol(index) < 2) {
       if(all(index %in% 0:length(index))) {
-        p <- diag(1 / diag(x))
-        return(p)
+        x[x != 0] <- 1 / x[x != 0]
+        return(x)
       }
     }
     if(inherits(x, "dgCMatrix")) {
