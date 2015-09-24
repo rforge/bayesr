@@ -984,12 +984,12 @@ points(LondonFStations, cex = 1.2)
 <<echo=FALSE, results=hide>>=
 if(!file.exists("firemodel.rda")) {
   f <- list(
-    Surv(arrivaltime) ~ ti(arrivaltime) + ti(arrivaltime,lon,lat,d=c(1,2)),
-    gamma ~ s(fsintens) + s(daytime,bs="cc") + s(lon,lat,k=100)
+    Surv(arrivaltime) ~ ti(arrivaltime) + ti(arrivaltime,lon,lat,d=c(1,2),k=c(10,30)),
+    gamma ~ s(fsintens,k=20) + s(daytime,bs="cc",k=20) + s(lon,lat,k=100)
   )
 
   firemodel <- bamlss(f, data = LondonFire, family = "cox", subdivisions = 50,
-    n.iter = 12000, burnin = 2000, thin = 10, nu = 0.1)
+    n.iter = 30000, burnin = 10000, thin = 20, nu = 0.1)
 
   data_basehaz <- function(n = 30, target = 6, ...)
   {
