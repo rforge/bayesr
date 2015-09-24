@@ -601,7 +601,7 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
           args2$full <- FALSE
           args2$plot <- FALSE
         }
-        do.call(colorlegend, delete.args(colorlegend, args2, c("font", "cex")))
+        do.call(colorlegend, delete.args(colorlegend, args2, c("font", "cex")))$map
       }
     }
     if(contour) {
@@ -613,6 +613,7 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
         delete.args(graphics::contour.default, args, 
         c("xlab", "ylab", "main", "axes")))
     }
+    args$pal <- pal
   }
   args$pmat <- pmat0
 

@@ -971,61 +971,90 @@ next section.
 
 \subsection{Cox-regression} \label{sec:coxreg}
 
-<<echo=FALSE, results=hide>>=
-data("LondonFire")
 
+<<echo=FALSE, fig=TRUE>>=
+library("maptools")
+data("LondonFire")
+plot(LondonBoroughs)
+points(LondonFire, pch = 4, col = rgb(0, 0, 1, alpha = 0.4))
+points(LondonFStations, pch = 16, col = rainbow_hcl(1), cex = 1.2)
+points(LondonFStations, cex = 1.2)
+@
+
+<<echo=FALSE, results=hide>>=
 if(!file.exists("firemodel.rda")) {
   f <- list(
-    Surv(arrivaltime) ~ ti(arrivaltime, k = 20) + ti(arrivaltime, lon, lat, d = c(1, 2), bs = c("tp", "tp"), k = c(5, 30)),
-    gamma ~ s(fsintens, k = 20) + s(daytime, bs = "cc", k = 20) + s(lon, lat, k = 100)
+    Surv(arrivaltime) ~ ti(arrivaltime) + ti(arrivaltime,lon,lat,d=c(1,2)),
+    gamma ~ s(fsintens) + s(daytime,bs="cc") + s(lon,lat,k=100)
   )
 
-  firemodel <- bamlss(f, data = LondonFire, family = "cox", subdivisions = 10,
-    n.iter = 4000, burnin = 2000, thin = 10, cores = 6, nu = 0.1)
+  firemodel <- bamlss(f, data = LondonFire, family = "cox", subdivisions = 50,
+    n.iter = 12000, burnin = 2000, thin = 10, nu = 0.1)
 
-  save(firemodel, file = "firemodel.rda")
+  data_basehaz <- function(n = 30, target = 6, ...)
+  {
+    require("spatstat")
+    require("sp")
+    gpclibPermit()
+
+    xy <- bbox(LondonBoroughs)
+    co <- expand.grid(
+      "lon" = seq(min(xy[1, 1]), max(xy[1, 2]), length = n),
+      "lat" = seq(min(xy[2, 1]), max(xy[2, 2]), length = n)
+    )
+    ob <- unionSpatialPolygons(LondonBoroughs,
+      rep(1L, length = length(LondonBoroughs)))
+    nob <- length(slot(slot(ob, "polygons")[[1]], "Polygons"))
+    pip <- NULL
+    for(j in 1:nob) {
+     oco <- slot(slot(slot(ob, "polygons")[[1]], "Polygons")[[j]], "coords")
+     pip <- cbind(pip, point.in.polygon(co$lon, co$lat, oco[, 1L], oco[, 2L], mode.checked = FALSE) < 1L)
+    }
+    pip <- apply(pip, 1, function(x) all(x))
+
+    co <- co[pip < 1, , drop = FALSE]
+    nd <- NULL
+    atime <- with(as.data.frame(LondonFire), seq(min(arrivaltime), max(arrivaltime), length = 100))
+    for(i in 1:nrow(co)) {
+      td <- data.frame("arrivaltime" = atime)
+      td$lon <- co$lon[i]
+      td$lat <- co$lat[i]
+      td$id <- i
+      nd <- rbind(nd, td)
+    }
+
+    nd$id <- as.factor(nd$id)
+    nd$p50 <- predict(firemodel, newdata = nd, model = "lambda", FUN = mean, intercept = FALSE)
+    nd$atime <- nd$arrivaltime
+    nd$arrivaltime <- target
+    nd$pspatial <- predict(firemodel, newdata = nd, model = "lambda",
+      term = "ti(arrivaltime,lon,lat)",
+      FUN = mean, intercept = FALSE)
+    attr(nd, "target") <- target
+
+    return(nd)
+  }
+
+  firemodel_plotdata <- data_basehaz(20, 10)
+
+  save(firemodel, firemodel_plotdata, file = "firemodel.rda")
 } else {
   load("firemodel.rda")
 }
 
-
-plot_basehaz <- function(n = 10, target = 6, ...)
+plot_basehaz <- function(data, pos = "topright", mcolor = diverge_hcl, ...)
 {
-  co <- with(LondonFire, expand.grid(
-    "lon" = seq(min(lon), max(lon), length = n),
-    "lat" = seq(min(lat), max(lat), length = n)
-  ))
-  chull <- as.data.frame(with(LondonFire, convexhull.xy(cbind(lon, lat)))$bdry[[1]])
-  pip <- point.in.polygon(co$lon, co$lat, chull$x, chull$y)
-  co <- co[pip > 0, , drop = FALSE]
-  nd <- NULL
-  atime <- with(LondonFire, seq(min(arrivaltime), max(arrivaltime), length = 100))
-  for(i in 1:nrow(co)) {
-    td <- data.frame("arrivaltime" = atime)
-    td$lon <- co$lon[i]
-    td$lat <- co$lat[i]
-    td$id <- i
-    nd <- rbind(nd, td)
-  }
-  nd$id <- as.factor(nd$id)
-  nd$p50 <- predict(firemodel, newdata = nd, model = "lambda", FUN = median)
   par(mfrow = c(1, 2))
-  bamlss_factor2d_plot(nd[, c("id", "arrivaltime", "p50")], rug = FALSE, ...)
-  abline(v = target)
-  nd$arrivaltime <- target
-  nd$p <- predict(firemodel, newdata = nd, model = "lambda", FUN = median)
-  nd$p <- nd$p - mean(nd$p)
-  rlon <- range(nd$lon)
-  rlat <- range(nd$lat)
-  rlon <- rlon + c(-1, 1) * 0.1 * abs(diff(rlon))
-  rlat <- rlat + c(-0.05, 0.3) * abs(diff(rlat))
-  pal <- plot3d(p ~ lon + lat, data = nd, legend = FALSE, image = TRUE, grid = 200,
-    xlim = rlon, ylim = rlat, swap = TRUE)
-  colorlegend(pos = "topleft", x = nd$p, color = pal$pal$colors, plot = FALSE, add = TRUE,
-    digits = 1, shift = c(0.1, 0.02), distance.labels = 0)
+  bamlss_factor2d_plot(data[, c("id", "atime", "p50")], rug = FALSE, ...)
+  abline(v = attr(data, "target"))
+  plot(LondonBoroughs)
+  xymap(lon, lat, pspatial, data = data, pos = pos,
+    layout = FALSE, map = FALSE, add = TRUE, color = mcolor)
+  plot(LondonBoroughs, add = TRUE)
+  box()
 }
 
-plot_basehaz(target = 10)
+plot_basehaz(firemodel_plotdata, col = rgb(0.1, 0.1, 0.1, alpha = 0.1))
 @
 
 

@@ -206,7 +206,7 @@ f <- list(
 b <- bamlss(f, data = GAMart, optimizer = boost99, sampler = FALSE)
 plot(b)
 plot(b, which = "boost.summary")
-
+x11()
 
 data("india", "india.bnd", package = "gamboostLSS")
 
@@ -230,11 +230,11 @@ data("LondonFire")
 
 f <- list(
   Surv(arrivaltime) ~ s(arrivaltime),
-  gamma ~ s(fsintens) + s(daytime, bs = "cc", k = 20) + s(lon, lat, k = 100)
+  gamma ~ s(fsintens, k = 20) + s(daytime, bs = "cc", k = 20) + s(lon, lat, k = 100)
 )
 
 b <- bamlss(f, data = LondonFire, family = "cox", subdivisions = 50,
-  n.iter = 1200, burnin = 200, thin = 1, cores = 3)
+  n.iter = 1200, burnin = 200, thin = 4, cores = 4)
 
 plot(b, model = 2, term = 2, image = TRUE, grid = 200, swap = TRUE)
 

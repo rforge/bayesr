@@ -47,14 +47,12 @@ trim <- function(x) {
 sa <- trim(sa)
 sn <- trim(sn)
 
-FireStations <- data.frame("name" = sn, "address" = sa, stringsAsFactors = FALSE)
+LondonFStations <- data.frame("name" = sn, "address" = sa, stringsAsFactors = FALSE)
 
 
 ## Add fire stations coordinates.
 library("RCurl")
 library("rjson")
-
-key <- "AIzaSyBEtRUvHLe8Ah6N022HHXuQKRt5rDvsxGQ"
 
 url <- function(address, return.call = "json", sensor = "false") {
   root <- "http://maps.google.com/maps/api/geocode/"
@@ -89,13 +87,15 @@ geoCode <- function(address,verbose=FALSE) {
 }
 
 
-co <- geoCode(FireStations$address)
-
-FireStations <- cbind(FireStations, co[, c("lon", "lat")])
+## Get the stations lon,lat.
+library("sp")
+co <- geoCode(LondonFStations$address)
+LondonFStations <- cbind(LondonFStations, co[, c("lon", "lat")])
+coordinates(LondonFStations) <- c("lon", "lat")
+proj4string(LondonFStations) <- CRS("+init=epsg:4326")
 
 
 ## Transform coordinates.
-library("sp")
 xy <- LondonFire[, c("east", "north")]
 coordinates(xy) <- c("east", "north")
 proj4string(xy) <- CRS("+init=epsg:27700")
@@ -106,13 +106,13 @@ LondonFire$lon <- res$lon
 LondonFire$lat <- res$lat
 
 
-## Calculate fire stations intensity
+## Calculate fire stations intensity.
 library("spatstat")
 library("raster")
 chull <- convexhull.xy(as.matrix(rbind(LondonFire[ , c("lon", "lat")],
-  FireStations[, c("lon", "lat")])))
+  coordinates(LondonFStations))))
 win <- expandwinPerfect(chull, TRUE, 1)
-fsppp <- ppp(x = FireStations$lon, FireStations$lat, window = win)
+fsppp <- ppp(x = LondonFStations$lon, LondonFStations$lat, window = win)
 fsintens <- density.ppp(fsppp, bw.diggle)
 fsintens <- raster(fsintens)
 proj4string(fsintens) <- CRS("+init=epsg:4326")
@@ -120,10 +120,30 @@ LondonFire$fsintens <- extract(fsintens, as.matrix(LondonFire[ , c("lon", "lat")
 
 
 ## Finalize.
-LondonFire <- LondonFire[, c("year", "month", "day", "daytime",
-  "arrivaltime", "id", "lon", "lat", "fsintens")]
+LondonFire <- LondonFire[, c("arrivaltime", "daytime", "fsintens", "lon", "lat")]
+coordinates(LondonFire) <- c("lon", "lat")
+proj4string(LondonFire) <- CRS("+init=epsg:4326")
 
-save(LondonFire, FireStations,
+
+## Get London boroughs.
+library("OIdata")
+library("maptools")
+data("london_boroughs")
+xy <- na.omit(london_boroughs)
+nas <- attr(xy, "na.action")
+coordinates(xy) <- c("x", "y")
+proj4string(xy) <- CRS("+init=epsg:27700")
+xy <- as.data.frame(spTransform(xy, CRS("+init=epsg:4326")))
+LondonBoroughs <- london_boroughs
+LondonBoroughs[-nas, "x"] <- xy$x
+LondonBoroughs[-nas, "y"] <- xy$y
+IDs <- unique(as.character(LondonBoroughs$name))
+LondonBoroughs <- map2SpatialPolygons(LondonBoroughs[, c("x", "y")], IDs = IDs,
+  proj4string = CRS("+init=epsg:4326"))
+
+
+## Save the data.
+save(LondonFire, LondonFStations, LondonBoroughs,
   file = "~/svn/bayesr/pkg/bamlss/data/LondonFire.rda",
   compress = "xz")
 
