@@ -976,12 +976,12 @@ data("LondonFire")
 
 if(!file.exists("firemodel.rda")) {
   f <- list(
-    Surv(arrivaltime) ~ ti(arrivaltime) + ti(arrivaltime, lon, lat, d = c(1, 2), bs = c("tp", "tp"),
+    Surv(arrivaltime) ~ ti(arrivaltime, k = 20) + ti(arrivaltime, lon, lat, d = c(1, 2), bs = c("tp", "tp"), k = c(5, 30)),
     gamma ~ s(fsintens, k = 20) + s(daytime, bs = "cc", k = 20) + s(lon, lat, k = 100)
   )
 
   firemodel <- bamlss(f, data = LondonFire, family = "cox", subdivisions = 10,
-    n.iter = 120, burnin = 20, thin = 1, cores = 4, nu = 0.1)
+    n.iter = 4000, burnin = 2000, thin = 10, cores = 6, nu = 0.1)
 
   save(firemodel, file = "firemodel.rda")
 } else {
