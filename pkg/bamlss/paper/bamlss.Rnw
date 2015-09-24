@@ -969,6 +969,66 @@ next section.
 \section{Software implementation and examples} \label{sec:softex}
 
 
+\subsection{Cox-regression} \label{sec:coxreg}
+
+<<echo=FALSE, results=hide>>=
+data("LondonFire")
+
+if(!file.exists("firemodel.rda")) {
+  f <- list(
+    Surv(arrivaltime) ~ ti(arrivaltime) + ti(arrivaltime, lon, lat, d = c(1, 2), bs = c("tp", "tp"),
+    gamma ~ s(fsintens, k = 20) + s(daytime, bs = "cc", k = 20) + s(lon, lat, k = 100)
+  )
+
+  firemodel <- bamlss(f, data = LondonFire, family = "cox", subdivisions = 10,
+    n.iter = 120, burnin = 20, thin = 1, cores = 4, nu = 0.1)
+
+  save(firemodel, file = "firemodel.rda")
+} else {
+  load("firemodel.rda")
+}
+
+
+plot_basehaz <- function(n = 10, target = 6, ...)
+{
+  co <- with(LondonFire, expand.grid(
+    "lon" = seq(min(lon), max(lon), length = n),
+    "lat" = seq(min(lat), max(lat), length = n)
+  ))
+  chull <- as.data.frame(with(LondonFire, convexhull.xy(cbind(lon, lat)))$bdry[[1]])
+  pip <- point.in.polygon(co$lon, co$lat, chull$x, chull$y)
+  co <- co[pip > 0, , drop = FALSE]
+  nd <- NULL
+  atime <- with(LondonFire, seq(min(arrivaltime), max(arrivaltime), length = 100))
+  for(i in 1:nrow(co)) {
+    td <- data.frame("arrivaltime" = atime)
+    td$lon <- co$lon[i]
+    td$lat <- co$lat[i]
+    td$id <- i
+    nd <- rbind(nd, td)
+  }
+  nd$id <- as.factor(nd$id)
+  nd$p50 <- predict(firemodel, newdata = nd, model = "lambda", FUN = median)
+  par(mfrow = c(1, 2))
+  bamlss_factor2d_plot(nd[, c("id", "arrivaltime", "p50")], rug = FALSE, ...)
+  abline(v = target)
+  nd$arrivaltime <- target
+  nd$p <- predict(firemodel, newdata = nd, model = "lambda", FUN = median)
+  nd$p <- nd$p - mean(nd$p)
+  rlon <- range(nd$lon)
+  rlat <- range(nd$lat)
+  rlon <- rlon + c(-1, 1) * 0.1 * abs(diff(rlon))
+  rlat <- rlat + c(-0.05, 0.3) * abs(diff(rlat))
+  pal <- plot3d(p ~ lon + lat, data = nd, legend = FALSE, image = TRUE, grid = 200,
+    xlim = rlon, ylim = rlat, swap = TRUE)
+  colorlegend(pos = "topleft", x = nd$p, color = pal$pal$colors, plot = FALSE, add = TRUE,
+    digits = 1, shift = c(0.1, 0.02), distance.labels = 0)
+}
+
+plot_basehaz(target = 10)
+@
+
+
 \section{Summary}\label{sec:conclusion}
 
 
