@@ -4827,7 +4827,7 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
         }
       }
       rval$parameters <- pc
-    }
+    }     
     colnames(rval$parameters) <- "parameters"
   }
   if(!length(rval)) return(NULL)
@@ -4847,7 +4847,7 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
         rownames(rval2[[i]]) <- gsub(paste(i, "p.", sep = "."), "", rownames(rval2[[i]]), fixed = TRUE)
         rownames(rval2[[i]]) <- gsub(paste(i, "s.", sep = "."), "", rownames(rval2[[i]]), fixed = TRUE)
       }
-      if(ncol(rval2[[i]]) < 2) {
+      if(ncol(rval2[[i]]) < 2 & !summary) {
         rn <- rownames(rval2[[i]])
         rval2[[i]] <- rval2[[i]][, 1]
         names(rval2[[i]]) <- rn
@@ -4864,7 +4864,7 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
           rownames(rval) <- gsub(paste(i, ".", sep = ""), "", rownames(rval), fixed = TRUE)
       }
     } 
-    if(ncol(rval) < 2) {
+    if(ncol(rval) < 2 & !summary) {
       rn <- rownames(rval)
       rval <- rval[, 1]
       names(rval) <- rn
