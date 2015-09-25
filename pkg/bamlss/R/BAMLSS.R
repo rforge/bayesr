@@ -299,6 +299,12 @@ design.construct <- function(formula, data = NULL, knots = NULL,
         }
       }
     }
+    if(!is.null(obj$smooth.construct)) {
+      sl <- NULL
+      for(j in seq_along(obj$smooth.construct))
+        sl <- c(sl, obj$smooth.construct[[j]]$label)
+      names(obj$smooth.construct) <- sl
+    }
     if(!is.null(drop)) {
       take <- c("model.matrix", "smooth.construct")[c(model.matrix, smooth.construct)]
       obj[!(names(obj) %in% take)] <- NULL
@@ -4488,7 +4494,7 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
 
     ## Smooth effects.
     if(has_sterms(obj$terms)) {
-      tl <- get_sterms_labels(obj$terms)
+      tl <- names(obj$smooth.construct)
       sn <- paste(id, "s", tl, sep = ".")
       i <- grep2(sn, snames, fixed = TRUE)
       if(length(i)) {
