@@ -3911,7 +3911,8 @@ summary.bamlss <- function(object, model = NULL, FUN = NULL, parameters = TRUE, 
   rval$model.matrix <- coef.bamlss(object, model = model, FUN = FUN,
      sterms = FALSE, full.names = FALSE, list = TRUE, parameters = parameters)
   rval$smooth.construct <- coef.bamlss(object, model = model, FUN = FUN,
-     sterms = TRUE, full.names = FALSE, list = TRUE, parameters = FALSE, hyper.parameters = TRUE)
+     sterms = TRUE, full.names = FALSE, list = TRUE, parameters = parameters, hyper.parameters = TRUE,
+     summary = TRUE)
   rval$model.stats <- object$model.stats
   class(rval) <- "summary.bamlss"
   rval
@@ -4495,6 +4496,8 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
     ## Smooth effects.
     if(has_sterms(obj$terms)) {
       tl <- names(obj$smooth.construct)
+      tl2 <- get_sterms_labels(obj$terms)
+      tl <- tl[grep2(tl2, tl, fixed = TRUE)]
       sn <- paste(id, "s", tl, sep = ".")
       i <- grep2(sn, snames, fixed = TRUE)
       if(length(i)) {
@@ -4752,15 +4755,19 @@ confint.bamlss <- function(object, parm, level = 0.95, model = NULL,
 ## Extract model coefficients.
 coef.bamlss <- function(object, model = NULL, term = NULL,
   FUN = NULL, parameters = NULL, pterms = TRUE, sterms = TRUE,
-  hyper.parameters = FALSE, list = FALSE, full.names = TRUE, ...)
+  hyper.parameters = FALSE, summary = FALSE, list = FALSE, full.names = TRUE, ...)
 {
   if(is.null(object$samples) & is.null(object$parameters))
     stop("no coefficients to extract!")
   if(is.null(parameters))
     parameters <- is.null(object$samples)
   if(hyper.parameters) {
-    pterms <- parameters <- FALSE
-    drop <- c(".accepted", "logLik", "logPost", "AIC", "BIC", "DIC", "pd")
+    pterms <- FALSE
+    if(summary) {
+      drop <- c(".accepted", "logLik", "logPost", "AIC", "BIC", "DIC", "pd")
+    } else {
+      drop <- c(".accepted", "logLik", "logPost", "AIC", "BIC", "DIC", "pd", ".edf")
+    }
     if(is.null(FUN)) {
       FUN <- function(x) {
         c("Mean" = mean(x, na.rm = TRUE),
@@ -4784,7 +4791,7 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
     tdrop <- grep2(drop, colnames(rval$samples), fixed = TRUE)
     if(length(tdrop))
       rval$samples <- rval$samples[, -tdrop, drop = FALSE]
-    if(hyper.parameters) {
+    if(hyper.parameters & summary) {
       ttake <- grep2(c(".tau2", ".lambda", ".edf", ".alpha"), colnames(rval$samples), fixed = TRUE)
       if(length(ttake)) {
         rval$samples <- rval$samples[, ttake, drop = FALSE]
@@ -4804,10 +4811,31 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
   if(!is.null(object$parameters) & parameters) {
     rval$parameters <- parameters(object, list = FALSE)
     rval$parameters <- rval$parameters[-grep2(drop, names(rval$parameters), fixed = TRUE)]
+    if(summary)
+      rval$parameters <- rval$parameters[grep2(c(".tau2", ".edf"), names(rval$parameters), fixed = TRUE)]
     rval$parameters <- as.matrix(rval$parameters, ncol = 1)
+    if(!is.null(rval$samples)) {
+      pc <- NULL
+      rns <- gsub(".model.matrix", "", rownames(rval$samples), fixed = TRUE)
+      for(j in rns) {
+        if(j %in% rownames(rval$parameters)) {
+          pc <- rbind(pc, rval$parameters[j, , drop = FALSE])
+        } else {
+          tpc <- matrix(NA, nrow = 1, ncol = ncol(rval$parameters))
+          rownames(tpc) <- j
+          pc <- rbind(pc, tpc)
+        }
+      }
+      rval$parameters <- pc
+    }
     colnames(rval$parameters) <- "parameters"
   }
-  rval <- if(length(rval) < 2) as.matrix(rval[[1]], ncol = 1) else do.call("cbind", rval)
+  if(!length(rval)) return(NULL)
+  rval <- if(length(rval) < 2) {
+    as.matrix(rval[[1]], ncol = 1)
+  } else {
+    do.call("cbind", rval)
+  }
   if(!length(rval)) return(numeric(0))
   nx <- sapply(strsplit(rownames(rval), ".", fixed = TRUE), function(x) { x[1] })
   if(list) {
