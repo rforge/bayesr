@@ -136,7 +136,9 @@ cox.mode <- function(x, y, weights, offset,
         x$gamma$smooth.construct[[sj]]$binning$order)
 
       ## Compute mean and precision.
-      XWX <- crossprod(x$gamma$smooth.construct[[sj]]$X, x$gamma$smooth.construct[[sj]]$X * x$gamma$smooth.construct[[sj]]$weights)
+      XWX <- do.XWX(x$gamma$smooth.construct[[sj]]$X,
+        1 / x$gamma$smooth.construct[[sj]]$weights,
+        x$gamma$smooth.construct[[sj]]$imat)
       if(x$gamma$smooth.construct[[sj]]$fixed) {
         P <- matrix_inv(XWX)
       } else {
@@ -668,6 +670,8 @@ surv.transform <- function(x, y, data, family,
     y <- cbind("time" = y, "status" = rep(1, length(y)))
     class(y) <- "Surv"
   }
+  if(length(i <- which(y[, "time"] == 0)))
+    y[i, "time"] <- 1e-08 * abs(diff(range(y[, "time"])))
 
   grid <- function(upper, length){
     seq(from = 0, to = upper, length = length)

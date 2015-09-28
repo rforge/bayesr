@@ -985,11 +985,11 @@ points(LondonFStations, cex = 1.2)
 if(!file.exists("firemodel.rda")) {
   f <- list(
     Surv(arrivaltime) ~ ti(arrivaltime) + ti(arrivaltime,lon,lat,d=c(1,2)),
-    gamma ~ s(fsintens,k=20) + s(daytime,bs="cc",k=20) + s(lon,lat,k=100)
+    gamma ~ s(fsintens) + s(daytime,bs="cc",k=20) + s(lon,lat,k=100)
   )
 
-  firemodel <- bamlss(f, data = LondonFire, family = "cox", subdivisions = 50,
-    n.iter = 30000, burnin = 10000, thin = 20, nu = 0.1)
+  firemodel <- bamlss(f, data = LondonFire, family = "cox", subdivisions = 10,
+    n.iter = 12000, burnin = 2000, thin = 10, nu = 0.01, maxit = 1000)
 
   data_basehaz <- function(n = 30, target = 6, ...)
   {
@@ -1042,14 +1042,16 @@ if(!file.exists("firemodel.rda")) {
   load("firemodel.rda")
 }
 
-plot_basehaz <- function(data, pos = "topright", mcolor = diverge_hcl, ...)
+plot_basehaz <- function(data, pos = "topright", mcolor = diverge_hcl, curve = TRUE, ...)
 {
-  par(mfrow = c(1, 2))
-  bamlss_factor2d_plot(data[, c("id", "atime", "p50")], rug = FALSE, ...)
-  abline(v = attr(data, "target"))
+  if(curve) {
+    par(mfrow = c(1, 2))
+    bamlss_factor2d_plot(data[, c("id", "atime", "p50")], rug = FALSE, ...)
+    abline(v = attr(data, "target"))
+  }
   plot(LondonBoroughs)
   xymap(lon, lat, pspatial, data = data, pos = pos,
-    layout = FALSE, map = FALSE, add = TRUE, color = mcolor)
+    layout = FALSE, map = FALSE, add = curve, color = mcolor)
   plot(LondonBoroughs, add = TRUE)
   box()
 }

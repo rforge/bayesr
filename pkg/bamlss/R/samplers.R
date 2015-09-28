@@ -170,6 +170,9 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
 
   if(burnin < 1) burnin <- 1
   if(burnin > n.iter) burnin <- floor(n.iter * 0.1)
+  if(thin < 1)
+    thin <- 1
+  thin <- as.integer(thin)
   iterthin <- as.integer(seq(burnin, n.iter, by = thin))
 
   rho <- new.env()
