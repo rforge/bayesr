@@ -815,7 +815,12 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
       if(!is.null(x[[i]]$smooth.construct)) {
         par[[i]]$s <- list()
         for(k in names(x[[i]]$smooth.construct)) {
-          if(!is.null(x[[i]]$smooth.construct[[k]]$rand)) {
+          re.effect <- !is.null(x[[i]]$smooth.construct[[k]]$rand)
+          if(re.effect) {
+            if(is.logical(x[[i]]$smooth.construct[[k]]$rand))
+              re.effect <- FALSE
+          }
+          if(re.effect) {
             tpar1 <- rep(fill[1], ncol(x[[i]]$smooth.construct[[k]]$rand$Xr))
             tpar2 <- rep(fill[1], ncol(x[[i]]$smooth.construct[[k]]$Xf))
             cn1 <- colnames(x[[i]]$smooth.construct[[k]]$rand$Xr)
