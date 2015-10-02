@@ -984,12 +984,12 @@ points(LondonFStations, cex = 1.2)
 <<echo=FALSE, results=hide>>=
 if(!file.exists("firemodel.rda")) {
   f <- list(
-    Surv(arrivaltime) ~ ti(arrivaltime) + ti(arrivaltime,lon,lat,d=c(1,2)),
-    gamma ~ s(fsintens) + s(daytime,bs="cc",k=20) + s(lon,lat,k=100)
+    Surv(arrivaltime) ~ s(arrivaltime,bs="tp",k=20) + te(arrivaltime,lon,lat,d=c(1,2),bs=c("tp","tp"),mp=FALSE),
+    gamma ~ s(fsintens) + s(daytime,bs="cc",k=30)
   )
 
-  firemodel <- bamlss(f, data = LondonFire, family = "cox", subdivisions = 10,
-    n.iter = 12000, burnin = 2000, thin = 10, nu = 0.01, maxit = 1000)
+  firemodel <- bamlss(f, data = LondonFire, family = "cox",
+    subdivisions = 50, nu = 0.01, n.iter = 1200, burnin = 200, thin = 10, maxit = 1000)
 
   data_basehaz <- function(n = 30, target = 6, ...)
   {
@@ -1028,35 +1028,48 @@ if(!file.exists("firemodel.rda")) {
     nd$atime <- nd$arrivaltime
     nd$arrivaltime <- target
     nd$pspatial <- predict(firemodel, newdata = nd, model = "lambda",
-      term = "ti(arrivaltime,lon,lat)",
+      term = "(arrivaltime,lon,lat)",
       FUN = mean, intercept = FALSE)
     attr(nd, "target") <- target
 
     return(nd)
   }
 
-  firemodel_plotdata <- data_basehaz(80, 10)
+  firemodel_plotdata <- data_basehaz(40, 6)
 
   save(firemodel, firemodel_plotdata, file = "firemodel.rda")
 } else {
   load("firemodel.rda")
 }
 
-plot_basehaz <- function(data, pos = "topright", mcolor = diverge_hcl, curve = TRUE, ...)
+plot_basehaz <- function(data, pos = "top", mcolor = diverge_hcl, curve = TRUE, range = NULL, ...)
 {
+  if(is.null(range))
+    range <- c(-0.5, 0.5)
+  col <- colorlegend(x = data$p50, color = mcolor, symmetric = TRUE, plot = FALSE, add = FALSE,
+    range = range, lrange = range)
   if(curve) {
     par(mfrow = c(1, 2))
-    bamlss_factor2d_plot(data[, c("id", "atime", "p50")], rug = FALSE, ...)
+    bamlss_factor2d_plot(data[, c("id", "atime", "p50")], rug = FALSE, color = col$colors, ...)
     abline(v = attr(data, "target"))
   }
   plot(LondonBoroughs)
   xymap(lon, lat, pspatial, data = data, pos = pos,
-    layout = FALSE, map = FALSE, add = curve, color = mcolor)
+    layout = FALSE, map = FALSE, add = curve, color = col$colors,
+    shift = c(0.08, 0.03), symmetric = TRUE, range = range, lrange = range)
   plot(LondonBoroughs, add = TRUE)
   box()
 }
 
-plot_basehaz(firemodel_plotdata, col = rgb(0.1, 0.1, 0.1, alpha = 0.1))
+plot_basehaz(firemodel_plotdata)
+
+plot_bazehaz_anim <- function(n = 20, target = 1:20)
+{
+  for(i in target) {
+    pd <- data_basehaz(n, target = i)
+    plot_basehaz(pd)
+  }
+}
 @
 
 

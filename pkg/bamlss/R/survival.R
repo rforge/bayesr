@@ -24,7 +24,8 @@ cox.bamlss <- function(...)
       int <- attr(y, "width") * (0.5 * (eeta[, 1] + eeta[, n]) + apply(eeta[, 2:(n - 1)], 1, sum))
       ll <- (eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int
       sum(ll)
-    }
+    },
+    "predict" = bamlss.surv.prob
   )
 
   class(rval) <- "family.bamlss"
@@ -105,6 +106,7 @@ cox.mode <- function(x, y, weights, offset,
       fit <- x$lambda$smooth.construct[[sj]]$fit.fun(x$lambda$smooth.construct[[sj]]$X, g2)
       eta$lambda <- eta$lambda - fitted(x$lambda$smooth.construct[[sj]]$state) + fit
       x$lambda$smooth.construct[[sj]]$state$fitted.values <- fit
+      x$lambda$smooth.construct[[sj]]$state$edf <- sum.diag(int$hess %*% Sigma)
     }
 
     ###########################################
@@ -150,6 +152,7 @@ cox.mode <- function(x, y, weights, offset,
       }
       g <- drop(P %*% crossprod(x$gamma$smooth.construct[[sj]]$X, x$gamma$smooth.construct[[sj]]$rres))
       x$gamma$smooth.construct[[sj]]$state$parameters <- set.par(x$gamma$smooth.construct[[sj]]$state$parameters, g, "b")
+      x$gamma$smooth.construct[[sj]]$state$edf <- sum.diag(XWX %*% P)
 
       ## Compute fitted values.
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) {
@@ -253,6 +256,7 @@ cox.mcmc <- function(x, y, family, start, weights, offset,
   ## Porcess iterations.
   if(burnin < 1) burnin <- 1
   if(burnin > n.iter) burnin <- floor(n.iter * 0.1)
+  if(thin < 1) thin <- 1
   iterthin <- as.integer(seq(burnin, n.iter, by = thin))
 
   ## Samples.
@@ -854,5 +858,26 @@ survint <- function(X, eta, width, gamma, eta2 = NULL, index = NULL)
     .Call("survint_index", X, eta, width, gamma, eta2, as.integer(check), index)
   }
   return(int)
+}
+
+
+## Survival probabilities.
+bamlss.surv.prob <- function(object, newdata, type = c("probabilities", "link", "parameter"),
+  time, subdivisions = 100, ...)
+{
+  if(length(type) > 1)
+    type <- type[1]
+  type <- match.arg(type)
+  if(type != "probabilities") {
+    object$family$predict <- NULL
+    return(predict.bamlss(object, newdata, type, ...))
+  }
+  if(object$family$family != "cox")
+    stop("object must be a cox-survival model!")
+  if(missing(time))
+    stop("please specify the time!")
+  y <- model.response(model.frame(object))
+  timegrid <- seq(0, time, length = subdivisions)
+  
 }
 

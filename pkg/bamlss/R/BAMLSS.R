@@ -2429,10 +2429,19 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   intercept = TRUE, type = c("link", "parameter"), FUN = function(x) { mean(x, na.rm = TRUE) },
   trans = NULL, what = c("samples", "parameters"), nsamps = NULL, verbose = FALSE, drop = TRUE, ...)
 {
+  if(missing(newdata))
+    newdata <- NULL
+  family <- object$family
+  if(!is.null(family$predict)) {
+    if(is.function(family$predict)) {
+      return(family$predict(object = object, newdata = newdata, model = model, term = term,
+        intercept = intercept, type = type, FUN = FUN, trans = trans, what = what, nsamps = nsamps,
+        verbose = verbose, drop = drop, ...))
+    }
+  }
   if(is.null(object$x))
     object$x <- smooth.construct(object)
-  family <- object$family
-  if(missing(newdata)) {
+  if(is.null(newdata)) {
     newdata <- model.frame(object)
   } else {
     if(is.character(newdata)) {

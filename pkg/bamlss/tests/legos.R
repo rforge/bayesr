@@ -184,6 +184,10 @@ f <- list(
 b <- bamlss(f, family = "cox", data = d, nu = 0.1, subdivisions = 50, cores = 4,
   n.iter = 4000, burnin = 1000, thin = 5)
 
+## Predict P(T > t).
+b$family <- cox.bamlss()
+predict(b, type = "probabilties")
+
 
 ## JAGS.
 data("GAMart", package = "R2BayesX")
