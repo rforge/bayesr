@@ -863,8 +863,10 @@ survint <- function(X, eta, width, gamma, eta2 = NULL, index = NULL)
 
 ## Survival probabilities.
 bamlss.surv.prob <- function(object, newdata, type = c("probabilities", "link", "parameter"),
-  time, subdivisions = 100, ...)
+  FUN = function(x) { mean(x, na.rm = TRUE) }, time, subdivisions = 100, ...)
 {
+  if(is.null(newdata))
+    newdata <- model.frame(object)
   if(length(type) > 1)
     type <- type[1]
   type <- match.arg(type)
@@ -876,8 +878,109 @@ bamlss.surv.prob <- function(object, newdata, type = c("probabilities", "link", 
     stop("object must be a cox-survival model!")
   if(missing(time))
     stop("please specify the time!")
-  y <- model.response(model.frame(object))
-  timegrid <- seq(0, time, length = subdivisions)
-  
+  yname <- response.name(formula(as.Formula(object$x$lambda$formula, rhs = FALSE)))[1]
+  timegrid <- rep(list(seq(0, time, length = subdivisions)), length = nrow(newdata))
+  gdim <- c(length(timegrid), length(timegrid[[1]]))
+  width <- timegrid[[1]][2]
+
+  pred.setup <- predict.bamlss(object, newdata, type = "link", get.bamlss.predict.setup = TRUE, ...)
+  enames <- pred.setup$enames
+
+  pred_tc <- with(pred.setup, .predict.bamlss("gamma",
+    object$x$gamma, samps, enames$gamma, intercept,
+    nsamps, newdata, env))
+
+  pred_td <- with(pred.setup, .predict.bamlss.surv.td("lambda",
+    object$x$lambda$smooth.construct, samps, enames$lambda, intercept,
+    nsamps, newdata, env, yname, timegrid,
+    drop.terms.bamlss(object$x$lambda$terms, sterms = FALSE, keep.response = FALSE)))
+
+  probs <- NULL
+  for(i in 1:ncol(pred_td)) {
+    eta <- matrix(pred_td[, i], nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
+    eeta <- exp(eta)
+    int <- width * (0.5 * (eeta[, 1] + eeta[, subdivisions]) + apply(eeta[, 2:(subdivisions - 1)], 1, sum))
+    probs <- cbind(probs, exp(-1 * exp(pred_tc[, i]) * int))
+  }
+return(probs)
+  if(!is.null(FUN)) {
+    if(!is.matrix(probs))
+      probs <- matrix(probs, ncol = 1)
+    probs <- apply(probs, 1, FUN, ...)
+  }
+
+  return(probs)
+}
+
+
+sm_Xtimegrid <- function(x, data, grid, yname)
+{
+  ff <- sm_time_transform(x, data, grid, yname, timevar = yname, take = NULL)$fit.fun_timegrid
+  ff(NULL)
+}
+
+param_Xtimegrid <- function(formula, data, grid, yname)
+{
+  ff <- param_time_transform(list(), formula, data, grid, yname, timevar = yname, take = NULL)
+  ff(NULL)
+}
+
+
+.predict.bamlss.surv.td <- function(id, x, samps, enames, intercept, nsamps, newdata, env,
+  yname, grid, formula)
+{
+  snames <- colnames(samps)
+  enames <- gsub("p.Intercept", "p.(Intercept)", enames, fixed = TRUE)
+  has_intercept <- any(grepl(paste(id, "p", "(Intercept)", sep = "."), snames, fixed = TRUE))
+  if(intercept & has_intercept)
+    enames <- c("p.(Intercept)", enames)
+  enames <- unique(enames)
+  ec <- sapply(enames, function(x) {
+    paste(strsplit(x, "")[[1]][1:2], collapse = "")
+  })
+  enames2 <- sapply(enames, function(x) {
+    paste(strsplit(x, "")[[1]][-c(1:2)], collapse = "")
+  })
+
+  eta <- NULL
+  if(length(i <- grep("p.", ec))) {
+    for(j in enames2[i]) {
+      if(j != "(Intercept)") {
+        f <- as.formula(paste("~", if(has_intercept) "1" else "-1", "+", j), env = env)
+        X <- param_Xtimegrid(f, newdata, grid, yname)
+        if(has_intercept)
+          X <- X[, colnames(X) != "(Intercept)", drop = FALSE]
+        sn <- snames[grep2(paste(id, "p", j, sep = "."), snames, fixed = TRUE)]
+        eta <- if(is.null(eta)) {
+          fitted_matrix(X, samps[, sn, drop = FALSE])
+        } else {
+          eta + fitted_matrix(X, samps[, sn, drop = FALSE])
+        }
+      } else {
+        if(has_intercept) {
+          sn <- snames[grep2(paste(id, "p", j, sep = "."), snames, fixed = TRUE)]
+          eta <- eta + as.numeric(fitted_matrix(matrix(1, nrow = length(grid[[1]]) * nrow(newdata), ncol = 1),
+            samps[, sn, drop = FALSE]))
+        }
+      }
+    }
+  }
+  if(length(i <- grep("s.", ec))) {
+    for(j in enames2[i]) {
+      if(!inherits(x[[j]], "no.mgcv") & !inherits(x[[j]], "special")) {
+        X <- sm_Xtimegrid(x[[j]], newdata, grid, yname)
+        sn <- snames[grep2(paste(id, "s", j, sep = "."), snames, fixed = TRUE)]
+        eta <- if(is.null(eta)) {
+          fitted_matrix(X, samps[, sn, drop = FALSE])
+        } else {
+          eta + fitted_matrix(X, samps[, sn, drop = FALSE])
+        }
+      } else {
+        stop("no predictions for special terms available yet!")
+      }
+    }
+  }
+ 
+  eta
 }
 

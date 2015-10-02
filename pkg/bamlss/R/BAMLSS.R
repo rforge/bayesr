@@ -2509,10 +2509,15 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
     all.labels.formula(f, full.names = TRUE)
   })
 
+  if(!is.null(list(...)$get.bamlss.predict.setup)) {
+    return(list("samps" = samps, "enames" = enames, "intercept" = intercept,
+      "FUN" = FUN, "trans" = trans, "type" = type, "nsamps" = nsamps, "env" = env))
+  }
+
   pred <- list()
   for(i in nx) {
-    pred[[i]] <- .predict.bamlss(i, object$x[[i]], samps, enames[[i]],
-      intercept, FUN, trans, type, nsamps, newdata, env)
+    pred[[i]] <- .predict.bamlss(i, object$x[[i]], samps,
+      enames[[i]], intercept, nsamps, newdata, env)
   }
 
   if(type != "link") {
@@ -2555,7 +2560,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
 }
 
 
-.predict.bamlss <- function(id, x, samps, enames, intercept, FUN, trans, type, nsamps, data, env)
+.predict.bamlss <- function(id, x, samps, enames, intercept, nsamps, data, env)
 {
   if("smooth.construct" %in% names(x))
     x <- x$smooth.construct
