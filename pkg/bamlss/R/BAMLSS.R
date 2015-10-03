@@ -1779,9 +1779,7 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
   tf <- terms(formula, specials = unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", specials)),
     keep.order = TRUE)
   sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
-  tl <- gsub("list(", "", deparse(attr(tf, "variables")), fixed = TRUE)
-  tl <- strsplit(tl, "")[[1]]
-  tl <- strsplit(paste(tl[-length(tl)], collapse = ""), ", ", fixed = TRUE)[[1]]
+  tl <- attr(tf, "term.labels")
   vars <- NULL
   if(rhs) {
     if(length(sid)) {
