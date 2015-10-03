@@ -176,7 +176,7 @@ lambda <-  function(time, x) {
 d <- rSurvTime2(lambda, X, cens_fct, mean_cens = 5)
 
 f <- list(
-  Surv(time, event) ~ s(time, bs = "ps", k = 20) + x3:time,
+  Surv(time, event) ~ s(time, bs = "ps", k = 20) + s(time, by = x3),
   gamma ~ s(x1) + s(x2)
 )
 
