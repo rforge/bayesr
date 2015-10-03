@@ -989,7 +989,7 @@ if(!file.exists("firemodel.rda")) {
   )
 
   firemodel <- bamlss(f, data = LondonFire, family = "cox",
-    subdivisions = 10, nu = 0.1, sampler = FALSE)
+    subdivisions = 10, nu = 0.1, n.iter = 1200, burnin = 200, thin = 3, cores = 3)
 
   data_basehaz <- function(n = 30, target = 6, ...)
   {
@@ -1026,37 +1026,35 @@ if(!file.exists("firemodel.rda")) {
     nd$id <- as.factor(nd$id)
     nd$p50 <- predict(firemodel, newdata = nd, model = "lambda", FUN = mean, intercept = FALSE)
     nd$atime <- nd$arrivaltime
-    nd$arrivaltime <- target
-    nd$pspatial <- predict(firemodel, newdata = nd, model = "lambda",
-      term = "(arrivaltime,lon,lat)",
-      FUN = mean, intercept = FALSE)
+    nd$daytime <- 8.5
+    firemodel$family <- cox.bamlss()
+    nd$pspatial <- predict(firemodel, newdata = nd,
+      term = c("s(arrivaltime)", "te(arrivaltime,lon,lat)", "s(daytime)"),
+      FUN = mean, intercept = TRUE, type = "prob", time = target, ...)
     attr(nd, "target") <- target
 
     return(nd)
   }
 
-  firemodel_plotdata <- data_basehaz(40, 6)
+  firemodel_plotdata <- data_basehaz(80, 6, subdivisions = 15)
 
   save(firemodel, firemodel_plotdata, file = "firemodel.rda")
 } else {
   load("firemodel.rda")
 }
 
-plot_basehaz <- function(data, pos = "top", mcolor = diverge_hcl, curve = TRUE, range = NULL, ...)
+plot_basehaz <- function(data, pos = "top", curve = TRUE, ...)
 {
-  if(is.null(range))
-    range <- c(-0.5, 0.5)
-  col <- colorlegend(x = data$p50, color = mcolor, symmetric = TRUE, plot = FALSE, add = FALSE,
-    range = range, lrange = range)
   if(curve) {
     par(mfrow = c(1, 2))
-    bamlss_factor2d_plot(data[, c("id", "atime", "p50")], rug = FALSE, color = col$colors, ...)
+    bamlss_factor2d_plot(data[, c("id", "atime", "p50")], rug = FALSE,
+      color = rgb(0.1, 0.1, 0,1, alpha = 0.1), ...)
     abline(v = attr(data, "target"))
   }
   plot(LondonBoroughs)
   xymap(lon, lat, pspatial, data = data, pos = pos,
-    layout = FALSE, map = FALSE, add = curve, color = col$colors,
-    shift = c(0.08, 0.03), symmetric = TRUE, range = range, lrange = range)
+    layout = FALSE, map = FALSE, add = curve, color = diverge_hcl,
+    shift = c(0.08, 0.03), symmetric = FALSE)
   plot(LondonBoroughs, add = TRUE)
   box()
 }

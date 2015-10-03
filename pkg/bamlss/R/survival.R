@@ -657,7 +657,8 @@ surv.transform <- function(x, y, data, family,
         x$lambda$smooth.construct$model.matrix$term <- gsub("(Intercept)+", "",
           x$lambda$smooth.construct$model.matrix$term, fixed = TRUE)
         x$lambda$smooth.construct$model.matrix$state$parameters <- x$lambda$smooth.construct$model.matrix$state$parameters[-1]
-        attr(x$lambda$terms, "intercept") <- 0
+        x$lambda$terms <- drop.terms.bamlss(x$lambda$terms,
+          pterms = TRUE, sterms = TRUE, keep.intercept = FALSE)
       }
     }
   }
@@ -862,7 +863,7 @@ survint <- function(X, eta, width, gamma, eta2 = NULL, index = NULL)
 
 
 ## Survival probabilities.
-bamlss.surv.prob <- function(object, newdata, type = c("probabilities", "link", "parameter"),
+bamlss.surv.prob <- function(object, newdata, type = c("link", "parameter", "probabilities"),
   FUN = function(x) { mean(x, na.rm = TRUE) }, time, subdivisions = 100, ...)
 {
   if(is.null(newdata))
@@ -883,7 +884,8 @@ bamlss.surv.prob <- function(object, newdata, type = c("probabilities", "link", 
   gdim <- c(length(timegrid), length(timegrid[[1]]))
   width <- timegrid[[1]][2]
 
-  pred.setup <- predict.bamlss(object, newdata, type = "link", get.bamlss.predict.setup = TRUE, ...)
+  pred.setup <- predict.bamlss(object, newdata, type = "link",
+    get.bamlss.predict.setup = TRUE, ...)
   enames <- pred.setup$enames
 
   pred_tc <- with(pred.setup, .predict.bamlss("gamma",
@@ -902,11 +904,11 @@ bamlss.surv.prob <- function(object, newdata, type = c("probabilities", "link", 
     int <- width * (0.5 * (eeta[, 1] + eeta[, subdivisions]) + apply(eeta[, 2:(subdivisions - 1)], 1, sum))
     probs <- cbind(probs, exp(-1 * exp(pred_tc[, i]) * int))
   }
-return(probs)
   if(!is.null(FUN)) {
-    if(!is.matrix(probs))
-      probs <- matrix(probs, ncol = 1)
-    probs <- apply(probs, 1, FUN, ...)
+    if(is.matrix(probs)) {
+      if(ncol(probs) > 1)
+        probs <- apply(probs, 1, FUN)
+    }
   }
 
   return(probs)
@@ -921,7 +923,7 @@ sm_Xtimegrid <- function(x, data, grid, yname)
 
 param_Xtimegrid <- function(formula, data, grid, yname)
 {
-  ff <- param_time_transform(list(), formula, data, grid, yname, timevar = yname, take = NULL)
+  ff <- param_time_transform(list(), formula, data, grid, yname, timevar = yname, take = NULL)$fit.fun_timegrid
   ff(NULL)
 }
 

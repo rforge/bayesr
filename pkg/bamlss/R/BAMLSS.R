@@ -1779,7 +1779,9 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
   tf <- terms(formula, specials = unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", specials)),
     keep.order = TRUE)
   sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
-  tl <- attr(tf, "term.labels")
+  tl <- gsub("list(", "", deparse(attr(tf, "variables")), fixed = TRUE)
+  tl <- strsplit(tl, "")[[1]]
+  tl <- strsplit(paste(tl[-length(tl)], collapse = ""), ", ", fixed = TRUE)[[1]]
   vars <- NULL
   if(rhs) {
     if(length(sid)) {
@@ -2505,6 +2507,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
 
   env <- environment(object$formula)
   enames <- lapply(enames, function(x) {
+    if(is.null(x)) return(NULL)
     f <- as.formula(paste("~", paste(x, collapse = "+")), env = env)
     all.labels.formula(f, full.names = TRUE)
   })
