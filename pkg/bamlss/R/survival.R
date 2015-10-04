@@ -904,6 +904,7 @@ bamlss.surv.prob <- function(object, newdata, type = c("link", "parameter", "pro
     int <- width * (0.5 * (eeta[, 1] + eeta[, subdivisions]) + apply(eeta[, 2:(subdivisions - 1)], 1, sum))
     probs <- cbind(probs, exp(-1 * exp(pred_tc[, i]) * int))
   }
+
   if(!is.null(FUN)) {
     if(is.matrix(probs)) {
       if(ncol(probs) > 1)

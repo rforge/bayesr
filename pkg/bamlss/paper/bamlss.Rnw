@@ -60,12 +60,11 @@
 %% need no \usepackage{Sweave}
 \SweaveOpts{engine = R, eps = FALSE, keep.source = TRUE}
 
-%<<preliminaries, echo=FALSE, results=hide>>=
-%options(width = 70, prompt = "R> ", continue = "+  ")
-%set.seed(1090)
-%library("bamlss")
-%options("use.akima" = TRUE)
-%@
+<<preliminaries, echo=FALSE, results=hide>>=
+options(width = 70, prompt = "R> ", continue = "+  ")
+set.seed(1090)
+library("bamlss")
+@
 
 
 \begin{document}
@@ -985,18 +984,23 @@ points(LondonFStations, cex = 1.2)
 if(!file.exists("firemodel.rda")) {
   f <- list(
     Surv(arrivaltime) ~ ti(arrivaltime,k=20) + ti(arrivaltime,lon,lat,d=c(1,2),mp=FALSE,k=c(5,30)),
-    gamma ~ s(fsintens) + s(daytime,bs="cc",k=30)
+    gamma ~ s(fsintens) + s(daytime,bs="cc",k=30) + s(lon,lat,k=60)
   )
 
   firemodel <- bamlss(f, data = LondonFire, family = "cox",
-    subdivisions = 100, nu = 0.01, n.iter = 6000, burnin = 2000, thin = 10, cores = 4,
-    maxit = 3000)
+    subdivisions = 10, nu = 0.01, n.iter = 2000, burnin = 1000, thin = 5, cores = 4,
+    maxit = 1000)
 
-  data_basehaz <- function(n = 30, target = 6, ...)
+  data_basehaz <- function(n = 30, target = 6, k = 20, ...)
   {
     require("spatstat")
     require("sp")
+    require("maptools")
+    data("LondonFire")
+
     gpclibPermit()
+
+    firemodel$family <- cox.bamlss()
 
     xy <- bbox(LondonBoroughs)
     co <- expand.grid(
@@ -1027,49 +1031,103 @@ if(!file.exists("firemodel.rda")) {
     nd$id <- as.factor(nd$id)
     nd$p50 <- predict(firemodel, newdata = nd, model = "lambda", FUN = mean, intercept = FALSE)
     nd$atime <- nd$arrivaltime
-    nd$daytime <- 8.5
-    firemodel$family <- cox.bamlss()
-    nd$pspatial <- predict(firemodel, newdata = nd,
-      term = c("s(arrivaltime)", "te(arrivaltime,lon,lat)", "s(daytime)"),
-      FUN = mean, intercept = TRUE, type = "prob", time = target, ...)
-    attr(nd, "target") <- target
 
-    return(nd)
+    fbh <- NULL
+    for(i in unique(nd$id))
+      fbh <- cbind(fbh, nd$p50[nd$id == i])
+    fbh <- cbind(atime, fbh)
+
+    nd$daytime <- 8.5
+    nd$arrivaltime <- target
+    nd <- unique(nd[, c("lon", "lat", "arrivaltime", "daytime")])
+
+    nd$spatial_prob <- predict(firemodel, newdata = nd,
+      term = c("ti(arrivaltime)", "ti(arrivaltime,lon,lat)", "s(daytime)", "s(lon,lat)"),
+      intercept = TRUE, type = "prob", time = target, ...)
+    nd$spatial_tc <- predict(firemodel, newdata = nd, model = "gamma",
+      term = "s(lon,lat)", intercept = FALSE)
+    nd$spatial_td <- predict(firemodel, newdata = nd, model = "lambda",
+      term = "ti(arrivaltime,lon,lat)", intercept = FALSE)
+
+    return(list("curves" = fbh, "spatial" = nd, "target" = target))
   }
 
   firemodel_plotdata <- data_basehaz(80, 6, subdivisions = 15)
 
   save(firemodel, firemodel_plotdata, file = "firemodel.rda")
-} else {
+}
+
+if(!file.exists("figures"))
+  dir.create("figures")
+
+if(!file.exists("figures/firemodel.png")) {
   load("firemodel.rda")
-}
-
-plot_basehaz <- function(data, pos = "top", curve = TRUE, ...)
-{
-  if(curve) {
-    par(mfrow = c(1, 2))
-    bamlss_factor2d_plot(data[, c("id", "atime", "p50")], rug = FALSE,
-      color = rgb(0.1, 0.1, 0,1, alpha = 0.1), ...)
-    abline(v = attr(data, "target"))
+  plot.firemodel <- function(data, what = c("curves", "spatial_prob", "spatial_td", "spatial_tc"),
+    main = NULL, ...)
+  {
+    if(is.null(main)) {
+      main = c("Baseline-hazard", 
+        paste("Prob(T > ", data$target, ")", sep = ""),
+        paste("Time-dependent effect (t = ", data$target, ")", sep = ""),
+        "Time-constant effect")
+    }
+    main <- rep(main, length.out = 4)
+    par(mfrow = n2mfrow(length(what)))
+    if("curves" %in% what) {
+      matplot(data$curves[, 1], data$curves[, -1], type = "l", lty = 1,
+        col = rgb(0.1, 0.1, 0,1, alpha = 0.01), xlab = "Arrivaltime",
+        ylab = "f(Arrivaltime)", main = main[1])
+      plot2d(firemodel$results$lambda$s.effects[["ti(arrivaltime)"]], c.select = c(1, 3),
+        col.lines = rainbow_hcl(1), add = TRUE, rug = FALSE, lwd = 2)
+      abline(v = data$target)
+    }
+    if("spatial_prob" %in% what) {
+      plot(LondonBoroughs, main = main[2])
+      lr <- range(data$spatial$spatial_prob)
+      xr <- lr +  c(0.1, -0.1) * abs(diff(lr))
+      xymap(lon, lat, spatial_prob, data = data$spatial, pos = "bottomright",
+        layout = FALSE, map = FALSE, color = heat_hcl,
+        shift = c(0.03, 0.05), symmetric = FALSE, add = TRUE,
+        side.legend = 2, digits = 2, range = xr, lrange = round(lr, 2),
+        width = 0.2, height = 0.04, ...)
+      plot(LondonBoroughs, add = TRUE)
+      box()
+    }
+    if("spatial_td" %in% what) {
+      plot(LondonBoroughs, main = main[3])
+      lr <- range(data$spatial$spatial_td)
+      lr <- c(-1 * max(abs(lr)), max(abs(lr)))
+      xr <- lr + c(0.2, -0.2) * abs(diff(lr))
+      xymap(lon, lat, spatial_td, data = data$spatial, pos = "bottomright",
+        layout = FALSE, map = FALSE, color = diverge_hcl, swap = TRUE,
+        shift = c(0.03, 0.05), symmetric = TRUE, add = TRUE,
+        side.legend = 2, digits = 2, range = xr, lrange = round(lr, 2),
+        width = 0.2, height = 0.04, ...)
+      plot(LondonBoroughs, add = TRUE)
+      box()
+    }
+    if("spatial_tc" %in% what) {
+      plot(LondonBoroughs, main = main[4])
+      lr <- range(data$spatial$spatial_tc)
+      lr <- c(-1 * max(abs(lr)), max(abs(lr)))
+      xr <- lr + c(0.2, -0.2) * abs(diff(lr))
+      xymap(lon, lat, spatial_tc, data = data$spatial, pos = "bottomright",
+        layout = FALSE, map = FALSE, color = diverge_hcl, swap = TRUE,
+        shift = c(0.03, 0.05), symmetric = TRUE, add = TRUE,
+        side.legend = 2, digits = 2, range = xr, lrange = round(lr, 2),
+        width = 0.2, height = 0.04, ...)
+      plot(LondonBoroughs, add = TRUE)
+      box()
+    }
   }
-  plot(LondonBoroughs)
-  xymap(lon, lat, pspatial, data = data, pos = pos,
-    layout = FALSE, map = FALSE, add = curve, color = diverge_hcl,
-    shift = c(0.08, 0.03), symmetric = FALSE)
-  plot(LondonBoroughs, add = TRUE)
-  box()
-}
-
-plot_basehaz(firemodel_plotdata)
-
-plot_bazehaz_anim <- function(n = 20, target = 1:20)
-{
-  for(i in target) {
-    pd <- data_basehaz(n, target = i)
-    plot_basehaz(pd)
-  }
+  png("figures/firemodel.png", units = "in", res = 120, width = 7, height = 6)
+  par(mar = c(4.1, 4.1, 4.1, 0.1))
+  plot.firemodel(firemodel_plotdata)
+  dev.off()
 }
 @
+
+\includegraphics[width=0.8\textwidth]{figures/firemodel.png}
 
 
 \section{Summary}\label{sec:conclusion}
