@@ -64,6 +64,8 @@
 options(width = 70, prompt = "R> ", continue = "+  ")
 set.seed(1090)
 library("bamlss")
+library("maptools")
+data("LondonFire")
 @
 
 
@@ -970,16 +972,6 @@ next section.
 
 \subsection{Cox-regression} \label{sec:coxreg}
 
-
-<<echo=FALSE, fig=TRUE>>=
-library("maptools")
-data("LondonFire")
-plot(LondonBoroughs)
-points(LondonFire, pch = 4, col = rgb(0, 0, 1, alpha = 0.4))
-points(LondonFStations, pch = 16, col = rainbow_hcl(1), cex = 1.2)
-points(LondonFStations, cex = 1.2)
-@
-
 <<echo=FALSE, results=hide>>=
 if(!file.exists("firemodel.rda")) {
   f <- list(
@@ -1049,6 +1041,9 @@ if(!file.exists("firemodel.rda")) {
     nd$spatial_td <- predict(firemodel, newdata = nd, model = "lambda",
       term = "ti(arrivaltime,lon,lat)", intercept = FALSE)
 
+    b <- gam(log(arrivaltime) ~ s(lon, lat, k = 100), data = LondonFire)
+    nd$spatial_mtime <- exp(predict(b, newdata = nd))
+
     return(list("curves" = fbh, "spatial" = nd, "target" = target))
   }
 
@@ -1060,31 +1055,39 @@ if(!file.exists("firemodel.rda")) {
 if(!file.exists("figures"))
   dir.create("figures")
 
-if(!file.exists("figures/firemodel.png")) {
+if(!file.exists("figures/firemodel-data.png")) {
   load("firemodel.rda")
-  plot.firemodel <- function(data, what = c("curves", "spatial_prob", "spatial_td", "spatial_tc"),
-    main = NULL, ...)
+
+  plot.firemodel <- function(data, what = c("curves", "spatial_prob", "spatial_td", "spatial_tc",
+    "fsintens", "daytime"),
+    main = NULL, spar = TRUE, ...)
   {
+    require("maptools")
+
     if(is.null(main)) {
-      main = c("Baseline-hazard", 
+      main = c("Baseline-hazard effects", 
         paste("Prob(T > ", data$target, ")", sep = ""),
-        paste("Time-dependent effect (t = ", data$target, ")", sep = ""),
-        "Time-constant effect")
+        paste("Time-dependent spatial effect (t = ", data$target, ")", sep = ""),
+        "Time-constant spatial effect")
     }
     main <- rep(main, length.out = 4)
-    par(mfrow = n2mfrow(length(what)))
+    if(spar)
+      par(mfrow = n2mfrow(length(what)))
     if("curves" %in% what) {
       matplot(data$curves[, 1], data$curves[, -1], type = "l", lty = 1,
         col = rgb(0.1, 0.1, 0,1, alpha = 0.01), xlab = "Arrivaltime",
-        ylab = "f(Arrivaltime)", main = main[1])
+        ylab = "Log relative risk", main = main[1])
       plot2d(firemodel$results$lambda$s.effects[["ti(arrivaltime)"]], c.select = c(1, 3),
         col.lines = rainbow_hcl(1), add = TRUE, rug = FALSE, lwd = 2)
-      abline(v = data$target)
+      abline(v = data$target, col = "blue", lty = 2)
+      legend("bottomright", c("Mean baseline", "Spatial-varying baseline"), lwd = c(2, 1),
+        col = c(rainbow_hcl(1), "black"), box.col = NA, bg = NA, cex = 0.95)
     }
     if("spatial_prob" %in% what) {
-      plot(LondonBoroughs, main = main[2])
-      lr <- range(data$spatial$spatial_prob)
-      xr <- lr +  c(0.1, -0.1) * abs(diff(lr))
+      plot(LondonBoroughs, main = main[2],
+        xlab = "Longitude [deg]", ylab = "Latitude [deg]")
+      lr <- c(0, max(data$spatial$spatial_prob))
+      xr <- c(0, quantile(data$spatial$spatial_prob, probs = 0.97))
       xymap(lon, lat, spatial_prob, data = data$spatial, pos = "bottomright",
         layout = FALSE, map = FALSE, color = heat_hcl,
         shift = c(0.03, 0.05), symmetric = FALSE, add = TRUE,
@@ -1092,12 +1095,21 @@ if(!file.exists("figures/firemodel.png")) {
         width = 0.2, height = 0.04, ...)
       plot(LondonBoroughs, add = TRUE)
       box()
+      axis(1)
+      axis(2)
+    }
+    if("fsintens" %in% what) {
+      plot(firemodel, model = "gamma", term = "s(fsintens)", spar = FALSE,
+        xlab = "Fire station intensity", main = "Effect of fire station intensity",
+        ylab = "Effect", rug = FALSE, scheme = 2, grid = 100)
     }
     if("spatial_td" %in% what) {
-      plot(LondonBoroughs, main = main[3])
+      plot(LondonBoroughs, main = main[3],
+        xlab = "Longitude [deg]", ylab = "Latitude [deg]")
       lr <- range(data$spatial$spatial_td)
       lr <- c(-1 * max(abs(lr)), max(abs(lr)))
-      xr <- lr + c(0.2, -0.2) * abs(diff(lr))
+      xr <- quantile(data$spatial$spatial_td, probs = 0.9)
+      xr <- c(-1 * xr, xr)
       xymap(lon, lat, spatial_td, data = data$spatial, pos = "bottomright",
         layout = FALSE, map = FALSE, color = diverge_hcl, swap = TRUE,
         shift = c(0.03, 0.05), symmetric = TRUE, add = TRUE,
@@ -1105,12 +1117,21 @@ if(!file.exists("figures/firemodel.png")) {
         width = 0.2, height = 0.04, ...)
       plot(LondonBoroughs, add = TRUE)
       box()
+      axis(1)
+      axis(2)
+    }
+    if("daytime" %in% what) {
+      plot(firemodel, model = "gamma", term = "s(daytime)", spar = FALSE, rug = FALSE,
+        xlab = "Time of day", main = "Effect of time of day", ylab = "Effect",
+        scheme = 2, grid = 100)
     }
     if("spatial_tc" %in% what) {
-      plot(LondonBoroughs, main = main[4])
+      plot(LondonBoroughs, main = main[4],
+        xlab = "Longitude [deg]", ylab = "Latitude [deg]")
       lr <- range(data$spatial$spatial_tc)
       lr <- c(-1 * max(abs(lr)), max(abs(lr)))
-      xr <- lr + c(0.2, -0.2) * abs(diff(lr))
+      xr <- quantile(data$spatial$spatial_tc, probs = 0.9)
+      xr <- c(-1 * xr, xr)
       xymap(lon, lat, spatial_tc, data = data$spatial, pos = "bottomright",
         layout = FALSE, map = FALSE, color = diverge_hcl, swap = TRUE,
         shift = c(0.03, 0.05), symmetric = TRUE, add = TRUE,
@@ -1118,16 +1139,79 @@ if(!file.exists("figures/firemodel.png")) {
         width = 0.2, height = 0.04, ...)
       plot(LondonBoroughs, add = TRUE)
       box()
+      axis(1)
+      axis(2)
+    }
+    if("stations" %in% what) {
+      co <- bbox(LondonBoroughs)
+      scale <- 0.5
+      ylim <- c(co["y", 1], co["y", 2] + scale * abs(diff(co["y", ])))
+      plot(LondonBoroughs, main = "Dwelling fires and fire stations",
+        xlab = "Longitude [deg]", ylab = "Latitude [deg]", ylim = ylim)
+      cfun <- function(n) { heat_hcl(n, alpha = 0.9) }
+      pal <- make_pal(col = cfun, ncol = 99, data = LondonFire$arrivaltime, symmetric = FALSE,
+        range = c(4, 8), swap = TRUE)
+      points(LondonFire, pch = 4, col = pal$map(LondonFire$arrivaltime), cex = 0.5)
+      points(LondonFStations, pch = 16, col = "blue", cex = 0.6)
+      points(LondonFStations, cex = 0.6)
+      box()
+      axis(1)
+      axis(2)
+      legend("bottomleft", c("Fire", "Station"), pch = c(4, 21),
+        col = c("black", "black"), pt.bg = c(NA, "blue"), box.col = NA, bg = NA, cex = 0.95)
+
+      i <- order(LondonFire$lon)
+      atimes <- LondonFire$arrivaltime[i]
+      lon <- LondonFire$lon[i]
+      shift <- scale * 0.1 * abs(diff(co["y", ]))
+      y <- scale2(atimes, co["y", 2] + shift, ylim[2])
+      rect(lon - 0.002, rep(co["y", 2] + shift,length = length(y)), lon + 0.002, y,
+        col = pal$map(atimes), border = NA)
+      lines(range(lon), rep(co["y", 2] + shift, 2))
+
+
+      x <- c(lon, rev(lon))
+      y <- c(rep(co["y", 2] + shift, length = length(y)), y)
+      polygon(x, y)
+    }
+    if("mtime" %in% what) {
+      par(mfrow = c(1, 2))
+      i <- order(LondonFire$lat)
+      atimes <- LondonFire$arrivaltime[i]
+      lat <- LondonFire$lat[i]
+      plot(lat, atimes, type = "h", col = rgb(0.1, 0.1, 0.1, alpha = 0.01), lwd = 4)
+
+      i <- order(LondonFire$lon)
+      atimes <- LondonFire$arrivaltime[i]
+      lon <- LondonFire$lon[i]
+      plot(lon, atimes, type = "h", col = rgb(0.1, 0.1, 0.1, alpha = 0.01), lwd = 4)
     }
   }
-  png("figures/firemodel.png", units = "in", res = 120, width = 7, height = 6)
-  par(mar = c(4.1, 4.1, 4.1, 0.1))
+
+  png("figures/firemodel-data.png", units = "px", res = 120, width = 720, height = 960 / 3,
+    pointsize = 8)
+  par(mfrow = c(1, 2))
+  plot.firemodel(firemodel_plotdata, what = c("stations", "mtime"), spar = FALSE)
+  dev.off()
+
+  png("figures/firemodel-effects.png", units = "in", res = 120, width = 6, height = 8)
   plot.firemodel(firemodel_plotdata)
   dev.off()
 }
 @
 
-\includegraphics[width=0.8\textwidth]{figures/firemodel.png}
+\begin{figure}[t!]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/firemodel-data}
+\caption{\label{fig:londonfiredata} Distribution of dwelling fires and fire stations in London (2015).}
+\end{figure}
+
+\begin{figure}[t!]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/firemodel-effects}
+\caption{\label{fig:londonfiredeffects} Estimated effects of the fire emergency response times
+  survival model.}
+\end{figure}
 
 
 \section{Summary}\label{sec:conclusion}

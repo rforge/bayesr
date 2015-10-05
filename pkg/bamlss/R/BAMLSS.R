@@ -3363,10 +3363,12 @@ smooth.construct.fdl.smooth.spec <- function(object, data, knots)
 
 ## Plotting method for "bamlss" objects.
 plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
-  ask = dev.interactive(), ...)
+  ask = dev.interactive(), spar = TRUE, ...)
 {
-  op <- par(no.readonly = TRUE)
-  on.exit(par(op))
+  if(spar) {
+    op <- par(no.readonly = TRUE)
+    on.exit(par(op))
+  }
 
   ## What should be plotted?
   which.match <- c("effects", "samples", "hist-resid", "qq-resid",
@@ -3417,7 +3419,7 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
   if(which == "effects") {
     if(is.null(x$results)) {
       plot(results.bamlss.default(x), model = model, term = term, ...)
-    } else plot(x$results, model = model, term = term, ...)
+    } else plot(x$results, model = model, term = term, spar = spar, ...)
   }
 
   if(which == "boost.summary") {
@@ -3435,7 +3437,7 @@ plot.bamlss.results <- function(x, model = NULL, term = NULL,
   args <- list(...)
   cx <- class(x)
 
-  if(is.null(args$do_par) & spar) {
+  if(spar) {
     op <- par(no.readonly = TRUE)
     on.exit(par(op))
   }
@@ -3469,7 +3471,7 @@ plot.bamlss.results <- function(x, model = NULL, term = NULL,
     args2$object <- x
     res0 <- do.call("residuals.bamlss", delete.args("residuals.bamlss", args2))
     ny <- if(is.null(dim(res0))) 1 else ncol(res0)
-    if(is.null(args$do_par) & spar) {
+    if(spar) {
       if(!ask) {
         par(mfrow = n2mfrow(length(which) * ny))
       } else par(ask = ask)
@@ -3593,7 +3595,7 @@ plot.bamlss.results <- function(x, model = NULL, term = NULL,
 
     if(kn[1] < 1) on.exit(warning("no terms to plot!"), add = TRUE)
 
-    if(is.null(args$do_par) & spar) {
+    if(spar) {
       if(!ask) {
         if("cbamlss" %in% cx) {
           par(mfrow = c(length(x), kn[1] / length(x)))
@@ -3612,7 +3614,6 @@ plot.bamlss.results <- function(x, model = NULL, term = NULL,
       args[c("x", "term", "ask", "scale")] <- list(x[i], term, ask, scale)
       args$main <- if(!is.null(main)) main[i] else NULL
       if(!any(c("s.effects", "p.effects") %in% names(x[[i]]))) {
-        args$do_par <- FALSE
         do.call("plot.bamlss", args)
       } else {
         args$mmain <- NULL
