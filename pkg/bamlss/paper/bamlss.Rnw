@@ -979,9 +979,59 @@ if(!file.exists("firemodel.rda")) {
     gamma ~ s(fsintens) + s(daytime,bs="cc",k=30) + s(lon,lat,k=60)
   )
 
+  f <- list(
+    Surv(arrivaltime) ~ ti(arrivaltime,k=20) + ti(arrivaltime,lon,lat,d=c(1,2),mp=FALSE,k=c(5,30)),
+    gamma ~ s(fsintens) + ti(daytime,bs="cc",k=30) + ti(lon,lat,k=60,d=2) +
+      ti(daytime,lon,lat,bs=c("cc","cr"),d=c(1,2),mp=FALSE)
+  )
+
   firemodel <- bamlss(f, data = LondonFire, family = "cox",
     subdivisions = 10, nu = 0.01, n.iter = 2000, burnin = 1000, thin = 5, cores = 4,
-    maxit = 1000)
+    maxit = 1000, sampler = FALSE)
+
+
+  plot_daytime <- function(x, daytime = 1, n = 30, ...)
+  {
+    options(warn = -1)
+    library("maptools")
+    data("LondonFire")
+    gpclibPermit()
+    xy <- bbox(LondonBoroughs)
+    co <- expand.grid(
+      "lon" = seq(min(xy[1, 1]), max(xy[1, 2]), length = n),
+      "lat" = seq(min(xy[2, 1]), max(xy[2, 2]), length = n)
+    )
+    ob <- unionSpatialPolygons(LondonBoroughs,
+      rep(1L, length = length(LondonBoroughs)))
+    nob <- length(slot(slot(ob, "polygons")[[1]], "Polygons"))
+    pip <- NULL
+    for(j in 1:nob) {
+     oco <- slot(slot(slot(ob, "polygons")[[1]], "Polygons")[[j]], "coords")
+     pip <- cbind(pip, point.in.polygon(co$lon, co$lat, oco[, 1L], oco[, 2L], mode.checked = FALSE) < 1L)
+    }
+    pip <- apply(pip, 1, function(x) all(x))
+    co <- co[pip < 1, , drop = FALSE]
+    co$daytime <- daytime
+    co$spatial_daytime <- predict(x, newdata = co, model = "gamma",
+      term = "ti(daytime,lon,lat)", intercept = FALSE)
+    plot(LondonBoroughs, xlab = "Longitude [deg]", ylab = "Latitude [deg]",
+      main = paste("Daytime =", daytime))
+    lr <- range(co$spatial_daytime)
+    lr <- c(-1 * max(abs(lr)), max(abs(lr)))
+    xr <- quantile(co$spatial_daytime, probs = 0.9)
+    xr <- c(-1 * xr, xr)
+    xymap(lon, lat, spatial_daytime, data = co, pos = "bottomright",
+      layout = FALSE, map = FALSE, color = diverge_hcl, swap = TRUE,
+      shift = c(0.03, 0.05), symmetric = TRUE, add = TRUE,
+      side.legend = 2, digits = 1, range = xr, lrange = round(lr, 1),
+      width = 0.2, height = 0.04, ...)
+    plot(LondonBoroughs, add = TRUE)
+    box()
+    axis(1)
+    axis(2)
+    options(warn = 0)
+    return(invisible(NULL))
+  }
 
   data_basehaz <- function(n = 30, target = 6, k = 20, ...)
   {
@@ -1036,19 +1086,19 @@ if(!file.exists("firemodel.rda")) {
 
     co <- bbox(LondonBoroughs)
     co <- owin(co["x", ], co["y", ])
-    fsppp <- ppp(x = co2[, 1], co2[, 2], window = co)
+    fsppp <- ppp(x = LondonFStations$lon, LondonFStations$lat, window = co)
     fsintens <- density.ppp(fsppp, bw.diggle)
     fsintens <- raster(fsintens)
     proj4string(fsintens) <- CRS("+init=epsg:4326")
     nd$fsintens <- extract(fsintens, as.matrix(nd[ , c("lon", "lat")]))
 
     nd$spatial_prob <- predict(firemodel, newdata = nd,
-      term = c("ti(arrivaltime)", "ti(arrivaltime,lon,lat)", "s(fsintens)", "s(daytime)", "s(lon,lat)"),
+      term = c("(arrivaltime)", "(arrivaltime,lon,lat)", "(fsintens)", "(daytime)", "(lon,lat)"),
       intercept = TRUE, type = "prob", time = target, ...)
     nd$spatial_tc <- predict(firemodel, newdata = nd, model = "gamma",
-      term = "s(lon,lat)", intercept = FALSE)
+      term = "(lon,lat)", intercept = FALSE)
     nd$spatial_td <- predict(firemodel, newdata = nd, model = "lambda",
-      term = "ti(arrivaltime,lon,lat)", intercept = FALSE)
+      term = "(arrivaltime,lon,lat)", intercept = FALSE)
 
     return(list("curves" = fbh, "spatial" = nd, "target" = target))
   }
@@ -1127,7 +1177,7 @@ if(!file.exists("figures/firemodel-data.png")) {
       axis(2)
     }
     if("daytime" %in% what) {
-      plot(firemodel, model = "gamma", term = "s(daytime)", spar = FALSE, rug = FALSE,
+      plot(firemodel, model = "gamma", term = "ti(daytime)", spar = FALSE, rug = FALSE,
         xlab = "Time of day", main = "Effect of time of day", ylab = "Effect",
         scheme = 2, grid = 100)
     }
@@ -1152,19 +1202,21 @@ if(!file.exists("figures/firemodel-data.png")) {
       co <- bbox(LondonBoroughs)
       scale <- 0.5
       ylim <- c(co["y", 1], co["y", 2] + scale * abs(diff(co["y", ])))
-      plot(LondonBoroughs, main = "Dwelling fires and fire stations",
-        xlab = "Longitude [deg]", ylab = "Latitude [deg]", ylim = ylim)
-      cfun <- function(n) { heat_hcl(n, alpha = 1) }
+      plot(LondonBoroughs, main = "",
+        xlab = "Longitude [deg]", ylab = "", ylim = ylim)
+      cfun <- function(n) { heat_hcl(n, alpha = 0.8) }
       pal <- make_pal(col = cfun, ncol = 99, data = LondonFire$arrivaltime, symmetric = FALSE,
-        range = c(3, 9), swap = TRUE)
+        range = c(3, 8), swap = TRUE)
       ld <- as.data.frame(LondonFire)
       ld <- ld[order(ld$arrivaltime, decreasing = TRUE), ]
-      points(ld$lon, ld$lat, pch = 4, col = pal$map(ld$arrivaltime), cex = 0.5)
-      points(LondonFStations, pch = 16, col = "blue", cex = 0.6)
-      points(LondonFStations, cex = 0.6)
+      points(ld$lon, ld$lat, pch = 4, col = pal$map(ld$arrivaltime), cex = 0.6)
+      points(LondonFStations, pch = 16, col = "blue", cex = 0.8)
+      points(LondonFStations, cex = 0.8)
       box()
       axis(1)
-      axis(2)
+      axis(4, at = round(seq(co[2, 1] + 0.07, co[2, 2] - 0.07, length = 4), 2))
+      mtext(paste("Latitude [deg]",
+        paste(rep(" ", 30), collapse = "", sep = "")), side = 4, line = 3)
       legend("bottomleft", c("Fire", "Station"), pch = c(4, 21),
         col = c("black", "black"), pt.bg = c(NA, "blue"), box.col = NA, bg = NA, cex = 0.95)
       i <- order(LondonFire$arrivaltime, decreasing = TRUE)
@@ -1174,21 +1226,17 @@ if(!file.exists("figures/firemodel-data.png")) {
       y <- scale2(atimes, co["y", 2] + shift, ylim[2])
       rect(lon - 0.0015, rep(co["y", 2] + shift,length = length(y)), lon + 0.0015, y,
         col = pal$map(atimes), border = NA)
-      lines(range(lon) + c(-0.03, 0.03), rep(co["y", 2] + shift, 2))
-      lines(rep(min(lon) - 0.03, 2), c(co["y", 2] + shift, ylim[2]))
+      lines(co[1, ], rep(co["y", 2] + shift, 2))
       wt <- c(min(atimes), 6, 12, 20)
       wt2 <- scale2(wt, co["y", 2] + shift, ylim[2])
-      for(j in seq_along(wt)) {
-        lines(c(min(lon) - 0.03, min(lon) - 0.04), rep(wt2[j], 2))
-        text(min(lon) - 0.04, wt2[j], fmt(wt[j], 2, 0), pos = 2)
-      }
-      wt2 <- scale2(c(min(atimes), max(atimes)), co["y", 2] + shift, ylim[2])
-      text(min(lon) - 0.13, mean(wt2), "Arrivaltime", srt = 90, cex = 0.95)
+      axis(2, at = wt2, labels = fmt(wt, 2, 0))
+      mtext(paste(paste(rep(" ", 70), collapse = "", sep = ""), "Arrivaltime [min]"), side = 2, line = 3)
     }
   }
 
-  png("figures/firemodel-data.png", units = "px", res = 120, width = 720, height = 960 / 3,
+  png("figures/firemodel-data.png", units = "in", res = 120, width = 4, height = 4,
     pointsize = 8)
+  par(mar = c(4.1, 4.1, 0.1, 4.1))
   plot.firemodel(firemodel_plotdata, what = "stations", spar = FALSE)
   dev.off()
 
@@ -1200,7 +1248,7 @@ if(!file.exists("figures/firemodel-data.png")) {
 
 \begin{figure}[t!]
 \centering
-\includegraphics[width=0.92\textwidth]{figures/firemodel-data}
+\includegraphics[width=0.56\textwidth]{figures/firemodel-data}
 \caption{\label{fig:londonfiredata} Distribution of dwelling fires and fire stations in London (2015).}
 \end{figure}
 
