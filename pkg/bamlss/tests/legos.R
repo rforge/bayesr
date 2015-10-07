@@ -186,7 +186,7 @@ b <- bamlss(f, family = "cox", data = d, nu = 0.1, subdivisions = 50, cores = 4,
 
 ## Predict P(T > t).
 b$family <- cox.bamlss()
-predict(b, type = "probabilties")
+predict(b, type = "probabilties", time = 4)
 
 
 ## JAGS.

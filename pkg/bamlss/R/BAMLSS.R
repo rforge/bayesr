@@ -3953,10 +3953,12 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
       cat("Parametric coefficients:\n")
       print(x$model.matrix[[i]])
     }
-    if(!is.null(x$smooth.construct[[i]])) {
-      cat("-\n")
-      cat("Smooth terms:\n")
-      print(x$smooth.construct[[i]])
+    if(!is.null(x$smooth.construct) & length(x$smooth.construct)) {
+      if(!is.null(x$smooth.construct[[i]])) {
+        cat("-\n")
+        cat("Smooth terms:\n")
+        print(x$smooth.construct[[i]])
+      }
     }
     cat("---\n")
   }
@@ -4831,7 +4833,8 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
   }
   if(!is.null(object$parameters) & parameters) {
     rval$parameters <- parameters(object, list = FALSE)
-    rval$parameters <- rval$parameters[-grep2(drop, names(rval$parameters), fixed = TRUE)]
+    if(length(di <- grep2(drop, names(rval$parameters), fixed = TRUE)))
+      rval$parameters <- rval$parameters[-di]
     if(summary)
       rval$parameters <- rval$parameters[grep2(c(".tau2", ".edf"), names(rval$parameters), fixed = TRUE)]
     rval$parameters <- as.matrix(rval$parameters, ncol = 1)

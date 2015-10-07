@@ -981,7 +981,7 @@ if(!file.exists("firemodel.rda")) {
 
   f <- list(
     Surv(arrivaltime) ~ ti(arrivaltime,k=20) + ti(arrivaltime,lon,lat,d=c(1,2),mp=FALSE,k=c(5,30)),
-    gamma ~ s(fsintens) + ti(daytime,bs="cc",k=30) + ti(lon,lat,k=60,d=2) +
+    gamma ~ s(fsintens) + ti(daytime,bs="cc",k=30) + ti(lon,lat,k=80,d=2) +
       ti(daytime,lon,lat,bs=c("cc","cr"),d=c(1,2),mp=FALSE)
   )
 
@@ -1155,7 +1155,7 @@ if(!file.exists("figures/firemodel-data.png")) {
       axis(2)
     }
     if("fsintens" %in% what) {
-      plot(firemodel, model = "gamma", term = "s(fsintens)", spar = FALSE,
+      plot(firemodel, model = "gamma", term = "(fsintens)", spar = FALSE,
         xlab = "Fire station intensity", main = "Effect of fire station intensity",
         ylab = "Effect", rug = FALSE, scheme = 2, grid = 100)
     }
@@ -1177,7 +1177,7 @@ if(!file.exists("figures/firemodel-data.png")) {
       axis(2)
     }
     if("daytime" %in% what) {
-      plot(firemodel, model = "gamma", term = "ti(daytime)", spar = FALSE, rug = FALSE,
+      plot(firemodel, model = "gamma", term = "(daytime)", spar = FALSE, rug = FALSE,
         xlab = "Time of day", main = "Effect of time of day", ylab = "Effect",
         scheme = 2, grid = 100)
     }
@@ -1203,7 +1203,8 @@ if(!file.exists("figures/firemodel-data.png")) {
       scale <- 0.5
       ylim <- c(co["y", 1], co["y", 2] + scale * abs(diff(co["y", ])))
       plot(LondonBoroughs, main = "",
-        xlab = "Longitude [deg]", ylab = "", ylim = ylim)
+        xlab = "Longitude [deg]", ylab = "", ylim = ylim,
+        col = gray(0.9))
       cfun <- function(n) { heat_hcl(n, alpha = 0.8) }
       pal <- make_pal(col = cfun, ncol = 99, data = LondonFire$arrivaltime, symmetric = FALSE,
         range = c(3, 8), swap = TRUE)
