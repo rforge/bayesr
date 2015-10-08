@@ -3363,7 +3363,7 @@ smooth.construct.fdl.smooth.spec <- function(object, data, knots)
 
 ## Plotting method for "bamlss" objects.
 plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
-  ask = dev.interactive(), spar = TRUE, ...)
+  parameters = FALSE, ask = dev.interactive(), spar = TRUE, ...)
 {
   if(spar) {
     op <- par(no.readonly = TRUE)
@@ -3382,11 +3382,14 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
     stop("argument which is specified wrong!")
 
   if(which == "samples") {
-    par <- if(is.null(x$parameters)) NULL else unlist(x$parameters)
+    par <- if(parameters) {
+      if(is.null(x$parameters)) NULL else unlist(x$parameters)
+    } else NULL
     samps <- samples(x, model = model, term = term, drop = TRUE)
     snames <- colnames(samps)
     snames <- snames[!grepl(".p.edf", snames, fixed = TRUE) & !grepl(".accepted", snames, fixed = TRUE)]
     snames <- snames[!grepl("DIC", snames, fixed = TRUE) & !grepl("pd", snames, fixed = TRUE)]
+    snames <- snames[!grepl(".model.matrix.edf", snames, fixed = TRUE)]
     samps <- samps[, snames, drop = FALSE]
     np <- ncol(samps)
     par(mfrow = if(np <= 4) c(np, 2) else c(4, 2))
