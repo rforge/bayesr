@@ -985,7 +985,7 @@ if(!file.exists("firemodel.rda")) {
       ti(daytime,lon,lat,bs=c("cc","cr"),d=c(1,2),mp=FALSE,k=c(10,30))
   )
 
-  firemodel <- bamlss(f, data = LondonFire, family = "cox", sampler = FALSE,
+  firemodel <- bamlss(f, data = LondonFire, family = "cox",
     subdivisions = 10, nu = 0.01, n.iter = 2000, burnin = 1000, thin = 5, cores = 4,
     maxit = 1000)
 
@@ -1043,6 +1043,9 @@ if(!file.exists("firemodel.rda")) {
 
     gpclibPermit()
 
+    spatial_daytime <- grepl("(daytime,lon,lat)",
+      paste(all.labels.formula(terms(firemodel, model = "gamma")), collapse = "+"), fixed = TRUE)
+
     firemodel$family <- cox.bamlss()
 
     xy <- bbox(LondonBoroughs)
@@ -1063,9 +1066,12 @@ if(!file.exists("firemodel.rda")) {
     co <- co[pip < 1, , drop = FALSE]
     nd <- NULL
     atime <- with(as.data.frame(LondonFire), seq(min(arrivaltime), max(arrivaltime), length = 100))
-    dtime <- with(as.data.frame(LondonFire), seq(min(daytime), max(daytime), length = 100))
+    if(spatial_daytime)
+      dtime <- with(as.data.frame(LondonFire), seq(min(daytime), max(daytime), length = 100))
     for(i in 1:nrow(co)) {
-      td <- data.frame("arrivaltime" = atime, "daytime" = dtime)
+      td <- if(spatial_daytime) {
+        data.frame("arrivaltime" = atime, "daytime" = dtime)
+      } else data.frame("arrivaltime" = atime)
       td$lon <- co$lon[i]
       td$lat <- co$lat[i]
       td$id <- i
@@ -1074,18 +1080,22 @@ if(!file.exists("firemodel.rda")) {
 
     nd$id <- as.factor(nd$id)
     nd$p50atime <- predict(firemodel, newdata = nd, model = "lambda", FUN = mean, intercept = FALSE)
-    nd$p50dtime <- predict(firemodel, newdata = nd, model = "gamma", term = "daytime", intercept = FALSE)
+    if(spatial_daytime)
+      nd$p50dtime <- predict(firemodel, newdata = nd, model = "gamma", term = "daytime", intercept = FALSE)
     nd$atime <- nd$arrivaltime
-    nd$dtime <- nd$daytime
+    if(spatial_daytime)
+      nd$dtime <- nd$daytime
 
     fbh <- fdt <- NULL
     for(i in unique(nd$id)) {
       j <- nd$id == i
       fbh <- cbind(fbh, nd$p50atime[j])
-      fdt <- cbind(fdt, nd$p50dtime[j])
+      if(spatial_daytime)
+        fdt <- cbind(fdt, nd$p50dtime[j])
     }
     fbh <- cbind(atime, fbh)
-    fdt <- cbind(dtime, fdt)
+    if(spatial_daytime)
+      fdt <- cbind(dtime, fdt)
 
     nd$daytime <- 8.5
     nd$arrivaltime <- target
@@ -1106,8 +1116,10 @@ if(!file.exists("firemodel.rda")) {
       term = "(lon,lat)", intercept = FALSE)
     nd$spatial_td <- predict(firemodel, newdata = nd, model = "lambda",
       term = "(arrivaltime,lon,lat)", intercept = FALSE)
-    nd$spatial_daytime <- predict(firemodel, newdata = nd, model = "gamma",
-      term = "(daytime,lon,lat)", intercept = FALSE)
+    if(spatial_daytime) {
+      nd$spatial_daytime <- predict(firemodel, newdata = nd, model = "gamma",
+        term = "(daytime,lon,lat)", intercept = FALSE)
+    }
 
     return(list("curves" = fbh, "daytime" = fdt, "spatial" = nd, "target" = target))
   }
@@ -1148,7 +1160,7 @@ if(!file.exists("figures/firemodel-data.png")) {
       legend("bottomright", c("Mean baseline", "Spatial-varying baseline"), lwd = c(2, 1),
         col = c(rainbow_hcl(1), "black"), box.col = NA, bg = NA, cex = 0.95)
     }
-    if("daytime_curves" %in% what) {
+    if("daytime_curves" %in% what & !is.null(data$daytime)) {
       matplot(seq(0, 24, length = 100), data$daytime[, -1], type = "l", lty = 1,
         col = rgb(0.1, 0.1, 0,1, alpha = 0.01), xlab = "Time of day",
         ylab = "Effect of time of day", main = "Spatial-varying daytime effect")
