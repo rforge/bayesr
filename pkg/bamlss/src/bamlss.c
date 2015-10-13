@@ -618,14 +618,14 @@ void xbin_fun(SEXP ind, SEXP weights, SEXP e, SEXP xweights, SEXP xrres, SEXP or
   int *indptr = INTEGER(ind);
   int *orderptr = INTEGER(order);
 
-  xweightsptr[0] = 0;
-  xrresptr[0] = 0;
+  xweightsptr[0] = 0.0;
+  xrresptr[0] = 0.0;
 
   for(i = 0; i < n; i++) {
     if(indptr[i] > (j + 1)) {
       ++j;
-      xweightsptr[j] = 0;
-      xrresptr[j] = 0;
+      xweightsptr[j] = 0.0;
+      xrresptr[j] = 0.0;
     }
     k = orderptr[i] - 1;
     xweightsptr[j] += weightsptr[k];
@@ -1722,7 +1722,7 @@ SEXP do_XWX(SEXP x, SEXP w, SEXP index)
 
 
 /* Fast computation of fitted values with index matrix. */
-SEXP index_mat_fit(SEXP x, SEXP b, SEXP index)
+SEXP sparse_matrix_fit_fun(SEXP x, SEXP b, SEXP index)
 {
   double *xptr = REAL(x);
   double *bptr = REAL(b);
@@ -1792,4 +1792,26 @@ SEXP sum_diag(SEXP x, SEXP N)
 
   return rval;
 }
+
+
+/* Sparse cholesky decomposition */
+/*SEXP sparse_chol(SEXP x, SEXP index)*/
+/*{*/
+/*  int n = nrows(x);*/
+/*  int m = ncols(x);*/
+
+/*  SEXP L*/
+/*  PROTECT(L = allocMatrix(REALSXP, n, m));*/
+/*  double *Lptr = REAL(L);*/
+/*  double *xptr = REAL(x);*/
+/*  int *iptr = INTEGER(getListElement(index, "matrix"))*/
+/*  int *optr = INTEGER(getListElement(index, "ordering"))*/
+
+/*  if(n < 2 && m < 2) {*/
+/*    Lptr[0] = Lptr[0]^(0.5)*/
+/*  } else {*/
+/*    Lptr[0] = (x[optr[0], optr[0]])^0.5;*/
+
+/*  }*/
+/*}*/
 

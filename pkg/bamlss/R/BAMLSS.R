@@ -154,7 +154,7 @@ print.bamlss.frame <- function(x, ...)
 design.construct <- function(formula, data = NULL, knots = NULL,
   model.matrix = TRUE, smooth.construct = TRUE, binning = FALSE,
   before = TRUE, gam.side = TRUE, model = NULL, drop = NULL,
-  scale.x = TRUE, ...)
+  scale.x = TRUE, sparse.cons = 0, ...)
 {
   if(!model.matrix & !smooth.construct)
     return(NULL)
@@ -249,9 +249,9 @@ design.construct <- function(formula, data = NULL, knots = NULL,
               tsm$binning$order <- order(tsm$binning$match.index)
               tsm$binning$sorted.index <- tsm$binning$match.index[tsm$binning$order]
               smt <- smoothCon(tsm, if(before) data[tsm$binning$nodups, term.names, drop = FALSE] else data,
-                knots, absorb.cons = acons)
+                knots, absorb.cons = acons, sparse.cons = sparse.cons)
             } else {
-              smt <- smoothCon(tsm, data, knots, absorb.cons = acons)
+              smt <- smoothCon(tsm, data, knots, absorb.cons = acons, sparse.cons = sparse.cons)
             }
           } else {
             smt <- smooth.construct(tsm, data, knots)
@@ -374,8 +374,8 @@ design.construct <- function(formula, data = NULL, knots = NULL,
 }
 
 
-## Functions for index matrices.
-index_mat <- function(x, crossprod = FALSE, S = NULL)
+## Functions for sparse matrices.
+sparse.matrix.index <- function(x, ...)
 {
   if(is.null(dim(x)))
     return(NULL)
@@ -394,83 +394,160 @@ index_mat <- function(x, crossprod = FALSE, S = NULL)
     index <- if(is.null(dim(index))) {
       matrix(index, ncol = 1)
     } else t(index)
-    if(ncol(index) == ncol(x))
-      return(NULL)
   }
   storage.mode(index) <- "integer"
-  if(crossprod) {
-    require("spam")
-    x <- crossprod.spam(as.spam(x))
-    i <- index_mat_precmat(x, S = S)
-    attr(index, "crossprod") <- list(
-      "ordering" = i,
-      "index" = index_mat(as.matrix(x[i, i]), crossprod = FALSE)
-    )
-  }
   index
 }
 
 
-index_mat_precmat <- function(x, S = NULL)
+## Bandwidth minimization permutation.
+sparse.matrix.ordering <- function(x, ...)
 {
   require("spam")
   x <- as.spam(x)
-  if(!is.null(S)) {
-    if(!is.list(S))
-      S <- list(S)
-    for(j in seq_along(S))
-      x <- x + as.spam(S[[j]])
-  }
   return(ordering(chol.spam(x)))
 }
 
 
-cholesky <- function(a, ...) {
-  n <- nrow(a)
-  l <- matrix(0, nrow = n, ncol = n)
-  for(j in 1:n) {
-    l[j, j] <- (a[j, j] - sum(l[j, 1:(j - 1)]^2))^0.5
-    if(j < n) {
-      for(i in (j + 1):n) {
-        l[i, j] <- (a[i, j] -
-          sum(l[i, 1:(j - 1)] * l[j, 1:(j - 1)])) / l[j, j]
-      }
-    }
-  }
-  return(l)
-}
-
-
-cholesky2 <- function(a, order, index) {
-  n <- nrow(a)
-  l <- matrix(0, nrow = n, ncol = n)
-  for(j in 1:n) {
-    l[order[j], order[j]] <- (a[order[j], order[j]] - sum(l[order[j], 1:(order[j] - 1)]^2))^0.5
-    if(j < n) {
-      for(i in (j + 1):n) {
-        l[order[i], order[j]] <- (a[order[i], order[j]] -
-          sum(l[order[i], 1:(order[j] - 1)] * l[order[j], 1:(order[j] - 1)])) / l[order[j], order[j]]
-      }
-    }
-  }
-  return(l)
-}
-
-
-## Cuthill-McKee.
-spam.inv <- function(x)
+## Setup sparse indeces for various algorithms.
+sparse.setup <- function(x, S = NULL, ...)
 {
-  x <- as.spam(x)
-  chol2inv(chol(x))
+  symmetric <- nrow(x) == ncol(x)
+  index.matrix <- sparse.matrix.index(x, ...)
+  if(!symmetric)
+    x <- crossprod(x)
+  if(!is.null(S)) {
+    if(!is.list(S))
+      S <- list(S)
+    for(j in seq_along(S))
+      x <- x + S[[j]]
+  }
+  index.crossprod <- if(!symmetric) sparse.matrix.index(x, ...) else NULL
+  ordering <- sparse.matrix.ordering(x, ...)
+  xchol <- sparse.chol(x, index = list(
+    "matrix" = if(!symmetric) {
+      index.crossprod
+    } else {
+      index.matrix
+    },
+    "ordering" = ordering))
+  if(!all(dim(x) < 2))
+    diag(xchol) <- 0
+  setup <- list(
+    "matrix" = index.matrix,
+    "crossprod" = index.crossprod,
+    "ordering" = ordering,
+    "forward" = sparse.matrix.index(xchol),
+    "backward" = sparse.matrix.index(t(xchol))
+  )
+  return(setup)
+}
+
+
+## Sparse cholesky decomposition,
+## returns the lower triangle.
+sparse.chol <- function(x, index, ...)
+{
+  if(all(dim(x) < 2))
+    return(sqrt(x))
+
+  imat <- index[["matrix"]]
+  p <- index[["ordering"]]
+
+  # imat: index matrix of a[p,p]
+  # ??? check for positive definiteness?
+  n <- nrow(x)
+  l <- matrix(0, nrow = n, ncol = n)
+  
+  # First column simplified (no elements to sum up)
+  l[1, 1] <- (x[p[1], p[1]])^0.5
+  for(i in imat[1,][imat[1,]>1]) {
+    l[i, 1] <- x[p[i], p[1]] / l[1, 1]
+  }
+  c <- 1
+  for(j in p[2:(n-1)]) {
+    c <- c + 1
+    l[c, c] <- (x[j, j] - sum(l[c, 1:(c - 1)]^2))^0.5
+    # use only non-zero entries in lower subdiagonal
+    for(i in imat[c,][imat[c,] > c]) {   
+      l[i, c] <- (x[p[i], p[c]] -
+                    sum(l[i, 1:(c - 1)] * l[c, 1:(c - 1)])) / l[c, c]
+    }
+  }
+  # last column simplified: no subdiagonal - maybe still leave in loop?
+  l[n, n] <- (x[p[n], p[n]] - sum(l[n, 1:(n - 1)]^2))^0.5
+  j <- c(1:n)[p]
+  return(l[j,j])
+}
+
+
+## Sparse forward substitution.
+## L %*% x = bn
+## with bn = t(P) %*% b
+sparse.forwardsolve <- function(l, x, index, ...)
+{
+  if(all(dim(l) < 2))
+    return(x / l)
+  imat <- index[["matrix"]]
+  p <- index[["ordering"]]
+  n <- ncol(l)
+  Pt <- diag(n)[p,]
+  xn <- Pt %*% x
+  y <- matrix(rep(NA, n), ncol=1)
+  y[1] <- xn[1]/l[1, 1]
+  for(i in 2:n){
+    y[i] <- xn[i]/l[i, i]  
+    if(max(imat[i,]) > 0){
+      y[i] <- y[i] - sum(l[i, imat[i,][imat[i,] > 0] ] * y[imat[i,][imat[i,] > 0]])/l[i, i]
+    }
+  }
+  return(y)
+}
+
+
+## Sparse backward substitution.
+## t(L) %*% xn = x,
+## with x = P %*% xn.
+sparse.backsolve <- function(r, x, index = NULL, ...)
+{
+  if(all(dim(x) < 2))
+    return(r / x)
+  imat <- index[["matrix"]]
+  p <- index[["ordering"]]
+  n <- ncol(r)
+  P <- diag(n)[,p]
+  xn <- rep(NA, n)
+  xn[n] <- x[n]/r[n,n]
+  for(i in (n-1):1){
+    xn[i] <- x[i]/r[i,i]
+    if(max(imat[i,]) > 0){
+      xn[i] <- xn[i] - sum(r[imat[i,][imat[i,] > 0],i ] * xn[imat[i,][imat[i,] > 0]])/r[i, i]
+    }
+  }
+  x <- P %*% xn
+  return(x)
+}
+
+
+## Sparse matrix solve.
+sparse.solve <- function(a, b, index, ...)
+{
+  if(all(dim(a) < 2))
+    return(b / a)
+  id <- if(!("crossprod" %in% names(index))) "matrix" else "crossprod"
+  L <- sparse.chol(a, index = list("matrix" = index[[id]], "ordering" = index[["ordering"]]), ...)
+  y <- sparse.forwardsolve(L, b, index = list("matrix" = index$forward, "ordering" = index[["ordering"]]), ...)
+  z <- sparse.backsolve(L, y, list("matrix" = index$backward, "ordering" = index[["ordering"]]), ...)
+  return(z)
 }
 
 
 ## Computation of fitted values with index matrices.
-index_mat_fit <- function(X, b, index = NULL)
+sparse.matrix.fit.fun <- function(X, b, index = NULL)
 {
   fit <- if(inherits(X, "dgCMatrix") | is.null(index)) {
     drop(X %*% b)
-  } else .Call("index_mat_fit", X, b, index)
+  } else .Call("sparse_matrix_fit_fun", X, b, index)
   return(fit)
 }
 
@@ -481,8 +558,8 @@ make.fit.fun <- function(x, type = 1)
   ff <- function(X, b, expand = TRUE) {
     if(!is.null(names(b)))
       b <- get.par(b, "b")
-    index <- if(type < 2) "imat" else "grid.imat"
-    f <- if(is.null(x[[index]])) drop(X %*% b) else index_mat_fit(X, b, x[[index]])
+    index <- if(type < 2) "sparse.setup" else "grid.sparse.setup"
+    f <- if(is.null(x[[index]])) drop(X %*% b) else sparse.matrix.fit.fun(X, b, x[[index]]$matrix)
     if(!is.null(x$binning$match.index) & expand)
       f <- f[x$binning$match.index]
     if(!is.null(x$xt$force.center))
@@ -527,16 +604,6 @@ make.prior <- function(x) {
 }
 
 
-check.imat <- function(X, take)
-{
-  if(is.null(X)) {
-    return(NULL)
-  } else {
-    X[take, , drop = FALSE]
-  }
-}
-
-
 ## Fast block diagonal crossproduct with weights.
 do.XWX <- function(x, w, index = NULL)
 {
@@ -549,7 +616,6 @@ do.XWX <- function(x, w, index = NULL)
   }
   rval
 }
-
 
 
 ## Get the model.frame.
@@ -5365,22 +5431,16 @@ matrix_inv <- function(x, index = NULL)
 {
   if(length(x) < 2)
     return(1 / x)
-  if(!is.null(index)) {
-    if(ncol(index) < 2) {
-      if(all(index %in% 0:length(index))) {
-        x[x != 0] <- 1 / x[x != 0]
-        return(x)
-      }
-    }
-    if(inherits(x, "dgCMatrix")) {
-      return(solve(x))
-    }
-  }
   rn <- rownames(x)
   cn <- colnames(x)
-  p <- try(chol(x), silent = TRUE)
+  if(!is.null(index) & FALSE) {
+    id <- if(!("crossprod" %in% names(index))) "matrix" else "crossprod"
+    p <- sparse.chol(x, index = list("matrix" = index[[id]], "ordering" = index[["ordering"]]))
+  } else {
+    p <- try(chol(x), silent = TRUE)
+  }
   p <- if(inherits(p, "try-error")) {
-    try(solve(x), silent = TRUE)
+      try(solve(x), silent = TRUE)
   } else {
     try(chol2inv(p), silent = TRUE)
   }

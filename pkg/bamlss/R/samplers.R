@@ -726,17 +726,17 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
   xbin.fun(data$binning$sorted.index, weights, e, data$weights, data$rres, data$binning$order)
 
   ## Compute mean and precision.
-  XWX <- do.XWX(data$X, 1 / data$weights, data$imat)
+  XWX <- do.XWX(data$X, 1 / data$weights, data$sparse.setup$matrix)
   S <- 0
   P <- if(data$fixed) {
     if((k <- ncol(data$X)) < 2) {
       1 / XWX
-    } else matrix_inv(XWX, data$imat)
+    } else matrix_inv(XWX, data$sparse.setup$matrix)
   } else {
     tau2 <- get.par(theta, "tau2")
     for(j in seq_along(data$S))
       S <- S + 1 / tau2[j] * data$S[[j]]
-    matrix_inv(XWX + S, data$imat)
+    matrix_inv(XWX + S, data$sparse.setup$matrix)
   }
 
   P[P == Inf] <- 0
@@ -781,13 +781,13 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
   xbin.fun(data$binning$sorted.index, weights, e, data$weights, data$rres, data$binning$order)
 
   ## Compute mean and precision.
-  XWX <- do.XWX(data$X, 1 / data$weights, data$imat)
+  XWX <- do.XWX(data$X, 1 / data$weights, data$sparse.setup$matrix)
   P2 <- if(data$fixed) {
     if(k < 2) {
       1 / (XWX)
-    } else matrix_inv(XWX, data$imat)
+    } else matrix_inv(XWX, data$sparse.setup$matrix)
   } else {
-    matrix_inv(XWX + S, data$imat)
+    matrix_inv(XWX + S, data$sparse.setup$matrix)
   }
   P2[P2 == Inf] <- 0
   M2 <- P2 %*% crossprod(data$X, data$rres)

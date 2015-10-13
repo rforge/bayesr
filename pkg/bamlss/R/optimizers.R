@@ -319,7 +319,7 @@ bamlss.engine.setup.smooth.default <- function(x, ...)
       S <- 0
       for(j in seq_along(tau2))
         S <- S + 1 / tau2[j] * x$S[[j]]
-      P <- matrix_inv(x$state$XX + S, index = x$imat)
+      P <- matrix_inv(x$state$XX + S, index = x$sparse.setup)
       edf <- sum.diag(x$state$XX %*% P)
       return(edf)
     }
@@ -393,7 +393,7 @@ bamlss.engine.setup.smooth.default <- function(x, ...)
   if(!is.null(x$xt[["do.optim"]]))
     x$state$do.optim <- x$xt[["do.optim"]]
   x$state$edf <- x$edf(x)
-  x$imat <- index_mat(x$X)
+  x$sparse.setup <- sparse.setup(x$X, S = x$S)
   x$fit.fun <- make.fit.fun(x)
   x$state$fitted.values <- x$fit.fun(x$X, get.par(x$state$parameters, "b"))
   x$added <- c("nobs", "weights", "rres", "state", "grid", "a", "b", "prior", "edf",
@@ -438,7 +438,7 @@ assign.df <- function(x, df)
         S <- 0
         for(i in seq_along(x$S))
           S <- S + 1 / tau2[i] * x$S[[i]]
-        edf <- sum.diag(XX %*% matrix_inv(XX + S, index = x$imat))
+        edf <- sum.diag(XX %*% matrix_inv(XX + S, index = x$sparse.setup))
         return((df - edf)^2)
       }
       opt <- try(optimize(objfun, int)$minimum, silent = TRUE)
@@ -447,7 +447,7 @@ assign.df <- function(x, df)
     }
   } else {
     objfun <- function(tau2) {
-      edf <- sum.diag(XX %*% matrix_inv(XX + 1 / tau2 * x$S[[1]], index = x$imat))
+      edf <- sum.diag(XX %*% matrix_inv(XX + 1 / tau2 * x$S[[1]], index = x$sparse.setup))
       return((df - edf)^2)
     }
     tau2 <- try(optimize(objfun, int)$minimum, silent = TRUE)
@@ -825,7 +825,7 @@ bfit_newton <- function(x, family, y, eta, id, ...)
   g.hess <- hess(fun = lp, theta = g, id = id, prior = NULL,
     args = list("gradient" = gfun, "hessian" = hfun, "x" = x, "y" = y, "eta" = eta))
 
-  Sigma <- matrix_inv(g.hess, index = x$imat)
+  Sigma <- matrix_inv(g.hess, index = x$sparse.setup)
 
   g <- drop(g + nu * Sigma %*% g.grad)
 
@@ -866,17 +866,17 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
   xbin.fun(x$binning$sorted.index, hess, e, x$weights, x$rres, x$binning$order)
 
   ## Compute mean and precision.
-  XWX <- do.XWX(x$X, 1 / x$weights, x$imat)
+  XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
 
   if(!x$state$do.optim | x$fixed | !is.null(x$sp)) {
     if(x$fixed) {
-      P <- matrix_inv(XWX, index = x$imat)
+      P <- matrix_inv(XWX, index = x$sparse.setup)
     } else {
       S <- 0
       tau2 <- get.state(x, "tau2")
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * x$S[[j]]
-      P <- matrix_inv(XWX + S, index = x$imat)
+      P <- matrix_inv(XWX + S, index = x$sparse.setup)
     }
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
   } else {
@@ -887,7 +887,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
       S <- 0
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * x$S[[j]]
-      P <- matrix_inv(XWX + S, index = x$imat)
+      P <- matrix_inv(XWX + S, index = x$sparse.setup)
       if(inherits(P, "try-error")) return(NA)
       g <- drop(P %*% crossprod(x$X, x$rres))
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
@@ -917,7 +917,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
     tau2 <- get.state(x, "tau2")
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * x$S[[j]]
-    P <- matrix_inv(XWX + S, index = x$imat)
+    P <- matrix_inv(XWX + S, index = x$sparse.setup)
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
   }
 
@@ -1660,15 +1660,15 @@ boost_iwls <- function(x, hess, resids, nu)
   xbin.fun(x$binning$sorted.index, hess, resids, x$weights, x$rres, x$binning$order)
 
   ## Compute mean and precision.
-  XWX <- do.XWX(x$X, 1 / x$weights, x$imat)
+  XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
   if(x$fixed) {
-    P <- matrix_inv(XWX, index = x$imat)
+    P <- matrix_inv(XWX, index = x$sparse.setup)
   } else {
     S <- 0
     tau2 <- get.state(x, "tau2")
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * x$S[[j]]
-    P <- matrix_inv(XWX + S, index = x$imat)
+    P <- matrix_inv(XWX + S, index = x$sparse.setup)
   }
 
   ## New parameters.
@@ -1681,9 +1681,9 @@ boost_iwls <- function(x, hess, resids, nu)
   ## Find edf.
   xbin.fun(x$binning$sorted.index, hess, resids + fit0 + fitted(x$state), x$weights, x$rres, x$binning$order)
 
-  XWX <- do.XWX(x$X, 1 / x$weights, x$imat)
+  XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
   if(x$fixed) {
-    P <- matrix_inv(XWX, index = x$imat)
+    P <- matrix_inv(XWX, index = x$sparse.setup)
   } else {
     g0 <- g0 + g
 
@@ -1691,7 +1691,7 @@ boost_iwls <- function(x, hess, resids, nu)
       S <- 0
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * x$S[[j]]
-      P <- matrix_inv(XWX + S, index = x$imat)
+      P <- matrix_inv(XWX + S, index = x$sparse.setup)
       g1 <- drop(P %*% crossprod(x$X, x$rres))
       sum((g1 - g0)^2)
     }
@@ -1716,7 +1716,7 @@ boost_iwls <- function(x, hess, resids, nu)
     S <- 0
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * x$S[[j]]
-    P <- matrix_inv(XWX + S, index = x$imat)
+    P <- matrix_inv(XWX + S, index = x$sparse.setup)
   }
 
   ## Assign degrees of freedom.
@@ -1734,15 +1734,15 @@ boost_fit <- function(x, y, nu)
   xbin.fun(x$binning$sorted.index, rep(1, length = length(y)), y, x$weights, x$rres, x$binning$order)
 
   ## Compute mean and precision.
-  XWX <- do.XWX(x$X, 1 / x$weights, x$imat)
+  XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
   if(x$fixed) {
-    P <- matrix_inv(XWX, index = x$imat)
+    P <- matrix_inv(XWX, index = x$sparse.setup)
   } else {
     S <- 0
     tau2 <- get.state(x, "tau2")
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * x$S[[j]]
-    P <- matrix_inv(XWX + S, index = x$imat)
+    P <- matrix_inv(XWX + S, index = x$sparse.setup)
   }
 
   ## New parameters.

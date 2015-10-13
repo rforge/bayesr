@@ -140,7 +140,7 @@ cox.mode <- function(x, y, weights, offset,
       ## Compute mean and precision.
       XWX <- do.XWX(x$gamma$smooth.construct[[sj]]$X,
         1 / x$gamma$smooth.construct[[sj]]$weights,
-        x$gamma$smooth.construct[[sj]]$imat)
+        x$gamma$smooth.construct[[sj]]$sparse.setup$matrix)
       if(x$gamma$smooth.construct[[sj]]$fixed) {
         P <- matrix_inv(XWX)
       } else {
@@ -404,13 +404,13 @@ propose_surv_td <- function(x, y, eta, eta_timegrid, width, sub, nu)
   p1 <- x$prior(x$state$parameters)
 
   ## Compute gradient and hessian integrals.
-  int <- survint(X, eeta, width, exp(eta$gamma), index = x$imat)
+  int <- survint(X, eeta, width, exp(eta$gamma), index = x$sparse.setup$matrix)
   xgrad <- drop(t(y[, "status"]) %*% x$XT - int$grad)
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
 
   ## Compute the inverse of the hessian.
-  Sigma <- matrix_inv(xhess, index = x$imat)
+  Sigma <- matrix_inv(xhess, index = x$sparse.setup$matrix)
 
   ## Save old coefficients.
   g0 <- get.state(x, "b")
@@ -442,12 +442,12 @@ propose_surv_td <- function(x, y, eta, eta_timegrid, width, sub, nu)
   pibetaprop <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
 
   ## Prior prob.
-  int <- survint(X, eeta, width, exp(eta$gamma), index = x$imat)
+  int <- survint(X, eeta, width, exp(eta$gamma), index = x$sparse.setup$matrix)
   xgrad <- drop(t(y[, "status"]) %*% x$XT - int$grad)
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
 
-  Sigma2 <- matrix_inv(xhess, index = x$imat)
+  Sigma2 <- matrix_inv(xhess, index = x$sparse.setup$matrix)
   mu2 <- drop(g + nu * Sigma2 %*% xgrad)
   qbeta <- dmvnorm(g0, mean = mu2, sigma = Sigma2, log = TRUE)
 
@@ -498,7 +498,7 @@ propose_surv_tc <- function(x, y, eta, int)
   xbin.fun(x$binning$sorted.index, weights, e, x$weights, x$rres, x$binning$order)
 
   ## Compute mean and precision.
-  XWX <- do.XWX(x$X, 1 / x$weights, x$imat)
+  XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
   S <- 0
   P <- if(x$fixed) {
     if((k <- ncol(x$X)) < 2) {
@@ -550,7 +550,7 @@ propose_surv_tc <- function(x, y, eta, int)
   xbin.fun(x$binning$sorted.index, weights, e, x$weights, x$rres, x$binning$order)
 
   ## Compute mean and precision.
-  XWX <- do.XWX(x$X, 1 / x$weights, x$imat)
+  XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
   P2 <- if(x$fixed) {
     if(k < 2) {
       1 / (XWX)
@@ -730,7 +730,7 @@ surv.transform <- function(x, y, data, family,
   ## Assign index matrices for fast computation of integrals.
   for(j in ntd) {
     for(sj in seq_along(x[[j]]$smooth.construct)) {
-      x[[j]]$smooth.construct[[sj]]$imat <- index_mat(x[[j]]$smooth.construct[[sj]]$X)
+      x[[j]]$smooth.construct[[sj]]$sparse.setup$matrix <- index_mat(x[[j]]$smooth.construct[[sj]]$X)
     }
   }
 
@@ -833,7 +833,7 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take)
 
   x$XT <- extract_XT(X, gdim[1], gdim[2])
 
-  x$grid.imat <- index_mat(X)
+  x$grid.sparse.setup <- list("matrix" = sparse.matrix.index(X))
   ff <- make.fit.fun(x, type = 2)
 
   x$fit.fun_timegrid <- function(g) {

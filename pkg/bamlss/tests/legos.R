@@ -242,3 +242,37 @@ b <- bamlss(f, data = LondonFire, family = "cox", subdivisions = 50,
 
 plot(b, model = 2, term = 2, image = TRUE, grid = 200, swap = TRUE)
 
+
+## Sparse matrices.
+sparse.matrix <- function(n = 10, m = 20, sparse = TRUE)
+{
+  require("Matrix")
+  x <- smooth.construct(s(x), list("x" = runif(m)), NULL)
+  if(!sparse)
+    return(list("X" = x$X, "S" = x$S[[1]]))
+  X <- as.matrix(bdiag(rep(list(x$X), length = n)))
+  S <- as.matrix(bdiag(rep(list(x$S[[1]]), length = n)))
+  return(list("X" = X, "S" = S))
+}
+
+M <- sparse.matrix(sparse = TRUE)
+xx <- crossprod(M$X) + 0 * M$S
+b <- seq(0, 1, length = nrow(xx))
+sp <- sparse.setup(M$X)
+L <- sparse.chol(xx, index = list("matrix" = sp$crossprod, "ordering" = sp$ordering))
+y <- sparse.forwardsolve(L, b, index = list("matrix" = sp$forward, "ordering" = sp$ordering))
+z1 <- sparse.backsolve(L, y, list("matrix" = sp$backward, "ordering" = sp$ordering))
+z2 <- solve(xx) %*% b
+all.equal(z1, z2)
+all.equal(sparse.solve(xx, b, sp), solve(xx,b))
+
+sparse.solve(xx, diag(nrow(xx)), sp)
+
+
+add2spam <- function(x, y)
+{
+  pointers <- attributes(x)
+  x@entries <- x@entries + y[x@rowpointers, x@colindices]
+  return(x)
+}
+
