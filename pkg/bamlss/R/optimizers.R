@@ -440,7 +440,7 @@ assign.df <- function(x, df)
   if(df < 1)
     df <- 1
   int <- c(.Machine$double.eps^0.25, 1e+10)
-  XX <- crossprod(x$X)
+  XX <- if(inherits(x$X, "spam")) crossprod.spam(x$X) else crossprod(x$X)
   if(length(tau2) > 1) {
     df.part <- df / length(tau2)
     for(j in seq_along(tau2)) {

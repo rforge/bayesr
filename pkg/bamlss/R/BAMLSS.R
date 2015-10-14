@@ -5445,7 +5445,7 @@ matrix_inv <- function(x, index = NULL)
   p <- if(inherits(p, "try-error")) {
     try(solve(x), silent = TRUE)
   } else {
-    try(chol2inv(p), silent = TRUE)
+    try(if(inherits(x, "spam")) chol2inv.spam(p) else chol2inv(p), silent = TRUE)
   }
   if(inherits(p, "try-error")) {
     diag(x) <- jitter(diag(x), amount = 1e-5)
