@@ -196,7 +196,7 @@ set.par <- function(x, replacement, what) {
 }
 
 ## The default method.
-bamlss.engine.setup.smooth.default <- function(x, ...)
+bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, ...)
 {
   if(inherits(x, "special"))
     return(x)
@@ -399,6 +399,17 @@ bamlss.engine.setup.smooth.default <- function(x, ...)
   x$added <- c("nobs", "weights", "rres", "state", "grid", "a", "b", "prior", "edf",
     "grad", "hess", "lower", "upper")
 
+  if(spam) {
+    require("spam")
+    x$X <- as.spam(x$X)
+    xx <- crossprod.spam(x$X)
+    for(j in seq_along(x$S)) {
+      x$S[[j]] <- as.spam(x$S[[j]])
+      xx <- xx + x$S[[j]]
+    }
+    x$sparse.setup$spam.cholFactor <- chol.spam(xx)
+  }
+
   x
 }
 
@@ -435,9 +446,8 @@ assign.df <- function(x, df)
     for(j in seq_along(tau2)) {
       objfun <- function(val) {
         tau2[j] <- val
-        S <- 0
         for(i in seq_along(x$S))
-          S <- S + 1 / tau2[i] * x$S[[i]]
+          XX <- XX + 1 / tau2[i] * x$S[[i]]
         edf <- sum.diag(XX %*% matrix_inv(XX + S, index = x$sparse.setup))
         return((df - edf)^2)
       }
@@ -925,6 +935,106 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
   g <- get.state(x, "b")
   if(any(is.na(g)) | any(g %in% c(-Inf, Inf)))
     x$state$parameters <- set.par(x$state$parameters, rep(0, length(x$state$g)), "b")
+  x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
+  x$state$edf <- sum.diag(XWX %*% P)
+  if(!is.null(x$prior)) {
+    if(is.function(x$prior))
+      x$state$log.prior <- x$prior(x$state$parameters)
+  }
+
+  return(x$state)
+}
+
+
+bfit_iwls_spam <- function(x, family, y, eta, id, weights, ...)
+{
+  args <- list(...)
+
+  peta <- family$map2par(eta)
+  if(is.null(args$hess)) {
+    ## Compute weights.
+    hess <- family$hess[[id]](y, peta, id = id, ...)
+  } else hess <- args$hess
+
+  if(!is.null(weights))
+    hess <- hess * weights
+
+  if(is.null(args$z)) {
+    ## Score.
+    score <- family$score[[id]](y, peta, id = id, ...)
+
+    ## Compute working observations.
+    z <- eta[[id]] + 1 / hess * score
+  } else z <- args$z
+
+  ## Compute partial predictor.
+  eta[[id]] <- eta[[id]] - fitted(x$state)
+
+  ## Compute reduced residuals.
+  e <- z - eta[[id]]
+  xbin.fun(x$binning$sorted.index, hess, e, x$weights, x$rres, x$binning$order)
+
+  ## Compute mean and precision.
+  XWX <- (t(diag.spam(x$weights) %*% x$X)) %*% x$X
+  Xr <- crossprod.spam(x$X, x$rres)
+
+  if(!x$state$do.optim | x$fixed | !is.null(x$sp)) {
+    if(!x$fixed) {
+      tau2 <- get.state(x, "tau2")
+      S <- 0
+      for(j in seq_along(x$S))
+        S <- S + 1 / tau2[j] * x$S[[j]]
+      U <- update.spam.chol.NgPeyton(x$sparse.setup$spam.cholFactor, XWX + S)
+    } else {
+      U <- update.spam.chol.NgPeyton(x$sparse.setup$spam.cholFactor, XWX)
+    }
+    P <- chol2inv.spam(U)
+    b <- P %*% Xr
+    x$state$parameters <- set.par(x$state$parameters, b, "b")
+  } else {
+    args <- list(...)
+    edf0 <- args$edf - x$state$edf
+    eta2 <- eta
+    objfun <- function(tau2, ...) {
+      S <- 0
+      for(j in seq_along(x$S))
+        S <- S + 1 / tau2[j] * x$S[[j]]
+      U <- update.spam.chol.NgPeyton(x$sparse.setup$spam.cholFactor, XWX + S)
+      P <- chol2inv.spam(U)
+      b <- P %*% Xr
+      fit <- x$fit.fun(x$X, b)
+      edf <- sum.diag(P %*% XWX)
+      eta2[[id]] <- eta2[[id]] + fit
+      IC <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), x$criterion, ...)
+      return(IC)
+    }
+    if(length(get.state(x, "tau2")) < 2) {
+      if(is.null(x$grid.optim)) {
+        tau2 <- try(optimize(objfun, interval = x$state$interval)$minimum, silent = TRUE)
+        if(inherits(tau2, "try-error"))
+          tau2 <- optimize2(objfun, interval = x$state$interval, grid = x$state$grid)$minimum
+      } else {
+        tau2 <- optimize2(objfun, interval = x$state$interval, grid = x$state$grid)$minimum
+      }
+      x$state$parameters <- set.par(x$state$parameters, if(!length(tau2)) x$interval[1] else tau2, "tau2")
+    } else {
+      i <- grep("tau2", names(x$lower))
+      opt <- try(optim(get.state(x, "tau2"), fn = objfun, method = "L-BFGS-B",
+        lower = x$lower[i], upper = x$upper[i]), silent = TRUE)
+      if(!inherits(opt, "try-error"))
+        x$state$parameters <- set.par(x$state$parameters, opt$par, "tau2")
+    }
+    tau2 <- get.state(x, "tau2")
+    S <- 0
+    for(j in seq_along(x$S))
+      S <- S + 1 / tau2[j] * x$S[[j]]
+    U <- update.spam.chol.NgPeyton(x$sparse.setup$spam.cholFactor, XWX + S)
+    P <- chol2inv.spam(U)
+    b <- P %*% Xr
+    x$state$parameters <- set.par(x$state$parameters, b, "b")
+  }
+
+  ## Compute fitted values.
   x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
   x$state$edf <- sum.diag(XWX %*% P)
   if(!is.null(x$prior)) {

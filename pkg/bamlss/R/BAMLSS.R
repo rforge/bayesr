@@ -558,8 +558,12 @@ make.fit.fun <- function(x, type = 1)
   ff <- function(X, b, expand = TRUE) {
     if(!is.null(names(b)))
       b <- get.par(b, "b")
-    index <- if(type < 2) "sparse.setup" else "grid.sparse.setup"
-    f <- if(is.null(x[[index]])) drop(X %*% b) else sparse.matrix.fit.fun(X, b, x[[index]]$matrix)
+    if(inherits(X, "spam")) {
+      f <- as.matrix(X %*% b)
+    } else {
+      index <- if(type < 2) "sparse.setup" else "grid.sparse.setup"
+      f <- if(is.null(x[[index]])) drop(X %*% b) else sparse.matrix.fit.fun(X, b, x[[index]]$matrix)
+    }
     if(!is.null(x$binning$match.index) & expand)
       f <- f[x$binning$match.index]
     if(!is.null(x$xt$force.center))
@@ -5433,14 +5437,13 @@ matrix_inv <- function(x, index = NULL)
     return(1 / x)
   rn <- rownames(x)
   cn <- colnames(x)
-  if(!is.null(index) & FALSE) {
-    id <- if(!("crossprod" %in% names(index))) "matrix" else "crossprod"
-    p <- sparse.chol(x, index = list("matrix" = index[[id]], "ordering" = index[["ordering"]]))
+  if(!is.null(index) & is.spam(x)) {
+    p <- update.spam.chol.NgPeyton(index$spam.cholFactor, x)
   } else {
     p <- try(chol(x), silent = TRUE)
   }
   p <- if(inherits(p, "try-error")) {
-      try(solve(x), silent = TRUE)
+    try(solve(x), silent = TRUE)
   } else {
     try(chol2inv(p), silent = TRUE)
   }
@@ -5570,6 +5573,8 @@ scale.model.matrix <- function(x)
 ## Sum of diagonal elements.
 sum.diag <- function(x)
 {
+  if(inherits(x, "spam"))
+    x <- as.matrix(x)
   if(is.null(dx <- dim(x)))
     stop("x must be a matrix!")
   if(dx[1] != dx[2])

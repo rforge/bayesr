@@ -255,7 +255,7 @@ sparse.matrix <- function(n = 10, m = 20, sparse = TRUE)
   return(list("X" = X, "S" = S))
 }
 
-M <- sparse.matrix(sparse = TRUE)
+M <- sparse.matrix(sparse = FALSE)
 xx <- crossprod(M$X) + 0 * M$S
 b <- seq(0, 1, length = nrow(xx))
 sp <- sparse.setup(M$X)
