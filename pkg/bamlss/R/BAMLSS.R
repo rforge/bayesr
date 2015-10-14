@@ -424,13 +424,7 @@ sparse.setup <- function(x, S = NULL, ...)
   }
   index.crossprod <- if(!symmetric) sparse.matrix.index(x, ...) else NULL
   ordering <- sparse.matrix.ordering(x, ...)
-  xchol <- sparse.chol(x, index = list(
-    "matrix" = if(!symmetric) {
-      index.crossprod
-    } else {
-      index.matrix
-    },
-    "ordering" = ordering))
+  xchol <- chol(x[ordering, ordering])
   if(!all(dim(x) < 2))
     diag(xchol) <- 0
   setup <- list(
@@ -561,8 +555,8 @@ make.fit.fun <- function(x, type = 1)
     if(inherits(X, "spam")) {
       f <- as.matrix(X %*% b)
     } else {
-      index <- if(type < 2) "sparse.setup" else "grid.sparse.setup"
-      f <- if(is.null(x[[index]])) drop(X %*% b) else sparse.matrix.fit.fun(X, b, x[[index]]$matrix)
+      what <- if(type < 2) "matrix" else "grid.matrix"
+      f <- if(is.null(x$sparse.setup[[what]])) drop(X %*% b) else sparse.matrix.fit.fun(X, b, x$sparse.setup[[what]])
     }
     if(!is.null(x$binning$match.index) & expand)
       f <- f[x$binning$match.index]

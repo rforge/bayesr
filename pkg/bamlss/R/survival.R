@@ -84,7 +84,7 @@ cox.mode <- function(x, y, weights, offset,
       eeta <- exp(eta_timegrid)
 
       ## Compute gradient and hessian integrals.
-      int <- survint(X, eeta, width, exp(eta$gamma))
+      int <- survint(X, eeta, width, exp(eta$gamma), index = x$lambda$smooth.construct[[sj]]$sparse.setup$matrix)
       xgrad <- drop(t(y[, "status"]) %*% x$lambda$smooth.construct[[sj]]$XT - int$grad)
       xgrad <- xgrad + x$lambda$smooth.construct[[sj]]$grad(score = NULL, x$lambda$smooth.construct[[sj]]$state$parameters, full = FALSE)
       xhess <- int$hess + x$lambda$smooth.construct[[sj]]$hess(score = NULL, x$lambda$smooth.construct[[sj]]$state$parameters, full = FALSE)
@@ -727,13 +727,6 @@ surv.transform <- function(x, y, data, family,
     }
   }
 
-  ## Assign index matrices for fast computation of integrals.
-  for(j in ntd) {
-    for(sj in seq_along(x[[j]]$smooth.construct)) {
-      x[[j]]$smooth.construct[[sj]]$sparse.setup$matrix <- index_mat(x[[j]]$smooth.construct[[sj]]$X)
-    }
-  }
-
   y <- data.frame(y)
   names(y) <- rn
 
@@ -833,7 +826,7 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take)
 
   x$XT <- extract_XT(X, gdim[1], gdim[2])
 
-  x$grid.sparse.setup <- list("matrix" = sparse.matrix.index(X))
+  x$sparse.setup$grid.matrix <- sparse.matrix.index(X)
   ff <- make.fit.fun(x, type = 2)
 
   x$fit.fun_timegrid <- function(g) {
