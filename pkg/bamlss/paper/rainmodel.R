@@ -34,7 +34,7 @@ if(!file.exists("rainmodel.rda")) {
 
   rainmodel <- bamlss(f, data = homstart2, family = "cnorm",
     n.iter = 4000, burnin = 2000, thin = 10,
-    binning = TRUE, before = FALSE, cores = 1)
+    binning = TRUE, before = FALSE, cores = 7)
 } else {
   load("rainmodel.rda")
 }
