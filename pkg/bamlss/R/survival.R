@@ -410,7 +410,7 @@ propose_surv_td <- function(x, y, eta, eta_timegrid, width, sub, nu)
   xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
 
   ## Compute the inverse of the hessian.
-  Sigma <- matrix_inv(xhess, index = x$sparse.setup$matrix)
+  Sigma <- matrix_inv(xhess, index = x$sparse.setup)
 
   ## Save old coefficients.
   g0 <- get.state(x, "b")
@@ -447,7 +447,7 @@ propose_surv_td <- function(x, y, eta, eta_timegrid, width, sub, nu)
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
 
-  Sigma2 <- matrix_inv(xhess, index = x$sparse.setup$matrix)
+  Sigma2 <- matrix_inv(xhess, index = x$sparse.setup)
   mu2 <- drop(g + nu * Sigma2 %*% xgrad)
   qbeta <- dmvnorm(g0, mean = mu2, sigma = Sigma2, log = TRUE)
 
