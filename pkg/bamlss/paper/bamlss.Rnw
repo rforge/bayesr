@@ -970,6 +970,35 @@ next section.
 \section{Software implementation and examples} \label{sec:softex}
 
 
+\subsection{Precepitation climatolgy from daily observations} \label{sec:censreg}
+
+<<echo=FALSE, results=hide>>=
+if(!file.exists("rainmodel.rda")) {
+  if(file.exists("homstart.rda")) {
+    load("homstart.rda")
+  } else {
+    dpath <- system.file(package = "bamlss", "data")
+    if(!file.exists(file <- file.path(dpath, "homstart.rda"))) {
+      homstart_data(dir = dirname(file), load = TRUE)
+    } else load(file)
+    file.copy(file, file.path(getwd(), "homstart.rda"))
+  }
+
+  f <- list(
+    "mu" = sqrt(raw) ~ elevation + s(day, bs="cc") + s(long, lat, bs="tp", k=30) +
+      te(day,long,lat, bs=c("cc","tp"), d=c(1,2), k=c(10,30), mp=FALSE),
+    "sigma" = ~ elevation + s(day, bs="cc") + s(long, lat, bs="tp", k=30) +
+      te(day,long,lat, bs=c("cc","tp"), d=c(1,2), k=c(10,30), mp=FALSE),
+  )
+
+  b <- bamlss(f, data = homstart, family = gF(cens, left = 0),
+    n.iter = 1200, burnin = 200, thin = 1,
+    binning = TRUE, before = FALSE)
+
+  save(b, file = "rainmodel.rda")
+}
+@
+
 \subsection{Cox-regression} \label{sec:coxreg}
 
 <<echo=FALSE, results=hide>>=
