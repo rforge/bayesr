@@ -1315,6 +1315,83 @@ if(!file.exists("figures/firemodel-data.png")) {
     }
   }
 
+  grid_plot <- function(n = 10, FUN = NULL,
+    color = heat_hcl, symmetric = FALSE, swap = TRUE, eps = 0.0001, ...)
+  {
+    library("bamlss")
+    library("maptools")
+    library("hexbin")
+
+    if(is.null(FUN))
+      FUN <- function(x) { sum(x > 6) / length(x) }
+    data("LondonFire", package = "bamlss")
+    d <- as.data.frame(LondonFire)[, c("lon", "lat", "arrivaltime")]
+
+    hbin <- hexbin(d$lon, d$lat ,IDs=TRUE)
+    hvp <- plot(hbin)
+    mtrans <- hexTapply(hbin, d$arrivaltime, median, na.rm=TRUE)
+    pushHexport(hvp$plot.vp)
+    plot(LondonBoroughs)
+    grid.hexagons(hbin, pen = 0, border = 'red', use.count = FALSE, cell.at = mtrans)
+
+    xy <- bbox(LondonBoroughs)
+    co <- expand.grid(
+      "lon" = seq(min(xy[1, 1]), max(xy[1, 2]), length = n),
+      "lat" = seq(min(xy[2, 1]), max(xy[2, 2]), length = n)
+    )
+    ob <- unionSpatialPolygons(LondonBoroughs,
+      rep(1L, length = length(LondonBoroughs)))
+    nob <- length(slot(slot(ob, "polygons")[[1]], "Polygons"))
+    pip <- NULL
+    for(j in 1:nob) {
+     oco <- slot(slot(slot(ob, "polygons")[[1]], "Polygons")[[j]], "coords")
+     pip <- cbind(pip, point.in.polygon(co$lon, co$lat, oco[, 1L], oco[, 2L], mode.checked = FALSE) < 1L)
+    }
+    pip <- apply(pip, 1, function(x) all(x))
+
+    co <- co[pip < 1, , drop = FALSE]
+    dx <- diff(co[, 1])
+    dx <- min(dx[dx > 0]) / 4
+    dy <- diff(co[, 2])
+    dy <- min(dy[dy > 0]) / 4
+    
+    polys <- lapply(1:nrow(co), function(i) {
+      pol <- hexpolygon(co[i, 1], co[i, 2], dx = dx, dy = dy)
+      cbind(pol$x, pol$y)
+    })
+
+    plot(LondonBoroughs)
+    points(co)
+    for(i in seq_along(polys))
+      polygon(polys[[i]])
+
+    d$X <- round(d$lon, digits)
+    d$Y <- round(d$lat, digits)
+    d$cell <- d$X + 360 * d$Y
+    val <- by(d, d$cell, function(d) c(d$X[1], d$Y[1], FUN(d$arrivaltime)))
+    val.m <- matrix(unlist(val), nrow = 3)
+    rownames(val.m) <- c("X", "Y", "FUN")
+    val.m <- as.data.frame(t(val.m))
+    pp <- cbind(val.m$X, val.m$Y)
+    dx <- abs(diff(pp[, 1])); dy <- abs(diff(pp[, 2]))
+    dx <- dx[dx != 0]; dy <- dy[dy != 0]
+    dx <- dx[abs(dx) > eps]
+    dy <- dy[abs(dy) > eps]
+    res <- c(min(dx), min(dy))
+    colors <- colorlegend(x = val.m$FUN, plot = FALSE,
+      color = color, symmetric = symmetric, swap = swap, ...)
+    col <- colors$map(val.m$FUN)
+    plot(LondonBoroughs)
+    rect(pp[, 1] - res[1] / 2, pp[, 2] - res[2] / 2, pp[, 1] + res[1] / 2, pp[, 2] + res[2] / 2,
+      col = col, border = col, lwd = 0)
+    plot(LondonBoroughs, add = TRUE)
+    colorlegend(x = val.m$FUN, plot = FALSE, add = TRUE,
+      color = color, swap = swap, symmetric = symmetric, width = 0.2, height = 0.04,
+      pos = "bottomright", side.legend = 2, ...)
+  }
+
+grid_plot()
+
   png("figures/firemodel-data.png", units = "in", res = 120, width = 4, height = 4,
     pointsize = 8)
   par(mar = c(4.1, 4.1, 0.1, 4.1))

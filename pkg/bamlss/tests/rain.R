@@ -137,14 +137,14 @@ load("~/svn/SnowSafeFX/data/ehyddata.rda")
 dat$obs[dat$obs < 0] <- 0
 dat$yday <- as.POSIXlt(dat$date)$yday
 dat$year <- as.POSIXlt(dat$date)$year + 1900
-dat <- subset(dat, year >= 2009 & year <= 2011)
+dat <- subset(dat, year > 2010 & year <= 2011)
 
 f <- list(
   sqrt(obs) ~ te(yday,lon,lat, bs=c("cc","tp"), d=c(1, 2)) + s(alt) + s(lon, lat),
             ~ s(yday, bs = "cc") + s(alt) + s(lon, lat)
 )
 
-b1 <- bamlss(f, data = dat, optimizer = opt0, family = ff, sampler = NULL)
+b1 <- bamlss(f, data = dat, family = "cnorm", n.iter = 120, burnin = 20, thin = 1, binning = TRUE, before = FALSE)
 
 
 set.seed(111)
@@ -185,7 +185,13 @@ for(j in unique(d$id)) {
 }
 
 d$rain <- d$rain + rnorm(n, sd = 0.3)
+d <- subset(d, rain > 0)
 
-b <- bamlss(rain ~ te(time,lon,lat,bs=c("cc","tp"),d=c(1,2), k = c(5, 10)), data = d, n.iter = 200, burnin = 0, thin = 1, propose = "iwls", gam.side = FALSE, binning = TRUE)
+f <- list(
+  rain ~ s(lon,lat,k=10)+te(time,lon,lat,bs=c("cc","tp"),d=c(1,2), k = c(5, 10),mp=FALSE),
+  ~ s(lon,lat,k=10)+te(time,lon,lat,bs=c("cc","tp"),d=c(1,2), k = c(5, 10),mp=FALSE)
+)
+
+b <- bamlss(f, data = d, n.iter = 200, burnin = 0, thin = 1, binning = TRUE, before = FALSE, cores = 2, family = "cnorm")
 
 
