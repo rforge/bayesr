@@ -30,11 +30,11 @@ if(!file.exists("rainmodel.rda")) {
     binning = TRUE, before = FALSE, cores = 7)
 
   save(rainmodel, file = "rainmodel.rda")
-} else {
-  load("rainmodel.rda")
 }
 
 if(FALSE) {
+load("rainmodel.rda")
+
 expCens <- function(mu, sigma) {
   pnorm(mu / sigma) * (mu + sigma * dnorm(mu / sigma) / pnorm(mu / sigma))
 }
