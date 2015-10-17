@@ -188,8 +188,8 @@ d$rain <- d$rain + rnorm(n, sd = 0.3)
 d <- subset(d, rain > 0)
 
 f <- list(
-  rain ~ s(lon,lat,k=10)+te(time,lon,lat,bs=c("cc","tp"),d=c(1,2), k = c(5, 10),mp=FALSE),
-  ~ s(lon,lat,k=10)+te(time,lon,lat,bs=c("cc","tp"),d=c(1,2), k = c(5, 10),mp=FALSE)
+  rain ~ lon + s(lon,lat,k=10)+te(time,lon,lat,bs=c("cc","tp"),d=c(1,2), k = c(5, 10),mp=FALSE),
+  ~ lon + s(lon,lat,k=10)+te(time,lon,lat,bs=c("cc","tp"),d=c(1,2), k = c(5, 10),mp=FALSE)
 )
 
 b <- bamlss(f, data = d, n.iter = 200, burnin = 0, thin = 1, binning = TRUE, before = FALSE, cores = 2, family = "cnorm")

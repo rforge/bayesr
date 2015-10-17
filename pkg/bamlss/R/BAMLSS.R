@@ -4295,8 +4295,8 @@ drop.terms.bamlss <- function(f, pterms = TRUE, sterms = TRUE,
     tl <- attr(tx, "term.labels")
     sid <- unlist(attr(tx, "specials"))
     if(!is.null(sid)) {
-      st <- tl[sid - 1L]
-      pt <- tl[-1 * (sid - 1L)]
+      st <- tl[sid - sub]
+      pt <- tl[-1 * (sid - sub)]
     } else {
       st <- character(0)
       pt <- tl
