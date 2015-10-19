@@ -1315,8 +1315,8 @@ if(!file.exists("figures/firemodel-data.png")) {
     }
   }
 
-  grid_plot <- function(n = 300, FUN = NULL,
-    color = heat_hcl, symmetric = FALSE, swap = TRUE, eps = 0.0001, ...)
+  hex_plot <- function(n = 600, FUN = NULL,
+    color = heat_hcl, symmetric = FALSE, swap = TRUE, ...)
   {
     library("bamlss")
     library("maptools")
@@ -1327,32 +1327,26 @@ if(!file.exists("figures/firemodel-data.png")) {
     if(is.null(FUN))
       FUN <- function(x) { sum(x > 6) / length(x) }
 
-    plot(LondonBoroughs)
-    LBP <- unionSpatialPolygons(LondonBoroughs, rep(1L, length = length(LondonBoroughs)))
-    LBP <- spTransform(LBP, CRS("+init=epsg:27700"))
+    LBP <- spTransform(LondonBoundaries, CRS("+init=epsg:27700"))
     HexPts <- spsample(LBP, n = n, type = "hexagonal")
     HexPols <- HexPoints2SpatialPolygons(HexPts)
     HexPols <- spTransform(HexPols, CRS("+init=epsg:4326"))
-    LBP <- spTransform(LBP, CRS("+init=epsg:4326"))
-    clip <- gIntersection(LBP, HexPols, byid = TRUE, drop_lower_td = TRUE)
-    plot(clip, add = TRUE)
+    clip <- gIntersection(LondonBoundaries, HexPols, byid = TRUE, drop_lower_td = TRUE)
 
-    val <- over(clip, LondonFire[, "arrivaltime"], fn = mean)
-    clip <- as(clip, "SpatialPolygonsDataFrame")
-
-    colors <- colorlegend(x = val.m$FUN, plot = FALSE,
+    agg <- aggregate(LondonFire["arrivaltime"], clip, FUN = FUN)
+    
+    colors <- colorlegend(x = agg$arrivaltime, plot = FALSE,
       color = color, symmetric = symmetric, swap = swap, ...)
-    col <- colors$map(val.m$FUN)
-    plot(LondonBoroughs)
-    rect(pp[, 1] - res[1] / 2, pp[, 2] - res[2] / 2, pp[, 1] + res[1] / 2, pp[, 2] + res[2] / 2,
-      col = col, border = col, lwd = 0)
-    plot(LondonBoroughs, add = TRUE)
-    colorlegend(x = val.m$FUN, plot = FALSE, add = TRUE,
+
+    plot(LondonBoundaries, col = gray(0.9))
+    plot(agg, col = colors$map(agg$arrivaltime), add = TRUE)
+
+    colorlegend(x = agg$arrivaltime, plot = FALSE, add = TRUE,
       color = color, swap = swap, symmetric = symmetric, width = 0.2, height = 0.04,
       pos = "bottomright", side.legend = 2, ...)
   }
 
-grid_plot()
+hex_plot()
 
   png("figures/firemodel-data.png", units = "in", res = 120, width = 4, height = 4,
     pointsize = 8)
