@@ -126,24 +126,43 @@ proj4string(LondonFire) <- CRS("+init=epsg:4326")
 
 
 ## Get London boroughs.
-library("OIdata")
-library("maptools")
-data("london_boroughs")
-xy <- na.omit(london_boroughs)
-nas <- attr(xy, "na.action")
-coordinates(xy) <- c("x", "y")
-proj4string(xy) <- CRS("+init=epsg:27700")
-xy <- as.data.frame(spTransform(xy, CRS("+init=epsg:4326")))
-LondonBoroughs <- london_boroughs
-LondonBoroughs[-nas, "x"] <- xy$x
-LondonBoroughs[-nas, "y"] <- xy$y
-IDs <- unique(as.character(LondonBoroughs$name))
-LondonBoroughs <- map2SpatialPolygons(LondonBoroughs[, c("x", "y")], IDs = IDs,
-  proj4string = CRS("+init=epsg:4326"))
+## http://data.london.gov.uk/dataset/statistical-gis-boundary-files-london
+London.maps <- function()
+{
+  require("maptools")
+
+  owd <- getwd()
+  dir.create(tdir <- tempfile())
+
+  download.file("https://files.datapress.com/london/dataset/statistical-gis-boundary-files-london/statistical-gis-boundaries-london.zip", file.path(tdir, "London.zip"))
+
+  setwd(tdir)
+  unzip(file.path(tdir, "London.zip"), exdir = tdir)
+
+  lb <- readShapePoly(file.path(tdir, "statistical-gis-boundaries-london",
+    "ESRI", "London_Borough_Excluding_MHW.shp"), proj4string = CRS("+init=epsg:27700"))
+  lb <- spTransform(lb, CRS("+init=epsg:4326"))
+
+  lb0 <- readShapePoly(file.path(tdir, "statistical-gis-boundaries-london",
+    "ESRI", "London_Ward_CityMerged.shp"), proj4string = CRS("+init=epsg:27700"))
+  lb0 <- spTransform(lb0, CRS("+init=epsg:4326"))
+  lb0 <- unionSpatialPolygons(lb0, rep(1L, length = length(lb0)))
+
+  lb <- as(lb, "SpatialPolygons")
+  lb0 <- as(lb0, "SpatialPolygons")
+
+  setwd(owd)
+
+  return(list("Boroughs" = lb, "Boundaries" = lb0))
+}
+
+London <- London.maps()
+LondonBoroughs <- London$Boroughs
+LondonBoundaries <- London$Boundaries
 
 
 ## Save the data.
-save(LondonFire, LondonFStations, LondonBoroughs,
+save(LondonFire, LondonFStations, LondonBoroughs, LondonBoundaries,
   file = "~/svn/bayesr/pkg/bamlss/data/LondonFire.rda",
   compress = "xz")
 
