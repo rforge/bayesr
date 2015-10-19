@@ -1203,7 +1203,7 @@ if(!file.exists("figures/firemodel-data.png")) {
         col = c(rainbow_hcl(1), "black"), box.col = NA, bg = NA, cex = 0.95)
     }
     if("spatial_prob" %in% what) {
-      plot(LondonBoroughs, main = main[2],
+      plot(LondonBoundaries, main = main[2],
         xlab = "Longitude [deg]", ylab = "Latitude [deg]")
       lr <- c(0, max(data$spatial$spatial_prob))
       xr <- c(0, quantile(data$spatial$spatial_prob, probs = 0.95))
@@ -1212,7 +1212,8 @@ if(!file.exists("figures/firemodel-data.png")) {
         shift = c(0.03, 0.05), symmetric = FALSE, add = TRUE,
         side.legend = 2, digits = 1, range = xr, lrange = round(lr, 1),
         width = 0.2, height = 0.04, ...)
-      plot(LondonBoroughs, add = TRUE)
+      plot(LondonBoroughs, add = TRUE, lwd = 0.3)
+      plot(LondonBoundaries, col = NA, add = TRUE)
       box()
       axis(1)
       axis(2)
@@ -1223,7 +1224,7 @@ if(!file.exists("figures/firemodel-data.png")) {
         ylab = "Effect", rug = FALSE, scheme = 2, grid = 100)
     }
     if("spatial_td" %in% what) {
-      plot(LondonBoroughs, main = main[3],
+      plot(LondonBoundaries, main = main[3],
         xlab = "Longitude [deg]", ylab = "Latitude [deg]")
       lr <- range(data$spatial$spatial_td)
       lr <- c(-1 * max(abs(lr)), max(abs(lr)))
@@ -1234,7 +1235,8 @@ if(!file.exists("figures/firemodel-data.png")) {
         shift = c(0.03, 0.05), symmetric = TRUE, add = TRUE,
         side.legend = 2, digits = 1, range = xr, lrange = round(lr, 1),
         width = 0.2, height = 0.04, ...)
-      plot(LondonBoroughs, add = TRUE)
+      plot(LondonBoroughs, add = TRUE, lwd = 0.3)
+      plot(LondonBoundaries, col = NA, add = TRUE)
       box()
       axis(1)
       axis(2)
@@ -1245,7 +1247,7 @@ if(!file.exists("figures/firemodel-data.png")) {
         scheme = 2, grid = 100)
     }
     if("spatial_tc" %in% what) {
-      plot(LondonBoroughs, main = main[4],
+      plot(LondonBoundaries, main = main[4],
         xlab = "Longitude [deg]", ylab = "Latitude [deg]")
       lr <- range(data$spatial$spatial_tc)
       lr <- c(-1 * max(abs(lr)), max(abs(lr)))
@@ -1256,13 +1258,14 @@ if(!file.exists("figures/firemodel-data.png")) {
         shift = c(0.03, 0.05), symmetric = TRUE, add = TRUE,
         side.legend = 2, digits = 1, range = xr, lrange = round(lr, 1),
         width = 0.2, height = 0.04, ...)
-      plot(LondonBoroughs, add = TRUE)
+      plot(LondonBoroughs, add = TRUE, lwd = 0.3)
+      plot(LondonBoundaries, col = NA, add = TRUE)
       box()
       axis(1)
       axis(2)
     }
     if("spatial_daytime" %in% what) {
-      plot(LondonBoroughs, main = "Spatial daytime effect",
+      plot(LondonBoundaries, main = "Spatial daytime effect",
         xlab = "Longitude [deg]", ylab = "Latitude [deg]")
       lr <- range(data$spatial$spatial_daytime)
       lr <- c(-1 * max(abs(lr)), max(abs(lr)))
@@ -1273,7 +1276,8 @@ if(!file.exists("figures/firemodel-data.png")) {
         shift = c(0.03, 0.05), symmetric = TRUE, add = TRUE,
         side.legend = 2, digits = 1, range = xr, lrange = round(lr, 1),
         width = 0.2, height = 0.04, ...)
-      plot(LondonBoroughs, add = TRUE)
+      plot(LondonBoroughs, add = TRUE, lwd = 0.3)
+      plot(LondonBoundaries, col = NA, add = TRUE)
       box()
       axis(1)
       axis(2)
@@ -1284,7 +1288,7 @@ if(!file.exists("figures/firemodel-data.png")) {
       ylim <- c(co["y", 1], co["y", 2] + scale * abs(diff(co["y", ])))
       plot(LondonBoroughs, main = "",
         xlab = "Longitude [deg]", ylab = "", ylim = ylim,
-        col = gray(0.9))
+        col = gray(0.9), lwd = 0.3)
       cfun <- function(n) { heat_hcl(n, alpha = 0.8) }
       pal <- make_pal(col = cfun, ncol = 99, data = LondonFire$arrivaltime, symmetric = FALSE,
         range = c(3, 8), swap = TRUE)
@@ -1293,6 +1297,7 @@ if(!file.exists("figures/firemodel-data.png")) {
       points(ld$lon, ld$lat, pch = 4, col = pal$map(ld$arrivaltime), cex = 0.6)
       points(LondonFStations, pch = 16, col = "blue", cex = 0.8)
       points(LondonFStations, cex = 0.8)
+      plot(LondonBoundaries, col = NA, add = TRUE)
       box()
       axis(1)
       axis(4, at = round(seq(co[2, 1] + 0.07, co[2, 2] - 0.07, length = 4), 2))
@@ -1315,9 +1320,9 @@ if(!file.exists("figures/firemodel-data.png")) {
     }
   }
 
-  grid_agg_plot <- function(n = 1000, FUN = NULL,
+  plot.griddata <- function(n = 800, FUN = NULL,
     color = heat_hcl, symmetric = FALSE, swap = TRUE, type = "regular",
-    main = NULL, ...)
+    main = NULL, xlab = "Longitude [deg]", ylab = "Latitude [deg]", ...)
   {
     library("bamlss")
     library("maptools")
@@ -1358,7 +1363,7 @@ if(!file.exists("figures/firemodel-data.png")) {
     colors <- colorlegend(x = agg$arrivaltime, plot = FALSE,
       color = color, symmetric = symmetric, swap = swap, ...)
 
-    plot(LondonBoundaries, col = gray(0.9), xlab = "Longitude [deg]", ylab = "Latitude [deg]",
+    plot(LondonBoundaries, col = gray(0.9), xlab = xlab, ylab = ylab,
       main = main)
     plot(agg, col = colors$map(agg$arrivaltime), add = TRUE, border = NA)
     plot(LondonBoundaries, col = NA, add = TRUE)
@@ -1367,36 +1372,51 @@ if(!file.exists("figures/firemodel-data.png")) {
     colorlegend(x = agg$arrivaltime, plot = FALSE, add = TRUE,
       color = color, swap = swap, symmetric = symmetric, width = 0.2, height = 0.04,
       pos = "bottomright", side.legend = 2, shift = c(0.03, 0.05), ...)
-
-    box()
-    axis(1)
-    axis(2)
   }
 
-  fire.data.plot <- function()
+  plot.firedata <- function()
   {
-    par(mfrow = c(1, 3))
-    plot(LondonBoroughs, xlab = "Longitude [deg]", ylab = "Latitude [deg]", col = gray(0.9),
-      main = "Fires and fire stations")
+    par(mfrow = c(2, 2), mar = rep(0, 4), oma = c(4.1, 4.1, 4.1, 4.1))
+    plot(LondonBoundaries, col = gray(0.9))
+    plot(LondonBoroughs, lwd = 0.3, add = TRUE)
     points(LondonFire, pch = 4, col = rgb(1, 0, 0, alpha = 0.3), cex = 0.4)
     points(LondonFStations, pch = 16, col = rgb(0, 0, 1), cex = 0.8)
     points(LondonFStations, cex = 0.8)
     box()
-    axis(1)
     axis(2)
-    legend("bottomleft", c("Fire", "Station"), pch = c(4, 21),
+    axis(3)
+    legend("topright", c("Fire", "Station"), pch = c(4, 21),
       col = c(rgb(1, 0, 0, alpha = 1), "black"),
       pt.bg = c(NA, rgb(0, 0, 1)), box.col = NA, bg = NA, cex = 0.95)
-    grid_agg_plot(type = "hexagonal", at = c(0, 0.5, 1), labels = c("0.0", "0.5", "1.0"),
-      main = "% Arrivaltime > 6min")
-    hist(LondonFire$arrivaltime, breaks = 50, col = gray(0.9), freq = FALSE,
-      xlab = "Arrivaltime", main = "Histogram of arrivaltime")
-    abline(v = 6, lyy = 2, col = "blue")
+
+    plot.griddata(type = "hexagonal", at = c(0, 0.5, 1), labels = c("0.0", "0.5", "1.0"),
+      main = "", xlab = "", ylab = "")
     box()
+    axis(3)
+    legend("topright", "% Arrivatime > 6min", box.col = NA, bg = NA, cex = 0.95)
+
+    plot.griddata(type = "hexagonal", digits = 0, range = c(-1, 30), lrange = c(1, 40),
+      main = "", xlab = "", ylab = "", FUN = length)
+    box()
+    axis(2)
+    legend("topright", "#Number of fires", box.col = NA, bg = NA, cex = 0.95)
+
+    hist(LondonFire$arrivaltime, breaks = 50, col = gray(0.9), freq = FALSE,
+      xlab = "", main = "", axes = FALSE)
+    abline(v = 6, lty = 2, col = "blue")
+    box()
+    axis(1)
+    axis(4)
+    mtext("Arrivaltime", side = 1, line = 3)
+    mtext("Density", side = 4, line = 3)
+    legend("topright", "Histogram of arrivaltime", box.col = NA, bg = NA, cex = 0.95)
+
+    mtext("Latitude [deg]", side = 2, line = 3, outer = TRUE)
+    mtext("Longitude [deg]", side = 3, line = 3, outer = TRUE)
   }
 
-  png("figures/firemodel-data.png", units = "in", res = 120, width = 6 * 1.5, height = 8 / 3)
-  fire.data.plot()
+  png("figures/firemodel-data.png", units = "in", res = 120, width = 8, height = 6.5)
+  plot.firedata()
   dev.off()
 
   png("figures/firemodel-effects.png", units = "in", res = 120, width = 6, height = 8)
@@ -1407,13 +1427,13 @@ if(!file.exists("figures/firemodel-data.png")) {
 
 \begin{figure}[t!]
 \centering
-\includegraphics[width=1\textwidth]{figures/firemodel-data}
+\includegraphics[width=0.92\textwidth]{figures/firemodel-data}
 \caption{\label{fig:londonfiredata} Distribution of dwelling fires and fire stations in London (2015).}
 \end{figure}
 
 \begin{figure}[t!]
 \centering
-\includegraphics[width=0.6666667\textwidth]{figures/firemodel-effects}
+\includegraphics[width=0.92\textwidth]{figures/firemodel-effects}
 \caption{\label{fig:londonfiredeffects} Estimated effects of the fire emergency response times
   survival model.}
 \end{figure}
