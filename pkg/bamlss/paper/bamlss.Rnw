@@ -1006,6 +1006,14 @@ if(!file.exists("rainmodel.rda") & FALSE) {
 
 <<echo=FALSE, results=hide>>=
 if(!file.exists("firemodel.rda") & FALSE) {
+  library("spatstat")
+  library("sp")
+  library("maptools")
+  library("raster")
+  library("rgeos")
+
+  data("LondonFire")
+
   f <- list(
     Surv(arrivaltime) ~ ti(arrivaltime,k=20) + ti(arrivaltime,lon,lat,d=c(1,2),mp=FALSE,k=c(5,30)),
     gamma ~ s(fsintens) + s(daytime,bs="cc",k=30) + s(lon,lat,k=60)
@@ -1067,12 +1075,6 @@ if(!file.exists("firemodel.rda") & FALSE) {
 
   data_basehaz <- function(n = 30, target = 6, k = 20, ...)
   {
-    require("spatstat")
-    require("sp")
-    require("maptools")
-    library("raster")
-    data("LondonFire")
-
     gpclibPermit()
 
     spatial_daytime <- grepl("(daytime,lon,lat)",
@@ -1165,14 +1167,17 @@ if(!file.exists("figures"))
   dir.create("figures")
 
 if(!file.exists("figures/firemodel-data.png")) {
+  library("sp")
+  library("maptools")
+  library("rgeos")
+
+  data("LondonFire")
   load("firemodel_plotdata2.rda")
 
   plot.firemodel <- function(data, what = c("curves", "spatial_prob", "spatial_td", "spatial_tc",
     "fsintens", "daytime"),
     main = NULL, spar = TRUE, ...)
   {
-    require("maptools")
-
     if(is.null(main)) {
       main = c("Baseline-hazard effects", 
         paste("Prob(T > ", data$target, ")", sep = ""),
@@ -1324,12 +1329,6 @@ if(!file.exists("figures/firemodel-data.png")) {
     color = heat_hcl, symmetric = FALSE, swap = TRUE, type = "regular",
     main = NULL, xlab = "Longitude [deg]", ylab = "Latitude [deg]", ...)
   {
-    library("bamlss")
-    library("maptools")
-    library("rgeos")
-
-    data("LondonFire", package = "bamlss")
-
     if(is.null(FUN))
       FUN <- function(x) { sum(x > 6, na.rm = TRUE) / length(x) }
 
@@ -1395,21 +1394,26 @@ if(!file.exists("figures/firemodel-data.png")) {
     axis(3)
     legend("topright", "% Arrivatime > 6min", box.col = NA, bg = NA, cex = 0.95)
 
-    plot.griddata(type = "hexagonal", digits = 0, range = c(-1, 30), lrange = c(1, 40),
-      main = "", xlab = "", ylab = "", FUN = length)
+    plot.griddata(type = "hexagonal", digits = 0,
+      main = "", xlab = "", ylab = "", FUN = length, range = c(1, 35), lrange = c(1, 55))
     box()
     axis(2)
     legend("topright", "#Number of fires", box.col = NA, bg = NA, cex = 0.95)
 
     hist(LondonFire$arrivaltime, breaks = 50, col = gray(0.9), freq = FALSE,
       xlab = "", main = "", axes = FALSE)
-    abline(v = 6, lty = 2, col = "blue")
+    abline(v = 6, lty = 2, col = "blue", lwd = 2)
     box()
     axis(1)
     axis(4)
-    mtext("Arrivaltime", side = 1, line = 3)
+    mtext("Arrivaltime [min]", side = 1, line = 3)
     mtext("Density", side = 4, line = 3)
-    legend("topright", "Histogram of arrivaltime", box.col = NA, bg = NA, cex = 0.95)
+    F <- ecdf(LondonFire$arrivaltime)
+    P <- round(1 - F(6), 2)
+    legend("topright", "t = 6min",
+      lwd = 2, lty = 2, col = "blue",
+      title = paste("Prob(T > 6min) =", P),
+      box.col = NA, bg = NA, cex = 0.95)
 
     mtext("Latitude [deg]", side = 2, line = 3, outer = TRUE)
     mtext("Longitude [deg]", side = 3, line = 3, outer = TRUE)
