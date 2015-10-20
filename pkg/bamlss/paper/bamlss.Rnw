@@ -974,6 +974,8 @@ next section.
 
 <<echo=FALSE, results=hide>>=
 if(!file.exists("rainmodel.rda") & FALSE) {
+  ## AustriaTopo: https://www.ngdc.noaa.gov/mgg/global/global.html
+  ## Austria: http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/nuts_einheiten/index.html
   if(file.exists("homstart.rda")) {
     load("homstart.rda")
   } else {
@@ -985,7 +987,7 @@ if(!file.exists("rainmodel.rda") & FALSE) {
   }
 
   homstart$raw[homstart$raw < 0] <- 0
-  homstart2 <- subset(homstart, year > 1979)
+  homstart2 <- subset(homstart, year > 2001)
 
   f <- list(
     "mu" = sqrt(raw) ~ elevation + s(day, bs="cc") + s(long, lat, bs="tp", k=30) +
@@ -996,7 +998,7 @@ if(!file.exists("rainmodel.rda") & FALSE) {
 
   rainmodel <- bamlss(f, data = homstart2, family = "cnorm",
     n.iter = 4000, burnin = 2000, thin = 10,
-    binning = TRUE, before = FALSE, cores = 7)
+    binning = TRUE, before = FALSE, cores = 7, sampler = FALSE)
 
   save(rainmodel, file = "rainmodel.rda")
 }
