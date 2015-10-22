@@ -727,7 +727,7 @@ surv.transform <- function(x, y, data, family,
     }
   }
 
-  y <- data.frame(y)
+  y <- list(y)
   names(y) <- rn
 
   family$p2d <- function(par, log = FALSE, ...) {

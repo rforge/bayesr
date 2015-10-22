@@ -220,7 +220,7 @@ p(\boldsymbol{\beta}_{jk}) \propto \exp \left(- \frac{1}{2}
 with prior mean $\mathbf{m}_{jk}$ and prior covariance matrix $\mathbf{M}_{jk}$. In a lot of applications
 a vague prior specification is used with $\mathbf{m}_{jk} = \mathbf{0}$ and a large variance.
 
-\subsubsection{Nonlinear effects}
+\subsubsection{Nonlinear effects} \label{sec:smootheffects}
 
 Although the functional forms may be rather complex within predictor (\ref{eqn:structadd}),
 sometimes including more than one covariate, it is again possible to obtain a linear representation
@@ -243,6 +243,9 @@ on the regression coefficients $\boldsymbol{\beta}_{jk}$, where the precision ma
 corresponds to the frequentist's penalty matrix and depends on the type of function
 associated with the term. The variance parameter $\tau_{jk}^2$ is equivalent to the inverse smoothing
 parameter in a frequentist approach and controls the trade off between flexibility and smoothness.
+Note that within this notion a ridge penalty on linear effects can be obtained by
+$\mathbf{K}_{jk} = \mathbf{I}$, similarly independent and identically distributed (i.i.d.) random
+effects can be incorporated using prior (\ref{eqn:shrinkprior}).
 A common choice of prior for the variance parameter is a weakly informative inverse Gamma hyperprior
 \begin{equation} \label{eqn:ig}
 p(\tau_{jk}^2) = \frac{b_{jk}^{a_{jk}}}{\Gamma(a_{jk})} (\tau_{jk}^2)^{-(a_{jk} + 1)} \exp(-b_{jk} / \tau_{jk}^2).
@@ -253,12 +256,12 @@ Gamma prior for variance parameters needs to be reconsidered in some cases, e.g.
 problematic if $\tau_{jk}$ is close to zero, since the results a very sensitive on the choice of
 $a_{jk}$ and $b_{jk}$. Therefore, \citet{bamlss:Gelman:2006} proposes to use the half-Cauchy prior
 \begin{equation} \label{eqn:hcauchy}
-p(\tau_{jk}) = \frac{2}{\pi \, A(1 + (\tau_{jk} / A)^2) }, \quad A > 0.
+p(\tau_{jk}) = \frac{2A_{jk}}{\pi (\tau_{jk}^2 + A_{jk}^2)}, \quad A_{jk} > 0.
 \end{equation}
-For $A \rightarrow \infty$ the prior is uniform, hence large values result in weakly informative
-priors for $\tau_{jk}$. Note that within this notion a ridge penalty
-on linear effects can be obtained by $\mathbf{K}_{jk} = \mathbf{I}$, similarly independent and
-identically distributed (i.i.d.) random effects can be incorporated using prior (\ref{eqn:shrinkprior}).
+For $A_{jk} \rightarrow \infty$ the prior is uniform, hence large values (e.g., $A_{jk} = 25$) result in
+weakly informative priors. A desirable property of the half-Cauchy is that for $\tau_{jk} = 0$ the
+density is a nonzero constant, whereas the density of the inverse Gamma for $\tau_{jk} \rightarrow 0$
+vanishes (see also \citealp{bamlss:Polson+Scott:2012}).
 
 In addition, the individual model components $\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$ for any basis
 function specification can be further decomposed into a mixed model representation given by
@@ -464,8 +467,7 @@ one parameter is maximized holding the other parameters fixed. Note that this up
 further partitioned for each function within parameter block $k$, leading to a highly modular
 system.
 
-For orthogonal parameters $\boldsymbol{\beta}_k$, the updating scheme can be written as
-a $k$-partitioned Newton-Raphson iteration
+For parameters $\boldsymbol{\beta}_k$, the updating scheme can be written as a $k$-partitionedNewton-Raphson iteration
 \begin{equation} \label{eqn:blocknewton}
 \boldsymbol{\beta}_k^{(t + 1)} = U_k(\boldsymbol{\beta}_k^{(t)} | \cdot) = \boldsymbol{\beta}_k^{(t)} -
   \mathbf{H}_{kk}\left( \boldsymbol{\beta}_k^{(t)} \right)^{-1}\mathbf{s}_k\left( \boldsymbol{\beta}_k^{(t)} \right).
@@ -744,14 +746,21 @@ following methods:
   \end{enumerate}
 \end{itemize}
 
-In similar fashion the full conditionals $p(\tau_{jk} | \cdot)$ for smoothing variances using
-priors (\ref{eqn:shrinkprior}) and (\ref{eqn:ig}) are again an inverse gamma distribution
-with
+The full conditional $p(\tau_{jk} | \cdot)$ for smoothing variances is commonly constructed using
+priors for $\tau_{jk}$ that lead to known distributions, i.e., simple Gibbs sampling is possible.
+E.g., this is the case when using an inverse Gamma prior (\ref{eqn:ig}) in combination with
+the normal prior (\ref{eqn:shrinkprior}), then $p(\tau_{jk} | \cdot)$ is again an inverse Gamma
+distribution with
 $$
 \tilde{a}_{jk} = \frac{1}{2}rk(\mathbf{K}_{jk}) + a_{jk}, \qquad
   \tilde{b}_{jk} = \frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{K}_{jk}
   \boldsymbol{\beta}_{jk}^\star + b_{jk}.
 $$
+As mentioned in Section \ref{sec:smootheffects}, other priors than the inverse Gamma might be
+desirable. However, in most applications estimating the smooth effects using the inverse Gamma works
+particulary well. If a simple Gibbs sampling step cannot be derived, another easy to implement
+strategy is to use slice sampling, since the number of smoothing variances is usually not very large
+the computational burden does most of the times not exceed possible benefits.
 
 
 \subsection{Inference and prediction} \label{sec:infpred}
@@ -1011,15 +1020,34 @@ if(!file.exists("rainmodel.rda") & FALSE) {
   )
 
   rainmodel <- bamlss(f, data = homstart2, family = "cnorm",
-    n.iter = 4000, burnin = 2000, thin = 10,
-    binning = TRUE, before = FALSE, cores = 7, sampler = FALSE)
+    binning = TRUE, before = TRUE, gam.side = FALSE,
+    n.iter = 1200, burnin = 200, thin = 3, cores = 3)
 
-  save(rainmodel, file = "rainmodel.rda")
+  save(rainmodel, file = "rainmodel2.rda")
 }
 
 if(!file.exists("figures/rainmodel-data.png") & FALSE) {
-  load("rainmodel.rda")
+  library("spatstat")
+  library("sp")
+  library("maptools")
+  library("raster")
+  library("rgeos")
+
+  data("Austria")
+  load("rainmodel2.rda")
+
   raindata <- model.frame(rainmodel)
+
+  nd <- as.data.frame(coordinates(AustriaTopo))
+  names(nd) <- c("long", "lat")
+  nd$elevation <- extract(AustriaTopo, cbind(nd$long, nd$lat))
+  nd <- na.omit(nd)
+
+  nd$fmu <- predict(rainmodel, newdata = nd, model = "mu", term = "s(long,lat)", intercept = FALSE)
+  nd$fsigma <- predict(rainmodel, newdata = nd, model = "sigma", term = "s(long,lat)", intercept = FALSE)
+
+  coordinates(nd) <- c("long", "lat")
+  proj4string(nd) <- proj4string(AustriaTopo)
 }
 @
 

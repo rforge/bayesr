@@ -1069,7 +1069,7 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
 
   ## Compute results.
   if(is.function(functions$results))
-    bf$results <- functions$results(bf, bamlss = TRUE,  ...)
+    bf$results <- try(functions$results(bf, bamlss = TRUE,  ...))
 
   ## Save the model frame?
   if(!model)
@@ -5425,7 +5425,7 @@ h_response <- function(x)
 
 
 ## Create the inverse of a matrix.
-matrix_inv <- function(x, index = NULL)
+matrix_inv <- function(x, index = NULL, force = FALSE)
 {
   if(length(x) < 2)
     return(1 / x)
@@ -5444,6 +5444,9 @@ matrix_inv <- function(x, index = NULL)
   if(inherits(p, "try-error")) {
     diag(x) <- jitter(diag(x), amount = 1e-5)
     p <- try(solve(x), silent = TRUE)
+  }
+  if(inherits(p, "try-error") & force) {
+    p <- diag(ncol(x))
   }
   rownames(p) <- rn
   colnames(p) <- cn
