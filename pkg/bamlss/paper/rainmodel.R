@@ -16,7 +16,7 @@ if(file.exists("homstart.rda")) {
 homstart$raw[homstart$raw < 0] <- 0
 
 if(!file.exists("rainmodel.rda")) {
-  homstart2 <- subset(homstart, year > 2008)
+  homstart2 <- subset(homstart, year > 1979)
 
   f <- list(
     "mu" = sqrt(raw) ~ elevation + s(day, bs="cc") + s(long, lat, bs="tp", k=30) +
