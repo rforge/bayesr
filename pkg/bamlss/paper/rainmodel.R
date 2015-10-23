@@ -25,8 +25,10 @@ if(!file.exists("rainmodel.rda")) {
       te(day,long,lat, bs=c("cc","tp"), d=c(1,2), k=c(10,30), mp=FALSE)
   )
 
-  rainmodel <- bamlss(f, data = homstart2, family = "cnorm", binning = TRUE, gam.side = FALSE,
-    sampler = FALSE, do.optim = FALSE)
+  rainmodel <- bamlss(f, data = homstart2, family = "cnorm",
+    binning = TRUE, before = TRUE, gam.side = FALSE,
+    samplestats = FALSE, results = FALSE
+    n.iter = 3000, burnin = 1000, thin = 10, cores = 7)
 
   save(rainmodel, file = "rainmodel.rda")
 }

@@ -66,11 +66,11 @@ b0 <- crch(sqrt(rain) ~ sqrtensmean|sqrtenssd, data = RainIbk, dist = "gaussian"
 
 ## now with bamlss
 f <- list(
-  rain ~ s(sqrtensmean),
+  sqrt(rain) ~ s(sqrtensmean),
   sigma ~ s(sqrtenssd),
   alpha ~ s(sqrtensmean) + s(sqrtenssd)
 )
-b1 <- bamlss(f[1:2], data = RainIbk, family = gF(pcnorm), no.opt = TRUE, no.mcmc = TRUE)
+b1 <- bamlss(f[1:2], data = RainIbk, family = "cnorm", results = FALSE, samplestats = FALSE)
 
 f <- list(
   I(rain^(1/2)) ~ s(sqrtensmean),

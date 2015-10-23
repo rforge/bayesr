@@ -947,7 +947,8 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
 ## Main bamlss().
 bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
-  reference = NULL, transform = NULL, optimizer = NULL, sampler = NULL, results = NULL,
+  reference = NULL, transform = NULL, optimizer = NULL, sampler = NULL,
+  samplestats = NULL, results = NULL,
   cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, x = TRUE, rescale = FALSE, ...)
 {
   ## The environment.
@@ -961,13 +962,16 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
     optimizer <- family$optimizer
   if(!is.null(family$sampler) & is.null(sampler))
     sampler <- family$sampler
+  if(!is.null(family$samplestats) & is.null(samplestats))
+    samplestats <- family$samplestats
   if(!is.null(family$results) & is.null(results))
     results <- family$results
 
   ## Setup all processing functions.
-  foo <- list("transform" = transform, "optimizer" = optimizer, "sampler" = sampler, "results" = results)
+  foo <- list("transform" = transform, "optimizer" = optimizer,
+    "sampler" = sampler, "samplestats" = samplestats, "results" = results)
   nf <- names(foo)
-  default_fun <- c("no.transform", "bfit", "GMCMC", "results.bamlss.default")
+  default_fun <- c("no.transform", "bfit", "GMCMC", "samplestats", "results.bamlss.default")
   functions <- list()
   for(j in 1:length(foo)) {
     if(is.null(foo[[j]]))
@@ -1051,14 +1055,22 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
     bf$samples <- process.chains(bf$samples, combine)
 
     ## Optionally, compute more model stats from samples.
-    ms <- sample.stats(samples = bf$samples, x = bf$x, y = bf$y, family = bf$family)
-    if(is.null(bf$model.stats)) {
-      bf$model.stats <- list("sampler" = list())
-      bf$model.stats$sampler[names(ms)] <- ms
+    if(is.function(functions$samplestats)) {
+      ms <- functions$samplestats(samples = bf$samples, x = bf$x, y = bf$y, family = bf$family)
+      if(is.null(bf$model.stats)) {
+        bf$model.stats <- list("sampler" = list())
+        bf$model.stats$sampler[names(ms)] <- ms
+      } else {
+        bf$model.stats <- list("optimizer" = bf$model.stats, "sampler" = list())
+        bf$model.stats$sampler[names(ms)] <- ms
+      }
     } else {
-      bf$model.stats <- list("optimizer" = bf$model.stats, "sampler" = list())
-      bf$model.stats$sampler[names(ms)] <- ms
+      if(!is.null(bf$model.stats))
+        bf$model.stats <- list("optimizer" = bf$model.stats)
     }
+  } else {
+    if(!is.null(bf$model.stats))
+      bf$model.stats <- list("optimizer" = bf$model.stats)
   }
 
   if(rescale & bf$scale.x) {
@@ -1150,7 +1162,7 @@ eta.logLik.logPriors <- function(par, x, y, family)
 
 
 ## Model stats based on samples.
-sample.stats <- function(samples, x = NULL, y = NULL, family = NULL)
+samplestats <- function(samples, x = NULL, y = NULL, family = NULL)
 {
   if(inherits(samples, "bamlss")) {
     if(is.null(samples$samples))
@@ -4018,13 +4030,13 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
     if(!is.null(x$model.matrix[[i]])) {
       cat("-\n")
       cat("Parametric coefficients:\n")
-      print(x$model.matrix[[i]])
+      printCoefmat(x$model.matrix[[i]], digits = digits)
     }
     if(!is.null(x$smooth.construct) & length(x$smooth.construct)) {
       if(!is.null(x$smooth.construct[[i]])) {
         cat("-\n")
         cat("Smooth terms:\n")
-        print(x$smooth.construct[[i]])
+        printCoefmat(x$smooth.construct[[i]], digits = digits)
       }
     }
     cat("---\n")
