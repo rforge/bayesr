@@ -947,8 +947,7 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
 ## Main bamlss().
 bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
-  reference = NULL, transform = NULL, optimizer = NULL, sampler = NULL,
-  samplestats = NULL, results = NULL,
+  reference = NULL, transform = NULL, optimizer = NULL, sampler = NULL, samplestats = NULL, results = NULL,
   cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, x = TRUE, rescale = FALSE, ...)
 {
   ## The environment.
@@ -974,23 +973,23 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
   default_fun <- c("no.transform", "bfit", "GMCMC", "samplestats", "results.bamlss.default")
   functions <- list()
   for(j in 1:length(foo)) {
-    if(is.null(foo[[j]]))
-      foo[[j]] <- eval(parse(text = default_fun[j]))
-    if(is.list(foo[[j]])) {
-      args <- foo[[j]]
+    if(is.null(foo[[nf[j]]])) {
+      foo[[nf[j]]] <- get(default_fun[j], envir = env)
+    }
+    if(is.list(foo[[nf[j]]])) {
+      args <- foo[[nf[j]]]
       fun <- default_fun[j]
-      functions[[j]] <- function(x, ...) {
+      functions[[nf[j]]] <- function(x, ...) {
         args <- c(args, list(...))
         args$x <- x
         do.call(fun, args)
       }
-    } else functions[[j]] <- foo[[j]]
-    if(!is.function(functions[[j]])) {
-      if(!is.logical(functions[[j]]))
+    } else functions[[nf[j]]] <- foo[[nf[j]]]
+    if(!is.function(functions[[nf[j]]])) {
+      if(!is.logical(functions[[nf[j]]]))
         stop(paste("argument", nf[j], "is not a function!"))
     }
   }
-  names(functions) <- names(foo)
 
   ## Create the 'bamlss.frame'.
   bf <- match.call(expand.dots = TRUE)
