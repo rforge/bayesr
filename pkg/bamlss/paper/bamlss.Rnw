@@ -1034,22 +1034,78 @@ if(!file.exists("figures/rainmodel-data.png") & FALSE) {
   library("raster")
   library("rgeos")
 
+  if(file.exists("homstart.rda")) {
+    load("homstart.rda")
+  } else {
+    dpath <- system.file(package = "bamlss", "data")
+    if(!file.exists(file <- file.path(dpath, "homstart.rda"))) {
+      homstart_data(dir = dirname(file), load = TRUE)
+    } else load(file)
+    file.copy(file, file.path(getwd(), "homstart.rda"))
+  }
+
   data("Austria")
   load("rainmodel.rda")
-
-  raindata <- model.frame(rainmodel)
 
   nd <- as.data.frame(coordinates(AustriaTopo))
   names(nd) <- c("long", "lat")
   nd$elevation <- extract(AustriaTopo, cbind(nd$long, nd$lat))
   nd <- na.omit(nd)
 
-  nd$fmu <- predict(rainmodel, newdata = nd, model = "mu", term = "s(long,lat)", intercept = FALSE)
-  nd$fsigma <- predict(rainmodel, newdata = nd, model = "sigma", term = "s(long,lat)", intercept = FALSE)
+  nd$fmu <- predict(rainmodel, newdata = nd, model = "mu", term = "(long,lat)", intercept = FALSE)
+  nd$fsigma <- predict(rainmodel, newdata = nd, model = "sigma", term = "(long,lat)", intercept = FALSE)
 
   coordinates(nd) <- c("long", "lat")
   proj4string(nd) <- proj4string(AustriaTopo)
   gridded(nd) <- TRUE
+
+  expCens <- function(mu, sigma) {
+    pnorm(mu / sigma) * (mu + sigma * dnorm(mu / sigma) / pnorm(mu / sigma))
+  }
+
+  expSample <- function(mu, sigma) {
+    n <- 1000
+    N <- length(mu)
+    rval <- sapply(1:N, function(i) {
+      rs <- rnorm(n, mean = mu[i], sd = sigma[i])
+      rs[rs < 0] <- 0
+      rs <- mean(rs^2)
+      rs
+    })
+    unlist(rval)
+  }
+
+  nd2 <- data.frame("day" = 1:365)
+  co <- unique(homstart[, c("long", "lat", "elevation", "id")])
+  nd3 <- list()
+  for(i in 1:nrow(co)) {
+    cat("Station", i, "\n")
+    nd2$long <- co[i, "long"]
+    nd2$lat <- co[i, "lat"]
+    nd2$elevation <- mean(co$elevation)
+    nd2[[paste("fmu", i, sep = "")]] <- predict(rainmodel, model = "mu", term = "day",
+      newdata = nd2, intercept = FALSE)
+    nd2[[paste("fsigma", i, sep = "")]] <- predict(rainmodel, model = "sigma", term = "day",
+      newdata = nd2, intercept = FALSE)
+  
+    ttime <- subset(homstart, id == co$id[i])
+    ttime$day2 <- as.factor(ttime$day)
+    fday <- aggregate(sqrt(ttime$raw), by = list(ttime$day2), FUN = function(x) { mean(x, na.rm = TRUE ) })
+    names(fday) <- c("day", "mean")
+    fday$day <- as.integer(fday$day)
+    fday <- fday[order(fday$day), ]
+    nd2$day <- fday$day
+    foo <- function(x) { x }
+    pmu <- predict(rainmodel, model = "mu", newdata = nd2, intercept = TRUE, FUN = foo)
+    psigma <- predict(rainmodel, model = "sigma", newdata = nd2, intercept = TRUE, trans = exp, FUN = foo)
+    pred <- NULL
+    for(j in 1:ncol(pmu))
+      pred <- cbind(pred, expCens(pmu[, j], psigma[, j]))
+    pred <- apply(pred, 1, mean, na.rm = TRUE)
+    fday$pred <- pred
+    attr(fday, "co") <- as.list(co[i, c("long", "lat")])
+    nd3[[paste("s", i, sep = "")]] <- fday
+  }
 }
 @
 

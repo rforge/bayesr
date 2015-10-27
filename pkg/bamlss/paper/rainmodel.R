@@ -16,7 +16,7 @@ if(file.exists("homstart.rda")) {
 homstart$raw[homstart$raw < 0] <- 0
 
 if(!file.exists("rainmodel.rda")) {
-  homstart2 <- subset(homstart, year > 2008 & id %in% 1:32)
+  homstart2 <- subset(homstart, year > 1979)
 
   f <- list(
     "mu" = sqrt(raw) ~ elevation + ti(day,bs="cc") + ti(long,lat,k=30,mp=FALSE) +
@@ -28,7 +28,7 @@ if(!file.exists("rainmodel.rda")) {
   rainmodel <- bamlss(f, data = homstart2, family = "cnorm",
     binning = TRUE, before = TRUE, gam.side = FALSE,
     samplestats = FALSE, results = FALSE,
-    n.iter = 6000, burnin = 2000, thin = 20, cores = 7)
+    n.iter = 6000, burnin = 2000, thin = 20, cores = 7, sampler = FALSE)
 
   save(rainmodel, file = "rainmodel.rda")
 }
@@ -254,7 +254,7 @@ plot.mean.fit <- function(stations = 1) {
     lines(mean ~ day, data = nd3[[i]], col = rgb(1, 0, 0, alpha = 0.2), lwd = 2)
     lines(pred ~ day, data = nd3[[i]], col = rgb(0.1, 0.1, 0.1, alpha = 0.2), lwd = 2)
   }
-  plot(austria)
+  plot(Austria)
   for(i in stations) {
     co <- attr(nd3[[i]], "co")
     points(co$long, co$lat, pch = 16, cex = 1.5)
