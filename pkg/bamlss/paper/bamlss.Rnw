@@ -1022,12 +1022,12 @@ if(!file.exists("rainmodel.rda") & FALSE) {
   rainmodel <- bamlss(f, data = homstart2, family = "cnorm",
     binning = TRUE, before = TRUE, gam.side = FALSE,
     samplestats = FALSE, results = FALSE,
-    n.iter = 6000, burnin = 2000, thin = 20, cores = 7)
+    n.iter = 120, burnin = 20, thin = 1, cores = 1)
 
   save(rainmodel, file = "rainmodel.rda")
 }
 
-if(!file.exists("figures/rainmodel-data.png") & FALSE) {
+if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   library("spatstat")
   library("sp")
   library("maptools")
@@ -1044,6 +1044,8 @@ if(!file.exists("figures/rainmodel-data.png") & FALSE) {
     file.copy(file, file.path(getwd(), "homstart.rda"))
   }
 
+  homstart$raw[homstart$raw < 0] <- 0
+
   data("Austria")
   load("rainmodel.rda")
 
@@ -1054,10 +1056,6 @@ if(!file.exists("figures/rainmodel-data.png") & FALSE) {
 
   nd$fmu <- predict(rainmodel, newdata = nd, model = "mu", term = "(long,lat)", intercept = FALSE)
   nd$fsigma <- predict(rainmodel, newdata = nd, model = "sigma", term = "(long,lat)", intercept = FALSE)
-
-  coordinates(nd) <- c("long", "lat")
-  proj4string(nd) <- proj4string(AustriaTopo)
-  gridded(nd) <- TRUE
 
   expCens <- function(mu, sigma) {
     pnorm(mu / sigma) * (mu + sigma * dnorm(mu / sigma) / pnorm(mu / sigma))
@@ -1074,6 +1072,16 @@ if(!file.exists("figures/rainmodel-data.png") & FALSE) {
     })
     unlist(rval)
   }
+
+  nd$day <- 10
+  nd$fmu2 <- predict(rainmodel, newdata = nd, model = "mu", intercept = TRUE)
+  nd$fsigma2 <- predict(rainmodel, newdata = nd, model = "sigma", intercept = TRUE)
+  nd$rain10 <- expSample(nd$fmu2, nd$fsigma2)
+
+  nd$day <- 192
+  nd$fmu2 <- predict(rainmodel, newdata = nd, model = "mu", intercept = TRUE)
+  nd$fsigma2 <- predict(rainmodel, newdata = nd, model = "sigma", intercept = TRUE)
+  nd$rain192 <- expSample(nd$fmu, nd$fsigma2)
 
   nd2 <- data.frame("day" = 1:365)
   co <- unique(homstart[, c("long", "lat", "elevation", "id")])
@@ -1106,6 +1114,113 @@ if(!file.exists("figures/rainmodel-data.png") & FALSE) {
     attr(fday, "co") <- as.list(co[i, c("long", "lat")])
     nd3[[paste("s", i, sep = "")]] <- fday
   }
+
+  colors.rain <- function (n, h = c(-160, -38), c. = c(10, 80), l = c(86, 39), 
+    power = c(2.75806451612903, 1), fixup = FALSE, gamma = NULL, 
+    alpha = 1, ...) 
+  {
+    if (!is.null(gamma)) 
+        warning("'gamma' is deprecated and has no effect")
+    if (n < 1L) 
+        return(character(0L))
+    h <- rep(h, length.out = 2L)
+    c <- rep(c., length.out = 2L)
+    l <- rep(l, length.out = 2L)
+    power <- rep(power, length.out = 2L)
+    rval <- seq(1, 0, length = n)
+    rval <- hex(polarLUV(L = l[2L] - diff(l) * rval^power[2L], 
+        C = c[2L] - diff(c) * rval^power[1L], H = h[2L] - diff(h) * 
+            rval), fixup = fixup, ...)
+    if (!missing(alpha)) {
+        alpha <- pmax(pmin(alpha, 1), 0)
+        alpha <- format(as.hexmode(round(alpha * 255 + 1e-04)), 
+            width = 2L, upper.case = TRUE)
+        rval <- paste(rval, alpha, sep = "")
+    }
+    return(rval)
+  }
+
+  png("figures/rainmodel-effects.png", units = "in", res = 120, width = 6, height = 8)
+  par(mfrow = c(3, 2), mar = c(1.4, 0.4, 3.1, 0.4), oma = c(4, 4, 0, 2))
+  redblue1 <- hcl(c(260, 0, 0), c(80, 0, 80), 30, alpha = c(0.15, 0.1, 0.15))
+  redblue2 <- hcl(c(260, 0, 0), c(80, 0, 80), 30, alpha = c(0.15, 0.1, 0.15) * 3)
+  latbreaks <- c(46.4, 46.7, 48.2, 48.8)
+  latcat <- cut(co$lat, breaks = latbreaks)
+  ylim.mu <- max(abs(range(c(nd2[, grep("fmu", names(nd2))], nd2$fmu))))
+  ylim.sigma <- max(abs(range(c(nd2[, grep("fsigma", names(nd2))], nd2$fsigma))))
+  ylim.mu <- c(-1, 1) * ylim.mu
+  ylim.sigma <- c(-1, 1) * ylim.sigma
+  matplot(nd2$day, nd2[, grep("fmu", names(nd2))], type = "l", lty = 1,
+    col = redblue1[latcat], lwd = 2, axes = FALSE, xlab = "", ylab = "",
+    ylim = ylim.mu)
+  legend("topright", c("Latitude", paste(latbreaks[3:1], latbreaks[4:2], sep = "-")),
+    col = c(NA, rev(redblue2)), lty = 1, lwd = 2, bty = "n", cex = 0.8)
+  abline(h = 0, lty = 2)
+  Axis(as.Date(c("1970-01-01", "1970-12-31")), side = 1)
+  axis(2)
+  box()
+  mtext("Seasonal effect", side = 2, line = 2.5)
+  mtext("Time", side = 1, line = 2.5)
+  mtext(expression(paste("Effects on ", mu)), side = 3, line = 1)
+  matplot(nd2$day, nd2[, grep("fsigma", names(nd2))], type = "l", lty = 1,
+    col = redblue1[latcat], lwd = 2, axes = FALSE, xlab = "", ylab = "",
+    ylim = ylim.sigma)
+  abline(h = 0, lty = 2)
+  Axis(as.Date(c("1970-01-01", "1970-12-31")), side = 1)
+  axis(4)
+  box()
+  mtext(expression(paste("Effects on ", log(sigma))), side = 3, line = 1)
+  mtext("Time", side = 1, line = 2.5)
+
+  plot(Austria)
+  xymap(long, lat, fmu, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
+    add = TRUE, color = diverge_hcl, shift = c(0.09, 0.04), distance.labels = 0,
+    width = 0.3, symmetric = TRUE, swap = FALSE, range = ylim.mu, digits = 1)
+  plot(Austria, add = TRUE)
+  box()
+  axis(1)
+  axis(2)
+  mtext("Latitude [deg]", side = 2, line = 3)
+  legend("bottomleft", "Spatial effect", box.col = NA, bg = NA, cex = 0.9)
+
+  plot(Austria)
+  xymap(long, lat, fsigma, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
+    add = TRUE, color = diverge_hcl, shift = c(0.09, 0.04), distance.labels = 0,
+    width = 0.3, symmetric = TRUE, swap = FALSE, range = ylim.sigma, digits = 1)
+  plot(Austria, add = TRUE)
+  box()
+  axis(1)
+  axis(4)
+  box()
+
+  plot(Austria)
+  xymap(long, lat, rain10, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
+    add = TRUE, color = colors.rain, shift = c(0.09, 0.04), distance.labels = 0,
+    width = 0.3, symmetric = FALSE, swap = FALSE, digits = 1, range = c(0, 0.7),
+    lrange = round(c(0, max(nd$rain10)), 1))
+  plot(Austria, add = TRUE)
+  legend("bottomleft", "Precipitation in mm", box.col = NA, bg = NA, cex = 0.9)
+  box()
+  axis(1)
+  axis(2)
+  mtext("Longitude [deg]", side = 1, line = 3)
+  mtext("Latitude [deg]", side = 2, line = 3)
+  mtext("January", side = 3, line = 0.5)
+  box()
+
+  plot(Austria)
+  xymap(long, lat, rain192, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
+    add = TRUE, color = colors.rain, shift = c(0.09, 0.04), distance.labels = 0,
+    width = 0.3, symmetric = FALSE, swap = FALSE, digits = 1, range = c(0, 2.2),
+    lrange = round(c(0, max(nd$rain192)), 1))
+  plot(Austria, add = TRUE)
+  box()
+  axis(1)
+  axis(4)
+  mtext("Longitude [deg]", side = 1, line = 3)
+  mtext("July", side = 3, line = 0.5)
+  box()
+  dev.off()
 }
 @
 
@@ -1521,9 +1636,9 @@ if(!file.exists("figures/firemodel-data.png")) {
     mtext("Longitude [deg]", side = 3, line = 3, outer = TRUE)
   }
 
-  ##png("figures/firemodel-data.png", units = "in", res = 120, width = 8, height = 6.5)
-  ##plot.firedata()
-  ##dev.off()
+  png("figures/firemodel-data.png", units = "in", res = 120, width = 8, height = 6.5)
+  plot.firedata()
+  dev.off()
 
   png("figures/firemodel-effects.png", units = "in", res = 120, width = 6, height = 8)
   plot.firemodel(firemodel_plotdata)
