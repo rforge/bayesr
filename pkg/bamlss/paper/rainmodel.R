@@ -16,19 +16,20 @@ if(file.exists("homstart.rda")) {
 homstart$raw[homstart$raw < 0] <- 0
 
 if(!file.exists("rainmodel.rda")) {
-  homstart2 <- subset(homstart, year > 1979)
+  homstart$raw[homstart$raw < 0] <- 0
+  homstart2 <- subset(homstart, year >= 1979)
 
   f <- list(
-    "mu" = sqrt(raw) ~ elevation + ti(day,bs="cc") + ti(long,lat,k=30,mp=FALSE) +
-      ti(day,long,lat,bs=c("cc","cr"),d=c(1,2),k=c(8,20),mp=FALSE),
-    "sigma" = ~ elevation + ti(day,bs="cc") + ti(long,lat,k=30,mp=FALSE) +
-      ti(day,long,lat,bs=c("cc","cr"),d=c(1,2),k=c(8,20),mp=FALSE)
+    "mu" = sqrt(raw) ~ elevation + ti(day,bs="cc",k=20) + ti(long,lat,bs="tp",d=2,k=30) +
+      ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),mp=FALSE),
+    "sigma" = ~ elevation + ti(day,bs="cc",k=20) + ti(long,lat,bs="tp",d=2,k=30) +
+      ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),mp=FALSE)
   )
 
   rainmodel <- bamlss(f, data = homstart2, family = "cnorm",
     binning = TRUE, before = TRUE, gam.side = FALSE,
     samplestats = FALSE, results = FALSE,
-    n.iter = 6000, burnin = 2000, thin = 20, cores = 7, sampler = FALSE)
+    eps = 0.001, n.iter = 6000, burnin = 4000, thin = 10, cores = 7)
 
   save(rainmodel, file = "rainmodel.rda")
 }

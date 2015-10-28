@@ -405,7 +405,10 @@ sparse.matrix.ordering <- function(x, ...)
 {
   require("spam")
   x <- as.spam(x)
-  return(ordering(chol.spam(x)))
+  i <- try(ordering(chol.spam(x)), silent = TRUE)
+  if(inherits(i, "try-error"))
+    i <- 1:nrow(x)
+  return(i)
 }
 
 

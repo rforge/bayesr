@@ -1010,19 +1010,19 @@ if(!file.exists("rainmodel.rda") & FALSE) {
   }
 
   homstart$raw[homstart$raw < 0] <- 0
-  homstart2 <- subset(homstart, year > 1979)
+  homstart2 <- subset(homstart, year >= 1990)
 
   f <- list(
-    "mu" = sqrt(raw) ~ elevation + ti(day,bs="cc") + ti(long,lat,k=30,mp=FALSE) +
-      ti(day,long,lat,bs=c("cc","cr"),d=c(1,2),k=c(8,20),mp=FALSE),
-    "sigma" = ~ elevation + ti(day,bs="cc") + ti(long,lat,k=30,mp=FALSE) +
-      ti(day,long,lat,bs=c("cc","cr"),d=c(1,2),k=c(8,20),mp=FALSE)
+    "mu" = sqrt(raw) ~ elevation + ti(day,bs="cc",k=20) + ti(long,lat,bs="tp",d=2,k=30) +
+      ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),mp=FALSE),
+    "sigma" = ~ elevation + ti(day,bs="cc",k=20) + ti(long,lat,bs="tp",d=2,k=30) +
+      ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),mp=FALSE)
   )
 
   rainmodel <- bamlss(f, data = homstart2, family = "cnorm",
     binning = TRUE, before = TRUE, gam.side = FALSE,
     samplestats = FALSE, results = FALSE,
-    n.iter = 120, burnin = 20, thin = 1, cores = 1)
+    n.iter = 1200, burnin = 200, thin = 2, maxit = 30, cores = 2)
 
   save(rainmodel, file = "rainmodel.rda")
 }
@@ -1047,7 +1047,7 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   homstart$raw[homstart$raw < 0] <- 0
 
   data("Austria")
-  load("rainmodel.rda")
+  load("rainmodel3.rda")
 
   nd <- as.data.frame(coordinates(AustriaTopo))
   names(nd) <- c("long", "lat")
