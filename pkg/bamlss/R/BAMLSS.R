@@ -1444,7 +1444,6 @@ bamlss.model.frame <- function(formula, data, family = gaussian.bamlss(),
   ## Set up the model.frame.
   data <- list(formula = fF, data = data, subset = subset,
     na.action = na.action, drop.unused.levels = drop.unused.levels, ...)
-
   data <- do.call("model.frame", data)
   rownames(data) <- NULL
 

@@ -240,12 +240,13 @@ dev.off()
 
 
 ## Plot deviance from tru mean obs.
-plot.mean.fit <- function(stations = 1) {
+plot.mean.fit <- function(stations = 1, map = FALSE) {
   ylim <- NULL
   for(i in stations)
     ylim <- c(ylim , range(nd3[[i]][, 2:3]))
   ylim <- range(ylim)
-  par(mfrow = c(2, 1))
+  if(map)
+    par(mfrow = c(2, 1))
   plot(1, 1, type = "n", ylim = ylim, xlim = c(1, 365), axes = FALSE,
     xlab = "Time", ylab = "Raw vs. fitted values")
   Axis(as.Date(c("1970-01-01", "1970-12-31")), side = 1)
@@ -255,11 +256,13 @@ plot.mean.fit <- function(stations = 1) {
     lines(mean ~ day, data = nd3[[i]], col = rgb(1, 0, 0, alpha = 0.2), lwd = 2)
     lines(pred ~ day, data = nd3[[i]], col = rgb(0.1, 0.1, 0.1, alpha = 0.2), lwd = 2)
   }
-  plot(Austria)
-  for(i in stations) {
-    co <- attr(nd3[[i]], "co")
-    points(co$long, co$lat, pch = 16, cex = 1.5)
-    text(co$long, co$lat, i, pos = 3, cex = 1.5)
+  if(map) {
+    plot(Austria)
+    for(i in stations) {
+      co <- attr(nd3[[i]], "co")
+      points(co$long, co$lat, pch = 16, cex = 1.5)
+      text(co$long, co$lat, i, pos = 3, cex = 1.5)
+    }
   }
 }
 
