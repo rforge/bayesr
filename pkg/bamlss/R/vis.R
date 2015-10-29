@@ -832,7 +832,7 @@ colorlegend <- function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
   at = NULL, col.ticks = "black", lwd.ticks = 1L, lty.ticks = 1L, length.ticks = 0.3, 
   labels = NULL, distance.labels = 0.8, col.labels = "black", cex.labels = 1L, 
   digits = 2L, swap = FALSE, symmetric = TRUE, xpd = NULL,
-  title = NULL, side.title = 2, shift.title = c(0, 0), ...)
+  title = NULL, side.title = 2, shift.title = c(0, 0), cex.title = 1, ...)
 {
   args <- list(...)
   if(is.null(xlim)) {
@@ -1035,9 +1035,9 @@ colorlegend <- function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
         yp <- ylim[2L] + shift.title[2] * diff(range(ylim))
         text(if(side.legend < 2) xp else yp,
           if(side.legend < 2) yp else xp, title, pos = 3,
-          srt = if(side.legend == 2) 270 else 0, cex = cex.labels, xpd = xpd)
+          srt = if(side.legend == 2) 270 else 0, cex = cex.title, xpd = xpd)
       } else {
-        mtext(title, side = side.title)
+        mtext(title, side = side.title, cex = cex.title)
       }
     }
   }
