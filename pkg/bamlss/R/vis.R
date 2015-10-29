@@ -39,6 +39,8 @@ plot2d <- function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
     stop("x must be a matrix!")
   if(!is.list(x) && ncol(x) < 2L)
     stop("x must have at least 2 columns!")
+  if(scheme != 1)
+    col.lines <- c(NA, "black", NA)
   args <- list(...)
   nc <- ncol(x)
   if(is.null(c.select)) {
@@ -1336,7 +1338,7 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     lty.p <- rep(1, length.out = n)
   border.p <- if(!is.null(args$border)) rep(args$border, length.out = n) else NULL
   if(is.null(border.p))
-    border.p <- rep("black", length.out = n)
+    border.p <- rep(if(scheme != 1) "white" else "black", length.out = n)
   density.p <- if(!is.null(args$density)) rep(args$density, length.out = n) else NULL
   angle.p <- if(!is.null(args$angle)) rep(args$angle, length.out = n) else NULL
   if(is.null(angle.p))

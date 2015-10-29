@@ -75,10 +75,10 @@ if(!file.exists("figures"))
 
 epng <- function(file, height = 4, width = 5) {
   png(file, height = height, width = width,
-    units = "in", res = 150, bg = "transparent")
+    units = "in", res = 150, bg = "white")
 }
 
-main <- function(text, side = 3, line = 0.5, cex = 0.8, ...) {
+main <- function(text, side = 3, line = 0.5, cex = 1.2, ...) {
   mtext(text, side = side, line = line, cex = cex, ...)
 }
 @
@@ -948,10 +948,10 @@ The architecture of the conceptional framework is illustrated in Figure~\ref{fig
 \setlength{\unitlength}{1cm}
 \setlength{\fboxsep}{0pt}
 \begin{picture}(10.53, 5.7)(0, 0)
-\put(0, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize Formula}}}
+\put(0, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{Formula}}}}
 \put(2.5, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize Family}}}
 \put(5, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize Data}}}
-\put(2.5, 3.5){\fcolorbox{black}{heat4}{\framebox(2, 0.7)[c]{\footnotesize Parser}}}
+\put(2.5, 3.5){\fcolorbox{black}{heat4}{\framebox(2, 0.7)[c]{\footnotesize Model Frame}}}
 \put(2.5, 2.5){\fcolorbox{black}{heat3}{\framebox(2, 0.7)[c]{\footnotesize Transformer}}}
 \put(6, 3.5){\fcolorbox{black}{heat2}{\framebox(2, 0.7)[c]{\footnotesize Optimizer}}}
 \put(6, 2.5){\fcolorbox{black}{heat1}{\framebox(2, 0.7)[c]{\footnotesize Sampler}}}
@@ -1171,7 +1171,7 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
       rep(1L, length = length(Austria))), ...)
   }
 
-  epng("figures/rainmodel-data.png", width = 10, height = 4)
+  epng("figures/rainmodel-data.png", width = 9, height = 3.5)
   par(mfrow = c(1, 2), mar = c(4.1, 4.1, 1.5, 1.5))
   plot(Austria, col = gray(0.9), lwd = 0.3)
   plotUnionAustria(add = TRUE)
@@ -1201,8 +1201,8 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   box()
   dev.off()
 
-  epng("figures/rainmodel-effects-season.png", width = 10, height = 4)
-  par(mfrow = c(1, 2), mar = c(4.1, 4.1, 1.5, 1.5))
+  epng("figures/rainmodel-effects-season-mu.png", width = 4.5, height = 3.5)
+  par(mar = c(4.1, 4.1, 1.5, 1.5))
   redblue1 <- hcl(c(260, 0, 0), c(80, 0, 80), 30, alpha = c(0.15, 0.1, 0.15))
   redblue2 <- hcl(c(260, 0, 0), c(80, 0, 80), 30, alpha = c(0.15, 0.1, 0.15) * 3)
   latbreaks <- c(46.4, 46.7, 48.2, 48.8)
@@ -1218,12 +1218,17 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   lines(fdaymu ~ day, data = nd4, col = "black", lwd = 2, lty = 2)
   legend("bottom", c("Latitude", paste(latbreaks[3:1], latbreaks[4:2], sep = "-")),
     col = c(NA, rev(redblue2)), lty = 1, lwd = 2, bty = "n", cex = 0.8)
-  legend("topleft", c("Mean effect", "Spatial-varying effect"),
+  legend("topright", c("Mean effect", "Spatial-varying effect"),
     col = "black", lty = 2:1, box.col = NA, bg = NA, cex = 0.7) 
   abline(h = 0, lwd = 0.1)
   Axis(as.Date(c("1970-01-01", "1970-12-31")), side = 1)
   axis(2)
   box()
+  main(expression(paste("Seasonal ", mu, " effect")), line = 0.3)
+  dev.off()
+
+  epng("figures/rainmodel-effects-season-sigma.png", width = 4.5, height = 3.5)
+  par(mar = c(4.1, 4.1, 1.5, 1.5))
   matplot(nd2$day, nd2[, grep("fsigma", names(nd2))], type = "l", lty = 1,
     col = redblue1[latcat], lwd = 2, axes = FALSE,
     xlab = "Time", ylab = expression(paste("Effects on ", log(sigma))),
@@ -1233,48 +1238,52 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   Axis(as.Date(c("1970-01-01", "1970-12-31")), side = 1)
   axis(2)
   box()
+  main(expression(paste("Seasonal ", sigma, " effect")), line = 0.3)
   dev.off()
 
-  epng("figures/rainmodel-effects-spatial.png", width = 10, height = 4)
-  par(mfrow = c(1, 2), mar = c(4.1, 4.1, 1.5, 1.5))
+  epng("figures/rainmodel-effects-spatial-mu.png", width = 4.5, height = 3.5)
+  par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot(Austria, xlab = "Longitude [deg]", ylab = "Latitude [deg]", lwd = 0.3)
   xymap(long, lat, fmu, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
     add = TRUE, color = diverge_hcl, shift = c(0.09, 0.04), distance.labels = 0,
-    width = 0.3, symmetric = TRUE, swap = FALSE, range = ylim.mu, digits = 1,
-    title = expression(paste("Effect on ", mu)), cex.title = 0.9, shift.title = c(0, -4.5))
+    width = 0.3, symmetric = TRUE, swap = FALSE, range = ylim.mu, digits = 1)
   plot(Austria, add = TRUE, lwd = 0.3)
   plotUnionAustria(add = TRUE)
   box()
   axis(1)
   axis(2)
+  main(expression(paste("Spatial ", mu, " effect")), line = 0.3)
+  dev.off()
 
+  epng("figures/rainmodel-effects-spatial-sigma.png", width = 4.5, height = 3.5)
+  par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot(Austria, xlab = "Longitude [deg]", ylab = "Latitude [deg]", lwd = 0.3)
   xymap(long, lat, fsigma, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
     add = TRUE, color = diverge_hcl, shift = c(0.09, 0.04), distance.labels = 0,
-    width = 0.3, symmetric = TRUE, swap = FALSE, range = ylim.sigma, digits = 1,
-    title = expression(paste("Effect on ", log(sigma))), cex.title = 0.9, shift.title = c(0, -4.5))
+    width = 0.3, symmetric = TRUE, swap = FALSE, range = ylim.sigma, digits = 1)
   plot(Austria, add = TRUE, lwd = 0.3)
   plotUnionAustria(add = TRUE)
   box()
   axis(1)
   axis(2)
   box()
+  main(expression(paste("Spatial ", sigma, " effect")), line = 0.3)
   dev.off()
 
-  epng("figures/rainmodel-effects-predict.png", width = 10, height = 6)
+  epng("figures/rainmodel-effects-predict.png", width = 9, height = 5)
   par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot(Austria, xlab = "Longitude [deg]", ylab = "Latitude [deg]", lwd = 0.3)
   xymap(long, lat, rain10, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
-    add = TRUE, color = colors.rain, shift = c(0.1, 0.02), distance.labels = 0,
+    add = TRUE, color = colors.rain, shift = c(0.1, 0.1), distance.labels = 0,
     width = 0.3 / 2, height = 0.06 * 4/6, symmetric = FALSE, swap = FALSE, digits = 1, range = c(0, 0.5),
-    lrange = round(c(0, max(nd$rain10)), 1),
-    title = "Mean precipitation [mm] January 10th", cex.title = 0.9, shift.title = c(0, -4))
+    lrange = round(c(0, max(nd$rain10)), 1))
   plot(Austria, add = TRUE, lwd = 0.3)
   plotUnionAustria(add = TRUE)
   box()
   axis(1)
   axis(2)
   box()
+  main("Mean precipitation [mm] January 10th")
   dev.off()
 
   plot.mean.fit <- function(stations = 1, raw = TRUE, mean = TRUE, map = FALSE,
@@ -1310,8 +1319,6 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
       }
     }
   }
-
-  dev.off()
 }
 @
 
@@ -1324,8 +1331,8 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
 
 \begin{figure}[t!]
 \centering
-\includegraphics[width=0.92\textwidth]{figures/rainmodel-effects-season} \\
-\includegraphics[width=0.92\textwidth]{figures/rainmodel-effects-spatial} \\
+\includegraphics[width=0.46\textwidth]{figures/rainmodel-effects-season-mu}\includegraphics[width=0.46\textwidth]{figures/rainmodel-effects-season-sigma} \\[0.5cm]
+\includegraphics[width=0.46\textwidth]{figures/rainmodel-effects-spatial-mu}\includegraphics[width=0.46\textwidth]{figures/rainmodel-effects-spatial-sigma} \\[0.5cm]
 \includegraphics[width=0.92\textwidth]{figures/rainmodel-effects-predict}
 \caption{\label{fig:rainmodeleffects} Estimated effects of the rainmodel.}
 \end{figure}
@@ -1739,36 +1746,36 @@ if(!file.exists("figures/firemodel-data.png")) {
     mtext("Longitude [deg]", side = 3, line = 3, outer = TRUE)
   }
 
-  png("figures/firemodel-data.png", units = "in", res = 120, width = 8, height = 6.5)
+  png("figures/firemodel-data.png", units = "in", res = 120, width = 8 * 1.25, height = 6.5 * 1.25)
   plot.firedata()
   dev.off()
 
-  epng("figures/firemodel-effects-baseline.png", width = 5, height = 4)
+  epng("figures/firemodel-effects-baseline.png", width = 4.5, height = 3.5)
   par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot.firemodel(firemodel_plotdata, what = "curves", main = TRUE)
   dev.off()
 
-  epng("figures/firemodel-effects-fsintens.png", width = 5, height = 4)
+  epng("figures/firemodel-effects-fsintens.png", width = 4.5, height = 3.5)
   par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot.firemodel(firemodel_plotdata, what = "fsintens", main = TRUE)
   dev.off()
 
-  epng("figures/firemodel-effects-daytime.png", width = 5, height = 4)
+  epng("figures/firemodel-effects-daytime.png", width = 4.5, height = 3.5)
   par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot.firemodel(firemodel_plotdata, what = "daytime", main = TRUE)
   dev.off()
 
-  epng("figures/firemodel-effects-prob.png", width = 5, height = 4)
+  epng("figures/firemodel-effects-prob.png", width = 4.5, height = 3.5)
   par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot.firemodel(firemodel_plotdata, what = "spatial_prob", main = TRUE)
   dev.off()
 
-  epng("figures/firemodel-effects-spatial-td.png", width = 5, height = 4)
+  epng("figures/firemodel-effects-spatial-td.png", width = 4.5, height = 3.5)
   par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot.firemodel(firemodel_plotdata, what = "spatial_td", main = TRUE)
   dev.off()
 
-  epng("figures/firemodel-effects-spatial-tc.png", width = 5, height = 4)
+  epng("figures/firemodel-effects-spatial-tc.png", width = 4.5, height = 3.5)
   par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot.firemodel(firemodel_plotdata, what = "spatial_tc", main = TRUE)
   dev.off()
@@ -1783,8 +1790,8 @@ if(!file.exists("figures/firemodel-data.png")) {
 
 \begin{figure}[t!]
 \centering
-\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-baseline}\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-prob} \\
-\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-fsintens}\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-spatial-td} \\
+\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-baseline}\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-prob} \\[0.5cm]
+\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-fsintens}\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-spatial-td} \\[0.5cm]
 \includegraphics[width=0.46\textwidth]{figures/firemodel-effects-daytime}\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-spatial-tc}
 \caption{\label{fig:londonfiredeffects} Estimated effects of the fire emergency response times
   survival model.}
