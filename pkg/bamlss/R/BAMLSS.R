@@ -4011,6 +4011,15 @@ summary.bamlss <- function(object, model = NULL, FUN = NULL, parameters = TRUE, 
   }
   rval$model.matrix <- coef.bamlss(object, model = model, FUN = FUN,
      sterms = FALSE, full.names = FALSE, list = TRUE, parameters = parameters)
+  rval$model.matrix <- lapply(rval$model.matrix, function(x) {
+    if(!is.matrix(x)) {
+      rn <- names(x)
+      x <- matrix(x, ncol = 1)
+      rownames(x) <- rn
+      colnames(x) <- ""
+      x
+    }
+  })
   rval$smooth.construct <- coef.bamlss(object, model = model, FUN = FUN,
      sterms = TRUE, full.names = FALSE, list = TRUE, parameters = parameters, hyper.parameters = TRUE,
      summary = TRUE)

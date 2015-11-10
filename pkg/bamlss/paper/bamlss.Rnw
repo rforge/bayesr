@@ -73,9 +73,9 @@ data("Austria")
 if(!file.exists("figures"))
   dir.create("figures")
 
-epng <- function(file, height = 4, width = 5) {
+epng <- function(file, height = 4, width = 5, res = 200, bg = "white") {
   png(file, height = height, width = width,
-    units = "in", res = 150, bg = "white")
+    units = "in", res = res, bg = bg)
 }
 
 main <- function(text, side = 3, line = 0.5, cex = 1.2, ...) {
@@ -99,16 +99,17 @@ arbitrary forms such as, e.g., linear, nonlinear, spatial or random effects. Hen
 of the distribution is linked to an additive predictor in similar fashion as for the well
 established generalized additive model (GAM,~\citealp{bamlss:Hastie+Tibshirani:1990}).
 
-The terms of an additive predictor can be represented by an unified basis function approach, which
-supports a general model architecture. This fact can be further exploited because each term can be
-transformed into a mixed model representation \citep{bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003}, 
-independent on the assumptions about smoothness controlled by a penalty on the regression
-coefficients. In a Bayesian setting, equivalent smooth forms and generality is achieved using, e.g.,
-normal priors on the regression coefficients
+The terms of an additive predictor are most commonly represented by a basis function approach. This
+leads to a very generic model structure and can be further exploited because each term
+can be transformed into a mixed model representation
+\citep{bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003}. In a full Bayesian setting, this
+generality remains because priors on parameters can also be formalized in general way, e.g.,
+by assigning normal priors on the regression coefficients of smooth terms
 \citep{bamlss:Fahrmeir+Kneib+Lang+Marx:2013, bamlss:Brezger+Lang:2006}.
 
-The Bayesian approach is particularly attractive since it provides valid inference that does not
-rely on asymptotic properties and allows extensions such as variable selection or multilevel models.
+The full Bayesian approach using Marcov Chain Monte Carlo (MCMC) simulation is particularly
+attractive since it provides inference that does not rely on asymptotic properties and allows
+extensions such as variable selection or multilevel models.
 Probably for this reason, and because computational power has tremendously increased in the past
 decade, the number of Bayesian estimation engines that can tackle complicated inferential problems
 has seen a constant rise. As a whole, existing estimation engines already provide infrastructures
@@ -118,7 +119,7 @@ most of the engines support random effect estimation which in the end can in pri
 for setting up complex models with additive predictors (see, e.g., \citealp{bamlss:Wood:2006}).
 
 However, the majority of engines (Bayesian and frequentist) use different model setups and output 
-functionalities, which makes it difficult for practitioners, e.g., to compare properties of
+formats, which makes it difficult for practitioners, e.g., to compare properties of
 different algorithms or to select the appropriate distribution and variables, etc. The reasons are
 manifold: the use of different model specification languages like
 \proglang{BUGS}~\citep{bamlss:BUGS:2009} or \proglang{R}~\citep{bamlss:R}; different standalone
@@ -130,15 +131,16 @@ same environment.
 
 In order to ease the usage of already existing implementations and code, as well as to facilitate
 the development of new algorithms and extensions, we present an unified and entirely modular
-architecture for models with additive predictors which does not restrict to any type of regression
+architecture for models with additive predictors that does not restrict to any type of regression
 problem. Hence, the approach supports more than the GAMLSS statistical model class and is sometimes
 referred to as distributional regression. However, because of the great similarities with GAMLSS we
 call the conceptional framework Bayesian additive models for location, scale and shape (BAMLSS).
 
 The remainder of the paper is as follows. In Section~\ref{sec:models} the models supported by this
-framework are briefly introduced. Section~\ref{sec:arch} then presents the general modeling
-architecture and model specification problem. In Section~\ref{sec:softex} a software implementation
-of the concept is presented briefly together with a couple of examples.
+framework are briefly introduced. Section~\ref{sec:legobox} presents the lego bricks that can be
+utilized for model building and estimation. In Section~\ref{sec:comptools} computational strategies
+for the implemenation are presented. Section \ref{sec:softex} briefly introduces the \proglang{R}
+implementation using two examples.
 
 
 \section{Model structure and overview} \label{sec:models}
@@ -364,7 +366,7 @@ Bayesian point estimates of $\boldsymbol{\vartheta}$ are obtained by posterior m
 estimation. While posterior mode estimation requires maximization of the log-posterior
 (\ref{eqn:logpost}), which has an unique (sometimes analytical) solution in a number of cases,
 posterior mean and median estimation involves solving (possibly) high-dimensional integrals, usually
-requiring computer intensive techniques such as Markov chain Monte Carlo (MCMC) simulation. The
+requiring computer intensive techniques such as Markov chain Monte Carlo simulation. The
 following describes the quantities needed for generic iterative algorithms for estimating Bayesian
 distributional regression models.
 
@@ -494,7 +496,7 @@ $$
 $$
 with diagonal weight matrix $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and penalty matrix
-$\mathbf{G}_{jk} = 0.5\tau_{jk}^{-2}\mathbf{K}_{jk}$. Similarly, the score vector is
+$\mathbf{G}_{jk} = \tau_{jk}^{-2}\mathbf{K}_{jk}$. Similarly, the score vector is
 $$
 \mathbf{s}_k\left( \boldsymbol{\beta}_k^{(t)} \right) =
 \begin{pmatrix}
@@ -948,18 +950,18 @@ The architecture of the conceptional framework is illustrated in Figure~\ref{fig
 \setlength{\unitlength}{1cm}
 \setlength{\fboxsep}{0pt}
 \begin{picture}(10.53, 5.7)(0, 0)
-\put(0, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{Formula}}}}
-\put(2.5, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize Family}}}
-\put(5, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize Data}}}
-\put(2.5, 3.5){\fcolorbox{black}{heat4}{\framebox(2, 0.7)[c]{\footnotesize Model Frame}}}
-\put(2.5, 2.5){\fcolorbox{black}{heat3}{\framebox(2, 0.7)[c]{\footnotesize Transformer}}}
-\put(6, 3.5){\fcolorbox{black}{heat2}{\framebox(2, 0.7)[c]{\footnotesize Optimizer}}}
-\put(6, 2.5){\fcolorbox{black}{heat1}{\framebox(2, 0.7)[c]{\footnotesize Sampler}}}
-\put(6, 1.5){\fcolorbox{black}{heat2}{\framebox(2, 0.7)[c]{\footnotesize Results}}}
-\put(1, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize Summaries}}}
-\put(3.5, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize Plotting}}}
-\put(6, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize Selection}}}
-\put(8.5, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize Prediction}}}
+\put(0, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{formula}}}}
+\put(2.5, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{family}}}}
+\put(5, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{data}}}}
+\put(2.5, 3.5){\fcolorbox{black}{heat4}{\framebox(2, 0.7)[c]{\footnotesize \texttt{model.frame}}}}
+\put(2.5, 2.5){\fcolorbox{black}{heat3}{\framebox(2, 0.7)[c]{\footnotesize \texttt{transformer}}}}
+\put(6, 3.5){\fcolorbox{black}{heat2}{\framebox(2, 0.7)[c]{\footnotesize \texttt{optimizer}}}}
+\put(6, 2.5){\fcolorbox{black}{heat1}{\framebox(2, 0.7)[c]{\footnotesize \texttt{sampler}}}}
+\put(6, 1.5){\fcolorbox{black}{heat2}{\framebox(2, 0.7)[c]{\footnotesize \texttt{results}}}}
+\put(1, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{summary}}}}
+\put(3.5, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{plot}}}}
+\put(6, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{select}}}}
+\put(8.5, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{predict}}}}
 \put(3.5, 4.2){\line(0, 1){0.8}}
 \put(1, 5){\line(0, -1){0.4}}
 \put(6, 5){\line(0, -1){0.4}}
@@ -1057,7 +1059,7 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   homstart <- subset(homstart, year >= 1979)
 
   data("Austria")
-  load("rainmodel.rda")
+  load("rainmodel-final.rda")
 
   nd <- as.data.frame(coordinates(AustriaTopo))
   names(nd) <- c("long", "lat")
@@ -1171,8 +1173,8 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
       rep(1L, length = length(Austria))), ...)
   }
 
-  epng("figures/rainmodel-data.png", width = 9, height = 3.5)
-  par(mfrow = c(1, 2), mar = c(4.1, 4.1, 1.5, 1.5))
+  epng("figures/rainmodel-data-stations.png", width = 4.5, height = 3.5)
+  par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot(Austria, col = gray(0.9), lwd = 0.3)
   plotUnionAustria(add = TRUE)
   points(stations[, 1], stations[, 2], pch = 16, cex = 1, col = "blue")
@@ -1186,6 +1188,10 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
     col = "black",
     pt.bg = "blue",
     box.col = NA, bg = NA, cex = 0.95)
+  dev.off()
+
+  epng("figures/rainmodel-data-hist.png", width = 4.5, height = 3.5)
+  par(mar = c(4.1, 4.1, 1.5, 1.5))
   mf <- model.frame(rainmodel0)
   y <- mf[["sqrt(raw)"]]
   hist(y, freq = FALSE, main = "", col = gray(0.9), breaks = 50,
@@ -1270,12 +1276,12 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   main(expression(paste("Spatial ", sigma, " effect")), line = 0.3)
   dev.off()
 
-  epng("figures/rainmodel-effects-predict.png", width = 9, height = 5)
+  epng("figures/rainmodel-effects-predict.png", width = 9, height = 5, res = 200)
   par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot(Austria, xlab = "Longitude [deg]", ylab = "Latitude [deg]", lwd = 0.3)
   xymap(long, lat, rain10, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
     add = TRUE, color = colors.rain, shift = c(0.1, 0.1), distance.labels = 0,
-    width = 0.3 / 2, height = 0.06 * 4/6, symmetric = FALSE, swap = FALSE, digits = 1, range = c(0, 0.5),
+    width = 0.3 / 2, height = 0.06 * 4/6, symmetric = FALSE, swap = FALSE, digits = 1, range = c(0, 0.6),
     lrange = round(c(0, max(nd$rain10)), 1))
   plot(Austria, add = TRUE, lwd = 0.3)
   plotUnionAustria(add = TRUE)
@@ -1324,7 +1330,7 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
 
 \begin{figure}[t!]
 \centering
-\includegraphics[width=0.92\textwidth]{figures/rainmodel-data}
+\includegraphics[width=0.46\textwidth]{figures/rainmodel-data-stations}\includegraphics[width=0.46\textwidth]{figures/rainmodel-data-hist}
 \caption{\label{fig:rainmodeldata} Distribution of available meteorological stations and
   daily precipitation values.}
 \end{figure}
