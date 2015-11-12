@@ -478,7 +478,8 @@ one parameter is maximized holding the other parameters fixed. Note that this up
 further partitioned for each function within parameter block $k$, leading to a highly modular
 system.
 
-For parameters $\boldsymbol{\beta}_k$, the updating scheme can be written as a $k$-partitionedNewton-Raphson iteration
+For parameters $\boldsymbol{\beta}_k$, the updating scheme can be written as a $k$-partitioned
+Newton-Raphson iteration
 \begin{equation} \label{eqn:blocknewton}
 \boldsymbol{\beta}_k^{(t + 1)} = U_k(\boldsymbol{\beta}_k^{(t)} | \cdot) = \boldsymbol{\beta}_k^{(t)} -
   \mathbf{H}_{kk}\left( \boldsymbol{\beta}_k^{(t)} \right)^{-1}\mathbf{s}_k\left( \boldsymbol{\beta}_k^{(t)} \right).
@@ -585,15 +586,22 @@ and derivatives $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta} | \mathbf{y}) /
 with working observations
 $\mathbf{z}_k = \boldsymbol{\eta}_{k}^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$.
 Hence, this leads to a backfitting algorithm and cycling through (\ref{eqn:blockbackfit}) for
-terms $j = 1, \ldots, J_k$ and parameters $k = 1, \ldots, K$ is equivalent to a single
-Newton-Raphson step in (\ref{eqn:newton}). Note that this is a slightly simplified version of the
-backfitting algorithm developed in \citet{bamlss:Rigby+Stasinopoulos:2005} Appendix~C.2.
-The updating scheme (\ref{eqn:blockbackfit}) can be further generalized to
+terms $j = 1, \ldots, J_k$ and parameters $k = 1, \ldots, K$ is approximate to a single
+Newton-Raphson step in (\ref{eqn:newton}), because cross derivatives are not incorporated and
+therefore overall convergence will be slower.
+Note that this yields the ingredients of the \emph{RS}-algorithm developed in
+\citet{bamlss:Rigby+Stasinopoulos:2005} Appendix~B.2. The updating scheme (\ref{eqn:blockbackfit})
+can be further generalized to
 $$
 \mathbf{f}_{jk}^{(t)} = \mathbf{S}_{jk}\left(\mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}\right)
 $$
 i.e., theoretically any smoother function $\mathbf{S}_{jk}( \cdot )$ applied on the
-``partial residuals'' can be used.
+``partial residuals'' can be used. For optimization, different strategies of the backfitting
+algorithm (\ref{eqn:blockbackfit}) can be applied. One alternative is an inner backfitting algorithm
+for each parameter $k$, i.e., the backfitting procedure updates
+$\boldsymbol{\beta}_{jk}$, for $j = 1, \ldots, J_k$ until convergence, afterwards updates for
+parameters for the next $k$ are calculated again by an inner backfitting algorithm, and so forth
+(see also \citealp{bamlss:Rigby+Stasinopoulos:2005}).
 
 Note that for numerical reasons it is oftentimes better to replace the hessian by the expected
 Fisher information with weights $\mathbf{W}_{kk} = -\mathrm{diag}(E(\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y}) /
@@ -608,9 +616,9 @@ The mean of the posterior distribution is
 E(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X}) =
   \int \boldsymbol{\vartheta} p(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X})d\boldsymbol{\vartheta}.
 \end{equation}
-Clearly, the problem in deriving the expectation relies on the computation of the usually
-high-dimensional integral, which can be rarely solved analytically and needs to be approximated
-by numerical techniques. 
+Clearly, the problem in deriving the expectation, and other quantities like the posterior median,
+relies on the computation of the usually high-dimensional integral, which can be rarely solved
+analytically and needs to be approximated by numerical techniques.  
 
 MCMC simulation is commonly used in such situations as it provides an extendable framework that can 
 adapt to almost any type of problem. Moreover, computational power has increases tremendously in the
@@ -740,7 +748,9 @@ following methods:
   $-E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
     \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$,
   in each iteration of the MCMC sampler using iteratively reweighted least squares (IWLS)
-  \citep{bamlss:Gamerman:1997, bamlss:Brezger+Lang:2006, bamlss:Klein+Kneib+Klasen+Lang:2014}.
+  \citep{bamlss:Gamerman:1997, bamlss:Brezger+Lang:2006, bamlss:Klein+Kneib+Klasen+Lang:2014}. If
+  the computation of the weights $\mathbf{W}_{kk}$ is expensive, one simple strategy is to update
+  $\mathbf{W}_{kk}$ only after samples all parameters of $\boldsymbol{\theta}_k$ are drawn.
 
 \item \emph{Slice sampling}: \label{sec:smcmc} \\
   Slice sampling \citep{bamlss:Neal:2003} is a gradient free MCMC sampling scheme that produces
@@ -775,6 +785,11 @@ the computational burden does most of the times not exceed possible benefits.
 
 
 \subsection{Inference and prediction} \label{sec:infpred}
+
+Inference for parameters $\boldsymbol{\beta}_{jk}$ can be based on the asymptotic normality of the
+posterior distribution, which is valid for any posterior distribution under suitable regularity
+conditions.
+
 
 \subsection{Lego bricks} \label{sec:leobricks}
 
