@@ -437,7 +437,7 @@ the derivative of the link functions and the derivative of the STAR predictor
 $\boldsymbol{\eta}_k$ with respect to coefficients $\boldsymbol{\beta}_k$. Again by chain rule,
 the components of $\mathbf{H}_{ks}$ including $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$ can be
 written as
-\begin{equation} \label{hessian2}
+\begin{equation} \label{eqn:hessian2}
 \frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top} =
 \left( \frac{\partial \boldsymbol{\eta}_s}{\partial \boldsymbol{\beta}_s} \right)^\top
 \frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top}
@@ -617,8 +617,8 @@ E(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X}) =
   \int \boldsymbol{\vartheta} p(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X})d\boldsymbol{\vartheta}.
 \end{equation}
 Clearly, the problem in deriving the expectation, and other quantities like the posterior median,
-relies on the computation of the usually high-dimensional integral, which can be rarely solved
-analytically and needs to be approximated by numerical techniques.  
+relies on the computation of usually high-dimensional integrals, which can be rarely solved
+analytically and need to be approximated by numerical techniques.  
 
 MCMC simulation is commonly used in such situations as it provides an extendable framework that can 
 adapt to almost any type of problem. Moreover, computational power has increases tremendously in the
@@ -784,39 +784,71 @@ strategy is to use slice sampling, since the number of smoothing variances is us
 the computational burden does most of the times not exceed possible benefits.
 
 
+\newpage
+
+
 \subsection{Inference and prediction} \label{sec:infpred}
 
-Inference for parameters $\boldsymbol{\beta}_{jk}$ can be based on the asymptotic normality of the
-posterior distribution, which is valid for any posterior distribution under suitable regularity
-conditions.
+Under suitable regularity conditions inference for parameters $\boldsymbol{\beta}_{jk}$ can be based
+on the asymptotic normality of the posterior distribution
+$$ \label{eqn:asynorm}
+\boldsymbol{\beta}_{jk} \, | \, \mathbf{y} \overset{a}{\sim} N\left(\hat{\boldsymbol{\beta}}_{jk},
+  \mathbf{H}(\hat{\boldsymbol{\beta}}_{jk})^{-1}\right),
+$$
+with $\hat{\boldsymbol{\beta}}_{jk}$ as the posterior mode estimate. However, this approach is
+problematic since it does not take into account the uncertainty of estimated smoothing parameters.
+Moreover, from a computational perspective it can be difficult to derive the full Hessian
+information, because this might involve complex cross derivatives of the parameters and there
+are cases where standard numerical techniques cannot be applied (see Section~\ref{sec:coxreg}).
 
+Instead, applying full Bayesian inference is relatively easy by direct computation of desired
+statistics from posterior samples. Computational costs are relatively low, since only samples for
+parameters $\boldsymbol{\beta}_{jk}$ and $\tau_{jk}^2$ need to be saved (in practice
+about 2000-3000 are sufficient) from which inference of any combination of terms is straightforward,
+too.
+
+The posterior predictive distribution is approximated similarly. Random samples for response
+observations are computed by drawing samples from the response distribution
+\begin{equation} \label{eqn:pdist}
+y^\star \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{1}^{(t)}), \,\,
+  h_{2}(\theta_{2}^{(t)}), \dots, \,\, h_{K}(\theta_{K}^{(t)})\right)
+\end{equation}
+for each posterior sample $\theta_k^{(t)}$, $t = 1, \ldots, T$.
 
 \subsection{Lego bricks} \label{sec:leobricks}
 
-From the above, it can be recognized that the following quantities are repeatedly used within
+From the above, it can be recognized that the following ``lego bricks'' are repeatedly used within
 BAMLSS candidate algorithms:
 \begin{itemize}
-\item The density function $f(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$.
-\item The first order derivatives
-  $\partial \ell(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\theta}_k$,
-  $\partial \boldsymbol{\theta}_k / \partial \boldsymbol{\eta}_k$ and
-  $\partial \boldsymbol{\eta}_k / \partial \boldsymbol{\vartheta}_k$.
-\item Second order derivatives
-  $\partial^2 \ell(\boldsymbol{\vartheta} | \mathbf{y}) / \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top$.
-\item Derivatives for priors, e.g., $\log \, p(\boldsymbol{\beta}_{jk} | \tau_{jk}^2)$ and $\log \, p(\tau_{jk}^2)$.
+\item The density function (\ref{eqn:density}),
+\item the first order derivatives of $\boldsymbol{\beta}_k$ the log-likelihood (\ref{eqn:score2}),
+\item the second order derivatives of $\boldsymbol{\beta}_k$ the log-likelihood (\ref{eqn:hessian2}),
+\item derivatives for log-priors, e.g., $\log \, p(\boldsymbol{\beta}_{jk} | \tau_{jk}^2)$ and $\log \, p(\tau_{jk}^2)$.
 \end{itemize}
-Hence, a modular family specification system can in principle be used to implement various
-estimation algorithms. A simple generic algorithm for BAMLSS models is outlined by the 
-following pseudo code:
+As shown in Section~\ref{sec:postmode}, first and second order derivatives of $\boldsymbol{\beta}_k$
+can in most cases be computed by fragmenting with the chain rule into derivatives of the
+log-likelihood with respect to parameters $\boldsymbol{\theta}_k$, derivatives of link functions
+with respect to the linear predictors $\boldsymbol{\eta}_k$ and derivatives of $\boldsymbol{\eta}_k$
+with respect to the regression coefficients $\boldsymbol{\beta}_k$. Hence, most of the structures
+can be reused when implementing new models and/or algorithms, i.e., applying the backfitting
+algorithm (\ref{eqn:blockbackfit}) and derivative based MCMC as shown in Section~\ref{sec:dmh}
+usually only requires the calculation of derivates of the log-likelihood with respect to
+parameters $\boldsymbol{\theta}_k$ anew.
+
+Therefore, even though the models can be rather complex, it is possible to construct a quite simple
+modular system from which it is easy to create algorithms for numerous regression problems.
+Moreover, using the ideas of partitioned updating (\ref{eqn:pupdate}) and blockwise MCMC sampling,
+a simple generic algorithm for BAMLSS models is outlined by the following pseudo code:
 \begin{center}
 \begin{minipage}[c]{13cm}
-\code{while(eps >} $\varepsilon\,$ \code{\& i < maxit) \{ } \\
+\code{while(eps >} $\varepsilon\,$ \code{\& t < maxit) \{ } \\
 \hspace*{0.5cm} \code{for(k in 1:K) \{} \\
-\hspace*{1cm} \code{for(j in 1:p) \{} \\
-\hspace*{1.5cm} Compute $\boldsymbol{\eta}^{\texttt{[k]}}_{\texttt{-j}} = \boldsymbol{\eta}^{\texttt{[k]}} - \mathbf{f}_{\texttt{j}}^{\texttt{[k]}}$. \\
-\hspace*{1.5cm} Obtain new $(\boldsymbol{\beta}^{\texttt{[k]}}_{\texttt{j}}, {\tau^2}^{\texttt{[k]}}_{\texttt{j}})^\top = \texttt{u}_{\texttt{j}}^{\texttt{[k]}}(\mathbf{y}, \boldsymbol{\eta}^{\texttt{[k]}}_{\texttt{-j}},
-  \mathbf{x}^{\texttt{[k]}}_{\texttt{j}}, \boldsymbol{\beta}^{\texttt{[k]}}_{\texttt{j}}, {\tau^2}^{\texttt{[k]}}_{\texttt{j}}, \texttt{family}, \texttt{k})$. \\
-\hspace*{1.5cm} Update $\boldsymbol{\eta}^{\texttt{[k]}}$. \\
+\hspace*{1cm} \code{for(j in 1:J[k]) \{} \\
+\hspace*{1.5cm} Compute $\tilde{\boldsymbol{\eta}} = \boldsymbol{\eta}_{\texttt{k}} - \mathbf{f}_{\texttt{jk}}$. \\
+\hspace*{1.5cm} Obtain new $(\boldsymbol{\beta}_{\texttt{jk}}^\star, (\tau^2_{\texttt{jk}})^\star)^\top = \texttt{U}_{\texttt{jk}}
+  (\mathbf{X}_{\texttt{jk}}, \mathbf{y}, \tilde{\boldsymbol{\eta}}, \boldsymbol{\beta}_{\texttt{jk}}^{\texttt{[t]}},
+  (\tau^2_{\texttt{jk}})^{\texttt{[t]}})$. \\
+\hspace*{1.5cm} Update $\boldsymbol{\eta}_{\texttt{k}}$. \\
 \hspace*{1cm} \code{\}} \\
 \hspace*{0.5cm} \code{\}} \\
 \hspace*{0.5cm} Compute new \code{eps} \\
@@ -824,15 +856,12 @@ following pseudo code:
 \end{minipage}
 \end{center}
 The algorithm does not distinguish between the frequentist or Bayesian approach, because the 
-functions $\texttt{u}_{\texttt{j}}^{\texttt{[k]}}( \cdot )$ could either return proposals from
+functions $\texttt{U}_{\texttt{jk}}( \cdot )$ could either return proposals from
 a MCMC sampler or updates from an optimizing algorithm like the IWLS. Therefore, $\varepsilon$ 
 (e.g., $0.0001$) and \code{eps} represent the stopping mechanism in an optimizer while
-\code{maxit} controls the maximum iterations of a MCMC sampler, too. To achieve this flexibility a
-\code{family} object that contains all distribution specific information to compute the new
-parameters
-$(\boldsymbol{\beta}^{\texttt{[k]}}_{\texttt{j}}, {\tau^2}^{\texttt{[k]}}_{\texttt{j}})^\top$ is
-required, e.g., containing the log-likelihood function, the first and second order derivatives,
-etc., as described in the above.
+\code{maxit} controls the maximum iterations of a MCMC sampler, too. Also note that the updating
+functions could be different for each function $f_{jk}( \cdot )$, incorporating even more flexibility
+to the modeling system.
 
 %In practice, only few implementations support an entirely modular setup that can be
 %extended by the user. Examples that do support some flexibility are the \proglang{R}
