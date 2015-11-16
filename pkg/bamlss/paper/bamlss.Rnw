@@ -325,10 +325,6 @@ that are available for the covariate(s).
 
 \subsection{Response distribution} \label{sec:density}
 
-%Any statistical software for regression models needs some description system for the supported
-%distributions. Since most estimation algorithms have at least one common part, a modular system
-%with reusable elements arises naturally from the following characterizations.
-
 The main building block of regression model algorithms is the probability density function
 $f(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$, or for
 computational reasons its logarithm.
@@ -817,8 +813,8 @@ for each posterior sample $\theta_k^{(t)}$, $t = 1, \ldots, T$.
 
 \subsection{Lego bricks} \label{sec:leobricks}
 
-From the above, it can be recognized that the following ``lego bricks'' are repeatedly used within
-BAMLSS candidate algorithms:
+From Section~\ref{sec:postmean} and \ref{sec:postmode}, it can be recognized that the following
+``lego bricks'' are repeatedly used within BAMLSS candidate algorithms:
 \begin{itemize}
 \item The density function (\ref{eqn:density}),
 \item the first order derivatives of $\boldsymbol{\beta}_k$ the log-likelihood (\ref{eqn:score2}),
@@ -860,8 +856,8 @@ functions $\texttt{U}_{\texttt{jk}}( \cdot )$ could either return proposals from
 a MCMC sampler or updates from an optimizing algorithm like the IWLS. Therefore, $\varepsilon$ 
 (e.g., $0.0001$) and \code{eps} represent the stopping mechanism in an optimizer while
 \code{maxit} controls the maximum iterations of a MCMC sampler, too. Also note that the updating
-functions could be different for each function $f_{jk}( \cdot )$, incorporating even more flexibility
-to the modeling system.
+functions could in principle be different for each function $f_{jk}( \cdot )$, incorporating even
+more flexibility to the modeling system.
 
 %In practice, only few implementations support an entirely modular setup that can be
 %extended by the user. Examples that do support some flexibility are the \proglang{R}
@@ -985,6 +981,15 @@ category 1 and \code{response2} in category 2, respectively.
 
 In summary, the described model definition syntax does not restrict to any type of regression
 model, number of parameters and hierarchies.
+
+
+\subsection{Distribution families} \label{sec:families}
+
+Any statistical software for regression models needs some description system for the supported
+distributions. For modular systems, the family descriptor involves a function that evaluates
+the density function $f(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$ or its
+logarithm given the parameters $\boldsymbol{\theta}_k$ as well as the involved link functions.
+
 
 \subsection{Building blocks} \label{sec:blocks}
 
