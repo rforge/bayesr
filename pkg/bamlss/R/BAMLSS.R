@@ -4019,6 +4019,7 @@ summary.bamlss <- function(object, model = NULL, FUN = NULL, parameters = TRUE, 
       colnames(x) <- ""
       x
     }
+    x
   })
   rval$smooth.construct <- coef.bamlss(object, model = model, FUN = FUN,
      sterms = TRUE, full.names = FALSE, list = TRUE, parameters = parameters, hyper.parameters = TRUE,
