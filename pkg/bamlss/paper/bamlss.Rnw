@@ -816,20 +816,22 @@ for each posterior sample $\theta_k^{(t)}$, $t = 1, \ldots, T$.
 From Section~\ref{sec:postmean} and \ref{sec:postmode}, it can be recognized that the following
 ``lego bricks'' are repeatedly used within BAMLSS candidate algorithms:
 \begin{itemize}
-\item The density function (\ref{eqn:density}),
-\item the first order derivatives of $\boldsymbol{\beta}_k$ the log-likelihood (\ref{eqn:score2}),
-\item the second order derivatives of $\boldsymbol{\beta}_k$ the log-likelihood (\ref{eqn:hessian2}),
-\item derivatives for log-priors, e.g., $\log \, p(\boldsymbol{\beta}_{jk} | \tau_{jk}^2)$ and $\log \, p(\tau_{jk}^2)$.
+\item The density function $f(y ; \theta_{i} = h_1^{-1}(\eta_{1}(\mathbf{x}, \boldsymbol{\beta}_1)), \ldots,
+  \theta_{K} = h_K^{-1}(\eta_{K}(\mathbf{x}, \boldsymbol{\beta}_K)))$,
+\item link functions $h_k( \cdot )$,
+\item the first order derivatives $\frac{\partial \log \, p(\boldsymbol{\vartheta} ; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_k}$,
+\item the second order derivatives $\frac{\partial^2 \log \, p(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top}$,
+\item derivatives for log-priors, e.g., $\frac{\partial \log \, p_{jk}(\boldsymbol{\vartheta}_{jk})}{\partial \boldsymbol{\vartheta}_{jk}}$.
 \end{itemize}
-As shown in Section~\ref{sec:postmode}, first and second order derivatives of $\boldsymbol{\beta}_k$
-can in most cases be computed by fragmenting with the chain rule into derivatives of the
-log-likelihood with respect to parameters $\boldsymbol{\theta}_k$, derivatives of link functions
-with respect to the linear predictors $\boldsymbol{\eta}_k$ and derivatives of $\boldsymbol{\eta}_k$
-with respect to the regression coefficients $\boldsymbol{\beta}_k$. Hence, most of the structures
-can be reused when implementing new models and/or algorithms, i.e., applying the backfitting
-algorithm (\ref{eqn:blockbackfit}) and derivative based MCMC as shown in Section~\ref{sec:dmh}
-usually only requires the calculation of derivates of the log-likelihood with respect to
-parameters $\boldsymbol{\theta}_k$ anew.
+As shown in Section~\ref{sec:postmode}, first and second order derivatives of the log-likelihood
+w.r.t.\ $\boldsymbol{\beta}_k$ can in most cases be computed by fragmenting with the chain rule into
+derivatives of the log-likelihood w.r.t.\ parameters $\boldsymbol{\theta}_k$, derivatives of link
+functions w.r.t.\ the linear predictors $\boldsymbol{\eta}_k$ and derivatives of
+$\boldsymbol{\eta}_k$ w.r.t.\ the regression coefficients $\boldsymbol{\beta}_k$. Hence, most of the
+structures can be reused when implementing new models and/or algorithms, i.e., applying the
+backfitting algorithm (\ref{eqn:blockbackfit}) and derivative based MCMC as shown in
+Section~\ref{sec:dmh} usually only requires the calculation of derivates of the log-likelihood
+w.r.t.\ parameters $\boldsymbol{\theta}_k$ anew.
 
 Therefore, even though the models can be rather complex, it is possible to construct a quite simple
 modular system from which it is easy to create algorithms for numerous regression problems.
@@ -987,8 +989,68 @@ model, number of parameters and hierarchies.
 
 Any statistical software for regression models needs some description system for the supported
 distributions. For modular systems, the family descriptor involves a function that evaluates
-the density function $f(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$ or its
-logarithm given the parameters $\boldsymbol{\theta}_k$ as well as the involved link functions.
+the density function $f(y ; \theta_{i} = h_1^{-1}(\eta_{1}(\mathbf{x}, \boldsymbol{\beta}_1)), \ldots,
+  \theta_{K} = h_K^{-1}(\eta_{K}(\mathbf{x}, \boldsymbol{\beta}_K)))$ or its
+logarithm. In addition, link functions can usually be chosen by the user, i.e., these need to be
+provided within the descriptor, typically as character strings.
+
+As already noted in Section~\ref{sec:leobricks}, in the case of
+IWLS backfitting (\ref{eqn:blockbackfit}) and derivative based MCMC simulation \ref{sec:dmh},
+implementing a new distribution most of the times only requires to compute derivatives of
+the log-likelihood w.r.t.\ to parameters $\boldsymbol{\theta}_k$, hence, a modular family description
+system provides functions for first and second order derivatives which take
+$\boldsymbol{\theta}_k$ as an argument.
+
+For post-modeling analysis, a complete family descriptor also involves functions that compute the
+distribution function as well as the quantile function, again with parameters
+$\boldsymbol{\theta}_k$ as an argument.
+
+Computing the Bayesian predictive distribution additionally requires a function for random number
+generation from the distribution used for modeling.
+
+Following the basic principles of standard family descriptors for GLMs in \proglang{R}, a modular
+BAMLSS family descriptor for, e.g., the normal distribution with
+$\mathbf{y} \sim N(\boldsymbol{\mu}, \boldsymbol{\sigma}^2)$ can then be summarized by the following
+pseudo code:
+\begin{center}
+{ \renewcommand{\arraystretch}{1}
+\begin{tabular}{l}
+\code{list(} \\
+$\quad$ \code{family, names, links,} \medskip \\
+$\quad$ \code{d(y, par),} \\
+$\quad$ \code{p(y, par),} \\
+$\quad$ \code{q(y, par),} \\
+$\quad$ \code{r(y, par),} \medskip \\
+$\quad$ \code{score = list(} \\
+$\quad\quad$ \code{mu(y, par),} \\
+$\quad\quad$ \code{sigma(y, par)} \\
+$\quad$ \code{),} \\
+$\quad$ \code{hess = list(} \\
+$\quad\quad$ \code{mu(y, par),} \\
+$\quad\quad$ \code{sigma(y, par)} \\
+$\quad$ \code{)} \\
+\code{)}
+\end{tabular}
+}
+\end{center}
+Here, object \code{family} represents the name of the distribution as a character, similarly
+\code{names} indicates the parameter names and \code{links} its corresponding link functions.
+
+Function \code{d()} represents the density function, which can be evaluated given the response
+\code{y} and a named list of parameters \code{par}, i.e., each list entry in \code{par} holds one
+parameter of the distribution. Function \code{p()}, \code{q()} and \code{r()} are the distribution
+function, quantile function and the random number generator.
+
+For computing derivatives of $\boldsymbol{\beta}_k$, two additional list entries \code{score}
+and \code{hess} are required. Each of them hold functions for first or second order derivatives of
+the log-likelihood w.r.t.\ to parameters $\boldsymbol{\theta}_k$.
+
+Note that this example can easily be generalized to problems with any number of parameters/predictors.
+
+In summary, such a ``family'' object holds all information that is required by subsequent modeling
+and post-processing functions, i.e., for implementing new algorithms and/or interfaces to existing
+model fitters, it is natural to provide any extra ingredients needed within this object. This way
+a highly modular system can be created.
 
 
 \subsection{Building blocks} \label{sec:blocks}
@@ -1043,11 +1105,11 @@ calls the engine, either an external device or code within the same environment.
 from the engine is then uniformly processed in a results function to be able to plot estimates, 
 create summary statistics, and so forth.
 
-The main advantage of the architecture is that the blocks parser, transformer, setup, engine and 
-results are entirely exchangeable and reusable, i.e., it is relatively easy to incorporate new
-algorithms or engines. The other blocks are assumed to be more or less stable such that no extra
-coding is required. An implementation of this concept together with examples is illustrated in the
-next section.
+The main advantage of the architecture is that the blocks model frame, transformer, optimizer,
+sampler and results are entirely exchangeable and reusable, i.e., it is relatively easy to
+incorporate new algorithms or engines. The other blocks are assumed to be more or less stable such
+that no extra coding is required. An implementation of this concept together with examples is
+illustrated in the next section.
 
 
 \section{Software implementation and examples} \label{sec:softex}
