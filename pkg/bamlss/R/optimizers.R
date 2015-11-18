@@ -337,7 +337,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, ...)
         grad <- 0; grad2 <- NULL
         for(j in seq_along(tau2)) {
           gS <- x$S[[j]] %*% gamma
-          grad <- grad + drop(-0.5 / tau2[j] * gS)
+          grad <- grad + drop(-1 / tau2[j] * gS)
           if(full & !is.null(tau2[j])) {
             grad2 <- c(grad2, drop(-x$rank[j] / (2 * tau2[j]) - 1 / (2 * tau2[j]^2) * gS %*% gamma + (-x$a - 1) / tau2[j] + x$b / (tau2[j]^2)))
             x$X <- cbind(x$X, 0)
@@ -363,7 +363,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, ...)
       } else {
         hx <- 0
         for(j in seq_along(tau2)) {
-          hx <- hx + (1 / tau2[j]) * x$S[[j]]
+          hx <- hx + (-1 / tau2[j]) * x$S[[j]]
         }
       }
       return(hx)
