@@ -363,7 +363,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, ...)
       } else {
         hx <- 0
         for(j in seq_along(tau2)) {
-          hx <- hx + (-1 / tau2[j]) * x$S[[j]]
+          hx <- hx + (1 / tau2[j]) * x$S[[j]]
         }
       }
       return(hx)
