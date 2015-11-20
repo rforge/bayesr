@@ -838,7 +838,9 @@ modular system from which it is easy to create algorithms for numerous regressio
 Moreover, using the ideas of partitioned updating (\ref{eqn:pupdate}) and blockwise MCMC sampling,
 a simple generic algorithm for BAMLSS models is outlined by the following pseudo code:
 \begin{center}
-\begin{minipage}[c]{13cm}
+\fbox{
+\begin{minipage}[c]{11.3cm}
+$\phantom{i}$ \\[-0.3cm]
 \code{while(eps >} $\varepsilon\,$ \code{\& t < maxit) \{ } \\
 \hspace*{0.5cm} \code{for(k in 1:K) \{} \\
 \hspace*{1cm} \code{for(j in 1:J[k]) \{} \\
@@ -849,9 +851,12 @@ a simple generic algorithm for BAMLSS models is outlined by the following pseudo
 \hspace*{1.5cm} Update $\boldsymbol{\eta}_{\texttt{k}}$. \\
 \hspace*{1cm} \code{\}} \\
 \hspace*{0.5cm} \code{\}} \\
-\hspace*{0.5cm} Compute new \code{eps} \\
-\code{\}}
+\hspace*{0.5cm} \code{t = t + 1} \\
+\hspace*{0.5cm} Compute new \code{eps}. \\
+\code{\}} \\[-0.3cm]
+$\phantom{i}$
 \end{minipage}
+} \label{fig:bamlssalgo}
 \end{center}
 The algorithm does not distinguish between the frequentist or Bayesian approach, because the 
 functions $\texttt{U}_{\texttt{jk}}( \cdot )$ could either return proposals from
