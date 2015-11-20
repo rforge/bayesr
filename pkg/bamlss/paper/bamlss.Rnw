@@ -836,7 +836,8 @@ w.r.t.\ parameters $\boldsymbol{\theta}_k$ anew.
 Therefore, even though the models can be rather complex, it is possible to construct a quite simple
 modular system from which it is easy to create algorithms for numerous regression problems.
 Moreover, using the ideas of partitioned updating (\ref{eqn:pupdate}) and blockwise MCMC sampling,
-a simple generic algorithm for BAMLSS models is outlined by the following pseudo code:
+a simple generic algorithm for BAMLSS models is outlined in Figure~\ref{fig:algodesign}.
+\begin{figure}[ht!]
 \begin{center}
 \fbox{
 \begin{minipage}[c]{11.3cm}
@@ -858,6 +859,8 @@ $\phantom{i}$
 \end{minipage}
 } \label{fig:bamlssalgo}
 \end{center}
+\caption{\label{fig:algodesign} Generic BAMLSS model fitting algorithm.}
+\end{figure}
 The algorithm does not distinguish between the frequentist or Bayesian approach, because the 
 functions $\texttt{U}_{\texttt{jk}}( \cdot )$ could either return proposals from
 a MCMC sampler or updates from an optimizing algorithm like the IWLS. Therefore, $\varepsilon$ 
@@ -1015,29 +1018,34 @@ generation from the distribution used for modeling.
 
 Following the basic principles of standard family descriptors for GLMs in \proglang{R}, a modular
 BAMLSS family descriptor for, e.g., the normal distribution with
-$\mathbf{y} \sim N(\boldsymbol{\mu}, \boldsymbol{\sigma}^2)$ can then be summarized by the following
-pseudo code:
+$\mathbf{y} \sim N(\boldsymbol{\mu}, \boldsymbol{\sigma}^2)$ can then be summarized in
+Figure~\ref{fig:families}.
+\begin{figure}[ht!]
 \begin{center}
-{ \renewcommand{\arraystretch}{1}
-\begin{tabular}{l}
+\fbox{
+\begin{minipage}[c]{5cm}
+$\phantom{i}$ \\[-0.3cm]
 \code{list(} \\
-$\quad$ \code{family, names, links,} \medskip \\
-$\quad$ \code{d(y, par),} \\
-$\quad$ \code{p(y, par),} \\
-$\quad$ \code{q(y, par),} \\
-$\quad$ \code{r(y, par),} \medskip \\
-$\quad$ \code{score = list(} \\
-$\quad\quad$ \code{mu(y, par),} \\
-$\quad\quad$ \code{sigma(y, par)} \\
-$\quad$ \code{),} \\
-$\quad$ \code{hess = list(} \\
-$\quad\quad$ \code{mu(y, par),} \\
-$\quad\quad$ \code{sigma(y, par)} \\
-$\quad$ \code{)} \\
-\code{)}
-\end{tabular}
+\hspace*{0.5cm} \code{family, names, links,} \medskip \\
+\hspace*{0.5cm} \code{d(y, par),} \\
+\hspace*{0.5cm} \code{p(y, par),} \\
+\hspace*{0.5cm} \code{q(y, par),} \\
+\hspace*{0.5cm} \code{r(y, par),} \medskip \\
+\hspace*{0.5cm} \code{score = list(} \\
+\hspace*{1cm} \code{mu(y, par),} \\
+\hspace*{1cm} \code{sigma(y, par)} \\
+\hspace*{0.5cm} \code{),} \\
+\hspace*{0.5cm} \code{hess = list(} \\
+\hspace*{1cm} \code{mu(y, par),} \\
+\hspace*{1cm} \code{sigma(y, par)} \\
+\hspace*{0.5cm} \code{)} \\
+\code{)} \\[-0.3cm]
+$\phantom{i}$
+\end{minipage}
 }
 \end{center}
+\caption{\label{fig:families} Example of the family descriptor for the normal distribution.}
+\end{figure}
 Here, object \code{family} represents the name of the distribution as a character, similarly
 \code{names} indicates the parameter names and \code{links} its corresponding link functions.
 
