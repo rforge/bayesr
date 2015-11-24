@@ -1056,7 +1056,7 @@ function, quantile function and the random number generator.
 
 For computing derivatives of $\boldsymbol{\beta}_k$, two additional list entries \code{score}
 and \code{hess} are required. Each of them hold functions for first or second order derivatives of
-the log-likelihood w.r.t.\ to parameters $\boldsymbol{\theta}_k$.
+the log-likelihood w.r.t.\ to parameters $\boldsymbol{\theta}_k$ (here, $\mu$ and $\sigma$).
 
 Note that this example can easily be generalized to problems with any number of parameters/predictors.
 
@@ -1122,13 +1122,71 @@ The main advantage of the architecture is that the blocks model frame, transform
 sampler and results are entirely exchangeable and reusable, i.e., it is relatively easy to
 incorporate new algorithms or engines. The other blocks are assumed to be more or less stable such
 that no extra coding is required. An implementation of this concept together with examples is
-illustrated in the next section.
+illustrated in the next section. 
 
 
 \section{Software implementation and examples} \label{sec:softex}
 
 
 \subsection{Precepitation climatolgy from daily observations} \label{sec:censreg}
+
+Climatology models are one important component of the meteorological tool set. The accurate
+and complete knowledge of precipitation climatologies is especially relevant for problems involving
+agriculture, risk assessment, water management, tourism etc. One particular challenge of such models
+is the prediction of precipitation into areas without measurement. This is usually accounted for
+by multi-step procedures using interpolation methods like Kriging \citep{bamlss:Krige:1951}.
+Precipitation climatology models usually assume a normal distribution and are computed for
+monthly aggregated observations. However, because precipitation data is skewed and exhibits high
+density at zero observations the assumption of a normal distribution is critical and
+models for monthly data may have limited information value on finer temporal resolutions.
+
+To contribute to this topic we analyze precipitation data of Austria taken from the HOMSTART
+project
+(\url{http://www.zamg.ac.at/cms/de/forschung/klima/datensaetze/homstart/})
+conducted at the Zentralanstalt f\"ur Meteorologie und Geodynamik (ZAMG) and funded by the Austrian
+Climate Research Programme (ACRP). \citet{bamlss:Umlauf+Mayr+Messner:2012} already investigated the
+question if it rains more frequently on weekends than during work days using the HOMSTART data.
+The data set consists of daily precipitation time series within 1948--2009. Time series that could
+not be homogenized, e.g., due to missing appropriate reference stations or other uncertainties, are
+left out of the analysis. Overall, a rather dense net of 57~stations is used for modeling.
+In Figure~\ref{fig:rainmodeldata}, left panel, the distribution of the final meteorological stations
+is shown.
+
+As precipitation observations are limited to zero, a natural extension to the models that have been
+discussed for this type of data is censoring. Censoring assumes that a certain quantity cannot be
+observed below or above some certain threshold. Here, we assume a ``left-censored'' normal
+distribution with a threshold at zero. Moreover, to make positive observations more ``normal'', we
+carry out a square root transformation of the daily observations. The censored normal distribution
+seems to fit quite well to the data as shown in the right panel of Figure~\ref{fig:rainmodeldata}.
+
+The censored normal model with latent Gaussian variable $\mathbf{y}^\star$ and
+observed response $\mathbf{y}$, the square root of daily precipitation observations, is given by
+\begin{eqnarray*}
+\mathbf{y}^\star &\sim& N(\boldsymbol{\mu}, \boldsymbol{\sigma}^2) \\
+\boldsymbol{\mu} &=& \boldsymbol{\eta}_{\mu} \\
+\log(\boldsymbol{\sigma}) &=& \boldsymbol{\eta}_{\sigma} \\
+\mathbf{y} &=& max(\mathbf{0}, \mathbf{y}^\star).
+\end{eqnarray*}
+Modeling precipitation in complex terrain like the Alps naturally involves structured spatial
+variation, weather incoming flow is mostly from the north-west such that the northern part of
+Austria typically exhibits more rain than the southern part during the year. Moreover, the amount
+of precipitation is expected to increase with altitude. To account for these effects, as well as for
+potentially pronounced spatially-varying seasonality, we use the following additive predictor for
+parameter $\boldsymbol{\mu}$ and $\boldsymbol{\sigma}$:
+$$
+\boldsymbol{\eta} = \beta_0 + f_1(\texttt{alt}) + f_2(\texttt{day}) +
+  f_3(\texttt{lon}, \texttt{lat}) + f_4(\texttt{day}, \texttt{lon}, \texttt{lat}),
+$$
+here function $f_1$ is an altitude effect, $f_2$ the seasonal variation, $f_3$ a spatially
+correlated effect and $f_4$ a spatially-varying seasonal effect.
+
+The density function of a left censored Gaussian distribution is given by
+\begin{equation}
+  f(y; \, \mu = \eta_{\mu}, \, \sigma = \exp(\eta_{\sigma})) = \begin{cases} 
+    \frac{1}{\sigma} \phi\left(\frac{y-\mu}{\sigma} \right) & y > 0 \\
+    \Phi\left(\frac{c_l-\mu}{\sigma} \right) & \mbox{else.}
+  \end{cases}
+\end{equation}
 
 <<echo=FALSE, results=hide>>=
 if(!file.exists("rainmodel.rda") & FALSE) {
