@@ -753,7 +753,14 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
       if(is.null(model)) {
         if(list) return(x$parameters) else return(unlist(x$parameters))
       } else {
-        if(list) return(x$parameters[model]) else return(unlist(x$parameters[model]))
+        if(is.list(x$parameters)) {
+          if(list) return(x$parameters[model]) else return(unlist(x$parameters[model]))
+        } else {
+          if(!is.character(model))
+            model <- names(x$terms)[model]
+          rp <- grep(paste(model, ".", sep = ""), names(x$parameters), fixed = TRUE, value = TRUE)
+          return(x$parameters[rp])
+        }
       }
     }
   }
@@ -2573,7 +2580,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   } else {
     if(is.null(object$parameters))
       stop("cannot find any parameters!")
-    samps <- parameters(object, model = model, list = FALSE)
+    samps <- parameters(object, model = model, list = FALSE, extract = TRUE)
     cn <- names(samps)
     samps <- matrix(samps, nrow = 1)
     colnames(samps) <- cn
