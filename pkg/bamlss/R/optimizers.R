@@ -562,7 +562,7 @@ get.all.par <- function(x, drop = FALSE, list = TRUE)
   if(!list) {
     par <- unlist(par)
     if(drop) {
-      for(j in c("edf", "tau2", "alpha"))
+      for(j in c(".edf", ".tau2", ".alpha"))
         par <- par[!grepl(j, names(par), fixed = TRUE)]
     }
   }
