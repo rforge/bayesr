@@ -1056,7 +1056,13 @@ function, quantile function and the random number generator.
 
 For computing derivatives of $\boldsymbol{\beta}_k$, two additional list entries \code{score}
 and \code{hess} are required. Each of them hold functions for first or second order derivatives of
-the log-likelihood w.r.t.\ to parameters $\boldsymbol{\theta}_k$ (here, $\mu$ and $\sigma$).
+the log-likelihood w.r.t.\ to the linear predictors $\boldsymbol{\eta}_k$ (here,
+$\boldsymbol{\eta}_\mu$ and $\boldsymbol{\eta}_\sigma$). Note that in principal, the
+derivatives w.r.t.\ the parameters $\boldsymbol{\theta}_k$ would be sufficient to create a
+generic modeling setup, because of the chain rule derivatives of link functions could be simply
+multiplied, however, from the computational viewpoint it is more efficient to directly leave
+the specification of derivatives w.r.t.\ $\boldsymbol{\eta}_k$ within the family descriptor.
+This strategy is especially useful if derivatives for $\boldsymbol{\eta}_k$ have a simple structure.
 
 Note that this example can easily be generalized to problems with any number of parameters/predictors.
 
@@ -1159,34 +1165,45 @@ distribution with a threshold at zero. Moreover, to make positive observations m
 carry out a square root transformation of the daily observations. The censored normal distribution
 seems to fit quite well to the data as shown in the right panel of Figure~\ref{fig:rainmodeldata}.
 
-The censored normal model with latent Gaussian variable $\mathbf{y}^\star$ and
-observed response $\mathbf{y}$, the square root of daily precipitation observations, is given by
+The censored normal model with latent Gaussian variable $y^\star$ and
+observed response $y$, the square root of daily precipitation observations, is given by
 \begin{eqnarray*}
-\mathbf{y}^\star &\sim& N(\boldsymbol{\mu}, \boldsymbol{\sigma}^2) \\
-\boldsymbol{\mu} &=& \boldsymbol{\eta}_{\mu} \\
-\log(\boldsymbol{\sigma}) &=& \boldsymbol{\eta}_{\sigma} \\
-\mathbf{y} &=& max(\mathbf{0}, \mathbf{y}^\star).
+y^\star &\sim& N(\mu, \sigma^2) \\
+\mu &=& \eta_{\mu} \\
+\log(\sigma) &=& \eta_{\sigma} \\
+y &=& max(0, y^\star).
 \end{eqnarray*}
 Modeling precipitation in complex terrain like the Alps naturally involves structured spatial
 variation, weather incoming flow is mostly from the north-west such that the northern part of
 Austria typically exhibits more rain than the southern part during the year. Moreover, the amount
 of precipitation is expected to increase with altitude. To account for these effects, as well as for
 potentially pronounced spatially-varying seasonality, we use the following additive predictor for
-parameter $\boldsymbol{\mu}$ and $\boldsymbol{\sigma}$:
+parameter $\mu$ and $\sigma$:
 $$
-\boldsymbol{\eta} = \beta_0 + f_1(\texttt{alt}) + f_2(\texttt{day}) +
+\eta = \beta_0 + f_1(\texttt{alt}) + f_2(\texttt{day}) +
   f_3(\texttt{lon}, \texttt{lat}) + f_4(\texttt{day}, \texttt{lon}, \texttt{lat}),
 $$
-here function $f_1$ is an altitude effect, $f_2$ the seasonal variation, $f_3$ a spatially
-correlated effect and $f_4$ a spatially-varying seasonal effect.
+here function $f_1$ is an altitude effect, $f_2$ the cyclic seasonal variation, $f_3$ a spatially
+correlated effect of longitude and latitude coordinates and $f_4$ a spatially-varying seasonal
+effect. Hence, the overall seasonal effect is constructed by the main effect $f_2$ and the
+interaction effect $f_4$, where the deviations from the main effect are modeled to sum to zero for
+each day of the year, i.e., this can be viewed as a functional ANOVA decomposition.
 
-The density function of a left censored Gaussian distribution is given by
+The density function of a left censored Gaussian distribution with the threshold at zero is given by
 \begin{equation}
-  f(y; \, \mu = \eta_{\mu}, \, \sigma = \exp(\eta_{\sigma})) = \begin{cases} 
+  f(y; \, \mu = \eta_{\mu}, \, \log(\sigma) = \eta_{\sigma}) = \begin{cases} 
     \frac{1}{\sigma} \phi\left(\frac{y-\mu}{\sigma} \right) & y > 0 \\
-    \Phi\left(\frac{c_l-\mu}{\sigma} \right) & \mbox{else.}
+    \Phi\left(\frac{-\mu}{\sigma} \right) & \mbox{else,}
   \end{cases}
 \end{equation}
+where $\phi$ is the probability density and $\Phi$ the cumulative distribution function of the
+standard normal distribution.
+
+In order to construct the backfitting algorithm for posterior mode estimation using iteratively
+reweighted least squares, as shown in (\ref{eqn:blockbackfit}), as well as the corresponding
+derivative based MCMC sampling scheme presented in Section~\ref{sec:dmh} for estimation of the
+posterior mean and inference, the derivatives w.r.t.\ parameters $\mu$ and $\sigma$ need to be
+computed.
 
 <<echo=FALSE, results=hide>>=
 if(!file.exists("rainmodel.rda") & FALSE) {

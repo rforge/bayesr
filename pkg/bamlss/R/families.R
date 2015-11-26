@@ -2146,61 +2146,73 @@ tF <- function(x, ...)
     paste(', ', paste(names(args), "=", unlist(args), sep = '', collapse = ', '), sep = '')
   } else ''
 
-  mu.linkfun <- make.link.gamlss(x$mu.link)$linkfun
+  mu.link <- make.link2(x$mu.link)
+  mu.par.score <- names(formals(x$dldm))[-1]
+  mu.par.hess <- names(formals(x$d2ldm2))
   score$mu  <- function(y, par, ...) {
-    call <- paste('x$dldm(y, ', paste('par$', nx, sep = '', collapse = ', '), args, ')', sep = "")
-    eval(parse(text = call))
+    call <- paste('x$dldm(y, ', paste('par$', mu.par.score, sep = '', collapse = ', '), args, ')', sep = "")
+    eval(parse(text = call)) * x$mu.dr(mu.link$linkfun(par$mu))
   }
   hess$mu <- function(y, par, ...) {
-    fo <- names(formals(x$d2ldm2))
-    call <- paste('x$d2ldm2(', paste('par$', fo, sep = '', collapse = ', '), ')', sep = "")
+    call <- paste('x$dldm(y, ', paste('par$', mu.par.score, sep = '', collapse = ', '), args, ')', sep = "")
+    score <- eval(parse(text = call))
+    call <- paste('x$d2ldm2(', paste('par$', mu.par.hess, sep = '', collapse = ', '), ')', sep = "")
     hess <- eval(parse(text = call))
-    dlink <- 1 / x$mu.dr(mu.linkfun(par$mu))
-    hess <- -(hess / (dlink * dlink)) * dlink
+    eta <- mu.link$linkfun(par$mu)
+    hess <- -1 * drop(score * mu.link$mu.eta2(eta) + hess * mu.link$mu.eta(eta)^2)
     hess
   }
   if(k > 1) {
-    sigma.linkfun <- make.link.gamlss(x$sigma.link)$linkfun
+    sigma.link <- make.link2(x$sigma.link)
+    sigma.par.score <- names(formals(x$dldd))[-1]
+    sigma.par.hess <- names(formals(x$d2ldd2))
     score$sigma  <- function(y, par, ...) {
-      call <- paste('x$dldd(y, ', paste('par$', nx, sep = '', collapse = ', '), ')', sep = "")
-      eval(parse(text = call))
+      call <- paste('x$dldd(y, ', paste('par$', sigma.par.score, sep = '', collapse = ', '), ')', sep = "")
+      eval(parse(text = call)) * x$sigma.dr(sigma.link$linkfun(par$sigma))
     }
     hess$sigma <- function(y, par, ...) {
-      fo <- names(formals(x$d2ldd2))
-      call <- paste('x$d2ldd2(', paste('par$', fo, sep = '', collapse = ', '), ')', sep = "")
+      call <- paste('x$dldd(y, ', paste('par$', sigma.par.score, sep = '', collapse = ', '), ')', sep = "")
+      score <- eval(parse(text = call))
+      call <- paste('x$d2ldd2(', paste('par$', sigma.par.hess, sep = '', collapse = ', '), ')', sep = "")
       hess <- eval(parse(text = call))
-      dlink <- 1 / x$sigma.dr(sigma.linkfun(par$sigma))
-      hess <- -(hess / (dlink * dlink)) * dlink
+      eta <- sigma.link$linkfun(par$sigma)
+      hess <- -1 * drop(score * sigma.link$mu.eta2(eta) + hess * sigma.link$mu.eta(eta)^2)
       hess
     }
   }
   if(k > 2) {
-    nu.linkfun <- make.link.gamlss(x$nu.link)$linkfun
+    nu.link <- make.link2(x$nu.link)
+    nu.par.score <- names(formals(x$dldv))[-1]
+    nu.par.hess <- names(formals(x$d2ldv2))
     score$nu  <- function(y, par, ...) {
-      call <- paste('x$dldv(y, ', paste('par$', nx, sep = '', collapse = ', '), ')', sep = "")
-      eval(parse(text = call))
+      call <- paste('x$dldv(y, ', paste('par$', nu.par.score, sep = '', collapse = ', '), ')', sep = "")
+      eval(parse(text = call)) * x$nu.dr(nu.link$linkfun(par$nu))
     }
     hess$nu <- function(y, par, ...) {
-      fo <- names(formals(x$d2ldv2))
-      call <- paste('x$d2ldv2(', paste('par$', fo, sep = '', collapse = ', '), ')', sep = "")
+      call <- paste('x$dldv(y, ', paste('par$', nu.par.score, sep = '', collapse = ', '), ')', sep = "")
+      score <- eval(parse(text = call))
+      call <- paste('x$d2ldv2(', paste('par$', nu.par.hess, sep = '', collapse = ', '), ')', sep = "")
       hess <- eval(parse(text = call))
-      dlink <- 1 / x$nu.dr(nu.linkfun(par$sigma))
-      hess <- -(hess / (dlink * dlink)) * dlink
+      eta <- nu.link$linkfun(par$nu)
+      hess <- -1 * drop(score * nu.link$mu.eta2(eta) + hess * nu.link$mu.eta(eta)^2)
       hess
     }
   }
   if(k > 3) {
-    tau.linkfun <- make.link.gamlss(x$tau.link)$linkfun
+    tau.link <- make.link2(x$tau.link)
+    tau.par.score <- names(formals(x$dldt))[-1]
+    tau.par.hess <- names(formals(x$d2ldt2))
     score$tau  <- function(y, par, ...) {
-      call <- paste('x$dldt(y, ', paste('par$', nx, sep = '', collapse = ', '), ')', sep = "")
-      eval(parse(text = call))
+      call <- paste('x$dldt(y, ', paste('par$', tau.par.score, sep = '', collapse = ', '), ')', sep = "")
+      eval(parse(text = call)) * x$tau.dr(tau.link$linkfun(par$tau))
     }
     hess$tau <- function(y, par, ...) {
-      fo <- names(formals(x$d2ldt2))
-      call <- paste('x$d2ldt2(', paste('par$', fo, sep = '', collapse = ', '), ')', sep = "")
+      call <- paste('x$dldt(y, ', paste('par$', tau.par.score, sep = '', collapse = ', '), ')', sep = "")
+      score <- eval(parse(text = call))
+      call <- paste('x$d2ldt2(', paste('par$', tau.par.hess, sep = '', collapse = ', '), ')', sep = "")
       hess <- eval(parse(text = call))
-      dlink <- 1 / x$tau.dr(tau.linkfun(par$sigma))
-      hess <- -(hess / (dlink * dlink)) * dlink
+      eta <- tau.link$linkfun(par$tau)
+      hess <- -1 * drop(score * tau.link$mu.eta2(eta) + hess * tau.link$mu.eta(eta)^2)
       hess
     }
   }
