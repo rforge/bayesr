@@ -2151,7 +2151,7 @@ tF <- function(x, ...)
   mu.par.hess <- names(formals(x$d2ldm2))
   score$mu  <- function(y, par, ...) {
     call <- paste('x$dldm(y, ', paste('par$', mu.par.score, sep = '', collapse = ', '), args, ')', sep = "")
-    eval(parse(text = call)) * x$mu.dr(mu.link$linkfun(par$mu))
+    eval(parse(text = call)) * mu.link$mu.eta(mu.link$linkfun(par$mu))
   }
   hess$mu <- function(y, par, ...) {
     call <- paste('x$dldm(y, ', paste('par$', mu.par.score, sep = '', collapse = ', '), args, ')', sep = "")
@@ -2168,7 +2168,7 @@ tF <- function(x, ...)
     sigma.par.hess <- names(formals(x$d2ldd2))
     score$sigma  <- function(y, par, ...) {
       call <- paste('x$dldd(y, ', paste('par$', sigma.par.score, sep = '', collapse = ', '), ')', sep = "")
-      eval(parse(text = call)) * x$sigma.dr(sigma.link$linkfun(par$sigma))
+      eval(parse(text = call)) * sigma.link$mu.eta(sigma.link$linkfun(par$sigma))
     }
     hess$sigma <- function(y, par, ...) {
       call <- paste('x$dldd(y, ', paste('par$', sigma.par.score, sep = '', collapse = ', '), ')', sep = "")
@@ -2186,7 +2186,7 @@ tF <- function(x, ...)
     nu.par.hess <- names(formals(x$d2ldv2))
     score$nu  <- function(y, par, ...) {
       call <- paste('x$dldv(y, ', paste('par$', nu.par.score, sep = '', collapse = ', '), ')', sep = "")
-      eval(parse(text = call)) * x$nu.dr(nu.link$linkfun(par$nu))
+      eval(parse(text = call)) * nu.link$mu.eta(nu.link$linkfun(par$nu))
     }
     hess$nu <- function(y, par, ...) {
       call <- paste('x$dldv(y, ', paste('par$', nu.par.score, sep = '', collapse = ', '), ')', sep = "")
@@ -2204,7 +2204,7 @@ tF <- function(x, ...)
     tau.par.hess <- names(formals(x$d2ldt2))
     score$tau  <- function(y, par, ...) {
       call <- paste('x$dldt(y, ', paste('par$', tau.par.score, sep = '', collapse = ', '), ')', sep = "")
-      eval(parse(text = call)) * x$tau.dr(tau.link$linkfun(par$tau))
+      eval(parse(text = call)) * tau.link$mu.eta(tau.link$linkfun(par$tau))
     }
     hess$tau <- function(y, par, ...) {
       call <- paste('x$dldt(y, ', paste('par$', tau.par.score, sep = '', collapse = ', '), ')', sep = "")
@@ -2484,6 +2484,98 @@ gaussian5.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
     "type" = 1
   )
   
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+
+## GAMLSS tests.
+bct.bamlss <- function()
+{
+
+  mu.link <- make.link2("identity")
+  sigma.link <- make.link2("log")
+  nu.link <- make.link2("identity")
+  tau.link <- make.link2("log")
+
+  rval <- list(
+    "family" = "Box-Cox t",
+    "names" = c("mu", "sigma", "nu", "tau"),
+    "links" = c("mu" = "identity", "sigma" = "log", "nu" = "identity", "tau" = "log"),
+    "score" = list(
+      "mu" = function(y, par, ...) {
+         z <- ifelse(par$nu != 0, (((y / par$mu)^(par$nu) - 1)/(par$nu * par$sigma)), log(y / par$mu) / par$sigma)
+         w <- (par$tau + 1)/(par$tau + z^2)
+         ((w * z) / (par$mu * par$sigma) + (par$nu / par$mu) * (w * (z^2) - 1)) * mu.link$mu.eta(mu.link$linkfun(par$mu))
+      },
+      "sigma" = function(y, par, ...) {
+         z <- ifelse(par$nu != 0, (((y / par$mu)^(par$nu) - 1)/(par$nu * par$sigma)), log(y/par$mu)/par$sigma)
+         w <- (par$tau + 1)/(par$tau + z^2)
+         h <- dt(1/(par$sigma * abs(par$nu)), df = par$tau)/pt(1/(par$sigma * abs(par$nu)), df = par$tau)
+         ((w * (z^2) - 1)/par$sigma + h/(par$sigma^2 * abs(par$nu))) * sigma.link$mu.eta(sigma.link$linkfun(par$sigma))
+      },
+      "nu" = function(y, par, ...) {
+        z <- ifelse(par$nu != 0, (((y/par$mu)^(par$nu) - 1)/(par$nu * par$sigma)), log(y/par$mu)/par$sigma)
+        w <- (par$tau + 1)/(par$tau + z^2)
+        h <- dt(1/(par$sigma * abs(par$nu)), df = par$tau)/pt(1/(par$sigma * abs(par$nu)), df = par$tau)
+        dldv <- ((w * z^2)/par$nu) - log(y/par$mu) * (w * z^2 + ((w * z)/(par$sigma * par$nu)) - 1)
+        (dldv + sign(par$nu) * h/(par$sigma * par$nu^2)) * nu.link$mu.eta(nu.link$linkfun(par$nu))
+      },
+      "tau" = function(y, par, ...) {
+        z <- ifelse(par$nu != 0, (((y/par$mu)^par$nu - 1)/(par$nu * par$sigma)), log(y/par$mu)/par$sigma)
+        w <- (par$tau + 1)/(par$tau + z^2)
+        j <- (log(pt(1/(par$sigma * abs(par$nu)), df = par$tau + 0.01)) - log(pt(1/(par$sigma * abs(par$nu)), df = par$tau)))/0.01
+        dldt <- -0.5 * log(1 + (z^2)/par$tau) + (w * (z^2))/(2 * par$tau)
+        (dldt + 0.5 * digamma((par$tau + 1)/2) - 0.5 * digamma(par$tau/2) - 1/(2 * par$tau) - j) * tau.link$mu.eta(tau.link$linkfun(par$tau))
+      }
+    ),
+    "hess" = list(
+      "mu" = function(y, par, ...) {
+   
+      },
+      "sigma" = function(y, par, ...) {
+   
+      },
+      "nu" = function(y, par, ...) {
+   
+      },
+      "tau" = function(y, par, ...) {
+   
+      }
+    ),
+    "d" = function(y, par, log = FALSE) {
+      if(any(par$mu <= 0)) 
+        par$mu[par$mu <= 0] <- .Machine$double.eps^0.5
+      if(any(par$sigma <= 0)) 
+        par$sigma[par$sigma <= 0] <- .Machine$double.eps^0.5
+      if(any(par$tau <= 0)) 
+        par$tau[par$tau <= 0] <- .Machine$double.eps^0.5
+      if(any(y < 0)) 
+        stop(paste("y must be positive", "\n", ""))
+      if(length(par$nu) > 1) {
+        z <- ifelse(par$nu != 0, (((y/par$mu)^(par$nu) - 1)/(par$nu * par$sigma)), log(y/par$mu)/par$sigma)
+      } else {
+        if(par$nu != 0) 
+          z <- (((y/par$mu)^(par$nu) - 1)/(par$nu * par$sigma))
+        else
+          z <- log(y/par$mu)/par$sigma
+      }
+      loglik <- (par$nu - 1) * log(y) - par$nu * log(par$mu) - log(par$sigma)
+      fTz <- lgamma((par$tau + 1)/2) - lgamma(par$tau/2) - 0.5 * log(par$tau) - lgamma(0.5)
+      fTz <- fTz - ((par$tau + 1)/2) * log(1 + (z * z)/par$tau)
+      loglik <- loglik + fTz - log(pt(1/(par$sigma * abs(par$nu)), df = par$tau))
+      if(length(par$tau) > 1) {
+        loglik <- ifelse(par$tau > 1e+06, dBCCG(y, par$mu, par$sigma, par$nu, log = TRUE), loglik)
+      } else {
+        if(par$tau > 1e+06) 
+          loglik <- dBCCG(y, par$mu, par$sigma, par$nu, log = TRUE)
+      }
+      ft <- if(log == FALSE) exp(loglik) else loglik
+      ft
+    }
+  )
+
+  rval$hess <- NULL
   class(rval) <- "family.bamlss"
   rval
 }
