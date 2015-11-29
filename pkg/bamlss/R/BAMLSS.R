@@ -3865,7 +3865,7 @@ plot.bamlss.effect.default <- function(x, ...) {
           if(is.null(args$ylab))
             args$ylab <- attr(x, "specs")$label
           do.call("plotblock", delete.args("plotblock", args,
-            c("xlim", "ylim", "pch", "main", "xlab", "ylab", "lwd", "axes", "add")))
+            c("xlim", "ylim", "pch", "main", "xlab", "ylab", "lwd", "axes", "add", "scheme")))
         }
       }
     } else {
