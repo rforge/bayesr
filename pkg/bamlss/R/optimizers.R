@@ -1970,7 +1970,7 @@ set.starting.values <- function(x, start)
             if(length(i)) {
               tpar <- start[take[i]]
               names(tpar) <- gsub(paste(id, "p.", sep = "."), "", names(tpar), fixed = TRUE)
-              i <- grep2(c("edf", "accepted", "alpha"), names(tpar))
+              i <- grep2(c(".edf", ".accepted", ".alpha"), names(tpar))
               x[[id]]$smooth.construct$model.matrix$state$parameters <- if(length(i)) tpar[-i] else tpar
               x[[id]]$smooth.construct$model.matrix$state$fitted.values <- x[[id]]$smooth.construct$model.matrix$fit.fun(x[[id]]$smooth.construct$model.matrix$X, x[[id]]$smooth.construct$model.matrix$state$parameters)
             }
@@ -1988,7 +1988,7 @@ set.starting.values <- function(x, start)
           if(length(take)) {
             tpar <- start[take]
             names(tpar) <- gsub(paste(tl, ".", sep = ""), "", names(tpar), fixed = TRUE)
-            i <- grep2(c("edf", "accepted", "alpha"), names(tpar))
+            i <- grep2(c(".edf", ".accepted", ".alpha"), names(tpar))
             tpar <- if(length(i)) tpar[-i] else tpar
             spar <- x[[id]]$smooth.construct[[j]]$state$parameters
             spar <- set.par(spar, get.par(tpar, "b"), "b")

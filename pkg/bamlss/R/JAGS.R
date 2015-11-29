@@ -516,6 +516,8 @@ JAGS <- function(x, y, family, start = NULL,
   seed = NULL, verbose = TRUE, set.inits = TRUE,
   save.all = FALSE, modules = NULL, ...)
 {
+  if(is.null(attr(x, "bamlss.engine.setup")))
+    x <- bamlss.engine.setup(x, ...)
   if(!is.null(start))
     x <- set.starting.values(x, start)
   x <- randomize(x)
