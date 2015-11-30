@@ -185,6 +185,7 @@ cox.mode <- function(x, y, weights, offset,
       cat("\r")
       vtxt <- paste(
         "logPost ", fmt(logPost, width = 8, digits = digits),
+        " logLik ", fmt(logLik, width = 8, digits = digits),
         " eps ", fmt(eps0, width = 6, digits = digits + 2),
         " iteration ", formatC(iter, width = nchar(maxit)), sep = ""
       )
