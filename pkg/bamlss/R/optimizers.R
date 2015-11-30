@@ -695,6 +695,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         cat("\r")
         vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
           " logPost ", fmt(family$loglik(y, peta) + get.log.prior(x), width = 8, digits = digits),
+          " logLik ", fmt(family$loglik(y, peta), width = 8, digits = digits),
           " edf ", fmt(edf, width = 6, digits = digits),
           " eps ", fmt(eps0, width = 6, digits = digits + 2),
           " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
@@ -714,6 +715,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       cat("\r")
       vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
         " logPost ", fmt(logPost, width = 8, digits = digits),
+        " logLik ", fmt(family$loglik(y, peta), width = 8, digits = digits),
         " edf ", fmt(edf, width = 6, digits = digits),
         " eps ", fmt(eps0, width = 6, digits = digits + 2),
         " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
