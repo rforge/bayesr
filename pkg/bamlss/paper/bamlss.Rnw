@@ -23,9 +23,9 @@
 
 %% Authors: NU + rest in alphabetical order
 \author{Nikolaus Umlauf\\Universit\"at Innsbruck \And
-        Nadja Klein \And
+        Nadja Klein\\Universit\"at G\"ottingen \And
         Achim Zeileis\\Universit\"at Innsbruck}
-\Plainauthor{Nikolaus Umlauf, Achim Zeileis}
+\Plainauthor{Nikolaus Umlauf, Nadja Klein, Achim Zeileis}
 
 \title{BAMLSS: Bayesian additive models for location, scale and shape (and beyond)}
 \Plaintitle{BAMLSS: Bayesian additive models for location, scale and shape (and beyond)}
@@ -54,14 +54,14 @@
   6020 Innsbruck, Austria\\
   E-mail: \email{Nikolaus.Umlauf@uibk.ac.at}, \email{Achim.Zeileis@R-project.org}\\
   URL: \url{http://eeecon.uibk.ac.at/~umlauf/},\\
-  \phantom{URL: }\url{http://eeecon.uibk.ac.at/~zeileis/}
+  \phantom{URL: }\url{http://eeecon.uibk.ac.at/~zeileis/}\\
 
   Nadja Klein\\
   Chairs of Statistics and Econometrics\\
-  Georg-August-Universit\"at G\"ottingen\\
+  Universit\"at G\"ottingen\\
   Humboldtallee 3\\
   37073 G\"ottingen, Germany\\
-  E-mail: \email{nklein@uni-goettingen.de\\
+  E-mail: \email{nklein@uni-goettingen.de}\\
   URL: \url{https://www.uni-goettingen.de/de/325353.html},\\
   \phantom{URL: }\url{https://www.uni-goettingen.de/de/325353.html}
 }
