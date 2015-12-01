@@ -552,14 +552,16 @@ sparse.matrix.fit.fun <- function(X, b, index = NULL)
 ## The model term fitting function.
 make.fit.fun <- function(x, type = 1)
 {
-  ff <- function(X, b, expand = TRUE) {
+  ff <- function(X, b, expand = TRUE, no.sparse.setup = FALSE) {
     if(!is.null(names(b)))
       b <- get.par(b, "b")
     if(inherits(X, "spam")) {
       f <- as.matrix(X %*% b)
     } else {
       what <- if(type < 2) "matrix" else "grid.matrix"
-      f <- if(is.null(x$sparse.setup[[what]])) drop(X %*% b) else sparse.matrix.fit.fun(X, b, x$sparse.setup[[what]])
+      f <- if(is.null(x$sparse.setup[[what]]) | no.sparse.setup) {
+        drop(X %*% b)
+      } else sparse.matrix.fit.fun(X, b, x$sparse.setup[[what]])
     }
     if(!is.null(x$binning$match.index) & expand)
       f <- f[x$binning$match.index]
@@ -2345,7 +2347,8 @@ compute_term <- function(x, get.X, fit.fun, psamples, vsamples = NULL,
   } else {
     if(nt < 2) {
       fsamples <- apply(psamples, 1, function(g) {
-        fit.fun(X, g, expand = FALSE)
+        f <- fit.fun(X, g, expand = FALSE, no.sparse.setup = (nrow(psamples) < 2))
+        f
       })
       smf <- t(apply(fsamples, 1, FUN))
     } else {

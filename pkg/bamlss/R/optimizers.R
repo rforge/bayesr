@@ -1994,8 +1994,9 @@ set.starting.values <- function(x, start)
             tpar <- if(length(i)) tpar[-i] else tpar
             spar <- x[[id]]$smooth.construct[[j]]$state$parameters
             spar <- set.par(spar, get.par(tpar, "b"), "b")
-            if(any(grepl("tau2", tpar)))
+            if(any(grepl("tau2", names(tpar)))) {
               spar <- set.par(spar, get.par(tpar, "tau2"), "tau2")
+            }
             x[[id]]$smooth.construct[[j]]$state$parameters <- spar
             x[[id]]$smooth.construct[[j]]$state$fitted.values <- x[[id]]$smooth.construct[[j]]$fit.fun(x[[id]]$smooth.construct[[j]]$X, x[[id]]$smooth.construct[[j]]$state$parameters)
           }
