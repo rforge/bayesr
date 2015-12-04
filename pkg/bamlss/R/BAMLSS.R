@@ -5460,6 +5460,7 @@ h_response <- function(x)
 ## Create the inverse of a matrix.
 matrix_inv <- function(x, index = NULL, force = FALSE)
 {
+  require("spam")
   if(length(x) < 2)
     return(1 / x)
   rn <- rownames(x)

@@ -354,7 +354,7 @@ $\boldsymbol{\theta}_k$ are vectors of length $n$.
 Assigning prior distributions to the individual model components, e.g., given by the normal
 prior (\ref{eqn:shrinkprior}) and the inverse gamma prior (\ref{eqn:ig}), results in the log-posterior
 \begin{equation} \label{eqn:logpost}
-\log \, p(\boldsymbol{\vartheta} ; \mathbf{y}, \mathbf{X}) \propto
+\log \, p(\boldsymbol{\vartheta} ; \mathbf{y}, \mathbf{X}) =
   \ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X}) +
   \sum_{k = 1}^K\sum_{j = 1}^{J_k} \left\{ \log \, p_{jk}(\boldsymbol{\vartheta}_{jk}) \right\},
 \end{equation}
@@ -488,7 +488,7 @@ For parameters $\boldsymbol{\beta}_k$, the updating scheme can be written as a $
 Newton-Raphson iteration
 \begin{equation} \label{eqn:blocknewton}
 \boldsymbol{\beta}_k^{(t + 1)} = U_k(\boldsymbol{\beta}_k^{(t)} | \cdot) = \boldsymbol{\beta}_k^{(t)} -
-  \mathbf{H}_{kk}\left( \boldsymbol{\beta}_k^{(t)} \right)^{-1}\mathbf{s}_k\left( \boldsymbol{\beta}_k^{(t)} \right).
+  \mathbf{H}_{kk}\left( \boldsymbol{\beta}_k^{(t)} \right)^{-1}\mathbf{s}\left( \boldsymbol{\beta}_k^{(t)} \right).
 \end{equation}
 Assuming a basis function approach for functions (\ref{eqn:functions}) with multivariate normal
 priors (\ref{eqn:shrinkprior}), the hessian matrix in (\ref{eqn:blocknewton}) is given by
@@ -501,7 +501,7 @@ $$
 \mathbf{X}_{J_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} & \cdots & \mathbf{X}_{J_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk} + \mathbf{G}_{J_kk}
 \end{pmatrix}^{(t)},
 $$
-with diagonal weight matrix $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y}) /
+with diagonal weight matrix $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and penalty matrix
 $\mathbf{G}_{jk} = \tau_{jk}^{-2}\mathbf{K}_{jk}$. Similarly, the score vector is
 $$
@@ -512,7 +512,7 @@ $$
 \mathbf{X}_{J_kk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t)} \\
 \end{pmatrix}
 $$
-and derivatives $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta} | \mathbf{y}) /
+and derivatives $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k$. Focusing on the $j$th row of (\ref{eqn:blocknewton}) gives
 \begin{eqnarray*}
 (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\beta}_{jk}^{(t+1)} +
@@ -610,7 +610,8 @@ parameters for the next $k$ are calculated again by an inner backfitting algorit
 (see also \citealp{bamlss:Rigby+Stasinopoulos:2005}).
 
 Note that for numerical reasons it is oftentimes better to replace the hessian by the expected
-Fisher information with weights $\mathbf{W}_{kk} = -\mathrm{diag}(E(\partial^2 \ell(\boldsymbol{\beta} | \mathbf{y}) /
+Fisher information with weights
+$\mathbf{W}_{kk} = -\mathrm{diag}(E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top))$.
 
 \newpage
