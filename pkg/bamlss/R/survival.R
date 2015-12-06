@@ -53,6 +53,7 @@ cox.mode <- function(x, y, weights, offset,
   for(sj in seq_along(x$lambda$smooth.construct)) {
     g <- get.state(x$lambda$smooth.construct[[sj]], "b")
     eta_timegrid <- eta_timegrid + x$lambda$smooth.construct[[sj]]$fit.fun_timegrid(g)
+    x$lambda$smooth.construct[[sj]]$state$nu <- nu
   }
 
   ## Extract y.
@@ -67,10 +68,14 @@ cox.mode <- function(x, y, weights, offset,
   ## The interval width from subdivisons.
   width <- attr(y, "width")
 
+  ## Current log-priors.
+  log.priors <- get.log.prior(x)
+
   ## Start the backfitting algorithm.
+  maxit <- rep(maxit, length.out = 2)
   logPost0 <- NA
   eps0 <- eps + 1; iter <- 1
-  while(eps0 > eps & iter < maxit) {
+  while(eps0 > eps & iter < maxit[1]) {
     eta0 <- eta
 
     ########################################
@@ -94,7 +99,29 @@ cox.mode <- function(x, y, weights, offset,
 
       ## Update regression coefficients.
       g <- get.state(x$lambda$smooth.construct[[sj]], "b")
-      g2 <- drop(g + nu * Sigma %*% xgrad)
+
+      if(update.nu) {
+        objfun <- function(nu) {
+          g2 <- drop(g + nu * Sigma %*% xgrad)
+          names(g2) <- names(g)
+          fit_timegrid <- x$lambda$smooth.construct[[sj]]$fit.fun_timegrid(g2)
+          eta_timegrid <- eta_timegrid - x$lambda$smooth.construct[[sj]]$state$fitted_timegrid + fit_timegrid
+          fit <- x$lambda$smooth.construct[[sj]]$fit.fun(x$lambda$smooth.construct[[sj]]$X, g2)
+          eta$lambda <- eta$lambda - fitted(x$lambda$smooth.construct[[sj]]$state) + fit
+          eeta <- exp(eta_timegrid)
+          int <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
+          logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
+          logPost <- as.numeric(logLik + log.priors)
+          return(-1 * logPost)
+        }
+
+        nu.opt <- optim(x$lambda$smooth.construct[[sj]]$state$nu, fn = objfun,
+          method = "L-BFGS-B", lower = .Machine$double.eps^0.9, upper = 1)
+
+        x$lambda$smooth.construct[[sj]]$state$nu <- nu.opt$par
+      }
+
+      g2 <- drop(g + x$lambda$smooth.construct[[sj]]$state$nu * Sigma %*% xgrad)
       names(g2) <- names(g)
       x$lambda$smooth.construct[[sj]]$state$parameters <- set.par(x$lambda$smooth.construct[[sj]]$state$parameters, g2, "b")
 
@@ -171,15 +198,7 @@ cox.mode <- function(x, y, weights, offset,
     if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
 
     logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
-    logPost <- as.numeric(logLik + get.log.prior(x))
-
-    if(iter > 1 & update.nu) {
-      if(logPost < logPost0) {
-        nu <- nu * 0.9
-        if(verbose)
-          cat("\nupdated nu to:", nu, "\n")
-      }
-    }
+    logPost <- as.numeric(logLik + log.priors)
 
     if(verbose) {
       cat("\r")
@@ -187,7 +206,7 @@ cox.mode <- function(x, y, weights, offset,
         "logPost ", fmt(logPost, width = 8, digits = digits),
         " logLik ", fmt(logLik, width = 8, digits = digits),
         " eps ", fmt(eps0, width = 6, digits = digits + 2),
-        " iteration ", formatC(iter, width = nchar(maxit)), sep = ""
+        " iteration ", formatC(iter, width = nchar(maxit[1])), sep = ""
       )
       cat(vtxt)
       if(.Platform$OS.type != "unix") flush.console()
@@ -198,7 +217,7 @@ cox.mode <- function(x, y, weights, offset,
     iter <- iter + 1
   }
 
-  if(iter == maxit)
+  if(iter == maxit[1])
     warning("the backfitting algorithm did not converge, please check argument eps and maxit!")
 
   if(verbose) cat("\n")
