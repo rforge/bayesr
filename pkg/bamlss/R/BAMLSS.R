@@ -2673,9 +2673,13 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
         if(has_intercept)
           X <- X[, colnames(X) != "(Intercept)", drop = FALSE]
         sn <- snames[grep2(paste(id, "p", j, sep = "."), snames, fixed = TRUE)]
+        if(!length(sn))
+          sn <- snames[grep2(paste(id, "p.model.matrix", j, sep = "."), snames, fixed = TRUE)]
         eta <- eta + fitted_matrix(X, samps[, sn, drop = FALSE])
       } else {
         sn <- snames[grep2(paste(id, "p", j, sep = "."), snames, fixed = TRUE)]
+        if(!length(sn))
+          sn <- snames[grep2(paste(id, "p.model.matrix", j, sep = "."), snames, fixed = TRUE)]
         eta <- eta + fitted_matrix(matrix(1, nrow = nrow(data), ncol = 1), samps[, sn, drop = FALSE])
       }
     }

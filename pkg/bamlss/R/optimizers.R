@@ -1980,8 +1980,6 @@ set.starting.values <- function(x, start)
         }
         for(j in seq_along(x[[id]]$smooth.construct)) {
           tl <- x[[id]]$smooth.construct[[j]]$label
-          if(x[[id]]$smooth.construct[[j]]$by != "NA")
-            tl <- paste(tl, x[[id]]$smooth.construct[[j]]$by, sep = ":")
           take <- grep(tl <- paste(id, "s", tl, sep = "."),
             names(start), fixed = TRUE, value = TRUE)
           if(x[[id]]$smooth.construct[[j]]$by == "NA") {
