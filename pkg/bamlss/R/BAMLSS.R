@@ -4799,7 +4799,7 @@ samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE,
     }
     if(is.na(i))
       stop("cannot find model!")
-    j <- grep(nx[i], snames, fixed = TRUE, value = TRUE)
+    j <- grep(paste(nx[i], ".", sep = ""), snames, fixed = TRUE, value = TRUE)
     for(k in seq_along(x)) {
       x[[k]] <- x[[k]][, j]
     }

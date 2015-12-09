@@ -1711,6 +1711,30 @@ if(!file.exists("firemodel.rda") & FALSE) {
   firemodel_plotdata <- data_basehaz(80, 6, subdivisions = 15)
 
   save(firemodel, firemodel_plotdata, file = "firemodel_plotdata2.rda")
+
+  ## Predict for Russel Square.
+  if(FALSE) {
+    data("LondonFire")
+
+    library("spatstat")
+    library("raster")
+    chull <- convexhull.xy(as.matrix(rbind(as.data.frame(LondonFire)[ , c("lon", "lat")],
+      coordinates(LondonFStations))))
+    win <- expandwinPerfect(chull, TRUE, 1)
+    fsppp <- ppp(x = LondonFStations$lon, LondonFStations$lat, window = win)
+    fsintens <- density.ppp(fsppp, bw.diggle)
+    fsintens <- raster(fsintens)
+    proj4string(fsintens) <- CRS("+init=epsg:4326")
+    fsintens <- extract(fsintens, cbind(-0.125885, 51.521743))
+
+    nd <- data.frame("lat" = 51.521743, "lon" = -0.125885, "fsintens" = fsintens,
+      "daytime" = 15, "arrivaltime" = 6)
+    nd <- rbind(nd, nd)
+
+    p <- predict(firemodel, newdata = nd,
+      term = c("(arrivaltime)", "(arrivaltime,lon,lat)", "(fsintens)", "(daytime)", "(lon,lat)"),
+      intercept = TRUE, type = "prob", time = 6, subdivisions = 100)
+  }
 }
 
 if(!file.exists("figures/firemodel-data.png")) {
