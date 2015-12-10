@@ -439,18 +439,19 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
 ## Print info.
 barfun <- function(ptm, n.iter, i, step, nstep, start = TRUE)
 {
+  ia <- interactive()
   if(i == 10 & start) {
-    cat("\r")
+    cat(if(ia) "\r" else "\n")
     elapsed <- c(proc.time() - ptm)[3]
     rt <- elapsed / i * (n.iter - i)
     rt <- if(rt > 60) {
       paste(formatC(format(round(rt / 60, 2), nsmall = 2), width = 5), "min", sep = "")
     } else paste(formatC(format(round(rt, 2), nsmall = 2), width = 5), "sec", sep = "")
     cat("|", rep(" ", nstep), "|   0% ", rt, sep = "")
-    if(.Platform$OS.type != "unix") flush.console()
+    if(.Platform$OS.type != "unix" & ia) flush.console()
   }
   if(i %% step == 0) {
-    cat("\r")
+    cat(if(ia) "\r" else "\n")
     p <- i / n.iter
     p <- paste("|", paste(rep("*", round(nstep * p)), collapse = ""),
       paste(rep(" ", round(nstep * (1 - p))), collapse = ""), "| ",
@@ -464,7 +465,7 @@ barfun <- function(ptm, n.iter, i, step, nstep, start = TRUE)
       paste(formatC(format(round(elapsed / 60, 2), nsmall = 2), width = 5), "min", sep = "")
     } else paste(formatC(format(round(elapsed, 2), nsmall = 2), width = 5), "sec", sep = "")
     cat(p, rt, elapsed, sep = " ")
-    if(.Platform$OS.type != "unix") flush.console()
+    if(.Platform$OS.type != "unix" & ia) flush.console()
   }
 }
 
