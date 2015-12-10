@@ -2568,6 +2568,16 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
     }
     names(enames) <- nx
   } else enames <- tl
+  if(intercept) {
+    intcpt <- unlist(lapply(enames, function(x) { any(grepl("intercept", tolower(x))) }))
+    if(any(!intcpt)) {
+      for(i in seq_along(intcpt)) {
+        if(!intcpt[i])
+          enames[[i]] <- c(enames[[i]], "(Intercept)")
+      }
+    }
+  }
+  enames <- lapply(enames, unique)
   ff <- as.formula(paste("~", paste(unlist(enames), collapse = "+")))
   vars <- all.vars.formula(ff)
   if(!all(vars[vars != "Intercept"] %in% nn))
