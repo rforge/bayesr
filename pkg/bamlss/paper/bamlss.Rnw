@@ -829,8 +829,8 @@ From Section~\ref{sec:postmean} and \ref{sec:postmode}, it can be recognized tha
 \begin{itemize}
 \item The density function $f(y ; \theta_{i} = h_1^{-1}(\eta_{1}(\mathbf{x}, \boldsymbol{\beta}_1)), \ldots,
   \theta_{K} = h_K^{-1}(\eta_{K}(\mathbf{x}, \boldsymbol{\beta}_K)))$,
-\item link functions $h_k( \cdot )$,
-\item the first order derivatives $\frac{\partial \log \, p(\boldsymbol{\vartheta} ; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_k}$,
+\item link functions $h_k( \cdot )$ and derivatives of link functions,
+\item the first order derivatives $\frac{\partial \log \, p(\boldsymbol{\vartheta} ; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_k}$ and $\frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_k}$,
 \item the second order derivatives $\frac{\partial^2 \log \, p(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top}$,
 \item derivatives for log-priors, e.g., $\frac{\partial \log \, p_{jk}(\boldsymbol{\vartheta}_{jk})}{\partial \boldsymbol{\vartheta}_{jk}}$.
 \end{itemize}
@@ -1152,7 +1152,7 @@ and complete knowledge of precipitation climatologies is especially relevant for
 agriculture, risk assessment, water management, tourism etc. One particular challenge of such models
 is the prediction of precipitation into areas without measurement. This is usually accounted for
 by multi-step procedures using interpolation methods like Kriging \citep{bamlss:Krige:1951}.
-Precipitation climatology models usually assume a normal distribution and are computed for
+Precipitation climatology models commonly assume a normal distribution and are computed for
 monthly aggregated observations. However, because precipitation data is skewed and exhibits high
 density at zero observations the assumption of a normal distribution is critical and
 models for monthly data may have limited information value on finer temporal resolutions.
@@ -1198,7 +1198,9 @@ here function $f_1$ is an altitude effect, $f_2$ the cyclic seasonal variation, 
 correlated effect of longitude and latitude coordinates and $f_4$ a spatially-varying seasonal
 effect. Hence, the overall seasonal effect is constructed by the main effect $f_2$ and the
 interaction effect $f_4$, where the deviations from the main effect are modeled to sum to zero for
-each day of the year, i.e., this can be viewed as a functional ANOVA decomposition.
+each day of the year, i.e., this can be viewed as a functional ANOVA decomposition. All functions
+are estimated using penalized regression splines with multivariate normal priors
+(\ref{eqn:shrinkprior}) and inverse gamma priors (\ref{eqn:ig}) for the corresping variance parameters.
 
 The density function of a left censored Gaussian distribution with the threshold at zero is given by
 \begin{equation}
@@ -1210,11 +1212,53 @@ The density function of a left censored Gaussian distribution with the threshold
 where $\phi$ is the probability density and $\Phi$ the cumulative distribution function of the
 standard normal distribution.
 
-In order to construct the backfitting algorithm for posterior mode estimation using iteratively
-reweighted least squares, as shown in (\ref{eqn:blockbackfit}), as well as the corresponding
-derivative based MCMC sampling scheme presented in Section~\ref{sec:dmh} for estimation of the
-posterior mean and inference, the derivatives w.r.t.\ parameters $\mu$ and $\sigma$ need to be
-computed.
+For posterior mode estimation with the IWLS backfitting algorithm (\ref{eqn:blockbackfit}), as well
+as for the corresponding derivative based MCMC sampling scheme presented in
+Section~\ref{sec:dmh}, the score vectors $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
+\partial \boldsymbol{\eta}_k$ need to be computed with
+\begin{equation*}
+\frac{\partial \ell(\boldsymbol{\beta}; y, \mathbf{x})}{
+\partial \eta_{\mu}} = \begin{cases}
+  \frac{y - \mu}{\sigma^2} & y > 0 \\
+  -\frac{1}{\sigma} \frac{\phi\left(\frac{-\mu}{\sigma} \right)}
+    {\Phi\left(\frac{-\mu}{\sigma} \right)} & \mbox{else,}
+\end{cases}
+\end{equation*}
+and
+\begin{equation*}
+\frac{\partial \ell(\boldsymbol{\beta}; y, \mathbf{x})}{
+\partial \eta_{\sigma}} = \begin{cases} 
+  -1 + \frac{(y - \mu)^2}{\sigma^2} & y > 0 \\ 
+  -\frac{-\mu}{\sigma} \frac{\phi\left(\frac{-\mu}{\sigma} \right)}
+    {\Phi\left(\frac{-\mu}{\sigma} \right)} & \mbox{else.}
+\end{cases}
+\end{equation*}
+The weight matrix $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
+\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ is derived using
+\begin{equation*}
+\frac{\partial^2 \ell(\boldsymbol{\beta}; y, \mathbf{x})}{
+\partial \eta_{\mu}^2} = \begin{cases} 
+  -\frac{1}{\sigma^2} & y > 0 \\
+  -\frac{-\mu}{\sigma^3}\frac{\phi\left(\frac{-\mu}{\sigma} \right)}
+    {\Phi\left(\frac{-\mu}{\sigma} \right)}-\frac{1}{\sigma^2}
+    \frac{\phi\left(\frac{-\mu}{\sigma} \right)^2}
+    {\Phi\left(\frac{-\mu}{\sigma} \right)^2}
+  & \mbox{else,}
+\end{cases}
+\end{equation*}
+and
+\begin{equation*}
+\frac{\partial^2 \ell(\boldsymbol{\beta}; y, \mathbf{x})}{
+\partial \eta_{\sigma}^2} = \begin{cases} 
+  - 2 \frac{(y-\mu)^2}{\sigma^2} & y > 0 \\
+  - \frac{-\mu}{\sigma}\frac{\phi\left(\frac{-\mu}{\sigma} \right)}
+    {\Phi\left(\frac{-\mu}{\sigma} \right)} - \frac{(-\mu)^3}{\sigma^3}
+    \frac{\phi\left(\frac{-\mu}{\sigma} \right)}
+    {\Phi\left(\frac{-\mu}{\sigma} \right)} - \frac{(-\mu)^2}{\sigma^2}
+    \frac{\phi\left(\frac{-\mu}{\sigma} \right)^2}
+    {\Phi\left(\frac{-\mu}{\sigma} \right)^2} & \mbox{else.}
+\end{cases}
+\end{equation*}
 
 <<echo=FALSE, results=hide>>=
 if(!file.exists("rainmodel.rda") & FALSE) {
