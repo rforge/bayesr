@@ -89,6 +89,37 @@ n <- 200
 dat <- data.frame("x1" = sort(runif(n, 0, 1)))
 dat$y <- with(dat, 1.2 + f(x1) + rnorm(n, sd = 0.2))
 
+k0 <- 15
+X <- smoothCon(s(x1, k = k0, bs = "tp"), dat, NULL, absorb.cons = TRUE)[[1]]$X
+k <- ncol(X)
+
+ff <- function(beta) {
+  f <- (X %*% beta[2:(k + 1)]) / exp(1 + X %*% beta[(k + 2):(2 * k + 1)])
+  f <- f - mean(f)
+  beta[1] + f
+}
+
+objfun <- function(beta) {
+  f <- ff(beta)
+  return(sum((dat$y - f)^2))
+}
+
+start <- c(0, rep(0, ncol(X) * 2))
+
+opt <- optim(start, objfun, method = "BFGS")
+
+plot(dat)
+lines(ff(opt$par) ~ dat$x1)
+b <- gam(y ~ s(x1, k = k0), data = dat)
+lines(fitted(b) ~ dat$x1, col = "red")
+
+
+X2 <- cbind(X, dat$y * X)
+b <- lm(y ~ X2, data = dat)
+lines(ff(coef(b)) ~ dat$x1, col = "blue")
+
+
+
 b <- bamlss(y ~ s(x1), data = dat, method = "MP")
 
 b <- bamlss(y ~ s(x1), data = dat, method = "MCMC", sample = "slice", svalues = FALSE, n.iter = 1200, burnin = 200, thin = 1)
