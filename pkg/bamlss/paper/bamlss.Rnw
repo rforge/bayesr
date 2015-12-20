@@ -95,6 +95,7 @@ main <- function(text, side = 3, line = 0.5, cex = 1.2, ...) {
 
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 
 
 \section{Introduction} \label{sec:intro}
@@ -112,14 +113,13 @@ established generalized additive model (GAM,~\citealp{bamlss:Hastie+Tibshirani:1
 The terms of an additive predictor are most commonly represented by a basis function approach. This
 leads to a very generic model structure and can be further exploited because each term
 can be transformed into a mixed model representation
-\citep{bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003}. In a full Bayesian setting, this
+\citep{bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003}. In a fully Bayesian setting, this
 generality remains because priors on parameters can also be formalized in general way, e.g.,
 by assigning normal priors on the regression coefficients of smooth terms
 \citep{bamlss:Fahrmeir+Kneib+Lang+Marx:2013, bamlss:Brezger+Lang:2006}.
 
-The full Bayesian approach using Marcov Chain Monte Carlo (MCMC) simulation is particularly
-attractive since it provides inference that does not rely on asymptotic properties and allows
-extensions such as variable selection or multilevel models.
+The fully Bayesian approach using Markov Chain Monte Carlo (MCMC) simulation is particularly
+attractive since it provides inference that provides valid credible intervals for estimators in situations where confidence intervals for corresponding maximum likelihood estimators based on asymptotic properties fail. This is particular the case in more complex models, e.g.~with response distributions outside the exponential family or when multiple predictors contain several smooth effects. In addition, extensions such as variable selection, non-standard priors for hyperparameters or multilevel models are easily included.
 Probably for this reason, and because computational power has tremendously increased in the past
 decade, the number of Bayesian estimation engines that can tackle complicated inferential problems
 has seen a constant rise. As a whole, existing estimation engines already provide infrastructures
@@ -167,10 +167,10 @@ y \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{1}) = \eta_{1}, \,\,
 where $\mathbf{\mathcal{D}}$ denotes any distribution available for the response
 variable $y$ and $\theta_k$, $k = 1, \ldots, K$, are parameters that are linked to additive predictors
 using known monotonic and twice differentiable functions
-$h_{k}(\cdot)$ \citep{bamlss:Rigby+Stasinopoulos:2005}. Note that the response may also be a
+$h_{k}(\cdot)$ \citep{bamlss:Rigby+Stasinopoulos:2005,bamlss:Klein+Kneib+Lang+Sohn:2015}. Note that the response may also be a
 q-dimensional vector $\mathbf{y} = (y_{1}, \ldots, y_{q})^\top$, e.g., when
-$\mathbf{\mathcal{D}}$ is a multivariate normal density
-(see, e.g., \citealp{bamlss:Klein+Kneib+Klasen+Lang:2014}).
+$\mathbf{\mathcal{D}}$ is a distribution of random vectors with dimension $q$.
+(see, e.g., \citealp{bamlss:Klein+Kneib+Klasen+Lang:2015}).
 The $k$-th additive predictor is given by
 \begin{equation} \label{eqn:structadd}
 \eta_k = \eta_k(\mathbf{x}; \boldsymbol{\beta}_k) =
@@ -210,8 +210,8 @@ $i = 1, \ldots, n$ observations is a composition of
 \mathbf{f}_{jk} = f_{jk}(\mathbf{X}_{jk}, \boldsymbol{\beta}_{jk}),
 \end{equation}
 where $\mathbf{X}_{jk}$ ($n \times m_{jk}$) is a design matrix and the structure of $\mathbf{X}_{jk}$
-only depends on the type of covariate(s) and prior assumptions. The vector $\boldsymbol{\beta}_{jk}$
-($q_{jk} \times 1$) are regression coefficients that need to be estimated. Hence, the predictor
+only depends on the type of covariate(s). The vector $\boldsymbol{\beta}_{jk}$
+($q_{jk} \times 1$) are regression coefficients with appropriate prior assumptions that need to be estimated. Hence, the predictor
 (\ref{eqn:structadd}) may be written as $\boldsymbol{\eta}_k = \mathbf{f}_{1k} + \ldots + \mathbf{f}_{J_kk}$.
 The computation of the vector $\mathbf{f}_{jk}$ is in most cases a matrix product of the design matrix
 and the coefficients, however as already noted, the framework presented here allows for arbitrary
@@ -234,7 +234,7 @@ p(\boldsymbol{\beta}_{jk}) \propto 1.
 One of the simplest
 informative priors is a normal prior given by
 \begin{equation} \label{eqn:linprior}
-p(\boldsymbol{\beta}_{jk}) \propto \exp \left(- \frac{1}{2}
+p(\boldsymbol{\beta}_{jk}|\mathbf{M}_{jk},\mathbf{m}_{jk}) \propto \exp \left(- \frac{1}{2}
   (\boldsymbol{\beta}_{jk} - \mathbf{m}_{jk})^{\top}\mathbf{M}_{jk}^{-1}(\boldsymbol{\beta}_{jk} -
   \mathbf{m}_{jk})\right),
 \end{equation}
@@ -257,7 +257,7 @@ overview of smooth functions constructed from various basis functions is provide
 The elegance of the approach is that regularization of the possibly very complex functions is
 accomplished by placing a generic multivariate normal prior
 \begin{equation} \label{eqn:shrinkprior}
-p(\boldsymbol{\beta}_{jk}) \propto \left( \frac{1}{\tau_{jk}^2} \right)^{rk(\mathbf{K}_{jk}) / 2} \exp \left(- \frac{1}{2\tau_{jk}^2}
+p(\boldsymbol{\beta}_{jk}|\tau_{jk}^2) \propto \left( \frac{1}{\tau_{jk}^2} \right)^{rk(\mathbf{K}_{jk}) / 2} \exp \left(- \frac{1}{2\tau_{jk}^2}
 \boldsymbol{\beta}_{jk}^{\top}\mathbf{K}_{jk}\boldsymbol{\beta}_{jk}\right)
 \end{equation}
 on the regression coefficients $\boldsymbol{\beta}_{jk}$, where the precision matrix $\mathbf{K}_{jk}$
@@ -269,20 +269,20 @@ $\mathbf{K}_{jk} = \mathbf{I}$, similarly independent and identically distribute
 effects can be incorporated using prior (\ref{eqn:shrinkprior}).
 A common choice of prior for the variance parameter is a weakly informative inverse Gamma hyperprior
 \begin{equation} \label{eqn:ig}
-p(\tau_{jk}^2) = \frac{b_{jk}^{a_{jk}}}{\Gamma(a_{jk})} (\tau_{jk}^2)^{-(a_{jk} + 1)} \exp(-b_{jk} / \tau_{jk}^2).
+p(\tau_{jk}^2|a_{jk},b_{jk}) = \frac{b_{jk}^{a_{jk}}}{\Gamma(a_{jk})} (\tau_{jk}^2)^{-(a_{jk} + 1)} \exp(-b_{jk} / \tau_{jk}^2).
 \end{equation}
-with $a_{jk} = b_{jk} = 0.001$ as a standard option. Small values for $a_{jk}$ and $b_{jk}$ correspond to an 
-approximate uniform distribution for $\log(\tau_{jk}^2)$. However, the default option of the inverse
+with hyperparameters $a_{jk} = b_{jk} = 0.001$ as a standard option. Small values for $a_{jk}$ and $b_{jk}$ correspond to an 
+approximate flat prior for $\log(\tau_{jk}^2)$. Setting $b_{jk}=0$ and $a_{jk}=-1$ or $a_{jk}=-0.5$ yields flat priors for $\tau_{jk}^2$ and $\tau_{jk}$, respectively. However, the default option of the inverse
 Gamma prior for variance parameters needs to be reconsidered in some cases, e.g., it might be
 problematic if $\tau_{jk}$ is close to zero, since the results a very sensitive on the choice of
 $a_{jk}$ and $b_{jk}$. Therefore, \citet{bamlss:Gelman:2006} proposes to use the half-Cauchy prior
 \begin{equation} \label{eqn:hcauchy}
-p(\tau_{jk}) = \frac{2A_{jk}}{\pi (\tau_{jk}^2 + A_{jk}^2)}, \quad A_{jk} > 0.
+p(\tau_{jk}|A_{jk}) = \frac{2A_{jk}}{\pi (\tau_{jk}^2 + A_{jk}^2)}, \quad A_{jk} > 0.
 \end{equation}
-For $A_{jk} \rightarrow \infty$ the prior is uniform, hence large values (e.g., $A_{jk} = 25$) result in
+For the hyperparameter $A_{jk} \rightarrow \infty$ the prior is uniform, hence large values (e.g., $A_{jk} = 25$) result in
 weakly informative priors. A desirable property of the half-Cauchy is that for $\tau_{jk} = 0$ the
 density is a nonzero constant, whereas the density of the inverse Gamma for $\tau_{jk} \rightarrow 0$
-vanishes (see also \citealp{bamlss:Polson+Scott:2012}).
+vanishes (see also \citealp{bamlss:Polson+Scott:2012}). Note that in our framework the priors for variances $\tau_{jk}^2$ rather than $\tau_{jk}$ are usually considered. Hence, the corresponding priors have to be proposed. Another question is the actual choice of hyperparameters. A recent suggestion reducing this issue to the choice of a scale parameter that is directly related to the functions $f_{jk}$ (and thus much better interpretable and accessible for the user) is given in~\citet{bamlss:Klein+Kneib:2015} for several different hyperpriors for $\tau_{jk}^2$, such as resulting priors from half-Cauchy, half-normal or uniform priors for $\tau_{jk}$ or resulting penalised complexity priors~\citep{bamlss:Simpson:Rue:Martins:Riebler:Sorbye:2015}. 
 
 In addition, the individual model components $\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$ for any basis
 function specification can be further decomposed into a mixed model representation given by
@@ -297,6 +297,8 @@ $\mathbf{K}_{jk}$ and $\tilde{\mathbf{X}}_{jk}$ by finding a basis of the null s
 such that $\tilde{\mathbf{X}}_{jk}^{\top}\mathbf{K}_{jk} = \mathbf{0}$, i.e., parameters
 $\tilde{\boldsymbol{\gamma}}_{jk}$ are not penalized (see, e.g.,
 \citealp{bamlss:Fahrmeir+Kneib+Lang+Marx:2013, bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003}).
+
+\subsubsection{Multilevel effects?}\label{sec:multileveleffects}
 
 \subsubsection{Further effects}
 
@@ -380,12 +382,12 @@ distributional regression models.
 
 The mode of the posterior distribution is the mode of the log-posterior (\ref{eqn:logpost}) given by
 \begin{equation}
-\text{Mod}(\boldsymbol{\vartheta} ; \mathbf{y}, \mathbf{X}) =
+\text{Mod}(\boldsymbol{\vartheta} | \mathbf{y}, \mathbf{X}) =
   \underset{\boldsymbol{\vartheta}}{\text{arg max }} \log \, p(\boldsymbol{\vartheta} ; \mathbf{y}. \mathbf{X})
 \end{equation}
 and equals the maximum likelihood estimator
 \begin{equation}
-\text{ML}(\boldsymbol{\vartheta} ; \mathbf{y}, \mathbf{X}) =
+\text{ML}(\boldsymbol{\vartheta} | \mathbf{y}, \mathbf{X}) =
   \underset{\boldsymbol{\vartheta}}{\text{arg max }} \ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X})
 \end{equation}
 assigning uniform priors (\ref{eqn:uniprior})
@@ -612,7 +614,7 @@ parameters for the next $k$ are calculated again by an inner backfitting algorit
 Note that for numerical reasons it is oftentimes better to replace the hessian by the expected
 Fisher information with weights
 $\mathbf{W}_{kk} = -\mathrm{diag}(E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
-\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top))$.
+\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top))$,~\citep{bamlss:Klein:Kneib:Lang:2015}.
 
 \newpage
 
@@ -620,8 +622,9 @@ $\mathbf{W}_{kk} = -\mathrm{diag}(E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{
 
 The mean of the posterior distribution is
 \begin{equation} \label{eqn:postmean}
-E(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X}) =
-  \int \boldsymbol{\vartheta} p(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X})d\boldsymbol{\vartheta}.
+E(\boldsymbol{\vartheta}| \mathbf{y}, \mathbf{X}) =
+  \int \boldsymbol{\vartheta}\, p(\boldsymbol{\vartheta}| \mathbf{y}, \mathbf{X})d\boldsymbol{\vartheta} =
+  \int \boldsymbol{\vartheta}\, p(\mathbf{y};\boldsymbol{\vartheta}, \mathbf{X})p(\boldsymbol{\beta}| \mathbf{\boldsymbol{\tau}^2})p(\boldsymbol{\tau}^2)d\boldsymbol{\vartheta}.
 \end{equation}
 Clearly, the problem in deriving the expectation, and other quantities like the posterior median,
 relies on the computation of usually high-dimensional integrals, which can be rarely solved
@@ -683,7 +686,7 @@ following methods:
   of the log-posterior centered at the last state
   \begin{eqnarray*}
   p(\boldsymbol{\beta}_{jk}^\star | \cdot) &\propto& \exp\left\{
-    ln\,p\left(\boldsymbol{\beta}_{jk}^{(t)} | \cdot\right) +
+    \log\,p\left(\boldsymbol{\beta}_{jk}^{(t)} | \cdot\right) +
     \left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)^\top s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) + \right.\\
   && \left. \frac{1}{2}\left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)^\top
     \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)
@@ -755,7 +758,7 @@ following methods:
   $-E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
     \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$,
   in each iteration of the MCMC sampler using iteratively reweighted least squares (IWLS)
-  \citep{bamlss:Gamerman:1997, bamlss:Brezger+Lang:2006, bamlss:Klein+Kneib+Klasen+Lang:2014}. If
+  \citep{bamlss:Gamerman:1997, bamlss:Brezger+Lang:2006, bamlss:Klein+Kneib+Klasen+Lang:2015}. If
   the computation of the weights $\mathbf{W}_{kk}$ is expensive, one simple strategy is to update
   $\mathbf{W}_{kk}$ only after samples all parameters of $\boldsymbol{\theta}_k$ are drawn.
 
@@ -785,13 +788,27 @@ $$
   \boldsymbol{\beta}_{jk}^\star + b_{jk}.
 $$
 As mentioned in Section \ref{sec:smootheffects}, other priors than the inverse Gamma might be
-desirable. However, in most applications estimating the smooth effects using the inverse Gamma works
-particulary well. If a simple Gibbs sampling step cannot be derived, another easy to implement
-strategy is to use slice sampling, since the number of smoothing variances is usually not very large
+desirable. Then,  Metropolis Hastings steps also for the variances can be constructed, see~\citet{bamlss:Klein:Kneib:2015} for details. If a simple Gibbs sampling step cannot be derived, another strategy is to use slice sampling, since the number of smoothing variances is usually not very large
 the computational burden does most of the times not exceed possible benefits.
 
-
 \newpage
+
+\subsection{Model Choice} \label{sec:modchoice}
+
+\subsubsection{Model Fit} \label{sec:modfit}
+
+Quantile residuals defined as $\hat r_i=\Phi^{-1}(\mathbf{\mathcal{D}}(y_i|\hat{\boldsymbol{\theta}}_{i}))$ with the inverse cumulative distribution function (cdf) of a standard normal distribution $\Phi^{-1}$ and $\mathbf{\mathcal{D}}(\cdot|\hat{\boldsymbol{\theta}}_{i})$ denoting cdf with estimated parameters $\hat{\boldsymbol{\theta}}_{i}=(\hat\theta_{i1},\ldots,\hat\theta_{iK})'$ plugged in, should at least approximately be standard normally distributed if the correct model has been specified \citep{bamlss:Dunn:Smyth:1996}. Resulting residuals can be assessed graphically in terms of quantile-quantile-plots. Strong deviations from the bisecting line are then a sign for an inappropriate model fit. Instead of looking at residuals one can use the 
+probability integral transform (PIT) which considers $u_i=\mathbf{\mathcal{D}}(y_i|\hat{\boldsymbol{\theta}}_i)$ without applying the inverse standard normal cdf. If the estimated model is a good approximation to the true data generating process, the $u_i$ will then approximately follow a uniform distribution on $[0,1]$. Graphically, histograms of the $u_i$ can be used for this purpose.
+
+\subsubsection{Variable Selection with Posterior Mode} \label{sec:varselpostmode}
+
+\subsubsection{Variable Selection with Posterior Mean} \label{sec:varselpostmean}
+
+The deviance information criterion (DIC) can be used for model choice and variable selection in Bayesian inference. It is easily be computed from the MCMC output without requiring additional computional effort. If $\boldsymbol{\vartheta}^{[1]},\ldots,\boldsymbol{\vartheta}^{[T]}$ is a MCMC sample from the posterior for the complete parameter vector $\boldsymbol{\vartheta}$, the DIC is given by $\overline{D(\boldsymbol{\vartheta})}+ \mathit{pd}=2 D\overline{(\boldsymbol{\vartheta})}-D(\overline{\boldsymbol{\vartheta}})=\tfrac{2}{T}\sum D(\boldsymbol{\vartheta}^{[t]})-D(\tfrac{1}{T}\sum\boldsymbol{\vartheta}^{[t]})$ where $D(\boldsymbol{\vartheta})=-2\log(p(\yvec|\boldsymbol{\vartheta}))$ is the model deviance and $\mathit{pd}=\overline{D(\boldsymbol{\vartheta})}-D(\overline{\boldsymbol{\vartheta}})$ is an effective parameter count.
+
+\subsubsection{Predicitive Ability} \label{sec:predability}
+
+%\newpage
 
 
 \subsection{Inference and prediction} \label{sec:infpred}
@@ -808,7 +825,7 @@ Moreover, from a computational perspective it can be difficult to derive the ful
 information, because this might involve complex cross derivatives of the parameters and there
 are cases where standard numerical techniques cannot be applied (see Section~\ref{sec:coxreg}).
 
-Instead, applying full Bayesian inference is relatively easy by direct computation of desired
+Instead, applying fully Bayesian inference is relatively easy by direct computation of desired
 statistics from posterior samples. Computational costs are relatively low, since only samples for
 parameters $\boldsymbol{\beta}_{jk}$ and $\tau_{jk}^2$ need to be saved (in practice
 about 2000-3000 are sufficient) from which inference of any combination of terms is straightforward,
