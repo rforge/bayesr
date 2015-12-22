@@ -82,14 +82,14 @@ b <- bamlss(mstatus ~ s(age), family = multinomial.bamlss, data = marital.nz)
 
 
 ## pick function
-f <- simfun(type = "complicated")
+f <- simfun(type = "pick")
 
 set.seed(111)
 n <- 200
 dat <- data.frame("x1" = sort(runif(n, 0, 1)))
-dat$y <- with(dat, 1.2 + f(x1) + rnorm(n, sd = 0.2))
+dat$y <- with(dat, 10 + f(x1) + rnorm(n, sd = 0.2))
 
-k0 <- 15
+k0 <- 8
 X <- smoothCon(s(x1, k = k0, bs = "tp"), dat, NULL, absorb.cons = TRUE)[[1]]$X
 k <- ncol(X)
 
@@ -118,6 +118,51 @@ X2 <- cbind(X, dat$y * X)
 b <- lm(y ~ X2, data = dat)
 lines(ff(coef(b)) ~ dat$x1, col = "blue")
 
+
+stepfun <- function(maxit = 100, eps = .Machine$double.eps)
+{
+  y <- dat$y
+  k <- ncol(X)
+
+  beta <- rep(eps, 2 * k + 1)
+
+  fu <- drop(beta[1] + X %*% beta[2:(k + 1)])
+  fl <- drop(1 + X %*% beta[(k + 2):(2 * k + 1)])
+  fit <- fu / fl
+
+  iter <- 0; err <- eps + 1
+  while(iter < maxit & err > eps) {
+    fit0 <- fit
+
+    bu <- coef(lm.fit(cbind(1, X) / fl, y))
+    fu <- drop(bu[1] + X %*% bu[2:(k + 1)])
+    fit <- fu / fl
+
+    bl <- coef(lm.fit(X, y * fl))
+    fl <- drop(1 + X %*% bl)
+    fit <- fu / fl
+
+    if(iter > 0)
+      err <- mean((fit - fit0) / fit0)
+
+    iter <- iter + 1
+  }
+
+  b <- c(bu, bl)
+  plot(dat, ylim = range(c(fit, dat$y)))
+  lines(fit ~ dat$x1, col = "green")
+}
+
+stepfun()
+
+
+
+
+
+
+
+
+a <- nls(y ~ ns(x1,df=5) / ns(x1,df=5), data = dat)
 
 
 b <- bamlss(y ~ s(x1), data = dat, method = "MP")
@@ -365,4 +410,42 @@ print(nd)
 b <- bamlss(y ~ ., ~., data = dat, sampler = NULL, optimizer = boost0)
 
 
+
+
+
+##################################################
+## NLS ###########################################
+##################################################
+data("O2K", package = "nlstools")
+
+b <- gam(VO2 ~ s(t, k = 10,bs="ps"), data = O2K)
+
+sobj <- smoothCon(s(t, k = 5, bs = "ps"), O2K, NULL, absorb.cons = TRUE)[[1]]
+X <- sobj$X
+S <- sobj$S[[1]]
+k <- ncol(X)
+
+ff <- function(beta, X) {
+  f <- (X %*% beta[2:(k + 1)]) / exp(1 + X %*% beta[(k + 2):(2 * k + 1)])
+  f <- f - mean(f)
+  drop(beta[1] + f)
+}
+
+objfun <- function(theta, X, y, S, lambda) {
+  sd <- theta[1]
+  beta <- theta[-1]
+  f <- ff(beta, X)
+  bu <- beta[2:(k + 1)]
+  bl <- beta[(k + 2):(2 * k + 1)]
+  ll <- sum(dnorm(y, mean = f, sd = exp(sd), log = TRUE))
+  -1 * ll
+}
+
+start <- c(0, 0, rep(0, ncol(X) * 2))
+
+opt <- optim(start, objfun, X = X, y = O2K$VO2, S = S, lambda = c(0.00001, 0.000000000000001), method = "BFGS")
+
+plot(O2K, ylim = range(c(fitted(b), O2K$V02, ff(opt$par[-1], X))))
+lines(fitted(b) ~ O2K$t)
+lines(ff(opt$par[-1], X) ~ O2K$t, col = "red")
 
