@@ -342,6 +342,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, ...)
             grad2 <- c(grad2, drop(-x$rank[j] / (2 * tau2[j]) - 1 / (2 * tau2[j]^2) * x$S[[j]] %*% gamma + (-x$a - 1) / tau2[j] + x$b / (tau2[j]^2)))
             x$X <- cbind(x$X, 0)
           }
+          grad <- drop(grad)
         }
       }
       if(!is.null(score)) {
@@ -443,7 +444,7 @@ assign.df <- function(x, df)
     df <- 1
   int <- c(.Machine$double.eps^0.25, 1e+10)
   XX <- if(inherits(x$X, "spam")) crossprod.spam(x$X) else crossprod(x$X)
-  if(length(tau2) > 1) {
+  if(length(tau2) > 1 & FALSE) {
     df.part <- df / length(tau2)
     for(j in seq_along(tau2)) {
       objfun <- function(val) {
