@@ -936,11 +936,6 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
   }
 
-cat("\n")
-print(range(diag(P)))
-print(x$label)
-cat("------------\n")
-
   ## Compute fitted values.
   g <- get.state(x, "b")
   if(any(is.na(g)) | any(g %in% c(-Inf, Inf)))
