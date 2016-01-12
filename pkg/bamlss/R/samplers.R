@@ -799,12 +799,9 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
   ## Sample variance parameter.
   if(!data$fixed & is.null(data$sp)) {
     if(length(data$S) < 2) {
-      tau2 <- NULL
-      for(j in seq_along(data$S)) {
-        a <- data$rank[j] / 2 + data$a
-        b <- 0.5 * crossprod(g, data$S[[j]]) %*% g + data$b
-        tau2 <- c(tau2, 1 / rgamma(1, a, b))
-      }
+      a <- data$rank / 2 + data$a
+      b <- 0.5 * crossprod(g, data$S[[1]]) %*% g + data$b
+      tau2 <- 1 / rgamma(1, a, b)
       theta <- set.par(theta, tau2, "tau2")
     } else {
       i <- grep("tau2", names(theta))
