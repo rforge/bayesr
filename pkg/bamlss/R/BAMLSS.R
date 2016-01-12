@@ -633,11 +633,8 @@ make.prior <- function(x) {
       } else {
         if(!is.null(x$sp)) tau2 <- x$sp
         if(length(tau2) < 2) {
-          lp <- 0
-          for(j in seq_along(tau2)) {
-            lp <- lp + -log(tau2[j]) * x$rank[j] / 2 + drop(-0.5 / tau2[j] * crossprod(gamma, x$S[[j]]) %*% gamma) +
-              log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2[j]) - b / tau2[j]
-          }
+          lp <- -log(tau2) * x$rank / 2 + drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
+            log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2) - b / tau2
         } else {
           S <- lp <- 0
           for(j in seq_along(tau2)) {
