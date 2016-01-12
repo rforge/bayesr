@@ -798,7 +798,7 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
 
   ## Sample variance parameter.
   if(!data$fixed & is.null(data$sp)) {
-    if(!data$fixed & is.null(data$sp)) {
+    if(length(data$S) < 2) {
       tau2 <- NULL
       for(j in seq_along(data$S)) {
         a <- data$rank[j] / 2 + data$a
@@ -806,6 +806,12 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
         tau2 <- c(tau2, 1 / rgamma(1, a, b))
       }
       theta <- set.par(theta, tau2, "tau2")
+    } else {
+      i <- grep("tau2", names(theta))
+      for(j in i) {
+        theta <- uni.slice(theta, data, family, NULL,
+          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = pibetaprop)
+      }
     }
   }
 
