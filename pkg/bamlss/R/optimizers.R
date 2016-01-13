@@ -430,20 +430,23 @@ assign.df <- function(x, df)
   int <- c(.Machine$double.eps^0.25, 1e+10)
   XX <- if(inherits(x$X, "spam")) crossprod.spam(x$X) else crossprod(x$X)
   if(length(tau2) > 1) {
-    df.part <- df / length(tau2)
-    for(j in seq_along(tau2)) {
-      objfun <- function(val) {
-        tau2[j] <- val
-        S <- 0
-        for(i in seq_along(x$S))
-          S <- S + 1 / tau2[i] * x$S[[i]]
-        edf <- sum.diag(XX %*% matrix_inv(XX + S, index = x$sparse.setup))
-        return((df - edf)^2)
+    if(FALSE) {
+      df.part <- df / length(tau2)
+      for(j in seq_along(tau2)) {
+        objfun <- function(val) {
+          tau2[j] <- val
+          S <- 0
+          for(i in seq_along(x$S))
+            S <- S + 1 / tau2[i] * x$S[[i]]
+          edf <- sum.diag(XX %*% matrix_inv(XX + S, index = x$sparse.setup))
+          return((df - edf)^2)
+        }
+        opt <- try(optimize(objfun, int)$minimum, silent = TRUE)
+        if(!inherits(opt, "try-error"))
+          tau2[j] <- opt
       }
-      opt <- try(optimize(objfun, int)$minimum, silent = TRUE)
-      if(!inherits(opt, "try-error"))
-        tau2[j] <- opt
     }
+    tau2 <- rep(1000, length(tau2))
   } else {
     objfun <- function(tau2) {
       edf <- sum.diag(XX %*% matrix_inv(XX + 1 / tau2 * x$S[[1]], index = x$sparse.setup))
