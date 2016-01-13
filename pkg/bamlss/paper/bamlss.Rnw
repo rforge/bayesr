@@ -95,8 +95,6 @@ main <- function(text, side = 3, line = 0.5, cex = 1.2, ...) {
 
 
 \begin{document}
-\SweaveOpts{concordance=TRUE}
-
 
 \section{Introduction} \label{sec:intro}
 
@@ -804,7 +802,14 @@ probability integral transform (PIT) which considers $u_i=\mathbf{\mathcal{D}}(y
 
 \subsubsection{Variable Selection with Posterior Mean} \label{sec:varselpostmean}
 
-The deviance information criterion (DIC) can be used for model choice and variable selection in Bayesian inference. It is easily be computed from the MCMC output without requiring additional computional effort. If $\boldsymbol{\vartheta}^{[1]},\ldots,\boldsymbol{\vartheta}^{[T]}$ is a MCMC sample from the posterior for the complete parameter vector $\boldsymbol{\vartheta}$, the DIC is given by $\overline{D(\boldsymbol{\vartheta})}+ \mathit{pd}=2 D\overline{(\boldsymbol{\vartheta})}-D(\overline{\boldsymbol{\vartheta}})=\tfrac{2}{T}\sum D(\boldsymbol{\vartheta}^{[t]})-D(\tfrac{1}{T}\sum\boldsymbol{\vartheta}^{[t]})$ where $D(\boldsymbol{\vartheta})=-2\log(p(\yvec|\boldsymbol{\vartheta}))$ is the model deviance and $\mathit{pd}=\overline{D(\boldsymbol{\vartheta})}-D(\overline{\boldsymbol{\vartheta}})$ is an effective parameter count.
+The deviance information criterion (DIC) can be used for model choice and variable selection in
+Bayesian inference. It is easily be computed from the MCMC output without requiring additional
+computional effort. If $\boldsymbol{\vartheta}^{[1]},\ldots,\boldsymbol{\vartheta}^{[T]}$ is a MCMC
+sample from the posterior for the complete parameter vector $\boldsymbol{\vartheta}$, the DIC is
+given by $\overline{D(\boldsymbol{\vartheta})}+ \mathit{pd}=2 D\overline{(\boldsymbol{\vartheta})}-D(\overline{\boldsymbol{\vartheta}})=\tfrac{2}{T}\sum D(\boldsymbol{\vartheta}^{[t]})-D(\tfrac{1}{T}\sum\boldsymbol{\vartheta}^{[t]})$
+where $D(\boldsymbol{\vartheta})=-2\log(p(\mathbf{y}|\boldsymbol{\vartheta}))$ is the model deviance and
+$\mathit{pd}=\overline{D(\boldsymbol{\vartheta})}-D(\overline{\boldsymbol{\vartheta}})$ is an
+effective parameter count.
 
 \subsubsection{Predicitive Ability} \label{sec:predability}
 
