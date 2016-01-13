@@ -434,8 +434,9 @@ assign.df <- function(x, df)
     for(j in seq_along(tau2)) {
       objfun <- function(val) {
         tau2[j] <- val
+        S <- 0
         for(i in seq_along(x$S))
-          XX <- XX + 1 / tau2[i] * x$S[[i]]
+          S <- S + 1 / tau2[i] * x$S[[i]]
         edf <- sum.diag(XX %*% matrix_inv(XX + S, index = x$sparse.setup))
         return((df - edf)^2)
       }
