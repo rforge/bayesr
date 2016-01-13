@@ -290,23 +290,8 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, ...)
   x$b <- if(is.null(x$xt[["b"]])) 1e-04 else x$xt[["b"]]
   if(!is.null(x$xt[["prior"]]))
     x$prior <- x$xt[["prior"]]
-  if(is.null(x$prior) | !is.function(x$prior)) {
-    x$prior <- function(parameters) {
-      gamma <- parameters[!grepl("tau", names(parameters))]
-      tau2 <-  parameters[grepl("tau", names(parameters))]
-      if(x$fixed | !length(tau2)) {
-        lp <- sum(dnorm(gamma, sd = 1000, log = TRUE))
-      } else {
-        if(!is.null(x$sp)) tau2 <- x$sp
-        lp <- 0
-        for(j in seq_along(tau2)) {
-          lp <- lp + -log(tau2[j]) * x$rank[j] / 2 + drop(-0.5 / tau2[j] * crossprod(gamma, x$S[[j]]) %*% gamma) +
-            log((x$b^x$a)) - log(gamma(x$a)) + (-x$a - 1) * log(tau2[j]) - x$b / tau2[j]
-        }
-      }
-      return(lp)
-    }
-  }
+  if(is.null(x$prior) | !is.function(x$prior))
+    x$prior <- make.prior(x)
   if(is.null(x$edf)) {
     x$edf <- function(x, type = 1) {
       if(type > 1) {

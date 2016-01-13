@@ -645,7 +645,7 @@ make.prior <- function(x) {
           lp <- lp + ld
         }
       }
-      return(lp)
+      return(drop(lp))
     }
   }
   return(prior)
