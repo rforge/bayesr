@@ -810,7 +810,7 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
       i <- grep("tau2", names(theta))
       for(j in i) {
         theta <- uni.slice(theta, data, family, NULL,
-          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = 0, m = 30)
+          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = pibetaprop, m = 30)
       }
     }
   }
