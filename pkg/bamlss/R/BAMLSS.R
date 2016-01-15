@@ -645,7 +645,7 @@ make.prior <- function(x) {
             S <- S + 1 / tau2[j] * x$S[[j]]
             lp <- lp + log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2[j]) - b / tau2[j]
           }
-          ld <- -1/2 * (t(gamma) %*% ginv(S) %*% gamma)
+          ld <- -1/2 * (t(gamma) %*% S %*% gamma)
           lp <- lp + ld
         }
       }
