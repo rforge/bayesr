@@ -700,6 +700,23 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
 
   theta <- theta[[id[1]]][[id[2]]]
 
+  ## Sample variance parameter.
+  if(!data$fixed & is.null(data$sp) & length(data$S)) {
+    if(length(data$S) < 2) {
+      g <- get.par(theta, "b")
+      a <- data$rank / 2 + data$a
+      b <- 0.5 * crossprod(g, data$S[[1]]) %*% g + data$b
+      tau2 <- 1 / rgamma(1, a, b)
+      theta <- set.par(theta, tau2, "tau2")
+    } else {
+      i <- grep("tau2", names(theta))
+      for(j in i) {
+        theta <- uni.slice(theta, data, family, NULL,
+          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = 0, m = 100)
+      }
+    }
+  }
+
   if(is.null(attr(theta, "fitted.values")))
     attr(theta, "fitted.values") <- data$fit.fun(data$X, theta)
 
@@ -795,22 +812,6 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
 
   ## Get the log prior.
   qbeta <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
-
-  ## Sample variance parameter.
-  if(!data$fixed & is.null(data$sp)) {
-    if(length(data$S) < 2) {
-      a <- data$rank / 2 + data$a
-      b <- 0.5 * crossprod(g, data$S[[1]]) %*% g + data$b
-      tau2 <- 1 / rgamma(1, a, b)
-      theta <- set.par(theta, tau2, "tau2")
-    } else {
-      i <- grep("tau2", names(theta))
-      for(j in i) {
-        theta <- uni.slice(theta, data, family, NULL,
-          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = pibetaprop)
-      }
-    }
-  }
 
   theta <- set.par(theta, g, "b")
   data$state$parameters <- as.numeric(theta)

@@ -624,6 +624,10 @@ make.prior <- function(x) {
       if(is.null(x[["b"]])) 1e-04 else x[["b"]]
     } else x$xt[["b"]]
     fixed <- if(is.null(x$fixed)) FALSE else x$fixed
+    if(length(x$S)) {
+      if(length(x$S) > 1)
+        require("MASS")
+    }
 
     prior <- function(parameters) {
       gamma <- parameters[!grepl("tau", names(parameters))]
@@ -641,7 +645,8 @@ make.prior <- function(x) {
             S <- S + 1 / tau2[j] * x$S[[j]]
             lp <- lp + log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2[j]) - b / tau2[j]
           }
-          ld <- -1/2 * (t(gamma) %*% matrix_inv(S) %*% gamma)
+          ##ld <- dmvnorm(gamma, sigma = ginv(S), log = TRUE)
+          ld <- -1/2 * (t(gamma) %*% ginv(S) %*% gamma)
           lp <- lp + ld
         }
       }

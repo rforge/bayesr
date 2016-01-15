@@ -604,6 +604,8 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     }
   }
 
+  ia <- interactive()
+
   inner_bf <- function(x, y, eta, family, edf, id, ...) {
     eps0 <- eps + 1; iter <- 1
     while(eps0 > eps & iter < maxit) {
@@ -682,7 +684,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
       if(verbose) {
         IC <- get.ic(family, y, peta, edf, nobs, criterion)
-        cat("\r")
+        cat(if(ia) "\r" else "\n")
         vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
           " logPost ", fmt(family$loglik(y, peta) + get.log.prior(x), width = 8, digits = digits),
           " logLik ", fmt(family$loglik(y, peta), width = 8, digits = digits),
@@ -691,7 +693,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
         cat(vtxt)
 
-        if(.Platform$OS.type != "unix") flush.console()
+        if(.Platform$OS.type != "unix" & ia) flush.console()
       }
 
       iter <- iter + 1
@@ -702,7 +704,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     logPost <- as.numeric(logLik + get.log.prior(x))
 
     if(verbose) {
-      cat("\r")
+      cat(if(ia) "\r" else "\n")
       vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
         " logPost ", fmt(logPost, width = 8, digits = digits),
         " logLik ", fmt(family$loglik(y, peta), width = 8, digits = digits),
@@ -710,7 +712,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         " eps ", fmt(eps0, width = 6, digits = digits + 2),
         " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
       cat(vtxt)
-      if(.Platform$OS.type != "unix") flush.console()
+      if(.Platform$OS.type != "unix" & ia) flush.console()
       cat("\n")
     }
 
@@ -896,7 +898,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
       g <- drop(P %*% crossprod(x$X, x$rres))
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
       fit <- x$fit.fun(x$X, g)
-      edf <- sum.diag(P %*% XWX)
+      edf <- sum.diag(XWX %*% P)
       eta2[[id]] <- eta2[[id]] + fit
       IC <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), x$criterion, ...)
       return(IC)
@@ -912,7 +914,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
       x$state$parameters <- set.par(x$state$parameters, if(!length(tau2)) x$interval[1] else tau2, "tau2")
     } else {
       i <- grep("tau2", names(x$lower))
-      opt <- try(optim(get.state(x, "tau2"), fn = objfun, method = "L-BFGS-B",
+      opt <- try(optim(c(0, 0), fn = objfun, method = "L-BFGS-B",
         lower = x$lower[i], upper = x$upper[i]), silent = TRUE)
       if(!inherits(opt, "try-error"))
         x$state$parameters <- set.par(x$state$parameters, opt$par, "tau2")
@@ -998,7 +1000,7 @@ bfit_iwls_spam <- function(x, family, y, eta, id, weights, ...)
       P <- chol2inv.spam(U)
       b <- P %*% Xr
       fit <- x$fit.fun(x$X, b)
-      edf <- sum.diag(P %*% XWX)
+      edf <- sum.diag(XWX %*% P)
       eta2[[id]] <- eta2[[id]] + fit
       IC <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), x$criterion, ...)
       return(IC)
@@ -1184,12 +1186,12 @@ log_posterior <- function(par, x, y, family, verbose = TRUE, digits = 3, scale =
   lp <- as.numeric(ll + lprior)
 
   if(verbose) {
-    cat("\r")
+    cat(if(interactive()) "\r" else "\n")
     vtxt <- paste("logLik ", fmt(ll, width = 8, digits = digits),
       " logPost ", fmt(lp, width = 8, digits = digits),
       " iteration ", formatC(bamlss_log_posterior_iteration, width = 4), sep = "")
     cat(vtxt)
-    if(.Platform$OS.type != "unix") flush.console()
+    if(.Platform$OS.type != "unix" & interactive()) flush.console()
     bamlss_log_posterior_iteration <<- bamlss_log_posterior_iteration + 1
   }
 
@@ -1393,7 +1395,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     save.ll <- c(save.ll, ll)
 
     if(verbose) {
-      cat("\r")
+      cat(if(interactive()) "\r" else "\n")
       vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
         " logLik ", fmt(ll, width = 8, digits = digits),
         " edf ", fmt(edf, width = 6, digits = digits),
@@ -1401,7 +1403,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
         " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
       cat(vtxt)
 
-      if(.Platform$OS.type != "unix") flush.console()
+      if(.Platform$OS.type != "unix" & interactive()) flush.console()
     }
 
     iter <- iter + 1
@@ -1537,14 +1539,14 @@ boost99 <- function(x, y, family, weights = NULL, offset = NULL,
     save.ll <- c(save.ll, ll)
 
     if(verbose) {
-      cat("\r")
+      cat(if(interactive()) "\r" else "\n")
       vtxt <- paste(
         " logLik ", fmt(ll, width = 8, digits = digits),
         " eps ", fmt(eps0, width = 6, digits = digits + 2),
         " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
       cat(vtxt)
 
-      if(.Platform$OS.type != "unix") flush.console()
+      if(.Platform$OS.type != "unix" & interactive()) flush.console()
     }
 
     iter <- iter + 1
