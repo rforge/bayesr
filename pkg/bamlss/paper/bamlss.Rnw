@@ -1150,21 +1150,35 @@ compute estimates of parameters, and thirdly, functions for visualization and ou
 To set up the necessary model frame, the parser function translates the model formula
 (see Section~\ref{sec:symdesc}) and the data. For some algorithms a modified version of the
 model frame is needed, e.g., using the mixed model representation (\ref{eqn:mixed}) for smooth
-terms. Hence, a transformer function might be required. For using standalone estimation engines
-additional specifications could be required, e.g., the model code when using \proglang{BUGS} 
-implementations. This task is handled by the setup function. The actual estimation function then
-calls the engine, either an external device or code within the same environment. The data obtained
-from the engine is then uniformly processed in a results function to be able to plot estimates, 
-create summary statistics, and so forth.
+terms. Hence, a transformer function might be required. The actual estimation function then
+calls the engine, either an external device or function within the same environment. The data
+obtained from the engine is then uniformly processed in a results function, e.g., to be able to
+plot samples or effects, create summary statistics, and so forth.
 
 The main advantage of the architecture is that the blocks model frame, transformer, optimizer,
 sampler and results are entirely exchangeable and reusable, i.e., it is relatively easy to
 incorporate new algorithms or engines. The other blocks are assumed to be more or less stable such
 that no extra coding is required. An implementation of this concept together with examples is
-illustrated in the next section. 
+illustrated in the next section.
 
 
 \section{Software implementation and examples} \label{sec:softex}
+
+An implementation of the conceptional framework is provided in the \proglang{R} package
+\pkg{bamlss}. Unlike other software packages for regression modeling, the design really focuses on
+maximum flexibility and easy integration of new code and/or standalone systems, hence, the basic
+idea even goes beyond the concepts presented in the above sections.
+
+More specifically, the \pkg{bamlss} package provides infrastructures that build up all necessary
+matrices and information from which it is easy for the user to construct estimation algorithms or
+interfaces to existing software packages like \pkg{JAGS}. Similarly, the user usually does not need
+(want) to take care about computing post-estimation results like effect plots, summaries, etc.,
+however even this is possible. This way, solutions for new problems can be created relatively easy,
+as shown in the examples. Therefore, the \pkg{bamlss} package can also be seen as an harmonized
+framework for regression modeling.
+
+
+\subsection{Model fitting with bamlss} \label{sec:bamlss}
 
 
 \subsection{Precepitation climatolgy from daily observations} \label{sec:censreg}
@@ -1181,7 +1195,7 @@ models for monthly data may have limited information value on finer temporal res
 
 To contribute to this topic we analyze precipitation data of Austria taken from the HOMSTART
 project
-(\url{http://www.zamg.ac.at/cms/de/forschung/klima/datensaetze/homstart/})
+({\small \url{http://www.zamg.ac.at/cms/de/forschung/klima/datensaetze/homstart/}}) \\
 conducted at the Zentralanstalt f\"ur Meteorologie und Geodynamik (ZAMG) and funded by the Austrian
 Climate Research Programme (ACRP). \citet{bamlss:Umlauf+Mayr+Messner:2012} already investigated the
 question if it rains more frequently on weekends than during work days using the HOMSTART data.
@@ -1193,7 +1207,7 @@ is shown.
 
 As precipitation observations are limited to zero, a natural extension to the models that have been
 discussed for this type of data is censoring. Censoring assumes that a certain quantity cannot be
-observed below or above some certain threshold. Here, we assume a ``left-censored'' normal
+observed below or above some threshold value. Here, we assume a ``left-censored'' normal
 distribution with a threshold at zero. Moreover, to make positive observations more ``normal'', we
 carry out a square root transformation of the daily observations. The censored normal distribution
 seems to fit quite well to the data as shown in the right panel of Figure~\ref{fig:rainmodeldata}.
@@ -1236,7 +1250,7 @@ standard normal distribution.
 
 For posterior mode estimation with the IWLS backfitting algorithm (\ref{eqn:blockbackfit}), as well
 as for the corresponding derivative based MCMC sampling scheme presented in
-Section~\ref{sec:dmh}, the score vectors $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
+Section~\ref{sec:dmh}, the elements of the score vectors $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k$ need to be computed with
 \begin{equation*}
 \frac{\partial \ell(\boldsymbol{\beta}; y, \mathbf{x})}{
@@ -1255,8 +1269,9 @@ and
     {\Phi\left(\frac{-\mu}{\sigma} \right)} & \mbox{else.}
 \end{cases}
 \end{equation*}
-The weight matrix $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
-\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ is derived using
+The diagonal elements of the weight matrix
+$\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
+\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ are derived using
 \begin{equation*}
 \frac{\partial^2 \ell(\boldsymbol{\beta}; y, \mathbf{x})}{
 \partial \eta_{\mu}^2} = \begin{cases} 
