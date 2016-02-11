@@ -717,7 +717,6 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
 
   ## Compute old log likelihood and old log coefficients prior.
   pibeta <- family$loglik(y, peta)
-  p1 <- data$prior(theta)
 
   ## Sample variance parameter.
   if(!data$fixed & !data$fxsp & length(data$S)) {
@@ -731,10 +730,12 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
       i <- grep("tau2", names(theta))
       for(j in i) {
         theta <- uni.slice(theta, data, family, NULL,
-          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = pibeta, m = 30)
+          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = pibeta)
       }
     }
   }
+
+  p1 <- data$prior(theta)
 
   ## Compute partial predictor.
   eta2 <- eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values")
