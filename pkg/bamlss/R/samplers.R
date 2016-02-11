@@ -719,6 +719,23 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
   pibeta <- family$loglik(y, peta)
   p1 <- data$prior(theta)
 
+  ## Sample variance parameter.
+  if(!data$fixed & !data$fxsp & length(data$S)) {
+    if(length(data$S) < 2) {
+      g <- get.par(theta, "b")
+      a <- data$rank / 2 + data$a
+      b <- 0.5 * crossprod(g, data$S[[1]]) %*% g + data$b
+      tau2 <- 1 / rgamma(1, a, b)
+      theta <- set.par(theta, tau2, "tau2")
+    } else {
+      i <- grep("tau2", names(theta))
+      for(j in i) {
+        theta <- uni.slice(theta, data, family, NULL,
+          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = pibeta, m = 30)
+      }
+    }
+  }
+
   ## Compute partial predictor.
   eta2 <- eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values")
 
@@ -744,7 +761,7 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
   M <- P %*% crossprod(data$X, data$rres)
 
   ## Degrees of freedom.
-  edf <- sum.diag(XWX %*% P)
+  edf <- sum(diag(XWX %*% P))
 
   ## Save old coefficients
   g0 <- drop(get.par(theta, "b"))
@@ -797,24 +814,6 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
   qbeta <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
 
   theta <- set.par(theta, g, "b")
-
-  ## Sample variance parameter.
-  if(!data$fixed & is.null(data$sp) & length(data$S)) {
-    if(length(data$S) < 2) {
-      g <- get.par(theta, "b")
-      a <- data$rank / 2 + data$a
-      b <- 0.5 * crossprod(g, data$S[[1]]) %*% g + data$b
-      tau2 <- 1 / rgamma(1, a, b)
-      theta <- set.par(theta, tau2, "tau2")
-    } else {
-      i <- grep("tau2", names(theta))
-      for(j in i) {
-        theta <- uni.slice(theta, data, family, NULL,
-          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = pibetaprop, m = 30)
-      }
-    }
-  }
-
   data$state$parameters <- as.numeric(theta)
   names(data$state$parameters) <- names(theta)
 
@@ -897,8 +896,8 @@ gmcmc_sm.mvn <- function(family, theta, id, prior, eta, y, data, ...)
   p2 <- data$prior(theta)
 
   ## Sample variance parameter.
-  if(!data$fixed & is.null(data$sp)) {
-    if(!data$fixed & is.null(data$sp)) {
+  if(!data$fixed & !data$fxsp) {
+    if(!data$fixed & !data$fxsp) {
       tau2 <- NULL
       for(j in seq_along(data$S)) {
         a <- data$rank[j] / 2 + data$a
@@ -1004,8 +1003,8 @@ gmcmc_sm.newton <- function(family, theta, id, prior, eta, y, data, ...)
   alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
 
   ## Sample variance parameter.
-  if(!data$fixed & is.null(data$sp)) {
-    if(!data$fixed & is.null(data$sp)) {
+  if(!data$fixed & !data$fxsp) {
+    if(!data$fixed & !data$fxsp) {
       tau2 <- NULL
       for(j in seq_along(data$S)) {
         a <- data$rank[j] / 2 + data$a
@@ -1055,7 +1054,7 @@ gmcmc_sm.slice <- function(family, theta, id, prior, eta, y, data, ...)
   fit <- data$fit.fun(data$X, data$state$parameters)
 
   ## Sample variance parameter.
-  if(!data$fixed & is.null(data$sp)) {
+  if(!data$fixed & !data$fxsp) {
     if(length(i <- grep("tau2", names(theta)))) {
       eta[[id[1]]] <- eta[[id[1]]] + fit
       ll <- family$loglik(y, family$map2par(eta))
@@ -1584,8 +1583,8 @@ gmcmc_surv_sm.newton <- function(family, theta, id, prior, eta, y, data, ...)
   alpha <- (p.prop - p.old) + (q.old - q.prop)
 
   ## Sample variance parameter.
-  if(!data$fixed & is.null(data$sp)) {
-    if(!data$fixed & is.null(data$sp)) {
+  if(!data$fixed & !data$fxsp) {
+    if(!data$fixed & !data$fxsp) {
       tau2 <- NULL
       for(j in seq_along(data$S)) {
         a <- data$rank[j] / 2 + data$a
@@ -1651,8 +1650,8 @@ gmcmc_surv_sm.mvn <- function(family, theta, id, prior, eta, y, data, ...)
   p2 <- data$prior(theta)
 
   ## Sample variance parameter.
-  if(!data$fixed & is.null(data$sp)) {
-    if(!data$fixed & is.null(data$sp)) {
+  if(!data$fixed & !data$fxsp) {
+    if(!data$fixed & !data$fxsp) {
       tau2 <- NULL
       for(j in seq_along(data$S)) {
         a <- data$rank[j] / 2 + data$a

@@ -302,7 +302,6 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, ...)
       if(x$fixed | !length(tau2)) return(ncol(x$X))
       if(is.null(x$state$XX))
         x$state$XX <- crossprod(x$X)
-      if(!is.null(x$sp)) tau2 <- x$sp
       S <- 0
       for(j in seq_along(tau2))
         S <- S + 1 / tau2[j] * x$S[[j]]
@@ -398,6 +397,23 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, ...)
     x$sparse.setup$spam.cholFactor <- chol.spam(xx)
   }
 
+  if(ntau2 > 0) {
+    tau2 <- NULL
+    if(length(x$margin)) {
+      for(j in seq_along(x$margin)) {
+        if(!is.null(x$margin[[j]]$xt$tau2))
+          tau2 <- c(tau2, x$margin[[j]]$xt$tau2)
+      }
+    } else {
+      if(!is.null(x$xt$tau2))
+        tau2 <- x$xt$tau2
+    }
+    if(!is.null(tau2)) {
+      tau2 <- rep(tau2, length.out = ntau2)
+      x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
+    }
+  }
+
   x
 }
 
@@ -445,8 +461,8 @@ assign.df <- function(x, df)
         if(!inherits(opt, "try-error"))
           tau2[j] <- opt
       }
+      tau2 <- rep(1000, length(tau2))
     }
-    tau2 <- rep(1000, length(tau2))
   } else {
     objfun <- function(tau2) {
       edf <- sum.diag(XX %*% matrix_inv(XX + 1 / tau2 * x$S[[1]], index = x$sparse.setup))
@@ -873,8 +889,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
 
   ## Compute mean and precision.
   XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
-
-  if(!x$state$do.optim | x$fixed | !is.null(x$sp)) {
+  if(!x$state$do.optim | x$fixed | x$fxsp) {
     if(x$fixed) {
       P <- matrix_inv(XWX, index = x$sparse.setup)
     } else {
@@ -975,7 +990,7 @@ bfit_iwls_spam <- function(x, family, y, eta, id, weights, ...)
   XWX <- (t(diag.spam(x$weights) %*% x$X)) %*% x$X
   Xr <- crossprod.spam(x$X, x$rres)
 
-  if(!x$state$do.optim | x$fixed | !is.null(x$sp)) {
+  if(!x$state$do.optim | x$fixed | x$fxsp) {
     if(!x$fixed) {
       tau2 <- get.state(x, "tau2")
       S <- 0
@@ -1084,7 +1099,7 @@ bfit_optim <- function(x, family, y, eta, id, ...)
     }
   } else NULL
 
-  if(!x$fixed & x$state$do.optim & is.null(x$sp)) {
+  if(!x$fixed & x$state$do.optim & x$fxsp) {
     objfun2 <- function(tau2) {
       tpar <- set.par(tpar, tau2, "tau2")
       suppressWarnings(opt <- try(optim(get.par(tpar, "b"), fn = objfun, gr = grad,
@@ -1574,7 +1589,7 @@ boost.transform <- function(x, y, df, family, weights = NULL, offset = NULL,
   for(j in 1:np) {
     for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
       x[[nx[j]]]$smooth.construct[[sj]] <- assign.df(x[[nx[j]]]$smooth.construct[[sj]], df)
-      if(is.null(x[[nx[j]]]$smooth.construct[[sj]]$sp) & !x[[nx[j]]]$smooth.construct[[sj]]$fixed) {
+      if(!x[[nx[j]]]$smooth.construct[[sj]]$fxsp & !x[[nx[j]]]$smooth.construct[[sj]]$fixed) {
         x[[nx[j]]]$smooth.construct[[sj]]$old.optimize <- x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim
         x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim <- FALSE
         x[[nx[j]]]$smooth.construct[[sj]]$do.optim <- FALSE

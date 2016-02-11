@@ -635,14 +635,13 @@ make.prior <- function(x) {
       if(fixed | !length(tau2)) {
         lp <- sum(dnorm(gamma, sd = 1000, log = TRUE))
       } else {
-        if(!is.null(x$sp)) tau2 <- x$sp
         if(length(tau2) < 2) {
           lp <- -log(tau2) * x$rank / 2 + drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
             log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2) - b / tau2
         } else {
           S <- lp <- 0
           for(j in seq_along(tau2)) {
-            S <- S + 1 / tau2[j] * (t(gamma) %*% x$S[[j]] %*% gamma)
+            S <- S + 1 / tau2[j] * (crossprod(gamma, x$S[[j]]) %*% gamma)
             lp <- lp + log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2[j]) - b / tau2[j]
           }
           ld <- -1/2 * S
