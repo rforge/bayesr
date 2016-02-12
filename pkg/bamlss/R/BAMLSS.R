@@ -646,7 +646,7 @@ make.prior <- function(x) {
             P <- P + 1 / tau2[j] * x$S[[j]]
           }
           ld <- -0.5 * S
-          dP <- determinant(P, logarithm = TRUE)
+          dP <- glogdet(P)
           dP <- dP$modulus * dP$sign
           lp <- -0.5 * dP + lp + ld
         }
@@ -655,6 +655,12 @@ make.prior <- function(x) {
     }
   }
   return(prior)
+}
+
+glogdet <- function(x) {
+  sigma <- svd(x)$d
+  sigma <- sigma[abs(sigma) >= .Machine$double.eps]
+  list("modulus" = sum(log(abs(sigma))), "sign" = prod(sign(sigma)))
 }
 
 
