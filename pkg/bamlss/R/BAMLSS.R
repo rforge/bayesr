@@ -639,13 +639,16 @@ make.prior <- function(x) {
           lp <- -log(tau2) * x$rank / 2 + drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
             log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2) - b / tau2
         } else {
-          S <- lp <- 0
+          S <- P <- lp <- 0
           for(j in seq_along(tau2)) {
             S <- S + 1 / tau2[j] * (crossprod(gamma, x$S[[j]]) %*% gamma)
             lp <- lp + log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2[j]) - b / tau2[j]
+            P <- P + 1 / tau2[j] * x$S[[j]]
           }
-          ld <- -1/2 * S
-          lp <- lp + ld
+          ld <- -0.5 * S
+          dP <- determinant(P, logarithm = TRUE)
+          dP <- dP$modulus * dP$sign
+          lp <- -0.5 * dP + lp + ld
         }
       }
       return(drop(lp))
