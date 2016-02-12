@@ -639,28 +639,19 @@ make.prior <- function(x) {
           lp <- -log(tau2) * x$rank / 2 + drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
             log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2) - b / tau2
         } else {
-          S <- P <- lp <- 0
+          P <- 0
           for(j in seq_along(tau2)) {
-            S <- S + 1 / tau2[j] * (crossprod(gamma, x$S[[j]]) %*% gamma)
-            lp <- lp + log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2[j]) - b / tau2[j]
-            P <- P + 1 / tau2[j] * x$S[[j]]
+            P <- P + 1 / tau2[j] * (x$S[[j]] + diag(1e-05, nrow(x$S[[j]]), ncol(x$S[[j]])))
           }
-          ld <- -0.5 * S
-          dP <- glogdet(P)
+          dP <- determinant(P, logarithm = TRUE)
           dP <- dP$modulus * dP$sign
-          lp <- -0.5 * dP + lp + ld
+          lp <- 0.5 * dP + log((b^a)) - log(gamma(a)) + (-a - 1) * sum(log(tau2)) - 0.5 * (t(gamma) %*% P %*% gamma) - b / (sum(tau2))
         }
       }
       return(drop(lp))
     }
   }
   return(prior)
-}
-
-glogdet <- function(x) {
-  sigma <- svd(x)$d
-  sigma <- sigma[abs(sigma) >= .Machine$double.eps]
-  list("modulus" = sum(log(abs(sigma))), "sign" = prod(sign(sigma)))
 }
 
 
