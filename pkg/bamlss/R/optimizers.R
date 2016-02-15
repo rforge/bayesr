@@ -1969,6 +1969,12 @@ plot.boost.summary <- function(x, ...)
 set.starting.values <- function(x, start)
 {
   if(!is.null(start)) {
+    if(is.list(start)) {
+      if("parameters" %in% names(start))
+        start <- start$parameters
+    }
+    if(is.list(start))
+      start <- unlist(start)
     nx <- names(x)
     for(id in nx) {
       if(!is.null(x[[id]]$smooth.construct)) {

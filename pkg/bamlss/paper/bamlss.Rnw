@@ -1165,9 +1165,9 @@ illustrated in the next section.
 \section{Software implementation and examples} \label{sec:softex}
 
 An implementation of the conceptional framework is provided in the \proglang{R} package
-\pkg{bamlss}. Unlike other software packages for regression modeling, the design really focuses on
-maximum flexibility and easy integration of new code and/or standalone systems, hence, the basic
-idea even goes beyond the concepts presented in the above sections.
+\pkg{bamlss}. Unlike other software packages for regression modeling, the design substantially
+focuses on maximum flexibility and easy integration of new code and/or standalone systems, hence,
+possible implementations even go beyond the concepts presented in the above sections.
 
 More specifically, the \pkg{bamlss} package provides infrastructures that build up all necessary
 matrices and information from which it is easy for the user to construct estimation algorithms or
@@ -1177,6 +1177,82 @@ however even this is possible. This way, solutions for new problems can be creat
 as shown in the examples. Therefore, the \pkg{bamlss} package can also be seen as an harmonized
 framework for regression modeling.
 
+The following only gives a brief introduction of the capabilities of the package, for a detailed
+overview please visit the manual pages of \pkg{bamlss}.
+
+The main model fitting function is called \fct{bamlss}. The most important arguments are
+\begin{Code}
+  bamlss(formula, family = "gaussian", data = NULL,
+    weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
+    transform = NULL, optimizer = NULL, sampler = NULL, results = NULL,
+    start = NULL, cores = NULL, combine = TRUE, ...)
+\end{Code}
+where the first two lines basically represent the standard model frame specifications
+\citep[see][]{bamlss:Chambers+Hastie:1992}.
+
+Argument \code{formula} is an extended model formula, which can be specified following the
+principles described in Section~\ref{sec:symdesc}, i.e., the \code{formula} can be a list of
+formulas where each list entry specifies the details of one parameter of the modeled distribution.
+Therefore, the \pkg{bamlss} package makes heavy use of package \pkg{mgcv} infrastructures and supports
+all model term constructors implemented in \pkg{mgcv}, such as \fct{s}, \fct{te}, \fct{ti} and
+so forth.
+
+For a better understanding of the workflow using function \fct{bamlss}, we briefly describe
+the default model frame parser first. Internally, function \fct{bamlss} parses the \code{formula} with the
+specified \code{family} and the \code{data} into a \class{bamlss.frame} model frame using function
+\fct{bamlss.frame}. When called, function \fct{bamlss.frame} will compute all model matrices and information
+that is needed for subsequent modeling functions. The following example illustrates the possible
+output of \fct{bamlss.frame} for a simple normal model using the simulated motorcycle accident data
+of \proglang{R} package \pkg{MASS} \citep{bamlss:Venables+Ripley:2002}.
+<<>>=
+data("mcycle", package = "MASS")
+f <- list(accel ~ s(times), sigma ~ s(times))
+bf <- bamlss.frame(f, family = "gaussian", data = mcycle)
+print(bf)
+@
+Here, both parameters of the normal distribution are modeled in terms of covariate \code{times} using
+the \pkg{mgcv} default thin plate splines together with the \fct{s} model term constructor. Besides
+the \code{model.frame}, a \code{formula}, \code{family} and the model \code{terms}, the most
+important objects that the \class{bamlss.frame} object \code{bf} holds are elements \code{x} and \code{y}.
+The \code{x} element consists of all model matrices for each parameter of the distribution,
+indicated by the list names \code{mu} and \code{sigma}. Each of them saves the \code{formula} that
+is assigned to a parameter, together with a \code{fake.formula} where possible model term function
+calls are dropped, as well as the corresponding \code{terms} object, the \code{design.matrix} of
+parametric modeled covariates and the \code{smooth.construct} list of all smoothly modeled covariates.
+The elements of \code{smooth.construct} represent one model term each, in this example only
+\code{s(times)}, which is the result of calling the generic model term constructor
+\fct{smooth.construct} of the \pkg{mgcv} package. Inside \fct{bamlss.frame}, all centering and
+identifiability constraints for smooth terms are imposed utilizing \pkg{mgcv} functionality.
+The last element in a \class(bamlss.frame) named \code{y} then represents the response variable(s)
+that is used for modeling.
+
+After constructing the \class{bamlss.frame} the actual model fitters are applied. This can
+be an optimizer function, provided to argument \code{optimizer} and/or a MCMC sampler function
+provided to argument \code{sampler}. For standardization purposes, it is assumed that such functions
+have an \code{x}, \code{y} and \code{family} argument provided from function \fct{bamlss.frame}.
+Moreover, optimizer functions should return a \code{list} with an element named \code{parameters},
+a named \code{vector} or \code{list} of estimated parameters, whereas sampler
+functions should return a matrix of generated samples. To illustrate this setup we apply the default
+\pkg{bamlss} optimizer function \fct{bfit} to the \class{bamlss.frame} object \code{bf} before we
+start the MCMC sampler function \fct{GMCMC} with the returned parameters of \fct{bfit} as starting
+values.
+<<echo=FALSE, results=hide>>=
+if(!file.exists("mcycle-model.rda")) {
+  bo <- with(bf, bfit(x, y, family, maxit = 1000))
+  bs <- with(bf, GMCMC(x, y, family, start = bo, n.iter = 12000, burnin = 2000, thin = 10))
+  save(bo, bs, file = "mcycle-model.rda")
+} else {
+  load("mcycle-model.rda")
+}
+@
+<<eval=FALSE>>=
+bo <- with(bf, bfit(x, y, family))
+bs <- with(bf, GMCMC(x, y, family, start = bo))
+@
+<<>>=
+print(head(bo$parameters))
+print(head(bs[, 1:3]))
+@
 
 \subsection{Model fitting with bamlss} \label{sec:bamlss}
 
