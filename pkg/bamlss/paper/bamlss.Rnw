@@ -1232,7 +1232,9 @@ provided to argument \code{sampler}. For standardization purposes, it is assumed
 have an \code{x}, \code{y} and \code{family} argument provided from function \fct{bamlss.frame}.
 Moreover, optimizer functions should return a \code{list} with an element named \code{parameters},
 a named \code{vector} or \code{list} of estimated parameters, whereas sampler
-functions should return a matrix of generated samples. To illustrate this setup we apply the default
+functions should return a matrix of generated samples that can be coerced to a \class{mcmc} object,
+see also \proglang{R} package \pkg{coda} \citep{bamlss:Plummer+Best+Cowles+Vines:2006}.
+To illustrate this setup we apply the default
 \pkg{bamlss} optimizer function \fct{bfit} to the \class{bamlss.frame} object \code{bf} before we
 start the MCMC sampler function \fct{GMCMC} with the returned parameters of \fct{bfit} as starting
 values.
@@ -1240,7 +1242,7 @@ values.
 if(!file.exists("mcycle-model.rda")) {
   bo <- with(bf, bfit(x, y, family, maxit = 1000))
   bs <- with(bf, GMCMC(x, y, family, start = bo, n.iter = 12000, burnin = 2000, thin = 10))
-  save(bo, bs, file = "mcycle-model.rda")
+  save(bf, bo, bs, file = "mcycle-model.rda")
 } else {
   load("mcycle-model.rda")
 }
