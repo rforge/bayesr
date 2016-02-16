@@ -646,11 +646,11 @@ make.prior <- function(x) {
           }
           ##lp <- dmvnorm(gamma, sigma = matrix_inv(P), log = TRUE) + ld
           dP <- determinant(P, logarithm = TRUE)
-          dP <- dP$modulus * dP$sign
+          dP <- as.numeric(dP$modulus) * as.numeric(dP$sign)
           lp <- 0.5 * dP - 0.5 * (t(gamma) %*% P %*% gamma) + ld
         }
       }
-      return(drop(lp))
+      return(as.numeric(lp))
     }
   }
   return(prior)

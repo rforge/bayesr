@@ -588,7 +588,7 @@ fmt <- function(x, width = 8, digits = 2) {
 
 bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   criterion = c("AICc", "BIC", "AIC"), eps = .Machine$double.eps^0.25,
-  maxit = 400, outer = FALSE, inner = FALSE,
+  maxit = 400, outer = TRUE, inner = TRUE, mgcv = TRUE,
   verbose = TRUE, digits = 4, ...)
 {
   nx <- family$names
@@ -622,28 +622,74 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
   ia <- interactive()
 
-  inner_bf <- function(x, y, eta, family, edf, id, ...) {
-    eps0 <- eps + 1; iter <- 1
-    while(eps0 > eps & iter < maxit) {
-      eta0 <- eta
-      for(sj in seq_along(x)) {
-        ## Get updated parameters.
-        p.state <- x[[sj]]$update(x[[sj]], family, y, eta, id, edf = edf, ...)
+  if(!mgcv) {
+    inner_bf <- function(x, y, eta, family, edf, id, ...) {
+      eps0 <- eps + 1; iter <- 1
+      while(eps0 > eps & iter < maxit) {
+        eta0 <- eta
+        for(sj in seq_along(x)) {
+          ## Get updated parameters.
+          p.state <- x[[sj]]$update(x[[sj]], family, y, eta, id, edf = edf, ...)
 
-        ## Compute equivalent degrees of freedom.
-        edf <- edf - x[[sj]]$state$edf + p.state$edf
+          ## Compute equivalent degrees of freedom.
+          edf <- edf - x[[sj]]$state$edf + p.state$edf
 
-        ## Update predictor and smooth fit.
-        eta[[id]] <- eta[[id]] - fitted(x[[sj]]$state) + fitted(p.state)
+          ## Update predictor and smooth fit.
+          eta[[id]] <- eta[[id]] - fitted(x[[sj]]$state) + fitted(p.state)
 
-        x[[sj]]$state <- p.state
+          x[[sj]]$state <- p.state
+        }
+        eps0 <- do.call("cbind", eta)
+        eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
+        if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
+        iter <- iter + 1
       }
-      eps0 <- do.call("cbind", eta)
-      eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
-      if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
-      iter <- iter + 1
+      return(list("x" = x, "eta" = eta, "edf" = edf))
     }
-    return(list("x" = x, "eta" = eta, "edf" = edf))
+  } else {
+    inner_bf <- function(x, y, eta, family, edf, id, z, hess, ...) {
+      X <- lapply(x, function(x) { x$X })
+      S <- lapply(x, function(x) { x$S })
+      nt <- nt0 <- names(X)
+      nt <- rmf(nt)
+      names(X) <- names(S) <- nt
+      if("modelmatrix" %in% nt)
+        S <- S[!(nt %in% "modelmatrix")]
+      X$z <- z
+      f <- paste("z", paste(c("-1", nt), collapse = " + "), sep = " ~ ")
+      f <- as.formula(f)
+      b <- gam(f, data = X, weights = hess, paraPen = S)
+      cb <- coef(b)
+      ncb <- names(cb)
+      tau2 <- if(length(b$sp)) 1 / b$sp else NULL
+      for(sj in seq_along(x)) {
+        tn <- rmf(nt0[sj])
+        par <- cb[grep(tn, ncb, fixed = TRUE)]
+        tedf <- sum(b$edf[grep(tn, ncb, fixed = TRUE)])
+        names(par) <- paste("b", 1:length(par), sep = "")
+        if(!is.null(tau2) & (tn != "modelmatrix")) {
+          ttau2 <- tau2[grep(tn, names(tau2), fixed = TRUE)]
+          names(ttau2) <- paste("tau2", 1:length(ttau2), sep = "")
+          lo <- x[[sj]]$lower[grep("tau2", names(x[[sj]]$lower), fixed = TRUE)]
+          up <- x[[sj]]$upper[grep("tau2", names(x[[sj]]$upper), fixed = TRUE)]
+          if(any(j <- ttau2 < lo))
+            ttau2[j] <- lo[j]
+          if(any(j <- ttau2 > up))
+            ttau2[j] <- up[j]
+          par <- c(par, ttau2)
+        } else {
+          names(par) <- colnames(x[[sj]]$X)
+          par <- c(par, "tau21" = 1e+20)
+        }
+        x[[sj]]$state$parameters <- par
+        x[[sj]]$state$fitted.values <- x[[sj]]$fit.fun(x[[sj]]$X, par)
+        edf <- edf - x[[sj]]$state$edf + tedf
+        x[[sj]]$state$edf <- tedf
+        x[[sj]]$state$prior <- x[[sj]]$prior(par)
+      }
+      eta[[id]] <- fitted(b)
+      return(list("x" = x, "eta" = eta, "edf" = edf))
+    }
   }
 
   ## Backfitting main function.

@@ -1190,7 +1190,7 @@ The main model fitting function is called \fct{bamlss}. The most important argum
 where the first two lines basically represent the standard model frame specifications
 \citep[see][]{bamlss:Chambers+Hastie:1992}.
 
-Argument \code{formula} is an extended model formula, which can be specified following the
+Argument \code{formula} is an extended model formula, which can be specified by the
 principles described in Section~\ref{sec:symdesc}, i.e., the \code{formula} can be a list of
 formulas where each list entry specifies the details of one parameter of the modeled distribution.
 Therefore, the \pkg{bamlss} package makes heavy use of package \pkg{mgcv} infrastructures and supports
