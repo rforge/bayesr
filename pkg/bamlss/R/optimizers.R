@@ -588,7 +588,7 @@ fmt <- function(x, width = 8, digits = 2) {
 
 bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   criterion = c("AICc", "BIC", "AIC"), eps = .Machine$double.eps^0.25,
-  maxit = 400, outer = TRUE, inner = TRUE, mgcv = TRUE,
+  maxit = 400, outer = FALSE, inner = FALSE, mgcv = FALSE,
   verbose = TRUE, digits = 4, ...)
 {
   nx <- family$names
