@@ -15,8 +15,8 @@ homstart$raw[homstart$raw < 0] <- 0
 d <- subset(homstart, year >= 2009)
 
 f <- list(
-  sqrt(raw) ~ te(day,long,lat, bs=c("cc","tp"), d=c(1,2)) + s(long,lat) + s(elevation,k=4),
-  sigma ~ te(day,long,lat, bs=c("cc","tp"), d=c(1,2)) + s(long,lat) + s(elevation,k=4)
+  sqrt(raw) ~ ti(day,bs="cc") + ti(long,lat,bs="tp",d=2) + ti(day,long,lat, bs=c("cc","tp"), d=c(1,2)) + s(elevation,k=4),
+  sigma ~ ti(day,bs="cc") + ti(long,lat,bs="tp",d=2) + ti(day,long,lat, bs=c("cc","tp"), d=c(1,2)) + s(elevation,k=4)
 )
 
 b <- bamlss(f, data = d, family = "cnorm",
