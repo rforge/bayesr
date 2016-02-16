@@ -662,6 +662,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       cb <- coef(b)
       ncb <- names(cb)
       tau2 <- if(length(b$sp)) 1 / b$sp else NULL
+      fitted <- 0
       for(sj in seq_along(x)) {
         tn <- rmf(nt0[sj])
         par <- cb[grep(tn, ncb, fixed = TRUE)]
@@ -683,11 +684,12 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         }
         x[[sj]]$state$parameters <- par
         x[[sj]]$state$fitted.values <- x[[sj]]$fit.fun(x[[sj]]$X, par)
+        fitted <- fitted + x[[sj]]$state$fitted.values
         edf <- edf - x[[sj]]$state$edf + tedf
         x[[sj]]$state$edf <- tedf
         x[[sj]]$state$prior <- x[[sj]]$prior(par)
       }
-      eta[[id]] <- fitted(b)
+      eta[[id]] <- fitted
       return(list("x" = x, "eta" = eta, "edf" = edf))
     }
   }
