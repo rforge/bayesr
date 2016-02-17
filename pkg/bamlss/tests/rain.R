@@ -21,7 +21,7 @@ f <- list(
 
 b <- bamlss(f, data = d, family = "cnorm",
   binning = TRUE, do.optim = FALSE, gam.side = FALSE,
-  n.iter = 200, cores = 3, burnin = 0, thin = 1)
+  n.iter = 10,burnin=0,thin=1,maxit=20,step=1)
 
 
 library("truncreg")

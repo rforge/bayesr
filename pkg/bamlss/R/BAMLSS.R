@@ -2778,12 +2778,18 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
         fixed = TRUE, value = TRUE)
       if(j != "model.matrix") {
         if(!inherits(x$smooth.construct[[j]], "no.mgcv") & !inherits(x$smooth.construct[[j]], "special")) {
-          eta <- eta + fitted_matrix(x$smooth.construct[[j]]$X, samps[, sn, drop = FALSE])
+          fit <- fitted_matrix(x$smooth.construct[[j]]$X, samps[, sn, drop = FALSE])
+          if(!is.null(x$smooth.construct[[j]]$binning$match.index))
+            fit <- fit[x$smooth.construct[[j]]$binning$match.index, , drop = FALSE]
+          eta <- eta + fit
         } else {
           stop("no fitted values for special terms available yet!")
         }
       } else {
-        eta <- eta + fitted_matrix(x$smooth.construct[[j]]$X, samps[, sn, drop = FALSE])
+        fit <- fitted_matrix(x$smooth.construct[[j]]$X, samps[, sn, drop = FALSE])
+        if(!is.null(x$smooth.construct[[j]]$binning$match.index))
+          fit <- fit[x$smooth.construct[[j]]$binning$match.index, , drop = FALSE]
+        eta <- eta + fit
       }
     }
   }
