@@ -105,7 +105,6 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
     model.matrix = model.matrix, smooth.construct = smooth.construct, model = NULL,
     scale.x = scale.x, ...)
   bf$knots <- knots
-  bf$scale.x <- scale.x
 
   ## Assign class and return.
   class(bf) <- c("bamlss.frame", "list")
@@ -1134,7 +1133,7 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
       bf$model.stats <- list("optimizer" = bf$model.stats)
   }
 
-  if(rescale & bf$scale.x) {
+  if(rescale) {
     rs <- rescale.bamlss(bf)
     bf[names(rs)] <- rs
     rm(rs)
