@@ -2229,13 +2229,8 @@ tF <- function(x, ...)
     "score" = score,
     "hess" = hess,
     "d" = function(y, par, log = FALSE, ...) {
-      call <- paste('dfun(y, ', paste('par$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
+      call <- paste('dfun(y, ', paste('par$', nx, sep = '', collapse = ', '), ', log = log, ...)', sep = "")
       d <- try(eval(parse(text = call)), silent = TRUE)
-      if(inherits(d, "try-error")) {
-        d <- rep(0, length(y))
-      } else {
-        if(log) d <- log(d)
-      }
       d
     },
     "p" = function(y, par, ...) {

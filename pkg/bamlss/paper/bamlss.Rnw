@@ -1376,12 +1376,39 @@ normal.bamlss <- function(...) {
   return(f)
 }
 @
-Internally, if a family function ends with \code{.bamlss} it is
+Internally, if a family function name ends with \code{.bamlss} it is
 sufficient to call the family by character, e.g., the motorcycle model can be estimated using
 the new family object with
 <<eval=FALSE>>=
 b <- bamlss(f, family = "normal", data = mcycle)
 @
+As noted above, it is dependent on the implementation of the estimation engine which details
+are provided within the family object, therefore, in \pkg{bamlss} the family objects can hold
+an arbitrary number of specifications. At the time of writing, the distributions presented in
+Table~\ref{tab:distributions} are already provided within the \pkg{bamlss} package.
+\begin{table}[t!]
+\centering
+\begin{tabular}{ll}
+Function & Distribution \\ \hline
+\fct{beta.bamlss} & Beta distribution \\
+\fct{binomial.bamlss} & Binomial distribution \\
+\fct{cnorm.bamlss} & Censored normal distribution \\
+\fct{cox.bamlss} & Continuous time Cox-model \\
+\fct{gaussian.bamlss} & Gaussian distribution \\
+\fct{gamma.bamlss} & Gamma distribution \\
+\fct{multinomial.bamlss} & Multinomial distribution \\
+\fct{poisson.bamlss} & Poisson distribution \\ \hline
+\end{tabular}
+\caption{\label{tab:distributions} Available distributions in package \pkg{bamlss}.}
+\end{table}
+Additionally, there is also a family transformer function \fct{tF} for family objects created for
+the \proglang{R} package \pkg{gamlss}, e.g., the motorcycle model can be estimated with the \fct{NO} function of
+\pkg{bamlss} by
+<<eval=FALSE>>=
+b <- bamlss(f, family = tF(NO), data = mcycle)
+@
+But note that some of the provided \pkg{gamlss} distributions need good staring value for
+convergence.
 
 
 \subsection{Precepitation climatolgy from daily observations} \label{sec:censreg}
