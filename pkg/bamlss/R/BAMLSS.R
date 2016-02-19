@@ -1633,6 +1633,8 @@ bamlss.family <- function(family, type = "bamlss")
 
 complete.bamlss.family <- function(family)
 {
+  if(is.null(names(family$links)))
+    names(family$links) <- family$names
   if(is.null(family$map2par)) {
     linkinv <- vector(mode = "list", length = length(family$names))
     for(j in family$names)

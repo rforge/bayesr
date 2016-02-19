@@ -758,7 +758,7 @@ following methods:
   in each iteration of the MCMC sampler using iteratively reweighted least squares (IWLS)
   \citep{bamlss:Gamerman:1997, bamlss:Brezger+Lang:2006, bamlss:Klein+Kneib+Klasen+Lang:2015}. If
   the computation of the weights $\mathbf{W}_{kk}$ is expensive, one simple strategy is to update
-  $\mathbf{W}_{kk}$ only after samples all parameters of $\boldsymbol{\theta}_k$ are drawn.
+  $\mathbf{W}_{kk}$ only after samples of all parameters of $\boldsymbol{\theta}_k$ are drawn.
 
 \item \emph{Slice sampling}: \label{sec:smcmc} \\
   Slice sampling \citep{bamlss:Neal:2003} is a gradient free MCMC sampling scheme that produces
@@ -1174,7 +1174,7 @@ matrices and information from which it is easy for the user to construct estimat
 interfaces to existing software packages like \pkg{JAGS} or \pkg{BayesX}. Similarly, the user
 usually does not need (want) to take care about computing post-estimation results like effect plots,
 summaries, etc., however even this is possible. This way, solutions for new problems can be created
-relatively easy by, as shown in the examples. Therefore, the \pkg{bamlss} package can also be seen as
+relatively easy, as shown in the examples. Therefore, the \pkg{bamlss} package can also be seen as
 an harmonized framework for regression modeling.
 
 The following only gives a brief introduction of the capabilities of the package, for a detailed
@@ -1195,9 +1195,9 @@ where the first two lines basically represent the standard model frame specifica
 
 Argument \code{formula} is an extended model formula, which can be specified by the
 principles described in Section~\ref{sec:symdesc}, i.e., the \code{formula} can be a list of
-formulas where each list entry specifies the details of one parameter of the modeled distribution.
-For incorporating smooth terms, the \pkg{bamlss} package makes heavy use of package \pkg{mgcv}
-infrastructures and supports all model term constructors implemented in \pkg{mgcv},
+formulas where each list entry specifies the details of one parameter of the modeled response
+distribution. For incorporating smooth terms, the \pkg{bamlss} package makes heavy use of package
+\pkg{mgcv} infrastructures and supports all model term constructors implemented in \pkg{mgcv},
 such as \fct{s}, \fct{te}, \fct{ti} and so forth.
 
 For a better understanding of the workflow using function \fct{bamlss}, we briefly describe
@@ -1220,6 +1220,7 @@ $$
 where covariate \code{times} is the time measured in milliseconds after impact.
 In \proglang{R}, the model is specified and the corresponding model frame created with
 <<>>=
+library("bamlss")
 data("mcycle", package = "MASS")
 f <- list(accel ~ s(times), sigma ~ s(times))
 bf <- bamlss.frame(f, family = "gaussian", data = mcycle)
@@ -1229,7 +1230,8 @@ Here, both parameters of the normal distribution are modeled in terms of covaria
 the \pkg{mgcv} default thin plate splines together with the \fct{s} model term constructor. Besides
 the \code{model.frame}, a \code{formula}, \code{family} and the model \code{terms}, the most
 important objects that the \class{bamlss.frame} object \code{bf} holds are elements \code{x} and \code{y}.
-The \code{x} element consists of all model matrices for each parameter of the distribution,
+The \code{x} element is build up from the information of the \code{family} object, see
+Section~\ref{sec:families}, and consists of all model matrices for each parameter of the distribution,
 indicated by the list names \code{mu} and \code{sigma}. Each of them saves the \code{formula} that
 is assigned to a parameter, together with a \code{fake.formula} where possible model term function
 calls are dropped, as well as the corresponding \code{terms} object, the \code{model.matrix} of
@@ -1238,8 +1240,8 @@ covariates. The elements of \code{smooth.construct} represent one model term eac
 only \code{s(times)}, which is the result of calling the generic model term constructor
 \fct{smooth.construct} of the \pkg{mgcv} package. Inside \fct{bamlss.frame}, all centering and
 identifiability constraints for smooth terms are imposed utilizing \pkg{mgcv} functionality.
-The last element in a \class(bamlss.frame) named \code{y} then represents the response variable(s)
-that is used for modeling.
+Here, the last element in the \class{bamlss.frame} is named \code{y} and represents the response
+variable(s) that is used for modeling, only \code{accel} in this case.
 
 Within \fct{bamlss}, after constructing the \class{bamlss.frame} the actual model fitters are
 applied. This can be an optimizer function, provided to argument \code{optimizer} and/or a MCMC
@@ -1249,7 +1251,7 @@ Moreover, optimizer functions should return a \code{list} with an element named 
 a named \code{vector} or \code{list} of estimated parameters, whereas sampler
 functions should return a matrix of generated samples that can be coerced to a \class{mcmc} object,
 see also \proglang{R} package \pkg{coda} \citep{bamlss:Plummer+Best+Cowles+Vines:2006}.
-To illustrate this setup we apply the default
+To illustrate the internal setup we apply the default
 \pkg{bamlss} optimizer function \fct{bfit} to the \class{bamlss.frame} object \code{bf}
 <<echo=FALSE, results=hide>>=
 if(!file.exists("mcycle-model.rda")) {
@@ -1263,10 +1265,11 @@ if(!file.exists("mcycle-model.rda")) {
 <<eval=FALSE>>=
 bo <- with(bf, bfit(x, y, family))
 @
-Function \fct{bfit} applies the backfitting algorithm described in (\ref{eqn:blockbackfit}) together
-with automatic selection of the smoothing variances using information criteria like the
-AIC, BIC. The returned object from \fct{bfit} holds the estimated parameters and other information
-about the optimizer convergence, information criteria, etc.
+Function \fct{bfit} applies the algorithm described in Figure~\ref{fig:algodesign} and per default
+the IWLS updating scheme as described in (\ref{eqn:blockbackfit}). Moreover, an automated
+stepwise procedure for smoothing variances selection is implemented using information criteria like the
+corrected AIC and BIC \citep{bamlss:Belitz+Lang:2008}. The returned object from \fct{bfit} holds the
+estimated parameters and other information about the optimizer convergence, information criteria, etc.
 <<>>=
 print(names(bo))
 print(head(unlist(bo$parameters)))
@@ -1277,8 +1280,10 @@ Metropolis-Hastings algorithm and slice sampling, see Section~\ref{sec:postmean}
 <<eval=FALSE>>=
 bs <- with(bf, GMCMC(x, y, family, start = bo))
 @
-The generated samples are stored as a \class{coda} matrix, for which nice printing and plotting
-functions are provided.
+The generated samples are stored as a \class{mcmc} matrix in object \code{bs}, for which nice
+printing and plotting functions are provided, e.g., for inspecting the convergence of the MCMC
+sampler simple trace plots can be created by \code{plot(bs)} or the samples can
+be inspected directly with
 <<>>=
 print(head(bs[, 1:2]))
 @
@@ -1292,7 +1297,7 @@ bf$samples <- bs
 br <- results.bamlss.default(bf)
 plot(br)
 @
-The effect plots on parameter $\mu$ and $\sigma$ are shown in Figure~\ref{fig:mcycle}.
+The resulting effect plots on parameter $\mu$ and $\sigma$ are shown in Figure~\ref{fig:mcycle}.
 \begin{figure}[t!]
 \setkeys{Gin}{width=0.92\textwidth}
 \centering
@@ -1305,7 +1310,78 @@ plot(br, scheme = 2, spar = FALSE)
 \caption{\label{fig:mcycle} Estimated effects on $\mu$ and $\log(\sigma)$ of covariate \code{times}
   of the motorcycle data example.}
 \end{figure}
-Hence, it is also possible to
+
+In summary, function \fct{bamlss} is combining all these single steps. Moreover, since MCMC
+sampling is computationally intensive it is also possible to run chains on several cores using
+package \pkg{parallel}, which is part of the base \proglang{R} distribution. After
+sampling, the chains can be combined in one large \class{mcmc} matrix, but can also be inspected
+separately. Hence, if a new algorithm/interface for optimization or MCMC sampling is written, the user
+can simply provide these functions to \fct{bamlss} and only needs to care about the input arguments
+and the returning values of such functions to use the \pkg{bamlss} functionalities. E.g., using the
+\pkg{JAGS} interface in package \pkg{bamlss}, the same model can be estimated by providing the
+sampler function \fct{JAGS}
+<<eval=FALSE>>=
+b <- bamlss(f, family = "gaussian", data = mcycle,
+  optimizer = bfit, sampler = JAGS)
+@
+Here, we again run the backfitting optimizer function to generate good starting values for the
+MCMC simulation with \pkg{JAGS}. The returned object from \fct{bamlss} is of class \class{bamlss},
+for which common \proglang{R} generic functions like \fct{summary}, \fct{plot}, \fct{predict}, etc.\
+are provided, see Section~\ref{sec:censreg}~and~\ref{sec:coxreg} for examples.
+
+Like other common \proglang{R} model fitting functions the user must specify the distributions to be
+modeled, which are represented as family objects. The basic structure of such an \pkg{bamlss} family
+object is described in Section~\ref{sec:families}, but since these objects are simply
+passed to the optimizer or sampler functions, the model fitting functions itself must interpret
+the information provided by such objects. However, there are minimum requirements to parse the
+model frame with \fct{bamlss.frame}:
+\begin{itemize}
+\item The family object must return a \code{list} of class \class{family.bamlss}.
+\item The object must contain the family name as a character string. 
+\item The object must contain the names of the parameters as a character string, as well as
+  the corresponding link functions as character string.
+\end{itemize}
+Moreover, for most optimizer and sampling functions at least the density function should be provided.
+For example, a new family for the normal distribution holding the first and
+second order derivative functions of the log-likelihood w.r.t.\ the parameters
+(see Section~\ref{sec:leobricks}~and~\ref{sec:families}) to be used for the IWLS updating
+and sampling scheme within function \fct{bfit} and \fct{GMCMC} could be created with
+<<>>=
+normal.bamlss <- function(...) {
+  f <- list(
+    "family" = "normal",
+    "names" = c("mu", "sigma"),
+    "links" = c("identity", "log"),
+    "d" = function(y, par, log = FALSE) {
+      dnorm(y, mean = par$mu, sd = par$sigma, log = log)
+    },
+    "score" = list(
+      "mu" = function(y, par, ...) {
+        drop((y - par$mu) / (par$sigma^2))
+      },
+      "sigma" = function(y, par, ...) {
+        drop(-1 + (y - par$mu)^2 / (par$sigma^2))
+      }
+    ),
+    "hess" = list(
+      "mu" = function(y, par, ...) {
+        drop(1 / (par$sigma^2))
+      },
+      "sigma" = function(y, par, ...) { 
+        rep(2, length(y))
+      }
+    )
+  )
+  class(f) <- "family.bamlss"
+  return(f)
+}
+@
+Internally, if a family function ends with \code{.bamlss} it is
+sufficient to call the family by character, e.g., the motorcycle model can be estimated using
+the new family object with
+<<eval=FALSE>>=
+b <- bamlss(f, family = "normal", data = mcycle)
+@
 
 
 \subsection{Precepitation climatolgy from daily observations} \label{sec:censreg}
