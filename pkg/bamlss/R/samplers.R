@@ -58,6 +58,7 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       x[[i]][[j]]$state$fitted.values <- NULL
       x[[i]][[j]]$XW <- t(x[[i]][[j]]$X)
       x[[i]][[j]]$XWX <- crossprod(x[[i]][[j]]$X)
+      x[[i]][[j]]$dmvnorm_log <- dmvnorm_log
       nt <- c(nt, if(j == "model.matrix") "p" else paste("s", j, sep = "."))
       if(!is.null(x[[i]][[j]]$xt$propose))
         x[[i]][[j]]$propose <- x[[i]][[j]]$xt$propose
@@ -684,15 +685,41 @@ gmcmc_slice <- function(fun, theta, id, prior, ...)
 }
 
 
+dmvnorm_log <- function(x, mean, sigma)
+{
+  require("mvtnorm")
+  d <- try(dmvnorm(x, mean = mean, sigma = sigma, log = TRUE), silent = TRUE)
+  if(inherits(d, "try-error"))
+    d <- NA
+  return(d)
+}
+
+
 gmcmc_sm.iwlsC <- function(family, theta, id, prior,
   eta, y, data, zworking, resids, rho, ...)
 {
+  ## Sample variance parameter.
+  if(!data$fixed & !data$fxsp & length(data$S)) {
+    if(length(data$S) > 1) {
+      i <- grep("tau2", names(theta[[id[1]]][[id[2]]]))
+      for(j in i) {
+        theta[[id[1]]][[id[2]]] <- uni.slice(theta[[id[1]]][[id[2]]], data, family, NULL,
+          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = 0)
+      }
+    }
+  }
+
   rval <- .Call("gmcmc_iwls", family, theta, id, eta, y, data, zworking, resids, rho)
-  data$state$parameters <- as.numeric(rval$parameters)
-  names(data$state$parameters) <- names(rval$parameters)
-  rval$extra <- c("edf" = data$edf(data))
-  rval
+
+  return(list("parameters" = rval$parameters, "alpha" = rval$alpha, "extra" = c("edf" = rval$edf)))
 }
+
+
+process.derivs <- function(x)
+{
+  .Call("process_derivs", as.numeric(x))
+}
+
 
 gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
 {
@@ -707,10 +734,10 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
   peta <- family$map2par(eta)
 
   ## Compute weights.
-  weights <- family$hess[[id[1]]](y, peta, id = id[1])
+  weights <- process.derivs(family$hess[[id[1]]](y, peta, id = id[1]))
 
   ## Score.
-  score <- family$score[[id[1]]](y, peta, id = id[1])
+  score <- process.derivs(family$score[[id[1]]](y, peta, id = id[1]))
 
   ## Compute working observations.
   z <- eta[[id[1]]] + 1 / weights * score
@@ -757,7 +784,6 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
       S <- S + 1 / tau2[j] * data$S[[j]]
     matrix_inv(XWX + S, data$sparse.setup$matrix)
   }
-
   P[P == Inf] <- 0
   M <- P %*% crossprod(data$X, data$rres)
 
@@ -768,11 +794,17 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
   g0 <- drop(get.par(theta, "b"))
 
   ## Sample new parameters.
-  g <- drop(rmvnorm(n = 1, mean = M, sigma = P))
+  g <- try(drop(rmvnorm(n = 1, mean = M, sigma = P, method = "chol")), silent = TRUE)
+  if(inherits(g, "try-error")) {
+    return(list("parameters" = theta, "alpha" = -Inf, "extra" = c("edf" = NA)))
+  }
 
   ## Compute log priors.
   p2 <- data$prior(c("b" = g, get.par(theta, "tau2")))
-  qbetaprop <- dmvnorm(g, mean = M, sigma = P, log = TRUE)
+  qbetaprop <- try(dmvnorm(g, mean = M, sigma = P, log = TRUE), silent = TRUE)
+  if(inherits(qbetaprop, "try-error")) {
+    return(list("parameters" = theta, "alpha" = -Inf, "extra" = c("edf" = NA)))
+  }
 
   ## Compute fitted values.        
   attr(theta, "fitted.values") <- data$fit.fun(data$X, g)
@@ -787,10 +819,10 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
   pibetaprop <- family$loglik(y, peta)
 
   ## Compute new weights
-  weights <- family$hess[[id[1]]](y, peta, id = id[1])
+  weights <- process.derivs(family$hess[[id[1]]](y, peta, id = id[1]))
 
   ## New score.
-  score <- family$score[[id[1]]](y, peta, id = id[1])
+  score <- process.derivs(family$score[[id[1]]](y, peta, id = id[1]))
 
   ## New working observations.
   z <- eta[[id[1]]] + 1 / weights * score
@@ -812,11 +844,21 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
   M2 <- P2 %*% crossprod(data$X, data$rres)
 
   ## Get the log prior.
-  qbeta <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
+  qbeta <- try(dmvnorm(g0, mean = M2, sigma = P2, log = TRUE), silent = TRUE)
+  if(inherits(qbeta, "try-error")) {
+    return(list("parameters" = theta, "alpha" = -Inf, "extra" = c("edf" = NA)))
+  }
 
   theta <- set.par(theta, g, "b")
   data$state$parameters <- as.numeric(theta)
   names(data$state$parameters) <- names(theta)
+
+cat("\npibetaprop", pibetaprop, "\n");
+cat("qbeta", qbeta, "\n");
+cat("p2", p2, "\n");
+cat("pibeta", pibeta, "\n");
+cat("qbetaprop", qbetaprop, "\n");
+cat("p1", p1, "\n");
 
   ## Compute acceptance probablity.
   alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
