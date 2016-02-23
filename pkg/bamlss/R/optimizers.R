@@ -728,10 +728,10 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           peta <- family$map2par(eta)
 
           ## Compute weights.
-          hess <- family$hess[[nx[j]]](y, peta)
+          hess <- family$hess[[nx[j]]](y, peta, id = nx[j])
 
           ## Score.
-          score <- family$score[[nx[j]]](y, peta)
+          score <- family$score[[nx[j]]](y, peta, id = nx[j])
 
           ## Compute working observations.
           z <- eta[[nx[j]]] + 1 / hess * score
