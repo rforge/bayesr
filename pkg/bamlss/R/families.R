@@ -2144,7 +2144,7 @@ tF <- function(x, ...)
   nx <- c("mu", "sigma", "nu", "tau")[1:k]
   nf <- names(x)
   de <- c("m", "d", "v", "t")[1:k]
-  score <- hess <- list()
+  score <- hess <- initialize <- list()
 
   args <- if(!is.null(names(args))) {
     paste(', ', paste(names(args), "=", unlist(args), sep = '', collapse = ', '), sep = '')
@@ -2166,6 +2166,12 @@ tF <- function(x, ...)
     hess <- -1 * drop(score * mu.link$mu.eta2(eta) + hess * mu.link$mu.eta(eta)^2)
     hess
   }
+  if(!is.null(x$mu.initial)) {
+    initialize$mu <- function(y, ...) {
+      eval(x$mu.initial)
+      return(eval(parse(text = "mu.link$linkfun(mu)")))
+    }
+  }
   if(k > 1) {
     sigma.link <- make.link2(x$sigma.link)
     sigma.par.score <- names(formals(x$dldd))[-1]
@@ -2182,6 +2188,12 @@ tF <- function(x, ...)
       eta <- sigma.link$linkfun(par$sigma)
       hess <- -1 * drop(score * sigma.link$mu.eta2(eta) + hess * sigma.link$mu.eta(eta)^2)
       hess
+    }
+    if(!is.null(x$sigma.initial)) {
+      initialize$sigma <- function(y, ...) {
+        eval(x$sigma.initial)
+        return(eval(parse(text = "sigma.link$linkfun(sigma)")))
+      }
     }
   }
   if(k > 2) {
@@ -2201,6 +2213,12 @@ tF <- function(x, ...)
       hess <- -1 * drop(score * nu.link$mu.eta2(eta) + hess * nu.link$mu.eta(eta)^2)
       hess
     }
+    if(!is.null(x$nu.initial)) {
+      initialize$nu <- function(y, ...) {
+        eval(x$nu.initial)
+        return(eval(parse(text = "nu.link$linkfun(nu)")))
+      }
+    }
   }
   if(k > 3) {
     tau.link <- make.link2(x$tau.link)
@@ -2218,6 +2236,12 @@ tF <- function(x, ...)
       eta <- tau.link$linkfun(par$tau)
       hess <- -1 * drop(score * tau.link$mu.eta2(eta) + hess * tau.link$mu.eta(eta)^2)
       hess
+    }
+    if(!is.null(x$tau.initial)) {
+      initialize$tau <- function(y, ...) {
+        eval(x$tau.initial)
+        return(eval(parse(text = "tau.link$linkfun(tau)")))
+      }
     }
   }
 
@@ -2252,6 +2276,7 @@ tF <- function(x, ...)
   )
   names(rval$links) <- nx
   rval$valid.response <- x$y.valid
+  rval$initialize <- initialize
 
   class(rval) <- "family.bamlss"
   rval
