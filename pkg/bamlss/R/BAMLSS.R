@@ -81,7 +81,7 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
   bf$formula <- formula
 
   ## Add the terms object.
-  bf$terms <- terms.bamlss.formula(formula, data = data, ...)
+  bf$terms <- terms.bamlss.formula(formula, data = data, drop = FALSE, ...)
 
   ## Process possible score and hess functions.
   if(!is.null(score <- family$score)) {
@@ -104,6 +104,7 @@ bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
   bf$x <- design.construct(bf$terms, data = bf$model.frame, knots = knots,
     model.matrix = model.matrix, smooth.construct = smooth.construct, model = NULL,
     scale.x = scale.x, ...)
+
   bf$knots <- knots
 
   ## Assign class and return.
@@ -341,6 +342,12 @@ design.construct <- function(formula, data = NULL, knots = NULL,
           for(j in seq_along(formula[[i]]$smooth.construct)) {
             if(is.null(formula[[i]]$smooth.construct[[j]]$fixed))
               formula[[i]]$smooth.construct[[j]]$fixed <- FALSE
+            if(length(formula[[i]]$smooth.construct[[j]]$S)) {
+              for(sj in seq_along(formula[[i]]$smooth.construct[[j]]$S)) {
+                nc <- ncol(formula[[i]]$smooth.construct[[j]]$S[[sj]])
+                formula[[i]]$smooth.construct[[j]]$S[[sj]] <- formula[[i]]$smooth.construct[[j]]$S[[sj]] + diag(1e-05, nc, nc)
+              }
+            }
             if(is.null(formula[[i]]$smooth.construct[[j]]$fit.fun))
               formula[[i]]$smooth.construct[[j]]$fit.fun <- make.fit.fun(formula[[i]]$smooth.construct[[j]])
             if(is.null(formula[[i]]$smooth.construct[[j]]$prior))
@@ -354,6 +361,12 @@ design.construct <- function(formula, data = NULL, knots = NULL,
       for(j in seq_along(formula$smooth.construct)) {
         if(is.null(formula$smooth.construct[[j]]$fixed))
           formula$smooth.construct[[j]]$fixed <- FALSE
+        if(length(formula[[i]]$smooth.construct[[j]]$S)) {
+          for(sj in seq_along(formula$smooth.construct[[j]]$S)) {
+            nc <- ncol(formula$smooth.construct[[j]]$S[[sj]])
+            formula$smooth.construct[[j]]$S[[sj]] <- formula$smooth.construct[[j]]$S[[sj]] + diag(1e-05, nc, nc)
+          }
+        }
         if(is.null(formula$smooth.construct[[j]]$fit.fun))
           formula$smooth.construct[[j]]$fit.fun <- make.fit.fun(formula$smooth.construct[[j]])
         if(is.null(formula$smooth.construct[[j]]$prior))
@@ -609,7 +622,6 @@ dmvnorm2 <- function (x, mean = rep(0, p), sigma = diag(p), log = FALSE)
 }
 
 
-
 ## The prior function.
 make.prior <- function(x) {
   prior <- NULL
@@ -623,10 +635,6 @@ make.prior <- function(x) {
       if(is.null(x[["b"]])) 1e-04 else x[["b"]]
     } else x$xt[["b"]]
     fixed <- if(is.null(x$fixed)) FALSE else x$fixed
-    if(length(x$S)) {
-      if(length(x$S) > 1)
-        require("MASS")
-    }
 
     prior <- function(parameters) {
       gamma <- parameters[!grepl("tau", names(parameters))]
@@ -640,7 +648,7 @@ make.prior <- function(x) {
         } else {
           P <- ld <- 0
           for(j in seq_along(tau2)) {
-            P <- P + 1 / tau2[j] * (x$S[[j]] + diag(1e-05, nrow(x$S[[j]]), ncol(x$S[[j]])))
+            P <- P + 1 / tau2[j] * x$S[[j]]
             ld <- ld + log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2[j]) - b / tau2[j]
           }
           ##lp <- dmvnorm(gamma, sigma = matrix_inv(P), log = TRUE) + ld
@@ -1636,7 +1644,7 @@ complete.bamlss.family <- function(family)
   if(is.null(names(family$links)))
     names(family$links) <- family$names
   if(is.null(family$map2par)) {
-    linkinv <- vector(mode = "list", length = length(family$names))
+    linkinv <- list()
     for(j in family$names)
       linkinv[[j]] <- make.link2(family$links[j])$linkinv
     family$map2par <- function(eta) {

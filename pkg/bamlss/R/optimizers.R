@@ -437,8 +437,10 @@ assign.df <- function(x, df)
   if(x$fixed | !length(tau2))
     return(x)
   df <- if(is.null(x$xt$df)) df else x$xt$df
-  if(is.null(df))
-    df <- ceiling(ncol(x$X) * 0.5)
+  if(is.null(df)) {
+    nc <- ncol(x$X)
+    df <- ceiling(nc * if(nc < 11) 0.9 else 0.5)
+  }
   if(df > ncol(x$X))
     df <- ncol(x$X)
   if(df < 1)
@@ -494,6 +496,19 @@ get.eta <- function(x, expand = TRUE)
   }
   eta
 }
+
+## Initialze.
+init.eta <- function(eta, y, family, nobs)
+{
+  if(is.null(family$initialize))
+    return(eta)
+  for(j in family$names) {
+    if(!is.null(family$initialize[[j]]))
+      eta[[j]] <- family$initialize[[j]](y)
+  }
+  return(eta)
+}
+
 
 get.edf <- function(x, type = 1)
 {
@@ -598,18 +613,19 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   if(is.null(attr(x, "bamlss.engine.setup")))
     x <- bamlss.engine.setup(x, ...)
 
-  if(!is.null(start))
-    x <- set.starting.values(x, start)
-
   criterion <- match.arg(criterion)
   np <- length(nx)
   nobs <- nrow(y)
-  eta <- get.eta(x)
   if(is.data.frame(y)) {
     if(ncol(y) < 2)
       y <- y[[1]]
   }
 
+  if(!is.null(start))
+    x <- set.starting.values(x, start)
+
+  eta <- init.eta(get.eta(x), y, family, nobs)
+  
   if(!is.null(weights))
     weights <- as.data.frame(weights)
   if(!is.null(offset)) {
@@ -702,7 +718,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       eta0 <- eta
       ## Cycle through all parameters
       for(j in 1:np) {
-        if(outer) {
+        if(outer | iter < 2) {
           peta <- family$map2par(eta)
 
           ## Compute weights.
@@ -714,6 +730,9 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           ## Compute working observations.
           z <- eta[[nx[j]]] + 1 / hess * score
         } else z <- hess <- NULL
+
+        if(iter < 2)
+          eta[[nx[j]]] <- get.eta(x)[[nx[j]]]
 
         ## And all terms.
         if(inner) {
@@ -727,7 +746,8 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
             ## Get updated parameters.
             p.state <- x[[nx[j]]]$smooth.construct[[sj]]$update(x[[nx[j]]]$smooth.construct[[sj]],
-              family, y, eta, nx[j], edf = edf, z = z, hess = hess, weights = weights[[nx[j]]])
+              family, y, eta, nx[j], edf = edf, z = z, hess = hess, weights = weights[[nx[j]]],
+              iteration = iter)
 
             ## Compute equivalent degrees of freedom.
             edf <- edf - x[[nx[j]]]$smooth.construct[[sj]]$state$edf + p.state$edf
@@ -906,12 +926,37 @@ bfit_newton <- function(x, family, y, eta, id, ...)
   return(x$state)
 }
 
+bfit_iwls00 <- function(x, family, y, eta, id, weights, ...)
+{
+  args <- list(...)
+
+  peta <- family$map2par(eta)
+
+  hess <- family$hess[[id]](y, peta, id = id, ...)
+
+  ## Score.
+  score <- family$score[[id]](y, peta, id = id, ...)
+
+  ## Compute working observations.
+  z <- eta[[id]] + 1 / hess * score
+
+  ## Compute reduced residuals.
+  e <- z - eta[[id]] + fitted(x$state)
+
+  b <- lm.wfit(x$X, e, hess)
+
+  x$state$parameters <- set.par(x$state$parameters, coef(b), "b")
+  x$state$fitted.values <- fitted(b)
+
+  x$state
+}
 
 bfit_iwls <- function(x, family, y, eta, id, weights, ...)
 {
   args <- list(...)
 
   peta <- family$map2par(eta)
+
   if(is.null(args$hess)) {
     ## Compute weights.
     hess <- family$hess[[id]](y, peta, id = id, ...)

@@ -492,6 +492,10 @@ gaussian.bamlss <- function(...)
     "p" = function(y, par, ...) {
       pnorm(y, mean = par$mu, sd = par$sigma, ...)
     },
+    "initialize" = list(
+      "mu" = function(y, ...) { (y + mean(y)) / 2 },
+      "sigma" = function(y, ...) { rep(log(sd(y)), length(y)) }
+    ),
     "type" = 1
   )
   
@@ -1783,7 +1787,7 @@ poisson.bamlss <- function(...)
 
   rval <- list(
     "family" = "poisson",
-    "names" = c("lambda"),
+    "names" = "lambda",
     "links" = parse.links(links, c(lambda = "log"), ...),
     "bayesx" = list(
       "lambda" = c("poisson", "lambda")
