@@ -16,7 +16,7 @@ MCMCpack <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100, ..
 
 GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
-  propose = "iwls", chains = NULL, ...)
+  propose = "iwlsC", chains = NULL, ...)
 {
   nx <- family$names
   if(!all(nx %in% names(x)))
