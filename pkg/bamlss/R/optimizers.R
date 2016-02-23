@@ -625,6 +625,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     x <- set.starting.values(x, start)
 
   eta <- init.eta(get.eta(x), y, family, nobs)
+  ##eta$bd <- rep(1, nobs)
   
   if(!is.null(weights))
     weights <- as.data.frame(weights)
@@ -637,6 +638,11 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   }
 
   ia <- interactive()
+
+  if(mgcv) {
+    outer <- TRUE
+    inner <- TRUE
+  }
 
   if(!mgcv) {
     inner_bf <- function(x, y, eta, family, edf, id, ...) {

@@ -339,6 +339,18 @@ betaoi.bamlss <- function(...)
 }
 
 
+process_factor_response <- function(x)
+{
+   if(!is.null(attr(x, "contrasts"))) {
+     if(!is.null(dim(x)))
+       x <- x[, ncol(x)]
+   }
+   if(is.factor(x))
+     x <- as.integer(x) - 1L
+   as.integer(x)
+}
+
+
 binomial.bamlss <- function(...)
 {
   link <- "logit"
@@ -369,25 +381,28 @@ binomial.bamlss <- function(...)
       par$pi
     },
     "d" = function(y, par, log = FALSE) {
-      if(is.factor(y)) y <- as.integer(y) - 1
+      y <- process_factor_response(y)
       dbinom(y, size = 1, prob = par$pi, log = log)
     },
     "p" = function(y, par, ...) {
-      y <- as.integer(y) - 1
+      y <- process_factor_response(y)
       pbinom(y, size = 1, prob = par$pi, ...)
     },
     "score" = list(
       "pi" = function(y, par, ...) {
-        if(is.factor(y)) y <- as.integer(y) - 1
-        (par$pi - y) / ((par$pi - 1) * par$pi)
+        y <- process_factor_response(y)
+        y - par$pi
       }
     ),
     "hess" = list(
       "pi" = function(y, par, ...) {
-        if(is.factor(y)) y <- as.integer(y) - 1
-        -1 * ((par$pi^2 + y - 2 * par$pi * y) / ((-1 + par$pi^2) * par$pi^2))
+        par$pi * (1 - par$pi)
       }
     ),
+#    "initialize" = list("pi" = function(y, ...) {
+#      y <- process_factor_response(y)
+#      (y + 0.5) / 2
+#    }),
     "type" = 1
   )
 
@@ -2168,6 +2183,11 @@ tF <- function(x, ...)
   }
   if(!is.null(x$mu.initial)) {
     initialize$mu <- function(y, ...) {
+      if(!is.null(attr(y, "contrasts"))) {
+        if(!is.null(dim(y)))
+          y <- y[, ncol(y)]
+      }
+      bd <- rep(1, length(y))
       eval(x$mu.initial)
       return(eval(parse(text = "mu.link$linkfun(mu)")))
     }
@@ -2257,20 +2277,23 @@ tF <- function(x, ...)
     "score" = score,
     "hess" = hess,
     "d" = function(y, par, log = FALSE, ...) {
-      call <- paste('dfun(y, ', paste('par$', nx, sep = '', collapse = ', '), ', log = log, ...)', sep = "")
-      d <- try(eval(parse(text = call)), silent = TRUE)
-      d
+      call <- paste('dfun(y, ', paste(paste(names(par), 'par$', sep = "="),
+        names(par), sep = '', collapse = ', '), ', log = log, ...)', sep = "")
+      eval(parse(text = call))
     },
     "p" = function(y, par, ...) {
-      call <- paste('pfun(y, ', paste('par$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
+      call <- paste('pfun(y, ', paste(paste(names(par), 'par$', sep = "="),
+        names(par), sep = '', collapse = ', '), ', log = log, ...)', sep = "")
       eval(parse(text = call))
     },
     "q" = function(y, par, ...) {
-      call <- paste('qfun(y, ', paste('par$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
+      call <- paste('qfun(y, ', paste(paste(names(par), 'par$', sep = "="),
+        names(par), sep = '', collapse = ', '), ', log = log, ...)', sep = "")
       eval(parse(text = call))
     },
     "r" = function(y, par, ...) {
-      call <- paste('rfun(y, ', paste('par$', nx, sep = '', collapse = ', '), ', ...)', sep = "")
+      call <- paste('rfun(y, ', paste(paste(names(par), 'par$', sep = "="),
+        names(par), sep = '', collapse = ', '), ', log = log, ...)', sep = "")
       eval(parse(text = call))
     }
   )

@@ -1648,7 +1648,7 @@ complete.bamlss.family <- function(family)
     for(j in family$names)
       linkinv[[j]] <- make.link2(family$links[j])$linkinv
     family$map2par <- function(eta) {
-      for(j in names(eta)) {
+      for(j in family$names) {
         eta[[j]] <- linkinv[[j]](eta[[j]])
         eta[[j]][is.na(eta[[j]])] <- 0
         if(any(jj <- eta[[j]] == Inf))
