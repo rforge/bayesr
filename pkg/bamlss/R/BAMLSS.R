@@ -2569,6 +2569,14 @@ add.partial <- function(x, samples = FALSE, nsamps = 100)
 }
 
 
+## Helper function for prediction mean an 95% credible interval.
+c95 <- function(x)
+{
+  qx <- quantile(x, probs = c(0.025, 0.975), na.rm = TRUE)
+  return(c("2.5%" = qx[1], "Mean" = mean(x, na.rm = TRUE), "97.5%" = qx[2]))
+}
+
+
 ## A prediction method for "bamlss" objects.
 ## Prediction can also be based on multiple chains.
 predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
