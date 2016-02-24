@@ -2395,11 +2395,7 @@ compute_term <- function(x, get.X, fit.fun, psamples, vsamples = NULL,
 
   ## Compute samples of fitted values.
   if(is.null(FUN)) {
-    FUN <- function(x) {
-      rval <- as.numeric(quantile(x, probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
-      names(rval) <- c("2.5%", "50%", "97.5%")
-      rval
-    }
+    FUN <- c95
   }
   if(inherits(x, "mgcv.smooth") & nrow(psamples) > 39L) {
     smf <- quick_quantiles(X, psamples)
