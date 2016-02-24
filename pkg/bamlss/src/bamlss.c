@@ -378,7 +378,7 @@ SEXP sum_diag2(SEXP x, SEXP y)
   double sum2 = 0.0;
 
   for(c = 0; c < n; c++) {
-    for(d = 0; d < n; d++) {
+    for(d = c; d < n; d++) {
       for(k = 0; k < n; k++) {
         sum1 = sum1 + xptr[c + k * n] * yptr[k + d * n];
       }
