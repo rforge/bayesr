@@ -345,6 +345,58 @@ SEXP process_derivs(SEXP x)
 }
 
 
+/* Fast computation of sum of diagonal. */
+SEXP sum_diag(SEXP x, SEXP N)
+{
+  int i;
+  int n = INTEGER(N)[0];
+
+  double *xptr = REAL(x);
+  double sum = 0.0;
+
+  for(i = 0; i < n; i++) {
+    sum += xptr[i + n * i];
+  }
+
+  SEXP rval;
+  PROTECT(rval = allocVector(REALSXP, 1));
+  REAL(rval)[0] = sum;
+  UNPROTECT(1);
+
+  return rval;
+}
+
+
+SEXP sum_diag2(SEXP x, SEXP y)
+{
+  int c, d, k;
+  int n = ncols(x);
+
+  double *xptr = REAL(x);
+  double *yptr = REAL(y);
+  double sum1 = 0.0;
+  double sum2 = 0.0;
+
+  for(c = 0; c < n; c++) {
+    for(d = 0; d < n; d++) {
+      for(k = 0; k < n; k++) {
+        sum1 = sum1 + xptr[c + k * n] * yptr[k + d * n];
+      }
+      if(c == d)
+        sum2 += sum1;
+      sum1 = 0.0;
+    }
+  }
+
+  SEXP rval;
+  PROTECT(rval = allocVector(REALSXP, 1));
+  REAL(rval)[0] = sum2;
+  UNPROTECT(1);
+
+  return rval;
+}
+
+
 /* Efficient IWLS sampling. */
 SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   SEXP eta, SEXP response, SEXP x, SEXP z, SEXP e, SEXP id2, SEXP rho)
@@ -532,25 +584,13 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
     }
   }
 
-  /* Compute edf. */
-  int k1 = 1;
-  SEXP EDF;
-  PROTECT(EDF = duplicate(PINV));
-  ++nProtected;
-  SEXP edf;
-  PROTECT(edf = allocVector(REALSXP, 1));
-  ++nProtected;
-  REAL(edf)[0] = 0.0;
-  double *EDFptr = REAL(EDF);
-  F77_CALL(dgemm)(transa, transb, &nc, &k1, &nc, &one,
-    XWX0ptr, &nc, PINVptr, &nc, &zero, EDFptr, &nc);
-
   /* Compute mu. */
   SEXP mu0, mu1;
   PROTECT(mu0 = allocVector(REALSXP, nc));
   ++nProtected;
   PROTECT(mu1 = allocVector(REALSXP, nc));
   ++nProtected;
+  int k1 = 1;
   double *mu0ptr = REAL(mu0);
   double *mu1ptr = REAL(mu1);
   char *transa2 = "T";
@@ -560,12 +600,26 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
     PINVptr, &nc, mu0ptr, &nc, &zero, mu1ptr, &nc);
 
   /* Sample. */
+  double edf1 = 0.0;
+  double edf2 = 0.0;
   GetRNGstate();
   for(j = 0; j < nc; j++) {
     gamma0ptr[j] = rnorm(0, 1);
-    REAL(edf)[0] += EDFptr[j + nc * j];
+    for(i = j; i < nc; i++) {
+      for(k = 0; k < nc; k++) {
+        edf1 = edf1 + XWX0ptr[j + k * nc] * PINVptr[k + i * nc];
+      }
+      if(j == i)
+        edf2 += edf1;
+      edf1 = 0.0;
+    }
   }
   PutRNGstate();
+ 
+  SEXP edf;
+  PROTECT(edf = allocVector(REALSXP, 1));
+  ++nProtected;
+  REAL(edf)[0] = edf2;
   
   F77_CALL(dgemm)(transa2, transb, &nc, &k1, &nc, &one,
     PINVLptr, &nc, gamma0ptr, &nc, &zero, gamma1ptr, &nc);
@@ -1551,28 +1605,6 @@ SEXP scale_matrix(SEXP x, SEXP center, SEXP scale)
   }
 
   return x;
-}
-
-
-/* Fast computation of sum of diagonal. */
-SEXP sum_diag(SEXP x, SEXP N)
-{
-  int i;
-  int n = INTEGER(N)[0];
-
-  double *xptr = REAL(x);
-  double sum = 0.0;
-
-  for(i = 0; i < n; i++) {
-    sum += xptr[i + n * i];
-  }
-
-  SEXP rval;
-  PROTECT(rval = allocVector(REALSXP, 1));
-  REAL(rval)[0] = sum;
-  UNPROTECT(1);
-
-  return rval;
 }
 
 

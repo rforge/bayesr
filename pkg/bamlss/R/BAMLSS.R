@@ -5693,6 +5693,23 @@ sum.diag <- function(x)
   .Call("sum_diag", x, dx[1])
 }
 
+sum.diag2 <- function(x, y)
+{
+  if(inherits(x, "spam"))
+    x <- as.matrix(x)
+  if(inherits(y, "spam"))
+    y <- as.matrix(y)
+  if(is.null(dx <- dim(x)))
+    stop("x must be a matrix!")
+  if(is.null(dy <- dim(y)))
+    stop("y must be a matrix!")
+  if(dx[1] != dx[2])
+    stop("x must be symmetric!")
+  if(dy[1] != dy[2])
+    stop("y must be symmetric!")
+  .Call("sum_diag2", x, y)
+}
+
 
 #############################
 ## (13) Utility functions. ##
