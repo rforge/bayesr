@@ -181,8 +181,7 @@ beta.bamlss <- function(...)
        a <- mu * (1 - sigma2) / (sigma2)
        b <- a * (1 - mu) / mu
        pbeta(y, shape1 = a, shape2 = b, ...)
-    },
-    "type" = 1
+    }
   )
   class(rval) <- "family.bamlss"
   rval
@@ -400,12 +399,11 @@ binomial.bamlss <- function(...)
       "pi" = function(y, par, ...) {
         par$pi * (1 - par$pi)
       }
-    ),
+    )
 #    "initialize" = list("pi" = function(y, ...) {
 #      y <- process_factor_response(y)
 #      (y + 0.5) / 2
 #    }),
-    "type" = 1
   )
 
   class(rval) <- "family.bamlss"
@@ -512,8 +510,7 @@ gaussian.bamlss <- function(...)
     "initialize" = list(
       "mu" = function(y, ...) { (y + mean(y)) / 2 },
       "sigma" = function(y, ...) { rep(log(sd(y)), length(y)) }
-    ),
-    "type" = 1
+    )
   )
   
   class(rval) <- "family.bamlss"
@@ -564,8 +561,7 @@ gaussian2.bamlss <- function(...)
     },
     "p" = function(y, par, ...) {
       pnorm(y, mean = par$mu, sd = sqrt(par$sigma2), ...)
-    },
-    "type" = 1
+    }
   )
  
   class(rval) <- "family.bamlss"
@@ -1081,8 +1077,7 @@ cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
       with(par, pdist(y, mu, sigma, df, lower.tail = TRUE, log = log))
     },
     "score" = score,
-    "hess" = hess,
-    "type" = 1
+    "hess" = hess
   )
  
   class(rval) <- "family.bamlss"
@@ -1398,8 +1393,7 @@ gamma.bamlss <- function(...)
 		  a <- par$sigma
 		  s <- par$mu / par$sigma
 		  pgamma(y, shape = a, scale = s, lower.tail = lower.tail, log.p = log.p)
-	  },
-    "type" = 1
+	  }
   )
 
   class(rval) <- "family.bamlss"
@@ -1465,8 +1459,7 @@ lognormal.bamlss <- function(...)
     },
     "p" = function(y, par, ...) {
       plnorm(y, meanlog = par$mu, sdlog = par$sigma, ...)
-    },
-    "type" = 1
+    }
   )
 
   class(rval) <- "family.bamlss"
@@ -1598,8 +1591,7 @@ BCCG2.bamlss <- function(...)
       FYy2 <- ifelse(nu > 0, pnorm(-1/(sigma * abs(nu))), 0)
       FYy3 <- pnorm(1/(sigma * abs(nu)), ...)
       (FYy1 - FYy2)/FYy3
-    },
-    "type" = 1
+    }
   )
   
   class(rval) <- "family.bamlss"
@@ -1609,45 +1601,87 @@ BCCG2.bamlss <- function(...)
 
 mvn.bamlss <- function(...)
 {
-  links <- c(mu1 = "identity", mu2 = "identity",
-    sigma1 = "log", sigma2 = "log", rho = "rhogit")
+  require("mvtnorm")
 
   rval <- list(
     "family" = "mvn",
     "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho"),
-    "links" = parse.links(links, c(mu1 = "identity", mu2 = "identity",
-      sigma1 = "log", sigma2 = "log", rho = "rhogit"), ...),
-    "bayesx" = list(
-      "mu1" = c("bivnormal_mu", "mean"),
-      "mu2" = c("bivnormal_mu", "mu"),
-      "sigma1" = c("bivnormal_sigma", "scale1"),
-      "sigma2" = c("bivnormal_sigma", "scale2"),
-      "rho" = c("bivnormal_rho", "rho"),
-      "order" = 5:1,
-      "rm.number" = TRUE
-    ),
-    "mu" = function(par, ...) {
-      cbind(par$mu1, par$mu2)
-    },
+    "links" = c("identity", "identity", "log", "log", "rhogit"),
     "d" = function(y, par, log = FALSE) {
-      d <- rep(NA, nrow(y))
-      for(i in 1:nrow(y)) {
-        sigma <- matrix(c(par$sigma1[i], par$rho[i], par$rho[i], par$sigma2[i]), 2, 2)
-        d[i] <- dmvnorm(y[i, ], mean = c(par$mu1[i], par$mu2[i]), sigma = sigma, log = TRUE)
-      }
+      d <- .Call("mvn_logdens", as.numeric(y[, 1]), as.numeric(y[, 2]),
+        as.numeric(par$mu1), as.numeric(par$mu2), as.numeric(par$sigma1),
+        as.numeric(par$sigma2), as.numeric(par$rho))
+      if(!log)
+        d <- exp(d)
       return(d)
-#      cbind(
-#        dnorm(y[, 1], mean = par$mu1, sd = par$sigma1, log = log),
-#        dnorm(y[, 2], mean = par$mu2, sd = par$sigma2, log = log)
-#      )
     },
+    "loglik" = function(y, par, log = FALSE) {
+      ll <- .Call("mvn_loglik", as.numeric(y[, 1]), as.numeric(y[, 2]),
+        as.numeric(par$mu1), as.numeric(par$mu2), as.numeric(par$sigma1),
+        as.numeric(par$sigma2), as.numeric(par$rho))
+      return(ll)
+    },
+    "score" = list(
+      "mu1" = function(y, par, ...) {
+        1 / ((1 - par$rho^2) * par$sigma1) * ((y[, 1] - par$mu1) / par$sigma1 - par$rho * ((y[, 2] - par$mu2) / par$sigma2))
+      },
+      "mu2" = function(y, par, ...) {
+        1 / ((1 - par$rho^2) * par$sigma2) * ((y[, 2] - par$mu2) / par$sigma2 - par$rho * ((y[, 1] - par$mu1) / par$sigma1))
+      },
+      "sigma1" = function(y, par, ...) {
+        -1 + 1 / (1 - par$rho^2) * (y[, 1] - par$mu1) / par$sigma1 * ((y[, 1] - par$mu1) / par$sigma1 - par$rho * (y[, 2] - par$mu2) / par$sigma2)
+      },
+      "sigma2" = function(y, par, ...) {
+        -1 + 1 / (1 - par$rho^2) * (y[, 2] - par$mu2) / par$sigma2 * ((y[, 2] - par$mu2) / par$sigma2 - par$rho * (y[, 1] - par$mu1) / par$sigma1)
+      },
+      "rho" = function(y, par, ...) {
+        etarho <- par$rho / sqrt(1 - par$rho^2)
+        sval <- 1 / (1 - par$rho^2) * par$rho / ((1 + etarho^2)^(1.5)) - etarho * (((y[, 1] - par$mu1) / par$sigma1)^2 +
+          ((y[, 2] - par$mu2) / par$sigma2)^2) + (1 + 2 * etarho^2) / sqrt(1 + etarho^2) *
+          (y[, 1] - par$mu1) / par$sigma1 * (y[, 2] - par$mu2) / par$sigma2
+        sval
+      }
+    ),
+    "hess" = list(
+      "mu1" = function(y, par, ...) {
+        1 / ((1 - par$rho^2) * par$sigma1^2)
+      },
+      "mu2" = function(y, par, ...) {
+        1 / ((1 - par$rho^2) * par$sigma2^2)
+      },
+      "sigma1" = function(y, par, ...) {
+        1 + 1 / (1 - par$rho^2)
+      },
+      "sigma2" = function(y, par, ...) {
+        1 + 1 / (1 - par$rho^2)
+      },
+      "rho" = function(y, par, ...) {
+        1 - par$rho^4
+      }
+    ),
     "p" = function(y, par, ...) {
       cbind(
         pnorm(y[, 1], mean = par$mu1, sd = par$sigma1, ...),
         pnorm(y[, 2], mean = par$mu2, sd = par$sigma2, ...)
       )
     },
-    "type" = 2
+    "initialize" = list(
+      "mu1" = function(y, ...) {
+        (y[, 1] + mean(y[, 1])) / 2
+      },
+      "mu1" = function(y, ...) {
+        (y[, 2] + mean(y[, 2])) / 2
+      },
+      "sigma1" = function(y, ...) {
+        rep(log(sd(y[, 1])), length(y[, 1]))
+      },
+      "sigma2" = function(y, ...) {
+        rep(log(sd(y[, 1])), length(y[, 1]))
+      },
+      "rho" = function(y, ...) {
+        rep(0, length(y[, 1]))
+      }
+    )
   )
 
   class(rval) <- "family.bamlss"
@@ -1672,8 +1706,7 @@ bivprobit.bamlss <- function(...)
     ),
     "mu" = function(par, ...) {
       c(par$mu1, par$mu2)
-    },
-    "type" = 2
+    }
   )
 
   class(rval) <- "family.bamlss"
@@ -1727,8 +1760,7 @@ mvt.bamlss <- function(...)
     ),
     "mu" = function(par, ...) {
       c(par$mu1, par$mu2)
-    },
-    "type" = 2
+    }
   )
   class(rval) <- "family.bamlss"
   rval
@@ -1842,9 +1874,7 @@ poisson.bamlss <- function(...)
       "lambda" = function(y, par, ...) {
         1 / par$lambda
       }
-    ),
-    "nscore" = TRUE,
-    "type" = 3
+    )
   )
 
   class(rval) <- "family.bamlss"
@@ -1878,9 +1908,7 @@ zip.bamlss <- function(...)
     },
     "p" = function(y, par, ...) {
       ifelse(y < 0, 0, par$pi + (1 - par$pi) * ppois(y, lambda = par$lambda))
-    },
-    "nscore" = TRUE,
-    "type" = 3
+    }
   )
   if(rval$bayesx[[2]][[1]] == "zip_pi_cloglog")
     rval$bayesx[[1]][[1]] <- "zip_lambda_cloglog"
@@ -1920,9 +1948,7 @@ hurdleP.bamlss <- function(...)
       cdf3 <- par$pi + ((1 - par$pi) * (cdf1 - cdf2)/(1 - cdf2))
       cdf <- ifelse((y == 0), par$pi, cdf3)
       cdf
-    },
-    "nscore" = TRUE,
-    "type" = 3
+    }
   )
  
   class(rval) <- "family.bamlss"
@@ -1949,9 +1975,7 @@ negbin.bamlss <- function(...)
     },
     "p" = function(y, par, ...) {
       pnbinom(y, mu = par$mu, size = par$delta)
-    },
-    "nscore" = TRUE,
-    "type" = 3
+    }
   )
 
   class(rval) <- "family.bamlss"
@@ -1983,9 +2007,7 @@ zinb.bamlss <- function(...)
     },
     "p" = function(y, par, ...) {
       ifelse(y<0, 0, par$pi + (1 - par$pi) * pnbinom(y, size = par$delta, mu = par$mu))
-    },
-    "nscore" = TRUE,
-    "type" = 3
+    }
   )
 
   class(rval) <- "family.bamlss"
@@ -2023,9 +2045,7 @@ hurdleNB.bamlss <- function(...)
       cdf2 <- pnbinom(0, size = par$delta, mu = par$mu)
       cdf3 <- par$pi + ((1 - par$pi) * (cdf1 - cdf2)/(1 - cdf2))
       cdf <- ifelse((y == 0), par$pi, cdf3)
-    },
-    "nscore" = TRUE,
-    "type" = 3
+    }
   )
 
   class(rval) <- "family.bamlss"
@@ -2539,8 +2559,7 @@ gaussian5.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
     },
     "p" = function(y, par, ...) {
       pnorm(y, mean = par$mu, sd = par$sigma, ...)
-    },
-    "type" = 1
+    }
   )
   
   class(rval) <- "family.bamlss"

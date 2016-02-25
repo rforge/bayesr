@@ -1344,7 +1344,7 @@ are simply passed to the optimizer or sampler functions, the model fitting funct
 know how to interpret the information provided by such objects. However, there are minimum
 requirements to parse the model frame with \fct{bamlss.frame}:
 \begin{itemize}
-\item The family object must return a \code{list} of class \class{family.bamlss}.
+\item The family object must return a \class{list} of class \class{family.bamlss}.
 \item The object must contain the family name as a character string. 
 \item The object must contain the names of the parameters as a character string, as well as
   the corresponding link functions as character string.
@@ -1384,7 +1384,7 @@ normal.bamlss <- function(...) {
   return(f)
 }
 @
-Internally, if a family function name ends with \code{.bamlss} it is
+Internally, if a family function name ends with \class{.bamlss} it is
 sufficient to call the family by character, e.g., the motorcycle model can be estimated using
 the new family object with
 <<eval=FALSE>>=
@@ -1528,9 +1528,9 @@ and
 \end{equation*}
 
 <<echo=FALSE, results=hide>>=
+## Austria: http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/nuts_einheiten/index.html
+## AustriaTopo: https://www.ngdc.noaa.gov/mgg/global/global.html
 if(!file.exists("rainmodel.rda") & FALSE) {
-  ## Austria: http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/nuts_einheiten/index.html
-  ## AustriaTopo: https://www.ngdc.noaa.gov/mgg/global/global.html
   if(file.exists("homstart.rda")) {
     load("homstart.rda")
   } else {
@@ -1538,23 +1538,23 @@ if(!file.exists("rainmodel.rda") & FALSE) {
     if(!file.exists(file <- file.path(dpath, "homstart.rda"))) {
       homstart_data(dir = dirname(file), load = TRUE)
     } else load(file)
-    file.copy(file, file.path(getwd(), "homstart.rda"))
+    file.copy(file, file.path("homstart.rda"))
   }
 
   homstart$raw[homstart$raw < 0] <- 0
   homstart2 <- subset(homstart, year >= 1979)
 
   f <- list(
-    "mu" = sqrt(raw) ~ elevation + ti(day,bs="cc") + ti(long,lat,bs="tp",d=2,k=50) +
+    "mu" = sqrt(raw) ~ elevation + ti(day,bs="cc",k=10) + ti(long,lat,bs="tp",d=2,k=50) +
       ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),mp=FALSE,k=c(8,30)),
-    "sigma" = ~ elevation + ti(day,bs="cc") + ti(long,lat,bs="tp",d=2,k=50) +
+    "sigma" = ~ elevation + ti(day,bs="cc",k=10) + ti(long,lat,bs="tp",d=2,k=50) +
       ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),mp=FALSE,k=c(8,30))
   )
 
   rainmodel <- bamlss(f, data = homstart2, family = "cnorm",
     binning = TRUE, before = TRUE, gam.side = FALSE,
     samplestats = FALSE, results = FALSE,
-    eps = 0.001, n.iter = 1200, burnin = 200, thin = 2, cores = 2)
+    eps = 0.001, n.iter = 6000, burnin = 4000, thin = 10, cores = 7)
 
   save(rainmodel, file = "rainmodel.rda")
 }

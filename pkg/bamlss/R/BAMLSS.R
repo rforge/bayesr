@@ -1185,7 +1185,7 @@ no.transform <- FALSE
 ## Rescale fun.
 rescale.bamlss <- function(x)
 {
-  if(is.null(ys <- attr(x$y[[1]], "scale")))
+  if(is.null(ys <- attr(x$y, "scale")))
     ys <- list("center" = 0, "scale" = 1)
   return(x)
 }
@@ -1204,6 +1204,10 @@ get.all.parnames <- function(x, rename.p = TRUE)
 ## Extract logLik and logPriors.
 eta.logLik.logPriors <- function(par, x, y, family)
 {
+  if(is.data.frame(y)) {
+    if(ncol(y) < 2)
+      y <- y[[1]]
+  }
   nx <- names(x)
   eta <- vector(mode = "list", length = length(nx))
   names(eta) <- nx
@@ -1223,7 +1227,7 @@ eta.logLik.logPriors <- function(par, x, y, family)
       lprior <- lprior + sum(dnorm(tpar, sd = 1000, log = TRUE))
     }
   }
-  logLik <- family$loglik(y[[1]], family$map2par(eta))
+  logLik <- family$loglik(y, family$map2par(eta))
   logPost <- logLik + lprior
   return(list("eta" = eta, "logLik" = logLik, "logPost" = logPost))
 }
@@ -1252,6 +1256,10 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL)
     stats <- samples[, taken, drop = FALSE]
     stats <- as.list(apply(stats, 2, mean, na.rm = TRUE))
   }
+  if(is.data.frame(y)) {
+    if(ncol(y) < 2)
+      y <- y[[1]]
+  }
   if(length(what)) {
     pn <- get.all.parnames(x, rename.p = TRUE)
     pn <- pn[pn %in% colnames(samples)]
@@ -1274,11 +1282,11 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL)
       for(j in 1:ncol(par[[1]])) {
         for(i in nx)
           tpar[[i]] <- par[[i]][, j]
-        ll <- try(family$loglik(y[[1]], tpar), silent = TRUE)
+        ll <- try(family$loglik(y, tpar), silent = TRUE)
         if(!inherits(ll, "try-error"))
           dev[j] <- -2 * ll
       }
-      ll <- try(family$loglik(y[[1]], mpar), silent = TRUE)
+      ll <- try(family$loglik(y, mpar), silent = TRUE)
       if(!inherits(ll, "try-error")) {
         mdev <- -2 * ll
         pd <- mean(dev) - mdev

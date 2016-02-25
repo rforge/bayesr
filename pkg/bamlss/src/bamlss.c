@@ -1608,6 +1608,68 @@ SEXP scale_matrix(SEXP x, SEXP center, SEXP scale)
 }
 
 
+/* Log-likelihood multivariate normal distribution. */
+SEXP mvn_logdens(SEXP y1, SEXP y2, SEXP mu1, SEXP mu2, SEXP sigma1, SEXP sigma2, SEXP rho)
+{
+  int i, n = length(y1);
+
+  double *y1ptr = REAL(y1);
+  double *y2ptr = REAL(y2);
+  double *mu1ptr = REAL(mu1);
+  double *mu2ptr = REAL(mu2);
+  double *sigma1ptr = REAL(sigma1);
+  double *sigma2ptr = REAL(sigma2);
+  double *rhoptr = REAL(rho);
+
+  SEXP d;
+  PROTECT(d = allocVector(REALSXP, n));
+  double *dptr = REAL(d);
+
+  double log2pi = -1.83787706640935;
+
+  for(i = 0; i < n; i++) {
+    dptr[i] = log2pi - log(sigma1ptr[i]) - log(sigma2ptr[i]) - 0.5 * log(1.0 - pow(rhoptr[i], 2.0)) -
+      1.0 / (2.0 * (1.0 - pow(rhoptr[i], 2.0))) * (pow((y1ptr[i] - mu1ptr[i]) / sigma1ptr[i], 2.0) -
+      2.0 * rhoptr[i] * ((y1ptr[i] - mu1ptr[i]) * (y2ptr[i] - mu2ptr[i])) / (sigma1ptr[i] * sigma2ptr[i]) +
+      pow((y2ptr[i] - mu2ptr[i]) / sigma2ptr[i], 2.0));
+  }
+
+  UNPROTECT(1);
+
+  return d;
+}
+
+SEXP mvn_loglik(SEXP y1, SEXP y2, SEXP mu1, SEXP mu2, SEXP sigma1, SEXP sigma2, SEXP rho)
+{
+  int i, n = length(y1);
+
+  double *y1ptr = REAL(y1);
+  double *y2ptr = REAL(y2);
+  double *mu1ptr = REAL(mu1);
+  double *mu2ptr = REAL(mu2);
+  double *sigma1ptr = REAL(sigma1);
+  double *sigma2ptr = REAL(sigma2);
+  double *rhoptr = REAL(rho);
+  double sum = 0.0;
+  double log2pi = -1.83787706640935;
+
+  for(i = 0; i < n; i++) {
+    sum += log2pi - log(sigma1ptr[i]) - log(sigma2ptr[i]) - 0.5 * log(1.0 - pow(rhoptr[i], 2.0)) -
+      1.0 / (2.0 * (1.0 - pow(rhoptr[i], 2.0))) * (pow((y1ptr[i] - mu1ptr[i]) / sigma1ptr[i], 2.0) -
+      2.0 * rhoptr[i] * ((y1ptr[i] - mu1ptr[i]) * (y2ptr[i] - mu2ptr[i])) / (sigma1ptr[i] * sigma2ptr[i]) +
+      pow((y2ptr[i] - mu2ptr[i]) / sigma2ptr[i], 2.0));
+  }
+
+  SEXP ll;
+  PROTECT(ll = allocVector(REALSXP, 1));
+  REAL(ll)[0] = sum;
+
+  UNPROTECT(1);
+
+  return ll;
+}
+
+
 /* Sparse cholesky decomposition */
 /*SEXP sparse_chol(SEXP x, SEXP index)*/
 /*{*/
