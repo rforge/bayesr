@@ -54,7 +54,9 @@ make.link2 <- function(link)
       x$mu.eta2 <- function(eta) { rep(2, length = length(eta)) }
       return(x)
     }
+    x$mu.eta2 <- function(eta) rep.int(0, length(eta))
     warning(paste('higher derivatives of link "', link, '" not available!', sep = ''))
+    return(x)
   }
 
   if(link %in% c("logit", "probit", "cauchit", "cloglog", "identity",
@@ -1628,10 +1630,16 @@ mvn.bamlss <- function(...)
       cbind(par$mu1, par$mu2)
     },
     "d" = function(y, par, log = FALSE) {
-      cbind(
-        dnorm(y[, 1], mean = par$mu1, sd = par$sigma1, log = log),
-        dnorm(y[, 2], mean = par$mu2, sd = par$sigma2, log = log)
-      )
+      d <- rep(NA, nrow(y))
+      for(i in 1:nrow(y)) {
+        sigma <- matrix(c(par$sigma1[i], par$rho[i], par$rho[i], par$sigma2[i]), 2, 2)
+        d[i] <- dmvnorm(y[i, ], mean = c(par$mu1[i], par$mu2[i]), sigma = sigma, log = TRUE)
+      }
+      return(d)
+#      cbind(
+#        dnorm(y[, 1], mean = par$mu1, sd = par$sigma1, log = log),
+#        dnorm(y[, 2], mean = par$mu2, sd = par$sigma2, log = log)
+#      )
     },
     "p" = function(y, par, ...) {
       cbind(

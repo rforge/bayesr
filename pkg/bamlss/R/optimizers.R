@@ -1363,6 +1363,11 @@ opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
   if(!is.null(start))
     x <- set.starting.values(x, start)
 
+  if(is.data.frame(y)) {
+    if(ncol(y) < 2)
+      y <- y[[1]]
+  }
+
   par <- get.all.par(x, list = FALSE, drop = TRUE)
 
   if(!hessian) {
@@ -1371,7 +1376,7 @@ opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
 
     opt <- optim(par, fn = log_posterior,
       gr = if(!is.null(family$score) & gradient) grad_posterior else NULL,
-      x = x, y = y[[1]], family = family, method = "BFGS", verbose = verbose,
+      x = x, y = y, family = family, method = "BFGS", verbose = verbose,
       digits = digits, control = list(fnscale = -1, reltol = eps, maxit = maxit),
       hessian = TRUE)
  
@@ -1383,12 +1388,12 @@ opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
     eta <- get.eta.par(opt$par, x)
 
     return(list("parameters" = opt$par, "fitted.values" = eta,
-      "logPost" = opt$value, "logLik" = family$loglik(y[[1]], family$map2par(eta)),
+      "logPost" = opt$value, "logLik" = family$loglik(y, family$map2par(eta)),
       "hessian" = opt$hessian, "converged" = opt$convergence < 1))
   } else {
     opt <- optimHess(par, fn = log_posterior,
       gr = if(!is.null(family$score) & gradient) grad_posterior else NULL,
-      x = x, y = y[[1]], family = family, verbose = verbose, digits = digits,
+      x = x, y = y, family = family, verbose = verbose, digits = digits,
       control = list(fnscale = -1, reltol = eps, maxit = maxit))
     return(opt)
   }

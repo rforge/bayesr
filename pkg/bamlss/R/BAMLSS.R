@@ -1737,10 +1737,10 @@ bamlss.formula <- function(formula, family = NULL)
       fn[nas] <- family$names[nas]
       if(is.null(family$names))
         family$names <- NA
-      if(!is.na(family$names[1]))
-        fn[1] <- family$names[1]
+      if(!all(is.na(family$names[1:length(fn)])))
+        fn <- family$names[1:length(fn)]
       else
-        family$names <- fn
+        family$names[1:length(fn)] <- fn
     } else fn[nas] <- paste("par", 1:length(fn[nas]), sep = ".")
     if(is.null(family)) {
       if(length(fn) < length(formula)) {
