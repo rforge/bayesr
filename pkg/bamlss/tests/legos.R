@@ -313,5 +313,5 @@ for(i in 1:n) {
 }
 dat <- data.frame(y0=y[,1],y1=y[,2],x0=x0,x1=x1,x2=x2,x3=x3)
 f <- list(y0~s(x0)+s(x1),y1~s(x2)+s(x3))
-b <- bamlss(f,family="mvn",data=dat,sampler=F)
+b <- bamlss(f,family="mvn",data=dat)
 
