@@ -1405,6 +1405,7 @@ Function & Distribution \\ \hline
 \fct{gaussian.bamlss} & Gaussian distribution \\
 \fct{gamma.bamlss} & Gamma distribution \\
 \fct{multinomial.bamlss} & Multinomial distribution \\
+\fct{mvn.bamlss} & Multivariate normal distribution \\
 \fct{poisson.bamlss} & Poisson distribution \\ \hline
 \end{tabular}
 \caption{\label{tab:distributions} Available distributions in package \pkg{bamlss}.}
@@ -1526,6 +1527,16 @@ and
     {\Phi\left(\frac{-\mu}{\sigma} \right)^2} & \mbox{else.}
 \end{cases}
 \end{equation*}
+The first and second derivative functions have been implemented in the \pkg{bamlss} family
+\fct{cnorm.bamlss} and can be directly used within the optimizer function \fct{bfit} and
+the MCMC sampler function \fct{GMCMC}.
+
+Since the HOMSTART data set has over $1$ million observations, the resulting design matrices
+excessively demands the computer's storage as well as CPU power. In order to prevent problems
+associated with storage and to reduce computational time,
+we make use of the fact that, e.g., the effect of the day of year only has 365 unique observations.
+This is much smaller than the total number of observations of the data set, i.e., the design matrix
+as a lot of duplicated rows. 
 
 <<echo=FALSE, results=hide>>=
 ## Austria: http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/nuts_einheiten/index.html
