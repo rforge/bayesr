@@ -1580,6 +1580,7 @@ boost99 <- function(x, y, family, weights = NULL, offset = NULL,
   criterion <- match.arg(criterion)
 
   np <- length(nx)
+  ## FIXME!!!
   y <- y[[1]]
   nobs <- if(is.null(dim(y))) length(y) else nrow(y)
 
