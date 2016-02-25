@@ -15,9 +15,9 @@ if(!file.exists("rainmodel.rda")) {
   homstart2 <- subset(homstart, year >= 1979)
 
   f <- list(
-    "mu" = sqrt(raw) ~ elevation + ti(day,bs="cc") + ti(long,lat,bs="tp",d=2,k=50) +
+    "mu" = sqrt(raw) ~ elevation + ti(day,bs="cc",k=10) + ti(long,lat,bs="tp",d=2,k=50) +
       ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),mp=FALSE,k=c(8,30)),
-    "sigma" = ~ elevation + ti(day,bs="cc") + ti(long,lat,bs="tp",d=2,k=50) +
+    "sigma" = ~ elevation + ti(day,bs="cc",k=10) + ti(long,lat,bs="tp",d=2,k=50) +
       ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),mp=FALSE,k=c(8,30))
   )
 
