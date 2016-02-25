@@ -54,7 +54,7 @@ make.link2 <- function(link)
       x$mu.eta2 <- function(eta) { rep(2, length = length(eta)) }
       return(x)
     }
-    stop(paste('higher derivatives of link "', link, '" not available!', sep = ''), call. = FALSE)
+    warning(paste('higher derivatives of link "', link, '" not available!', sep = ''))
   }
 
   if(link %in% c("logit", "probit", "cauchit", "cloglog", "identity",
@@ -791,6 +791,10 @@ cnorm.bamlss <- function(...)
     rval <- rnorm(n) * par$sigma + par$mu
     pmax(pmin(rval, Inf), 0)
   }
+  f$initialize = list(
+    "mu" = function(y, ...) { (y + mean(y)) / 2 },
+    "sigma" = function(y, ...) { rep(log(sd(y)), length(y)) }
+  )
   class(f) <- "family.bamlss"
   f
 }
