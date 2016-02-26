@@ -299,19 +299,33 @@ add2spam <- function(x, y)
 
 
 ## MVN.
-V <- matrix(c(2,1,1,2),2,2)
 f0 <- function(x) 2 * sin(pi * x)
 f1 <- function(x) exp(2 * x)
 f2 <- function(x) 0.2 * x^11 * (10 * (1 - x))^6 + 10 * (10 * x)^3 * (1 - x)^10
+f3 <- function(x) sin(x * 3) - 3
+f4 <- function(x) cos(x * 6) - 2
+
 n <- 300
 x0 <- runif(n); x1 <- runif(n);
 x2 <- runif(n); x3 <- runif(n)
 y <- matrix(0, n, 2)
 for(i in 1:n) {
+  s1 <- exp(f3(x1[i]))
+  s2 <- exp(f4(x2[i]))
+  V <- matrix(c(s1^2, 0, 0, s2^2), 2, 2)
   mu <- c(f0(x0[i]) + f1(x1[i]), f2(x2[i]))
   y[i,] <- rmvn(1, mu, V)
 }
+
 dat <- data.frame(y0=y[,1],y1=y[,2],x0=x0,x1=x1,x2=x2,x3=x3)
-f <- list(y0~s(x0)+s(x1),y1~s(x2)+s(x3))
-b <- bamlss(f,family="mvn",data=dat)
+
+f <- list(
+  y0 ~ s(x0) + s(x1),
+  y1 ~ s(x2) + s(x3),
+  sigma1 ~ s(x1),
+  sigma2 ~ s(x2),
+  rho ~ 1
+)
+
+b <- bamlss(f, family = "mvn", data = dat)
 

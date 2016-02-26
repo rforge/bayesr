@@ -1532,11 +1532,50 @@ The first and second derivative functions have been implemented in the \pkg{baml
 the MCMC sampler function \fct{GMCMC}.
 
 Since the HOMSTART data set has over $1$ million observations, the resulting design matrices
-excessively demands the computer's storage as well as CPU power. In order to prevent problems
-associated with storage and to reduce computational time,
-we make use of the fact that, e.g., the effect of the day of year only has 365 unique observations.
-This is much smaller than the total number of observations of the data set, i.e., the design matrix
-as a lot of duplicated rows. 
+excessively demands the computer's storage as well as the CPU power. In order to prevent computational
+problems associated with very large data sets like HOMSTART, we make use of the fact that, e.g.,
+the effect of the day of
+year only has 365 unique observations. This is much smaller than the total number of observations
+of the data set, i.e., the corresponding design matrix has a lot of duplicated rows and is hence inefficient
+for the use within model fitting algorithms. Therefore, we apply the IWLS algorithms described in
+Section~\ref{sec:postmode}~and~\ref{sec:postmean} using shrinkage of the design matrices based
+on unique covariate observations. To make the IWLS algorithms based on unique observations work a
+reduced form of the diagonal weight matrix $\mathbf{W}_{kk}$ and the reduced
+partial residual vector from $\mathbf{z}_k - \boldsymbol{\eta}^{(t)}_{k, -j}$ has to be computed
+additionally. For the computational details of this highly
+efficient algorithm see \citet{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}. By
+following the design of the generic BAMLSS algorithm presented in Figure~\ref{fig:algodesign} this
+is relatively easy to implement, since one only needs to provide updating functions
+$\texttt{U}_{\texttt{jk}}( \cdot )$ that compute the efficient IWLS. This feature is supported
+within the model fitting functions \fct{bfit} and \fct{GMCMC}.
+
+The HOMSTART data is not directly shipped with package \pkg{bamlss}, however, the data frame used for
+modeling can be downloaded and parsed with
+<<eval=FALSE>>=
+homstart_data(dir = ".", load = TRUE)
+@
+The function \fct{homstart\_data} saves the data as \code{homstart.rda} in the specified directory and loads the data into
+the global environment as object \code{homstart}. The formula for the precipitation model is specified by
+<<eval=FALSE>>=
+f <- list(
+  "mu" = sqrt(raw) ~ elevation + ti(day,bs="cc",k=10) +
+    ti(long,lat,bs="tp",d=2,k=50) +
+    ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),k=c(8,30)),
+  "sigma" = ~ elevation + ti(day,bs="cc",k=10) +
+    ti(long,lat,bs="tp",d=2,k=50) +
+    ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),k=c(8,30))
+)
+@
+using the \pkg{mgcv} smooth term constructor \fct{ti} for decomposition of the day of year and
+the spatial effect into main effects and its deviations. Note that \code{bs = "cc"} specifies a
+cyclic cubic spline for the seasonal effect and \code{bs = "tp"} is a thin-plate spline. The model
+can then be fitted with
+<<eval=FALSE>>=
+rainmodel <- bamlss(f, data = homstart, family = "cnorm",
+  binning = TRUE, before = FALSE, results = FALSE,
+  n.iter = 6000, burnin = 4000, thin = 10, cores = 7)
+@
+
 
 <<echo=FALSE, results=hide>>=
 ## Austria: http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/nuts_einheiten/index.html

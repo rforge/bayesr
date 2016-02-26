@@ -304,6 +304,7 @@ s981000;Irdning - Gumpenstein;14,1;47,5;710;0;1;1'
     homstart$weekend = factor(as.integer(homstart$weekend), levels = c(0, 1), labels = c("no", "yes"))
     homstart$bin = factor(as.integer(homstart$bin), levels = c(0, 1), labels = c("no", "yes"))
     homstart$cat = factor(as.integer(homstart$cat), levels = c(0, 1, 2, 3), labels = c("none", "low", "medium", "high"))
+    homstart$raw[homstart$raw < 0] <- 0
     save(homstart, file = file.path(dir, "homstart.rda"), compress = "bzip2")
     remove(list = savelist)
   }
