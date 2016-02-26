@@ -614,7 +614,6 @@ Fisher information with weights
 $\mathbf{W}_{kk} = -\mathrm{diag}(E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top))$,~\citep{bamlss:Klein:Kneib:Lang:2015}.
 
-\newpage
 
 \subsubsection{Posterior mean} \label{sec:postmean}
 
@@ -1566,8 +1565,8 @@ f <- list(
     ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),k=c(8,30))
 )
 @
-using the \pkg{mgcv} smooth term constructor \fct{ti} for decomposition of the day of year and
-the spatial effect into main effects and its deviations. Note that \code{bs = "cc"} specifies a
+using the \pkg{mgcv} smooth term constructor \fct{ti} for decomposition of the day of year effect
+and the spatial effect into main effects and its deviations. Note that \code{bs = "cc"} specifies a
 cyclic cubic spline for the seasonal effect and \code{bs = "tp"} is a thin-plate spline. The model
 can then be fitted with
 <<eval=FALSE>>=
@@ -1596,13 +1595,13 @@ if(!file.exists("rainmodel.rda") & FALSE) {
 
   f <- list(
     "mu" = sqrt(raw) ~ elevation + ti(day,bs="cc",k=10) + ti(long,lat,bs="tp",d=2,k=50) +
-      ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),mp=FALSE,k=c(8,30)),
+      ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),k=c(8,30)),
     "sigma" = ~ elevation + ti(day,bs="cc",k=10) + ti(long,lat,bs="tp",d=2,k=50) +
-      ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),mp=FALSE,k=c(8,30))
+      ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),k=c(8,30))
   )
 
   rainmodel <- bamlss(f, data = homstart2, family = "cnorm",
-    binning = TRUE, before = TRUE, gam.side = FALSE,
+    binning = TRUE, before = FALSE,
     samplestats = FALSE, results = FALSE,
     eps = 0.001, n.iter = 6000, burnin = 4000, thin = 10, cores = 7)
 
@@ -1630,7 +1629,7 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   homstart <- subset(homstart, year >= 1979)
 
   data("Austria")
-  load("rainmodel-final.rda")
+  load("rainmodel-2016-02-26.rda")
 
   nd <- as.data.frame(coordinates(AustriaTopo))
   names(nd) <- c("long", "lat")

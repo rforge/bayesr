@@ -16,13 +16,13 @@ if(!file.exists("rainmodel.rda")) {
 
   f <- list(
     "mu" = sqrt(raw) ~ elevation + ti(day,bs="cc",k=10) + ti(long,lat,bs="tp",d=2,k=50) +
-      ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),mp=FALSE,k=c(8,30)),
+      ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),k=c(8,30)),
     "sigma" = ~ elevation + ti(day,bs="cc",k=10) + ti(long,lat,bs="tp",d=2,k=50) +
-      ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),mp=FALSE,k=c(8,30))
+      ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),k=c(8,30))
   )
 
   rainmodel <- bamlss(f, data = homstart2, family = "cnorm",
-    binning = TRUE, before = TRUE, gam.side = FALSE,
+    binning = TRUE, before = FALSE,
     samplestats = FALSE, results = FALSE,
     eps = 0.001, n.iter = 6000, burnin = 4000, thin = 10, cores = 7)
 
