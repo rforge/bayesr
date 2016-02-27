@@ -1575,9 +1575,14 @@ rainmodel <- bamlss(f, data = homstart, family = "cnorm",
   results = FALSE, samplestats = FALSE,
   n.iter = 6000, burnin = 2000, thin = 10, cores = 7)
 @
-Argument \code{binning} is the switch in function \fct{bamlss.frame} for applying the shrinkage of
-the design matrices, as described above, moreover if \code{binning} is an \class{integer} all
-covariates in the data set will be rounded to this decimal places.
+The model is estimated using the efficient IWLS algorithms with the shrinked design matrices by
+setting argument \code{binning = TRUE}. Argument \code{before} indicates that shrinkage should be
+applied on the covariates before design matrices are computed, otherwise shrinkage is performed
+after the full design matrices are set up. This is important if identifiability constraints need
+to be computed, which is implemented in function \fct{gam.side} in package \pkg{mgcv}, since this
+must be done before any shrinkage. In this example we use the \fct{ti} constructor that implements
+the correct constraints, therefore, the reduced design matrices can be computed directly, which is
+saving quite a lot of RAM storage.
 
 <<echo=FALSE, results=hide>>=
 ## Austria: http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/nuts_einheiten/index.html
