@@ -1530,7 +1530,7 @@ The first and second derivative functions have been implemented in the \pkg{baml
 \fct{cnorm.bamlss} and can be directly used within the optimizer function \fct{bfit} and
 the MCMC sampler function \fct{GMCMC}.
 
-Since the HOMSTART data set has over $1$ million observations, the resulting design matrices
+Since the HOMSTART data set has over $1.2$ million observations, the resulting design matrices
 excessively demands the computer's storage as well as the CPU power. In order to prevent computational
 problems associated with very large data sets like HOMSTART, we make use of the fact that, e.g.,
 the effect of the day of
@@ -1571,10 +1571,13 @@ cyclic cubic spline for the seasonal effect and \code{bs = "tp"} is a thin-plate
 can then be fitted with
 <<eval=FALSE>>=
 rainmodel <- bamlss(f, data = homstart, family = "cnorm",
-  binning = TRUE, before = FALSE, results = FALSE,
-  n.iter = 6000, burnin = 4000, thin = 10, cores = 7)
+  binning = TRUE, before = TRUE, gam.side = FALSE,
+  results = FALSE, samplestats = FALSE,
+  n.iter = 6000, burnin = 2000, thin = 10, cores = 7)
 @
-
+Argument \code{binning} is the switch in function \fct{bamlss.frame} for applying the shrinkage of
+the design matrices, as described above, moreover if \code{binning} is an \class{integer} all
+covariates in the data set will be rounded to this decimal places.
 
 <<echo=FALSE, results=hide>>=
 ## Austria: http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/nuts_einheiten/index.html

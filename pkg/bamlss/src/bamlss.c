@@ -409,6 +409,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   SEXP theta2;
   PROTECT(theta2 = duplicate(getListElement(getListElement(theta,
     CHAR(STRING_ELT(id, 0))), CHAR(STRING_ELT(id, 1)))));
+  double *thetaptr = REAL(theta2);
   ++nProtected;
 
   int S_ind = getListElement_index(x, "S");
@@ -425,10 +426,15 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 
   SEXP gamma0, gamma1, tau2;
   PROTECT(gamma0 = allocVector(REALSXP, nc));
+  double *gamma0ptr = REAL(gamma0);
   ++nProtected;
+
   PROTECT(gamma1 = allocVector(REALSXP, nc));
+  double *gamma1ptr = REAL(gamma1);
   ++nProtected;
+
   PROTECT(tau2 = allocVector(REALSXP, ntau2));
+  double *tau2ptr = REAL(tau2);
   ++nProtected;
 
   /* Evaluate loglik, weights and score vector. */
@@ -437,18 +443,22 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   ++nProtected;
   int ll_ind = getListElement_index(family, "loglik");
   double pibeta = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, peta, id2, rho))[0];
+
   SEXP weights;
   PROTECT(weights = iwls_eval(getListElement(getListElement(family, "hess"),
     CHAR(STRING_ELT(id, 0))), response, peta, id2, rho));
   double *weightsptr = REAL(weights);
   ++nProtected;
+
   SEXP score;
   PROTECT(score = iwls_eval(getListElement(getListElement(family, "score"),
     CHAR(STRING_ELT(id, 0))), response, peta, id2, rho));
   double *scoreptr = REAL(score);
   ++nProtected;
+
   SEXP eta2;
   PROTECT(eta2 = duplicate(eta));
+  double *etaptr = REAL(getListElement(eta2, CHAR(STRING_ELT(id, 0))));
   ++nProtected;
 
   /* Create weighted matrix */
@@ -457,11 +467,6 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   int nr = nrows(VECTOR_ELT(x, X_ind));
 
   /* More pointers needed. */
-  double *thetaptr = REAL(theta2);
-  double *gamma0ptr = REAL(gamma0);
-  double *gamma1ptr = REAL(gamma1);
-  double *tau2ptr = REAL(tau2);
-  double *etaptr = REAL(getListElement(eta2, CHAR(STRING_ELT(id, 0))));
   double *zptr = REAL(z);
   double *eptr = REAL(e);
   double *xweightsptr = REAL(getListElement(x, "weights"));
@@ -533,8 +538,8 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 
   SEXP XWX0;
   PROTECT(XWX0 = duplicate(getListElement(x, "XWX")));
-  ++nProtected;
   double *XWX0ptr = REAL(XWX0);
+  ++nProtected;
 
   /* Add penalty matrix and variance parameter. */
   if(fixed < 1) {
@@ -552,8 +557,8 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   /* Cholesky decompostion of XWX. */
   SEXP L;
   PROTECT(L = duplicate(getListElement(x, "XWX")));
-  ++nProtected;
   double *Lptr = REAL(L);
+  ++nProtected;
 
   for(j = 0; j < nc; j++) { 	/* Zero the lower triangle. */
     for(i = j + 1; i < nc; i++) {
@@ -567,15 +572,15 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   /* Compute the inverse precision matrix. */
   SEXP PINV;
   PROTECT(PINV = duplicate(L));
-  ++nProtected;
   double *PINVptr = REAL(PINV);
+  ++nProtected;
 
   F77_CALL(dpotri)("Upper", &nc, PINVptr, &nc, &info);
 
   SEXP PINVL;
   PROTECT(PINVL = duplicate(PINV));
-  ++nProtected;
   double *PINVLptr = REAL(PINVL);
+  ++nProtected;
   F77_CALL(dpotrf)("Upper", &nc, PINVLptr, &nc, &info);
 
   for(j = 0; j < nc; j++) {
@@ -585,14 +590,17 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   }
 
   /* Compute mu. */
-  SEXP mu0, mu1;
+  SEXP mu0;
   PROTECT(mu0 = allocVector(REALSXP, nc));
-  ++nProtected;
-  PROTECT(mu1 = allocVector(REALSXP, nc));
-  ++nProtected;
-  int k1 = 1;
   double *mu0ptr = REAL(mu0);
+  ++nProtected;
+
+  SEXP mu1;
+  PROTECT(mu1 = allocVector(REALSXP, nc));
   double *mu1ptr = REAL(mu1);
+  ++nProtected;
+
+  int k1 = 1;
   char *transa2 = "T";
   F77_CALL(dgemm)(transa2, transb, &nc, &k1, &nr, &one,
     Xptr, &nr, xrresptr, &nr, &zero, mu0ptr, &nc);
@@ -766,8 +774,9 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   /* Cholesky decompostion of XWX. */
   SEXP L2;
   PROTECT(L2 = duplicate(getListElement(x, "XWX")));
-  ++nProtected;
   Lptr = REAL(L2);
+  ++nProtected;
+
   for(j = 0; j < nc; j++) { 	/* Zero the lower triangle. */
     for(i = j + 1; i < nc; i++) {
       Lptr[i + nc * j] = 0.0;
@@ -779,8 +788,8 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   /* Compute the inverse precision matrix. */
   SEXP PINV2;
   PROTECT(PINV2 = duplicate(L2));
-  ++nProtected;
   PINVptr = REAL(PINV2);
+  ++nProtected;
 
   F77_CALL(dpotri)("Upper", &nc, PINVptr, &nc, &info);
 	F77_CALL(dpotrf)("Upper", &nc, PINVLptr, &nc, &info);
@@ -844,11 +853,6 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
     qbeta = 0.5 * sdiag0 - 0.5 * qbeta;
   }
 
-  /* Stuff everything together. */
-  SEXP rval;
-  PROTECT(rval = allocVector(VECSXP, 3));
-  ++nProtected;
-
   double cval = 0.0;
   for(j = 0; j < nc; j++) {
     cval = thetaptr[j];
@@ -885,6 +889,11 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 /*Rprintf("qbetaprop %g\n", qbetaprop);*/
 /*Rprintf("p1 %g\n", p1);*/
 /*Rprintf("alpha %g\n", exp(REAL(alpha)[0]));*/
+
+  /* Stuff everything together. */
+  SEXP rval;
+  PROTECT(rval = allocVector(VECSXP, 3));
+  ++nProtected;
 
   SET_VECTOR_ELT(rval, 0, theta2);
   SET_VECTOR_ELT(rval, 1, alpha);

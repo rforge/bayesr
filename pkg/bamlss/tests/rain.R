@@ -159,6 +159,8 @@ b <- bamlss0(yobs ~ x, data = d, family = gF(cens, left = 0))
 coef(b)
 plot(b, which = 3:4)
 
+set.seed(111)
+
 n <- 6
 years <- 2
 co <- expand.grid("lon" = seq(0.001, 1, length = n), "lat" = seq(0.001, 1, length = n))
@@ -175,7 +177,6 @@ for(j in 1:years) {
   }
 }
 
-
 d$rain <- with(d, sin(scale2(time, -pi, pi)) * scale2(sin(lon), 0.3, 0.5) * scale2(lat, 0.1, 0.5))
 co <- unique(d[, c("lon", "lat")])
 plot(rain ~ time, data = d, type = "n")
@@ -188,10 +189,11 @@ d$rain <- d$rain + rnorm(n, sd = 0.3)
 d <- subset(d, rain > 0)
 
 f <- list(
-  rain ~ lon + s(lon,lat,k=10)+te(time,lon,lat,bs=c("cc","tp"),d=c(1,2), k = c(5, 10),mp=FALSE),
-  ~ lon + s(lon,lat,k=10)+te(time,lon,lat,bs=c("cc","tp"),d=c(1,2), k = c(5, 10),mp=FALSE)
+  rain ~ ti(time) + ti(time,lon,lat,bs=c("cc","tp"),d=c(1,2), k = c(5, 10)),
+  ~ 1
 )
 
-b <- bamlss(f, data = d, n.iter = 200, burnin = 0, thin = 1, binning = TRUE, before = FALSE, cores = 2, family = "cnorm")
+b <- bamlss(f, data = d, n.iter = 1200, burnin = 200, thin = 1,
+  binning = TRUE, before = TRUE, gam.side = FALSE, family = "cnorm")
 
 
