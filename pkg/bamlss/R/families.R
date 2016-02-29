@@ -798,7 +798,7 @@ cnorm.bamlss <- function(...)
 }
 
 
-pcnorm.bamlss <- function(start = 2, ...)
+pcnorm.bamlss <- function(start = 2, update = FALSE, ...)
 {
   f <- list(
     "family" = "pcnorm",
@@ -816,7 +816,13 @@ pcnorm.bamlss <- function(start = 2, ...)
       x$x$alpha$smooth.construct$model.matrix$state$fitted.values <- x$x$alpha$smooth.construct$model.matrix$X %*% x$x$alpha$smooth.construct$model.matrix$state$parameters
       for(j in seq_along(x$x$alpha$smooth.construct)) {
         x$x$alpha$smooth.construct[[j]]$propose <- gmcmc_sm.slice
-        x$x$alpha$smooth.construct[[j]]$update <- bfit_optim
+        x$x$alpha$smooth.construct[[j]]$update <- if(update) {
+          bfit_optim
+        } else {
+          function(x, ...) {
+            return(x$state)
+          }
+        }
       }
     }
 
@@ -868,8 +874,8 @@ pcnorm.bamlss <- function(start = 2, ...)
     dy
   }
   f$initialize = list(
-    "mu" = function(y, ...) { (y + mean(y)) / 2 },
-    "sigma" = function(y, ...) { rep(log(sd(y)), length(y)) },
+    "mu" = function(y, ...) { (y^(1 / log(start)) + mean(y^(1 / log(start)))) / 2 },
+    "sigma" = function(y, ...) { rep(log(sd(y^(1 / log(start)))), length(y)) },
     "alpha" = function(y, ...) { rep(log(start), length(y)) }
   )
   class(f) <- "family.bamlss"
