@@ -708,51 +708,57 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   /* Evaluate loglik, weights and score vector. */
   peta = map2par(getListElement(family, "map2par"), eta2, rho);
   double pibetaprop = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, peta, id2, rho))[0];
-  weights = iwls_eval(getListElement(getListElement(family, "hess"),
-    CHAR(STRING_ELT(id, 0))), response, peta, id2, rho);
-  weightsptr = REAL(weights);
-  score = iwls_eval(getListElement(getListElement(family, "score"),
-    CHAR(STRING_ELT(id, 0))), response, peta, id2, rho);
-  scoreptr = REAL(score);
 
-  xweightsptr[0] = 0;
+  SEXP weights2;
+  PROTECT(weights2 = iwls_eval(getListElement(getListElement(family, "hess"),
+    CHAR(STRING_ELT(id, 0))), response, peta, id2, rho));
+  double *weights2ptr = REAL(weights2);
+  ++nProtected;
+
+  SEXP score2;
+  PROTECT(score2 = iwls_eval(getListElement(getListElement(family, "score"),
+    CHAR(STRING_ELT(id, 0))), response, peta, id2, rho));
+  double *score2ptr = REAL(score2);
+  ++nProtected;
+
+  xweights2ptr[0] = 0;
   xrresptr[0] = 0;
 
   j = 0;
   for(i = 0; i < n; i++) {
     if(indptr[i] > (j + 1)) {
       for(jj = 0; jj < nc; jj++) {
-        XWptr[jj + nc * j] = Xptr[j + nr * jj] * xweightsptr[j];
+        XWptr[jj + nc * j] = Xptr[j + nr * jj] * xweights2ptr[j];
       }
       ++j;
-      xweightsptr[j] = 0;
+      xweights2ptr[j] = 0;
       xrresptr[j] = 0;
     }
     k = orderptr[i] - 1;
 
-    if(ISNA(weightsptr[k]))
-      weightsptr[k] = 1.490116e-08;
-    if(weightsptr[k] < -1e+10)
-      weightsptr[k] = -1e+10;
-    if(weightsptr[k] > 1e+10)
-      weightsptr[k] = 1e+10;
+    if(ISNA(weights2ptr[k]))
+      weights2ptr[k] = 1.490116e-08;
+    if(weights2ptr[k] < -1e+10)
+      weights2ptr[k] = -1e+10;
+    if(weights2ptr[k] > 1e+10)
+      weights2ptr[k] = 1e+10;
 
-    if(ISNA(scoreptr[k]))
-      scoreptr[k] = 1.490116e-08;
-    if(scoreptr[k] < -1e+10)
-      scoreptr[k] = -1e+10;
-    if(scoreptr[k] > 1e+10)
-      scoreptr[k] = 1e+10;
+    if(ISNA(score2ptr[k]))
+      score2ptr[k] = 1.490116e-08;
+    if(score2ptr[k] < -1e+10)
+      score2ptr[k] = -1e+10;
+    if(score2ptr[k] > 1e+10)
+      score2ptr[k] = 1e+10;
 
-    zptr[k] = etaptr[k] + scoreptr[k] / weightsptr[k];
+    zptr[k] = etaptr[k] + score2ptr[k] / weights2ptr[k];
     etaptr[k] -= fitptr[k];
     eptr[k] = zptr[k] - etaptr[k];
-    xweightsptr[j] += weightsptr[k];
-    xrresptr[j] += weightsptr[k] * eptr[k];
+    xweightsptr[j] += weights2ptr[k];
+    xrresptr[j] += weights2ptr[k] * eptr[k];
   }
 
   for(jj = 0; jj < nc; jj++) {
-    XWptr[jj + nc * j] = Xptr[j + nr * jj] * xweightsptr[j];
+    XWptr[jj + nc * j] = Xptr[j + nr * jj] * xweights2ptr[j];
   }
 
   /* Compute X'WX. */

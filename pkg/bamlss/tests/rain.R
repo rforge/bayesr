@@ -27,7 +27,7 @@ set.seed(123)
 
 b <- bamlss(f, data = d, family = "cnorm",
   binning = TRUE, do.optim = FALSE, gam.side = FALSE, before = TRUE,
-  n.iter = 1200,burnin=200,thin=1,maxit=10)
+  n.iter = 1200,burnin=200,thin=1,maxit=10, cores = 2)
 
 
 library("truncreg")
