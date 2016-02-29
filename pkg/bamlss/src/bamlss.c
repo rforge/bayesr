@@ -721,8 +721,8 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   double *score2ptr = REAL(score2);
   ++nProtected;
 
-  xweightsptr[0] = 0;
-  xrresptr[0] = 0;
+  xweightsptr[0] = 0.0;
+  xrresptr[0] = 0.0;
 
   j = 0;
   for(i = 0; i < n; i++) {
@@ -731,8 +731,8 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
         XWptr[jj + nc * j] = Xptr[j + nr * jj] * xweightsptr[j];
       }
       ++j;
-      xweightsptr[j] = 0;
-      xrresptr[j] = 0;
+      xweightsptr[j] = 0.0;
+      xrresptr[j] = 0.0;
     }
     k = orderptr[i] - 1;
 
