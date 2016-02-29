@@ -758,7 +758,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   }
 
   for(jj = 0; jj < nc; jj++) {
-    XWptr[jj + nc * j] = Xptr[j + nr * jj] * xweights2ptr[j];
+    XWptr[jj + nc * j] = Xptr[j + nr * jj] * xweightsptr[j];
   }
 
   /* Compute X'WX. */
