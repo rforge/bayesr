@@ -798,53 +798,37 @@ cnorm.bamlss <- function(...)
 }
 
 
-pcnorm.bamlss <- function(alpha = NULL, start = 1.5, ...)
+pcnorm.bamlss <- function(start = 2, ...)
 {
   f <- list(
     "family" = "pcnorm",
-    "names" = c("mu", "sigma"),
-    "links" = c("mu" = "identity", "sigma" = "log")
+    "names" = c("mu", "sigma", "alpha"),
+    "links" = c("identity", "log", "log")
   )
-  if(is.null(alpha)) {
-    f$names <- c(f$names, "alpha")
-    f$links <- c(f$links, "alpha" = "log")
-  }
   f$transform <- function(x, ...) {
-    x <- bamlss.setup(x, ...)
-    y <- attr(x, "response.vec")
-    check <- as.integer(y <= 0)
-    attr(y, "check") <- check
-    attr(x, "response.vec") <- y
-    if("alpha" %in% names(x)) {
-      if(length(x$alpha$smooth)) {
-        for(j in seq_along(x$alpha$smooth))
-          x$alpha$smooth[[j]]$propose <- gmcmc_sm.slice
-        if(!is.null(x$alpha$smooth$parametric)) {
-          x$alpha$smooth$parametric$state$parameters["g1"] <- log(start)
-          x$alpha$smooth$parametric$state$fitted.values <- x$alpha$smooth$parametric$get.mu(x$alpha$smooth$parametric$X, x$alpha$smooth$parametric$state$parameters)
-        }
+    attr(x$y[[1]], "check") <- as.integer(x$y[[1]] <= 0)
+
+    if(is.null(attr(x$x, "bamlss.engine.setup")))
+      x$x <- bamlss.engine.setup(x$x, ...)
+
+    if(!is.null(x$x$alpha$smooth.construct$model.matrix)) {
+      x$x$alpha$smooth.construct$model.matrix$state$parameters[1] <- log(start)
+      x$x$alpha$smooth.construct$model.matrix$state$fitted.values <- x$x$alpha$smooth.construct$model.matrix$X %*% x$x$alpha$smooth.construct$model.matrix$state$parameters
+      for(j in seq_along(x$x$alpha$smooth.construct)) {
+        x$x$alpha$smooth.construct[[j]]$propose <- gmcmc_sm.slice
+        x$x$alpha$smooth.construct[[j]]$update <- bfit_optim
       }
     }
-    x
-  }
-  f$engine <- function(x, ...) {
-    optimizer <- if(is.null(list(...)$no.opt)) opt0 else bfit_cnorm
-    sampler <- if(is.null(list(...)$no.mcmc)) {
-      function(x, ...) { GMCMC(x, propose = "iwls", ...) }
-    } else null.sampler
-    stacker(x, optimizer = optimizer, sampler = sampler, ...)
+
+    list("x" = x$x, "y" = x$y)
   }
   f$score <- list(
     "mu" = function(y, par, ...) {
-      if(!is.null(alpha))
-        par$alpha <- rep(alpha, length = length(y))
       .Call("cnorm_score_mu",
         as.numeric(y^(1 / par$alpha)), as.numeric(par$mu), as.numeric(par$sigma),
         as.integer(attr(y, "check")))
     },
     "sigma" = function(y, par, ...) {
-      if(!is.null(alpha))
-        par$alpha <- rep(alpha, length = length(y))
       .Call("cnorm_score_sigma",
         as.numeric(y^(1 / par$alpha)), as.numeric(par$mu), as.numeric(par$sigma),
         as.integer(attr(y, "check")))
@@ -857,30 +841,25 @@ pcnorm.bamlss <- function(alpha = NULL, start = 1.5, ...)
   )
   f$hess <- list(
     "mu" = function(y, par, ...) {
-      if(!is.null(alpha))
-        par$alpha <- rep(alpha, length = length(y))
       .Call("cnorm_hess_mu",
         as.numeric(y^(1 / par$alpha)), as.numeric(par$mu), as.numeric(par$sigma),
         as.integer(attr(y, "check")))
     },
     "sigma" = function(y, par, ...) {
-      if(!is.null(alpha))
-        par$alpha <- rep(alpha, length = length(y))
       .Call("cnorm_hess_sigma",
         as.numeric(y^(1 / par$alpha)), as.numeric(par$mu), as.numeric(par$sigma),
         as.integer(attr(y, "check")))
+    },
+    "alpha" = function(y, par, ...) {
+      rep(0.0, length(par$alpha))
     }
   )
   f$loglik <- function(y, par, ...) {
-    if(!is.null(alpha))
-      par$alpha <- rep(alpha, length = length(y))
     .Call("cnorm_power_loglik",
       as.numeric(y), as.numeric(par$mu), as.numeric(par$sigma), as.numeric(par$alpha),
       as.integer(attr(y, "check")))
   }
   f$d <- function(y, par, log = FALSE) {
-    if(!is.null(alpha))
-      par$alpha <- rep(alpha, length = length(y))
     dy <- ifelse(y <= 0, pnorm(0, par$mu, par$sigma, log.p = TRUE),
       dnorm(y^(1 / par$alpha), par$mu, par$sigma, log = TRUE) -
       log(par$alpha) + (1 / par$alpha - 1) * log(y))
@@ -888,25 +867,14 @@ pcnorm.bamlss <- function(alpha = NULL, start = 1.5, ...)
       dy <- exp(dy)
     dy
   }
-  f$p <- function(y, par, log = FALSE) {
-    if(!is.null(alpha))
-      par$alpha <- rep(alpha, length = length(y))
-    ifelse(y <= 0, 0, pnorm(y^(1 / par$alpha), par$mu, par$sigma, log = log))
-  }
-  f$q <- function(y, par, ...) {
-    if(!is.null(alpha))
-      par$alpha <- rep(alpha, length = length(y))
-    rval <- qnorm(y^(1 / par$alpha), par$mu, par$sigma)
-    pmax(pmin(rval, Inf), 0)
-  }
-  f$r <- function(n, y, par, ...) {
-    rval <- rnorm(n, par$mu, par$sigma)
-    pmax(pmin(rval, Inf), 0)
-  }
+  f$initialize = list(
+    "mu" = function(y, ...) { (y + mean(y)) / 2 },
+    "sigma" = function(y, ...) { rep(log(sd(y)), length(y)) },
+    "alpha" = function(y, ...) { rep(log(start), length(y)) }
+  )
   class(f) <- "family.bamlss"
   f
 }
-
 
 
 cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),

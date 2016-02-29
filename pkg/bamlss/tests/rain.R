@@ -12,22 +12,20 @@ if(file.exists("~/data/homstart.rda")) {
 
 homstart$raw[homstart$raw < 0] <- 0
 
-d <- subset(homstart, year >= 2009)
-
 f <- list(
-  "mu" = sqrt(raw) ~ elevation + ti(day,bs="cc") +
-    ti(long,lat,bs="tp",d=2) +
-    ti(day,long,lat,bs=c("cc","tp"),d=c(1,2)),
-  "sigma" = ~ elevation + ti(day,bs="cc") +
-    ti(long,lat,bs="tp",d=2) +
-    ti(day,long,lat,bs=c("cc","tp"),d=c(1,2))
+  "mu" = raw ~ s(day,bs="cc"),
+  "sigma" = ~ s(day,bs="cc"),
+  "alpha" = ~ 1
 )
 
-set.seed(123)
+for(i in levels(homstart$id)) {
+  td <- subset(homstart, id == i)
 
-b <- bamlss(f, data = d, family = "cnorm",
-  binning = TRUE, do.optim = FALSE, gam.side = FALSE, before = TRUE,
-  n.iter = 1200,burnin=200,thin=1,maxit=10, cores = 2)
+  b <- bamlss(f, data = td, family = "pcnorm",
+    binning = TRUE, gam.side = FALSE, before = TRUE)
+
+  plot(b)
+}
 
 
 library("truncreg")
@@ -72,11 +70,11 @@ b0 <- crch(sqrt(rain) ~ sqrtensmean|sqrtenssd, data = RainIbk, dist = "gaussian"
 
 ## now with bamlss
 f <- list(
-  sqrt(rain) ~ s(sqrtensmean),
+  rain ~ s(sqrtensmean),
   sigma ~ s(sqrtenssd),
-  alpha ~ s(sqrtensmean) + s(sqrtenssd)
+  alpha ~ 1
 )
-b1 <- bamlss(f[1:2], data = RainIbk, family = "cnorm", results = FALSE, samplestats = FALSE)
+b1 <- bamlss(f, data = RainIbk, family = "pcnorm", sampler = FALSE)
 
 f <- list(
   I(rain^(1/2)) ~ s(sqrtensmean),

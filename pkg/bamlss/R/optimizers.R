@@ -1164,11 +1164,6 @@ bfit_optim <- function(x, family, y, eta, id, ...)
   eta[[id]] <- eta[[id]] - fitted(x$state)
   eta2 <- eta
 
-  if(is.null(x$state$XX)) x$state$XX <- crossprod(x$X)
-  if(!x$fixed) {
-    args <- list(...)
-    edf0 <- args$edf - x$state$edf
-  }
   tpar <- x$state$parameters
 
   ## Objective for regression coefficients.
@@ -1197,35 +1192,6 @@ bfit_optim <- function(x, family, y, eta, id, ...)
       return(drop(-1 * grad))
     }
   } else NULL
-
-  if(!x$fixed & x$state$do.optim & x$fxsp) {
-    objfun2 <- function(tau2) {
-      tpar <- set.par(tpar, tau2, "tau2")
-      suppressWarnings(opt <- try(optim(get.par(tpar, "b"), fn = objfun, gr = grad,
-        method = "BFGS", control = list(), tau2 = tau2), silent = TRUE))
-      if(!inherits(opt, "try-error")) {
-        tpar <- set.par(tpar, opt$par, "b")
-        x$state$fitted.values <- x$fit.fun(x$X, tpar)
-      }
-      x$state$parameters <- tpar
-      edf <- x$edf(x)
-      eta2[[id]] <- eta[[id]] + fitted(x$state)
-      IC <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(eta2[[id]]), type = x$criterion, ...)
-      IC
-    }
-    if(length(get.state(x, "tau2")) < 2) {
-      tau2 <- try(optimize(objfun2, interval = c(0.1, 1000))$minimum, silent = TRUE)
-      if(inherits(tau2, "try-error"))
-        tau2 <- optimize2(objfun2, interval = x$state$interval, grid = x$state$grid)$minimum
-      tpar <- set.par(tpar, if(!length(tau2)) x$interval[1] else tau2, "tau2")
-    } else {
-      i <- grep("tau2", names(x$lower))
-      opt <- try(optim(get.state(x, "tau2"), fn = objfun2, method = "L-BFGS-B",
-        lower = x$lower[i], upper = x$upper[i]), silent = TRUE)
-      if(!inherits(opt, "try-error"))
-        tpar <- set.par(tpar, opt$par, "tau2")
-    }
-  }
 
   suppressWarnings(opt <- try(optim(get.par(tpar, "b"), fn = objfun, gr = grad,
     method = "BFGS", control = list(), tau2 = get.par(tpar, "tau2")), silent = TRUE))
