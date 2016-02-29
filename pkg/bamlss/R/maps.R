@@ -303,7 +303,6 @@ neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
   if(!nb) {
     adjmat <- nb2mat(adjmat, style = "B", zero.policy = TRUE)
 
-
     if(is.null(nx))
       nx <- try(slot(x, "data")$NAME, silent = TRUE)
     if(is.null(nx))

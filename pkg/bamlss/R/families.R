@@ -798,7 +798,7 @@ cnorm.bamlss <- function(...)
 }
 
 
-pcnorm.bamlss <- function(start = 2, update = FALSE, ...)
+pcnorm.bamlss <- function(start = 2, update = TRUE, ...)
 {
   f <- list(
     "family" = "pcnorm",
@@ -813,7 +813,7 @@ pcnorm.bamlss <- function(start = 2, update = FALSE, ...)
 
     if(!is.null(x$x$alpha$smooth.construct$model.matrix)) {
       x$x$alpha$smooth.construct$model.matrix$state$parameters[1] <- log(start)
-      x$x$alpha$smooth.construct$model.matrix$state$fitted.values <- x$x$alpha$smooth.construct$model.matrix$X %*% x$x$alpha$smooth.construct$model.matrix$state$parameters
+      x$x$alpha$smooth.construct$model.matrix$state$fitted.values <- x$x$alpha$smooth.construct$model.matrix$fit.fun(x$x$alpha$smooth.construct$model.matrix$X, x$x$alpha$smooth.construct$model.matrix$state$parameters)
       for(j in seq_along(x$x$alpha$smooth.construct)) {
         x$x$alpha$smooth.construct[[j]]$propose <- gmcmc_sm.slice
         x$x$alpha$smooth.construct[[j]]$update <- if(update) {
