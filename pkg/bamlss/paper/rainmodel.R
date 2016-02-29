@@ -22,7 +22,7 @@ if(!file.exists("rainmodel.rda")) {
   )
 
   rainmodel <- bamlss(f, data = homstart2, family = "cnorm",
-    binning = TRUE, before = FALSE,
+    binning = TRUE, before = TRUE, gam.side = FALSE,
     samplestats = FALSE, results = FALSE,
     eps = 0.001, n.iter = 6000, burnin = 4000, thin = 10, cores = 7)
 

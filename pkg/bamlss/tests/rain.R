@@ -15,13 +15,19 @@ homstart$raw[homstart$raw < 0] <- 0
 d <- subset(homstart, year >= 2009)
 
 f <- list(
-  sqrt(raw) ~ ti(day,bs="cc") + ti(long,lat,bs="tp",d=2) + ti(day,long,lat, bs=c("cc","tp"), d=c(1,2)) + s(elevation,k=4),
-  sigma ~ ti(day,bs="cc") + ti(long,lat,bs="tp",d=2) + ti(day,long,lat, bs=c("cc","tp"), d=c(1,2)) + s(elevation,k=4)
+  "mu" = sqrt(raw) ~ elevation + ti(day,bs="cc") +
+    ti(long,lat,bs="tp",d=2) +
+    ti(day,long,lat,bs=c("cc","tp"),d=c(1,2)),
+  "sigma" = ~ elevation + ti(day,bs="cc") +
+    ti(long,lat,bs="tp",d=2) +
+    ti(day,long,lat,bs=c("cc","tp"),d=c(1,2))
 )
 
+set.seed(123)
+
 b <- bamlss(f, data = d, family = "cnorm",
-  binning = TRUE, do.optim = FALSE, gam.side = FALSE,
-  n.iter = 10,burnin=0,thin=1,maxit=20,step=1)
+  binning = TRUE, do.optim = FALSE, gam.side = FALSE, before = TRUE,
+  n.iter = 1200,burnin=200,thin=1,maxit=10)
 
 
 library("truncreg")
