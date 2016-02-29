@@ -721,17 +721,17 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   double *score2ptr = REAL(score2);
   ++nProtected;
 
-  xweights2ptr[0] = 0;
+  xweightsptr[0] = 0;
   xrresptr[0] = 0;
 
   j = 0;
   for(i = 0; i < n; i++) {
     if(indptr[i] > (j + 1)) {
       for(jj = 0; jj < nc; jj++) {
-        XWptr[jj + nc * j] = Xptr[j + nr * jj] * xweights2ptr[j];
+        XWptr[jj + nc * j] = Xptr[j + nr * jj] * xweightsptr[j];
       }
       ++j;
-      xweights2ptr[j] = 0;
+      xweightsptr[j] = 0;
       xrresptr[j] = 0;
     }
     k = orderptr[i] - 1;
