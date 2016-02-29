@@ -488,8 +488,8 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   double *fitrptr = REAL(getListElement(x, "fit.reduced"));
 
   /* Start. */
-  xweightsptr[0] = 0;
-  xrresptr[0] = 0;
+  xweightsptr[0] = 0.0;
+  xrresptr[0] = 0.0;
 
   j = 0;
   int jj;
@@ -499,8 +499,8 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
         XWptr[jj + nc * j] = Xptr[j + nr * jj] * xweightsptr[j];
       }
       ++j;
-      xweightsptr[j] = 0;
-      xrresptr[j] = 0;
+      xweightsptr[j] = 0.0;
+      xrresptr[j] = 0.0;
     }
     k = orderptr[i] - 1;
 
