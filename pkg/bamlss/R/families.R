@@ -851,7 +851,7 @@ pcnorm.bamlss <- function(start = 2, ...)
         as.integer(attr(y, "check")))
     },
     "alpha" = function(y, par, ...) {
-      rep(0.0, length(par$alpha))
+      rep(1.0, length(par$alpha))
     }
   )
   f$loglik <- function(y, par, ...) {
