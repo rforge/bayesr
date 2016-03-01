@@ -5462,30 +5462,12 @@ residuals.bamlss <- function(object, type = "quantile",
   family <- family(object)
   stopifnot(!is.null(family$p))
 
-  par <- predict(object, FUN = function(x) { x }, nsamps = nsamps)
-  nc <- min(sapply(par, ncol))
+  par <- predict(object, nsamps = nsamps)
+
   for(j in family$names)
     par[[j]] <- make.link2(family$links[j])$linkinv(par[[j]])
 
-  res <- matrix(NA, nobs, nc)
-  par2 <- list()
-
-  for(i in 1:nc) {
-    for(j in family$names)
-      par2[[j]] <- par[[j]][, i]
-    res[, i] <- qnorm(family$p(y, par2))
-  }
-
-  if(!is.null(FUN)) {
-    res <- apply(res, 1, FUN, ...)
-    if(!is.null(dim(res))) {
-      res <- t(res)
-      if(ncol(res) < 2)
-        res <- as.numeric(res)
-    }
-  }
-
-  res
+  return(qnorm(family$p(y, par)))
 }
 
 

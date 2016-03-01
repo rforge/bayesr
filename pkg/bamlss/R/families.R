@@ -779,7 +779,7 @@ cnorm.bamlss <- function(...)
       dnorm((y - par$mu) / par$sigma, log = log) / par$sigma^(1 - log) - log(par$sigma) * log)
   }
   f$p <- function(y, par, log = FALSE) {
-    ifelse(y <= 0, 0, pnorm((y - par$mu) / par$sigma, log = log))
+    return(ifelse(y == 0, runif(length(y), 0, pnorm(0, par$mu, par$sigma)), pnorm(y - par$mu, 0, par$sigma)))
   }
   f$q <- function(y, par, ...) {
     rval <- qnorm(y) * par$sigma + par$mu
@@ -866,7 +866,8 @@ pcnorm.bamlss <- function(start = 2, update = FALSE, ...)
     dy
   }
   f$p <- function(y, par, log = FALSE) {
-    ifelse(y <= 0, 0, pnorm((y^(1 / par$lambda) - par$mu) / par$sigma, log = log))
+    y <- y^(1 / par$lambda)
+    return(ifelse(y == 0, runif(length(y), 0, pnorm(0, par$mu, par$sigma)), pnorm(y - par$mu, 0, par$sigma)))
   }
   f$q <- function(y, par, ...) {
     rval <- qnorm(y^(1 / par$lambda)) * par$sigma + par$mu
