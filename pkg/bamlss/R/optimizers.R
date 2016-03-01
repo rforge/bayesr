@@ -1193,6 +1193,8 @@ bfit_optim <- function(x, family, y, eta, id, ...)
     }
   } else NULL
 
+grad <- NULL
+
   suppressWarnings(opt <- try(optim(get.par(tpar, "b"), fn = objfun, gr = grad,
     method = "BFGS", control = list(), tau2 = get.par(tpar, "tau2")), silent = TRUE))
 
@@ -1204,6 +1206,8 @@ bfit_optim <- function(x, family, y, eta, id, ...)
 
   if(!x$fixed)
     x$state$edf <- x$edf(x)
+
+plot(x$state$fitted.values ~ td$day)
 
   return(x$state)
 }

@@ -1059,6 +1059,23 @@ gmcmc_sm.slice <- function(family, theta, id, prior, eta, y, data, ...)
   ## Remove fitted values.
   eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values")
 
+  ## Sample variance parameter.
+  if(!data$fixed & !data$fxsp & length(data$S)) {
+    if(length(data$S) < 2) {
+      g <- get.par(theta, "b")
+      a <- data$rank / 2 + data$a
+      b <- 0.5 * crossprod(g, data$S[[1]]) %*% g + data$b
+      tau2 <- 1 / rgamma(1, a, b)
+      theta <- set.par(theta, tau2, "tau2")
+    } else {
+      i <- grep("tau2", names(theta))
+      for(j in i) {
+        theta <- uni.slice(theta, data, family, NULL,
+          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = pibeta)
+      }
+    }
+  }
+
   ## Sample coefficients.
   data$state$parameters <- set.par(data$state$parameters, get.par(theta, "b"), "b")
   for(j in seq_along(get.par(theta, "b"))) {
@@ -1069,23 +1086,11 @@ gmcmc_sm.slice <- function(family, theta, id, prior, eta, y, data, ...)
   ## New fitted values.
   fit <- data$fit.fun(data$X, data$state$parameters)
 
-  ## Sample variance parameter.
-  if(!data$fixed & !data$fxsp) {
-    if(length(i <- grep("tau2", names(theta)))) {
-      eta[[id[1]]] <- eta[[id[1]]] + fit
-      ll <- family$loglik(y, family$map2par(eta))
-      for(j in i) {
-        data$state$parameters <- uni.slice(data$state$parameters, data, family, NULL,
-          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = ll)
-      }
-    }
-  }
-
   ## New theta.
   theta <- data$state$parameters
   attr(theta, "fitted.values") <- fit
 
-  return(list("parameters" = theta, "alpha" = log(1), "extra" = c("edf" = data$edf(data))))
+  return(list("parameters" = theta, "alpha" = log(1)))
 }
 
 

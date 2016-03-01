@@ -798,7 +798,7 @@ cnorm.bamlss <- function(...)
 }
 
 
-pcnorm.bamlss <- function(start = 2, update = TRUE, ...)
+pcnorm.bamlss <- function(start = 2, update = FALSE, ...)
 {
   f <- list(
     "family" = "pcnorm",
@@ -838,11 +838,6 @@ pcnorm.bamlss <- function(start = 2, update = TRUE, ...)
       .Call("cnorm_score_sigma",
         as.numeric(y^(1 / par$lambda)), as.numeric(par$mu), as.numeric(par$sigma),
         as.integer(attr(y, "check")))
-    },
-    "lambda" = function(y, par, ...) {
-      .Call("cnorm_power_score_lambda",
-        as.numeric(y), as.numeric(par$mu), as.numeric(par$sigma),
-        as.numeric(par$lambda), as.integer(attr(y, "check")))
     }
   )
   f$hess <- list(
@@ -855,9 +850,6 @@ pcnorm.bamlss <- function(start = 2, update = TRUE, ...)
       .Call("cnorm_hess_sigma",
         as.numeric(y^(1 / par$lambda)), as.numeric(par$mu), as.numeric(par$sigma),
         as.integer(attr(y, "check")))
-    },
-    "lambda" = function(y, par, ...) {
-      rep(1.0, length(par$lambda))
     }
   )
   f$loglik <- function(y, par, ...) {

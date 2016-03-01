@@ -1074,10 +1074,7 @@ SEXP cnorm_hess_sigma(SEXP y, SEXP mu, SEXP sigma, SEXP check)
 /* Censored normal, left = 0, right - Inf, with power parameter. */
 SEXP cnorm_power_loglik(SEXP y, SEXP mu, SEXP sigma, SEXP lambda, SEXP check)
 {
-  SEXP rval;
-  PROTECT(rval = allocVector(REALSXP, 1));
-  int i;
-  int n = length(y);
+  int i, n = length(y);
   double *yptr = REAL(y);
   double *muptr = REAL(mu);
   double *sigmaptr = REAL(sigma);
@@ -1085,17 +1082,24 @@ SEXP cnorm_power_loglik(SEXP y, SEXP mu, SEXP sigma, SEXP lambda, SEXP check)
   int *checkptr = INTEGER(check);
 
   double ll = 0.0;
+  double onediv = 0.0;
+
   for(i = 0; i < n; i++) {
     if(checkptr[i]) {
       ll += pnorm5(0.0 , muptr[i], sigmaptr[i], 1, 1);
     } else {
-      ll += dnorm(pow(yptr[i], 1.0 / lambdaptr[i]), muptr[i], sigmaptr[i], 1) -
-        log(lambdaptr[i]) + (1.0 / lambdaptr[i] - 1.0) * log(yptr[i]);
+      onediv = 1.0 / lambdaptr[i];
+      ll += dnorm(pow(yptr[i], onediv), muptr[i], sigmaptr[i], 1) -
+        log(lambdaptr[i]) + (onediv - 1.0) * log(yptr[i]);
     }
   }
 
+  SEXP rval;
+  PROTECT(rval = allocVector(REALSXP, 1));
   REAL(rval)[0] = ll;
+
   UNPROTECT(1);
+
   return rval;
 }
 

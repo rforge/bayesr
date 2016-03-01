@@ -1262,6 +1262,7 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL)
   }
   if(length(what)) {
     pn <- get.all.parnames(x, rename.p = TRUE)
+    pn <- gsub(".p.model.matrix.", ".p.", pn, fixed = TRUE)
     pn <- pn[pn %in% colnames(samples)]
     if(length(pn) & ("DIC" %in% what)) {
       samples <- samples[, pn, drop = FALSE]
@@ -1270,13 +1271,11 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL)
       names(par) <- nx
       mpar <- par
       for(i in nx)
-        par[[i]] <- .fitted.bamlss(i, x[[i]], samples)
-      par <- family$map2par(par)
+        par[[i]] <- make.link2(family$links[i])$linkinv(.fitted.bamlss(i, x[[i]], samples))
       msamples <- matrix(apply(samples, 2, mean, na.rm = TRUE), nrow = 1)
       colnames(msamples) <- pn
       for(i in nx)
-        mpar[[i]] <- .fitted.bamlss(i, x[[i]], msamples)
-      mpar <- family$map2par(mpar)
+        mpar[[i]] <- make.link2(family$links[i])$linkinv(.fitted.bamlss(i, x[[i]], msamples))
       tpar <- mpar
       dev <- rep(NA, ncol(par[[1]]))
       for(j in 1:ncol(par[[1]])) {
@@ -1289,7 +1288,7 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL)
       ll <- try(family$loglik(y, mpar), silent = TRUE)
       if(!inherits(ll, "try-error")) {
         mdev <- -2 * ll
-        pd <- mean(dev) - mdev
+        pd <- mean(dev, na.rm = TRUE) - mdev
         DIC <- mdev + 2 * pd
         if(is.null(stats))
           stats <- list()
@@ -2783,7 +2782,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
 .fitted.bamlss <- function(id, x, samps)
 {
   snames <- colnames(samps)
-  snames <- snames[-grep2(c("alpha", "edf", "tau2", "accepted"), snames)]
+  snames <- snames[-grep2(c(".alpha", ".edf", ".tau2", ".accepted"), snames, fixed = TRUE)]
   eta <- 0
   if(!is.null(x$model.matrix)) {
     if(ncol(x$model.matrix) > 0) {
@@ -2797,6 +2796,12 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
     for(j in names(x$smooth.construct)) {
       sn <- grep(paste(id, if(j != "model.matrix") "s" else "p", j, sep = "."), snames,
         fixed = TRUE, value = TRUE)
+      if(!length(sn)) {
+        if(j == "model.matrix")
+          sn <- grep(paste(id, ".p.", sep = ""), snames, fixed = TRUE, value = TRUE)
+      }
+      if(!length(sn))
+        warning(paste('no fitted matrix for "', id, '", "', j, '"!', sep = ""))
       if(j != "model.matrix") {
         if(!inherits(x$smooth.construct[[j]], "no.mgcv") & !inherits(x$smooth.construct[[j]], "special")) {
           fit <- fitted_matrix(x$smooth.construct[[j]]$X, samps[, sn, drop = FALSE])
