@@ -919,7 +919,7 @@ gmcmc_sm.mvn <- function(family, theta, id, prior, eta, y, data, ...)
       i <- grep("tau2", names(theta))
       for(j in i) {
         theta <- uni.slice(theta, data, family, NULL,
-          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = pibeta)
+          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = ll1)
       }
     }
   }
@@ -1059,6 +1059,17 @@ gmcmc_sm.slice <- function(family, theta, id, prior, eta, y, data, ...)
   ## Remove fitted values.
   eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values")
 
+  attr(theta, "fitted.values") <- NULL
+
+  ## Sample coefficients.
+  for(j in seq_along(get.par(theta, "b"))) {
+    theta <- uni.slice(theta, data, family, y,
+      eta, id[1], j, logPost = gmcmc_logPost)
+  }
+
+  ## New fitted values.
+  fit <- data$fit.fun(data$X, theta)
+
   ## Sample variance parameter.
   if(!data$fixed & !data$fxsp & length(data$S)) {
     if(length(data$S) < 2) {
@@ -1068,26 +1079,18 @@ gmcmc_sm.slice <- function(family, theta, id, prior, eta, y, data, ...)
       tau2 <- 1 / rgamma(1, a, b)
       theta <- set.par(theta, tau2, "tau2")
     } else {
+      ## New logLik.
+      eta[[id[1]]] <- eta[[id[1]]] + fit
+      ll <- family$loglik(y, family$map2par(eta))
       i <- grep("tau2", names(theta))
       for(j in i) {
         theta <- uni.slice(theta, data, family, NULL,
-          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = pibeta)
+          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = ll)
       }
     }
   }
 
-  ## Sample coefficients.
-  data$state$parameters <- set.par(data$state$parameters, get.par(theta, "b"), "b")
-  for(j in seq_along(get.par(theta, "b"))) {
-    data$state$parameters <- uni.slice(data$state$parameters, data, family, y,
-      eta, id[1], j, logPost = gmcmc_logPost)
-  }
-
-  ## New fitted values.
-  fit <- data$fit.fun(data$X, data$state$parameters)
-
   ## New theta.
-  theta <- data$state$parameters
   attr(theta, "fitted.values") <- fit
 
   return(list("parameters" = theta, "alpha" = log(1)))

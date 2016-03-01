@@ -866,12 +866,10 @@ pcnorm.bamlss <- function(start = 2, update = FALSE, ...)
     dy
   }
   f$p <- function(y, par, log = FALSE) {
-    y <- y^(1 / par$lambda)
-    ifelse(y <= 0, 0, pnorm((y - par$mu) / par$sigma, log = log))
+    ifelse(y <= 0, 0, pnorm((y^(1 / par$lambda) - par$mu) / par$sigma, log = log))
   }
   f$q <- function(y, par, ...) {
-    y <- y^(1 / par$lambda)
-    rval <- qnorm(y) * par$sigma + par$mu
+    rval <- qnorm(y^(1 / par$lambda)) * par$sigma + par$mu
     pmax(pmin(rval, Inf), 0)
   }
   f$initialize = list(
