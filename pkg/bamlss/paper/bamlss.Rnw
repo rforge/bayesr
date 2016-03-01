@@ -1637,7 +1637,7 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   homstart <- subset(homstart, year >= 1979)
 
   data("Austria")
-  load("rainmodel-2016-02-26.rda")
+  load("rainmodel-2016-03-01.rda")
 
   nd <- as.data.frame(coordinates(AustriaTopo))
   names(nd) <- c("long", "lat")
