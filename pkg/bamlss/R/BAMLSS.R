@@ -1296,7 +1296,7 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL)
         stats$DIC <- DIC
         stats$pd <- pd
       } else {
-        warning("no DIC, cannot evaluate the $loglik() function in .bamlss family object!")
+        warning("no DIC, cannot evaluate the $loglik() function in 'bamlss' family object!")
       }
     }
   }
@@ -3550,7 +3550,7 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
 
   ## What should be plotted?
   which.match <- c("effects", "samples", "hist-resid", "qq-resid",
-    "scatter-resid", "scale-resid", "max-acf", "param-samples", "boost.summary")
+    "scatter-resid", "max-acf", "param-samples", "boost.summary")
   if(!is.character(which)) {
     if(any(which > 8L))
       which <- which[which <= 8L]
@@ -3559,53 +3559,93 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
   if(length(which) > length(which.match) || !any(which %in% which.match))
     stop("argument which is specified wrong!")
 
-  if(which == "samples") {
-    par <- if(parameters) {
-      if(is.null(x$parameters)) NULL else unlist(x$parameters)
-    } else NULL
-    samps <- samples(x, model = model, term = term, drop = TRUE)
-    snames <- colnames(samps)
-    snames <- snames[!grepl(".p.edf", snames, fixed = TRUE) & !grepl(".accepted", snames, fixed = TRUE)]
-    snames <- snames[!grepl("DIC", snames, fixed = TRUE) & !grepl("pd", snames, fixed = TRUE)]
-    snames <- snames[!grepl(".model.matrix.edf", snames, fixed = TRUE)]
-    samps <- samps[, snames, drop = FALSE]
-    np <- ncol(samps)
-    par(mfrow = if(np <= 4) c(np, 2) else c(4, 2))
-    devAskNewPage(ask)
-    tx <- as.vector(time(samps))
-    for(j in 1:np) {
-      al <- if(grepl("logLik", snames[j], fixed = TRUE)) {
-        x$logLik
-      } else {
-        if(!is.null(par)) {
-          if(snames[j] %in% names(par))
-            par[snames[j]]
-        } else NULL
+  ok <- any(c("hist-resid", "qq-resid") %in% which)
+
+  if(length(which) > 1 | ok) {
+    which <- which[which %in% c("hist-resid", "qq-resid")]
+    if(spar)
+      par(mfrow = n2mfrow(length(which)))
+    res <- residuals.bamlss(x, ...)
+    res <- res[is.finite(res)]
+    for(w in which) {
+      args <- list(...)
+      if(w == "hist-resid") {
+        rdens <- density(res)
+        rh <- hist(res, plot = FALSE)
+        args$ylim <- c(0, max(c(rh$density, rdens$y)))
+        args$freq <- FALSE
+        args$x <- res
+        args <- delete.args("hist.default", args, package = "graphics")
+        if(is.null(args$xlab))
+          args$xlab <- "Quantile residuals"
+        if(is.null(args$ylab))
+          args$ylab <- "Density"
+        if(is.null(args$main)) 
+          args$main <- "Histogramm and density"
+        ok <- try(do.call("hist", args))
+        if(!inherits(ok, "try-error"))
+          lines(rdens)
+        box()
       }
-      lim <- range(c(al, samps[, j]), na.rm = TRUE)
-      traceplot(samps[, j, drop = FALSE], main = paste("Trace of", snames[j]), ylim = lim)
-      lines(lowess(tx, samps[, j]), col = "red")
-      if(!is.null(al))
-        abline(h = al, col = "blue")
-      if(snames[j] %in% c(names(par), "logLik"))
-        abline(h = mean(samps[, j], na.rm = TRUE), col = "green")
-      densplot(samps[, j, drop = FALSE], main = paste("Density of", snames[j]), xlim = lim)
-      if(!is.null(al))
-        abline(v = al, col = "blue")
-      if(snames[j] %in% c(names(par), "logLik"))
-        abline(v = mean(samps[, j], na.rm = TRUE), col = "green")
+      if(w == "qq-resid") {
+        args$y <- res
+        args <- delete.args("qqnorm.default", args, package = "stats", not = c("col", "pch"))
+        if(is.null(args$main))
+          args$main <- "Normal Q-Q Plot"
+        ok <- try(do.call(qqnorm, args))
+        if(!inherits(ok, "try-error"))
+          qqline(args$y) ## abline(0,1)
+      }
     }
-  }
+  } else {
+    if(which == "samples") {
+      par <- if(parameters) {
+        if(is.null(x$parameters)) NULL else unlist(x$parameters)
+      } else NULL
+      samps <- samples(x, model = model, term = term, drop = TRUE)
+      snames <- colnames(samps)
+      snames <- snames[!grepl(".p.edf", snames, fixed = TRUE) & !grepl(".accepted", snames, fixed = TRUE)]
+      snames <- snames[!grepl("DIC", snames, fixed = TRUE) & !grepl("pd", snames, fixed = TRUE)]
+      snames <- snames[!grepl(".model.matrix.edf", snames, fixed = TRUE)]
+      samps <- samps[, snames, drop = FALSE]
+      np <- ncol(samps)
+      par(mfrow = if(np <= 4) c(np, 2) else c(4, 2))
+      devAskNewPage(ask)
+      tx <- as.vector(time(samps))
+      for(j in 1:np) {
+        al <- if(grepl("logLik", snames[j], fixed = TRUE)) {
+          x$logLik
+        } else {
+          if(!is.null(par)) {
+            if(snames[j] %in% names(par))
+              par[snames[j]]
+          } else NULL
+        }
+        lim <- range(c(al, samps[, j]), na.rm = TRUE)
+        traceplot(samps[, j, drop = FALSE], main = paste("Trace of", snames[j]), ylim = lim)
+        lines(lowess(tx, samps[, j]), col = "red")
+        if(!is.null(al))
+          abline(h = al, col = "blue")
+        if(snames[j] %in% c(names(par), "logLik"))
+          abline(h = mean(samps[, j], na.rm = TRUE), col = "green")
+        densplot(samps[, j, drop = FALSE], main = paste("Density of", snames[j]), xlim = lim)
+        if(!is.null(al))
+          abline(v = al, col = "blue")
+        if(snames[j] %in% c(names(par), "logLik"))
+          abline(v = mean(samps[, j], na.rm = TRUE), col = "green")
+      }
+    }
 
-  if(which == "effects") {
-    if(is.null(x$results)) {
-      plot(results.bamlss.default(x), model = model, term = term, ...)
-    } else plot(x$results, model = model, term = term, spar = spar, ...)
-  }
+    if(which == "effects") {
+      if(is.null(x$results)) {
+        plot(results.bamlss.default(x), model = model, term = term, ...)
+      } else plot(x$results, model = model, term = term, spar = spar, ...)
+    }
 
-  if(which == "boost.summary") {
-    if(!is.null(x$boost.summary))
-      plot(x$boost.summary, ...)
+    if(which == "boost.summary") {
+      if(!is.null(x$boost.summary))
+        plot(x$boost.summary, ...)
+    }
   }
 
   return(invisible(NULL))
@@ -5401,99 +5441,42 @@ create.dp <- function(family)
 
 
 ## Extract model residuals.
-residuals.bamlss <- function(object, type = c("quantile", "ordinary", "quantile2", "ordinary2"),
-  samples = FALSE, FUN = mean, nsamps = NULL)
+residuals.bamlss <- function(object, type = "quantile",
+  samples = FALSE, FUN = mean, nsamps = NULL, ...)
 {
   type <- match.arg(type)
-  y <- model.response2(object)
-  if(!is.null(dim(y))) {
-    if(!is.null(hrn <- h_response(object))) {
-      if(!samples) stop("need to set argument samples = TRUE using hierarchical models!")
-      y <- y[, !(colnames(y) %in% hrn)]
-    }
-  }
-  family <- attr(object, "family")
-  if(is.null(family$type)) family$type <- 1
-  if(type == "ordinary") {
-    if(is.factor(y)) y <- as.integer(y) - 1
-  } else stopifnot(!is.null(family$p))
 
-  if(type %in% c("quantile2", "ordinary2")) {
-    samples <- TRUE
-    FUN2 <- function(x) { x }
-  } else FUN2 <- FUN
-
-  res <- fitted(object, type = "link", samples = samples, FUN = FUN2, nsamps = nsamps)
-  if(!is.list(res)) {
-    res <- list(res)
-    names(res) <- family$names
-  }
-
-  if(samples & type %in% c("quantile2", "ordinary2")) {
-    nc <- ncol(res[[1]])
-    res2 <- matrix(NA, nrow(res[[1]]), nc)
-    if(!is.null(dim(y)))
-      res2 <- rep(list(res2), length = ncol(y))
-    for(j in seq_along(res)) {
-      colnames(res[[j]]) <- paste("i",
-        formatC(1:ncol(res[[j]]), width = nchar(nc), flag = "0"),
-        sep = ".")
-    }
-    res <- as.data.frame(res)
-    for(i in 1:nc) {
-      eta2 <- res[, grep(ni <- paste(".i.",
-        formatC(i, width = nchar(nc), flag = "0"), sep = ""),
-        names(res)), drop = FALSE]
-      names(eta2) <- gsub(ni, "", names(eta2))
-      tres <- if(type == "quantile2") {
-        if(family$type == 3) {
-          le <- family$p(y - 1, family$map2par(eta2))
-          ri <- family$p(y, family$map2par(eta2))
-          qnorm(runif(length(y), min = le, max = ri))
-        } else qnorm(family$p(y, family$map2par(eta2)))
-      } else family$mu(family$map2par(eta2))
-      if(is.null(dim(y))) {
-        res2[, i] <- unlist(tres)
-      } else {
-        for(j in 1:ncol(y))
-          res2[[j]][, i] <- tres[, j]
-      }
-    }
-    if(is.null(dim(y))) {
-      res <- apply(res2, 1, FUN)
-    } else {
-      res <- list()
-      for(j in 1:ncol(y))
-        res[[j]] <- apply(res2[[j]], 1, FUN)
-      names(res) <- names(y)
-      res <- as.data.frame(res)
-    }
-  }
-
-  if(type %in% c("quantile", "ordinary")) {
-    eta <- res
-    res <- if(type == "quantile") {
-      if(family$type == 3) {
-        le <- family$p(y - 1, family$map2par(eta))
-        ri <- family$p(y, family$map2par(eta))
-        qnorm(runif(length(y), min = le, max = ri))
-      } else qnorm(family$p(y, family$map2par(eta)))
-    } else family$mu(family$map2par(eta))
-  }
-
-  if(type %in% c("ordinary", "ordinary2")) {
-    if(is.null(dim(y))) {
-      res <- y - res
-    } else {
-      res <- as.data.frame(res)
-      colnames(res) <- colnames(y)
-      for(j in 1:ncol(y))
-        res[[j]] <- y[, j] - res[[j]]
-    }
+  nobs <- nrow(object$y)
+  y <- if(is.data.frame(object$y)) {
+    if(ncol(object$y) < 2)
+      object$y[[1]]
   } else {
+    object$y
+  }
+
+  family <- family(object)
+  stopifnot(!is.null(family$p))
+
+  par <- predict(object, FUN = function(x) { x }, nsamps = nsamps)
+  nc <- min(sapply(par, ncol))
+  for(j in family$names)
+    par[[j]] <- make.link2(family$links[j])$linkinv(par[[j]])
+
+  res <- matrix(NA, nobs, nc)
+  par2 <- list()
+
+  for(i in 1:nc) {
+    for(j in family$names)
+      par2[[j]] <- par[[j]][, i]
+    res[, i] <- qnorm(family$p(y, par2))
+  }
+
+  if(!is.null(FUN)) {
+    res <- apply(res, 1, FUN, ...)
     if(!is.null(dim(res))) {
-      res <- as.data.frame(res)
-      colnames(res) <- colnames(y)
+      res <- t(res)
+      if(ncol(res) < 2)
+        res <- as.numeric(res)
     }
   }
 

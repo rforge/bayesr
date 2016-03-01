@@ -1072,7 +1072,7 @@ SEXP cnorm_hess_sigma(SEXP y, SEXP mu, SEXP sigma, SEXP check)
 
 
 /* Censored normal, left = 0, right - Inf, with power parameter. */
-SEXP cnorm_power_loglik(SEXP y, SEXP mu, SEXP sigma, SEXP alpha, SEXP check)
+SEXP cnorm_power_loglik(SEXP y, SEXP mu, SEXP sigma, SEXP lambda, SEXP check)
 {
   SEXP rval;
   PROTECT(rval = allocVector(REALSXP, 1));
@@ -1081,7 +1081,7 @@ SEXP cnorm_power_loglik(SEXP y, SEXP mu, SEXP sigma, SEXP alpha, SEXP check)
   double *yptr = REAL(y);
   double *muptr = REAL(mu);
   double *sigmaptr = REAL(sigma);
-  double *alphaptr = REAL(alpha);
+  double *lambdaptr = REAL(lambda);
   int *checkptr = INTEGER(check);
 
   double ll = 0.0;
@@ -1089,8 +1089,8 @@ SEXP cnorm_power_loglik(SEXP y, SEXP mu, SEXP sigma, SEXP alpha, SEXP check)
     if(checkptr[i]) {
       ll += pnorm5(0.0 , muptr[i], sigmaptr[i], 1, 1);
     } else {
-      ll += dnorm(pow(yptr[i], 1.0 / alphaptr[i]), muptr[i], sigmaptr[i], 1) -
-        log(alphaptr[i]) + (1.0 / alphaptr[i] - 1.0) * log(yptr[i]);
+      ll += dnorm(pow(yptr[i], 1.0 / lambdaptr[i]), muptr[i], sigmaptr[i], 1) -
+        log(lambdaptr[i]) + (1.0 / lambdaptr[i] - 1.0) * log(yptr[i]);
     }
   }
 
@@ -1100,7 +1100,7 @@ SEXP cnorm_power_loglik(SEXP y, SEXP mu, SEXP sigma, SEXP alpha, SEXP check)
 }
 
 
-SEXP cnorm_power_score_alpha(SEXP y, SEXP mu, SEXP sigma, SEXP alpha, SEXP check)
+SEXP cnorm_power_score_lambda(SEXP y, SEXP mu, SEXP sigma, SEXP lambda, SEXP check)
 {
   SEXP rval;
   PROTECT(rval = allocVector(REALSXP, length(y)));
@@ -1110,7 +1110,7 @@ SEXP cnorm_power_score_alpha(SEXP y, SEXP mu, SEXP sigma, SEXP alpha, SEXP check
   double *muptr = REAL(mu);
   double * sigmaptr = REAL(sigma);
   double *rvalptr = REAL(rval);
-  double *alphaptr = REAL(alpha);
+  double *lambdaptr = REAL(lambda);
   int *checkptr = INTEGER(check);
 
   double tmp, tmp2, tmp3;
@@ -1119,7 +1119,7 @@ SEXP cnorm_power_score_alpha(SEXP y, SEXP mu, SEXP sigma, SEXP alpha, SEXP check
     if(checkptr[i]) {
       rvalptr[i] = 0.0;
     } else {
-      tmp = exp(-log(alphaptr[i]));
+      tmp = exp(-log(lambdaptr[i]));
       tmp2 = log(yptr[i]);
       tmp3 = pow(yptr[i], tmp);
       rvalptr[i] = (tmp * tmp3 * tmp2 * (tmp3 - muptr[i])) / pow(sigmaptr[i], 2.0) - tmp * tmp2 - 1.0;

@@ -779,7 +779,7 @@ cnorm.bamlss <- function(...)
       dnorm((y - par$mu) / par$sigma, log = log) / par$sigma^(1 - log) - log(par$sigma) * log)
   }
   f$p <- function(y, par, log = FALSE) {
-    ifelse(y < 0, 0, pnorm((y - par$mu) / par$sigma, log = log))
+    ifelse(y <= 0, 0, pnorm((y - par$mu) / par$sigma, log = log))
   }
   f$q <- function(y, par, ...) {
     rval <- qnorm(y) * par$sigma + par$mu
@@ -802,7 +802,7 @@ pcnorm.bamlss <- function(start = 2, update = TRUE, ...)
 {
   f <- list(
     "family" = "pcnorm",
-    "names" = c("mu", "sigma", "alpha"),
+    "names" = c("mu", "sigma", "lambda"),
     "links" = c("identity", "log", "log")
   )
   f$transform <- function(x, ...) {
@@ -811,12 +811,12 @@ pcnorm.bamlss <- function(start = 2, update = TRUE, ...)
     if(is.null(attr(x$x, "bamlss.engine.setup")))
       x$x <- bamlss.engine.setup(x$x, ...)
 
-    if(!is.null(x$x$alpha$smooth.construct$model.matrix)) {
-      x$x$alpha$smooth.construct$model.matrix$state$parameters[1] <- log(start)
-      x$x$alpha$smooth.construct$model.matrix$state$fitted.values <- x$x$alpha$smooth.construct$model.matrix$fit.fun(x$x$alpha$smooth.construct$model.matrix$X, x$x$alpha$smooth.construct$model.matrix$state$parameters)
-      for(j in seq_along(x$x$alpha$smooth.construct)) {
-        x$x$alpha$smooth.construct[[j]]$propose <- gmcmc_sm.slice
-        x$x$alpha$smooth.construct[[j]]$update <- if(update) {
+    if(!is.null(x$x$lambda$smooth.construct$model.matrix)) {
+      x$x$lambda$smooth.construct$model.matrix$state$parameters[1] <- log(start)
+      x$x$lambda$smooth.construct$model.matrix$state$fitted.values <- x$x$lambda$smooth.construct$model.matrix$fit.fun(x$x$lambda$smooth.construct$model.matrix$X, x$x$lambda$smooth.construct$model.matrix$state$parameters)
+      for(j in seq_along(x$x$lambda$smooth.construct)) {
+        x$x$lambda$smooth.construct[[j]]$propose <- gmcmc_sm.slice
+        x$x$lambda$smooth.construct[[j]]$update <- if(update) {
           bfit_optim
         } else {
           function(x, ...) {
@@ -831,52 +831,61 @@ pcnorm.bamlss <- function(start = 2, update = TRUE, ...)
   f$score <- list(
     "mu" = function(y, par, ...) {
       .Call("cnorm_score_mu",
-        as.numeric(y^(1 / par$alpha)), as.numeric(par$mu), as.numeric(par$sigma),
+        as.numeric(y^(1 / par$lambda)), as.numeric(par$mu), as.numeric(par$sigma),
         as.integer(attr(y, "check")))
     },
     "sigma" = function(y, par, ...) {
       .Call("cnorm_score_sigma",
-        as.numeric(y^(1 / par$alpha)), as.numeric(par$mu), as.numeric(par$sigma),
+        as.numeric(y^(1 / par$lambda)), as.numeric(par$mu), as.numeric(par$sigma),
         as.integer(attr(y, "check")))
     },
-    "alpha" = function(y, par, ...) {
-      .Call("cnorm_power_score_alpha",
+    "lambda" = function(y, par, ...) {
+      .Call("cnorm_power_score_lambda",
         as.numeric(y), as.numeric(par$mu), as.numeric(par$sigma),
-        as.numeric(par$alpha), as.integer(attr(y, "check")))
+        as.numeric(par$lambda), as.integer(attr(y, "check")))
     }
   )
   f$hess <- list(
     "mu" = function(y, par, ...) {
       .Call("cnorm_hess_mu",
-        as.numeric(y^(1 / par$alpha)), as.numeric(par$mu), as.numeric(par$sigma),
+        as.numeric(y^(1 / par$lambda)), as.numeric(par$mu), as.numeric(par$sigma),
         as.integer(attr(y, "check")))
     },
     "sigma" = function(y, par, ...) {
       .Call("cnorm_hess_sigma",
-        as.numeric(y^(1 / par$alpha)), as.numeric(par$mu), as.numeric(par$sigma),
+        as.numeric(y^(1 / par$lambda)), as.numeric(par$mu), as.numeric(par$sigma),
         as.integer(attr(y, "check")))
     },
-    "alpha" = function(y, par, ...) {
-      rep(1.0, length(par$alpha))
+    "lambda" = function(y, par, ...) {
+      rep(1.0, length(par$lambda))
     }
   )
   f$loglik <- function(y, par, ...) {
     .Call("cnorm_power_loglik",
-      as.numeric(y), as.numeric(par$mu), as.numeric(par$sigma), as.numeric(par$alpha),
+      as.numeric(y), as.numeric(par$mu), as.numeric(par$sigma), as.numeric(par$lambda),
       as.integer(attr(y, "check")))
   }
   f$d <- function(y, par, log = FALSE) {
     dy <- ifelse(y <= 0, pnorm(0, par$mu, par$sigma, log.p = TRUE),
-      dnorm(y^(1 / par$alpha), par$mu, par$sigma, log = TRUE) -
-      log(par$alpha) + (1 / par$alpha - 1) * log(y))
+      dnorm(y^(1 / par$lambda), par$mu, par$sigma, log = TRUE) -
+      log(par$lambda) + (1 / par$lambda - 1) * log(y))
     if(!log)
       dy <- exp(dy)
     dy
   }
+  f$p <- function(y, par, log = FALSE) {
+    y <- y^(1 / par$lambda)
+    ifelse(y <= 0, 0, pnorm((y - par$mu) / par$sigma, log = log))
+  }
+  f$q <- function(y, par, ...) {
+    y <- y^(1 / par$lambda)
+    rval <- qnorm(y) * par$sigma + par$mu
+    pmax(pmin(rval, Inf), 0)
+  }
   f$initialize = list(
     "mu" = function(y, ...) { (y^(1 / log(start)) + mean(y^(1 / log(start)))) / 2 },
     "sigma" = function(y, ...) { rep(log(sd(y^(1 / log(start)))), length(y)) },
-    "alpha" = function(y, ...) { rep(log(start), length(y)) }
+    "lambda" = function(y, ...) { rep(log(start), length(y)) }
   )
   class(f) <- "family.bamlss"
   f

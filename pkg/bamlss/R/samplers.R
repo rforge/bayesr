@@ -886,31 +886,7 @@ gmcmc_sm.mvn <- function(family, theta, id, prior, eta, y, data, ...)
         family$loglik(y, family$map2par(eta)) + data$prior(c(g, tau2))
       }
 
-      if(is.null(family$gradient[[id[1]]])) {
-        gfun <- NULL
-      } else {
-        gfun <- list()
-        gfun[[id[1]]] <- function(g, y, eta, x, ...) {
-          gg <- family$gradient[[id[1]]](g, y, eta, x)
-          if(!is.null(data$grad)) {
-            gg <- gg + data$grad(score = NULL, c(g, tau2), full = FALSE)
-          }
-          drop(gg)
-       }
-      }
-
-      if(is.null(family$hessian[[id[1]]])) {
-        hfun <- NULL
-      } else {
-        hfun <- list()
-        hfun[[id[1]]] <- function(g, y, eta, x, ...) {
-          hg <- family$hessian[[id[1]]](g, y, eta, x)
-          if(!is.null(data$hess)) {
-            hg <- hg + data$hess(score = NULL, c(g, tau2), full = FALSE)
-          }
-          hg
-        }
-      }
+      gfun <- hfun <- NULL
 
       g.grad <- grad(fun = lp, theta = g, id = id[1], prior = NULL,
         args = list("gradient" = gfun, "x" = data, "y" = y, "eta" = eta))
@@ -932,15 +908,19 @@ gmcmc_sm.mvn <- function(family, theta, id, prior, eta, y, data, ...)
   p2 <- data$prior(theta)
 
   ## Sample variance parameter.
-  if(!data$fixed & !data$fxsp) {
-    if(!data$fixed & !data$fxsp) {
-      tau2 <- NULL
-      for(j in seq_along(data$S)) {
-        a <- data$rank[j] / 2 + data$a
-        b <- 0.5 * crossprod(g, data$S[[j]]) %*% g + data$b
-        tau2 <- c(tau2, 1 / rgamma(1, a, b))
-      }
+  if(!data$fixed & !data$fxsp & length(data$S)) {
+    if(length(data$S) < 2) {
+      g <- get.par(theta, "b")
+      a <- data$rank / 2 + data$a
+      b <- 0.5 * crossprod(g, data$S[[1]]) %*% g + data$b
+      tau2 <- 1 / rgamma(1, a, b)
       theta <- set.par(theta, tau2, "tau2")
+    } else {
+      i <- grep("tau2", names(theta))
+      for(j in i) {
+        theta <- uni.slice(theta, data, family, NULL,
+          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = pibeta)
+      }
     }
   }
 
@@ -950,7 +930,7 @@ gmcmc_sm.mvn <- function(family, theta, id, prior, eta, y, data, ...)
   data$state$parameters <- as.numeric(theta)
   names(data$state$parameters) <- names(theta)
 
-  rval <- list("parameters" = theta, "alpha" = alpha, "extra" = c("edf" = data$edf(data)))
+  rval <- list("parameters" = theta, "alpha" = alpha)
   rval
 }
 
