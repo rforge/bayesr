@@ -2320,12 +2320,21 @@ fitted_matrix <- function(X, samples)
 
 
 ## Function to compute statistics from samples of a model term.
-compute_term <- function(x, get.X, fit.fun, psamples, vsamples = NULL,
-  asamples = NULL, FUN = NULL, snames, s.effects.resmat, data,
-  grid = 100, rug = TRUE, hlevel = 1, sx = FALSE, re.slope = FALSE, edfsamples = NULL)
+compute_s.effect <- function(x, get.X, fit.fun, psamples,
+  FUN = NULL, snames, data, grid = -1, rug = TRUE)
 {
   nt <- length(x$term)
-  if(x$by != "NA" | nt > 1) grid <- NA
+  if(nt > 2)
+    return(NULL)
+
+  if(x$by != "NA") grid <- NA
+  if(!is.na(grid)) {
+    if(grid < 0) {
+      grid <- if(nt > 1) {
+        if(nt > 2) 20 else 30
+      } else 100
+    }
+  }
 
   tterms <- NULL
   for(l in nt:1) {
@@ -2341,41 +2350,25 @@ compute_term <- function(x, get.X, fit.fun, psamples, vsamples = NULL,
     colnames(data) <- gsub(char, ".", colnames(data), fixed = TRUE)
 
   ## Data for rug plotting.
-  rugp <- if(length(x$term) < 2 & rug) data[[x$term]] else NULL
-
-  if(hlevel > 1)
-    data <- unique(data)
-
-  ## Handling factor by variables.
-  if(x$by != "NA") {
-    if(nlevels(data[[x$by]]) > 2 & FALSE)
-      x$by <- "NA"
-    if(sx) {
-      if(all(data[[x$by]] %% 1 == 0)) {
-        if(length(unique(data[[x$by]])) < length(data[[x$by]]))
-          x$by <- "NA"
-      }
-      if(re.slope) {
-        x$by <- "NA"
-      }
-    }
-  }
+  rugp <- if(nt < 2 & rug) data[[x$term]] else NULL
 
   ## New x values for which effect should
   ## be calculated, n = 100.
   if(!is.na(grid)) {
-    if(length(x$term) < 2 & !is.factor(data[[tterms[1]]]) & !any(grepl("mrf", class(x))) &
-      !any(grepl("re.", class(x), fixed = TRUE)) & !any(grepl("random", class(x))) & !re.slope) {
+    if(!is.factor(data[[tterms[1]]]) & !any(grepl("mrf", class(x))) &
+      !any(grepl("re.", class(x), fixed = TRUE)) & !any(grepl("random", class(x)))) {
       xsmall <- TRUE
       nd <- list()
       for(j in tterms) {
         xr <- range(data[[j]], na.rm = TRUE)
         nd[[j]] <- seq(xr[1], xr[2], length = grid)
       }
+      nd <- expand.grid(nd)
+      grid <- nrow(nd)
       if(x$by != "NA") { ## FIXME: check by variables!
         if(!is.factor(data[[x$by]])) {
           xr <- range(data[[x$by]], na.rm = TRUE)
-          nd[[x$by]] <- seq(xr[1], xr[2], length = 100)
+          nd[[x$by]] <- seq(xr[1], xr[2], length = grid)
         } else nd[[x$by]] <- rep(data[[x$by]], length.out = grid)
       }
       data0 <- data
@@ -2458,9 +2451,6 @@ compute_term <- function(x, get.X, fit.fun, psamples, vsamples = NULL,
 
   ## Assign class and attributes.
   smf <- unique(smf)
-  if(is.factor(data[, tterms])) {
-    bbb <- 1 ## FIXME: factors!
-  }
   class(smf) <- c(class(x), "data.frame")
   x[!(names(x) %in% c("term", "label", "bs.dim", "dim"))] <- NULL
   attr(x, "qrc") <- NULL
@@ -2469,62 +2459,8 @@ compute_term <- function(x, get.X, fit.fun, psamples, vsamples = NULL,
   attr(smf, "x") <- if(xsmall & nt < 2) data0[, tterms] else data[, tterms]
   attr(smf, "by.drop") <- by.drop
   attr(smf, "rug") <- rugp
-  colnames(psamples) <- paste(x$label, 1:ncol(psamples), sep = ".")
 
-  ## Get samples of the variance parameter.
-  edf <- FALSE
-  vsamples0 <- NULL
-  if(!is.null(edfsamples)) {
-    vsamples0 <- vsamples
-    vsamples <- edfsamples
-    edf <- TRUE
-  }
-  if(!is.null(vsamples)) {
-    if(!is.matrix(vsamples))
-      vsamples <- matrix(vsamples, ncol = 1)
-    ## edf <- apply(vsamples, 1, function(x) {} )
-    smatfull <- NULL
-    for(j in 1:ncol(vsamples)) {
-      qu <- drop(quantile(vsamples[, j], probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
-      sd <- sd(vsamples[, j], na.rm = TRUE)
-      me <- mean(vsamples[, j], na.rm = TRUE)
-      smat <- matrix(c(me, sd, qu), nrow = 1)
-      colnames(smat) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
-      rownames(smat) <- x$label
-      if(!is.null(asamples)) {
-        smat <- cbind(smat, "alpha" = mean(asamples))
-      }
-      smatfull <- rbind(smatfull, smat)
-    }
-    if(!is.null(smatfull)) {
-      if(any(duplicated(rownames(smatfull)))) {
-        rownames(smatfull) <- paste(rownames(smatfull), 1:nrow(smatfull), sep = ":")
-      }
-    }
-    if(!is.null(smf)) {
-      attr(smf, "scale") <- smatfull
-      attr(smf, "specs")$label <- gsub(")", paste(",",
-        paste(formatC(me, digits = 2), collapse = ","), ")",
-        sep = ""), x$label)
-      colnames(vsamples) <- paste(x$label, if(is.null(edfsamples)) "tau2" else "edf", 1:nrow(smatfull), sep = ".")
-      attr(smf, if(is.null(edfsamples)) "samples.scale" else "samples.edf") <- as.mcmc(vsamples)
-      if(!is.null(vsamples0)) {
-        if(!is.matrix(vsamples0)) vsamples0 <- matrix(vsamples0, ncol = 1)
-        colnames(vsamples0) <- paste(x$label, "tau2", 1:ncol(vsamples0), sep = ".")
-        attr(smf, "samples.scale") <- as.mcmc(vsamples0)
-      }
-      if(!is.null(asamples)) {
-        asamples <- matrix(asamples, ncol = 1)
-        colnames(asamples) <- paste(x$label, "alpha", sep = ".")
-        attr(smf, "samples.alpha") <- as.mcmc(asamples)
-      }
-    }
-    s.effects.resmat <- rbind(s.effects.resmat, smatfull)
-    if(edf)
-      attr(s.effects.resmat, "edf") <- TRUE
-  }
-
-  return(list("term" = smf, "s.effects.resmat" = s.effects.resmat))
+  return(smf)
 }
 
 
@@ -4678,7 +4614,7 @@ get_sterms_labels <- function(x, specials = NULL)
 
 
 ## Process results with samples and bamlss.frame.
-results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 100, nsamps = NULL,
+results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = -1, nsamps = NULL,
   burnin = NULL, thin = NULL, ...)
 {
   if(!inherits(x, "bamlss.frame") & !inherits(x, "bamlss"))
@@ -4787,31 +4723,6 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
             }
           }
 
-          ## Possible variance/edf parameter samples.
-          vsamples <- NULL
-          tau2 <- paste(id, "s", j, "tau2", sep = ".")
-          if(length(tau2 <- grep(tau2, snames, fixed = TRUE))) {
-            vsamples <- samps[, tau2, drop = FALSE]
-            vsamples <- vsamples[!nas, , drop = FALSE]
-          } else {
-            if(obj$smooth.construct[[j]]$fixed)
-              vsamples <- rep(.Machine$double.eps, nrow(samps))
-          }
-          edfsamples <- NULL
-          edf <- paste(id, "s", j, "edf", sep = ".")
-          if(length(edf <- grep(edf, snames, fixed = TRUE))) {
-            edfsamples <- samps[, edf, drop = FALSE]
-            edfsamples <- edfsamples[!nas, , drop = FALSE]
-          }
-
-          ## Acceptance probalities.
-          asamples <- NULL
-          alpha <- paste(id, "s", j, "alpha", sep = ".")
-          if(length(alpha <- grep(alpha, snames, fixed = TRUE))) {
-            asamples <- as.numeric(samps[, alpha])
-            asamples <- asamples[!nas]
-          }
-
           ## Prediction matrix.
           get.X <- function(x) { ## FIXME: time(x)
             X <- PredictMat(obj$smooth.construct[[j]], x)
@@ -4842,17 +4753,9 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
             obj$smooth.construct[[j]]$by
           } else NULL)
 
-          fst <- compute_term(obj$smooth.construct[[j]], get.X = get.X,
-            fit.fun = obj$smooth.construct[[j]]$fit.fun,
-            psamples = psamples[, b, drop = FALSE], vsamples = vsamples, asamples = asamples,
-            FUN = NULL, snames = snames, s.effects.resmat = s.effects.resmat,
-            data = mf[, tn, drop = FALSE],
-            grid = grid, edfsamples = edfsamples)
-
-          ## Add term to effects list.
-          s.effects[[obj$smooth.construct[[j]]$label]] <- fst$term
-          s.effects.resmat <- fst$s.effects.resmat
-          remove(fst)
+          s.effects[[obj$smooth.construct[[j]]$label]] <- compute_s.effect(obj$smooth.construct[[j]],
+            get.X = get.X, fit.fun = obj$smooth.construct[[j]]$fit.fun, psamples = psamples[, b, drop = FALSE],
+            FUN = NULL, snames = snames, data = mf[, tn, drop = FALSE], grid = grid)
         }
       }
     }
@@ -4860,8 +4763,7 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
     rval <- list(
       "model" = list("formula" = obj$formula,
         "DIC" = DIC, "pd" = pd, "N" = nrow(mf)),
-      "p.effects" = p.effects, "s.effects" = s.effects,
-      "s.effects.resmat" = s.effects.resmat
+      "p.effects" = p.effects, "s.effects" = s.effects
     )
 
     class(rval) <- "bamlss.results"

@@ -1520,7 +1520,7 @@ Since the HOMSTART data set has over $1.2$ million observations, the resulting d
 excessively demands the computer's storage as well as the CPU power. In order to prevent computational
 problems associated with very large data sets like HOMSTART, we make use of the fact that, e.g.,
 the effect of the day of
-year only has 365 unique observations. This is much smaller than the total number of observations
+year has $365$ unique observations, only. This is much smaller than the total number of observations
 of the data set, i.e., the corresponding design matrix has a lot of duplicated rows and is hence inefficient
 for the use within model fitting algorithms. Therefore, we apply the IWLS algorithms described in
 Section~\ref{sec:postmode}~and~\ref{sec:postmean} using shrinkage of the design matrices based
@@ -1543,10 +1543,10 @@ The function \fct{homstart\_data} saves the data as \code{homstart.rda} in the s
 the global environment as object \code{homstart}. The formula for the precipitation model is specified by
 <<eval=FALSE>>=
 f <- list(
-  "mu" = sqrt(raw) ~ elevation + ti(day,bs="cc",k=10) +
+  "mu" = sqrt(raw) ~ s(elevation) + ti(day,bs="cc",k=10) +
     ti(long,lat,bs="tp",d=2,k=50) +
     ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),k=c(8,30)),
-  "sigma" = ~ elevation + ti(day,bs="cc",k=10) +
+  "sigma" = ~ s(elevation) + ti(day,bs="cc",k=10) +
     ti(long,lat,bs="tp",d=2,k=50) +
     ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),k=c(8,30))
 )
@@ -1568,7 +1568,14 @@ after the full design matrices are set up. This is important if identifiability 
 to be computed, which is implemented in function \fct{gam.side} in package \pkg{mgcv}, since this
 must be done before any shrinkage. In this example we use the \fct{ti} constructor that implements
 the correct constraints, therefore, the reduced design matrices can be computed directly, which is
-saving quite a lot of RAM storage.
+saving quite a lot of RAM storage. On a Linux system with Intel i7-2600 3.40GHz processors running
+the models takes approximately 1.5 days.
+
+The estimated effects of the model can be plotted by
+<<eval=FALSE>>=
+plot(rainmodel)
+@
+However, since 
 
 \begin{figure}[t!]
 \centering
@@ -1582,7 +1589,8 @@ saving quite a lot of RAM storage.
 \includegraphics[width=0.46\textwidth]{figures/rainmodel-effects-season-mu}\includegraphics[width=0.46\textwidth]{figures/rainmodel-effects-season-sigma} \\[0.5cm]
 \includegraphics[width=0.46\textwidth]{figures/rainmodel-effects-spatial-mu}\includegraphics[width=0.46\textwidth]{figures/rainmodel-effects-spatial-sigma} \\[0.5cm]
 \includegraphics[width=0.92\textwidth]{figures/rainmodel-effects-predict}
-\caption{\label{fig:rainmodeleffects} Estimated effects of the rainmodel.}
+\caption{\label{fig:rainmodeleffects} Estimated effects of the precipitation model, 1st and 2nd row,
+  predicted average precipitation for January 10th, bottom row.}
 \end{figure}
 
 

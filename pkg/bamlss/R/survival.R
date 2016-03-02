@@ -475,15 +475,18 @@ propose_surv_td <- function(x, y, eta, eta_timegrid, width, sub, nu)
   x$state$edf <- sum.diag(int$hess %*% Sigma2)
 
   ## Sample variance parameter.
-  if(!x$fixed & is.null(x$sp)) {
-    if(!x$fixed & is.null(x$sp)) {
-      tau2 <- NULL
-      for(j in seq_along(x$S)) {
-        a <- x$rank[j] / 2 + x$a
-        b <- 0.5 * crossprod(g, x$S[[j]]) %*% g + x$b
-        tau2 <- c(tau2, 1 / rgamma(1, a, b))
-      }
+  if(!x$fixed & !x$fxsp & length(x$S)) {
+    if(length(x$S) < 2) {
+      a <- x$rank / 2 + x$a
+      b <- 0.5 * crossprod(g, x$S[[1]]) %*% g + x$b
+      tau2 <- 1 / rgamma(1, a, b)
       x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
+    } else {
+      i <- grep("tau2", names(x$state$parameters))
+      for(j in i) {
+        x$state$parameters <- uni.slice(x$state$parameters, x, NULL, NULL,
+          NULL, "lambda", j, logPost = gmcmc_logPost, lower = 0, ll = pibeta)
+      }
     }
   }
 
@@ -585,15 +588,18 @@ propose_surv_tc <- function(x, y, eta, int)
   qbeta <- dmvnorm(g0, mean = M2, sigma = P2, log = TRUE)
 
   ## Sample variance parameter.
-  if(!x$fixed & is.null(x$sp)) {
-    if(!x$fixed & is.null(x$sp)) {
-      tau2 <- NULL
-      for(j in seq_along(x$S)) {
-        a <- x$rank[j] / 2 + x$a
-        b <- 0.5 * crossprod(g, x$S[[j]]) %*% g + x$b
-        tau2 <- c(tau2, 1 / rgamma(1, a, b))
-      }
+  if(!x$fixed & !x$fxsp & length(x$S)) {
+    if(length(x$S) < 2) {
+      a <- x$rank / 2 + x$a
+      b <- 0.5 * crossprod(g, x$S[[1]]) %*% g + x$b
+      tau2 <- 1 / rgamma(1, a, b)
       x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
+    } else {
+      i <- grep("tau2", names(x$state$parameters))
+      for(j in i) {
+        x$state$parameters <- uni.slice(x$state$parameters, x, NULL, NULL,
+          NULL, "gamma", j, logPost = gmcmc_logPost, lower = 0, ll = pibeta)
+      }
     }
   }
 

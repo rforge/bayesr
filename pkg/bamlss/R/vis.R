@@ -584,6 +584,7 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
           if(is.null(args$side.ticks))
             args2$side.ticks <- 2L
         }
+        args2[["col"]] <- NULL
         args2$color <- col.surface
         args2$ncol <- ncol
         args2$x <- args$z
@@ -603,7 +604,7 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
           args2$full <- FALSE
           args2$plot <- FALSE
         }
-        do.call(colorlegend, delete.args(colorlegend, args2, c("font", "cex")))$map
+        do.call(colorlegend, delete.args(colorlegend, args2, "font"))$map
       }
     }
     if(contour) {
@@ -1620,7 +1621,7 @@ set.plot2d.specs <- function(nc, args, col.lines, is.bayesx)
 
 
 interp2 <- function(x, y, z, xo = NULL, yo = NULL, grid = 30,
-  type = c("akima", "mba", "mgcv", "gam"), linear = FALSE, extrap = FALSE, k = 40)
+  type = c("mba", "akima", "mgcv", "gam"), linear = FALSE, extrap = FALSE, k = 40)
 {
   type <- tolower(type)
   type <- match.arg(type)

@@ -40,15 +40,17 @@
 ## state list, as this could vary for special terms. A default
 ## method is provided.
 bamlss.engine.setup <- function(x, update = "iwls",
-  do.optim = NULL, grid.optim = NULL, criterion = c("AICc", "BIC", "AIC"),
+  do.optim = NULL, optim.grid = NULL, criterion = c("AICc", "BIC", "AIC"),
   nu = 0.1, start = NULL, df = NULL, ...)
 {
   if(!is.null(attr(x, "bamlss.engine.setup"))) return(x)
 
   criterion <- match.arg(criterion)
-  if(!is.null(grid.optim)) {
-    if(!grid.optim)
-      grid.optim <- NULL
+  if(!is.null(optim.grid)) {
+    if(is.na(optim.grid))
+      optim.grid <- NULL
+    if(!optim.grid)
+      optim.grid <- NULL
   }
 
   foo <- function(x, id = NULL) {
@@ -91,7 +93,7 @@ bamlss.engine.setup <- function(x, update = "iwls",
             } else tdf <- df[1]
           }
           x$smooth.construct[[j]] <- assign.df(x$smooth.construct[[j]], tdf)
-          x$smooth.construct[[j]]$grid.optim <- grid.optim
+          x$smooth.construct[[j]]$optim.grid <- optim.grid
           if(!is.null(x$smooth.construct[[j]]$xt$update))
             x$smooth.construct[[j]]$update <- x$smooth.construct[[j]]$xt$update
           if(is.null(x$smooth.construct[[j]]$update)) {
@@ -1018,7 +1020,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
       return(IC)
     }
     if(length(get.state(x, "tau2")) < 2) {
-      if(is.null(x$grid.optim)) {
+      if(is.null(x$optim.grid)) {
         tau2 <- try(optimize(objfun, interval = x$state$interval)$minimum, silent = TRUE)
         if(inherits(tau2, "try-error"))
           tau2 <- optimize2(objfun, interval = x$state$interval, grid = x$state$grid)$minimum
@@ -1120,7 +1122,7 @@ bfit_iwls_spam <- function(x, family, y, eta, id, weights, ...)
       return(IC)
     }
     if(length(get.state(x, "tau2")) < 2) {
-      if(is.null(x$grid.optim)) {
+      if(is.null(x$optim.grid)) {
         tau2 <- try(optimize(objfun, interval = x$state$interval)$minimum, silent = TRUE)
         if(inherits(tau2, "try-error"))
           tau2 <- optimize2(objfun, interval = x$state$interval, grid = x$state$grid)$minimum

@@ -233,12 +233,12 @@ b <- bamlss(f, data = india, sampler = FALSE, optimizer = boost99)
 data("LondonFire")
 
 f <- list(
-  Surv(arrivaltime) ~ s(arrivaltime),
-  gamma ~ s(fsintens, k = 20) + s(daytime, bs = "cc", k = 20) + s(lon, lat, k = 100)
+  Surv(arrivaltime) ~ ti(arrivaltime) + ti(arrivaltime,lon,lat,d=c(1,2),k=c(5,5)),
+  gamma ~ s(fsintens, k = 20) + s(daytime, bs = "cc", k = 20) + te(lon, lat)
 )
 
-b <- bamlss(f, data = LondonFire, family = "cox", subdivisions = 50,
-  n.iter = 1200, burnin = 200, thin = 4, cores = 4)
+b <- bamlss(f, data = LondonFire, family = "cox", subdivisions = 25,
+  n.iter = 500, burnin = 100, thin = 1, cores = 2)
 
 plot(b, model = 2, term = 2, image = TRUE, grid = 200, swap = TRUE)
 

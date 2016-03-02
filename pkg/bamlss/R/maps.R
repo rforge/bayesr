@@ -412,6 +412,38 @@ smooth.construct.sws.smooth.spec <- function(object, data, knots)
 }
 
 
+smooth.construct.sws2.smooth.spec <- function(object, data, knots) 
+{
+  require("spdep")
+  call <- if(length(object$term) > 1) {
+    paste("s(", paste(object$term[-1], collapse = ", "), ", bs = 'kr', k = ", object$bs.dim, ")", sep = "")
+  } else {
+    paste("s(", paste(object$term, collapse = ", "), ", bs = 'kr', k = ", object$bs.dim, ")", sep = "")
+  }
+  object$X <- smooth.construct(eval(parse(text = call)), data, NULL)$X
+  object$X <- object$X * data[[object$term[1]]]
+  object$S <- list()
+  object$rank <- 0
+  object$null.space.dim <- 0
+  object$fixed <- TRUE
+  object$plot.me <- FALSE
+  object
+}
+
+
+Predict.matrix.sws2.smooth <- function(object, data)
+{
+  call <- if(length(object$term) > 1) {
+    paste("s(", paste(object$term[-1], collapse = ", "), ", bs = 'kr', k = ", object$bs.dim, ")", sep = "")
+  } else {
+    paste("s(", paste(object$term, collapse = ", "), ", bs = 'kr', k = ", object$bs.dim, ")", sep = "")
+  }
+  object$X <- smooth.construct(eval(parse(text = call)), data, NULL)$X
+  object$X <- object$X * data[[object$term[1]]]
+  X
+}
+
+
 ## Compute centroids of polygons.
 centroids <- function(x, id = NULL, verbose = FALSE, check.dups = TRUE)
 {
