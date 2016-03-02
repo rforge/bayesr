@@ -1,4 +1,4 @@
-## source all functions in the package once more
+## Source all functions in the package once more.
 sbayesr <- function(R2BayesX = FALSE, dir = NULL) {
   if(is.null(dir)) {
     dir <- if(!R2BayesX) {
@@ -12,7 +12,7 @@ sbayesr <- function(R2BayesX = FALSE, dir = NULL) {
 }
 
 
-## open the test script
+## Open the test script.
 tscript <- function(file = NULL) {
   if(is.null(file))
     file <- "~/svn/bayesr/pkg/bamlss/inst/tscript.R"
@@ -22,7 +22,7 @@ tscript <- function(file = NULL) {
 }
 
 
-## dynamic C code.
+## Dynamic C code.
 compile <- function(dir = NULL, tdir = NULL)
 {
   hold <- getwd()

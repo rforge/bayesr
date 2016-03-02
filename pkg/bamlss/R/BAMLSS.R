@@ -3504,40 +3504,8 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
 
   if(length(which) > 1 | ok) {
     which <- which[which %in% c("hist-resid", "qq-resid")]
-    if(spar)
-      par(mfrow = n2mfrow(length(which)))
     res <- residuals.bamlss(x, ...)
-    res <- res[is.finite(res)]
-    for(w in which) {
-      args <- list(...)
-      if(w == "hist-resid") {
-        rdens <- density(res)
-        rh <- hist(res, plot = FALSE)
-        args$ylim <- c(0, max(c(rh$density, rdens$y)))
-        args$freq <- FALSE
-        args$x <- res
-        args <- delete.args("hist.default", args, package = "graphics")
-        if(is.null(args$xlab))
-          args$xlab <- "Quantile residuals"
-        if(is.null(args$ylab))
-          args$ylab <- "Density"
-        if(is.null(args$main)) 
-          args$main <- "Histogramm and density"
-        ok <- try(do.call("hist", args))
-        if(!inherits(ok, "try-error"))
-          lines(rdens)
-        box()
-      }
-      if(w == "qq-resid") {
-        args$y <- res
-        args <- delete.args("qqnorm.default", args, package = "stats", not = c("col", "pch"))
-        if(is.null(args$main))
-          args$main <- "Normal Q-Q Plot"
-        ok <- try(do.call(qqnorm, args))
-        if(!inherits(ok, "try-error"))
-          qqline(args$y) ## abline(0,1)
-      }
-    }
+    plot(res, which = which, spar = spar, ...)
   } else {
     if(which == "samples") {
       par <- if(parameters) {
@@ -4260,19 +4228,35 @@ DIC.bamlss <- function(object, ..., samples = TRUE, nsamps = NULL)
 }
 
 
-logLik.bamlss <- function(object, ..., FUN = NULL)
+logLik.bamlss <- function(object, ..., optimizer = FALSE)
 {
-  NULL
-}
-
-
-edf <- function (object, ...) { 
-  UseMethod("edf")
-}
-
-edf.bamlss <- function(object, FUN = mean, ...)
-{
-  NULL
+  Call <- match.call()
+  mn <- as.character(Call[-1L])
+  object <- list(object, ...)
+  ll <- edf <- NULL
+  for(j in seq_along(object)) {
+    ms <- object[[j]]$model.stats
+    ms <- if(is.null(ms$sampler) | optimizer) {
+      if(is.null(ms$optimizer) & !optimizer) {
+        samplestats(object[[j]])
+      } else ms$optimizer
+    } else ms$sampler
+    if(is.null(ms) & !optimizer)
+      ms <- samplestats(object[[j]])
+    if(is.null(ms)) {
+      warning(paste("no logLik available for model ", mn[j], "!", sep = ""))
+    } else {
+      ll <- c(ll, ms$logLik)
+      edf <- c(edf, if(is.null(ms$edf)) NA else ms$edf)
+    }
+  }
+  if(all(is.na(edf)))
+    edf <- NULL
+  if(!is.null(ll)) {
+    rval <- cbind("logLik" = ll, "edf" = edf)
+    row.names(rval) <- if(nrow(rval) > 1) mn[1:nrow(rval)] else ""
+  } else rval <- NULL
+  rval
 }
 
 
@@ -5348,28 +5332,107 @@ create.dp <- function(family)
 
 
 ## Extract model residuals.
-residuals.bamlss <- function(object, type = "quantile",
-  samples = FALSE, FUN = mean, nsamps = NULL, ...)
+residuals.bamlss <- function(object, type = c("quantile", "response"), nsamps = NULL, ...)
 {
-  type <- match.arg(type)
+  family <- family(object)
 
-  nobs <- nrow(object$y)
-  y <- if(is.data.frame(object$y)) {
-    if(ncol(object$y) < 2)
-      object$y[[1]]
+  if(!is.null(family$residuals)) {
+    res <- family$residuals(object, type = type, nsamps = nsamps, ...)
+    if(length(class(res)) < 2) {
+      if(inherits(res, "numeric"))
+        class(res) <- c("bamlss.residuals", class(res))
+    }
   } else {
-    object$y
+    type <- match.arg(type)
+
+    nobs <- nrow(object$y)
+    y <- if(is.data.frame(object$y)) {
+      if(ncol(object$y) < 2)
+        object$y[[1]]
+    } else {
+      object$y
+    }
+
+    par <- predict(object, nsamps = nsamps)
+    for(j in family$names)
+      par[[j]] <- make.link2(family$links[j])$linkinv(par[[j]])
+
+    if(type == "quantile") {
+      stopifnot(!is.null(family$p))
+      res <- qnorm(family$p(y, par))
+      attr(res, "type") <- "Quantile"
+    }
+
+    if(type == "response") {
+      mu <- if(is.null(family$mu)) {
+        function(par, ...) { par[[1]] }
+      } else family$mu
+      res <- y - mu(par)
+      attr(res, "type") <- "Response"
+    }
+   
+    class(res) <- c("bamlss.residuals", class(res))
   }
 
-  family <- family(object)
-  stopifnot(!is.null(family$p))
+  return(res)
+}
 
-  par <- predict(object, nsamps = nsamps)
 
-  for(j in family$names)
-    par[[j]] <- make.link2(family$links[j])$linkinv(par[[j]])
+## Residuals plotting functions.
+plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid"), spar = TRUE, ...)
+{
+  ## What should be plotted?
+  which.match <- c("hist-resid", "qq-resid")
+  if(!is.character(which)) {
+    if(any(which > 2L))
+      which <- which[which <= 2L]
+    which <- which.match[which]
+  } else which <- which.match[pmatch(tolower(which), which.match)]
+  if(length(which) > length(which.match) || !any(which %in% which.match))
+    stop("argument which is specified wrong!")
 
-  return(qnorm(family$p(y, par)))
+  if(spar) {
+    op <- par(no.readonly = TRUE)
+    on.exit(par(op))
+    par(mfrow = n2mfrow(length(which)))
+  }
+
+  type <- attr(x, "type")
+  x <- x[is.finite(x)]
+
+  for(w in which) {
+    args <- list(...)
+    if(w == "hist-resid") {
+      rdens <- density(x)
+      rh <- hist(x, plot = FALSE)
+      args$ylim <- c(0, max(c(rh$density, rdens$y)))
+      args$freq <- FALSE
+      args$x <- x
+      args <- delete.args("hist.default", args, package = "graphics")
+      if(is.null(args$xlab))
+        args$xlab <- if(is.null(type)) "Residuals" else paste(type, "residuals")
+      if(is.null(args$ylab))
+        args$ylab <- "Density"
+      if(is.null(args$main)) 
+        args$main <- "Histogramm and density"
+      ok <- try(do.call("hist", args))
+      if(!inherits(ok, "try-error"))
+        lines(rdens)
+      box()
+    }
+    if(w == "qq-resid") {
+      args$y <- x
+      args$x <- NULL
+      args <- delete.args("qqnorm.default", args, package = "stats", not = c("col", "pch"))
+      if(is.null(args$main))
+        args$main <- "Normal Q-Q Plot"
+      ok <- try(do.call(qqnorm, args))
+      if(!inherits(ok, "try-error"))
+        qqline(args$y) ## abline(0,1)
+    }
+  }
+
+  return(invisible(NULL))
 }
 
 
