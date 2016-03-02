@@ -354,12 +354,10 @@ process_factor_response <- function(x)
 
 binomial.bamlss <- function(...)
 {
-  link <- "logit"
-
   rval <- list(
     "family" = "binomial",
     "names" = "pi",
-    "links" = parse.links(link, c(pi = "logit"), ...),
+    "links" = c(pi = "logit"),
     "valid.response" = function(x) {
       if(!is.factor(x)) {
         if(length(unique(x)) > 2)
@@ -371,7 +369,7 @@ binomial.bamlss <- function(...)
       TRUE
     },
     "bayesx" = list(
-      "pi" = c(paste("binomial", link, sep = "_"), "mu")
+      "pi" = c("binomial_logit", "mu")
     ),
     "bugs" = list(
       "dist" = "dbern",
@@ -399,16 +397,17 @@ binomial.bamlss <- function(...)
       "pi" = function(y, par, ...) {
         par$pi * (1 - par$pi)
       }
-    )
-#    "initialize" = list("pi" = function(y, ...) {
-#      y <- process_factor_response(y)
-#      (y + 0.5) / 2
-#    }),
+    ),
+    "initialize" = list("pi" = function(y, ...) {
+      y <- process_factor_response(y)
+      (y + 0.5) / 2
+    })
   )
 
   class(rval) <- "family.bamlss"
   rval
 }
+
 
 cloglog.bamlss <- function(...)
 {
@@ -1814,12 +1813,10 @@ multinomial.bamlss <- multinom.bamlss <- function(...)
 ## Count Data distributions
 poisson.bamlss <- function(...)
 {
-  links <- c(lambda = "log")
-
   rval <- list(
     "family" = "poisson",
     "names" = "lambda",
-    "links" = parse.links(links, c(lambda = "log"), ...),
+    "links" = c(lambda = "log"),
     "bayesx" = list(
       "lambda" = c("poisson", "lambda")
     ),
