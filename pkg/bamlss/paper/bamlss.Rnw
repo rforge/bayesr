@@ -1570,10 +1570,6 @@ must be done before any shrinkage. In this example we use the \fct{ti} construct
 the correct constraints, therefore, the reduced design matrices can be computed directly, which is
 saving quite a lot of RAM storage.
 
-<<echo=FALSE, results=hide>>=
-
-@
-
 \begin{figure}[t!]
 \centering
 \includegraphics[width=0.46\textwidth]{figures/rainmodel-data-stations}\includegraphics[width=0.46\textwidth]{figures/rainmodel-data-hist}
@@ -1591,10 +1587,6 @@ saving quite a lot of RAM storage.
 
 
 \subsection{Cox-regression} \label{sec:coxreg}
-
-<<echo=FALSE, results=hide>>=
-
-@
 
 \begin{figure}[t!]
 \centering
