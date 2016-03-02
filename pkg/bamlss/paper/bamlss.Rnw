@@ -1543,11 +1543,11 @@ The function \fct{homstart\_data} saves the data as \code{homstart.rda} in the s
 the global environment as object \code{homstart}. The formula for the precipitation model is specified by
 <<eval=FALSE>>=
 f <- list(
-  "mu" = sqrt(raw) ~ s(elevation,k=3) + ti(day,bs="cc",k=10) +
-    ti(long,lat,bs="tp",d=2,k=50) +
+  "mu" = sqrt(raw) ~ s(elevation,) + ti(day,bs="cc",k=10) +
+    ti(long,lat,bs="tp",d=2,k=30) +
     ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),k=c(8,30)),
-  "sigma" = ~ s(elevation,k=3) + ti(day,bs="cc",k=10) +
-    ti(long,lat,bs="tp",d=2,k=50) +
+  "sigma" = ~ s(elevation) + ti(day,bs="cc",k=10) +
+    ti(long,lat,bs="tp",d=2,k=30) +
     ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),k=c(8,30))
 )
 @
@@ -1558,7 +1558,7 @@ can then be fitted with
 <<eval=FALSE>>=
 rainmodel <- bamlss(f, data = homstart, family = "cnorm",
   binning = TRUE, before = TRUE, gam.side = FALSE,
-  n.iter = 6000, burnin = 2000, thin = 10, cores = 7)
+  n.iter = 4000, burnin = 2000, thin = 10, cores = 8)
 @
 The model is estimated using the efficient IWLS algorithms with the shrinked design matrices by
 setting argument \code{binning = TRUE}. Argument \code{before} indicates that shrinkage should be
@@ -1566,9 +1566,12 @@ applied on the covariates before design matrices are computed, otherwise shrinka
 after the full design matrices are set up. This is important if identifiability constraints need
 to be computed, which is implemented in function \fct{gam.side} in package \pkg{mgcv}, since this
 must be done before any shrinkage. In this example we use the \fct{ti} constructor that implements
-the correct constraints, therefore, the reduced design matrices can be computed directly, which is
-saving quite a lot of RAM storage. On a Linux system with Intel i7-2600 3.40GHz processors running
-the model takes approximately 1.5 days.
+the correct constraints, therefore, the reduced design matrices can be computed instantly, which is
+saving quite a lot of RAM storage. With a total of \code{n.iter = 4000} iterations of the MCMC
+sampler, on a Linux system with 8 Intel i7-2600 3.40GHz processors running the model takes
+approximately 1.5 days. For computing the final model output the first $2000$ samples of every
+core are withdrawn (argument \code{burnin}) and only every 10th sample is saved
+(argument \code{thin}).
 
 The estimated effects of the model can be plotted by
 <<eval=FALSE>>=
