@@ -1312,12 +1312,10 @@ pareto.bamlss <- function(...)
 
 gamma.bamlss <- function(...)
 {
-  links <- c(mu = "log", sigma = "log")
-
   rval <- list(
     "family" = "gamma",
     "names" = c("mu", "sigma"),
-    "links" = parse.links(links, c(mu = "log", sigma = "log"), ...),
+    "links" = c(mu = "log", sigma = "log"),
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
       if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
@@ -1351,23 +1349,23 @@ gamma.bamlss <- function(...)
       }
     ),
     "loglik" = function(y, par, ...) {
-		  a <- par$sigma
-		  s <- par$mu / par$sigma 
-		  sum(dgamma(y, shape = a, scale = s, log = TRUE), na.rm = TRUE)
+       a <- par$sigma
+       s <- par$mu / par$sigma
+       sum(dgamma(y, shape = a, scale = s, log = TRUE), na.rm = TRUE)
     },
     "mu" = function(par, ...) {
       par$mu
     },
-	  "d" = function(y, par, log = FALSE) {
-		  a <- par$sigma
-		  s <- par$mu / par$sigma
-		  dgamma(y, shape = a, scale = s, log = log)
-	  },
-	  "p" = function(y, par, lower.tail = TRUE, log.p = FALSE) {
-		  a <- par$sigma
-		  s <- par$mu / par$sigma
-		  pgamma(y, shape = a, scale = s, lower.tail = lower.tail, log.p = log.p)
-	  }
+    "d" = function(y, par, log = FALSE) {
+      a <- par$sigma
+      s <- par$mu / par$sigma
+      dgamma(y, shape = a, scale = s, log = log)
+    },
+    "p" = function(y, par, lower.tail = TRUE, log.p = FALSE) {
+      a <- par$sigma
+      s <- par$mu / par$sigma
+      pgamma(y, shape = a, scale = s, lower.tail = lower.tail, log.p = log.p)
+    }
   )
 
   class(rval) <- "family.bamlss"
