@@ -1558,7 +1558,6 @@ can then be fitted with
 <<eval=FALSE>>=
 rainmodel <- bamlss(f, data = homstart, family = "cnorm",
   binning = TRUE, before = TRUE, gam.side = FALSE,
-  results = FALSE, samplestats = FALSE,
   n.iter = 6000, burnin = 2000, thin = 10, cores = 7)
 @
 The model is estimated using the efficient IWLS algorithms with the shrinked design matrices by
@@ -1575,7 +1574,7 @@ The estimated effects of the model can be plotted by
 <<eval=FALSE>>=
 plot(rainmodel)
 @
-However, since 
+However, the spatially varying day of year effect will not be 
 
 \begin{figure}[t!]
 \centering
