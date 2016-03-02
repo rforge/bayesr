@@ -1579,11 +1579,12 @@ function, in this case we compute the seasonal effect for different locations us
 function. For example, the estimated seasonal effect for Innsbruck and Vienna for parameter $\mu$
 can be computed by
 <<eval=FALSE>>=
+n <- 365
 nd <- data.frame(
-  "day" = rep(1:365, 2),
-  "long" = c(rep(11.404881, 365), rep(16.384151, 365)),
-  "lat" = c(rep(47.269362, 365), rep(48.208906, 365)),
-  "City" = c(rep("Innsbruck", 365), rep("Vienna", 365))
+  "day" = rep(1:n, 2),
+  "long" = c(rep(11.404881, n), rep(16.384151, n)),
+  "lat" = c(rep(47.269362, n), rep(48.208906, n)),
+  "City" = c(rep("Innsbruck", n), rep("Vienna", n))
 )
 
 nd$fit <- predict(rainmodel, newdata = nd,
