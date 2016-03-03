@@ -1605,7 +1605,7 @@ added to the predictions. The default in \fct{predict} is to compute the mean of
 however, any function can supplied to argument \code{FUN}, also with multiple outputs like in
 function \fct{quantile}.
 
-The resulting plots of the estimated effects are shown in Figure~\ref{fig:rainmodeleffects}.
+The plots of the estimated effects are shown in Figure~\ref{fig:rainmodeleffects}.
 The top row illustrates the spatial variation of the seasonal effect (solid lines) together with the
 mean effect (dashed lines) for parameters $\mu$ and $\sigma$. The estimates indicate that during
 June to August precipitation is highest in the mean effect for $\mu$. However, there is some clear
@@ -1647,6 +1647,21 @@ zero predicted precipitation.
 
 
 \subsection{Cox-regression} \label{sec:coxreg}
+
+This analysis is based on the article of \citet{bamlss:Taylor:2015}. The \emph{London Fire Brigade}
+(LFB) is one of the largest in the world. Each year, the LFB is called thousands of times, in most
+cases due to dwelling fires. Since the time it takes until a fire engine arrives at the scene after
+an emergency call has been received, an obvious question is how to reduce the response times in order
+to prevent further damage or fatal casualties. Clearly, it mostly depends on the distance of the
+responsible fire station to the site of how much damage can be prevented, moreover, in some
+cases it may happen that fire trucks are already in use at another fire scenery and therefore it
+also depends on the number of fire stations in the area. This is viewed as an optimization problem
+in \citet{bamlss:Taylor:2015}, i.e., they treated the question if there is possible improvement
+of response times according to space in a probabilistic way.
+
+They analyzed the response times using a survival model
+
+
 
 \begin{figure}[t!]
 \centering

@@ -2,8 +2,8 @@ library("zoo")
 
 ## Paper: http://arxiv.org/pdf/1503.07709.pdf
 ## Data: http://data.london.gov.uk/dataset/london-fire-brigade-incident-records
-## Note: renamed data sets...
-d <- read.csv("~/data/LondonFire/data2012-2015.csv",
+## Note: renamed data set, saved as .csv file...
+d <- read.csv("~/data/LondonFire/data2013-2016.csv",
   header = TRUE, stringsAsFactors = FALSE)
 d <- subset(d, PropertyCategory == "Dwelling" & IncidentGroup == "Fire")
 d$DateOfCall <- as.Date(d$DateOfCall, "%d-%b-%y")
@@ -162,7 +162,8 @@ LondonBoundaries <- London$Boundaries
 
 
 ## Save the data.
-save(LondonFire, LondonFStations, LondonBoroughs, LondonBoundaries,
-  file = "~/svn/bayesr/pkg/bamlss/data/LondonFire.rda",
-  compress = "xz")
+library("bamlss")
+
+save_data(LondonFire, LondonFStations, LondonBoroughs, LondonBoundaries,
+  file = "~/svn/bayesr/pkg/bamlss/data/LondonFire.rda")
 
