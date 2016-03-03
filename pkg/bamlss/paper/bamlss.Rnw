@@ -1653,13 +1653,45 @@ This analysis is based on the article of \citet{bamlss:Taylor:2015}. The \emph{L
 cases due to dwelling fires. Since the time it takes until a fire engine arrives at the scene after
 an emergency call has been received, an obvious question is how to reduce the response times in order
 to prevent further damage or fatal casualties. Clearly, it mostly depends on the distance of the
-responsible fire station to the site of how much damage can be prevented, moreover, in some
-cases it may happen that fire trucks are already in use at another fire scenery and therefore it
+responsible fire station to the site of how much damage can be prevented, besides, in some
+cases it may happen that fire engines are already in use at another fire scenery and therefore it
 also depends on the number of fire stations in the area. This is viewed as an optimization problem
-in \citet{bamlss:Taylor:2015}, i.e., they treated the question if there is possible improvement
-of response times according to space in a probabilistic way.
+in \citet{bamlss:Taylor:2015}, i.e., they treated the question of possible improvements
+of response times according to space in a probabilistic way by accounting for random spatial
+variation using a piecewise constant gaussian process.
 
-They analyzed the response times using a survival model
+Moreover, to gain better insight to this problem, they analyzed the response times within a
+survival context, which seems natural for this kind of time-to-event data. More precisely, they
+described the hazard of an event (the fire engine arrives) at time $t$ with a relative risk model of
+the form
+$$
+\lambda(t) = \exp\left(\eta(t)\right) =  \exp\left( \eta_{\lambda}(t) + \eta_{\gamma} \right),
+$$
+i.e., a model for the instantaneous arrival rate conditional on the engine having not arrived before
+time $t$. Here, the hazard function is assumed to depend on a time-varying predictor
+$\eta_{\lambda}(t)$ and a time-constant predictor $\eta_{\gamma}$. In most survival models, the
+time-varying part $\eta_{\lambda}(t)$ represents the so called baseline hazard and is an univariate
+function of time $t$. Following \citet{bamlss:Taylor:2015}, we set up a similar
+model with the a time-constant predictor given by
+$$
+\eta_{\gamma} = \beta_0 + f_1(\texttt{fsintens}) + f_2(\texttt{daytime}) +
+  f_3(\texttt{lon}, \texttt{lat}),
+$$
+where covariate \code{fsintens} is the fire station intensity at a certain location, computed
+with a density estimate from all fire stations in London. I.e., this variable is a proxy
+for the distance to the next fire station(s), especially suited for situations when the responsible
+fire station already send out all fire engines such that help needs to arrive from another station.
+Variable \code{daytime} is the time of the day when the fire occurred and accounts for the effect
+that it is more difficult for a fire engine to arrive at the scene in rush hours. To answer the
+question of spatially driven hazards, a spatial effect of longitude and latitude coordinates
+is included in the model. All functions $f_1, \ldots, f_3$ are assumed to be possibly nonlinear
+and are modeled using penalized splines.
+
+The probability that the engine will arrive on the scene after time $t$ is described by the survival
+function
+$$
+S(t) = Prob(T > t) = \exp \, \left( -\int_0^t \lambda(u)du \right).
+$$
 
 
 
