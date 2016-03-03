@@ -585,43 +585,6 @@ make.fit.fun <- function(x, type = 1)
 }
 
 
-dmvnorm2 <- function (x, mean = rep(0, p), sigma = diag(p), log = FALSE) 
-{
-  if(is.vector(x)) 
-    x <- matrix(x, ncol = length(x))
-  p <- ncol(x)
-  if(!missing(mean)) {
-    if(!is.null(dim(mean))) 
-      dim(mean) <- NULL
-    if(length(mean) != p) 
-      stop("mean and sigma have non-conforming size")
-  }
-    if (!missing(sigma)) {
-        if (p != ncol(sigma)) 
-            stop("x and sigma have non-conforming size")
-        if (!isSymmetric(sigma, tol = 0.0001, 
-            check.attributes = FALSE)) 
-            stop("sigma must be a symmetric matrix")
-    }
-    dec <- tryCatch(chol(sigma), error = function(e) e)
-    if (inherits(dec, "error")) {
-        x.is.mu <- colSums(t(x) != mean) == 0
-        logretval <- rep.int(-Inf, nrow(x))
-        logretval[x.is.mu] <- Inf
-    }
-    else {
-        tmp <- backsolve(dec, t(x) - mean, transpose = TRUE)
-        rss <- colSums(tmp^2)
-        logretval <- -sum(log(diag(dec))) - 0.5 * p * log(2 * 
-            pi) - 0.5 * rss
-    }
-    names(logretval) <- rownames(x)
-    if (log) 
-        logretval
-    else exp(logretval)
-}
-
-
 ## The prior function.
 make.prior <- function(x) {
   prior <- NULL
@@ -1201,40 +1164,8 @@ get.all.parnames <- function(x, rename.p = TRUE)
 }
 
 
-## Extract logLik and logPriors.
-eta.logLik.logPriors <- function(par, x, y, family)
-{
-  if(is.data.frame(y)) {
-    if(ncol(y) < 2)
-      y <- y[[1]]
-  }
-  nx <- names(x)
-  eta <- vector(mode = "list", length = length(nx))
-  names(eta) <- nx
-  lprior <- 0.0
-  for(j in nx) {
-    eta[[j]] <- 0.0
-    for(sj in names(x[[j]]$smooth.construct)) {
-      xl <- paste(j, if(sj != "model.matrix") "s" else "p", x[[j]]$smooth.construct[[sj]]$label, sep = ".")
-      tpar <- par[grep(xl, names(par), fixed = TRUE)]
-      eta[[j]] <- eta[[j]] + x[[j]]$smooth.construct[[sj]]$fit.fun(x[[j]]$smooth.construct[[sj]]$X, tpar)
-      lprior <- lprior + x[[j]]$smooth.construct[[sj]]$prior(tpar)
-    }
-    if(!is.null(x[[j]]$model.matrix)) {
-      xl <- paste(j, "p", colnames(x[[j]]$model.matrix), sep = ".")
-      tpar <- par[grep(xl, names(par), fixed = TRUE)]
-      eta[[j]] <- eta[[j]] + drop(x[[j]]$model.matrix %*% tpar)
-      lprior <- lprior + sum(dnorm(tpar, sd = 1000, log = TRUE))
-    }
-  }
-  logLik <- family$loglik(y, family$map2par(eta))
-  logPost <- logLik + lprior
-  return(list("eta" = eta, "logLik" = logLik, "logPost" = logPost))
-}
-
-
 ## Model stats based on samples.
-samplestats <- function(samples, x = NULL, y = NULL, family = NULL)
+samplestats <- function(samples, x = NULL, y = NULL, family = NULL, logLik = FALSE)
 {
   if(inherits(samples, "bamlss")) {
     if(is.null(samples$samples))
@@ -1254,13 +1185,17 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL)
   if(length(taken)) {
     what <- what[!(what %in% taken)]
     stats <- samples[, taken, drop = FALSE]
+    if(logLik) {
+      if("loglik" %in% tolower(taken))
+        return(stats[, tolower(taken) == "loglik"])
+    }
     stats <- as.list(apply(stats, 2, mean, na.rm = TRUE))
   }
   if(is.data.frame(y)) {
     if(ncol(y) < 2)
       y <- y[[1]]
   }
-  if(length(what)) {
+  if(length(what) | logLik) {
     pn <- get.all.parnames(x, rename.p = TRUE)
     pn <- gsub(".p.model.matrix.", ".p.", pn, fixed = TRUE)
     pn <- pn[pn %in% colnames(samples)]
@@ -1277,14 +1212,18 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL)
       for(i in nx)
         mpar[[i]] <- make.link2(family$links[i])$linkinv(.fitted.bamlss(i, x[[i]], msamples))
       tpar <- mpar
-      dev <- rep(NA, ncol(par[[1]]))
+      dev <- ll <- rep(NA, ncol(par[[1]]))
       for(j in 1:ncol(par[[1]])) {
         for(i in nx)
           tpar[[i]] <- par[[i]][, j]
-        ll <- try(family$loglik(y, tpar), silent = TRUE)
-        if(!inherits(ll, "try-error"))
-          dev[j] <- -2 * ll
+        llt <- try(family$loglik(y, tpar), silent = TRUE)
+        if(!inherits(llt, "try-error")) {
+          ll[j] <- llt
+          dev[j] <- -2 * ll[j]
+        }
       }
+      if(logLik)
+        return(ll)
       ll <- try(family$loglik(y, mpar), silent = TRUE)
       if(!inherits(ll, "try-error")) {
         mdev <- -2 * ll
@@ -1343,134 +1282,6 @@ stacker <- function(x, optimizer = bfit0, sampler = samplerJAGS, ...)
   }
 
   x
-}
-
-
-#########################
-## (3) BAMLSS wrapper. ##
-#########################
-bamlss99 <- function(formula, family = gaussian, data = NULL, knots = NULL,
-  weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
-  optimizer = list(bfit0), sampler = list(GMCMC), results = resultsBayesG,
-  engine = NULL, cores = NULL, sleep = 1, combine = TRUE,
-  n.iter = 12000, thin = 10, burnin = 2000, seed = NULL, ...)
-{
-  ff <- try(inherits(family, "family.bamlss"), silent = TRUE)
-  if(inherits(ff, "try-error")) {
-    family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
-  } else {
-    if(is.function(family)) {
-      if(inherits(try(family(), silent = TRUE), "try-error"))
-        family <- deparse(substitute(family), backtick = TRUE, width.cutoff = 500)
-    }
-  }
-  family.bamlss <- if(is.function(family)) family() else {
-    if(is.character(family)) {
-      if(!grepl("gF(", family, fixed = TRUE) & !grepl("gF2(", family, fixed = TRUE))
-          if(!grepl("bamlss", family))
-            family <- paste(family, "bamlss", sep = ".")
-      family <- eval(parse(text = family[1]))
-      if(is.function(family))
-        family()
-      else family
-    } else family
-  }
-
-  if(is.null(engine)) {
-    mc.cores <- cores
-    transform <- if(!is.null(family.bamlss$transform)) {
-      function(x) { family.bamlss$transform(x, ...) }
-    } else function(x) { bamlss.setup(x, ...) }
-    if(!is.null(family.bamlss$sampler)) {
-      sampler <- function(x, ...) {
-        family.bamlss$sampler(x, cores = mc.cores,
-          n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, sleep = sleep, ...)
-      }
-    }
-    if(!is.null(family.bamlss$setup))
-      setup <- function(x, ...) { family.bamlss$setup(x, ...) }
-    else
-      setup <- FALSE
-    if(is.null(sampler))
-      sampler <- function(x, ...) { null.sampler(x, ...) }
-    if(!is.null(family.bamlss$engine)) {
-      engine <- function(x) {
-        family.bamlss$engine(x, cores = mc.cores,
-          n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, sleep = sleep, ...)
-      }
-      cores <- NULL
-      xengine <- "in.family"
-    } else {
-      engine <- function(x) {
-        stacker(x, optimizer = optimizer, sampler = sampler, cores = mc.cores,
-          n.iter = n.iter, thin = thin, burnin = burnin, seed = seed, sleep = sleep, ...)
-      }
-      setup <- FALSE
-      cores <- NULL
-      xengine <- "stacker"
-    }
-  } else {
-    xengine <- c("BayesG", "BayesX", "JAGS", "STAN")
-    xengine <- xengine[pmatch(engine, xengine)]
-
-    if(xengine == "BayesX") {
-      require("BayesXsrc")
-
-      data.name <- if(!is.null(data)) {
-        deparse(substitute(data), backtick = TRUE, width.cutoff = 500)
-      } else "d"
-
-      transform <- transformBayesX
-      setup <- function(x) {
-        setupBayesX(x, n.iter = n.iter, thin = thin, burnin = burnin,
-          seed = seed, data.name = data.name, cores = cores, ...)
-      }
-      engine <- samplerBayesX
-      results <- resultsBayesX
-    }
-
-    if(xengine == "BayesG") {
-      transform <- transformBayesG
-      setup <- FALSE
-      engine <- function(x) {
-        BayesG(x, n.iter = n.iter, thin = thin,
-          burnin = burnin, seed = seed, ...)
-      }
-      results <- resultsBayesG
-    }
-  
-    if(xengine %in% c("JAGS", "STAN")) {
-      transform <- transformBUGS
-      if(xengine == "JAGS") {
-        require("rjags")
-        setup <- setupJAGS
-        engine <- function(x) {
-          samplerJAGS(x, n.iter = n.iter, thin = thin,
-            burnin = burnin, seed = seed, ...)
-        }
-      } else {
-        require("rstan")
-        setup <- bugs2stan
-        engine <- function(x) {
-          samplerSTAN(x, n.iter = n.iter, thin = thin,
-            burnin = burnin, seed = seed, ...)
-        }  
-      }
-
-      results <- resultsJAGS
-    }
-  }
-
-  rval <- xreg(formula, family = family, data = data, knots = knots,
-    weights = weights, subset = subset, offset = offset, na.action = na.action,
-    contrasts = contrasts, parse.input = bamlss.frame, transform = transform,
-    setup = setup, engine = engine, results = results, cores = cores,
-    combine = combine, sleep = sleep, ...)
-  
-  rval$call <- match.call()
-  rval$engine <- xengine
-  
-  rval
 }
 
 
@@ -4228,33 +4039,48 @@ DIC.bamlss <- function(object, ..., samples = TRUE, nsamps = NULL)
 }
 
 
-logLik.bamlss <- function(object, ..., optimizer = FALSE)
+logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
 {
   Call <- match.call()
   mn <- as.character(Call[-1L])
   object <- list(object, ...)
   ll <- edf <- NULL
+  if(samples)
+    ll <- list()
   for(j in seq_along(object)) {
-    ms <- object[[j]]$model.stats
-    ms <- if(is.null(ms$sampler) | optimizer) {
-      if(is.null(ms$optimizer) & !optimizer) {
-        samplestats(object[[j]])
-      } else ms$optimizer
-    } else ms$sampler
-    if(is.null(ms) & !optimizer)
-      ms <- samplestats(object[[j]])
-    if(is.null(ms)) {
-      warning(paste("no logLik available for model ", mn[j], "!", sep = ""))
+    if(samples) {
+      ll[[j]] <- mcmc(samplestats(object[[j]], logLik = TRUE),
+        start = start(object[[j]]$samples), end = end(object[[j]]$samples),
+        thin = thin(object[[j]]$samples))
     } else {
-      ll <- c(ll, ms$logLik)
-      edf <- c(edf, if(is.null(ms$edf)) NA else ms$edf)
+      ms <- object[[j]]$model.stats
+      ms <- if(is.null(ms$sampler) | optimizer) {
+        if(is.null(ms$optimizer) & !optimizer) {
+          samplestats(object[[j]])
+        } else ms$optimizer
+      } else ms$sampler
+      if(is.null(ms) & !optimizer)
+        ms <- samplestats(object[[j]])
+      if(is.null(ms)) {
+        warning(paste("no logLik available for model ", mn[j], "!", sep = ""))
+      } else {
+        ll <- c(ll, ms$logLik)
+        edf <- c(edf, if(is.null(ms$edf)) NA else ms$edf)
+      }
     }
   }
-  if(all(is.na(edf)))
-    edf <- NULL
+  if(!is.null(edf)) {
+    if(all(is.na(edf)))
+      edf <- NULL
+  }
   if(!is.null(ll)) {
-    rval <- cbind("logLik" = ll, "edf" = edf)
-    row.names(rval) <- if(nrow(rval) > 1) mn[1:nrow(rval)] else ""
+    if(samples) {
+      names(ll) <- mn[1:length(ll)]
+      rval <- as.mcmc.list(ll)
+    } else {
+      rval <- cbind("logLik" = ll, "edf" = edf)
+      row.names(rval) <- if(nrow(rval) > 1) mn[1:nrow(rval)] else ""
+    }
   } else rval <- NULL
   rval
 }

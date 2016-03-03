@@ -1,4 +1,5 @@
-MCMCpack <- function(x, n.iter = 1200, burnin = 200, thin = 1, verbose = 100, ...)
+MCMCpack <- function(x, y, family, start = NULL,
+  n.iter = 1200, burnin = 200, thin = 1, verbose = 100, ...)
 {
   require("MCMCpack")
 

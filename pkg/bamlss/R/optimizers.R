@@ -1382,7 +1382,7 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind)
 
 
 ## Likelihood based boosting.
-boost <- function(x, y, family, weights = NULL, offset = NULL,
+boost_logLik <- function(x, y, family, weights = NULL, offset = NULL,
   criterion = c("AICc", "BIC", "AIC"),
   nu = 1, df = 4, maxit = 100, mstop = NULL, best = TRUE,
   verbose = TRUE, digits = 4,
@@ -1533,27 +1533,31 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
 
 
 ## 2nd booster.
-boost99 <- function(x, y, family, weights = NULL, offset = NULL,
-  criterion = c("AICc", "BIC", "AIC"),
+boost <- function(x, y, family, weights = NULL, offset = NULL,
   nu = 0.1, df = 4, maxit = 100, mstop = NULL, best = TRUE,
   verbose = TRUE, digits = 4,
   eps = .Machine$double.eps^0.25, plot = TRUE, ...)
 {
+  if(is.null(family$score))
+    stop("need score functions in family object for boosting!")
+
+
+  nx <- family$names
+  if(!all(nx %in% names(x)))
+    stop("parameter names mismatch with family names!")
+
   if(!is.null(mstop))
     maxit <- mstop
 
   if(is.null(attr(x, "bamlss.engine.setup")))
     x <- bamlss.engine.setup(x, ...)
 
-  nx <- family$names
-  if(!all(nx %in% names(x)))
-    stop("parameter names mismatch with family names!")
-  criterion <- match.arg(criterion)
-
   np <- length(nx)
-  ## FIXME!!!
-  y <- y[[1]]
-  nobs <- if(is.null(dim(y))) length(y) else nrow(y)
+  nobs <- nrow(y)
+  if(is.data.frame(y)) {
+    if(ncol(y) < 2)
+      y <- y[[1]]
+  }
 
   ## Setup boosting structure, i.e, all parametric
   ## terms get an entry in $smooth.construct object.
@@ -1691,6 +1695,7 @@ boost.transform <- function(x, y, df, family, weights = NULL, offset = NULL,
         model.matrix[[pj]]$binning <- x[[nx[j]]]$smooth.construct[[ii]]$binning
         model.matrix[[pj]]$nobs <- x[[nx[j]]]$smooth.construct[[ii]]$nobs
         model.matrix[[pj]]$fixed <- TRUE
+        model.matrix[[pj]]$fxsp <- FALSE
         model.matrix[[pj]]$weights <- x[[nx[j]]]$smooth.construct[[ii]]$weights
         model.matrix[[pj]]$rres <- x[[nx[j]]]$smooth.construct[[ii]]$rres
         model.matrix[[pj]]$fit.reduced <- x[[nx[j]]]$smooth.construct[[ii]]$fit.reduced

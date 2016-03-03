@@ -25,7 +25,7 @@ cox.bamlss <- function(...)
       ll <- (eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int
       sum(ll)
     },
-    "predict" = bamlss.surv.prob
+    "predict" = cox.predict
   )
 
   class(rval) <- "family.bamlss"
@@ -890,7 +890,7 @@ survint <- function(X, eta, width, gamma, eta2 = NULL, index = NULL)
 
 
 ## Survival probabilities.
-bamlss.surv.prob <- function(object, newdata, type = c("link", "parameter", "probabilities"),
+cox.predict <- function(object, newdata, type = c("link", "parameter", "probabilities"),
   FUN = function(x) { mean(x, na.rm = TRUE) }, time, subdivisions = 100, ...)
 {
   if(is.null(newdata))
