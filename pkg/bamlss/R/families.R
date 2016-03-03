@@ -1631,9 +1631,17 @@ mvn.bamlss <- function(...)
       }
     ),
     "p" = function(y, par, ...) {
-      cbind(
+      p <- cbind(
         pnorm(y[, 1], mean = par$mu1, sd = par$sigma1, ...),
         pnorm(y[, 2], mean = par$mu2, sd = par$sigma2, ...)
+      )
+      colnames(p) <- colnames(y)
+      p
+    },
+    "mu" = function(y, par, ...) {
+      cbind(
+        "mu1" = par$mu1,
+        "mu2" = par$mu2
       )
     },
     "initialize" = list(
@@ -1810,7 +1818,7 @@ multinomial.bamlss <- multinom.bamlss <- function(...)
 }
 
 
-## Count Data distributions
+## Count Data distributions.
 poisson.bamlss <- function(...)
 {
   rval <- list(
@@ -1836,12 +1844,17 @@ poisson.bamlss <- function(...)
     },
     "score" = list(
       "lambda" = function(y, par, ...) {
-        y / par$lambda - 1
+        y - par$lambda
       }
     ),
     "hess" = list(
       "lambda" = function(y, par, ...) {
-        1 / par$lambda
+        par$lambda
+      }
+    ),
+    initialize = list(
+      "lambda" = function(y, ...) {
+        (y + mean(y)) / 2
       }
     )
   )

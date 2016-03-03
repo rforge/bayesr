@@ -5083,7 +5083,7 @@ term.labels2 <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
   intercept = TRUE, list = TRUE, type = 1, ...)
 {
   if(inherits(x, "bamlss") | inherits(x, "bamlss.frame")) {
-    x <- terms(x)
+    x <- terms(x, drop = FALSE)
   } else {
     if(!inherits(x, "bamlss.terms")) {
       if(inherits(x, "terms")) {
@@ -5093,7 +5093,6 @@ term.labels2 <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
   }
 
   nx <- names(x)
-
   if(is.null(model)) {
     model <- nx
   } else {
@@ -5347,13 +5346,14 @@ residuals.bamlss <- function(object, type = c("quantile", "response"), nsamps = 
 
     nobs <- nrow(object$y)
     y <- if(is.data.frame(object$y)) {
-      if(ncol(object$y) < 2)
+      if(ncol(object$y) < 2) {
         object$y[[1]]
+      } else object$y
     } else {
       object$y
     }
 
-    par <- predict(object, nsamps = nsamps)
+    par <- predict(object, nsamps = nsamps, drop = FALSE)
     for(j in family$names)
       par[[j]] <- make.link2(family$links[j])$linkinv(par[[j]])
 
@@ -5391,44 +5391,51 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid"), spar =
   if(length(which) > length(which.match) || !any(which %in% which.match))
     stop("argument which is specified wrong!")
 
+  if(is.null(dim(x)))
+    x <- matrix(x, ncol = 1)
+  nc <- ncol(x)
+  cn <- colnames(x)
+
   if(spar) {
     op <- par(no.readonly = TRUE)
     on.exit(par(op))
-    par(mfrow = n2mfrow(length(which)))
+    par(mfrow = n2mfrow(length(which) * nc))
   }
 
   type <- attr(x, "type")
   x <- x[is.finite(x)]
 
-  for(w in which) {
-    args <- list(...)
-    if(w == "hist-resid") {
-      rdens <- density(x)
-      rh <- hist(x, plot = FALSE)
-      args$ylim <- c(0, max(c(rh$density, rdens$y)))
-      args$freq <- FALSE
-      args$x <- x
-      args <- delete.args("hist.default", args, package = "graphics")
-      if(is.null(args$xlab))
-        args$xlab <- if(is.null(type)) "Residuals" else paste(type, "residuals")
-      if(is.null(args$ylab))
-        args$ylab <- "Density"
-      if(is.null(args$main)) 
-        args$main <- "Histogramm and density"
-      ok <- try(do.call("hist", args))
-      if(!inherits(ok, "try-error"))
-        lines(rdens)
-      box()
-    }
-    if(w == "qq-resid") {
-      args$y <- x
-      args$x <- NULL
-      args <- delete.args("qqnorm.default", args, package = "stats", not = c("col", "pch"))
-      if(is.null(args$main))
-        args$main <- "Normal Q-Q Plot"
-      ok <- try(do.call(qqnorm, args))
-      if(!inherits(ok, "try-error"))
-        qqline(args$y) ## abline(0,1)
+  for(j in 1:nc) {
+    for(w in which) {
+      args <- list(...)
+      if(w == "hist-resid") {
+        rdens <- density(x)
+        rh <- hist(x, plot = FALSE)
+        args$ylim <- c(0, max(c(rh$density, rdens$y)))
+        args$freq <- FALSE
+        args$x <- x
+        args <- delete.args("hist.default", args, package = "graphics")
+        if(is.null(args$xlab))
+          args$xlab <- if(is.null(type)) "Residuals" else paste(type, "residuals")
+        if(is.null(args$ylab))
+          args$ylab <- "Density"
+        if(is.null(args$main)) 
+          args$main <- paste("Histogramm and density", if(!is.null(cn[j])) paste(":", cn[j]) else NULL)
+        ok <- try(do.call("hist", args))
+        if(!inherits(ok, "try-error"))
+          lines(rdens)
+        box()
+      }
+      if(w == "qq-resid") {
+        args$y <- x
+        args$x <- NULL
+        args <- delete.args("qqnorm.default", args, package = "stats", not = c("col", "pch"))
+        if(is.null(args$main))
+          args$main <- paste("Normal Q-Q Plot", if(!is.null(cn[j])) paste(":", cn[j]) else NULL)
+        ok <- try(do.call(qqnorm, args))
+        if(!inherits(ok, "try-error"))
+          qqline(args$y) ## abline(0,1)
+      }
     }
   }
 
