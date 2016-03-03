@@ -802,7 +802,7 @@ pcnorm.bamlss <- function(start = 2, update = FALSE, ...)
   f <- list(
     "family" = "pcnorm",
     "names" = c("mu", "sigma", "lambda"),
-    "links" = c("identity", "log", "log")
+    "links" = c(mu = "identity", sigma = "log", lambda = "log")
   )
   f$transform <- function(x, ...) {
     attr(x$y[[1]], "check") <- as.integer(x$y[[1]] <= 0)
@@ -873,8 +873,12 @@ pcnorm.bamlss <- function(start = 2, update = FALSE, ...)
     pmax(pmin(rval, Inf), 0)
   }
   f$initialize = list(
-    "mu" = function(y, ...) { (y^(1 / log(start)) + mean(y^(1 / log(start)))) / 2 },
-    "sigma" = function(y, ...) { rep(log(sd(y^(1 / log(start)))), length(y)) },
+    "mu" = function(y, ...) {
+      (y^(1 / start) + mean(y^(1 / start))) / 2
+    },
+    "sigma" = function(y, ...) {
+      rep(log(sd(y^(1 / start))), length(y))
+    },
     "lambda" = function(y, ...) { rep(log(start), length(y)) }
   )
   class(f) <- "family.bamlss"

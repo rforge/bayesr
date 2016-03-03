@@ -1040,7 +1040,6 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * x$S[[j]]
     P <- matrix_inv(XWX + S, index = x$sparse.setup)
-
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
   }
 
