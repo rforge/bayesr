@@ -27,7 +27,7 @@ if(!file.exists("rainmodel.rda") & FALSE) {
   )
 
   rainmodel <- bamlss(f, data = homstart, family = "cnorm",
-    binning = TRUE, before = TRUE, gam.side = FALSE,
+    binning = TRUE, before = TRUE, gam.side = FALSE, samplestats = FALSE, results = FALSE,
     eps = 0.001, n.iter = 4000, burnin = 2000, thin = 10, cores = 8)
 
   save(rainmodel, file = "rainmodel.rda")
