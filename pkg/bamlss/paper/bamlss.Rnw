@@ -1319,8 +1319,9 @@ b <- bamlss(f, family = "gaussian", data = mcycle,
 @
 Here, we again run the backfitting optimizer function to generate good starting values for the
 MCMC simulation with \pkg{JAGS}. The returned object from \fct{bamlss} is of class \class{bamlss},
-for which common \proglang{R} generic functions like \fct{summary}, \fct{plot}, \fct{predict}, etc.\
-are provided, see Section~\ref{sec:censreg}~and~\ref{sec:coxreg} for examples.
+for which common \proglang{R} generic functions like \fct{summary}, \fct{plot}, \fct{predict},
+\fct{residuals}, \fct{logLik}, \fct{DIC}, etc.\ are provided,
+see Section~\ref{sec:censreg}~and~\ref{sec:coxreg} for examples. 
 
 Like other model fitting functions in \proglang{R} the user must specify the distributions to be
 modeled, which are commonly represented as so called family objects. The basic structure of such
@@ -1377,7 +1378,11 @@ b <- bamlss(f, family = "normal", data = mcycle)
 @
 As noted above, it is dependent on the implementation of the estimation engine which details
 must be provided within the family object, therefore, in \pkg{bamlss} the family objects can hold
-an arbitrary number of specifications. At the time of writing, the distributions presented in
+an arbitrary number of specifications. Family objects may also control, e.g., which optimizer or
+sampler function should be used when calling function \fct{bamlss}, amongst other options.
+This way, it is easy to write model
+fitting functions for specific problems, like for the continuous time Cox-model in example
+Section~\ref{sec:coxreg}. At the time of writing, the distributions presented in
 Table~\ref{tab:distributions} are already provided within the \pkg{bamlss} package.
 \begin{table}[t!]
 \centering
@@ -1569,7 +1574,7 @@ must be done before any shrinkage. In this example we use the \fct{ti} construct
 the correct constraints, therefore, the reduced design matrices can be computed instantly, which is
 saving quite a lot of RAM storage. With a total of \code{n.iter = 4000} iterations of the MCMC
 sampler, on a Linux system with 8 Intel i7-2600 3.40GHz processors running the model takes
-approximately 1.5 days. For computing the final model output the first $2000$ samples of every
+approximately 17 hours. For computing the final model output the first $2000$ samples of every
 core are withdrawn (argument \code{burnin}) and only every 10th sample is saved
 (argument \code{thin}).
 

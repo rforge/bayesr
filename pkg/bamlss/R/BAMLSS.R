@@ -5358,9 +5358,14 @@ residuals.bamlss <- function(object, type = c("quantile", "response"), nsamps = 
       par[[j]] <- make.link2(family$links[j])$linkinv(par[[j]])
 
     if(type == "quantile") {
-      stopifnot(!is.null(family$p))
-      res <- qnorm(family$p(y, par))
-      attr(res, "type") <- "Quantile"
+      if(is.null(family$p)) {
+        type <- "response"
+        warning(paste("no $p() function in family '", family$family,
+          "', cannot compute quantile residuals, computing response resdiuals instead!", sep = ""))
+      } else {
+        res <- qnorm(family$p(y, par))
+        attr(res, "type") <- "Quantile"
+      }
     }
 
     if(type == "response") {
