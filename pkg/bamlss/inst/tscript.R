@@ -504,3 +504,9 @@ functions <- c(
   "xy2poly",
   "homstart_data"
 )
+
+imports <- c(
+  "expand.t2.smooths",
+  "smooth2random",
+  
+)

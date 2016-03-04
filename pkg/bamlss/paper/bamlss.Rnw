@@ -1623,9 +1623,12 @@ The spatial effect for parameter $\sigma$ shows that model uncertainty is the hi
 southern regions and in Vorarlberg.
 
 The bottom plot in Figure~\ref{fig:rainmodeleffects} is an example of the resulting precipitation
-climatology for January 10th. The plot clearly shows the influence of elevation, while alpine
-regions have an predicted precipitation average of about $1$mm, the lower regions have basically
-zero predicted precipitation.
+climatology for January 10th. The predicted average precipitation is quite low all over Austria,
+ranging from $0$ to $1.1$mm. The map indicates that more precipitation can be expected in the
+northern parts of the Alps, especially in Vorarlberg and regions around Salzburg. The effect of
+elevation is also visible since the valleys exhibit less precipitation than the alpine regions,
+however, the effect is not as pronounced as, e.g., the seasonal effect(s), most probably because
+the variation of elevation of the meteorological stations used in this data set is relatively small.
 \begin{figure}[t!]
 \centering
 \includegraphics[width=0.46\textwidth]{figures/rainmodel-data-stations}\includegraphics[width=0.46\textwidth]{figures/rainmodel-data-hist}
