@@ -577,7 +577,7 @@ if(!file.exists("figures/firemodel-data.png")) {
     legend("topright", "% Arrivatime > 6min", box.col = NA, bg = NA, cex = 0.95)
 
     plot.griddata(type = "hexagonal", digits = 0,
-      main = "", xlab = "", ylab = "", FUN = length, range = c(1, 35), lrange = c(1, 55))
+      main = "", xlab = "", ylab = "", FUN = length, range = c(1, 60), lrange = c(1, 80))
     box()
     axis(2)
     legend("topright", "#Number of fires", box.col = NA, bg = NA, cex = 0.95)

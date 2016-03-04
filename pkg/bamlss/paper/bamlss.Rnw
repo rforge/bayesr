@@ -1649,10 +1649,11 @@ the variation of elevation of the meteorological stations used in this data set 
 \newpage
 
 
-\subsection{Cox-regression} \label{sec:coxreg}
+\subsection{Cox-model} \label{sec:coxreg}
 
 This analysis is based on the article of \citet{bamlss:Taylor:2015}. The \emph{London Fire Brigade}
-(LFB) is one of the largest in the world. Each year, the LFB is called thousands of times, in most
+(LFB, \url{http://www.london-fire.gov.uk}) is one of the largest in the world. Each year, the LFB is
+called thousands of times, in most
 cases due to dwelling fires. Since the time it takes until a fire engine arrives at the scene after
 an emergency call has been received, an obvious question is how to reduce the response times in order
 to prevent further damage or fatal casualties. Clearly, it mostly depends on the distance of the
@@ -1662,6 +1663,33 @@ also depends on the number of fire stations in the area. This is viewed as an op
 in \citet{bamlss:Taylor:2015}, i.e., they treated the question of possible improvements
 of response times according to space in a probabilistic way by accounting for random spatial
 variation using a piecewise constant gaussian process.
+
+To contribute to the topic, we use the dwelling fire response time data of 2015. The data is freely
+available at the London DataStore (\url{http://data.london.gov.uk/}) with an UK Open Government
+Licence (OGL v2). The data set, also containing previous years, can be downloaded from
+\begin{center}
+\url{http://data.london.gov.uk/dataset/london-fire-brigade-incident-records}
+\end{center}
+To make the example reproducible we also added a precompiled version of the 2015 data to the
+\pkg{bamlss} package, the data can be loaded with
+<<eval=FALSE>>=
+data("LondonFire", package = "bamlss")
+@
+This will load the following objects: \code{LondonFire}, the data used for modeling;
+\code{LondonFStations}, the locations of the 2015 fire stations; \code{LondonBoroughs}, the
+polygons of the boroughs in London; \code{LondonBoundaries}, the polygon of the boundaries of
+London. The locations of the fire stations where computed from the list of all London fire
+stations in 2015, which is provided by the LFB (see
+\url{http://www.london-fire.gov.uk/A-ZFireStations.asp}).
+
+The final 2015 dwelling fire data set consists of $5838$ fire events that have been received at
+the $103$ fire stations. The distribution of dwelling fires and fire stations is shown in
+Figure~\ref{fig:londonfiredata}.
+\begin{figure}[t!]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/firemodel-data}
+\caption{\label{fig:londonfiredata} Distribution of dwelling fires and fire stations in London (2015).}
+\end{figure}
 
 Moreover, to gain better insight to this problem, they analyzed the response times within a
 survival context, which seems natural for this kind of time-to-event data. More precisely, they
@@ -1692,19 +1720,20 @@ nonlinear and are modeled using penalized splines.
 
 In this example, we additionally relax the time-varying predictor $\eta_{\lambda}(t)$ to
 $$
-\eta_{\lambda}(t) = f_0(t) + \sum_{j = 1}^{J_{\lambda}} f_j(t, \mathbf{x})
+\eta_{\lambda}(t) = f_0(t) + \sum_{j = 1}^{J_{\lambda}} f_j(t, \mathbf{x}).
 $$
-hence, the baseline hazard is represented by $f_0(t)$ and all functions $f_j(t, \mathbf{x})$
+Here, the baseline hazard is represented by $f_0(t)$ and all functions $f_j(t, \mathbf{x})$
 are time-varying possibly nonlinear functions of covariates. This model is a Cox-type
 additive model introduced by \citet{bamlss:Kneib+Fahrmeir:2007}. To further investigate if
 there is a space-time varying effect, i.e., if the shape of the baseline hazard is dependent on the
 location we used the following additive predictor
 $$
-\eta_{\lambda}(t) = f_0(\texttt{arrivaltime}) + f_1(\texttt{arrivaltime}, \texttt{lon}, \texttt{lat}).
+\eta_{\lambda}(\texttt{arrivaltime}) = f_0(\texttt{arrivaltime}) + f_1(\texttt{arrivaltime}, \texttt{lon}, \texttt{lat}),
 $$
-Here, function $f_0(\texttt{arrivaltime})$ is the baseline hazard modeled by a penalized spline and
-$f_1(\texttt{arrivaltime}, \texttt{lon}, \texttt{lat})$ is the space-time varying effect modeling
-the deviations from the baseline.
+where variable \code{arrivaltime} is the waiting time until the first fire engine arrives after the
+received emergency call. Function $f_0(\texttt{arrivaltime})$ is the baseline hazard modeled by a
+penalized spline and $f_1(\texttt{arrivaltime}, \texttt{lon}, \texttt{lat})$ is the space-time
+varying effect modeling the deviations from the baseline.
 
 The probability that the engine will arrive on the scene after time $t$ is described by the survival
 function
@@ -1766,11 +1795,6 @@ Here, diagonal matrix $\mathbf{I}$ represents the integrals for all individuals.
 
 Optimizer and sampler implemented in function \code{cox.mode()} and \code{cox.mcmc()}.
 
-\begin{figure}[t!]
-\centering
-\includegraphics[width=0.92\textwidth]{figures/firemodel-data}
-\caption{\label{fig:londonfiredata} Distribution of dwelling fires and fire stations in London (2015).}
-\end{figure}
 
 \begin{figure}[t!]
 \centering
