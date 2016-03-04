@@ -1655,7 +1655,7 @@ This analysis is based on the article of \citet{bamlss:Taylor:2015}. The \emph{L
 (LFB, \url{http://www.london-fire.gov.uk}) is one of the largest in the world. Each year, the LFB is
 called thousands of times, in most
 cases due to dwelling fires. Since the time it takes until a fire engine arrives at the scene after
-an emergency call has been received, an obvious question is how to reduce the response times in order
+an emergency call has been received, an important question is how to reduce the response times in order
 to prevent further damage or fatal casualties. Clearly, it mostly depends on the distance of the
 responsible fire station to the site of how much damage can be prevented, besides, in some
 cases it may happen that fire engines are already in use at another fire scenery and therefore it
