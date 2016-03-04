@@ -1685,10 +1685,26 @@ with a density estimate from all fire stations in London. I.e., this variable is
 for the distance to the next fire station(s), especially suited for situations when the responsible
 fire station already send out all fire engines such that help needs to arrive from another station.
 Variable \code{daytime} is the time of the day when the fire occurred and accounts for the effect
-that it is more difficult for a fire engine to arrive at the scene in rush hours. To answer the
-question of spatially driven hazards, a spatial effect of longitude and latitude coordinates
-is included in the model. All functions $f_1, \ldots, f_3$ are assumed to be possibly nonlinear
-and are modeled using penalized splines.
+that it is more difficult for a fire engine to arrive at the scene in rush hours. To treat the
+question of structured spatially driven hazards, a spatial effect of longitude and latitude
+coordinates is included in the model. All functions $f_1, \ldots, f_3$ are assumed to be possibly
+nonlinear and are modeled using penalized splines.
+
+In this example, we additionally relax the time-varying predictor $\eta_{\lambda}(t)$ to
+$$
+\eta_{\lambda}(t) = f_0(t) + \sum_{j = 1}^{J_{\lambda}} f_j(t, \mathbf{x})
+$$
+hence, the baseline hazard is represented by $f_0(t)$ and all functions $f_j(t, \mathbf{x})$
+are time-varying possibly nonlinear functions of covariates. This model is a Cox-type
+additive model introduced by \citet{bamlss:Kneib+Fahrmeir:2007}. To further investigate if
+there is a space-time varying effect, i.e., if the shape of the baseline hazard is dependent on the
+location we used the following additive predictor
+$$
+\eta_{\lambda}(t) = f_0(\texttt{arrivaltime}) + f_1(\texttt{arrivaltime}, \texttt{lon}, \texttt{lat}).
+$$
+Here, function $f_0(\texttt{arrivaltime})$ is the baseline hazard modeled by a penalized spline and
+$f_1(\texttt{arrivaltime}, \texttt{lon}, \texttt{lat})$ is the space-time varying effect modeling
+the deviations from the baseline.
 
 The probability that the engine will arrive on the scene after time $t$ is described by the survival
 function
@@ -1696,7 +1712,59 @@ $$
 S(t) = Prob(T > t) = \exp \, \left( -\int_0^t \lambda(u)du \right).
 $$
 
+For NR and MCMC we need the log-likelihood of the continuous time Cox-model
+$$
+\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) =
+  \sum_{i = 1}^n \left( \delta_i\eta_{i\gamma} - \int_0^{t_i} \exp( \eta_{i\lambda}(u)du ) \right)
+$$
+Assuming a basis function approach, the score vector for the time-dependent part is
+$$
+\mathbf{s}\left(\boldsymbol{\beta}_{\lambda}\right) = \boldsymbol{\delta}^{\top}\mathbf{X}_{\lambda}(\mathbf{t}) -
+  \sum_{i = 1}^n \exp(\eta_{i\gamma})\left( \int_0^{t_i} \exp( \eta_{i\lambda}(u) )\mathbf{x}_i(u)du \right).
+$$
+The elements of the Hessian w.r.t. $\boldsymbol{\beta}_{\lambda}$ are
+$$
+\mathbf{H}\left(\boldsymbol{\beta}_{\lambda}\right) =
+-\sum_{i = 1}^{n} \exp\left( \eta_{i\gamma} \right) \int_{0}^{t_i} \exp( \eta_{i\lambda}(u) )
+  \boldsymbol{x}_{i\lambda}(u)\boldsymbol{x}_{i\lambda}^{\top}(u)du.
+$$
 
+The integrals need to be computed numerically, e.g., using the trapezoidal rule we ``only'' need
+to set up a time grid, lets say with 100 equidistant points within $[0, t_i]$
+$$
+\mathbf{G} = \begin{pmatrix}
+\mathbf{g}_1^\top \\
+\vdots \\
+\mathbf{g}_n^\top
+\end{pmatrix}, \quad \text{with} \quad \mathbf{g}_i = (0, \ldots, t_i)^{\top},
+$$
+to construct the evaluated $\lambda(t)$ matrix with
+$$
+\hat{\eta}_{\lambda}(\mathbf{G}) = \begin{pmatrix}
+\sum_{j = 1}^{J_\lambda} f_j(x_{1j}(g_{10})) & \ldots & \sum_{j = 1}^{J_\lambda} f_j(x_{1j}(g_{1t_i})) \\
+\vdots & \ddots & \vdots \\
+\sum_{j = 1}^{J_\lambda} f_j(x_{nj}(g_{n0})) & \ldots & \sum_{j = 1}^{J_\lambda} f_j(x_{nj}(g_{nt_i}))
+\end{pmatrix}\hspace*{-0.2cm}\begin{matrix} \phantom{i} \\ \phantom{i} \\ \phantom{i}.\end{matrix}
+$$
+
+Fortunately, the time-constant part is a bit easier. Results in IWLS backfitting/proposal scheme
+with
+$$
+\mathbf{z} = \boldsymbol{\eta}_{\gamma} + \mathbf{W}^{-1}\mathbf{u}
+$$
+with diagonal matrix
+$$
+\mathbf{W} = diag(\exp( \boldsymbol{\eta}_{\gamma}) \cdot \mathbf{I})
+$$
+and
+$$
+\mathbf{u} = \boldsymbol{\delta} - \exp(\boldsymbol{\eta}_{\gamma}) \cdot \mathbf{I}.
+$$
+Here, diagonal matrix $\mathbf{I}$ represents the integrals for all individuals.
+
+\medskip
+
+Optimizer and sampler implemented in function \code{cox.mode()} and \code{cox.mcmc()}.
 
 \begin{figure}[t!]
 \centering
