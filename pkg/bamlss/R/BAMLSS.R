@@ -933,14 +933,16 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
             cn <- colnames(x[[i]]$smooth.construct[[k]]$X)
             if(is.null(cn))
               cn <- paste("b", 1:length(tpar), sep = "")
-            names(tpar) <- cn
+            if(!simple.list)
+              names(tpar) <- cn
           }
           if(length(x[[i]]$smooth.construct[[k]]$S)) {
             tpar3 <- NULL
             for(kk in seq_along(x[[i]]$smooth.construct[[k]]$S)) {
               tpar3 <- c(tpar3, fill[2])
             }
-            names(tpar3) <- paste("tau2", 1:length(tpar3), sep = "")
+            if(!simple.list)
+              names(tpar3) <- paste("tau2", 1:length(tpar3), sep = "")
             tpar <- c(tpar, tpar3)
           }
           par[[i]]$s[[k]] <- tpar
@@ -977,10 +979,10 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
 
 
 ## Main bamlss().
-bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL, knots = NULL,
+bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
   reference = NULL, transform = NULL, optimizer = NULL, sampler = NULL, samplestats = NULL, results = NULL,
-  cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, x = TRUE, rescale = FALSE, ...)
+  cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, x = TRUE, ...)
 {
   ## The environment.
   env <- get_formula_envir(formula)
@@ -1042,10 +1044,15 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
     opt <- functions$optimizer(x = bf$x, y = bf$y, family = bf$family,
       start = start, weights = model.weights(bf$model.frame),
       offset = model.offset(bf$model.frame), ...)
-    if(!is.list(opt))
-      stop("the optimizer must return a list()!")
+    if(!is.list(opt)) {
+      if(inherits(opt, "numeric")) {
+        opt <- list("parameters" = drop(opt))
+      } else stop("the optimizer should return the parameters as named numeric vector!")
+    }
     if(is.null(opt$parameters))
-      stop("the optimizer must return $parameters!")
+      stop("the optimizer must return an element $parameters!")
+    if(is.null(names(opt$parameters)))
+      stop("the returned parameters must be a named numeric vector!")
     bf$parameters <- opt$parameters
     if(!is.null(opt$fitted.values))
       bf$fitted.values <- opt$fitted.values
@@ -1104,12 +1111,6 @@ bamlss <- function(formula, family = gaussian.bamlss, data = NULL, start = NULL,
       bf$model.stats <- list("optimizer" = bf$model.stats)
   }
 
-  if(rescale) {
-    rs <- rescale.bamlss(bf)
-    bf[names(rs)] <- rs
-    rm(rs)
-  }
-
   ## Compute results.
   if(is.function(functions$results))
     bf$results <- try(functions$results(bf, bamlss = TRUE,  ...))
@@ -1143,15 +1144,6 @@ family.bamlss <- family.bamlss.frame <- function(object, ...)
 
 ## Nothing to transform.
 no.transform <- FALSE
-
-
-## Rescale fun.
-rescale.bamlss <- function(x)
-{
-  if(is.null(ys <- attr(x$y, "scale")))
-    ys <- list("center" = 0, "scale" = 1)
-  return(x)
-}
 
 
 ## Extract all parameter names.
