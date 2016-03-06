@@ -1,42 +1,35 @@
 \name{bamlss-package}
 \alias{bamlss-package}
-\alias{bamlss}
 \docType{package}
 
 \title{
-  Bayesian Regression in R
+  Bayesian Additive Models for Location Scale and Shape (and Beyond)
 }
 
 \description{
-  R infrastructures for Bayesian regression models.
-}
-
-\details{
-  \tabular{ll}{
-    Package: \tab bamlss\cr
-    Type: \tab Package\cr
-    Version: \tab 0.1-1\cr
-    Date: \tab 2013-04-08\cr
-    License: \tab GPL-2 | GPL-3\cr
-  }
+  The \pkg{bamlss} package is a general tool for complex Bayesian regression modeling
+  with structured additive predictors based on Markov chain Monte Carlo simulation.
+  The design of this package substantially focuses on maximum flexibility and easy
+  integration of new code and/or standalone systems. The package makes heavy use of
+  \code{\link{mgcv}} infrastructures to build up all necessary model matrices and
+  information from which it is relatively easy for the user to construct estimation
+  algorithms or interfaces to existing software packages. The package can also be
+  seen as an harmonized framework for regression modeling since it does not restrict
+  to any type of problem. The main function in this package is \code{\link{bamlss}},
+  which is a wrapper function that calls optimizer and/or sampling functions that can
+  be exchanged by the user. Moreover, the package contains numerous functions for
+  creating post-estimation results like summary statistics and effect plots etc.
 }
 
 \author{
-  Nikolaus Umlauf, Stefan Lang, Achim Zeileis.
+  Nikolaus Umlauf, Nadja Klein, Achim Zeileis.
 }
-
-\references{
-  ...
-}
-
 
 \keyword{package}
 
 \seealso{
-  \code{\link{bamlss}}
+  \code{\link{bamlss}}, \code{\link{bamlss.frame}}
 }
 
-\examples{
-## See the documentation of ?bamlss
-}
-
+\keyword{regression}
+\keyword{MCMC}
