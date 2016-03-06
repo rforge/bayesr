@@ -508,7 +508,7 @@ gaussian.bamlss <- function(...)
     },
     "initialize" = list(
       "mu" = function(y, ...) { (y + mean(y)) / 2 },
-      "sigma" = function(y, ...) { rep(log(sd(y)), length(y)) }
+      "sigma" = function(y, ...) { rep(sd(y), length(y)) }
     )
   )
   
@@ -790,7 +790,7 @@ cnorm.bamlss <- function(...)
   }
   f$initialize = list(
     "mu" = function(y, ...) { (y + mean(y)) / 2 },
-    "sigma" = function(y, ...) { rep(log(sd(y)), length(y)) }
+    "sigma" = function(y, ...) { rep(sd(y), length(y)) }
   )
   class(f) <- "family.bamlss"
   f
@@ -877,9 +877,9 @@ pcnorm.bamlss <- function(start = 2, update = FALSE, ...)
       (y^(1 / start) + mean(y^(1 / start))) / 2
     },
     "sigma" = function(y, ...) {
-      rep(log(sd(y^(1 / start))), length(y))
+      rep(sd(y^(1 / start)), length(y))
     },
-    "lambda" = function(y, ...) { rep(log(start), length(y)) }
+    "lambda" = function(y, ...) { rep(start, length(y)) }
   )
   class(f) <- "family.bamlss"
   f
@@ -1656,10 +1656,10 @@ mvn.bamlss <- function(...)
         (y[, 2] + mean(y[, 2])) / 2
       },
       "sigma1" = function(y, ...) {
-        rep(log(sd(y[, 1])), length(y[, 1]))
+        rep(sd(y[, 1]), length(y[, 1]))
       },
       "sigma2" = function(y, ...) {
-        rep(log(sd(y[, 1])), length(y[, 1]))
+        rep(sd(y[, 1]), length(y[, 1]))
       },
       "rho" = function(y, ...) {
         rep(0, length(y[, 1]))
