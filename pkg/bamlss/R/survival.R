@@ -72,6 +72,7 @@ cox.mode <- function(x, y, weights, offset,
   log.priors <- get.log.prior(x)
 
   ## Start the backfitting algorithm.
+  ia <- interactive()
   maxit <- rep(maxit, length.out = 2)
   logPost0 <- NA
   eps0 <- eps + 1; iter <- 1
@@ -201,7 +202,7 @@ cox.mode <- function(x, y, weights, offset,
     logPost <- as.numeric(logLik + log.priors)
 
     if(verbose) {
-      cat("\r")
+      cat(if(ia) "\r" else "\n")
       vtxt <- paste(
         "logPost ", fmt(logPost, width = 8, digits = digits),
         " logLik ", fmt(logLik, width = 8, digits = digits),
@@ -209,7 +210,7 @@ cox.mode <- function(x, y, weights, offset,
         " iteration ", formatC(iter, width = nchar(maxit[1])), sep = ""
       )
       cat(vtxt)
-      if(.Platform$OS.type != "unix") flush.console()
+      if(.Platform$OS.type != "unix" & ia) flush.console()
     }
 
     logPost0 <- logPost
