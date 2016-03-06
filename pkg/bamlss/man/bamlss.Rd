@@ -26,12 +26,13 @@
   \code{\link{plot.bamlss}}, etc. See the examples.
 }
 \usage{
-bamlss(formula, family = "gaussian", data = NULL, start = NULL,
-  knots = NULL, weights = NULL, subset = NULL, offset = NULL,
-  na.action = na.omit, contrasts = NULL, reference = NULL,
-  transform = NULL, optimizer = NULL, sampler = NULL, samplestats = NULL,
-  results = NULL, cores = NULL, sleep = NULL, combine = TRUE,
-  model = TRUE, x = TRUE, ...)
+bamlss(formula, family = "gaussian", data = NULL,
+  start = NULL, knots = NULL, weights = NULL,
+  subset = NULL, offset = NULL, na.action = na.omit,
+  contrasts = NULL, reference = NULL, transform = NULL,
+  optimizer = NULL, sampler = NULL, samplestats = NULL,
+  results = NULL, cores = NULL, sleep = NULL,
+  combine = TRUE, model = TRUE, x = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
