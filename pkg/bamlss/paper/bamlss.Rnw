@@ -1795,6 +1795,8 @@ Here, diagonal matrix $\mathbf{I}$ represents the integrals for all individuals.
 
 Optimizer and sampler implemented in function \code{cox.mode()} and \code{cox.mcmc()}.
 
+Estimation 1.2 days
+
 
 \begin{figure}[t!]
 \centering

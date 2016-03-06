@@ -425,7 +425,7 @@ if(!file.exists("figures/firemodel-data.png")) {
       box()
       axis(1)
       axis(2)
-      if(main) main(paste("Time-dependent spatial effect (t = ", data$target, ")", sep = ""))
+      if(main) main(paste("Time-varying spatial effect (t = ", data$target, ")", sep = ""))
     }
     if("daytime" %in% what) {
       plot(firemodel, model = "gamma", term = "(daytime)", spar = FALSE, rug = FALSE,

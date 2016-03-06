@@ -144,7 +144,7 @@ if(!file.exists("firemodel.rda") & FALSE) {
     return(list("curves" = fbh, "daytime" = fdt, "spatial" = nd, "target" = target))
   }
 
-  firemodel_plotdata <- data_basehaz(80, 6, subdivisions = 15)
+  firemodel_plotdata <- data_basehaz(120, 6, subdivisions = 25)
 
   save(firemodel, firemodel_plotdata, file = "firemodel_plotdata.rda")
 }
