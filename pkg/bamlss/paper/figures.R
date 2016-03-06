@@ -319,7 +319,7 @@ if(!file.exists("figures/firemodel-data.png")) {
   data("LondonFire")
   load("firemodel_plotdata.rda")
 
-  plot_daytime <- function(x, daytime = 1, n = 30, ...)
+  plot_daytime <- function(x, daytime = 1, n = 30, range = NULL, lrange = NULL, ...)
   {
     options(warn = -1)
     gpclibPermit()
@@ -340,17 +340,21 @@ if(!file.exists("figures/firemodel-data.png")) {
     co <- co[pip < 1, , drop = FALSE]
     co$daytime <- daytime
     co$spatial_daytime <- predict(x, newdata = co, model = "gamma",
-      term = "ti(daytime,lon,lat)", intercept = FALSE)
+      term = "daytime", intercept = FALSE)
     plot(LondonBoroughs, xlab = "Longitude [deg]", ylab = "Latitude [deg]",
       main = paste("Daytime =", daytime))
-    lr <- range(co$spatial_daytime)
-    lr <- c(-1 * max(abs(lr)), max(abs(lr)))
-    xr <- quantile(co$spatial_daytime, probs = 0.9)
-    xr <- c(-1 * xr, xr)
+    if(is.null(lrange)) {
+      lrange <- range(co$spatial_daytime)
+      lrange <- c(-1 * max(abs(lrange)), max(abs(lrange)))
+    }
+    if(is.null(range)) {
+      range <- quantile(co$spatial_daytime, probs = 0.9)
+      range <- c(-1 * range, range)
+    }
     xymap(lon, lat, spatial_daytime, data = co, pos = "bottomright",
       layout = FALSE, map = FALSE, color = diverge_hcl, swap = TRUE,
       shift = c(0.03, 0.05), symmetric = TRUE, add = TRUE,
-      side.legend = 2, digits = 1, range = xr, lrange = round(lr, 1),
+      side.legend = 2, digits = 1, range = range, lrange = round(lrange, 1),
       width = 0.2, height = 0.04, ...)
     plot(LondonBoroughs, add = TRUE)
     box()

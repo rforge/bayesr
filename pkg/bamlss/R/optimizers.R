@@ -505,8 +505,10 @@ init.eta <- function(eta, y, family, nobs)
   if(is.null(family$initialize))
     return(eta)
   for(j in family$names) {
-    if(!is.null(family$initialize[[j]]))
-      eta[[j]] <- family$initialize[[j]](y)
+    if(!is.null(family$initialize[[j]])) {
+      linkfun <- make.link2(family$links[j])$linkfun
+      eta[[j]] <- linkfun(family$initialize[[j]](y))
+    }
   }
   return(eta)
 }
