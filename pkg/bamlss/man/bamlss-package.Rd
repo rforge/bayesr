@@ -16,9 +16,11 @@
   algorithms or interfaces to existing software packages. The package can also be
   seen as an harmonized framework for regression modeling since it does not restrict
   to any type of problem. The main function in this package is \code{\link{bamlss}},
-  which is a wrapper function that calls optimizer and/or sampling functions that can
-  be exchanged by the user. Moreover, the package contains numerous functions for
-  creating post-estimation results like summary statistics and effect plots etc.
+  which is a wrapper function that calls optimizer and/or sampling functions for fitting
+  Bayesian additive models for location scale and shape (and beyond). These model fitting
+  functions can be exchanged by the user. Moreover, the package contains numerous
+  functions for creating post-estimation results like summary statistics and
+  effect plots etc.
 }
 
 \author{

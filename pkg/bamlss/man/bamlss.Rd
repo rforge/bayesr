@@ -7,11 +7,11 @@
 \description{
   This is the main model fitting function of the package. Function \code{bamlss()}
   is wrapper function that parses the \code{data} and the model \code{formula}, or
-  extended \code{\link{bamlss.formula}}, and the \code{\link{bamlss.family}} into a
-  \code{\link{bamlss.frame}}. The \code{\link{bamlss.frame}} then holds all model
+  extended \code{\link{bamlss.formula}}, as well as the \code{\link{bamlss.family}}
+  into a \code{\link{bamlss.frame}}. The \code{\link{bamlss.frame}} then holds all model
   matrices and information that is needed for setting up estimation enginges.
   The model matrices are based on \code{\link{mgcv}} infrastructures, i.e.,
-  smooth terms are constructed using \code{\link{smmoth.construct}} and
+  smooth terms are constructed using \code{\link{smooth.construct}} and
   \code{\link{smoothCon}}. Therefore, all \code{\link{mgcv}} model term constructors like
   \code{\link{s}}, \code{\link{te}}, \code{\link{t2}} and \code{\link{ti}} can be used.
   Identifiablity conditions are imposed using function \code{\link{gam.side}}.
@@ -36,7 +36,7 @@ bamlss(formula, family = "gaussian", data = NULL,
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{formula}{}
+  \item{formula}{A formula or extended formula, see \code{\link{bamlss.formula}}}
   \item{family}{}
   \item{data}{}
   \item{start}{}
