@@ -319,7 +319,7 @@ if(!file.exists("figures/firemodel-data.png")) {
   data("LondonFire")
   load("firemodel_plotdata.rda")
 
-  plot_daytime <- function(x, daytime = 1, n = 30, range = NULL, lrange = NULL, ...)
+  plot.daytime <- function(x, daytime = 1, n = 30, range = NULL, lrange = NULL, ...)
   {
     options(warn = -1)
     gpclibPermit()
@@ -405,7 +405,7 @@ if(!file.exists("figures/firemodel-data.png")) {
       box()
       axis(1)
       axis(2)
-      if(main) main(paste("Prob(T > ", data$target, ")", sep = ""))
+      if(main) main(paste("Prob(T > ", data$target, "); 8:30 AM", sep = ""))
     }
     if("fsintens" %in% what) {
       plot(firemodel, model = "gamma", term = "(fsintens)", spar = FALSE,
@@ -512,11 +512,13 @@ if(!file.exists("figures/firemodel-data.png")) {
   }
 
   plot.griddata <- function(n = 800, FUN = NULL,
-    color = heat_hcl, symmetric = FALSE, swap = TRUE, type = "regular",
-    main = NULL, xlab = "Longitude [deg]", ylab = "Latitude [deg]", ...)
+    color = heat_hcl, symmetric = FALSE, swap = TRUE, type = c("hexagonal", "regular"),
+    main = NULL, xlab = "Longitude [deg]", ylab = "Latitude [deg]", variable = "arrivaltime", ...)
   {
     if(is.null(FUN))
       FUN <- function(x) { sum(x > 6, na.rm = TRUE) / length(x) }
+
+    type <- match.arg(type)
 
     LBP0 <- unionSpatialPolygons(LondonBoroughs,
       rep(1L, length = length(LondonBoroughs)))
@@ -543,18 +545,18 @@ if(!file.exists("figures/firemodel-data.png")) {
     Pols <- spTransform(Pols, CRS("+init=epsg:4326"))
 
     clip <- gIntersection(LBP0, Pols, byid = TRUE, drop_lower_td = TRUE)
-    agg <- aggregate(LondonFire["arrivaltime"], clip, FUN = FUN)
+    agg <- aggregate(LondonFire[variable], clip, FUN = FUN)
     
-    colors <- colorlegend(x = agg$arrivaltime, plot = FALSE,
+    colors <- colorlegend(x = agg[[variable]], plot = FALSE,
       color = color, symmetric = symmetric, swap = swap, ...)
 
     plot(LondonBoundaries, col = gray(0.9), xlab = xlab, ylab = ylab,
       main = main)
-    plot(agg, col = colors$map(agg$arrivaltime), add = TRUE, border = NA)
+    plot(agg, col = colors$map(agg[[variable]]), add = TRUE, border = NA)
     plot(LondonBoundaries, col = NA, add = TRUE)
     plot(LondonBoroughs, lwd = 0.3, add = TRUE)
 
-    colorlegend(x = agg$arrivaltime, plot = FALSE, add = TRUE,
+    colorlegend(x = agg[[variable]], plot = FALSE, add = TRUE,
       color = color, swap = swap, symmetric = symmetric, width = 0.2, height = 0.04,
       pos = "bottomright", side.legend = 2, shift = c(0.03, 0.05), ...)
   }

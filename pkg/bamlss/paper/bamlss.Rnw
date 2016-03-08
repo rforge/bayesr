@@ -408,7 +408,7 @@ with score vector
 = \frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}} +
     \sum_{k = 1}^K\sum_{j = 1}^{J_k} \left\{ \frac{\partial \log \, p_{jk}(\boldsymbol{\beta}_{jk})}{\partial \boldsymbol{\beta}} \right\}.
 \end{equation}
-and hessian matrix $\mathbf{H}(\boldsymbol{\beta})$ with components
+and Hessian matrix $\mathbf{H}(\boldsymbol{\beta})$ with components
 \begin{equation} \label{eqn:hessian}
 \mathbf{H}_{ks}(\boldsymbol{\beta}) =
 \frac{\partial \mathbf{s}(\boldsymbol{\beta}_k)}{\partial \boldsymbol{\beta}_s^\top} =
@@ -477,7 +477,7 @@ Newton-Raphson iteration
   \mathbf{H}_{kk}\left( \boldsymbol{\beta}_k^{(t)} \right)^{-1}\mathbf{s}\left( \boldsymbol{\beta}_k^{(t)} \right).
 \end{equation}
 Assuming a basis function approach for functions (\ref{eqn:functions}) with multivariate normal
-priors (\ref{eqn:shrinkprior}), the hessian matrix in (\ref{eqn:blocknewton}) is given by
+priors (\ref{eqn:shrinkprior}), the Hessian matrix in (\ref{eqn:blocknewton}) is given by
 $$
 \mathbf{H}_{kk}\left( \boldsymbol{\beta}_k^{(t)} \right) =
 \begin{pmatrix}
@@ -595,7 +595,7 @@ $\boldsymbol{\beta}_{jk}$, for $j = 1, \ldots, J_k$ until convergence, afterward
 parameters for the next $k$ are calculated again by an inner backfitting algorithm, and so forth
 (see also \citealp{bamlss:Rigby+Stasinopoulos:2005}).
 
-Note that for numerical reasons it is oftentimes better to replace the hessian by the expected
+Note that for numerical reasons it is oftentimes better to replace the Hessian by the expected
 Fisher information with weights
 $\mathbf{W}_{kk} = -\mathrm{diag}(E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top))$,~\citep{bamlss:Klein:Kneib:Lang:2015}.
@@ -829,7 +829,7 @@ y^\star \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{1}^{(t)}), \,\,
 \end{equation}
 for each posterior sample $\theta_k^{(t)}$, $t = 1, \ldots, T$.
 
-\subsection{Lego bricks} \label{sec:leobricks}
+\subsection{Lego bricks} \label{sec:legobricks}
 
 From Section~\ref{sec:postmean} and \ref{sec:postmode}, it can be recognized that the following
 ``lego bricks'' are repeatedly used within BAMLSS candidate algorithms:
@@ -1020,7 +1020,7 @@ the density function $f(y ; \theta_{i} = h_1^{-1}(\eta_{1}(\mathbf{x}, \boldsymb
 logarithm. In addition, link functions can usually be chosen by the user, i.e., these need to be
 provided within the descriptor, typically as character strings.
 
-As already noted in Section~\ref{sec:leobricks}, in the case of
+As already noted in Section~\ref{sec:legobricks}, in the case of
 IWLS backfitting (\ref{eqn:blockbackfit}) and derivative based MCMC simulation \ref{sec:dmh},
 implementing a new distribution most of the times only requires to compute derivatives of
 the log-likelihood w.r.t.\ to parameters $\boldsymbol{\theta}_k$, hence, a modular family description
@@ -1340,7 +1340,7 @@ requirements to parse the model frame with function \fct{bamlss.frame}:
 Moreover, for most optimizer and sampling functions at least the density function should be provided.
 For example, a new family for the normal distribution holding the first and
 second order derivative functions of the log-likelihood w.r.t.\ the parameters
-(see Section~\ref{sec:leobricks}~and~\ref{sec:families}) to be used for the IWLS updating
+(see Section~\ref{sec:legobricks}~and~\ref{sec:families}) to be used for the IWLS updating
 and sampling scheme within function \fct{bfit} and \fct{GMCMC} could be created with
 <<>>=
 normal.bamlss <- function(...) {
@@ -1660,10 +1660,10 @@ reason, the LFB's annual performance target is an average fire engine arrival ti
 maximum. Clearly, it mostly depends on the distance of the responsible fire station to the site of
 how much damage can be prevented, besides, in some cases it may happen that fire engines are already
 in use at another fire scenery and therefore it also depends on the number of fire stations in the
-area. This is viewed as an optimization problem in \citet{bamlss:Taylor:2015}, i.e., they treated
+area. This is viewed as an optimization problem in \citet{bamlss:Taylor:2015}, i.e., they treat
 the question of possible improvements of response times according to space in a probabilistic way.
-Therefore, they analyzed the effect of fire station closures in 2014 using a parametric proportional
-hazards model and identified regions of possible concern about the number of available fire stations.
+Therefore, they analyze the effect of fire station closures in 2014 using a parametric proportional
+hazards model and identify regions of possible concern about the number of available fire stations.
 To contribute to the topic, we apply an extended complex Cox-model for continuous time on the
 2015 dwelling fire response time data of London and show how the generic framework presented
 in this paper can be utilized to set up new estimation algorithms for this type model.
@@ -1701,9 +1701,9 @@ lower density of fire stations. Moreover, according the full distribution of fir
 \caption{\label{fig:londonfiredata} Distribution of dwelling fires and fire stations in London (2015).}
 \end{figure}
 
-As mentioned above, \citet{bamlss:Taylor:2015} analyzed the response times within a
+As mentioned above, \citet{bamlss:Taylor:2015} analyze the response times within a
 survival context, which seems natural for this kind of time-to-event data. More precisely, they
-described the hazard of an event (the fire engine arrives) at time $t$ with a relative risk model of
+describe the hazard of an event (the fire engine arrives) at time $t$ with a relative risk model of
 the form
 $$
 \lambda(t) = \exp\left(\eta(t)\right) =  \exp\left( \eta_{\lambda}(t) + \eta_{\gamma} \right),
@@ -1718,7 +1718,7 @@ $$
 \eta_{\gamma} = \beta_0 + f_1(\texttt{fsintens}) + f_2(\texttt{daytime}) +
   f_3(\texttt{lon}, \texttt{lat}) + f_4(\texttt{daytime}, \texttt{lon}, \texttt{lat}),
 $$
-where $\beta_0$ is an intercept and function$f_1$ is the effect of fire station intensity,
+where $\beta_0$ is an intercept and function $f_1$ is the effect of fire station intensity,
 variable \code{fsintens} computed with a kernel density estimate of all fire stations in London.
 I.e., this variable is a proxy for the distance to the next fire station(s), especially suited for
 situations when the responsible fire station already send out all fire engines such that help needs
@@ -1745,71 +1745,78 @@ $$
 \eta_{\lambda}(\texttt{arrivaltime}) = f_0(\texttt{arrivaltime}) + f_1(\texttt{arrivaltime}, \texttt{lon}, \texttt{lat}).
 $$
 Here, variable \code{arrivaltime} is the waiting time until the first fire engine arrives after the
-received emergency call. Function $f_0(\texttt{arrivaltime})$ represents the baseline hazard and is
-modeled by a penalized spline and $f_1(\texttt{arrivaltime}, \texttt{lon}, \texttt{lat})$ is the
-space-time varying effect modeling the deviations from the baseline.
+received emergency call and function $f_0(\texttt{arrivaltime})$ then represents the baseline
+hazard. Function $f_1(\texttt{arrivaltime}, \texttt{lon}, \texttt{lat})$ is a space-time varying
+effect modeling the deviations from the baseline. Both functions are modeled using penalized splines.
 
 The probability that the engine will arrive on the scene after time $t$ is described by the survival
 function
 $$
-S(t) = Prob(T > t) = \exp \, \left( -\int_0^t \lambda(u)du \right).
+S(t) = Prob(T > t) = \exp \, \left( -\int_0^t \lambda(u)du \right),
 $$
-For the posterior mode estimation and MCMC simulation we need the log-likelihood of the continuous
-time Cox-model, \fixme{stopped here!}
+which is of major interest in this analysis. Based on the survival function the log-likelihood
+function of the continuous time Cox-model is given by
 $$
 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) =
-  \sum_{i = 1}^n \left( \delta_i\eta_{i\gamma} - \int_0^{t_i} \exp( \eta_{i\lambda}(u)du ) \right)
+  \sum_{i = 1}^n \left( \delta_i\eta_{i\gamma} - \int_0^{t_i} \exp( \eta_{i\lambda}(u)du ) \right).
 $$
-Assuming a basis function approach, the score vector for the time-dependent part is
+where $\delta_i$ is the usual censoring indicator, which equals to $\delta_i = 1$ in this example,
+because we focus on real fire events. For implementing an algorithm for posterior mode estimation
+as well as for derivative based MCMC simulation, the score vectors and Hessian need to be computed.
+Assuming a basis function approach, the score vector of the regression coefficients for the
+time-varying part $\eta_{\lambda}(t)$ is
 $$
 \mathbf{s}\left(\boldsymbol{\beta}_{\lambda}\right) = \boldsymbol{\delta}^{\top}\mathbf{X}_{\lambda}(\mathbf{t}) -
   \sum_{i = 1}^n \exp(\eta_{i\gamma})\left( \int_0^{t_i} \exp( \eta_{i\lambda}(u) )\mathbf{x}_i(u)du \right).
 $$
-The elements of the Hessian w.r.t. $\boldsymbol{\beta}_{\lambda}$ are
+The elements of the Hessian w.r.t.\ $\boldsymbol{\beta}_{\lambda}$ are
 $$
 \mathbf{H}\left(\boldsymbol{\beta}_{\lambda}\right) =
 -\sum_{i = 1}^{n} \exp\left( \eta_{i\gamma} \right) \int_{0}^{t_i} \exp( \eta_{i\lambda}(u) )
   \boldsymbol{x}_{i\lambda}(u)\boldsymbol{x}_{i\lambda}^{\top}(u)du.
 $$
+Note that the Hessian cannot be simplified further, i.e., in order to construct IWLS updating
+functions. The reason is that for the IWLS updating scheme we need to compute the diagonal weight
+matrix based on $\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
+\partial \boldsymbol{\eta}_{\lambda}(\mathbf{t}) \partial \boldsymbol{\eta}_{\lambda}(\mathbf{t})^\top$.
+This requires a functional derivative like the Hadamard derivative since the predictor depends on time
+$t$. However, it turns out that the derivative forms martingale residuals
+\citep[see, e.g.,][]{bamlss:Barlow+Prentice:1988} which are incapable for estimating time-varying
+effects, see also \citet{bamlss:Hofner:2008} Section~5.2 for a detailed discussion.
 
-The integrals need to be computed numerically, e.g., using the trapezoidal rule we ``only'' need
-to set up a time grid, lets say with 100 equidistant points within $[0, t_i]$
+Constructing updating functions for the time-constant part $\eta_{\gamma}$ again yields an
+IWLS updating scheme with working observations given by
 $$
-\mathbf{G} = \begin{pmatrix}
-\mathbf{g}_1^\top \\
-\vdots \\
-\mathbf{g}_n^\top
-\end{pmatrix}, \quad \text{with} \quad \mathbf{g}_i = (0, \ldots, t_i)^{\top},
+\mathbf{z} = \boldsymbol{\eta}_{\gamma} + \mathbf{W}^{-1}\mathbf{u},
 $$
-to construct the evaluated $\lambda(t)$ matrix with
+with the weight matrix
 $$
-\hat{\eta}_{\lambda}(\mathbf{G}) = \begin{pmatrix}
-\sum_{j = 1}^{J_\lambda} f_j(x_{1j}(g_{10})) & \ldots & \sum_{j = 1}^{J_\lambda} f_j(x_{1j}(g_{1t_i})) \\
-\vdots & \ddots & \vdots \\
-\sum_{j = 1}^{J_\lambda} f_j(x_{nj}(g_{n0})) & \ldots & \sum_{j = 1}^{J_\lambda} f_j(x_{nj}(g_{nt_i}))
-\end{pmatrix}\hspace*{-0.2cm}\begin{matrix} \phantom{i} \\ \phantom{i} \\ \phantom{i}.\end{matrix}
+\mathbf{W} = diag(\mathbf{P}\exp( \boldsymbol{\eta}_{\gamma})),
 $$
+where $\mathbf{P}$ is a diagonal matrix with elements $p_{ii} = \int_0^{t_i}
+\exp( \eta_{i\lambda}(u)du )$. The score vector is
+$$
+\mathbf{u} = \boldsymbol{\delta} - \mathbf{P}\exp(\boldsymbol{\eta}_{\gamma}).
+$$
+\citep{bamlss:Hennerfeind+Brezger+Fahrmeir:2006}
 
-Fortunately, the time-constant part is a bit easier. Results in IWLS backfitting/proposal scheme
-with
-$$
-\mathbf{z} = \boldsymbol{\eta}_{\gamma} + \mathbf{W}^{-1}\mathbf{u}
-$$
-with diagonal matrix
-$$
-\mathbf{W} = diag(\exp( \boldsymbol{\eta}_{\gamma}) \cdot \mathbf{I})
-$$
-and
-$$
-\mathbf{u} = \boldsymbol{\delta} - \exp(\boldsymbol{\eta}_{\gamma}) \cdot \mathbf{I}.
-$$
-Here, diagonal matrix $\mathbf{I}$ represents the integrals for all individuals.
+As a result, applying the generic algorithm presented in Section~\ref{sec:legobricks} to this type
+of problem two specific difficulties need to be considered. First, the updating functions for
+the time-varying predictor $\eta_{\lambda}(t)$ are different from the time-constant updating
+functions for $\eta_{\gamma}$. Secondly, a specific hurdle of the continuous time Cox-model is the
+computation of the integrals, because these do not have a closed form solution and need to be
+approximated numerically, e.g., by the trapezoidal rule or Gaussian quadratur. Therefore, it
+is inefficient to compute the integrals a new for every update, since for the time-constant part
+the integrals given in $\mathbf{P}$ do not change anymore.
 
-\medskip
-
-Optimizer and sampler implemented in function \code{cox.mode()} and \code{cox.mcmc()}.
+In order to reduce computing time we account for the idiosyncrasy of the Cox-model and
+implement an optimizer function \fct{cox.mode} for posterior mode estimation as well as
+the sampler function \fct{cox.mcmc} for MCMC simulation. The amount of work to implement this
+model using the \pkg{bamlss} infrastructures is moderate, because most of the code of functions
+\fct{bfit} and \fct{GMCMC} could be reused and only needed slight adaption.
 
 Estimation 1.2 days
+
 
 
 \begin{figure}[t!]
