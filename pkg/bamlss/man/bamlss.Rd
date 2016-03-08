@@ -36,12 +36,23 @@ bamlss(formula, family = "gaussian", data = NULL,
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{formula}{A formula or extended formula, see \code{\link{bamlss.formula}}}
-  \item{family}{}
-  \item{data}{}
-  \item{start}{}
-  \item{knots}{}
-  \item{weights}{}
+  \item{formula}{A formula or extended formula, i.e., the \code{formula} can be a
+    \code{\link{list}} of formulas where each list entry specifies the details of one parameter
+    of the modeled response distribution, see \code{\link{bamlss.formula}}. For incorporating
+    smooth terms, all model term constructors implemented in \code{\link{mgcv}} such as
+    \code{\link{s}}, \code{\link{te}} and \code{\link{ti}} can be used, amongst others.}
+  \item{family}{A \code{\link{bamlss.family}} object, specifying the details of the modeled
+    distribution such as the density function, link functions, etc.}
+  \item{data}{A \code{\link{data.frame}} or \code{\link{list}} containing the model
+    response variable(s) and covariates specified in the \code{formula}.
+    By default the variables are taken from \code{environment(formula)}:
+    typically the environment from which \code{bamlss} is called.}
+  \item{start}{A named numeric vector containing starting values to be send to the \code{optimizer}
+    and/or \code{sampler} function. For a possible naming convention for the parameters see
+    function \code{\link{parameters}}, but this is not restrictive and engine specific.
+  \item{knots}{An optional list containing user specified knots, see the documentation of
+    function \code{\link{gam}}.
+  \item{weights}{Prior weights on the data.}
   \item{subset}{}
   \item{offset}{}
   \item{na.action}{}

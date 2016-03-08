@@ -673,7 +673,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       return(list("x" = x, "eta" = eta, "edf" = edf))
     }
   } else {
-    inner_bf <- function(x, y, eta, family, edf, id, z, hess, ...) {
+    inner_bf <- function(x, y, eta, family, edf, id, z, hess, weights, ...) {
       X <- lapply(x, function(x) { x$X })
       S <- lapply(x, function(x) { x$S })
       nt <- nt0 <- names(X)
@@ -684,6 +684,8 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       X$z <- z
       f <- paste("z", paste(c("-1", nt), collapse = " + "), sep = " ~ ")
       f <- as.formula(f)
+      if(!is.null(weights))
+        hess <- hess * weights
       b <- gam(f, data = X, weights = hess, paraPen = S)
       cb <- coef(b)
       ncb <- names(cb)
@@ -936,7 +938,8 @@ bfit_newton <- function(x, family, y, eta, id, ...)
   return(x$state)
 }
 
-bfit_iwls00 <- function(x, family, y, eta, id, weights, ...)
+
+bfit_lm <- function(x, family, y, eta, id, weights, ...)
 {
   args <- list(...)
 
@@ -953,13 +956,27 @@ bfit_iwls00 <- function(x, family, y, eta, id, weights, ...)
   ## Compute reduced residuals.
   e <- z - eta[[id]] + fitted(x$state)
 
-  b <- lm.wfit(x$X, e, hess)
+  if(!is.null(weights))
+    hess <- hess * weights
+  if(x$fixed | x$fxsp) {
+    b <- lm.wfit(x$X, e, hess)
+  } else {
+    tau2 <- get.par(x$state$parameters, "tau2")
+    S <- 0
+    for(j in seq_along(x$S))
+      S <- S + 1 / tau2[j] * x$S[[j]]
+    n <- nrow(S)
+    w <- c(hess, rep(0, n))
+    e <- c(e, rep(1, n))
+    b <- lm.wfit(rbind(x$X, S), e, w)
+  }
 
   x$state$parameters <- set.par(x$state$parameters, coef(b), "b")
-  x$state$fitted.values <- fitted(b)
+  x$state$fitted.values <- x$X %*% coef(b)
 
   x$state
 }
+
 
 bfit_iwls <- function(x, family, y, eta, id, weights, ...)
 {
@@ -1161,7 +1178,7 @@ bfit_iwls_spam <- function(x, family, y, eta, id, weights, ...)
 
 
 ## Updating based on optim.
-bfit_optim <- function(x, family, y, eta, id, ...)
+bfit_optim <- function(x, family, y, eta, id, weights, ...)
 {
   ## Compute partial predictor.
   eta[[id]] <- eta[[id]] - fitted(x$state)
@@ -1175,7 +1192,11 @@ bfit_optim <- function(x, family, y, eta, id, ...)
     if(!is.null(tau2) & !x$fixed)
       tpar <- set.par(tpar, tau2, "tau2")
     eta2[[id]] <- eta[[id]] + x$fit.fun(x$X, tpar)
-    ll <- family$loglik(y, family$map2par(eta2))
+    ll <- if(is.null(weights)) {
+      family$loglik(y, family$map2par(eta2))
+    } else {
+      sum(family$d(y, family$map2par(eta2)) * weights, na.rm = TRUE)
+    }
     lp <- x$prior(tpar)
     val <- -1 * (ll + lp)
     if(!is.finite(val)) val <- NA
@@ -1196,8 +1217,6 @@ bfit_optim <- function(x, family, y, eta, id, ...)
     }
   } else NULL
 
-grad <- NULL
-
   suppressWarnings(opt <- try(optim(get.par(tpar, "b"), fn = objfun, gr = grad,
     method = "BFGS", control = list(), tau2 = get.par(tpar, "tau2")), silent = TRUE))
 
@@ -1209,8 +1228,6 @@ grad <- NULL
 
   if(!x$fixed)
     x$state$edf <- x$edf(x)
-
-plot(x$state$fitted.values ~ td$day)
 
   return(x$state)
 }
