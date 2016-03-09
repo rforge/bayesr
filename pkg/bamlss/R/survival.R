@@ -110,7 +110,7 @@ cox.mode <- function(x, y, weights, offset, criterion = c("AICc", "BIC", "AIC"),
 
     logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
     edf <- get.edf(x, type = 2)
-    IC <- get.ic2(logLik, edf, criterion)
+    IC <- get.ic2(logLik, edf, length(eta$gamma), criterion)
 
     if(verbose) {
       cat(if(ia) "\r" else "\n")
@@ -188,7 +188,7 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
       int2 <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
       logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int2, na.rm = TRUE)
       edf <- sum.diag(int$hess %*% Sigma)
-      return(get.ic2(logLik, edf, criterion))
+      return(get.ic2(logLik, edf, length(eta$lambda), criterion))
     }
 
     if(length(get.state(x, "tau2")) < 2) {
@@ -303,7 +303,7 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, ...)
       edf <- sum.diag(XWX %*% P)
       eta$gamma <- eta$gamma + fit
       logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
-      return(get.ic2(logLik, edf, criterion))
+      return(get.ic2(logLik, edf, length(eta$gamma), criterion))
     }
     if(length(get.state(x, "tau2")) < 2) {
       if(is.null(x$optim.grid)) {

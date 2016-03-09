@@ -841,7 +841,7 @@ get.ic <- function(family, y, par, edf, n, type = c("AIC", "BIC", "AICc", "MP"),
   return(pen)
 }
 
-get.ic2 <- function(logLik, edf, type = c("AIC", "BIC", "AICc", "MP"), ...)
+get.ic2 <- function(logLik, edf, n, type = c("AIC", "BIC", "AICc", "MP"), ...)
 {
   type <- match.arg(type)
   pen <- switch(type,
