@@ -34,12 +34,14 @@ cox.bamlss <- function(...)
 
 
 ## Posterior mode estimation.
-cox.mode <- function(x, y, weights, offset,
+cox.mode <- function(x, y, weights, offset, criterion = c("AICc", "BIC", "AIC"),
   nu = 0.1, update.nu = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
   verbose = TRUE, digits = 4, ...)
 {
   if(nu < 0 | nu > 1)
     stop("nu must be 0 < nu < 1!")
+
+  criterion <- match.arg(criterion)
 
   ## Names of parameters/predictors.
   nx <- names(x)
@@ -68,73 +70,22 @@ cox.mode <- function(x, y, weights, offset,
   ## The interval width from subdivisons.
   width <- attr(y, "width")
 
-  ## Current log-priors.
-  log.priors <- get.log.prior(x)
-
   ## Start the backfitting algorithm.
   ia <- interactive()
   maxit <- rep(maxit, length.out = 2)
-  logPost0 <- NA
   eps0 <- eps + 1; iter <- 1
   while(eps0 > eps & iter < maxit[1]) {
     eta0 <- eta
 
-    ########################################
-    ## Cycle through time-dependent part. ##
-    ########################################
+    ######################################
+    ## Cycle through time-varying part. ##
+    ######################################
     for(sj in seq_along(x$lambda$smooth.construct)) {
-      ## The time-dependent design matrix for the grid.
-      X <- x$lambda$smooth.construct[[sj]]$fit.fun_timegrid(NULL)
-
-      ## Timegrid lambda.
-      eeta <- exp(eta_timegrid)
-
-      ## Compute gradient and hessian integrals.
-      int <- survint(X, eeta, width, exp(eta$gamma), index = x$lambda$smooth.construct[[sj]]$sparse.setup$matrix)
-      xgrad <- drop(t(y[, "status"]) %*% x$lambda$smooth.construct[[sj]]$XT - int$grad)
-      xgrad <- xgrad + x$lambda$smooth.construct[[sj]]$grad(score = NULL, x$lambda$smooth.construct[[sj]]$state$parameters, full = FALSE)
-      xhess <- int$hess + x$lambda$smooth.construct[[sj]]$hess(score = NULL, x$lambda$smooth.construct[[sj]]$state$parameters, full = FALSE)
-
-      ## Compute the inverse of the hessian.
-      Sigma <- matrix_inv(xhess)
-
-      ## Update regression coefficients.
-      g <- get.state(x$lambda$smooth.construct[[sj]], "b")
-
-      if(update.nu) {
-        objfun <- function(nu) {
-          g2 <- drop(g + nu * Sigma %*% xgrad)
-          names(g2) <- names(g)
-          fit_timegrid <- x$lambda$smooth.construct[[sj]]$fit.fun_timegrid(g2)
-          eta_timegrid <- eta_timegrid - x$lambda$smooth.construct[[sj]]$state$fitted_timegrid + fit_timegrid
-          fit <- x$lambda$smooth.construct[[sj]]$fit.fun(x$lambda$smooth.construct[[sj]]$X, g2)
-          eta$lambda <- eta$lambda - fitted(x$lambda$smooth.construct[[sj]]$state) + fit
-          eeta <- exp(eta_timegrid)
-          int <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
-          logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
-          logPost <- as.numeric(logLik + log.priors)
-          return(-1 * logPost)
-        }
-
-        nu.opt <- optim(x$lambda$smooth.construct[[sj]]$state$nu, fn = objfun,
-          method = "L-BFGS-B", lower = .Machine$double.eps^0.9, upper = 1)
-
-        x$lambda$smooth.construct[[sj]]$state$nu <- nu.opt$par
-      }
-
-      g2 <- drop(g + x$lambda$smooth.construct[[sj]]$state$nu * Sigma %*% xgrad)
-      names(g2) <- names(g)
-      x$lambda$smooth.construct[[sj]]$state$parameters <- set.par(x$lambda$smooth.construct[[sj]]$state$parameters, g2, "b")
-
-      ## Update additive predictors.
-      fit_timegrid <- x$lambda$smooth.construct[[sj]]$fit.fun_timegrid(g2)
-      eta_timegrid <- eta_timegrid - x$lambda$smooth.construct[[sj]]$state$fitted_timegrid + fit_timegrid
-      x$lambda$smooth.construct[[sj]]$state$fitted_timegrid <- fit_timegrid
-
-      fit <- x$lambda$smooth.construct[[sj]]$fit.fun(x$lambda$smooth.construct[[sj]]$X, g2)
-      eta$lambda <- eta$lambda - fitted(x$lambda$smooth.construct[[sj]]$state) + fit
-      x$lambda$smooth.construct[[sj]]$state$fitted.values <- fit
-      x$lambda$smooth.construct[[sj]]$state$edf <- sum.diag(int$hess %*% Sigma)
+      state <- update_surv_tv(x$lambda$smooth.construct[[sj]], y, eta, eta_timegrid,
+        width, sub, update.nu, criterion = criterion,...)
+      eta$lambda <- eta$lambda - fitted(x$lambda$smooth.construct[[sj]]$state) + fitted(state)
+      eta_timegrid <- eta_timegrid - x$lambda$smooth.construct[[sj]]$state$fitted_timegrid + state$fitted_timegrid
+      x$lambda$smooth.construct[[sj]]$state <- state
     }
 
     ###########################################
@@ -147,51 +98,10 @@ cox.mode <- function(x, y, weights, offset,
     ## Cycle through time-independent part. ##
     ##########################################
     for(sj in seq_along(x$gamma$smooth.construct)) {
-      ## Compute weights.
-      weights <- exp(eta$gamma) * int
-
-      ## Compute score.
-      score <- y[, "status"] - exp(eta$gamma) * int
-
-      ## Compute working observations.
-      z <- eta$gamma + 1 / weights * score
-
-      ## Compute partial predictor.
-      eta$gamma <- eta$gamma - fitted(x$gamma$smooth.construct[[sj]]$state)
-
-      ## Compute reduced residuals.
-      e <- z - eta$gamma
-      xbin.fun(x$gamma$smooth.construct[[sj]]$binning$sorted.index, weights, e,
-        x$gamma$smooth.construct[[sj]]$weights, x$gamma$smooth.construct[[sj]]$rres,
-        x$gamma$smooth.construct[[sj]]$binning$order)
-
-      ## Compute mean and precision.
-      XWX <- do.XWX(x$gamma$smooth.construct[[sj]]$X,
-        1 / x$gamma$smooth.construct[[sj]]$weights,
-        x$gamma$smooth.construct[[sj]]$sparse.setup$matrix)
-      if(x$gamma$smooth.construct[[sj]]$fixed) {
-        P <- matrix_inv(XWX)
-      } else {
-        S <- 0
-        tau2 <- get.state(x$gamma$smooth.construct[[sj]], "tau2")
-        for(j in seq_along(x$gamma$smooth.construct[[sj]]$S))
-          S <- S + 1 / tau2[j] * x$gamma$smooth.construct[[sj]]$S[[j]]
-        P <- matrix_inv(XWX + S)
-      }
-      g <- drop(P %*% crossprod(x$gamma$smooth.construct[[sj]]$X, x$gamma$smooth.construct[[sj]]$rres))
-      x$gamma$smooth.construct[[sj]]$state$parameters <- set.par(x$gamma$smooth.construct[[sj]]$state$parameters, g, "b")
-      x$gamma$smooth.construct[[sj]]$state$edf <- sum.diag(XWX %*% P)
-
-      ## Compute fitted values.
-      if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) {
-        x$gamma$smooth.construct[[sj]]$state$parameters <- set.par(x$gamma$smooth.construct[[sj]]$state$parameters,
-          rep(0, length(x$gamma$smooth.construct[[sj]]$state$g)), "b")
-      }
-      x$gamma$smooth.construct[[sj]]$state$fitted.values <- x$gamma$smooth.construct[[sj]]$fit.fun(x$gamma$smooth.construct[[sj]]$X,
-        get.state(x$gamma$smooth.construct[[sj]], "b"))
-
-      ## Update additive predictor.
-      eta$gamma <- eta$gamma + fitted(x$gamma$smooth.construct[[sj]]$state)
+      state <- update_surv_tc(x$gamma$smooth.construct[[sj]], y,
+        eta, eeta, int, criterion = criterion, ...)
+      eta$gamma <- eta$gamma - fitted(x$gamma$smooth.construct[[sj]]$state) + fitted(state)
+      x$gamma$smooth.construct[[sj]]$state <- state
     }
 
     eps0 <- do.call("cbind", eta)
@@ -199,21 +109,20 @@ cox.mode <- function(x, y, weights, offset,
     if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
 
     logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
-    logPost <- as.numeric(logLik + log.priors)
+    edf <- get.edf(x, type = 2)
+    IC <- get.ic2(logLik, edf, criterion)
 
     if(verbose) {
       cat(if(ia) "\r" else "\n")
-      vtxt <- paste(
-        "logPost ", fmt(logPost, width = 8, digits = digits),
+      vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
         " logLik ", fmt(logLik, width = 8, digits = digits),
+        " edf ", fmt(edf, width = 6, digits = digits),
         " eps ", fmt(eps0, width = 6, digits = digits + 2),
         " iteration ", formatC(iter, width = nchar(maxit[1])), sep = ""
       )
       cat(vtxt)
       if(.Platform$OS.type != "unix" & ia) flush.console()
     }
-
-    logPost0 <- logPost
 
     iter <- iter + 1
   }
@@ -226,10 +135,212 @@ cox.mode <- function(x, y, weights, offset,
   logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
   logPost <- as.numeric(logLik + get.log.prior(x))
 
+  npar <- names(get.all.par(x, list = FALSE, drop = TRUE))
+  hessian <- list()
+  k <- 1
+  for(i in seq_along(x)) {
+    for(j in seq_along(x[[i]]$smooth.construct)) {
+      hessian[[k]] <- x[[i]]$smooth.construct[[j]]$state$hessian
+      k <- k + 1
+    }
+  }
+  require("Matrix")
+  hessian <- as.matrix(do.call("bdiag", hessian))
+  colnames(hessian) <- rownames(hessian) <- npar
+
   return(list("fitted.values" = eta, "parameters" = get.all.par(x),
-    "edf" = get.edf(x, type = 2), "logLik" = logLik, "logPost" = logPost))
+    "edf" = get.edf(x, type = 2), "logLik" = logLik, "logPost" = logPost,
+    "hessian" = hessian))
 
   return(x)
+}
+
+
+## Updating functions.
+update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, criterion, ...)
+{
+  ## The time-varying design matrix for the grid.
+  X <- x$fit.fun_timegrid(NULL)
+
+  ## Timegrid lambda.
+  eeta <- exp(eta_timegrid)
+
+  ## Compute gradient and hessian integrals.
+  int <- survint(X, eeta, width, exp(eta$gamma), index = x$sparse.setup$matrix)
+  xgrad <- drop(t(y[, "status"]) %*% x$XT - int$grad)
+
+  if(!(!x$state$do.optim | x$fixed | x$fxsp)) {
+    par <- x$state$parameters
+
+    objfun <- function(tau2) {
+      par <- set.par(par, tau2, "tau2")
+      xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
+      xhess <- int$hess + x$hess(score = NULL, par, full = FALSE)
+      Sigma <- matrix_inv(xhess)
+      g <- get.par(par, "b")
+      g2 <- drop(g + x$state$nu * Sigma %*% xgrad)
+      names(g2) <- names(g)
+      fit_timegrid <- x$fit.fun_timegrid(g2)
+      eta_timegrid <- eta_timegrid - x$state$fitted_timegrid + fit_timegrid
+      fit <- x$fit.fun(x$X, g2)
+      eta$lambda <- eta$lambda - fitted(x$state) + fit
+      eeta <- exp(eta_timegrid)
+      int2 <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
+      logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int2, na.rm = TRUE)
+      edf <- sum.diag(int$hess %*% Sigma)
+      return(get.ic2(logLik, edf, criterion))
+    }
+
+    if(length(get.state(x, "tau2")) < 2) {
+      if(is.null(x$optim.grid)) {
+        tau2 <- try(optimize(objfun, interval = x$state$interval)$minimum, silent = TRUE)
+        if(inherits(tau2, "try-error"))
+          tau2 <- optimize2(objfun, interval = x$state$interval, grid = x$state$grid)$minimum
+      } else {
+        tau2 <- optimize2(objfun, interval = x$state$interval, grid = x$state$grid)$minimum
+      }
+      x$state$parameters <- set.par(x$state$parameters, if(!length(tau2)) x$interval[1] else tau2, "tau2")
+    } else {
+      i <- grep("tau2", names(x$lower))
+      opt <- try(optim(c(0, 0), fn = objfun, method = "L-BFGS-B",
+        lower = x$lower[i], upper = x$upper[i]), silent = TRUE)
+     if(!inherits(opt, "try-error"))
+       x$state$parameters <- set.par(x$state$parameters, opt$par, "tau2")
+    }
+  }
+
+  xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
+  xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
+
+  ## Compute the inverse of the hessian.
+  Sigma <- matrix_inv(xhess)
+
+  ## Update regression coefficients.
+  g <- get.state(x, "b")
+
+  if(update.nu) {
+    objfun <- function(nu) {
+      g2 <- drop(g + nu * Sigma %*% xgrad)
+      names(g2) <- names(g)
+      fit_timegrid <- x$fit.fun_timegrid(g2)
+      eta_timegrid <- eta_timegrid - x$state$fitted_timegrid + fit_timegrid
+      fit <- x$fit.fun(x$X, g2)
+      eta$lambda <- eta$lambda - fitted(x$state) + fit
+      eeta <- exp(eta_timegrid)
+      int <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
+      logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
+      x$state$paremeters <- set.par(x$state$parameters, g2, "b")
+      return(-1 * logLik)
+    }
+
+    nu.opt <- optim(x$state$nu, fn = objfun, method = "L-BFGS-B", lower = .Machine$double.eps^0.9, upper = 1)
+    x$state$nu <- nu.opt$par
+  }
+
+  g2 <- drop(g + x$state$nu * Sigma %*% xgrad)
+  names(g2) <- names(g)
+  x$state$parameters <- set.par(x$state$parameters, g2, "b")
+
+  ## Update additive predictors.
+  x$state$fitted_timegrid <- x$fit.fun_timegrid(g2)
+  x$state$fitted.values <- x$fit.fun(x$X, g2)
+  x$state$edf <- sum.diag(int$hess %*% Sigma)
+  x$state$hessian <- xhess
+
+  return(x$state)
+}
+
+
+update_surv_tc <- function(x, y, eta, eeta, int, criterion, ...)
+{
+  ## Compute weights.
+  weights <- exp(eta$gamma) * int
+
+  ## Compute score.
+  score <- y[, "status"] - exp(eta$gamma) * int
+
+  ## Compute working observations.
+  z <- eta$gamma + 1 / weights * score
+
+  ## Compute partial predictor.
+  eta$gamma <- eta$gamma - fitted(x$state)
+
+  ## Compute reduced residuals.
+  e <- z - eta$gamma
+  xbin.fun(x$binning$sorted.index, weights, e,
+    x$weights, x$rres,
+    x$binning$order)
+
+  ## Compute mean and precision.
+  XWX <- do.XWX(x$X,
+    1 / x$weights,
+    x$sparse.setup$matrix)
+
+  if(!x$state$do.optim | x$fixed | x$fxsp) {
+    if(x$fixed) {
+      x$state$hessian <- XWX
+      P <- matrix_inv(x$state$hessian, index = x$sparse.setup)
+    } else {
+      S <- 0
+      tau2 <- get.state(x, "tau2")
+      for(j in seq_along(x$S))
+        S <- S + 1 / tau2[j] * x$S[[j]]
+      x$state$hessian <- XWX + S
+      P <- matrix_inv(x$state$hessian, index = x$sparse.setup)
+    }
+    x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
+  } else {
+    args <- list(...)
+    objfun <- function(tau2, ...) {
+      S <- 0
+      for(j in seq_along(x$S))
+        S <- S + 1 / tau2[j] * x$S[[j]]
+      P <- matrix_inv(XWX + S, index = x$sparse.setup)
+      if(inherits(P, "try-error")) return(NA)
+      g <- drop(P %*% crossprod(x$X, x$rres))
+      if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
+      fit <- x$fit.fun(x$X, g)
+      edf <- sum.diag(XWX %*% P)
+      eta$gamma <- eta$gamma + fit
+      logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
+      return(get.ic2(logLik, edf, criterion))
+    }
+    if(length(get.state(x, "tau2")) < 2) {
+      if(is.null(x$optim.grid)) {
+        tau2 <- try(optimize(objfun, interval = x$state$interval)$minimum, silent = TRUE)
+        if(inherits(tau2, "try-error"))
+          tau2 <- optimize2(objfun, interval = x$state$interval, grid = x$state$grid)$minimum
+      } else {
+        tau2 <- optimize2(objfun, interval = x$state$interval, grid = x$state$grid)$minimum
+      }
+      x$state$parameters <- set.par(x$state$parameters, if(!length(tau2)) x$interval[1] else tau2, "tau2")
+    } else {
+      i <- grep("tau2", names(x$lower))
+      opt <- try(optim(c(0, 0), fn = objfun, method = "L-BFGS-B",
+        lower = x$lower[i], upper = x$upper[i]), silent = TRUE)
+      if(!inherits(opt, "try-error"))
+        x$state$parameters <- set.par(x$state$parameters, opt$par, "tau2")
+    }
+    S <- 0
+    tau2 <- get.state(x, "tau2")
+    for(j in seq_along(x$S))
+      S <- S + 1 / tau2[j] * x$S[[j]]
+    x$state$hessian <- XWX + S
+    P <- matrix_inv(x$state$hessian, index = x$sparse.setup)
+    x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
+  }
+
+  x$state$edf <- sum.diag(XWX %*% P)
+
+  ## Compute fitted values.
+  g <- get.state(x, "b")
+  if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) {
+    x$state$parameters <- set.par(x$state$parameters,
+      rep(0, length(x$state$g)), "b")
+  }
+  x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
+
+  return(x$state)
 }
 
 
@@ -315,11 +426,11 @@ cox.mcmc <- function(x, y, family, start, weights, offset,
   for(iter in 1:n.iter) {
     if(save <- iter %in% iterthin)
       js <- which(iterthin == iter)
-    ########################################
-    ## Cycle through time-dependent part. ##
-    ########################################
+    ######################################
+    ## Cycle through time-varying part. ##
+    ######################################
     for(sj in names(x$lambda$smooth.construct)) {
-      p.state <- propose_surv_td(x$lambda$smooth.construct[[sj]], y, eta, eta_timegrid, width, sub, nu)
+      p.state <- propose_surv_tv(x$lambda$smooth.construct[[sj]], y, eta, eta_timegrid, width, sub, nu)
 
       ## If accepted, set current state to proposed state.
       accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
@@ -411,9 +522,9 @@ cox.mcmc <- function(x, y, family, start, weights, offset,
 
 ## MCMC propose functions.
 ## Time-varying propose function.
-propose_surv_td <- function(x, y, eta, eta_timegrid, width, sub, nu)
+propose_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, nu)
 {
-  ## The time-dependent design matrix for the grid.
+  ## The time-varying design matrix for the grid.
   X <- x$fit.fun_timegrid(NULL)
 
   ## Timegrid lambda.
@@ -920,14 +1031,14 @@ cox.predict <- function(object, newdata, type = c("link", "parameter", "probabil
     object$x$gamma, samps, enames$gamma, intercept,
     nsamps, newdata, env))
 
-  pred_td <- with(pred.setup, .predict.bamlss.surv.td("lambda",
+  pred_tv <- with(pred.setup, .predict.bamlss.surv.td("lambda",
     object$x$lambda$smooth.construct, samps, enames$lambda, intercept,
     nsamps, newdata, env, yname, timegrid,
     drop.terms.bamlss(object$x$lambda$terms, sterms = FALSE, keep.response = FALSE)))
 
   probs <- NULL
-  for(i in 1:ncol(pred_td)) {
-    eta <- matrix(pred_td[, i], nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
+  for(i in 1:ncol(pred_tv)) {
+    eta <- matrix(pred_tv[, i], nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
     eeta <- exp(eta)
     int <- width * (0.5 * (eeta[, 1] + eeta[, subdivisions]) + apply(eeta[, 2:(subdivisions - 1)], 1, sum))
     probs <- cbind(probs, exp(-1 * exp(pred_tc[, i]) * int))

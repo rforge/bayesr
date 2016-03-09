@@ -181,8 +181,8 @@ f <- list(
 )
 
 ## Cox model with continuous time.
-b <- bamlss(f, family = "cox", data = d, nu = 0.1, subdivisions = 50, cores = 4,
-  n.iter = 4000, burnin = 1000, thin = 5)
+b <- bamlss(f, family = "cox", data = d,
+  n.iter = 1200, burnin = 200, thin = 1)
 
 ## Predict P(T > t).
 b$family <- cox.bamlss()

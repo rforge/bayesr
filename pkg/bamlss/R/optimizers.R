@@ -841,6 +841,18 @@ get.ic <- function(family, y, par, edf, n, type = c("AIC", "BIC", "AICc", "MP"),
   return(pen)
 }
 
+get.ic2 <- function(logLik, edf, type = c("AIC", "BIC", "AICc", "MP"), ...)
+{
+  type <- match.arg(type)
+  pen <- switch(type,
+    "AIC" = -2 * logLik + 2 * edf,
+    "BIC" = -2 * logLik + edf * log(n),
+    "AICc" = -2 * logLik + 2 * edf + (2 * edf * (edf + 1)) / (n - edf - 1),
+    "MP" = -1 * (logLik + edf)
+  )
+  return(pen)
+}
+
 
 ## Function to create full parameter vector.
 make_par <- function(x, type = 1, add.tau2 = FALSE) {
