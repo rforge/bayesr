@@ -136,17 +136,39 @@ cox.mode <- function(x, y, weights, offset, criterion = c("AICc", "BIC", "AIC"),
   logPost <- as.numeric(logLik + get.log.prior(x))
 
   npar <- names(get.all.par(x, list = FALSE, drop = TRUE))
+  nh <- NULL
   hessian <- list()
   k <- 1
-  for(i in seq_along(x)) {
-    for(j in seq_along(x[[i]]$smooth.construct)) {
+  for(i in names(x)) {
+    for(j in names(x[[i]]$smooth.construct)) {
+      nh2 <- if(j == "model.matrix") paste(i, "p", sep = ".") else paste(i, "s", j, sep = ".")
+      nh2 <- paste(nh2, names(get.state(x[[i]]$smooth.construct[[j]], "b")), sep = ".")
       hessian[[k]] <- x[[i]]$smooth.construct[[j]]$state$hessian
+
+      if(j != "model.matrix") {
+        g <- get.state(x[[i]]$smooth.construct[[j]], "b")
+ 
+        samps <- rmvnorm(100, g, matrix_inv(hessian[[k]]))
+
+        fs <- apply(samps, 1, function(g) {
+          drop(x[[i]]$smooth.construct[[j]]$X %*% g)
+        })
+
+        xp <- d[[x[[i]]$smooth.construct[[j]]$term]]
+        io <- order(xp)
+
+        matplot(xp[io], fs[io, ], type = "l", lty = 1, col = rgb(0.1, 0.1, 0.1, alpha = 0.3))
+        Sys.sleep(3)
+      }
+
+      nh <- c(nh, nh2)
       k <- k + 1
     }
   }
   require("Matrix")
-  hessian <- as.matrix(do.call("bdiag", hessian))
-  colnames(hessian) <- rownames(hessian) <- npar
+  hessian <- -1 * as.matrix(do.call("bdiag", hessian))
+  rownames(hessian) <- colnames(hessian) <- nh
+  hessian <- hessian[npar, npar]
 
   return(list("fitted.values" = eta, "parameters" = get.all.par(x),
     "edf" = get.edf(x, type = 2), "logLik" = logLik, "logPost" = logPost,

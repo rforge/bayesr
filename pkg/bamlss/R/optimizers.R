@@ -1393,8 +1393,12 @@ opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
       "logPost" = opt$value, "logLik" = family$loglik(y, family$map2par(eta)),
       "hessian" = opt$hessian, "converged" = opt$convergence < 1))
   } else {
-    opt <- optimHess(par, fn = log_posterior,
-      gr = if(!is.null(family$score) & gradient) grad_posterior else NULL,
+    fn <- if(is.null(family$p2d)) {
+      log_posterior
+    } else function(par, ...) { sum(family$p2d(par, log = TRUE), na.rm = TRUE) }
+
+    opt <- optimHess(par, fn = fn,
+      gr = if(!is.null(family$score) & gradient & is.null(family$p2d)) grad_posterior else NULL,
       x = x, y = y, family = family, verbose = verbose, digits = digits,
       control = list(fnscale = -1, reltol = eps, maxit = maxit))
     return(opt)

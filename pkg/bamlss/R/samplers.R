@@ -1370,6 +1370,43 @@ gmcmc_newton <- function(fun, theta, id, prior, ...)
 }
 
 
+MVNORM <- function(x, y = NULL, family = NULL, start = NULL, n.samples = 500, ...)
+{
+  require("mvtnorm")
+
+  if(inherits(x, "bamlss")) {
+    if(is.null(x$hessian)) {
+      hessian <- opt(x = x$x, y = x$y, family = x$family,
+        start = start, hessian = TRUE, ...)
+    } else {
+      hessian <- x$hessian
+    }
+  } else {
+    hessian <- opt(x = x, y = y, family = family, start = start, hessian = TRUE, ...)
+  }
+
+  if(is.null(hessian))
+    stop("need the hessian for sampling!")
+
+  par <- get.all.par(if(inherits(x, "bamlss")) x$x else x, list = FALSE, drop = TRUE)
+  if(length(par) < 1)
+    par <- start
+  if(is.null(par))
+    stop("need parameters for sampling!")
+
+  if(length(i <- grep2(c(".alpha", ".edf", ".tau2", ".accepted"), names(par), fixed = TRUE)))
+    par <- par[-i]
+
+  npar <- names(par)
+  hessian <- hessian[npar, npar]
+
+  samps <- rmvnorm(n.samples, mean = par, sigma = matrix_inv(-1 * hessian))
+  colnames(samps) <- names(par)
+
+  as.mcmc(samps)
+}
+
+
 null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC"), ...)
 {
   family <- attr(x, "family")

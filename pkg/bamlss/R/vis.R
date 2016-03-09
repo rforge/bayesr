@@ -1310,7 +1310,7 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
         oco <- slot(slot(slot(ob, "polygons")[[1]], "Polygons")[[j]], "coords")
         pip <- cbind(pip, point.in.polygon(xco, yco, oco[, 1L], oco[, 2L], mode.checked = FALSE) < 1L)
       }
-      pip <- apply(pip, 1, function(x) all(x))
+      pip <- apply(pip, 1, function(x) { x < 1 })
     
       icolors[pip] <- NA
     }
@@ -1657,7 +1657,7 @@ interp2 <- function(x, y, z, xo = NULL, yo = NULL, grid = 30,
       pid <- chull(X <- cbind(x, y))
       pol <- X[c(pid, pid[1]), ]
       pip <- point.in.polygon(nd$x, nd$y, pol[, 1], pol[, 2])
-      fit[!pip] <- NA
+      fit[pip < 1] <- NA
     }
   }
   if(type == "mba") {

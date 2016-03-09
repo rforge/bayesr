@@ -2134,7 +2134,7 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
   if(!is.na(grid)) {
     if(grid < 0) {
       grid <- if(nt > 1) {
-        if(nt > 2) 20 else 30
+        NA
       } else 100
     }
   }
@@ -2174,8 +2174,17 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
           nd[[x$by]] <- seq(xr[1], xr[2], length = grid)
         } else nd[[x$by]] <- rep(data[[x$by]], length.out = grid)
       }
+      nd <- as.data.frame(nd)
+      if(nt == 2L) {
+        require("sp")
+        pid <- chull(as.matrix(data[, tterms]))
+        pol <- data[c(pid, pid[1]), ]
+        pip <- point.in.polygon(nd[, 1], nd[, 2], pol[, 1], pol[, 2])
+        nd[pip < 1, ] <- NA
+        nd <- na.omit(nd)
+      }
       data0 <- data
-      data <- as.data.frame(nd)
+      data <- nd
     } else xsmall <- FALSE
   } else {
     data0 <- data[, c(tterms, if(x$by != "NA") x$by else NULL), drop = FALSE]
@@ -2521,7 +2530,8 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
 .fitted.bamlss <- function(id, x, samps)
 {
   snames <- colnames(samps)
-  snames <- snames[-grep2(c(".alpha", ".edf", ".tau2", ".accepted"), snames, fixed = TRUE)]
+  if(length(i <- grep2(c(".alpha", ".edf", ".tau2", ".accepted"), snames, fixed = TRUE)))
+    snames <- snames[-i]
   eta <- 0
   if(!is.null(x$model.matrix)) {
     if(ncol(x$model.matrix) > 0) {
@@ -2540,7 +2550,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
           sn <- grep(paste(id, ".p.", sep = ""), snames, fixed = TRUE, value = TRUE)
       }
       if(!length(sn))
-        warning(paste('no fitted matrix for "', id, '", "', j, '"!', sep = ""))
+        stop(paste('no fitted matrix for "', id, '", "', j, '"!', sep = ""))
       if(j != "model.matrix") {
         if(!inherits(x$smooth.construct[[j]], "no.mgcv") & !inherits(x$smooth.construct[[j]], "special")) {
           fit <- fitted_matrix(x$smooth.construct[[j]]$X, samps[, sn, drop = FALSE])
