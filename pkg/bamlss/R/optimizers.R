@@ -422,7 +422,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, ...)
 
 ## Function to find tau2 interval according to the
 ## effective degrees of freedom
-tau2interval <- function(x, lower = .Machine$double.eps^0.25, upper = 1e+10)
+tau2interval <- function(x, lower = .Machine$double.eps^0.8, upper = 1e+10)
 {
   if(length(x$S) < 2) {
     return(c(lower, upper))
@@ -1084,7 +1084,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
       x$state$parameters <- set.par(x$state$parameters, if(!length(tau2)) x$interval[1] else tau2, "tau2")
     } else {
       i <- grep("tau2", names(x$lower))
-      opt <- try(optim(rep(10, length(i)), fn = objfun, method = "L-BFGS-B",
+      opt <- try(optim(x$lower[i] * 1.05, fn = objfun, method = "L-BFGS-B",
         lower = x$lower[i], upper = x$upper[i]), silent = TRUE)
       if(!inherits(opt, "try-error"))
         x$state$parameters <- set.par(x$state$parameters, opt$par, "tau2")

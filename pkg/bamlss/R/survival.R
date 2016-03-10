@@ -191,8 +191,8 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
       i <- grep("tau2", names(x$lower))
       opt <- try(optim(rep(10, length(i)), fn = objfun, method = "L-BFGS-B",
         lower = x$lower[i], upper = x$upper[i]), silent = TRUE)
-     if(!inherits(opt, "try-error"))
-       x$state$parameters <- set.par(x$state$parameters, opt$par, "tau2")
+      if(!inherits(opt, "try-error"))
+        x$state$parameters <- set.par(x$state$parameters, opt$par, "tau2")
     }
   }
 
@@ -277,7 +277,7 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, ...)
     }
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
   } else {
-    args <- list(...)
+
     objfun <- function(tau2, ...) {
       S <- 0
       for(j in seq_along(x$S))
@@ -292,6 +292,7 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, ...)
       logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
       return(get.ic2(logLik, edf, length(eta$gamma), criterion))
     }
+
     if(length(get.state(x, "tau2")) < 2) {
       if(is.null(x$optim.grid)) {
         tau2 <- try(optimize(objfun, interval = x$state$interval)$minimum, silent = TRUE)

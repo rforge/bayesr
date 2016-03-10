@@ -48,16 +48,16 @@ if(!file.exists("firemodel.rda") & FALSE) {
   data("LondonFire")
 
   f <- list(
-    Surv(arrivaltime) ~ ti(arrivaltime,k=20) + ti(arrivaltime,lon,lat,d=c(1,2),k=c(5,30)),
+    Surv(arrivaltime) ~ ti(arrivaltime,k=20) + ti(arrivaltime,lon,lat,d=c(1,2),k=c(5,30),mp=FALSE),
     gamma ~ s(fsintens) + ti(daytime,bs="cc",k=30) + ti(lon,lat,k=80,d=2) +
-      ti(daytime,lon,lat,bs=c("cc","cr"),d=c(1,2),k=c(10,30))
+      ti(daytime,lon,lat,bs=c("cc","cr"),d=c(1,2),k=c(10,30),mp=FALSE)
   )
 
-  ##firemodel <- bamlss(f, data = LondonFire, family = "cox",
-  ##  subdivisions = 25, nu = 0.01, maxit = 1000, sampler = MVNORM)
+  firemodel <- bamlss(f, data = LondonFire, family = "cox",
+    subdivisions = 15, nu = 0.01, maxit = 1000, sampler = MVNORM)
 
   firemodel <- bamlss(f, data = LondonFire, family = "cox",
-    subdivisions = 25, nu = 0.01, maxit = 1000,
+    subdivisions = 15, nu = 0.01, maxit = 1000,
     n.iter = 60000, burnin = 20000, thin = 200, cores = 6, df = 10)
 
   save(firemodel, file = "firemodel.rda")
@@ -147,7 +147,7 @@ if(!file.exists("firemodel.rda") & FALSE) {
     return(list("curves" = fbh, "daytime" = fdt, "spatial" = nd, "target" = target))
   }
 
-  firemodel_plotdata <- data_basehaz(120, 6, subdivisions = 25)
+  firemodel_plotdata <- data_basehaz(120, 6, subdivisions = 15)
 
   save(firemodel, firemodel_plotdata, file = "firemodel_plotdata.rda")
 }
