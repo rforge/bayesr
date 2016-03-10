@@ -1370,6 +1370,7 @@ gmcmc_newton <- function(fun, theta, id, prior, ...)
 }
 
 
+## Naive sampler.
 MVNORM <- function(x, y = NULL, family = NULL, start = NULL, n.samples = 500, ...)
 {
   require("mvtnorm")
@@ -1388,7 +1389,7 @@ MVNORM <- function(x, y = NULL, family = NULL, start = NULL, n.samples = 500, ..
   if(is.null(hessian))
     stop("need the hessian for sampling!")
 
-  par <- get.all.par(if(inherits(x, "bamlss")) x$x else x, list = FALSE, drop = TRUE)
+  par <- if(inherits(x, "bamlss")) unlist(x$parameters) else get.all.par(x, list = FALSE, drop = TRUE)
   if(length(par) < 1)
     par <- start
   if(is.null(par))
@@ -1404,153 +1405,6 @@ MVNORM <- function(x, y = NULL, family = NULL, start = NULL, n.samples = 500, ..
   colnames(samps) <- names(par)
 
   as.mcmc(samps)
-}
-
-
-null.sampler <- function(x, n.samples = 500, criterion = c("AICc", "BIC", "AIC"), ...)
-{
-  family <- attr(x, "family")
-  nx <- family$names
-  np <- length(nx)
-  par <- make_par(x, add.tau2 = TRUE)
-  nh <- names(par$par)
-  y <- attr(x, "response.vec")
-  eta <- get.eta(x)
-  if(n.samples < 1) n.samples <- 1
-
-  if(n.samples > 1) {
-    require("mvtnorm")
-    no.special <- TRUE
-    for(j in 1:np) {
-      for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-        if(inherits(x[[nx[j]]]$smooth.construct[[sj]], "special"))
-          no.special <- FALSE
-      }
-    }
-    if(!is.null(family$hessian) & is.null(attr(x, "hessian")) & no.special) {
-      hessian <- list(); i <- 1
-      nh3 <- NULL
-      for(j in 1:np) {
-        for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-          nh2 <- grep(paste("p", j, ".t", sj, ".", sep = ""), nh, fixed = TRUE, value = TRUE)
-          nhg <- nh2[!grepl("tau2", nh2)]
-          g <- get.state(x[[nx[j]]]$smooth.construct[[sj]], "b")
-          hessian[[i]] <- family$hessian[[nx[j]]](g, y, eta, x[[nx[j]]]$smooth.construct[[sj]], id = nx[j])
-          nh3 <- c(nh3, nhg)
-          i <- i + 1
-        }
-      }
-      require("Matrix")
-      hessian <- -1 * as.matrix(do.call("bdiag", hessian))
-      rownames(hessian) <- colnames(hessian) <- nh3
-    } else {
-      hessian <- if(is.null(attr(x, "hessian"))) {
-        opt0(x, hessian = TRUE, verbose = FALSE, ...)
-      } else attr(x, "hessian")
-    }
-    hessian <- matrix_inv(-1 * hessian)
-  }
-
-  criterion <- match.arg(criterion)
-
-  samps <- matrix(NA, n.samples, length(nh))
-  colnames(samps) <- nh
-  sn <- NULL
-
-  edf <- 0
-  edf_sm <- edf_sm_n <- NULL
-
-  for(j in 1:np) {
-    for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-      nh2 <- grep(paste("p", j, ".t", sj, ".", sep = ""), nh, fixed = TRUE, value = TRUE)
-      nhg <- nh2[!grepl("tau2", nh2)]
-      g <- get.state(x[[nx[j]]]$smooth.construct[[sj]], "b")
-      if(n.samples > 1) {
-        sigma <- hessian[nhg, nhg, drop = FALSE]
-        if(any(eigen(sigma, symmetric = TRUE)$values <= 0)) {
-          require("Matrix")
-          sigma2 <- try(nearPD(sigma)$mat, silent = TRUE)
-          if(inherits(sigma2, "try-error")) {
-            sigma2 <- diag(sigma)
-            sigma2 <- if(length(sigma2) < 2) matrix(sigma2, 1, 1) else diag(sigma2)
-          }
-          sigma <- as.matrix(sigma2)
-        }
-        if(length(sigma) < 2) sigma <- matrix(sigma, 1, 1)
-        g <- rmvnorm(n = n.samples, mean = g, sigma = sigma)
-        colnames(g) <- nhg
-        samps[, nhg] <- g
-      } else samps[1L, nhg] <- g
-      sn <- c(sn, paste(nx[j], x[[nx[j]]]$smooth.construct[[sj]]$label, paste("b", 1:length(nhg), sep = ""), sep = "."))
-      if(!x[[nx[j]]]$smooth.construct[[sj]]$fixed) {
-        nhtau2 <- nh2[grepl("tau2", nh2)]
-        tedf <- x[[nx[j]]]$smooth.construct[[sj]]$edf(x[[nx[j]]]$smooth.construct[[sj]], type = 2)
-        edf_sm <- cbind(edf_sm, rep(tedf, length = n.samples))
-        edf_sm_n <- c(edf_sm_n, paste(nx[j], x[[nx[j]]]$smooth.construct[[sj]]$label, "edf", sep = "."))
-        samps[1L, nhtau2] <- get.state(x[[nx[j]]]$smooth.construct[[sj]], "tau2") ##tedf
-        edf <- edf + tedf
-        sn <- c(sn, paste(nx[j], x[[nx[j]]]$smooth.construct[[sj]]$label, paste("tau2", 1:length(nhtau2), sep = ""), sep = "."))
-      } else {
-        edf <- edf + ncol(x[[nx[j]]]$smooth.construct[[sj]]$X)
-      }
-    }
-  }
-
-  colnames(edf_sm) <- edf_sm_n
-  colnames(samps) <- sn
-  samps <- cbind(samps, edf_sm)
-  IC <- as.numeric(get.ic(family, y, family$map2par(eta), edf, length(eta[[1L]]), criterion))
-  samps <- cbind(samps, IC, edf)
-  colnames(samps)[(ncol(samps) - 1):ncol(samps)] <- c(criterion, "save.edf")
-
-  as.mcmc(samps)
-}
-
-get.sigma <- function(x, family, y, eta, id)
-{
-  if(is.null(x$state$hessian)) {
-    if(!is.null(family$hessian[[id]])) {
-      xhess <- family$hessian[[id]](get.state(x, "b"), y, eta, x)
-      xhess <- xhess + x$hess(score = NULL, x$state$parameters, full = FALSE)
-    } else {
-      eta[[id]] <- eta[[id]] - fitted(x$state)
-
-      tau2 <- get.state(x, "tau2")
-
-      lp <- function(g) {
-        eta[[id]] <- eta[[id]] + x$fit.fun(x$X, g)
-        family$loglik(y, family$map2par(eta)) + x$prior(c(g, tau2))
-      }
-
-      if(is.null(family$gradient[[id]])) {
-        if(!is.null(family$score[[id]]) & !is.null(x$grad)) {
-          gfun <- function(g, ...) {
-            eta[[id]] <- eta[[id]] + x$fit.fun(x$X, g)
-            x$grad(family$score[[id]](y, family$map2par(eta)), g, full = FALSE)
-          }
-        } else gfun <- NULL
-      } else {
-        gfun <- function(g, ...) {
-          gg <- family$gradient[[id]](g, y, eta, x)
-          if(!is.null(x$grad)) {
-            gg <- gg + x$grad(score = NULL, c(g, tau2), full = FALSE)
-          }
-          drop(gg)
-        }
-      }
-
-      xhess <- -1 * optimHess(get.state(x, "b"), fn = lp, gr = gfun, control = list("fnscale" = -1))
-    }
-
-    if(length(xhess) < 2) {
-      xhess <- matrix(1 / xhess, 1, 1)
-    } else {
-      ## xhess <- chol2inv(chol(xhess))
-      xhess <- diag(1 / diag(xhess))
-    }
-
-    return(xhess)
-  } else return(x$state$hessian)
 }
 
 

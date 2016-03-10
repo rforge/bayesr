@@ -144,23 +144,6 @@ cox.mode <- function(x, y, weights, offset, criterion = c("AICc", "BIC", "AIC"),
       nh2 <- if(j == "model.matrix") paste(i, "p", sep = ".") else paste(i, "s", j, sep = ".")
       nh2 <- paste(nh2, names(get.state(x[[i]]$smooth.construct[[j]], "b")), sep = ".")
       hessian[[k]] <- x[[i]]$smooth.construct[[j]]$state$hessian
-
-      if(j != "model.matrix") {
-        g <- get.state(x[[i]]$smooth.construct[[j]], "b")
- 
-        samps <- rmvnorm(100, g, matrix_inv(hessian[[k]]))
-
-        fs <- apply(samps, 1, function(g) {
-          drop(x[[i]]$smooth.construct[[j]]$X %*% g)
-        })
-
-        xp <- d[[x[[i]]$smooth.construct[[j]]$term]]
-        io <- order(xp)
-
-        matplot(xp[io], fs[io, ], type = "l", lty = 1, col = rgb(0.1, 0.1, 0.1, alpha = 0.3))
-        Sys.sleep(3)
-      }
-
       nh <- c(nh, nh2)
       k <- k + 1
     }

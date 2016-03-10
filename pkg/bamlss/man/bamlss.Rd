@@ -4,6 +4,7 @@
 \title{
   Fit Bayesian Additive Models for Location Scale and Shape (and Beyond)
 }
+
 \description{
   This is the main model fitting function of the package. Function \code{bamlss()}
   is wrapper function that parses the \code{data} and the model \code{formula}, or
@@ -25,6 +26,7 @@
   summary statistics with \code{\link{summary.bamlss}}, effect plots with
   \code{\link{plot.bamlss}}, etc. See the examples.
 }
+
 \usage{
 bamlss(formula, family = "gaussian", data = NULL,
   start = NULL, knots = NULL, weights = NULL,
@@ -34,7 +36,7 @@ bamlss(formula, family = "gaussian", data = NULL,
   results = NULL, cores = NULL, sleep = NULL,
   combine = TRUE, model = TRUE, x = TRUE, ...)
 }
-%- maybe also 'usage' for other objects documented here.
+
 \arguments{
   \item{formula}{A formula or extended formula, i.e., the \code{formula} can be a
     \code{\link{list}} of formulas where each list entry specifies the details of one parameter
@@ -49,9 +51,9 @@ bamlss(formula, family = "gaussian", data = NULL,
     typically the environment from which \code{bamlss} is called.}
   \item{start}{A named numeric vector containing starting values to be send to the \code{optimizer}
     and/or \code{sampler} function. For a possible naming convention for the parameters see
-    function \code{\link{parameters}}, but this is not restrictive and engine specific.
+    function \code{\link{parameters}}, but this is not restrictive and engine specific.}
   \item{knots}{An optional list containing user specified knots, see the documentation of
-    function \code{\link{gam}}.
+    function \code{\link{gam}}}.
   \item{weights}{Prior weights on the data.}
   \item{subset}{}
   \item{offset}{}
@@ -76,7 +78,7 @@ bamlss(formula, family = "gaussian", data = NULL,
 }
 
 \value{
-  An object of class \code{'bamlss'}.
+  An object of class \code{"bamlss"}.
 }
 
 \references{
@@ -92,11 +94,13 @@ bamlss(formula, family = "gaussian", data = NULL,
 }
 
 \examples{
-  ## Simulated data example.
-  d <- GAMart()
-  b <- bamlss(num ~ s(x1) + s(x2) + s(x3), data = d)
-  summary(b)
-  plot(b)
+\dontrun{
+## Simulated data example.
+d <- GAMart()
+b <- bamlss(num ~ s(x1) + s(x2) + s(x3), data = d)
+summary(b)
+plot(b)
+}
 }
 
 \keyword{regression}
