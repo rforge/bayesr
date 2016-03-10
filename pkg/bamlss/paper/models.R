@@ -53,6 +53,9 @@ if(!file.exists("firemodel.rda") & FALSE) {
       ti(daytime,lon,lat,bs=c("cc","cr"),d=c(1,2),k=c(10,30))
   )
 
+  ##firemodel <- bamlss(f, data = LondonFire, family = "cox",
+  ##  subdivisions = 25, nu = 0.01, maxit = 1000, sampler = MVNORM)
+
   firemodel <- bamlss(f, data = LondonFire, family = "cox",
     subdivisions = 25, nu = 0.01, maxit = 1000,
     n.iter = 60000, burnin = 20000, thin = 200, cores = 6, df = 10)

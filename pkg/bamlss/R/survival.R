@@ -207,7 +207,7 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
       x$state$parameters <- set.par(x$state$parameters, if(!length(tau2)) x$interval[1] else tau2, "tau2")
     } else {
       i <- grep("tau2", names(x$lower))
-      opt <- try(optim(c(0, 0), fn = objfun, method = "L-BFGS-B",
+      opt <- try(optim(rep(10, length(i)), fn = objfun, method = "L-BFGS-B",
         lower = x$lower[i], upper = x$upper[i]), silent = TRUE)
      if(!inherits(opt, "try-error"))
        x$state$parameters <- set.par(x$state$parameters, opt$par, "tau2")
@@ -321,7 +321,7 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, ...)
       x$state$parameters <- set.par(x$state$parameters, if(!length(tau2)) x$interval[1] else tau2, "tau2")
     } else {
       i <- grep("tau2", names(x$lower))
-      opt <- try(optim(c(0, 0), fn = objfun, method = "L-BFGS-B",
+      opt <- try(optim(rep(10, length(i)), fn = objfun, method = "L-BFGS-B",
         lower = x$lower[i], upper = x$upper[i]), silent = TRUE)
       if(!inherits(opt, "try-error"))
         x$state$parameters <- set.par(x$state$parameters, opt$par, "tau2")
