@@ -1060,6 +1060,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
     edf0 <- args$edf - x$state$edf
     eta2 <- eta
     objfun <- function(tau2, ...) {
+      tau2 <- rep(tau2, length = length(x$S))
       S <- 0
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * x$S[[j]]
@@ -1073,21 +1074,11 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
       IC <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), x$criterion, ...)
       return(IC)
     }
-    if(length(get.state(x, "tau2")) < 2) {
-      if(is.null(x$optim.grid)) {
-        tau2 <- try(optimize(objfun, interval = x$state$interval)$minimum, silent = TRUE)
-        if(inherits(tau2, "try-error"))
-          tau2 <- optimize2(objfun, interval = x$state$interval, grid = x$state$grid)$minimum
-      } else {
-        tau2 <- optimize2(objfun, interval = x$state$interval, grid = x$state$grid)$minimum
-      }
-      x$state$parameters <- set.par(x$state$parameters, if(!length(tau2)) x$interval[1] else tau2, "tau2")
-    } else {
-      i <- grep("tau2", names(x$lower))
-      opt <- try(optim(x$lower[i] * 1.05, fn = objfun, method = "L-BFGS-B",
-        lower = x$lower[i], upper = x$upper[i]), silent = TRUE)
-      if(!inherits(opt, "try-error"))
-        x$state$parameters <- set.par(x$state$parameters, opt$par, "tau2")
+    tau2 <- get.state(x, "tau2")
+    tau2 <- try(optimize(objfun, interval = c(tau2[1] / 100, tau2[1] * 100))$minimum, silent = TRUE)
+    if(!inherits(tau2, "try-error")) {
+      tau2 <- rep(tau2, length = length(x$S))
+      x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
     }
     S <- 0
     tau2 <- get.state(x, "tau2")

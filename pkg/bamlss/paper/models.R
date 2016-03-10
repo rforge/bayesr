@@ -48,9 +48,9 @@ if(!file.exists("firemodel.rda") & FALSE) {
   data("LondonFire")
 
   f <- list(
-    Surv(arrivaltime) ~ ti(arrivaltime,k=20) + ti(arrivaltime,lon,lat,d=c(1,2),k=c(5,30),mp=FALSE),
+    Surv(arrivaltime) ~ ti(arrivaltime,k=20) + ti(arrivaltime,lon,lat,d=c(1,2),k=c(5,30)),
     gamma ~ s(fsintens) + ti(daytime,bs="cc",k=30) + ti(lon,lat,k=80,d=2) +
-      ti(daytime,lon,lat,bs=c("cc","cr"),d=c(1,2),k=c(10,30),mp=FALSE)
+      ti(daytime,lon,lat,bs=c("cc","cr"),d=c(1,2),k=c(10,30))
   )
 
   firemodel <- bamlss(f, data = LondonFire, family = "cox",
