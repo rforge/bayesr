@@ -1069,7 +1069,8 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
       bf$samples <- functions$sampler(x = bf$x, y = bf$y, family = bf$family,
         weights = model.weights(bf$model.frame),
         offset = model.offset(bf$model.frame),
-        start = if(is.null(bf$parameters)) start else unlist(bf$parameters), ...)
+        start = if(is.null(bf$parameters)) start else unlist(bf$parameters),
+        hessian = bf$hessian, ...)
     } else {
       require("parallel")
       parallel_fun <- function(j) {
@@ -1077,7 +1078,8 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
         functions$sampler(x = bf$x, y = bf$y, family = bf$family,
           weights = model.weights(bf$model.frame),
           offset = model.offset(bf$model.frame),
-          start = if(is.null(bf$parameters)) start else unlist(bf$parameters), ...)
+          start = if(is.null(bf$parameters)) start else unlist(bf$parameters),
+          hessian = bf$hessian, ...)
       }
       bf$samples <- mclapply(1:cores, parallel_fun, mc.cores = cores)
     }
@@ -3917,9 +3919,11 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
     cat("---\n")
   }
   if(!is.null(x$model.stats)) {
+    if(!length(x$model.stats$sampler))
+      x$model.stats$sampler <- NULL
     if(!is.null(x$model.stats$sampler)) {
       cat("Sampler summary:\n-\n")
-      k <- 1
+      k <- 1; ok <- FALSE
       for(j in sort(names(x$model.stats$sampler))) {
         ok <- TRUE
         cat(if(k > 1) " " else "", j, " = ", round(x$model.stats$sampler[[j]], digits), sep = "")
@@ -4769,17 +4773,19 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
       ttake <- grep2(c(".tau2", ".lambda", ".edf", ".alpha"), colnames(rval$samples), fixed = TRUE)
       if(length(ttake)) {
         rval$samples <- rval$samples[, ttake, drop = FALSE]
-      } else return(numeric(0))
+      } else rval$samples <- numeric(0)
     }
-    rval$samples <- apply(rval$samples, 2, function(x) { FUN(na.omit(x), ...) })
-    rval$samples <- if(!is.null(dim(rval$samples))) {
-      t(rval$samples)
-    } else {
-      as.matrix(rval$samples, ncol = 1)
-    }
-    if(is.null(colnames(rval$samples))) {
-      fn <- deparse(substitute(FUN), backtick = TRUE, width.cutoff = 500)
-      colnames(rval$samples) <- rep(fn, length = ncol(rval$samples))
+    if(length(rval$samples)) {
+      rval$samples <- apply(rval$samples, 2, function(x) { FUN(na.omit(x), ...) })
+      rval$samples <- if(!is.null(dim(rval$samples))) {
+        t(rval$samples)
+      } else {
+        as.matrix(rval$samples, ncol = 1)
+      }
+      if(is.null(colnames(rval$samples))) {
+        fn <- deparse(substitute(FUN), backtick = TRUE, width.cutoff = 500)
+        colnames(rval$samples) <- rep(fn, length = ncol(rval$samples))
+      }
     }
   }
   if(!is.null(object$parameters) & parameters) {
@@ -4789,7 +4795,7 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
     if(summary)
       rval$parameters <- rval$parameters[grep2(c(".tau2", ".edf"), names(rval$parameters), fixed = TRUE)]
     rval$parameters <- as.matrix(rval$parameters, ncol = 1)
-    if(!is.null(rval$samples)) {
+    if(!is.null(rval$samples) & length(rval$samples)) {
       pc <- NULL
       rns <- gsub(".model.matrix", "", rownames(rval$samples), fixed = TRUE)
       for(j in rns) {

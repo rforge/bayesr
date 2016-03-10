@@ -1371,25 +1371,31 @@ gmcmc_newton <- function(fun, theta, id, prior, ...)
 
 
 ## Naive sampler.
-MVNORM <- function(x, y = NULL, family = NULL, start = NULL, n.samples = 500, ...)
+MVNORM <- function(x, y = NULL, family = NULL, start = NULL, n.samples = 500, hessian = NULL, ...)
 {
   require("mvtnorm")
 
-  if(inherits(x, "bamlss")) {
-    if(is.null(x$hessian)) {
-      hessian <- opt(x = x$x, y = x$y, family = x$family,
-        start = start, hessian = TRUE, ...)
+  if(is.null(hessian)) {
+    if(inherits(x, "bamlss")) {
+      if(is.null(x$hessian)) {
+        hessian <- opt(x = x$x, y = x$y, family = x$family,
+          start = start, hessian = TRUE, ...)
+      } else {
+        hessian <- x$hessian
+      }
     } else {
-      hessian <- x$hessian
+      hessian <- opt(x = x, y = y, family = family, start = start, hessian = TRUE, ...)
     }
-  } else {
-    hessian <- opt(x = x, y = y, family = family, start = start, hessian = TRUE, ...)
   }
 
   if(is.null(hessian))
     stop("need the hessian for sampling!")
 
-  par <- if(inherits(x, "bamlss")) unlist(x$parameters) else get.all.par(x, list = FALSE, drop = TRUE)
+  par <- if(inherits(x, "bamlss")) {
+    unlist(x$parameters)
+  } else {
+    if(is.null(start)) get.all.par(x, list = FALSE, drop = TRUE) else start
+  }
   if(length(par) < 1)
     par <- start
   if(is.null(par))

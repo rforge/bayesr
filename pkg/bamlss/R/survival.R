@@ -136,16 +136,16 @@ cox.mode <- function(x, y, weights, offset, criterion = c("AICc", "BIC", "AIC"),
   logPost <- as.numeric(logLik + get.log.prior(x))
 
   npar <- names(get.all.par(x, list = FALSE, drop = TRUE))
-  nh <- NULL
-  hessian <- list()
-  k <- 1
+  hessian <- list(); nh <- NULL
   for(i in names(x)) {
     for(j in names(x[[i]]$smooth.construct)) {
-      nh2 <- if(j == "model.matrix") paste(i, "p", sep = ".") else paste(i, "s", j, sep = ".")
-      nh2 <- paste(nh2, names(get.state(x[[i]]$smooth.construct[[j]], "b")), sep = ".")
-      hessian[[k]] <- x[[i]]$smooth.construct[[j]]$state$hessian
-      nh <- c(nh, nh2)
-      k <- k + 1
+      pn <- if(j == "model.matrix") paste(i, "p", sep = ".") else paste(i, "s", j, sep = ".")
+      hessian[[pn]] <- x[[i]]$smooth.construct[[j]]$state$hessian
+      cn <- colnames(x[[i]]$smooth.construct[[j]]$X)
+      if(is.null(cn))
+        cn <- paste("b", 1:ncol(x[[i]]$smooth.construct[[j]]$X), sep = "")
+      pn <- paste(pn, cn, sep = ".")
+      nh <- c(nh, pn)
     }
   }
   require("Matrix")
