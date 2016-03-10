@@ -1195,30 +1195,46 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL, logLik = FAL
     pn <- pn[pn %in% colnames(samples)]
     if(length(pn) & ("DIC" %in% what)) {
       samples <- samples[, pn, drop = FALSE]
-      nx <- names(x)
-      par <- rep(list(0), length = length(x))
-      names(par) <- nx
-      mpar <- par
-      for(i in nx)
-        par[[i]] <- make.link2(family$links[i])$linkinv(.fitted.bamlss(i, x[[i]], samples))
-      msamples <- matrix(apply(samples, 2, mean, na.rm = TRUE), nrow = 1)
-      colnames(msamples) <- pn
-      for(i in nx)
-        mpar[[i]] <- make.link2(family$links[i])$linkinv(.fitted.bamlss(i, x[[i]], msamples))
-      tpar <- mpar
-      dev <- ll <- rep(NA, ncol(par[[1]]))
-      for(j in 1:ncol(par[[1]])) {
+      if(is.null(family$p2d)) {
+        nx <- names(x)
+        par <- rep(list(0), length = length(x))
+        names(par) <- nx
+        mpar <- par
         for(i in nx)
-          tpar[[i]] <- par[[i]][, j]
-        llt <- try(family$loglik(y, tpar), silent = TRUE)
-        if(!inherits(llt, "try-error")) {
-          ll[j] <- llt
-          dev[j] <- -2 * ll[j]
+          par[[i]] <- make.link2(family$links[i])$linkinv(.fitted.bamlss(i, x[[i]], samples))
+        msamples <- matrix(apply(samples, 2, mean, na.rm = TRUE), nrow = 1)
+        colnames(msamples) <- pn
+        for(i in nx)
+          mpar[[i]] <- make.link2(family$links[i])$linkinv(.fitted.bamlss(i, x[[i]], msamples))
+        tpar <- mpar
+        dev <- ll <- rep(NA, ncol(par[[1]]))
+        for(j in 1:ncol(par[[1]])) {
+          for(i in nx)
+            tpar[[i]] <- par[[i]][, j]
+          llt <- try(family$loglik(y, tpar), silent = TRUE)
+          if(!inherits(llt, "try-error")) {
+            ll[j] <- llt
+            dev[j] <- -2 * ll[j]
+          }
+        }
+        if(logLik)
+          return(ll)
+        ll <- try(family$loglik(y, mpar), silent = TRUE)
+      } else {
+        mpar <- apply(samples, 2, mean, na.rm = TRUE)
+        ll <- try(apply(samples, 1, function(x) {
+          names(x) <- colnames(samples)
+          sum(family$p2d(x, log = TRUE), na.rm = TRUE)
+        }), silent = TRUE)
+        if(inherits(ll, "try-error")) {
+          warning("no DIC, cannot evaluate the $p2d() function in 'bamlss' family object!")
+        } else {
+          if(logLik)
+            return(ll)
+          dev <- -2 * ll
+          ll <- try(sum(family$p2d(mpar, log = TRUE), na.rm = TRUE), silent = TRUE)
         }
       }
-      if(logLik)
-        return(ll)
-      ll <- try(family$loglik(y, mpar), silent = TRUE)
       if(!inherits(ll, "try-error")) {
         mdev <- -2 * ll
         pd <- mean(dev, na.rm = TRUE) - mdev

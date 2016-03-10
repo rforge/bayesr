@@ -874,23 +874,26 @@ surv.transform <- function(x, y, data, family,
   names(y) <- rn
 
   family$p2d <- function(par, log = FALSE, ...) {
-    lpar <- eta <- list()
+    eta <- list(); eta_timegrid <- 0
     for(j in c("lambda", "gamma")) {
       eta[[j]] <- 0
-      lpar[[j]] <- list()
       for(sj in names(x[[j]]$smooth.construct)) {
         pn <- paste(j, if(sj != "model.matrix") "s" else "p", sep = ".")
         cn <- colnames(x[[j]]$smooth.construct[[sj]]$X)
         if(is.null(cn))
           cn <- paste("b", 1:ncol(x[[j]]$smooth.construct[[sj]]$X), sep = "")
-        pn <- paste(pn, sj, cn, sep = ".")
-        lpar[[j]][[sj]] <- par[pn]
-        eta[[j]] <- eta[[j]] + x[[j]]$smooth.construct[[sj]]$fit.fun(x[[j]]$smooth.construct[[sj]]$X, lpar[[j]][[sj]])
+        pn <- if(sj == "model.matrix") {
+          if(!("model.matrix" %in% names(par))) {
+            paste(pn, cn, sep = ".")
+          } else paste(pn, sj, cn, sep = ".")
+        } else {
+          paste(pn, sj, cn, sep = ".")
+        }
+        eta[[j]] <- eta[[j]] + x[[j]]$smooth.construct[[sj]]$fit.fun(x[[j]]$smooth.construct[[sj]]$X, par[pn])
+        if(j == "lambda")
+          eta_timegrid <- eta_timegrid + x$lambda$smooth.construct[[sj]]$fit.fun_timegrid(par[pn])
       }
     }
-    eta_timegrid <- 0
-    for(sj in names(x$lambda$smooth.construct))
-      eta_timegrid <- eta_timegrid + x$lambda$smooth.construct[[sj]]$fit.fun_timegrid(lpar$lambda[[sj]])
     eeta <- exp(eta_timegrid)
     int <- width * (0.5 * (eeta[, 1] + eeta[, subdivisions]) + apply(eeta[, 2:(subdivisions - 1)], 1, sum))
     d <- (eta$lambda + eta$gamma) * y[[1]][, "status"] - exp(eta$gamma) * int
