@@ -595,6 +595,29 @@ get.all.par <- function(x, drop = FALSE, list = TRUE)
 }
 
 
+get.hessian <- function(x)
+{
+  npar <- names(get.all.par(x, list = FALSE, drop = TRUE))
+  hessian <- list(); nh <- NULL
+  for(i in names(x)) {
+    for(j in names(x[[i]]$smooth.construct)) {
+      pn <- if(j == "model.matrix") paste(i, "p", sep = ".") else paste(i, "s", j, sep = ".")
+      hessian[[pn]] <- x[[i]]$smooth.construct[[j]]$state$hessian
+      cn <- colnames(x[[i]]$smooth.construct[[j]]$X)
+      if(is.null(cn))
+        cn <- paste("b", 1:ncol(x[[i]]$smooth.construct[[j]]$X), sep = "")
+      pn <- paste(pn, cn, sep = ".")
+      nh <- c(nh, pn)
+    }
+  }
+  require("Matrix")
+  hessian <- -1 * as.matrix(do.call("bdiag", hessian))
+  rownames(hessian) <- colnames(hessian) <- nh
+  hessian <- hessian[npar, npar]
+  return(hessian)
+}
+
+
 ## Formatting for printing.
 fmt <- function(x, width = 8, digits = 2) {
   txt <- formatC(round(x, digits), format = "f", digits = digits , width = width)

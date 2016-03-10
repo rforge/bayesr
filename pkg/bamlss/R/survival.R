@@ -135,27 +135,9 @@ cox.mode <- function(x, y, weights, offset, criterion = c("AICc", "BIC", "AIC"),
   logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
   logPost <- as.numeric(logLik + get.log.prior(x))
 
-  npar <- names(get.all.par(x, list = FALSE, drop = TRUE))
-  hessian <- list(); nh <- NULL
-  for(i in names(x)) {
-    for(j in names(x[[i]]$smooth.construct)) {
-      pn <- if(j == "model.matrix") paste(i, "p", sep = ".") else paste(i, "s", j, sep = ".")
-      hessian[[pn]] <- x[[i]]$smooth.construct[[j]]$state$hessian
-      cn <- colnames(x[[i]]$smooth.construct[[j]]$X)
-      if(is.null(cn))
-        cn <- paste("b", 1:ncol(x[[i]]$smooth.construct[[j]]$X), sep = "")
-      pn <- paste(pn, cn, sep = ".")
-      nh <- c(nh, pn)
-    }
-  }
-  require("Matrix")
-  hessian <- -1 * as.matrix(do.call("bdiag", hessian))
-  rownames(hessian) <- colnames(hessian) <- nh
-  hessian <- hessian[npar, npar]
-
   return(list("fitted.values" = eta, "parameters" = get.all.par(x),
     "edf" = get.edf(x, type = 2), "logLik" = logLik, "logPost" = logPost,
-    "hessian" = hessian))
+    "hessian" = get.hessian(x)))
 
   return(x)
 }
