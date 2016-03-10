@@ -151,7 +151,7 @@ legend("topright", names(pi), lwd = 1, col = 1:ncol(pi))
 set.seed(111)
 
 ## Sample covariates first.
-n <- 600
+n <- 300
 X <- matrix(NA, nrow = n, ncol = 3)
 X[, 1] <- runif(n, -1, 1)
 X[, 2] <- runif(n, -3, 3)

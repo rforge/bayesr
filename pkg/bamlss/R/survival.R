@@ -874,6 +874,9 @@ surv.transform <- function(x, y, data, family,
   names(y) <- rn
 
   family$p2d <- function(par, log = FALSE, ...) {
+    if(length(i <- grep2(c(".alpha", ".edf", ".tau2", ".accepted"), names(par), fixed = TRUE)))
+      par <- par[-i]
+    names(par) <- gsub(".p.model.matrix.", ".p.", names(par), fixed = TRUE)
     eta <- list(); eta_timegrid <- 0
     for(j in c("lambda", "gamma")) {
       eta[[j]] <- 0
