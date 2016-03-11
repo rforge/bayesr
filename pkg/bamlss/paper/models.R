@@ -58,7 +58,7 @@ if(!file.exists("firemodel.rda") & FALSE) {
 
   firemodel <- bamlss(f, data = LondonFire, family = "cox",
     subdivisions = 15, nu = 0.01, maxit = 1000,
-    n.iter = 60000, burnin = 20000, thin = 200, cores = 6, df = 10)
+    n.iter = 60000, burnin = 20000, thin = 200, cores = 6)
 
   save(firemodel, file = "firemodel.rda")
 

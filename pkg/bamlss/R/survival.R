@@ -160,7 +160,6 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
     par <- x$state$parameters
 
     objfun <- function(tau2) {
-      tau2 <- rep(tau2, length = length(x$S))
       par <- set.par(par, tau2, "tau2")
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
       xhess <- int$hess + x$hess(score = NULL, par, full = FALSE)
@@ -178,6 +177,9 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
       edf <- sum.diag(int$hess %*% Sigma)
       return(get.ic2(logLik, edf, length(eta$lambda), criterion))
     }
+
+    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
+    x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
 
     tau2 <- get.state(x, "tau2")
     tau2 <- try(optimize(objfun, interval = c(tau2[1] / 100, tau2[1] * 100))$minimum, silent = TRUE)
@@ -269,7 +271,6 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, ...)
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
   } else {
     objfun <- function(tau2, ...) {
-      tau2 <- rep(tau2, length = length(x$S))
       S <- 0
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * x$S[[j]]
@@ -284,14 +285,9 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, ...)
       return(get.ic2(logLik, edf, length(eta$gamma), criterion))
     }
 
-    tau2 <- get.state(x, "tau2")
-    tau2 <- try(optimize(objfun, interval = c(tau2[1] / 100, tau2[1] * 100))$minimum, silent = TRUE)
-    if(!inherits(tau2, "try-error")) {
-      tau2 <- rep(tau2, length = length(x$S))
-      x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
-    }
+    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
+    x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
     S <- 0
-    tau2 <- get.state(x, "tau2")
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * x$S[[j]]
     x$state$hessian <- XWX + S

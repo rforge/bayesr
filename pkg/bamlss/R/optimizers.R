@@ -877,6 +877,32 @@ get.ic2 <- function(logLik, edf, n, type = c("AIC", "BIC", "AICc", "MP"), ...)
 }
 
 
+## Naive smoothing parameter optimization.
+tau2.optim <- function(f, start, ..., scale = 100, eps = 0.001, maxit = 10)
+{
+  foo <- function(par, start, k) {
+    start[k] <- par
+    return(f(start, ...))
+  }
+
+  iter <- 1; eps0 <- eps + 1
+  while((eps0 > eps) & (iter < maxit)) {
+    start0 <- start
+    for(k in seq_along(start)) {
+      tpar <- try(optimize(foo, interval = c(start[k] / scale, start[k] * scale), start = start, k = k)$minimum, silent = TRUE)
+      if(!inherits(tpar, "try-error"))
+        start[k] <- tpar
+    }
+    if(length(start) < 2)
+      break
+    eps <- mean(abs((start - start0) / start0))
+    iter <- iter + 1
+  }
+
+  return(start)
+}
+
+
 ## Function to create full parameter vector.
 make_par <- function(x, type = 1, add.tau2 = FALSE) {
   family <- attr(x, "family")
@@ -1059,8 +1085,8 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
     args <- list(...)
     edf0 <- args$edf - x$state$edf
     eta2 <- eta
+
     objfun <- function(tau2, ...) {
-      tau2 <- rep(tau2, length = length(x$S))
       S <- 0
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * x$S[[j]]
@@ -1074,14 +1100,10 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
       IC <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), x$criterion, ...)
       return(IC)
     }
-    tau2 <- get.state(x, "tau2")
-    tau2 <- try(optimize(objfun, interval = c(tau2[1] / 100, tau2[1] * 100))$minimum, silent = TRUE)
-    if(!inherits(tau2, "try-error")) {
-      tau2 <- rep(tau2, length = length(x$S))
-      x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
-    }
+
+    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
+    x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
     S <- 0
-    tau2 <- get.state(x, "tau2")
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * x$S[[j]]
     P <- matrix_inv(XWX + S, index = x$sparse.setup)
