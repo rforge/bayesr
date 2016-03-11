@@ -111,15 +111,15 @@ bamlss(formula, family = "gaussian", data = NULL,
       of the parameters. A convention for model fitting engines is that such functions should have
       the following arguments:
 
-      \code{optimizer(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)}
+      \code{optimizer(x, y, family, start, weights, offset, ...)}
 
-      Internally, function \code{bamlss()} will send the \code{x}, \code{y}, \code{family} object,
-      etc., of the created \code{\link{bamlss.frame}} object to the optimizer function (see the
-      manual of \code{\link{bamlss.frame}} for more details on the \code{x}, \code{y} and other
-      objects). The job of the optimizer is to return a named numeric vector of optimum parameters.
-      The names of the parameters should be such that they can be uniquely mapped to the
-      corresponding model matrices. See function \code{\link{parameters}} for more details on
-      parameter names. The default optimizer function is \code{\link{bfit}}.
+      Internally, function \code{bamlss()} will send the \code{x} object, the \code{y} object,
+      the \code{family} object, etc., of the created \code{\link{bamlss.frame}} object to the
+      optimizer function (see the manual of \code{\link{bamlss.frame}} for more details on the
+      \code{x}, \code{y} and other objects). The job of the optimizer is to return a named numeric
+      vector of optimum parameters. The names of the parameters should be such that they can be
+      uniquely mapped to the corresponding model matrices. See function \code{\link{parameters}}
+      for more details on parameter names. The default optimizer function is \code{\link{bfit}}.
   }
 }
 
