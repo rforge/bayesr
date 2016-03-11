@@ -1096,7 +1096,7 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
 
     ## Optionally, compute more model stats from samples.
     if(is.function(functions$samplestats)) {
-      ms <- functions$samplestats(samples = bf$samples, x = bf$x, y = bf$y, family = bf$family)
+      ms <- functions$samplestats(samples = bf$samples, x = bf$x, y = bf$y, family = bf$family, ...)
       if(is.null(bf$model.stats)) {
         bf$model.stats <- list("sampler" = list())
         bf$model.stats$sampler[names(ms)] <- ms
