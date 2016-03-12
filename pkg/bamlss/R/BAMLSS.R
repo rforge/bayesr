@@ -3322,7 +3322,7 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
 
   ## What should be plotted?
   which.match <- c("effects", "samples", "hist-resid", "qq-resid",
-    "scatter-resid", "max-acf", "param-samples", "boost.summary")
+    "scatter-resid", "max-acf", "param-samples", "boost.summary", "results")
   if(!is.character(which)) {
     if(any(which > 8L))
       which <- which[which <= 8L]
@@ -3330,6 +3330,8 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
   } else which <- which.match[pmatch(tolower(which), which.match)]
   if(length(which) > length(which.match) || !any(which %in% which.match))
     stop("argument which is specified wrong!")
+  if(which == "results")
+    which <- "effects"
 
   ok <- any(c("hist-resid", "qq-resid") %in% which)
 
@@ -3881,6 +3883,11 @@ delete.NULLs <- function(x.list)
 ## Model summary functions.
 summary.bamlss <- function(object, model = NULL, FUN = NULL, parameters = TRUE, ...)
 {
+  if(!is.null(object$results)) {
+    sfun <- try(get(paste("summary", class(object$results), sep = ".")), silent = TRUE)
+    if(!inherits(sfun, "try-error"))
+      return(sfun(object, model = model, FUN = FUN, parameters = parameters, ...))
+  }
   rval <- list()
   rval$call <- object$call
   rval$family <- object$family
