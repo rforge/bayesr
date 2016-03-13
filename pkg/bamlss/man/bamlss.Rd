@@ -165,6 +165,9 @@ bamlss(formula, family = "gaussian", data = NULL,
       function is provided. Hence, the user can control the output of the model, the plotting
       and summary statistics, too.
   }
+
+  Note that function \code{transform()}, \code{optimizer()}, \code{sampler()}, \code{samplestats()}
+  and \code{results()} can be provided from the \code{\link{bamlss.family}} object.
 }
 
 \value{
