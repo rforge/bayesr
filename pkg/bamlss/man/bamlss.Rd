@@ -18,13 +18,11 @@
   can be used. Identifiability conditions are imposed using function \code{\link[mgcv]{gam.side}}.
 
   After the \code{\link{bamlss.frame}} is set up function \code{bamlss()} applies optimizer
-  and/or sampling functions using the \code{'bamlss.frame'} object. These functions can also be
-  provided by the user. See the details below on how to create new engines to be used
-  with function \code{bamlss()}.
+  and/or sampling functions. These functions can also be provided by the user. See the details
+  below on how to create new engines to be used with function \code{bamlss()}.
 
-  The optimum parameters and/or the samples of the parameters are then parsed to create
-  summary statistics with \code{\link{summary.bamlss}}, effect plots with
-  \code{\link{plot.bamlss}}, etc., see the examples.
+  Finally, the estimated parameters and/or samples are used to create model output results like
+  summary statistics or effect plots. The computation of results may also be controlled by the user.
 }
 
 \usage{
