@@ -1805,17 +1805,24 @@ of problem two specific difficulties need to be considered. First, the updating 
 the time-varying predictor $\eta_{\lambda}(t)$ are different from the time-constant updating
 functions for $\eta_{\gamma}$. Secondly, a specific hurdle of the continuous time Cox-model is the
 computation of the integrals, because these do not have a closed form solution and need to be
-approximated numerically, e.g., by the trapezoidal rule or Gaussian quadratur. Therefore, it
-is inefficient to compute the integrals a new for every update, since for the time-constant part
-the integrals given in $\mathbf{P}$ do not change anymore.
+approximated numerically, e.g., by the trapezoidal rule or Gaussian quadratur. Moreover, it
+is inefficient to compute the integrals a new for every updating step, since for the
+time-constant part the integrals given in $\mathbf{P}$ do not change anymore.
 
 In order to reduce computing time we account for the idiosyncrasy of the Cox-model and
 implement an optimizer function \fct{cox.mode} for posterior mode estimation as well as
 the sampler function \fct{cox.mcmc} for MCMC simulation. The amount of work to implement this
 model using the \pkg{bamlss} infrastructures is moderate, because most of the code of functions
-\fct{bfit} and \fct{GMCMC} can be reused and only need slight adaption. The corresponding
-bamlss family object \fct{cox.bamlss} then sets the two estimation engines as the default
-model fitters.
+\fct{bfit} and \fct{GMCMC} can be reused and only need slight adaption. In this example, the
+the optimizer and sampler function are part of the corresponding bamlss family object
+\fct{cox.bamlss}
+<<>>=
+print(names(cox.bamlss()))
+@
+Additionally, the family object holds a transformer function that sets up the infrastructures for
+computing the integrals for the score, Hessians and the log-likelihood function. Since integrals
+need to be approximated for computing survival probabilities, too, a special \fct{predict} function
+for this task is also added to the family object.
 
 The formula for the fire response waiting time model is set up in \proglang{R} with
 <<eval=FALSE>>=
@@ -1828,9 +1835,18 @@ f <- list(
 )
 @
 where function \fct{Surv} creates the survival object, the response that is used for modeling
-(see the documentation of the \pkg{survival} package, \citealp{bamlss:Therneau:2016}).
-
-Estimation 1.2 days
+(see the documentation of the \pkg{survival} package, \citealp{bamlss:Therneau:2016}). Again,
+we apply a decomposition of main effect an spatial-varying effects using the \fct{ti()} model
+term constructor function. Finally, the model is estimated with
+<<eval=FALSE>>=
+firemodel <- bamlss(f, data = LondonFire, family = "cox",
+  n.iter = 4000, burnin = 2000, thin = 10, cores = 8)
+@
+using function \fct{cox.mode} to compute starting values for MCMC sampling with function
+\fct{cox.mcmc}. On a Linux system with 8 Intel i7-2600 3.40GHz processors estimation takes
+approximately 1.2 days. Note that function \fct{cox.mode} also applies an automated procedure for
+smoothing variances selection using information criteria like the corrected AIC and BIC, similar
+as the implementation of function \fct{bfit}.
 
 
 

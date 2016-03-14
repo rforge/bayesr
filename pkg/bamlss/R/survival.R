@@ -18,13 +18,6 @@ cox.bamlss <- function(...)
     },
     "optimizer" = cox.mode,
     "sampler" = cox.mcmc,
-    "loglik" = function(y, eta, ...) {
-      n <- attr(y, "subdivisions")
-      eeta <- exp(eta_Surv_timegrid)
-      int <- attr(y, "width") * (0.5 * (eeta[, 1] + eeta[, n]) + apply(eeta[, 2:(n - 1)], 1, sum))
-      ll <- (eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int
-      sum(ll)
-    },
     "predict" = cox.predict
   )
 
