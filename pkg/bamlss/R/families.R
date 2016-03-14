@@ -2,13 +2,32 @@
 ## BAMLSS Families. ##
 ######################
 ## Print method.
-print.family.bamlss <- function(x, ...)
+print.family.bamlss <- function(x, full = TRUE, ...)
 {
   cat("Family:", x$family, "\n")
   links <- paste(names(x$links), x$links, sep = " = ")
   links <- paste(links, collapse = ", ")
   cat(if(length(links) > 1) "Link functions:" else "Link function:", links, sep = " ")
   cat("\n")
+  if(full) {
+    nfun <- names(x[c("transform", "optimizer", "sampler", "results", "predict")])
+    if(!all(is.na(nfun))) {
+      nfun <- nfun[!is.na(nfun)]
+      cat("---\nFamily specific functions:\n")
+      for(j in nfun)
+        cat(" ..$ ", j, "\n", sep = "")
+    }
+    nfun <- names(x[c("score", "hess")])
+    if(!all(is.na(nfun))) {
+      nfun <- nfun[!is.na(nfun)]
+      cat("---\nDerivative functions:\n")
+      for(j in nfun) {
+        cat(" ..$ ", j, "\n", sep = "")
+        for(i in names(x[[j]]))
+          cat(" .. ..$ ", i, "\n", sep = "")
+      }
+    }
+  }
 }
 
 

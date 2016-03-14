@@ -3322,7 +3322,8 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
 
   ## What should be plotted?
   which.match <- c("effects", "samples", "hist-resid", "qq-resid",
-    "scatter-resid", "max-acf", "param-samples", "boost.summary", "results")
+    "scatter-resid", "max-acf", "param-samples", "boost.summary", "results",
+    "max-acf")
   if(!is.character(which)) {
     if(any(which > 8L))
       which <- which[which <= 8L]
@@ -3340,7 +3341,7 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
     res <- residuals.bamlss(x, ...)
     plot(res, which = which, spar = spar, ...)
   } else {
-    if(which == "samples") {
+    if(which %in% c("samples", "max-acf")) {
       par <- if(parameters) {
         if(is.null(x$parameters)) NULL else unlist(x$parameters)
       } else NULL
@@ -3350,31 +3351,40 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
       snames <- snames[!grepl("DIC", snames, fixed = TRUE) & !grepl("pd", snames, fixed = TRUE)]
       snames <- snames[!grepl(".model.matrix.edf", snames, fixed = TRUE)]
       samps <- samps[, snames, drop = FALSE]
-      np <- ncol(samps)
-      par(mfrow = if(np <= 4) c(np, 2) else c(4, 2))
-      devAskNewPage(ask)
-      tx <- as.vector(time(samps))
-      for(j in 1:np) {
-        al <- if(grepl("logLik", snames[j], fixed = TRUE)) {
-          x$logLik
-        } else {
-          if(!is.null(par)) {
-            if(snames[j] %in% names(par))
-              par[snames[j]]
-          } else NULL
+      if(which == "samples") {
+        np <- ncol(samps)
+        par(mfrow = if(np <= 4) c(np, 2) else c(4, 2))
+        devAskNewPage(ask)
+        tx <- as.vector(time(samps))
+        for(j in 1:np) {
+            al <- if(grepl("logLik", snames[j], fixed = TRUE)) {
+            x$logLik
+          } else {
+            if(!is.null(par)) {
+              if(snames[j] %in% names(par))
+                par[snames[j]]
+            } else NULL
+          }
+          lim <- range(c(al, samps[, j]), na.rm = TRUE)
+          traceplot(samps[, j, drop = FALSE], main = paste("Trace of", snames[j]), ylim = lim)
+          lines(lowess(tx, samps[, j]), col = "red")
+          if(!is.null(al))
+            abline(h = al, col = "blue")
+          if(snames[j] %in% c(names(par), "logLik"))
+            abline(h = mean(samps[, j], na.rm = TRUE), col = "green")
+          densplot(samps[, j, drop = FALSE], main = paste("Density of", snames[j]), xlim = lim)
+          if(!is.null(al))
+            abline(v = al, col = "blue")
+          if(snames[j] %in% c(names(par), "logLik"))
+            abline(v = mean(samps[, j], na.rm = TRUE), col = "green")
         }
-        lim <- range(c(al, samps[, j]), na.rm = TRUE)
-        traceplot(samps[, j, drop = FALSE], main = paste("Trace of", snames[j]), ylim = lim)
-        lines(lowess(tx, samps[, j]), col = "red")
-        if(!is.null(al))
-          abline(h = al, col = "blue")
-        if(snames[j] %in% c(names(par), "logLik"))
-          abline(h = mean(samps[, j], na.rm = TRUE), col = "green")
-        densplot(samps[, j, drop = FALSE], main = paste("Density of", snames[j]), xlim = lim)
-        if(!is.null(al))
-          abline(v = al, col = "blue")
-        if(snames[j] %in% c(names(par), "logLik"))
-          abline(v = mean(samps[, j], na.rm = TRUE), col = "green")
+      } else {
+        snames <- snames[!grepl(".edf", snames, fixed = TRUE)]
+        snames <- snames[!grepl(".alpha", snames, fixed = TRUE)]
+        snames <- snames[!grepl("logLik", snames, fixed = TRUE)]
+        samps <- samps[, snames, drop = FALSE]
+        macf <- apply(samps, 2, function(x) { acf(x, ...) })
+        print(head(macf))
       }
     }
 
@@ -3923,7 +3933,7 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
   cat("\nCall:\n")
   print(x$call)
   cat("---\n")
-  print(x$family)
+  print(x$family, full = FALSE)
   cat("*---\n")
   for(i in names(x$formula)) {
     print.bamlss.formula(x$formula[i])
@@ -3988,7 +3998,7 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
 ## Simple "bamlss" print method.
 print.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ...) 
 {
-  print(family(x))
+  print(family(x), full = FALSE)
   cat("*---\n")
   print(formula(x))
   if(any(c("logLik", "logPost", "IC", "edf") %in% names(x))) {

@@ -877,25 +877,55 @@ get.ic2 <- function(logLik, edf, n, type = c("AIC", "BIC", "AICc", "MP"), ...)
 }
 
 
+cround <- function(x, digits = 2)
+{
+  cdigits <- Vectorize(function(x) {
+    if(abs(x) >= 1)
+      return(0)
+    scipen <- getOption("scipen")
+    on.exit(options("scipen" = scipen))
+    options("scipen" = 100)
+    x <- strsplit(paste(x), "")[[1]]
+    x <- x[which(x == "."):length(x)][-1]
+    i <- which(x != "0")
+    x <- x[1:(i[1] - 1)]
+    n <- length(x)
+    if(n < 2) {
+      if(x != "0")
+        return(1)
+      else return(n + 1)
+    } else return(n + 1)
+  })
+
+  round(x, digits = cdigits(x) + digits)
+}
+
+
 ## Naive smoothing parameter optimization.
-tau2.optim <- function(f, start, ..., scale = 100, eps = 0.001, maxit = 10)
+tau2.optim <- function(f, start, ..., scale = 10, eps = 0.0001, maxit = 10)
 {
   foo <- function(par, start, k) {
     start[k] <- par
     return(f(start, ...))
   }
 
+  start <- cround(start)
+
   iter <- 1; eps0 <- eps + 1
   while((eps0 > eps) & (iter < maxit)) {
     start0 <- start
     for(k in seq_along(start)) {
-      tpar <- try(optimize(foo, interval = c(start[k] / scale, start[k] * scale), start = start, k = k)$minimum, silent = TRUE)
-      if(!inherits(tpar, "try-error"))
-        start[k] <- tpar
+      xr <- c(start[k] / scale, start[k] * scale)
+      tpar <- try(optimize(foo, interval = xr, start = start, k = k), silent = TRUE)
+      if(!inherits(tpar, "try-error")) {
+        dgts <- cdigits(tpar$minimum)
+        start[k] <- cround(tpar$minimum)
+      }
     }
     if(length(start) < 2)
       break
-    eps <- mean(abs((start - start0) / start0))
+
+    eps0 <- mean(abs((start - start0) / start0))
     iter <- iter + 1
   }
 

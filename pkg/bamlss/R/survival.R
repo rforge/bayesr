@@ -12,7 +12,7 @@ cox.bamlss <- function(...)
   rval <- list(
     "family" = "cox",
     "names" = c("lambda", "gamma"),
-    "links" = c(lambda = "log", gamma = "identity"),
+    "links" = c(lambda = "log", gamma = "log"),
     "transform" = function(x, ...) {
       surv.transform(x = x$x, y = x$y, data = model.frame(x), family = x$family, is.cox = TRUE, ...)
     },

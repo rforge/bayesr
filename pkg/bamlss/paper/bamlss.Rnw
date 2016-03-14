@@ -75,6 +75,7 @@ options(width = 70, prompt = "R> ", continue = "+  ")
 set.seed(1090)
 
 library("bamlss")
+library("survival")
 source("models.R")
 source("figures.R")
 @
@@ -774,7 +775,6 @@ As mentioned in Section \ref{sec:smootheffects}, other priors than the inverse G
 desirable. Then,  Metropolis Hastings steps also for the variances can be constructed, see~\citet{bamlss:Klein:Kneib:2015} for details. If a simple Gibbs sampling step cannot be derived, another strategy is to use slice sampling, since the number of smoothing variances is usually not very large
 the computational burden does most of the times not exceed possible benefits.
 
-\newpage
 
 \subsection{Model Choice} \label{sec:modchoice}
 
@@ -797,8 +797,6 @@ $\mathit{pd}=\overline{D(\boldsymbol{\vartheta})}-D(\overline{\boldsymbol{\varth
 effective parameter count.
 
 \subsubsection{Predicitive Ability} \label{sec:predability}
-
-%\newpage
 
 
 \subsection{Inference and prediction} \label{sec:infpred}
@@ -1817,12 +1815,12 @@ model using the \pkg{bamlss} infrastructures is moderate, because most of the co
 the optimizer and sampler function are part of the corresponding bamlss family object
 \fct{cox.bamlss}
 <<>>=
-print(names(cox.bamlss()))
+print(cox.bamlss())
 @
 Additionally, the family object holds a transformer function that sets up the infrastructures for
-computing the integrals for the score, Hessians and the log-likelihood function. Since integrals
-need to be approximated for computing survival probabilities, too, a special \fct{predict} function
-for this task is also added to the family object.
+computing the integrals for the score vectors, Hessian matrices and the log-likelihood function. 
+Since integrals need to be approximated for computing survival probabilities, too, a special
+\fct{predict} function for this task is also added to the family object.
 
 The formula for the fire response waiting time model is set up in \proglang{R} with
 <<eval=FALSE>>=
@@ -1834,21 +1832,34 @@ f <- list(
     ti(daytime,lon,lat,bs=c("cc","cr"),d=c(1,2),k=c(10,30))
 )
 @
-where function \fct{Surv} creates the survival object, the response that is used for modeling
+where function \fct{Surv} creates a survival object, the response that is used for modeling
 (see the documentation of the \pkg{survival} package, \citealp{bamlss:Therneau:2016}). Again,
-we apply a decomposition of main effect an spatial-varying effects using the \fct{ti()} model
+we apply a decomposition of main effects and spatial-varying effects using the \fct{ti} model
 term constructor function. Finally, the model is estimated with
 <<eval=FALSE>>=
 firemodel <- bamlss(f, data = LondonFire, family = "cox",
   n.iter = 4000, burnin = 2000, thin = 10, cores = 8)
 @
-using function \fct{cox.mode} to compute starting values for MCMC sampling with function
-\fct{cox.mcmc}. On a Linux system with 8 Intel i7-2600 3.40GHz processors estimation takes
+and runs function \fct{cox.mode} to compute starting values prior starting the MCMC sampler
+function \fct{cox.mcmc}. On a Linux system with 8 Intel i7-2600 3.40GHz processors estimation takes
 approximately 1.2 days. Note that function \fct{cox.mode} also applies an automated procedure for
 smoothing variances selection using information criteria like the corrected AIC and BIC, similar
 as the implementation of function \fct{bfit}.
 
-
+The estimated effects are shown in Figure~\ref{fig:londonfiredeffects}. The upper left panel
+shows that the average ``risk'' that a fire engine arrives increases steeply until the target time
+of six minutes. The space-time varying effect is relatively small compared to the overall size
+of the effect, especially until the six minutes target time it seems that the location
+does not have a great influence on the relative risk. Only for waiting times above ${\sim}15$
+minutes, the space-time varying effect is more pronounced. The effect for fire station intensity is
+bounded, i.e., there is a natural limit for the benefit from opening new fire stations in the area.
+The effect of the time of the day then indicates that in the morning hours around 4-5 am, as well
+as in the afternoon around 14-16 pm, the risk of waiting longer for the fire engine to arrive
+is increasing. The time-constant spatial effect clearly shows that the average risk of increased 
+waiting times are higher in the city center and some smaller area in southern London. However, the 
+estimated probabilities of waiting longer than six minutes around the center show moderate
+variation, while the borders of London indicate higher probabilities as well as in the western
+parts, most probably because of the lower fire station density in these areas.
 
 \begin{figure}[t!]
 \centering
@@ -1856,7 +1867,11 @@ as the implementation of function \fct{bfit}.
 \includegraphics[width=0.46\textwidth]{figures/firemodel-effects-fsintens}\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-spatial-td} \\[0.5cm]
 \includegraphics[width=0.46\textwidth]{figures/firemodel-effects-daytime}\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-spatial-tc}
 \caption{\label{fig:londonfiredeffects} Estimated effects of the fire emergency response times
-  survival model.}
+  survival model. Top left panel shows the mean baseline effect, red line, together with the
+  spatially-varying effects, black lines. The six minutes target waiting time is represented by
+  the blue dashed vertical line. The upper right panel shows the estimated probability
+  of waiting longer than six minutes until the first engine arrives at 8:30 am. The space-time varying
+  effect is illustrated at six minutes waiting time in the second row, right panel.}
 \end{figure}
 
 
