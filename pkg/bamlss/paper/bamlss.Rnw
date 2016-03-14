@@ -119,7 +119,7 @@ manifold: the use of different model specification languages like
 \proglang{BUGS}~\citep{bamlss:BUGS:2009} or \proglang{R}~\citep{bamlss:R}; different standalone
 statistical software packages like \pkg{BayesX}~\citep{bamlss:Umlauf+Adler+Kneib+Lang+Zeileis:2014,
 bamlss:Belitz+Brezger+Kneib+Lang:2011}, \pkg{JAGS}~\citep{bamlss:Plummer:2013},
-\pkg{Stan}~\citep{bamlss:stan-software:2013} or
+\pkg{Stan}~\citep{bamlss:stan-software:2016} or
 \pkg{WinBUGS}~\citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}; or even differences within the
 same environment.
 
@@ -890,7 +890,7 @@ more flexibility to the modeling system.
 %In practice, only few implementations support an entirely modular setup that can be
 %extended by the user. Examples that do support some flexibility are the \proglang{R}
 %model fitting functions \fct{glm}, \fct{gam} as well as function \fct{gamlss} of package \pkg{gamlss}
-%\citep{bamlss:Stasinopoulos+Rigby:2014}.
+%\citep{bamlss:Stasinopoulos+Rigby:2016}.
 
 
 \section{Computational tools and strategies for implementation} \label{sec:comptools}
@@ -903,7 +903,7 @@ a syntax (see also \citealp{bamlss:Chambers+Hastie:1992}), which is familiar to 
 \proglang{R} user today. Without such specifications, that in the end translate model formulae into
 model frames, the estimation of regression models is very circumstantial, especially in the case of
 structured additive predictors (\ref{eqn:structadd}). Therefore, the \proglang{R} model formula
-language is also extensible. The recommended package \pkg{mgcv}~\citep{bamlss:Wood:2014} for
+language is also extensible. The recommended package \pkg{mgcv}~\citep{bamlss:wood:2016} for
 estimating GAMs additionally provides the generic descriptor \code{s()} for smooth terms. However,
 to conveniently specify the models presented in Section~\ref{sec:models}, a slightly enhanced syntax
 is required.
@@ -1813,7 +1813,22 @@ In order to reduce computing time we account for the idiosyncrasy of the Cox-mod
 implement an optimizer function \fct{cox.mode} for posterior mode estimation as well as
 the sampler function \fct{cox.mcmc} for MCMC simulation. The amount of work to implement this
 model using the \pkg{bamlss} infrastructures is moderate, because most of the code of functions
-\fct{bfit} and \fct{GMCMC} could be reused and only needed slight adaption.
+\fct{bfit} and \fct{GMCMC} can be reused and only need slight adaption. The corresponding
+bamlss family object \fct{cox.bamlss} then sets the two estimation engines as the default
+model fitters.
+
+The formula for the fire response waiting time model is set up in \proglang{R} with
+<<eval=FALSE>>=
+f <- list(
+  "lambda" = Surv(arrivaltime) ~ ti(arrivaltime,k=20) +
+    ti(arrivaltime,lon,lat,d=c(1,2),k=c(5,30)),
+  "gamma" = ~ s(fsintens) + ti(daytime,bs="cc",k=30) +
+    ti(lon,lat,k=80,d=2) +
+    ti(daytime,lon,lat,bs=c("cc","cr"),d=c(1,2),k=c(10,30))
+)
+@
+where function \fct{Surv} creates the survival object, the response that is used for modeling
+(see the documentation of the \pkg{survival} package, \citealp{bamlss:Therneau:2016}).
 
 Estimation 1.2 days
 
