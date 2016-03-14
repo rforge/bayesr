@@ -917,10 +917,8 @@ tau2.optim <- function(f, start, ..., scale = 10, eps = 0.0001, maxit = 10)
     for(k in seq_along(start)) {
       xr <- c(start[k] / scale, start[k] * scale)
       tpar <- try(optimize(foo, interval = xr, start = start, k = k), silent = TRUE)
-      if(!inherits(tpar, "try-error")) {
-        dgts <- cdigits(tpar$minimum)
+      if(!inherits(tpar, "try-error"))
         start[k] <- cround(tpar$minimum)
-      }
     }
     if(length(start) < 2)
       break
