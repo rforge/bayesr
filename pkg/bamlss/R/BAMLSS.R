@@ -1159,7 +1159,7 @@ get.all.parnames <- function(x, rename.p = TRUE)
 
 
 ## Model stats based on samples.
-samplestats <- function(samples, x = NULL, y = NULL, family = NULL, logLik = FALSE)
+samplestats <- function(samples, x = NULL, y = NULL, family = NULL, logLik = FALSE, ...)
 {
   if(inherits(samples, "bamlss")) {
     if(is.null(samples$samples))
