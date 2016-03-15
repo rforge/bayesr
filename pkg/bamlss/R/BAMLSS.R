@@ -1195,7 +1195,7 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL, logLik = FAL
     pn <- pn[pn %in% colnames(samples)]
     if(length(pn) & ("DIC" %in% what)) {
       samples <- samples[, pn, drop = FALSE]
-      if(is.null(family$p2d)) {
+      if(is.null(family$p2d) & is.null(family$p2logLik)) {
         nx <- names(x)
         par <- rep(list(0), length = length(x))
         names(par) <- nx
@@ -1224,7 +1224,9 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL, logLik = FAL
         mpar <- apply(samples, 2, mean, na.rm = TRUE)
         ll <- try(apply(samples, 1, function(x) {
           names(x) <- colnames(samples)
-          sum(family$p2d(x, log = TRUE), na.rm = TRUE)
+          if(is.null(family$p2logLik)) {
+            sum(family$p2d(x, log = TRUE), na.rm = TRUE)
+          } else family$p2logLik(x)
         }), silent = TRUE)
         if(inherits(ll, "try-error")) {
           warning("no DIC, cannot evaluate the $p2d() function in 'bamlss' family object!")
@@ -1232,7 +1234,9 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL, logLik = FAL
           if(logLik)
             return(ll)
           dev <- -2 * ll
-          ll <- try(sum(family$p2d(mpar, log = TRUE), na.rm = TRUE), silent = TRUE)
+          ll <- try(if(is.null(family$p2logLik)) {
+              sum(family$p2d(mpar, log = TRUE), na.rm = TRUE)
+            } else family$p2logLik(mpar), silent = TRUE)
         }
       }
       if(!inherits(ll, "try-error")) {
