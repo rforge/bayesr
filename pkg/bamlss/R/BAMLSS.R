@@ -3834,7 +3834,6 @@ bamlss_factor2d_plot <- function(x, ids = NULL, add = FALSE, ...)
     if(!is.null(y))
       y <- y[i]
   }
-  args$ylim <- args$zlim
   xlim <- if(is.null(args$xlim)) range(xd) else args$xlim
   ylim <- if(is.null(args$ylim)) range(fx) else args$ylim
   if(!add) {
@@ -5370,6 +5369,20 @@ h_response <- function(x)
 ## Create the inverse of a matrix.
 matrix_inv <- function(x, index = NULL, force = FALSE)
 {
+  if(!is.null(index$crossprod) & FALSE) {
+    if(ncol(index$crossprod) < ncol(x)) {
+      ju <- unique(index$crossprod[, 1])
+      if(length(ju) < nrow(x)) {
+        require("Matrix")
+        inv <- list()
+        for(i in ju) {
+          take <- index$crossprod[, 1] == i
+          inv[[as.character(i)]] <- solve(x[take, take, drop = FALSE])
+        }
+        return(as.matrix(do.call("bdiag", inv)))
+      }
+    }
+  }
   require("spam")
   if(length(x) < 2)
     return(1 / x)
