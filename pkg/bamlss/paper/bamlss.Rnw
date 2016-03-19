@@ -83,6 +83,7 @@ source("figures.R")
 
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 
 \section{Introduction} \label{sec:intro}
 
@@ -121,7 +122,7 @@ different algorithms or to select the appropriate distribution and variables, et
 manifold: the use of different model specification languages like
 \proglang{BUGS}~\citep{bamlss:BUGS:2009} or \proglang{R}~\citep{bamlss:R}; different standalone
 statistical software packages like \pkg{BayesX}~\citep{bamlss:Umlauf+Adler+Kneib+Lang+Zeileis:2014,
-bamlss:Belitz+Brezger+Kneib+Lang:2011}, \pkg{JAGS}~\citep{bamlss:Plummer:2013},
+bamlss:Belitz+Brezger+Klein+Kneib+Lang+Umlauf:2015}, \pkg{JAGS}~\citep{bamlss:Plummer:2013},
 \pkg{Stan}~\citep{bamlss:stan-software:2016} or
 \pkg{WinBUGS}~\citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}; or even differences within the
 same environment.
