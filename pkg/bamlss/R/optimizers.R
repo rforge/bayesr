@@ -665,6 +665,8 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   }
 
   ia <- interactive()
+  nback <- if(is.null(list(...)$nback)) 20 else list(...)$nback
+  ic.eps <- if(is.null(list(...)$ic.eps)) 0.0001 else list(...)$ic.eps
 
   if(mgcv) {
     outer <- TRUE
@@ -747,7 +749,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
   ## Backfitting main function.
   backfit <- function(verbose = TRUE) {
-    eps0 <- eps + 1; iter <- 1
+    eps0 <- eps + 1; iter <- 1; ic_contrib <- NULL
     edf <- get.edf(x, type = 2)
     while(eps0 > eps & iter < maxit) {
       eta0 <- eta
@@ -801,8 +803,15 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
       peta <- family$map2par(eta)
 
+      IC <- get.ic(family, y, peta, edf, nobs, criterion)
+      ic_contrib <- c(ic_contrib, IC)
+      if(iter > nback) {
+        adic <- abs(diff(tail(ic_contrib, nback))) / tail(ic_contrib, nback - 1)
+        if(all(adic < ic.eps))
+          eps0 <- 0
+      }
+
       if(verbose) {
-        IC <- get.ic(family, y, peta, edf, nobs, criterion)
         cat(if(ia) "\r" else "\n")
         vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
           " logPost ", fmt(family$loglik(y, peta) + get.log.prior(x), width = 8, digits = digits),

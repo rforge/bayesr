@@ -3349,7 +3349,7 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
       par <- if(parameters) {
         if(is.null(x$parameters)) NULL else unlist(x$parameters)
       } else NULL
-      samps <- samples(x, model = model, term = term, drop = TRUE)
+      samps <- samples(x, model = model, term = term, drop = TRUE, ...)
       snames <- colnames(samps)
       snames <- snames[!grepl(".p.edf", snames, fixed = TRUE) & !grepl(".accepted", snames, fixed = TRUE)]
       snames <- snames[!grepl("DIC", snames, fixed = TRUE) & !grepl("pd", snames, fixed = TRUE)]
@@ -3387,8 +3387,18 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
         snames <- snames[!grepl(".alpha", snames, fixed = TRUE)]
         snames <- snames[!grepl("logLik", snames, fixed = TRUE)]
         samps <- samps[, snames, drop = FALSE]
-        macf <- apply(samps, 2, function(x) { acf(x, ...) })
-        print(head(macf))
+        macf <- apply(samps, 2, function(x) { acf(x, plot = FALSE, ...) })
+        acfx <- macf[[1]]
+        acfx$acf <- array(apply(do.call("rbind", lapply(macf, function(x) { x$acf })), 2, max), dim = c(length(acfx$acf), 1L, 1L))
+        args <- list(...)
+        if(is.null(args$main))
+          args$main <- "Maximum ACF of samples"
+        if(is.null(args$xlab))
+          args$xlab <- "Lag"
+        if(is.null(args$ylab))
+          args$ylab <- "ACF"
+        getS3method("plot", class = "acf")(acfx, main = args$main, xlab = args$xlab,
+          ylab = args$ylab, xlim = args$xlim, ylim = args$ylim)
       }
     }
 

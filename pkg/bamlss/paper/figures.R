@@ -319,7 +319,7 @@ if(!file.exists("figures/firemodel-data.png")) {
   data("LondonFire")
   load("firemodel_plotdata.rda")
 
-  plot.daytime <- function(x, daytime = 1, n = 30, range = NULL, lrange = NULL, ...)
+  plot.daytime <- function(x, daytime = 1, n = 30, range = NULL, lrange = NULL, main = NULL, ...)
   {
     options(warn = -1)
     gpclibPermit()
@@ -342,7 +342,7 @@ if(!file.exists("figures/firemodel-data.png")) {
     co$spatial_daytime <- predict(x, newdata = co, model = "gamma",
       term = "daytime", intercept = FALSE)
     plot(LondonBoroughs, xlab = "Longitude [deg]", ylab = "Latitude [deg]",
-      main = paste("Daytime =", daytime))
+      main = NULL)
     if(is.null(lrange)) {
       lrange <- range(co$spatial_daytime)
       lrange <- c(-1 * max(abs(lrange)), max(abs(lrange)))
@@ -360,6 +360,8 @@ if(!file.exists("figures/firemodel-data.png")) {
     box()
     axis(1)
     axis(2)
+
+    if(!is.null(main)) main(main)
     options(warn = 0)
     return(invisible(NULL))
   }
@@ -381,15 +383,17 @@ if(!file.exists("figures/firemodel-data.png")) {
       if(main) main("Baseline-hazard effects")
     }
     if("daytime_curves" %in% what & !is.null(data$daytime)) {
+      ylim <- range(data$daytime[, -1])
+      ylim[1] <- ylim[1] - abs(diff(ylim)) * 0.1
       matplot(seq(0, 24, length = 100), data$daytime[, -1], type = "l", lty = 1,
         col = rgb(0.1, 0.1, 0,1, alpha = 0.01), xlab = "Time of day",
-        ylab = "Effect of time of day")
+        ylab = "Effect of time of day", ylim = ylim)
       plot2d(firemodel$results$gamma$s.effects[["ti(daytime)"]], c.select = c(1, 3),
         col.lines = rainbow_hcl(1), add = TRUE, rug = FALSE, lwd = 2)
       abline(v = 8.5, col = "blue", lty = 2)
       legend("bottomright", c("Mean daytime effect", "Spatial-varying effect"), lwd = c(2, 1),
         col = c(rainbow_hcl(1), "black"), box.col = NA, bg = NA, cex = 0.95)
-      if(main) main("Spatial-varying daytime effect")
+      if(main) main("Spatial-varying time of day effect")
     }
     if("spatial_prob" %in% what) {
       plot(LondonBoundaries, xlab = "Longitude [deg]", ylab = "Latitude [deg]")
@@ -626,6 +630,11 @@ if(!file.exists("figures/firemodel-data.png")) {
   plot.firemodel(firemodel_plotdata, what = "daytime", main = TRUE)
   dev.off()
 
+  epng("figures/firemodel-effects-daytime-curves.png", width = 4.5, height = 3.5)
+  par(mar = c(4.1, 4.1, 1.5, 1.5))
+  plot.firemodel(firemodel_plotdata, what = "daytime_curves", main = TRUE)
+  dev.off()
+
   epng("figures/firemodel-effects-prob.png", width = 4.5, height = 3.5)
   par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot.firemodel(firemodel_plotdata, what = "spatial_prob", main = TRUE)
@@ -640,5 +649,23 @@ if(!file.exists("figures/firemodel-data.png")) {
   par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot.firemodel(firemodel_plotdata, what = "spatial_tc", main = TRUE)
   dev.off()
+
+  epng("figures/firemodel-max-acf.png", width = 4.5, height = 3.5)
+  par(mar = c(4.1, 4.1, 1.5, 1.5))
+  plot(firemodel, which = "max-acf", thin = 4)
+  dev.off()
+
+  lr <- range(firemodel_plotdata$daytime[,-1])
+  q90 <- quantile(firemodel_plotdata$daytime[,-1], prob = 0.99)
+  rr <- c(-1 * q90, q90)
+  target <- c(0, 4, 6, 8.5, 10, 12, 14, 16, 18, 20, 22, 24)
+  tmain <- c("00:00", "04:00", "06:00", "08:30", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00", "22:00", "24:00")
+  tmain <- paste("Time of day", tmain)
+  for(i in seq_along(target)) {
+    epng(paste("figures/firemodel-daytime-t", i, ".png", sep = ""), width = 4.5, height = 3.5)
+    par(mar = c(4.1, 4.1, 1.5, 1.5))
+    plot.daytime(firemodel, daytime = target[i], n = 120, range = rr, lrange = lr, main = tmain[i])
+    dev.off()
+  }
 }
 
