@@ -43,9 +43,10 @@
   for the estimation of a variety of models and proposes an unified modeling architecture
   that can deal with a wide range of types of model terms. We show that within this framework
   implementing algorithms for complex regression problems, as well as the integration of already
-  existing software, is relatively easy. The examples illustrate the usefulness of the approach on
-  a very large climatology model for daily precipitation observations, as well as on a computational
-  intensive spatial Cox-model for continuous time with over five thousand ``individuals''.
+  existing software, is relatively straightforward. We further emphasize the usefulness on an
+  example of a very large climatology model for over $1.2$ million daily precipitation observations,
+  as well as on a computational demanding Cox-model for continuous time with space-time interactions
+  on a data set with over five thousand ``individuals''.
 }
 
 \Address{
@@ -107,7 +108,12 @@ by assigning normal priors on the regression coefficients of smooth terms
 \citep{bamlss:Fahrmeir+Kneib+Lang+Marx:2013, bamlss:Brezger+Lang:2006}.
 
 The fully Bayesian approach using Markov Chain Monte Carlo (MCMC) simulation is particularly
-attractive since it provides inference that provides valid credible intervals for estimators in situations where confidence intervals for corresponding maximum likelihood estimators based on asymptotic properties fail. This is particular the case in more complex models, e.g., with response distributions outside the exponential family or when multiple predictors contain several smooth effects. In addition, extensions such as variable selection, non-standard priors for hyperparameters or multilevel models are easily included.
+attractive since it provides inference that provides valid credible intervals for estimators in
+situations where confidence intervals for corresponding maximum likelihood estimators based on
+asymptotic properties fail. This is particular the case in more complex models, e.g., with response
+distributions outside the exponential family or when multiple predictors contain several smooth
+effects. In addition, extensions such as variable selection, non-standard priors for
+hyper-parameters or multilevel models are easily included.
 Probably for this reason, and because computational power has tremendously increased in the past
 decade, the number of Bayesian estimation engines that can tackle complicated inferential problems
 has seen a constant rise. As a whole, existing estimation engines already provide infrastructures
@@ -123,7 +129,7 @@ different algorithms or to select the appropriate distribution and variables, et
 manifold: the use of different model specification languages like
 \proglang{BUGS}~\citep{bamlss:BUGS:2009} or \proglang{R}~\citep{bamlss:R}; different standalone
 statistical software packages like \pkg{BayesX}~\citep{bamlss:Umlauf+Adler+Kneib+Lang+Zeileis:2014,
-bamlss:Belitz+Brezger+Kneib+Lang:2011}, \pkg{JAGS}~\citep{bamlss:Plummer:2013},
+bamlss:Belitz+Brezger+Kneib+Lang+Umlauf:2016}, \pkg{JAGS}~\citep{bamlss:Plummer:2013},
 \pkg{Stan}~\citep{bamlss:stan-software:2016} or
 \pkg{WinBUGS}~\citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}; or even differences within the
 same environment.
@@ -131,14 +137,17 @@ same environment.
 In order to ease the usage of already existing implementations and code, as well as to facilitate
 the development of new algorithms and extensions, we present an unified and entirely modular
 architecture for models with additive predictors that does not restrict to any type of regression
-problem. Hence, the approach supports more than the GAMLSS statistical model class and is sometimes
+problem. More precisely, we highlight the similarities between estimation algorithms such that
+model building is practically based on a ``Lego'' toolbox with repeatedly used ``bricks''.
+Hence, the approach supports more than the GAMLSS statistical model class and is sometimes
 referred to as distributional regression. However, because of the great similarities with GAMLSS we
-call the conceptional framework Bayesian additive models for location, scale and shape (BAMLSS).
+call the conceptional framework Bayesian additive models for location, scale and shape (BAMLSS),
+and beyond.
 
 The remainder of the paper is as follows. In Section~\ref{sec:models} the models supported by this
-framework are briefly introduced. Section~\ref{sec:legobox} presents the lego bricks that can be
+framework are briefly introduced. Section~\ref{sec:legobox} presents the ``Lego bricks'' that can be
 utilized for model building and estimation. In Section~\ref{sec:comptools} computational strategies
-for the implemenation are presented. Finally, Section~\ref{sec:softex} introduces the corresponding
+for the implementation are presented. Finally, Section~\ref{sec:softex} introduces the corresponding
 \proglang{R} implementation on a very large model for daily precipitation observations, as well as
 on the computational challenging Cox-model for continuous time.
 
@@ -257,36 +266,46 @@ parameter in a frequentist approach and controls the trade off between flexibili
 Note that within this notion a ridge penalty on linear effects can be obtained by
 $\mathbf{K}_{jk} = \mathbf{I}$, similarly independent and identically distributed (i.i.d.) random
 effects can be incorporated using prior (\ref{eqn:shrinkprior}).
-A common choice of prior for the variance parameter is a weakly informative inverse Gamma hyperprior
+A common choice of prior for the variance parameter is a weakly informative inverse Gamma hyper-prior
 \begin{equation} \label{eqn:ig}
 p(\tau_{jk}^2|a_{jk},b_{jk}) = \frac{b_{jk}^{a_{jk}}}{\Gamma(a_{jk})} (\tau_{jk}^2)^{-(a_{jk} + 1)} \exp(-b_{jk} / \tau_{jk}^2).
 \end{equation}
-with hyperparameters $a_{jk} = b_{jk} = 0.001$ as a standard option. Small values for $a_{jk}$ and $b_{jk}$ correspond to an 
-approximate flat prior for $\log(\tau_{jk}^2)$. Setting $b_{jk}=0$ and $a_{jk}=-1$ or $a_{jk}=-0.5$ yields flat priors for $\tau_{jk}^2$ and $\tau_{jk}$, respectively. However, the default option of the inverse
-Gamma prior for variance parameters needs to be reconsidered in some cases, e.g., it might be
-problematic if $\tau_{jk}$ is close to zero, since the results a very sensitive on the choice of
-$a_{jk}$ and $b_{jk}$. Therefore, \citet{bamlss:Gelman:2006} proposes to use the half-Cauchy prior
+with hyper-parameters $a_{jk} = b_{jk} = 0.001$ as a standard option. Small values for $a_{jk}$ and
+$b_{jk}$ correspond to an approximate flat prior for $\log(\tau_{jk}^2)$. Setting $b_{jk}=0$ and
+$a_{jk}=-1$ or $a_{jk}=-0.5$ yields flat priors for $\tau_{jk}^2$ and $\tau_{jk}$, respectively.
+However, the default option of the inverse Gamma prior for variance parameters needs to be
+reconsidered in some cases, e.g., it might be problematic if $\tau_{jk}$ is close to zero, since the
+results a very sensitive on the choice of $a_{jk}$ and $b_{jk}$. Therefore,
+\citet{bamlss:Gelman:2006} proposes to use the half-Cauchy prior
 \begin{equation} \label{eqn:hcauchy}
 p(\tau_{jk}|A_{jk}) = \frac{2A_{jk}}{\pi (\tau_{jk}^2 + A_{jk}^2)}, \quad A_{jk} > 0.
 \end{equation}
-For the hyperparameter $A_{jk} \rightarrow \infty$ the prior is uniform, hence large values (e.g., $A_{jk} = 25$) result in
-weakly informative priors. A desirable property of the half-Cauchy is that for $\tau_{jk} = 0$ the
-density is a nonzero constant, whereas the density of the inverse Gamma for $\tau_{jk} \rightarrow 0$
-vanishes (see also \citealp{bamlss:Polson+Scott:2012}). Note that in our framework the priors for variances $\tau_{jk}^2$ rather than $\tau_{jk}$ are usually considered. Hence, the corresponding priors have to be proposed. Another question is the actual choice of hyperparameters. A recent suggestion reducing this issue to the choice of a scale parameter that is directly related to the functions $f_{jk}$ (and thus much better interpretable and accessible for the user) is given in~\citet{bamlss:Klein+Kneib:2015} for several different hyperpriors for $\tau_{jk}^2$, such as resulting priors from half-Cauchy, half-normal or uniform priors for $\tau_{jk}$ or resulting penalised complexity priors~\citep{bamlss:Simpson:Rue:Martins:Riebler:Sorbye:2015}.
+For the hyper-parameter $A_{jk} \rightarrow \infty$ the prior is uniform, hence large values
+(e.g., $A_{jk} = 25$) result in weakly informative priors. A desirable property of the half-Cauchy
+is that for $\tau_{jk} = 0$ the density is a nonzero constant, whereas the density of the inverse
+Gamma for $\tau_{jk} \rightarrow 0$ vanishes (see also \citealp{bamlss:Polson+Scott:2012}). Note
+that in our framework the priors for variances $\tau_{jk}^2$ rather than $\tau_{jk}$ are usually
+considered. Hence, the corresponding priors have to be proposed. Another question is the actual
+choice of hyper-parameters. A recent suggestion reducing this issue to the choice of a scale
+parameter that is directly related to the functions $f_{jk}$ (and thus much better interpretable and
+accessible for the user) is given in~\citet{bamlss:Klein+Kneib:2016} for several different
+hyper-priors for $\tau_{jk}^2$, such as resulting priors from half-Cauchy, half-normal or uniform
+priors for $\tau_{jk}$ or resulting penalized complexity
+priors~\citep{bamlss:Simpson:Rue:Martins:Riebler:Sorbye:2015}.
 
 Note that using a basis function approach it is possible to construct effects of more than
-one covariate by applying tensor products of marginal design matrices \citep{bamlss:Wood:2006}.
+one covariate by applying tensor products of marginal design matrices
+\citep{bamlss:Eilers+Marx:2003, bamlss:Wood:2006}.
 The resulting penalty matrix is also constructed by tensor products, e.g., for a two-dimensional
 effect the corresponding penalty takes the following form
 $$
-\boldsymbol{\beta}_{jk}^\top \left( \frac{1}{\tau_{1jk}^2} \mathbf{K}_{1jk} \otimes \mathbf{I}_{2jk} +
-  \frac{1}{\tau_{2jk}^2} \mathbf{I}_{1jk} \otimes \mathbf{K}_{2jk} \right) \boldsymbol{\beta}_{jk} =
-\boldsymbol{\beta}_{jk}^\top \mathbf{K}_{jk}
-  \left(\frac{1}{\tau_{1jk}^2},\frac{1}{\tau_{2jk}^2} \right)\boldsymbol{\beta}_{jk},
+\boldsymbol{\beta}_{jk}^\top \left( \frac{1}{\tau_{1jk}^2} \mathbf{I}_{2jk} \otimes \mathbf{K}_{1jk} +
+  \frac{1}{\tau_{2jk}^2} \mathbf{K}_{2jk} \otimes \mathbf{I}_{1jk} \right) \boldsymbol{\beta}_{jk} =
+\boldsymbol{\beta}_{jk}^\top \mathbf{K}_{jk}(\boldsymbol{\tau}_{jk}^2)\boldsymbol{\beta}_{jk},
 $$
 where $\mathbf{K}_{1jk}$ and $\mathbf{K}_{2jk}$ are the penalty matrices of the marginal effects
-and $\tau_{1jk}^2$ and $\tau_{2jk}^2$ are variances that control the smoothness of the effect
-in each of the two dimensions.
+and $\boldsymbol{\tau}_{jk}^2 = (\tau_{1jk}^2, \tau_{2jk}^2)^\top$ are variances that control the
+smoothness of the effect in each of the two dimensions.
 
 In addition, the individual model components $\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$ for any basis
 function specification can be further decomposed into a mixed model representation given by
@@ -300,13 +319,13 @@ The design matrix $\mathbf{U}_{jk}$ is derived from a spectral decomposition of 
 $\mathbf{K}_{jk}$ and $\tilde{\mathbf{X}}_{jk}$ by finding a basis of the null space of $\mathbf{K}_{jk}$
 such that $\tilde{\mathbf{X}}_{jk}^{\top}\mathbf{K}_{jk} = \mathbf{0}$, i.e., parameters
 $\tilde{\boldsymbol{\gamma}}_{jk}$ are not penalized (see, e.g.,
-\citealp{bamlss:Fahrmeir+Kneib+Lang+Marx:2013, bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003}).
+\citealp{bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003, bamlss:Fahrmeir+Kneib+Lang+Marx:2013}).
 
 
 \subsubsection{Multilevel effects} \label{sec:multileveleffects}
 
 In numerous applications geographical information and spatial covariates are given at
-different resolutions. For example, spatial data that is measured within different regions for
+different resolutions. For example, spatial data that is measured within different regions, for
 which additional regional covariates are available. Whenever there is such a nested structure
 in the data, it is possible to model such complex (spatial) heterogeneity effects using
 a compound prior
@@ -317,12 +336,12 @@ $$
 where $\boldsymbol{\varepsilon}_{jk} \sim N(\mathbf{0}, \tilde{\tau}^2\mathbf{I})$ is a vector
 of i.i.d.\ Gaussian random effects and
 $\tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})$ represents a full
-structured additive predictor of nested covariates, e.g., including a discrete spatial effect
-modeled by a Markov random field. This way, potential costly operations during estimation
+structured additive predictor of nested covariates, e.g., including a discrete regional spatial
+effect modeled by a Markov random field. This way, potential costly operations during estimation
 can be avoided since the number of observation in
 $\tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})$ is equal to
 the number of coefficients in $\boldsymbol{\beta}_{jk}$, which is usually much smaller than the
-actual number of observations. Moreover, the full conditionals for
+actual number of observations $n$. Moreover, the full conditionals for
 $\tilde{\boldsymbol{\beta}}_{jk}$ are Gaussian regardless of the response distribution, therefore,
 an alternative parametrization can be applied that leads to highly efficient MCMC sampling schemes,
 see \citet{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}.
@@ -396,9 +415,6 @@ be viewed as a penalized log-likelihood using prior (\ref{eqn:shrinkprior}) for 
 parameters $\boldsymbol{\tau}_{jk}^2$.
 
 
-\newpage
-
-
 \subsection{Model fitters} \label{sec:modelfit}
 
 Bayesian point estimates of $\boldsymbol{\vartheta}$ are obtained by posterior mode, mean or median
@@ -430,8 +446,9 @@ $\boldsymbol{\tau}_{jk}^2$ and $p(\boldsymbol{\tau}_{jk}^2) \propto 1$. Moreover
 $\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}^\top, (\boldsymbol{\tau}^2_{jk})^\top)^\top$ and the
 estimator $\hat{\boldsymbol{\tau}}^2_{jk}$ is usually derived by additionally
 minimizing an information criterion such as the Akaike information criterion (AIC) or the Bayesian
-information criterion (BIC) (see also \citealp{bamlss:Rigby+Stasinopoulos:2005} Appendix~A.2. for
-a more detailed discussion on variance/hyperparameter estimation). In the following we describe
+information criterion (BIC), see also \citealp{bamlss:Rigby+Stasinopoulos:2005} Appendix~A.2. for
+a more detailed discussion on variance/hyperparameter estimation. In Section~\ref{sec:varselpostmode},
+we briefly discuss a stepwise approach for smoothing parameter selection. In the following we describe
 posterior mode estimation for the case of fixed and known parameters $\boldsymbol{\tau}_{jk}^2$,
 i.e., $\boldsymbol{\vartheta}_{jk} = \boldsymbol{\beta}_{jk}$ for
 $j = 1, \ldots, J_k$ and $k = 1, \ldots, K$.
@@ -820,7 +837,7 @@ $$
 $$
 As mentioned in Section \ref{sec:smootheffects}, other priors than the inverse Gamma might be
 desirable. Then,  Metropolis-Hastings steps also for the variances can be constructed,
-see~\citet{bamlss:Klein+Kneib:2015} for details. If a simple Gibbs sampling step cannot be
+see~\citet{bamlss:Klein+Kneib:2016} for details. If a simple Gibbs sampling step cannot be
 derived, e.g., using multi-dimensional tensor product splines (see Section~\ref{sec:smootheffects}),
 another strategy is to use slice sampling, since the number of smoothing variances is
 usually not very large the computational burden does most of the times not exceed possible benefits.
@@ -850,10 +867,10 @@ Graphically, histograms of the $u_i$ can be used for this purpose.
 
 Information criteria like the Akaike information criterion (AIC), or the corrected AIC, as well as
 the Bayesian information criterion (BIC), amongst others, can be used for selecting variables and
-smoothing variances $\boldsymbol{\tau}^2_{jk}$. These criteria try to penalize overly complex models
-, i.e., are trying to prevent overfitting. Using nonlinear functions, for each model component, the
-degrees of freedom used to estimate the function can be approximated by the equivalent degrees of
-freedom (edf) calculated by
+smoothing variances $\boldsymbol{\tau}^2_{jk}$. These criteria try to penalize overly complex models,
+i.e., are trying to prevent over-fitting. Estimating model complexity using (possibly) nonlinear
+functions, for each model component, the degrees of freedom used to estimate the function can be
+approximated by the equivalent degrees of freedom (edf) calculated by
 $$
 \mathrm{edf}_{jk}(\boldsymbol{\tau}^2_{jk}) = \mathrm{trace}\left\{
   \mathbf{F}_{kk}(\boldsymbol{\beta}_{jk})(
@@ -867,6 +884,16 @@ derivate of the shrinkage prior w.r.t.\ $\boldsymbol{\beta}_{jk}$, e.g., using p
 (\ref{eqn:shrinkprior}) the matrix is $\mathbf{G}_{jk}(\tau^2_{jk}) = \tau_{jk}^{-2}\mathbf{K}_{jk}$. The
 total degrees of freedom used to estimate the model are then given by
 $\sum_{k}\sum_{j} \mathrm{edf}_{jk}(\boldsymbol{\tau}^2_{jk})$.
+
+Instead of global optimization of smoothing variances, a fast strategy is the stepwise selection
+during backfitting, which is proposed by \citet{bamlss:Belitz+Lang:2008} and can be adapted to
+distributional regression models. In each cycle of the backfitting algorithm (\ref{eqn:blocknewton})
+or (\ref{eqn:blockbackfit}), the smoothing variances for each model component are optimized holding all
+other variances fixed. To further speed up convergence, the search space for smoothing variances can
+be based on a small grid of candidate values. This will not lead to a global optimum, however, the
+resulting parameters serve as good starting values for full Bayesian inference with MCMC. This is
+especially useful for multi-dimensional effects with multiple smoothing variances since convergence
+of the MCMC chains will usually take much longer with improper starting values.
 
 Another recently proposed, however computationally intensive, approach for the
 types of models presented in this paper is gradient boosting
@@ -983,9 +1010,6 @@ more flexibility to the modeling system.
 %extended by the user. Examples that do support some flexibility are the \proglang{R}
 %model fitting functions \fct{glm}, \fct{gam} as well as function \fct{gamlss} of package \pkg{gamlss}
 %\citep{bamlss:Stasinopoulos+Rigby:2016}.
-
-
-\newpage
 
 
 \section{Computational tools and strategies for implementation} \label{sec:comptools}
@@ -1242,9 +1266,6 @@ that no extra coding is required. An implementation of this concept together wit
 illustrated in the next section.
 
 
-\newpage
-
-
 \section{Software implementation and examples} \label{sec:softex}
 
 An implementation of the conceptional framework is provided in the \proglang{R} package
@@ -1355,7 +1376,8 @@ bo <- with(bf, bfit(x, y, family))
 Function \fct{bfit} applies the algorithm described in Figure~\ref{fig:algodesign} and per default
 the IWLS updating scheme as described in (\ref{eqn:blockbackfit}). Moreover, an automated
 stepwise procedure for smoothing variances selection is implemented using information criteria like the
-corrected AIC and BIC \citep{bamlss:Belitz+Lang:2008}. The returned object from \fct{bfit} holds the
+corrected AIC and BIC \citep{bamlss:Belitz+Lang:2008}, see also Section~\ref{sec:varselpostmode}.
+The returned object from \fct{bfit} holds the
 fitted values and corresponding parameter estimates, the equivalent degrees of freedom (edf)
 used to produce the model fit, as well as other information about convergence
 of the algorithm, information criteria, etc.
@@ -1997,15 +2019,12 @@ $4$ on the log-scale.
 \end{figure}
 
 
-\clearpage
-
-
 \section{Summary}\label{sec:conclusion}
 
 This paper summarizes frequently used algorithms for the estimation of flexible Bayesian
-distributional regression models, a.k.a.\ Bayesian additive models for location scale and shape
-(BAMLSS). We highlight the similarities between optimization and sampling concepts and outline
-a generic architecture that utilizes repeated building blocks in order to facilitate solutions
+distributional regression models, a.k.a.\ Bayesian additive models for location, scale and shape
+(BAMLSS), and beyond. We highlight the similarities between optimization and sampling concepts and
+outline a generic architecture that utilizes repeated ``Lego bricks'' in order to facilitate solutions
 for new problems or the integration of existing code. An implementation of the conceptional framework
 is provided in the \proglang{R} package \pkg{bamlss} \citep{bamlss:Umlauf+Klein+Zeileis:2016}.
 The usefulness of the approach is illustrated by two complex, difficult to estimate, models.
