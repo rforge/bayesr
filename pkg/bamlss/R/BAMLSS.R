@@ -1,5 +1,5 @@
 ## Create a 'bamlss.frame'.
-bamlss.frame <- function(formula, data = NULL, family = gaussian.bamlss(),
+bamlss.frame <- function(formula, data = NULL, family = "gaussian",
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
   model.matrix = TRUE, smooth.construct = TRUE, ytype = c("matrix", "vector"),
