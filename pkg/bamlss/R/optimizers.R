@@ -650,8 +650,9 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
   if(!is.null(start))
     x <- set.starting.values(x, start)
-
-  eta <- init.eta(get.eta(x), y, family, nobs)
+  eta <- get.eta(x)
+  if(is.null(start))
+    eta <- init.eta(eta, y, family, nobs)
   ##eta$bd <- rep(1, nobs)
   
   if(!is.null(weights))

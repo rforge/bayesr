@@ -63,7 +63,8 @@ bamlss(formula, family = "gaussian", data = NULL,
     \code{\link[stats]{model.matrix.default}}.}
   \item{reference}{A \code{character} specifying a reference category, e.g., when
     fitting a multinomial model.}
-  \item{transform}{A transformer function that is applied on the \code{\link{bamlss.frame}}.}
+  \item{transform}{A transformer function that is applied on the \code{\link{bamlss.frame}}.
+    See, e.g., function \code{\link{randomize}} and \code{\link{bamlss.engine.setup}}.}
   \item{optimizer}{An optimizer function that returns, e.g., posterior mode estimates
     of the parameters as a named numeric vector. The default optimizer function is
     \code{\link{bfit}}. If set to \code{FALSE}, no optimizer function will be used.}
@@ -108,7 +109,7 @@ bamlss(formula, family = "gaussian", data = NULL,
       however, even special user defined constructors can be included, see the manual of
       \code{\link{bamlss.frame}}.
     \item In a second step, the \code{\link{bamlss.frame}} can be transformed, e.g., if a mixed
-      model representation of smooth terms is needed, e.g., see function \code{\link{randomize}}.
+      model representation of smooth terms is needed, see function \code{\link{randomize}}.
     \item Then an optimizer function is started, e.g., a function that finds posterior mode estimates
       of the parameters. A convention for model fitting engines is that such functions should have
       the following arguments:
@@ -126,7 +127,7 @@ bamlss(formula, family = "gaussian", data = NULL,
       \code{\link{parameters}} for more details on parameter names. The default optimizer function
       is \code{\link{bfit}}. The optimizer can return more information than only the optimum
       parameters. It is possible to return a list, the convention here is that an element named
-      \code{"parameters"} holds the named vector of estimated parameters. Possible other return
+      \code{"parameters"} then holds the named vector of estimated parameters. Possible other return
       values could be fitted values, the Hessian matrix, information criteria or information
       about convergence of the algorithm, etc. Note that the parameters are simply added to the
       \code{\link{bamlss.frame}} in an (list) entry named \code{parameters}.
@@ -135,7 +136,7 @@ bamlss(formula, family = "gaussian", data = NULL,
 
       \code{sampler(x, y, family, start, weights, offset, ...)}
 
-      Sampler functions must return a matrix of samples, each row represents one iteration, that
+      Sampler functions must return a matrix of samples, each row represents one iteration and the matrix
       can be coerced to \code{\link[coda]{mcmc}} objects. The function may return a list of samples,
       e.g., if multiple chains are returned each list entry then holds one sample matrix of
       one chain. The column names of the sample matrix should be the same as the names of estimated
@@ -150,8 +151,8 @@ bamlss(formula, family = "gaussian", data = NULL,
 
       where argument \code{samples} are the samples returned from the \code{sampler} function,
       and \code{x}, \code{y} and \code{family} are the same objects as passed to the optimizer
-      and or sampler functions. For example, the default function in \code{bamlss()} is also
-      called \code{\link{samplestats}} and returns the mean of the log-likelihood and the
+      and or sampler functions. For example, the default function in \code{bamlss()} for this task
+      is also called \code{\link{samplestats}} and returns the mean of the log-likelihood and the
       log-posterior computed of all samples, as well as the DIC.
     \item The last step is to compute more complex information about the model using the
       \code{results} function. The arguments of such \code{results} functions are
@@ -167,15 +168,30 @@ bamlss(formula, family = "gaussian", data = NULL,
   }
 
   Note that function \code{transform()}, \code{optimizer()}, \code{sampler()}, \code{samplestats()}
-  and \code{results()} can be provided from the \code{\link{bamlss.family}} object.
+  and \code{results()} can be provided from the \code{\link{bamlss.family}} object, e.g.,
+  if a \code{\link{bamlss.family}} object has an element named \code{"optimizer"}, which
+  represents a valid optimizer function such as \code{\link{bfit}}, exactly this optimizer
+  function will be used as a default when using the family.
 }
 
 \value{
-  An object of class \code{"bamlss"}.
+  An object of class \code{"bamlss"}. The object is in principle only a slight extension
+  of a \code{\link{bamlss.frame}}, i.e., if an \code{optimizer} is applied it will hold the
+  estimated parameters in an additional element named \code{"parameters"}. If a sampler function
+  is applied it will additionally hold the samples in an element named \code{"samples"}.
+  The same mechanism is used for \code{results} function.
+
+  If the \code{optimizer} function computes additional output next to the parameters, this will
+  be saved in an element named \code{"model.stats"}. If a \code{samplestats} function is applied,
+  the output will also be saved in the \code{"model.stats"} element.
+
+  Additionally, the initial \code{bamlss()} \code{call} is returned.
 }
 
 \references{
-%% ~put references to the literature/web site here ~
+  Umlauf N, Klein N, Zeileis A (2016).
+    Bayesian Additive Models for Location Scale and Shape (and Beyond).
+    \emph{(to appear)}
 }
 
 \author{
@@ -184,15 +200,35 @@ bamlss(formula, family = "gaussian", data = NULL,
 
 \seealso{
   \code{\link{bamlss.frame}}, \code{\link{family.bamlss}}, \code{\link{formula.bamlss}},
+  \code{\link{coef.bamlss}}, \code{\link{parameters}}, \code{\link{randomize}}, \code{\link{bamlss.engine.setup}},
+  \code{\link{bfit}}, \code{\link{GMCMC}}, \code{\link{continue}}
 }
 
 \examples{
 \dontrun{
 ## Simulated data example.
 d <- GAMart()
-b <- bamlss(num ~ s(x1) + s(x2) + s(x3), data = d)
+f <- num ~ s(x1) + s(x2) + s(x3) + te(lon, lat)
+b <- bamlss(f, data = d)
 summary(b)
 plot(b)
+plot(b, which = 3:4)
+plot(b, which = "samples")
+
+## Use of optimizer and sampler functions:
+## * first run optimizer,
+b1 <- bamlss(f, data = d, optimizer = bfit, sampler = FALSE)
+print.bamlss.frame(b1)
+
+## * afterwards, start sampler with staring values,
+b2 <- bamlss(f, data = d, start = coef(b1), optimizer = FALSE, sampler = GMCMC)
+print.bamlss.frame(b2)
+
+## Continue sampling.
+b3 <- continue(b2, n.iter = 12000, burnin = 0, thin = 10)
+plot(b3, which = "samples")
+plot(b3, which = "max-acf")
+plot(b3, which = "max-acf", burnin = 500, thin = 4)
 }
 }
 

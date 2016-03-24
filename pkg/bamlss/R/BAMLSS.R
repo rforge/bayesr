@@ -1127,6 +1127,7 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
 
   bf$call <- match.call()
   class(bf) <- c("bamlss", "bamlss.frame", "list")
+  attr(bf, "functions") <- functions
 
   bf
 }
@@ -2096,6 +2097,11 @@ process.chains <- function(x, combine = TRUE, drop = FALSE)
 {
   if(!is.list(x))
     x <- list(x)
+  n <- sapply(x, nrow)
+  if((length(unique(n)) > 1) & combine) {
+    x <- lapply(x, as.matrix)
+    x <- list(as.mcmc(do.call("rbind", x)))
+  }
   model.specs <- attr(x[[1]], "model.specs")
   if(inherits(x[[1]], "mcmc.list")) {
     x <- as.mcmc.list(do.call("c", x))
@@ -2425,7 +2431,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   type <- match.arg(type)
   what <- match.arg(what)
   if(!is.null(object$samples) & what == "samples") {
-    samps <- samples(object, model = model)
+    samps <- samples(object, model = model, ...)
     if(!is.null(nsamps)) {
       i <- seq(1, nrow(samps), length = nsamps)
       samps <- samps[i, , drop = FALSE]
@@ -3921,8 +3927,8 @@ summary.bamlss <- function(object, model = NULL, FUN = NULL, parameters = TRUE, 
          quantile(x, probs = c(0.025, 0.5, 0.975)))
     }
   }
-  rval$model.matrix <- coef.bamlss(object, model = model, FUN = FUN,
-     sterms = FALSE, full.names = FALSE, list = TRUE, parameters = parameters)
+  rval$model.matrix <- .coef.bamlss(object, model = model, FUN = FUN,
+     sterms = FALSE, full.names = FALSE, list = TRUE, parameters = parameters, ...)
   rval$model.matrix <- lapply(rval$model.matrix, function(x) {
     if(!is.matrix(x)) {
       rn <- names(x)
@@ -3933,9 +3939,9 @@ summary.bamlss <- function(object, model = NULL, FUN = NULL, parameters = TRUE, 
     }
     x
   })
-  rval$smooth.construct <- coef.bamlss(object, model = model, FUN = FUN,
+  rval$smooth.construct <- .coef.bamlss(object, model = model, FUN = FUN,
      sterms = TRUE, full.names = FALSE, list = TRUE, parameters = parameters, hyper.parameters = TRUE,
-     summary = TRUE)
+     summary = TRUE, ...)
   rval$model.stats <- object$model.stats
   class(rval) <- "summary.bamlss"
   rval
@@ -4757,6 +4763,54 @@ samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE,
 }
 
 
+## Continue sampling.
+continue <- function(object, chains = NULL, cores = NULL, combine = TRUE, ...)
+{
+  if(is.null(object$samples))
+    stop("no samples to continue from!")
+  start <- drop(tail(process.chains(object$samples, combine = TRUE, drop = TRUE), 0))
+  i <- grep2(c(".edf", ".alpha", ".accepted", "logLik", "DIC"), names(start), fixed = TRUE)
+  start <- start[-i]
+
+  sampler <- attr(object, "functions")$sampler
+  results <- attr(object, "functions")$results
+
+  if(is.null(cores)) {
+    samples <- sampler(x = object$x, y = object$y, family = object$family,
+      weights = model.weights(object$model.frame),
+      offset = model.offset(object$model.frame),
+      start = start, hessian = object$hessian, ...)
+  } else {
+    require("parallel")
+    parallel_fun <- function(j) {
+      if(j > 1 & !is.null(sleep)) Sys.sleep(sleep)
+      sampler(x = object$x, y = object$y, family = object$family,
+        weights = model.weights(object$model.frame),
+        offset = model.offset(object$model.frame), start = start,
+        hessian = object$hessian, ...)
+    }
+    samples <- mclapply(1:cores, parallel_fun, mc.cores = cores)
+  }
+  if(!inherits(samples, "mcmc")) {
+    if(is.list(samples)) {
+      samples <- as.mcmc.list(lapply(samples, as.mcmc))
+    } else {
+      samples <- as.mcmc(samples)
+    }
+  }
+
+  ## Process samples.
+  samples <- process.chains(samples, combine)
+  object$samples <- c(object$samples, samples)
+
+  ## Compute results.
+  if(is.function(results))
+    object$results <- try(results(object, bamlss = TRUE,  ...))
+
+  return(object)
+}
+
+
 ## Credible intervals of coefficients.
 confint.bamlss <- function(object, parm, level = 0.95, model = NULL,
   pterms = TRUE, sterms = FALSE, full.names = FALSE, hyper.parameters = FALSE, ...)
@@ -4770,7 +4824,7 @@ confint.bamlss <- function(object, parm, level = 0.95, model = NULL,
   FUN <- function(x) {
     quantile(x, probs = probs, na.rm = TRUE)
   }
-  return(coef.bamlss(object, model = model, term = parm,
+  return(.coef.bamlss(object, model = model, term = parm,
     FUN = FUN, parameters = FALSE, pterms = pterms, sterms = sterms,
     full.names = full.names, hyper.parameters = hyper.parameters))
 }
@@ -4779,14 +4833,25 @@ confint.bamlss <- function(object, parm, level = 0.95, model = NULL,
 ## Extract model coefficients.
 coef.bamlss <- function(object, model = NULL, term = NULL,
   FUN = NULL, parameters = NULL, pterms = TRUE, sterms = TRUE,
-  hyper.parameters = FALSE, summary = FALSE, list = FALSE, full.names = TRUE, ...)
+  list = FALSE, full.names = TRUE, ...)
+{
+  .coef.bamlss(object, model = model, term = term,
+    FUN = FUN, parameters = parameters, pterms = pterms, sterms = sterms,
+    s.variances = TRUE, hyper.parameters = TRUE,
+    summary = FALSE, list = list, full.names = full.names, ...)
+}
+
+.coef.bamlss <- function(object, model = NULL, term = NULL,
+  FUN = NULL, parameters = NULL, pterms = TRUE, sterms = TRUE,
+  s.variances = FALSE, hyper.parameters = FALSE, summary = FALSE,
+  list = FALSE, full.names = TRUE, ...)
 {
   if(is.null(object$samples) & is.null(object$parameters))
     stop("no coefficients to extract!")
   if(is.null(parameters))
     parameters <- is.null(object$samples)
   if(hyper.parameters) {
-    pterms <- FALSE
+    pterms <- if(s.variances) TRUE else FALSE
     if(summary) {
       drop <- c(".accepted", "logLik", "logPost", "AIC", "BIC", "DIC", "pd")
     } else {
@@ -4811,7 +4876,7 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
   par <- samps <- NULL
   rval <- list()
   if(!is.null(object$samples)) {
-    rval$samples <- samples(object, model = model, term = term)
+    rval$samples <- samples(object, model = model, term = term, ...)
     tdrop <- grep2(drop, colnames(rval$samples), fixed = TRUE)
     if(length(tdrop))
       rval$samples <- rval$samples[, -tdrop, drop = FALSE]
