@@ -185,7 +185,8 @@ bamlss(formula, family = "gaussian", data = NULL,
   be saved in an element named \code{"model.stats"}. If a \code{samplestats} function is applied,
   the output will also be saved in the \code{"model.stats"} element.
 
-  Additionally, the initial \code{bamlss()} \code{call} is returned.
+  Additionally, all functions that are called are saved as attribute \code{"functions"} in the
+  returned object.
 }
 
 \references{
