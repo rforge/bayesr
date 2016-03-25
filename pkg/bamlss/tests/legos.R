@@ -63,7 +63,7 @@ f <- list(
   id ~ s(x3)
 )
 
-bf <- bamlss.frame(f, data = GAMart, family = "multinomial")
+bf <- bamlss.frame(f, data = GAMart(), family = "multinomial")
 print(bf)
 head(model.response(model.frame(bf)))
 

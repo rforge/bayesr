@@ -1833,7 +1833,8 @@ multinomial.bamlss <- multinom.bamlss <- function(...)
       d2 <- log(rowSums(par))
       d <- d1 - d2
       return(sum(d, na.rm = TRUE))
-    }
+    },
+    "cat" = TRUE
   )
 
   class(rval) <- "family.bamlss"

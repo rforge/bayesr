@@ -201,8 +201,10 @@ bamlss(formula, family = "gaussian", data = NULL,
 
 \seealso{
   \code{\link{bamlss.frame}}, \code{\link{family.bamlss}}, \code{\link{formula.bamlss}},
-  \code{\link{coef.bamlss}}, \code{\link{parameters}}, \code{\link{randomize}}, \code{\link{bamlss.engine.setup}},
-  \code{\link{bfit}}, \code{\link{GMCMC}}, \code{\link{continue}}
+  \code{\link{randomize}}, \code{\link{bamlss.engine.setup}},
+  \code{\link{bfit}}, \code{\link{GMCMC}}, \code{\link{continue}},
+  \code{\link{coef.bamlss}}, \code{\link{parameters}}, \code{\link{predict.bamlss}},
+  \code{\link{plot.bamlss}}
 }
 
 \examples{

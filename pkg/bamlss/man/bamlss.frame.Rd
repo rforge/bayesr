@@ -52,9 +52,9 @@ bamlss.frame(formula, data = NULL, family = "gaussian",
   \item{smooth.construct}{Logical, should model matrices, e.g., as returned from
     \code{\link[mgcv]{smooth.construct}} and \code{\link[mgcv]{smoothCon}} be part
     of returned \code{bamlss.frame}?.}
-  \item{ytype}{For categorical reponses, should the reponse be a vector or matrix. If
+  \item{ytype}{For categorical responses, should the response be a vector or matrix. If
     \code{ytype == "matrix"} code{bamlss.frame()} uses function \code{\link{model.matrix}}
-    to construct the repsonse matrix from levels.}
+    to construct the response matrix from levels.}
   \item{scale.x}{Logical, should the model matrices of the linear parts be scaled?}
   \item{\dots}{Arguments passed to function \code{\link{smooth.construct.bamlss.frame}}.}
 }
@@ -67,8 +67,14 @@ bamlss.frame(formula, data = NULL, family = "gaussian",
   all package \code{\link{mgcv}} smooth term constructor functions like
   \code{\link[mgcv]{s}}, \code{\link[mgcv]{te}}, \code{\link[mgcv]{t2}} and
   \code{\link[mgcv]{ti}} can be used (see also function \code{\link[mgcv]{smooth.construct}}),
-  however, even special user defined constructors can be included, see the manual of
-  \code{\link{bamlss.frame}}. See the examples below!
+  however, even special user defined constructors can be included, see the examples below.
+
+  Function \code{bamlss.frame()} uses function \code{\link{model.matrix.bamlss.frame}} to
+  compute all design matrices for simple linear parts, all smooth terms are parsed with
+  function \code{\link{smooth.construct.bamlss.frame}}.
+
+  It is also possible to create a \code{"bamlss.frame"} using hierarchical formulae, see the
+  example below.
 }
 
 \value{
@@ -79,7 +85,7 @@ bamlss.frame(formula, data = NULL, family = "gaussian",
   \item{family}{The \code{\link{bamlss.family}} object.}
   \item{terms}{The \code{\link{bamlss.terms}} object.}
   \item{x}{A named list, the elements correspond to the parameters that are specified
-    within the \code{\link{bamlss.family}} object. For each parameter the corresponidng
+    within the \code{\link{bamlss.family}} object. For each parameter the corresponding
     \code{formula}, a \code{fake.formula} only holding the covariate names, a \code{\link{terms}}
     object, a \code{\link{model.matrix}} for the linear part and a list \code{smooth.construct}
     holding all information for smooth terms as returned from function
@@ -89,7 +95,7 @@ bamlss.frame(formula, data = NULL, family = "gaussian",
 
 \seealso{
   \code{\link{bamlss}}, \code{\link{bamlss.formula}}, \code{\link{bamlss.family}},
-  \code{\link{smooth.construct.bamlss.frame}}
+  \code{\link{smooth.construct.bamlss.frame}}, \code{\link{model.matrix.bamlss.frame}}
 }
 
 \examples{
@@ -112,8 +118,48 @@ f <- list(
 bf <- bamlss.frame(f, data = d, family = "multinomial", reference = "low")
 print(bf)
 
-## The response is a vector per default.
+## The response is a matrix per default.
 head(bf$y)
+
+## 0/1 responses.
+d <- cbind(d, model.matrix(~ -1 + cat, data = d))
+
+f <- list(
+  catnone ~ fac + s(x1),
+  catlow ~ s(x2),
+  catmedium ~ s(x3)
+)
+
+bf <- bamlss.frame(f, data = d, family = "multinomial")
+print(bf)
+
+## Hierarchical structures.
+f <- list(
+  num ~ s(x1) + s(x2) + id,
+  id ~ te(lon, lat),
+  sigma ~ s(x1) + fac
+)
+
+bf <- bamlss.frame(f, data = d, family = "gaussian")
+print(bf)
+
+## Special model term constructors,
+## set up "new" constructor function and eval
+## with bamlss.frame().
+s77 <- function(...) {
+  sm <- s(...)
+  sm$label <- paste("s77(", paste(sm$term, collapse = ","), ")", sep = "")
+  sm
+}
+
+f <- list(
+  num ~ s77(x1) + s(x2) + id,
+  sigma ~ s77(x1)
+)
+
+bf <- bamlss.frame(f, data = d, family = "gaussian", specials = "s77")
+print(bf)
+names(bf$x$mu$smooth.construct)
 }
 
 \keyword{regression}
