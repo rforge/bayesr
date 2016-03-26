@@ -496,6 +496,167 @@ setupBayesX <- function(x, control = controlBayesX(...), ...)
 }
 
 
+BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
+  data = NULL, control = controlBayesX(...), ...)
+{
+  if(is.null(family$bayesx))
+    stop("BayesX specifications missing in family object, cannot set up model!")
+
+  fbx <- family$bayesx
+
+  model.name <- control$setup$model.name
+  data.name <- rmf(control$setup$data.name)
+  prg.name <- control$setup$prg.name
+  dir <- control$setup$dir
+  cores <- control$setup$cores
+  if(is.null(cores)) cores <- 1
+
+  if(!file.exists(dir)) {
+    dir.create(dir)
+    on.exit(unlink(dir))
+  }
+
+  if(is.null(data)) {
+    data <- try(get('bf', envir = parent.frame())$model.frame, silent = TRUE)
+    if(inherits(data, "try-error"))
+      stop("cannot find the model.frame for creating BayesX model term objects!")
+  }
+  if(is.null(data))
+    stop("no data available for creating BayesX model term objects!")
+
+  yname <- colnames(y)[1]
+
+  single_eqn <- function(x, y, id) {
+    rhs <- dfiles <- prgex <- sdata <- NULL
+
+    if(!is.null(x$model.matrix)) {
+      cn <- rmf(colnames(x$model.matrix))
+      colnames(x$model.matrix) <- cn
+      cn <- cn[cn != "Intercept"]
+      if(length(cn)) {
+        rhs <- c(rhs, cn)
+        sdata <- as.data.frame(x$model.matrix[, cn, drop = FALSE])
+      }
+      if("Intercept" %in% colnames(x$model.matrix))
+        rhs <- c("const", rhs)
+    }
+
+    if(!is.null(x$smooth.construct)) {
+      for(j in names(x$smooth.construct)) {
+        if(is.null(x$smooth.construct[[j]]$sx.construct))
+          class(x$smooth.construct[[j]]) <- "userdefined.smooth.spec"
+        sxc <- sx.construct(x$smooth.construct[[j]], data, id = c(id, j), dir = dir)
+        if(!is.null(attr(sxc, "write")))
+          prgex <- c(prgex, attr(sxc, "write")(dir))
+        rhs <- c(rhs, sxc)
+        sdata <- if(is.null(sdata)) {
+          data[, x$smooth.construct[[j]]$term, drop = FALSE]
+        } else cbind(sdata, data[, x$smooth.construct[[j]]$term, drop = FALSE])
+      }
+    }
+
+    rn <- response.name(as.formula(x$formula), hierarchical = FALSE)
+    if(is.na(rn))
+      rn <- yname
+    eqn <- paste(rn, "=", paste(rhs, collapse = " + "))
+    rval <- list("eqn" = eqn, "prgex" = prgex)
+
+    if(!is.null(sdata)) {
+      rval$dname <- paste(paste(id, collapse = "_"), data.name, sep = "_")
+      write.table(sdata, file = file.path(dir, paste(rval$dname, ".raw", sep = "")))
+      rval$prgex <- c(rval$prgex,
+        paste("dataset", rval$dname),
+        paste(rval$dname, ".infile using ",
+          file.path(dir, paste(rval$dname, ".raw", sep = "")), sep = ""),
+        prgex
+      )
+    }
+
+    rval
+  }
+
+  eqn <- list()
+  prgex <- NULL
+  n <- 1
+  for(i in names(x)) {
+    if(!all(c("fake.formula", "formula") %in% names(x[[i]]))) {
+      eqn[[i]] <- list()
+      k <- 1
+      for(j in names(x[[i]])) {
+        msp <- single_eqn(x[[i]][[j]], y, id = c(i, j))
+        teqn <- paste(model.name, ".hregress ", msp$eqn,
+          ", family=", if(k < 2) fbx[[i]][1] else "gaussian_re",
+          ", equationtype=", fbx[[i]][2],
+          if(n < 2 & k < 2) {
+            paste(",", paste(names(control$prg), "=", control$prg, sep = "", collapse = ", "))
+          } else NULL,
+          if(!is.null(msp$dname)) paste(", using", msp$dname) else NULL, sep = "")
+        eqn[[i]][[j]] <- teqn
+        prgex <- c(prgex, msp$prgex)
+        k <- k + 1
+      }
+      eqn[[i]] <- rev(eqn[[i]])
+    } else {
+      msp <- single_eqn(x[[i]], y, id = i)
+      teqn <- paste(model.name, ".hregress ", msp$eqn, ", family=", fbx[[i]][1],
+        ", equationtype=", fbx[[i]][2],
+        if(n < 2) {
+          paste(",", paste(names(control$prg), "=", control$prg, sep = "", collapse = ", "))
+        } else NULL,
+        if(!is.null(msp$dname)) paste(", using", msp$dname) else NULL, sep = "")
+      eqn[[i]] <- teqn
+      prgex <- c(prgex, msp$prgex)
+    }
+    n <- n + 1
+  }
+
+  prg <- c(prgex, "", paste("mcmcreg", model.name), "")
+  for(i in unlist(rev(eqn)))
+    prg <- c(prg, i, "")
+
+  prg <- c(prg, paste(model.name, "getsample", sep = "."))
+  prg <- c(
+    paste('%% BayesX program created by bamlss: ', as.character(Sys.time()), sep = ''),
+    paste('%% usefile ', file.path(dir, prg.name), sep = ''), "",
+    prg
+  )
+
+  if(any(grepl("##seed##", prg, fixed = TRUE)))
+    prg <- gsub("##seed##", round(runif(1L) * .Machine$integer.max), prg, fixed = TRUE)
+
+
+  prgf <- file.path(dir, prg.name)
+  writeLines(prg, prgf)
+
+##writeLines(prg)
+
+  require("BayesXsrc")
+
+  warn <- getOption("warn")
+  options(warn = -1)
+  ok <- run.bayesx(prg = prgf, verbose = control$setup$verbose)
+print(ok)
+  options("warn" = warn)
+  if(length(i <- grep("error", ok$log, ignore.case = TRUE))) {
+    errl <- gsub("^ +", "", ok$log[i])
+    errl <- gsub(" +$", "", errl)
+    errl <- encodeString(errl, width = NA, justify = "left")
+    errl <- paste(" *", errl)
+    errm <- paste("an error occurred running the BayesX binary! The following messages are returned:\n",
+      paste(errl, collapse = "\n", sep = ""), sep = "")
+    warning(errm, call. = FALSE)
+  }
+  if(length(i <- grep("-nan", ok$log, ignore.case = TRUE))){
+    warning("the BayesX engine returned NA samples, please check your model specification! In some cases it can be helpful to center continuous covariates!", call. = FALSE)
+  }
+
+  stop()
+
+  samples <- NULL
+  samples
+}
+
+
 samplerBayesX <- function(x, ...)
 {
   if(any(grepl("##seed##", x$prg, fixed = TRUE)))
@@ -550,509 +711,7 @@ writeLines(x$prg)
     warning("the BayesX engine returned NA samples, please check your model specification! In some cases it can be helpful to center continuous covariates!", call. = FALSE)
   }
   samples <- NULL
-  mfile <- grep(paste(x$control$setup$model.name, "_R.r", sep = ""), dir(dir), value = TRUE, fixed = TRUE)
-  if(length(mfile)) {
-    mfile <- readLines(file.path(dir, mfile))
-    mfile <- process_mfile(mfile)
-    mspecs <- list("effects" = list(), "model" = list())
-    for(j in 1:nrow(mfile$effects)) {
-      ts <- read.table(mfile$effects[j, "samples"], header = TRUE)
-      ts$intnr <- NULL
-      names(ts) <- paste(mfile$effects[j, "terms"], "[", 1:ncol(ts), "]", sep = "")
-      samples <- cbind(samples, as.matrix(ts))
-      if(!is.na(mfile$effects[j, "varsamples"])) {
-        ts <- read.table(mfile$effects[j, "varsamples"], header = TRUE)
-        ts$intnr <- NULL
-        names(ts) <- paste(mfile$effects[j, "terms"], ":var[", 1:ncol(ts), "]", sep = "")
-        samples <- cbind(samples, as.matrix(ts))
-      }
-      mspecs$effects[[mfile$effects[j, "terms"]]] <- list(
-        "basis" = if(!is.na(mfile$effects[j, "basis"])) {
-            eval(parse(file = mfile$effects[j, "basis"]))
-         } else function(x) { x },
-        "family" = mfile$effects[j, "family"],
-        "eqntype" = mfile$effects[j, "eqntype"],
-        "filetype" = mfile$effects[j, "filetype"],
-        "hlevel" =  as.integer(mfile$effects[j, "hlevel"])
-      )
-    }
-    dic <- if(!is.null(mfile$model$dic)) read.table(mfile$model$dic, header = TRUE) else NULL
-    samples <- cbind(samples, "dic" = dic$dic, "pd" = dic$pd)
-    samples <- as.mcmc(samples)
-    attr(samples, "model.specs") <- mspecs
-  }
-
   samples
-}
-
-process_mfile <- function(x)
-{
-  predict <- dic <- NULL
-  if(length(i <- grep("predict.res", x, ignore.case = TRUE))) {
-    predict <- gsub(";", "", gsub("\\s", "", strsplit(x[i], "=", fixed = TRUE)[[1]][2]))
-    x <- x[-i]
-  }
-  if(length(i <- grep("DIC.res", x, ignore.case = TRUE))) {
-    dic <- gsub(";", "", gsub("\\s", "", strsplit(x[i], "=", fixed = TRUE)[[1]][2]))
-    x <- x[-i]
-  }
-  n <- length(x)
-  x <- gsub("equation=", "family=", x, fixed = TRUE)
-  x <- gsub("-", "_", x, fixed = TRUE)
-  samples <- varsamples <- eqntype <- family <- basis <- terms <- hlevel <- filetype <- rep(NA, length = n)
-
-  c2c <- function(x) {
-    if(any(grepl("(", x, fixed = TRUE))) {
-      i <- regexpr("\\((.*)\\)", x)
-      x2 <- substring(x, i + 1, i + attr(i, "match.length") - 2)
-      x3 <- gsub(",", ";", x2, fixed = TRUE)
-      x <- gsub(x2, x3, x, fixed = TRUE)
-    }
-    x
-  }
-
-  for(j in 1:n) {
-    specs <- strsplit(c2c(x[j]), ",")[[1]]
-    if(length(tmp <- grep("pathsamples", specs, value = TRUE))) {
-      samples[j] <- gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2])
-    }
-    if(length(tmp <- grep("pathvarsample", specs, value = TRUE))) {
-      varsamples[j] <- gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2])
-    }
-    if(length(tmp <- grep("equationtype", specs, value = TRUE))) {
-      eqntype[j] <- gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2])
-    }
-    if(length(tmp <- grep("filetype", specs, value = TRUE))) {
-      filetype[j] <- gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2])
-    }
-    if(length(tmp <- grep("family", specs, value = TRUE))) {
-      family[j] <- tolower(gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2]))
-    }
-    if(length(tmp <- grep("pathbasis", specs, value = TRUE))) {
-      basis[j] <- gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2])
-    }
-    if(length(tmp <- grep("hlevel", specs, value = TRUE))) {
-      hlevel[j] <- as.integer(gsub("\\s", "", strsplit(tmp, "=", fixed = TRUE)[[1]][2]))
-    } else hlevel[j] <- 1
-    if(length(tmp <- grep("term", specs, value = TRUE))) {
-      tt <- strsplit(tmp, "=", fixed = TRUE)[[1]]
-      tt <- paste(tt[2:length(tt)], collapse = "=")
-      tt <- gsub(";", ",", tt, fixed = TRUE)
-      tt <- gsub("^\\s+|\\s+$", "", tt)
-      terms[j] <- gsub("\\s", "+", tt)
-      
-      ## FIXME: this is just a brute force fix for multinom hierarchical structures!
-      ##        Searching for the correct category in the samples path.
-      if(grepl("multinom", family[j])) {
-        cat <- strsplit(samples[j], "_", fixed = TRUE)[[1]]
-        cat <- cat[4]
-        terms[j] <- paste(terms[j], cat, sep = ":")
-      }
-
-    }
-  }
-
-  for(j in 1:n) {
-    if(grepl("gaussian_re", family[j], fixed = TRUE) |
-      grepl("Gaussian_random_effect", family[j], fixed = TRUE))
-    {
-      i <- grep(eqntype[j], eqntype)
-      i <- i[i != j]
-      ok <- TRUE
-      for(l in i) {
-        if(hlevel[l] < 2 & ok) {
-          family[j] <- family[l]
-          ok <- FALSE
-        }
-      }
-    }
-  }
-
-  ## FIXME: this is just a brute force fix for multinom hierarchical structures!
-  ##        Searching for the correct category by matching the equationtype.
-  ##        Not possible for more than 2 modeled categories!
-  if(any(grepl("multinom", family))) {
-    for(j in seq_along(hlevel)) {
-      if(hlevel[j] > 1 & !grepl(":", terms[j], fixed = TRUE)) {
-        et <- eqntype[j]
-        ok <- TRUE
-        for(i in seq_along(eqntype)) {
-          if(i != j & et == eqntype[i]) {
-            if(grepl(":", terms[i], fixed = TRUE) & ok) {
-              terms[j] <- paste(terms[j], strsplit(terms[i], ":", fixed = TRUE)[[1]][2], sep = ":")
-              ok <- FALSE
-            }
-          }
-        }
-      }
-    }
-  }
-
-  known_paramaters <- c("mu", "sigma", "sigma2", "pi", "delta", "tau",
-    "a", "b", "p", "df", "rho", "lambda", "alpha", "nu")
-
-  ft <- sapply(strsplit(family, "_"), function(x) {
-    if(length(x) > 1) {
-      if(x[2] %in% known_paramaters) x[2] else x[1]
-    } else x
-  })
-
-  ft <- paste(ft, eqntype, sep = "")
-
-  terms <- paste(terms, ft, sep = ":")
-
-  if(any(i <- duplicated(terms))) {
-    for(j in terms[i]) {
-      tt <- grep(j, terms, value = TRUE, fixed = TRUE)
-      tt <- paste(tt, 1:length(tt), sep = ":")
-      terms[terms == j] <- tt
-    }
-  }
-  terms <- paste(terms, hlevel, sep = ":")
-
-  rval <- list("effects" = cbind(terms, filetype, samples, varsamples, basis, family, eqntype, hlevel),
-    "model" = list("predict" = predict, "dic" = dic))
-  rval
-}
-
-
-resultsBayesX <- function(x, samples, ...)
-{
-  family <- attr(x, "family")
-  grid <- attr(x, "grid")
-  response.name <- attr(attr(x, "model.frame"), "response.name")
-  if(is.null(grid)) grid <- 100
-  if(is.function(family))
-    family <- family()
-  mspecs <- attr(samples, "model.specs")
-  ylevels <- attr(x, "ylevels")
-  reference <- attr(x, "reference")
-  if(family$cat)
-    ylevels <- ylevels[ylevels != reference]
-
-  rename.p <- function(x) {
-    if(family$family %in% c("binomial", "multinomial", "quant", "poisson", "zip", "dirichlet")) {
-      foo <- switch(family$family,
-        "binomial" = function(x) gsub("binomial", "pi", x),
-        "multinomial" = function(x) {
-          if(any(grepl("):", x, fixed = TRUE))) {
-            x <- strsplit(x, "):", fixed = TRUE)
-            x <- sapply(x, function(x2) {
-              rn <- if(reference == "NA") "" else response.name[1]
-              if(length(x2) > 1) {
-                x2[2] <- gsub(rn, "", gsub("multinom:", "", x2[2]))
-                x2[2] <- gsub("multinomialprobit:", "", x2[2])
-                x2 <- paste(x2, collapse = "):")
-              } else {
-                x2 <- gsub(rn, "", gsub("multinom:", "", x2))
-                x2 <- gsub("multinomialprobit:", "", x2)
-              }
-              x2
-            })
-            x <- unlist(x)
-          } else {
-            x <- gsub(response.name[1], "", gsub("multinom:", "", x))
-            x <- gsub("multinomialprobit:", "", x)
-          }
-          x <- gsub("multinommean:", "", x, fixed = TRUE)
-          x <- gsub("multinommeanservant:", "", x, fixed = TRUE)
-          x
-        },
-        "quant" = function(x) {
-          gsub("quantregmean", "quantregmu", x)
-        },
-        "poisson" = function(x) {
-          gsub("poissonmu", "poissonlambda", x)
-        },
-        "zip" = function(x) {
-          ## gsub("zip", "lambda", x)
-          x
-        },
-        "dirichlet" = function(x) {
-          x <- gsub("dirichletmean", "dirichletalpha1", x)
-          x <- gsub("dirichletalpha", "alpha", x)
-          x
-        }
-      )
-      x <- foo(x)
-    }
-    if(grepl("zero-adjusted", family$family)) {
-      x <- gsub("binomial", "pi", x)
-    }
-    x
-  }
-
-  if(is.null(mspecs) & is.list(samples))
-    mspecs <- attr(samples[[1]], "model.specs")
-  names(mspecs$effects) <- rename.p(names(mspecs$effects))
-
-  createBayesXresults <- function(obj, samples, id = NULL, sid = FALSE) {
-    if(inherits(samples[[1]], "mcmc.list"))
-      samples <- do.call("c", samples)
-    chains <- length(samples)
-    rval <- vector(mode = "list", length = chains)
-    snames <- rename.p(colnames(samples[[1]]))
-    if(is.null(snames))
-      snames <- attributes(samples[[1]])$dimnames[[2]]
-    for(j in 1:chains) {
-      if(any(grepl("dic", snames))) {
-        DIC <- mean(as.numeric(samples[[j]][, grepl("dic", snames)]))
-        pd <- mean(as.numeric(samples[[j]][, grepl("pd", snames)]))
-      } else {
-        DIC <- pd <- NA
-      }
-
-      ## Compute model term effects.
-      param.effects <- effects <- effects.hyp <- NULL
-      fitted.values <- 0
-
-      ## remove number from id
-      id2 <- id
-      if(!is.null(family$bayesx$rm.number)) {
-        for(i in 1:10)
-          id2 <- gsub(i, "", id2)
-      }
-      if(!is.null(obj$hlevel) & FALSE) {
-        if(obj$hlevel > 1)
-          id2 <- "gaussian"
-      }
-
-      ## Parametric effects.
-      if(k <- ncol(obj$X)) {
-        nx <- obj$pterms
-        nx <- gsub("Intercept", "const", nx, fixed = TRUE)
-        pt <- paste(nx, collapse = "+")
-        pt <- paste(pt, paste(family$bayesx[[id]][1], id2, sep = ""), if(obj$hlevel > 1) 2 else 1, sep = ":")
-        if(any(grepl(pt, snames, fixed = TRUE))) {
-          samps <- as.matrix(samples[[j]][, grepl(pt, snames, fixed = TRUE)], ncol = k)
-          nx <- gsub("const", "(Intercept)", nx, fixed = TRUE)
-          colnames(samps) <- nx
-          qu <- t(apply(samps, 2, quantile, probs = c(0.025, 0.5, 0.975), na.rm = TRUE))
-          sd <- drop(apply(samps, 2, sd, na.rm = TRUE))
-          me <- drop(apply(samps, 2, mean, na.rm = TRUE))
-          param.effects <- cbind(me, sd, qu)
-          rownames(param.effects) <- nx
-          colnames(param.effects) <- c("Mean", "Sd", "2.5%", "50%", "97.5%")
-          fitted.values <- as.vector(fitted.values + obj$X %*% param.effects[, 1])
-          attr(param.effects, "samples") <- as.mcmc(samps)
-        } else warning("please check the BayesX files!")
-      }
-
-      ## Smooth terms.
-      if(length(i <- grep("sx(", names(mspecs$effects), fixed = TRUE))) {
-        sx.smooth <- mspecs$effects[i]
-        sx.terms <- unlist(lapply(obj$sx.smooth, function(x) {
-          attr(x, "specs")$label
-        }))
-        sx.extras <- lapply(obj$sx.smooth, function(x) {
-          cx <- class(xs <- attr(x, "specs"))
-          if(cx %in% "rps.smooth.spec") {
-            return(list(paste("sx(", xs$term, ")", sep = ""), paste("sx(", xs$by, ")", sep = "")))
-          } else {
-            if(cx %in% "re.smooth.spec" & xs$by != "NA") {
-              return(list(paste("sx(", xs$by, ")", sep = ""),
-                paste("sx(", xs$term, ",by=", xs$by, ")", sep = ""), xs$by))
-            } else return(NULL)
-          }
-        })
-        if(length(sx.extras)) {
-          sx.terms <- unique(c(sx.terms, unlist(sapply(sx.extras, function(x) { x[[1]] } ))))
-        }
-        sx.check <- FALSE
-        if(!is.null(sx.terms)) {
-          nxc <- sapply(strsplit(names(sx.smooth), ":", fixed = TRUE), function(x) { x[1] })
-          for(char in c(".", "_")) {
-            sx.terms <- gsub(char, "", sx.terms, fixed = TRUE)
-            nxc <- gsub(char, "", nxc, fixed = TRUE)
-          }
-          if(any(take <- nxc %in% sx.terms)) {
-            sx.check <- TRUE
-            sx.smooth <- sx.smooth[take]
-          }
-        }
-        for(idj in c(id2, "gaussian")) {
-          if(sx.check & length(i <- grep(paste(paste(family$bayesx[[id]][1], idj, sep = ""),
-              if(obj$hlevel > 1) 2 else 1, sep = ":"), names(sx.smooth), fixed = TRUE))) {
-            if(!is.list(effects))
-              effects <- list()
-            for(i in names(sx.smooth[i])) {
-              tn <- grep(i, snames, fixed = TRUE, value = TRUE)
-              psamples <- as.matrix(samples[[j]][, snames %in% tn], ncol = length(tn))
-
-              ## Possible variance parameter samples.
-              if(length(vs <- grep(":var[", colnames(psamples), fixed = TRUE))) {
-                vsamples <- psamples[, vs[1]]
-                psamples <- psamples[, -vs, drop = FALSE]
-              }
-
-              ## Prediction matrix.
-              re.check <- NULL
-              if(length(sx.extras)) {
-                re.check <- unlist(sapply(sx.extras, function(x) {
-                  ii <- strsplit(i, ":")[[1]][1]
-                  return(if(ii %in% x[[1]]) {
-                      if(length(x) > 2) x[2:3] else x[[2]]
-                    } else NULL)
-                }))
-              }
-
-              is.re.slope <- FALSE
-              if(is.null(re.check)) {
-                tn0 <- strsplit(i, ":")[[1]][1]
-              } else {
-                if(length(re.check) < 2) {
-                  tn0 <- re.check[1]
-                } else {
-                  tn0 <- re.check[1]
-                  is.re.slope <- TRUE
-                }
-              }
-
-              tn <- gsub(")", "", gsub("sx(", "", tn0, fixed = TRUE), fixed = TRUE)
-              tn <- strsplit(tn, ",", fixed = TRUE)[[1]]
-              tn <- tn[!grepl("by", tn)]
-              tn1 <- eval(parse(text = tn0))
-
-              basis <- sx.smooth[[i]]$basis
-
-              if(tn1$by != "NA") {
-                tn <- c(tn, tn1$by)
-                get.X <- function(data) {
-                  X <- if(ncol(data) > 1) {
-                    if(!is.factor(data[, ncol(data)]) & !is.re.slope) {
-                      as.numeric(data[, ncol(data)]) * basis(data[, 1:(ncol(data) - 1), drop = FALSE])
-                    } else {
-                      basis(data[, 1:(ncol(data) - 1), drop = FALSE])
-                    }
-                  } else basis(data[, 1, drop = FALSE])
-                  return(X)
-                }
-              } else {
-                get.X <- basis
-              }
-
-              X <- sx.smooth[[i]]$basis(attr(x, "model.frame")[1, tn, drop = FALSE])
-            
-              get.mu <- function(X, g, ...) {
-                X %*% as.numeric(g)
-              }
-
-              ## Compute final smooth term object.
-              stype <- attr(X, "type")
-              class(tn1) <- paste(stype, "smooth.spec", sep = ".")
-
-              fst <- try(compute_term(tn1, get.X = get.X, get.mu = get.mu,
-                psamples = psamples, vsamples = vsamples, asamples = NULL, FUN = NULL,
-                snames = snames, effects.hyp = effects.hyp, fitted.values = fitted.values,
-                data = attr(x, "model.frame")[, tn, drop = FALSE], grid = grid,
-                hlevel = obj$hlevel, sx = TRUE, re.slope = is.re.slope), silent = TRUE)
-           
-              if(!inherits(fst, "try-error")) {
-                attr(fst$term, "specs")$get.mu <- get.mu
-                attr(fst$term, "specs")$basis <- sx.smooth[[i]]$basis
-                if(sid)
-                  attr(fst$term, "specs")$label <- paste(attr(fst$term, "specs")$label, id, sep = ":")
-                if(is.re.slope) {
-                  attr(fst$term, "specs")$by <- re.check[2]
-                  attr(fst$term, "specs")$re.slope <- TRUE
-                }
-
-                ## Add term to effects list.
-                effects[[paste(tn0, stype, sep = ":")]] <- fst$term
-                effects.hyp <- fst$effects.hyp
-                fitted.values <- fst$fitted.values
-                rm(fst)
-              } else warning(paste("problems computing effect object for term ", tn1$label, "!", sep = ""))
-            }
-          }
-        }
-      }
-
-      ## Compute partial residuals.
-      if(!is.null(effects) & obj$hlevel < 2) {
-        if(length(obj$response)) {
-          if(obj$response %in% names(attr(x, "model.frame"))) {
-            if(!is.na(link <- family$links[id])) {
-              link <- make.link2(link)
-            } else link <- NULL
-            effects <- partial.residuals(effects, attr(x, "model.frame")[[obj$response]],
-              fitted.values, family)
-          }
-        }
-      }
-
-      ## Stuff everything together.
-      rval[[j]] <- list(
-        "model" = list("DIC" = DIC, "pd" = pd, "N" = nrow(attr(x, "model.frame")),
-        "formula" = obj$formula, "hlevel" = obj$hlevel), "param.effects" = param.effects, "effects" = effects,
-        "effects.hyp" = effects.hyp,
-        "fitted.values" = if(length(fitted.values) < 2) NA else fitted.values 
-      )
-
-      class(rval[[j]]) <- "bamlss"
-    }
-    names(rval) <- paste("Chain", 1:chains, sep = "_")
-    if(length(rval) < 2) {
-      rval <- rval[[1]]
-    }
-    attr(rval, "fixed.names") <- TRUE
-    class(rval) <- "bamlss"
-    return(rval)
-  }
-
-  nx <- names(x)
-  nx <- nx[!(nx %in% c("call", "family"))]
-  if(is(samples, "mcmc"))
-    samples <- as.mcmc.list(list(samples))
-  if(!all(c("formula", "fake.formula") %in% names(x))) {
-    rval <- list()
-    fn <- family$names
-    if(is.null(names(x))) {
-      nx <- paste("h", 1:length(x), sep = "")
-      names(x) <- nx
-    }
-    if(length(unique(nx)) != length(nx)) {
-      nx <- paste(rep(nx, length.out = length(nx)), 1:length(nx), sep = ":")
-      names(x) <- nx
-    }
-    if(family$cat) {
-      fn <- rmf(ylevels)
-      names(x) <- nx <- fn
-    }
-    if(length(fn) != length(nx))
-      fn <- nx
-    for(j in seq_along(nx)) {
-      if(!all(c("formula", "fake.formula") %in% names(x[[nx[j]]]))) {
-        rval[[nx[j]]] <- list()
-        nh <- NULL
-        for(ii in seq_along(x[[nx[j]]])) {
-          nh <- c(nh, x[[nx[j]]][[ii]]$hlevel)
-          rval[[nx[j]]][[ii]] <- createBayesXresults(x[[nx[j]]][[ii]],
-            samples, id = fn[j], sid = length(nx) > 1)
-        }
-        if(any(dups <- duplicated(nh))) {
-          dups <- nh[dups]
-          for(dn in dups)
-            nh[nh == dn] <- paste(nh[nh == dn], 1:length(nh[nh == dn]), sep = "-")
-        }
-        names(rval[[nx[j]]]) <- paste("h", nh, sep = "")
-        attr(rval[[nx[j]]], "hlevel") <- TRUE
-      } else {
-        rval[[nx[j]]] <- createBayesXresults(x[[nx[j]]], samples, id = fn[j], sid = length(nx) > 1)
-      }
-      class(rval[[nx[j]]]) <- "bamlss"
-    }
-#    if(length(nx) > 1)
-#      names(rval) <- fn
-#    else
-#      rval <- rval[[1]]
-    names(rval) <- fn
-    attr(rval, "fixed.names") <- TRUE
-    class(rval) <- "bamlss"
-    return(rval)
-  } else {
-    return(createBayesXresults(x, samples, id = family$names))
-  }
 }
 
 
@@ -1162,10 +821,20 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
         xt <- NULL
       if(!is.null(call$z)) 
         term <- c(term, deparse(call$z))
-      rval <- s(x, z, k = k, bs = bs, m = m, xt = xt)
+      rval <- if(bs != "te") {
+        s(x, z, k = k, bs = bs, m = m, xt = xt)
+      } else {
+        te(x, z, k = k, bs = "ps", m = m, xt = xt, mp = FALSE)
+      }
+      rval$by <- by
       rval$term <- term
       rval$dim <- length(term)
-      rval$by <- by
+      rval$sx.construct <- TRUE
+      if(!(bs %in% c("ps", "te", "psplinerw1", "psplinerw2", "pspline",
+         "re", "pspline2dimrw2", "pspline2dimrw1"))) {
+        class(rval) <- c(class(rval), "no.mgcv")
+      }
+
       rval$label <- paste("sx(", paste(term, collapse = ",", sep = ""),
         if(by != "NA") paste(",by=", by, sep = "") else NULL, ")", sep = "")
     }
@@ -1174,14 +843,14 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
   return(rval)
 }
 
-sx.construct <- function(object, data)
+sx.construct <- function(object, data, ...)
 {
   UseMethod("sx.construct")
 }
 
-sx.construct.default <- function(object, data) 
+sx.construct.default <- function(object, data, ...) 
 {
-  cl <- class(object)
+  cl <- grep(".smooth.spec", class(object), value = TRUE, fixed = TRUE)
   bs <- gsub(".smooth.spec", "", cl, fixed = TRUE)
   info <- if(cl == paste(bs, "smooth.spec", sep = ".")) {
     paste("with basis", sQuote(bs))
@@ -1225,10 +894,48 @@ do.xt <- function(term, object, not = NULL, noco = FALSE)
   return(term)
 }
 
-sx.construct.ps.smooth.spec <- sx.construct.psplinerw1.smooth.spec <-
-sx.construct.psplinerw2.smooth.spec <- sx.construct.pspline.smooth.spec <-
-function(object, data)
+sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
 {
+  id <- paste(rmf(id), collapse = "_")
+  term <- paste(object$term, collapse = "*")
+  Sn <- paste(id, "S", sep = "_")
+  Xn <- paste(id, "X", sep = "_")
+  if(length(object$S) > 1) {
+    object$S <- do.call("+", object$S)
+    object$rank <- qr(object$S[[1]])$rank
+  }
+  if(is.null(object$rank))
+    object$rank <- qr(object$S[[1]])$rank
+  if(is.null(object$xt$centermethod))
+    object$xt$centermethod <- "meanfd"
+  term <- paste(term, "(userdefined,penmatdata=", Sn, ",designmatdata=", Xn,
+    ",rankK=", object$rank, sep = "")
+  term <- paste(do.xt(term, object, NULL), ")", sep = "")
+
+  write <- function(dir) {
+    write.table(object$S[[1]], file = file.path(dir, paste(Sn, ".raw", sep = "")),
+      quote = FALSE, row.names = FALSE)
+    write.table(object$X, file = file.path(dir, paste(Xn, ".raw", sep = "")),
+      quote = FALSE, row.names = FALSE)
+    c(
+      paste("dataset", Sn),
+      paste(Sn, ".infile using ", file.path(dir, paste(Sn, ".raw", sep = "")), sep = ""),
+      paste("dataset", Xn),
+      paste(Xn, ".infile using ", file.path(dir, paste(Xn, ".raw", sep = "")), sep = "")
+    )
+  }
+
+  attr(term, "write") <- write
+
+  term
+}
+
+sx.construct.pspline.smooth <- sx.construct.ps.smooth.spec <- sx.construct.psplinerw1.smooth.spec <-
+sx.construct.psplinerw2.smooth.spec <- sx.construct.pspline.smooth.spec <-
+function(object, data, ...)
+{
+  if(class(object)[1] == "pspline.smooth")
+    class(object) <- "psplinerw2.smooth.spec"
   if(length(object$p.order) == 1L) 
     m <- rep(object$p.order, 2L)
   else 
@@ -1266,7 +973,7 @@ function(object, data)
 }
 
 sx.construct.ra.smooth.spec <- sx.construct.re.smooth.spec <-
-sx.construct.random.smooth.spec <- function(object, data)
+sx.construct.random.smooth.spec <- function(object, data, ...)
 {
   term <- object$term
   if(is.null(object$ins))
@@ -1280,7 +987,7 @@ sx.construct.random.smooth.spec <- function(object, data)
   return(term)
 }
 
-sx.construct.rps.smooth.spec <- function(object, data)
+sx.construct.rps.smooth.spec <- function(object, data, ...)
 {
   term <- paste(object$term, "(hrandom_pspline,centermethod=meansum2", sep = "")
   term <- paste(do.xt(term, object, NULL), ")", sep = "")
@@ -1289,7 +996,7 @@ sx.construct.rps.smooth.spec <- function(object, data)
   return(term)
 }
 
-sx.construct.kr.smooth.spec <- sx.construct.kriging.smooth.spec <- function(object, data)
+sx.construct.kr.smooth.spec <- sx.construct.kriging.smooth.spec <- function(object, data, ...)
 {
   termo <- object$term
   if(length(termo) < 2L)
@@ -1322,12 +1029,12 @@ construct.shrw <- function(object, data, what)
   return(term)
 }
 
-sx.construct.offset.smooth.spec <- function(object, data)
+sx.construct.offset.smooth.spec <- function(object, data, ...)
 {
   return(construct.shrw(object, data, "offset"))
 }
 
-sx.construct.mrf.smooth.spec <- sx.construct.spatial.smooth.spec <- function(object, data)
+sx.construct.mrf.smooth.spec <- sx.construct.spatial.smooth.spec <- function(object, data, ...)
 {
   if(is.null(object$xt))
     stop("need to supply a map object in argument xt!")  
