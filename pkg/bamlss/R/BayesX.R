@@ -537,8 +537,10 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         rhs <- c(rhs, cn)
         sdata <- as.data.frame(x$model.matrix[, cn, drop = FALSE])
       }
-      if("Intercept" %in% colnames(x$model.matrix))
+      if("Intercept" %in% colnames(x$model.matrix)) {
+        sdata <- cbind("Intercept" = rep(1, nrow(y)), sdata)
         rhs <- c("const", rhs)
+      }
     }
 
     if(!is.null(x$smooth.construct)) {
@@ -556,19 +558,24 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     }
 
     rn <- response.name(as.formula(x$formula), hierarchical = FALSE)
+    if(rn %in% family$names)
+      rn <- NA
     if(is.na(rn))
       rn <- yname
     eqn <- paste(rn, "=", paste(rhs, collapse = " + "))
     rval <- list("eqn" = eqn, "prgex" = prgex)
 
     if(!is.null(sdata)) {
+      if(nrow(sdata) == nrow(y))
+        sdata <- cbind(sdata, y)
       rval$dname <- paste(paste(id, collapse = "_"), data.name, sep = "_")
-      write.table(sdata, file = file.path(dir, paste(rval$dname, ".raw", sep = "")))
-      rval$prgex <- c(rval$prgex,
+      write.table(sdata, file = file.path(dir, paste(rval$dname, ".raw", sep = "")),
+        quote = FALSE, row.names = FALSE)
+      rval$prgex <- c(
         paste("dataset", rval$dname),
         paste(rval$dname, ".infile using ",
           file.path(dir, paste(rval$dname, ".raw", sep = "")), sep = ""),
-        prgex
+        rval$prgex
       )
     }
 
@@ -580,17 +587,18 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   n <- 1
   for(i in names(x)) {
     if(!all(c("fake.formula", "formula") %in% names(x[[i]]))) {
+      stop("hierarchical models not supported yet!")
       eqn[[i]] <- list()
       k <- 1
       for(j in names(x[[i]])) {
         msp <- single_eqn(x[[i]][[j]], y, id = c(i, j))
         teqn <- paste(model.name, ".hregress ", msp$eqn,
           ", family=", if(k < 2) fbx[[i]][1] else "gaussian_re",
-          ", equationtype=", fbx[[i]][2],
-          if(n < 2 & k < 2) {
-            paste(",", paste(names(control$prg), "=", control$prg, sep = "", collapse = ", "))
+          " equationtype=", fbx[[i]][2],
+          if(n == length(x) & k < 2) {
+            paste(" ", paste(names(control$prg), "=", control$prg, sep = "", collapse = " "))
           } else NULL,
-          if(!is.null(msp$dname)) paste(", using", msp$dname) else NULL, sep = "")
+          if(!is.null(msp$dname)) paste(" using", msp$dname) else NULL, sep = "")
         eqn[[i]][[j]] <- teqn
         prgex <- c(prgex, msp$prgex)
         k <- k + 1
@@ -599,11 +607,11 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     } else {
       msp <- single_eqn(x[[i]], y, id = i)
       teqn <- paste(model.name, ".hregress ", msp$eqn, ", family=", fbx[[i]][1],
-        ", equationtype=", fbx[[i]][2],
-        if(n < 2) {
-          paste(",", paste(names(control$prg), "=", control$prg, sep = "", collapse = ", "))
+        " equationtype=", fbx[[i]][2],
+        if(n == length(x)) {
+          paste(" ", paste(names(control$prg), "=", control$prg, sep = "", collapse = " "))
         } else NULL,
-        if(!is.null(msp$dname)) paste(", using", msp$dname) else NULL, sep = "")
+        if(!is.null(msp$dname)) paste(" using", msp$dname) else NULL, sep = "")
       eqn[[i]] <- teqn
       prgex <- c(prgex, msp$prgex)
     }
@@ -624,18 +632,14 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   if(any(grepl("##seed##", prg, fixed = TRUE)))
     prg <- gsub("##seed##", round(runif(1L) * .Machine$integer.max), prg, fixed = TRUE)
 
-
   prgf <- file.path(dir, prg.name)
   writeLines(prg, prgf)
-
-##writeLines(prg)
 
   require("BayesXsrc")
 
   warn <- getOption("warn")
   options(warn = -1)
   ok <- run.bayesx(prg = prgf, verbose = control$setup$verbose)
-print(ok)
   options("warn" = warn)
   if(length(i <- grep("error", ok$log, ignore.case = TRUE))) {
     errl <- gsub("^ +", "", ok$log[i])
@@ -650,10 +654,48 @@ print(ok)
     warning("the BayesX engine returned NA samples, please check your model specification! In some cases it can be helpful to center continuous covariates!", call. = FALSE)
   }
 
-  stop()
+  sfiles <- grep("_sample.raw", dir(file.path(dir, "output")), fixed = TRUE, value = TRUE)
 
   samples <- NULL
-  samples
+  for(i in names(x)) {
+    if(!all(c("fake.formula", "formula") %in% names(x[[i]]))) {
+      stop("hierarchical models not supported yet!")
+    } else {
+      if(!is.null(x[[i]]$model.matrix)) {
+        sf <- grepl(paste("_", i, "_", sep = ""), sfiles, fixed = TRUE) & grepl(paste("LinearEffects", sep = ""), sfiles, fixed = TRUE)
+        sf <- sfiles[sf]
+        samps <- as.matrix(read.table(file.path(dir, "output", sf), header = TRUE)[, -1, drop = FALSE])
+        colnames(samps) <- paste(i, ".p.", colnames(x[[i]]$model.matrix), sep = "")
+        samples <- cbind(samples, samps)
+      }
+      if(!is.null(x[[i]]$smooth.construct)) {
+        for(j in seq_along(x[[i]]$smooth.construct)) {
+          term <- paste("_", paste(x[[i]]$smooth.construct[[j]]$term, collapse = "_"), "_", sep = "")
+          sf <- grepl(paste("_", i, "_", sep = ""), sfiles, fixed = TRUE) & grepl(term, sfiles, fixed = TRUE) & !grepl("_variance_", sfiles, fixed = TRUE)
+          sf <- sfiles[sf]
+          samps <- as.matrix(read.table(file.path(dir, "output", sf), header = TRUE)[, -1, drop = FALSE])
+          cn <- colnames(x[[i]]$smooth.construct[[j]]$X)
+          if(is.null(cn))
+            cn <- paste("b", 1:ncol(x[[i]]$smooth.construct[[j]]$X), sep = "")
+          colnames(samps) <- paste(i, ".s.", x[[i]]$smooth.construct[[j]]$label, ".", cn, sep = "")
+          sf <- grepl(paste("_", i, "_", sep = ""), sfiles, fixed = TRUE) & grepl(term, sfiles, fixed = TRUE) & grepl("_variance_", sfiles, fixed = TRUE)
+          sf <- sfiles[sf]
+          if(length(sf)) {
+            vsamps <- as.matrix(read.table(file.path(dir, "output", sf), header = TRUE)[, -1, drop = FALSE])
+            colnames(vsamps) <- paste(i, ".s.", x[[i]]$smooth.construct[[j]]$label, ".", paste("tau2", 1:ncol(vsamps), sep = ""), sep = "")
+            samps <- cbind(samps, vsamps)
+          }
+          samples <- cbind(samples, samps)
+        }
+      }
+    }
+  }
+
+  sf <- grep("_DIC", dir(file.path(dir, "output")), fixed = TRUE, value = TRUE)
+  dic <- read.table(file.path(dir, "output", sf), header = TRUE)[, -1, drop = FALSE]
+  samples <- cbind(samples, "DIC" = dic$dic, "pd" = dic$pd)
+
+  as.mcmc(samples)
 }
 
 
@@ -902,7 +944,7 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
   Xn <- paste(id, "X", sep = "_")
   if(length(object$S) > 1) {
     object$S <- do.call("+", object$S)
-    object$rank <- qr(object$S[[1]])$rank
+    object$rank <- sum(object$rank)
   }
   if(is.null(object$rank))
     object$rank <- qr(object$S[[1]])$rank
@@ -910,7 +952,7 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
     object$xt$centermethod <- "meanfd"
   term <- paste(term, "(userdefined,penmatdata=", Sn, ",designmatdata=", Xn,
     ",rankK=", object$rank, sep = "")
-  term <- paste(do.xt(term, object, NULL), ")", sep = "")
+  term <- paste(do.xt(term, object, c("center", "before")), ")", sep = "")
 
   write <- function(dir) {
     write.table(object$S[[1]], file = file.path(dir, paste(Sn, ".raw", sep = "")),
