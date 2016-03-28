@@ -478,8 +478,10 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
   }
   if(is.null(object$rank))
     object$rank <- qr(object$S[[1]])$rank
-  if(is.null(object$xt$centermethod))
-    object$xt$centermethod <- "meanfd"
+  if(is.null(object$xt$nocenter))
+    object$xt$nocenter <- TRUE
+  ##if(is.null(object$xt$centermethod))
+  ##  object$xt$centermethod <- "meanfd"
   term <- paste(term, "(userdefined,penmatdata=", Sn, ",designmatdata=", Xn,
     ",rankK=", object$rank, sep = "")
   term <- paste(do.xt(term, object, c("center", "before")), ")", sep = "")
