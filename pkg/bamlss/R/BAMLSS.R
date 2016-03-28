@@ -162,7 +162,7 @@ print.bamlss.frame <- function(x, ...)
 design.construct <- function(formula, data = NULL, knots = NULL,
   model.matrix = TRUE, smooth.construct = TRUE, binning = FALSE,
   before = TRUE, gam.side = TRUE, model = NULL, drop = NULL,
-  scale.x = TRUE, sparse.cons = 0, specials = NULL, ...)
+  scale.x = TRUE, absorb.cons = NULL, sparse.cons = 0, specials = NULL, ...)
 {
   if(!model.matrix & !smooth.construct)
     return(NULL)
@@ -257,9 +257,11 @@ design.construct <- function(formula, data = NULL, knots = NULL,
               tsm$binning$order <- order(tsm$binning$match.index)
               tsm$binning$sorted.index <- tsm$binning$match.index[tsm$binning$order]
               smt <- smoothCon(tsm, if(before) data[tsm$binning$nodups, term.names, drop = FALSE] else data,
-                knots, absorb.cons = acons, sparse.cons = sparse.cons)
+                knots, absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons, sparse.cons = sparse.cons)
             } else {
-              smt <- smoothCon(tsm, data, knots, absorb.cons = acons, sparse.cons = sparse.cons)
+              smt <- smoothCon(tsm, data, knots,
+                absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons,
+                sparse.cons = sparse.cons)
             }
           } else {
             smt <- smooth.construct(tsm, data, knots)
