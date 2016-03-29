@@ -920,6 +920,7 @@ tau2.optim <- function(f, start, ..., scale = 10, eps = 0.0001, maxit = 10)
   }
 
   start <- cround(start)
+  ic0 <- f(start)
 
   iter <- 1; eps0 <- eps + 1
   while((eps0 > eps) & (iter < maxit)) {
@@ -927,8 +928,10 @@ tau2.optim <- function(f, start, ..., scale = 10, eps = 0.0001, maxit = 10)
     for(k in seq_along(start)) {
       xr <- c(start[k] / scale, start[k] * scale)
       tpar <- try(optimize(foo, interval = xr, start = start, k = k), silent = TRUE)
-      if(!inherits(tpar, "try-error"))
-        start[k] <- cround(tpar$minimum)
+      if(!inherits(tpar, "try-error")) {
+        if(tpar$objective < ic0)
+          start[k] <- cround(tpar$minimum)
+      }
     }
     if(length(start) < 2)
       break
