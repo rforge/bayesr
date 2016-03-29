@@ -1801,7 +1801,7 @@ multinomial.bamlss <- multinom.bamlss <- function(...)
       "model" = BUGSmodel
     ),
     "bayesx" = list(
-      "pi" = c(paste("multinom", link, sep = "_"), "mu", "meanservant")
+      "pi" = c(paste("multinom", "logit", sep = "_"), "main", "servant")
     ),
     "score" = function(y, par, id, ...) {
       pi <- par[[id]] / (1 + rowSums(do.call("cbind", par)))
