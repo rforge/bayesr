@@ -265,7 +265,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
             }
           } else {
             smt <- smooth.construct(tsm, data, knots)
-            if(inherits(smt, "no.mgcv")) {
+            if(inherits(tsm, "no.mgcv") | inherits(smt, "no.mgcv")) {
               no.mgcv <- c(no.mgcv, list(smt))
               next
             } else {
@@ -297,16 +297,11 @@ design.construct <- function(formula, data = NULL, knots = NULL,
             smooth <- sme
             rm(sme)
           }
-          if(!is.null(no.mgcv))
-            smooth <- c(smooth, no.mgcv)
-          if(length(smooth)) {
-            stl <- NULL
-            for(j in seq_along(smooth))
-              stl <- c(stl, smooth[[j]]$label)
-            names(smooth) <- stl
-          }
-          obj$smooth.construct <- smooth
         }
+        if(!is.null(no.mgcv))
+          smooth <- c(smooth, no.mgcv)
+        if(length(smooth))
+          obj$smooth.construct <- smooth
       }
     }
     if(!is.null(obj$smooth.construct)) {
@@ -4707,7 +4702,7 @@ samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE,
     stop("x is not a 'bamlss' object!")
   if(is.null(x$samples))
     stop("no samples to extract!")
-  tx <- terms(x)
+  tx <- terms(x, drop = FALSE)
   x <- x$samples
 
   x <- process.chains(x, combine, drop = FALSE)

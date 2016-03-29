@@ -73,7 +73,6 @@ simfun <- function(type = "sinus")
       x <- scale2(x, 0, 1)
       knots <- c(0.2, 0.6, 0.7)
       B <- splineDesign(knots, x, ord = 3, outer.ok = TRUE)
-print(dim(B))
       f <- B %*% c(20, 4, 6, 11, 6)
       f <- f - mean(f)
       return(f)
@@ -166,9 +165,12 @@ GAMart <- function(n = 500, sd = 0.1, seed = FALSE)
   d$eta <- with(d, scale2(f1(x1) + f2(x2) + f3(x3) + f4(lon, lat) + f5(id) + f6(fac), -1, 1))
   d$err <- rnorm(n, sd = sd)
   d$num <- with(d, eta + err)
+  d$pnum <- d$num + abs(min(d$num)) + 1
+  d$bnum <- scale2(d$num, 0.01, 0.99)
+  d$cnum <- round(scale2(d$num, 0, 100))
   d$bin <- cut(d$num, quantile(d$num, probs = c(0, 0.5, 1)), labels = c("no", "yes"), include.lowest = TRUE)
   d$cat <- cut(d$num, quantile(d$num), labels = c("none", "low", "medium", "high"), include.lowest = TRUE)
-  d <- d[, c("num", "bin", "cat", "eta", "x1", "x2", "x3", "fac", "id", "lon", "lat", "err")]
+  d <- d[, c("num", "pnum", "bnum", "cnum", "bin", "cat", "eta", "x1", "x2", "x3", "fac", "id", "lon", "lat", "err")]
 
   d
 }

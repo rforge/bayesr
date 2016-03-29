@@ -140,7 +140,7 @@ beta.bamlss <- function(...)
       ok
     },
     "bayesx" = list(
-      "mu" = c("beta", "mean"),
+      "mu" = c("beta", "mu"),
       "sigma2" = c("beta", "sigma2")
     ),
     "bugs" = list(

@@ -3,7 +3,7 @@
 ######################
 BayesX.control <- function(n.iter = 1200, thin = 1, burnin = 200,
   seed = NULL, predict = "light", model.name = "bamlss", data.name = "d",
-  prg.name = NULL, dir = NULL, verbose = FALSE, cores = NULL, ...)
+  prg.name = NULL, dir = NULL, verbose = FALSE, show.prg = TRUE, cores = NULL, ...)
 {
   if(is.null(seed))
     seed <- '##seed##'
@@ -30,7 +30,7 @@ BayesX.control <- function(n.iter = 1200, thin = 1, burnin = 200,
     ),
     "setup" = list(
       "main" = c(rep(FALSE, 3), rep(TRUE, 2)), "model.name" = model.name, "data.name" = data.name,
-      "prg.name" = prg.name, "dir" = dir, "verbose" = verbose, "cores" = cores
+      "prg.name" = prg.name, "dir" = dir, "verbose" = verbose, "show.prg" = show.prg, "cores" = cores
     )
   )
 
@@ -67,6 +67,13 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     stop("no data available for creating BayesX model term objects!")
 
   yname <- colnames(y)[1]
+  for(j in names(y)) {
+    if(is.factor(y[[j]])) {
+      if(nlevels(y[[j]]) < 3) {
+        y[[j]] <- as.integer(as.integer(y[[j]]) - 1L)
+      }
+    }
+  }
 
   single_eqn <- function(x, y, id) {
     rhs <- dfiles <- prgex <- sdata <- NULL
@@ -91,7 +98,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     if(!is.null(x$smooth.construct)) {
       for(j in names(x$smooth.construct)) {
         if(is.null(x$smooth.construct[[j]]$sx.construct))
-          class(x$smooth.construct[[j]]) <- "userdefined.smooth.spec"
+          class(x$smooth.construct[[j]]) <- c("userdefined.smooth.spec", class(x$smooth.construct[[j]]))
         sxc <- sx.construct(x$smooth.construct[[j]], data, id = c(id, j), dir = dir, mcmcreg = TRUE)
         if(!is.null(attr(sxc, "write")))
           prgex <- c(prgex, attr(sxc, "write")(dir))
@@ -104,7 +111,8 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
             if(inherits(x$smooth.construct[[j]], "userdefined.smooth.spec")) {
               sdata[[tl]] <- runif(nrow(data))
             } else {
-              sdata <- data[, tl, drop = FALSE]
+              for(tlj in tl)
+                sdata[[tlj]] <- data[[tlj]]
             }
           }
         } else {
@@ -128,6 +136,10 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     rval <- list("eqn" = eqn, "prgex" = prgex)
 
     if(!is.null(sdata)) {
+      for(j in names(sdata)) {
+        if(is.factor(sdata[[j]]))
+          sdata[[j]] <- as.integer(sdata[[j]]) - 1L
+      }
       if(nrow(sdata) == nrow(y))
         sdata <- cbind(sdata, y)
       rval$dname <- paste(paste(id, collapse = "_"), data.name, sep = "_")
@@ -147,6 +159,10 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   eqn <- list()
   prgex <- NULL
   n <- 1
+  main <- if(is.null(family$main)) c(TRUE, rep(FALSE, length(x) - 1)) else family$main
+  pcmd <- control$prg$predict
+  control$prg$predict <- NULL
+
   for(i in names(x)) {
     if(!all(c("fake.formula", "formula") %in% names(x[[i]]))) {
       stop("hierarchical models not supported yet!")
@@ -160,6 +176,9 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           if(n == length(x) & k < 2) {
             paste(" ", paste(names(control$prg), "=", control$prg, sep = "", collapse = " "))
           } else NULL,
+          if(main[n]) {
+            paste(" predict=", pcmd, sep = "")
+          } else NULL,
           if(!is.null(msp$dname)) paste(" using", msp$dname) else NULL, sep = "")
         eqn[[i]][[j]] <- teqn
         prgex <- c(prgex, msp$prgex)
@@ -172,6 +191,9 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         " equationtype=", fbx[[i]][2],
         if(n == length(x)) {
           paste(" ", paste(names(control$prg), "=", control$prg, sep = "", collapse = " "))
+        } else NULL,
+        if(main[n]) {
+          paste(" predict=", pcmd, sep = "")
         } else NULL,
         if(!is.null(msp$dname)) paste(" using", msp$dname) else NULL, sep = "")
       eqn[[i]] <- teqn
@@ -194,26 +216,8 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   if(any(grepl("##seed##", prg, fixed = TRUE)))
     prg <- gsub("##seed##", round(runif(1L) * .Machine$integer.max), prg, fixed = TRUE)
 
-#  cores <- control$setup$cores
-
-#  if(cores > 1) {
-#    k <- 1
-#    while(file.exists(cdir <- file.path(dir, paste("Core", k, sep = "")))) {
-#      k <- k + 1
-#    }
-#    dir.create(cdir)
-#    prg <- gsub('##outfile##', prg <- file.path(cdir, model.name), prg, fixed = TRUE)
-#    prg.name <- paste(gsub(".prg", "", prg.name, fixed = TRUE), k, ".prg", sep = "")
-#    if(length(i <- grep('usefile', prg)))
-#      prg[i] <- paste('%% usefile', file.path(dir, prg.name))
-#    prg <- gsub(file.path(dir, paste(model.name, 'log', sep = '.')),
-#      file.path(cdir, paste(model.name, 'log', sep = '.')), prg, fixed = TRUE)
-#    prg <- gsub(paste(model.name, ".", sep = ""), paste(model.name, k, ".", sep = ""),
-#      prg, fixed = TRUE)
-#    prg[grep("mcmcreg", prg)] <- paste("mcmcreg ", model.name, k, sep = "")
-
-#    dir <- cdir
-#  }
+  if(control$setup$show.prg)
+    writeLines(prg)
 
   prgf <- file.path(dir, prg.name)
   writeLines(prg, prgf)
@@ -233,7 +237,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       paste(errl, collapse = "\n", sep = ""), sep = "")
     warning(errm, call. = FALSE)
   }
-  if(length(i <- grep("-nan", ok$log, ignore.case = TRUE))){
+  if(length(i <- grep("-nan", ok$log, ignore.case = TRUE))) {
     warning("the BayesX engine returned NA samples, please check your model specification! In some cases it can be helpful to center continuous covariates!", call. = FALSE)
   }
 
@@ -424,11 +428,13 @@ sx.construct.default <- function(object, data, ...)
 {
   cl <- grep(".smooth.spec", class(object), value = TRUE, fixed = TRUE)
   bs <- gsub(".smooth.spec", "", cl, fixed = TRUE)
-  info <- if(cl == paste(bs, "smooth.spec", sep = ".")) {
-    paste("with basis", sQuote(bs))
-  } else {
-    paste("of class", sQuote(cl))
-  }
+  if(length(cl)) {
+    info <- if(cl == paste(bs, "smooth.spec", sep = ".")) {
+      paste("with basis", sQuote(bs))
+    } else {
+      paste("of class", sQuote(cl))
+    }
+  } else info <- paste("of class", paste(sQuote(class(object)), collapse = ", "))
   stop(paste("BayesX does not support smooth terms ", info,
     ", it is recommended to use sx() for specifying smooth terms",
     sep = ""))
@@ -555,6 +561,7 @@ function(object, dir, prg, data, mcmcreg = FALSE, ...)
   by <- object$term[1L]
   term <- object$term[2L]
   object <- object$margin[[1L]]
+  object$bs.dim <- as.integer(object$bs.dim^2)
   object$term <- term
   object$by <- by
   term <- sx.construct(object, dir, prg, data, mcmcreg = mcmcreg, ...)
@@ -566,7 +573,7 @@ function(object, dir, prg, data, mcmcreg = FALSE, ...)
 }
 
 sx.construct.ra.smooth.spec <- sx.construct.re.smooth.spec <-
-sx.construct.random.smooth.spec <- function(object, data, ...)
+sx.construct.random.smooth.spec <- sx.construct.random.effect <- function(object, data, mcmcreg = FALSE, ...)
 {
   term <- object$term
   if(is.null(object$ins))
