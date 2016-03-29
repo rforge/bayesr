@@ -1995,7 +1995,7 @@ formula_hcheck <- function(formula)
       for(i in seq_along(formula)) {
         if(j != i) {
           fi <- if(!is.list(formula[[i]])) list(formula[[i]]) else formula[[i]]
-          rnj <- response.name(formula[[j]])
+          rnj <- response.name(formula[[j]], keep.functions = TRUE)
           for(jj in seq_along(fi)) {
             av <- all.vars(fi[[jj]])
             rn <- response.name(fi[[jj]])
