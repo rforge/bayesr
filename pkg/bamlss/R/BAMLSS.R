@@ -5461,17 +5461,23 @@ h_response <- function(x)
 ## Create the inverse of a matrix.
 matrix_inv <- function(x, index = NULL, force = FALSE)
 {
-  if(!is.null(index$crossprod) & FALSE) {
+  if(!is.null(index$crossprod)) {
     if(ncol(index$crossprod) < ncol(x)) {
-      ju <- unique(index$crossprod[, 1])
-      if(length(ju) < nrow(x)) {
-        require("Matrix")
-        inv <- list()
-        for(i in ju) {
-          take <- index$crossprod[, 1] == i
-          inv[[as.character(i)]] <- solve(x[take, take, drop = FALSE])
+      if(ncol(index$crossprod) < 2) {
+        return(diag(1 / diag(x)))
+      } else {
+        if(FALSE) {
+          ju <- unique(index$crossprod[, 1])
+          if(length(ju) < nrow(x)) {
+            require("Matrix")
+            inv <- list()
+            for(i in ju) {
+              take <- index$crossprod[, 1] == i
+              inv[[as.character(i)]] <- solve(x[take, take, drop = FALSE])
+            }
+            return(as.matrix(do.call("bdiag", inv)))
+          }
         }
-        return(as.matrix(do.call("bdiag", inv)))
       }
     }
   }
