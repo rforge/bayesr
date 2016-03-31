@@ -1573,9 +1573,11 @@ bamlss.formula <- function(formula, family = NULL, specials = NULL)
       }
     }
     fn[fn %in% c("1", "-1")] <- NA
+
     nas <- which(is.na(fn))
     if(!is.null(family)) {
-      fn[nas] <- family$names[nas]
+      if(length(nas))
+        fn[nas] <- family$names[nas]
       if(is.null(family$names))
         family$names <- NA
       if(!all(is.na(family$names[1:length(fn)])))
@@ -1583,6 +1585,7 @@ bamlss.formula <- function(formula, family = NULL, specials = NULL)
       else
         family$names[1:length(fn)] <- fn
     } else fn[nas] <- paste("par", 1:length(fn[nas]), sep = ".")
+
     if(is.null(family)) {
       if(length(fn) < length(formula)) {
         k <- length(formula) - length(fn)
@@ -1794,6 +1797,8 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
     vars <- c(vars, response.name(formula, keep.functions = TRUE))
   if(intercept & (attr(tf, "intercept") > 0))
     vars <- c("1", vars)
+  if(length(vars) < 1)
+    vars <- NULL
   unique(vars)
 }
 
@@ -1834,8 +1839,10 @@ fake.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL)
 {
   if(all(!lhs & !rhs))
     return(0 ~ 0)
-  if(all(rhs))
+  if(all(rhs)) {
     f <- paste(all.vars.formula(formula, lhs = FALSE, rhs = TRUE, specials, intercept = TRUE), collapse = "+")
+    if(f == "") f <- "-1"
+  }
   if(all(lhs))
     f <- paste(all.vars.formula(formula, lhs = TRUE, rhs = FALSE), "~", if(!is.null(f)) f else 0)
   else

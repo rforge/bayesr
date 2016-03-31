@@ -603,6 +603,8 @@ get.hessian <- function(x)
     for(j in names(x[[i]]$smooth.construct)) {
       pn <- if(j == "model.matrix") paste(i, "p", sep = ".") else paste(i, "s", j, sep = ".")
       hessian[[pn]] <- x[[i]]$smooth.construct[[j]]$state$hessian
+      if(is.null(hessian[[pn]]))
+        hessian[[pn]] <- diag(1e-07, ncol(x[[i]]$smooth.construct[[j]]$X))
       cn <- colnames(x[[i]]$smooth.construct[[j]]$X)
       if(is.null(cn))
         cn <- paste("b", 1:ncol(x[[i]]$smooth.construct[[j]]$X), sep = "")
