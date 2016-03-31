@@ -929,8 +929,10 @@ tau2.optim <- function(f, start, ..., scale = 10, eps = 0.0001, maxit = 10)
       xr <- c(start[k] / scale, start[k] * scale)
       tpar <- try(optimize(foo, interval = xr, start = start, k = k), silent = TRUE)
       if(!inherits(tpar, "try-error")) {
-        if(tpar$objective < ic0)
+        if(tpar$objective < ic0) {
           start[k] <- cround(tpar$minimum)
+          ic0 <- tpar$objective
+        }
       }
     }
     if(length(start) < 2)
