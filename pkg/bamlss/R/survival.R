@@ -862,7 +862,7 @@ surv.transform <- function(x, y, data, family,
 }
 
 
-param_time_transform <- function(x, formula, data, grid, yname, timevar, take)
+param_time_transform <- function(x, formula, data, grid, yname, timevar, take, derivMat = FALSE)
 {
   if(!is.null(take))
     data <- data[take, , drop = FALSE]
@@ -883,13 +883,30 @@ param_time_transform <- function(x, formula, data, grid, yname, timevar, take)
     X <- cbind(X, unlist(grid))
     colnames(X)[ncol(X)] <- timevar
   }
+
+  dX <- NULL
+  if(derivMat) {
+    dX <- X
+    for(j in colnames(dX)) {
+      if(!is.factor(dX[[j]]))
+        dX[[j]] <- dX[[j]] + 1e-7
+    }
+  }
+
   X <- model.matrix(formula, data = X)
 
   gdim <- c(length(grid), length(grid[[1]]))
 
   x$XT <- extract_XT(X, gdim[1], gdim[2])
 
+  if(derivMat) {
+    dX <- model.matrix(formula, data = dX)
+    dX <- (X - dX) / 1e-7
+    x$dXT <- extract_XT(dX, gdim[1], gdim[2])
+  }
+
   x$fit.fun_timegrid <- function(g) {
+    if(is.character(g)) return(dX)
     if(is.null(g)) return(X)
     g <- get.par(g, "b")
     f <- drop(X %*% g)
@@ -901,7 +918,7 @@ param_time_transform <- function(x, formula, data, grid, yname, timevar, take)
   x
 }
 
-sm_time_transform <- function(x, data, grid, yname, timevar, take)
+sm_time_transform <- function(x, data, grid, yname, timevar, take, derivMat = FALSE)
 {
   if(!is.null(take))
     data <- data[take, , drop = FALSE]
@@ -923,15 +940,32 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take)
   }
   if(x$by != "NA" & x$by != yname)
     X[[x$by]] <- rep(data[[x$by]], each = length(grid[[1]]))
+
+  dX <- NULL
+  if(derivMat) {
+    dX <- X
+    for(j in colnames(dX)) {
+      if(!is.factor(dX[[j]]))
+        dX[[j]] <- dX[[j]] + 1e-7
+    }
+  }
+
   X <- PredictMat(x, X)
   gdim <- c(length(grid), length(grid[[1]]))
 
   x$XT <- extract_XT(X, gdim[1], gdim[2])
 
+  if(derivMat) {
+    dX <- PredictMat(x, dX)
+    dX <- (X - dX) / 1e-7
+    x$dXT <- extract_XT(dX, gdim[1], gdim[2])
+  }
+
   x$sparse.setup$grid.matrix <- sparse.matrix.index(X)
   ff <- make.fit.fun(x, type = 2)
 
   x$fit.fun_timegrid <- function(g) {
+    if(is.character(g)) return(dX)
     if(is.null(g)) return(X)
     f <- ff(X, g, expand = FALSE)
     f <- matrix(f, nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
