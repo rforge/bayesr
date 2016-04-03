@@ -54,5 +54,8 @@ echo $contents; } ?>
 
 <p> The <strong>project summary page</strong> you can find <a href="http://<?php echo $domain; ?>/projects/<?php echo $group_name; ?>/"><strong>here</strong></a>. </p>
 
+<p><a href="precipitation_clim.tar.gz">Supplementary material</a> for
+the article "Spatio-Temporal Precipitation Climatology over Complex
+Terrain Using a Censored Additive Regression Model"</p>
 </body>
 </html>
