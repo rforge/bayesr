@@ -994,15 +994,25 @@ extract_XT <- function(X, tnr, tnc)
 
 
 ## Survival integrals.
-survint <- function(X, eta, width, gamma, eta2 = NULL, index = NULL)
+survint <- function(X, eta, width, gamma, eta2 = NULL, index = NULL, dX = NULL, deta = NULL, deta2 = NULL)
 {
   if(check <- is.null(eta2))
     eta2 <- as.numeric(0.0)
-  int <- if(is.null(index)) {
-    .Call("survint", X, eta, width, gamma, eta2, as.integer(check))
+
+  int <- if(is.null(dX)) {
+    if(is.null(index)) {
+      .Call("survint", X, eta, width, gamma, eta2, as.integer(check))
+    } else {
+      .Call("survint_index", X, eta, width, gamma, eta2, as.integer(check), index)
+    }
   } else {
-    .Call("survint_index", X, eta, width, gamma, eta2, as.integer(check), index)
+    if(is.null(index)) {
+      .Call("dsurvint", X, eta, width, gamma, eta2, as.integer(check), dX, deta, deta2)
+    } else {
+      .Call("dsurvint_index", X, eta, width, gamma, eta2, as.integer(check), index, dX, deta, deta2)
+    }
   }
+
   return(int)
 }
 

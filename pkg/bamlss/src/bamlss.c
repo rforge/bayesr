@@ -1512,6 +1512,247 @@ SEXP survint_index(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP che
 }
 
 
+/* Survival integrals with derivatives. */
+SEXP dsurvint(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP check,
+  SEXP dX, SEXP deta, SEXP deta2)
+{
+  double *Xptr = REAL(X);
+  double *etaptr = REAL(eta);
+  double *eta2ptr = REAL(eta2);
+  double *gammaptr = REAL(gamma);
+  double *widthptr = REAL(width);
+
+  double *dXptr = REAL(dX);
+  double *detaptr = REAL(deta);
+  double *deta2ptr = REAL(deta2);
+
+  int nProtected = 0;
+
+  int nr = nrows(X);
+  int nc = ncols(X);
+
+  int tnr = nrows(eta);
+  int tnc = ncols(eta);
+
+  int ok = INTEGER(check)[0];
+
+  SEXP grad;
+  PROTECT(grad = allocVector(REALSXP, nc));
+  ++nProtected;
+  double *gradptr = REAL(grad);
+
+  SEXP hess;
+  PROTECT(hess = allocMatrix(REALSXP, nc, nc));
+  ++nProtected;
+  double *hessptr = REAL(hess);
+
+  int i, ii, j, jj, k, forward;
+  double sum = 0.0;
+  double tmp = 0.0;
+  double dtmp = 0.0;
+
+  for(j = 0; j < nc; j++) {
+    for(jj = 0; jj <= j; jj++) {
+      hessptr[j + jj * nc] = 0.0;
+      hessptr[jj + j * nc] = 0.0;
+    }
+  }
+
+  SEXP tmat;
+  PROTECT(tmat = duplicate(hess));
+  ++nProtected;
+  double *tmatptr = REAL(tmat);
+
+  for(j = 0; j < nc; j++) {
+    gradptr[j] = 0.0;
+    for(i = 0; i < tnr; i++) {
+      sum = 0.0;
+      for(k = 1; k < (tnc - 1); k++) {
+        sum += Xptr[k + i * tnc + nr * j] * etaptr[i + k * tnr] + dXptr[k + i * tnc + nr * j] * detaptr[i + k * tnr];
+      }
+      sum += 0.5 * (Xptr[i * tnc + nr * j] * etaptr[i] +
+        Xptr[(tnc - 1) + i * tnc + nr * j] * etaptr[i + (tnc - 1) * tnr]) +
+          0.5 * (dXptr[i * tnc + nr * j] * detaptr[i] +
+        dXptr[(tnc - 1) + i * tnc + nr * j] * detaptr[i + (tnc - 1) * tnr]);
+      sum *= widthptr[i] * gammaptr[i];
+      gradptr[j] += sum;
+
+      if(j < 1) {
+        forward = tnc * i;
+        for(k = 0; k < tnc; k++) {
+          for(jj = 0; jj < nc; jj++) {
+            for(ii = 0; ii <= jj; ii++) {
+              tmp = Xptr[k + forward + jj * nr] * Xptr[k + forward + ii * nr];
+              dtmp = dXptr[k + forward + jj * nr] * dXptr[k + forward + ii * nr];
+              if(ok < 1) {
+                tmp *= eta2ptr[i + k * tnr];
+                dtmp *= deta2ptr[i + k * tnr];
+              } else {
+                tmp *= etaptr[i + k * tnr];
+                dtmp *= detaptr[i + k * tnr];
+              }
+              if(k == 0 || k == (tnc - 1)) {
+                tmatptr[jj + ii * nc] += (tmp * 0.5 + dtmp * 0.5);
+              } else {
+                tmatptr[jj + ii * nc] += (tmp + dtmp);
+              }
+            }
+          }
+        }
+        for(jj = 0; jj < nc; jj++) {
+          for(ii = 0; ii <= jj; ii++) {
+            tmp = tmatptr[jj + ii * nc] * widthptr[i];
+            hessptr[jj + ii * nc] += tmp * gammaptr[i];
+            hessptr[ii + jj * nc] = hessptr[jj + ii * nc];
+            tmatptr[jj + ii * nc] = 0.0;
+          }
+        }
+      }
+    }
+  }
+
+  SEXP rval;
+  PROTECT(rval = allocVector(VECSXP, 2));
+  ++nProtected;
+
+  SEXP nrval;
+  PROTECT(nrval = allocVector(STRSXP, 2));
+  ++nProtected;
+
+  SET_VECTOR_ELT(rval, 0, grad);
+  SET_VECTOR_ELT(rval, 1, hess);
+
+  SET_STRING_ELT(nrval, 0, mkChar("grad"));
+  SET_STRING_ELT(nrval, 1, mkChar("hess"));
+        
+  setAttrib(rval, R_NamesSymbol, nrval); 
+
+  UNPROTECT(nProtected);
+  return rval;
+}
+
+
+/* Survival integrals with index matrix. */
+SEXP dsurvint_index(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP check, SEXP index,
+  SEXP dX, SEXP deta, SEXP deta2)
+{
+  double *Xptr = REAL(X);
+  double *etaptr = REAL(eta);
+  double *eta2ptr = REAL(eta2);
+  double *gammaptr = REAL(gamma);
+  double *widthptr = REAL(width);
+
+  double *dXptr = REAL(dX);
+  double *detaptr = REAL(deta);
+  double *deta2ptr = REAL(deta2);
+
+  int *indexptr = INTEGER(index);
+
+  int nProtected = 0;
+
+  int nr = nrows(X);
+  int nc = ncols(X);
+  int nc_index = ncols(index);
+  int tnr = nrows(eta);
+  int tnc = ncols(eta);
+
+  int ok = INTEGER(check)[0];
+
+  SEXP grad;
+  PROTECT(grad = allocVector(REALSXP, nc));
+  ++nProtected;
+  double *gradptr = REAL(grad);
+
+  SEXP hess;
+  PROTECT(hess = allocMatrix(REALSXP, nc, nc));
+  ++nProtected;
+  double *hessptr = REAL(hess);
+
+  int i, ii, j, jj, k, forward, m;
+  double sum = 0.0;
+  double tmp = 0.0;
+  double dtmp = 0.0;
+
+  for(j = 0; j < nc; j++) {
+    gradptr[j] = 0.0;
+    for(jj = 0; jj <= j; jj++) {
+      hessptr[j + jj * nc] = 0.0;
+      hessptr[jj + j * nc] = 0.0;
+    }
+  }
+
+  SEXP tmat;
+  PROTECT(tmat = duplicate(hess));
+  ++nProtected;
+  double *tmatptr = REAL(tmat);
+
+  for(i = 0; i < tnr; i++) {
+    forward = tnc * i;
+    for(j = 0; j < nc_index; j++) {
+      jj = indexptr[i + j * tnr] - 1;
+      if(jj < 0) continue;
+      sum = 0.0;
+      for(k = 0; k < tnc; k++) {
+        ii = indexptr[i] - 1;
+        while(ii <= jj) {
+          tmp = Xptr[k + forward + jj * nr] * Xptr[k + forward + ii * nr];
+          dtmp = dXptr[k + forward + jj * nr] * Xptr[k + forward + ii * nr];
+          if(ok < 1) {
+            tmp *= eta2ptr[i + k * tnr];
+            dtmp *= deta2ptr[i + k * tnr];
+          } else {
+            tmp *= etaptr[i + k * tnr];
+            dtmp *= detaptr[i + k * tnr];
+          }
+          if(k == 0 || k == (tnc - 1)) {
+            tmatptr[jj + ii * nc] += 0.5 * (tmp + dtmp);
+          } else {
+            tmatptr[jj + ii * nc] += (tmp + dtmp);
+          }
+          ii++;
+        }
+        if((k > 0) & (k < (tnc - 1))) {
+          sum += Xptr[k + i * tnc + nr * jj] * etaptr[i + k * tnr] + dXptr[k + i * tnc + nr * jj] * detaptr[i + k * tnr];
+        }
+      }
+      sum += 0.5 * (Xptr[i * tnc + nr * jj] * etaptr[i] +
+        Xptr[(tnc - 1) + i * tnc + nr * jj] * etaptr[i + (tnc - 1) * tnr]) +
+          0.5 * (dXptr[i * tnc + nr * jj] * detaptr[i] +
+        dXptr[(tnc - 1) + i * tnc + nr * jj] * detaptr[i + (tnc - 1) * tnr]);
+      sum *= widthptr[i] * gammaptr[i];
+      gradptr[jj] += sum;
+      ii = indexptr[i] - 1;
+      while(ii <= jj) {
+        tmp = tmatptr[jj + ii * nc] * widthptr[i];
+        hessptr[jj + ii * nc] += tmp * gammaptr[i];
+        hessptr[ii + jj * nc] = hessptr[jj + ii * nc];
+        tmatptr[jj + ii * nc] = 0.0;
+        ii++;
+      }
+    }
+  }
+
+  SEXP rval;
+  PROTECT(rval = allocVector(VECSXP, 2));
+  ++nProtected;
+
+  SEXP nrval;
+  PROTECT(nrval = allocVector(STRSXP, 2));
+  ++nProtected;
+
+  SET_VECTOR_ELT(rval, 0, grad);
+  SET_VECTOR_ELT(rval, 1, hess);
+
+  SET_STRING_ELT(nrval, 0, mkChar("grad"));
+  SET_STRING_ELT(nrval, 1, mkChar("hess"));
+        
+  setAttrib(rval, R_NamesSymbol, nrval); 
+
+  UNPROTECT(nProtected);
+  return rval;
+}
+
+
 /* Extract the XT matrix. */
 SEXP extract_XT(SEXP X, SEXP TNR, SEXP TNC)
 {

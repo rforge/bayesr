@@ -3311,6 +3311,32 @@ Predict.matrix.kriging.smooth <- function(object, data)
 }
 
 
+## Spatial random effect constructor functions.
+smooth.construct.sr.smooth.spec <- function(object, data, knots)
+{
+  if(object$dim < 2) stop("spatial locations misspecified!")
+  if(object$bs.dim < 0) object$bs.dim <- 10
+
+  knots <- if(is.null(object$xt$knots)) object$bs.dim else object$xt$knots
+
+  D <- krDesign2D(data[[object$term[1]]], data[[object$term[2]]],
+    knots = knots,
+    phi = object$xt$phi, v = object$xt$v, c = object$xt$c,
+    psi = object$xt$psi, delta = object$xt$delta,
+    isotropic = object$xt$isotropic)
+
+  X <- D$B
+  object$X <- X
+  object$S <- list(D$K)
+  object$rank <- qr(D$K)$rank
+  object$knots <- D$knots
+  object$null.space.dim <- ncol(D$K)
+ 
+  class(object) <- "kriging.smooth"
+  object
+}
+
+
 ## Smooth constructor for lag function.
 ## (C) Viola Obermeier.
 smooth.construct.fdl.smooth.spec <- function(object, data, knots)
