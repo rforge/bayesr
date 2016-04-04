@@ -4693,7 +4693,7 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
   }
 
   rval <- list()
-  nx <- names(x$terms)
+  nx <- names(x$x)
   for(j in nx) {
     rval[[j]] <- make_results(x$x[[j]], id = j)
     if(!is.null(rval[[j]]$s.effects)) {
