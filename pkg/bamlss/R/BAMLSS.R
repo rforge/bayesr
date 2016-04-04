@@ -2538,6 +2538,10 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   if(intercept & has_intercept)
     enames <- c("p.(Intercept)", enames)
   enames <- unique(enames)
+  if(!has_intercept) {
+    if(length(i <- grep("intercept", enames, ignore.case = TRUE)))
+      enames <- enames[-i]  
+  }
   ec <- sapply(enames, function(x) {
     paste(strsplit(x, "")[[1]][1:2], collapse = "")
   })

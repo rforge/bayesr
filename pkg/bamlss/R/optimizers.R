@@ -2172,11 +2172,13 @@ set.starting.values <- function(x, start)
     }
     if(is.list(start))
       start <- unlist(start)
+    nstart <- names(start)
+    tns <- sapply(strsplit(nstart, ".", fixed = TRUE), function(x) { x[1] })
     nx <- names(x)
     for(id in nx) {
       if(!is.null(x[[id]]$smooth.construct)) {
         if(!is.null(x[[id]]$smooth.construct$model.matrix)) {
-          if(length(take <- grep(paste(id, "p", sep = "."), names(start), fixed = TRUE, value = TRUE))) {
+          if(length(take <- grep(paste(id, "p", sep = "."), nstart[tns %in% id], fixed = TRUE, value = TRUE))) {
             cn <- paste(id, "p", colnames(x[[id]]$smooth.construct$model.matrix$X), sep = ".")
             i <- grep2(take, cn, fixed = TRUE)
             if(length(i)) {
@@ -2191,7 +2193,7 @@ set.starting.values <- function(x, start)
         for(j in seq_along(x[[id]]$smooth.construct)) {
           tl <- x[[id]]$smooth.construct[[j]]$label
           take <- grep(tl <- paste(id, "s", tl, sep = "."),
-            names(start), fixed = TRUE, value = TRUE)
+            nstart[tns %in% id], fixed = TRUE, value = TRUE)
           if(x[[id]]$smooth.construct[[j]]$by == "NA") {
             take <- take[!grepl(paste(tl, ":", sep = ""), take, fixed = TRUE)]
           }

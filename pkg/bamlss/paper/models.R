@@ -37,7 +37,7 @@ if(!file.exists("rainmodel.rda") & FALSE) {
 ###################################
 ## (2) Fire response time model. ##
 ###################################
-if(!file.exists("firemodel.rda") & FALSE) {
+if(!file.exists("firemodel.rda")) {
   library("bamlss")
   library("spatstat")
   library("sp")
