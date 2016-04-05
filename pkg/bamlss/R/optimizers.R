@@ -924,7 +924,7 @@ tau2.optim <- function(f, start, ..., scale = 10, eps = 0.0001, maxit = 10)
   start <- cround(start)
   ic0 <- f(start)
 
-  iter <- 1; eps0 <- eps + 1
+  iter <- 0; eps0 <- eps + 1
   while((eps0 > eps) & (iter < maxit)) {
     start0 <- start
     for(k in seq_along(start)) {
