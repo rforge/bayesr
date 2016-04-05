@@ -388,6 +388,10 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, ...)
   x$added <- c("nobs", "weights", "rres", "state", "grid", "a", "b", "prior", "edf",
     "grad", "hess", "lower", "upper")
 
+  args <- list(...)
+  force.spam <- if(is.null(args$force.spam)) FALSE else args$force.spam
+  if((ncol(x$sparse.setup$crossprod) < ncol(x$X) * 0.1) & force.spam)
+    spam <- TRUE
   if(spam) {
     require("spam")
     x$X <- as.spam(x$X)
@@ -397,6 +401,8 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, ...)
       xx <- xx + x$S[[j]]
     }
     x$sparse.setup$spam.cholFactor <- chol.spam(xx)
+    if(force.spam)
+      x$update <- bfit_iwls_spam
   }
 
   if(ntau2 > 0) {
@@ -640,7 +646,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     stop("design construct names mismatch with family names!")
 
   if(is.null(attr(x, "bamlss.engine.setup")))
-    x <- bamlss.engine.setup(x, ...)
+    x <- bamlss.engine.setup(x, force.spam = TRUE, ...)
 
   criterion <- match.arg(criterion)
   np <- length(nx)
@@ -1241,6 +1247,9 @@ bfit_iwls_spam <- function(x, family, y, eta, id, weights, ...)
     args <- list(...)
     edf0 <- args$edf - x$state$edf
     eta2 <- eta
+
+    env <- new.env()
+
     objfun <- function(tau2, ...) {
       S <- 0
       for(j in seq_along(x$S))
@@ -1251,26 +1260,31 @@ bfit_iwls_spam <- function(x, family, y, eta, id, weights, ...)
       fit <- x$fit.fun(x$X, b)
       edf <- sum.diag(XWX %*% P)
       eta2[[id]] <- eta2[[id]] + fit
-      IC <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), x$criterion, ...)
-      return(IC)
+      ic <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), x$criterion, ...)
+      if(!is.null(env$ic_val)) {
+        if((ic < env$ic_val) & (ic < env$ic00_val)) {
+          par <- c(b, tau2)
+          names(par) <- names(x$state$parameters)
+          x$state$parameters <- par
+          x$state$fitted.values <- fit
+          x$state$edf <- edf
+          if(!is.null(x$prior)) {
+            if(is.function(x$prior))
+              x$state$log.prior <- x$prior(par)
+          }
+          assign("state", x$state, envir = env)
+          assign("ic_val", ic, envir = env)
+        }
+      } else assign("ic_val", ic, envir = env)
+      return(ic)
     }
-    if(length(get.state(x, "tau2")) < 2) {
-      if(is.null(x$optim.grid)) {
-        tau2 <- try(optimize(objfun, interval = x$state$interval)$minimum, silent = TRUE)
-        if(inherits(tau2, "try-error"))
-          tau2 <- optimize2(objfun, interval = x$state$interval, grid = x$state$grid)$minimum
-      } else {
-        tau2 <- optimize2(objfun, interval = x$state$interval, grid = x$state$grid)$minimum
-      }
-      x$state$parameters <- set.par(x$state$parameters, if(!length(tau2)) x$interval[1] else tau2, "tau2")
-    } else {
-      i <- grep("tau2", names(x$lower))
-      opt <- try(optim(get.state(x, "tau2"), fn = objfun, method = "L-BFGS-B",
-        lower = x$lower[i], upper = x$upper[i]), silent = TRUE)
-      if(!inherits(opt, "try-error"))
-        x$state$parameters <- set.par(x$state$parameters, opt$par, "tau2")
-    }
-    tau2 <- get.state(x, "tau2")
+
+    assign("ic00_val", objfun(get.state(x, "tau2")), envir = env)
+    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
+
+    if(!is.null(env$state))
+      return(env$state)
+
     S <- 0
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * x$S[[j]]
@@ -1278,6 +1292,7 @@ bfit_iwls_spam <- function(x, family, y, eta, id, weights, ...)
     P <- chol2inv.spam(U)
     b <- P %*% Xr
     x$state$parameters <- set.par(x$state$parameters, b, "b")
+    x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
   }
 
   ## Compute fitted values.

@@ -246,10 +246,10 @@ plot(b, model = 2, term = 2, image = TRUE, grid = 200, swap = TRUE)
 ## Sparse matrices.
 library("spam")
 
-sparse.matrix <- function(n = 100, m = 20, sparse = TRUE)
+sparse.matrix <- function(n = 400, m = 20, k = 5, sparse = TRUE)
 {
   require("Matrix")
-  x <- smooth.construct(s(x), list("x" = runif(m)), NULL)
+  x <- smooth.construct(s(x, k = k), list("x" = runif(m)), NULL)
   if(!sparse)
     return(list("X" = x$X, "S" = x$S[[1]]))
   X <- as.matrix(bdiag(rep(list(x$X), length = n)))
@@ -263,10 +263,18 @@ xx <- crossprod(M$X) + M$S
 xx.spam <- as.spam(xx)
 xx.chol <- chol.spam(xx.spam)
 
+spam.options(cholsymmetrycheck = FALSE)
+
 system.time(
   for(i in 1:100) {
     U <- update.spam.chol.NgPeyton(xx.chol, xx.spam)
     P <- chol2inv.spam(U)
+  }
+)
+
+system.time(
+  for(i in 1:100) {
+    P <- solve(xx.spam)
   }
 )
 
