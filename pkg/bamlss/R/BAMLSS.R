@@ -5672,7 +5672,7 @@ scale.model.matrix <- function(x)
 sum.diag <- function(x)
 {
   if(inherits(x, "spam"))
-    x <- as.matrix(x)
+    return(sum(diag.spam(x), na. rm = TRUE))
   if(is.null(dx <- dim(x)))
     stop("x must be a matrix!")
   if(dx[1] != dx[2])
