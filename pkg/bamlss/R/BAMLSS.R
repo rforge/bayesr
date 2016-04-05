@@ -4165,7 +4165,7 @@ logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
         start = start(object[[j]]$samples), end = end(object[[j]]$samples),
         thin = thin(object[[j]]$samples))
     } else {
-      ms <- object[[j]]$model.stats
+      ms <- ms0 <- object[[j]]$model.stats
       ms <- if(is.null(ms$sampler) | optimizer) {
         if(is.null(ms$optimizer) & !optimizer) {
           samplestats(object[[j]])
@@ -4176,6 +4176,15 @@ logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
       if(is.null(ms)) {
         warning(paste("no logLik available for model ", mn[j], "!", sep = ""))
       } else {
+        if(!("logLik" %in% names(ms))) {
+          if(!is.null(ms0$optimizer)) {
+            if("logLik" %in% names(ms0$optimizer)) {
+              ms <- ms0$optimizer
+            }
+          }
+        }
+        if(!("logLik" %in% names(ms)))
+          warning(paste("no logLik available for model ", mn[j], "!", sep = ""))
         ll <- c(ll, ms$logLik)
         edf <- c(edf, if(is.null(ms$edf)) NA else ms$edf)
       }

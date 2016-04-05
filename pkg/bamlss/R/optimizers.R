@@ -633,7 +633,7 @@ fmt <- function(x, width = 8, digits = 2) {
 bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   criterion = c("AICc", "BIC", "AIC"), eps = .Machine$double.eps^0.25,
   maxit = 400, outer = FALSE, inner = FALSE, mgcv = FALSE,
-  verbose = TRUE, digits = 4, ...)
+  verbose = TRUE, digits = 4, flush = TRUE, ...)
 {
   nx <- family$names
   if(!all(nx %in% names(x)))
@@ -667,7 +667,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     }
   }
 
-  ia <- interactive()
+  ia <- if(flush) interactive() else FALSE
   nback <- if(is.null(list(...)$nback)) 20 else list(...)$nback
   ic.eps <- if(is.null(list(...)$ic.eps)) 0.0001 else list(...)$ic.eps
 
@@ -815,7 +815,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       }
 
       if(verbose) {
-        cat(if(ia) "\r" else "\n")
+        cat(if(ia) "\r" else if(iter > 1) "\n" else NULL)
         vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
           " logPost ", fmt(family$loglik(y, peta) + get.log.prior(x), width = 8, digits = digits),
           " logLik ", fmt(family$loglik(y, peta), width = 8, digits = digits),
@@ -917,7 +917,7 @@ cround <- function(x, digits = 2)
 tau2.optim <- function(f, start, ..., scale = 10, eps = 0.0001, maxit = 10)
 {
   foo <- function(par, start, k) {
-    start[k] <- par
+    start[k] <- cround(par)
     return(f(start, ...))
   }
 
@@ -1131,6 +1131,8 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
     edf0 <- args$edf - x$state$edf
     eta2 <- eta
 
+    env <- new.env()
+
     objfun <- function(tau2, ...) {
       S <- 0
       for(j in seq_along(x$S))
@@ -1142,11 +1144,31 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
       fit <- x$fit.fun(x$X, g)
       edf <- sum.diag(XWX %*% P)
       eta2[[id]] <- eta2[[id]] + fit
-      IC <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), x$criterion, ...)
-      return(IC)
+      ic <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), x$criterion, ...)
+      if(!is.null(env$ic_val)) {
+        if((ic < env$ic_val) & (ic < env$ic00_val)) {
+          par <- c(g, tau2)
+          names(par) <- names(x$state$parameters)
+          x$state$parameters <- par
+          x$state$fitted.values <- fit
+          x$state$edf <- edf
+          if(!is.null(x$prior)) {
+            if(is.function(x$prior))
+              x$state$log.prior <- x$prior(par)
+          }
+          assign("state", x$state, envir = env)
+          assign("ic_val", ic, envir = env)
+        }
+      } else assign("ic_val", ic, envir = env)
+      return(ic)
     }
 
+    assign("ic00_val", objfun(get.state(x, "tau2")), envir = env)
     tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
+
+    if(!is.null(env$state))
+      return(env$state)
+
     x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
     S <- 0
     for(j in seq_along(x$S))
