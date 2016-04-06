@@ -5508,6 +5508,15 @@ h_response <- function(x)
 ## Create the inverse of a matrix.
 matrix_inv <- function(x, index = NULL, force = FALSE)
 {
+  if(inherits(x, "Matrix")) {
+    if(!is.null(index$crossprod)) {
+      if(ncol(index$crossprod) < 2) {
+        return(Diagonal(x = 1 / diag(x)))
+      } else {
+        return(solve(x))
+      }
+    }
+  }
   if(!is.null(index$crossprod)) {
     if(ncol(index$crossprod) < ncol(x)) {
       if(ncol(index$crossprod) < 2) {
