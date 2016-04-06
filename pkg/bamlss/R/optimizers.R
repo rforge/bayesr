@@ -772,7 +772,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
   ## Backfitting main function.
   backfit <- function(verbose = TRUE) {
-    eps0 <- eps + 1; iter <- 1; ic_contrib <- NULL
+    eps0 <- eps + 1; iter <- 0; ic_contrib <- NULL
     edf <- get.edf(x, type = 2)
     while(eps0 > eps & iter < maxit) {
       eta0 <- eta
@@ -834,6 +834,8 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           eps0 <- 0
       }
 
+      iter <- iter + 1
+
       if(verbose) {
         cat(if(ia) "\r" else if(iter > 1) "\n" else NULL)
         vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
@@ -846,8 +848,6 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
         if(.Platform$OS.type != "unix" & ia) flush.console()
       }
-
-      iter <- iter + 1
     }
 
     IC <- get.ic(family, y, peta, edf, nobs, criterion)
