@@ -200,7 +200,7 @@ set.par <- function(x, replacement, what) {
 }
 
 ## The default method.
-bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, ...)
+bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, ...)
 {
   if(inherits(x, "special"))
     return(x)
@@ -389,6 +389,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, ...)
     "grad", "hess", "lower", "upper")
 
   args <- list(...)
+
   force.spam <- if(is.null(args$force.spam)) FALSE else args$force.spam
   if((ncol(x$sparse.setup$crossprod) < ncol(x$X) * 0.1) & force.spam)
     spam <- TRUE
@@ -403,6 +404,19 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, ...)
     x$sparse.setup$spam.cholFactor <- chol.spam(xx)
     if(force.spam)
       x$update <- bfit_iwls_spam
+  }
+
+  force.Matrix <- if(is.null(args$force.Matrix)) FALSE else args$force.Matrix
+  if((ncol(x$sparse.setup$crossprod) < ncol(x$X) * 0.1) & force.Matrix)
+    Matrix <- TRUE
+  if(Matrix) {
+    require("Matrix")
+    x$X <- Matrix(x$X, sparse = TRUE)
+    for(j in seq_along(x$S))
+      x$S[[j]] <- Matrix(x$S[[j]], sparse = TRUE)
+    if(force.Matrix)
+      x$update <- bfit_iwls_Matrix
+    x$prior <- make.prior(x)
   }
 
   if(ntau2 > 0) {
@@ -646,7 +660,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     stop("design construct names mismatch with family names!")
 
   if(is.null(attr(x, "bamlss.engine.setup")))
-    x <- bamlss.engine.setup(x, force.spam = TRUE, ...)
+    x <- bamlss.engine.setup(x, ...)
 
   criterion <- match.arg(criterion)
   np <- length(nx)
@@ -1305,6 +1319,115 @@ bfit_iwls_spam <- function(x, family, y, eta, id, weights, ...)
 
   return(x$state)
 }
+
+
+bfit_iwls_Matrix <- function(x, family, y, eta, id, weights, ...)
+{
+  args <- list(...)
+
+  peta <- family$map2par(eta)
+  if(is.null(args$hess)) {
+    ## Compute weights.
+    hess <- family$hess[[id]](y, peta, id = id, ...)
+  } else hess <- args$hess
+
+  if(!is.null(weights))
+    hess <- hess * weights
+
+  if(is.null(args$z)) {
+    ## Score.
+    score <- family$score[[id]](y, peta, id = id, ...)
+
+    ## Compute working observations.
+    z <- eta[[id]] + 1 / hess * score
+  } else z <- args$z
+
+  ## Compute partial predictor.
+  eta[[id]] <- eta[[id]] - fitted(x$state)
+
+  ## Compute reduced residuals.
+  e <- z - eta[[id]]
+  xbin.fun(x$binning$sorted.index, hess, e, x$weights, x$rres, x$binning$order)
+
+  ## Compute mean and precision.
+  XWX <- crossprod(Diagonal(x = x$weights) %*% x$X, x$X)
+  Xr <- crossprod(x$X, x$rres)
+  if(!x$state$do.optim | x$fixed | x$fxsp) {
+    if(!x$fixed) {
+      tau2 <- get.state(x, "tau2")
+      S <- Matrix(0, ncol(x$X), ncol(x$X))
+      for(j in seq_along(x$S))
+        S <- S + 1 / tau2[j] * x$S[[j]]
+      U <- chol(XWX + S)
+    } else {
+      U <- chol(XWX)
+    }
+    P <- chol2inv(U)
+    b <- P %*% Xr
+    x$state$parameters <- set.par(x$state$parameters, as.numeric(b), "b")
+  } else {
+    args <- list(...)
+    edf0 <- args$edf - x$state$edf
+    eta2 <- eta
+
+    env <- new.env()
+
+    objfun <- function(tau2, ...) {
+      S <- Matrix(0, ncol(x$X), ncol(x$X))
+      for(j in seq_along(x$S))
+        S <- S + 1 / tau2[j] * x$S[[j]]
+      U <- chol(XWX + S)
+      P <- chol2inv(U)
+      b <- P %*% Xr
+      fit <- x$fit.fun(x$X, b)
+      edf <- sum.diag(XWX %*% P)
+      eta2[[id]] <- eta2[[id]] + fit
+      ic <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), x$criterion, ...)
+      if(!is.null(env$ic_val)) {
+        if((ic < env$ic_val) & (ic < env$ic00_val)) {
+          par <- c(as.numeric(b), tau2)
+          names(par) <- names(x$state$parameters)
+          x$state$parameters <- par
+          x$state$fitted.values <- fit
+          x$state$edf <- edf
+          if(!is.null(x$prior)) {
+            if(is.function(x$prior))
+              x$state$log.prior <- x$prior(par)
+          }
+          assign("state", x$state, envir = env)
+          assign("ic_val", ic, envir = env)
+        }
+      } else assign("ic_val", ic, envir = env)
+      return(ic)
+    }
+
+    assign("ic00_val", objfun(get.state(x, "tau2")), envir = env)
+    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
+
+    if(!is.null(env$state))
+      return(env$state)
+
+    S <- Matrix(0, ncol(x$X), ncol(x$X))
+    for(j in seq_along(x$S))
+      S <- S + 1 / tau2[j] * x$S[[j]]
+    U <- chol(XWX + S)
+    P <- chol2inv(U)
+    b <- P %*% Xr
+    x$state$parameters <- set.par(x$state$parameters, as.numeric(b), "b")
+    x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
+  }
+
+  ## Compute fitted values.
+  x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
+  x$state$edf <- sum.diag(XWX %*% P)
+  if(!is.null(x$prior)) {
+    if(is.function(x$prior))
+      x$state$log.prior <- x$prior(x$state$parameters)
+  }
+
+  return(x$state)
+}
+
 
 
 ## Updating based on optim.

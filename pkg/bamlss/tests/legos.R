@@ -245,6 +245,7 @@ plot(b, model = 2, term = 2, image = TRUE, grid = 200, swap = TRUE)
 
 ## Sparse matrices.
 library("spam")
+library("Matrix")
 
 sparse.matrix <- function(n = 400, m = 20, k = 5, sparse = TRUE)
 {
@@ -263,6 +264,8 @@ xx <- crossprod(M$X) + M$S
 xx.spam <- as.spam(xx)
 xx.chol <- chol.spam(xx.spam)
 
+xx.Matrix <- Matrix(xx)
+
 spam.options(cholsymmetrycheck = FALSE)
 
 system.time(
@@ -274,7 +277,8 @@ system.time(
 
 system.time(
   for(i in 1:100) {
-    P <- solve(xx.spam)
+    U1 <- chol(xx.Matrix)
+    P2 <- chol2inv(U1)
   }
 )
 

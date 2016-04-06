@@ -572,7 +572,7 @@ make.fit.fun <- function(x, type = 1)
   ff <- function(X, b, expand = TRUE, no.sparse.setup = FALSE) {
     if(!is.null(names(b)))
       b <- get.par(b, "b")
-    if(inherits(X, "spam")) {
+    if(inherits(X, "spam") | inherits(X, "Matrix")) {
       f <- as.matrix(X %*% b)
     } else {
       what <- if(type < 2) "matrix" else "grid.matrix"
@@ -614,7 +614,8 @@ make.prior <- function(x) {
           lp <- -log(tau2) * x$rank / 2 + drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
             log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2) - b / tau2
         } else {
-          P <- ld <- 0
+          ld <- 0
+          P <- if(inherits(x$X, "Matrix")) Matrix(0, ncol(x$X), ncol(x$X)) else 0
           for(j in seq_along(tau2)) {
             P <- P + 1 / tau2[j] * x$S[[j]]
             ld <- ld + log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2[j]) - b / tau2[j]
@@ -5673,6 +5674,8 @@ sum.diag <- function(x)
 {
   if(inherits(x, "spam"))
     return(sum(diag.spam(x), na.rm = TRUE))
+  if(inherits(x, "Matrix"))
+    return(sum(diag(x), na.rm = TRUE))
   if(is.null(dx <- dim(x)))
     stop("x must be a matrix!")
   if(dx[1] != dx[2])
