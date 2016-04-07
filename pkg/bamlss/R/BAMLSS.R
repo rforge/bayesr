@@ -443,16 +443,9 @@ sparse.setup <- function(x, S = NULL, ...)
       x <- x + S[[j]]
   }
   index.crossprod <- if(!symmetric) sparse.matrix.index(x, ...) else NULL
-  ordering <- sparse.matrix.ordering(x, ...)
-  xchol <- chol(x[ordering, ordering])
-  if(!all(dim(x) < 2))
-    diag(xchol) <- 0
   setup <- list(
     "matrix" = index.matrix,
-    "crossprod" = index.crossprod,
-    "ordering" = ordering,
-    "forward" = sparse.matrix.index(xchol),
-    "backward" = sparse.matrix.index(t(xchol))
+    "crossprod" = index.crossprod
   )
   return(setup)
 }
@@ -5525,7 +5518,6 @@ matrix_inv <- function(x, index = NULL, force = FALSE)
         if(FALSE) {
           ju <- unique(index$crossprod[, 1])
           if(length(ju) < nrow(x)) {
-            require("Matrix")
             inv <- list()
             for(i in ju) {
               take <- index$crossprod[, 1] == i
@@ -5537,12 +5529,11 @@ matrix_inv <- function(x, index = NULL, force = FALSE)
       }
     }
   }
-  require("spam")
   if(length(x) < 2)
     return(1 / x)
   rn <- rownames(x)
   cn <- colnames(x)
-  if(!is.null(index) & is.spam(x)) {
+  if(!is.null(index) & is(x, "spam")) {
     p <- update.spam.chol.NgPeyton(index$spam.cholFactor, x)
   } else {
     p <- try(chol(x), silent = TRUE)

@@ -308,8 +308,6 @@ cox.mcmc <- function(x, y, family, start, weights, offset,
   n.iter = 1200, burnin = 200, thin = 1,
   verbose = TRUE, digits = 4, step = 20, ...)
 {
-  require("mvtnorm")
-
   nu <- 1
 
   if(!is.null(start))

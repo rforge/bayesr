@@ -774,6 +774,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   backfit <- function(verbose = TRUE) {
     eps0 <- eps + 1; iter <- 0; ic_contrib <- NULL
     edf <- get.edf(x, type = 2)
+    ptm <- proc.time()
     while(eps0 > eps & iter < maxit) {
       eta0 <- eta
       ## Cycle through all parameters
@@ -850,6 +851,8 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       }
     }
 
+    elapsed <- c(proc.time() - ptm)[3]
+
     IC <- get.ic(family, y, peta, edf, nobs, criterion)
     logLik <- family$loglik(y, peta)
     logPost <- as.numeric(logLik + get.log.prior(x))
@@ -864,7 +867,10 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
       cat(vtxt)
       if(.Platform$OS.type != "unix" & ia) flush.console()
-      cat("\n")
+      et <- if(elapsed > 60) {
+        paste(formatC(format(round(elapsed / 60, 2), nsmall = 2), width = 5), "min", sep = "")
+      } else paste(formatC(format(round(elapsed, 2), nsmall = 2), width = 5), "sec", sep = "")
+      cat("\nelapsed time: ", et, "\n", sep = "")
     }
 
     if(iter == maxit)

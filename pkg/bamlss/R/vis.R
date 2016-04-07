@@ -1661,7 +1661,6 @@ interp2 <- function(x, y, z, xo = NULL, yo = NULL, grid = 30,
     }
   }
   if(type == "mba") {
-    stopifnot(require("MBA"))
     fit <- MBA::mba.surf(data.frame("x" = x, "y" = y, "z" = z), xgrid, ygrid)$xyz.est$z
   }
   if(type == "akima") {

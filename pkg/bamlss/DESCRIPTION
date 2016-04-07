@@ -6,7 +6,7 @@ Authors@R: c(person(given = "Nikolaus", family = "Umlauf", role = c("aut", "cre"
   person(given = "Nadja", family = "Klein", role = "aut", email = "nklein@uni-goettingen.de"),
   person(given = "Achim", family = "Zeileis", role = "aut", email = "Achim.Zeileis@R-project.org"))
 Description: R infrastructures for Bayesian regression models.
-Depends: R (>= 3.2.3), colorspace, Formula, coda, mgcv, mvtnorm
-Suggests: BayesXsrc, rjags, rstan, parallel
+Depends: R (>= 3.2.3), colorspace, Formula, coda, mgcv, mvtnorm, Matrix, MBA
+Suggests: parallel
 License: GPL-2 | GPL-3
 LazyLoad: yes

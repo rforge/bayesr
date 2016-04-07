@@ -93,8 +93,6 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
   simplify = TRUE, chains = NULL, cores = NULL, combine = TRUE, sleep = 1,
   compile = FALSE, ...)
 {
-  require("coda")
-
   if(!is.list(theta)) {
     theta <- list(theta)
     names(theta) <- names(formals(fun))[1]
@@ -420,7 +418,6 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
   if(cores < 2) {
     rval <- sampling(chains, ...)
   } else {
-    require("parallel")
     parallel_fun <- function(j) {
       if(j > 1 & !is.null(sleep)) Sys.sleep(sleep)
       sampling(chains, ...)
@@ -528,8 +525,6 @@ plot.gmcmc <- function(x, ...)
 
 gmcmc_mvnorm <- function(fun, theta, id, prior, ...)
 {
-  require("mvtnorm")
-
   args <- list(...)
   iteration <- args$iteration
 
@@ -701,7 +696,6 @@ gmcmc_slice <- function(fun, theta, id, prior, ...)
 
 dmvnorm_log <- function(x, mean, sigma)
 {
-  require("mvtnorm")
   d <- try(dmvnorm(x, mean = mean, sigma = sigma, log = TRUE), silent = TRUE)
   if(inherits(d, "try-error"))
     d <- NA
@@ -737,8 +731,6 @@ process.derivs <- function(x)
 
 gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
 {
-  require("mvtnorm")
-
   theta <- theta[[id[1]]][[id[2]]]
 
   if(is.null(attr(theta, "fitted.values")))
@@ -876,8 +868,6 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
 
 gmcmc_sm.mvn <- function(family, theta, id, prior, eta, y, data, ...)
 {
-  require("mvtnorm")
-
   theta <- theta[[id[1]]][[id[2]]]
 
   if(is.null(attr(theta, "fitted.values")))
@@ -951,8 +941,6 @@ gmcmc_sm.mvn <- function(family, theta, id, prior, eta, y, data, ...)
 
 gmcmc_sm.newton <- function(family, theta, id, prior, eta, y, data, ...)
 {
-  require("mvtnorm")
-
   theta <- theta[id]
   g <- get.par(theta, "b")
   tau2 <- if(!data$fixed) get.par(theta, "tau2") else NULL
@@ -1113,8 +1101,6 @@ gmcmc_sm.slice <- function(family, theta, id, prior, eta, y, data, ...)
 
 gmcmc_mvnorm2 <- function(fun, theta, id, prior, ...)
 {
-  require("mvtnorm")
-
   args <- list(...)
   iteration <- args$iteration
 
@@ -1295,8 +1281,6 @@ hess <- function(fun, theta, prior, id, args, diag = FALSE)
 
 gmcmc_newton <- function(fun, theta, id, prior, ...)
 {
-  require("mvtnorm")
-
   args <- list(...)
 
   adapt <- if(is.null(args$adapt)) {
@@ -1373,8 +1357,6 @@ gmcmc_newton <- function(fun, theta, id, prior, ...)
 ## Naive sampler.
 MVNORM <- function(x, y = NULL, family = NULL, start = NULL, n.samples = 500, hessian = NULL, ...)
 {
-  require("mvtnorm")
-
   if(is.null(hessian)) {
     if(inherits(x, "bamlss")) {
       if(is.null(x$hessian)) {
@@ -1430,8 +1412,6 @@ cat2 <- function(x, sleep = 0.03) {
 ## Survival propose() functions.
 gmcmc_surv_sm.newton <- function(family, theta, id, prior, eta, y, data, ...)
 {
-  require("mvtnorm")
-
   args <- list(...)
   eta_Surv_timegrid0 <- eta_Surv_timegrid
 
@@ -1544,8 +1524,6 @@ gmcmc_surv_sm.newton <- function(family, theta, id, prior, eta, y, data, ...)
 
 gmcmc_surv_sm.mvn <- function(family, theta, id, prior, eta, y, data, ...)
 {
-  require("mvtnorm")
-
   args <- list(...)
   eta_Surv_timegrid0 <- eta_Surv_timegrid
 
