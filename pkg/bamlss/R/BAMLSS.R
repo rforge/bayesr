@@ -611,7 +611,7 @@ make.prior <- function(x) {
         lp <- sum(dnorm(gamma, sd = 1000, log = TRUE))
       } else {
         if(length(tau2) < 2) {
-          lp <- -log(tau2) * x$rank / 2 + drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
+          lp <- -log(tau2) * x$rank / 2 + drop(-0.5 / tau2 * gamma %*% x$S[[1]] %*% gamma) +
             log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2) - b / tau2
         } else {
           ld <- 0
