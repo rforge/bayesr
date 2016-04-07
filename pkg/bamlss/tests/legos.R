@@ -266,6 +266,14 @@ xx.chol <- chol.spam(xx.spam)
 
 xx.Matrix <- Matrix(xx)
 
+b <- runif(ncol(xx.Matrix))
+system.time(
+  for(i in 1:100) {
+    L <- Cholesky(xx.Matrix, super = FALSE)
+    a <- solve(L, b, system = "A")
+  }
+)
+
 spam.options(cholsymmetrycheck = FALSE)
 
 system.time(

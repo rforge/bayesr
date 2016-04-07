@@ -5513,7 +5513,7 @@ matrix_inv <- function(x, index = NULL, force = FALSE)
       if(ncol(index$crossprod) < 2) {
         return(Diagonal(x = 1 / diag(x)))
       } else {
-        return(solve(x))
+        return(chol2inv(chol(x)))
       }
     }
   }
