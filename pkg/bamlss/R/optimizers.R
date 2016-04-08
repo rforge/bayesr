@@ -625,9 +625,9 @@ get.hessian <- function(x)
   for(i in names(x)) {
     for(j in names(x[[i]]$smooth.construct)) {
       pn <- if(j == "model.matrix") paste(i, "p", sep = ".") else paste(i, "s", j, sep = ".")
+      if(is.null(x[[i]]$smooth.construct[[j]]$state$hessian))
+        x[[i]]$smooth.construct[[j]]$state$hessian <- diag(1e-07, ncol(x[[i]]$smooth.construct[[j]]$X))
       hessian[[pn]] <- as.matrix(x[[i]]$smooth.construct[[j]]$state$hessian)
-      if(is.null(hessian[[pn]]))
-        hessian[[pn]] <- diag(1e-07, ncol(x[[i]]$smooth.construct[[j]]$X))
       cn <- colnames(x[[i]]$smooth.construct[[j]]$X)
       if(is.null(cn))
         cn <- paste("b", 1:ncol(x[[i]]$smooth.construct[[j]]$X), sep = "")
@@ -635,7 +635,6 @@ get.hessian <- function(x)
       nh <- c(nh, pn)
     }
   }
-  require("Matrix")
   hessian <- -1 * as.matrix(do.call("bdiag", hessian))
   rownames(hessian) <- colnames(hessian) <- nh
   hessian <- hessian[npar, npar]
