@@ -3388,8 +3388,11 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
   } else which <- which.match[pmatch(tolower(which), which.match)]
   if(length(which) > length(which.match) || !any(which %in% which.match))
     stop("argument which is specified wrong!")
-  if(which == "results")
-    which <- "effects"
+  if(length(which) < 2) {
+    if(which == "results")
+      which <- "effects"
+  }
+  which <- which[which != "results"]
 
   ok <- any(c("hist-resid", "qq-resid") %in% which)
 
