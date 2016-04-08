@@ -614,7 +614,7 @@ make.prior <- function(x) {
             ld <- ld + log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2[j]) - b / tau2[j]
           }
           ##lp <- dmvnorm(gamma, sigma = matrix_inv(P), log = TRUE) + ld
-          st <- system.time(dP <- determinant(P, logarithm = TRUE))
+          dP <- determinant(P, logarithm = TRUE)
           dP <- as.numeric(dP$modulus) * as.numeric(dP$sign)
           lp <- 0.5 * dP - 0.5 * (t(gamma) %*% P %*% gamma) + ld
         }
