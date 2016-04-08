@@ -604,7 +604,7 @@ make.prior <- function(x) {
         lp <- sum(dnorm(gamma, sd = 1000, log = TRUE))
       } else {
         if(length(tau2) < 2) {
-          lp <- -log(tau2) * x$rank / 2 + drop(-0.5 / tau2 * crossprod(gamma, x$S[[1]]) %*% gamma) +
+          lp <- -log(tau2) * x$rank / 2 + drop(-0.5 / tau2 * t(gamma) %*% x$S[[1]] %*% gamma) +
             log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2) - b / tau2
         } else {
           ld <- 0
@@ -616,7 +616,7 @@ make.prior <- function(x) {
           ##lp <- dmvnorm(gamma, sigma = matrix_inv(P), log = TRUE) + ld
           st <- system.time(dP <- determinant(P, logarithm = TRUE))
           dP <- as.numeric(dP$modulus) * as.numeric(dP$sign)
-          lp <- 0.5 * dP - 0.5 * (crossprod(gamma, P) %*% gamma) + ld
+          lp <- 0.5 * dP - 0.5 * (t(gamma) %*% P %*% gamma) + ld
         }
       }
       return(as.numeric(lp))
