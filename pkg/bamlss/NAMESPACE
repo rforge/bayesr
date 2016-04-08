@@ -42,6 +42,7 @@ export(
   "make.prior",
   "sum.diag",
   "get.log.prior",
+  "get.all.par",
 
   ## families,
   "beta.bamlss",
