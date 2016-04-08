@@ -290,10 +290,6 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
   }
   x$a <- if(is.null(x$xt[["a"]])) 1e-04 else x$xt[["a"]]
   x$b <- if(is.null(x$xt[["b"]])) 1e-04 else x$xt[["b"]]
-  if(!is.null(x$xt[["prior"]]))
-    x$prior <- x$xt[["prior"]]
-  if(is.null(x$prior) | !is.function(x$prior))
-    x$prior <- make.prior(x)
   if(is.null(x$edf)) {
     x$edf <- function(x, type = 1) {
       if(type > 1) {
@@ -438,6 +434,10 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
   x$pid <- list("b" = which(pid), "tau2" = which(!pid))
   if(!length(x$pid$tau2))
     x$pid$tau2 <- NULL
+  if(!is.null(x$xt[["prior"]]))
+    x$prior <- x$xt[["prior"]]
+  if(is.null(x$prior) | !is.function(x$prior))
+    x$prior <- make.prior(x)
 
   x
 }
