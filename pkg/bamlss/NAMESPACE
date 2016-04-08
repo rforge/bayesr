@@ -1,3 +1,110 @@
-exportPattern("^[[:alpha:]]+")
+import("mgcv")
+import("Matrix")
+import("mvtnorm")
+import("coda")
+importFrom("stats", "AIC", "BIC")
 
 useDynLib(bamlss)
+
+export(
+  ## main user interface
+  "bamlss",               
+  "bamlss.frame",
+  "bamlss.formula",
+  "bamlss.family",
+  "bfit",
+  "GMCMC",
+  "JAGS",
+  "BayesX",
+  "MVNORM",
+  "surv.transform",
+  "cox.mode",
+  "cox.mcmc",
+  "cox.predict",
+  "terms.bamlss",
+  "drop.terms.bamlss",
+  "design.construct",
+
+  ## engine setup functions
+  "randomize",
+  "set.starting.values",
+  "bamlss.engine.setup",
+  "bamlss.engine.setup.smooth",
+  "get.state",
+  "get.par",
+  "set.par",
+  "get.eta",
+  "get.hessian",
+  "get.edf",
+  "make.fit.fun",
+  "sparse.setup",
+  "sparse.matrix.fit.fun",
+  "make.prior",
+  "sum.diag",
+  "get.log.prior",
+
+  ## families,
+  "beta.bamlss",
+  "binomial.bamlss",
+  "cnorm.bamlss",
+  "cox.bamlss",
+  "gaussian.bamlss",
+  "gamma.bamlss",
+  "multinomial.bamlss",
+  "mvn.bamlss",
+  "poisson.bamlss",
+
+  ## extractor functions
+  "DIC",
+  "samples",
+  "samplestats",
+  "results.bamlss.default",
+  "parameters",
+
+  ## others
+  "GAMart",
+  "Surv2",
+  "has_pterms",
+  "has_sterms",
+  "tau2.optim",
+  "response.name",
+  "c95",
+  "s2",
+  "sx",
+  "sx.construct",
+  "matrix_inv",
+  "fmt"
+)
+
+S3method("plot", "bamlss")
+S3method("plot", "bamlss.results")
+S3method("summary", "bamlss")
+S3method("predict", "bamlss")
+S3method("fitted", "bamlss")
+S3method("logLik", "bamlss")
+S3method("DIC", "bamlss")
+S3method("coef", "bamlss")
+S3method("residuals", "bamlss")
+S3method("model.matrix", "bamlss.frame")
+S3method("model.matrix", "bamlss.terms")
+S3method("model.matrix", "bamlss.formula")
+S3method("smooth.construct", "bamlss.frame")
+S3method("smooth.construct", "kr.smooth.spec")
+S3method("bamlss.engine.setup.smooth", "default")
+S3method("Predict.matrix", "kriging.smooth")
+
+S3method("sx.construct", "default")
+S3method("sx.construct", "userdefined.smooth.spec")
+S3method("sx.construct", "ps.smooth.spec")
+S3method("sx.construct", "pspline.smooth.spec")
+S3method("sx.construct", "tensor.smooth")
+S3method("sx.construct", "tensor.smooth.spec")
+S3method("sx.construct", "t2.smooth.spec")
+S3method("sx.construct", "ra.smooth.spec")
+S3method("sx.construct", "re.smooth.spec")
+S3method("sx.construct", "random.smooth.spec")
+S3method("sx.construct", "random.effect")
+S3method("sx.construct", "kr.smooth.spec")
+S3method("sx.construct", "offset.smooth.spec")
+S3method("sx.construct", "mrf.smooth.spec")
+

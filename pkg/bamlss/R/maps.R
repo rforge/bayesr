@@ -527,7 +527,7 @@ cpos <- function(p, np)
 {
   rval <- .Call("cpos",
     as.numeric(p),
-    as.integer(np))
+    as.integer(np), PACKAGE = "bamlss")
 
   return(rval)
 }

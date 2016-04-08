@@ -767,30 +767,30 @@ cnorm.bamlss <- function(...)
     "mu" = function(y, par, ...) {
       .Call("cnorm_score_mu",
         as.numeric(y), as.numeric(par$mu), as.numeric(par$sigma),
-        as.integer(attr(y, "check")))
+        as.integer(attr(y, "check")), PACKAGE = "bamlss")
     },
     "sigma" = function(y, par, ...) {
       .Call("cnorm_score_sigma",
         as.numeric(y), as.numeric(par$mu), as.numeric(par$sigma),
-        as.integer(attr(y, "check")))
+        as.integer(attr(y, "check")), PACKAGE = "bamlss")
     }
   )
   f$hess <- list(
     "mu" = function(y, par, ...) {
       .Call("cnorm_hess_mu",
         as.numeric(y), as.numeric(par$mu), as.numeric(par$sigma),
-        as.integer(attr(y, "check")))
+        as.integer(attr(y, "check")), PACKAGE = "bamlss")
     },
     "sigma" = function(y, par, ...) {
       .Call("cnorm_hess_sigma",
         as.numeric(y), as.numeric(par$mu), as.numeric(par$sigma),
-        as.integer(attr(y, "check")))
+        as.integer(attr(y, "check")), PACKAGE = "bamlss")
     }
   )
   f$loglik <- function(y, par, ...) {
     .Call("cnorm_loglik",
       as.numeric(y), as.numeric(par$mu), as.numeric(par$sigma),
-      as.integer(attr(y, "check")))
+      as.integer(attr(y, "check")), PACKAGE = "bamlss")
   }
   f$d <- function(y, par, log = FALSE) {
     ifelse(y <= 0, pnorm(-par$mu / par$sigma, log.p = log),
@@ -850,30 +850,30 @@ pcnorm.bamlss <- function(start = 2, update = FALSE, ...)
     "mu" = function(y, par, ...) {
       .Call("cnorm_score_mu",
         as.numeric(y^(1 / par$lambda)), as.numeric(par$mu), as.numeric(par$sigma),
-        as.integer(attr(y, "check")))
+        as.integer(attr(y, "check")), PACKAGE = "bamlss")
     },
     "sigma" = function(y, par, ...) {
       .Call("cnorm_score_sigma",
         as.numeric(y^(1 / par$lambda)), as.numeric(par$mu), as.numeric(par$sigma),
-        as.integer(attr(y, "check")))
+        as.integer(attr(y, "check")), PACKAGE = "bamlss")
     }
   )
   f$hess <- list(
     "mu" = function(y, par, ...) {
       .Call("cnorm_hess_mu",
         as.numeric(y^(1 / par$lambda)), as.numeric(par$mu), as.numeric(par$sigma),
-        as.integer(attr(y, "check")))
+        as.integer(attr(y, "check")), PACKAGE = "bamlss")
     },
     "sigma" = function(y, par, ...) {
       .Call("cnorm_hess_sigma",
         as.numeric(y^(1 / par$lambda)), as.numeric(par$mu), as.numeric(par$sigma),
-        as.integer(attr(y, "check")))
+        as.integer(attr(y, "check")), PACKAGE = "bamlss")
     }
   )
   f$loglik <- function(y, par, ...) {
     .Call("cnorm_power_loglik",
       as.numeric(y), as.numeric(par$mu), as.numeric(par$sigma), as.numeric(par$lambda),
-      as.integer(attr(y, "check")))
+      as.integer(attr(y, "check")), PACKAGE = "bamlss")
   }
   f$d <- function(y, par, log = FALSE) {
     dy <- ifelse(y <= 0, pnorm(0, par$mu, par$sigma, log.p = TRUE),
@@ -1595,8 +1595,6 @@ BCCG2.bamlss <- function(...)
 
 mvn.bamlss <- function(...)
 {
-  require("mvtnorm")
-
   rval <- list(
     "family" = "mvn",
     "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho"),
@@ -1604,7 +1602,7 @@ mvn.bamlss <- function(...)
     "d" = function(y, par, log = FALSE) {
       d <- .Call("mvn_logdens", as.numeric(y[, 1]), as.numeric(y[, 2]),
         as.numeric(par$mu1), as.numeric(par$mu2), as.numeric(par$sigma1),
-        as.numeric(par$sigma2), as.numeric(par$rho))
+        as.numeric(par$sigma2), as.numeric(par$rho), PACKAGE = "bamlss")
       if(!log)
         d <- exp(d)
       return(d)
@@ -1612,7 +1610,7 @@ mvn.bamlss <- function(...)
     "loglik" = function(y, par, log = FALSE) {
       ll <- .Call("mvn_loglik", as.numeric(y[, 1]), as.numeric(y[, 2]),
         as.numeric(par$mu1), as.numeric(par$mu2), as.numeric(par$sigma1),
-        as.numeric(par$sigma2), as.numeric(par$rho))
+        as.numeric(par$sigma2), as.numeric(par$rho), PACKAGE = "bamlss")
       return(ll)
     },
     "score" = list(

@@ -706,7 +706,8 @@ dmvnorm_log <- function(x, mean, sigma)
 gmcmc_sm.iwlsC <- function(family, theta, id, prior,
   eta, y, data, zworking, resids, rho, ...)
 {
-  rval <- .Call("gmcmc_iwls", family, theta, id, eta, y, data, zworking, resids, id[1], rho)
+  rval <- .Call("gmcmc_iwls", family, theta, id, eta, y, data,
+    zworking, resids, id[1], rho, PACKAGE = "bamlss")
 
   ## Sample variance parameter.
   if(!data$fixed & !data$fxsp & length(data$S)) {
@@ -725,7 +726,7 @@ gmcmc_sm.iwlsC <- function(family, theta, id, prior,
 
 process.derivs <- function(x)
 {
-  .Call("process_derivs", as.numeric(x))
+  .Call("process_derivs", as.numeric(x), PACKAGE = "bamlss")
 }
 
 

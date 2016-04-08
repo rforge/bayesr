@@ -391,7 +391,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
   args <- list(...)
 
   force.spam <- if(is.null(args$force.spam)) FALSE else args$force.spam
-  if((ncol(x$sparse.setup$crossprod) < ncol(x$X) * 0.1) & force.spam)
+  if((ncol(x$sparse.setup$crossprod) < ncol(x$X) * 0.5) & force.spam)
     spam <- TRUE
   if(spam) {
     require("spam")
@@ -407,10 +407,9 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
   }
 
   force.Matrix <- if(is.null(args$force.Matrix)) FALSE else args$force.Matrix
-  if((ncol(x$sparse.setup$crossprod) < ncol(x$X) * 0.1) & force.Matrix)
+  if((ncol(x$sparse.setup$crossprod) < ncol(x$X) * 0.5) & force.Matrix)
     Matrix <- TRUE
   if(Matrix) {
-    require("Matrix")
     x$X <- Matrix(x$X, sparse = TRUE)
     for(j in seq_along(x$S))
       x$S[[j]] <- Matrix(x$S[[j]], sparse = TRUE)

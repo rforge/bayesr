@@ -552,9 +552,9 @@ sparse.solve <- function(a, b, index, ...)
 ## Computation of fitted values with index matrices.
 sparse.matrix.fit.fun <- function(X, b, index = NULL)
 {
-  fit <- if(inherits(X, "dgCMatrix") | is.null(index)) {
+  fit <- if(inherits(X, "dgCMatrix") | is.null(index) | inherits(X, "Matrix")) {
     drop(X %*% b)
-  } else .Call("sparse_matrix_fit_fun", X, b, index)
+  } else .Call("sparse_matrix_fit_fun", X, b, index, PACKAGE = "bamlss")
   return(fit)
 }
 
@@ -634,7 +634,7 @@ do.XWX <- function(x, w, index = NULL)
   } else {
     if(is.null(dim(index)))
       index <- matrix(index, ncol = 1)
-    rval <- .Call("do_XWX", x, w, index)
+    rval <- .Call("do_XWX", x, w, index, PACKAGE = "bamlss")
   }
   rval
 }
@@ -1010,7 +1010,9 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
   functions <- list()
   for(j in 1:length(foo)) {
     if(is.null(foo[[nf[j]]])) {
-      foo[[nf[j]]] <- get(default_fun[j], envir = env)
+      foo[[nf[j]]] <- if(default_fun[j] != "no.transform") {
+        get(default_fun[j], envir = env)
+      } else FALSE
     }
     if(is.list(foo[[nf[j]]])) {
       args <- foo[[nf[j]]]
@@ -1146,9 +1148,6 @@ family.bamlss <- family.bamlss.frame <- function(object, ...)
 {
   return(object$family)
 }
-
-## Nothing to transform.
-no.transform <- FALSE
 
 
 ## Extract all parameter names.
@@ -2156,7 +2155,7 @@ c.bamlss <- function(...)
 ## Fast computation of quantiles.
 quick_quantiles <- function(X, samples)
 {
-  rval <- .Call("quick_quantiles", X, samples)
+  rval <- .Call("quick_quantiles", X, samples, PACKAGE = "bamlss")
   rval <- as.data.frame(rval)
   names(rval) <- c("2.5%", "50%", "97.5%")
   rval
@@ -2164,7 +2163,7 @@ quick_quantiles <- function(X, samples)
 
 fitted_matrix <- function(X, samples)
 {
-  fit <- .Call("fitted_matrix", X, as.matrix(samples))
+  fit <- .Call("fitted_matrix", X, as.matrix(samples), PACKAGE = "bamlss")
 }
 
 
@@ -5663,7 +5662,7 @@ scale.model.matrix <- function(x)
     center[i] <- 0.0
     scale[i] <- 1.0
   }
-  x <- .Call("scale_matrix", x, center, scale)
+  x <- .Call("scale_matrix", x, center, scale, PACKAGE = "bamlss")
   attr(x, "scale") <- list("center" = center, "scale" = scale)
   x
 }
@@ -5680,7 +5679,7 @@ sum.diag <- function(x)
     stop("x must be a matrix!")
   if(dx[1] != dx[2])
     stop("x must be symmetric!")
-  .Call("sum_diag", x, dx[1])
+  .Call("sum_diag", x, dx[1], PACKAGE = "bamlss")
 }
 
 sum.diag2 <- function(x, y)
@@ -5697,7 +5696,7 @@ sum.diag2 <- function(x, y)
     stop("x must be symmetric!")
   if(dy[1] != dy[2])
     stop("y must be symmetric!")
-  .Call("sum_diag2", x, y)
+  .Call("sum_diag2", x, y, PACKAGE = "bamlss")
 }
 
 
