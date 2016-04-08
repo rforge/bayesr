@@ -74,7 +74,8 @@ export(
   "sx",
   "sx.construct",
   "matrix_inv",
-  "fmt"
+  "fmt",
+  "rSurvTime2"
 )
 
 S3method("plot", "bamlss")
