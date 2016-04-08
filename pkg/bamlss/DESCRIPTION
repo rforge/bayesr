@@ -7,6 +7,6 @@ Authors@R: c(person(given = "Nikolaus", family = "Umlauf", role = c("aut", "cre"
   person(given = "Achim", family = "Zeileis", role = "aut", email = "Achim.Zeileis@R-project.org"))
 Description: R infrastructures for Bayesian regression models.
 Depends: R (>= 3.2.3), colorspace, Formula, coda, mgcv, mvtnorm, Matrix, MBA
-Suggests: akima, maps, maptools, parallel, shapefiles, sp, spdep, splines
+Suggests: akima, maps, maptools, parallel, shapefiles, sp, spdep, splines, survival
 License: GPL-2 | GPL-3
 LazyLoad: yes
