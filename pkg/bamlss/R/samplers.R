@@ -59,6 +59,7 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       x[[i]][[j]]$state$fitted.values <- NULL
       x[[i]][[j]]$XW <- t(x[[i]][[j]]$X)
       x[[i]][[j]]$XWX <- crossprod(x[[i]][[j]]$X)
+      x[[i]][[j]]$dmvnorm_log <- dmvnorm_log
       nt <- c(nt, if(j == "model.matrix") "p" else paste("s", j, sep = "."))
       if(!is.null(x[[i]][[j]]$xt$propose))
         x[[i]][[j]]$propose <- x[[i]][[j]]$xt$propose
@@ -697,6 +698,15 @@ gmcmc_slice <- function(fun, theta, id, prior, ...)
 }
 
 
+dmvnorm_log <- function(x, mean, sigma)
+{
+  d <- try(dmvnorm(x, mean = mean, sigma = sigma, log = TRUE), silent = TRUE)
+  if(inherits(d, "try-error"))
+    d <- NA
+  return(d)
+}
+
+
 gmcmc_sm.iwlsC <- function(family, theta, id, prior,
   eta, y, data, zworking, resids, rho, weights = NULL, offset = NULL, ...)
 {
@@ -791,12 +801,12 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, weights = NULL
   P <- if(data$fixed) {
     if((k <- ncol(data$X)) < 2) {
       1 / XWX
-    } else matrix_inv(XWX, data$sparse.setup$matrix)
+    } else matrix_inv(XWX, data$sparse.setup)
   } else {
     tau2 <- get.par(theta, "tau2")
     for(j in seq_along(data$S))
       S <- S + 1 / tau2[j] * data$S[[j]]
-    matrix_inv(XWX + S, data$sparse.setup$matrix)
+    matrix_inv(XWX + S, data$sparse.setup)
   }
   P[P == Inf] <- 0
   M <- P %*% crossprod(data$X, data$rres)
@@ -850,9 +860,9 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, weights = NULL
   P2 <- if(data$fixed) {
     if(k < 2) {
       1 / (XWX)
-    } else matrix_inv(XWX, data$sparse.setup$matrix)
+    } else matrix_inv(XWX, data$sparse.setup)
   } else {
-    matrix_inv(XWX + S, data$sparse.setup$matrix)
+    matrix_inv(XWX + S, data$sparse.setup)
   }
   P2[P2 == Inf] <- 0
   M2 <- P2 %*% crossprod(data$X, data$rres)
