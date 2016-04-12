@@ -59,7 +59,6 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       x[[i]][[j]]$state$fitted.values <- NULL
       x[[i]][[j]]$XW <- t(x[[i]][[j]]$X)
       x[[i]][[j]]$XWX <- crossprod(x[[i]][[j]]$X)
-      x[[i]][[j]]$dmvnorm_log <- dmvnorm_log
       nt <- c(nt, if(j == "model.matrix") "p" else paste("s", j, sep = "."))
       if(!is.null(x[[i]][[j]]$xt$propose))
         x[[i]][[j]]$propose <- x[[i]][[j]]$xt$propose
@@ -79,11 +78,13 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   resids <- as.numeric(rep(0, length = nobs))
   if(!is.null(weights))
     weights <- as.data.frame(weights)
+  if(!is.null(offset))
+    offset <- as.data.frame(offset)
 
   samps <- gmcmc(fun = family, theta = theta, fitfun = fitfun, data = x,
     propose = propose2, logLik = logLik, n.iter = n.iter, burnin = burnin, thin = thin,
     y = y, simplify = FALSE, zworking = zworking, resids = resids,
-    cores = 1, chains = chains, combine = FALSE, weights = weights, ...)
+    cores = 1, chains = chains, combine = FALSE, weights = weights, offset = offset, ...)
 
   samps
 }
@@ -696,18 +697,13 @@ gmcmc_slice <- function(fun, theta, id, prior, ...)
 }
 
 
-dmvnorm_log <- function(x, mean, sigma)
-{
-  d <- try(dmvnorm(x, mean = mean, sigma = sigma, log = TRUE), silent = TRUE)
-  if(inherits(d, "try-error"))
-    d <- NA
-  return(d)
-}
-
-
 gmcmc_sm.iwlsC <- function(family, theta, id, prior,
-  eta, y, data, zworking, resids, rho, weights = NULL, ...)
+  eta, y, data, zworking, resids, rho, weights = NULL, offset = NULL, ...)
 {
+  if(!is.null(offset)) {
+    for(j in names(offset))
+      eta[[j]] <- eta[[j]] + offset[[j]]
+  }
   W <- if(is.null(weights[[id[1]]])) 1.0 else weights[[id[1]]]
   rval <- .Call("gmcmc_iwls", family, theta, id, eta, y, data,
     zworking, resids, id[1], W, rho, PACKAGE = "bamlss")
@@ -733,12 +729,17 @@ process.derivs <- function(x)
 }
 
 
-gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, weights = NULL, ...)
+gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, weights = NULL, offset = NULL, ...)
 {
   theta <- theta[[id[1]]][[id[2]]]
 
   if(is.null(attr(theta, "fitted.values")))
     attr(theta, "fitted.values") <- data$fit.fun(data$X, theta)
+
+  if(!is.null(offset)) {
+    for(j in names(offset))
+      eta[[j]] <- eta[[j]] + offset[[j]]
+  }
 
   ## Map predictor to parameter scale.
   peta <- family$map2par(eta)

@@ -1397,8 +1397,10 @@ bamlss.model.frame <- function(formula, data, family = gaussian.bamlss(),
     data[["(weights)"]] <- weights
   }
   if(!is.null(offset)) {
-    if(!is.list(offset))
-      offset <- list(offset)
+    if(!is.list(offset)) {
+      offset <- rep(list(offset), length = length(family$names))
+      names(offset) <- family$names
+    }
     offset <- do.call("cbind", offset)
     colnames(offset) <- names(formula)[1:ncol(offset)]
     if(!is.null(subset)) {
