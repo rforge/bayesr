@@ -1379,8 +1379,10 @@ bamlss.model.frame <- function(formula, data, family = gaussian.bamlss(),
 
   ## Process weights and offset.
   if(!is.null(weights)) {
-    if(!is.list(weights))
-      weights <- list(weights)
+    if(!is.list(weights)) {
+      weights <- rep(list(weights), length = length(family$names))
+      names(weights) <- family$names
+    }
     weights <- do.call("cbind", weights)
     colnames(weights) <- names(formula)[1:ncol(weights)]
     if(!is.null(subset)) {
@@ -1390,6 +1392,8 @@ bamlss.model.frame <- function(formula, data, family = gaussian.bamlss(),
     }
     if(nrow(weights) < 2)
       weights <- do.call(rbind, replicate(nrow(data), weights, simplify = FALSE))
+    for(j in 1:ncol(weights))
+      weights[weights[, j] == 0, j] <- .Machine$double.eps
     data[["(weights)"]] <- weights
   }
   if(!is.null(offset)) {

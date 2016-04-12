@@ -77,6 +77,8 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
   zworking <- as.numeric(rep(0, length = nobs))
   resids <- as.numeric(rep(0, length = nobs))
+  if(!is.null(weights))
+    weights <- as.data.frame(weights)
 
   samps <- gmcmc(fun = family, theta = theta, fitfun = fitfun, data = x,
     propose = propose2, logLik = logLik, n.iter = n.iter, burnin = burnin, thin = thin,
