@@ -176,8 +176,8 @@ lambda <-  function(time, x) {
 d <- rSurvTime2(lambda, X, cens_fct, mean_cens = 5)
 
 f <- list(
-  Surv(time, event) ~ s(time, bs = "ps", k = 20) + s(time, by = x3),
-  gamma ~ s(x1) + s(x2)
+  Surv(time, event) ~ s(time, bs = "ps", k = 20) + s(time, by = x3, k = 20),
+  gamma ~ s(x1, k = 20) + s(x2, k = 20)
 )
 
 ## Cox model with continuous time.

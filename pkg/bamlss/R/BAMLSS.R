@@ -563,8 +563,6 @@ sparse.matrix.fit.fun <- function(X, b, index = NULL)
 make.fit.fun <- function(x, type = 1)
 {
   ff <- function(X, b, expand = TRUE, no.sparse.setup = FALSE) {
-    if(!is.null(names(b)))
-      b <- get.par(b, "b")
     if(inherits(X, "spam") | inherits(X, "Matrix")) {
       f <- as.matrix(X %*% b)
     } else {

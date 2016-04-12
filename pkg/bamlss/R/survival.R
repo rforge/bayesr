@@ -51,6 +51,15 @@ cox.mode <- function(x, y, weights, offset, criterion = c("AICc", "BIC", "AIC"),
     x$lambda$smooth.construct[[sj]]$state$nu <- nu
   }
 
+  ## Set edf to zero.
+  for(i in names(x)) {
+    if(length(x[[i]]$smooth.construct)) {
+      for(j in names(x[[i]]$smooth.construct))
+        x[[i]]$smooth.construct[[j]]$state$edf <- 0
+    }
+  }
+  edf <- 0
+
   ## Extract y.
   y <- y[[1]]
 
@@ -67,6 +76,7 @@ cox.mode <- function(x, y, weights, offset, criterion = c("AICc", "BIC", "AIC"),
   ia <- interactive()
   maxit <- rep(maxit, length.out = 2)
   eps0 <- eps + 1; iter <- 1
+  ptm <- proc.time()
   while(eps0 > eps & iter < maxit[1]) {
     eta0 <- eta
 
@@ -75,9 +85,10 @@ cox.mode <- function(x, y, weights, offset, criterion = c("AICc", "BIC", "AIC"),
     ######################################
     for(sj in seq_along(x$lambda$smooth.construct)) {
       state <- update_surv_tv(x$lambda$smooth.construct[[sj]], y, eta, eta_timegrid,
-        width, sub, update.nu, criterion = criterion,...)
+        width, sub, update.nu, criterion = criterion, edf = edf, ...)
       eta$lambda <- eta$lambda - fitted(x$lambda$smooth.construct[[sj]]$state) + fitted(state)
       eta_timegrid <- eta_timegrid - x$lambda$smooth.construct[[sj]]$state$fitted_timegrid + state$fitted_timegrid
+      edf <- edf - x$lambda$smooth.construct[[sj]]$state$edf + state$edf
       x$lambda$smooth.construct[[sj]]$state <- state
     }
 
@@ -92,8 +103,9 @@ cox.mode <- function(x, y, weights, offset, criterion = c("AICc", "BIC", "AIC"),
     ##########################################
     for(sj in seq_along(x$gamma$smooth.construct)) {
       state <- update_surv_tc(x$gamma$smooth.construct[[sj]], y,
-        eta, eeta, int, criterion = criterion, ...)
+        eta, eeta, int, criterion = criterion, edf = edf, ...)
       eta$gamma <- eta$gamma - fitted(x$gamma$smooth.construct[[sj]]$state) + fitted(state)
+      edf <- edf - x$gamma$smooth.construct[[sj]]$state$edf + state$edf
       x$gamma$smooth.construct[[sj]]$state <- state
     }
 
@@ -102,7 +114,6 @@ cox.mode <- function(x, y, weights, offset, criterion = c("AICc", "BIC", "AIC"),
     if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
 
     logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
-    edf <- get.edf(x, type = 2)
     IC <- get.ic2(logLik, edf, length(eta$gamma), criterion)
 
     if(verbose) {
@@ -120,24 +131,32 @@ cox.mode <- function(x, y, weights, offset, criterion = c("AICc", "BIC", "AIC"),
     iter <- iter + 1
   }
 
+  elapsed <- c(proc.time() - ptm)[3]
+
   if(iter == maxit[1])
     warning("the backfitting algorithm did not converge, please check argument eps and maxit!")
 
-  if(verbose) cat("\n")
+  if(verbose) {
+    et <- if(elapsed > 60) {
+      paste(formatC(format(round(elapsed / 60, 2), nsmall = 2), width = 5), "min", sep = "")
+    } else paste(formatC(format(round(elapsed, 2), nsmall = 2), width = 5), "sec", sep = "")
+    cat("\nelapsed time: ", et, "\n", sep = "")
+  }
 
   logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
   logPost <- as.numeric(logLik + get.log.prior(x))
 
-  return(list("fitted.values" = eta, "parameters" = get.all.par(x),
+  rval <- list("fitted.values" = eta, "parameters" = get.all.par(x),
     "edf" = get.edf(x, type = 2), "logLik" = logLik, "logPost" = logPost,
-    "hessian" = get.hessian(x)))
+    "hessian" = get.hessian(x), "converged" = iter < maxit[1], "time" = elapsed)
+  rval[[criterion]] <- get.ic2(logLik, edf, length(eta$gamma), criterion)
 
-  return(x)
+  return(rval)
 }
 
 
 ## Updating functions.
-update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, criterion, ...)
+update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, criterion, edf, ...)
 {
   ## The time-varying design matrix for the grid.
   X <- x$fit.fun_timegrid(NULL)
@@ -150,16 +169,34 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
   xgrad <- drop(t(y[, "status"]) %*% x$XT - int$grad)
 
   if(!(!x$state$do.optim | x$fixed | x$fxsp)) {
+    env <- new.env()
     par <- x$state$parameters
 
+    edf0 <- if(!is.null(edf)) edf - x$state$edf else 0
+
     objfun <- function(tau2) {
-      par <- set.par(par, tau2, "tau2")
+      par[x$pid$tau2] <- tau2
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
       xhess <- int$hess + x$hess(score = NULL, par, full = FALSE)
       Sigma <- matrix_inv(xhess)
-      g <- get.par(par, "b")
-      g2 <- drop(g + x$state$nu * Sigma %*% xgrad)
-      names(g2) <- names(g)
+      g <- par[x$pid$b]
+      if(update.nu) {
+        objfun.nu <- function(nu) {
+          g2 <- drop(g + nu * Sigma %*% xgrad)
+          fit_timegrid <- x$fit.fun_timegrid(g2)
+          eta_timegrid <- eta_timegrid - x$state$fitted_timegrid + fit_timegrid
+          fit <- x$fit.fun(x$X, g2)
+          eta$lambda <- eta$lambda - fitted(x$state) + fit
+          eeta <- exp(eta_timegrid)
+          int <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
+          logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
+          par[x$pid$b] <- g2
+          logPost <- logLik + x$prior(par)
+          return(-1 * logPost)
+        }
+        nu <- optimize(f = objfun.nu, interval = c(0, 1))$minimum
+      } else nu <- x$state$nu
+      g2 <- drop(g + nu * Sigma %*% xgrad)
       fit_timegrid <- x$fit.fun_timegrid(g2)
       eta_timegrid <- eta_timegrid - x$state$fitted_timegrid + fit_timegrid
       fit <- x$fit.fun(x$X, g2)
@@ -167,19 +204,31 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
       eeta <- exp(eta_timegrid)
       int2 <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
       logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int2, na.rm = TRUE)
-      edf <- sum.diag(int$hess %*% Sigma)
-      return(get.ic2(logLik, edf, length(eta$lambda), criterion))
+      edf1 <- sum.diag(int$hess %*% Sigma)
+      edf <- edf0 + edf1
+      ic <- get.ic2(logLik, edf, length(eta$lambda), criterion)
+      if(!is.null(env$ic_val)) {
+        if((ic < env$ic_val) & (ic < env$ic00_val)) {
+          par[x$pid$b] <- g2
+          opt_state <- list("parameters" = par,
+            "fitted.values" = fit, "fitted_timegrid" = fit_timegrid,
+            "edf" = edf1, "hessian" = xhess,
+            "nu" = nu, "do.optim" = x$state$do.optim)
+          assign("state", opt_state, envir = env)
+          assign("ic_val", ic, envir = env)
+        }
+      } else assign("ic_val", ic, envir = env)
+      return(ic)
     }
+
+    assign("ic00_val", objfun(get.state(x, "tau2")), envir = env)
 
     tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
-    x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
 
-    tau2 <- get.state(x, "tau2")
-    tau2 <- try(optimize(objfun, interval = c(tau2[1] / 100, tau2[1] * 100))$minimum, silent = TRUE)
-    if(!inherits(tau2, "try-error")) {
-      tau2 <- rep(tau2, length = length(x$S))
-      x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
-    }
+    if(!is.null(env$state))
+      return(env$state)
+
+    x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
   }
 
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
@@ -194,7 +243,6 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
   if(update.nu) {
     objfun <- function(nu) {
       g2 <- drop(g + nu * Sigma %*% xgrad)
-      names(g2) <- names(g)
       fit_timegrid <- x$fit.fun_timegrid(g2)
       eta_timegrid <- eta_timegrid - x$state$fitted_timegrid + fit_timegrid
       fit <- x$fit.fun(x$X, g2)
@@ -202,12 +250,11 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
       eeta <- exp(eta_timegrid)
       int <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
       logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
-      x$state$paremeters <- set.par(x$state$parameters, g2, "b")
-      return(-1 * logLik)
+      x$state$paremeters[x$pid$b] <- g2
+      logPost <- logLik + x$prior(x$state$parameters)
+      return(-1 * logPost)
     }
-
-    nu.opt <- optim(x$state$nu, fn = objfun, method = "L-BFGS-B", lower = .Machine$double.eps^0.9, upper = 1)
-    x$state$nu <- nu.opt$par
+    x$state$nu <- optimize(f = objfun, interval = c(0, 1))$minimum
   }
 
   g2 <- drop(g + x$state$nu * Sigma %*% xgrad)
@@ -224,7 +271,7 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
 }
 
 
-update_surv_tc <- function(x, y, eta, eeta, int, criterion, ...)
+update_surv_tc <- function(x, y, eta, eeta, int, criterion, edf, ...)
 {
   ## Compute weights.
   weights <- exp(eta$gamma) * int
@@ -263,6 +310,8 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, ...)
     }
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
   } else {
+    edf0 <- if(!is.null(edf)) edf - x$state$edf else 0
+
     objfun <- function(tau2, ...) {
       S <- 0
       for(j in seq_along(x$S))
@@ -272,7 +321,8 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, ...)
       g <- drop(P %*% crossprod(x$X, x$rres))
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
       fit <- x$fit.fun(x$X, g)
-      edf <- sum.diag(XWX %*% P)
+      edf1 <- sum.diag(XWX %*% P)
+      edf <- edf0 + edf1
       eta$gamma <- eta$gamma + fit
       logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
       return(get.ic2(logLik, edf, length(eta$gamma), criterion))
