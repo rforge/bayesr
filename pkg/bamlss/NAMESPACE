@@ -54,6 +54,8 @@ export(
   "multinomial.bamlss",
   "mvn.bamlss",
   "poisson.bamlss",
+  "BUGSeta",
+  "BUGSmodel",
 
   ## extractor functions
   "DIC",
@@ -82,6 +84,8 @@ export(
 S3method("plot", "bamlss")
 S3method("plot", "bamlss.results")
 S3method("summary", "bamlss")
+S3method("family", "bamlss")
+S3method("family", "bamlss.frame")
 S3method("print", "summary.bamlss")
 S3method("print", "family.bamlss")
 S3method("predict", "bamlss")

@@ -387,31 +387,35 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
   args <- list(...)
 
   force.spam <- if(is.null(args$force.spam)) FALSE else args$force.spam
-  if((ncol(x$sparse.setup$crossprod) < ncol(x$X) * 0.5) & force.spam)
-    spam <- TRUE
-  if(spam) {
-    require("spam")
-    x$X <- as.spam(x$X)
-    xx <- crossprod.spam(x$X)
-    for(j in seq_along(x$S)) {
-      x$S[[j]] <- as.spam(x$S[[j]])
-      xx <- xx + x$S[[j]]
+  if(!is.null(x$sparse.setup$crossprod)) {
+    if((ncol(x$sparse.setup$crossprod) < ncol(x$X) * 0.5) & force.spam)
+      spam <- TRUE
+    if(spam) {
+      require("spam")
+      x$X <- as.spam(x$X)
+      xx <- crossprod.spam(x$X)
+      for(j in seq_along(x$S)) {
+        x$S[[j]] <- as.spam(x$S[[j]])
+        xx <- xx + x$S[[j]]
+      }
+      x$sparse.setup$spam.cholFactor <- chol.spam(xx)
+      if(force.spam)
+        x$update <- bfit_iwls_spam
     }
-    x$sparse.setup$spam.cholFactor <- chol.spam(xx)
-    if(force.spam)
-      x$update <- bfit_iwls_spam
   }
 
   force.Matrix <- if(is.null(args$force.Matrix)) FALSE else args$force.Matrix
-  if((ncol(x$sparse.setup$crossprod) < ncol(x$X) * 0.5) & force.Matrix)
-    Matrix <- TRUE
-  if(Matrix) {
-    x$X <- Matrix(x$X, sparse = TRUE)
-    for(j in seq_along(x$S))
-      x$S[[j]] <- Matrix(x$S[[j]], sparse = TRUE)
-    if(force.Matrix)
-      x$update <- bfit_iwls_Matrix
-    x$prior <- make.prior(x)
+  if(!is.null(x$sparse.setup$crossprod)) {
+    if((ncol(x$sparse.setup$crossprod) < ncol(x$X) * 0.5) & force.Matrix)
+      Matrix <- TRUE
+    if(Matrix) {
+      x$X <- Matrix(x$X, sparse = TRUE)
+      for(j in seq_along(x$S))
+        x$S[[j]] <- Matrix(x$S[[j]], sparse = TRUE)
+      if(force.Matrix)
+        x$update <- bfit_iwls_Matrix
+      x$prior <- make.prior(x)
+    }
   }
 
   if(ntau2 > 0) {

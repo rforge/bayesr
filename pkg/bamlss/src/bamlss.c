@@ -405,12 +405,18 @@ SEXP sum_diag2(SEXP x, SEXP y)
 
 /* Efficient IWLS sampling. */
 SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
-  SEXP eta, SEXP response, SEXP x, SEXP z, SEXP e, SEXP id2, SEXP rho)
+  SEXP eta, SEXP response, SEXP x, SEXP z, SEXP e, SEXP id2, SEXP W, SEXP rho)
 {
   int i, j, k, nProtected = 0;
   int n = INTEGER(getListElement(x, "nobs"))[0];
   int fixed = LOGICAL(getListElement(x, "fixed"))[0];
   int fxsp = LOGICAL(getListElement(x, "fxsp"))[0];
+  int nW = length(W);
+  if(nW > 1) {
+    if(nW != n)
+      nW = 1;
+  }
+  double *Wptr = REAL(W);
 
   SEXP theta2;
   PROTECT(theta2 = duplicate(getListElement(getListElement(theta,
@@ -516,6 +522,8 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
       weightsptr[k] = -1e+10;
     if(weightsptr[k] > 1e+10)
       weightsptr[k] = 1e+10;
+    if(nW > 1)
+      weightsptr[k] *= Wptr[k];
 
     if(ISNA(scoreptr[k]))
       scoreptr[k] = 1.490116e-08;
@@ -748,6 +756,8 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
       weights2ptr[k] = -1e+10;
     if(weights2ptr[k] > 1e+10)
       weights2ptr[k] = 1e+10;
+    if(nW > 1)
+      weightsptr[k] *= Wptr[k];
 
     if(ISNA(score2ptr[k]))
       score2ptr[k] = 1.490116e-08;

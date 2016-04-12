@@ -81,7 +81,7 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   samps <- gmcmc(fun = family, theta = theta, fitfun = fitfun, data = x,
     propose = propose2, logLik = logLik, n.iter = n.iter, burnin = burnin, thin = thin,
     y = y, simplify = FALSE, zworking = zworking, resids = resids,
-    cores = 1, chains = chains, combine = FALSE, ...)
+    cores = 1, chains = chains, combine = FALSE, weights = weights, ...)
 
   samps
 }
@@ -704,10 +704,11 @@ dmvnorm_log <- function(x, mean, sigma)
 
 
 gmcmc_sm.iwlsC <- function(family, theta, id, prior,
-  eta, y, data, zworking, resids, rho, ...)
+  eta, y, data, zworking, resids, rho, weights = NULL, ...)
 {
+  W <- if(is.null(weights[[id[1]]])) 1.0 else weights[[id[1]]]
   rval <- .Call("gmcmc_iwls", family, theta, id, eta, y, data,
-    zworking, resids, id[1], rho, PACKAGE = "bamlss")
+    zworking, resids, id[1], W, rho, PACKAGE = "bamlss")
 
   ## Sample variance parameter.
   if(!data$fixed & !data$fxsp & length(data$S)) {
@@ -730,7 +731,7 @@ process.derivs <- function(x)
 }
 
 
-gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
+gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, weights = NULL, ...)
 {
   theta <- theta[[id[1]]][[id[2]]]
 
@@ -741,13 +742,16 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
   peta <- family$map2par(eta)
 
   ## Compute weights.
-  weights <- process.derivs(family$hess[[id[1]]](y, peta, id = id[1]))
+  hess <- process.derivs(family$hess[[id[1]]](y, peta, id = id[1]))
+
+  if(!is.null(weights[[id[1]]]))
+    hess <- hess * weights[[id[1]]]
 
   ## Score.
   score <- process.derivs(family$score[[id[1]]](y, peta, id = id[1]))
 
   ## Compute working observations.
-  z <- eta[[id[1]]] + 1 / weights * score
+  z <- eta[[id[1]]] + 1 / hess * score
 
   ## Compute old log likelihood and old log coefficients prior.
   pibeta <- family$loglik(y, peta)
@@ -776,7 +780,7 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
 
   ## Compute reduced residuals.
   e <- z - eta2
-  xbin.fun(data$binning$sorted.index, weights, e, data$weights, data$rres, data$binning$order)
+  xbin.fun(data$binning$sorted.index, hess, e, data$weights, data$rres, data$binning$order)
 
   ## Compute mean and precision.
   XWX <- do.XWX(data$X, 1 / data$weights, data$sparse.setup$matrix)
@@ -826,17 +830,17 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, ...)
   pibetaprop <- family$loglik(y, peta)
 
   ## Compute new weights
-  weights <- process.derivs(family$hess[[id[1]]](y, peta, id = id[1]))
+  hess <- process.derivs(family$hess[[id[1]]](y, peta, id = id[1]))
 
   ## New score.
   score <- process.derivs(family$score[[id[1]]](y, peta, id = id[1]))
 
   ## New working observations.
-  z <- eta[[id[1]]] + 1 / weights * score
+  z <- eta[[id[1]]] + 1 / hess * score
 
   ## Compute reduced residuals.
   e <- z - eta2
-  xbin.fun(data$binning$sorted.index, weights, e, data$weights, data$rres, data$binning$order)
+  xbin.fun(data$binning$sorted.index, hess, e, data$weights, data$rres, data$binning$order)
 
   ## Compute mean and precision.
   XWX <- do.XWX(data$X, 1 / data$weights, data$sparse.setup$matrix)

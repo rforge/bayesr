@@ -39,7 +39,7 @@ bamlss.formula(formula, family = NULL, specials = NULL)
 }
 
 \seealso{
-  \code{link{bamlss}}, \code{\link{bamlss.frame}}, \code{\link{bamlss.formula}}
+  \code{\link{bamlss}}, \code{\link{bamlss.frame}}, \code{\link{bamlss.formula}}
 }
 
 \examples{
