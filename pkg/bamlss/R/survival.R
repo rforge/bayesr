@@ -738,6 +738,7 @@ Surv2 <- function(..., obs = NULL, subdivisions = 100)
   require("survival")
   rval <- cbind(as.matrix(Surv(...)), "obs" = obs)
   class(rval) <- c("matrix", "Surv2")
+  attr(rval, "subdivisions") <- subdivisions
   rval
 }
 
