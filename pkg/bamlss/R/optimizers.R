@@ -518,8 +518,9 @@ get.eta <- function(x, expand = TRUE)
   for(j in 1:np) {
     eta[[j]] <- 0
     for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-      fit <- x[[nx[j]]]$smooth.construct[[sj]]$fit.fun(x[[nx[j]]]$smooth.construct[[sj]]$X,
-        x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, expand)
+      par <- x[[nx[j]]]$smooth.construct[[sj]]$state$parameters
+      par <- par[x[[nx[j]]]$smooth.construct[[sj]]$pid$b]
+      fit <- x[[nx[j]]]$smooth.construct[[sj]]$fit.fun(x[[nx[j]]]$smooth.construct[[sj]]$X, par, expand)
       eta[[j]] <- eta[[j]] + fit
     }
   }
