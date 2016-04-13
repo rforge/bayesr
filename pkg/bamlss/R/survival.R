@@ -179,10 +179,11 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
       xhess <- int$hess + x$hess(score = NULL, par, full = FALSE)
       Sigma <- matrix_inv(xhess)
+      Hs <- Sigma %*% xgrad
       g <- par[x$pid$b]
       if(update.nu) {
         objfun.nu <- function(nu) {
-          g2 <- drop(g + nu * Sigma %*% xgrad)
+          g2 <- drop(g + nu * Hs)
           fit_timegrid <- x$fit.fun_timegrid(g2)
           eta_timegrid <- eta_timegrid - x$state$fitted_timegrid + fit_timegrid
           fit <- x$fit.fun(x$X, g2)
@@ -196,7 +197,7 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
         }
         nu <- optimize(f = objfun.nu, interval = c(0, 1))$minimum
       } else nu <- x$state$nu
-      g2 <- drop(g + nu * Sigma %*% xgrad)
+      g2 <- drop(g + nu * Hs)
       fit_timegrid <- x$fit.fun_timegrid(g2)
       eta_timegrid <- eta_timegrid - x$state$fitted_timegrid + fit_timegrid
       fit <- x$fit.fun(x$X, g2)
@@ -236,13 +237,14 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
 
   ## Compute the inverse of the hessian.
   Sigma <- matrix_inv(xhess)
+  Hs <- Sigma %*% xgrad
 
   ## Update regression coefficients.
   g <- get.state(x, "b")
 
   if(update.nu) {
     objfun <- function(nu) {
-      g2 <- drop(g + nu * Sigma %*% xgrad)
+      g2 <- drop(g + nu * Hs)
       fit_timegrid <- x$fit.fun_timegrid(g2)
       eta_timegrid <- eta_timegrid - x$state$fitted_timegrid + fit_timegrid
       fit <- x$fit.fun(x$X, g2)
@@ -257,7 +259,7 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
     x$state$nu <- optimize(f = objfun, interval = c(0, 1))$minimum
   }
 
-  g2 <- drop(g + x$state$nu * Sigma %*% xgrad)
+  g2 <- drop(g + x$state$nu * Hs)
   names(g2) <- names(g)
   x$state$parameters <- set.par(x$state$parameters, g2, "b")
 
@@ -296,6 +298,8 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, edf, ...)
     1 / x$weights,
     x$sparse.setup$matrix)
 
+  Xr <- crossprod(x$X, x$rres)
+
   if(!x$state$do.optim | x$fixed | x$fxsp) {
     if(x$fixed) {
       x$state$hessian <- XWX
@@ -308,7 +312,7 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, edf, ...)
       x$state$hessian <- XWX + S
       P <- matrix_inv(x$state$hessian, index = x$sparse.setup)
     }
-    x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
+    x$state$parameters <- set.par(x$state$parameters, drop(P %*% Xr), "b")
   } else {
     edf0 <- if(!is.null(edf)) edf - x$state$edf else 0
 
@@ -318,7 +322,7 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, edf, ...)
         S <- S + 1 / tau2[j] * x$S[[j]]
       P <- matrix_inv(XWX + S, index = x$sparse.setup)
       if(inherits(P, "try-error")) return(NA)
-      g <- drop(P %*% crossprod(x$X, x$rres))
+      g <- drop(P %*% Xr)
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
       fit <- x$fit.fun(x$X, g)
       edf1 <- sum.diag(XWX %*% P)
@@ -335,7 +339,7 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, edf, ...)
       S <- S + 1 / tau2[j] * x$S[[j]]
     x$state$hessian <- XWX + S
     P <- matrix_inv(x$state$hessian, index = x$sparse.setup)
-    x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
+    x$state$parameters <- set.par(x$state$parameters, drop(P %*% Xr), "b")
   }
 
   x$state$edf <- sum.diag(XWX %*% P)
