@@ -371,16 +371,10 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
     if(is.logical(x$sp))
       x[["sp"]] <- NULL
   }
-  if(is.null(x$fit.fun))
-    x$fit.fun <- make.fit.fun(x)
-  state$fitted.values <- x$fit.fun(x$X, get.par(state$parameters, "b"))
   x$state <- state
   if(!is.null(x$xt[["do.optim"]]))
     x$state$do.optim <- x$xt[["do.optim"]]
-  x$state$edf <- x$edf(x)
   x$sparse.setup <- sparse.setup(x$X, S = x$S)
-  x$fit.fun <- make.fit.fun(x)
-  x$state$fitted.values <- x$fit.fun(x$X, get.par(x$state$parameters, "b"))
   x$added <- c("nobs", "weights", "rres", "state", "grid", "a", "b", "prior", "edf",
     "grad", "hess", "lower", "upper")
 
@@ -443,6 +437,10 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
   if(is.null(x$prior) | !is.function(x$prior))
     x$prior <- make.prior(x)
 
+  x$fit.fun <- make.fit.fun(x)
+  x$state$fitted.values <- x$fit.fun(x$X, get.par(x$state$parameters, "b"))
+  x$state$edf <- x$edf(x)
+
   x
 }
 
@@ -468,7 +466,7 @@ assign.df <- function(x, df)
   df <- if(is.null(x$xt$df)) df else x$xt$df
   if(is.null(df)) {
     nc <- ncol(x$X)
-    df <- ceiling(nc * if(nc < 11) 0.9 else 0.5)
+    df <- ceiling(nc * 0.5)
   }
   if(df > ncol(x$X))
     df <- ncol(x$X)
