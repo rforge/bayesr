@@ -78,7 +78,8 @@ export(
   "matrix_inv",
   "fmt",
   "rSurvTime2",
-  "scale2"
+  "scale2",
+  "continue"
 )
 
 S3method("plot", "bamlss")
