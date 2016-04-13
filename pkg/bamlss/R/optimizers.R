@@ -39,19 +39,10 @@
 ## bamlss.engine.setup.smooth(), which adds additional parts to the
 ## state list, as this could vary for special terms. A default
 ## method is provided.
-bamlss.engine.setup <- function(x, update = "iwls",
-  do.optim = NULL, optim.grid = NULL, criterion = c("AICc", "BIC", "AIC"),
+bamlss.engine.setup <- function(x, update = "iwls", do.optim = NULL,
   nu = 0.1, start = NULL, df = NULL, ...)
 {
   if(!is.null(attr(x, "bamlss.engine.setup"))) return(x)
-
-  criterion <- match.arg(criterion)
-  if(!is.null(optim.grid)) {
-    if(is.na(optim.grid))
-      optim.grid <- NULL
-    if(!optim.grid)
-      optim.grid <- NULL
-  }
 
   foo <- function(x, id = NULL) {
     if(!any(c("formula", "fake.formula") %in% names(x))) {
@@ -93,7 +84,6 @@ bamlss.engine.setup <- function(x, update = "iwls",
             } else tdf <- df[1]
           }
           x$smooth.construct[[j]] <- assign.df(x$smooth.construct[[j]], tdf)
-          x$smooth.construct[[j]]$optim.grid <- optim.grid
           if(!is.null(x$smooth.construct[[j]]$xt$update))
             x$smooth.construct[[j]]$update <- x$smooth.construct[[j]]$xt$update
           if(is.null(x$smooth.construct[[j]]$update)) {
@@ -112,7 +102,6 @@ bamlss.engine.setup <- function(x, update = "iwls",
           }
           if(!is.null(x$smooth.construct[[j]]$rank))
             x$smooth.construct[[j]]$rank <- as.numeric(x$smooth.construct[[j]]$rank)
-          x$smooth.construct[[j]]$criterion <- criterion
           x$smooth.construct[[j]]$nu <- nu
           if(!is.null(x$smooth.construct[[j]]$Xf)) {
             x$smooth.construct[[j]]$Xfcn <- paste(paste(paste(x$smooth.construct[[j]]$term, collapse = "."),
@@ -656,8 +645,9 @@ fmt <- function(x, width = 8, digits = 2) {
 }
 
 bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
-  criterion = c("AICc", "BIC", "AIC"), eps = .Machine$double.eps^0.25,
-  maxit = 400, outer = FALSE, inner = FALSE, mgcv = FALSE,
+  update = "iwls", criterion = c("AICc", "BIC", "AIC"),
+  eps = .Machine$double.eps^0.25, maxit = 400,
+  outer = FALSE, inner = FALSE, mgcv = FALSE,
   verbose = TRUE, digits = 4, flush = TRUE, ...)
 {
   nx <- family$names
@@ -665,7 +655,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     stop("design construct names mismatch with family names!")
 
   if(is.null(attr(x, "bamlss.engine.setup")))
-    x <- bamlss.engine.setup(x, ...)
+    x <- bamlss.engine.setup(x, update = update, ...)
 
   criterion <- match.arg(criterion)
   np <- length(nx)
@@ -803,7 +793,8 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         ## And all terms.
         if(inner) {
           tbf <- inner_bf(x[[nx[j]]]$smooth.construct, y, eta, family,
-            edf = edf, id = nx[j], z = z, hess = hess, weights = weights[[nx[j]]])
+            edf = edf, id = nx[j], z = z, hess = hess, weights = weights[[nx[j]]],
+            criterion = criterion)
           x[[nx[j]]]$smooth.construct <- tbf$x
           edf <- tbf$edf
           eta <- tbf$eta
@@ -813,7 +804,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
             ## Get updated parameters.
             p.state <- x[[nx[j]]]$smooth.construct[[sj]]$update(x[[nx[j]]]$smooth.construct[[sj]],
               family, y, eta, nx[j], edf = edf, z = z, hess = hess, weights = weights[[nx[j]]],
-              iteration = iter)
+              iteration = iter, criterion = criterion)
 
             ## Compute equivalent degrees of freedom.
             edf <- edf - x[[nx[j]]]$smooth.construct[[sj]]$state$edf + p.state$edf
@@ -1076,7 +1067,7 @@ bfit_newton <- function(x, family, y, eta, id, ...)
 }
 
 
-bfit_lm <- function(x, family, y, eta, id, weights, ...)
+bfit_lm <- function(x, family, y, eta, id, weights, criterion, ...)
 {
   args <- list(...)
 
@@ -1115,7 +1106,7 @@ bfit_lm <- function(x, family, y, eta, id, weights, ...)
 }
 
 
-bfit_iwls <- function(x, family, y, eta, id, weights, ...)
+bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
 {
   args <- list(...)
 
@@ -1175,7 +1166,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
       fit <- x$fit.fun(x$X, g)
       edf <- sum.diag(XWX %*% P)
       eta2[[id]] <- eta2[[id]] + fit
-      ic <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), x$criterion, ...)
+      ic <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), criterion, ...)
       if(!is.null(env$ic_val)) {
         if((ic < env$ic_val) & (ic < env$ic00_val)) {
           par <- c(g, tau2)
@@ -1223,7 +1214,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, ...)
 }
 
 
-bfit_iwls_spam <- function(x, family, y, eta, id, weights, ...)
+bfit_iwls_spam <- function(x, family, y, eta, id, weights, criterion, ...)
 {
   args <- list(...)
 
@@ -1285,7 +1276,7 @@ bfit_iwls_spam <- function(x, family, y, eta, id, weights, ...)
       fit <- x$fit.fun(x$X, b)
       edf <- sum.diag(XWX %*% P)
       eta2[[id]] <- eta2[[id]] + fit
-      ic <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), x$criterion, ...)
+      ic <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), criterion, ...)
       if(!is.null(env$ic_val)) {
         if((ic < env$ic_val) & (ic < env$ic00_val)) {
           par <- c(b, tau2)
@@ -1332,7 +1323,7 @@ bfit_iwls_spam <- function(x, family, y, eta, id, weights, ...)
 }
 
 
-bfit_iwls_Matrix <- function(x, family, y, eta, id, weights, ...)
+bfit_iwls_Matrix <- function(x, family, y, eta, id, weights, criterion, ...)
 {
   args <- list(...)
 
@@ -1393,7 +1384,7 @@ bfit_iwls_Matrix <- function(x, family, y, eta, id, weights, ...)
       fit <- x$fit.fun(x$X, b)
       edf <- sum.diag(XWX %*% P)
       eta2[[id]] <- eta2[[id]] + fit
-      ic <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), x$criterion, ...)
+      ic <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), criterion, ...)
       if(!is.null(env$ic_val)) {
         if((ic < env$ic_val) & (ic < env$ic00_val)) {
           par <- c(as.numeric(b), tau2)
@@ -1442,7 +1433,7 @@ bfit_iwls_Matrix <- function(x, family, y, eta, id, weights, ...)
 
 
 ## Updating based on optim.
-bfit_optim <- function(x, family, y, eta, id, weights, ...)
+bfit_optim <- function(x, family, y, eta, id, weights, criterion, ...)
 {
   ## Compute partial predictor.
   eta[[id]] <- eta[[id]] - fitted(x$state)
