@@ -168,7 +168,7 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
   \item{IC}{The value of the information criterion.}
   \item{converged}{Logical, indicating convergence of the backfitting algorithm.}
 
-  For updating functions a list providing the current state:
+  \item{For updating functions a list providing the current state}{}
   \item{fitted.values}{The resulting fitted values after updating.}
   \item{parameters}{The resulting named numeric vector of updated model term parameters.
     Coefficients should be named with \code{"b1"}, \dots, \code{"bk"}, where \code{k} is
