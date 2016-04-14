@@ -271,7 +271,12 @@ d <- data.frame(
 )
 
 ## Special model terms must be called with s2()!
-b <- bamlss(y ~ -1 + s2(time, bs = "gc"), data = d,
+set.seed(333)
+f <- list(
+  "mu" = y ~ s2(time, bs = "gc"),
+  "sigma" = ~ s(time)
+)
+b <- bamlss(f, data = d,
   optimizer = bfit, sampler = GMCMC)
 plot(b)
 nd <- data.frame("time" = seq(1, 15, length = 100))
