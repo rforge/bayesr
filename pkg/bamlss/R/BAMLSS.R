@@ -2714,42 +2714,6 @@ smooth.construct.rsc.smooth.spec <- function(object, data, knots) {
 }
 
 
-## Smooth constructor function for growth curves.
-smooth.construct.gc.smooth.spec <- function(object, data, knots) 
-{
-  object$X <- matrix(as.numeric(data[[object$term]]), ncol = 1)
-  center <- if(!is.null(object$xt$center)) {
-    object$xt$center
-  } else FALSE
-  object$by.done <- TRUE
-  if(object$by != "NA")
-    stop("by variables not supported!")
-  object$fit.fun <- function(X, b, ...) {
-    f <- b[1] * exp(-b[2] * exp(-b[3] * drop(X)))
-    if(center)
-      f <- f - mean(f)
-    f
-  }
-  object$update <- bfit_optim
-  object$propose <- gmcmc_sm.slice
-  object$prior <- function(b) { 1 }
-  object$fixed <- TRUE
-  object$state$parameters <- c("b1" = 0, "b2" = 0.5, "b3" = 0.1)
-  object$state$fitted.values <- rep(0, length(object$X))
-  object$state$edf <- 3
-  object$special.npar <- 3
-  class(object) <- c("gc.smooth", "no.mgcv", "special")
-  object
-}
-
-## Work around for the "prediction matrix" of a growth curve.
-Predict.matrix.gc.smooth <- function(object, data, knots) 
-{
-  X <- matrix(as.numeric(data[[object$term]]), ncol = 1)
-  X
-}
-
-
 ## Rational spline constructor.
 rs <- function(..., k = -1, fx = NULL, bs = "tp", m = NA, xt = NULL, link = "log", specials = NULL)
 {
