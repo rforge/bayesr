@@ -94,7 +94,7 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
   The algorithm either updates each model term over all distributional parameters sequentially,
   or does a full update until convergence for model terms for one distributional parameter before
   updating the next parameter, see argument \code{inner}. Additionally, working observations and
-  weights can be computed only once in an \code{outer}] iteration.
+  weights can be computed only once in an \code{outer} iteration.
 
   Starting values of regression coefficients and smoothing variances can be supplied, moreover,
   if a family object holds functions for initializing the distributional parameters, see also
@@ -105,11 +105,11 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
   This is achieved by providing an updating function to argument
   \code{update}, which should be used for all model terms. Another option is to set the updating
   function within the \code{xt} argument of the \pkg{mgcv} smooth term constructor functions, see
-  e.g. function \code{\link{s}}. If the \code{xt} list then holds an element named \code{"update"},
+  e.g. function \code{\link[mgcv]{s}}. If the \code{xt} list then holds an element named \code{"update"},
   which is a valid updating function, this updating function is used for the corresponding model
   term. This way it is possible to create special updating functions, e.g., that do not fit in the
   IWLS scheme. See the examples below. Note that this does not work if \code{mgcv = TRUE}, since the
-  \code{\link{gam}} function assumes a strict linear representation of smooth terms.
+  \code{\link[mgcv]{gam}} function assumes a strict linear representation of smooth terms.
   
   A model term updating function has the following arguments:
 
@@ -134,7 +134,7 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
   \code{fit.fun(X, b, ...)}
 
   where \code{X} is the design matrix and \code{b} is the vector of coefficients. Hence, for
-  usual IWLS updating the fitted values are computed by \code{X %*% b}. For special terms like
+  usual IWLS updating the fitted values are computed by \code{X \%*\% b}. For special terms like
   nonlinear growth curves this may not be the case, see the example below. The fitting functions
   are assigned by \code{\link{bamlss.engine.setup}}, unless the function is already provided
   after calling the constructor function \code{\link[mgcv]{smooth.consttruct}} or
