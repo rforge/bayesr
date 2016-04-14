@@ -60,6 +60,8 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       x[[i]][[j]]$XW <- t(x[[i]][[j]]$X)
       x[[i]][[j]]$XWX <- crossprod(x[[i]][[j]]$X)
       x[[i]][[j]]$dmvnorm_log <- dmvnorm_log
+      if(is.null(x[[i]][[j]]$fxsp))
+        x[[i]][[j]]$fxsp <- FALSE
       nt <- c(nt, if(j == "model.matrix") "p" else paste("s", j, sep = "."))
       if(!is.null(x[[i]][[j]]$xt$propose))
         x[[i]][[j]]$propose <- x[[i]][[j]]$xt$propose
@@ -1408,7 +1410,7 @@ MVNORM <- function(x, y = NULL, family = NULL, start = NULL, n.samples = 500, he
   hessian <- hessian[npar, npar]
 
   samps <- rmvnorm(n.samples, mean = par, sigma = matrix_inv(-1 * hessian))
-  colnames(samps) <- names(par)
+  colnames(samps) <- npar
 
   as.mcmc(samps)
 }

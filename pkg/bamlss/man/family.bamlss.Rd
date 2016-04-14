@@ -63,21 +63,27 @@ family.bamlss.frame(object, ...)
   on the type of model this feature is usually not needed.
 
   Similarly, for derivative based algorithms, e.g. using iteratively reweighted least squares
-  (IWLS), the family object holds derivative functions evaluating derivatives of the
-  log-likelihood w.r.t. the linear predictors (or expectations of derivatives). For each parameter,
-  these functions also hold the following arguments:
+  (IWLS, see function \code{\link{bfit}}, the family object holds derivative functions evaluating
+  derivatives of the log-likelihood w.r.t. the linear predictors (or expectations of derivatives).
+  For each parameter, these functions also hold the following arguments:
  
   \code{score(y, par, ...)}
 
-  for computing the first derivative of the log-likelihood w.r.t. to a linear predictor and
+  for computing the first derivative of the log-likelihood w.r.t. a linear predictor and
 
   \code{hess(y, par, ...)}
 
-  for computing the negative second derivatives.
+  for computing the negative second derivatives. Within the family object these functions
+  are organized in a named list, see the examples below.
 
   In addition, for the cumulative distribution function (\code{p(y, par, ...)}), for the quantile
   function (\code{q(y, par, ...)}) or for creating random numbers (\code{r(y, par, ...)}) the same
   structure is assumed. See, e.g., the code of function \code{gaussian.bamlss()}.
+
+  Some model fitting engines can initialize the distributional parameters which oftentimes
+  leads to much faster convergence. The initialize functions are again organized witin a named list,
+  one entry for each parameter, similar to the \code{score} and \code{hess} functions, e.g.,
+  see the code of family object \code{gaussian.bamlss}.
 
   Using function \code{\link{bamlss}}, \code{\link{residuals.bamlss}} and
   \code{\link{predict.bamlss}} the family objects may

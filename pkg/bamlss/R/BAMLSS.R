@@ -847,7 +847,10 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
                 names(tpar2) <- cn2
                 tpar <- c(tpar1, tpar2)
               } else {
-                tpar <- rep(fill[1], ncol(x[[i]][[j]]$smooth.construct[[k]]$X))
+                nfill <- if(is.null(x[[i]][[j]]$smooth.construct[[k]]$special.npar)) {
+                  ncol(x[[i]][[j]]$smooth.construct[[k]]$X)
+                } else x[[i]][[j]]$smooth.construct[[k]]$special.npar
+                tpar <- rep(fill[1], nfill)
                 cn <- colnames(x[[i]][[j]]$smooth.construct[[k]]$X)
                 if(is.null(cn))
                   cn <- paste("b", 1:length(tpar), sep = "")
@@ -932,7 +935,10 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
             names(tpar2) <- cn2
             tpar <- c(tpar1, tpar2)
           } else {
-            tpar <- rep(fill[1], ncol(x[[i]]$smooth.construct[[k]]$X))
+            nfill <- if(is.null(x[[i]]$smooth.construct[[k]]$special.npar)) {
+              ncol(x[[i]]$smooth.construct[[k]]$X)
+            } else x[[i]]$smooth.construct[[k]]$special.npar
+            tpar <- rep(fill[1], nfill)
             cn <- colnames(x[[i]]$smooth.construct[[k]]$X)
             if(is.null(cn))
               cn <- paste("b", 1:length(tpar), sep = "")
@@ -2574,12 +2580,16 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   }
   if(length(i <- grep("s.", ec))) {
     for(j in enames2[i]) {
+      sn <- snames[grep2(paste(id, "s", j, sep = "."), snames, fixed = TRUE)]
       if(!inherits(x[[j]], "no.mgcv") & !inherits(x[[j]], "special")) {
         X <- PredictMat(x[[j]], data)
-        sn <- snames[grep2(paste(id, "s", j, sep = "."), snames, fixed = TRUE)]
         eta <- eta + fitted_matrix(X, samps[, sn, drop = FALSE])
       } else {
-        stop("no predictions for special terms available yet!")
+        X <- PredictMat(x[[j]], data)
+        fit <- apply(samps[, sn, drop = FALSE], 1, function(b) {
+          x[[j]]$fit.fun(X, b)
+        })
+        eta <- eta + fit
       }
     }
   }
@@ -2618,7 +2628,10 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
             fit <- fit[x$smooth.construct[[j]]$binning$match.index, , drop = FALSE]
           eta <- eta + fit
         } else {
-          stop("no fitted values for special terms available yet!")
+          fit <- apply(samps[, sn, drop = FALSE], 1, function(b) {
+            x$smooth.construct[[j]]$fit.fun(x$smooth.construct[[j]]$X, b)
+          })
+          eta <- eta + fit
         }
       } else {
         fit <- fitted_matrix(x$smooth.construct[[j]]$X, samps[, sn, drop = FALSE])
@@ -2705,39 +2718,26 @@ smooth.construct.rsc.smooth.spec <- function(object, data, knots) {
 smooth.construct.gc.smooth.spec <- function(object, data, knots) 
 {
   object$X <- matrix(as.numeric(data[[object$term]]), ncol = 1)
-  object$special <- TRUE
-  if(is.null(object$xt))
-    object$xt <- list("center" = FALSE)
-  else
-    object$xt$center <- TRUE
+  center <- if(!is.null(object$xt$center)) {
+    object$xt$center
+  } else FALSE
   object$by.done <- TRUE
   if(object$by != "NA")
-    stop("by variables not implemented yet!")
-
-  object$fit.fun <- function(X, g, ...) {
-    ##f <- g[1] * exp(-g[2] * exp(-g[3] * drop(X)))
-    f <- log(g[1]) - g[2] * exp(-g[3] * drop(X))
-    f <- exp(f)
-    if(object$xt$center)
+    stop("by variables not supported!")
+  object$fit.fun <- function(X, b, ...) {
+    f <- b[1] * exp(-b[2] * exp(-b[3] * drop(X)))
+    if(center)
       f <- f - mean(f)
     f
   }
-  object$update <- bfit0_optim
+  object$update <- bfit_optim
   object$propose <- gmcmc_sm.slice
-  object$prior <- function(gamma) {
-    sum(dnorm(gamma, sd = 1000, log = TRUE))
-  }
-  object$edf <- function(x) { 3 }
+  object$prior <- function(b) { 1 }
   object$fixed <- TRUE
-  object$np <- 3
-  object$state$parameters <- rep(0, 3)
-  names(object$state$parameters) <- paste("g", 1:3, sep = "")
-  object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
+  object$state$parameters <- c("b1" = 0, "b2" = 0.5, "b3" = 0.1)
+  object$state$fitted.values <- rep(0, length(object$X))
   object$state$edf <- 3
-  object$lower <- rep(-Inf, 3)
-  object$upper <- rep(Inf, 3)
-  names(object$lower) <- names(object$upper) <- names(object$state$parameters)
-
+  object$special.npar <- 3
   class(object) <- c("gc.smooth", "no.mgcv", "special")
   object
 }
@@ -4685,8 +4685,18 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
 
           b <- paste(id, "s", j,
             if(is.null(colnames(obj$smooth.construct[[j]]$X))) {
-              paste("b", 1:ncol(obj$smooth.construct[[j]]$X), sep = "")
+              if(!inherits(obj$smooth.construct[[j]], "special")) {
+                paste("b", 1:ncol(obj$smooth.construct[[j]]$X), sep = "")
+              } else {
+                npar  <- if(!is.null(obj$smooth.construct[[j]]$state$parameters)) {
+                  length(get.state(obj$smooth.construct[[j]], "b"))
+                } else {
+                  ncol(obj$smooth.construct[[j]]$X)
+                }
+                paste("b", 1:npar, sep = "")
+              }
             } else colnames(obj$smooth.construct[[j]]$X), sep = ".")
+
           tn <- c(obj$smooth.construct[[j]]$term, if(obj$smooth.construct[[j]]$by != "NA") {
             obj$smooth.construct[[j]]$by
           } else NULL)

@@ -280,11 +280,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
   x$a <- if(is.null(x$xt[["a"]])) 1e-04 else x$xt[["a"]]
   x$b <- if(is.null(x$xt[["b"]])) 1e-04 else x$xt[["b"]]
   if(is.null(x$edf)) {
-    x$edf <- function(x, type = 1) {
-      if(type > 1) {
-        if(!is.null(x$state$edf))
-          return(x$state$edf)
-      }
+    x$edf <- function(x) {
       tau2 <- get.state(x, "tau2")
       if(x$fixed | !length(tau2)) return(ncol(x$X))
       if(is.null(x$state$XX))
@@ -506,7 +502,9 @@ get.eta <- function(x, expand = TRUE)
     eta[[j]] <- 0
     for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
       par <- x[[nx[j]]]$smooth.construct[[sj]]$state$parameters
-      par <- par[x[[nx[j]]]$smooth.construct[[sj]]$pid$b]
+      par <- if(!is.null(x[[nx[j]]]$smooth.construct[[sj]]$pid)) {
+        par[x[[nx[j]]]$smooth.construct[[sj]]$pid$b]
+      } else get.state(x[[nx[j]]]$smooth.construct[[sj]], "b")
       fit <- x[[nx[j]]]$smooth.construct[[sj]]$fit.fun(x[[nx[j]]]$smooth.construct[[sj]]$X, par, expand)
       eta[[j]] <- eta[[j]] + fit
     }
@@ -794,7 +792,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         if(inner) {
           tbf <- inner_bf(x[[nx[j]]]$smooth.construct, y, eta, family,
             edf = edf, id = nx[j], z = z, hess = hess, weights = weights[[nx[j]]],
-            criterion = criterion)
+            criterion = criterion, iteration = iter)
           x[[nx[j]]]$smooth.construct <- tbf$x
           edf <- tbf$edf
           eta <- tbf$eta
@@ -1442,15 +1440,16 @@ bfit_optim <- function(x, family, y, eta, id, weights, criterion, ...)
   tpar <- x$state$parameters
 
   ## Objective for regression coefficients.
-  objfun <- function(gamma, tau2 = NULL) {
-    tpar <- set.par(tpar, gamma, "b")
+  objfun <- function(b, tau2 = NULL) {
+    tpar <- set.par(tpar, b, "b")
     if(!is.null(tau2) & !x$fixed)
       tpar <- set.par(tpar, tau2, "tau2")
-    eta2[[id]] <- eta[[id]] + x$fit.fun(x$X, tpar)
-    ll <- if(is.null(weights)) {
+    fit <- x$fit.fun(x$X, b)
+    eta2[[id]] <- eta[[id]] + fit
+    ll <- if(is.null(weights[[id]])) {
       family$loglik(y, family$map2par(eta2))
     } else {
-      sum(family$d(y, family$map2par(eta2)) * weights, na.rm = TRUE)
+      sum(family$d(y, family$map2par(eta2)) * weights[[id]], na.rm = TRUE)
     }
     lp <- x$prior(tpar)
     val <- -1 * (ll + lp)
@@ -1473,16 +1472,15 @@ bfit_optim <- function(x, family, y, eta, id, weights, criterion, ...)
   } else NULL
 
   suppressWarnings(opt <- try(optim(get.par(tpar, "b"), fn = objfun, gr = grad,
-    method = "BFGS", control = list(), tau2 = get.par(tpar, "tau2")), silent = TRUE))
+    method = "BFGS", control = list(), tau2 = get.par(tpar, "tau2"), hessian = TRUE),
+    silent = TRUE))
 
   if(!inherits(opt, "try-error")) {
     tpar <- set.par(tpar, opt$par, "b")
     x$state$fitted.values <- x$fit.fun(x$X, tpar)
     x$state$parameters <- tpar
+    x$state$hessian <- opt$hessian
   }
-
-  if(!x$fixed)
-    x$state$edf <- x$edf(x)
 
   return(x$state)
 }
@@ -1613,12 +1611,19 @@ opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
       y <- y[[1]]
   }
 
+  for(i in names(x)) {
+    for(j in seq_along(x[[i]]$smooth.construct)) {
+      if(is.null(x[[i]]$smooth.construct[[j]]$grad))
+        gradient <- FALSE
+    }
+  }
+
   par <- get.all.par(x, list = FALSE, drop = TRUE)
 
-  if(!hessian) {
-    if(verbose)
-      bamlss_log_posterior_iteration <<- 1
+  if(verbose)
+    bamlss_log_posterior_iteration <<- 1
 
+  if(!hessian) {
     opt <- optim(par, fn = log_posterior,
       gr = if(!is.null(family$score) & gradient) grad_posterior else NULL,
       x = x, y = y, family = family, method = "BFGS", verbose = verbose,
@@ -1639,11 +1644,16 @@ opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
     fn <- if(is.null(family$p2d)) {
       log_posterior
     } else function(par, ...) { sum(family$p2d(par, log = TRUE), na.rm = TRUE) }
-
     opt <- optimHess(par, fn = fn,
       gr = if(!is.null(family$score) & gradient & is.null(family$p2d)) grad_posterior else NULL,
       x = x, y = y, family = family, verbose = verbose, digits = digits,
       control = list(fnscale = -1, reltol = eps, maxit = maxit))
+
+    if(verbose) {
+      cat("\n")
+      rm(bamlss_log_posterior_iteration, envir = .GlobalEnv)
+    }
+
     return(opt)
   }
 }
