@@ -2386,7 +2386,7 @@ add.partial <- function(x, samples = FALSE, nsamps = 100)
 c95 <- function(x)
 {
   qx <- quantile(x, probs = c(0.025, 0.975), na.rm = TRUE)
-  return(c("2.5%" = qx[1], "Mean" = mean(x, na.rm = TRUE), "97.5%" = qx[2]))
+  return(c(qx[1], "Mean" = mean(x, na.rm = TRUE), qx[2]))
 }
 
 
