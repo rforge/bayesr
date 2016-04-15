@@ -46,36 +46,42 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
   \item{weights}{Prior weights on the data, as returned from function \code{\link{bamlss.frame}}.}
   \item{offset}{Can be used to supply model offsets for use in fitting,
     returned from function \code{\link{bamlss.frame}}.}
-  \item{update}{Sets the updating function for model terms, per default \code{"iwls"}, a
-    character pointing to the set of updating functions. Other options are
-    \code{"optim"} and \code{"lm"} etc., however this is more experimental
-    and should not be set by the user. Another option is to pass an updating function which
-    should be used for each model term, the structure of updating functions is described in the
-    details below.}
+  \item{update}{Sets the updating function for model terms, e.g. for a term \code{s(x)} in the model
+    formula. Per default this is set to \code{"iwls"}, a character pointing to the set of updating
+    functions, see above. Other options are \code{"optim"} and \code{"lm"} etc., however, this is
+    more experimental and should not be set by the user. Another option is to pass a full updating
+    function which should be used for each model term, the structure of updating functions is
+    described in the details below. Model terms may also have different updating functions, see
+    the example section implementing a new model term constructor for Gompertz growth curves
+    using this feature.}
   \item{criterion}{Set the information criterion that should be used, e.g., for smoothing
     variance selection. Options are the corrected AIC \code{"AICc"}, the \code{"BIC"} and
     \code{"AIC"}.}
   \item{eps}{The relative convergence tolerance of the backfitting algorithm.}
   \item{maxit}{The maximum number of iterations for the backfitting algorithm}
-  \item{outer}{Should the current working observations be computed in one outer iteration,
-    otherwise the working observations are computed anew for each model term updating step.}
+  \item{outer}{Should the current working observations and weights be computed in one outer
+    iteration, otherwise the working observations are computed anew for each model term
+    updating step.}
   \item{inner}{Should the model terms for one parameter of the modeled distribution be
     fully updated until convergence in an inner iteration, i.e., the algorithm waits until
     coefficients for the current distribution parameter do not change anymore before updating
     the next parameter.}
-  \item{mgcv}{Should the \pkg{mgcv} \code{\link{gam}} function be used for computing updates in
-    an \code{inner} iteration with working observations provided in an \code{outer} iteration.}
+  \item{mgcv}{Should the \pkg{mgcv} \code{\link[mgcv]{gam}} function be used for computing updates
+    in an \code{inner} iteration with working observations provided in an \code{outer} iteration.}
   \item{verbose}{Print information during runtime of the algorithm.}
   \item{digits}{Set the digits for printing when \code{verbose = TRUE}.}
   \item{eta}{The current value of the predictors, provided as a named list, one list entry
-    for each parameter.}
+    for each parameter. The names correspond to the parameter names in the family object,
+    see \code{\link{family.bamlss}}. E.g., when using the \code{\link{gaussian.bamlss}} family
+    object, the current values for the mean can be extracted by \code{eta\$mu} and for the
+    standard deviation by \code{eta\$sigma}.}
   \item{id}{Character, the name of the current parameter for which the model term should
     be updated.}
   \item{\dots}{For function \code{bfit()}, arguments passed to function
     \code{\link{bamlss.engine.setup}}. For updating functions, within the dots argument the
     actual \code{iteration} number of the backfitting algorithm, the actual total number of
     equivalent degrees of freedom \code{edf} and vectors \code{z} and \code{hess}
-    if argument \code{outer = TRUE} are provided.}
+    only if argument \code{outer = TRUE} are provided.}
 }
 
 \details{
@@ -107,9 +113,10 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
   function within the \code{xt} argument of the \pkg{mgcv} smooth term constructor functions, see
   e.g. function \code{\link[mgcv]{s}}. If the \code{xt} list then holds an element named \code{"update"},
   which is a valid updating function, this updating function is used for the corresponding model
-  term. This way it is possible to create special updating functions, e.g., that do not fit in the
-  IWLS scheme. See the examples below. Note that this does not work if \code{mgcv = TRUE}, since the
-  \code{\link[mgcv]{gam}} function assumes a strict linear representation of smooth terms.
+  term. This way it is possible to call different (special) updating functions for specific terms,
+  e.g., that do not fit in the IWLS scheme. See the examples below. Note that this does not work if
+  \code{mgcv = TRUE}, since the \code{\link[mgcv]{gam}} function assumes a strict linear
+  representation of smooth terms.
   
   A model term updating function has the following arguments:
 
@@ -194,7 +201,7 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
 
 \seealso{
   \code{\link{bamlss}}, \code{\link{bamlss.frame}},
-  \code{\link{bamlss.engine.setup}}, \code{\link{set.starting.values}}
+  \code{\link{bamlss.engine.setup}}, \code{\link{set.starting.values}}, \code{\link{s2}}
 }
 
 \examples{
