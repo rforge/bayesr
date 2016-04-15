@@ -262,24 +262,28 @@ Predict.matrix.gc.smooth <- function(object, data, knots)
   X
 }
 
-## Growth curve data example.
-d <- data.frame(
-  "time" = 1:15,
-  "y" = c(16.08, 33.83, 65.80, 97.20,
-    191.55, 326.20, 386.87, 520.53, 590.03,
-    651.92, 724.93, 699.56, 689.96, 637.56, 717.41)
-)
+## Heteroscedastic growth curve data example.
+set.seed(123)
+
+d <- data.frame("time" = 1:30)
+d$y <- 2 + 1 / (1 + exp(0.5 * (15 - d$time))) +
+  rnorm(30, sd = exp(-4 + 0.1 * d$time))
 
 ## Special model terms must be called with s2()!
-set.seed(333)
 f <- list(
   "mu" = y ~ s2(time, bs = "gc"),
   "sigma" = ~ s(time)
 )
+
+## Fit model with special model term.
 b <- bamlss(f, data = d,
   optimizer = bfit, sampler = GMCMC)
+
+## Plot the fitted curves.
 plot(b)
-nd <- data.frame("time" = seq(1, 15, length = 100))
+
+## Predict with special model term.
+nd <- data.frame("time" = seq(1, 30, length = 100))
 p <- predict(b, newdata = nd, model = "mu", FUN = c95)
 plot(d, ylim = range(c(d$y, p)))
 matplot(nd$time, p, type = "l",
