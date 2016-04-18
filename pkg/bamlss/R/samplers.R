@@ -716,20 +716,21 @@ gmcmc_sm.iwlsC <- function(family, theta, id, prior,
     for(j in names(offset))
       eta[[j]] <- eta[[j]] + offset[[j]]
   }
-  W <- if(is.null(weights[[id[1]]])) 1.0 else weights[[id[1]]]
-  rval <- .Call("gmcmc_iwls", family, theta, id, eta, y, data,
-    zworking, resids, id[1], W, rho, PACKAGE = "bamlss")
 
   ## Sample variance parameter.
   if(!data$fixed & !data$fxsp & length(data$S)) {
     if(length(data$S) > 1) {
-      i <- grep("tau2", names(rval$parameters))
+      i <- grep("tau2", names(theta[[id[1]]][[id[2]]]))
       for(j in i) {
-        rval$parameters <- uni.slice(rval$parameters, data, family, NULL,
+        theta[[id[1]]][[id[2]]] <- uni.slice(theta[[id[1]]][[id[2]]], data, family, NULL,
           NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = 0)
       }
     }
   }
+
+  W <- if(is.null(weights[[id[1]]])) 1.0 else weights[[id[1]]]
+  rval <- .Call("gmcmc_iwls", family, theta, id, eta, y, data,
+    zworking, resids, id[1], W, rho, PACKAGE = "bamlss")
 
   return(list("parameters" = rval$parameters, "alpha" = rval$alpha, "extra" = c("edf" = rval$edf)))
 }
@@ -881,6 +882,16 @@ gmcmc_sm.iwls <- function(family, theta, id, prior, eta, y, data, weights = NULL
 
   ## Compute acceptance probablity.
   alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
+
+#cat("\n-----------\n")
+#cat("pibetaprop", pibetaprop, "\n")
+#cat("qbeta", qbeta, "\n")
+#cat("p2", p2, "\n")
+#cat("pibeta", pibeta, "\n")
+#cat("qbetaprop", qbetaprop, "\n")
+#cat("p1", p1, "\n")
+#cat("alpha", exp(alpha), "\n")
+#print(data$label)
 
   return(list("parameters" = theta, "alpha" = alpha, "extra" = c("edf" = edf)))
 }
