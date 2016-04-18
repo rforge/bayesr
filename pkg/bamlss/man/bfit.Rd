@@ -92,7 +92,7 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
   and weights only the derivatives of the log-likelihood w.r.t. the linear predictors are required.
 
   It is assumed that the provided \code{family} object holds functions for computing the first
-  and second derivatives of the log-likelihood w.r.t. the linear predictors. These Functions
+  and second order derivatives of the log-likelihood w.r.t. the linear predictors. These Functions
   are provided within the named lists \code{"score"} and \code{"hess"} within the \code{family}
   object. See the documentation of \code{\link{family.bamlss}} and the code of the provided
   families, e.g. \code{\link{gaussian.bamlss}}, for examples of the required structure.
