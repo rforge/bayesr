@@ -85,7 +85,8 @@ export(
   "fmt",
   "rSurvTime2",
   "scale2",
-  "continue"
+  "continue",
+  "homstart_data"
 )
 
 S3method("plot", "bamlss")
