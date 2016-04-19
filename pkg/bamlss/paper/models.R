@@ -3,7 +3,7 @@
 ##############################
 ## Austria: http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/nuts_einheiten/index.html
 ## AustriaTopo: https://www.ngdc.noaa.gov/mgg/global/global.html
-if(!file.exists("rainmodel.rda") & FALSE) {
+if(!file.exists("rainmodel.rda")) {
   library("bamlss")
 
   if(file.exists("homstart.rda")) {
@@ -53,12 +53,9 @@ if(!file.exists("firemodel.rda")) {
       ti(daytime,lon,lat,bs=c("cc","cr"),d=c(1,2),k=c(10,30))
   )
 
-#  firemodel <- bamlss(f, data = LondonFire, family = "cox",
-#    subdivisions = 15, nu = 0.01, maxit = 1000, sampler = MVNORM)
-
   firemodel <- bamlss(f, data = LondonFire, family = "cox",
-    subdivisions = 15, nu = 0.01, maxit = 1000,
-    n.iter = 2000, burnin = 1000, thin = 3, cores = 3)
+    subdivisions = 15, maxit = 1000,
+    n.iter = 4000, burnin = 2000, thin = 10, cores = 8)
 
   save(firemodel, file = "firemodel.rda")
 
