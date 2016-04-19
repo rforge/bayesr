@@ -4002,13 +4002,15 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
       cat("Sampler summary:\n-\n")
       k <- 1; ok <- FALSE
       for(j in sort(names(x$model.stats$sampler))) {
-        ok <- TRUE
-        cat(if(k > 1) " " else "", j, " = ", round(x$model.stats$sampler[[j]], digits), sep = "")
-        k <- k + 1
-        if(k == 4) {
-          k <- 1
-          cat("\n")
-          ok <- FALSE
+        if(length(x$model.stats$sampler[[j]]) < 2) {
+          ok <- TRUE
+          cat(if(k > 1) " " else "", j, " = ", round(x$model.stats$sampler[[j]], digits), sep = "")
+          k <- k + 1
+          if(k == 4) {
+            k <- 1
+            cat("\n")
+            ok <- FALSE
+          }
         }
       }
       if(ok) {
@@ -4022,13 +4024,15 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
       cat("Optimizer summary:\n-\n")
       k <- 1
       for(j in sort(names(x$model.stats$optimizer))) {
-        ok <- TRUE
-        cat(if(k > 1) " " else "", j, " = ", round(x$model.stats$optimizer[[j]], digits), sep = "")
-        k <- k + 1
-        if(k == 4) {
-          k <- 1
-          cat("\n")
-          ok <- FALSE
+        if(length(x$model.stats$optimizer[[j]]) < 2) {
+          ok <- TRUE
+          cat(if(k > 1) " " else "", j, " = ", round(x$model.stats$optimizer[[j]], digits), sep = "")
+          k <- k + 1
+          if(k == 4) {
+            k <- 1
+            cat("\n")
+            ok <- FALSE
+          }
         }
       }
       if(ok) cat("\n---\n")
