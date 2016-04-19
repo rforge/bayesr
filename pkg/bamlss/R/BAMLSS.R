@@ -599,8 +599,18 @@ make.prior <- function(x) {
     fixed <- if(is.null(x$fixed)) FALSE else x$fixed
 
     prior <- function(parameters) {
-      gamma <- parameters[x$pid$b]
-      tau2 <-  parameters[x$pid$tau2]
+      if(is.null(x$pid)) {
+        if(!is.null(names(parameters))) {
+          gamma <- get.par(parameters, "b")
+          tau2 <- get.par(parameters, "tau2")
+        } else {
+          gamma <- parameters
+          tau2 <- numeric(0)
+        }
+      } else {
+        gamma <- parameters[x$pid$b]
+        tau2 <-  parameters[x$pid$tau2]
+      }
       if(fixed | !length(tau2)) {
         lp <- sum(dnorm(gamma, sd = 1000, log = TRUE))
       } else {
