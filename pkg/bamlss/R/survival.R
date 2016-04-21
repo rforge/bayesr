@@ -1038,8 +1038,8 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take, derivMat = FA
   x$state$optimize <- FALSE
 
   if(derivMat) {
-    x$orig.class <- class(x)
-    x$deriv.eps <- eps
+    x$xt$orig.class <- class(x)
+    x$xt$deriv.eps <- eps
     class(x) <- "deriv.smooth"
   }
 
@@ -1050,8 +1050,10 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take, derivMat = FA
 ## Class for Predict.matrix with derivatives.
 Predict.matrix.deriv.smooth <- function(object, data)
 {
-  eps <- object$deriv.eps
-  class(object) <- object$orig.class
+  eps <- object$xt$deriv.eps
+  class(object) <- object$xt$orig.class
+  data <- as.data.frame(data)
+  attr(object, "qrc") <- NULL
   X <- PredictMat(object, data)
   for(j in object$term)
     data[[j]] <- data[[j]] + eps
