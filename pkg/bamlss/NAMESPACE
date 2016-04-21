@@ -109,5 +109,6 @@ S3method("model.matrix", "bamlss.formula")
 S3method("smooth.construct", "bamlss.frame")
 S3method("smooth.construct", "kr.smooth.spec")
 S3method("Predict.matrix", "kriging.smooth")
+S3method("Predict.matrix", "deriv.smooth")
 S3method("bamlss.engine.setup.smooth", "default")
 
