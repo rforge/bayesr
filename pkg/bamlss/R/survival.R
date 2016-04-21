@@ -971,9 +971,11 @@ param_time_transform <- function(x, formula, data, grid, yname, timevar, take, d
     f
   }
   x$state$fitted_timegrid <- x$fit.fun_timegrid(get.state(x, "b"))
+  class(x) <- c(class(x), "deriv.model.matrix")
 
   x
 }
+
 
 sm_time_transform <- function(x, data, grid, yname, timevar, take, derivMat = FALSE, eps = 1e-7)
 {
@@ -1035,7 +1037,28 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take, derivMat = FA
   x$state$fitted_timegrid <- x$fit.fun_timegrid(get.state(x, "b"))
   x$state$optimize <- FALSE
 
+  if(derivMat) {
+    x$orig.class <- class(x)
+    x$deriv.eps <- eps
+    class(x) <- "deriv.smooth"
+  }
+
   x
+}
+
+
+## Class for Predict.matrix with derivatives.
+Predict.matrix.deriv.smooth <- function(object, data)
+{
+  eps <- object$deriv.eps
+  class(object) <- object$orig.class
+  X <- PredictMat(object, data)
+  for(j in object$term)
+    data[[j]] <- data[[j]] + eps
+  if(object$by != "NA")
+    data[[object$by]] <- data[[object$by]] + eps
+  X <- -1 * (X - PredictMat(object, data)) / eps
+  X
 }
 
 

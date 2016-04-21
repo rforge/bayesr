@@ -1262,7 +1262,7 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL, logLik = FAL
             } else family$p2logLik(mpar), silent = TRUE)
         }
       }
-      if(!inherits(ll, "try-error")) {
+      if(!inherits(ll, "try-error") & !all(!is.finite(dev))) {
         mdev <- -2 * ll
         pd <- mean(dev, na.rm = TRUE) - mdev
         DIC <- mdev + 2 * pd
