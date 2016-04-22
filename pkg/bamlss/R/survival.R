@@ -1054,10 +1054,14 @@ Predict.matrix.deriv.smooth <- function(object, data)
   class(object) <- object$xt$orig.class
   data <- as.data.frame(data)
   X <- Predict.matrix(object, data)
-  for(j in object$term)
-    data[[j]] <- data[[j]] + eps
-  if(object$by != "NA")
-    data[[object$by]] <- data[[object$by]] + eps
+  for(j in object$term) {
+    if(!is.factor(data[[j]]))
+      data[[j]] <- data[[j]] + eps
+  }
+  if(object$by != "NA") {
+    if(!is.factor(data[[object$by]]))
+      data[[object$by]] <- data[[object$by]] + eps
+  }
   dX <- Predict.matrix(object, data)
   X <- -1 * (X - dX) / eps
   X
