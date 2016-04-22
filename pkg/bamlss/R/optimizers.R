@@ -2355,7 +2355,7 @@ set.starting.values <- function(x, start)
             i <- grep2(take, cn, fixed = TRUE)
             if(length(i)) {
               tpar <- start[take[i]]
-              i <- grep2(c(".edf", ".accepted", ".alpha"), names(tpar))
+              i <- grep2(c(".edf", ".accepted", ".alpha"), names(tpar), fixed = TRUE)
               if(length(i))
                 tpar <- tpar[-i]
               names(tpar) <- gsub(paste(id, "p.", sep = "."), "", names(tpar), fixed = TRUE)
@@ -2373,7 +2373,7 @@ set.starting.values <- function(x, start)
           }
           if(length(take)) {
             tpar <- start[take]
-            i <- grep2(c(".edf", ".accepted", ".alpha"), names(tpar))
+            i <- grep2(c(".edf", ".accepted", ".alpha"), names(tpar), fixed = TRUE)
             tpar <- if(length(i)) tpar[-i] else tpar
             names(tpar) <- gsub(paste(tl, ".", sep = ""), "", names(tpar), fixed = TRUE)
             spar <- x[[id]]$smooth.construct[[j]]$state$parameters
