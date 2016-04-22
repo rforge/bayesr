@@ -2281,7 +2281,7 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
   if(is.null(FUN)) {
     FUN <- c95
   }
-  if(inherits(x, "mgcv.smooth") & nrow(psamples) > 39L) {
+  if((inherits(x, "mgcv.smooth") | inherits(x, "deriv.smooth")) & (nrow(psamples) > 39L)) {
     smf <- quick_quantiles(X, psamples)
   } else {
     if(nt < 2) {
