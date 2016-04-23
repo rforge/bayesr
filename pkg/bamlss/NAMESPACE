@@ -70,6 +70,14 @@ export(
   "results.bamlss.default",
   "parameters",
 
+  ## vis functions
+  "plot2d",
+  "plot3d",
+  "plotmap",
+  "plotblock",
+  "sliceplot",
+  "colorlegend",
+
   ## others
   "GAMart",
   "Surv2",
