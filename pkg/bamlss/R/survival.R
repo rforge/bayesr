@@ -1101,7 +1101,8 @@ survint <- function(X, eta, width, gamma, eta2 = NULL, index = NULL, dX = NULL, 
 
 ## Survival probabilities.
 cox.predict <- function(object, newdata, type = c("link", "parameter", "probabilities"),
-  FUN = function(x) { mean(x, na.rm = TRUE) }, time, subdivisions = 100, ...)
+  FUN = function(x) { mean(x, na.rm = TRUE) }, time, subdivisions = 100, cores = NULL,
+  chunks = 1, ...)
 {
   if(is.null(newdata))
     newdata <- model.frame(object)
@@ -1117,35 +1118,85 @@ cox.predict <- function(object, newdata, type = c("link", "parameter", "probabil
   if(missing(time))
     stop("please specify the time!")
   yname <- response.name(formula(as.Formula(object$x$lambda$formula, rhs = FALSE)))[1]
-  timegrid <- rep(list(seq(0, time, length = subdivisions)), length = nrow(newdata))
-  gdim <- c(length(timegrid), length(timegrid[[1]]))
-  width <- timegrid[[1]][2]
 
-  pred.setup <- predict.bamlss(object, newdata, type = "link",
-    get.bamlss.predict.setup = TRUE, ...)
-  enames <- pred.setup$enames
+  cox_pobs <- function(data) {
+    timegrid <- rep(list(seq(0, time, length = subdivisions)), length = nrow(data))
+    gdim <- c(length(timegrid), length(timegrid[[1]]))
+    width <- timegrid[[1]][2]
 
-  pred_tc <- with(pred.setup, .predict.bamlss("gamma",
-    object$x$gamma, samps, enames$gamma, intercept,
-    nsamps, newdata, env))
+    pred.setup <- predict.bamlss(object, data, type = "link",
+      get.bamlss.predict.setup = TRUE, ...)
+    enames <- pred.setup$enames
 
-  pred_tv <- with(pred.setup, .predict.bamlss.surv.td("lambda",
-    object$x$lambda$smooth.construct, samps, enames$lambda, intercept,
-    nsamps, newdata, env, yname, timegrid,
-    drop.terms.bamlss(object$x$lambda$terms, sterms = FALSE, keep.response = FALSE)))
+    pred_tc <- with(pred.setup, .predict.bamlss("gamma",
+      object$x$gamma, samps, enames$gamma, intercept,
+      nsamps, data, env))
 
-  probs <- NULL
-  for(i in 1:ncol(pred_tv)) {
-    eta <- matrix(pred_tv[, i], nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
-    eeta <- exp(eta)
-    int <- width * (0.5 * (eeta[, 1] + eeta[, subdivisions]) + apply(eeta[, 2:(subdivisions - 1)], 1, sum))
-    probs <- cbind(probs, exp(-1 * exp(pred_tc[, i]) * int))
+    pred_tv <- with(pred.setup, .predict.bamlss.surv.td("lambda",
+      object$x$lambda$smooth.construct, samps, enames$lambda, intercept,
+      nsamps, data, env, yname, timegrid,
+      drop.terms.bamlss(object$x$lambda$terms, sterms = FALSE, keep.response = FALSE)))
+
+    probs <- NULL
+    for(i in 1:ncol(pred_tv)) {
+      eta <- matrix(pred_tv[, i], nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
+      eeta <- exp(eta)
+      int <- width * (0.5 * (eeta[, 1] + eeta[, subdivisions]) + apply(eeta[, 2:(subdivisions - 1)], 1, sum))
+      probs <- cbind(probs, exp(-1 * exp(pred_tc[, i]) * int))
+    }
+
+    if(!is.null(FUN)) {
+      if(is.matrix(probs)) {
+        if(ncol(probs) > 1)
+          probs <- apply(probs, 1, FUN)
+      } 
+    }
+
+    return(probs)
   }
 
-  if(!is.null(FUN)) {
-    if(is.matrix(probs)) {
-      if(ncol(probs) > 1)
-        probs <- apply(probs, 1, FUN)
+  if(is.null(cores)) {
+    if(chunks < 2) {
+      probs <- cox_pobs(newdata)
+    } else {
+      id <- sort(rep(1:chunks, length.out = nrow(newdata)))
+      probs <- list()
+      for(i in 1:chunks)
+        probs[[i]] <- cox_pobs(newdata[id == i, , drop = FALSE])
+      probs <- if(is.matrix(probs[[1]])) {
+        do.call("rbind", probs)
+      } else {
+        do.call("c", probs)
+      }
+    }
+  } else {
+    require("parallel")
+    id <- sort(rep(1:cores, length.out = nrow(newdata)))
+
+    parallel_fun <- function(i) {
+      if(chunks < 2) {
+        pr <- cox_probs(newdata[id == i, , drop = FALSE])
+      } else {
+        nd <- newdata[id == i, , drop = FALSE]
+        idc <- sort(rep(1:chunks, length.out = nrow(nd)))
+        pr <- list()
+        for(j in 1:chunks)
+          pr[[j]] <- cox_pobs(nd[idc == j, , drop = FALSE])
+        pr <- if(is.matrix(pr[[1]])) {
+          do.call("rbind", pr)
+        } else {
+          do.call("c", pr)
+        }
+      }
+      return(pr)
+    }
+
+    probs <- mclapply(1:cores, parallel_fun, mc.cores = cores)
+
+    probs <- if(is.matrix(probs[[1]])) {
+      do.call("rbind", probs)
+    } else {
+      do.call("c", probs)
     }
   }
 
