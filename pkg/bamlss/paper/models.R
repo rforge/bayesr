@@ -131,7 +131,7 @@ if(!file.exists("firemodel.rda")) {
 
     nd$spatial_prob <- predict(firemodel, newdata = nd,
       term = c("(arrivaltime)", "(arrivaltime,lon,lat)", "(fsintens)", "(daytime)", "(lon,lat)"),
-      intercept = TRUE, type = "prob", time = target, ...)
+      intercept = TRUE, type = "prob", time = target, cores = 4, chunks = 50, ...)
     nd$spatial_tc <- predict(firemodel, newdata = nd, model = "gamma",
       term = "(lon,lat)", intercept = FALSE)
     nd$spatial_td <- predict(firemodel, newdata = nd, model = "lambda",
