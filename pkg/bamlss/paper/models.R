@@ -99,9 +99,9 @@ if(!file.exists("firemodel.rda")) {
     }
 
     nd$id <- as.factor(nd$id)
-    nd$p50atime <- predict(firemodel, newdata = nd, model = "lambda", FUN = mean, intercept = FALSE)
+    nd$p50atime <- predict(firemodel, newdata = nd, model = "lambda", FUN = mean, intercept = FALSE, cores = 4, chunks = 100)
     if(spatial_daytime)
-      nd$p50dtime <- predict(firemodel, newdata = nd, model = "gamma", term = "daytime", intercept = FALSE)
+      nd$p50dtime <- predict(firemodel, newdata = nd, model = "gamma", term = "daytime", intercept = FALSE, cores = 4, chunks = 100)
     nd$atime <- nd$arrivaltime
     if(spatial_daytime)
       nd$dtime <- nd$daytime
@@ -131,14 +131,14 @@ if(!file.exists("firemodel.rda")) {
 
     nd$spatial_prob <- predict(firemodel, newdata = nd,
       term = c("(arrivaltime)", "(arrivaltime,lon,lat)", "(fsintens)", "(daytime)", "(lon,lat)"),
-      intercept = TRUE, type = "prob", time = target, cores = 4, chunks = 50, ...)
+      intercept = TRUE, type = "prob", time = target, cores = 4, chunks = 100, ...)
     nd$spatial_tc <- predict(firemodel, newdata = nd, model = "gamma",
-      term = "(lon,lat)", intercept = FALSE)
+      term = "(lon,lat)", intercept = FALSE, cores = 4, chunks = 50)
     nd$spatial_td <- predict(firemodel, newdata = nd, model = "lambda",
-      term = "(arrivaltime,lon,lat)", intercept = FALSE)
+      term = "(arrivaltime,lon,lat)", intercept = FALSE, cores = 4, chunks = 100)
     if(spatial_daytime) {
       nd$spatial_daytime <- predict(firemodel, newdata = nd, model = "gamma",
-        term = "(daytime,lon,lat)", intercept = FALSE)
+        term = "(daytime,lon,lat)", intercept = FALSE, cores = 4, chunks = 100)
     }
 
     return(list("curves" = fbh, "daytime" = fdt, "spatial" = nd, "target" = target))
