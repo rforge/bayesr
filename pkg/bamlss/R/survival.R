@@ -1120,7 +1120,7 @@ cox.predict <- function(object, newdata, type = c("link", "parameter", "probabil
     stop("please specify the time!")
   yname <- response.name(formula(as.Formula(object$x$lambda$formula, rhs = FALSE)))[1]
 
-  cox_pobs <- function(data) {
+  cox_probs <- function(data) {
     timegrid <- rep(list(seq(0, time, length = subdivisions)), length = nrow(data))
     gdim <- c(length(timegrid), length(timegrid[[1]]))
     width <- timegrid[[1]][2]
@@ -1158,12 +1158,12 @@ cox.predict <- function(object, newdata, type = c("link", "parameter", "probabil
 
   if(is.null(cores)) {
     if(chunks < 2) {
-      probs <- cox_pobs(newdata)
+      probs <- cox_probs(newdata)
     } else {
       id <- sort(rep(1:chunks, length.out = nrow(newdata)))
       probs <- list()
       for(i in 1:chunks)
-        probs[[i]] <- cox_pobs(newdata[id == i, , drop = FALSE])
+        probs[[i]] <- cox_probs(newdata[id == i, , drop = FALSE])
       probs <- if(is.matrix(probs[[1]])) {
         do.call("rbind", probs)
       } else {
@@ -1181,8 +1181,9 @@ cox.predict <- function(object, newdata, type = c("link", "parameter", "probabil
         nd <- newdata[id == i, , drop = FALSE]
         idc <- sort(rep(1:chunks, length.out = nrow(nd)))
         pr <- list()
-        for(j in 1:chunks)
-          pr[[j]] <- cox_pobs(nd[idc == j, , drop = FALSE])
+        for(j in 1:chunks) {
+          pr[[j]] <- cox_probs(nd[idc == j, , drop = FALSE])
+        }
         pr <- if(is.matrix(pr[[1]])) {
           do.call("rbind", pr)
         } else {

@@ -59,7 +59,7 @@ if(!file.exists("firemodel.rda")) {
 
   save(firemodel, file = "firemodel.rda")
 
-  data_basehaz <- function(n = 30, target = 6, k = 20, ...)
+  predict_firemodel <- function(n = 30, target = 6, k = 20, cores = 4, chunks = 50, ...)
   {
     gpclibPermit()
 
@@ -99,9 +99,9 @@ if(!file.exists("firemodel.rda")) {
 
     nd <- unique(nd[order(nd$id), ])
     nd$id <- as.factor(nd$id)
-    nd$p50atime <- predict(firemodel, newdata = nd, model = "lambda", FUN = mean, intercept = FALSE, cores = 4, chunks = 100)
+    nd$p50atime <- predict(firemodel, newdata = nd, model = "lambda", FUN = mean, intercept = FALSE, cores = cores, chunks = chunks)
     if(spatial_daytime)
-      nd$p50dtime <- predict(firemodel, newdata = nd, model = "gamma", term = "daytime", intercept = FALSE, cores = 4, chunks = 100)
+      nd$p50dtime <- predict(firemodel, newdata = nd, model = "gamma", term = "daytime", intercept = FALSE, cores = cores, chunks = chunks)
     nd$atime <- nd$arrivaltime
     if(spatial_daytime)
       nd$dtime <- nd$daytime
@@ -130,20 +130,20 @@ if(!file.exists("firemodel.rda")) {
     nd$fsintens <- extract(fsintens, as.matrix(nd[ , c("lon", "lat")]))
     nd$spatial_prob <- predict(firemodel, newdata = nd,
       term = c("(arrivaltime)", "(arrivaltime,lon,lat)", "(fsintens)", "(daytime)", "(lon,lat)"),
-      intercept = TRUE, type = "prob", time = target, cores = 4, chunks = 100, ...)
+      intercept = TRUE, type = "prob", time = target, cores = cores, chunks = chunks, ...)
     nd$spatial_tc <- predict(firemodel, newdata = nd, model = "gamma",
-      term = "(lon,lat)", intercept = FALSE, cores = 4, chunks = 100)
+      term = "(lon,lat)", intercept = FALSE, cores = cores, chunks = chunks)
     nd$spatial_td <- predict(firemodel, newdata = nd, model = "lambda",
-      term = "(arrivaltime,lon,lat)", intercept = FALSE, cores = 4, chunks = 100)
+      term = "(arrivaltime,lon,lat)", intercept = FALSE, cores = cores, chunks = chunks)
     if(spatial_daytime) {
       nd$spatial_daytime <- predict(firemodel, newdata = nd, model = "gamma",
-        term = "(daytime,lon,lat)", intercept = FALSE, cores = 4, chunks = 100)
+        term = "(daytime,lon,lat)", intercept = FALSE, cores = cores, chunks = chunks)
     }
 
     return(list("curves" = fbh, "daytime" = fdt, "spatial" = nd, "target" = target))
   }
 
-  firemodel_plotdata <- data_basehaz(30, 6, subdivisions = 15)
+  firemodel_plotdata <- predict_firemodel(250, 6, subdivisions = 15)
 
   save(firemodel, firemodel_plotdata, file = "firemodel_plotdata.rda")
 }
