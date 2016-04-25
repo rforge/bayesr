@@ -1593,10 +1593,10 @@ BCCG2.bamlss <- function(...)
 }
 
 
-mvn.bamlss <- function(...)
+mvnorm.bamlss <- function(...)
 {
   rval <- list(
-    "family" = "mvn",
+    "family" = "mvnorm",
     "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho"),
     "links" = c("identity", "identity", "log", "log", "rhogit"),
     "d" = function(y, par, log = FALSE) {

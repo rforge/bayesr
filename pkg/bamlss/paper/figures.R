@@ -38,7 +38,7 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   homstart <- subset(homstart, year >= 1979)
 
   data("Austria")
-  load("rainmodel-2016-03-04.rda")
+  load("rainmodel.rda")
 
   nd <- as.data.frame(coordinates(AustriaTopo))
   names(nd) <- c("long", "lat")
@@ -229,7 +229,7 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   epng("figures/rainmodel-effects-spatial-mu.png", width = 4.5, height = 3.5)
   par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot(Austria, xlab = "Longitude [deg]", ylab = "Latitude [deg]", lwd = 0.3)
-  xymap(long, lat, fmu, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
+  bamlss:::xymap(long, lat, fmu, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
     add = TRUE, color = diverge_hcl, shift = c(0.09, 0.04), distance.labels = 0,
     width = 0.3, symmetric = TRUE, swap = FALSE, range = ylim.mu, digits = 1)
   plot(Austria, add = TRUE, lwd = 0.3)
@@ -243,7 +243,7 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   epng("figures/rainmodel-effects-spatial-sigma.png", width = 4.5, height = 3.5)
   par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot(Austria, xlab = "Longitude [deg]", ylab = "Latitude [deg]", lwd = 0.3)
-  xymap(long, lat, fsigma, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
+  bamlss:::xymap(long, lat, fsigma, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
     add = TRUE, color = diverge_hcl, shift = c(0.09, 0.04), distance.labels = 0,
     width = 0.3, symmetric = TRUE, swap = FALSE, range = ylim.sigma, digits = 1)
   plot(Austria, add = TRUE, lwd = 0.3)
@@ -258,7 +258,7 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   epng("figures/rainmodel-effects-predict.png", width = 9, height = 5, res = 200)
   par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot(Austria, xlab = "Longitude [deg]", ylab = "Latitude [deg]", lwd = 0.3)
-  xymap(long, lat, rain10, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
+  bamlss:::xymap(long, lat, rain10, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
     add = TRUE, color = colors.rain, shift = c(0.1, 0.1), distance.labels = 0,
     width = 0.3 / 2, height = 0.06 * 4/6, symmetric = FALSE, swap = FALSE, digits = 1, range = c(0, 0.6),
     lrange = round(c(0, max(nd$rain10)), 1))
@@ -351,7 +351,7 @@ if(!file.exists("figures/firemodel-data.png")) {
       range <- quantile(co$spatial_daytime, probs = 0.9)
       range <- c(-1 * range, range)
     }
-    xymap(lon, lat, spatial_daytime, data = co, pos = "bottomright",
+    bamlss:::xymap(lon, lat, spatial_daytime, data = co, pos = "bottomright",
       layout = FALSE, map = FALSE, color = diverge_hcl, swap = TRUE,
       shift = c(0.03, 0.05), symmetric = TRUE, add = TRUE,
       side.legend = 2, digits = 1, range = range, lrange = round(lrange, 1),
@@ -399,7 +399,7 @@ if(!file.exists("figures/firemodel-data.png")) {
       plot(LondonBoundaries, xlab = "Longitude [deg]", ylab = "Latitude [deg]")
       lr <- c(0, max(data$spatial$spatial_prob))
       xr <- c(0, quantile(data$spatial$spatial_prob, probs = 0.95))
-      xymap(lon, lat, spatial_prob, data = data$spatial, pos = "bottomright",
+      bamlss:::xymap(lon, lat, spatial_prob, data = data$spatial, pos = "bottomright",
         layout = FALSE, map = FALSE, color = heat_hcl,
         shift = c(0.03, 0.05), symmetric = FALSE, add = TRUE,
         side.legend = 2, digits = 1, range = xr, lrange = round(lr, 1),
@@ -423,7 +423,7 @@ if(!file.exists("figures/firemodel-data.png")) {
       lr <- c(-1 * max(abs(lr)), max(abs(lr)))
       xr <- quantile(data$spatial$spatial_td, probs = 0.9)
       xr <- c(-1 * xr, xr)
-      xymap(lon, lat, spatial_td, data = data$spatial, pos = "bottomright",
+      bamlss:::xymap(lon, lat, spatial_td, data = data$spatial, pos = "bottomright",
         layout = FALSE, map = FALSE, color = diverge_hcl, swap = TRUE,
         shift = c(0.03, 0.05), symmetric = TRUE, add = TRUE,
         side.legend = 2, digits = 1, range = xr, lrange = round(lr, 1),
@@ -447,7 +447,7 @@ if(!file.exists("figures/firemodel-data.png")) {
       lr <- c(-1 * max(abs(lr)), max(abs(lr)))
       xr <- quantile(data$spatial$spatial_tc, probs = 0.9)
       xr <- c(-1 * xr, xr)
-      xymap(lon, lat, spatial_tc, data = data$spatial, pos = "bottomright",
+      bamlss:::xymap(lon, lat, spatial_tc, data = data$spatial, pos = "bottomright",
         layout = FALSE, map = FALSE, color = diverge_hcl, swap = TRUE,
         shift = c(0.03, 0.05), symmetric = TRUE, add = TRUE,
         side.legend = 2, digits = 1, range = xr, lrange = round(lr, 1),
@@ -465,7 +465,7 @@ if(!file.exists("figures/firemodel-data.png")) {
       lr <- c(-1 * max(abs(lr)), max(abs(lr)))
       xr <- quantile(data$spatial$spatial_daytime, probs = 0.9)
       xr <- c(-1 * xr, xr)
-      xymap(lon, lat, spatial_daytime, data = data$spatial, pos = "bottomright",
+      bamlss:::xymap(lon, lat, spatial_daytime, data = data$spatial, pos = "bottomright",
         layout = FALSE, map = FALSE, color = diverge_hcl, swap = TRUE,
         shift = c(0.03, 0.05), symmetric = TRUE, add = TRUE,
         side.legend = 2, digits = 1, range = xr, lrange = round(lr, 1),
@@ -652,7 +652,7 @@ if(!file.exists("figures/firemodel-data.png")) {
 
   epng("figures/firemodel-max-acf.png", width = 4.5, height = 3.5)
   par(mar = c(4.1, 4.1, 1.5, 1.5))
-  plot(firemodel, which = "max-acf", thin = 4)
+  plot(firemodel, which = "max-acf", thin = 4, lag = 100)
   dev.off()
 
   lr <- range(firemodel_plotdata$daytime[,-1])
@@ -664,7 +664,7 @@ if(!file.exists("figures/firemodel-data.png")) {
   for(i in seq_along(target)) {
     epng(paste("figures/firemodel-daytime-t", i, ".png", sep = ""), width = 4.5, height = 3.5)
     par(mar = c(4.1, 4.1, 1.5, 1.5))
-    plot.daytime(firemodel, daytime = target[i], n = 120, range = rr, lrange = lr, main = tmain[i])
+    plot.daytime(firemodel, daytime = target[i], n = 30, range = rr, lrange = lr, main = tmain[i])
     dev.off()
   }
 }

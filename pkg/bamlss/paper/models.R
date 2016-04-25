@@ -84,21 +84,22 @@ if(!file.exists("firemodel.rda")) {
     pip <- apply(pip, 1, function(x) all(x))
 
     co <- co[pip < 1, , drop = FALSE]
-    nd <- NULL
     atime <- with(as.data.frame(LondonFire), seq(min(arrivaltime), max(arrivaltime), length = 100))
     if(spatial_daytime)
       dtime <- with(as.data.frame(LondonFire), seq(min(daytime), max(daytime), length = 100))
-    for(i in 1:nrow(co)) {
-      td <- if(spatial_daytime) {
-        data.frame("arrivaltime" = atime, "daytime" = dtime)
-      } else data.frame("arrivaltime" = atime)
-      td$lon <- co$lon[i]
-      td$lat <- co$lat[i]
-      td$id <- i
-      nd <- rbind(nd, td)
-    }
 
+    nd <- if(spatial_daytime) {
+      data.frame("arrivaltime" = sort(rep(atime, nrow(co))),
+        "daytime" = sort(rep(dtime, nrow(co))))
+    } else {
+      data.frame("arrivaltime" = sort(rep(atime, nrow(co))))
+    }
+    co$id <- 1:nrow(co)
+    nd <- cbind(nd, co[unlist(rep(list(co$id), length = 100)), ])
+
+    nd <- unique(nd[order(nd$id), ])
     nd$id <- as.factor(nd$id)
+
     nd$p50atime <- predict(firemodel, newdata = nd, model = "lambda", FUN = mean, intercept = FALSE, cores = 4, chunks = 100)
     if(spatial_daytime)
       nd$p50dtime <- predict(firemodel, newdata = nd, model = "gamma", term = "daytime", intercept = FALSE, cores = 4, chunks = 100)
@@ -133,7 +134,7 @@ if(!file.exists("firemodel.rda")) {
       term = c("(arrivaltime)", "(arrivaltime,lon,lat)", "(fsintens)", "(daytime)", "(lon,lat)"),
       intercept = TRUE, type = "prob", time = target, cores = 4, chunks = 100, ...)
     nd$spatial_tc <- predict(firemodel, newdata = nd, model = "gamma",
-      term = "(lon,lat)", intercept = FALSE, cores = 4, chunks = 50)
+      term = "(lon,lat)", intercept = FALSE, cores = 4, chunks = 100)
     nd$spatial_td <- predict(firemodel, newdata = nd, model = "lambda",
       term = "(arrivaltime,lon,lat)", intercept = FALSE, cores = 4, chunks = 100)
     if(spatial_daytime) {

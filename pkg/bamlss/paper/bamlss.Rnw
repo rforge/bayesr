@@ -35,17 +35,17 @@
 
 \Abstract{
   Bayesian analysis provides a convenient setting for the estimation of complex generalized
-  additive regression models (GAM). Since computational power has tremendously increased in the past
+  additive regression models. Since computational power has tremendously increased in the past
   decade it is now possible to tackle complicated inferential problems, e.g., with Markov chain
   Monte Carlo simulation, on virtually any modern computer. This is one of the reasons why
   Bayesian methods have become quite popular and it has lead to a number of highly specialized and
   optimized estimation engines. The paper exploits the quite general structures that arise
-  for the estimation of a variety of models and proposes an unified modeling architecture
+  for the estimation of a variety of GAM-type models and proposes a unified modeling architecture
   that can deal with a wide range of types of model terms. We show that within this framework
   implementing algorithms for complex regression problems, as well as the integration of already
-  existing software, is relatively straightforward. We further emphasize the usefulness on an
+  existing software, is relatively straightforward. We further emphasize the usefulness with an
   example of a very large climatology model for over $1.2$ million daily precipitation observations,
-  as well as on a computational demanding Cox-model for continuous time with space-time interactions
+  as well as on a computational demanding Cox model for continuous time with space-time interactions
   on a data set with over five thousand ``individuals''.
 }
 
@@ -91,32 +91,32 @@ source("figures.R")
 
 The generalized additive model for location, scale and shape
 (GAMLSS,~\citealp{bamlss:Rigby+Stasinopoulos:2005}) relaxes the distributional assumptions of
-an response variable in a way that allows for modeling the mean (location) as well
+a response variable in a way that allows for modeling the mean (location) as well
 as higher moments (scale and shape) in terms of covariates. This is
 especially useful in cases where, e.g., the response does not follow the exponential family or
 particular interest lies on scale and shape parameters. Moreover, covariate effects can have
-arbitrary forms such as, e.g., linear, nonlinear, spatial or random effects. Hence, each parameter
+flexible forms such as, e.g., linear, nonlinear, spatial or random effects. Hence, each parameter
 of the distribution is linked to an additive predictor in similar fashion as for the well
 established generalized additive model (GAM,~\citealp{bamlss:Hastie+Tibshirani:1990}).
 
 The terms of an additive predictor are most commonly represented by a basis function approach. This
 leads to a very generic model structure and can be further exploited because each term
 can be transformed into a mixed model representation
-\citep{bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003}. In a fully Bayesian setting, this
-generality remains because priors on parameters can also be formalized in general way, e.g.,
-by assigning normal priors on the regression coefficients of smooth terms
+\citep{bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003}. In a fully Bayesian setting this
+generality remains because priors on parameters can also be formalized in a general way, e.g.,
+by assigning normal priors to the regression coefficients of smooth terms
 \citep{bamlss:Fahrmeir+Kneib+Lang+Marx:2013, bamlss:Brezger+Lang:2006}.
 
-The fully Bayesian approach using Markov Chain Monte Carlo (MCMC) simulation is particularly
+The fully Bayesian approach using Markov chain Monte Carlo (MCMC) simulation is particularly
 attractive since it provides inference that provides valid credible intervals for estimators in
 situations where confidence intervals for corresponding maximum likelihood estimators based on
-asymptotic properties fail. This is particular the case in more complex models, e.g., with response
+asymptotic properties fail, this is specifically the case in more complex models, e.g., with response
 distributions outside the exponential family or when multiple predictors contain several smooth
 effects. In addition, extensions such as variable selection, non-standard priors for
 hyper-parameters or multilevel models are easily included.
-Probably for this reason, and because computational power has tremendously increased in the past
+Probably for this reason and because computational power has tremendously increased in the past
 decade, the number of Bayesian estimation engines that can tackle complicated inferential problems
-has seen a constant rise. As a whole, existing estimation engines already provide infrastructures
+has kept increasing. Existing estimation engines already provide infrastructures
 for a number of regression problems exceeding univariate responses, e.g., for multinomial,
 multivariate normal or mixed discrete-continuous distributed variables, and so forth. In addition,
 most of the engines support random effect estimation which in the end can in principle be utilized
@@ -132,7 +132,15 @@ statistical software packages like \pkg{BayesX}~\citep{bamlss:Umlauf+Adler+Kneib
 bamlss:Belitz+Brezger+Kneib+Lang+Umlauf:2016}, \pkg{JAGS}~\citep{bamlss:Plummer:2013},
 \pkg{Stan}~\citep{bamlss:stan-software:2016} or
 \pkg{WinBUGS}~\citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}; or even differences within the
-same environment.
+same environment, e.g., the \proglang{R} packages \pkg{mgcv} \citep{bamlss:Wood:2016},
+\pkg{gamlss} \citep{bamlss:Stasinopoulos+Rigby:2016} and \pkg{VGAM} \citep{bamlss:Yee:2016}
+implement all model terms in their own fashion style. This is particular problematic if all
+packages are loaded into \proglang{R}'s global environment, because
+some functions that are supposed to fulfill the same purpose have different interpretations.
+
+This article examines the structures that are required for the estimation of a variety of models
+and combines the building blocks to a kind of unified conceptional ``Lego toolbox''. The presented
+framework thereby leverages
 
 In order to ease the usage of already existing implementations and code, as well as to facilitate
 the development of new algorithms and extensions, we present an unified and entirely modular
@@ -1022,7 +1030,7 @@ a syntax (see also \citealp{bamlss:Chambers+Hastie:1992}), which is familiar to 
 \proglang{R} user today. Without such specifications, that in the end translate model formulae into
 model frames, the estimation of regression models is very circumstantial, especially in the case of
 structured additive predictors (\ref{eqn:structadd}). Therefore, the \proglang{R} model formula
-language is also extensible. The recommended package \pkg{mgcv}~\citep{bamlss:wood:2016} for
+language is also extensible. The recommended package \pkg{mgcv}~\citep{bamlss:Wood:2016} for
 estimating GAMs additionally provides the generic descriptor \code{s()} for smooth terms. However,
 to conveniently specify the models presented in Section~\ref{sec:models}, a slightly enhanced syntax
 is required.
@@ -1518,7 +1526,7 @@ Function & Distribution \\ \hline
 \fct{gaussian.bamlss} & Gaussian distribution \\
 \fct{gamma.bamlss} & Gamma distribution \\
 \fct{multinomial.bamlss} & Multinomial distribution \\
-\fct{mvn.bamlss} & Multivariate normal distribution \\
+\fct{mvnorm.bamlss} & Multivariate normal distribution \\
 \fct{poisson.bamlss} & Poisson distribution \\ \hline
 \end{tabular}
 \caption{\label{tab:distributions} Available distributions in package \pkg{bamlss}.}

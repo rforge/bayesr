@@ -60,7 +60,7 @@ export(
   "gaussian.bamlss",
   "gamma.bamlss",
   "multinomial.bamlss",
-  "mvn.bamlss",
+  "mvnorm.bamlss",
   "poisson.bamlss",
   "BUGSeta",
   "BUGSmodel",
@@ -107,6 +107,7 @@ S3method("family", "bamlss")
 S3method("family", "bamlss.frame")
 S3method("print", "summary.bamlss")
 S3method("print", "family.bamlss")
+S3method("print", "bamlss.frame")
 S3method("predict", "bamlss")
 S3method("fitted", "bamlss")
 S3method("logLik", "bamlss")
