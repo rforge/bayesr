@@ -2414,7 +2414,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
     if(is.function(family$predict)) {
       return(family$predict(object = object, newdata = newdata, model = model, term = term,
         intercept = intercept, type = type, FUN = FUN, trans = trans, what = what, nsamps = nsamps,
-        verbose = verbose, drop = drop, ...))
+        verbose = verbose, drop = drop, cores = cores, chunks = chunks, ...))
     }
   }
   if(is.null(object$x))
