@@ -99,7 +99,6 @@ if(!file.exists("firemodel.rda")) {
 
     nd <- unique(nd[order(nd$id), ])
     nd$id <- as.factor(nd$id)
-
     nd$p50atime <- predict(firemodel, newdata = nd, model = "lambda", FUN = mean, intercept = FALSE, cores = 4, chunks = 100)
     if(spatial_daytime)
       nd$p50dtime <- predict(firemodel, newdata = nd, model = "gamma", term = "daytime", intercept = FALSE, cores = 4, chunks = 100)
@@ -129,7 +128,6 @@ if(!file.exists("firemodel.rda")) {
     fsintens <- raster(fsintens)
     proj4string(fsintens) <- CRS("+init=epsg:4326")
     nd$fsintens <- extract(fsintens, as.matrix(nd[ , c("lon", "lat")]))
-
     nd$spatial_prob <- predict(firemodel, newdata = nd,
       term = c("(arrivaltime)", "(arrivaltime,lon,lat)", "(fsintens)", "(daytime)", "(lon,lat)"),
       intercept = TRUE, type = "prob", time = target, cores = 4, chunks = 100, ...)
@@ -145,7 +143,7 @@ if(!file.exists("firemodel.rda")) {
     return(list("curves" = fbh, "daytime" = fdt, "spatial" = nd, "target" = target))
   }
 
-  firemodel_plotdata <- data_basehaz(120, 6, subdivisions = 15)
+  firemodel_plotdata <- data_basehaz(30, 6, subdivisions = 15)
 
   save(firemodel, firemodel_plotdata, file = "firemodel_plotdata.rda")
 }

@@ -1111,7 +1111,8 @@ cox.predict <- function(object, newdata, type = c("link", "parameter", "probabil
   type <- match.arg(type)
   if(type != "probabilities") {
     object$family$predict <- NULL
-    return(predict.bamlss(object, newdata, type, ...))
+    return(predict.bamlss(object, newdata = newdata, type = type,
+      FUN = FUN, cores = cores, chunks = chunks, ...))
   }
   if(object$family$family != "cox")
     stop("object must be a cox-survival model!")
