@@ -2404,7 +2404,8 @@ c95 <- function(x)
 ## Prediction can also be based on multiple chains.
 predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   intercept = TRUE, type = c("link", "parameter"), FUN = function(x) { mean(x, na.rm = TRUE) },
-  trans = NULL, what = c("samples", "parameters"), nsamps = NULL, verbose = FALSE, drop = TRUE, ...)
+  trans = NULL, what = c("samples", "parameters"), nsamps = NULL, verbose = FALSE, drop = TRUE,
+  cores = NULL, chunks = 1, ...)
 {
   if(missing(newdata))
     newdata <- NULL
@@ -2502,10 +2503,66 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
       "FUN" = FUN, "trans" = trans, "type" = type, "nsamps" = nsamps, "env" = env))
   }
 
-  pred <- list()
-  for(i in nx) {
-    pred[[i]] <- .predict.bamlss(i, object$x[[i]], samps,
-      enames[[i]], intercept, nsamps, newdata, env)
+  if(is.null(cores)) {
+    pred <- list()
+    if(chunks > 1) {
+      chunk_id <- sort(rep(1:chunks, length.out = nrow(newdata)))
+      for(i in nx) {
+        cpred <- list()
+        for(j in 1:chunks) {
+          cpred[[j]] <- .predict.bamlss(i, object$x[[i]], samps,
+            enames[[i]], intercept, nsamps, newdata[chunk_id == j, , drop = FALSE], env)
+        }
+        pred[[i]] <- if(is.matrix(cpred[[1]])) do.call("rbind", cpred) else do.call("c", cpred)
+      }
+    } else {
+      for(i in nx) {
+        pred[[i]] <- .predict.bamlss(i, object$x[[i]], samps,
+          enames[[i]], intercept, nsamps, newdata, env)
+      }
+    }
+  } else {
+    require("parallel")
+
+    core_id <- sort(rep(1:cores, length.out = nrow(newdata)))
+
+    parallel_fun <- function(k) {
+      nd <- newdata[core_id == k, , drop = FALSE]
+      pred <- list()
+      if(chunks > 1) {
+        chunk_id <- sort(rep(1:chunks, length.out = nrow(nd)))
+        for(i in nx) {
+          cpred <- list()
+          for(j in 1:chunks) {
+            cpred[[j]] <- .predict.bamlss(i, object$x[[i]], samps,
+              enames[[i]], intercept, nsamps, nd[chunk_id == j, , drop = FALSE], env)
+          }
+          pred[[i]] <- if(is.matrix(cpred[[1]])) do.call("rbind", cpred) else do.call("c", cpred)
+        }
+      } else {
+        for(i in nx) {
+          pred[[i]] <- .predict.bamlss(i, object$x[[i]], samps,
+            enames[[i]], intercept, nsamps, nd, env)
+        }
+      }
+      return(pred)
+    }
+
+    pred <- mclapply(1:cores, parallel_fun, mc.cores = cores)
+
+    if(cores < 2) {
+      pred <- pred[[1]]
+    } else {
+      for(i in nx) {
+        for(j in 2:cores) {
+          pred[[1]][[i]] <- if(is.matrix(pred[[1]][[i]])) {
+            rbind(pred[[1]][[i]], pred[[j]][[i]])
+          } else c(pred[[1]][[i]], pred[[j]][[i]])
+          pred[[j]][[i]] <- NULL
+        }
+      }
+      pred <- pred[[1]]
+    }
   }
 
   if(type != "link") {
