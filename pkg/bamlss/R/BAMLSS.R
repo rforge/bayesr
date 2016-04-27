@@ -2558,7 +2558,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
           pred[[1]][[i]] <- if(is.matrix(pred[[1]][[i]])) {
             rbind(pred[[1]][[i]], pred[[j]][[i]])
           } else c(pred[[1]][[i]], pred[[j]][[i]])
-          pred[[j]][[i]] <- NULL
+          pred[[j]][[i]] <- NA
         }
       }
       pred <- pred[[1]]

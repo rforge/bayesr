@@ -140,29 +140,25 @@ some functions that are supposed to fulfill the same purpose have different inte
 
 This article examines the structures that are required for the estimation of a variety of models
 and combines the building blocks to a kind of unified conceptional ``Lego toolbox''. The presented
-framework thereby leverages
+framework thereby leverages repetitive components that arise when applying iterative based
+estimation algorithms, either for posterior mode or mean estimation. Moreover, the framework
+embeds very general model terms which are not necessarily a linear combination of a design matrix
+and regression coefficients. Within this modeling architecture the process of model building
+becomes relatively straightforward and supports more than the GAMLSS statistical model class.
+However, because of the great similarities with GAMLSS we call the conceptional framework Bayesian 
+additive models for location, scale and shape (BAMLSS), and beyond.
 
-In order to ease the usage of already existing implementations and code, as well as to facilitate
-the development of new algorithms and extensions, we present an unified and entirely modular
-architecture for models with additive predictors that does not restrict to any type of regression
-problem. More precisely, we highlight the similarities between estimation algorithms such that
-model building is practically based on a ``Lego'' toolbox with repeatedly used ``bricks''.
-Hence, the approach supports more than the GAMLSS statistical model class and is sometimes
-referred to as distributional regression. However, because of the great similarities with GAMLSS we
-call the conceptional framework Bayesian additive models for location, scale and shape (BAMLSS),
-and beyond.
-
-The remainder of the paper is as follows. In Section~\ref{sec:models} the models supported by this
+The remainder of the paper is as follows. In Section~\ref{sec:model} the models supported by this
 framework are briefly introduced. Section~\ref{sec:legobox} presents the ``Lego bricks'' that can be
 utilized for model building and estimation. In Section~\ref{sec:comptools} computational strategies
 for the implementation are presented. Finally, Section~\ref{sec:softex} introduces the corresponding
 \proglang{R} implementation on a very large model for daily precipitation observations, as well as
-on the computational challenging Cox-model for continuous time.
+on the computationally challenging Cox model for continuous time.
 
 
-\section{Model structure and overview} \label{sec:models}
+\section{Model structure} \label{sec:model}
 
-Supposing data of $i = 1, \ldots, n$ observations is available, the models discussed in this paper
+Based on data for $i = 1, \ldots, n$ observations, the models discussed in this paper
 assume conditional independence of individual response observations given covariates.
 Within the GAMLSS model class all parameters of the response distribution can be modeled by
 explanatory variables such that
@@ -171,7 +167,7 @@ y \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{1}) = \eta_{1}, \,\,
   h_{2}(\theta_{2}) = \eta_{2}, \dots, \,\, h_{K}(\theta_{K}) =
   \eta_{K}\right),
 \end{equation}
-where $\mathbf{\mathcal{D}}$ denotes any distribution available for the response
+where $\mathbf{\mathcal{D}}$ denotes a distribution available for the response
 variable $y$ and $\theta_k$, $k = 1, \ldots, K$, are parameters that are linked to additive predictors
 using known monotonic and twice differentiable functions
 $h_{k}(\cdot)$ \citep{bamlss:Rigby+Stasinopoulos:2005,bamlss:Klein+Kneib+Lang+Sohn:2015}. Note that the response may also be a
@@ -179,173 +175,95 @@ q-dimensional vector $\mathbf{y} = (y_{1}, \ldots, y_{q})^\top$, e.g., when
 $\mathbf{\mathcal{D}}$ is a distribution of random vectors with dimension $q$.
 (see, e.g., \citealp{bamlss:Klein+Kneib+Klasen+Lang:2015}).
 The $k$-th additive predictor is given by
-\begin{equation} \label{eqn:structadd}
+\begin{equation} \label{eqn:addpred}
 \eta_k = \eta_k(\mathbf{x}; \boldsymbol{\beta}_k) =
   f_{1k}(\mathbf{x}; \boldsymbol{\beta}_{1k}) + \ldots + f_{J_kk}(\mathbf{x}; \boldsymbol{\beta}_{J_kk}),
 \end{equation}
-with unspecified (possibly nonlinear) functions $f_{jk}(\cdot)$ of a generic covariate vector
-$\mathbf{x}$, $j = 1, \ldots, J_k$ and $k = 1, \ldots, K$. In the following, we only assume that
-each function $f_{jk}(\cdot)$ is a composition of covariate data $\mathbf{x}$ and regression
-coefficients $\boldsymbol{\beta}_{jk}$, hence, $f_{jk}(\cdot)$ are not necessarily linear
-functions or functions that have a linear representation, only. More specifically, a simple linear
-effect of one continuous covariate could be given by
-$f_{jk}(\mathbf{x}, \boldsymbol{\beta}_{jk}) = x_{1}\beta$, whereas a nonlinear effect
-$f_{jk}(\mathbf{x}, \boldsymbol{\beta}_{jk}) = f(x_{1})$
-could, e.g., be modeled by regression splines or a technique that is nonlinear in the
-parameters like growth curves, amongst others. More examples that are covered by this framework are:
-Spatially correlated effects of some discrete location index, varying coefficients, spatially
-varying effects, random intercepts and slopes, etc. Also note that each predictor in
-(\ref{eqn:dreg}) may contain a different set of covariate effects 
-supporting very complex structures with arbitrary combinations. This general framework is also
-known as structured additive regression
-(STAR,~\citealp{bamlss:Fahrmeir+Kneib+Lang:2004, bamlss:Brezger+Lang:2006}) and covers a number of
-well known model classes that have been developed for the exponential family of distributions as
-special cases, e.g., generalized additive models (GAM, \citealp{bamlss:Hastie+Tibshirani:1990}),
-generalized additive mixed models (GAMM, \citealp{bamlss:Lin+Zhang:1999}), geoadditive models
-\citep{bamlss:Kamman+Wand:2003}, varying coefficient models \citep{bamlss:Hastie+Tibshirani:1993},
-and geographically weighted regression \citep{bamlss:Fotheringham+Brunsdon+Charlton:2002}.
+with unspecified (possibly nonlinear) functions $f_{jk}(\cdot)$ of a covariate vector
+$\mathbf{x}$, $j = 1, \ldots, J_k$ and $k = 1, \ldots, K$ and
+$\boldsymbol{\beta}_k = (\boldsymbol{\beta}_{1k}, \ldots, \boldsymbol{\beta}_{J_kk})^\top$ are
+regression coefficients that need to estimated from the data. The vector of function
+evaluations $\mathbf{f}_{jk} = (f_{jk}(\mathbf{x}_{1}; \boldsymbol{\beta}_{jk}), \ldots,
+  f_{jk}(\mathbf{x}_{n}; \boldsymbol{\beta}_{jk}))^{\top}$ of the
+$i = 1, \ldots, n$ observations is then given by
+\begin{equation} \label{eqn:functions}
+\mathbf{f}_{jk} = \begin{pmatrix}
+f_{jk}(\mathbf{x}_{1}; \boldsymbol{\beta}_{jk}) \\
+\vdots \\
+f_{jk}(\mathbf{x}_{n}; \boldsymbol{\beta}_{jk})
+\end{pmatrix} = f_{jk}(\mathbf{X}_{jk}; \boldsymbol{\beta}_{jk}),
+\end{equation}
+where $\mathbf{X}_{jk}$ ($n \times m_{jk}$) is a design matrix and the structure of $\mathbf{X}_{jk}$
+only depends on the type of covariate(s) and prior assumptions about $f_{jk}( \cdot )$.
+In this notation the $k$-th parameter vector is given by
+\begin{equation} \label{eqn:addpar}
+h_k(\boldsymbol{\theta}_k) = \boldsymbol{\eta}_k = \eta_k(\mathbf{X}_k ; \boldsymbol{\beta}_k) =
+  \mathbf{f}_{1k} + \ldots + \mathbf{f}_{J_kk},
+\end{equation}
+where $\mathbf{X}_k = (\mathbf{X}_{1k}, \ldots, \mathbf{X}_{J_kk})^\top$ is the combined design
+matrix for parameter $k$.
 
+The functions $f_{jk}(\cdot)$ are usually based on a basis function approach, where $\eta_k$ then is
+a typical GAM-type or so called structured additive predictor
+(STAR,~\citealp{bamlss:Fahrmeir+Kneib+Lang:2004, bamlss:Brezger+Lang:2006}). However, in this paper
+we relax this assumption and let $f_{jk}(\cdot)$ be an unspecified composition of covariate data
+$\mathbf{x}$ and regression coefficients $\boldsymbol{\beta}_{jk}$ ($q_{jk} \times 1$). For example,
+if a linear basis function approach is used
+$$
+\mathbf{f}_{jk} = \mathbf{X}_{jk}\boldsymbol{\beta}_{jk},
+$$
+if $f_{jk}( \cdot )$ represents a growth curve like the Gompertz function the vector of function
+evaluations yields
+$$
+\mathbf{f}_{jk} = \beta_{1} \cdot \exp \left( -\exp\left( \beta_{2} +
+  \mathbf{X}_{jk}\beta_{3} \right) \right),
+$$
+where $f_{jk}( \cdot )$ is also nonlinear in the parameters $\boldsymbol{\beta}_{jk}$. However,
+even more complex model terms are supported by the BAMLSS framework.
 
 \section{A conceptional Lego toolbox} \label{sec:legobox}
 
-\subsection{Terms and priors} \label{sec:termprior}
+\subsection{Priors} \label{sec:priors}
 
-In the following, we assume that for each function $f_{jk}(\cdot)$ the vector of function evaluations
-$\mathbf{f}_{jk} = (f_{jk}(\mathbf{x}_{1}),\ldots,f_{jk}(\mathbf{x}_{n}))^{\top}$ of the
-$i = 1, \ldots, n$ observations is a composition of
-\begin{equation} \label{eqn:functions}
-\mathbf{f}_{jk} = f_{jk}(\mathbf{X}_{jk}, \boldsymbol{\beta}_{jk}),
+Since the functions $f_{jk}( \cdot )$ may have a complex nonlinear form, to ensure regularization,
+e.g., for penalizing too abrupt jumps using a P(enalised)-spline representation of $f_{jk}( \cdot )$
+\citep{bamlss:Eilers+Marx:1996}, in the frequentist setting it is common to add a
+penalty $\text{pen}(\mathbf{f}_{jk}) = \text{pen}(\boldsymbol{\beta}_{jk})$ to the regression
+problem. Within the Bayesian formulation the equivalent is to put prior distributions
+$\pi_{jk}( \cdot )$ on the regression coefficients $\boldsymbol{\beta}_{jk}$.
+
+A simple choice for a non-informative prior is
+\begin{equation} \label{eqn:oneprior}
+\pi_{jk}(\boldsymbol{\beta}_{jk}) \propto 1.
 \end{equation}
-where $\mathbf{X}_{jk}$ ($n \times m_{jk}$) is a design matrix and the structure of $\mathbf{X}_{jk}$
-only depends on the type of covariate(s). The vector $\boldsymbol{\beta}_{jk}$
-($q_{jk} \times 1$) are regression coefficients with appropriate prior assumptions that need to be estimated. Hence, the predictor
-(\ref{eqn:structadd}) may be written as $\boldsymbol{\eta}_k = \mathbf{f}_{1k} + \ldots + \mathbf{f}_{J_kk}$.
-The computation of the vector $\mathbf{f}_{jk}$ is in most cases a matrix product of the design matrix
-and the coefficients, however as already noted, the framework presented here allows for arbitrary
-functional types that may not have this structure, e.g., nonlinear growth curve estimation of covariates.
-In the frequentist setting, to ensure regularization, e.g., for penalizing too abrupt jumps using a
-P(enalised)-spline representation of $f_{jk}(\cdot)$ \citep{bamlss:Eilers+Marx:1996}, it is common to add a
-penalty $\text{pen}(\mathbf{f}_{jk}) = \text{pen}(\boldsymbol{\beta}_{jk})$ to the regression problem.
-Within the Bayesian formulation, the equivalent is to put prior distributions $p(\cdot)$ on
-the regression coefficients $\boldsymbol{\beta}_{jk}$. The following outlines frequently used terms
-and corresponding priors for parameters within STAR predictors (\ref{eqn:structadd}).
-
-\subsubsection{Linear effects}
-
-Linear or parametric effects can be written as a simple matrix product
-$\mathbf{f}_{jk} = \mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$. A common choice of $p(\boldsymbol{\beta}_{jk})$
-is to use a non-informative uniform prior
-\begin{equation} \label{eqn:uniprior}
-p(\boldsymbol{\beta}_{jk}) \propto 1.
+Informative priors for $\boldsymbol{\beta}_{jk}$ are usually based on a normal kernel
+(see,~e.g.,~\citealp{bamlss:Fahrmeir+Kneib+Lang+Marx:2013}).
+In the presented BAMLSS framework we relax this assumption and assign the general prior
+\begin{equation} \label{eqn:gprior}
+\pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}) \propto
+   g_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \boldsymbol{\tau}_{jk}) \cdot
+   g_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk}),
 \end{equation}
-One of the simplest
-informative priors is a normal prior given by
-\begin{equation} \label{eqn:linprior}
-p(\boldsymbol{\beta}_{jk}|\mathbf{M}_{jk},\mathbf{m}_{jk}) \propto \exp \left(- \frac{1}{2}
-  (\boldsymbol{\beta}_{jk} - \mathbf{m}_{jk})^{\top}\mathbf{M}_{jk}^{-1}(\boldsymbol{\beta}_{jk} -
-  \mathbf{m}_{jk})\right),
-\end{equation}
-with prior mean $\mathbf{m}_{jk}$ and prior covariance matrix $\mathbf{M}_{jk}$. In a lot of applications
-a vague prior specification is used with $\mathbf{m}_{jk} = \mathbf{0}$ and a large variance.
-
-\subsubsection{Nonlinear effects} \label{sec:smootheffects}
-
-Although the functional forms may be rather complex within predictor (\ref{eqn:structadd}),
-sometimes including more than one covariate, it is again possible to obtain a linear representation
-$\mathbf{f}_{jk} = \mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$ using a basis function approach. Here, the columns
-of the design matrix $\mathbf{X}_{jk}$ hold the so called basis functions which are predetermined by
-the type of the function chosen. More specifically, for functions of a single covariate commonly
-used basis functions are B-splines or thin plate splines, which are also capable to estimate higher
-dimensional functions. Moreover, higher dimensional functions can always be obtained by tensor
-product basis construction of marginal basis of an arbitrary number of covariates. A detailed
-overview of smooth functions constructed from various basis functions is provided in
-\citet{bamlss:Fahrmeir+Kneib+Lang+Marx:2013} and \citet{bamlss:Wood:2006}.
-
-The elegance of the approach is that regularization of the possibly very complex functions is
-accomplished by placing a generic multivariate normal prior
-\begin{equation} \label{eqn:shrinkprior}
-p(\boldsymbol{\beta}_{jk}|\tau_{jk}^2) \propto \left( \frac{1}{\tau_{jk}^2} \right)^{rk(\mathbf{K}_{jk}) / 2} \exp \left(- \frac{1}{2\tau_{jk}^2}
-\boldsymbol{\beta}_{jk}^{\top}\mathbf{K}_{jk}\boldsymbol{\beta}_{jk}\right)
-\end{equation}
-on the regression coefficients $\boldsymbol{\beta}_{jk}$, where the precision matrix $\mathbf{K}_{jk}$
-corresponds to the frequentist's penalty matrix and depends on the type of function
-associated with the term. The variance parameter $\tau_{jk}^2$ is equivalent to the inverse smoothing
-parameter in a frequentist approach and controls the trade off between flexibility and smoothness.
-Note that within this notion a ridge penalty on linear effects can be obtained by
-$\mathbf{K}_{jk} = \mathbf{I}$, similarly independent and identically distributed (i.i.d.) random
-effects can be incorporated using prior (\ref{eqn:shrinkprior}).
-A common choice of prior for the variance parameter is a weakly informative inverse Gamma hyper-prior
-\begin{equation} \label{eqn:ig}
-p(\tau_{jk}^2|a_{jk},b_{jk}) = \frac{b_{jk}^{a_{jk}}}{\Gamma(a_{jk})} (\tau_{jk}^2)^{-(a_{jk} + 1)} \exp(-b_{jk} / \tau_{jk}^2).
-\end{equation}
-with hyper-parameters $a_{jk} = b_{jk} = 0.001$ as a standard option. Small values for $a_{jk}$ and
-$b_{jk}$ correspond to an approximate flat prior for $\log(\tau_{jk}^2)$. Setting $b_{jk}=0$ and
-$a_{jk}=-1$ or $a_{jk}=-0.5$ yields flat priors for $\tau_{jk}^2$ and $\tau_{jk}$, respectively.
-However, the default option of the inverse Gamma prior for variance parameters needs to be
-reconsidered in some cases, e.g., it might be problematic if $\tau_{jk}$ is close to zero, since the
-results a very sensitive on the choice of $a_{jk}$ and $b_{jk}$. Therefore,
-\citet{bamlss:Gelman:2006} proposes to use the half-Cauchy prior
-\begin{equation} \label{eqn:hcauchy}
-p(\tau_{jk}|A_{jk}) = \frac{2A_{jk}}{\pi (\tau_{jk}^2 + A_{jk}^2)}, \quad A_{jk} > 0.
-\end{equation}
-For the hyper-parameter $A_{jk} \rightarrow \infty$ the prior is uniform, hence large values
-(e.g., $A_{jk} = 25$) result in weakly informative priors. A desirable property of the half-Cauchy
-is that for $\tau_{jk} = 0$ the density is a nonzero constant, whereas the density of the inverse
-Gamma for $\tau_{jk} \rightarrow 0$ vanishes (see also \citealp{bamlss:Polson+Scott:2012}). Note
-that in our framework the priors for variances $\tau_{jk}^2$ rather than $\tau_{jk}$ are usually
-considered. Hence, the corresponding priors have to be proposed. Another question is the actual
-choice of hyper-parameters. A recent suggestion reducing this issue to the choice of a scale
-parameter that is directly related to the functions $f_{jk}$ (and thus much better interpretable and
-accessible for the user) is given in~\citet{bamlss:Klein+Kneib:2016} for several different
-hyper-priors for $\tau_{jk}^2$, such as resulting priors from half-Cauchy, half-normal or uniform
-priors for $\tau_{jk}$ or resulting penalized complexity
-priors~\citep{bamlss:Simpson:Rue:Martins:Riebler:Sorbye:2015}.
-
-Note that using a basis function approach it is possible to construct effects of more than
-one covariate by applying tensor products of marginal design matrices
-\citep{bamlss:Eilers+Marx:2003, bamlss:Wood:2006}.
-The resulting penalty matrix is also constructed by tensor products, e.g., for a two-dimensional
-effect the corresponding penalty takes the following form
-$$
-\boldsymbol{\beta}_{jk}^\top \left( \frac{1}{\tau_{1jk}^2} \mathbf{I}_{2jk} \otimes \mathbf{K}_{1jk} +
-  \frac{1}{\tau_{2jk}^2} \mathbf{K}_{2jk} \otimes \mathbf{I}_{1jk} \right) \boldsymbol{\beta}_{jk} =
-\boldsymbol{\beta}_{jk}^\top \mathbf{K}_{jk}(\boldsymbol{\tau}_{jk}^2)\boldsymbol{\beta}_{jk},
-$$
-where $\mathbf{K}_{1jk}$ and $\mathbf{K}_{2jk}$ are the penalty matrices of the marginal effects
-and $\boldsymbol{\tau}_{jk}^2 = (\tau_{1jk}^2, \tau_{2jk}^2)^\top$ are variances that control the
-smoothness of the effect in each of the two dimensions.
-
-In addition, the individual model components $\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$ for any basis
-function specification can be further decomposed into a mixed model representation given by
-\begin{equation*} \label{eqn:mixed}
-\mathbf{f}_{jk} = \tilde{\mathbf{X}}_{jk}\tilde{\boldsymbol{\gamma}}_{jk} +
-  \mathbf{U}_{jk}\tilde{\boldsymbol{\beta}}_{jk},
-\end{equation*}
-where $\tilde{\boldsymbol{\gamma}}_{jk}$ represents the fixed effects parameters and 
-$\tilde{\boldsymbol{\beta}}_{jk} \sim N(\mathbf{0}, \tau^2_{jk}\mathbf{I})$ i.i.d.\ random effects.
-The design matrix $\mathbf{U}_{jk}$ is derived from a spectral decomposition of the penalty matrix
-$\mathbf{K}_{jk}$ and $\tilde{\mathbf{X}}_{jk}$ by finding a basis of the null space of $\mathbf{K}_{jk}$
-such that $\tilde{\mathbf{X}}_{jk}^{\top}\mathbf{K}_{jk} = \mathbf{0}$, i.e., parameters
-$\tilde{\boldsymbol{\gamma}}_{jk}$ are not penalized (see, e.g.,
-\citealp{bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003, bamlss:Fahrmeir+Kneib+Lang+Marx:2013}).
-
-
-\subsubsection{Multilevel effects} \label{sec:multileveleffects}
+where $g_{\boldsymbol{\beta}_{jk}}( \cdot )$ and $g_{\boldsymbol{\tau}_{jk}}( \cdot )$ are prior
+densities that depend on the type of covariate and prior assumptions about $f_{jk}( \cdot )$.
+The vector $\boldsymbol{\tau}_{jk}$ represents additional prior parameters,
+typically, these parameters are variances, e.g., that account for the
+degree of smoothness of $f_{jk}( \cdot )$ or the amount of correlation between observations.
 
 In numerous applications geographical information and spatial covariates are given at
 different resolutions. For example, spatial data that is measured within different regions, for
 which additional regional covariates are available. Whenever there is such a nested structure
 in the data, it is possible to model such complex (spatial) heterogeneity effects using
 a compound prior
-$$
+\begin{equation} \label{eqn:compoundprior}
 \boldsymbol{\beta}_{jk} = \tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})
   + \boldsymbol{\varepsilon}_{jk}.
-$$
+\end{equation}
 where $\boldsymbol{\varepsilon}_{jk} \sim N(\mathbf{0}, \tilde{\tau}^2\mathbf{I})$ is a vector
 of i.i.d.\ Gaussian random effects and
 $\tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})$ represents a full
-structured additive predictor of nested covariates, e.g., including a discrete regional spatial
-effect modeled by a Markov random field. This way, potential costly operations during estimation
+predictor of nested covariates, e.g., including a discrete regional spatial
+effect. This way, potential costly operations during estimation
 can be avoided since the number of observation in
 $\tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})$ is equal to
 the number of coefficients in $\boldsymbol{\beta}_{jk}$, which is usually much smaller than the
@@ -355,75 +273,38 @@ an alternative parametrization can be applied that leads to highly efficient MCM
 see \citet{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}.
 
 
-\subsubsection{Further effects}
-
-Within the scope of the presented framework we allow for functions of covariates that cannot
-necessarily be written by a matrix product $\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$. As an
-example, nonlinear growth curve estimation with the Gompertz function requires the evaluation of
-$$
-\mathbf{f}_{jk} = \beta_{1} \cdot \exp \left( -\exp\left( \beta_{2} +
-  \mathbf{X}_{jk}\beta_{3} \right) \right)
-$$
-and particular interest may lie on the parameters describing the growth rate, lag phase, etc.
-As a standard option one can put non-informative uniform priors (\ref{eqn:uniprior}) or normal
-priors (\ref{eqn:linprior}) on $\boldsymbol{\beta}$. To generalize this, the framework allows for
-any functions $f_{jk}(\mathbf{X}_{jk}, \boldsymbol{\beta}_{jk})$ and prior(s) $p(\boldsymbol{\beta}_{jk})$
-that are available for the covariate(s).
-
-%The representation of the terms in the structured additive predictor (\ref{eqn:structadd})
-%already suggests a general and modular architecture. However, to keep the focus on maximum
-%flexibility of the conceptional framework it is useful to list the typical steps needed to estimate
-%the models presented in Section~\ref{sec:models}:
-%\begin{enumerate}
-%\item Choosing an appropriate distribution for the response.
-%\item Specification of the model terms the parameters are modeled by.
-%\item Setting up the corresponding design and penalty matrices.
-%\item Starting the estimation engine.
-%\item Processing the results for printing summaries, plotting, etc. 
-%\end{enumerate}
-%Step 2 thereby requires some type of generic model formula syntax to actually specify the
-%dependencies of the parameters on covariates. Choosing an appropriate distribution in step 1 implies
-%that the estimation engine used in step 4 includes the corresponding implementation. In addition,
-%to compute, e.g., goodness of fit plots using quantile residuals \citep{bamlss:Dunn+Gordon:1996},
-%the distribution specification oftentimes needs information beyond the log-likelihood function.
-%Moreover, the individual steps should be modular, e.g., changing the estimation engine does not
-%require additional adjustments on subsequent infrastructures. The following describes the
-%conceptional building blocks in more detail.
-
 \subsection{Response distribution} \label{sec:density}
 
 The main building block of regression model algorithms is the probability density function
-$f(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$, or for
-computational reasons its logarithm.
-Note that $f$ is considered to be a general density and $\boldsymbol{\theta}_k$, $k = 1, \ldots, K$,
-are parameters that are linked to STAR predictors given in equation (\ref{eqn:structadd}).
-Estimation typically requires to evaluate the log-likelihood function
+$g(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$, or for
+computational reasons its logarithm. Estimation typically requires to evaluate the log-likelihood
+function
 \begin{equation} \label{eqn:density}
 \ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X}) =
-  \sum_{i = 1}^n \log \, f(y_i ; \theta_{i1} = h_1^{-1}(\eta_{i1}(\mathbf{x}_i, \boldsymbol{\beta}_1)), \ldots,
-  \theta_{iK} = h_K^{-1}(\eta_{iK}(\mathbf{x}_i, \boldsymbol{\beta}_K)))
+  \sum_{i = 1}^n \log \, g(y_i ; \theta_{i1} = h_1^{-1}(\eta_{i1}(\mathbf{x}_i; \boldsymbol{\beta}_1)), \ldots,
+  \theta_{iK} = h_K^{-1}(\eta_{iK}(\mathbf{x}_i; \boldsymbol{\beta}_K)))
 \end{equation}
 a number of times, where the vector
 $\boldsymbol{\beta} = (\boldsymbol{\beta}_1^\top, \ldots, \boldsymbol{\beta}_K^\top)^\top$ 
 comprises all model coefficients that should be estimated, $\mathbf{X} = (\mathbf{X}_1, \ldots, \mathbf{X}_K)$
 are the respective covariate matrices with $\mathbf{x}_i$ as the $i$-th row of $\mathbf{X}$ and
 $\boldsymbol{\theta}_k$ are vectors of length $n$.
-Assigning prior distributions to the individual model components, e.g., given by the normal
-prior (\ref{eqn:shrinkprior}) and the inverse gamma prior (\ref{eqn:ig}), results in the log-posterior
+Assigning prior distributions to the individual model components results in the log-posterior
 \begin{equation} \label{eqn:logpost}
-\log \, p(\boldsymbol{\vartheta} ; \mathbf{y}, \mathbf{X}) \propto
+\log \, p(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}) \propto
   \ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X}) +
-  \sum_{k = 1}^K\sum_{j = 1}^{J_k} \left\{ \log \, p_{jk}(\boldsymbol{\vartheta}_{jk}) \right\},
+  \sum_{k = 1}^K\sum_{j = 1}^{J_k} \left\{ \log \,
+  \pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}) \right\},
 \end{equation}
-where, e.g., $\boldsymbol{\vartheta}_{jk} = (\boldsymbol{\beta}_{jk}^\top, (\boldsymbol{\tau}^2_{jk})^\top)^\top$
-is a vector of all parameters associated to the $jk$-th term and includes all variances, too, and
-prior $p_{jk}(\cdot)$ denotes the combination of all assigned priors on parameters
-$\boldsymbol{\vartheta}_{jk}$. Also note that from a frequentist perspective (\ref{eqn:logpost}) can
-be viewed as a penalized log-likelihood using prior (\ref{eqn:shrinkprior}) for fixed variance
-parameters $\boldsymbol{\tau}_{jk}^2$.
+where $\boldsymbol{\tau} = (\boldsymbol{\tau}_1^\top, \ldots, \boldsymbol{\tau}_K^\top)^\top =
+(\boldsymbol{\tau}_{11}^\top, \ldots, \boldsymbol{\tau}_{J_11}^\top, \ldots,
+\boldsymbol{\tau}_{1K}^\top, \ldots, \boldsymbol{\tau}_{J_KK}^\top)^\top$ is
+the vector of all assigned hyper-priors used within prior functions $\pi_{jk}( \cdot )$.
+Note that from a frequentist perspective (\ref{eqn:logpost}) can be viewed as a penalized
+log-likelihood, e.g., if a normal prior is used for $\pi_{jk}( \cdot )$.
 
 
-\subsection{Model fitters} \label{sec:modelfit}
+\subsection{Model fitting} \label{sec:modelfit}
 
 Bayesian point estimates of $\boldsymbol{\vartheta}$ are obtained by posterior mode, mean or median
 estimation. While posterior mode estimation requires maximization of the log-posterior
@@ -445,7 +326,7 @@ and equals the maximum likelihood estimator
 \text{ML}(\boldsymbol{\vartheta} | \mathbf{y}, \mathbf{X}) =
   \underset{\boldsymbol{\vartheta}}{\text{arg max }} \ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X})
 \end{equation}
-assigning uniform priors (\ref{eqn:uniprior})
+assigning uniform priors (\ref{eqn:oneprior})
 for $j = 1, \ldots, J_k$, $k = 1, \ldots, K$.
 For models involving shrinkage priors, e.g., given by (\ref{eqn:shrinkprior}), the posterior mode is
 equivalent to a penalized maximum likelihood estimator for fixed variance parameters
@@ -1029,10 +910,10 @@ implemented for various computer programs. The statistical environment \proglang
 a syntax (see also \citealp{bamlss:Chambers+Hastie:1992}), which is familiar to almost any common
 \proglang{R} user today. Without such specifications, that in the end translate model formulae into
 model frames, the estimation of regression models is very circumstantial, especially in the case of
-structured additive predictors (\ref{eqn:structadd}). Therefore, the \proglang{R} model formula
+structured additive predictors (\ref{eqn:addpred}). Therefore, the \proglang{R} model formula
 language is also extensible. The recommended package \pkg{mgcv}~\citep{bamlss:Wood:2016} for
 estimating GAMs additionally provides the generic descriptor \code{s()} for smooth terms. However,
-to conveniently specify the models presented in Section~\ref{sec:models}, a slightly enhanced syntax
+to conveniently specify the models presented in Section~\ref{sec:model}, a slightly enhanced syntax
 is required.
 
 Hereinafter, we follow the notation of the \proglang{R} formula language and denote

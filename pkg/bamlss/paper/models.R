@@ -59,7 +59,7 @@ if(!file.exists("firemodel.rda")) {
 
   save(firemodel, file = "firemodel.rda")
 
-  predict_firemodel <- function(n = 30, target = 6, k = 20, cores = 4, chunks = 50, ...)
+  predict_firemodel <- function(n = 30, target = 6, k = 20, cores = 4, chunks = 30, ...)
   {
     gpclibPermit()
 
@@ -143,7 +143,7 @@ if(!file.exists("firemodel.rda")) {
     return(list("curves" = fbh, "daytime" = fdt, "spatial" = nd, "target" = target))
   }
 
-  firemodel_plotdata <- predict_firemodel(250, 6, subdivisions = 15)
+  firemodel_plotdata <- predict_firemodel(40, 6, subdivisions = 15)
 
   save(firemodel, firemodel_plotdata, file = "firemodel_plotdata.rda")
 }
