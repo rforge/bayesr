@@ -3356,29 +3356,73 @@ Predict.matrix.kriging.smooth <- function(object, data)
 }
 
 
-## Spatial random effect constructor functions.
-smooth.construct.sr.smooth.spec <- function(object, data, knots)
+## Space-time random effect constructor functions.
+smooth.construct.str.smooth.spec <- function(object, data, knots)
 {
-  if(object$dim < 2) stop("spatial locations misspecified!")
+  if(object$dim < 3) stop("need at least 3 variables!")
   if(object$bs.dim < 0) object$bs.dim <- 10
 
   knots <- if(is.null(object$xt$knots)) object$bs.dim else object$xt$knots
 
-  D <- krDesign2D(data[[object$term[1]]], data[[object$term[2]]],
+  trend <- data[object$term[3:object$dim]]
+  if(length(trend) > 1)
+    trend <- trend[[1]] + scale2(trend[[2]], 0, 1)
+  trend <- as.vector(trend)
+
+  co0 <- cbind(data[[object$term[1]]], data[[object$term[2]]])
+  coid <- match.index(co0)
+  co1 <- co0[coid$nodups, ]
+  mid <- c(1:nrow(co1))[coid$match.index]
+  
+  D <- krDesign2D(co1[, 1], co1[, 2],
     knots = knots,
     phi = object$xt$phi, v = object$xt$v, c = object$xt$c,
     psi = object$xt$psi, delta = object$xt$delta,
     isotropic = object$xt$isotropic)
 
-  X <- D$B
-  object$X <- X
-  object$S <- list(D$K)
-  object$rank <- qr(D$K)$rank
+  object$X <- D$B %*% chol2inv(chol(D$K))
+  b <- list()
+  time <- sort(unique(trend))
+  b <- rep(list(rep(0, length = length(time))), length = ncol(D$B))
+  b <- do.call("cbind", b)
+  rownames(b) <- paste("t", time, sep = "")
+  colnames(b) <- paste("k", 1:ncol(b), sep = "")
+
+  object$fit.fun <- function(X, b, ...) {
+    fit <- apply(b$b, 1, function(g) {
+      X %*% g
+    })
+    fit <- as.numeric(fit)
+print(fit)
+    fit
+  }
+
+  object$prior <- function(parameters) {
+    b <- parameters$b
+    tau <- parameters$tau
+    print(b)
+stop()
+  }
+
+  object$update <- bfit_optim
+
   object$knots <- D$knots
-  object$null.space.dim <- ncol(D$K)
+  object$state <- list("parameters" = list("b" = b, "tau2" = c(0.001, 0.001)),
+    "fitted.values" = rep(0, length(trend)))
  
-  class(object) <- "kriging.smooth"
+  class(object) <- c("strandom.smooth", "no.mgcv", "special")
   object
+}
+
+
+Predict.matrix.strandom.smooth <- function(object, data, knots) 
+{
+  D <- krDesign2D(data[[object$term[1]]], data[[object$term[2]]],
+    knots = object$knots,
+    phi = object$xt$phi, v = object$xt$v, c = object$xt$c,
+    psi = object$xt$psi, delta = object$xt$delta,
+    isotropic = object$xt$isotropic)
+  return(D$X %*% chol2inv(chol(D$K)))
 }
 
 

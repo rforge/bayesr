@@ -192,6 +192,10 @@ for(j in unique(d$id)) {
 d$rain <- d$rain + rnorm(n, sd = 0.3)
 d <- subset(d, rain > 0)
 
+b <- bamlss(rain ~ s2(lon,lat,year,time,bs="str"), data = d)
+
+
+
 f <- list(
   rain ~ ti(time) + ti(time,lon,lat,bs=c("cc","tp"),d=c(1,2), k = c(5, 10)),
   ~ 1
