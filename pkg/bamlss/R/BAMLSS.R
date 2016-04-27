@@ -2612,6 +2612,12 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   snames <- colnames(samps)
   enames <- gsub("p.Intercept", "p.(Intercept)", enames, fixed = TRUE)
   has_intercept <- any(grepl(paste(id, "p", "(Intercept)", sep = "."), snames, fixed = TRUE))
+  if(!has_intercept) {
+    if(any(grepl(".p.model.matrix.(Intercept)", snames, fixed = TRUE)))
+      has_intercept <- TRUE
+    if(any(grepl(".p.model.matrix.Intercept", snames, fixed = TRUE)))
+      has_intercept <- TRUE
+  }
   if(intercept & has_intercept)
     enames <- c("p.(Intercept)", enames)
   enames <- unique(enames)
