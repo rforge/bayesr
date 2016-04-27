@@ -1148,7 +1148,6 @@ dopos <- function(pos, limits, width, height, side.legend, shift)
 }
 
 
-
 plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   missing = TRUE, swap = FALSE, range = NULL, names = FALSE, values = FALSE, col = NULL,
   ncol = 100, breaks = NULL, cex.legend = 1, cex.names = 1, cex.values = cex.names,
@@ -1432,6 +1431,11 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     mtext(args$ylab, side = 2L)
 
   return(invisible(NULL))
+}
+
+
+plot.bnd <- function(x, ...) {
+  plotmap(x, ...)
 }
 
 
