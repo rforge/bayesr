@@ -138,22 +138,25 @@ implement all model terms in their own fashion style. This is particular problem
 packages are loaded into \proglang{R}'s global environment, because
 some functions that are supposed to fulfill the same purpose have different interpretations.
 
-This article examines the structures that are required for the estimation of a variety of models
-and combines the building blocks to a kind of unified conceptional ``Lego toolbox''. The presented
-framework thereby leverages repetitive components that arise when applying iterative based
-estimation algorithms, either for posterior mode or mean estimation. Moreover, the framework
-embeds very general model terms which are not necessarily a linear combination of a design matrix
-and regression coefficients. Within this modeling architecture the process of model building
-becomes relatively straightforward and supports more than the GAMLSS statistical model class.
-However, because of the great similarities with GAMLSS we call the conceptional framework Bayesian 
-additive models for location, scale and shape (BAMLSS), and beyond.
+In this article we present a kind of unified conceptional ``Lego toolbox'' for complex
+regression models. We show that iterative estimation algorithms, e.g., for posterior mode or
+mean estimation based on MCMC simulation, exhibit very similar structures such that the process of
+model building becomes relatively straightforward, since the model architecture is only a
+combination single ``bricks''. Moreover, the framework embeds very general model terms which are not
+necessarily a linear combination of a design matrix and regression coefficients. Hence,
+the concept supports more than the GAMLSS statistical model class, however, because of the great
+similarities with GAMLSS we call the conceptional framework Bayesian additive models for location,
+scale and shape (BAMLSS) and beyond. The concept can be exploited in two ways: first, to develop
+new algorithms and code, secondly, to easily integrate existing implementations. A prove of
+concept is given in the corresponding \proglang{R} implementation \pkg{bamlss}.
 
 The remainder of the paper is as follows. In Section~\ref{sec:model} the models supported by this
 framework are briefly introduced. Section~\ref{sec:legobox} presents the ``Lego bricks'' that can be
 utilized for model building and estimation. In Section~\ref{sec:comptools} computational strategies
-for the implementation are presented. Finally, Section~\ref{sec:softex} introduces the corresponding
-\proglang{R} implementation on a very large model for daily precipitation observations, as well as
-on the computationally challenging Cox model for continuous time.
+for the implementation are presented. Finally, Section~\ref{sec:softex} briefly introduces the
+\proglang{R} package \pkg{bamlss}. The framework is further illustrated on a very large model for
+daily precipitation observations, as well as on the computationally challenging Cox model for
+continuous time.
 
 
 \section{Model structure} \label{sec:model}
@@ -221,34 +224,45 @@ $$
 where $f_{jk}( \cdot )$ is also nonlinear in the parameters $\boldsymbol{\beta}_{jk}$. However,
 even more complex model terms are supported by the BAMLSS framework.
 
+
 \section{A conceptional Lego toolbox} \label{sec:legobox}
 
 \subsection{Priors} \label{sec:priors}
+
+Within Bayesian models prior distributions need to be assigned for each parameter vector
+$\boldsymbol{\beta}_{jk}$, where the choice of prior distributions depends on the type of
+model and application. A simple choice for a non-informative prior is
+\begin{equation} \label{eqn:oneprior}
+\pi_{jk}(\boldsymbol{\beta}_{jk}) \propto 1.
+\end{equation}
 
 Since the functions $f_{jk}( \cdot )$ may have a complex nonlinear form, to ensure regularization,
 e.g., for penalizing too abrupt jumps using a P(enalised)-spline representation of $f_{jk}( \cdot )$
 \citep{bamlss:Eilers+Marx:1996}, in the frequentist setting it is common to add a
 penalty $\text{pen}(\mathbf{f}_{jk}) = \text{pen}(\boldsymbol{\beta}_{jk})$ to the regression
-problem. Within the Bayesian formulation the equivalent is to put prior distributions
-$\pi_{jk}( \cdot )$ on the regression coefficients $\boldsymbol{\beta}_{jk}$.
-
-A simple choice for a non-informative prior is
-\begin{equation} \label{eqn:oneprior}
-\pi_{jk}(\boldsymbol{\beta}_{jk}) \propto 1.
-\end{equation}
-Informative priors for $\boldsymbol{\beta}_{jk}$ are usually based on a normal kernel
-(see,~e.g.,~\citealp{bamlss:Fahrmeir+Kneib+Lang+Marx:2013}).
-In the presented BAMLSS framework we relax this assumption and assign the general prior
+problem. Within the Bayesian formulation the equivalent is, e.g., to assign a normal prior
+on $\boldsymbol{\beta}_{jk}$ (see,~e.g.,~\citealp{bamlss:Fahrmeir+Kneib+Lang+Marx:2013}).
+However, within the presented BAMLSS framework we relax this assumption and assign the general prior
 \begin{equation} \label{eqn:gprior}
-\pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}) \propto
-   g_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \boldsymbol{\tau}_{jk}) \cdot
-   g_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk}),
+\pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk} | \boldsymbol{\alpha}_{jk}) \propto
+   g_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \boldsymbol{\tau}_{jk};
+     \boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}}) \cdot
+   g_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}),
 \end{equation}
 where $g_{\boldsymbol{\beta}_{jk}}( \cdot )$ and $g_{\boldsymbol{\tau}_{jk}}( \cdot )$ are prior
 densities that depend on the type of covariate and prior assumptions about $f_{jk}( \cdot )$.
-The vector $\boldsymbol{\tau}_{jk}$ represents additional prior parameters,
+Here, the vector $\boldsymbol{\tau}_{jk}$ represents additional prior parameters,
 typically, these parameters are variances, e.g., that account for the
 degree of smoothness of $f_{jk}( \cdot )$ or the amount of correlation between observations.
+For example, using a spline representation of $f_{jk}( \cdot )$ in combination with a normal
+prior the variances can be interpreted as the inverse smoothing parameters in a penalized regression
+context. Within this very general setup
+$\boldsymbol{\alpha}_{jk} = \{\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}},
+\boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}\}$ is a set of prespecified and fixed
+hyper-parameters, e.g., further controlling the shape of $g_{\boldsymbol{\beta}_{jk}}( \cdot )$ and
+$g_{\boldsymbol{\tau}_{jk}}( \cdot )$, or incorporating prior beliefs about
+$\boldsymbol{\beta}_{jk}$. Within GAM-type models the choice of $\boldsymbol{\alpha}_{jk}$ is
+commonly non-informative.  
 
 In numerous applications geographical information and spatial covariates are given at
 different resolutions. For example, spatial data that is measured within different regions, for
