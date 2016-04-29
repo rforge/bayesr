@@ -247,8 +247,13 @@ design.construct <- function(formula, data = NULL, knots = NULL,
             if(is.null(tsm$xt$binning))
               tsm$xt$binning <- binning
             acons <- TRUE
-            if(!is.null(tsm$xt$center))
-              acons <- tsm$xt$center
+            if(inherits(tsm, "tensor.smooth.spec")) {
+              if(!is.null(tsm$margin[[1]]$xt$center))
+                acons <- tsm$margin[[1]]$xt$center
+            } else {
+              if(!is.null(tsm$xt$center))
+                acons <- tsm$xt$center
+            }
             tsm$xt$center <- acons
             tsm$xt$before <- before
             if(!is.null(tsm$xt$binning)) {

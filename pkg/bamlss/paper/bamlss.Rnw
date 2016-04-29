@@ -142,13 +142,14 @@ In this article we present a kind of unified conceptional ``Lego toolbox'' for c
 regression models. We show that iterative estimation algorithms, e.g., for posterior mode or
 mean estimation based on MCMC simulation, exhibit very similar structures such that the process of
 model building becomes relatively straightforward, since the model architecture is only a
-combination single ``bricks''. Moreover, the framework embeds very general model terms which are not
-necessarily a linear combination of a design matrix and regression coefficients. Hence,
+combination of single ``bricks''. Moreover, the framework embeds very general model terms which are
+not necessarily a linear combination of a design matrix and regression coefficients. Hence,
 the concept supports more than the GAMLSS statistical model class, however, because of the great
 similarities with GAMLSS we call the conceptional framework Bayesian additive models for location,
-scale and shape (BAMLSS) and beyond. The concept can be exploited in two ways: first, to develop
+scale and shape (BAMLSS) and beyond. The concept can be exploited in two ways: First, to develop
 new algorithms and code, secondly, to easily integrate existing implementations. A prove of
-concept is given in the corresponding \proglang{R} implementation \pkg{bamlss}.
+concept is given in the corresponding \proglang{R} implementation \pkg{bamlss} which is
+available on \pkg{Rforge}.
 
 The remainder of the paper is as follows. In Section~\ref{sec:model} the models supported by this
 framework are briefly introduced. Section~\ref{sec:legobox} presents the ``Lego bricks'' that can be
@@ -157,6 +158,9 @@ for the implementation are presented. Finally, Section~\ref{sec:softex} briefly 
 \proglang{R} package \pkg{bamlss}. The framework is further illustrated on a very large model for
 daily precipitation observations, as well as on the computationally challenging Cox model for
 continuous time.
+
+
+\newpage
 
 
 \section{Model structure} \label{sec:model}
@@ -225,29 +229,34 @@ where $f_{jk}( \cdot )$ is also nonlinear in the parameters $\boldsymbol{\beta}_
 even more complex model terms are supported by the BAMLSS framework.
 
 
+\newpage
+
+
 \section{A conceptional Lego toolbox} \label{sec:legobox}
 
 \subsection{Priors} \label{sec:priors}
 
-Within Bayesian models prior distributions need to be assigned for each parameter vector
+In Bayesian models prior distributions need to be assigned for each parameter vector
 $\boldsymbol{\beta}_{jk}$, where the choice of prior distributions depends on the type of
 model and application. A simple choice for a non-informative prior is
 \begin{equation} \label{eqn:oneprior}
 \pi_{jk}(\boldsymbol{\beta}_{jk}) \propto 1.
 \end{equation}
 
-Since the functions $f_{jk}( \cdot )$ may have a complex nonlinear form, to ensure regularization,
-e.g., for penalizing too abrupt jumps using a P(enalised)-spline representation of $f_{jk}( \cdot )$
-\citep{bamlss:Eilers+Marx:1996}, in the frequentist setting it is common to add a
-penalty $\text{pen}(\mathbf{f}_{jk}) = \text{pen}(\boldsymbol{\beta}_{jk})$ to the regression
-problem. Within the Bayesian formulation the equivalent is, e.g., to assign a normal prior
+Since the functions $f_{jk}( \cdot )$ are commonly unspecified and flexible some kind regularization
+needs to be ensured, e.g., for penalizing too abrupt jumps in the functional form using a
+P(enalised)-spline representation of $f_{jk}( \cdot )$ \citep{bamlss:Eilers+Marx:1996}. In the
+frequentist setting this is accounted for by adding a penalty
+$\text{pen}(\mathbf{f}_{jk}) = \text{pen}(\boldsymbol{\beta}_{jk})$ to the regression
+problem. In the Bayesian formulation the equivalent is, e.g., to assign a normal prior
 on $\boldsymbol{\beta}_{jk}$ (see,~e.g.,~\citealp{bamlss:Fahrmeir+Kneib+Lang+Marx:2013}).
-However, within the presented BAMLSS framework we relax this assumption and assign the general prior
+However, within the presented BAMLSS framework we relax this assumption and assign the rather general
+prior
 \begin{equation} \label{eqn:gprior}
-\pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk} | \boldsymbol{\alpha}_{jk}) \propto
-   g_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \boldsymbol{\tau}_{jk};
+\pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) \propto
+   g_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \, \boldsymbol{\tau}_{jk};
      \boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}}) \cdot
-   g_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}),
+   g_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}),
 \end{equation}
 where $g_{\boldsymbol{\beta}_{jk}}( \cdot )$ and $g_{\boldsymbol{\tau}_{jk}}( \cdot )$ are prior
 densities that depend on the type of covariate and prior assumptions about $f_{jk}( \cdot )$.
@@ -255,14 +264,14 @@ Here, the vector $\boldsymbol{\tau}_{jk}$ represents additional prior parameters
 typically, these parameters are variances, e.g., that account for the
 degree of smoothness of $f_{jk}( \cdot )$ or the amount of correlation between observations.
 For example, using a spline representation of $f_{jk}( \cdot )$ in combination with a normal
-prior the variances can be interpreted as the inverse smoothing parameters in a penalized regression
-context. Within this very general setup
+prior for $g_{\boldsymbol{\beta}_{jk}}( \cdot )$ the variances can be interpreted as the inverse
+smoothing parameters in a penalized regression context. Within this very general setup
 $\boldsymbol{\alpha}_{jk} = \{\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}},
-\boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}\}$ is a set of prespecified and fixed
-hyper-parameters, e.g., further controlling the shape of $g_{\boldsymbol{\beta}_{jk}}( \cdot )$ and
-$g_{\boldsymbol{\tau}_{jk}}( \cdot )$, or incorporating prior beliefs about
-$\boldsymbol{\beta}_{jk}$. Within GAM-type models the choice of $\boldsymbol{\alpha}_{jk}$ is
-commonly non-informative.  
+\boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}\}$ is a set of fixed
+prior specifications, e.g., further controlling the shape of $g_{\boldsymbol{\beta}_{jk}}( \cdot )$
+and $g_{\boldsymbol{\tau}_{jk}}( \cdot )$, incorporating prior beliefs about
+$\boldsymbol{\beta}_{jk}$, or for GAM-type models $\boldsymbol{\alpha}_{jk}$ usually holds
+the so called penalty matrices, amongst others.
 
 In numerous applications geographical information and spatial covariates are given at
 different resolutions. For example, spatial data that is measured within different regions, for
@@ -278,13 +287,13 @@ of i.i.d.\ Gaussian random effects and
 $\tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})$ represents a full
 predictor of nested covariates, e.g., including a discrete regional spatial
 effect. This way, potential costly operations during estimation
-can be avoided since the number of observation in
+can be avoided since the number of observations in
 $\tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})$ is equal to
 the number of coefficients in $\boldsymbol{\beta}_{jk}$, which is usually much smaller than the
 actual number of observations $n$. Moreover, the full conditionals for
-$\tilde{\boldsymbol{\beta}}_{jk}$ are Gaussian regardless of the response distribution, therefore,
-an alternative parametrization can be applied that leads to highly efficient MCMC sampling schemes,
-see \citet{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}.
+$\tilde{\boldsymbol{\beta}}_{jk}$ are Gaussian regardless of the response distribution and leads to
+highly efficient estimation algorithms,
+see~\citet{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}.
 
 
 \subsection{Response distribution} \label{sec:density}
@@ -305,28 +314,94 @@ are the respective covariate matrices with $\mathbf{x}_i$ as the $i$-th row of $
 $\boldsymbol{\theta}_k$ are vectors of length $n$.
 Assigning prior distributions to the individual model components results in the log-posterior
 \begin{equation} \label{eqn:logpost}
-\log \, p(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}) \propto
+\log \, p(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha}) \propto
   \ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X}) +
-  \sum_{k = 1}^K\sum_{j = 1}^{J_k} \left\{ \log \,
-  \pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}) \right\},
+  \sum_{k = 1}^K\sum_{j = 1}^{J_k} \left[ \log \,
+  \pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) \right],
 \end{equation}
 where $\boldsymbol{\tau} = (\boldsymbol{\tau}_1^\top, \ldots, \boldsymbol{\tau}_K^\top)^\top =
 (\boldsymbol{\tau}_{11}^\top, \ldots, \boldsymbol{\tau}_{J_11}^\top, \ldots,
 \boldsymbol{\tau}_{1K}^\top, \ldots, \boldsymbol{\tau}_{J_KK}^\top)^\top$ is
-the vector of all assigned hyper-priors used within prior functions $\pi_{jk}( \cdot )$.
-Note that from a frequentist perspective (\ref{eqn:logpost}) can be viewed as a penalized
-log-likelihood, e.g., if a normal prior is used for $\pi_{jk}( \cdot )$.
+the vector of all assigned hyper-priors used within prior functions $\pi_{jk}( \cdot )$
+and similarly $\boldsymbol{\alpha}$ is the set of all fixed prior specifications. Note that from a
+frequentist perspective (\ref{eqn:logpost}) can be viewed as a penalized log-likelihood, e.g., if
+a normal prior is used within $\pi_{jk}( \cdot )$ for $\boldsymbol{\beta}_{jk}$.
 
 
 \subsection{Model fitting} \label{sec:modelfit}
 
-Bayesian point estimates of $\boldsymbol{\vartheta}$ are obtained by posterior mode, mean or median
-estimation. While posterior mode estimation requires maximization of the log-posterior
-(\ref{eqn:logpost}), which has an unique (sometimes analytical) solution in a number of cases,
-posterior mean and median estimation involves solving (possibly) high-dimensional integrals, usually
-requiring computer intensive techniques such as Markov chain Monte Carlo simulation. The
-following describes the quantities needed for generic iterative algorithms for estimating Bayesian
-distributional regression models.
+Bayesian point estimates of $\boldsymbol{\beta}$ and $\boldsymbol{\tau}$ are obtained by:
+\begin{enumerate}
+\item[(a)] Maximization of the log-posterior for posterior mode estimation.
+\item[(b)] Solving high dimensional integrals, e.g., for posterior mean or median estimation.
+\end{enumerate}
+For the possibly very complex models within the BAMLSS framework, problems (a) and (b) are commonly
+solved by computer intensive iterative algorithms, since analytical solutions are available only in
+a small number of cases. These algorithms perform the updating scheme
+\begin{equation} \label{eqn:updating}
+(\boldsymbol{\beta}^{(t + 1)}, \boldsymbol{\tau}^{(t + 1)}) =
+  U(\boldsymbol{\beta}^{(t)}, \boldsymbol{\tau}^{(t)};
+    \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha}),
+\end{equation}
+where function $U( \cdot )$ is an updating function, e.g., for generating one Newton-Raphson step
+in (a) or getting the next step in a MCMC simulation in (b). The updating scheme can be partitioned
+into separate updating equations using leapfrog or zigzag iteration (see, e.g.,
+\citealp{bamlss:Smyth:1996}). Now let
+\begin{eqnarray} \label{eqn:blockupdate}
+(\boldsymbol{\beta}_1^{(t + 1)}, \boldsymbol{\tau}_1^{(t + 1)}) &=&
+  U_1(\boldsymbol{\beta}_1^{(t)}, \boldsymbol{\beta}_2^{(t)},
+    \ldots, \boldsymbol{\beta}_K^{(t)}, \boldsymbol{\tau}_1^{(t)}, \boldsymbol{\tau}_2^{(t)},
+    \ldots, \boldsymbol{\tau}_K^{(t)}; \mathbf{y}, \mathbf{X}_1, \boldsymbol{\alpha}_1) \nonumber \\
+(\boldsymbol{\beta}_2^{(t + 1)}, \boldsymbol{\tau}_2^{(t + 1)}) &=&
+  U_2(\boldsymbol{\beta}_1^{(t + 1)}, \boldsymbol{\beta}_2^{(t)},
+    \ldots, \boldsymbol{\beta}_K^{(t)}, \boldsymbol{\tau}_1^{(t + 1)}, \boldsymbol{\tau}_2^{(t)},
+    \ldots, \boldsymbol{\tau}_K^{(t)}; \mathbf{y}, \mathbf{X}_2, \boldsymbol{\alpha}_2) \\
+  &\vdots& \nonumber \\
+(\boldsymbol{\beta}_K^{(t + 1)}, \boldsymbol{\tau}_K^{(t + 1)}) &=&
+  U_K(\boldsymbol{\beta}_1^{(t + 1)}, \boldsymbol{\beta}_2^{(t + 1)},
+    \ldots, \boldsymbol{\beta}_K^{(t)}, \boldsymbol{\tau}_1^{(t + 1)}, \boldsymbol{\tau}_2^{(t + 1)},
+    \ldots, \boldsymbol{\tau}_K^{(t)}; \mathbf{y}, \mathbf{X}_K, \boldsymbol{\alpha}_K) \nonumber
+\end{eqnarray}
+be a partitioned updating scheme with updating functions $U_k( \cdot )$, i.e., in each iteration
+updates for $k$-th parameter are computed while holding all other parameters
+fixed. This splitting method can even be applied for all terms within a parameter
+\begin{equation} \label{eqn:blockblockupdate}
+(\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)}) =
+  U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t)} | \, \cdot \,) \qquad
+    j = 1, \ldots, J_k, \quad k = 1, \ldots, K,
+\end{equation}
+and $U_{jk}( \cdot )$ is an updating function for a single model term.
+
+In a partitioned updating system functions $U_{jk}( \cdot )$ need not necessarily have the same
+structure, e.g., in MCMC simulation it is common to mix between several sampling methods depending
+on the type of model term. Hence, by using highly modular systems like (\ref{eqn:blockupdate}) and
+(\ref{eqn:blockblockupdate}) it is possible to develop flexible estimation algorithms for numerous
+possibly very complex models.
+
+
+\section{Lego bricks} \label{sec:legobricks}
+
+\subsection{Priors} \label{sec:priorsbricks}
+
+\subsubsection{Linear effects}
+
+For simple linear effects a common choice of $\pi_{jk}( \cdot )$ is to use a non-informative
+uniform prior given in (\ref{eqn:oneprior}). One of the simplest informative priors is a normal
+prior given by
+\begin{equation} \label{eqn:linprior}
+\pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) \propto
+  \exp \left(- \frac{1}{2}(\boldsymbol{\beta}_{jk} -
+    \mathbf{m})^{\top}diag(\boldsymbol{\tau}_{jk})^{-1}(\boldsymbol{\beta}_{jk} -
+    \mathbf{m})\right),
+\end{equation}
+where $\boldsymbol{\alpha}_{jk} = \{\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}} = \{\mathbf{m}\}\}$
+with $\mathbf{m}$ as a prior mean for $\boldsymbol{\beta}_{jk}$ and $diag(\boldsymbol{\tau}_{jk})$
+is a prior covariance matrix. In a lot of applications a vague prior specification is used with
+$\mathbf{m} = \mathbf{0}$ and a large variance.
+
+\subsubsection{Nonlinear effects} \label{sec:smootheffects}
+
+
 
 \subsubsection{Posterior mode} \label{sec:postmode}
 
@@ -374,7 +449,7 @@ with score vector
 \mathbf{s}(\boldsymbol{\beta}) = 
   \frac{\partial \log \, p(\boldsymbol{\vartheta} ; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}}
 = \frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}} +
-    \sum_{k = 1}^K\sum_{j = 1}^{J_k} \left\{ \frac{\partial \log \, p_{jk}(\boldsymbol{\beta}_{jk})}{\partial \boldsymbol{\beta}} \right\}.
+    \sum_{k = 1}^K\sum_{j = 1}^{J_k} \left[ \frac{\partial \log \, p_{jk}(\boldsymbol{\beta}_{jk})}{\partial \boldsymbol{\beta}} \right].
 \end{equation}
 and Hessian matrix $\mathbf{H}(\boldsymbol{\beta})$ with components
 \begin{equation} \label{eqn:hessian}
@@ -424,7 +499,7 @@ Although solving the updating scheme (\ref{eqn:newton}) is feasible, from the co
 perspective of the model class it is still a bit unhandy. Fortunately, the problem of iteratively
 finding the roots for $\boldsymbol{\beta}$ can be partitioned into separate updating equations
 using leapfrog or zigzag iteration \citep{bamlss:Smyth:1996}. Now let
-\begin{eqnarray} \label{eqn:pupdate}
+\begin{eqnarray} \label{eqn:blockupdate}
 \boldsymbol{\beta}_1^{(t + 1)} &=& U_1(\boldsymbol{\beta}_1^{(t)}, \boldsymbol{\beta}_2^{(t)},
   \ldots, \boldsymbol{\beta}_K^{(t)}) \nonumber \\
 \boldsymbol{\beta}_2^{(t + 1)} &=& U_2(\boldsymbol{\beta}_1^{(t+1)}, \boldsymbol{\beta}_2^{(t)},
@@ -586,7 +661,7 @@ adapt to almost any type of problem. Moreover, computational power has increases
 past decade and even computer intensive algorithms are feasible on simple desktop computers today.
 In the following we summarize three sampling techniques that are especially suited for this
 modeling framework, i.e., techniques that can be used for a highly modular and extendable system.
-Similarly to updating scheme (\ref{eqn:pupdate}) we consider samples that are drawn for blocks of
+Similarly to updating scheme (\ref{eqn:blockupdate}) we consider samples that are drawn for blocks of
 parameters, more specifically, the sampling schemes successively update the parameters of a single
 function (\ref{eqn:functions}). Note that for some models there exist full conditionals that can
 be derived in closed form from the log-posterior (\ref{eqn:logpost}), however, we especially focus
@@ -602,8 +677,8 @@ following methods:
   candidate is then accepted as the new state of the Markov chain with probability
   $$
   \alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \boldsymbol{\beta}_{jk}^{(t)}\right) =
-  \text{min} \left\{ \frac{p(\boldsymbol{\beta}_{jk}^{\star} | \cdot)}{
-    p(\boldsymbol{\beta}_{jk}^{(t)} | \cdot)}, 1 \right\}
+  \text{min} \left[ \frac{p(\boldsymbol{\beta}_{jk}^{\star} | \cdot)}{
+    p(\boldsymbol{\beta}_{jk}^{(t)} | \cdot)}, 1 \right]
   $$
   with the log-posterior $p(\boldsymbol{\beta}_{jk} | \cdot)$ evaluated at the proposed and
   current value.
@@ -636,26 +711,26 @@ following methods:
   The construction of the full conditional is based on a second order Taylor series expansion
   of the log-posterior centered at the last state
   \begin{eqnarray*}
-  p(\boldsymbol{\beta}_{jk}^\star | \cdot) &\propto& \exp\left\{
+  p(\boldsymbol{\beta}_{jk}^\star | \cdot) &\propto& \exp\left[
     \log\,p\left(\boldsymbol{\beta}_{jk}^{(t)} | \cdot\right) +
     \left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)^\top s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) + \right.\\
   && \left. \frac{1}{2}\left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)^\top
     \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)
-    \left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)\right\} \\
-  &\propto& \exp\left\{(\boldsymbol{\beta}_{jk}^\star)^\top s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) +
+    \left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)\right] \\
+  &\propto& \exp\left[(\boldsymbol{\beta}_{jk}^\star)^\top s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) +
     \left(\frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) - \right.\right. \\
-  && \qquad\qquad\left.\left. \frac{1}{2}(\boldsymbol{\beta}_{jk}^{(t)})^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) \right)\left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)\right\} \\
-  &\propto& \exp\left\{(\boldsymbol{\beta}_{jk}^\star)^\top s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) +
+  && \qquad\qquad\left.\left. \frac{1}{2}(\boldsymbol{\beta}_{jk}^{(t)})^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) \right)\left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)\right] \\
+  &\propto& \exp\left[(\boldsymbol{\beta}_{jk}^\star)^\top s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) +
     \frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^\star - \right. \\
   && \left. \qquad\qquad \frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)} -
-    \frac{1}{2}(\boldsymbol{\beta}_{jk}^{(t)})^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^\star \right\} \\
-  &=& \exp\left\{
+    \frac{1}{2}(\boldsymbol{\beta}_{jk}^{(t)})^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^\star \right] \\
+  &=& \exp\left[
     \frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^\star +
     (\boldsymbol{\beta}_{jk}^\star)^\top s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) -
-    (\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)} \right\} \\
-  &=& \exp\left\{
+    (\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)} \right] \\
+  &=& \exp\left[
     -\frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top-\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^\star +
-    (\boldsymbol{\beta}_{jk}^\star)^\top \left(s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) - \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)}\right) \right\}
+    (\boldsymbol{\beta}_{jk}^\star)^\top \left(s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) - \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)}\right) \right]
   \end{eqnarray*}
   which is proportional to a multivariate normal distribution with precision matrix
   $$
@@ -663,9 +738,9 @@ following methods:
   $$
   and mean
   \begin{eqnarray*}
-  \boldsymbol{\mu}_{jk}^{(t)} &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left\{
+  \boldsymbol{\mu}_{jk}^{(t)} &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left[
     s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) -
-    \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)} \right\} \\
+    \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)} \right] \\
   &=& \boldsymbol{\beta}_{jk}^{(t)} -
     \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)^{-1}
     s\left(\boldsymbol{\beta}_{jk}^{(t)}\right).
@@ -677,8 +752,8 @@ following methods:
   of the candidate is then computed by
   $$
   \alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \boldsymbol{\beta}_{jk}^{(t)}\right) =
-  \text{min} \left\{ \frac{p(\boldsymbol{\beta}_{jk}^{\star} | \cdot)q(\boldsymbol{\beta}_{jk}^{(t)} | \boldsymbol{\beta}_{jk}^\star)}{
-    p(\boldsymbol{\beta}_{jk}^{(t)} | \cdot)q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)})  }, 1 \right\}.
+  \text{min} \left[ \frac{p(\boldsymbol{\beta}_{jk}^{\star} | \cdot)q(\boldsymbol{\beta}_{jk}^{(t)} | \boldsymbol{\beta}_{jk}^\star)}{
+    p(\boldsymbol{\beta}_{jk}^{(t)} | \cdot)q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)})  }, 1 \right].
   $$
   Again, assuming a basis
   function approach with multivariate normal priors (\ref{eqn:shrinkprior}) the precision matrix is
@@ -688,20 +763,20 @@ following methods:
   with weights $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and the mean can be written as
   \begin{eqnarray*}
-  \boldsymbol{\mu}_{jk}^{(t)} &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left\{
+  \boldsymbol{\mu}_{jk}^{(t)} &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left[
   \mathbf{X}_{jk}^\top\mathbf{u}_k^{(t)} - \mathbf{G}_{jk}\boldsymbol{\beta}_{jk}^{(t)} +
-  (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\beta}_{jk}^{(t)}\right\} \\
-  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left\{
+  (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\beta}_{jk}^{(t)}\right] \\
+  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left[
   \mathbf{X}_{jk}^\top\mathbf{u}_k^{(t)} +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t)}\right\} \\
-  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left\{
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t)}\right] \\
+  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left[
   \mathbf{X}_{jk}^\top\mathbf{u}_k^{(t)} +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left(\boldsymbol{\eta}_k^{(t)} - \boldsymbol{\eta}^{(t)}_{k,-j}\right)\right\} \\
-  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\left\{
-  \mathbf{u}_k^{(t)} + \mathbf{W}_{kk}\left(\boldsymbol{\eta}_k^{(t)} - \boldsymbol{\eta}^{(t)}_{k,-j}\right)\right\} \\
-  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left\{
-  \boldsymbol{\eta}_k^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}  - \boldsymbol{\eta}^{(t)}_{k,-j}\right\} \\
-  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left\{\mathbf{z}_k  - \boldsymbol{\eta}^{(t)}_{k,-j}\right\}
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left(\boldsymbol{\eta}_k^{(t)} - \boldsymbol{\eta}^{(t)}_{k,-j}\right)\right] \\
+  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\left[
+  \mathbf{u}_k^{(t)} + \mathbf{W}_{kk}\left(\boldsymbol{\eta}_k^{(t)} - \boldsymbol{\eta}^{(t)}_{k,-j}\right)\right] \\
+  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left[
+  \boldsymbol{\eta}_k^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}  - \boldsymbol{\eta}^{(t)}_{k,-j}\right] \\
+  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left[\mathbf{z}_k  - \boldsymbol{\eta}^{(t)}_{k,-j}\right]
   \end{eqnarray*}
   with working observations
   $\mathbf{z}_k = \boldsymbol{\eta}_k^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$. Therefore,
@@ -724,7 +799,7 @@ following methods:
   \begin{enumerate}
   \item Sample $h \sim U(0, p(\vartheta_{ijk}^{(t)} | \cdot))$.
   \item Sample $\vartheta_{ijk}^{(t+1)} \sim U(S)$ from the horizontal slice
-    $S = \{\vartheta_{ijk}: h < p(\vartheta_{ijk} | \cdot)\}$.
+    $S = [\vartheta_{ijk}: h < p(\vartheta_{ijk} | \cdot)]$.
   \end{enumerate}
 \end{itemize}
 
@@ -775,9 +850,9 @@ i.e., are trying to prevent over-fitting. Estimating model complexity using (pos
 functions, for each model component, the degrees of freedom used to estimate the function can be
 approximated by the equivalent degrees of freedom (edf) calculated by
 $$
-\mathrm{edf}_{jk}(\boldsymbol{\tau}^2_{jk}) = \mathrm{trace}\left\{
+\mathrm{edf}_{jk}(\boldsymbol{\tau}^2_{jk}) = \mathrm{trace}\left[
   \mathbf{F}_{kk}(\boldsymbol{\beta}_{jk})(
-  \mathbf{F}_{kk}(\boldsymbol{\beta}_{jk}) + \mathbf{G}_{jk}(\boldsymbol{\tau}^2_{jk}))^{-1} \right\},
+  \mathbf{F}_{kk}(\boldsymbol{\beta}_{jk}) + \mathbf{G}_{jk}(\boldsymbol{\tau}^2_{jk}))^{-1} \right],
 $$
 with $\mathbf{F}_{kk}(\boldsymbol{\beta}_{jk}) =
 \partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})/
@@ -875,26 +950,26 @@ w.r.t.\ parameters $\boldsymbol{\theta}_k$ anew.
 
 Therefore, even though the models can be rather complex, it is possible to construct a quite simple
 modular system from which it is easy to create algorithms for numerous regression problems.
-Moreover, using the ideas of partitioned updating (\ref{eqn:pupdate}) and blockwise MCMC sampling,
+Moreover, using the ideas of partitioned updating (\ref{eqn:blockupdate}) and blockwise MCMC sampling,
 a simple generic algorithm for BAMLSS models is outlined in Figure~\ref{fig:algodesign}.
 \begin{figure}[ht!]
 \begin{center}
 \fbox{
 \begin{minipage}[c]{11.3cm}
 $\phantom{i}$ \\[-0.3cm]
-\code{while(eps >} $\varepsilon\,$ \code{\& t < maxit) \{ } \\
-\hspace*{0.5cm} \code{for(k in 1:K) \{} \\
-\hspace*{1cm} \code{for(j in 1:J[k]) \{} \\
+\code{while(eps >} $\varepsilon\,$ \code{\& t < maxit) [ } \\
+\hspace*{0.5cm} \code{for(k in 1:K) [} \\
+\hspace*{1cm} \code{for(j in 1:J[k]) [} \\
 \hspace*{1.5cm} Compute $\tilde{\boldsymbol{\eta}} = \boldsymbol{\eta}_{\texttt{k}} - \mathbf{f}_{\texttt{jk}}$. \\
 \hspace*{1.5cm} Obtain new $(\boldsymbol{\beta}_{\texttt{jk}}^\star, (\tau^2_{\texttt{jk}})^\star)^\top = \texttt{U}_{\texttt{jk}}
   (\mathbf{X}_{\texttt{jk}}, \mathbf{y}, \tilde{\boldsymbol{\eta}}, \boldsymbol{\beta}_{\texttt{jk}}^{\texttt{[t]}},
   (\tau^2_{\texttt{jk}})^{\texttt{[t]}})$. \\
 \hspace*{1.5cm} Update $\boldsymbol{\eta}_{\texttt{k}}$. \\
-\hspace*{1cm} \code{\}} \\
-\hspace*{0.5cm} \code{\}} \\
+\hspace*{1cm} \code{]} \\
+\hspace*{0.5cm} \code{]} \\
 \hspace*{0.5cm} \code{t = t + 1} \\
 \hspace*{0.5cm} Compute new \code{eps}. \\
-\code{\}} \\[-0.3cm]
+\code{]} \\[-0.3cm]
 $\phantom{i}$
 \end{minipage}
 } \label{fig:bamlssalgo}

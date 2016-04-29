@@ -104,16 +104,10 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           prgex <- c(prgex, attr(sxc, "write")(dir))
         rhs <- c(rhs, sxc)
         tl <- x$smooth.construct[[j]]$term
-        if(inherits(x$smooth.construct[[j]], "userdefined.smooth.spec"))
-          tl <- paste(tl, collapse = "")
         if(!is.null(sdata)) {
           if(!all(tl %in% colnames(sdata))) {
-            if(inherits(x$smooth.construct[[j]], "userdefined.smooth.spec")) {
-              sdata[[tl]] <- runif(nrow(data))
-            } else {
-              for(tlj in tl)
-                sdata[[tlj]] <- data[[tlj]]
-            }
+            for(tlj in tl)
+              sdata[[tlj]] <- data[[tlj]]
           }
         } else {
           if(inherits(x$smooth.construct[[j]], "userdefined.smooth.spec")) {
@@ -258,11 +252,10 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       if(!is.null(x[[i]]$smooth.construct)) {
         for(j in seq_along(x[[i]]$smooth.construct)) {
           tl <- x[[i]]$smooth.construct[[j]]$term
-          if(is.null(x[[i]]$smooth.construct[[j]]$sx.construct))
-            tl <- paste(tl, collapse = "")
           term <- paste("_", paste(tl, collapse = "_"), "_", sep = "")
           sf <- grepl(paste("_", i, "_", sep = ""), sfiles, fixed = TRUE) & grepl(term, sfiles, fixed = TRUE) & !grepl("_variance_", sfiles, fixed = TRUE)
           sf <- sfiles[sf]
+          sf <- sf[-grep("anisotropy", sf)]
           samps <- as.matrix(read.table(file.path(dir, "output", sf), header = TRUE)[, -1, drop = FALSE])
           cn <- colnames(x[[i]]$smooth.construct[[j]]$X)
           if(is.null(cn))
@@ -475,34 +468,64 @@ do.xt <- function(term, object, not = NULL, noco = FALSE)
 sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
 {
   id <- paste(rmf(id), collapse = "_")
-  term <- paste(object$term, collapse = "")
+  term <- if(length(object$term) > 1) {
+    paste(object$term, collapse = "*")
+  } else object$term
   Sn <- paste(id, "S", sep = "_")
+  Sn <- paste(Sn, "", 1:length(object$S), sep = "")
   Xn <- paste(id, "X", sep = "_")
-  if(length(object$S) > 1) {
-    object$S <- list(do.call("+", object$S))
-    object$rank <- qr(object$S[[1]])$rank
-  }
   if(is.null(object$rank))
-    object$rank <- qr(object$S[[1]])$rank
+    object$rank <- sapply(object$S, function(x) { qr(x)$rank })
   if(is.null(object$xt$nocenter))
     object$xt$nocenter <- TRUE
-  ##if(is.null(object$xt$centermethod))
-  ##  object$xt$centermethod <- "meanfd"
-  term <- paste(term, "(userdefined,penmatdata=", Sn, ",designmatdata=", Xn,
-    ",rankK=", object$rank, sep = "")
+  if(is.null(object$xt$centermethod))
+    object$xt$centermethod <- "meansimple"
+  term <- paste(term, if(inherits(object, "tensor.smooth")) "(tensor," else "(userdefined,", sep = "")
+  for(j in seq_along(object$S))
+    term <- paste(term, paste("penmatdata", if(j < 2) "" else j, "=", sep = ""), Sn[j], ",", sep = "")
+  if(length(object$S) > 1 & FALSE) {
+    Xn <- paste(Xn, "", 1:length(object$S), sep = "")
+    for(j in seq_along(object$S))
+      term <- paste(term, paste("designmatdata", if(j < 2) "" else j, "=", sep = ""), Xn[j], ",", sep = "")
+  } else {
+    term <- paste(term, "designmatdata=", Xn, ",", sep = "")
+  }
+  term <- paste(term, "rankK=", sum(object$rank), sep = "")
   term <- paste(do.xt(term, object, c("center", "before")), ")", sep = "")
 
   write <- function(dir) {
-    write.table(object$S[[1]], file = file.path(dir, paste(Sn, ".raw", sep = "")),
-      quote = FALSE, row.names = FALSE)
-    write.table(object$X, file = file.path(dir, paste(Xn, ".raw", sep = "")),
-      quote = FALSE, row.names = FALSE)
-    c(
-      paste("dataset", Sn),
-      paste(Sn, ".infile using ", file.path(dir, paste(Sn, ".raw", sep = "")), sep = ""),
-      paste("dataset", Xn),
-      paste(Xn, ".infile using ", file.path(dir, paste(Xn, ".raw", sep = "")), sep = "")
-    )
+    for(j in seq_along(object$S)) {
+      write.table(object$S[[j]], file = file.path(dir, paste(Sn[j], ".raw", sep = "")),
+        quote = FALSE, row.names = FALSE)
+    }
+    if(inherits(object, "tensor.smooth") & FALSE) {
+      for(j in seq_along(object$S)) {
+        write.table(object$margin[[j]]$X, file = file.path(dir, paste(Xn[j], ".raw", sep = "")),
+          quote = FALSE, row.names = FALSE)
+      }
+    } else {
+      write.table(object$X, file = file.path(dir, paste(Xn, ".raw", sep = "")),
+        quote = FALSE, row.names = FALSE)
+    }
+    if(inherits(object, "tensor.smooth") & FALSE) {
+      cmd <- NULL
+      for(j in seq_along(object$S)) {
+        cmd <- c(cmd,
+          paste("dataset", Sn[j]),
+          paste(Sn[j], ".infile using ", file.path(dir, paste(Sn[j], ".raw", sep = "")), sep = ""),
+          paste("dataset", Xn[j]),
+          paste(Xn[j], ".infile using ", file.path(dir, paste(Xn[j], ".raw", sep = "")), sep = "")
+        )
+      }
+    } else {
+      cmd <- c(
+        paste("dataset", Sn),
+        paste(Sn, ".infile using ", file.path(dir, paste(Sn, ".raw", sep = "")), sep = ""),
+        paste("dataset", Xn),
+        paste(Xn, ".infile using ", file.path(dir, paste(Xn, ".raw", sep = "")), sep = "")
+      )
+    }
+    return(cmd)
   }
 
   attr(term, "write") <- write
