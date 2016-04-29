@@ -228,8 +228,20 @@ $$
 where $f_{jk}( \cdot )$ is also nonlinear in the parameters $\boldsymbol{\beta}_{jk}$. However,
 even more complex model terms are supported by the BAMLSS framework.
 
-
-\newpage
+Note that in a linear basis representation the individual model components
+$\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$ can be further
+decomposed into a mixed model representation given by
+\begin{equation*} \label{eqn:mixed}
+\mathbf{f}_{jk} = \tilde{\mathbf{X}}_{jk}\tilde{\boldsymbol{\gamma}}_{jk} +
+  \mathbf{U}_{jk}\tilde{\boldsymbol{\beta}}_{jk},
+\end{equation*}
+where $\tilde{\boldsymbol{\gamma}}_{jk}$ represents the fixed effects parameters and 
+$\tilde{\boldsymbol{\beta}}_{jk} \sim N(\mathbf{0}, \tau^2_{jk}\mathbf{I})$ i.i.d.\ random effects.
+The design matrix $\mathbf{U}_{jk}$ is derived from a spectral decomposition of the penalty matrix
+$\mathbf{K}_{jk}$ and $\tilde{\mathbf{X}}_{jk}$ by finding a basis of the null space of $\mathbf{K}_{jk}$
+such that $\tilde{\mathbf{X}}_{jk}^{\top}\mathbf{K}_{jk} = \mathbf{0}$, i.e., parameters
+$\tilde{\boldsymbol{\gamma}}_{jk}$ are not penalized (see, e.g.,
+\citealp{bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003, bamlss:Fahrmeir+Kneib+Lang+Marx:2013}).
 
 
 \section{A conceptional Lego toolbox} \label{sec:legobox}
@@ -259,7 +271,8 @@ prior
    g_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}),
 \end{equation}
 where $g_{\boldsymbol{\beta}_{jk}}( \cdot )$ and $g_{\boldsymbol{\tau}_{jk}}( \cdot )$ are prior
-densities that depend on the type of covariate and prior assumptions about $f_{jk}( \cdot )$.
+densities (or combinations of densities) that depend on the type of covariate and prior
+assumptions about $f_{jk}( \cdot )$.
 Here, the vector $\boldsymbol{\tau}_{jk}$ represents additional prior parameters,
 typically, these parameters are variances, e.g., that account for the
 degree of smoothness of $f_{jk}( \cdot )$ or the amount of correlation between observations.
@@ -325,7 +338,8 @@ where $\boldsymbol{\tau} = (\boldsymbol{\tau}_1^\top, \ldots, \boldsymbol{\tau}_
 the vector of all assigned hyper-priors used within prior functions $\pi_{jk}( \cdot )$
 and similarly $\boldsymbol{\alpha}$ is the set of all fixed prior specifications. Note that from a
 frequentist perspective (\ref{eqn:logpost}) can be viewed as a penalized log-likelihood, e.g., if
-a normal prior is used within $\pi_{jk}( \cdot )$ for $\boldsymbol{\beta}_{jk}$.
+a normal prior is used within $\pi_{jk}( \cdot )$ for $\boldsymbol{\beta}_{jk}$
+(see Section~\ref{sec:priorsbricks}).
 
 
 \subsection{Model fitting} \label{sec:modelfit}
@@ -383,9 +397,12 @@ possibly very complex models.
 
 \subsection{Priors} \label{sec:priorsbricks}
 
+In the following we summarize commonly used specifications for priors $\pi_{jk}( \cdot )$ used for
+estimating GAM-type models.
+
 \subsubsection{Linear effects}
 
-For simple linear effects a common choice of $\pi_{jk}( \cdot )$ is to use a non-informative
+For simple linear effects a common choice for $\pi_{jk}( \cdot )$ is to use a non-informative
 uniform prior given in (\ref{eqn:oneprior}). One of the simplest informative priors is a normal
 prior given by
 \begin{equation} \label{eqn:linprior}
@@ -394,13 +411,70 @@ prior given by
     \mathbf{m})^{\top}diag(\boldsymbol{\tau}_{jk})^{-1}(\boldsymbol{\beta}_{jk} -
     \mathbf{m})\right),
 \end{equation}
-where $\boldsymbol{\alpha}_{jk} = \{\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}} = \{\mathbf{m}\}\}$
+where $g_{\boldsymbol{\tau}_{jk}}( \cdot ) = 1$ and
+$\boldsymbol{\alpha}_{jk} = \{\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}} = \{\mathbf{m}\}\}$
 with $\mathbf{m}$ as a prior mean for $\boldsymbol{\beta}_{jk}$ and $diag(\boldsymbol{\tau}_{jk})$
 is a prior covariance matrix. In a lot of applications a vague prior specification is used with
-$\mathbf{m} = \mathbf{0}$ and a large variance.
+$\mathbf{m} = \mathbf{0}$ and a large variance (see, e.g., \citealp{bamlss:Fahrmeir+Kneib+Lang+Marx:2013}).
 
 \subsubsection{Nonlinear effects} \label{sec:smootheffects}
 
+If the nonlinear functions in (\ref{eqn:addpred}) are modeled using a basis function approach
+the usual choice of prior $\pi_{jk}( \cdot )$ is based on multivariate normal for
+$\boldsymbol{\beta}_{jk}$ given by
+\begin{equation} \label{eqn:mvnormprior}
+g_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \,
+  \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}})) \propto
+  |\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})|^{-\frac{1}{2}} \exp\left(
+    -\frac{1}{2}\boldsymbol{\beta}_{jk}^\top\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})\boldsymbol{\beta}_{jk}\right).
+\end{equation}
+Here, the precision matrix $\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})$ is build up of
+prespecified so called penalty matrices
+$\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}} = \{\mathbf{K}_{1jk}, \ldots, \mathbf{K}_{Ljk}\}$,
+e.g., for tensor product smooths the precision matrix is
+$\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk}) = \sum_{l = 1}^{L_{jk}} \frac{1}{\tau_{ljk}^2}\mathbf{K}_{ljk}$
+(see, e.g., \citealp{bamlss:Wood:2006}).
+The variances $\tau_{ljk}^2$ account for the amount of smoothness (regularization) of the
+function and can be interpreted as the inverse smoothing parameters in the frequentist approach.
+A common choice for the prior for $\boldsymbol{\tau}_{jk}$ is based on inverse Gamma distributions
+for each $\boldsymbol{\tau}_{jk} = (\tau_{1jk}, \ldots, \tau_{L_{jk}jk})^\top$
+\begin{equation} \label{eqn:igprior}
+g_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}) =
+  \prod_{l = 1}^{L_{jk}} \frac{b_{ljk}^{a_{ljk}}}{\Gamma(a_{ljk})} (\tau_{ljk}^2)^{-(a_{ljk} + 1)} \exp(-b_{ljk} / \tau_{ljk}^2),
+\end{equation}
+with fixed parameters $\boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}} = \{ \mathbf{a}_{jk}, \mathbf{b}_{jk} \}$.
+Small values for $\mathbf{a}_{jk}$ and $\mathbf{b}_{jk}$ correspond to approximate flat priors for
+$\log(\tau_{ljk}^2)$. Setting $\mathbf{b}_{jk} = \mathbf{0}$ and
+$\mathbf{a}_{jk}=-\mathbf{1}$ or $\mathbf{a}_{jk} = -1/2\mathbf{1}$ yields flat priors for
+$\tau_{ljk}^2$ and $\tau_{ljk}$, respectively.
+However, the inverse Gamma prior as a default option for variance parameters needs to be
+reconsidered in some cases, e.g., it might be problematic if $\tau_{ljk}$ is close to zero, since the
+results a very sensitive on the choice of $\mathbf{a}_{jk}$ and $\mathbf{b}_{jk}$. Therefore,
+\citet{bamlss:Gelman:2006} proposes to use the half-Cauchy prior
+\begin{equation} \label{eqn:hcauchy}
+g_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}) =
+  \prod_{l = 1}^{L_{jk}}\frac{2A_{ljk}}{\pi (\tau_{ljk}^2 + A_{ljk}^2)}, \quad A_{ljk} > 0,
+\end{equation}
+with hyper-parameters $\boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}} = \{\mathbf{A}_{jk}\}$.
+For $A_{ljk} \rightarrow \infty$ the priors are uniform, hence large values
+(e.g., $A_{ljk} = 25$) result in weakly informative priors. A desirable property of the half-Cauchy
+is that for $\tau_{ljk} = 0$ the density is a nonzero constant, whereas the density of the inverse
+Gamma for $\tau_{ljk} \rightarrow 0$ vanishes (see also \citealp{bamlss:Polson+Scott:2012}). Note
+that in our framework the priors for variances $\tau_{ljk}^2$ rather than $\tau_{ljk}$ are usually
+considered. Hence, the corresponding priors have to be proposed. Another question is the actual
+choice of hyper-parameters. A recent suggestion reducing this issue to the choice of a scale
+parameter that is directly related to the functions $f_{jk}( \cdot )$ (and thus much better
+interpretable and accessible for the user) is given in~\citet{bamlss:Klein+Kneib:2016} for several
+different hyper-priors for $\tau_{ljk}^2$, such as resulting priors from half-Cauchy, half-normal
+or uniform priors for $\tau_{ljk}$ or resulting penalized complexity
+priors~\citep{bamlss:Simpson:Rue:Martins:Riebler:Sorbye:2015}.
+
+
+\subsection{Response distribution} \label{sec:bricksdensity}
+
+
+
+\clearpage
 
 
 \subsubsection{Posterior mode} \label{sec:postmode}
@@ -417,7 +491,7 @@ and equals the maximum likelihood estimator
 \end{equation}
 assigning uniform priors (\ref{eqn:oneprior})
 for $j = 1, \ldots, J_k$, $k = 1, \ldots, K$.
-For models involving shrinkage priors, e.g., given by (\ref{eqn:shrinkprior}), the posterior mode is
+For models involving shrinkage priors, e.g., given by (\ref{eqn:mvnormprior}), the posterior mode is
 equivalent to a penalized maximum likelihood estimator for fixed variance parameters
 $\boldsymbol{\tau}_{jk}^2$ and $p(\boldsymbol{\tau}_{jk}^2) \propto 1$. Moreover, the structure of
 (\ref{eqn:logpost}) prohibits simultaneous estimation of
@@ -520,7 +594,7 @@ Newton-Raphson iteration
   \mathbf{H}_{kk}\left( \boldsymbol{\beta}_k^{(t)} \right)^{-1}\mathbf{s}\left( \boldsymbol{\beta}_k^{(t)} \right).
 \end{equation}
 Assuming a basis function approach for functions (\ref{eqn:functions}) with multivariate normal
-priors (\ref{eqn:shrinkprior}), the Hessian matrix in (\ref{eqn:blocknewton}) is given by
+priors (\ref{eqn:mvnormprior}), the Hessian matrix in (\ref{eqn:blocknewton}) is given by
 $$
 \mathbf{H}_{kk}\left( \boldsymbol{\beta}_k^{(t)} \right) =
 \begin{pmatrix}
@@ -690,7 +764,7 @@ following methods:
   optimize the acceptance rate to roughly $1/4$ are suggested to obtain a good mixing (see also
   \citealp{bamlss:Gareth+Roberts+Jeffrey+Rosenthal:2009}). Similarly,
   within the presented modeling framework and a basis function approach with multivariate normal
-  prior (\ref{eqn:shrinkprior}), a convenient way is to set
+  prior (\ref{eqn:mvnormprior}), a convenient way is to set
   $\boldsymbol{\Sigma}_{jk} = \sigma_{jk}\mathbf{K}_{jk}^{-1}$ and optimize $\sigma_{jk}$ to the
   desired properties in the adaptive phase.
 
@@ -756,7 +830,7 @@ following methods:
     p(\boldsymbol{\beta}_{jk}^{(t)} | \cdot)q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)})  }, 1 \right].
   $$
   Again, assuming a basis
-  function approach with multivariate normal priors (\ref{eqn:shrinkprior}) the precision matrix is
+  function approach with multivariate normal priors (\ref{eqn:mvnormprior}) the precision matrix is
   $$
   \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk},
   $$
@@ -805,8 +879,8 @@ following methods:
 
 The full conditional $p(\tau_{jk} | \cdot)$ for smoothing variances is commonly constructed using
 priors for $\tau_{jk}$ that lead to known distributions, i.e., simple Gibbs sampling is possible.
-E.g., this is the case when using an inverse Gamma prior (\ref{eqn:ig}) in combination with
-the normal prior (\ref{eqn:shrinkprior}), then $p(\tau_{jk} | \cdot)$ is again an inverse Gamma
+E.g., this is the case when using an inverse Gamma prior (\ref{eqn:igprior}) in combination with
+the normal prior (\ref{eqn:mvnormprior}), then $p(\tau_{jk} | \cdot)$ is again an inverse Gamma
 distribution with
 $$
 \tilde{a}_{jk} = \frac{1}{2}rk(\mathbf{K}_{jk}) + a_{jk}, \qquad
@@ -859,7 +933,7 @@ with $\mathbf{F}_{kk}(\boldsymbol{\beta}_{jk}) =
 \partial \boldsymbol{\beta}_{jk} \partial
 \boldsymbol{\beta}_{jk}^\top$ and matrix $\mathbf{G}_{jk}(\boldsymbol{\tau}^2_{jk})$ is the second
 derivate of the shrinkage prior w.r.t.\ $\boldsymbol{\beta}_{jk}$, e.g., using prior
-(\ref{eqn:shrinkprior}) the matrix is $\mathbf{G}_{jk}(\tau^2_{jk}) = \tau_{jk}^{-2}\mathbf{K}_{jk}$. The
+(\ref{eqn:mvnormprior}) the matrix is $\mathbf{G}_{jk}(\tau^2_{jk}) = \tau_{jk}^{-2}\mathbf{K}_{jk}$. The
 total degrees of freedom used to estimate the model are then given by
 $\sum_{k}\sum_{j} \mathrm{edf}_{jk}(\boldsymbol{\tau}^2_{jk})$.
 
@@ -1558,7 +1632,7 @@ effect. Hence, the overall seasonal effect is constructed by the main effect $f_
 interaction effect $f_4$, where the deviations from the main effect are modeled to sum to zero for
 each day of the year, i.e., this can be viewed as a functional ANOVA decomposition. All functions
 are estimated using penalized regression splines with multivariate normal priors
-(\ref{eqn:shrinkprior}) and inverse gamma priors (\ref{eqn:ig}) for the corresping variance parameters.
+(\ref{eqn:mvnormprior}) and inverse gamma priors (\ref{eqn:igprior}) for the corresping variance parameters.
 
 The density function of a left censored Gaussian distribution with the threshold at zero is given by
 \begin{equation}
