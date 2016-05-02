@@ -138,10 +138,9 @@ same environment, e.g., the \proglang{R} packages \pkg{mgcv}
 particular problematic if all packages are loaded into \proglang{R}'s global environment, because
 some functions that are supposed to fulfill the same purpose have different interpretations.
 
-In this article we present a kind of unified conceptional ``Lego toolbox'' for complex%
+In this article we present a kind of unified conceptional ``Lego toolbox'' for complex
 regression models. We show that iterative estimation algorithms, e.g., for posterior mode or
 mean estimation based on MCMC simulation, exhibit very similar structures such that the process of
-In this article we present a kind of unified conceptional ``Lego toolbox'' for complex
 model building becomes relatively straightforward, since the model architecture is only a
 combination of single ``bricks''. Moreover, the framework embeds very general model terms which are
 not necessarily a linear combination of a design matrix and regression coefficients. Hence,
