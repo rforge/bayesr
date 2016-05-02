@@ -358,8 +358,8 @@ a small number of cases. These algorithms perform the updating scheme
     \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha}),
 \end{equation}
 where function $U( \cdot )$ is an updating function, e.g., for generating one Newton-Raphson step
-in (a) or getting the next step in a MCMC simulation in (b). The updating scheme can be partitioned
-into separate updating equations using leapfrog or zigzag iteration (see, e.g.,
+in (a) or getting the next step in a MCMC simulation in (b), amongst others. The updating scheme can
+be partitioned into separate updating equations using leapfrog or zigzag iteration (see, e.g.,
 \citealp{bamlss:Smyth:1996}). Now let
 \begin{eqnarray} \label{eqn:blockupdate}
 (\boldsymbol{\beta}_1^{(t + 1)}, \boldsymbol{\tau}_1^{(t + 1)}) &=&
@@ -377,7 +377,7 @@ into separate updating equations using leapfrog or zigzag iteration (see, e.g.,
     \ldots, \boldsymbol{\tau}_K^{(t)}; \mathbf{y}, \mathbf{X}_K, \boldsymbol{\alpha}_K) \nonumber
 \end{eqnarray}
 be a partitioned updating scheme with updating functions $U_k( \cdot )$, i.e., in each iteration
-updates for $k$-th parameter are computed while holding all other parameters
+updates for the $k$-th parameter are computed while holding all other parameters
 fixed. This splitting method can even be applied for all terms within a parameter
 \begin{equation} \label{eqn:blockblockupdate}
 (\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)}) =
@@ -427,8 +427,8 @@ the usual choice of prior $\pi_{jk}( \cdot )$ is based on multivariate normal fo
 $\boldsymbol{\beta}_{jk}$ given by
 \begin{equation} \label{eqn:mvnormprior}
 g_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \,
-  \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}})) \propto
-  |\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})|^{-\frac{1}{2}} \exp\left(
+  \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}}) \propto
+  |\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})|^{\frac{1}{2}} \exp\left(
     -\frac{1}{2}\boldsymbol{\beta}_{jk}^\top\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})\boldsymbol{\beta}_{jk}\right).
 \end{equation}
 Here, the precision matrix $\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})$ is build up of
@@ -436,7 +436,8 @@ prespecified so called penalty matrices
 $\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}} = \{\mathbf{K}_{1jk}, \ldots, \mathbf{K}_{Ljk}\}$,
 e.g., for tensor product smooths the precision matrix is
 $\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk}) = \sum_{l = 1}^{L_{jk}} \frac{1}{\tau_{ljk}^2}\mathbf{K}_{ljk}$
-(see, e.g., \citealp{bamlss:Wood:2006}).
+(see, e.g., \citealp{bamlss:Wood:2006}). Note that $\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})$ is often
+not of full rank, therefore, $g_{\boldsymbol{\beta}_{jk}}( \cdot )$ is partially improper.
 The variances $\tau_{ljk}^2$ account for the amount of smoothness (regularization) of the
 function and can be interpreted as the inverse smoothing parameters in the frequentist approach.
 A common choice for the prior for $\boldsymbol{\tau}_{jk}$ is based on inverse Gamma distributions
@@ -575,7 +576,7 @@ Although solving the updating scheme (\ref{eqn:newton}) is feasible, from the co
 perspective of the model class it is still a bit unhandy. Fortunately, the problem of iteratively
 finding the roots for $\boldsymbol{\beta}$ can be partitioned into separate updating equations
 using leapfrog or zigzag iteration \citep{bamlss:Smyth:1996}. Now let
-\begin{eqnarray} \label{eqn:blockupdate}
+\begin{eqnarray} \label{eqn:blockupdate0}
 \boldsymbol{\beta}_1^{(t + 1)} &=& U_1(\boldsymbol{\beta}_1^{(t)}, \boldsymbol{\beta}_2^{(t)},
   \ldots, \boldsymbol{\beta}_K^{(t)}) \nonumber \\
 \boldsymbol{\beta}_2^{(t + 1)} &=& U_2(\boldsymbol{\beta}_1^{(t+1)}, \boldsymbol{\beta}_2^{(t)},
