@@ -132,10 +132,10 @@ statistical software packages like \pkg{BayesX}~\citep{bamlss:Umlauf+Adler+Kneib
 bamlss:Belitz+Brezger+Kneib+Lang+Umlauf:2016}, \pkg{JAGS}~\citep{bamlss:Plummer:2013},
 \pkg{Stan}~\citep{bamlss:stan-software:2016} or
 \pkg{WinBUGS}~\citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}; or even differences within the
-same environment, e.g., the \proglang{R} packages \pkg{mgcv} \citep{bamlss:Wood:2016},
-\pkg{gamlss} \citep{bamlss:Stasinopoulos+Rigby:2016} and \pkg{VGAM} \citep{bamlss:Yee:2016}
-implement all model terms in their own fashion style. This is particular problematic if all
-packages are loaded into \proglang{R}'s global environment, because
+same environment, e.g., the \proglang{R} packages \pkg{mgcv}
+\citep{bamlss:Wood:2016}, \pkg{gamlss} \citep{bamlss:Stasinopoulos+Rigby:2016} and \pkg{VGAM}
+\citep{bamlss:Yee:2016} implement all model term infrastructures in their own fashion style. This is
+particular problematic if all packages are loaded into \proglang{R}'s global environment, because
 some functions that are supposed to fulfill the same purpose have different interpretations.
 
 regression models. We show that iterative estimation algorithms, e.g., for posterior mode or
