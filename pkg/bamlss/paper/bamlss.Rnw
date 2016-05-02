@@ -138,18 +138,18 @@ implement all model terms in their own fashion style. This is particular problem
 packages are loaded into \proglang{R}'s global environment, because
 some functions that are supposed to fulfill the same purpose have different interpretations.
 
-In this article we present a kind of unified conceptional ``Lego toolbox'' for complex
 regression models. We show that iterative estimation algorithms, e.g., for posterior mode or
 mean estimation based on MCMC simulation, exhibit very similar structures such that the process of
+In this article we present a kind of unified conceptional ``Lego toolbox'' for complex
 model building becomes relatively straightforward, since the model architecture is only a
 combination of single ``bricks''. Moreover, the framework embeds very general model terms which are
 not necessarily a linear combination of a design matrix and regression coefficients. Hence,
 the concept supports more than the GAMLSS statistical model class, however, because of the great
 similarities with GAMLSS we call the conceptional framework Bayesian additive models for location,
-scale and shape (BAMLSS) and beyond. The concept can be exploited in two ways: First, to develop
-new algorithms and code, secondly, to easily integrate existing implementations. A prove of
-concept is given in the corresponding \proglang{R} implementation \pkg{bamlss} which is
-available on \pkg{Rforge}.
+scale and shape (BAMLSS) and beyond. The concept can be exploited in three ways: First, to develop
+new models and algorithms, secondly, to compare algorithms and third to easily integrate existing
+implementations. A prove of concept is given in the corresponding \proglang{R} implementation
+\pkg{bamlss} \citep{bamlss:Umlauf+Klein+Zeileis:2016}.
 
 The remainder of the paper is as follows. In Section~\ref{sec:model} the models supported by this
 framework are briefly introduced. Section~\ref{sec:legobox} presents the ``Lego bricks'' that can be
@@ -335,7 +335,7 @@ Assigning prior distributions to the individual model components results in the 
 where $\boldsymbol{\tau} = (\boldsymbol{\tau}_1^\top, \ldots, \boldsymbol{\tau}_K^\top)^\top =
 (\boldsymbol{\tau}_{11}^\top, \ldots, \boldsymbol{\tau}_{J_11}^\top, \ldots,
 \boldsymbol{\tau}_{1K}^\top, \ldots, \boldsymbol{\tau}_{J_KK}^\top)^\top$ is
-the vector of all assigned hyper-priors used within prior functions $\pi_{jk}( \cdot )$
+the vector of all assigned hyper-parameters used within prior functions $\pi_{jk}( \cdot )$
 and similarly $\boldsymbol{\alpha}$ is the set of all fixed prior specifications. Note that from a
 frequentist perspective (\ref{eqn:logpost}) can be viewed as a penalized log-likelihood, e.g., if
 a normal prior is used within $\pi_{jk}( \cdot )$ for $\boldsymbol{\beta}_{jk}$
@@ -387,10 +387,12 @@ fixed. This splitting method can even be applied for all terms within a paramete
 and $U_{jk}( \cdot )$ is an updating function for a single model term.
 
 In a partitioned updating system functions $U_{jk}( \cdot )$ need not necessarily have the same
-structure, e.g., in MCMC simulation it is common to mix between several sampling methods depending
-on the type of model term. Hence, by using highly modular systems like (\ref{eqn:blockupdate}) and
-(\ref{eqn:blockblockupdate}) it is possible to develop flexible estimation algorithms for numerous
-possibly very complex models.
+structure, e.g., for posterior mode estimation some updating functions could be based on
+iteratively reweighted least squares (IWLS) and some on ordinary Newton-Raphson steps (see, e.g.,
+example Section~\ref{sec:coxreg}). In MCMC simulation it is common to mix between several sampling
+methods depending on the type of model term. Hence, by using highly modular systems like
+(\ref{eqn:blockupdate}) and (\ref{eqn:blockblockupdate}) it is possible to develop flexible
+estimation algorithms for numerous possibly very complex models.
 
 
 \section{Lego bricks} \label{sec:legobricks}
@@ -408,14 +410,15 @@ prior given by
 \begin{equation} \label{eqn:linprior}
 \pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) \propto
   \exp \left(- \frac{1}{2}(\boldsymbol{\beta}_{jk} -
-    \mathbf{m})^{\top}diag(\boldsymbol{\tau}_{jk})^{-1}(\boldsymbol{\beta}_{jk} -
+    \mathbf{m})^{\top}\mathbf {P}_{jk}(\boldsymbol{\tau}_{jk})(\boldsymbol{\beta}_{jk} -
     \mathbf{m})\right),
 \end{equation}
-where $g_{\boldsymbol{\tau}_{jk}}( \cdot ) = 1$ and
-$\boldsymbol{\alpha}_{jk} = \{\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}} = \{\mathbf{m}\}\}$
-with $\mathbf{m}$ as a prior mean for $\boldsymbol{\beta}_{jk}$ and $diag(\boldsymbol{\tau}_{jk})$
-is a prior covariance matrix. In a lot of applications a vague prior specification is used with
-$\mathbf{m} = \mathbf{0}$ and a large variance (see, e.g., \citealp{bamlss:Fahrmeir+Kneib+Lang+Marx:2013}).
+where $\boldsymbol{\tau}_{jk}$ are assumed to be fixed with $g_{\boldsymbol{\tau}_{jk}}( \cdot ) = 1$
+and $\boldsymbol{\alpha}_{jk} = \{\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}} = \{\mathbf{m}\}\}$
+with $\mathbf{m}$ as a prior mean for $\boldsymbol{\beta}_{jk}$. The matrix $\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})$
+is a fixed prior precision matrix, e.g., $\mathbf{P}_{jk} = diag(\boldsymbol{\tau}_{jk})$. In a lot of
+applications a vague prior specification is used with $\mathbf{m} = \mathbf{0}$ and a large
+precision (see, e.g., \citealp{bamlss:Fahrmeir+Kneib+Lang+Marx:2013}).
 
 \subsubsection{Nonlinear effects} \label{sec:smootheffects}
 
@@ -445,7 +448,7 @@ g_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \boldsymbol{\alpha}_{\boldsy
 with fixed parameters $\boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}} = \{ \mathbf{a}_{jk}, \mathbf{b}_{jk} \}$.
 Small values for $\mathbf{a}_{jk}$ and $\mathbf{b}_{jk}$ correspond to approximate flat priors for
 $\log(\tau_{ljk}^2)$. Setting $\mathbf{b}_{jk} = \mathbf{0}$ and
-$\mathbf{a}_{jk}=-\mathbf{1}$ or $\mathbf{a}_{jk} = -1/2\mathbf{1}$ yields flat priors for
+$\mathbf{a}_{jk}=-\mathbf{1}$ or $\mathbf{a}_{jk} = -1/2 \cdot \mathbf{1}$ yields flat priors for
 $\tau_{ljk}^2$ and $\tau_{ljk}$, respectively.
 However, the inverse Gamma prior as a default option for variance parameters needs to be
 reconsidered in some cases, e.g., it might be problematic if $\tau_{ljk}$ is close to zero, since the
@@ -471,7 +474,6 @@ priors~\citep{bamlss:Simpson:Rue:Martins:Riebler:Sorbye:2015}.
 
 
 \subsection{Response distribution} \label{sec:bricksdensity}
-
 
 
 \clearpage
