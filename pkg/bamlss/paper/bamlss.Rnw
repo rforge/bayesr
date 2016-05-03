@@ -2,6 +2,8 @@
 % \documentclass[article]{jss}
 \usepackage{amsmath,amssymb,amsfonts,thumbpdf}
 \usepackage{multirow,longtable}
+\usepackage{algorithmic}
+\usepackage{algorithm}
 
 \definecolor{darkgray}{rgb}{0.1,0.1,0.1}
 \definecolor{heat1}{rgb}{0.8274510, 0.2470588, 0.4156863}
@@ -169,11 +171,11 @@ Based on data for $i = 1, \ldots, n$ observations, the models discussed in this 
 assume conditional independence of individual response observations given covariates.
 Within the GAMLSS model class all parameters of the response distribution can be modeled by
 explanatory variables such that
-\begin{equation} \label{eqn:dreg}
+\begin{equation*} \label{eqn:dreg}
 y \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{1}) = \eta_{1}, \,\,
   h_{2}(\theta_{2}) = \eta_{2}, \dots, \,\, h_{K}(\theta_{K}) =
   \eta_{K}\right),
-\end{equation}
+\end{equation*}
 where $\mathbf{\mathcal{D}}$ denotes a distribution available for the response
 variable $y$ and $\theta_k$, $k = 1, \ldots, K$, are parameters that are linked to additive predictors
 using known monotonic and twice differentiable functions
@@ -203,10 +205,10 @@ f_{jk}(\mathbf{x}_{n}; \boldsymbol{\beta}_{jk})
 where $\mathbf{X}_{jk}$ ($n \times m_{jk}$) is a design matrix and the structure of $\mathbf{X}_{jk}$
 only depends on the type of covariate(s) and prior assumptions about $f_{jk}( \cdot )$.
 In this notation the $k$-th parameter vector is given by
-\begin{equation} \label{eqn:addpar}
+\begin{equation*} \label{eqn:addpar}
 h_k(\boldsymbol{\theta}_k) = \boldsymbol{\eta}_k = \eta_k(\mathbf{X}_k ; \boldsymbol{\beta}_k) =
   \mathbf{f}_{1k} + \ldots + \mathbf{f}_{J_kk},
-\end{equation}
+\end{equation*}
 where $\mathbf{X}_k = (\mathbf{X}_{1k}, \ldots, \mathbf{X}_{J_kk})^\top$ is the combined design
 matrix for parameter $k$.
 
@@ -291,10 +293,10 @@ different resolutions. For example, spatial data that is measured within differe
 which additional regional covariates are available. Whenever there is such a nested structure
 in the data, it is possible to model such complex (spatial) heterogeneity effects using
 a compound prior
-\begin{equation} \label{eqn:compoundprior}
+\begin{equation*} \label{eqn:compoundprior}
 \boldsymbol{\beta}_{jk} = \tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})
   + \boldsymbol{\varepsilon}_{jk}.
-\end{equation}
+\end{equation*}
 where $\boldsymbol{\varepsilon}_{jk} \sim N(\mathbf{0}, \tilde{\tau}^2\mathbf{I})$ is a vector
 of i.i.d.\ Gaussian random effects and
 $\tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})$ represents a full
@@ -315,11 +317,11 @@ The main building block of regression model algorithms is the probability densit
 $g(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$, or for
 computational reasons its logarithm. Estimation typically requires to evaluate the log-likelihood
 function
-\begin{equation} \label{eqn:density}
+\begin{equation*} \label{eqn:loglik}
 \ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X}) =
   \sum_{i = 1}^n \log \, g(y_i ; \theta_{i1} = h_1^{-1}(\eta_{i1}(\mathbf{x}_i; \boldsymbol{\beta}_1)), \ldots,
   \theta_{iK} = h_K^{-1}(\eta_{iK}(\mathbf{x}_i; \boldsymbol{\beta}_K)))
-\end{equation}
+\end{equation*}
 a number of times, where the vector
 $\boldsymbol{\beta} = (\boldsymbol{\beta}_1^\top, \ldots, \boldsymbol{\beta}_K^\top)^\top$ 
 comprises all model coefficients that should be estimated, $\mathbf{X} = (\mathbf{X}_1, \ldots, \mathbf{X}_K)$
@@ -407,12 +409,12 @@ estimating GAM-type models.
 For simple linear effects a common choice for $\pi_{jk}( \cdot )$ is to use a non-informative
 uniform prior given in (\ref{eqn:oneprior}). One of the simplest informative priors is a normal
 prior given by
-\begin{equation} \label{eqn:linprior}
+\begin{equation*} \label{eqn:linprior}
 \pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) \propto
   \exp \left(- \frac{1}{2}(\boldsymbol{\beta}_{jk} -
     \mathbf{m})^{\top}\mathbf {P}_{jk}(\boldsymbol{\tau}_{jk})(\boldsymbol{\beta}_{jk} -
     \mathbf{m})\right),
-\end{equation}
+\end{equation*}
 where $\boldsymbol{\tau}_{jk}$ are assumed to be fixed with $g_{\boldsymbol{\tau}_{jk}}( \cdot ) = 1$
 and $\boldsymbol{\alpha}_{jk} = \{\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}} = \{\mathbf{m}\}\}$
 with $\mathbf{m}$ as a prior mean for $\boldsymbol{\beta}_{jk}$. The matrix $\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})$
@@ -455,10 +457,10 @@ However, the inverse Gamma prior as a default option for variance parameters nee
 reconsidered in some cases, e.g., it might be problematic if $\tau_{ljk}$ is close to zero, since the
 results a very sensitive on the choice of $\mathbf{a}_{jk}$ and $\mathbf{b}_{jk}$. Therefore,
 \citet{bamlss:Gelman:2006} proposes to use the half-Cauchy prior
-\begin{equation} \label{eqn:hcauchy}
+\begin{equation*} \label{eqn:hcauchy}
 g_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}) =
   \prod_{l = 1}^{L_{jk}}\frac{2A_{ljk}}{\pi (\tau_{ljk}^2 + A_{ljk}^2)}, \quad A_{ljk} > 0,
-\end{equation}
+\end{equation*}
 with hyper-parameters $\boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}} = \{\mathbf{A}_{jk}\}$.
 For $A_{ljk} \rightarrow \infty$ the priors are uniform, hence large values
 (e.g., $A_{ljk} = 25$) result in weakly informative priors. A desirable property of the half-Cauchy
@@ -482,73 +484,75 @@ presented in Section~\ref{sec:modelfit}.
 \subsubsection{Posterior mode} \label{sec:postmode}
 
 The mode of the posterior distribution is the mode of the log-posterior (\ref{eqn:logpost}) given by
-\begin{equation}
+\begin{equation*}
 \text{Mod}(\boldsymbol{\beta}, \boldsymbol{\tau} | \, \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha}) =
   \underset{\boldsymbol{\beta}, \boldsymbol{\tau}}{\text{arg max }} \log \,
   p(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})
-\end{equation}
+\end{equation*}
 and equals the maximum likelihood estimator
-\begin{equation}
+\begin{equation*}
 \text{ML}(\boldsymbol{\beta} | \, \mathbf{y}, \mathbf{X}) =
   \underset{\boldsymbol{\beta}}{\text{arg max }} \ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X})
-\end{equation}
+\end{equation*}
 when assigning uniform priors (\ref{eqn:oneprior}) on $\boldsymbol{\beta}_{jk}$
 for $j = 1, \ldots, J_k$, $k = 1, \ldots, K$.
 For models involving shrinkage priors, e.g., in GAM-type models given by (\ref{eqn:mvnormprior}),
 the posterior mode is equivalent to a penalized maximum likelihood estimator for fixed parameters
-$\boldsymbol{\tau}_{jk}$ and prior density $g_{\boldsymbol{\tau}_{jk}}( \cdot ) \propto 1$.
-Moreover, the structure of (\ref{eqn:logpost}) prohibits simultaneous estimation of
-$(\boldsymbol{\beta}_{jk}^\top, (\boldsymbol{\tau}_{jk})^\top)^\top$ and the
-estimator $\hat{\boldsymbol{\tau}}_{jk}$ is usually derived by additionally
+$\boldsymbol{\tau}_{jk}$ and prior densities $g_{\boldsymbol{\tau}_{jk}}( \cdot ) \propto 1$.
+Moreover, the structure of (\ref{eqn:logpost}) usually prohibits estimation of
+$\boldsymbol{\tau}_{jk}$ through maximization of the log-posterior and the
+estimator $\hat{\boldsymbol{\tau}}_{jk}$ is commonly derived by additionally
 minimizing an information criterion such as the Akaike information criterion (AIC) or the Bayesian
 information criterion (BIC), see also \citealp{bamlss:Rigby+Stasinopoulos:2005} Appendix~A.2. for
-a more detailed discussion on smoothing parameter estimation. In Section~\ref{sec:varselpostmode},
-we briefly discuss a stepwise approach for smoothing parameter selection. For developing general
-updating functions we describe posterior mode estimation for the case of fixed and known
-parameters $\boldsymbol{\tau}_{jk}$, because these updating function form the basis of estimation
-algorithms for $\boldsymbol{\tau}_{jk}$. Estimation of
+a more detailed discussion on smoothing parameter estimation. In Section~\ref{sec:modchoice},
+we briefly discuss a stepwise approach for smoothing parameter selection.
+
+For developing general updating functions we begin with describing posterior mode estimation for
+the case of fixed parameters $\boldsymbol{\tau}_{jk}$, because these updating functions form the
+basis of estimation algorithms for $\boldsymbol{\tau}_{jk}$.
+Estimation of
 $\boldsymbol{\beta} = (\boldsymbol{\beta}_1^\top, \ldots, \boldsymbol{\beta}_K^\top)^\top$
 requires solving equations
 $\partial (\log \, p(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})) / \partial \boldsymbol{\beta} = \mathbf{0}$.
 A particularly convenient updating function (\ref{eqn:updating}) for maximization of (\ref{eqn:logpost})
 is a Newton-Raphson type updating 
 \begin{equation} \label{eqn:newton}
-\boldsymbol{\beta}^{(t + 1)} = U(\boldsymbol{\beta}^{(t)}) = \boldsymbol{\beta}^{(t)} -
+\boldsymbol{\beta}^{(t + 1)} = U(\boldsymbol{\beta}^{(t)} | \, \cdot) = \boldsymbol{\beta}^{(t)} -
   \mathbf{H}\left( \boldsymbol{\beta}^{(t)} \right)^{-1}\mathbf{s}\left( \boldsymbol{\beta}^{(t)} \right)
 \end{equation}
 with score vector
-\begin{equation} \label{eqn:score}
+\begin{equation*} \label{eqn:score}
 \mathbf{s}(\boldsymbol{\beta}) = 
   \frac{\partial \log \, p(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})}{
     \partial \boldsymbol{\beta}}
 = \frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}} +
     \sum_{k = 1}^K\sum_{j = 1}^{J_k} \left[ \frac{\partial \log \,
     \pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})}{\partial \boldsymbol{\beta}} \right].
-\end{equation}
+\end{equation*}
 and Hessian matrix $\mathbf{H}(\boldsymbol{\beta})$ with components
-\begin{equation} \label{eqn:hessian}
+\begin{equation*} \label{eqn:hessian}
 \mathbf{H}_{ks}(\boldsymbol{\beta}) =
 \frac{\partial \mathbf{s}(\boldsymbol{\beta}_k)}{\partial \boldsymbol{\beta}_s^\top} =
 \frac{\partial^2 \log \,  p(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})}{
   \partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top},
-\end{equation}
+\end{equation*}
 for $k = 1, \dots, K$ and $s = 1, \dots, K$. By chain rule, the part of the score vector involving
 the derivatives of the log-likelihood for the $k$-th parameter can be further decomposed to
-\begin{equation} \label{eqn:score2}
+\begin{equation*} \label{eqn:score2}
 \frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_k} =
   \frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\eta}_k}
   \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_k} = 
   \frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\theta}_k}
   \frac{\partial \boldsymbol{\theta}_k}{\partial \boldsymbol{\eta}_k}
   \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_k},
-\end{equation}
+\end{equation*}
 including the derivatives of the log-likelihood with respect to parameters $\boldsymbol{\theta}_k$,
 the derivative of the link functions and the derivative of the predictor
 $\boldsymbol{\eta}_k$ with respect to coefficients $\boldsymbol{\beta}_k$. Again by chain rule,
 the components of $\mathbf{H}_{ks}$ including $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$ can be
 written as
 \begin{equation} \label{eqn:hessian2}
-\frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top} =
+\mathbf{F}_{ks}(\boldsymbol{\beta}) = \frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top} =
 \left( \frac{\partial \boldsymbol{\eta}_s}{\partial \boldsymbol{\beta}_s} \right)^\top
 \frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top}
 \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_k}
@@ -556,11 +560,11 @@ written as
   \, + \, \frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\eta}_k}
     \frac{\partial^2 \boldsymbol{\eta}_k}{\partial^2 \boldsymbol{\beta}_k}}_{\text{if } k = s},
 \end{equation}
-where the second term cancels out if all functions (\ref{eqn:functions}) can be written as a linear
-combination of a design matrix and coefficients, e.g., when using a basis function approach. Within
-the first term, the second derivatives of the log-likelihood involving the predictors can be written
-as
-\begin{equation} \label{hessian3}
+where the second term on the right hand side cancels out if all functions (\ref{eqn:functions}) can
+be written as a linear combination of a design matrix and coefficients, e.g., when using a basis
+function approach. Within the first term, the second derivatives of the log-likelihood involving the
+predictors can be written as
+\begin{equation} \label{eqn:hessian3}
 \frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top} =
   \frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\theta}_k}
   \frac{\partial^2 \boldsymbol{\theta}_k}{\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_s^\top} + 
@@ -581,28 +585,35 @@ in (\ref{eqn:blocknewton}) is given by
 $$
 \mathbf{H}_{kk}\left( \boldsymbol{\beta}_k^{(t)} \right) =
 \begin{pmatrix}
-\mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} + \mathbf{G}_{1k} &
+\mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} + \mathbf{G}_{1k}(\boldsymbol{\tau}_{1k}) &
   \cdots & \mathbf{X}_{1k}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk} \\
 \vdots & \ddots & \vdots \\
-\mathbf{X}_{J_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} & \cdots & \mathbf{X}_{J_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk} + \mathbf{G}_{J_kk}
+\mathbf{X}_{J_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{1k} & \cdots & \mathbf{X}_{J_kk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk} + \mathbf{G}_{J_kk}(\boldsymbol{\tau}_{J_kk})
 \end{pmatrix}^{(t)},
 $$
 with diagonal weight matrix $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and matrices
-$$
-\mathbf{G}_{jk} = \frac{\partial^2 \log \,
+\begin{equation} \label{eqn:gmatrix}
+\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}) = \frac{\partial^2 \log \,
   \pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk},
-  \boldsymbol{\alpha}_{jk})}{\partial \boldsymbol{\beta} \partial \boldsymbol{\beta}^\top}.
-$$
-Typically, using priors based on multivariate normal kernels (\ref{eqn:mvnormprior}) matrices
-$\mathbf{G}_{jk}$ are a simple product of smoothing variances and penalty matrices.
+  \boldsymbol{\alpha}_{jk})}{\partial \boldsymbol{\beta}_{jk} \partial \boldsymbol{\beta}_{jk}^\top}.
+\end{equation}
+Note once again that the $\boldsymbol{\tau}_{jk}$ are fixed and usually estimation cannot be
+done with maximization of the log-posterior (see also Section~\ref{sec:modchoice}). Typically,
+using a linear basis function representation of functions
+$f_{jk}( \cdot )$ and priors based on multivariate normal kernels (\ref{eqn:mvnormprior}) matrices
+$\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ are a simple product of smoothing variances and penalty
+matrices, e.g., with only one smoothing variance
+$\mathbf{G}_{jk}(\tau_{jk}) = \tau_{jk}^{-2}\mathbf{K}_{jk}$ with corresponding penalty matrix
+$\mathbf{K}_{jk}$.
+
 Similarly, the score vector is
 $$
 \mathbf{s}_k\left( \boldsymbol{\beta}_k^{(t)} \right) =
 \begin{pmatrix}
-\mathbf{X}_{1k}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{1k}\boldsymbol{\beta}_{1k}^{(t)} \\
+\mathbf{X}_{1k}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{1k}(\boldsymbol{\tau}_{1k})\boldsymbol{\beta}_{1k}^{(t)} \\
 \vdots \\
-\mathbf{X}_{J_kk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t)} \\
+\mathbf{X}_{J_kk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{J_kk}(\boldsymbol{\tau}_{J_kk})\boldsymbol{\beta}_{J_kk}^{(t)} \\
 \end{pmatrix}
 $$
 and derivatives $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
@@ -613,7 +624,7 @@ The updates are based on an iteratively reweighted least squares scheme given by
   \boldsymbol{\beta}_{jk}^{(t+1)}
   = U_{jk}(\boldsymbol{\beta}_{jk}^{(t)} | \, \cdot ) =
     (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} +
-      \mathbf{G}_{jk})^{-1}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}(
+      \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))^{-1}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}(
       \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)})
 \end{equation}
 with working observations
@@ -626,12 +637,23 @@ therefore overall convergence will be slower.
 Note that this yields the ingredients of the \emph{RS}-algorithm developed in
 \citet{bamlss:Rigby+Stasinopoulos:2005} Appendix~B.2. The updating scheme (\ref{eqn:blockbackfit})
 can be further generalized to
-\begin{equation} \label{eqn:gbackfit}
+\begin{equation*} \label{eqn:gbackfit}
 \boldsymbol{\beta}_{jk}^{(t + 1)} = U_{jk}\left(\boldsymbol{\beta}_{jk}^{(t)},
   \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)} | \, \cdot\right)
-\end{equation}
+\end{equation*}
 i.e., theoretically any updating function applied on the ``partial residuals''
-$\mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}$ can be used.
+$\mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}$ can be used. Note also that this result
+is equivalent to updating function
+\begin{eqnarray} \label{eqn:blockblocknewton}
+\boldsymbol{\beta}_{jk}^{(t + 1)} &=& U_{jk}(\boldsymbol{\beta}_{jk}^{(t)} | \, \cdot) \nonumber \\
+ &=& \boldsymbol{\beta}_{jk}^{(t)} -
+  \mathbf{H}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right)^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) \\
+ &=& \boldsymbol{\beta}_{jk}^{(t)} -
+  \left[\mathbf{F}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
+    \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right), \nonumber
+\end{eqnarray}
+where matrix $\mathbf{F}_{kk}( \cdot )$ is the derivative matrix given in (\ref{eqn:hessian2}).
+
 For optimization, different strategies of the backfitting
 algorithm (\ref{eqn:blockbackfit}) can be applied. One alternative is an inner backfitting algorithm
 for each parameter $k$, i.e., the backfitting procedure updates
@@ -648,12 +670,12 @@ $\mathbf{W}_{kk} = -\mathrm{diag}(E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{
 \subsubsection{Posterior mean} \label{sec:postmean}
 
 The mean of the posterior distribution is
-\begin{equation} \label{eqn:postmean}
+\begin{equation*} \label{eqn:postmean}
 E(\boldsymbol{\beta}, \boldsymbol{\tau} | \, \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha}) =
   \int \begin{pmatrix} \boldsymbol{\beta} \\ \boldsymbol{\tau} \end{pmatrix}
   p(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})
   d\begin{pmatrix} \boldsymbol{\beta} \\ \boldsymbol{\tau} \end{pmatrix}.
-\end{equation}
+\end{equation*}
 Clearly, the problem in deriving the expectation, and other quantities like the posterior median,
 relies on the computation of usually high-dimensional integrals, which can be rarely solved
 analytically and need to be approximated by numerical techniques.  
@@ -663,9 +685,7 @@ adapt to almost any type of problem. In the following we summarize sampling tech
 are especially suited within the BAMLSS framework, i.e., techniques that can be used for a highly
 modular and extendable system. In this context we describe sampling functions for the updating
 scheme presented in (\ref{eqn:blockblockupdate}), i.e., the functions $U_{jk}( \cdot )$ now generate
-the next step in a Markov chain and use the following algorithm
-\fixme{Insert algorithm!}
-
+the next step in a Markov chain.
 
 Note that for some models there exist full conditionals that can be derived in closed form from the
 log-posterior (\ref{eqn:logpost}), however, we especially focus on situations were this is not
@@ -724,11 +744,14 @@ derived by each of the following methods:
     \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)} \right] \\
   &=& \boldsymbol{\beta}_{jk}^{(t)} -
     \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)^{-1}
-    s\left(\boldsymbol{\beta}_{jk}^{(t)}\right),
+    \mathbf{s}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) \\
+ &=& \boldsymbol{\beta}_{jk}^{(t)} -
+  \left[\mathbf{F}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
+    \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right),
   \end{eqnarray*}
-  with Hessian matrix $\mathbf{H}_{kk}( \cdot )$ and score vector $\mathbf{s}( \cdot )$.
-  Note that the mean is simply one Newton or Fisher scoring iteration towards the posterior mode.
-  Hence, the proposal density for $\boldsymbol{\beta}_{jk}$ is
+  which is equivalent to the updating function given in (\ref{eqn:blockblocknewton}).
+  Hence, the mean is simply one Newton or Fisher scoring iteration towards the posterior mode.
+  The proposal density for $\boldsymbol{\beta}_{jk}$ then is
   $q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)}) =
     N(\boldsymbol{\mu}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk}^{(t)})$ and the acceptance probability
   of the candidate is then computed by
@@ -737,22 +760,23 @@ derived by each of the following methods:
   \text{min} \left[ \frac{p(\boldsymbol{\beta}_{jk}^{\star} | \cdot)q(\boldsymbol{\beta}_{jk}^{(t)} | \boldsymbol{\beta}_{jk}^\star)}{
     p(\boldsymbol{\beta}_{jk}^{(t)} | \cdot)q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)})  }, 1 \right].
   $$
-  Again, assuming a basis
-  function approach with multivariate normal priors (\ref{eqn:mvnormprior}) the precision matrix is
+  Again, assuming a basis function approach for functions $f_{jk}( \cdot )$ the precision matrix is
   $$
-  \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk},
+  \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} =
+    \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}),
   $$
   with weights $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
-\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and the mean can be written as
-  \begin{equation}
+\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$. The mean can be written as
+  \begin{equation*}
   \boldsymbol{\mu}_{jk}^{(t)} =
     \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left(\mathbf{z}_k  -
       \boldsymbol{\eta}^{(t)}_{k,-j}\right)
-  \end{equation}
+  \end{equation*}
   with working observations
   $\mathbf{z}_k = \boldsymbol{\eta}_k^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$
-  (see again Appendix~\ref{appendix:fullcond1} for a detailed derivation). Therefore,
-  the computation of the mean is equivalent to a full Newton step, or Fisher scoring when using
+  (see again Appendix~\ref{appendix:fullcond1} for a detailed derivation). Note again,
+  the computation of the mean is equivalent to a full Newton step as given in updating function
+  (\ref{eqn:blockblocknewton}), or Fisher scoring when using
   $-E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
     \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$,
   in each iteration of the MCMC sampler using iteratively reweighted least squares (IWLS)
@@ -788,12 +812,12 @@ $$
   \boldsymbol{\beta}_{jk}^\star + b_{jk},
 $$
 and matrix $\mathbf{K}_{jk}$ is again a penalty matrix that depends on the type of model term.
-As mentioned in Section \ref{sec:smootheffects}, other priors than the inverse Gamma might be
+As mentioned in Section \ref{sec:priorsbricks}, other priors than the inverse Gamma might be
 desirable. Then,  Metropolis-Hastings steps also for the variances can be constructed,
 see~\citet{bamlss:Klein+Kneib:2016} for details. If a simple Gibbs sampling step cannot be
-derived, e.g., using multi-dimensional tensor product splines (see Section~\ref{sec:smootheffects}),
-another strategy is to use slice sampling, since the number of smoothing variances is
-usually not very large the computational burden does most of the times not exceed possible benefits.
+derived, e.g., for multi-dimensional tensor product splines, another strategy is to use slice
+sampling, since the number of smoothing variances is usually not very large the computational
+burden does most of the times not exceed possible benefits.
 
 
 \subsection{Model Choice} \label{sec:modchoice}
@@ -801,16 +825,16 @@ usually not very large the computational burden does most of the times not excee
 \subsubsection{Model Fit} \label{sec:modfit}
 
 Quantile residuals defined as
-$\hat{r}_i = \Phi^{-1}(\mathbf{\mathcal{D}}(y_i | \hat{\boldsymbol{\theta}}_{i}))$ with the inverse 
-cumulative distribution function (cdf) of a standard normal distribution $\Phi^{-1}$ and
-$\mathbf{\mathcal{D}}(\cdot | \hat{\boldsymbol{\theta}}_{i})$ denoting cdf with estimated
+$\hat{r}_i = \Phi^{-1}(\mathbf{\mathcal{C}}(y_i | \, \hat{\boldsymbol{\theta}}_{i}))$ with the inverse 
+cumulative distribution function (CDF) of a standard normal distribution $\Phi^{-1}$ and
+$\mathbf{\mathcal{C}}(\cdot | \, \hat{\boldsymbol{\theta}}_{i})$ denoting the CDF with estimated
 parameters $\hat{\boldsymbol{\theta}}_{i} = (\hat{\theta}_{i1}, \ldots, \hat{\theta}_{iK})^\top$
 plugged in, should at least approximately be standard normally distributed if the correct model has
 been specified \citep{bamlss:Dunn:Smyth:1996}. Resulting residuals can be assessed graphically in
-terms of quantile-quantile-plots. Strong deviations from the bisecting line are then a sign for an
+terms of quantile-quantile-plots. Strong deviations from the diagonal line are then a sign for an
 inappropriate model fit. Instead of looking at residuals one can use the 
 probability integral transform (PIT) which considers
-$u_i = \mathbf{\mathcal{D}}(y_i | \hat{\boldsymbol{\theta}}_i)$ without applying the inverse
+$u_i = \mathbf{\mathcal{C}}(y_i | \, \hat{\boldsymbol{\theta}}_i)$ without applying the inverse
 standard normal cdf. If the estimated model is a good approximation to the true data generating 
 process, the $u_i$ will then approximately follow a uniform distribution on $[0, 1]$.
 Graphically, histograms of the $u_i$ can be used for this purpose.
@@ -820,23 +844,20 @@ Graphically, histograms of the $u_i$ can be used for this purpose.
 
 Information criteria like the Akaike information criterion (AIC), or the corrected AIC, as well as
 the Bayesian information criterion (BIC), amongst others, can be used for selecting variables and
-smoothing variances $\boldsymbol{\tau}^2_{jk}$. These criteria try to penalize overly complex models,
+smoothing variances $\boldsymbol{\tau}_{jk}$. These criteria try to penalize overly complex models,
 i.e., are trying to prevent over-fitting. Estimating model complexity using (possibly) nonlinear
 functions, for each model component, the degrees of freedom used to estimate the function can be
-approximated by the equivalent degrees of freedom (edf) calculated by
+approximated by the equivalent degrees of freedom (EDF) calculated by
 $$
-\mathrm{edf}_{jk}(\boldsymbol{\tau}^2_{jk}) = \mathrm{trace}\left[
+\mathrm{edf}_{jk}(\boldsymbol{\tau}_{jk}) = \mathrm{trace}\left[
   \mathbf{F}_{kk}(\boldsymbol{\beta}_{jk})(
-  \mathbf{F}_{kk}(\boldsymbol{\beta}_{jk}) + \mathbf{G}_{jk}(\boldsymbol{\tau}^2_{jk}))^{-1} \right],
+  \mathbf{F}_{kk}(\boldsymbol{\beta}_{jk}) + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))^{-1} \right],
 $$
-with $\mathbf{F}_{kk}(\boldsymbol{\beta}_{jk}) =
-\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})/
-\partial \boldsymbol{\beta}_{jk} \partial
-\boldsymbol{\beta}_{jk}^\top$ and matrix $\mathbf{G}_{jk}(\boldsymbol{\tau}^2_{jk})$ is the second
-derivate of the shrinkage prior w.r.t.\ $\boldsymbol{\beta}_{jk}$, e.g., using prior
-(\ref{eqn:mvnormprior}) the matrix is $\mathbf{G}_{jk}(\tau^2_{jk}) = \tau_{jk}^{-2}\mathbf{K}_{jk}$. The
+where $\mathbf{F}_{kk}( \cdot )$ is the derivative matrix given in (\ref{eqn:hessian2}) and
+matrix $\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ is the prior
+derivative matrix as given in (\ref{eqn:gmatrix}). The
 total degrees of freedom used to estimate the model are then given by
-$\sum_{k}\sum_{j} \mathrm{edf}_{jk}(\boldsymbol{\tau}^2_{jk})$.
+$\sum_{k}\sum_{j} \mathrm{edf}_{jk}(\boldsymbol{\tau}_{jk})$.
 
 Instead of global optimization of smoothing variances, a fast strategy is the stepwise selection
 during backfitting, which is proposed by \citet{bamlss:Belitz+Lang:2008} and can be adapted to
@@ -847,15 +868,6 @@ be based on a small grid of candidate values. This will not lead to a global opt
 resulting parameters serve as good starting values for full Bayesian inference with MCMC. This is
 especially useful for multi-dimensional effects with multiple smoothing variances since convergence
 of the MCMC chains will usually take much longer with improper starting values.
-
-Another recently proposed, however computationally intensive, approach for the
-types of models presented in this paper is gradient boosting
-\citep{bamlss:Messner+Mayr+Zeileis:2016, bamlss:Hofner+Mayr+Schmid:2014}.
-The boosting algorithm slightly differs from classical boosting in so far, that in each boosting iteration for each parameter
-$\theta_k$, first the model components (base learners) that best fit to the respective negative
-gradients are chosen, afterwards, the model component that contributes to the log-likelihood the
-most is selected for updating. This way, only one stopping criterion needs to be used, which
-makes finding the optimum stopping iteration, e.g., by cross-validation less costly.
 
 
 \subsubsection{Variable Selection with Posterior Mean} \label{sec:varselpostmean}
@@ -890,11 +902,11 @@ are cases where standard numerical techniques cannot be applied (see Section~\re
 Instead, applying fully Bayesian inference is relatively easy by direct computation of desired
 statistics from posterior samples. Computational costs are relatively low, since only samples for
 parameters $\boldsymbol{\beta}_{jk}$ and $\boldsymbol{\tau}_{jk}^2$ need to be saved (in practice
-about 2000-3000 are sufficient) from which inference of any combination of terms is straightforward,
+about 2000--3000 are sufficient) from which inference of any combination of terms is straightforward,
 too.
 
 The posterior predictive distribution is approximated similarly. Random samples for response
-observations are computed by drawing samples from the response distribution
+observations are computed by drawing samples $y^\star$ from the response distribution
 \begin{equation} \label{eqn:pdist}
 y^\star \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{1}^{(t)}), \,\,
   h_{2}(\theta_{2}^{(t)}), \dots, \,\, h_{K}(\theta_{K}^{(t)})\right)
@@ -1999,31 +2011,23 @@ The usefulness of the approach is illustrated by two complex, difficult to estim
 The following shows the steps needed to derive the iterative updating scheme based on IWLS in
 Section~\ref{sec:bricksmodelfit}. Focusing on the $j$-th row of (\ref{eqn:blocknewton}) gives
 \begin{eqnarray*}
-(\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\beta}_{jk}^{(t+1)} +
+(\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))\boldsymbol{\beta}_{jk}^{(t+1)} +
 \ldots + \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t + 1)} - \\
-(\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\beta}_{jk}^{(t)} -
+(\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))\boldsymbol{\beta}_{jk}^{(t)} -
 \ldots - \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t)}
-  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{jk}\boldsymbol{\beta}_{jk}^{(t)}
+  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\boldsymbol{\beta}_{jk}^{(t)}
 \end{eqnarray*}
 \begin{eqnarray*}
-\mathbf{G}_{jk}(\boldsymbol{\beta}_{jk}^{(t+1)} - \boldsymbol{\beta}_{jk}^{(t)}) +
+\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})(\boldsymbol{\beta}_{jk}^{(t+1)} - \boldsymbol{\beta}_{jk}^{(t)}) +
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} + \ldots +
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t+1)} - \\
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t)} - \ldots -
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t)}
-  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{jk}\boldsymbol{\beta}_{jk}^{(t)}
+  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\boldsymbol{\beta}_{jk}^{(t)}
 \end{eqnarray*}
 \begin{eqnarray*}
-\mathbf{G}_{jk}\boldsymbol{\beta}_{jk}^{(t)} +
-  \mathbf{G}_{jk}(\boldsymbol{\beta}_{jk}^{(t+1)} - \boldsymbol{\beta}_{jk}^{(t)}) +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} + \ldots +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t+1)} - \\
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t)} - \ldots -
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t)}
-  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)}
-\end{eqnarray*}
-\begin{eqnarray*}
-\mathbf{G}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} +
+\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\boldsymbol{\beta}_{jk}^{(t)} +
+  \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})(\boldsymbol{\beta}_{jk}^{(t+1)} - \boldsymbol{\beta}_{jk}^{(t)}) +
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} + \ldots +
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t+1)} - \\
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t)} - \ldots -
@@ -2031,39 +2035,47 @@ Section~\ref{sec:bricksmodelfit}. Focusing on the $j$-th row of (\ref{eqn:blockn
   &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)}
 \end{eqnarray*}
 \begin{eqnarray*}
-\mathbf{G}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} +
+\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\boldsymbol{\beta}_{jk}^{(t+1)} +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} + \ldots +
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t+1)} - \\
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t)} - \ldots -
+  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t)}
+  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)}
+\end{eqnarray*}
+\begin{eqnarray*}
+\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\boldsymbol{\beta}_{jk}^{(t+1)} +
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} + 
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)} -
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)}
   &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)}
 \end{eqnarray*}
 \begin{eqnarray*}
-(\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\beta}_{jk}^{(t+1)}
+(\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))\boldsymbol{\beta}_{jk}^{(t+1)}
   &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} + \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
     \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)}
 \end{eqnarray*}
 \begin{eqnarray*}
   \boldsymbol{\beta}_{jk}^{(t+1)}
-  &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})^{-1}(\mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} +
+  &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))^{-1}(\mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} +
     \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
     \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)})
 \end{eqnarray*}
 \begin{eqnarray*}
   \boldsymbol{\beta}_{jk}^{(t+1)}
-  &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})^{-1}\mathbf{X}_{jk}^\top(\mathbf{u}_k^{(t)} +
+  &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))^{-1}\mathbf{X}_{jk}^\top(\mathbf{u}_k^{(t)} +
     \mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
     \mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)})
 \end{eqnarray*}
 \begin{eqnarray*}
   \boldsymbol{\beta}_{jk}^{(t+1)}
-  &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})^{-1}\mathbf{X}_{jk}^\top(
+  &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))^{-1}\mathbf{X}_{jk}^\top(
     \mathbf{W}_{kk}\mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)} +
     \mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
     \mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)})
 \end{eqnarray*}
 \begin{eqnarray*}
   \boldsymbol{\beta}_{jk}^{(t+1)}
-  &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})^{-1}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}(
+  &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))^{-1}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}(
     \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)} +
     \boldsymbol{\eta}_{k}^{(t)} -
     \boldsymbol{\eta}_{k, -j}^{(t+1)})
@@ -2111,18 +2123,21 @@ and mean
   \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)} \right] \\
 &=& \boldsymbol{\beta}_{jk}^{(t)} -
   \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)^{-1}
-  \mathbf{s}\left(\boldsymbol{\beta}_{jk}^{(t)}\right).
+  \mathbf{s}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) \\
+ &=& \boldsymbol{\beta}_{jk}^{(t)} -
+  \left[\mathbf{F}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
+    \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right).
 \end{eqnarray*}
 Using a linear basis function representation of functions $f_{jk}( \cdot )$ the precision matrix is
 $$
-\left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk},
+\left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}),
 $$
 with weights $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and the mean can be written as
 \begin{eqnarray*}
   \boldsymbol{\mu}_{jk}^{(t)} &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left[
-  \mathbf{X}_{jk}^\top\mathbf{u}_k^{(t)} - \mathbf{G}_{jk}\boldsymbol{\beta}_{jk}^{(t)} +
-  (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk})\boldsymbol{\beta}_{jk}^{(t)}\right] \\
+  \mathbf{X}_{jk}^\top\mathbf{u}_k^{(t)} - \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\boldsymbol{\beta}_{jk}^{(t)} +
+  (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))\boldsymbol{\beta}_{jk}^{(t)}\right] \\
   &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left[
   \mathbf{X}_{jk}^\top\mathbf{u}_k^{(t)} +
   \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t)}\right] \\
