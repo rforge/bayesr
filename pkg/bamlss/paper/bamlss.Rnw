@@ -775,16 +775,19 @@ derived by each of the following methods:
   \end{enumerate}
 \end{itemize}
 
-The full conditional $p(\tau_{jk} | \, \cdot)$ for smoothing variances is commonly constructed using
-priors for $\tau_{jk}$ that lead to known distributions, i.e., simple Gibbs sampling is possible.
-E.g., this is the case when using an inverse Gamma prior (\ref{eqn:igprior}) in combination with
-the normal prior (\ref{eqn:mvnormprior}), then $p(\tau_{jk} | \, \cdot)$ is again an inverse Gamma
-distribution with
+The full conditional $p(\boldsymbol{\tau}_{jk} | \, \cdot)$ for smoothing variances is commonly
+constructed using priors for $\boldsymbol{\tau}_{jk}$ that lead to known distributions, i.e.,
+simple Gibbs sampling is possible. E.g., this is the case when using a linear basis function
+approach and only one smoothing variance $\tau_{jk}$ is assigned. Then, by using an
+inverse Gamma prior (\ref{eqn:igprior}) for $\tau_{jk}$ in combination with the normal prior
+(\ref{eqn:mvnormprior}) for $\boldsymbol{\beta}_{jk}$ the full-conditional $p(\tau_{jk} | \, \cdot)$
+is again an inverse Gamma distribution with
 $$
 \tilde{a}_{jk} = \frac{1}{2}rk(\mathbf{K}_{jk}) + a_{jk}, \qquad
   \tilde{b}_{jk} = \frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{K}_{jk}
-  \boldsymbol{\beta}_{jk}^\star + b_{jk}.
+  \boldsymbol{\beta}_{jk}^\star + b_{jk},
 $$
+and matrix $\mathbf{K}_{jk}$ is again a penalty matrix that depends on the type of model term.
 As mentioned in Section \ref{sec:smootheffects}, other priors than the inverse Gamma might be
 desirable. Then,  Metropolis-Hastings steps also for the variances can be constructed,
 see~\citet{bamlss:Klein+Kneib:2016} for details. If a simple Gibbs sampling step cannot be
