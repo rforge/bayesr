@@ -598,12 +598,13 @@ with diagonal weight matrix $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\b
   \pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk},
   \boldsymbol{\alpha}_{jk})}{\partial \boldsymbol{\beta}_{jk} \partial \boldsymbol{\beta}_{jk}^\top}.
 \end{equation}
-Note once again that the $\boldsymbol{\tau}_{jk}$ are fixed and usually estimation cannot be
-done with maximization of the log-posterior (see also Section~\ref{sec:modchoice}). Typically,
-using a linear basis function representation of functions
-$f_{jk}( \cdot )$ and priors based on multivariate normal kernels (\ref{eqn:mvnormprior}) matrices
-$\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ are a simple product of smoothing variances and penalty
-matrices, e.g., with only one smoothing variance
+Here, we want to emphasize that the influence of these prior derivatives matrices is usually controlled by
+$\boldsymbol{\tau}_{jk}$, however, note once again that the $\boldsymbol{\tau}_{jk}$ are held fixed
+for the moment and usually estimation cannot be done with maximization of the
+log-posterior (see also Section~\ref{sec:modchoice}). Typically, using a linear basis function
+representation of functions $f_{jk}( \cdot )$ and priors based on multivariate normal kernels
+(\ref{eqn:mvnormprior}) matrices $\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ are a simple product of
+smoothing variances and penalty matrices, e.g., with only one smoothing variance
 $\mathbf{G}_{jk}(\tau_{jk}) = \tau_{jk}^{-2}\mathbf{K}_{jk}$ with corresponding penalty matrix
 $\mathbf{K}_{jk}$.
 
@@ -820,9 +821,9 @@ sampling, since the number of smoothing variances is usually not very large the 
 burden does most of the times not exceed possible benefits.
 
 
-\subsection{Model Choice} \label{sec:modchoice}
+\subsection{Model choice} \label{sec:modchoice}
 
-\subsubsection{Model Fit} \label{sec:modfit}
+\subsubsection{Model fit} \label{sec:modfit}
 
 Quantile residuals defined as
 $\hat{r}_i = \Phi^{-1}(\mathbf{\mathcal{C}}(y_i | \, \hat{\boldsymbol{\theta}}_{i}))$ with the inverse 
@@ -840,11 +841,17 @@ process, the $u_i$ will then approximately follow a uniform distribution on $[0,
 Graphically, histograms of the $u_i$ can be used for this purpose.
 
 
-\subsubsection{Variable Selection with Posterior Mode} \label{sec:varselpostmode}
+\subsubsection{Smoothing variances with posterior mode} \label{sec:smoothvarsel}
 
-Information criteria like the Akaike information criterion (AIC), or the corrected AIC, as well as
-the Bayesian information criterion (BIC), amongst others, can be used for selecting variables and
-smoothing variances $\boldsymbol{\tau}_{jk}$. These criteria try to penalize overly complex models,
+As already mentioned in Section~\ref{sec:bricksmodelfit}, depending on the structure of the priors
+(\ref{eqn:gprior}) parameters $\boldsymbol{\tau}$ cannot be estimated by maximization of the
+log-posterior (\ref{eqn:logpost}). For example, this is the case for GAM-type models in
+combination with priors based on multivariate normal kernels (\ref{eqn:mvnormprior}) where
+$\boldsymbol{\tau}$ represents the so called smoothing parameters.
+
+Therefore, information criteria like the Akaike information criterion (AIC), or the corrected AIC,
+as well as the Bayesian information criterion (BIC), amongst others, are commonly used for selecting
+the smoothing variances $\boldsymbol{\tau}_{jk}$. These criteria try to penalize overly complex models,
 i.e., are trying to prevent over-fitting. Estimating model complexity using (possibly) nonlinear
 functions, for each model component, the degrees of freedom used to estimate the function can be
 approximated by the equivalent degrees of freedom (EDF) calculated by
@@ -870,7 +877,7 @@ especially useful for multi-dimensional effects with multiple smoothing variance
 of the MCMC chains will usually take much longer with improper starting values.
 
 
-\subsubsection{Variable Selection with Posterior Mean} \label{sec:varselpostmean}
+\subsubsection{Variable selection with posterior mean} \label{sec:varselpostmean}
 
 The deviance information criterion (DIC) can be used for model choice and variable selection in
 Bayesian inference. It is easily be computed from the MCMC output without requiring additional
@@ -906,12 +913,13 @@ about 2000--3000 are sufficient) from which inference of any combination of term
 too.
 
 The posterior predictive distribution is approximated similarly. Random samples for response
-observations are computed by drawing samples $y^\star$ from the response distribution
-\begin{equation} \label{eqn:pdist}
-y^\star \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{1}^{(t)}), \,\,
-  h_{2}(\theta_{2}^{(t)}), \dots, \,\, h_{K}(\theta_{K}^{(t)})\right)
-\end{equation}
-for each posterior sample $\theta_k^{(t)}$, $t = 1, \ldots, T$.
+observations given new covariate values $\mathbf{x}^\star$ are computed by drawing samples
+$y^\star$ from the response distribution
+\begin{equation*} \label{eqn:pdist}
+y^\star \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{1}) = \eta_1(\mathbf{x}^\star; \boldsymbol{\beta}_1^{(t)}),
+  \,\, \dots, \,\, h_{K}(\theta_{K}) = \eta_K(\mathbf{x}^\star; \boldsymbol{\beta}_K^{(t)})\right)
+\end{equation*}
+for each posterior sample $\boldsymbol{\beta}_k^{(t)}$ $t = 1, \ldots, T$.
 
 \subsection{Lego bricks} \label{sec:legobricks}
 
@@ -1341,7 +1349,7 @@ bo <- with(bf, bfit(x, y, family))
 Function \fct{bfit} applies the algorithm described in Figure~\ref{fig:algodesign} and per default
 the IWLS updating scheme as described in (\ref{eqn:blockbackfit}). Moreover, an automated
 stepwise procedure for smoothing variances selection is implemented using information criteria like the
-corrected AIC and BIC \citep{bamlss:Belitz+Lang:2008}, see also Section~\ref{sec:varselpostmode}.
+corrected AIC and BIC \citep{bamlss:Belitz+Lang:2008}, see also Section~\ref{sec:smoothvarsel}.
 The returned object from \fct{bfit} holds the
 fitted values and corresponding parameter estimates, the equivalent degrees of freedom (edf)
 used to produce the model fit, as well as other information about convergence
