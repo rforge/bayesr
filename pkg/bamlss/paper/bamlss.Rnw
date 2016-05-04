@@ -844,10 +844,10 @@ Graphically, histograms of the $u_i$ can be used for this purpose.
 \subsubsection{Smoothing variances with posterior mode} \label{sec:smoothvarsel}
 
 As already mentioned in Section~\ref{sec:bricksmodelfit}, depending on the structure of the priors
-(\ref{eqn:gprior}) parameters $\boldsymbol{\tau}$ cannot be estimated by maximization of the
+(\ref{eqn:gprior}) parameters $\boldsymbol{\tau}_{jk}$ cannot be estimated by maximization of the
 log-posterior (\ref{eqn:logpost}). For example, this is the case for GAM-type models in
 combination with priors based on multivariate normal kernels (\ref{eqn:mvnormprior}) where
-$\boldsymbol{\tau}$ represents the so called smoothing parameters.
+$\boldsymbol{\tau}_{jk}$ represents smoothing variances.
 
 Therefore, information criteria like the Akaike information criterion (AIC), or the corrected AIC,
 as well as the Bayesian information criterion (BIC), amongst others, are commonly used for selecting
@@ -881,15 +881,15 @@ of the MCMC chains will usually take much longer with improper starting values.
 
 The deviance information criterion (DIC) can be used for model choice and variable selection in
 Bayesian inference. It is easily be computed from the MCMC output without requiring additional
-computational effort. If $\boldsymbol{\vartheta}^{(1)}, \ldots, \boldsymbol{\vartheta}^{(T)}$ is a
-MCMC sample from the posterior for the complete parameter vector $\boldsymbol{\vartheta}$, the
+computational effort. If $\boldsymbol{\beta}^{(1)}, \ldots, \boldsymbol{\beta}^{(T)}$ is a
+MCMC sample from the posterior for the complete parameter vector $\boldsymbol{\beta}$, the
 DIC is given by
-$\overline{D(\boldsymbol{\vartheta})} + \mathrm{pd} = 2 \overline{D(\boldsymbol{\vartheta})} -
-D(\overline{\boldsymbol{\vartheta}}) =
-\tfrac{2}{T}\sum D(\boldsymbol{\vartheta}^{(t)}) - D(\tfrac{1}{T}\sum\boldsymbol{\vartheta}^{(t)})$
-where $D(\boldsymbol{\vartheta}) = -2\log(p(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X}))$
-is the model deviance and $\mathrm{pd} = \overline{D(\boldsymbol{\vartheta})} -
-D(\overline{\boldsymbol{\vartheta}})$ is an effective parameter count.
+$\overline{D(\boldsymbol{\beta})} + \mathrm{pd} = 2 \overline{D(\boldsymbol{\beta})} -
+D(\overline{\boldsymbol{\beta}}) =
+\tfrac{2}{T}\sum D(\boldsymbol{\beta}^{(t)}) - D(\tfrac{1}{T}\sum\boldsymbol{\beta}^{(t)})$
+where $D(\boldsymbol{\beta}) = -2 \cdot \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$
+is the model deviance and $\mathrm{pd} = \overline{D(\boldsymbol{\beta})} -
+D(\overline{\boldsymbol{\beta}})$ is an effective parameter count.
 
 
 \subsection{Inference and prediction} \label{sec:infpred}
@@ -914,70 +914,68 @@ too.
 
 The posterior predictive distribution is approximated similarly. Random samples for response
 observations given new covariate values $\mathbf{x}^\star$ are computed by drawing samples
-$y^\star$ from the response distribution
+from the response distribution
 \begin{equation*} \label{eqn:pdist}
 y^\star \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{1}) = \eta_1(\mathbf{x}^\star; \boldsymbol{\beta}_1^{(t)}),
   \,\, \dots, \,\, h_{K}(\theta_{K}) = \eta_K(\mathbf{x}^\star; \boldsymbol{\beta}_K^{(t)})\right)
 \end{equation*}
-for each posterior sample $\boldsymbol{\beta}_k^{(t)}$ $t = 1, \ldots, T$.
+for each posterior sample $\boldsymbol{\beta}_k^{(t)}$; $k = 1, \dots, K$, $t = 1, \ldots, T$.
 
 \subsection{Lego bricks} \label{sec:legobricks}
 
-From Section~\ref{sec:postmean} and \ref{sec:postmode}, it can be recognized that the following
-``lego bricks'' are repeatedly used within BAMLSS candidate algorithms:
+From Section~\ref{sec:priorsbricks} to \ref{sec:infpred}, it can be recognized that the following
+``Lego bricks'' are repeatedly used within the BAMLSS framework:
 \begin{itemize}
 \item The density function $f(y ; \theta_{i} = h_1^{-1}(\eta_{1}(\mathbf{x}, \boldsymbol{\beta}_1)), \ldots,
   \theta_{K} = h_K^{-1}(\eta_{K}(\mathbf{x}, \boldsymbol{\beta}_K)))$,
-\item link functions $h_k( \cdot )$ and derivatives of link functions,
-\item the first order derivatives $\frac{\partial \log \, p(\boldsymbol{\vartheta} ; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_k}$ and $\frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_k}$,
-\item the second order derivatives $\frac{\partial^2 \log \, p(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top}$,
-\item derivatives for log-priors, e.g., $\frac{\partial \log \, p_{jk}(\boldsymbol{\vartheta}_{jk})}{\partial \boldsymbol{\vartheta}_{jk}}$.
+\item link functions $h_k( \cdot )$ and derivatives of inverse link functions,
+\item the first order derivatives $\frac{\partial \log \, p(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})}{\partial \boldsymbol{\beta}_k}$ and $\frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_k}$,
+\item the second order derivatives $\frac{\partial^2 \log \, p(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top}$,
+\item derivatives for log-priors, e.g., $\frac{\partial \log \, \pi_{jk}(\boldsymbol{\beta}_{jk};
+  \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})}{\partial \boldsymbol{\beta}_{jk}}$.
 \end{itemize}
-As shown in Section~\ref{sec:postmode}, first and second order derivatives of the log-likelihood
+As shown in Section~\ref{sec:bricksmodelfit}, first and second order derivatives of the log-likelihood
 w.r.t.\ $\boldsymbol{\beta}_k$ can in most cases be computed by fragmenting with the chain rule into
 derivatives of the log-likelihood w.r.t.\ parameters $\boldsymbol{\theta}_k$, derivatives of link
 functions w.r.t.\ the linear predictors $\boldsymbol{\eta}_k$ and derivatives of
 $\boldsymbol{\eta}_k$ w.r.t.\ the regression coefficients $\boldsymbol{\beta}_k$. Hence, most of the
 structures can be reused when implementing new models and/or algorithms, i.e., applying the
-backfitting algorithm (\ref{eqn:blockbackfit}) and derivative based MCMC as shown in
-Section~\ref{sec:dmh} usually only requires the calculation of derivates of the log-likelihood
-w.r.t.\ parameters $\boldsymbol{\theta}_k$ anew.
+backfitting algorithm (\ref{eqn:blockbackfit}) and derivative based MCMC usually only requires the
+calculation of derivatives of the log-likelihood w.r.t.\ parameters $\boldsymbol{\theta}_k$ anew.
 
 Therefore, even though the models can be rather complex, it is possible to construct a quite simple
 modular system from which it is easy to create algorithms for numerous regression problems.
-Moreover, using the ideas of partitioned updating (\ref{eqn:blockupdate}) and blockwise MCMC sampling,
-a simple generic algorithm for BAMLSS models is outlined in Figure~\ref{fig:algodesign}.
-\begin{figure}[ht!]
-\begin{center}
-\fbox{
-\begin{minipage}[c]{11.3cm}
-$\phantom{i}$ \\[-0.3cm]
-\code{while(eps >} $\varepsilon\,$ \code{\& t < maxit) [ } \\
-\hspace*{0.5cm} \code{for(k in 1:K) [} \\
-\hspace*{1cm} \code{for(j in 1:J[k]) [} \\
-\hspace*{1.5cm} Compute $\tilde{\boldsymbol{\eta}} = \boldsymbol{\eta}_{\texttt{k}} - \mathbf{f}_{\texttt{jk}}$. \\
-\hspace*{1.5cm} Obtain new $(\boldsymbol{\beta}_{\texttt{jk}}^\star, (\tau^2_{\texttt{jk}})^\star)^\top = \texttt{U}_{\texttt{jk}}
-  (\mathbf{X}_{\texttt{jk}}, \mathbf{y}, \tilde{\boldsymbol{\eta}}, \boldsymbol{\beta}_{\texttt{jk}}^{\texttt{[t]}},
-  (\tau^2_{\texttt{jk}})^{\texttt{[t]}})$. \\
-\hspace*{1.5cm} Update $\boldsymbol{\eta}_{\texttt{k}}$. \\
-\hspace*{1cm} \code{]} \\
-\hspace*{0.5cm} \code{]} \\
-\hspace*{0.5cm} \code{t = t + 1} \\
-\hspace*{0.5cm} Compute new \code{eps}. \\
-\code{]} \\[-0.3cm]
-$\phantom{i}$
-\end{minipage}
-} \label{fig:bamlssalgo}
-\end{center}
+Moreover, using the ideas of partitioned updating as presented in Section~\ref{sec:modelfit} for
+posterior mode estimation or MCMC, a simple generic algorithm for BAMLSS models is outlined in
+Algorithm~\ref{fig:algodesign}.
+\begin{algorithm}
 \caption{\label{fig:algodesign} Generic BAMLSS model fitting algorithm.}
-\end{figure}
-The algorithm does not distinguish between the frequentist or Bayesian approach, because the 
-functions $\texttt{U}_{\texttt{jk}}( \cdot )$ could either return proposals from
-a MCMC sampler or updates from an optimizing algorithm like the IWLS. Therefore, $\varepsilon$ 
-(e.g., $0.0001$) and \code{eps} represent the stopping mechanism in an optimizer while
-\code{maxit} controls the maximum iterations of a MCMC sampler, too. Also note that the updating
-functions could in principle be different for each function $f_{jk}( \cdot )$, incorporating even
-more flexibility to the modeling system.
+\begin{algorithmic}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\REQUIRE{$\mathbf{y}$, $\mathbf{X}$, $\boldsymbol{\alpha}$.}
+\renewcommand{\algorithmicrequire}{\textbf{Initialize:}}
+\renewcommand{\algorithmicensure}{\textbf{Set:}}
+\ENSURE{stopping criterion $\varepsilon$, number of iterations $T$, e.g., $\varepsilon = 0.0001$, $T = 1000$.}
+\REQUIRE{$\boldsymbol{\beta}$, $\boldsymbol{\eta}$, $\boldsymbol{\tau}$, e.g.,
+  $\boldsymbol{\beta} = \mathbf{0}, \boldsymbol{\tau} = 0.001 \cdot \mathbf{1}$, $\Delta = \varepsilon + 1$.}
+\WHILE{$(\Delta > \varepsilon) \, \& \, (t < T)$}
+  \STATE set $\boldsymbol{\eta}_0 = \boldsymbol{\eta}^{(t)}$.
+  \FOR{$k = 1$ to $K$}
+    \FOR{$j = 1$ to $J_k$}
+      \STATE obtain new state $(\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)}) \leftarrow
+        U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t)} | \, \cdot \,)$.
+      \STATE compute $\mathbf{f}_{jk}^{(t + 1)} \leftarrow f_{jk}(\mathbf{X}_{jk}, \boldsymbol{\beta}_{jk}^{(t + 1)})$.
+      \STATE update $\boldsymbol{\eta}_k^{(t + 1)} \leftarrow \boldsymbol{\eta}_k^{(t)} - \mathbf{f}_{jk}^{(t)} + \mathbf{f}_{jk}^{(t + 1)}$.
+    \ENDFOR
+  \ENDFOR
+  \STATE compute $\Delta \leftarrow \text{rel.change}(\boldsymbol{\eta}_0, \boldsymbol{\eta}^{(t + 1)})$.
+  \STATE increase $t \leftarrow t + 1$.
+\ENDWHILE
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\ENSURE{posterior mode estimates $\hat{\boldsymbol{\beta}}$, $\hat{\boldsymbol{\tau}}$ or
+  MCMC samples $\boldsymbol{\beta}^{(t)}$, $\boldsymbol{\tau}^{(t)}$, $t = 1, \ldots, T$.}
+\end{algorithmic}
+\end{algorithm}
 
 %In practice, only few implementations support an entirely modular setup that can be
 %extended by the user. Examples that do support some flexibility are the \proglang{R}
