@@ -959,7 +959,7 @@ which is outlined in Algorithm~\ref{fig:algodesign}.
 \REQUIRE{$\boldsymbol{\beta}$, $\boldsymbol{\eta}$, $\boldsymbol{\tau}$, e.g.,
   $\boldsymbol{\beta} = \mathbf{0}, \boldsymbol{\tau} = 0.001 \cdot \mathbf{1}$, $\Delta = \varepsilon + 1$.}
 \WHILE{$(\Delta > \varepsilon) \, \& \, (t < T)$}
-  \STATE set $\boldsymbol{\eta}_0 = \boldsymbol{\eta}^{(t)}$.
+  \STATE set $\mathring{\boldsymbol{\eta}} = \boldsymbol{\eta}^{(t)}$.
   \FOR{$k = 1$ to $K$}
     \FOR{$j = 1$ to $J_k$}
       \STATE obtain new state $(\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)}) \leftarrow
@@ -968,7 +968,7 @@ which is outlined in Algorithm~\ref{fig:algodesign}.
       \STATE update $\boldsymbol{\eta}_k^{(t + 1)} \leftarrow \boldsymbol{\eta}_k^{(t)} - \mathbf{f}_{jk}^{(t)} + \mathbf{f}_{jk}^{(t + 1)}$.
     \ENDFOR
   \ENDFOR
-  \STATE compute $\Delta \leftarrow \text{rel.change}(\boldsymbol{\eta}_0, \boldsymbol{\eta}^{(t + 1)})$.
+  \STATE compute $\Delta \leftarrow \text{rel.change}(\mathring{\boldsymbol{\eta}}, \boldsymbol{\eta}^{(t + 1)})$.
   \STATE increase $t \leftarrow t + 1$.
 \ENDWHILE
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
