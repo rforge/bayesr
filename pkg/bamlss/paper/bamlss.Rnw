@@ -973,7 +973,7 @@ which is outlined in Algorithm~\ref{fig:algodesign}.
 \ENDWHILE
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
 \ENSURE{posterior mode estimates $\hat{\boldsymbol{\beta}} = \boldsymbol{\beta}^{(t)}$,
-  $\hat{\boldsymbol{\tau}} = \boldsymbol{\tau}^{(t)}$ \\
+  $\hat{\boldsymbol{\tau}} = \boldsymbol{\tau}^{(t)}$; \\
   or MCMC samples $\boldsymbol{\beta}^{(t)}$, $\boldsymbol{\tau}^{(t)}$, $t = 1, \ldots, T$.}
 \end{algorithmic}
 \end{algorithm}
