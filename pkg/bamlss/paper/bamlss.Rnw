@@ -946,8 +946,8 @@ calculation of derivatives of the log-likelihood w.r.t.\ parameters $\boldsymbol
 Therefore, even though the models can be rather complex, it is possible to construct a quite simple
 modular system from which it is easy to create algorithms for numerous regression problems.
 Moreover, using the ideas of partitioned updating as presented in Section~\ref{sec:modelfit} for
-posterior mode estimation or MCMC, a simple generic algorithm for BAMLSS models is outlined in
-Algorithm~\ref{fig:algodesign}.
+posterior mode estimation or MCMC, a simple generic algorithm for BAMLSS models can be constructed
+which is outlined in Algorithm~\ref{fig:algodesign}.
 \begin{algorithm}
 \caption{\label{fig:algodesign} Generic BAMLSS model fitting algorithm.}
 \begin{algorithmic}
@@ -972,10 +972,13 @@ Algorithm~\ref{fig:algodesign}.
   \STATE increase $t \leftarrow t + 1$.
 \ENDWHILE
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
-\ENSURE{posterior mode estimates $\hat{\boldsymbol{\beta}}$, $\hat{\boldsymbol{\tau}}$ or
-  MCMC samples $\boldsymbol{\beta}^{(t)}$, $\boldsymbol{\tau}^{(t)}$, $t = 1, \ldots, T$.}
+\ENSURE{posterior mode estimates $\hat{\boldsymbol{\beta}} = \boldsymbol{\beta}^{(t)}$,
+  $\hat{\boldsymbol{\tau}} = \boldsymbol{\tau}^{(t)}$ \\
+  or MCMC samples $\boldsymbol{\beta}^{(t)}$, $\boldsymbol{\tau}^{(t)}$, $t = 1, \ldots, T$.}
 \end{algorithmic}
 \end{algorithm}
+Here, the updating functions $U_{jk}( \cdot )$ either create a new state in posterior maximization or
+in a Markov chain.
 
 %In practice, only few implementations support an entirely modular setup that can be
 %extended by the user. Examples that do support some flexibility are the \proglang{R}
