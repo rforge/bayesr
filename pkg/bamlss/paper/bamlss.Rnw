@@ -849,7 +849,7 @@ log-posterior (\ref{eqn:logpost}). For example, this is the case for GAM-type mo
 combination with priors based on multivariate normal kernels (\ref{eqn:mvnormprior}) where
 $\boldsymbol{\tau}_{jk}$ represents smoothing variances.
 
-Therefore, information criteria like the Akaike information criterion (AIC), or the corrected AIC,
+Therefore, goodness of fit criteria like the Akaike information criterion (AIC), or the corrected AIC,
 as well as the Bayesian information criterion (BIC), amongst others, are commonly used for selecting
 the smoothing variances $\boldsymbol{\tau}_{jk}$. These criteria try to penalize overly complex models,
 i.e., are trying to prevent over-fitting. Estimating model complexity using (possibly) nonlinear
@@ -868,13 +868,15 @@ $\sum_{k}\sum_{j} \mathrm{edf}_{jk}(\boldsymbol{\tau}_{jk})$.
 
 Instead of global optimization of smoothing variances, a fast strategy is the stepwise selection
 during backfitting, which is proposed by \citet{bamlss:Belitz+Lang:2008} and can be adapted to
-distributional regression models. In each cycle of the backfitting algorithm (\ref{eqn:blocknewton})
-or (\ref{eqn:blockbackfit}), the smoothing variances for each model component are optimized holding all
-other variances fixed. To further speed up convergence, the search space for smoothing variances can
-be based on a small grid of candidate values. This will not lead to a global optimum, however, the
-resulting parameters serve as good starting values for full Bayesian inference with MCMC. This is
-especially useful for multi-dimensional effects with multiple smoothing variances since convergence
-of the MCMC chains will usually take much longer with improper starting values.
+distributional regression models. In each cycle of the backfitting
+algorithm (\ref{eqn:blocknewton}) or (\ref{eqn:blockbackfit}), the smoothing variances for each
+model component are optimized holding all other variances fixed, see Algorithm~\ref{fig:umode}. To
+further speed up convergence, the search space for smoothing variances can be based on a small grid
+of candidate values. This will not lead to a global optimum according the goodness of fit
+criterion, however, the resulting parameters serve as good starting values for full Bayesian
+inference with MCMC. This is especially useful for multi-dimensional effects with multiple
+smoothing variances since convergence of the MCMC chains will usually take much longer with
+improper starting values.
 
 
 \subsubsection{Variable selection with posterior mean} \label{sec:varselpostmean}
@@ -947,7 +949,7 @@ Therefore, even though the models can be rather complex, it is possible to const
 modular system from which it is easy to create algorithms for numerous regression problems.
 Moreover, using the ideas of partitioned updating as presented in Section~\ref{sec:modelfit} for
 posterior mode estimation or MCMC, a simple generic algorithm for BAMLSS models can be constructed
-which is outlined in Algorithm~\ref{fig:algodesign}.
+as outlined in Algorithm~\ref{fig:algodesign}.
 \begin{algorithm}
 \caption{\label{fig:algodesign} Generic BAMLSS model fitting algorithm.}
 \begin{algorithmic}
@@ -957,7 +959,8 @@ which is outlined in Algorithm~\ref{fig:algodesign}.
 \renewcommand{\algorithmicensure}{\textbf{Set:}}
 \ENSURE{stopping criterion $\varepsilon$, number of iterations $T$, e.g., $\varepsilon = 0.0001$, $T = 1000$.}
 \REQUIRE{$\boldsymbol{\beta}$, $\boldsymbol{\eta}$, $\boldsymbol{\tau}$, e.g.,
-  $\boldsymbol{\beta} = \mathbf{0}, \boldsymbol{\tau} = 0.001 \cdot \mathbf{1}$, $\Delta = \varepsilon + 1$.}
+  $\boldsymbol{\beta} = \mathbf{0}, \boldsymbol{\tau} = 0.001 \cdot \mathbf{1}$,
+  $\Delta = \varepsilon + 1$, $t = 1$.}
 \WHILE{$(\Delta > \varepsilon) \, \& \, (t < T)$}
   \STATE set $\mathring{\boldsymbol{\eta}} = \boldsymbol{\eta}^{(t)}$.
   \FOR{$k = 1$ to $K$}
@@ -978,12 +981,51 @@ which is outlined in Algorithm~\ref{fig:algodesign}.
 \end{algorithmic}
 \end{algorithm}
 Here, the updating functions $U_{jk}( \cdot )$ either create a new state in posterior maximization or
-in a Markov chain.
-
-%In practice, only few implementations support an entirely modular setup that can be
-%extended by the user. Examples that do support some flexibility are the \proglang{R}
-%model fitting functions \fct{glm}, \fct{gam} as well as function \fct{gamlss} of package \pkg{gamlss}
-%\citep{bamlss:Stasinopoulos+Rigby:2016}.
+a Markov chain. In practice, for full Bayesian inference the algorithm is applied twice, i.e.,
+first computing posterior mode estimates before running a MCMC simulation with these estimates
+as starting values. Finding good starting values is especially important for complex model terms
+that include multiple smoothing variances. In Algorithm~\ref{fig:umode}, the stepwise selection
+of smoothing variances, similar to \citet{bamlss:Belitz+Lang:2008} is shown.
+\begin{algorithm}
+\caption{\label{fig:umode} Posterior mode updating $U_{jk}( \cdot )$ with smoothing variance selection.}
+\begin{algorithmic}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Set:}}
+\REQUIRE{$\mathbf{y}$, $\mathbf{X}$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}^{(t)}$, $\boldsymbol{\tau}^{(t)}$.}
+\ENSURE{goodness of fit criteria $C$}
+\FOR{$l = 1$ to $L_{jk}$}
+  \STATE set search interval for $\tau_{ljk}^{(t + 1)}$, e.g., $\mathcal{I} = [\tau_{ljk}^{(t)} \cdot 10^{-1}, \tau_{ljk}^{(t)} \cdot 10]$.
+  \STATE find $\tau_{ljk}^{(t + 1)} =
+    \underset{\tau_{ljk}^\star \in \mathcal{I}}{\text{arg min }} C(U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \tau_{ljk}^\star | \, \cdot))$.
+\ENDFOR
+\STATE update $\boldsymbol{\beta}_{jk}^{(t + 1)} = U_{jk}(\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)} | \, \cdot)$.
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\ENSURE{updates $\boldsymbol{\beta}_{jk}^{(t + 1)}$, $\boldsymbol{\tau}_{jk}^{(t + 1)}$.}
+\end{algorithmic}
+\end{algorithm}
+In each step of Algorithm~\ref{fig:algodesign}, each of the
+$\boldsymbol{\tau}_{jk} = (\tau_{1jk}, \ldots, \tau_{L_{jk}jk})^\top$ smoothing variances is
+optimized one after the other using an adaptive search interval. Hence, the optimization problem
+is reduced to a one-dimensional search that is relative straightforward to implement. The algorithm
+does not guarantee a global minimum given the goodness of fit criterion, however, the solution
+is at least close and serves as good starting points for full MCMC.
+\begin{table}[t!]
+\centering
+\begin{tabular}{llllll}
+\hline
+Name & Log-likelihood & $\mathbf{s}( \cdot )$ & $\mathbf{F}_{kk}( \cdot )$ & $\mathbf{u}_k$ & $\mathbf{W}_{kk}$ \\ \hline
+Beta \\
+Binomial \\
+Censored normal \\
+Cox-model \\
+Gaussian \\
+Gamma \\
+Multinomial \\
+Multivariate normal \\
+Poisson \\ \hline
+\end{tabular}
+\caption{\label{tab:bricks} Lego bricks used for modeling.}
+\end{table}
 
 
 \section{Computational tools and strategies for implementation} \label{sec:comptools}
