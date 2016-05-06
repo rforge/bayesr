@@ -4,6 +4,7 @@
 \usepackage{multirow,longtable}
 \usepackage{algorithmic}
 \usepackage{algorithm}
+\usepackage{rotating}
 
 \definecolor{darkgray}{rgb}{0.1,0.1,0.1}
 \definecolor{heat1}{rgb}{0.8274510, 0.2470588, 0.4156863}
@@ -610,7 +611,7 @@ $\mathbf{K}_{jk}$.
 
 Similarly, the score vector is
 $$
-\mathbf{s}_k\left( \boldsymbol{\beta}_k^{(t)} \right) =
+\mathbf{s}\left( \boldsymbol{\beta}_k^{(t)} \right) =
 \begin{pmatrix}
 \mathbf{X}_{1k}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{1k}(\boldsymbol{\tau}_{1k})\boldsymbol{\beta}_{1k}^{(t)} \\
 \vdots \\
@@ -651,7 +652,7 @@ is equivalent to updating function
   \mathbf{H}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right)^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) \\
  &=& \boldsymbol{\beta}_{jk}^{(t)} -
   \left[\mathbf{F}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
-    \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right), \nonumber
+    \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right), \nonumber
 \end{eqnarray}
 where matrix $\mathbf{F}_{kk}( \cdot )$ is the derivative matrix given in (\ref{eqn:hessian2}).
 
@@ -748,7 +749,7 @@ derived by each of the following methods:
     \mathbf{s}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) \\
  &=& \boldsymbol{\beta}_{jk}^{(t)} -
   \left[\mathbf{F}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
-    \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right),
+    \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right),
   \end{eqnarray*}
   which is equivalent to the updating function given in (\ref{eqn:blockblocknewton}).
   Hence, the mean is simply one Newton or Fisher scoring iteration towards the posterior mode.
@@ -925,22 +926,22 @@ for each posterior sample $\boldsymbol{\beta}_k^{(t)}$; $k = 1, \dots, K$, $t = 
 
 \subsection{Lego bricks} \label{sec:legobricks}
 
-From Section~\ref{sec:priorsbricks} to \ref{sec:infpred}, it can be recognized that the following
+Using the flexible partitioned updating system (\ref{eqn:blockblockupdate}), from
+Section~\ref{sec:priorsbricks} to \ref{sec:infpred}, it can be recognized that the following
 ``Lego bricks'' are repeatedly used within the BAMLSS framework:
 \begin{itemize}
-\item The density function $f(y ; \theta_{i} = h_1^{-1}(\eta_{1}(\mathbf{x}, \boldsymbol{\beta}_1)), \ldots,
-  \theta_{K} = h_K^{-1}(\eta_{K}(\mathbf{x}, \boldsymbol{\beta}_K)))$,
+\item The log-likelihood function $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$,
 \item link functions $h_k( \cdot )$ and derivatives of inverse link functions,
-\item the first order derivatives $\frac{\partial \log \, p(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})}{\partial \boldsymbol{\beta}_k}$ and $\frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_k}$,
-\item the second order derivatives $\frac{\partial^2 \log \, p(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top}$,
+\item the first order derivatives $\frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_{jk}}$ and $\frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_{jk}}$,
+\item the second order derivatives $\frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_{jk} \partial \boldsymbol{\beta}_{jk}^\top}$,
 \item derivatives for log-priors, e.g., $\frac{\partial \log \, \pi_{jk}(\boldsymbol{\beta}_{jk};
   \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})}{\partial \boldsymbol{\beta}_{jk}}$.
 \end{itemize}
 As shown in Section~\ref{sec:bricksmodelfit}, first and second order derivatives of the log-likelihood
-w.r.t.\ $\boldsymbol{\beta}_k$ can in most cases be computed by fragmenting with the chain rule into
+w.r.t.\ $\boldsymbol{\beta}_{jk}$ can in most cases be computed by fragmenting with the chain rule into
 derivatives of the log-likelihood w.r.t.\ parameters $\boldsymbol{\theta}_k$, derivatives of link
 functions w.r.t.\ the linear predictors $\boldsymbol{\eta}_k$ and derivatives of
-$\boldsymbol{\eta}_k$ w.r.t.\ the regression coefficients $\boldsymbol{\beta}_k$. Hence, most of the
+$\boldsymbol{\eta}_k$ w.r.t.\ the regression coefficients $\boldsymbol{\beta}_{jk}$. Hence, most of the
 structures can be reused when implementing new models and/or algorithms, i.e., applying the
 backfitting algorithm (\ref{eqn:blockbackfit}) and derivative based MCMC usually only requires the
 calculation of derivatives of the log-likelihood w.r.t.\ parameters $\boldsymbol{\theta}_k$ anew.
@@ -995,10 +996,10 @@ of smoothing variances, similar to \citet{bamlss:Belitz+Lang:2008} is shown.
 \ENSURE{goodness of fit criteria $C$}
 \FOR{$l = 1$ to $L_{jk}$}
   \STATE set search interval for $\tau_{ljk}^{(t + 1)}$, e.g., $\mathcal{I} = [\tau_{ljk}^{(t)} \cdot 10^{-1}, \tau_{ljk}^{(t)} \cdot 10]$.
-  \STATE find $\tau_{ljk}^{(t + 1)} =
+  \STATE find $\tau_{ljk}^{(t + 1)} \leftarrow
     \underset{\tau_{ljk}^\star \in \mathcal{I}}{\text{arg min }} C(U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \tau_{ljk}^\star | \, \cdot))$.
 \ENDFOR
-\STATE update $\boldsymbol{\beta}_{jk}^{(t + 1)} = U_{jk}(\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)} | \, \cdot)$.
+\STATE update $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow U_{jk}(\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)} | \, \cdot)$.
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
 \ENSURE{updates $\boldsymbol{\beta}_{jk}^{(t + 1)}$, $\boldsymbol{\tau}_{jk}^{(t + 1)}$.}
 \end{algorithmic}
@@ -1009,23 +1010,26 @@ optimized one after the other using an adaptive search interval. Hence, the opti
 is reduced to a one-dimensional search that is relative straightforward to implement. The algorithm
 does not guarantee a global minimum given the goodness of fit criterion, however, the solution
 is at least close and serves as good starting points for full MCMC.
-\begin{table}[t!]
+\begin{sidewaystable}
 \centering
 \begin{tabular}{llllll}
 \hline
-Name & Log-likelihood & $\mathbf{s}( \cdot )$ & $\mathbf{F}_{kk}( \cdot )$ & $\mathbf{u}_k$ & $\mathbf{W}_{kk}$ \\ \hline
+Name & $\ell(\boldsymbol{\beta}; \mathbf{y}_i, \mathbf{x}_i)$ &
+  $\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) / \partial \boldsymbol{\beta}_{jk}$ &
+  $\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) / \partial \boldsymbol{\beta}_{jk}\partial \boldsymbol{\beta}_{jk}^\top$ &
+  $\mathbf{u}_k$ & $\mathbf{W}_{kk}$ \\ \hline
 Beta \\
 Binomial \\
 Censored normal \\
-Cox-model \\
-Gaussian \\
+Cox-model & $\delta\eta_{\gamma} - \int_0^{t} \exp( \eta_{\lambda}(u)du )$ \\
+Gaussian & $-\frac{1}{2}\log(2\pi) - \eta_{\sigma} - \frac{(y - \eta_{\mu})^2}{2\exp(\eta_{\sigma})^2}$ \\
 Gamma \\
 Multinomial \\
 Multivariate normal \\
 Poisson \\ \hline
 \end{tabular}
 \caption{\label{tab:bricks} Lego bricks used for modeling.}
-\end{table}
+\end{sidewaystable}
 
 
 \section{Computational tools and strategies for implementation} \label{sec:comptools}
