@@ -97,7 +97,8 @@ export(
   "rSurvTime2",
   "scale2",
   "continue",
-  "homstart_data"
+  "homstart_data",
+  "t5"
 )
 
 S3method("plot", "bamlss")
@@ -121,7 +122,9 @@ S3method("model.matrix", "bamlss.terms")
 S3method("model.matrix", "bamlss.formula")
 S3method("smooth.construct", "bamlss.frame")
 S3method("smooth.construct", "kr.smooth.spec")
+S3method("smooth.construct", "tensor5.smooth.spec")
 S3method("Predict.matrix", "kriging.smooth")
 S3method("Predict.matrix", "deriv.smooth")
+S3method("Predict.matrix", "tensor5.smooth")
 S3method("bamlss.engine.setup.smooth", "default")
 

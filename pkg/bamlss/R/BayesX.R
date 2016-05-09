@@ -495,7 +495,7 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
   if(is.null(object$rank))
     object$rank <- sapply(object$S, function(x) { qr(x)$rank })
   if(is.null(object$xt$centermethod))
-    object$xt$centermethod <- "meanfd"
+    object$xt$centermethod <- "meanf"
   if(!is.null(object$C))
     object$xt$centermethod <- NULL
   term <- paste(term, if(is.tensor) "(tensor," else "(userdefined,", sep = "")
