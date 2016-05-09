@@ -103,19 +103,26 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         if(!is.null(attr(sxc, "write")))
           prgex <- c(prgex, attr(sxc, "write")(dir))
         rhs <- c(rhs, sxc)
+        is.tensor <- inherits(x$smooth.construct[[j]], "tensor.smooth") | inherits(x$smooth.construct[[j]], "tensor5.smooth")
         tl <- x$smooth.construct[[j]]$term
-        if(!is.null(sdata)) {
-          if(!all(tl %in% colnames(sdata))) {
-            for(tlj in tl)
-              sdata[[tlj]] <- data[[tlj]]
-          }
-        } else {
+        if(is.null(sdata)) {
           if(inherits(x$smooth.construct[[j]], "userdefined.smooth.spec")) {
             sdata <- data[, 1, drop = FALSE]
             colnames(sdata) <- tl
             sdata[[1]] <- runif(nrow(data))
           } else {
             sdata <- data[, tl, drop = FALSE]
+          }
+        }
+        if(!is.tensor & (length(tl) > 1))
+          tl <- c(tl, paste(tl, collapse = ""))
+        if(!all(tl %in% colnames(sdata))) {
+          for(tlj in tl) {
+            if(tlj %in% names(data)) {
+              sdata[[tlj]] <- data[[tlj]]
+            } else {
+              sdata[[tlj]] <- runif(nrow(sdata))
+            }
           }
         }
       }
@@ -257,6 +264,9 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       if(!is.null(x[[i]]$smooth.construct)) {
         for(j in seq_along(x[[i]]$smooth.construct)) {
           tl <- x[[i]]$smooth.construct[[j]]$term
+          is.tensor <- inherits(x[[i]]$smooth.construct[[j]], "tensor.smooth") | inherits(x[[i]]$smooth.construct[[j]], "tensor5.smooth")
+          if(!is.tensor & (length(tl) > 1))
+            tl <- paste(tl, collapse = "")
           term <- paste("_", paste(tl, collapse = "_"), "_", sep = "")
           sf <- grepl(paste("_", i, "_", sep = ""), sfiles, fixed = TRUE) & grepl(term, sfiles, fixed = TRUE) & !grepl("_variance_", sfiles, fixed = TRUE)
           sf <- sfiles[sf]
@@ -473,9 +483,10 @@ do.xt <- function(term, object, not = NULL, noco = FALSE)
 
 sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
 {
+  is.tensor <- inherits(object, "tensor.smooth") | inherits(object, "tensor5.smooth")
   id <- paste(rmf(id), collapse = "_")
   term <- if(length(object$term) > 1) {
-    paste(object$term, collapse = "*")
+    paste(object$term, collapse = if(is.tensor) "*" else "")
   } else object$term
   Sn <- paste(id, "S", sep = "_")
   Sn <- paste(Sn, "", 1:length(object$S), sep = "")
@@ -484,10 +495,9 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
   if(is.null(object$rank))
     object$rank <- sapply(object$S, function(x) { qr(x)$rank })
   if(is.null(object$xt$centermethod))
-    object$xt$centermethod <- "nullspace"
+    object$xt$centermethod <- "meanfd"
   if(!is.null(object$C))
     object$xt$centermethod <- NULL
-  is.tensor <- inherits(object, "tensor.smooth") | inherits(object, "tensor5.smooth")
   term <- paste(term, if(is.tensor) "(tensor," else "(userdefined,", sep = "")
   for(j in seq_along(object$S))
     term <- paste(term, paste("penmatdata", if(j < 2) "" else j, "=", sep = ""), Sn[j], ",", sep = "")
