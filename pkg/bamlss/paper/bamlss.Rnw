@@ -398,7 +398,7 @@ methods depending on the type of model term. Hence, by using highly modular syst
 estimation algorithms for numerous possibly very complex models.
 
 
-\section{Lego bricks} \label{sec:legobricks}
+\section{Lego bricks} \label{sec:algorithms}
 
 \subsection{Priors} \label{sec:priorsbricks}
 
@@ -924,9 +924,10 @@ y^\star \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{1}) = \eta_1(\mathbf{x}^\st
 \end{equation*}
 for each posterior sample $\boldsymbol{\beta}_k^{(t)}$; $k = 1, \dots, K$, $t = 1, \ldots, T$.
 
-\subsection{Lego bricks} \label{sec:legobricks}
 
-Using the flexible partitioned updating system (\ref{eqn:blockblockupdate}), from
+\section{BAMLSS algorithms} \label{sec:algorithms}
+
+Using the flexible partitioned updating systems like (\ref{eqn:blockblockupdate}), from
 Section~\ref{sec:priorsbricks} to \ref{sec:infpred}, it can be recognized that the following
 ``Lego bricks'' are repeatedly used within the BAMLSS framework:
 \begin{itemize}
@@ -949,8 +950,8 @@ calculation of derivatives of the log-likelihood w.r.t.\ parameters $\boldsymbol
 Therefore, even though the models can be rather complex, it is possible to construct a quite simple
 modular system from which it is easy to create algorithms for numerous regression problems.
 Moreover, using the ideas of partitioned updating as presented in Section~\ref{sec:modelfit} for
-posterior mode estimation or MCMC, a simple generic algorithm for BAMLSS models can be constructed
-as outlined in Algorithm~\ref{fig:algodesign}.
+posterior mode estimation or MCMC, a simple generic algorithm for BAMLSS can be constructed, which
+is outlined in Algorithm~\ref{fig:algodesign}.
 \begin{algorithm}
 \caption{\label{fig:algodesign} Generic BAMLSS model fitting algorithm.}
 \begin{algorithmic}
@@ -958,25 +959,25 @@ as outlined in Algorithm~\ref{fig:algodesign}.
 \REQUIRE{$\mathbf{y}$, $\mathbf{X}$, $\boldsymbol{\alpha}$.}
 \renewcommand{\algorithmicrequire}{\textbf{Initialize:}}
 \renewcommand{\algorithmicensure}{\textbf{Set:}}
-\ENSURE{stopping criterion $\varepsilon$, number of iterations $T$, e.g., $\varepsilon = 0.0001$, $T = 1000$.}
+\ENSURE{Stopping criterion $\varepsilon$, number of iterations $T$, e.g., $\varepsilon = 0.0001$, $T = 1000$.}
 \REQUIRE{$\boldsymbol{\beta}$, $\boldsymbol{\eta}$, $\boldsymbol{\tau}$, e.g.,
   $\boldsymbol{\beta} = \mathbf{0}, \boldsymbol{\tau} = 0.001 \cdot \mathbf{1}$,
   $\Delta = \varepsilon + 1$, $t = 1$.}
 \WHILE{$(\Delta > \varepsilon) \, \& \, (t < T)$}
-  \STATE set $\mathring{\boldsymbol{\eta}} = \boldsymbol{\eta}^{(t)}$.
+  \STATE Set $\mathring{\boldsymbol{\eta}} = \boldsymbol{\eta}^{(t)}$.
   \FOR{$k = 1$ to $K$}
     \FOR{$j = 1$ to $J_k$}
-      \STATE obtain new state $(\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)}) \leftarrow
+      \STATE Obtain new state $(\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)}) \leftarrow
         U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t)} | \, \cdot \,)$.
-      \STATE compute $\mathbf{f}_{jk}^{(t + 1)} \leftarrow f_{jk}(\mathbf{X}_{jk}, \boldsymbol{\beta}_{jk}^{(t + 1)})$.
-      \STATE update $\boldsymbol{\eta}_k^{(t + 1)} \leftarrow \boldsymbol{\eta}_k^{(t)} - \mathbf{f}_{jk}^{(t)} + \mathbf{f}_{jk}^{(t + 1)}$.
+      \STATE Compute $\mathbf{f}_{jk}^{(t + 1)} \leftarrow f_{jk}(\mathbf{X}_{jk}, \boldsymbol{\beta}_{jk}^{(t + 1)})$.
+      \STATE Update $\boldsymbol{\eta}_k^{(t + 1)} \leftarrow \boldsymbol{\eta}_k^{(t)} - \mathbf{f}_{jk}^{(t)} + \mathbf{f}_{jk}^{(t + 1)}$.
     \ENDFOR
   \ENDFOR
-  \STATE compute $\Delta \leftarrow \text{rel.change}(\mathring{\boldsymbol{\eta}}, \boldsymbol{\eta}^{(t + 1)})$.
-  \STATE increase $t \leftarrow t + 1$.
+  \STATE Compute $\Delta \leftarrow \text{rel.change}(\mathring{\boldsymbol{\eta}}, \boldsymbol{\eta}^{(t + 1)})$.
+  \STATE Increase $t \leftarrow t + 1$.
 \ENDWHILE
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
-\ENSURE{posterior mode estimates $\hat{\boldsymbol{\beta}} = \boldsymbol{\beta}^{(t)}$,
+\ENSURE{Posterior mode estimates $\hat{\boldsymbol{\beta}} = \boldsymbol{\beta}^{(t)}$,
   $\hat{\boldsymbol{\tau}} = \boldsymbol{\tau}^{(t)}$; \\
   or MCMC samples $\boldsymbol{\beta}^{(t)}$, $\boldsymbol{\tau}^{(t)}$, $t = 1, \ldots, T$.}
 \end{algorithmic}
@@ -985,23 +986,23 @@ Here, the updating functions $U_{jk}( \cdot )$ either create a new state in post
 a Markov chain. In practice, for full Bayesian inference the algorithm is applied twice, i.e.,
 first computing posterior mode estimates before running a MCMC simulation with these estimates
 as starting values. Finding good starting values is especially important for complex model terms
-that include multiple smoothing variances. In Algorithm~\ref{fig:umode}, the stepwise selection
-of smoothing variances, similar to \citet{bamlss:Belitz+Lang:2008} is shown.
+that, e.g., include multiple smoothing variances. In Algorithm~\ref{fig:umode}, the stepwise selection
+of smoothing variances, similar to \citet{bamlss:Belitz+Lang:2008}, is shown.
 \begin{algorithm}
 \caption{\label{fig:umode} Posterior mode updating $U_{jk}( \cdot )$ with smoothing variance selection.}
 \begin{algorithmic}
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
 \renewcommand{\algorithmicensure}{\textbf{Set:}}
 \REQUIRE{$\mathbf{y}$, $\mathbf{X}$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}^{(t)}$, $\boldsymbol{\tau}^{(t)}$.}
-\ENSURE{goodness of fit criteria $C$}
+\ENSURE{Goodness of fit criteria $C$.}
 \FOR{$l = 1$ to $L_{jk}$}
-  \STATE set search interval for $\tau_{ljk}^{(t + 1)}$, e.g., $\mathcal{I} = [\tau_{ljk}^{(t)} \cdot 10^{-1}, \tau_{ljk}^{(t)} \cdot 10]$.
-  \STATE find $\tau_{ljk}^{(t + 1)} \leftarrow
+  \STATE Set search interval for $\tau_{ljk}^{(t + 1)}$, e.g., $\mathcal{I} = [\tau_{ljk}^{(t)} \cdot 10^{-1}, \tau_{ljk}^{(t)} \cdot 10]$.
+  \STATE Find $\tau_{ljk}^{(t + 1)} \leftarrow
     \underset{\tau_{ljk}^\star \in \mathcal{I}}{\text{arg min }} C(U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \tau_{ljk}^\star | \, \cdot))$.
 \ENDFOR
-\STATE update $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow U_{jk}(\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)} | \, \cdot)$.
+\STATE Update $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow U_{jk}(\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)} | \, \cdot)$.
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
-\ENSURE{updates $\boldsymbol{\beta}_{jk}^{(t + 1)}$, $\boldsymbol{\tau}_{jk}^{(t + 1)}$.}
+\ENSURE{Updates $\boldsymbol{\beta}_{jk}^{(t + 1)}$, $\boldsymbol{\tau}_{jk}^{(t + 1)}$.}
 \end{algorithmic}
 \end{algorithm}
 In each step of Algorithm~\ref{fig:algodesign}, each of the
@@ -1009,7 +1010,28 @@ $\boldsymbol{\tau}_{jk} = (\tau_{1jk}, \ldots, \tau_{L_{jk}jk})^\top$ smoothing 
 optimized one after the other using an adaptive search interval. Hence, the optimization problem
 is reduced to a one-dimensional search that is relative straightforward to implement. The algorithm
 does not guarantee a global minimum given the goodness of fit criterion, however, the solution
-is at least close and serves as good starting points for full MCMC.
+is at least close and serves as good starting points for full MCMC. The MCMC updating functions
+usually either accept or reject samples of the parameters and smoothing variances are sampled
+after samples for $\boldsymbol{\beta}_{jk}$.
+\begin{algorithm}
+\caption{\label{fig:mcmc} MCMC updating $U_{jk}( \cdot )$.}
+\begin{algorithmic}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Set:}}
+\REQUIRE{$\mathbf{y}$, $\mathbf{X}$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}^{(t)}$, $\boldsymbol{\tau}^{(t)}$.}
+\ENSURE{Sampling method.}
+\STATE Sample $\boldsymbol{\beta}_{jk}^\star \leftarrow q(\boldsymbol{\beta}_{jk}^\star | \,\boldsymbol{\beta}_{jk}^{(t)})$.
+\STATE Compute acceptance probability $\alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \, \boldsymbol{\beta}_{jk}^{(t)}\right)$.
+\IF{uniform draw $U(0, 1) \leq \alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \, \boldsymbol{\beta}_{jk}^{(t)}\right)$}
+    \STATE $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow \boldsymbol{\beta}_{jk}^{\star}$
+  \ELSE
+    \STATE $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow \boldsymbol{\beta}_{jk}^{(t)}$.
+  \ENDIF
+\STATE Generate $\boldsymbol{\tau}_{jk}^{(t + 1)}$ similarly as above.
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\ENSURE{Next state $\boldsymbol{\beta}_{jk}^{(t + 1)}$, $\boldsymbol{\tau}_{jk}^{(t + 1)}$.}
+\end{algorithmic}
+\end{algorithm}
 \begin{sidewaystable}
 \centering
 \begin{tabular}{llllll}
@@ -1159,7 +1181,7 @@ the density function $f(y ; \theta_{i} = h_1^{-1}(\eta_{1}(\mathbf{x}, \boldsymb
 logarithm. In addition, link functions can usually be chosen by the user, i.e., these need to be
 provided within the descriptor, typically as character strings.
 
-As already noted in Section~\ref{sec:legobricks}, in the case of
+As already noted in Section~\ref{sec:algorithms}, in the case of
 IWLS backfitting (\ref{eqn:blockbackfit}) and derivative based MCMC simulation \ref{sec:dmh},
 implementing a new distribution most of the times only requires to compute derivatives of
 the log-likelihood w.r.t.\ to parameters $\boldsymbol{\theta}_k$, hence, a modular family description
@@ -1481,7 +1503,7 @@ requirements to parse the model frame with function \fct{bamlss.frame}:
 Moreover, for most optimizer and sampling functions at least the density function should be provided.
 For example, a new family for the normal distribution holding the first and
 second order derivative functions of the log-likelihood w.r.t.\ the parameters
-(see Section~\ref{sec:legobricks}~and~\ref{sec:families}) to be used for the IWLS updating
+(see Section~\ref{sec:algorithms}~and~\ref{sec:families}) to be used for the IWLS updating
 and sampling scheme within function \fct{bfit} and \fct{GMCMC} could be created with
 <<>>=
 normal.bamlss <- function(...) {
@@ -1943,7 +1965,7 @@ $$
 $$
 \citep{bamlss:Hennerfeind+Brezger+Fahrmeir:2006}
 
-As a result, applying the generic algorithm presented in Section~\ref{sec:legobricks} to this type
+As a result, applying the generic algorithm presented in Section~\ref{sec:algorithms} to this type
 of problem two specific difficulties need to be considered. First, the updating functions for
 the time-varying predictor $\eta_{\lambda}(t)$ are different from the time-constant updating
 functions for $\eta_{\gamma}$. Secondly, a specific hurdle of the continuous time Cox-model is the
