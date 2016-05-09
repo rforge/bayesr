@@ -260,7 +260,8 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           term <- paste("_", paste(tl, collapse = "_"), "_", sep = "")
           sf <- grepl(paste("_", i, "_", sep = ""), sfiles, fixed = TRUE) & grepl(term, sfiles, fixed = TRUE) & !grepl("_variance_", sfiles, fixed = TRUE)
           sf <- sfiles[sf]
-          sf <- sf[-grep("anisotropy", sf)]
+          if(any(grepl("anisotropy", sf)))
+            sf <- sf[-grep("anisotropy", sf)]
           samps <- as.matrix(read.table(file.path(dir, "output", sf), header = TRUE)[, -1, drop = FALSE])
           cn <- colnames(x[[i]]$smooth.construct[[j]]$X)
           if(is.null(cn))
@@ -484,6 +485,8 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
     object$rank <- sapply(object$S, function(x) { qr(x)$rank })
   if(is.null(object$xt$centermethod))
     object$xt$centermethod <- "nullspace"
+  if(!is.null(object$C))
+    object$xt$centermethod <- NULL
   is.tensor <- inherits(object, "tensor.smooth") | inherits(object, "tensor5.smooth")
   term <- paste(term, if(is.tensor) "(tensor," else "(userdefined,", sep = "")
   for(j in seq_along(object$S))
@@ -497,7 +500,7 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
   }
   if(!is.null(object$C))
     term <- paste(term, "constrmatdata=", Cn, ",", sep = "")
-  term <- paste(term, "rankK=", sum(object$rank), sep = "")
+  term <- paste(term, "rankK=", prod(object$rank), sep = "")
   term <- paste(do.xt(term, object, c("center", "before")), ")", sep = "")
 
   write <- function(dir) {
@@ -868,7 +871,7 @@ resplit <- function(x) {
 
 
 ## Special tensor constructor.
-t5 <- function(..., constraint = c("main", "both")) {
+t5 <- function(..., constraint = c("none", "main", "both")) {
   object <- te(...)
   object$constraint <- match.arg(constraint)
   object$label <- gsub("te(", "t5(", object$label, fixed = TRUE)
@@ -898,7 +901,9 @@ smooth.construct.tensor5.smooth.spec <- function(object, data, knots)
 
     A <- t(A)
     object$C <- A
-  } else {
+  }
+
+  if(object$constraint == "both") {
     ## Remove main effects and varying coefficients.
     A1 <- cbind(rep(1, p1), 1:p1)
     A2 <- cbind(rep(1, p2), 1:p2)
