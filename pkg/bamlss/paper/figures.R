@@ -319,7 +319,7 @@ if(!file.exists("figures/firemodel-data.png")) {
   data("LondonFire")
   load("firemodel_plotdata.rda")
 
-  plot.daytime <- function(x, daytime = 1, n = 30, range = NULL, lrange = NULL, main = NULL, ...)
+  plot.daytime <- function(x, daytime = 1, n = 30, range = NULL, lrange = NULL, main = NULL, cores = 4, chunks = 1, ...)
   {
     options(warn = -1)
     gpclibPermit()
@@ -340,7 +340,7 @@ if(!file.exists("figures/firemodel-data.png")) {
     co <- co[pip < 1, , drop = FALSE]
     co$daytime <- daytime
     co$spatial_daytime <- predict(x, newdata = co, model = "gamma",
-      term = "daytime", intercept = FALSE)
+      term = "daytime", intercept = FALSE, cores = cores, chunks = chunks)
     plot(LondonBoroughs, xlab = "Longitude [deg]", ylab = "Latitude [deg]",
       main = NULL)
     if(is.null(lrange)) {
@@ -661,10 +661,12 @@ if(!file.exists("figures/firemodel-data.png")) {
   target <- c(0, 4, 6, 8.5, 10, 12, 14, 16, 18, 20, 22, 24)
   tmain <- c("00:00", "04:00", "06:00", "08:30", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00", "22:00", "24:00")
   tmain <- paste("Time of day", tmain)
+  firemodel$family <- cox.bamlss()
   for(i in seq_along(target)) {
+    cat("create figure for target", i, "\n")
     epng(paste("figures/firemodel-daytime-t", i, ".png", sep = ""), width = 4.5, height = 3.5)
     par(mar = c(4.1, 4.1, 1.5, 1.5))
-    plot.daytime(firemodel, daytime = target[i], n = 30, range = rr, lrange = lr, main = tmain[i])
+    plot.daytime(firemodel, daytime = target[i], n = 120, range = rr, lrange = lr, main = tmain[i])
     dev.off()
   }
 }
