@@ -59,14 +59,12 @@ if(!file.exists("firemodel.rda")) {
 
   save(firemodel, file = "firemodel.rda")
 
-  predict_firemodel <- function(n = 30, target = 6, k = 20, cores = 4, chunks = 30, ...)
+  predict_firemodel <- function(n = 30, target = 6, k = 20, cores = NULL, chunks = 100, ...)
   {
     gpclibPermit()
 
     spatial_daytime <- grepl("(daytime,lon,lat)",
       paste(all.labels.formula(terms(firemodel, model = "gamma")), collapse = "+"), fixed = TRUE)
-
-    firemodel$family <- cox.bamlss()
 
     xy <- bbox(LondonBoroughs)
     co <- expand.grid(
@@ -99,9 +97,9 @@ if(!file.exists("firemodel.rda")) {
 
     nd <- unique(nd[order(nd$id), ])
     nd$id <- as.factor(nd$id)
-    nd$p50atime <- predict(firemodel, newdata = nd, model = "lambda", FUN = mean, intercept = FALSE, cores = cores, chunks = chunks)
+    nd$p50atime <- predict(firemodel, newdata = nd, model = "lambda", FUN = mean, intercept = FALSE, cores = cores, chunks = chunks, verbose = TRUE)
     if(spatial_daytime)
-      nd$p50dtime <- predict(firemodel, newdata = nd, model = "gamma", term = "daytime", intercept = FALSE, cores = cores, chunks = chunks)
+      nd$p50dtime <- predict(firemodel, newdata = nd, model = "gamma", term = "daytime", intercept = FALSE, cores = cores, chunks = chunks, verbose = TRUE)
     nd$atime <- nd$arrivaltime
     if(spatial_daytime)
       nd$dtime <- nd$daytime
@@ -130,20 +128,21 @@ if(!file.exists("firemodel.rda")) {
     nd$fsintens <- extract(fsintens, as.matrix(nd[ , c("lon", "lat")]))
     nd$spatial_prob <- predict(firemodel, newdata = nd,
       term = c("(arrivaltime)", "(arrivaltime,lon,lat)", "(fsintens)", "(daytime)", "(lon,lat)"),
-      intercept = TRUE, type = "prob", time = target, cores = cores, chunks = chunks, ...)
+      intercept = TRUE, type = "prob", time = target, cores = cores, chunks = chunks, verbose = TRUE, ...)
     nd$spatial_tc <- predict(firemodel, newdata = nd, model = "gamma",
-      term = "(lon,lat)", intercept = FALSE, cores = cores, chunks = chunks)
+      term = "(lon,lat)", intercept = FALSE, cores = cores, chunks = chunks, verbose = TRUE)
     nd$spatial_td <- predict(firemodel, newdata = nd, model = "lambda",
-      term = "(arrivaltime,lon,lat)", intercept = FALSE, cores = cores, chunks = chunks)
+      term = "(arrivaltime,lon,lat)", intercept = FALSE, cores = cores, chunks = chunks, verbose = TRUE)
     if(spatial_daytime) {
       nd$spatial_daytime <- predict(firemodel, newdata = nd, model = "gamma",
-        term = "(daytime,lon,lat)", intercept = FALSE, cores = cores, chunks = chunks)
+        term = "(daytime,lon,lat)", intercept = FALSE, cores = cores, chunks = chunks, verbose = TRUE)
     }
 
     return(list("curves" = fbh, "daytime" = fdt, "spatial" = nd, "target" = target))
   }
 
-  firemodel_plotdata <- predict_firemodel(40, 6, subdivisions = 15)
+  firemodel$family <- cox.bamlss()
+  firemodel_plotdata <- predict_firemodel(120, 6, subdivisions = 15)
 
   save(firemodel, firemodel_plotdata, file = "firemodel_plotdata.rda")
 }

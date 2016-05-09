@@ -237,6 +237,11 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
   sfiles <- grep("_sample.raw", dir(file.path(dir, "output")), fixed = TRUE, value = TRUE)
 
+  if(!length(sfiles)) {
+    warning("BayesX did not return any samples!")
+    return(NULL)
+  }
+
   samples <- NULL
   for(i in names(x)) {
     if(!all(c("fake.formula", "formula") %in% names(x[[i]]))) {
@@ -474,22 +479,24 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
   Sn <- paste(id, "S", sep = "_")
   Sn <- paste(Sn, "", 1:length(object$S), sep = "")
   Xn <- paste(id, "X", sep = "_")
+  Cn <- paste(id, "C", sep = "_")
   if(is.null(object$rank))
     object$rank <- sapply(object$S, function(x) { qr(x)$rank })
-  if(is.null(object$xt$nocenter))
-    object$xt$nocenter <- TRUE
   if(is.null(object$xt$centermethod))
-    object$xt$centermethod <- "meansimple"
-  term <- paste(term, if(inherits(object, "tensor.smooth")) "(tensor," else "(userdefined,", sep = "")
+    object$xt$centermethod <- "nullspace"
+  is.tensor <- inherits(object, "tensor.smooth") | inherits(object, "tensor5.smooth")
+  term <- paste(term, if(is.tensor) "(tensor," else "(userdefined,", sep = "")
   for(j in seq_along(object$S))
     term <- paste(term, paste("penmatdata", if(j < 2) "" else j, "=", sep = ""), Sn[j], ",", sep = "")
-  if(length(object$S) > 1 & FALSE) {
+  if(length(object$S) > 1) {
     Xn <- paste(Xn, "", 1:length(object$S), sep = "")
     for(j in seq_along(object$S))
       term <- paste(term, paste("designmatdata", if(j < 2) "" else j, "=", sep = ""), Xn[j], ",", sep = "")
   } else {
     term <- paste(term, "designmatdata=", Xn, ",", sep = "")
   }
+  if(!is.null(object$C))
+    term <- paste(term, "constrmatdata=", Cn, ",", sep = "")
   term <- paste(term, "rankK=", sum(object$rank), sep = "")
   term <- paste(do.xt(term, object, c("center", "before")), ")", sep = "")
 
@@ -498,7 +505,7 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
       write.table(object$S[[j]], file = file.path(dir, paste(Sn[j], ".raw", sep = "")),
         quote = FALSE, row.names = FALSE)
     }
-    if(inherits(object, "tensor.smooth") & FALSE) {
+    if(is.tensor) {
       for(j in seq_along(object$S)) {
         write.table(object$margin[[j]]$X, file = file.path(dir, paste(Xn[j], ".raw", sep = "")),
           quote = FALSE, row.names = FALSE)
@@ -507,7 +514,11 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
       write.table(object$X, file = file.path(dir, paste(Xn, ".raw", sep = "")),
         quote = FALSE, row.names = FALSE)
     }
-    if(inherits(object, "tensor.smooth") & FALSE) {
+    if(!is.null(object$C)) {
+      write.table(object$C, file = file.path(dir, paste(Cn, ".raw", sep = "")),
+        quote = FALSE, row.names = FALSE)
+    }
+    if(is.tensor) {
       cmd <- NULL
       for(j in seq_along(object$S)) {
         cmd <- c(cmd,
@@ -523,6 +534,12 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
         paste(Sn, ".infile using ", file.path(dir, paste(Sn, ".raw", sep = "")), sep = ""),
         paste("dataset", Xn),
         paste(Xn, ".infile using ", file.path(dir, paste(Xn, ".raw", sep = "")), sep = "")
+      )
+    }
+    if(!is.null(object$C)) {
+      cmd <- c(cmd,
+        paste("dataset", Cn),
+        paste(Cn, ".infile using ", file.path(dir, paste(Cn, ".raw", sep = "")), sep = "")
       )
     }
     return(cmd)
@@ -847,5 +864,57 @@ resplit <- function(x) {
     x <- paste(x, sep = "", collapse = "")
 	
   return(x)
+}
+
+
+## Special tensor constructor.
+t5 <- function(..., constraint = c("main", "both")) {
+  object <- te(...)
+  object$constraint <- match.arg(constraint)
+  object$label <- gsub("te(", "t5(", object$label, fixed = TRUE)
+  object$special <- TRUE
+  class(object) <- "tensor5.smooth.spec"
+  object
+}
+
+smooth.construct.tensor5.smooth.spec <- function(object, data, knots)
+{
+  object$np <- FALSE
+  object <- smooth.construct.tensor.smooth.spec(object, data, knots)
+
+  p1 <- ncol(object$margin[[1]]$X)
+  p2 <- ncol(object$margin[[2]]$X)
+
+  I1 <- diag(p1)
+  I2 <- diag(p2)
+
+  if(object$constraint == "main") {
+    ## Remove main effects only.
+    A1 <- matrix(rep(1, p1), ncol = 1)
+    A2 <- matrix(rep(1, p2), ncol = 1)
+
+    A <- cbind(I2 %x% A1, A2 %x% I1)
+    A <- A[, -ncol(A)]
+
+    A <- t(A)
+    object$C <- A
+  } else {
+    ## Remove main effects and varying coefficients.
+    A1 <- cbind(rep(1, p1), 1:p1)
+    A2 <- cbind(rep(1, p2), 1:p2)
+
+    A <- cbind(I2 %x% A1, A2 %x% I1)
+    ##A <- A[,-c(1, 66, 87, 88)]
+
+    object$C <- t(A)
+  }
+  
+  class(object) <- "tensor5.smooth"
+  return(object)
+}
+
+Predict.matrix.tensor5.smooth <- function(object, data) 
+{
+  Predict.matrix.tensor.smooth(object, data)
 }
 

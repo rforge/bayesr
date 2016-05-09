@@ -1114,10 +1114,12 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
       bf$samples <- mclapply(1:cores, parallel_fun, mc.cores = cores)
     }
     if(!inherits(bf$samples, "mcmc")) {
-      if(is.list(bf$samples)) {
-        bf$samples <- as.mcmc.list(lapply(bf$samples, as.mcmc))
-      } else {
-        bf$samples <- as.mcmc(bf$samples)
+      if(!is.null(bf$samples)) {
+        if(is.list(bf$samples)) {
+          bf$samples <- as.mcmc.list(lapply(bf$samples, as.mcmc))
+        } else {
+          bf$samples <- as.mcmc(bf$samples)
+        }
       }
     }
 
@@ -1200,6 +1202,7 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL, logLik = FAL
   what <- c("logLik", "logPost", "DIC", "pd")
   if(inherits(samples, "mcmc.list"))
     samples <- process.chains(samples)
+  if(is.null(samples)) return(NULL)
   samples <- as.matrix(samples)
   sn <- colnames(samples)
   stats <- NULL
@@ -1795,7 +1798,7 @@ make_fFormula <- function(formula)
 all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, intercept = FALSE)
 {
   env <- environment(formula)
-  tf <- terms(formula, specials = unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", specials)),
+  tf <- terms(formula, specials = unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", "t5", specials)),
     keep.order = TRUE)
   sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
@@ -1831,7 +1834,7 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
 all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
 {
   env <- environment(formula)
-  tf <- terms(formula, specials = unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", specials)),
+  tf <- terms(formula, specials = unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", "t5", specials)),
     keep.order = FALSE)
   sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
@@ -2144,6 +2147,7 @@ randomize <- function(x)
 ## Combine sample chains.
 process.chains <- function(x, combine = TRUE, drop = FALSE)
 {
+  if(is.null(x)) return(NULL)
   if(!is.list(x))
     x <- list(x)
   n <- sapply(x, nrow)
@@ -2508,50 +2512,110 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
       "FUN" = FUN, "trans" = trans, "type" = type, "nsamps" = nsamps, "env" = env))
   }
 
+  pred_fun <- function(pred, id) {
+    if(type != "link") {
+      links <- family$links[nx]
+      if(length(links) > 0) {
+        if(links[id] != "identity") {
+          linkinv <- make.link2(links[id])$linkinv
+          pred <- linkinv(pred)
+        }
+      } else {
+        warning(paste("could not compute predictions on the scale of parameter",
+          ", predictions on the scale of the linear predictor are returned!", sep = ""))
+      }
+    }
+    if(!is.null(trans)) {
+      if(!is.list(trans)) {
+        trans <- rep(list(trans), length = length(nx))
+        names(trans) <- nx
+      }
+      if(!is.null(trans[[id]])) {
+        if(!is.function(trans[[id]]))
+          stop("argument trans must be a list of transformer functions!")
+        pred <- trans[[id]](pred)
+      }
+    }
+    pred <- apply(pred, 1, FUN, ...)
+    if(!is.null(dim(pred)))
+      pred <- t(pred)
+    return(pred)
+  }
+
+  ia <- interactive()
+
   if(is.null(cores)) {
     pred <- list()
     if(chunks > 1) {
       chunk_id <- sort(rep(1:chunks, length.out = nrow(newdata)))
+      newdata <- split(newdata, chunk_id)
+      chunks <- length(newdata)
       for(i in nx) {
-        cpred <- list()
+        pred[[i]] <- NULL
         for(j in 1:chunks) {
-          cpred[[j]] <- .predict.bamlss(i, object$x[[i]], samps,
-            enames[[i]], intercept, nsamps, newdata[chunk_id == j, , drop = FALSE], env)
+          if(verbose) {
+            cat(if(ia) "\r" else "\n")
+            cat("predicting chunk", j, "of", chunks, "...")
+            if(.Platform$OS.type != "unix" & ia) flush.console()
+          }
+          if(j < 2) {
+            pred[[i]] <- pred_fun(.predict.bamlss(i, object$x[[i]], samps,
+              enames[[i]], intercept, nsamps, newdata[[j]], env), id = i)
+          } else {
+            if(is.null(dim(pred[[i]]))) {
+              pred[[i]] <- c(pred[[i]], pred_fun(.predict.bamlss(i, object$x[[i]], samps,
+                enames[[i]], intercept, nsamps, newdata[[j]], env), id = i))
+            } else {
+              pred[[i]] <- rbind(pred[[i]], pred_fun(.predict.bamlss(i, object$x[[i]], samps,
+                enames[[i]], intercept, nsamps, newdata[[j]], env), id = i))
+            }
+          }
         }
-        pred[[i]] <- if(is.matrix(cpred[[1]])) do.call("rbind", cpred) else do.call("c", cpred)
+        if(verbose) cat("\n")
       }
     } else {
       for(i in nx) {
-        pred[[i]] <- .predict.bamlss(i, object$x[[i]], samps,
-          enames[[i]], intercept, nsamps, newdata, env)
+        pred[[i]] <- pred_fun(.predict.bamlss(i, object$x[[i]], samps,
+          enames[[i]], intercept, nsamps, newdata, env), id = i)
       }
     }
   } else {
     require("parallel")
 
-    core_id <- sort(rep(1:cores, length.out = nrow(newdata)))
-
     parallel_fun <- function(k) {
-      nd <- newdata[core_id == k, , drop = FALSE]
       pred <- list()
       if(chunks > 1) {
-        chunk_id <- sort(rep(1:chunks, length.out = nrow(nd)))
+        chunk_id <- sort(rep(1:chunks, length.out = nrow(newdata[[k]])))
+        nd <- split(newdata[[k]], chunk_id)
+        chunks <- length(nd)
         for(i in nx) {
-          cpred <- list()
           for(j in 1:chunks) {
-            cpred[[j]] <- .predict.bamlss(i, object$x[[i]], samps,
-              enames[[i]], intercept, nsamps, nd[chunk_id == j, , drop = FALSE], env)
+            if(j < 2) {
+              pred[[i]] <- pred_fun(.predict.bamlss(i, object$x[[i]], samps,
+                enames[[i]], intercept, nsamps, nd[[j]], env), id = i)
+            } else {
+              if(is.null(dim(pred[[i]]))) {
+                pred[[i]] <- c(pred[[i]], pred_fun(.predict.bamlss(i, object$x[[i]], samps,
+                  enames[[i]], intercept, nsamps, nd[[j]], env), id = i))
+              } else {
+                pred[[i]] <- rbind(pred[[i]], pred_fun(.predict.bamlss(i, object$x[[i]], samps,
+                  enames[[i]], intercept, nsamps, nd[[j]], env), id = i))
+              }
+            }
           }
-          pred[[i]] <- if(is.matrix(cpred[[1]])) do.call("rbind", cpred) else do.call("c", cpred)
         }
       } else {
         for(i in nx) {
-          pred[[i]] <- .predict.bamlss(i, object$x[[i]], samps,
-            enames[[i]], intercept, nsamps, nd, env)
+          pred[[i]] <- pred_fun(.predict.bamlss(i, object$x[[i]], samps,
+            enames[[i]], intercept, nsamps, newdata[[k]], env), id = i)
         }
       }
       return(pred)
     }
+
+    core_id <- sort(rep(1:cores, length.out = nrow(newdata)))
+    newdata <- split(newdata, core_id)
+    cores <- length(newdata)
 
     pred <- mclapply(1:cores, parallel_fun, mc.cores = cores)
 
@@ -2568,39 +2632,6 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
       }
       pred <- pred[[1]]
     }
-  }
-
-  if(type != "link") {
-    links <- family$links[nx]
-    if(length(links) > 0) {
-      for(i in nx) {
-        if(links[i] != "identity") {
-          linkinv <- make.link2(links[i])$linkinv
-          pred[[i]] <- linkinv(pred[[i]])
-        }
-      }
-    } else {
-      warning(paste("could not compute predictions on the scale of parameter",
-        ", predictions on the scale of the linear predictor are returned!", sep = ""))
-    }
-  }
-  if(!is.null(trans)) {
-    if(!is.list(trans)) {
-      trans <- rep(list(trans), length = length(nx))
-      names(trans) <- nx
-    }
-    for(i in nx) {
-      if(!is.null(trans[[i]])) {
-        if(!is.function(trans[[i]]))
-          stop("argument trans must be a list of transformer functions!")
-        pred[[i]] <- trans[[i]](pred[[i]])
-      }
-    }
-  }
-  for(i in nx) {
-    pred[[i]] <- apply(pred[[i]], 1, FUN, ...)
-    if(!is.null(dim(pred[[i]])))
-      pred[[i]] <- t(pred[[i]])
   }
 
   if((length(pred) < 2) & drop)
@@ -4397,7 +4428,7 @@ print.bamlss.formula <- function(x, ...) {
 drop.terms.bamlss <- function(f, pterms = TRUE, sterms = TRUE,
   specials = NULL, keep.response = TRUE, keep.intercept = TRUE, data = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "t5"))
   if(!inherits(f, "formula")) {
     if(!is.null(f$terms)) {
       f <- f$terms
@@ -4462,7 +4493,7 @@ terms.bamlss <- terms.bamlss.frame <- terms.bamlss.formula <- function(x, specia
   if(!inherits(x, "bamlss.formula"))
     x <- bamlss.formula(x, ...)
   env <- environment(x)
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "t5"))
   elmts <- c("formula", "fake.formula")
   if(!any(names(x) %in% elmts) & !inherits(x, "formula")) {
     if(!is.null(model)) {
@@ -4588,7 +4619,7 @@ has_response <- function(x)
 
 has_sterms <- function(x, specials = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "t5"))
   if(inherits(x, "formula"))
     x <- terms(x, specials = specials)
   if(!inherits(x, "terms"))
@@ -4598,7 +4629,7 @@ has_sterms <- function(x, specials = NULL)
 
 has_pterms <- function(x, specials = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "t5"))
   if(inherits(x, "formula"))
     x <- terms(x, specials = specials)
   if(!inherits(x, "terms"))
@@ -4611,7 +4642,7 @@ has_pterms <- function(x, specials = NULL)
 
 get_pterms_labels <- function(x, specials = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "t5"))
   tl <- if(has_pterms(x, specials)) {
     x <- drop.terms.bamlss(x, pterms = TRUE, sterms = FALSE,
       keep.response = FALSE, specials = specials)
@@ -4623,7 +4654,7 @@ get_pterms_labels <- function(x, specials = NULL)
 get_sterms_labels <- function(x, specials = NULL)
 {
   env <- environment(x)
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "t5"))
   if(has_sterms(x, specials)) {
     x <- drop.terms.bamlss(x, pterms = FALSE, sterms = TRUE,
       keep.response = FALSE, specials = specials)

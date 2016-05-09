@@ -1102,7 +1102,7 @@ survint <- function(X, eta, width, gamma, eta2 = NULL, index = NULL, dX = NULL, 
 ## Survival probabilities.
 cox.predict <- function(object, newdata, type = c("link", "parameter", "probabilities"),
   FUN = function(x) { mean(x, na.rm = TRUE) }, time, subdivisions = 100, cores = NULL,
-  chunks = 1, ...)
+  chunks = 1, verbose = FALSE, ...)
 {
   if(is.null(newdata))
     newdata <- model.frame(object)
@@ -1112,7 +1112,7 @@ cox.predict <- function(object, newdata, type = c("link", "parameter", "probabil
   if(type != "probabilities") {
     object$family$predict <- NULL
     return(predict.bamlss(object, newdata = newdata, type = type,
-      FUN = FUN, cores = cores, chunks = chunks, ...))
+      FUN = FUN, cores = cores, chunks = chunks, verbose = verbose, ...))
   }
   if(object$family$family != "cox")
     stop("object must be a cox-survival model!")
@@ -1156,43 +1156,63 @@ cox.predict <- function(object, newdata, type = c("link", "parameter", "probabil
     return(probs)
   }
 
+  ia <- interactive()
+
   if(is.null(cores)) {
     if(chunks < 2) {
       probs <- cox_probs(newdata)
     } else {
       id <- sort(rep(1:chunks, length.out = nrow(newdata)))
-      probs <- list()
-      for(i in 1:chunks)
-        probs[[i]] <- cox_probs(newdata[id == i, , drop = FALSE])
-      probs <- if(is.matrix(probs[[1]])) {
-        do.call("rbind", probs)
-      } else {
-        do.call("c", probs)
+      newdata <- split(newdata, id)
+      chunks <- length(newdata)
+      probs <- NULL
+      for(i in 1:chunks) {
+        if(verbose) {
+          cat(if(ia) "\r" else "\n")
+          cat("predicting chunk", i, "of", chunks, "...")
+          if(.Platform$OS.type != "unix" & ia) flush.console()
+        }
+        if(i < 2) {
+          probs <- cox_probs(newdata[[i]])
+        } else {
+          if(is.null(dim(probs))) {
+            probs <- c(probs, cox_probs(newdata[[i]]))
+          } else {
+            probs <- rbind(probs, cox_probs(newdata[[i]]))
+          }
+        }
       }
+      if(verbose) cat("\n")
     }
   } else {
     require("parallel")
-    id <- sort(rep(1:cores, length.out = nrow(newdata)))
 
     parallel_fun <- function(i) {
       if(chunks < 2) {
-        pr <- cox_probs(newdata[id == i, , drop = FALSE])
+        pr <- cox_probs(newdata[[i]])
       } else {
-        nd <- newdata[id == i, , drop = FALSE]
-        idc <- sort(rep(1:chunks, length.out = nrow(nd)))
-        pr <- list()
+        idc <- sort(rep(1:chunks, length.out = nrow(newdata[[i]])))
+        nd <- split(newdata[[i]], idc)
+        chunks <- length(nd)
+        pr <- NULL
         for(j in 1:chunks) {
-          pr[[j]] <- cox_probs(nd[idc == j, , drop = FALSE])
-        }
-        pr <- if(is.matrix(pr[[1]])) {
-          do.call("rbind", pr)
-        } else {
-          do.call("c", pr)
+          if(j < 2) {
+            pr <- cox_probs(nd[[j]])
+          } else {
+            if(is.null(dim(pr))) {
+              pr <- c(pr, cox_probs(nd[[j]]))
+            } else {
+              pr <- rbind(pr, cox_probs(nd[[j]]))
+            }
+          }
         }
       }
       return(pr)
     }
 
+    id <- sort(rep(1:cores, length.out = nrow(newdata)))
+    newdata <- split(newdata, id)
+    cores <- length(newdata)
     probs <- mclapply(1:cores, parallel_fun, mc.cores = cores)
 
     probs <- if(is.matrix(probs[[1]])) {
