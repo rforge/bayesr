@@ -44,6 +44,12 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   if(is.null(family$bayesx))
     stop("BayesX specifications missing in family object, cannot set up model!")
 
+  if(is.null(attr(x, "bamlss.engine.setup")))
+    x <- bamlss.engine.setup(x, update = update, parametric2smooth = FALSE, ...)
+
+  if(!is.null(start))
+    x <- set.starting.values(x, start) ## FIXME: starting values for parametric parts?
+
   fbx <- family$bayesx
 
   model.name <- control$setup$model.name
@@ -483,6 +489,7 @@ do.xt <- function(term, object, not = NULL, noco = FALSE)
 
 sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
 {
+  object$state <- NULL
   is.tensor <- inherits(object, "tensor.smooth") | inherits(object, "tensor5.smooth")
   id <- paste(rmf(id), collapse = "_")
   term <- if(length(object$term) > 1) {
@@ -492,12 +499,19 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
   Sn <- paste(Sn, "", 1:length(object$S), sep = "")
   Xn <- paste(id, "X", sep = "_")
   Cn <- paste(id, "C", sep = "_")
+  Pn <- paste(id, "P", sep = "_")
   if(is.null(object$rank))
     object$rank <- sapply(object$S, function(x) { qr(x)$rank })
   if(is.null(object$xt$centermethod))
-    object$xt$centermethod <- "meanf"
-  if(!is.null(object$C))
+    object$xt$nocenter <- TRUE
+  if(!is.null(object$C)) {
     object$xt$centermethod <- NULL
+    object$xt$nocenter <- NULL
+  }
+  if(is.null(object$C) & is.tensor) {
+    object$xt$centermethod <- NULL
+    object$xt$nocenter <- NULL
+  }
   term <- paste(term, if(is.tensor) "(tensor," else "(userdefined,", sep = "")
   for(j in seq_along(object$S))
     term <- paste(term, paste("penmatdata", if(j < 2) "" else j, "=", sep = ""), Sn[j], ",", sep = "")
@@ -510,6 +524,8 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
   }
   if(!is.null(object$C))
     term <- paste(term, "constrmatdata=", Cn, ",", sep = "")
+  if(!is.null(object$state$parameters))
+    term <- paste(term, "betastart=", Pn, ",", sep = "")
   term <- paste(term, "rankK=", prod(object$rank), sep = "")
   term <- paste(do.xt(term, object, c("center", "before")), ")", sep = "")
 
@@ -529,6 +545,11 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
     }
     if(!is.null(object$C)) {
       write.table(object$C, file = file.path(dir, paste(Cn, ".raw", sep = "")),
+        quote = FALSE, row.names = FALSE)
+    }
+    if(!is.null(object$state$parameters)) {
+      spar <- as.data.frame(matrix(get.par(object$state$parameters, "b"), nrow = 1))
+      write.table(spar, file = file.path(dir, paste(Pn, ".raw", sep = "")),
         quote = FALSE, row.names = FALSE)
     }
     if(is.tensor) {
@@ -553,6 +574,12 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
       cmd <- c(cmd,
         paste("dataset", Cn),
         paste(Cn, ".infile using ", file.path(dir, paste(Cn, ".raw", sep = "")), sep = "")
+      )
+    }
+    if(!is.null(object$state$parameters)) {
+      cmd <- c(cmd,
+        paste("dataset", Pn),
+        paste(Pn, ".infile using ", file.path(dir, paste(Pn, ".raw", sep = "")), sep = "")
       )
     }
     return(cmd)

@@ -1116,35 +1116,11 @@ $\quad$ \code{tau} $\sim$ \code{s(z2)} \\
 \end{tabular}
 }
 \end{center}
-A convention we make at this point is that
-the mean formula is always the one including the response variable and all other formulas
-have the corresponding parameter name on the left hand side. Hence, a mapping of terms with 
-parameters is provided.
+A convention we make at this point is that the first formula is always the one including the
+response variable and all other formulas have the corresponding parameter name on the left hand
+side. Hence, a mapping of terms with parameters is provided.
 
-Within this syntax it is also possible to incorporate multilevel models with STAR predictor
-\citep{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}, where a hierarchy of
-units or clusters grouped at different levels is given. Suppose there is data on three levels
-available, where variable \code{id1} denotes the indicator from the individual observations to the
-second level with lower resolution and \code{id2} is another indicator mapping from the second to
-third level. A four parameter model with 3 levels can be specified with
-\begin{center}
-{ \renewcommand{\arraystretch}{1}
-\begin{tabular}{l}
-\code{list(} \\
-$\quad$ \code{y} $\sim$ \code{x1 + x2 + s(z1) + s({\color{heat1}{id1}}),} \\
-$\quad$ {\color{heat1}{\code{id1} $\sim$ \code{x3 + s(z3) + s(}}}\code{\color{blue1}{id2}}\code{\color{heat1})}\code{,} \\
-$\quad$ {\color{blue1}{\code{id2} $\sim$ \code{s(z4)}}}\code{,} \\
-$\quad$ \code{sigma2} $\sim$ \code{x1 + x2 + s(z1),} \\
-$\quad$ \code{nu} $\sim$ \code{s(z1) + s({\color{heat1}{id1}}),} \\
-$\quad$ \code{tau} $\sim$ \code{s(z2)} \\
-\code{)}
-\end{tabular}
-}
-\end{center}
-Note that the mean and \code{nu} parameter include the indicator variable \code{id1}, therefore,
-the level two and three formulas are incorporated in both specifications.
-
-In addition, models with categorical responses can be formulated in a similar fashion. A model
+Models with categorical responses can be formulated in a similar fashion. A model
 with three categories within the \code{y} variable, e.g., a multinomial model with some
 reference category can be defined by
 \begin{center}
@@ -1164,33 +1140,32 @@ the formulas of each category explicitly by
 { \renewcommand{\arraystretch}{1}
 \begin{tabular}{l}
 \code{list(} \\
-$\quad$ \code{response1} $\sim$ \code{x1 + s(z1) + s(z2),} \\
-$\quad$ \code{response2} $\sim$ \code{x1 + x2 + s(z1) + s(z3)} \\
+$\quad$ \code{y1} $\sim$ \code{x1 + s(z1) + s(z2),} \\
+$\quad$ \code{y2} $\sim$ \code{x1 + x2 + s(z1) + s(z3)} \\
 \code{)}
 \end{tabular}
 }
 \end{center}
-i.e., variable \code{response1} is a dummy variable indicating whether the $i$th observation is in
-category 1 and \code{response2} in category 2, respectively.
+i.e., variable \code{y1} is a dummy variable indicating whether the $i$-th observation is in
+category 1 and \code{y2} in category 2, respectively.
 
 In summary, the described model definition syntax does not restrict to any type of regression
-model, number of parameters and hierarchies.
+model or number of parameters.
 
 
 \subsection{Distribution families} \label{sec:families}
 
 Any statistical software for regression models needs some description system for the supported
 distributions. For modular systems, the family descriptor involves a function that evaluates
-the density function $f(y ; \theta_{i} = h_1^{-1}(\eta_{1}(\mathbf{x}, \boldsymbol{\beta}_1)), \ldots,
+the density function $g(y ; \theta_{i} = h_1^{-1}(\eta_{1}(\mathbf{x}, \boldsymbol{\beta}_1)), \ldots,
   \theta_{K} = h_K^{-1}(\eta_{K}(\mathbf{x}, \boldsymbol{\beta}_K)))$ or its
 logarithm. In addition, link functions can usually be chosen by the user, i.e., these need to be
 provided within the descriptor, typically as character strings.
 
-As already noted in Section~\ref{sec:algorithms}, in the case of
-IWLS backfitting (\ref{eqn:blockbackfit}) and derivative based MCMC simulation \ref{sec:dmh},
-implementing a new distribution most of the times only requires to compute derivatives of
-the log-likelihood w.r.t.\ to parameters $\boldsymbol{\theta}_k$, hence, a modular family description
-system provides functions for first and second order derivatives which take
+As already noted in Section~\ref{sec:algorithms}, e.g., in the case of IWLS backfitting and derivative
+based MCMC simulation, implementing a new distribution most of the times only requires to compute
+derivatives of the log-likelihood w.r.t.\ to parameters $\boldsymbol{\theta}_k$. Hence, a modular
+family description system provides functions for first and second order derivatives which take
 $\boldsymbol{\theta}_k$ as an argument.
 
 For post-modeling analysis, a complete family descriptor also involves functions that compute the
@@ -1256,9 +1231,9 @@ model fitters, it is natural to provide any extra ingredients needed within this
 a highly modular system can be created.
 
 
-\subsection{Building blocks} \label{sec:blocks}
+\subsection{Architecture} \label{sec:blocks}
 
-The architecture of the conceptional framework is illustrated in Figure~\ref{fig:blocks}.
+A possible architecture for the BAMLSS framework is illustrated in Figure~\ref{fig:blocks}.
 \begin{figure}[ht!]
 \centering
 \setlength{\unitlength}{1cm}
@@ -1294,7 +1269,7 @@ The architecture of the conceptional framework is illustrated in Figure~\ref{fig
 \end{picture}
 \caption{\label{fig:blocks} Conceptional overview.}
 \end{figure}
-The framework can be divided in three parts: First, functions that describe distribution families,
+The concept can be divided in three parts: First, functions that describe distribution families,
 formulas, together with the data that is used for modeling. Secondly, functions that actually
 compute estimates of parameters, and thirdly, functions for visualization and output statistics.
 

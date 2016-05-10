@@ -40,7 +40,7 @@
 ## state list, as this could vary for special terms. A default
 ## method is provided.
 bamlss.engine.setup <- function(x, update = "iwls", do.optim = NULL,
-  nu = 0.1, start = NULL, df = NULL, ...)
+  nu = 0.1, start = NULL, df = NULL, parametric2smooth = TRUE, ...)
 {
   if(!is.null(attr(x, "bamlss.engine.setup"))) return(x)
 
@@ -50,7 +50,7 @@ bamlss.engine.setup <- function(x, update = "iwls", do.optim = NULL,
         x[[j]] <- foo(x[[j]], id = c(id, j))
     } else {
       if(is.null(id)) id <- ""
-      if(!is.null(dim(x$model.matrix))) {
+      if(!is.null(dim(x$model.matrix)) & parametric2smooth) {
         if(nrow(x$model.matrix) > 0 & !is.na(mean(unlist(x$model.matrix), na.rm = TRUE))) {
           if(is.null(x$smooth.construct)) x$smooth.construct <- list()
           label <- if(is.null(colnames(x$model.matrix))) {
