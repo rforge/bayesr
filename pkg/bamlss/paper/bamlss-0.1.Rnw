@@ -86,6 +86,7 @@ source("figures.R")
 
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 
 \section{Introduction} \label{sec:intro}
 
