@@ -5,6 +5,8 @@
 \alias{bfit_iwls_spam}
 \alias{bfit_iwls_lm}
 \alias{bfit_iwls_optim}
+\alias{bfit_lm}
+\alias{bfit_optim}
 
 \title{
   Fit BAMLSS with Backfitting
@@ -24,7 +26,7 @@ bfit(x, y, family, start = NULL, weights = NULL, offset = NULL,
   update = "iwls", criterion = c("AICc", "BIC", "AIC"),
   eps = .Machine$double.eps^0.25, maxit = 400,
   outer = FALSE, inner = FALSE, mgcv = FALSE,
-  verbose = TRUE, digits = 4, ...)
+  verbose = TRUE, digits = 4, flush = TRUE, ...)
 
 ## Model term updating functions:
 bfit_iwls(x, family, y, eta, id, weights, criterion, ...)
@@ -70,6 +72,7 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
     in an \code{inner} iteration with working observations provided in an \code{outer} iteration.}
   \item{verbose}{Print information during runtime of the algorithm.}
   \item{digits}{Set the digits for printing when \code{verbose = TRUE}.}
+  \item{flush}{use \code{\link{flush.console}} for displaying the current output in the console.}
   \item{eta}{The current value of the predictors, provided as a named list, one list entry
     for each parameter. The names correspond to the parameter names in the family object,
     see \code{\link{family.bamlss}}. E.g., when using the \code{\link{gaussian.bamlss}} family
@@ -251,7 +254,7 @@ smooth.construct.gc.smooth.spec <- function(object, data, knots)
     f
   }
   object$update <- bfit_optim
-  object$propose <- gmcmc_sm.slice
+  object$propose <- GMCMC_slice
   object$prior <- function(b) { 1 }
   object$fixed <- TRUE
   object$state$parameters <- c("b1" = 0, "b2" = 0.5, "b3" = 0.1)

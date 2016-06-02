@@ -2,6 +2,15 @@
 \alias{family.bamlss}
 \alias{family.bamlss.frame}
 \alias{bamlss.family}
+\alias{beta.bamlss}
+\alias{binomial.bamlss}
+\alias{cnorm.bamlss}
+\alias{cox.bamlss}
+\alias{gaussian.bamlss}
+\alias{gamma.bamlss}
+\alias{multinomial.bamlss}
+\alias{mvn.bamlss}
+\alias{poisson.bamlss}
 
 \title{
   Distribution Families in \pkg{bamlss}

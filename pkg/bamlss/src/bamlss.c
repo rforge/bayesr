@@ -475,7 +475,6 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 
   /* Create weighted matrix */
   int X_ind = getListElement_index(x, "X");
-  int prior_ind = getListElement_index(x, "prior");
   int nr = nrows(VECTOR_ELT(x, X_ind));
 
   /* More pointers needed. */
@@ -661,12 +660,11 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   double gSg = 0.0;
   double a = 0.0;
   double b = 0.0;
-  double *rankptr;
   if(ntau2 < 2) {
     if(fixed < 1) {
       a = REAL(getListElement(x, "a"))[0];
       b = REAL(getListElement(x, "b"))[0];
-      rankptr = REAL(getListElement(x, "rank"));
+      double *rankptr = REAL(getListElement(x, "rank"));
       for(jj = 0; jj < ntau2; jj++) {
         Sptr = REAL(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj));
         gSg = 0.0;
@@ -837,6 +835,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
     double a2 = 0.0;
     double b2 = 0.0;
     if(fixed < 1) {
+      double *rankptr2 = REAL(getListElement(x, "rank"));
       for(jj = 0; jj < ntau2; jj++) {
         Sptr = REAL(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj));
         gSg = 0.0;
@@ -851,11 +850,11 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
           qbeta += tsum2 * (thetaptr[i] - mu1ptr[i]);
         }
         if(ntau2 < 2) {
-          p1 += -log(tau2ptr[jj]) * rankptr[jj] / 2 + -0.5 / tau2ptr[jj] * gSg +
+          p1 += -log(tau2ptr[jj]) * rankptr2[jj] / 2 + -0.5 / tau2ptr[jj] * gSg +
             log(pow(b, a)) - exp(lgamma(a)) + (-a - 1) * log(tau2ptr[jj]) - b / tau2ptr[jj];
         }
         if((fxsp < 1) && (ntau2 < 2)) {
-          a2 = rankptr[jj] / 2 + a;
+          a2 = rankptr2[jj] / 2 + a;
           b2 = 0.5 * gSg + b;
           GetRNGstate();
           tau2ptr[jj] = 1 / rgamma(a2, 1 / b2);
@@ -1029,13 +1028,12 @@ SEXP cnorm_hess_mu(SEXP y, SEXP mu, SEXP sigma, SEXP check)
   PROTECT(rval = allocVector(REALSXP, length(y)));
   int i;
   int n = length(y);
-  double *yptr = REAL(y);
   double *muptr = REAL(mu);
   double *sigmaptr = REAL(sigma);
   double *rvalptr = REAL(rval);
   int *checkptr = INTEGER(check);
 
-  double ddist, pdist, mills, d1, d2;
+  double ddist, pdist, mills, d1;
 
   for(i = 0; i < n; i++) {
     if(checkptr[i]) {
@@ -1043,7 +1041,6 @@ SEXP cnorm_hess_mu(SEXP y, SEXP mu, SEXP sigma, SEXP check)
       pdist = pnorm5(-muptr[i] / sigmaptr[i], 0.0, 1.0, 1, 0);
       mills = sigmaptr[i] * ddist / pdist;
       d1 = -muptr[i] / pow(sigmaptr[i], 2.0);
-      d2 = d1 * -muptr[i];
       rvalptr[i] = -1 * (-d1 / sigmaptr[i] * mills - pow(mills, 2.0) / pow(sigmaptr[i], 2.0));
     } else {
       rvalptr[i] = 1 / pow(sigmaptr[i], 2.0);
@@ -1449,7 +1446,7 @@ SEXP survint_index(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP che
   ++nProtected;
   double *hessptr = REAL(hess);
 
-  int i, ii, j, jj, k, forward, m;
+  int i, ii, j, jj, k, forward;
   double sum = 0.0;
   double tmp = 0.0;
 
@@ -1684,7 +1681,7 @@ SEXP dsurvint_index(SEXP X, SEXP eta, SEXP width, SEXP gamma, SEXP eta2, SEXP ch
   ++nProtected;
   double *hessptr = REAL(hess);
 
-  int i, ii, j, jj, k, forward, m;
+  int i, ii, j, jj, k, forward;
   double sum = 0.0;
   double tmp = 0.0;
   double dtmp = 0.0;

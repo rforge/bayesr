@@ -234,7 +234,7 @@ write.gra <- function(map, file, replace=FALSE)
 
 read.bnd <- function(file, sorted=FALSE)
 {
-    ## Liste wird erstellt: 1. Element enthält die 1. Spalte aus BND-Datei, 2. Element die 2. Spalte 
+    ## Liste wird erstellt: 1. Element enthaelt die 1. Spalte aus BND-Datei, 2. Element die 2. Spalte 
     data.raw <- scan(file,
                      what = list("", ""),
                      sep = ",",
@@ -244,7 +244,7 @@ read.bnd <- function(file, sorted=FALSE)
     oldOptions <- options(warn = -1)
     on.exit(options(oldOptions))    
 
-    ## Ursache für Warnungen: NAs werden bei jedem Regionsnamen und bei is.in erzeugt
+    ## Ursache fuer Warnungen: NAs werden bei jedem Regionsnamen und bei is.in erzeugt
     data.numeric <- lapply(data.raw,
                            as.numeric)
 
@@ -345,7 +345,7 @@ read.bnd <- function(file, sorted=FALSE)
         surrounding <- surrounding[newOrder]
     }
 
-    ## Bestimmung des Höhe-Breiten-Verhältnisses
+    ## Bestimmung des Hoehe-Breiten-Verhaeltnisses
     minima <- sapply(map, function(x){apply(x,2,min)})
     maxima <- sapply(map, function(x){apply(x,2,max)})
     
