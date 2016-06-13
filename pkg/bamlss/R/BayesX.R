@@ -72,7 +72,12 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   if(is.null(data))
     stop("no data available for creating BayesX model term objects!")
 
+  cny <- colnames(y)
+  for(j in seq_along(cny))
+    cny[j] <- all.vars(as.formula(paste("~", cny[j])))
+  colnames(y) <- cny
   yname <- colnames(y)[1]
+
   for(j in names(y)) {
     if(is.factor(y[[j]])) {
       if(nlevels(y[[j]]) < 3) {
@@ -274,6 +279,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           if(!is.tensor & (length(tl) > 1))
             tl <- paste(tl, collapse = "")
           term <- paste("_", paste(tl, collapse = "_"), "_", sep = "")
+          term <- paste("of", term, "sample", sep = "")
           sf <- grepl(paste("_", i, "_", sep = ""), sfiles, fixed = TRUE) & grepl(term, sfiles, fixed = TRUE) & !grepl("_variance_", sfiles, fixed = TRUE)
           sf <- sfiles[sf]
           if(any(grepl("anisotropy", sf)))
@@ -489,8 +495,15 @@ do.xt <- function(term, object, not = NULL, noco = FALSE)
 
 sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
 {
+  ## FIXME: nocenter!
   object$state <- NULL
+  if(!is.null(object$sx.S))
+    object$S <- object$sx.S
+  if(!is.null(object$sx.rank))
+    object$rank <- object$sx.rank
   is.tensor <- inherits(object, "tensor.smooth") | inherits(object, "tensor5.smooth")
+  if(is.null(object$C))
+    object$C <- matrix(1, nrow = ncol(object$X))
   id <- paste(rmf(id), collapse = "_")
   term <- if(length(object$term) > 1) {
     paste(object$term, collapse = if(is.tensor) "*" else "")
@@ -512,7 +525,7 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
     object$xt$centermethod <- NULL
     object$xt$nocenter <- NULL
   }
-  term <- paste(term, if(is.tensor) "(tensor," else "(userdefined,", sep = "")
+  term <- paste(term, if(is.tensor & (length(object$S) > 1)) "(tensor," else "(userdefined,", sep = "")
   for(j in seq_along(object$S))
     term <- paste(term, paste("penmatdata", if(j < 2) "" else j, "=", sep = ""), Sn[j], ",", sep = "")
   if(length(object$S) > 1) {
@@ -526,7 +539,7 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
     term <- paste(term, "constrmatdata=", Cn, ",", sep = "")
   if(!is.null(object$state$parameters))
     term <- paste(term, "betastart=", Pn, ",", sep = "")
-  term <- paste(term, "rankK=", prod(object$rank), sep = "")
+  term <- paste(term, "rankK=", sum(object$rank), sep = "")
   term <- paste(do.xt(term, object, c("center", "before")), ")", sep = "")
 
   write <- function(dir) {
@@ -908,9 +921,16 @@ resplit <- function(x) {
 
 
 ## Special tensor constructor.
-t5 <- function(..., constraint = c("none", "main", "both")) {
-  object <- te(...)
+t5 <- function(..., k = NA, constraint = c("main", "both")) {
+  object <- te(..., k = k)
   object$constraint <- match.arg(constraint)
+  cl <- sapply(object$margin, function(x) { class(x) })
+  if(any(i <- !(cl %in% c("ps.smooth.spec", "re.smooth.spec")))) {
+    for(j in which(i))
+      class(object$margin[[j]]) <- "ps.smooth.spec"
+  }
+  if((length(object$margin) < 2) & all(is.na(k)))
+    object$margin[[1]]$bs.dim <- 20
   object$label <- gsub("te(", "t5(", object$label, fixed = TRUE)
   object$special <- TRUE
   class(object) <- "tensor5.smooth.spec"
@@ -919,34 +939,51 @@ t5 <- function(..., constraint = c("none", "main", "both")) {
 
 smooth.construct.tensor5.smooth.spec <- function(object, data, knots)
 {
+  if(length(object$margin) > 2)
+    stop("more than two variables in t5() currently not supported!")
+  
   object$np <- FALSE
   object <- smooth.construct.tensor.smooth.spec(object, data, knots)
+  object$sx.S <- lapply(object$margin, function(x) { x$S[[1]] })
+  object$sx.rank <- sapply(object$S, function(x) { qr(x)$rank })
 
-  p1 <- ncol(object$margin[[1]]$X)
-  p2 <- ncol(object$margin[[2]]$X)
+  if(length(object$margin) < 2) {
+    p <- ncol(object$margin[[1]]$X)
+    object$C <- matrix(1, ncol = p)
+  } else {
+    p1 <- ncol(object$margin[[1]]$X)
+    p2 <- ncol(object$margin[[2]]$X)
 
-  I1 <- diag(p1)
-  I2 <- diag(p2)
+    I1 <- diag(p1)
+    I2 <- diag(p2)
 
-  if(object$constraint == "main") {
-    ## Remove main effects only.
-    A1 <- matrix(rep(1, p1), ncol = 1)
-    A2 <- matrix(rep(1, p2), ncol = 1)
+    if(object$constraint == "main") {
+      ## Remove main effects only.
+      A1 <- matrix(rep(1, p1), ncol = 1)
+      A2 <- matrix(rep(1, p2), ncol = 1)
 
-    A <- cbind(I2 %x% A1, A2 %x% I1)
-    A <- A[, -ncol(A)]
+      A <- cbind(I2 %x% A1, A2 %x% I1)
+      ##A <- A[, -ncol(A), drop = FALSE]
+    }
 
-    A <- t(A)
-    object$C <- A
-  }
+    if(object$constraint == "both") {
+      ## Remove main effects and varying coefficients.
+      A1 <- cbind(rep(1, p1), 1:p1)
+      A2 <- cbind(rep(1, p2), 1:p2)
 
-  if(object$constraint == "both") {
-    ## Remove main effects and varying coefficients.
-    A1 <- cbind(rep(1, p1), 1:p1)
-    A2 <- cbind(rep(1, p2), 1:p2)
+      A <- cbind(I2 %x% A1, A2 %x% I1)
+      ##A <- A[,-c(1, 66, 87, 88)]
+    }
 
-    A <- cbind(I2 %x% A1, A2 %x% I1)
-    ##A <- A[,-c(1, 66, 87, 88)]
+    cA <- ncol(A)
+    rA <- qr(A)$rank
+    if(rA < cA) {
+      k <- cA - rA
+      A <- A[, -c((cA - k):cA), drop = FALSE]
+    }
+
+    i <- match.index(t(A))
+    A <- A[, i$nodups, drop = FALSE]
 
     object$C <- t(A)
   }
