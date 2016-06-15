@@ -502,8 +502,24 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
   if(!is.null(object$sx.rank))
     object$rank <- object$sx.rank
   is.tensor <- inherits(object, "tensor.smooth") | inherits(object, "tensor5.smooth")
-  if(is.null(object$C))
-    object$C <- matrix(1, nrow = ncol(object$X))
+  if(is.null(object$C)) {
+    if(is.tensor) {
+      p1 <- ncol(object$margin[[1]]$X)
+      p2 <- ncol(object$margin[[2]]$X)
+
+      I1 <- diag(p1)
+      I2 <- diag(p2)
+
+      A1 <- matrix(rep(1, p1), ncol = 1)
+      A2 <- matrix(rep(1, p2), ncol = 1)
+
+      A <- cbind(I2 %x% A1, A2 %x% I1)
+      A <- A[, -ncol(A), drop = FALSE]
+      object$C <- t(A)
+    } else {
+      object$xt$centermethod <- "nullspace"
+    }
+  }
   id <- paste(rmf(id), collapse = "_")
   term <- if(length(object$term) > 1) {
     paste(object$term, collapse = if(is.tensor) "*" else "")
@@ -539,7 +555,7 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
     term <- paste(term, "constrmatdata=", Cn, ",", sep = "")
   if(!is.null(object$state$parameters))
     term <- paste(term, "betastart=", Pn, ",", sep = "")
-  term <- paste(term, "rankK=", sum(object$rank), sep = "")
+  term <- paste(term, "rankK=", prod(object$rank), sep = "")
   term <- paste(do.xt(term, object, c("center", "before")), ")", sep = "")
 
   write <- function(dir) {
@@ -972,14 +988,18 @@ smooth.construct.tensor5.smooth.spec <- function(object, data, knots)
       A2 <- cbind(rep(1, p2), 1:p2)
 
       A <- cbind(I2 %x% A1, A2 %x% I1)
-      ##A <- A[,-c(1, 66, 87, 88)]
     }
 
     cA <- ncol(A)
     rA <- qr(A)$rank
     if(rA < cA) {
-      k <- cA - rA
-      A <- A[, -c((cA - k):cA), drop = FALSE]
+      i <- sapply(1:ncol(A), function(j) { qr(A[, -j])$rank })
+print(i)
+      j <- which(i == max(i))
+print(j)
+print(dim(A))
+stop()
+      A <- A[, -j, drop = FALSE]
     }
 
     i <- match.index(t(A))
