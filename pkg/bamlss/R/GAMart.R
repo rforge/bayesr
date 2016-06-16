@@ -109,26 +109,26 @@ scale2 <- function(x, lower = -1.5, upper = 1.5)
 
 
 ## Artificial data set generating function.
-GAMart <- function(n = 500, sd = 0.1, seed = FALSE)
+GAMart <- function(n = 500, sd = 0.1, seed = FALSE, ti = c("none", "main", "both"))
 {
   if(seed) set.seed(111)
 
-  n2 <- ceiling(sqrt(n) / 4)
-  d <- expand.grid("lon" = seq(0, 1, length = n2), "lat" = seq(0, 1, length = n2))
-  d$id <- factor(1:nrow(d))
-  d <- rep(d, ceiling(n / (n2 * n2)))
-  d <- data.frame(
-    "lon" = unlist(d[grepl("lon", names(d))]),
-    "lat" = unlist(d[grepl("lat", names(d))]),
-    "id" = unlist(d[grepl("id", names(d))])
-  )
-  d <- d[1:n, ]
+  ti <- match.arg(ti)
+
+  n2 <- ceiling(sqrt(n))
   
   ## Other covariates.
-  d$x1 <- runif(n, 0, 1)
-  d$x2 <- runif(n, 0, 1)
-  d$x3 <- runif(n, 0, 1)
-  d$fac <- factor(sample(1:3, size = n, replace = TRUE), labels = c("low", "medium", "high"))
+  d <- data.frame(
+    "x1" = runif(n, 0, 1),
+    "x2" = runif(n, 0, 1),
+    "x3" = runif(n, 0, 1),
+    "fac" = factor(sample(1:3, size = n, replace = TRUE), labels = c("low", "medium", "high")),
+    "lon" = sample(seq(0, 1, length = n2), size = n, replace = TRUE),
+    "lat" = sample(seq(0, 1, length = n2), size = n, replace = TRUE)
+  )
+
+  i <- match.index(d[, c("lon", "lat")])
+  d$id <- as.factor(i$match.index)
 
   ## Functions.
   ## Linear.
@@ -162,7 +162,14 @@ GAMart <- function(n = 500, sd = 0.1, seed = FALSE)
   }
   
   ## Response.
-  d$eta <- with(d, scale2(f1(x1) + f2(x2) + f3(x3) + f4(lon, lat) + f5(id) + f6(fac), -1, 1))
+  if(ti == "none") {
+    d$eta <- with(d, scale2(f1(x1) + f2(x2) + f3(x3) + f4(lon, lat) + f5(id) + f6(fac), -1, 1))
+  } else {
+    if(ti == "main")
+      d$eta <- with(d, scale2(f1(lon) + f3(lat) + f4(lon, lat), -1, 1))
+    if(ti == "both")
+      d$eta <- with(d, scale2(0.1 * lon - 0.2 * lat + f1(lon) + f2(lat) + f4(lon, lat), -1, 1))
+  }
   d$err <- rnorm(n, sd = sd)
   d$num <- with(d, eta + err)
   d$pnum <- d$num + abs(min(d$num)) + 1

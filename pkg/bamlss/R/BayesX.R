@@ -114,8 +114,10 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         if(!is.null(attr(sxc, "write")))
           prgex <- c(prgex, attr(sxc, "write")(dir))
         rhs <- c(rhs, sxc)
-        is.t5 <- inherits(x$smooth.construct[[j]], "tensor5.smooth")
+        is.tx <- inherits(x$smooth.construct[[j]], "tensorX.smooth")
         tl <- x$smooth.construct[[j]]$term
+        if((x$smooth.construct[[j]]$by != "NA") & is.tx)
+          tl <- c(tl, x$smooth.construct[[j]]$by)
         if(is.null(sdata)) {
           if(inherits(x$smooth.construct[[j]], "userdefined.smooth.spec")) {
             sdata <- data[, 1, drop = FALSE]
@@ -125,7 +127,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
             sdata <- data[, tl, drop = FALSE]
           }
         }
-        if(!is.t5 & (length(tl) > 1))
+        if(!is.tx & (length(tl) > 1))
           tl <- c(tl, paste(tl, collapse = ""))
         if(!all(tl %in% colnames(sdata))) {
           for(tlj in tl) {
@@ -275,8 +277,10 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       if(!is.null(x[[i]]$smooth.construct)) {
         for(j in seq_along(x[[i]]$smooth.construct)) {
           tl <- x[[i]]$smooth.construct[[j]]$term
-          is.t5 <- inherits(x[[i]]$smooth.construct[[j]], "tensor5.smooth")
-          if(!is.t5 & (length(tl) > 1))
+          is.tx <- inherits(x[[i]]$smooth.construct[[j]], "tensorX.smooth")
+          if((x[[i]]$smooth.construct[[j]]$by != "NA") & is.tx)
+            tl <- c(x[[i]]$smooth.construct[[j]]$by, tl)
+          if(!is.tx & (length(tl) > 1))
             tl <- paste(tl, collapse = "")
           term <- paste("_", paste(tl, collapse = "_"), "_", sep = "")
           term <- paste("of", term, "sample", sep = "")
@@ -500,18 +504,22 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
     object$S <- object$sx.S
   if(!is.null(object$sx.rank))
     object$rank <- object$sx.rank
-  is.t5 <- inherits(object, "tensor5.smooth")
+  is.tx <- inherits(object, "tensorX.smooth")
   if(inherits(object, "tensor.smooth")) {
     S <- 0
     for(j in seq_along(object$S))
       S <- S + object$S[[j]]
     object$S <- list(S)
   }
-  if(is.null(object$C) & !is.t5)
+  if(!is.null(object$C)) {
+    if(nrow(object$C) < 1)
+      object$C <- NULL
+  }
+  if(is.null(object$C) & !is.tx)
     object$xt$nocenter <- TRUE
   id <- paste(rmf(id), collapse = "_")
   term <- if(length(object$term) > 1) {
-    paste(object$term, collapse = if(is.t5) "*" else "")
+    paste(object$term, collapse = if(is.tx) "*" else "")
   } else object$term
   Sn <- paste(id, "S", sep = "_")
   Sn <- paste(Sn, "", 1:length(object$S), sep = "")
@@ -526,7 +534,7 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
     object$xt$centermethod <- NULL
     object$xt$nocenter <- NULL
   }
-  term <- paste(term, if(is.t5 & (length(object$S) > 1)) "(tensor," else "(userdefined,", sep = "")
+  term <- paste(term, if(is.tx & (length(object$S) > 1)) "(tensor," else "(userdefined,", sep = "")
   for(j in seq_along(object$S))
     term <- paste(term, paste("penmatdata", if(j < 2) "" else j, "=", sep = ""), Sn[j], ",", sep = "")
   if(length(object$S) > 1) {
@@ -544,12 +552,15 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
     term <- paste(term, "rankK=", prod(object$rank), sep = "")
   term <- paste(do.xt(term, object, c("center", "before")), ")", sep = "")
 
+  if((object$by != "NA") & is.tx)
+    term <- make_by(term, object, data)
+
   write <- function(dir) {
     for(j in seq_along(object$S)) {
       write.table(object$S[[j]], file = file.path(dir, paste(Sn[j], ".raw", sep = "")),
         quote = FALSE, row.names = FALSE)
     }
-    if(is.t5) {
+    if(is.tx) {
       for(j in seq_along(object$S)) {
         write.table(object$margin[[j]]$X, file = file.path(dir, paste(Xn[j], ".raw", sep = "")),
           quote = FALSE, row.names = FALSE)
@@ -567,7 +578,7 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
       write.table(spar, file = file.path(dir, paste(Pn, ".raw", sep = "")),
         quote = FALSE, row.names = FALSE)
     }
-    if(is.t5) {
+    if(is.tx) {
       cmd <- NULL
       for(j in seq_along(object$S)) {
         cmd <- c(cmd,
@@ -923,7 +934,7 @@ resplit <- function(x) {
 
 
 ## Special tensor constructor.
-t5 <- function(..., k = NA, constraint = c("main", "both", "none")) {
+tx <- function(..., k = NA, constraint = c("main", "both", "none")) {
   object <- te(..., k = k)
   object$constraint <- match.arg(constraint)
   cl <- sapply(object$margin, function(x) { class(x) })
@@ -933,21 +944,26 @@ t5 <- function(..., k = NA, constraint = c("main", "both", "none")) {
   }
   if((length(object$margin) < 2) & all(is.na(k)))
     object$margin[[1]]$bs.dim <- 20
-  object$label <- gsub("te(", "t5(", object$label, fixed = TRUE)
+  object$label <- gsub("te(", "tx(", object$label, fixed = TRUE)
   object$special <- TRUE
-  class(object) <- "tensor5.smooth.spec"
+  class(object) <- "tensorX.smooth.spec"
   object
 }
 
-smooth.construct.tensor5.smooth.spec <- function(object, data, knots)
+smooth.construct.tensorX.smooth.spec <- function(object, data, knots)
 {
   if(length(object$margin) > 2)
-    stop("more than two variables in t5() currently not supported!")
-  
+    stop("more than two variables in tx() currently not supported!")
+
   object$np <- FALSE
+  object$by.done <- TRUE
+  object$side.constrain <- FALSE
   object <- smooth.construct.tensor.smooth.spec(object, data, knots)
   object$sx.S <- lapply(object$margin, function(x) { x$S[[1]] })
   object$sx.rank <- sapply(object$S, function(x) { qr(x)$rank })
+
+  if(object$by != "NA")
+    object$label <- paste(object$label, object$by, sep = ":")
 
   if(length(object$margin) < 2) {
     p <- ncol(object$margin[[1]]$X)
@@ -991,13 +1007,15 @@ smooth.construct.tensor5.smooth.spec <- function(object, data, knots)
       object$C <- t(A)
     }
   }
+
+  if(object$by != "NA")
+    object$X <- data[[object$by]] * object$X
   
-  class(object) <- "tensor5.smooth"
+  class(object) <- "tensorX.smooth"
   return(object)
 }
 
-Predict.matrix.tensor5.smooth <- function(object, data) 
+Predict.matrix.tensorX.smooth <- function(object, data) 
 {
   Predict.matrix.tensor.smooth(object, data)
 }
-
