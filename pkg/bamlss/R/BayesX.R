@@ -278,6 +278,8 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         for(j in seq_along(x[[i]]$smooth.construct)) {
           tl <- x[[i]]$smooth.construct[[j]]$term
           is.tx <- inherits(x[[i]]$smooth.construct[[j]], "tensorX.smooth")
+          if(is.tx)
+            tl <- rev(tl)
           if((x[[i]]$smooth.construct[[j]]$by != "NA") & is.tx)
             tl <- c(x[[i]]$smooth.construct[[j]]$by, tl)
           if(!is.tx & (length(tl) > 1))
