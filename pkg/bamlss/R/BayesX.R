@@ -519,7 +519,7 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
     object$xt$nocenter <- TRUE
   id <- paste(rmf(id), collapse = "_")
   term <- if(length(object$term) > 1) {
-    paste(object$term, collapse = if(is.tx) "*" else "")
+    paste(rev(object$term), collapse = if(is.tx) "*" else "")
   } else object$term
   Sn <- paste(id, "S", sep = "_")
   Sn <- paste(Sn, "", 1:length(object$S), sep = "")
