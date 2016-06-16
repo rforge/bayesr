@@ -549,7 +549,7 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
   if(!is.null(object$state$parameters))
     term <- paste(term, "betastart=", Pn, ",", sep = "")
   if(is.null(object$xt$nocenter))
-    term <- paste(term, "rankK=", prod(object$rank), sep = "")
+    term <- paste(term, "rankK=", sum(object$rank), sep = "")
   term <- paste(do.xt(term, object, c("center", "before")), ")", sep = "")
 
   if((object$by != "NA") & is.tx)
@@ -969,15 +969,13 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots)
     p <- ncol(object$margin[[1]]$X)
     object$C <- matrix(1, ncol = p)
   } else {
+    p1 <- ncol(object$margin[[1]]$X); p2 <- ncol(object$margin[[2]]$X)
+    I1 <- diag(p1); I2 <- diag(p2)
+    K <- object$margin[[1]]$S[[1]]%x%I2 + I1%x%object$margin[[2]]$S[[1]]
+    object$rank <- object$sx.rank <- qr(K)$rank
     if(object$constraint == "none") {
       object$xt$nocenter <- TRUE
     } else {
-      p1 <- ncol(object$margin[[1]]$X)
-      p2 <- ncol(object$margin[[2]]$X)
-
-      I1 <- diag(p1)
-      I2 <- diag(p2)
-
       if(object$constraint == "main") {
         ## Remove main effects only.
         A1 <- matrix(rep(1, p1), ncol = 1)
