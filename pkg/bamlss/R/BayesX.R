@@ -290,6 +290,9 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           sf <- sfiles[sf]
           if(any(grepl("anisotropy", sf)))
             sf <- sf[-grep("anisotropy", sf)]
+          tj <- grep("tensor", sf, fixed = TRUE)
+          if(length(tj))
+            sf <- if(is.tx & (length(x[[i]]$smooth.construct[[j]]$term) > 1)) sf[tj] else sf[-tj]
           samps <- as.matrix(read.table(file.path(dir, "output", sf), header = TRUE)[, -1, drop = FALSE])
           cn <- colnames(x[[i]]$smooth.construct[[j]]$X)
           if(is.null(cn))
@@ -298,6 +301,9 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           sf <- grepl(paste("_", i, "_", sep = ""), sfiles, fixed = TRUE) & grepl(term, sfiles, fixed = TRUE) & grepl("_variance_", sfiles, fixed = TRUE)
           sf <- sfiles[sf]
           if(length(sf)) {
+            tj <- grep("tensor", sf, fixed = TRUE)
+            if(length(tj))
+              sf <- if(is.tx & (length(x[[i]]$smooth.construct[[j]]$term) > 1)) sf[tj] else sf[-tj]
             vsamps <- as.matrix(read.table(file.path(dir, "output", sf), header = TRUE)[, -1, drop = FALSE])
             colnames(vsamps) <- paste(i, ".s.", x[[i]]$smooth.construct[[j]]$label, ".", paste("tau2", 1:ncol(vsamps), sep = ""), sep = "")
             samps <- cbind(samps, vsamps)
@@ -523,11 +529,20 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
   term <- if(length(object$term) > 1) {
     paste(rev(object$term), collapse = if(is.tx) "*" else "")
   } else object$term
-  Sn <- paste(id, "S", sep = "_")
-  Sn <- paste(Sn, "", 1:length(object$S), sep = "")
-  Xn <- paste(id, "X", sep = "_")
-  Cn <- paste(id, "C", sep = "_")
-  Pn <- paste(id, "P", sep = "_")
+  by <- if(object$by != "NA") object$by else NULL
+  if(!is.null(by)) {
+    Sn <- paste(id, by, "S", sep = "_")
+    Sn <- paste(Sn, "", 1:length(object$S), sep = "")
+    Xn <- paste(id, by, "X", sep = "_")
+    Cn <- paste(id, by, "C", sep = "_")
+    Pn <- paste(id, by, "P", sep = "_")
+  } else {
+    Sn <- paste(id, "S", sep = "_")
+    Sn <- paste(Sn, "", 1:length(object$S), sep = "")
+    Xn <- paste(id, "X", sep = "_")
+    Cn <- paste(id, "C", sep = "_")
+    Pn <- paste(id, "P", sep = "_")
+  }
   if(is.null(object$rank))
     object$rank <- sapply(object$S, function(x) { qr(x)$rank })
   if(!is.null(object$xt$nocenter))

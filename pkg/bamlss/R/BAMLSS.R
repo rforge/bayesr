@@ -1572,6 +1572,8 @@ as.list.Formula <- function(x)
 ## and hierarchical structures.
 bamlss.formula <- function(formula, family = NULL, specials = NULL)
 {
+  if(is.null(specials))
+    specials <- c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx")
   if(inherits(formula, "bamlss.formula"))
     return(formula)
   if(!is.list(formula)) {
@@ -1800,8 +1802,13 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
   env <- environment(formula)
   tf <- terms(formula, specials = unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", specials)),
     keep.order = TRUE)
-  sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
+  ## sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
+  sid <- NULL
+  for(j in specials)
+    sid <- c(sid, grep2(paste(j, "(", sep = ""), tl, fixed = TRUE))
+  if(length(sid))
+    sid <- sort(unique(sid))
   vars <- NULL
   if(rhs) {
     if(length(sid)) {
@@ -1827,6 +1834,10 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
     vars <- c("1", vars)
   if(length(vars) < 1)
     vars <- NULL
+  if(any(i <- grep(":", vars, fixed = TRUE))) {
+    dv <- unlist(strsplit(vars[i], ":", fixed = TRUE))
+    vars <- c(vars[-i], dv)
+  }
   unique(vars)
 }
 
@@ -1836,8 +1847,13 @@ all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
   env <- environment(formula)
   tf <- terms(formula, specials = unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", specials)),
     keep.order = FALSE)
-  sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
+  ## sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
+  sid <- NULL
+  for(j in specials)
+    sid <- c(sid, grep2(paste(j, "(", sep = ""), tl, fixed = TRUE))
+  if(length(sid))
+    sid <- sort(unique(sid))
   labs <- NULL
 
   if(length(sid)) {
@@ -4441,12 +4457,16 @@ drop.terms.bamlss <- function(f, pterms = TRUE, sterms = TRUE,
     terms.formula(f, specials = specials, keep.order = TRUE, data = data)
   } else f
   specials <- unique(c(names(attr(tx, "specials")), specials))
-  sid <- unlist(attr(tx, "specials"))
   tl <- attr(tx, "term.labels")
+  sid <- NULL
+  for(j in specials)
+    sid <- c(sid, grep2(paste(j, "(", sep = ""), tl, fixed = TRUE))
+  if(length(sid))
+    sid <- sort(unique(sid))
   sub <- attr(tx, "response")
-  if(!is.null(sid)) {
-    st <- tl[sid - sub]
-    pt <- tl[-1 * (sid - sub)]
+  if(length(sid)) {
+    st <- tl[sid]
+    pt <- tl[-sid]
   } else {
     st <- character(0)
     pt <- tl
@@ -4458,10 +4478,14 @@ drop.terms.bamlss <- function(f, pterms = TRUE, sterms = TRUE,
   }
   if(!pterms & length(pt)) {
     tl <- attr(tx, "term.labels")
-    sid <- unlist(attr(tx, "specials"))
-    if(!is.null(sid)) {
-      st <- tl[sid - sub]
-      pt <- tl[-1 * (sid - sub)]
+    sid <- NULL
+    for(j in specials)
+      sid <- c(sid, grep2(paste(j, "(", sep = ""), tl, fixed = TRUE))
+    if(length(sid))
+      sid <- sort(unique(sid))
+    if(length(sid)) {
+      st <- tl[sid]
+      pt <- tl[-sid]
     } else {
       st <- character(0)
       pt <- tl
