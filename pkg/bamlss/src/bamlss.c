@@ -903,6 +903,11 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   ++nProtected;
   REAL(alpha)[0] = (pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1);
 
+  SEXP loglik;
+  PROTECT(loglik = allocVector(REALSXP, 1));
+  ++nProtected;
+  REAL(loglik)[0] = pibetaprop;
+
 /*Rprintf("pibetaprop %g\n", pibetaprop);*/
 /*Rprintf("qbeta %g\n", qbeta);*/
 /*Rprintf("p2 %g\n", p2);*/
@@ -913,20 +918,22 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 
   /* Stuff everything together. */
   SEXP rval;
-  PROTECT(rval = allocVector(VECSXP, 3));
+  PROTECT(rval = allocVector(VECSXP, 4));
   ++nProtected;
 
   SET_VECTOR_ELT(rval, 0, theta2);
   SET_VECTOR_ELT(rval, 1, alpha);
   SET_VECTOR_ELT(rval, 2, edf);
+  SET_VECTOR_ELT(rval, 3, loglik);
 
   SEXP nrval;
-  PROTECT(nrval = allocVector(STRSXP, 3));
+  PROTECT(nrval = allocVector(STRSXP, 4));
   ++nProtected;
 
   SET_STRING_ELT(nrval, 0, mkChar("parameters"));
   SET_STRING_ELT(nrval, 1, mkChar("alpha"));
   SET_STRING_ELT(nrval, 2, mkChar("edf"));
+  SET_STRING_ELT(nrval, 3, mkChar("loglik"));
         
   setAttrib(rval, R_NamesSymbol, nrval);
 

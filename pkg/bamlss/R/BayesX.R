@@ -280,8 +280,8 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           is.tx <- inherits(x[[i]]$smooth.construct[[j]], "tensorX.smooth")
           if(is.tx)
             tl <- rev(tl)
-          if((x[[i]]$smooth.construct[[j]]$by != "NA") & is.tx)
-            tl <- c(x[[i]]$smooth.construct[[j]]$by, tl)
+          #if((x[[i]]$smooth.construct[[j]]$by != "NA") & is.tx)
+          #  tl <- c(x[[i]]$smooth.construct[[j]]$by, tl)
           if(!is.tx & (length(tl) > 1))
             tl <- paste(tl, collapse = "")
           term <- paste("_", paste(tl, collapse = "_"), "_", sep = "")
@@ -505,7 +505,7 @@ do.xt <- function(term, object, not = NULL, noco = FALSE)
   return(term)
 }
 
-sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
+sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(object, data, id = NULL, dir = NULL, ...)
 {
   object$state <- NULL
   if(!is.null(object$sx.S))
@@ -525,6 +525,8 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
   }
   if(is.null(object$C) & !is.tx)
     object$xt$nocenter <- TRUE
+  if(is.null(id))
+    id <- "t"
   id <- paste(rmf(id), collapse = "_")
   term <- if(length(object$term) > 1) {
     paste(rev(object$term), collapse = if(is.tx) "*" else "")
@@ -568,9 +570,6 @@ sx.construct.userdefined.smooth.spec <- function(object, data, id, dir, ...)
   if(is.null(object$xt$nocenter))
     term <- paste(term, "rankK=", sum(object$rank), sep = "")
   term <- paste(do.xt(term, object, c("center", "before")), ")", sep = "")
-
-  if((object$by != "NA") & is.tx)
-    term <- make_by(term, object, data)
 
   write <- function(dir) {
     for(j in seq_along(object$S)) {
@@ -1023,8 +1022,11 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots)
     }
   }
 
-  if(object$by != "NA")
+  if(object$by != "NA") {
     object$X <- data[[object$by]] * object$X
+    for(j in seq_along(object$margin))
+      object$margin[[j]]$X <- data[[object$by]] * object$margin[[j]]$X
+  }
   
   class(object) <- "tensorX.smooth"
   return(object)

@@ -109,7 +109,7 @@ scale2 <- function(x, lower = -1.5, upper = 1.5)
 
 
 ## Artificial data set generating function.
-GAMart <- function(n = 500, sd = 0.1, seed = FALSE, ti = c("none", "main", "both"))
+GAMart <- function(n = 500, sd = 0.1, seed = FALSE, ti = c("none", "vcm", "main", "both"))
 {
   if(seed) set.seed(111)
 
@@ -169,6 +169,8 @@ GAMart <- function(n = 500, sd = 0.1, seed = FALSE, ti = c("none", "main", "both
       d$eta <- with(d, scale2(f1(lon) + f3(lat) + f4(lon, lat), -1, 1))
     if(ti == "both")
       d$eta <- with(d, scale2(0.1 * lon - 0.2 * lat + f1(lon) + f2(lat) + f4(lon, lat), -1, 1))
+    if(ti == "vcm")
+      d$eta <- with(d, 1.2 + 0.1 * x1 + x1 * f2(x2))
   }
   d$err <- rnorm(n, sd = sd)
   d$num <- with(d, eta + err)

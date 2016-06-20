@@ -130,4 +130,5 @@ S3method("Predict.matrix", "kriging.smooth")
 S3method("Predict.matrix", "deriv.smooth")
 S3method("Predict.matrix", "tensorX.smooth")
 S3method("bamlss.engine.setup.smooth", "default")
+S3method("sx.construct", "tensorX.smooth")
 
