@@ -954,7 +954,7 @@ tx <- function(..., k = NA, constraint = c("main", "both", "none")) {
   object <- te(..., k = k)
   object$constraint <- match.arg(constraint)
   cl <- sapply(object$margin, function(x) { class(x) })
-  if(any(i <- !(cl %in% c("ps.smooth.spec", "re.smooth.spec")))) {
+  if(any(i <- !(cl %in% c("ps.smooth.spec", "re.smooth.spec", "cyclic.smooth")))) {
     for(j in which(i))
       class(object$margin[[j]]) <- "ps.smooth.spec"
   }
