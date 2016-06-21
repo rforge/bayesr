@@ -610,22 +610,27 @@ make.prior <- function(x) {
       if(is.null(x[["b"]])) 1e-04 else x[["b"]]
     } else x$xt[["b"]]
     theta <- if(is.null(x$xt[["theta"]])) {
-      if(is.null(x[["theta"]])) 3 else x[["theta"]]
+      x[["theta"]]
     } else x$xt[["theta"]]
+
+    if(is.null(theta)) {
+      theta <- switch(prior,
+        "sd" = 0.00877812,
+        "hc" = 0.01034553,
+        "hn" = 0.1457644
+      )
+    }
+
     fixed <- if(is.null(x$fixed)) FALSE else x$fixed
 
-    var_prior_fun <- function(tau2) {
-      if(prior == "ig") {
-        lp <- log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2) - b / tau2
-      }
-      if(prior == "hc") {
-        lp <- -log(1 + tau2 / (theta^2)) - 0.5 * log(tau2) - log(theta^2)
-      }
-      if(prior == "sd") {
-        lp <- -0.5 * log(tau2) + 0.5 * log(theta) - (tau2 / theta)^(0.5)
-      }
-      return(as.numeric(lp))
-    }
+    igs <- log((b^a)) - log(gamma(a))
+
+    var_prior_fun <- switch(prior,
+      "ig" = function(tau2) { igs + (-a - 1) * log(tau2) - b / tau2 },
+      "hc" = function(tau2) { -log(1 + tau2 / (theta^2)) - 0.5 * log(tau2) - log(theta^2) },
+      "sd" = function(tau2) { -0.5 * log(tau2) + 0.5 * log(theta) - (tau2 / theta)^(0.5) },
+      "hn" = function(tau2) { -0.5 * log(tau2) - tau2 / (2 * theta^2) }
+    )
 
     prior_fun <- function(parameters) {
       if(is.null(x$pid)) {
