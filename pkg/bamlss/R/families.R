@@ -637,23 +637,23 @@ truncgaussian.bamlss <- function(...)
     ),
     "mu" = function(par, ...) {
       mu <-  par$mu
-	    sigma <- par$sigma
-	    arg <- - mu / sigma
-	    mu + sigma * dnorm(arg) / (1 - pnorm(arg))
+      sigma <- par$sigma
+      arg <- - mu / sigma
+      mu + sigma * dnorm(arg) / (1 - pnorm(arg))
     },
     "d" = function(y, par, log = FALSE) {
       mu <-  par$mu
-	    sigma <- par$sigma
-	    arg <- - mu / sigma
-	    d <- dnorm(y / sigma + arg) / (1 - pnorm(arg))
+      sigma <- par$sigma
+      arg <- - mu / sigma
+      d <- dnorm(y / sigma + arg) / (1 - pnorm(arg))
       if(log) d <- log(d)
       d
     },
     "p" = function(y, par, ...) {
       mu <-  par$mu
-	    sigma <- par$sigma
-	    arg <- - mu / sigma
-	    2 * (pnorm(y / sigma + arg) - pnorm(arg))
+      sigma <- par$sigma
+      arg <- - mu / sigma
+      2 * (pnorm(y / sigma + arg) - pnorm(arg))
     },
     "score" = list(
       "mu" = function(y, par, ...) {

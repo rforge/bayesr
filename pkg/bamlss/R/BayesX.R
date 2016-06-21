@@ -118,6 +118,8 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         tl <- x$smooth.construct[[j]]$term
         if((x$smooth.construct[[j]]$by != "NA") & is.tx)
           tl <- c(tl, x$smooth.construct[[j]]$by)
+        if(!is.tx & (length(tl) > 1))
+          tl <- paste(tl, collapse = "")
         if(is.null(sdata)) {
           if(inherits(x$smooth.construct[[j]], "userdefined.smooth.spec")) {
             sdata <- data[, 1, drop = FALSE]
@@ -127,8 +129,6 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
             sdata <- data[, tl, drop = FALSE]
           }
         }
-        if(!is.tx & (length(tl) > 1))
-          tl <- c(tl, paste(tl, collapse = ""))
         if(!all(tl %in% colnames(sdata))) {
           for(tlj in tl) {
             if(tlj %in% names(data)) {
@@ -529,7 +529,7 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
     id <- "t"
   id <- paste(rmf(id), collapse = "_")
   term <- if(length(object$term) > 1) {
-    paste(rev(object$term), collapse = if(is.tx) "*" else "")
+    paste(if(is.tx) rev(object$term) else object$term, collapse = if(is.tx) "*" else "")
   } else object$term
   by <- if(object$by != "NA") object$by else NULL
   if(!is.null(by)) {
@@ -953,13 +953,13 @@ resplit <- function(x) {
 tx <- function(..., k = NA, constraint = c("main", "both", "none")) {
   object <- te(..., k = k)
   object$constraint <- match.arg(constraint)
-  cl <- sapply(object$margin, function(x) { class(x) })
-  if(any(i <- !(cl %in% c("ps.smooth.spec", "re.smooth.spec", "cyclic.smooth")))) {
-    for(j in which(i))
-      class(object$margin[[j]]) <- "ps.smooth.spec"
-  }
-  if((length(object$margin) < 2) & all(is.na(k)))
-    object$margin[[1]]$bs.dim <- 20
+#  cl <- sapply(object$margin, function(x) { class(x) })
+#  if(any(i <- !(cl %in% c("ps.smooth.spec", "re.smooth.spec", "cyclic.smooth")))) {
+#    for(j in which(i))
+#      class(object$margin[[j]]) <- "ps.smooth.spec"
+#  }
+#  if((length(object$margin) < 2) & all(is.na(k)))
+#    object$margin[[1]]$bs.dim <- 20
   object$label <- gsub("te(", "tx(", object$label, fixed = TRUE)
   object$special <- TRUE
   class(object) <- "tensorX.smooth.spec"
