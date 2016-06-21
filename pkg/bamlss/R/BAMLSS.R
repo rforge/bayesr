@@ -592,18 +592,42 @@ make.fit.fun <- function(x, type = 1)
 ## The prior function.
 make.prior <- function(x) {
   prior <- NULL
-  if(!is.null(x$xt$prior))
+  if(!is.null(x$xt$prior)) {
     prior <- x$xt$prior
-  if(is.null(prior) | !is.function(prior)) {
+    if(is.character(x$xt$prior)) {
+      prior <- tolower(prior)
+      if(!(prior %in% c("ig", "hc", "sd")))
+        stop(paste('smoothing variance prior "', prior, '" not supported!', sep = ''))
+    }
+  } else {
+    prior <- "ig"
+  }
+  if(!is.function(prior)) {
     a <- if(is.null(x$xt[["a"]])) {
       if(is.null(x[["a"]])) 1e-04 else x[["a"]]
     } else x$xt[["a"]]
     b <- if(is.null(x$xt[["b"]])) {
       if(is.null(x[["b"]])) 1e-04 else x[["b"]]
     } else x$xt[["b"]]
+    theta <- if(is.null(x$xt[["theta"]])) {
+      if(is.null(x[["theta"]])) 3 else x[["theta"]]
+    } else x$xt[["theta"]]
     fixed <- if(is.null(x$fixed)) FALSE else x$fixed
 
-    prior <- function(parameters) {
+    var_prior_fun <- function(tau2) {
+      if(prior == "ig") {
+        lp <- log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2) - b / tau2
+      }
+      if(prior == "hc") {
+        lp <- -log(1 + tau2 / (theta^2)) - 0.5 * log(tau2) - log(theta^2)
+      }
+      if(prior == "sd") {
+        lp <- -0.5 * log(tau2) + 0.5 * log(theta) - (tau2 / theta)^(0.5)
+      }
+      return(as.numeric(lp))
+    }
+
+    prior_fun <- function(parameters) {
       if(is.null(x$pid)) {
         if(!is.null(names(parameters))) {
           gamma <- get.par(parameters, "b")
@@ -620,14 +644,13 @@ make.prior <- function(x) {
         lp <- sum(dnorm(gamma, sd = 1000, log = TRUE))
       } else {
         if(length(tau2) < 2) {
-          lp <- -log(tau2) * x$rank / 2 + drop(-0.5 / tau2 * t(gamma) %*% x$S[[1]] %*% gamma) +
-            log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2) - b / tau2
+          lp <- -log(tau2) * x$rank / 2 + drop(-0.5 / tau2 * t(gamma) %*% x$S[[1]] %*% gamma) + var_prior_fun(tau2)
         } else {
           ld <- 0
           P <- if(inherits(x$X, "Matrix")) Matrix(0, ncol(x$X), ncol(x$X)) else 0
           for(j in seq_along(tau2)) {
             P <- P + 1 / tau2[j] * x$S[[j]]
-            ld <- ld + log((b^a)) - log(gamma(a)) + (-a - 1) * log(tau2[j]) - b / tau2[j]
+            ld <- ld + var_prior_fun(tau2[j])
           }
           ##lp <- dmvnorm(gamma, sigma = matrix_inv(P), log = TRUE) + ld
           dP <- determinant(P, logarithm = TRUE)
@@ -637,8 +660,11 @@ make.prior <- function(x) {
       }
       return(as.numeric(lp))
     }
+
+    return(prior_fun)
+  } else {
+    return(prior)
   }
-  return(prior)
 }
 
 

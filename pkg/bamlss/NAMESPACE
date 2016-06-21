@@ -24,6 +24,7 @@ export(
   "GMCMC",
   "GMCMC_iwls",
   "GMCMC_iwlsC",
+  "GMCMC_iwlsC_gp",
   "GMCMC_slice",
   "JAGS",
   "BayesX",

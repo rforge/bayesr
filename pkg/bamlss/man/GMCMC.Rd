@@ -2,6 +2,7 @@
 \alias{GMCMC}
 \alias{GMCMC_iwls}
 \alias{GMCMC_iwlsC}
+\alias{GMCMC_iwlsC_gp}
 \alias{GMCMC_slice}
 
 \title{
@@ -18,12 +19,14 @@
 ## Sampler function:
 GMCMC(x, y, family, start = NULL, weights = NULL, offset = NULL,
   n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
-  propose = "iwlsC", chains = NULL, ...)
+  propose = "iwlsC_gp", chains = NULL, ...)
 
 ## Propose functions:
 GMCMC_iwls(family, theta, id, eta, y, data,
   weights = NULL, offset = NULL, ...)
 GMCMC_iwlsC(family, theta, id, eta, y, data,
+  weights = NULL, offset = NULL, zworking, resids, rho, ...)
+GMCMC_iwlsC_gp(family, theta, id, eta, y, data,
   weights = NULL, offset = NULL, zworking, resids, rho, ...)
 GMCMC_slice(family, theta, id, eta, y, data, ...)
 }
@@ -86,6 +89,17 @@ GMCMC_slice(family, theta, id, eta, y, data, ...)
   a valid propose function is supplied within the extra \code{xt} list, this propose function will
   be used. This way each model term may have its own propose function for creating samples
   of the parameters. See the example section.
+
+  The default proposal function \code{GMCMC_iwlsC_gp} allows for general priors for the
+  smoothing variances. Samples of smoothing variances are computed using slice sampling.
+  Function \code{GMCMC_iwlsC} samples smoothing variances of univariate terms assuming an inverse
+  gamma prior. Terms of higher dimensions use again slice sampling for creating samples of
+  smoothing variances.
+
+  Function \code{GMCMC_iwls} is similar to function \code{GMCMC_iwlsC} but uses plain \R code.
+
+  Function \code{GMCMC_slice} applies slice sampling also for the regression coefficients and
+  is therefore relatively slow.
 }
 
 \value{
