@@ -86,6 +86,10 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     }
   }
 
+  is.user <- function(x) {
+    inherits(x, "userdefined.smooth.spec") | inherits(x, "tensorX.smooth") | inherits(x, "userdefined.smooth")
+  }
+
   single_eqn <- function(x, y, id) {
     rhs <- dfiles <- prgex <- sdata <- NULL
 
@@ -114,14 +118,13 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         if(!is.null(attr(sxc, "write")))
           prgex <- c(prgex, attr(sxc, "write")(dir))
         rhs <- c(rhs, sxc)
-        is.tx <- inherits(x$smooth.construct[[j]], "tensorX.smooth")
         tl <- x$smooth.construct[[j]]$term
-        if((x$smooth.construct[[j]]$by != "NA") & is.tx)
+        if((x$smooth.construct[[j]]$by != "NA") & is.user(x$smooth.construct[[j]]))
           tl <- c(tl, x$smooth.construct[[j]]$by)
-        if(!is.tx & (length(tl) > 1))
+        if((length(tl) > 1) & is.user(x$smooth.construct[[j]]))
           tl <- paste(tl, collapse = "")
         if(is.null(sdata)) {
-          if(inherits(x$smooth.construct[[j]], "userdefined.smooth.spec")) {
+          if(is.user(x$smooth.construct[[j]])) {
             sdata <- data[, 1, drop = FALSE]
             colnames(sdata) <- tl
             sdata[[1]] <- runif(nrow(data))
@@ -277,12 +280,9 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       if(!is.null(x[[i]]$smooth.construct)) {
         for(j in seq_along(x[[i]]$smooth.construct)) {
           tl <- x[[i]]$smooth.construct[[j]]$term
-          is.tx <- inherits(x[[i]]$smooth.construct[[j]], "tensorX.smooth")
-          if(is.tx)
-            tl <- rev(tl)
-          #if((x[[i]]$smooth.construct[[j]]$by != "NA") & is.tx)
-          #  tl <- c(x[[i]]$smooth.construct[[j]]$by, tl)
-          if(!is.tx & (length(tl) > 1))
+          if((x[[i]]$smooth.construct[[j]]$by != "NA") & is.user(x[[i]]$smooth.construct[[j]]))
+            tl <- c(tl, x[[i]]$smooth.construct[[j]]$by)
+          if((length(tl) > 1) & is.user(x[[i]]$smooth.construct[[j]]))
             tl <- paste(tl, collapse = "")
           term <- paste("_", paste(tl, collapse = "_"), "_", sep = "")
           term <- paste("of", term, "sample", sep = "")
@@ -291,6 +291,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           if(any(grepl("anisotropy", sf)))
             sf <- sf[-grep("anisotropy", sf)]
           tj <- grep("tensor", sf, fixed = TRUE)
+          is.tx <- inherits(x[[i]]$smooth.construct[[j]], "tensorX.smooth")
           if(length(tj))
             sf <- if(is.tx & (length(x[[i]]$smooth.construct[[j]]$term) > 1)) sf[tj] else sf[-tj]
           samps <- as.matrix(read.table(file.path(dir, "output", sf), header = TRUE)[, -1, drop = FALSE])
@@ -300,6 +301,11 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           colnames(samps) <- paste(i, ".s.", x[[i]]$smooth.construct[[j]]$label, ".", cn, sep = "")
           sf <- grepl(paste("_", i, "_", sep = ""), sfiles, fixed = TRUE) & grepl(term, sfiles, fixed = TRUE) & grepl("_variance_", sfiles, fixed = TRUE)
           sf <- sfiles[sf]
+          term <- gsub("_sample", "_omega", term, fixed = TRUE)
+          aniso <- grepl(paste("_", i, "_", sep = ""), sfiles, fixed = TRUE) & grepl(term, sfiles, fixed = TRUE) & grepl("_anisotropy_", sfiles, fixed = TRUE)
+          aniso <- sfiles[aniso]
+          if(length(aniso) & FALSE)
+            sf <- aniso
           if(length(sf)) {
             tj <- grep("tensor", sf, fixed = TRUE)
             if(length(tj))
@@ -529,10 +535,11 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
     id <- "t"
   id <- paste(rmf(id), collapse = "_")
   term <- if(length(object$term) > 1) {
-    paste(if(is.tx) rev(object$term) else object$term, collapse = if(is.tx) "*" else "")
+    paste(object$term, collapse = "")
   } else object$term
   by <- if(object$by != "NA") object$by else NULL
   if(!is.null(by)) {
+    term <- paste(term, by, collapse = "")
     Sn <- paste(id, by, "S", sep = "_")
     Sn <- paste(Sn, "", 1:length(object$S), sep = "")
     Xn <- paste(id, by, "X", sep = "_")
@@ -559,7 +566,7 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
   if(length(object$S) > 1) {
     Xn <- paste(Xn, "", 1:length(object$S), sep = "")
     for(j in seq_along(object$S))
-      term <- paste(term, paste("designmatdata", if(j < 2) "" else j, "=", sep = ""), Xn[j], ",", sep = "")
+      term <- paste(term, paste("designmatdata", if(j < 2) "" else j, "=", sep = ""), rev(Xn)[j], ",", sep = "")
   } else {
     term <- paste(term, "designmatdata=", Xn, if(is.null(object$xt$nocenter)) "," else "", sep = "")
   }

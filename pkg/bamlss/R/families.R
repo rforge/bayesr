@@ -601,21 +601,21 @@ truncgaussian2.bamlss <- function(...)
     ),
     "mu" = function(par, ...) {
       mu <-  par$mu
-	    sigma <- sqrt(par$sigma2)
-	    arg <- - mu / sigma
-	    mu + sigma * dnorm(arg) / (1 - pnorm(arg))
+      sigma <- sqrt(par$sigma2)
+      arg <- - mu / sigma
+      mu + sigma * dnorm(arg) / (1 - pnorm(arg))
     },
     "d" = function(y, par, log = FALSE) {
-	    sigma <- sqrt(par$sigma2)
-	    arg <- - par$mu / sigma
-	    d <- dnorm(y / sigma + arg) / (1 - pnorm(arg))
+      sigma <- sqrt(par$sigma2)
+      arg <- - par$mu / sigma
+      d <- dnorm(y / sigma + arg) / (1 - pnorm(arg))
       if(log) d <- log(d)
       d
     },
     "p" = function(y, par, ...) {
-	    sigma <- sqrt(par$sigma2)
-	    arg <- - par$mu / sigma
-	    2 * (pnorm(y / sigma + arg) - pnorm(arg))
+      sigma <- sqrt(par$sigma2)
+      arg <- - par$mu / sigma
+      2 * (pnorm(y / sigma + arg) - pnorm(arg))
     }
   )
   
