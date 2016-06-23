@@ -87,7 +87,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   }
 
   is.user <- function(x) {
-    inherits(x, "userdefined.smooth.spec") | inherits(x, "tensorX.smooth") | inherits(x, "userdefined.smooth")
+    inherits(x, "userdefined.smooth.spec") | inherits(x, "tensorX.smooth") | inherits(x, "userdefined.smooth") | inherits(x, "tensor.smooth")
   }
 
   single_eqn <- function(x, y, id) {
@@ -562,7 +562,7 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
   }
   term <- paste(term, if(is.tx & (length(object$S) > 1)) "(tensor," else "(userdefined,", sep = "")
   for(j in seq_along(object$S))
-    term <- paste(term, paste("penmatdata", if(j < 2) "" else j, "=", sep = ""), Sn[j], ",", sep = "")
+    term <- paste(term, paste("penmatdata", if(j < 2) "" else j, "=", sep = ""), rev(Sn)[j], ",", sep = "")
   if(length(object$S) > 1) {
     Xn <- paste(Xn, "", 1:length(object$S), sep = "")
     for(j in seq_along(object$S))
@@ -992,9 +992,9 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots)
     p <- ncol(object$margin[[1]]$X)
     object$C <- matrix(1, ncol = p)
   } else {
-    p1 <- ncol(object$margin[[1]]$X); p2 <- ncol(object$margin[[2]]$X)
+    p1 <- ncol(object$margin[[2]]$X); p2 <- ncol(object$margin[[1]]$X)
     I1 <- diag(p1); I2 <- diag(p2)
-    K <- object$margin[[1]]$S[[1]]%x%I2 + I1%x%object$margin[[2]]$S[[1]]
+    K <- object$margin[[2]]$S[[1]]%x%I2 + I1%x%object$margin[[1]]$S[[1]]
     object$rank <- object$sx.rank <- qr(K)$rank
     if(object$constraint == "none") {
       object$xt$nocenter <- TRUE
