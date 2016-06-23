@@ -794,7 +794,7 @@ simSurv <- function(n)
 
 ## Survival models transformer function.
 surv.transform <- function(x, y, data, family,
-  subdivisions = 100, timedependent = "lambda",
+  subdivisions = 25, timedependent = "lambda",
   timevar = NULL, idvar = NULL, is.cox = FALSE, alpha = 0.1, ...)
 {
   rn <- names(y)

@@ -42,7 +42,7 @@ cox.mcmc(x, y, family, start, weights, offset,
 
 \details{
   The sampler uses derivative based proposal functions to create samples of parameters.
-  For time-dependent functions the proposals are based on one Newton iteration centered
+  For time-dependent functions the proposals are based on one Newton-Raphson iteration centered
   at the last state, while for the time-constant functions proposals can be based
   on iteratively reweighted least squares (IWLS), see also function \code{\link{GMCMC}}.
   The integrals that are part of the time-dependent function updates are solved numerically.
