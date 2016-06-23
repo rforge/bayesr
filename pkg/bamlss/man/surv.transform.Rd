@@ -99,4 +99,5 @@ for(j in seq_along(grid)) {
 }
 
 \keyword{regression}
+\keyword{survival}
 

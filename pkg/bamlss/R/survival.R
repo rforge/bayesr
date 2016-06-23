@@ -763,7 +763,7 @@ rSurvTime2 <- function (lambda, x, cens_fct, upper = 1000, ..., file = NULL,
   }
 }
 
-simSurv <- function(n)
+simSurv <- function(n = 300)
 {
   X <- matrix(NA, nrow = n, ncol = 3)
   X[, 1] <- runif(n, -1, 1)

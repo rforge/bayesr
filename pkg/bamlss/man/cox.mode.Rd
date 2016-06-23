@@ -70,4 +70,5 @@ cox.mode(x, y, weights, offset,
 }
 
 \keyword{regression}
+\keyword{survival}
 

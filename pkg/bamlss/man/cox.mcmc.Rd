@@ -92,4 +92,5 @@ plot(b)
 }
 
 \keyword{regression}
+\keyword{survival}
 
