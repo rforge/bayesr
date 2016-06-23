@@ -103,7 +103,8 @@ export(
   "scale2",
   "continue",
   "homstart_data",
-  "tx"
+  "tx",
+  "rmf"
 )
 
 S3method("plot", "bamlss")

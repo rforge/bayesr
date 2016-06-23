@@ -72,6 +72,22 @@ BUGSmodel(x, family, is.stan = FALSE, reference = NULL, ...)
   the data and creates the final BUGS model code that can be send to JAGS.
 }
 
+\note{
+  Note that for setting up a new family object to be used with \code{JAGS()} additional
+  information needs to be supplied. The extra information must be placed within the
+  family object in an element named \code{"bugs"}. The following entries should be supplied
+  within the \code{..$bugs} list:
+  \itemize{
+    \item \code{"dist"}. The name of the distribution in BUGS/JAGS model language.
+    \item \code{"eta"}. The function that computes the BUGS code for one structured additive predictor.
+      Function \code{BUGSeta()} is used per default.
+    \item \code{"model"}. The function that merges all single predictor BUGS model code and data.
+      The default function is \code{BUGSmodel()}.
+    \item \code{"reparam"}. A named vector of character strings that specify a reparametrization.
+  }
+  See also the example code of \code{\link{family.bamlss}}.
+}
+
 \seealso{
   \code{\link{bamlss}}, \code{\link{bamlss.frame}},
   \code{\link{bamlss.engine.setup}}, \code{\link{set.starting.values}}, \code{\link{bfit}},

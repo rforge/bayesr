@@ -175,14 +175,6 @@ b <- bamlss(num ~ s(x1) + s(x2) + s(x3), data = d,
   optimizer = bfit, sampler = JAGS, family = "norm4JAGS")
 plot(b)
 }
-
-## More complex example, family for GAMs using mgcv
-## gam() and jagam().
-gam.bamlss <- function(family = gaussian) {
-  if(is.function(family))
-    family <- family()
-  
-}
 }
 
 \keyword{regression}
