@@ -104,7 +104,7 @@ GMCMC_slice(family, theta, id, eta, y, data, ...)
 
 \value{
   The function returns samples of parameters, depending on the return value of the propose functions
-  other quantities can be returned. The samples are provided a \code{\link[coda]{mcmc}} matrix.
+  other quantities can be returned. The samples are provided as a \code{\link[coda]{mcmc}} matrix.
   If \code{chains > 1}, the samples are provided as a \code{\link[coda]{mcmc.list}}.
 }
 

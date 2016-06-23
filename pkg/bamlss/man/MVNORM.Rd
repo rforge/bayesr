@@ -34,7 +34,7 @@ MVNORM(x, y = NULL, family = NULL, start = NULL,
 }
 
 \value{
-  Function \code{MVNORM()} returns samples of parameters. The samples are provided a
+  Function \code{MVNORM()} returns samples of parameters. The samples are provided as a
   \code{\link[coda]{mcmc}} matrix.
 }
 

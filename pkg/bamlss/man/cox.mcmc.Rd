@@ -50,7 +50,7 @@ cox.mcmc(x, y, family, start, weights, offset,
 }
 
 \value{
-  The function returns samples of parameters. The samples are provided a
+  The function returns samples of parameters. The samples are provided as a
   \code{\link[coda]{mcmc}} matrix.
 }
 

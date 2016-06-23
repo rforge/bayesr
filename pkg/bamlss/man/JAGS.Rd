@@ -64,7 +64,7 @@ BUGSmodel(x, family, is.stan = FALSE, reference = NULL, ...)
 }
 
 \value{
-  Function \code{JAGS()} returns samples of parameters. The samples are provided a \code{\link[coda]{mcmc}}
+  Function \code{JAGS()} returns samples of parameters. The samples are provided as a \code{\link[coda]{mcmc}}
   matrix. If \code{n.chains > 1}, the samples are provided as a \code{\link[coda]{mcmc.list}}.
 
   Function \code{BUGSeta()} returns the BUGS model code and preprocessed data for one
