@@ -21,7 +21,8 @@
 \usage{
 surv.transform(x, y, data, family,
   subdivisions = 100, timedependent = "lambda",
-  timevar = NULL, idvar = NULL, is.cox = FALSE, alpha = 0.1, ...)
+  timevar = NULL, idvar = NULL, is.cox = FALSE,
+  alpha = 0.1, ...)
 }
 
 \arguments{
