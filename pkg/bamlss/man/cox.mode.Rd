@@ -6,10 +6,10 @@
 }
 
 \description{
-  This function computes posterior mode estimates of the parameters of the Cox model
-  using a Newton-Raphson algorithm. Integrals are solved numerically. Morover,
-  optimum smoothing variances are computed using a stepwise optimization, see also the
-  details section of function \code{\link{bfit}}.
+  This function computes posterior mode estimates of the parameters of a flexible Cox model
+  with structured additive predictors using a Newton-Raphson algorithm. Integrals are solved
+  numerically. Morover, optimum smoothing variances are computed using a stepwise optimization,
+  see also the details section of function \code{\link{bfit}}.
 }
 
 \usage{
@@ -66,25 +66,7 @@ cox.mode(x, y, weights, offset,
 }
 
 \examples{
-\dontrun{
-set.seed(123)
-
-## Simulate survival data.
-d <- simSurv(n = 500)
-
-## Formula of the survival model, note
-## that the baseline is given in the first formula by s(time).
-f <- list(
-  Surv(time, event) ~ s(time) + s(time, by = x3),
-  gamma ~ s(x1) + s(x2)
-)
-
-## Cox model with continuous time.
-b <- bamlss(f, family = "cox", data = d)
-
-## Plot estimated effects.
-plot(b)
-}
+## Please see the examples of function cox.mcmc()!
 }
 
 \keyword{regression}
