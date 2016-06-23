@@ -1831,8 +1831,8 @@ make_fFormula <- function(formula)
 all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, intercept = FALSE)
 {
   env <- environment(formula)
-  tf <- terms(formula, specials = unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", specials)),
-    keep.order = TRUE)
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx"))
+  tf <- terms(formula, specials = specials, keep.order = TRUE)
   ## sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
   sid <- NULL
@@ -1876,8 +1876,8 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
 all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
 {
   env <- environment(formula)
-  tf <- terms(formula, specials = unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", specials)),
-    keep.order = FALSE)
+  specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", specials))
+  tf <- terms(formula, specials = specials, keep.order = FALSE)
   ## sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
   sid <- NULL
