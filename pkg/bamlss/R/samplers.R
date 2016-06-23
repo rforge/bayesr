@@ -1410,6 +1410,8 @@ gmcmc_newton <- function(fun, theta, id, prior, ...)
 ## Naive sampler.
 MVNORM <- function(x, y = NULL, family = NULL, start = NULL, n.samples = 500, hessian = NULL, ...)
 {
+  if(!is.null(start))
+    start <- unlist(start)
   if(is.null(hessian)) {
     if(inherits(x, "bamlss")) {
       if(is.null(x$hessian)) {

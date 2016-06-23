@@ -44,7 +44,7 @@ BUGSmodel(x, family, is.stan = FALSE, reference = NULL, ...)
     function \code{\link{parameters}}.}
   \item{tdir}{The path to the temporary directory that should be used.}
   \item{n.chains}{Specifies the number of sequential MCMC chains that should be run with JAGS.}
-  \item{n.adpat}{Specifies the number of iterations that should be used as an initial adaptive phase.}
+  \item{n.adapt}{Specifies the number of iterations that should be used as an initial adaptive phase.}
   \item{n.iter}{Sets the number of MCMC iterations.}
   \item{thin}{Defines the thinning parameter for MCMC simulation. E.g., \code{thin = 10} means,
     that only every 10th sampled parameter will be stored.}
@@ -55,7 +55,7 @@ BUGSmodel(x, family, is.stan = FALSE, reference = NULL, ...)
   \item{set.inits}{Should initial values of BAMLSS \code{\link{parameters}} be provided to JAGS,
     if available. Set in argument \code{start}.}
   \item{save.all}{Should all JAGS files be saved in \code{tdir}.}
-  \item{modules}{Specify additional modules that should be loade, see function \code{\link[rjags]{load.module}}.}
+  \item{modules}{Specify additional modules that should be loaded, see function \code{\link[rjags]{load.module}}.}
   \item{id}{Character, the current parameter name for which the BUGS code should be produced.}
   \item{is.stan}{Should the BUGS code be translated to STAN code. Note that this is only experimental.}
   \item{reference}{A \code{character} specifying a reference category, e.g., when
