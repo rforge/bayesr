@@ -99,6 +99,7 @@ export(
   "matrix_inv",
   "fmt",
   "rSurvTime2",
+  "simSurv",
   "scale2",
   "continue",
   "homstart_data",

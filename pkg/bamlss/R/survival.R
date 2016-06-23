@@ -598,17 +598,10 @@ propose_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, nu)
 
   ## Sample variance parameter.
   if(!x$fixed & !x$fxsp & length(x$S)) {
-    if(length(x$S) < 2) {
-      a <- x$rank / 2 + x$a
-      b <- 0.5 * crossprod(g, x$S[[1]]) %*% g + x$b
-      tau2 <- 1 / rgamma(1, a, b)
-      x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
-    } else {
-      i <- grep("tau2", names(x$state$parameters))
-      for(j in i) {
-        x$state$parameters <- uni.slice(x$state$parameters, x, NULL, NULL,
-          NULL, "lambda", j, logPost = gmcmc_logPost, lower = 0, ll = pibeta)
-      }
+    i <- grep("tau2", names(x$state$parameters))
+    for(j in i) {
+      x$state$parameters <- uni.slice(x$state$parameters, x, NULL, NULL,
+        NULL, "lambda", j, logPost = gmcmc_logPost, lower = 0, ll = pibeta)
     }
   }
 
@@ -711,17 +704,10 @@ propose_surv_tc <- function(x, y, eta, int)
 
   ## Sample variance parameter.
   if(!x$fixed & !x$fxsp & length(x$S)) {
-    if(length(x$S) < 2) {
-      a <- x$rank / 2 + x$a
-      b <- 0.5 * crossprod(g, x$S[[1]]) %*% g + x$b
-      tau2 <- 1 / rgamma(1, a, b)
-      x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
-    } else {
-      i <- grep("tau2", names(x$state$parameters))
-      for(j in i) {
-        x$state$parameters <- uni.slice(x$state$parameters, x, NULL, NULL,
-          NULL, "gamma", j, logPost = gmcmc_logPost, lower = 0, ll = pibeta)
-      }
+    i <- grep("tau2", names(x$state$parameters))
+    for(j in i) {
+      x$state$parameters <- uni.slice(x$state$parameters, x, NULL, NULL,
+        NULL, "gamma", j, logPost = gmcmc_logPost, lower = 0, ll = pibeta)
     }
   }
 
@@ -775,6 +761,34 @@ rSurvTime2 <- function (lambda, x, cens_fct, upper = 1000, ..., file = NULL,
   } else {
     return(data)
   }
+}
+
+simSurv <- function(n)
+{
+  X <- matrix(NA, nrow = n, ncol = 3)
+  X[, 1] <- runif(n, -1, 1)
+  X[, 2] <- runif(n, -3, 3)
+  X[, 3] <- runif(n, -1, 1)
+
+  ## Specify censoring function.
+  cens_fct <- function(time, mean_cens) {
+    ## Censoring times are independent exponentially distributed.
+    censor_time <- rexp(n = length(time), rate = 1 / mean_cens)
+    event <- (time <= censor_time)
+    t_obs <- apply(cbind(time, censor_time), 1, min)
+    ## Return matrix of observed survival times and event indicator.
+    return(cbind(t_obs, event))
+  }
+
+  ## log(time) is the baseline hazard.
+  lambda <-  function(time, x) {
+    exp(log(time) + 0.7 * x[1] + sin(x[2]) + sin(time * 2) * x[3])
+  }
+
+  ## Simulate data with lambda() and cens_fct().
+  d <- rSurvTime2(lambda, X, cens_fct, mean_cens = 5)
+
+  return(d)
 }
 
 
