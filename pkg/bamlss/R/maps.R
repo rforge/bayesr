@@ -560,8 +560,8 @@ drop2poly <- function(x, y, map)
     oco <- slot(slot(slot(ob, "polygons")[[1]], "Polygons")[[j]], "coords")
     pip <- cbind(pip, point.in.polygon(x, y, oco[, 1L], oco[, 2L], mode.checked = FALSE) < 1L)
   }
-  pip <- apply(pip, 1, function(x) { x < 1 })
-  return(which(!pip))
+  pip <- apply(pip, 1, function(x) { !all(x) })
+  return(which(pip))
 }
 
 xy2poly <- function(x, y, map, verbose = TRUE)

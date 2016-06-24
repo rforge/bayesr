@@ -1387,7 +1387,11 @@ gamma.bamlss <- function(...)
       a <- par$sigma
       s <- par$mu / par$sigma
       pgamma(y, shape = a, scale = s, lower.tail = lower.tail, log.p = log.p)
-    }
+    },
+    "initialize" = list(
+      "mu" = function(y, ...) { (y + mean(y)) / 2 },
+      "sigma" = function(y, ...) { rep(sd(y), length(y)) }
+    )
   )
 
   class(rval) <- "family.bamlss"
