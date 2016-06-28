@@ -181,6 +181,8 @@ set.par <- function(x, replacement, what) {
   if(what %in% c("tau2", "tau", "lambda")) {
     x[grep("tau", names(x))] <- replacement
   } else {
+if(length(replacement) > length(x[!grepl("tau", names(x)) & !grepl("edf", names(x))]))
+  stop("here")
     if(what %in% "b") {
       x[!grepl("tau", names(x)) & !grepl("edf", names(x))] <- replacement
     } else x[what] <- replacement
@@ -1532,6 +1534,9 @@ log_posterior <- function(par, x, y, family, verbose = TRUE, digits = 3, scale =
         paste(j, "p", strsplit(x[[j]]$smooth.construct[[sj]]$label, "+", fixed = TRUE)[[1]], sep = ".")
       }
       tpar <- par[grep2(xl, names(par), fixed = TRUE)]
+      if(x[[j]]$smooth.construct[[sj]]$by == "NA") {
+        tpar <- tpar[!grepl(":", names(tpar), fixed = TRUE)]
+      }
       x[[j]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[j]]$smooth.construct[[sj]]$state$parameters, tpar, "b")
       x[[j]]$smooth.construct[[sj]]$state$fitted.values <- x[[j]]$smooth.construct[[sj]]$fit.fun(x[[j]]$smooth.construct[[sj]]$X,
         get.par(tpar, "b"))
@@ -1575,6 +1580,9 @@ grad_posterior <- function(par, x, y, family, ...)
         paste(j, "p", strsplit(x[[j]]$smooth.construct[[sj]]$label, "+", fixed = TRUE)[[1]], sep = ".")
       }
       tpar <- par[grep2(xl, names(par), fixed = TRUE)]
+      if(x[[j]]$smooth.construct[[sj]]$by == "NA") {
+        tpar <- tpar[!grepl(":", names(tpar), fixed = TRUE)]
+      }
       x[[j]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[j]]$smooth.construct[[sj]]$state$parameters, tpar, "b")
       x[[j]]$smooth.construct[[sj]]$state$fitted.values <- x[[j]]$smooth.construct[[sj]]$fit.fun(x[[j]]$smooth.construct[[sj]]$X,
         get.par(tpar, "b"))

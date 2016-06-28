@@ -1049,6 +1049,7 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take, derivMat = FA
     f
   }
   x$state$fitted_timegrid <- x$fit.fun_timegrid(get.state(x, "b"))
+print(head(x$state$fitted_timegrid))
   x$state$optimize <- FALSE
 
   if(derivMat) {
