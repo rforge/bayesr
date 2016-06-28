@@ -287,6 +287,8 @@ neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
     x <- bnd2sp(x)
   }
 
+  nx <- names(x)
+
   adjmat <- if(!inherits(x, "nb")) {
     switch(type,
       "boundary" = poly2nb(x, ...),
