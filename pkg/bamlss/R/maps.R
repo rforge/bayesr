@@ -5,7 +5,7 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
   layout = TRUE, mmar = c(0, 0, 0, 0), lmar = c(1.3, 3, 1.3, 2), interp = FALSE,
   grid = 8, linear = FALSE, extrap = FALSE, duplicate = "mean", xlim = NULL,
   ylim = NULL, map = TRUE, boundary = TRUE, interior = TRUE, rivers = FALSE, mcol = NULL,
-  contour.data = NULL, cgrid = 30, data = NULL, subset = NULL, box = FALSE,
+  contour.data = NULL, cgrid = 100, data = NULL, subset = NULL, box = FALSE,
   ireturn = FALSE, sort = TRUE, proj4string = CRS(as.character(NA)), eps = 0.0001, ...)
 {
   ## projection = "+proj=longlat +ellps=WGS84 +datum=WGS84"
@@ -558,22 +558,24 @@ centroidtext <- function(polygon, poly.name = NULL, counter = "NA", cex = 1, ...
 
 
 ## Function to drop data outside the polygon area.
-drop2poly <- function(x, y, map)
+drop2poly <- function(x, y, map, union = FALSE)
 {
   require("maptools")
-  gpclibPermit()
-  class(map) <- "bnd"
-  mapsp <- bnd2sp(map)
-  ob <- unionSpatialPolygons(mapsp, rep(1L, length = length(mapsp)), avoidGEOS  = TRUE)
 
-  nob <- length(slot(slot(ob, "polygons")[[1]], "Polygons"))
+  if(inherits(map, "bnd"))
+    map <- bnd2sp(map)
+  if(union)
+    map <- unionSpatialPolygons(map, rep(1L, length = length(map)), avoidGEOS  = TRUE)
+
+  np <- length(slot(slot(map, "polygons")[[1]], "Polygons"))
   pip <- NULL
-  for(j in 1:nob) {
-    oco <- slot(slot(slot(ob, "polygons")[[1]], "Polygons")[[j]], "coords")
-    pip <- cbind(pip, point.in.polygon(x, y, oco[, 1L], oco[, 2L], mode.checked = FALSE) < 1L)
+  for(j in 1:np) {
+    oco <- slot(slot(slot(map, "polygons")[[1]], "Polygons")[[j]], "coords")
+    pip <- cbind(pip, point.in.polygon(x, y, oco[, 1L], oco[, 2L], mode.checked = FALSE))
   }
-  pip <- apply(pip, 1, function(x) { !all(x) })
-  return(which(pip))
+  pip <- apply(pip, 1, any)
+
+  return(pip)
 }
 
 xy2poly <- function(x, y, map, verbose = TRUE)
