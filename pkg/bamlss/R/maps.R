@@ -5,7 +5,7 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
   layout = TRUE, mmar = c(0, 0, 0, 0), lmar = c(1.3, 3, 1.3, 2), interp = FALSE,
   grid = 8, linear = FALSE, extrap = FALSE, duplicate = "mean", xlim = NULL,
   ylim = NULL, map = TRUE, boundary = TRUE, interior = TRUE, rivers = FALSE, mcol = NULL,
-  contour.data = NULL, k = 30, akima = FALSE, data = NULL, subset = NULL, box = FALSE,
+  contour.data = NULL, cgrid = 30, data = NULL, subset = NULL, box = FALSE,
   ireturn = FALSE, sort = TRUE, proj4string = CRS(as.character(NA)), eps = 0.0001, ...)
 {
   ## projection = "+proj=longlat +ellps=WGS84 +datum=WGS84"
@@ -99,6 +99,12 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
       box()
   }
 
+  addmap <- NULL
+  if(!is.logical(map)) {
+    addmap <- map
+    map <- FALSE
+  }
+
   if(map) {
     m <- map("world", add = TRUE, xlim = if(!add) NULL else xlim, ylim = if(!add) NULL else ylim,
       fill = if(is.null(mcol)) FALSE else TRUE, col = if(is.null(mcol)) gray(0.6) else mcol,
@@ -125,22 +131,26 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
       contour.data <- data.frame("x" = as.numeric(x), "y" = as.numeric(y), "z" = as.numeric(z))
     contour.data <- unique(contour.data)
     x <- contour.data[, 1]; y <- contour.data[, 2]; z <- contour.data[, 3]
-    if(!akima) {
-      cm <- bam(z ~ s(x, y, k = k))
-      x <- seq(min(x), max(x), length = 100)
-      y <- seq(min(y), max(y), length = 100)
-      nd <- expand.grid(x = x, y = y)
-      fit <- as.numeric(predict(cm, newdata = nd))
-      ok <- map.where("world", nd$x, nd$y)
-      fit[is.na(ok)] <- NA
-      fit <- matrix(fit, 100, 100)
-    } else {
-      xo <- seq(min(x), max(x), length = 100)
-      yo <- seq(min(y), max(y), length = 100)
-      adat <- interp(x, y, z, xo = xo, yo = yo, duplicate = "mean")
-      fit <- adat$z; x <- xo; y <- yo
+    xo <- seq(min(x), max(x), length = cgrid)
+    yo <- seq(min(y), max(y), length = cgrid)
+    fit <- interp2(x, y, z, xo = xo, yo = yo, grid = cgrid)
+
+    if(!is.null(addmap)) {
+      require("maptools")
+      gpclibPermit()
+      eg <- expand.grid("x" = xo, "y" = yo)
+      nob <- length(slot(slot(addmap, "polygons")[[1]], "Polygons"))
+      pip <- NULL
+      for(j in 1:nob) {
+        oco <- slot(slot(slot(addmap, "polygons")[[1]], "Polygons")[[j]], "coords")
+        pip <- cbind(pip, point.in.polygon(eg$x, eg$y, oco[, 1L], oco[, 2L], mode.checked = FALSE))
+      }
+      pip <- apply(pip, 1, function(x) { any(x > 0) })
+      fit[!pip] <- NA
+      fit <- matrix(fit, cgrid, cgrid)
     }
-    contour(x, y, fit, add = TRUE)
+
+    contour(xo, yo, fit, add = TRUE)
   }
   if(legend) {
     if(layout) {
