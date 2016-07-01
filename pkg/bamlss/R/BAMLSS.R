@@ -1087,11 +1087,7 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
   bf[c("transform", "optimizer", "sampler", "samplestats",
     "results", "cores", "sleep", "combine", "model", "x")] <- NULL
   bf[[1]] <- as.name("bamlss.frame")
-  bf <- try(eval(bf, envir = env), silent = TRUE)
-  if(inherits(bf, "try-error")) {
-    environment(bf$formula) <- parent.frame()
-    bf <- eval(bf, envir = parent.frame())
-  }
+  bf <- eval(bf, envir = env)
 
   ## Transform.
   if(is.function(functions$transform)) {
@@ -1857,7 +1853,9 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
           } else c(vars, st$by)
         }
       }
-    } else vars <- tl
+    } else {
+      vars <- tl
+    }
   }
   if(lhs & (attr(tf, "response") > 0))
     vars <- c(vars, response.name(formula, keep.functions = TRUE))

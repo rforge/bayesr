@@ -567,11 +567,13 @@ drop2poly <- function(x, y, map, union = FALSE)
   if(union)
     map <- unionSpatialPolygons(map, rep(1L, length = length(map)), avoidGEOS  = TRUE)
 
-  np <- length(slot(slot(map, "polygons")[[1]], "Polygons"))
+  np <- length(map@polygons)
   pip <- NULL
   for(j in 1:np) {
-    oco <- slot(slot(slot(map, "polygons")[[1]], "Polygons")[[j]], "coords")
-    pip <- cbind(pip, point.in.polygon(x, y, oco[, 1L], oco[, 2L], mode.checked = FALSE))
+    for(i in 1:length(map@polygons[[j]]@Polygons)) {
+      oco <- map@polygons[[j]]@Polygons[[i]]@coords
+      pip <- cbind(pip, point.in.polygon(x, y, oco[, 1L], oco[, 2L], mode.checked = FALSE))
+    }
   }
   pip <- apply(pip, 1, any)
 
