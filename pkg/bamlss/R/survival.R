@@ -1037,9 +1037,12 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take, derivMat = FA
     X <- -1 * (X - dX) / eps
     x$XT <- extract_XT(dX, gdim[1], gdim[2])
     x$X <- -1 * (x$X - PredictMat(x, ddata)) / eps
+    gm <- sparse.matrix.index(X)
+    if(!is.null(gm))
+      x$sparse.setup$grid.matrix <- gm
+  } else {
+    x$sparse.setup$grid.matrix <- sparse.matrix.index(X)
   }
-
-  x$sparse.setup$grid.matrix <- sparse.matrix.index(X)
   ff <- make.fit.fun(x, type = 2)
 
   x$fit.fun_timegrid <- function(g) {

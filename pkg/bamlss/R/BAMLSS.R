@@ -404,6 +404,8 @@ sparse.matrix.index <- function(x, ...)
   index <- apply(x, 1, function(x) {
     which(x != 0)
   })
+  if(length(index) < 1)
+    return(NULL)
   if(is.list(index)) {
     n <- max(sapply(index, length))
     index <- lapply(index, function(x) {
