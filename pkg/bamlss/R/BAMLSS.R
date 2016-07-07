@@ -4094,7 +4094,7 @@ bamlss_factor2d_plot <- function(x, ids = NULL, add = FALSE, ...)
     tid <- xd[id == j]
     lines(fid ~ tid, col = col[i], lwd = lwd[i], lty = lty[i])
     if(!is.null(y))
-      points(tid, y[id == j], col = col[i])
+      points(tid, y[id == j], col = col[i], cex = args$cex, pch = args$pch)
     i <- i + 1
   }
   rug <- if(is.null(args$rug)) TRUE else args$rug

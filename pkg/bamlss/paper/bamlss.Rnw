@@ -293,11 +293,11 @@ the so called penalty matrices, amongst others.
 In numerous applications geographical information and spatial covariates are given at
 different resolutions. For example, spatial data that is measured within different regions, for
 which additional regional covariates are available. Whenever there is such a nested structure
-in the data, it is possible to model such complex (spatial) heterogeneity effects using
+in the data, it is possible to model the complex (spatial) heterogeneity effects using
 a compound prior
 \begin{equation*} \label{eqn:compoundprior}
 \boldsymbol{\beta}_{jk} = \tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})
-  + \boldsymbol{\varepsilon}_{jk}.
+  + \boldsymbol{\varepsilon}_{jk},
 \end{equation*}
 where $\boldsymbol{\varepsilon}_{jk} \sim \mathcal{N}(\mathbf{0}, \tilde{\tau}^2\mathbf{I})$ is a vector
 of i.i.d.\ Gaussian random effects and
