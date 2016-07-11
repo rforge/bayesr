@@ -103,7 +103,7 @@ flexible forms such as, e.g., linear, nonlinear, spatial or random effects. Henc
 of the distribution is linked to an additive predictor in similar fashion as for the well
 established generalized additive model (GAM,~\citealp{bamlss:Hastie+Tibshirani:1990}).
 
-The terms of an additive predictor are most commonly represented by a basis function approach. This
+The terms of an additive predictor are most commonly represented by basis function approaches. This
 leads to a very generic model structure and can be further exploited because each term
 can be transformed into a mixed model representation
 \citep{bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003}. In a fully Bayesian setting this
@@ -111,23 +111,23 @@ generality remains because priors on parameters can also be formalized in a gene
 by assigning normal priors to the regression coefficients of smooth terms
 \citep{bamlss:Fahrmeir+Kneib+Lang+Marx:2013, bamlss:Brezger+Lang:2006}.
 
-The fully Bayesian approach using Markov chain Monte Carlo (MCMC) simulation is particularly
-attractive since it provides inference that provides valid credible intervals for estimators in
+The fully Bayesian approach using Markov chain Monte Carlo (MCMC) simulation techniques is particularly
+attractive since the inferential framework provides valid credible intervals for estimators in
 situations where confidence intervals for corresponding maximum likelihood estimators based on
-asymptotic properties fail, this is specifically the case in more complex models, e.g., with response
+asymptotic properties fail. This is specifically the case in more complex models, e.g., with response
 distributions outside the exponential family or when multiple predictors contain several smooth
-effects. In addition, extensions such as variable selection, non-standard priors for
-hyper-parameters or multilevel models are easily included.
+effects \citep{bamlss:Klein+Kneib+Lang:2015}. In addition, extensions such as variable selection,
+non-standard priors for hyper-parameters or multilevel models are easily included.
 Probably for this reason and because computational power has tremendously increased in the past
-decade, the number of Bayesian estimation engines that can tackle complicated inferential problems
-has kept increasing. Existing estimation engines already provide infrastructures
+decade, the number of Bayesian estimation engines, but also frequentist, that can tackle complicated
+inferential problems has kept increasing. Existing estimation engines already provide infrastructures
 for a number of regression problems exceeding univariate responses, e.g., for multinomial,
 multivariate normal or mixed discrete-continuous distributed variables, and so forth. In addition,
 most of the engines support random effect estimation which in the end can in principle be utilized
 for setting up complex models with additive predictors
 (see, e.g., \citealp{bamlss:Wood:2006}, \citealp{bamlss:Wood:2016b}).
 
-However, the majority of engines (Bayesian and frequentist) use different model setups and output 
+However, the majority of engines use different model setups and output 
 formats, which makes it difficult for practitioners, e.g., to compare properties of
 different algorithms or to select the appropriate distribution and variables, etc. The reasons are
 manifold: the use of different model specification languages like
@@ -139,7 +139,7 @@ bamlss:Belitz+Brezger+Kneib+Lang+Umlauf:2016}, \pkg{JAGS}~\citep{bamlss:Plummer:
 same environment, e.g., the \proglang{R} packages \pkg{mgcv}
 \citep{bamlss:Wood:2016}, \pkg{gamlss} \citep{bamlss:Stasinopoulos+Rigby:2016} and \pkg{VGAM}
 \citep{bamlss:Yee:2016} implement all model term infrastructures in their own fashion style. This is
-particular problematic if all packages are loaded into \proglang{R}'s global environment, because
+particularly problematic if all packages are loaded into \proglang{R}'s global environment, because
 some functions that are supposed to fulfill the same purpose have different interpretations.
 
 In this article we present a kind of unified conceptional ``Lego toolbox'' for complex
@@ -171,17 +171,19 @@ continuous time.
 
 Based on data for $i = 1, \ldots, n$ observations, the models discussed in this paper
 assume conditional independence of individual response observations given covariates.
-Within the GAMLSS model class all parameters of the response distribution can be modeled by
+Within the GAMLSS or distributional model class
+\citep{bamlss:Rigby+Stasinopoulos:2005,bamlss:Klein+Kneib+Lang+Sohn:2015}
+all parameters of the response distribution can be modeled by
 explanatory variables such that
 \begin{equation*} \label{eqn:dreg}
 y \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{1}) = \eta_{1}, \,\,
   h_{2}(\theta_{2}) = \eta_{2}, \dots, \,\, h_{K}(\theta_{K}) =
   \eta_{K}\right),
 \end{equation*}
-where $\mathbf{\mathcal{D}}$ denotes a distribution available for the response
+where $\mathbf{\mathcal{D}}$ denotes a parametric distribution available for the response
 variable $y$ and $\theta_k$, $k = 1, \ldots, K$, are parameters that are linked to additive predictors
 using known monotonic and twice differentiable functions
-$h_{k}(\cdot)$ \citep{bamlss:Rigby+Stasinopoulos:2005,bamlss:Klein+Kneib+Lang+Sohn:2015}. Note that the response may also be a
+$h_{k}(\cdot)$. Note that the response may also be a
 q-dimensional vector $\mathbf{y} = (y_{1}, \ldots, y_{q})^\top$, e.g., when
 $\mathbf{\mathcal{D}}$ is a distribution of random vectors with dimension $q$.
 (see, e.g., \citealp{bamlss:Klein+Kneib+Klasen+Lang:2015}).
