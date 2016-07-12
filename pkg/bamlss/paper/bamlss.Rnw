@@ -184,7 +184,7 @@ where $\mathbf{\mathcal{D}}$ denotes a parametric distribution available for the
 variable $y$ and $\theta_k$, $k = 1, \ldots, K$, are parameters that are linked to additive predictors
 using known monotonic and twice differentiable functions
 $h_{k}(\cdot)$. Note that the response may also be a
-q-dimensional vector $\mathbf{y} = (y_{1}, \ldots, y_{q})^\top$, e.g., when
+$q$-dimensional vector $\mathbf{y} = (y_{1}, \ldots, y_{q})^\top$, e.g., when
 $\mathbf{\mathcal{D}}$ is a distribution of random vectors with dimension $q$.
 (see, e.g., \citealp{bamlss:Klein+Kneib+Klasen+Lang:2015}).
 The $k$-th additive predictor is given by
@@ -192,8 +192,8 @@ The $k$-th additive predictor is given by
 \eta_k = \eta_k(\mathbf{x}; \boldsymbol{\beta}_k) =
   f_{1k}(\mathbf{x}; \boldsymbol{\beta}_{1k}) + \ldots + f_{J_kk}(\mathbf{x}; \boldsymbol{\beta}_{J_kk}),
 \end{equation}
-with unspecified (possibly nonlinear) functions $f_{jk}(\cdot)$ of a covariate vector
-$\mathbf{x}$, $j = 1, \ldots, J_k$ and $k = 1, \ldots, K$ and
+with unspecified (possibly nonlinear) functions $f_{jk}(\cdot)$ of subvectors of a vector
+$\mathbf{x}$ collecting all available covariate information, $j = 1, \ldots, J_k$ and $k = 1, \ldots, K$ and
 $\boldsymbol{\beta}_k = (\boldsymbol{\beta}_{1k}, \ldots, \boldsymbol{\beta}_{J_kk})^\top$ are
 regression coefficients that need to estimated from the data. The vector of function
 evaluations $\mathbf{f}_{jk} = (f_{jk}(\mathbf{x}_{1}; \boldsymbol{\beta}_{jk}), \ldots,
@@ -258,12 +258,12 @@ In Bayesian models prior distributions need to be assigned for each parameter ve
 $\boldsymbol{\beta}_{jk}$, where the choice of prior distributions depends on the type of
 model and application. A simple choice for a non-informative prior is
 \begin{equation} \label{eqn:oneprior}
-\pi_{jk}(\boldsymbol{\beta}_{jk}) \propto 1.
+p_{jk}(\boldsymbol{\beta}_{jk}) \propto 1.
 \end{equation}
 
 Since the functions $f_{jk}( \cdot )$ are commonly unspecified and flexible some kind regularization
 needs to be ensured, e.g., for penalizing too abrupt jumps in the functional form using a
-P(enalised)-spline representation of $f_{jk}( \cdot )$ \citep{bamlss:Eilers+Marx:1996}. In the
+P(enalized)-spline representation of $f_{jk}( \cdot )$ \citep{bamlss:Eilers+Marx:1996}. In the
 frequentist setting this is accounted for by adding a penalty
 $\text{pen}(\mathbf{f}_{jk}) = \text{pen}(\boldsymbol{\beta}_{jk})$ to the regression
 problem. In the Bayesian formulation the equivalent is, e.g., to assign a normal prior
@@ -271,24 +271,24 @@ on $\boldsymbol{\beta}_{jk}$ (see,~e.g.,~\citealp{bamlss:Fahrmeir+Kneib+Lang+Mar
 However, within the presented BAMLSS framework we relax this assumption and assign the rather general
 prior
 \begin{equation} \label{eqn:gprior}
-\pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) \propto
-   g_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \, \boldsymbol{\tau}_{jk};
+p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) \propto
+   d_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \, \boldsymbol{\tau}_{jk};
      \boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}}) \cdot
-   g_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}),
+   d_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}),
 \end{equation}
-where $g_{\boldsymbol{\beta}_{jk}}( \cdot )$ and $g_{\boldsymbol{\tau}_{jk}}( \cdot )$ are prior
+where $d_{\boldsymbol{\beta}_{jk}}( \cdot )$ and $d_{\boldsymbol{\tau}_{jk}}( \cdot )$ are prior
 densities (or combinations of densities) that depend on the type of covariate and prior
 assumptions about $f_{jk}( \cdot )$.
 Here, the vector $\boldsymbol{\tau}_{jk}$ represents additional prior parameters,
 typically, these parameters are variances, e.g., that account for the
 degree of smoothness of $f_{jk}( \cdot )$ or the amount of correlation between observations.
 For example, using a spline representation of $f_{jk}( \cdot )$ in combination with a normal
-prior for $g_{\boldsymbol{\beta}_{jk}}( \cdot )$ the variances can be interpreted as the inverse
+prior for $d_{\boldsymbol{\beta}_{jk}}( \cdot )$ the variances can be interpreted as the inverse
 smoothing parameters in a penalized regression context. Within this very general setup
 $\boldsymbol{\alpha}_{jk} = \{\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}},
 \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}\}$ is a set of fixed
-prior specifications, e.g., further controlling the shape of $g_{\boldsymbol{\beta}_{jk}}( \cdot )$
-and $g_{\boldsymbol{\tau}_{jk}}( \cdot )$, incorporating prior beliefs about
+prior specifications, e.g., further controlling the shape of $d_{\boldsymbol{\beta}_{jk}}( \cdot )$
+and $d_{\boldsymbol{\tau}_{jk}}( \cdot )$, incorporating prior beliefs about
 $\boldsymbol{\beta}_{jk}$, or for GAM-type models $\boldsymbol{\alpha}_{jk}$ usually holds
 the so called penalty matrices, amongst others.
 
@@ -318,12 +318,12 @@ see~\citet{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}.
 \subsection{Response distribution} \label{sec:density}
 
 The main building block of regression model algorithms is the probability density function
-$g(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$, or for
+$d(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$, or for
 computational reasons its logarithm. Estimation typically requires to evaluate the log-likelihood
 function
 \begin{equation*} \label{eqn:loglik}
 \ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X}) =
-  \sum_{i = 1}^n \log \, g(y_i ; \theta_{i1} = h_1^{-1}(\eta_{i1}(\mathbf{x}_i; \boldsymbol{\beta}_1)), \ldots,
+  \sum_{i = 1}^n \log \, d(y_i ; \theta_{i1} = h_1^{-1}(\eta_{i1}(\mathbf{x}_i; \boldsymbol{\beta}_1)), \ldots,
   \theta_{iK} = h_K^{-1}(\eta_{iK}(\mathbf{x}_i; \boldsymbol{\beta}_K)))
 \end{equation*}
 a number of times, where the vector
@@ -333,18 +333,18 @@ are the respective covariate matrices with $\mathbf{x}_i$ as the $i$-th row of $
 $\boldsymbol{\theta}_k$ are vectors of length $n$.
 Assigning prior distributions to the individual model components results in the log-posterior
 \begin{equation} \label{eqn:logpost}
-\log \, p(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha}) \propto
+\log \, \pi(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha}) \propto
   \ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X}) +
   \sum_{k = 1}^K\sum_{j = 1}^{J_k} \left[ \log \,
-  \pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) \right],
+  p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) \right],
 \end{equation}
 where $\boldsymbol{\tau} = (\boldsymbol{\tau}_1^\top, \ldots, \boldsymbol{\tau}_K^\top)^\top =
 (\boldsymbol{\tau}_{11}^\top, \ldots, \boldsymbol{\tau}_{J_11}^\top, \ldots,
 \boldsymbol{\tau}_{1K}^\top, \ldots, \boldsymbol{\tau}_{J_KK}^\top)^\top$ is
-the vector of all assigned hyper-parameters used within prior functions $\pi_{jk}( \cdot )$
+the vector of all assigned hyper-parameters used within prior functions $p_{jk}( \cdot )$
 and similarly $\boldsymbol{\alpha}$ is the set of all fixed prior specifications. Note that from a
 frequentist perspective (\ref{eqn:logpost}) can be viewed as a penalized log-likelihood, e.g., if
-a normal prior is used within $\pi_{jk}( \cdot )$ for $\boldsymbol{\beta}_{jk}$
+a normal prior is used within $p_{jk}( \cdot )$ for $\boldsymbol{\beta}_{jk}$
 (see Section~\ref{sec:priorsbricks}).
 
 
@@ -394,7 +394,7 @@ and $U_{jk}( \cdot )$ is an updating function for a single model term.
 
 In a partitioned updating system functions $U_{jk}( \cdot )$ need not necessarily have the same
 structure, e.g., for posterior mode estimation some updating functions could be based on
-iteratively reweighted least squares (IWLS) and some on ordinary Newton-Raphson steps (see, e.g.,
+iteratively weighted least squares (IWLS) and some on ordinary Newton-Raphson steps (see, e.g.,
 example Section~\ref{sec:coxreg}). In MCMC simulation it is common to mix between several sampling
 methods depending on the type of model term. Hence, by using highly modular systems like
 (\ref{eqn:blockupdate}) and (\ref{eqn:blockblockupdate}) it is possible to develop flexible
@@ -405,21 +405,21 @@ estimation algorithms for numerous possibly very complex models.
 
 \subsection{Priors} \label{sec:priorsbricks}
 
-In the following we summarize commonly used specifications for priors $\pi_{jk}( \cdot )$ used for
+In the following we summarize commonly used specifications for priors $p_{jk}( \cdot )$ used for
 estimating GAM-type models.
 
 \subsubsection{Linear effects}
 
-For simple linear effects a common choice for $\pi_{jk}( \cdot )$ is to use a non-informative
-uniform prior given in (\ref{eqn:oneprior}). One of the simplest informative priors is a normal
+For simple linear effects a common choice for $p_{jk}( \cdot )$ is to use a non-informative
+flat prior given in (\ref{eqn:oneprior}). One of the simplest informative priors is a normal
 prior given by
 \begin{equation*} \label{eqn:linprior}
-\pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) \propto
+p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) \propto
   \exp \left(- \frac{1}{2}(\boldsymbol{\beta}_{jk} -
     \mathbf{m})^{\top}\mathbf {P}_{jk}(\boldsymbol{\tau}_{jk})(\boldsymbol{\beta}_{jk} -
     \mathbf{m})\right),
 \end{equation*}
-where $\boldsymbol{\tau}_{jk}$ are assumed to be fixed with $g_{\boldsymbol{\tau}_{jk}}( \cdot ) = 1$
+where $\boldsymbol{\tau}_{jk}$ are assumed to be fixed with $d_{\boldsymbol{\tau}_{jk}}( \cdot ) = 1$
 and $\boldsymbol{\alpha}_{jk} = \{\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}} = \{\mathbf{m}\}\}$
 with $\mathbf{m}$ as a prior mean for $\boldsymbol{\beta}_{jk}$. The matrix $\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})$
 is a fixed prior precision matrix, e.g., $\mathbf{P}_{jk} = diag(\boldsymbol{\tau}_{jk})$. In a lot of
@@ -429,10 +429,10 @@ precision (see, e.g., \citealp{bamlss:Fahrmeir+Kneib+Lang+Marx:2013}).
 \subsubsection{Nonlinear effects} \label{sec:smootheffects}
 
 If the nonlinear functions in (\ref{eqn:addpred}) are modeled using a basis function approach
-the usual choice of prior $\pi_{jk}( \cdot )$ is based on a multivariate normal kernel for
+the usual choice of prior $p_{jk}( \cdot )$ is based on a multivariate normal kernel for
 $\boldsymbol{\beta}_{jk}$ given by
 \begin{equation} \label{eqn:mvnormprior}
-g_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \,
+d_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \,
   \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}}) \propto
   |\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})|^{\frac{1}{2}} \exp\left(
     -\frac{1}{2}\boldsymbol{\beta}_{jk}^\top\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})\boldsymbol{\beta}_{jk}\right).
@@ -441,15 +441,15 @@ Here, the precision matrix $\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})$ is build up
 prespecified so called penalty matrices
 $\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}} = \{\mathbf{K}_{1jk}, \ldots, \mathbf{K}_{Ljk}\}$,
 e.g., for tensor product smooths the precision matrix is
-$\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk}) = \sum_{l = 1}^{L_{jk}} \frac{1}{\tau_{ljk}^2}\mathbf{K}_{ljk}$
-(see, e.g., \citealp{bamlss:Wood:2006}). Note that $\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})$ is often
-not of full rank, therefore, $g_{\boldsymbol{\beta}_{jk}}( \cdot )$ is partially improper.
+$\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk}) = \sum_{l = 1}^{L_{jk}} \frac{1}{\tau_{ljk}^2}\mathbf{K}_{ljk}$.
+Note that $\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})$ is often
+not of full rank, therefore, $d_{\boldsymbol{\beta}_{jk}}( \cdot )$ is partially improper.
 The variances $\tau_{ljk}^2$ account for the amount of smoothness (regularization) of the
 function and can be interpreted as the inverse smoothing parameters in the frequentist approach.
 A common choice for the prior for $\boldsymbol{\tau}_{jk}$ is based on inverse Gamma distributions
 for each $\boldsymbol{\tau}_{jk} = (\tau_{1jk}, \ldots, \tau_{L_{jk}jk})^\top$
 \begin{equation} \label{eqn:igprior}
-g_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}) =
+d_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}) =
   \prod_{l = 1}^{L_{jk}} \frac{b_{ljk}^{a_{ljk}}}{\Gamma(a_{ljk})} (\tau_{ljk}^2)^{-(a_{ljk} + 1)} \exp(-b_{ljk} / \tau_{ljk}^2),
 \end{equation}
 with fixed parameters $\boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}} = \{ \mathbf{a}_{jk}, \mathbf{b}_{jk} \}$.
@@ -462,7 +462,7 @@ reconsidered in some cases, e.g., it might be problematic if $\tau_{ljk}$ is clo
 results a very sensitive on the choice of $\mathbf{a}_{jk}$ and $\mathbf{b}_{jk}$. Therefore,
 \citet{bamlss:Gelman:2006} proposes to use the half-Cauchy prior
 \begin{equation*} \label{eqn:hcauchy}
-g_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}) =
+d_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}) =
   \prod_{l = 1}^{L_{jk}}\frac{2A_{ljk}}{\pi (\tau_{ljk}^2 + A_{ljk}^2)}, \quad A_{ljk} > 0,
 \end{equation*}
 with hyper-parameters $\boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}} = \{\mathbf{A}_{jk}\}$.
@@ -477,7 +477,7 @@ parameter that is directly related to the functions $f_{jk}( \cdot )$ (and thus 
 interpretable and accessible for the user) is given in~\citet{bamlss:Klein+Kneib:2016} for several
 different hyper-priors for $\tau_{ljk}^2$, such as resulting priors from half-Cauchy, half-normal
 or uniform priors for $\tau_{ljk}$ or resulting penalized complexity
-priors~\citep{bamlss:Simpson:Rue:Martins:Riebler:Sorbye:2015}.
+priors~\citep{bamlss:Simpson:Rue:Martins:Riebler:Sorbye:2015}, so called scale dependent priors.
 
 
 \subsection{Model fitting} \label{sec:bricksmodelfit}
@@ -489,20 +489,20 @@ presented in Section~\ref{sec:modelfit}.
 
 The mode of the posterior distribution is the mode of the log-posterior (\ref{eqn:logpost}) given by
 \begin{equation*}
-\text{Mod}(\boldsymbol{\beta}, \boldsymbol{\tau} | \, \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha}) =
+\text{Mode}(\boldsymbol{\beta}, \boldsymbol{\tau} | \, \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha}) =
   \underset{\boldsymbol{\beta}, \boldsymbol{\tau}}{\text{arg max }} \log \,
-  p(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})
+  \pi(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})
 \end{equation*}
-and equals the maximum likelihood estimator
+and is equivalent to  the maximum likelihood estimator
 \begin{equation*}
 \text{ML}(\boldsymbol{\beta} | \, \mathbf{y}, \mathbf{X}) =
   \underset{\boldsymbol{\beta}}{\text{arg max }} \ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X})
 \end{equation*}
-when assigning uniform priors (\ref{eqn:oneprior}) on $\boldsymbol{\beta}_{jk}$
+when assigning flat priors (\ref{eqn:oneprior}) on $\boldsymbol{\beta}_{jk}$
 for $j = 1, \ldots, J_k$, $k = 1, \ldots, K$.
 For models involving shrinkage priors, e.g., in GAM-type models given by (\ref{eqn:mvnormprior}),
 the posterior mode is equivalent to a penalized maximum likelihood estimator for fixed parameters
-$\boldsymbol{\tau}_{jk}$ and prior densities $g_{\boldsymbol{\tau}_{jk}}( \cdot ) \propto 1$.
+$\boldsymbol{\tau}_{jk}$ and prior densities $d_{\boldsymbol{\tau}_{jk}}( \cdot ) \propto 1$.
 Moreover, the structure of (\ref{eqn:logpost}) usually prohibits estimation of
 $\boldsymbol{\tau}_{jk}$ through maximization of the log-posterior and the
 estimator $\hat{\boldsymbol{\tau}}_{jk}$ is commonly derived by additionally
@@ -517,7 +517,7 @@ basis of estimation algorithms for $\boldsymbol{\tau}_{jk}$.
 Estimation of
 $\boldsymbol{\beta} = (\boldsymbol{\beta}_1^\top, \ldots, \boldsymbol{\beta}_K^\top)^\top$
 requires solving equations
-$\partial (\log \, p(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})) / \partial \boldsymbol{\beta} = \mathbf{0}$.
+$\partial (\log \, \pi(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})) / \partial \boldsymbol{\beta} = \mathbf{0}$.
 A particularly convenient updating function (\ref{eqn:updating}) for maximization of (\ref{eqn:logpost})
 is a Newton-Raphson type updating 
 \begin{equation} \label{eqn:newton}
@@ -527,17 +527,17 @@ is a Newton-Raphson type updating
 with score vector
 \begin{equation*} \label{eqn:score}
 \mathbf{s}(\boldsymbol{\beta}) = 
-  \frac{\partial \log \, p(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})}{
+  \frac{\partial \log \, \pi(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})}{
     \partial \boldsymbol{\beta}}
 = \frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}} +
     \sum_{k = 1}^K\sum_{j = 1}^{J_k} \left[ \frac{\partial \log \,
-    \pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})}{\partial \boldsymbol{\beta}} \right].
+    p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})}{\partial \boldsymbol{\beta}} \right].
 \end{equation*}
 and Hessian matrix $\mathbf{H}(\boldsymbol{\beta})$ with components
 \begin{equation*} \label{eqn:hessian}
 \mathbf{H}_{ks}(\boldsymbol{\beta}) =
 \frac{\partial \mathbf{s}(\boldsymbol{\beta}_k)}{\partial \boldsymbol{\beta}_s^\top} =
-\frac{\partial^2 \log \,  p(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})}{
+\frac{\partial^2 \log \,  \pi(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})}{
   \partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top},
 \end{equation*}
 for $k = 1, \dots, K$ and $s = 1, \dots, K$. By chain rule, the part of the score vector involving
@@ -599,7 +599,7 @@ with diagonal weight matrix $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\b
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and matrices
 \begin{equation} \label{eqn:gmatrix}
 \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}) = \frac{\partial^2 \log \,
-  \pi_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk},
+  p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk},
   \boldsymbol{\alpha}_{jk})}{\partial \boldsymbol{\beta}_{jk} \partial \boldsymbol{\beta}_{jk}^\top}.
 \end{equation}
 Here, we want to emphasize that the influence of these prior derivatives matrices is usually controlled by
@@ -624,7 +624,7 @@ $$
 and derivatives $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k$. Focusing on the $j$-th row of (\ref{eqn:blocknewton}) leads to single
 model term updating functions $U_{jk}( \cdot )$ as presented in algorithm (\ref{eqn:blockblockupdate}).
-The updates are based on an iteratively reweighted least squares scheme given by
+The updates are based on an iteratively weighted least squares scheme given by
 \begin{equation} \label{eqn:blockbackfit}
   \boldsymbol{\beta}_{jk}^{(t+1)}
   = U_{jk}(\boldsymbol{\beta}_{jk}^{(t)} | \, \cdot ) =
@@ -678,12 +678,12 @@ The mean of the posterior distribution is
 \begin{equation*} \label{eqn:postmean}
 E(\boldsymbol{\beta}, \boldsymbol{\tau} | \, \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha}) =
   \int \begin{pmatrix} \boldsymbol{\beta} \\ \boldsymbol{\tau} \end{pmatrix}
-  p(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})
+  \pi(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})
   d\begin{pmatrix} \boldsymbol{\beta} \\ \boldsymbol{\tau} \end{pmatrix}.
 \end{equation*}
 Clearly, the problem in deriving the expectation, and other quantities like the posterior median,
 relies on the computation of usually high-dimensional integrals, which can be rarely solved
-analytically and need to be approximated by numerical techniques.  
+analytically and thus need to be approximated by numerical techniques.  
 
 MCMC simulation is commonly used in such situations as it provides an extendable framework that can 
 adapt to almost any type of problem. In the following we summarize sampling techniques that
@@ -693,7 +693,7 @@ scheme presented in (\ref{eqn:blockblockupdate}), i.e., the functions $U_{jk}( \
 the next step in a Markov chain.
 
 Note that for some models there exist full conditionals that can be derived in closed form from the
-log-posterior (\ref{eqn:logpost}), however, we especially focus on situations were this is not
+log-posterior (\ref{eqn:logpost}). However, we especially focus on situations were this is not
 generally the case. MCMC samples for the regression coefficients $\boldsymbol{\beta}_{jk}$ can be
 derived by each of the following methods:
 \begin{itemize}
@@ -705,10 +705,10 @@ derived by each of the following methods:
   candidate is then accepted as the new state of the Markov chain with probability
   $$
   \alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \, \boldsymbol{\beta}_{jk}^{(t)}\right) =
-  \text{min} \left[ \frac{p(\boldsymbol{\beta}_{jk}^{\star} | \, \cdot)}{
-    p(\boldsymbol{\beta}_{jk}^{(t)} | \, \cdot)}, 1 \right]
+  \text{min} \left[ \frac{\pi(\boldsymbol{\beta}_{jk}^{\star} | \, \cdot)}{
+    \pi(\boldsymbol{\beta}_{jk}^{(t)} | \, \cdot)}, 1 \right]
   $$
-  with the log-posterior $p(\boldsymbol{\beta}_{jk} | \, \cdot)$ evaluated at the proposed and
+  with the log-posterior $\pi(\boldsymbol{\beta}_{jk} | \, \cdot)$ evaluated at the proposed and
   current value.
   Commonly, the jumping distribution is a normal distribution $\mathcal{N}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk})$ centered at the current iterate and fixed covariance matrix. Although this algorithm
   is theoretically working for any distribution, the actual sampling performance depends heavily on
@@ -727,14 +727,14 @@ derived by each of the following methods:
   $\mathcal{N}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk})$ is to use the local curvature
   information
   $$
-  \boldsymbol{\Sigma}_{jk} = -\left( \frac{\partial^2 p(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X})}{
-    \partial \boldsymbol{\beta}_{jk}\boldsymbol{\beta}_{jk}^\top} \right)^{-1}
+  \boldsymbol{\Sigma}_{jk} = -\left( \frac{\partial^2 \pi(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X})}{
+    \partial \boldsymbol{\beta}_{jk}\boldsymbol{\beta}_{jk}^\top} \right)^{-1},
   $$
-  computed at the posterior mode estimate $\hat{\boldsymbol{\beta}}_{jk}$. However, fixing
-  $\boldsymbol{\Sigma}_{jk}$ during MCMC simulation might still lead to undesired behavior of the
-  Markov chain especially when iterates move into regions with low probability mass of the
+  or its expectation, computed at the posterior mode estimate $\hat{\boldsymbol{\beta}}_{jk}$.
+  However, fixing $\boldsymbol{\Sigma}_{jk}$ during MCMC simulation might still lead to undesired
+  behavior of the Markov chain especially when iterates move into regions with low probability mass of the
   posterior distribution. A solution is to construct full conditionals
-  $p(\boldsymbol{\beta}_{jk} | \cdot)$
+  $\pi(\boldsymbol{\beta}_{jk} | \cdot)$
   which approximate the posterior at the current iterate and minimize the risk of slow traversing.
   The construction of the full conditional is based on a second order Taylor series expansion
   of the log-posterior centered at the last state and yields a multivariate normal distribution
@@ -755,15 +755,16 @@ derived by each of the following methods:
     \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right),
   \end{eqnarray*}
   which is equivalent to the updating function given in (\ref{eqn:blockblocknewton}).
-  Hence, the mean is simply one Newton or Fisher scoring iteration towards the posterior mode.
+  Hence, the mean is simply one Newton or Fisher scoring iteration towards the posterior mode at
+  the current step.
   The proposal density for $\boldsymbol{\beta}_{jk}$ then is
   $q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)}) =
     \mathcal{N}(\boldsymbol{\mu}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk}^{(t)})$ and the acceptance probability
   of the candidate is then computed by
   $$
   \alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \boldsymbol{\beta}_{jk}^{(t)}\right) =
-  \text{min} \left[ \frac{p(\boldsymbol{\beta}_{jk}^{\star} | \cdot)q(\boldsymbol{\beta}_{jk}^{(t)} | \boldsymbol{\beta}_{jk}^\star)}{
-    p(\boldsymbol{\beta}_{jk}^{(t)} | \cdot)q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)})  }, 1 \right].
+  \text{min} \left[ \frac{\pi(\boldsymbol{\beta}_{jk}^{\star} | \cdot)q(\boldsymbol{\beta}_{jk}^{(t)} | \boldsymbol{\beta}_{jk}^\star)}{
+    \pi(\boldsymbol{\beta}_{jk}^{(t)} | \cdot)q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)})  }, 1 \right].
   $$
   Again, assuming a basis function approach for functions $f_{jk}( \cdot )$ the precision matrix is
   $$
@@ -771,7 +772,8 @@ derived by each of the following methods:
     \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}),
   $$
   with weights $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
-\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$. The mean can be written as
+\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$, or the corresponding expectation.
+  The mean can be written as
   \begin{equation*}
   \boldsymbol{\mu}_{jk}^{(t)} =
     \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left(\mathbf{z}_k  -
@@ -784,7 +786,7 @@ derived by each of the following methods:
   (\ref{eqn:blockblocknewton}), or Fisher scoring when using
   $-E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
     \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$,
-  in each iteration of the MCMC sampler using iteratively reweighted least squares (IWLS)
+  in each iteration of the MCMC sampler using iteratively weighted least squares (IWLS)
   \citep{bamlss:Gamerman:1997, bamlss:Brezger+Lang:2006, bamlss:Klein+Kneib+Klasen+Lang:2015}. If
   the computation of the weights $\mathbf{W}_{kk}$ is expensive, one simple strategy is to update
   $\mathbf{W}_{kk}$ only after samples of all parameters of $\boldsymbol{\theta}_k$ are drawn.
@@ -798,18 +800,18 @@ derived by each of the following methods:
   (\ref{eqn:logpost}). Updates for the $i$-th parameter in $\boldsymbol{\beta}_{jk}$ are
   generated by:
   \begin{enumerate}
-  \item Sample $h \sim \mathcal{U}(0, p(\beta_{ijk}^{(t)} | \, \cdot))$.
+  \item Sample $h \sim \mathcal{U}(0, \pi(\beta_{ijk}^{(t)} | \, \cdot))$.
   \item Sample $\beta_{ijk}^{(t+1)} \sim \mathcal{U}(S)$ from the horizontal slice
-    $S = \{\beta_{ijk}: h < p(\beta_{ijk} | \, \cdot)\}$.
+    $S = \{\beta_{ijk}: h < \pi(\beta_{ijk} | \, \cdot)\}$.
   \end{enumerate}
 \end{itemize}
 
-The full conditional $p(\boldsymbol{\tau}_{jk} | \, \cdot)$ for smoothing variances is commonly
+The full conditional $\pi(\boldsymbol{\tau}_{jk} | \, \cdot)$ for smoothing variances is commonly
 constructed using priors for $\boldsymbol{\tau}_{jk}$ that lead to known distributions, i.e.,
 simple Gibbs sampling is possible. E.g., this is the case when using a linear basis function
 approach and only one smoothing variance $\tau_{jk}$ is assigned. Then, by using an
 inverse Gamma prior (\ref{eqn:igprior}) for $\tau_{jk}$ in combination with the normal prior
-(\ref{eqn:mvnormprior}) for $\boldsymbol{\beta}_{jk}$ the full-conditional $p(\tau_{jk} | \, \cdot)$
+(\ref{eqn:mvnormprior}) for $\boldsymbol{\beta}_{jk}$ the full-conditional $\pi(\tau_{jk} | \, \cdot)$
 is again an inverse Gamma distribution with
 $$
 \tilde{a}_{jk} = \frac{1}{2}rk(\mathbf{K}_{jk}) + a_{jk}, \qquad
@@ -830,17 +832,18 @@ burden does most of the times not exceed possible benefits.
 \subsubsection{Model fit} \label{sec:modfit}
 
 Quantile residuals defined as
-$\hat{r}_i = \Phi^{-1}(\mathbf{\mathcal{C}}(y_i | \, \hat{\boldsymbol{\theta}}_{i}))$ with the inverse 
-cumulative distribution function (CDF) of a standard normal distribution $\Phi^{-1}$ and
-$\mathbf{\mathcal{C}}(\cdot | \, \hat{\boldsymbol{\theta}}_{i})$ denoting the CDF with estimated
+$\hat{r}_i = \Phi^{-1}(\mathbf{\mathcal{F}}(y_i | \, \hat{\boldsymbol{\theta}}_{i}))$ with the inverse 
+cumulative distribution function of a standard normal distribution $\Phi^{-1}$ and
+$\mathbf{\mathcal{F}}( \cdot )$ denoting the cumulative distribution
+function (CDF) of the modeled distribution $\mathcal{D}( \cdot )$ with estimated
 parameters $\hat{\boldsymbol{\theta}}_{i} = (\hat{\theta}_{i1}, \ldots, \hat{\theta}_{iK})^\top$
 plugged in, should at least approximately be standard normally distributed if the correct model has
 been specified \citep{bamlss:Dunn:Smyth:1996}. Resulting residuals can be assessed graphically in
 terms of quantile-quantile-plots. Strong deviations from the diagonal line are then a sign for an
 inappropriate model fit. Instead of looking at residuals one can use the 
 probability integral transform (PIT) which considers
-$u_i = \mathbf{\mathcal{C}}(y_i | \, \hat{\boldsymbol{\theta}}_i)$ without applying the inverse
-standard normal cdf. If the estimated model is a good approximation to the true data generating 
+$u_i = \mathbf{\mathcal{F}}(y_i | \, \hat{\boldsymbol{\theta}}_i)$ without applying the inverse
+standard normal CDF. If the estimated model is a good approximation to the true data generating 
 process, the $u_i$ will then approximately follow a uniform distribution on $[0, 1]$.
 Graphically, histograms of the $u_i$ can be used for this purpose.
 
@@ -856,19 +859,23 @@ $\boldsymbol{\tau}_{jk}$ represents smoothing variances.
 Therefore, goodness of fit criteria like the Akaike information criterion (AIC), or the corrected AIC,
 as well as the Bayesian information criterion (BIC), amongst others, are commonly used for selecting
 the smoothing variances $\boldsymbol{\tau}_{jk}$. These criteria try to penalize overly complex models,
-i.e., are trying to prevent over-fitting. Estimating model complexity using (possibly) nonlinear
-functions, for each model component, the degrees of freedom used to estimate the function can be
-approximated by the equivalent degrees of freedom (EDF) calculated by
+i.e., are trying to prevent over-fitting. For models using a linear basis function approach,
+estimating model complexity using (possibly) nonlinear functions is based on the so called
+equivalent degrees of freedom (EDF). For each model component the EDF used to estimate the function
+are calculated by
 $$
-\mathrm{edf}_{jk}(\boldsymbol{\tau}_{jk}) = \mathrm{trace}\left[
+\mathrm{edf}_{jk}(\boldsymbol{\tau}_{jk}) := \mathrm{trace}\left[
   \mathbf{F}_{kk}(\boldsymbol{\beta}_{jk})(
   \mathbf{F}_{kk}(\boldsymbol{\beta}_{jk}) + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))^{-1} \right],
 $$
 where $\mathbf{F}_{kk}( \cdot )$ is the derivative matrix given in (\ref{eqn:hessian2}) and
 matrix $\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ is the prior
 derivative matrix as given in (\ref{eqn:gmatrix}). The
-total degrees of freedom used to estimate the model are then given by
-$\sum_{k}\sum_{j} \mathrm{edf}_{jk}(\boldsymbol{\tau}_{jk})$.
+total degrees of freedom used to fit the model are then estimated by
+$\sum_{k}\sum_{j} \mathrm{edf}_{jk}(\boldsymbol{\tau}_{jk})$. Note that the definition
+of EDF here is slightly more general and is usually defined as the
+trace of the smoother matrix (see, e.g., \citealp{bamlss:Hastie+Tibshirani:1990}) and can be applied
+even for more complex likelihood structures, e.g., in a flexible Cox-model \citep{bamlss:Hofner:2008}.
 
 Instead of global optimization of smoothing variances, a fast strategy is the stepwise selection
 during backfitting, which is proposed by \citet{bamlss:Belitz+Lang:2008} and can be adapted to
@@ -938,7 +945,7 @@ recognized that the following ``Lego bricks'' are repeatedly used within the BAM
 \item link functions $h_k( \cdot )$ and derivatives of inverse link functions,
 \item the first order derivatives $\frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_{jk}}$ and $\frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_{jk}}$,
 \item the second order derivatives $\frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_{jk} \partial \boldsymbol{\beta}_{jk}^\top}$,
-\item derivatives for log-priors, e.g., $\frac{\partial \log \, \pi_{jk}(\boldsymbol{\beta}_{jk};
+\item derivatives for log-priors, e.g., $\frac{\partial \log \, p_{jk}(\boldsymbol{\beta}_{jk};
   \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})}{\partial \boldsymbol{\beta}_{jk}}$.
 \end{itemize}
 As shown in Section~\ref{sec:bricksmodelfit}, first and second order derivatives of the log-likelihood
@@ -997,13 +1004,13 @@ of smoothing variances, similar to \citet{bamlss:Belitz+Lang:2008}, is shown.
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
 \renewcommand{\algorithmicensure}{\textbf{Set:}}
 \REQUIRE{$\mathbf{y}$, $\mathbf{X}$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}^{(t)}$, $\boldsymbol{\tau}^{(t)}$.}
-\ENSURE{Goodness of fit criteria $C$.}
+\ENSURE{Goodness of fit criterion $C$.}
 \FOR{$l = 1$ to $L_{jk}$}
   \STATE Set search interval for $\tau_{ljk}^{(t + 1)}$, e.g., $\mathcal{I} = [\tau_{ljk}^{(t)} \cdot 10^{-1}, \tau_{ljk}^{(t)} \cdot 10]$.
   \STATE Find $\tau_{ljk}^{(t + 1)} \leftarrow
     \underset{\tau_{ljk}^\star \in \mathcal{I}}{\text{arg min }} C(U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \tau_{ljk}^\star | \, \cdot))$.
 \ENDFOR
-\STATE Update $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow U_{jk}(\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)} | \, \cdot)$.
+\STATE Update $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t + 1)} | \, \cdot)$.
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
 \ENSURE{Updates $\boldsymbol{\beta}_{jk}^{(t + 1)}$, $\boldsymbol{\tau}_{jk}^{(t + 1)}$.}
 \end{algorithmic}
@@ -1160,7 +1167,7 @@ model or number of parameters.
 
 Any statistical software for regression models needs some description system for the supported
 distributions. For modular systems, the family descriptor involves a function that evaluates
-the density function $g(y ; \theta_{i} = h_1^{-1}(\eta_{1}(\mathbf{x}, \boldsymbol{\beta}_1)), \ldots,
+the density function $d(y ; \theta_{i} = h_1^{-1}(\eta_{1}(\mathbf{x}, \boldsymbol{\beta}_1)), \ldots,
   \theta_{K} = h_K^{-1}(\eta_{K}(\mathbf{x}, \boldsymbol{\beta}_K)))$ or its
 logarithm. In addition, link functions can usually be chosen by the user, i.e., these need to be
 provided within the descriptor, typically as character strings.
@@ -2149,7 +2156,7 @@ The following shows the steps to derive a multivariate normal jumping distributi
 on a second order Taylor series expansion of the log-posterior centered at the last state of
 $\boldsymbol{\beta}_{jk}$.
 \begin{eqnarray*}
-  p(\boldsymbol{\beta}_{jk}^\star | \cdot) &\propto& \exp\left[
+  \pi(\boldsymbol{\beta}_{jk}^\star | \cdot) &\propto& \exp\left[
     \log\,p\left(\boldsymbol{\beta}_{jk}^{(t)} | \cdot\right) +
     \left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)^\top \mathbf{s}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) + \right.\\
   && \left. \qquad\qquad \frac{1}{2}\left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)^\top

@@ -2229,7 +2229,6 @@ tF <- function(x, ...)
       }
       bd <- rep(1, length(y))
       eval(x$mu.initial)
-      return(eval(parse(text = "mu.link$linkfun(mu)")))
     }
   }
   if(k > 1) {
@@ -2252,7 +2251,6 @@ tF <- function(x, ...)
     if(!is.null(x$sigma.initial)) {
       initialize$sigma <- function(y, ...) {
         eval(x$sigma.initial)
-        return(eval(parse(text = "sigma.link$linkfun(sigma)")))
       }
     }
   }
@@ -2276,7 +2274,6 @@ tF <- function(x, ...)
     if(!is.null(x$nu.initial)) {
       initialize$nu <- function(y, ...) {
         eval(x$nu.initial)
-        return(eval(parse(text = "nu.link$linkfun(nu)")))
       }
     }
   }
@@ -2300,7 +2297,6 @@ tF <- function(x, ...)
     if(!is.null(x$tau.initial)) {
       initialize$tau <- function(y, ...) {
         eval(x$tau.initial)
-        return(eval(parse(text = "tau.link$linkfun(tau)")))
       }
     }
   }
