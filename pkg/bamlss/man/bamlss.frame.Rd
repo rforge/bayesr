@@ -18,7 +18,7 @@ bamlss.frame(formula, data = NULL, family = "gaussian",
   na.action = na.omit, contrasts = NULL,
   knots = NULL, specials = NULL, reference = NULL,
   model.matrix = TRUE, smooth.construct = TRUE,
-  ytype = c("matrix", "vector"), scale.x = FALSE, ...)
+  ytype = c("matrix", "vector", "integer"), scale.x = FALSE, ...)
 }
 
 \arguments{
@@ -54,7 +54,8 @@ bamlss.frame(formula, data = NULL, family = "gaussian",
     of returned \code{bamlss.frame}?.}
   \item{ytype}{For categorical responses, should the response be a vector or matrix. If
     \code{ytype == "matrix"} code{bamlss.frame()} uses function \code{\link{model.matrix}}
-    to construct the response matrix from levels.}
+    to construct the response matrix from levels. If the response is a factor
+    \code{ytype == "integer"} will create an integer response.}
   \item{scale.x}{Logical, should the model matrices of the linear parts be scaled?}
   \item{\dots}{Arguments passed to function \code{\link{smooth.construct.bamlss.frame}}.}
 }
