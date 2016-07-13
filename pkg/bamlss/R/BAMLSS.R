@@ -2,7 +2,7 @@
 bamlss.frame <- function(formula, data = NULL, family = "gaussian",
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
-  model.matrix = TRUE, smooth.construct = TRUE, ytype = c("matrix", "vector"),
+  model.matrix = TRUE, smooth.construct = TRUE, ytype = c("matrix", "vector", "integer"),
   scale.x = FALSE, ...)
 {
   ## Parse formula.
@@ -25,12 +25,12 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
     formula <- c(formula, formula2)
 
     ## Parse family object.
-    family <- bamlss.family(family)
+    family <- bamlss.family(family, ...)
 
     ## Parse formula.
     formula <- bamlss.formula(if(length(formula) < 2) formula[[1]] else formula, family, specials)
   } else {
-    family <- bamlss.family(family)
+    family <- bamlss.family(family, ...)
   }
   if(!is.null(attr(formula, "orig.formula")))
     formula <- attr(formula, "orig.formula")
@@ -48,7 +48,7 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
 
   ## Process categorical responses and assign 'y'.
   cf <- bamlss.formula.cat(formula, family, bf$model.frame, reference)
-  if(!is.null(cf)) {
+  if(!is.null(cf) & (ytype != "integer")) {
     rn <- response.name(formula, hierarchical = FALSE, na.rm = TRUE)
     hrn <- response.name(formula, hierarchical = TRUE, na.rm = TRUE)
     orig.formula <- formula
@@ -65,6 +65,10 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
       }
     } else {
       bf$y <- bf$model.frame[rn]
+      if(is.factor(bf$model.frame[[rn[1]]])) {
+        if(ytype == "integer")
+          bf$y[[1]] <- as.integer(bf$y[[1]]) - if(nlevels(bf$model.frame[[rn[1]]]) < 3) 1L else 0L
+      }
     }
     if(length(hrn) > length(rn)) {
       ynot <- hrn[!(hrn %in% rn)]
@@ -83,6 +87,9 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
       if(is.factor(bf$y[[j]]) & (ytype == "matrix")) {
         f <- as.formula(paste("~ -1 +", j))
         bf$y[j] <- model.matrix(f, data = bf$model.frame)
+      }
+      if(is.factor(bf$y[[j]]) & (ytype == "integer")) {
+        bf$y[[j]] <- as.integer(bf$y[[j]]) - if(nlevels(bf$y[[j]]) < 3) 1L else 0L
       }
     }
   }
@@ -1045,7 +1052,7 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
   env <- get_formula_envir(formula)
 
   ## Search for functions in family object.
-  family <- bamlss.family(family)
+  family <- bamlss.family(family, ...)
   if(!is.null(family$transform) & is.null(transform))
     transform <- family$transform
   if(!is.null(family$optimizer) & is.null(optimizer))
@@ -1381,7 +1388,7 @@ bamlss.model.frame <- function(formula, data, family = gaussian.bamlss(),
       env <- parent.frame()
     return(eval(fcall, env))
   } else {
-    family <- bamlss.family(family)
+    family <- bamlss.family(family, ...)
     formula <- bamlss.formula(formula, family, specials)
     env <- environment(formula)
   }
@@ -1506,7 +1513,7 @@ rm_infinite <- function(x) {
 
 
 ## Parse families and get correct family object, depending on type.
-bamlss.family <- function(family, type = "bamlss")
+bamlss.family <- function(family, type = "bamlss", ...)
 {
   family <- if(is.function(family)) family() else {
     if(is.character(family)) {
@@ -1521,6 +1528,8 @@ bamlss.family <- function(family, type = "bamlss")
       else family
     } else family
   }
+  if(inherits(family, "gamlss.family"))
+    family <- tF(family, ...)
   if(!inherits(family, "family.bamlss")) {
     if(!is.character(family)) {
       if(is.null(family$family)) stop("family is specified wrong, no family name available!")
@@ -1599,7 +1608,7 @@ as.list.Formula <- function(x)
 
 ## Special formula parser, can deal with multi parameter models
 ## and hierarchical structures.
-bamlss.formula <- function(formula, family = NULL, specials = NULL)
+bamlss.formula <- function(formula, family = NULL, specials = NULL, ...)
 {
   if(is.null(specials))
     specials <- c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx")
@@ -1612,7 +1621,7 @@ bamlss.formula <- function(formula, family = NULL, specials = NULL)
       formula <- as.list.Formula(formula)
   }
   if(!is.null(family))
-    family <- bamlss.family(family)
+    family <- bamlss.family(family, ...)
   if(!is.list(formula)) formula <- list(formula)
   if(!length(formula)) stop("formula is specified wrong!")
   

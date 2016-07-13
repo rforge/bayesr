@@ -670,7 +670,6 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   eta <- get.eta(x)
   if(is.null(start))
     eta <- init.eta(eta, y, family, nobs)
-  ##eta$bd <- rep(1, nobs)
   
   if(!is.null(weights))
     weights <- as.data.frame(weights)

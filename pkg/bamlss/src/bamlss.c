@@ -314,6 +314,16 @@ void xbin_fun(SEXP ind, SEXP weights, SEXP e, SEXP xweights, SEXP xrres, SEXP or
       xrresptr[j] = 0.0;
     }
     k = orderptr[i] - 1;
+
+    if(ISNA(weightsptr[k]))
+      weightsptr[k] = 1.490116e-08;
+    if(weightsptr[k] < 1e-10)
+      weightsptr[k] = 1e-10;
+    if(weightsptr[k] < 0.0)
+      weightsptr[k] = -1.0 * weightsptr[k];
+    if(weightsptr[k] > 1e+10)
+      weightsptr[k] = 1e+10;
+
     xweightsptr[j] += weightsptr[k];
     xrresptr[j] += weightsptr[k] * eptr[k];
   }
@@ -517,8 +527,10 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 
     if(ISNA(weightsptr[k]))
       weightsptr[k] = 1.490116e-08;
-    if(weightsptr[k] < -1e+10)
-      weightsptr[k] = -1e+10;
+    if(weightsptr[k] < 1e-10)
+      weightsptr[k] = 1e-10;
+    if(weightsptr[k] < 0.0)
+      weightsptr[k] = -1.0 * weightsptr[k];
     if(weightsptr[k] > 1e+10)
       weightsptr[k] = 1e+10;
     if(nW > 1)
@@ -750,12 +762,14 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 
     if(ISNA(weights2ptr[k]))
       weights2ptr[k] = 1.490116e-08;
-    if(weights2ptr[k] < -1e+10)
-      weights2ptr[k] = -1e+10;
+    if(weights2ptr[k] < 1e-10)
+      weights2ptr[k] = 1e-10;
+    if(weights2ptr[k] < 0.0)
+      weights2ptr[k] = -1.0 * weights2ptr[k];
     if(weights2ptr[k] > 1e+10)
       weights2ptr[k] = 1e+10;
     if(nW > 1)
-      weightsptr[k] *= Wptr[k];
+      weights2ptr[k] *= Wptr[k];
 
     if(ISNA(score2ptr[k]))
       score2ptr[k] = 1.490116e-08;
