@@ -2197,7 +2197,6 @@ tF <- function(x, ...)
   args <- list(...)
   bd <- if(is.null(args$bd)) 1 else args$bd
   args$bd <- NULL
-  k <- x$nopar
   nx <- names(x$parameters)
   score <- hess <- initialize <- list()
 
