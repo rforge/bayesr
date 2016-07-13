@@ -1109,6 +1109,8 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
 {
   args <- list(...)
 
+  alpha <- if(is.null(x$state$alpha)) 1 else x$state$alpha
+
   peta <- family$map2par(eta)
 
   if(is.null(args$hess)) {
@@ -1133,6 +1135,9 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
   ## Compute reduced residuals.
   e <- z - eta[[id]]
   xbin.fun(x$binning$sorted.index, hess, e, x$weights, x$rres, x$binning$order)
+
+  ## Old parameters.
+  g0 <- get.state(x, "b")
 
   ## Compute mean and precision.
   XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
@@ -1208,6 +1213,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
     if(is.function(x$prior))
       x$state$log.prior <- x$prior(x$state$parameters)
   }
+  x$state$alpha <- alpha
 
   return(x$state)
 }

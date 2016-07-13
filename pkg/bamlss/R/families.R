@@ -2311,9 +2311,9 @@ tF <- function(x, ...)
   }
 
   dfun <- get(paste("d", x$family[1], sep = ""))
-  pfun <- get(paste("p", x$family[1], sep = ""))
-  qfun <- get(paste("q", x$family[1], sep = ""))
-  rfun <- get(paste("r", x$family[1], sep = ""))
+  pfun <- try(get(paste("p", x$family[1], sep = "")), silent = TRUE)
+  qfun <- try(get(paste("q", x$family[1], sep = "")), silent = TRUE)
+  rfun <- try(get(paste("r", x$family[1], sep = "")), silent = TRUE)
 
   dc <- parse(text = paste('dfun(y,', paste(paste(nx, 'par$', sep = "="),
     nx, sep = '', collapse = ','), ',log=log,...)', sep = ""))
@@ -2331,9 +2331,9 @@ tF <- function(x, ...)
     "score" = score,
     "hess" = hess,
     "d" = function(y, par, log = FALSE, ...) { eval(dc) },
-    "p" = function(y, par, log = FALSE, ...) { eval(pc) },
-    "q" = function(y, par, log = FALSE, ...) { eval(qc) },
-    "r" = function(y, par, ...) { eval(rc) }
+    "p" = if(!inherits(pfun, "try-error")) function(y, par, log = FALSE, ...) { eval(pc) } else NULL,
+    "q" = if(!inherits(qfun, "try-error")) function(y, par, log = FALSE, ...) { eval(qc) } else NULL,
+    "r" = if(!inherits(rfun, "try-error")) function(y, par, ...) { eval(rc) } else NULL
   )
   names(rval$links) <- nx
   rval$valid.response <- x$y.valid

@@ -179,7 +179,9 @@ GAMart <- function(n = 500, sd = 0.1, seed = FALSE, ti = c("none", "vcm", "main"
   d$cnum <- round(scale2(d$num, 0, 100))
   d$bin <- cut(d$num, quantile(d$num, probs = c(0, 0.5, 1)), labels = c("no", "yes"), include.lowest = TRUE)
   d$cat <- cut(d$num, quantile(d$num), labels = c("none", "low", "medium", "high"), include.lowest = TRUE)
-  d <- d[, c("num", "pnum", "bnum", "cnum", "bin", "cat", "eta", "x1", "x2", "x3", "fac", "id", "lon", "lat", "err")]
+  ystar <- d$eta + rnorm(n, sd = 1)
+  d$cens <- ifelse(ystar > 0.0, ystar, 0.0)
+  d <- d[, c("num", "pnum", "bnum", "cnum", "bin", "cat", "cens", "eta", "x1", "x2", "x3", "fac", "id", "lon", "lat", "err")]
 
   d
 }
