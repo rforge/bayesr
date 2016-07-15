@@ -361,8 +361,10 @@ design.construct <- function(formula, data = NULL, knots = NULL,
               formula[[i]]$smooth.construct[[j]]$fixed <- FALSE
             if(length(formula[[i]]$smooth.construct[[j]]$S)) {
               for(sj in seq_along(formula[[i]]$smooth.construct[[j]]$S)) {
-                nc <- ncol(formula[[i]]$smooth.construct[[j]]$S[[sj]])
-                formula[[i]]$smooth.construct[[j]]$S[[sj]] <- formula[[i]]$smooth.construct[[j]]$S[[sj]] + diag(1e-05, nc, nc)
+                if(!is.list(formula[[i]]$smooth.construct[[j]]$S[[sj]])) {
+                  nc <- ncol(formula[[i]]$smooth.construct[[j]]$S[[sj]])
+                  formula[[i]]$smooth.construct[[j]]$S[[sj]] <- formula[[i]]$smooth.construct[[j]]$S[[sj]] + diag(1e-05, nc, nc)
+                }
               }
             }
             if(is.null(formula[[i]]$smooth.construct[[j]]$fit.fun))
@@ -380,8 +382,10 @@ design.construct <- function(formula, data = NULL, knots = NULL,
           formula$smooth.construct[[j]]$fixed <- FALSE
         if(length(formula[[i]]$smooth.construct[[j]]$S)) {
           for(sj in seq_along(formula$smooth.construct[[j]]$S)) {
-            nc <- ncol(formula$smooth.construct[[j]]$S[[sj]])
-            formula$smooth.construct[[j]]$S[[sj]] <- formula$smooth.construct[[j]]$S[[sj]] + diag(1e-05, nc, nc)
+            if(!is.list(formula$smooth.construct[[j]]$S[[sj]])) {
+              nc <- ncol(formula$smooth.construct[[j]]$S[[sj]])
+              formula$smooth.construct[[j]]$S[[sj]] <- formula$smooth.construct[[j]]$S[[sj]] + diag(1e-05, nc, nc)
+            }
           }
         }
         if(is.null(formula$smooth.construct[[j]]$fit.fun))
@@ -1858,10 +1862,12 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
         if(inherits(st, "try-error"))
           st <- eval(parse(text = j), enclos = env, envir = loadNamespace("mgcv"))
         vars <- c(vars, st$term)
-        if(st$by != "NA") {
-          vars <- if(grepl("~", st$by)) {
-            c(vars, all.vars.formula(as.formula(st$by, env = env)))
-          } else c(vars, st$by)
+        if(!is.null(st$by)) {
+          if(st$by != "NA") {
+            vars <- if(grepl("~", st$by)) {
+              c(vars, all.vars.formula(as.formula(st$by, env = env)))
+            } else c(vars, st$by)
+          }
         }
       }
     } else {
@@ -2880,7 +2886,7 @@ smooth.construct.rsc.smooth.spec <- function(object, data, knots) {
 
 
 ## Rational smooths constructor.
-rs <- function(formula)
+rs <- function(formula, link = "log", xt = NULL)
 {
   formula <- deparse(substitute(formula), backtick = TRUE, width.cutoff = 500)
   formula <- gsub("[[:space:]]", "", formula)
@@ -2893,6 +2899,7 @@ rs <- function(formula)
   formula <- formula(formula, lhs = 0, drop = FALSE)
   fn <- formula(formula, rhs = 1)
   fd <- formula(formula, rhs = 2)
+  fd <- update(fd, . ~ -1 + .)
   vn <- all.vars.formula(fn)
   vd <- all.vars.formula(fd)
   formula <- bamlss.formula(list(fn, fd))
@@ -2902,7 +2909,10 @@ rs <- function(formula)
     "formula" = formula,
     "terms" = c("n" = vn, "d" = vd),
     "label" = label,
-    "special" = TRUE
+    "special" = TRUE,
+    "link" = link,
+    "xt" = NULL,
+    "by" = "NA"
   )
 
   class(rval) <- "rs.smooth.spec"
@@ -2911,13 +2921,12 @@ rs <- function(formula)
 
 smooth.construct.rs.smooth.spec <- function(object, data, knots) 
 {
-  dcn <- design.construct(object$formula, data = data, knots = knots)
-  object$X <- lapply(dcn, function(x) {
+  object$design.construct <- design.construct(object$formula, data = data, knots = knots)
+  object$X <- lapply(object$design.construct, function(x) {
     X <- NULL
     if(!is.null(x$model.matrix)) {
       if(nrow(x$model.matrix) > 0) {
         X <- x$model.matrix
-        X <- X[, !grepl("(Intercept)", colnames(X)), drop = FALSE]
         if(ncol(X) < 1)
           X <- NULL
       }
@@ -2928,35 +2937,161 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     }
     return(X)
   })
-  object$S <- lapply(dcn, function(x) {
-    S <- list()
-    k <- 1
+
+  center <- if(!is.null(object$xt$center)) {
+    object$xt$center
+  } else TRUE
+
+  k <- ncol(object$X[[1]])
+  object$linkfun <- make.link2(object$link)$linkfun
+  object$linkinv <- make.link2(object$link)$linkinv
+
+  fg <- gaussian()
+  object$dev.resids <- fg$dev.resids
+  object$aic <- fg$aic
+  object$special.npar <- ncol(object$X[[1]]) + ncol(object$X[[2]])
+
+  object$fit.fun <- function(X, b, ...) {
+    fn <- drop(X[[1]] %*% b[1:k])
+    fd <- object$linkinv(drop(object$linkfun(1) + X[[2]] %*% b[-(1:k)]))
+    f <- fn / fd
+    if(center)
+      f <- f - mean(f)
+    return(f)
+  }
+
+  par_ids <- lapply(object$design.construct, function(x) {
+    ids <- list(); k <- 1
     if(!is.null(x$model.matrix)) {
       if(nrow(x$model.matrix) > 0) {
-        X <- x$model.matrix
-        X <- X[, !grepl("(Intercept)", colnames(X)), drop = FALSE]
-        if(ncol(X) < 1)
-          X <- NULL
-        if(!is.null(X)) {
-          S[[k]] <- matrix(0, ncol(X), ncol(X))
+        if(ncol(x$model.matrix) > 0) {
+          ids[[k]] <- 1:ncol(x$model.matrix)
+          names(ids[[k]]) <- paste("b", 1:ncol(x$model.matrix), sep = "")
           k <- k + 1
         }
       }
     }
     if(!is.null(x$smooth.construct)) {
       for(j in seq_along(x$smooth.construct)) {
-        S[[k]] <- x$smooth.construct[[j]]$S
+        if(k < 2)
+          ids[[k]] <- 1:(ncol(x$smooth.construct[[j]]$X) + length(x$smooth.construct[[j]]$S))
+        else
+          ids[[k]] <- (max(ids[[k - 1]]) + 1):(max(ids[[k - 1]]) + ncol(x$smooth.construct[[j]]$X) + length(x$smooth.construct[[j]]$S))
+        names(ids[[k]]) <- c(paste("b", ids[[k]][1:ncol(x$smooth.construct[[j]]$X)], sep = ""),
+          paste("tau2", ids[[k]][(ncol(x$smooth.construct[[j]]$X) + 1):(ncol(x$smooth.construct[[j]]$X) + length(x$smooth.construct[[j]]$S))], sep = ""))
         k <- k + 1
       }
     }
-    return(S)
+    ids
   })
-  object$fit.fun <- function(X, b) {
+  par_ids[[2]] <- lapply(par_ids[[2]], function(x) {
+    x + max(unlist(par_ids[[1]]))
+  })
 
+  parameters <- rep(0, length(unlist(par_ids)))
+  np <- unlist(sapply(par_ids, function(x) {
+    drop(sapply(x, names))
+  }))
+  names(parameters) <- np
+  tau2 <- get.par(parameters, "tau2")
+  tau2 <- rep(100, length(tau2))
+  parameters <- set.par(parameters, tau2, "tau2")
+
+  priors <- lapply(object$design.construct, function(x) {
+    pl <- list(); k <- 1
+    if(!is.null(x$model.matrix)) {
+      if(nrow(x$model.matrix) > 0) {
+        if(ncol(x$model.matrix) > 0) {
+          pl[[k]] <- function(parameter) { sum(dnorm(parameters, sd = 1000, log = TRUE)) }
+          k <- k + 1
+        }
+      }
+    }
+    if(!is.null(x$smooth.construct)) {
+      for(j in seq_along(x$smooth.construct)) {
+        pl[[k]] <- make.prior(x$smooth.construct[[j]])
+        k <- k + 1
+      }
+    }
+    pl
+  })
+
+  object$prior <- function(b) {
+    lp <- 0
+    for(i in seq_along(par_ids)) {
+      if(is.list(par_ids[[i]])) {
+        for(j in seq_along(par_ids[[i]])) {
+          lp <- lp + priors[[i]][[j]](b[par_ids[[i]][[j]]])
+        }
+      } else {
+        lp <- lp + priors[[i]](b[par_ids[[i]]])
+      }
+    }
+    return(lp)
   }
 
+  object$update <- function(x, family, y, eta, id, weights, criterion, ...)
+  {
+    args <- list(...)
 
-  class(object) <- c("rs.smooth", "no.mgcv")
+    peta <- family$map2par(eta)
+
+    if(is.null(args$hess)) {
+      ## Compute weights.
+      hess <- family$hess[[id]](y, peta, id = id, ...)
+    } else hess <- args$hess
+
+    if(!is.null(weights))
+      hess <- hess * weights
+
+    if(is.null(args$z)) {
+      ## Score.
+      score <- family$score[[id]](y, peta, id = id, ...)
+
+      ## Compute working observations.
+      z <- eta[[id]] + 1 / hess * score
+    } else z <- args$z
+
+    ## Compute partial predictor.
+    eta[[id]] <- eta[[id]] - fitted(x$state)
+
+    ## Compute residuals.
+    e <- z - eta[[id]]
+
+    k <- ncol(x$X[[1]])
+    n <- length(e)
+
+    loglikfun <- function(par) {
+      beta <- par[1:k]
+      gamma <- par[-(1:k)]
+      scale_eta <- x$linkfun(1) + drop(x$X[[2]] %*% gamma)
+      scale <- x$linkinv(scale_eta)
+      mu <- drop(x$X[[1]] %*% beta) / scale
+      dev <- sum(x$dev.resids(y, mu, hess))
+      x$aic(y, n, mu, hess, dev) / 2
+    }
+
+    tpar <- get.state(x, "b")
+
+    opt <- optim(par = tpar, fn = loglikfun, gr = NULL,
+      method = "BFGS", hessian = TRUE)
+
+    tpar <- set.par(tpar, opt$par, "b")
+
+    x$state$fitted.values <- x$fit.fun(x$X, tpar)
+    x$state$parameters <- tpar
+    x$state$hessian <- opt$hessian
+
+    return(x$state)
+  }
+
+  object$state <- list(
+    "parameters" = parameters,
+    "fitted.values" = rep(0, nrow(object$X[[1]])),
+    "edf" = ncol(object$X[[1]]) + ncol(object$X[[2]])
+  )
+
+  class(object) <- c("rs.smooth", "no.mgcv", "special")
   object
 }
 
@@ -2964,16 +3099,14 @@ Predict.matrix.rs.smooth <- function(object, data, knots)
 {
   data <- as.data.frame(data)
 
-  X <- list()
-  for(j in seq_along(object$smooths)) {
-    if(object$smooths[[j]]$param) {
-      X[[j]] <- data[[object$smooths[[j]]$term]]
-    } else {
-      X[[j]] <- PredictMat(object$smooths[[j]], data)
+  object$X <- lapply(object$design.construct, function(x) {
+    X <- NULL
+    if(!is.null(x$smooth.construct)) {
+      for(sj in names(x$smooth.construct))
+        X <- cbind(X, Predict.matrix(x$smooth.construct[[j]], data, knots))
     }
-  }
-  names(X) <- paste("g", 1:length(X), sep = "")
-  X <- as.matrix(as.data.frame(X))
+    return(X)
+  })
 
   X
 }

@@ -447,6 +447,8 @@ tau2interval <- function(x, lower = .Machine$double.eps^0.8, upper = 1e+10)
 ## Assign degrees of freedom.
 assign.df <- function(x, df)
 {
+  if(inherits(x, "special"))
+    return(x)
   tau2 <- get.par(x$state$parameters, "tau2")
   if(x$fixed | !length(tau2))
     return(x)
@@ -1109,8 +1111,6 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
 {
   args <- list(...)
 
-  alpha <- if(is.null(x$state$alpha)) 1 else x$state$alpha
-
   peta <- family$map2par(eta)
 
   if(is.null(args$hess)) {
@@ -1213,7 +1213,6 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
     if(is.function(x$prior))
       x$state$log.prior <- x$prior(x$state$parameters)
   }
-  x$state$alpha <- alpha
 
   return(x$state)
 }
