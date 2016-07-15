@@ -2937,6 +2937,29 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     }
     return(X)
   })
+  object$S <- lapply(object$design.construct, function(x) {
+    S <- list()
+    k <- 1
+    if(!is.null(x$model.matrix)) {
+      if(nrow(x$model.matrix) > 0) {
+        X <- x$model.matrix
+        X <- X[, !grepl("(Intercept)", colnames(X)), drop = FALSE]
+        if(ncol(X) < 1)
+          X <- NULL
+        if(!is.null(X)) {
+          S[[k]] <- matrix(0, ncol(X), ncol(X))
+          k <- k + 1
+        }
+      }
+    }
+    if(!is.null(x$smooth.construct)) {
+      for(j in seq_along(x$smooth.construct)) {
+        S[[k]] <- x$smooth.construct[[j]]$S
+        k <- k + 1
+      }
+    }
+    return(S)
+  })
 
   center <- if(!is.null(object$xt$center)) {
     object$xt$center
