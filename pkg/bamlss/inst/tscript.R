@@ -1,3 +1,24 @@
+f <- bamlss:::simfun(type = "complicated")
+n <- 500
+d <- data.frame("x" = runif(n))
+d$y <- with(d, 10 + f(x) + rnorm(n, sd = 0.1))
+X <- smooth.construct(s(x, bs = "ps"), d, NULL)$X
+Z <- -1 * y * X[, -1]
+colnames(X) <- paste("X", 1:ncol(X), sep = "")
+colnames(Z) <- paste("Z", 1:ncol(Z), sep = "")
+R <- cbind(X, Z)
+cb <- drop(solve(t(R) %*% R + 0.001 * diag(ncol(R))) %*% t(R) %*% y)
+cx <- cb[grep("X", names(cb))]
+cz <- cb[grep("Z", names(cb))]
+fit <- X %*% cx / (1 + X[, -1] %*% cz)
+
+plot(d)
+i <- order(d$x)
+lines(d$x[i], fit[i])
+
+
+lines(fit[i] ~ d$x[i])
+
 ## generate data
 set.seed(123)
 n <- 500

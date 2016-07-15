@@ -957,7 +957,7 @@ param_time_transform <- function(x, formula, data, grid, yname, timevar, take, d
   if(derivMat) {
     dX <- X
     for(j in colnames(dX)) {
-      if(!is.factor(dX[[j]])) {
+      if(!is.factor(dX[[j]]) & (grepl(timevar, j, fixed = TRUE))) {
         dX[[j]] <- dX[[j]] + eps
         ddata[[j]] <- ddata[[j]] + eps
       }
@@ -1020,7 +1020,7 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take, derivMat = FA
   if(derivMat) {
     dX <- X
     for(j in colnames(dX)) {
-      if(!is.factor(dX[[j]])) {
+      if(!is.factor(dX[[j]]) & (grepl(timevar, j, fixed = TRUE))) {
         dX[[j]] <- dX[[j]] + eps
         ddata[[j]] <- ddata[[j]] + eps
       }
@@ -1045,8 +1045,11 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take, derivMat = FA
   }
   ff <- make.fit.fun(x, type = 2)
 
+  all_zero <- all(X == 0)
+
   x$fit.fun_timegrid <- function(g) {
     if(is.null(g)) return(X)
+    if(all_zero) return(rep(0, gdim[1]))
     f <- ff(X, g, expand = FALSE)
     f <- matrix(f, nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
     f
