@@ -1045,15 +1045,20 @@ sm_time_transform <- function(x, data, grid, yname, timevar, take, derivMat = FA
   }
   ff <- make.fit.fun(x, type = 2)
 
-  all_zero <- all(X == 0)
+  x$all_zero <- all(X == 0) & all(x$X == 0)
+  x$timevar <- timevar
 
   x$fit.fun_timegrid <- function(g) {
     if(is.null(g)) return(X)
-    if(all_zero) return(rep(0, gdim[1]))
+    if(x$all_zero) return(rep(0, gdim[1]))
     f <- ff(X, g, expand = FALSE)
     f <- matrix(f, nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
     f
   }
+
+  if(x$all_zero)
+    x$fit.fun <- function(X, b) {  rep(0, nrow(X)) }
+
   x$state$fitted_timegrid <- x$fit.fun_timegrid(get.state(x, "b"))
   x$state$optimize <- FALSE
 
@@ -1075,11 +1080,11 @@ Predict.matrix.deriv.smooth <- function(object, data)
   data <- as.data.frame(data)
   X <- Predict.matrix(object, data)
   for(j in object$term) {
-    if(!is.factor(data[[j]]))
+    if(!is.factor(data[[j]]) & (grepl(x$timevar, j, fixed = TRUE)) & (x$timevar %in% c(x$term, x$by)))
       data[[j]] <- data[[j]] + eps
   }
   if(object$by != "NA") {
-    if(!is.factor(data[[object$by]]))
+    if(!is.factor(data[[object$by]]) & (x$timevar %in% c(x$term, x$by)))
       data[[object$by]] <- data[[object$by]] + eps
   }
   dX <- Predict.matrix(object, data)
