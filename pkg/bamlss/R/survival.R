@@ -1077,7 +1077,7 @@ Predict.matrix.deriv.smooth <- function(object, data)
   data <- as.data.frame(data)
   X <- Predict.matrix(object, data)
   for(j in object$term) {
-    if(!is.factor(data[[j]]) & (grepl(x$timevar, j, fixed = TRUE)) & (x$timevar %in% c(x$term, x$by)))
+    if(!is.factor(data[[j]]) & (grepl(x$timevar, j, fixed = TRUE)) & (object$timevar %in% c(object$term, object$by)))
       data[[j]] <- data[[j]] + eps
   }
   if(object$by != "NA") {
