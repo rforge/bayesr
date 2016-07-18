@@ -181,8 +181,6 @@ set.par <- function(x, replacement, what) {
   if(what %in% c("tau2", "tau", "lambda")) {
     x[grep("tau", names(x))] <- replacement
   } else {
-if(length(replacement) > length(x[!grepl("tau", names(x)) & !grepl("edf", names(x))]))
-  stop("here")
     if(what %in% "b") {
       x[!grepl("tau", names(x)) & !grepl("edf", names(x))] <- replacement
     } else x[what] <- replacement
@@ -622,9 +620,11 @@ get.hessian <- function(x)
       if(is.null(x[[i]]$smooth.construct[[j]]$state$hessian))
         x[[i]]$smooth.construct[[j]]$state$hessian <- diag(1e-07, ncol(x[[i]]$smooth.construct[[j]]$X))
       hessian[[pn]] <- as.matrix(x[[i]]$smooth.construct[[j]]$state$hessian)
-      cn <- colnames(x[[i]]$smooth.construct[[j]]$X)
-      if(is.null(cn))
-        cn <- paste("b", 1:ncol(x[[i]]$smooth.construct[[j]]$X), sep = "")
+      if(is.null(colnames(hessian[[pn]]))) {
+        cn <- colnames(x[[i]]$smooth.construct[[j]]$X)
+        if(is.null(cn))
+          cn <- paste("b", 1:ncol(x[[i]]$smooth.construct[[j]]$X), sep = "")
+      } else cn <- colnames(hessian[[pn]])
       pn <- paste(pn, cn, sep = ".")
       nh <- c(nh, pn)
     }
@@ -876,7 +876,8 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     names(IC) <- criterion
 
     rval <- list("fitted.values" = eta, "parameters" = get.all.par(x), "edf" = edf,
-      "logLik" = logLik, "logPost" = logPost, "converged" = iter < maxit)
+      "logLik" = logLik, "logPost" = logPost, "hessian" = get.hessian(x),
+      "converged" = iter < maxit)
     rval[[names(IC)]] <- IC
     rval
   }
@@ -1143,13 +1144,15 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
   XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
   if(!x$state$do.optim | x$fixed | x$fxsp) {
     if(x$fixed) {
+      x$state$hessian <- XWX
       P <- matrix_inv(XWX, index = x$sparse.setup)
     } else {
       S <- 0
       tau2 <- get.state(x, "tau2")
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * x$S[[j]]
-      P <- matrix_inv(XWX + S, index = x$sparse.setup)
+      x$state$hessian <- XWX + S
+      P <- matrix_inv(x$state$hessian, index = x$sparse.setup)
     }
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
   } else {
@@ -1178,6 +1181,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
           x$state$parameters <- par
           x$state$fitted.values <- fit
           x$state$edf <- edf
+          x$state$hessian <- XWX + S
           if(!is.null(x$prior)) {
             if(is.function(x$prior))
               x$state$log.prior <- x$prior(par)
@@ -1200,6 +1204,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * x$S[[j]]
     P <- matrix_inv(XWX + S, index = x$sparse.setup)
+    x$state$hessian <- XWX + S
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
   }
 
