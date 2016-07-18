@@ -876,7 +876,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     names(IC) <- criterion
 
     rval <- list("fitted.values" = eta, "parameters" = get.all.par(x), "edf" = edf,
-      "logLik" = logLik, "logPost" = logPost, "hessian" = get.hessian(x),
+      "logLik" = logLik, "logPost" = logPost,
       "converged" = iter < maxit)
     rval[[names(IC)]] <- IC
     rval
@@ -1144,15 +1144,13 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
   XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
   if(!x$state$do.optim | x$fixed | x$fxsp) {
     if(x$fixed) {
-      x$state$hessian <- XWX
       P <- matrix_inv(XWX, index = x$sparse.setup)
     } else {
       S <- 0
       tau2 <- get.state(x, "tau2")
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * x$S[[j]]
-      x$state$hessian <- XWX + S
-      P <- matrix_inv(x$state$hessian, index = x$sparse.setup)
+      P <- matrix_inv(XWX + S, index = x$sparse.setup)
     }
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
   } else {
@@ -1181,7 +1179,6 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
           x$state$parameters <- par
           x$state$fitted.values <- fit
           x$state$edf <- edf
-          x$state$hessian <- XWX + S
           if(!is.null(x$prior)) {
             if(is.function(x$prior))
               x$state$log.prior <- x$prior(par)
@@ -1204,7 +1201,6 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * x$S[[j]]
     P <- matrix_inv(XWX + S, index = x$sparse.setup)
-    x$state$hessian <- XWX + S
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
   }
 
@@ -1630,8 +1626,12 @@ opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
 
   for(i in names(x)) {
     for(j in seq_along(x[[i]]$smooth.construct)) {
-      if(is.null(x[[i]]$smooth.construct[[j]]$grad))
+      if(is.null(x[[i]]$smooth.construct[[j]]$grad)) {
         gradient <- FALSE
+      } else {
+        if(!all(c("score", "parameters", "full") %in% names(formals(x[[i]]$smooth.construct[[j]]$grad))))
+          gradient <- FALSE
+      }
     }
   }
 
