@@ -3077,12 +3077,32 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
       -1 * grad
     }
 
-    opt <- optim(par = get.state(x, "b"), fn = loglikfun, gr = gradfun,
-      method = "BFGS", hessian = TRUE)
+    hessfun <- function(par) {
+      scale <- x$fit.fun(x$X, par, scale = TRUE)
+      scale_eta <- x$scale_linkfun(scale)
+      eta <- x$fit.fun(x$X, par, mu = TRUE)
+      eta <- drop(eta / scale)
+      fog <- x$mu.eta(eta) / scale ## aka working weights
+      mu <- eta
+      varmu <- x$variance(mu)
+      phi <- x$dispersion((e - mu) / varmu, fog)
+ 
+      Hbeta <- sqrt(hess) * (1 / sqrt(varmu)) * fog
+      Hgamma <- - Hbeta * eta * x$scale_mu.eta(scale_eta)
+      crossprod(cbind(Hbeta * object$xmat, Hgamma * object$zmat))/phi - x$hess(par)
+    }
+
+    if(TRUE) {
+      opt <- nlminb(start = get.state(x, "b"), objective = loglikfun, gradient = gradfun,
+        hessian = hessfun, control = NULL)
+    } else {
+      opt <- optim(par = get.state(x, "b"), fn = loglikfun, gr = gradfun,
+        method = "BFGS", hessian = TRUE)
+    }
 
     x$state$parameters <- set.par(x$state$parameters, opt$par, "b")
     x$state$fitted.values <- x$fit.fun(x$X, x$state$parameters)
-    x$state$hessian <- opt$hessian
+    x$state$hessian <- hessfun(opt$par)
 
     return(x$state)
   }
