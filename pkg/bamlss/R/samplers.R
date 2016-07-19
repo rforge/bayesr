@@ -54,8 +54,10 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       attr(theta[[i]][[j]], "fitted.values") <- x[[i]][[j]]$fit.fun(x[[i]][[j]]$X, x[[i]][[j]]$state$parameters)
       attr(theta[[i]][[j]], "hess") <- x[[i]][[j]]$state$hessian
       x[[i]][[j]]$state$fitted.values <- NULL
-      x[[i]][[j]]$XW <- t(x[[i]][[j]]$X)
-      x[[i]][[j]]$XWX <- crossprod(x[[i]][[j]]$X)
+      if(!inherits(x[[i]][[j]], "special")) {
+        x[[i]][[j]]$XW <- t(x[[i]][[j]]$X)
+        x[[i]][[j]]$XWX <- crossprod(x[[i]][[j]]$X)
+      }
       x[[i]][[j]]$dmvnorm_log <- dmvnorm_log
       if(is.null(x[[i]][[j]]$fxsp))
         x[[i]][[j]]$fxsp <- FALSE
@@ -1127,21 +1129,13 @@ GMCMC_slice <- function(family, theta, id, eta, y, data, ...)
 
   ## Sample variance parameter.
   if(!data$fixed & !data$fxsp & length(data$S)) {
-    if(length(data$S) < 2) {
-      g <- get.par(theta, "b")
-      a <- data$rank / 2 + data$a
-      b <- 0.5 * crossprod(g, data$S[[1]]) %*% g + data$b
-      tau2 <- 1 / rgamma(1, a, b)
-      theta <- set.par(theta, tau2, "tau2")
-    } else {
-      ## New logLik.
-      eta[[id[1]]] <- eta[[id[1]]] + fit
-      ll <- family$loglik(y, family$map2par(eta))
-      i <- grep("tau2", names(theta))
-      for(j in i) {
-        theta <- uni.slice(theta, data, family, NULL,
-          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = ll)
-      }
+    ## New logLik.
+    eta[[id[1]]] <- eta[[id[1]]] + fit
+    ll <- family$loglik(y, family$map2par(eta))
+    i <- grep("tau2", names(theta))
+    for(j in i) {
+      theta <- uni.slice(theta, data, family, NULL,
+        NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = ll)
     }
   }
 

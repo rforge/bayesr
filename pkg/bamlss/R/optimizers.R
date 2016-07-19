@@ -299,7 +299,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
       tau2 <-  get.par(parameters, "tau2")
       grad2 <- NULL
       if(x$fixed | !length(tau2)) {
-        grad <- 0
+        grad <- rep(0, length(gamma))
       } else {
         grad <- 0; grad2 <- NULL
         for(j in seq_along(tau2)) {
@@ -327,7 +327,8 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
     x$hess <- function(score = NULL, parameters, full = FALSE) {
       tau2 <- get.par(parameters, "tau2")
       if(x$fixed | !length(tau2)) {
-        hx <- 0
+        k <- length(get.par(parameters, "b"))
+        hx <- matrix(0, k, k)
       } else {
         hx <- 0
         for(j in seq_along(tau2)) {
