@@ -252,7 +252,7 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
       eeta <- exp(eta_timegrid)
       int <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
       logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
-      x$state$paremeters[x$pid$b] <- g2
+      x$state$parameters[x$pid$b] <- g2
       logPost <- logLik + x$prior(x$state$parameters)
       return(-1 * logPost)
     }
