@@ -86,9 +86,9 @@ export(
   "colorlegend",
 
   ## JM
-  jm.bamlss,
-  jm.mode,
-  jm.mcmc,
+  "jm.bamlss",
+  "jm.mode",
+  "jm.mcmc",
 
   ## others
   "GAMart",
@@ -109,7 +109,8 @@ export(
   "continue",
   "homstart_data",
   "tx",
-  "rmf"
+  "rmf",
+  "rs"
 )
 
 S3method("plot", "bamlss")
