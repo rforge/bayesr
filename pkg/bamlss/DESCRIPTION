@@ -5,7 +5,7 @@ Title: Bayesian Additive Models for Location Scale and Shape (and Beyond)
 Authors@R: c(person(given = "Nikolaus", family = "Umlauf", role = c("aut", "cre"), email = "Nikolaus.Umlauf@uibk.ac.at"),
   person(given = "Nadja", family = "Klein", role = "aut", email = "nklein@uni-goettingen.de"),
   person(given = "Achim", family = "Zeileis", role = "aut", email = "Achim.Zeileis@R-project.org"),
-  person(given = "Meike", family = "Koehler", role = "aut", email = "Meike.Koehler@helmholtz-muenchen.de))
+  person(given = "Meike", family = "Koehler", role = "aut", email = "Meike.Koehler@helmholtz-muenchen.de"))
 Description: R infrastructures for Bayesian regression models.
 Depends: R (>= 3.2.3), colorspace, Formula, coda, mgcv, mvtnorm, Matrix, MBA
 Suggests: akima, maps, maptools, parallel, shapefiles, sp, spdep, splines, survival
