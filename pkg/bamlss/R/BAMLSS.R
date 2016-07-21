@@ -2891,7 +2891,7 @@ smooth.construct.rsc.smooth.spec <- function(object, data, knots) {
 
 
 ## Rational smooths constructor.
-rs <- function(formula, link = "log", xt = NULL)
+rs <- function(formula, link = "log", ...)
 {
   formula <- deparse(substitute(formula), backtick = TRUE, width.cutoff = 500)
   formula <- gsub("[[:space:]]", "", formula)
@@ -2904,6 +2904,9 @@ rs <- function(formula, link = "log", xt = NULL)
   fn <- formula(formula, rhs = 1)
   fd <- formula(formula, rhs = 2)
 
+  kn <- sum(unlist(attr(terms(fn, specials = c("s", "te", "t2", "ti")), "specials")))
+  kd <- sum(unlist(attr(terms(fn, specials = c("s", "te", "t2", "ti")), "specials")))
+
   fnl <- all.labels.formula(fn)
   fdl <- all.labels.formula(fd)
   fnl <- paste(fnl, collapse = "+")
@@ -2914,7 +2917,9 @@ rs <- function(formula, link = "log", xt = NULL)
   vd <- all.vars.formula(fd)
   formula <- bamlss.formula(list(fn, fd))
   names(formula) <- c("numerator", "denominator")
-  if(is.null(xt)) xt <- list()
+  xt <- list(...)
+  if(is.null(xt$df))
+    xt$df <- 5
 
   rval <- list(
     "formula" = formula,
@@ -2923,7 +2928,8 @@ rs <- function(formula, link = "log", xt = NULL)
     "special" = TRUE,
     "link" = link,
     "xt" = xt,
-    "by" = "NA"
+    "by" = "NA",
+    "nspecials" = kn + kd
   )
   rval$dim <- length(rval$term)
 
@@ -2951,7 +2957,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
   } else TRUE
 
   object$X <- bamlss.engine.setup(design.construct(object$formula, data = data, knots = knots),
-    df = object$xt$df)
+    df = rep(object$xt$df, object$nspecials))
 
   parameters <- NULL
   npar <- edf <- 0
@@ -2960,6 +2966,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     for(sj in seq_along(object$X[[j]]$smooth.construct)) {
       pn <- if(j < 2) "n" else "d"
       names(object$X[[j]]$smooth.construct[[sj]]$state$parameters) <- paste(pn, sj, names(object$X[[j]]$smooth.construct[[sj]]$state$parameters), sep = ".")
+      tpar <- object$X[[j]]$smooth.construct[[sj]]$state$parameters
       parameters <- c(parameters, object$X[[j]]$smooth.construct[[sj]]$state$parameters)
       npar <- npar + ncol(object$X[[j]]$smooth.construct[[sj]]$X)
       edf <- edf + object$X[[j]]$smooth.construct[[sj]]$state$edf
@@ -3031,77 +3038,129 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
 
   object$update <- function(x, family, y, eta, id, weights, criterion, ...)
   {
-    args <- list(...)
-
-    peta <- family$map2par(eta)
-
-    if(is.null(args$hess)) {
-      ## Compute weights.
-      hess <- family$hess[[id]](y, peta, id = id, ...)
-    } else hess <- args$hess
-
-    if(!is.null(weights))
-      hess <- hess * weights
-
-    if(is.null(args$z)) {
-      ## Score.
-      score <- family$score[[id]](y, peta, id = id, ...)
-
-      ## Compute working observations.
-      z <- eta[[id]] + 1 / hess * score
-    } else z <- args$z
-
-    ## Compute partial predictor.
     eta[[id]] <- eta[[id]] - fitted(x$state)
-    e <- drop(z - eta[[id]])
-    n <- length(e)
 
-    theta <- x$state$parameters
+    par0 <- x$state$parameters
 
-    loglikfun <- function(par) {
-      scale_eta <- x$scale_linkfun(1) + x$fit.fun(x$X, par, scale = TRUE)
-      scale <- x$scale_linkinv(scale_eta)
-      scale[scale == Inf] <- 1e+10
-      eta <- x$fit.fun(x$X, par, mu = TRUE) / scale
-      mu <- x$linkinv(eta)
-      dev <- sum(x$dev.resids(e, mu, rep(1, n)))
-      theta <- set.par(theta, par, "b")
-      x$aic(e, n, mu, rep(1, n), dev)/2 - 1 - x$prior(theta)
+    objfun <- function(b) {
+      b <- set.par(par0, b, "b")
+      eta[[id]] <- eta[[id]] + x$fit.fun(x$X, b)
+      ll <- family$loglik(y, family$map2par(eta))
+      -1 * (ll + x$prior(b))
     }
 
-    gradfun <- function(par) {
-      scale_eta <- x$scale_linkfun(1) + x$fit.fun(x$X, par, scale = TRUE)
-      scale <- x$scale_linkinv(scale_eta)
-      scale[scale == Inf] <- 1e+10
-      eta <- x$fit.fun(x$X, par, mu = TRUE) / scale
-      fog <- x$mu.eta(eta) / scale ## aka working weights
-      mu <- x$linkinv(eta)
-      varmu <- x$variance(mu)
-      phi <- x$dispersion((e - mu) / varmu, fog)
-      gbeta <- sqrt(1) * ((e - mu) / varmu) * fog
-      ggamma <- - gbeta * eta * x$scale_mu.eta(scale_eta)
-      theta <- set.par(theta, par, "b")
-      -colSums(cbind(gbeta * x$xmat, ggamma * x$zmat)/phi) + x$grad(theta)
+    gradfun <- function(b) {
+      b1 <- set.par(par0, b, "b")
+
+      eta_mu <- x$fit.fun(x$X, b1, mu = TRUE)
+      eta_scale <- x$scale_linkfun(1) + x$fit.fun(x$X, b1, scale = TRUE)
+      scale <- x$scale_linkinv(eta_scale)
+
+      fit <- eta_mu / scale
+      fit <- fit - mean(fit)
+
+      eta[[id]] <- eta[[id]] + fit
+      peta <- family$map2par(eta)
+      score <- drop(family$score[[id]](y, peta))
+
+      w_mu <- 1 / scale
+      w_scale <- eta_mu * (-1 / (scale^2)) * x$scale_mu.eta(eta_scale)
+
+      grad <- c(t(x$xmat) %*% (score * w_mu), t(x$zmat) %*% (score * w_scale)) + x$grad(b1)
+
+      -grad
     }
 
-    hessfun <- function(par, inverse = FALSE) {
-      scale_eta <- x$scale_linkfun(1) + x$fit.fun(x$X, par, scale = TRUE)
-      scale <- x$scale_linkinv(scale_eta)
-      scale[scale == Inf] <- 1e+10
-      eta <- x$fit.fun(x$X, par, mu = TRUE) / scale
-      fog <- x$mu.eta(eta) / scale
-      mu <- x$linkinv(eta)
-      varmu <- x$variance(mu)   
-      phi <- x$dispersion((e - mu) / varmu, fog)
-      Hbeta <- sqrt(1) * (1 / sqrt(varmu)) * fog
-      Hgamma <- - Hbeta * eta * x$scale_mu.eta(scale_eta)
-      theta <- set.par(theta, par, "b")
-      if(!inverse) {
-        crossprod(cbind(Hbeta * x$xmat, Hgamma * x$zmat))/phi + x$hess(theta)
-      } else {  ## better than: solve(crossprod(...))
-        chol2inv(qr.R(qr(cbind(Hbeta * x$xmat, Hgamma * x$zmat))) + diag(1e-20, length(par))) * phi
-      }
+    hessfun <- function(b) {
+      b1 <- set.par(par0, b, "b")
+
+      eta_mu <- x$fit.fun(x$X, b1, mu = TRUE)
+      eta_scale <- x$scale_linkfun(1) + x$fit.fun(x$X, b1, scale = TRUE)
+      scale <- x$scale_linkinv(eta_scale)
+
+      fit <- eta_mu / scale
+      fit <- fit - mean(fit)
+
+      eta[[id]] <- eta[[id]] + fit
+      peta <- family$map2par(eta)
+      hess <- drop(family$hess[[id]](y, peta))
+
+      w_mu <- 1 / scale
+      w_scale <- eta_mu * (-1 / (scale^2)) * x$scale_mu.eta(eta_scale)
+
+      H <- list(t(x$xmat * (w_mu^2 * hess)) %*% x$xmat,
+        t(x$zmat * (w_scale^2 * hess)) %*% x$zmat)
+      H <- as.matrix(do.call("bdiag", H)) + x$hess(b1)
+
+      H
     }
+
+    b <- nlminb(start = get.state(x, "b"), objective = objfun, gradient = gradfun, hessian = hessfun)$par
+##   b <- optim(get.par(par0, "b"), fn = objfun, gr = gradfun, method = "BFGS")$par
+
+
+#    eta_mu <- x$fit.fun(x$X, b, mu = TRUE)
+#    eta_scale <- x$scale_linkfun(1) + x$fit.fun(x$X, b, scale = TRUE)
+#    scale <- x$scale_linkinv(eta_scale)
+
+#    w_mu <- 1 / scale
+#    w_scale <- eta_mu * (-1 / (scale^2)) * x$scale_mu.eta(eta_scale)
+
+#    X <- cbind(x$xmat * w_mu, x$zmat * w_scale)
+
+#    b <- matrix_inv(t(X * hess) %*% X) %*% (t(X) * hess) %*% e
+#print(b)
+
+#    b <- c(b_mu, b_scale)
+
+#    n <- length(e)
+
+#    theta <- x$state$parameters
+
+#    loglikfun <- function(par) {
+#      scale_eta <- x$scale_linkfun(1) + x$fit.fun(x$X, par, scale = TRUE)
+#      scale <- x$scale_linkinv(scale_eta)
+#      scale[scale == Inf] <- 1e+10
+#      eta <- x$fit.fun(x$X, par, mu = TRUE) / scale
+#      mu <- x$linkinv(eta)
+#      dev <- sum(x$dev.resids(e, mu, rep(1, n)))
+#      theta <- set.par(theta, par, "b")
+#      x$aic(e, n, mu, rep(1, n), dev)/2 - 1 - x$prior(theta)
+#    }
+
+#    gradfun <- function(par) {
+#      scale_eta <- x$scale_linkfun(1) + x$fit.fun(x$X, par, scale = TRUE)
+#      scale <- x$scale_linkinv(scale_eta)
+#      scale[scale == Inf] <- 1e+10
+#      eta <- x$fit.fun(x$X, par, mu = TRUE) / scale
+#      fog <- x$mu.eta(eta) / scale ## aka working weights
+#      mu <- x$linkinv(eta)
+#      varmu <- x$variance(mu)
+#      phi <- x$dispersion((e - mu) / varmu, fog)
+#      gbeta <- sqrt(1) * ((e - mu) / varmu) * fog
+#      ggamma <- - gbeta * eta * x$scale_mu.eta(scale_eta)
+#      theta <- set.par(theta, par, "b")
+#      -colSums(cbind(gbeta * x$xmat, ggamma * x$zmat)/phi) + x$grad(theta)
+#    }
+
+#    hessfun <- function(par, inverse = FALSE) {
+#      scale_eta <- x$scale_linkfun(1) + x$fit.fun(x$X, par, scale = TRUE)
+#      scale <- x$scale_linkinv(scale_eta)
+#      scale[scale == Inf] <- 1e+10
+#      eta <- x$fit.fun(x$X, par, mu = TRUE) / scale
+#      fog <- x$mu.eta(eta) / scale
+#      mu <- x$linkinv(eta)
+#      varmu <- x$variance(mu)   
+#      phi <- x$dispersion((e - mu) / varmu, fog)
+#      Hbeta <- sqrt(1) * (1 / sqrt(varmu)) * fog
+#      Hgamma <- - Hbeta * eta * x$scale_mu.eta(scale_eta)
+#      theta <- set.par(theta, par, "b")
+#      if(!inverse) {
+#        crossprod(cbind(Hbeta * x$xmat, Hgamma * x$zmat))/phi + x$hess(theta)
+#      } else {  ## better than: solve(crossprod(...))
+#        chol2inv(qr.R(qr(cbind(Hbeta * x$xmat, Hgamma * x$zmat))) + diag(1e-20, length(par))) * phi
+#      }
+#    }
 
 #    g0 <- get.state(x, "b")
 #    Sigma <- hessfun(g0, inverse = TRUE)
@@ -3118,12 +3177,16 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
 #    g1 <- g0 - nu * grad %*% Sigma
 #    opt <- optim(g0, fn = loglikfun, gr = gradfun, method = "BFGS")
 
-    b <- nlminb(start = get.state(x, "b"), objective = loglikfun, gradient = gradfun, hessian = hessfun)$par  
+#    b <- nlminb(start = get.state(x, "b"), objective = loglikfun, gradient = gradfun, hessian = hessfun)$par
+
     x$state$parameters <- set.par(x$state$parameters, b, "b")
     x$state$fitted.values <- x$fit.fun(x$X, x$state$parameters)
 
     return(x$state)
   }
+
+  #object$grad <- NULL
+  #object$update <- bfit_optim
 
   object$state <- list(
     "parameters" = parameters,
