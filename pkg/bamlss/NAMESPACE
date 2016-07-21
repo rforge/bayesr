@@ -85,6 +85,11 @@ export(
   "sliceplot",
   "colorlegend",
 
+  ## JM
+  jm.bamlss,
+  jm.mode,
+  jm.mcmc,
+
   ## others
   "GAMart",
   "Surv2",
