@@ -2891,7 +2891,7 @@ smooth.construct.rsc.smooth.spec <- function(object, data, knots) {
 
 
 ## Rational smooths constructor.
-rs <- function(formula, link = "identity", ...)
+rs <- function(formula, link = "log", ...)
 {
   formula <- deparse(substitute(formula), backtick = TRUE, width.cutoff = 500)
   formula <- gsub("[[:space:]]", "", formula)
@@ -3017,11 +3017,13 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
   }
 
   object$fit.fun <- function(X, b, ..., nocenter = FALSE, mu = FALSE, scale = FALSE) {
+    if(!is.null(names(b)))
+      b <- get.par(b, "b")
     fn <- fd <- 0
+    k1 <- 1
     for(sj in seq_along(X[[1]]$smooth.construct)) {
-      id <- paste("n", sj, sep = "")
-      tb <- get.par(b[grep(id, names(b), fixed = TRUE)], "b")
-      fn <- fn + X[[1]]$smooth.construct[[sj]]$X %*% tb
+      k2 <- ncol(X[[1]]$smooth.construct[[sj]]$X)
+      fn <- fn + X[[1]]$smooth.construct[[sj]]$X %*% b[k1:k2]
     }
     if(mu) return(drop(fn))
     for(sj in seq_along(X[[2]]$smooth.construct)) {
@@ -3060,7 +3062,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
       w_mu <- 1 / scale
       w_scale <- eta_mu * (-1 / (scale^2)) * x$scale_mu.eta(eta_scale)
 
-      grad <- c(t(x$xmat) %*% (score * w_mu), t(x$zmat) %*% (score * w_scale))
+      grad <- c(colSums(x$xmat * score * w_mu), colSums(x$zmat * score * w_scale))
 
       grad
     }
@@ -3187,7 +3189,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
       w_mu <- 1 / scale
       w_scale <- eta_mu * (-1 / (scale^2)) * data$scale_mu.eta(eta_scale)
 
-      grad <- c(t(data$xmat) %*% (score * w_mu), t(data$zmat) %*% (score * w_scale))
+      grad <- c(colSums(data$xmat * score * w_mu), colSums(data$zmat * score * w_scale))
 
       grad
     }
@@ -3225,6 +3227,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
 
     ## Sample new parameters.
     g <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma))
+    names(g) <- names(g0)
     theta2 <- set.par(theta, g, "b")
 
     ## Compute log priors.
@@ -3234,8 +3237,8 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     ## Map predictor to parameter scale.
     fit <- data$fit.fun(data$X, theta2)
     eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values") + fit
-    peta <- family$map2par(eta)
 
+    peta <- family$map2par(eta)
     score2 <- process.derivs(family$score[[id[1]]](y, peta, id = id[1]))
     hess2 <- process.derivs(family$hess[[id[1]]](y, peta, id = id[1]))
 
@@ -3260,15 +3263,57 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     ## Compute acceptance probablity.
     alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
 
-cat("\n")
-print(qbeta)
-print(qbetaprop)
-cat("\n")
-
     ## New theta.
     attr(theta2, "fitted.values") <- fit
 
     return(list("parameters" = theta2, "alpha" = alpha))
+  }
+
+  object$propose <- function(family, theta, id, eta, y, data, weights = NULL, ...)
+  {
+    theta <- theta[[id[1]]][[id[2]]]
+
+    if(is.null(attr(theta, "fitted.values")))
+      attr(theta, "fitted.values") <- data$fit.fun(data$X, theta)
+
+    peta <- family$map2par(eta)
+    pibeta <- family$loglik(y, peta)
+    p1 <- data$prior(theta)
+ 
+    ## Old position.
+    g0 <- get.par(theta, "b")
+
+    ## Sample new parameters.
+    g <- drop(g0 + rnorm(length(g0), mean = 0, sd = 0.01))
+    names(g) <- names(g0)
+    theta <- set.par(theta, g, "b")
+
+    ## Compute log priors.
+    p2 <- data$prior(theta)
+
+    ## Map predictor to parameter scale.
+    fit <- data$fit.fun(data$X, theta)
+    eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values") + fit
+
+    peta <- family$map2par(eta)
+    pibetaprop <- family$loglik(y, peta)
+
+    ## Sample variance parameter.
+    i <- grep("tau2", names(theta))
+    if(length(i)) {
+      for(j in i) {
+        theta <- uni.slice(theta, data, NULL, NULL,
+          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = pibetaprop)
+      }
+    }
+
+    ## Compute acceptance probablity.
+    alpha <- drop((pibetaprop + p2) - (pibeta + p1))
+
+    ## New theta.
+    attr(theta, "fitted.values") <- fit
+
+    return(list("parameters" = theta, "alpha" = alpha))
   }
 
   object$PredictMat <- function(object, data) {
