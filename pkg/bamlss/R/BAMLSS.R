@@ -3022,14 +3022,15 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     fn <- fd <- 0
     k1 <- 1
     for(sj in seq_along(X[[1]]$smooth.construct)) {
-      k2 <- ncol(X[[1]]$smooth.construct[[sj]]$X)
+      k2 <- k1 + ncol(X[[1]]$smooth.construct[[sj]]$X) - 1
       fn <- fn + X[[1]]$smooth.construct[[sj]]$X %*% b[k1:k2]
+      k1 <- k2 + 1
     }
     if(mu) return(drop(fn))
     for(sj in seq_along(X[[2]]$smooth.construct)) {
-      id <- paste("d", sj, sep = "")
-      tb <- get.par(b[grep(id, names(b), fixed = TRUE)], "b")
-      fd <- fd + X[[2]]$smooth.construct[[sj]]$X %*% tb
+      k2 <- k1 + ncol(X[[2]]$smooth.construct[[sj]]$X) - 1
+      fd <- fd + X[[2]]$smooth.construct[[sj]]$X %*% b[k1:k2]
+      k1 <- k2 + 1
     }
     if(scale) return(drop(fd))
     fd <- object$scale_linkinv(drop(object$scale_linkfun(1) + fd))
@@ -3269,22 +3270,44 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     return(list("parameters" = theta2, "alpha" = alpha))
   }
 
-  object$propose <- function(family, theta, id, eta, y, data, weights = NULL, ...)
+  object$propose99 <- function(family, theta, id, eta, y, data, weights = NULL, ...)
   {
+    args <- list(...)
+
     theta <- theta[[id[1]]][[id[2]]]
+
+    if(is.null(attr(theta, "hess"))) {
+      hessfun <- function(b, hess) {
+        eta_mu <- data$fit.fun(data$X, b, mu = TRUE)
+        eta_scale <- data$scale_linkfun(1) + data$fit.fun(data$X, b, scale = TRUE)
+        scale <- data$scale_linkinv(eta_scale)
+
+        w_mu <- 1 / scale
+        w_scale <- eta_mu * (-1 / (scale^2)) * data$scale_mu.eta(eta_scale)
+
+        Hd <- crossprod(data$xmat * (w_mu^2 * hess), data$xmat)
+        Hn <- crossprod(data$zmat * (w_scale^2 * hess), data$zmat)
+
+        as.matrix(do.call("bdiag", list(Hd, Hn)))
+      }
+
+      hess <- process.derivs(family$hess[[id[1]]](y, family$map2par(eta), id = id[1]))
+      hess <- matrix_inv(hessfun(theta, hess))
+      attr(theta, "hess") <- sqrt(diag(hess))
+    }
 
     if(is.null(attr(theta, "fitted.values")))
       attr(theta, "fitted.values") <- data$fit.fun(data$X, theta)
-
-    peta <- family$map2par(eta)
-    pibeta <- family$loglik(y, peta)
-    p1 <- data$prior(theta)
  
     ## Old position.
     g0 <- get.par(theta, "b")
 
+    peta <- family$map2par(eta)
+    pibeta <- family$loglik(y, peta)
+    p1 <- data$prior(theta)
+
     ## Sample new parameters.
-    g <- drop(g0 + rnorm(length(g0), mean = 0, sd = 0.01))
+    g <- drop(g0 + rnorm(length(g0), mean = 0, sd = attr(theta, "hess")))
     names(g) <- names(g0)
     theta <- set.par(theta, g, "b")
 
@@ -3315,6 +3338,8 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
 
     return(list("parameters" = theta, "alpha" = alpha))
   }
+
+  object$propose99 <- GMCMC_slice
 
   object$PredictMat <- function(object, data) {
     Predict.matrix.rs.smooth(object, data)

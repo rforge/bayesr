@@ -1119,7 +1119,8 @@ GMCMC_slice <- function(family, theta, id, eta, y, data, ...)
   attr(theta, "fitted.values") <- NULL
 
   ## Sample coefficients.
-  for(j in seq_along(get.par(theta, "b"))) {
+  i <- grep("b", names(theta))
+  for(j in i) {
     theta <- uni.slice(theta, data, family, y,
       eta, id[1], j, logPost = gmcmc_logPost)
   }
