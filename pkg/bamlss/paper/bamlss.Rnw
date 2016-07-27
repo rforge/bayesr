@@ -401,7 +401,7 @@ methods depending on the type of model term. Hence, by using highly modular syst
 estimation algorithms for numerous possibly very complex models.
 
 
-\section{Lego bricks} \label{sec:algorithms}
+\section{Lego bricks} \label{sec:legobricks}
 
 \subsection{Priors} \label{sec:priorsbricks}
 
@@ -1045,31 +1045,44 @@ after $\boldsymbol{\beta}_{jk}$. In Algorithm~\ref{fig:mcmc} the general samplin
 
 In summary, building algorithms for BAMLSS is practically based on combining updating functions
 which are itself based on repeated ``Lego bricks''. Hence, once the infrastructure is in place, it
-is relatively easy to implement algorithms for a variety of models. In Table~\ref{tab:bricks}
-we give examples of the contents of bricks for a couple of models.
-\begin{sidewaystable}
-\centering
-\begin{tabular}{llllll}
-\hline
-Name & $\ell(\boldsymbol{\beta}; \mathbf{y}_i, \mathbf{x}_i)$ &
-  $\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) / \partial \boldsymbol{\beta}_{jk}$ &
-  $\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) / \partial \boldsymbol{\beta}_{jk}\partial \boldsymbol{\beta}_{jk}^\top$ &
-  $\mathbf{u}_k$ & $\mathbf{W}_{kk}$ \\ \hline
-Beta \\
-Binomial \\
-Censored normal \\
-Cox-model & $\delta\eta_{\gamma} - \int_0^{t} \exp( \eta_{\lambda}(u)du )$ \\
-Gaussian & $-\frac{1}{2}\log(2\pi) - \eta_{\sigma} - \frac{(y - \eta_{\mu})^2}{2\exp(\eta_{\sigma})^2}$ \\
-Gamma \\
-Multinomial \\
-Multivariate normal \\
-Poisson \\ \hline
-\end{tabular}
-\caption{\label{tab:bricks} Examples of ``Lego bricks'' for building BAMLSS and beyond.}
-\end{sidewaystable}
+is relatively easy to implement algorithms for a variety of models.
 
 
 \section{Computational tools and strategies for implementation} \label{sec:comptools}
+
+Today, there exist a couple of implementations supporting distributional regression models. The
+\proglang{R} packages \pkg{gamlss} and \pkg{VGAM} are probably the best known for flexible modeling
+in an empirical Bayes setting. Besides, general purpose Bayesian modeling software like \pkg{WinBUGS},
+\pkg{JAGS} and \pkg{Stan} play a prominent role in the applied statistician's toolbox. Whereas the
+former emphasize on GAM-type additive models, the latter in principle allow for any type
+of models. This huge amount of flexibility is of course not without its drawbacks, e.g., estimation
+time is usually quite long especially when using large data sets. One of the most efficient
+software packages for Bayesian GAM-type distributional regression models, but with less flexibility on the
+model term side, is the standalone software \pkg{BayesX} with corresponding \proglang{R} interface
+\pkg{R2BayesX}. More recently, the \proglang{R} package \pkg{mgcv} started to support general
+smooth models \citep{bamlss:Wood+Pya+Saefken:2016} and additionally implements an interface to
+\pkg{JAGS} for estimating GAMs \citep{bamlss:Wood:2016b}.
+
+While the support for implementing new distributions is existing for all of the above software
+packages, the possibilities for implementing new model term types is more limited. The \pkg{mgcv}
+package provides very generic smooth term constructor methods for creating model terms based on
+a basis function approach. Package \pkg{gamlss} is slightly more flexible since the user can
+implement not only his own smooth terms but also smooth fitting updating functions. On the other
+hand, using general purpose Bayesian modeling software the user can in principle incorporate all
+kinds of different model terms, however, the implementation is usually a bit tedious.
+
+Whereas model term flexibility is a major focus, there is less attention on the algorithmic side.
+In contrast, this paper aims to contribute to algorithmic flexibility by presenting iterative
+estimation algorithms with exchangeable updating functions. Moreover, the structures exploited in
+the last three sections suggest a unified modeling architecture that is useful for building
+algorithms and writing interfaces to existing implementations.
+
+In order to unify the multitude of possibilities, a general software system for BAMLSS should
+address the following:
+\begin{enumerate}
+\item 
+\end{enumerate}
+
 
 \subsection{Symbolic descriptions} \label{sec:symdesc}
 
@@ -1078,7 +1091,7 @@ implemented for various computer programs. The statistical environment \proglang
 a syntax (see also \citealp{bamlss:Chambers+Hastie:1992}), which is familiar to almost any common
 \proglang{R} user today. Without such specifications, that in the end translate model formulae into
 model frames, the estimation of regression models is very circumstantial, especially in the case of
-structured additive predictors (\ref{eqn:addpred}). Therefore, the \proglang{R} model formula
+additive predictors (\ref{eqn:addpred}). Therefore, the \proglang{R} model formula
 language is also extensible. The recommended package \pkg{mgcv}~\citep{bamlss:Wood:2016} for
 estimating GAMs additionally provides the generic descriptor \code{s()} for smooth terms, amongst
 others. However, to conveniently specify the models presented in Section~\ref{sec:model}, a
@@ -1172,7 +1185,7 @@ the density function $d(y ; \theta_{i} = h_1^{-1}(\eta_{1}(\mathbf{x}, \boldsymb
 logarithm. In addition, link functions can usually be chosen by the user, i.e., these need to be
 provided within the descriptor, typically as character strings.
 
-As already noted in Section~\ref{sec:algorithms}, e.g., in the case of IWLS backfitting and derivative
+As already noted in Section~\ref{sec:legobricks}, e.g., in the case of IWLS backfitting and derivative
 based MCMC simulation, implementing a new distribution most of the times only requires to compute
 derivatives of the log-likelihood w.r.t.\ to parameters $\boldsymbol{\theta}_k$. Hence, a modular
 family description system provides functions for first and second order derivatives which take
@@ -1493,7 +1506,7 @@ requirements to parse the model frame with function \fct{bamlss.frame}:
 Moreover, for most optimizer and sampling functions at least the density function should be provided.
 For example, a new family for the normal distribution holding the first and
 second order derivative functions of the log-likelihood w.r.t.\ the parameters
-(see Section~\ref{sec:algorithms}~and~\ref{sec:families}) to be used for the IWLS updating
+(see Section~\ref{sec:legobricks}~and~\ref{sec:families}) to be used for the IWLS updating
 and sampling scheme within function \fct{bfit} and \fct{GMCMC} could be created with
 <<>>=
 normal.bamlss <- function(...) {
@@ -1955,7 +1968,7 @@ $$
 $$
 \citep{bamlss:Hennerfeind+Brezger+Fahrmeir:2006}
 
-As a result, applying the generic algorithm presented in Section~\ref{sec:algorithms} to this type
+As a result, applying the generic algorithm presented in Section~\ref{sec:legobricks} to this type
 of problem two specific difficulties need to be considered. First, the updating functions for
 the time-varying predictor $\eta_{\lambda}(t)$ are different from the time-constant updating
 functions for $\eta_{\gamma}$. Secondly, a specific hurdle of the continuous time Cox-model is the
