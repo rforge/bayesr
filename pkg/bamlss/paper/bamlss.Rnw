@@ -1055,7 +1055,7 @@ Today, there exist a couple of implementations supporting distributional regress
 in an empirical Bayes setting. Besides, general purpose Bayesian modeling software like \pkg{WinBUGS},
 \pkg{JAGS} and \pkg{Stan} play a prominent role in the applied statistician's toolbox. Whereas the
 former emphasize on GAM-type additive models, the latter in principle allow for any type
-of models. This huge amount of flexibility is of course not without its drawbacks, e.g., estimation
+of model. This huge amount of flexibility is of course not without its drawbacks, e.g., estimation
 time is usually quite long especially when using large data sets. One of the most efficient
 software packages for Bayesian GAM-type distributional regression models, but with less flexibility on the
 model term side, is the standalone software \pkg{BayesX} with corresponding \proglang{R} interface
@@ -1072,15 +1072,19 @@ hand, using general purpose Bayesian modeling software the user can in principle
 kinds of different model terms, however, the implementation is usually a bit tedious.
 
 Whereas model term flexibility is a major focus, there is less attention on the algorithmic side.
-In contrast, this paper aims to contribute to algorithmic flexibility by presenting iterative
-estimation algorithms with exchangeable updating functions. Moreover, the structures exploited in
-the last three sections suggest a unified modeling architecture that is useful for building
-algorithms and writing interfaces to existing implementations.
+Usually model fitting algorithms can be chosen only from a small predefined list. In contrast, this
+paper aims to contribute to algorithmic flexibility by presenting iterative estimation algorithms
+with exchangeable updating functions. Moreover, the structures exploited in the last three sections
+suggest a unified modeling architecture that is useful for building algorithms and writing
+interfaces to existing implementations.
 
 In order to unify the multitude of possibilities, a general software system for BAMLSS should
 address the following:
 \begin{enumerate}
-\item 
+\item Unified model description.
+\item A generic method for setting up model terms and corresponding prior structures.
+\item Support of exchangeable updating functions or even model fitting engines.
+\item Standard post modeling extractor functions.
 \end{enumerate}
 
 
@@ -1174,84 +1178,6 @@ category 1 and \code{y2} in category 2, respectively.
 
 In summary, the described model definition syntax does not restrict to any type of regression
 model or number of parameters.
-
-
-\subsection{Distribution families} \label{sec:families}
-
-Any statistical software for regression models needs some description system for the supported
-distributions. For modular systems, the family descriptor involves a function that evaluates
-the density function $d(y ; \theta_{i} = h_1^{-1}(\eta_{1}(\mathbf{x}, \boldsymbol{\beta}_1)), \ldots,
-  \theta_{K} = h_K^{-1}(\eta_{K}(\mathbf{x}, \boldsymbol{\beta}_K)))$ or its
-logarithm. In addition, link functions can usually be chosen by the user, i.e., these need to be
-provided within the descriptor, typically as character strings.
-
-As already noted in Section~\ref{sec:legobricks}, e.g., in the case of IWLS backfitting and derivative
-based MCMC simulation, implementing a new distribution most of the times only requires to compute
-derivatives of the log-likelihood w.r.t.\ to parameters $\boldsymbol{\theta}_k$. Hence, a modular
-family description system provides functions for first and second order derivatives which take
-$\boldsymbol{\theta}_k$ as an argument.
-
-For post-modeling analysis, a complete family descriptor also involves functions that compute the
-distribution function as well as the quantile function, again with parameters
-$\boldsymbol{\theta}_k$ as an argument.
-
-Computing the Bayesian predictive distribution additionally requires a function for random number
-generation from the distribution used for modeling.
-
-Following the basic principles of standard family descriptors for GLMs in \proglang{R}, a modular
-BAMLSS family descriptor for, e.g., the normal distribution with
-$\mathbf{y} \sim \mathcal{N}(\boldsymbol{\mu}, \boldsymbol{\sigma}^2)$ can then be summarized in
-Figure~\ref{fig:families}.
-\begin{figure}[ht!]
-\begin{center}
-\fbox{
-\begin{minipage}[c]{5cm}
-$\phantom{i}$ \\[-0.3cm]
-\code{list(} \\
-\hspace*{0.5cm} \code{family, names, links,} \medskip \\
-\hspace*{0.5cm} \code{d(y, par),} \\
-\hspace*{0.5cm} \code{p(y, par),} \\
-\hspace*{0.5cm} \code{q(y, par),} \\
-\hspace*{0.5cm} \code{r(y, par),} \medskip \\
-\hspace*{0.5cm} \code{score = list(} \\
-\hspace*{1cm} \code{mu(y, par),} \\
-\hspace*{1cm} \code{sigma(y, par)} \\
-\hspace*{0.5cm} \code{),} \\
-\hspace*{0.5cm} \code{hess = list(} \\
-\hspace*{1cm} \code{mu(y, par),} \\
-\hspace*{1cm} \code{sigma(y, par)} \\
-\hspace*{0.5cm} \code{)} \\
-\code{)} \\[-0.3cm]
-$\phantom{i}$
-\end{minipage}
-}
-\end{center}
-\caption{\label{fig:families} Example of the family descriptor for the normal distribution.}
-\end{figure}
-Here, object \code{family} represents the name of the distribution as a character, similarly
-\code{names} indicates the parameter names and \code{links} its corresponding link functions.
-
-Function \code{d()} represents the density function, which can be evaluated given the response
-\code{y} and a named list of parameters \code{par}, i.e., each list entry in \code{par} holds one
-parameter of the distribution. Function \code{p()}, \code{q()} and \code{r()} are the distribution
-function, quantile function and the random number generator.
-
-For computing derivatives of $\boldsymbol{\beta}_k$, two additional list entries \code{score}
-and \code{hess} are required. Each of them hold functions for first or second order derivatives of
-the log-likelihood w.r.t.\ to the linear predictors $\boldsymbol{\eta}_k$ (here,
-$\boldsymbol{\eta}_\mu$ and $\boldsymbol{\eta}_\sigma$). Note that in principal, the
-derivatives w.r.t.\ the parameters $\boldsymbol{\theta}_k$ would be sufficient to create a
-generic modeling setup, because of the chain rule derivatives of link functions could be simply
-multiplied, however, from the computational viewpoint it is more efficient to directly leave
-the specification of derivatives w.r.t.\ $\boldsymbol{\eta}_k$ within the family descriptor.
-This strategy is especially useful if derivatives for $\boldsymbol{\eta}_k$ have a simple structure.
-
-Note that this example can easily be generalized to problems with any number of parameters/predictors.
-
-In summary, such a ``family'' object holds all information that is required by subsequent modeling
-and post-processing functions, i.e., for implementing new algorithms and/or interfaces to existing
-model fitters, it is natural to provide any extra ingredients needed within this object. This way
-a highly modular system can be created.
 
 
 \subsection{Architecture} \label{sec:blocks}
