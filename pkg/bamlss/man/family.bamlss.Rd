@@ -11,6 +11,7 @@
 \alias{multinomial.bamlss}
 \alias{mvn.bamlss}
 \alias{poisson.bamlss}
+\alias{jm.bamlss}
 
 \title{
   Distribution Families in \pkg{bamlss}
@@ -32,6 +33,7 @@ beta.bamlss(...)
 binomial.bamlss(...)
 cnorm.bamlss(...)
 cox.bamlss(...)
+jm.bamlss(...)
 gaussian.bamlss(...)
 gamma.bamlss(...)
 multinomial.bamlss(...)

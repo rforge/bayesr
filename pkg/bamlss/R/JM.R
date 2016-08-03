@@ -121,7 +121,7 @@ jm.transform <- function(x, y, data, terms, knots, formula, family, jm.start = N
       scale.x = FALSE)[[j]]
   }
 
-  ## Degrees of freedon to 1 for alpha smooths.
+  ## Degrees of freedom to 1 for alpha smooths.
   for(j in c("alpha", if(dalpha) "dalpha" else NULL)) {
     for(sj in names(x[[j]]$smooth.construct)) {
       if(sj != "model.matrix")
@@ -1611,9 +1611,9 @@ update_jm_dalpha <- function(x, eta, eta_timegrid,
 
 
 ## (5) Joint model MCMC.
-jm.mcmc <- function(x, y, family, start, weights, offset,
+jm.mcmc <- function(x, y, family, start, jm.start = NULL, weights, offset,
   n.iter = 1200, burnin = 200, thin = 1,
-  verbose = TRUE, digits = 4, step = 20, jm.start = NULL,
+  verbose = TRUE, digits = 4, step = 20, 
   fixed = NULL, slice = NULL, ...)
 {
   dalpha <- has_pterms(x$dalpha$terms) | (length(x$dalpha$smooth.construct) > 0)
@@ -2836,3 +2836,275 @@ Predict.matrix.Random2.effect <- function(object, data)
 
 
 
+# simulate data
+################################################################################
+
+jm.sim <- function(nsub, times = seq(0, 72, 3), 
+                   long_setting = c("simple", "linear", "nonlinear", "functional"), 
+                   alpha_setting = c("zero", "constant", "linear", "nonlinear"), 
+                   dalpha_setting="zero",
+                   sigma=0.3, long_df=6, censoring=TRUE, tmax=NULL,  probmiss=0.1,  
+                   subdivisions = 1000, seed=5555, full=FALSE, file = NULL, ...)  { 
+  ## specify censoring function (aus CoxFlexBoost) changed into uniformly (as too much censoring)
+  ## added censoring at tmax
+  cens_fct <- function(time, tmax){
+    ## censoring times are independent uniformly distributed
+    censor_time <- runif(n = length(time), min=0, max=1.5*tmax)
+    censor_time <- ifelse(censor_time > tmax, tmax, censor_time)
+    event <- (time <= censor_time)
+    survtime <- apply(cbind(time, censor_time), 1, min)
+    ## return matrix of observed survival times and event indicator
+    return(cbind(survtime, event))
+  }
+  
+  
+  ## introduce random missings 
+  ## (excluding the first measurement to ensure all subjects remain in the data)
+  miss_fct <- function(data, prop, obstime="obstime"){
+    select <- which(data[[obstime]] > 0) 
+    n <- length(select)
+    n_miss <- round(prop*n, 0)
+    miss <- sample(select, n_miss)
+    data <- data[-miss,]
+    return(data)
+  }
+  
+  
+  ## generate baseline covariates 
+  ## (x1=survival covariate, x2=longitudinal covariate)
+  gen_x <- function(nsub){
+    x1 <- x2 <-  matrix(NA, nrow=nsub, ncol=2)
+    x1 <- runif(nsub, -3, 3) 
+    x2 <- runif(nsub, -3, 3) 
+    list(x1=x1, x2=x2)
+  }  
+  
+  ## generate random effects 
+  ## (r1=random intercept, r2=random slope)
+  gen_r <- function(nsub){
+    r1 <- r2 <- matrix(NA, nrow=nsub, ncol=2)
+    r1 <- rnorm(nsub, 0, 0.25) 
+    r2 <- rnorm(nsub, 0, 0.4) 
+    list(r1=r1, r2=r2)
+  }  
+  
+  ## function written by Fabian Scheipl for random functional effect
+  ## (changed into random functional intercepts)
+  gen_b <- function(times, nsub, long_df, pen=2, l=c(1,1), seed=NULL){
+    if(!is.null(seed)) set.seed(seed)
+    require(splines)
+    
+    # Recursion for difference operator matrix
+    makeDiffOp <- function(degree, dim){
+      if(degree==0){
+        return(diag(dim))  
+      } else {
+        return(diff(makeDiffOp(degree-1, dim)))
+      }    
+    }
+    # Kronecker Product penalty from marginal
+    Pi <- l[1] * kronecker(diag(nsub), diag(long_df)) 
+    Pt <- l[2] * kronecker(diag(nsub), crossprod(makeDiffOp(pen[1], long_df)))
+    P <- .1*diag(nsub*long_df) + Pt + Pi
+    
+    coef <- rmvnorm(nsub*long_df, sigma=solve(P))
+    bt <- splines::bs(times, df = long_df, intercept = FALSE)
+    b_set <- list(knots=attr(bt, "knots"), Boundary.knots=attr(bt, "Boundary.knots"),
+                  degree=attr(bt, "degree"), intercept=attr(bt, "intercept"))
+    return(list(matrix(coef, ncol=long_df, nrow=nsub), b_set))
+  }
+  
+  ## numerical derivative for B-Spline
+  ## modified from JMbayes code
+  dbs <-  function (x, df = NULL, knots = NULL, degree=3, intercept = FALSE, Boundary.knots = range(x), eps = 1e-07) {
+    ex <- pmax(abs(x), 1)
+    x1 <- x + eps * ex
+    x2 <- x - eps * ex
+    bs.xeps1 <- suppressWarnings(bs(x1, df, knots, degree, intercept, Boundary.knots))
+    bs.xeps2 <- suppressWarnings(bs(x2, df, knots, degree, intercept, Boundary.knots))
+    out <- (bs.xeps1 - bs.xeps2) / c(x1 - x2)
+    out
+  }
+  
+  
+  ## compute predictors
+  ## individual longitudinal trajectories
+  mu <-  function(time, x2, r1, r2, beta, long_df, b_set, long_setting){
+    if(is.null(dim(beta))){
+      beta <- matrix(beta, nrow=length(time), ncol=long_df, byrow=TRUE)
+    }
+    # TODO: Suppress warnings
+    switch(long_setting,
+           "simple" = (1.25 + 0.6*sin(x2) + (-0.02)*time),
+           "linear" = (1.25 + r1 + 0.6*sin(x2) + (-0.01)*time + r2*0.02*time),
+           "nonlinear" = (0.5 + r1 + 0.6*sin(x2) + 0.1*(time+2)*exp(-0.075*time)),
+           "functional" = (0.5 + r1 + 0.6*sin(x2) + 0.1*(time+2)*exp(-0.075*time) + 
+                             apply(splines::bs(time, long_df, b_set$knots, b_set$degree,
+                                               b_set$intercept, b_set$Boundary.knots) * beta,1,sum)))
+  }
+  
+  ## derivative of individual longitudinal trajectories
+  dmu <-  function(time, r2, beta, long_df, b_set, long_setting){
+    if(long_setting=="functional"){
+      if(is.null(dim(beta))){
+        beta <- matrix(beta, nrow=length(time), ncol=long_df, byrow=TRUE)
+      }
+    }
+    switch(long_setting,
+           "simple" = (-0.02) + 0*time,
+           "linear" = (-0.01 + r2*0.02) + 0*time,
+           "nonlinear" = (0.085 - 0.0075*time)*exp(-0.075*time),    
+           "functional" = (0.085 - 0.0075*time)*exp(-0.075*time) + 
+             apply(dbs(time, long_df, b_set$knots, b_set$degree,
+                       b_set$intercept, b_set$Boundary.knots) * beta,1,sum))
+  }
+  
+  ## association between mu and log-hazard
+  alpha <- function(time, alpha_setting){
+    switch(alpha_setting,
+           "zero" = 0*time,
+           "constant" = 0*time + 1,
+           "linear" = 1 - 0.015*time,
+           "nonlinear" = cos((time-20)/20),
+           "nonlinear2" = cos((time-33)/33))
+  }
+  
+  ## association between dmu and log-hazard
+  dalpha <- function(time, dalpha_setting){
+    switch(dalpha_setting,
+           "zero" = 0*time,
+           "constant" = 0*time + 10,
+           "linear" = 6 - 0.015*time,
+           "nonlinear" = 50+55*sin((time)/20),
+           "nonlinear2" = 50+55*sin((time)/20))
+  }
+  
+  ## baseline hazard
+  lambda <-  function(time){
+    1.4*log((time+10)/1000)
+  }
+  
+  ## nonlinear baseline covariate
+  gamma <-  function(x1){
+    sin(x1)
+  }
+  
+  
+  ## compute hazard for every person i at time
+  hazard <-  function(time, x1, x2, r1, r2, beta, long_df, b_set, 
+                      alpha_setting, dalpha_setting, long_setting){
+    exp(lambda(time) + gamma(x1) + 
+          alpha(time, alpha_setting)*mu(time, x2, r1, r2, beta, long_df, b_set, long_setting) + 
+          dalpha(time, dalpha_setting)*dmu(time, r2, beta, long_df, b_set, long_setting))
+  }
+  
+  if(!is.null(seed)){
+    set.seed(seed)
+  }
+  id <- rep(1:nsub, each=length(times))
+  time <- rep(NA, nsub) 
+  if(is.null(tmax)){
+    tmax <- max(times)
+  }
+  
+  # generate input
+  r <- gen_r(nsub)
+  r1 <- r$r1
+  r2 <- r$r2
+  x <- gen_x(nsub)
+  x1 <- x$x1
+  x2 <- x$x2
+  temp <- gen_b(times, nsub, long_df=long_df, l=c(1,5))
+  beta <- temp[[1]]
+  b_set <- temp[[2]]
+  
+  Hazard <- function(hazard, x1, x2, r1, r2, beta, long_df, b_set, time, 
+                     alpha_setting, dalpha_setting, long_setting) { 
+    integrate(hazard, 0, time, x1 = x1, x2 = x2, r1 = r1, r2 = r2, beta=beta, 
+              long_df = long_df, b_set = b_set, alpha_setting = alpha_setting, 
+              dalpha_setting = dalpha_setting, long_setting = long_setting, 
+              subdivisions = subdivisions)$value 
+  } 
+  
+  InvHazard <- function(Hazard, hazard, x1, x2, r1, r2, beta, long_df, b_set, 
+                        time, alpha_setting, dalpha_setting, long_setting, ...) { 
+    negLogU <- -log(runif(1, 0, 1)) 
+    # check if first Lambda value is smaller than sample
+    rootfct <- function(time) { 
+      negLogU - Hazard(hazard, x1, x2, r1, r2, beta, long_df, b_set, time, 
+                       alpha_setting, dalpha_setting, long_setting) 
+    } 
+    if(rootfct(times[1])<0){
+      return(0)
+    } else {
+      root <- try(uniroot(rootfct, interval = c(0, tmax))$root, silent=TRUE)
+      root <- if(inherits(root, "try-error")) {
+        # if root not within [0, tmax] --> error --> set it to tmax + 1 (will be censored)
+        tmax + 1
+      } else {root}
+    }
+    return(root)
+  }
+  
+  # Finding Survival Times
+  cumhaz <- rep(NA, nsub)
+  for(i in 1:nsub) { 
+    time[i] <- InvHazard(Hazard, hazard, x1[i], x2[i], r1[i], r2[i], beta[i,], long_df, b_set, 
+                         time, alpha_setting, dalpha_setting, long_setting, ...)
+    cumhaz[i] <- Hazard(hazard, x1[i], x2[i], r1[i], r2[i], beta[i,], long_df, b_set, 
+                        time[i], alpha_setting, dalpha_setting, long_setting, ...)
+  } 
+  if(censoring){
+    time_event <- cens_fct(time, tmax=tmax) 
+  } else {
+    event <- as.numeric(time <= tmax)
+    time <- ifelse(time > tmax, tmax, time)
+    time_event <- cbind(time, event) 
+  }
+  
+  
+  # Make data (long format)
+  data_short <- data.frame(survtime = time_event[, 1], event = time_event[, 2], 
+                           x1 = x1, x2 = x2, r1 = r1, r2 = r2, cumhaz = cumhaz)
+  names(data_short) <- gsub(".", "", names(data_short), fixed = TRUE) 
+  data_long <- cbind(id, data_short[id,], obstime=rep(times, nsub))
+  data_grid <- data.frame(survtime = times)
+  
+  i <- !duplicated(data_long$id)
+  beta_id <- beta[data_long$id,]
+  
+  # Save true predictors
+  data_long$alpha <- alpha(data_long$survtime, alpha_setting) 
+  data_grid$alpha <- alpha(data_grid$survtime, alpha_setting) 
+  data_long$dalpha <- dalpha(data_long$survtime, dalpha_setting) 
+  data_grid$dalpha <- dalpha(data_grid$survtime, dalpha_setting) 
+  
+  # gamma and lambda have only joint intercept which is estimated in predictor gamma
+  f_lambda <- lambda(data_long$survtime)
+  data_long$lambda <- lambda(data_long$survtime) - mean(f_lambda)
+  data_grid$lambda <- lambda(data_grid$survtime) - mean(f_lambda)
+  data_long$gamma <- gamma(data_long$x1) + mean(f_lambda)
+  data_long$mu <- with(data_long, mu(obstime, x2, r1, r2, beta_id, long_df, b_set, long_setting))
+  data_long$dmu <- with(data_long, dmu(obstime, r2, beta_id, long_df, b_set, long_setting))
+  data_long$id <- as.factor(data_long$id)
+  
+  # censoring and missings                     
+  data_long <- data_long[data_long$obstime<=data_long$survtime,]
+  data_long <- miss_fct(data_long, probmiss)
+  
+  # Draw longitudinal observations
+  data_long$y <- rnorm(nrow(data_long), data_long$mu, sigma)
+ 
+  if(full==TRUE){
+    d <- list(data=data_long, data_grid=data_grid)
+  } else {
+    d <- data_long
+  }
+  
+  if(!is.null(file)) { 
+    save(d, file = file) 
+    invisible(data_long) 
+  } else { 
+    return(d) 
+  } 
+}
