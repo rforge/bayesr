@@ -1067,7 +1067,7 @@ While the support for implementing new distributions is existing for all of the 
 packages, the possibilities for implementing new model term types is more limited. The \pkg{mgcv}
 package provides very generic smooth term constructor methods for creating model terms based on
 a basis function approach. Package \pkg{gamlss} is slightly more flexible since the user can
-implement not only his own smooth terms but also smooth fitting updating functions. On the other
+implement not only his own smooth terms, but also smooth fitting updating functions. On the other
 hand, using general purpose Bayesian modeling software the user can in principle incorporate all
 kinds of different model terms, however, the implementation is usually a bit tedious.
 

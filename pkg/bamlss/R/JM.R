@@ -356,14 +356,21 @@ sparse_Matrix_setup <- function(x, sparse = TRUE, force = FALSE)
 jm.mode <- function(x, y, weights, offset,
   criterion = c("AICc", "BIC", "AIC"), maxit = c(100, 1),
   nu = c("lambda" = 0.1, "gamma" = 0.1, "mu" = 0.1, "sigma" = 0.1, "alpha" = 0.1, "dalpha" = 0.1),
-  update.nu = TRUE, fix.lambda = FALSE, fix.gamma = FALSE, fix.alpha = FALSE, fix.mu = FALSE, fix.sigma = FALSE, fix.dalpha = FALSE,
-  eps = 0.0001, nu.eps = -Inf, edf.eps = NULL, ic.eps = 1e-08, alpha.eps = 0.001, nback = 40,
-  verbose = TRUE, digits = 4, sys.sleep = NULL, ...)
+  update.nu = TRUE, eps = 0.0001, alpha.eps = 0.001, ic.eps = 1e-08, nback = 40,
+  verbose = TRUE, digits = 4, ...)
 {
+  ## Hard coded.
+  fix.lambda <- FALSE
+  fix.gamma <- FALSE
+  fix.alpha <- FALSE
+  fix.mu <- FALSE
+  fix.sigma <- FALSE
+  fix.dalpha <- FALSE
+  nu.eps <- -Inf
+  edf.eps <- Inf
+
   criterion <- match.arg(criterion)
   ia <- interactive()
-  if(is.null(edf.eps))
-    edf.eps <- Inf
 
   dalpha <- has_pterms(x$dalpha$terms) | (length(x$dalpha$smooth.construct) > 0)
 
@@ -1612,10 +1619,12 @@ update_jm_dalpha <- function(x, eta, eta_timegrid,
 
 ## (5) Joint model MCMC.
 jm.mcmc <- function(x, y, family, start, jm.start = NULL, weights, offset,
-  n.iter = 1200, burnin = 200, thin = 1,
-  verbose = TRUE, digits = 4, step = 20, 
-  fixed = NULL, slice = NULL, ...)
+  n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE, digits = 4, step = 20, ...)
 {
+  ## Hard coded.
+  fixed <- NULL
+  slice <- NULL
+
   dalpha <- has_pterms(x$dalpha$terms) | (length(x$dalpha$smooth.construct) > 0)
 
   nu <- 1
