@@ -2920,7 +2920,6 @@ rs <- function(formula, link = "log", ...)
   if(fdl == "")
     nd <- FALSE
   label <- if(nd) paste("rs(", fnl, "|", fdl, ")", sep = "") else paste("rs(", fnl, ")", sep = "")
-  fd <- update(fd, . ~ . - 1)
   vn <- all.vars.formula(fn)
   vd <- all.vars.formula(fd)
   formula <- bamlss.formula(list(fn, fd))
@@ -2973,6 +2972,21 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
 
   object$X <- bamlss.engine.setup(design.construct(object$formula, data = data, knots = knots),
     df = rep(object$xt$df, object$nspecials))
+
+  if(!is.null(object$X[[2]]$smooth.construct$model.matrix)) {
+    cn <- colnames(object$X[[2]]$smooth.construct$model.matrix$X)
+    if("(Intercept)" %in% cn)
+      object$X[[2]]$smooth.construct$model.matrix$X <- object$X[[2]]$smooth.construct$model.matrix$X[, cn != "(Intercept)", drop = FALSE]
+    if(ncol(object$X[[2]]$smooth.construct$model.matrix$X) < 1) {
+      object$X[[2]]$smooth.construct$model.matrix <- NULL
+      object$X[[2]]$terms <- drop.terms.bamlss(object$X[[2]]$terms, pterms = FALSE, keep.intercept = FALSE)
+    } else {
+      object$X[[2]]$smooth.construct$model.matrix$term <- gsub("(Intercept)+", "",
+        object$X[[2]]$smooth.construct$model.matrix$term, fixed = TRUE)
+      object$X[[2]]$smooth.construct$model.matrix$state$parameters <- object$X[[2]]$smooth.construct$model.matrix$state$parameters[-1]
+      attr(object$X[[2]]$terms, "intercept") <- 0
+    }
+  }
 
   parameters <- NULL
   npar <- edf <- 0
@@ -3224,6 +3238,9 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     Sigma <- matrix_inv(hess0 + data$hess(theta))
     xgrad <- -1 * (gradfun(theta, score) + data$grad(theta))
 
+    if(all(is.na(Sigma)) | all(is.na(xgrad)))
+      return(list("parameters" = theta, "alpha" = -Inf, "extra" = c("edf" = NA)))
+
     edf <- sum.diag(hess0 %*% Sigma) - 1
 
     ## Old position.
@@ -3253,6 +3270,10 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     pibetaprop <- family$loglik(y, peta)
     Sigma2 <- matrix_inv(hessfun(theta2, score2, hess2) + data$hess(theta2))
     xgrad2 <- -1 * (gradfun(theta2, score2) + data$grad(theta2))
+
+    if(all(is.na(Sigma2)) | all(is.na(xgrad2)))
+      return(list("parameters" = theta, "alpha" = -Inf, "extra" = c("edf" = NA)))
+
     mu2 <- drop(g - Sigma2 %*% xgrad2)
     qbeta <- dmvnorm(g0, mean = mu2, sigma = Sigma2, log = TRUE)
 
