@@ -2838,7 +2838,7 @@ Predict.matrix.Random2.effect <- function(object, data)
 
 # simulate data
 ################################################################################
-
+##
 jm.sim <- function(nsub, times = seq(0, 72, 3), 
                    long_setting = c("simple", "linear", "nonlinear", "functional"), 
                    alpha_setting = c("zero", "constant", "linear", "nonlinear"), 
