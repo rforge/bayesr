@@ -2898,8 +2898,11 @@ rs <- function(formula, link = "log", ...)
   if(!grepl("~", strsplit(formula, "")[[1]][1]))
     formula <- paste("~", formula, sep = "")
   formula <- as.Formula(formula)
-  if(length(formula)[2] < 2L)
+  nd <- TRUE
+  if(length(formula)[2] < 2L) {
     formula <- as.Formula(formula(formula), formula(formula))
+    nd <- FALSE
+  }
   formula <- formula(formula, lhs = 0, drop = FALSE)
   fn <- formula(formula, rhs = 1)
   fd <- formula(formula, rhs = 2)
@@ -2911,7 +2914,7 @@ rs <- function(formula, link = "log", ...)
   fdl <- all.labels.formula(fd)
   fnl <- paste(fnl, collapse = "+")
   fdl <- paste(fdl, collapse = "+")
-  label <- paste("rs(", fnl, "|", fdl, ")", sep = "")
+  label <- if(nd) paste("rs(", fnl, "|", fdl, ")", sep = "") else paste("rs(", fnl, ")", sep = "")
   fd <- update(fd, . ~ -1 + .)
   vn <- all.vars.formula(fn)
   vd <- all.vars.formula(fd)
@@ -2944,6 +2947,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
   object$scale_linkfun <- make.link2(object$link)$linkfun
   object$scale_linkinv <- make.link2(object$link)$linkinv
   object$scale_mu.eta <- make.link2(object$link)$mu.eta
+  object$scale_mu.eta2 <- make.link2(object$link)$mu.eta2
   object$dev.resids <- gaussian()$dev.resids
   object$aic <- gaussian()$aic
   object$mu.eta <- gaussian()$mu.eta
@@ -3042,23 +3046,14 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
 
   object$update <- function(x, family, y, eta, id, weights, criterion, ...)
   {
-    eta[[id]] <- eta[[id]] - fitted(x$state)
-
-    par0 <- x$state$parameters
+    peta <- family$map2par(eta)
+    score <- drop(family$score[[id]](y, peta))
+    hess <- drop(family$hess[[id]](y, peta))
 
     gradfun <- function(b) {
-      b1 <- set.par(par0, b, "b")
-
-      eta_mu <- x$fit.fun(x$X, b1, mu = TRUE)
-      eta_scale <- x$scale_linkfun(1) + x$fit.fun(x$X, b1, scale = TRUE)
+      eta_mu <- x$fit.fun(x$X, b, mu = TRUE)
+      eta_scale <- x$scale_linkfun(1) + x$fit.fun(x$X, b, scale = TRUE)
       scale <- x$scale_linkinv(eta_scale)
-
-      fit <- eta_mu / scale
-      fit <- fit - mean(fit)
-
-      eta[[id]] <- eta[[id]] + fit
-      peta <- family$map2par(eta)
-      score <- drop(family$score[[id]](y, peta))
 
       w_mu <- 1 / scale
       w_scale <- eta_mu * (-1 / (scale^2)) * x$scale_mu.eta(eta_scale)
@@ -3069,83 +3064,79 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     }
 
     hessfun <- function(b) {
-      b1 <- set.par(par0, b, "b")
-
-      eta_mu <- x$fit.fun(x$X, b1, mu = TRUE)
-      eta_scale <- x$scale_linkfun(1) + x$fit.fun(x$X, b1, scale = TRUE)
+      eta_mu <- x$fit.fun(x$X, b, mu = TRUE)
+      eta_scale <- x$scale_linkfun(1) + x$fit.fun(x$X, b, scale = TRUE)
       scale <- x$scale_linkinv(eta_scale)
-
-      fit <- eta_mu / scale
-      fit <- fit - mean(fit)
-
-      eta[[id]] <- eta[[id]] + fit
-      peta <- family$map2par(eta)
-      hess <- drop(family$hess[[id]](y, peta))
 
       w_mu <- 1 / scale
       w_scale <- eta_mu * (-1 / (scale^2)) * x$scale_mu.eta(eta_scale)
+      w_scale2 <- eta_mu / scale^3 * (2 * x$scale_mu.eta(eta_scale)^2 - scale * x$scale_mu.eta2(eta_scale))
 
       Hd <- crossprod(x$xmat * (w_mu^2 * hess), x$xmat)
       Hn <- crossprod(x$zmat * (w_scale^2 * hess), x$zmat)
+      Hn <- Hn + crossprod(x$zmat * (w_scale2 * score), x$zmat)
 
       as.matrix(do.call("bdiag", list(Hd, Hn)))
     }
 
     b0 <- get.state(x, "b")
+    par0 <- x$state$parameters
+
     hess <- hessfun(b0)
     grad <- gradfun(b0)
 
-#    if(length(get.par(x$state$parameters, "tau2")) & FALSE) {
-#      env <- new.env()
-#      args <- list(...)
-#      edf0 <- args$edf - x$state$edf
-#      k <- ncol(x$xmat)
+    eta[[id]] <- eta[[id]] - fitted(x$state)
 
-#      objfun <- function(tau2) {
-#        par1 <- set.par(par0, tau2, "tau2")
-#        grad <- -1 * (grad + x$grad(par1))
-#        hess <- hess + x$hess(par1)
-#        Sigma <- matrix_inv(hess)
-#        Hs <- Sigma %*% grad
-#        objfun.nu <- function(nu) {
-#          b1 <- drop(b0 - nu * Hs)
-#          par2 <- set.par(par1, b1, "b")
-#          eta[[id]] <- eta[[id]] + x$fit.fun(x$X, par2)
-#          logLik <- family$loglik(y, family$map2par(eta))
-#          logPost <- logLik + x$prior(par2)
-#          return(-1 * logPost)
-#        }
-#        nu <- optimize(f = objfun.nu, interval = c(0, 1))$minimum
-#        b1 <- drop(b0 - nu * Hs)
-#        par2 <- set.par(par1, b1, "b")
-#        fit <- x$fit.fun(x$X, par2)
-#        eta[[id]] <- eta[[id]] + fit
-#        logLik <- family$loglik(y, family$map2par(eta))
-#        edf1 <- sum.diag(hess[1:k, 1:k] %*% Sigma[1:k, 1:k])
-#        edf2 <- sum.diag(hess[-(1:k), -(1:k)] %*% Sigma[-(1:k), -(1:k)])
-#        edf3 <- edf1 + edf2
-#        edf <- edf0 + edf3
-#        ic <- get.ic2(logLik, edf, length(eta[[id]]), criterion)
-#        if(!is.null(env$ic_val)) {
-#          if((ic < env$ic_val) & (ic < env$ic00_val)) {
-#            opt_state <- list("parameters" = par2,
-#              "fitted.values" = fit, "edf" = edf3, "nu" = nu)
-#            assign("state", opt_state, envir = env)
-#            assign("ic_val", ic, envir = env)
-#          }
-#        } else assign("ic_val", ic, envir = env)
-#        return(ic)
-#      }
+    if(length(start <- get.par(x$state$parameters, "tau2"))) {
+      env <- new.env()
+      args <- list(...)
+      edf0 <- args$edf - x$state$edf
+      k <- ncol(x$xmat)
 
-#      assign("ic00_val", objfun(get.state(x, "tau2")), envir = env)
+      objfun <- function(tau2) {
+        par1 <- set.par(par0, tau2, "tau2")
+        grad <- -1 * (grad + x$grad(par1))
+        Sigma <- matrix_inv(hess + x$hess(par1))
+        Hs <- Sigma %*% grad
+        objfun.nu <- function(nu) {
+          b1 <- drop(b0 - nu * Hs)
+          par2 <- set.par(par1, b1, "b")
+          eta[[id]] <- eta[[id]] + x$fit.fun(x$X, par2)
+          logLik <- family$loglik(y, family$map2par(eta))
+          logPost <- logLik + x$prior(par2)
+          return(-1 * logPost)
+        }
+        nu <- optimize(f = objfun.nu, interval = c(0, 1))$minimum
+        b1 <- drop(b0 - nu * Hs)
+        par2 <- set.par(par1, b1, "b")
+        fit <- x$fit.fun(x$X, par2)
+        eta[[id]] <- eta[[id]] + fit
+        logLik <- family$loglik(y, family$map2par(eta))
+        edf1 <- sum.diag(hess[1:k, 1:k] %*% Sigma[1:k, 1:k])
+        edf2 <- sum.diag(hess[-(1:k), -(1:k)] %*% Sigma[-(1:k), -(1:k)])
+        edf3 <- edf1 + edf2 - 1
+        edf <- edf0 + edf3
+        ic <- get.ic2(logLik, edf, length(eta[[id]]), criterion)
+        if(!is.null(env$ic_val)) {
+          if((ic < env$ic_val) & (ic < env$ic00_val)) {
+            opt_state <- list("parameters" = par2,
+              "fitted.values" = fit, "edf" = edf3, "nu" = nu)
+            assign("state", opt_state, envir = env)
+            assign("ic_val", ic, envir = env)
+          }
+        } else assign("ic_val", ic, envir = env)
+        return(ic)
+      }
 
-#      tau2 <- tau2.optim(objfun, start = get.par(par0, "tau2"))
+      assign("ic00_val", objfun(get.state(x, "tau2")), envir = env)
 
-#      if(!is.null(env$state))
-#        return(env$state)
+      tau2 <- tau2.optim(objfun, start = start)
 
-#      par0 <- set.par(par0, tau2, "tau2")
-#    }
+      if(!is.null(env$state))
+        return(env$state)
+
+      par0 <- set.par(par0, tau2, "tau2")
+    }
 
     hess <- hess + x$hess(par0)
     Sigma <- matrix_inv(hess)
@@ -3169,13 +3160,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     return(x$state)
   }
 
-  object$state <- list(
-    "parameters" = parameters,
-    "fitted.values" = rep(0, nrow(object$X[[1]]$smooth.construct[[1]]$X)),
-    "edf" = edf
-  )
-
-  object$propose99 <- function(family, theta, id, eta, y, data, weights = NULL, ...)
+  object$propose <- function(family, theta, id, eta, y, data, weights = NULL, ...)
   {
     theta <- theta[[id[1]]][[id[2]]]
 
@@ -3195,16 +3180,18 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
       grad
     }
 
-    hessfun <- function(b, hess) {
+    hessfun <- function(b, score, hess) {
       eta_mu <- data$fit.fun(data$X, b, mu = TRUE)
       eta_scale <- data$scale_linkfun(1) + data$fit.fun(data$X, b, scale = TRUE)
       scale <- data$scale_linkinv(eta_scale)
 
       w_mu <- 1 / scale
       w_scale <- eta_mu * (-1 / (scale^2)) * data$scale_mu.eta(eta_scale)
+      w_scale2 <- eta_mu / scale^3 * (2 * data$scale_mu.eta(eta_scale)^2 - scale * data$scale_mu.eta2(eta_scale))
 
       Hd <- crossprod(data$xmat * (w_mu^2 * hess), data$xmat)
       Hn <- crossprod(data$zmat * (w_scale^2 * hess), data$zmat)
+      Hn <- Hn + crossprod(data$zmat * (w_scale2 * score), data$zmat)
 
       as.matrix(do.call("bdiag", list(Hd, Hn)))
     }
@@ -3217,8 +3204,11 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     pibeta <- family$loglik(y, peta)
     p1 <- data$prior(theta)
  
-    Sigma <- matrix_inv(hessfun(theta, hess) + data$hess(theta))
+    hess0 <- hessfun(theta, score, hess)
+    Sigma <- matrix_inv(hess0 + data$hess(theta))
     xgrad <- -1 * (gradfun(theta, score) + data$grad(theta))
+
+    edf <- sum.diag(hess0 %*% Sigma) - 1
 
     ## Old position.
     g0 <- get.par(theta, "b")
@@ -3245,11 +3235,9 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
 
     ## Compute new log likelihood.
     pibetaprop <- family$loglik(y, peta)
-    Sigma2 <- matrix_inv(hessfun(theta2, hess2)) + data$hess(theta2)
-
+    Sigma2 <- matrix_inv(hessfun(theta2, score2, hess2) + data$hess(theta2))
     xgrad2 <- -1 * (gradfun(theta2, score2) + data$grad(theta2))
     mu2 <- drop(g - Sigma2 %*% xgrad2)
-
     qbeta <- dmvnorm(g0, mean = mu2, sigma = Sigma2, log = TRUE)
 
     ## Sample variance parameter.
@@ -3267,158 +3255,14 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     ## New theta.
     attr(theta2, "fitted.values") <- fit
 
-    return(list("parameters" = theta2, "alpha" = alpha))
+    return(list("parameters" = theta2, "alpha" = alpha, "extra" = c("edf" = edf)))
   }
 
-
-  object$propose99 <- function(family, theta, id, eta, y, data, weights = NULL, ...)
-  {
-    theta <- theta[[id[1]]][[id[2]]]
-
-    if(is.null(attr(theta, "fitted.values")))
-      attr(theta, "fitted.values") <- data$fit.fun(data$X, theta)
-
-    objfun <- function(b, eta, theta) {
-      eta[[id[1]]] <- eta[[id[1]]] + data$fit.fun(data$X, b)
-      theta <- set.par(theta, b, "b")
-      return(family$loglik(y, family$map2par(eta)) + data$prior(theta))
-    }
-
-    grad_Hess <- function(...) {
-      gh <- fdHess(...)
-      e <- eigen(-1 * gh$Hessian)
-      e$values <- abs(e$values)
-      e$values[e$values == 0] <- .Machine$double.eps^0.5
-      gh$Hessian <- e$vectors %*% diag(e$values) %*% t(e$vectors)
-      return(gh)
-    }
-
-    peta <- family$map2par(eta)
-    pibeta <- family$loglik(y, peta)
-    p1 <- data$prior(theta)
-
-    eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values")
-    gh <- grad_Hess(get.par(theta, "b"), fun = objfun, eta = eta, theta = theta)
-
-    Sigma <- matrix_inv(gh$Hessian)
-    xgrad <- gh$gradient
-
-    ## Old position.
-    g0 <- get.par(theta, "b")
-
-    ## Get new position.
-    mu <- drop(g0 - Sigma %*% xgrad)
-
-    ## Sample new parameters.
-    g <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma))
-    names(g) <- names(g0)
-    theta2 <- set.par(theta, g, "b")
-
-    ## Compute log priors.
-    p2 <- data$prior(theta2)
-    qbetaprop <- dmvnorm(g, mean = mu, sigma = Sigma, log = TRUE)
-
-    ## Map predictor to parameter scale.
-    fit <- data$fit.fun(data$X, theta2)
-
-    eta[[id[1]]] <- eta[[id[1]]] + fit
-    peta <- family$map2par(eta)
-    pibetaprop <- family$loglik(y, peta)
-
-    eta[[id[1]]] <- eta[[id[1]]] - fit
-    gh2 <- grad_Hess(get.par(theta, "b"), fun = objfun, eta = eta, theta = theta2)
-
-    Sigma2 <- matrix_inv(gh2$Hessian)
-    xgrad2 <- gh2$gradient
-
-    mu2 <- drop(g - Sigma2 %*% xgrad2)
-
-    qbeta <- dmvnorm(g0, mean = mu2, sigma = Sigma2, log = TRUE)
-
-    ## Sample variance parameter.
-    i <- grep("tau2", names(theta2))
-    if(length(i)) {
-      for(j in i) {
-        theta2 <- uni.slice(theta2, data, NULL, NULL,
-          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = pibetaprop)
-      }
-    }
-
-    ## Compute acceptance probablity.
-    alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
-
-    ## New theta.
-    attr(theta2, "fitted.values") <- fit
-
-    return(list("parameters" = theta2, "alpha" = alpha))
-  }
-
-
-  object$propose <- function(family, theta, id, eta, y, data, weights = NULL, ...)
-  {
-    args <- list(...)
-
-    theta <- theta[[id[1]]][[id[2]]]
-
-    if(is.null(attr(theta, "sd")))
-      attr(theta, "sd") <- 0.01
- 
-    ## Old position.
-    g0 <- get.par(theta, "b")
-
-    peta <- family$map2par(eta)
-    pibeta <- family$loglik(y, peta)
-    p1 <- data$prior(theta)
-
-    ## Sample new parameters.
-    g <- g0 + rnorm(length(g0), mean = 0, sd = attr(theta, "sd"))
-    names(g) <- names(g0)
-    theta <- set.par(theta, g, "b")
-
-    ## Compute log priors.
-    p2 <- data$prior(theta)
-
-    ## Map predictor to parameter scale.
-    fit <- data$fit.fun(data$X, theta)
-
-    eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values") + fit
-
-    peta <- family$map2par(eta)
-    pibetaprop <- family$loglik(y, peta)
-
-    ## Sample variance parameter.
-    i <- grep("tau2", names(theta))
-    if(length(i)) {
-      for(j in i) {
-        theta <- uni.slice(theta, data, NULL, NULL,
-          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = pibetaprop)
-      }
-    }
-
-    ## Compute acceptance probablity.
-    alpha <- drop((pibetaprop + p2) - (pibeta + p1))
-
-    ## New theta.
-    attr(theta, "fitted.values") <- fit
-    attr(theta, "alpha") <- c(attr(theta, "alpha"), min(c(exp(alpha), 1)))
-
-    if(((la <- length(attr(theta, "alpha"))) > 10) & (args$iteration < args$burnin)) {
-      ma <- mean(attr(theta, "alpha")[(la - 9):la])
-      if((ma < 0.6) | (ma > 0.9)) {
-        if(ma < 0.6) {
-          attr(theta, "sd") <- attr(theta, "sd") * 0.9
-        }
-        if(ma > 0.9) {
-          attr(theta, "sd") <- attr(theta, "sd") * 1.1
-        }
-      }
-    }
-
-    return(list("parameters" = theta, "alpha" = alpha))
-  }
-
-  object$propose99 <- GMCMC_slice
-
+  object$state <- list(
+    "parameters" = parameters,
+    "fitted.values" = rep(0, nrow(object$X[[1]]$smooth.construct[[1]]$X)),
+    "edf" = edf
+  )
   object$PredictMat <- function(object, data) {
     Predict.matrix.rs.smooth(object, data)
   }

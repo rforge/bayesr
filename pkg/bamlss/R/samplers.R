@@ -16,7 +16,7 @@ MCMCpack <- function(x, y, family, start = NULL,
 
 
 GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
-  n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
+  n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE, step = 20,
   propose = "iwlsC_gp", chains = NULL, ...)
 {
   nx <- family$names
@@ -86,7 +86,8 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   samps <- gmcmc(fun = family, theta = theta, fitfun = fitfun, data = x,
     propose = propose2, logLik = logLik, n.iter = n.iter, burnin = burnin, thin = thin,
     y = y, simplify = FALSE, zworking = zworking, resids = resids,
-    cores = 1, chains = chains, combine = FALSE, weights = weights, offset = offset, ...)
+    cores = 1, chains = chains, combine = FALSE, weights = weights, offset = offset,
+    verbose = verbose, step = step, ...)
 
   samps
 }
@@ -288,7 +289,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
   step <- floor(n.iter / step)
 
   sampler <- function(...) {
-    cat2("Starting the sampler...")
+    if(verbose) cat2("Starting the sampler...")
     ptm <- proc.time()
     for(iter in 1:n.iter) {
       if(save <- iter %in% iterthin)
