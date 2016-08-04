@@ -84,8 +84,8 @@ bamlss.engine.setup <- function(x, update = "iwls", do.optim = NULL,
             } else tdf <- df[1]
           }
           x$smooth.construct[[j]] <- assign.df(x$smooth.construct[[j]], tdf)
-          if(!is.null(x$smooth.construct[[j]]$xt$update))
-            x$smooth.construct[[j]]$update <- x$smooth.construct[[j]]$xt$update
+          if(!is.null(x$smooth.construct[[j]]$xt[["update"]]))
+            x$smooth.construct[[j]]$update <- x$smooth.construct[[j]]$xt[["update"]]
           if(is.null(x$smooth.construct[[j]]$update)) {
             if(is.character(update)) {
               if(!grepl("bfit_", update))

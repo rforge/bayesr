@@ -1013,6 +1013,9 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
               names(tpar3) <- paste("tau2", 1:length(tpar3), sep = "")
             tpar <- c(tpar, tpar3)
           }
+          if(!is.null(x[[i]]$smooth.construct[[k]]$special.mpar)) {
+            tpar <- x[[i]]$smooth.construct[[k]]$special.mpar()
+          }
           par[[i]]$s[[k]] <- tpar
           if(!is.null(start)) {
             if(length(ii <- grep(paste(i, "s", k, sep = "."), names(start), fixed = TRUE))) {
@@ -2350,12 +2353,12 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
   }
 
   ## Compute samples of fitted values.
-  if(is.null(FUN)) {
-    FUN <- c95
-  }
-  if((inherits(x, "mgcv.smooth") | inherits(x, "deriv.smooth")) & (nrow(psamples) > 39L)) {
+  if((inherits(x, "mgcv.smooth") | inherits(x, "deriv.smooth")) & (nrow(psamples) > 39L) & is.null(FUN)) {
     smf <- quick_quantiles(X, psamples)
   } else {
+    if(is.null(FUN)) {
+      FUN <- c95
+    }
     if(nt < 2) {
       fsamples <- apply(psamples, 1, function(g) {
         f <- fit.fun(X, g, expand = FALSE, no.sparse.setup = (nrow(psamples) < 2))
@@ -2914,8 +2917,10 @@ rs <- function(formula, link = "log", ...)
   fdl <- all.labels.formula(fd)
   fnl <- paste(fnl, collapse = "+")
   fdl <- paste(fdl, collapse = "+")
+  if(fdl == "")
+    nd <- FALSE
   label <- if(nd) paste("rs(", fnl, "|", fdl, ")", sep = "") else paste("rs(", fnl, ")", sep = "")
-  fd <- update(fd, . ~ -1 + .)
+  fd <- update(fd, . ~ . - 1)
   vn <- all.vars.formula(fn)
   vd <- all.vars.formula(fd)
   formula <- bamlss.formula(list(fn, fd))
@@ -2923,6 +2928,12 @@ rs <- function(formula, link = "log", ...)
   xt <- list(...)
   if(is.null(xt$df))
     xt$df <- 5
+  if(is.null(xt$update.nu))
+    xt$update.nu <- TRUE
+  if(is.null(xt$nu))
+    xt$nu <- 0.1
+  if(is.null(xt$do.optim))
+    xt$do.optim <- TRUE
 
   rval <- list(
     "formula" = formula,
@@ -3020,6 +3031,8 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     return(lh)
   }
 
+  rs_intcpt <- 1 - .Machine$double.eps
+
   object$fit.fun <- function(X, b, ..., nocenter = FALSE, mu = FALSE, scale = FALSE) {
     if(!is.null(names(b)))
       b <- get.par(b, "b")
@@ -3037,7 +3050,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
       k1 <- k2 + 1
     }
     if(scale) return(drop(fd))
-    fd <- object$scale_linkinv(drop(object$scale_linkfun(1) + fd))
+    fd <- object$scale_linkinv(drop(object$scale_linkfun(rs_intcpt) + fd))
     f <- fn / fd
     if(center & !nocenter)
       f <- f - mean(f)
@@ -3052,31 +3065,29 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
 
     gradfun <- function(b) {
       eta_mu <- x$fit.fun(x$X, b, mu = TRUE)
-      eta_scale <- x$scale_linkfun(1) + x$fit.fun(x$X, b, scale = TRUE)
+      eta_scale <- x$scale_linkfun(rs_intcpt) + x$fit.fun(x$X, b, scale = TRUE)
       scale <- x$scale_linkinv(eta_scale)
 
       w_mu <- 1 / scale
       w_scale <- eta_mu * (-1 / (scale^2)) * x$scale_mu.eta(eta_scale)
 
-      grad <- c(colSums(x$xmat * score * w_mu), colSums(x$zmat * score * w_scale))
+      grad <- c(colSums(x$xmat * score * w_mu), if(!is.null(x$zmat)) colSums(x$zmat * score * w_scale) else NULL)
 
       grad
     }
 
     hessfun <- function(b) {
       eta_mu <- x$fit.fun(x$X, b, mu = TRUE)
-      eta_scale <- x$scale_linkfun(1) + x$fit.fun(x$X, b, scale = TRUE)
+      eta_scale <- x$scale_linkfun(rs_intcpt) + x$fit.fun(x$X, b, scale = TRUE)
       scale <- x$scale_linkinv(eta_scale)
 
       w_mu <- 1 / scale
       w_scale <- eta_mu * (-1 / (scale^2)) * x$scale_mu.eta(eta_scale)
-      w_scale2 <- eta_mu / scale^3 * (2 * x$scale_mu.eta(eta_scale)^2 - scale * x$scale_mu.eta2(eta_scale))
 
       Hd <- crossprod(x$xmat * (w_mu^2 * hess), x$xmat)
-      Hn <- crossprod(x$zmat * (w_scale^2 * hess), x$zmat)
-      Hn <- Hn + crossprod(x$zmat * (w_scale2 * score), x$zmat)
+      Hn <- if(!is.null(x$zmat)) crossprod(x$zmat * (w_scale^2 * hess), x$zmat) else NULL
 
-      as.matrix(do.call("bdiag", list(Hd, Hn)))
+      return(if(!is.null(Hn)) as.matrix(do.call("bdiag", list(Hd, Hn))) else as.matrix(Hd))
     }
 
     b0 <- get.state(x, "b")
@@ -3087,7 +3098,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
 
     eta[[id]] <- eta[[id]] - fitted(x$state)
 
-    if(length(start <- get.par(x$state$parameters, "tau2"))) {
+    if(length(start <- get.par(x$state$parameters, "tau2")) & x$xt$do.optim) {
       env <- new.env()
       args <- list(...)
       edf0 <- args$edf - x$state$edf
@@ -3098,15 +3109,19 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
         grad <- -1 * (grad + x$grad(par1))
         Sigma <- matrix_inv(hess + x$hess(par1))
         Hs <- Sigma %*% grad
-        objfun.nu <- function(nu) {
-          b1 <- drop(b0 - nu * Hs)
-          par2 <- set.par(par1, b1, "b")
-          eta[[id]] <- eta[[id]] + x$fit.fun(x$X, par2)
-          logLik <- family$loglik(y, family$map2par(eta))
-          logPost <- logLik + x$prior(par2)
-          return(-1 * logPost)
+        if(x$xt$update.nu) {
+          objfun.nu <- function(nu) {
+            b1 <- drop(b0 - nu * Hs)
+            par2 <- set.par(par1, b1, "b")
+            eta[[id]] <- eta[[id]] + x$fit.fun(x$X, par2)
+            logLik <- family$loglik(y, family$map2par(eta))
+            logPost <- logLik + x$prior(par2)
+            return(-1 * logPost)
+          }
+          nu <- optimize(f = objfun.nu, interval = c(0, 1))$minimum
+        } else {
+          nu <- x$xt$nu
         }
-        nu <- optimize(f = objfun.nu, interval = c(0, 1))$minimum
         b1 <- drop(b0 - nu * Hs)
         par2 <- set.par(par1, b1, "b")
         fit <- x$fit.fun(x$X, par2)
@@ -3142,16 +3157,19 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     Sigma <- matrix_inv(hess)
     grad <- -1 * (grad + x$grad(par0))
 
-    objfun <- function(nu) {
-      b1 <- b0 - nu * Sigma %*% grad
-      par0 <- set.par(par0, b1, "b")
-      eta[[id]] <- eta[[id]] + x$fit.fun(x$X, par0)
-      logLik <- family$loglik(y, family$map2par(eta))
-      logPost <- logLik + x$prior(par0)
-      return(-1 * logPost)
+    if(x$xt$update.nu) {
+      objfun <- function(nu) {
+        b1 <- b0 - nu * Sigma %*% grad
+        par0 <- set.par(par0, b1, "b")
+        eta[[id]] <- eta[[id]] + x$fit.fun(x$X, par0)
+        logLik <- family$loglik(y, family$map2par(eta))
+        logPost <- logLik + x$prior(par0)
+        return(-1 * logPost)
+      }
+      nu <- optimize(f = objfun, interval = c(0, 1))$minimum
+    } else {
+      nu <- x$xt$nu
     }
-
-    nu <- optimize(f = objfun, interval = c(0, 1))$minimum
     b <- b0 - nu * grad %*% Sigma
 
     x$state$parameters <- set.par(x$state$parameters, b, "b")
@@ -3169,31 +3187,29 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
 
     gradfun <- function(b, score) {
       eta_mu <- data$fit.fun(data$X, b, mu = TRUE)
-      eta_scale <- data$scale_linkfun(1) + data$fit.fun(data$X, b, scale = TRUE)
+      eta_scale <- data$scale_linkfun(rs_intcpt) + data$fit.fun(data$X, b, scale = TRUE)
       scale <- data$scale_linkinv(eta_scale)
 
       w_mu <- 1 / scale
       w_scale <- eta_mu * (-1 / (scale^2)) * data$scale_mu.eta(eta_scale)
 
-      grad <- c(colSums(data$xmat * score * w_mu), colSums(data$zmat * score * w_scale))
+      grad <- c(colSums(data$xmat * score * w_mu), if(!is.null(data$zmat)) colSums(data$zmat * score * w_scale) else NULL)
 
       grad
     }
 
     hessfun <- function(b, score, hess) {
       eta_mu <- data$fit.fun(data$X, b, mu = TRUE)
-      eta_scale <- data$scale_linkfun(1) + data$fit.fun(data$X, b, scale = TRUE)
+      eta_scale <- data$scale_linkfun(rs_intcpt) + data$fit.fun(data$X, b, scale = TRUE)
       scale <- data$scale_linkinv(eta_scale)
 
       w_mu <- 1 / scale
       w_scale <- eta_mu * (-1 / (scale^2)) * data$scale_mu.eta(eta_scale)
-      w_scale2 <- eta_mu / scale^3 * (2 * data$scale_mu.eta(eta_scale)^2 - scale * data$scale_mu.eta2(eta_scale))
 
       Hd <- crossprod(data$xmat * (w_mu^2 * hess), data$xmat)
-      Hn <- crossprod(data$zmat * (w_scale^2 * hess), data$zmat)
-      Hn <- Hn + crossprod(data$zmat * (w_scale2 * score), data$zmat)
+      Hn <- if(!is.null(data$zmat)) crossprod(data$zmat * (w_scale^2 * hess), data$zmat) else NULL
 
-      as.matrix(do.call("bdiag", list(Hd, Hn)))
+      return(if(!is.null(Hn)) as.matrix(do.call("bdiag", list(Hd, Hn))) else as.matrix(Hd))
     }
 
     peta <- family$map2par(eta)
@@ -3203,7 +3219,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
 
     pibeta <- family$loglik(y, peta)
     p1 <- data$prior(theta)
- 
+
     hess0 <- hessfun(theta, score, hess)
     Sigma <- matrix_inv(hess0 + data$hess(theta))
     xgrad <- -1 * (gradfun(theta, score) + data$grad(theta))
@@ -3267,6 +3283,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     Predict.matrix.rs.smooth(object, data)
   }
   object$special.npar <- length(get.par(object$state$parameters, "b"))
+  object$special.mpar <- function(...) { object$state$parameters }
   object$fixed <- FALSE
   object$fxsp <- FALSE
   object$S <- list(matrix(0, 1, 1))
@@ -3291,6 +3308,75 @@ Predict.matrix.rs.smooth <- function(object, data)
     }
   }
   Xl
+}
+
+rs.plot <- function(x, model = NULL, term = NULL,
+  what = c("numerator", "denominator"), type = "link", ...)
+{
+  tl <- term.labels2(x, model = model, pterms = FALSE, intercept = FALSE, type = 2)
+  tl <- grep("rs(", tl, fixed = TRUE, value = TRUE)
+  if(length(tl) < 1)
+    return(invisible(NULL))
+  term <- if(!is.null(term)) {
+    grep(term, tl, fixed = TRUE, value = TRUE)
+  } else tl
+
+  op <- par(no.readonly = TRUE)
+  on.exit(par(op))
+
+  if(!is.null(x$samples)) {
+    samps <- samples(x, model = model)
+  } else {
+    if(is.null(x$parameters))
+      stop("cannot find any parameters!")
+    samps <- parameters(x, model = model, list = FALSE, extract = TRUE)
+    cn <- names(samps)
+    samps <- matrix(samps, nrow = 1)
+    colnames(samps) <- cn
+    samps <- as.mcmc(samps)
+  }
+
+  pl <- list()
+  k <- 1
+  for(j in seq_along(term)) {
+    pn <- names(term)[j]
+    tlj <- names(x$x[[pn]]$smooth.construct)
+    i <- grep(term[j], tlj, fixed = TRUE)
+    for(w in what) {
+      nw <- nw0 <- names(x$x[[pn]]$smooth.construct[[i]]$X[[w]]$smooth.construct)
+      nw <- nw[nw != "model.matrix"]
+      if(length(nw) > 0) {
+        for(ii in nw) {
+          get.X <- function(data) {
+            PredictMat(x$x[[pn]]$smooth.construct[[i]]$X[[w]]$smooth.construct[[ii]], data)
+          }
+          iii <- which(nw0 %in% ii)
+          iii <- paste(if(w == "denominator") "d" else "n", iii, sep = "")
+          iii <- paste(pn, ".s.", tlj[i], ".", iii, sep = "")
+          sn <- colnames(samps)
+          sn <- grep(iii, sn, fixed = TRUE, value = TRUE)
+          if((w == "denominator") & (type != "link")) {
+            FUN <- function(z) {
+              c95(x$x[[pn]]$smooth.construct[[i]]$scale_linkinv(z))
+            }
+          } else {
+            FUN <- NULL
+          }
+          pl[[k]] <- compute_s.effect(x$x[[pn]]$smooth.construct[[i]]$X[[w]]$smooth.construct[[ii]], get.X,
+            x$x[[pn]]$smooth.construct[[i]]$X[[w]]$smooth.construct[[ii]]$fit.fun, samps[, sn, drop = FALSE],
+            FUN = FUN, sn, model.frame(x), grid = -1, rug = TRUE)
+          attr(pl[[k]], "specs")$label <- paste(attr(pl[[k]], "specs")$label, ".", w, sep = "")
+          k <- k + 1
+        }
+      }
+    }
+  }
+
+  par(mfrow = n2mfrow(length(pl)))
+  for(j in seq_along(pl)) {
+    plot.bamlss.effect(pl[[j]], ...)
+  }
+  invisible(pl)
 }
 
 
