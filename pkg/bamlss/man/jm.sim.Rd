@@ -83,6 +83,7 @@ are returned
 
 \examples{
 ## todo
+}
 
 \keyword{survival}
 \keyword{distribution}

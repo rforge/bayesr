@@ -99,7 +99,6 @@ bf <- with(bf, jm.transform(x = x, y = y, terms = terms, knots = knots,
            timevar = "obstime", idvar = "id"))
 
 }
-}
 
 \keyword{regression}
 \keyword{survival}
