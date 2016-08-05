@@ -670,6 +670,12 @@ Note that for numerical reasons it is oftentimes better to replace the Hessian b
 Fisher information with weights
 $\mathbf{W}_{kk} = -\mathrm{diag}(E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top))$,~\citep{bamlss:Klein+Kneib+Lang:2015}.
+Moreover, to achieve convergence, algorithms for posterior mode usually initialize the parameter
+vectors $\boldsymbol{\theta}_k$. Then, after one inner backfitting iteration the algorithm
+can proceed in a full zigzag fashion or again with inner iterations. For all updating schemes it
+might also be appropriate to vary the updating step length, possibly in each iteration. This is
+relatively straightforward to implement, because step length optimization is a one dimensional
+problem.
 
 
 \subsubsection{Posterior mean} \label{sec:postmean}
@@ -762,9 +768,9 @@ derived by each of the following methods:
     \mathcal{N}(\boldsymbol{\mu}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk}^{(t)})$ and the acceptance probability
   of the candidate is then computed by
   $$
-  \alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \boldsymbol{\beta}_{jk}^{(t)}\right) =
-  \text{min} \left[ \frac{\pi(\boldsymbol{\beta}_{jk}^{\star} | \cdot)q(\boldsymbol{\beta}_{jk}^{(t)} | \boldsymbol{\beta}_{jk}^\star)}{
-    \pi(\boldsymbol{\beta}_{jk}^{(t)} | \cdot)q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)})  }, 1 \right].
+  \alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \, \boldsymbol{\beta}_{jk}^{(t)}\right) =
+  \text{min} \left[ \frac{\pi(\boldsymbol{\beta}_{jk}^{\star} | \, \cdot)q(\boldsymbol{\beta}_{jk}^{(t)} | \, \boldsymbol{\beta}_{jk}^\star)}{
+    \pi(\boldsymbol{\beta}_{jk}^{(t)} | \, \cdot)q(\boldsymbol{\beta}_{jk}^\star | \, \boldsymbol{\beta}_{jk}^{(t)})  }, 1 \right].
   $$
   Again, assuming a basis function approach for functions $f_{jk}( \cdot )$ the precision matrix is
   $$
@@ -1046,6 +1052,14 @@ after $\boldsymbol{\beta}_{jk}$. In Algorithm~\ref{fig:mcmc} the general samplin
 In summary, building algorithms for BAMLSS is practically based on combining updating functions
 which are itself based on repeated ``Lego bricks''. Hence, once the infrastructure is in place, it
 is relatively easy to implement algorithms for a variety of models.
+\begin{table}[t!]
+\centering
+\begin{tabular}{lll}
+\multicolumn{2}{c}{$f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$} & $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$ \\ \hline
+no covariate & $\mathbf{1}\beta_{jk}$ & constant prior \\
+scalar covariate(s) & $\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$ &
+\end{tabular}
+\end{table}
 
 
 \section{Computational tools and strategies for implementation} \label{sec:comptools}
