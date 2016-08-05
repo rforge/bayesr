@@ -1054,10 +1054,23 @@ which are itself based on repeated ``Lego bricks''. Hence, once the infrastructu
 is relatively easy to implement algorithms for a variety of models.
 \begin{table}[t!]
 \centering
-\begin{tabular}{lll}
-\multicolumn{2}{c}{$f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$} & $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$ \\ \hline
-no covariate & $\mathbf{1}\beta_{jk}$ & constant prior \\
-scalar covariate(s) & $\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$ &
+\begin{tabular}{ll|ll}
+\multicolumn{2}{c}{$f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$} & \multicolumn{2}{c}{$p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$} \\
+Covariate (subset of $\mathbf{x}$) & Effect types &
+  $d_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \, \boldsymbol{\tau}_{jk};
+     \boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}})$ &
+  $d_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}})$ \\ \hline
+No covariate & Intercept $\beta$ & $\propto$ const & \dots \\
+Scalar covariates & Linear effect $x \cdot \beta$ & \dots & \dots \\
+                    & Smooth effect $f(x)$ & \dots & \dots \\
+Vector of scalars & Linear interaction $x_1 \cdot x_2 \cdot \beta$ & \dots & \dots \\
+                  & Varying coefficient $f(x_2) \cdot x_1$  & \dots & \dots \\
+                  & Smooth effect $f(x_1, \ldots, x_m)$  & \dots & \dots \\
+Indicator covariates & Random intercept $\beta_i$  & \dots & \dots \\
+                     & Spatial effect $f(s)$, $x = s$ & \dots & \dots \\
+Scalar and indicator & Random slope $x_1 \cdot \beta_i$ & \dots & \dots \\
+                     & Space-time effect $f(t, s)$, $\mathbf{x} = (t, s)$ & \dots & \dots \\
+                     & Functional random intercept $f_i(t)$, $x = t$ & \dots & \dots \\
 \end{tabular}
 \end{table}
 
