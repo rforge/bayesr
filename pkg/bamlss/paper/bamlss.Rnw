@@ -1052,7 +1052,7 @@ after $\boldsymbol{\beta}_{jk}$. In Algorithm~\ref{fig:mcmc} the general samplin
 In summary, building algorithms for BAMLSS is practically based on combining updating functions
 which are itself based on repeated ``Lego bricks''. Hence, once the infrastructure is in place, it
 is relatively easy to implement algorithms for a variety of models.
-\begin{table}[t!]
+\begin{sidewaystable}
 \centering
 \begin{tabular}{ll|ll}
 \multicolumn{2}{c}{$f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$} & \multicolumn{2}{c}{$p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$} \\
@@ -1061,18 +1061,19 @@ Covariate (subset of $\mathbf{x}$) & Effect types &
      \boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}})$ &
   $d_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}})$ \\ \hline
 No covariate & Intercept $\beta$ & $\propto$ const & \dots \\
-Scalar covariates & Linear effect $x \cdot \beta$ & \dots & \dots \\
-                    & Smooth effect $f(x)$ & \dots & \dots \\
+Scalar covariates $x$ & Linear effect $x \cdot \beta$ & \dots & \dots \\
+                      & Smooth effect $f(x)$ & \dots & \dots \\
 Vector of scalars & Linear interaction $x_1 \cdot x_2 \cdot \beta$ & \dots & \dots \\
-                  & Varying coefficient $f(x_2) \cdot x_1$  & \dots & \dots \\
-                  & Smooth effect $f(x_1, \ldots, x_m)$  & \dots & \dots \\
-Indicator covariates & Random intercept $\beta_i$  & \dots & \dots \\
-                     & Spatial effect $f(s)$, $x = s$ & \dots & \dots \\
-Scalar and indicator & Random slope $x_1 \cdot \beta_i$ & \dots & \dots \\
-                     & Space-time effect $f(t, s)$, $\mathbf{x} = (t, s)$ & \dots & \dots \\
-                     & Functional random intercept $f_i(t)$, $x = t$ & \dots & \dots \\
+$(x_1, \ldots, x_L)^\top$ & Varying coefficient $f(x_2) \cdot x_1$  & \dots & \dots \\
+                  & Smooth effect $f(x_1, \ldots, x_L)$  & \dots & \dots \\
+Indicator covariates $s$ & Random intercept $\beta_s$  & \dots & \dots \\
+                     & Spatial effect $f(s)$ & \dots & \dots \\
+Scalar and indicator & Random slope $x \cdot \beta_s$ & \dots & \dots \\
+                     & Space-time effect $f(s, t)$ & \dots & \dots \\
+                     & Functional random intercept $f_s(t)$ & \dots & \dots \\
 \end{tabular}
-\end{table}
+\caption{\label{tab:legobricks} Commonly used ``Lego bricks'' for GAM-type models.}
+\end{sidewaystable}
 
 
 \section{Computational tools and strategies for implementation} \label{sec:comptools}
