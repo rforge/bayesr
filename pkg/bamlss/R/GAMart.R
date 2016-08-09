@@ -186,3 +186,13 @@ GAMart <- function(n = 500, sd = 0.1, seed = FALSE, ti = c("none", "vcm", "main"
   d
 }
 
+
+Volcano <- function(...) {
+  eta <- scale2(volcano, 0, 1)
+  lon <- scale2(1:nrow(z), 0, 1)
+  lat <- scale2(1:ncol(z), 0, 1)
+  d <- expand.grid("lon" = lon, "lat" = lat)
+  d$y <- as.numeric(eta) + rnorm(length(eta), sd = 0.3)
+  d
+}
+
