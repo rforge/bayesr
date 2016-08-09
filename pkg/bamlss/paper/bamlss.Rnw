@@ -1054,25 +1054,31 @@ which are itself based on repeated ``Lego bricks''. Hence, once the infrastructu
 is relatively easy to implement algorithms for a variety of models.
 \begin{sidewaystable}
 \centering
-\begin{tabular}{ll|ll}
-\multicolumn{2}{c}{$f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$} & \multicolumn{2}{c}{$p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$} \\
-Covariate (subset of $\mathbf{x}$) & Effect types &
-  $d_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \, \boldsymbol{\tau}_{jk};
-     \boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}})$ &
-  $d_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}})$ \\ \hline
-No covariate & Intercept $\beta$ & $\propto$ const & \dots \\
-Scalar covariates $x$ & Linear effect $x \cdot \beta$ & \dots & \dots \\
-                      & Smooth effect $f(x)$ & \dots & \dots \\
-Vector of scalars & Linear interaction $x_1 \cdot x_2 \cdot \beta$ & \dots & \dots \\
-$(x_1, \ldots, x_L)^\top$ & Varying coefficient $f(x_2) \cdot x_1$  & \dots & \dots \\
-                  & Smooth effect $f(x_1, \ldots, x_L)$  & \dots & \dots \\
-Indicator covariates $s$ & Random intercept $\beta_s$  & \dots & \dots \\
-                     & Spatial effect $f(s)$ & \dots & \dots \\
-Scalar and indicator & Random slope $x \cdot \beta_s$ & \dots & \dots \\
-                     & Space-time effect $f(s, t)$ & \dots & \dots \\
-                     & Functional random intercept $f_s(t)$ & \dots & \dots \\
+\begin{tabular}{l|l|ll}
+\multicolumn{1}{c}{Covariates} & \multicolumn{1}{c}{Effect types $f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$} & \multicolumn{2}{c}{Prior densities $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$} \\
+& &
+  \multicolumn{1}{c}{$d_{\boldsymbol{\beta}}(\boldsymbol{\beta} | \, \boldsymbol{\tau};
+     \boldsymbol{\alpha}_{\boldsymbol{\beta}})$} &
+  \multicolumn{1}{c}{$d_{\boldsymbol{\tau}}(\boldsymbol{\tau} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}})$} \\ \hline
+\multirow{6}{*}{Scalar covariates} & Intercept $\beta$ & \multirow{2}{*}{$\propto$ const} & \multicolumn{1}{c}{\multirow{3}{*}{$\emptyset$}} \\
+& Linear effect $x \cdot \beta$ &
+  \multirow{2}{*}{$\propto \exp \left(- \frac{1}{2}(\boldsymbol{\beta} -
+    \mathbf{m})^{\top}\mathbf {P}(\boldsymbol{\tau})(\boldsymbol{\beta} -
+    \mathbf{m})\right)$}
+                      & \\
+& Linear interaction $x_1 \cdot x_2 \cdot \beta$ & & \\ \cline{2-4}
+& Smooth effect $f(x)$ & \multirow{8}{*}{$\propto |\mathbf{P}(\boldsymbol{\tau})|^{\frac{1}{2}} \exp\left(
+    -\frac{1}{2}\boldsymbol{\beta}^\top\mathbf{P}(\boldsymbol{\tau})\boldsymbol{\beta}\right)$} &
+    \multirow{2}{*}{IG $\propto (\tau^2)^{-(a + 1)} \exp(-b / \tau^2)$} \\
+& Varying coefficient $f(x_2) \cdot x_1$  & & \\
+& Smooth effect $f(x_1, \ldots, x_L)$  & & \multirow{2}{*}{HC $\propto (1 + \tau^2/a^2)^{-1}(\tau^2/a^2)^{-1/2}$} \\ \cline{1-1}
+\multirow{2}{*}{Grouping variable $s$} & Random intercept $\beta_s$ & &  \\
+& Spatial effect $f(s)$ & & \multirow{2}{*}{SD $\propto (\tau^2/\tau)^{-1/2} \exp(-(\tau^2/a)^{1/2})$} \\ \cline{1-1}
+\multirow{2}{*}{Grouping and scalar,} & Random slope $x \cdot \beta_s$ & & \\
+\multirow{2}{*}{time variable $t$}& Space-time effect $f(s, t)$ & & \multirow{2}{*}{HN $\propto (\tau^2)^{1/2 -1} \exp(-\tau^2/(2a^2))$} \\
+& Functional random intercept $f_s(t)$ & & \\
 \end{tabular}
-\caption{\label{tab:legobricks} Commonly used ``Lego bricks'' for GAM-type models.}
+\caption{\label{tab:legobricks} Commonly used ``Lego bricks'' in BAMLSS. }
 \end{sidewaystable}
 
 
