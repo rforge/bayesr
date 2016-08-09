@@ -157,7 +157,7 @@ implementations. A prove of concept is given in the corresponding \proglang{R} i
 
 The remainder of the paper is as follows. In Section~\ref{sec:model} the models supported by this
 framework are briefly introduced. Section~\ref{sec:legobox} presents the ``Lego bricks'' that can be
-utilized for model building and estimation. In Section~\ref{sec:comptools} computational strategies
+utilized for model building and estimation. In Section~\ref{sec:strategies} computational strategies
 for the implementation are presented. Finally, Section~\ref{sec:softex} briefly introduces the
 \proglang{R} package \pkg{bamlss}. The framework is further illustrated on a very large model for
 daily precipitation observations, as well as on the computationally challenging Cox model for
@@ -968,7 +968,7 @@ modular system from which it is easy to create algorithms for numerous regressio
 Moreover, using the ideas of partitioned updating as presented in Section~\ref{sec:modelfit} for
 posterior mode estimation or MCMC, a simple generic algorithm for BAMLSS can be constructed, which
 is outlined in Algorithm~\ref{fig:algodesign}.
-\begin{algorithm}
+\begin{algorithm}[!h]
 \caption{\label{fig:algodesign} Generic BAMLSS model fitting algorithm.}
 \begin{algorithmic}
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
@@ -1004,7 +1004,7 @@ first computing posterior mode estimates before running a MCMC simulation with t
 as starting values. Finding good starting values is especially important for complex model terms
 that, e.g., include multiple smoothing variances. In Algorithm~\ref{fig:umode}, the stepwise selection
 of smoothing variances, similar to \citet{bamlss:Belitz+Lang:2008}, is shown.
-\begin{algorithm}
+\begin{algorithm}[!h]
 \caption{\label{fig:umode} Posterior mode updating $U_{jk}( \cdot )$ with smoothing variance selection.}
 \begin{algorithmic}
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
@@ -1029,7 +1029,7 @@ does not guarantee a global minimum given the goodness of fit criterion, however
 is at least close and serves as good starting points for full MCMC. The MCMC updating functions
 usually either accept or reject samples of the parameters and smoothing variances are sampled
 after $\boldsymbol{\beta}_{jk}$. In Algorithm~\ref{fig:mcmc} the general sampling scheme is shown.
-\begin{algorithm}
+\begin{algorithm}[!h]
 \caption{\label{fig:mcmc} MCMC updating $U_{jk}( \cdot )$.}
 \begin{algorithmic}
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
@@ -1051,7 +1051,9 @@ after $\boldsymbol{\beta}_{jk}$. In Algorithm~\ref{fig:mcmc} the general samplin
 
 In summary, building algorithms for BAMLSS is practically based on combining updating functions
 which are itself based on repeated ``Lego bricks''. Hence, once the infrastructure is in place, it
-is relatively easy to implement algorithms for a variety of models.
+is relatively easy to implement algorithms for a variety of models. In Table~\ref{tab:mlegobricks}
+we further exemplify the modular structure for model term specifications using commonly used
+priors for regression coefficients $\boldsymbol{\beta}_{jk}$ and smoothing variances $\boldsymbol{\tau}_{jk}$.
 \begin{sidewaystable}
 \centering
 \begin{tabular}{l|l|ll}
@@ -1078,11 +1080,11 @@ is relatively easy to implement algorithms for a variety of models.
 \multirow{2}{*}{time variable $t$}& Space-time effect $f(s, t)$ & & \multirow{2}{*}{HN $\propto (\tau^2)^{1/2 -1} \exp(-\tau^2/(2a^2))$} \\
 & Functional random intercept $f_s(t)$ & & \\
 \end{tabular}
-\caption{\label{tab:legobricks} Commonly used ``Lego bricks'' in BAMLSS. }
+\caption{\label{tab:mlegobricks} Commonly used ``Lego bricks'' for model terms in BAMLSS. }
 \end{sidewaystable}
 
 
-\section{Computational tools and strategies for implementation} \label{sec:comptools}
+\section{Strategies for implementation} \label{sec:strategies}
 
 Today, there exist a couple of implementations supporting distributional regression models. The
 \proglang{R} packages \pkg{gamlss} and \pkg{VGAM} are probably the best known for flexible modeling
