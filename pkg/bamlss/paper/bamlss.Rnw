@@ -1080,7 +1080,10 @@ priors for regression coefficients $\boldsymbol{\beta}_{jk}$ and smoothing varia
 \multirow{2}{*}{time variable $t$}& Space-time effect $f(s, t)$ & & \multirow{2}{*}{HN $\propto (\tau^2)^{1/2 -1} \exp(-\tau^2/(2a^2))$} \\
 & Functional random intercept $f_s(t)$ & & \\
 \end{tabular}
-\caption{\label{tab:mlegobricks} Commonly used ``Lego bricks'' for model terms in BAMLSS. }
+\caption{\label{tab:mlegobricks} Commonly used ``Lego bricks'' for model terms in BAMLSS. Priors for
+  linear effects assume that the precision matrix $\mathbf{P}(\boldsymbol{\tau})$ is fixed. For smooth
+  effects, prior densities are: Inverse Gamma (IG), half-Cauchy (HC), scale-dependent (SD) and
+  half-normal (HN).}
 \end{sidewaystable}
 
 
@@ -1115,17 +1118,18 @@ three sections suggest an unified modeling architecture that is useful for build
 writing interfaces to existing implementations.
 
 In order to unify the multitude of possibilities, a general software system for BAMLSS and beyond
-should address the following:
+adresses the following:
 \begin{enumerate}
-\item Unified model description.
-\item A generic method for setting up model terms and corresponding prior structures.
-\item Support of exchangeable updating functions or even model fitting engines.
-\item Standard post modeling extractor functions.
+\item Unified model description,
+\item a generic method for setting up model terms and corresponding prior structures,
+\item support of exchangeable updating functions or even model fitting engines,
+\item standard post modeling extractor functions.
 \end{enumerate}
 While points 2--4 are primarily software specific issues, the first point is more general. For
 setting up all necessary design and penalty matrices, as well as prior structures, a symbolic
-model definition is needed, which is described in the next section. Section~\ref{sec:architecture}
-then describes a general architecture for implementing BAMLSS and beyond.
+model definition is needed. A concept for symbolic model description is described in the next
+section. Section~\ref{sec:architecture} then describes a general architecture for implementing
+BAMLSS and beyond.
 
 
 \subsection{Symbolic descriptions} \label{sec:symdesc}
@@ -1258,23 +1262,29 @@ A possible architecture for the BAMLSS framework is illustrated in Figure~\ref{f
 \end{picture}
 \caption{\label{fig:blocks} Flexible BAMLSS architecture.}
 \end{figure}
-The concept can be divided in three parts: First, functions that describe distribution families,
+The concept can be divided into three parts: First, functions that describe distribution families,
 formulas, together with the data that is used for modeling. Secondly, functions that actually
-compute estimates of parameters, and thirdly, functions for visualization and output statistics.
+compute estimates of parameters, and thirdly, functions for creating results like sampling
+statistics i.a., visualization, prediction etc.
 
-To set up the necessary model frame, the parser function translates the model formula
-(see Section~\ref{sec:symdesc}) and the data. For some algorithms a modified version of the
-model frame is needed, e.g., using the mixed model representation (\ref{eqn:mixed}) for smooth
-terms. Hence, a transformer function might be required. The actual estimation function then
-calls the engine, either an external device or function within the same environment. The data
-obtained from the engine is then uniformly processed in a results function, e.g., to be able to
-plot samples or effects, create summary statistics, and so forth.
+To set up the necessary model frame, a parser function translates the model formula
+(see Section~\ref{sec:symdesc}) and the data and creates all necessary information that is
+needed for subsequent model fitting engines. For some algorithms a modified version of the
+model term setup is needed, e.g., when using the mixed model representation (\ref{eqn:mixed}) for
+smooth terms, design and penalty matrices are transformed. This can be done by an optional
+transformer function applied on the BAMLSS model frame.
 
-The main advantage of the architecture is that the blocks model frame, transformer, optimizer,
-sampler and results are entirely exchangeable and reusable, i.e., it is relatively easy to
-incorporate new algorithms or engines. The other blocks are assumed to be more or less stable such
-that no extra coding is required. An implementation of this concept together with examples is
-illustrated in the next section.
+The estimation step has two parts. First, an (optional) optimizer function, for example computing
+posterior mode estimates. Secondly, a sampler function for full Bayesian inference with MCMC which uses
+posterior mode estimates as staring values. Note that each, the optimizer and the sampler function,
+can be exchanged in this concept, i.e., this way it is possible to write a number of different
+optimizer and sampler functions, e.g., for specific problems.
+
+In summary, the main advantage of the architecture is that the building blocks model frame,
+transformer, optimizer, sampler and results are entirely exchangeable and reusable, i.e., it is
+relatively easy to incorporate new algorithms or engines, amongst others. The other blocks are
+assumed to be more or less stable such that no extra coding is required. An implementation of this
+concept together with examples is illustrated in the next section.
 
 
 \section{Software implementation and examples} \label{sec:softex}
@@ -1316,205 +1326,25 @@ distribution. For incorporating smooth terms, the \pkg{bamlss} package makes hea
 \pkg{mgcv} infrastructures and supports all model term constructors implemented in \pkg{mgcv},
 such as \fct{s}, \fct{te}, \fct{ti} and so forth.
 
-For a better understanding of the workflow using function \fct{bamlss}, we briefly describe
-the default model frame constructor first. Internally, function \fct{bamlss} parses the
-\code{formula} with the specified \code{family} and the \code{data} into a \class{bamlss.frame}
-object using function \fct{bamlss.frame}. When called, function \fct{bamlss.frame} will compute all
-model matrices and information that is needed for subsequent modeling functions. The following
-example illustrates the possible output of \fct{bamlss.frame} for a simple normal model using the
-simulated motorcycle accident data of \proglang{R} package
-\pkg{MASS}~\citep{bamlss:Venables+Ripley:2002}. The model for head acceleration (variable \code{accel})
-is given by
-\begin{eqnarray*}
-\texttt{accel} &\sim& \mathcal{N}(\mu, \sigma^2) \\
-\mu = \eta_{\mu} && \sigma = \exp(\eta_{\sigma}).
-\end{eqnarray*}
-Both additive predictors $\eta_{\mu}$ and $\eta_{\sigma}$ are specified by
-$$
-\eta = \beta_0 + f(\texttt{times}),
-$$
-where covariate \code{times} is the time measured in milliseconds after impact.
-In \proglang{R}, the model is specified and the corresponding model frame created with
-<<>>=
-library("bamlss")
-data("mcycle", package = "MASS")
-f <- list(accel ~ s(times, k = 20), sigma ~ s(times, k = 20))
-bf <- bamlss.frame(f, family = "gaussian", data = mcycle)
-print(bf)
-@
-Here, both parameters of the normal distribution are modeled in terms of covariate \code{times} using
-the \pkg{mgcv} default thin plate splines together with the \fct{s} model term constructor. Besides
-the \code{model.frame}, a \code{formula}, \code{family} and the model \code{terms}, the most
-important objects that the \class{bamlss.frame} object \code{bf} holds are elements \code{x} and \code{y}.
-The \code{x} element is build up from the information of the \code{family} object, see
-Section~\ref{sec:families}, and consists of all model matrices for each parameter of the distribution,
-indicated by the list names \code{mu} and \code{sigma}. Each of them saves the \code{formula} that
-is assigned to a parameter, together with a \code{fake.formula} that is a simple helper formula
-to ease building up the model matrices, as well as the corresponding \code{terms}
-object, the \code{model.matrix} of
-parametric modeled covariates and the \code{smooth.construct} list of all smoothly modeled
-covariates. The elements of \code{smooth.construct} consist of one model term each, in this example
-only \code{s(times)}, which is the result of calling the generic model term constructor
-\fct{smooth.construct} of the \pkg{mgcv} package. Inside \fct{bamlss.frame}, all centering and
-identifiability constraints for smooth terms are imposed utilizing \pkg{mgcv} functionality.
-Here, the last element in the \class{bamlss.frame} is named \code{y} and represents the response
-variable(s) that is used for modeling, only \code{accel} in this case.
+Estimation is performed by an \code{optimizer} and \code{sampler} function, which can be provided by the user.
+The default optimizer function implements an IWLS backfitting algorithm (\ref{eqn:blockbackfit})
+with automatic smoothing variance selection, see also Algorithm~\ref{fig:algodesign} and
+\ref{fig:umode}. The default sampler function implements derivative based MCMC based on IWLS
+proposals, smoothing variances are sampled using slice sampling, see also Section~\ref{sec:postmean}.
+For writing new optimizer and sampler functions only a simple general format of function arguments
+and return values must be adhered. See the documentation of the \pkg{bamlss} package for more
+details.
 
-Within \fct{bamlss}, after constructing the \class{bamlss.frame} the actual model fitters are
-applied. This can be an optimizer function, provided to argument \code{optimizer} and/or a MCMC
-sampler function provided to argument \code{sampler}. For standardization purposes, it is assumed
-that such functions have an \code{x}, \code{y} and \code{family} argument provided from function \fct{bamlss.frame}.
-Moreover, optimizer functions should return a named numeric vector with the estimated
-parameters or a \code{list} with an element named \code{parameters}
-(again the named numeric \code{vector} of estimated parameters), where additional elements hold,
-e.g., information about convergence or fitted values, see below. Sampler functions should return a named
-matrix of generated samples that can be coerced to a \class{mcmc} object, see also \proglang{R}
-package \pkg{coda} \citep{bamlss:Plummer+Best+Cowles+Vines:2006}. To illustrate the internal setup
-we apply the default \pkg{bamlss} optimizer function \fct{bfit} to the \class{bamlss.frame} object
-\code{bf}
-<<echo=FALSE, results=hide>>=
-if(!file.exists("mcycle-model.rda")) {
-  bo <- with(bf, bfit(x, y, family, maxit = 1000))
-  bs <- with(bf, GMCMC(x, y, family, start = bo, n.iter = 12000, burnin = 2000, thin = 10))
-  save(bf, bo, bs, file = "mcycle-model.rda")
-} else {
-  load("mcycle-model.rda")
-}
-@
-<<eval=FALSE>>=
-bo <- with(bf, bfit(x, y, family))
-@
-Function \fct{bfit} applies the algorithm described in Figure~\ref{fig:algodesign} and per default
-the IWLS updating scheme as described in (\ref{eqn:blockbackfit}). Moreover, an automated
-stepwise procedure for smoothing variances selection is implemented using information criteria like the
-corrected AIC and BIC \citep{bamlss:Belitz+Lang:2008}, see also Section~\ref{sec:smoothvarsel}.
-The returned object from \fct{bfit} holds the
-fitted values and corresponding parameter estimates, the equivalent degrees of freedom (edf)
-used to produce the model fit, as well as other information about convergence
-of the algorithm, information criteria, etc.
-<<>>=
-print(names(bo))
-print(head(unlist(bo$parameters)))
-@
-The parameters can then be used as starting values in the default MCMC sampler function
-\fct{GMCMC}, which is a quite flexible MCMC sampler function implementing the derivative based
-Metropolis-Hastings algorithm and slice sampling, see Section~\ref{sec:postmean}, amongst others.
-<<eval=FALSE>>=
-bs <- with(bf, GMCMC(x, y, family, start = bo))
-@
-The generated samples are stored as a \class{mcmc} matrix in object \code{bs}, for which nice
-printing and plotting functions are provided, e.g., for inspecting the convergence of the MCMC
-sampler simple trace plots can be created by
-<<eval=FALSE>>=
-plot(bs)
-@
-or the samples can be inspected directly with
-<<>>=
-print(head(bs[, 1:2]))
-@
-Afterwards, the estimated parameters or MCMC samples are used for creating post-estimation results
-like summary statistics, effect plots, etc. Within \fct{bamlss}, the default function for this task
-is \fct{results.bamlss.default} and is passed to argument \code{results}. The function returns an
-object of class \class{bamlss.results} for which generic plotting and summary functions are provided.
-For example, using the samples from the MCMC run we create the post-estimation results and plot the 
-estimated functions by
-<<eval=FALSE>>=
-bf$samples <- bs
-br <- results.bamlss.default(bf)
-plot(br)
-@
-The resulting effect plots on parameter $\mu$ and $\sigma$ are shown in Figure~\ref{fig:mcycle}.
-\begin{figure}[t!]
-\setkeys{Gin}{width=0.92\textwidth}
-\centering
-<<echo=FALSE, fig=TRUE, width=9, height=3.5>>=
-par(mar = c(4.1, 4.1, 0.1, 1.1), mfrow = c(1, 2))
-bf$samples <- bs
-br <- results.bamlss.default(bf)
-plot(br, scheme = 2, spar = FALSE, grid = 100)
-@
-\caption{\label{fig:mcycle} Estimated effects on $\mu$ and $\log(\sigma)$ of covariate \code{times}
-  of the motorcycle data example together with $95\%$ credible intervals, gray shaded areas.}
-\end{figure}
-
-In summary, function \fct{bamlss} is combining all these single steps. Moreover, since MCMC
-sampling is computationally intensive it is also possible to run chains on several cores using
-package \pkg{parallel}, which is part of the base \proglang{R} distribution. After
-sampling, the chains can be combined in one large \class{mcmc} matrix, but can also be inspected
-separately. Hence, if a new algorithm/interface for optimization or MCMC sampling is written, the user
-can simply provide these functions to \fct{bamlss} and only needs to care about the input arguments
-and the returning values of the model fitters to use the \pkg{bamlss} functionalities. E.g.,
-using the \pkg{JAGS} interface in package \pkg{bamlss}, the same model can be estimated by
-providing the sampler function \fct{JAGS} (which is a similar interface as the \fct{jagam} function
-of the \pkg{mgcv} package)
-<<eval=FALSE>>=
-b <- bamlss(f, family = "gaussian", data = mcycle,
-  optimizer = bfit, sampler = JAGS)
-@
-Here, we again run the backfitting optimizer function to generate good starting values for the
-MCMC simulation with \pkg{JAGS}. The returned object from \fct{bamlss} is of class \class{bamlss},
-for which common \proglang{R} generic functions like \fct{summary}, \fct{plot}, \fct{predict},
-\fct{residuals}, \fct{logLik}, \fct{DIC}, etc.\ are provided,
-see Section~\ref{sec:censreg}~and~\ref{sec:coxreg} for examples. 
+Moreover, since MCMC sampling is computationally intensive it is also possible to run chains on
+several cores using package \pkg{parallel}, which is part of the base \proglang{R} distribution. 
 
 Like other model fitting functions in \proglang{R} the user must specify the distributions to be
-modeled, which are commonly represented as so called family objects. The basic structure of such
-an \pkg{bamlss} family object is described in Section~\ref{sec:families}. Since these objects
+modeled, which are commonly represented as so called family objects. Since these objects
 are simply passed to the optimizer or sampler functions, the model fitting functions itself must 
-know how much information is needed to interpret the model. However, there are minimum
-requirements to parse the model frame with function \fct{bamlss.frame}:
-\begin{itemize}
-\item The family object must return a \class{list} of class \class{family.bamlss}.
-\item The object must contain the family name as a character string. 
-\item The object must contain the names of the parameters as a character string, as well as
-  the corresponding link functions as character string.
-\end{itemize}
-Moreover, for most optimizer and sampling functions at least the density function should be provided.
-For example, a new family for the normal distribution holding the first and
-second order derivative functions of the log-likelihood w.r.t.\ the parameters
-(see Section~\ref{sec:legobricks}~and~\ref{sec:families}) to be used for the IWLS updating
-and sampling scheme within function \fct{bfit} and \fct{GMCMC} could be created with
-<<>>=
-normal.bamlss <- function(...) {
-  f <- list(
-    "family" = "normal",
-    "names" = c("mu", "sigma"),
-    "links" = c("identity", "log"),
-    "d" = function(y, par, log = FALSE) {
-      dnorm(y, mean = par$mu, sd = par$sigma, log = log)
-    },
-    "score" = list(
-      "mu" = function(y, par, ...) {
-        drop((y - par$mu) / (par$sigma^2))
-      },
-      "sigma" = function(y, par, ...) {
-        drop(-1 + (y - par$mu)^2 / (par$sigma^2))
-      }
-    ),
-    "hess" = list(
-      "mu" = function(y, par, ...) {
-        drop(1 / (par$sigma^2))
-      },
-      "sigma" = function(y, par, ...) { 
-        rep(2, length(y))
-      }
-    )
-  )
-  class(f) <- "family.bamlss"
-  return(f)
-}
-@
-Internally, if a family function name ends with \class{.bamlss} it is
-sufficient to call the family by character, e.g., the motorcycle model can be estimated using
-the new family object with
-<<eval=FALSE>>=
-b <- bamlss(f, family = "normal", data = mcycle)
-@
-As noted above, it is dependent on the implementation of the estimation engine which details
-must be provided within the family object, therefore, in \pkg{bamlss} the family objects can hold
-an arbitrary number of specifications. Family objects may also control, e.g., which optimizer or
-sampler function should be used when calling function \fct{bamlss}, amongst other options.
-This way, it is easy to write model
+know how much information is needed to interpret the model. Therefore, in \pkg{bamlss} the family
+objects can hold an arbitrary number of specifications. Family objects may also control, e.g.,
+which optimizer or sampler function should be used when calling function \fct{bamlss},
+amongst other options. This way, it is easy to write model
 fitting functions for specific problems, like for the continuous time Cox-model in example
 Section~\ref{sec:coxreg}. At the time of writing, the distributions presented in
 Table~\ref{tab:distributions} are already provided within the \pkg{bamlss} package.
@@ -1534,6 +1364,7 @@ Function & Distribution \\ \hline
 \end{tabular}
 \caption{\label{tab:distributions} Available distributions in package \pkg{bamlss}.}
 \end{table}
+In addition, the package supports family objects of the \pkg{gamlss} package.
 
 
 \subsection{Precepitation climatolgy from daily observations} \label{sec:censreg}
@@ -1651,10 +1482,8 @@ and
     {\Phi\left(\frac{-\mu}{\sigma} \right)^2} & \mbox{else.}
 \end{cases}
 \end{equation*}
-
 The first and second derivative functions have been implemented in the \pkg{bamlss} family
-\fct{cnorm.bamlss} and can be directly used within the optimizer function \fct{bfit} and
-the MCMC sampler function \fct{GMCMC}.
+\fct{cnorm.bamlss}.
 
 Since the HOMSTART data set has over $1.2$ million observations, the resulting design matrices
 excessively demands the computer's storage as well as the CPU power. In order to prevent computational
@@ -1662,83 +1491,20 @@ problems associated with very large data sets like HOMSTART, we make use of the 
 the effect of the day of
 year has $365$ unique observations, only. This is much smaller than the total number of observations
 of the data set, i.e., the corresponding design matrix has a lot of duplicated rows and is hence inefficient
-for the use within model fitting algorithms. Therefore, we apply the IWLS algorithms described in
-Section~\ref{sec:postmode}~and~\ref{sec:postmean} using shrinkage of the design matrices based
+for the use within model fitting algorithms. Therefore, we implemented updating functions
+$U_{jk}( \cdot )$ that support shrinkage of the design matrices based
 on unique covariate observations. To make the IWLS algorithms based on unique observations work a
 reduced form of the diagonal weight matrix $\mathbf{W}_{kk}$ and the reduced
 partial residual vector from $\mathbf{z}_k - \boldsymbol{\eta}^{(t)}_{k, -j}$ has to be computed
 additionally. For the computational details of this highly
-efficient algorithm see \citet{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}. By
-following the design of the generic BAMLSS algorithm presented in Figure~\ref{fig:algodesign} this
-is relatively easy to implement, since one only needs to provide updating functions
-$\texttt{U}_{\texttt{jk}}( \cdot )$ that compute the efficient IWLS. This feature is supported
-within the model fitting functions \fct{bfit} and \fct{GMCMC}.
+efficient algorithm see \citet{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}. Since the default
+estimation engines in package \pkg{bamlss} are based on the design of the generic BAMLSS algorithm
+presented in Algorithm~\ref{fig:algodesign}, this is relatively straightforward to implement.
 
-The HOMSTART data is not directly shipped with package \pkg{bamlss}, however, the data frame used for
-modeling can be downloaded and parsed with
-<<eval=FALSE>>=
-homstart_data(dir = ".", load = TRUE)
-@
-The function \fct{homstart\_data} saves the data as \code{homstart.rda} in the specified directory and loads the data into
-the global environment as object \code{homstart}. The formula for the precipitation model is specified by
-<<eval=FALSE>>=
-f <- list(
-  "mu" = sqrt(raw) ~ s(elevation,) + ti(day,bs="cc",k=10) +
-    ti(long,lat,bs="tp",d=2,k=30) +
-    ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),k=c(8,30)),
-  "sigma" = ~ s(elevation) + ti(day,bs="cc",k=10) +
-    ti(long,lat,bs="tp",d=2,k=30) +
-    ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),k=c(8,30))
-)
-@
-using the \pkg{mgcv} smooth term constructor \fct{ti} for decomposition of the day of year effect
-and the spatial effect into main effects and its deviations. Note that \code{bs = "cc"} specifies a
-cyclic cubic spline for the seasonal effect and \code{bs = "tp"} is a thin-plate spline. The model
-can then be fitted with
-<<eval=FALSE>>=
-rainmodel <- bamlss(f, data = homstart, family = "cnorm",
-  binning = TRUE, before = TRUE, gam.side = FALSE,
-  n.iter = 4000, burnin = 2000, thin = 10, cores = 8)
-@
-The model is estimated using the efficient IWLS algorithms with the shrinked design matrices by
-setting argument \code{binning = TRUE}. Argument \code{before} indicates that shrinkage should be
-applied on the covariates before design matrices are computed, otherwise shrinkage is performed
-after the full design matrices are set up. This is important if identifiability constraints need
-to be computed, which is implemented in function \fct{gam.side} in package \pkg{mgcv}, since this
-must be done before any shrinkage. In this example we use the \fct{ti} constructor that implements
-the correct constraints, therefore, the reduced design matrices can be computed instantly, which is
-saving quite a lot of RAM storage. With a total of \code{n.iter = 4000} iterations of the MCMC
-sampler, on a Linux system with 8 Intel i7-2600 3.40GHz processors running the model takes
-approximately 17 hours. For computing the final model output the first $2000$ samples of every
-core are withdrawn (argument \code{burnin}) and only every 10th sample is saved
-(argument \code{thin}).
-
-The estimated effects of the model can be plotted with
-<<eval=FALSE>>=
-plot(rainmodel)
-@
-The spatial-varying effect of the day of the year is not automatically generated
-by the plotting function, in this case we compute the seasonal effect for different locations using
-the \fct{predict} function. For example, the estimated seasonal effect for Innsbruck and Vienna for
-parameter $\mu$ can be computed by
-<<eval=FALSE>>=
-n <- 365
-nd <- data.frame(
-  "day" = rep(1:n, 2),
-  "long" = c(rep(11.404881, n), rep(16.384151, n)),
-  "lat" = c(rep(47.269362, n), rep(48.208906, n)),
-  "City" = c(rep("Innsbruck", n), rep("Vienna", n))
-)
-
-nd$fit <- predict(rainmodel, newdata = nd,
-  model = "mu", term = c("ti(day)", "ti(day,long,lat)"),
-  intercept = FALSE, FUN = mean)
-@
-Argument \code{model} specifies the model for which predictions should be computed and \code{term}
-the term(s) that should be included. If \code{intercept = FALSE}, the model intercept will not be
-added to the predictions. The default in \fct{predict} is to compute the mean of the samples,
-however, any function can supplied to argument \code{FUN}, also with multiple outputs like in
-function \fct{quantile}.
+With a total of 4000 iterations of the MCMC sampler, on a Linux system with 8
+Intel i7-2600 3.40GHz processors running the model takes approximately 17 hours. For computing the
+final model output the first $2000$ samples of every core are withdrawn and only every 10th sample
+is saved.
 
 The plots of the estimated effects are shown in Figure~\ref{fig:rainmodeleffects}.
 The top row illustrates the spatial variation of the seasonal effect (solid lines) together with the
@@ -1806,17 +1572,7 @@ from
 \begin{center}
 \url{http://data.london.gov.uk/dataset/london-fire-brigade-incident-records}
 \end{center}
-To make the example reproducible we also added a precompiled version of the 2015 data to the
-\pkg{bamlss} package, the data can be loaded with
-<<eval=FALSE>>=
-data("LondonFire", package = "bamlss")
-@
-This will load the following objects: \code{LondonFire}, the data used for modeling;
-\code{LondonFStations}, the locations of the 2015 fire stations; \code{LondonBoroughs}, the
-polygons of the boroughs in London; \code{LondonBoundaries}, the polygon of the boundaries of
-London. The locations of the fire stations where computed from the list of all London fire
-stations in 2015, which is provided by the LFB (see
-\url{http://www.london-fire.gov.uk/A-ZFireStations.asp}).
+A precompiled version of the 2015 data is available in the \pkg{bamlss} package.
 
 The final 2015 dwelling fire data set consists of $5838$ fire events that have been received at
 the $103$ fire stations. The distribution of dwelling fires and fire stations is shown in
@@ -1934,53 +1690,26 @@ $$
 $$
 \citep{bamlss:Hennerfeind+Brezger+Fahrmeir:2006}
 
-As a result, applying the generic algorithm presented in Section~\ref{sec:legobricks} to this type
+As a result, applying the generic algorithm presented in Algorithm~\ref{fig:algodesign} to this type
 of problem two specific difficulties need to be considered. First, the updating functions for
 the time-varying predictor $\eta_{\lambda}(t)$ are different from the time-constant updating
 functions for $\eta_{\gamma}$. Secondly, a specific hurdle of the continuous time Cox-model is the
 computation of the integrals, because these do not have a closed form solution and need to be
-approximated numerically, e.g., by the trapezoidal rule or Gaussian quadratur. Moreover, it
+approximated numerically, e.g., by the trapezoidal rule or Gaussian quadrature. Moreover, it
 is inefficient to compute the integrals a new for every updating step, since for the
 time-constant part the integrals given in $\mathbf{P}$ do not change anymore.
 
 In order to reduce computing time we account for the idiosyncrasy of the Cox-model and
 implement an optimizer function \fct{cox.mode} for posterior mode estimation as well as
 the sampler function \fct{cox.mcmc} for MCMC simulation. The amount of work to implement this
-model using the \pkg{bamlss} infrastructures is moderate, because most of the code of functions
-\fct{bfit} and \fct{GMCMC} can be reused and only need slight adaption. In this example, the
+model using the \pkg{bamlss} infrastructures is moderate, because most of the code of the default
+estimation engines can be reused and only need slight adaption. In this example, the
 the optimizer and sampler function are part of the corresponding bamlss family object
-\fct{cox.bamlss}
-<<>>=
-print(cox.bamlss())
-@
-Additionally, the family object holds a transformer function that sets up the infrastructures for
-computing the integrals for the score vectors, Hessian matrices and the log-likelihood function. 
-Since integrals need to be approximated for computing survival probabilities, too, a special
-\fct{predict} function for this task is also added to the family object.
+\fct{cox.bamlss}.
 
-The formula for the fire response waiting time model is set up in \proglang{R} with
-<<eval=FALSE>>=
-f <- list(
-  "lambda" = Surv(arrivaltime) ~ ti(arrivaltime,k=20) +
-    ti(arrivaltime,lon,lat,d=c(1,2),k=c(5,30)),
-  "gamma" = ~ s(fsintens) + ti(daytime,bs="cc",k=30) +
-    ti(lon,lat,k=80,d=2) +
-    ti(daytime,lon,lat,bs=c("cc","cr"),d=c(1,2),k=c(10,30))
-)
-@
-where function \fct{Surv} creates a survival object, the response that is used for modeling
-(see the documentation of the \pkg{survival} package, \citealp{bamlss:Therneau:2016}). Again,
-we apply a decomposition of main effects and spatial-varying effects using the \fct{ti} model
-term constructor function. Finally, the model is estimated with
-<<eval=FALSE>>=
-firemodel <- bamlss(f, data = LondonFire, family = "cox",
-  n.iter = 4000, burnin = 2000, thin = 10, cores = 8)
-@
-and runs function \fct{cox.mode} to compute starting values prior starting the MCMC sampler
-function \fct{cox.mcmc}. On a Linux system with 8 Intel i7-2600 3.40GHz processors estimation takes
+On a Linux system with 8 Intel i7-2600 3.40GHz processors estimation takes
 approximately 1.2 days. Note that function \fct{cox.mode} also applies an automated procedure for
-smoothing variances selection using information criteria like the corrected AIC and BIC, similar
-as the implementation of function \fct{bfit}.
+smoothing variances selection using information criteria, see also Algorithm~\ref{fig:umode}.
 
 The estimated effects are shown in Figure~\ref{fig:londonfireeffects}. The upper left panel
 shows that the average ``risk'' that a fire engine arrives increases steeply until the target time

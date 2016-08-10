@@ -2928,7 +2928,7 @@ rs <- function(formula, link = "log", ...)
   if(is.null(xt$df))
     xt$df <- 5
   if(is.null(xt$update.nu))
-    xt$update.nu <- TRUE
+    xt$update.nu <- FALSE
   if(is.null(xt$nu))
     xt$nu <- 0.1
   if(is.null(xt$do.optim))
@@ -3288,6 +3288,8 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
 
     ## Compute acceptance probablity.
     alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
+
+print(exp(alpha))
 
     ## New theta.
     attr(theta2, "fitted.values") <- fit
