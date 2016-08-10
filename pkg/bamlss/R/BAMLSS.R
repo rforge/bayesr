@@ -3289,8 +3289,6 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     ## Compute acceptance probablity.
     alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
 
-print(exp(alpha))
-
     ## New theta.
     attr(theta2, "fitted.values") <- fit
 
