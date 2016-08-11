@@ -372,13 +372,13 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
       spam <- TRUE
     if(spam) {
       stopifnot(requireNamespace("spam"))
-      x$X <- as.spam(x$X)
-      xx <- crossprod.spam(x$X)
+      x$X <- spam::as.spam(x$X)
+      xx <- spam::crossprod.spam(x$X)
       for(j in seq_along(x$S)) {
-        x$S[[j]] <- as.spam(x$S[[j]])
+        x$S[[j]] <- spam::as.spam(x$S[[j]])
         xx <- xx + x$S[[j]]
       }
-      x$sparse.setup$spam.cholFactor <- chol.spam(xx)
+      x$sparse.setup$spam.cholFactor <- spam::chol.spam(xx)
       if(force.spam) {
         x$update <- bfit_iwls_spam
       }
@@ -391,9 +391,9 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
       Matrix <- TRUE
     if(Matrix) {
       stopifnot(requireNamespace("Matrix"))
-      x$X <- Matrix(x$X, sparse = TRUE)
+      x$X <- Matrix::Matrix(x$X, sparse = TRUE)
       for(j in seq_along(x$S))
-        x$S[[j]] <- Matrix(x$S[[j]], sparse = TRUE)
+        x$S[[j]] <- Matrix::Matrix(x$S[[j]], sparse = TRUE)
       if(force.Matrix)
         x$update <- bfit_iwls_Matrix
       x$prior <- make.prior(x)
@@ -463,7 +463,12 @@ assign.df <- function(x, df)
   if(df < 1)
     df <- 1
   int <- c(.Machine$double.eps^0.25, 1e+10)
-  XX <- if(inherits(x$X, "spam")) crossprod.spam(x$X) else crossprod(x$X)
+  if(inherits(x$X, "spam")) {
+    stopifnot(requireNamespace("spam"))
+    XX <- spam::crossprod.spam(x$X)
+  } else {
+    XX <- crossprod(x$X)
+  }
   if(length(tau2) > 1) {
     if(FALSE) {
       df.part <- df / length(tau2)
@@ -695,8 +700,8 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     inner <- TRUE
   }
 
-  if(!mgcv) {
-    inner_bf <- function(x, y, eta, family, edf, id, ...) {
+  inner_bf <- if(!mgcv) {
+    function(x, y, eta, family, edf, id, ...) {
       eps0 <- eps + 1; iter <- 1
       while(eps0 > eps & iter < maxit) {
         eta0 <- eta
@@ -720,7 +725,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       return(list("x" = x, "eta" = eta, "edf" = edf))
     }
   } else {
-    inner_bf <- function(x, y, eta, family, edf, id, z, hess, weights, ...) {
+    function(x, y, eta, family, edf, id, z, hess, weights, ...) {
       X <- lapply(x, function(x) { x$X })
       S <- lapply(x, function(x) { x$S })
       nt <- nt0 <- names(X)
@@ -1360,12 +1365,12 @@ bfit_iwls_Matrix <- function(x, family, y, eta, id, weights, criterion, ...)
   xbin.fun(x$binning$sorted.index, hess, e, x$weights, x$rres, x$binning$order)
 
   ## Compute mean and precision.
-  XWX <- crossprod(Diagonal(x = x$weights) %*% x$X, x$X)
+  XWX <- crossprod(Matrix::Diagonal(x = x$weights) %*% x$X, x$X)
   Xr <- crossprod(x$X, x$rres)
   if(!x$state$do.optim | x$fixed | x$fxsp) {
     if(!x$fixed) {
       tau2 <- get.state(x, "tau2")
-      S <- Matrix(0, ncol(x$X), ncol(x$X))
+      S <- Matrix::Matrix(0, ncol(x$X), ncol(x$X))
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * x$S[[j]]
       U <- chol(XWX + S)
@@ -1383,7 +1388,7 @@ bfit_iwls_Matrix <- function(x, family, y, eta, id, weights, criterion, ...)
     env <- new.env()
 
     objfun <- function(tau2, ...) {
-      S <- Matrix(0, ncol(x$X), ncol(x$X))
+      S <- Matrix::Matrix(0, ncol(x$X), ncol(x$X))
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * x$S[[j]]
       U <- chol(XWX + S)
@@ -1417,7 +1422,7 @@ bfit_iwls_Matrix <- function(x, family, y, eta, id, weights, criterion, ...)
     if(!is.null(env$state))
       return(env$state)
 
-    S <- Matrix(0, ncol(x$X), ncol(x$X))
+    S <- Matrix::Matrix(0, ncol(x$X), ncol(x$X))
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * x$S[[j]]
     U <- chol(XWX + S)
