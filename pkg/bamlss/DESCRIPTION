@@ -7,7 +7,10 @@ Authors@R: c(person(given = "Nikolaus", family = "Umlauf", role = c("aut", "cre"
   person(given = "Achim", family = "Zeileis", role = "aut", email = "Achim.Zeileis@R-project.org"),
   person(given = "Meike", family = "Koehler", role = "aut", email = "Meike.Koehler@helmholtz-muenchen.de"))
 Description: R infrastructures for Bayesian regression models.
-Depends: R (>= 3.2.3), colorspace, Formula, coda, mgcv, mvtnorm, Matrix, MBA
-Suggests: akima, maps, maptools, parallel, shapefiles, sp, spdep, splines, survival
+Depends: R (>= 3.2.3), coda, mgcv
+Imports: Formula, colorspace, MBA, fields, gamlss, geoR, maps,
+  maptools, mvtnorm, shapefiles, sp, spdep,
+  survival, zoo, methods
+Suggests: Matrix, spam, akima, rjags, BayesXsrc, mapdata
 License: GPL-2 | GPL-3
 LazyLoad: yes

@@ -1,18 +1,16 @@
-MCMCpack <- function(x, y, family, start = NULL,
-  n.iter = 1200, burnin = 200, thin = 1, verbose = 100, ...)
-{
-  require("MCMCpack")
+#MCMCpack <- function(x, y, family, start = NULL,
+#  n.iter = 1200, burnin = 200, thin = 1, verbose = 100, ...)
+#{
+#  par <- make_par(x, type = 2)
 
-  par <- make_par(x, type = 2)
+#  post.samp <- MCMCmetrop1R(log_posterior, theta.init = par$par,
+#    x = x, logfun = TRUE, V = attr(x, "hessian"),
+#    mcmc = n.iter, burnin = burnin, thin = thin, verbose = verbose)
 
-  post.samp <- MCMCmetrop1R(log_posterior, theta.init = par$par,
-    x = x, logfun = TRUE, V = attr(x, "hessian"),
-    mcmc = n.iter, burnin = burnin, thin = thin, verbose = verbose)
+#  colnames(post.samp) <- names(par$par)
 
-  colnames(post.samp) <- names(par$par)
-
-  post.samp
-}
+#  post.samp
+#}
 
 
 GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
@@ -96,8 +94,8 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
   fitfun = NULL, logLik = NULL, data = NULL, attr.copy = "hess",
   n.iter = 12000, burnin = 2000, thin = 10, verbose = TRUE, step = 20,
-  simplify = TRUE, chains = NULL, cores = NULL, combine = TRUE, sleep = 1,
-  compile = FALSE, ...)
+  simplify = TRUE, chains = NULL, cores = NULL,
+  combine = TRUE, sleep = 1, ...)
 {
   if(!is.list(theta)) {
     theta <- list(theta)
@@ -400,11 +398,6 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
     class(theta.save) <- c("gmcmc", class(theta.save))
 
     return(theta.save)
-  }
-
-  if(compile) {
-    require("compiler")
-    sampler <- cmpfun(sampler)
   }
 
   sampling <- function(chains, ...) {
@@ -840,7 +833,7 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
   M <- P %*% crossprod(data$X, data$rres)
 
   ## Degrees of freedom.
-  edf <- sum.diag(XWX %*% P)
+  edf <- sum_diag(XWX %*% P)
 
   ## Save old coefficients
   g0 <- drop(get.par(theta, "b"))

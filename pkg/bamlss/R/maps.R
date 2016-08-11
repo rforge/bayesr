@@ -9,8 +9,6 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
   ireturn = FALSE, sort = TRUE, proj4string = CRS(as.character(NA)), eps = 0.0001, ...)
 {
   ## projection = "+proj=longlat +ellps=WGS84 +datum=WGS84"
-  require("maps")
-  require("sp")
 
   if(!ireturn) {
     opar <- par(no.readonly = TRUE)
@@ -38,8 +36,6 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
   data <- na.omit(data)
 
   if(interp) {
-    require("MBA")
-
     data <- na.omit(data)
 
     pp <- cbind(data$x, data$y)
@@ -112,7 +108,7 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
   }
 
   if(rivers) {
-    require("mapdata")
+    stopifnot(loadNamespace("mapdata"))
     map("rivers", add = TRUE, col = "lightblue")
   }
 
@@ -120,7 +116,6 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
     col = col, border = col, lwd = 0)
 
   if(rivers) {
-    require("mapdata")
     map("rivers", add = TRUE, col = "lightblue")
   }
 
@@ -136,7 +131,6 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
     fit <- interp2(x, y, z, xo = xo, yo = yo, grid = cgrid)
 
     if(!is.null(addmap)) {
-      require("maptools")
       gpclibPermit()
       eg <- expand.grid("x" = xo, "y" = yo)
       nob <- length(slot(slot(addmap, "polygons")[[1]], "Polygons"))
@@ -269,7 +263,6 @@ pixelmap <- function(x, y, size = 0.1, width = NULL, data = NULL,
 neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
   k = 1, id = NULL, nb = FALSE, rm.dups = FALSE, ...)
 {
-  require("maptools"); require("spdep")
   type <- match.arg(type)
 
   nx <- NULL
@@ -380,7 +373,7 @@ plotneighbors <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
 ## of a polygon map.
 spatial.weights <- function(x, ...)
 {
-  require("spdep")
+  loadNamespace("spdep")
   nb <- neighbormatrix(x, nb = TRUE, ...)
   weights <- listw2mat(nb2listw(nb, ...))
   weights
@@ -391,7 +384,7 @@ spatial.weights <- function(x, ...)
 ## from xy-coordinates
 spatial.weights2 <- function(x, y = NULL, d1 = 0, d2 = 0.5, W = FALSE, ...)
 {
-  require("spdep")
+  loadNamespace("spdep")
   if(!is.null(y))
     x <- cbind(x, y)
   if(!is.matrix(x))
@@ -407,7 +400,7 @@ spatial.weights2 <- function(x, y = NULL, d1 = 0, d2 = 0.5, W = FALSE, ...)
 ## Spatial weighted smooth constructor.
 smooth.construct.sws.smooth.spec <- function(object, data, knots) 
 {
-  require("spdep")
+  loadNamespace("spdep")
   xt <- object$xt
   object$xt <- NULL
   if(!is.null(xt$coords))
@@ -426,7 +419,7 @@ smooth.construct.sws.smooth.spec <- function(object, data, knots)
 
 smooth.construct.sws2.smooth.spec <- function(object, data, knots) 
 {
-  require("spdep")
+  loadNamespace("spdep")
   call <- if(length(object$term) > 1) {
     paste("s(", paste(object$term[-1], collapse = ", "), ", bs = 'kr', k = ", object$bs.dim, ")", sep = "")
   } else {
@@ -452,7 +445,7 @@ Predict.matrix.sws2.smooth <- function(object, data)
   }
   object$X <- smooth.construct(eval(parse(text = call)), data, NULL)$X
   object$X <- object$X * data[[object$term[1]]]
-  X
+  object
 }
 
 
@@ -560,7 +553,7 @@ centroidtext <- function(polygon, poly.name = NULL, counter = "NA", cex = 1, ...
 ## Function to drop data outside the polygon area.
 drop2poly <- function(x, y, map, union = FALSE)
 {
-  require("maptools")
+  loadNamespace("maptools")
 
   if(inherits(map, "bnd"))
     map <- bnd2sp(map)

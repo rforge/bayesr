@@ -732,7 +732,7 @@ trunc.bamlss <- function(direction = "left", point = 0, ...)
       ll
     },
     "p" = function(y, par, ...) {
-      require("msm")
+      ## Needs msm package!
       ptnorm(y, mean = par$mu, sd = par$sigma,
         lower = if(direction == "left") point else -Inf,
         upper = if(direction == "right") point else Inf)
@@ -2189,8 +2189,6 @@ gF2 <- function(x, ...) {
 ## Function to transform gamlss.family objects.
 tF <- function(x, ...)
 {
-  require("gamlss")
-
   if(is.function(x)) x <- x()
   if(!inherits(x, "gamlss.family")) stop('only "gamlss.family" objects can be transformed!')
 

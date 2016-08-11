@@ -445,8 +445,6 @@ samplerJAGS <- function(x, tdir = NULL,
   seed = NULL, verbose = TRUE, set.inits = TRUE,
   save.all = FALSE, modules = NULL)
 {
-  require("rjags")
-
   ## Temporary directory handling.
   if(is.null(tdir)) {
     dir.create(tdir <- tempfile())
@@ -468,10 +466,10 @@ samplerJAGS <- function(x, tdir = NULL,
   }
 
   ## Sampling.
-  load.module("dic")
+  rjags::load.module("dic")
   if(!is.null(modules)) {
     for(m in modules)
-      load.module(m)
+      rjags::load.module(m)
   }
   
   if(verbose) writeLines(x$model)
@@ -491,13 +489,13 @@ samplerJAGS <- function(x, tdir = NULL,
   }
   
   if(set.inits) {
-    jmodel <- jags.model(mfile, data = x$data, inits = inits,
+    jmodel <- rjags::jags.model(mfile, data = x$data, inits = inits,
       n.chains = n.chains, n.adapt = n.adapt)
   } else {
-    jmodel <- jags.model(mfile, data = x$data,
+    jmodel <- rjags::jags.model(mfile, data = x$data,
       n.chains = n.chains, n.adapt = n.adapt)
   }
-  jsamples <- coda.samples(jmodel, variable.names = c(x$psave, "deviance"),
+  jsamples <- rjags::coda.samples(jmodel, variable.names = c(x$psave, "deviance"),
     n.iter = n.iter, thin = thin)
 
   ## Remove burnin.
@@ -516,6 +514,8 @@ JAGS <- function(x, y, family, start = NULL,
   seed = NULL, verbose = TRUE, set.inits = TRUE,
   save.all = FALSE, modules = NULL, ...)
 {
+  stopifnot(requireNamespace("rjags"))
+
   if(is.null(attr(x, "bamlss.engine.setup")))
     x <- bamlss.engine.setup(x, ...)
   if(!is.null(start))

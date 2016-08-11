@@ -426,8 +426,6 @@ read.gra <- function(file, sorted = FALSE, sep = " ")
 
 shp2bnd <- function(shpname, regionnames, check.is.in = TRUE)
 {   
-  require("shapefiles")
-
     ## safe coercions ...
     shpname <- as.character(shpname)
     regionnames <- as.character(regionnames)
@@ -439,8 +437,8 @@ shp2bnd <- function(shpname, regionnames, check.is.in = TRUE)
               identical(length(check.is.in), 1L))
     
     ## now read the shapefile information
-    shp <- shapefiles::read.shapefile(shpname)
-    dbf <- shapefiles::read.dbf(paste(shpname,".dbf",sep=""))
+    shp <- read.shapefile(shpname)
+    dbf <- read.dbf(paste(shpname,".dbf",sep=""))
 
     ## extract names of the regions:
     regionnames <-
@@ -699,8 +697,6 @@ gra2nb <- function(graObject)
 
 bnd2sp <- function(bndObject)
 {
-  require("sp")
-
     ## check if S3 class of bndObject is "bnd"
     stopifnot(inherits(x=bndObject,
                        what="bnd"))
@@ -734,11 +730,11 @@ bnd2sp <- function(bndObject)
 
         ## convert these polygons to Polygon class objects
         idPolygons <- lapply(bndObject[idMatches],
-                             FUN=sp::Polygon,
+                             FUN=Polygon,
                              hole=FALSE)
 
         ## add the Polygons object with these Polygon parts to return list
-        ret[[id]] <- sp::Polygons(srl=idPolygons,
+        ret[[id]] <- Polygons(srl=idPolygons,
                                   ID=id)        
     }
 
@@ -748,7 +744,7 @@ bnd2sp <- function(bndObject)
     for(innerInd in whichAreInner)
     {
         ## get the hole
-        hole <- sp::Polygon(coords=bndObject[[innerInd]],
+        hole <- Polygon(coords=bndObject[[innerInd]],
                             hole=TRUE)
 
         ## get outer polys list
@@ -760,12 +756,12 @@ bnd2sp <- function(bndObject)
                         hole)
 
         ## write back extended outer polys list as new Polygons object with same ID as before 
-        ret[[outerId]] <- sp::Polygons(srl=outerPolys,
+        ret[[outerId]] <- Polygons(srl=outerPolys,
                                        ID=outerId)
     }
     
     ## convert list of Polygons to a SpatialPolygons object and return that
-    ret <- sp::SpatialPolygons(Srl=ret)
+    ret <- SpatialPolygons(Srl=ret)
     return(ret)
 }
 
@@ -775,20 +771,18 @@ sp2bnd <- function(spObject,
   regionNames=sapply(spObject@polygons, slot, "ID"),
   ## character vector of region names
   ## (parallel to the Polygons list in spObject)
-  height2width=round(diff(sp::bbox(spObject)[2, ]) / diff(sp::bbox(spObject)[1, ]), 2),
+  height2width=round(diff(bbox(spObject)[2, ]) / diff(bbox(spObject)[1, ]), 2),
   ## ratio of height to width
   epsilon=sqrt(.Machine$double.eps))
   ## how much can two polygons differ (in maximumn
   ## squared Euclidean distance) and still match each other?
     
 {
-  require("sp")
-
   ## check if S4 class of spObject is "SpatialPolygons"
   stopifnot(is(object = spObject, class2 = "SpatialPolygons"))
 
   ## extracts
-  spObject <- sp::polygons(spObject)  ## now surely a SpatialPolygons object
+  spObject <- polygons(spObject)  ## now surely a SpatialPolygons object
   spList <- spObject@polygons         ## discard other slots
   nRegions <- length(spList)
 
@@ -821,14 +815,14 @@ sp2bnd <- function(spObject,
                 numHolesProcessed <- numHolesProcessed + 1
 
                 ## and correct invariant
-                holes[[numHolesProcessed]] <- sp::coordinates(polygonObject)
+                holes[[numHolesProcessed]] <- coordinates(polygonObject)
                 names(holes)[numHolesProcessed] <- regionNames[regionIterator]
             } else {
                 ## increment Polygon counter
                 numPolysProcessed <- numPolysProcessed + 1
 
                 ## and correct invariant
-                ret[[numPolysProcessed]] <- sp::coordinates(polygonObject)
+                ret[[numPolysProcessed]] <- coordinates(polygonObject)
                 names(ret)[numPolysProcessed] <- regionNames[regionIterator]
             }
         }

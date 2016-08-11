@@ -41,6 +41,8 @@ BayesX.control <- function(n.iter = 1200, thin = 1, burnin = 200,
 BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   data = NULL, control = BayesX.control(...), ...)
 {
+  stopifnot(requireNamespace("BayesXsrc"))
+
   if(is.null(family$bayesx))
     stop("BayesX specifications missing in family object, cannot set up model!")
 
@@ -239,11 +241,9 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   prgf <- file.path(dir, prg.name)
   writeLines(prg, prgf)
 
-  require("BayesXsrc")
-
   warn <- getOption("warn")
   options(warn = -1)
-  ok <- run.bayesx(prg = prgf, verbose = control$setup$verbose)
+  ok <- BayesXsrc::run.bayesx(prg = prgf, verbose = control$setup$verbose)
   options("warn" = warn)
   if(length(i <- grep("error", ok$log, ignore.case = TRUE))) {
     errl <- gsub("^ +", "", ok$log[i])
@@ -973,7 +973,7 @@ tx <- function(..., k = NA, constraint = c("main", "both", "none")) {
   object
 }
 
-smooth.construct.tensorX.smooth.spec <- function(object, data, knots)
+smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
 {
   if(length(object$margin) > 2)
     stop("more than two variables in tx() currently not supported!")

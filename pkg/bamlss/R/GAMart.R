@@ -69,7 +69,6 @@ simfun <- function(type = "sinus")
       return(f)
     },
     "yue1" = function(x) {
-      require("splines")
       x <- scale2(x, 0, 1)
       knots <- c(0.2, 0.6, 0.7)
       B <- splineDesign(knots, x, ord = 3, outer.ok = TRUE)
@@ -188,7 +187,7 @@ GAMart <- function(n = 500, sd = 0.1, seed = FALSE, ti = c("none", "vcm", "main"
 
 
 Volcano <- function(...) {
-  eta <- scale2(volcano, 0, 1)
+  eta <- scale2(get("volcano"), 0, 1)
   lon <- scale2(1:nrow(eta), 0, 1)
   lat <- scale2(1:ncol(eta), 0, 1)
   d <- expand.grid("lon" = lon, "lat" = lat)

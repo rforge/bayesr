@@ -1,14 +1,3 @@
-############################
-## (1) STAN installation. ##
-############################
-install.stan <- function() {
-  require("Rcpp")
-  require("inline")
-  options("repos" = c(getOption("repos"), rstan = "http://wiki.rstan-repo.googlecode.com/git/"))
-  install.packages("rstan", type = "source")
-}
-
-
 ################################
 ## (2) STAN helper functions. ##
 ################################
@@ -125,8 +114,6 @@ STAN <- function(x, tdir = NULL,
   n.chains = 1, n.iter = 4000, thin = 2, burnin = 1000,
   seed = NULL, verbose = FALSE, show.model = TRUE, ...)
 {
-  require("rstan")
-
   ## Temporary directory handling.
   if(is.null(tdir)) {
     dir.create(tdir <- tempfile())

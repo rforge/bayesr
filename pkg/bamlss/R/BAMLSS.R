@@ -438,7 +438,7 @@ sparse.matrix.index <- function(x, ...)
 ## Bandwidth minimization permutation.
 sparse.matrix.ordering <- function(x, ...)
 {
-  require("spam")
+  stopifnot(requireNamespace("spam"))
   x <- as.spam(x)
   i <- try(ordering(chol.spam(x)), silent = TRUE)
   if(inherits(i, "try-error"))
@@ -1145,7 +1145,6 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
         start = if(is.null(bf$parameters)) start else unlist(bf$parameters),
         hessian = bf$hessian, ...)
     } else {
-      require("parallel")
       parallel_fun <- function(j) {
         if(j > 1 & !is.null(sleep)) Sys.sleep(sleep)
         functions$sampler(x = bf$x, y = bf$y, family = bf$family,
@@ -2323,7 +2322,6 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
       }
       nd <- as.data.frame(nd)
       if(nt == 2L) {
-        require("sp")
         pid <- chull(as.matrix(data[, tterms]))
         pol <- data[c(pid, pid[1]), ]
         pip <- point.in.polygon(nd[, 1], nd[, 2], pol[, 1], pol[, 2])
@@ -2454,7 +2452,7 @@ add.partial <- function(x, samples = FALSE, nsamps = 100)
             if(attr(x$terms[[j]]$effects[[ne[sj]]], "specs")$xt$center)
               e <- e - mean(e)
           }
-          e <- data.frame(mf[, term], e)
+          e <- data.frame(x$model.frame[, term], e)
           names(e) <- c(term, "partial.resids")
           attr(x$terms[[j]]$effects[[ne[sj]]], "partial.resids") <- e
         }
@@ -2646,8 +2644,6 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
       }
     }
   } else {
-    require("parallel")
-
     parallel_fun <- function(k) {
       pred <- list()
       if(chunks > 1) {
@@ -3141,8 +3137,8 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
         fit <- x$fit.fun(x$X, par2)
         eta[[id]] <- eta[[id]] + fit
         logLik <- family$loglik(y, family$map2par(eta))
-        edf1 <- sum.diag(hess[1:k, 1:k] %*% Sigma[1:k, 1:k])
-        edf2 <- sum.diag(hess[-(1:k), -(1:k)] %*% Sigma[-(1:k), -(1:k)])
+        edf1 <- sum_diag(hess[1:k, 1:k] %*% Sigma[1:k, 1:k])
+        edf2 <- sum_diag(hess[-(1:k), -(1:k)] %*% Sigma[-(1:k), -(1:k)])
         edf3 <- edf1 + edf2 - 1
         edf <- edf0 + edf3
         ic <- get.ic2(logLik, edf, length(eta[[id]]), criterion)
@@ -3188,6 +3184,63 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
 
     x$state$parameters <- set.par(x$state$parameters, b, "b")
     x$state$fitted.values <- x$fit.fun(x$X, x$state$parameters)
+
+    return(x$state)
+  }
+
+  object$update99 <- function(x, family, y, eta, id, weights, criterion, ...)
+  {
+    args <- list(...)
+
+    for(i in 1:2) {
+      for(j in seq_along(x$X[[i]]$smooth.construct)) {
+        peta <- family$map2par(eta)
+
+        hess <- family$hess[[id]](y, peta, id = id, ...)
+
+        if(!is.null(weights))
+          hess <- hess * weights
+
+        score <- family$score[[id]](y, peta, id = id, ...)
+
+        eta_scale <- x$scale_linkfun(rs_intcpt) + x$fit.fun(x$X, x$state$parameters, scale = TRUE)
+        scale <- x$scale_linkinv(eta_scale)
+        if(i < 2) {
+          hess <- hess * (1 / scale)^2
+          score <- score * (1 / scale)
+        } else {
+          eta_mu <- x$fit.fun(x$X, x$state$parameters, mu = TRUE)
+          hess <- hess * (eta_mu * (-1 / (scale^2)) * x$scale_mu.eta(eta_scale))^2
+          score <- score * (eta_mu * (-1 / (scale^2)) * x$scale_mu.eta(eta_scale))
+        }
+
+        ## Compute working observations.
+        z <- eta[[id]] + 1 / hess * score
+
+        eta[[id]] <- eta[[id]] - fitted(x$state)
+        e <- z - eta[[id]]
+
+        XWX <- crossprod(x$X[[i]]$smooth.construct[[j]]$X * hess, x$X[[i]]$smooth.construct[[j]]$X)
+
+        idj <- paste(if(i < 2) "n" else "d", j, sep = "")
+
+        if(x$X[[i]]$smooth.construct[[j]]$fixed) {
+          P <- matrix_inv(XWX, index = x$X[[i]]$smooth.construct[[j]]$sparse.setup)
+        } else {
+          S <- 0
+          ij <- grep(paste(idj, ".tau2", sep = ""), names(x$state$parameters), fixed = TRUE)
+          tau2 <- x$state$parameters[ij]
+          for(jj in seq_along(x$X[[i]]$smooth.construct[[j]]$S))
+            S <- S + 1 / tau2[jj] * x$X[[i]]$smooth.construct[[j]]$S[[jj]]
+          P <- matrix_inv(XWX + S, index = x$X[[i]]$smooth.construct[[j]]$sparse.setup)
+        }
+        b <- drop(P %*% crossprod(x$X[[i]]$smooth.construct[[j]]$X * hess, e))
+        ij <- grep(paste(idj, ".b", sep = ""), names(x$state$parameters), fixed = TRUE)
+        x$state$parameters[ij] <- b
+        x$state$fitted.values <- x$fit.fun(x$X, x$state$parameters)
+        eta[[id]] <- eta[[id]] + fitted(x$state)
+      }
+    }
 
     return(x$state)
   }
@@ -3241,7 +3294,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     if(all(is.na(Sigma)) | all(is.na(xgrad)))
       return(list("parameters" = theta, "alpha" = -Inf, "extra" = c("edf" = NA)))
 
-    edf <- sum.diag(hess0 %*% Sigma) - 1
+    edf <- sum_diag(hess0 %*% Sigma) - 1
 
     ## Old position.
     g0 <- get.par(theta, "b")
@@ -3334,7 +3387,7 @@ Predict.matrix.rs.smooth <- function(object, data)
 rs.plot <- function(x, model = NULL, term = NULL,
   what = c("numerator", "denominator"), type = "link", ...)
 {
-  tl <- term.labels2(x, model = model, pterms = FALSE, intercept = FALSE, type = 2)
+  tl <- term.labels2(x, model = model, pterms = FALSE, intercept = FALSE, type = 2, list = FALSE)
   tl <- grep("rs(", tl, fixed = TRUE, value = TRUE)
   if(length(tl) < 1)
     return(invisible(NULL))
@@ -3482,8 +3535,7 @@ krDesign1D <- function(z, knots = NULL, rho = NULL,
   phi = NULL, v = NULL, c = NULL, ...)
 {
   rho <- if(is.null(rho)) {
-    require("geoR")
-    geoR::matern
+    matern
   } else rho
   knots <- if(is.null(knots)) sort(unique(z)) else knots
   v <- if(is.null(v)) 2.5 else v
@@ -3506,8 +3558,7 @@ krDesign2D <- function(z1, z2, knots = 10, rho = NULL,
   isotropic = TRUE, ...)
 {
   rho <- if(is.null(rho)) {
-    require("geoR")
-    geoR::matern
+    matern
   } else rho
   if(is.null(psi)) psi <- 1
   if(is.null(delta)) delta <- 1
@@ -3517,8 +3568,7 @@ krDesign2D <- function(z1, z2, knots = 10, rho = NULL,
     if(knots == length(z1)) {
       unique(cbind(z1, z2))
     } else {
-      require("fields")
-      fields::cover.design(R = unique(cbind(z1, z2)), nd = knots)
+      cover.design(R = unique(cbind(z1, z2)), nd = knots)
     }
   } else knots
   v <- if(is.null(v)) 2.5 else v
@@ -3567,7 +3617,7 @@ krDesign2D <- function(z1, z2, knots = 10, rho = NULL,
 
 
 ## Kriging smooth constructor functions.
-smooth.construct.kr.smooth.spec <- function(object, data, knots)
+smooth.construct.kr.smooth.spec <- function(object, data, knots, ...)
 {
   if(object$dim > 2) stop("more than 2 covariates not supported using kriging terms!")
   if(object$bs.dim < 0) object$bs.dim <- 10
@@ -5221,7 +5271,6 @@ continue <- function(object, chains = NULL, cores = NULL, combine = TRUE, ...)
       offset = model.offset(object$model.frame),
       start = start, hessian = object$hessian, ...)
   } else {
-    require("parallel")
     parallel_fun <- function(j) {
       if(j > 1 & !is.null(sleep)) Sys.sleep(sleep)
       sampler(x = object$x, y = object$y, family = object$family,
@@ -5508,6 +5557,14 @@ term.labels2 <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
       rval[[j]] <- c(rval[[j]], "(Intercept)")
   }
   names(rval) <- nx
+  if(!list) {
+    rval2 <- NULL
+    for(j in seq_along(nx)) {
+      names(rval[[j]]) <- rep(nx[j], length = length(rval[[j]]))
+      rval2 <- c(rval2, rval[[j]])
+    }
+    rval <- rval2
+  }
   rval
 }
 
@@ -6053,7 +6110,7 @@ scale.model.matrix <- function(x)
 
 
 ## Sum of diagonal elements.
-sum.diag <- function(x)
+sum_diag <- function(x)
 {
   if(inherits(x, "spam"))
     return(sum(diag.spam(x), na.rm = TRUE))
@@ -6066,7 +6123,7 @@ sum.diag <- function(x)
   .Call("sum_diag", x, dx[1], PACKAGE = "bamlss")
 }
 
-sum.diag2 <- function(x, y)
+sum_diag2 <- function(x, y)
 {
   if(inherits(x, "spam"))
     x <- as.matrix(x)
@@ -6083,56 +6140,6 @@ sum.diag2 <- function(x, y)
   .Call("sum_diag2", x, y, PACKAGE = "bamlss")
 }
 
-
-#############################
-## (13) Utility functions. ##
-#############################
-TODOs <- NA
-class(TODOs) <- "TODOs"
-
-print.TODOs <- function(x, ...)
-{
-  todos <- .TODOs(...)
-  print(todos, row.names = FALSE)
-  invisible(todos)
-}
-
-.TODOs <- function(file = NULL)
-{
-  require("bamlss")
-  if(is.null(file))
-    file <- "~/svn/bayesr/pkg/bamlss/R/families.R"
-  file <- path.expand(file)
-  env <- new.env()
-  source(file, local = env)
-  fun <- grep(".bamlss", ls(env), fixed = TRUE, value = TRUE)
-  fun <- fun[!grepl("print", fun)]
-  tab <- NULL
-  for(i in seq_along(fun)) {
-    fe <- try(eval(parse(text = paste(fun[i], "()", sep = "")), envir = env), silent = TRUE)
-    if(inherits(fe, "family.bamlss")) {
-      if(!is.null(fe$family)) {
-        dgp <- try(get(paste("dgp", fe$family, sep = "_")), silent = TRUE)
-        dgp <- if(!inherits(dgp, "try-error")) "yes" else "no"
-      } else dgp <- "no"
-      tab <- rbind(tab, cbind(
-        "family" = if(!is.null(fe$family)) fe$family else "na",
-        "type" = if(!is.null(fe$type)) fe$type else "na",
-        "loglik" = if(!is.null(fe$loglik)) "yes" else "no",
-        "scorefun" = if(!is.null(fe$score)) "yes" else "no",
-        "weightfun" = if(!is.null(fe$weights)) "yes" else "no",
-        "d" = if(!is.null(fe$d)) "yes" else "no",
-        "p" = if(!is.null(fe$p)) "yes" else "no",
-        "mu" = if(!is.null(fe$mu)) "yes" else "no",
-        "dgp" = dgp,
-        "BayesX" = if(!is.null(fe$bayesx)) "yes" else "no",
-        "JAGS" = if(!is.null(fe$jagstan)) "yes" else "no",
-        "IWLS" = if(!is.null(fe$score) & !is.null(fe$weights) & !is.null(fe$d)) "yes" else "no"
-      ))
-    }
-  }
-  as.data.frame(tab)
-}
 
 #.First.lib <- function(lib, pkg)
 #{

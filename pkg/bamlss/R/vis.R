@@ -1266,8 +1266,6 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   if(!add)
     do.call(graphics::plot.default, delete.args(graphics::plot.default, args))
   if(interp & !is.null(x)) {
-    stopifnot(require("maptools"))
-
     cdata <- data.frame(centroids(map), "id" = names(map))
     cdata <- merge(cdata, data.frame("z" = x$x, "id" = x$id), by = "id")
     cdata <- unique(cdata)
@@ -1315,7 +1313,6 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     }
 
     if(land.only) {
-      require("maps")
       icolors[is.na(map.where("world", xco, yco))] <- NA
     }
 
@@ -1657,7 +1654,6 @@ interp2 <- function(x, y, z, xo = NULL, yo = NULL, grid = 30,
     fit <- as.vector(predict(b, newdata = nd))
 
     if(!extrap) {
-      require("sp")
       pid <- chull(X <- cbind(x, y))
       pol <- X[c(pid, pid[1]), ]
       pip <- point.in.polygon(nd$x, nd$y, pol[, 1], pol[, 2])
@@ -1669,9 +1665,9 @@ interp2 <- function(x, y, z, xo = NULL, yo = NULL, grid = 30,
   }
   if(type == "akima") {
     if(isTRUE(getOption("use.akima"))) {
-      stopifnot(require("akima"))
+      stopifnot(requireNamespace("akima"))
     } else {
-      if(require("akima")) {
+      if(requireNamespace("akima")) {
         cat("NOTE: Package 'akima' has an ACM license that restricts applications to non-commercial usage.\n")
       } else {
         stop(paste("plot3d() can only be used if the 'akima' package is installed. ",
@@ -1680,7 +1676,7 @@ interp2 <- function(x, y, z, xo = NULL, yo = NULL, grid = 30,
       }
     }
 
-    fit <- try(akima::interp(x, y, z, xo = xo, yo = yo, 
+    fit <- try(interp(x, y, z, xo = xo, yo = yo, 
       duplicate = "mean", linear = linear, extrap = extrap)$z, silent = TRUE)
     if(inherits(fit, "try-error") | all(is.na(fit))) {
       cat("NOTE: akima::interp() is designed for irregular data points, the coordinates will be slightly jittered to obtain irregular spaced points.\n")

@@ -7,8 +7,6 @@
 ## (1) The family object.
 cox.bamlss <- function(...)
 {
-  require("survival")
-
   rval <- list(
     "family" = "cox",
     "names" = c("lambda", "gamma"),
@@ -205,7 +203,7 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
       eeta <- exp(eta_timegrid)
       int2 <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
       logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int2, na.rm = TRUE)
-      edf1 <- sum.diag(int$hess %*% Sigma)
+      edf1 <- sum_diag(int$hess %*% Sigma)
       edf <- edf0 + edf1
       ic <- get.ic2(logLik, edf, length(eta$lambda), criterion)
       if(!is.null(env$ic_val)) {
@@ -266,7 +264,7 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
   ## Update additive predictors.
   x$state$fitted_timegrid <- x$fit.fun_timegrid(g2)
   x$state$fitted.values <- x$fit.fun(x$X, g2)
-  x$state$edf <- sum.diag(int$hess %*% Sigma)
+  x$state$edf <- sum_diag(int$hess %*% Sigma)
   x$state$hessian <- xhess
 
   return(x$state)
@@ -325,7 +323,7 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, edf, ...)
       g <- drop(P %*% Xr)
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
       fit <- x$fit.fun(x$X, g)
-      edf1 <- sum.diag(XWX %*% P)
+      edf1 <- sum_diag(XWX %*% P)
       edf <- edf0 + edf1
       eta$gamma <- eta$gamma + fit
       logLik <- sum((eta$lambda + eta$gamma) * y[, "status"] - exp(eta$gamma) * int, na.rm = TRUE)
@@ -342,7 +340,7 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, edf, ...)
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% Xr), "b")
   }
 
-  x$state$edf <- sum.diag(XWX %*% P)
+  x$state$edf <- sum_diag(XWX %*% P)
 
   ## Compute fitted values.
   g <- get.state(x, "b")
@@ -594,7 +592,7 @@ propose_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, nu)
   qbeta <- dmvnorm(g0, mean = mu2, sigma = Sigma2, log = TRUE)
 
   ## Save edf.
-  x$state$edf <- sum.diag(int$hess %*% Sigma2)
+  x$state$edf <- sum_diag(int$hess %*% Sigma2)
 
   ## Sample variance parameter.
   if(!x$fixed & !x$fxsp & length(x$S)) {
@@ -653,7 +651,7 @@ propose_surv_tc <- function(x, y, eta, int)
   M <- P %*% crossprod(x$X, x$rres)
 
   ## Degrees of freedom.
-  x$state$edf <- sum.diag(XWX %*% P)
+  x$state$edf <- sum_diag(XWX %*% P)
 
   ## Save old coefficients
   g0 <- drop(get.par(x$state$parameters, "b"))
@@ -725,7 +723,6 @@ propose_surv_tc <- function(x, y, eta, int)
 ################################
 Surv2 <- function(..., obs = NULL, subdivisions = 100)
 {
-  require("survival")
   rval <- cbind(as.matrix(Surv(...)), "obs" = obs)
   class(rval) <- c("matrix", "Surv2")
   attr(rval, "subdivisions") <- subdivisions
@@ -1207,8 +1204,6 @@ cox.predict <- function(object, newdata, type = c("link", "parameter", "probabil
       if(verbose) cat("\n")
     }
   } else {
-    require("parallel")
-
     parallel_fun <- function(i) {
       if(chunks < 2) {
         pr <- cox_probs(newdata[[i]])

@@ -135,7 +135,6 @@ s981000;Irdning - Gumpenstein;14,1;47,5;710;0;1;1'
   
     ## convenience function to read in the homstart series
     readhomstart <- function(f, which = 2, prefix = "s") {
-      require("zoo")
       x <- read.zoo(f, header = FALSE, skip = 3, format = "%Y%m%d", na.string = "NA", drop = FALSE)
       colnames(x) <- paste(prefix, strsplit(f, "_", fixed = TRUE)[[1]][2], sep = "")
       x
@@ -175,7 +174,6 @@ s981000;Irdning - Gumpenstein;14,1;47,5;710;0;1;1'
   }
 
   if(!file.exists(file.path(dir, "homstart.rda"))) {
-    require("zoo")
     load(file.path(tdir, "homstart0.rda"))
 
     ## set up matrix with harmonic seasonal regressors
@@ -208,8 +206,6 @@ s981000;Irdning - Gumpenstein;14,1;47,5;710;0;1;1'
       breaks = c(0.01, 0.99, 4.99), labels = c("none", "low", "medium", "high"),
       origin = 1970, order = 2)
     {
-      stopifnot(require("zoo"))
-  
       ## only use first column of data
       x0 <- x
       x <- x[, 1L]
@@ -280,7 +276,7 @@ s981000;Irdning - Gumpenstein;14,1;47,5;710;0;1;1'
         month = dat$month,
         year = dat$year,
         day = dat$day,
-        long = homstart$long[homstart$id == i],
+        lon = homstart$long[homstart$id == i],
         lat = homstart$lat[homstart$id == i],
         id = as.integer(rep(rownames(homstart)[homstart$id == i], length = nrow(dat))),
         as.data.frame(dat$harmon),

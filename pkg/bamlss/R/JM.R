@@ -334,6 +334,7 @@ sparse_Matrix_setup <- function(x, sparse = TRUE, force = FALSE)
 {
   if(sparse) {
     if((ncol(x$sparse.setup$crossprod) < (ncol(x$X) * 0.5)) | force) {
+      stopifnot(requireNamespace("Matrix"))
       x$X <- Matrix(x$X, sparse = TRUE)
       x$XT <- Matrix(x$XT, sparse = TRUE)
       for(j in seq_along(x$S))
@@ -789,7 +790,7 @@ update_jm_gamma <- function(x, eta, eta_timegrid, int,
       g2 <- drop(g + nu * Hs)
       fit <- x$fit.fun(x$X, g2)
       eta$gamma <- eta$gamma - fitted(x$state) + fit
-      edf1 <- sum.diag(xhess0 %*% Sigma)
+      edf1 <- sum_diag(xhess0 %*% Sigma)
       edf <- edf0 + edf1
 
       logLik <- get_LogPost(eta_timegrid, eta, 0)
@@ -849,7 +850,7 @@ update_jm_gamma <- function(x, eta, eta_timegrid, int,
   ## Update additive predictors.
   fit <- x$fit.fun(x$X, g2)
   x$state$fitted.values <- fit
-  x$state$edf <- sum.diag(xhess0 %*% Sigma)
+  x$state$edf <- sum_diag(xhess0 %*% Sigma)
   x$state$hessian <- xhess
 
   return(x$state)
@@ -914,7 +915,7 @@ update_jm_lambda <- function(x, eta, eta_timegrid,
       eta$lambda <- eta$lambda - fitted(x$state) + fit
       eta_timegrid_lambda <- eta_timegrid_lambda - x$state$fitted_timegrid + fit_timegrid
       eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
-      edf1 <- sum.diag(int$hess %*% Sigma)
+      edf1 <- sum_diag(int$hess %*% Sigma)
       edf <- edf0 + edf1
       logLik <- get_LogPost(eta_timegrid, eta, 0)
       ic <- get.ic2(logLik, edf, length(eta$mu), criterion)
@@ -975,7 +976,7 @@ update_jm_lambda <- function(x, eta, eta_timegrid,
   ## Update additive predictors.
   x$state$fitted_timegrid <- x$fit.fun_timegrid(g2)
   x$state$fitted.values <- x$fit.fun(x$X, g2, expand = FALSE)
-  x$state$edf <- sum.diag(int$hess %*% Sigma)
+  x$state$edf <- sum_diag(int$hess %*% Sigma)
   x$state$hessian <- xhess
 
   return(x$state)
@@ -1055,7 +1056,7 @@ update_jm_mu <- function(x, y, eta, eta_timegrid,
       if(!is.null(dx))
         eta_timegrid_dmu <- eta_timegrid_dmu - dx$state$fitted_timegrid + dx$fit.fun_timegrid(g2)
       eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
-      edf1 <- sum.diag(xhess0 %*% Sigma)
+      edf1 <- sum_diag(xhess0 %*% Sigma)
       edf <- edf0 + edf1
       logLik <- get_LogPost(eta_timegrid, eta, 0)
       ic <- get.ic2(logLik, edf, length(eta$mu), criterion)
@@ -1116,7 +1117,7 @@ update_jm_mu <- function(x, y, eta, eta_timegrid,
   ## Update fitted values..
   x$state$fitted_timegrid <- x$fit.fun_timegrid(g2)
   x$state$fitted.values <- x$fit.fun(x$X, g2)
-  x$state$edf <- sum.diag(xhess0 %*% Sigma)
+  x$state$edf <- sum_diag(xhess0 %*% Sigma)
   x$state$hessian <- -1 * xhess
 
   return(x$state)
@@ -1191,7 +1192,7 @@ update_jm_mu_Matrix <- function(x, y, eta, eta_timegrid,
       if(!is.null(dx))
         eta_timegrid_dmu <- eta_timegrid_dmu - dx$state$fitted_timegrid + dx$fit.fun_timegrid(g2)
       eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
-      edf1 <- sum.diag(xhess0 %*% Sigma)
+      edf1 <- sum_diag(xhess0 %*% Sigma)
       edf <- edf0 + edf1
       logLik <- get_LogPost(eta_timegrid, eta, 0)
       ic <- get.ic2(logLik, edf, length(eta$mu), criterion)
@@ -1251,7 +1252,7 @@ update_jm_mu_Matrix <- function(x, y, eta, eta_timegrid,
   ## Update fitted values..
   x$state$fitted_timegrid <- x$fit.fun_timegrid(g2)
   x$state$fitted.values <- x$fit.fun(x$X, g2)
-  x$state$edf <- sum.diag(xhess0 %*% Sigma)
+  x$state$edf <- sum_diag(xhess0 %*% Sigma)
   x$state$hessian <- -1 * xhess
 
   return(x$state)
@@ -1310,7 +1311,7 @@ update_jm_sigma <- function(x, y, eta, eta_timegrid,
       g2 <- drop(g - nu * Hs)
       names(g2) <- names(g)
       eta$sigma <- eta$sigma - fitted(x$state) + x$fit.fun(x$X, g2)
-      edf1 <- sum.diag(xhess0 %*% Sigma)
+      edf1 <- sum_diag(xhess0 %*% Sigma)
       edf <- edf0 + edf1
       logLik <- get_LogPost(eta_timegrid, eta, 0)
       ic <- get.ic2(logLik, edf, length(eta$mu), criterion)
@@ -1368,7 +1369,7 @@ update_jm_sigma <- function(x, y, eta, eta_timegrid,
       
   ## Update fitted values.
   x$state$fitted.values <- x$fit.fun(x$X, g2)
-  x$state$edf <- sum.diag(xhess0 %*% Sigma)
+  x$state$edf <- sum_diag(xhess0 %*% Sigma)
   x$state$hessian <- -1 * xhess
 
   return(x$state)
@@ -1431,7 +1432,7 @@ update_jm_alpha <- function(x, eta, eta_timegrid,
       eta$alpha <- eta$alpha - fitted(x$state) + fit
       eta_timegrid_alpha <- eta_timegrid_alpha - x$state$fitted_timegrid + fit_timegrid
       eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
-      edf1 <- sum.diag(int$hess %*% Sigma)
+      edf1 <- sum_diag(int$hess %*% Sigma)
       edf <- edf0 + edf1
       logLik <- get_LogPost(eta_timegrid, eta, 0)
       ic <- get.ic2(logLik, edf, length(eta$mu), criterion)
@@ -1488,7 +1489,7 @@ update_jm_alpha <- function(x, eta, eta_timegrid,
   ## Update fitted values.
   x$state$fitted_timegrid <- x$fit.fun_timegrid(g2)
   x$state$fitted.values <- x$fit.fun(x$X, g2, expand = FALSE)
-  x$state$edf <- sum.diag(int$hess %*% Sigma)
+  x$state$edf <- sum_diag(int$hess %*% Sigma)
   x$state$hessian <- xhess
 
   return(x$state)
@@ -1551,7 +1552,7 @@ update_jm_dalpha <- function(x, eta, eta_timegrid,
       eta$dalpha <- eta$dalpha - fitted(x$state) + fit
       eta_timegrid_dalpha <- eta_timegrid_dalpha - x$state$fitted_timegrid + fit_timegrid
       eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
-      edf1 <- sum.diag(int$hess %*% Sigma)
+      edf1 <- sum_diag(int$hess %*% Sigma)
       edf <- edf0 + edf1
       logLik <- get_LogPost(eta_timegrid, eta, 0)
       ic <- get.ic2(logLik, edf, length(eta$mu), criterion)
@@ -1610,7 +1611,7 @@ update_jm_dalpha <- function(x, eta, eta_timegrid,
   ## Update fitted values.
   x$state$fitted_timegrid <- x$fit.fun_timegrid(g2)
   x$state$fitted.values <- x$fit.fun(x$X, g2, expand = FALSE)
-  x$state$edf <- sum.diag(int$hess %*% Sigma)
+  x$state$edf <- sum_diag(int$hess %*% Sigma)
   x$state$hessian <- xhess
 
   return(x$state)
@@ -2087,7 +2088,7 @@ propose_jm_lambda <- function(x, y,
   qbeta <- dmvnorm(g0, mean = mu2, sigma = Sigma2, log = TRUE)
 
   ## Save edf.
-  x$state$edf <- sum.diag(int$hess %*% Sigma2)
+  x$state$edf <- sum_diag(int$hess %*% Sigma2)
 
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
@@ -2210,7 +2211,7 @@ propose_jm_mu_simple <- function(x, y,
   qbeta <- dmvnorm(g0, mean = mu2, sigma = -1 * Sigma2, log = TRUE)
   
   ## Save edf.
-  x$state$edf <- sum.diag(int$hess %*% (-1 * Sigma2))
+  x$state$edf <- sum_diag(int$hess %*% (-1 * Sigma2))
 
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
@@ -2333,7 +2334,7 @@ propose_jm_mu_Matrix <- function(x, y,
   qbeta <- dmvnorm(g0, mean = mu2, sigma = as.matrix(Sigma2), log = TRUE)
   
   ## Save edf.
-  x$state$edf <- sum.diag(int$hess %*% Sigma2)
+  x$state$edf <- sum_diag(int$hess %*% Sigma2)
 
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
@@ -2429,7 +2430,7 @@ propose_jm_alpha <- function(x, y,
   qbeta <- dmvnorm(g0, mean = mu2, sigma = Sigma2, log = TRUE)
   
   ## Save edf.
-  x$state$edf <- sum.diag(int$hess %*% Sigma2)
+  x$state$edf <- sum_diag(int$hess %*% Sigma2)
 
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
@@ -2524,7 +2525,7 @@ propose_jm_dalpha <- function(x, y,
   qbeta <- dmvnorm(g0, mean = mu2, sigma = Sigma2, log = TRUE)
   
   ## Save edf.
-  x$state$edf <- sum.diag(int$hess %*% Sigma2)
+  x$state$edf <- sum_diag(int$hess %*% Sigma2)
 
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
@@ -2616,7 +2617,7 @@ propose_jm_gamma <- function(x, y,
   qbeta <- dmvnorm(g0, mean = mu2, sigma = Sigma2, log = TRUE)
   
   ## Save edf.
-  x$state$edf <- sum.diag(xhess0 %*% Sigma2)
+  x$state$edf <- sum_diag(xhess0 %*% Sigma2)
 
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
@@ -2703,7 +2704,7 @@ propose_jm_sigma <- function(x, y,
   qbeta <- dmvnorm(g0, mean = mu2, sigma = -1 * Sigma2, log = TRUE)
   
   ## Save edf.
-  x$state$edf <- sum.diag(xhess0 %*% Sigma2)
+  x$state$edf <- sum_diag(xhess0 %*% Sigma2)
 
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
@@ -2901,7 +2902,6 @@ jm.sim <- function(nsub, times = seq(0, 72, 3),
   ## (changed into random functional intercepts)
   gen_b <- function(times, nsub, long_df, pen=2, l=c(1,1), seed=NULL){
     if(!is.null(seed)) set.seed(seed)
-    require(splines)
     
     # Recursion for difference operator matrix
     makeDiffOp <- function(degree, dim){
@@ -2917,7 +2917,7 @@ jm.sim <- function(nsub, times = seq(0, 72, 3),
     P <- .1*diag(nsub*long_df) + Pt + Pi
     
     coef <- rmvnorm(nsub*long_df, sigma=solve(P))
-    bt <- splines::bs(times, df = long_df, intercept = FALSE)
+    bt <- bs(times, df = long_df, intercept = FALSE)
     b_set <- list(knots=attr(bt, "knots"), Boundary.knots=attr(bt, "Boundary.knots"),
                   degree=attr(bt, "degree"), intercept=attr(bt, "intercept"))
     return(list(matrix(coef, ncol=long_df, nrow=nsub), b_set))
@@ -2948,7 +2948,7 @@ jm.sim <- function(nsub, times = seq(0, 72, 3),
            "linear" = (1.25 + r1 + 0.6*sin(x2) + (-0.01)*time + r2*0.02*time),
            "nonlinear" = (0.5 + r1 + 0.6*sin(x2) + 0.1*(time+2)*exp(-0.075*time)),
            "functional" = (0.5 + r1 + 0.6*sin(x2) + 0.1*(time+2)*exp(-0.075*time) + 
-                             apply(splines::bs(time, long_df, b_set$knots, b_set$degree,
+                             apply(bs(time, long_df, b_set$knots, b_set$degree,
                                                b_set$intercept, b_set$Boundary.knots) * beta,1,sum)))
   }
   

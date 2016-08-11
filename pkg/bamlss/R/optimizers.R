@@ -289,7 +289,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
       for(j in seq_along(tau2))
         S <- S + 1 / tau2[j] * x$S[[j]]
       P <- matrix_inv(x$state$XX + S, index = x$sparse.setup)
-      edf <- sum.diag(x$state$XX %*% P)
+      edf <- sum_diag(x$state$XX %*% P)
       return(edf)
     }
   }
@@ -371,7 +371,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
     if((ncol(x$sparse.setup$crossprod) < ncol(x$X) * 0.5) & force.spam)
       spam <- TRUE
     if(spam) {
-      require("spam")
+      stopifnot(requireNamespace("spam"))
       x$X <- as.spam(x$X)
       xx <- crossprod.spam(x$X)
       for(j in seq_along(x$S)) {
@@ -379,8 +379,9 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
         xx <- xx + x$S[[j]]
       }
       x$sparse.setup$spam.cholFactor <- chol.spam(xx)
-      if(force.spam)
+      if(force.spam) {
         x$update <- bfit_iwls_spam
+      }
     }
   }
 
@@ -389,6 +390,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
     if((ncol(x$sparse.setup$crossprod) < ncol(x$X) * 0.5) & force.Matrix)
       Matrix <- TRUE
     if(Matrix) {
+      stopifnot(requireNamespace("Matrix"))
       x$X <- Matrix(x$X, sparse = TRUE)
       for(j in seq_along(x$S))
         x$S[[j]] <- Matrix(x$S[[j]], sparse = TRUE)
@@ -471,7 +473,7 @@ assign.df <- function(x, df)
           S <- 0
           for(i in seq_along(x$S))
             S <- S + 1 / tau2[i] * x$S[[i]]
-          edf <- sum.diag(XX %*% matrix_inv(XX + S, index = x$sparse.setup))
+          edf <- sum_diag(XX %*% matrix_inv(XX + S, index = x$sparse.setup))
           return((df - edf)^2)
         }
         opt <- try(optimize(objfun, int)$minimum, silent = TRUE)
@@ -482,7 +484,7 @@ assign.df <- function(x, df)
     }
   } else {
     objfun <- function(tau2) {
-      edf <- sum.diag(XX %*% matrix_inv(XX + 1 / tau2 * x$S[[1]], index = x$sparse.setup))
+      edf <- sum_diag(XX %*% matrix_inv(XX + 1 / tau2 * x$S[[1]], index = x$sparse.setup))
       return((df - edf)^2)
     }
     tau2 <- try(optimize(objfun, int)$minimum, silent = TRUE)
@@ -1170,7 +1172,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
       g <- drop(P %*% crossprod(x$X, x$rres))
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
       fit <- x$fit.fun(x$X, g)
-      edf <- sum.diag(XWX %*% P)
+      edf <- sum_diag(XWX %*% P)
       eta2[[id]] <- eta2[[id]] + fit
       ic <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), criterion, ...)
       if(!is.null(env$ic_val)) {
@@ -1210,7 +1212,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
   if(any(is.na(g)) | any(g %in% c(-Inf, Inf)))
     x$state$parameters <- set.par(x$state$parameters, rep(0, length(x$state$g)), "b")
   x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
-  x$state$edf <- sum.diag(XWX %*% P)
+  x$state$edf <- sum_diag(XWX %*% P)
   if(!is.null(x$prior)) {
     if(is.function(x$prior))
       x$state$log.prior <- x$prior(x$state$parameters)
@@ -1280,7 +1282,7 @@ bfit_iwls_spam <- function(x, family, y, eta, id, weights, criterion, ...)
       P <- chol2inv.spam(U)
       b <- P %*% Xr
       fit <- x$fit.fun(x$X, b)
-      edf <- sum.diag(XWX %*% P)
+      edf <- sum_diag(XWX %*% P)
       eta2[[id]] <- eta2[[id]] + fit
       ic <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), criterion, ...)
       if(!is.null(env$ic_val)) {
@@ -1319,7 +1321,7 @@ bfit_iwls_spam <- function(x, family, y, eta, id, weights, criterion, ...)
 
   ## Compute fitted values.
   x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
-  x$state$edf <- sum.diag(XWX %*% P)
+  x$state$edf <- sum_diag(XWX %*% P)
   if(!is.null(x$prior)) {
     if(is.function(x$prior))
       x$state$log.prior <- x$prior(x$state$parameters)
@@ -1388,7 +1390,7 @@ bfit_iwls_Matrix <- function(x, family, y, eta, id, weights, criterion, ...)
       P <- chol2inv(U)
       b <- P %*% Xr
       fit <- x$fit.fun(x$X, b)
-      edf <- sum.diag(XWX %*% P)
+      edf <- sum_diag(XWX %*% P)
       eta2[[id]] <- eta2[[id]] + fit
       ic <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), criterion, ...)
       if(!is.null(env$ic_val)) {
@@ -1427,7 +1429,7 @@ bfit_iwls_Matrix <- function(x, family, y, eta, id, weights, criterion, ...)
 
   ## Compute fitted values.
   x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
-  x$state$edf <- sum.diag(XWX %*% P)
+  x$state$edf <- sum_diag(XWX %*% P)
   if(!is.null(x$prior)) {
     if(is.function(x$prior))
       x$state$log.prior <- x$prior(x$state$parameters)
@@ -2229,7 +2231,7 @@ boost_iwls <- function(x, hess, resids, nu)
   }
 
   ## Assign degrees of freedom.
-  x$state$edf <- sum.diag(XWX %*% P)
+  x$state$edf <- sum_diag(XWX %*% P)
   attr(x$state$parameters, "edf") <- x$state$edf
 
   return(x$state)
