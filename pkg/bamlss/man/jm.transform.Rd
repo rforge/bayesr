@@ -84,7 +84,7 @@ d <- sim_jm(###)
 ## Formula of the joint model
 f <- list(Surv2(survtime, event, obs = y) ~ s(survtime, bs="ps"),
           gamma ~ s(x1, bs="ps"),
-          mu ~ obstime + s("id", bs="re")
+          mu ~ obstime + s("id", bs="re"),
           sigma ~ 1,
           alpha ~ 1,
           dalpha ~ -1)

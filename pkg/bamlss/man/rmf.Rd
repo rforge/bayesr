@@ -5,6 +5,10 @@
   Remove Special Characters
 }
 
+\description{
+  A simple helper function that removes special characters from a character string.
+}
+
 \usage{
 rmf(x)
 }

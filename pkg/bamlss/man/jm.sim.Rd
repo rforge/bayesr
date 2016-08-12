@@ -34,6 +34,7 @@ jm.sim(nsub, times = seq(0, 72, 3),
   \item{probmiss}{proportion of longitudinal measurements to be set to missing.}
   \item{seed}{numeric scalar setting the random seed.}
   \item{subdivisions}{maximum number of subintervals in the integration of the cumulative hazard.}
+  \item{full}{???}
   \item{file}{character. name of the data file the generated data set should be stored into
     (e.g., "survtimes.RData") or NULL if the dataset should directly be returned in \R. }
   \item{\dots}{further arguments to be passed to the predictor functions. }

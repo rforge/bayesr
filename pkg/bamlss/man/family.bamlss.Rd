@@ -9,7 +9,7 @@
 \alias{gaussian.bamlss}
 \alias{gamma.bamlss}
 \alias{multinomial.bamlss}
-\alias{mvn.bamlss}
+\alias{mvnorm.bamlss}
 \alias{poisson.bamlss}
 \alias{jm.bamlss}
 
@@ -37,12 +37,12 @@ jm.bamlss(...)
 gaussian.bamlss(...)
 gamma.bamlss(...)
 multinomial.bamlss(...)
-mvn.bamlss(...)
+mvnorm.bamlss(...)
 poisson.bamlss(...)
 
 ## Extractor functions:
-family.bamlss(object, ...)
-family.bamlss.frame(object, ...)
+\method{family}{bamlss}(object, ...)
+\method{family}{bamlss.frame}(object, ...)
 }
 
 \arguments{

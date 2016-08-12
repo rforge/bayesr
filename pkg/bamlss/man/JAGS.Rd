@@ -1,5 +1,7 @@
 \name{JAGS}
 \alias{JAGS}
+\alias{BUGSeta}
+\alias{BUGSmodel}
 
 \title{
   Markov Chain Monte Carlo for BAMLSS using JAGS

@@ -11,10 +11,10 @@
 }
 
 \usage{
-jm.mcmc(x, y, family, start, jm.start = NULL, weights, offset,
-  n.iter = 1200, burnin = 200, thin = 1,
-  verbose = TRUE, digits = 4, step = 20,
-  fixed = NULL, slice = NULL, ...)
+jm.mcmc(x, y, family, start, jm.start = NULL,
+  weights, offset, n.iter = 1200, burnin = 200,
+  thin = 1, verbose = TRUE, digits = 4,
+  step = 20, ...)
 }
 
 \arguments{
@@ -75,7 +75,7 @@ d <- sim_jm(###)
 ## Formula of the according joint model
 f <- list(Surv2(survtime, event, obs = y) ~ s(survtime, bs="ps"),
           gamma ~ s(x1, bs="ps"),
-          mu ~ obstime + s("id", bs="re")
+          mu ~ obstime + s("id", bs="re"),
           sigma ~ 1,
           alpha ~ 1,
           dalpha ~ -1)
@@ -103,7 +103,7 @@ long_df <- 6
 f <- list(Surv2(survtime, event, obs = y) ~ s(survtime, bs="ps"),
           gamma ~ s(x1, bs="ps"),
           mu ~ ti(id, bs="re") + ti(obstime, bs="ps", k=nlevels(d$id)) + 
-               ti(id, obstime, bs=c("re", "ps"), k=c(nlevels(d$id), long_df)) + s(x2, bs="ps")
+               ti(id, obstime, bs=c("re", "ps"), k=c(nlevels(d$id), long_df)) + s(x2, bs="ps"),
           sigma ~ 1,
           alpha ~ s(survtime, bs="ps"),
           dalpha ~ -1)

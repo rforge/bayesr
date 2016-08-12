@@ -18,7 +18,8 @@
 simSurv(n = 300)
 
 ## Simulate arbitrary survival times.
-rSurvTime(lambda, x, cens_fct, upper = 1000, ..., file = NULL)
+rSurvTime2(lambda, x, cens_fct, upper = 1000, ...,
+  file = NULL, subdivisions = 1000)
 }
 
 \arguments{
@@ -31,6 +32,7 @@ rSurvTime(lambda, x, cens_fct, upper = 1000, ..., file = NULL)
   \item{\dots}{further arguments to be passed to \code{lambda} or \code{cens_fct}. }
   \item{file}{character. name of the data file the generated data set should be stored into
     (e.g., "survtimes.RData") or NULL if the dataset should directly be returned in \R. }
+  \item{subdivisions}{The maximum number of subintervals for the integration.}
 }
 
 \details{

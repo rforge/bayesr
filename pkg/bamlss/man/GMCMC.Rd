@@ -18,8 +18,8 @@
 \usage{
 ## Sampler function:
 GMCMC(x, y, family, start = NULL, weights = NULL, offset = NULL,
-  n.iter = 1200, burnin = 200, thin = 1, verbose = 100,
-  propose = "iwlsC_gp", chains = NULL, ...)
+  n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE,
+  step = 20, propose = "iwlsC_gp", chains = NULL, ...)
 
 ## Propose functions:
 GMCMC_iwls(family, theta, id, eta, y, data,
@@ -49,6 +49,7 @@ GMCMC_slice(family, theta, id, eta, y, data, ...)
   \item{thin}{Defines the thinning parameter for MCMC simulation. E.g., \code{thin = 10} means,
     that only every 10th sampled parameter will be stored.}
   \item{verbose}{Print information during runtime of the algorithm.}
+  \item{step}{How many times should algorithm runtime information be printed, divides \code{n.iter}.}
   \item{propose}{Sets the propose function for model terms, e.g. for a term \code{s(x)} in the model
     formula. Per default this is set to \code{"iwlsC"}, a character pointing to the set of propose
     functions, see above. Other options are \code{"iwls"} and \code{"slice"}, however, this is

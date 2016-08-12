@@ -15,10 +15,11 @@
 \usage{
 jm.mode(x, y, weights, offset,
   criterion = c("AICc", "BIC", "AIC"), maxit = c(100, 1),
-  nu = c("lambda" = 0.1, "gamma" = 0.1, "mu" = 0.1, "sigma" = 0.1, "alpha" = 0.1, "dalpha" = 0.1),
-  update.nu = TRUE,  
-  eps = 0.0001, nu.eps = -Inf, edf.eps = NULL, ic.eps = 1e-08, alpha.eps = 0.001, 
-  nback = 40, verbose = TRUE, digits = 4, ...)
+  nu = c("lambda" = 0.1, "gamma" = 0.1, "mu" = 0.1,
+    "sigma" = 0.1, "alpha" = 0.1, "dalpha" = 0.1),
+  update.nu = TRUE, eps = 0.0001, alpha.eps = 0.001,
+  ic.eps = 1e-08, nback = 40, verbose = TRUE,
+  digits = 4, ...)
 }
 
 \arguments{
@@ -39,9 +40,9 @@ jm.mode(x, y, weights, offset,
   \item{update.nu}{Should the updating step length be optimized in each iteration
     of the backfitting algorithm? Overridess parameter \code{nu} if set to \code{TRUE}.}
   \item{eps}{The relative convergence tolerance of the backfitting algorithm.}
-  \item{nu.eps}{The relative convergence tolerance for the optimization of steplength \code{nu}.}
-  \item{ic.eps}{Raus?}
   \item{alpha.eps}{The relative convergence tolerance of the backfitting algorithm for predictor alpha.}
+  \item{ic.eps}{???}
+  \item{nback}{???}
   \item{verbose}{Print information during runtime of the algorithm.}
   \item{digits}{Set the digits for printing when \code{verbose = TRUE}.}
   \item{\dots}{Currently not used.}

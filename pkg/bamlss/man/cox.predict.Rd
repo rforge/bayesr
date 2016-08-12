@@ -40,7 +40,7 @@ cox.predict(object, newdata,
   \item{chunks}{The number of chunks that should be processed sequentially on one core.
     This way memory problems can be avoided when computing survival times for large problems.}
   \item{verbose}{Print progress information.}
-  \item{dots}{Arguments passed to \code{\link{predict.bamlss}}.}
+  \item{\dots}{Arguments passed to \code{\link{predict.bamlss}}.}
 }
 
 \value{
