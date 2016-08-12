@@ -255,7 +255,7 @@ smooth.construct.gc.smooth.spec <- function(object, data, knots)
   }
   object$update <- bfit_optim
   object$propose <- GMCMC_slice
-  object$prior <- function(b) { 1 }
+  object$prior <- function(b) { sum(dnorm(b, sd = 1000, log = TRUE)) }
   object$fixed <- TRUE
   object$state$parameters <- c("b1" = 0, "b2" = 0.5, "b3" = 0.1)
   object$state$fitted.values <- rep(0, length(object$X))

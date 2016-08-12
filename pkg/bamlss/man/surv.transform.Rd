@@ -57,6 +57,7 @@ surv.transform(x, y, data, family,
 }
 
 \examples{
+library("survival")
 set.seed(111)
 
 ## Simulate survival data.

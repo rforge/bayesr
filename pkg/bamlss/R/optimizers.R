@@ -1,5 +1,3 @@
-.bamlss_log_posterior_iteration <- NULL
-
 ##################################################
 ## (1) Generic setup function for smooth terms. ##
 ##################################################
@@ -1531,7 +1529,7 @@ get.eta.par <- function(par, x)
 
 
 ## The log-posterior.
-log_posterior <- function(par, x, y, family, verbose = TRUE, digits = 3, scale = NULL)
+log_posterior <- function(par, x, y, family, verbose = TRUE, digits = 3, scale = NULL, ienv = NULL)
 {
   nx <- names(x)
   eta <- vector(mode = "list", length = length(nx))
@@ -1563,10 +1561,11 @@ log_posterior <- function(par, x, y, family, verbose = TRUE, digits = 3, scale =
     cat(if(interactive()) "\r" else "\n")
     vtxt <- paste("logLik ", fmt(ll, width = 8, digits = digits),
       " logPost ", fmt(lp, width = 8, digits = digits),
-      " iteration ", formatC(.bamlss_log_posterior_iteration, width = 4), sep = "")
+      " iteration ", formatC(ienv$bamlss_log_posterior_iteration, width = 4), sep = "")
     cat(vtxt)
     if(.Platform$OS.type != "unix" & interactive()) flush.console()
-    .bamlss_log_posterior_iteration <<- .bamlss_log_posterior_iteration + 1
+    bamlss_log_posterior_iteration <- ienv$bamlss_log_posterior_iteration + 1
+    assign("bamlss_log_posterior_iteration", bamlss_log_posterior_iteration, envir = ienv)
   }
 
   if(!is.null(scale))
@@ -1644,19 +1643,23 @@ opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
 
   par <- get.all.par(x, list = FALSE, drop = TRUE)
 
-  if(verbose)
-    .bamlss_log_posterior_iteration <<- 1
+  ienv <- NULL
+  if(verbose) {
+    ienv <- new.env()
+    bamlss_log_posterior_iteration <- 1
+    assign("bamlss_log_posterior_iteration", bamlss_log_posterior_iteration, envir = ienv)
+  }
 
   if(!hessian) {
     opt <- optim(par, fn = log_posterior,
       gr = if(!is.null(family$score) & gradient) grad_posterior else NULL,
       x = x, y = y, family = family, method = "BFGS", verbose = verbose,
-      digits = digits, control = list(fnscale = -1, reltol = eps, maxit = maxit),
+      digits = digits, ienv = ienv, control = list(fnscale = -1, reltol = eps, maxit = maxit),
       hessian = TRUE)
  
     if(verbose) {
       cat("\n")
-      rm(.bamlss_log_posterior_iteration, envir = .GlobalEnv)
+      rm(ienv)
     }
 
     eta <- get.eta.par(opt$par, x)
@@ -1670,12 +1673,12 @@ opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
     } else function(par, ...) { sum(family$p2d(par, log = TRUE), na.rm = TRUE) }
     opt <- optimHess(par, fn = fn,
       gr = if(!is.null(family$score) & gradient & is.null(family$p2d)) grad_posterior else NULL,
-      x = x, y = y, family = family, verbose = verbose, digits = digits,
+      x = x, y = y, family = family, verbose = verbose, digits = digits, ienv = ienv,
       control = list(fnscale = -1, reltol = eps, maxit = maxit))
 
     if(verbose) {
       cat("\n")
-      rm(.bamlss_log_posterior_iteration, envir = .GlobalEnv)
+      rm(ienv)
     }
 
     return(opt)

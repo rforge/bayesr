@@ -5097,7 +5097,7 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
                 npar  <- if(inherits(obj$smooth.construct[[j]], "rs.smooth")) {
                   names(get.par(obj$smooth.construct[[j]]$state$parameters, "b"))
                 } else {
-                  if(!is.null(obj$smooth.construct[[j]]$state$parameters)) {
+                  npar <- if(!is.null(obj$smooth.construct[[j]]$state$parameters)) {
                     length(get.state(obj$smooth.construct[[j]], "b"))
                   } else {
                     ncol(obj$smooth.construct[[j]]$X)
