@@ -369,84 +369,83 @@ plotneighbors <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
 }
 
 
-## Function to create a spatial weight matrix
-## of a polygon map.
-spatial.weights <- function(x, ...)
-{
-  loadNamespace("spdep")
-  nb <- neighbormatrix(x, nb = TRUE, ...)
-  weights <- listw2mat(nb2listw(nb, ...))
-  weights
-}
+### Function to create a spatial weight matrix
+### of a polygon map.
+#spatial.weights <- function(x, ...)
+#{
+#  loadNamespace("spdep")
+#  nb <- neighbormatrix(x, nb = TRUE, ...)
+#  weights <- listw2mat(nb2listw(nb, ...))
+#  weights
+#}
 
 
-## Function to create spatial weight matrix
-## from xy-coordinates
-spatial.weights2 <- function(x, y = NULL, d1 = 0, d2 = 0.5, W = FALSE, ...)
-{
-  loadNamespace("spdep")
-  if(!is.null(y))
-    x <- cbind(x, y)
-  if(!is.matrix(x))
-    x <- as.matrix(x)
-  weights <- nb2listw(dnearneigh(x, d1, d2), ...)
-  if(W) {
-    weights <- listw2mat(weights)
-  }
-  weights
-}
+### Function to create spatial weight matrix
+### from xy-coordinates
+#spatial.weights2 <- function(x, y = NULL, d1 = 0, d2 = 0.5, W = FALSE, ...)
+#{
+#  if(!is.null(y))
+#    x <- cbind(x, y)
+#  if(!is.matrix(x))
+#    x <- as.matrix(x)
+#  weights <- nb2listw(dnearneigh(x, d1, d2), ...)
+#  if(W) {
+#    weights <- listw2mat(weights)
+#  }
+#  weights
+#}
 
 
-## Spatial weighted smooth constructor.
-smooth.construct.sws.smooth.spec <- function(object, data, knots) 
-{
-  loadNamespace("spdep")
-  xt <- object$xt
-  object$xt <- NULL
-  if(!is.null(xt$coords))
-    W <- spatial.weights2(xt$coords, W = FALSE)
-  if(!is.null(xt$weights))
-    W <- xt$weights
-  bs <- if(is.null(xt$bs)) "tp" else xt$bs
-  class(object) <- paste(bs, "smooth.spec", sep = ".")
-  object <- smooth.construct(object, data, knots)
-  object$X <- lag.listw(W, object$X,
-    zero.policy = if(is.null(xt$zero.policy)) TRUE else xt$zero.policy,
-    NAOK = TRUE)
-  object
-}
+### Spatial weighted smooth constructor.
+#smooth.construct.sws.smooth.spec <- function(object, data, knots) 
+#{
+#  loadNamespace("spdep")
+#  xt <- object$xt
+#  object$xt <- NULL
+#  if(!is.null(xt$coords))
+#    W <- spatial.weights2(xt$coords, W = FALSE)
+#  if(!is.null(xt$weights))
+#    W <- xt$weights
+#  bs <- if(is.null(xt$bs)) "tp" else xt$bs
+#  class(object) <- paste(bs, "smooth.spec", sep = ".")
+#  object <- smooth.construct(object, data, knots)
+#  object$X <- lag.listw(W, object$X,
+#    zero.policy = if(is.null(xt$zero.policy)) TRUE else xt$zero.policy,
+#    NAOK = TRUE)
+#  object
+#}
 
 
-smooth.construct.sws2.smooth.spec <- function(object, data, knots) 
-{
-  loadNamespace("spdep")
-  call <- if(length(object$term) > 1) {
-    paste("s(", paste(object$term[-1], collapse = ", "), ", bs = 'kr', k = ", object$bs.dim, ")", sep = "")
-  } else {
-    paste("s(", paste(object$term, collapse = ", "), ", bs = 'kr', k = ", object$bs.dim, ")", sep = "")
-  }
-  object$X <- smooth.construct(eval(parse(text = call)), data, NULL)$X
-  object$X <- object$X * data[[object$term[1]]]
-  object$S <- list()
-  object$rank <- 0
-  object$null.space.dim <- 0
-  object$fixed <- TRUE
-  object$plot.me <- FALSE
-  object
-}
+#smooth.construct.sws2.smooth.spec <- function(object, data, knots) 
+#{
+#  loadNamespace("spdep")
+#  call <- if(length(object$term) > 1) {
+#    paste("s(", paste(object$term[-1], collapse = ", "), ", bs = 'kr', k = ", object$bs.dim, ")", sep = "")
+#  } else {
+#    paste("s(", paste(object$term, collapse = ", "), ", bs = 'kr', k = ", object$bs.dim, ")", sep = "")
+#  }
+#  object$X <- smooth.construct(eval(parse(text = call)), data, NULL)$X
+#  object$X <- object$X * data[[object$term[1]]]
+#  object$S <- list()
+#  object$rank <- 0
+#  object$null.space.dim <- 0
+#  object$fixed <- TRUE
+#  object$plot.me <- FALSE
+#  object
+#}
 
 
-Predict.matrix.sws2.smooth <- function(object, data)
-{
-  call <- if(length(object$term) > 1) {
-    paste("s(", paste(object$term[-1], collapse = ", "), ", bs = 'kr', k = ", object$bs.dim, ")", sep = "")
-  } else {
-    paste("s(", paste(object$term, collapse = ", "), ", bs = 'kr', k = ", object$bs.dim, ")", sep = "")
-  }
-  object$X <- smooth.construct(eval(parse(text = call)), data, NULL)$X
-  object$X <- object$X * data[[object$term[1]]]
-  object
-}
+#Predict.matrix.sws2.smooth <- function(object, data)
+#{
+#  call <- if(length(object$term) > 1) {
+#    paste("s(", paste(object$term[-1], collapse = ", "), ", bs = 'kr', k = ", object$bs.dim, ")", sep = "")
+#  } else {
+#    paste("s(", paste(object$term, collapse = ", "), ", bs = 'kr', k = ", object$bs.dim, ")", sep = "")
+#  }
+#  object$X <- smooth.construct(eval(parse(text = call)), data, NULL)$X
+#  object$X <- object$X * data[[object$term[1]]]
+#  object
+#}
 
 
 ## Compute centroids of polygons.
@@ -533,7 +532,6 @@ cpos <- function(p, np)
   rval <- .Call("cpos",
     as.numeric(p),
     as.integer(np), PACKAGE = "bamlss")
-
   return(rval)
 }
 
@@ -545,7 +543,6 @@ centroidtext <- function(polygon, poly.name = NULL, counter = "NA", cex = 1, ...
   else
     txt <- poly.name
   text(pos[1L], pos[2L], txt, cex = cex, ...)
-
   return(invisible(NULL))
 }
 

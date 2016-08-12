@@ -203,75 +203,61 @@ smooth2random.tensor.smooth <- function (object, vnames, type = 1)
 }
 
 
-## From R2BayesX.
-r <- function(x, h = NULL, by = NA, xt = NULL, 
-  data = NULL, weights = NULL, subset = NULL, 
-  offset = NULL, na.action = na.fail, contrasts = NULL, 
-  control = bayesx.control(...), ...)
+.ringDirxy2 <- function(xy) 
 {
-  term <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500L)
-  call <- match.call()
-  is.formula <- FALSE
-  if(!any(grepl("~", term)) && is.null(h) && !is.null(data)) {
-    term <- paste(term, "~", 1)
-  } 
-  if(any(grepl("~", term))) {
-    tmp <- strsplit(term, "~")[[1L]]
-    call$h <- h <- term
-    term <- splitme(tmp[1L])
-    term <- resplit(term[term != " "])
-    call$x <- term
-    is.formula <- TRUE
-  }
-  by.var <- if(!is.character(by)) deparse(substitute(by), backtick = TRUE, width.cutoff = 500L) else by
-  ins <- formula <- NULL
-  if(by.var == ".") 
-    stop("by=. not allowed")
-  if(term == ".") 
-    stop("r(.) not yet supported.")
-  label <- paste("r(", term)
-  if(!is.null(h)) {
-    ins <- list()
-    mlabel <- paste(as.character(call$h), collapse = " ")
-    split <- splitme(mlabel)
-    if(split[1L] != "~" && !is.formula)
-      mlabel <- resplit(c("~", split))
-    if(!is.formula)
-      formula <- as.formula(paste(term, mlabel))
-    else
-      formula <- as.formula(mlabel)
-    if(length(grep("~", mlabel, fixed = TRUE)))
-      label <- paste("r(", mlabel)
-    else
-      label <- paste(label, ",", mlabel, collapse="")
-    mf <- terms.formula(formula, specials=c("sx", "s", "te", "r"))
-    mterms <- attr(mf, "term.labels")
-    if(length(mterms) > 0L)
-      for(k in 1L:length(mterms)) {
-        if(is.sm(mterms[k]))
-          ins[[k]] <- try(eval(parse(text = mterms[k])), silent = TRUE)
-        else {
-          ins[[k]] <-list(term = mterms[k], label = mterms[k])
-          class(ins[[k]]) <- "lin.smooth.spec"
-        }
-      }
+    a <- xy[, 1]
+    b <- xy[, 2]
+    nvx <- length(b)
+    if ((a[1] == a[nvx]) && (b[1] == b[nvx])) {
+        a <- a[-nvx]
+        b <- b[-nvx]
+        nvx <- nvx - 1
     }
-  if(by.var != "NA")
-    label <- paste(label, ",by=", by.var, collapse = "")
-  label <- gsub(" ", "", paste(label, ")", sep = ""))
-  rval <- list(term = term, label = label, by = by.var, xt = xt, 
-    ins = ins, formula = formula, data = data, weights = weights, 
-    subset = subset, offset = offset, na.action = na.action, 
-    contrasts = contrasts, control = control)
-  if(!is.null(control$bs) && control$bs == "rsps") {
-    rval$control$bs <- NULL
-    class(rval) <- "rsps.smooth.spec"
-    if(is.null(rval$ins)) {
-      rval$ins <- list()
-      rval$formula <- as.formula(paste(rval$term, "~ -1"))
+    if (nvx < 3) 
+        return(1)
+    tX <- 0
+    dfYMax <- max(b)
+    ti <- 1
+    for (i in 1:nvx) {
+        if (b[i] == dfYMax && a[i] > tX) 
+            ti <- i
     }
-  } else class(rval) <- "ra.smooth.spec"
+    if ((ti > 1) & (ti < nvx)) {
+        dx0 = a[ti - 1] - a[ti]
+        dx1 = a[ti + 1] - a[ti]
+        dy0 = b[ti - 1] - b[ti]
+        dy1 = b[ti + 1] - b[ti]
+    }
+    else if (ti == nvx) {
+        dx0 = a[ti - 1] - a[ti]
+        dx1 = a[1] - a[ti]
+        dy0 = b[ti - 1] - b[ti]
+        dy1 = b[1] - b[ti]
+    }
+    else {
+        dx1 = a[2] - a[1]
+        dx0 = a[nvx] - a[1]
+        dy1 = b[2] - b[1]
+        dy0 = b[nvx] - b[1]
+    }
+    v3 = ((dx0 * dy1) - (dx1 * dy0))
+    if (v3 > 0) 
+        return(as.integer(1))
+    else return(as.integer(-1))
+}
 
-  return(rval) 
+
+plot.density2 <- function (x, main = NULL, xlab = NULL, ylab = "Density", type = "l", 
+    zero.line = TRUE, ...) 
+{
+    if (is.null(xlab)) 
+        xlab <- paste("N =", x$n, "  Bandwidth =", formatC(x$bw))
+    if (is.null(main)) 
+        main <- deparse(x$call)
+    plot.default(x, main = main, xlab = xlab, ylab = ylab, type = type, 
+        ...)
+    if (zero.line) 
+        abline(h = 0, lwd = 0.1, col = "gray")
+    invisible(NULL)
 }
 

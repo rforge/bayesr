@@ -10,7 +10,7 @@ Description: R infrastructures for Bayesian regression models.
 Depends: R (>= 3.2.3), coda, mgcv
 Imports: Formula, colorspace, MBA, fields, gamlss, geoR, maps,
   maptools, mvtnorm, shapefiles, sp, spdep,
-  survival, zoo, methods
-Suggests: Matrix, spam, akima, rjags, BayesXsrc, mapdata
+  survival, zoo, methods, spam, Matrix
+Suggests: akima, rjags, BayesXsrc, mapdata
 License: GPL-2 | GPL-3
 LazyLoad: yes

@@ -438,7 +438,6 @@ sparse.matrix.index <- function(x, ...)
 ## Bandwidth minimization permutation.
 sparse.matrix.ordering <- function(x, ...)
 {
-  stopifnot(requireNamespace("spam"))
   x <- as.spam(x)
   i <- try(ordering(chol.spam(x)), silent = TRUE)
   if(inherits(i, "try-error"))
@@ -1341,35 +1340,35 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL, logLik = FAL
 #########################
 ## (2) Engine stacker. ##
 #########################
-stacker <- function(x, optimizer = bfit0, sampler = samplerJAGS, ...)
-{
-  if(is.function(optimizer) | is.character(optimizer))
-    optimizer <- list(optimizer)
-  if(is.integer(sampler) | is.numeric(sampler)) {
-    n.samples <- as.integer(sampler)
-    sampler <- function(x, ...) { null.sampler(x, n.samples = n.samples) }
-  }
-  if(is.null(sampler))
-    sampler <- null.sampler
-  if(is.function(sampler) | is.character(sampler))
-    sampler <- list(sampler)
-  if(length(optimizer)) {
-    for(j in optimizer) {
-      if(is.character(j)) j <- eval(parse(text = j))
-      if(!is.function(j)) stop("the optimizer must be a function!")
-      x <- j(x, ...)
-    }
-  }
-  if(length(sampler)) {
-    for(j in sampler) {
-      if(is.character(j)) j <- eval(parse(text = j))
-      if(!is.function(j)) stop("the sampler must be a function!")
-      x <- j(x, ...)
-    }
-  }
+#stacker <- function(x, optimizer = bfit0, sampler = samplerJAGS, ...)
+#{
+#  if(is.function(optimizer) | is.character(optimizer))
+#    optimizer <- list(optimizer)
+#  if(is.integer(sampler) | is.numeric(sampler)) {
+#    n.samples <- as.integer(sampler)
+#    sampler <- function(x, ...) { null.sampler(x, n.samples = n.samples) }
+#  }
+#  if(is.null(sampler))
+#    sampler <- null.sampler
+#  if(is.function(sampler) | is.character(sampler))
+#    sampler <- list(sampler)
+#  if(length(optimizer)) {
+#    for(j in optimizer) {
+#      if(is.character(j)) j <- eval(parse(text = j))
+#      if(!is.function(j)) stop("the optimizer must be a function!")
+#      x <- j(x, ...)
+#    }
+#  }
+#  if(length(sampler)) {
+#    for(j in sampler) {
+#      if(is.character(j)) j <- eval(parse(text = j))
+#      if(!is.function(j)) stop("the sampler must be a function!")
+#      x <- j(x, ...)
+#    }
+#  }
 
-  x
-}
+#  x
+#}
 
 
 "[.bamlss" <- function(x, ...) {
@@ -3114,13 +3113,13 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
       edf0 <- args$edf - x$state$edf
       k <- ncol(x$xmat)
 
-      objfun <- function(tau2) {
+      objfun1 <- function(tau2) {
         par1 <- set.par(par0, tau2, "tau2")
         grad <- -1 * (grad + x$grad(par1))
         Sigma <- matrix_inv(hess + x$hess(par1))
         Hs <- Sigma %*% grad
         if(x$xt$update.nu) {
-          objfun.nu <- function(nu) {
+          objfun_nu1 <- function(nu) {
             b1 <- drop(b0 - nu * Hs)
             par2 <- set.par(par1, b1, "b")
             eta[[id]] <- eta[[id]] + x$fit.fun(x$X, par2)
@@ -3128,7 +3127,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
             logPost <- logLik + x$prior(par2)
             return(-1 * logPost)
           }
-          nu <- optimize(f = objfun.nu, interval = c(0, 1))$minimum
+          nu <- optimize(f = objfun_nu1, interval = c(0, 1))$minimum
         } else {
           nu <- x$xt$nu
         }
@@ -3153,9 +3152,9 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
         return(ic)
       }
 
-      assign("ic00_val", objfun(get.state(x, "tau2")), envir = env)
+      assign("ic00_val", objfun1(get.state(x, "tau2")), envir = env)
 
-      tau2 <- tau2.optim(objfun, start = start)
+      tau2 <- tau2.optim(objfun1, start = start)
 
       if(!is.null(env$state))
         return(env$state)
@@ -3168,7 +3167,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
     grad <- -1 * (grad + x$grad(par0))
 
     if(x$xt$update.nu) {
-      objfun <- function(nu) {
+      objfun_nu2 <- function(nu) {
         b1 <- b0 - nu * Sigma %*% grad
         par0 <- set.par(par0, b1, "b")
         eta[[id]] <- eta[[id]] + x$fit.fun(x$X, par0)
@@ -3176,7 +3175,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
         logPost <- logLik + x$prior(par0)
         return(-1 * logPost)
       }
-      nu <- optimize(f = objfun, interval = c(0, 1))$minimum
+      nu <- optimize(f = objfun_nu2, interval = c(0, 1))$minimum
     } else {
       nu <- x$xt$nu
     }
@@ -3557,6 +3556,7 @@ krDesign2D <- function(z1, z2, knots = 10, rho = NULL,
   phi = NULL, v = NULL, c = NULL, psi = NULL, delta = 1,
   isotropic = TRUE, ...)
 {
+  stopifnot(requireNamespace("fields"))
   rho <- if(is.null(rho)) {
     matern
   } else rho
@@ -3586,14 +3586,14 @@ krDesign2D <- function(z1, z2, knots = 10, rho = NULL,
     max(abs(diff(range(knots)))) / c
   } else phi
   if(phi == 0)
-    phi <- max(abs(fields::rdist(z1, z2))) / c
-  K <- rho(fields::rdist(knots, knots), phi, v)
+    phi <- max(abs(rdist(z1, z2))) / c
+  K <- rho(rdist(knots, knots), phi, v)
   if(isotropic) {
     B <- NULL
     for(j in 1:nk) {
       kn <- matrix(knots[j, ], nrow = 1, ncol = 2)
-	    h <- fields::rdist(z, kn)
-		  B <- cbind(B, rho(h, phi, v))
+      h <- rdist(z, kn)
+      B <- cbind(B, rho(h, phi, v))
     }
   } else {
     B <- matrix(0, nrow(z), nk)
@@ -3955,7 +3955,7 @@ plot.bamlss.results <- function(x, model = NULL, term = NULL,
             if(ny > 1)
               args2$main <- paste(names(res0)[j], args2$main, sep = ": ")
           }
-          ok <- try(do.call(eval(parse(text = "graphics::hist.default")), args2))
+          ok <- try(do.call(get("hist.default"), args2))
           if(!inherits(ok, "try-error"))
             lines(rdens)
           box()
@@ -4210,7 +4210,7 @@ plot.bamlss.effect.default <- function(x, ...) {
         args$x <- density(x[, "50%"], na.rm = TRUE)
         if(!limNULL)
           args$xlim <- args$ylim
-        do.call("plot", delete.args(plot.density, args, c("main", "xlim")))
+        do.call("plot", delete.args(plot.density2, args, c("main", "xlim")))
       } else {
         if(!is.null(args$map)) {
           args$x <- x[, grepl("50%", colnames(x), fixed = TRUE)]
@@ -5254,7 +5254,7 @@ samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE,
 
 
 ## Continue sampling.
-continue <- function(object, chains = NULL, cores = NULL, combine = TRUE, ...)
+continue <- function(object, chains = NULL, cores = NULL, combine = TRUE, sleep = NULL, ...)
 {
   if(is.null(object$samples))
     stop("no samples to continue from!")

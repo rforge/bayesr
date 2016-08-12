@@ -575,7 +575,7 @@ shp2bnd <- function(shpname, regionnames, check.is.in = TRUE)
                 {                       
                     ## find out which is the outer one
                     outer <- inner <- 0L
-                    if(.ringDirxy(polyList[[j]]) < 0)
+                    if(.ringDirxy2(polyList[[j]]) < 0)
                     {
                         outer <- j
                         inner <- i

@@ -37,7 +37,7 @@ jm.bamlss <- function(...)
         attr(y, "width") <- attr(rval$y[[1]], "width")
         attr(y, "subdivisions") <- attr(rval$y[[1]], "subdivisions")
         cat2("generating starting model for survival part...\n")
-        spar <- cox.mode(x = x2, y = list(y), family = gF2(cox),
+        spar <- cox.mode(x = x2, y = list(y), family = gF2("cox"),
           start = NULL, maxit = 100)$parameters
         if(plot) {
           b <- list("x" = x2, "model.frame" = x$model.frame, "parameters" = spar)
@@ -334,7 +334,6 @@ sparse_Matrix_setup <- function(x, sparse = TRUE, force = FALSE)
 {
   if(sparse) {
     if((ncol(x$sparse.setup$crossprod) < (ncol(x$X) * 0.5)) | force) {
-      stopifnot(requireNamespace("Matrix"))
       x$X <- Matrix(x$X, sparse = TRUE)
       x$XT <- Matrix(x$XT, sparse = TRUE)
       for(j in seq_along(x$S))
@@ -767,7 +766,7 @@ update_jm_gamma <- function(x, eta, eta_timegrid, int,
       edf - x$state$edf
     }
 
-    objfun <- function(tau2) {
+    objfun1 <- function(tau2) {
       par[x$pid$tau2] <- tau2
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
       xhess <- xhess0 + x$hess(score = NULL, par, full = FALSE)
@@ -808,8 +807,8 @@ update_jm_gamma <- function(x, eta, eta_timegrid, int,
       return(ic)
     }
 
-    assign("ic00_val", objfun(get.state(x, "tau2")), envir = env)
-    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
+    assign("ic00_val", objfun1(get.state(x, "tau2")), envir = env)
+    tau2 <- tau2.optim(objfun1, start = get.state(x, "tau2"))
 
     if(!is.null(env$state))
       return(env$state)
@@ -828,7 +827,7 @@ update_jm_gamma <- function(x, eta, eta_timegrid, int,
   g <- get.state(x, "b")
 
   if(update.nu) {
-    objfun <- function(nu) {
+    objfun2 <- function(nu) {
       g2 <- drop(g + nu * Hs)
       names(g2) <- names(g)
       x$state$parameters <- set.par(x$state$parameters, g2, "b")
@@ -840,7 +839,7 @@ update_jm_gamma <- function(x, eta, eta_timegrid, int,
       return(-1 * lp)
     }
 
-    x$state$nu <- optimize(f = objfun, interval = c(0, 1))$minimum
+    x$state$nu <- optimize(f = objfun2, interval = c(0, 1))$minimum
   }
 
   g2 <- drop(g + x$state$nu * Hs)
@@ -882,7 +881,7 @@ update_jm_lambda <- function(x, eta, eta_timegrid,
       edf - x$state$edf
     }
 
-    objfun <- function(tau2) {
+    objfun1 <- function(tau2) {
       par <- set.par(par, tau2, "tau2")
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
       xhess <- int$hess + x$hess(score = NULL, par, full = FALSE)
@@ -932,8 +931,8 @@ update_jm_lambda <- function(x, eta, eta_timegrid,
       return(ic)
     }
 
-    assign("ic00_val", objfun(get.state(x, "tau2")), envir = env)
-    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
+    assign("ic00_val", objfun1(get.state(x, "tau2")), envir = env)
+    tau2 <- tau2.optim(objfun1, start = get.state(x, "tau2"))
 
     if(!is.null(env$state))
       return(env$state)
@@ -952,7 +951,7 @@ update_jm_lambda <- function(x, eta, eta_timegrid,
   g <- get.state(x, "b")
 
   if(update.nu) {
-    objfun <- function(nu) {
+    objfun2 <- function(nu) {
       g2 <- drop(g + nu * Hs)
       names(g2) <- names(g)
       x$state$parameters <- set.par(x$state$parameters, g2, "b")
@@ -965,7 +964,7 @@ update_jm_lambda <- function(x, eta, eta_timegrid,
       lp <- get_LogPost(eta_timegrid, eta, x$prior(x$state$parameters))
       return(-1 * lp)
     }
-    x$state$nu <- optimize(f = objfun, interval = c(0, 1))$minimum
+    x$state$nu <- optimize(f = objfun2, interval = c(0, 1))$minimum
   }
 
   g2 <- drop(g + x$state$nu * Hs)
@@ -1020,7 +1019,7 @@ update_jm_mu <- function(x, y, eta, eta_timegrid,
       edf - x$state$edf
     }
 
-    objfun <- function(tau2) {
+    objfun1 <- function(tau2) {
       par <- set.par(par, tau2, "tau2")
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
       xhess <- xhess0 - x$hess(score = NULL, par, full = FALSE)
@@ -1073,8 +1072,8 @@ update_jm_mu <- function(x, y, eta, eta_timegrid,
       return(ic)
     }
 
-    assign("ic00_val", objfun(get.state(x, "tau2")), envir = env)
-    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"), maxit = 1)
+    assign("ic00_val", objfun1(get.state(x, "tau2")), envir = env)
+    tau2 <- tau2.optim(objfun1, start = get.state(x, "tau2"), maxit = 1)
 
     if(!is.null(env$state))
       return(env$state)
@@ -1093,7 +1092,7 @@ update_jm_mu <- function(x, y, eta, eta_timegrid,
   g <- get.state(x, "b")
 
   if(update.nu) {
-    objfun <- function(nu) {
+    objfun2 <- function(nu) {
       g2 <- drop(g - nu * Hs)
       names(g2) <- names(g)
       x$state$parameters <- set.par(x$state$parameters, g2, "b")
@@ -1107,7 +1106,7 @@ update_jm_mu <- function(x, y, eta, eta_timegrid,
       lp <- get_LogPost(eta_timegrid, eta, x$prior(x$state$parameters))
       return(-1 * lp)
     }
-    x$state$nu <- optimize(f = objfun, interval = c(0, 1))$minimum
+    x$state$nu <- optimize(f = objfun2, interval = c(0, 1))$minimum
   }
 
   g2 <- drop(g - x$state$nu * Hs)
@@ -1159,7 +1158,7 @@ update_jm_mu_Matrix <- function(x, y, eta, eta_timegrid,
       edf - x$state$edf
     }
 
-    objfun <- function(tau2) {
+    objfun1 <- function(tau2) {
       par[x$pid$tau2] <- tau2
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
       xhess <- xhess0 - x$hess(score = NULL, par, full = FALSE)
@@ -1210,8 +1209,8 @@ update_jm_mu_Matrix <- function(x, y, eta, eta_timegrid,
       return(ic)
     }
 
-    assign("ic00_val", objfun(get.state(x, "tau2")), envir = env)
-    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"), maxit = 1)
+    assign("ic00_val", objfun1(get.state(x, "tau2")), envir = env)
+    tau2 <- tau2.optim(objfun1, start = get.state(x, "tau2"), maxit = 1)
 
     if(!is.null(env$state))
       return(env$state)
@@ -1230,7 +1229,7 @@ update_jm_mu_Matrix <- function(x, y, eta, eta_timegrid,
   g <- get.state(x, "b")
 
   if(update.nu) {
-    objfun <- function(nu) {
+    objfun2 <- function(nu) {
       g2 <- drop(g - nu * Hs)
       x$state$parameters[x$pid$b] <- g2
       fit_timegrid <- x$fit.fun_timegrid(g2)
@@ -1243,7 +1242,7 @@ update_jm_mu_Matrix <- function(x, y, eta, eta_timegrid,
       lp <- get_LogPost(eta_timegrid, eta, x$prior(x$state$parameters))
       return(-1 * lp)
     }
-    x$state$nu <- optimize(f = objfun, interval = c(0, 1))$minimum
+    x$state$nu <- optimize(f = objfun2, interval = c(0, 1))$minimum
   }
 
   g2 <- drop(g - x$state$nu * Hs)
@@ -1286,7 +1285,9 @@ update_jm_sigma <- function(x, y, eta, eta_timegrid,
       edf - x$state$edf
     }
 
-    objfun <- function(tau2) {
+    env <- new.env()
+
+    objfun1 <- function(tau2) {
       par <- set.par(par, tau2, "tau2")
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
       xhess <- xhess0 - x$hess(score = NULL, par, full = FALSE)
@@ -1310,7 +1311,8 @@ update_jm_sigma <- function(x, y, eta, eta_timegrid,
       }
       g2 <- drop(g - nu * Hs)
       names(g2) <- names(g)
-      eta$sigma <- eta$sigma - fitted(x$state) + x$fit.fun(x$X, g2)
+      fit <- x$fit.fun(x$X, g2)
+      eta$sigma <- eta$sigma - fitted(x$state) + fit
       edf1 <- sum_diag(xhess0 %*% Sigma)
       edf <- edf0 + edf1
       logLik <- get_LogPost(eta_timegrid, eta, 0)
@@ -1329,8 +1331,8 @@ update_jm_sigma <- function(x, y, eta, eta_timegrid,
       return(ic)
     }
 
-    assign("ic00_val", objfun(get.state(x, "tau2")), envir = env)
-    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"), maxit = 1)
+    assign("ic00_val", objfun1(get.state(x, "tau2")), envir = env)
+    tau2 <- tau2.optim(objfun1, start = get.state(x, "tau2"), maxit = 1)
 
     if(!is.null(env$state))
       return(env$state)
@@ -1349,7 +1351,7 @@ update_jm_sigma <- function(x, y, eta, eta_timegrid,
   g <- get.state(x, "b")
 
   if(update.nu) {
-    objfun <- function(nu) {
+    objfun2 <- function(nu) {
       g2 <- drop(g - nu * Hs)
       names(g2) <- names(g)
       x$state$parameters <- set.par(x$state$parameters, g2, "b")
@@ -1359,7 +1361,7 @@ update_jm_sigma <- function(x, y, eta, eta_timegrid,
       return(-1 * lp)
     }
 
-    x$state$nu <- optimize(f = objfun, interval = c(0, 1))$minimum
+    x$state$nu <- optimize(f = objfun2, interval = c(0, 1))$minimum
   }
  
 
@@ -1402,7 +1404,7 @@ update_jm_alpha <- function(x, eta, eta_timegrid,
       edf - x$state$edf
     }
 
-    objfun <- function(tau2) {
+    objfun1 <- function(tau2) {
       par <- set.par(par, tau2, "tau2")
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
       xhess <- int$hess + x$hess(score = NULL, par, full = FALSE)
@@ -1449,8 +1451,8 @@ update_jm_alpha <- function(x, eta, eta_timegrid,
       return(ic)
     }
 
-    assign("ic00_val", objfun(get.state(x, "tau2")), envir = env)
-    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
+    assign("ic00_val", objfun1(get.state(x, "tau2")), envir = env)
+    tau2 <- tau2.optim(objfun1, start = get.state(x, "tau2"))
 
     if(!is.null(env$state))
       return(env$state)
@@ -1469,7 +1471,7 @@ update_jm_alpha <- function(x, eta, eta_timegrid,
   g <- get.state(x, "b")
 
   if(update.nu) {
-    objfun <- function(nu) {
+    objfun2 <- function(nu) {
       g2 <- drop(g + nu * Hs)
       names(g2) <- names(g)
       x$state$parameters <- set.par(x$state$parameters, g2, "b")
@@ -1479,7 +1481,7 @@ update_jm_alpha <- function(x, eta, eta_timegrid,
       lp <- get_LogPost(eta_timegrid, eta, x$prior(x$state$parameters))
       return(-1 * lp)
     }
-    x$state$nu <- optimize(f = objfun, interval = c(0, 1))$minimum
+    x$state$nu <- optimize(f = objfun2, interval = c(0, 1))$minimum
   }
 
   g2 <- drop(g + x$state$nu * Hs)        
@@ -1522,7 +1524,7 @@ update_jm_dalpha <- function(x, eta, eta_timegrid,
       edf - x$state$edf
     }
 
-    objfun <- function(tau2) {
+    objfun1 <- function(tau2) {
       par <- set.par(par, tau2, "tau2")
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
       xhess <- int$hess + x$hess(score = NULL, par, full = FALSE)
@@ -1569,8 +1571,8 @@ update_jm_dalpha <- function(x, eta, eta_timegrid,
       return(ic)
     }
 
-    assign("ic00_val", objfun(get.state(x, "tau2")), envir = env)
-    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
+    assign("ic00_val", objfun1(get.state(x, "tau2")), envir = env)
+    tau2 <- tau2.optim(objfun1, start = get.state(x, "tau2"))
 
     if(!is.null(env$state))
       return(env$state)
@@ -1589,7 +1591,7 @@ update_jm_dalpha <- function(x, eta, eta_timegrid,
   g <- get.state(x, "b")
 
   if(update.nu) {
-    objfun <- function(nu) {
+    objfun2 <- function(nu) {
       g2 <- drop(g + nu * Hs)
       names(g2) <- names(g)
       x$state$parameters <- set.par(x$state$parameters, g2, "b")
@@ -1599,7 +1601,7 @@ update_jm_dalpha <- function(x, eta, eta_timegrid,
       lp <- get_LogPost(eta_timegrid, eta, x$prior(x$state$parameters))
       return(-1 * lp)
     }
-    x$state$nu <- optimize(f = objfun, interval = c(0, 1))$minimum
+    x$state$nu <- optimize(f = objfun2, interval = c(0, 1))$minimum
   }
   nu <- x$state$nu
 

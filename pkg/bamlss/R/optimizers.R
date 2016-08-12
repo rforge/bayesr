@@ -1,3 +1,5 @@
+.bamlss_log_posterior_iteration <- NULL
+
 ##################################################
 ## (1) Generic setup function for smooth terms. ##
 ##################################################
@@ -371,14 +373,13 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
     if((ncol(x$sparse.setup$crossprod) < ncol(x$X) * 0.5) & force.spam)
       spam <- TRUE
     if(spam) {
-      stopifnot(requireNamespace("spam"))
-      x$X <- spam::as.spam(x$X)
-      xx <- spam::crossprod.spam(x$X)
+      x$X <- as.spam(x$X)
+      xx <- crossprod.spam(x$X)
       for(j in seq_along(x$S)) {
-        x$S[[j]] <- spam::as.spam(x$S[[j]])
+        x$S[[j]] <- as.spam(x$S[[j]])
         xx <- xx + x$S[[j]]
       }
-      x$sparse.setup$spam.cholFactor <- spam::chol.spam(xx)
+      x$sparse.setup$spam.cholFactor <- chol.spam(xx)
       if(force.spam) {
         x$update <- bfit_iwls_spam
       }
@@ -390,10 +391,9 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
     if((ncol(x$sparse.setup$crossprod) < ncol(x$X) * 0.5) & force.Matrix)
       Matrix <- TRUE
     if(Matrix) {
-      stopifnot(requireNamespace("Matrix"))
-      x$X <- Matrix::Matrix(x$X, sparse = TRUE)
+      x$X <- Matrix(x$X, sparse = TRUE)
       for(j in seq_along(x$S))
-        x$S[[j]] <- Matrix::Matrix(x$S[[j]], sparse = TRUE)
+        x$S[[j]] <- Matrix(x$S[[j]], sparse = TRUE)
       if(force.Matrix)
         x$update <- bfit_iwls_Matrix
       x$prior <- make.prior(x)
@@ -464,8 +464,7 @@ assign.df <- function(x, df)
     df <- 1
   int <- c(.Machine$double.eps^0.25, 1e+10)
   if(inherits(x$X, "spam")) {
-    stopifnot(requireNamespace("spam"))
-    XX <- spam::crossprod.spam(x$X)
+    XX <- crossprod.spam(x$X)
   } else {
     XX <- crossprod(x$X)
   }
@@ -1365,12 +1364,12 @@ bfit_iwls_Matrix <- function(x, family, y, eta, id, weights, criterion, ...)
   xbin.fun(x$binning$sorted.index, hess, e, x$weights, x$rres, x$binning$order)
 
   ## Compute mean and precision.
-  XWX <- crossprod(Matrix::Diagonal(x = x$weights) %*% x$X, x$X)
+  XWX <- crossprod(Diagonal(x = x$weights) %*% x$X, x$X)
   Xr <- crossprod(x$X, x$rres)
   if(!x$state$do.optim | x$fixed | x$fxsp) {
     if(!x$fixed) {
       tau2 <- get.state(x, "tau2")
-      S <- Matrix::Matrix(0, ncol(x$X), ncol(x$X))
+      S <- Matrix(0, ncol(x$X), ncol(x$X))
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * x$S[[j]]
       U <- chol(XWX + S)
@@ -1388,7 +1387,7 @@ bfit_iwls_Matrix <- function(x, family, y, eta, id, weights, criterion, ...)
     env <- new.env()
 
     objfun <- function(tau2, ...) {
-      S <- Matrix::Matrix(0, ncol(x$X), ncol(x$X))
+      S <- Matrix(0, ncol(x$X), ncol(x$X))
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * x$S[[j]]
       U <- chol(XWX + S)
@@ -1422,7 +1421,7 @@ bfit_iwls_Matrix <- function(x, family, y, eta, id, weights, criterion, ...)
     if(!is.null(env$state))
       return(env$state)
 
-    S <- Matrix::Matrix(0, ncol(x$X), ncol(x$X))
+    S <- Matrix(0, ncol(x$X), ncol(x$X))
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * x$S[[j]]
     U <- chol(XWX + S)
@@ -1564,10 +1563,10 @@ log_posterior <- function(par, x, y, family, verbose = TRUE, digits = 3, scale =
     cat(if(interactive()) "\r" else "\n")
     vtxt <- paste("logLik ", fmt(ll, width = 8, digits = digits),
       " logPost ", fmt(lp, width = 8, digits = digits),
-      " iteration ", formatC(bamlss_log_posterior_iteration, width = 4), sep = "")
+      " iteration ", formatC(.bamlss_log_posterior_iteration, width = 4), sep = "")
     cat(vtxt)
     if(.Platform$OS.type != "unix" & interactive()) flush.console()
-    bamlss_log_posterior_iteration <<- bamlss_log_posterior_iteration + 1
+    .bamlss_log_posterior_iteration <<- .bamlss_log_posterior_iteration + 1
   }
 
   if(!is.null(scale))
@@ -1646,7 +1645,7 @@ opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
   par <- get.all.par(x, list = FALSE, drop = TRUE)
 
   if(verbose)
-    bamlss_log_posterior_iteration <<- 1
+    .bamlss_log_posterior_iteration <<- 1
 
   if(!hessian) {
     opt <- optim(par, fn = log_posterior,
@@ -1657,7 +1656,7 @@ opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
  
     if(verbose) {
       cat("\n")
-      rm(bamlss_log_posterior_iteration, envir = .GlobalEnv)
+      rm(.bamlss_log_posterior_iteration, envir = .GlobalEnv)
     }
 
     eta <- get.eta.par(opt$par, x)
@@ -1676,7 +1675,7 @@ opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
 
     if(verbose) {
       cat("\n")
-      rm(bamlss_log_posterior_iteration, envir = .GlobalEnv)
+      rm(.bamlss_log_posterior_iteration, envir = .GlobalEnv)
     }
 
     return(opt)
@@ -2213,9 +2212,7 @@ boost_iwls <- function(x, hess, resids, nu)
     }
 
     if(length(get.state(x, "tau2")) < 2) {
-      tau2 <- try(optimize(objfun, interval = x$state$interval)$minimum, silent = TRUE)
-      if(inherits(tau2, "try-error"))
-        tau2 <- optimize2(objfun, interval = x$state$interval, grid = x$state$grid)$minimum
+      tau2 <- optimize(objfun, interval = x$state$interval)$minimum
     } else {
       i <- grep("tau2", names(x$lower))
       tau2 <- if(!is.null(x$state$true.tau2)) x$state$true.tau2 else get.state(x, "tau2")

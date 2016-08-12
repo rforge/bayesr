@@ -427,7 +427,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
     if(!inherits(rval, "mcmc.list"))
       rval <- as.mcmc.list(rval)
     if(combine)
-      rval <- combine_chains(rval)
+      rval <- process.chains(rval)
   }
   
   return(rval)

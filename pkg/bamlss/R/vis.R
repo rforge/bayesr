@@ -1676,7 +1676,7 @@ interp2 <- function(x, y, z, xo = NULL, yo = NULL, grid = 30,
       }
     }
 
-    fit <- try(interp(x, y, z, xo = xo, yo = yo, 
+    fit <- try(akima::interp(x, y, z, xo = xo, yo = yo, 
       duplicate = "mean", linear = linear, extrap = extrap)$z, silent = TRUE)
     if(inherits(fit, "try-error") | all(is.na(fit))) {
       cat("NOTE: akima::interp() is designed for irregular data points, the coordinates will be slightly jittered to obtain irregular spaced points.\n")

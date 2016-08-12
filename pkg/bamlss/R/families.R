@@ -688,68 +688,68 @@ truncgaussian.bamlss <- function(...)
 }
 
 
-trunc.bamlss <- function(direction = "left", point = 0, ...)
-{
-  links <- c(mu = "identity", sigma = "log")
+#trunc.bamlss <- function(direction = "left", point = 0, ...)
+#{
+#  links <- c(mu = "identity", sigma = "log")
 
-  tgrad <- function(y, par, what = "mu") {
-    par$sigma[par$sigma < 1] <- 1
-    par$mu[par$mu < -10] <- -10
-    par$mu[par$mu > 10] <- 10
-    resid <- y - par$mu
-    if(direction == "left") {
-      trunc <- par$mu - point
-      sgn <- 1
-    } else {
-      trunc <- point - par$mu
-      sgn <- -1
-    }
-    mills <- dnorm(trunc / par$sigma) / pnorm(trunc / par$sigma)
-    g <- if(what == "mu") {
-      resid / par$sigma^2 - sgn / par$sigma * mills
-    } else {
-      resid^2 / par$sigma^3 - 1 / par$sigma + trunc / par$sigma^2 * mills
-    }
-    return(g)
-  }
+#  tgrad <- function(y, par, what = "mu") {
+#    par$sigma[par$sigma < 1] <- 1
+#    par$mu[par$mu < -10] <- -10
+#    par$mu[par$mu > 10] <- 10
+#    resid <- y - par$mu
+#    if(direction == "left") {
+#      trunc <- par$mu - point
+#      sgn <- 1
+#    } else {
+#      trunc <- point - par$mu
+#      sgn <- -1
+#    }
+#    mills <- dnorm(trunc / par$sigma) / pnorm(trunc / par$sigma)
+#    g <- if(what == "mu") {
+#      resid / par$sigma^2 - sgn / par$sigma * mills
+#    } else {
+#      resid^2 / par$sigma^3 - 1 / par$sigma + trunc / par$sigma^2 * mills
+#    }
+#    return(g)
+#  }
 
-  rval <- list(
-    "family" = "truncreg",
-    "names" = c("mu", "sigma"),
-    "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
-    "d" = function(y, par, log = FALSE) {
-      par$sigma[par$sigma < 1] <- 1
-      par$mu[par$mu < -10] <- -10
-      par$mu[par$mu > 10] <- 10
-      resid <- y - par$mu
-      if(direction == "left") {
-        trunc <- par$mu - point
-      } else {
-        trunc <- point - par$mu
-      }
-      ll <- log(dnorm(resid / par$sigma)) - log(par$sigma) - log(pnorm(trunc / par$sigma))
-      if(!log) ll <- exp(ll)
-      ll
-    },
-    "p" = function(y, par, ...) {
-      ## Needs msm package!
-      ptnorm(y, mean = par$mu, sd = par$sigma,
-        lower = if(direction == "left") point else -Inf,
-        upper = if(direction == "right") point else Inf)
-    },
-    "score" = list(
-      "mu" = function(y, par, ...) {
-        as.numeric(tgrad(y, par, what = "mu"))
-      },
-      "sigma" = function(y, par, ...) {
-        as.numeric(tgrad(y, par, what = "sigma"))
-      }
-    )
-  )
-  
-  class(rval) <- "family.bamlss"
-  rval
-}
+#  rval <- list(
+#    "family" = "truncreg",
+#    "names" = c("mu", "sigma"),
+#    "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
+#    "d" = function(y, par, log = FALSE) {
+#      par$sigma[par$sigma < 1] <- 1
+#      par$mu[par$mu < -10] <- -10
+#      par$mu[par$mu > 10] <- 10
+#      resid <- y - par$mu
+#      if(direction == "left") {
+#        trunc <- par$mu - point
+#      } else {
+#        trunc <- point - par$mu
+#      }
+#      ll <- log(dnorm(resid / par$sigma)) - log(par$sigma) - log(pnorm(trunc / par$sigma))
+#      if(!log) ll <- exp(ll)
+#      ll
+#    },
+#    "p" = function(y, par, ...) {
+#      ## Needs msm package!
+#      ptnorm(y, mean = par$mu, sd = par$sigma,
+#        lower = if(direction == "left") point else -Inf,
+#        upper = if(direction == "right") point else Inf)
+#    },
+#    "score" = list(
+#      "mu" = function(y, par, ...) {
+#        as.numeric(tgrad(y, par, what = "mu"))
+#      },
+#      "sigma" = function(y, par, ...) {
+#        as.numeric(tgrad(y, par, what = "sigma"))
+#      }
+#    )
+#  )
+#  
+#  class(rval) <- "family.bamlss"
+#  rval
+#}
 
 
 cnorm.bamlss <- function(...)
@@ -833,7 +833,7 @@ pcnorm.bamlss <- function(start = 2, update = FALSE, ...)
       x$x$lambda$smooth.construct$model.matrix$state$parameters[1] <- log(start)
       x$x$lambda$smooth.construct$model.matrix$state$fitted.values <- x$x$lambda$smooth.construct$model.matrix$fit.fun(x$x$lambda$smooth.construct$model.matrix$X, x$x$lambda$smooth.construct$model.matrix$state$parameters)
       for(j in seq_along(x$x$lambda$smooth.construct)) {
-        x$x$lambda$smooth.construct[[j]]$propose <- gmcmc_sm.slice
+        x$x$lambda$smooth.construct[[j]]$propose <- GMCMC_slice
         x$x$lambda$smooth.construct[[j]]$update <- if(update) {
           bfit_optim
         } else {
@@ -2104,55 +2104,55 @@ quant2.bamlss <- function(prob = 0.5, ...)
 
 
 ## Zero adjusted families.
-zero.bamlss <- function(g = invgaussian)
-{
-  pi <- "logit"
-  gg <- try(inherits(g, "family.bamlss"), silent = TRUE)
-  if(inherits(gg, "try-error")) {
-    g <- deparse(substitute(g), backtick = TRUE, width.cutoff = 500)
-  } else {
-    if(is.function(g)) {
-      if(inherits(try(g(), silent = TRUE), "try-error"))
-        g <- deparse(substitute(g), backtick = TRUE, width.cutoff = 500)
-    }
-  }
-  g <- bamlss.family(g)
-  g[c("mu", "map2par", "loglik")] <- NULL
-  g0 <- g
-  np <- g$names
-  g$links <- c(g$links, "pi" = pi)
-  g$family <- paste("zero-adjusted | ", g$family, ", ", "binomial", sep = "")
-  g$names <- c(g$names, "pi")
-  g$valid.response <- function(x) {
-    if(any(x < 0)) stop("response includes values smaller than zero!")
-    TRUE
-  }
-  dfun <- g0$d
-  pfun <- g0$p
-  if(is.function(dfun)) {
-    g$d <- function(y, par, log = TRUE) {
-      d <- dfun(y, par, log = FALSE) * par$pi * (y > 0) + (1 - par$pi) * (y == 0)
-      if(log)
-        d <- log(d)
-      d
-    }
-  }
-  if(is.function(pfun)) {
-    g$p <- function(y, par, log = FALSE) {
-      pfun(y, par, log = log) * par$pi + (1 - par$pi)
-    }
-  }
-  g$bayesx <- c(g$bayesx, list("pi" = c(paste("binomial", pi, sep = "_"), "meanservant")))
-  g$bayesx$hess <- list()
-  for(j in np) {
-    g$bayesx$hess[[j]] <- function(x) { 1 * (x > 0) }
-    if(grepl("mean", g$bayesx[[j]][2]))
-      g$bayesx[[j]][2] <- "meanservant"
-  }
-  g$bayesx$zero <- TRUE
-  class(g) <- "family.bamlss"
-  g
-}
+#zero.bamlss <- function(g = invgaussian)
+#{
+#  pi <- "logit"
+#  gg <- try(inherits(g, "family.bamlss"), silent = TRUE)
+#  if(inherits(gg, "try-error")) {
+#    g <- deparse(substitute(g), backtick = TRUE, width.cutoff = 500)
+#  } else {
+#    if(is.function(g)) {
+#      if(inherits(try(g(), silent = TRUE), "try-error"))
+#        g <- deparse(substitute(g), backtick = TRUE, width.cutoff = 500)
+#    }
+#  }
+#  g <- bamlss.family(g)
+#  g[c("mu", "map2par", "loglik")] <- NULL
+#  g0 <- g
+#  np <- g$names
+#  g$links <- c(g$links, "pi" = pi)
+#  g$family <- paste("zero-adjusted | ", g$family, ", ", "binomial", sep = "")
+#  g$names <- c(g$names, "pi")
+#  g$valid.response <- function(x) {
+#    if(any(x < 0)) stop("response includes values smaller than zero!")
+#    TRUE
+#  }
+#  dfun <- g0$d
+#  pfun <- g0$p
+#  if(is.function(dfun)) {
+#    g$d <- function(y, par, log = TRUE) {
+#      d <- dfun(y, par, log = FALSE) * par$pi * (y > 0) + (1 - par$pi) * (y == 0)
+#      if(log)
+#        d <- log(d)
+#      d
+#    }
+#  }
+#  if(is.function(pfun)) {
+#    g$p <- function(y, par, log = FALSE) {
+#      pfun(y, par, log = log) * par$pi + (1 - par$pi)
+#    }
+#  }
+#  g$bayesx <- c(g$bayesx, list("pi" = c(paste("binomial", pi, sep = "_"), "meanservant")))
+#  g$bayesx$hess <- list()
+#  for(j in np) {
+#    g$bayesx$hess[[j]] <- function(x) { 1 * (x > 0) }
+#    if(grepl("mean", g$bayesx[[j]][2]))
+#      g$bayesx[[j]][2] <- "meanservant"
+#  }
+#  g$bayesx$zero <- TRUE
+#  class(g) <- "family.bamlss"
+#  g
+#}
 
 
 ## General bamlss family creator.
@@ -2163,7 +2163,8 @@ gF <- function(x, ...) {
 }
 
 gF2 <- function(x, ...) {
-  x <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500)
+  if(!is.character(x))
+    x <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500)
   F <- get(paste(x, "bamlss", sep = "."), mode = "function")
   x <- F(...)
   linkinv <- vector(mode = "list", length = length(x$names))
@@ -2565,98 +2566,6 @@ gaussian5.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
     }
   )
   
-  class(rval) <- "family.bamlss"
-  rval
-}
-
-
-## GAMLSS tests.
-bct.bamlss <- function()
-{
-
-  mu.link <- make.link2("identity")
-  sigma.link <- make.link2("log")
-  nu.link <- make.link2("identity")
-  tau.link <- make.link2("log")
-
-  rval <- list(
-    "family" = "Box-Cox t",
-    "names" = c("mu", "sigma", "nu", "tau"),
-    "links" = c("mu" = "identity", "sigma" = "log", "nu" = "identity", "tau" = "log"),
-    "score" = list(
-      "mu" = function(y, par, ...) {
-         z <- ifelse(par$nu != 0, (((y / par$mu)^(par$nu) - 1)/(par$nu * par$sigma)), log(y / par$mu) / par$sigma)
-         w <- (par$tau + 1)/(par$tau + z^2)
-         ((w * z) / (par$mu * par$sigma) + (par$nu / par$mu) * (w * (z^2) - 1)) * mu.link$mu.eta(mu.link$linkfun(par$mu))
-      },
-      "sigma" = function(y, par, ...) {
-         z <- ifelse(par$nu != 0, (((y / par$mu)^(par$nu) - 1)/(par$nu * par$sigma)), log(y/par$mu)/par$sigma)
-         w <- (par$tau + 1)/(par$tau + z^2)
-         h <- dt(1/(par$sigma * abs(par$nu)), df = par$tau)/pt(1/(par$sigma * abs(par$nu)), df = par$tau)
-         ((w * (z^2) - 1)/par$sigma + h/(par$sigma^2 * abs(par$nu))) * sigma.link$mu.eta(sigma.link$linkfun(par$sigma))
-      },
-      "nu" = function(y, par, ...) {
-        z <- ifelse(par$nu != 0, (((y/par$mu)^(par$nu) - 1)/(par$nu * par$sigma)), log(y/par$mu)/par$sigma)
-        w <- (par$tau + 1)/(par$tau + z^2)
-        h <- dt(1/(par$sigma * abs(par$nu)), df = par$tau)/pt(1/(par$sigma * abs(par$nu)), df = par$tau)
-        dldv <- ((w * z^2)/par$nu) - log(y/par$mu) * (w * z^2 + ((w * z)/(par$sigma * par$nu)) - 1)
-        (dldv + sign(par$nu) * h/(par$sigma * par$nu^2)) * nu.link$mu.eta(nu.link$linkfun(par$nu))
-      },
-      "tau" = function(y, par, ...) {
-        z <- ifelse(par$nu != 0, (((y/par$mu)^par$nu - 1)/(par$nu * par$sigma)), log(y/par$mu)/par$sigma)
-        w <- (par$tau + 1)/(par$tau + z^2)
-        j <- (log(pt(1/(par$sigma * abs(par$nu)), df = par$tau + 0.01)) - log(pt(1/(par$sigma * abs(par$nu)), df = par$tau)))/0.01
-        dldt <- -0.5 * log(1 + (z^2)/par$tau) + (w * (z^2))/(2 * par$tau)
-        (dldt + 0.5 * digamma((par$tau + 1)/2) - 0.5 * digamma(par$tau/2) - 1/(2 * par$tau) - j) * tau.link$mu.eta(tau.link$linkfun(par$tau))
-      }
-    ),
-    "hess" = list(
-      "mu" = function(y, par, ...) {
-   
-      },
-      "sigma" = function(y, par, ...) {
-   
-      },
-      "nu" = function(y, par, ...) {
-   
-      },
-      "tau" = function(y, par, ...) {
-   
-      }
-    ),
-    "d" = function(y, par, log = FALSE) {
-      if(any(par$mu <= 0)) 
-        par$mu[par$mu <= 0] <- .Machine$double.eps^0.5
-      if(any(par$sigma <= 0)) 
-        par$sigma[par$sigma <= 0] <- .Machine$double.eps^0.5
-      if(any(par$tau <= 0)) 
-        par$tau[par$tau <= 0] <- .Machine$double.eps^0.5
-      if(any(y < 0)) 
-        stop(paste("y must be positive", "\n", ""))
-      if(length(par$nu) > 1) {
-        z <- ifelse(par$nu != 0, (((y/par$mu)^(par$nu) - 1)/(par$nu * par$sigma)), log(y/par$mu)/par$sigma)
-      } else {
-        if(par$nu != 0) 
-          z <- (((y/par$mu)^(par$nu) - 1)/(par$nu * par$sigma))
-        else
-          z <- log(y/par$mu)/par$sigma
-      }
-      loglik <- (par$nu - 1) * log(y) - par$nu * log(par$mu) - log(par$sigma)
-      fTz <- lgamma((par$tau + 1)/2) - lgamma(par$tau/2) - 0.5 * log(par$tau) - lgamma(0.5)
-      fTz <- fTz - ((par$tau + 1)/2) * log(1 + (z * z)/par$tau)
-      loglik <- loglik + fTz - log(pt(1/(par$sigma * abs(par$nu)), df = par$tau))
-      if(length(par$tau) > 1) {
-        loglik <- ifelse(par$tau > 1e+06, dBCCG(y, par$mu, par$sigma, par$nu, log = TRUE), loglik)
-      } else {
-        if(par$tau > 1e+06) 
-          loglik <- dBCCG(y, par$mu, par$sigma, par$nu, log = TRUE)
-      }
-      ft <- if(log == FALSE) exp(loglik) else loglik
-      ft
-    }
-  )
-
-  rval$hess <- NULL
   class(rval) <- "family.bamlss"
   rval
 }

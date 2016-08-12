@@ -293,46 +293,16 @@ buildBUGS.smooth <- function(smooth, setup, i)
 
 ## For special terms, e.g. growth curves, this function
 ## builds the model code.
-buildBUGS.smooth.special <- function(smooth, setup, i, zero)
+buildBUGS.smooth.special <- function(smooth, setup, i)
 {
   UseMethod("buildBUGS.smooth.special")
 }
 
 
 ## Default special model term builder.
-buildBUGS.smooth.special.default <- function(smooth, setup, i, zero)
+buildBUGS.smooth.special.default <- function(smooth, setup, i)
 {
-  buildBUGS.smooth(smooth, setup, i, zero)
-}
-
-
-## JAGS random scaling model term constructor.
-buildBUGS.smooth.special.rsc.smooth <- function(smooth, setup, i, zero)
-{
-  smooth$special <- FALSE
-  setup <- buildBUGS.smooth(smooth, setup, i, zero)
-
-  if(!is.null(smooth$by.formula)) {
-    st <- setup$smooth.construct[si <- grep(paste("sm", i, "[i] <-", sep = ""), setup$smooth.construct, fixed = TRUE)]
-    st <- strsplit(st, " <- ", fixed = TRUE)[[1]]
-    n <- length(smooth$rs.by)
-    rs <- paste("rs", i, 1:n, "[rsid", i, 1:n, "[i]]", sep = "", collapse = " + ")
-    st[2] <- paste("(", if(smooth$one) "1 + ", rs, ")*(", st[2], ")", sep = "")
-    setup$smooth.construct[si] <- paste(st[1], "<-", st[2])
-    for(j in 1:n) {
-      tmp <- paste("    rs", i, j, "[j] ~ dnorm(0, taugrs", i, j, ")", sep = "")
-      setup$priors.coef <- c(setup$priors.coef, tmp)
-      setup$loops <- c(setup$loops, nlevels(smooth$rs.by[[j]]))
-      setup$priors.scale <- c(setup$priors.scale,
-        paste("  ", "taugrs", i, j, " ~ dgamma(1.0E-4, 1.0E-4)", sep = ""))
-      setup$psave <- c(setup$psave, paste("rs", i, j, sep = ""),
-        paste("taugrs", i, j, sep = ""))
-      setup$data[[paste("rsid", i, j, sep = "")]] <- as.integer(smooth$rs.by[[j]])
-      setup$inits[[paste("rs", i, j, sep = "")]] <- rnorm(nlevels(smooth$rs.by[[j]]))
-    }
-  }
-
-  setup
+  buildBUGS.smooth(smooth, setup, i)
 }
 
 
@@ -367,69 +337,6 @@ buildBUGS.smooth.special.gc.smooth <- function(smooth, setup, i, zero)
         paste(fall, collapse = " + ", sep = ""), sep = ""), "  }")
   }
   setup$eta <- paste(setup$eta, paste("sm", i, if(center) 1 else NULL, "[i]", sep = ""),
-    sep = if(length(setup$eta)) " + " else "")
-
-  setup
-}
-
-
-## Special code builder for rational splines.
-buildBUGS.smooth.special.rs.smooth <- function(smooth, setup, i, zero)
-{
-  fall <- fall0 <- NULL
-  k1 <- ncol(smooth$smooth.constructs[[1]]$X)
-  k2 <- ncol(smooth$smooth.constructs[[2]]$X)
-
-  fall0 <- c(fall0, paste("Z", i, "[i, ", 1:k2, "]", sep = ""))
-  fall <- c(fall, paste("b", i, if(k1 > 1) paste("[", 1:k1, "]", sep = ""),
-    "*X", i, "[i, ", 1:k1, "]", sep = ""))
-  setup$data[[paste("X", i, sep = "")]] <- smooth$smooth.constructs[[1]]$X
-  setup$data[[paste("Z", i, sep = "")]] <- smooth$smooth.constructs[[2]]$X
-  tmp <- if(k1 > 1) {
-      paste("    b", i, if(zero) "[j] <- 0.0" else "[j] ~ dnorm(0, 1.0E-6)", sep = "")
-  } else paste("  b", i, if(zero) " <- 0.0" else " ~ dnorm(0, 1.0E-6)", sep = "")
-  setup$priors.coef <- c(setup$priors.coef, tmp)
-  setup$loops <- c(setup$loops, k1)
-  if(!zero)
-    setup$inits[[paste("b", i, sep = "")]] <- runif(k1, 0.1, 0.2)
-  setup$psave <- c(setup$psave, paste("b", i, sep = ""))
-
-#  tmp <- if((kw <- length(fall)) > 1) {
-#    paste("    w", i, if(zero) "[j] <- 0.0" else "[j] ~ dgamma(1.0E-4, 1.0E-4)", sep = "")
-#  } else paste("  w", i, if(zero) " <- 0.0" else " ~ dgamma(1.0E-4, 1.0E-4)", sep = "")
-
-  tmp <- if((kw <- length(fall0)) > 1) {
-    paste("    w", i, if(zero) "[j] <- 0.0" else "[j] ~ dnorm(0, 1.0E-6)", sep = "")
-  } else paste("  w", i, if(zero) " <- 0.0" else " ~ dnorm(0, 1.0E-6)", sep = "")
-
-  ## setup$adds <- paste("  w2", i, " <- 1 / sum(w", i, ")", sep = "")
-  setup$priors.coef <- c(setup$priors.coef, tmp)
-  setup$loops <- c(setup$loops, k2)
-  if(!zero)
-    setup$inits[[paste("w", i, sep = "")]] <- runif(k2, 0.1, 0.2)
-  setup$psave <- c(setup$psave, paste("w", i, sep = ""))
-
-  fall0 <- paste(fall0, c(1, paste("w", i, "[", 1:(length(fall0) - 1), "]", sep = "")), sep = "*")
-  ## fall <- paste(fall, c(1, paste("w", i, "[", 1:(length(fall) - 1), "]", sep = "")), sep = "*")
-
-  center <- if(is.null(smooth$xt$center)) TRUE else smooth$xt$center
-
-  link <- BUGSlinks(smooth$link)
-  
-  if(!center) {
-    fall0 <- paste("    sm0", i, "[i] <- 1 / (", gsub("eta", paste(fall0, collapse = " + "), link), ")", sep = "")
-    fall <- paste("    sm", i, "[i] <- sm0", i, "[i] * (", paste(fall, collapse = " + "), ")", sep = "")
-    setup$smooth.construct <- c(setup$smooth.construct, fall, fall0)
-  } else {
-    fall0 <- paste("    sm0", i, "[i] <- 1 / (", gsub("eta", paste(fall0, collapse = " + "), link), ")", sep = "")
-    fall <- paste("    sm", i, 0, "[i] <- sm0", i, "[i] * (", paste(fall, collapse = " + "), ")", sep = "")
-    setup$start <- c(setup$start,
-      paste("  sm", i, " <- sm", i, 0, " - mean(sm", i, 0, ")", sep = ""))
-    setup$close1 <- c(setup$close1,
-      paste("  for(i in 1:n) {", sep = ""), fall0, fall, "  }")
-  }
-
-  setup$eta <- paste(setup$eta, paste("sm", i, "[i]", sep = ""),
     sep = if(length(setup$eta)) " + " else "")
 
   setup

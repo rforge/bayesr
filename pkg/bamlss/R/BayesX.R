@@ -794,7 +794,7 @@ sx.construct.mrf.smooth.spec <- sx.construct.spatial.smooth.spec <- function(obj
     if(is.null(map)) {
       map <- object$xt
       if(is(map, "SpatialPolygonsDataFrame"))
-        map <- SPDF2bnd(map)
+        map <- sp2bnd(map)
       if(is.null(map) || (!is.list(map) && !inherits(map, "bnd") || !inherits(map, "gra")))
         stop("need to supply a bnd or graph file object in argument xt!")
     }

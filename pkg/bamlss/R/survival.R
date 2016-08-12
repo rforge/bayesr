@@ -172,7 +172,7 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
 
     edf0 <- if(!is.null(edf)) edf - x$state$edf else 0
 
-    objfun <- function(tau2) {
+    objfun1 <- function(tau2) {
       par[x$pid$tau2] <- tau2
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
       xhess <- int$hess + x$hess(score = NULL, par, full = FALSE)
@@ -220,9 +220,9 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
       return(ic)
     }
 
-    assign("ic00_val", objfun(get.state(x, "tau2")), envir = env)
+    assign("ic00_val", objfun1(get.state(x, "tau2")), envir = env)
 
-    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
+    tau2 <- tau2.optim(objfun1, start = get.state(x, "tau2"))
 
     if(!is.null(env$state))
       return(env$state)
@@ -241,7 +241,7 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
   g <- get.state(x, "b")
 
   if(update.nu) {
-    objfun <- function(nu) {
+    objfun2 <- function(nu) {
       g2 <- drop(g + nu * Hs)
       fit_timegrid <- x$fit.fun_timegrid(g2)
       eta_timegrid <- eta_timegrid - x$state$fitted_timegrid + fit_timegrid
@@ -254,7 +254,7 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
       logPost <- logLik + x$prior(x$state$parameters)
       return(-1 * logPost)
     }
-    x$state$nu <- optimize(f = objfun, interval = c(0, 1))$minimum
+    x$state$nu <- optimize(f = objfun2, interval = c(0, 1))$minimum
   }
 
   g2 <- drop(g + x$state$nu * Hs)

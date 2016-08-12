@@ -6,17 +6,18 @@ import("gamlss")
 
 importFrom("parallel", "mclapply")
 importFrom("sp", "bbox", "point.in.polygon", "polygons",
-  "coordinates", "Polygon", "Polygons", "SpatialPolygons", "SpatialPoints")
+  "coordinates", "Polygon", "Polygons", "SpatialPolygons", "SpatialPoints",
+  "CRS", "proj4string", "coordinates<-", "proj4string<-")
 importFrom("shapefiles", "read.shapefile", "read.dbf")
 importFrom("geoR", "matern")
-importFrom("fields", "cover.design")
+importFrom("fields", "cover.design", "rdist")
 importFrom("splines", "splineDesign", "bs")
 importFrom("zoo", "read.zoo", "coredata")
 importFrom("MBA", "mba.points")
 importFrom("maps", "map.where", "map")
-importFrom("maptools", "unionSpatialPolygons")
+importFrom("maptools", "unionSpatialPolygons", "readShapePoly", "gpclibPermit")
 importFrom("spdep", "poly2nb", "nb2mat", "dnearneigh",
-  "tri2nb", "knearneigh", "knn2nb", "is.symmetric.nb")
+  "tri2nb", "knearneigh", "knn2nb", "is.symmetric.nb", "make.sym.nb")
 importFrom("survival", "Surv")
 importFrom("mvtnorm", "rmvnorm", "dmvnorm")
 importFrom("stats", "AIC", "BIC", "family")
@@ -25,7 +26,7 @@ importFrom("grDevices", "chull", "dev.interactive", "devAskNewPage",
   "gray", "gray.colors", "n2mfrow", "trans3d")
 importFrom("graphics", "abline", "axis", "box", "contour", "hist",
   "layout", "lcm", "lines", "matplot", "mtext", "par",
-  "points", "rect", "text")
+  "points", "rect", "text", "plot.default")
 importFrom("methods", "is", "slot")
 importFrom("stats", "acf", "as.formula", "coef", "complete.cases",
   "contrasts<-", "dbeta", "dbinom", "delete.response",
@@ -44,6 +45,9 @@ importFrom("stats", "acf", "as.formula", "coef", "complete.cases",
 importFrom("utils", "download.file", "flush.console", "getS3method",
   "head", "read.csv2", "read.table", "tail", "unzip",
   "write.table")
+
+import("spam")
+import("Matrix")
 
 useDynLib(bamlss)
 
