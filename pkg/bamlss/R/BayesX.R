@@ -3,7 +3,7 @@
 ######################
 BayesX.control <- function(n.iter = 1200, thin = 1, burnin = 200,
   seed = NULL, predict = "light", model.name = "bamlss", data.name = "d",
-  prg.name = NULL, dir = NULL, verbose = FALSE, show.prg = TRUE, cores = NULL, ...)
+  prg.name = NULL, dir = NULL, verbose = FALSE, show.prg = TRUE, ...)
 {
   if(is.null(seed))
     seed <- '##seed##'
@@ -21,7 +21,7 @@ BayesX.control <- function(n.iter = 1200, thin = 1, burnin = 200,
     attr(dir, "unlink") <- TRUE
   } else dir <- path.expand(dir)
   if(!file.exists(dir)) dir.create(dir)
-  if(is.null(cores)) cores <- 1
+  cores <- 1
 
   cvals <- list(
     "prg" = list(
@@ -1043,3 +1043,51 @@ Predict.matrix.tensorX.smooth <- function(object, data)
 {
   Predict.matrix.tensor.smooth(object, data)
 }
+
+
+## Download the newest version of BayesXsrc.
+get_BayesXsrc <- function(dir = NULL, install = TRUE) {
+  owd <- getwd()
+  if(is.null(dir)) {
+    dir.create(dir <- tempfile())
+    on.exit(unlink(dir))
+  }
+  setwd(dir)
+  system("svn checkout svn://scm.r-forge.r-project.org/svnroot/bayesr/pkg/BayesXsrc BayesXsrc")
+
+  devel <- c(
+    'REPOS=http://svn.gwdg.de/svn/bayesx/trunk',
+    'USER=guest',
+    'PASSWD=guest',
+    'DIRS="adaptiv alex andrea bib dag graph leyre mcmc psplines samson structadd"',
+    'FILES="export_type.h main.cpp values.h"',
+    'mkdir -p src/bayesxsrc',
+    'cd src/bayesxsrc',
+    'for i in $DIRS ; do',
+    '  svn checkout --username "${USER}" --password "${PASSWD}" $REPOS/$i $i',
+    'done',
+    'for i in $FILES ; do',
+    '  svn export --username "${USER}" --password "${PASSWD}" $REPOS/$i $i',
+    'done',
+    'cd ..',
+    'cp dev-Makefile Makefile',
+    'cp dev-Makefile.win Makefile.win'
+  )
+
+  writeLines(devel, file.path("BayesXsrc", "bootstrap-devel.sh"))
+
+  sh <- c(
+    'cd BayesXsrc',
+    'sh ./bootstrap-devel.sh',
+    'cd ..',
+    'R CMD build BayesXsrc',
+    if(install) 'R CMD INSTALL BayesXsrc_*.tar.gz' else NULL
+  )
+
+  writeLines(sh, "get_BayesXsrc.sh")
+  system('sh ./get_BayesXsrc.sh')
+
+  setwd(owd)
+  return(invisible(NULL))
+}
+

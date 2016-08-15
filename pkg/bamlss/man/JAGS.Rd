@@ -108,9 +108,11 @@ bf <- bamlss.frame(f, data = d, family = "gaussian")
 ## First, find starting values with optimizer.
 opt <- with(bf, bfit(x, y, family))
 
-## Sample.
-samps <- with(bf, JAGS(x, y, family, start = opt$parameters))
-plot(samps)
+## Sample with JAGS.
+if(require("rjags")) {
+  samps <- with(bf, JAGS(x, y, family, start = opt$parameters))
+  plot(samps)
+}
 }
 
 \keyword{regression}
