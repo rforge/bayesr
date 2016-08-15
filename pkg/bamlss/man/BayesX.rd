@@ -58,8 +58,8 @@ get_BayesXsrc(dir = NULL, install = TRUE)
   \item{model.name}{The name that should be used for the model when calling \pkg{BayesX}.}
   \item{data.name}{The name that should be used for the data set when calling \pkg{BayesX}.}
   \item{prg.name}{The name that should be used for the \code{.prg} file that is send to \pkg{BayesX}.}
-  \item{dir}{Specifies the directory where \pk{BayesX} should store all output files. For function
-    \code{get_BayesXsrc(), the directory where \pk{BayesXsrc} should be stored.}
+  \item{dir}{Specifies the directory where \pkg{BayesX} should store all output files. For function
+    \code{get_BayesXsrc()}, the directory where \pkg{BayesXsrc} should be stored.}
   \item{verbose}{Print information during runtime of the algorithm.}
   \item{show.prg}{Show the \pkg{BayesX} \code{.prg} file.}
   \item{bs}{A \code{\link{character}} string, specifying the basis/type which is used for
@@ -142,6 +142,7 @@ if(require("BayesXsrc")) {
     data = d, optimizer = FALSE, sampler = BayesX)
 
   plot(b)
+}
 }
 }
 
