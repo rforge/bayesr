@@ -3,6 +3,7 @@
 \alias{BayesX.control}
 \alias{sx}
 \alias{tx}
+\alias{get_BayesXsrc}
 
 \title{
   Markov Chain Monte Carlo for BAMLSS using \pkg{BayesX}
@@ -41,6 +42,7 @@ get_BayesXsrc(dir = NULL, install = TRUE)
     used for fitting the model. For function \code{sx()} arguments \code{x} and \code{z} specify
     the variables the smooth should be a function of.}
   \item{y}{The model response, as returned from function \code{\link{bamlss.frame}}.}
+  \item{z}{Second variable in a \code{sx()} term.}
   \item{family}{A \pkg{bamlss} family object, see \code{\link{family.bamlss}}.}
   \item{start}{A named numeric vector containing possible starting values, the names are based on
     function \code{\link{parameters}}.}
