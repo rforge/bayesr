@@ -1085,9 +1085,9 @@ get_BayesXsrc <- function(dir = NULL, install = TRUE) {
   )
 
   writeLines(sh, "get_BayesXsrc.sh")
-  system('sh ./get_BayesXsrc.sh')
+  ok <- system('sh ./get_BayesXsrc.sh')
 
   setwd(owd)
-  return(invisible(NULL))
+  return(ok)
 }
 
