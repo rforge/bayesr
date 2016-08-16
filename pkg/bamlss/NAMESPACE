@@ -70,6 +70,8 @@ export(
   "GMCMC_slice",
   "JAGS",
   "BayesX",
+  "BayesX.control",
+  "get_BayesXsrc",
   "MVNORM",
   "surv.transform",
   "cox.mode",

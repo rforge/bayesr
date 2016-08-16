@@ -92,6 +92,10 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     inherits(x, "userdefined.smooth.spec") | inherits(x, "tensorX.smooth") | inherits(x, "userdefined.smooth") | inherits(x, "tensor.smooth")
   }
 
+  is.tx <- function(x) {
+    inherits(x, "tensorX.smooth")
+  }
+
   single_eqn <- function(x, y, id) {
     rhs <- dfiles <- prgex <- sdata <- NULL
 
@@ -123,7 +127,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         tl <- x$smooth.construct[[j]]$term
         if((x$smooth.construct[[j]]$by != "NA") & is.user(x$smooth.construct[[j]]))
           tl <- c(tl, x$smooth.construct[[j]]$by)
-        if((length(tl) > 1) & is.user(x$smooth.construct[[j]]))
+        if((length(tl) > 1) & is.user(x$smooth.construct[[j]]) & !is.tx(x$smooth.construct[[j]]))
           tl <- paste(tl, collapse = "")
         if(is.null(sdata)) {
           if(is.user(x$smooth.construct[[j]])) {
@@ -282,7 +286,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           tl <- x[[i]]$smooth.construct[[j]]$term
           if((x[[i]]$smooth.construct[[j]]$by != "NA") & is.user(x[[i]]$smooth.construct[[j]]))
             tl <- c(tl, x[[i]]$smooth.construct[[j]]$by)
-          if((length(tl) > 1) & is.user(x[[i]]$smooth.construct[[j]]))
+          if((length(tl) > 1) & is.user(x[[i]]$smooth.construct[[j]]) & !is.tx(x[[i]]$smooth.construct[[j]]))
             tl <- paste(tl, collapse = "")
           term <- paste("_", paste(tl, collapse = "_"), "_", sep = "")
           term <- paste("of", term, "sample", sep = "")
@@ -291,9 +295,8 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           if(any(grepl("anisotropy", sf)))
             sf <- sf[-grep("anisotropy", sf)]
           tj <- grep("tensor", sf, fixed = TRUE)
-          is.tx <- inherits(x[[i]]$smooth.construct[[j]], "tensorX.smooth")
           if(length(tj))
-            sf <- if(is.tx & (length(x[[i]]$smooth.construct[[j]]$term) > 1)) sf[tj] else sf[-tj]
+            sf <- if(is.tx(x[[i]]$smooth.construct[[j]]) & (length(x[[i]]$smooth.construct[[j]]$term) > 1)) sf[tj] else sf[-tj]
           samps <- as.matrix(read.table(file.path(dir, "output", sf), header = TRUE)[, -1, drop = FALSE])
           cn <- colnames(x[[i]]$smooth.construct[[j]]$X)
           if(is.null(cn))
@@ -309,7 +312,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           if(length(sf)) {
             tj <- grep("tensor", sf, fixed = TRUE)
             if(length(tj))
-              sf <- if(is.tx & (length(x[[i]]$smooth.construct[[j]]$term) > 1)) sf[tj] else sf[-tj]
+              sf <- if(is.tx(x[[i]]$smooth.construct[[j]]) & (length(x[[i]]$smooth.construct[[j]]$term) > 1)) sf[tj] else sf[-tj]
             vsamps <- as.matrix(read.table(file.path(dir, "output", sf), header = TRUE)[, -1, drop = FALSE])
             colnames(vsamps) <- paste(i, ".s.", x[[i]]$smooth.construct[[j]]$label, ".", paste("tau2", 1:ncol(vsamps), sep = ""), sep = "")
             samps <- cbind(samps, vsamps)
@@ -535,7 +538,7 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
     id <- "t"
   id <- paste(rmf(id), collapse = "_")
   term <- if(length(object$term) > 1) {
-    paste(object$term, collapse = "")
+    paste(object$term, collapse = if(!is.tx) "" else "*")
   } else object$term
   by <- if(object$by != "NA") object$by else NULL
   if(!is.null(by)) {

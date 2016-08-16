@@ -70,7 +70,8 @@ get_BayesXsrc(dir = NULL, install = TRUE)
   \item{k}{The dimension(s) of the bases used to represent the \code{tx()} smooth term.}
   \item{\dots}{Not used in \code{BayesX.control}. For function \code{sx()} any extra arguments that
     should be passed to \pkg{BayesX} for this model term can be specified here. For function
-    \code{tx()}, all variables the smooth should be a function of are specified here.}
+    \code{tx()}, all variables the smooth should be a function of are specified here. For function
+    \code{BayesX()} all arguments that should be passed to \code{BayesX.control}.}
   \item{constraint}{Specifies the type of contraints that should be applied. \code{"main"}, both
     main effects should be removed; \code{"both"}, both main effects and varying effects should
     be removed; \code{"none"}, no constraint should be applied.}
@@ -82,6 +83,13 @@ get_BayesXsrc(dir = NULL, install = TRUE)
   The functions calls \pkg{BayesX} via function \code{\link[BayesXrsc]{run.bayesx}}. After
   the \pkg{BayesX} sampler has finished, the function reads back in all the parameter samples
   that can then be used for further processing within \code{\link{bamlss}}, i.a.
+
+  The smooth term constructor functions \code{\link[mgcv]{s}} and \code{\link[mgcv]{te}} can
+  be used with the \code{BayesX()} sampler. When using \code{\link[mgcv]{te}} note that only
+  one smoothing variance is estimated by \pkg{BayesX}.
+
+  For anisotropic penalties use function \code{tx()}, which currently supports smooth functions
+  of two variables, only!
 }
 
 \value{
@@ -131,6 +139,10 @@ get_BayesXsrc(dir = NULL, install = TRUE)
 
 \examples{
 \dontrun{
+## Get newest version of BayesXsrc.
+## Note: needs sh, svn and R build tools!
+get_BayesXsrc()
+
 if(require("BayesXsrc")) {
   ## Simulate some data
   set.seed(123)
@@ -140,10 +152,16 @@ if(require("BayesXsrc")) {
   ## that BayesX computes staring values, so
   ## these are not required by some optimizer function
   ## in bamlss()
-  b <- bamlss(num ~ s(x1) + s(x2) + s(x3) + te(lon,lat),
+  b1 <- bamlss(num ~ s(x1) + s(x2) + s(x3) + s(lon,lat),
     data = d, optimizer = FALSE, sampler = BayesX)
 
-  plot(b)
+  plot(b1)
+
+  ## Same model with anisotropic penalty.
+  b2 <- bamlss(num ~ s(x1) + s(x2) + s(x3) + tx(lon,lat),
+    data = d, optimizer = FALSE, sampler = BayesX)
+
+  plot(b2)
 }
 }
 }
