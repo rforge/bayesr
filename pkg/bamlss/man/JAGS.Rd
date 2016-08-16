@@ -97,6 +97,7 @@ BUGSmodel(x, family, is.stan = FALSE, reference = NULL, ...)
 }
 
 \examples{
+\dontrun{
 ## Simulated data example illustrating
 ## how to call the sampler function.
 ## This is done internally within
@@ -112,6 +113,7 @@ opt <- with(bf, bfit(x, y, family))
 if(require("rjags")) {
   samps <- with(bf, JAGS(x, y, family, start = opt$parameters))
   plot(samps)
+}
 }
 }
 

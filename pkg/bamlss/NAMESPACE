@@ -77,7 +77,6 @@ export(
   "cox.mode",
   "cox.mcmc",
   "cox.predict",
-  "terms.bamlss",
   "drop.terms.bamlss",
   "design.construct",
 
@@ -109,8 +108,6 @@ export(
   "multinomial.bamlss",
   "mvnorm.bamlss",
   "poisson.bamlss",
-  "BUGSeta",
-  "BUGSmodel",
 
   ## extractor functions
   "DIC",
@@ -155,7 +152,9 @@ export(
   "tx",
   "rmf",
   "rs",
-  "smooth.construct"
+  "smooth.construct",
+  "BUGSeta",
+  "BUGSmodel"
 )
 
 S3method("plot", "bamlss")
@@ -185,4 +184,5 @@ S3method("Predict.matrix", "deriv.smooth")
 S3method("Predict.matrix", "tensorX.smooth")
 S3method("bamlss.engine.setup.smooth", "default")
 S3method("sx.construct", "tensorX.smooth")
+S3method("terms", "bamlss")
 

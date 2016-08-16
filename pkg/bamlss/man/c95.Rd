@@ -26,6 +26,7 @@ c95(x)
 x <- rnorm(100)
 c95(x)
 
+\dontrun{
 ## Example computing predictions.
 set.seed(123)
 d <- data.frame("x" = seq(-3, 3, length = 30))
@@ -41,6 +42,7 @@ matplot(d$x, p, type = "l", lty = c(2, 1, 2),
 
 ## Example extracting coefficients.
 coef(b, FUN = c95)
+}
 }
 
 \keyword{regression}

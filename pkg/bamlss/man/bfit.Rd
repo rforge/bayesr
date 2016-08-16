@@ -212,8 +212,8 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
 ## how to call the optimizer function.
 ## This is done internally within
 ## the setup of function bamlss().
-d <- GAMart()
-f <- num ~ s(x1) + s(x2) + s(x3) + te(lon, lat)
+d <- GAMart(n = 200)
+f <- num ~ s(x1) + s(x2) + s(x3)
 bf <- bamlss.frame(f, data = d, family = "gaussian")
 opt <- with(bf, bfit(x, y, family))
 print(str(opt))
@@ -223,6 +223,7 @@ b <- bamlss(f, data = d, family = "gaussian", sampler = FALSE)
 plot(b)
 summary(b)
 
+\dontrun{
 ## Use of different updating function.
 b <- bamlss(f, data = d, family = "gaussian",
   sampler = FALSE, update = bfit_lm)
@@ -298,6 +299,7 @@ p <- predict(b, newdata = nd, model = "mu", FUN = c95)
 plot(d, ylim = range(c(d$y, p)))
 matplot(nd$time, p, type = "l",
   lty = c(2, 1, 2), col = "black", add = TRUE)
+}
 }
 
 \keyword{regression}

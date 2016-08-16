@@ -157,7 +157,6 @@ plot(b)
 ## Compute the log-likelihood using the family object.
 f <- family(b)
 sum(f$d(y = d$num, par = f$map2par(fitted(b)), log = TRUE))
-}
 
 ## For using JAGS() more details are needed.
 norm4JAGS.bamlss <- function(...) {
@@ -171,7 +170,6 @@ norm4JAGS.bamlss <- function(...) {
   return(f)
 }
 
-\dontrun{
 ## Now with bfit() and JAGS().
 b <- bamlss(num ~ s(x1) + s(x2) + s(x3), data = d,
   optimizer = bfit, sampler = JAGS, family = "norm4JAGS")

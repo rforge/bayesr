@@ -121,6 +121,7 @@ GMCMC_slice(family, theta, id, eta, y, data, ...)
 }
 
 \examples{
+\dontrun{
 ## Simulated data example illustrating
 ## how to call the sampler function.
 ## This is done internally within
@@ -135,6 +136,7 @@ opt <- with(bf, bfit(x, y, family))
 ## Sample.
 samps <- with(bf, GMCMC(x, y, family, start = opt$parameters))
 plot(samps)
+}
 }
 
 \keyword{regression}
