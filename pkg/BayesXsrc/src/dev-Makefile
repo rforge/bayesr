@@ -87,7 +87,7 @@ MCMC_OBJS = \
 	bayesxsrc/mcmc/tvariance2dim.o\
 	bayesxsrc/mcmc/variance_nonp.o\
 	bayesxsrc/mcmc/variance_nonp_vector.o\
-	bayesxsrc/mcmc/variance_nonp_vector_nigmix.o\
+	bayesxsrc/mcmc/variance_nonp_vector_nigmix.o
 PSPLINES_OBJS = \
 	bayesxsrc/psplines/IWLS_pspline.o\
 	bayesxsrc/psplines/bsplinemat.o\
