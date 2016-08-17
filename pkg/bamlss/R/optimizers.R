@@ -40,7 +40,7 @@
 ## state list, as this could vary for special terms. A default
 ## method is provided.
 bamlss.engine.setup <- function(x, update = "iwls", do.optim = NULL,
-  nu = 0.1, start = NULL, df = NULL, parametric2smooth = TRUE, ...)
+  df = NULL, parametric2smooth = TRUE, ...)
 {
   if(!is.null(attr(x, "bamlss.engine.setup"))) return(x)
 
@@ -102,7 +102,6 @@ bamlss.engine.setup <- function(x, update = "iwls", do.optim = NULL,
           }
           if(!is.null(x$smooth.construct[[j]]$rank))
             x$smooth.construct[[j]]$rank <- as.numeric(x$smooth.construct[[j]]$rank)
-          x$smooth.construct[[j]]$nu <- nu
           if(!is.null(x$smooth.construct[[j]]$Xf)) {
             x$smooth.construct[[j]]$Xfcn <- paste(paste(paste(x$smooth.construct[[j]]$term, collapse = "."),
               "Xf", sep = "."), 1:ncol(x$smooth.construct[[j]]$Xf), sep = ".")
@@ -118,8 +117,7 @@ bamlss.engine.setup <- function(x, update = "iwls", do.optim = NULL,
                 "bs.dim" = ncol(x$smooth.construct[[j]]$Xf),
                 "fixed" = TRUE,
                 "is.model.matrix" = TRUE,
-                "by" = "NA",
-                "nu" = nu
+                "by" = "NA"
               )
               x$smooth.construct <- c(x$smooth.construct, "model.matrix")
             } else {

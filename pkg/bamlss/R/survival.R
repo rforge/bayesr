@@ -721,11 +721,10 @@ propose_surv_tc <- function(x, y, eta, int)
 ################################
 ## Survival helper functions. ##
 ################################
-Surv2 <- function(..., obs = NULL, subdivisions = 100)
+Surv2 <- function(..., obs = NULL)
 {
   rval <- cbind(as.matrix(Surv(...)), "obs" = obs)
   class(rval) <- c("matrix", "Surv2")
-  attr(rval, "subdivisions") <- subdivisions
   rval
 }
 

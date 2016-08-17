@@ -84,7 +84,6 @@ export(
   "randomize",
   "set.starting.values",
   "bamlss.engine.setup",
-  "bamlss.engine.setup.smooth",
   "get.state",
   "get.par",
   "set.par",
@@ -115,7 +114,6 @@ export(
   "samplestats",
   "results.bamlss.default",
   "parameters",
-  "all.labels.formula",
 
   ## vis functions
   "plot2d",

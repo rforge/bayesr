@@ -20,11 +20,11 @@ GAMart(n = 500, sd = 0.1, seed = FALSE,
   \item{ti}{For tensor product interaction term, the type of interaction.}
 }
 
-
-
 \examples{
-\dontrun{
 d <- GAMart()
+head(d)
+
+\dontrun{
 b <- bamlss(num ~ s(x1) + s(x2) + s(x3) + te(lon,lat), data = d)
 plot(b)
 }
