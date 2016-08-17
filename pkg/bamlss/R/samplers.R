@@ -23,7 +23,7 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   np <- length(nx)
 
   if(is.null(attr(x, "bamlss.engine.setup")))
-    x <- bamlss.engine.setup(x, ...)
+    x <- bamlss.engine.setup(x, propose = propose, ...)
 
   nobs <- nrow(y)
   if(is.data.frame(y)) {
@@ -35,10 +35,10 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     x <- set.starting.values(x, start)
 
   if(is.character(propose)) {
-    propose <- if(grepl("GMCMC_", propose, fixed = TRUE)) {
-      eval(parse(text = propose))
+    propose <- if(grepl("GMCMC", propose, fixed = TRUE)) {
+      get(propose)
     } else {
-      eval(parse(text = paste("GMCMC", propose, sep = "_")))
+      get(paste("GMCMC", propose, sep = "_"))
     }
   }
 
@@ -60,8 +60,10 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       if(is.null(x[[i]][[j]]$fxsp))
         x[[i]][[j]]$fxsp <- FALSE
       nt <- c(nt, if(j == "model.matrix") "p" else paste("s", j, sep = "."))
-      if(!is.null(x[[i]][[j]]$xt$propose))
-        x[[i]][[j]]$propose <- x[[i]][[j]]$xt$propose
+      if(is.null(x[[i]][[j]]$propose)) {
+        if(!is.null(x[[i]][[j]]$xt$propose))
+          x[[i]][[j]]$propose <- x[[i]][[j]]$xt$propose
+      }
       propose2[[i]][[j]] <- if(is.null(x[[i]][[j]]$propose)) propose else x[[i]][[j]]$propose
       fitfun[[i]][[j]] <- function(x, p) {
         attr(p, "fitted.values")
@@ -1096,6 +1098,7 @@ gmcmc_logPost <- function(g, x, family, y = NULL, eta = NULL, id, ll = NULL)
     ll <- family$loglik(y, family$map2par(eta))
   }
   lp <- x$prior(g)
+
   return(ll + lp)
 }
 
@@ -1113,7 +1116,9 @@ GMCMC_slice <- function(family, theta, id, eta, y, data, ...)
   attr(theta, "fitted.values") <- NULL
 
   ## Sample coefficients.
-  i <- grep("b", names(theta))
+  i <- 1:length(theta)
+  if(!data$fixed)
+    i <- i[-grep("tau2", names(theta))]
   for(j in i) {
     theta <- uni.slice(theta, data, family, y,
       eta, id[1], j, logPost = gmcmc_logPost)

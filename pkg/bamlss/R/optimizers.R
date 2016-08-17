@@ -39,8 +39,8 @@
 ## bamlss.engine.setup.smooth(), which adds additional parts to the
 ## state list, as this could vary for special terms. A default
 ## method is provided.
-bamlss.engine.setup <- function(x, update = "iwls", do.optim = NULL,
-  df = NULL, parametric2smooth = TRUE, ...)
+bamlss.engine.setup <- function(x, update = "iwls", propose = "iwlsC_gp",
+  do.optim = NULL, df = NULL, parametric2smooth = TRUE, ...)
 {
   if(!is.null(attr(x, "bamlss.engine.setup"))) return(x)
 
@@ -90,9 +90,17 @@ bamlss.engine.setup <- function(x, update = "iwls", do.optim = NULL,
             if(is.character(update)) {
               if(!grepl("bfit_", update))
                 update <- paste("bfit", update, sep = "_")
-              update <- eval(parse(text = update))
+              update <- get(update)
             }
             x$smooth.construct[[j]]$update <- update
+          }
+          if(is.null(x$smooth.construct[[j]]$propose)) {
+            if(is.character(propose)) {
+              if(!grepl("GMCMC", propose))
+                propose <- paste("GMCMC", propose, sep = "_")
+              propose <- get(propose)
+            }
+            x$smooth.construct[[j]]$propose <- propose
           }
           if(is.null(x$smooth.construct[[j]]$state$do.optim)) {
             if(is.null(do.optim))

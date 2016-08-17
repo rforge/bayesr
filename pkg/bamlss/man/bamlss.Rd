@@ -207,8 +207,7 @@ bamlss(formula, family = "gaussian", data = NULL,
 }
 
 \examples{
-\dontrun{
-## Simulated data example.
+\dontrun{## Simulated data example.
 d <- GAMart()
 f <- num ~ s(x1) + s(x2) + s(x3) + te(lon, lat)
 b <- bamlss(f, data = d)

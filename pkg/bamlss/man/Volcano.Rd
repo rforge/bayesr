@@ -30,9 +30,8 @@ Volcano(sd = 0.3)
 d <- Volcano()
 head(d)
 
-\dontrun{
-b <- bamlss(y ~ te(lon,lat,k=10), data = d)
-plot(b, theta = -40)
+\dontrun{b <- bamlss(y ~ te(lon,lat,k=10), data = d)
+plot(b, theta = -130)
 }
 }
 

@@ -177,7 +177,6 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
   \item{logPost}{The value of the log-posterior.}
   \item{IC}{The value of the information criterion.}
   \item{converged}{Logical, indicating convergence of the backfitting algorithm.}
-
   \item{For updating functions a list providing the current state}{}
   \item{fitted.values}{The resulting fitted values after updating.}
   \item{parameters}{The resulting named numeric vector of updated model term parameters.
@@ -223,8 +222,7 @@ b <- bamlss(f, data = d, family = "gaussian", sampler = FALSE)
 plot(b)
 summary(b)
 
-\dontrun{
-## Use of different updating function.
+\dontrun{## Use of different updating function.
 b <- bamlss(f, data = d, family = "gaussian",
   sampler = FALSE, update = bfit_lm)
 plot(b)
