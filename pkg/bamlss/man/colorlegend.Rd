@@ -11,17 +11,17 @@
 }
 
 \usage{
-colorlegend (color = NULL, ncol = NULL, x = NULL, 
-  breaks = NULL, pos = "center", shift = 0.02, side.legend = 1L, 
-  side.ticks = 1L, range = NULL, lrange = NULL, 
-  width = 0.4, height = 0.06, scale = TRUE, xlim = NULL, 
-  ylim = NULL, plot = NULL, full = FALSE, add = FALSE, 
-  col.border = "black", lty.border = 1L, lwd.border = 1L, 
-  ticks = TRUE, at = NULL, col.ticks = "black", lwd.ticks = 1L, 
-  lty.ticks = 1L, length.ticks = 0.3, labels = NULL, 
-  distance.labels = 0.8, col.labels = "black", cex.labels = 1L, 
+colorlegend(color = NULL, ncol = NULL, x = NULL, breaks = NULL, 
+  pos = "center", shift = 0.02, side.legend = 1L, side.ticks = 1L,
+  range = NULL, lrange = NULL, width = 0.25, height = 0.05,
+  scale = TRUE, xlim = NULL, ylim = NULL, plot = NULL, full = FALSE,
+  add = FALSE, col.border = "black", lty.border = 1L, lwd.border = 1L,
+  ticks = TRUE, at = NULL, col.ticks = "black", lwd.ticks = 1L,
+  lty.ticks = 1L, length.ticks = 0.3, labels = NULL,
+  distance.labels = 0, col.labels = "black", cex.labels = 1L,
   digits = 2L, swap = FALSE, symmetric = TRUE, xpd = NULL,
-  title = NULL, side.title = 2, shift.title = c(0, 0), ...)
+  title = NULL, side.title = 2, shift.title = c(0, 0),
+  cex.title = 1, ...)
 }
 
 \arguments{
@@ -82,6 +82,7 @@ colorlegend (color = NULL, ncol = NULL, x = NULL,
     top if \code{side.title = 1} or at the bottom if \code{side.title = 2}.}
   \item{shift.title}{Numeric vector of length 2. Specifies a possible shift of the title in either
     x- or y-direction.}
+  \item{cex.title}{Text size for the title.}
   \item{\dots}{Other graphical parameters to be passed to function \code{\link[graphics]{text}}.}
 }
 
