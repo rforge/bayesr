@@ -49,6 +49,8 @@ get_BayesXsrc(dir = NULL, install = TRUE)
   \item{weights}{Prior weights on the data, as returned from function \code{\link{bamlss.frame}}.}
   \item{offset}{Can be used to supply model offsets for use in fitting,
     returned from function \code{\link{bamlss.frame}}.}
+  \item{data}{The model frame that should be used for modeling. Note that argument \code{data} needs
+    not to be specified when the \code{BayesX()} sampler function is used with \code{\link{bamlss}}.}
   \item{control}{List of control arguments to be send to \pkg{BayesX}. See below.}
   \item{n.iter}{Sets the number of MCMC iterations.}
   \item{thin}{Defines the thinning parameter for MCMC simulation. E.g., \code{thin = 10} means,
