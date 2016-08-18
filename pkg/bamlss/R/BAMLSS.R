@@ -5254,7 +5254,8 @@ samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE,
 
 
 ## Continue sampling.
-continue <- function(object, chains = NULL, cores = NULL, combine = TRUE, sleep = NULL, ...)
+continue <- function(object, chains = NULL, cores = NULL,
+  combine = TRUE, sleep = NULL, results = TRUE, ...)
 {
   if(is.null(object$samples))
     stop("no samples to continue from!")
@@ -5263,7 +5264,7 @@ continue <- function(object, chains = NULL, cores = NULL, combine = TRUE, sleep 
   start <- start[-i]
 
   sampler <- attr(object, "functions")$sampler
-  results <- attr(object, "functions")$results
+  results <- if(results) attr(object, "functions")$results else FALSE
 
   if(is.null(cores)) {
     samples <- sampler(x = object$x, y = object$y, family = object$family,
@@ -5290,7 +5291,7 @@ continue <- function(object, chains = NULL, cores = NULL, combine = TRUE, sleep 
 
   ## Process samples.
   samples <- process.chains(samples, combine)
-  object$samples <- c(object$samples, samples)
+  object$samples <- as.mcmc.list(c(object$samples, samples))
 
   ## Compute results.
   if(is.function(results))
