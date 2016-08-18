@@ -2850,16 +2850,19 @@ Predict.matrix.Random2.effect <- function(object, data)
 
 # simulate data
 ################################################################################
-##
-jm.sim <- function(nsub, times = seq(0, 72, 3), 
-                   long_setting = c("simple", "linear", "nonlinear", "functional"), 
-                   alpha_setting = c("zero", "constant", "linear", "nonlinear"), 
-                   dalpha_setting="zero",
-                   sigma=0.3, long_df=6, censoring=TRUE, tmax=NULL,  probmiss=0.1,  
-                   subdivisions = 1000, seed=5555, full=FALSE, file = NULL, ...)  { 
+
+simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
+                  long_setting = "functional", alpha_setting = "nonlinear", 
+                  dalpha_setting="zero", sigma=0.3, long_df=6, tmax=NULL,    
+                  seed=NULL, full=TRUE, file = NULL, ...){
+  
+  if(is.null(tmax)){
+    tmax <- max(times)
+  }
+  
   ## specify censoring function (aus CoxFlexBoost) changed into uniformly (as too much censoring)
   ## added censoring at tmax
-  cens_fct <- function(time, tmax){
+  censoring <- function(time, tmax){
     ## censoring times are independent uniformly distributed
     censor_time <- runif(n = length(time), min=0, max=1.5*tmax)
     censor_time <- ifelse(censor_time > tmax, tmax, censor_time)
@@ -2888,8 +2891,8 @@ jm.sim <- function(nsub, times = seq(0, 72, 3),
     x1 <- x2 <-  matrix(NA, nrow=nsub, ncol=2)
     x1 <- runif(nsub, -3, 3) 
     x2 <- runif(nsub, -3, 3) 
-    list(x1=x1, x2=x2)
-  }  
+    cbind(x1, x2)
+  } 
   
   ## generate random effects 
   ## (r1=random intercept, r2=random slope)
@@ -2897,14 +2900,14 @@ jm.sim <- function(nsub, times = seq(0, 72, 3),
     r1 <- r2 <- matrix(NA, nrow=nsub, ncol=2)
     r1 <- rnorm(nsub, 0, 0.25) 
     r2 <- rnorm(nsub, 0, 0.4) 
-    list(r1=r1, r2=r2)
+    cbind(r1, r2)
   }  
   
   ## function written by Fabian Scheipl for random functional effect
   ## (changed into random functional intercepts)
   gen_b <- function(times, nsub, long_df, pen=2, l=c(1,1), seed=NULL){
     if(!is.null(seed)) set.seed(seed)
-    
+    require(splines)
     # Recursion for difference operator matrix
     makeDiffOp <- function(degree, dim){
       if(degree==0){
@@ -2918,11 +2921,12 @@ jm.sim <- function(nsub, times = seq(0, 72, 3),
     Pt <- l[2] * kronecker(diag(nsub), crossprod(makeDiffOp(pen[1], long_df)))
     P <- .1*diag(nsub*long_df) + Pt + Pi
     
-    coef <- rmvnorm(nsub*long_df, sigma=solve(P))
+    coef <- matrix(rmvnorm(nsub*long_df, sigma=solve(P)), ncol=long_df, nrow=nsub)
+    colnames(coef) <- paste0("b", 1:long_df)
     bt <- bs(times, df = long_df, intercept = FALSE)
     b_set <- list(knots=attr(bt, "knots"), Boundary.knots=attr(bt, "Boundary.knots"),
                   degree=attr(bt, "degree"), intercept=attr(bt, "intercept"))
-    return(list(matrix(coef, ncol=long_df, nrow=nsub), b_set))
+    return(list(coef, b_set))
   }
   
   ## numerical derivative for B-Spline
@@ -2940,30 +2944,44 @@ jm.sim <- function(nsub, times = seq(0, 72, 3),
   
   ## compute predictors
   ## individual longitudinal trajectories
-  mu <-  function(time, x2, r1, r2, beta, long_df, b_set, long_setting){
+  mu <-  function(time, x, r, long_df, b_set, long_setting){
+    
+    # allow to always extract coefficients as column
+    if(is.null(dim(r))){
+      r <- matrix(r, nrow=1)
+    } 
+    
+    beta <- r[, -c(1:2)]
+    # duplicate vector beta for the multiple integration points
     if(is.null(dim(beta))){
       beta <- matrix(beta, nrow=length(time), ncol=long_df, byrow=TRUE)
     }
     # TODO: Suppress warnings
     switch(long_setting,
-           "simple" = (1.25 + 0.6*sin(x2) + (-0.02)*time),
-           "linear" = (1.25 + r1 + 0.6*sin(x2) + (-0.01)*time + r2*0.02*time),
-           "nonlinear" = (0.5 + r1 + 0.6*sin(x2) + 0.1*(time+2)*exp(-0.075*time)),
-           "functional" = (0.5 + r1 + 0.6*sin(x2) + 0.1*(time+2)*exp(-0.075*time) + 
+           "simple" = (1.25 + 0.6*sin(x) + (-0.02)*time),
+           "linear" = (1.25 + r[, 1] + 0.6*sin(x) + (-0.01)*time + r[, 2]*0.02*time),
+           "nonlinear" = (0.5 + r[, 1] + 0.6*sin(x) + 0.1*(time+2)*exp(-0.075*time)),
+           "functional" = (0.5 + r[, 1] + 0.6*sin(x) + 0.1*(time+2)*exp(-0.075*time) + 
                              apply(bs(time, long_df, b_set$knots, b_set$degree,
-                                               b_set$intercept, b_set$Boundary.knots) * beta,1,sum)))
+                                      b_set$intercept, b_set$Boundary.knots) * beta, 1, sum)))
   }
   
   ## derivative of individual longitudinal trajectories
-  dmu <-  function(time, r2, beta, long_df, b_set, long_setting){
-    if(long_setting=="functional"){
-      if(is.null(dim(beta))){
-        beta <- matrix(beta, nrow=length(time), ncol=long_df, byrow=TRUE)
-      }
+  dmu <-  function(time, r, long_df, b_set, long_setting){
+    
+    # allow to always extract coefficients as column
+    if(is.null(dim(r))){
+      r <- matrix(r, nrow=1)
+    } 
+    
+    beta <- r[, -c(1:2)]
+    # duplicate vector beta for the multiple integration points
+    if(is.null(dim(beta))){
+      beta <- matrix(beta, nrow=length(time), ncol=long_df, byrow=TRUE)
     }
     switch(long_setting,
            "simple" = (-0.02) + 0*time,
-           "linear" = (-0.01 + r2*0.02) + 0*time,
+           "linear" = (-0.01 + r[, 2]*0.02) + 0*time,
            "nonlinear" = (0.085 - 0.0075*time)*exp(-0.075*time),    
            "functional" = (0.085 - 0.0075*time)*exp(-0.075*time) + 
              apply(dbs(time, long_df, b_set$knots, b_set$degree,
@@ -2996,54 +3014,59 @@ jm.sim <- function(nsub, times = seq(0, 72, 3),
   }
   
   ## nonlinear baseline covariate
-  gamma <-  function(x1){
-    sin(x1)
+  gamma <-  function(x){
+    sin(x)
+  }
+  
+  # full hazard 
+  hazard <-  function(time, x, r, ...){
+    exp(lambda(time) + gamma(x[1]) + 
+          alpha(time, alpha_setting)*mu(time, x[2], r, long_df, b_set, long_setting) + 
+          dalpha(time, dalpha_setting)*dmu(time, r, long_df, b_set, long_setting))
   }
   
   
-  ## compute hazard for every person i at time
-  hazard <-  function(time, x1, x2, r1, r2, beta, long_df, b_set, 
-                      alpha_setting, dalpha_setting, long_setting){
-    exp(lambda(time) + gamma(x1) + 
-          alpha(time, alpha_setting)*mu(time, x2, r1, r2, beta, long_df, b_set, long_setting) + 
-          dalpha(time, dalpha_setting)*dmu(time, r2, beta, long_df, b_set, long_setting))
-  }
-  
+  # generate input
   if(!is.null(seed)){
     set.seed(seed)
   }
+  r <- gen_r(nsub)
+  x <- gen_x(nsub)
+  
+  temp <- gen_b(times, nsub, long_df=long_df, l=c(1,5))
+  r <- cbind(r, temp[[1]])
+  b_set <- temp[[2]]
+  
+  d <- rJM(hazard, cens_fct, miss_fct, full=full) 
+  if(!is.null(file)) { 
+    save(d, file = file) 
+    invisible(d) 
+  } else { 
+    return(d) 
+  } 
+}
+
+
+
+rJM <- function(hazard, cens_fct, miss_fct, subdivisions=1000, tmax=NULL, file=NULL, full=TRUE, ...){
+  ## compute hazard for every person i at time
+  
   id <- rep(1:nsub, each=length(times))
   time <- rep(NA, nsub) 
   if(is.null(tmax)){
     tmax <- max(times)
   }
   
-  # generate input
-  r <- gen_r(nsub)
-  r1 <- r$r1
-  r2 <- r$r2
-  x <- gen_x(nsub)
-  x1 <- x$x1
-  x2 <- x$x2
-  temp <- gen_b(times, nsub, long_df=long_df, l=c(1,5))
-  beta <- temp[[1]]
-  b_set <- temp[[2]]
-  
-  Hazard <- function(hazard, x1, x2, r1, r2, beta, long_df, b_set, time, 
-                     alpha_setting, dalpha_setting, long_setting) { 
-    integrate(hazard, 0, time, x1 = x1, x2 = x2, r1 = r1, r2 = r2, beta=beta, 
-              long_df = long_df, b_set = b_set, alpha_setting = alpha_setting, 
-              dalpha_setting = dalpha_setting, long_setting = long_setting, 
+  Hazard <- function(hazard, time, x, r) { 
+    integrate(hazard, 0, time, x = x, r = r,
               subdivisions = subdivisions)$value 
   } 
   
-  InvHazard <- function(Hazard, hazard, x1, x2, r1, r2, beta, long_df, b_set, 
-                        time, alpha_setting, dalpha_setting, long_setting, ...) { 
+  InvHazard <- function(Hazard, hazard, x, r) { 
     negLogU <- -log(runif(1, 0, 1)) 
     # check if first Lambda value is smaller than sample
     rootfct <- function(time) { 
-      negLogU - Hazard(hazard, x1, x2, r1, r2, beta, long_df, b_set, time, 
-                       alpha_setting, dalpha_setting, long_setting) 
+      negLogU - Hazard(hazard, time, x, r) 
     } 
     if(rootfct(times[1])<0){
       return(0)
@@ -3060,29 +3083,20 @@ jm.sim <- function(nsub, times = seq(0, 72, 3),
   # Finding Survival Times
   cumhaz <- rep(NA, nsub)
   for(i in 1:nsub) { 
-    time[i] <- InvHazard(Hazard, hazard, x1[i], x2[i], r1[i], r2[i], beta[i,], long_df, b_set, 
-                         time, alpha_setting, dalpha_setting, long_setting, ...)
-    cumhaz[i] <- Hazard(hazard, x1[i], x2[i], r1[i], r2[i], beta[i,], long_df, b_set, 
-                        time[i], alpha_setting, dalpha_setting, long_setting, ...)
+    time[i] <- InvHazard(Hazard, hazard, x[i,], r[i,])
+    cumhaz[i] <- Hazard(hazard, time[i], x[i,], r[i,])
   } 
-  if(censoring){
-    time_event <- cens_fct(time, tmax=tmax) 
-  } else {
-    event <- as.numeric(time <= tmax)
-    time <- ifelse(time > tmax, tmax, time)
-    time_event <- cbind(time, event) 
-  }
   
+  time_event <- censoring(time, tmax) 
   
   # Make data (long format)
   data_short <- data.frame(survtime = time_event[, 1], event = time_event[, 2], 
-                           x1 = x1, x2 = x2, r1 = r1, r2 = r2, cumhaz = cumhaz)
+                           x, r, cumhaz = cumhaz)
   names(data_short) <- gsub(".", "", names(data_short), fixed = TRUE) 
   data_long <- cbind(id, data_short[id,], obstime=rep(times, nsub))
   data_grid <- data.frame(survtime = times)
   
   i <- !duplicated(data_long$id)
-  beta_id <- beta[data_long$id,]
   
   # Save true predictors
   data_long$alpha <- alpha(data_long$survtime, alpha_setting) 
@@ -3095,8 +3109,8 @@ jm.sim <- function(nsub, times = seq(0, 72, 3),
   data_long$lambda <- lambda(data_long$survtime) - mean(f_lambda)
   data_grid$lambda <- lambda(data_grid$survtime) - mean(f_lambda)
   data_long$gamma <- gamma(data_long$x1) + mean(f_lambda)
-  data_long$mu <- with(data_long, mu(obstime, x2, r1, r2, beta_id, long_df, b_set, long_setting))
-  data_long$dmu <- with(data_long, dmu(obstime, r2, beta_id, long_df, b_set, long_setting))
+  data_long$mu <- mu(data_long$obstime, data_long$x2, r[id,], long_df, b_set, long_setting)
+  data_long$dmu <- dmu(data_long$obstime, r[id,], long_df, b_set, long_setting)
   data_long$id <- as.factor(data_long$id)
   
   # censoring and missings                     
@@ -3105,17 +3119,13 @@ jm.sim <- function(nsub, times = seq(0, 72, 3),
   
   # Draw longitudinal observations
   data_long$y <- rnorm(nrow(data_long), data_long$mu, sigma)
- 
+  
   if(full==TRUE){
     d <- list(data=data_long, data_grid=data_grid)
   } else {
     d <- data_long
   }
   
-  if(!is.null(file)) { 
-    save(d, file = file) 
-    invisible(data_long) 
-  } else { 
-    return(d) 
-  } 
+  return(d)
+  
 }
