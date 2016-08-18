@@ -50,9 +50,15 @@ bamlss.engine.setup(x, update = "iwls", propose = "iwlsC_gp",
       (edf) of the model term.
     \item \code{"do.optim"}: Should an optimizer function try to find optimum smoothing variances?
   }
+  The state will be changed in each iteration and can be passed outside an updating function.
 
   Additionally, if missing in the \code{xt} argument of a model term (see, e.g., function
-  \code{\link[mgcv]{s}}) the function adds the corresponding log-prior, its 
+  \code{\link[mgcv]{s}} for \code{xt}) the function adds the corresponding log-prior and its first
+  and second order derivatives w.r.t. regression coefficients in functions \code{grad()} and
+  \code{hess()}.
+
+  Also, objects named \code{"lower"} and \code{"upper"} are added to each model term. These
+  indicate the lower and upper boundaries of the parameter space.
 }
 
 \value{
@@ -70,6 +76,8 @@ bf <- bamlss.frame(num ~ s(x1) + s(x2), data = d, family = "gaussian")
 names(bf$x$mu$smooth.construct)
 bf$x <- bamlss.engine.setup(bf$x, df = c("s(x1)" = 1, "s(x2)" = 3))
 names(bf$x$mu$smooth.construct)
+names(bf$x$mu$smooth.construct[["s(x1)"]])
+names(bf$x$mu$smooth.construct[["s(x1)"]]$state)
 sapply(bf$x$mu$smooth.construct, function(x) {
   c(x$state$edf, get.state(x, "tau2"))
 })

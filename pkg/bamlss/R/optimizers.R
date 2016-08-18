@@ -228,7 +228,6 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
     x$fixed <- if(!is.null(x$fx)) x$fx[1] else FALSE
   if(!x$fixed & is.null(state$interval))
     state$interval <- if(is.null(x$xt[["interval"]])) tau2interval(x) else x$xt[["interval"]]
-  state$grid <- if(is.null(x$xt[["grid"]])) 10 else x$xt[["grid"]]
   ntau2 <- length(x$S)
   if(length(ntau2) < 1) {
     if(x$fixed) {
@@ -363,11 +362,12 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
     if(is.logical(x$sp))
       x[["sp"]] <- NULL
   }
+  state$interval <- NULL
   x$state <- state
   if(!is.null(x$xt[["do.optim"]]))
     x$state$do.optim <- x$xt[["do.optim"]]
   x$sparse.setup <- sparse.setup(x$X, S = x$S)
-  x$added <- c("nobs", "weights", "rres", "state", "grid", "a", "b", "prior", "edf",
+  x$added <- c("nobs", "weights", "rres", "state", "a", "b", "prior", "edf",
     "grad", "hess", "lower", "upper")
 
   args <- list(...)
