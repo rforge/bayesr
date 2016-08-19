@@ -8,8 +8,8 @@
 \description{
   This function computes posterior mode estimates of the parameters of a flexible joint model
   of longitudinal and survival data with structured additive predictors using a Newton-Raphson 
-  algorithm. Integrals are solved numerically using trapezoidal rule. Smoothing variances are computed using numerical
-  optimization.
+  algorithm. Integrals are solved numerically using trapezoidal rule. Smoothing variances are
+  computed using numerical optimization.
 }
 
 \usage{
@@ -38,7 +38,7 @@ jm.mode(x, y, weights, offset,
   \item{nu}{Vector of step lengths for parameter updates of one Newton-Raphson update for 
   each predictor of the joint model.}
   \item{update.nu}{Should the updating step length be optimized in each iteration
-    of the backfitting algorithm? Overridess parameter \code{nu} if set to \code{TRUE}.}
+    of the backfitting algorithm? Uses \code{nu} as starting value if set to \code{TRUE}.}
   \item{eps}{The relative convergence tolerance of the backfitting algorithm.}
   \item{alpha.eps}{The relative convergence tolerance of the backfitting algorithm for predictor alpha.}
   \item{ic.eps}{???}

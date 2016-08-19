@@ -1,4 +1,4 @@
-\name{bamlss}
+  \name{bamlss}
 \alias{bamlss}
 
 \title{

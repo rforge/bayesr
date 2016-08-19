@@ -1,5 +1,6 @@
-\name{jm.sim}
-\alias{jm.sim}
+\name{simJM}
+\alias{simJM}
+\alias{rJM}
 
 
 \title{
@@ -8,46 +9,42 @@
 
 \description{
   Simulates longitudinal data with normal error and (Cox-type) survival times
-  using the inversion method. 
+  using the inversion method. The function \code{simJM()} is a wrapper specifying
+  all predictors. The wrapper calls  \code{rJM()} which is modified from \code{rSurvtime()}
+  of the \R package \code{CoxFlexBoost}. 
 }
 
 \usage{
-jm.sim(nsub, times = seq(0, 72, 3), 
-       long_setting = c("simple", "linear", "nonlinear", "functional"), 
-       alpha_setting = c("zero", "constant", "linear", "nonlinear"), 
-       dalpha_setting="zero", 
-       sigma=0.3, long_df=6, censoring=TRUE, tmax=NULL,  probmiss=0.1,  
-       subdivisions = 1000, seed=5555, full=FALSE, file = NULL, ...)
+simJM(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
+      long_setting = "functional", alpha_setting = "nonlinear", 
+      dalpha_setting="zero", sigma=0.3, long_df=6, tmax=NULL,    
+      seed=NULL, full=TRUE, file = NULL, ...){
 }
 
 \arguments{
   \item{nsub}{number of individuals for which longitudinal data and survival times should be simulated.}
   \item{times}{vector of time points at which longitudinal measurements are "sampled".}
+  \item{probmiss}{proportion of longitudinal measurements to be set to missing. Used to induce sparsity in the longitudinal measurements.}
   \item{long_setting}{Specification of the longitudinal trajectories of the sampled subjects. Preset specifications are \code{"simple"}, \code{"linear"}, \code{"nonlinear"} and \code{"functional"}. See Details.}
-  \item{alpha_setting}{specification of the association between survival and longitudinal. Preset specifications are \code{"simple"}, \code{"linear"}, \code{"nonlinear"} and \code{"functional"}. See Details.}
+  \item{alpha_setting}{specification of the association between survival and longitudinal. Preset specifications are \code{"simple"}, \code{"linear"}, \code{"nonlinear"} and \code{"nonlinear2"}. See Details.}
   \item{dalpha_setting}{specification of the association between survival and the derivative of the longitudinal. Work in progress.}
   \item{sigma}{standard deviation of the normal error around the true longitudinal measurements.}
   \item{long_df}{number of basis functions from which functional random intercepts are sampled.}
-  \item{censoring}{logical indicating if uniform censoring should be employed.}
   \item{tmax}{longest possible survival time, observations are censored after that timepoint. 
   Defaults to \code{max(times)}. Should not be specified longer than \code{max(times)} for functional random intercepts.}
-  \item{probmiss}{proportion of longitudinal measurements to be set to missing.}
   \item{seed}{numeric scalar setting the random seed.}
-  \item{subdivisions}{maximum number of subintervals in the integration of the cumulative hazard.}
-  \item{full}{???}
+  \item{full}{logical indicating if only the longitudinal data set should be returned (\code{FALSE}) or also the data for the survival part evaluated on a regular time grid (\code{TRUE}). }
   \item{file}{character. name of the data file the generated data set should be stored into
-    (e.g., "survtimes.RData") or NULL if the dataset should directly be returned in \R. }
+    (e.g., "simdata.RData") or NULL if the dataset should directly be returned in \R. }
   \item{\dots}{further arguments to be passed to the predictor functions. }
 
 }
 
 \details{
-  The functions simulations longitudinal data basing on the given specification at given \code{times}. 
+  The function simulates longitudinal data basing on the given specification at given \code{times}. 
   The full hazard is built from all joint model predictors and survival times are sampled using the 
   inversion method (cf. Bender, Augustin, & Blettner, 2005). Additional censoring and missingness 
   can be introduced. The longitudinal information is censored according to the survival information. 
-  The sampling of the survival times was modified from the function
-  \code{rSurvtime()} from the \R package \code{CoxFlexBoost}.
   Pre-specified functions of \code{long_setting} and \code{alpha_setting} are: TODO.
 }
 
