@@ -2907,7 +2907,6 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
   ## (changed into random functional intercepts)
   gen_b <- function(times, nsub, long_df, pen=2, l=c(1,1), seed=NULL){
     if(!is.null(seed)) set.seed(seed)
-    require(splines)
     # Recursion for difference operator matrix
     makeDiffOp <- function(degree, dim){
       if(degree==0){
