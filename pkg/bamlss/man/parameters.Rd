@@ -5,13 +5,14 @@
 
 \description{
   The function either sets up a list of all parameters of a \code{\link{bamlss.frame}}, which
-  can be used for setting up models, or extract the estimated parameters of a \code{\link{bamlss}}
+  can be used for setting up models, or extracts the estimated parameters of a \code{\link{bamlss}}
   object.
 }
 
 \usage{
-parameters(x, model = NULL, start = NULL, fill = c(0, 1e-04),
-  list = FALSE, simple.list = FALSE, extract = FALSE)
+parameters(x, model = NULL, start = NULL,
+  fill = c(0, 1e-04), list = FALSE,
+  simple.list = FALSE, extract = FALSE)
 }
 
 \arguments{
@@ -54,7 +55,7 @@ object.
 
 \seealso{
 \code{\link{bamlss.frame}}, \code{\link{bamlss}}, \code{\link{bfit}}, \code{\link{GMCMC}},
-\code{link{get.par}}, \code{\link{set.par}}
+\code{\link{get.par}}, \code{\link{set.par}}
 }
 
 \examples{
