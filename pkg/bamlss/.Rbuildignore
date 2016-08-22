@@ -2,5 +2,7 @@ inst/tscript.R
 inst/JSS
 R/devtools.R
 R/STAN.R
+data/MunichBnd.rda
+data/rent99.rda
 tests
 paper
