@@ -127,7 +127,6 @@ export(
   "c95",
   "s2",
   "sx",
-  "sx.construct",
   "rSurvTime2",
   "simSurv",
   "scale2",

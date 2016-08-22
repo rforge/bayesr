@@ -11,7 +11,7 @@
 }
 
 \usage{
-continue(object, chains = NULL, combine = FALSE,
+continue(object, cores = NULL, combine = FALSE,
   sleep = NULL, results = TRUE, ...)
 }
 

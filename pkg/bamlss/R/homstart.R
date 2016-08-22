@@ -4,8 +4,7 @@
 ##      free for research purposes)
 ##   - metainformation about the corresponding meteoroligcal stations 
 ##     (provided in a .csv in our data.zip)
-homstart_data <- function(dir = NULL, load = TRUE, tdir = NULL,
-  stations = NULL, rain = TRUE, elevation = TRUE, tempmin = FALSE, tempmax = FALSE)
+homstart_data <- function(dir = NULL, load = TRUE, tdir = NULL)
 {
   if(is.null(tdir)) {
     tdir <- tempfile()
@@ -17,6 +16,12 @@ homstart_data <- function(dir = NULL, load = TRUE, tdir = NULL,
   if(is.null(dir)) dir <- tdir
   dir <- path.expand(dir)
   stopifnot(file.exists(dir))
+
+  ## Hard coded.
+  rain <- TRUE
+  elevation <- TRUE
+  tempmin <- tempmax <- TRUE
+  stations <- NULL
 
   ## first specify which series to read in
   all_stations <- stations
