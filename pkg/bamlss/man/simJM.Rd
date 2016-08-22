@@ -16,9 +16,9 @@
 
 \usage{
 simJM(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
-      long_setting = "functional", alpha_setting = "nonlinear", 
-      dalpha_setting="zero", sigma=0.3, long_df=6, tmax=NULL,    
-      seed=NULL, full=TRUE, file = NULL, ...){
+  long_setting = "functional", alpha_setting = "nonlinear", 
+  dalpha_setting = "zero", sigma = 0.3, long_df = 6,
+  tmax = NULL, seed = NULL, full = TRUE, file = NULL, ...)
 }
 
 \arguments{
@@ -37,7 +37,6 @@ simJM(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
   \item{file}{character. name of the data file the generated data set should be stored into
     (e.g., "simdata.RData") or NULL if the dataset should directly be returned in \R. }
   \item{\dots}{further arguments to be passed to the predictor functions. }
-
 }
 
 \details{
@@ -80,7 +79,7 @@ are returned
 }
 
 \examples{
-## todo
+## Todo...
 }
 
 \keyword{survival}
