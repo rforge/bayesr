@@ -82,7 +82,7 @@ get_BayesXsrc(dir = NULL, install = TRUE)
 
 \details{
   Function \code{BayesX()} writes a \pkg{BayesX} \code{.prg} file and processes the data.
-  The functions calls \pkg{BayesX} via function \code{\link[BayesXrsc]{run.bayesx}}. After
+  The functions calls \pkg{BayesX} via function \code{\link[BayesXsrc]{run.bayesx}}. After
   the \pkg{BayesX} sampler has finished, the function reads back in all the parameter samples
   that can then be used for further processing within \code{\link{bamlss}}, i.a.
 
