@@ -122,6 +122,8 @@ export(
   "jm.bamlss",
   "jm.mode",
   "jm.mcmc",
+  "simJM",
+  "rJM",
 
   ## others
   "GAMart",
