@@ -84,7 +84,7 @@ bamlss(formula, family = "gaussian", data = NULL,
     package.}
   \item{sleep}{Time the system should sleep before the next core is started.}
   \item{combine}{If samples are computed on multiple cores, should the samples be combined into
-    one bin \code{\link[coda]{mcmc}} matrix?}
+    one \code{\link[coda]{mcmc}} matrix?}
   \item{model}{If set to \code{FALSE} the model frame used for modeling is not part of the
     return value.}
   \item{x}{If set to \code{FALSE} the model matrices are not part of the return value.}

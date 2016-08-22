@@ -3806,7 +3806,7 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
       par <- if(parameters) {
         if(is.null(x$parameters)) NULL else unlist(x$parameters)
       } else NULL
-      samps <- samples(x, model = model, term = term, drop = TRUE, ...)
+      samps <- samples(x, model = model, term = term, drop = TRUE, combine = TRUE, ...)
       snames <- colnames(samps)
       snames <- snames[!grepl(".p.edf", snames, fixed = TRUE) & !grepl(".accepted", snames, fixed = TRUE)]
       snames <- snames[!grepl("DIC", snames, fixed = TRUE) & !grepl("pd", snames, fixed = TRUE)]
@@ -5254,8 +5254,8 @@ samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE,
 
 
 ## Continue sampling.
-continue <- function(object, chains = NULL, cores = NULL,
-  combine = TRUE, sleep = NULL, results = TRUE, ...)
+continue <- function(object, cores = NULL, combine = FALSE,
+  sleep = NULL, results = TRUE, ...)
 {
   if(is.null(object$samples))
     stop("no samples to continue from!")
@@ -5290,8 +5290,8 @@ continue <- function(object, chains = NULL, cores = NULL,
   }
 
   ## Process samples.
-  samples <- process.chains(samples, combine)
-  object$samples <- as.mcmc.list(c(object$samples, samples))
+  samples <- process.chains(samples, TRUE)
+  object$samples <- process.chains(as.mcmc.list(c(object$samples, samples)), combine = combine)
 
   ## Compute results.
   if(is.function(results))
