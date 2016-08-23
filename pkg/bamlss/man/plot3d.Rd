@@ -27,7 +27,7 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
     e.g. for simple plotting of bivariate surfaces \code{z ~ x + y}, see the examples.
     \code{x} may also be a character file path to the data to be used for plotting.}
   \item{residuals}{If set to \code{TRUE}, residuals may also be plotted if available. Residuals must
-    be supplied as an \code{\link{attribute}} named \code{"residuals"}, which
+    be supplied as an \code{\link{attr}}ibute named \code{"residuals"}, which
     is a matrix or data frame where the first two columns are covariates and the third column
     the residuals.}
   \item{col.surface}{The color of the surface, may also be a function, e.g. 

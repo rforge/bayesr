@@ -1157,8 +1157,10 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
 {
   if(missing(map))
     stop("map object is missing!")
-  if(inherits(map, "SpatialPolygons"))
-    map <- sp2bnd(map)
+  if(inherits(map, "SpatialPolygons")) {
+    stopifnot(requireNamespace("BayesX"))
+    map <- BayesX::sp2bnd(map)
+  }
   if(!is.list(map))
     stop("argument map must be a list() of matrix polygons!")
   args <- list(...)

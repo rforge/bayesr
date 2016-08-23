@@ -18,16 +18,16 @@ plotblock(x, residuals = FALSE, range = c(0.3, 0.3),
 
 \arguments{
   \item{x}{Either a \code{list} of length of the unique factors, where each \code{list} element 
-    contains the estimated effects for one factor as a matrix, see \code{\link{fitted.bayesx}}, or 
+    contains the estimated effects for one factor as a matrix, or 
     one data matrix with first column as the group or factor variable. Also formulas are accepted, 
     e.g it is possible to specify the plot with \code{f ~ x} or \code{f1 + f2 ~ x}. By convention, 
     the covariate for which effects should be plotted, is always in the first column in the 
     resulting data matrix, that is used for plotting, i.e. in the second formula example, the data 
     matrix is \code{cbind(x, f1, f2)}, also see argument \code{c.select} and \code{fill.select}.}
-  \item{residuals}{If set to \code{TRUE}, partial residuals will be plotted if available. Partial
-    residuals may be set as an \code{\link[base]{attr}}ibute of \code{x} named 
-    \code{"partial.resids"}, where the partial residuals must be a matrix with first column 
-    specifying the covariate, and second column the partial residuals that should be plotted.}
+  \item{residuals}{If set to \code{TRUE}, residuals will be plotted if available. Residuals may be
+    set as an \code{\link[base]{attr}}ibute of \code{x} named 
+    \code{"residuals"}, where the residuals must be a matrix with first column 
+    specifying the covariate, and second column the residuals that should be plotted.}
   \item{range}{Numeric vector, specifying the left and right bound of the block.}
   \item{col.residuals}{The color of the partial residuals.}
   \item{col.lines}{Vector of maximum length of columns of \code{x} minus 1, specifying the color of 

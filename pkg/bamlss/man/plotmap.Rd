@@ -26,8 +26,8 @@ plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     with first column indicating the \code{x} coordinate and second column the \code{y} coordinate
     each, also see \code{\link[graphics]{polygon}}.}
   \item{x}{A matrix or data frame with two columns, first column indicates the region and 
-    second column the the values which will define the background colors of the polygons, e.g. 
-    fitted values from \code{\link{bayesx}}. More columns are possible, e.g. quantiles, which can 
+    second column the the values which will define the background colors of the polygons, e.g., 
+    fitted values from \code{\link{bamlss}}. More columns are possible, e.g. quantiles, which can 
     accessed with argument \code{se}.}
   \item{id}{If argument \code{x} is a vector, argument \code{id} should contain a character vector 
     of the same length of \code{x} with entries indicating the polygon the \eqn{i}-th value of 

@@ -126,8 +126,9 @@ get_BayesXsrc(dir = NULL, install = TRUE)
     \item \code{"ps"}: P-spline with second order difference penalty. 
     \item \code{"mrf"}: Markov random fields: Defines a Markov random field prior for a
                spatial covariate, where geographical information is provided by a map object in
-               boundary or graph file format (see function \code{\link{read.bnd}}, \code{\link{read.gra}} and
-               \code{\link{shp2bnd}}), as an additional argument named \code{map}.
+               boundary or graph file format (see function \code{\link[BayesX]{read.bnd}},
+               \code{\link[BayesX]{read.gra}} and \code{\link[BayesX]{shp2bnd}}), as an additional
+               argument named \code{map}.
     \item \code{"re"}: Gaussian i.i.d. Random effects of a unit or cluster identification covariate.
   }
 

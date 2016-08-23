@@ -11,6 +11,6 @@ Depends: R (>= 3.2.3), coda, colorspace, mgcv
 Imports: Formula, MBA, fields, gamlss, geoR, maps,
   maptools, mvtnorm, shapefiles, sp, spdep,
   survival, zoo, methods, spam, Matrix
-Suggests: akima, rjags, BayesXsrc, mapdata, raster, spatstat
+Suggests: akima, rjags, BayesX, BayesXsrc, mapdata, raster, spatstat
 License: GPL-2 | GPL-3
 LazyLoad: yes

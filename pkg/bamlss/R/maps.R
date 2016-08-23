@@ -108,7 +108,7 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
   }
 
   if(rivers) {
-    stopifnot(loadNamespace("mapdata"))
+    stopifnot(requireNamespace("mapdata"))
     map("rivers", add = TRUE, col = "lightblue")
   }
 
@@ -263,6 +263,8 @@ pixelmap <- function(x, y, size = 0.1, width = NULL, data = NULL,
 neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
   k = 1, id = NULL, nb = FALSE, rm.dups = FALSE, ...)
 {
+  stopifnot(requireNamespace("BayesX"))
+
   type <- match.arg(type)
 
   nx <- NULL
@@ -277,7 +279,7 @@ neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
       class(x) <- "bnd"
       warning(paste("duplicated polygon names in map: ", ndups, "!", sep = ""))
     }
-    dups <- anyDuplicated(coordinates(bnd2sp(x)))
+    dups <- anyDuplicated(coordinates(BayesX::bnd2sp(x)))
     if(dups > 0) {
       ndups <- paste(nx[dups], collapse = ", ")
       if(rm.dups) {
@@ -287,7 +289,7 @@ neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
       class(x) <- "bnd"
       warning(paste("duplicated coordinates in map, found for region(s): ", ndups, "!", sep = ""))
     }
-    x <- bnd2sp(x)
+    x <- BayesX::bnd2sp(x)
   }
 
   nx <- names(x)
@@ -373,7 +375,7 @@ plotneighbors <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
 ### of a polygon map.
 #spatial.weights <- function(x, ...)
 #{
-#  loadNamespace("spdep")
+#  requireNamespace("spdep")
 #  nb <- neighbormatrix(x, nb = TRUE, ...)
 #  weights <- listw2mat(nb2listw(nb, ...))
 #  weights
@@ -399,7 +401,7 @@ plotneighbors <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
 ### Spatial weighted smooth constructor.
 #smooth.construct.sws.smooth.spec <- function(object, data, knots) 
 #{
-#  loadNamespace("spdep")
+#  requireNamespace("spdep")
 #  xt <- object$xt
 #  object$xt <- NULL
 #  if(!is.null(xt$coords))
@@ -418,7 +420,7 @@ plotneighbors <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
 
 #smooth.construct.sws2.smooth.spec <- function(object, data, knots) 
 #{
-#  loadNamespace("spdep")
+#  requireNamespace("spdep")
 #  call <- if(length(object$term) > 1) {
 #    paste("s(", paste(object$term[-1], collapse = ", "), ", bs = 'kr', k = ", object$bs.dim, ")", sep = "")
 #  } else {
@@ -451,8 +453,10 @@ plotneighbors <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
 ## Compute centroids of polygons.
 centroids <- function(x, id = NULL, verbose = FALSE, check.dups = TRUE)
 {
-  if(inherits(x, "SpatialPolygons"))
-    x <- sp2bnd(x)
+  if(inherits(x, "SpatialPolygons")) {
+    stopifnot(requireNamespace("BayesX"))
+    x <- BayesX::sp2bnd(x)
+  }
   if(!is.list(x))
     stop("argument map must be a list() of matrix polygons!")
 
@@ -550,10 +554,10 @@ centroidtext <- function(polygon, poly.name = NULL, counter = "NA", cex = 1, ...
 ## Function to drop data outside the polygon area.
 drop2poly <- function(x, y, map, union = FALSE)
 {
-  loadNamespace("maptools")
-
-  if(inherits(map, "bnd"))
-    map <- bnd2sp(map)
+  if(inherits(map, "bnd")) {
+    stopifnot(requireNamespace("BayesX"))
+    map <- BayesX::bnd2sp(map)
+  }
   if(union)
     map <- unionSpatialPolygons(map, rep(1L, length = length(map)), avoidGEOS  = TRUE)
 

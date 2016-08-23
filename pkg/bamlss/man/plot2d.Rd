@@ -24,7 +24,7 @@ plot2d(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
     to specify the plot via a \code{formula}, e.g. \code{y ~ x}, see the examples.
     \code{x} may also be a character file path to the data to be used for plotting.}
   \item{residuals}{If set to \code{TRUE}, residuals may also be plotted if available.
-    Residuals must be supplied as an \code{\link{attribute}} named \code{"residuals"}, which
+    Residuals must be supplied as an \code{\link{attr}}ibute named \code{"residuals"}, which
     is a matrix or data frame where the first column is the covariate and the second column
     the residuals.}
   \item{rug}{Add a \code{\link[graphics]{rug}} to the plot.}
