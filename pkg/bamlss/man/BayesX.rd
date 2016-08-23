@@ -139,8 +139,7 @@ get_BayesXsrc(dir = NULL, install = TRUE)
 }
 
 \examples{
-\dontrun{
-## Get newest version of BayesXsrc.
+\dontrun{## Get newest version of BayesXsrc.
 ## Note: needs sh, svn and R build tools!
 get_BayesXsrc()
 

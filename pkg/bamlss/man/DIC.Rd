@@ -19,8 +19,7 @@ DIC(object, ...)
 }
 
 \examples{
-\dontrun{
-d <- GAMart()
+\dontrun{d <- GAMart()
 b1 <- bamlss(num ~ s(x1), data = d)
 b2 <- bamlss(num ~ s(x1) + s(x2), data = d)
 DIC(b1, b2)

@@ -147,8 +147,7 @@ normal.bamlss <- function(...) {
   return(f)
 }
 
-\dontrun{
-## Test on simulated data.
+\dontrun{## Test on simulated data.
 d <- GAMart()
 b <- bamlss(num ~ s(x1) + s(x2) + s(x3),
   data = d, family = "normal")

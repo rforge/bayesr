@@ -54,8 +54,7 @@ cox.predict(object, newdata,
 }
 
 \examples{
-\dontrun{
-set.seed(123)
+\dontrun{set.seed(123)
 
 ## Simulate survival data.
 d <- simSurv(n = 500)

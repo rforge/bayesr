@@ -24,8 +24,7 @@ GAMart(n = 500, sd = 0.1, seed = FALSE,
 d <- GAMart()
 head(d)
 
-\dontrun{
-b <- bamlss(num ~ s(x1) + s(x2) + s(x3) + te(lon,lat), data = d)
+\dontrun{b <- bamlss(num ~ s(x1) + s(x2) + s(x3) + te(lon,lat), data = d)
 plot(b)
 }
 }

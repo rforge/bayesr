@@ -26,8 +26,7 @@ c95(x)
 x <- rnorm(100)
 c95(x)
 
-\dontrun{
-## Example computing predictions.
+\dontrun{## Example computing predictions.
 set.seed(123)
 d <- data.frame("x" = seq(-3, 3, length = 30))
 d$y <- sin(d$x) + rnorm(30, sd = 0.3)

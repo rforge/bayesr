@@ -97,8 +97,7 @@ BUGSmodel(x, family, is.stan = FALSE, reference = NULL, ...)
 }
 
 \examples{
-\dontrun{
-## Simulated data example illustrating
+\dontrun{## Simulated data example illustrating
 ## how to call the sampler function.
 ## This is done internally within
 ## the setup of function bamlss().
