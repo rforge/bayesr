@@ -121,7 +121,7 @@ plot2d(f1 + f2 ~ x, data = d, fill.select = c(0, 1, 1), lty = 0,
   density = 20, poly.lty = 1, poly.lwd = 2)
 plot2d(f1 + f + f2 ~ x, data = d, fill.select = c(0, 1, 0, 1), 
   lty = c(0, 1, 0), density = 20, poly.lty = 1, poly.lwd = 2)
-}
+}}
 
 \keyword{hplot}
 
