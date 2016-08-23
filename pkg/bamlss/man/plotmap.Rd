@@ -111,7 +111,7 @@ data("columb.polys", package = "mgcv")
 ## Plot the map.
 plotmap(columb.polys)
 
-## Plot aggragted data.
+## Plot aggregated data.
 a <- with(columb, aggregate(crime,
   by = list("district" = district), FUN = mean))
 
