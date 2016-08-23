@@ -5148,12 +5148,19 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
 
 ## Fitted values/terms extraction
 fitted.bamlss <- function(object, model = NULL, term = NULL,
-  type = c("link", "parameter"), samples = FALSE, FUN = mean,
+  type = c("link", "parameter"), samples = TRUE, FUN = c95,
   nsamps = NULL, ...)
 {
   type <- match.arg(type)
   if(!samples & !is.null(object$fitted.values)) {
-    return(object$fitted.values)
+    if(!is.null(term))
+      stop("term specific fitted values must be computed with 'samples = TRUE'!")
+    return(if(is.null(model)) {
+        object$fitted.values
+      } else {
+        if(length(model) < 2) {
+          object$fitted.values[[model]]
+        } else object$fitted.values[model]})
   } else {
     return(predict.bamlss(object, model = model, term = term,
       type = type, FUN = FUN, nsamps = nsamps, ...))

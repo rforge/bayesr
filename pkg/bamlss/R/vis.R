@@ -63,7 +63,7 @@ plot2d <- function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
     args$col.polygons <- rep(c("grey80", "grey70"), round(nc/2))
   else
     args$col.polygons <- col.polygons
-  if(residuals && !is.null(pres <- attr(x, "partial.resids")))
+  if(residuals && !is.null(pres <- attr(x, "residuals")))
     residuals <- TRUE
   else
     residuals <- FALSE
@@ -109,7 +109,7 @@ plot2d <- function(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
   if(residuals) {
     if(!is.null(shift)) pres[, 2L] <- pres[, 2L] + shift
     if(!is.null(trans)) pres[, 2L] <- trans(pres[, 2L])
-    attr(x, "partial.resids") <- pres
+    attr(x, "residuals") <- pres
   }
   if(is.null(args$ylim)) {
     ylim <- NULL
@@ -181,7 +181,7 @@ plot2d.default <- function(x, residuals, range, col.residuals = "black",
   fill.select = NULL, col.polygons = NULL, col.rug = NULL, pb = FALSE, 
   x.co = NULL, rug = FALSE, jitter = FALSE, specs)
 {
-  if(residuals && !is.null(pres <- attr(x, "partial.resids")))
+  if(residuals && !is.null(pres <- attr(x, "residuals")))
     residuals <- TRUE
   else
     residuals <- FALSE
@@ -190,7 +190,7 @@ plot2d.default <- function(x, residuals, range, col.residuals = "black",
   if(!is.matrix(x))
     x <- matrix(x, nrow = 1L)
   if(residuals)
-    e <- attr(x, "partial.resids")
+    e <- attr(x, "residuals")
   x <- unique(x)
   if(pb) {
     nc <- ncol(x)
@@ -357,8 +357,8 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
   if(!is.null(shift))
     shift <- as.numeric(shift[1])
   e <- NULL
-  if(!is.null(attr(x, "partial.resids"))) {
-    e <- attr(x, "partial.resids")
+  if(!is.null(attr(x, "residuals"))) {
+    e <- attr(x, "residuals")
     if(!is.null(shift))
       e[, 3L] <- e[, 3L] + shift
   }
@@ -701,7 +701,7 @@ plotblock <- function(x, residuals = FALSE, range = c(0.3, 0.3),
   }
   ylim <- NULL
   if(!is.list(x)) {
-    if(is.null(e <- attr(x, "partial.resids")))
+    if(is.null(e <- attr(x, "residuals")))
       residuals <- FALSE
     xu <- unique(x[,1L])
     n <- length(xu)      
@@ -726,7 +726,7 @@ plotblock <- function(x, residuals = FALSE, range = c(0.3, 0.3),
             pres <- matrix(pres, nrow = 1)
           if(!is.null(shift))
             pres[, 2L:ncol(pres)] <- pres[, 2L:ncol(pres)] + shift
-          attr(effects[[i]], "partial.resids") <- pres
+          attr(effects[[i]], "residuals") <- pres
           ylim <- c(ylim, pres[, 2L:ncol(pres)])
         }
       }
@@ -735,7 +735,7 @@ plotblock <- function(x, residuals = FALSE, range = c(0.3, 0.3),
   } else {
     n <- length(x)	
     for(i in 1L:n) {
-      if(residuals && !is.null(pres <- attr(x[[i]], "partial.resids"))) {
+      if(residuals && !is.null(pres <- attr(x[[i]], "residuals"))) {
         pres <- pres[pres[,1L] != 0 & pres[,1L] != -1,]
         if(!is.matrix(pres))
           pres <- matrix(pres, nrow = 1L)
@@ -762,7 +762,7 @@ plotblock <- function(x, residuals = FALSE, range = c(0.3, 0.3),
           else
             pres <- pres + shift
         }
-        attr(x[[i]], "partial.resids") <- pres
+        attr(x[[i]], "residuals") <- pres
       }
       if(!is.null(shift)) x[[i]][, 2L:ncol(x[[i]])] <- x[[i]][, 2L:ncol(x[[i]])] + shift
       if(!is.null(trans)) {
@@ -805,8 +805,8 @@ plotblock <- function(x, residuals = FALSE, range = c(0.3, 0.3),
       x[[i]][, 2:ncol(x[[i]])] <- xvals
     }
     args$x <- x[[i]]
-    if(!is.null(attr(args$x, "partial.resids")))
-      attr(args$x, "partial.resids")[,1L] <- i
+    if(!is.null(attr(args$x, "residuals")))
+      attr(args$x, "residuals")[,1L] <- i
     do.call(plot2d.default, delete.args(plot2d.default, args))
     axn[i] <- if(is.null(labels)) colnames(x[[i]])[1L] else labels[i]
   }
