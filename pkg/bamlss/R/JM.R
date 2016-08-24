@@ -2853,8 +2853,8 @@ Predict.matrix.Random2.effect <- function(object, data)
 
 simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
                   long_setting = "functional", alpha_setting = "nonlinear", 
-                  dalpha_setting="zero", sigma=0.3, long_df=6, tmax=NULL,    
-                  seed=NULL, full=TRUE, file = NULL, ...){
+                  dalpha_setting = "zero", sigma = 0.3, long_df = 6, tmax=NULL,    
+                  seed=NULL, full=FALSE, file = NULL){
   
   if(is.null(tmax)){
     tmax <- max(times)
@@ -2905,14 +2905,15 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
   
   ## function written by Fabian Scheipl for random functional effect
   ## (changed into random functional intercepts)
-  gen_b <- function(times, nsub, long_df, pen=2, l=c(1,1), seed=NULL){
+  gen_b <- function(times, nsub, long_df, pen = 2, l = c(1,1), seed = NULL){
     if(!is.null(seed)) set.seed(seed)
+    require(splines)
     # Recursion for difference operator matrix
     makeDiffOp <- function(degree, dim){
-      if(degree==0){
+      if(degree == 0){
         return(diag(dim))  
       } else {
-        return(diff(makeDiffOp(degree-1, dim)))
+        return(diff(makeDiffOp(degree - 1, dim)))
       }    
     }
     # Kronecker Product penalty from marginal
@@ -2920,17 +2921,18 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
     Pt <- l[2] * kronecker(diag(nsub), crossprod(makeDiffOp(pen[1], long_df)))
     P <- .1*diag(nsub*long_df) + Pt + Pi
     
-    coef <- matrix(rmvnorm(nsub*long_df, sigma=solve(P)), ncol=long_df, nrow=nsub)
+    coef <- matrix(rmvnorm(nsub*long_df, sigma = solve(P)), ncol = long_df, nrow = nsub)
     colnames(coef) <- paste0("b", 1:long_df)
     bt <- bs(times, df = long_df, intercept = FALSE)
-    b_set <- list(knots=attr(bt, "knots"), Boundary.knots=attr(bt, "Boundary.knots"),
-                  degree=attr(bt, "degree"), intercept=attr(bt, "intercept"))
+    b_set <- list(knots = attr(bt, "knots"), Boundary.knots = attr(bt, "Boundary.knots"),
+                  degree = attr(bt, "degree"), intercept = attr(bt, "intercept"))
     return(list(coef, b_set))
   }
   
   ## numerical derivative for B-Spline
   ## modified from JMbayes code
-  dbs <-  function (x, df = NULL, knots = NULL, degree=3, intercept = FALSE, Boundary.knots = range(x), eps = 1e-07) {
+  dbs <-  function (x, df = NULL, knots = NULL, degree=3, intercept = FALSE, 
+                    Boundary.knots = range(x), eps = 1e-07) {
     ex <- pmax(abs(x), 1)
     x1 <- x + eps * ex
     x2 <- x - eps * ex
@@ -2953,11 +2955,10 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
     beta <- r[, -c(1:2)]
     # duplicate vector beta for the multiple integration points
     if(is.null(dim(beta))){
-      beta <- matrix(beta, nrow=length(time), ncol=long_df, byrow=TRUE)
+      beta <- matrix(beta, nrow = length(time), ncol = long_df, byrow=TRUE)
     }
     # TODO: Suppress warnings
     switch(long_setting,
-           "simple" = (1.25 + 0.6*sin(x) + (-0.02)*time),
            "linear" = (1.25 + r[, 1] + 0.6*sin(x) + (-0.01)*time + r[, 2]*0.02*time),
            "nonlinear" = (0.5 + r[, 1] + 0.6*sin(x) + 0.1*(time+2)*exp(-0.075*time)),
            "functional" = (0.5 + r[, 1] + 0.6*sin(x) + 0.1*(time+2)*exp(-0.075*time) + 
@@ -2970,13 +2971,13 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
     
     # allow to always extract coefficients as column
     if(is.null(dim(r))){
-      r <- matrix(r, nrow=1)
+      r <- matrix(r, nrow = 1)
     } 
     
     beta <- r[, -c(1:2)]
     # duplicate vector beta for the multiple integration points
     if(is.null(dim(beta))){
-      beta <- matrix(beta, nrow=length(time), ncol=long_df, byrow=TRUE)
+      beta <- matrix(beta, nrow = length(time), ncol = long_df, byrow = TRUE)
     }
     switch(long_setting,
            "simple" = (-0.02) + 0*time,
@@ -3003,13 +3004,13 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
            "zero" = 0*time,
            "constant" = 0*time + 10,
            "linear" = 6 - 0.015*time,
-           "nonlinear" = 50+55*sin((time)/20),
-           "nonlinear2" = 50+55*sin((time)/20))
+           "nonlinear" = 50 + 55*sin((time)/20),
+           "nonlinear2" = 50 + 55*sin((time)/20))
   }
   
   ## baseline hazard
   lambda <-  function(time){
-    1.4*log((time+10)/1000)
+    1.4*log((time + 10)/1000)
   }
   
   ## nonlinear baseline covariate
@@ -3026,6 +3027,7 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
   
   
   # generate input
+  id <- rep(1:nsub, each=length(times))
   if(!is.null(seed)){
     set.seed(seed)
   }
@@ -3036,63 +3038,9 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
   r <- cbind(r, temp[[1]])
   b_set <- temp[[2]]
   
-  d <- rJM(hazard, cens_fct, miss_fct, full=full) 
-  if(!is.null(file)) { 
-    save(d, file = file) 
-    invisible(d) 
-  } else { 
-    return(d) 
-  } 
-}
-
-
-
-rJM <- function(hazard, cens_fct, miss_fct, subdivisions=1000, tmax=NULL, file=NULL, full=TRUE, ...){
-  ## compute hazard for every person i at time
+  data_short <- rJM(hazard, censoring, x, r, tmin = times[1], tmax = tmax) 
   
-  id <- rep(1:nsub, each=length(times))
-  time <- rep(NA, nsub) 
-  if(is.null(tmax)){
-    tmax <- max(times)
-  }
-  
-  Hazard <- function(hazard, time, x, r) { 
-    integrate(hazard, 0, time, x = x, r = r,
-              subdivisions = subdivisions)$value 
-  } 
-  
-  InvHazard <- function(Hazard, hazard, x, r) { 
-    negLogU <- -log(runif(1, 0, 1)) 
-    # check if first Lambda value is smaller than sample
-    rootfct <- function(time) { 
-      negLogU - Hazard(hazard, time, x, r) 
-    } 
-    if(rootfct(times[1])<0){
-      return(0)
-    } else {
-      root <- try(uniroot(rootfct, interval = c(0, tmax))$root, silent=TRUE)
-      root <- if(inherits(root, "try-error")) {
-        # if root not within [0, tmax] --> error --> set it to tmax + 1 (will be censored)
-        tmax + 1
-      } else {root}
-    }
-    return(root)
-  }
-  
-  # Finding Survival Times
-  cumhaz <- rep(NA, nsub)
-  for(i in 1:nsub) { 
-    time[i] <- InvHazard(Hazard, hazard, x[i,], r[i,])
-    cumhaz[i] <- Hazard(hazard, time[i], x[i,], r[i,])
-  } 
-  
-  time_event <- censoring(time, tmax) 
-  
-  # Make data (long format)
-  data_short <- data.frame(survtime = time_event[, 1], event = time_event[, 2], 
-                           x, r, cumhaz = cumhaz)
-  names(data_short) <- gsub(".", "", names(data_short), fixed = TRUE) 
-  data_long <- cbind(id, data_short[id,], obstime=rep(times, nsub))
+  data_long <- cbind(id, data_short[id,], obstime = rep(times, nsub))
   data_grid <- data.frame(survtime = times)
   
   i <- !duplicated(data_long$id)
@@ -3111,20 +3059,78 @@ rJM <- function(hazard, cens_fct, miss_fct, subdivisions=1000, tmax=NULL, file=N
   data_long$mu <- mu(data_long$obstime, data_long$x2, r[id,], long_df, b_set, long_setting)
   data_long$dmu <- dmu(data_long$obstime, r[id,], long_df, b_set, long_setting)
   data_long$id <- as.factor(data_long$id)
+  data_long$sigma <- rep(log(sigma), nrow(data_long))
   
-  # censoring and missings                     
-  data_long <- data_long[data_long$obstime<=data_long$survtime,]
+  # censoring                   
+  data_long <- data_long[data_long$obstime <= data_long$survtime,]
+  
+  # saving data without longitudinal missings
+  data_full <- data_long
+  
+  # inducing longitudinal missings
   data_long <- miss_fct(data_long, probmiss)
   
   # Draw longitudinal observations
   data_long$y <- rnorm(nrow(data_long), data_long$mu, sigma)
   
   if(full==TRUE){
-    d <- list(data=data_long, data_grid=data_grid)
+    d <- list(data=data_long, data_grid = data_grid, data_full = data_full)
   } else {
     d <- data_long
   }
+  if(!is.null(file)) { 
+    save(d, file = file) 
+    invisible(d) 
+  } else { 
+    return(d) 
+  } 
+}
+
+
+
+rJM <- function(hazard, censoring, x, r, 
+                subdivisions = 1000, tmin = 0, tmax, file = NULL, ...){
+  ## compute hazard for every person i at time
+  nsub <- nrow(x)
   
-  return(d)
+  time <- rep(NA, nsub) 
   
+  Hazard <- function(hazard, time, x, r) { 
+    integrate(hazard, 0, time, x = x, r = r,
+              subdivisions = subdivisions)$value 
+  } 
+  
+  InvHazard <- function(Hazard, hazard, x, r, tmin, tmax) { 
+    negLogU <- -log(runif(1, 0, 1)) 
+    # check if first Lambda value is smaller than sample
+    rootfct <- function(time) { 
+      negLogU - Hazard(hazard, time, x, r) 
+    } 
+    if(rootfct(tmin)<0){
+      return(0)
+    } else {
+      root <- try(uniroot(rootfct, interval = c(0, tmax))$root, silent=TRUE)
+      root <- if(inherits(root, "try-error")) {
+        # if root not within [0, tmax] --> error --> set it to tmax + 0.01 (will be censored)
+        tmax + 0.01
+      } else {root}
+    }
+    return(root)
+  }
+  
+  # Finding Survival Times
+  cumhaz <- rep(NA, nsub)
+  for(i in 1:nsub) { 
+    time[i] <- InvHazard(Hazard, hazard, x[i,], r[i,], tmin, tmax)
+    cumhaz[i] <- Hazard(hazard, time[i], x[i,], r[i,])
+  } 
+  
+  time_event <- censoring(time, tmax) 
+  
+  # Make data (long format)
+  data_short <- data.frame(survtime = time_event[, 1], event = time_event[, 2], 
+                           x, r, cumhaz = cumhaz)
+  names(data_short) <- gsub(".", "", names(data_short), fixed = TRUE) 
+  
+  return(data_short)
 }
