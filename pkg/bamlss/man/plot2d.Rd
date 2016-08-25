@@ -15,7 +15,8 @@ plot2d(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
   col.residuals = NULL, col.lines = NULL, col.polygons = NULL, 
   col.rug = NULL, c.select = NULL, fill.select = NULL, 
   data = NULL, sep = "", month = NULL, year = NULL,
-  step = 12, shift = NULL, trans = NULL, ...)
+  step = 12, shift = NULL, trans = NULL,
+  scheme = 1, s2.col = NULL, grid = 20, ...)
 }
 
 \arguments{
@@ -59,6 +60,9 @@ plot2d(x, residuals = FALSE, rug = TRUE, jitter = TRUE,
   \item{shift}{Numeric constant to be added to the smooth before plotting.}
   \item{trans}{Function to be applied to the smooth before plotting, e.g., to transform the
     plot to the response scale.}
+  \item{scheme}{Sets the plotting scheme for polygons, possible values are \code{1} and \code{2}.}
+  \item{s2.col}{The color for the second plotting scheme.}
+  \item{grid}{Integer, specifies the number of polygons for the second plotting scheme.}
   \item{\dots}{Other graphical parameters, please see the details.}
 }
 

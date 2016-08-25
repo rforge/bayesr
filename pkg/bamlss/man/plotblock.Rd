@@ -13,7 +13,7 @@
 plotblock(x, residuals = FALSE, range = c(0.3, 0.3), 
   col.residuals = "black", col.lines = "black", c.select = NULL, 
   fill.select = NULL , col.polygons = NULL, data = NULL,
-  shift = NULL, trans = NULL, ...)
+  shift = NULL, trans = NULL, labels = NULL, ...)
 }
 
 \arguments{
@@ -52,6 +52,7 @@ plotblock(x, residuals = FALSE, range = c(0.3, 0.3),
   \item{shift}{Numeric constant to be added to the smooth before plotting.}
   \item{trans}{Function to be applied to the smooth before plotting, e.g., to transform the
     plot to the response scale.}
+  \item{labels}{Character, labels for the factor levels.}
   \item{\dots}{Graphical parameters, please see the details.}
 }
 

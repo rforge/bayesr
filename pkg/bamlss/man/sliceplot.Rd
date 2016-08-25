@@ -13,7 +13,7 @@
 sliceplot(x, y = NULL, z = NULL, view = 1, c.select = NULL,
   values = NULL, probs = c(0.1, 0.5, 0.9), grid = 100,
   legend = TRUE, pos = "topright", digits = 2, data = NULL,
-  rawdata = FALSE, type = "akima", linear = FALSE,
+  rawdata = FALSE, type = "mba", linear = FALSE,
   extrap = FALSE, k = 40, rug = TRUE, rug.col = NULL,
   jitter = TRUE, ...)
 }

@@ -18,7 +18,7 @@ plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   mar.min = 2, add = FALSE, interp = FALSE, grid = 200,
   land.only = FALSE, extrap = FALSE, outside = FALSE, type = "akima",
   linear = FALSE, k = 40, p.pch = 15, p.cex = 1, shift = NULL,
-  trans = NULL, ...)
+  trans = NULL, scheme = 1, ...)
 }
 
 \arguments{
@@ -79,6 +79,7 @@ plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   \item{shift}{Numeric constant to be added to the smooth before plotting.}
   \item{trans}{Function to be applied to the smooth before plotting, e.g., to transform the
     plot to the response scale.}
+  \item{scheme}{Sets the default color from black to white for the polygon borders.}
   \item{\dots}{Parameters to be passed to \code{\link{colorlegend}} and others, e.g. change the 
     \code{border} of the polygons and \code{density}, see \code{\link[graphics]{polygon}}. Please 
     see the exmaples.}
