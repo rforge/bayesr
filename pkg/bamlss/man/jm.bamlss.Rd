@@ -117,27 +117,31 @@ We approximate integration in the survival part of the likelihood using trapezoi
 }
 
 \examples{
+\dontrun{
 set.seed(123)
 
 ## Simulate survival data
 # with random intercepts/slopes and a linear effect of time,
 # constant association alpha and no effect of the derivative
-d <- simJM(nsub = 200, long_setting = "linear", alpha_setting = "constant",
-            dalpha_setting = "zero", full = FALSE)
+d <- simJM(nsub = 200, long_setting = "linear", 
+           alpha_setting = "constant",
+           dalpha_setting = "zero", full = FALSE)
 
 ## Formula of the according joint model
 f <- list(Surv2(survtime, event, obs = y) ~ s(survtime, bs = "ps"),
           gamma ~ s(x1, bs = "ps"),
-          mu ~ obstime + s(id, bs = "re")+ s(id, obstime, bs = "re"),
+          mu ~ obstime + s(id, bs = "re") + 
+                s(id, obstime, bs = "re"),
           sigma ~ 1,
           alpha ~ 1,
           dalpha ~ -1)
 
 ## Joint model estimation
-# The family object jm.bamlss sets the default optimizer and sampler function.
-# First, posterior mode estimates are computed using function jm.mode(), 
-# afterwards the sampler jm.mcmc() is started.
-b <- bamlss(f, data = d, family = "jm", timevar = "obstime", idvar = "id")
+# jm.bamlss sets the default optimizer and sampler function.
+# First, posterior mode estimates are computed using function
+# jm.mode(), afterwards the sampler jm.mcmc() is started.
+b <- bamlss(f, data = d, family = "jm", timevar = "obstime", 
+            idvar = "id")
 
 ## Plot estimated effects.
 plot(b)
@@ -145,33 +149,39 @@ plot(b)
 
 
 ## Simulate survival data
-# with functional random intercepts and a nonlinear effect of time,
-# time-varying association alpha and no effect of the derivative.
-# Note: This specification is the default in the data simulation.
+# with functional random intercepts and a nonlinear effect 
+# of time, time-varying association alpha and no effect 
+# of the derivative.
+# Note: This specification is the simJM default.
 d <- simJM(nsub = 200, full = FALSE)
 
 ## Formula of the according joint model
-# specify the number of knots for the smooth nonlinear effect of time
+# umber of knots for the smooth nonlinear effect of time
 klong <- 8
 f <- list(Surv2(survtime, event, obs = y) ~ s(survtime, bs = "ps"),
           gamma ~ s(x1, bs = "ps"),
-          mu ~ ti(id, bs = "re") + ti(obstime, bs = "ps", k = klong) + 
-               ti(id, obstime, bs = c("re", "ps"), k = c(nlevels(d$id), klong)) + 
+          mu ~ ti(id, bs = "re") + 
+               ti(obstime, bs = "ps", k = klong) + 
+               ti(id, obstime, bs = c("re", "ps"), 
+                  k = c(nlevels(d$id), klong)) + 
                s(x2, bs = "ps"),
           sigma ~ 1,
           alpha ~ s(survtime, bs = "ps"),
           dalpha ~ -1)
 
 ## Estimating posterior mode only using jm.mode()
-b_mode <- bamlss(f, data = d, family = "jm", timevar = "obstime", idvar = "id", 
-                 sampler = MVNORM)
+b_mode <- bamlss(f, data = d, family = "jm", timevar = "obstime", 
+                 idvar = "id", sampler = MVNORM)
 
-## Estimating posterior means using jm.mcmc() and using mode starting values
-b_mean <- bamlss(f, data = d, family = "jm", timevar = "obstime", idvar = "id",
-                 optimizer = FALSE, jm.start = parameters(b_mode))
+## Estimating posterior means using jm.mcmc() 
+#  with starting values generated from posterior mode 
+b_mean <- bamlss(f, data = d, family = "jm", timevar = "obstime", 
+                 idvar = "id", optimizer = FALSE, 
+                 jm.start = parameters(b_mode))
 plot(b_mean, model = "alpha")
 plot(b_mean, model = "alpha", which = samples)
-}
 
+}
+}
 \keyword{regression}
 

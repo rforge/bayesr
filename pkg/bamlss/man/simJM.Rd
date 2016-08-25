@@ -86,16 +86,19 @@ Covariates within these datesets include a subject identifier \code{id}, the sam
 }
 
 \examples{
+\dontrun{
 ## Simulate survival data
-# with functional random intercepts and a nonlinear effect of time,
-# time-varying association alpha
+# with functional random intercepts and a nonlinear effect 
+# of time, time-varying association alpha.
 d <- simJM(nsub = 300)
 
 
 ## Simulate survival data
-# with random intercepts and linear effect of time,
-# constant association alpha and no effect of the derivative
-d <- simJM(nsub = 200, long_setting = "linear", alpha_setting = "constant")
+# with random intercepts/slopes and a linear effect of time,
+# constant association alpha.
+d <- simJM(nsub = 200, long_setting = "linear", 
+           alpha_setting = "constant")
+}
 }
 
 \keyword{survival}
