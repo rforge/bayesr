@@ -255,9 +255,10 @@ jm.transform <- function(x, y, data, terms, knots, formula, family, jm.start = N
   ## Assign time grid predict functions.
   for(i in seq_along(ntd)) {
     if(has_pterms(x[[ntd[i]]]$terms)) {
-      x[[ntd[i]]]$smooth.construct$model.matrix <- param_time_transform(x[[ntd[i]]]$smooth.construct$model.matrix,
+      x[[ntd[i]]]$smooth.construct$model.matrix <- param_time_transform2(x[[ntd[i]]]$smooth.construct$model.matrix,
         drop.terms.bamlss(x[[ntd[i]]]$terms, sterms = FALSE, keep.response = FALSE), data, grid, yname,
-        if(ntd[i] != "mu" & ntd[i] != "dmu") timevar else timevar_mu, take, derivMat = (ntd[i] == "dmu"))
+        if(ntd[i] != "mu" & ntd[i] != "dmu") timevar else timevar_mu, take, derivMat = (ntd[i] == "dmu"), 
+        timevar2 = timevar_mu, idvar = idvar)
     }
     if(length(x[[ntd[i]]]$smooth.construct)) {
       for(j in names(x[[ntd[i]]]$smooth.construct)) {
@@ -2847,6 +2848,107 @@ Predict.matrix.Random2.effect <- function(object, data)
 }
 
 
+# time transform for time-varying survival covariates
+param_time_transform2 <- function (x, formula, data, grid, yname, timevar, take, 
+                                   derivMat = FALSE, eps = 1e-07, 
+                                   timevar2=NULL, idvar=NULL){
+  if (derivMat) 
+    ddata <- data
+  id <- data[[idvar]]
+  X <- Xn <- tvar <- NULL
+  for (j in names(data)) {
+    if ((!grepl("Surv(", j, fixed = TRUE) & !grepl("Surv2(", j, fixed = TRUE)) & 
+        (j != yname) & (j != timevar)) {
+      # split data per subject
+      idata <- split(data[[j]], id)
+      # check if timevarying variable
+      temp <- lapply(1:length(idata), function(i){length(unique(idata[[i]])) > 1})
+      if(any(unlist(temp))){
+        tvar <- c(tvar, j)
+        print(tvar)
+        # times <- split(data[[timevar2]], id)
+        # extract unique time-varying values
+        values <- lapply(1:length(idata), function(i){unique(idata[[i]])})
+        # extract break points
+        breaks <- lapply(1:length(idata), function(i){
+          split(data[[timevar2]], id)[[i]][c(TRUE, diff(idata[[i]]) != 0)]})
+        # transfer break points to evaluation grid
+        igrid <- lapply(1:length(idata), function(i){
+          if(length(breaks[[i]]) > 1){
+            g <- cut(grid[[i]], breaks[[i]], labels=FALSE, include.lowest = TRUE)
+            g[is.na(g)] <- max(g, na.rm=TRUE) + 1
+            g
+          } else {
+            rep(1, length(grid[[i]]))
+          }})
+        # evaluate variable on that grid
+        evalgrid <- lapply(1:length(idata), function(i){
+          values[[i]][igrid[[i]]]})
+        df <- data.frame(unlist(evalgrid))
+        names(df) <- j
+        X <- if (is.null(X)) 
+          df
+        else cbind(X, df)
+        Xn <- c(Xn, j)
+      }
+    }
+  }
+  if (!is.null(take)) 
+    data <- data[take, , drop = FALSE]
+  for (j in names(data)) {
+    if ((!grepl("Surv(", j, fixed = TRUE) & !grepl("Surv2(", 
+                                                   j, fixed = TRUE)) & (j != yname) & (j != timevar) & !(j %in% tvar)) {
+      df <- data.frame(rep(data[[j]], each = length(grid[[1]])))
+      names(df) <- j
+      X <- if (is.null(X)) 
+        df
+      else cbind(X, df)
+      Xn <- c(Xn, j)
+      print(Xn)
+    }
+  }
+  if (!is.null(X)) 
+    colnames(X) <- Xn
+  X <- if (is.null(X)) 
+    data.frame(unlist(grid))
+  else cbind(X, unlist(grid))
+  colnames(X)[ncol(X)] <- yname
+  if (timevar != yname) {
+    X <- cbind(X, unlist(grid))
+    colnames(X)[ncol(X)] <- timevar
+  }
+  dX <- NULL
+  if (derivMat) {
+    dX <- X
+    for (j in colnames(dX)) {
+      if (!is.factor(dX[[j]]) & (grepl(timevar, j, fixed = TRUE)) & 
+          (timevar %in% c(x$term, x$by))) {
+        dX[[j]] <- dX[[j]] + eps
+        ddata[[j]] <- ddata[[j]] + eps
+      }
+    }
+  }
+  X <- model.matrix(formula, data = X)
+  gdim <- c(length(grid), length(grid[[1]]))
+  x$XT <- extract_XT(X, gdim[1], gdim[2])
+  if (derivMat) {
+    dX <- model.matrix(formula, data = dX)
+    X <- -1 * (X - dX)/eps
+    x$XT <- extract_XT(X, gdim[1], gdim[2])
+    x$X <- -1 * (x$X - model.matrix(formula, data = ddata))/eps
+  }
+  x$fit.fun_timegrid <- function(g) {
+    if (is.null(g)) 
+      return(X)
+    g <- get.par(g, "b")
+    f <- drop(X %*% g)
+    f <- matrix(f, nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
+    f
+  }
+  x$state$fitted_timegrid <- x$fit.fun_timegrid(get.state(x, "b"))
+  class(x) <- c(class(x), "deriv.model.matrix")
+  x
+}
 
 # simulate data
 ################################################################################
@@ -2908,6 +3010,7 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
   gen_b <- function(times, nsub, long_df, pen = 2, l = c(1,1), seed = NULL){
     if(!is.null(seed)) set.seed(seed)
     require(splines)
+    require(mvtnorm)
     # Recursion for difference operator matrix
     makeDiffOp <- function(degree, dim){
       if(degree == 0){
