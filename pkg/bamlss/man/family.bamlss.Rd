@@ -11,7 +11,6 @@
 \alias{multinomial.bamlss}
 \alias{mvnorm.bamlss}
 \alias{poisson.bamlss}
-\alias{jm.bamlss}
 
 \title{
   Distribution Families in \pkg{bamlss}

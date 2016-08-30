@@ -774,6 +774,7 @@ sx.construct.offset.smooth.spec <- function(object, data, ...)
 
 sx.construct.mrf.smooth.spec <- sx.construct.spatial.smooth.spec <- function(object, data, ...)
 {
+  stopifnot(requireNamespace("BayesX"))
   if(is.null(object$xt))
     stop("need to supply a map object in argument xt!")  
   map.name <- help.map.name(deparse(substitute(object, env = .GlobalEnv), 
@@ -803,15 +804,15 @@ sx.construct.mrf.smooth.spec <- sx.construct.spatial.smooth.spec <- function(obj
     if(is.null(map)) {
       map <- object$xt
       if(is(map, "SpatialPolygonsDataFrame"))
-        map <- sp2bnd(map)
+        map <- BayesX::sp2bnd(map)
       if(is.null(map) || (!is.list(map) && !inherits(map, "bnd") || !inherits(map, "gra")))
         stop("need to supply a bnd or graph file object in argument xt!")
     }
   }
   if(is(map, "nb"))
-    map <- nb2gra(map)
+    map <- BayesX::nb2gra(map)
   if(inherits(map, "SpatialPolygons"))
-    map <- sp2bnd(map)
+    map <- BayesX::sp2bnd(map)
   if(!inherits(map, "bnd") && !inherits(map, "gra")) {
     if(is.list(map))
       class(map) <- "bnd"
@@ -851,11 +852,11 @@ sx.construct.mrf.smooth.spec <- sx.construct.spatial.smooth.spec <- function(obj
       } else poly.names <- sort(names(map))
       map <- map[poly.names]
       class(map) <- "bnd"
-      write.bnd(map = map, file = mapfile, replace = TRUE)
+      BayesX::write.bnd(map = map, file = mapfile, replace = TRUE)
       prg <- c(prg, paste(map.name, ".infile using ", mapfile, sep = ""))
     } else {
       if(!is.character(map)) {
-        write.gra(map = map, file = mapfile, replace = TRUE)
+        BayesX::write.gra(map = map, file = mapfile, replace = TRUE)
         prg <- c(prg, paste(map.name, ".infile, graph using ", mapfile, sep = ""))
       } else {
         stopifnot(is.character(map))

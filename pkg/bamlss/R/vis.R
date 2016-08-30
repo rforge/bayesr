@@ -1298,9 +1298,10 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
     icolors <- map_fun(cvals)
 
     if(!outside) {
+      stopifnot(requireNamespace("BayesX"))
       gpclibPermit()
       class(map) <- "bnd"
-      mapsp <- bnd2sp(map)
+      mapsp <- BayesX::bnd2sp(map)
       ob <- unionSpatialPolygons(mapsp, rep(1L, length = length(mapsp)), avoidGEOS  = TRUE)
 
       nob <- length(slot(slot(ob, "polygons")[[1]], "Polygons"))

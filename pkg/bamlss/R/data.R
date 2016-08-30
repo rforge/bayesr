@@ -24,6 +24,7 @@ save_data <- function(..., file, envir = parent.frame())
 ## Munich rent index.
 data_MunichRent <- function(dir = NULL)
 {
+  stopifnot(requireNamespace("BayesX"))
   if(is.null(dir))
     dir <- "~/svn/bayesr/pkg/bamlss/data"
   dir <- path.expand(dir)
@@ -52,7 +53,7 @@ data_MunichRent <- function(dir = NULL)
   save_data(rent99, file = file.path(dir, "rent99.rda"), envir = nenv)
 
   dpath <- "http://www.stat.uni-muenchen.de/~kneib/regressionsbuch/download/muenchen.bnd"
-  MunichBnd <- read.bnd(dpath)
+  MunichBnd <- BayesX::read.bnd(dpath)
   nm <- names(MunichBnd)
   MunichBnd <- MunichBnd[nm[order(as.integer(nm))]]
   attr(MunichBnd, "asp") <- 1.1
@@ -96,6 +97,7 @@ data_Patent <- function(dir = NULL)
 ## Map of Germany.
 data_Germany <- function(dir = NULL)
 {
+  stopifnot(requireNamespace("BayesX"))
   if(is.null(dir))
     dir <- "~/svn/bayesr/pkg/bamlss/data"
   dir <- path.expand(dir)
@@ -109,7 +111,7 @@ data_Germany <- function(dir = NULL)
   g <- readShapePoly(file.path(tf, "germany", "DEU_adm3.shp"))
   rn <- as.character(d$NAME_3)
   Encoding(rn) <- "latin1"
-  GermanyBnd <- sp2bnd(g, regionNames = rn)
+  GermanyBnd <- BayesX::sp2bnd(g, regionNames = rn)
   d <- slot(g, "data")
   d <- data.frame("name" = as.character(d$NAME_3), "id" = as.character(d$ID_3),
     stringsAsFactors = FALSE)
