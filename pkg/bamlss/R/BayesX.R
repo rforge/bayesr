@@ -89,7 +89,12 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   }
 
   is.user <- function(x) {
-    inherits(x, "userdefined.smooth.spec") | inherits(x, "tensorX.smooth") | inherits(x, "userdefined.smooth") | inherits(x, "tensor.smooth")
+    iu <- inherits(x, "userdefined.smooth.spec") | inherits(x, "tensorX.smooth") | inherits(x, "userdefined.smooth") | inherits(x, "tensor.smooth")
+    if(!is.null(x$sx.construct))
+      iu <- FALSE
+    if(is.null(x$sx.construct) & !iu)
+      iu <- TRUE
+    return(iu)
   }
 
   is.tx <- function(x) {
