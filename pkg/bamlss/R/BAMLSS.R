@@ -3861,8 +3861,8 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
 
     if(which == "effects") {
       if(is.null(x$results)) {
-        plot(results.bamlss.default(x), model = model, term = term, ...)
-      } else plot(x$results, model = model, term = term, spar = spar, ...)
+        plot(results.bamlss.default(x), model = model, term = term, ask = ask, ...)
+      } else plot(x$results, model = model, term = term, spar = spar, ask = ask, ...)
     }
 
     if(which == "boost.summary") {
@@ -3876,7 +3876,7 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
 
 
 plot.bamlss.results <- function(x, model = NULL, term = NULL,
-  ask = FALSE, scale = 1, spar = TRUE, ...)
+  ask = dev.interactive(), scale = 1, spar = TRUE, ...)
 {
   args <- list(...)
   cx <- class(x)
