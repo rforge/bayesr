@@ -1,5 +1,8 @@
 \name{smooth.construct}
 \alias{smooth.construct}
+\alias{smooth.construct.bamlss.frame}
+\alias{smooth.construct.bamlss.formula}
+\alias{smooth.construct.bamlss.terms}
 
 \title{Constructor Functions for Smooth Terms in BAMLSS}
 
@@ -9,15 +12,30 @@
   on the setup of BAMLSS.}
 
 \usage{
+## Function as in package mgcv
+## but with additional dots argument.
 smooth.construct(object, data, knots, ...)
+
+## For 'bamlss.frame's.
+\method{smooth.construct}{bamlss.frame}(object, data = NULL, knots = NULL,
+  model = NULL, drop = TRUE, ...)
+
+\method{smooth.construct}{bamlss.formula}(object, data = NULL, knots = NULL,
+  model = NULL, drop = TRUE, ...)
+
+\method{smooth.construct}{bamlss.terms}(object, data = NULL, knots = NULL,
+  model = NULL, drop = TRUE, ...)
 }
 
 \arguments{
-  \item{object}{Either a smooth specifiaction object, or object of class \code{"bamlss"} or
-    \code{"bamlss.frame"}. For smooth specification objects, see function
-    \code{\link[mgcv]{smooth.construct}}}
-  \item{data}{A data frame or list, see also see function \code{\link[mgcv]{smooth.construct}}}
-  \item{knots}{See function \code{\link[mgcv]{smooth.construct}}}
+  \item{object}{Either a smooth specifiaction object, or object of class \code{"bamlss"},
+    \code{"bamlss.frame"}, \code{"bamlss.formula"} or \code{"bamlss.terms"}. For smooth
+    specification objects, see function \code{\link[mgcv]{smooth.construct}}.}
+  \item{data}{A data frame or list, see also see function \code{\link[mgcv]{smooth.construct}}.}
+  \item{knots}{See function \code{\link[mgcv]{smooth.construct}}.}
+  \item{model}{Character, specifies for which model parameter the smooth constructs should be
+    created.}
+  \item{drop}{If there is only one model parameter the returned named list is simplified.}
   \item{\dots}{Arguments passed to the smooth term constructor functions.}
 }
 
@@ -28,7 +46,8 @@ see function \code{\link{bamlss.frame}} for more details.
 }
 
 \seealso{
-  \code{\link{bamlss.frame}}, \code{\link{bamlss}}, \code{\link[mgcv]{smooth.construct}}.
+  \code{\link{bamlss.frame}}, \code{\link{bamlss.formula}},
+  \code{\link{bamlss}}, \code{\link[mgcv]{smooth.construct}}.
 }
 
 

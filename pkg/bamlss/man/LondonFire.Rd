@@ -14,7 +14,7 @@
   object \code{LondonFStations}.
 }
 
-\usage{data("London")}
+\usage{data("LondonFire")}
 
 \format{
 The \code{LondonFire} data contains the following variables:
@@ -41,7 +41,7 @@ The \code{LondonFire} data contains the following variables:
 
   Taylor BM (2016). Spatial Modelling of Emergency Service Response Times.
     \emph{Journal of the Royal Statistical Society}: Series A (Statistics in Society),
-    pp. n/a–n/a. URL \url{http://dx.doi.org/10.1111/rssa.12192}.
+    pp. n/a-n/a. URL \url{http://dx.doi.org/10.1111/rssa.12192}.
 }
 
 \examples{

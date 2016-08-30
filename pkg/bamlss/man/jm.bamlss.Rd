@@ -1,4 +1,5 @@
 \name{jm.bamlss}
+\alias{jm.bamlss}
 \alias{jm.mode}
 \alias{jm.mcmc}
 
@@ -15,24 +16,24 @@
 }
 
 \usage{
+## JM family object:
+jm.bamlss(...)
 
-jm.bamlss(formula, data = NULL, timevar=NULL, idvar = NULL, 
-          start = NULL, knots = NULL, weights = NULL,
-          offset = NULL, cores = NULL, combine = TRUE, ...)
-          
-jm.mode(x, y, weights, offset, criterion = c("AICc", "BIC", "AIC"), 
-        maxit = c(100, 1), nu = c("lambda" = 0.1, "gamma" = 0.1, 
-        "mu" = 0.1, "sigma" = 0.1, "alpha" = 0.1, "dalpha" = 0.1),
-        update.nu = TRUE, eps = 0.0001, alpha.eps = 0.001,
-        ic.eps = 1e-08, nback = 40, verbose = TRUE,
-        digits = 4, ...)
+## Posterior mode optimizing engine:      
+jm.mode(x, y, weights, offset,
+  criterion = c("AICc", "BIC", "AIC"), 
+  maxit = c(100, 1), nu = c("lambda" = 0.1, "gamma" = 0.1, 
+    "mu" = 0.1, "sigma" = 0.1, "alpha" = 0.1, "dalpha" = 0.1),
+  update.nu = TRUE, eps = 0.0001, alpha.eps = 0.001,
+  ic.eps = 1e-08, nback = 40, verbose = TRUE,
+  digits = 4, ...)
 
+## Sampler function:
 jm.mcmc(x, y, family, start, jm.start = NULL,
-        weights, offset, n.iter = 1200, burnin = 200,
-        thin = 1, verbose = TRUE, digits = 4,
-        step = 20, ...)
+  weights, offset, n.iter = 1200, burnin = 200,
+  thin = 1, verbose = TRUE, digits = 4,
+  step = 20, ...)
 }
-
 
 \arguments{
   \item{formula}{list of formulas where each list entry specifies the details of one predictor in
@@ -58,7 +59,8 @@ jm.mcmc(x, y, family, start, jm.start = NULL,
     package.}
   \item{combine}{If samples are computed on multiple cores, should the samples be combined into
     one bin \code{\link[coda]{mcmc}} matrix?}
-  \item{\dots}{Arguments passed to the functions as \code{jm.transform} and \code{jm.mode}, \code{jm.mcmc}. For further options in the bamlss call refer to \code{\link{bamlss}}.}
+  \item{\dots}{Arguments passed to the functions \code{jm.mode} and \code{jm.mcmc}.
+    For further options in the bamlss call refer to \code{\link{bamlss}}.}
   \item{x}{The \code{x} list, as returned from function
     \code{\link{bamlss.frame}} and transformed by function \code{jm.transform},
     holding all model matrices and other information that is used for
@@ -90,8 +92,6 @@ jm.mcmc(x, y, family, start, jm.start = NULL,
   \item{step}{How many times should algorithm runtime information be printed, divides \code{n.iter}.}
 }
 
-
-
 \details{
 We refer to the paper of Koehler, Umlauf, and Greven (2016) for details on the flexible additive joint model. In short, we model the hazard of subject \eqn{i} an event at time \eqn{t} as 
 \deqn{h_{i}(t)= \exp [\eta_{\lambda i}(t)+
@@ -103,7 +103,6 @@ Each predictor \eqn{\eta_{ki}} is a structured additive predictor, i.e. a sum of
 We approximate integration in the survival part of the likelihood using trapezoidal rule. For posterior mode estimation 
 }
 
-
 \references{
   Koehler N, Umlauf N, Greven S (2016). Flexible Bayesian additive joint models with an application     to type 1 diabetes research. \emph{(submitted)}
   
@@ -111,42 +110,40 @@ We approximate integration in the survival part of the likelihood using trapezoi
     Scale and Shape (and Beyond). \emph{(to appear)}
 }
 
-
 \seealso{
-  \code{\link{bamlss}}, \code{\link{bamlss.frame}}
+  \code{\link{bamlss}}, \code{\link{bamlss.frame}}.
 }
 
 \examples{
-\dontrun{
-set.seed(123)
+\dontrun{set.seed(123)
 
 ## Simulate survival data
 # with random intercepts/slopes and a linear effect of time,
 # constant association alpha and no effect of the derivative
 d <- simJM(nsub = 200, long_setting = "linear", 
-           alpha_setting = "constant",
-           dalpha_setting = "zero", full = FALSE)
+  alpha_setting = "constant",
+  dalpha_setting = "zero", full = FALSE)
 
 ## Formula of the according joint model
-f <- list(Surv2(survtime, event, obs = y) ~ s(survtime, bs = "ps"),
-          gamma ~ s(x1, bs = "ps"),
-          mu ~ obstime + s(id, bs = "re") + 
-                s(id, obstime, bs = "re"),
-          sigma ~ 1,
-          alpha ~ 1,
-          dalpha ~ -1)
+f <- list(
+  Surv2(survtime, event, obs = y) ~ s(survtime, bs = "ps"),
+  gamma ~ s(x1, bs = "ps"),
+  mu ~ obstime + s(id, bs = "re") + 
+    s(id, obstime, bs = "re"),
+  sigma ~ 1,
+  alpha ~ 1,
+  dalpha ~ -1
+)
 
 ## Joint model estimation
 # jm.bamlss sets the default optimizer and sampler function.
 # First, posterior mode estimates are computed using function
 # jm.mode(), afterwards the sampler jm.mcmc() is started.
-b <- bamlss(f, data = d, family = "jm", timevar = "obstime", 
-            idvar = "id")
+b <- bamlss(f, data = d, family = "jm",
+  timevar = "obstime", idvar = "id")
 
 ## Plot estimated effects.
 plot(b)
-
-
 
 ## Simulate survival data
 # with functional random intercepts and a nonlinear effect 
@@ -158,26 +155,29 @@ d <- simJM(nsub = 200, full = FALSE)
 ## Formula of the according joint model
 # umber of knots for the smooth nonlinear effect of time
 klong <- 8
-f <- list(Surv2(survtime, event, obs = y) ~ s(survtime, bs = "ps"),
-          gamma ~ s(x1, bs = "ps"),
-          mu ~ ti(id, bs = "re") + 
-               ti(obstime, bs = "ps", k = klong) + 
-               ti(id, obstime, bs = c("re", "ps"), 
-                  k = c(nlevels(d$id), klong)) + 
-               s(x2, bs = "ps"),
-          sigma ~ 1,
-          alpha ~ s(survtime, bs = "ps"),
-          dalpha ~ -1)
+f <- list(
+  Surv2(survtime, event, obs = y) ~ s(survtime, bs = "ps"),
+  gamma ~ s(x1, bs = "ps"),
+  mu ~ ti(id, bs = "re") + 
+    ti(obstime, bs = "ps", k = klong) + 
+    ti(id, obstime, bs = c("re", "ps"), 
+      k = c(nlevels(d$id), klong)) + 
+    s(x2, bs = "ps"),
+  sigma ~ 1,
+  alpha ~ s(survtime, bs = "ps"),
+  dalpha ~ -1
+)
 
 ## Estimating posterior mode only using jm.mode()
-b_mode <- bamlss(f, data = d, family = "jm", timevar = "obstime", 
-                 idvar = "id", sampler = MVNORM)
+b_mode <- bamlss(f, data = d, family = "jm",
+  timevar = "obstime", idvar = "id", sampler = MVNORM)
 
 ## Estimating posterior means using jm.mcmc() 
 #  with starting values generated from posterior mode 
-b_mean <- bamlss(f, data = d, family = "jm", timevar = "obstime", 
-                 idvar = "id", optimizer = FALSE, 
-                 jm.start = parameters(b_mode))
+b_mean <- bamlss(f, data = d, family = "jm",
+  timevar = "obstime", idvar = "id", optimizer = FALSE,
+  jm.start = parameters(b_mode))
+
 plot(b_mean, model = "alpha")
 plot(b_mean, model = "alpha", which = samples)
 

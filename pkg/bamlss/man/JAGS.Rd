@@ -11,7 +11,10 @@
   This sampler function for BAMLSS is an interface to the JAGS library
   using package \code{\link[rjags]{rjags}}. The function basically interprets the
   \code{\link{bamlss.frame}} into BUGS code, similar to the \code{\link[mgcv]{jagam}} function of
-  package \code{\link[mgcv]{mgcv}}. Note that estimating BAMLSS with JAGS is not very efficient.
+  package \code{\link[mgcv]{mgcv}}. I.e., the function uses the random effects representation of
+  smooth terms, see the transformer function \code{\link{randomize}} to generate the BUGS code.
+
+  Note that estimating BAMLSS with JAGS is not very efficient.
   Also note that this function is more experimental and support is only provided for a small
   number of \code{\link{bamlss.family}} objects.
 
