@@ -185,6 +185,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   main <- if(is.null(family$main)) c(TRUE, rep(FALSE, length(x) - 1)) else family$main
   pcmd <- control$prg$predict
   control$prg$predict <- NULL
+  control$prg$quantile <- family$bayesx$quantile
 
   for(i in names(x)) {
     if(!all(c("fake.formula", "formula") %in% names(x[[i]]))) {

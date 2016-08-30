@@ -4,6 +4,7 @@
 \alias{sx}
 \alias{tx}
 \alias{get_BayesXsrc}
+\alias{quant.bamlss}
 
 \title{
   Markov Chain Monte Carlo for BAMLSS using \pkg{BayesX}
@@ -31,6 +32,9 @@ sx(x, z = NULL, bs = "ps", by = NA, ...)
 
 ## Special BayesX tensor product smooth term constructor.
 tx(..., k = NA, constraint = c("main", "both", "none"))
+
+## Family object for quantile regression with BayesX.
+quant.bamlss(prob = 0.5)
 
 ## Download the newest version of BayesXsrc.
 get_BayesXsrc(dir = NULL, install = TRUE)
@@ -77,6 +81,7 @@ get_BayesXsrc(dir = NULL, install = TRUE)
   \item{constraint}{Specifies the type of contraints that should be applied. \code{"main"}, both
     main effects should be removed; \code{"both"}, both main effects and varying effects should
     be removed; \code{"none"}, no constraint should be applied.}
+  \item{prob}{Numeric, specifies the quantile to be modeled, see the examples.}
   \item{install}{Should package \pkg{BayesXsrc} be installed?}
 }
 
@@ -163,6 +168,22 @@ if(require("BayesXsrc")) {
     data = d, optimizer = FALSE, sampler = BayesX)
 
   plot(b2)
+
+  ## Quantile regression.
+  b3_0.1 <- bamlss(num ~ s(x1) + s(x2) + s(x3) + tx(lon,lat),
+    data = d, optimizer = FALSE, sampler = BayesX,
+    family = gF(quant, prob = 0.1))
+
+  b3_0.9 <- bamlss(num ~ s(x1) + s(x2) + s(x3) + tx(lon,lat),
+    data = d, optimizer = FALSE, sampler = BayesX,
+    family = gF(quant, prob = 0.9))
+
+  ## Predict quantiles.
+  p_0.1 <- predict(b3_0.1, term = "s(x2)")
+  p_0.9 <- predict(b3_0.9, term = "s(x2)")
+
+  ## Plot.
+  plot2d(p_0.1 + p_0.9 ~ x2, data = d)
 }
 }
 }

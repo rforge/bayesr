@@ -96,6 +96,8 @@ export(
   "multinomial.bamlss",
   "mvnorm.bamlss",
   "poisson.bamlss",
+  "quant.bamlss",
+  "gF",
 
   ## extractor functions
   "DIC",

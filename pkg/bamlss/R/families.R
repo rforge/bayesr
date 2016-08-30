@@ -2062,15 +2062,14 @@ hurdleNB.bamlss <- function(...)
 
 
 ## http://stats.stackexchange.com/questions/17672/quantile-regression-in-jags
-quant.bamlss <- function(prob = 0.5, ...)
+quant.bamlss <- function(prob = 0.5)
 {
-  links <- c(mu = "identity")
   rval <- list(
     "family" = "quant",
-    "names" = "mu",
-    "links" = parse.links(links, c(mu = "identity"), ...),
+    "names" = "mean",
+    "links" = c("mean" = "identity"),
     "bayesx" = list(
-      "mu" = c("quantreg", "mean"),
+      "mean" = c("quantreg", "mean"),
       "quantile" = prob
     )
   )
