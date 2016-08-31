@@ -207,7 +207,7 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
 }
 
 \examples{
-## Simulated data example illustrating
+\dontrun{## Simulated data example illustrating
 ## how to call the optimizer function.
 ## This is done internally within
 ## the setup of function bamlss().
@@ -222,7 +222,7 @@ b <- bamlss(f, data = d, family = "gaussian", sampler = FALSE)
 plot(b)
 summary(b)
 
-\dontrun{## Use of different updating function.
+## Use of different updating function.
 b <- bamlss(f, data = d, family = "gaussian",
   sampler = FALSE, update = bfit_lm)
 plot(b)

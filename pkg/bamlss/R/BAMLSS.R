@@ -5175,16 +5175,20 @@ grep2 <- function(pattern, x, ...) {
   sort(unique(i))
 }
 
-samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE,
+samples <- function(object, ...)
+{
+  UseMethod("samples")
+}
+
+samples.bamlss <- samples.bamlss.frame <- function(object, model = NULL, term = NULL, combine = TRUE, drop = TRUE,
   burnin = NULL, thin = NULL, ...)
 {
-  if(!inherits(x, "bamlss") & !inherits(x, "bamlss.frame"))
-    stop("x is not a 'bamlss' object!")
-  if(is.null(x$samples))
+  if(!inherits(object, "bamlss") & !inherits(object, "bamlss.frame"))
+    stop("object is not a 'bamlss' object!")
+  if(is.null(object$samples))
     stop("no samples to extract!")
-  tx <- terms(x, drop = FALSE)
-  x <- x$samples
-
+  tx <- terms(object, drop = FALSE)
+  x <- object$samples
   x <- process.chains(x, combine, drop = FALSE)
 
   snames <- colnames(x[[1]])
@@ -5251,7 +5255,6 @@ samples <- function(x, model = NULL, term = NULL, combine = TRUE, drop = TRUE,
         start = if(!is.null(burnin)) burnin else 1, thin = thin)
     }
   }
-
 
   if(drop & (length(x) < 2))
     x <- x[[1]]

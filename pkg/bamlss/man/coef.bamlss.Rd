@@ -12,7 +12,8 @@
 
 \usage{
 \method{coef}{bamlss}(object, model = NULL, term = NULL,
-  FUN = NULL, parameters = NULL, pterms = TRUE, sterms = TRUE,
+  FUN = NULL, parameters = NULL,
+  pterms = TRUE, sterms = TRUE,
   hyper.parameters = TRUE, list = FALSE,
   full.names = TRUE, ...)
 }
