@@ -2750,20 +2750,22 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   }
   if(length(i <- grep("s.", ec))) {
     for(j in enames2[i]) {
-      sn <- snames[grep2(paste(id, "s", j, sep = "."), snames, fixed = TRUE)]
-      if(!inherits(x[[j]], "no.mgcv") & !inherits(x[[j]], "special")) {
-        X <- PredictMat(x[[j]], data)
-        eta <- eta + fitted_matrix(X, samps[, sn, drop = FALSE])
-      } else {
-        if(is.null(x[[j]]$PredictMat)) {
-          X <- PredictMat(x[[j]], data)
+      for(jj in grep(j, names(x), fixed = TRUE, value = TRUE)) {
+        sn <- snames[grep2(paste(id, "s", jj, sep = "."), snames, fixed = TRUE)]
+        if(!inherits(x[[jj]], "no.mgcv") & !inherits(x[[jj]], "special")) {
+          X <- PredictMat(x[[jj]], data)
+          eta <- eta + fitted_matrix(X, samps[, sn, drop = FALSE])
         } else {
-          X <- x[[j]]$PredictMat(x[[j]], data)
+          if(is.null(x[[jj]]$PredictMat)) {
+            X <- PredictMat(x[[jj]], data)
+          } else {
+            X <- x[[jj]]$PredictMat(x[[jj]], data)
+          }
+          fit <- apply(samps[, sn, drop = FALSE], 1, function(b) {
+            x[[jj]]$fit.fun(X, b)
+          })
+          eta <- eta + fit
         }
-        fit <- apply(samps[, sn, drop = FALSE], 1, function(b) {
-          x[[j]]$fit.fun(X, b)
-        })
-        eta <- eta + fit
       }
     }
   }
