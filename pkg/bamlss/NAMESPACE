@@ -145,6 +145,7 @@ export(
 S3method("plot", "bamlss")
 S3method("plot", "bnd")
 S3method("plot", "bamlss.results")
+S3method("plot", "bamlss.residuals")
 S3method("summary", "bamlss")
 S3method("family", "bamlss")
 S3method("family", "bamlss.frame")
