@@ -255,10 +255,15 @@ jm.transform <- function(x, y, data, terms, knots, formula, family, jm.start = N
   ## Assign time grid predict functions.
   for(i in seq_along(ntd)) {
     if(has_pterms(x[[ntd[i]]]$terms)) {
-      x[[ntd[i]]]$smooth.construct$model.matrix <- param_time_transform2(x[[ntd[i]]]$smooth.construct$model.matrix,
-        drop.terms.bamlss(x[[ntd[i]]]$terms, sterms = FALSE, keep.response = FALSE), data, grid, yname,
-        if(ntd[i] != "mu" & ntd[i] != "dmu") timevar else timevar_mu, take, derivMat = (ntd[i] == "dmu"), 
-        timevar2 = timevar_mu, idvar = idvar)
+      if(ntd[i]=="lambda"){
+        x[[ntd[i]]]$smooth.construct$model.matrix <- param_time_transform2(x[[ntd[i]]]$smooth.construct$model.matrix,
+             drop.terms.bamlss(x[[ntd[i]]]$terms, sterms = FALSE, keep.response = FALSE), data, grid, yname,
+             timevar_mu, take, derivMat = (ntd[i] == "dmu"), timevar2 = timevar_mu, idvar = idvar)
+      } else{
+        x[[ntd[i]]]$smooth.construct$model.matrix <- param_time_transform(x[[ntd[i]]]$smooth.construct$model.matrix,
+          drop.terms.bamlss(x[[ntd[i]]]$terms, sterms = FALSE, keep.response = FALSE), data, grid, yname,
+          if(ntd[i] != "mu" & ntd[i] != "dmu") timevar else timevar_mu, take, derivMat = (ntd[i] == "dmu"))
+      }
     }
     if(length(x[[ntd[i]]]$smooth.construct)) {
       for(j in names(x[[ntd[i]]]$smooth.construct)) {
