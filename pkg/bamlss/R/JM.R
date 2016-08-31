@@ -2933,6 +2933,7 @@ param_time_transform2 <- function (x, formula, data, grid, yname, timevar, take,
       }
     }
   }
+  formula <- update(formula, . ~ . - 1)
   X <- model.matrix(formula, data = X)
   gdim <- c(length(grid), length(grid[[1]]))
   x$XT <- extract_XT(X, gdim[1], gdim[2])
