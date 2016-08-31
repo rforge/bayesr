@@ -5330,11 +5330,11 @@ confint.bamlss <- function(object, parm, level = 0.95, model = NULL,
 ## Extract model coefficients.
 coef.bamlss <- function(object, model = NULL, term = NULL,
   FUN = NULL, parameters = NULL, pterms = TRUE, sterms = TRUE,
-  list = FALSE, full.names = TRUE, ...)
+  hyper.parameters = TRUE, list = FALSE, full.names = TRUE, ...)
 {
   .coef.bamlss(object, model = model, term = term,
     FUN = FUN, parameters = parameters, pterms = pterms, sterms = sterms,
-    s.variances = TRUE, hyper.parameters = TRUE,
+    s.variances = TRUE, hyper.parameters = hyper.parameters,
     summary = FALSE, list = list, full.names = full.names, ...)
 }
 
