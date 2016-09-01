@@ -1,5 +1,7 @@
 \name{model.matrix.bamlss.frame}
 \alias{model.matrix.bamlss.frame}
+\alias{model.matrix.bamlss.formula}
+\alias{model.matrix.bamlss.terms}
 
 \title{
 Construct/Extract BAMLSS Design Matrices
@@ -12,10 +14,10 @@ Construct/Extract BAMLSS Design Matrices
 
 \usage{
 \method{model.matrix}{bamlss.frame}(object, data = NULL, model = NULL,
-  drop = TRUE, ...)
+  drop = TRUE, scale.x = FALSE, ...)
 
 \method{model.matrix}{bamlss.formula}(object, data = NULL, model = NULL,
-  drop = TRUE, ...)
+  drop = TRUE, scale.x = FALSE, ...)
 
 \method{model.matrix}{bamlss.terms}(object, data = NULL, model = NULL,
   drop = TRUE, scale.x = FALSE, ...)
@@ -23,7 +25,7 @@ Construct/Extract BAMLSS Design Matrices
 
 \arguments{
   \item{object}{A \code{\link{bamlss.frame}}, \code{\link{bamlss.formula}} or
-    \code{\link{bamlss.terms}} object.}
+    \code{\link{terms.bamlss}} object.}
   \item{data}{A data frame or list.}
   \item{model}{Character or integer, specifies the model for which design matrices should be returned.}
   \item{drop}{If model matrices for only one \code{model} are returned, the list structure is dropped.}

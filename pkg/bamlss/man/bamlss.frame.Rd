@@ -84,7 +84,7 @@ bamlss.frame(formula, data = NULL, family = "gaussian",
   \item{model.frame}{The \code{\link{model.frame}} used to compute all design matrices.}
   \item{formula}{The \code{\link{bamlss.formula}}.}
   \item{family}{The \code{\link{bamlss.family}} object.}
-  \item{terms}{The \code{\link{bamlss.terms}} object.}
+  \item{terms}{The \code{\link{terms.bamlss}} object.}
   \item{x}{A named list, the elements correspond to the parameters that are specified
     within the \code{\link{bamlss.family}} object. For each parameter the corresponding
     \code{formula}, a \code{fake.formula} only holding the covariate names, a \code{\link{terms}}
