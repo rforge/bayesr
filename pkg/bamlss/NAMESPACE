@@ -175,4 +175,6 @@ S3method("terms", "bamlss.frame")
 S3method("terms", "bamlss.formula")
 S3method("samples", "bamlss")
 S3method("samples", "bamlss.frame")
+S3method("model.frame", "bamlss")
+S3method("model.frame", "bamlss.frame")
 

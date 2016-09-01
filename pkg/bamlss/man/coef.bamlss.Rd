@@ -1,13 +1,17 @@
 \name{coef.bamlss}
 \alias{coef.bamlss}
+\alias{confint.bamlss}
 
 \title{
   Extract BAMLSS Coefficients
 }
 
 \description{
-  Method to extract coefficients of fitted \code{\link{bamlss}} objects, either coefficients
+  Methods to extract coefficients of fitted \code{\link{bamlss}} objects, either coefficients
   returned from optimizer functions, or samples from a sampler functions.
+
+  Method \code{confint.bamlss()} produces credible intervals or parameter samples
+  using quantiles.
 }
 
 \usage{
@@ -16,6 +20,10 @@
   pterms = TRUE, sterms = TRUE,
   hyper.parameters = TRUE, list = FALSE,
   full.names = TRUE, ...)
+
+\method{confint}{bamlss}(object, parm, level = 0.95,
+  model = NULL, pterms = TRUE, sterms = FALSE,
+  full.names = FALSE, hyper.parameters = FALSE, ...)
 }
 
 \arguments{
@@ -32,6 +40,9 @@
   \item{list}{Should the returned object have a list structure for each distribution parameter?}
   \item{full.names}{Should full names be assigned, indicating whether a term is parametric "p" or
     smooth "s".}
+  \item{parm}{Character or integer. For which term should coefficients intervals be extracted?}
+  \item{level}{The credible level which defines the lower and upper quantiles that should
+    be computed from the samples.}
   \item{\dots}{Arguments to be passed to \code{FUN} and function \code{\link{samples}}.}
 }
 
@@ -81,6 +92,9 @@ coef(b, sterms = FALSE, hyper.parameters = FALSE)
 ## For sigma.
 coef(b, model = "sigma", sterms = FALSE,
   hyper.parameters = FALSE)
+
+## 95 perc. credible interval based on samples.
+confint(b)
 }
 }
 
