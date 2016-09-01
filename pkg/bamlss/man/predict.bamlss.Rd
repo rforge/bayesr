@@ -9,7 +9,7 @@
   Takes a fitted \code{\link{bamlss}} object and computes predictions. Predictions can be based on
   estimated parameters of optimizer functions or on samples returned from sampler functions.
   It is possible to compute predictions on multiple cores using the
-  \code{\link[parallel]{parallel}} and to chunk predeictions to save computation time and memory
+  \code{\link[parallel]{parallel}} and to chunk predictions to save computation time and memory
   storage. Predictions can be computed for full distributional parameters or specific model
   terms. If a \code{link{bamlss}} model was fitted on multiple cores, i.e., the samples
   are provided as \code{link{mcmc.list}} where each list entry represents samples from one
@@ -33,7 +33,7 @@
     on argument \code{term}, only covariates that are needed by the
     corresponding model terms need to be supplied.}
   \item{model}{Character or integer, specifies the model for which predictions should be computed.}
-  \item{term}{Character or integer, specifies the model terms for which precitions are required.
+  \item{term}{Character or integer, specifies the model terms for which predictions are required.
     Note that, e.g., \code{term = c("s(x1)", "x2")} will compute the combined prediction
     \code{s(x1) + x2}.}
   \item{intercept}{Should the intercept be included?}
@@ -52,10 +52,10 @@
     be useful to compute predictions only based on \code{nsamps} samples, i.e., \code{nsamps}
     specifies the number of samples which are extracted on equidistant intervals.}
   \item{verbose}{If predictions are chunked, information on the prediction process can be printed.}
-  \item{drop}{If predictions for only one \code{model} are retuned, the list structure is dropped.}
+  \item{drop}{If predictions for only one \code{model} are returned, the list structure is dropped.}
   \item{cores}{Specifies the number of cores that should be used for prediction. Note that
     this functionality is based on the \code{\link[parallel]{parallel}} package.}
-  \item{chunks}{Should computations be splitted into \code{chunks}? Prediction is then processed
+  \item{chunks}{Should computations be split into \code{chunks}? Prediction is then processed
     sequentially.}
   \item{\dots}{Arguments passed to prediction functions that are part of a \code{\link{bamlss.family}}
     object, i.e., the objects has a \code{$predict()} function that should be used instead.}

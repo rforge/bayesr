@@ -72,5 +72,7 @@ sc <- smooth.construct(f, data = d)
 str(sc)
 }
 
-\keyword{models} \keyword{smooth} \keyword{regression}
+\keyword{models}
+\keyword{smooth}
+\keyword{regression}
 

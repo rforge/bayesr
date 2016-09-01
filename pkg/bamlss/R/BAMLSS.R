@@ -341,7 +341,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
     }
   } else formula <- assign.design(formula)
 
-  if(!all(c("formula", "fake.formula") %in% names(formula))) {
+  if((!all(c("formula", "fake.formula") %in% names(formula))) & smooth.construct) {
     for(i in seq_along(formula)) {
       if(!all(c("formula", "fake.formula") %in% names(formula[[i]]))) {
         for(j in seq_along(formula[[i]])) {
@@ -802,15 +802,27 @@ extract.design.construct <- function(object, data = NULL,
     return(NULL)
   mostattributes(object) <- NULL
   attr(object, "orig.formula") <- NULL
+  if(what == "model.matrix") {
+    if(is.list(object)) {
+      for(j in seq_along(object)) {
+        if(is.list(object[[j]])) {
+          if((length(object[[j]]) < 2) & (names(object[[j]]) == "model.matrix")) {
+            object[[j]] <- object[[j]]$model.matrix
+          }
+        }
+      }
+    }
+  }
   return(object)
 }
 
 
 ## Model matrix extractor.
-model.matrix.bamlss.frame <- model.matrix.bamlss.formula <- model.matrix.bamlss.terms <- function(object, data = NULL, model = NULL, drop = TRUE, ...)
+model.matrix.bamlss.frame <- model.matrix.bamlss.formula <- model.matrix.bamlss.terms <- function(object, data = NULL, model = NULL, drop = TRUE, scale.x = FALSE, ...)
 {
   extract.design.construct(object, data = data,
-    knots = NULL, model = model, drop = drop, what = "model.matrix")
+    knots = NULL, model = model, drop = drop, what = "model.matrix",
+    scale.x = scale.x)
 }
 
 
