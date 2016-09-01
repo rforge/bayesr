@@ -147,7 +147,7 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
   usual IWLS updating the fitted values are computed by \code{X \%*\% b}. For special terms like
   nonlinear growth curves this may not be the case, see the example below. The fitting functions
   are assigned by \code{\link{bamlss.engine.setup}}, unless the function is already provided
-  after calling the constructor function \code{\link[mgcv]{smooth.consttruct}} or
+  after calling the constructor function \code{\link[mgcv]{smooth.construct}} or
   \code{\link[mgcv]{smoothCon}}. Note that the dots argument is usually not needed by the user.
 
   The default updating function is \code{bfit_iwls()}. Functions \code{bfit_iwls_Matrix()} and
