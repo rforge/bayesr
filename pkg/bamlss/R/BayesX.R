@@ -129,7 +129,11 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         if(!is.null(attr(sxc, "write")))
           prgex <- c(prgex, attr(sxc, "write")(dir))
         rhs <- c(rhs, sxc)
-        tl <- x$smooth.construct[[j]]$term
+        tl <- if(is.null(x$smooth.construct[[j]]$tx.term)) {
+          x$smooth.construct[[j]]$term
+        } else {
+          x$smooth.construct[[j]]$tx.term
+        }
         if((x$smooth.construct[[j]]$by != "NA") & is.user(x$smooth.construct[[j]]))
           tl <- c(tl, x$smooth.construct[[j]]$by)
         if((length(tl) > 1) & is.user(x$smooth.construct[[j]]) & !is.tx(x$smooth.construct[[j]]))
@@ -289,7 +293,11 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       }
       if(!is.null(x[[i]]$smooth.construct)) {
         for(j in seq_along(x[[i]]$smooth.construct)) {
-          tl <- x[[i]]$smooth.construct[[j]]$term
+          tl <- if(is.null(x[[i]]$smooth.construct[[j]]$tx.term)) {
+            x[[i]]$smooth.construct[[j]]$term
+          } else {
+            x[[i]]$smooth.construct[[j]]$tx.term
+          }
           if((x[[i]]$smooth.construct[[j]]$by != "NA") & is.user(x[[i]]$smooth.construct[[j]]))
             tl <- c(tl, x[[i]]$smooth.construct[[j]]$by)
           if((length(tl) > 1) & is.user(x[[i]]$smooth.construct[[j]]) & !is.tx(x[[i]]$smooth.construct[[j]]))
@@ -544,7 +552,7 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
     id <- "t"
   id <- paste(rmf(id), collapse = "_")
   term <- if(length(object$term) > 1) {
-    paste(object$term, collapse = if(!is.tx) "" else "*")
+    paste(if(is.null(object$tx.term)) object$term else object$tx.term, collapse = if(!is.tx) "" else "*")
   } else object$term
   by <- if(object$by != "NA") object$by else NULL
   if(!is.null(by)) {
@@ -1037,6 +1045,9 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
         stop("rank problems with constraint matrix!")
       object$C <- t(A)
     }
+    object$tx.term <- unlist(lapply(object$margin, function(x) {
+      paste(x$term, collapse = "")
+    }))
   }
 
   if(object$by != "NA") {
