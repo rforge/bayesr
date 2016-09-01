@@ -115,8 +115,11 @@ plot2d(p ~ x2, data = d, col.lines = rgb(0.1, 0.1, 0.1, alpha = 0.1))
 ## Or using specific combinations of terms.
 p <- predict(b, model = "mu", term = c("s(x2)", "te(lon,lat)"),
   intercept = FALSE, FUN = function(x) { x })
+head(p)
 
 ## Prediction using new data.
+## Only need x3 data when predicting
+## for s(x3).
 nd <- data.frame("x3" = seq(0, 1, length = 100))
 nd <- cbind(nd, predict(b, newdata = nd, term = "s(x3)"))
 print(head(nd))
