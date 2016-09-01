@@ -6,7 +6,7 @@
 }
 
 \description{
-  This sampler function for BAMLSS uses estimated \code{\link{parameters}} and the hessian
+  This sampler function for BAMLSS uses estimated \code{\link{parameters}} and the Hessian
   information to create samples from a multivariate normal distribution. Note that smoothing
   variance uncertainty is not accounted for, therefore, the resulting credible intervals
   are most likely too narrow. 

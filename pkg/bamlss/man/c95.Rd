@@ -6,7 +6,7 @@
 }
 
 \description{
-  Small helper function that cumputes the 2.5\% and 97.5\% quantiles and the
+  Small helper function that computes the 2.5\% and 97.5\% quantiles and the
   mean of a vector. Useful for example when using function \code{\link{predict.bamlss}}.
 }
 

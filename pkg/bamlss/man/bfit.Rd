@@ -14,7 +14,7 @@
 
 \description{
   This optimizer function is a generic tool for fitting BAMLSS using a backfitting algorithm.
-  The backfitting procedure is based on iteratively reweighted least squares (IWLS) for finding
+  The backfitting procedure is based on iteratively weighted least squares (IWLS) for finding
   posterior mode estimates, however, the updating methods for model terms can be more general, see
   the details section. In addition, the default IWLS updating scheme implements optimum smoothing
   variance selection based on information criteria using a stepwise approach.
@@ -88,7 +88,7 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
 }
 
 \details{
-  This algorithm is based on iteratively reweighted least squares (IWLS) for BAMLSS, i.e.,
+  This algorithm is based on iteratively weighted least squares (IWLS) for BAMLSS, i.e.,
   a Newton-Raphson or Fisher scoring algorithm is applied, similar to
   Rigby~and~Stasinopoulos~(2005). The algorithm utilizes the chain rule for computing derivatives of
   the log-posterior w.r.t. regression coefficients, therefore, to compute the working observations
@@ -181,7 +181,7 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
   \item{fitted.values}{The resulting fitted values after updating.}
   \item{parameters}{The resulting named numeric vector of updated model term parameters.
     Coefficients should be named with \code{"b1"}, \dots, \code{"bk"}, where \code{k} is
-    the total number of cofficients. Smoothing variances should be named with
+    the total number of coefficients. Smoothing variances should be named with
     \code{"tau21"}, \dots, \code{"tau2m"}, where \code{m} is the total number of smoothing
     variances assigned to the model term.}
   \item{edf}{The equivalent degrees of freedom used to produce the fitted values.}

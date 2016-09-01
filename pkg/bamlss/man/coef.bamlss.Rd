@@ -22,15 +22,15 @@
   \item{object}{An object of class \code{"bamlss"}}
   \item{model}{Character or integer. For which model should coefficients be extracted?}
   \item{term}{Character or integer. For which term should coefficients be extracted?}
-  \item{FUN}{A function that is applied on the paramater samples.}
+  \item{FUN}{A function that is applied on the parameter samples.}
   \item{parameters}{If is set to \code{TRUE}, additionally adds estimated parameters
     returned from an optimizer function (if available).}
-  \item{pterms}{Should coefficients of parameteric terms be included?}
+  \item{pterms}{Should coefficients of parametric terms be included?}
   \item{sterms}{Should coefficients of smooths terms be included?}
-  \item{hyper.parameters}{For smooth terms, should hyper parameters such as smooting variances
+  \item{hyper.parameters}{For smooth terms, should hyper parameters such as smoothing variances
     be included?}
   \item{list}{Should the returned object have a list structure for each distribution parameter?}
-  \item{full.names}{Should full names be assigned, indicating wether a term is paramateric "p" or
+  \item{full.names}{Should full names be assigned, indicating whether a term is parametric "p" or
     smooth "s".}
   \item{\dots}{Arguments to be passed to \code{FUN} and function \code{\link{samples}}.}
 }

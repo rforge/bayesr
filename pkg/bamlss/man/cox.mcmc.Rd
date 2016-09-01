@@ -30,7 +30,7 @@ cox.mcmc(x, y, family, start, weights, offset,
   \item{offset}{Can be used to supply model offsets for use in fitting,
     returned from function \code{\link{bamlss.frame}}.}
   \item{n.iter}{Sets the number of MCMC iterations.}
-  \item{burnin}{Sets the burnin phase of the sampler, i.e., the number of starting samples that
+  \item{burnin}{Sets the burn-in phase of the sampler, i.e., the number of starting samples that
     should be removed.}
   \item{thin}{Defines the thinning parameter for MCMC simulation. E.g., \code{thin = 10} means,
     that only every 10th sampled parameter will be stored.}

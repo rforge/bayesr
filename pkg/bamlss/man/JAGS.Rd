@@ -53,7 +53,7 @@ BUGSmodel(x, family, is.stan = FALSE, reference = NULL, ...)
   \item{n.iter}{Sets the number of MCMC iterations.}
   \item{thin}{Defines the thinning parameter for MCMC simulation. E.g., \code{thin = 10} means,
     that only every 10th sampled parameter will be stored.}
-  \item{burnin}{Sets the burnin phase of the sampler, i.e., the number of starting samples that
+  \item{burnin}{Sets the burn-in phase of the sampler, i.e., the number of starting samples that
     should be removed.}
   \item{seed}{Sets the seed.}
   \item{verbose}{Print information during runtime of the algorithm.}
@@ -88,7 +88,7 @@ BUGSmodel(x, family, is.stan = FALSE, reference = NULL, ...)
       Function \code{BUGSeta()} is used per default.
     \item \code{"model"}. The function that merges all single predictor BUGS model code and data.
       The default function is \code{BUGSmodel()}.
-    \item \code{"reparam"}. A named vector of character strings that specify a reparametrization.
+    \item \code{"reparam"}. A named vector of character strings that specify a re-parametrization.
   }
   See also the example code of \code{\link{family.bamlss}}.
 }

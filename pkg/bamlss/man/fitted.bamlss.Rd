@@ -19,13 +19,13 @@
 \arguments{
   \item{object}{An object of class \code{"bamlss"}}
   \item{model}{Character or integer, specifies the model for which fitted values should be computed.}
-  \item{term}{Character or integer, specifies the model terms for which precitions are required.
+  \item{term}{Character or integer, specifies the model terms for which fitted values are required.
     Note that if \code{samples = TRUE}, e.g., \code{term = c("s(x1)", "x2")} will compute the
     combined fitted values \code{s(x1) + x2}.}
   \item{type}{If \code{type = "link"} the linear predictor of the corresponding \code{model}
     is returned. If \code{type = "parameter"} fitted values on the distributional parameter scale
     are returned.}
-  \item{samples}{Should predictions be computed using samples of paramaters or estimated parameters
+  \item{samples}{Should fitted values be computed using samples of parameters or estimated parameters
     as returned from optimizer functions (e.g., function \code{\link{bfit}} returns
     \code{"fitted.values"}). The former results in a call to \code{\link{predict.bamlss}}, the
     latter simply extracts the \code{"fitted.values"} of the \code{\link{bamlss}} object and

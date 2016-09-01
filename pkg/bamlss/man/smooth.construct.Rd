@@ -28,7 +28,7 @@ smooth.construct(object, data, knots, ...)
 }
 
 \arguments{
-  \item{object}{Either a smooth specifiaction object, or object of class \code{"bamlss"},
+  \item{object}{Either a smooth specification object, or object of class \code{"bamlss"},
     \code{"bamlss.frame"}, \code{"bamlss.formula"} or \code{"bamlss.terms"}. For smooth
     specification objects, see function \code{\link[mgcv]{smooth.construct}}.}
   \item{data}{A data frame or list, see also see function \code{\link[mgcv]{smooth.construct}}.}
@@ -49,7 +49,6 @@ see function \code{\link{bamlss.frame}} for more details.
   \code{\link{bamlss.frame}}, \code{\link{bamlss.formula}},
   \code{\link{bamlss}}, \code{\link[mgcv]{smooth.construct}}.
 }
-
 
 \examples{
 ## Generate some data.

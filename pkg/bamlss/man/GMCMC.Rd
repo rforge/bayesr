@@ -11,7 +11,7 @@
 
 \description{
   These functions provide a quite general infrastructure for sampling BAMLSS. The default
-  proposal function is based on iteratively reweighted least squares (IWLS), however,
+  proposal function is based on iteratively weighted least squares (IWLS), however,
   each model term may have a different updating function, see the details.
 }
 
@@ -44,7 +44,7 @@ GMCMC_slice(family, theta, id, eta, y, data, ...)
   \item{offset}{Can be used to supply model offsets for use in fitting,
     returned from function \code{\link{bamlss.frame}}.}
   \item{n.iter}{Sets the number of MCMC iterations.}
-  \item{burnin}{Sets the burnin phase of the sampler, i.e., the number of starting samples that
+  \item{burnin}{Sets the burn-in phase of the sampler, i.e., the number of starting samples that
     should be removed.}
   \item{thin}{Defines the thinning parameter for MCMC simulation. E.g., \code{thin = 10} means,
     that only every 10th sampled parameter will be stored.}
@@ -62,7 +62,7 @@ GMCMC_slice(family, theta, id, eta, y, data, ...)
     represents the parameters of the distribution, the second level the parameters of
     the model terms. E.g., using the \code{\link{gaussian.bamlss}} family object
     \code{theta[["mu"]][["s(x)"]]} extracts the current state of a model term \code{"s(x)"}
-    of the \code{"mu"} paramater. Extraction is done with the \code{id} argument.}
+    of the \code{"mu"} parameter. Extraction is done with the \code{id} argument.}
   \item{id}{The parameter identifier, a character vector of length 2. The first character
     specifies the current distributional parameter, the second the current model term.}
   \item{eta}{The current value of the predictors, provided as a named list, one list entry

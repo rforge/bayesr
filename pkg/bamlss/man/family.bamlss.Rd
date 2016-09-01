@@ -32,7 +32,6 @@ beta.bamlss(...)
 binomial.bamlss(...)
 cnorm.bamlss(...)
 cox.bamlss(...)
-jm.bamlss(...)
 gaussian.bamlss(...)
 gamma.bamlss(...)
 multinomial.bamlss(...)
@@ -72,7 +71,7 @@ poisson.bamlss(...)
   \code{par$sigma}. The dots argument is for passing special internally used objects, depending
   on the type of model this feature is usually not needed.
 
-  Similarly, for derivative based algorithms, e.g. using iteratively reweighted least squares
+  Similarly, for derivative based algorithms, e.g. using iteratively weighted least squares
   (IWLS, see function \code{\link{bfit}}, the family object holds derivative functions evaluating
   derivatives of the log-likelihood w.r.t. the linear predictors (or expectations of derivatives).
   For each parameter, these functions also hold the following arguments:
@@ -91,7 +90,7 @@ poisson.bamlss(...)
   structure is assumed. See, e.g., the code of function \code{gaussian.bamlss()}.
 
   Some model fitting engines can initialize the distributional parameters which oftentimes
-  leads to much faster convergence. The initialize functions are again organized witin a named list,
+  leads to much faster convergence. The initialize functions are again organized within a named list,
   one entry for each parameter, similar to the \code{score} and \code{hess} functions, e.g.,
   see the code of family object \code{gaussian.bamlss}.
 

@@ -60,12 +60,12 @@ plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   \item{interp}{Logical, should the values provided in argument \code{x} be interpolated to obtain
     a smooth colored map.}
   \item{grid}{Integer, defines the number of grid cells to be used for interpolation.}
-  \item{land.only}{If set to \code{TRUE}, only interpoltated pixels that cover land are drawn,
+  \item{land.only}{If set to \code{TRUE}, only interpolated pixels that cover land are drawn,
     see also function \code{\link[maps]{map.where}}.}
   \item{extrap}{Logical, should interpolations be computed outside the observation area
     (i.e., extrapolated)?}
   \item{outside}{Logical, should interpolated values outside the boundaries of the map be plotted.}
-  \item{type}{Character, which type of interpolation metjod should be used. The default is
+  \item{type}{Character, which type of interpolation method should be used. The default is
     \code{type = "akima"}, see function \code{\link[akima]{interp}}. The two other options are
     \code{type = "mba"}, which calls function \code{\link[MBA]{mba.surf}} of package \pkg{MBA}, or
     \code{type = "mgcv"}, which uses a spatial smoother withing package \pkg{mgcv} for interpolation.
@@ -75,7 +75,7 @@ plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   \item{k}{Integer, the number of basis functions to be used to compute the interpolated surface
     when \code{type = "mgcv"}.}
   \item{p.pch}{Numeric, the point size of the grid cells when using interpolation.}
-  \item{p.cex}{Numeric, the size of the grid cell points whein using interpolation.}
+  \item{p.cex}{Numeric, the size of the grid cell points when using interpolation.}
   \item{shift}{Numeric constant to be added to the smooth before plotting.}
   \item{trans}{Function to be applied to the smooth before plotting, e.g., to transform the
     plot to the response scale.}
@@ -92,7 +92,7 @@ plotmap(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
 
   \url{http://www.acm.org/publications/policies/softwarecrnotice}
   
-  Function \code{plotmap} prints a note refering to the ACM licence. This note can be supressed by
+  Function \code{plotmap} prints a note referring to the ACM license. This note can be suppressed by
   setting
 
   \code{options("use.akima" = TRUE)} 

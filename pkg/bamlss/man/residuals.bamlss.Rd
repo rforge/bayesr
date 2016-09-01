@@ -26,7 +26,8 @@
     computing residuals may take quite some time. Therefore, to get a first feeling it can
     be useful to compute residuals only based on \code{nsamps} samples, i.e., \code{nsamps}
     specifies the number of samples which are extracted on equidistant intervals.}
-  \item{which}{Should a histogram with kerenel density estimates be plotted or a qq-plot?}
+  \item{x}{Object returned from function \code{residuals.bamlss()}.}
+  \item{which}{Should a histogram with kernel density estimates be plotted or a qq-plot?}
   \item{spar}{Should graphical parameters be set by the plotting function?}
   \item{\dots}{For function \code{residuals.bamlss()} arguments passed to possible
     \code{$residuals()} functions that may be part of a \code{\link{bamlss.family}}. For function

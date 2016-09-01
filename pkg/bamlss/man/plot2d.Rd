@@ -56,7 +56,7 @@ plot2d(x, residuals = FALSE, rug = FALSE, jitter = TRUE,
   \item{month, year, step}{Provide specific annotation for plotting estimation results for temporal
     variables. \code{month} and \code{year} define the minimum time point whereas step specifies the
     type of temporal data with \code{step = 4}, \code{step = 2} and \code{step = 1} corresponding to
-    quartely, half yearly and yearly data.}
+    quarterly, half yearly and yearly data.}
   \item{shift}{Numeric constant to be added to the smooth before plotting.}
   \item{trans}{Function to be applied to the smooth before plotting, e.g., to transform the
     plot to the response scale.}

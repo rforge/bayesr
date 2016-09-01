@@ -59,7 +59,7 @@ jm.bamlss <- function(...)
 
 
 ## (2) The transformer function.
-jm.transform <- function(x, y, data, terms, knots, formula, family, jm.start = NULL,
+jm.transform <- function(x, y, data, terms, knots, formula, family,
   subdivisions = 25, timedependent = c("lambda", "mu", "alpha", "dalpha"), 
   timevar = NULL, idvar = NULL, alpha = .Machine$double.eps, mu = NULL, sigma = NULL,
   sparse = TRUE, ...)
@@ -211,23 +211,6 @@ jm.transform <- function(x, y, data, terms, knots, formula, family, jm.start = N
     x$sigma$smooth.construct$model.matrix$state$fitted.values <- x$sigma$smooth.construct$model.matrix$X %*% x$sigma$smooth.construct$model.matrix$state$parameters
   }
 
-  ## Starting values.
-  if(!is.null(jm.start)) {
-    if(is.matrix(jm.start)) {
-      if(any(i <- grepl("Mean", colnames(jm.start))))
-        jm.start <- jm.start[, i]
-      else stop("the starting values should be a vector not a matrix!")
-    }
-    if(dalpha) {
-      if(!any(grepl("dmu.", names(jm.start), fixed = TRUE))) {
-        start.dmu <- start[grep("mu.", names(jm.start), fixed = TRUE)]
-        names(start.dmu) <- gsub("mu.", "dmu.", names(start.dmu), fixed = TRUE)
-        jm.start <- c(jm.start, start.dmu)
-      }
-    }
-    x <- set.starting.values(x, jm.start)
-  }
-
   ## Shrink design and index matrices for survival part.
   ## Enforce sparse setup.
   for(j in c("mu", if(dalpha) "dmu" else NULL)) {
@@ -359,7 +342,7 @@ sparse_Matrix_setup <- function(x, sparse = TRUE, force = FALSE)
 }
 
 
-jm.mode <- function(x, y, weights, offset,
+jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
   criterion = c("AICc", "BIC", "AIC"), maxit = c(100, 1),
   nu = c("lambda" = 0.1, "gamma" = 0.1, "mu" = 0.1, "sigma" = 0.1, "alpha" = 0.1, "dalpha" = 0.1),
   update.nu = TRUE, eps = 0.0001, alpha.eps = 0.001, ic.eps = 1e-08, nback = 40,
@@ -375,10 +358,26 @@ jm.mode <- function(x, y, weights, offset,
   nu.eps <- -Inf
   edf.eps <- Inf
 
+  dalpha <- has_pterms(x$dalpha$terms) | (length(x$dalpha$smooth.construct) > 0)
+
+  if(!is.null(start)) {
+    if(is.matrix(start)) {
+      if(any(i <- grepl("Mean", colnames(start))))
+        start <- start[, i]
+      else stop("the starting values should be a vector not a matrix!")
+    }
+    if(dalpha) {
+      if(!any(grepl("dmu.", names(start), fixed = TRUE))) {
+        start.dmu <- start[grep("mu.", names(start), fixed = TRUE)]
+        names(start.dmu) <- gsub("mu.", "dmu.", names(start.dmu), fixed = TRUE)
+        start <- c(start, start.dmu)
+      }
+    }
+    x <- set.starting.values(x, start)
+  }
+
   criterion <- match.arg(criterion)
   ia <- interactive()
-
-  dalpha <- has_pterms(x$dalpha$terms) | (length(x$dalpha$smooth.construct) > 0)
 
   ## Names of parameters/predictors.
   nx <- names(x)
@@ -1627,7 +1626,7 @@ update_jm_dalpha <- function(x, eta, eta_timegrid,
 
 
 ## (5) Joint model MCMC.
-jm.mcmc <- function(x, y, family, start, jm.start = NULL, weights, offset,
+jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE, digits = 4, step = 20, ...)
 {
   ## Hard coded.
@@ -1638,8 +1637,6 @@ jm.mcmc <- function(x, y, family, start, jm.start = NULL, weights, offset,
 
   nu <- 1
 
-  if(!is.null(jm.start))
-    start <- jm.start
   if(!is.null(start)) {
     if(is.matrix(start)) {
       if(any(i <- grepl("Mean", colnames(start))))

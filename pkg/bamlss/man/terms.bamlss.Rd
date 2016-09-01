@@ -38,8 +38,8 @@ BAMLSS Model Terms
 }
 
 \value{
-  A list of \code{\link[stats]{terms.object}}s, depending on the structure
-  of the \code{\link{bamlss.formula}} object.
+  Object of class \code{"bamlss.terms"}, a list of \code{\link[stats]{terms.object}}s, depending on
+  the structure of the \code{\link{bamlss.formula}} object.
 }
 
 \seealso{

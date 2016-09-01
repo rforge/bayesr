@@ -9,7 +9,7 @@
 \description{
   Function \code{simSurv()} and \code{rSurvtime2()} simulate arbitrary (Cox-type) survival times
   using the inversion method. Function \code{simSurv()} is a simple wrapper that calls
-  \code{rSurvtime2()}. The functions are based on the \R package \code{CoxFlexBoost} implementation
+  \code{rSurvtime2()}. The functions are based on the \R package \pkg{CoxFlexBoost} implementation
   \code{rSurvtime()} and only slightly modify the code.
 }
 
@@ -49,13 +49,12 @@ rSurvTime2(lambda, x, cens_fct, upper = 1000, ...,
 }
 
 \references{
-  Benjamin Hofner (2016). CoxFlexBoost: Boosting Flexible Cox Models
-  (with Time-Varying Effects). R package version 0.7-0.
+  Benjamin Hofner (2016). \pkg{CoxFlexBoost}: Boosting Flexible Cox Models
+    (with Time-Varying Effects). R package version 0.7-0.
 
   Ralph Bender and Thomas Augustin and Maria Blettner (2005),
-  Generating Survival Times to Simulate Cox Proportional Hazards
-  Models.
-  \emph{Statistics in Medicine}, \bold{24}, 1713--1723.
+    Generating Survival Times to Simulate Cox Proportional Hazards Models.
+    \emph{Statistics in Medicine}, \bold{24}, 1713-1723.
 }
 
 \seealso{

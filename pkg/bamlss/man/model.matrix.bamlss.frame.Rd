@@ -40,7 +40,7 @@ Construct/Extract BAMLSS Design Matrices
 
 \seealso{
   \code{\link[stats]{model.matrix}}, \code{\link{bamlss.frame}},
-  \code{\link{bamlss.formula}}, \code{\link{bamlss.terms}}.
+  \code{\link{bamlss.formula}}, \code{\link{terms.bamlss}}.
 }
 
 \examples{

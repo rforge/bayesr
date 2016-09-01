@@ -65,7 +65,7 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
   \item{shift}{Numeric constant to be added to the smooth before plotting.}
   \item{trans}{Function to be applied to the smooth before plotting, e.g., to transform the
     plot to the response scale.}
-  \item{type}{Character, which type of interpolation metjod should be used. The default is
+  \item{type}{Character, which type of interpolation method should be used. The default is
     \code{type = "akima"}, see function \code{\link[akima]{interp}}. The two other options are
     \code{type = "mba"}, which calls function \code{\link[MBA]{mba.surf}} of package \pkg{MBA}, or
     \code{type = "mgcv"}, which uses a spatial smoother withing package \pkg{mgcv} for interpolation.
@@ -99,7 +99,7 @@ plot3d(x, residuals = FALSE, col.surface = NULL,
 
   \url{http://www.acm.org/publications/policies/softwarecrnotice}
   
-  Function \code{plot3d} prints a note refering to the ACM licence. This note can be supressed by
+  Function \code{plot3d} prints a note referring to the ACM license. This note can be suppressed by
   setting
 
   \code{options("use.akima" = TRUE)} 

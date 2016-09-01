@@ -135,7 +135,6 @@ export(
   "homstart_data",
   "tx",
   "rmf",
-  "rs",
   "smooth.construct",
   "BUGSeta",
   "BUGSmodel"

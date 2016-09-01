@@ -29,7 +29,7 @@ randomize(x)
 \value{
   A transformed \code{\link{bamlss.frame}}. To each \code{\link[bamlss]{smooth.construct}} model term
   an element named \code{"Xf"}, the fixed effects design matrix, and an element \code{"rand$Xr"},
-  the random effects design matrix, is added. In addition, for retransforming parameters elements
+  the random effects design matrix, is added. In addition, for re-transforming parameters elements
   \code{"trans.U"} and \code{"trans.D"} are supplied. See also function
   \code{\link[mgcv]{smooth2random}}.
 }

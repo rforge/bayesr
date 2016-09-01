@@ -8,7 +8,7 @@
 \description{
   This function computes posterior mode estimates of the parameters of a flexible Cox model
   with structured additive predictors using a Newton-Raphson algorithm. Integrals are solved
-  numerically. Morover, optimum smoothing variances are computed using a stepwise optimization,
+  numerically. Moreover, optimum smoothing variances are computed using a stepwise optimization,
   see also the details section of function \code{\link{bfit}}.
 }
 

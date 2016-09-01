@@ -9,7 +9,7 @@
   This function takes a fitted Cox model, i.e., a model estimated by \code{\link{cox.mode}}
   or \code{\link{cox.mcmc}} and computes predictions given a new data set or the
   original values. Survival probabilities are computed using numerical integration, therefore,
-  computation may take some time. To avoid problems with computer memory, the predcition
+  computation may take some time. To avoid problems with computer memory, the prediction
   of survival probabilities can be split into chunks and computed parallel on different cores.
 }
 

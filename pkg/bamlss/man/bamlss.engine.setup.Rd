@@ -84,4 +84,5 @@ sapply(bf$x$mu$smooth.construct, function(x) {
 }
 
 \keyword{regression}
+\keyword{models}
 

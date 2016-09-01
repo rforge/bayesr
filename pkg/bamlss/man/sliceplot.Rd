@@ -47,7 +47,7 @@ sliceplot(x, y = NULL, z = NULL, view = 1, c.select = NULL,
     \code{plot3d} is called.}
   \item{rawdata}{If set to \code{TRUE}, the data will not be interpolated, only raw data will be
     used. This is useful when displaying data on a regular grid.}
-  \item{type}{Character, which type of interpolation metjod should be used. The default is
+  \item{type}{Character, which type of interpolation method should be used. The default is
     \code{type = "akima"}, see function \code{\link[akima]{interp}}. The two other options are
     \code{type = "mba"}, which calls function \code{\link[MBA]{mba.surf}} of package \pkg{MBA}, or
     \code{type = "mgcv"}, which uses a spatial smoother withing package \pkg{mgcv} for interpolation.
@@ -77,7 +77,7 @@ sliceplot(x, y = NULL, z = NULL, view = 1, c.select = NULL,
 
   \url{http://www.acm.org/publications/policies/softwarecrnotice}
   
-  Function \code{sliceplot} prints a note refering to the ACM licence. This note can be supressed by
+  Function \code{sliceplot} prints a note referring to the ACM license. This note can be suppressed by
   setting
 
   \code{options("use.akima" = TRUE)} 

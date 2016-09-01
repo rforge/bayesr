@@ -7,7 +7,7 @@ HOMSTART Precipitation Data
 
 \description{
 This function downloads and compiles the HOMSTART-project data set. The data is downloaded from
-the Zentralanstalt f\"ur Meteorologie und Geodynamik (ZAMG, \url{http://www.zamg.ac.at}) and
+the Zentralanstalt fuer Meteorologie und Geodynamik (ZAMG, \url{http://www.zamg.ac.at}) and
 funded by the Austrian Climate Research Programme (ACRP) and is free for research purposes.
 }
 
@@ -48,7 +48,7 @@ Nemec J, Gruber C, Chimani B, Auer I (2012).
 
 Nemec J, Chimani B, Gruber C, Auer I (2011).
   Ein neuer {D}atensatz homogenisierter {T}agesdaten.
-  \emph{\"OGM Bulletin}, \bold{1}, 19--20.
+  \emph{OEGM Bulletin}, \bold{1}, 19--20.
   \url{http://www.meteorologie.at/docs/OEGM\_bulletin\_2011\_1.pdf}
 
 Umlauf N, Mayr G, Messner J, Zeileis A (2012).

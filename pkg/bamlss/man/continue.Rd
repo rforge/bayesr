@@ -37,7 +37,8 @@ A \code{\link{bamlss}} object.
 }
 
 \examples{
-\dontrun{set.seed(123)
+\dontrun{## Simulate and run model with MCMC.
+set.seed(123)
 d <- GAMart()
 b <- bamlss(num ~ s(x1) + s(x2) + s(x3) + te(lon,lat), data = d)
 

@@ -29,9 +29,9 @@ samples(object, ...)
     on multiple cores, can be combined into one large sample matrix.}
   \item{drop}{If there is only one \code{model} for which samples should be extracted, should
     the list structure be dropped?}
-  \item{burnin}{Integer, specifies the number of samples that should be withdrawn as a burnin phase.}
+  \item{burnin}{Integer, specifies the number of samples that should be withdrawn as a burn-in phase.}
   \item{thin}{Integer, specifies the step length of samples that should be extracted, e.g.,
-    \code{thin = 10} mean that only everey 10th sample is returned.}
+    \code{thin = 10} mean that only every 10th sample is returned.}
   \item{\dots}{Other arguments.}
 }
 
