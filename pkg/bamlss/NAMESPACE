@@ -87,16 +87,16 @@ export(
   "set.par",
 
   ## families,
-  "beta.bamlss",
-  "binomial.bamlss",
-  "cnorm.bamlss",
-  "cox.bamlss",
-  "gaussian.bamlss",
-  "gamma.bamlss",
-  "multinomial.bamlss",
-  "mvnorm.bamlss",
-  "poisson.bamlss",
-  "quant.bamlss",
+  "beta_bamlss",
+  "binomial_bamlss",
+  "cnorm_bamlss",
+  "cox_bamlss",
+  "gaussian_bamlss",
+  "gamma_bamlss",
+  "multinomial_bamlss",
+  "mvnorm_bamlss",
+  "poisson_bamlss",
+  "quant_bamlss",
   "gF",
 
   ## extractor functions
@@ -115,7 +115,7 @@ export(
   "colorlegend",
 
   ## JM
-  "jm.bamlss",
+  "jm_bamlss",
   "jm.mode",
   "jm.mcmc",
   "simJM",

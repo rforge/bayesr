@@ -75,7 +75,7 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
   \item{flush}{use \code{\link{flush.console}} for displaying the current output in the console.}
   \item{eta}{The current value of the predictors, provided as a named list, one list entry
     for each parameter. The names correspond to the parameter names in the family object,
-    see \code{\link{family.bamlss}}. E.g., when using the \code{\link{gaussian.bamlss}} family
+    see \code{\link{family.bamlss}}. E.g., when using the \code{\link{gaussian_bamlss}} family
     object, the current values for the mean can be extracted by \code{eta\$mu} and for the
     standard deviation by \code{eta\$sigma}.}
   \item{id}{Character, the name of the current parameter for which the model term should
@@ -98,7 +98,7 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
   and second order derivatives of the log-likelihood w.r.t. the linear predictors. These Functions
   are provided within the named lists \code{"score"} and \code{"hess"} within the \code{family}
   object. See the documentation of \code{\link{family.bamlss}} and the code of the provided
-  families, e.g. \code{\link{gaussian.bamlss}}, for examples of the required structure.
+  families, e.g. \code{\link{gaussian_bamlss}}, for examples of the required structure.
 
   The algorithm either updates each model term over all distributional parameters sequentially,
   or does a full update until convergence for model terms for one distributional parameter before

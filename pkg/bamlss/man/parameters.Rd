@@ -35,7 +35,7 @@ parameters(x, model = NULL, start = NULL,
   estimated parameters of some optimizer.
 
   The naming convention of the parameter list is used by a couple of functions in this package.
-  For each parameter of the modeled distribution, e.g., \code{\link{gaussian.bamlss}} has
+  For each parameter of the modeled distribution, e.g., \code{\link{gaussian_bamlss}} has
   parameters \code{"mu"} and \code{"sigma"}, a list element is created. These elements the contain
   the list of all model term parameters. Parametric model terms are indicated with \code{"p"} and
   smooth model terms with \code{"s"}. If the design matrix of a model term in the \code{x} list

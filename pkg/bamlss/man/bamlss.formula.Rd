@@ -40,7 +40,7 @@ bamlss.formula(formula, family = NULL, specials = NULL, ...)
 }
 
 \seealso{
-  \code{\link{bamlss}}, \code{\link{bamlss.frame}}, \code{\link{bamlss.formula}}
+  \code{\link{bamlss}}, \code{\link{bamlss.frame}}, \code{\link{bamlss.family}}
 }
 
 \examples{
@@ -67,12 +67,12 @@ f <- bamlss.formula(f)
 print(f)
 print(names(f))
 
-## Using a bamlss family object, e.g., gaussian.bamlss().
+## Using a bamlss family object, e.g., gaussian_bamlss().
 ## The family has two parameters, mu and sigma, for
 ## each parameter one formula is returned. If no
 ## formula is specified an intercept only model is
 ## generated for the respective parameter.
-f <- bamlss.formula(y ~ x1 + s(x2), family = gaussian.bamlss)
+f <- bamlss.formula(y ~ x1 + s(x2), family = gaussian_bamlss)
 
 ## Note, same as:
 f <- bamlss.formula(y ~ x1 + s(x2), family = "gaussian")

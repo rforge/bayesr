@@ -9,7 +9,7 @@
   This function takes a \code{\link{bamlss.frame}} and computes design matrices of model terms
   based on a time grid for time-dependent structured additive predictors in a survival context.
   Note that this transformer function is usually used internally by function \code{\link{bamlss}}
-  and is the default transformer function using the \code{\link{cox.bamlss}} family object.
+  and is the default transformer function using the \code{\link{cox_bamlss}} family object.
 
   The time grid design matrices can be used to construct the full structured additive predictor
   for each time point. This way it is possible to solve the integrals that are part of, e.g.,
@@ -33,7 +33,7 @@ surv.transform(x, y, data, family,
   \item{y}{The model response, as returned from function \code{\link{bamlss.frame}}.}
   \item{data}{The data.frame that should be used for setting up all matrices.}
   \item{family}{A \pkg{bamlss} family object, see \code{\link{family.bamlss}}.
-    In this case this is the \code{\link{cox.bamlss}} family object.}
+    In this case this is the \code{\link{cox_bamlss}} family object.}
   \item{subdivisions}{How many time points should be created for each individual.}
   \item{timedependent}{A character vector specifying the names of parameters in \code{x}
     that are time-dependent. Time grid design matrices are only computed for these parameters.}
@@ -52,7 +52,7 @@ surv.transform(x, y, data, family,
 }
 
 \seealso{
-  \code{\link{cox.bamlss}}, \code{\link{cox.mode}}, \code{\link{cox.mcmc}},
+  \code{\link{cox_bamlss}}, \code{\link{cox.mode}}, \code{\link{cox.mcmc}},
   \code{\link{simSurv}}, \code{\link{bamlss}}
 }
 

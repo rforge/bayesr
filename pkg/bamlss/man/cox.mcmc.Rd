@@ -23,7 +23,7 @@ cox.mcmc(x, y, family, start, weights, offset,
     fitting the model.}
   \item{y}{The model response, as returned from function \code{\link{bamlss.frame}}.}
   \item{family}{A \pkg{bamlss} family object, see \code{\link{family.bamlss}}.
-    In this case this is the \code{\link{cox.bamlss}} family object.}
+    In this case this is the \code{\link{cox_bamlss}} family object.}
   \item{start}{A named numeric vector containing possible starting values, the names are based on
     function \code{\link{parameters}}.}
   \item{weights}{Prior weights on the data, as returned from function \code{\link{bamlss.frame}}.}
@@ -60,7 +60,7 @@ cox.mcmc(x, y, family, start, weights, offset,
 }
 
 \seealso{
-  \code{\link{cox.mcmc}}, \code{\link{cox.bamlss}}, \code{\link{surv.transform}},
+  \code{\link{cox.mcmc}}, \code{\link{cox_bamlss}}, \code{\link{surv.transform}},
   \code{\link{simSurv}}, \code{\link{bamlss}}
 }
 
@@ -78,7 +78,7 @@ f <- list(
 )
 
 ## Cox model with continuous time.
-## Note the the family object cox.bamlss sets
+## Note the the family object cox_bamlss() sets
 ## the default optimizer and sampler function!
 ## First, posterior mode estimates are computed
 ## using function cox.mode(), afterwards the

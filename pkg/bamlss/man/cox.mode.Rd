@@ -61,7 +61,7 @@ cox.mode(x, y, weights, offset,
 }
 
 \seealso{
-  \code{\link{cox.mcmc}}, \code{\link{cox.bamlss}}, \code{\link{surv.transform}},
+  \code{\link{cox.mcmc}}, \code{\link{cox_bamlss}}, \code{\link{surv.transform}},
   \code{\link{simSurv}}, \code{\link{bamlss}}
 }
 

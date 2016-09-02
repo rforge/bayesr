@@ -62,7 +62,7 @@ rJM(hazard, censoring, x, r,
   The function simulates longitudinal data basing on the given specification at given \code{times}.
   The full hazard is built from all joint model predictors \eqn{\eta_{\mu}}, \eqn{\eta_{\sigma}},
   \eqn{\eta_{\lambda}}, \eqn{\eta_{\gamma}}, \eqn{\eta_{\alpha}} as presented in
-  Koehler et al. (2016), see also {\code{\link{jm.bamlss}}}. Survival times are sampled using the inversion
+  Koehler et al. (2016), see also {\code{\link{jm_bamlss}}}. Survival times are sampled using the inversion
   method (cf. Bender, Augustin, & Blettner, 2005). Additional censoring and missingness is
   introduced. The longitudinal information is censored according to the survival information. The
   user can also specify own predictors and use only \code{rJM} to simulate survival times
@@ -115,7 +115,7 @@ rJM(hazard, censoring, x, r,
 }
 
 \seealso{
-  \code{\link{jm.bamlss}}, \code{\link{jm.mode}}, \code{\link{jm.mcmc}}, \code{\link{bamlss}}.
+  \code{\link{jm_bamlss}}, \code{\link{jm.mode}}, \code{\link{jm.mcmc}}, \code{\link{bamlss}}.
 }
 
 \examples{

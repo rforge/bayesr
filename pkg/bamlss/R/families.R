@@ -127,7 +127,7 @@ parse.links <- function(links, default.links, ...)
 
 
 ## http://stats.stackexchange.com/questions/41536/how-can-i-model-a-proportion-with-bugs-jags-stan
-beta.bamlss <- function(...)
+beta_bamlss <- function(...)
 {
   links <- c(mu = "logit", sigma2 = "logit")
 
@@ -207,7 +207,7 @@ beta.bamlss <- function(...)
 }
 
 
-betazoi.bamlss <- function(...)
+betazoi_bamlss <- function(...)
 {
   links <- c(mu = "logit", sigma2 = "logit", nu = "log", tau = "log")
 
@@ -260,7 +260,7 @@ betazoi.bamlss <- function(...)
 }
 
 
-betazi.bamlss <- function(...)
+betazi_bamlss <- function(...)
 {
   links <- c(mu = "logit", sigma2 = "logit", nu = "log")
 
@@ -309,7 +309,7 @@ betazi.bamlss <- function(...)
 }
 
 
-betaoi.bamlss <- function(...)
+betaoi_bamlss <- function(...)
 {
   links <- c(mu = "logit", sigma2 = "logit", tau = "log")
 
@@ -371,7 +371,7 @@ process_factor_response <- function(x)
 }
 
 
-binomial.bamlss <- function(...)
+binomial_bamlss <- function(...)
 {
   rval <- list(
     "family" = "binomial",
@@ -428,7 +428,7 @@ binomial.bamlss <- function(...)
 }
 
 
-cloglog.bamlss <- function(...)
+cloglog_bamlss <- function(...)
 {
   link <- "cloglog"
 
@@ -459,7 +459,62 @@ cloglog.bamlss <- function(...)
   rval
 }
 
-gaussian.bamlss <- function(...)
+gaussian_bamlss <- function(...)
+{
+  links <- c(mu = "identity", sigma = "log")
+
+  rval <- list(
+    "family" = "gaussian",
+    "names" = c("mu", "sigma"),
+    "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
+    "bayesx" = list(
+      "mu" = switch(links["mu"],
+        "identity" = c("normal2", "mu"),
+        "inverse" = c("normal_mu_inv", "mean")
+      ),
+      "sigma" = switch(links["sigma"],
+        "log" = c("normal2", "sigma"),
+        "logit" = c("normal_sigma_logit", "scale")
+      )
+    ),
+    "bugs" = list(
+      "dist" = "dnorm",
+      "eta" = BUGSeta,
+      "model" = BUGSmodel,
+      "reparam" = c(sigma = "1 / sqrt(sigma)")
+    ),
+    "score" = list(
+      "mu" = function(y, par, ...) { drop((y - par$mu) / (par$sigma^2)) },
+      "sigma" = function(y, par, ...) { drop(-1 + (y - par$mu)^2 / (par$sigma^2)) }
+    ),
+    "hess" = list(
+      "mu" = function(y, par, ...) { drop(1 / (par$sigma^2)) },
+      "sigma" = function(y, par, ...) { rep(2, length(y)) }
+    ),
+    "loglik" = function(y, par, ...) {
+      sum(dnorm(y, par$mu, par$sigma, log = TRUE))
+    },
+    "mu" = function(par, ...) {
+      par$mu
+    },
+    "d" = function(y, par, log = FALSE) {
+      dnorm(y, mean = par$mu, sd = par$sigma, log = log)
+    },
+    "p" = function(y, par, ...) {
+      pnorm(y, mean = par$mu, sd = par$sigma, ...)
+    },
+    "initialize" = list(
+      "mu" = function(y, ...) { (y + mean(y)) / 2 },
+      "sigma" = function(y, ...) { rep(sd(y), length(y)) }
+    )
+  )
+  
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+
+gaussian1_bamlss <- function(...)
 {
   links <- c(mu = "identity", sigma = "log")
 
@@ -536,7 +591,7 @@ gaussian.bamlss <- function(...)
 }
 
 
-gaussian2.bamlss <- function(...)
+gaussian2_bamlss <- function(...)
 {
   links <- c(mu = "identity", sigma2 = "log")
 
@@ -587,7 +642,7 @@ gaussian2.bamlss <- function(...)
 }
 
 
-truncgaussian2.bamlss <- function(...)
+truncgaussian2_bamlss <- function(...)
 {
   links <- c(mu = "identity", sigma2 = "log")
 
@@ -623,7 +678,7 @@ truncgaussian2.bamlss <- function(...)
   rval
 }
 
-truncgaussian.bamlss <- function(...)
+truncgaussian_bamlss <- function(...)
 {
   links <- c(mu = "identity", sigma = "log")
 
@@ -688,7 +743,7 @@ truncgaussian.bamlss <- function(...)
 }
 
 
-#trunc.bamlss <- function(direction = "left", point = 0, ...)
+#trunc_bamlss <- function(direction = "left", point = 0, ...)
 #{
 #  links <- c(mu = "identity", sigma = "log")
 
@@ -752,7 +807,7 @@ truncgaussian.bamlss <- function(...)
 #}
 
 
-cnorm.bamlss <- function(...)
+cnorm_bamlss <- function(...)
 {
   f <- list(
     "family" = "cnorm",
@@ -816,7 +871,7 @@ cnorm.bamlss <- function(...)
 }
 
 
-pcnorm.bamlss <- function(start = 2, update = FALSE, ...)
+pcnorm_bamlss <- function(start = 2, update = FALSE, ...)
 {
   f <- list(
     "family" = "pcnorm",
@@ -905,7 +960,7 @@ pcnorm.bamlss <- function(start = 2, update = FALSE, ...)
 }
 
 
-cens.bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
+cens_bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
   left = 0, right = Inf, dist = "gaussian", ...)
 {
   dist <- match.arg(dist, c("student", "gaussian", "logistic"))
@@ -1111,7 +1166,7 @@ qtrunc <- function(p, spec, a = -Inf, b = Inf, ...)
   return(tt)
 }
 
-trunc2.bamlss <- function(links = c(mu = "identity", sigma = "log"),
+trunc2_bamlss <- function(links = c(mu = "identity", sigma = "log"),
   name = "norm", a = -Inf, b = Inf, ...)
 {
   rval <- list(
@@ -1149,7 +1204,7 @@ trunc2.bamlss <- function(links = c(mu = "identity", sigma = "log"),
 }
 
 
-t.bamlss <- function(...)
+t_bamlss <- function(...)
 {
   links <- c(mu = "identity", sigma2 = "log", df = "log")
 
@@ -1187,7 +1242,7 @@ t.bamlss <- function(...)
 }
 
 
-invgaussian.bamlss <- function(...)
+invgaussian_bamlss <- function(...)
 {
   links <- c(mu = "log", sigma2 = "log")
 
@@ -1241,7 +1296,7 @@ invgaussian.bamlss <- function(...)
   rval
 }
 
-weibull.bamlss <- function(...)
+weibull_bamlss <- function(...)
 {
   links <- c(lambda = "log", alpha = "log")
 
@@ -1286,7 +1341,7 @@ weibull.bamlss <- function(...)
 }
 
 
-pareto.bamlss <- function(...)
+pareto_bamlss <- function(...)
 {
   links <- c(b = "log", p = "log")
 
@@ -1332,7 +1387,7 @@ pareto.bamlss <- function(...)
 }
 
 
-gamma.bamlss <- function(...)
+gamma_bamlss <- function(...)
 {
   rval <- list(
     "family" = "gamma",
@@ -1399,7 +1454,7 @@ gamma.bamlss <- function(...)
 }
 
 
-gengamma.bamlss <- function(...)
+gengamma_bamlss <- function(...)
 {
   links <- c(mu = "log", sigma = "log", tau = "log")
 
@@ -1424,7 +1479,7 @@ gengamma.bamlss <- function(...)
 }
 
 
-lognormal.bamlss <- function(...)
+lognormal_bamlss <- function(...)
 {
   links <- c(mu = "identity", sigma = "log")
 
@@ -1465,7 +1520,7 @@ lognormal.bamlss <- function(...)
 }
 
 
-lognormal2.bamlss <- function(...)
+lognormal2_bamlss <- function(...)
 {
   links <- c(mu = "identity", sigma2 = "log")
 
@@ -1506,7 +1561,7 @@ lognormal2.bamlss <- function(...)
 }
 
 
-dagum.bamlss <- function(...)
+dagum_bamlss <- function(...)
 {
   links <- c(a = "log", b = "log", p = "log")
 
@@ -1552,7 +1607,7 @@ dagum.bamlss <- function(...)
 }
 
 
-BCCG2.bamlss <- function(...)
+BCCG2_bamlss <- function(...)
 {
   links <- c(mu = "log", sigma = "log", nu = "identity")
 
@@ -1597,7 +1652,7 @@ BCCG2.bamlss <- function(...)
 }
 
 
-mvnorm.bamlss <- function(...)
+mvnorm_bamlss <- function(...)
 {
   rval <- list(
     "family" = "mvnorm",
@@ -1693,7 +1748,7 @@ mvnorm.bamlss <- function(...)
 }
 
 
-bivprobit.bamlss <- function(...)
+bivprobit_bamlss <- function(...)
 {
   links <- c(mu1 = "identity", mu2 = "identity", rho = "rhogit")
 
@@ -1718,7 +1773,7 @@ bivprobit.bamlss <- function(...)
 }
 
 
-bivlogit.bamlss <- function(...)
+bivlogit_bamlss <- function(...)
 {
   links <- c(p1 = "logit", p2 = "logit", psi = "log")
 
@@ -1743,7 +1798,7 @@ bivlogit.bamlss <- function(...)
 }
 
 
-mvt.bamlss <- function(...)
+mvt_bamlss <- function(...)
 {
   links <- c(mu1 = "identity", mu2 = "identity",
     sigma1 = "log", sigma2 = "log", rho = "fisherz", df = "log")
@@ -1771,7 +1826,7 @@ mvt.bamlss <- function(...)
 }
 
 
-dirichlet.bamlss <- function(...)
+dirichlet_bamlss <- function(...)
 {
   link <- "logit"
 
@@ -1789,7 +1844,7 @@ dirichlet.bamlss <- function(...)
 }
 
 
-multinomial.bamlss <- multinom.bamlss <- function(...)
+multinomial_bamlss <- multinom_bamlss <- function(...)
 {
   link <- "log"
 
@@ -1845,7 +1900,7 @@ multinomial.bamlss <- multinom.bamlss <- function(...)
 
 
 ## Count Data distributions.
-poisson.bamlss <- function(...)
+poisson_bamlss <- function(...)
 {
   rval <- list(
     "family" = "poisson",
@@ -1890,7 +1945,7 @@ poisson.bamlss <- function(...)
 }
 
 
-zip.bamlss <- function(...)
+zip_bamlss <- function(...)
 {
   links <- c(lambda = "log", pi = "logit")
 
@@ -1926,7 +1981,7 @@ zip.bamlss <- function(...)
 }
 
 
-hurdleP.bamlss <- function(...)
+hurdleP_bamlss <- function(...)
 {
   links <- c(lambda = "log", pi = "logit")
 
@@ -1963,7 +2018,7 @@ hurdleP.bamlss <- function(...)
   rval
 }
 
-negbin.bamlss <- function(...)
+negbin_bamlss <- function(...)
 {
   links <- c(mu = "log", delta = "log")
 
@@ -1991,7 +2046,7 @@ negbin.bamlss <- function(...)
 }
 
 
-zinb.bamlss <- function(...)
+zinb_bamlss <- function(...)
 {
   links <- c(mu = "log", pi = "logit", delta = "log")
 
@@ -2022,7 +2077,7 @@ zinb.bamlss <- function(...)
   rval
 }
 
-hurdleNB.bamlss <- function(...)
+hurdleNB_bamlss <- function(...)
 {
   links <- c(mu = "log", pi = "logit", delta = "log")
 
@@ -2062,7 +2117,7 @@ hurdleNB.bamlss <- function(...)
 
 
 ## http://stats.stackexchange.com/questions/17672/quantile-regression-in-jags
-quant.bamlss <- function(prob = 0.5)
+quant_bamlss <- function(prob = 0.5)
 {
   rval <- list(
     "family" = "quant",
@@ -2078,7 +2133,7 @@ quant.bamlss <- function(prob = 0.5)
 }
 
 
-quant2.bamlss <- function(prob = 0.5, ...)
+quant2_bamlss <- function(prob = 0.5, ...)
 {
   links <- c(mu = "identity", sigma = "log")
   rval <- list(
@@ -2103,7 +2158,7 @@ quant2.bamlss <- function(prob = 0.5, ...)
 
 
 ## Zero adjusted families.
-#zero.bamlss <- function(g = invgaussian)
+#zero_bamlss <- function(g = invgaussian)
 #{
 #  pi <- "logit"
 #  gg <- try(inherits(g, "family.bamlss"), silent = TRUE)
@@ -2157,14 +2212,14 @@ quant2.bamlss <- function(prob = 0.5, ...)
 ## General bamlss family creator.
 gF <- function(x, ...) {
   x <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500)
-  F <- get(paste(x, "bamlss", sep = "."), mode = "function")
+  F <- get(paste(x, "bamlss", sep = "_"), mode = "function")
   F(...)
 }
 
 gF2 <- function(x, ...) {
   if(!is.character(x))
     x <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500)
-  F <- get(paste(x, "bamlss", sep = "."), mode = "function")
+  F <- get(paste(x, "bamlss", sep = "_"), mode = "function")
   x <- F(...)
   linkinv <- vector(mode = "list", length = length(x$names))
   for(j in x$names)
@@ -2519,7 +2574,7 @@ get.dist <- function(distribution = "norm")
 }
 
 
-gaussian5.bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
+gaussian5_bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
 {
   links <- parse.links(links, c(mu = "identity", sigma = "log"), ...)
   lfun <- list()

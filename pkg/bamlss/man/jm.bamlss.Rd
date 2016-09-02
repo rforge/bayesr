@@ -1,5 +1,5 @@
-\name{jm.bamlss}
-\alias{jm.bamlss}
+\name{jm_bamlss}
+\alias{jm_bamlss}
 \alias{jm.mode}
 \alias{jm.mcmc}
 \alias{jm.transform}
@@ -17,7 +17,7 @@
 
 \usage{
 ## JM family object.
-jm.bamlss(...)
+jm_bamlss(...)
 
 ## "bamlss.frame" transformer function
 ## to set up joint models.
@@ -166,7 +166,7 @@ f <- list(
 )
 
 ## Joint model estimation
-## jm.bamlss() sets the default optimizer and sampler function.
+## jm_bamlss() sets the default optimizer and sampler function.
 ## First, posterior mode estimates are computed using function
 ## jm.mode(), afterwards the sampler jm.mcmc() is started.
 b <- bamlss(f, data = d, family = "jm",

@@ -60,14 +60,14 @@ GMCMC_slice(family, theta, id, eta, y, data, ...)
   \item{chains}{How many chains should be started? Chains a sampled sequentially!}
   \item{theta}{The current state of parameters, provided as a named list. The first level
     represents the parameters of the distribution, the second level the parameters of
-    the model terms. E.g., using the \code{\link{gaussian.bamlss}} family object
+    the model terms. E.g., using the \code{\link{gaussian_bamlss}} family object
     \code{theta[["mu"]][["s(x)"]]} extracts the current state of a model term \code{"s(x)"}
     of the \code{"mu"} parameter. Extraction is done with the \code{id} argument.}
   \item{id}{The parameter identifier, a character vector of length 2. The first character
     specifies the current distributional parameter, the second the current model term.}
   \item{eta}{The current value of the predictors, provided as a named list, one list entry
     for each parameter. The names correspond to the parameter names in the family object,
-    see \code{\link{family.bamlss}}. E.g., when using the \code{\link{gaussian.bamlss}} family
+    see \code{\link{family.bamlss}}. E.g., when using the \code{\link{gaussian_bamlss}} family
     object, the current values for the mean can be extracted by \code{eta\$mu} and for the
     standard deviation by \code{eta\$sigma}.}
   \item{data}{An object as returned from function

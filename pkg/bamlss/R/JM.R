@@ -2,7 +2,7 @@
 ## Joint model model fitting engine. ##
 #######################################
 ## (1) The family object.
-jm.bamlss <- function(...)
+jm_bamlss <- function(...)
 {
   links = c(lambda = "log", gamma = "log", mu = "identity", sigma = "log",
      alpha = "identity", dalpha = "identity")

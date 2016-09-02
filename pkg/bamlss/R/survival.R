@@ -5,7 +5,7 @@
 ## Cox model fitting engine. ##
 ###############################
 ## (1) The family object.
-cox.bamlss <- function(...)
+cox_bamlss <- function(...)
 {
   rval <- list(
     "family" = "cox",

@@ -718,7 +718,7 @@ model.frame.bamlss <- model.frame.bamlss.frame <- function(formula, ...)
     fcall["start"] <- NULL
     fcall["drop.unused.levels"] <- FALSE
     if(is.null(fcall["family"]))
-      fcall["family"] <- parse(text = "gaussian.bamlss()")
+      fcall["family"] <- parse(text = "gaussian_bamlss()")
     eval(fcall, env)
   } else formula$model.frame
   mf
@@ -1391,7 +1391,7 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL, logLik = FAL
 
 
 ## Create the model.frame.
-bamlss.model.frame <- function(formula, data, family = gaussian.bamlss(),
+bamlss.model.frame <- function(formula, data, family = gaussian_bamlss(),
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   specials = NULL, contrasts.arg = NULL, drop.unused.levels = TRUE, ...)
 {
@@ -1537,7 +1537,7 @@ bamlss.family <- function(family, type = "bamlss", ...)
       if(!is.null(type)) {
         if(!grepl("gF(", family, fixed = TRUE) & !grepl("gF2(", family, fixed = TRUE))
           if(!grepl(type, family))
-            family <- paste(family, type, sep = ".")
+            family <- paste(family, type, sep = "_")
       }
       family <- eval(parse(text = family[1]))
       if(is.function(family))
@@ -1552,7 +1552,7 @@ bamlss.family <- function(family, type = "bamlss", ...)
       if(is.null(family$family)) stop("family is specified wrong, no family name available!")
       family <- family$family
     }
-    txt <- paste(family, type, sep = if(!is.null(type)) "." else "")
+    txt <- paste(family, type, sep = if(!is.null(type)) "_" else "")
     txt <- gsub("bamlss.bamlss", "bamlss", txt, fixed = TRUE)
     family <- eval(parse(text = txt[1]))
     family <- family()

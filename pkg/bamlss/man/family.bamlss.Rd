@@ -2,15 +2,15 @@
 \alias{family.bamlss}
 \alias{family.bamlss.frame}
 \alias{bamlss.family}
-\alias{beta.bamlss}
-\alias{binomial.bamlss}
-\alias{cnorm.bamlss}
-\alias{cox.bamlss}
-\alias{gaussian.bamlss}
-\alias{gamma.bamlss}
-\alias{multinomial.bamlss}
-\alias{mvnorm.bamlss}
-\alias{poisson.bamlss}
+\alias{beta_bamlss}
+\alias{binomial_bamlss}
+\alias{cnorm_bamlss}
+\alias{cox_bamlss}
+\alias{gaussian_bamlss}
+\alias{gamma_bamlss}
+\alias{multinomial_bamlss}
+\alias{mvnorm_bamlss}
+\alias{poisson_bamlss}
 
 \title{
   Distribution Families in \pkg{bamlss}
@@ -28,15 +28,15 @@
 
 \usage{
 ## Family objects in bamlss:
-beta.bamlss(...)
-binomial.bamlss(...)
-cnorm.bamlss(...)
-cox.bamlss(...)
-gaussian.bamlss(...)
-gamma.bamlss(...)
-multinomial.bamlss(...)
-mvnorm.bamlss(...)
-poisson.bamlss(...)
+beta_bamlss(...)
+binomial_bamlss(...)
+cnorm_bamlss(...)
+cox_bamlss(...)
+gaussian_bamlss(...)
+gamma_bamlss(...)
+multinomial_bamlss(...)
+mvnorm_bamlss(...)
+poisson_bamlss(...)
 
 ## Extractor functions:
 \method{family}{bamlss}(object, ...)
@@ -58,7 +58,8 @@ poisson.bamlss(...)
     \item The object must contain the names of the parameters as a character string, as well as
       the corresponding link functions as character string.
   }
-  For most optimizer and sampling functions at least the density function should be provided.
+  For most optimizer and sampling functions at least the density function, including a \code{log}
+  argument, should be provided.
   When using generic model fitting engines like \code{\link{bfit}} or \code{\link{GMCMC}}, as
   well as for computing post-modeling statistics with function \code{\link{samplestats}}, and others,
   it is assumed that the density function in a family object has the following arguments:
@@ -98,11 +99,11 @@ poisson.bamlss(...)
   \code{\link{predict.bamlss}} the family objects may
   also specify the \code{transform()}er, \code{optimizer()}, \code{sampler()},
   \code{samplestats()}, \code{results()}, \code{residuals()} and \code{predict()} function that
-  should be used with this family. See for example the setup of \code{\link{cox.bamlss}}.
+  should be used with this family. See for example the setup of \code{\link{cox_bamlss}}.
 
   For using specialized estimation engines like \code{\link{JAGS}} it is recommended to supply
   any extra arguments needed by those engines with an additional list entry within the family
-  object, e.g., using \code{gaussian.bamlss} with \code{\link{JAGS}} the family objects holds
+  object, e.g., using \code{gaussian_bamlss()} with \code{\link{JAGS}} the family objects holds
   special details in an element named \code{"bugs"}.
 
   The examples below illustrate this setup. See also the code of the \pkg{bamlss} family
@@ -116,7 +117,7 @@ poisson.bamlss(...)
 \examples{
 ## New family object for the normal distribution,
 ## can be used by function bfit() and GMCMC().
-normal.bamlss <- function(...) {
+normal_bamlss <- function(...) {
   f <- list(
     "family" = "normal",
     "names" = c("mu", "sigma"),
@@ -157,7 +158,7 @@ sum(f$d(y = d$num, par = f$map2par(fitted(b)), log = TRUE))
 
 ## For using JAGS() more details are needed.
 norm4JAGS.bamlss <- function(...) {
-  f <- normal.bamlss()
+  f <- normal_bamlss()
   f$bugs <- list(
     "dist" = "dnorm",
     "eta" = BUGSeta,
@@ -175,4 +176,6 @@ plot(b)
 }
 
 \keyword{regression}
+\keyword{models}
+\keyword{distribution}
 

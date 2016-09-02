@@ -49,7 +49,7 @@ cox.predict(object, newdata,
 }
 
 \seealso{
-  \code{\link{cox.mcmc}}, \code{\link{cox.bamlss}}, \code{\link{surv.transform}},
+  \code{\link{cox.mcmc}}, \code{\link{cox_bamlss}}, \code{\link{surv.transform}},
   \code{\link{simSurv}}, \code{\link{bamlss}}, \code{\link{predict.bamlss}}
 }
 
@@ -67,7 +67,7 @@ f <- list(
 )
 
 ## Cox model with continuous time.
-## Note the the family object cox.bamlss sets
+## Note the the family object cox_bamlss() sets
 ## the default optimizer and sampler function!
 ## First, posterior mode estimates are computed
 ## using function cox.mode(), afterwards the

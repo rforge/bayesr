@@ -42,7 +42,9 @@ bamlss(formula, family = "gaussian", data = NULL,
     smooth terms, all model term constructors implemented in \code{\link{mgcv}} such as
     \code{\link[mgcv]{s}}, \code{\link[mgcv]{te}} and \code{\link[mgcv]{ti}} can be used, amongst others.}
   \item{family}{A \code{\link{bamlss.family}} object, specifying the details of the modeled
-    distribution such as the parameter names, the density function, link functions, etc.}
+    distribution such as the parameter names, the density function, link functions, etc.
+    Can be a character without the \code{"_bamlss"} extension of the
+    \code{\link{bamlss.family}} name.}
   \item{data}{A \code{\link{data.frame}} or \code{\link{list}} containing the model
     response variable(s) and covariates specified in the \code{formula}.
     By default the variables are taken from \code{environment(formula)}:
@@ -233,6 +235,6 @@ plot(b3, which = "max-acf", burnin = 500, thin = 4)
 }
 }
 
+\keyword{models}
 \keyword{regression}
-\keyword{MCMC}
 

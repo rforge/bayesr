@@ -4,7 +4,7 @@
 \alias{sx}
 \alias{tx}
 \alias{get_BayesXsrc}
-\alias{quant.bamlss}
+\alias{quant_bamlss}
 
 \title{
   Markov Chain Monte Carlo for BAMLSS using \pkg{BayesX}
@@ -34,7 +34,7 @@ sx(x, z = NULL, bs = "ps", by = NA, ...)
 tx(..., k = NA, constraint = c("main", "both", "none"))
 
 ## Family object for quantile regression with BayesX.
-quant.bamlss(prob = 0.5)
+quant_bamlss(prob = 0.5)
 
 ## Download the newest version of BayesXsrc.
 get_BayesXsrc(dir = NULL, install = TRUE)
@@ -123,7 +123,7 @@ get_BayesXsrc(dir = NULL, install = TRUE)
   information needs to be supplied. The extra information must be placed within the
   family object in an named \code{list} element named \code{"bayesx"}. For each parameter of
   the distribution a character string with the corresponding \pkg{BayesX} \code{family} name and the
-  \code{equationtype} must be supplied. See, e.g., the \R code of \code{\link{gaussian.bamlss}}
+  \code{equationtype} must be supplied. See, e.g., the \R code of \code{\link{gaussian_bamlss}}
   how the setup works.
 
   For function \code{sx()} the following basis types are currently supported:
