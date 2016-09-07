@@ -14,13 +14,7 @@ bamlss_shiny <- function(dir = NULL)
   if(!file.exists(file.path(dir, "predictions")))
     dir.create(file.path(dir, "predictions"))
 
-  dump("bamlss_shiny_ui", file = file.path(dir, "ui.R"), envir = .GlobalEnv)
-  dump("bamlss_shiny_server", file = file.path(dir, "server.R"), envir = .GlobalEnv)
-
-  shiny::runApp(dir)
-}
-
-
+  ## ui.R and server.R
 bamlss_shiny_ui <- function(...) {
   fluidPage(
     titlePanel("Model Visualizer"),
@@ -38,12 +32,11 @@ bamlss_shiny_ui <- function(...) {
      ## Show a plot of the generated distribution.
      mainPanel(
        uiOutput("predict"),
-       selectInput('plot_type', 'Select the type of plot.', c("Histogram")),
-       uiOutput("select_parameters"),
-       tags$hr(),
+       uiOutput("plot_type_button"),
        uiOutput("plot_parameters"),
-       actionButton("plot_predictions", label = "Plot."),
-       plotOutput("the_plot", width = '60%')
+       uiOutput("plot_button"),
+       plotOutput("the_plot", width = '60%'),
+       tags$br()
      )
    ))
 }
@@ -107,7 +100,7 @@ bamlss_shiny_server <- function(input, output, session)
   output$predict <- renderUI({
     if(!is.null(input$variables_selected)) {
       rval <- tagList(
-        numericInput("ngrid", "Size of grid.", 100, min = 1, max = 1000),
+        numericInput("ngrid", "Size of grid.", 30, min = 1, max = 1000),
         actionButton("predict_model", label = "Predict."),
         tags$hr()
       )
@@ -129,47 +122,90 @@ bamlss_shiny_server <- function(input, output, session)
         }
       }
       nd <- expand.grid(nd)
-      pred <- try(predict(m, newdata = nd, term = input$variables_selected), silent = TRUE)
-      if(!inherits(pred, "try-error"))
+      withProgress(message = "Computing predictions", value = 0, {
+        pred <- try(predict(m, newdata = nd, term = input$variables_selected,
+          FUN = function(x) { x }), silent = TRUE)
+      })
+      if(file.exists("predictions/pred.Rda"))
+        file.remove("predictions/pred.Rda")
+      if(!inherits(pred, "try-error")) {
         save(pred, file = "predictions/pred.Rda")
-      else warning("Cannot compute prediction, check selected covariates!")
+      } else {
+        warning("Cannot compute prediction, check selected covariates!")
+      }
     }
   })
 
-  output$select_parameters <- renderUI({
+  available_predictions <- reactive({
+    e1 <- input$load_model
+    e2 <- input$variables_selected
+    e3 <- input$predict_model
+    dir("predictions")
+  })
+
+  output$plot_type_button <- renderUI({
     rval <- NULL
-    if(!is.null(input$variables_selected)) {
+    if(length(available_predictions())) {
       m <- get(input$selected_model, envir = .GlobalEnv)
       nf <- family(m)$names
-      if(length(nf) > 1) {
-        rval <- selectInput('selected_parmeters', 'Select distribution parameter.',
-          nf, selected = nf[1], multiple = TRUE, selectize = TRUE)
-      }
+      rval <- tagList(
+        selectInput('plot_type', 'Select the type of plot.', c("Histogram")),
+        if(length(nf) > 1) {
+          selectInput('selected_parameters', 'Select distribution parameter.',
+            nf, selected = nf[1], multiple = TRUE, selectize = TRUE)
+        } else NULL,
+        tags$hr()
+      )
     }
     rval
   })
 
   output$plot_parameters <- renderUI({
-    if(input$plot_type == "Histogram") {
-      rval <- tagList(numericInput("nbreaks", "Number of breaks.", -1, min = 1, max = 1000, step = 1))
+    rval <- NULL
+    if(length(available_predictions())) {
+      if(input$plot_type == "Histogram") {
+        rval <- tagList(numericInput("nbreaks", "Number of breaks.", -1, min = 1, max = 1000, step = 1))
+      }
+    }
+    rval
+  })
+
+  output$plot_button <- renderUI({
+    if(length(available_predictions())) {
+      rval <- actionButton("plot_predictions", label = "Plot.")
     } else rval <- NULL
     rval
   })
 
   observeEvent(input$plot_predictions, {
-    if(file.exists("predictions/pred.Rda")) {
+    if(length(available_predictions())) {
       output$the_plot <- renderPlot({
-        load("predictions/pred.Rda")
-        par(mfrow = n2mfrow(length(pred)), mar = c(4.1, 4.1, 4.1, 0.1))
-        nf <- names(pred)
-        if(length(nf) > 1)
-          nf <- input$selected_parmeters
-        for(i in nf) {
-          hist(pred[[i]], breaks = if(input$nbreaks < 0) "Sturges" else input$nbreaks, freq = FALSE,
-            main = i, xlab = "Predictions")
+        if(length(available_predictions()) & file.exists("predictions/pred.Rda")) {
+          load("predictions/pred.Rda")
+          par(mfrow = n2mfrow(length(pred)), mar = c(4.1, 4.1, 4.1, 0.1))
+          nf <- names(pred)
+          if(length(nf) > 1)
+            nf <- input$selected_parameters
+          for(i in nf) {
+            hist(pred[[i]], breaks = if(input$nbreaks < 0) "Sturges" else input$nbreaks, freq = FALSE,
+              main = i, xlab = "Predictions")
+            lines(density(pred[[i]]))
+          }
         }
       })
     }
   })
+}
+  
+  nenv <- new.env()
+  on.exit(unlink(nenv), add = TRUE)
+
+  assign("bamlss_shiny_ui", bamlss_shiny_ui, envir = nenv)
+  assign("bamlss_shiny_server", bamlss_shiny_server, envir = nenv)
+
+  dump("bamlss_shiny_ui", file = file.path(dir, "ui.R"), envir = nenv)
+  dump("bamlss_shiny_server", file = file.path(dir, "server.R"), envir = nenv)
+
+  shiny::runApp(dir)
 }
 
