@@ -546,7 +546,7 @@ gmcmc_mvnorm <- function(fun, theta, id, prior, ...)
         sum(dnorm(theta[id], sd = 1000, log = TRUE), na.rm = TRUE)
       } else sum(do.call(prior, c(theta, args)[names(formals(prior))]), na.rm = TRUE)
 
-      theta[id] <- drop(rmvnorm(n = 1, mean = theta[id], sigma = scale * sigma))
+      theta[id] <- drop(mvtnorm::rmvnorm(n = 1, mean = theta[id], sigma = scale * sigma))
 
       ll1 <- sum(do.call(fun, c(theta, args)[names(formals(fun))]), na.rm = TRUE)
       p1 <- if(is.null(prior)) {
@@ -582,7 +582,7 @@ gmcmc_mvnorm <- function(fun, theta, id, prior, ...)
     sum(dnorm(theta[id], sd = 1000, log = TRUE), na.rm = TRUE)
   } else sum(do.call(prior, c(theta, args)[names(formals(prior))]), na.rm = TRUE)
 
-  theta[id] <- drop(rmvnorm(n = 1, mean = theta[id], sigma = scale * sigma))
+  theta[id] <- drop(mvtnorm::rmvnorm(n = 1, mean = theta[id], sigma = scale * sigma))
 
   ll1 <- sum(do.call(fun, c(theta, args)[names(formals(fun))]), na.rm = TRUE)
   p1 <- if(is.null(prior)) {
