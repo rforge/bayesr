@@ -76,7 +76,7 @@ bamlss_shiny_server <- function(input, output, session)
       m <- get(input$selected_model, envir = .GlobalEnv)
       mf <- model.frame(m)
       tn <- lapply(formula(m), function(x) {
-        all.labels.formula(x$formula)
+        bamlss:::all.labels.formula(x$formula)
       })
       tn <- unique(do.call("c", tn))
       output$select_terms <- renderUI({
@@ -219,12 +219,44 @@ bamlss_shiny_server <- function(input, output, session)
             nf <- input$selected_parameters
           for(i in nf) {
             if(input$plot_type == "Histogram") {
-              hist(pred[[i]], breaks = if(input$nbreaks < 0) "Sturges" else input$nbreaks,
-                freq = FALSE, main = i, xlab = "Predictions")
-              lines(density(pred[[i]]))
+              rdens <- density(pred[[i]])
+              rh <- hist(pred[[i]], plot = FALSE)
+              args <- list()
+              args$ylim <- c(0, max(c(rh$density, rdens$y)))
+              args$freq <- FALSE
+              args$x <- pred[[i]]
+              args$ylab <- "Density"
+              args$xlab <- "Predictions"
+              args$main <- i
+              args$breaks <- if(input$nbreaks < 0) "Sturges" else input$nbreaks
+              ok <- try(do.call("hist", args))
+              if(!inherits(ok, "try-error"))
+                lines(rdens)
+              box()
             }
             if(input$plot_type == "Effect") {
-            
+              m <- get(input$selected_model, envir = .GlobalEnv)
+              mf <- na.omit(model.frame(m))
+              vars <- NULL
+              for(j in input$terms_selected)
+                vars <- c(vars, all.vars(as.formula(paste("~", j))))
+              vars <- unique(vars)
+              for(j in seq_along(vars)) {
+                if(!any(vars[j] %in% names(mf)))
+                  vars[j] <- grep(vars[j], names(mf), fixed = TRUE, value = TRUE)
+              }
+              nd <- list()
+              for(j in vars) {
+                vn <- paste("var_", j, sep = "")
+                if(is.character(input[[vn]])) {
+                  nd[[j]] <- factor(input[[vn]], levels = levels(mf[[j]]))
+                } else {
+                  nd[[j]] <- seq(input[[vn]][1], input[[vn]][2], length = as.integer(input$ngrid))
+                }
+              }
+              nd <- expand.grid(nd)
+              if(length(vars) < 2)
+                plot2d(pred[[i]] ~ nd[[vars]], xlab = vars, ylab = "Predictions")
             }
           }
         }
