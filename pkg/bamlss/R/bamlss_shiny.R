@@ -257,6 +257,8 @@ bamlss_shiny_server <- function(input, output, session)
               nd <- expand.grid(nd)
               if(length(vars) < 2)
                 plot2d(pred[[i]] ~ nd[[vars]], xlab = vars, ylab = "Predictions")
+              if(length(vars) < 3)
+                plot3d(pred[[i]] ~ nd[[vars[1]]] + nd[[vars[2]]], xlab = vars[1], ylab = vars[2], zlab = "Predictions")
             }
           }
         }
