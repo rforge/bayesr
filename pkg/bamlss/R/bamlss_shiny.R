@@ -115,7 +115,7 @@ bamlss_shiny_server <- function(input, output, session)
   output$predict_parameters <- renderUI({
     if(!is.null(input$selected_model)) {
       m <- get(input$selected_model, envir = .GlobalEnv)
-      nf <- family(m)$names
+      nf <- c(family(m)$names, family(m)$moment)
       nsamps <- nrow(m$samples[[1]]) - 1L
       rval <- tagList(
         numericInput("ngrid", "Size of grid.", 30, min = 1, max = 1000),
@@ -123,10 +123,11 @@ bamlss_shiny_server <- function(input, output, session)
         selectInput('predict_fun', 'Select function applied on samples.',
           c("None", "Mean", "Median", "Sd", "Var", "95% CI", "99% CI", "c95"), selected = "c95"),
         if(length(nf) > 1) {
-          selectInput('selected_parameters', 'Select distribution parameter.',
-            nf, selected = nf[1], multiple = TRUE, selectize = TRUE)
+          selectInput('selected_parameters', 'Select distribution parameter/moment.',
+            nf, selected = nf[1])
         } else NULL,
-        selectInput('plot_type', 'Select the type of plot.', c("Histogram", "Effect"), selected = "Histogram"),
+        selectInput('plot_type', 'Select the type of plot.',
+          c("Histogram", "Histogram 2d", "Effect", "Image"), selected = "Histogram"),
         conditionalPanel(condition = "input.plot_type == 'Histogram'",
           numericInput("nbreaks", "Number of breaks.", -1, min = 1, max = 1000, step = 1)),
         tags$hr()
@@ -163,7 +164,11 @@ bamlss_shiny_server <- function(input, output, session)
           if(is.character(input[[vn]])) {
             nd[[i]] <- factor(input[[vn]], levels = levels(mf[[i]]))
           } else {
-            nd[[i]] <- seq(input[[vn]][1], input[[vn]][2], length = as.integer(input$ngrid))
+            nd[[i]] <- if(identical(input[[vn]][1], input[[vn]][2])) {
+              input[[vn]][1]
+            } else {
+              seq(input[[vn]][1], input[[vn]][2], length = as.integer(input$ngrid))
+            }
           }
           all_NULL <- c(all_NULL, FALSE)
         } else {
@@ -197,8 +202,11 @@ bamlss_shiny_server <- function(input, output, session)
       if(is.null(model_terms()) & input$intercept == "no") {
         pred <- NULL
       } else {
-        withProgress(message = "Generating plot.", value = 0, {
-          pred <- try(predict(m, newdata = nd, term = model_terms(),
+        withProgress(message = "Generating visualization data ...", value = 0, {
+          mt <- model_terms()
+          if(is.null(mt) & (input$intercept == "yes"))
+            mt <- "Intercept"
+          pred <- try(predict(m, newdata = nd, term = mt,
             FUN = FUN, intercept = input$intercept == "yes", nsamps = input$nsamps), silent = TRUE)
         })
         if(inherits(pred, "try-error"))
@@ -209,14 +217,16 @@ bamlss_shiny_server <- function(input, output, session)
   })
 
   output$make_plot <- renderPlot({
-    if(!is.null(pred <- predict_model())) {
+    if(!is.null(pred <- predict_model()) & length(input$selected_parameters) & length(input$ngrid)) {
       nf <- names(pred)
       if(length(nf) > 1)
         nf <- input$selected_parameters
-      par(mfrow = n2mfrow(length(nf)))
+      if(input$plot_type != "Image")
+        par(mfrow = n2mfrow(length(nf)))
+      is_hist <- input$plot_type %in% c("Histogram", "Histogram 2d")
       for(i in nf) {
         if(input$plot_type == "Histogram") {
-          par(mar = c(4.1, 4.1, 4.1, 0.1))
+          par(mar = c(4.1, 4.1, if(length(nf) > 1) 4.1 else 0.1, 0.1))
           rdens <- density(pred[[i]])
           rh <- hist(pred[[i]], plot = FALSE)
           args <- list()
@@ -225,14 +235,15 @@ bamlss_shiny_server <- function(input, output, session)
           args$x <- pred[[i]]
           args$ylab <- "Density"
           args$xlab <- "Predictions"
-          args$main <- i
+          args$main <- if(length(nf) > 1) i else NA
+          args$col <- "lightgray"
           args$breaks <- if(input$nbreaks < 0) "Sturges" else input$nbreaks
           ok <- try(do.call("hist", args))
           if(!inherits(ok, "try-error"))
             lines(rdens)
           box()
         }
-        if(input$plot_type == "Effect" & !is.null(model_terms())) {
+        if(input$plot_type != "Histogram" & !is.null(model_terms())) {
           m <- get(input$selected_model, envir = .GlobalEnv)
           mf <- na.omit(model.frame(m))
           vars <- NULL
@@ -249,17 +260,42 @@ bamlss_shiny_server <- function(input, output, session)
             if(is.character(input[[vn]])) {
               nd[[j]] <- factor(input[[vn]], levels = levels(mf[[j]]))
             } else {
-              nd[[j]] <- seq(input[[vn]][1], input[[vn]][2], length = as.integer(input$ngrid))
+              nd[[j]] <- if(identical(input[[vn]][1], input[[vn]][2])) {
+                input[[vn]][1]
+              } else {
+                seq(input[[vn]][1], input[[vn]][2], length = as.integer(input$ngrid))
+              }
             }
           }
           nd <- expand.grid(nd)
-          if(length(vars) == 1) {
-            par(mar = c(4.1, 4.1, 4.1, 0.1))
-            plot2d(pred[[i]] ~ nd[[vars]], xlab = vars, ylab = "Predictions")
+          dim <- apply(nd, 2, function(x) {
+            all(x == x[1])     
+          })
+          vars <- vars[!dim]
+          if(length(vars) == 1 & (input$plot_type == "Effect")) {
+            par(mar = c(4.1, 4.1, if(length(nf) > 1) 4.1 else 1.1, 0.1))
+            plot2d(pred[[i]] ~ nd[[vars]], xlab = vars, ylab = "Predictions", ylim = range(pred[[i]]),
+              col.lines = if(input$predict_fun == "None") rgb(0.1, 0.1, 0.1, alpha = 0.1) else "black",
+              main = if(length(nf) > 1) i else NULL,
+              fill.select = if(input$predict_fun == "c95") c(0, 1, 0, 1) else NULL,
+              scheme = if(input$predict_fun == "c95") 2 else 1, grid = 50)
           }
           if(length(vars) == 2) {
-            par(mar = c(0.1, 0.1, 4.1, 0.1))
-            plot3d(pred[[i]] ~ nd[[vars[1]]] + nd[[vars[2]]], xlab = vars[1], ylab = vars[2], zlab = "Predictions")
+            if(input$plot_type %in% c("Effect", "Image")) {
+              par(mar = if(input$plot_type == "Image") {
+                  c(4.1, 4.1, if(length(nf) > 1) 4.1 else 1.1, 0.1)
+                } else c(1.1, 0.1, if(length(nf) > 1) 4.1 else 0.1, 0.1))
+              c.select <- if(is.null(dim(pred[[i]]))) 1 else ncol(pred[[i]])
+              plot3d(pred[[i]] ~ nd[[vars[1]]] + nd[[vars[2]]], xlab = vars[1], ylab = vars[2],
+                zlab = "Predictions", c.select = 1:c.select,
+                border = if(input$predict_fun == "None") rgb(0.1, 0.1, 0.1, alpha = 0.01) else NULL,
+                image = input$plot_type == "Image", main = if(length(nf) > 1) i else NULL,
+                legend = length(nf) < 2, grid = input$ngrid, ticktype = "detailed",
+                contour = input$plot_type == "Image")
+            }
+            if(input$plot_type %in% c("Histogram 2d")) {
+              
+            }
           }
         }
       }

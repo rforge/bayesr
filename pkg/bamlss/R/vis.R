@@ -404,6 +404,7 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
         if(any(nx %in% k))
           take <- c(take[1], id[nx %in% k][1], take[2])
     }
+    if(!length(take)) take <- NULL
     if(is.null(take) && !is.character(c.select)) {
       if(min(c.select) < 3L)
         c.select <- c.select + 2L
@@ -482,6 +483,11 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
     args$r <- r.persp
     if(is.null(args$zlim))
       args$zlim <- zlimit
+    args$zlim <- range(args$zlim)
+    if(identical(args$zlim[1], args$zlim[2])) {
+      args$zlim[1] <- args$zlim[1] - 0.1
+      args$zlim[2] <- args$zlim[2] + 0.1
+    }
     if(is.null(args$theta))
       args$theta <- 40
     if(is.null(args$phi))
@@ -502,6 +508,11 @@ plot3d <- function(x, residuals = FALSE, col.surface = NULL,
         par(new = TRUE)
         args$col <- color[k]
         args$border <- bcol[k]
+        if(k > 1) {
+          args$xlab <- args$ylab <- args$zlab <- args$main <- NA
+          args$box <- FALSE
+          args$axes <- FALSE
+        }
         myfit <- matrix(fitted[[k]], grid, grid)
         args$z <- substitute(myfit)
         pmat <- do.call(graphics::persp, 
@@ -1625,7 +1636,7 @@ set.plot2d.specs <- function(nc, args, col.lines, is.bayesx)
 
 
 interp2 <- function(x, y, z, xo = NULL, yo = NULL, grid = 30,
-  type = c("mba", "akima", "mgcv", "gam"), linear = FALSE, extrap = FALSE, k = 40)
+  type = c("mba", "akima", "mgcv", "gam", "raw"), linear = FALSE, extrap = FALSE, k = 40)
 {
   type <- tolower(type)
   type <- match.arg(type)
