@@ -331,7 +331,7 @@ void xbin_fun(SEXP ind, SEXP weights, SEXP e, SEXP xweights, SEXP xrres, SEXP or
 
 
 /* Process derivatives. */
-SEXP process_derivs(SEXP x)
+SEXP process_derivs(SEXP x, SEXP w)
 {
   int i;
   int n = length(x);
@@ -344,14 +344,16 @@ SEXP process_derivs(SEXP x)
 
   for(i = 0; i < n; i++) {
     rvalptr[i] = xptr[i];
-    if(ISNA(xptr[i])) {
+    if(ISNA(xptr[i]))
       rvalptr[i] = 1.490116e-08;
-    }
-    if(xptr[i] < -1e+10) {
-      rvalptr[i] = -1e+10;
-    }
-    if(xptr[i] > 1e+10) {
+    if(xptr[i] > 1e+10)
       rvalptr[i] = 1e+10;
+    if(LOGICAL(w)[0]) {
+      if(xptr[i] < 0.0)
+        rvalptr[i] = -1.0 * xptr[i];
+    } else {
+      if(xptr[i] < -1e+10)
+        rvalptr[i] = -1e+10;
     }
   }
 
@@ -1069,8 +1071,8 @@ SEXP gmcmc_iwls_gp(SEXP family, SEXP theta, SEXP id,
 
     if(ISNA(weightsptr[k]))
       weightsptr[k] = 1.490116e-08;
-    if(weightsptr[k] < -1e+10)
-      weightsptr[k] = -1e+10;
+    if(weightsptr[k] < 0.0)
+      weightsptr[k] = -1.0 * weightsptr[k];
     if(weightsptr[k] > 1e+10)
       weightsptr[k] = 1e+10;
     if(nW > 1)
@@ -1258,8 +1260,8 @@ SEXP gmcmc_iwls_gp(SEXP family, SEXP theta, SEXP id,
 
     if(ISNA(weights2ptr[k]))
       weights2ptr[k] = 1.490116e-08;
-    if(weights2ptr[k] < -1e+10)
-      weights2ptr[k] = -1e+10;
+    if(weights2ptr[k] < 0.0)
+      weights2ptr[k] = -1.0 * weights2ptr[k];
     if(weights2ptr[k] > 1e+10)
       weights2ptr[k] = 1e+10;
     if(nW > 1)

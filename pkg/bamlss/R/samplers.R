@@ -756,9 +756,9 @@ GMCMC_iwlsC_gp <- function(family, theta, id, eta, y, data,
 }
 
 
-process.derivs <- function(x)
+process.derivs <- function(x, is.weight = FALSE)
 {
-  .Call("process_derivs", as.numeric(x), PACKAGE = "bamlss")
+  .Call("process_derivs", as.numeric(x), as.logical(is.weight), PACKAGE = "bamlss")
 }
 
 
@@ -778,13 +778,15 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
   peta <- family$map2par(eta)
 
   ## Compute weights.
-  hess <- process.derivs(family$hess[[id[1]]](y, peta, id = id[1]))
+  hess <- family$hess[[id[1]]](y, peta, id = id[1])
 
   if(!is.null(weights[[id[1]]]))
     hess <- hess * weights[[id[1]]]
 
+  hess <- process.derivs(hess, is.weight = TRUE)
+
   ## Score.
-  score <- process.derivs(family$score[[id[1]]](y, peta, id = id[1]))
+  score <- process.derivs(family$score[[id[1]]](y, peta, id = id[1]), is.weight = FALSE)
 
   ## Compute working observations.
   z <- eta[[id[1]]] + 1 / hess * score
@@ -866,10 +868,15 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
   pibetaprop <- family$loglik(y, peta)
 
   ## Compute new weights
-  hess <- process.derivs(family$hess[[id[1]]](y, peta, id = id[1]))
+  hess <- family$hess[[id[1]]](y, peta, id = id[1])
+
+  if(!is.null(weights[[id[1]]]))
+    hess <- hess * weights[[id[1]]]
+
+  hess <- process.derivs(hess, is.weight = TRUE)
 
   ## New score.
-  score <- process.derivs(family$score[[id[1]]](y, peta, id = id[1]))
+  score <- process.derivs(family$score[[id[1]]](y, peta, id = id[1]), is.weight = FALSE)
 
   ## New working observations.
   z <- eta[[id[1]]] + 1 / hess * score

@@ -226,7 +226,7 @@ bamlss_shiny_server <- function(input, output, session)
       is_hist <- input$plot_type %in% c("Histogram", "Histogram 2d")
       for(i in nf) {
         if(input$plot_type == "Histogram") {
-          par(mar = c(4.1, 4.1, if(length(nf) > 1) 4.1 else 0.1, 0.1))
+          par(mar = c(4.1, 4.1, if(length(nf) > 1) 4.1 else 1.1, 0.1))
           rdens <- density(pred[[i]])
           rh <- hist(pred[[i]], plot = FALSE)
           args <- list()

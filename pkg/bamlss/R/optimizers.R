@@ -1133,9 +1133,11 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
   if(!is.null(weights))
     hess <- hess * weights
 
+  hess <- process.derivs(hess, is.weight = TRUE)
+
   if(is.null(args$z)) {
     ## Score.
-    score <- family$score[[id]](y, peta, id = id, ...)
+    score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
 
     ## Compute working observations.
     z <- eta[[id]] + 1 / hess * score
@@ -1217,8 +1219,9 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
 
   ## Compute fitted values.
   g <- get.state(x, "b")
-  if(any(is.na(g)) | any(g %in% c(-Inf, Inf)))
-    x$state$parameters <- set.par(x$state$parameters, rep(0, length(x$state$g)), "b")
+  if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) {
+    x$state$parameters <- set.par(x$state$parameters, rep(0, length(get.state(x, "b"))), "b")
+  }
   x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
   x$state$edf <- sum_diag(XWX %*% P)
   if(!is.null(x$prior)) {
@@ -1243,9 +1246,11 @@ bfit_iwls_spam <- function(x, family, y, eta, id, weights, criterion, ...)
   if(!is.null(weights))
     hess <- hess * weights
 
+  hess <- process.derivs(hess, is.weight = TRUE)
+
   if(is.null(args$z)) {
     ## Score.
-    score <- family$score[[id]](y, peta, id = id, ...)
+    score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
 
     ## Compute working observations.
     z <- eta[[id]] + 1 / hess * score
@@ -1352,9 +1357,11 @@ bfit_iwls_Matrix <- function(x, family, y, eta, id, weights, criterion, ...)
   if(!is.null(weights))
     hess <- hess * weights
 
+  hess <- process.derivs(hess, is.weight = TRUE)
+
   if(is.null(args$z)) {
     ## Score.
-    score <- family$score[[id]](y, peta, id = id, ...)
+    score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
 
     ## Compute working observations.
     z <- eta[[id]] + 1 / hess * score
