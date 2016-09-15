@@ -1,6 +1,6 @@
 Package: bamlss
 Version: 0.1-1
-Date: 2016-03-04
+Date: 2016-09-15
 Title: Bayesian Additive Models for Location Scale and Shape (and Beyond)
 Authors@R: c(person(given = "Nikolaus", family = "Umlauf", role = c("aut", "cre"), email = "Nikolaus.Umlauf@uibk.ac.at"),
   person(given = "Nadja", family = "Klein", role = "aut", email = "nklein@uni-goettingen.de"),
@@ -10,7 +10,7 @@ Description: R infrastructures for Bayesian regression models.
 Depends: R (>= 3.2.3), coda, colorspace, mgcv
 Imports: Formula, MBA, fields, gamlss, geoR, maps,
   maptools, mvtnorm, shapefiles, sp, spdep,
-  survival, zoo, methods, spam, Matrix
-Suggests: akima, rjags, BayesX, BayesXsrc, mapdata, raster, spatstat, shiny
+  survival, zoo, methods, spam, Matrix, shiny
+Suggests: akima, rjags, BayesX, BayesXsrc, mapdata, raster, spatstat
 License: GPL-2 | GPL-3
 LazyLoad: yes

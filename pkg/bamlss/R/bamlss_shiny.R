@@ -1,8 +1,5 @@
 bamlss_shiny <- function(dir = NULL)
 {
-  stopifnot(requireNamespace("shiny"))
-  stopifnot(requireNamespace("tools"))
-
   owd <- getwd()
   if(is.null(dir)) {
     dir.create(dir <- tempfile())
@@ -76,7 +73,7 @@ bamlss_shiny_server <- function(input, output, session)
       m <- get(input$selected_model, envir = .GlobalEnv)
       mf <- model.frame(m)
       tn <- lapply(formula(m), function(x) {
-        bamlss:::all.labels.formula(x$formula)
+        all.labels.formula(x$formula)
       })
       tn <- unique(do.call("c", tn))
       output$select_intercept <- renderUI({
