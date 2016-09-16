@@ -193,14 +193,17 @@ plot_jm_surv <- function(i, maxtime = 80, grid = 10) {
   )
   time <- seq(0, maxtime, length = grid)
 
-  if(all(time == time[1]))
-    stop(paste("Not enough time points available for individual ", i, "!", sep = ""))
+  if(all(time == time[1])) {
+    stop(paste("Not enough time points available for individual ",
+      i, "!", sep = ""))
+  }
 
   p_surv <- NULL
   for(t in time) {
     nd$survtime <- t
     nd$obstime <- t
-    p_surv <- rbind(p_surv, t(predict(b, newdata = nd, type = "probabilities", FUN = c95)))
+    p_surv <- rbind(p_surv, t(predict(b, newdata = nd,
+      type = "probabilities", FUN = c95)))
   }
 
   nd <- data.frame(
@@ -209,14 +212,15 @@ plot_jm_surv <- function(i, maxtime = 80, grid = 10) {
   )
   p_long <- predict(b, newdata = nd, model = "mu", FUN = c95)
 
-  par(mfrow = c(2, 1), mar = rep(0, 4), oma = c(4.1, 4.1, 1.1, 4.1))
+  par(mfrow = c(2, 1), mar = rep(0, 4),
+    oma = c(4.1, 4.1, 1.1, 4.1))
   plot2d(p_surv ~ time, fill.select = c(0, 1, 0, 1),
     scheme = 2, axes = FALSE, ylim = c(0, 1))
   axis(2)
   box()
   mtext("Prob(T > t)", side = 2, line = 2.5)
-  plot2d(p_long ~ time, fill.select = c(0, 1, 0, 1), scheme = 2,
-    xlab = "Time", ylab = "Effect of time", axes = FALSE)
+  plot2d(p_long ~ time, fill.select = c(0, 1, 0, 1),
+    scheme = 2, axes = FALSE)
   with(subset(d, id == i), points(obstime, y))
   axis(1)
   axis(4)
