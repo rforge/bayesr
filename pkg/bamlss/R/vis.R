@@ -2,7 +2,7 @@ plot2d <- function(x, residuals = FALSE, rug = FALSE, jitter = TRUE,
   col.residuals = NULL, col.lines = NULL, col.polygons = NULL, 
   col.rug = NULL, c.select = NULL, fill.select = NULL, data = NULL,
   sep = "", month = NULL, year = NULL, step = 12,
-  shift = NULL, trans = NULL, scheme = 1, s2.col = NULL, grid = 20, ...)
+  shift = NULL, trans = NULL, scheme = 1, s2.col = NULL, grid = 50, ...)
 {
   rugp <- attr(x, "rug")
   if(is.null(x))

@@ -175,6 +175,59 @@ b <- bamlss(f, data = d, family = "jm",
 ## Plot estimated effects.
 plot(b)
 
+## Predict event probabilities for two
+## individuals.
+nd <- subset(d, id %in% c(192, 127))
+p <- predict(b, newdata = nd, type = "probabilities")
+print(p)
+
+## Plot of survival probabilities and
+## corresponding longitudinal effects
+## for individual i.
+plot_jm_surv <- function(i, maxtime = 80, grid = 10) {
+  on.exit(par(par(no.readonly = TRUE)))
+
+  nd <- data.frame(
+    "id" = factor(i, levels = levels(d$id)),
+    "x1" = d$x1[d$id == i][1]
+  )
+  time <- seq(0, maxtime, length = grid)
+
+  if(all(time == time[1]))
+    stop(paste("Not enough time points available for individual ", i, "!", sep = ""))
+
+  p_surv <- NULL
+  for(t in time) {
+    nd$survtime <- t
+    nd$obstime <- t
+    p_surv <- rbind(p_surv, t(predict(b, newdata = nd, type = "probabilities", FUN = c95)))
+  }
+
+  nd <- data.frame(
+    "obstime" = time,
+    "id" = factor(i, levels = levels(d$id))
+  )
+  p_long <- predict(b, newdata = nd, model = "mu", FUN = c95)
+
+  par(mfrow = c(2, 1), mar = rep(0, 4), oma = c(4.1, 4.1, 1.1, 4.1))
+  plot2d(p_surv ~ time, fill.select = c(0, 1, 0, 1),
+    scheme = 2, axes = FALSE, ylim = c(0, 1))
+  axis(2)
+  box()
+  mtext("Prob(T > t)", side = 2, line = 2.5)
+  plot2d(p_long ~ time, fill.select = c(0, 1, 0, 1), scheme = 2,
+    xlab = "Time", ylab = "Effect of time", axes = FALSE)
+  with(subset(d, id == i), points(obstime, y))
+  axis(1)
+  axis(4)
+  box()
+  mtext("Effect of time", side = 4, line = 2.5)
+  mtext("Time", side = 1, line = 2.5)
+}
+
+plot_jm_surv(i = 3)
+plot_jm_surv(i = 192)
+
 ## Simulate survival data
 ## with functional random intercepts and a nonlinear effect 
 ## of time, time-varying association alpha and no effect 
