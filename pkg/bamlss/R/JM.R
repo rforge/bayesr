@@ -50,7 +50,8 @@ jm_bamlss <- function(...)
       return(rval)
     },
     "optimizer" = jm.mode,
-    "sampler" = jm.mcmc
+    "sampler" = jm.mcmc,
+    "predict" = jm.predict
   )
   
   class(rval) <- "family.bamlss"
@@ -238,11 +239,11 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
   ## Assign time grid predict functions.
   for(i in seq_along(ntd)) {
     if(has_pterms(x[[ntd[i]]]$terms)) {
-      if(ntd[i]=="lambda"){
+      if(ntd[i]=="lambda") {
         x[[ntd[i]]]$smooth.construct$model.matrix <- param_time_transform2(x[[ntd[i]]]$smooth.construct$model.matrix,
-             drop.terms.bamlss(x[[ntd[i]]]$terms, sterms = FALSE, keep.response = FALSE), data, grid, yname,
-             timevar_mu, take, derivMat = (ntd[i] == "dmu"), timevar2 = timevar_mu, idvar = idvar)
-      } else{
+          drop.terms.bamlss(x[[ntd[i]]]$terms, sterms = FALSE, keep.response = FALSE), data, grid, yname,
+          timevar_mu, take, derivMat = (ntd[i] == "dmu"), timevar2 = timevar_mu, idvar = idvar)
+      } else {
         x[[ntd[i]]]$smooth.construct$model.matrix <- param_time_transform(x[[ntd[i]]]$smooth.construct$model.matrix,
           drop.terms.bamlss(x[[ntd[i]]]$terms, sterms = FALSE, keep.response = FALSE), data, grid, yname,
           if(ntd[i] != "mu" & ntd[i] != "dmu") timevar else timevar_mu, take, derivMat = (ntd[i] == "dmu"))
@@ -3191,7 +3192,6 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
 }
 
 
-
 rJM <- function(hazard, censoring, x, r, 
                 subdivisions = 1000, tmin = 0, tmax, file = NULL, ...){
   ## compute hazard for every person i at time
@@ -3238,3 +3238,169 @@ rJM <- function(hazard, censoring, x, r,
   
   return(data_short)
 }
+
+
+## Prediction.
+jm.predict <- function(object, newdata, type = c("link", "parameter", "probabilities"),
+  FUN = function(x) { mean(x, na.rm = TRUE) }, subdivisions = 100, cores = NULL,
+  chunks = 1, verbose = FALSE, ...)
+{
+  if(is.null(newdata))
+    newdata <- model.frame(object)
+  if(length(type) > 1)
+    type <- type[1]
+  type <- match.arg(type)
+  if(type != "probabilities") {
+    object$family$predict <- NULL
+    return(predict.bamlss(object, newdata = newdata, type = type,
+      FUN = FUN, cores = cores, chunks = chunks, verbose = verbose, ...))
+  }
+  if(object$family$family != "jm")
+    stop("object must be a joint-model!")
+
+  dalpha <- has_pterms(object$x$dalpha$terms) | (length(object$x$dalpha$smooth.construct) > 0)
+
+  timevar <- attr(object$y[[1]], "timevar")
+  idvar <- attr(object$y[[1]], "idvar")
+
+  ## Create the time grid.  
+  grid <- function(upper, length) {
+    seq(from = 0, to = upper, length = length)
+  }
+
+  jm_probs <- function(data) {
+    take <- !duplicated(data[, c(timevar["lambda"], idvar)])
+    dsurv <- subset(data, take)
+    nobs <- nrow(dsurv)
+    timegrid <- lapply(dsurv[[timevar["lambda"]]], grid, length = subdivisions)
+    gdim <- c(length(timegrid), length(timegrid[[1]]))
+    width <- rep(NA, nobs)
+    for(i in 1:nobs)
+      width[i] <- timegrid[[i]][2]
+
+    pred.setup <- predict.bamlss(object, data, type = "link",
+      get.bamlss.predict.setup = TRUE, ...)
+    enames <- pred.setup$enames
+
+    pred_gamma <- with(pred.setup, .predict.bamlss("gamma",
+      object$x$gamma, samps, enames$gamma, intercept,
+      nsamps, dsurv, env))
+
+    pred_lambda <- with(pred.setup, .predict.bamlss.surv.td("lambda",
+      object$x$lambda$smooth.construct, samps, enames$lambda, intercept,
+      nsamps, dsurv, env, timevar["lambda"], timegrid,
+      drop.terms.bamlss(object$x$lambda$terms, sterms = FALSE, keep.response = FALSE)))
+
+    pred_alpha <- with(pred.setup, .predict.bamlss.surv.td("alpha",
+      object$x$alpha$smooth.construct, samps, enames$alpha, intercept,
+      nsamps, dsurv, env, timevar["lambda"], timegrid,
+      drop.terms.bamlss(object$x$alpha$terms, sterms = FALSE, keep.response = FALSE)))
+
+    pred_mu <- with(pred.setup, .predict.bamlss.surv.td("mu",
+      object$x$mu$smooth.construct, samps, enames$mu, intercept,
+      nsamps, dsurv, env, timevar["mu"], timegrid,
+      drop.terms.bamlss(object$x$mu$terms, sterms = FALSE, keep.response = FALSE)))
+
+    if(dalpha) {
+      pred_dalpha <- with(pred.setup, .predict.bamlss.surv.td("dalpha",
+        object$x$dalpha$smooth.construct, samps, enames$dalpha, intercept,
+        nsamps, dsurv, env, timevar["lambda"], timegrid,
+        drop.terms.bamlss(object$x$dalpha$terms, sterms = FALSE, keep.response = FALSE)))
+
+      pred_dmu <- with(pred.setup, .predict.bamlss.surv.td("dmu",
+        object$x$dmu$smooth.construct, samps, enames$dmu, intercept,
+        nsamps, dsurv, env, timevar["mu"], timegrid,
+        drop.terms.bamlss(object$x$dmu$terms, sterms = FALSE, keep.response = FALSE)))
+    }
+
+    eta_timegrid <- if(dalpha) {
+      pred_lambda + pred_alpha * pred_mu + pred_dalpha * pred_dmu
+    } else {
+      pred_lambda + pred_alpha * pred_mu
+    }
+
+    probs <- NULL
+    for(i in 1:ncol(eta_timegrid)) {
+      eta <- matrix(eta_timegrid[, i], nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
+      eeta <- exp(eta)
+      int <- width * (0.5 * (eeta[, 1] + eeta[, subdivisions]) + apply(eeta[, 2:(subdivisions - 1), drop = FALSE], 1, sum))
+      probs <- cbind(probs, exp(-1 * exp(pred_gamma[, i]) * int))
+    }
+
+    if(!is.null(FUN)) {
+      if(is.matrix(probs)) {
+        if(ncol(probs) > 1)
+          probs <- apply(probs, 1, FUN)
+      } 
+    }
+
+    return(probs)
+  }
+
+  ia <- interactive()
+
+  if(is.null(cores)) {
+    if(chunks < 2) {
+      probs <- jm_probs(newdata)
+    } else {
+      id <- sort(rep(1:chunks, length.out = nrow(newdata)))
+      newdata <- split(newdata, id)
+      chunks <- length(newdata)
+      probs <- NULL
+      for(i in 1:chunks) {
+        if(verbose) {
+          cat(if(ia) "\r" else "\n")
+          cat("predicting chunk", i, "of", chunks, "...")
+          if(.Platform$OS.type != "unix" & ia) flush.console()
+        }
+        if(i < 2) {
+          probs <- jm_probs(newdata[[i]])
+        } else {
+          if(is.null(dim(probs))) {
+            probs <- c(probs, jm_probs(newdata[[i]]))
+          } else {
+            probs <- rbind(probs, jm_probs(newdata[[i]]))
+          }
+        }
+      }
+      if(verbose) cat("\n")
+    }
+  } else {
+    parallel_fun <- function(i) {
+      if(chunks < 2) {
+        pr <- jm_probs(newdata[[i]])
+      } else {
+        idc <- sort(rep(1:chunks, length.out = nrow(newdata[[i]])))
+        nd <- split(newdata[[i]], idc)
+        chunks <- length(nd)
+        pr <- NULL
+        for(j in 1:chunks) {
+          if(j < 2) {
+            pr <- jm_probs(nd[[j]])
+          } else {
+            if(is.null(dim(pr))) {
+              pr <- c(pr, jm_probs(nd[[j]]))
+            } else {
+              pr <- rbind(pr, jm_probs(nd[[j]]))
+            }
+          }
+        }
+      }
+      return(pr)
+    }
+
+    id <- sort(rep(1:cores, length.out = nrow(newdata)))
+    newdata <- split(newdata, id)
+    cores <- length(newdata)
+    probs <- mclapply(1:cores, parallel_fun, mc.cores = cores)
+
+    probs <- if(is.matrix(probs[[1]])) {
+      do.call("rbind", probs)
+    } else {
+      do.call("c", probs)
+    }
+  }
+
+  return(probs)
+}
+

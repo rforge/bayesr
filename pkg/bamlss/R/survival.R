@@ -1271,7 +1271,7 @@ param_Xtimegrid <- function(formula, data, grid, yname)
     paste(strsplit(x, "")[[1]][-c(1:2)], collapse = "")
   })
 
-  eta <- NULL
+  eta <- 0
   if(length(i <- grep("p.", ec))) {
     for(j in enames2[i]) {
       if(j != "(Intercept)") {
