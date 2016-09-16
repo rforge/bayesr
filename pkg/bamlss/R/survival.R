@@ -1160,7 +1160,7 @@ cox.predict <- function(object, newdata, type = c("link", "parameter", "probabil
     for(i in 1:ncol(pred_tv)) {
       eta <- matrix(pred_tv[, i], nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
       eeta <- exp(eta)
-      int <- width * (0.5 * (eeta[, 1] + eeta[, subdivisions]) + apply(eeta[, 2:(subdivisions - 1)], 1, sum))
+      int <- width * (0.5 * (eeta[, 1] + eeta[, subdivisions]) + apply(eeta[, 2:(subdivisions - 1), drop = FALSE], 1, sum))
       probs <- cbind(probs, exp(-1 * exp(pred_tc[, i]) * int))
     }
 
