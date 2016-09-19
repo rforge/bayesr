@@ -261,38 +261,14 @@ pixelmap <- function(x, y, size = 0.1, width = NULL, data = NULL,
 ## a list() of polygons or objects of class
 ## "SpatialPolygons".
 neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
-  k = 1, id = NULL, nb = FALSE, rm.dups = FALSE, ...)
+  k = 1, id = NULL, nb = FALSE, names = NULL, ...)
 {
-  stopifnot(requireNamespace("BayesX"))
-
-  type <- match.arg(type)
-
-  nx <- NULL
-  if(is.list(x) & !inherits(x, "nb")) {
-    nx <- names(x)
-    if(any(dups <- duplicated(nx))) {
-      ndups <- paste(nx[dups], collapse = ", ")
-      if(rm.dups) {
-        nx <- nx[!dups]
-        x <- x[!dups]
-      }
-      class(x) <- "bnd"
-      warning(paste("duplicated polygon names in map: ", ndups, "!", sep = ""))
-    }
-    dups <- anyDuplicated(coordinates(BayesX::bnd2sp(x)))
-    if(dups > 0) {
-      ndups <- paste(nx[dups], collapse = ", ")
-      if(rm.dups) {
-        x <- x[-dups]
-        nx <- nx[-dups]
-      }
-      class(x) <- "bnd"
-      warning(paste("duplicated coordinates in map, found for region(s): ", ndups, "!", sep = ""))
-    }
+  if(inherits(x, "bnd")) {
+    stopifnot(requireNamespace("BayesX"))
     x <- BayesX::bnd2sp(x)
   }
 
-  nx <- names(x)
+  type <- match.arg(type)
 
   adjmat <- if(!inherits(x, "nb")) {
     switch(type,
@@ -310,27 +286,35 @@ neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
   if(!nb) {
     adjmat <- nb2mat(adjmat, style = "B", zero.policy = TRUE)
 
-    if(is.null(nx))
-      nx <- try(slot(x, "data")$NAME, silent = TRUE)
-    if(is.null(nx))
-      nx <- try(slot(x, "data")$ID, silent = TRUE)
-    if(!is.null(nx) && class(nx) != "try-error") {
-      if(length(nx) == nrow(adjmat)) {
-        rownames(adjmat) <- nx
-        colnames(adjmat) <- nx
-      } else nx <- rownames(adjmat)
+    if(inherits(x, "SpatialPolygonsDataFrame") & is.null(names)) {
+      names <- if(is.null(names)) {
+        as.character(slot(x, "data")$OBJECTID)
+      } else {
+        try(as.character(slot(x, "data")[[names]]), silent = TRUE)
+      }
+    }
+    if(!is.null(names) & class(names) != "try-error") {
+      if(length(names) == nrow(adjmat)) {
+        rownames(adjmat) <- names
+        colnames(adjmat) <- names
+      } else names <- rownames(adjmat)
     }
 
     if(!is.null(id)) {
-      id <- as.character(unique(id))
-      i <- nx %in% id
+      id <- if(is.factor(id)) {
+        levels(id)
+      } else {
+        as.character(unique(id))
+      }
+      i <- rownames(adjmat) %in% id
       adjmat <- adjmat[i, i]
-      nn <- rowSums(adjmat)
-      adjmat[adjmat > 0] <- -1
-      diag(adjmat) <- nn
     }
 
-    attr(adjmat, "coords") <- coordinates(x)
+    nn <- rowSums(adjmat)
+    adjmat[adjmat > 0] <- -1
+    diag(adjmat) <- nn
+
+    colnames(adjmat) <- rownames(adjmat)
   }
 
   adjmat
@@ -339,34 +323,12 @@ neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
 
 ## Function to plot the neighborhood relationship
 ## given some polygon list() map x.
-plotneighbors <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
-  k = 1, nb.specs = list(), n.lwd = 1, n.col = "black", n.lty = 1, n.pch = 1,
-  add = FALSE, ...)
+plotneighbors <- function(x, add = FALSE, ...)
 {
-  type <- match.arg(type)
-  nb.specs$x <- x
-  nb.specs$type <- type
-  nb.specs$k <- k
-  adjmat <- if(!is.matrix(x)) {
-    do.call("neighbormatrix", nb.specs)
-  } else {
-    add <- TRUE
-    x
-  }
-  coords <- attr(adjmat, "coords")
+  nb <- neighbormatrix(x, nb = TRUE, ...)
   if(!add)
-    plotmap(x, ...)
-  args <- list(...)
-  if(is.null(args$names) & !add) points(coords, pch = n.pch, col = n.col)
-  id <- 1:ncol(adjmat)
-  for(i in 1:nrow(adjmat)) {
-    neighbors <- id[adjmat[i, ] > 0]
-    if(length(neighbors)) {
-      xy.neighbors <- coords[c(i, neighbors), ]
-      for(j in 2:nrow(xy.neighbors))
-        lines(xy.neighbors[c(1, j), ], lwd = n.lwd, lty = n.lty, col = n.col)
-    }
-  }
+    plot(x, col = "lightgray")
+  plot(nb, coordinates(x), add = TRUE, pch = 16)
   invisible(NULL)
 }
 

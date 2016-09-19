@@ -138,7 +138,9 @@ export(
   "rmf",
   "smooth.construct",
   "BUGSeta",
-  "BUGSmodel"
+  "BUGSmodel",
+  "neighbormatrix",
+  "plotneighbors"
 )
 
 S3method("plot", "bamlss")
