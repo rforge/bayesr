@@ -285,8 +285,7 @@ neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
 
   if(!nb) {
     adjmat <- nb2mat(adjmat, style = "B", zero.policy = TRUE)
-
-    if(inherits(x, "SpatialPolygonsDataFrame") & is.null(names)) {
+    if(inherits(x, "SpatialPolygonsDataFrame")) {
       names <- if(is.null(names)) {
         as.character(slot(x, "data")$OBJECTID)
       } else {
