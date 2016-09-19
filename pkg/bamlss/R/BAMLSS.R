@@ -4261,6 +4261,7 @@ plot.bamlss.effect.default <- function(x, ...) {
         specs <- attr(x, "specs")
         isf <- sapply(args$x[, specs$term], is.factor)
         if(any(isf)) {
+          args$ylim <- args$zlim
           do.call("bamlss_factor2d_plot", args)
         } else {
           do.call("plot3d", delete.args("plot3d", args,
@@ -4292,7 +4293,7 @@ bamlss_random_plot <- function(x, ...)
   return(invisible(NULL))   
 }
 
-bamlss_factor2d_plot <- function(x, ids = NULL, add = FALSE, ...)
+bamlss_factor2d_plot <- function(x, ids = NULL, add = FALSE, rug = FALSE, ...)
 {
   args <- list(...)
   y <- args$response
@@ -4338,12 +4339,12 @@ bamlss_factor2d_plot <- function(x, ids = NULL, add = FALSE, ...)
   for(j in levels(id)) {
     fid <- fx[id == j]
     tid <- xd[id == j]
-    lines(fid ~ tid, col = col[i], lwd = lwd[i], lty = lty[i])
+    o <- order(tid)
+    lines(fid[o] ~ tid[o], col = col[i], lwd = lwd[i], lty = lty[i])
     if(!is.null(y))
       points(tid, y[id == j], col = col[i], cex = args$cex, pch = args$pch)
     i <- i + 1
   }
-  rug <- if(is.null(args$rug)) TRUE else args$rug
   if(rug) {
     jitter <- if(is.null(args$jitter)) TRUE else args$jitter
     if(jitter)
