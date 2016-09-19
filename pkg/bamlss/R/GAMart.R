@@ -167,9 +167,9 @@ GAMart <- function(n = 500, sd = 0.1, seed = FALSE, ti = c("none", "vcm", "main"
     if(ti == "main")
       d$eta <- with(d, scale2(f1(lon) + f3(lat) + f4(lon, lat), -1, 1))
     if(ti == "both")
-      d$eta <- with(d, scale2(0.1 * lon - 0.2 * lat + f1(lon) + f2(lat) + f4(lon, lat), -1, 1))
+      d$eta <- with(d, scale2(0.7 * lon - 0.9 * lat + f1(lon) + f2(lat) + f4(lon, lat), -1, 1))
     if(ti == "vcm")
-      d$eta <- with(d, 1.2 + 0.1 * x1 + x1 * f2(x2))
+      d$eta <- with(d, 1.2 + 1.4 * x1 + x1 * f2(x2))
   }
   d$err <- rnorm(n, sd = sd)
   d$num <- with(d, eta + err)

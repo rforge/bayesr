@@ -298,8 +298,13 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           } else {
             x[[i]]$smooth.construct[[j]]$tx.term
           }
-          if((x[[i]]$smooth.construct[[j]]$by != "NA") & is.user(x[[i]]$smooth.construct[[j]]))
-            tl <- c(tl, x[[i]]$smooth.construct[[j]]$by)
+          if((x[[i]]$smooth.construct[[j]]$by != "NA") & is.user(x[[i]]$smooth.construct[[j]])) {
+            tl <- if(is.tx(x[[i]]$smooth.construct[[j]])) {
+              c(x[[i]]$smooth.construct[[j]]$by, tl)
+            } else {
+              c(tl, x[[i]]$smooth.construct[[j]]$by)
+            }
+          }
           if((length(tl) > 1) & is.user(x[[i]]$smooth.construct[[j]]) & !is.tx(x[[i]]$smooth.construct[[j]]))
             tl <- paste(tl, collapse = "")
           term <- paste("_", paste(tl, collapse = "_"), "_", sep = "")
@@ -556,7 +561,7 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
   } else object$term
   by <- if(object$by != "NA") object$by else NULL
   if(!is.null(by)) {
-    term <- paste(term, by, collapse = "")
+    term <- if(is.tx) paste(by, term, sep = "*") else paste(term, by, sep = "")
     Sn <- paste(id, by, "S", sep = "_")
     Sn <- paste(Sn, "", 1:length(object$S), sep = "")
     Xn <- paste(id, by, "X", sep = "_")
@@ -975,8 +980,8 @@ resplit <- function(x) {
 
 
 ## Special tensor constructor.
-tx <- function(..., k = NA, constraint = c("main", "both", "none")) {
-  object <- te(..., k = k)
+tx <- function(..., bs = "ps",k = NA, constraint = c("center", "main", "both", "none")) {
+  object <- te(..., bs = bs, k = k)
   object$constraint <- match.arg(constraint)
 #  cl <- sapply(object$margin, function(x) { class(x) })
 #  if(any(i <- !(cl %in% c("ps.smooth.spec", "re.smooth.spec", "cyclic.smooth")))) {
@@ -1017,33 +1022,37 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
     if(object$constraint == "none") {
       object$xt$nocenter <- TRUE
     } else {
-      if(object$constraint == "main") {
-        ## Remove main effects only.
-        A1 <- matrix(rep(1, p1), ncol = 1)
-        A2 <- matrix(rep(1, p2), ncol = 1)
-      }
-      if(object$constraint == "both") {
-        ## Remove main effects and varying coefficients.
-        A1 <- cbind(rep(1, p1), 1:p1)
-        A2 <- cbind(rep(1, p2), 1:p2)
-      }
+      if(object$constraint == "center") {
+        object$C <- matrix(1, ncol = p1 + p2)
+      } else {
+        if(object$constraint == "main") {
+          ## Remove main effects only.
+          A1 <- matrix(rep(1, p1), ncol = 1)
+          A2 <- matrix(rep(1, p2), ncol = 1)
+        }
+        if(object$constraint == "both") {
+          ## Remove main effects and varying coefficients.
+          A1 <- cbind(rep(1, p1), 1:p1)
+          A2 <- cbind(rep(1, p2), 1:p2)
+        }
 
-      A <- cbind(I2 %x% A1, A2 %x% I1)
+        A <- cbind(I2 %x% A1, A2 %x% I1)
 
-      i <- match.index(t(A))
-      A <- A[, i$nodups, drop = FALSE]
+        i <- match.index(t(A))
+        A <- A[, i$nodups, drop = FALSE]
 
-      k <- 0
-      while((qr(A)$rank < ncol(A)) & (k < 100)) {
-        i <- sapply(1:ncol(A), function(d) { qr(A[, -d])$rank })
-        j <- which(i == qr(A)$rank)
-        if(length(j))
-          A <- A[, -j[length(j)], drop = FALSE]
-        k <- k + 1
+        k <- 0
+        while((qr(A)$rank < ncol(A)) & (k < 100)) {
+          i <- sapply(1:ncol(A), function(d) { qr(A[, -d])$rank })
+          j <- which(i == qr(A)$rank)
+          if(length(j))
+            A <- A[, -j[length(j)], drop = FALSE]
+          k <- k + 1
+        }
+        if(k == 100)
+          stop("rank problems with constraint matrix!")
+        object$C <- t(A)
       }
-      if(k == 100)
-        stop("rank problems with constraint matrix!")
-      object$C <- t(A)
     }
     object$tx.term <- unlist(lapply(object$margin, function(x) {
       paste(x$term, collapse = "")

@@ -31,7 +31,8 @@ BayesX.control(n.iter = 1200, thin = 1, burnin = 200,
 sx(x, z = NULL, bs = "ps", by = NA, ...)
 
 ## Special BayesX tensor product smooth term constructor.
-tx(..., k = NA, constraint = c("main", "both", "none"))
+tx(..., bs = "ps", k = NA,
+  constraint = c("center", "main", "both", "none"))
 
 ## Family object for quantile regression with BayesX.
 quant_bamlss(prob = 0.5)

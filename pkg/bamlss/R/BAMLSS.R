@@ -2281,7 +2281,7 @@ fitted_matrix <- function(X, samples)
 
 ## Function to compute statistics from samples of a model term.
 compute_s.effect <- function(x, get.X, fit.fun, psamples,
-  FUN = NULL, snames, data, grid = -1, rug = TRUE)
+  FUN = c95, snames, data, grid = -1, rug = TRUE)
 {
   nt <- length(x$term)
   if(nt > 2)
@@ -2391,6 +2391,10 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
   }
   names(smf) <- c(x$term, cnames)
 
+  if(is.null(FUN)) {
+    FUN <- c95
+  }
+
   if(x$by != "NA") { ## FIXME: hard coded fix for plotting varying coefficient terms!
     if(!is.factor(data[[x$by]])) {
       X <- X / data[[x$by]]
@@ -2399,7 +2403,7 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
         fit.fun(X, g, expand = FALSE)
       })
 
-      smf <- t(apply(fsamples, 1, FUN))
+      smf <- t(apply(fsamples, 1, FUN = FUN))
 
       cnames <- colnames(smf)
       smf <- as.data.frame(smf)
@@ -5127,7 +5131,7 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
 
           s.effects[[obj$smooth.construct[[j]]$label]] <- compute_s.effect(obj$smooth.construct[[j]],
             get.X = get.X, fit.fun = obj$smooth.construct[[j]]$fit.fun, psamples = psamples[, b, drop = FALSE],
-            FUN = NULL, snames = snames, data = mf[, tn, drop = FALSE], grid = grid)
+            FUN = c95, snames = snames, data = mf[, tn, drop = FALSE], grid = grid)
         }
       }
     }
