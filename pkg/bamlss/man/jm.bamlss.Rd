@@ -242,7 +242,6 @@ plot_jm_surv <- function(i, maxtime = 80, grid = 10) {
 
 plot_jm_surv(i = 3)
 plot_jm_surv(i = 30)
-plot_jm_surv(i = 192)
 
 ## Simulate survival data
 ## with functional random intercepts and a nonlinear effect 
