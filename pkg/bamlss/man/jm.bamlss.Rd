@@ -184,14 +184,16 @@ print(p)
 ## Plot of survival probabilities and
 ## corresponding longitudinal effects
 ## for individual i.
-plot_jm_surv <- function(i, maxtime = 80, grid = 10) {
+plot_jm_surv <- function(i, maxtime = 80, grid = 50) {
   on.exit(par(par(no.readonly = TRUE)))
 
   nd <- data.frame(
     "id" = factor(i, levels = levels(d$id)),
     "x1" = d$x1[d$id == i][1]
   )
-  time <- seq(0, maxtime, length = grid)
+
+  tmax <- max(d$obstime[d$id == i])
+  time <- seq(tmax, maxtime, length = grid)
 
   if(all(time == time[1])) {
     stop(paste("Not enough time points available for individual ",
@@ -206,21 +208,30 @@ plot_jm_surv <- function(i, maxtime = 80, grid = 10) {
       type = "probabilities", FUN = c95)))
   }
 
+  time2 <- seq(0, maxtime, length = grid)
+
   nd <- data.frame(
-    "obstime" = time,
+    "obstime" = time2,
     "id" = factor(i, levels = levels(d$id))
   )
   p_long <- predict(b, newdata = nd, model = "mu", FUN = c95)
 
+  s2.col <- rev(rgb(0, 0, 1, alpha = seq(0.1, 0.01, length = 50)))
+
   par(mfrow = c(2, 1), mar = rep(0, 4),
     oma = c(4.1, 4.1, 1.1, 4.1))
   plot2d(p_surv ~ time, fill.select = c(0, 1, 0, 1),
-    scheme = 2, axes = FALSE, ylim = c(0, 1))
+    scheme = 2, axes = FALSE, ylim = c(0, 1),
+    xlim = c(0, maxtime), s2.col = s2.col)
+  abline(v = tmax, lty = 2)
   axis(2)
   box()
   mtext("Prob(T > t)", side = 2, line = 2.5)
-  plot2d(p_long ~ time, fill.select = c(0, 1, 0, 1),
-    scheme = 2, axes = FALSE)
+  plot2d(p_long[time2 <= tmax, ] ~ time2[time2 <= tmax], fill.select = c(0, 1, 0, 1),
+    scheme = 2, axes = FALSE, xlim = c(0, maxtime), ylim = range(p_long))
+  plot2d(p_long[time2 >= tmax, ] ~ time2[time2 >= tmax], fill.select = c(0, 1, 0, 1),
+    scheme = 2, axes = FALSE, add = TRUE, s2.col = s2.col)
+  abline(v = tmax, lty = 2)
   with(subset(d, id == i), points(obstime, y))
   axis(1)
   axis(4)

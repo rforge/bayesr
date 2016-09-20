@@ -1249,7 +1249,7 @@ sm_Xtimegrid <- function(x, data, grid, yname, derivMat = FALSE)
   ff(NULL)
 }
 
-param_Xtimegrid <- function(formula, data, grid, yname, type = 1)
+param_Xtimegrid <- function(formula, data, grid, yname, type = 1, derivMat = FALSE)
 {
   ff <- if(type < 2) {
     param_time_transform(list(), formula, data, grid, yname,
