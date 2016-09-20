@@ -983,13 +983,8 @@ resplit <- function(x) {
 tx <- function(..., bs = "ps",k = NA, constraint = c("center", "main", "both", "none")) {
   object <- te(..., bs = bs, k = k)
   object$constraint <- match.arg(constraint)
-#  cl <- sapply(object$margin, function(x) { class(x) })
-#  if(any(i <- !(cl %in% c("ps.smooth.spec", "re.smooth.spec", "cyclic.smooth")))) {
-#    for(j in which(i))
-#      class(object$margin[[j]]) <- "ps.smooth.spec"
-#  }
-#  if((length(object$margin) < 2) & all(is.na(k)))
-#    object$margin[[1]]$bs.dim <- 20
+  if((length(object$margin) < 2) & all(is.na(k)))
+    object$margin[[1]]$bs.dim <- 10
   object$label <- gsub("te(", "tx(", object$label, fixed = TRUE)
   object$special <- TRUE
   class(object) <- "tensorX.smooth.spec"
