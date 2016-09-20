@@ -1242,21 +1242,28 @@ cox.predict <- function(object, newdata, type = c("link", "parameter", "probabil
 }
 
 
-sm_Xtimegrid <- function(x, data, grid, yname)
+sm_Xtimegrid <- function(x, data, grid, yname, derivMat = FALSE)
 {
-  ff <- sm_time_transform(x, data, grid, yname, timevar = yname, take = NULL)$fit.fun_timegrid
+  ff <- sm_time_transform(x, data, grid, yname, timevar = yname,
+    take = NULL, derivMat = derivMat)$fit.fun_timegrid
   ff(NULL)
 }
 
-param_Xtimegrid <- function(formula, data, grid, yname)
+param_Xtimegrid <- function(formula, data, grid, yname, type = 1)
 {
-  ff <- param_time_transform(list(), formula, data, grid, yname, timevar = yname, take = NULL)$fit.fun_timegrid
+  ff <- if(type < 2) {
+    param_time_transform(list(), formula, data, grid, yname,
+      timevar = yname, take = NULL, derivMat = derivMat)$fit.fun_timegrid
+  } else {
+    param_time_transform2(list(), formula, data, grid, yname,
+      timevar = yname, take = NULL, derivMat = derivMat)$fit.fun_timegrid
+  }
   ff(NULL)
 }
 
 
 .predict.bamlss.surv.td <- function(id, x, samps, enames, intercept, nsamps, newdata, env,
-  yname, grid, formula)
+  yname, grid, formula, type = 1, derivMat = FALSE)
 {
   snames <- colnames(samps)
   enames <- gsub("p.Intercept", "p.(Intercept)", enames, fixed = TRUE)
@@ -1276,7 +1283,7 @@ param_Xtimegrid <- function(formula, data, grid, yname)
     for(j in enames2[i]) {
       if(j != "(Intercept)") {
         f <- as.formula(paste("~", if(has_intercept) "1" else "-1", "+", j), env = env)
-        X <- param_Xtimegrid(f, newdata, grid, yname)
+        X <- param_Xtimegrid(f, newdata, grid, yname, type = type, derivMat = derivMat)
         if(has_intercept)
           X <- X[, colnames(X) != "(Intercept)", drop = FALSE]
         sn <- snames[grep2(paste(id, "p", j, sep = "."), snames, fixed = TRUE)]
@@ -1297,7 +1304,7 @@ param_Xtimegrid <- function(formula, data, grid, yname)
   if(length(i <- grep("s.", ec))) {
     for(j in enames2[i]) {
       if(!inherits(x[[j]], "no.mgcv") & !inherits(x[[j]], "special")) {
-        X <- sm_Xtimegrid(x[[j]], newdata, grid, yname)
+        X <- sm_Xtimegrid(x[[j]], newdata, grid, yname, derivMat = derivMat)
         sn <- snames[grep2(paste(id, "s", j, sep = "."), snames, fixed = TRUE)]
         eta <- if(is.null(eta)) {
           fitted_matrix(X, samps[, sn, drop = FALSE])

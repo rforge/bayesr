@@ -3289,7 +3289,8 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
     pred_lambda <- with(pred.setup, .predict.bamlss.surv.td("lambda",
       object$x$lambda$smooth.construct, samps, enames$lambda, intercept,
       nsamps, dsurv, env, timevar["lambda"], timegrid,
-      drop.terms.bamlss(object$x$lambda$terms, sterms = FALSE, keep.response = FALSE)))
+      drop.terms.bamlss(object$x$lambda$terms, sterms = FALSE, keep.response = FALSE),
+      type = 2))
 
     pred_alpha <- with(pred.setup, .predict.bamlss.surv.td("alpha",
       object$x$alpha$smooth.construct, samps, enames$alpha, intercept,
@@ -3310,7 +3311,8 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
       pred_dmu <- with(pred.setup, .predict.bamlss.surv.td("dmu",
         object$x$dmu$smooth.construct, samps, enames$dmu, intercept,
         nsamps, dsurv, env, timevar["mu"], timegrid,
-        drop.terms.bamlss(object$x$dmu$terms, sterms = FALSE, keep.response = FALSE)))
+        drop.terms.bamlss(object$x$dmu$terms, sterms = FALSE, keep.response = FALSE),
+        derivMat = TRUE))
     }
 
     eta_timegrid <- if(dalpha) {
