@@ -184,7 +184,7 @@ print(p)
 ## Plot of survival probabilities and
 ## corresponding longitudinal effects
 ## for individual i.
-plot_jm_surv <- function(i, maxtime = 80, grid = 50) {
+plot_jm_surv <- function(i, maxtime = 80, grid = 10) {
   on.exit(par(par(no.readonly = TRUE)))
 
   nd <- data.frame(
@@ -208,7 +208,7 @@ plot_jm_surv <- function(i, maxtime = 80, grid = 50) {
       type = "probabilities", FUN = c95)))
   }
 
-  time2 <- seq(0, maxtime, length = grid)
+  time2 <- sort(c(tmax, seq(0, maxtime, length = grid)))
 
   nd <- data.frame(
     "obstime" = time2,
