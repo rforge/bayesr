@@ -3241,7 +3241,7 @@ rJM <- function(hazard, censoring, x, r,
 
 
 ## Prediction.
-jm.predict <- function(object, newdata, type = c("link", "parameter", "probabilities"),
+jm.predict <- function(object, newdata, type = c("link", "parameter", "probabilities", "cumhaz"),
   FUN = function(x) { mean(x, na.rm = TRUE) }, subdivisions = 100, cores = NULL,
   chunks = 1, verbose = FALSE, ...)
 {
@@ -3250,7 +3250,7 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
   if(length(type) > 1)
     type <- type[1]
   type <- match.arg(type)
-  if(type != "probabilities") {
+  if(!(type %in% c("probabilities", "cumhaz"))) {
     object$family$predict <- NULL
     return(predict.bamlss(object, newdata = newdata, type = type,
       FUN = FUN, cores = cores, chunks = chunks, verbose = verbose, ...))
@@ -3326,7 +3326,11 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
       eta <- matrix(eta_timegrid[, i], nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
       eeta <- exp(eta)
       int <- width * (0.5 * (eeta[, 1] + eeta[, subdivisions]) + apply(eeta[, 2:(subdivisions - 1), drop = FALSE], 1, sum))
-      probs <- cbind(probs, exp(-1 * exp(pred_gamma[, i]) * int))
+      probs <- if(type == "probabilities") {
+        cbind(probs, exp(-1 * exp(pred_gamma[, i]) * int))
+      } else {
+        cbind(probs, exp(pred_gamma[, i]) * int)
+      }
     }
 
     if(!is.null(FUN)) {
