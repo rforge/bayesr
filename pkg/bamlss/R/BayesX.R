@@ -134,15 +134,17 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         } else {
           x$smooth.construct[[j]]$tx.term
         }
-        if((x$smooth.construct[[j]]$by != "NA") & is.user(x$smooth.construct[[j]]))
+        otl <- x$smooth.construct[[j]]$term
+        if((x$smooth.construct[[j]]$by != "NA") & is.user(x$smooth.construct[[j]])) {
           tl <- c(tl, x$smooth.construct[[j]]$by)
+          otl <- c(otl, x$smooth.construct[[j]]$by)
+        }
         if((length(tl) > 1) & is.user(x$smooth.construct[[j]]) & !is.tx(x$smooth.construct[[j]]))
           tl <- paste(tl, collapse = "")
         if(is.null(sdata)) {
           if(is.user(x$smooth.construct[[j]])) {
-            sdata <- data[, 1, drop = FALSE]
+            sdata <- match.index(data[, otl, drop = FALSE])$match.index
             colnames(sdata) <- tl
-            sdata[[1]] <- runif(nrow(data))
           } else {
             sdata <- data[, tl, drop = FALSE]
           }
@@ -152,7 +154,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
             if(tlj %in% names(data)) {
               sdata[[tlj]] <- data[[tlj]]
             } else {
-              sdata[[tlj]] <- runif(nrow(sdata))
+              sdata[[tlj]] <- match.index(data[, otl, drop = FALSE])$match.index
             }
           }
         }
@@ -585,18 +587,23 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
   term <- paste(term, if(is.tx & (length(object$S) > 1)) "(tensor," else "(userdefined,", sep = "")
   for(j in seq_along(object$S))
     term <- paste(term, paste("penmatdata", if(j < 2) "" else j, "=", sep = ""), rev(Sn)[j], ",", sep = "")
+  noc_and_cm <- is.null(object$xt$nocenter) & is.null(object$xt$centermethod)
   if(length(object$S) > 1) {
     Xn <- paste(Xn, "", 1:length(object$S), sep = "")
-    for(j in seq_along(object$S))
-      term <- paste(term, paste("designmatdata", if(j < 2) "" else j, "=", sep = ""), rev(Xn)[j], ",", sep = "")
+    for(j in seq_along(object$S)) {
+      term <- paste(term, paste("designmatdata", if(j < 2) "" else j, "=", sep = ""),
+        rev(Xn)[j], if(j == length(object$S)) { if(noc_and_cm) "," else "" } else ",", sep = "")
+    }
   } else {
-    term <- paste(term, "designmatdata=", Xn, if(is.null(object$xt$nocenter)) "," else "", sep = "")
+    term <- paste(term, "designmatdata=", Xn,
+      if(noc_and_cm) "," else "",
+      sep = "")
   }
   if(!is.null(object$C))
     term <- paste(term, "constrmatdata=", Cn, ",", sep = "")
   if(!is.null(object$state$parameters))
     term <- paste(term, "betastart=", Pn, ",", sep = "")
-  if(is.null(object$xt$nocenter))
+  if(is.null(object$xt$nocenter) & is.null(object$xt$centermethod))
     term <- paste(term, "rankK=", sum(object$rank), sep = "")
   term <- paste(do.xt(term, object, c("center", "before")), ")", sep = "")
 
@@ -980,7 +987,9 @@ resplit <- function(x) {
 
 
 ## Special tensor constructor.
-tx <- function(..., bs = "ps",k = NA, constraint = c("center", "main", "both", "none")) {
+tx <- function(..., bs = "ps",k = NA,
+  constraint = c("center", "main", "both", "none", "meanf", "meanfd", "meansimple"))
+{
   object <- te(..., bs = bs, k = k)
   object$constraint <- match.arg(constraint)
   if((length(object$margin) < 2) & all(is.na(k)))
@@ -1006,17 +1015,21 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
   if(object$by != "NA")
     object$label <- paste(object$label, object$by, sep = ":")
 
-  if(length(object$margin) < 2) {
-    p <- ncol(object$margin[[1]]$X)
-    object$C <- matrix(1, ncol = p)
-  } else {
-    p1 <- ncol(object$margin[[2]]$X); p2 <- ncol(object$margin[[1]]$X)
-    I1 <- diag(p1); I2 <- diag(p2)
-    K <- object$margin[[2]]$S[[1]]%x%I2 + I1%x%object$margin[[1]]$S[[1]]
-    object$rank <- object$sx.rank <- qr(K)$rank
-    if(object$constraint == "none") {
+  if(object$constraint %in% c("meanf", "meanfd", "meansimple", "none")) {
+    if(object$constraint == "none")
       object$xt$nocenter <- TRUE
+    else
+      object$xt$centermethod <- object$constraint
+  } else {
+    if(length(object$margin) < 2) {
+      p <- ncol(object$margin[[1]]$X)
+      object$C <- matrix(1, ncol = p)
     } else {
+      p1 <- ncol(object$margin[[2]]$X); p2 <- ncol(object$margin[[1]]$X)
+      I1 <- diag(p1); I2 <- diag(p2)
+      K <- object$margin[[2]]$S[[1]]%x%I2 + I1%x%object$margin[[1]]$S[[1]]
+      object$rank <- object$sx.rank <- qr(K)$rank
+
       if(object$constraint == "center") {
         object$C <- matrix(1, ncol = p1 + p2)
       } else {
@@ -1049,6 +1062,9 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
         object$C <- t(A)
       }
     }
+  }
+
+  if(length(object$margin) > 1) {
     object$tx.term <- unlist(lapply(object$margin, function(x) {
       paste(x$term, collapse = "")
     }))

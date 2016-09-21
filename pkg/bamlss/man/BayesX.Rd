@@ -32,7 +32,8 @@ sx(x, z = NULL, bs = "ps", by = NA, ...)
 
 ## Special BayesX tensor product smooth term constructor.
 tx(..., bs = "ps", k = NA,
-  constraint = c("center", "main", "both", "none"))
+  constraint = c("center", "main", "both",
+    "none", "meanf", "meanfd", "meansimple"))
 
 ## Family object for quantile regression with BayesX.
 quant_bamlss(prob = 0.5)
@@ -79,7 +80,7 @@ get_BayesXsrc(dir = NULL, install = TRUE)
     should be passed to \pkg{BayesX} for this model term can be specified here. For function
     \code{tx()}, all variables the smooth should be a function of are specified here. For function
     \code{BayesX()} all arguments that should be passed to \code{BayesX.control}.}
-  \item{constraint}{Specifies the type of contraints that should be applied. \code{"main"}, both
+  \item{constraint}{Specifies the type of constraints that should be applied. \code{"main"}, both
     main effects should be removed; \code{"both"}, both main effects and varying effects should
     be removed; \code{"none"}, no constraint should be applied.}
   \item{prob}{Numeric, specifies the quantile to be modeled, see the examples.}
