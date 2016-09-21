@@ -2931,7 +2931,7 @@ param_time_transform2 <- function (x, formula, data, grid, yname, timevar, take,
       }
     }
   }
-  formula <- update(formula, . ~ . - 1)
+  formula <- update(formula, ~ . - 1)
   X <- model.matrix(formula, data = X)
   gdim <- c(length(grid), length(grid[[1]]))
   x$XT <- extract_XT(X, gdim[1], gdim[2])
@@ -3224,9 +3224,11 @@ rJM <- function(hazard, censoring, x, r,
   
   # Finding Survival Times
   cumhaz <- rep(NA, nsub)
+  survprob <- rep(NA, nsub)
   for(i in 1:nsub) { 
     time[i] <- InvHazard(Hazard, hazard, x[i,], r[i,], tmin, tmax)
     cumhaz[i] <- Hazard(hazard, time[i], x[i,], r[i,])
+    survprob[i] <- exp((-1)*cumhaz[i])
   } 
   
   time_event <- censoring(time, tmax) 
