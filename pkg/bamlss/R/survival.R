@@ -1119,7 +1119,7 @@ survint <- function(X, eta, width, gamma, eta2 = NULL, index = NULL, dX = NULL, 
 
 ## Survival probabilities.
 cox.predict <- function(object, newdata, type = c("link", "parameter", "probabilities"),
-  FUN = function(x) { mean(x, na.rm = TRUE) }, time, subdivisions = 100, cores = NULL,
+  FUN = function(x) { mean(x, na.rm = TRUE) }, time = NULL, subdivisions = 100, cores = NULL,
   chunks = 1, verbose = FALSE, ...)
 {
   if(is.null(newdata))
@@ -1134,14 +1134,24 @@ cox.predict <- function(object, newdata, type = c("link", "parameter", "probabil
   }
   if(object$family$family != "cox")
     stop("object must be a cox-survival model!")
-  if(missing(time))
-    stop("please specify the time!")
+
   yname <- response.name(formula(as.Formula(object$x$lambda$formula, rhs = FALSE)))[1]
 
+  if(is.null(time) & !(yname %in% names(newdata)))
+    stop("please specify argument time or supply values for survival time variable!")
+  if(!is.null(time))
+    newdata[[yname]] <- rep(time, length.out = nrow(newdata))
+
+  ## Create the time grid.  
+  grid <- function(upper, length) {
+    seq(from = 0, to = upper, length = length)
+  }
+
   cox_probs <- function(data) {
-    timegrid <- rep(list(seq(0, time, length = subdivisions)), length = nrow(data))
+    nobs <- nrow(data)
+    timegrid <- lapply(data[[yname]], grid, length = subdivisions)
     gdim <- c(length(timegrid), length(timegrid[[1]]))
-    width <- timegrid[[1]][2]
+    width <- sapply(timegrid, function(x) { x[2] })
 
     pred.setup <- predict.bamlss(object, data, type = "link",
       get.bamlss.predict.setup = TRUE, ...)

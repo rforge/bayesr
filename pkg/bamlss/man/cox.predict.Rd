@@ -17,7 +17,7 @@
 cox.predict(object, newdata,
   type = c("link", "parameter", "probabilities"),
   FUN = function(x) { mean(x, na.rm = TRUE) },
-  time, subdivisions = 100, cores = NULL,
+  time = NULL, subdivisions = 100, cores = NULL,
   chunks = 1, verbose = FALSE, ...)
 }
 
@@ -33,7 +33,8 @@ cox.predict(object, newdata,
     the function computes means of samples, however, other functions like \code{\link{quantile}}
     can be supplied.}
   \item{time}{\code{numeric}, specifies the time for which survival probabilities should
-    be computed if \code{type = "probabilities"}.}
+    be computed if \code{type = "probabilities"}. Note that this overwrites survival times
+    that are supplied in argument \code{newdata}.}
   \item{subdivisions}{How many time points should be created for each individual.}
   \item{cores}{Specifies the number of cores that should be used for prediction. The problem is
     split into \code{core} chunks, each chunk is then processed by one core.}
