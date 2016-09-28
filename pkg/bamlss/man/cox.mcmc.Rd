@@ -65,7 +65,8 @@ cox.mcmc(x, y, family, start, weights, offset,
 }
 
 \examples{
-\dontrun{set.seed(123)
+\dontrun{library("survival")
+set.seed(123)
 
 ## Simulate survival data.
 d <- simSurv(n = 500)

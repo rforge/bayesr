@@ -318,8 +318,14 @@ design.construct <- function(formula, data = NULL, knots = NULL,
     }
     if(!is.null(obj$smooth.construct)) {
       sl <- NULL
-      for(j in seq_along(obj$smooth.construct))
-        sl <- c(sl, obj$smooth.construct[[j]]$label)
+      for(j in seq_along(obj$smooth.construct)) {
+        slj <- obj$smooth.construct[[j]]$label
+        if(obj$smooth.construct[[j]]$by != "NA") {
+          if(grepl(pat <- paste("):", obj$smooth.construct[[j]]$by, sep = ""), slj, fixed = TRUE))
+            slj <- gsub(pat, paste(",by=", obj$smooth.construct[[j]]$by, ")", sep = ""), slj, fixed = TRUE)
+        }
+        sl <- c(sl, slj)
+      }
       names(obj$smooth.construct) <- sl
     }
     if(!is.null(drop)) {
@@ -1871,7 +1877,7 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
       if(!length(vars))
         vars <- NULL
       for(j in tl[sid]) {
-        st <- try(eval(parse(text = j), envir = env), silent = TRUE)
+        st <- try(eval(parse(text = j)), silent = TRUE)
         if(inherits(st, "try-error"))
           st <- eval(parse(text = j), enclos = env, envir = loadNamespace("mgcv"))
         vars <- c(vars, st$term)
@@ -1926,9 +1932,13 @@ all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
       tl[-sid] <- labs
     labs2 <- NULL
     for(j in tl[sid]) {
-      st <- try(eval(parse(text = j), envir = env), silent = TRUE)
+      st <- try(eval(parse(text = j)), silent = TRUE)
       if(inherits(st, "try-error"))
         st <- eval(parse(text = j), enclos = env, envir = loadNamespace("mgcv"))
+      if(st$by != "NA") {
+        if(!grepl(paste("by=", st$by, sep = ""), st$label, fixed = TRUE))
+          st$label <- gsub(")", paste(",by=", st$by, ")", sep = ""), st$label, fixed = TRUE)
+      }
       labs2 <- c(labs2, if(full.names) paste("s", st$label, sep = ".") else st$label)
     }
     tl[sid] <- labs2
@@ -2281,7 +2291,7 @@ fitted_matrix <- function(X, samples)
 
 ## Function to compute statistics from samples of a model term.
 compute_s.effect <- function(x, get.X, fit.fun, psamples,
-  FUN = c95, snames, data, grid = -1, rug = TRUE)
+  FUN = NULL, snames, data, grid = -1, rug = TRUE)
 {
   nt <- length(x$term)
   if(nt > 2)
@@ -3453,6 +3463,7 @@ rs.plot <- function(x, model = NULL, term = NULL,
           } else {
             FUN <- NULL
           }
+
           pl[[k]] <- compute_s.effect(x$x[[pn]]$smooth.construct[[i]]$X[[w]]$smooth.construct[[ii]], get.X,
             x$x[[pn]]$smooth.construct[[i]]$X[[w]]$smooth.construct[[ii]]$fit.fun, samps[, sn, drop = FALSE],
             FUN = FUN, sn, model.frame(x), grid = -1, rug = TRUE)
@@ -4963,8 +4974,14 @@ get_sterms_labels <- function(x, specials = NULL)
       st <- try(eval(parse(text = j), envir = env), silent = TRUE)
       if(inherits(st, "try-error"))
         st <- eval(parse(text = j), enclos = env, envir = loadNamespace("mgcv"))
-      if(st$by != "NA")
-        st$label <- paste(st$label, st$by, sep = ":")
+      if(st$by != "NA") {
+        if(grepl(st$label, paste("):", st$by, sep = ""))) {
+          st$label <- gsub(paste("):", st$by, sep = ""), paste(",by=", st$by, ")", sep = ""),
+            st$label, fixed = TRUE)
+        } else {
+          st$label <- gsub(")", paste(",by=", st$by, ")", sep = ""), st$label, fixed = TRUE)
+        }
+      }
       tl <- c(tl, st$label)
     }
   } else tl <- character(0)
@@ -5132,7 +5149,7 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
 
           s.effects[[obj$smooth.construct[[j]]$label]] <- compute_s.effect(obj$smooth.construct[[j]],
             get.X = get.X, fit.fun = obj$smooth.construct[[j]]$fit.fun, psamples = psamples[, b, drop = FALSE],
-            FUN = c95, snames = snames, data = mf[, tn, drop = FALSE], grid = grid)
+            FUN = NULL, snames = snames, data = mf[, tn, drop = FALSE], grid = grid)
         }
       }
     }
