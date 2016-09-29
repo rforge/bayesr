@@ -3,7 +3,6 @@ import("mgcv")
 import("Formula")
 import("colorspace")
 import("gamlss")
-import("ff")
 import("ffbase")
 
 importFrom("parallel", "mclapply")
