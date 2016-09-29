@@ -5,33 +5,12 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
   model.matrix = TRUE, smooth.construct = TRUE, ytype = c("matrix", "vector", "integer"),
   scale.x = FALSE, ...)
 {
+  ## Parse family object.
+  family <- bamlss.family(family, ...)
+
   ## Parse formula.
-  if(!inherits(formula, "bamlss.formula")) {
-    ## Search for additional formulas.
-    formula2 <- NULL; formula3 <- list(); k <- 1
-    fn <- names(fo <- formals(fun = bamlss.frame))[-1]
-    fn <- fn[fn != "..."]
-    for(f in fn) {
-      fe <- paste("deparse(substitute(", f, "), backtick = TRUE, width.cutoff = 500)", sep = "")
-      fe <- eval(parse(text = fe))
-      if(any(grepl("~", fe, fixed = TRUE))) {
-        fe <- as.formula(fe, env = environment(if(is.list(formula)) formula[[1]] else formula))
-        formula2 <- c(formula2, as.formula(fe))
-        formula3[[k]] <- fe
-        eval(parse(text = paste(f, if(is.null(fo[[f]])) "NULL" else fo[[f]], sep = " = ")))
-        k <- k + 1
-      }
-    }
-    formula <- c(formula, formula2)
-
-    ## Parse family object.
-    family <- bamlss.family(family, ...)
-
-    ## Parse formula.
-    formula <- bamlss.formula(if(length(formula) < 2) formula[[1]] else formula, family, specials)
-  } else {
-    family <- bamlss.family(family, ...)
-  }
+  if(!inherits(formula, "bamlss.formula"))
+    formula <- bamlss.formula(formula, family, specials)
   if(!is.null(attr(formula, "orig.formula")))
     formula <- attr(formula, "orig.formula")
 
@@ -43,56 +22,65 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
   bf$model.frame <- bamlss.model.frame(formula, data, family, weights,
     subset, offset, na.action, specials, contrasts)
 
-  ## Type of y.
-  ytype <- match.arg(ytype)
+  if(!is.character(bf$model.frame)) {
+    ## Type of y.
+    ytype <- match.arg(ytype)
 
-  ## Process categorical responses and assign 'y'.
-  cf <- bamlss.formula.cat(formula, family, bf$model.frame, reference)
-  if(!is.null(cf) & (ytype != "integer")) {
-    rn <- response.name(formula, hierarchical = FALSE, na.rm = TRUE)
-    hrn <- response.name(formula, hierarchical = TRUE, na.rm = TRUE)
-    orig.formula <- formula
-    formula <- cf$formula
-    if(ytype == "matrix") {
-      if(is.factor(bf$model.frame[[rn[1]]])) {
-        f <- as.formula(paste("~ -1 +", rn[1]))
-        bf$y <- bf$model.frame[rn]
-        bf$y[rn[1]] <- model.matrix(f, data = bf$model.frame)
-        colnames(bf$y[[rn[1]]]) <- rmf(gsub(rn[1], "", colnames(bf$y[[rn[1]]])))
-        bf$y[[rn[1]]] <- bf$y[[rn[1]]][, rmf(c(names(formula), cf$reference))]
+    ## Process categorical responses and assign 'y'.
+    cf <- bamlss.formula.cat(formula, family, bf$model.frame, reference)
+    if(!is.null(cf) & (ytype != "integer")) {
+      rn <- response.name(formula, hierarchical = FALSE, na.rm = TRUE)
+      hrn <- response.name(formula, hierarchical = TRUE, na.rm = TRUE)
+      orig.formula <- formula
+      formula <- cf$formula
+      if(ytype == "matrix") {
+        if(is.factor(bf$model.frame[[rn[1]]])) {
+          f <- as.formula(paste("~ -1 +", rn[1]))
+          bf$y <- bf$model.frame[rn]
+          bf$y[rn[1]] <- model.matrix(f, data = bf$model.frame)
+          colnames(bf$y[[rn[1]]]) <- rmf(gsub(rn[1], "", colnames(bf$y[[rn[1]]])))
+          bf$y[[rn[1]]] <- bf$y[[rn[1]]][, rmf(c(names(formula), cf$reference))]
+        } else {
+          bf$y <- bf$model.frame[rn]
+        }
       } else {
         bf$y <- bf$model.frame[rn]
+        if(is.factor(bf$model.frame[[rn[1]]])) {
+          if(ytype == "integer")
+            bf$y[[1]] <- as.integer(bf$y[[1]]) - if(nlevels(bf$model.frame[[rn[1]]]) < 3) 1L else 0L
+        }
       }
+      if(length(hrn) > length(rn)) {
+        ynot <- hrn[!(hrn %in% rn)]
+        bf$y <- cbind(bf$y, bf$model.frame[ynot])
+      }
+      attr(bf$y, "reference") <- cf$reference
+      family$names <- names(formula)
+      family$links <- rep(family$links, length.out = length(formula))
+      names(family$links) <- names(formula)
+      attr(formula, "orig.formula") <- orig.formula
     } else {
+      rn <- response.name(formula, hierarchical = FALSE, keep.functions = TRUE)
+      rn <- rn[rn %in% names(bf$model.frame)]
       bf$y <- bf$model.frame[rn]
-      if(is.factor(bf$model.frame[[rn[1]]])) {
-        if(ytype == "integer")
-          bf$y[[1]] <- as.integer(bf$y[[1]]) - if(nlevels(bf$model.frame[[rn[1]]]) < 3) 1L else 0L
+      for(j in rn) {
+        if(is.factor(bf$y[[j]]) & (ytype == "matrix")) {
+          f <- as.formula(paste("~ -1 +", j))
+          bf$y[j] <- model.matrix(f, data = bf$model.frame)
+        }
+        if(is.factor(bf$y[[j]]) & (ytype == "integer")) {
+          bf$y[[j]] <- as.integer(bf$y[[j]]) - if(nlevels(bf$y[[j]]) < 3) 1L else 0L
+        }
       }
     }
-    if(length(hrn) > length(rn)) {
-      ynot <- hrn[!(hrn %in% rn)]
-      bf$y <- cbind(bf$y, bf$model.frame[ynot])
-    }
-    attr(bf$y, "reference") <- cf$reference
-    family$names <- names(formula)
-    family$links <- rep(family$links, length.out = length(formula))
-    names(family$links) <- names(formula)
-    attr(formula, "orig.formula") <- orig.formula
   } else {
+    mf <- read.table(bf$model.frame, header = TRUE, nrows = 3L, ...)
     rn <- response.name(formula, hierarchical = FALSE, keep.functions = TRUE)
-    rn <- rn[rn %in% names(bf$model.frame)]
-    bf$y <- bf$model.frame[rn]
-    for(j in rn) {
-      if(is.factor(bf$y[[j]]) & (ytype == "matrix")) {
-        f <- as.formula(paste("~ -1 +", j))
-        bf$y[j] <- model.matrix(f, data = bf$model.frame)
-      }
-      if(is.factor(bf$y[[j]]) & (ytype == "integer")) {
-        bf$y[[j]] <- as.integer(bf$y[[j]]) - if(nlevels(bf$y[[j]]) < 3) 1L else 0L
-      }
-    }
+    rn <- rn[rn %in% names(mf)]
+    bf$y <- rn
+    attr(bf$y, "path") <- bf$model.frame
   }
+
   bf$formula <- formula
 
   ## Add the terms object.
@@ -165,6 +153,22 @@ print.bamlss.frame <- function(x, ...)
 }
 
 
+## ff version for indecing.
+match.index.ff <- function(x)
+{
+  nodups <- ffwhich(x, !duplicated(x))
+  ind <- NULL
+  for(i in chunk(nodups)) {
+    ind2 <- apply(x[i, ], MARGIN = 1L, FUN = paste, sep = "\r", collapse = ";")
+    ind2 <- match(ind2, ind2[nodups[i]])
+    ind <- ffappend(ind, ind2)
+  }
+  ord <- fforder(ind)
+  sindex <- ind[ord]
+  return(list("match.index" = ind, "nodups" = nodups, "order" = ord, "sorted.index" = sindex))
+}
+
+
 ## Compute the 'bamlss.frame' 'x' master object.
 design.construct <- function(formula, data = NULL, knots = NULL,
   model.matrix = TRUE, smooth.construct = TRUE, binning = FALSE,
@@ -187,8 +191,15 @@ design.construct <- function(formula, data = NULL, knots = NULL,
   formula <- formula.bamlss.terms(formula)
   if(is.null(data))
     stop("data needs to be supplied!")
-  if(!inherits(data, "data.frame"))
-    data <- as.data.frame(data)
+  nmax <- NULL
+  if(!is.character(data)) {
+    if(!inherits(data, "data.frame"))
+      data <- as.data.frame(data)
+  } else {
+    requireNamespace("ffbase")
+    data <- read.table.ffdf(file = data,
+      na.strings = "", header = TRUE, sep = ",")
+  }
   if(!is.null(model))
     formula <- model.terms(formula, model)
   if(!binning)
@@ -196,7 +207,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
 
   assign.design <- function(obj, dups = NULL)
   {
-    if(!is.null(dups)) {
+    if(!is.null(dups) & is.null(nmax)) {
       if(any(dups)) {
         mi <- match.index(data[, all.vars(obj$fake.formula), drop = FALSE])
         obj[names(mi)] <- mi
@@ -207,12 +218,35 @@ design.construct <- function(formula, data = NULL, knots = NULL,
     if(!all(c("formula", "fake.formula") %in% names(obj)))
       return(obj)
     if(model.matrix) {
-      obj$model.matrix <- model.matrix(drop.terms.bamlss(obj$terms,
-        sterms = FALSE, keep.response = FALSE, data = data, specials = specials), data = data)
-      if(ncol(obj$model.matrix) > 0) {
-        if(scale.x)
-          obj$model.matrix <- scale.model.matrix(obj$model.matrix)
-      } else obj$model.matrix <- NULL
+      if(!inherits(data, "ffdf")) {
+        obj$model.matrix <- model.matrix(drop.terms.bamlss(obj$terms,
+          sterms = FALSE, keep.response = FALSE, data = data, specials = specials), data = data)
+        if(ncol(obj$model.matrix) > 0) {
+          if(scale.x)
+            obj$model.matrix <- scale.model.matrix(obj$model.matrix)
+        } else obj$model.matrix <- NULL
+      } else {
+        mm_terms <- drop.terms.bamlss(obj$terms,
+          sterms = FALSE, keep.response = FALSE, data = data, specials = specials)
+        mm_intercept <- attr(mm_terms, "intercept") > 0
+        mm_vars <- all.vars.formula(mm_terms)
+        if(mm_intercept)
+          obj$model.matrix <- ffdf("Intercept" = ff(1, length = nrow(data)))
+        if(!is.null(mm_vars)) {
+          if(!all(mm_vars %in% colnames(data)))
+            stop("variables missing in supplied data!")
+          if(mm_intercept) {
+            for(v in mm_vars)
+              obj$model.matrix[[v]] <- data[[v]]
+          } else {
+            obj$model.matrix <- data[mm_vars]
+          }
+        }
+        
+        binning <- match.index.ff(obj$model.matrix)
+        obj$model.matrix <- obj$model.matrix[binning$nodups, ]
+        attr(obj$model.matrix, "binning") <- binning
+      }
     }
     if(smooth.construct) {
       tx <- drop.terms.bamlss(obj$terms,
@@ -1401,6 +1435,12 @@ bamlss.model.frame <- function(formula, data, family = gaussian_bamlss(),
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   specials = NULL, contrasts.arg = NULL, drop.unused.levels = TRUE, ...)
 {
+  if(is.character(data)) {
+    if(!file.exists(data))
+      stop("data path is not existing!")
+    return(data)
+  }
+
   if(inherits(formula, "bamlss.frame") | inherits(formula, "bamlss")) {
     if(!is.null(formula$model.frame))
       return(formula$model.frame)
@@ -1420,6 +1460,7 @@ bamlss.model.frame <- function(formula, data, family = gaussian_bamlss(),
     na.action <- get(getOption("na.action"))
   if(missing(data))
     data <- environment(formula)
+
   if(!is.data.frame(data))
     data <- as.data.frame(data)
 
