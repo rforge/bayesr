@@ -20,10 +20,10 @@ if(!file.exists("rainmodel.rda")) {
   homstart <- subset(homstart, year >= 1979)
 
   f <- list(
-    "mu" = sqrt(raw) ~ s(elevation,k=4) + ti(day,bs="cc",k=10) + ti(long,lat,bs="tp",d=2,k=30) +
-      ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),k=c(8,30)),
-    "sigma" = ~ s(elevation,k=4) + ti(day,bs="cc",k=10) + ti(long,lat,bs="tp",d=2,k=30) +
-      ti(day,long,lat,bs=c("cc","tp"),d=c(1,2),k=c(8,30))
+    "mu" = sqrt(raw) ~ s(elevation,k=4) + ti(day,bs="cc",k=10) + ti(lon,lat,bs="tp",d=2,k=30) +
+      ti(day,lon,lat,bs=c("cc","tp"),d=c(1,2),k=c(8,30)),
+    "sigma" = ~ s(elevation,k=4) + ti(day,bs="cc",k=10) + ti(lon,lat,bs="tp",d=2,k=30) +
+      ti(day,lon,lat,bs=c("cc","tp"),d=c(1,2),k=c(8,30))
   )
 
   rainmodel <- bamlss(f, data = homstart, family = "cnorm",

@@ -41,12 +41,12 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   load("rainmodel.rda")
 
   nd <- as.data.frame(coordinates(AustriaTopo))
-  names(nd) <- c("long", "lat")
-  nd$elevation <- extract(AustriaTopo, cbind(nd$long, nd$lat))
+  names(nd) <- c("lon", "lat")
+  nd$elevation <- extract(AustriaTopo, cbind(nd$lon, nd$lat))
   nd <- na.omit(nd)
 
-  nd$fmu <- predict(rainmodel, newdata = nd, model = "mu", term = "(long,lat)", intercept = FALSE)
-  nd$fsigma <- predict(rainmodel, newdata = nd, model = "sigma", term = "(long,lat)", intercept = FALSE)
+  nd$fmu <- predict(rainmodel, newdata = nd, model = "mu", term = "(lon,lat)", intercept = FALSE)
+  nd$fsigma <- predict(rainmodel, newdata = nd, model = "sigma", term = "(lon,lat)", intercept = FALSE)
 
   expCens <- function(mu, sigma) {
     pnorm(mu / sigma) * (mu + sigma * dnorm(mu / sigma) / pnorm(mu / sigma))
@@ -74,11 +74,11 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   nd$rain192 <- expSample(nd$fmu, nd$fsigma2)
 
   nd2 <- data.frame("day" = 1:365)
-  co <- unique(homstart[, c("long", "lat", "elevation", "id")])
+  co <- unique(homstart[, c("lon", "lat", "elevation", "id")])
   nd3 <- list()
   for(i in 1:nrow(co)) {
     cat("Station", i, "\n")
-    nd2$long <- co[i, "long"]
+    nd2$lon <- co[i, "lon"]
     nd2$lat <- co[i, "lat"]
     nd2$elevation <- mean(co$elevation)
     nd2[[paste("fmu", i, sep = "")]] <- predict(rainmodel, model = "mu", term = "day",
@@ -101,7 +101,7 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
       pred <- cbind(pred, expCens(pmu[, j], exp(psigma[, j])))
     pred <- apply(pred, 1, mean, na.rm = TRUE)
     fday$pred <- pred
-    attr(fday, "co") <- as.list(co[i, c("long", "lat")])
+    attr(fday, "co") <- as.list(co[i, c("lon", "lat")])
     nd3[[paste("s", i, sep = "")]] <- fday
   }
 
@@ -144,7 +144,7 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
     load("rainmodel0.rda")
   }
 
-  stations <- unique(homstart[, c("long", "lat")])
+  stations <- unique(homstart[, c("lon", "lat")])
   orange <- rgb(242, 146, 0, maxColorValue = 255)
 
   plotUnionAustria <- function(...) {
@@ -229,7 +229,7 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   epng("figures/rainmodel-effects-spatial-mu.png", width = 4.5, height = 3.5)
   par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot(Austria, xlab = "Longitude [deg]", ylab = "Latitude [deg]", lwd = 0.3)
-  bamlss:::xymap(long, lat, fmu, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
+  bamlss:::xymap(lon, lat, fmu, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
     add = TRUE, color = diverge_hcl, shift = c(0.09, 0.04), distance.labels = 0,
     width = 0.3, symmetric = TRUE, swap = FALSE, range = ylim.mu, digits = 1)
   plot(Austria, add = TRUE, lwd = 0.3)
@@ -243,7 +243,7 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   epng("figures/rainmodel-effects-spatial-sigma.png", width = 4.5, height = 3.5)
   par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot(Austria, xlab = "Longitude [deg]", ylab = "Latitude [deg]", lwd = 0.3)
-  bamlss:::xymap(long, lat, fsigma, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
+  bamlss:::xymap(lon, lat, fsigma, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
     add = TRUE, color = diverge_hcl, shift = c(0.09, 0.04), distance.labels = 0,
     width = 0.3, symmetric = TRUE, swap = FALSE, range = ylim.sigma, digits = 1)
   plot(Austria, add = TRUE, lwd = 0.3)
@@ -258,7 +258,7 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   epng("figures/rainmodel-effects-predict.png", width = 9, height = 5, res = 200)
   par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot(Austria, xlab = "Longitude [deg]", ylab = "Latitude [deg]", lwd = 0.3)
-  bamlss:::xymap(long, lat, rain10, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
+  bamlss:::xymap(lon, lat, rain10, data = nd, pos = "topleft", layout = FALSE, map = FALSE,
     add = TRUE, color = colors.rain, shift = c(0.1, 0.1), distance.labels = 0,
     width = 0.3 / 2, height = 0.06 * 4/6, symmetric = FALSE, swap = FALSE, digits = 1, range = c(0, 0.6),
     lrange = round(c(0, max(nd$rain10)), 1))
@@ -299,8 +299,8 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
       plot(Austria)
       for(i in stations) {
         co <- attr(nd3[[i]], "co")
-        points(co$long, co$lat, pch = 16, cex = 1.5)
-        text(co$long, co$lat, i, pos = 3, cex = 1.5)
+        points(co$lon, co$lat, pch = 16, cex = 1.5)
+        text(co$lon, co$lat, i, pos = 3, cex = 1.5)
       }
     }
   }

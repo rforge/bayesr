@@ -22,7 +22,7 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
   bf$model.frame <- bamlss.model.frame(formula, data, family, weights,
     subset, offset, na.action, specials, contrasts)
 
-  if(!is.character(bf$model.frame)) {
+  if(!inherits(bf$model.frame, "ffdf")) {
     ## Type of y.
     ytype <- match.arg(ytype)
 
@@ -74,11 +74,9 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
       }
     }
   } else {
-    mf <- read.table(bf$model.frame, header = TRUE, nrows = 3L, ...)
     rn <- response.name(formula, hierarchical = FALSE, keep.functions = TRUE)
-    rn <- rn[rn %in% names(mf)]
-    bf$y <- rn
-    attr(bf$y, "path") <- bf$model.frame
+    rn <- rn[rn %in% names(bf$model.frame)]
+    bf$y <- bf$model.frame[rn]
   }
 
   bf$formula <- formula
@@ -153,16 +151,11 @@ print.bamlss.frame <- function(x, ...)
 }
 
 
-## ff version for indecing.
+## ff version for indexing.
 match.index.ff <- function(x)
 {
   nodups <- ffwhich(x, !duplicated(x))
-  ind <- NULL
-  for(i in chunk(nodups)) {
-    ind2 <- apply(x[i, ], MARGIN = 1L, FUN = paste, sep = "\r", collapse = ";")
-    ind2 <- match(ind2, ind2[nodups[i]])
-    ind <- ffappend(ind, ind2)
-  }
+  ind <- ffdfmatch(x, x[nodups, , drop = FALSE])
   ord <- fforder(ind)
   sindex <- ind[ord]
   return(list("match.index" = ind, "nodups" = nodups, "order" = ord, "sorted.index" = sindex))
@@ -191,14 +184,22 @@ design.construct <- function(formula, data = NULL, knots = NULL,
   formula <- formula.bamlss.terms(formula)
   if(is.null(data))
     stop("data needs to be supplied!")
-  nmax <- NULL
-  if(!is.character(data)) {
+
+  no_ff <- !inherits(data, "ffdf")
+
+  if(!is.character(data) & no_ff) {
     if(!inherits(data, "data.frame"))
       data <- as.data.frame(data)
-  } else {
-    requireNamespace("ffbase")
+  }
+  if(is.character(data)) {
     data <- read.table.ffdf(file = data,
       na.strings = "", header = TRUE, sep = ",")
+  }
+  if(inherits(data, "ffdf")) {
+    before <- TRUE
+    gam.side <- FALSE
+    if(is.null(binning))
+      binning <- TRUE
   }
   if(!is.null(model))
     formula <- model.terms(formula, model)
@@ -207,7 +208,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
 
   assign.design <- function(obj, dups = NULL)
   {
-    if(!is.null(dups) & is.null(nmax)) {
+    if(!is.null(dups) & no_ff) {
       if(any(dups)) {
         mi <- match.index(data[, all.vars(obj$fake.formula), drop = FALSE])
         obj[names(mi)] <- mi
@@ -241,11 +242,21 @@ design.construct <- function(formula, data = NULL, knots = NULL,
           } else {
             obj$model.matrix <- data[mm_vars]
           }
+          if(is.numeric(binning)) {
+            for(v in mm_vars) {
+              obj$model.matrix[[v]] <- round(obj$model.matrix[[v]], binning)
+            }
+          }
         }
-        
-        binning <- match.index.ff(obj$model.matrix)
-        obj$model.matrix <- obj$model.matrix[binning$nodups, ]
-        attr(obj$model.matrix, "binning") <- binning
+        bind <- match.index.ff(obj$model.matrix)
+        obj$model.matrix <- as.matrix(as.data.frame(obj$model.matrix[bind$nodups, , drop = FALSE]))
+        if(is.null(colnames(obj$model.matrix)) & ncol(obj$model.matrix) < 2) {
+          if(mm_intercept)
+            colnames(obj$model.matrix) <- "(Intercept)"
+          if(!is.null(mm_vars))
+            colnames(obj$model.matrix) <- mm_vars
+        }
+        attr(obj$model.matrix, "binning") <- bind
       }
     }
     if(smooth.construct) {
@@ -273,8 +284,13 @@ design.construct <- function(formula, data = NULL, knots = NULL,
           if(!is.null(tsm$xt$binning)) {
             if(!is.logical(tsm$xt$binning)) {
               for(tsmt in tsm$term) {
-                if(!is.factor(data[[tsmt]]))
-                  data[[tsmt]] <- round(data[[tsmt]], digits = tsm$xt$binning)
+                if(!inherits(data, "ffdf")) {
+                  if(!is.factor(data[[tsmt]]))
+                    data[[tsmt]] <- round(data[[tsmt]], digits = tsm$xt$binning)
+                } else {
+                  if(is.numeric(binning))
+                    data[[tsmt]] <- round(data[[tsmt]], digits = tsm$xt$binning)
+                }
               }
             }
           }
@@ -299,11 +315,27 @@ design.construct <- function(formula, data = NULL, knots = NULL,
             tsm$xt$before <- before
             if(!is.null(tsm$xt$binning)) {
               term.names <- c(tsm$term, if(tsm$by != "NA") tsm$by else NULL)
-              tsm$binning <- match.index(data[, term.names, drop = FALSE])
-              tsm$binning$order <- order(tsm$binning$match.index)
-              tsm$binning$sorted.index <- tsm$binning$match.index[tsm$binning$order]
-              smt <- smoothCon(tsm, if(before) data[tsm$binning$nodups, term.names, drop = FALSE] else data,
-                knots, absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons, sparse.cons = sparse.cons)
+              if(!inherits(data, "ffdf")) {
+                tsm$binning <- match.index(data[, term.names, drop = FALSE])
+                tsm$binning$order <- order(tsm$binning$match.index)
+                tsm$binning$sorted.index <- tsm$binning$match.index[tsm$binning$order]
+              } else {
+                tsm$binning <- match.index.ff(data[term.names])
+                attr(tsm, "ff") <- TRUE
+              }
+              if(!inherits(data, "ffdf")) {
+                smt <- smoothCon(tsm, if(before) data[tsm$binning$nodups, term.names, drop = FALSE] else data,
+                  knots, absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons, sparse.cons = sparse.cons)
+              } else {
+                xdata <- as.data.frame(data[tsm$binning$nodups, term.names, drop = FALSE])
+                if(!inherits(xdata, "data.frame")) {
+                  xdata <- data.frame(xdata)
+                  names(xdata) <- term.names
+                }
+                smt <- smoothCon(tsm, xdata,
+                  knots, absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons,
+                  sparse.cons = sparse.cons)
+              }
             } else {
               smt <- smoothCon(tsm, data, knots,
                 absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons,
@@ -443,6 +475,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
     if(drop & (length(formula) < 2))
       formula <- formula[[1]]
   }
+
   return(formula)
 }
 
@@ -631,8 +664,13 @@ make.fit.fun <- function(x, type = 1)
         drop(X %*% b)
       } else sparse.matrix.fit.fun(X, b, x$sparse.setup[[what]])
     }
-    if(!is.null(x$binning$match.index) & expand)
+    if(!is.null(x$binning$match.index) & expand) {
+      if(inherits(x$binning$match.index, "ff")) {
+        f <- as.ff(f)
+        return(f[x$binning$match.index])
+      }
       f <- f[x$binning$match.index]
+    }
     if(!is.null(x$xt$force.center))
       f <- f - mean(f, na.rm = TRUE)
     return(as.numeric(f))
@@ -1438,6 +1476,8 @@ bamlss.model.frame <- function(formula, data, family = gaussian_bamlss(),
   if(is.character(data)) {
     if(!file.exists(data))
       stop("data path is not existing!")
+    data <- read.table.ffdf(file = data,
+      na.strings = "", header = TRUE, sep = ",")
     return(data)
   }
 
@@ -1619,13 +1659,19 @@ complete.bamlss.family <- function(family)
     for(j in family$names)
       linkinv[[j]] <- make.link2(family$links[j])$linkinv
     family$map2par <- function(eta) {
-      for(j in family$names) {
-        eta[[j]] <- linkinv[[j]](eta[[j]])
-        eta[[j]][is.na(eta[[j]])] <- 0
-        if(any(jj <- eta[[j]] == Inf))
-          eta[[j]][jj] <- 10
-        if(any(jj <- eta[[j]] == -Inf))
-          eta[[j]][jj] <- -10
+      if(inherits(eta[[1L]], "ff")) {
+        for(j in family$names)
+          eta[[j]] <- ff_eval(eta[[j]], FUN = function(x) { linkinv[[j]](x) },
+            lower = c(-Inf, -10), upper = c(Inf, 10))
+      } else {
+        for(j in family$names) {        
+          eta[[j]] <- linkinv[[j]](eta[[j]])
+          eta[[j]][is.na(eta[[j]])] <- 0
+          if(any(jj <- eta[[j]] == Inf))
+            eta[[j]][jj] <- 10
+          if(any(jj <- eta[[j]] == -Inf))
+            eta[[j]][jj] <- -10
+        }
       }
       return(eta)
     }

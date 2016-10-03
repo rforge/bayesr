@@ -68,6 +68,10 @@ bamlss.engine.setup <- function(x, update = "iwls", propose = "iwlsC_gp",
             "by" = "NA",
             "xt" = list("binning" = x$binning)
           )), x$smooth.construct)
+          if(!is.null(attr(x$model.matrix, "binning"))) {
+            x$smooth.construct[["model.matrix"]]$binning <- attr(x$model.matrix, "binning")
+            x$smooth.construct[["model.matrix"]]$xt$binning <- TRUE
+          }
           class(x$smooth.construct[["model.matrix"]]) <- c(class(x$smooth.construct[["model.matrix"]]),
             "no.mgcv", "model.matrix")
           x$model.matrix <- NULL
@@ -525,6 +529,47 @@ get.eta <- function(x, expand = TRUE)
   eta
 }
 
+
+ffdf_eval <- function(x, FUN)
+{
+  res <- NULL
+  for(i in chunk(x)) {
+    res <- ffappend(res, FUN(x[i, ]))
+  }
+  res
+}
+
+ffdf_eval_sh <- function(y, par, FUN)
+{
+  res <- NULL
+  for(i in chunk(y)) {
+    tpar <- list()
+    for(j in names(par))
+      tpar[[j]] <- par[[j]][i]
+    res <- ffappend(res, FUN(y[i, ], tpar))
+  }
+  res
+}
+
+ff_eval <- function(x, FUN, lower = NULL, upper = NULL)
+{
+  res <- NULL
+  for(i in chunk(x)) {
+    tres <- FUN(x[i])
+    if(!is.null(lower)) {
+      if(any(jj <- tres == lower[1]))
+        tres[jj] <- lower[2]
+    }
+    if(!is.null(upper)) {
+      if(any(jj <- tres == upper[1]))
+        tres[jj] <- upper[2]
+    }
+    res <- ffappend(res, tres)
+  }
+  res
+}
+
+
 ## Initialze.
 init.eta <- function(eta, y, family, nobs)
 {
@@ -533,7 +578,11 @@ init.eta <- function(eta, y, family, nobs)
   for(j in family$names) {
     if(!is.null(family$initialize[[j]])) {
       linkfun <- make.link2(family$links[j])$linkfun
-      eta[[j]] <- linkfun(family$initialize[[j]](y))
+      if(inherits(y, "ffdf")) {
+        eta[[j]] <- ffdf_eval(y, function(x) { linkfun(family$initialize[[j]](x)) })
+      } else {
+        eta[[j]] <- linkfun(family$initialize[[j]](y))
+      }
     }
   }
   return(eta)
@@ -672,6 +721,9 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
   criterion <- match.arg(criterion)
   np <- length(nx)
+
+  no_ff <- !inherits(y, "ffdf")
+
   nobs <- nrow(y)
   if(is.data.frame(y)) {
     if(ncol(y) < 2)
@@ -683,7 +735,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   eta <- get.eta(x)
   if(is.null(start))
     eta <- init.eta(eta, y, family, nobs)
-  
+ 
   if(!is.null(weights))
     weights <- as.data.frame(weights)
   if(!is.null(offset)) {
@@ -789,11 +841,22 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         if(outer | iter < 2) {
           peta <- family$map2par(eta)
 
-          ## Compute weights.
-          hess <- family$hess[[nx[j]]](y, peta, id = nx[j])
+          if(no_ff) {
+            ## Compute weights.
+            hess <- process.derivs(family$hess[[nx[j]]](y, peta, id = nx[j]), is.weight = TRUE)
 
-          ## Score.
-          score <- family$score[[nx[j]]](y, peta, id = nx[j])
+            ## Score.
+            score <- process.derivs(family$score[[nx[j]]](y, peta, id = nx[j]), is.weight = FALSE)
+          } else {
+            ## Same for large files.
+            hess <- ffdf_eval_sh(y, peta, FUN = function(y, par) {
+              process.derivs(family$hess[[nx[j]]](y, par, id = nx[j]), is.weight = TRUE)
+            })
+
+            score <- ffdf_eval_sh(y, peta, FUN = function(y, par) {
+              process.derivs(family$score[[nx[j]]](y, par, id = nx[j]), is.weight = FALSE)
+            })
+          }
 
           ## Compute working observations.
           z <- eta[[nx[j]]] + 1 / hess * score
@@ -1123,21 +1186,32 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
 {
   args <- list(...)
 
+  no_ff <- !inherits(y, "ff")
   peta <- family$map2par(eta)
 
   if(is.null(args$hess)) {
     ## Compute weights.
-    hess <- family$hess[[id]](y, peta, id = id, ...)
+    if(no_ff) {
+      hess <- process.derivs(family$hess[[id]](y, peta, id = id, ...), is.weight = TRUE)
+    } else {
+      hess <- ffdf_eval_sh(y, peta, FUN = function(y, par) {
+        process.derivs(family$hess[[nx[j]]](y, par, id = nx[j]), is.weight = TRUE)
+      })
+    }
   } else hess <- args$hess
 
   if(!is.null(weights))
     hess <- hess * weights
 
-  hess <- process.derivs(hess, is.weight = TRUE)
-
   if(is.null(args$z)) {
     ## Score.
-    score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
+    if(no_ff) {
+      score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
+    } else {
+      score <- ffdf_eval_sh(y, peta, FUN = function(y, par) {
+        process.derivs(family$score[[nx[j]]](y, par, id = nx[j]), is.weight = FALSE)
+      })
+    }
 
     ## Compute working observations.
     z <- eta[[id]] + 1 / hess * score
@@ -1702,6 +1776,8 @@ opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
 ## Fast computation of weights and residuals when binning.
 xbin.fun <- function(ind, weights, e, xweights, xrres, oind)
 {
+  if(inherits(ind, "ff"))
+    stop("ff support stops here!")
   .Call("xbin_fun", as.integer(ind), as.numeric(weights), 
     as.numeric(e), as.numeric(xweights), as.numeric(xrres),
     as.integer(oind))
