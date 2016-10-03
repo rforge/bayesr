@@ -44,6 +44,7 @@ if(!file.exists("firemodel.rda")) {
   library("maptools")
   library("raster")
   library("rgeos")
+  library("survival")
 
   data("LondonFire")
 
