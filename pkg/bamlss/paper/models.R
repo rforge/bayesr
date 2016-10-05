@@ -71,7 +71,7 @@ if(!file.exists("firemodel_plotdata.rda")) {
     gpclibPermit()
 
     spatial_daytime <- grepl("(daytime,lon,lat)",
-      paste(all.labels.formula(terms(firemodel, model = "gamma")), collapse = "+"), fixed = TRUE)
+      paste(bamlss:::all.labels.formula(terms(firemodel, model = "gamma")), collapse = "+"), fixed = TRUE)
 
     xy <- bbox(LondonBoroughs)
     co <- expand.grid(
