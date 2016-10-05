@@ -1,11 +1,21 @@
+############################
+## (0) Required packages. ##
+############################
+library("bamlss")
+library("spatstat")
+library("sp")
+library("maptools")
+library("raster")
+library("rgeos")
+library("survival")
+
+
 ##############################
 ## (1) Precipitation model. ##
 ##############################
 ## Austria: http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/nuts_einheiten/index.html
 ## AustriaTopo: https://www.ngdc.noaa.gov/mgg/global/global.html
 if(!file.exists("rainmodel.rda")) {
-  library("bamlss")
-
   if(file.exists("homstart.rda")) {
     load("homstart.rda")
   } else {
@@ -38,14 +48,6 @@ if(!file.exists("rainmodel.rda")) {
 ## (2) Fire response time model. ##
 ###################################
 if(!file.exists("firemodel.rda")) {
-  library("bamlss")
-  library("spatstat")
-  library("sp")
-  library("maptools")
-  library("raster")
-  library("rgeos")
-  library("survival")
-
   data("LondonFire")
 
   f <- list(
@@ -59,6 +61,10 @@ if(!file.exists("firemodel.rda")) {
     n.iter = 4000, burnin = 2000, thin = 10, cores = 8)
 
   save(firemodel, file = "firemodel.rda")
+}
+
+if(!file.exists("firemodel_plotdata.rda")) {
+  load("firemodel.rda")
 
   predict_firemodel <- function(n = 30, target = 6, k = 20, cores = NULL, chunks = 100, ...)
   {
@@ -142,7 +148,7 @@ if(!file.exists("firemodel.rda")) {
     return(list("curves" = fbh, "daytime" = fdt, "spatial" = nd, "target" = target))
   }
 
-  firemodel$family <- cox.bamlss()
+  firemodel$family <- cox_bamlss()
   firemodel_plotdata <- predict_firemodel(120, 6, subdivisions = 15)
 
   save(firemodel, firemodel_plotdata, file = "firemodel_plotdata.rda")
