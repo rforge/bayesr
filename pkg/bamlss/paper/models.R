@@ -65,6 +65,7 @@ if(!file.exists("firemodel.rda")) {
 
 if(!file.exists("firemodel_plotdata.rda")) {
   load("firemodel.rda")
+  data("LondonFire")
 
   predict_firemodel <- function(n = 30, target = 6, k = 20, cores = NULL, chunks = 100, ...)
   {
