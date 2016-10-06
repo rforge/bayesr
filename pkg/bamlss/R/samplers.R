@@ -289,7 +289,11 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
   step <- floor(n.iter / step)
 
   sampler <- function(...) {
-    if(verbose) cat2("Starting the sampler...")
+    if(verbose) {
+      cat2("Starting the sampler...")
+      if(!interactive())
+        cat("\n")
+    }
     ptm <- proc.time()
     for(iter in 1:n.iter) {
       if(save <- iter %in% iterthin)

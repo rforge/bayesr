@@ -3,6 +3,7 @@
 \alias{jm.mode}
 \alias{jm.mcmc}
 \alias{jm.transform}
+\alias{jm.survplot}
 
 \title{
   Fit Flexible Additive Joint Models
@@ -40,6 +41,10 @@ jm.mode(x, y, start = NULL, weights = NULL,
 jm.mcmc(x, y, family, start = NULL, weights = NULL,
   offset = NULL, n.iter = 1200, burnin = 200, thin = 1,
   verbose = TRUE, digits = 4, step = 20, ...)
+
+## Survival plot.
+jm.survplot(object, i = 1, maxtime = NULL,
+  grid = 10, points = TRUE, rug = !points)
 }
 
 \arguments{
@@ -99,6 +104,15 @@ jm.mcmc(x, y, family, start = NULL, weights = NULL,
   \item{thin}{the thinning parameter for MCMC simulation. E.g., \code{thin = 10} means,
     that only every 10th sampled parameter will be stored.}
   \item{step}{How many times should algorithm runtime information be printed, divides \code{n.iter}.}
+  \item{object}{A \code{"bamlss"} object processed with the JM optimizer function
+    \code{jm.mode()} ans/or sampler function \code{jm.mcmc()} for which the survival plot
+    should be created.}
+  \item{i}{Integer or character, specifies the individual for which the plot should be created.}
+  \item{maxtime}{The maximum time for which predictions should be computed. The default
+   is \code{1.4 * max(survtime)} and \code{survtime} is the individuals survival time.}
+  \item{grid}{Integer, the number of time points that should be used for predictions.}
+  \item{points}{Should longitudinal observations be added to the plot.}
+  \item{rug}{Should longitudinal observed time points be added on the x-axis to the plot.}
   \item{\dots}{Currently not used.}
 }
 
@@ -184,64 +198,8 @@ print(p)
 ## Plot of survival probabilities and
 ## corresponding longitudinal effects
 ## for individual i.
-plot_jm_surv <- function(i, maxtime = 80, grid = 10) {
-  on.exit(par(par(no.readonly = TRUE)))
-
-  nd <- data.frame(
-    "id" = factor(i, levels = levels(d$id)),
-    "x1" = d$x1[d$id == i][1]
-  )
-
-  tmax <- max(d$obstime[d$id == i])
-  time <- seq(tmax, maxtime, length = grid)
-
-  if(all(time == time[1])) {
-    stop(paste("Not enough time points available for individual ",
-      i, "!", sep = ""))
-  }
-
-  p_surv <- NULL
-  for(t in time) {
-    nd$survtime <- t
-    nd$obstime <- t
-    p_surv <- rbind(p_surv, t(predict(b, newdata = nd,
-      type = "probabilities", FUN = c95)))
-  }
-
-  time2 <- sort(c(tmax, seq(0, maxtime, length = grid)))
-
-  nd <- data.frame(
-    "obstime" = time2,
-    "id" = factor(i, levels = levels(d$id))
-  )
-  p_long <- predict(b, newdata = nd, model = "mu", FUN = c95)
-
-  s2.col <- rev(rgb(0, 0, 1, alpha = seq(0.1, 0.01, length = 50)))
-
-  par(mfrow = c(2, 1), mar = rep(0, 4),
-    oma = c(4.1, 4.1, 1.1, 4.1))
-  plot2d(p_surv ~ time, fill.select = c(0, 1, 0, 1),
-    scheme = 2, axes = FALSE, ylim = c(0, 1),
-    xlim = c(0, maxtime), s2.col = s2.col)
-  abline(v = tmax, lty = 2)
-  axis(2)
-  box()
-  mtext("Prob(T > t)", side = 2, line = 2.5)
-  plot2d(p_long[time2 <= tmax, ] ~ time2[time2 <= tmax], fill.select = c(0, 1, 0, 1),
-    scheme = 2, axes = FALSE, xlim = c(0, maxtime), ylim = range(p_long))
-  plot2d(p_long[time2 >= tmax, ] ~ time2[time2 >= tmax], fill.select = c(0, 1, 0, 1),
-    scheme = 2, axes = FALSE, add = TRUE, s2.col = s2.col)
-  abline(v = tmax, lty = 2)
-  with(subset(d, id == i), points(obstime, y))
-  axis(1)
-  axis(4)
-  box()
-  mtext("Effect of time", side = 4, line = 2.5)
-  mtext("Time", side = 1, line = 2.5)
-}
-
-plot_jm_surv(i = 3)
-plot_jm_surv(i = 30)
+jm.survplot(b, i = 3)
+jm.survplot(b, i = 30)
 
 ## Simulate survival data
 ## with functional random intercepts and a nonlinear effect 

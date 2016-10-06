@@ -1805,7 +1805,11 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   }
 
   ## Start sampling.
-  cat2("Starting the sampler...")
+  if(verbose) {
+    cat2("Starting the sampler...")
+    if(!interactive())
+      cat("\n")
+  }
 
   nstep <- step
   step <- floor(n.iter / step)
@@ -3410,5 +3414,83 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
   }
 
   return(probs)
+}
+
+
+jm.survplot <- function(object, i = 1, maxtime = NULL,
+  grid = 10, points = TRUE, rug = !points)
+{
+  on.exit(par(par(no.readonly = TRUE)))
+
+  FUN <- function(x) { mean(x, na.rm = TRUE) }
+  idvar <- attr(object$y[[1]], "idvar")
+  timevar <- attr(object$y[[1]], "timevar")
+  mf <- model.frame(object)
+
+  if(!is.character(i))
+    i <- levels(mf[[idvar]])[i]
+  ii <- mf[[idvar]] == i
+
+  tmax <- max(mf[[timevar["lambda"]]][ii])
+  if(is.null(maxtime))
+    maxtime <- 1.4 * tmax
+  time <- seq(tmax, maxtime, length.out = grid)
+
+  if(all(time == time[1])) {
+    stop(paste("Not enough time points available for individual ",
+      i, "!", sep = ""))
+  }
+
+  nd <- data.frame(time, time)
+  names(nd) <- timevar
+  vars <- names(mf)[!(names(mf) %in% c(timevar, idvar))]
+  for(j in vars) {
+    if(!is.factor(mf[[j]])) {
+      nd[[j]] <- FUN(mf[[j]][ii])
+    } else {
+      ftab <- table(mf[[j]][ii])
+      ntab <- names(ftab)
+      nd[[j]] <- factor(ntab[which.max(as.vector(ftab))], levels = levels(mf[[j]]))
+    }
+  }
+  nd[[idvar]] <- factor(i, levels = levels(mf[[idvar]]))
+
+  p_surv <- t(predict(object, newdata = nd, type = "probabilities", FUN = c95))
+
+  time2 <- sort(c(tmax, seq(0, maxtime, length = grid - 1)))
+  nd[[timevar["lambda"]]] <- nd[[timevar["mu"]]] <- time2
+
+  p_long <- predict(object, newdata = nd, model = "mu", FUN = c95)
+
+  s2.col <- rev(rgb(0, 0, 1, alpha = seq(0.1, 0.01, length = 50)))
+
+  par(mfrow = c(2, 1), mar = rep(0, 4),
+    oma = c(4.1, 4.1, 1.1, 4.1))
+  plot2d(p_surv ~ time, fill.select = c(0, 1, 0, 1),
+    scheme = 2, axes = FALSE, ylim = c(0, 1),
+    xlim = c(0, maxtime), s2.col = s2.col, xlab = "", ylab = "")
+  abline(v = tmax, lty = 2)
+  axis(2)
+  box()
+  mtext("Prob(T > t)", side = 2, line = 2.5)
+  plot2d(p_long[time2 <= tmax, ] ~ time2[time2 <= tmax], fill.select = c(0, 1, 0, 1),
+    scheme = 2, axes = FALSE, xlim = c(0, maxtime),
+    xlab = "", ylab = "",
+    ylim = if(points) range(c(p_long, object$y[[1]][ii, "obs"])) else range(p_long))
+  plot2d(p_long[time2 >= tmax, ] ~ time2[time2 >= tmax], fill.select = c(0, 1, 0, 1),
+    scheme = 2, axes = FALSE, add = TRUE, s2.col = s2.col,
+    xlab = "", ylab = "")
+  abline(v = tmax, lty = 2)
+  if(points)
+    points(mf[[timevar["mu"]]][ii], object$y[[1]][ii, "obs"])
+  if(rug)
+    rug(mf[[timevar["mu"]]][ii])
+  axis(1)
+  axis(4)
+  box()
+  mtext("Effect of time", side = 4, line = 2.5)
+  mtext("Time", side = 1, line = 2.5)
+
+  invisible(NULL)
 }
 

@@ -425,7 +425,11 @@ cox.mcmc <- function(x, y, family, start, weights, offset,
   }
 
   ## Start sampling.
-  cat2("Starting the sampler...")
+  if(verbose) {
+    cat2("Starting the sampler...")
+    if(!interactive())
+      cat("\n")
+  }
 
   nstep <- step
   step <- floor(n.iter / step)

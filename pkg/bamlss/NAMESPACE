@@ -122,6 +122,7 @@ export(
   "jm.mcmc",
   "simJM",
   "rJM",
+  "jm.survplot",
 
   ## others
   "GAMart",

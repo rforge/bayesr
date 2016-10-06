@@ -1159,6 +1159,26 @@ dopos <- function(pos, limits, width, height, side.legend, shift)
 }
 
 
+.plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
+  missing = TRUE, swap = FALSE, range = NULL, names = FALSE, values = FALSE, col = NULL,
+  ncol = 100, breaks = NULL, cex.legend = 1, cex.names = 1, cex.values = cex.names,
+  digits = 2L, mar.min = 2, add = FALSE, interp = FALSE, grid = 200, land.only = FALSE,
+  extrap = FALSE, outside = FALSE, type = "akima", linear = FALSE, k = 40,
+  p.pch = 15, p.cex = 1, shift = NULL, trans = NULL, scheme = 1, ...)
+{
+  if(inherits(map, "bnd")) {
+    stopifnot(requireNamespace("BayesX"))
+    map <- BayesX::bnd2sp(map)
+  }
+  
+  if(!inherits(map, "SpatialPolygons"))
+    stop("please supply a 'SpatialPolygons' object to argument map!")
+  if(!inherits(map, "SpatialPolygonsDataFrame"))
+    map <- as(map, "SpatialPolygonsDataFrame")
+  plot(map)
+}
+
+
 plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   missing = TRUE, swap = FALSE, range = NULL, names = FALSE, values = FALSE, col = NULL,
   ncol = 100, breaks = NULL, cex.legend = 1, cex.names = 1, cex.values = cex.names,
