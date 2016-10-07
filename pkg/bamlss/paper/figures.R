@@ -175,7 +175,7 @@ if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
   y <- mf[["sqrt(raw)"]]
   hist(y, freq = FALSE, main = "", col = gray(0.9), breaks = 50,
     xlab = expression(paste("Daily ", sqrt(observations))), ylab = "Density")
-  ff <- gF2(cens, left = 0)
+  ff <- bamlss:::gF2(cens, left = 0)
   cr <- coef(rainmodel0)
   eta <- list(mu = cr[1], sigma = cr[2])
   y2 <- seq(min(y), max(y), length = 200)
