@@ -16,7 +16,7 @@ main <- function(text, side = 3, line = 0.5, cex = 1.2, ...) {
 ##############################
 ## Austria: http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/nuts_einheiten/index.html
 ## AustriaTopo: https://www.ngdc.noaa.gov/mgg/global/global.html
-if(!file.exists("figures/rainmodel-effects.png") & FALSE) {
+if(!file.exists("figures/rainmodel-effects.png")) {
   library("bamlss")
   library("spatstat")
   library("sp")
