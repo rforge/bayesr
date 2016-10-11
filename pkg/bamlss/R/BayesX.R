@@ -603,63 +603,89 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
     term <- paste(term, "constrmatdata=", Cn, sep = "")
   if(!is.null(object$state$parameters))
     term <- paste(term, ",betastart=", Pn, sep = "")
-object$rank <- NULL
   if(is.null(object$xt$nocenter) & is.null(object$xt$centermethod) & !is.null(object$rank))
     term <- paste(term, ",rankK=", sum(object$rank), sep = "")
   term <- paste(do.xt(term, object, c("center", "before")), ")", sep = "")
 
   write <- function(dir) {
+    exists <- NULL
     for(j in seq_along(object$S)) {
-      write.table(object$S[[j]], file = file.path(dir, paste(Sn[j], ".raw", sep = "")),
-        quote = FALSE, row.names = FALSE)
+      if(!file.exists(file.path(dir, paste(Sn[j], ".raw", sep = "")))) {
+        write.table(object$S[[j]], file = file.path(dir, paste(Sn[j], ".raw", sep = "")),
+          quote = FALSE, row.names = FALSE)
+      } else exists <- c(exists, file.path(dir, paste(Sn[j], ".raw", sep = "")))
     }
     if(is.tx) {
       for(j in seq_along(object$S)) {
-        write.table(object$margin[[j]]$X, file = file.path(dir, paste(Xn[j], ".raw", sep = "")),
-          quote = FALSE, row.names = FALSE)
+        if(!file.exists(file.path(dir, paste(Xn[j], ".raw", sep = "")))) {
+          write.table(object$margin[[j]]$X, file = file.path(dir, paste(Xn[j], ".raw", sep = "")),
+            quote = FALSE, row.names = FALSE)
+        } else exists <- c(exists, file.path(dir, paste(Xn[j], ".raw", sep = "")))
       }
     } else {
-      write.table(object$X, file = file.path(dir, paste(Xn, ".raw", sep = "")),
-        quote = FALSE, row.names = FALSE)
+      if(!file.exists(file.path(dir, paste(Xn, ".raw", sep = "")))) {
+        write.table(object$X, file = file.path(dir, paste(Xn, ".raw", sep = "")),
+          quote = FALSE, row.names = FALSE)
+      } else exists <- c(exists, file.path(dir, paste(Xn, ".raw", sep = "")))
     }
     if(!is.null(object$C)) {
-      write.table(object$C, file = file.path(dir, paste(Cn, ".raw", sep = "")),
-        quote = FALSE, row.names = FALSE)
+      if(!file.exists(file.path(dir, paste(Cn, ".raw", sep = "")))) {
+        write.table(object$C, file = file.path(dir, paste(Cn, ".raw", sep = "")),
+          quote = FALSE, row.names = FALSE)
+      } else exists <- c(exists, file.path(dir, paste(Cn, ".raw", sep = "")))
     }
     if(!is.null(object$state$parameters)) {
       spar <- as.data.frame(matrix(get.par(object$state$parameters, "b"), nrow = 1))
-      write.table(spar, file = file.path(dir, paste(Pn, ".raw", sep = "")),
-        quote = FALSE, row.names = FALSE)
+      if(!file.exists(file.path(dir, paste(Pn, ".raw", sep = "")))) {
+        write.table(spar, file = file.path(dir, paste(Pn, ".raw", sep = "")),
+          quote = FALSE, row.names = FALSE)
+      } else exists <- c(exists, file.path(dir, paste(Pn, ".raw", sep = "")))
     }
+    cmd <- NULL
     if(is.tx) {
-      cmd <- NULL
       for(j in seq_along(object$S)) {
-        cmd <- c(cmd,
-          paste("dataset", Sn[j]),
-          paste(Sn[j], ".infile using ", file.path(dir, paste(Sn[j], ".raw", sep = "")), sep = ""),
-          paste("dataset", Xn[j]),
-          paste(Xn[j], ".infile using ", file.path(dir, paste(Xn[j], ".raw", sep = "")), sep = "")
-        )
+        if(!(file.path(dir, paste(Sn[j], ".raw", sep = "")) %in% exists)) {
+          cmd <- c(cmd,
+            paste("dataset", Sn[j]),
+            paste(Sn[j], ".infile using ", file.path(dir, paste(Sn[j], ".raw", sep = "")), sep = "")
+          )
+        }
+        if(!(file.path(dir, paste(Xn[j], ".raw", sep = "")) %in% exists)) {
+          cmd <- c(cmd,
+            paste("dataset", Xn[j]),
+            paste(Xn[j], ".infile using ", file.path(dir, paste(Xn[j], ".raw", sep = "")), sep = "")
+          )
+        }
       }
     } else {
-      cmd <- c(
-        paste("dataset", Sn),
-        paste(Sn, ".infile using ", file.path(dir, paste(Sn, ".raw", sep = "")), sep = ""),
-        paste("dataset", Xn),
-        paste(Xn, ".infile using ", file.path(dir, paste(Xn, ".raw", sep = "")), sep = "")
-      )
+      if(!(file.path(dir, paste(Sn, ".raw", sep = "")) %in% exists)) {
+        cmd <- c(cmd,
+          paste("dataset", Sn),
+          paste(Sn, ".infile using ", file.path(dir, paste(Sn, ".raw", sep = "")), sep = "")
+        )
+      }
+      if(!(file.path(dir, paste(Xn, ".raw", sep = "")) %in% exists)) {
+        cmd <- c(cmd,
+          paste("dataset", Xn),
+          paste(Xn, ".infile using ", file.path(dir, paste(Xn, ".raw", sep = "")), sep = "")
+        )
+      }
     }
     if(!is.null(object$C)) {
-      cmd <- c(cmd,
-        paste("dataset", Cn),
-        paste(Cn, ".infile using ", file.path(dir, paste(Cn, ".raw", sep = "")), sep = "")
-      )
+      if(!(file.path(dir, paste(Cn, ".raw", sep = "")) %in% exists)) {
+        cmd <- c(cmd,
+          paste("dataset", Cn),
+          paste(Cn, ".infile using ", file.path(dir, paste(Cn, ".raw", sep = "")), sep = "")
+        )
+      }
     }
     if(!is.null(object$state$parameters)) {
-      cmd <- c(cmd,
-        paste("dataset", Pn),
-        paste(Pn, ".infile using ", file.path(dir, paste(Pn, ".raw", sep = "")), sep = "")
-      )
+      if(!(file.path(dir, paste(Pn, ".raw", sep = "")) %in% exists)) {
+        cmd <- c(cmd,
+          paste("dataset", Pn),
+          paste(Pn, ".infile using ", file.path(dir, paste(Pn, ".raw", sep = "")), sep = "")
+        )
+      }
     }
     return(cmd)
   }
@@ -989,7 +1015,7 @@ resplit <- function(x) {
 
 ## Special tensor constructor.
 tx <- function(..., bs = "ps",k = NA,
-  constraint = c("center", "main", "both", "none", "meanf", "meanfd", "meansimple"))
+  constraint = c("meanf", "center", "main", "both", "none", "meanfd", "meansimple"))
 {
   object <- te(..., bs = bs, k = k)
   object$constraint <- match.arg(constraint)
@@ -1011,7 +1037,7 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
   object$side.constrain <- FALSE
   object <- smooth.construct.tensor.smooth.spec(object, data, knots)
   object$sx.S <- lapply(object$margin, function(x) { x$S[[1]] })
-  object$sx.rank <- sapply(object$S, function(x) { qr(x)$rank })
+  object$sx.rank <- qr(do.call("+", object$S))$rank
 
   if(object$by != "NA")
     object$label <- paste(object$label, object$by, sep = ":")
@@ -1029,7 +1055,6 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
       p1 <- ncol(object$margin[[2]]$X); p2 <- ncol(object$margin[[1]]$X)
       I1 <- diag(p1); I2 <- diag(p2)
       K <- object$margin[[2]]$S[[1]]%x%I2 + I1%x%object$margin[[1]]$S[[1]]
-      object$rank <- object$sx.rank <- qr(K)$rank
 
       if(object$constraint == "center") {
         object$C <- matrix(1, ncol = p1 * p2)
