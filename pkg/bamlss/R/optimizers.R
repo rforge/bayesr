@@ -1222,7 +1222,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
 
   ## Compute reduced residuals.
   e <- z - eta[[id]]
-  xbin.fun(x$binning$sorted.index, hess, e, x$weights, x$rres, x$binning$order)
+  xbin.fun(x$binning$sorted.index, hess, e, x$weights, x$rres, x$binning$order, x$binning$uind)
 
   ## Old parameters.
   g0 <- get.state(x, "b")
@@ -1774,13 +1774,15 @@ opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
 
 
 ## Fast computation of weights and residuals when binning.
-xbin.fun <- function(ind, weights, e, xweights, xrres, oind)
+xbin.fun <- function(ind, weights, e, xweights, xrres, oind, uind = NULL)
 {
-  if(inherits(ind, "ff"))
+  if(inherits(ind, "ff")) {
     stop("ff support stops here!")
-  .Call("xbin_fun", as.integer(ind), as.numeric(weights), 
-    as.numeric(e), as.numeric(xweights), as.numeric(xrres),
-    as.integer(oind))
+  } else {
+    .Call("xbin_fun", as.integer(ind), as.numeric(weights), 
+      as.numeric(e), as.numeric(xweights), as.numeric(xrres),
+      as.integer(oind))
+  }
   invisible(NULL)
 }
 

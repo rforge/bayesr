@@ -600,11 +600,12 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
       sep = "")
   }
   if(!is.null(object$C))
-    term <- paste(term, "constrmatdata=", Cn, ",", sep = "")
+    term <- paste(term, "constrmatdata=", Cn, sep = "")
   if(!is.null(object$state$parameters))
-    term <- paste(term, "betastart=", Pn, ",", sep = "")
-  if(is.null(object$xt$nocenter) & is.null(object$xt$centermethod))
-    term <- paste(term, "rankK=", sum(object$rank), sep = "")
+    term <- paste(term, ",betastart=", Pn, sep = "")
+object$rank <- NULL
+  if(is.null(object$xt$nocenter) & is.null(object$xt$centermethod) & !is.null(object$rank))
+    term <- paste(term, ",rankK=", sum(object$rank), sep = "")
   term <- paste(do.xt(term, object, c("center", "before")), ")", sep = "")
 
   write <- function(dir) {
@@ -1031,7 +1032,7 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
       object$rank <- object$sx.rank <- qr(K)$rank
 
       if(object$constraint == "center") {
-        object$C <- matrix(1, ncol = p1 + p2)
+        object$C <- matrix(1, ncol = p1 * p2)
       } else {
         if(object$constraint == "main") {
           ## Remove main effects only.

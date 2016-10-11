@@ -5,6 +5,8 @@ import("colorspace")
 import("gamlss")
 import("ffbase")
 
+importFrom("bit", "chunk")
+importFrom("ff", "read.table.ffdf", "ff", "ffdf", "fforder", "as.ff")
 importFrom("parallel", "mclapply")
 importFrom("sp", "bbox", "point.in.polygon", "polygons",
   "coordinates", "Polygon", "Polygons", "SpatialPolygons", "SpatialPoints",

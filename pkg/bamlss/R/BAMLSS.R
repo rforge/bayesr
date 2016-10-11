@@ -158,7 +158,8 @@ match.index.ff <- function(x)
   ind <- ffdfmatch(x, x[nodups, , drop = FALSE])
   ord <- fforder(ind)
   sindex <- ind[ord]
-  return(list("match.index" = ind, "nodups" = nodups, "order" = ord, "sorted.index" = sindex))
+  
+  return(list("match.index" = ind, "nodups" = nodups, "order" = ord, "sorted.index" = sindex, "uind" = ind[nodups]))
 }
 
 
@@ -228,7 +229,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
         } else obj$model.matrix <- NULL
       } else {
         mm_terms <- drop.terms.bamlss(obj$terms,
-          sterms = FALSE, keep.response = FALSE, data = data, specials = specials)
+          sterms = FALSE, keep.response = FALSE, data = NULL, specials = specials)
         mm_intercept <- attr(mm_terms, "intercept") > 0
         mm_vars <- all.vars.formula(mm_terms)
         if(mm_intercept)
@@ -248,15 +249,17 @@ design.construct <- function(formula, data = NULL, knots = NULL,
             }
           }
         }
-        bind <- match.index.ff(obj$model.matrix)
-        obj$model.matrix <- as.matrix(as.data.frame(obj$model.matrix[bind$nodups, , drop = FALSE]))
-        if(is.null(colnames(obj$model.matrix)) & ncol(obj$model.matrix) < 2) {
-          if(mm_intercept)
-            colnames(obj$model.matrix) <- "(Intercept)"
-          if(!is.null(mm_vars))
-            colnames(obj$model.matrix) <- mm_vars
+        if(!is.null(obj$model.matrix)) {
+          bind <- match.index.ff(obj$model.matrix)
+          obj$model.matrix <- as.matrix(as.data.frame(obj$model.matrix[bind$nodups, , drop = FALSE]))
+          if(is.null(colnames(obj$model.matrix)) & ncol(obj$model.matrix) < 2) {
+            if(mm_intercept)
+              colnames(obj$model.matrix) <- "(Intercept)"
+            if(!is.null(mm_vars))
+              colnames(obj$model.matrix) <- mm_vars
+          }
+          attr(obj$model.matrix, "binning") <- bind
         }
-        attr(obj$model.matrix, "binning") <- bind
       }
     }
     if(smooth.construct) {
