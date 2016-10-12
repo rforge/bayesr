@@ -1159,27 +1159,156 @@ dopos <- function(pos, limits, width, height, side.legend, shift)
 }
 
 
-.plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
-  missing = TRUE, swap = FALSE, range = NULL, names = FALSE, values = FALSE, col = NULL,
-  ncol = 100, breaks = NULL, cex.legend = 1, cex.names = 1, cex.values = cex.names,
-  digits = 2L, mar.min = 2, add = FALSE, interp = FALSE, grid = 200, land.only = FALSE,
-  extrap = FALSE, outside = FALSE, type = "akima", linear = FALSE, k = 40,
-  p.pch = 15, p.cex = 1, shift = NULL, trans = NULL, scheme = 1, ...)
+list2sp <- function(x) 
 {
-  if(inherits(map, "bnd")) {
-    stopifnot(requireNamespace("BayesX"))
-    map <- BayesX::bnd2sp(map)
+  bndNames <- names(x)
+  regions <- unique(bndNames)
+  bndAttributes <- attributes(x)
+  x <- lapply(x, FUN = function(polygon) {
+    polygon <- if(!isTRUE(identical(polygon[1, ], polygon[nrow(polygon), ]))) {
+      rbind(polygon, polygon[1, ])
+    } else {
+      polygon
+    }
+    as.matrix(na.omit(polygon))
+  })
+  ret <- list()
+  for(id in regions) {
+    idMatches <- which(id == bndNames)
+    idPolygons <- lapply(na.omit(x[idMatches]), FUN = sp::Polygon, hole = FALSE)
+    ret[[id]] <- sp::Polygons(srl = idPolygons, ID = id)
   }
+  surrounding <- bndAttributes$surrounding
+  whichAreInner <- which(sapply(surrounding, length) > 0L)
+  for(innerInd in whichAreInner) {
+    hole <- sp::Polygon(coords = x[[innerInd]], hole = TRUE)
+    outerId <- surrounding[[innerInd]]
+    outerPolys <- ret[[outerId]]@Polygons
+    outerPolys <- c(outerPolys, hole)
+    ret[[outerId]] <- sp::Polygons(srl = outerPolys, ID = outerId)
+  }
+  ret <- sp::SpatialPolygons(Srl = ret)
+  return(ret)
+}
+
+
+plotmap <- function(map, x = NULL, id = NULL, select = NULL,
+  legend = TRUE, names = FALSE, values = FALSE, ...)
+{
+  if(inherits(map, "bnd") | inherits(map, "list"))
+    map <- list2sp(map)
   
   if(!inherits(map, "SpatialPolygons"))
     stop("please supply a 'SpatialPolygons' object to argument map!")
   if(!inherits(map, "SpatialPolygonsDataFrame"))
     map <- as(map, "SpatialPolygonsDataFrame")
-  plot(map)
+  if(!is.null(x)) {
+    if(is.data.frame(x)) {
+      if(any(is.f <- apply(x, 2, is.factor))) {
+        id <- as.factor(x[, which(is.f)[1]])
+        x <- x[, which(!is.f)[1]]
+      }
+      if(any(is.c <- apply(x, 2, is.character))) {
+        id <- as.factor(x[, which(is.c)[1]])
+        x <- x[, which(!is.c)[1]]
+      }
+    }
+    if(is.matrix(x)) {
+      if(ncol(x > 1)) {
+        id <- as.factor(as.integer(x[, 2]))
+        x <- x[, 1]
+      }
+    }
+    if(is.null(id))
+      stop("no region identifier found!")
+    x <- as.numeric(x)
+    if(length(x) != length(id))
+      stop("length of x != length of id!")
+    pol_id <- as.factor(as.character(sapply(slot(map, "polygons"), function(x) {
+      slot(x, "ID")
+    })))
+
+    if(!any(id %in% pol_id))
+      stop("region identifier does not match with polygon ID!")
+
+    if(all(pol_id == id)) {
+      map@data <- data.frame("ID" = id, "x" = x)
+    } else {
+      map@data <- merge(
+        data.frame("ID" = pol_id),
+        data.frame("ID" = id, "x" = x),
+        by = "ID"
+      )
+    }
+
+    select <- "x"
+  }
+
+  nm <- names(map)
+  args <- list(...)
+
+  if((length(nm)) < 2 & (nm[1] == "dummy")) {
+    id <- as.character(1:nrow(map@data))
+    plot(map, ...)
+  } else {
+    if(is.null(select))
+      select <- nm[1]
+    if(!is.character(select)) {
+      select <- min(c(select, length(nm)))
+      select <- nm[select]
+    }
+    map@data[[select]] <- as.numeric(map@data[[select]])
+
+    if(is.null(args$color))
+      args$color <- heat_hcl
+    if(is.null(args$symmetric))
+      args$symmetric <- FALSE
+    if(is.null(args$swap))
+      args$swap <- TRUE
+    if(is.null(args$pos))
+      args$pos <- "topleft"
+    if(is.null(args$digits))
+      args$digits <- 2
+    if(is.null(args$angle))
+      args$angle <- 45
+    if(is.null(args$axes))
+      args$axes <- FALSE
+    if(is.null(args$lty))
+      args$lty <- par("lty")
+    if(is.null(args$add))
+      args$add <- FALSE
+    if(is.null(args$border))
+      args$border <- 1
+
+    args$x <- map@data[[select]]
+    args$plot <- FALSE
+    pal <- do.call("colorlegend", delete.args("colorlegend", args))
+
+    plot(map, col = pal$map(map@data[[select]]), border = args$border, add = args$add,
+      xlim = args$xlim, ylim = args$ylim, xpd = args$xpd, density = args$density,
+      angle = args$angle, pbg = args$pbg, axes = args$axes, lty = args$lty)
+
+    if(legend) {
+      args$add <- TRUE
+      pal <- do.call("colorlegend", delete.args("colorlegend", args))
+    }
+
+    if(values) {
+      co <- coordinates(map)
+      text(co[, 1], co[, 2],
+        as.character(round(map@data[[select]], digits = args$digits)),
+        cex = args$cex)
+    }
+  }
+
+  if(names) {
+    co <- coordinates(map)
+    text(co[, 1], co[, 2], id, cex = args$cex)
+  }
 }
 
 
-plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
+.plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
   missing = TRUE, swap = FALSE, range = NULL, names = FALSE, values = FALSE, col = NULL,
   ncol = 100, breaks = NULL, cex.legend = 1, cex.names = 1, cex.values = cex.names,
   digits = 2L, mar.min = 2, add = FALSE, interp = FALSE, grid = 200, land.only = FALSE,
@@ -1332,7 +1461,7 @@ plotmap <- function(map, x = NULL, id = NULL, c.select = NULL, legend = TRUE,
       stopifnot(requireNamespace("BayesX"))
       gpclibPermit()
       class(map) <- "bnd"
-      mapsp <- BayesX::bnd2sp(map)
+      mapsp <- list2sp(map)
       ob <- unionSpatialPolygons(mapsp, rep(1L, length = length(mapsp)), avoidGEOS  = TRUE)
 
       nob <- length(slot(slot(ob, "polygons")[[1]], "Polygons"))

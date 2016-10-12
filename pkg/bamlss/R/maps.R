@@ -263,9 +263,8 @@ pixelmap <- function(x, y, size = 0.1, width = NULL, data = NULL,
 neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
   k = 1, id = NULL, nb = FALSE, names = NULL, ...)
 {
-  if(inherits(x, "bnd")) {
-    stopifnot(requireNamespace("BayesX"))
-    x <- BayesX::bnd2sp(x)
+  if(inherits(x, "bnd") | inherits(x, "list")) {
+    x <- list2sp(x)
   }
 
   type <- match.arg(type)
@@ -515,9 +514,8 @@ centroidtext <- function(polygon, poly.name = NULL, counter = "NA", cex = 1, ...
 ## Function to drop data outside the polygon area.
 drop2poly <- function(x, y, map, union = FALSE)
 {
-  if(inherits(map, "bnd")) {
-    stopifnot(requireNamespace("BayesX"))
-    map <- BayesX::bnd2sp(map)
+  if(inherits(map, "bnd") | inherits(map, "list")) {
+    map <- list2sp(map)
   }
   if(union)
     map <- unionSpatialPolygons(map, rep(1L, length = length(map)), avoidGEOS  = TRUE)
