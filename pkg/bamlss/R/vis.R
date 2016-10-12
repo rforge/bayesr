@@ -1192,7 +1192,7 @@ list2sp <- function(x)
 }
 
 
-plotmap <- function(map, x = NULL, id = NULL, select = NULL,
+plotmap <- function(map, x = NA, id = NULL, select = NULL,
   legend = TRUE, names = FALSE, values = FALSE, ...)
 {
   if(inherits(map, "bnd") | inherits(map, "list"))
@@ -1202,6 +1202,10 @@ plotmap <- function(map, x = NULL, id = NULL, select = NULL,
     stop("please supply a 'SpatialPolygons' object to argument map!")
   if(!inherits(map, "SpatialPolygonsDataFrame"))
     map <- as(map, "SpatialPolygonsDataFrame")
+  if(!is.null(x)) {
+    if(all(is.na(x)))
+      x <- NULL
+  }
   if(!is.null(x)) {
     if(is.data.frame(x)) {
       if(any(is.f <- apply(x, 2, is.factor))) {
@@ -1247,7 +1251,7 @@ plotmap <- function(map, x = NULL, id = NULL, select = NULL,
   nm <- names(map)
   args <- list(...)
 
-  if((length(nm)) < 2 & (nm[1] == "dummy")) {
+  if(((length(nm)) < 2 & (nm[1] == "dummy")) | is.null(x)) {
     id <- as.character(1:nrow(map@data))
     plot(map, ...)
   } else {
