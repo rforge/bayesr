@@ -1279,6 +1279,8 @@ plotmap <- function(map, x = NULL, id = NULL, select = NULL,
       args$add <- FALSE
     if(is.null(args$border))
       args$border <- 1
+    if(is.null(args$lwd))
+      args$lwd <- 1
 
     args$x <- map@data[[select]]
     args$plot <- FALSE
@@ -1286,7 +1288,8 @@ plotmap <- function(map, x = NULL, id = NULL, select = NULL,
 
     plot(map, col = pal$map(map@data[[select]]), border = args$border, add = args$add,
       xlim = args$xlim, ylim = args$ylim, xpd = args$xpd, density = args$density,
-      angle = args$angle, pbg = args$pbg, axes = args$axes, lty = args$lty)
+      angle = args$angle, pbg = args$pbg, axes = args$axes, lty = args$lty,
+      lwd = args$lwd)
 
     if(legend) {
       args$add <- TRUE
