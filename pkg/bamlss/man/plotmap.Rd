@@ -11,7 +11,7 @@
 }
  
 \usage{
-plotmap(map, x = NULL, id = NULL, select = NULL,
+plotmap(map, x = NA, id = NULL, select = NULL,
   legend = TRUE, names = FALSE, values = FALSE, ...)
 }
 
@@ -23,7 +23,9 @@ plotmap(map, x = NULL, id = NULL, select = NULL,
     one column that is the region identifier and one that contains the values to be plotted.
     In case \code{x} is a data.frame, the function searches for \code{"character"} or
     \code{"factor"} columns for the region identifier. If \code{x} is a matrix, the second
-    column of \code{x} is supposed to be the region identifier.}
+    column of \code{x} is supposed to be the region identifier. If \code{x = NA} and
+    \code{map} is an object of class \code{"SpatialPolygonsDataFrame"} only the polygons
+    will be plotted without using the data.}
   \item{id}{If argument \code{x} is a vector, argument \code{id} should contain the region identifier
     vector.}
   \item{select}{Select the column of the data in \code{x} which should be used for plotting, may

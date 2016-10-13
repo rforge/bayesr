@@ -32,7 +32,8 @@ bamlss(formula, family = "gaussian", data = NULL,
   contrasts = NULL, reference = NULL, transform = NULL,
   optimizer = NULL, sampler = NULL, samplestats = NULL,
   results = NULL, cores = NULL, sleep = NULL,
-  combine = TRUE, model = TRUE, x = TRUE, ...)
+  combine = TRUE, model = TRUE, x = TRUE,
+  light = FALSE, ...)
 }
 
 \arguments{
@@ -90,6 +91,8 @@ bamlss(formula, family = "gaussian", data = NULL,
   \item{model}{If set to \code{FALSE} the model frame used for modeling is not part of the
     return value.}
   \item{x}{If set to \code{FALSE} the model matrices are not part of the return value.}
+  \item{light}{Should the returned object be lighter, i.e., if \code{light = TRUE} the returned
+    object will not contain the model.frame and design and penalty matrices are deleted.}
   \item{\dots}{Arguments passed to the \code{transformer}, \code{optimizer}, \code{sampler},
     \code{results} and \code{samplestats} function.}
 }

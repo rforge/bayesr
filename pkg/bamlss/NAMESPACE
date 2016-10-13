@@ -144,7 +144,8 @@ export(
   "BUGSeta",
   "BUGSmodel",
   "neighbormatrix",
-  "plotneighbors"
+  "plotneighbors",
+  "bamlss.model.frame"
 )
 
 S3method("plot", "bamlss")

@@ -80,6 +80,7 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
   }
 
   bf$formula <- formula
+  attr(bf$formula, "response.name") <- rn
 
   ## Add the terms object.
   bf$terms <- terms.bamlss.formula(formula, data = data, drop = FALSE, specials = specials, ...)
@@ -379,6 +380,8 @@ design.construct <- function(formula, data = NULL, knots = NULL,
             rm(sme)
           }
         }
+        for(j in seq_along(smooth))
+          smooth[[j]][["X.dim"]] <- ncol(smooth[[j]]$X)
         if(!is.null(no.mgcv))
           smooth <- c(smooth, no.mgcv)
         if(length(smooth))
@@ -796,7 +799,7 @@ model.frame.bamlss <- model.frame.bamlss.frame <- function(formula, ...)
     if(!is.null(attr(ft, "orig.formula"))) {
       fcall["formula"] <- parse(text = paste("attr(", fcall["formula"], ", 'orig.formula')", sep = ""))
     }
-    fcall["start"] <- NULL
+    fcall["start"] <- fcall["light"] <- NULL
     fcall["drop.unused.levels"] <- FALSE
     if(is.null(fcall["family"]))
       fcall["family"] <- parse(text = "gaussian_bamlss()")
@@ -1145,7 +1148,7 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
 bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
   reference = NULL, transform = NULL, optimizer = NULL, sampler = NULL, samplestats = NULL, results = NULL,
-  cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, x = TRUE, ...)
+  cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, x = TRUE, light = FALSE, ...)
 {
   ## The environment.
   env <- get_formula_envir(formula)
@@ -1284,12 +1287,24 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
     bf$results <- try(functions$results(bf, bamlss = TRUE,  ...))
 
   ## Save the model frame?
-  if(!model)
+  if(!model | light)
     bf$model.frame <- NULL
 
   ## Save 'x' master object?
   if(!x)
     bf$x <- NULL
+
+  if(light) {
+    if(!is.null(bf$x)) {
+      for(j in names(bf$x)) {
+        if(length(bf$x[[j]]$smooth.construct)) {
+          for(i in seq_along(bf$x[[j]]$smooth.construct))
+            bf$x[[j]]$smooth.construct[[i]][c("X", "S", "Xr", "Xf")] <- NULL
+        }
+      }
+    }
+    bf$y <- NULL
+  }
 
   bf$call <- match.call()
   class(bf) <- c("bamlss", "bamlss.frame", "list")
@@ -1966,19 +1981,8 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
       vars <- tl[-sid]
       if(!length(vars))
         vars <- NULL
-      for(j in tl[sid]) {
-        st <- try(eval(parse(text = j)), silent = TRUE)
-        if(inherits(st, "try-error"))
-          st <- eval(parse(text = j), enclos = env, envir = loadNamespace("mgcv"))
-        vars <- c(vars, st$term)
-        if(!is.null(st$by)) {
-          if(st$by != "NA") {
-            vars <- if(grepl("~", st$by)) {
-              c(vars, all.vars.formula(as.formula(st$by, env = env)))
-            } else c(vars, st$by)
-          }
-        }
-      }
+      for(j in tl[sid])
+        vars <- c(vars, all.vars(as.formula(paste("~", j))))
     } else {
       vars <- tl
     }
@@ -2020,18 +2024,7 @@ all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
       labs <- NULL
     else
       tl[-sid] <- labs
-    labs2 <- NULL
-    for(j in tl[sid]) {
-      st <- try(eval(parse(text = j)), silent = TRUE)
-      if(inherits(st, "try-error"))
-        st <- eval(parse(text = j), enclos = env, envir = loadNamespace("mgcv"))
-      if(st$by != "NA") {
-        if(!grepl(paste("by=", st$by, sep = ""), st$label, fixed = TRUE))
-          st$label <- gsub(")", paste(",by=", st$by, ")", sep = ""), st$label, fixed = TRUE)
-      }
-      labs2 <- c(labs2, if(full.names) paste("s", st$label, sep = ".") else st$label)
-    }
-    tl[sid] <- labs2
+    tl[sid] <- gsub(" ", "", tl[sid])
     labs <- tl
   } else labs <- if(full.names) paste("p", tl, sep = ".") else tl
 
@@ -2076,8 +2069,13 @@ formula_extend <- function(formula, family, specials = NULL)
 response.name <- function(formula, hierarchical = TRUE, keep.functions = FALSE, na.rm = FALSE)
 {
   rn <- NA
-  if(inherits(formula, "bamlss.frame"))
+  if(inherits(formula, "bamlss.frame")) {
+    if(!is.null(formula$formula)) {
+      if(!is.null(attr(formula$formula, "response.name")))
+        return(attr(formula$formula, "response.name"))
+    }
     formula <- terms(model.frame(formula))
+  }
   if(!is.null(attr(formula, "terms")))
     formula <- attr(formula, "terms")
   if(inherits(formula, "formula")) {
@@ -5059,21 +5057,8 @@ get_sterms_labels <- function(x, specials = NULL)
   if(has_sterms(x, specials)) {
     x <- drop.terms.bamlss(x, pterms = FALSE, sterms = TRUE,
       keep.response = FALSE, specials = specials)
-    tl <- NULL
-    for(j in attr(x, "term.labels")) {
-      st <- try(eval(parse(text = j), envir = env), silent = TRUE)
-      if(inherits(st, "try-error"))
-        st <- eval(parse(text = j), enclos = env, envir = loadNamespace("mgcv"))
-      if(st$by != "NA") {
-        if(grepl(st$label, paste("):", st$by, sep = ""))) {
-          st$label <- gsub(paste("):", st$by, sep = ""), paste(",by=", st$by, ")", sep = ""),
-            st$label, fixed = TRUE)
-        } else {
-          st$label <- gsub(")", paste(",by=", st$by, ")", sep = ""), st$label, fixed = TRUE)
-        }
-      }
-      tl <- c(tl, st$label)
-    }
+    tl <- attr(x, "term.labels")
+    tl <- gsub(" ", "", tl)
   } else tl <- character(0)
   tl
 }
@@ -5215,23 +5200,27 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
             }
           }
 
-          b <- paste(id, "s", j,
-            if(is.null(colnames(obj$smooth.construct[[j]]$X))) {
-              if(!inherits(obj$smooth.construct[[j]], "special")) {
-                paste("b", 1:ncol(obj$smooth.construct[[j]]$X), sep = "")
-              } else {
-                npar  <- if(inherits(obj$smooth.construct[[j]], "rs.smooth")) {
-                  names(get.par(obj$smooth.construct[[j]]$state$parameters, "b"))
+          if(is.null(obj$smooth.construct[[j]][["X"]])) {
+            b <- paste(id, "s", j, paste("b", 1:obj$smooth.construct[[j]][["X.dim"]], sep = ""), sep = ".")
+          } else {
+            b <- paste(id, "s", j,
+              if(is.null(colnames(obj$smooth.construct[[j]]$X))) {
+                if(!inherits(obj$smooth.construct[[j]], "special")) {
+                  paste("b", 1:ncol(obj$smooth.construct[[j]]$X), sep = "")
                 } else {
-                  npar <- if(!is.null(obj$smooth.construct[[j]]$state$parameters)) {
-                    length(get.state(obj$smooth.construct[[j]], "b"))
+                  npar  <- if(inherits(obj$smooth.construct[[j]], "rs.smooth")) {
+                    names(get.par(obj$smooth.construct[[j]]$state$parameters, "b"))
                   } else {
-                    ncol(obj$smooth.construct[[j]]$X)
+                    npar <- if(!is.null(obj$smooth.construct[[j]]$state$parameters)) {
+                      length(get.state(obj$smooth.construct[[j]], "b"))
+                    } else {
+                      ncol(obj$smooth.construct[[j]]$X)
+                    }
+                    paste("b", 1:npar, sep = "")
                   }
-                  paste("b", 1:npar, sep = "")
                 }
-              }
-            } else colnames(obj$smooth.construct[[j]]$X), sep = ".")
+              } else colnames(obj$smooth.construct[[j]]$X), sep = ".")
+          }
 
           tn <- c(obj$smooth.construct[[j]]$term, if(obj$smooth.construct[[j]]$by != "NA") {
             obj$smooth.construct[[j]]$by
@@ -5922,6 +5911,9 @@ residuals.bamlss <- function(object, type = c("quantile", "response"), nsamps = 
     }
   } else {
     type <- match.arg(type)
+
+    if(is.null(object$y))
+      stop("response variable is missing, cannot compute residuals!")
 
     nobs <- nrow(object$y)
     y <- if(is.data.frame(object$y)) {
