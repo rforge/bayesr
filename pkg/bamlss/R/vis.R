@@ -980,8 +980,14 @@ colorlegend <- function(color = NULL, ncol = NULL, x = NULL, breaks = NULL,
         if(abs(diff(lrange / max(lrange))) / length(at) < 0.2)
           at <- seq(min(lrange), max(lrange), length.out = 3L)
       }
-      if(is.null(labels))
-        labels <- format(at, digits = digits, nsmall = digits)
+      if(is.null(labels)) {
+        justify <- "centre"
+        if((side.legend == 2) & (side.ticks == 1))
+          justify <- "right"
+        if((side.legend == 2) & (side.ticks == 2))
+          justify <- "left"
+        labels <- format(gsub(" ", "", format(at, digits = digits, nsmall = digits)), justify = justify)
+      }
       if(side.legend < 2L) {
         at <- obs2legend(at, xlim)
         length.ticks <- length.ticks * height
