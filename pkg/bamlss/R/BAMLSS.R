@@ -2025,6 +2025,8 @@ all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
     else
       tl[-sid] <- labs
     tl[sid] <- gsub(" ", "", tl[sid])
+    if(full.names)
+      tl[sid] <- paste("s", tl[sid], sep = ".")
     labs <- tl
   } else labs <- if(full.names) paste("p", tl, sep = ".") else tl
 
