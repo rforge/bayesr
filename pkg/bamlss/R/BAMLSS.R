@@ -5642,7 +5642,14 @@ term.labels <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
 term.labels2 <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
   intercept = TRUE, list = TRUE, type = 1, ...)
 {
+  stl <- NULL
+  is.bamlss <- FALSE
   if(inherits(x, "bamlss") | inherits(x, "bamlss.frame")) {
+    stl <- lapply(x$x, function(x) {
+      if(!is.null(x$smooth.construct))
+        names(x$smooth.construct)
+    })
+    is.bamlss <- TRUE
     x <- terms(x, drop = FALSE)
   } else {
     if(!inherits(x, "bamlss.terms")) {
@@ -5673,7 +5680,7 @@ term.labels2 <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
   nx <- names(x)
   rval <- vector(mode = "list", length = length(nx))
   for(j in seq_along(x)) {
-    txj <- drop.terms.bamlss(x[[j]], pterms = TRUE, sterms = TRUE, keep.response = FALSE)
+    txj <- drop.terms.bamlss(x[[j]], pterms = TRUE, sterms = !is.bamlss, keep.response = FALSE)
     if(type < 2) {
       rval[[j]] <- attr(txj, "term.labels")
     } else {
@@ -5681,6 +5688,8 @@ term.labels2 <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
     }
     if(intercept & (attr(txj, "intercept") > 0))
       rval[[j]] <- c(rval[[j]], "(Intercept)")
+    if(is.bamlss)
+      rval[[j]] <- c(rval[[j]], stl[[j]])
   }
   names(rval) <- nx
   if(!list) {
