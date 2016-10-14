@@ -1257,7 +1257,7 @@ plotmap <- function(map, x = NA, id = NULL, select = NULL,
   nm <- names(map)
   args <- list(...)
 
-  if(((length(nm)) < 2 & (nm[1] == "dummy")) | is.null(x)) {
+  if((((length(nm)) < 2 & (nm[1] == "dummy")) | is.null(x)) & is.null(select)) {
     id <- as.character(1:nrow(map@data))
     plot(map, ...)
   } else {
@@ -1299,7 +1299,7 @@ plotmap <- function(map, x = NA, id = NULL, select = NULL,
     plot(map, col = pal$map(map@data[[select]]), border = args$border, add = args$add,
       xlim = args$xlim, ylim = args$ylim, xpd = args$xpd, density = args$density,
       angle = args$angle, pbg = args$pbg, axes = args$axes, lty = args$lty,
-      lwd = args$lwd)
+      lwd = args$lwd, xlab = args$xlab, ylab = args$ylab, main = args$main)
 
     if(legend) {
       args$add <- TRUE
