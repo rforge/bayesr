@@ -801,7 +801,11 @@ model.frame.bamlss <- model.frame.bamlss.frame <- function(formula, ...)
     if(!is.null(attr(ft, "orig.formula"))) {
       fcall["formula"] <- parse(text = paste("attr(", fcall["formula"], ", 'orig.formula')", sep = ""))
     }
-    fcall["start"] <- fcall["light"] <- NULL
+
+    nf <- names(fcall)
+    nf <- nf[!(nf %in% names(formals(bamlss.model.frame)))]
+    nf <- nf[nchar(nf) > 0]
+    fcall[nf] <- NULL
     fcall["drop.unused.levels"] <- FALSE
     if(is.null(fcall["family"]))
       fcall["family"] <- parse(text = "gaussian_bamlss()")
