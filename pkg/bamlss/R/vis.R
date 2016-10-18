@@ -1213,45 +1213,58 @@ plotmap <- function(map, x = NA, id = NULL, select = NULL,
       x <- NULL
   }
   if(!is.null(x)) {
-    if(is.data.frame(x)) {
-      if(any(is.f <- apply(x, 2, is.factor))) {
-        id <- as.factor(x[, which(is.f)[1]])
-        x <- x[, which(!is.f)[1]]
+    if(is.data.frame(x) & is.character(id) & (length(id) == 1)) {
+      if(!(id %in% names(x)))
+        stop("id variable must be part of data x!")
+      if(!(id %in% names(map@data)))
+        stop("id variable must be part of data in map!")
+      map@data <- merge(map@data, x, by = id)
+      if(is.null(select)) {
+        select <- names(x)
+        select <- select[!(select %in% id)]
+        select <- select[1]
       }
-      if(any(is.c <- apply(x, 2, is.character))) {
-        id <- as.factor(x[, which(is.c)[1]])
-        x <- x[, which(!is.c)[1]]
-      }
-    }
-    if(is.matrix(x)) {
-      if(ncol(x > 1)) {
-        id <- as.factor(as.integer(x[, 2]))
-        x <- x[, 1]
-      }
-    }
-    if(is.null(id))
-      stop("no region identifier found!")
-    x <- as.numeric(x)
-    if(length(x) != length(id))
-      stop("length of x != length of id!")
-    pol_id <- as.factor(as.character(sapply(slot(map, "polygons"), function(x) {
-      slot(x, "ID")
-    })))
-
-    if(!any(id %in% pol_id))
-      stop("region identifier does not match with polygon ID!")
-
-    if(all(pol_id == id)) {
-      map@data <- data.frame("ID" = id, "x" = x)
     } else {
-      map@data <- merge(
-        data.frame("ID" = pol_id),
-        data.frame("ID" = id, "x" = x),
-        by = "ID"
-      )
-    }
+      if(is.data.frame(x)) {
+        if(any(is.f <- apply(x, 2, is.factor))) {
+          id <- as.factor(x[, which(is.f)[1]])
+          x <- x[, which(!is.f)[1]]
+        }
+        if(any(is.c <- apply(x, 2, is.character))) {
+          id <- as.factor(x[, which(is.c)[1]])
+          x <- x[, which(!is.c)[1]]
+        }
+      }
+      if(is.matrix(x)) {
+        if(ncol(x > 1)) {
+          id <- as.factor(as.integer(x[, 2]))
+          x <- x[, 1]
+        }
+      }
+      if(is.null(id))
+        stop("no region identifier found!")
+      x <- as.numeric(x)
+      if(length(x) != length(id))
+        stop("length of x != length of id!")
+      pol_id <- as.factor(as.character(sapply(slot(map, "polygons"), function(x) {
+        slot(x, "ID")
+      })))
 
-    select <- "x"
+      if(!any(id %in% pol_id))
+        stop("region identifier does not match with polygon ID!")
+
+      if(all(pol_id == id)) {
+        map@data <- data.frame("ID" = id, "x" = x)
+      } else {
+        map@data <- merge(
+          data.frame("ID" = pol_id),
+          data.frame("ID" = id, "x" = x),
+          by = "ID"
+        )
+      }
+
+      select <- "x"
+    }
   }
 
   nm <- names(map)
@@ -1267,7 +1280,7 @@ plotmap <- function(map, x = NA, id = NULL, select = NULL,
       select <- min(c(select, length(nm)))
       select <- nm[select]
     }
-    map@data[[select]] <- as.numeric(map@data[[select]])
+    map@data[[select[1]]] <- as.numeric(map@data[[select[1]]])
 
     if(is.null(args$color))
       args$color <- heat_hcl
@@ -1292,11 +1305,11 @@ plotmap <- function(map, x = NA, id = NULL, select = NULL,
     if(is.null(args$lwd))
       args$lwd <- 1
 
-    args$x <- map@data[[select]]
+    args$x <- map@data[[select[1]]]
     args$plot <- FALSE
     pal <- do.call("colorlegend", delete.args("colorlegend", args))
 
-    plot(map, col = pal$map(map@data[[select]]), border = args$border, add = args$add,
+    plot(map, col = pal$map(map@data[[select[1]]]), border = args$border, add = args$add,
       xlim = args$xlim, ylim = args$ylim, xpd = args$xpd, density = args$density,
       angle = args$angle, pbg = args$pbg, axes = args$axes, lty = args$lty,
       lwd = args$lwd, xlab = args$xlab, ylab = args$ylab, main = args$main)
@@ -1309,7 +1322,7 @@ plotmap <- function(map, x = NA, id = NULL, select = NULL,
     if(values) {
       co <- coordinates(map)
       text(co[, 1], co[, 2],
-        as.character(round(map@data[[select]], digits = args$digits)),
+        as.character(round(map@data[[select[1]]], digits = args$digits)),
         cex = args$cex)
     }
   }
