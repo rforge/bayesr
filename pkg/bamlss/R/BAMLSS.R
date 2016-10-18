@@ -1981,8 +1981,16 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
       vars <- tl[-sid]
       if(!length(vars))
         vars <- NULL
-      for(j in tl[sid])
-        vars <- c(vars, all.vars(as.formula(paste("~", j))))
+      for(j in tl[sid]) {
+        tcall <- parse(text = j)[[1]]
+        tcall[c("k","fx","bs","m","xt","id","sp","pc","d","mp","np")] <- NULL
+        tcall <- eval(tcall)
+        vars <- c(vars, tcall$term)
+        if(!is.null(tcall$by)) {
+          if(tcall$by != "NA")
+            vars <- c(vars, tcall$by)
+        }
+      }
     } else {
       vars <- tl
     }
