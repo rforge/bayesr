@@ -1091,9 +1091,9 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
   }
 
   if(length(object$margin) > 1) {
-    object$tx.term <- unlist(lapply(object$margin, function(x) {
+    object$tx.term <- paste(unlist(lapply(object$margin, function(x) {
       paste(x$term, collapse = "")
-    }))
+    })), collapse = "")
   }
 
   if(object$by != "NA") {
