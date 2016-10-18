@@ -1014,7 +1014,7 @@ resplit <- function(x) {
 
 
 ## Special tensor constructor.
-tx <- function(..., bs = "ps",k = NA,
+tx <- function(..., bs = "ps", k = NA,
   constraint = c("center", "main", "both", "none", "meanf", "meanfd", "meansimple"))
 {
   object <- te(..., bs = bs, k = k)

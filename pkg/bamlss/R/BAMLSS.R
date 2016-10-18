@@ -393,8 +393,10 @@ design.construct <- function(formula, data = NULL, knots = NULL,
       for(j in seq_along(obj$smooth.construct)) {
         slj <- obj$smooth.construct[[j]]$label
         if(obj$smooth.construct[[j]]$by != "NA") {
-          if(grepl(pat <- paste("):", obj$smooth.construct[[j]]$by, sep = ""), slj, fixed = TRUE))
+          if(grepl(pat <- paste("):", obj$smooth.construct[[j]]$by, sep = ""), slj, fixed = TRUE)) {
             slj <- gsub(pat, paste(",by=", obj$smooth.construct[[j]]$by, ")", sep = ""), slj, fixed = TRUE)
+            obj$smooth.construct[[j]]$label <- slj
+          }
         }
         sl <- c(sl, slj)
       }
@@ -2033,6 +2035,18 @@ all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
     else
       tl[-sid] <- labs
     tl[sid] <- gsub(" ", "", tl[sid])
+    for(j in sid) {
+      tcall <- parse(text = tl[j])[[1]]
+      tcall[c("k","fx","bs","m","xt","id","sp","pc","d","mp","np")] <- NULL
+      tcall <- eval(tcall)
+      tl[j] <- gsub(" ", "", tcall$label)
+      if(!is.null(tcall$by)) {
+        if(tcall$by != "NA") {
+          if(!grepl("by=", tl[j], fixed = TRUE))
+            tl[j] <- gsub(")", paste(",by=", tcall$by, ")", sep = ""), tl[j], fixed = TRUE)
+        }
+      }
+    }
     if(full.names)
       tl[sid] <- paste("s", tl[sid], sep = ".")
     labs <- tl
@@ -5067,8 +5081,7 @@ get_sterms_labels <- function(x, specials = NULL)
   if(has_sterms(x, specials)) {
     x <- drop.terms.bamlss(x, pterms = FALSE, sterms = TRUE,
       keep.response = FALSE, specials = specials)
-    tl <- attr(x, "term.labels")
-    tl <- gsub(" ", "", tl)
+    tl <- all.labels.formula(x)
   } else tl <- character(0)
   tl
 }
