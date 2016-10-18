@@ -1445,7 +1445,7 @@ gamma_bamlss <- function(...)
     },
     "initialize" = list(
       "mu" = function(y, ...) { (y + mean(y)) / 2 },
-      "sigma" = function(y, ...) { rep(sd(y), length(y)) }
+      "sigma" = function(y, ...) { rep(1, length(y)) }
     )
   )
 
