@@ -5,6 +5,7 @@
 \usepackage{algorithmic}
 \usepackage{algorithm}
 \usepackage{rotating}
+\usepackage{enumitem}
 
 \definecolor{darkgray}{rgb}{0.1,0.1,0.1}
 \definecolor{heat1}{rgb}{0.8274510, 0.2470588, 0.4156863}
@@ -180,12 +181,12 @@ y \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{1}) = \eta_{1}, \,\,
   h_{2}(\theta_{2}) = \eta_{2}, \dots, \,\, h_{K}(\theta_{K}) =
   \eta_{K}\right),
 \end{equation*}
-where $\mathbf{\mathcal{D}}$ denotes a parametric distribution available for the response
-variable $y$ and $\theta_k$, $k = 1, \ldots, K$, are parameters that are linked to additive predictors
-using known monotonic and twice differentiable functions
+where $\mathbf{\mathcal{D}}$ denotes a parametric distribution for the response
+variable $y$ with $K$ parameters $\theta_k$, $k = 1, \ldots, K$, that are linked to additive
+predictors using known monotonic and twice differentiable functions
 $h_{k}(\cdot)$. Note that the response may also be a
 $q$-dimensional vector $\mathbf{y} = (y_{1}, \ldots, y_{q})^\top$, e.g., when
-$\mathbf{\mathcal{D}}$ is a distribution of random vectors with dimension $q$.
+$\mathbf{\mathcal{D}}$ is a multivariate distribution.
 (see, e.g., \citealp{bamlss:Klein+Kneib+Klasen+Lang:2015}).
 The $k$-th additive predictor is given by
 \begin{equation} \label{eqn:addpred}
@@ -195,8 +196,8 @@ The $k$-th additive predictor is given by
 with unspecified (possibly nonlinear) functions $f_{jk}(\cdot)$ of subvectors of a vector
 $\mathbf{x}$ collecting all available covariate information, $j = 1, \ldots, J_k$ and $k = 1, \ldots, K$ and
 $\boldsymbol{\beta}_k = (\boldsymbol{\beta}_{1k}, \ldots, \boldsymbol{\beta}_{J_kk})^\top$ are
-regression coefficients that need to estimated from the data. The vector of function
-evaluations $\mathbf{f}_{jk} = (f_{jk}(\mathbf{x}_{1}; \boldsymbol{\beta}_{jk}), \ldots,
+parameters, typically regression coefficients that need to estimated from the data. The vector of
+function evaluations $\mathbf{f}_{jk} = (f_{jk}(\mathbf{x}_{1}; \boldsymbol{\beta}_{jk}), \ldots,
   f_{jk}(\mathbf{x}_{n}; \boldsymbol{\beta}_{jk}))^{\top}$ of the
 $i = 1, \ldots, n$ observations is then given by
 \begin{equation} \label{eqn:functions}
@@ -214,11 +215,11 @@ h_k(\boldsymbol{\theta}_k) = \boldsymbol{\eta}_k = \eta_k(\mathbf{X}_k ; \boldsy
   \mathbf{f}_{1k} + \ldots + \mathbf{f}_{J_kk},
 \end{equation*}
 where $\mathbf{X}_k = (\mathbf{X}_{1k}, \ldots, \mathbf{X}_{J_kk})^\top$ is the combined design
-matrix for parameter $k$.
+matrix for the $k$-th parameter.
 
-The functions $f_{jk}(\cdot)$ are usually based on a basis function approach, where $\eta_k$ then is
-a typical GAM-type or so called structured additive predictor
-(STAR,~\citealp{bamlss:Fahrmeir+Kneib+Lang:2004, bamlss:Brezger+Lang:2006}). However, in this paper
+While functions $f_{jk}(\cdot)$ are usually based on a basis function approach, where $\eta_k$ then is
+a typical GAM-type or so-called structured additive predictor
+(STAR,~\citealp{bamlss:Fahrmeir+Kneib+Lang:2004, bamlss:Brezger+Lang:2006}), in this paper
 we relax this assumption and let $f_{jk}(\cdot)$ be an unspecified composition of covariate data
 $\mathbf{x}$ and regression coefficients $\boldsymbol{\beta}_{jk}$ ($q_{jk} \times 1$). For example,
 if a linear basis function approach is used
@@ -251,6 +252,189 @@ $\tilde{\boldsymbol{\gamma}}_{jk}$ are not penalized (see, e.g.,
 
 
 \section{A conceptional Lego toolbox} \label{sec:legobox}
+
+
+\subsection{Response distribution} \label{sec:density}
+
+The main building block of regression model algorithms is the probability density function
+$d(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$, or for
+computational reasons its logarithm. Estimation typically requires to evaluate the log-likelihood
+function
+\begin{equation*} \label{eqn:loglik}
+\ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X}) =
+  \sum_{i = 1}^n \log \, d(y_i ; \theta_{i1} = h_1^{-1}(\eta_{i1}(\mathbf{x}_i; \boldsymbol{\beta}_1)), \ldots,
+  \theta_{iK} = h_K^{-1}(\eta_{iK}(\mathbf{x}_i; \boldsymbol{\beta}_K)))
+\end{equation*}
+a number of times, where the vector
+$\boldsymbol{\beta} = (\boldsymbol{\beta}_1^\top, \ldots, \boldsymbol{\beta}_K^\top)^\top$ 
+comprises all model coefficients that should be estimated, $\mathbf{X} = (\mathbf{X}_1, \ldots, \mathbf{X}_K)$
+are the respective covariate matrices with $\mathbf{x}_i$ as the $i$-th row of $\mathbf{X}$ and
+$\boldsymbol{\theta}_k$ are vectors of length $n$.
+Assigning prior distributions $p_{jk}( \cdot )$ to the individual model components results in the
+log-posterior
+\begin{equation} \label{eqn:logpost}
+\log \, \pi(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha}) \propto
+  \ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X}) +
+  \sum_{k = 1}^K\sum_{j = 1}^{J_k} \left[ \log \,
+  p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) \right],
+\end{equation}
+where $\boldsymbol{\tau} = (\boldsymbol{\tau}_1^\top, \ldots, \boldsymbol{\tau}_K^\top)^\top =
+(\boldsymbol{\tau}_{11}^\top, \ldots, \boldsymbol{\tau}_{J_11}^\top, \ldots,
+\boldsymbol{\tau}_{1K}^\top, \ldots, \boldsymbol{\tau}_{J_KK}^\top)^\top$ is
+the vector of all assigned hyper-parameters used within prior functions $p_{jk}( \cdot )$
+and similarly $\boldsymbol{\alpha}$ is the set of all fixed prior specifications. For example,
+$f_{jk}( \cdot )$ is modeled as a penalized spline \citep{bamlss:Eilers+Marx:1996}, then
+$\boldsymbol{\tau}_{jk}$ represents smoothing variances (parameters) and $\boldsymbol{\alpha}_{jk}$
+is a set of penalty matrices. Also note that from a
+frequentist perspective (\ref{eqn:logpost}) can be viewed as a penalized log-likelihood, e.g., if
+a normal prior is used within $p_{jk}( \cdot )$ for $\boldsymbol{\beta}_{jk}$
+(see Section~\ref{sec:priorsbricks}).
+
+
+\subsection{Model fitting} \label{sec:modelfit}
+
+Bayesian point estimates of $\boldsymbol{\beta}$ and $\boldsymbol{\tau}$ are obtained by:
+\begin{enumerate}[label=(\alph*)]
+\item \label{item:a} Maximization of the log-posterior for posterior mode estimation.
+\item \label{item:b} Solving high-dimensional integrals, e.g., for posterior mean or median
+  estimation.
+\end{enumerate}
+For the possibly very complex models within the BAMLSS framework, problems \ref{item:a} and
+\ref{item:b} are commonly solved by computer intensive iterative algorithms, since analytical
+solutions are available only in a few special cases. In either case, the algorithms perform the
+updating scheme
+\begin{equation} \label{eqn:updating}
+(\boldsymbol{\beta}^{(t + 1)}, \boldsymbol{\tau}^{(t + 1)}) =
+  U(\boldsymbol{\beta}^{(t)}, \boldsymbol{\tau}^{(t)};
+    \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha}),
+\end{equation}
+where function $U( \cdot )$ is an updating function, e.g., for generating one Newton-Raphson step
+in \ref{item:a} or getting the next step in a MCMC simulation in \ref{item:b}, amongst others. The
+updating scheme can be partitioned into separate updating equations using leapfrog or zigzag
+iteration (see, e.g., \citealp{bamlss:Smyth:1996}). Now let
+\begin{eqnarray} \label{eqn:blockupdate}
+(\boldsymbol{\beta}_1^{(t + 1)}, \boldsymbol{\tau}_1^{(t + 1)}) &=&
+  U_1(\boldsymbol{\beta}_1^{(t)}, \boldsymbol{\beta}_2^{(t)},
+    \ldots, \boldsymbol{\beta}_K^{(t)}, \boldsymbol{\tau}_1^{(t)}, \boldsymbol{\tau}_2^{(t)},
+    \ldots, \boldsymbol{\tau}_K^{(t)}; \mathbf{y}, \mathbf{X}_1, \boldsymbol{\alpha}_1) \nonumber \\
+(\boldsymbol{\beta}_2^{(t + 1)}, \boldsymbol{\tau}_2^{(t + 1)}) &=&
+  U_2(\boldsymbol{\beta}_1^{(t + 1)}, \boldsymbol{\beta}_2^{(t)},
+    \ldots, \boldsymbol{\beta}_K^{(t)}, \boldsymbol{\tau}_1^{(t + 1)}, \boldsymbol{\tau}_2^{(t)},
+    \ldots, \boldsymbol{\tau}_K^{(t)}; \mathbf{y}, \mathbf{X}_2, \boldsymbol{\alpha}_2) \\
+  &\vdots& \nonumber \\
+(\boldsymbol{\beta}_K^{(t + 1)}, \boldsymbol{\tau}_K^{(t + 1)}) &=&
+  U_K(\boldsymbol{\beta}_1^{(t + 1)}, \boldsymbol{\beta}_2^{(t + 1)},
+    \ldots, \boldsymbol{\beta}_K^{(t)}, \boldsymbol{\tau}_1^{(t + 1)}, \boldsymbol{\tau}_2^{(t + 1)},
+    \ldots, \boldsymbol{\tau}_K^{(t)}; \mathbf{y}, \mathbf{X}_K, \boldsymbol{\alpha}_K) \nonumber
+\end{eqnarray}
+be a partitioned updating scheme with updating functions $U_k( \cdot )$, i.e., in each iteration
+updates for the $k$-th parameter are computed while holding all other parameters
+fixed. Furthermore, this strategy can be applied for all terms within a parameter
+\begin{equation} \label{eqn:blockblockupdate}
+(\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)}) =
+  U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t)} | \, \cdot \,) \qquad
+    j = 1, \ldots, J_k, \quad k = 1, \ldots, K,
+\end{equation}
+and $U_{jk}( \cdot )$ is an updating function for a single model term.
+
+The partitioned updating system allows for having different functions $U_{jk}( \cdot )$, e.g., for
+problem \ref{item:a} some updating functions could be based on iteratively
+weighted least squares (IWLS) and some on ordinary Newton-Raphson steps (see, e.g.,
+example Section~\ref{sec:coxreg}). For \ref{item:b}, e.g., using MCMC simulation it is common to
+mix between several sampling methods depending on the type of model term or distribution parameter.
+
+Using highly modular systems like (\ref{eqn:blockupdate}) and (\ref{eqn:blockblockupdate})
+it is possible to develop a generic estimation algorithm for numerous possibly very complex models,
+which is outlined in Algorithm~\ref{fig:algodesign}.
+\begin{algorithm}[!h]
+\caption{\label{fig:algodesign} Generic BAMLSS model fitting algorithm.}
+\begin{algorithmic}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\REQUIRE{$\mathbf{y}$, $\mathbf{X}$, $\boldsymbol{\alpha}$.}
+\renewcommand{\algorithmicrequire}{\textbf{Initialize:}}
+\renewcommand{\algorithmicensure}{\textbf{Set:}}
+\ENSURE{Stopping criterion $\varepsilon$, number of iterations $T$, e.g., $\varepsilon = 0.0001$, $T = 1000$.}
+\REQUIRE{$\boldsymbol{\beta}$, $\boldsymbol{\eta}$, $\boldsymbol{\tau}$, e.g.,
+  $\boldsymbol{\beta} = \mathbf{0}, \boldsymbol{\tau} = 0.001 \cdot \mathbf{1}$,
+  $\Delta = \varepsilon + 1$, $t = 1$.}
+\WHILE{$(\Delta > \varepsilon) \, \& \, (t < T)$}
+  \STATE Set $\mathring{\boldsymbol{\eta}} = \boldsymbol{\eta}^{(t)}$.
+  \FOR{$k = 1$ to $K$}
+    \FOR{$j = 1$ to $J_k$}
+      \STATE Obtain new state $(\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)}) \leftarrow
+        U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t)} | \, \cdot \,)$ using Algorithm~\ref{fig:umode} or \ref{fig:mcmc}.
+      \STATE Compute $\mathbf{f}_{jk}^{(t + 1)} \leftarrow f_{jk}(\mathbf{X}_{jk}, \boldsymbol{\beta}_{jk}^{(t + 1)})$.
+      \STATE Update $\boldsymbol{\eta}_k^{(t + 1)} \leftarrow \boldsymbol{\eta}_k^{(t)} - \mathbf{f}_{jk}^{(t)} + \mathbf{f}_{jk}^{(t + 1)}$.
+    \ENDFOR
+  \ENDFOR
+  \STATE Compute $\Delta \leftarrow \text{rel.change}(\mathring{\boldsymbol{\eta}}, \boldsymbol{\eta}^{(t + 1)})$.
+  \STATE Increase $t \leftarrow t + 1$.
+\ENDWHILE
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\ENSURE{Posterior mode estimates $\hat{\boldsymbol{\beta}} = \boldsymbol{\beta}^{(t)}$,
+  $\hat{\boldsymbol{\tau}} = \boldsymbol{\tau}^{(t)}$ for \ref{item:a}; \\
+  or MCMC samples $\boldsymbol{\beta}^{(t)}$, $\boldsymbol{\tau}^{(t)}$, $t = 1, \ldots, T$ for
+  \ref{item:b}.}
+\end{algorithmic}
+\end{algorithm}
+In practice, for full Bayesian inference the algorithm is applied twice, i.e.,
+first computing estimates for \ref{item:a} and then using these as starting values for solving
+\ref{item:b}.
+
+Finding good starting values is especially important for complex model terms that, e.g., include
+multiple smoothing variances. Therefore, we propose to estimate parameters $\boldsymbol{\tau}_{jk}$
+using a goodness-of-fit criterion within the stepwise selection approach presented in
+Algorithm~\ref{fig:umode}, similar to \citet{bamlss:Belitz+Lang:2008}.
+\begin{algorithm}[!h]
+\addtocounter{algorithm}{-1}
+\renewcommand\thealgorithm{2\alph{algorithm}}
+\caption{\label{fig:umode} Posterior mode updating $U_{jk}( \cdot )$ with smoothing variance selection.}
+\begin{algorithmic}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Set:}}
+\REQUIRE{$\mathbf{y}$, $\mathbf{X}$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}^{(t)}$, $\boldsymbol{\tau}^{(t)}$.}
+\ENSURE{Goodness-of-fit criterion $C$.}
+\FOR{$l = 1$ to $L_{jk}$}
+  \STATE Set search interval for $\tau_{ljk}^{(t + 1)}$, e.g., $\mathcal{I}_{ljk} = [\tau_{ljk}^{(t)} \cdot 10^{-1}, \tau_{ljk}^{(t)} \cdot 10]$.
+  \STATE Find $\tau_{ljk}^{(t + 1)} \leftarrow
+    \underset{\tau_{ljk}^\star \in \mathcal{I}_{ljk}}{\text{arg min }} C(U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \tau_{ljk}^\star | \, \cdot))$.
+\ENDFOR
+\STATE Update $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t + 1)} | \, \cdot)$.
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\ENSURE{Updates $\boldsymbol{\beta}_{jk}^{(t + 1)}$, $\boldsymbol{\tau}_{jk}^{(t + 1)}$.}
+\end{algorithmic}
+\end{algorithm}
+In each updating step in Algorithm~\ref{fig:algodesign} each
+$\boldsymbol{\tau}_{jk} = (\tau_{1jk}, \ldots, \tau_{L_{jk}jk})^\top$ is optimized one after the
+other using adaptive search intervals. Hence, the optimization problem is reduced to a
+one-dimensional search that is relative fast and straightforward to implement. The algorithm
+does not guarantee a global minimum given the goodness-of-fit criterion, however, the solution
+is at least close and serves as good starting points for full MCMC. The MCMC updating functions
+usually either accept or reject samples of the parameters and smoothing variances are sampled
+after $\boldsymbol{\beta}_{jk}$. In Algorithm~\ref{fig:mcmc} the general sampling scheme is shown.
+\begin{algorithm}[!h]
+\renewcommand\thealgorithm{2\alph{algorithm}}
+\caption{\label{fig:mcmc} MCMC updating $U_{jk}( \cdot )$.}
+\begin{algorithmic}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Set:}}
+\REQUIRE{$\mathbf{y}$, $\mathbf{X}$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}^{(t)}$, $\boldsymbol{\tau}^{(t)}$.}
+\ENSURE{Sampling method, e.g., derivative based MCMC (see Section~\ref{sec:bricksmodelfit}).}
+\STATE Sample $\boldsymbol{\beta}_{jk}^\star \leftarrow q_{jk}(\boldsymbol{\beta}_{jk}^\star | \,\boldsymbol{\beta}_{jk}^{(t)})$.
+\STATE Compute acceptance probability $\alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \, \boldsymbol{\beta}_{jk}^{(t)}\right)$.
+\IF{uniform draw $U(0, 1) \leq \alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \, \boldsymbol{\beta}_{jk}^{(t)}\right)$}
+    \STATE $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow \boldsymbol{\beta}_{jk}^{\star}$
+  \ELSE
+    \STATE $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow \boldsymbol{\beta}_{jk}^{(t)}$.
+  \ENDIF
+\STATE Generate $\boldsymbol{\tau}_{jk}^{(t + 1)}$ analogously.
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\ENSURE{Next state $\boldsymbol{\beta}_{jk}^{(t + 1)}$, $\boldsymbol{\tau}_{jk}^{(t + 1)}$.}
+\end{algorithmic}
+\end{algorithm}
+Note again the general structure of sampling Algorithm~\ref{fig:mcmc}, i.e., the proposal function
+$q_{jk}( \cdot )$ is left unspecified up to this point.
+
 
 \subsection{Priors} \label{sec:priors}
 
@@ -313,92 +497,6 @@ actual number of observations $n$. Moreover, the full conditionals for
 $\tilde{\boldsymbol{\beta}}_{jk}$ are Gaussian regardless of the response distribution and leads to
 highly efficient estimation algorithms,
 see~\citet{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}.
-
-
-\subsection{Response distribution} \label{sec:density}
-
-The main building block of regression model algorithms is the probability density function
-$d(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$, or for
-computational reasons its logarithm. Estimation typically requires to evaluate the log-likelihood
-function
-\begin{equation*} \label{eqn:loglik}
-\ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X}) =
-  \sum_{i = 1}^n \log \, d(y_i ; \theta_{i1} = h_1^{-1}(\eta_{i1}(\mathbf{x}_i; \boldsymbol{\beta}_1)), \ldots,
-  \theta_{iK} = h_K^{-1}(\eta_{iK}(\mathbf{x}_i; \boldsymbol{\beta}_K)))
-\end{equation*}
-a number of times, where the vector
-$\boldsymbol{\beta} = (\boldsymbol{\beta}_1^\top, \ldots, \boldsymbol{\beta}_K^\top)^\top$ 
-comprises all model coefficients that should be estimated, $\mathbf{X} = (\mathbf{X}_1, \ldots, \mathbf{X}_K)$
-are the respective covariate matrices with $\mathbf{x}_i$ as the $i$-th row of $\mathbf{X}$ and
-$\boldsymbol{\theta}_k$ are vectors of length $n$.
-Assigning prior distributions to the individual model components results in the log-posterior
-\begin{equation} \label{eqn:logpost}
-\log \, \pi(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha}) \propto
-  \ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X}) +
-  \sum_{k = 1}^K\sum_{j = 1}^{J_k} \left[ \log \,
-  p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) \right],
-\end{equation}
-where $\boldsymbol{\tau} = (\boldsymbol{\tau}_1^\top, \ldots, \boldsymbol{\tau}_K^\top)^\top =
-(\boldsymbol{\tau}_{11}^\top, \ldots, \boldsymbol{\tau}_{J_11}^\top, \ldots,
-\boldsymbol{\tau}_{1K}^\top, \ldots, \boldsymbol{\tau}_{J_KK}^\top)^\top$ is
-the vector of all assigned hyper-parameters used within prior functions $p_{jk}( \cdot )$
-and similarly $\boldsymbol{\alpha}$ is the set of all fixed prior specifications. Note that from a
-frequentist perspective (\ref{eqn:logpost}) can be viewed as a penalized log-likelihood, e.g., if
-a normal prior is used within $p_{jk}( \cdot )$ for $\boldsymbol{\beta}_{jk}$
-(see Section~\ref{sec:priorsbricks}).
-
-
-\subsection{Model fitting} \label{sec:modelfit}
-
-Bayesian point estimates of $\boldsymbol{\beta}$ and $\boldsymbol{\tau}$ are obtained by:
-\begin{enumerate}
-\item[(a)] Maximization of the log-posterior for posterior mode estimation.
-\item[(b)] Solving high dimensional integrals, e.g., for posterior mean or median estimation.
-\end{enumerate}
-For the possibly very complex models within the BAMLSS framework, problems (a) and (b) are commonly
-solved by computer intensive iterative algorithms, since analytical solutions are available only in
-a small number of cases. These algorithms perform the updating scheme
-\begin{equation} \label{eqn:updating}
-(\boldsymbol{\beta}^{(t + 1)}, \boldsymbol{\tau}^{(t + 1)}) =
-  U(\boldsymbol{\beta}^{(t)}, \boldsymbol{\tau}^{(t)};
-    \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha}),
-\end{equation}
-where function $U( \cdot )$ is an updating function, e.g., for generating one Newton-Raphson step
-in (a) or getting the next step in a MCMC simulation in (b), amongst others. The updating scheme can
-be partitioned into separate updating equations using leapfrog or zigzag iteration (see, e.g.,
-\citealp{bamlss:Smyth:1996}). Now let
-\begin{eqnarray} \label{eqn:blockupdate}
-(\boldsymbol{\beta}_1^{(t + 1)}, \boldsymbol{\tau}_1^{(t + 1)}) &=&
-  U_1(\boldsymbol{\beta}_1^{(t)}, \boldsymbol{\beta}_2^{(t)},
-    \ldots, \boldsymbol{\beta}_K^{(t)}, \boldsymbol{\tau}_1^{(t)}, \boldsymbol{\tau}_2^{(t)},
-    \ldots, \boldsymbol{\tau}_K^{(t)}; \mathbf{y}, \mathbf{X}_1, \boldsymbol{\alpha}_1) \nonumber \\
-(\boldsymbol{\beta}_2^{(t + 1)}, \boldsymbol{\tau}_2^{(t + 1)}) &=&
-  U_2(\boldsymbol{\beta}_1^{(t + 1)}, \boldsymbol{\beta}_2^{(t)},
-    \ldots, \boldsymbol{\beta}_K^{(t)}, \boldsymbol{\tau}_1^{(t + 1)}, \boldsymbol{\tau}_2^{(t)},
-    \ldots, \boldsymbol{\tau}_K^{(t)}; \mathbf{y}, \mathbf{X}_2, \boldsymbol{\alpha}_2) \\
-  &\vdots& \nonumber \\
-(\boldsymbol{\beta}_K^{(t + 1)}, \boldsymbol{\tau}_K^{(t + 1)}) &=&
-  U_K(\boldsymbol{\beta}_1^{(t + 1)}, \boldsymbol{\beta}_2^{(t + 1)},
-    \ldots, \boldsymbol{\beta}_K^{(t)}, \boldsymbol{\tau}_1^{(t + 1)}, \boldsymbol{\tau}_2^{(t + 1)},
-    \ldots, \boldsymbol{\tau}_K^{(t)}; \mathbf{y}, \mathbf{X}_K, \boldsymbol{\alpha}_K) \nonumber
-\end{eqnarray}
-be a partitioned updating scheme with updating functions $U_k( \cdot )$, i.e., in each iteration
-updates for the $k$-th parameter are computed while holding all other parameters
-fixed. This splitting method can even be applied for all terms within a parameter
-\begin{equation} \label{eqn:blockblockupdate}
-(\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)}) =
-  U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t)} | \, \cdot \,) \qquad
-    j = 1, \ldots, J_k, \quad k = 1, \ldots, K,
-\end{equation}
-and $U_{jk}( \cdot )$ is an updating function for a single model term.
-
-In a partitioned updating system functions $U_{jk}( \cdot )$ need not necessarily have the same
-structure, e.g., for posterior mode estimation some updating functions could be based on
-iteratively weighted least squares (IWLS) and some on ordinary Newton-Raphson steps (see, e.g.,
-example Section~\ref{sec:coxreg}). In MCMC simulation it is common to mix between several sampling
-methods depending on the type of model term. Hence, by using highly modular systems like
-(\ref{eqn:blockupdate}) and (\ref{eqn:blockblockupdate}) it is possible to develop flexible
-estimation algorithms for numerous possibly very complex models.
 
 
 \section{Lego bricks} \label{sec:legobricks}
@@ -963,91 +1061,6 @@ structures can be reused when implementing new models and/or algorithms, i.e., a
 backfitting algorithm (\ref{eqn:blockbackfit}) and derivative based MCMC usually only requires the
 calculation of derivatives of the log-likelihood w.r.t.\ parameters $\boldsymbol{\theta}_k$ anew.
 
-Therefore, even though the models can be rather complex, it is possible to construct a quite simple
-modular system from which it is easy to create algorithms for numerous regression problems.
-Moreover, using the ideas of partitioned updating as presented in Section~\ref{sec:modelfit} for
-posterior mode estimation or MCMC, a simple generic algorithm for BAMLSS can be constructed, which
-is outlined in Algorithm~\ref{fig:algodesign}.
-\begin{algorithm}[!h]
-\caption{\label{fig:algodesign} Generic BAMLSS model fitting algorithm.}
-\begin{algorithmic}
-\renewcommand{\algorithmicrequire}{\textbf{Input:}}
-\REQUIRE{$\mathbf{y}$, $\mathbf{X}$, $\boldsymbol{\alpha}$.}
-\renewcommand{\algorithmicrequire}{\textbf{Initialize:}}
-\renewcommand{\algorithmicensure}{\textbf{Set:}}
-\ENSURE{Stopping criterion $\varepsilon$, number of iterations $T$, e.g., $\varepsilon = 0.0001$, $T = 1000$.}
-\REQUIRE{$\boldsymbol{\beta}$, $\boldsymbol{\eta}$, $\boldsymbol{\tau}$, e.g.,
-  $\boldsymbol{\beta} = \mathbf{0}, \boldsymbol{\tau} = 0.001 \cdot \mathbf{1}$,
-  $\Delta = \varepsilon + 1$, $t = 1$.}
-\WHILE{$(\Delta > \varepsilon) \, \& \, (t < T)$}
-  \STATE Set $\mathring{\boldsymbol{\eta}} = \boldsymbol{\eta}^{(t)}$.
-  \FOR{$k = 1$ to $K$}
-    \FOR{$j = 1$ to $J_k$}
-      \STATE Obtain new state $(\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)}) \leftarrow
-        U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t)} | \, \cdot \,)$.
-      \STATE Compute $\mathbf{f}_{jk}^{(t + 1)} \leftarrow f_{jk}(\mathbf{X}_{jk}, \boldsymbol{\beta}_{jk}^{(t + 1)})$.
-      \STATE Update $\boldsymbol{\eta}_k^{(t + 1)} \leftarrow \boldsymbol{\eta}_k^{(t)} - \mathbf{f}_{jk}^{(t)} + \mathbf{f}_{jk}^{(t + 1)}$.
-    \ENDFOR
-  \ENDFOR
-  \STATE Compute $\Delta \leftarrow \text{rel.change}(\mathring{\boldsymbol{\eta}}, \boldsymbol{\eta}^{(t + 1)})$.
-  \STATE Increase $t \leftarrow t + 1$.
-\ENDWHILE
-\renewcommand{\algorithmicensure}{\textbf{Output:}}
-\ENSURE{Posterior mode estimates $\hat{\boldsymbol{\beta}} = \boldsymbol{\beta}^{(t)}$,
-  $\hat{\boldsymbol{\tau}} = \boldsymbol{\tau}^{(t)}$; \\
-  or MCMC samples $\boldsymbol{\beta}^{(t)}$, $\boldsymbol{\tau}^{(t)}$, $t = 1, \ldots, T$.}
-\end{algorithmic}
-\end{algorithm}
-Here, the updating functions $U_{jk}( \cdot )$ either create a new state in posterior maximization or
-a Markov chain. In practice, for full Bayesian inference the algorithm is applied twice, i.e.,
-first computing posterior mode estimates before running a MCMC simulation with these estimates
-as starting values. Finding good starting values is especially important for complex model terms
-that, e.g., include multiple smoothing variances. In Algorithm~\ref{fig:umode}, the stepwise selection
-of smoothing variances, similar to \citet{bamlss:Belitz+Lang:2008}, is shown.
-\begin{algorithm}[!h]
-\caption{\label{fig:umode} Posterior mode updating $U_{jk}( \cdot )$ with smoothing variance selection.}
-\begin{algorithmic}
-\renewcommand{\algorithmicrequire}{\textbf{Input:}}
-\renewcommand{\algorithmicensure}{\textbf{Set:}}
-\REQUIRE{$\mathbf{y}$, $\mathbf{X}$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}^{(t)}$, $\boldsymbol{\tau}^{(t)}$.}
-\ENSURE{Goodness of fit criterion $C$.}
-\FOR{$l = 1$ to $L_{jk}$}
-  \STATE Set search interval for $\tau_{ljk}^{(t + 1)}$, e.g., $\mathcal{I} = [\tau_{ljk}^{(t)} \cdot 10^{-1}, \tau_{ljk}^{(t)} \cdot 10]$.
-  \STATE Find $\tau_{ljk}^{(t + 1)} \leftarrow
-    \underset{\tau_{ljk}^\star \in \mathcal{I}}{\text{arg min }} C(U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \tau_{ljk}^\star | \, \cdot))$.
-\ENDFOR
-\STATE Update $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t + 1)} | \, \cdot)$.
-\renewcommand{\algorithmicensure}{\textbf{Output:}}
-\ENSURE{Updates $\boldsymbol{\beta}_{jk}^{(t + 1)}$, $\boldsymbol{\tau}_{jk}^{(t + 1)}$.}
-\end{algorithmic}
-\end{algorithm}
-In each step of Algorithm~\ref{fig:algodesign}, each of the
-$\boldsymbol{\tau}_{jk} = (\tau_{1jk}, \ldots, \tau_{L_{jk}jk})^\top$ smoothing variances is
-optimized one after the other using an adaptive search interval. Hence, the optimization problem
-is reduced to a one-dimensional search that is relative straightforward to implement. The algorithm
-does not guarantee a global minimum given the goodness of fit criterion, however, the solution
-is at least close and serves as good starting points for full MCMC. The MCMC updating functions
-usually either accept or reject samples of the parameters and smoothing variances are sampled
-after $\boldsymbol{\beta}_{jk}$. In Algorithm~\ref{fig:mcmc} the general sampling scheme is shown.
-\begin{algorithm}[!h]
-\caption{\label{fig:mcmc} MCMC updating $U_{jk}( \cdot )$.}
-\begin{algorithmic}
-\renewcommand{\algorithmicrequire}{\textbf{Input:}}
-\renewcommand{\algorithmicensure}{\textbf{Set:}}
-\REQUIRE{$\mathbf{y}$, $\mathbf{X}$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}^{(t)}$, $\boldsymbol{\tau}^{(t)}$.}
-\ENSURE{Sampling method, e.g., derivative based MCMC.}
-\STATE Sample $\boldsymbol{\beta}_{jk}^\star \leftarrow q(\boldsymbol{\beta}_{jk}^\star | \,\boldsymbol{\beta}_{jk}^{(t)})$.
-\STATE Compute acceptance probability $\alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \, \boldsymbol{\beta}_{jk}^{(t)}\right)$.
-\IF{uniform draw $U(0, 1) \leq \alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \, \boldsymbol{\beta}_{jk}^{(t)}\right)$}
-    \STATE $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow \boldsymbol{\beta}_{jk}^{\star}$
-  \ELSE
-    \STATE $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow \boldsymbol{\beta}_{jk}^{(t)}$.
-  \ENDIF
-\STATE Generate $\boldsymbol{\tau}_{jk}^{(t + 1)}$ similarly as above.
-\renewcommand{\algorithmicensure}{\textbf{Output:}}
-\ENSURE{Next state $\boldsymbol{\beta}_{jk}^{(t + 1)}$, $\boldsymbol{\tau}_{jk}^{(t + 1)}$.}
-\end{algorithmic}
-\end{algorithm}
 
 In summary, building algorithms for BAMLSS is practically based on combining updating functions
 which are itself based on repeated ``Lego bricks''. Hence, once the infrastructure is in place, it
