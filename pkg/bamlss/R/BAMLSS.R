@@ -1172,6 +1172,12 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
   if(!is.null(family$results) & is.null(results))
     results <- family$results
 
+  ## Switch for light variant.
+  if(light) {
+    results <- FALSE
+    samplestats <- FALSE
+  }
+
   ## Setup all processing functions.
   foo <- list("transform" = transform, "optimizer" = optimizer,
     "sampler" = sampler, "samplestats" = samplestats, "results" = results)
@@ -1304,12 +1310,21 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
     if(!is.null(bf$x)) {
       for(j in names(bf$x)) {
         if(length(bf$x[[j]]$smooth.construct)) {
-          for(i in seq_along(bf$x[[j]]$smooth.construct))
-            bf$x[[j]]$smooth.construct[[i]][c("X", "S", "Xr", "Xf")] <- NULL
+          for(i in seq_along(bf$x[[j]]$smooth.construct)) {
+            bf$x[[j]]$smooth.construct[[i]][c("X", "S", "Xr", "Xf", "binning")] <- NULL
+            bf$x[[j]]$smooth.construct[[i]][["xt"]][["binning"]] <- NULL
+            if(!is.null(bf$x[[j]]$smooth.construct[[i]][["margin"]])) {
+              for(jj in seq_along(bf$x[[j]]$smooth.construct[[i]][["margin"]])) {
+                bf$x[[j]]$smooth.construct[[i]][["margin"]][[jj]][c("X", "S", "Xr", "Xf", "binning")] <- NULL
+                bf$x[[j]]$smooth.construct[[i]][["margin"]][[jj]][["xt"]][["binning"]] <- NULL
+              }
+            }
+          }
         }
       }
     }
     bf$y <- NULL
+    bf$fitted.values <- NULL
   }
 
   bf$call <- match.call()

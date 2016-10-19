@@ -47,3 +47,23 @@ compile <- function(dir = NULL, tdir = NULL)
   setwd(hold)
 }
 
+
+## Object size.
+list.size <- function(x, j = NULL)
+{
+  if(is.list(x) & length(x)) {
+    if(is.null(names(x)))
+      names(x) <- paste("x", 1:length(x), sep = "")
+    for(i in names(x)) {
+      if(!is.null(j))
+        cat(j, i, ".. ")
+      else
+        cat(i, ".. ")
+      print(object.size(x[[i]]), units = "Mb")
+      if(is.list(x[[i]]))
+        list.size(x[[i]], j = c(j, ".. "))
+    }
+  }
+  invisible(NULL)
+}
+
