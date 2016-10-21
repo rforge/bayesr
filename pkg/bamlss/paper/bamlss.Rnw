@@ -24,6 +24,7 @@
 %% for internal use
 \newcommand{\fixme}[1]{\emph{\marginpar{FIXME} (#1)}}
 \newcommand{\readme}[1]{\emph{\marginpar{README} (#1)}}
+\DeclareMathOperator{\diag}{diag}
 
 %% Authors: NU + rest in alphabetical order
 \author{Nikolaus Umlauf\\Universit\"at Innsbruck \And
@@ -290,23 +291,20 @@ p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}
      \boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}}) \cdot
    d_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}),
 \end{equation}
-and $d_{\boldsymbol{\beta}_{jk}}( \cdot )$ and $d_{\boldsymbol{\tau}_{jk}}( \cdot )$ are prior
-densities (or combinations of densities) that depend on the type of covariate and prior
-assumptions about $f_{jk}( \cdot )$. In this context, $\boldsymbol{\tau}_{jk}$ are typically
+with prior densities (or combinations of densities) $d_{\boldsymbol{\beta}_{jk}}( \cdot )$ and
+$d_{\boldsymbol{\tau}_{jk}}( \cdot )$ that depend on the type of covariate and prior
+assumptions about $f_{jk}( \cdot )$. In this framework, $\boldsymbol{\tau}_{jk}$ are typically
 variances, e.g., that account for the degree of smoothness of $f_{jk}( \cdot )$ or the amount of
 correlation between observations. For example, using a spline representation of $f_{jk}( \cdot )$ in
 combination with a normal prior for $d_{\boldsymbol{\beta}_{jk}}( \cdot )$ the variances can be
-interpreted as the inverse smoothing parameters in a penalized regression context. Within this very
-general setup $\boldsymbol{\alpha}_{jk} = \{\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}},
-\boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}\}$ is a set of fixed
-prior specifications, e.g., further controlling the shape of $d_{\boldsymbol{\beta}_{jk}}( \cdot )$
-and $d_{\boldsymbol{\tau}_{jk}}( \cdot )$, incorporating prior beliefs about
-$\boldsymbol{\beta}_{jk}$, or for GAM-type models $\boldsymbol{\alpha}_{jk}$ usually holds
-the so called penalty matrices, amongst others.
-
-As mentioned above note that from a frequentist perspective (\ref{eqn:logpost}) can be viewed as a
-penalized log-likelihood, e.g., if a normal prior is used within $p_{jk}( \cdot )$ for
-$\boldsymbol{\beta}_{jk}$ (see Section~\ref{sec:priorsbricks}).
+interpreted as the inverse smoothing parameters in a penalized regression context, i.e., from a
+frequentist perspective (\ref{eqn:logpost}) can be viewed as a penalized log-likelihood.
+In addition, the fixed prior specifications
+$\boldsymbol{\alpha}_{jk} = \{\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}},
+\boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}\}$ can further control the shape of
+$d_{\boldsymbol{\beta}_{jk}}( \cdot )$ and $d_{\boldsymbol{\tau}_{jk}}( \cdot )$, incorporate prior
+beliefs about $\boldsymbol{\beta}_{jk}$, or for GAM-type models $\boldsymbol{\alpha}_{jk}$ usually
+holds the so called penalty matrices, amongst others.
 
 
 \newpage
@@ -368,6 +366,7 @@ Using highly modular systems like (\ref{eqn:blockupdate}) and (\ref{eqn:blockblo
 it is possible to develop a generic estimation algorithm for numerous possibly very complex models,
 which is outlined in Algorithm~\ref{fig:algodesign}.
 \begin{algorithm}[!h]
+\renewcommand\thealgorithm{A1}
 \caption{\label{fig:algodesign} Generic BAMLSS model fitting algorithm.}
 \begin{algorithmic}
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
@@ -383,7 +382,7 @@ which is outlined in Algorithm~\ref{fig:algodesign}.
   \FOR{$k = 1$ to $K$}
     \FOR{$j = 1$ to $J_k$}
       \STATE Obtain new state $(\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)}) \leftarrow
-        U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t)} | \, \cdot \,)$ using Algorithm~\ref{fig:umode} or \ref{fig:mcmc}.
+        U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t)}, \, \cdot \,)$ using Algorithm~\ref{fig:umode} or \ref{fig:mcmc}.
       \STATE Compute $\mathbf{f}_{jk}^{(t + 1)} \leftarrow f_{jk}(\mathbf{X}_{jk}, \boldsymbol{\beta}_{jk}^{(t + 1)})$.
       \STATE Update $\boldsymbol{\eta}_k^{(t + 1)} \leftarrow \boldsymbol{\eta}_k^{(t)} - \mathbf{f}_{jk}^{(t)} + \mathbf{f}_{jk}^{(t + 1)}$.
     \ENDFOR
@@ -408,7 +407,7 @@ using a goodness-of-fit criterion within the stepwise selection approach present
 Algorithm~\ref{fig:umode}, similar to \citet{bamlss:Belitz+Lang:2008}.
 \begin{algorithm}[!h]
 \addtocounter{algorithm}{-1}
-\renewcommand\thealgorithm{2\alph{algorithm}}
+\renewcommand\thealgorithm{A2\alph{algorithm}}
 \caption{\label{fig:umode} Posterior mode updating $U_{jk}( \cdot )$ with smoothing variance selection.}
 \begin{algorithmic}
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
@@ -418,9 +417,9 @@ Algorithm~\ref{fig:umode}, similar to \citet{bamlss:Belitz+Lang:2008}.
 \FOR{$l = 1$ to $L_{jk}$}
   \STATE Set search interval for $\tau_{ljk}^{(t + 1)}$, e.g., $\mathcal{I}_{ljk} = [\tau_{ljk}^{(t)} \cdot 10^{-1}, \tau_{ljk}^{(t)} \cdot 10]$.
   \STATE Find $\tau_{ljk}^{(t + 1)} \leftarrow
-    \underset{\tau_{ljk}^\star \in \mathcal{I}_{ljk}}{\text{arg min }} C(U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \tau_{ljk}^\star | \, \cdot))$.
+    \underset{\tau_{ljk}^\star \in \mathcal{I}_{ljk}}{\text{arg min }} C(U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \tau_{ljk}^\star, \, \cdot))$.
 \ENDFOR
-\STATE Update $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t + 1)} | \, \cdot)$.
+\STATE Update $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t + 1)}, \, \cdot \,)$.
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
 \ENSURE{Updates $\boldsymbol{\beta}_{jk}^{(t + 1)}$, $\boldsymbol{\tau}_{jk}^{(t + 1)}$.}
 \end{algorithmic}
@@ -434,16 +433,16 @@ is at least close and serves as good starting points for full MCMC. The MCMC upd
 usually either accept or reject samples of the parameters and smoothing variances are sampled
 after $\boldsymbol{\beta}_{jk}$. In Algorithm~\ref{fig:mcmc} the general sampling scheme is shown.
 \begin{algorithm}[!h]
-\renewcommand\thealgorithm{2\alph{algorithm}}
+\renewcommand\thealgorithm{A2\alph{algorithm}}
 \caption{\label{fig:mcmc} MCMC updating $U_{jk}( \cdot )$.}
 \begin{algorithmic}
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
 \renewcommand{\algorithmicensure}{\textbf{Set:}}
 \REQUIRE{$\mathbf{y}$, $\mathbf{X}$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}^{(t)}$, $\boldsymbol{\tau}^{(t)}$.}
 \ENSURE{Sampling method, e.g., derivative based MCMC (see Section~\ref{sec:bricksmodelfit}).}
-\STATE Sample $\boldsymbol{\beta}_{jk}^\star \leftarrow q_{jk}(\boldsymbol{\beta}_{jk}^\star | \,\boldsymbol{\beta}_{jk}^{(t)})$.
-\STATE Compute acceptance probability $\alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \, \boldsymbol{\beta}_{jk}^{(t)}\right)$.
-\IF{uniform draw $U(0, 1) \leq \alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \, \boldsymbol{\beta}_{jk}^{(t)}\right)$}
+\STATE Sample $\boldsymbol{\beta}_{jk}^\star \leftarrow q_{jk}(\boldsymbol{\beta}_{jk}^\star \, | \,\boldsymbol{\beta}_{jk}^{(t)})$.
+\STATE Compute acceptance probability $\alpha\left( \boldsymbol{\beta}_{jk}^{\star} \, | \, \boldsymbol{\beta}_{jk}^{(t)}\right)$.
+\IF{uniform draw $U(0, 1) \leq \alpha\left( \boldsymbol{\beta}_{jk}^{\star} \, | \, \boldsymbol{\beta}_{jk}^{(t)}\right)$}
     \STATE $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow \boldsymbol{\beta}_{jk}^{\star}$
   \ELSE
     \STATE $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow \boldsymbol{\beta}_{jk}^{(t)}$.
@@ -460,81 +459,51 @@ different sampling schemes like derivative based Metropolis-Hastings and slice s
 Section~\ref{sec:bricksmodelfit}.
 
 
-\subsection{Priors} \label{sec:priors}
-
-In Bayesian models prior distributions need to be assigned for each parameter vector
-$\boldsymbol{\beta}_{jk}$, where the choice of prior distributions depends on the type of
-model and application. A simple choice for a non-informative prior is
-\begin{equation} \label{eqn:oneprior}
-p_{jk}(\boldsymbol{\beta}_{jk}) \propto 1.
-\end{equation}
-
-Since the functions $f_{jk}( \cdot )$ are commonly unspecified and flexible some kind regularization
-needs to be ensured, e.g., for penalizing too abrupt jumps in the functional form using a
-P(enalized)-spline representation of $f_{jk}( \cdot )$ \citep{bamlss:Eilers+Marx:1996}. In the
-frequentist setting this is accounted for by adding a penalty
-$\text{pen}(\mathbf{f}_{jk}) = \text{pen}(\boldsymbol{\beta}_{jk})$ to the regression
-problem. In the Bayesian formulation the equivalent is, e.g., to assign a normal prior
-on $\boldsymbol{\beta}_{jk}$ (see,~e.g.,~\citealp{bamlss:Fahrmeir+Kneib+Lang+Marx:2013}).
-However, within the presented BAMLSS framework we relax this assumption and assign the rather general
-prior
-\begin{equation} \label{eqn:gprior}
-p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) \propto
-   d_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \, \boldsymbol{\tau}_{jk};
-     \boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}}) \cdot
-   d_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}),
-\end{equation}
-where $d_{\boldsymbol{\beta}_{jk}}( \cdot )$ and $d_{\boldsymbol{\tau}_{jk}}( \cdot )$ are prior
-densities (or combinations of densities) that depend on the type of covariate and prior
-assumptions about $f_{jk}( \cdot )$.
-Here, the vector $\boldsymbol{\tau}_{jk}$ represents additional prior parameters,
-typically, these parameters are variances, e.g., that account for the
-degree of smoothness of $f_{jk}( \cdot )$ or the amount of correlation between observations.
-For example, using a spline representation of $f_{jk}( \cdot )$ in combination with a normal
-prior for $d_{\boldsymbol{\beta}_{jk}}( \cdot )$ the variances can be interpreted as the inverse
-smoothing parameters in a penalized regression context. Within this very general setup
-$\boldsymbol{\alpha}_{jk} = \{\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}},
-\boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}\}$ is a set of fixed
-prior specifications, e.g., further controlling the shape of $d_{\boldsymbol{\beta}_{jk}}( \cdot )$
-and $d_{\boldsymbol{\tau}_{jk}}( \cdot )$, incorporating prior beliefs about
-$\boldsymbol{\beta}_{jk}$, or for GAM-type models $\boldsymbol{\alpha}_{jk}$ usually holds
-the so called penalty matrices, amongst others.
-
-In numerous applications geographical information and spatial covariates are given at
-different resolutions. For example, spatial data that is measured within different regions, for
-which additional regional covariates are available. Whenever there is such a nested structure
-in the data, it is possible to model the complex (spatial) heterogeneity effects using
-a compound prior
-\begin{equation*} \label{eqn:compoundprior}
-\boldsymbol{\beta}_{jk} = \tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})
-  + \boldsymbol{\varepsilon}_{jk},
-\end{equation*}
-where $\boldsymbol{\varepsilon}_{jk} \sim \mathcal{N}(\mathbf{0}, \tilde{\tau}^2\mathbf{I})$ is a vector
-of i.i.d.\ Gaussian random effects and
-$\tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})$ represents a full
-predictor of nested covariates, e.g., including a discrete regional spatial
-effect. This way, potential costly operations during estimation
-can be avoided since the number of observations in
-$\tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})$ is equal to
-the number of coefficients in $\boldsymbol{\beta}_{jk}$, which is usually much smaller than the
-actual number of observations $n$. Moreover, the full conditionals for
-$\tilde{\boldsymbol{\beta}}_{jk}$ are Gaussian regardless of the response distribution and leads to
-highly efficient estimation algorithms,
-see~\citet{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}.
+\newpage
 
 
 \section{Lego bricks} \label{sec:legobricks}
 
+For computing parameter updates for either \ref{item:a} or \ref{item:b} using flexible partitioned
+updating systems like (\ref{eqn:blockupdate}) and (\ref{eqn:blockblockupdate}), we show within this
+section that the following ``Lego bricks'' are repeatedly used in Algorithm~\ref{fig:algodesign}:
+\begin{enumerate}
+\item \label{item:1} The log-likelihood function $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$,
+\item \label{item:2} link functions $h_k( \cdot )$,
+\item \label{item:3} prior densities $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$.
+\end{enumerate}
+Moreover, model term updating Algorithms~\ref{fig:umode} and \ref{fig:mcmc} usually require
+\begin{enumerate}
+\setcounter{enumi}{3}
+\item \label{item:4} the derivatives of inverse link functions $h_k^{-1}( \cdot )$,
+\item \label{item:5} the first order derivatives $\frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_{jk}}$,
+\item \label{item:6} the first order derivatives $\frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_{jk}}$,
+\item \label{item:7} the second order derivatives $\frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_{jk} \partial \boldsymbol{\beta}_{jk}^\top}$,
+\item \label{item:8} derivatives for log-priors, e.g., $\frac{\partial \log \, p_{jk}(\boldsymbol{\beta}_{jk};
+  \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})}{\partial \boldsymbol{\beta}_{jk}}$.
+\end{enumerate}
+Computationally, this leads to a ``Lego'' system with (usually) fixed bricks \ref{item:2},
+\ref{item:3}, \ref{item:4}, \ref{item:5} and \ref{item:8}; in which only components \ref{item:1},
+\ref{item:6} and \ref{item:7} need to be supplied for implementing a new model. As shown in the
+upcoming this is relatively straightforward in most cases since \ref{item:6} and \ref{item:7} can
+be simplified when fragmenting with the chain rule.
+
+The remainder of this section is as follows. Details about commonly used prior densities in
+GAM-type models are provided in the next section. In Section~\ref{sec:bricksmodelfit} we derive the
+general parts that are needed for updating functions in Algorithm~\ref{fig:umode} and
+\ref{fig:mcmc}. In Section~\ref{sec:modchoice} and \ref{sec:infpred} we briefly discuss model
+choice, Bayesian inference and prediction.
+
+
 \subsection{Priors} \label{sec:priorsbricks}
 
-In the following we summarize commonly used specifications for priors $p_{jk}( \cdot )$ used for
+In the following we summarize commonly-used specifications for priors $p_{jk}( \cdot )$ used for
 estimating GAM-type models.
 
 \subsubsection{Linear effects}
 
 For simple linear effects a common choice for $p_{jk}( \cdot )$ is to use a non-informative
-flat prior given in (\ref{eqn:oneprior}). One of the simplest informative priors is a normal
-prior given by
+(constant) flat prior. One of the simplest informative priors is a normal prior given by
 \begin{equation*} \label{eqn:linprior}
 p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) \propto
   \exp \left(- \frac{1}{2}(\boldsymbol{\beta}_{jk} -
@@ -544,7 +513,7 @@ p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}
 where $\boldsymbol{\tau}_{jk}$ are assumed to be fixed with $d_{\boldsymbol{\tau}_{jk}}( \cdot ) = 1$
 and $\boldsymbol{\alpha}_{jk} = \{\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}} = \{\mathbf{m}\}\}$
 with $\mathbf{m}$ as a prior mean for $\boldsymbol{\beta}_{jk}$. The matrix $\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})$
-is a fixed prior precision matrix, e.g., $\mathbf{P}_{jk} = diag(\boldsymbol{\tau}_{jk})$. In a lot of
+is a fixed prior precision matrix, e.g., $\mathbf{P}_{jk} = \diag(\boldsymbol{\tau}_{jk})$. In a lot of
 applications a vague prior specification is used with $\mathbf{m} = \mathbf{0}$ and a large
 precision (see, e.g., \citealp{bamlss:Fahrmeir+Kneib+Lang+Marx:2013}).
 
@@ -602,10 +571,37 @@ or uniform priors for $\tau_{ljk}$ or resulting penalized complexity
 priors~\citep{bamlss:Simpson:Rue:Martins:Riebler:Sorbye:2015}, so called scale dependent priors.
 
 
+\subsubsection{Multilevel effects} \label{sec:multilevel}
+
+In numerous applications geographical information and spatial covariates are given at
+different resolutions. For example, spatial data that is measured within different regions, for
+which additional regional covariates are available. Whenever there is such a nested structure
+in the data, it is possible to model the complex (spatial) heterogeneity effects using
+a compound prior
+\begin{equation*} \label{eqn:compoundprior}
+\boldsymbol{\beta}_{jk} = \tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})
+  + \boldsymbol{\varepsilon}_{jk},
+\end{equation*}
+where $\boldsymbol{\varepsilon}_{jk} \sim \mathcal{N}(\mathbf{0}, \tilde{\tau}_{jk}^2\mathbf{I})$ is a vector
+of i.i.d.\ Gaussian random effects and
+$\tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})$ represents a full
+predictor of nested covariates, e.g., including a discrete regional spatial
+effect. This way, potential costly operations in updating Algorithm~\ref{fig:umode} and
+\ref{fig:mcmc} can be avoided since the number of observations in
+$\tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})$ is equal to
+the number of coefficients in $\boldsymbol{\beta}_{jk}$, which is usually much smaller than the
+actual number of observations $n$. Moreover, the full conditionals (see also
+Section~\ref{sec:bricksmodelfit}) for $\tilde{\boldsymbol{\beta}}_{jk}$ are Gaussian regardless of
+the response distribution and leads to highly efficient estimation algorithms,
+see~\citet{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}.
+
+
 \subsection{Model fitting} \label{sec:bricksmodelfit}
 
-In the following we describe the quantities needed for the updating functions in the algorithms
-presented in Section~\ref{sec:modelfit}.
+This sections describes the quantities needed for applying the general
+Algorithm~\ref{fig:algodesign}. More precisely we first describe posterior mode updating
+as used within Algorithm~\ref{fig:umode}, before we introduce several MCMC sampling schemes that
+can be applied in updating Algorithm~\ref{fig:mcmc}.
 
 \subsubsection{Posterior mode} \label{sec:postmode}
 
@@ -620,7 +616,7 @@ and is equivalent to  the maximum likelihood estimator
 \text{ML}(\boldsymbol{\beta} | \, \mathbf{y}, \mathbf{X}) =
   \underset{\boldsymbol{\beta}}{\text{arg max }} \ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X})
 \end{equation*}
-when assigning flat priors (\ref{eqn:oneprior}) on $\boldsymbol{\beta}_{jk}$
+when assigning flat (constant) priors to $\boldsymbol{\beta}_{jk}$
 for $j = 1, \ldots, J_k$, $k = 1, \ldots, K$.
 For models involving shrinkage priors, e.g., in GAM-type models given by (\ref{eqn:mvnormprior}),
 the posterior mode is equivalent to a penalized maximum likelihood estimator for fixed parameters
@@ -1063,65 +1059,65 @@ y^\star \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{1}) = \eta_1(\mathbf{x}^\st
 for each posterior sample $\boldsymbol{\beta}_k^{(t)}$; $k = 1, \dots, K$, $t = 1, \ldots, T$.
 
 
-\section{BAMLSS algorithms} \label{sec:algorithms}
+%\section{BAMLSS algorithms} \label{sec:algorithms}
 
-Using flexible partitioned updating systems like (\ref{eqn:blockupdate}) and
-(\ref{eqn:blockblockupdate}), from Section~\ref{sec:priorsbricks} to \ref{sec:infpred}, it can be
-recognized that the following ``Lego bricks'' are repeatedly used within the BAMLSS framework:
-\begin{itemize}
-\item The log-likelihood function $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$,
-\item link functions $h_k( \cdot )$ and derivatives of inverse link functions,
-\item the first order derivatives $\frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_{jk}}$ and $\frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_{jk}}$,
-\item the second order derivatives $\frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_{jk} \partial \boldsymbol{\beta}_{jk}^\top}$,
-\item derivatives for log-priors, e.g., $\frac{\partial \log \, p_{jk}(\boldsymbol{\beta}_{jk};
-  \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})}{\partial \boldsymbol{\beta}_{jk}}$.
-\end{itemize}
-As shown in Section~\ref{sec:bricksmodelfit}, first and second order derivatives of the log-likelihood
-w.r.t.\ $\boldsymbol{\beta}_{jk}$ can in most cases be computed by fragmenting with the chain rule into
-derivatives of the log-likelihood w.r.t.\ parameters $\boldsymbol{\theta}_k$, derivatives of link
-functions w.r.t.\ the linear predictors $\boldsymbol{\eta}_k$ and derivatives of
-$\boldsymbol{\eta}_k$ w.r.t.\ the regression coefficients $\boldsymbol{\beta}_{jk}$. Hence, most of the
-structures can be reused when implementing new models and/or algorithms, i.e., applying the
-backfitting algorithm (\ref{eqn:blockbackfit}) and derivative based MCMC usually only requires the
-calculation of derivatives of the log-likelihood w.r.t.\ parameters $\boldsymbol{\theta}_k$ anew.
+%Using flexible partitioned updating systems like (\ref{eqn:blockupdate}) and
+%(\ref{eqn:blockblockupdate}), from Section~\ref{sec:priorsbricks} to \ref{sec:infpred}, it can be
+%recognized that the following ``Lego bricks'' are repeatedly used within the BAMLSS framework:
+%\begin{itemize}
+%\item The log-likelihood function $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$,
+%\item link functions $h_k( \cdot )$ and derivatives of inverse link functions,
+%\item the first order derivatives $\frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_{jk}}$ and $\frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_{jk}}$,
+%\item the second order derivatives $\frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_{jk} \partial \boldsymbol{\beta}_{jk}^\top}$,
+%\item derivatives for log-priors, e.g., $\frac{\partial \log \, p_{jk}(\boldsymbol{\beta}_{jk};
+%  \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})}{\partial \boldsymbol{\beta}_{jk}}$.
+%\end{itemize}
+%As shown in Section~\ref{sec:bricksmodelfit}, first and second order derivatives of the log-likelihood
+%w.r.t.\ $\boldsymbol{\beta}_{jk}$ can in most cases be computed by fragmenting with the chain rule into
+%derivatives of the log-likelihood w.r.t.\ parameters $\boldsymbol{\theta}_k$, derivatives of link
+%functions w.r.t.\ the linear predictors $\boldsymbol{\eta}_k$ and derivatives of
+%$\boldsymbol{\eta}_k$ w.r.t.\ the regression coefficients $\boldsymbol{\beta}_{jk}$. Hence, most of the
+%structures can be reused when implementing new models and/or algorithms, i.e., applying the
+%backfitting algorithm (\ref{eqn:blockbackfit}) and derivative based MCMC usually only requires the
+%calculation of derivatives of the log-likelihood w.r.t.\ parameters $\boldsymbol{\theta}_k$ anew.
 
 
-In summary, building algorithms for BAMLSS is practically based on combining updating functions
-which are itself based on repeated ``Lego bricks''. Hence, once the infrastructure is in place, it
-is relatively easy to implement algorithms for a variety of models. In Table~\ref{tab:mlegobricks}
-we further exemplify the modular structure for model term specifications using commonly used
-priors for regression coefficients $\boldsymbol{\beta}_{jk}$ and smoothing variances $\boldsymbol{\tau}_{jk}$.
-\begin{sidewaystable}
-\centering
-\begin{tabular}{l|l|ll}
-\multicolumn{1}{c}{Covariates} & \multicolumn{1}{c}{Effect types $f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$} & \multicolumn{2}{c}{Prior densities $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$} \\
-& &
-  \multicolumn{1}{c}{$d_{\boldsymbol{\beta}}(\boldsymbol{\beta} | \, \boldsymbol{\tau};
-     \boldsymbol{\alpha}_{\boldsymbol{\beta}})$} &
-  \multicolumn{1}{c}{$d_{\boldsymbol{\tau}}(\boldsymbol{\tau} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}})$} \\ \hline
-\multirow{6}{*}{Scalar covariates} & Intercept $\beta$ & \multirow{2}{*}{$\propto$ const} & \multicolumn{1}{c}{\multirow{3}{*}{$\emptyset$}} \\
-& Linear effect $x \cdot \beta$ &
-  \multirow{2}{*}{$\propto \exp \left(- \frac{1}{2}(\boldsymbol{\beta} -
-    \mathbf{m})^{\top}\mathbf {P}(\boldsymbol{\tau})(\boldsymbol{\beta} -
-    \mathbf{m})\right)$}
-                      & \\
-& Linear interaction $x_1 \cdot x_2 \cdot \beta$ & & \\ \cline{2-4}
-& Smooth effect $f(x)$ & \multirow{8}{*}{$\propto |\mathbf{P}(\boldsymbol{\tau})|^{\frac{1}{2}} \exp\left(
-    -\frac{1}{2}\boldsymbol{\beta}^\top\mathbf{P}(\boldsymbol{\tau})\boldsymbol{\beta}\right)$} &
-    \multirow{2}{*}{IG $\propto (\tau^2)^{-(a + 1)} \exp(-b / \tau^2)$} \\
-& Varying coefficient $f(x_2) \cdot x_1$  & & \\
-& Smooth effect $f(x_1, \ldots, x_L)$  & & \multirow{2}{*}{HC $\propto (1 + \tau^2/a^2)^{-1}(\tau^2/a^2)^{-1/2}$} \\ \cline{1-1}
-\multirow{2}{*}{Grouping variable $s$} & Random intercept $\beta_s$ & &  \\
-& Spatial effect $f(s)$ & & \multirow{2}{*}{SD $\propto (\tau^2/\tau)^{-1/2} \exp(-(\tau^2/a)^{1/2})$} \\ \cline{1-1}
-\multirow{2}{*}{Grouping and scalar,} & Random slope $x \cdot \beta_s$ & & \\
-\multirow{2}{*}{time variable $t$}& Space-time effect $f(s, t)$ & & \multirow{2}{*}{HN $\propto (\tau^2)^{1/2 -1} \exp(-\tau^2/(2a^2))$} \\
-& Functional random intercept $f_s(t)$ & & \\
-\end{tabular}
-\caption{\label{tab:mlegobricks} Commonly used ``Lego bricks'' for model terms in BAMLSS. Priors for
-  linear effects assume that the precision matrix $\mathbf{P}(\boldsymbol{\tau})$ is fixed. For smooth
-  effects, prior densities are: Inverse Gamma (IG), half-Cauchy (HC), scale-dependent (SD) and
-  half-normal (HN).}
-\end{sidewaystable}
+%In summary, building algorithms for BAMLSS is practically based on combining updating functions
+%which are itself based on repeated ``Lego bricks''. Hence, once the infrastructure is in place, it
+%is relatively easy to implement algorithms for a variety of models. In Table~\ref{tab:mlegobricks}
+%we further exemplify the modular structure for model term specifications using commonly used
+%priors for regression coefficients $\boldsymbol{\beta}_{jk}$ and smoothing variances $\boldsymbol{\tau}_{jk}$.
+%\begin{sidewaystable}
+%\centering
+%\begin{tabular}{l|l|ll}
+%\multicolumn{1}{c}{Covariates} & \multicolumn{1}{c}{Effect types $f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$} & \multicolumn{2}{c}{Prior densities $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$} \\
+%& &
+%  \multicolumn{1}{c}{$d_{\boldsymbol{\beta}}(\boldsymbol{\beta} | \, \boldsymbol{\tau};
+%     \boldsymbol{\alpha}_{\boldsymbol{\beta}})$} &
+%  \multicolumn{1}{c}{$d_{\boldsymbol{\tau}}(\boldsymbol{\tau} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}})$} \\ \hline
+%\multirow{6}{*}{Scalar covariates} & Intercept $\beta$ & \multirow{2}{*}{$\propto$ const} & \multicolumn{1}{c}{\multirow{3}{*}{$\emptyset$}} \\
+%& Linear effect $x \cdot \beta$ &
+%  \multirow{2}{*}{$\propto \exp \left(- \frac{1}{2}(\boldsymbol{\beta} -
+%    \mathbf{m})^{\top}\mathbf {P}(\boldsymbol{\tau})(\boldsymbol{\beta} -
+%    \mathbf{m})\right)$}
+%                      & \\
+%& Linear interaction $x_1 \cdot x_2 \cdot \beta$ & & \\ \cline{2-4}
+%& Smooth effect $f(x)$ & \multirow{8}{*}{$\propto |\mathbf{P}(\boldsymbol{\tau})|^{\frac{1}{2}} \exp\left(
+%    -\frac{1}{2}\boldsymbol{\beta}^\top\mathbf{P}(\boldsymbol{\tau})\boldsymbol{\beta}\right)$} &
+%    \multirow{2}{*}{IG $\propto (\tau^2)^{-(a + 1)} \exp(-b / \tau^2)$} \\
+%& Varying coefficient $f(x_2) \cdot x_1$  & & \\
+%& Smooth effect $f(x_1, \ldots, x_L)$  & & \multirow{2}{*}{HC $\propto (1 + \tau^2/a^2)^{-1}(\tau^2/a^2)^{-1/2}$} \\ \cline{1-1}
+%\multirow{2}{*}{Grouping variable $s$} & Random intercept $\beta_s$ & &  \\
+%& Spatial effect $f(s)$ & & \multirow{2}{*}{SD $\propto (\tau^2/\tau)^{-1/2} \exp(-(\tau^2/a)^{1/2})$} \\ \cline{1-1}
+%\multirow{2}{*}{Grouping and scalar,} & Random slope $x \cdot \beta_s$ & & \\
+%\multirow{2}{*}{time variable $t$}& Space-time effect $f(s, t)$ & & \multirow{2}{*}{HN $\propto (\tau^2)^{1/2 -1} \exp(-\tau^2/(2a^2))$} \\
+%& Functional random intercept $f_s(t)$ & & \\
+%\end{tabular}
+%\caption{\label{tab:mlegobricks} Commonly used ``Lego bricks'' for model terms in BAMLSS. Priors for
+%  linear effects assume that the precision matrix $\mathbf{P}(\boldsymbol{\tau})$ is fixed. For smooth
+%  effects, prior densities are: Inverse Gamma (IG), half-Cauchy (HC), scale-dependent (SD) and
+%  half-normal (HN).}
+%\end{sidewaystable}
 
 
 \section{Strategies for implementation} \label{sec:strategies}
