@@ -4184,7 +4184,7 @@ plot.bamlss.results <- function(x, model = NULL, term = NULL,
               pterms[[i]] <- if(length(tterm)) tterm else NA
             } else pterms[[i]] <- term[term <= length(ne[[i]])]
           }
-          if(!is.null(x[[i]]$s.effects)) {
+          if(!is.null(x[[i]]$s.effects) & length(x[[i]]$s.effects)) {
             kn[1] <- kn[1] + length(na.omit(pterms[[i]]))
           }
         }
@@ -4199,7 +4199,7 @@ plot.bamlss.results <- function(x, model = NULL, term = NULL,
 
     if(kn[1] < 1) on.exit(warning("no terms to plot!"), add = TRUE)
 
-    if(spar) {
+    if(spar & (kn[1] > 0)) {
       if(!ask) {
         if("cbamlss" %in% cx) {
           par(mfrow = c(length(x), kn[1] / length(x)))
@@ -4256,7 +4256,7 @@ plot.bamlss.results <- function(x, model = NULL, term = NULL,
     }
   }
   for(i in 1:n) {
-    if(!is.null(x[[i]]$s.effects) & length(na.omit(pterms[[i]]))) {
+    if(!is.null(x[[i]]$s.effects) & length(na.omit(pterms[[i]])) & length(x[[i]]$s.effects)) {
       k <- k + length(na.omit(pterms[[i]]))
       if(scale > 0) {
         term <- term[1:length(x[[i]]$s.effects)]
@@ -4279,7 +4279,7 @@ plot.bamlss.results <- function(x, model = NULL, term = NULL,
     ylim <- range(ylim, na.rm = TRUE)
   args$residuals <- NULL
   for(i in 1:n) {
-    if(!is.null(x[[i]]$s.effects)) {
+    if(!is.null(x[[i]]$s.effects) & length(x[[i]]$s.effects)) {
       for(e in pterms[[i]]) {
         lim <- c("ylim", "zlim")[(attr(x[[i]]$s.effects[[e]], "specs")$dim > 1) * 1 + 1]
         setlim <- FALSE
