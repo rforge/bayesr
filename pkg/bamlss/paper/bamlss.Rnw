@@ -254,7 +254,7 @@ $\tilde{\boldsymbol{\gamma}}_{jk}$ are not penalized (see, e.g.,
 \section{A conceptional Lego toolbox} \label{sec:legobox}
 
 
-\subsection{Response distribution} \label{sec:density}
+\subsection{Posterior distribution} \label{sec:posterior}
 
 The main building block of regression model algorithms is the probability density function
 $d(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$, or for
@@ -282,13 +282,34 @@ where $\boldsymbol{\tau} = (\boldsymbol{\tau}_1^\top, \ldots, \boldsymbol{\tau}_
 (\boldsymbol{\tau}_{11}^\top, \ldots, \boldsymbol{\tau}_{J_11}^\top, \ldots,
 \boldsymbol{\tau}_{1K}^\top, \ldots, \boldsymbol{\tau}_{J_KK}^\top)^\top$ is
 the vector of all assigned hyper-parameters used within prior functions $p_{jk}( \cdot )$
-and similarly $\boldsymbol{\alpha}$ is the set of all fixed prior specifications. For example,
-$f_{jk}( \cdot )$ is modeled as a penalized spline \citep{bamlss:Eilers+Marx:1996}, then
-$\boldsymbol{\tau}_{jk}$ represents smoothing variances (parameters) and $\boldsymbol{\alpha}_{jk}$
-is a set of penalty matrices. Also note that from a
-frequentist perspective (\ref{eqn:logpost}) can be viewed as a penalized log-likelihood, e.g., if
-a normal prior is used within $p_{jk}( \cdot )$ for $\boldsymbol{\beta}_{jk}$
-(see Section~\ref{sec:priorsbricks}).
+and similarly $\boldsymbol{\alpha}$ is the set of all fixed prior specifications. More precisely,
+the rather general prior for the $jk$-th model term is given by
+\begin{equation} \label{eqn:gprior}
+p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) \propto
+   d_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \, \boldsymbol{\tau}_{jk};
+     \boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}}) \cdot
+   d_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}),
+\end{equation}
+and $d_{\boldsymbol{\beta}_{jk}}( \cdot )$ and $d_{\boldsymbol{\tau}_{jk}}( \cdot )$ are prior
+densities (or combinations of densities) that depend on the type of covariate and prior
+assumptions about $f_{jk}( \cdot )$. In this context, $\boldsymbol{\tau}_{jk}$ are typically
+variances, e.g., that account for the degree of smoothness of $f_{jk}( \cdot )$ or the amount of
+correlation between observations. For example, using a spline representation of $f_{jk}( \cdot )$ in
+combination with a normal prior for $d_{\boldsymbol{\beta}_{jk}}( \cdot )$ the variances can be
+interpreted as the inverse smoothing parameters in a penalized regression context. Within this very
+general setup $\boldsymbol{\alpha}_{jk} = \{\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}},
+\boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}\}$ is a set of fixed
+prior specifications, e.g., further controlling the shape of $d_{\boldsymbol{\beta}_{jk}}( \cdot )$
+and $d_{\boldsymbol{\tau}_{jk}}( \cdot )$, incorporating prior beliefs about
+$\boldsymbol{\beta}_{jk}$, or for GAM-type models $\boldsymbol{\alpha}_{jk}$ usually holds
+the so called penalty matrices, amongst others.
+
+As mentioned above note that from a frequentist perspective (\ref{eqn:logpost}) can be viewed as a
+penalized log-likelihood, e.g., if a normal prior is used within $p_{jk}( \cdot )$ for
+$\boldsymbol{\beta}_{jk}$ (see Section~\ref{sec:priorsbricks}).
+
+
+\newpage
 
 
 \subsection{Model fitting} \label{sec:modelfit}
@@ -332,7 +353,7 @@ updates for the $k$-th parameter are computed while holding all other parameters
 fixed. Furthermore, this strategy can be applied for all terms within a parameter
 \begin{equation} \label{eqn:blockblockupdate}
 (\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)}) =
-  U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t)} | \, \cdot \,) \qquad
+  U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t)}, \, \cdot \,) \qquad
     j = 1, \ldots, J_k, \quad k = 1, \ldots, K,
 \end{equation}
 and $U_{jk}( \cdot )$ is an updating function for a single model term.
@@ -432,8 +453,11 @@ after $\boldsymbol{\beta}_{jk}$. In Algorithm~\ref{fig:mcmc} the general samplin
 \ENSURE{Next state $\boldsymbol{\beta}_{jk}^{(t + 1)}$, $\boldsymbol{\tau}_{jk}^{(t + 1)}$.}
 \end{algorithmic}
 \end{algorithm}
-Note again the general structure of sampling Algorithm~\ref{fig:mcmc}, i.e., the proposal function
-$q_{jk}( \cdot )$ is left unspecified up to this point.
+Note again the general structure of sampling Algorithm~\ref{fig:mcmc}, i.e., the proposal functions
+$q_{jk}( \cdot )$ generate parameter samples
+$\boldsymbol{\beta}_{jk}^{(t + 1)}$, $\boldsymbol{\tau}_{jk}^{(t + 1)}$ using (possibly)
+different sampling schemes like derivative based Metropolis-Hastings and slice sampling, see
+Section~\ref{sec:bricksmodelfit}.
 
 
 \subsection{Priors} \label{sec:priors}
