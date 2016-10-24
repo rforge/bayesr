@@ -2205,7 +2205,10 @@ make.par.list <- function(x, iter)
     if(!is.null(x$smooth.construct)) {
       for(j in names(x$smooth.construct)) {
         rval[[j]] <- matrix(0, nrow = iter, ncol = ncol(x$smooth.construct[[j]]$X))
+        colnames(rval[[j]]) <- names(get.par(x$smooth.construct[[j]]$state$parameters, "b"))
         rval[[j]][1, ] <- get.par(x$smooth.construct[[j]]$state$parameters, "b")
+        if(!is.null(x$smooth.construct[[j]]$is.model.matrix))
+          attr(rval[[j]], "is.model.matrix") <- TRUE
       }
     }
   } else {
@@ -2220,8 +2223,24 @@ make.par.list <- function(x, iter)
 fill_parm <- function(x)
 {
   for(i in seq_along(x)) {
-    for(j in seq_along(x[[i]])) {
+    is.mm <- NULL
+    for(j in names(x[[i]])) {
+      if(!is.null(attr(x[[i]][[j]], "is.model.matrix")))
+        is.mm <- c(is.mm, j)
+      cn <- colnames(x[[i]][[j]])
       x[[i]][[j]] <- apply(x[[i]][[j]], 2, cumsum)
+      colnames(x[[i]][[j]]) <- cn
+    }
+    if(!is.null(is.mm)) {
+      x[[i]][["p"]] <- do.call("cbind", x[[i]][is.mm])
+      colnames(x[[i]][["p"]]) <- is.mm
+      x[[i]][is.mm[is.mm != "p"]] <- NULL
+    }
+    sm <- names(x[[i]])
+    sm <- sm[sm != "p"]
+    if(length(sm)) {
+      x[[i]][["s"]] <- x[[i]][sm]
+      x[[i]][sm[sm != "s"]] <- NULL
     }
   }
   return(x)
@@ -2293,7 +2312,6 @@ boost.retransform <- function(x) {
         "state" = state
       )
       x[[i]]$smooth.construct$model.matrix$fit.fun <- make.fit.fun(x[[i]]$smooth.construct$model.matrix)
-      
     }
   }
   return(x)
@@ -2489,6 +2507,27 @@ print.boost.summary <- function(object, summary = TRUE, plot = FALSE, ...)
 plot.boost.summary <- function(x, ...)
 {
   print.boost.summary(x, summary = FALSE, plot = TRUE) 
+}
+
+
+boost.predict <- function(x, mstop = 1, ...)
+{
+  if(is.null(par <- x$model.stats$optimizer$boost.parameters))
+    stop("this is not a bamlss boosted object!")
+  if(mstop > x$model.stats$optimizer$boost.summary$mstop)
+    stop("mstop larger than available iterations!")
+  x$samples <- NULL
+  for(i in seq_along(par)) {
+    for(j in seq_along(par[[i]]))
+      if(!is.list(par[[i]][[j]])) {
+        par[[i]][[j]] <- par[[i]][[j]][mstop, ]
+      } else {
+        for(k in seq_along(par[[i]][[j]]))
+          par[[i]][[j]][[k]] <- par[[i]][[j]][[k]][mstop, ]
+      }
+  }
+  x$parameters <- unlist(par)
+  predict(x, ...)
 }
 
 
