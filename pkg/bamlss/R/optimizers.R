@@ -1939,14 +1939,16 @@ boost_logLik <- function(x, y, family, weights = NULL, offset = NULL,
 
 
 ## 2nd booster.
-boost <- function(x, y, family, weights = NULL, offset = NULL,
-  nu = 0.1, df = 4, maxit = 100, mstop = NULL, best = TRUE,
+boost <- function(x, y, family,
+  nu = 0.1, df = 1, maxit = 100, mstop = NULL,
   verbose = TRUE, digits = 4,
   eps = .Machine$double.eps^0.25, plot = TRUE, ...)
 {
   if(is.null(family$score))
     stop("need score functions in family object for boosting!")
 
+  ## FIXME: hard coded.
+  weights <- offset <- NULL
 
   nx <- family$names
   if(!all(nx %in% names(x)))
@@ -1968,11 +1970,15 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   ## Setup boosting structure, i.e, all parametric
   ## terms get an entry in $smooth.construct object.
   ## Intercepts are initalized.
-  x <- boost.transform(x, y, df, family, weights, offset, maxit, eps, ...)
+  x <- boost.transform(x = x, y = y, df = df, family = family,
+    maxit = maxit, eps = eps, ...)
 
   ## Create a list() that saves the states for
   ## all parameters and model terms.
   states <- make.state.list(x)
+
+  ## Matrix of all parameters.
+  parm <- make.par.list(x, iter = maxit)
 
   ## Term selector help vectors.
   select <- rep(NA, length = length(nx))
@@ -2030,6 +2036,9 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     x[[take[1]]]$smooth.construct[[take[2]]]$selected[iter] <- 1
     x[[take[1]]]$smooth.construct[[take[2]]]$loglik[iter] <- loglik[i]
 
+    ## Save parameters.
+    parm[[take[1]]][[take[2]]][iter, ] <- get.par(states[[take[1]]][[take[2]]]$parameters, "b")
+
     eps0 <- do.call("cbind", eta)
     eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
     if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
@@ -2058,7 +2067,8 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   bsum <- boost.summary(x, maxit, "logLik", save.ll)
   x <- boost.retransform(x)
 
-  list("parameters" = get.all.par(x), "fitted.values" = get.eta(x), "boost.summary" = bsum)
+  list("parameters" = get.all.par(x), "fitted.values" = get.eta(x), "boost.summary" = bsum,
+    "boost.parameters" = fill_parm(parm))
 }
 
 
@@ -2133,6 +2143,7 @@ boost.transform <- function(x, y, df, family, weights = NULL, offset = NULL,
 
   ## Initialize intercepts.
   eps0 <- eps + 1; iter <- 1
+
   while(eps0 > eps & iter < maxit) {
     eta0 <- eta
     ## Cycle through all parameters
@@ -2183,6 +2194,37 @@ make.state.list <- function(x, type = 1)
     }
   }
   return(rval)
+}
+
+
+make.par.list <- function(x, iter)
+{
+  elmts <- c("formula", "fake.formula")
+  if(all(elmts %in% names(x))) {
+    rval <- list()
+    if(!is.null(x$smooth.construct)) {
+      for(j in names(x$smooth.construct)) {
+        rval[[j]] <- matrix(0, nrow = iter, ncol = ncol(x$smooth.construct[[j]]$X))
+        rval[[j]][1, ] <- get.par(x$smooth.construct[[j]]$state$parameters, "b")
+      }
+    }
+  } else {
+    rval <- list()
+    for(j in names(x)) {
+      rval[[j]] <- make.par.list(x[[j]], iter)
+    }
+  }
+  return(rval)
+}
+
+fill_parm <- function(x)
+{
+  for(i in seq_along(x)) {
+    for(j in seq_along(x[[i]])) {
+      x[[i]][[j]] <- apply(x[[i]][[j]], 2, cumsum)
+    }
+  }
+  return(x)
 }
 
 

@@ -3,7 +3,7 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   contrasts = NULL, knots = NULL, specials = NULL, reference = NULL,
   model.matrix = TRUE, smooth.construct = TRUE, ytype = c("matrix", "vector", "integer"),
-  scale.x = FALSE, ...)
+  scale.x = FALSE, scale.d = FALSE, ...)
 {
   ## Parse family object.
   family <- bamlss.family(family, ...)
@@ -101,6 +101,9 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
 
   ## Add more functions to family object.
   bf$family <- complete.bamlss.family(family)
+
+  if(inherits(bf$model.frame, "data.frame") & scale.d)
+    bf$model.frame <- scale_model.frame(bf$model.frame, not = rn)
 
   ## Assign the 'x' master object.
   bf$x <- design.construct(bf$terms, data = bf$model.frame, knots = knots,
@@ -6285,6 +6288,29 @@ scale.model.matrix <- function(x)
   }
   x <- .Call("scale_matrix", x, center, scale, PACKAGE = "bamlss")
   attr(x, "scale") <- list("center" = center, "scale" = scale)
+  x
+}
+
+## Small helper function to scale the model.matrix.
+scale_model.frame <- function(x, not = "")
+{
+  if(!inherits(x, "data.frame"))
+    x <- as.data.frame(x)
+  cn <- colnames(x)
+  cn2 <- scales <- centers <- NULL
+  for(j in cn) {
+    if(!is.factor(x[[j]]) & !(j %in% not)) {
+      cx <- mean(as.numeric(x[[j]]), na.rm = TRUE)
+      sx <- sd(as.numeric(x[[j]]), na.rm = TRUE)
+      x[[j]] <- (x[[j]] - cx) / sx
+      cn2 <- c(cn2, j)
+      scales <- c(scales, sx)
+      centers <- c(centers, cx)
+    }
+  }
+  names(centers) <- cn2
+  names(scales) <- cn2
+  attr(x, "scale") <- list("center" = centers, "scale" = scales)
   x
 }
 
