@@ -465,14 +465,15 @@ Section~\ref{sec:bricksmodelfit}.
 \section{Lego bricks} \label{sec:legobricks}
 
 For computing parameter updates for either \ref{item:a} or \ref{item:b} using flexible partitioned
-updating systems like (\ref{eqn:blockupdate}) and (\ref{eqn:blockblockupdate}), we show within this
-section that the following ``Lego bricks'' are repeatedly used in Algorithm~\ref{fig:algodesign}:
+updating systems like (\ref{eqn:blockupdate}) and (\ref{eqn:blockblockupdate}), the following
+``Lego bricks'' are repeatedly used in Algorithm~\ref{fig:algodesign}:
 \begin{enumerate}
 \item \label{item:1} The log-likelihood function $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$,
 \item \label{item:2} link functions $h_k( \cdot )$,
 \item \label{item:3} prior densities $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$.
 \end{enumerate}
-Moreover, model term updating Algorithms~\ref{fig:umode} and \ref{fig:mcmc} usually require
+Moreover, in this section we derive the details for updating Algorithms~\ref{fig:umode} and
+\ref{fig:mcmc}, which usually require
 \begin{enumerate}
 \setcounter{enumi}{3}
 \item \label{item:4} the derivatives of inverse link functions $h_k^{-1}( \cdot )$,
