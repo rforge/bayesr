@@ -2047,6 +2047,8 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
     dv <- unlist(strsplit(vars[i], ":", fixed = TRUE))
     vars <- c(vars[-i], dv)
   }
+  vars <- unique(vars)
+  vars <- all.vars(as.formula(paste("~", paste(vars, collapse = "+"))))
   unique(vars)
 }
 

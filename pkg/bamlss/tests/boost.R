@@ -19,3 +19,10 @@ f <- list(
 )
 
 b <- bamlss(f, data = d, optimizer = boost, sampler = FALSE, scale.d = TRUE)
+
+load("cars.rda")
+f <- price ~ -1 + poly(age, 3) + poly(kilometer, 3) +
+  poly(TIA, 3) + abs + sunroof
+f <- update.formula(f, ~ .^2)
+
+b <- bamlss(f, data = cars, optimizer = boost, sampler = FALSE, scale.d = TRUE)

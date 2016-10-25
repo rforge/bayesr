@@ -17,7 +17,7 @@
 boost(x, y, family,
   nu = 0.1, df = 4, maxit = 100, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
-  nback = 10, eps = .Machine$double.eps^0.25,
+  nback = 10, Machine$double.eps^0.25,
   plot = TRUE, ...)
 
 ## Boosting summary extractor:
@@ -45,9 +45,9 @@ boost.summary(object, ...)
   \item{verbose}{Print information during runtime of the algorithm.}
   \item{digits}{Set the digits for printing when \code{verbose = TRUE}.}
   \item{flush}{use \code{\link{flush.console}} for displaying the current output in the console.}
-  \item{nback}{If \code{nback} is not \code{NULL}, then the algorithm stops if the relative
-    change of predictors of the last \code{nabck} iterations is smaller or equal to \code{eps}.
-    If argument \code{mstop} is \code{NULL} the default is to set relatively large to
+  \item{nback}{If \code{nback} is not \code{NULL}, then the algorithm stops if the difference
+    of relative changes of predictors of the last \code{nback} iterations is smaller or equal to
+    \code{eps}. If argument \code{mstop} is \code{NULL} the default is to set relatively large to
     \code{mstop = 10000}.}
   \item{eps}{The relative convergence tolerance of the boosting algorithm using \code{nback}.}
   \item{plot}{Should the boosting summary be printed and plotted?}

@@ -2072,7 +2072,7 @@ boost <- function(x, y, family,
 
     if(!is.null(nback)) {
       if(iter > nback) {
-        seps <- abs(diff(tail(save.eps, nback))) / tail(save.eps, nback - 1)
+        seps <- abs(diff(tail(save.eps, nback)))
         if(any(!is.finite(seps)) | any(is.na(seps)))
           break
         if(all(seps < eps))
@@ -2083,9 +2083,13 @@ boost <- function(x, y, family,
 
   if(verbose) cat("\n")
 
+  bsum <- make.boost.summary(x, if(is.null(nback)) maxit else (iter - 1), "logLik", save.ll)
+  if(plot)
+    plot.boost.summary(bsum)
+
   return(list("parameters" = parm2mat(parm),
     "fitted.values" = get.eta(x),
-    "boost.summary" = make.boost.summary(x, if(is.null(nback)) maxit else (iter - 1), "logLik", save.ll)))
+    "boost.summary" = bsum))
 }
 
 
@@ -2533,12 +2537,12 @@ print.boost.summary <- function(x, summary = TRUE, plot = TRUE, ...)
     op <- par(no.readonly = TRUE)
     on.exit(par(op))
     par(mfrow = c(1, 2), mar = c(5.1, 4.1, 2.1, 2.1))
-    plot(x$ic, type = "l", xlab = "Iteration", ylab = x$criterion)
+    plot(x$ic, type = "l", xlab = "Iteration", ylab = x$criterion, ...)
     abline(v = x$mstop, lwd = 3, col = "lightgray")
     axis(3, at = x$mstop, labels = paste("mstop =", x$mstop))
     par(mar = c(5.1, 4.1, 2.1, 10.1))
     matplot(1:nrow(x$loglik), x$loglik, type = "l", lty = 1,
-      xlab = "Iteration", ylab = "LogLik contribution", col = "black")
+      xlab = "Iteration", ylab = "LogLik contribution", col = "black", ...)
     abline(v = x$mstop, lwd = 3, col = "lightgray")
     axis(4, at = x$loglik[nrow(x$loglik), ], labels = colnames(x$loglik), las = 1)
     axis(3, at = x$mstop, labels = paste("mstop =", x$mstop))
@@ -2550,7 +2554,7 @@ print.boost.summary <- function(x, summary = TRUE, plot = TRUE, ...)
 
 plot.boost.summary <- function(x, ...)
 {
-  print.boost.summary(x, summary = FALSE, plot = TRUE) 
+  print.boost.summary(x, summary = FALSE, plot = TRUE, ...) 
 }
 
 
