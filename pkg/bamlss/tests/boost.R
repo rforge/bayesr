@@ -14,15 +14,8 @@ d$eta_sigma <- with(d, 0.5 * x1 + cos(scale2(x6, -3, 3)))
 d$y <- rnorm(n, mean = d$eta_mu, sd = exp(d$eta_sigma))
 
 f <- list(
-  y ~ s(x1) + s(x2) + s(x3),
-  sigma ~ s(x1) + s(x6)
-)
-
-b <- bamlss(f, data = d, sampler = NULL)
-
-f <- list(
   y ~ x1 + x2 + x3 + x4 + x5 + x6 + s(x1) + s(x2) + s(x3) + s(x4) + s(x5) + s(x6),
   sigma ~ x1 + x2 + x3 + x4 + x5 + x6 + s(x1) + s(x2) + s(x3) + s(x4) + s(x5) + s(x6)
 )
 
-b <- bamlss(f, data = d, sampler = NULL, optimizer = boost0, df = 4, criterion = "BIC")
+b <- bamlss(f, data = d, optimizer = boost, sampler = FALSE, scale.d = TRUE)

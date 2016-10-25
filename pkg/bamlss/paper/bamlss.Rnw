@@ -401,8 +401,9 @@ In practice, for full Bayesian inference the algorithm is applied twice, i.e.,
 first computing estimates for \ref{item:a} and then using these as starting values for solving
 \ref{item:b}.
 
-Finding good starting values is especially important for complex model terms that, e.g., include
-multiple smoothing variances. Therefore, we propose to estimate parameters $\boldsymbol{\tau}_{jk}$
+Finding good starting values is especially important for complex model terms that, e.g., for
+multi-dimensional functions $f_{jk}( \cdot )$ that have multiple smoothing variances in prior densities
+$p_{jk}( \cdot )$. Therefore, we propose to estimate parameters $\boldsymbol{\tau}_{jk}$
 using a goodness-of-fit criterion within the stepwise selection approach presented in
 Algorithm~\ref{fig:umode}, similar to \citet{bamlss:Belitz+Lang:2008}.
 \begin{algorithm}[!h]
@@ -429,9 +430,13 @@ $\boldsymbol{\tau}_{jk} = (\tau_{1jk}, \ldots, \tau_{L_{jk}jk})^\top$ is optimiz
 other using adaptive search intervals. Hence, the optimization problem is reduced to a
 one-dimensional search that is relative fast and straightforward to implement. The algorithm
 does not guarantee a global minimum given the goodness-of-fit criterion, however, the solution
-is at least close and serves as good starting points for full MCMC. The MCMC updating functions
-usually either accept or reject samples of the parameters and smoothing variances are sampled
-after $\boldsymbol{\beta}_{jk}$. In Algorithm~\ref{fig:mcmc} the general sampling scheme is shown.
+is at least close and serves as good starting points for full MCMC. Optimization speed can be
+further increased if for a given search interval only a grid of possible values for each
+$\tau_{ljk}$ is used.
+
+The MCMC updating functions usually either accept or reject samples of the parameters and smoothing
+variances are sampled after $\boldsymbol{\beta}_{jk}$. In Algorithm~\ref{fig:mcmc} the general
+sampling scheme is shown.
 \begin{algorithm}[!h]
 \renewcommand\thealgorithm{A2\alph{algorithm}}
 \caption{\label{fig:mcmc} MCMC updating $U_{jk}( \cdot )$.}
@@ -487,7 +492,8 @@ Computationally, this leads to a ``Lego'' system with (usually) fixed bricks \re
 \ref{item:3}, \ref{item:4}, \ref{item:5} and \ref{item:8}; in which only components \ref{item:1},
 \ref{item:6} and \ref{item:7} need to be supplied for implementing a new model. As shown in the
 upcoming this is relatively straightforward in most cases since \ref{item:6} and \ref{item:7} can
-be simplified when fragmenting with the chain rule.
+be simplified when fragmenting with the chain rule. Moreover, most parts that are used for solving
+\ref{item:a} can also be used for \ref{item:b}.
 
 The remainder of this section is as follows. Details about commonly used prior densities in
 GAM-type models are provided in the next section. In Section~\ref{sec:bricksmodelfit} we derive the
@@ -622,13 +628,15 @@ for $j = 1, \ldots, J_k$, $k = 1, \ldots, K$.
 For models involving shrinkage priors, e.g., in GAM-type models given by (\ref{eqn:mvnormprior}),
 the posterior mode is equivalent to a penalized maximum likelihood estimator for fixed parameters
 $\boldsymbol{\tau}_{jk}$ and prior densities $d_{\boldsymbol{\tau}_{jk}}( \cdot ) \propto 1$.
-Moreover, the structure of (\ref{eqn:logpost}) usually prohibits estimation of
-$\boldsymbol{\tau}_{jk}$ through maximization of the log-posterior and the
+Moreover, the structure of the log-posterior (\ref{eqn:logpost}) usually prohibits estimation of
+$\boldsymbol{\tau}_{jk}$ through maximization and the
 estimator $\hat{\boldsymbol{\tau}}_{jk}$ is commonly derived by additionally
 minimizing an information criterion such as the Akaike information criterion (AIC) or the Bayesian
-information criterion (BIC), see also \citealp{bamlss:Rigby+Stasinopoulos:2005} Appendix~A.2. for
-a more detailed discussion on smoothing parameter estimation. In Section~\ref{sec:modchoice},
-we briefly discuss a stepwise approach for smoothing parameter selection.
+information criterion (BIC). See also Algorithm~\ref{fig:umode} for an adaptive stepwise approach
+for estimation of $\boldsymbol{\tau}_{jk}$ (see also \citealp{bamlss:Rigby+Stasinopoulos:2005} Appendix~A.2. for
+a more detailed discussion on smoothing parameter estimation). In Section~\ref{sec:modchoice},
+we briefly discuss details on the computation of information criteria with equivalent degrees
+of freedom.
 
 For developing general updating functions we begin with describing posterior mode estimation for
 the case of fixed parameters $\boldsymbol{\tau}_{jk}$, because these updating functions form the
@@ -640,7 +648,7 @@ $\partial (\log \, \pi(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \math
 A particularly convenient updating function (\ref{eqn:updating}) for maximization of (\ref{eqn:logpost})
 is a Newton-Raphson type updating 
 \begin{equation} \label{eqn:newton}
-\boldsymbol{\beta}^{(t + 1)} = U(\boldsymbol{\beta}^{(t)} | \, \cdot) = \boldsymbol{\beta}^{(t)} -
+\boldsymbol{\beta}^{(t + 1)} = U(\boldsymbol{\beta}^{(t)}, \, \cdot \,) = \boldsymbol{\beta}^{(t)} -
   \mathbf{H}\left( \boldsymbol{\beta}^{(t)} \right)^{-1}\mathbf{s}\left( \boldsymbol{\beta}^{(t)} \right)
 \end{equation}
 with score vector
@@ -684,7 +692,7 @@ written as
     \frac{\partial^2 \boldsymbol{\eta}_k}{\partial^2 \boldsymbol{\beta}_k}}_{\text{if } k = s},
 \end{equation}
 where the second term on the right hand side cancels out if all functions (\ref{eqn:functions}) can
-be written as a linear combination of a design matrix and coefficients, e.g., when using a basis
+be written as a matrix product of a design matrix and coefficients, e.g., when using a basis
 function approach. Within the first term, the second derivatives of the log-likelihood involving the
 predictors can be written as
 \begin{equation} \label{eqn:hessian3}
@@ -700,11 +708,11 @@ involving the second derivatives of the link functions.
 Using a $k$-partitioned updating scheme as presented in (\ref{eqn:blockupdate}) updating functions
 $U_k( \cdot )$ are given by
 \begin{equation} \label{eqn:blocknewton}
-\boldsymbol{\beta}_k^{(t + 1)} = U_k(\boldsymbol{\beta}_k^{(t)} | \, \cdot) = \boldsymbol{\beta}_k^{(t)} -
+\boldsymbol{\beta}_k^{(t + 1)} = U_k(\boldsymbol{\beta}_k^{(t)}, \, \cdot \,) = \boldsymbol{\beta}_k^{(t)} -
   \mathbf{H}_{kk}\left( \boldsymbol{\beta}_k^{(t)} \right)^{-1}\mathbf{s}\left( \boldsymbol{\beta}_k^{(t)} \right).
 \end{equation}
-Assuming a linear basis function approach for functions (\ref{eqn:functions}) the Hessian matrix
-in (\ref{eqn:blocknewton}) is given by
+Assuming model terms (\ref{eqn:functions}) that can be written as a matrix product of a design
+matrix and coefficients the Hessian matrix in (\ref{eqn:blocknewton}) is given by
 $$
 \mathbf{H}_{kk}\left( \boldsymbol{\beta}_k^{(t)} \right) =
 \begin{pmatrix}
@@ -746,7 +754,7 @@ model term updating functions $U_{jk}( \cdot )$ as presented in algorithm (\ref{
 The updates are based on an iteratively weighted least squares scheme given by
 \begin{equation} \label{eqn:blockbackfit}
   \boldsymbol{\beta}_{jk}^{(t+1)}
-  = U_{jk}(\boldsymbol{\beta}_{jk}^{(t)} | \, \cdot ) =
+  = U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \, \cdot \,) =
     (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} +
       \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))^{-1}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}(
       \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)})
@@ -755,21 +763,21 @@ with working observations
 $\mathbf{z}_k = \boldsymbol{\eta}_{k}^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$
 (in Appendix~\ref{appendix:pmodeiwls} the detailed derivations are presented).
 Hence, this leads to a backfitting algorithm and cycling through (\ref{eqn:blockbackfit}) for
-terms $j = 1, \ldots, J_k$ and parameters $k = 1, \ldots, K$ is approximate to a single
-Newton-Raphson step in (\ref{eqn:newton}), because cross derivatives are not incorporated and
-therefore overall convergence will be slower.
+terms $j = 1, \ldots, J_k$ and parameters $k = 1, \ldots, K$ approximates a single
+Newton-Raphson step in (\ref{eqn:newton}), since cross derivatives are not incorporated in the
+updating scheme.
 Note that this yields the ingredients of the \emph{RS}-algorithm developed in
 \citet{bamlss:Rigby+Stasinopoulos:2005} Appendix~B.2. The updating scheme (\ref{eqn:blockbackfit})
 can be further generalized to
 \begin{equation*} \label{eqn:gbackfit}
 \boldsymbol{\beta}_{jk}^{(t + 1)} = U_{jk}\left(\boldsymbol{\beta}_{jk}^{(t)},
-  \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)} | \, \cdot\right)
+  \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}, \, \cdot \,\right)
 \end{equation*}
 i.e., theoretically any updating function applied on the ``partial residuals''
 $\mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}$ can be used. Note also that this result
 is equivalent to updating function
 \begin{eqnarray} \label{eqn:blockblocknewton}
-\boldsymbol{\beta}_{jk}^{(t + 1)} &=& U_{jk}(\boldsymbol{\beta}_{jk}^{(t)} | \, \cdot) \nonumber \\
+\boldsymbol{\beta}_{jk}^{(t + 1)} &=& U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \, \cdot \,) \nonumber \\
  &=& \boldsymbol{\beta}_{jk}^{(t)} -
   \mathbf{H}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right)^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) \\
  &=& \boldsymbol{\beta}_{jk}^{(t)} -
@@ -792,9 +800,10 @@ $\mathbf{W}_{kk} = -\mathrm{diag}(E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{
 Moreover, to achieve convergence, algorithms for posterior mode usually initialize the parameter
 vectors $\boldsymbol{\theta}_k$. Then, after one inner backfitting iteration the algorithm
 can proceed in a full zigzag fashion or again with inner iterations. For all updating schemes it
-might also be appropriate to vary the updating step length, possibly in each iteration. This is
-relatively straightforward to implement, because step length optimization is a one dimensional
-problem.
+might also be appropriate to vary the updating step length of parameter updates,
+possibly in each iteration. This is relatively straightforward to implement, because step length
+optimization is a one dimensional problem, i.e., finding the step length that most improves the
+log-posterior contribution.
 
 
 \subsubsection{Posterior mean} \label{sec:postmean}
@@ -810,10 +819,10 @@ Clearly, the problem in deriving the expectation, and other quantities like the 
 relies on the computation of usually high-dimensional integrals, which can be rarely solved
 analytically and thus need to be approximated by numerical techniques.  
 
-MCMC simulation is commonly used in such situations as it provides an extendable framework that can 
+MCMC simulation is commonly used in such situations as it provides an extensible framework that can 
 adapt to almost any type of problem. In the following we summarize sampling techniques that
-are especially suited within the BAMLSS framework, i.e., techniques that can be used for a highly
-modular and extendable system. In this context we describe sampling functions for the updating
+are especially well-suited within the BAMLSS framework, i.e., techniques that can be used for a
+highly modular and extensible system. In this context we describe sampling functions for the updating
 scheme presented in (\ref{eqn:blockblockupdate}), i.e., the functions $U_{jk}( \cdot )$ now generate
 the next step in a Markov chain.
 
@@ -823,7 +832,7 @@ generally the case. MCMC samples for the regression coefficients $\boldsymbol{\b
 derived by each of the following methods:
 \begin{itemize}
 \item \emph{Random-walk Metropolis}: \label{sec:rwm} \\
-  Probably the most important algorithm, because of its generality and easy implementation, is
+  Probably the most important algorithm, because of its generality and ease of implementation, is
   random-walk Metropolis. The sampler
   proceeds by drawing a candidate $\boldsymbol{\beta}_{jk}^{\star}$ from a symmetric jumping
   distribution $q(\boldsymbol{\beta}_{jk}^{\star}| \, \boldsymbol{\beta}_{jk}^{(t)})$, the
@@ -847,7 +856,7 @@ derived by each of the following methods:
   $\boldsymbol{\Sigma}_{jk} = \sigma_{jk}\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})^{-1}$ and optimize
   $\sigma_{jk}$ to the desired properties in the adaptive phase.
 
-\item \emph{Derivative based Metropolis-Hastings}: \label{sec:dmh} \\
+\item \emph{Derivative-based Metropolis-Hastings}: \label{sec:dmh} \\
   A commonly used alternative for the covariance matrix of the jumping distribution
   $\mathcal{N}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk})$ is to use the local curvature
   information
@@ -857,10 +866,10 @@ derived by each of the following methods:
   $$
   or its expectation, computed at the posterior mode estimate $\hat{\boldsymbol{\beta}}_{jk}$.
   However, fixing $\boldsymbol{\Sigma}_{jk}$ during MCMC simulation might still lead to undesired
-  behavior of the Markov chain especially when iterates move into regions with low probability mass of the
-  posterior distribution. A solution is to construct full conditionals
+  behavior of the Markov chain especially when parameter samples move into regions with low
+  probability mass of the posterior distribution. A solution is to construct full conditionals
   $\pi(\boldsymbol{\beta}_{jk} | \cdot)$
-  which approximate the posterior at the current iterate and minimize the risk of slow traversing.
+  which approximate the posterior at the current parameter state and minimize the risk of slow traversing.
   The construction of the full conditional is based on a second order Taylor series expansion
   of the log-posterior centered at the last state and yields a multivariate normal distribution
   (see Appendix~\ref{appendix:fullcond1} for a detailed derivation) with precision matrix
@@ -933,7 +942,7 @@ derived by each of the following methods:
 
 The full conditional $\pi(\boldsymbol{\tau}_{jk} | \, \cdot)$ for smoothing variances is commonly
 constructed using priors for $\boldsymbol{\tau}_{jk}$ that lead to known distributions, i.e.,
-simple Gibbs sampling is possible. E.g., this is the case when using a linear basis function
+simple Gibbs sampling is possible. E.g., this is the case when using a basis function
 approach and only one smoothing variance $\tau_{jk}$ is assigned. Then, by using an
 inverse Gamma prior (\ref{eqn:igprior}) for $\tau_{jk}$ in combination with the normal prior
 (\ref{eqn:mvnormprior}) for $\boldsymbol{\beta}_{jk}$ the full-conditional $\pi(\tau_{jk} | \, \cdot)$
@@ -954,7 +963,7 @@ burden does most of the times not exceed possible benefits.
 
 \subsection{Model choice} \label{sec:modchoice}
 
-\subsubsection{Model fit} \label{sec:modfit}
+\subsubsection{Diagnostics} \label{sec:diagnostics}
 
 Quantile residuals defined as
 $\hat{r}_i = \Phi^{-1}(\mathbf{\mathcal{F}}(y_i | \, \hat{\boldsymbol{\theta}}_{i}))$ with the inverse 
@@ -981,10 +990,10 @@ log-posterior (\ref{eqn:logpost}). For example, this is the case for GAM-type mo
 combination with priors based on multivariate normal kernels (\ref{eqn:mvnormprior}) where
 $\boldsymbol{\tau}_{jk}$ represents smoothing variances.
 
-Therefore, goodness of fit criteria like the Akaike information criterion (AIC), or the corrected AIC,
+Therefore, goodness-of-fit criteria like the Akaike information criterion (AIC), or the corrected AIC,
 as well as the Bayesian information criterion (BIC), amongst others, are commonly used for selecting
 the smoothing variances $\boldsymbol{\tau}_{jk}$. These criteria try to penalize overly complex models,
-i.e., are trying to prevent over-fitting. For models using a linear basis function approach,
+i.e., are trying to prevent over-fitting. For models using a basis function approach,
 estimating model complexity using (possibly) nonlinear functions is based on the so called
 equivalent degrees of freedom (EDF). For each model component the EDF used to estimate the function
 are calculated by
@@ -1002,17 +1011,8 @@ of EDF here is slightly more general and is usually defined as the
 trace of the smoother matrix (see, e.g., \citealp{bamlss:Hastie+Tibshirani:1990}) and can be applied
 even for more complex likelihood structures, e.g., in a flexible Cox-model \citep{bamlss:Hofner:2008}.
 
-Instead of global optimization of smoothing variances, a fast strategy is the stepwise selection
-during backfitting, which is proposed by \citet{bamlss:Belitz+Lang:2008} and can be adapted to
-distributional regression models. In each cycle of the backfitting
-algorithm (\ref{eqn:blocknewton}) or (\ref{eqn:blockbackfit}), the smoothing variances for each
-model component are optimized holding all other variances fixed, see Algorithm~\ref{fig:umode}. To
-further speed up convergence, the search space for smoothing variances can be based on a small grid
-of candidate values. This will not lead to a global optimum according the goodness of fit
-criterion, however, the resulting parameters serve as good starting values for full Bayesian
-inference with MCMC. This is especially useful for multi-dimensional effects with multiple
-smoothing variances since convergence of the MCMC chains will usually take much longer with
-improper starting values.
+Instead of global optimization of smoothing variances, a fast strategy is the adaptive
+stepwise selection approach presented in Algorithm~\ref{fig:umode}.
 
 
 \subsubsection{Variable selection with posterior mean} \label{sec:varselpostmean}
