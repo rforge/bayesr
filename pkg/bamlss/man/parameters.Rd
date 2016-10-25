@@ -12,7 +12,8 @@
 \usage{
 parameters(x, model = NULL, start = NULL,
   fill = c(0, 1e-04), list = FALSE,
-  simple.list = FALSE, extract = FALSE)
+  simple.list = FALSE, extract = FALSE,
+  ...)
 }
 
 \arguments{
@@ -26,6 +27,7 @@ parameters(x, model = NULL, start = NULL,
   \item{list}{Should the function return a list of all parameters?}
   \item{simple.list}{Should the names of parameter vectors be dropped?}
   \item{extract}{Should parameters of a \code{\link{bamlss.frame}} be extracted or initialized?}
+  \item{\dots}{Currently not used.}
 }
 
 \details{

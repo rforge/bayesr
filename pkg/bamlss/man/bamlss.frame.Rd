@@ -58,7 +58,7 @@ bamlss.frame(formula, data = NULL, family = "gaussian",
     to construct the response matrix from levels. If the response is a factor
     \code{ytype == "integer"} will create an integer response.}
   \item{scale.x}{Logical, should the model matrices of the linear parts be scaled?}
-  \item{scale.x}{Logical, should the numeric variables in the model frame be scaled?}
+  \item{scale.d}{Logical, should the numeric variables in the model frame be scaled?}
   \item{\dots}{Arguments passed to function \code{\link{smooth.construct.bamlss.frame}}.}
 }
 

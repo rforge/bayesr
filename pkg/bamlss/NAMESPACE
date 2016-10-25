@@ -30,7 +30,7 @@ importFrom("grDevices", "chull", "dev.interactive", "devAskNewPage",
 importFrom("graphics", "abline", "axis", "box", "contour", "hist",
   "layout", "lcm", "lines", "matplot", "mtext", "par",
   "points", "rect", "text", "plot.default")
-importFrom("methods", "is", "slot")
+importFrom("methods", "is", "as", "slot")
 importFrom("stats", "acf", "as.formula", "coef", "complete.cases",
   "contrasts<-", "dbeta", "dbinom", "delete.response",
   "density", "dgamma", "dist", "dlnorm", "dlogis", "dnbinom",
@@ -145,7 +145,11 @@ export(
   "BUGSmodel",
   "neighbormatrix",
   "plotneighbors",
-  "bamlss.model.frame"
+  "bamlss.model.frame",
+  
+  ## Boosting
+  "boost",
+  "boost.summary"
 )
 
 S3method("plot", "bamlss")
@@ -158,6 +162,8 @@ S3method("family", "bamlss.frame")
 S3method("print", "summary.bamlss")
 S3method("print", "family.bamlss")
 S3method("print", "bamlss.frame")
+S3method("print", "boost.summary")
+S3method("plot", "boost.summary")
 S3method("predict", "bamlss")
 S3method("fitted", "bamlss")
 S3method("logLik", "bamlss")

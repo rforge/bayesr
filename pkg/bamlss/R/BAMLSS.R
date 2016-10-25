@@ -934,12 +934,20 @@ smooth.construct.bamlss.frame <- smooth.construct.bamlss.formula <- smooth.const
 
 ## Extract/initialize parameters.
 parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
-  list = FALSE, simple.list = FALSE, extract = FALSE)
+  list = FALSE, simple.list = FALSE, extract = FALSE, ...)
 {
   if(inherits(x, "bamlss") | extract) {
     if(!is.null(x$parameters)) {
       if(is.null(model)) {
-        if(list) return(x$parameters) else return(unlist(x$parameters))
+        if(list) {
+          return(x$parameters)
+        } else {
+          if(inherits(x$parameters, "data.frame") | inherits(x$parameters, "matrix")) {
+            args <- list(...)
+            mstop <- if(is.null(args$mstop)) nrow(x$parameters) else args$mstop
+            return(x$parameters[mstop, ])
+          } else return(unlist(x$parameters))
+        }
       } else {
         if(is.list(x$parameters)) {
           if(list) return(x$parameters[model]) else return(unlist(x$parameters[model]))
@@ -947,7 +955,11 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
           if(!is.character(model))
             model <- names(x$terms)[model]
           rp <- grep(paste(model, ".", sep = ""), names(x$parameters), fixed = TRUE, value = TRUE)
-          return(x$parameters[rp])
+          if(inherits(x$parameters, "data.frame") | inherits(x$parameters, "matrix")) {
+            args <- list(...)
+            mstop <- if(is.null(args$mstop)) nrow(x$parameters) else args$mstop
+            x$parameters[mstop, rp]
+          } else return(x$parameters[rp])
         }
       }
     }
@@ -1234,8 +1246,13 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
     }
     if(is.null(opt$parameters))
       stop("the optimizer must return an element $parameters!")
-    if(is.null(names(opt$parameters)))
-      stop("the returned parameters must be a named numeric vector!")
+    if(inherits(opt$parameters, "data.frame") | inherits(opt$parameters, "matrix")) {
+      if(is.null(colnames(opt$parameters)))
+        stop("the returned parameters must be a named numeric data.frame or matrix!")
+    } else {
+      if(is.null(names(opt$parameters)))
+        stop("the returned parameters must be a named numeric vector!")
+    }
     bf$parameters <- opt$parameters
     if(!is.null(opt$fitted.values))
       bf$fitted.values <- opt$fitted.values
@@ -2639,13 +2656,14 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   trans = NULL, what = c("samples", "parameters"), nsamps = NULL, verbose = FALSE, drop = TRUE,
   cores = NULL, chunks = 1, ...)
 {
+  FUN2 <- function(x, ...) FUN(x)
   if(missing(newdata))
     newdata <- NULL
   family <- object$family
   if(!is.null(family$predict)) {
     if(is.function(family$predict)) {
       return(family$predict(object = object, newdata = newdata, model = model, term = term,
-        intercept = intercept, type = type, FUN = FUN, trans = trans, what = what, nsamps = nsamps,
+        intercept = intercept, type = type, FUN = FUN2, trans = trans, what = what, nsamps = nsamps,
         verbose = verbose, drop = drop, cores = cores, chunks = chunks, ...))
     }
   }
@@ -2716,7 +2734,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   } else {
     if(is.null(object$parameters))
       stop("cannot find any parameters!")
-    samps <- parameters(object, model = model, list = FALSE, extract = TRUE)
+    samps <- parameters(object, model = model, list = FALSE, extract = TRUE, ...)
     cn <- names(samps)
     samps <- matrix(samps, nrow = 1)
     colnames(samps) <- cn
@@ -2732,7 +2750,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
 
   if(!is.null(list(...)$get.bamlss.predict.setup)) {
     return(list("samps" = samps, "enames" = enames, "intercept" = intercept,
-      "FUN" = FUN, "trans" = trans, "type" = type, "nsamps" = nsamps, "env" = env))
+      "FUN" = FUN2, "trans" = trans, "type" = type, "nsamps" = nsamps, "env" = env))
   }
 
   pred_fun <- function(pred, id) {
@@ -2759,7 +2777,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
         pred <- trans[[id]](pred)
       }
     }
-    pred <- apply(pred, 1, FUN, ...)
+    pred <- apply(pred, 1, FUN2, ...)
     if(!is.null(dim(pred)))
       pred <- t(pred)
     return(pred)
@@ -2811,6 +2829,9 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
         chunks <- length(nd)
         for(i in nx) {
           for(j in 1:chunks) {
+            if(verbose)
+              cat("\npredicting chunk", j, "of", chunks, "...")
+
             if(j < 2) {
               pred[[i]] <- pred_fun(.predict.bamlss(i, object$x[[i]], samps,
                 enames[[i]], intercept, nsamps, nd[[j]], env), id = i)
@@ -2825,6 +2846,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
             }
           }
         }
+        if(verbose) cat("\n")
       } else {
         for(i in nx) {
           pred[[i]] <- pred_fun(.predict.bamlss(i, object$x[[i]], samps,
@@ -4623,6 +4645,9 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
             cat("\n")
             ok <- FALSE
           }
+        } else {
+          print(x$model.stats$optimizer[[j]], ...)
+          ok <- FALSE
         }
       }
       if(ok) cat("\n---\n")

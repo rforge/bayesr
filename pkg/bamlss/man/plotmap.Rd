@@ -30,6 +30,7 @@ plotmap(map, x = NA, id = NULL, select = NULL,
     vector.}
   \item{select}{Select the column of the data in \code{x} which should be used for plotting, may
     be an integer or character with the corresponding column name.}
+  \item{legend}{Should a color legend be added to the plot, see also function \code{\link{colorlegend}}.}
   \item{names}{If set to \code{TRUE} the name for each polygon will also be plotted at the centroids
     of the corresponding polygons.}
   \item{values}{If set to \code{TRUE} the corresponding values for each polygon will also be plotted 

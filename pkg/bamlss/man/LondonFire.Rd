@@ -30,11 +30,11 @@ The \code{LondonFire} data contains the following variables:
 \references{
   London Fire (2015). London Fire Brigade Incident Records.
     \emph{London Data Store}, UK Open Government Licence (OGL v2),
-    \url{http://data.london.gov.uk/dataset/london-fire-brigade-incident-records}.
+    \url{https://data.london.gov.uk/dataset/london-fire-brigade-incident-records}.
 
   London Boroughs/Boundaries (2015). Statistical GIS Boundary Files for London.
     \emph{London Data Store}, UK Open Government Licence (OGL v2),
-    \url{http://data.london.gov.uk/dataset/statistical-gis-boundary-files-london}.
+    \url{https://data.london.gov.uk/dataset/statistical-gis-boundary-files-london}.
 
   London Fire Stations (2015). \emph{London Fire Brigade},
     \url{http://www.london-fire.gov.uk/A-ZFireStations.asp}.

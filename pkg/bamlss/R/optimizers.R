@@ -1195,7 +1195,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
       hess <- process.derivs(family$hess[[id]](y, peta, id = id, ...), is.weight = TRUE)
     } else {
       hess <- ffdf_eval_sh(y, peta, FUN = function(y, par) {
-        process.derivs(family$hess[[nx[j]]](y, par, id = nx[j]), is.weight = TRUE)
+        process.derivs(family$hess[[id]](y, par, id = id), is.weight = TRUE)
       })
     }
   } else hess <- args$hess
@@ -1209,7 +1209,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
       score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
     } else {
       score <- ffdf_eval_sh(y, peta, FUN = function(y, par) {
-        process.derivs(family$score[[nx[j]]](y, par, id = nx[j]), is.weight = FALSE)
+        process.derivs(family$score[[id]](y, par, id = id), is.weight = FALSE)
       })
     }
 
@@ -1931,7 +1931,7 @@ boost_logLik <- function(x, y, family, weights = NULL, offset = NULL,
     cat("---\n", criterion, "=", save.ic[mstop], "-> at mstop =", mstop, "\n---\n")
   }
 
-  bsum <- boost.summary(x, mstop, criterion, save.ic)
+  bsum <- make.boost.summary(x, mstop, criterion, save.ic)
   x <- boost.retransform(x)
 
   list("parameters" = get.all.par(x), "fitted.values" = get.eta(x), "boost.summary" = bsum)
@@ -1940,9 +1940,9 @@ boost_logLik <- function(x, y, family, weights = NULL, offset = NULL,
 
 ## 2nd booster.
 boost <- function(x, y, family,
-  nu = 0.1, df = 1, maxit = 100, mstop = NULL,
-  verbose = TRUE, digits = 4,
-  eps = .Machine$double.eps^0.25, plot = TRUE, ...)
+  nu = 0.1, df = 4, maxit = 100, mstop = NULL,
+  verbose = TRUE, digits = 4, flush = TRUE,
+  nback = 40, eps = .Machine$double.eps^0.25, plot = TRUE, ...)
 {
   if(is.null(family$score))
     stop("need score functions in family object for boosting!")
@@ -1954,11 +1954,16 @@ boost <- function(x, y, family,
   if(!all(nx %in% names(x)))
     stop("parameter names mismatch with family names!")
 
+  if(!is.null(nback)) {
+    if(is.null(mstop))
+      mstop <- 10000
+  }
+
   if(!is.null(mstop))
     maxit <- mstop
 
   if(is.null(attr(x, "bamlss.engine.setup")))
-    x <- bamlss.engine.setup(x, ...)
+    x <- bamlss.engine.setup(x, df = df, ...)
 
   np <- length(nx)
   nobs <- nrow(y)
@@ -1970,7 +1975,7 @@ boost <- function(x, y, family,
   ## Setup boosting structure, i.e, all parametric
   ## terms get an entry in $smooth.construct object.
   ## Intercepts are initalized.
-  x <- boost.transform(x = x, y = y, df = df, family = family,
+  x <- boost.transform(x = x, y = y, df = NULL, family = family,
     maxit = maxit, eps = eps, ...)
 
   ## Create a list() that saves the states for
@@ -1991,9 +1996,12 @@ boost <- function(x, y, family,
   ## Extract actual predictor.
   eta <- get.eta(x)
 
+  ## Print stuff.
+  ia <- if(flush) interactive() else FALSE
+
   ## Start boosting.
   eps0 <- 1; iter <- 1
-  save.ll <- NULL
+  save.ll <- save.eps <- NULL
   ll <- family$loglik(y, family$map2par(eta))
   while(iter <= maxit) {
     eta0 <- eta
@@ -2047,34 +2055,42 @@ boost <- function(x, y, family,
     ll <- family$loglik(y, peta)
 
     save.ll <- c(save.ll, ll)
+    save.eps <- c(save.eps, eps0)
 
     if(verbose) {
-      cat(if(interactive()) "\r" else "\n")
+      cat(if(ia) "\r" else "\n")
       vtxt <- paste(
         " logLik ", fmt(ll, width = 8, digits = digits),
         " eps ", fmt(eps0, width = 6, digits = digits + 2),
         " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
       cat(vtxt)
 
-      if(.Platform$OS.type != "unix" & interactive()) flush.console()
+      if(.Platform$OS.type != "unix" & ia) flush.console()
     }
 
     iter <- iter + 1
+
+    if(!is.null(nback)) {
+      if(iter > nback) {
+        seps <- abs(diff(tail(save.eps, nback))) / tail(save.eps, nback - 1)
+        if(any(!is.finite(seps)) | any(is.na(seps)))
+          break
+        if(all(seps < eps))
+          break
+      }
+    }
   }
 
   if(verbose) cat("\n")
 
-  bsum <- boost.summary(x, maxit, "logLik", save.ll)
-  x <- boost.retransform(x)
-
-  list("parameters" = get.all.par(x), "fitted.values" = get.eta(x), "boost.summary" = bsum,
-    "boost.parameters" = fill_parm(parm))
+  return(list("parameters" = parm2mat(parm),
+    "fitted.values" = get.eta(x),
+    "boost.summary" = make.boost.summary(x, if(is.null(nback)) maxit else (iter - 1), "logLik", save.ll)))
 }
 
 
-
 ## Boost setup.
-boost.transform <- function(x, y, df, family, weights = NULL, offset = NULL,
+boost.transform <- function(x, y, df = NULL, family, weights = NULL, offset = NULL,
   maxit = 100, eps = .Machine$double.eps^0.25, ...)
 {
   np <- length(x)
@@ -2084,7 +2100,8 @@ boost.transform <- function(x, y, df, family, weights = NULL, offset = NULL,
   eta <- get.eta(x)
   for(j in 1:np) {
     for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-      x[[nx[j]]]$smooth.construct[[sj]] <- assign.df(x[[nx[j]]]$smooth.construct[[sj]], df)
+      if(!is.null(df))
+        x[[nx[j]]]$smooth.construct[[sj]] <- assign.df(x[[nx[j]]]$smooth.construct[[sj]], df)
       if(!x[[nx[j]]]$smooth.construct[[sj]]$fxsp & !x[[nx[j]]]$smooth.construct[[sj]]$fixed) {
         x[[nx[j]]]$smooth.construct[[sj]]$old.optimize <- x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim
         x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim <- FALSE
@@ -2220,8 +2237,9 @@ make.par.list <- function(x, iter)
   return(rval)
 }
 
-fill_parm <- function(x)
+parm2mat <- function(x)
 {
+  nx <- names(x)
   for(i in seq_along(x)) {
     is.mm <- NULL
     for(j in names(x[[i]])) {
@@ -2242,7 +2260,20 @@ fill_parm <- function(x)
       x[[i]][["s"]] <- x[[i]][sm]
       x[[i]][sm[sm != "s"]] <- NULL
     }
+    n <- names(x[[i]])
+    for(j in names(x[[i]])) {
+      if(j != "s") {
+        colnames(x[[i]][[j]]) <- paste(nx[i], j, colnames(x[[i]][[j]]), sep = ".")
+      } else {
+        for(k in names(x[[i]][[j]])) {
+          colnames(x[[i]][[j]][[k]]) <- paste(nx[i], j, k, colnames(x[[i]][[j]][[k]]), sep = ".")
+        }
+        x[[i]][[j]] <- do.call("cbind", x[[i]][[j]])
+      }
+    }
+    x[[i]] <- do.call("cbind", x[[i]])
   }
+  x <- do.call("cbind", x)
   return(x)
 }
 
@@ -2424,7 +2455,7 @@ boost_fit <- function(x, y, nu)
 }
 
 
-## Increase coeffiecients.
+## Increase coefficients.
 increase <- function(state0, state1)
 {
   g <- get.par(state0$parameters, "b") + get.par(state1$parameters, "b")
@@ -2438,7 +2469,7 @@ increase <- function(state0, state1)
 
 
 ## Extract summary for boosting.
-boost.summary <- function(x, mstop, criterion, save.ic)
+make.boost.summary <- function(x, mstop, criterion, save.ic)
 {
   nx <- names(x)
   labels <- NULL
@@ -2451,7 +2482,7 @@ boost.summary <- function(x, mstop, criterion, save.ic)
       rn <- c(rn, x[[i]]$smooth.construct[[j]]$label)
       bsum[[i]] <- rbind(bsum[[i]], sum(x[[i]]$smooth.construct[[j]]$selected[1:mstop]) / mstop * 100)
       lmat[[i]] <- rbind(lmat[[i]], sum(x[[i]]$smooth.construct[[j]]$loglik[1:mstop]))
-      ll.contrib <- cbind(ll.contrib, cumsum(x[[i]]$smooth.construct[[j]]$loglik))
+      ll.contrib <- cbind(ll.contrib, cumsum(x[[i]]$smooth.construct[[j]]$loglik[1:mstop]))
     }
     if(!is.matrix(bsum[[i]])) bsum[[i]] <- matrix(bsum[[i]], nrow = 1)
     bsum[[i]] <- cbind(bsum[[i]], lmat[[i]])
@@ -2463,15 +2494,27 @@ boost.summary <- function(x, mstop, criterion, save.ic)
   colnames(ll.contrib) <- labels
   names(bsum) <- nx
   bsum <- list("summary" = bsum, "mstop" = mstop, "criterion" = criterion,
-    "ic" = save.ic, "loglik" = ll.contrib)
+    "ic" = save.ic[1:mstop], "loglik" = ll.contrib)
   class(bsum) <- "boost.summary"
   return(bsum)
 }
 
 
-## Smallish print function for boost summaries.
-print.boost.summary <- function(object, summary = TRUE, plot = FALSE, ...)
+boost.summary <- function(object, ...)
 {
+  if(!is.null(object$model.stats$optimizer$boost.summary))
+    print.boost.summary(object$model.stats$optimizer$boost.summary, ...)
+  invisible(object$model.stats$optimizer$boost.summary)
+}
+
+
+## Smallish print function for boost summaries.
+print.boost.summary <- function(x, summary = TRUE, plot = TRUE, ...)
+{
+  if(inherits(object, "bamlss"))
+    object <- object$model.stats$optimizer$boost.summary
+  if(is.null(object))
+    stop("no summary for boosted model available")
   if(summary) {
     np <- length(object$summary)
     cat("\n")
@@ -2504,30 +2547,10 @@ print.boost.summary <- function(object, summary = TRUE, plot = FALSE, ...)
   return(invisible(object))
 }
 
+
 plot.boost.summary <- function(x, ...)
 {
   print.boost.summary(x, summary = FALSE, plot = TRUE) 
-}
-
-
-boost.predict <- function(x, mstop = 1, ...)
-{
-  if(is.null(par <- x$model.stats$optimizer$boost.parameters))
-    stop("this is not a bamlss boosted object!")
-  if(mstop > x$model.stats$optimizer$boost.summary$mstop)
-    stop("mstop larger than available iterations!")
-  x$samples <- NULL
-  for(i in seq_along(par)) {
-    for(j in seq_along(par[[i]]))
-      if(!is.list(par[[i]][[j]])) {
-        par[[i]][[j]] <- par[[i]][[j]][mstop, ]
-      } else {
-        for(k in seq_along(par[[i]][[j]]))
-          par[[i]][[j]][[k]] <- par[[i]][[j]][[k]][mstop, ]
-      }
-  }
-  x$parameters <- unlist(par)
-  predict(x, ...)
 }
 
 
