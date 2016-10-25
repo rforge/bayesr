@@ -1942,7 +1942,7 @@ boost_logLik <- function(x, y, family, weights = NULL, offset = NULL,
 boost <- function(x, y, family,
   nu = 0.1, df = 4, maxit = 100, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
-  nback = 40, eps = .Machine$double.eps^0.25, plot = TRUE, ...)
+  nback = 10, eps = .Machine$double.eps^0.25, plot = TRUE, ...)
 {
   if(is.null(family$score))
     stop("need score functions in family object for boosting!")
@@ -2026,7 +2026,7 @@ boost <- function(x, y, family,
       select[i] <- which.min(rss[[i]])
 
       ## Compute likelihood contribution.
-      eta[[i]] <- eta[[i]] + fitted(states[[i]][[j]])
+      eta[[i]] <- eta[[i]] + fitted(states[[i]][[select[i]]])
       loglik[i] <- -1 * (ll - family$loglik(y, family$map2par(eta)))
       eta[[i]] <- eta0[[i]]
     }

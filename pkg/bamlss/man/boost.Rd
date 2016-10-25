@@ -17,7 +17,7 @@
 boost(x, y, family,
   nu = 0.1, df = 4, maxit = 100, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
-  nback = 40, eps = .Machine$double.eps^0.25,
+  nback = 10, eps = .Machine$double.eps^0.25,
   plot = TRUE, ...)
 
 ## Boosting summary extractor:
