@@ -2511,18 +2511,18 @@ boost.summary <- function(object, ...)
 ## Smallish print function for boost summaries.
 print.boost.summary <- function(x, summary = TRUE, plot = TRUE, ...)
 {
-  if(inherits(object, "bamlss"))
-    object <- object$model.stats$optimizer$boost.summary
-  if(is.null(object))
+  if(inherits(x, "bamlss"))
+    x <- x$model.stats$optimizer$boost.summary
+  if(is.null(x))
     stop("no summary for boosted model available")
   if(summary) {
-    np <- length(object$summary)
+    np <- length(x$summary)
     cat("\n")
-    cat(object$criterion, "=", object$ic[object$mstop], "-> at mstop =", object$mstop, "\n---\n")
+    cat(x$criterion, "=", x$ic[x$mstop], "-> at mstop =", x$mstop, "\n---\n")
     for(j in 1:np) {
-      if(length(object$summary[[j]]) < 2) {
-        print(round(object$summary[[j]], digits = 4))
-      } else printCoefmat(object$summary[[j]], digits = 4)
+      if(length(x$summary[[j]]) < 2) {
+        print(round(x$summary[[j]], digits = 4))
+      } else printCoefmat(x$summary[[j]], digits = 4)
       if(j != np)
         cat("---\n")
     }
@@ -2533,18 +2533,18 @@ print.boost.summary <- function(x, summary = TRUE, plot = TRUE, ...)
     op <- par(no.readonly = TRUE)
     on.exit(par(op))
     par(mfrow = c(1, 2), mar = c(5.1, 4.1, 2.1, 2.1))
-    plot(object$ic, type = "l", xlab = "Iteration", ylab = object$criterion)
-    abline(v = object$mstop, lwd = 3, col = "lightgray")
-    axis(3, at = object$mstop, labels = paste("mstop =", object$mstop))
+    plot(x$ic, type = "l", xlab = "Iteration", ylab = x$criterion)
+    abline(v = x$mstop, lwd = 3, col = "lightgray")
+    axis(3, at = x$mstop, labels = paste("mstop =", x$mstop))
     par(mar = c(5.1, 4.1, 2.1, 10.1))
-    matplot(1:nrow(object$loglik), object$loglik, type = "l", lty = 1,
+    matplot(1:nrow(x$loglik), x$loglik, type = "l", lty = 1,
       xlab = "Iteration", ylab = "LogLik contribution", col = "black")
-    abline(v = object$mstop, lwd = 3, col = "lightgray")
-    axis(4, at = object$loglik[nrow(object$loglik), ], labels = colnames(object$loglik), las = 1)
-    axis(3, at = object$mstop, labels = paste("mstop =", object$mstop))
+    abline(v = x$mstop, lwd = 3, col = "lightgray")
+    axis(4, at = x$loglik[nrow(x$loglik), ], labels = colnames(x$loglik), las = 1)
+    axis(3, at = x$mstop, labels = paste("mstop =", x$mstop))
   }
 
-  return(invisible(object))
+  return(invisible(x))
 }
 
 
