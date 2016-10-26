@@ -802,8 +802,8 @@ vectors $\boldsymbol{\theta}_k$. Then, after one inner backfitting iteration the
 can proceed in a full zigzag fashion or again with inner iterations. For all updating schemes it
 might also be appropriate to vary the updating step length of parameter updates,
 possibly in each iteration. This is relatively straightforward to implement, because step length
-optimization is a one dimensional problem, i.e., finding the step length that most improves the
-log-posterior contribution.
+optimization is a one dimensional problem, i.e., for each model term finding the step length that
+improves the log-posterior most.
 
 
 \subsubsection{Posterior mean} \label{sec:postmean}
@@ -1123,8 +1123,8 @@ for each posterior sample $\boldsymbol{\beta}_k^{(t)}$; $k = 1, \dots, K$, $t = 
 
 \section{Strategies for implementation} \label{sec:strategies}
 
-Today, there exist a couple of implementations supporting distributional regression models. The
-\proglang{R} packages \pkg{gamlss} and \pkg{VGAM} are probably the best known for flexible modeling
+Today, there exist a couple of implementations supporting distributional regression models in
+\proglang{R}. The \proglang{R} packages \pkg{gamlss} and \pkg{VGAM} are probably the best known for flexible modeling
 in an empirical Bayes setting. Besides, general purpose Bayesian modeling software like \pkg{WinBUGS},
 \pkg{JAGS} and \pkg{Stan} play a prominent role in the applied statistician's toolbox. Whereas the
 former emphasize on GAM-type additive models, the latter in principle allow for any type
