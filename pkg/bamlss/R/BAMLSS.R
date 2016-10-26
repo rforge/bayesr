@@ -2004,7 +2004,7 @@ make_fFormula <- function(formula)
 }
 
 
-all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, intercept = FALSE)
+all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, intercept = FALSE, type = 1)
 {
   env <- environment(formula)
   specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx"))
@@ -2048,7 +2048,8 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
     vars <- c(vars[-i], dv)
   }
   vars <- unique(vars)
-  vars <- all.vars(as.formula(paste("~", paste(vars, collapse = "+"))))
+  if(type == 1)
+    vars <- all.vars(as.formula(paste("~", paste(vars, collapse = "+"))))
   unique(vars)
 }
 
@@ -2102,11 +2103,11 @@ fake.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL)
   if(all(!lhs & !rhs))
     return(0 ~ 0)
   if(all(rhs)) {
-    f <- paste(all.vars.formula(formula, lhs = FALSE, rhs = TRUE, specials, intercept = TRUE), collapse = "+")
+    f <- paste(all.vars.formula(formula, lhs = FALSE, rhs = TRUE, specials, intercept = TRUE, type = 2), collapse = "+")
     if(f == "") f <- "-1"
   }
   if(all(lhs))
-    f <- paste(all.vars.formula(formula, lhs = TRUE, rhs = FALSE), "~", if(!is.null(f)) f else 0)
+    f <- paste(all.vars.formula(formula, lhs = TRUE, rhs = FALSE, type = 2), "~", if(!is.null(f)) f else 0)
   else
     f <- paste("~", if(!is.null(f)) f else 0)
   f <- as.formula(f, env = environment(formula))
