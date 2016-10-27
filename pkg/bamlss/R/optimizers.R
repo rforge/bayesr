@@ -1788,161 +1788,161 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind, uind = NULL)
 
 
 ## Likelihood based boosting.
-boost_logLik <- function(x, y, family, weights = NULL, offset = NULL,
-  criterion = c("AICc", "BIC", "AIC"),
-  nu = 1, df = 4, maxit = 100, mstop = NULL, best = TRUE,
-  verbose = TRUE, digits = 4,
-  eps = .Machine$double.eps^0.25, plot = TRUE, ...)
-{
-  if(!is.null(mstop))
-    maxit <- mstop
+#boost_logLik <- function(x, y, family, weights = NULL, offset = NULL,
+#  criterion = c("AICc", "BIC", "AIC"),
+#  nu = 1, df = 4, maxit = 100, mstop = NULL, best = TRUE,
+#  verbose = TRUE, digits = 4,
+#  eps = .Machine$double.eps^0.25, plot = TRUE, ...)
+#{
+#  if(!is.null(mstop))
+#    maxit <- mstop
 
-  if(is.null(attr(x, "bamlss.engine.setup")))
-    x <- bamlss.engine.setup(x, ...)
+#  if(is.null(attr(x, "bamlss.engine.setup")))
+#    x <- bamlss.engine.setup(x, ...)
 
-  nx <- family$names
-  if(!all(nx %in% names(x)))
-    stop("parameter names mismatch with family names!")
-  criterion <- match.arg(criterion)
+#  nx <- family$names
+#  if(!all(nx %in% names(x)))
+#    stop("parameter names mismatch with family names!")
+#  criterion <- match.arg(criterion)
 
-  np <- length(nx)
-  y <- y[[1]]
-  nobs <- if(is.null(dim(y))) length(y) else nrow(y)
+#  np <- length(nx)
+#  y <- y[[1]]
+#  nobs <- if(is.null(dim(y))) length(y) else nrow(y)
 
-  ## Setup boosting structure, i.e, all parametric
-  ## terms get an entry in $smooth.construct object.
-  ## Intercepts are initalized.
-  x <- boost.transform(x, y, df, family, weights, offset, maxit, eps, ...)
+#  ## Setup boosting structure, i.e, all parametric
+#  ## terms get an entry in $smooth.construct object.
+#  ## Intercepts are initalized.
+#  x <- boost.transform(x, y, df, family, weights, offset, maxit, eps, ...)
 
-  ## Create a list() that saves the states for
-  ## all parameters and model terms.
-  states <- make.state.list(x)
+#  ## Create a list() that saves the states for
+#  ## all parameters and model terms.
+#  states <- make.state.list(x)
 
-  ## Term selector help vectors.
-  select <- unlist(states)
-  term.names <- names(select)
+#  ## Term selector help vectors.
+#  select <- unlist(states)
+#  term.names <- names(select)
 
-  ## Extract actual predictor.
-  eta <- get.eta(x)
+#  ## Extract actual predictor.
+#  eta <- get.eta(x)
 
-  ## Initial parameters.
-  parameters <- get.all.par(x)
+#  ## Initial parameters.
+#  parameters <- get.all.par(x)
 
-  ## Start boosting.
-  eps0 <- 1; iter <- 1
-  save.ic <- save.ll <- NULL
-  ll <- family$loglik(y, family$map2par(eta))
-  while(iter <= maxit) {
-    eta0 <- eta
+#  ## Start boosting.
+#  eps0 <- 1; iter <- 1
+#  save.ic <- save.ll <- NULL
+#  ll <- family$loglik(y, family$map2par(eta))
+#  while(iter <= maxit) {
+#    eta0 <- eta
 
-    ## Cycle through all parameters
-    for(i in nx) {
-      peta <- family$map2par(eta)
+#    ## Cycle through all parameters
+#    for(i in nx) {
+#      peta <- family$map2par(eta)
 
-      ## Compute weights.
-      hess <- family$hess[[i]](y, peta, id = i)
+#      ## Compute weights.
+#      hess <- family$hess[[i]](y, peta, id = i)
 
-      ## Score.
-      score <- family$score[[i]](y, peta, id = i)
+#      ## Score.
+#      score <- family$score[[i]](y, peta, id = i)
 
-      ## Compute working observations.
-      z <- eta[[i]] + 1 / hess * score
+#      ## Compute working observations.
+#      z <- eta[[i]] + 1 / hess * score
 
-      ## Residuals.
-      resids <- z - eta[[i]]
+#      ## Residuals.
+#      resids <- z - eta[[i]]
 
-      for(j in names(x[[i]]$smooth.construct)) {
-        ## Get updated parameters.
-        states[[i]][[j]] <- boost_iwls(x[[i]]$smooth.construct[[j]], hess, resids, nu)
+#      for(j in names(x[[i]]$smooth.construct)) {
+#        ## Get updated parameters.
+#        states[[i]][[j]] <- boost_iwls(x[[i]]$smooth.construct[[j]], hess, resids, nu)
 
-        ## Compute likelihood contribution.
-        eta[[i]] <- eta[[i]] + fitted(states[[i]][[j]])
-        select[paste(i, j, sep = ".")] <- -1 * (ll - family$loglik(y, family$map2par(eta)))
-        eta[[i]] <- eta0[[i]]
-      }
-    }
+#        ## Compute likelihood contribution.
+#        eta[[i]] <- eta[[i]] + fitted(states[[i]][[j]])
+#        select[paste(i, j, sep = ".")] <- -1 * (ll - family$loglik(y, family$map2par(eta)))
+#        eta[[i]] <- eta0[[i]]
+#      }
+#    }
 
-    ## Which term to update.
-    take <- strsplit(term.names[which.max(select)], ".", fixed = TRUE)[[1]]
+#    ## Which term to update.
+#    take <- strsplit(term.names[which.max(select)], ".", fixed = TRUE)[[1]]
 
-    ## Update selected base learner.
-    eta[[take[1]]] <- eta[[take[1]]] + fitted(states[[take[1]]][[take[2]]])
+#    ## Update selected base learner.
+#    eta[[take[1]]] <- eta[[take[1]]] + fitted(states[[take[1]]][[take[2]]])
 
-    ## Write to x.
-    x[[take[1]]]$smooth.construct[[take[2]]]$state <- increase(x[[take[1]]]$smooth.construct[[take[2]]]$state, states[[take[1]]][[take[2]]])
-    x[[take[1]]]$smooth.construct[[take[2]]]$selected[iter] <- 1
-    x[[take[1]]]$smooth.construct[[take[2]]]$loglik[iter] <- max(select)
+#    ## Write to x.
+#    x[[take[1]]]$smooth.construct[[take[2]]]$state <- increase(x[[take[1]]]$smooth.construct[[take[2]]]$state, states[[take[1]]][[take[2]]])
+#    x[[take[1]]]$smooth.construct[[take[2]]]$selected[iter] <- 1
+#    x[[take[1]]]$smooth.construct[[take[2]]]$loglik[iter] <- max(select)
 
-    edf <- get.edf(x, type = 2)
+#    edf <- get.edf(x, type = 2)
 
-    eps0 <- do.call("cbind", eta)
-    eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
-    if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
+#    eps0 <- do.call("cbind", eta)
+#    eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
+#    if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
 
-    peta <- family$map2par(eta)
-    IC <- get.ic(family, y, peta, edf, nobs, criterion)
-    if(!is.null(save.ic) & best) {
-      if(all(IC < save.ic))
-        parameters <- get.all.par(x)
-    }
-    ll <- family$loglik(y, peta)
+#    peta <- family$map2par(eta)
+#    IC <- get.ic(family, y, peta, edf, nobs, criterion)
+#    if(!is.null(save.ic) & best) {
+#      if(all(IC < save.ic))
+#        parameters <- get.all.par(x)
+#    }
+#    ll <- family$loglik(y, peta)
 
-    save.ic <- c(save.ic, IC)
-    save.ll <- c(save.ll, ll)
+#    save.ic <- c(save.ic, IC)
+#    save.ll <- c(save.ll, ll)
 
-    if(verbose) {
-      cat(if(interactive()) "\r" else "\n")
-      vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
-        " logLik ", fmt(ll, width = 8, digits = digits),
-        " edf ", fmt(edf, width = 6, digits = digits),
-        " eps ", fmt(eps0, width = 6, digits = digits + 2),
-        " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
-      cat(vtxt)
+#    if(verbose) {
+#      cat(if(interactive()) "\r" else "\n")
+#      vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
+#        " logLik ", fmt(ll, width = 8, digits = digits),
+#        " edf ", fmt(edf, width = 6, digits = digits),
+#        " eps ", fmt(eps0, width = 6, digits = digits + 2),
+#        " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
+#      cat(vtxt)
 
-      if(.Platform$OS.type != "unix" & interactive()) flush.console()
-    }
+#      if(.Platform$OS.type != "unix" & interactive()) flush.console()
+#    }
 
-    iter <- iter + 1
-  }
+#    iter <- iter + 1
+#  }
 
-  if(verbose) cat("\n")
+#  if(verbose) cat("\n")
 
-  mstop <- which.min(save.ic)
+#  mstop <- which.min(save.ic)
 
-  ## Overwrite parameter state.
-  if(best) {
-    for(i in nx) {
-      rn <- NULL
-      for(j in names(x[[i]]$smooth.construct)) {
-        x[[i]]$smooth.construct[[j]]$state$parameters <- parameters[[i]]$s[[j]]
-        g <- get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "b")
-        if(!is.null(tau2 <- attr(parameters[[i]]$s[[j]], "true.tau2"))) {
-          x[[i]]$smooth.construct[[j]]$state$parameters <- set.par(x[[i]]$smooth.construct[[j]]$state$parameters,
-            tau2, "tau2")
-        }
-        x[[i]]$smooth.construct[[j]]$state$edf <- attr(parameters[[i]]$s[[j]], "edf")
-        if(is.null(x[[i]]$smooth.construct[[j]]$state$edf))
-          x[[i]]$smooth.construct[[j]]$state$edf <- 0
-      }
-    }
-  }
+#  ## Overwrite parameter state.
+#  if(best) {
+#    for(i in nx) {
+#      rn <- NULL
+#      for(j in names(x[[i]]$smooth.construct)) {
+#        x[[i]]$smooth.construct[[j]]$state$parameters <- parameters[[i]]$s[[j]]
+#        g <- get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "b")
+#        if(!is.null(tau2 <- attr(parameters[[i]]$s[[j]], "true.tau2"))) {
+#          x[[i]]$smooth.construct[[j]]$state$parameters <- set.par(x[[i]]$smooth.construct[[j]]$state$parameters,
+#            tau2, "tau2")
+#        }
+#        x[[i]]$smooth.construct[[j]]$state$edf <- attr(parameters[[i]]$s[[j]], "edf")
+#        if(is.null(x[[i]]$smooth.construct[[j]]$state$edf))
+#          x[[i]]$smooth.construct[[j]]$state$edf <- 0
+#      }
+#    }
+#  }
 
-  if(verbose) {
-    cat("---\n", criterion, "=", save.ic[mstop], "-> at mstop =", mstop, "\n---\n")
-  }
+#  if(verbose) {
+#    cat("---\n", criterion, "=", save.ic[mstop], "-> at mstop =", mstop, "\n---\n")
+#  }
 
-  bsum <- make.boost.summary(x, mstop, criterion, save.ic)
-  x <- boost.retransform(x)
+#  bsum <- make.boost.summary(x, mstop, criterion, save.ic)
+#  x <- boost.retransform(x)
 
-  list("parameters" = get.all.par(x), "fitted.values" = get.eta(x), "boost.summary" = bsum)
-}
+#  list("parameters" = get.all.par(x), "fitted.values" = get.eta(x), "boost.summary" = bsum)
+#}
 
 
 ## 2nd booster.
 boost <- function(x, y, family,
-  nu = 0.1, df = 4, maxit = 100, mstop = NULL,
+  nu = 0.1, df = 4, maxit = NULL, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
-  nback = 10, eps = .Machine$double.eps^0.25, plot = TRUE, ...)
+  eps = .Machine$double.eps^0.25, nback = 10, plot = TRUE, ...)
 {
   if(is.null(family$score))
     stop("need score functions in family object for boosting!")
@@ -1954,13 +1954,13 @@ boost <- function(x, y, family,
   if(!all(nx %in% names(x)))
     stop("parameter names mismatch with family names!")
 
-  if(!is.null(nback)) {
-    if(is.null(mstop))
-      mstop <- 10000
-  }
-
   if(!is.null(mstop))
     maxit <- mstop
+
+  if(!is.null(nback)) {
+    if(is.null(maxit))
+      maxit <- 10000
+  }
 
   if(is.null(attr(x, "bamlss.engine.setup")))
     x <- bamlss.engine.setup(x, df = df, ...)
@@ -2011,7 +2011,7 @@ boost <- function(x, y, family,
       peta <- family$map2par(eta)
 
       ## Actual gradient.
-      grad <- family$score[[i]](y, peta, id = i)
+      grad <- process.derivs(family$score[[i]](y, peta, id = i), is.weight = FALSE)
 
       ## Fit to gradient.
       for(j in names(x[[i]]$smooth.construct)) {
@@ -2083,25 +2083,25 @@ boost <- function(x, y, family,
 
   if(verbose) cat("\n")
 
-  bsum <- make.boost.summary(x, if(is.null(nback)) maxit else (iter - 1), "logLik", save.ll)
+  bsum <- make.boost.summary(x, if(is.null(nback)) maxit else (iter - 1), save.ll)
   if(plot)
     plot.boost.summary(bsum)
 
-  return(list("parameters" = parm2mat(parm),
+  return(list("parameters" = parm2mat(parm, if(is.null(nback)) maxit else (iter - 1)),
     "fitted.values" = get.eta(x),
     "boost.summary" = bsum))
 }
 
 
 ## Boost setup.
-boost.transform <- function(x, y, df = NULL, family, weights = NULL, offset = NULL,
-  maxit = 100, eps = .Machine$double.eps^0.25, ...)
+boost.transform <- function(x, y, df = NULL, family,
+  weights = NULL, offset = NULL, maxit = 100,
+  eps = .Machine$double.eps^0.25, ...)
 {
   np <- length(x)
   nx <- names(x)
 
   ## Initialize select indicator and intercepts.
-  eta <- get.eta(x)
   for(j in 1:np) {
     for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
       if(!is.null(df))
@@ -2162,31 +2162,39 @@ boost.transform <- function(x, y, df = NULL, family, weights = NULL, offset = NU
     }
   }
 
-  ## Initialize intercepts.
-  eps0 <- eps + 1; iter <- 1
+  eta <- get.eta(x)
+  eta <- init.eta(eta, y, family, nobs)
+  nobs <- length(eta[[1]])
+  start <- unlist(lapply(eta, mean, na.rm = TRUE))
 
-  while(eps0 > eps & iter < maxit) {
-    eta0 <- eta
-    ## Cycle through all parameters
-    for(j in 1:np) {
-      for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-        if(inherits(x[[nx[j]]]$smooth.construct[[sj]], "model.matrix") & x[[nx[j]]]$smooth.construct[[sj]]$label == "(Intercept)") {
-          ## Get updated parameters.
-          p.state <- bfit_iwls(x[[nx[j]]]$smooth.construct[[sj]],
-            family, y, eta, nx[j], weights = weights[[nx[j]]], offset = offset[[nx[j]]], ...)
+  objfun <- function(par) {
+    eta <- list()
+    for(i in seq_along(nx))
+      eta[[nx[i]]] <- rep(par[i], length = nobs)
+    ll <- family$loglik(y, family$map2par(eta))
+    return(ll)
+  }
 
-          ## Update predictor and smooth fit.
-          eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth.construct[[sj]]$state) + fitted(p.state)
-
-          x[[nx[j]]]$smooth.construct[[sj]]$state <- p.state
-        }
-      }
+  gradfun <- function(par) {
+    eta <- list()
+    for(i in seq_along(nx))
+      eta[[nx[i]]] <- rep(par[i], length = nobs)
+    peta <- family$map2par(eta)
+    grad <- par
+    for(j in nx) {
+      score <- process.derivs(family$score[[j]](y, peta, id = j), is.weight = FALSE)
+      grad[i] <- mean(score)
     }
+    return(grad)
+  }
 
-    eps0 <- do.call("cbind", eta)
-    eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
-    if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
-    iter <- iter + 1
+  opt <- optim(start, fn = objfun, gr = gradfun, method = "BFGS", control = list(fnscale = -1))
+
+  for(i in nx) {
+    if(!is.null(x[[i]]$smooth.construct[["(Intercept)"]])) {
+      x[[i]]$smooth.construct[["(Intercept)"]]$state$parameters[1] <- opt$par[i]
+      x[[i]]$smooth.construct[["(Intercept)"]]$state$fitted.values <- rep(opt$par[i], length = nobs)
+    }
   }
 
   return(x)
@@ -2241,7 +2249,7 @@ make.par.list <- function(x, iter)
   return(rval)
 }
 
-parm2mat <- function(x)
+parm2mat <- function(x, mstop)
 {
   nx <- names(x)
   for(i in seq_along(x)) {
@@ -2250,7 +2258,7 @@ parm2mat <- function(x)
       if(!is.null(attr(x[[i]][[j]], "is.model.matrix")))
         is.mm <- c(is.mm, j)
       cn <- colnames(x[[i]][[j]])
-      x[[i]][[j]] <- apply(x[[i]][[j]], 2, cumsum)
+      x[[i]][[j]] <- apply(x[[i]][[j]][1:mstop, , drop = FALSE], 2, cumsum)
       colnames(x[[i]][[j]]) <- cn
     }
     if(!is.null(is.mm)) {
@@ -2473,7 +2481,7 @@ increase <- function(state0, state1)
 
 
 ## Extract summary for boosting.
-make.boost.summary <- function(x, mstop, criterion, save.ic)
+make.boost.summary <- function(x, mstop, save.ic)
 {
   nx <- names(x)
   labels <- NULL
@@ -2497,7 +2505,7 @@ make.boost.summary <- function(x, mstop, criterion, save.ic)
   }
   colnames(ll.contrib) <- labels
   names(bsum) <- nx
-  bsum <- list("summary" = bsum, "mstop" = mstop, "criterion" = criterion,
+  bsum <- list("summary" = bsum, "mstop" = mstop,
     "ic" = save.ic[1:mstop], "loglik" = ll.contrib)
   class(bsum) <- "boost.summary"
   return(bsum)
@@ -2513,7 +2521,9 @@ boost.summary <- function(object, ...)
 
 
 ## Smallish print function for boost summaries.
-print.boost.summary <- function(x, summary = TRUE, plot = TRUE, ...)
+print.boost.summary <- function(x, summary = TRUE, plot = TRUE,
+  which = c("loglik", "loglik.contrib"), intercept = TRUE,
+  spar = TRUE, ...)
 {
   if(inherits(x, "bamlss"))
     x <- x$model.stats$optimizer$boost.summary
@@ -2534,18 +2544,41 @@ print.boost.summary <- function(x, summary = TRUE, plot = TRUE, ...)
   }
 
   if(plot) {
-    op <- par(no.readonly = TRUE)
-    on.exit(par(op))
-    par(mfrow = c(1, 2), mar = c(5.1, 4.1, 2.1, 2.1))
-    plot(x$ic, type = "l", xlab = "Iteration", ylab = x$criterion, ...)
-    abline(v = x$mstop, lwd = 3, col = "lightgray")
-    axis(3, at = x$mstop, labels = paste("mstop =", x$mstop))
-    par(mar = c(5.1, 4.1, 2.1, 10.1))
-    matplot(1:nrow(x$loglik), x$loglik, type = "l", lty = 1,
-      xlab = "Iteration", ylab = "LogLik contribution", col = "black", ...)
-    abline(v = x$mstop, lwd = 3, col = "lightgray")
-    axis(4, at = x$loglik[nrow(x$loglik), ], labels = colnames(x$loglik), las = 1)
-    axis(3, at = x$mstop, labels = paste("mstop =", x$mstop))
+    if(!is.character(which)) {
+      which <- c("loglik", "loglik.contrib", "parameters")[as.integer(which)]
+    } else {
+      which <- tolower(which)
+      which <- match.arg(which, several.ok = TRUE)
+    }
+
+    if(spar) {
+      op <- par(no.readonly = TRUE)
+      on.exit(par(op))
+      par(mfrow = c(1, length(which)))
+    }
+
+    for(w in which) {
+      if(w == "loglik") {
+        if(spar)
+          par(mar = c(5.1, 4.1, 2.1, 2.1))
+        plot(x$ic, type = "l", xlab = "Iteration", ylab = "logLik", ...)
+        abline(v = x$mstop, lwd = 3, col = "lightgray")
+        axis(3, at = x$mstop, labels = paste("mstop =", x$mstop))
+      }
+      if(w == "loglik.contrib") {
+        if(spar)
+          par(mar = c(5.1, 4.1, 2.1, 10.1))
+        if(!intercept) {
+          j <- grep("(Intercept)", colnames(x$loglik), fixed = TRUE)
+          x$loglik <- x$loglik[, -j]
+        }
+        matplot(x$loglik, type = "l", lty = 1,
+          xlab = "Iteration", ylab = "LogLik contribution", col = "black", ...)
+        abline(v = x$mstop, lwd = 3, col = "lightgray")
+        axis(4, at = x$loglik[nrow(x$loglik), ], labels = colnames(x$loglik), las = 1)
+        axis(3, at = x$mstop, labels = paste("mstop =", x$mstop))
+      }
+    }
   }
 
   return(invisible(x))
@@ -2555,6 +2588,51 @@ print.boost.summary <- function(x, summary = TRUE, plot = TRUE, ...)
 plot.boost.summary <- function(x, ...)
 {
   print.boost.summary(x, summary = FALSE, plot = TRUE, ...) 
+}
+
+boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters"),
+  intercept = TRUE, spar = TRUE, mstop = NULL, ...)
+{
+  if(!is.character(which)) {
+    which <- c("loglik", "loglik.contrib", "parameters")[as.integer(which)]
+  } else {
+    which <- tolower(which)
+    which <- match.arg(which, several.ok = TRUE)
+  }
+
+  if(spar) {
+    op <- par(no.readonly = TRUE)
+    on.exit(par(op))
+    par(mfrow = c(1, length(which)))
+  }
+
+  if(is.null(mstop))
+    mstop <- x$model.stats$optimizer$boost.summary$mstop
+  x$model.stats$optimizer$boost.summary$mstop <- mstop
+  x$model.stats$optimizer$boost.summary$ic <- x$model.stats$optimizer$boost.summary$ic[1:mstop]
+  x$model.stats$optimizer$boost.summary$loglik <- x$model.stats$optimizer$boost.summary$loglik[1:mstop, , drop = FALSE]
+
+  for(w in which) {
+    if(w %in% c("loglik", "loglik.contrib")) {
+      if((w == "loglik") & spar)
+        par(mar = c(5.1, 4.1, 2.1, 2.1))
+      if((w == "loglik.contrib") & spar)
+        par(mar = c(5.1, 4.1, 2.1, 10.1))
+      plot.boost.summary(x, which = w, spar = FALSE, intercept = intercept, ...)
+    }
+    if(w == "parameters") {
+      if(spar)
+        par(mar = c(5.1, 4.1, 2.1, 10.1))
+      p <- x$parameters[1:mstop, , drop = FALSE]
+      if(!intercept)
+        p <- p[, -grep("(Intercept)", colnames(p), fixed = TRUE), drop = FALSE]
+      matplot(p, type = "l", lty = 1, col = "black", xlab = "Iteration",
+        ylab = "Value")
+      abline(v = mstop, lwd = 3, col = "lightgray")
+      axis(4, at = p[nrow(p), ], labels = colnames(p), las = 1)
+      axis(3, at = mstop, labels = paste("mstop =", mstop))
+    }
+  }
 }
 
 

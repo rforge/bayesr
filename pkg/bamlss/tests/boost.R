@@ -21,8 +21,30 @@ f <- list(
 b <- bamlss(f, data = d, optimizer = boost, sampler = FALSE, scale.d = TRUE)
 
 load("cars.rda")
-f <- price ~ -1 + poly(age, 3) + poly(kilometer, 3) +
-  poly(TIA, 3) + abs + sunroof
+f <- price ~ poly(age, 3) + poly(kilometer, 3) +
+  poly(TIA, 3) + abs + sunroof - 1
 f <- update.formula(f, ~ .^2)
 
 b <- bamlss(f, data = cars, optimizer = boost, sampler = FALSE, scale.d = TRUE)
+
+
+d <- list()
+n <- 100
+for(i in 1:n)
+  d[[paste("x", i, sep = "")]] <- runif(500)
+d <- as.data.frame(d)
+
+j <- sample(1:ncol(d), size = 8, replace = FALSE)
+coef <- rep(0, ncol(d))
+coef[j] <- runif(length(j), -1, 1)
+d$y <- as.matrix(d) %*% coef + rnorm(500, sd = 0.3)
+
+f <- paste(names(d)[-ncol(d)], collapse = "+")
+f <- as.formula(paste("y~", f, sep = ""))
+
+b <- bamlss(f, data = d, optimizer = boost, sampler = FALSE, scale.d = TRUE)
+
+
+d <- GAMart()
+b <- bamlss(num ~ x1 + x2 + x3 + s(x1) + s(x2) + s(x3), data = d, optimizer = boost, sampler = FALSE, scale.d = TRUE)
+

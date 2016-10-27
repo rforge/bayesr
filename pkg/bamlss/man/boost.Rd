@@ -1,7 +1,7 @@
 \name{boost}
 \alias{boost}
 \alias{boost.summary}
-\alias{boost.summary}
+\alias{boost.plot}
 \alias{print.boost.summary}
 \alias{plot.boost.summary}
 
@@ -15,16 +15,22 @@
 \usage{
 ## Gradient boosting optimizer:
 boost(x, y, family,
-  nu = 0.1, df = 4, maxit = 100, mstop = NULL,
+  nu = 0.1, df = 4, maxit = NULL, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
-  nback = 10, Machine$double.eps^0.25,
+  eps = .Machine$double.eps^0.25, nback = 10,
   plot = TRUE, ...)
 
 ## Boosting summary extractor:
 boost.summary(object, ...)
 
+## Plot all boosting paths.
+boost.plot(x, which = c("loglik", "loglik.contrib", "parameters"),
+  intercept = TRUE, spar = TRUE, mstop = NULL, ...)
+
 ## Boosting summary printing and plotting:
-\method{print}{boost.summary}(x, summary = TRUE, plot = TRUE, ...)
+\method{print}{boost.summary}(x, summary = TRUE, plot = TRUE,
+  which = c("loglik", "loglik.contrib"), intercept = TRUE,
+  spar = TRUE, ...)
 \method{plot}{boost.summary}(x, ...)
 }
 
@@ -45,14 +51,16 @@ boost.summary(object, ...)
   \item{verbose}{Print information during runtime of the algorithm.}
   \item{digits}{Set the digits for printing when \code{verbose = TRUE}.}
   \item{flush}{use \code{\link{flush.console}} for displaying the current output in the console.}
-  \item{nback}{If \code{nback} is not \code{NULL}, then the algorithm stops if the difference
-    of relative changes of predictors of the last \code{nback} iterations is smaller or equal to
-    \code{eps}. If argument \code{mstop} is \code{NULL} the default is to set relatively large to
-    \code{mstop = 10000}.}
-  \item{eps}{The relative convergence tolerance of the boosting algorithm using \code{nback}.}
+  \item{eps}{The relative change of predictors in each boosting iteration.}
+  \item{nback}{If \code{nback} is not \code{NULL}, then the algorithm stops if the
+    the relative change of predictors of the last \code{nback} iterations is smaller or
+    equal to \code{eps}. If \code{maxit = NULL} the maximum number of iterations is set to 10000.}
   \item{plot}{Should the boosting summary be printed and plotted?}
   \item{object}{A \code{\link{bamlss}} object that was fitted using \code{boost()}.}
   \item{summary}{Should the summary be printed?}
+  \item{which}{Which of the three provided plots should be created?}
+  \item{intercept}{Should the coefficient paths of intercepts be dropped in the plot?}
+  \item{spar}{Should graphical parmeters be set with \code{\link[graphics]{par}}?}
   \item{\dots}{For function \code{boost()}, arguments passed to \code{\link{bamlss.engine.setup}}.
     for function \code{boost.summary()} arguments passed to function \code{print.boost.summary()}.}
 }
@@ -92,6 +100,7 @@ plot(b)
 
 ## Print and plot the boosting summary.
 boost.summary(b)
+boost.plot(b)
 
 ## Extract estimated parameters for certain
 ## boosting iterations.

@@ -149,7 +149,8 @@ export(
   
   ## Boosting
   "boost",
-  "boost.summary"
+  "boost.summary",
+  "boost.plot"
 )
 
 S3method("plot", "bamlss")

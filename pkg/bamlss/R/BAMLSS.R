@@ -541,7 +541,7 @@ sparse.setup <- function(x, S = NULL, ...)
     if(!is.list(S))
       S <- list(S)
     for(j in seq_along(S))
-      x <- x + S[[j]]
+      x <- x + if(length(S[[j]]) < 1) 0 else S[[j]]
   }
   index.crossprod <- if(!symmetric) sparse.matrix.index(x, ...) else NULL
   setup <- list(
@@ -2441,6 +2441,8 @@ quick_quantiles <- function(X, samples)
 
 fitted_matrix <- function(X, samples)
 {
+  if(ncol(X) != ncol(samples))
+    stop("dimensions of design matrix and samples do not match!")
   fit <- .Call("fitted_matrix", X, as.matrix(samples), PACKAGE = "bamlss")
 }
 
@@ -2692,6 +2694,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   if(!is.null(attr(object, "fixed.names")))
     names(newdata) <- rmf(names(newdata))
   nn <- names(newdata)
+  nn <- all.vars(as.formula(paste("~", paste(nn, collapse = "+"))))
   rn <- response.name(object, keep.functions = TRUE)
   nn <- nn[nn != rn]
   tl <- term.labels2(object, model = model, intercept = intercept, type = 2)
@@ -2913,10 +2916,10 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
       enames <- enames[-i]  
   }
   ec <- sapply(enames, function(x) {
-    paste(strsplit(x, "")[[1]][1:2], collapse = "")
+    paste(strsplit(x, "", fixed = TRUE)[[1]][1:2], collapse = "")
   })
   enames2 <- sapply(enames, function(x) {
-    paste(strsplit(x, "")[[1]][-c(1:2)], collapse = "")
+    paste(strsplit(x, "", fixed = TRUE)[[1]][-c(1:2)], collapse = "")
   })
   eta <- matrix(0, nrow = nrow(data), ncol = nrow(samps))
   if(length(i <- grep("p.", ec))) {
@@ -2926,9 +2929,24 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
         X <- model.matrix(f, data = data)
         if(has_intercept)
           X <- X[, colnames(X) != "(Intercept)", drop = FALSE]
-        sn <- snames[grep2(paste(id, "p", j, sep = "."), snames, fixed = TRUE)]
-        if(!length(sn))
+        if(grepl(":", j)) {
+          jt <- strsplit(j, ":", fixed = TRUE)[[1]]
+          ok <- NULL
+          for(jjt in jt)
+            ok <- cbind(ok, grepl(jjt, snames, fixed = TRUE), grepl(paste(id, "p", sep = "."), snames, fixed = TRUE) | grepl(paste(id, "p,model.matrix", sep = "."), snames, fixed = TRUE))
+          ok <- apply(ok, 1, all)
+          sn <- snames[ok]
+        } else {
+          sn <- snames[grep2(paste(id, "p", j, sep = "."), snames, fixed = TRUE)]
+          sn <- sn[!grepl(":", sn, fixed = TRUE)]
+        }
+        if(!length(sn)) {
           sn <- snames[grep2(paste(id, "p.model.matrix", j, sep = "."), snames, fixed = TRUE)]
+        }
+        if(ncol(X) > length(sn)) {
+          sn2 <- gsub(paste(id, "p.", sep = "."), "", sn, fixed = TRUE)
+          X <- X[, sn2, drop = FALSE]
+        }
         eta <- eta + fitted_matrix(X, samps[, sn, drop = FALSE])
       } else {
         sn <- snames[grep2(paste(id, "p", j, sep = "."), snames, fixed = TRUE)]
