@@ -2084,8 +2084,11 @@ all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
       tl[j] <- gsub(" ", "", tcall$label)
       if(!is.null(tcall$by)) {
         if(tcall$by != "NA") {
-          if(!grepl("by=", tl[j], fixed = TRUE))
-            tl[j] <- gsub(")", paste(",by=", tcall$by, ")", sep = ""), tl[j], fixed = TRUE)
+          if(!grepl("by=", tl[j], fixed = TRUE)) {
+            tlt <- strsplit(tl[j], "")[[1]]
+            tlt <- paste(tlt[1:(length(tlt) - 1)], collapse = "")
+            tl[j] <- paste(tlt, ",by=", tcall$by, ")", sep = "")
+          }
         }
       }
     }
@@ -2093,7 +2096,6 @@ all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
       tl[sid] <- paste("s", tl[sid], sep = ".")
     labs <- tl
   } else labs <- if(full.names) paste("p", tl, sep = ".") else tl
-
   unique(labs)
 }
 
@@ -2463,15 +2465,18 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
   tterms <- NULL
   for(l in nt:1) {
     tterm <- x$term[l]
-    for(char in c("(", ")", "[", "]"))
+    for(char in c("(", ")", "[", "]")) {
       tterm <- gsub(char, ".", tterm, fixed = TRUE)
+    }
     if(inherits(data[[tterm]], "ts"))
       data[[tterm]] <- as.numeric(data[[tterm]])
     tterms <- c(tterms, tterm)
   }
 
-  for(char in c("(", ")", "[", "]"))
+  for(char in c("(", ")", "[", "]")) {
     colnames(data) <- gsub(char, ".", colnames(data), fixed = TRUE)
+    x$by <- gsub(char, ".", x$by, fixed = TRUE)
+  }
 
   ## Data for rug plotting.
   rugp <- if(nt < 2 & rug) data[[x$term]] else NULL
@@ -5249,6 +5254,10 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
 
           ## Prediction matrix.
           get.X <- function(x) { ## FIXME: time(x)
+            for(char in c("(", ")", "[", "]")) {
+              obj$smooth.construct[[j]]$term <- gsub(char, ".", obj$smooth.construct[[j]]$term, fixed = TRUE)
+              obj$smooth.construct[[j]]$by <- gsub(char, ".", obj$smooth.construct[[j]]$by, fixed = TRUE)
+            }
             if(is.null(obj$smooth.construct[[j]]$PredictMat)) {
               X <- PredictMat(obj$smooth.construct[[j]], x)
             } else {
