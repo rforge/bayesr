@@ -2027,7 +2027,6 @@ boost <- function(x, y, family,
 
       ## Compute likelihood contribution.
       eta[[i]] <- eta[[i]] + fitted(states[[i]][[select[i]]])
-
       loglik[i] <- -1 * (ll - family$loglik(y, family$map2par(eta)))
       eta[[i]] <- eta0[[i]]
     }
