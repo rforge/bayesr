@@ -62,7 +62,7 @@ rJM(hazard, censoring, x, r,
   The function simulates longitudinal data basing on the given specification at given \code{times}.
   The full hazard is built from all joint model predictors \eqn{\eta_{\mu}}, \eqn{\eta_{\sigma}},
   \eqn{\eta_{\lambda}}, \eqn{\eta_{\gamma}}, \eqn{\eta_{\alpha}} as presented in
-  Koehler et al. (2016), see also {\code{\link{jm_bamlss}}}. Survival times are sampled using the inversion
+  Koehler, Umlauf, and Greven (2016), see also {\code{\link{jm_bamlss}}}. Survival times are sampled using the inversion
   method (cf. Bender, Augustin, & Blettner, 2005). Additional censoring and missingness is
   introduced. The longitudinal information is censored according to the survival information. The
   user can also specify own predictors and use only \code{rJM} to simulate survival times
@@ -91,7 +91,7 @@ rJM(hazard, censoring, x, r,
     \item{data}{Simulated dataset in long format including all longitudinal and survival covariates.}
     \item{data_grid}{Dataset of the time-varying survival predictors which are not subject specific,
       evaluated at a grid of fixed time points.}
-    \item{data_full}{Simulated data set prior to censoring of longitudinal missings. Useful to
+    \item{data_full}{Simulated data set prior to generating longitudinal missings. Useful to
       assess the longitudinal fit.}
   For \code{full = FALSE} only the first dataset is returned. 
 
@@ -110,7 +110,7 @@ rJM(hazard, censoring, x, r,
   Generating Survival Times to Simulate Cox Proportional Hazards Models.
   \emph{Statistics in Medicine}, \bold{24}, 1713-1723.
   
-  Koehler N., Umlauf N., Greven S .(2016). Flexible Bayesian Additive Joint Models with an
+   Koehler N, Umlauf N, Beyerlein, A., Winkler, C., Ziegler, A., and Greven S (2016). Flexible Bayesian Additive Joint Models with an
     Application to Type 1 Diabetes Research. \emph{(submitted)}
 }
 
