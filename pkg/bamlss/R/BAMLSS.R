@@ -2752,6 +2752,12 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
     samps <- as.mcmc(samps)
   }
 
+  ## Remove samples not needed for predictions!
+  cn <- colnames(samps)
+  cn <- cn[-grep2(c(".tau2", ".alpha", ".edf", ".accepted", ".dic", ".loglik", ".logpost"),
+    tolower(cn), fixed = TRUE)]
+  samps <- samps[, cn, drop = FALSE]
+
   env <- environment(object$formula)
   enames <- lapply(enames, function(x) {
     if(is.null(x)) return(NULL)
@@ -2952,7 +2958,8 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
         sn <- snames[grep2(paste(id, "p", j, sep = "."), snames, fixed = TRUE)]
         if(!length(sn))
           sn <- snames[grep2(paste(id, "p.model.matrix", j, sep = "."), snames, fixed = TRUE)]
-        eta <- eta + fitted_matrix(matrix(1, nrow = nrow(data), ncol = 1), samps[, sn, drop = FALSE])
+        if(length(sn))
+          eta <- eta + fitted_matrix(matrix(1, nrow = nrow(data), ncol = 1), samps[, sn, drop = FALSE])
       }
     }
   }
@@ -5746,8 +5753,11 @@ term.labels2 <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
   is.bamlss <- FALSE
   if(inherits(x, "bamlss") | inherits(x, "bamlss.frame")) {
     stl <- lapply(x$x, function(x) {
-      if(!is.null(x$smooth.construct))
-        names(x$smooth.construct)
+      if(!is.null(x$smooth.construct)) {
+        nst <- names(x$smooth.construct)
+        nst <- nst[nst != "model.matrix"]
+        if(length(nst)) return(nst) else return(NULL)
+      } else return(NULL)
     })
     is.bamlss <- TRUE
     x <- terms(x, drop = FALSE)
