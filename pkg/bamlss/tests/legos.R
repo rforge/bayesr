@@ -324,6 +324,10 @@ f1 <- function(x) exp(2 * x)
 f2 <- function(x) 0.2 * x^11 * (10 * (1 - x))^6 + 10 * (10 * x)^3 * (1 - x)^10
 f3 <- function(x) sin(x * 3) - 3
 f4 <- function(x) cos(x * 6) - 2
+f5 <- function(x) {
+  eta <- sin(scale2(x, -3, 3))
+  eta / sqrt(1 + eta^2)
+}
 
 n <- 300
 x0 <- runif(n); x1 <- runif(n);
@@ -332,7 +336,8 @@ y <- matrix(0, n, 2)
 for(i in 1:n) {
   s1 <- exp(f3(x1[i]))
   s2 <- exp(f4(x2[i]))
-  V <- matrix(c(s1^2, 0, 0, s2^2), 2, 2)
+  rho <- f5(x3[i])
+  V <- matrix(c(s1^2, rho * s1 * s2, rho * s1 * s2, s2^2), 2, 2)
   mu <- c(f0(x0[i]) + f1(x1[i]), f2(x2[i]))
   y[i,] <- rmvn(1, mu, V)
 }
@@ -344,8 +349,9 @@ f <- list(
   y1 ~ s(x2) + s(x3),
   sigma1 ~ s(x1),
   sigma2 ~ s(x2),
-  rho ~ 1
+  rho12 ~ s(x3)
 )
 
-b <- bamlss(f, family = "mvn", data = dat)
+b <- bamlss(f, family = ".mvnorm", data = dat, optimizer = boost, sampler = FALSE,
+  nback = NULL, maxit = 30000, nu = 0.01)
 

@@ -1748,6 +1748,85 @@ mvnorm_bamlss <- function(...)
 }
 
 
+.mvnorm_bamlss <- function(k = 2, ...)
+{
+  mu <- paste("mu", 1:k, sep = "")
+  sigma <- paste("sigma", 1:k, sep = "")
+  
+  rho <- NULL
+  for(i in 1:k) {
+    for(j in 1:k) {
+      if(i < j)
+        rho <- c(rho, paste("rho", i, j, sep = ""))
+    }
+  }
+  links <- c(rep("identity", length(mu)), rep("log", length(sigma)), rep("rhogit", length(rho)))
+  names(links) <- c(mu, sigma, rho)
+
+  rval <- list(
+    "family" = ".mvnorm",
+    "names" = c(mu, sigma, rho),
+    "links" = links,
+    "d" = function(y, par, log = FALSE) {
+      par <- do.call("cbind", par)
+      cn <- colnames(par)
+      sj <- grep("sigma", cn)
+      mj <- grep("mu", cn)
+      rj <- grep("rho", cn)[1]
+      n <- length(y[, 1])
+      d <- rep(0, n)
+      for(i in 1:n) {
+        Sigma <- diag(par[i, sj])
+        l <- 0
+        for(ii in 1:k) {
+          for(jj in 1:ii) {
+            if(jj < ii) {
+              Sigma[ii, jj] <- par[i, rj + l]
+              Sigma[jj, ii] <- par[i, rj + l]
+              l <- l + 1
+            }
+          }
+        }
+        d[i] <- dmvnorm(y[i, ], par[i, mj], sigma = Sigma, log = log)
+      }
+      return(d)
+    },
+    "p" = function(y, par, ...) {
+      p <- NULL
+      for(j in 1:k) {
+        p <- cbind(p, pnorm(y[, j],
+          mean = par[[paste("mu", j, sep = "")]],
+          sd = par[[paste("sigma", j , sep = "")]], ...))
+      }
+      colnames(p) <- colnames(y)
+      p
+    },
+    "mu" = function(y, par, ...) {
+      do.call("cbind", par[grep("mu", names(par))])
+    }
+  )
+
+  mu_calls <- sigma_calls <- rho_calls <- NULL
+  for(j in seq_along(mu))
+    mu_calls <- c(mu_calls, paste("function(y, ...) { (y[,", j, "] + mean(y[,", j , "])) / 2 }"))
+  for(j in seq_along(sigma))
+    sigma_calls <- c(sigma_calls, paste("function(y, ...) { rep(sd(y[,", j , "]), length(y[,", j, "])) }"))
+  for(j in seq_along(rho))
+    rho_calls <- c(rho_calls, "function(y, ...) { rep(0, length(y[, 1])) }")
+  init <- list()
+  for(j in seq_along(mu))
+    init[[mu[j]]] <- eval(parse(text = mu_calls[j]))
+  for(j in seq_along(sigma))
+    init[[sigma[j]]] <- eval(parse(text = sigma_calls[j]))
+  for(j in seq_along(rho))
+    init[[rho[j]]] <- eval(parse(text = rho_calls[j]))
+  rval$initialize <- init
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+
 bivprobit_bamlss <- function(...)
 {
   links <- c(mu1 = "identity", mu2 = "identity", rho = "rhogit")
