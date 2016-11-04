@@ -828,7 +828,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   ++nProtected;
 
   F77_CALL(dpotri)("Upper", &nc, PINVptr, &nc, &info);
-	F77_CALL(dpotrf)("Upper", &nc, PINVLptr, &nc, &info);
+  F77_CALL(dpotrf)("Upper", &nc, PINVLptr, &nc, &info);
 
   sdiag0 = 0.0;
   for(j = 0; j < nc; j++) {
@@ -1322,7 +1322,7 @@ SEXP gmcmc_iwls_gp(SEXP family, SEXP theta, SEXP id,
   ++nProtected;
 
   F77_CALL(dpotri)("Upper", &nc, PINVptr, &nc, &info);
-	F77_CALL(dpotrf)("Upper", &nc, PINVLptr, &nc, &info);
+  F77_CALL(dpotrf)("Upper", &nc, PINVLptr, &nc, &info);
 
   sdiag0 = 0.0;
   for(j = 0; j < nc; j++) {
@@ -2404,6 +2404,84 @@ SEXP mvn_loglik(SEXP y1, SEXP y2, SEXP mu1, SEXP mu2, SEXP sigma1, SEXP sigma2, 
   UNPROTECT(1);
 
   return ll;
+}
+
+
+SEXP log_dmvnorm(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ)
+{
+  int i, j, jj, l;
+  int n = INTEGER(N)[0];
+  int k = INTEGER(K)[0];
+  int info;
+
+  SEXP Sigma;
+  PROTECT(Sigma = allocVector(REALSXP, k * k));
+  double *Sigmaptr = REAL(Sigma);
+  double *Pptr = REAL(PAR);
+
+  int *MJptr = INTEGER(MJ);
+  int *SJptr = INTEGER(SJ);
+  int rj = INTEGER(RJ)[0];
+
+  SEXP ymu;
+  PROTECT(ymu = allocVector(REALSXP, k));
+  double *ymuptr = REAL(ymu);
+  double *Yptr = REAL(Y);
+
+  SEXP d;
+  PROTECT(d = allocVector(REALSXP, n));
+  double *dptr = REAL(d);
+
+  double det = 0.0;
+  double sum = 0.0;
+  double n2 = - n / 2;
+
+  for(j = 0; j < k; j++) {
+    for(i = 0; i < k; i++) {
+      Sigmaptr[i + k * j] = 0.0;
+    }
+  }
+
+  for(i = 0; i < n; i++) {
+    l = 0;
+    for(j = 0; j < k; j++) {
+      Sigmaptr[j + k * j] = Pptr[i + n * SJptr[j]];
+      for(jj = 0; jj < j; jj++) {
+        Sigmaptr[j + k * jj] = Pptr[i + n * rj + l];
+        Sigmaptr[jj + k * j] = Sigmaptr[j + k * jj];
+        l <- l + 1;
+      }
+      ymuptr[j] = Yptr[i + n * j] - Pptr[i + n * SJptr[j]];
+    }
+
+    F77_CALL(dpotrf)("Upper", &k, Sigmaptr, &k, &info);
+
+    for(j = 0; j < k; j++)
+      det += log(Sigmaptr[j + k * j]);
+    det *= 2;
+
+    F77_CALL(dpotri)("Upper", &k, Sigmaptr, &k, &info);
+
+    for(j = 0; j < k; j++) {
+      for(jj = j + 1; jj < k; jj++) {
+        Sigmaptr[jj + j * k] = Sigmaptr[j + jj * k];
+      }
+    }
+
+    for(j = 0; j < k; j++) {
+      for(jj = 0; jj < k; jj++) {
+        sum += Sigmaptr[j + jj * k] * pow(ymuptr[j], 2.0);
+      }
+    }
+
+    dptr[i] = n2 * det - 0.5 * sum;
+
+    det = 0.0;
+    sum = 0.0;
+  }
+
+  UNPROTECT(3);
+  return d;
 }
 
 

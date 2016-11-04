@@ -35,7 +35,7 @@ cox_bamlss(...)
 gaussian_bamlss(...)
 gamma_bamlss(...)
 multinomial_bamlss(...)
-mvnorm_bamlss(...)
+mvnorm_bamlss(k = 2, ...)
 poisson_bamlss(...)
 
 ## Extractor functions:
@@ -46,6 +46,8 @@ poisson_bamlss(...)
 \arguments{
   \item{object}{An object of class \code{"bamlss"} or \code{"bamlss.frame"}, see function
     \code{\link{bamlss}} and \code{\link{bamlss.frame}}.}
+  \item{k}{The dimension of the multivariate normal. Note, if \code{k = 1} function
+    \code{gaussian_bamlss()} is called.}
   \item{\dots}{Arguments passed to functions that are called within the family object.}
 }
 

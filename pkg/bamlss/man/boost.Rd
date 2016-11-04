@@ -51,9 +51,9 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters"),
   \item{verbose}{Print information during runtime of the algorithm.}
   \item{digits}{Set the digits for printing when \code{verbose = TRUE}.}
   \item{flush}{use \code{\link{flush.console}} for displaying the current output in the console.}
-  \item{eps}{The relative change of predictors in each boosting iteration.}
+  \item{eps}{The relative tolerance used as stopping mechanism, see argument \code{nback}.}
   \item{nback}{If \code{nback} is not \code{NULL}, then the algorithm stops if the
-    the relative change of predictors of the last \code{nback} iterations is smaller or
+    the relative change in the log-likelihood of the last \code{nback} iterations is smaller or
     equal to \code{eps}. If \code{maxit = NULL} the maximum number of iterations is set to 10000.}
   \item{plot}{Should the boosting summary be printed and plotted?}
   \item{object}{A \code{\link{bamlss}} object that was fitted using \code{boost()}.}

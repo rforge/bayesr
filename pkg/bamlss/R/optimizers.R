@@ -1956,7 +1956,7 @@ boost <- function(x, y, family,
   if(is.null(family$score))
     family$score <- list()
   for(i in nx) {
-    if(is.null(family$score[[i]])) {
+    if(is.null(family$score[[i]]) | TRUE) {
       family$score[[i]] <- function(y, par, id, ...) {
         par[[id]] <- par[[id]] + err
         d1 <- family$d(y, par, log = TRUE)
@@ -2014,7 +2014,7 @@ boost <- function(x, y, family,
 
   ## Start boosting.
   eps0 <- 1; iter <- 1
-  save.ll <- save.eps <- NULL
+  save.ll <- NULL
   ll <- family$loglik(y, family$map2par(eta))
   while(iter <= maxit) {
     eta0 <- eta
@@ -2068,7 +2068,6 @@ boost <- function(x, y, family,
     ll <- family$loglik(y, peta)
 
     save.ll <- c(save.ll, ll)
-    save.eps <- c(save.eps, eps0)
 
     if(verbose) {
       cat(if(ia) "\r" else "\n")
@@ -2085,10 +2084,10 @@ boost <- function(x, y, family,
 
     if(!is.null(nback)) {
       if(iter > nback) {
-        seps <- abs(diff(tail(save.eps, nback)))
-        if(any(!is.finite(seps)) | any(is.na(seps)))
+        dll <- abs(diff(tail(save.ll, nback))) / tail(save.ll, nback - 1)
+        if(any(!is.finite(dll)) | any(is.na(dll)))
           break
-        if(all(seps < eps))
+        if(all(dll < eps))
           break
       }
     }
@@ -2545,7 +2544,7 @@ print.boost.summary <- function(x, summary = TRUE, plot = TRUE,
   if(summary) {
     np <- length(x$summary)
     cat("\n")
-    cat(x$criterion, "=", x$ic[x$mstop], "-> at mstop =", x$mstop, "\n---\n")
+    cat("logLik. =", x$ic[x$mstop], "-> at mstop =", x$mstop, "\n---\n")
     for(j in 1:np) {
       if(length(x$summary[[j]]) < 2) {
         print(round(x$summary[[j]], digits = 4))

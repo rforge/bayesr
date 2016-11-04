@@ -325,11 +325,11 @@ f2 <- function(x) 0.2 * x^11 * (10 * (1 - x))^6 + 10 * (10 * x)^3 * (1 - x)^10
 f3 <- function(x) sin(x * 3) - 3
 f4 <- function(x) cos(x * 6) - 2
 f5 <- function(x) {
-  eta <- sin(scale2(x, -3, 3))
+  eta <- 1 + sin(scale2(x, -3, 3))
   eta / sqrt(1 + eta^2)
 }
 
-n <- 300
+n <- 2000
 x0 <- runif(n); x1 <- runif(n);
 x2 <- runif(n); x3 <- runif(n)
 y <- matrix(0, n, 2)
@@ -352,6 +352,5 @@ f <- list(
   rho12 ~ s(x3)
 )
 
-b <- bamlss(f, family = ".mvnorm", data = dat, optimizer = boost, sampler = FALSE,
-  nback = NULL, maxit = 30000, nu = 0.01)
+b <- bamlss(f, family = "mvnorm", data = dat, optimizer = boost, sampler = FALSE, nback = NULL, maxit = 1000, nu = 0.1)
 

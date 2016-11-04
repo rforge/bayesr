@@ -1652,7 +1652,7 @@ BCCG2_bamlss <- function(...)
 }
 
 
-mvnorm_bamlss <- function(...)
+bivnorm_bamlss <- function(...)
 {
   rval <- list(
     "family" = "mvnorm",
@@ -1748,8 +1748,13 @@ mvnorm_bamlss <- function(...)
 }
 
 
-.mvnorm_bamlss <- function(k = 2, ...)
+mvnorm_bamlss <- function(k = 2, ...)
 {
+  if(k == 1)
+    return(gaussian_bamlss())
+  #if(k == 2)
+  #  return(bivnorm_bamlss())
+
   mu <- paste("mu", 1:k, sep = "")
   sigma <- paste("sigma", 1:k, sep = "")
   
@@ -1768,6 +1773,7 @@ mvnorm_bamlss <- function(...)
     "names" = c(mu, sigma, rho),
     "links" = links,
     "d" = function(y, par, log = FALSE) {
+      d0 <- logMVNORM(y, par)
       par <- do.call("cbind", par)
       cn <- colnames(par)
       sj <- grep("sigma", cn)
@@ -1789,6 +1795,12 @@ mvnorm_bamlss <- function(...)
         }
         d[i] <- dmvnorm(y[i, ], par[i, mj], sigma = Sigma, log = log)
       }
+
+print(head(cbind(d0, d)))
+stop()
+
+      if(!log)
+        d <- exp(d)
       return(d)
     },
     "p" = function(y, par, ...) {
@@ -1824,6 +1836,19 @@ mvnorm_bamlss <- function(...)
 
   class(rval) <- "family.bamlss"
   rval
+}
+
+
+logMVNORM <- function(y, par)
+{
+  par <- do.call("cbind", par)
+  y <- as.matrix(y)
+  cn <- colnames(par)
+  sj <- grep("sigma", cn)
+  mj <- grep("mu", cn)
+  rj <- grep("rho", cn)[1]
+  return(.Call("log_dmvnorm", y, par, as.integer(nrow(y)),
+    as.integer(ncol(y)), as.integer(mj), as.integer(sj), as.integer(rj)))
 }
 
 
