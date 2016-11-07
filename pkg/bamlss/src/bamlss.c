@@ -2415,7 +2415,7 @@ SEXP log_dmvnorm(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ)
   int info;
 
   SEXP Sigma;
-  PROTECT(Sigma = allocVector(REALSXP, k * k));
+  PROTECT(Sigma = allocMatrix(REALSXP, k, k));
   double *Sigmaptr = REAL(Sigma);
   double *Pptr = REAL(PAR);
 
@@ -2434,7 +2434,6 @@ SEXP log_dmvnorm(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ)
 
   double det = 0.0;
   double sum = 0.0;
-  double n2 = - n / 2;
 
   for(j = 0; j < k; j++) {
     for(i = 0; i < k; i++) {
@@ -2445,20 +2444,20 @@ SEXP log_dmvnorm(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ)
   for(i = 0; i < n; i++) {
     l = 0;
     for(j = 0; j < k; j++) {
-      Sigmaptr[j + k * j] = Pptr[i + n * SJptr[j]];
+      Sigmaptr[j + k * j] = Pptr[i + n * SJptr[j] - 1];
       for(jj = 0; jj < j; jj++) {
-        Sigmaptr[j + k * jj] = Pptr[i + n * rj + l];
+        Sigmaptr[j + k * jj] = Pptr[i + n * rj + l - 1] * Pptr[i + n * SJptr[j] - 1] * Pptr[i + n * SJptr[jj] - 1];
         Sigmaptr[jj + k * j] = Sigmaptr[j + k * jj];
         l <- l + 1;
       }
-      ymuptr[j] = Yptr[i + n * j] - Pptr[i + n * SJptr[j]];
+      ymuptr[j] = Yptr[i + n * j] - Pptr[i + n * MJptr[j] - 1];
     }
 
     F77_CALL(dpotrf)("Upper", &k, Sigmaptr, &k, &info);
 
     for(j = 0; j < k; j++)
       det += log(Sigmaptr[j + k * j]);
-    det *= 2;
+    det = det * 2.0;
 
     F77_CALL(dpotri)("Upper", &k, Sigmaptr, &k, &info);
 
@@ -2474,7 +2473,9 @@ SEXP log_dmvnorm(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ)
       }
     }
 
-    dptr[i] = n2 * det - 0.5 * sum;
+Rprintf("sum %g\n", sum);
+
+    dptr[i] = - 0.5 * k * log(2.0 * 3.14159265358979323846) - 0.5 * det - 0.5 * sum;
 
     det = 0.0;
     sum = 0.0;

@@ -1851,6 +1851,17 @@ logMVNORM <- function(y, par)
     as.integer(ncol(y)), as.integer(mj), as.integer(sj), as.integer(rj)))
 }
 
+if(FALSE) {
+  mu <- c(3, 4)
+  sigma <- matrix(c(4,2,2,3), ncol=2)
+  y <- c(2, 2.5)
+  dmvnorm(y, mu, sigma, log = TRUE)
+
+  y <- matrix(y, nrow = 1)
+  par <- list("mu1" = mu[1], "mu2" = mu[2], "sigma1" = 4, "sigma2" = 3, "rho12" = 0.1666667)
+  logMVNORM(y, par)
+}
+
 
 bivprobit_bamlss <- function(...)
 {
