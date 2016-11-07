@@ -1956,7 +1956,7 @@ boost <- function(x, y, family,
   if(is.null(family$score))
     family$score <- list()
   for(i in nx) {
-    if(is.null(family$score[[i]]) | TRUE) {
+    if(is.null(family$score[[i]])) {
       family$score[[i]] <- function(y, par, id, ...) {
         par[[id]] <- par[[id]] + err
         d1 <- family$d(y, par, log = TRUE)

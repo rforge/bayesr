@@ -2432,6 +2432,7 @@ SEXP log_dmvnorm(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ)
   PROTECT(d = allocVector(REALSXP, n));
   double *dptr = REAL(d);
 
+  double lpi = - 0.5 * k * log(2.0 * 3.14159265358979323846);
   double det = 0.0;
   double sum = 0.0;
 
@@ -2444,41 +2445,33 @@ SEXP log_dmvnorm(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ)
   for(i = 0; i < n; i++) {
     l = 0;
     for(j = 0; j < k; j++) {
-      Sigmaptr[j + k * j] = Pptr[i + n * SJptr[j] - 1];
-      for(jj = 0; jj < j; jj++) {
-        Sigmaptr[j + k * jj] = Pptr[i + n * rj + l - 1] * Pptr[i + n * SJptr[j] - 1] * Pptr[i + n * SJptr[jj] - 1];
-        Sigmaptr[jj + k * j] = Sigmaptr[j + k * jj];
-        l <- l + 1;
+      Sigmaptr[j + k * j] = pow(Pptr[i + n * (SJptr[j] - 1)], 2.0);
+      for(jj = j + 1; jj < k; jj++) {
+        Sigmaptr[jj + k * j] = Pptr[i + n * (rj + l - 1)] * Pptr[i + n * (SJptr[jj] - 1)] * Pptr[i + n * (SJptr[j] - 1)];
+        Sigmaptr[j + k * jj] = Sigmaptr[jj + k * j];
+        l = l + 1;
       }
-      ymuptr[j] = Yptr[i + n * j] - Pptr[i + n * MJptr[j] - 1];
+      ymuptr[j] = Yptr[i + n * j] - Pptr[i + n * (MJptr[j] - 1)];
     }
 
     F77_CALL(dpotrf)("Upper", &k, Sigmaptr, &k, &info);
 
+    det = 0.0;
     for(j = 0; j < k; j++)
       det += log(Sigmaptr[j + k * j]);
     det = det * 2.0;
 
     F77_CALL(dpotri)("Upper", &k, Sigmaptr, &k, &info);
 
-    for(j = 0; j < k; j++) {
-      for(jj = j + 1; jj < k; jj++) {
-        Sigmaptr[jj + j * k] = Sigmaptr[j + jj * k];
-      }
-    }
-
-    for(j = 0; j < k; j++) {
-      for(jj = 0; jj < k; jj++) {
-        sum += Sigmaptr[j + jj * k] * pow(ymuptr[j], 2.0);
-      }
-    }
-
-Rprintf("sum %g\n", sum);
-
-    dptr[i] = - 0.5 * k * log(2.0 * 3.14159265358979323846) - 0.5 * det - 0.5 * sum;
-
-    det = 0.0;
     sum = 0.0;
+    for(j = 0; j < k; j++) {
+      for(jj = j + 1; jj < k; jj++)
+        Sigmaptr[jj + j * k] = Sigmaptr[j + jj * k];
+      for(jj = 0; jj < k; jj++)
+        sum += Sigmaptr[j + jj * k] * ymuptr[j] * ymuptr[jj];
+    }
+
+    dptr[i] = lpi - 0.5 * det - 0.5 * sum;
   }
 
   UNPROTECT(3);

@@ -325,32 +325,49 @@ f2 <- function(x) 0.2 * x^11 * (10 * (1 - x))^6 + 10 * (10 * x)^3 * (1 - x)^10
 f3 <- function(x) sin(x * 3) - 3
 f4 <- function(x) cos(x * 6) - 2
 f5 <- function(x) {
-  eta <- 1 + sin(scale2(x, -3, 3))
+  eta <- 1 + 3 * sin(scale2(x, -3, 3))
+  eta / sqrt(1 + eta^2)
+}
+f6 <- function(x) {
+  eta <- 1 + exp(x * 3)
   eta / sqrt(1 + eta^2)
 }
 
-n <- 2000
+n <- 1000
 x0 <- runif(n); x1 <- runif(n);
 x2 <- runif(n); x3 <- runif(n)
-y <- matrix(0, n, 2)
+y <- matrix(0, n, 3)
 for(i in 1:n) {
   s1 <- exp(f3(x1[i]))
   s2 <- exp(f4(x2[i]))
-  rho <- f5(x3[i])
-  V <- matrix(c(s1^2, rho * s1 * s2, rho * s1 * s2, s2^2), 2, 2)
-  mu <- c(f0(x0[i]) + f1(x1[i]), f2(x2[i]))
-  y[i,] <- rmvn(1, mu, V)
+  s3 <- exp(-1)
+  rho12 <- f5(x3[i])
+  rho13 <- 0.1
+  rho23 <- f6(x3[i])
+  V <- diag(c(s1, s2, s3))
+  V[1, 2] <- rho12 * sqrt(s1) * sqrt(s2)
+  V[1, 3] <- rho13 * sqrt(s1) * sqrt(s3)
+  V[2, 3] <- rho23 * sqrt(s2) * sqrt(s3)
+  V[2, 1] <- V[1, 2]
+  V[3, 1] <- V[1, 3]
+  V[3, 2] <- V[2, 3]
+  mu <- c(f0(x0[i]) + f1(x1[i]), f2(x2[i]), f3(x3[i]))
+  y[i,] <- rmvnorm(1, mu, V)
 }
 
-dat <- data.frame(y0=y[,1],y1=y[,2],x0=x0,x1=x1,x2=x2,x3=x3)
+dat <- data.frame(y0=y[,1],y1=y[,2],y2=y[,3],x0=x0,x1=x1,x2=x2,x3=x3)
 
 f <- list(
   y0 ~ s(x0) + s(x1),
-  y1 ~ s(x2) + s(x3),
+  y1 ~ s(x2),
+  y2 ~ s(x3),
   sigma1 ~ s(x1),
   sigma2 ~ s(x2),
-  rho12 ~ s(x3)
+  sigma3 ~ 1,
+  rho12 ~ s(x3),
+  rho13 ~ 1,
+  rho23 ~ s(x3)
 )
 
-b <- bamlss(f, family = "mvnorm", data = dat, optimizer = boost, sampler = FALSE, nback = NULL, maxit = 1000, nu = 0.1)
+b <- bamlss(f, family = gF(mvnorm, k = 3), data = dat, optimizer = boost, sampler = FALSE, nback = NULL, maxit = 1000, nu = 0.1)
 
