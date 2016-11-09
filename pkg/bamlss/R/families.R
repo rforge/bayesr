@@ -1659,7 +1659,7 @@ bivnorm_bamlss <- function(...)
     "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho"),
     "links" = c("identity", "identity", "log", "log", "rhogit"),
     "d" = function(y, par, log = FALSE) {
-      d <- .Call("mvn_logdens", as.numeric(y[, 1]), as.numeric(y[, 2]),
+      d <- .Call("bivnorm_loglik", as.numeric(y[, 1]), as.numeric(y[, 2]),
         as.numeric(par$mu1), as.numeric(par$mu2), as.numeric(par$sigma1),
         as.numeric(par$sigma2), as.numeric(par$rho), PACKAGE = "bamlss")
       if(!log)
@@ -1667,7 +1667,7 @@ bivnorm_bamlss <- function(...)
       return(d)
     },
     "loglik" = function(y, par, log = FALSE) {
-      ll <- .Call("mvn_loglik", as.numeric(y[, 1]), as.numeric(y[, 2]),
+      ll <- .Call("bivnorm_loglik", as.numeric(y[, 1]), as.numeric(y[, 2]),
         as.numeric(par$mu1), as.numeric(par$mu2), as.numeric(par$sigma1),
         as.numeric(par$sigma2), as.numeric(par$rho), PACKAGE = "bamlss")
       return(ll)
@@ -1773,7 +1773,7 @@ mvnorm_bamlss <- function(k = 2, ...)
     "names" = c(mu, sigma, rho),
     "links" = links,
     "d" = function(y, par, log = FALSE) {
-      d <- logMVNORM(y, par)
+      d <- log_dmvnorm(y, par)
       if(!log)
         d <- exp(d)
       return(d)
@@ -1814,7 +1814,7 @@ mvnorm_bamlss <- function(k = 2, ...)
 }
 
 
-logMVNORM <- function(y, par)
+log_dmvnorm <- function(y, par)
 {
   par <- do.call("cbind", par)
   y <- as.matrix(y)
@@ -1822,42 +1822,7 @@ logMVNORM <- function(y, par)
   sj <- grep("sigma", cn)
   mj <- grep("mu", cn)
   rj <- as.integer(min(grep("rho", cn)))
-  return(.Call("log_dmvnorm", y, par, nrow(y), ncol(y), mj, sj, rj))
-}
-
-if(FALSE) {
-  a <- c(1,2,3,4,5,6)
-  b <- c(2,3,5,6,1,9)
-  c <- c(3,5,5,5,10,8)
-  d <- c(10,20,30,40,50,55)
-  e <- c(7,8,9,4,6,10)
- 
-  #create matrix from vectors
-  S <- cov(cbind(a,b,c,d,e))
-  mu <- rnorm(nrow(S))
-  y <- rnorm(nrow(S))
-
-  dmvnorm(x = y, mean = mu, sigma = S, log = TRUE)
-
-  mu <- as.list(mu)
-  names(mu) <- paste("mu", 1:length(mu), sep = "")
-  sigma <- as.list(diag(S))
-  names(sigma) <- paste("sigma", 1:length(sigma), sep = "")
-
-  rho <- list()
-  for(i in 1:length(sigma)) {
-    for(j in 1:length(sigma)) {
-      if(i < j) {
-        rho[[paste("rho", i, j, sep = "")]] <- S[i, j] / (sigma[[i]] * sigma[[j]])
-      }
-    }
-  }
-
-  par <- c(mu, sigma, rho)
-  y <- matrix(y, nrow = 1)
-
-  compile(); sbayesr()
-  logMVNORM(y, par)
+  return(.Call("log_dmvnorm", y, par, nrow(y), ncol(y), mj, sj, rj, PACKAGE = "bamlss"))
 }
 
 

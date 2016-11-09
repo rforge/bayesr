@@ -1751,6 +1751,7 @@ complete.bamlss.family <- function(family)
   }
 
   err <- .Machine$double.eps^0.5
+  err2 <- err * 2
 
   if(is.null(family$score))
     family$score <- list()
@@ -1763,7 +1764,7 @@ complete.bamlss.family <- function(family)
         "  d1 <- family$d(y, par, log = TRUE);",
         paste("  par[['", i, "']] <- linkinv[['", i, "']](eta - err);", sep = ""),
         "  d2 <- family$d(y, par, log = TRUE);",
-        "  return((d1 - d2) / (2 * err))",
+        "  return((d1 - d2) / err2)",
         "}"
       )
       family$score[[i]] <- eval(parse(text = paste(fun, collapse = "")))
@@ -1781,7 +1782,7 @@ complete.bamlss.family <- function(family)
         paste("  d1 <- family$score[['", i, "']](y, par, ...);", sep = ""),
         paste("  par[['", i, "']] <- linkinv[['", i, "']](eta - err);", sep = ""),
         paste("  d2 <- family$score[['", i, "']](y, par, ...);", sep = ""),
-        "  return(-1 * (d1 - d2) / (2 * err))",
+        "  return(-1 * (d1 - d2) / err2)",
         "}"
       )
       family$hess[[i]] <- eval(parse(text = paste(fun, collapse = "")))

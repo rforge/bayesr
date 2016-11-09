@@ -1938,7 +1938,7 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind, uind = NULL)
 #}
 
 
-## 2nd booster.
+## Gradient boosting.
 boost <- function(x, y, family,
   nu = 0.1, df = 4, maxit = NULL, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
@@ -2199,7 +2199,7 @@ boost.transform <- function(x, y, df = NULL, family,
 
 ## Simple list() generator for
 ## saving states of model terms.
-make.state.list <- function(x, type = 1)
+make.state.list <- function(x, type = 1, intercept = TRUE)
 {
   elmts <- c("formula", "fake.formula")
   if(all(elmts %in% names(x))) {
@@ -2207,15 +2207,19 @@ make.state.list <- function(x, type = 1)
     if(!is.null(x$model.matrix))
       rval$model.matrix <- NA
     if(!is.null(x$smooth.construct)) {
-      for(j in names(x$smooth.construct))
-        rval[[j]] <- NA
+      for(j in names(x$smooth.construct)) {
+        if(j == "(Intercept)" & intercept)
+          rval[[j]] <- NA
+        if(j != "(Intercept)")
+          rval[[j]] <- NA
+      }
     }
     if(type > 1)
       rval <- unlist(rval)
   } else {
     rval <- list()
     for(j in names(x)) {
-      rval[[j]] <- make.state.list(x[[j]], type)
+      rval[[j]] <- make.state.list(x[[j]], type, intercept = intercept)
     }
   }
   return(rval)
@@ -2568,8 +2572,10 @@ print.boost.summary <- function(x, summary = TRUE, plot = TRUE,
           j <- grep("(Intercept)", colnames(x$loglik), fixed = TRUE)
           x$loglik <- x$loglik[, -j]
         }
+        xn <- sapply(strsplit(colnames(x$loglik), ".", fixed = TRUE), function(x) { x[length(x)] })
+        cols <- rainbow_hcl(length(unique(xn)))
         matplot(x$loglik, type = "l", lty = 1,
-          xlab = "Iteration", ylab = "LogLik contribution", col = "black", ...)
+          xlab = "Iteration", ylab = "LogLik contribution", col = cols[as.factor(xn)], ...)
         abline(v = x$mstop, lwd = 3, col = "lightgray")
         axis(4, at = x$loglik[nrow(x$loglik), ], labels = colnames(x$loglik), las = 1)
         axis(3, at = x$mstop, labels = paste("mstop =", x$mstop))
@@ -2622,8 +2628,10 @@ boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters"),
       p <- x$parameters[1:mstop, , drop = FALSE]
       if(!intercept)
         p <- p[, -grep("(Intercept)", colnames(p), fixed = TRUE), drop = FALSE]
-      matplot(p, type = "l", lty = 1, col = "black", xlab = "Iteration",
-        ylab = "Value")
+      xn <- sapply(strsplit(colnames(p), ".", fixed = TRUE), function(x) { x[1] })
+      cols <- rainbow_hcl(length(unique(xn)))
+      matplot(p, type = "l", lty = 1, col = cols[as.factor(xn)], xlab = "Iteration",
+        ylab = "Value", ...)
       abline(v = mstop, lwd = 3, col = "lightgray")
       axis(4, at = p[nrow(p), ], labels = colnames(p), las = 1)
       axis(3, at = mstop, labels = paste("mstop =", mstop))
@@ -2642,6 +2650,11 @@ set.starting.values <- function(x, start)
     }
     if(is.list(start))
       start <- unlist(start)
+    if(is.matrix(start)) {
+      nstart <- colnames(start)
+      start <- as.vector(start[nrow(start), , drop = TRUE])
+      names(start) <- nstart
+    }
     nstart <- names(start)
     tns <- sapply(strsplit(nstart, ".", fixed = TRUE), function(x) { x[1] })
     nx <- names(x)

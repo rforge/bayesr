@@ -319,35 +319,74 @@ add2spam <- function(x, y)
 
 
 ## MVN.
+if(FALSE) {
+  a <- c(1,2,3,4,5,6)
+  b <- c(2,3,5,6,1,9)
+  c <- c(3,5,5,5,10,8)
+  d <- c(10,20,30,40,50,55)
+  e <- c(7,8,9,4,6,10)
+ 
+  #create matrix from vectors
+  S <- cov(cbind(a,b,c,d,e))
+  mu <- rnorm(nrow(S))
+  y <- rnorm(nrow(S))
+
+  dmvnorm(x = y, mean = mu, sigma = S, log = TRUE)
+
+  mu <- as.list(mu)
+  names(mu) <- paste("mu", 1:length(mu), sep = "")
+  sigma <- as.list(diag(S))
+  names(sigma) <- paste("sigma", 1:length(sigma), sep = "")
+
+  rho <- list()
+  for(i in 1:length(sigma)) {
+    for(j in 1:length(sigma)) {
+      if(i < j) {
+        rho[[paste("rho", i, j, sep = "")]] <- S[i, j] / (sigma[[i]] * sigma[[j]])
+      }
+    }
+  }
+
+  par <- c(mu, sigma, rho)
+  y <- matrix(y, nrow = 1)
+
+  compile(); sbayesr()
+  log_dmvnorm(y, par)
+}
+
+## Model.
 f0 <- function(x) 2 * sin(pi * x)
 f1 <- function(x) exp(2 * x)
 f2 <- function(x) 0.2 * x^11 * (10 * (1 - x))^6 + 10 * (10 * x)^3 * (1 - x)^10
 f3 <- function(x) sin(x * 3) - 3
 f4 <- function(x) cos(x * 6) - 2
 f5 <- function(x) {
-  eta <- 1 + 3 * sin(scale2(x, -3, 3))
+  eta <- sin(scale2(x, -3, 3)) - 3
   eta / sqrt(1 + eta^2)
 }
 f6 <- function(x) {
-  eta <- 1 + exp(x)
+  eta <- cos(scale2(x, -3, 3)) - 2
   eta / sqrt(1 + eta^2)
 }
 
 n <- 1000
 x0 <- runif(n); x1 <- runif(n);
 x2 <- runif(n); x3 <- runif(n)
+
+s1 <- exp(f3(x1))
+s2 <- exp(f4(x2))
+s3 <- exp(rep(-1, n))
+rho12 <- f5(x3)
+rho13 <- rep(0.1, n)
+rho23 <- f6(x3)
+
 y <- matrix(0, n, 3)
+
 for(i in 1:n) {
-  s1 <- exp(f3(x1[i]))
-  s2 <- exp(f4(x2[i]))
-  s3 <- exp(-1)
-  rho12 <- f5(x3[i])
-  rho13 <- 0.1
-  rho23 <- f6(x3[i])
-  V <- diag(c(s1, s2, s3)^2)
-  V[1, 2] <- rho12 * sqrt(s1) * sqrt(s2)
-  V[1, 3] <- rho13 * sqrt(s1) * sqrt(s3)
-  V[2, 3] <- rho23 * sqrt(s2) * sqrt(s3)
+  V <- diag(c(s1[i], s2[i], s3[i])^2)
+  V[1, 2] <- rho12[i] * s1[i] * s2[i]
+  V[1, 3] <- rho13[i] * s1[i] * s3[i]
+  V[2, 3] <- rho23[i] * s2[i] * s3[i]
   V[2, 1] <- V[1, 2]
   V[3, 1] <- V[1, 3]
   V[3, 2] <- V[2, 3]
@@ -369,5 +408,5 @@ f <- list(
   rho23 ~ s(x3)
 )
 
-b <- bamlss(f, family = gF(mvnorm, k = 3), data = dat, optimizer = boost, sampler = FALSE, nback = NULL, maxit = 1000, nu = 0.1)
+b <- bamlss(f, family = gF(mvnorm, k = 3), data = dat, optimizer = boost, sampler = FALSE, nback = NULL, maxit = 1000, nu = 0.1, scale.d = TRUE)
 
