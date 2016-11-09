@@ -329,7 +329,7 @@ f5 <- function(x) {
   eta / sqrt(1 + eta^2)
 }
 f6 <- function(x) {
-  eta <- 1 + exp(x * 3)
+  eta <- 1 + exp(x)
   eta / sqrt(1 + eta^2)
 }
 
@@ -344,7 +344,7 @@ for(i in 1:n) {
   rho12 <- f5(x3[i])
   rho13 <- 0.1
   rho23 <- f6(x3[i])
-  V <- diag(c(s1, s2, s3))
+  V <- diag(c(s1, s2, s3)^2)
   V[1, 2] <- rho12 * sqrt(s1) * sqrt(s2)
   V[1, 3] <- rho13 * sqrt(s1) * sqrt(s3)
   V[2, 3] <- rho23 * sqrt(s2) * sqrt(s3)
@@ -352,7 +352,7 @@ for(i in 1:n) {
   V[3, 1] <- V[1, 3]
   V[3, 2] <- V[2, 3]
   mu <- c(f0(x0[i]) + f1(x1[i]), f2(x2[i]), f3(x3[i]))
-  y[i,] <- rmvnorm(1, mu, V)
+  y[i,] <- rmvn(1, mu, V)
 }
 
 dat <- data.frame(y0=y[,1],y1=y[,2],y2=y[,3],x0=x0,x1=x1,x2=x2,x3=x3)

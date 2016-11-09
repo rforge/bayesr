@@ -1713,10 +1713,15 @@ complete.bamlss.family <- function(family)
 {
   if(is.null(names(family$links)))
     names(family$links) <- family$names
+
+  linkinv <- linkfun <- list()
+  for(j in family$names) {
+    link <- make.link2(family$links[j])
+    linkinv[[j]] <- link$linkinv
+    linkfun[[j]] <- link$linkfun
+  }
+
   if(is.null(family$map2par)) {
-    linkinv <- list()
-    for(j in family$names)
-      linkinv[[j]] <- make.link2(family$links[j])$linkinv
     family$map2par <- function(eta) {
       if(inherits(eta[[1L]], "ff")) {
         for(j in family$names)
@@ -1735,12 +1740,52 @@ complete.bamlss.family <- function(family)
       return(eta)
     }
   }
+
   if(is.null(family$mu)) {
     family$mu <- function(par) { make.link2(family$links[1])$linkinv(par[[1]]) }
   }
+
   if(is.null(family$loglik)) {
     if(!is.null(family$d))
       family$loglik <- function(y, par, ...) { sum(family$d(y, par, log = TRUE), na.rm = TRUE) }
+  }
+
+  err <- .Machine$double.eps^0.5
+
+  if(is.null(family$score))
+    family$score <- list()
+  for(i in family$names) {
+    if(is.null(family$score[[i]])) {
+      fun <- c(
+        "function(y, par, ...) {",
+        paste("  eta <- linkfun[['", i, "']](par[['", i, "']]);", sep = ""),
+        paste("  par[['", i, "']] <- linkinv[['", i, "']](eta + err);", sep = ""),
+        "  d1 <- family$d(y, par, log = TRUE);",
+        paste("  par[['", i, "']] <- linkinv[['", i, "']](eta - err);", sep = ""),
+        "  d2 <- family$d(y, par, log = TRUE);",
+        "  return((d1 - d2) / (2 * err))",
+        "}"
+      )
+      family$score[[i]] <- eval(parse(text = paste(fun, collapse = "")))
+    }
+  }
+
+  if(is.null(family$hess))
+    family$hess <- list()
+  for(i in family$names) {
+    if(is.null(family$hess[[i]])) {
+      fun <- c(
+        "function(y, par, ...) {",
+        paste("  eta <- linkfun[['", i, "']](par[['", i, "']]);", sep = ""),
+        paste("  par[['", i, "']] <- linkinv[['", i, "']](eta + err);", sep = ""),
+        paste("  d1 <- family$score[['", i, "']](y, par, ...);", sep = ""),
+        paste("  par[['", i, "']] <- linkinv[['", i, "']](eta - err);", sep = ""),
+        paste("  d2 <- family$score[['", i, "']](y, par, ...);", sep = ""),
+        "  return(-1 * (d1 - d2) / (2 * err))",
+        "}"
+      )
+      family$hess[[i]] <- eval(parse(text = paste(fun, collapse = "")))
+    }
   }
 
   return(family)

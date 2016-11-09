@@ -1951,22 +1951,6 @@ boost <- function(x, y, family,
   if(!all(nx %in% names(x)))
     stop("parameter names mismatch with family names!")
 
-  err <- .Machine$double.eps^0.5
-
-  if(is.null(family$score))
-    family$score <- list()
-  for(i in nx) {
-    if(is.null(family$score[[i]])) {
-      family$score[[i]] <- function(y, par, id, ...) {
-        par[[id]] <- par[[id]] + err
-        d1 <- family$d(y, par, log = TRUE)
-        par[[id]] <- par[[id]] - (2 * err)
-        d2 <- family$d(y, par, log = TRUE)
-        return((d1 - d2) / (2 * err))
-      }
-    }
-  }
-
   if(!is.null(mstop))
     maxit <- mstop
 
