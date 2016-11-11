@@ -1750,8 +1750,10 @@ complete.bamlss.family <- function(family)
       family$loglik <- function(y, par, ...) { sum(family$d(y, par, log = TRUE), na.rm = TRUE) }
   }
 
-  err <- .Machine$double.eps^0.5
-  err2 <- err * 2
+  err01 <- .Machine$double.eps^(1/3)
+  err02 <- err01 * 2
+  err11 <- .Machine$double.eps^(1/4)
+  err12 <- err11 * 2
 
   if(is.null(family$score))
     family$score <- list()
@@ -1760,11 +1762,11 @@ complete.bamlss.family <- function(family)
       fun <- c(
         "function(y, par, ...) {",
         paste("  eta <- linkfun[['", i, "']](par[['", i, "']]);", sep = ""),
-        paste("  par[['", i, "']] <- linkinv[['", i, "']](eta + err);", sep = ""),
+        paste("  par[['", i, "']] <- linkinv[['", i, "']](eta + err01);", sep = ""),
         "  d1 <- family$d(y, par, log = TRUE);",
-        paste("  par[['", i, "']] <- linkinv[['", i, "']](eta - err);", sep = ""),
+        paste("  par[['", i, "']] <- linkinv[['", i, "']](eta - err01);", sep = ""),
         "  d2 <- family$d(y, par, log = TRUE);",
-        "  return((d1 - d2) / err2)",
+        "  return((d1 - d2) / err02)",
         "}"
       )
       family$score[[i]] <- eval(parse(text = paste(fun, collapse = "")))
@@ -1778,11 +1780,11 @@ complete.bamlss.family <- function(family)
       fun <- c(
         "function(y, par, ...) {",
         paste("  eta <- linkfun[['", i, "']](par[['", i, "']]);", sep = ""),
-        paste("  par[['", i, "']] <- linkinv[['", i, "']](eta + err);", sep = ""),
+        paste("  par[['", i, "']] <- linkinv[['", i, "']](eta + err11);", sep = ""),
         paste("  d1 <- family$score[['", i, "']](y, par, ...);", sep = ""),
-        paste("  par[['", i, "']] <- linkinv[['", i, "']](eta - err);", sep = ""),
+        paste("  par[['", i, "']] <- linkinv[['", i, "']](eta - err11);", sep = ""),
         paste("  d2 <- family$score[['", i, "']](y, par, ...);", sep = ""),
-        "  return(-1 * (d1 - d2) / err2)",
+        "  return(-1 * (d1 - d2) / err12)",
         "}"
       )
       family$hess[[i]] <- eval(parse(text = paste(fun, collapse = "")))

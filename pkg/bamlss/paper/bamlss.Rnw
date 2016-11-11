@@ -401,7 +401,7 @@ In practice, for full Bayesian inference the algorithm is applied twice, i.e.,
 first computing estimates for \ref{item:a} and then using these as starting values for solving
 \ref{item:b}.
 
-Finding good starting values is especially important for complex model terms that, e.g., for
+Finding good starting values is especially important for complex model terms, e.g., for
 multi-dimensional functions $f_{jk}( \cdot )$ that have multiple smoothing variances in prior densities
 $p_{jk}( \cdot )$. Therefore, we propose to estimate parameters $\boldsymbol{\tau}_{jk}$
 using a goodness-of-fit criterion within the stepwise selection approach presented in
