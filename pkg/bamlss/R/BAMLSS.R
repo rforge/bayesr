@@ -1770,6 +1770,7 @@ complete.bamlss.family <- function(family)
         "}"
       )
       family$score[[i]] <- eval(parse(text = paste(fun, collapse = "")))
+      attr(family$score[[i]], "dnum") <- TRUE
     }
   }
 
@@ -1777,16 +1778,29 @@ complete.bamlss.family <- function(family)
     family$hess <- list()
   for(i in family$names) {
     if(is.null(family$hess[[i]])) {
-      fun <- c(
-        "function(y, par, ...) {",
-        paste("  eta <- linkfun[['", i, "']](par[['", i, "']]);", sep = ""),
-        paste("  par[['", i, "']] <- linkinv[['", i, "']](eta + err11);", sep = ""),
-        paste("  d1 <- family$score[['", i, "']](y, par, ...);", sep = ""),
-        paste("  par[['", i, "']] <- linkinv[['", i, "']](eta - err11);", sep = ""),
-        paste("  d2 <- family$score[['", i, "']](y, par, ...);", sep = ""),
-        "  return(-1 * (d1 - d2) / err12)",
-        "}"
-      )
+      fun <- if(!is.null(attr(family$score[[i]], "dnum"))) {
+        c(
+          "function(y, par, ...) {",
+          paste("  eta <- linkfun[['", i, "']](par[['", i, "']]);", sep = ""),
+          paste("  par[['", i, "']] <- linkinv[['", i, "']](eta + err11);", sep = ""),
+          paste("  d1 <- family$score[['", i, "']](y, par, ...);", sep = ""),
+          paste("  par[['", i, "']] <- linkinv[['", i, "']](eta - err11);", sep = ""),
+          paste("  d2 <- family$score[['", i, "']](y, par, ...);", sep = ""),
+          "  return(-1 * (d1 - d2) / err12)",
+          "}"
+        )
+      } else {
+        c(
+          "function(y, par, ...) {",
+          paste("  eta <- linkfun[['", i, "']](par[['", i, "']]);", sep = ""),
+          paste("  par[['", i, "']] <- linkinv[['", i, "']](eta + err01);", sep = ""),
+          paste("  d1 <- family$score[['", i, "']](y, par, ...);", sep = ""),
+          paste("  par[['", i, "']] <- linkinv[['", i, "']](eta - err01);", sep = ""),
+          paste("  d2 <- family$score[['", i, "']](y, par, ...);", sep = ""),
+          "  return(-1 * (d1 - d2) / err02)",
+          "}"
+        )
+      }
       family$hess[[i]] <- eval(parse(text = paste(fun, collapse = "")))
     }
   }
