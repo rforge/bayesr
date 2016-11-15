@@ -1096,11 +1096,9 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
     })), collapse = "")
   }
 
-#  if(object$by != "NA") {
-#    object$X <- data[[object$by]] * object$X
-#    for(j in seq_along(object$margin))
-#      object$margin[[j]]$X <- data[[object$by]] * object$margin[[j]]$X
-#  }
+  if(object$by != "NA") {
+    object$X <- data[[object$by]] * object$X
+  }
   
   class(object) <- "tensorX.smooth"
   return(object)
