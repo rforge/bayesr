@@ -2791,7 +2791,10 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
       }
     }
   }
-  enames <- lapply(enames, unique)
+  enames <- lapply(lapply(enames, unique), function(x) {
+    x <- x[!is.na(x)]
+    return(if(length(x) < 1) NULL else x)
+  })
   ff <- as.formula(paste("~", paste(unlist(enames), collapse = "+")))
   vars <- all.vars.formula(ff)
   if(!all(vars[vars != "Intercept"] %in% nn))
