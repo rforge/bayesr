@@ -956,9 +956,10 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
             model <- names(x$terms)[model]
           rp <- grep(paste(model, ".", sep = ""), names(x$parameters), fixed = TRUE, value = TRUE)
           if(inherits(x$parameters, "data.frame") | inherits(x$parameters, "matrix")) {
+            rp <- grep(paste(model, ".", sep = ""), colnames(x$parameters), fixed = TRUE, value = TRUE)
             args <- list(...)
             mstop <- if(is.null(args$mstop)) nrow(x$parameters) else args$mstop
-            x$parameters[mstop, rp]
+            return(x$parameters[mstop, rp])
           } else return(x$parameters[rp])
         }
       }
@@ -2819,8 +2820,10 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
 
   ## Remove samples not needed for predictions!
   cn <- colnames(samps)
-  cn <- cn[-grep2(c(".tau2", ".alpha", ".edf", ".accepted", ".dic", ".loglik", ".logpost"),
-    tolower(cn), fixed = TRUE)]
+  drop2 <- grep2(c(".tau2", ".alpha", ".edf", ".accepted", ".dic", ".loglik", ".logpost"),
+    tolower(cn), fixed = TRUE)
+  if(length(drop2))
+    cn <- cn[-drop2]
   samps <- samps[, cn, drop = FALSE]
 
   env <- environment(object$formula)
