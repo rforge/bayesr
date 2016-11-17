@@ -1942,7 +1942,7 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind, uind = NULL)
 boost <- function(x, y, family,
   nu = 0.1, df = 4, maxit = NULL, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
-  eps = .Machine$double.eps^0.25, nback = 10, plot = TRUE, ...)
+  eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE, ...)
 {
   ## FIXME: hard coded.
   weights <- offset <- NULL
