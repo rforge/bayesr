@@ -586,13 +586,13 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
   }
   term <- paste(term, if(is.tx & (length(object$S) > 1)) "(tensor," else "(userdefined,", sep = "")
   for(j in seq_along(object$S))
-    term <- paste(term, paste("penmatdata", if(j < 2) "" else j, "=", sep = ""), rev(Sn)[j], ",", sep = "")
+    term <- paste(term, paste("penmatdata", if(j < 2) "" else j, "=", sep = ""), Sn[j], ",", sep = "")
   noc_and_cm <- is.null(object$xt$nocenter) & is.null(object$xt$centermethod)
   if(length(object$S) > 1) {
     Xn <- paste(Xn, "", 1:length(object$S), sep = "")
     for(j in seq_along(object$S)) {
       term <- paste(term, paste("designmatdata", if(j < 2) "" else j, "=", sep = ""),
-        rev(Xn)[j], if(j == length(object$S)) { if(noc_and_cm) "," else "" } else ",", sep = "")
+        Xn[j], if(j == length(object$S)) { if(noc_and_cm) "," else "" } else ",", sep = "")
     }
   } else {
     term <- paste(term, "designmatdata=", Xn,
