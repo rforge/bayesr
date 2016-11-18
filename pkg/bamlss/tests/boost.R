@@ -48,3 +48,26 @@ b <- bamlss(f, data = d, optimizer = boost, sampler = FALSE, scale.d = TRUE)
 d <- GAMart()
 b <- bamlss(num ~ x1 + x2 + x3 + s(x1) + s(x2) + s(x3), data = d, optimizer = boost, sampler = FALSE, scale.d = TRUE)
 
+
+## Rain example.
+homstart_data()
+homstart$raw[homstart$raw < 0] <- 0
+
+f <- list(
+  raw ~ s(day),
+  sigma ~ s(day),
+  lambda ~ s(day)
+)
+
+ff <- bamlss:::pcnorm_bamlss()
+
+nd <- data.frame("day" = 1:365)
+for(i in levels(homstart$id)) {
+  cat("Station", i, "\n")
+  d <- subset(homstart, id == i)
+  b <- bamlss(f, data = d, family = ff, optimizer = boost, sampler = FALSE, maxit = 2000)
+  p <- predict(b, newdata = nd)
+  names(p) <- paste("s", i, ".", names(p), sep = "")
+  nd <- cbind(nd, do.call("cbind", p))
+}
+
