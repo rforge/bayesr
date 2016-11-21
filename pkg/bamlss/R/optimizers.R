@@ -1940,7 +1940,7 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind, uind = NULL)
 
 ## Gradient boosting.
 boost <- function(x, y, family,
-  nu = 0.1, df = 4, maxit = NULL, mstop = NULL,
+  nu = 0.1, df = 4, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE, ...)
 {
@@ -1958,6 +1958,9 @@ boost <- function(x, y, family,
     if(is.null(maxit))
       maxit <- 10000
   }
+
+  if(is.null(maxit))
+    stop("please set either argument 'maxit' or 'mstop'!")
 
   if(is.null(attr(x, "bamlss.engine.setup")))
     x <- bamlss.engine.setup(x, df = df, ...)
@@ -2068,7 +2071,7 @@ boost <- function(x, y, family,
 
     if(!is.null(nback)) {
       if(iter > nback) {
-        dll <- abs(diff(tail(save.ll, nback))) / tail(save.ll, nback - 1)
+        dll <- abs(diff(tail(save.ll, nback)))
         if(any(!is.finite(dll)) | any(is.na(dll)))
           break
         if(all(dll < eps))

@@ -15,7 +15,7 @@
 \usage{
 ## Gradient boosting optimizer:
 boost(x, y, family,
-  nu = 0.1, df = 4, maxit = NULL, mstop = NULL,
+  nu = 0.1, df = 4, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL,
   plot = TRUE, ...)
@@ -51,9 +51,9 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters"),
   \item{verbose}{Print information during runtime of the algorithm.}
   \item{digits}{Set the digits for printing when \code{verbose = TRUE}.}
   \item{flush}{use \code{\link{flush.console}} for displaying the current output in the console.}
-  \item{eps}{The relative tolerance used as stopping mechanism, see argument \code{nback}.}
+  \item{eps}{The tolerance used as stopping mechanism, see argument \code{nback}.}
   \item{nback}{Integer. If \code{nback} is not \code{NULL}, then the algorithm stops if the
-    the relative change in the log-likelihood of the last \code{nback} iterations is smaller or
+    the change in the log-likelihood of the last \code{nback} iterations is smaller or
     equal to \code{eps}. If \code{maxit = NULL} the maximum number of iterations is set to 10000.}
   \item{plot}{Should the boosting summary be printed and plotted?}
   \item{object}{A \code{\link{bamlss}} object that was fitted using \code{boost()}.}

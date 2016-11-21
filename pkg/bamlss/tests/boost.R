@@ -54,9 +54,9 @@ homstart_data()
 homstart$raw[homstart$raw < 0] <- 0
 
 f <- list(
-  raw ~ s(day),
-  sigma ~ s(day),
-  lambda ~ s(day)
+  raw ~ s(day,k=20),
+  sigma ~ s(day,k=20),
+  lambda ~ s(day,k=20)
 )
 
 ff <- bamlss:::pcnorm_bamlss()
@@ -65,7 +65,8 @@ nd <- data.frame("day" = 1:365)
 for(i in levels(homstart$id)) {
   cat("Station", i, "\n")
   d <- subset(homstart, id == i)
-  b <- bamlss(f, data = d, family = ff, optimizer = boost, sampler = FALSE, maxit = 2000)
+  if(nrow(d) < 100) next
+  b <- bamlss(f, data = d, family = ff, optimizer = boost, sampler = FALSE, maxit = 3000)
   p <- predict(b, newdata = nd)
   names(p) <- paste("s", i, ".", names(p), sep = "")
   nd <- cbind(nd, do.call("cbind", p))
