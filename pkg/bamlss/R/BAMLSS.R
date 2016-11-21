@@ -4055,6 +4055,21 @@ smooth.construct.fdl.smooth.spec <- function(object, data, knots)
 }
 
 
+traceplot2 <- function(theta, n.plot=100, ylab = "", ...) {
+  cuq <- Vectorize(function(n, x) {
+    as.numeric(quantile(x[1:n],c(.025,.5,.975)))
+  }, vectorize.args = "n")
+  n.rep <- length(theta)
+  plot(1:n.rep, theta, col = "lightgrey", xlab = "iter",
+    ylab = ylab, type = "l", ...)
+  iter <- round(seq(1, n.rep, length = n.plot + 1)[-1])
+  tq <- cuq(iter,theta)
+  lines(iter, tq[2,])
+  lines(iter, tq[1,], lty = 2)
+  lines(iter, tq[3,], lty = 2)
+}
+
+
 ## Plotting method for "bamlss" objects.
 plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
   parameters = FALSE, ask = dev.interactive(), spar = TRUE, ...)
@@ -4104,26 +4119,9 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
         devAskNewPage(ask)
         tx <- as.vector(time(samps))
         for(j in 1:np) {
-            al <- if(grepl("logLik", snames[j], fixed = TRUE)) {
-            x$logLik
-          } else {
-            if(!is.null(par)) {
-              if(snames[j] %in% names(par))
-                par[snames[j]]
-            } else NULL
-          }
-          lim <- range(c(al, samps[, j]), na.rm = TRUE)
-          traceplot(samps[, j, drop = FALSE], main = paste("Trace of", snames[j]), ylim = lim)
+          traceplot2(samps[, j, drop = FALSE], main = paste("Trace of", snames[j]))
           lines(lowess(tx, samps[, j]), col = "red")
-          if(!is.null(al))
-            abline(h = al, col = "blue")
-          if(snames[j] %in% c(names(par), "logLik"))
-            abline(h = mean(samps[, j], na.rm = TRUE), col = "green")
-          densplot(samps[, j, drop = FALSE], main = paste("Density of", snames[j]), xlim = lim)
-          if(!is.null(al))
-            abline(v = al, col = "blue")
-          if(snames[j] %in% c(names(par), "logLik"))
-            abline(v = mean(samps[, j], na.rm = TRUE), col = "green")
+          acf(samps[, j, drop = FALSE], main = paste("ACF of", snames[j]), ...)
         }
       } else {
         snames <- snames[!grepl(".edf", snames, fixed = TRUE)]
