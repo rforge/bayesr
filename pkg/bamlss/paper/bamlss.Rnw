@@ -223,7 +223,7 @@ a typical GAM-type or so-called structured additive predictor
 (STAR,~\citealp{bamlss:Fahrmeir+Kneib+Lang:2004, bamlss:Brezger+Lang:2006}), in this paper
 we relax this assumption and let $f_{jk}(\cdot)$ be an unspecified composition of covariate data
 $\mathbf{x}$ and regression coefficients $\boldsymbol{\beta}_{jk}$ ($q_{jk} \times 1$). For example,
-if a linear basis function approach is used
+if a basis function representation is used
 $$
 \mathbf{f}_{jk} = \mathbf{X}_{jk}\boldsymbol{\beta}_{jk},
 $$
@@ -236,7 +236,7 @@ $$
 where $f_{jk}( \cdot )$ is also nonlinear in the parameters $\boldsymbol{\beta}_{jk}$. However,
 even more complex model terms are supported by the BAMLSS framework.
 
-Note that in a linear basis representation the individual model components
+Note that using basis functions the individual model components
 $\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$ can be further
 decomposed into a mixed model representation given by
 \begin{equation} \label{eqn:mixed}
@@ -555,8 +555,7 @@ Small values for $\mathbf{a}_{jk}$ and $\mathbf{b}_{jk}$ correspond to approxima
 $\log(\tau_{ljk}^2)$. Setting $\mathbf{b}_{jk} = \mathbf{0}$ and
 $\mathbf{a}_{jk}=-\mathbf{1}$ or $\mathbf{a}_{jk} = -1/2 \cdot \mathbf{1}$ yields flat priors for
 $\tau_{ljk}^2$ and $\tau_{ljk}$, respectively.
-However, the inverse Gamma prior as a default option for variance parameters needs to be
-reconsidered in some cases, e.g., it might be problematic if $\tau_{ljk}$ is close to zero, since the
+However, the inverse Gamma prior might be problematic if $\tau_{ljk}$ is close to zero, since the
 results a very sensitive on the choice of $\mathbf{a}_{jk}$ and $\mathbf{b}_{jk}$. Therefore,
 \citet{bamlss:Gelman:2006} proposes to use the half-Cauchy prior
 \begin{equation*} \label{eqn:hcauchy}
@@ -678,12 +677,12 @@ the derivatives of the log-likelihood for the $k$-th parameter can be further de
   \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_k},
 \end{equation*}
 including the derivatives of the log-likelihood with respect to parameters $\boldsymbol{\theta}_k$,
-the derivative of the link functions and the derivative of the predictor
+the derivative of the inverse link functions and the derivative of the predictor
 $\boldsymbol{\eta}_k$ with respect to coefficients $\boldsymbol{\beta}_k$. Again by chain rule,
 the components of $\mathbf{H}_{ks}$ including $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$ can be
 written as
 \begin{equation} \label{eqn:hessian2}
-\mathbf{F}_{ks}(\boldsymbol{\beta}) = \frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top} =
+\mathbf{J}_{ks}(\boldsymbol{\beta}) = \frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top} =
 \left( \frac{\partial \boldsymbol{\eta}_s}{\partial \boldsymbol{\beta}_s} \right)^\top
 \frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top}
 \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_k}
@@ -781,10 +780,10 @@ is equivalent to updating function
  &=& \boldsymbol{\beta}_{jk}^{(t)} -
   \mathbf{H}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right)^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) \\
  &=& \boldsymbol{\beta}_{jk}^{(t)} -
-  \left[\mathbf{F}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
+  \left[\mathbf{J}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
     \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right), \nonumber
 \end{eqnarray}
-where matrix $\mathbf{F}_{kk}( \cdot )$ is the derivative matrix given in (\ref{eqn:hessian2}).
+where matrix $\mathbf{J}_{kk}( \cdot )$ is the derivative matrix given in (\ref{eqn:hessian2}).
 
 For optimization, different strategies of the backfitting
 algorithm (\ref{eqn:blockbackfit}) can be applied. One alternative is an inner backfitting algorithm
@@ -885,7 +884,7 @@ derived by each of the following methods:
     \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)^{-1}
     \mathbf{s}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) \\
  &=& \boldsymbol{\beta}_{jk}^{(t)} -
-  \left[\mathbf{F}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
+  \left[\mathbf{J}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
     \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right),
   \end{eqnarray*}
   which is equivalent to the updating function given in (\ref{eqn:blockblocknewton}).
@@ -999,10 +998,10 @@ equivalent degrees of freedom (EDF). For each model component the EDF used to es
 are calculated by
 $$
 \mathrm{edf}_{jk}(\boldsymbol{\tau}_{jk}) := \mathrm{trace}\left[
-  \mathbf{F}_{kk}(\boldsymbol{\beta}_{jk})(
-  \mathbf{F}_{kk}(\boldsymbol{\beta}_{jk}) + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))^{-1} \right],
+  \mathbf{J}_{kk}(\boldsymbol{\beta}_{jk})(
+  \mathbf{J}_{kk}(\boldsymbol{\beta}_{jk}) + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))^{-1} \right],
 $$
-where $\mathbf{F}_{kk}( \cdot )$ is the derivative matrix given in (\ref{eqn:hessian2}) and
+where $\mathbf{J}_{kk}( \cdot )$ is the derivative matrix given in (\ref{eqn:hessian2}) and
 matrix $\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ is the prior
 derivative matrix as given in (\ref{eqn:gmatrix}). The
 total degrees of freedom used to fit the model are then estimated by
@@ -1123,30 +1122,7 @@ for each posterior sample $\boldsymbol{\beta}_k^{(t)}$; $k = 1, \dots, K$, $t = 
 
 \section{Strategies for implementation} \label{sec:strategies}
 
-Today, there exist a couple of implementations supporting distributional regression models in
-\proglang{R}. The \proglang{R} packages \pkg{gamlss} and \pkg{VGAM} are probably the best known for flexible modeling
-in an empirical Bayes setting. Besides, general purpose Bayesian modeling software like \pkg{WinBUGS},
-\pkg{JAGS} and \pkg{Stan} play a prominent role in the applied statistician's toolbox. Whereas the
-former emphasize on GAM-type additive models, the latter in principle allow for any type
-of model. This huge amount of flexibility is of course not without its drawbacks, e.g., estimation
-time is usually quite long especially when using large data sets. One of the most efficient
-software packages for Bayesian GAM-type distributional regression models, but with less flexibility on the
-model term side, is the standalone software \pkg{BayesX} with corresponding \proglang{R} interface
-\pkg{R2BayesX}. More recently, the \proglang{R} package \pkg{mgcv} started to support general
-smooth models \citep{bamlss:Wood+Pya+Saefken:2016} and additionally implements an interface to
-\pkg{JAGS} for estimating GAMs \citep{bamlss:Wood:2016b}.
-
-While the possibility for implementing new distributions is supported by all of the above software
-packages, options for implementing new model term types are more limited. The \pkg{mgcv}
-package provides very generic smooth term constructor methods for creating model terms based on
-a basis function approach. Package \pkg{gamlss} is slightly more flexible since the user can
-implement not only his own smooth terms, but also smooth fitting updating functions. On the other
-hand, using general purpose Bayesian modeling software the user can in principle incorporate all
-kinds of different model terms, however, the implementation is usually a bit tedious, i.a.
-
-Whereas model term flexibility is a major focus, there is less attention on the algorithmic side.
-Usually model fitting algorithms can be chosen only from a small predefined list. In contrast, this
-paper aims to contribute to full algorithmic flexibility by presenting iterative estimation
+This paper aims to contribute to full algorithmic flexibility by presenting iterative estimation
 algorithms with exchangeable updating functions. Moreover, the structures exploited in the last
 three sections suggest an unified modeling architecture that is useful for building algorithms and
 writing interfaces to existing implementations.
@@ -1934,7 +1910,7 @@ and mean
   \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)^{-1}
   \mathbf{s}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) \\
  &=& \boldsymbol{\beta}_{jk}^{(t)} -
-  \left[\mathbf{F}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
+  \left[\mathbf{J}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
     \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right).
 \end{eqnarray*}
 Using a linear basis function representation of functions $f_{jk}( \cdot )$ the precision matrix is
