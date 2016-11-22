@@ -158,12 +158,13 @@ implementations. A prove of concept is given in the corresponding \proglang{R} i
 \pkg{bamlss} \citep{bamlss:Umlauf+Klein+Zeileis:2016}.
 
 The remainder of the paper is as follows. In Section~\ref{sec:model} the models supported by this
-framework are briefly introduced. Section~\ref{sec:legobox} presents the ``Lego bricks'' that can be
-utilized for model building and estimation. In Section~\ref{sec:strategies} computational strategies
-for the implementation are presented. Finally, Section~\ref{sec:softex} briefly introduces the
-\proglang{R} package \pkg{bamlss}. The framework is further illustrated on a very large model for
-daily precipitation observations, as well as on the computationally challenging Cox model for
-continuous time.
+framework are briefly introduced. Section~\ref{sec:legobox} presents the conceptional algorithm
+design used to estimate numerous (possibly) complex models. In Section~\ref{sec:legobricks} the
+details of the ``Lego'' bricks that form the estimation systems are presented. Then,
+Section~\ref{sec:strategies} describes computational strategies for the implementation of the
+framework. Finally, Section~\ref{sec:illustrations} further illustrated the concept on a very large
+model for daily precipitation observations, as well as on the computationally challenging Cox model
+for continuous time.
 
 
 \newpage
@@ -475,7 +476,8 @@ updating systems like (\ref{eqn:blockupdate}) and (\ref{eqn:blockblockupdate}), 
 \begin{enumerate}
 \item \label{item:1} The log-likelihood function $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$,
 \item \label{item:2} link functions $h_k( \cdot )$,
-\item \label{item:3} prior densities $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$.
+\item \label{item:3} model terms $f_{jk}( \cdot )$ and corresponding prior densities
+  $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$.
 \end{enumerate}
 Moreover, in this section we derive the details for updating Algorithms~\ref{fig:umode} and
 \ref{fig:mcmc}, which usually require
@@ -502,10 +504,43 @@ general parts that are needed for updating functions in Algorithm~\ref{fig:umode
 choice, Bayesian inference and prediction.
 
 
-\subsection{Priors} \label{sec:priorsbricks}
+\subsection{Model terms and priors} \label{sec:priorsbricks}
 
 In the following we summarize commonly-used specifications for priors $p_{jk}( \cdot )$ used for
-estimating GAM-type models.
+estimating GAM-type models. In addition, Table~\ref{tab:mlegobricks} provides an overview of model
+terms and prior structures.
+
+\begin{sidewaystable}
+\centering
+\begin{tabular}{l|l|ll}
+\multicolumn{1}{c}{Covariates} & \multicolumn{1}{c}{Effect types $f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$} & \multicolumn{2}{c}{Prior densities $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$} \\
+& &
+  \multicolumn{1}{c}{$d_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \, \boldsymbol{\tau}_{jk};
+     \boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}})$} &
+  \multicolumn{1}{c}{$d_{\tau_{ljk}}(\tau_{ljk} | \, \boldsymbol{\alpha}_{\tau_{ljk}})$} \\ \hline
+\multirow{6}{*}{Scalar covariates} & Intercept $\beta$ & \multirow{2}{*}{$\propto$ constant} & \multicolumn{1}{c}{\multirow{3}{*}{$\emptyset$}} \\
+& Linear effect $x \cdot \beta$ &
+  \multirow{2}{*}{$\propto \exp \left(- \frac{1}{2}(\boldsymbol{\beta} -
+    \mathbf{m})^{\top}\mathbf {P}(\boldsymbol{\tau})(\boldsymbol{\beta} -
+    \mathbf{m})\right)$}
+                      & \\
+& Linear interaction $x_1 \cdot x_2 \cdot \beta$ & & \\ \cline{2-4}
+& Smooth effect $f(x)$ & \multirow{8}{*}{$\propto |\mathbf{P}(\boldsymbol{\tau})|^{\frac{1}{2}} \exp\left(
+    -\frac{1}{2}\boldsymbol{\beta}^\top\mathbf{P}(\boldsymbol{\tau})\boldsymbol{\beta}\right)$} &
+    \multirow{2}{*}{IG $\propto (\tau^2)^{-(a + 1)} \exp(-b / \tau^2)$} \\
+& Varying coefficient $f(x_2) \cdot x_1$  & & \\
+& Smooth effect $f(x_1, \ldots, x_L)$  & & \multirow{2}{*}{HC $\propto (1 + \tau^2/a^2)^{-1}(\tau^2/a^2)^{-1/2}$} \\ \cline{1-1}
+\multirow{2}{*}{Grouping variable $s$} & Random intercept $\beta_s$ & &  \\
+& Spatial effect $f(s)$ & & \multirow{2}{*}{SD $\propto (\tau^2/\tau)^{-1/2} \exp(-(\tau^2/a)^{1/2})$} \\ \cline{1-1}
+\multirow{2}{*}{Grouping and scalar,} & Random slope $x \cdot \beta_s$ & & \\
+\multirow{2}{*}{time variable $t$}& Space-time effect $f(s, t)$ & & \multirow{2}{*}{HN $\propto (\tau^2)^{1/2 -1} \exp(-\tau^2/(2a^2))$} \\
+& Functional random intercept $f_s(t)$ & & \\
+\end{tabular}
+\caption{\label{tab:mlegobricks} Commonly used ``Lego bricks'' for model terms in BAMLSS. Priors for
+  linear effects assume that the precision matrix $\mathbf{P}(\boldsymbol{\tau})$ is fixed. For smooth
+  effects, prior densities are: Inverse Gamma (IG), half-Cauchy (HC), scale-dependent (SD) and
+  half-normal (HN).}
+\end{sidewaystable}
 
 \subsubsection{Linear effects}
 
@@ -604,10 +639,15 @@ see~\citet{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}.
 
 \subsection{Model fitting} \label{sec:bricksmodelfit}
 
-This sections describes the quantities needed for applying the general
-Algorithm~\ref{fig:algodesign}. More precisely we first describe posterior mode updating
-as used within Algorithm~\ref{fig:umode}, before we introduce several MCMC sampling schemes that
-can be applied in updating Algorithm~\ref{fig:mcmc}.
+The construction of suitable updating functions $U_{jk}( \cdot )$ for solving problem \ref{item:a}
+and \ref{item:b} can be carried out in many ways. In this respect, note again that algorithm
+\ref{fig:algodesign} is very general, i.e., does not restrict to a specific iterative procedure.
+In the following we describe commonly used quantities that can be used for estimation of BAMLSS.
+Moreover, this section highlights the ``Lego'' system character described in the above, that
+arises when using gradient based updating schemes for \ref{item:a} and \ref{item:b}.
+More precisely, we first describe posterior mode updating as used within Algorithm~\ref{fig:umode},
+before we introduce several MCMC sampling schemes that can be applied in updating
+Algorithm~\ref{fig:mcmc}.
 
 \subsubsection{Posterior mode} \label{sec:postmode}
 
@@ -626,7 +666,7 @@ when assigning flat (constant) priors to $\boldsymbol{\beta}_{jk}$
 for $j = 1, \ldots, J_k$, $k = 1, \ldots, K$.
 For models involving shrinkage priors, e.g., in GAM-type models given by (\ref{eqn:mvnormprior}),
 the posterior mode is equivalent to a penalized maximum likelihood estimator for fixed parameters
-$\boldsymbol{\tau}_{jk}$ and prior densities $d_{\boldsymbol{\tau}_{jk}}( \cdot ) \propto 1$.
+$\boldsymbol{\tau}_{jk}$ and prior densities $d_{\boldsymbol{\tau}_{jk}}( \cdot ) \propto \text{constant}$.
 Moreover, the structure of the log-posterior (\ref{eqn:logpost}) usually prohibits estimation of
 $\boldsymbol{\tau}_{jk}$ through maximization and the
 estimator $\hat{\boldsymbol{\tau}}_{jk}$ is commonly derived by additionally
@@ -866,12 +906,12 @@ derived by each of the following methods:
   or its expectation, computed at the posterior mode estimate $\hat{\boldsymbol{\beta}}_{jk}$.
   However, fixing $\boldsymbol{\Sigma}_{jk}$ during MCMC simulation might still lead to undesired
   behavior of the Markov chain especially when parameter samples move into regions with low
-  probability mass of the posterior distribution. A solution is to construct full conditionals
-  $\pi(\boldsymbol{\beta}_{jk} | \cdot)$
-  which approximate the posterior at the current parameter state and minimize the risk of slow traversing.
-  The construction of the full conditional is based on a second order Taylor series expansion
-  of the log-posterior centered at the last state and yields a multivariate normal distribution
-  (see Appendix~\ref{appendix:fullcond1} for a detailed derivation) with precision matrix
+  probability mass of the posterior distribution. A solution with good mixing properties is to
+  construct approximate full conditionals $\pi(\boldsymbol{\beta}_{jk} | \cdot)$ that are based on a
+  second order Taylor series expansion of the log-posterior centered at the last state 
+  \citep{bamlss:Gamerman:1997, bamlss:Brezger+Lang:2006, bamlss:Fahrmeir+Kneib+Lang:2004,
+  bamlss:Klein+Kneib+Klasen+Lang:2015, bamlss:Klein+Kneib+Lang+Sohn:2015}. The resulting proposal density is multivariate
+  normal (see Appendix~\ref{appendix:fullcond1} for a detailed derivation) with precision matrix
   $$
   \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = -\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)
   $$
@@ -893,7 +933,7 @@ derived by each of the following methods:
   The proposal density for $\boldsymbol{\beta}_{jk}$ then is
   $q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)}) =
     \mathcal{N}(\boldsymbol{\mu}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk}^{(t)})$ and the acceptance probability
-  of the candidate is then computed by
+  of the candidate is computed by
   $$
   \alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \, \boldsymbol{\beta}_{jk}^{(t)}\right) =
   \text{min} \left[ \frac{\pi(\boldsymbol{\beta}_{jk}^{\star} | \, \cdot)q(\boldsymbol{\beta}_{jk}^{(t)} | \, \boldsymbol{\beta}_{jk}^\star)}{
@@ -919,8 +959,7 @@ derived by each of the following methods:
   (\ref{eqn:blockblocknewton}), or Fisher scoring when using
   $-E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
     \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$,
-  in each iteration of the MCMC sampler using iteratively weighted least squares (IWLS)
-  \citep{bamlss:Gamerman:1997, bamlss:Brezger+Lang:2006, bamlss:Klein+Kneib+Klasen+Lang:2015}. If
+  in each iteration of the MCMC sampler using iteratively weighted least squares (IWLS). If
   the computation of the weights $\mathbf{W}_{kk}$ is expensive, one simple strategy is to update
   $\mathbf{W}_{kk}$ only after samples of all parameters of $\boldsymbol{\theta}_k$ are drawn.
 
@@ -1059,73 +1098,15 @@ y^\star \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{1}) = \eta_1(\mathbf{x}^\st
 for each posterior sample $\boldsymbol{\beta}_k^{(t)}$; $k = 1, \dots, K$, $t = 1, \ldots, T$.
 
 
-%\section{BAMLSS algorithms} \label{sec:algorithms}
-
-%Using flexible partitioned updating systems like (\ref{eqn:blockupdate}) and
-%(\ref{eqn:blockblockupdate}), from Section~\ref{sec:priorsbricks} to \ref{sec:infpred}, it can be
-%recognized that the following ``Lego bricks'' are repeatedly used within the BAMLSS framework:
-%\begin{itemize}
-%\item The log-likelihood function $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$,
-%\item link functions $h_k( \cdot )$ and derivatives of inverse link functions,
-%\item the first order derivatives $\frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_{jk}}$ and $\frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_{jk}}$,
-%\item the second order derivatives $\frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_{jk} \partial \boldsymbol{\beta}_{jk}^\top}$,
-%\item derivatives for log-priors, e.g., $\frac{\partial \log \, p_{jk}(\boldsymbol{\beta}_{jk};
-%  \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})}{\partial \boldsymbol{\beta}_{jk}}$.
-%\end{itemize}
-%As shown in Section~\ref{sec:bricksmodelfit}, first and second order derivatives of the log-likelihood
-%w.r.t.\ $\boldsymbol{\beta}_{jk}$ can in most cases be computed by fragmenting with the chain rule into
-%derivatives of the log-likelihood w.r.t.\ parameters $\boldsymbol{\theta}_k$, derivatives of link
-%functions w.r.t.\ the linear predictors $\boldsymbol{\eta}_k$ and derivatives of
-%$\boldsymbol{\eta}_k$ w.r.t.\ the regression coefficients $\boldsymbol{\beta}_{jk}$. Hence, most of the
-%structures can be reused when implementing new models and/or algorithms, i.e., applying the
-%backfitting algorithm (\ref{eqn:blockbackfit}) and derivative based MCMC usually only requires the
-%calculation of derivatives of the log-likelihood w.r.t.\ parameters $\boldsymbol{\theta}_k$ anew.
-
-
-%In summary, building algorithms for BAMLSS is practically based on combining updating functions
-%which are itself based on repeated ``Lego bricks''. Hence, once the infrastructure is in place, it
-%is relatively easy to implement algorithms for a variety of models. In Table~\ref{tab:mlegobricks}
-%we further exemplify the modular structure for model term specifications using commonly used
-%priors for regression coefficients $\boldsymbol{\beta}_{jk}$ and smoothing variances $\boldsymbol{\tau}_{jk}$.
-%\begin{sidewaystable}
-%\centering
-%\begin{tabular}{l|l|ll}
-%\multicolumn{1}{c}{Covariates} & \multicolumn{1}{c}{Effect types $f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$} & \multicolumn{2}{c}{Prior densities $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$} \\
-%& &
-%  \multicolumn{1}{c}{$d_{\boldsymbol{\beta}}(\boldsymbol{\beta} | \, \boldsymbol{\tau};
-%     \boldsymbol{\alpha}_{\boldsymbol{\beta}})$} &
-%  \multicolumn{1}{c}{$d_{\boldsymbol{\tau}}(\boldsymbol{\tau} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}})$} \\ \hline
-%\multirow{6}{*}{Scalar covariates} & Intercept $\beta$ & \multirow{2}{*}{$\propto$ const} & \multicolumn{1}{c}{\multirow{3}{*}{$\emptyset$}} \\
-%& Linear effect $x \cdot \beta$ &
-%  \multirow{2}{*}{$\propto \exp \left(- \frac{1}{2}(\boldsymbol{\beta} -
-%    \mathbf{m})^{\top}\mathbf {P}(\boldsymbol{\tau})(\boldsymbol{\beta} -
-%    \mathbf{m})\right)$}
-%                      & \\
-%& Linear interaction $x_1 \cdot x_2 \cdot \beta$ & & \\ \cline{2-4}
-%& Smooth effect $f(x)$ & \multirow{8}{*}{$\propto |\mathbf{P}(\boldsymbol{\tau})|^{\frac{1}{2}} \exp\left(
-%    -\frac{1}{2}\boldsymbol{\beta}^\top\mathbf{P}(\boldsymbol{\tau})\boldsymbol{\beta}\right)$} &
-%    \multirow{2}{*}{IG $\propto (\tau^2)^{-(a + 1)} \exp(-b / \tau^2)$} \\
-%& Varying coefficient $f(x_2) \cdot x_1$  & & \\
-%& Smooth effect $f(x_1, \ldots, x_L)$  & & \multirow{2}{*}{HC $\propto (1 + \tau^2/a^2)^{-1}(\tau^2/a^2)^{-1/2}$} \\ \cline{1-1}
-%\multirow{2}{*}{Grouping variable $s$} & Random intercept $\beta_s$ & &  \\
-%& Spatial effect $f(s)$ & & \multirow{2}{*}{SD $\propto (\tau^2/\tau)^{-1/2} \exp(-(\tau^2/a)^{1/2})$} \\ \cline{1-1}
-%\multirow{2}{*}{Grouping and scalar,} & Random slope $x \cdot \beta_s$ & & \\
-%\multirow{2}{*}{time variable $t$}& Space-time effect $f(s, t)$ & & \multirow{2}{*}{HN $\propto (\tau^2)^{1/2 -1} \exp(-\tau^2/(2a^2))$} \\
-%& Functional random intercept $f_s(t)$ & & \\
-%\end{tabular}
-%\caption{\label{tab:mlegobricks} Commonly used ``Lego bricks'' for model terms in BAMLSS. Priors for
-%  linear effects assume that the precision matrix $\mathbf{P}(\boldsymbol{\tau})$ is fixed. For smooth
-%  effects, prior densities are: Inverse Gamma (IG), half-Cauchy (HC), scale-dependent (SD) and
-%  half-normal (HN).}
-%\end{sidewaystable}
-
-
 \section{Strategies for implementation} \label{sec:strategies}
 
-This paper aims to contribute to full algorithmic flexibility by presenting iterative estimation
-algorithms with exchangeable updating functions. Moreover, the structures exploited in the last
-three sections suggest an unified modeling architecture that is useful for building algorithms and
-writing interfaces to existing implementations.
+This paper aims to contribute to the statistician's tool box by proposing very general iterative
+estimation algorithms that are virtually based on a system of ``Lego'' bricks.  The ``Lego'' bricks
+are part of a variety of different algorithms, i.e., they are not only useful for building (new)
+algorithms, but also for interfacing existing implementations. Moreover, the
+construction of algorithm \ref{fig:algodesign} allows for different updating functions
+$U_{jk}( \cdot )$, therefore, we propose an unified modeling architecture that can be used for
+numerous complex regression problems.
 
 In order to unify the multitude of possibilities, a general software system for BAMLSS and beyond
 adresses the following:
@@ -1135,108 +1116,45 @@ adresses the following:
 \item support of exchangeable updating functions or even model fitting engines,
 \item standard post modeling extractor functions.
 \end{enumerate}
-While points 2--4 are primarily software specific issues, the first point is more general. For
-setting up all necessary design and penalty matrices, as well as prior structures, a symbolic
-model definition is needed. A concept for symbolic model description is described in the next
-section. Section~\ref{sec:architecture} then describes a general architecture for implementing
-BAMLSS and beyond.
+While points 2--4 are primarily software specific issues, the first point is more general.
 
-
-\subsection{Symbolic descriptions} \label{sec:symdesc}
-
-Based on \citet{bamlss:Wilkinson+Rogers:1973} symbolic descriptions for specifying models have been
-implemented for various computer programs. The statistical environment \proglang{R} provides such
-a syntax (see also \citealp{bamlss:Chambers+Hastie:1992}), which is familiar to almost any common
-\proglang{R} user today. Without such specifications, that in the end translate model formulae into
-model frames, the estimation of regression models is very circumstantial, especially in the case of
-additive predictors (\ref{eqn:addpred}). Therefore, the \proglang{R} model formula
-language is also extensible. The recommended package \pkg{mgcv}~\citep{bamlss:Wood:2016} for
-estimating GAMs additionally provides the generic descriptor \code{s()} for smooth terms, amongst
-others. However, to conveniently specify the models presented in Section~\ref{sec:model}, a
-slightly enhanced syntax is required.
-
-Hereinafter, we follow the notation of the \proglang{R} formula language and denote
-smooth and random effect terms with the \code{s()} descriptor. A typical linear regression model 
-with a response variable \code{y} and covariates \code{x1} and \code{x2} is then represented by
+For setting up all necessary design and penalty matrices, as well as prior structures, a symbolic
+model definition is needed. Based on \citet{bamlss:Wilkinson+Rogers:1973} symbolic descriptions for
+specifying models have been implemented for various computer programs. The statistical environment
+\proglang{R} provides such a syntax (see also \citealp{bamlss:Chambers+Hastie:1992}), which is
+familiar to almost any common \proglang{R} user today. Adapting this syntax for BAMLSS models
+is relatively straightforward, e.g., by suppling a list of formulas to the model fitting function.
+For example, a typical linear regression model with a response variable \code{y} and covariates
+\code{x1} and \code{x2} is represented by
 \begin{center}
 \code{y} $\sim$ \code{x1 + x2}
 \end{center}
-A model with two additional nonlinear modeled terms of covariates \code{z1}, \code{z2} and \code{z3}
-is set up with
+Following the syntax of the recommended \proglang{R} package \pkg{mgcv} \citep{bamlss:Wood:2016},
+smooth model terms are denoted with \code{s()}. A model with two additional nonlinear modeled terms
+of covariates \code{x3}, \code{x4} and \code{x5} is set up with
 \begin{center}
 \begin{tabular}{l}
-\code{y} $\sim$ \code{x1 + x2 + s(z1) + s(z2, z3)}
+\code{y} $\sim$ \code{x1 + x2 + s(x3) + s(x4, x5)}
 \end{tabular}
 \end{center}
-However, in the context of distributional regression we need formula extensions for multiple
-parameters. A convenient way to specify, e.g., the parameters of a normal model with
-$y~\sim~\mathcal{N}(\mu = \eta_{\mu}, log(\sigma) = \eta_{\sigma})$ is given by
+For BAMLSS a convenient way to specify, e.g., the parameters of a normal model with
+$y~\sim~\mathcal{N}(\mu = \eta_{\mu}, \log(\sigma) = \eta_{\sigma})$ is given by
 \begin{center}
 { \renewcommand{\arraystretch}{1}
 \begin{tabular}{l}
 \code{list(} \\
-$\quad$ \code{y} $\sim$ \code{x1 + x2 + s(z1) + s(z2),} \\
-$\quad$ \code{sigma} $\sim$ \code{x1 + x2 + s(z1)} \\
+$\quad$ \code{y} $\sim$ \code{x1 + x2 + s(x3) + s(x4),} \\
+$\quad$ \code{sigma} $\sim$ \code{x1 + x2 + s(x3)} \\
 \code{)}
 \end{tabular}
 }
 \end{center}
 i.e., two formulas are provided where the first represents the description of the mean $\mu$
-and the second of the scale parameter $\sigma$. Furthermore, the two formulas
-are symbolically connected by a list of formulas that is send to the subsequent processor. This way
-any number of parameters can be easily specified, e.g., a four parameter example is
-\begin{center}
-{ \renewcommand{\arraystretch}{1}
-\begin{tabular}{l}
-\code{list(} \\
-$\quad$ \code{y} $\sim$ \code{x1 + x2 + s(z1) + s(z2),} \\
-$\quad$ \code{sigma} $\sim$ \code{x1 + x2 + s(z1),} \\
-$\quad$ \code{nu} $\sim$ \code{s(z1),} \\
-$\quad$ \code{tau} $\sim$ \code{s(z2)} \\
-\code{)}
-\end{tabular}
-}
-\end{center}
-A convention we make at this point is that the first formula is always the one including the
-response variable and all other formulas have the corresponding parameter name on the left hand
-side. Hence, a mapping of terms with parameters is provided.
+and the second of the scale parameter $\sigma$. Hence, this type of formula can be extended to
+any number of parameters that should be modeled by explanatory variables.
 
-Models with categorical responses can be formulated in a similar fashion. A model
-with three categories within the \code{y} variable, e.g., a multinomial model with some
-reference category can be defined by
-\begin{center}
-{ \renewcommand{\arraystretch}{1}
-\begin{tabular}{l}
-\code{list(} \\
-$\quad$ \code{y} $\sim$ \code{x1 + s(z1) + s(z2),} \\
-$\quad$ $\sim$ \code{x1 + x2 + s(z1) + s(z3)} \\
-\code{)}
-\end{tabular}
-}
-\end{center}
-where all subsequent formulas do not need a left hand side. The only additional assumption here is
-that the order of the formulas represents the order of the categories. Another option is to specify
-the formulas of each category explicitly by
-\begin{center}
-{ \renewcommand{\arraystretch}{1}
-\begin{tabular}{l}
-\code{list(} \\
-$\quad$ \code{y1} $\sim$ \code{x1 + s(z1) + s(z2),} \\
-$\quad$ \code{y2} $\sim$ \code{x1 + x2 + s(z1) + s(z3)} \\
-\code{)}
-\end{tabular}
-}
-\end{center}
-i.e., variable \code{y1} is a dummy variable indicating whether the $i$-th observation is in
-category 1 and \code{y2} in category 2, respectively.
-
-In summary, the described model definition syntax does not restrict to any type of regression
-model or number of parameters.
-
-
-\subsection{Architecture} \label{sec:architecture}
-
-A possible architecture for the BAMLSS framework is illustrated in Figure~\ref{fig:blocks}.
+Concerning points 2--4 a possible architecture for the BAMLSS framework is illustrated in
+Figure~\ref{fig:blocks}.
 \begin{figure}[ht!]
 \centering
 \setlength{\unitlength}{1cm}
@@ -1278,46 +1196,33 @@ compute estimates of parameters, and thirdly, functions for creating results lik
 statistics i.a., visualization, prediction etc.
 
 To set up the necessary model frame, a parser function translates the model formula
-(see Section~\ref{sec:symdesc}) and the data and creates all necessary information that is
+and the data and creates all necessary information that is
 needed for subsequent model fitting engines. For some algorithms a modified version of the
 model term setup is needed, e.g., when using the mixed model representation (\ref{eqn:mixed}) for
 smooth terms, design and penalty matrices are transformed. This can be done by an optional
 transformer function applied on the BAMLSS model frame.
 
 The estimation step has two parts. First, an (optional) optimizer function, for example computing
-posterior mode estimates. Secondly, a sampler function for full Bayesian inference with MCMC which uses
-posterior mode estimates as staring values. Note that each, the optimizer and the sampler function,
-can be exchanged in this concept, i.e., this way it is possible to write a number of different
-optimizer and sampler functions, e.g., for specific problems.
+posterior mode estimates using Algorithm~\ref{fig:algodesign} and \ref{fig:umode}. Secondly, a
+sampler function for full Bayesian inference with MCMC using using Algorithm~\ref{fig:algodesign}
+in combination with \ref{fig:mcmc}, which uses posterior mode estimates as staring values. Note that
+each, the optimizer and the sampler function, can be exchanged in this concept, i.e., this way it is
+possible to write a number of different optimizer and sampler functions, e.g., for specific
+problems.
 
 In summary, the main advantage of the architecture is that the building blocks model frame,
 transformer, optimizer, sampler and results are entirely exchangeable and reusable, i.e., it is
 relatively easy to incorporate new algorithms or engines, amongst others. The other blocks are
-assumed to be more or less stable such that no extra coding is required. An implementation of this
-concept together with examples is illustrated in the next section.
-
-
-\section{Software implementation and examples} \label{sec:softex}
+assumed to be more or less stable such that no extra coding is required.
 
 An implementation of the conceptional framework is provided in the \proglang{R} package
-\pkg{bamlss} \citep{bamlss:Umlauf+Klein+Zeileis:2016}. Unlike other software packages for regression
-modeling, the design substantially focuses on maximum flexibility and easy integration of new code
-and/or standalone systems, hence, possible implementations even go beyond the concepts presented in
-the above sections.
-
-More specifically, the \pkg{bamlss} package provides infrastructures that build up all necessary
-model matrices and information from which it is easy for the user to construct estimation algorithms or
-interfaces to existing software packages like \pkg{JAGS} or \pkg{BayesX}. Similarly, the user
-usually does not need (want) to take care about computing post-estimation results like effect plots,
-summaries, etc., however even this is possible. This way, solutions for new problems can be created
-relatively easy, as shown in the examples. Therefore, the \pkg{bamlss} package can also be seen as
-an harmonized framework for regression modeling.
-
-The following only gives a brief introduction of the capabilities of the package, for a detailed
-overview please visit the manual pages of \pkg{bamlss}.
-
-
-\subsection{Model fitting with bamlss} \label{sec:bamlss}
+\pkg{bamlss} \citep{bamlss:Umlauf+Klein+Zeileis:2016}. More specifically, the \pkg{bamlss} package
+provides infrastructures that build up all necessary model matrices and information from which it is
+easy for the user to construct estimation algorithms or interfaces to existing software packages
+like \pkg{JAGS} or \pkg{BayesX}. Similarly, the user usually does not need (want) to take care about
+computing post-estimation results like effect plots, summaries, etc., however even this is possible.
+This way, solutions for new problems can be created relatively easy. Therefore, the
+\pkg{bamlss} package can also be seen as an harmonized framework for regression modeling.
 
 The main model fitting function is called \fct{bamlss}. The most important arguments are
 \begin{Code}
@@ -1329,54 +1234,21 @@ The main model fitting function is called \fct{bamlss}. The most important argum
 where the first two lines basically represent the standard model frame specifications
 \citep[see][]{bamlss:Chambers+Hastie:1992}.
 
-Argument \code{formula} is an extended model formula, which can be specified by the
-principles described in Section~\ref{sec:symdesc}, i.e., the \code{formula} can be a list of
+Argument \code{formula} is an extended model formula, i.e., the \code{formula} can be a list of
 formulas where each list entry specifies the details of one parameter of the modeled response
 distribution. For incorporating smooth terms, the \pkg{bamlss} package makes heavy use of package
 \pkg{mgcv} infrastructures and supports all model term constructors implemented in \pkg{mgcv},
 such as \fct{s}, \fct{te}, \fct{ti} and so forth.
 
-Estimation is performed by an \code{optimizer} and \code{sampler} function, which can be provided by the user.
-The default optimizer function implements an IWLS backfitting algorithm (\ref{eqn:blockbackfit})
-with automatic smoothing variance selection, see also Algorithm~\ref{fig:algodesign} and
-\ref{fig:umode}. The default sampler function implements derivative based MCMC based on IWLS
-proposals, smoothing variances are sampled using slice sampling, see also Section~\ref{sec:postmean}.
-For writing new optimizer and sampler functions only a simple general format of function arguments
-and return values must be adhered. See the documentation of the \pkg{bamlss} package for more
-details.
-
-Moreover, since MCMC sampling is computationally intensive it is also possible to run chains on
-several cores using package \pkg{parallel}, which is part of the base \proglang{R} distribution. 
-
-Like other model fitting functions in \proglang{R} the user must specify the distributions to be
-modeled, which are commonly represented as so called family objects. Since these objects
-are simply passed to the optimizer or sampler functions, the model fitting functions itself must 
-know how much information is needed to interpret the model. Therefore, in \pkg{bamlss} the family
-objects can hold an arbitrary number of specifications. Family objects may also control, e.g.,
-which optimizer or sampler function should be used when calling function \fct{bamlss},
-amongst other options. This way, it is easy to write model
-fitting functions for specific problems, like for the continuous time Cox-model in example
-Section~\ref{sec:coxreg}. At the time of writing, the distributions presented in
-Table~\ref{tab:distributions} are already provided within the \pkg{bamlss} package.
-\begin{table}[t!]
-\centering
-\begin{tabular}{ll}
-Function & Distribution \\ \hline
-\fct{beta.bamlss} & Beta distribution \\
-\fct{binomial.bamlss} & Binomial distribution \\
-\fct{cnorm.bamlss} & Censored normal distribution \\
-\fct{cox.bamlss} & Continuous time Cox-model \\
-\fct{gaussian.bamlss} & Gaussian distribution \\
-\fct{gamma.bamlss} & Gamma distribution \\
-\fct{multinomial.bamlss} & Multinomial distribution \\
-\fct{mvnorm.bamlss} & Multivariate normal distribution \\
-\fct{poisson.bamlss} & Poisson distribution \\ \hline
-\end{tabular}
-\caption{\label{tab:distributions} Available distributions in package \pkg{bamlss}.}
-\end{table}
-In addition, the package supports family objects of the \pkg{gamlss} package.
+Estimation is performed by an \code{optimizer} and \code{sampler} function, which can be provided by
+the user. The default optimizer function implements an IWLS backfitting algorithm (\ref{eqn:blockbackfit})
+with automatic smoothing variance selection, see also Algorithm~\ref{fig:umode}. The default sampler
+function implements derivative based MCMC based on IWLS proposals, smoothing variances are sampled
+using slice sampling, see also Section~\ref{sec:legobricks}. For writing new optimizer and sampler
+functions only a simple general format of function arguments and return values must be adhered.
 
 
+\section{Illustratiuons} \label{sec:illustrations}
 \subsection{Precepitation climatolgy from daily observations} \label{sec:censreg}
 
 Climatology models are one important component of the meteorological tool set. The accurate
