@@ -1165,8 +1165,10 @@ Figure~\ref{fig:blocks}.
 \put(5, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{data}}}}
 \put(2.5, 3.5){\fcolorbox{black}{heat4}{\framebox(2, 0.7)[c]{\footnotesize \texttt{model.frame}}}}
 \put(2.5, 2.5){\fcolorbox{black}{heat3}{\framebox(2, 0.7)[c]{\footnotesize \texttt{transformer}}}}
-\put(6, 3.5){\fcolorbox{black}{heat2}{\framebox(4.1, 0.7)[c]{\footnotesize \texttt{optimizer}, e.g., \ref{fig:algodesign} \& \ref{fig:umode}}}}
-\put(6, 2.5){\fcolorbox{black}{heat1}{\framebox(4.1, 0.7)[c]{\footnotesize \texttt{sampler}, e.g., \ref{fig:algodesign} \& \ref{fig:mcmc}}}}
+\put(6, 3.5){\fcolorbox{black}{heat2}{\framebox(2, 0.7)[c]{\footnotesize \texttt{optimizer}}}}
+\put(8.2, 3.8){\footnotesize (e.g., \ref{fig:algodesign} \& \ref{fig:umode})}
+\put(8.2, 2.8){\footnotesize (e.g., \ref{fig:algodesign} \& \ref{fig:mcmc})}
+\put(6, 2.5){\fcolorbox{black}{heat1}{\framebox(2, 0.7)[c]{\footnotesize \texttt{sampler}}}}
 \put(6, 1.5){\fcolorbox{black}{heat2}{\framebox(2, 0.7)[c]{\footnotesize \texttt{results}}}}
 \put(1, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{summary}}}}
 \put(3.5, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{plot}}}}
@@ -1276,11 +1278,12 @@ In Figure~\ref{fig:rainmodeldata}, left panel, the distribution of the final met
 is shown.
 
 As precipitation observations are limited to zero, a natural extension to the models that have been
-discussed for this type of data is censoring. Censoring assumes that a certain quantity cannot be
-observed below or above some threshold value. Here, we assume a ``left-censored'' normal
-distribution with a threshold at zero. Moreover, to make positive observations more ``normal'', we
-carry out a square root transformation of the daily observations. The censored normal distribution
-seems to fit quite well to the data as shown in the right panel of Figure~\ref{fig:rainmodeldata}.
+discussed for this type of data is censoring \citep{bamlss:Stauffer+Mayr+Messner+Umlauf+Zeileis:2016}.
+Censoring assumes that a certain quantity cannot be observed below or above some threshold value.
+Here, we assume a ``left-censored'' normal distribution with a threshold at zero. Moreover, to make
+positive observations more ``normal'', we carry out a square root transformation of the daily
+observations. The censored normal distribution seems to fit quite well to the data as shown in the
+right panel of Figure~\ref{fig:rainmodeldata}.
 
 The censored normal model with latent Gaussian variable $y^\star$ and
 observed response $y$, the square root of daily precipitation observations, is given by
@@ -1309,7 +1312,7 @@ each day of the year, i.e., this can be viewed as a functional ANOVA decompositi
 For full Bayesian estimation with Algorithm~\ref{fig:algodesign}, \ref{fig:umode} and
 \ref{fig:mcmc}, we construct updating functions $U_{jk}( \cdot )$ based on IWLS structures. Hence,
 as shown in Section~\ref{sec:legobricks} this only requires the following ``Lego bricks'' to be
-implemented in \pkg{bamlss}:
+implemented:
 \begin{itemize}
 \item The density function of a left censored Gaussian distribution with the threshold at zero is given by
 \begin{equation}
@@ -1322,7 +1325,7 @@ where $\phi$ is the probability density and $\Phi$ the cumulative distribution f
 standard normal distribution.
 
 \item Score vectors $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
-\partial \boldsymbol{\eta}_k$ need to be computed with
+\partial \boldsymbol{\eta}_k$ are computed with
 \begin{equation*}
 \frac{\partial \ell(\boldsymbol{\beta}; y, \mathbf{x})}{
 \partial \eta_{\mu}} = \begin{cases}
