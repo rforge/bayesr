@@ -541,7 +541,7 @@ sparse.setup <- function(x, S = NULL, ...)
     if(!is.list(S))
       S <- list(S)
     for(j in seq_along(S))
-      x <- x + if(length(S[[j]]) < 1) 0 else S[[j]]
+      x <- x + if(length(S[[j]]) < 1) 0 else { if(is.function(S[[j]])) S[[j]](c("b" = rep(0, attr(S[[j]], "npar")))) else S[[j]] }
   }
   index.crossprod <- if(!symmetric) sparse.matrix.index(x, ...) else NULL
   setup <- list(
@@ -750,7 +750,7 @@ make.prior <- function(x) {
         lp <- sum(dnorm(gamma, sd = 1000, log = TRUE))
       } else {
         if(length(tau2) < 2) {
-          lp <- -log(tau2) * x$rank / 2 + drop(-0.5 / tau2 * t(gamma) %*% x$S[[1]] %*% gamma) + var_prior_fun(tau2)
+          lp <- -log(tau2) * x$rank / 2 + drop(-0.5 / tau2 * t(gamma) %*% (if(is.function(x$S[[1]])) x$S[[1]](gamma) else x$S[[1]]) %*% gamma) + var_prior_fun(tau2)
         } else {
           ld <- 0
           P <- if(inherits(x$X, "Matrix")) Matrix(0, ncol(x$X), ncol(x$X)) else 0
