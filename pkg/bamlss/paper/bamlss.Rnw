@@ -160,7 +160,7 @@ implementations. A prove of concept is given in the corresponding \proglang{R} i
 The remainder of the paper is as follows. In Section~\ref{sec:model} the models supported by this
 framework are briefly introduced. Section~\ref{sec:legobox} presents the conceptional algorithm
 design used to estimate numerous (possibly) complex models. In Section~\ref{sec:legobricks} the
-details of the ``Lego'' bricks that form the estimation systems are presented. Then,
+details of the ``Lego bricks'' that form the estimation systems are presented. Then,
 Section~\ref{sec:strategies} describes computational strategies for the implementation of the
 framework. Finally, Section~\ref{sec:illustrations} further illustrated the concept on a very large
 model for daily precipitation observations, as well as on the computationally challenging Cox model
@@ -1101,7 +1101,7 @@ for each posterior sample $\boldsymbol{\beta}_k^{(t)}$; $k = 1, \dots, K$, $t = 
 \section{Strategies for implementation} \label{sec:strategies}
 
 This paper aims to contribute to the statistician's tool box by proposing very general iterative
-estimation algorithms that are virtually based on a system of ``Lego'' bricks.  The ``Lego'' bricks
+estimation algorithms that are virtually based on a system of ``Lego bricks''.  The ``Lego bricks''
 are part of a variety of different algorithms, i.e., they are not only useful for building (new)
 algorithms, but also for interfacing existing implementations. Moreover, the
 construction of algorithm \ref{fig:algodesign} allows for different updating functions
@@ -1130,7 +1130,7 @@ For example, a typical linear regression model with a response variable \code{y}
 \code{y} $\sim$ \code{x1 + x2}
 \end{center}
 Following the syntax of the recommended \proglang{R} package \pkg{mgcv} \citep{bamlss:Wood:2016},
-smooth model terms are denoted with \code{s()}. A model with two additional nonlinear modeled terms
+smooth model terms are denoted with \code{s()}. A model with two additional smooth terms
 of covariates \code{x3}, \code{x4} and \code{x5} is set up with
 \begin{center}
 \begin{tabular}{l}
@@ -1165,8 +1165,8 @@ Figure~\ref{fig:blocks}.
 \put(5, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{data}}}}
 \put(2.5, 3.5){\fcolorbox{black}{heat4}{\framebox(2, 0.7)[c]{\footnotesize \texttt{model.frame}}}}
 \put(2.5, 2.5){\fcolorbox{black}{heat3}{\framebox(2, 0.7)[c]{\footnotesize \texttt{transformer}}}}
-\put(6, 3.5){\fcolorbox{black}{heat2}{\framebox(2, 0.7)[c]{\footnotesize \texttt{optimizer}}}}
-\put(6, 2.5){\fcolorbox{black}{heat1}{\framebox(2, 0.7)[c]{\footnotesize \texttt{sampler}}}}
+\put(6, 3.5){\fcolorbox{black}{heat2}{\framebox(4.1, 0.7)[c]{\footnotesize \texttt{optimizer}, e.g., \ref{fig:algodesign} \& \ref{fig:umode}}}}
+\put(6, 2.5){\fcolorbox{black}{heat1}{\framebox(4.1, 0.7)[c]{\footnotesize \texttt{sampler}, e.g., \ref{fig:algodesign} \& \ref{fig:mcmc}}}}
 \put(6, 1.5){\fcolorbox{black}{heat2}{\framebox(2, 0.7)[c]{\footnotesize \texttt{results}}}}
 \put(1, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{summary}}}}
 \put(3.5, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{plot}}}}
@@ -1204,16 +1204,11 @@ transformer function applied on the BAMLSS model frame.
 
 The estimation step has two parts. First, an (optional) optimizer function, for example computing
 posterior mode estimates using Algorithm~\ref{fig:algodesign} and \ref{fig:umode}. Secondly, a
-sampler function for full Bayesian inference with MCMC using using Algorithm~\ref{fig:algodesign}
+sampler function for full Bayesian inference with MCMC using Algorithm~\ref{fig:algodesign}
 in combination with \ref{fig:mcmc}, which uses posterior mode estimates as staring values. Note that
-each, the optimizer and the sampler function, can be exchanged in this concept, i.e., this way it is
-possible to write a number of different optimizer and sampler functions, e.g., for specific
-problems.
-
-In summary, the main advantage of the architecture is that the building blocks model frame,
-transformer, optimizer, sampler and results are entirely exchangeable and reusable, i.e., it is
-relatively easy to incorporate new algorithms or engines, amongst others. The other blocks are
-assumed to be more or less stable such that no extra coding is required.
+each, the optimizer and the sampler function (and others), can be exchanged in this concept, i.e.,
+this way it is possible to write a number of different optimizer and sampler functions, e.g., for
+specific problems.
 
 An implementation of the conceptional framework is provided in the \proglang{R} package
 \pkg{bamlss} \citep{bamlss:Umlauf+Klein+Zeileis:2016}. More specifically, the \pkg{bamlss} package
@@ -1229,7 +1224,7 @@ The main model fitting function is called \fct{bamlss}. The most important argum
   bamlss(formula, family = "gaussian", data = NULL,
     weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
     transform = NULL, optimizer = NULL, sampler = NULL, results = NULL,
-    start = NULL, cores = NULL, combine = TRUE, ...)
+    start = NULL, ...)
 \end{Code}
 where the first two lines basically represent the standard model frame specifications
 \citep[see][]{bamlss:Chambers+Hastie:1992}.
@@ -1240,7 +1235,11 @@ distribution. For incorporating smooth terms, the \pkg{bamlss} package makes hea
 \pkg{mgcv} infrastructures and supports all model term constructors implemented in \pkg{mgcv},
 such as \fct{s}, \fct{te}, \fct{ti} and so forth.
 
-Estimation is performed by an \code{optimizer} and \code{sampler} function, which can be provided by
+Similarly to other flexible model fitting functions the user can specify his own family functions.
+Moreover, the package supports family objects of the \pkg{gamlss} package
+\citep{bamlss:Stasinopoulos+Rigby:2016}.
+
+Estimation is performed by an \code{optimizer} and/or \code{sampler} function, which can be provided by
 the user. The default optimizer function implements an IWLS backfitting algorithm (\ref{eqn:blockbackfit})
 with automatic smoothing variance selection, see also Algorithm~\ref{fig:umode}. The default sampler
 function implements derivative based MCMC based on IWLS proposals, smoothing variances are sampled
@@ -1248,7 +1247,8 @@ using slice sampling, see also Section~\ref{sec:legobricks}. For writing new opt
 functions only a simple general format of function arguments and return values must be adhered.
 
 
-\section{Illustratiuons} \label{sec:illustrations}
+\section{Illustrations} \label{sec:illustrations}
+
 \subsection{Precepitation climatolgy from daily observations} \label{sec:censreg}
 
 Climatology models are one important component of the meteorological tool set. The accurate
@@ -1265,7 +1265,9 @@ To contribute to this topic we analyze precipitation data of Austria taken from 
 project
 ({\small \url{http://www.zamg.ac.at/cms/de/forschung/klima/datensaetze/homstart/}}) \\
 conducted at the Zentralanstalt f\"ur Meteorologie und Geodynamik (ZAMG) and funded by the Austrian
-Climate Research Programme (ACRP). \citet{bamlss:Umlauf+Mayr+Messner:2012} already investigated the
+Climate Research Programme (ACRP)
+\citep{bamlss:Nemec+Chimani+Gruber:2011, bamlss:Nemec+Gruber+Chimani:2011}.
+\citet{bamlss:Umlauf+Mayr+Messner:2012} already investigated the
 question if it rains more frequently on weekends than during work days using the HOMSTART data.
 The data set consists of daily precipitation time series within 1948--2009. Time series that could
 not be homogenized, e.g., due to missing appropriate reference stations or other uncertainties, are
@@ -1302,11 +1304,14 @@ here function $f_1$ is an altitude effect, $f_2$ the cyclic seasonal variation, 
 correlated effect of longitude and latitude coordinates and $f_4$ a spatially-varying seasonal
 effect. Hence, the overall seasonal effect is constructed by the main effect $f_2$ and the
 interaction effect $f_4$, where the deviations from the main effect are modeled to sum to zero for
-each day of the year, i.e., this can be viewed as a functional ANOVA decomposition. All functions
-are estimated using penalized regression splines with multivariate normal priors
-(\ref{eqn:mvnormprior}) and inverse gamma priors (\ref{eqn:igprior}) for the corresping variance parameters.
+each day of the year, i.e., this can be viewed as a functional ANOVA decomposition.
 
-The density function of a left censored Gaussian distribution with the threshold at zero is given by
+For full Bayesian estimation with Algorithm~\ref{fig:algodesign}, \ref{fig:umode} and
+\ref{fig:mcmc}, we construct updating functions $U_{jk}( \cdot )$ based on IWLS structures. Hence,
+as shown in Section~\ref{sec:legobricks} this only requires the following ``Lego bricks'' to be
+implemented in \pkg{bamlss}:
+\begin{itemize}
+\item The density function of a left censored Gaussian distribution with the threshold at zero is given by
 \begin{equation}
   f(y; \, \mu = \eta_{\mu}, \, \log(\sigma) = \eta_{\sigma}) = \begin{cases} 
     \frac{1}{\sigma} \phi\left(\frac{y-\mu}{\sigma} \right) & y > 0 \\
@@ -1316,9 +1321,7 @@ The density function of a left censored Gaussian distribution with the threshold
 where $\phi$ is the probability density and $\Phi$ the cumulative distribution function of the
 standard normal distribution.
 
-For posterior mode estimation with the IWLS backfitting algorithm (\ref{eqn:blockbackfit}), as well
-as for the corresponding derivative based MCMC sampling scheme presented in
-Section~\ref{sec:dmh}, the elements of the score vectors $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
+\item Score vectors $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k$ need to be computed with
 \begin{equation*}
 \frac{\partial \ell(\boldsymbol{\beta}; y, \mathbf{x})}{
@@ -1337,7 +1340,7 @@ and
     {\Phi\left(\frac{-\mu}{\sigma} \right)} & \mbox{else.}
 \end{cases}
 \end{equation*}
-The diagonal elements of the weight matrix
+\item The diagonal elements of the weight matrix
 $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ are derived using
 \begin{equation*}
@@ -1364,8 +1367,10 @@ and
     {\Phi\left(\frac{-\mu}{\sigma} \right)^2} & \mbox{else.}
 \end{cases}
 \end{equation*}
+\end{itemize}
 The first and second derivative functions have been implemented in the \pkg{bamlss} family
-\fct{cnorm.bamlss}.
+\fct{cnorm\_bamlss}.
+
 
 Since the HOMSTART data set has over $1.2$ million observations, the resulting design matrices
 excessively demands the computer's storage as well as the CPU power. In order to prevent computational
