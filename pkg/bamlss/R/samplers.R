@@ -803,7 +803,7 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
     if(length(data$S) < 2) {
       g <- get.par(theta, "b")
       a <- data$rank / 2 + data$a
-      b <- 0.5 * crossprod(g, data$S[[1]]) %*% g + data$b
+      b <- 0.5 * crossprod(g, if(is.function(data$S[[1]])) data$S[[1]](g) else data$S[[1]]) %*% g + data$b
       tau2 <- 1 / rgamma(1, a, b)
       theta <- set.par(theta, tau2, "tau2")
     } else {
@@ -834,7 +834,7 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
   } else {
     tau2 <- get.par(theta, "tau2")
     for(j in seq_along(data$S))
-      S <- S + 1 / tau2[j] * data$S[[j]]
+      S <- S + 1 / tau2[j] * if(is.function(data$S[[j]])) data$S[[j]](theta) else data$S[[j]]
     matrix_inv(XWX + S, data$sparse.setup)
   }
   P[P == Inf] <- 0
@@ -888,6 +888,14 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
   ## Compute reduced residuals.
   e <- z - eta2
   xbin.fun(data$binning$sorted.index, hess, e, data$weights, data$rres, data$binning$order)
+
+  ## New penalty.
+  S <- 0
+  if(!data$fixed) {
+    tau2 <- get.par(theta, "tau2")
+    for(j in seq_along(data$S))
+      S <- S + 1 / tau2[j] * if(is.function(data$S[[j]])) data$S[[j]](g) else data$S[[j]]
+  }
 
   ## Compute mean and precision.
   XWX <- do.XWX(data$X, 1 / data$weights, data$sparse.setup$matrix)

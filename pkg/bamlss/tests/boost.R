@@ -92,5 +92,5 @@ f <- list(
   sigma ~ x1 + x2 + x3 + x4 + x5 + x6
 )
 
-b <- bamlss(f, data = d, sampler = FALSE, lasso = TRUE)
+b <- bamlss(f, data = d, lasso = TRUE)
 

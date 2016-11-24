@@ -2717,6 +2717,11 @@ set.starting.values <- function(x, start)
               if(length(i))
                 tpar <- tpar[-i]
               names(tpar) <- gsub(paste(id, "p.", sep = "."), "", names(tpar), fixed = TRUE)
+              if(any(l <- grepl("tau2", take))) {
+                tau2 <- start[take[l]]
+                names(tau2) <- gsub(paste(id, "p.", sep = "."), "", names(tau2), fixed = TRUE)
+                tpar <- c(tpar, tau2)
+              }
               x[[id]]$smooth.construct$model.matrix$state$parameters <- tpar
               x[[id]]$smooth.construct$model.matrix$state$fitted.values <- x[[id]]$smooth.construct$model.matrix$fit.fun(x[[id]]$smooth.construct$model.matrix$X, x[[id]]$smooth.construct$model.matrix$state$parameters)
             }
