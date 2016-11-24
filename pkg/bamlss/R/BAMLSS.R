@@ -691,13 +691,13 @@ make.fit.fun <- function(x, type = 1)
 
 
 ## The prior function.
-make.prior <- function(x) {
+make.prior <- function(x, sigma = 0.1) {
   prior <- NULL
   if(!is.null(x$xt$prior)) {
     prior <- x$xt$prior
     if(is.character(x$xt$prior)) {
       prior <- tolower(prior)
-      if(!(prior %in% c("ig", "hc", "sd")))
+      if(!(prior %in% c("ig", "hc", "sd", "hn", "hn.lasso")))
         stop(paste('smoothing variance prior "', prior, '" not supported!', sep = ''))
     }
   } else {
@@ -730,7 +730,12 @@ make.prior <- function(x) {
       "ig" = function(tau2) { igs + (-a - 1) * log(tau2) - b / tau2 },
       "hc" = function(tau2) { -log(1 + tau2 / (theta^2)) - 0.5 * log(tau2) - log(theta^2) },
       "sd" = function(tau2) { -0.5 * log(tau2) + 0.5 * log(theta) - (tau2 / theta)^(0.5) },
-      "hn" = function(tau2) { -0.5 * log(tau2) - tau2 / (2 * theta^2) }
+      "hn" = function(tau2) { -0.5 * log(tau2) - tau2 / (2 * theta^2) },
+      "hn.lasso0" = function(tau2) { -0.2257913 - log(sigma) - tau2^2/(2 * sigma^2) },
+      "hn.lasso" = function(tau2) {
+        theta <- sqrt(pi) / (sigma * sqrt(2))
+        log(2 * theta / pi) - (tau2^2 * theta^2) / pi
+      }
     )
 
     prior_fun <- function(parameters) {

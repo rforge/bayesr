@@ -68,6 +68,11 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       fitfun[[i]][[j]] <- function(x, p) {
         attr(p, "fitted.values")
       }
+      if(!is.null(x[[i]][[j]]$lasso.select)) {
+        tau2 <- get.par(x[[i]][[j]]$state$parameters, "tau2")
+        sigma <- tau2 * sqrt(pi) / sqrt(2)
+        x[[i]][[j]]$prior <- make.prior(x[[i]][[j]], sigma = sigma)
+      }
     }
     names(theta[[i]]) <- names(propose2[[i]]) <- names(fitfun[[i]]) <- names(x[[i]]) <- nt
   }
@@ -800,7 +805,7 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
 
   ## Sample variance parameter.
   if(!data$fixed & !data$fxsp & length(data$S)) {
-    if(length(data$S) < 2) {
+    if((length(data$S) < 2) & FALSE) {
       g <- get.par(theta, "b")
       a <- data$rank / 2 + data$a
       b <- 0.5 * crossprod(g, if(is.function(data$S[[1]])) data$S[[1]](g) else data$S[[1]]) %*% g + data$b

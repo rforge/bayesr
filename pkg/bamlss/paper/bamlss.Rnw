@@ -1755,7 +1755,7 @@ on a second order Taylor series expansion of the log-posterior centered at the l
 $\boldsymbol{\beta}_{jk}$.
 \begin{eqnarray*}
   \pi(\boldsymbol{\beta}_{jk}^\star | \cdot) &\propto& \exp\left[
-    \log\,p\left(\boldsymbol{\beta}_{jk}^{(t)} | \cdot\right) +
+    \log\,\pi\left(\boldsymbol{\beta}_{jk}^{(t)} | \cdot\right) +
     \left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)^\top \mathbf{s}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) + \right.\\
   && \left. \qquad\qquad \frac{1}{2}\left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)^\top
     \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)

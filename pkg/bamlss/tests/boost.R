@@ -92,5 +92,48 @@ f <- list(
   sigma ~ x1 + x2 + x3 + x4 + x5 + x6
 )
 
-b <- bamlss(f, data = d, lasso = TRUE, sep.lasso = TRUE, prior.lasso = "hc", propose = "iwls", n.iter = 12000, burnin = 2000, thin = 10)
+b <- bamlss(f, data = d, lasso = TRUE, propose = "iwls", n.iter = 12000, burnin = 2000, thin = 10)
+
+
+dgp <- function(n = 100, p = 10
+  sd = 0.3, sigma = diag(p), prob = c(0.7, 0.3), kmax = NULL)
+{
+  require("mvtnorm")
+
+  beta <- if(is.null(kmax)) {
+    sample(0:1, size = p, replace = TRUE, prob = prob)
+  } else {
+    sample(c(rep(0, p - kmax), rep(1, kmax)))
+  }
+
+  X <- rmvnorm(n, rep(0, p), sigma = sigma)
+  colnames(X) <- paste("x", 1:ncol(X), sep = "")
+  f <- X %*% beta
+  y <- f + rnorm(n, sd = sd)
+
+  d <- data.frame("y" = y, "f" = f)
+  d <- cbind(d, as.data.frame(X))
+
+  attr(d, "beta") <- beta
+  return(d)
+}
+
+d <- dgp(n = 300, p = 20, sd = 0.1)
+
+f <- grep("x", colnames(d), value = TRUE)
+f <- paste(f, collapse = "+")
+f <- as.formula(paste("y", f, sep = "~"))
+
+b <- bamlss(f, data = d, lasso = TRUE, sampler = FALSE, criterion = "BIC", sep.lasso = TRUE)
+print(sum(attr(d, "beta")))
+
+b0 <- bamlss(f, data = d, sampler = FALSE)
+
+cb <- coef(b, hyper = FALSE)
+cb <- round(cb[!grepl("Intercept", names(cb))], 3)
+
+cb0 <- coef(b0, hyper = FALSE)
+cb0 <- round(cb0[!grepl("Intercept", names(cb0))], 3)
+
+cbind(attr(d, "beta"), cb != 0, cb0 != 0)
 

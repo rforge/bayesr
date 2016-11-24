@@ -200,7 +200,7 @@ set.par <- function(x, replacement, what) {
 
 ## The default method.
 bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE,
-  lasso = FALSE, sep.lasso = FALSE, prior.lasso = "hc", ...)
+  lasso = FALSE, sep.lasso = FALSE, prior.lasso = "hn.lasso", ...)
 {
   if(inherits(x, "special"))
     return(x)
@@ -263,8 +263,9 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE,
           x$S <- list(A)
         }
         x$xt[["prior"]] <- prior.lasso
-        x$prior <- make.prior(x)
         x$fixed <- FALSE
+        x$prior <- make.prior(x, sigma = 0.001)
+        x$lasso.select <- TRUE
       }
     }
   }
@@ -308,7 +309,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE,
             rep(if(!is.null(x$xt[["tau2"]])) {
               x$xt[["tau2"]]
             } else {
-              if(!is.null(x$xt[["lambda"]])) 1 / x$xt[["lambda"]] else {if(lasso) 1e-5 else 1000}
+              if(!is.null(x$xt[["lambda"]])) 1 / x$xt[["lambda"]] else {if(lasso) 1e-3 else 1000}
             }, length.out = ntau2)
           }
         } else rep(x$sp, length.out = ntau2)
@@ -474,10 +475,12 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE,
   x$pid <- list("b" = which(pid), "tau2" = which(!pid))
   if(!length(x$pid$tau2))
     x$pid$tau2 <- NULL
-  if(!is.null(x$xt[["prior"]]))
-    x$prior <- x$xt[["prior"]]
-  if(is.null(x$prior) | !is.function(x$prior))
-    x$prior <- make.prior(x)
+  if(is.null(x$prior)) {
+    if(!is.null(x$xt[["prior"]]))
+      x$prior <- x$xt[["prior"]]
+    if(is.null(x$prior) | !is.function(x$prior))
+      x$prior <- make.prior(x)
+  }
 
   x$fit.fun <- make.fit.fun(x)
   x$state$fitted.values <- x$fit.fun(x$X, get.par(x$state$parameters, "b"))
@@ -1035,6 +1038,7 @@ get.ic2 <- function(logLik, edf, n, type = c("AIC", "BIC", "AICc", "MP"), ...)
 
 cround <- function(x, digits = 2)
 {
+  return(x)
   cdigits <- Vectorize(function(x) {
     if(abs(x) >= 1)
       return(0)
