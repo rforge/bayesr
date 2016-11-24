@@ -84,7 +84,7 @@ d <- data.frame(
   "x6" = runif(n, -1, 1)
 )
 d$eta_mu <- with(d, 1.2 + x1 - 0.5 * x2 + x6)
-d$eta_sigma <- with(d, 0.5 * x1  -0.8 * x4)
+d$eta_sigma <- with(d, 0.5 * x1  - 0.8 * x4)
 d$y <- rnorm(n, mean = d$eta_mu, sd = exp(d$eta_sigma))
 
 f <- list(

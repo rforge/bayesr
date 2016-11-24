@@ -200,7 +200,7 @@ set.par <- function(x, replacement, what) {
 
 ## The default method.
 bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE,
-  lasso = FALSE, sep.lasso = FALSE, ...)
+  lasso = FALSE, sep.lasso = FALSE, prior.lasso = "hc", ...)
 {
   if(inherits(x, "special"))
     return(x)
@@ -262,6 +262,8 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE,
           attr(A, "npar") <- ncol(x$X)
           x$S <- list(A)
         }
+        x$xt[["prior"]] <- prior.lasso
+        x$prior <- make.prior(x)
         x$fixed <- FALSE
       }
     }
