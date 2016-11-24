@@ -1031,7 +1031,7 @@ get.ic2 <- function(logLik, edf, n, type = c("AIC", "BIC", "AICc", "MP"), ...)
     "BIC" = -2 * logLik + edf * log(n),
     "AICc" = -2 * logLik + 2 * edf + (2 * edf * (edf + 1)) / (n - edf - 1),
     "MP" = -1 * (logLik + edf)
-  )x
+  )
   return(pen)
 }
 
