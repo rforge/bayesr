@@ -124,16 +124,18 @@ f <- grep("x", colnames(d), value = TRUE)
 f <- paste(f, collapse = "+")
 f <- as.formula(paste("y", f, sep = "~"))
 
-b <- bamlss(f, data = d, lasso = TRUE, sampler = FALSE, criterion = "BIC", sep.lasso = TRUE)
-print(sum(attr(d, "beta")))
-
 b0 <- bamlss(f, data = d, sampler = FALSE)
-
-cb <- coef(b, hyper = FALSE)
-cb <- round(cb[!grepl("Intercept", names(cb))], 3)
+b1 <- bamlss(f, data = d, lasso = TRUE, sampler = FALSE, criterion = "BIC", sep.lasso = FALSE)
+b2 <- bamlss(f, data = d, lasso = TRUE, sampler = FALSE, criterion = "BIC", sep.lasso = TRUE)
 
 cb0 <- coef(b0, hyper = FALSE)
-cb0 <- round(cb0[!grepl("Intercept", names(cb0))], 3)
+cb0 <- round(cb0[!grepl("Intercept", names(cb0))], 4)
 
-cbind(attr(d, "beta"), cb != 0, cb0 != 0)
+cb1 <- coef(b1, hyper = FALSE)
+cb1 <- round(cb1[!grepl("Intercept", names(cb1))], 4)
+
+cb2 <- coef(b2, hyper = FALSE)
+cb2 <- round(cb2[!grepl("Intercept", names(cb2))], 4)
+
+cbind("true" = attr(d, "beta"), "fixed" = cb0 != 0, "lasso" = cb1 != 0, "sep.lasso" = cb2 != 0)
 
