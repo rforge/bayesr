@@ -755,7 +755,7 @@ make.prior <- function(x) {
           ld <- 0
           P <- if(inherits(x$X, "Matrix")) Matrix(0, ncol(x$X), ncol(x$X)) else 0
           for(j in seq_along(tau2)) {
-            P <- P + 1 / tau2[j] * x$S[[j]]
+            P <- P + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](gamma) else x$S[[j]]
             ld <- ld + var_prior_fun(tau2[j])
           }
           ##lp <- dmvnorm(gamma, sigma = matrix_inv(P), log = TRUE) + ld

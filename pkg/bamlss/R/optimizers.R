@@ -199,7 +199,8 @@ set.par <- function(x, replacement, what) {
 }
 
 ## The default method.
-bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, lasso = FALSE, ...)
+bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE,
+  lasso = FALSE, sep.lasso = FALSE, ...)
 {
   if(inherits(x, "special"))
     return(x)
@@ -230,24 +231,39 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
           A <- diag(1 / (sqrt(b^2) + 1e-5))
           A
         }
-      } else {
-        A <- function(parameters) {
-          b <- get.par(parameters, "b")
-          A <- diag(1 / (sqrt(b^2) + 1e-5))
-          A[1, 1] <- 0
-          A
-        }
-      }
-      attr(A, "npar") <- ncol(x$X)
-      if(is.null(x$S))
-        x$S <- list(A)
-      else {
-        if(!is.null(x$is.model.matrix))
+        if(is.null(x$S))
           x$S <- list(A)
         else
           x$S <- c(x$S, list(A))
+      } else {
+        if(sep.lasso) {
+          cn <- colnames(x$X)
+          cn <- cn[cn != "(Intercept)"]
+          A <- list()
+          for(j in seq_along(cn)) {
+            f <- c('function(parameters) {',
+            '  b <- get.par(parameters, "b")',
+            '  A <- diag(0, length(b))',
+            '  A[1, 1] <- .Machine$double.xmin',
+            paste('  A[', j+1, ',', j+1, '] <- 1 / sqrt(b[', j+1, ']^2 + 1e-5)', sep = ''),
+            '  A',
+            '}')
+            A[[j]] <- eval(parse(text = paste(f, collapse = "\n")))
+            attr(A[[j]], "npar") <- ncol(x$X)
+          }
+          x$S <- A
+        } else {
+          A <- function(parameters) {
+            b <- get.par(parameters, "b")
+            A <- diag(1 / sqrt(b^2 + 1e-5))
+            A[1, 1] <- .Machine$double.xmin
+            A
+          }
+          attr(A, "npar") <- ncol(x$X)
+          x$S <- list(A)
+        }
+        x$fixed <- FALSE
       }
-      x$fixed <- FALSE
     }
   }
   x$nobs <- length(x$binning$match.index)
@@ -290,7 +306,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
             rep(if(!is.null(x$xt[["tau2"]])) {
               x$xt[["tau2"]]
             } else {
-              if(!is.null(x$xt[["lambda"]])) 1 / x$xt[["lambda"]] else {if(lasso) .Machine$double.eps^0.5 else 1000}
+              if(!is.null(x$xt[["lambda"]])) 1 / x$xt[["lambda"]] else {if(lasso) 1e-5 else 1000}
             }, length.out = ntau2)
           }
         } else rep(x$sp, length.out = ntau2)

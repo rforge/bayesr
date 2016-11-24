@@ -72,3 +72,25 @@ for(i in levels(homstart$id)) {
   nd <- cbind(nd, do.call("cbind", p))
 }
 
+
+## Lasso.
+n <- 1000
+d <- data.frame(
+  "x1" = runif(n, -1, 1)
+  "x2" = runif(n, -1, 1)
+  "x3" = runif(n, -1, 1)
+  "x4" = runif(n, -1, 1)
+  "x5" = runif(n, -1, 1)
+  "x6" = runif(n, -1, 1)
+)
+d$eta_mu <- with(d, 1.2 + x1 - 0.5 * x2 + x6)
+d$eta_sigma <- with(d, 0.5 * x1  -0.8 * x4)
+d$y <- rnorm(n, mean = d$eta_mu, sd = exp(d$eta_sigma))
+
+f <- list(
+  y ~ x1 + x2 + x3 + x4 + x5 + x6,
+  sigma ~ x1 + x2 + x3 + x4 + x5 + x6
+)
+
+b <- bamlss(f, data = d, sampler = FALSE, lasso = TRUE)
+
