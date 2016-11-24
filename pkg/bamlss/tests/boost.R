@@ -76,11 +76,11 @@ for(i in levels(homstart$id)) {
 ## Lasso.
 n <- 1000
 d <- data.frame(
-  "x1" = runif(n, -1, 1)
-  "x2" = runif(n, -1, 1)
-  "x3" = runif(n, -1, 1)
-  "x4" = runif(n, -1, 1)
-  "x5" = runif(n, -1, 1)
+  "x1" = runif(n, -1, 1),
+  "x2" = runif(n, -1, 1),
+  "x3" = runif(n, -1, 1),
+  "x4" = runif(n, -1, 1),
+  "x5" = runif(n, -1, 1),
   "x6" = runif(n, -1, 1)
 )
 d$eta_mu <- with(d, 1.2 + x1 - 0.5 * x2 + x6)

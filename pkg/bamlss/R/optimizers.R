@@ -244,7 +244,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE,
             f <- c('function(parameters) {',
             '  b <- get.par(parameters, "b")',
             '  A <- diag(0, length(b))',
-            '  A[1, 1] <- .Machine$double.xmin',
+            '  A[1, 1] <- .Machine$double.eps',
             paste('  A[', j+1, ',', j+1, '] <- 1 / sqrt(b[', j+1, ']^2 + 1e-5)', sep = ''),
             '  A',
             '}')
@@ -256,7 +256,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE,
           A <- function(parameters) {
             b <- get.par(parameters, "b")
             A <- diag(1 / sqrt(b^2 + 1e-5))
-            A[1, 1] <- .Machine$double.xmin
+            A[1, 1] <- .Machine$double.eps
             A
           }
           attr(A, "npar") <- ncol(x$X)
