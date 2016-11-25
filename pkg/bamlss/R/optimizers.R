@@ -290,10 +290,12 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE,
     }
   }
   if(!is.null(x$sp)) {
-    x$sp <- rep(x$sp, length.out = ntau2)
-    for(j in seq_along(x$sp))
-      if(x$sp[j] == 0) x$sp[j] <- .Machine$double.eps^0.5
-    x$fxsp <- TRUE
+    if(all(is.numeric(x$sp))) {
+      x$sp <- rep(x$sp, length.out = ntau2)
+      for(j in seq_along(x$sp))
+        if(x$sp[j] == 0) x$sp[j] <- .Machine$double.eps^0.5
+      x$fxsp <- TRUE
+    } else x$fxsp <- FALSE
   } else x$fxsp <- FALSE
   if(is.null(state$parameters)) {
     state$parameters <- rep(0, ncol(x$X))
@@ -465,6 +467,8 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE,
     } else {
       if(!is.null(x$xt$tau2))
         tau2 <- x$xt$tau2
+      if(!is.null(x$xt$lambda))
+        tau2 <- 1 / x$xt$lambda
     }
     if(!is.null(tau2)) {
       tau2 <- rep(tau2, length.out = ntau2)
@@ -1062,7 +1066,7 @@ cround <- function(x, digits = 2)
 
 
 ## Naive smoothing parameter optimization.
-tau2.optim <- function(f, start, ..., scale = 10, eps = 0.0001, maxit = 10)
+tau2.optim <- function(f, start, ..., scale = 10, eps = 0.0001, maxit = 1)
 {
   foo <- function(par, start, k) {
     start[k] <- cround(par)
@@ -1279,6 +1283,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
 
   ## Compute mean and precision.
   XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
+
   if(!x$state$do.optim | x$fixed | x$fxsp) {
     if(x$fixed) {
       P <- matrix_inv(XWX, index = x$sparse.setup)

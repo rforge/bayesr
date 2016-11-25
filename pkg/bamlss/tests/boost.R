@@ -95,7 +95,7 @@ f <- list(
 b <- bamlss(f, data = d, lasso = TRUE, propose = "iwls", n.iter = 12000, burnin = 2000, thin = 10)
 
 
-dgp <- function(n = 100, p = 10
+dgp <- function(n = 100, p = 10,
   sd = 0.3, sigma = diag(p), prob = c(0.7, 0.3), kmax = NULL)
 {
   require("mvtnorm")
@@ -122,7 +122,10 @@ d <- dgp(n = 300, p = 20, sd = 0.1)
 
 f <- grep("x", colnames(d), value = TRUE)
 f <- paste(f, collapse = "+")
-f <- as.formula(paste("y", f, sep = "~"))
+f <- as.formula(paste("", f, sep = "~"))
+
+b <- bamlss(y ~ la(f), data = d, sampler = FALSE)
+
 
 b0 <- bamlss(f, data = d, sampler = FALSE)
 b1 <- bamlss(f, data = d, lasso = TRUE, sampler = FALSE, criterion = "BIC", sep.lasso = FALSE)
