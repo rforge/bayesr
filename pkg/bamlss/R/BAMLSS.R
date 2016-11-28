@@ -3781,11 +3781,11 @@ la <- function(formula, type = c("single", "multiple"), ...)
 
 smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
 {
-  object$X <- as.matrix(as.data.frame(data)[, object$term, drop = FALSE])
+  object$X <- as.matrix(model.matrix(object$formula, data = as.data.frame(data)))[, -1]
   object$S <- list()
   const <- object$xt$const
   if(is.null(const))
-    const <- 1e-10
+    const <- 1e-5
   if(object$type == "single") {
     object$S[[1]] <- function(parameters) {
       b <- get.par(parameters, "b")
@@ -3807,7 +3807,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     }
     object$S <- A
   }
-  object$xt[["prior"]] <- "hn.lasso"
+  object$xt[["prior"]] <- "hc"
   object$fixed <- FALSE
   object$fxsp <- FALSE
   object$prior <- make.prior(object, sigma = 0.1)
@@ -3821,7 +3821,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
 
 Predict.matrix.lasso.smooth <- function(object, data)
 {
-  as.matrix(as.data.frame(data)[, object$term, drop = FALSE])
+  as.matrix(model.matrix(object$formula, data = as.data.frame(data)))[, -1]
 }
 
 

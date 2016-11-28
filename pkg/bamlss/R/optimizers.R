@@ -106,12 +106,10 @@ bamlss.engine.setup <- function(x, update = "iwls", propose = "iwlsC_gp",
             }
             x$smooth.construct[[j]]$propose <- propose
           }
-          if(is.null(x$smooth.construct[[j]]$state$do.optim)) {
-            if(is.null(do.optim))
-              x$smooth.construct[[j]]$state$do.optim <- TRUE
-            else
-              x$smooth.construct[[j]]$state$do.optim <- do.optim
-          }
+          if(is.null(do.optim))
+            x$smooth.construct[[j]]$state$do.optim <- TRUE
+          else
+            x$smooth.construct[[j]]$state$do.optim <- do.optim
           if(!is.null(x$smooth.construct[[j]]$rank))
             x$smooth.construct[[j]]$rank <- as.numeric(x$smooth.construct[[j]]$rank)
           if(!is.null(x$smooth.construct[[j]]$Xf)) {
@@ -2751,7 +2749,8 @@ set.starting.values <- function(x, start)
             tpar <- if(length(i)) tpar[-i] else tpar
             names(tpar) <- gsub(paste(tl, ".", sep = ""), "", names(tpar), fixed = TRUE)
             spar <- x[[id]]$smooth.construct[[j]]$state$parameters
-            spar <- set.par(spar, get.par(tpar, "b"), "b")
+            if(length(get.par(tpar, "b")))
+              spar <- set.par(spar, get.par(tpar, "b"), "b")
             if(any(grepl("tau2", names(tpar)))) {
               spar <- set.par(spar, get.par(tpar, "tau2"), "tau2")
             }
@@ -2764,5 +2763,50 @@ set.starting.values <- function(x, start)
   }
 
   return(x)
+}
+
+
+lasso <- function(x, y, start = NULL, lambda = 10000, nlambda = 100, ...)
+{
+  if(is.null(attr(x, "bamlss.engine.setup")))
+    x <- bamlss.engine.setup(x, update = bfit_iwls, do.optim = FALSE, ...)
+
+  if(!is.null(start)) {
+    start <- start[!grepl("tau2", start)]
+    if(length(start) < 1)
+    start <- NULL
+  }
+
+  lambdas <- seq(lambda, 0.0001, length = nlambda)
+
+  par <- list(); ic <- NULL
+  for(l in seq_along(lambdas)) {
+    start2 <- start
+    tau2 <- NULL
+    for(i in names(x)) {
+      for(j in names(x[[i]]$smooth.construct)) {
+        if(is.null(x[[i]]$smooth.construct[[j]]$is.model.matrix)) {
+          tau2 <- get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "tau2")
+          tau20 <- rep(1 / lambdas[l], length.out = length(tau2))
+          names(tau20) <- names(tau2)
+          names(tau20) <- paste(i, "s", x[[i]]$smooth.construct[[j]]$label, names(tau20), sep = ".")
+          start2 <- c(start2, tau20)
+        }
+      }
+    }
+
+    if(l > 1) {
+      cb <- unlist(par[[l - 1]])
+      ntau2 <- length(grep("tau2", names(cb), value = TRUE))
+      cb[grepl("tau2", names(cb))] <- rep(1 / lambdas[l], length.out = ntau2)
+      start2 <- cb
+    }
+
+    b <- bfit(x = x, y = y, start = start2, verbose = TRUE, ...)
+    par[[l]] <- unlist(b$parameters)
+    ic <- rbind(ic, c("logLik" = b$logLik, "logPost" = b$logPost, "IC" = as.numeric(unlist(b[grep("ic", names(b), ignore.case = TRUE)]))))
+  }
+
+  list("parameters" = do.call("rbind", par), "ic" = ic, "lambda" = lambdas)
 }
 
