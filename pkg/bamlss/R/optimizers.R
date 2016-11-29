@@ -197,8 +197,7 @@ set.par <- function(x, replacement, what) {
 }
 
 ## The default method.
-bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE,
-  lasso = FALSE, sep.lasso = FALSE, prior.lasso = "hn.lasso", ...)
+bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, ...)
 {
   if(inherits(x, "special"))
     return(x)
@@ -220,52 +219,6 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE,
       "order" = 1:nr,
       "sorted.index" = 1:nr
     )
-  }
-  if(lasso) {
-    if(!is.null(x$is.model.matrix) & !(colnames(x$X)[1] == "(Intercept)" & ncol(x$X) < 2)) {
-      if(is.null(x$is.model.matrix)) {
-        A <- function(parameters) {
-          b <- get.par(parameters, "b")
-          A <- diag(1 / (sqrt(b^2) + 1e-5))
-          A
-        }
-        if(is.null(x$S))
-          x$S <- list(A)
-        else
-          x$S <- c(x$S, list(A))
-      } else {
-        if(sep.lasso) {
-          cn <- colnames(x$X)
-          cn <- cn[cn != "(Intercept)"]
-          A <- list()
-          for(j in seq_along(cn)) {
-            f <- c('function(parameters) {',
-            '  b <- get.par(parameters, "b")',
-            '  A <- diag(0, length(b))',
-            '  A[1, 1] <- .Machine$double.eps',
-            paste('  A[', j+1, ',', j+1, '] <- 1 / sqrt(b[', j+1, ']^2 + 1e-5)', sep = ''),
-            '  A',
-            '}')
-            A[[j]] <- eval(parse(text = paste(f, collapse = "\n")))
-            attr(A[[j]], "npar") <- ncol(x$X)
-          }
-          x$S <- A
-        } else {
-          A <- function(parameters) {
-            b <- get.par(parameters, "b")
-            A <- diag(1 / sqrt(b^2 + 1e-5))
-            A[1, 1] <- .Machine$double.eps
-            A
-          }
-          attr(A, "npar") <- ncol(x$X)
-          x$S <- list(A)
-        }
-        x$xt[["prior"]] <- prior.lasso
-        x$fixed <- FALSE
-        x$prior <- make.prior(x, sigma = 0.001)
-        x$lasso.select <- TRUE
-      }
-    }
   }
   x$nobs <- length(x$binning$match.index)
   k <- length(x$binning$nodups)
@@ -300,7 +253,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE,
     names(state$parameters) <- if(is.null(colnames(x$X))) {
       paste("b", 1:length(state$parameters), sep = "")
     } else colnames(x$X)
-    if(is.null(x$is.model.matrix) | lasso) {
+    if(is.null(x$is.model.matrix)) {
       if(ntau2 > 0) {
         tau2 <- if(is.null(x$sp)) {
           if(x$fixed) {
@@ -309,7 +262,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE,
             rep(if(!is.null(x$xt[["tau2"]])) {
               x$xt[["tau2"]]
             } else {
-              if(!is.null(x$xt[["lambda"]])) 1 / x$xt[["lambda"]] else {if(lasso) 1e-3 else 1000}
+              if(!is.null(x$xt[["lambda"]])) 1 / x$xt[["lambda"]] else 1000
             }, length.out = ntau2)
           }
         } else rep(x$sp, length.out = ntau2)
@@ -487,6 +440,24 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE,
   x$fit.fun <- make.fit.fun(x)
   x$state$fitted.values <- x$fit.fun(x$X, get.par(x$state$parameters, "b"))
   x$state$edf <- x$edf(x)
+
+  XX <- crossprod(x$X)
+  XX_is_diagonal <- all(XX[!diag(nrow(XX))] == 0)
+  if(is.character(XX_is_diagonal))
+    XX_is_diagonal <- FALSE
+
+  b <- runif(length(get.par(x$state$parameters, "b")))
+  tau2 <- get.par(x$state$parameters, "tau2")
+  for(j in seq_along(x$S)) {
+    S <- 0
+    for(j in seq_along(tau2)) {
+      S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c("b" = b, "tau2" = tau2)) else x$S[[j]]
+    }
+  }
+  S_is_diagonal <- all(S[!diag(nrow(S))] == 0)
+  if(is.character(S_is_diagonal))
+    S_is_diagonal <- FALSE
+  x$all_diagonal <- XX_is_diagonal & (if(x$fixed) TRUE else S_is_diagonal)
 
   x
 }
@@ -1281,16 +1252,15 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
 
   ## Compute mean and precision.
   XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
-
   if(!x$state$do.optim | x$fixed | x$fxsp) {
     if(x$fixed) {
-      P <- matrix_inv(XWX, index = x$sparse.setup)
+      P <- matrix_inv(XWX, index = x$sparse.setup, all_diagonal = x$all_diagonal)
     } else {
       S <- 0
       tau2 <- get.state(x, "tau2")
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](g0) else x$S[[j]]
-      P <- matrix_inv(XWX + S, index = x$sparse.setup)
+      P <- matrix_inv(XWX + S, index = x$sparse.setup, all_diagonal = x$all_diagonal)
     }
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
   } else {
@@ -1304,7 +1274,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
       S <- 0
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](g0) else x$S[[j]]
-      P <- matrix_inv(XWX + S, index = x$sparse.setup)
+      P <- matrix_inv(XWX + S, index = x$sparse.setup, all_diagonal = x$all_diagonal)
       if(inherits(P, "try-error")) return(NA)
       g <- drop(P %*% crossprod(x$X, x$rres))
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
@@ -1340,7 +1310,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
     S <- 0
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](x$state$parameters) else x$S[[j]]
-    P <- matrix_inv(XWX + S, index = x$sparse.setup)
+    P <- matrix_inv(XWX + S, index = x$sparse.setup, all_diagonal = x$all_diagonal)
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
   }
 

@@ -3786,6 +3786,7 @@ la <- function(formula, type = c("single", "multiple"), ...)
 smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
 {
   object$X <- as.matrix(model.matrix(object$formula, data = as.data.frame(data)))
+
   if(length(i <- grep("Intercept", colnames(object$X))))
     object$X <- object$X[, -i, drop = FALSE]
   object$S <- list()
@@ -3824,7 +3825,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     object$xt$lambda <- 1 / 0.0001
   object$xt$do.optim <- TRUE
   object$lassoconst <- const
-  object$propose <- GMCMC_iwlsC_gp_gS
+  object$propose <- GMCMC_iwls
   class(object) <- "lasso.smooth"
   object
 }
@@ -6352,8 +6353,17 @@ h_response <- function(x)
 
 
 ## Create the inverse of a matrix.
-matrix_inv <- function(x, index = NULL, force = FALSE)
+matrix_inv <- function(x, index = NULL, force = FALSE, all_diagonal = FALSE)
 {
+  if(is.null(all_diagonal))
+    all_diagonal <- FALSE
+  if(all_diagonal) {
+    x <- 1 / diag(x)
+    x <- if(length(x) < 2) {
+      matrix(x, 1, 1)
+    } else diag(x)
+    return(x)
+  }
   if(inherits(x, "Matrix")) {
     if(!is.null(index$crossprod)) {
       if(ncol(index$crossprod) < 2) {
