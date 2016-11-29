@@ -1,16 +1,31 @@
 \name{la}
 \alias{la}
 \alias{lasso}
+\alias{lasso.plot}
+\alias{lasso.stop}
 
 \title{Lasso Smooth Constructor}
 
 \description{
-  Smooth constructors for Lasso penalization with \code{\link{bamlss}}. The penalization is based
-  on a Taylor series approximation of the Lasso penalty.
+  Smooth constructors and optimizer for Lasso penalization with \code{\link{bamlss}}. The
+  penalization is based on a Taylor series approximation of the Lasso penalty.
 }
 
 \usage{
+## Smooth constructor function.
 la(formula, type = c("single", "multiple"), ...)
+
+## Single Lasso smoothing parameter optimizer.
+lasso(x, y, start = NULL, lower = 0.001, upper = 1000,
+  nlambda = 100, lambda = NULL, verbose = TRUE, digits = 4,
+  flush = TRUE, ...)
+
+## Plotting function for lasso() optimizer.
+lasso.plot(x, which = c("criterion", "parameters"), spar = TRUE, ...)
+
+## Extract optimum stopping iteration for lasso() optimizer.
+## Based on the minimum of the information criterion.
+lasso.stop(x)
 }
 
 \arguments{
@@ -18,13 +33,39 @@ la(formula, type = c("single", "multiple"), ...)
     penalized with Lasso.}
   \item{type}{Should one single penalty parameter be used or multiple parameters, one for each
     covariate in \code{formula}.}
+  \item{x}{For function \code{lasso()} the \code{x} list, as returned from function
+    \code{\link{bamlss.frame}}, holding all model matrices and other information that is used for
+    fitting the model. For the plotting function and \code{lasso.stop()} the corresponding
+    \code{\link{bamlss}} object fitted with the \code{lasso()} optimizer.}
+  \item{y}{The model response, as returned from function \code{\link{bamlss.frame}}.}
+  \item{start}{A vector of starting values. Note, Lasso smoothing parameters will be dropped.}
+  \item{lower}{Numeric. The minimum lambda value.}
+  \item{upper}{Numeric. The maximum lambda value.}
+  \item{nlambda}{Integer. The number of smoothing parameters for which coefficients should be
+    estimated, i.e., the vector of smoothing parameters is build up as a sequence from
+    \code{lower} to \code{upper} with length \code{nlambda}.}
+  \item{lambda}{Numeric. A sequence/vector of lambda parameters that should be used.}
+  \item{verbose}{Print information during runtime of the algorithm.}
+  \item{digits}{Set the digits for printing when \code{verbose = TRUE}.}
+  \item{flush}{use \code{\link{flush.console}} for displaying the current output in the console.}
+  \item{which}{Which of the two provided plots should be created?}
+  \item{spar}{Should graphical parameters be set by the plotting function?}
   \item{\dots}{Arguments passed to the subsequent smooth constructor function.
     \code{lambda} controls the starting value of the penalty parameter, \code{const} the constant
-    that is added within the penalty approximation.}
+    that is added within the penalty approximation.
+    For the optimizer \code{lasso()} arguments passed to function \code{\link{bfit}}.}
 }
 
 \value{
-  Similar to function \code{\link[mgcv]{s}} a simple smooth specification object.
+  For function \code{la()}, similar to function \code{\link[mgcv]{s}} a simple smooth
+  specification object.
+
+  For function \code{lasso()} a list containing the following objects:
+  \item{fitted.values}{A named list of the fitted values based on the last lasso iteration
+    of the modeled parameters of the selected distribution.}
+  \item{parameters}{A matrix, each row corresponds to the parameter values of one boosting iteration.}
+  \item{lasso.stats}{A matrix containing information about the log-likelihood, log-posterior
+    and the information criterion for each lambda.}
 }
 
 \references{
@@ -38,60 +79,46 @@ la(formula, type = c("single", "multiple"), ...)
 }
 
 \examples{
-\dontrun{## Simulate data.
-dgp <- function(n = 100, p = 10,
-  sd = 0.3, sigma = diag(p), prob = c(0.8, 0.2), kmax = NULL)
-{
-  require("mvtnorm")
+\dontrun{## Load data example.
+data(rent99, package = "gamlss.data")
+rent99$district <- as.factor(rent99$district)
 
-  beta <- if(is.null(kmax)) {
-    sample(0:1, size = p, replace = TRUE, prob = prob)
-  } else {
-    sample(c(rep(0, p - kmax), rep(1, kmax)))
-  }
+## Model formula.
+fl <- ~ area + yearc + location + bath + kitchen + cheating + district
+f <- list(rentsqm ~ la(fl), sigma ~ la(fl))
 
-  X <- rmvnorm(n, rep(0, p), sigma = sigma)
-  colnames(X) <- paste("x", 1:ncol(X), sep = "")
-  f <- X %*% beta
-  y <- f + rnorm(n, sd = sd)
+## Estimate Lasso model with
+## single lambda parameter.
+b1 <- bamlss(f, data = rent99, sampler = FALSE, optimizer = lasso,
+  lower = 0.0001, upper = 50, criterion = "BIC")
 
-  d <- data.frame("y" = as.vector(y), "f" = as.vector(f))
-  d <- cbind(d, as.data.frame(X))
+## Plot information criterion and
+## coefficient paths.
+lasso.plot(b1)
 
-  attr(d, "beta") <- beta
-  return(d)
-}
+## Extract optimum lambda/iteration.
+lasso.stop(b1)
 
-set.seed(123)
-d <- dgp(n = 1000, p = 20, sd = 0.1)
+## Extract coefficients for optimum
+## Lasso parameter.
+parameters(b1, mstop = lasso.stop(b1))
 
-f <- grep("x", colnames(d), value = TRUE)
-f <- paste(f, collapse = "+")
+## Predict with optimum lasso.
+p1 <- predict(b1, mstop = lasso.stop(b1))
 
-f0 <- as.formula(paste("y", f, sep = "~"))
-f <- as.formula(paste("", f, sep = "~"))
+## Now with different lambda for mu and sigma.
+b2 <- bamlss(f, data = rent99, sampler = FALSE, criterion = "BIC")
+summary(b2)
 
-b0 <- bamlss(f0, data = d, sampler = FALSE)
-b1 <- bamlss(y ~ la(f), data = d, sampler = FALSE)
-b2 <- bamlss(y ~ la(f, type = "multiple"), data = d, sampler = FALSE)
-
-cb0 <- coef(b0, hyper = FALSE)
-cb0 <- cb0[!grepl("Intercept", names(cb0))]
-
-cb1 <- coef(b1, hyper = FALSE)
-cb1 <- cb1[!grepl("Intercept", names(cb1))]
-
-cb2 <- coef(b2, hyper = FALSE)
-cb2 <- cb2[!grepl("Intercept", names(cb2))]
-
-coefs <- data.frame(
-  "true" = attr(d, "beta"),
-  "fixed" = cb0,
-  "lasso" = cb1,
-  "sep.lasso" = cb2
+## With lambda parameters for each covariate.
+f <- list(
+  rentsqm ~ la(area) + la(yearc) + la(location) +
+    la(bath) + la(kitchen) + la(cheating) + la(district),
+  sigma ~ la(area) + la(yearc) + la(location) +
+    la(bath) + la(kitchen) + la(cheating) + la(district)
 )
-
-print(round(coefs, 5))
+b3 <- bamlss(f, data = rent99, sampler = FALSE, criterion = "BIC")
+summary(b3)
 }
 }
 

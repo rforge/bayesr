@@ -540,8 +540,9 @@ sparse.setup <- function(x, S = NULL, ...)
   if(!is.null(S)) {
     if(!is.list(S))
       S <- list(S)
-    for(j in seq_along(S))
+    for(j in seq_along(S)) {
       x <- x + if(length(S[[j]]) < 1) 0 else { if(is.function(S[[j]])) S[[j]](c("b" = rep(0, attr(S[[j]], "npar")))) else S[[j]] }
+    }
   }
   index.crossprod <- if(!symmetric) sparse.matrix.index(x, ...) else NULL
   setup <- list(
@@ -3750,20 +3751,15 @@ rs.plot <- function(x, model = NULL, term = NULL,
 ## Lasso smooth constructor.
 la <- function(formula, type = c("single", "multiple"), ...)
 {
-  f0 <- formula
   formula <- deparse(substitute(formula), backtick = TRUE, width.cutoff = 500)
   formula <- gsub("[[:space:]]", "", formula)
   if(!grepl("~", strsplit(formula, "")[[1]][1]))
-    formula <- paste("~", formula, sep = "")
+    formula <- as.formula(paste("~", formula, sep = ""))
   label <- NULL
-  if(!any(grepl("+", formula, fixed = TRUE)) & !any(grepl("-", formula, fixed = TRUE))) {
+  formula <- as.formula(formula)
+  if(!any(grepl("+", formula, fixed = TRUE)) & !any(grepl("-", formula, fixed = TRUE)))
     label <- paste("la(", paste(all.vars.formula(as.formula(formula)), collapse = "+"), ")", sep = "")
-    formula <- f0
-  } else {
-    formula <- as.formula(formula)
-  }
   vars <- unique(all.vars.formula(formula))
-
   rval <- list(
     "formula" = formula,
     "term" = vars,
@@ -3774,14 +3770,15 @@ la <- function(formula, type = c("single", "multiple"), ...)
   rval$dim <- length(rval$term)
   rval$special <- TRUE
   rval$xt <- list(...)
-
   class(rval) <- "la.smooth.spec"
   rval
 }
 
 smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
 {
-  object$X <- as.matrix(model.matrix(object$formula, data = as.data.frame(data)))[, -1]
+  object$X <- as.matrix(model.matrix(object$formula, data = as.data.frame(data)))
+  if(length(i <- grep("Intercept", colnames(object$X))))
+    object$X <- object$X[, -i, drop = FALSE]
   object$S <- list()
   const <- object$xt$const
   if(is.null(const))
@@ -3789,13 +3786,15 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   if(object$type == "single") {
     object$S[[1]] <- function(parameters) {
       b <- get.par(parameters, "b")
-      A <- diag(1 / sqrt(b^2 + const))
+      A <- if(length(b) > 1) {
+        diag(1 / sqrt(b^2 + const))
+      } else matrix(1 / sqrt(b^2 + const), 1, 1)
       A
     }
     attr(object$S[[1]], "npar") <- ncol(object$X)
   } else {
     A <- list()
-    for(j in seq_along(object$term)) {
+    for(j in 1:ncol(object$X)) {
       f <- c('function(parameters) {',
         '  b <- get.par(parameters, "b")',
         '  A <- diag(0, length(b))',
@@ -3821,7 +3820,10 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
 
 Predict.matrix.lasso.smooth <- function(object, data)
 {
-  as.matrix(model.matrix(object$formula, data = as.data.frame(data)))[, -1]
+  X <- as.matrix(model.matrix(object$formula, data = as.data.frame(data)))
+  if(length(i <- grep("Intercept", colnames(X))))
+    X <- X[, -i, drop = FALSE]
+  X
 }
 
 
@@ -5700,7 +5702,7 @@ confint.bamlss <- function(object, parm, level = 0.95, model = NULL,
   }
   return(.coef.bamlss(object, model = model, term = parm,
     FUN = FUN, parameters = FALSE, pterms = pterms, sterms = sterms,
-    full.names = full.names, hyper.parameters = hyper.parameters))
+    full.names = full.names, hyper.parameters = hyper.parameters, ...))
 }
 
 
@@ -5774,7 +5776,7 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
     }
   }
   if(!is.null(object$parameters) & parameters) {
-    rval$parameters <- parameters(object, list = FALSE)
+    rval$parameters <- parameters(object, list = FALSE, ...)
     if(length(di <- grep2(drop, names(rval$parameters), fixed = TRUE)))
       rval$parameters <- rval$parameters[-di]
     if(summary)

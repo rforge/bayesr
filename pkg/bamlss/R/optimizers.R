@@ -2766,47 +2766,162 @@ set.starting.values <- function(x, start)
 }
 
 
-lasso <- function(x, y, start = NULL, lambda = 10000, nlambda = 100, ...)
+lasso <- function(x, y, start = NULL, lower = 0.001, upper = 1000,
+  nlambda = 100, lambda = NULL, verbose = TRUE, digits = 4, flush = TRUE, ...)
 {
   if(is.null(attr(x, "bamlss.engine.setup")))
-    x <- bamlss.engine.setup(x, update = bfit_iwls, do.optim = FALSE, ...)
+    x <- bamlss.engine.setup(x, update = bfit_iwls, ...)
 
-  if(!is.null(start)) {
-    start <- start[!grepl("tau2", start)]
-    if(length(start) < 1)
-    start <- NULL
-  }
+  lambdas <- if(is.null(lambda)) {
+    seq(upper, lower, length = nlambda)
+  } else lambda
 
-  lambdas <- seq(lambda, 0.0001, length = nlambda)
+  ia <- if(flush) interactive() else FALSE
 
   par <- list(); ic <- NULL
+
+  ptm <- proc.time()
+
   for(l in seq_along(lambdas)) {
-    start2 <- start
+    if(l > 1)
+      start <- unlist(par[[l - 1]])
     tau2 <- NULL
     for(i in names(x)) {
       for(j in names(x[[i]]$smooth.construct)) {
-        if(is.null(x[[i]]$smooth.construct[[j]]$is.model.matrix)) {
+        if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth")) {
+          x[[i]]$smooth.construct[[j]]$state$do.optim <- FALSE
+          x[[i]]$smooth.construct[[j]]$fxsp <- TRUE
           tau2 <- get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "tau2")
-          tau20 <- rep(1 / lambdas[l], length.out = length(tau2))
-          names(tau20) <- names(tau2)
-          names(tau20) <- paste(i, "s", x[[i]]$smooth.construct[[j]]$label, names(tau20), sep = ".")
-          start2 <- c(start2, tau20)
+          nt <- names(tau2)
+          tau2 <- rep(1 / lambdas[l], length.out = length(tau2))
+          names(tau2) <- paste(i, "s", x[[i]]$smooth.construct[[j]]$label, nt, sep = ".")
+          if(!is.null(start)) {
+            if(all(names(tau2) %in% names(start))) {
+              start[names(tau2)] <- tau2
+            }
+          } else {
+            start <- c(start, tau2)
+          }
         }
       }
     }
 
-    if(l > 1) {
-      cb <- unlist(par[[l - 1]])
-      ntau2 <- length(grep("tau2", names(cb), value = TRUE))
-      cb[grepl("tau2", names(cb))] <- rep(1 / lambdas[l], length.out = ntau2)
-      start2 <- cb
-    }
-
-    b <- bfit(x = x, y = y, start = start2, verbose = TRUE, ...)
+    b <- bfit(x = x, y = y, start = start, verbose = FALSE, ...)
+    nic <- grep("ic", names(b), value = TRUE, ignore.case = TRUE)
     par[[l]] <- unlist(b$parameters)
-    ic <- rbind(ic, c("logLik" = b$logLik, "logPost" = b$logPost, "IC" = as.numeric(unlist(b[grep("ic", names(b), ignore.case = TRUE)]))))
+    mstats <- c(b$logLik, b$logPost, b[[nic]], b[["edf"]])
+    names(mstats) <- c("logLik", "logPost", nic, "edf")
+    ic <- rbind(ic, mstats)
+
+    if(verbose) {
+      cat(if(ia) "\r" else if(l > 1) "\n" else NULL)
+      vtxt <- paste(nic, " ", fmt(b[[nic]], width = 8, digits = digits),
+        " edf ", fmt(mstats["edf"], width = 6, digits = digits),
+        " lambda ", fmt(lambdas[l], width = 6, digits = digits),
+        " iteration ", formatC(l, width = nchar(nlambda)), sep = "")
+      cat(vtxt)
+
+      if(.Platform$OS.type != "unix" & ia) flush.console()
+    }
   }
 
-  list("parameters" = do.call("rbind", par), "ic" = ic, "lambda" = lambdas)
+  elapsed <- c(proc.time() - ptm)[3]
+
+  if(verbose) {
+    et <- if(elapsed > 60) {
+      paste(formatC(format(round(elapsed / 60, 2), nsmall = 2), width = 5), "min", sep = "")
+    } else paste(formatC(format(round(elapsed, 2), nsmall = 2), width = 5), "sec", sep = "")
+    cat("\nelapsed time: ", et, "\n", sep = "")
+  }
+
+  ic <- cbind(ic, "lambda" = lambdas)
+  rownames(ic) <- NULL
+  class(ic) <- "lasso.stats"
+
+  list("parameters" = do.call("rbind", par), "lasso.stats" = ic)
+}
+
+print.lasso.stats <- function(x, digits = 4, ...)
+{
+  ls <- attr(lasso.stop(x), "stats")
+  ic <- grep("ic", names(ls), ignore.case = TRUE, value = TRUE)
+  cat(ic, "=", ls[ic], "-> at lambda =", ls["lambda"], "\n")
+  ls <- ls[!(names(ls) %in% c("lambda", ic))]
+  ls <- paste(names(ls), "=", round(ls, digits = digits), collapse = " ")
+  cat(ls, "\n---\n")
+  return(invisible(NULL))
+}
+
+
+lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, ...)
+{
+  if(!is.character(which)) {
+    which <- c("criterion", "parameters")[as.integer(which)]
+  } else {
+    which <- tolower(which)
+    which <- match.arg(which, several.ok = TRUE)
+  }
+
+  par <- x$parameters
+  npar <- colnames(par)
+  for(j in c("Intercept", ".edf", ".lambda", ".tau"))
+    npar <- npar[!grepl(j, npar, fixed = TRUE)]
+  x$parameters <- x$parameters[, npar, drop = FALSE]
+  ic <- x$model.stats$optimizer$lasso.stats
+  nic <- grep("ic", colnames(ic), value = TRUE, ignore.case = TRUE)
+
+  if(spar) {
+    op <- par(no.readonly = TRUE)
+    on.exit(par(op))
+    par(mfrow = c(1, length(which)), mar = c(5.1, 5.1, 4.1, 1.1))
+  }
+
+  at <- pretty(1:nrow(ic))
+  at[at == 0] <- 1
+
+  if("criterion" %in% which) {
+    plot(1:nrow(ic), ic[, nic], type = "l",
+      xlab = expression(log(lambda)), ylab = nic, axes = FALSE)
+    axis(1, at = at, labels = round(log(ic[at, "lambda"]), digits = 2))
+    axis(2)
+    i <- which.min(ic[, nic])
+    abline(v = i, col = "lightgray", lwd = 2, lty = 2)
+    val <- round(ic[i, "lambda"], 4)
+    axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
+    box()
+  }
+
+  if("parameters" %in% which) {
+    if(spar)
+      par(mar = c(5.1, 5.1, 4.1, 10.1))
+
+    if(!is.null(list(...)$standardize)) {
+      x$parameters <- apply(x$parameters, 2, function(x) {
+        x / max(abs(x))
+      })
+    }
+
+    xn <- sapply(strsplit(colnames(x$parameters), ".", fixed = TRUE), function(x) { x[1] })
+    cols <- if(length(unique(xn)) < 2) "black" else rainbow_hcl(length(unique(xn)))
+    matplot(1:nrow(x$parameters), x$parameters, type = "l", lty = 1, col = cols[as.factor(xn)],
+      axes = FALSE, xlab = expression(log(lambda)), ylab = expression(beta[j]))
+    axis(1, at = at, labels = round(log(ic[at, "lambda"]), digits = 2))
+    axis(2)
+    axis(4, at = x$parameters[nrow(x$parameters), ],
+      labels = colnames(x$parameters), las = 1)
+    box()
+  }
+
+  return(invisible(NULL))
+}
+
+lasso.stop <- function(x)
+{
+  if(!inherits(x, "lasso.stats"))
+    x <- x$model.stats$optimizer$lasso.stats
+  nic <- grep("ic", colnames(x), value = TRUE, ignore.case = TRUE)
+  i <- which.min(x[, nic])
+  attr(i, "stats") <- x[i, ]
+  i
 }
 

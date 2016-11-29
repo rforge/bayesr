@@ -151,7 +151,10 @@ export(
   "boost",
   "boost.summary",
   "boost.plot",
-  "la"
+  "la",
+  "lasso",
+  "lasso.plot",
+  "lasso.stop"
 )
 
 S3method("plot", "bamlss")
