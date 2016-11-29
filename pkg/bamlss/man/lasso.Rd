@@ -106,7 +106,8 @@ parameters(b1, mstop = lasso.stop(b1))
 ## Predict with optimum lasso.
 p1 <- predict(b1, mstop = lasso.stop(b1))
 
-## Now with different lambda for mu and sigma.
+## Now with different lambda for mu and sigma using
+## optimizer functiuon bfit().
 b2 <- bamlss(f, data = rent99, sampler = FALSE, criterion = "BIC")
 summary(b2)
 
