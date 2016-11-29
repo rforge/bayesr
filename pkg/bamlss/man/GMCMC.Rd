@@ -3,6 +3,7 @@
 \alias{GMCMC_iwls}
 \alias{GMCMC_iwlsC}
 \alias{GMCMC_iwlsC_gp}
+\alias{GMCMC_iwlsC_gp_gS}
 \alias{GMCMC_slice}
 
 \title{
@@ -27,6 +28,8 @@ GMCMC_iwls(family, theta, id, eta, y, data,
 GMCMC_iwlsC(family, theta, id, eta, y, data,
   weights = NULL, offset = NULL, zworking, resids, rho, ...)
 GMCMC_iwlsC_gp(family, theta, id, eta, y, data,
+  weights = NULL, offset = NULL, zworking, resids, rho, ...)
+GMCMC_iwlsC_gp_gS(family, theta, id, eta, y, data,
   weights = NULL, offset = NULL, zworking, resids, rho, ...)
 GMCMC_slice(family, theta, id, eta, y, data, ...)
 }
@@ -92,7 +95,8 @@ GMCMC_slice(family, theta, id, eta, y, data, ...)
   of the parameters. See the example section.
 
   The default proposal function \code{GMCMC_iwlsC_gp} allows for general priors for the
-  smoothing variances. Samples of smoothing variances are computed using slice sampling.
+  smoothing variances. \code{GMCMC_iwlsC_gp_gS} allows for general penalty functions. Samples of
+  smoothing variances are computed using slice sampling.
   Function \code{GMCMC_iwlsC} samples smoothing variances of univariate terms assuming an inverse
   gamma prior. Terms of higher dimensions use again slice sampling for creating samples of
   smoothing variances.

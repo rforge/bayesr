@@ -68,11 +68,7 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       fitfun[[i]][[j]] <- function(x, p) {
         attr(p, "fitted.values")
       }
-      if(!is.null(x[[i]][[j]]$lasso.select)) {
-        tau2 <- get.par(x[[i]][[j]]$state$parameters, "tau2")
-        sigma <- tau2 * sqrt(pi) / sqrt(2)
-        x[[i]][[j]]$prior <- make.prior(x[[i]][[j]], sigma = sigma)
-      }
+      x[[i]][[j]]$penaltyFunction <- as.integer(sapply(x[[i]][[j]]$S, is.function))   
     }
     names(theta[[i]]) <- names(propose2[[i]]) <- names(fitfun[[i]]) <- names(x[[i]]) <- nt
   }
@@ -750,6 +746,31 @@ GMCMC_iwlsC_gp <- function(family, theta, id, eta, y, data,
 
   W <- if(is.null(weights[[id[1]]])) 1.0 else weights[[id[1]]]
   rval <- .Call("gmcmc_iwls_gp", family, theta, id, eta, y, data,
+    zworking, resids, id[1], W, rho, PACKAGE = "bamlss")
+
+  ## Sample variance parameter.
+  if(!data$fixed & !data$fxsp & length(data$S)) {
+    i <- grep("tau2", names(rval$parameters))
+    for(j in i) {
+      rval$parameters <- uni.slice(rval$parameters, data, family, NULL,
+        NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = rval$loglik)
+    }
+  }
+
+  return(list("parameters" = rval$parameters, "alpha" = rval$alpha, "extra" = c("edf" = rval$edf)))
+}
+
+
+GMCMC_iwlsC_gp_gS <- function(family, theta, id, eta, y, data,
+  weights = NULL, offset = NULL, zworking, resids, rho, ...)
+{
+  if(!is.null(offset)) {
+    for(j in names(offset))
+      eta[[j]] <- eta[[j]] + offset[[j]]
+  }
+
+  W <- if(is.null(weights[[id[1]]])) 1.0 else weights[[id[1]]]
+  rval <- .Call("gmcmc_iwls_gp_gS", family, theta, id, eta, y, data,
     zworking, resids, id[1], W, rho, PACKAGE = "bamlss")
 
   ## Sample variance parameter.

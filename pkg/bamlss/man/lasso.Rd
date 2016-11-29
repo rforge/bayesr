@@ -120,6 +120,10 @@ f <- list(
 )
 b3 <- bamlss(f, data = rent99, sampler = FALSE, criterion = "BIC")
 summary(b3)
+
+## With full MCMC.
+b4 <- bamlss(f, data = rent99, criterion = "BIC")
+summary(b4)
 }
 }
 

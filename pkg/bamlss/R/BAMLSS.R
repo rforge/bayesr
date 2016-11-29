@@ -3753,11 +3753,20 @@ la <- function(formula, type = c("single", "multiple"), ...)
 {
   formula <- deparse(substitute(formula), backtick = TRUE, width.cutoff = 500)
   formula <- gsub("[[:space:]]", "", formula)
-  if(!grepl("~", strsplit(formula, "")[[1]][1]))
-    formula <- as.formula(paste("~", formula, sep = ""))
   label <- NULL
+  if(!grepl("+", formula, fixed = TRUE) & !grepl("-", formula, fixed = TRUE)) {
+    if(formula %in% ls(envir = .GlobalEnv)) {
+      label <- paste("ls(", formula, ")", sep = "")
+      formula <- get(formula, envir = .GlobalEnv)
+    }
+  }
+  if(is.character(formula)) {
+    if(!grepl("~", strsplit(formula, "")[[1]][1]))
+      formula <- paste("~", formula, sep = "")
+    formula <- as.formula(formula)
+  }
   formula <- as.formula(formula)
-  if(!any(grepl("+", formula, fixed = TRUE)) & !any(grepl("-", formula, fixed = TRUE)))
+  if(!any(grepl("+", formula, fixed = TRUE)) & !any(grepl("-", formula, fixed = TRUE)) & is.null(label))
     label <- paste("la(", paste(all.vars.formula(as.formula(formula)), collapse = "+"), ")", sep = "")
   vars <- unique(all.vars.formula(formula))
   rval <- list(
@@ -3814,6 +3823,8 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   if(is.null(object$xt$lambda))
     object$xt$lambda <- 1 / 0.0001
   object$xt$do.optim <- TRUE
+  object$lassoconst <- const
+  object$propose <- GMCMC_iwlsC_gp_gS
   class(object) <- "lasso.smooth"
   object
 }
