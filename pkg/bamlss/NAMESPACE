@@ -71,7 +71,6 @@ export(
   "GMCMC_iwls",
   "GMCMC_iwlsC",
   "GMCMC_iwlsC_gp",
-  "GMCMC_iwlsC_gp_gS",
   "GMCMC_slice",
   "JAGS",
   "BayesX",

@@ -142,3 +142,13 @@ cb2 <- round(cb2[!grepl("Intercept", names(cb2))], 4)
 
 cbind("true" = attr(d, "beta"), "fixed" = cb0 != 0, "lasso" = cb1 != 0, "sep.lasso" = cb2 != 0)
 
+
+
+data(rent99, package = "gamlss.data")
+rent99$district <- as.factor(rent99$district)
+
+f <- rentsqm ~ la(area) + la(yearc) + la(location) +
+  la(bath) + la(kitchen) + la(cheating)
+
+b <- bamlss(f, data = rent99, scale.d = TRUE)
+

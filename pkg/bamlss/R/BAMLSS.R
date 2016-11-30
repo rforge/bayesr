@@ -3786,7 +3786,6 @@ la <- function(formula, type = c("single", "multiple"), ...)
 smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
 {
   object$X <- as.matrix(model.matrix(object$formula, data = as.data.frame(data)))
-
   if(length(i <- grep("Intercept", colnames(object$X))))
     object$X <- object$X[, -i, drop = FALSE]
   object$S <- list()
@@ -3820,13 +3819,31 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$fixed <- FALSE
   object$fxsp <- FALSE
   object$prior <- make.prior(object, sigma = 0.1)
-  object$lasso.select <- TRUE
   if(is.null(object$xt$lambda))
     object$xt$lambda <- 1 / 0.0001
   object$xt$do.optim <- TRUE
   object$lassoconst <- const
-  object$propose <- GMCMC_iwls
+
+  XX <- crossprod(object$X)
+  XX_is_diagonal <- all(XX[!diag(nrow(XX))] == 0)
+
+  b <- runif(ncol(object$X))
+  tau2 <- runif(length(object$S))
+  S <- 0
+  for(j in seq_along(tau2))
+    S <- S + 1 / tau2[j] * if(is.function(object$S[[j]])) object$S[[j]](c("b" = b, "tau2" = tau2)) else x$S[[j]]
+  S_is_diagonal <- all(S[!diag(nrow(S))] == 0)
+  object$all_diagonal <- XX_is_diagonal & S_is_diagonal
+
+  object$propose <- if(object$all_diagonal & (object$type %in% c("single", "multiple"))) {
+    GMCMC_iwlsC_gp
+  } else GMCMC_iwlsC_gp
+  object$ctype <- switch(object$type,
+    "single" = 0,
+    "multiple" = 1
+  )
   class(object) <- "lasso.smooth"
+
   object
 }
 

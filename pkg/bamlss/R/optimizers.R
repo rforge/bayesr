@@ -441,23 +441,18 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
   x$state$fitted.values <- x$fit.fun(x$X, get.par(x$state$parameters, "b"))
   x$state$edf <- x$edf(x)
 
-  XX <- crossprod(x$X)
-  XX_is_diagonal <- all(XX[!diag(nrow(XX))] == 0)
-  if(is.character(XX_is_diagonal))
-    XX_is_diagonal <- FALSE
+  if(is.null(x$all_diagonal)) {
+    XX <- crossprod(x$X)
+    XX_is_diagonal <- all(XX[!diag(nrow(XX))] == 0)
 
-  b <- runif(length(get.par(x$state$parameters, "b")))
-  tau2 <- get.par(x$state$parameters, "tau2")
-  for(j in seq_along(x$S)) {
+    b <- runif(length(get.par(x$state$parameters, "b")))
+    tau2 <- get.par(x$state$parameters, "tau2")
     S <- 0
-    for(j in seq_along(tau2)) {
-      S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c("b" = b, "tau2" = tau2)) else x$S[[j]]
-    }
+    for(j in seq_along(tau2))
+       S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c("b" = b, "tau2" = tau2)) else x$S[[j]]
+    S_is_diagonal <- all(S[!diag(nrow(S))] == 0)
+    x$all_diagonal <- XX_is_diagonal & (if(x$fixed) TRUE else S_is_diagonal)
   }
-  S_is_diagonal <- all(S[!diag(nrow(S))] == 0)
-  if(is.character(S_is_diagonal))
-    S_is_diagonal <- FALSE
-  x$all_diagonal <- XX_is_diagonal & (if(x$fixed) TRUE else S_is_diagonal)
 
   x
 }
