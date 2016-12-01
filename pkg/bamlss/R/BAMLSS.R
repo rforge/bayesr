@@ -3835,8 +3835,10 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   S_is_diagonal <- all(S[!diag(nrow(S))] == 0)
   object$all_diagonal <- XX_is_diagonal & S_is_diagonal
 
+  object$xt[["binning"]] <- TRUE
+
   object$propose <- if(object$all_diagonal & (object$type %in% c("single", "multiple"))) {
-    GMCMC_iwlsC_gp
+    GMCMC_iwlsC_gp_diag_lasso
   } else GMCMC_iwlsC_gp
   object$ctype <- switch(object$type,
     "single" = 0,

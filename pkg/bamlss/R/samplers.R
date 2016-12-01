@@ -761,6 +761,31 @@ GMCMC_iwlsC_gp <- function(family, theta, id, eta, y, data,
 }
 
 
+GMCMC_iwlsC_gp_diag_lasso <- function(family, theta, id, eta, y, data,
+  weights = NULL, offset = NULL, zworking, resids, rho, ...)
+{
+  if(!is.null(offset)) {
+    for(j in names(offset))
+      eta[[j]] <- eta[[j]] + offset[[j]]
+  }
+
+  W <- if(is.null(weights[[id[1]]])) 1.0 else weights[[id[1]]]
+  rval <- .Call("gmcmc_iwls_gp_diag_lasso", family, theta, id, eta, y, data,
+    zworking, resids, id[1], W, rho, PACKAGE = "bamlss")
+
+  ## Sample variance parameter.
+  if(!data$fixed & !data$fxsp & length(data$S)) {
+    i <- grep("tau2", names(rval$parameters))
+    for(j in i) {
+      rval$parameters <- uni.slice(rval$parameters, data, family, NULL,
+        NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = rval$loglik)
+    }
+  }
+
+  return(list("parameters" = rval$parameters, "alpha" = rval$alpha, "extra" = c("edf" = rval$edf)))
+}
+
+
 process.derivs <- function(x, is.weight = FALSE)
 {
   .Call("process_derivs", as.numeric(x), as.logical(is.weight), PACKAGE = "bamlss")
@@ -827,6 +852,7 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
 
   ## Compute mean and precision.
   XWX <- do.XWX(data$X, 1 / data$weights, data$sparse.setup$matrix)
+
   S <- 0
   P <- if(data$fixed) {
     if((k <- ncol(data$X)) < 2) {
@@ -900,6 +926,7 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
 
   ## Compute mean and precision.
   XWX <- do.XWX(data$X, 1 / data$weights, data$sparse.setup$matrix)
+
   P2 <- if(data$fixed) {
     if(k < 2) {
       1 / (XWX)
@@ -922,6 +949,10 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
 
   ## Compute acceptance probablity.
   alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
+
+print(M)
+print(M2)
+cat("---\n")
 
 #cat("\n-----------\n")
 #cat("pibetaprop", pibetaprop, "\n")

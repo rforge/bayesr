@@ -147,8 +147,8 @@ cbind("true" = attr(d, "beta"), "fixed" = cb0 != 0, "lasso" = cb1 != 0, "sep.las
 data(rent99, package = "gamlss.data")
 rent99$district <- as.factor(rent99$district)
 
-f <- rentsqm ~ la(area) + la(yearc) + la(location) +
-  la(bath) + la(kitchen) + la(cheating)
+f <- rentsqm ~ la(location) + la(yearc) + la(area) +
+  la(bath) + la(kitchen) + la(cheating) + la(district)
 
-b <- bamlss(f, data = rent99, scale.d = TRUE)
+b <- bamlss(f, data = rent99, scale.d = TRUE, criterion = "BIC")
 

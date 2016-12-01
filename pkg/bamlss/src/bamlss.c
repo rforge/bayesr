@@ -82,6 +82,22 @@ void pmat(SEXP mat)
   Rprintf("\n");
 }
 
+void pmat_int(SEXP mat)
+{
+  int i,j,n = nrows(mat), k = ncols(mat);
+  Rprintf("   ");
+  for(j = 0; j < k; ++j)
+    Rprintf("[%d] ", j);
+  Rprintf("\n");
+  for(i = 0; i < n; ++i) {
+    Rprintf("[%d]", i);
+    for(j = 0; j < k; ++j)
+      Rprintf(" %d", INTEGER(mat)[i + j * n]);
+    Rprintf("\n");
+  }
+  Rprintf("\n");
+}
+
 void merr()
 {
   char *m = "stopped";
@@ -1391,6 +1407,359 @@ SEXP gmcmc_iwls_gp(SEXP family, SEXP theta, SEXP id,
   REAL(loglik)[0] = pibetaprop;
 
   /* Stuff everything together. */
+  SEXP rval;
+  PROTECT(rval = allocVector(VECSXP, 4));
+  ++nProtected;
+
+  SET_VECTOR_ELT(rval, 0, theta2);
+  SET_VECTOR_ELT(rval, 1, alpha);
+  SET_VECTOR_ELT(rval, 2, edf);
+  SET_VECTOR_ELT(rval, 3, loglik);
+
+  SEXP nrval;
+  PROTECT(nrval = allocVector(STRSXP, 4));
+  ++nProtected;
+
+  SET_STRING_ELT(nrval, 0, mkChar("parameters"));
+  SET_STRING_ELT(nrval, 1, mkChar("alpha"));
+  SET_STRING_ELT(nrval, 2, mkChar("edf"));
+  SET_STRING_ELT(nrval, 3, mkChar("loglik"));
+        
+  setAttrib(rval, R_NamesSymbol, nrval);
+
+  UNPROTECT(nProtected);
+  return rval;
+}
+
+
+SEXP gmcmc_iwls_gp_diag_lasso(SEXP family, SEXP theta, SEXP id,
+  SEXP eta, SEXP response, SEXP x, SEXP z, SEXP e, SEXP id2, SEXP W, SEXP rho)
+{
+  int i, j, k, nProtected = 0;
+  int n = INTEGER(getListElement(x, "nobs"))[0];
+  int nW = length(W);
+  if(nW > 1) {
+    if(nW != n)
+      nW = 1;
+  }
+  double *Wptr = REAL(W);
+
+  SEXP theta2;
+  PROTECT(theta2 = duplicate(getListElement(getListElement(theta,
+    CHAR(STRING_ELT(id, 0))), CHAR(STRING_ELT(id, 1)))));
+  double *thetaptr = REAL(theta2);
+  ++nProtected;
+
+  int S_ind = getListElement_index(x, "S");
+  int ntau2 = length(VECTOR_ELT(x, S_ind));
+  int nc = length(theta2) - ntau2;
+
+  int *iptr = INTEGER(getListElement(getListElement(x, "sparse.setup"), "matrix"));
+  int nc_index = ncols(getListElement(getListElement(x, "sparse.setup"), "matrix"));
+
+  SEXP gamma0, gamma1;
+  PROTECT(gamma0 = allocVector(REALSXP, nc));
+  double *gamma0ptr = REAL(gamma0);
+  ++nProtected;
+
+  PROTECT(gamma1 = allocVector(REALSXP, nc));
+  double *gamma1ptr = REAL(gamma1);
+  ++nProtected;
+
+  /* Evaluate loglik, weights and score vector. */
+  SEXP peta;
+  PROTECT(peta = map2par(getListElement(family, "map2par"), eta, rho));
+  ++nProtected;
+  int ll_ind = getListElement_index(family, "loglik");
+  double pibeta = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, peta, id2, rho))[0];
+
+  SEXP weights;
+  PROTECT(weights = iwls_eval(getListElement(getListElement(family, "hess"),
+    CHAR(STRING_ELT(id, 0))), response, peta, id2, rho));
+  double *weightsptr = REAL(weights);
+  ++nProtected;
+
+  SEXP score;
+  PROTECT(score = iwls_eval(getListElement(getListElement(family, "score"),
+    CHAR(STRING_ELT(id, 0))), response, peta, id2, rho));
+  double *scoreptr = REAL(score);
+  ++nProtected;
+
+  SEXP eta2;
+  PROTECT(eta2 = duplicate(eta));
+  double *etaptr = REAL(getListElement(eta2, CHAR(STRING_ELT(id, 0))));
+  ++nProtected;
+
+  /* Create weighted matrix */
+  int X_ind = getListElement_index(x, "X");
+  int nr = nrows(VECTOR_ELT(x, X_ind));
+
+  /* More pointers needed. */
+  double *zptr = REAL(z);
+  double *eptr = REAL(e);
+  double *xweightsptr = REAL(getListElement(x, "weights"));
+  double *xrresptr = REAL(getListElement(x, "rres"));
+  double *XWXptr = REAL(getListElement(x, "XWX"));
+  double *Xptr = REAL(VECTOR_ELT(x, X_ind));
+  double *Sptr;
+  int *idptr = INTEGER(getListElement(getListElement(x, "binning"), "match.index"));
+  int *indptr = INTEGER(getListElement(getListElement(x, "binning"), "sorted.index"));
+  int *orderptr = INTEGER(getListElement(getListElement(x, "binning"), "order"));
+
+  /* Handling fitted.values. */
+  SEXP fitname;
+  PROTECT(fitname = allocVector(STRSXP, 1));
+  ++nProtected;
+  SET_STRING_ELT(fitname, 0, mkChar("fitted.values"));
+  double *fitptr = REAL(getAttrib(theta2, fitname));
+  double *fitrptr = REAL(getListElement(x, "fit.reduced"));
+
+  /* Init mu. */
+  SEXP mu0;
+  PROTECT(mu0 = allocVector(REALSXP, nc));
+  double *mu0ptr = REAL(mu0);
+  ++nProtected;
+
+  SEXP mu1;
+  PROTECT(mu1 = allocVector(REALSXP, nc));
+  double *mu1ptr = REAL(mu1);
+  ++nProtected;
+
+  /* Start. */
+  xweightsptr[0] = 0.0;
+  xrresptr[0] = 0.0;
+
+  j = 0;
+  int jj;
+
+  for(jj = 0; jj < nc; jj++) {
+    XWXptr[jj + nc * jj] = 0.0;
+    mu0ptr[jj] = 0.0;
+    mu1ptr[jj] = 0.0;
+  }
+
+  for(i = 0; i < n; i++) {
+    if(indptr[i] > (j + 1)) {
+
+/*      for(jj = 0; jj < nc_index; jj++) {*/
+/*        if((iptr[j + jj * nr] < 0) || (iptr[j + jj * nr] > nc))*/
+/*          continue;*/
+/*        XWXptr[jj + nc * jj] += pow(Xptr[j + (iptr[j + jj * nr] - 1) * nr], 2.0) * xweightsptr[j];*/
+/*        mu0ptr[jj] += Xptr[j + (iptr[j + jj * nr] - 1) * nr] * xrresptr[j];*/
+/*      }*/
+
+      for(jj = 0; jj < nc; jj++) {
+        XWXptr[jj + nc * jj] += pow(Xptr[j + nr * jj], 2.0) * xweightsptr[j];
+        mu0ptr[jj] += Xptr[j + nr * jj] * xrresptr[j];
+      }
+      ++j;
+      xweightsptr[j] = 0.0;
+      xrresptr[j] = 0.0;
+    }
+    k = orderptr[i] - 1;
+
+    if(ISNA(weightsptr[k]))
+      weightsptr[k] = 1.490116e-08;
+    if(weightsptr[k] < 0.0)
+      weightsptr[k] = -1.0 * weightsptr[k];
+    if(weightsptr[k] > 1e+10)
+      weightsptr[k] = 1e+10;
+    if(nW > 1)
+      weightsptr[k] *= Wptr[k];
+
+    if(ISNA(scoreptr[k]))
+      scoreptr[k] = 1.490116e-08;
+    if(scoreptr[k] < -1e+10)
+      scoreptr[k] = -1e+10;
+    if(scoreptr[k] > 1e+10)
+      scoreptr[k] = 1e+10;
+
+    zptr[k] = etaptr[k] + scoreptr[k] / weightsptr[k];
+    etaptr[k] -= fitptr[k];
+    eptr[k] = zptr[k] - etaptr[k];
+
+    xweightsptr[j] += weightsptr[k];
+    xrresptr[j] += weightsptr[k] * eptr[k];
+  }
+
+  for(jj = 0; jj < nc; jj++) {
+    XWXptr[jj + nc * jj] += pow(Xptr[j + nr * jj], 2.0) * xweightsptr[j];
+    mu0ptr[jj] += Xptr[j + nr * jj] * xrresptr[j];
+  }
+
+/*  for(jj = 0; jj < nc_index; jj++) {*/
+/*    if((iptr[j + jj * nr] < 0) || (iptr[j + jj * nr] > nc))*/
+/*      continue;*/
+/*    XWXptr[jj + nc * jj] += pow(Xptr[j + (iptr[j + jj * nr] - 1) * nr], 2.0) * xweightsptr[j];*/
+/*    mu0ptr[jj] += Xptr[j + (iptr[j + jj * nr] - 1) * nr] * xrresptr[j];*/
+/*  }*/
+
+  double edf0 = 0.0;
+  double edf1 = 0.0;
+  double qbetaprop = 0.0;
+  GetRNGstate();
+  if(ntau2 > 1) {
+    for(j = 0; j < nc; j++) {
+      edf1 = XWXptr[j + j * nc];
+      XWXptr[j + nc * j] += 1.0 / (thetaptr[nc + j] * pow(pow(thetaptr[j], 2.0) + 0.00001, 0.5));
+      XWXptr[j + nc * j] = 1.0 / XWXptr[j + nc * j];
+      mu1ptr[j] = XWXptr[j + nc * j] * mu0ptr[j];
+      gamma1ptr[j] = rnorm(mu1ptr[j], pow(XWXptr[j + j * nc], 0.5));
+      edf0 = edf0 + edf1 * XWXptr[j + j * nc];
+      qbetaprop += dnorm(gamma1ptr[j], mu1ptr[j], pow(XWXptr[j + nc * j], 0.5), 1);
+    }
+  } else {
+    for(j = 0; j < nc; j++) {
+      edf1 = XWXptr[j + j * nc];
+      XWXptr[j + nc * j] += 1.0 / (thetaptr[nc] * pow(pow(thetaptr[j], 2.0) + 0.00001, 0.5));
+      XWXptr[j + nc * j] = 1.0 / XWXptr[j + nc * j];
+      mu1ptr[j] = XWXptr[j + nc * j] * mu0ptr[j];
+      gamma1ptr[j] = rnorm(mu1ptr[j], pow(XWXptr[j + j * nc], 0.5));
+      edf0 = edf0 + edf1 * XWXptr[j + j * nc];
+      qbetaprop += dnorm(gamma1ptr[j], mu1ptr[j], pow(XWXptr[j + nc * j], 0.5), 1);
+    }
+  }
+  PutRNGstate();
+ 
+  SEXP edf;
+  PROTECT(edf = allocVector(REALSXP, 1));
+  ++nProtected;
+  REAL(edf)[0] = edf0;
+
+  SEXP P1;
+  PROTECT(P1 = eval_prior(getListElement(x, "prior"), theta2, rho));
+  ++nProtected;
+  double p1 = REAL(P1)[0];
+
+  for(i = 0; i < nr; i++) {
+    fitrptr[i] = 0.0;
+    for(j = 0; j < nc_index; j++) {
+      if((iptr[i + j * nr] < 0) || (iptr[i + j * nr] > nc))
+        continue;
+      fitrptr[i] += Xptr[i + (iptr[i + j * nr] - 1) * nr] * gamma1ptr[(iptr[i + j * nr] - 1)];
+    }
+  }
+
+  for(i = 0; i < n; i++) {
+    k = idptr[i] - 1;
+    fitptr[i] = fitrptr[k];
+    etaptr[i] += fitptr[i];
+  }
+
+  peta = map2par(getListElement(family, "map2par"), eta2, rho);
+  double pibetaprop = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, peta, id2, rho))[0];
+
+  SEXP weights2;
+  PROTECT(weights2 = iwls_eval(getListElement(getListElement(family, "hess"),
+    CHAR(STRING_ELT(id, 0))), response, peta, id2, rho));
+  double *weights2ptr = REAL(weights2);
+  ++nProtected;
+
+  SEXP score2;
+  PROTECT(score2 = iwls_eval(getListElement(getListElement(family, "score"),
+    CHAR(STRING_ELT(id, 0))), response, peta, id2, rho));
+  double *score2ptr = REAL(score2);
+  ++nProtected;
+
+  xweightsptr[0] = 0.0;
+  xrresptr[0] = 0.0;
+
+  for(jj = 0; jj < nc; jj++) {
+    XWXptr[jj + nc * jj] = 0.0;
+    mu0ptr[jj] = 0.0;
+    mu1ptr[jj] = 0.0;
+  }
+
+  j = 0;
+  for(i = 0; i < n; i++) {
+    if(indptr[i] > (j + 1)) {
+
+/*      for(jj = 0; jj < nc_index; jj++) {*/
+/*        if((iptr[j + jj * nr] < 0) || (iptr[j + jj * nr] > nc))*/
+/*          continue;*/
+/*        XWXptr[jj + nc * jj] += pow(Xptr[j + (iptr[j + jj * nr] - 1) * nr], 2.0) * xweightsptr[j];*/
+/*        mu0ptr[jj] += Xptr[j + (iptr[j + jj * nr] - 1) * nr] * xrresptr[j];*/
+/*      }*/
+
+      for(jj = 0; jj < nc; jj++) {
+        XWXptr[jj + nc * jj] += pow(Xptr[j + nr * jj], 2.0) * xweightsptr[j];
+        mu0ptr[jj] += Xptr[j + nr * jj] * xrresptr[j];
+      }
+      ++j;
+      xweightsptr[j] = 0.0;
+      xrresptr[j] = 0.0;
+    }
+    k = orderptr[i] - 1;
+
+    if(ISNA(weights2ptr[k]))
+      weights2ptr[k] = 1.490116e-08;
+    if(weights2ptr[k] < 0.0)
+      weights2ptr[k] = -1.0 * weights2ptr[k];
+    if(weights2ptr[k] > 1e+10)
+      weights2ptr[k] = 1e+10;
+    if(nW > 1)
+      weightsptr[k] *= Wptr[k];
+
+    if(ISNA(score2ptr[k]))
+      score2ptr[k] = 1.490116e-08;
+    if(score2ptr[k] < -1e+10)
+      score2ptr[k] = -1e+10;
+    if(score2ptr[k] > 1e+10)
+      score2ptr[k] = 1e+10;
+
+    zptr[k] = etaptr[k] + score2ptr[k] / weights2ptr[k];
+    etaptr[k] -= fitptr[k];
+    eptr[k] = zptr[k] - etaptr[k];
+    xweightsptr[j] += weights2ptr[k];
+    xrresptr[j] += weights2ptr[k] * eptr[k];
+  }
+
+/*  for(jj = 0; jj < nc_index; jj++) {*/
+/*    if((iptr[j + jj * nr] < 0) || (iptr[j + jj * nr] > nc))*/
+/*      continue;*/
+/*    XWXptr[jj + nc * jj] += pow(Xptr[j + (iptr[j + jj * nr] - 1) * nr], 2.0) * xweightsptr[j];*/
+/*    mu0ptr[jj] += Xptr[j + (iptr[j + jj * nr] - 1) * nr] * xrresptr[j];*/
+/*  }*/
+
+  for(jj = 0; jj < nc; jj++) {
+    XWXptr[jj + nc * jj] += pow(Xptr[j + nr * jj], 2.0) * xweightsptr[j];
+    mu0ptr[jj] += Xptr[j + nr * jj] * xrresptr[j];
+  }
+
+  double qbeta = 0.0;
+  if(ntau2 > 1) {
+    for(j = 0; j < nc; j++) {
+      XWXptr[j + nc * j] += 1.0 / (thetaptr[nc + j] * pow(pow(thetaptr[j], 2.0) + 0.00001, 0.5));
+      XWXptr[j + nc * j] = 1.0 / XWXptr[j + nc * j];
+      mu1ptr[j] = XWXptr[j + nc * j] * mu0ptr[j];
+      qbeta += dnorm(thetaptr[j], mu1ptr[j], pow(XWXptr[j + nc * j], 0.5), 1);
+      thetaptr[j] = gamma1ptr[j];
+    }
+  } else {
+    for(j = 0; j < nc; j++) {
+      XWXptr[j + nc * j] += 1.0 / (thetaptr[nc] * pow(pow(thetaptr[j], 2.0) + 0.00001, 0.5));
+      XWXptr[j + nc * j] = 1.0 / XWXptr[j + nc * j];
+      mu1ptr[j] = XWXptr[j + nc * j] * mu0ptr[j];
+      qbeta += dnorm(thetaptr[j], mu1ptr[j], pow(XWXptr[j + nc * j], 0.5), 1);
+      thetaptr[j] = gamma1ptr[j];
+    }
+  }
+
+  SEXP P2;
+  PROTECT(P2 = eval_prior(getListElement(x, "prior"), theta2, rho));
+  ++nProtected;
+  double p2 = REAL(P2)[0];
+
+  SEXP alpha;
+  PROTECT(alpha = allocVector(REALSXP, 1));
+  ++nProtected;
+  REAL(alpha)[0] = (pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1);
+
+  SEXP loglik;
+  PROTECT(loglik = allocVector(REALSXP, 1));
+  ++nProtected;
+  REAL(loglik)[0] = pibetaprop;
+
   SEXP rval;
   PROTECT(rval = allocVector(VECSXP, 4));
   ++nProtected;
