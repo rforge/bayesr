@@ -108,7 +108,7 @@ data_Germany <- function(dir = NULL)
     zf <- file.path(tf, "germany.zip"))
   unzip(zf, exdir = gsub("\\.zip$", "", zf))
 
-  g <- readShapePoly(file.path(tf, "germany", "DEU_adm3.shp"))
+  g <- maptools::readShapePoly(file.path(tf, "germany", "DEU_adm3.shp"))
   rn <- as.character(d$NAME_3)
   Encoding(rn) <- "latin1"
   GermanyBnd <- BayesX::sp2bnd(g, regionNames = rn)

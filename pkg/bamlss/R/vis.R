@@ -1485,10 +1485,10 @@ plotmap <- function(map, x = NA, id = NULL, select = NULL,
 
     if(!outside) {
       stopifnot(requireNamespace("BayesX"))
-      gpclibPermit()
+      maptools::gpclibPermit()
       class(map) <- "bnd"
       mapsp <- list2sp(map)
-      ob <- unionSpatialPolygons(mapsp, rep(1L, length = length(mapsp)), avoidGEOS  = TRUE)
+      ob <- maptools::unionSpatialPolygons(mapsp, rep(1L, length = length(mapsp)), avoidGEOS  = TRUE)
 
       nob <- length(slot(slot(ob, "polygons")[[1]], "Polygons"))
       pip <- NULL
@@ -1502,7 +1502,7 @@ plotmap <- function(map, x = NA, id = NULL, select = NULL,
     }
 
     if(land.only) {
-      icolors[is.na(map.where("world", xco, yco))] <- NA
+      icolors[is.na(maps::map.where("world", xco, yco))] <- NA
     }
 
     if(length(res)) {

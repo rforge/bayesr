@@ -550,7 +550,7 @@ get.eta <- function(x, expand = TRUE)
 ffdf_eval <- function(x, FUN)
 {
   res <- NULL
-  for(i in chunk(x)) {
+  for(i in bit::chunk(x)) {
     res <- ffappend(res, FUN(x[i, ]))
   }
   res
@@ -559,7 +559,7 @@ ffdf_eval <- function(x, FUN)
 ffdf_eval_sh <- function(y, par, FUN)
 {
   res <- NULL
-  for(i in chunk(y)) {
+  for(i in bit::chunk(y)) {
     tpar <- list()
     for(j in names(par))
       tpar[[j]] <- par[[j]][i]
@@ -571,7 +571,7 @@ ffdf_eval_sh <- function(y, par, FUN)
 ff_eval <- function(x, FUN, lower = NULL, upper = NULL)
 {
   res <- NULL
-  for(i in chunk(x)) {
+  for(i in bit::chunk(x)) {
     tres <- FUN(x[i])
     if(!is.null(lower)) {
       if(any(jj <- tres == lower[1]))

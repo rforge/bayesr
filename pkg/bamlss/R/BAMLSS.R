@@ -3831,7 +3831,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   tau2 <- runif(length(object$S))
   S <- 0
   for(j in seq_along(tau2))
-    S <- S + 1 / tau2[j] * if(is.function(object$S[[j]])) object$S[[j]](c("b" = b, "tau2" = tau2)) else x$S[[j]]
+    S <- S + 1 / tau2[j] * if(is.function(object$S[[j]])) object$S[[j]](c("b" = b, "tau2" = tau2)) else object$S[[j]]
   S_is_diagonal <- all(S[!diag(nrow(S))] == 0)
   object$all_diagonal <- XX_is_diagonal & S_is_diagonal
 
@@ -3939,12 +3939,12 @@ krDesign1D <- function(z, knots = NULL, rho = NULL,
   phi = NULL, v = NULL, c = NULL, ...)
 {
   rho <- if(is.null(rho)) {
-    matern
+    geoR::matern
   } else rho
   knots <- if(is.null(knots)) sort(unique(z)) else knots
   v <- if(is.null(v)) 2.5 else v
   c <- if(is.null(c)) {
-    optim(1, matern, phi = 1, kappa = v, method = "L-BFGS-B", lower = 1e-10)$par
+    optim(1, geoR::matern, phi = 1, kappa = v, method = "L-BFGS-B", lower = 1e-10)$par
   } else c
   phi <- if(is.null(phi)) max(abs(diff(range(knots)))) / c else phi
   B <- NULL
@@ -3963,7 +3963,7 @@ krDesign2D <- function(z1, z2, knots = 10, rho = NULL,
 {
   stopifnot(requireNamespace("fields"))
   rho <- if(is.null(rho)) {
-    matern
+    geoR::matern
   } else rho
   if(is.null(psi)) psi <- 1
   if(is.null(delta)) delta <- 1
@@ -3973,7 +3973,7 @@ krDesign2D <- function(z1, z2, knots = 10, rho = NULL,
     if(knots == length(z1)) {
       unique(cbind(z1, z2))
     } else {
-      cover.design(R = unique(cbind(z1, z2)), nd = knots)
+      fields::cover.design(R = unique(cbind(z1, z2)), nd = knots)
     }
   } else knots
   v <- if(is.null(v)) 2.5 else v
@@ -3991,13 +3991,13 @@ krDesign2D <- function(z1, z2, knots = 10, rho = NULL,
     max(abs(diff(range(knots)))) / c
   } else phi
   if(phi == 0)
-    phi <- max(abs(rdist(z1, z2))) / c
-  K <- rho(rdist(knots, knots), phi, v)
+    phi <- max(abs(fields::rdist(z1, z2))) / c
+  K <- rho(fields::rdist(knots, knots), phi, v)
   if(isotropic) {
     B <- NULL
     for(j in 1:nk) {
       kn <- matrix(knots[j, ], nrow = 1, ncol = 2)
-      h <- rdist(z, kn)
+      h <- fields::rdist(z, kn)
       B <- cbind(B, rho(h, phi, v))
     }
   } else {

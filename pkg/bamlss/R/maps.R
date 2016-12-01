@@ -58,7 +58,7 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
 
     data <- as.data.frame(mba.points(data, px, extend = TRUE, verbose = FALSE)$xyz.est)
 
-    where <- map.where("world", data$x, data$y)
+    where <- maps::map.where("world", data$x, data$y)
     data <- data[!is.na(where), ]
     if(ireturn)
       return(data)
@@ -131,7 +131,7 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
     fit <- interp2(x, y, z, xo = xo, yo = yo, grid = cgrid)
 
     if(!is.null(addmap)) {
-      gpclibPermit()
+      maptools::gpclibPermit()
       eg <- expand.grid("x" = xo, "y" = yo)
       nob <- length(slot(slot(addmap, "polygons")[[1]], "Polygons"))
       pip <- NULL
@@ -271,19 +271,19 @@ neighbormatrix <- function(x, type = c("boundary", "dist", "delaunay", "knear"),
 
   adjmat <- if(!inherits(x, "nb")) {
     switch(type,
-      "boundary" = poly2nb(x, ...),
-      "dist" = dnearneigh(coordinates(x), ...),
-      "delaunay" = tri2nb(coordinates(x), ...),
-      "knear" = knn2nb(knearneigh(coordinates(x), k = k, ...), sym = TRUE))
+      "boundary" = spdep::poly2nb(x, ...),
+      "dist" = spdep::dnearneigh(coordinates(x), ...),
+      "delaunay" = spdep::tri2nb(coordinates(x), ...),
+      "knear" = spdep::knn2nb(spdep::knearneigh(coordinates(x), k = k, ...), sym = TRUE))
   } else x
 
-  if(!(is.symmetric.nb(adjmat, verbose = FALSE, force = TRUE))) {
+  if(!(spdep::is.symmetric.nb(adjmat, verbose = FALSE, force = TRUE))) {
     warning("neighbormatrix is not symmetric, will envorce symmetry!")
-    adjmat <- make.sym.nb(adjmat)
+    adjmat <- spdep::make.sym.nb(adjmat)
   }
 
   if(!nb) {
-    adjmat <- nb2mat(adjmat, style = "B", zero.policy = TRUE)
+    adjmat <- spdep::nb2mat(adjmat, style = "B", zero.policy = TRUE)
     if(inherits(x, "SpatialPolygonsDataFrame")) {
       names <- if(is.null(names)) {
         as.character(slot(x, "data")$OBJECTID)
@@ -518,7 +518,7 @@ drop2poly <- function(x, y, map, union = FALSE)
     map <- list2sp(map)
   }
   if(union)
-    map <- unionSpatialPolygons(map, rep(1L, length = length(map)), avoidGEOS  = TRUE)
+    map <- maptools::unionSpatialPolygons(map, rep(1L, length = length(map)), avoidGEOS  = TRUE)
 
   np <- length(map@polygons)
   pip <- NULL

@@ -140,7 +140,7 @@ s981000;Irdning - Gumpenstein;14,1;47,5;710;0;1;1'
   
     ## convenience function to read in the homstart series
     readhomstart <- function(f, which = 2, prefix = "s") {
-      x <- read.zoo(f, header = FALSE, skip = 3, format = "%Y%m%d", na.string = "NA", drop = FALSE)
+      x <- zoo::read.zoo(f, header = FALSE, skip = 3, format = "%Y%m%d", na.string = "NA", drop = FALSE)
       colnames(x) <- paste(prefix, strsplit(f, "_", fixed = TRUE)[[1]][2], sep = "")
       x
     }
@@ -243,9 +243,9 @@ s981000;Irdning - Gumpenstein;14,1;47,5;710;0;1;1'
       ## set up return value
       rval <- data.frame(
         raw = as.numeric(x),                                                             ## original zoo series
-        cens = ifelse(coredata(x) >= 0, coredata(x), 0),                                 ## censored at zero
-        bin = factor(coredata(x) > 0, levels = c(FALSE, TRUE), labels = c("no", "yes")), ## binary: greater than zero?
-        cat = cut(coredata(x), breaks = c(-Inf, breaks, Inf), labels = labels),          ## ordered categorical
+        cens = ifelse(zoo::coredata(x) >= 0, zoo::coredata(x), 0),                                 ## censored at zero
+        bin = factor(zoo::coredata(x) > 0, levels = c(FALSE, TRUE), labels = c("no", "yes")), ## binary: greater than zero?
+        cat = cut(zoo::coredata(x), breaks = c(-Inf, breaks, Inf), labels = labels),          ## ordered categorical
         trend = 1900 - origin + as.POSIXlt(tx)$year + (yday365(tx) - 1)/365,             ## years since origin
         month = factor(as.POSIXlt(tx)$mon + 1, levels = 1:12, labels = month.abb),       ## month of year
         year = factor(1900 + as.POSIXlt(tx)$year),                                       ## year

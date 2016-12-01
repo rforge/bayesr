@@ -2,6 +2,7 @@ inst/tscript.R
 inst/JSS
 R/devtools.R
 R/STAN.R
+R/bamlss_shiny.R
 data/MunichBnd.rda
 data/rent99.rda
 tests

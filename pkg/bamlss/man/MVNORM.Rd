@@ -29,7 +29,7 @@ MVNORM(x, y = NULL, family = NULL, start = NULL,
   \item{hessian}{The Hessian matrix that should be used. Note that the row and column names
     must be the same as the names of the \code{\link{parameters}}. If \code{hessian = NULL}
     the function uses \code{\link{optim}} to compute the Hessian if it is not provided
-    within \code{\link{x}}.}
+    within \code{x}.}
   \item{\dots}{Arguments passed to function \code{\link{optim}}.}
 }
 

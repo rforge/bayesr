@@ -28,8 +28,6 @@ GMCMC_iwlsC(family, theta, id, eta, y, data,
   weights = NULL, offset = NULL, zworking, resids, rho, ...)
 GMCMC_iwlsC_gp(family, theta, id, eta, y, data,
   weights = NULL, offset = NULL, zworking, resids, rho, ...)
-GMCMC_iwlsC_gp_gS(family, theta, id, eta, y, data,
-  weights = NULL, offset = NULL, zworking, resids, rho, ...)
 GMCMC_slice(family, theta, id, eta, y, data, ...)
 }
 

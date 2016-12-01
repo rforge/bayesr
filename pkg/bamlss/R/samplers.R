@@ -950,10 +950,6 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
   ## Compute acceptance probablity.
   alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
 
-print(M)
-print(M2)
-cat("---\n")
-
 #cat("\n-----------\n")
 #cat("pibetaprop", pibetaprop, "\n")
 #cat("qbeta", qbeta, "\n")
