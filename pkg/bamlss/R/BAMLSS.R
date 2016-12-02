@@ -4964,7 +4964,7 @@ logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
   Call <- match.call()
   mn <- as.character(Call[-1L])
   object <- list(object, ...)
-  ll <- edf <- NULL
+  ll <- edf <- nobs <- NULL
   if(samples)
     ll <- list()
   for(j in seq_along(object)) {
@@ -4995,6 +4995,7 @@ logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
           warning(paste("no logLik available for model ", mn[j], "!", sep = ""))
         ll <- c(ll, ms$logLik)
         edf <- c(edf, if(is.null(ms$edf)) NA else ms$edf)
+        nobs <- c(nobs, if(is.null(ms$nobs)) nrow(object[[j]]$y) else ms$nobs)
       }
     }
   }
@@ -5007,7 +5008,7 @@ logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
       names(ll) <- mn[1:length(ll)]
       rval <- as.mcmc.list(ll)
     } else {
-      rval <- cbind("logLik" = ll, "edf" = edf)
+      rval <- cbind("logLik" = ll, "edf" = edf, "nobs" = nobs)
       row.names(rval) <- if(nrow(rval) > 1) mn[1:nrow(rval)] else ""
     }
   } else rval <- NULL
@@ -6603,6 +6604,32 @@ sum_diag2 <- function(x, y)
   if(dy[1] != dy[2])
     stop("y must be symmetric!")
   .Call("sum_diag2", x, y, PACKAGE = "bamlss")
+}
+
+AIC.bamlss <- function(object, ..., k = 2)
+{
+  val <- lapply(c(object, ...), logLik.bamlss)
+  val <- lapply(val, function(x) {
+    data.frame("AIC" = -2 * x[,"logLik"] + k * x[,"edf"], "edf" = x[,"edf"])
+  })
+  val <- do.call("rbind", val)
+  Call <- match.call()
+  Call$k <- NULL
+  row.names(val) <- if(nrow(val) > 1) as.character(Call[-1L]) else ""
+  val
+}
+
+BIC.bamlss <- function(object, ..., k = 2)
+{
+  val <- lapply(c(object, ...), logLik.bamlss)
+  val <- lapply(val, function(x) {
+    data.frame("BIC" = -2 * x[,"logLik"] + x[,"edf"] * log(x[, "nobs"]), "edf" = x[,"edf"])
+  })
+  val <- do.call("rbind", val)
+  Call <- match.call()
+  Call$k <- NULL
+  row.names(val) <- if(nrow(val) > 1) as.character(Call[-1L]) else ""
+  val
 }
 
 

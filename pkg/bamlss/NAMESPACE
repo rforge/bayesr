@@ -3,8 +3,6 @@ import("mgcv")
 import("Formula")
 import("colorspace")
 import("ffbase")
-import("spam")
-import("Matrix")
 
 importFrom("ff", "read.table.ffdf", "ff", "ffdf", "fforder", "as.ff")
 importFrom("parallel", "mclapply")
@@ -39,6 +37,9 @@ importFrom("stats", "acf", "as.formula", "coef", "complete.cases",
 importFrom("utils", "download.file", "flush.console", "getS3method",
   "head", "read.csv2", "read.table", "tail", "unzip",
   "write.table")
+
+import("spam")
+import("Matrix")
 
 useDynLib(bamlss)
 

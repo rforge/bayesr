@@ -967,7 +967,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     names(IC) <- criterion
 
     rval <- list("fitted.values" = eta, "parameters" = get.all.par(x), "edf" = edf,
-      "logLik" = logLik, "logPost" = logPost,
+      "logLik" = logLik, "logPost" = logPost, "nobs" = nobs,
       "converged" = iter < maxit)
     rval[[names(IC)]] <- IC
     rval
@@ -1730,6 +1730,7 @@ opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
   if(!is.null(start))
     x <- set.starting.values(x, start)
 
+  nobs <- nrow(y)
   if(is.data.frame(y)) {
     if(ncol(y) < 2)
       y <- y[[1]]
@@ -1771,7 +1772,7 @@ opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
 
     return(list("parameters" = opt$par, "fitted.values" = eta,
       "logPost" = opt$value, "logLik" = family$loglik(y, family$map2par(eta)),
-      "hessian" = opt$hessian, "converged" = opt$convergence < 1))
+      "nobs" = nobs, "hessian" = opt$hessian, "converged" = opt$convergence < 1))
   } else {
     fn <- if(is.null(family$p2d)) {
       log_posterior
@@ -2105,8 +2106,7 @@ boost <- function(x, y, family,
     plot.boost.summary(bsum)
 
   return(list("parameters" = parm2mat(parm, if(is.null(nback)) maxit else (iter - 1)),
-    "fitted.values" = get.eta(x),
-    "boost.summary" = bsum))
+    "fitted.values" = get.eta(x), "nobs" = nobs, "boost.summary" = bsum))
 }
 
 
@@ -2803,7 +2803,7 @@ lasso <- function(x, y, start = NULL, lower = 0.001, upper = 1000,
   rownames(ic) <- NULL
   class(ic) <- "lasso.stats"
 
-  list("parameters" = do.call("rbind", par), "lasso.stats" = ic)
+  list("parameters" = do.call("rbind", par), "lasso.stats" = ic, "nobs" = nrow(y))
 }
 
 print.lasso.stats <- function(x, digits = 4, ...)
