@@ -1344,7 +1344,6 @@ plotmap <- function(map, x = NA, id = NULL, select = NULL,
   if(missing(map))
     stop("map object is missing!")
   if(inherits(map, "SpatialPolygons")) {
-    stopifnot(requireNamespace("BayesX"))
     map <- BayesX::sp2bnd(map)
   }
   if(!is.list(map))
@@ -1484,7 +1483,6 @@ plotmap <- function(map, x = NA, id = NULL, select = NULL,
     icolors <- map_fun(cvals)
 
     if(!outside) {
-      stopifnot(requireNamespace("BayesX"))
       maptools::gpclibPermit()
       class(map) <- "bnd"
       mapsp <- list2sp(map)

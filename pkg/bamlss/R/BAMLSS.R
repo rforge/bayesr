@@ -3961,7 +3961,6 @@ krDesign2D <- function(z1, z2, knots = 10, rho = NULL,
   phi = NULL, v = NULL, c = NULL, psi = NULL, delta = 1,
   isotropic = TRUE, ...)
 {
-  stopifnot(requireNamespace("fields"))
   rho <- if(is.null(rho)) {
     geoR::matern
   } else rho

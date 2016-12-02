@@ -821,7 +821,6 @@ sx.construct.offset.smooth.spec <- function(object, data, ...)
 
 sx.construct.mrf.smooth.spec <- sx.construct.spatial.smooth.spec <- function(object, data, ...)
 {
-  stopifnot(requireNamespace("BayesX"))
   if(is.null(object$xt))
     stop("need to supply a map object in argument xt!")  
   map.name <- help.map.name(deparse(substitute(object, env = .GlobalEnv), 

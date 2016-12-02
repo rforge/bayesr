@@ -102,21 +102,21 @@ xymap <- function(x, y, z, color = sequential_hcl(99, h = 100), raw.color = FALS
   }
 
   if(map) {
-    m <- map("world", add = TRUE, xlim = if(!add) NULL else xlim, ylim = if(!add) NULL else ylim,
+    m <- maps::map("world", add = TRUE, xlim = if(!add) NULL else xlim, ylim = if(!add) NULL else ylim,
       fill = if(is.null(mcol)) FALSE else TRUE, col = if(is.null(mcol)) gray(0.6) else mcol,
       boundary = boundary, interior = interior)
   }
 
   if(rivers) {
     stopifnot(requireNamespace("mapdata"))
-    map("rivers", add = TRUE, col = "lightblue")
+    maps::map("rivers", add = TRUE, col = "lightblue")
   }
 
   rect(pp[, 1] - res[1] / 2, pp[, 2] - res[2] / 2, pp[, 1] + res[1] / 2, pp[, 2] + res[2] / 2,
     col = col, border = col, lwd = 0)
 
   if(rivers) {
-    map("rivers", add = TRUE, col = "lightblue")
+    maps::map("rivers", add = TRUE, col = "lightblue")
   }
 
   if(!is.null(mcol))
@@ -414,7 +414,6 @@ plotneighbors <- function(x, add = FALSE, ...)
 centroids <- function(x, id = NULL, verbose = FALSE, check.dups = TRUE)
 {
   if(inherits(x, "SpatialPolygons")) {
-    stopifnot(requireNamespace("BayesX"))
     x <- BayesX::sp2bnd(x)
   }
   if(!is.list(x))

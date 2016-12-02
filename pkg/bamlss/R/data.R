@@ -24,7 +24,6 @@ save_data <- function(..., file, envir = parent.frame())
 ## Munich rent index.
 data_MunichRent <- function(dir = NULL)
 {
-  stopifnot(requireNamespace("BayesX"))
   if(is.null(dir))
     dir <- "~/svn/bayesr/pkg/bamlss/data"
   dir <- path.expand(dir)
@@ -97,7 +96,6 @@ data_Patent <- function(dir = NULL)
 ## Map of Germany.
 data_Germany <- function(dir = NULL)
 {
-  stopifnot(requireNamespace("BayesX"))
   if(is.null(dir))
     dir <- "~/svn/bayesr/pkg/bamlss/data"
   dir <- path.expand(dir)
