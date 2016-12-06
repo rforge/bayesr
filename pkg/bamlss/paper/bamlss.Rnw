@@ -1138,7 +1138,7 @@ of covariates \code{x3}, \code{x4} and \code{x5} is set up with
 \end{tabular}
 \end{center}
 For BAMLSS a convenient way to specify, e.g., the parameters of a normal model with
-$y~\sim~\mathcal{N}(\mu = \eta_{\mu}, \log(\sigma) = \eta_{\sigma})$ is given by
+$y~\sim~\mathcal{N}(\mu = \eta_{\mu}, \log(\sigma) = \eta_{\sigma})$ is then given by
 \begin{center}
 { \renewcommand{\arraystretch}{1}
 \begin{tabular}{l}
@@ -1151,7 +1151,7 @@ $\quad$ \code{sigma} $\sim$ \code{x1 + x2 + s(x3)} \\
 \end{center}
 i.e., two formulas are provided where the first represents the description of the mean $\mu$
 and the second of the scale parameter $\sigma$. Hence, this type of formula can be extended to
-any number of parameters that should be modeled by explanatory variables.
+any number of parameters (model parts) that should be modeled by explanatory variables.
 
 Concerning points 2--4 a possible architecture for the BAMLSS framework is illustrated in
 Figure~\ref{fig:blocks}.
@@ -1195,7 +1195,7 @@ Figure~\ref{fig:blocks}.
 The concept can be divided into three parts: First, functions that describe distribution families,
 formulas, together with the data that is used for modeling. Secondly, functions that actually
 compute estimates of parameters, and thirdly, functions for creating results like sampling
-statistics i.a., visualization, prediction etc.
+statistics, visualization, prediction etc.
 
 To set up the necessary model frame, a parser function translates the model formula
 and the data and creates all necessary information that is
@@ -1242,11 +1242,12 @@ Moreover, the package supports family objects of the \pkg{gamlss} package
 \citep{bamlss:Stasinopoulos+Rigby:2016}.
 
 Estimation is performed by an \code{optimizer} and/or \code{sampler} function, which can be provided by
-the user. The default optimizer function implements an IWLS backfitting algorithm (\ref{eqn:blockbackfit})
+the user. The default optimizer function implements the IWLS backfitting algorithm (\ref{eqn:blockbackfit})
 with automatic smoothing variance selection, see also Algorithm~\ref{fig:umode}. The default sampler
 function implements derivative based MCMC based on IWLS proposals, smoothing variances are sampled
 using slice sampling, see also Section~\ref{sec:legobricks}. For writing new optimizer and sampler
-functions only a simple general format of function arguments and return values must be adhered.
+functions only a simple general format of function arguments and return values must be adhered, see
+also the documentation of \pkg{bamlss}.
 
 
 \section{Illustrations} \label{sec:illustrations}
@@ -1291,14 +1292,11 @@ observed response $y$, the square root of daily precipitation observations, is g
 y^\star &\sim& \mathcal{N}(\mu, \sigma^2) \\
 \mu &=& \eta_{\mu} \\
 \log(\sigma) &=& \eta_{\sigma} \\
-y &=& max(0, y^\star).
+y &=& \max(0, y^\star).
 \end{eqnarray*}
-Modeling precipitation in complex terrain like the Alps naturally involves structured spatial
-variation, weather incoming flow is mostly from the north-west such that the northern part of
-Austria typically exhibits more rain than the southern part during the year. Moreover, the amount
-of precipitation is expected to increase with altitude. To account for these effects, as well as for
-potentially pronounced spatially-varying seasonality, we use the following additive predictor for
-parameter $\mu$ and $\sigma$:
+Because precipitation in the Alps is driven by the season and local characteristics, e.g.,
+differing altitude form north to south, we use the following additive predictor for parameter
+$\mu$ and $\sigma$:
 $$
 \eta = \beta_0 + f_1(\texttt{alt}) + f_2(\texttt{day}) +
   f_3(\texttt{lon}, \texttt{lat}) + f_4(\texttt{day}, \texttt{lon}, \texttt{lat}),
@@ -1387,9 +1385,9 @@ on unique covariate observations. To make the IWLS algorithms based on unique ob
 reduced form of the diagonal weight matrix $\mathbf{W}_{kk}$ and the reduced
 partial residual vector from $\mathbf{z}_k - \boldsymbol{\eta}^{(t)}_{k, -j}$ has to be computed
 additionally. For the computational details of this highly
-efficient algorithm see \citet{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}. Since the default
-estimation engines in package \pkg{bamlss} are based on the design of the generic BAMLSS algorithm
-presented in Algorithm~\ref{fig:algodesign}, this is relatively straightforward to implement.
+efficient algorithm see \citet{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}. For usage
+within \pkg{bamlss} see also the documentation of estimation engines \fct{bfit} and \fct{GMCMC} and
+the corresponding updating functions \fct{bfit\_iwls} and \fct{GMCMC\_iwls}.
 
 With a total of 4000 iterations of the MCMC sampler, on a Linux system with 8
 Intel i7-2600 3.40GHz processors running the model takes approximately 17 hours. For computing the
@@ -1433,14 +1431,18 @@ the variation of elevation of the meteorological stations used in this data set 
 \includegraphics[width=0.46\textwidth]{figures/rainmodel-effects-spatial-mu}\includegraphics[width=0.46\textwidth]{figures/rainmodel-effects-spatial-sigma} \\[0.5cm]
 \includegraphics[width=0.92\textwidth]{figures/rainmodel-effects-predict}
 \caption{\label{fig:rainmodeleffects} Estimated effects of the precipitation model, 1st and 2nd row,
-  predicted average precipitation for January 10th, bottom row.}
+  predicted average precipitation of the censored mean computed using sampling from the fitted
+  distribution for January 10th, bottom row.}
 \end{figure}
 
 
 \subsection{Cox-model} \label{sec:coxreg}
 
-This analysis is based on the article of \citet{bamlss:Taylor:2015}. The \emph{London Fire Brigade}
-(LFB, \url{http://www.london-fire.gov.uk}) is one of the largest in the world. Each year, the LFB is
+This analysis is based on the article of \citet{bamlss:Taylor:2015} and contributes to the developed
+model by inclusion of complex space-time interactions using the BAMLSS framework.
+
+The \emph{London Fire Brigade} (LFB, \url{http://www.london-fire.gov.uk}) is one of the largest in
+the world. Each year, the LFB is
 called thousands of times, in most cases due to dwelling fires. Since the time it takes until a
 fire engine arrives at the scene after an emergency call has been received, an important question is
 how to reduce the response times in order to prevent further damage or fatal casualties. For this
@@ -1448,15 +1450,15 @@ reason, the LFB's annual performance target is an average fire engine arrival ti
 maximum. Clearly, it mostly depends on the distance of the responsible fire station to the site of
 how much damage can be prevented, besides, in some cases it may happen that fire engines are already
 in use at another fire scenery and therefore it also depends on the number of fire stations in the
-area. This is viewed as an optimization problem in \citet{bamlss:Taylor:2015}, i.e., they treat
+area. This is viewed as an optimization problem in \citet{bamlss:Taylor:2015}, i.e., he treats
 the question of possible improvements of response times according to space in a probabilistic way.
-Therefore, they analyze the effect of fire station closures in 2014 using a parametric proportional
+Therefore, he analyzes the effect of fire station closures in 2014 using a parametric proportional
 hazards model and identify regions of possible concern about the number of available fire stations.
 To contribute to the topic, we apply an extended complex Cox-model for continuous time on the
 2015 dwelling fire response time data of London and show how the generic framework presented
 in this paper can be utilized to set up new estimation algorithms for this type model.
 
-The data is freely available at the London DataStore (\url{http://data.london.gov.uk/}) with an UK
+The data is freely available at the London DataStore (\url{http://data.london.gov.uk/}) with a UK
 Open Government Licence (OGL v2). The data set, also containing previous years, can be downloaded
 from
 \begin{center}
@@ -1479,9 +1481,9 @@ lower density of fire stations. Moreover, according the full distribution of fir
 \caption{\label{fig:londonfiredata} Distribution of dwelling fires and fire stations in London (2015).}
 \end{figure}
 
-As mentioned above, \citet{bamlss:Taylor:2015} analyze the response times within a
-survival context, which seems natural for this kind of time-to-event data. More precisely, they
-describe the hazard of an event (the fire engine arrives) at time $t$ with a relative risk model of
+As mentioned above, \citet{bamlss:Taylor:2015} analyzes the response times within a
+survival context, which seems natural for this kind of time-to-event data. More precisely, he
+describes the hazard of an event (the fire engine arrives) at time $t$ with a relative risk model of
 the form
 $$
 \lambda(t) = \exp\left(\eta(t)\right) =  \exp\left( \eta_{\lambda}(t) + \eta_{\gamma} \right),
@@ -1531,54 +1533,60 @@ are modeled using penalized splines.
 
 The probability that the engine will arrive on the scene after time $t$ is described by the survival
 function
-$$
-S(t) = Prob(T > t) = \exp \, \left( -\int_0^t \lambda(u)du \right),
-$$
-which is of major interest in this analysis. Based on the survival function the log-likelihood
-function of the continuous time Cox-model is given by
-$$
-\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) =
-  \sum_{i = 1}^n \left( \delta_i\eta_{i\gamma} - \int_0^{t_i} \exp( \eta_{i\lambda}(u)du ) \right).
-$$
-where $\delta_i$ is the usual censoring indicator, which equals to $\delta_i = 1$ in this example,
-because we focus on real fire events. For implementing an algorithm for posterior mode estimation
-as well as for derivative based MCMC simulation, the score vectors and Hessian need to be computed.
-Assuming a basis function approach, the score vector of the regression coefficients for the
-time-varying part $\eta_{\lambda}(t)$ is
-$$
-\mathbf{s}\left(\boldsymbol{\beta}_{\lambda}\right) = \boldsymbol{\delta}^{\top}\mathbf{X}_{\lambda}(\mathbf{t}) -
-  \sum_{i = 1}^n \exp(\eta_{i\gamma})\left( \int_0^{t_i} \exp( \eta_{i\lambda}(u) )\mathbf{x}_i(u)du \right).
-$$
-The elements of the Hessian w.r.t.\ $\boldsymbol{\beta}_{\lambda}$ are
-$$
-\mathbf{H}\left(\boldsymbol{\beta}_{\lambda}\right) =
--\sum_{i = 1}^{n} \exp\left( \eta_{i\gamma} \right) \int_{0}^{t_i} \exp( \eta_{i\lambda}(u) )
-  \boldsymbol{x}_{i\lambda}(u)\boldsymbol{x}_{i\lambda}^{\top}(u)du.
-$$
-Note that the Hessian cannot be simplified further, i.e., in order to construct IWLS updating
-functions. The reason is that for the IWLS updating scheme we need to compute the diagonal weight
-matrix based on $\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
-\partial \boldsymbol{\eta}_{\lambda}(\mathbf{t}) \partial \boldsymbol{\eta}_{\lambda}(\mathbf{t})^\top$.
-This requires a functional derivative like the Hadamard derivative since the predictor depends on time
-$t$. However, it turns out that the derivative forms martingale residuals
-\citep[see, e.g.,][]{bamlss:Barlow+Prentice:1988} which are incapable for estimating time-varying
-effects, see also \citet{bamlss:Hofner:2008} Section~5.2 for a detailed discussion.
-
-Constructing updating functions for the time-constant part $\eta_{\gamma}$ again yields an
-IWLS updating scheme with working observations given by
-$$
-\mathbf{z} = \boldsymbol{\eta}_{\gamma} + \mathbf{W}^{-1}\mathbf{u},
-$$
-with the weight matrix
-$$
-\mathbf{W} = \mathrm{diag}(\mathbf{P}\exp( \boldsymbol{\eta}_{\gamma})),
-$$
-where $\mathbf{P}$ is a diagonal matrix with elements $p_{ii} = \int_0^{t_i}
-\exp( \eta_{i\lambda}(u)du )$. The score vector is
-$$
-\mathbf{u} = \boldsymbol{\delta} - \mathbf{P}\exp(\boldsymbol{\eta}_{\gamma}).
-$$
-\citep{bamlss:Hennerfeind+Brezger+Fahrmeir:2006}
+\begin{equation} \label{eqn:surv}
+S(t) = \mathrm{Prob}(T > t) = \exp \, \left( -\int_0^t \lambda(u)du \right),
+\end{equation}
+which is of major interest in this analysis. Based on (\ref{eqn:surv}), for full Bayesian inference
+the following ``Lego bricks'' need to be implemented for updating functions $U_{jk}( \cdot )$ using
+algorithms \ref{fig:algodesign}, \ref{fig:umode} and \ref{fig:mcmc}:
+\begin{itemize}
+\item The log-likelihood function of the continuous time Cox-model is then given by
+  $$
+  \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) =
+   \sum_{i = 1}^n \left( \delta_i\eta_{i\gamma} - \int_0^{t_i} \exp( \eta_{i\lambda}(u)du ) \right).
+  $$
+  where $\delta_i$ is the usual censoring indicator, which equals to $\delta_i = 1$ in this example,
+  because we focus on real fire events.
+\item For derivative based estimation using Algorithm~\ref{fig:umode} and for MCMC simulation with
+  Algorithm~\ref{fig:mcmc}, the score vectors and Hessian need to be computed.
+  Assuming a basis function approach, the score vector of the regression coefficients for the
+  time-varying part $\eta_{\lambda}(t)$ is
+  $$
+  \mathbf{s}\left(\boldsymbol{\beta}_{\lambda}\right) = \boldsymbol{\delta}^{\top}\mathbf{X}_{\lambda}(\mathbf{t}) -
+    \sum_{i = 1}^n \exp(\eta_{i\gamma})\left( \int_0^{t_i} \exp( \eta_{i\lambda}(u) )\mathbf{x}_i(u)du \right).
+  $$
+\item The elements of the Hessian w.r.t.\ $\boldsymbol{\beta}_{\lambda}$ are
+  $$
+  \mathbf{H}\left(\boldsymbol{\beta}_{\lambda}\right) =
+  -\sum_{i = 1}^{n} \exp\left( \eta_{i\gamma} \right) \int_{0}^{t_i} \exp( \eta_{i\lambda}(u) )
+    \boldsymbol{x}_{i\lambda}(u)\boldsymbol{x}_{i\lambda}^{\top}(u)du.
+  $$
+  Note that the Hessian cannot be simplified further, i.e., in order to construct IWLS updating
+  functions. The reason is that for the IWLS updating scheme we need to compute the diagonal weight
+  matrix based on $\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
+  \partial \boldsymbol{\eta}_{\lambda}(\mathbf{t}) \partial \boldsymbol{\eta}_{\lambda}(\mathbf{t})^\top$.
+  This requires a functional derivative like the Hadamard derivative since the predictor depends on time
+  $t$. However, it turns out that the derivative forms martingale residuals
+  \citep[see, e.g.,][]{bamlss:Barlow+Prentice:1988} which are incapable for estimating time-varying
+  effects, see also \citet{bamlss:Hofner:2008} Section~5.2 for a detailed discussion. Therefore
+  updating functions $U_{jk}( \cdot )$ within Algorithm~\ref{fig:umode} and \ref{fig:mcmc} are based
+  on updating equation (\ref{eqn:blockblocknewton}).
+\item Constructing updating functions for the time-constant part $\eta_{\gamma}$ again yields an
+  IWLS updating scheme with working observations given by
+  $$
+  \mathbf{z} = \boldsymbol{\eta}_{\gamma} + \mathbf{W}^{-1}\mathbf{u},
+  $$
+  with the weight matrix
+  $$
+  \mathbf{W} = \mathrm{diag}(\mathbf{P}\exp( \boldsymbol{\eta}_{\gamma})),
+  $$
+  where $\mathbf{P}$ is a diagonal matrix with elements $p_{ii} = \int_0^{t_i}
+  \exp( \eta_{i\lambda}(u)du )$. The score vector is
+  $$
+  \mathbf{u} = \boldsymbol{\delta} - \mathbf{P}\exp(\boldsymbol{\eta}_{\gamma}).
+  $$
+  \citep{bamlss:Hennerfeind+Brezger+Fahrmeir:2006}
+\end{itemize}
 
 As a result, applying the generic algorithm presented in Algorithm~\ref{fig:algodesign} to this type
 of problem two specific difficulties need to be considered. First, the updating functions for
