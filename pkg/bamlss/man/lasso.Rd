@@ -90,7 +90,7 @@ f <- list(rentsqm ~ la(fl), sigma ~ la(fl))
 ## Estimate Lasso model with
 ## single lambda parameter.
 b1 <- bamlss(f, data = rent99, sampler = FALSE, optimizer = lasso,
-  lower = 0.0001, upper = 50, criterion = "BIC", scale.d = TRUE)
+  lower = 0.0001, upper = 10000, criterion = "BIC", nlambda = 1000)
 
 ## Plot information criterion and
 ## coefficient paths.
@@ -108,8 +108,7 @@ p1 <- predict(b1, mstop = lasso.stop(b1))
 
 ## Now with different lambda for mu and sigma using
 ## optimizer function bfit().
-b2 <- bamlss(f, data = rent99, sampler = FALSE,
-  criterion = "BIC", scale.d = TRUE)
+b2 <- bamlss(f, data = rent99, criterion = "BIC", sampler = FALSE)
 summary(b2)
 
 ## With lambda parameters for each covariate.
@@ -119,12 +118,11 @@ f <- list(
   sigma ~ la(area) + la(yearc) + la(location) +
     la(bath) + la(kitchen) + la(cheating) + la(district)
 )
-b3 <- bamlss(f, data = rent99, sampler = FALSE,
-  criterion = "BIC", scale.d = TRUE)
+b3 <- bamlss(f, data = rent99, criterion = "BIC", sampler = FALSE)
 summary(b3)
 
 ## With full MCMC.
-b4 <- bamlss(f, data = rent99, criterion = "BIC", scale.d = TRUE)
+b4 <- bamlss(f, data = rent99, criterion = "BIC")
 summary(b4)
 }
 }

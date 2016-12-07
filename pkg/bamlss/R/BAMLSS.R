@@ -2807,7 +2807,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   })
   if(all(is.null(unlist(enames))))
     stop("argument term is specified wrong!")
-  ff <- as.formula(paste("~", paste(unlist(enames), collapse = "+")))
+  ff <- as.formula(paste("~", paste(unique(unlist(enames)), collapse = "+")))
   vars <- all.vars.formula(ff)
   if(!all(vars[vars != "Intercept"] %in% nn))
     stop("cannot compute prediction, variables missing in newdata!")
@@ -3758,7 +3758,7 @@ la <- function(formula, type = c("single", "multiple"), ...)
   label <- NULL
   if(!grepl("+", formula, fixed = TRUE) & !grepl("-", formula, fixed = TRUE)) {
     if(formula %in% ls(envir = .GlobalEnv)) {
-      label <- paste("ls(", formula, ")", sep = "")
+      label <- paste("la(", formula, ")", sep = "")
       formula <- get(formula, envir = .GlobalEnv)
     }
   }
@@ -3785,11 +3785,47 @@ la <- function(formula, type = c("single", "multiple"), ...)
   rval
 }
 
+
+blockstand <- function(x)
+{  
+  decomp <- qr(x)
+  if(decomp$rank < ncol(x))
+    stop("block standardization cannot be computed, matrix is not of full rank!")
+  scale <- qr.R(decomp)
+  x <- qr.Q(decomp)
+  is_diag <- all(scale[!diag(nrow(scale))] == 0)
+  if(is_diag)
+    scale <- as.vector(1 / diag(scale))
+  else
+    scale <- solve(scale)
+  attr(x, "blockscale") <- scale
+  x
+}
+
+
 smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
 {
-  object$X <- as.matrix(model.matrix(object$formula, data = as.data.frame(data)))
-  if(length(i <- grep("Intercept", colnames(object$X))))
-    object$X <- object$X[, -i, drop = FALSE]
+  data <- as.data.frame(data)
+  tl <- term.labels2(terms(object$formula), intercept = FALSE, list = FALSE)
+  object$X <- object$lasso_trans <- df <- list()
+  for(j in tl) {
+    object$X[[j]] <- as.matrix(model.matrix(as.formula(paste("~", j)), data = data))
+    if(length(i <- grep("Intercept", colnames(object$X[[j]]))))
+      object$X[[j]] <- object$X[[j]][, -i, drop = FALSE]
+    if(!is.factor(data[[j]])) {
+      object$X[[j]] <- scale(object$X[[j]])
+      object$lasso_trans[[j]] <- list(
+        "center" = attr(object$X[[j]], "scaled:center"),
+        "scale" = attr(object$X[[j]], "scaled:scale")
+      )
+    } else {
+      object$X[[j]] <- blockstand(object$X[[j]])
+      object$lasso_trans[[j]] <- list("blockscale" = attr(object$X[[j]], "blockscale"))
+    }
+    df[[j]] <- sqrt(rep(ncol(object$X[[j]]), ncol(object$X[[j]])))
+  }
+  df <- unlist(df)
+  object$X <- do.call("cbind", object$X)
   object$S <- list()
   const <- object$xt$const
   if(is.null(const))
@@ -3798,8 +3834,8 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     object$S[[1]] <- function(parameters) {
       b <- get.par(parameters, "b")
       A <- if(length(b) > 1) {
-        diag(1 / sqrt(b^2 + const))
-      } else matrix(1 / sqrt(b^2 + const), 1, 1)
+        diag(df / sqrt(b^2 + const))
+      } else matrix(df / sqrt(b^2 + const), 1, 1)
       A
     }
     attr(object$S[[1]], "npar") <- ncol(object$X)
@@ -3809,7 +3845,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
       f <- c('function(parameters) {',
         '  b <- get.par(parameters, "b")',
         '  A <- diag(0, length(b))',
-        paste('  A[', j, ',', j, '] <- 1 / sqrt(b[', j, ']^2 + const)', sep = ''),
+        paste('  A[', j, ',', j, '] <- df[', j, '] / sqrt(b[', j, ']^2 + const)', sep = ''),
         '  A',
         '}')
       A[[j]] <- eval(parse(text = paste(f, collapse = "\n")))
@@ -3853,10 +3889,30 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
 
 Predict.matrix.lasso.smooth <- function(object, data)
 {
-  X <- as.matrix(model.matrix(object$formula, data = as.data.frame(data)))
-  if(length(i <- grep("Intercept", colnames(X))))
-    X <- X[, -i, drop = FALSE]
-  X
+  data <- as.data.frame(data)
+  tl <- term.labels2(terms(object$formula), intercept = FALSE, list = FALSE)
+  X <- list()
+  for(j in tl) {
+    X[[j]] <- as.matrix(model.matrix(as.formula(paste("~", j)), data = data))
+    if(length(i <- grep("Intercept", colnames(X[[j]]))))
+      X[[j]] <- X[[j]][, -i, drop = FALSE]
+    if(!is.factor(data[[j]])) {
+      X[[j]] <- X[[j]] * object$lasso_trans[[j]]$scale + object$lasso_trans[[j]]$center
+    } else {
+      X[[j]] <- if(!is.matrix(object$lasso_trans[[j]]$blockscale)) {
+        bs <- if(length(object$lasso_trans[[j]]$blockscale) == 1L) {
+          matrix(object$lasso_trans[[j]]$blockscale, 1, 1)
+        } else {
+          diag(object$lasso_trans[[j]]$blockscale)
+        }
+stop("FIXME!")
+        X[[j]] %*% bs
+      } else {
+        X[[j]] %*% object$lasso_trans[[j]]$blockscale
+      }
+    }
+  }
+  do.call("cbind", X)
 }
 
 
