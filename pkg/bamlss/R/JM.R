@@ -3404,7 +3404,7 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
     id <- sort(rep(1:cores, length.out = nrow(newdata)))
     newdata <- split(newdata, id)
     cores <- length(newdata)
-    probs <- mclapply(1:cores, parallel_fun, mc.cores = cores)
+    probs <- parallel::mclapply(1:cores, parallel_fun, mc.cores = cores)
 
     probs <- if(is.matrix(probs[[1]])) {
       do.call("rbind", probs)

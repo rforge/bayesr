@@ -1290,7 +1290,7 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
           start = if(is.null(bf$parameters)) start else unlist(bf$parameters),
           hessian = bf$hessian, ...)
       }
-      bf$samples <- mclapply(1:cores, parallel_fun, mc.cores = cores)
+      bf$samples <- parallel::mclapply(1:cores, parallel_fun, mc.cores = cores)
     }
     if(!inherits(bf$samples, "mcmc")) {
       if(!is.null(bf$samples)) {
@@ -2805,6 +2805,8 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
     x <- x[!is.na(x)]
     return(if(length(x) < 1) NULL else x)
   })
+  if(all(is.null(unlist(enames))))
+    stop("argument term is specified wrong!")
   ff <- as.formula(paste("~", paste(unlist(enames), collapse = "+")))
   vars <- all.vars.formula(ff)
   if(!all(vars[vars != "Intercept"] %in% nn))
@@ -2954,7 +2956,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
     newdata <- split(newdata, core_id)
     cores <- length(newdata)
 
-    pred <- mclapply(1:cores, parallel_fun, mc.cores = cores)
+    pred <- parallel::mclapply(1:cores, parallel_fun, mc.cores = cores)
 
     if(cores < 2) {
       pred <- pred[[1]]
@@ -5696,7 +5698,7 @@ continue <- function(object, cores = NULL, combine = FALSE,
         offset = model.offset(object$model.frame), start = start,
         hessian = object$hessian, ...)
     }
-    samples <- mclapply(1:cores, parallel_fun, mc.cores = cores)
+    samples <- parallel::mclapply(1:cores, parallel_fun, mc.cores = cores)
   }
   if(!inherits(samples, "mcmc")) {
     if(is.list(samples)) {
@@ -5972,6 +5974,8 @@ term.labels2 <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
   }
 
   x <- x[model]
+  if(!is.null(stl))
+    stl <- stl[model]
   nx <- names(x)
   rval <- vector(mode = "list", length = length(nx))
   for(j in seq_along(x)) {

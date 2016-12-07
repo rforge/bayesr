@@ -1652,8 +1652,7 @@ $4$ on the log-scale.
 \centering
 \includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t1}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t2}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t3} \\[0.5cm]
 \includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t4}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t5}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t6} \\[0.5cm]
-\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t7}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t8}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t9} \\[0.5cm]
-\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t10}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t11}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t12} \\[0.5cm]
+\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t7}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t8}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t9}
 \caption{\label{fig:londonfiredaytime} Estimated spatial-varying time of the day effect.}
 \end{figure}
 

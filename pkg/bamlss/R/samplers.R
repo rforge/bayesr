@@ -428,7 +428,7 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
       if(j > 1 & !is.null(sleep)) Sys.sleep(sleep)
       sampling(chains, ...)
     }
-    rval <- mclapply(1:cores, parallel_fun, mc.cores = cores)
+    rval <- parallel::mclapply(1:cores, parallel_fun, mc.cores = cores)
     if(!inherits(rval, "mcmc.list") & inherits(rval[[1L]], "mcmc.list"))
       rval <- as.mcmc.list(do.call("c", rval))
     if(!inherits(rval, "mcmc.list"))

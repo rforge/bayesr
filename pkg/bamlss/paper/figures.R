@@ -386,10 +386,13 @@ if(!file.exists("figures/firemodel-max-acf.png")) {
       ylim <- range(data$daytime[, -1])
       ylim[1] <- ylim[1] - abs(diff(ylim)) * 0.1
       matplot(seq(0, 24, length = 100), data$daytime[, -1], type = "l", lty = 1,
-        col = rgb(0.1, 0.1, 0,1, alpha = 0.01), xlab = "Time of day",
-        ylab = "Effect of time of day", ylim = ylim)
+        col = rgb(0.1, 0.1, 0,1, alpha = 0.01), xlab = "Time of day [h]",
+        ylab = "Effect of time of day", ylim = ylim, )
       plot2d(firemodel$results$gamma$s.effects[["ti(daytime)"]], c.select = c(1, 3),
         col.lines = rainbow_hcl(1), add = TRUE, rug = FALSE, lwd = 2)
+      axis(1, at = c(0, 6, 12, 18, 24))
+      axis(2)
+      box()
       abline(v = 8.5, col = "blue", lty = 2)
       legend("bottomright", c("Mean daytime effect", "Spatial-varying effect"), lwd = c(2, 1),
         col = c(rainbow_hcl(1), "black"), box.col = NA, bg = NA, cex = 0.95)
@@ -437,8 +440,11 @@ if(!file.exists("figures/firemodel-max-acf.png")) {
     }
     if("daytime" %in% what) {
       plot(firemodel, model = "gamma", term = "(daytime)", spar = FALSE, rug = FALSE,
-        xlab = "Time of day", ylab = "Effect on log relative risk",
-        scheme = 2, grid = 100)
+        xlab = "Time of day [h]", ylab = "Effect on log relative risk",
+        scheme = 2, grid = 100, axes = FALSE)
+      axis(1, at = c(0, 6, 12, 18, 24))
+      axis(2)
+      box()
       if(main) main("Effect of time of day")
     }
     if("spatial_tc" %in% what) {
@@ -655,18 +661,20 @@ if(!file.exists("figures/firemodel-max-acf.png")) {
   plot(firemodel, which = "max-acf", thin = 4, lag = 100)
   dev.off()
 
-  lr <- range(firemodel_plotdata$daytime[,-1])
-  q90 <- quantile(firemodel_plotdata$daytime[,-1], prob = 0.99)
-  rr <- c(-1 * q90, q90)
-  target <- c(0, 4, 6, 8.5, 10, 12, 14, 16, 18, 20, 22, 24)
-  tmain <- c("00:00", "04:00", "06:00", "08:30", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00", "22:00", "24:00")
+  lr <- range(firemodel_plotdata$spatial$spatial_tc)
+  lr <- c(-1 * max(abs(lr)), max(abs(lr)))
+  rr <- quantile(data$spatial$spatial_tc, probs = 0.9)
+  rr <- c(-1 * rr, rr)
+
+  target <- c(0, 3, 6, 9, 12, 15, 18, 21, 24)
+  tmain <- c("00:00", "03:00", "06:00", "09:00", "12:00", "15:00", "18:00", "21:00", "24:00")
   tmain <- paste("Time of day", tmain)
-  firemodel$family <- cox.bamlss()
+  firemodel$family <- cox_bamlss()
   for(i in seq_along(target)) {
     cat("create figure for target", i, "\n")
     epng(paste("figures/firemodel-daytime-t", i, ".png", sep = ""), width = 4.5, height = 3.5)
     par(mar = c(4.1, 4.1, 1.5, 1.5))
-    plot.daytime(firemodel, daytime = target[i], n = 120, range = rr, lrange = lr, main = tmain[i])
+    plot.daytime(firemodel, daytime = target[i], n = 120, range = rr, lrange = round(lr, 1), main = tmain[i])
     dev.off()
   }
 }
