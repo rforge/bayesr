@@ -3793,12 +3793,7 @@ blockstand <- function(x)
     stop("block standardization cannot be computed, matrix is not of full rank!")
   scale <- qr.R(decomp)
   x <- qr.Q(decomp)
-  is_diag <- all(scale[!diag(nrow(scale))] == 0)
-  if(is_diag)
-    scale <- as.vector(1 / diag(scale))
-  else
-    scale <- solve(scale)
-  attr(x, "blockscale") <- scale
+  attr(x, "blockscale") <- solve(scale)
   x
 }
 
@@ -3863,18 +3858,19 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$lassoconst <- const
 
   XX <- crossprod(object$X)
-  XX_is_diagonal <- all(XX[!diag(nrow(XX))] == 0)
+  XX <- XX[!diag(nrow(XX))]
+  XX_is_diagonal <- isTRUE(all.equal(XX, rep(0, length(XX))))
 
   b <- runif(ncol(object$X))
   tau2 <- runif(length(object$S))
   S <- 0
   for(j in seq_along(tau2))
     S <- S + 1 / tau2[j] * if(is.function(object$S[[j]])) object$S[[j]](c("b" = b, "tau2" = tau2)) else object$S[[j]]
-  S_is_diagonal <- all(S[!diag(nrow(S))] == 0)
+  S <- S[!diag(nrow(S))]
+  S_is_diagonal <- isTRUE(all.equal(S, rep(0, length(S))))
   object$all_diagonal <- XX_is_diagonal & S_is_diagonal
 
   object$xt[["binning"]] <- TRUE
-
   object$propose <- if(object$all_diagonal & (object$type %in% c("single", "multiple"))) {
     GMCMC_iwlsC_gp_diag_lasso
   } else GMCMC_iwlsC_gp
@@ -3897,22 +3893,12 @@ Predict.matrix.lasso.smooth <- function(object, data)
     if(length(i <- grep("Intercept", colnames(X[[j]]))))
       X[[j]] <- X[[j]][, -i, drop = FALSE]
     if(!is.factor(data[[j]])) {
-      X[[j]] <- X[[j]] * object$lasso_trans[[j]]$scale + object$lasso_trans[[j]]$center
+      X[[j]] <- (X[[j]] - object$lasso_trans[[j]]$center) / object$lasso_trans[[j]]$scale
     } else {
-      X[[j]] <- if(!is.matrix(object$lasso_trans[[j]]$blockscale)) {
-        bs <- if(length(object$lasso_trans[[j]]$blockscale) == 1L) {
-          matrix(object$lasso_trans[[j]]$blockscale, 1, 1)
-        } else {
-          diag(object$lasso_trans[[j]]$blockscale)
-        }
-stop("FIXME!")
-        X[[j]] %*% bs
-      } else {
-        X[[j]] %*% object$lasso_trans[[j]]$blockscale
-      }
+      X[[j]] <- X[[j]] %*% object$lasso_trans[[j]]$blockscale
     }
   }
-  do.call("cbind", X)
+  return(do.call("cbind", X))
 }
 
 
@@ -4373,7 +4359,7 @@ plot.bamlss.results <- function(x, model = NULL, term = NULL,
 
     args2 <- args
     args2$object <- x
-    res0 <- do.call("residuals.bamlss", delete.args("residuals.bamlss", args2))
+    res0 <- do.call("residuals.bamlss", delete.args("residuals.bamlss", args2, not = "mstop"))
     ny <- if(is.null(dim(res0))) 1 else ncol(res0)
     if(spar) {
       if(!ask) {
@@ -5021,6 +5007,13 @@ logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
   Call <- match.call()
   mn <- as.character(Call[-1L])
   object <- list(object, ...)
+  mstop <- object$mstop
+  if(any(names(object) != "")) {
+    i <- names(object) == ""
+    object <- object[i]
+    mn <- mn[i]
+  }
+  object <- object[mn != "mstop"]
   ll <- edf <- nobs <- NULL
   if(samples)
     ll <- list()
@@ -5047,9 +5040,15 @@ logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
               ms <- ms0$optimizer
             }
           }
+        }        
+        if(!("logLik" %in% names(ms))) {
+          dfun <- object[[j]]$family$d
+          pred <- predict(object[[j]], type = "parameter", mstop = mstop)
+          ms <- list("logLik" = sum(dfun(object[[j]]$y[[1]], pred, log = TRUE), na.rm = TRUE))
         }
-        if(!("logLik" %in% names(ms)))
+        if(!("logLik" %in% names(ms))) {
           warning(paste("no logLik available for model ", mn[j], "!", sep = ""))
+        }
         ll <- c(ll, ms$logLik)
         edf <- c(edf, if(is.null(ms$edf)) NA else ms$edf)
         nobs <- c(nobs, if(is.null(ms$nobs)) nrow(object[[j]]$y) else ms$nobs)
@@ -6288,7 +6287,7 @@ residuals.bamlss <- function(object, type = c("quantile", "response"), nsamps = 
       object$y
     }
 
-    par <- predict(object, nsamps = nsamps, drop = FALSE)
+    par <- predict(object, nsamps = nsamps, drop = FALSE, ...)
     for(j in family$names)
       par[[j]] <- make.link2(family$links[j])$linkinv(par[[j]])
 
