@@ -663,8 +663,8 @@ if(!file.exists("figures/firemodel-max-acf.png")) {
 
   lr <- range(firemodel_plotdata$spatial$spatial_tc)
   lr <- c(-1 * max(abs(lr)), max(abs(lr)))
-  rr <- quantile(data$spatial$spatial_tc, probs = 0.9)
-  rr <- c(-1 * rr, rr)
+  rr <- quantile(firemodel_plotdata$spatial$spatial_tc, probs = 0.4)
+  rr <- round(c(-1 * rr, rr), 1)
 
   target <- c(0, 3, 6, 9, 12, 15, 18, 21, 24)
   tmain <- c("00:00", "03:00", "06:00", "09:00", "12:00", "15:00", "18:00", "21:00", "24:00")

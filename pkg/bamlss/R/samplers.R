@@ -1493,15 +1493,18 @@ MVNORM <- function(x, y = NULL, family = NULL, start = NULL, n.samples = 500, he
 
 
 cat2 <- function(x, sleep = 0.03) {
-  x <- strsplit(x, "")[[1]]
-  add <- ""
-  for(i in seq_along(x)) {
-    if(i > 1) {
-      Sys.sleep(sleep)
-      cat("\r")
+  if(interactive()) {
+    x <- strsplit(x, "")[[1]]
+    add <- ""
+    for(i in seq_along(x)) {
+      if(i > 1) {
+        Sys.sleep(sleep)
+        cat("\r")
+      }
+      cat(paste(x[1:i], collapse = ""))
     }
-    cat(paste(x[1:i], collapse = ""))
-  }
+  } else cat(x)
+  invisible(NULL)
 }
 
 
