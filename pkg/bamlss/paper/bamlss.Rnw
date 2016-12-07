@@ -1569,10 +1569,11 @@ algorithms \ref{fig:algodesign}, \ref{fig:umode} and \ref{fig:mcmc}:
   $t$. However, it turns out that the derivative forms martingale residuals
   \citep[see, e.g.,][]{bamlss:Barlow+Prentice:1988} which are incapable for estimating time-varying
   effects, see also \citet{bamlss:Hofner:2008} Section~5.2 for a detailed discussion. Therefore
-  updating functions $U_{jk}( \cdot )$ within Algorithm~\ref{fig:umode} and \ref{fig:mcmc} are based
-  on updating equation (\ref{eqn:blockblocknewton}).
+  updating functions $U_{jk}( \cdot )$ for the time-varying predictor $\eta_{\lambda}(t)$ are based
+  on updating equation (\ref{eqn:blockblocknewton}) within Algorithm~\ref{fig:umode} and
+  \ref{fig:mcmc}.
 \item Constructing updating functions for the time-constant part $\eta_{\gamma}$ again yields an
-  IWLS updating scheme with working observations given by
+  IWLS updating scheme, see Section~\ref{sec:legobricks}, with working observations given by
   $$
   \mathbf{z} = \boldsymbol{\eta}_{\gamma} + \mathbf{W}^{-1}\mathbf{u},
   $$
@@ -1589,12 +1590,12 @@ algorithms \ref{fig:algodesign}, \ref{fig:umode} and \ref{fig:mcmc}:
 \end{itemize}
 
 As a result, applying the generic algorithm presented in Algorithm~\ref{fig:algodesign} to this type
-of problem two specific difficulties need to be considered. First, the updating functions for
-the time-varying predictor $\eta_{\lambda}(t)$ are different from the time-constant updating
-functions for $\eta_{\gamma}$. Secondly, a specific hurdle of the continuous time Cox-model is the
-computation of the integrals, because these do not have a closed form solution and need to be
-approximated numerically, e.g., by the trapezoidal rule or Gaussian quadrature. Moreover, it
-is inefficient to compute the integrals a new for every updating step, since for the
+of problem two specific difficulties need to be considered. First, the updating functions
+$U_{jk}( \cdot )$ for the time-varying predictor $\eta_{\lambda}(t)$ are different from the
+time-constant updating functions for $\eta_{\gamma}$. Secondly, a specific hurdle of the continuous
+time Cox-model is the computation of the integrals, because these do not have a closed form solution
+and need to be approximated numerically, e.g., by the trapezoidal rule or Gaussian quadrature.
+Moreover, it is inefficient to compute the integrals a new for every updating step, since for the
 time-constant part the integrals given in $\mathbf{P}$ do not change anymore.
 
 In order to reduce computing time we account for the idiosyncrasy of the Cox-model and
@@ -1602,8 +1603,8 @@ implement an optimizer function \fct{cox.mode} for posterior mode estimation as 
 the sampler function \fct{cox.mcmc} for MCMC simulation. The amount of work to implement this
 model using the \pkg{bamlss} infrastructures is moderate, because most of the code of the default
 estimation engines can be reused and only need slight adaption. In this example, the
-the optimizer and sampler function are part of the corresponding bamlss family object
-\fct{cox.bamlss}.
+the optimizer and sampler function are part of the corresponding \pkg{bamlss} family object
+\fct{cox\_bamlss}.
 
 On a Linux system with 8 Intel i7-2600 3.40GHz processors estimation takes
 approximately 1.2 days. Note that function \fct{cox.mode} also applies an automated procedure for

@@ -373,7 +373,7 @@ if(!file.exists("figures/firemodel-max-acf.png")) {
       par(mfrow = n2mfrow(length(what)), mar = c(4.1, 4.1, 3.1, 1.1))
     if("curves" %in% what) {
       matplot(data$curves[, 1], data$curves[, -1], type = "l", lty = 1,
-        col = rgb(0.1, 0.1, 0,1, alpha = 0.01), xlab = "Arrivaltime",
+        col = rgb(0.1, 0.1, 0,1, alpha = 0.01), xlab = "Arrivaltime [min]",
         ylab = "Effect on log relative risk")
       plot2d(firemodel$results$lambda$s.effects[["ti(arrivaltime)"]], c.select = c(1, 3),
         col.lines = rainbow_hcl(1), add = TRUE, rug = FALSE, lwd = 2)
@@ -397,8 +397,8 @@ if(!file.exists("figures/firemodel-max-acf.png")) {
     }
     if("spatial_prob" %in% what) {
       plot(LondonBoundaries, xlab = "Longitude [deg]", ylab = "Latitude [deg]")
-      lr <- c(0, max(data$spatial$spatial_prob))
-      xr <- c(0, quantile(data$spatial$spatial_prob, probs = 0.95))
+      lr <- c(0, 1)
+      xr <- c(0, 1)
       bamlss:::xymap(lon, lat, spatial_prob, data = data$spatial, pos = "bottomright",
         layout = FALSE, map = FALSE, color = heat_hcl,
         shift = c(0.03, 0.05), symmetric = FALSE, add = TRUE,
