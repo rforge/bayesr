@@ -140,7 +140,7 @@ bamlss:Belitz+Brezger+Kneib+Lang+Umlauf:2016}, \pkg{JAGS}~\citep{bamlss:Plummer:
 \pkg{WinBUGS}~\citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}; or even differences within the
 same environment, e.g., the \proglang{R} packages \pkg{mgcv}
 \citep{bamlss:Wood:2016}, \pkg{gamlss} \citep{bamlss:Stasinopoulos+Rigby:2016} and \pkg{VGAM}
-\citep{bamlss:Yee:2016} implement all model term infrastructures in their own fashion style. This is
+\citep{bamlss:Yee:2016, bamlss:Yee:2015} implement all model term infrastructures in their own fashion style. This is
 particularly problematic if all packages are loaded into \proglang{R}'s global environment, because
 some functions that are supposed to fulfill the same purpose have different interpretations.
 
@@ -1620,12 +1620,13 @@ quite large and bounded, i.e., there is a natural limit for the benefit from ope
 The effect of the time of the day then indicates that in the morning hours around $4$-$5$ am, as well
 as in the afternoon around $2$-$4$ pm, the risk of waiting longer for the fire engine to arrive
 is only slightly increasing. In addition, the spatial deviations from the mean time of day effect are
-modest, similar in magnitude as the spacial-varying baseline effects. The largest deviation seems
-to be at around $10$ am. In Figure~\ref{fig:londonfiredaytime} the spatial-varying effect is
-illustrated on $12$ time points. The maps indicate possible hot-spots of this effect, however, as
-mentioned above the overall effect size from $-0.4$ to $0.4$ is not very large such that differences
-in risk probabilities are almost negligible. In contrast, the time-constant spatial effect clearly shows
-that the average risk of increased waiting times are higher in the city center and some smaller
+modest, similar in magnitude as the spatial varying baseline effects. The largest deviation seems
+to be at around $10$ am. In Figure~\ref{fig:londonfiredaytime} the spatial varying effect is
+illustrated on $9$ time points. The maps indicate possible hot-spots of this effect, however, as
+mentioned above the overall effect size from $-0.4$ to $0.4$ is not very large (see also
+Figure~\ref{fig:londonfireeffects} bottom left) such that differences in risk probabilities are
+almost negligible. In contrast, the time-constant spatial effect clearly shows that the average risk
+of increased waiting times are higher in the city center and some smaller
 area in southern London. However, the  estimated probabilities of waiting longer than six minutes
 around the center show moderate variation, while the borders of London indicate higher probabilities
 as well as in the western parts, most probably because of the lower fire station density in these
@@ -1653,7 +1654,7 @@ $4$ on the log-scale.
 \includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t1}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t2}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t3} \\[0.5cm]
 \includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t4}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t5}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t6} \\[0.5cm]
 \includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t7}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t8}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t9}
-\caption{\label{fig:londonfiredaytime} Estimated spatial-varying time of the day effect.}
+\caption{\label{fig:londonfiredaytime} Estimated spatial varying time-of-the-day effect.}
 \end{figure}
 
 
