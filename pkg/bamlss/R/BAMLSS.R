@@ -3804,24 +3804,26 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
 {
   data <- as.data.frame(data)
   tl <- term.labels2(terms(object$formula), intercept = FALSE, list = FALSE)
-  object$X <- object$lasso_trans <- df <- list()
+  object$X <- df <- list()
+  object$lasso <- list("trans" = list())
   for(j in tl) {
     object$X[[j]] <- as.matrix(model.matrix(as.formula(paste("~", j)), data = data))
     if(length(i <- grep("Intercept", colnames(object$X[[j]]))))
       object$X[[j]] <- object$X[[j]][, -i, drop = FALSE]
     if(!is.factor(data[[j]])) {
       object$X[[j]] <- scale(object$X[[j]])
-      object$lasso_trans[[j]] <- list(
+      object$lasso$trans[[j]] <- list(
         "center" = attr(object$X[[j]], "scaled:center"),
         "scale" = attr(object$X[[j]], "scaled:scale")
       )
     } else {
       object$X[[j]] <- blockstand(object$X[[j]])
-      object$lasso_trans[[j]] <- list("blockscale" = attr(object$X[[j]], "blockscale"))
+      object$lasso$trans[[j]] <- list("blockscale" = attr(object$X[[j]], "blockscale"))
     }
     df[[j]] <- sqrt(rep(ncol(object$X[[j]]), ncol(object$X[[j]])))
   }
   df <- unlist(df)
+  object$lasso$df <- df
   object$X <- do.call("cbind", object$X)
   object$S <- list()
   const <- object$xt$const
@@ -3857,25 +3859,27 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   if(is.null(object$xt$lambda))
     object$xt$lambda <- 1 / 0.0001
   object$xt$do.optim <- TRUE
-  object$lassoconst <- const
+  object$lasso$const <- const
 
   XX <- crossprod(object$X)
-  XX_is_diagonal <- all(XX[!diag(nrow(XX))] == 0)
-
+  XX <- XX[!diag(nrow(XX))]
+  XX_is_diagonal <- isTRUE(all.equal(XX, rep(0, length(XX))))
   b <- runif(ncol(object$X))
   tau2 <- runif(length(object$S))
   S <- 0
   for(j in seq_along(tau2))
     S <- S + 1 / tau2[j] * if(is.function(object$S[[j]])) object$S[[j]](c("b" = b, "tau2" = tau2)) else object$S[[j]]
-  S_is_diagonal <- all(S[!diag(nrow(S))] == 0)
+  S <- S[!diag(nrow(S))]
+  S_is_diagonal <- isTRUE(all.equal(S, rep(0, length(S))))
+
   object$all_diagonal <- XX_is_diagonal & S_is_diagonal
-
+  object$propose <- if(object$all_diagonal) GMCMC_iwlsC_gp_diag_lasso else GMCMC_iwlsC_gp
   object$xt[["binning"]] <- TRUE
-
   object$ctype <- switch(object$type,
     "single" = 0,
     "multiple" = 1
   )
+
   class(object) <- "lasso.smooth"
 
   object
@@ -3891,9 +3895,9 @@ Predict.matrix.lasso.smooth <- function(object, data)
     if(length(i <- grep("Intercept", colnames(X[[j]]))))
       X[[j]] <- X[[j]][, -i, drop = FALSE]
     if(!is.factor(data[[j]])) {
-      X[[j]] <- (X[[j]] - object$lasso_trans[[j]]$center) / object$lasso_trans[[j]]$scale
+      X[[j]] <- (X[[j]] - object$lasso$trans[[j]]$center) / object$lasso$trans[[j]]$scale
     } else {
-      X[[j]] <- X[[j]] %*% object$lasso_trans[[j]]$blockscale
+      X[[j]] <- X[[j]] %*% object$lasso$trans[[j]]$blockscale
     }
   }
   return(do.call("cbind", X))
@@ -4281,7 +4285,8 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
         for(j in 1:np) {
           traceplot2(samps[, j, drop = FALSE], main = paste("Trace of", snames[j]))
           lines(lowess(tx, samps[, j]), col = "red")
-          acf(samps[, j, drop = FALSE], main = paste("ACF of", snames[j]), ...)
+          nu <- length(unique(samps[, j, drop = FALSE]))
+          acf(if(nu < 2) jitter(samps[, j, drop = FALSE]) else samps[, j, drop = FALSE], main = paste("ACF of", snames[j]), ...)
         }
       } else {
         snames <- snames[!grepl(".edf", snames, fixed = TRUE)]

@@ -1457,6 +1457,8 @@ SEXP gmcmc_iwls_gp_diag_lasso(SEXP family, SEXP theta, SEXP id,
   int *iptr = INTEGER(getListElement(getListElement(x, "sparse.setup"), "matrix"));
   int nc_index = ncols(getListElement(getListElement(x, "sparse.setup"), "matrix"));
 
+  double *dfptr = REAL(getListElement(getListElement(x, "lasso"), "df"));
+
   SEXP gamma0, gamma1;
   PROTECT(gamma0 = allocVector(REALSXP, nc));
   double *gamma0ptr = REAL(gamma0);
@@ -1601,7 +1603,7 @@ SEXP gmcmc_iwls_gp_diag_lasso(SEXP family, SEXP theta, SEXP id,
   if(ntau2 > 1) {
     for(j = 0; j < nc; j++) {
       edf1 = XWXptr[j + j * nc];
-      XWXptr[j + nc * j] += 1.0 / (thetaptr[nc + j] * pow(pow(thetaptr[j], 2.0) + 0.00001, 0.5));
+      XWXptr[j + nc * j] += dfptr[j] / (thetaptr[nc + j] * pow(pow(thetaptr[j], 2.0) + 0.00001, 0.5));
       XWXptr[j + nc * j] = 1.0 / XWXptr[j + nc * j];
       mu1ptr[j] = XWXptr[j + nc * j] * mu0ptr[j];
       gamma1ptr[j] = rnorm(mu1ptr[j], pow(XWXptr[j + j * nc], 0.5));
@@ -1611,7 +1613,7 @@ SEXP gmcmc_iwls_gp_diag_lasso(SEXP family, SEXP theta, SEXP id,
   } else {
     for(j = 0; j < nc; j++) {
       edf1 = XWXptr[j + j * nc];
-      XWXptr[j + nc * j] += 1.0 / (thetaptr[nc] * pow(pow(thetaptr[j], 2.0) + 0.00001, 0.5));
+      XWXptr[j + nc * j] += dfptr[j] / (thetaptr[nc] * pow(pow(thetaptr[j], 2.0) + 0.00001, 0.5));
       XWXptr[j + nc * j] = 1.0 / XWXptr[j + nc * j];
       mu1ptr[j] = XWXptr[j + nc * j] * mu0ptr[j];
       gamma1ptr[j] = rnorm(mu1ptr[j], pow(XWXptr[j + j * nc], 0.5));
@@ -1729,7 +1731,7 @@ SEXP gmcmc_iwls_gp_diag_lasso(SEXP family, SEXP theta, SEXP id,
   double qbeta = 0.0;
   if(ntau2 > 1) {
     for(j = 0; j < nc; j++) {
-      XWXptr[j + nc * j] += 1.0 / (thetaptr[nc + j] * pow(pow(thetaptr[j], 2.0) + 0.00001, 0.5));
+      XWXptr[j + nc * j] += dfptr[j] / (thetaptr[nc + j] * pow(pow(thetaptr[j], 2.0) + 0.00001, 0.5));
       XWXptr[j + nc * j] = 1.0 / XWXptr[j + nc * j];
       mu1ptr[j] = XWXptr[j + nc * j] * mu0ptr[j];
       qbeta += dnorm(thetaptr[j], mu1ptr[j], pow(XWXptr[j + nc * j], 0.5), 1);
@@ -1737,7 +1739,7 @@ SEXP gmcmc_iwls_gp_diag_lasso(SEXP family, SEXP theta, SEXP id,
     }
   } else {
     for(j = 0; j < nc; j++) {
-      XWXptr[j + nc * j] += 1.0 / (thetaptr[nc] * pow(pow(thetaptr[j], 2.0) + 0.00001, 0.5));
+      XWXptr[j + nc * j] += dfptr[j] / (thetaptr[nc] * pow(pow(thetaptr[j], 2.0) + 0.00001, 0.5));
       XWXptr[j + nc * j] = 1.0 / XWXptr[j + nc * j];
       mu1ptr[j] = XWXptr[j + nc * j] * mu0ptr[j];
       qbeta += dnorm(thetaptr[j], mu1ptr[j], pow(XWXptr[j + nc * j], 0.5), 1);
