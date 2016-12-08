@@ -776,6 +776,8 @@ make.prior <- function(x, sigma = 0.1) {
       return(as.numeric(lp))
     }
 
+    attr(prior_fun, "var_prior") <- prior
+
     return(prior_fun)
   } else {
     return(prior)
@@ -3848,32 +3850,28 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     }
     object$S <- A
   }
-  object$xt[["prior"]] <- "hc"
+  object$xt[["prior"]] <- "ig"
   object$fixed <- FALSE
   object$fxsp <- FALSE
-  object$prior <- make.prior(object, sigma = 0.1)
+  object$prior <- make.prior(object)
   if(is.null(object$xt$lambda))
     object$xt$lambda <- 1 / 0.0001
   object$xt$do.optim <- TRUE
   object$lassoconst <- const
 
   XX <- crossprod(object$X)
-  XX <- XX[!diag(nrow(XX))]
-  XX_is_diagonal <- isTRUE(all.equal(XX, rep(0, length(XX))))
+  XX_is_diagonal <- all(XX[!diag(nrow(XX))] == 0)
 
   b <- runif(ncol(object$X))
   tau2 <- runif(length(object$S))
   S <- 0
   for(j in seq_along(tau2))
     S <- S + 1 / tau2[j] * if(is.function(object$S[[j]])) object$S[[j]](c("b" = b, "tau2" = tau2)) else object$S[[j]]
-  S <- S[!diag(nrow(S))]
-  S_is_diagonal <- isTRUE(all.equal(S, rep(0, length(S))))
+  S_is_diagonal <- all(S[!diag(nrow(S))] == 0)
   object$all_diagonal <- XX_is_diagonal & S_is_diagonal
 
   object$xt[["binning"]] <- TRUE
-  object$propose <- if(object$all_diagonal & (object$type %in% c("single", "multiple"))) {
-    GMCMC_iwlsC_gp_diag_lasso
-  } else GMCMC_iwlsC_gp
+
   object$ctype <- switch(object$type,
     "single" = 0,
     "multiple" = 1

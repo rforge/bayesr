@@ -433,8 +433,9 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
   if(is.null(x$prior)) {
     if(!is.null(x$xt[["prior"]]))
       x$prior <- x$xt[["prior"]]
-    if(is.null(x$prior) | !is.function(x$prior))
+    if(is.null(x$prior) | !is.function(x$prior)) {
       x$prior <- make.prior(x)
+    }
   }
 
   x$fit.fun <- make.fit.fun(x)

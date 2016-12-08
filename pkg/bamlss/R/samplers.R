@@ -750,10 +750,22 @@ GMCMC_iwlsC_gp <- function(family, theta, id, eta, y, data,
 
   ## Sample variance parameter.
   if(!data$fixed & !data$fxsp & length(data$S)) {
-    i <- grep("tau2", names(rval$parameters))
-    for(j in i) {
-      rval$parameters <- uni.slice(rval$parameters, data, family, NULL,
-        NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = rval$loglik)
+    if((length(data$S) < 2) & (attr(data$prior, "var_prior") == "ig")) {
+      g <- get.par(rval$parameters, "b")
+      if(is.function(data$S[[1]])) {
+        K <- data$S[[1]](g)
+        data$rank <- ncol(K)
+      } else K <- data$S[[1]]
+      a <- data$rank / 2 + data$a
+      b <- 0.5 * crossprod(g, K) %*% g + data$b
+      tau2 <- 1 / rgamma(1, a, b)
+      rval$parameters <- set.par(rval$parameters, tau2, "tau2")
+    } else {
+      i <- grep("tau2", names(rval$parameters))
+      for(j in i) {
+        rval$parameters <- uni.slice(rval$parameters, data, family, NULL,
+          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = rval$loglik)
+      }
     }
   }
 
@@ -775,30 +787,24 @@ GMCMC_iwlsC_gp_diag_lasso <- function(family, theta, id, eta, y, data,
 
   ## Sample variance parameter.
   if(!data$fixed & !data$fxsp & length(data$S)) {
-    i <- grep("tau2", names(rval$parameters))
-    for(j in i) {
-      rval$parameters <- uni.slice(rval$parameters, data, family, NULL,
-        NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = rval$loglik)
+    if((length(data$S) < 2) & (attr(data$prior, "var_prior") == "ig")) {
+      g <- get.par(rval$parameters, "b")
+      if(is.function(data$S[[1]])) {
+        K <- data$S[[1]](g)
+        data$rank <- ncol(K)
+      } else K <- data$S[[1]]
+      a <- data$rank / 2 + data$a
+      b <- 0.5 * crossprod(g, K) %*% g + data$b
+      tau2 <- 1 / rgamma(1, a, b)
+      rval$parameters <- set.par(rval$parameters, tau2, "tau2")
+    } else {
+      i <- grep("tau2", names(rval$parameters))
+      for(j in i) {
+        rval$parameters <- uni.slice(rval$parameters, data, family, NULL,
+          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = rval$loglik)
+      }
     }
   }
-
-  ## Sample variance parameter.
-#  if(!data$fixed & !data$fxsp & length(data$S)) {
-#    if((length(data$S) < 2) & (data$xt[["prior"]] == "ig")) {
-#      g <- get.par(rval$parameters, "b")
-#      K <- if(is.function(data$S[[1]])) data$S[[1]](g) else data$S[[1]]
-#      a <- ncol(K) / 2 + data$a
-#      b <- 0.5 * crossprod(g, K) %*% g + data$b
-#      tau2 <- 1 / rgamma(1, a, b)
-#      rval$parameters <- set.par(rval$parameters, tau2, "tau2")
-#    } else {
-#      i <- grep("tau2", names(rval$parameters))
-#      for(j in i) {
-#        rval$parameters <- uni.slice(rval$parameters, data, family, NULL,
-#          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = rval$loglik)
-#      }
-#    }
-#  }
 
   return(list("parameters" = rval$parameters, "alpha" = rval$alpha, "extra" = c("edf" = rval$edf)))
 }
@@ -844,14 +850,18 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
 
   ## Sample variance parameter.
   if(!data$fixed & !data$fxsp & length(data$S)) {
-    if((length(data$S) < 2) & FALSE) {
+    if((length(data$S) < 2) & (attr(data$prior, "var_prior") == "ig")) {
       g <- get.par(theta, "b")
+      if(is.function(data$S[[1]])) {
+        K <- data$S[[1]](g)
+        data$rank <- ncol(K)
+      } else K <- data$S[[1]]
       a <- data$rank / 2 + data$a
-      b <- 0.5 * crossprod(g, if(is.function(data$S[[1]])) data$S[[1]](g) else data$S[[1]]) %*% g + data$b
+      b <- 0.5 * crossprod(g, K) %*% g + data$b
       tau2 <- 1 / rgamma(1, a, b)
       theta <- set.par(theta, tau2, "tau2")
     } else {
-      i <- grep("tau2", names(theta))
+      i <- grep("tau2", names(rval$parameters))
       for(j in i) {
         theta <- uni.slice(theta, data, family, NULL,
           NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = pibeta)
