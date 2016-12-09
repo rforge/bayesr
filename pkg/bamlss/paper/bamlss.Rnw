@@ -167,7 +167,7 @@ model for daily precipitation observations, as well as on the computationally ch
 for continuous time.
 
 
-\newpage
+%% \newpage
 
 
 \section{Model structure} \label{sec:model}
@@ -308,7 +308,7 @@ beliefs about $\boldsymbol{\beta}_{jk}$, or for GAM-type models $\boldsymbol{\al
 holds the so called penalty matrices, amongst others.
 
 
-\newpage
+%% \newpage
 
 
 \subsection{Model fitting} \label{sec:modelfit}
@@ -465,7 +465,7 @@ different sampling schemes like derivative based Metropolis-Hastings and slice s
 Section~\ref{sec:bricksmodelfit}.
 
 
-\newpage
+%% \newpage
 
 
 \section{Lego bricks} \label{sec:legobricks}
@@ -473,28 +473,43 @@ Section~\ref{sec:bricksmodelfit}.
 For computing parameter updates for either \ref{item:a} or \ref{item:b} using flexible partitioned
 updating systems like (\ref{eqn:blockupdate}) and (\ref{eqn:blockblockupdate}), the following
 ``Lego bricks'' are repeatedly used in Algorithm~\ref{fig:algodesign}:
-\begin{enumerate}
-\item \label{item:1} The log-likelihood function $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$,
+\begin{enumerate}[label=B\theenumi.,ref=B\theenumi]
+\item \label{item:1} The density
+  $d(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$ and respective
+  log-likelihood function $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$,
 \item \label{item:2} link functions $h_k( \cdot )$,
 \item \label{item:3} model terms $f_{jk}( \cdot )$ and corresponding prior densities
   $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$.
 \end{enumerate}
 Moreover, in this section we derive the details for updating Algorithms~\ref{fig:umode} and
 \ref{fig:mcmc}, which usually require
-\begin{enumerate}
+\begin{enumerate}[label=B\theenumi.,ref=B\theenumi]
 \setcounter{enumi}{3}
 \item \label{item:4} the derivatives of inverse link functions $h_k^{-1}( \cdot )$,
 \item \label{item:5} the first order derivatives $\frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_{jk}}$,
-\item \label{item:6} the first order derivatives $\frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_{jk}}$,
-\item \label{item:7} the second order derivatives $\frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_{jk} \partial \boldsymbol{\beta}_{jk}^\top}$,
+\item \label{item:6} first order derivatives of the log-likelihood
+\begin{enumerate}[label=\theenumi\theenumii.,ref=\theenumi\theenumii]
+  \item  \label{item:6a}w.r.t.\ regression coefficients $\frac{\partial \ell(\boldsymbol{\beta};
+    \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_{jk}}$,
+  \item \label{item:6b} w.r.t.\ predictors $\frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y},
+    \mathbf{X})}{\partial \boldsymbol{\eta}_{k}}$,
+\end{enumerate}
+\item \label{item:7} the second order derivatives of the log-likelihood
+\begin{enumerate}[label=\theenumi\theenumii.,ref=\theenumi\theenumii]
+  \item \label{item:7a} w.r.t.\ regression coefficients $\frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y},
+    \mathbf{X})}{\partial \boldsymbol{\beta}_{jk} \partial \boldsymbol{\beta}_{jk}^\top}$,	
+  \item \label{item:7b} w.r.t.\ predictors $\frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y},
+    \mathbf{X})}{\partial \boldsymbol{\eta}_{k} \partial \boldsymbol{\eta}_{k}^\top}$,
+\end{enumerate}
 \item \label{item:8} derivatives for log-priors, e.g., $\frac{\partial \log \, p_{jk}(\boldsymbol{\beta}_{jk};
   \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})}{\partial \boldsymbol{\beta}_{jk}}$.
 \end{enumerate}
 Computationally, this leads to a ``Lego'' system with (usually) fixed bricks \ref{item:2},
 \ref{item:3}, \ref{item:4}, \ref{item:5} and \ref{item:8}; in which only components \ref{item:1},
-\ref{item:6} and \ref{item:7} need to be supplied for implementing a new model. As shown in the
-upcoming this is relatively straightforward in most cases since \ref{item:6} and \ref{item:7} can
-be simplified when fragmenting with the chain rule. Moreover, most parts that are used for solving
+\ref{item:6a} and \ref{item:7a} need to be supplied for implementing a new model. As shown in the
+upcoming this is relatively straightforward in most cases since \ref{item:6a} and \ref{item:7a} can
+be simplified when fragmenting with the chain rule leading to updating functions that only require
+\ref{item:6b} and \ref{item:7b} to be implemented. Moreover, most parts that are used for solving
 \ref{item:a} can also be used for \ref{item:b}.
 
 The remainder of this section is as follows. Details about commonly used prior densities in
@@ -1311,8 +1326,8 @@ For full Bayesian estimation with Algorithm~\ref{fig:algodesign}, \ref{fig:umode
 \ref{fig:mcmc}, we construct updating functions $U_{jk}( \cdot )$ based on IWLS structures. Hence,
 as shown in Section~\ref{sec:legobricks} this only requires the following ``Lego bricks'' to be
 implemented:
-\begin{itemize}
-\item The density function of a left censored Gaussian distribution with the threshold at zero is given by
+\begin{enumerate}[leftmargin=*,align=left]
+\item[\ref{item:1}.] The density function of a left censored Gaussian distribution with the threshold at zero is given by
 \begin{equation}
   f(y; \, \mu = \eta_{\mu}, \, \log(\sigma) = \eta_{\sigma}) = \begin{cases} 
     \frac{1}{\sigma} \phi\left(\frac{y-\mu}{\sigma} \right) & y > 0 \\
@@ -1322,7 +1337,7 @@ implemented:
 where $\phi$ is the probability density and $\Phi$ the cumulative distribution function of the
 standard normal distribution.
 
-\item Score vectors $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
+\item[\ref{item:6b}.] Score vectors $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k$ are computed with
 \begin{equation*}
 \frac{\partial \ell(\boldsymbol{\beta}; y, \mathbf{x})}{
@@ -1341,7 +1356,7 @@ and
     {\Phi\left(\frac{-\mu}{\sigma} \right)} & \mbox{else.}
 \end{cases}
 \end{equation*}
-\item The diagonal elements of the weight matrix
+\item[\ref{item:7b}.] The diagonal elements of the weight matrix
 $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ are derived using
 \begin{equation*}
@@ -1368,7 +1383,7 @@ and
     {\Phi\left(\frac{-\mu}{\sigma} \right)^2} & \mbox{else.}
 \end{cases}
 \end{equation*}
-\end{itemize}
+\end{enumerate}
 The first and second derivative functions have been implemented in the \pkg{bamlss} family
 \fct{cnorm\_bamlss}.
 
@@ -1434,6 +1449,9 @@ the variation of elevation of the meteorological stations used in this data set 
   predicted average precipitation of the censored mean computed using sampling from the fitted
   distribution for January 10th, bottom row.}
 \end{figure}
+
+
+%% \newpage
 
 
 \subsection{Cox-model} \label{sec:coxreg}
@@ -1539,15 +1557,15 @@ S(t) = \mathrm{Prob}(T > t) = \exp \, \left( -\int_0^t \lambda(u)du \right),
 which is of major interest in this analysis. Based on (\ref{eqn:surv}), for full Bayesian inference
 the following ``Lego bricks'' need to be implemented for updating functions $U_{jk}( \cdot )$ using
 algorithms \ref{fig:algodesign}, \ref{fig:umode} and \ref{fig:mcmc}:
-\begin{itemize}
-\item The log-likelihood function of the continuous time Cox-model is then given by
+\begin{enumerate}[leftmargin=*,align=left]
+\item[\ref{item:1}.] The log-likelihood function of the continuous time Cox-model is then given by
   $$
   \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) =
    \sum_{i = 1}^n \left( \delta_i\eta_{i\gamma} - \int_0^{t_i} \exp( \eta_{i\lambda}(u)du ) \right).
   $$
   where $\delta_i$ is the usual censoring indicator, which equals to $\delta_i = 1$ in this example,
   because we focus on real fire events.
-\item For derivative based estimation using Algorithm~\ref{fig:umode} and for MCMC simulation with
+\item[\ref{item:6a}.] For derivative based estimation using Algorithm~\ref{fig:umode} and for MCMC simulation with
   Algorithm~\ref{fig:mcmc}, the score vectors and Hessian need to be computed.
   Assuming a basis function approach, the score vector of the regression coefficients for the
   time-varying part $\eta_{\lambda}(t)$ is
@@ -1555,7 +1573,7 @@ algorithms \ref{fig:algodesign}, \ref{fig:umode} and \ref{fig:mcmc}:
   \mathbf{s}\left(\boldsymbol{\beta}_{\lambda}\right) = \boldsymbol{\delta}^{\top}\mathbf{X}_{\lambda}(\mathbf{t}) -
     \sum_{i = 1}^n \exp(\eta_{i\gamma})\left( \int_0^{t_i} \exp( \eta_{i\lambda}(u) )\mathbf{x}_i(u)du \right).
   $$
-\item The elements of the Hessian w.r.t.\ $\boldsymbol{\beta}_{\lambda}$ are
+\item[\ref{item:7a}.] The elements of the Hessian w.r.t.\ $\boldsymbol{\beta}_{\lambda}$ are
   $$
   \mathbf{H}\left(\boldsymbol{\beta}_{\lambda}\right) =
   -\sum_{i = 1}^{n} \exp\left( \eta_{i\gamma} \right) \int_{0}^{t_i} \exp( \eta_{i\lambda}(u) )
@@ -1572,8 +1590,9 @@ algorithms \ref{fig:algodesign}, \ref{fig:umode} and \ref{fig:mcmc}:
   updating functions $U_{jk}( \cdot )$ for the time-varying predictor $\eta_{\lambda}(t)$ are based
   on updating equation (\ref{eqn:blockblocknewton}) within Algorithm~\ref{fig:umode} and
   \ref{fig:mcmc}.
-\item Constructing updating functions for the time-constant part $\eta_{\gamma}$ again yields an
-  IWLS updating scheme, see Section~\ref{sec:legobricks}, with working observations given by
+\item[\ref{item:6b} \& \ref{item:7b}.] Constructing updating functions for the time-constant part
+  $\eta_{\gamma}$ again yields an IWLS updating scheme, see Section~\ref{sec:legobricks}, with
+  working observations given by
   $$
   \mathbf{z} = \boldsymbol{\eta}_{\gamma} + \mathbf{W}^{-1}\mathbf{u},
   $$
@@ -1587,7 +1606,7 @@ algorithms \ref{fig:algodesign}, \ref{fig:umode} and \ref{fig:mcmc}:
   \mathbf{u} = \boldsymbol{\delta} - \mathbf{P}\exp(\boldsymbol{\eta}_{\gamma}).
   $$
   \citep{bamlss:Hennerfeind+Brezger+Fahrmeir:2006}
-\end{itemize}
+\end{enumerate}
 
 As a result, applying the generic algorithm presented in Algorithm~\ref{fig:algodesign} to this type
 of problem two specific difficulties need to be considered. First, the updating functions
@@ -1756,9 +1775,9 @@ Section~\ref{sec:bricksmodelfit}. Focusing on the $j$-th row of (\ref{eqn:blockn
 \end{eqnarray*}
 This yields the updating function $U_{jk}( \cdot )$ shown in (\ref{eqn:blockbackfit}).
 
-\newpage
+%% \newpage
 
-\section{Full conditionals for derivative based MCMC} \label{appendix:fullcond1}
+\section{Approximate full conditionals for derivative based MCMC} \label{appendix:fullcond1}
 The following shows the steps to derive a multivariate normal jumping distribution based
 on a second order Taylor series expansion of the log-posterior centered at the last state of
 $\boldsymbol{\beta}_{jk}$.
@@ -1802,7 +1821,7 @@ and mean
   \left[\mathbf{J}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
     \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right).
 \end{eqnarray*}
-Using a linear basis function representation of functions $f_{jk}( \cdot )$ the precision matrix is
+Using a basis function representation of functions $f_{jk}( \cdot )$ the precision matrix is
 $$
 \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}),
 $$
