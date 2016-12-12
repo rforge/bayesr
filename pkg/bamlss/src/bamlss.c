@@ -1461,7 +1461,6 @@ SEXP gmcmc_iwls_gp_diag_lasso(SEXP family, SEXP theta, SEXP id,
 
   SEXP gamma0, gamma1;
   PROTECT(gamma0 = allocVector(REALSXP, nc));
-  double *gamma0ptr = REAL(gamma0);
   ++nProtected;
 
   PROTECT(gamma1 = allocVector(REALSXP, nc));
@@ -1503,7 +1502,6 @@ SEXP gmcmc_iwls_gp_diag_lasso(SEXP family, SEXP theta, SEXP id,
   double *xrresptr = REAL(getListElement(x, "rres"));
   double *XWXptr = REAL(getListElement(x, "XWX"));
   double *Xptr = REAL(VECTOR_ELT(x, X_ind));
-  double *Sptr;
   int *idptr = INTEGER(getListElement(getListElement(x, "binning"), "match.index"));
   int *indptr = INTEGER(getListElement(getListElement(x, "binning"), "sorted.index"));
   int *orderptr = INTEGER(getListElement(getListElement(x, "binning"), "order"));
