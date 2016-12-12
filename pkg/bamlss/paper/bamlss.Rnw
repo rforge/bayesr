@@ -1775,7 +1775,7 @@ Section~\ref{sec:bricksmodelfit}. Focusing on the $j$-th row of (\ref{eqn:blockn
 \end{eqnarray*}
 This yields the updating function $U_{jk}( \cdot )$ shown in (\ref{eqn:blockbackfit}).
 
-%% \newpage
+\newpage
 
 \section{Approximate full conditionals for derivative based MCMC} \label{appendix:fullcond1}
 The following shows the steps to derive a multivariate normal jumping distribution based

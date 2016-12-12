@@ -190,6 +190,8 @@ set.par <- function(x, replacement, what) {
     x[grep("tau", names(x))] <- replacement
   } else {
     if(what %in% "b") {
+      if(as.integer(sum(!grepl("tau", names(x)) & !grepl("edf", names(x)))) != length(replacement))
+        stop("here")
       x[!grepl("tau", names(x)) & !grepl("edf", names(x))] <- replacement
     } else x[what] <- replacement
   }
@@ -1697,7 +1699,7 @@ grad_posterior <- function(par, x, y, family, ...)
         paste(j, "p", strsplit(x[[j]]$smooth.construct[[sj]]$label, "+", fixed = TRUE)[[1]], sep = ".")
       }
       tpar <- par[grep2(xl, names(par), fixed = TRUE)]
-      if(x[[j]]$smooth.construct[[sj]]$by == "NA") {
+      if((x[[j]]$smooth.construct[[sj]]$by == "NA") & (sj != "model.matrix")) {
         tpar <- tpar[!grepl(":", names(tpar), fixed = TRUE)]
       }
       x[[j]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[j]]$smooth.construct[[sj]]$state$parameters, tpar, "b")
