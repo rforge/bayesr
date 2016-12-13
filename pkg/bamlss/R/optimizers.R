@@ -2160,9 +2160,11 @@ boost.transform <- function(x, y, df = NULL, family,
         model.matrix[[pj]]$state <- list("parameters" = g0[pj])
         model.matrix[[pj]]$state$fitted.values <- drop(model.matrix[[pj]]$X %*% g0[pj])
         model.matrix[[pj]]$state$edf <- 0
+        model.matrix[[pj]]$state$rss <- 0
         model.matrix[[pj]]$state$do.optim <- FALSE
         model.matrix[[pj]]$is.model.matrix <- TRUE
         model.matrix[[pj]]$selected <- rep(0, length = maxit)
+        model.matrix[[pj]]$sparse.setup <- sparse.setup(model.matrix[[pj]]$X, S = model.matrix[[pj]]$S)
         model.matrix[[pj]]$upper <- Inf
         model.matrix[[pj]]$lower <- -Inf
         class(model.matrix[[pj]]) <- class(x[[nx[j]]]$smooth.construct[[ii]])
@@ -2179,6 +2181,11 @@ boost.transform <- function(x, y, df = NULL, family,
       x[[nx[j]]]$smooth.construct[[sj]]$selected <- rep(0, length = maxit)
       x[[nx[j]]]$smooth.construct[[sj]]$loglik <- rep(0, length = maxit)
       x[[nx[j]]]$smooth.construct[[sj]]$state$edf <- 0
+      x[[nx[j]]]$smooth.construct[[sj]]$state$rss <- 0
+      nc <- ncol(x[[nx[j]]]$smooth.construct[[sj]]$X)
+      nr <- nrow(x[[nx[j]]]$smooth.construct[[sj]]$X)
+      x[[nx[j]]]$smooth.construct[[sj]]$XWX <- matrix(0, nc, nc)
+      x[[nx[j]]]$smooth.construct[[sj]]$XW <- matrix(0, nc, nr)
     }
   }
 
@@ -2462,7 +2469,7 @@ boost_iwls <- function(x, hess, resids, nu)
 
 
 ## Boosting gradient fit.
-boost_fit <- function(x, y, nu)
+boost_fit0 <- function(x, y, nu)
 {
   ## Compute reduced residuals.
   xbin.fun(x$binning$sorted.index, rep(1, length = length(y)), y, x$weights, x$rres, x$binning$order)
@@ -2487,6 +2494,12 @@ boost_fit <- function(x, y, nu)
   x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
   x$state$rss <- sum((x$state$fitted.values - y)^2)
 
+  return(x$state)
+}
+
+boost_fit <- function(x, y, nu)
+{
+  .Call("boost_fit", x, y, nu)
   return(x$state)
 }
 

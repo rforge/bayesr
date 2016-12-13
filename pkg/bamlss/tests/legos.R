@@ -408,5 +408,5 @@ f <- list(
   rho23 ~ s(x3)
 )
 
-b <- bamlss(f, family = gF(mvnorm, k = 3), data = dat, optimizer = boost, sampler = FALSE, nback = 10, maxit = 1000, nu = 0.1, scale.d = TRUE)
+b <- bamlss(f, family = gF(mvnorm, k = 3), data = dat, optimizer = boost, sampler = FALSE, maxit = 1000, nu = 0.1, scale.d = TRUE)
 

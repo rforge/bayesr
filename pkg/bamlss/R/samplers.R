@@ -861,7 +861,7 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
       tau2 <- 1 / rgamma(1, a, b)
       theta <- set.par(theta, tau2, "tau2")
     } else {
-      i <- grep("tau2", names(rval$parameters))
+      i <- grep("tau2", names(theta))
       for(j in i) {
         theta <- uni.slice(theta, data, family, NULL,
           NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = pibeta)

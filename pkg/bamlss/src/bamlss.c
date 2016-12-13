@@ -2865,24 +2865,175 @@ SEXP log_dmvnorm(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ)
 }
 
 
-/* Sparse cholesky decomposition */
-/*SEXP sparse_chol(SEXP x, SEXP index)*/
-/*{*/
-/*  int n = nrows(x);*/
-/*  int m = ncols(x);*/
+/* Boosting updater. */
+void boost_fit(SEXP x, SEXP y, SEXP nu)
+{
+  int i, j, k, nProtected = 0;
+  int n = length(y);
+  int fixed = LOGICAL(getListElement(x, "fixed"))[0];
+  int fxsp = LOGICAL(getListElement(x, "fxsp"))[0];
 
-/*  SEXP L*/
-/*  PROTECT(L = allocMatrix(REALSXP, n, m));*/
-/*  double *Lptr = REAL(L);*/
-/*  double *xptr = REAL(x);*/
-/*  int *iptr = INTEGER(getListElement(index, "matrix"))*/
-/*  int *optr = INTEGER(getListElement(index, "ordering"))*/
+  double *thetaptr = REAL(getListElement(getListElement(x, "state"), "parameters"));
 
-/*  if(n < 2 && m < 2) {*/
-/*    Lptr[0] = Lptr[0]^(0.5)*/
-/*  } else {*/
-/*    Lptr[0] = (x[optr[0], optr[0]])^0.5;*/
+  int S_ind = getListElement_index(x, "S");
+  int ntau2;
+  if(fixed > 0) {
+    ntau2 = 0;
+  } else {
+    ntau2 = length(VECTOR_ELT(x, S_ind));
+  }
+  int nc = length(getListElement(getListElement(x, "state"), "parameters"));
+  if(fixed < 1) {
+    nc -= ntau2;
+  }
 
-/*  }*/
-/*}*/
+  SEXP tau2;
+  PROTECT(tau2 = allocVector(REALSXP, ntau2));
+  double *tau2ptr = REAL(tau2);
+  ++nProtected;
+
+  /* Create weighted matrix */
+  int X_ind = getListElement_index(x, "X");
+  int nr = nrows(VECTOR_ELT(x, X_ind));
+
+  /* More pointers needed. */
+  double *eptr = REAL(y);
+  double *xweightsptr = REAL(getListElement(x, "weights"));
+  double *xrresptr = REAL(getListElement(x, "rres"));
+  double *XWptr = REAL(getListElement(x, "XW"));
+  double *XWXptr = REAL(getListElement(x, "XWX"));
+  double *Xptr = REAL(VECTOR_ELT(x, X_ind));
+  double *Sptr;
+  int *idptr = INTEGER(getListElement(getListElement(x, "binning"), "match.index"));
+  int *indptr = INTEGER(getListElement(getListElement(x, "binning"), "sorted.index"));
+  int *orderptr = INTEGER(getListElement(getListElement(x, "binning"), "order"));
+
+  /* Handling fitted.values. */
+  double *fitrptr = REAL(getListElement(x, "fit.reduced"));
+  double *fitptr = REAL(getListElement(getListElement(x, "state"), "fitted.values"));
+
+  /* Start. */
+  xweightsptr[0] = 0.0;
+  xrresptr[0] = 0.0;
+
+  j = 0;
+  int jj;
+  for(i = 0; i < n; i++) {
+    if(indptr[i] > (j + 1)) {
+      for(jj = 0; jj < nc; jj++) {
+        XWptr[jj + nc * j] = Xptr[j + nr * jj] * xweightsptr[j];
+      }
+      ++j;
+      xweightsptr[j] = 0.0;
+      xrresptr[j] = 0.0;
+    }
+    k = orderptr[i] - 1;
+
+    xweightsptr[j] += 1.0;
+    xrresptr[j] += eptr[k];
+  }
+
+  for(jj = 0; jj < nc; jj++) {
+    XWptr[jj + nc * j] = Xptr[j + nr * jj] * xweightsptr[j];
+  }
+
+  /* Compute X'WX. */
+  char *transa = "N", *transb = "N";
+  double one = 1.0, zero = 0.0;
+  F77_CALL(dgemm)(transa, transb, &nc, &nc, &nr, &one,
+    XWptr, &nc, Xptr, &nr, &zero, XWXptr, &nc);
+
+  /* Add penalty matrix and variance parameter. */
+  if(fixed < 1) {
+    for(jj = 0; jj < ntau2; jj++) {
+      Sptr = REAL(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj));
+      tau2ptr[jj] = thetaptr[nc + jj];
+      for(i = 0; i < nc; i++) {
+        for(j = 0; j < nc; j++) {
+          XWXptr[i + nc * j] += 1 / tau2ptr[jj] * Sptr[i + nc * j];
+        }
+      }
+    }
+  }
+
+  /* Cholesky decompostion of XWX. */
+  SEXP L;
+  PROTECT(L = duplicate(getListElement(x, "XWX")));
+  double *Lptr = REAL(L);
+  ++nProtected;
+
+  for(j = 0; j < nc; j++) { 	/* Zero the lower triangle. */
+    for(i = j + 1; i < nc; i++) {
+      Lptr[i + nc * j] = 0.0;
+    }
+  }
+
+  int info;
+  F77_CALL(dpotrf)("Upper", &nc, Lptr, &nc, &info);
+
+  /* Compute the inverse precision matrix. */
+  SEXP PINV;
+  PROTECT(PINV = duplicate(L));
+  double *PINVptr = REAL(PINV);
+  ++nProtected;
+
+  F77_CALL(dpotri)("Upper", &nc, PINVptr, &nc, &info);
+
+  SEXP PINVL;
+  PROTECT(PINVL = duplicate(PINV));
+  double *PINVLptr = REAL(PINVL);
+  ++nProtected;
+  F77_CALL(dpotrf)("Upper", &nc, PINVLptr, &nc, &info);
+
+  for(j = 0; j < nc; j++) {
+    for(i = j + 1; i < nc; i++) {
+      PINVptr[i + j * nc] = PINVptr[j + i * nc];
+    }
+  }
+
+  /* Compute mu. */
+  SEXP mu0;
+  PROTECT(mu0 = allocVector(REALSXP, nc));
+  double *mu0ptr = REAL(mu0);
+  ++nProtected;
+
+  SEXP mu1;
+  PROTECT(mu1 = allocVector(REALSXP, nc));
+  double *mu1ptr = REAL(mu1);
+  ++nProtected;
+
+  int k1 = 1;
+  char *transa2 = "T";
+  F77_CALL(dgemm)(transa2, transb, &nc, &k1, &nr, &one,
+    Xptr, &nr, xrresptr, &nr, &zero, mu0ptr, &nc);
+  F77_CALL(dgemm)(transa, transb, &nc, &k1, &nc, &one,
+    PINVptr, &nc, mu0ptr, &nc, &zero, mu1ptr, &nc);
+
+  for(j = 0; j < nc; j++) {
+    thetaptr[j] = REAL(nu)[0] * mu1ptr[j];
+  }
+
+  int *iptr = INTEGER(getListElement(getListElement(x, "sparse.setup"), "matrix"));
+  int nc_index = ncols(getListElement(getListElement(x, "sparse.setup"), "matrix"));
+
+  for(i = 0; i < nr; i++) {
+    fitrptr[i] = 0.0;
+    for(j = 0; j < nc_index; j++) {
+      if((iptr[i + j * nr] < 0) || (iptr[i + j * nr] > nc))
+        continue;
+      fitrptr[i] += Xptr[i + (iptr[i + j * nr] - 1) * nr] * thetaptr[(iptr[i + j * nr] - 1)];
+    }
+  }
+
+  double *yptr = REAL(y);
+  double rss = 0.0;
+  for(i = 0; i < n; i++) {
+    k = idptr[i] - 1;
+    fitptr[i] = fitrptr[k];
+    rss += pow(fitptr[i] - yptr[i], 2.0);
+  }
+  REAL(getListElement(getListElement(x, "state"), "rss"))[0] = rss;
+
+  UNPROTECT(nProtected);
+}
 

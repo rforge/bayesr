@@ -103,7 +103,7 @@ lasso.stop(b1)
 ## Lasso parameter.
 parameters(b1, mstop = lasso.stop(b1))
 
-## Predict with optimum lasso.
+## Predict with optimum Lasso parameter.
 p1 <- predict(b1, mstop = lasso.stop(b1))
 
 ## Now with different lambda for mu and sigma using
