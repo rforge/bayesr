@@ -2871,7 +2871,6 @@ void boost_fit(SEXP x, SEXP y, SEXP nu)
   int i, j, k, nProtected = 0;
   int n = length(y);
   int fixed = LOGICAL(getListElement(x, "fixed"))[0];
-  int fxsp = LOGICAL(getListElement(x, "fxsp"))[0];
 
   double *thetaptr = REAL(getListElement(getListElement(x, "state"), "parameters"));
 
