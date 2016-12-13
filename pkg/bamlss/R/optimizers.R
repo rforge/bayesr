@@ -971,7 +971,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
     rval <- list("fitted.values" = eta, "parameters" = get.all.par(x), "edf" = edf,
       "logLik" = logLik, "logPost" = logPost, "nobs" = nobs,
-      "converged" = iter < maxit)
+      "converged" = iter < maxit, "runtime" = elapsed)
     rval[[names(IC)]] <- IC
     rval
   }
@@ -2025,6 +2025,7 @@ boost <- function(x, y, family,
   eps0 <- 1; iter <- 1
   save.ll <- NULL
   ll <- family$loglik(y, family$map2par(eta))
+  ptm <- proc.time()
   while(iter <= maxit) {
     eta0 <- eta
 
@@ -2102,14 +2103,22 @@ boost <- function(x, y, family,
     }
   }
 
-  if(verbose) cat("\n")
+  elapsed <- c(proc.time() - ptm)[3]
+
+  if(verbose) {
+    cat("\n")
+    et <- if(elapsed > 60) {
+      paste(formatC(format(round(elapsed / 60, 2), nsmall = 2), width = 5), "min", sep = "")
+    } else paste(formatC(format(round(elapsed, 2), nsmall = 2), width = 5), "sec", sep = "")
+    cat("\n elapsed time: ", et, "\n", sep = "")
+  }
 
   bsum <- make.boost.summary(x, if(is.null(nback)) maxit else (iter - 1), save.ll)
   if(plot)
     plot.boost.summary(bsum)
 
   return(list("parameters" = parm2mat(parm, if(is.null(nback)) maxit else (iter - 1)),
-    "fitted.values" = get.eta(x), "nobs" = nobs, "boost.summary" = bsum))
+    "fitted.values" = get.eta(x), "nobs" = nobs, "boost.summary" = bsum, "runtime" = elapsed))
 }
 
 

@@ -170,11 +170,14 @@ match.index.ff <- function(x)
 ## Compute the 'bamlss.frame' 'x' master object.
 design.construct <- function(formula, data = NULL, knots = NULL,
   model.matrix = TRUE, smooth.construct = TRUE, binning = FALSE,
-  before = TRUE, gam.side = !binning, model = NULL, drop = NULL,
+  before = TRUE, gam.side = NULL, model = NULL, drop = NULL,
   scale.x = TRUE, absorb.cons = NULL, sparse.cons = 0, specials = NULL, ...)
 {
   if(!model.matrix & !smooth.construct)
     return(NULL)
+
+  if(is.null(gam.side))
+    gam.side <- if(binning) FALSE else TRUE
 
   if(inherits(formula, "bamlss.frame")) {
     data <- if(is.null(data)) model.frame(formula) else data
