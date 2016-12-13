@@ -1252,15 +1252,15 @@ plotmap <- function(map, x = NA, id = NULL, select = NULL,
 
       if(!any(id %in% pol_id))
         stop("region identifier does not match with polygon ID!")
-
-      if(all(pol_id == id)) {
-        map@data <- data.frame("ID" = id, "x" = x)
+      if(all(pol_id %in% id)) {
+        map@data <- data.frame("ID" = pol_id, "x" = x)
       } else {
-        map@data <- merge(
-          data.frame("ID" = pol_id),
-          data.frame("ID" = id, "x" = x),
-          by = "ID"
-        )
+        map@data <- data.frame("ID" = pol_id, "x" = NA)
+        for(j in seq_along(pol_id)) {
+          if(pol_id[j] %in% id) {
+            map@data$x[j] <- x[id %in% pol_id[j]]
+          }
+        }
       }
 
       select <- "x"

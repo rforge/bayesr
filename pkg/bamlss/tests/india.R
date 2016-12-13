@@ -1,21 +1,25 @@
-library("BayesR")
+library("bamlss")
 
 data("india", "india.bnd", package = "gamboostLSS")
-india <- cbind(india, centroids(india.bnd, id = india$mcdist))
-india$stunting2 <- scale(india$stunting)
+
+K <- neighbormatrix(india.bnd, id = india$mcdist)
 
 f <- list(
-  stunting2 ~ s(cbmi) + s(cage) + s(mbmi) + s(mage) + s(x, y, k = 100),
-  sigma2 ~ s(cbmi) + s(cage) + s(mbmi) + s(mage) + s(x, y, k = 100)
+  stunting ~ s(cbmi) + s(cage) + s(mbmi) + s(mage) + s(mcdist,bs="mrf",xt=list(penalty=K)),
+  sigma ~ s(cbmi) + s(cage) + s(mbmi) + s(mage) + s(mcdist,bs="mrf",xt=list(penalty=K))
 )
 
-b <- bamlss(f, data = india, method = c("backfitting", "MCMC"),
-  update = "iwls", propose = "iwls", inner = TRUE,
-  n.iter = 1200, burnin = 200, thin = 1)
+b <- bamlss(f, data = india)
 
-india$mu.sp <- predict(b, model = "mu", term = "s(x,y)", intercept = FALSE)
-india$sigma2.sp <- predict(b, model = "sigma2", term = "s(x,y)", intercept = FALSE)
+nd <- data.frame("mcdist" = unique(india$mcdist))
 
-par(mfrow = c(1, 2))
-plotmap(india.bnd, x = india$mu.sp, id = india$mcdist, pos = "bottomright")
-plotmap(india.bnd, x = india$sigma2.sp, id = india$mcdist, pos = "bottomright")
+nd$sp.mu <- predict(b, newdata = nd, model = "mu", term = "s(mcdist)", intercept = FALSE)
+nd$sp.sigma <- predict(b, newdata = nd, model = "sigma", term = "s(mcdist)", intercept = FALSE)
+
+par(mfrow = c(1, 2), mar = rep(0, 4))
+plotmap(india.bnd, x = nd$sp.mu, id = nd$mcdist,
+  pos = "bottomright", color = diverge_hcl, symmetric = TRUE,
+  side.legend = 2, swap = FALSE, shift = c(0.2, 0.1))
+plotmap(india.bnd, x = nd$sp.sigma, id = nd$mcdist,
+  pos = "bottomright", color = diverge_hcl, symmetric = TRUE,
+  side.legend = 2, swap = FALSE, shift = c(0.2, 0.1))
