@@ -2039,7 +2039,8 @@ boost <- function(x, y, family,
       ## Fit to gradient.
       for(j in names(x[[i]]$smooth.construct)) {
         ## Get updated parameters.
-        states[[i]][[j]] <- boost_fit(x[[i]]$smooth.construct[[j]], grad, nu)
+        .Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu)
+        states[[i]][[j]] <- x[[i]]$smooth.construct[[j]]$state
 
         ## Get rss.
         rss[[i]][j] <- states[[i]][[j]]$rss
@@ -2478,7 +2479,7 @@ boost_iwls <- function(x, hess, resids, nu)
 
 
 ## Boosting gradient fit.
-boost_fit0 <- function(x, y, nu)
+boost_fit <- function(x, y, nu)
 {
   ## Compute reduced residuals.
   xbin.fun(x$binning$sorted.index, rep(1, length = length(y)), y, x$weights, x$rres, x$binning$order)
@@ -2503,12 +2504,6 @@ boost_fit0 <- function(x, y, nu)
   x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
   x$state$rss <- sum((x$state$fitted.values - y)^2)
 
-  return(x$state)
-}
-
-boost_fit <- function(x, y, nu)
-{
-  .Call("boost_fit", x, y, nu)
   return(x$state)
 }
 
