@@ -352,6 +352,12 @@ design.construct <- function(formula, data = NULL, knots = NULL,
                 sparse.cons = sparse.cons)
             }
           } else {
+            if(inherits(tsm, "mrf.smooth.spec")) {
+              if(!is.null(tsm$xt$map)) {
+                vl <- levels(data[[tsm$term]])
+                tsm$xt$polys <- as.list(tsm$xt$map[vl])
+              }
+            }
             smt <- smooth.construct(tsm, data, knots)
             if(inherits(tsm, "no.mgcv") | inherits(smt, "no.mgcv")) {
               no.mgcv <- c(no.mgcv, list(smt))

@@ -605,12 +605,14 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
     term <- paste(term, ",betastart=", Pn, sep = "")
   if(is.null(object$xt$nocenter) & is.null(object$xt$centermethod) & !is.null(object$rank))
     term <- paste(term, ",rankK=", sum(object$rank), sep = "")
-  term <- paste(do.xt(term, object, c("center", "before")), ")", sep = "")
+  term <- paste(do.xt(term, object,
+    c("center", "before", "penalty", "polys", "map", "map.name", "nb", "gra")), ")", sep = "")
 
   write <- function(dir) {
     exists <- NULL
     for(j in seq_along(object$S)) {
       if(!file.exists(file.path(dir, paste(Sn[j], ".raw", sep = "")))) {
+        colnames(object$S[[j]]) <- rownames(object$S[[j]]) <- NULL
         write.table(object$S[[j]], file = file.path(dir, paste(Sn[j], ".raw", sep = "")),
           quote = FALSE, row.names = FALSE)
       } else exists <- c(exists, file.path(dir, paste(Sn[j], ".raw", sep = "")))
@@ -819,7 +821,7 @@ sx.construct.offset.smooth.spec <- function(object, data, ...)
   return(construct.shrw(object, data, "offset"))
 }
 
-sx.construct.mrf.smooth.spec <- sx.construct.spatial.smooth.spec <- function(object, data, ...)
+sx.construct.mrf.smooth <- sx.construct.mrf.smooth.spec <- sx.construct.spatial.smooth.spec <- function(object, data, ...)
 {
   if(is.null(object$xt))
     stop("need to supply a map object in argument xt!")  
@@ -919,7 +921,7 @@ sx.construct.mrf.smooth.spec <- sx.construct.spatial.smooth.spec <- function(obj
 
   term <- object$term
   term <- paste(term, "(spatial,map=", map.name, sep = "")
-  term <- paste(do.xt(term, object, c("map", "polys", "penalty", "map.name")), ")", sep = "")
+  term <- paste(do.xt(term, object, c("map", "polys", "penalty", "map.name", "nb")), ")", sep = "")
   if(object$by != "NA")
     term <- make_by(term, object, data)
 
