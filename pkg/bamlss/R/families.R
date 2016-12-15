@@ -371,8 +371,11 @@ process_factor_response <- function(x)
 }
 
 
-binomial_bamlss <- function(...)
+binomial_bamlss <- function(link = "logit", ...)
 {
+  if(link != "logit")
+    return(binomial2_bamlss(...))
+
   rval <- list(
     "family" = "binomial",
     "names" = "pi",
@@ -427,6 +430,46 @@ binomial_bamlss <- function(...)
   rval
 }
 
+
+binomial2_bamlss <- function(...)
+{
+  rval <- list(
+    "family" = "binomial",
+    "names" = "pi",
+    "links" = c(pi = "probit"),
+    "valid.response" = function(x) {
+      if(!is.factor(x)) {
+        if(length(unique(x)) > 2)
+          stop("response has more than 2 levels!", call. = FALSE)
+      } else {
+        if(nlevels(x) > 2)
+          stop("more than 2 levels in factor response!", call. = FALSE)
+      }
+      TRUE
+    },
+    "bayesx" = list(
+      "pi" = c("binomial_probit", "mu")
+    ),
+    "mu" = function(par, ...) {
+      par$pi
+    },
+    "d" = function(y, par, log = FALSE) {
+      y <- process_factor_response(y)
+      i <- y < 1
+      par$pi[i] <- 1 - par$pi[i]
+      if(log)
+        par$pi <- log(par$pi)
+      par$pi
+    },
+    "initialize" = list("pi" = function(y, ...) {
+      y <- process_factor_response(y)
+      (y + 0.5) / 2
+    })
+  )
+
+  class(rval) <- "family.bamlss"
+  rval
+}
 
 cloglog_bamlss <- function(...)
 {
@@ -2289,7 +2332,8 @@ quant2_bamlss <- function(prob = 0.5, ...)
 
 ## General bamlss family creator.
 gF <- function(x, ...) {
-  x <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500)
+  if(!is.character(x))
+    x <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500)
   F <- get(paste(x, "bamlss", sep = "_"), mode = "function")
   F(...)
 }

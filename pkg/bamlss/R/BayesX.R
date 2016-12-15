@@ -752,6 +752,7 @@ function(object, dir, prg, data, mcmcreg = FALSE, ...)
   object$term <- term
   object$by <- by
   term <- sx.construct(object, dir, prg, data, mcmcreg = mcmcreg, ...)
+  term <- gsub("(pspline", "(tensor", term, fixed = TRUE)
   if(!mcmcreg) {
     term <- gsub("psplinerw2", "pspline2dimrw2", term)
     term <- gsub("psplinerw1", "pspline2dimrw1", term)

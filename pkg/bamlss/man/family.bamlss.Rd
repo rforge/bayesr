@@ -7,6 +7,7 @@
 \alias{cnorm_bamlss}
 \alias{cox_bamlss}
 \alias{gaussian_bamlss}
+\alias{gaussian2_bamlss}
 \alias{gamma_bamlss}
 \alias{multinomial_bamlss}
 \alias{mvnorm_bamlss}
@@ -29,10 +30,11 @@
 \usage{
 ## Family objects in bamlss:
 beta_bamlss(...)
-binomial_bamlss(...)
+binomial_bamlss(link = "logit", ...)
 cnorm_bamlss(...)
 cox_bamlss(...)
 gaussian_bamlss(...)
+gaussian2_bamlss(...)
 gamma_bamlss(...)
 multinomial_bamlss(...)
 mvnorm_bamlss(k = 2, ...)
@@ -48,6 +50,7 @@ poisson_bamlss(...)
     \code{\link{bamlss}} and \code{\link{bamlss.frame}}.}
   \item{k}{The dimension of the multivariate normal. Note, if \code{k = 1} function
     \code{gaussian_bamlss()} is called.}
+  \item{link}{Possible link functions.}
   \item{\dots}{Arguments passed to functions that are called within the family object.}
 }
 
