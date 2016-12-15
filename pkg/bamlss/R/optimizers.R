@@ -2758,7 +2758,7 @@ lasso <- function(x, y, start = NULL, lower = 0.001, upper = 1000,
     x <- bamlss.engine.setup(x, update = bfit_iwls, ...)
 
   lambdas <- if(is.null(lambda)) {
-    seq(upper, lower, length = nlambda)
+    scale2(rev(abs(1 / log(seq(upper, lower, length = nlambda)))), lower, upper)[-1]
   } else lambda
 
   ia <- if(flush) interactive() else FALSE
@@ -2821,7 +2821,7 @@ lasso <- function(x, y, start = NULL, lower = 0.001, upper = 1000,
 
   ic <- cbind(ic, "lambda" = lambdas)
   rownames(ic) <- NULL
-  class(ic) <- "lasso.stats"
+  class(ic) <- c("lasso.stats", "matrix")
 
   list("parameters" = do.call("rbind", par), "lasso.stats" = ic, "nobs" = nrow(y))
 }
@@ -2867,7 +2867,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, ...
   if("criterion" %in% which) {
     plot(1:nrow(ic), ic[, nic], type = "l",
       xlab = expression(log(lambda)), ylab = nic, axes = FALSE)
-    axis(1, at = at, labels = round(log(ic[at, "lambda"]), digits = 2))
+    axis(1, at = at, labels = round(log(ic[, "lambda"][at]), digits = 2))
     axis(2)
     i <- which.min(ic[, nic])
     abline(v = i, col = "lightgray", lwd = 2, lty = 2)
@@ -2890,10 +2890,14 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, ...
 
     matplot(c(1:nrow(x$parameters)), x$parameters, type = "l", lty = 1, col = cols[as.factor(xn)],
       axes = FALSE, xlab = expression(log(lambda)), ylab = expression(beta[j]))
-    axis(1, at = at, labels = round(log(ic[at, "lambda"]), digits = 2))
+    axis(1, at = at, labels = round(log(ic[, "lambda"][at]), digits = 2))
     axis(2)
     axis(4, at = x$parameters[nrow(x$parameters), ],
       labels = colnames(x$parameters), las = 1)
+    i <- which.min(ic[, nic])
+    abline(v = i, col = "lightgray", lwd = 2, lty = 2)
+    val <- round(ic[i, "lambda"], 4)
+    axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
     box()
   }
 
