@@ -557,6 +557,34 @@ gaussian_bamlss <- function(...)
 }
 
 
+Gaussian_bamlss <- function(...)
+{
+  rval <- list(
+    "family" = "gaussian",
+    "names" = "mu",
+    "links" = c(mu = "identity"),
+    "bayesx" = list(
+      "mu" = c("gaussian", "mu")
+    ),
+    "score" = list(
+      "mu" = function(y, par, ...) { y - par$mu }
+    ),
+    "hess" = list(
+      "mu" = function(y, par, ...) { rep(1, length(par$mu)) }
+    ),
+    "loglik" = function(y, par, ...) {
+      sum(dnorm(y, par$mu, 1, log = TRUE))
+    },
+    "initialize" = list(
+      "mu" = function(y, ...) { (y + mean(y)) / 2 }
+    )
+  )
+  
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+
 gaussian1_bamlss <- function(...)
 {
   links <- c(mu = "identity", sigma = "log")

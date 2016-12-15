@@ -8,6 +8,7 @@
 \alias{cox_bamlss}
 \alias{gaussian_bamlss}
 \alias{gaussian2_bamlss}
+\alias{Gaussian_bamlss}
 \alias{gamma_bamlss}
 \alias{multinomial_bamlss}
 \alias{mvnorm_bamlss}
@@ -35,6 +36,7 @@ cnorm_bamlss(...)
 cox_bamlss(...)
 gaussian_bamlss(...)
 gaussian2_bamlss(...)
+Gaussian_bamlss(...)
 gamma_bamlss(...)
 multinomial_bamlss(...)
 mvnorm_bamlss(k = 2, ...)

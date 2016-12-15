@@ -85,6 +85,7 @@ export(
   "cox_bamlss",
   "gaussian_bamlss",
   "gaussian2_bamlss",
+  "Gaussian_bamlss",
   "gamma_bamlss",
   "multinomial_bamlss",
   "mvnorm_bamlss",
