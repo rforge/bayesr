@@ -3813,6 +3813,8 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
 {
   data <- as.data.frame(data)
   tl <- term.labels2(terms(object$formula), intercept = FALSE, list = FALSE)
+  if(any(grepl("la(", tl, fixed = TRUE)))
+    tl <- object$term
   object$X <- df <- list()
   object$lasso <- list("trans" = list())
   for(j in tl) {

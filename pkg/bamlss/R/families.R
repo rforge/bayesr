@@ -585,6 +585,50 @@ Gaussian_bamlss <- function(...)
 }
 
 
+pareto_bamlss <- function(...)
+{
+  links <- c(mu = "log", sigma = "log")
+
+  rval <- list(
+    "family" = "pareto",
+    "names" = c("mu", "sigma"),
+    "links" = parse.links(links, c(mu = "log", sigma = "log"), ...),
+    "mu" = function(par, ...) {
+      par$mu
+    },
+    "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
+    "bayesx" = list(
+      "mu"  = c("pareto", "b"),
+      "sigma" = c("pareto", "p")
+    ),
+    "bugs" = list(
+      "dist" = "dpar",
+      "eta" = BUGSeta,
+      "model" = BUGSmodel
+    ),
+    "d" = function(y, par, log = FALSE) {
+      d <- rep(0, length(y))
+      i <- y >= par$mu
+      d[i] <- log(par$sigma[i]) + par$sigma[i] * log(par$mu[i]) - (par$sigma[i] + 1) * log(y[i])
+      if(!log)
+        d[i] <- exp(d[i])
+      d
+    },
+    "initialize" = list(
+      "mu" = function(y, ...) { rep(min(y), length(y)) },
+      "sigma" = function(y, ...) { rep(sd(y), length(y)) }
+    )
+  )
+  
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+
 gaussian1_bamlss <- function(...)
 {
   links <- c(mu = "identity", sigma = "log")
@@ -1404,52 +1448,6 @@ weibull_bamlss <- function(...)
       alpha <- par$alpha
       lambda <- par$lambda
       rweibull(y, scale = lambda, shape = alpha, ...)
-    }
-  )
-  
-  class(rval) <- "family.bamlss"
-  rval
-}
-
-
-pareto_bamlss <- function(...)
-{
-  links <- c(b = "log", p = "log")
-
-  rval <- list(
-    "family" = "pareto",
-    "names" = c("b", "p"),
-    "links" = parse.links(links, c(b = "log", p = "log"), ...),
-    "valid.response" = function(x) {
-      if(is.factor(x)) return(FALSE)
-      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
-      ok
-    },
-    "bayesx" = list(
-      "b"  = c("pareto", "b"),
-      "p" = c("pareto", "p")
-    ),
-    "bugs" = list(
-      "dist" = "dpar",
-      "eta" = BUGSeta,
-      "model" = BUGSmodel
-    ),
-    "mu" = function(par, ...) {
-      p <- par$p
-      b <- par$b
-      p * gamma(1 + 1 / b)
-    },
-    "d" = function(y, par, log = FALSE) {
-      p <- par$p
-      b <- par$b
-      d <- p * b^p * (y + b)^(-p - 1)
-      if(log) d <- log(d)
-      d
-    },
-    "p" = function(y, par, ...) {
-      p <- par$p
-      b <- par$b
-      1 - ((b/(b + y))^(p))
     }
   )
   
