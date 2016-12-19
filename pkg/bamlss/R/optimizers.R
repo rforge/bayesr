@@ -1009,6 +1009,7 @@ get.ic2 <- function(logLik, edf, n, type = c("AIC", "BIC", "AICc", "MP"), ...)
 
 cround <- function(x, digits = 2)
 {
+  return(x)
   cdigits <- Vectorize(function(x) {
     if(abs(x) >= 1)
       return(0)
@@ -1046,7 +1047,8 @@ tau2.optim <- function(f, start, ..., scale = 10, eps = 0.0001, maxit = 1)
   while((eps0 > eps) & (iter < maxit)) {
     start0 <- start
     for(k in seq_along(start)) {
-      xr <- c(start[k] / scale, start[k] * scale)
+      upper <- start[k] * scale
+      xr <- c(start[k] / scale, if(upper < 1) upper + 1 else upper)
       tpar <- try(optimize(foo, interval = xr, start = start, k = k), silent = TRUE)
       if(!inherits(tpar, "try-error")) {
         if(tpar$objective < ic0) {
