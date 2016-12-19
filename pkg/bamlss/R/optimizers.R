@@ -2758,7 +2758,7 @@ lasso <- function(x, y, start = NULL, lower = 0.001, upper = 1000,
     x <- bamlss.engine.setup(x, update = bfit_iwls, ...)
 
   lambdas <- if(is.null(lambda)) {
-    scale2(rev(abs(1 / log(seq(upper, lower, length = nlambda)))), lower, upper)[-1]
+    scale2(-1 * log(1:nlambda), lower, upper)
   } else lambda
 
   ia <- if(flush) interactive() else FALSE
