@@ -3868,7 +3868,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$fxsp <- FALSE
   object$prior <- make.prior(object)
   if(is.null(object$xt$lambda))
-    object$xt$lambda <- 1 / 0.0001
+    object$xt$lambda <- 0.0001
   object$xt$do.optim <- TRUE
   object$lasso$const <- const
 

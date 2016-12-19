@@ -516,7 +516,7 @@ assign.df <- function(x, df)
     }
   } else {
     objfun <- function(tau2) {
-      edf <- sum_diag(XX %*% matrix_inv(XX + 1 / tau2 * (if(is.function(x$S[[1]])) x$S[[1]](c("b" = rep(0, attr(x$S[[j]], "npar")))) else x$S[[1]]), index = x$sparse.setup))
+      edf <- sum_diag(XX %*% matrix_inv(XX + 1 / tau2 * (if(is.function(x$S[[1]])) x$S[[1]](c("b" = runif(attr(x$S[[j]], "npar") , 0, 1))) else x$S[[1]]), index = x$sparse.setup))
       return((df - edf)^2)
     }
     tau2 <- try(optimize(objfun, int)$minimum, silent = TRUE)
@@ -1047,7 +1047,7 @@ tau2.optim <- function(f, start, ..., scale = 10, eps = 0.0001, maxit = 1)
   while((eps0 > eps) & (iter < maxit)) {
     start0 <- start
     for(k in seq_along(start)) {
-      xr <- c(start[k] / scale, start[k] * scale)
+      xr <- c(start[k] / scale, start[k] * scale + if(start[k] * scale < 1) 1 else 0)
       tpar <- try(optimize(foo, interval = xr, start = start, k = k), silent = TRUE)
       if(!inherits(tpar, "try-error")) {
         if(tpar$objective < ic0) {
