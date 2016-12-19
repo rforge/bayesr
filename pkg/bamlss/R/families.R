@@ -585,14 +585,16 @@ Gaussian_bamlss <- function(...)
 }
 
 
-pareto_bamlss <- function(...)
+gpareto_bamlss <- function(...)
 {
-  links <- c(mu = "log", sigma = "log")
+  links <- c(xi = "log", sigma = "log")
+  linkfun <- list()
+  linkfun$xi <- linkfun$sigma <- make.link("log")$linkfun
 
   rval <- list(
-    "family" = "pareto",
-    "names" = c("mu", "sigma"),
-    "links" = parse.links(links, c(mu = "log", sigma = "log"), ...),
+    "family" = "Generalized Pareto",
+    "names" = c("xi", "sigma"),
+    "links" = parse.links(links, c(xi = "identity", sigma = "log"), ...),
     "mu" = function(par, ...) {
       par$mu
     },
@@ -601,25 +603,26 @@ pareto_bamlss <- function(...)
       if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
       ok
     },
-    "bayesx" = list(
-      "mu"  = c("pareto", "b"),
-      "sigma" = c("pareto", "p")
-    ),
-    "bugs" = list(
-      "dist" = "dpar",
-      "eta" = BUGSeta,
-      "model" = BUGSmodel
-    ),
     "d" = function(y, par, log = FALSE) {
-      d <- rep(0, length(y))
-      i <- y >= par$mu
-      d[i] <- log(par$sigma[i]) + par$sigma[i] * log(par$mu[i]) - (par$sigma[i] + 1) * log(y[i])
+      d <- -log(par$sigma) - (1 / par$xi + 1) * log(1 + par$xi * y / par$sigma)
       if(!log)
-        d[i] <- exp(d[i])
+        d <- exp(d)
       d
     },
+    "score" = list(
+      "xi" = function(y, par, ...) {
+        eta_xi <- linkfun$xi(par$xi)
+        1 / eta_xi^2 * log(1 + eta_xi * y / par$sigma ) - (1 / eta_xi + 1) *
+          ((y / par$sigma) / (y / par$sigma) + eta_xi)
+      },
+      "sigma" = function(y, par, ...) {
+        eta_xi <- linkfun$xi(par$xi)
+        eta_sigma <- linkfun$sigma(par$sigma)
+        -par$sigma + (1 + eta_xi * y) / (exp(2 * eta_sigma) + y * par$sigma)
+      }
+    ),
     "initialize" = list(
-      "mu" = function(y, ...) { rep(min(y), length(y)) },
+      "xi" = function(y, ...) { (y + mean(y)) / 2 },
       "sigma" = function(y, ...) { rep(sd(y), length(y)) }
     )
   )

@@ -3823,7 +3823,16 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     object$X[[j]] <- as.matrix(model.matrix(as.formula(paste("~", j)), data = data))
     if(length(i <- grep("Intercept", colnames(object$X[[j]]))))
       object$X[[j]] <- object$X[[j]][, -i, drop = FALSE]
-    if(!is.factor(data[[j]])) {
+    is_f <- is.factor(data[[j]])
+    if(grepl(":", j, fixed = TRUE)) {
+      j2 <- strsplit(j, ":")[[1]]
+      is_f <- any(sapply(j2, function(i) is.factor(data[[i]])))
+    }
+    if(grepl("*", j, fixed = TRUE)) {
+      j2 <- strsplit(j, "*")[[1]]
+      is_f <- any(sapply(j2, function(i) is.factor(data[[i]])))
+    }
+    if(!is_f) {
       object$X[[j]] <- scale(object$X[[j]])
       object$lasso$trans[[j]] <- list(
         "center" = attr(object$X[[j]], "scaled:center"),
