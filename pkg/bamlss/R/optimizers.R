@@ -1009,7 +1009,6 @@ get.ic2 <- function(logLik, edf, n, type = c("AIC", "BIC", "AICc", "MP"), ...)
 
 cround <- function(x, digits = 2)
 {
-  return(x)
   cdigits <- Vectorize(function(x) {
     if(abs(x) >= 1)
       return(0)
