@@ -91,6 +91,7 @@ export(
   "mvnorm_bamlss",
   "poisson_bamlss",
   "quant_bamlss",
+  "gpareto_bamlss",
   "gF",
 
   ## extractor functions

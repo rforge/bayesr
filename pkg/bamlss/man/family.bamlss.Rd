@@ -13,6 +13,7 @@
 \alias{multinomial_bamlss}
 \alias{mvnorm_bamlss}
 \alias{poisson_bamlss}
+\alias{gpareto_bamlss}
 
 \title{
   Distribution Families in \pkg{bamlss}
@@ -41,6 +42,7 @@ gamma_bamlss(...)
 multinomial_bamlss(...)
 mvnorm_bamlss(k = 2, ...)
 poisson_bamlss(...)
+gpareto_bamlss(...)
 
 ## Extractor functions:
 \method{family}{bamlss}(object, ...)
