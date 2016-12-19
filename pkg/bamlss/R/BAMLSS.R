@@ -3798,13 +3798,15 @@ la <- function(formula, type = c("single", "multiple"), ...)
 
 
 blockstand <- function(x)
-{  
+{
+  cn <- colnames(x)
   decomp <- qr(x)
   if(decomp$rank < ncol(x))
     stop("block standardization cannot be computed, matrix is not of full rank!")
   scale <- qr.R(decomp)
   x <- qr.Q(decomp)
   attr(x, "blockscale") <- solve(scale)
+  colnames(x) <- cn
   x
 }
 
