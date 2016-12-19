@@ -1047,7 +1047,7 @@ tau2.optim <- function(f, start, ..., scale = 10, eps = 0.0001, maxit = 1)
   while((eps0 > eps) & (iter < maxit)) {
     start0 <- start
     for(k in seq_along(start)) {
-      xr <- c(start[k] / scale, start[k] * scale + if(start[k] * scale < 1) 1 else 0)
+      xr <- c(start[k] / scale, start[k] * scale)
       tpar <- try(optimize(foo, interval = xr, start = start, k = k), silent = TRUE)
       if(!inherits(tpar, "try-error")) {
         if(tpar$objective < ic0) {
