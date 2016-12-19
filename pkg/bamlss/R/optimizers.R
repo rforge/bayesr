@@ -1314,6 +1314,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
   }
   x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
   x$state$edf <- sum_diag(XWX %*% P)
+
   if(!is.null(x$prior)) {
     if(is.function(x$prior))
       x$state$log.prior <- x$prior(x$state$parameters)
@@ -2775,7 +2776,7 @@ lasso <- function(x, y, start = NULL, lower = 0.001, upper = 1000,
           nt <- names(tau2)
           tau2 <- rep(1 / lambdas[l], length.out = length(tau2))
           names(tau2) <- paste(i, "s", x[[i]]$smooth.construct[[j]]$label, nt, sep = ".")
-          if(!is.null(start)) {
+          if(!is.null(start) & (l > 1)) {
             if(all(names(tau2) %in% names(start))) {
               start[names(tau2)] <- tau2
             }
@@ -2787,6 +2788,7 @@ lasso <- function(x, y, start = NULL, lower = 0.001, upper = 1000,
     }
 
     b <- bfit(x = x, y = y, start = start, verbose = FALSE, ...)
+
     nic <- grep("ic", names(b), value = TRUE, ignore.case = TRUE)
     par[[l]] <- unlist(b$parameters)
     mstats <- c(b$logLik, b$logPost, b[[nic]], b[["edf"]])
