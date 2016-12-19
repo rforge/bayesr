@@ -3866,6 +3866,8 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     object$S <- A
   }
   object$xt[["prior"]] <- "ig"
+  object$xt[["a"]] <- 1
+  object$xt[["b"]] <- 1e-4
   object$fixed <- FALSE
   object$fxsp <- FALSE
   object$prior <- make.prior(object)
