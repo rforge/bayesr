@@ -378,8 +378,10 @@ design.construct <- function(formula, data = NULL, knots = NULL,
             } else {
               smooth <- try(gam.side(smooth, obj$model.matrix, tol = .Machine$double.eps^.5), silent = TRUE)
             }
-            if(inherits(smooth, "try-error"))
+            if(inherits(smooth, "try-error")) {
+              cat("---\n", smooth, "---\n")
               stop("gam.side() produces an error when binning, try to set before = FALSE or set gam.side = FALSE!")
+            }
           }
           sme <- NULL
           if(smooth.construct)
@@ -3919,7 +3921,16 @@ Predict.matrix.lasso.smooth <- function(object, data)
     X[[j]] <- as.matrix(model.matrix(as.formula(paste("~", j)), data = data))
     if(length(i <- grep("Intercept", colnames(X[[j]]))))
       X[[j]] <- X[[j]][, -i, drop = FALSE]
-    if(!is.factor(data[[j]])) {
+    is_f <- is.factor(data[[j]])
+    if(grepl(":", j, fixed = TRUE)) {
+      j2 <- strsplit(j, ":")[[1]]
+      is_f <- any(sapply(j2, function(i) is.factor(data[[i]])))
+    }
+    if(grepl("*", j, fixed = TRUE)) {
+      j2 <- strsplit(j, "*")[[1]]
+      is_f <- any(sapply(j2, function(i) is.factor(data[[i]])))
+    }
+    if(!is_f) {
       X[[j]] <- (X[[j]] - object$lasso$trans[[j]]$center) / object$lasso$trans[[j]]$scale
     } else {
       X[[j]] <- X[[j]] %*% object$lasso$trans[[j]]$blockscale
