@@ -605,6 +605,8 @@ gpareto_bamlss <- function(...)
     },
     "d" = function(y, par, log = FALSE) {
       d <- -log(par$sigma) - (1 / par$xi + 1) * log(1 + par$xi * y / par$sigma)
+## -log(h(\eta_{\sigma})) - (1 / g(\eta_{\xi}) + 1) * log(1 + g(\eta_{\xi}) * y / h(\eta_{\sigma}))
+## -log(h(x)) - (1 / g(\eta_{\xi}) + 1) * log(1 + g(\eta_{\xi}) * y / h(x))
       if(!log)
         d <- exp(d)
       d
@@ -612,13 +614,22 @@ gpareto_bamlss <- function(...)
     "score" = list(
       "xi" = function(y, par, ...) {
         eta_xi <- linkfun$xi(par$xi)
-        1 / eta_xi^2 * log(1 + eta_xi * y / par$sigma ) - (1 / eta_xi + 1) *
-          ((y / par$sigma) / (y / par$sigma) + eta_xi)
+        eta_sigma <- linkfun$sigma(par$sigma)
+        exp(-eta_xi) * log(y * exp(eta_xi - eta_sigma) + 1) -
+          ((exp(-eta_xi) + 1) * y * exp(eta_xi - eta_sigma)) / (y * exp(eta_xi - eta_sigma) + 1)
       },
       "sigma" = function(y, par, ...) {
-        eta_xi <- linkfun$xi(par$xi)
-        eta_sigma <- linkfun$sigma(par$sigma)
-        -par$sigma + (1 + eta_xi * y) / (exp(2 * eta_sigma) + y * par$sigma)
+        (y - par$sigma) / (par$sigma + par$xi * y)
+      }
+    ),
+    "hess" = list(
+#      "xi" = function(y, par, ...) {
+#        eta_xi <- linkfun$xi(par$xi)
+#        h <- ((exp(-eta_xi) + 1)*y^2*exp(2*eta_xi - 2*par$sigma))/(y*exp(eta_xi - par$sigma) + 1)^2 + (2*exp(-par$sigma)*y)/(y*exp(eta_xi - par$sigma) + 1) - ((exp(-eta_xi) + 1)*y*exp(eta_xi - par$sigma))/(y*exp(eta_xi - par$sigma) + 1) - exp(-eta_xi)*log(y*exp(eta_xi - par$sigma) + 1)
+#        -h
+#      },
+      "sigma" = function(y, par, ...) {
+        ((par$xi + 1) * par$sigma * y) / (par$sigma + par$xi * y)^2
       }
     ),
     "initialize" = list(
