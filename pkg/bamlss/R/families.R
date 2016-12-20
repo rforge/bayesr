@@ -587,14 +587,10 @@ Gaussian_bamlss <- function(...)
 
 gpareto_bamlss <- function(...)
 {
-  links <- c(xi = "log", sigma = "log")
-  linkfun <- list()
-  linkfun$xi <- linkfun$sigma <- make.link("log")$linkfun
-
   rval <- list(
     "family" = "Generalized Pareto",
     "names" = c("xi", "sigma"),
-    "links" = parse.links(links, c(xi = "identity", sigma = "log"), ...),
+    "links" = c(xi = "log", sigma = "log"),
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
       if(ok <- !all(x >= 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
@@ -608,66 +604,48 @@ gpareto_bamlss <- function(...)
     },
     "mu" = function(par, ...) {
       par$sigma / (1 - par$xi)
+    }
+  )
+
+  dldxi <- D(parse(text = "-log(sigma) - (1 / xi + 1) * log(1 + xi * y / sigma)"), "xi")
+  d2ld2xi <- D(dldxi, "xi")
+  dlds <- D(parse(text = "-log(sigma) - (1 / xi + 1) * log(1 + xi * y / sigma)"), "sigma")
+  d2ld2s <- D(dlds, "sigma")
+
+  y <- rSymPy::Var("y")
+  xi <- rSymPy::Var("xi")
+  sigma <- rSymPy::Var("sigma")
+
+  Exi <- rSymPy::sympy(paste("integrate(", gsub("^", "**", gsub(" ", "",
+    paste(deparse(d2ld2xi), collapse = "")), fixed = TRUE), ",y)", sep = ""))
+  Esigma <- rSymPy::sympy(paste("integrate(", gsub("^", "**", gsub(" ", "",
+    paste(deparse(d2ld2s), collapse = "")), fixed = TRUE), ",y)", sep = ""))
+  Exi <- gsub("**", "^", Exi, fixed = TRUE)
+  Esigma <- gsub("**", "^", Esigma, fixed = TRUE)
+  d2ld2xi <- parse(text = Exi)
+  d2ld2s <- parse(text = Esigma)
+
+  rval$score <- list(
+    "xi" = function(y, par, ...) {
+      with(par, eval(dldxi))
     },
-    "score" = list(
-      "xi" = function(y, par, ...) {
-        eta_xi <- linkfun$xi(par$xi)
-        eta_sigma <- linkfun$sigma(par$sigma)
-        exp(-eta_xi) * log(y * exp(eta_xi - eta_sigma) + 1) -
-          ((exp(-eta_xi) + 1) * y * exp(eta_xi - eta_sigma)) / (y * exp(eta_xi - eta_sigma) + 1)
-      },
-      "sigma" = function(y, par, ...) {
-        (y - par$sigma) / (par$sigma + par$xi * y)
-      }
-    ),
-    "hess" = list(
-#      "xi" = function(y, par, ...) {
-#        eta_xi <- linkfun$xi(par$xi)
-#        h <- ((exp(-eta_xi) + 1)*y^2*exp(2*eta_xi - 2*par$sigma))/(y*exp(eta_xi - par$sigma) + 1)^2 + (2*exp(-par$sigma)*y)/(y*exp(eta_xi - par$sigma) + 1) - ((exp(-eta_xi) + 1)*y*exp(eta_xi - par$sigma))/(y*exp(eta_xi - par$sigma) + 1) - exp(-eta_xi)*log(y*exp(eta_xi - par$sigma) + 1)
-#        -h
-#      },
-      "sigma" = function(y, par, ...) {
-        ((par$xi + 1) * par$sigma * y) / (par$sigma + par$xi * y)^2
-      }
-    ),
-    "initialize" = list(
-      "xi" = function(y, ...) { (y + mean(y)) / 2 },
-      "sigma" = function(y, ...) { rep(sd(y), length(y)) }
-    )
+    "sigma" = function(y, par, ...) {
+      with(par, eval(dlds))
+    }
+  )
+
+  rval$hess <- list(
+    "xi" = function(y, par, ...) {
+      with(par, -1 * eval(d2ld2xi))
+    },
+    "sigma" = function(y, par, ...) {
+      with(par, -1 * eval(d2ld2s))
+    }
   )
   
-  class(rval) <- "family.bamlss"
-  rval
-}
-
-
-gpareto2_bamlss <- function(...)
-{
-  links <- c(xi = "log", nu = "log")
-
-  linkfun <- list()
-  linkfun$xi <- linkfun$nu <- make.link("log")$linkfun
-
-  rval <- list(
-    "family" = "gpareto2",
-    "names" = c("xi", "nu"),
-    "links" = parse.links(links, c(xi = "log", nu = "log"), ...),
-    "valid.response" = function(x) {
-      if(is.factor(x)) return(FALSE)
-      if(ok <- !all(x >= 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
-      ok
-    },
-    "d" = function(y, par, log = FALSE) {
-      beta <- par$nu / (1 + par$xi)
-      d <- 1 - (1 + par$xi * y / beta)^(-1 / par$xi)
-      if(log)
-        d <- log(d)
-      d
-    },
-    "initialize" = list(
-      "xi" = function(y, ...) { rep(mean(y), length(y)) },
-      "nu" = function(y, ...) { rep(sd(y), length(y)) }
-    )
+  rval$initialize <- list(
+    "xi" = function(y, ...) { rep(sd(y) / mean(y) - 1, length(y)) },
+    "sigma" = function(y, ...) { rep(sd(y), length(y)) }
   )
   
   class(rval) <- "family.bamlss"
