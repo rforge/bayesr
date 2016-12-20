@@ -595,21 +595,19 @@ gpareto_bamlss <- function(...)
     "family" = "Generalized Pareto",
     "names" = c("xi", "sigma"),
     "links" = parse.links(links, c(xi = "identity", sigma = "log"), ...),
-    "mu" = function(par, ...) {
-      par$mu
-    },
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
-      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      if(ok <- !all(x >= 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
       ok
     },
     "d" = function(y, par, log = FALSE) {
       d <- -log(par$sigma) - (1 / par$xi + 1) * log(1 + par$xi * y / par$sigma)
-## -log(h(\eta_{\sigma})) - (1 / g(\eta_{\xi}) + 1) * log(1 + g(\eta_{\xi}) * y / h(\eta_{\sigma}))
-## -log(h(x)) - (1 / g(\eta_{\xi}) + 1) * log(1 + g(\eta_{\xi}) * y / h(x))
       if(!log)
         d <- exp(d)
       d
+    },
+    "mu" = function(par, ...) {
+      par$sigma / (1 - par$xi)
     },
     "score" = list(
       "xi" = function(y, par, ...) {
@@ -635,6 +633,40 @@ gpareto_bamlss <- function(...)
     "initialize" = list(
       "xi" = function(y, ...) { (y + mean(y)) / 2 },
       "sigma" = function(y, ...) { rep(sd(y), length(y)) }
+    )
+  )
+  
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+
+gpareto2_bamlss <- function(...)
+{
+  links <- c(xi = "log", nu = "log")
+
+  linkfun <- list()
+  linkfun$xi <- linkfun$nu <- make.link("log")$linkfun
+
+  rval <- list(
+    "family" = "gpareto2",
+    "names" = c("xi", "nu"),
+    "links" = parse.links(links, c(xi = "log", nu = "log"), ...),
+    "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x >= 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
+    "d" = function(y, par, log = FALSE) {
+      beta <- par$nu / (1 + par$xi)
+      d <- 1 - (1 + par$xi * y / beta)^(-1 / par$xi)
+      if(log)
+        d <- log(d)
+      d
+    },
+    "initialize" = list(
+      "xi" = function(y, ...) { rep(mean(y), length(y)) },
+      "nu" = function(y, ...) { rep(sd(y), length(y)) }
     )
   )
   
