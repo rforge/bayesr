@@ -78,11 +78,13 @@ compute_derivatives <- function(loglik, parameters, expectation = TRUE)
   if(!grepl("y", loglik))
     stop("the response y is missing in loglik!")
 
-  for(p in parameters) {
-    v <- paste(p, ' <- ', 'rSymPy::Var("', p, '")', sep = '')
-    eval(parse(text = v))
+  if(expectation) {
+    for(p in parameters) {
+      v <- paste(p, ' <- ', 'rSymPy::Var("', p, '")', sep = '')
+      eval(parse(text = v))
+    }
+    y <- rSymPy::Var("y")
   }
-  y <- rSymPy::Var("y")
 
   score <- hess <- list()
   for(p in parameters) {
