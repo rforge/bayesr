@@ -585,44 +585,6 @@ Gaussian_bamlss <- function(...)
 }
 
 
-## Derivatives helper.
-compute_derivatives <- function(loglik, parameters, expectation = TRUE)
-{
-  if(!is.character(loglik))
-    stop("argument loglik must be a character!")
-  if(!is.character(parameters))
-    stop("argument parameters must be a character!")
-  if(!grepl("y", loglik))
-    stop("the response y is missing in loglik!")
-
-  if(expectation) {
-    for(p in parameters) {
-      v <- paste(p, ' <- ', 'rSymPy::Var("', p, '")', sep = '')
-      eval(parse(text = v))
-    }
-    y <- rSymPy::Var("y")
-  }
-
-  score <- hess <- list()
-  for(p in parameters) {
-    dldp <- D(parse(text = loglik), p)
-    score[[p]] <- dldp
-    d2ld2p <- D(dldp, p)
-    if(expectation) {
-      Ep <- rSymPy::sympy(paste("integrate(", gsub("^", "**", gsub(" ", "",
-        paste(deparse(d2ld2p), collapse = "")), fixed = TRUE), ",y)", sep = ""))
-      Ep <- gsub("**", "^", Ep, fixed = TRUE)
-      Ep <- parse(text = Ep)
-      hess[[p]] <- Ep
-    } else {
-      hess[[p]] <- d2ld2p
-    }
-  }
-
-  return(list("score" = score, "hess" = hess))
-}
-
-
 gpareto_bamlss <- function(...)
 {
   rval <- list(
@@ -671,32 +633,37 @@ gpareto_bamlss <- function(...)
 #    }
 #  )
 
-  devs <- compute_derivatives("-sigma - (1 / exp(xi) + 1) * log(1 + exp(xi) * y / exp(sigma))",
-    c("xi", "sigma"), expectation = FALSE)
-
   rval$score <- list(
     "xi" = function(y, par, ...) {
-      xi <- log(par$xi)
-      sigma <- log(par$sigma)
-      eval(devs$score$xi)
+      ys <- y / par$sigma
+      xi1 <- 1 / par$xi
+      xi1ys <- 1 + par$xi * ys
+      -((xi1 + 1) * (par$xi * ys/xi1ys) - xi1 * log(xi1ys))
     },
     "sigma" = function(y, par, ...) {
-      xi <- log(par$xi)
-      sigma <- log(par$sigma)
-      eval(devs$score$sigma)
+      ys <- y / par$sigma
+      -(1 - (1/par$xi + 1) * (par$xi * ys /(1 + par$xi * ys)))
     }
   )
 
   rval$hess <- list(
-    "xi" = function(y, par, ...) {
-      xi <- log(par$xi)
-      sigma <- log(par$sigma)
-      -1 * eval(devs$hess$xi)
+    "xi" = function(y, par, ...) {      
+      ys <- y / par$sigma
+      xi1 <- 1 / par$xi
+      xi2 <- par$xi^2
+      xiys <- par$xi * ys
+      xi1ys <- 1 + xiys
+      xiysxi1ys <- xiys / xi1ys
+      xi1xiysxi1ys <- xi1 * xiysxi1ys
+      (xi1 + 1) * (xiysxi1ys - xiys^2/xi1ys^2) - xi1xiysxi1ys - ((xi1 - par$xi * (2 * xi2)/xi2^2) * log(xi1ys) + xi1xiysxi1ys)
     },
     "sigma" = function(y, par, ...) {
-      xi <- log(par$xi)
-      sigma <- log(par$sigma)
-      -1 * eval(devs$hess$sigma)
+      s1 <- 1 / par$sigma
+      ys <- y / par$sigma
+      xiys1 <- par$xi * y * s1
+      xiys <- par$xi * ys
+      xi1ys <- 1 + xiys
+      -1 * (1/par$xi + 1) * ((xiys1 - par$xi * y * par$sigma * 2 * s1^2)/xi1ys + xiys1 * xiys1/xi1ys^2)
     }
   )
   
