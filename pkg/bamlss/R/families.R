@@ -607,39 +607,47 @@ gpareto_bamlss <- function(...)
     }
   )
 
-  dldxi <- D(parse(text = "-log(sigma) - (1 / xi + 1) * log(1 + xi * y / sigma)"), "xi")
-  d2ld2xi <- D(dldxi, "xi")
-  dlds <- D(parse(text = "-log(sigma) - (1 / xi + 1) * log(1 + xi * y / sigma)"), "sigma")
-  d2ld2s <- D(dlds, "sigma")
-
-  y <- rSymPy::Var("y")
-  xi <- rSymPy::Var("xi")
-  sigma <- rSymPy::Var("sigma")
-
-  Exi <- rSymPy::sympy(paste("integrate(", gsub("^", "**", gsub(" ", "",
-    paste(deparse(d2ld2xi), collapse = "")), fixed = TRUE), ",y)", sep = ""))
-  Esigma <- rSymPy::sympy(paste("integrate(", gsub("^", "**", gsub(" ", "",
-    paste(deparse(d2ld2s), collapse = "")), fixed = TRUE), ",y)", sep = ""))
-  Exi <- gsub("**", "^", Exi, fixed = TRUE)
-  Esigma <- gsub("**", "^", Esigma, fixed = TRUE)
-  d2ld2xi <- parse(text = Exi)
-  d2ld2s <- parse(text = Esigma)
-
   rval$score <- list(
     "xi" = function(y, par, ...) {
-      with(par, eval(dldxi))
+      ys <- y / par$sigma
+      xi1 <- 1 / par$xi
+      xiy <- 1 + par$xi * ys
+      -((xi1 + 1) * (ys/xiy) - xi1^2 * log(xiy))
     },
     "sigma" = function(y, par, ...) {
-      with(par, eval(dlds))
+      -(1/par$sigma - (1/par$xi + 1) * (par$xi * y/par$sigma^2/(1 + par$xi * y/par$sigma)))
     }
   )
 
   rval$hess <- list(
     "xi" = function(y, par, ...) {
-      with(par, -1 * eval(d2ld2xi))
+      xi2 <- par$xi^(2)
+      xi3 <- par$xi^(3)
+      xi4 <- par$xi^(4)
+      xi5 <- par$xi^(5)
+      xi6 <- par$xi^(6)
+      xiy <- par$xi * y
+      sxi5 <- par$sigma * xi5
+      yxi6 <- y * xi6
+      s2 <- par$sigma^(2)
+      y2 <- y^(2)
+      ls <- log(par$sigma)
+      lsxiy <- log(par$sigma + xiy)
+      sxi2 <- par$sigma * xi2
+      sy <- par$sigma * y
+      sxi5yxi6 <- sxi5 + yxi6
+      xi6y2 <- xi6 * y2
+
+      h <- -2*(s2*xi4*lsxiy/(sxi5yxi6) + xi6y2*lsxiy/(sxi5yxi6) - s2*xi4*ls/(sxi5yxi6) - xi6y2*ls/(sxi5yxi6) -
+        2*sy*xi5*ls/(sxi5yxi6) + 2*sy*xi5*lsxiy/(sxi5yxi6) + s2*xi4/(sxi5yxi6) - xi6y2/(sxi5yxi6))/xi3 +
+        (1 + 1/par$xi)*(-2*par$sigma^3*log(sxi2 + y*xi3)/xi3 - par$sigma^4/(xi4*(y + par$sigma/par$xi)) + y*s2/xi2)/s2 +
+        2*(-s2*log(par$sigma*par$xi + y*xi2)/xi2 + sy/par$xi)/(sxi2)
+      -1 * h
     },
     "sigma" = function(y, par, ...) {
-      with(par, -1 * eval(d2ld2s))
+      ys2 <- y / par$sigma^2
+      h <- -(1 + 1/par$xi)*(1/(par$xi^2*(y + par$sigma/par$xi)) + ys2) + ys2
+      -1 * h
     }
   )
   
@@ -2794,5 +2802,40 @@ gaussian5_bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
   
   class(rval) <- "family.bamlss"
   rval
+}
+
+
+compute_derivatives <- function(loglik, parameters, expectation = TRUE)
+{
+  if(!is.character(loglik))
+    stop("argument loglik must be a character!")
+  if(!is.character(parameters))
+    stop("argument parameters must be a character!")
+  if(!grepl("y", loglik))
+    stop("the response y is missing in loglik!")
+
+  for(p in parameters) {
+    v <- paste(p, ' <- ', 'rSymPy::Var("', p, '")', sep = '')
+    eval(parse(text = v))
+  }
+  y <- rSymPy::Var("y")
+
+  score <- hess <- list()
+  for(p in parameters) {
+    dldp <- D(parse(text = loglik), p)
+    score[[p]] <- dldp
+    d2ld2p <- D(dldp, p)
+    if(expectation) {
+      Ep <- rSymPy::sympy(paste("integrate(", gsub("^", "**", gsub(" ", "",
+        paste(deparse(d2ld2p), collapse = "")), fixed = TRUE), ",y)", sep = ""))
+      Ep <- gsub("**", "^", Ep, fixed = TRUE)
+      Ep <- parse(text = Ep)
+      hess[[p]] <- Ep
+    } else {
+      hess[[p]] <- d2ld2p
+    }
+  }
+
+  return(list("score" = score, "hess" = hess))
 }
 
