@@ -190,8 +190,9 @@ set.par <- function(x, replacement, what) {
     x[grep("tau", names(x))] <- replacement
   } else {
     if(what %in% "b") {
-      if(as.integer(sum(!grepl("tau", names(x)) & !grepl("edf", names(x)))) != length(replacement))
+      if(as.integer(sum(!grepl("tau", names(x)) & !grepl("edf", names(x)))) != length(replacement)) {
         stop("here")
+      }
       x[!grepl("tau", names(x)) & !grepl("edf", names(x))] <- replacement
     } else x[what] <- replacement
   }

@@ -3131,6 +3131,9 @@ SEXP gpareto_hess_xi(SEXP y, SEXP xi, SEXP sigma)
 
     rvalptr[i] = -2.0*(s2*xi4*lsxiy/(sxi5yxi6) + xi6y2*lsxiy/(sxi5yxi6) - s2*xi4*ls/(sxi5yxi6) - xi6y2*ls/(sxi5yxi6) - 2.0*sy*xi5*ls/(sxi5yxi6) + 2.0*sy*xi5*lsxiy/(sxi5yxi6) + s2*xi4/(sxi5yxi6) - xi6y2/(sxi5yxi6))/xi3 + (1.0 + 1.0/xiptr[i])*(-2.0*pow(sigmaptr[i], 3.0)*log(sxi2 + yptr[i]*xi3)/xi3 - pow(sigmaptr[i], 4.0)/(xi4*(yptr[i] + sigmaptr[i]/xiptr[i])) + yptr[i]*s2/xi2)/s2 + 2.0*(-s2*log(sigmaptr[i]*xiptr[i] + yptr[i]*xi2)/xi2 + sy/xiptr[i])/(sxi2);
     rvalptr[i] *= -1.0;
+
+    if(ISNA(rvalptr[i]))
+      rvalptr[i] = 1.490116e-08;
   }
 
   UNPROTECT(1);
@@ -3154,6 +3157,9 @@ SEXP gpareto_hess_sigma(SEXP y, SEXP xi, SEXP sigma)
     ys2 = yptr[i] / pow(sigmaptr[i], 2.0);
     rvalptr[i] = ys2 - (1.0 + 1.0/xiptr[i])*(1.0/(pow(xiptr[i], 2.0)*(yptr[i] + sigmaptr[i]/xiptr[i])) + ys2);
     rvalptr[i] *= -1.0;
+
+    if(ISNA(rvalptr[i]))
+      rvalptr[i] = 1.490116e-08;
   }
 
   UNPROTECT(1);
