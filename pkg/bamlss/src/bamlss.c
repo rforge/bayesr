@@ -3036,3 +3036,104 @@ void boost_fit(SEXP x, SEXP y, SEXP nu)
   UNPROTECT(nProtected);
 }
 
+
+/* Generalized Pareto. */
+SEXP gpareto_score_xi(SEXP y, SEXP xi, SEXP sigma)
+{
+  SEXP rval;
+  PROTECT(rval = allocVector(REALSXP, length(y)));
+  int i;
+  int n = length(y);
+  double *yptr = REAL(y);
+  double *xiptr = REAL(xi);
+  double *sigmaptr = REAL(sigma);
+  double *rvalptr = REAL(rval);
+
+  double ys = 0.0;
+  double xi1 = 0.0;
+  double xiy = 0.0;
+
+  for(i = 0; i < n; i++) {
+    ys = yptr[i] / sigmaptr[i];
+    xi1 = 1.0 / xiptr[i];
+    xiy = 1.0 + xiptr[i] * ys;
+    rvalptr[i] = pow(xi1, 2.0) * log(xiy) - (xi1 + 1.0) * (ys/xiy);
+  }
+
+  UNPROTECT(1);
+  return rval;
+}
+
+SEXP gpareto_score_sigma(SEXP y, SEXP xi, SEXP sigma)
+{
+  SEXP rval;
+  PROTECT(rval = allocVector(REALSXP, length(y)));
+  int i;
+  int n = length(y);
+  double *yptr = REAL(y);
+  double *xiptr = REAL(xi);
+  double *sigmaptr = REAL(sigma);
+  double *rvalptr = REAL(rval);
+
+  for(i = 0; i < n; i++) {
+    rvalptr[i] = (1.0/xiptr[i] + 1.0) * (xiptr[i] * yptr[i]/pow(sigmaptr[i], 2.0)/(1.0 + xiptr[i] * yptr[i]/sigmaptr[i])) - 1.0 / sigmaptr[i];
+  }
+
+  UNPROTECT(1);
+  return rval;
+}
+
+SEXP gpareto_hess_xi(SEXP y, SEXP xi, SEXP sigma)
+{
+  SEXP rval;
+  PROTECT(rval = allocVector(REALSXP, length(y)));
+  int i;
+  int n = length(y);
+  double *yptr = REAL(y);
+  double *xiptr = REAL(xi);
+  double *sigmaptr = REAL(sigma);
+  double *rvalptr = REAL(rval);
+
+  double xi2 = 0.0;
+  double xi3 = 0.0;
+  double xi4 = 0.0;
+  double xi5 = 0.0;
+  double xi6 = 0.0;
+  double xiy = 0.0;
+  double sxi5 = 0.0;
+  double yxi6 = 0.0;
+  double s2 = 0.0;
+  double y2 = 0.0;
+  double ls = 0.0;
+  double lsxiy = 0.0;
+  double sxi2 = 0.0;
+  double sy = 0.0;
+  double sxi5yxi6 = 0.0;
+  double xi6y2 = 0.0;
+
+  for(i = 0; i < n; i++) {
+    xi2 = pow(xiptr[i], 2.0);
+    xi3 = pow(xiptr[i], 3.0);
+    xi4 = pow(xiptr[i], 4.0);
+    xi5 = pow(xiptr[i], 5.0);
+    xi6 = pow(xiptr[i], 6.0);
+    xiy = xiptr[i] * yptr[i];
+    sxi5 = sigmaptr[i] * xi5;
+    yxi6 = yptr[i] * xi6;
+    s2 = pow(sigmaptr[i], 2.0);
+    y2 = pow(yptr[i], 2.0);
+    ls = log(sigmaptr[i]);
+    lsxiy = log(sigmaptr[i] + xiy);
+    sxi2 = sigmaptr[i] * xi2;
+    sy = sigmaptr[i] * yptr[i];
+    sxi5yxi6 = sxi5 + yxi6;
+    xi6y2 = xi6 * y2;
+
+    rvalptr[i] = -2.0*(s2*xi4*lsxiy/(sxi5yxi6) + xi6y2*lsxiy/(sxi5yxi6) - s2*xi4*ls/(sxi5yxi6) - xi6y2*ls/(sxi5yxi6) - 2.0*sy*xi5*ls/(sxi5yxi6) + 2.0*sy*xi5*lsxiy/(sxi5yxi6) + s2*xi4/(sxi5yxi6) - xi6y2/(sxi5yxi6))/xi3 + (1.0 + 1.0/xiptr[i])*(-2.0*pow(sigmaptr[i], 3.0)*log(sxi2 + yptr[i]*xi3)/xi3 - pow(sigmaptr[i], 4.0)/(xi4*(yptr[i] + sigmaptr[i]/xiptr[i])) + yptr[i]*s2/xi2)/s2 + 2.0*(-s2*log(sigmaptr[i]*xiptr[i] + yptr[i]*xi2)/xi2 + sy/xiptr[i])/(sxi2);
+    rvalptr[i] *= -1.0;
+  }
+
+  UNPROTECT(1);
+  return rval;
+}
+

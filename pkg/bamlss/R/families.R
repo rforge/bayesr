@@ -609,40 +609,16 @@ gpareto_bamlss <- function(...)
 
   rval$score <- list(
     "xi" = function(y, par, ...) {
-      ys <- y / par$sigma
-      xi1 <- 1 / par$xi
-      xiy <- 1 + par$xi * ys
-      -((xi1 + 1) * (ys/xiy) - xi1^2 * log(xiy))
+      .Call("gpareto_score_xi", as.numeric(y), as.numeric(par$xi), as.numeric(par$sigma))
     },
     "sigma" = function(y, par, ...) {
-      -(1/par$sigma - (1/par$xi + 1) * (par$xi * y/par$sigma^2/(1 + par$xi * y/par$sigma)))
+      .Call("gpareto_score_sigma", as.numeric(y), as.numeric(par$xi), as.numeric(par$sigma))
     }
   )
 
   rval$hess <- list(
     "xi" = function(y, par, ...) {
-      xi2 <- par$xi^(2)
-      xi3 <- par$xi^(3)
-      xi4 <- par$xi^(4)
-      xi5 <- par$xi^(5)
-      xi6 <- par$xi^(6)
-      xiy <- par$xi * y
-      sxi5 <- par$sigma * xi5
-      yxi6 <- y * xi6
-      s2 <- par$sigma^(2)
-      y2 <- y^(2)
-      ls <- log(par$sigma)
-      lsxiy <- log(par$sigma + xiy)
-      sxi2 <- par$sigma * xi2
-      sy <- par$sigma * y
-      sxi5yxi6 <- sxi5 + yxi6
-      xi6y2 <- xi6 * y2
-
-      h <- -2*(s2*xi4*lsxiy/(sxi5yxi6) + xi6y2*lsxiy/(sxi5yxi6) - s2*xi4*ls/(sxi5yxi6) - xi6y2*ls/(sxi5yxi6) -
-        2*sy*xi5*ls/(sxi5yxi6) + 2*sy*xi5*lsxiy/(sxi5yxi6) + s2*xi4/(sxi5yxi6) - xi6y2/(sxi5yxi6))/xi3 +
-        (1 + 1/par$xi)*(-2*par$sigma^3*log(sxi2 + y*xi3)/xi3 - par$sigma^4/(xi4*(y + par$sigma/par$xi)) + y*s2/xi2)/s2 +
-        2*(-s2*log(par$sigma*par$xi + y*xi2)/xi2 + sy/par$xi)/(sxi2)
-      -1 * h
+      .Call("gpareto_hess_xi", as.numeric(y), as.numeric(par$xi), as.numeric(par$sigma))
     },
     "sigma" = function(y, par, ...) {
       ys2 <- y / par$sigma^2
