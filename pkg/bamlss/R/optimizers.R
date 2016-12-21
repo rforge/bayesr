@@ -2753,8 +2753,7 @@ lasso <- function(x, y, start = NULL, lower = 0.001, upper = 1000,
   if(is.null(attr(x, "bamlss.engine.setup")))
     x <- bamlss.engine.setup(x, update = bfit_iwls, ...)
 
-  if(!is.null(start))
-    x <- set.starting.values(x, start)
+  start2 <- start
 
   lambdas <- if(is.null(lambda)) {
     scale2(-1 * log(1:nlambda), lower, upper)
@@ -2791,6 +2790,11 @@ lasso <- function(x, y, start = NULL, lower = 0.001, upper = 1000,
           }
         }
       }
+    }
+
+    if((l < 2) & !is.null(start2)) {
+      start <- c(start, start2)
+      start <- start[!duplicated(names(start))]
     }
 
     b <- bfit(x = x, y = y, start = start, verbose = verbose[2], ...)

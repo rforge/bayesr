@@ -1238,8 +1238,13 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
       }
     } else functions[[nf[j]]] <- foo[[nf[j]]]
     if(!is.function(functions[[nf[j]]])) {
-      if(!is.logical(functions[[nf[j]]]))
+      if(!is.logical(functions[[nf[j]]])) {
         stop(paste("argument", nf[j], "is not a function!"))
+      } else {
+        if(functions[[nf[j]]]) {
+          functions[[nf[j]]] <- get(default_fun[j], envir = env)
+        }
+      }
     }
   }
 
