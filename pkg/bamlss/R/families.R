@@ -609,21 +609,23 @@ gpareto_bamlss <- function(...)
 
   rval$score <- list(
     "xi" = function(y, par, ...) {
-      .Call("gpareto_score_xi", as.numeric(y), as.numeric(par$xi), as.numeric(par$sigma))
+      .Call("gpareto_score_xi", as.numeric(y), as.numeric(par$xi),
+        as.numeric(par$sigma), PACKAGE = "bamlss")
     },
     "sigma" = function(y, par, ...) {
-      .Call("gpareto_score_sigma", as.numeric(y), as.numeric(par$xi), as.numeric(par$sigma))
+      .Call("gpareto_score_sigma", as.numeric(y), as.numeric(par$xi),
+        as.numeric(par$sigma), PACKAGE = "bamlss")
     }
   )
 
   rval$hess <- list(
     "xi" = function(y, par, ...) {
-      .Call("gpareto_hess_xi", as.numeric(y), as.numeric(par$xi), as.numeric(par$sigma))
+      .Call("gpareto_hess_xi", as.numeric(y), as.numeric(par$xi),
+        as.numeric(par$sigma), PACKAGE = "bamlss")
     },
     "sigma" = function(y, par, ...) {
-      ys2 <- y / par$sigma^2
-      h <- -(1 + 1/par$xi)*(1/(par$xi^2*(y + par$sigma/par$xi)) + ys2) + ys2
-      -1 * h
+      .Call("gpareto_hess_sigma", as.numeric(y), as.numeric(par$xi),
+        as.numeric(par$sigma), PACKAGE = "bamlss")
     }
   )
   

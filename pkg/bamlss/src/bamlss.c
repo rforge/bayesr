@@ -3137,3 +3137,26 @@ SEXP gpareto_hess_xi(SEXP y, SEXP xi, SEXP sigma)
   return rval;
 }
 
+SEXP gpareto_hess_sigma(SEXP y, SEXP xi, SEXP sigma)
+{
+  SEXP rval;
+  PROTECT(rval = allocVector(REALSXP, length(y)));
+  int i;
+  int n = length(y);
+  double *yptr = REAL(y);
+  double *xiptr = REAL(xi);
+  double *sigmaptr = REAL(sigma);
+  double *rvalptr = REAL(rval);
+
+  double ys2 = 0.0;
+
+  for(i = 0; i < n; i++) {
+    ys2 = yptr[i] / pow(sigmaptr[i], 2.0);
+    rvalptr[i] = ys2 - (1.0 + 1.0/xiptr[i])*(1.0/(pow(xiptr[i], 2.0)*(yptr[i] + sigmaptr[i]/xiptr[i])) + ys2);
+    rvalptr[i] *= -1.0;
+  }
+
+  UNPROTECT(1);
+  return rval;
+}
+
