@@ -2804,38 +2804,3 @@ gaussian5_bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
   rval
 }
 
-
-compute_derivatives <- function(loglik, parameters, expectation = TRUE)
-{
-  if(!is.character(loglik))
-    stop("argument loglik must be a character!")
-  if(!is.character(parameters))
-    stop("argument parameters must be a character!")
-  if(!grepl("y", loglik))
-    stop("the response y is missing in loglik!")
-
-  for(p in parameters) {
-    v <- paste(p, ' <- ', 'rSymPy::Var("', p, '")', sep = '')
-    eval(parse(text = v))
-  }
-  y <- rSymPy::Var("y")
-
-  score <- hess <- list()
-  for(p in parameters) {
-    dldp <- D(parse(text = loglik), p)
-    score[[p]] <- dldp
-    d2ld2p <- D(dldp, p)
-    if(expectation) {
-      Ep <- rSymPy::sympy(paste("integrate(", gsub("^", "**", gsub(" ", "",
-        paste(deparse(d2ld2p), collapse = "")), fixed = TRUE), ",y)", sep = ""))
-      Ep <- gsub("**", "^", Ep, fixed = TRUE)
-      Ep <- parse(text = Ep)
-      hess[[p]] <- Ep
-    } else {
-      hess[[p]] <- d2ld2p
-    }
-  }
-
-  return(list("score" = score, "hess" = hess))
-}
-
