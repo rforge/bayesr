@@ -604,6 +604,10 @@ gpareto_bamlss <- function(...)
     },
     "mu" = function(par, ...) {
       par$sigma / (1 - par$xi)
+    },
+    "p" = function(y, par, ...) {
+      p <- 1 - (1 + par$xi * y / par$sigma)^(-1 / par$xi)
+      p
     }
   )
 

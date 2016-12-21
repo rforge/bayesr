@@ -2753,9 +2753,15 @@ lasso <- function(x, y, start = NULL, lower = 0.001, upper = 1000,
   if(is.null(attr(x, "bamlss.engine.setup")))
     x <- bamlss.engine.setup(x, update = bfit_iwls, ...)
 
+  if(!is.null(start))
+    x <- set.starting.values(x, start)
+
   lambdas <- if(is.null(lambda)) {
     scale2(-1 * log(1:nlambda), lower, upper)
   } else lambda
+
+  if(length(verbose) < 2)
+    verbose <- c(verbose, FALSE)
 
   ia <- if(flush) interactive() else FALSE
 
@@ -2787,7 +2793,7 @@ lasso <- function(x, y, start = NULL, lower = 0.001, upper = 1000,
       }
     }
 
-    b <- bfit(x = x, y = y, start = start, verbose = FALSE, ...)
+    b <- bfit(x = x, y = y, start = start, verbose = verbose[2], ...)
 
     nic <- grep("ic", names(b), value = TRUE, ignore.case = TRUE)
     par[[l]] <- unlist(b$parameters)
@@ -2795,7 +2801,7 @@ lasso <- function(x, y, start = NULL, lower = 0.001, upper = 1000,
     names(mstats) <- c("logLik", "logPost", nic, "edf")
     ic <- rbind(ic, mstats)
 
-    if(verbose) {
+    if(verbose[1]) {
       cat(if(ia) "\r" else if(l > 1) "\n" else NULL)
       vtxt <- paste(nic, " ", fmt(b[[nic]], width = 8, digits = digits),
         " edf ", fmt(mstats["edf"], width = 6, digits = digits),
@@ -2809,7 +2815,7 @@ lasso <- function(x, y, start = NULL, lower = 0.001, upper = 1000,
 
   elapsed <- c(proc.time() - ptm)[3]
 
-  if(verbose) {
+  if(verbose[1]) {
     et <- if(elapsed > 60) {
       paste(formatC(format(round(elapsed / 60, 2), nsmall = 2), width = 5), "min", sep = "")
     } else paste(formatC(format(round(elapsed, 2), nsmall = 2), width = 5), "sec", sep = "")
