@@ -585,6 +585,44 @@ Gaussian_bamlss <- function(...)
 }
 
 
+## Derivatives helper.
+compute_derivatives <- function(loglik, parameters, expectation = TRUE)
+{
+  if(!is.character(loglik))
+    stop("argument loglik must be a character!")
+  if(!is.character(parameters))
+    stop("argument parameters must be a character!")
+  if(!grepl("y", loglik))
+    stop("the response y is missing in loglik!")
+
+  if(expectation) {
+    for(p in parameters) {
+      v <- paste(p, ' <- ', 'rSymPy::Var("', p, '")', sep = '')
+      eval(parse(text = v))
+    }
+    y <- rSymPy::Var("y")
+  }
+
+  score <- hess <- list()
+  for(p in parameters) {
+    dldp <- D(parse(text = loglik), p)
+    score[[p]] <- dldp
+    d2ld2p <- D(dldp, p)
+    if(expectation) {
+      Ep <- rSymPy::sympy(paste("integrate(", gsub("^", "**", gsub(" ", "",
+        paste(deparse(d2ld2p), collapse = "")), fixed = TRUE), ",y)", sep = ""))
+      Ep <- gsub("**", "^", Ep, fixed = TRUE)
+      Ep <- parse(text = Ep)
+      hess[[p]] <- Ep
+    } else {
+      hess[[p]] <- d2ld2p
+    }
+  }
+
+  return(list("score" = score, "hess" = hess))
+}
+
+
 gpareto_bamlss <- function(...)
 {
   rval <- list(
@@ -611,25 +649,54 @@ gpareto_bamlss <- function(...)
     }
   )
 
+#  rval$score <- list(
+#    "xi" = function(y, par, ...) {
+#      .Call("gpareto_score_xi", as.numeric(y), as.numeric(par$xi),
+#        as.numeric(par$sigma), PACKAGE = "bamlss")
+#    },
+#    "sigma" = function(y, par, ...) {
+#      .Call("gpareto_score_sigma", as.numeric(y), as.numeric(par$xi),
+#        as.numeric(par$sigma), PACKAGE = "bamlss")
+#    }
+#  )
+
+#  rval$hess <- list(
+#    "xi" = function(y, par, ...) {
+#      .Call("gpareto_hess_xi", as.numeric(y), as.numeric(par$xi),
+#        as.numeric(par$sigma), PACKAGE = "bamlss")
+#    },
+#    "sigma" = function(y, par, ...) {
+#      .Call("gpareto_hess_sigma", as.numeric(y), as.numeric(par$xi),
+#        as.numeric(par$sigma), PACKAGE = "bamlss")
+#    }
+#  )
+
+  devs <- compute_derivatives("-sigma - (1 / exp(xi) + 1) * log(1 + exp(xi) * y / exp(sigma))",
+    c("xi", "sigma"), expectation = FALSE)
+
   rval$score <- list(
     "xi" = function(y, par, ...) {
-      .Call("gpareto_score_xi", as.numeric(y), as.numeric(par$xi),
-        as.numeric(par$sigma), PACKAGE = "bamlss")
+      xi <- log(par$xi)
+      sigma <- log(par$sigma)
+      eval(devs$score$xi)
     },
     "sigma" = function(y, par, ...) {
-      .Call("gpareto_score_sigma", as.numeric(y), as.numeric(par$xi),
-        as.numeric(par$sigma), PACKAGE = "bamlss")
+      xi <- log(par$xi)
+      sigma <- log(par$sigma)
+      eval(devs$score$sigma)
     }
   )
 
   rval$hess <- list(
     "xi" = function(y, par, ...) {
-      .Call("gpareto_hess_xi", as.numeric(y), as.numeric(par$xi),
-        as.numeric(par$sigma), PACKAGE = "bamlss")
+      xi <- log(par$xi)
+      sigma <- log(par$sigma)
+      -1 * eval(devs$hess$xi)
     },
     "sigma" = function(y, par, ...) {
-      .Call("gpareto_hess_sigma", as.numeric(y), as.numeric(par$xi),
-        as.numeric(par$sigma), PACKAGE = "bamlss")
+      xi <- log(par$xi)
+      sigma <- log(par$sigma)
+      -1 * eval(devs$hess$sigma)
     }
   )
   
