@@ -18,7 +18,7 @@ la(formula, type = c("single", "multiple"), ...)
 ## Single Lasso smoothing parameter optimizer.
 lasso(x, y, start = NULL, lower = 0.001, upper = 1000,
   nlambda = 100, lambda = NULL, verbose = TRUE, digits = 4,
-  flush = TRUE, ...)
+  flush = TRUE, nu = NULL, stop.nu = NULL, ...)
 
 ## Plotting function for lasso() optimizer.
 lasso.plot(x, which = c("criterion", "parameters"), spar = TRUE, ...)
@@ -48,6 +48,11 @@ lasso.stop(x)
   \item{verbose}{Print information during runtime of the algorithm.}
   \item{digits}{Set the digits for printing when \code{verbose = TRUE}.}
   \item{flush}{use \code{\link{flush.console}} for displaying the current output in the console.}
+  \item{nu}{Numeric or logical. Defines the step length for parameter updating of a model term,
+    useful when the algorithm encounters convergence problems. If \code{nu = TRUE} the step length
+    parameter is optimized for each model term in each iteration of the backfitting algorithm.}
+  \item{stop.nu}{Integer. Should step length reduction be stopped after \code{stop.nu} iterations
+    of the Lasso algorithm?}
   \item{which}{Which of the two provided plots should be created?}
   \item{spar}{Should graphical parameters be set by the plotting function?}
   \item{\dots}{Arguments passed to the subsequent smooth constructor function.

@@ -733,7 +733,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   update = "iwls", criterion = c("AICc", "BIC", "AIC"),
   eps = .Machine$double.eps^0.25, maxit = 400,
   outer = FALSE, inner = FALSE, mgcv = FALSE,
-  verbose = TRUE, digits = 4, flush = TRUE, ...)
+  verbose = TRUE, digits = 4, flush = TRUE, nu = NULL, stop.nu = NULL, ...)
 {
   nx <- family$names
   if(!all(nx %in% names(x)))
@@ -777,7 +777,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   }
 
   inner_bf <- if(!mgcv) {
-    function(x, y, eta, family, edf, id, ...) {
+    function(x, y, eta, family, edf, id, nu, ...) {
       eps0 <- eps + 1; iter <- 1
       while(eps0 > eps & iter < maxit) {
         eta0 <- eta
@@ -890,7 +890,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         if(inner) {
           tbf <- inner_bf(x[[nx[j]]]$smooth.construct, y, eta, family,
             edf = edf, id = nx[j], z = z, hess = hess, weights = weights[[nx[j]]],
-            criterion = criterion, iteration = iter)
+            criterion = criterion, iteration = iter, nu = nu)
           x[[nx[j]]]$smooth.construct <- tbf$x
           edf <- tbf$edf
           eta <- tbf$eta
@@ -906,11 +906,41 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
             edf <- edf - x[[nx[j]]]$smooth.construct[[sj]]$state$edf + p.state$edf
 
             ## Update predictor and smooth fit.
+            if(!is.null(nu)) {
+              if(!is.numeric(nu)) {
+                lp <- get.log.prior(x) - x[[nx[j]]]$smooth.construct[[sj]]$prior(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters)
+                objfun <- function(nu) {
+                  fit <- nu * p.state$fitted.values + (1 - nu) * x[[nx[j]]]$smooth.construct[[sj]]$state$fitted.values
+                  eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth.construct[[sj]]$state) + fit
+                  p.state$parameters <- set.par(p.state$parameters,
+                    nu * get.par(p.state$parameters, "b") +
+                    (1 - nu) * get.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, "b"), "b")
+                  lp <- family$loglik(y, family$map2par(eta)) + x[[nx[j]]]$smooth.construct[[sj]]$prior(p.state$parameters)
+                  -lp
+                }
+                nuo <- optimize(f = objfun, interval = c(0, 1))$minimum
+                p.state$fitted.values <- nuo * p.state$fitted.values + (1 - nuo) * x[[nx[j]]]$smooth.construct[[sj]]$state$fitted.values
+                p.state$parameters <- set.par(p.state$parameters,
+                  nuo * get.par(p.state$parameters, "b") +
+                  (1 - nuo) * get.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, "b"), "b")
+              } else {
+                p.state$fitted.values <- nu * p.state$fitted.values + (1 - nu) * x[[nx[j]]]$smooth.construct[[sj]]$state$fitted.values
+                p.state$parameters <- set.par(p.state$parameters,
+                  nu * get.par(p.state$parameters, "b") +
+                  (1 - nu) * get.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, "b"), "b")
+              }
+            }
+
             eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth.construct[[sj]]$state) + fitted(p.state)
 
             x[[nx[j]]]$smooth.construct[[sj]]$state <- p.state
           }
         }
+      }
+
+      if(!is.null(stop.nu)) {
+        if(iter > stop.nu)
+          nu <- NULL
       }
 
       eps0 <- do.call("cbind", eta)
@@ -2756,7 +2786,8 @@ set.starting.values <- function(x, start)
 
 
 lasso <- function(x, y, start = NULL, lower = 0.001, upper = 1000,
-  nlambda = 100, lambda = NULL, verbose = TRUE, digits = 4, flush = TRUE, ...)
+  nlambda = 100, lambda = NULL, verbose = TRUE, digits = 4, flush = TRUE,
+  nu = NULL, stop.nu = NULL, ...)
 {
   if(is.null(attr(x, "bamlss.engine.setup")))
     x <- bamlss.engine.setup(x, update = bfit_iwls, ...)
@@ -2805,13 +2836,18 @@ lasso <- function(x, y, start = NULL, lower = 0.001, upper = 1000,
       start <- start[!duplicated(names(start))]
     }
 
-    b <- bfit(x = x, y = y, start = start, verbose = verbose[2], ...)
+    b <- bfit(x = x, y = y, start = start, verbose = verbose[2], nu = nu, stop.nu = stop.nu, ...)
 
     nic <- grep("ic", names(b), value = TRUE, ignore.case = TRUE)
     par[[l]] <- unlist(b$parameters)
     mstats <- c(b$logLik, b$logPost, b[[nic]], b[["edf"]])
     names(mstats) <- c("logLik", "logPost", nic, "edf")
     ic <- rbind(ic, mstats)
+
+    if(!is.null(stop.nu)) {
+      if(l > stop.nu)
+        nu <- NULL
+    }
 
     if(verbose[1]) {
       cat(if(ia) "\r" else if(l > 1) "\n" else NULL)

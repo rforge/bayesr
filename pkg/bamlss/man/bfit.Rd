@@ -26,7 +26,8 @@ bfit(x, y, family, start = NULL, weights = NULL, offset = NULL,
   update = "iwls", criterion = c("AICc", "BIC", "AIC"),
   eps = .Machine$double.eps^0.25, maxit = 400,
   outer = FALSE, inner = FALSE, mgcv = FALSE,
-  verbose = TRUE, digits = 4, flush = TRUE, ...)
+  verbose = TRUE, digits = 4, flush = TRUE,
+  nu = NULL, stop.nu = NULL, ...)
 
 ## Model term updating functions:
 bfit_iwls(x, family, y, eta, id, weights, criterion, ...)
@@ -73,6 +74,11 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
   \item{verbose}{Print information during runtime of the algorithm.}
   \item{digits}{Set the digits for printing when \code{verbose = TRUE}.}
   \item{flush}{use \code{\link{flush.console}} for displaying the current output in the console.}
+  \item{nu}{Numeric or logical. Defines the step length for parameter updating of a model term,
+    useful when the algorithm encounters convergence problems. If \code{nu = TRUE} the step length
+    parameter is optimized for each model term in each iteration of the backfitting algorithm.}
+  \item{stop.nu}{Integer. Should step length reduction be stopped after \code{stop.nu} iterations
+    of the backfitting algorithm?}
   \item{eta}{The current value of the predictors, provided as a named list, one list entry
     for each parameter. The names correspond to the parameter names in the family object,
     see \code{\link{family.bamlss}}. E.g., when using the \code{\link{gaussian_bamlss}} family
