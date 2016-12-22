@@ -668,7 +668,7 @@ gpareto_bamlss <- function(...)
 #  )
   
   rval$initialize <- list(
-    "xi" = function(y, ...) { rep(sd(y) / mean(y) - 1, length(y)) },
+    "xi" = function(y, ...) { rep(mean(y) + 0.5, length(y)) },
     "sigma" = function(y, ...) { rep(sd(y), length(y)) }
   )
   
