@@ -69,7 +69,7 @@ list.size <- function(x, j = NULL)
 
 
 ## Derivatives helper.
-compute_derivatives <- function(loglik, density = NULL, parameters, expectation = TRUE)
+compute_derivatives <- function(loglik, parameters, density = NULL, expectation = FALSE)
 {
   if(!is.character(loglik))
     stop("argument loglik must be a character!")
@@ -95,7 +95,7 @@ compute_derivatives <- function(loglik, density = NULL, parameters, expectation 
     d2ld2p <- D(dldp, p)
     if(expectation) {
       int <- paste("integrate(", gsub("^", "**", gsub(" ", "",
-        paste("(", paste(deparse(d2ld2p), collapse = ""), ")*", density, sep = "")), fixed = TRUE), ",y)", sep = "")
+        paste("(", paste(deparse(d2ld2p), collapse = ""), ")*(", density, ")", sep = "")), fixed = TRUE), ",y)", sep = "")
       Ep <- rSymPy::sympy(int)
       Ep <- gsub("**", "^", Ep, fixed = TRUE)
       Ep <- parse(text = Ep)
