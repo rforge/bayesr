@@ -2866,11 +2866,12 @@ SEXP log_dmvnorm(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ)
 
 
 /* Boosting updater. */
-void boost_fit(SEXP x, SEXP y, SEXP nu)
+void boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
 {
   int i, j, k, nProtected = 0;
   int n = length(y);
   int fixed = LOGICAL(getListElement(x, "fixed"))[0];
+  int *penFun = INTEGER(getListElement(x, "penaltyFunction"));
 
   double *thetaptr = REAL(getListElement(getListElement(x, "state"), "parameters"));
 
@@ -2945,7 +2946,11 @@ void boost_fit(SEXP x, SEXP y, SEXP nu)
   /* Add penalty matrix and variance parameter. */
   if(fixed < 1) {
     for(jj = 0; jj < ntau2; jj++) {
-      Sptr = REAL(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj));
+      if(penFun[jj] > 0) {
+        Sptr = REAL(get_S_mat(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj), getListElement(getListElement(x, "state"), "parameters"), rho));
+      } else {
+        Sptr = REAL(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj));
+      }
       tau2ptr[jj] = thetaptr[nc + jj];
       for(i = 0; i < nc; i++) {
         for(j = 0; j < nc; j++) {

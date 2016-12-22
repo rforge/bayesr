@@ -2018,6 +2018,9 @@ boost <- function(x, y, family,
   ## Print stuff.
   ia <- if(flush) interactive() else FALSE
 
+  ## Env for C.
+  rho <- new.env()
+
   ## Start boosting.
   eps0 <- 1; iter <- 1
   save.ll <- NULL
@@ -2036,7 +2039,7 @@ boost <- function(x, y, family,
       ## Fit to gradient.
       for(j in names(x[[i]]$smooth.construct)) {
         ## Get updated parameters.
-        .Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu)
+        .Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu, rho)
         states[[i]][[j]] <- x[[i]]$smooth.construct[[j]]$state
 
         ## Get rss.
@@ -2193,6 +2196,10 @@ boost.transform <- function(x, y, df = NULL, family,
       nr <- nrow(x[[nx[j]]]$smooth.construct[[sj]]$X)
       x[[nx[j]]]$smooth.construct[[sj]]$XWX <- matrix(0, nc, nc)
       x[[nx[j]]]$smooth.construct[[sj]]$XW <- matrix(0, nc, nr)
+      if(!is.null(x[[nx[j]]]$smooth.construct[[sj]]$S))
+        x[[nx[j]]]$smooth.construct[[sj]]$penaltyFunction <- as.integer(sapply(x[[nx[j]]]$smooth.construct[[sj]]$S, is.function))
+      else
+        x[[nx[j]]]$smooth.construct[[sj]]$penaltyFunction <- 0L
     }
   }
 
