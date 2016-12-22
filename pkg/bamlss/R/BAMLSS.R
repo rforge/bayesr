@@ -3882,7 +3882,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     object$S <- A
   }
   object$xt[["prior"]] <- "ig"
-  object$xt[["a"]] <- 1
+  object$xt[["a"]] <- 1e-4
   object$xt[["b"]] <- 1e-4
   object$fixed <- FALSE
   object$fxsp <- FALSE
@@ -3906,7 +3906,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$all_diagonal <- XX_is_diagonal & S_is_diagonal
   object$propose <- if(object$all_diagonal) GMCMC_iwlsC_gp_diag_lasso else GMCMC_iwlsC_gp
   object$xt[["binning"]] <- TRUE
-  object$xt[["df"]] <- ceiling(ncol(object$X) * 0.95)
+  object$xt[["df"]] <- ceiling(ncol(object$X) * 0.1)
   object$ctype <- switch(object$type,
     "single" = 0,
     "multiple" = 1
