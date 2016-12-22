@@ -2061,7 +2061,7 @@ boost <- function(x, y, family,
     take <- c(nx[i], names(rss[[i]])[select[i]])
 
     ## Update selected base learner.
-    eta[[take[1]]] <- eta[[take[1]]] + fitted(states[[take[1]]][[take[2]]])
+    eta[[take[1]]] <- eta[[take[1]]] + states[[take[1]]][[take[2]]]$fitted.values
 
     ## Write to x.
     x[[take[1]]]$smooth.construct[[take[2]]]$state <- increase(x[[take[1]]]$smooth.construct[[take[2]]]$state, states[[take[1]]][[take[2]]])
