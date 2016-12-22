@@ -611,61 +611,61 @@ gpareto_bamlss <- function(...)
     }
   )
 
-#  rval$score <- list(
-#    "xi" = function(y, par, ...) {
-#      .Call("gpareto_score_xi", as.numeric(y), as.numeric(par$xi),
-#        as.numeric(par$sigma), PACKAGE = "bamlss")
-#    },
-#    "sigma" = function(y, par, ...) {
-#      .Call("gpareto_score_sigma", as.numeric(y), as.numeric(par$xi),
-#        as.numeric(par$sigma), PACKAGE = "bamlss")
-#    }
-#  )
-
-#  rval$hess <- list(
-#    "xi" = function(y, par, ...) {
-#      .Call("gpareto_hess_xi", as.numeric(y), as.numeric(par$xi),
-#        as.numeric(par$sigma), PACKAGE = "bamlss")
-#    },
-#    "sigma" = function(y, par, ...) {
-#      .Call("gpareto_hess_sigma", as.numeric(y), as.numeric(par$xi),
-#        as.numeric(par$sigma), PACKAGE = "bamlss")
-#    }
-#  )
-
   rval$score <- list(
     "xi" = function(y, par, ...) {
-      ys <- y / par$sigma
-      xi1 <- 1 / par$xi
-      xi1ys <- 1 + par$xi * ys
-      -((xi1 + 1) * (par$xi * ys/xi1ys) - xi1 * log(xi1ys))
+      .Call("gpareto_score_xi", as.numeric(y), as.numeric(par$xi),
+        as.numeric(par$sigma), PACKAGE = "bamlss")
     },
     "sigma" = function(y, par, ...) {
-      ys <- y / par$sigma
-      -(1 - (1/par$xi + 1) * (par$xi * ys /(1 + par$xi * ys)))
+      .Call("gpareto_score_sigma", as.numeric(y), as.numeric(par$xi),
+        as.numeric(par$sigma), PACKAGE = "bamlss")
     }
   )
 
   rval$hess <- list(
-    "xi" = function(y, par, ...) {      
-      ys <- y / par$sigma
-      xi1 <- 1 / par$xi
-      xi2 <- par$xi^2
-      xiys <- par$xi * ys
-      xi1ys <- 1 + xiys
-      xiysxi1ys <- xiys / xi1ys
-      xi1xiysxi1ys <- xi1 * xiysxi1ys
-      (xi1 + 1) * (xiysxi1ys - xiys^2/xi1ys^2) - xi1xiysxi1ys - ((xi1 - par$xi * (2 * xi2)/xi2^2) * log(xi1ys) + xi1xiysxi1ys)
+    "xi" = function(y, par, ...) {
+      .Call("gpareto_hess_xi", as.numeric(y), as.numeric(par$xi),
+        as.numeric(par$sigma), PACKAGE = "bamlss")
     },
     "sigma" = function(y, par, ...) {
-      s1 <- 1 / par$sigma
-      ys <- y / par$sigma
-      xiys1 <- par$xi * y * s1
-      xiys <- par$xi * ys
-      xi1ys <- 1 + xiys
-      -1 * (1/par$xi + 1) * ((xiys1 - par$xi * y * par$sigma * 2 * s1^2)/xi1ys + xiys1 * xiys1/xi1ys^2)
+      .Call("gpareto_hess_sigma", as.numeric(y), as.numeric(par$xi),
+        as.numeric(par$sigma), PACKAGE = "bamlss")
     }
   )
+
+#  rval$score <- list(
+#    "xi" = function(y, par, ...) {
+#      ys <- y / par$sigma
+#      xi1 <- 1 / par$xi
+#      xi1ys <- 1 + par$xi * ys
+#      -((xi1 + 1) * (par$xi * ys/xi1ys) - xi1 * log(xi1ys))
+#    },
+#    "sigma" = function(y, par, ...) {
+#      ys <- y / par$sigma
+#      -(1 - (1/par$xi + 1) * (par$xi * ys /(1 + par$xi * ys)))
+#    }
+#  )
+
+#  rval$hess <- list(
+#    "xi" = function(y, par, ...) {      
+#      ys <- y / par$sigma
+#      xi1 <- 1 / par$xi
+#      xi2 <- par$xi^2
+#      xiys <- par$xi * ys
+#      xi1ys <- 1 + xiys
+#      xiysxi1ys <- xiys / xi1ys
+#      xi1xiysxi1ys <- xi1 * xiysxi1ys
+#      (xi1 + 1) * (xiysxi1ys - xiys^2/xi1ys^2) - xi1xiysxi1ys - ((xi1 - par$xi * (2 * xi2)/xi2^2) * log(xi1ys) + xi1xiysxi1ys)
+#    },
+#    "sigma" = function(y, par, ...) {
+#      s1 <- 1 / par$sigma
+#      ys <- y / par$sigma
+#      xiys1 <- par$xi * y * s1
+#      xiys <- par$xi * ys
+#      xi1ys <- 1 + xiys
+#      -1 * (1/par$xi + 1) * ((xiys1 - par$xi * y * par$sigma * 2 * s1^2)/xi1ys + xiys1 * xiys1/xi1ys^2)
+#    }
+#  )
   
   rval$initialize <- list(
     "xi" = function(y, ...) { rep(sd(y) / mean(y) - 1, length(y)) },
