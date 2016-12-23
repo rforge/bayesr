@@ -3881,6 +3881,30 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     }
     object$S <- A
   }
+  fuse <- if(is.null(object$xt[["fuse"]])) FALSE else object$xt[["fuse"]]
+  if(fuse & ((k <- ncol(object$X)) > 1)) {
+    k <- ncol(object$X)
+    a <- rep(0, k)
+    Af <- list()
+    for(i in 1:k) {
+      A0 <- NULL
+      a2 <- a
+      a2[i] <- 1
+      for(j in 1:k) {
+        a3 <- a2
+        if(j > i) {
+          a3[j] <- -1
+          A0 <- cbind(A0, a3)
+        }
+      }
+      Af[[i]] <- if(i < k) A0 else matrix(0, nrow = k)
+    }
+    object$S[[ls <- length(object$S) + 1]] <- function(parameters) {
+      diag(sapply(Af, function(x) sum(sqrt((t(x) %*% b)^2 + const))))
+    }
+    attr(object$S[[ls]], "npar") <- ncol(object$X)
+  }
+
   object$xt[["prior"]] <- "ig"
   object$xt[["a"]] <- 1
   object$xt[["b"]] <- 1e-4
@@ -3898,8 +3922,9 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   b <- runif(ncol(object$X))
   tau2 <- runif(length(object$S))
   S <- 0
-  for(j in seq_along(tau2))
+  for(j in seq_along(tau2)) {
     S <- S + 1 / tau2[j] * if(is.function(object$S[[j]])) object$S[[j]](c("b" = b, "tau2" = tau2)) else object$S[[j]]
+  }
   S <- S[!diag(nrow(S))]
   S_is_diagonal <- isTRUE(all.equal(S, rep(0, length(S))))
 
