@@ -3892,15 +3892,17 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
       a2[i] <- 1
       for(j in 1:k) {
         a3 <- a2
-        if(j > i) {
+        if(j != i) {
           a3[j] <- -1
           A0 <- cbind(A0, a3)
         }
       }
-      Af[[i]] <- if(i < k) A0 else matrix(0, nrow = k)
+      Af[[i]] <- A0
     }
     object$S[[ls <- length(object$S) + 1]] <- function(parameters) {
-      diag(sapply(Af, function(x) sum(sqrt((t(x) %*% b)^2 + const))))
+      b <- get.par(parameters, "b")
+      d <- sapply(Af, function(x) sum(sqrt((t(x) %*% b)^2 + const)))
+      diag(d)
     }
     attr(object$S[[ls]], "npar") <- ncol(object$X)
   }
