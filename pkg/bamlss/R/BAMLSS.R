@@ -4738,7 +4738,7 @@ plot.bamlss.effect.default <- function(x, ...) {
         do.call("plot", delete.args(plot.density2, args, c("main", "xlim")))
       } else {
         if(!is.null(args$map)) {
-          args$x <- x[, grepl("50%", colnames(x), fixed = TRUE)]
+          args$x <- x[, grepl("Mean", colnames(x), fixed = TRUE)]
           args$id <- as.character(x[, 1])
           args$xlim <- args$ylim <- NULL
           do.call("plotmap", delete.args("plotmap", args,
