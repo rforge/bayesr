@@ -355,7 +355,10 @@ design.construct <- function(formula, data = NULL, knots = NULL,
             if(inherits(tsm, "mrf.smooth.spec")) {
               if(!is.null(tsm$xt$map)) {
                 vl <- levels(data[[tsm$term]])
-                tsm$xt$polys <- as.list(tsm$xt$map[vl])
+                mapn <- names(tsm$xt$map)
+                if(!all(mapn %in% vl))
+                  levels(data[[tsm$term]]) <- c(vl, mapn[!(mapn %in% vl)])
+                tsm$xt$polys <- as.list(tsm$xt$map)
               }
             }
             smt <- smooth.construct(tsm, data, knots)
@@ -4714,6 +4717,8 @@ plot.bamlss.effect.default <- function(x, ...) {
   }
   if(!is.null(args$shift))
     args[[lim]] <- args[[lim]] + args$shift
+  if((attr(x, "specs")$dim > 1) & inherits(x, "mrf.smooth"))
+    attr(x, "specs")$dim <- 1
   if(attr(x, "specs")$dim < 2) {
     if(is.null(args$fill.select))
       args$fill.select <- c(0, 1, 0, 1)

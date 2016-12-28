@@ -172,7 +172,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     if(!is.null(sdata)) {
       for(j in names(sdata)) {
         if(is.factor(sdata[[j]]))
-          sdata[[j]] <- as.integer(sdata[[j]]) - 1L
+          sdata[[j]] <- as.integer(as.character(sdata[[j]]))
       }
       if(nrow(sdata) == nrow(y))
         sdata <- cbind(sdata, y)
@@ -895,12 +895,6 @@ sx.construct.mrf.smooth <- sx.construct.mrf.smooth.spec <- sx.construct.spatial.
 
     prg <- paste("map", map.name)
     if(inherits(map, "bnd")) {
-      if(!any(is.na(poly.names <- as.integer(names(map))))) {
-        poly.names <- sort(poly.names)
-        poly.names <- as.character(poly.names)
-      } else poly.names <- sort(names(map))
-      map <- map[poly.names]
-      class(map) <- "bnd"
       BayesX::write.bnd(map = map, file = mapfile, replace = TRUE)
       prg <- c(prg, paste(map.name, ".infile using ", mapfile, sep = ""))
     } else {
