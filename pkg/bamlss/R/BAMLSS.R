@@ -3780,7 +3780,10 @@ la <- function(formula, type = c("single", "multiple"), ...)
   if(!grepl("+", formula, fixed = TRUE) & !grepl("-", formula, fixed = TRUE)) {
     if(formula %in% ls(envir = .GlobalEnv)) {
       label <- paste("la(", formula, ")", sep = "")
+      f0 <- formula
       formula <- get(formula, envir = .GlobalEnv)
+      if(!inherits(formula, "formula"))
+        formula <- f0
     }
   }
   if(is.character(formula)) {
@@ -3807,15 +3810,15 @@ la <- function(formula, type = c("single", "multiple"), ...)
 }
 
 
-blockstand <- function(x)
+blockstand <- function(x, n)
 {
   cn <- colnames(x)
   decomp <- qr(x)
   if(decomp$rank < ncol(x))
     stop("block standardization cannot be computed, matrix is not of full rank!")
   scale <- qr.R(decomp)
-  x <- qr.Q(decomp)
-  attr(x, "blockscale") <- solve(scale)
+  x <- qr.Q(decomp) * sqrt(n)
+  attr(x, "blockscale") <- solve(scale) + 1 / sqrt(n)
   colnames(x) <- cn
   x
 }
@@ -3849,7 +3852,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
         "scale" = attr(object$X[[j]], "scaled:scale")
       )
     } else {
-      object$X[[j]] <- blockstand(object$X[[j]])
+      object$X[[j]] <- blockstand(object$X[[j]], n = nrow(data))
       object$lasso$trans[[j]] <- list("blockscale" = attr(object$X[[j]], "blockscale"))
     }
     df[[j]] <- sqrt(rep(ncol(object$X[[j]]), ncol(object$X[[j]])))
@@ -3887,25 +3890,20 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   fuse <- if(is.null(object$xt[["fuse"]])) FALSE else object$xt[["fuse"]]
   if(fuse & ((k <- ncol(object$X)) > 1)) {
     k <- ncol(object$X)
-    a <- rep(0, k)
-    Af <- list()
-    for(i in 1:k) {
-      A0 <- NULL
-      a2 <- a
-      a2[i] <- 1
-      for(j in 1:k) {
-        a3 <- a2
-        if(j != i) {
-          a3[j] <- -1
-          A0 <- cbind(A0, a3)
-        }
-      }
-      Af[[i]] <- A0
+    Af <- matrix(0, ncol = choose(k, 2), nrow = k)
+    combis <- combn(k, 2)
+    for(ff in 1:ncol(combis)){
+      Af[combis[1, ff], ff] <- 1
+      Af[combis[2, ff], ff] <- -1
     }
     object$S[[ls <- length(object$S) + 1]] <- function(parameters) {
       b <- get.par(parameters, "b")
-      d <- sapply(Af, function(x) sum(sqrt((t(x) %*% b)^2 + const)))
-      diag(d)
+      S <- 0
+      for(k in 1:ncol(Af)) {
+        d <- drop(t(Af[, k]) %*% b)
+        S <- S + sqrt(d^2 + const) * 1 / sqrt(d^2 + const) * Af[, k] %*% t(Af[, k])
+      }
+      df * S
     }
     attr(object$S[[ls]], "npar") <- ncol(object$X)
   }
