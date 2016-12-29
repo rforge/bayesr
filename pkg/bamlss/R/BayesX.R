@@ -895,12 +895,16 @@ sx.construct.mrf.smooth <- sx.construct.mrf.smooth.spec <- sx.construct.spatial.
 
     prg <- paste("map", map.name)
     if(inherits(map, "bnd")) {
-      BayesX::write.bnd(map = map, file = mapfile, replace = TRUE)
-      prg <- c(prg, paste(map.name, ".infile using ", mapfile, sep = ""))
+      if(!file.exists(mapfile)) {
+        BayesX::write.bnd(map = map, file = mapfile, replace = TRUE)
+        prg <- c(prg, paste(map.name, ".infile using ", mapfile, sep = ""))
+      }
     } else {
       if(!is.character(map)) {
-        BayesX::write.gra(map = map, file = mapfile, replace = TRUE)
-        prg <- c(prg, paste(map.name, ".infile, graph using ", mapfile, sep = ""))
+        if(!file.exists(mapfile)) {
+          BayesX::write.gra(map = map, file = mapfile, replace = TRUE)
+          prg <- c(prg, paste(map.name, ".infile, graph using ", mapfile, sep = ""))
+        }
       } else {
         stopifnot(is.character(map))
         pos <- regexpr("\\.([[:alnum:]]+)$", map)
