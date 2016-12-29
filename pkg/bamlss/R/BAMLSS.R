@@ -3901,7 +3901,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
       S <- 0
       for(k in 1:ncol(Af)) {
         d <- drop(t(Af[, k]) %*% b)
-        S <- S + sqrt(d^2 + const) * 1 / sqrt(d^2 + const) * Af[, k] %*% t(Af[, k])
+        S <- S + 1 / sqrt(d^2 + const) * Af[, k] %*% t(Af[, k])
       }
       df * S
     }
