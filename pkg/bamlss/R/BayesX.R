@@ -247,6 +247,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     paste('%% usefile ', file.path(dir, prg.name), sep = ''), "",
     prg
   )
+  prg <- unique(prg)
 
   if(any(grepl("##seed##", prg, fixed = TRUE)))
     prg <- gsub("##seed##", round(runif(1L) * .Machine$integer.max), prg, fixed = TRUE)
@@ -895,16 +896,14 @@ sx.construct.mrf.smooth <- sx.construct.mrf.smooth.spec <- sx.construct.spatial.
 
     prg <- paste("map", map.name)
     if(inherits(map, "bnd")) {
-      if(!file.exists(mapfile)) {
+      if(!file.exists(mapfile))
         BayesX::write.bnd(map = map, file = mapfile, replace = TRUE)
-        prg <- c(prg, paste(map.name, ".infile using ", mapfile, sep = ""))
-      }
+      prg <- c(prg, paste(map.name, ".infile using ", mapfile, sep = ""))
     } else {
       if(!is.character(map)) {
-        if(!file.exists(mapfile)) {
+        if(!file.exists(mapfile))
           BayesX::write.gra(map = map, file = mapfile, replace = TRUE)
-          prg <- c(prg, paste(map.name, ".infile, graph using ", mapfile, sep = ""))
-        }
+        prg <- c(prg, paste(map.name, ".infile, graph using ", mapfile, sep = ""))
       } else {
         stopifnot(is.character(map))
         pos <- regexpr("\\.([[:alnum:]]+)$", map)
