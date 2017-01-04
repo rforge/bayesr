@@ -873,7 +873,9 @@ update_jm_lambda <- function(x, eta, eta_timegrid,
   eeta <- exp(eta_timegrid)
 
   ## Compute gradient and hessian integrals.
-  int <- survint(X, eeta, width, exp(eta$gamma), index = x$sparse.setup$matrix)
+  # int <- survint(X, eeta, width, exp(eta$gamma), index = x$sparse.setup$matrix) # throws error with time-varying covariates
+  int <- survint(X, eeta, width, exp(eta$gamma))
+  
   xgrad <- drop(t(status) %*% x$XT - int$grad)
 
   env <- new.env()
@@ -2063,7 +2065,7 @@ propose_jm_lambda <- function(x, y,
   mu <- drop(g0 + nu * Sigma %*% xgrad)
 
   ## Sample new parameters.
-  g <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma))
+  g <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma, method="chol"))
   names(g) <- names(g0)
   x$state$parameters <- set.par(x$state$parameters, g, "b")
 
@@ -2174,7 +2176,7 @@ propose_jm_mu_simple <- function(x, y,
   mu <- drop(g0 - nu * Sigma %*% xgrad)
 
   ## Sample new parameters.
-  g <- drop(rmvnorm(n = 1, mean = mu, sigma = -1 * Sigma))
+  g <- drop(rmvnorm(n = 1, mean = mu, sigma = -1 * Sigma, method="chol"))
   names(g) <- names(g0)
   x$state$parameters <- set.par(x$state$parameters, g, "b")
   
@@ -2291,8 +2293,23 @@ propose_jm_mu_Matrix <- function(x, y,
 
   Sigma <- as.matrix(Sigma)
 
-  ## Sample new parameters.
-  g <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma))
+  ## Sample new parameters using blickdiagonal structure.
+  if(!is.null(x$sparse.setup[["mu.matrix"]])){
+    lg <- lapply(1:nrow(x$sparse.setup[["mu.matrix"]]), function(i){
+      tmp <- x$sparse.setup[["mu.matrix"]][i,]
+      tmp <- tmp[tmp > 0]
+      if(length(tmp) == 1){
+        drop(rnorm(n = 1, mean = mu[tmp], sd = Sigma[tmp,tmp]))
+      } else{
+        if(length(tmp) > 1){
+          drop(rmvnorm(n = 1, mean = mu[tmp], sigma = Sigma[tmp,tmp], method="chol"))
+        }
+      } 
+    })
+    g <- unlist(lg)
+  } else {
+    g <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma, method="chol"))
+  }
 
   if(all(is.na(g))) {
     x$state$alpha <- 1
@@ -2302,10 +2319,25 @@ propose_jm_mu_Matrix <- function(x, y,
   names(g) <- names(g0)
   x$state$parameters <- set.par(x$state$parameters, g, "b")
   
-  ## Compute log priors.
+  ## Compute log priors using blockdiagonal structure.
   p2 <- x$prior(x$state$parameters)
-  qbetaprop <- dmvnorm(g, mean = mu, sigma = Sigma, log = TRUE)
-  
+  if(!is.null(x$sparse.setup[["mu.matrix"]])){
+    lqbetaprop <- lapply(1:nrow(x$sparse.setup[["mu.matrix"]]), function(i){
+      tmp <- x$sparse.setup[["mu.matrix"]][i,]
+      tmp <- tmp[tmp > 0]
+      if(length(tmp) == 1){
+        drop(dnorm(g[tmp], mean = mu[tmp], sd = Sigma[tmp,tmp]))
+      } else{
+        if(length(tmp) > 1){
+          dmvnorm(g[tmp], mean = mu[tmp], sigma = Sigma[tmp,tmp], log = TRUE)
+        }
+      } 
+    })
+    qbetaprop <- sum(unlist(lqbetaprop))
+  } else {
+    qbetaprop <- dmvnorm(g, mean = mu, sigma = Sigma, log = TRUE)
+  }
+
   ## Update additive predictors.
   fit_timegrid <- x$fit.fun_timegrid(g)
   eta_timegrid_mu <- eta_timegrid_mu - x$state$fitted_timegrid + fit_timegrid
@@ -2341,7 +2373,25 @@ propose_jm_mu_Matrix <- function(x, y,
 
   Sigma2 <- matrix_inv(-1 * xhess)
   mu2 <- drop(g + nu * Sigma2 %*% xgrad)
-  qbeta <- dmvnorm(g0, mean = mu2, sigma = as.matrix(Sigma2), log = TRUE)
+  Sigma2 <- as.matrix(Sigma2) 
+  
+  if(!is.null(x$sparse.setup[["mu.matrix"]])){
+    lqbeta <- lapply(1:nrow(x$sparse.setup[["mu.matrix"]]), function(i){
+      tmp <- x$sparse.setup[["mu.matrix"]][i,]
+      tmp <- tmp[tmp > 0]
+      if(length(tmp) == 1){
+        drop(dnorm(g0[tmp], mean = mu2[tmp], sd = Sigma2[tmp,tmp]))
+      } else{
+        if(length(tmp) > 1){
+          dmvnorm(g0[tmp], mean = mu2[tmp], sigma = Sigma2[tmp,tmp], log = TRUE)
+        }
+      } 
+    })
+    qbeta <- sum(unlist(lqbeta))
+  } else {
+    qbeta <- dmvnorm(g0, mean = mu2, sigma = as.matrix(Sigma2), log = TRUE)
+  }
+
   
   ## Save edf.
   x$state$edf <- sum_diag(int$hess %*% Sigma2)
@@ -2404,7 +2454,7 @@ propose_jm_alpha <- function(x, y,
   mu <- drop(g0 + nu * Sigma %*% xgrad)
   
   ## Sample new parameters.
-  g <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma))
+  g <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma, method="chol"))
   names(g) <- names(g0)
   x$state$parameters <- set.par(x$state$parameters, g, "b")
   
@@ -2499,7 +2549,7 @@ propose_jm_dalpha <- function(x, y,
   mu <- drop(g0 + nu * Sigma %*% xgrad)
   
   ## Sample new parameters.
-  g <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma))
+  g <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma, method="chol"))
   names(g) <- names(g0)
   x$state$parameters <- set.par(x$state$parameters, g, "b")
   
@@ -2593,7 +2643,7 @@ propose_jm_gamma <- function(x, y,
   mu <- drop(g0 + nu * Sigma %*% xgrad)
   
   ## Sample new parameters.
-  g <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma))
+  g <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma, method="chol"))
   names(g) <- names(g0)
   x$state$parameters <- set.par(x$state$parameters, g, "b")
   
@@ -2684,7 +2734,7 @@ propose_jm_sigma <- function(x, y,
   mu <- drop(g0 - nu * Sigma %*% xgrad)
   
   ## Sample new parameters.
-  g <- drop(rmvnorm(n = 1, mean = mu, sigma = -1 * Sigma))
+  g <- drop(rmvnorm(n = 1, mean = mu, sigma = -1 * Sigma, method="chol"))
   names(g) <- names(g0)
   x$state$parameters <- set.par(x$state$parameters, g, "b")
   
@@ -3030,7 +3080,7 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
     Pt <- l[2] * kronecker(diag(nsub), crossprod(makeDiffOp(pen[1], long_df)))
     P <- .1*diag(nsub*long_df) + Pt + Pi
     
-    coef <- matrix(rmvnorm(nsub*long_df, sigma = solve(P)), ncol = long_df, nrow = nsub)
+    coef <- matrix(rmvnorm(nsub*long_df, sigma = solve(P), method="chol"), ncol = long_df, nrow = nsub)
     colnames(coef) <- paste0("b", 1:long_df)
     bt <- bs(times, df = long_df, intercept = FALSE)
     b_set <- list(knots = attr(bt, "knots"), Boundary.knots = attr(bt, "Boundary.knots"),
