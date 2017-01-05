@@ -3919,7 +3919,6 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$xt[["a"]] <- 1
   object$xt[["b"]] <- 1e-4
   object$fixed <- if(is.null(object$xt[["fixed"]])) FALSE else object$xt[["fixed"]]
-print(object$fixed)
   object$fxsp <- FALSE
   object$prior <- make.prior(object)
   if(is.null(object$xt$lambda))
