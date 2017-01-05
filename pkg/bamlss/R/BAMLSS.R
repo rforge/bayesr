@@ -3859,6 +3859,9 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
       object$X[[j]] <- blockstand(object$X[[j]], n = nrow(data))
       object$lasso$trans[[j]] <- list("blockscale" = attr(object$X[[j]], "blockscale"))
     }
+    if(is.null(colnames(object$X[[j]])))
+      colnames(object$X[[j]]) <- paste("X", 1:ncol(object$X[[j]]), sep = "")
+    object$lasso$trans[[j]]$colnames <- colnames(object$X[[j]])
     df[[j]] <- sqrt(rep(ncol(object$X[[j]]), ncol(object$X[[j]])))
   }
   df <- unlist(df)
@@ -3915,7 +3918,8 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$xt[["prior"]] <- "ig"
   object$xt[["a"]] <- 1
   object$xt[["b"]] <- 1e-4
-  object$fixed <- FALSE
+  object$fixed <- if(is.null(object$xt[["fixed"]])) FALSE else object$xt[["fixed"]]
+print(object$fixed)
   object$fxsp <- FALSE
   object$prior <- make.prior(object)
   if(is.null(object$xt$lambda))

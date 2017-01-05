@@ -2889,6 +2889,34 @@ print.lasso.stats <- function(x, digits = 4, ...)
 }
 
 
+lasso.coef <- function(x, ...) {
+  cx <- coef.bamlss(x, ...)
+  ncx <- if(!is.null(dim(cx))) colnames(cx) else names(cx)
+  if(is.null(x$x))
+    x$x <- smooth.construct(x)
+  for(i in names(x$x)) {
+    for(j in names(x$x[[i]]$smooth.construct)) {
+      if(inherits(x$x[[i]]$smooth.construct[[j]], "lasso.smooth")) {
+        for(jj in names(x$x[[i]]$smooth.construct[[j]]$lasso$trans)) {
+          if(is.null(x$x[[i]]$smooth.construct[[j]]$lasso$trans[[jj]]$blockscale)) {
+            cid <- paste(i, ".s.", x$x[[i]]$smooth.construct[[j]]$label, ".",
+              x$x[[i]]$smooth.construct[[j]]$lasso$trans[[jj]]$colnames, sep = "")
+            if(is.null(dim(cx))) {
+              cx[cid] <- cx[cid] / x$x[[i]]$smooth.construct[[j]]$lasso$trans[[jj]]$scale
+            } else {
+              cx[, cid] <- cx[, cid] / x$x[[i]]$smooth.construct[[j]]$lasso$trans[[jj]]$scale
+            }
+          } else {
+            stop("FIXME: retrans of blockstand missing!")
+          }
+        }
+      }
+    }
+  }
+  cx
+}
+
+
 lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, ...)
 {
   if(!is.character(which)) {
