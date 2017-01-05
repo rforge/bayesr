@@ -668,6 +668,10 @@ sparse.solve <- function(a, b, index, ...)
 ## Computation of fitted values with index matrices.
 sparse.matrix.fit.fun <- function(X, b, index = NULL)
 {
+  if(!is.null(index)) {
+    if(nrow(index) != nrow(X))
+      return(drop(X %*% b))
+  }
   fit <- if(inherits(X, "dgCMatrix") | is.null(index) | inherits(X, "Matrix")) {
     drop(X %*% b)
   } else .Call("sparse_matrix_fit_fun", X, b, index, PACKAGE = "bamlss")
