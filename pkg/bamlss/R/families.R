@@ -608,6 +608,9 @@ gpareto_bamlss <- function(...)
     "p" = function(y, par, ...) {
       p <- 1 - (1 + par$xi * y / par$sigma)^(-1 / par$xi)
       p
+    },
+    "q" = function(y, par, ...) {
+      (par$sigma / par$xi) * ((1 - y)^(-par$xi) - 1)
     }
   )
 
