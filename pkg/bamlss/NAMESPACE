@@ -36,7 +36,7 @@ importFrom("stats", "acf", "as.formula", "coef", "complete.cases",
   "var", "window", "median")
 importFrom("utils", "download.file", "flush.console", "getS3method",
   "head", "read.csv2", "read.table", "tail", "unzip",
-  "write.table")
+  "write.table", "combn")
 
 import("spam")
 import("Matrix")
