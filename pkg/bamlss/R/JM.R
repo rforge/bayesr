@@ -5,7 +5,7 @@
 jm_bamlss <- function(...)
 {
   links = c(lambda = "log", gamma = "log", mu = "identity", sigma = "log",
-     alpha = "identity", dalpha = "identity")
+            alpha = "identity", dalpha = "identity")
   
   rval <- list(
     "family" = "jm",
@@ -13,9 +13,9 @@ jm_bamlss <- function(...)
     "links" = links,
     "transform" = function(x, jm.start = NULL, timevar = NULL, idvar = NULL, init.models = FALSE, plot = FALSE, ...) {
       rval <- jm.transform(x = x$x, y = x$y, terms = x$terms, knots = x$knots,
-        formula = x$formula, family = x$family, data = x$model.frame,
-        jm.start = jm.start, timevar = timevar, idvar = idvar, ...)
-
+                           formula = x$formula, family = x$family, data = x$model.frame,
+                           jm.start = jm.start, timevar = timevar, idvar = idvar, ...)
+      
       if(init.models) {
         x2 <- rval$x[c("mu", "sigma")]
         for(i in names(x2)) {
@@ -25,7 +25,7 @@ jm_bamlss <- function(...)
         attr(x2, "bamlss.engine.setup") <- TRUE
         cat2("generating starting model for longitudinal part...\n")
         gpar <- bfit(x = x2, y = rval$y[[1]][, "obs", drop = FALSE],
-          family = gF2(gaussian), start = NULL, maxit = 100)$parameters
+                     family = gF2(gaussian), start = NULL, maxit = 100)$parameters
         if(plot) {
           b <- list("x" = x2, "model.frame" = x$model.frame, "parameters" = gpar)
           class(b) <- "bamlss"
@@ -38,7 +38,7 @@ jm_bamlss <- function(...)
         attr(y, "subdivisions") <- attr(rval$y[[1]], "subdivisions")
         cat2("generating starting model for survival part...\n")
         spar <- cox.mode(x = x2, y = list(y), family = gF2("cox"),
-          start = NULL, maxit = 100)$parameters
+                         start = NULL, maxit = 100)$parameters
         if(plot) {
           b <- list("x" = x2, "model.frame" = x$model.frame, "parameters" = spar)
           class(b) <- "bamlss"
@@ -46,7 +46,7 @@ jm_bamlss <- function(...)
         }
         rval$x <- set.starting.values(rval$x, start = c(unlist(gpar), unlist(spar)))
       }
-
+      
       return(rval)
     },
     "optimizer" = jm.mode,
@@ -61,9 +61,9 @@ jm_bamlss <- function(...)
 
 ## (2) The transformer function.
 jm.transform <- function(x, y, data, terms, knots, formula, family,
-  subdivisions = 25, timedependent = c("lambda", "mu", "alpha", "dalpha"), 
-  timevar = NULL, idvar = NULL, alpha = .Machine$double.eps, mu = NULL, sigma = NULL,
-  sparse = TRUE, ...)
+                         subdivisions = 25, timedependent = c("lambda", "mu", "alpha", "dalpha"), 
+                         timevar = NULL, idvar = NULL, alpha = .Machine$double.eps, mu = NULL, sigma = NULL,
+                         sparse = TRUE, ...)
 {
   rn <- names(y)
   y0 <- y
@@ -71,7 +71,7 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
   ntd <- timedependent
   if(!all(ntd %in% names(x)))
     stop("the time dependent predictors specified are different from family object names!")
-
+  
   ## Create the time grid.  
   grid <- function(upper, length){
     seq(from = 0, to = upper, length = length)
@@ -112,16 +112,16 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
   timevar <- yname
   attr(y, "timevar") <- c("lambda" = timevar, "mu" = timevar_mu)
   attr(y, "idvar") <- idvar
-
+  
   dalpha <- has_pterms(x$dalpha$terms) | (length(x$dalpha$smooth.construct) > 0)
-
+  
   ## Recompute design matrixes for lambda, gamma, alpha.
   for(j in c("lambda", "gamma", "alpha", if(dalpha) "dalpha" else NULL)) {
     x[[j]]<- design.construct(terms, data = data[take, , drop = FALSE], knots = knots,
-      model.matrix = TRUE, smooth.construct = TRUE, model = j,
-      scale.x = FALSE)[[j]]
+                              model.matrix = TRUE, smooth.construct = TRUE, model = j,
+                              scale.x = FALSE)[[j]]
   }
-
+  
   ## Degrees of freedom to 1 for alpha smooths.
   for(j in c("alpha", if(dalpha) "dalpha" else NULL)) {
     for(sj in names(x[[j]]$smooth.construct)) {
@@ -129,7 +129,7 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
         x[[j]]$smooth.construct[[sj]]$xt$df <- 1
     }
   }
-
+  
   ## Degrees of freedon to 1 for gamma smooths.
   for(j in c("lambda", "gamma")) {
     for(sj in names(x[[j]]$smooth.construct)) {
@@ -137,7 +137,7 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
         x[[j]]$smooth.construct[[sj]]$xt$df <- 1
     }
   }
-
+  
   ## dalpha dmu initialize.
   if(dalpha) {
     terms <- c(terms, "dmu" = terms$mu)
@@ -150,8 +150,8 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
       formula$dmu$formula <- formula(terms$dmu)
     }
     x$dmu <- design.construct(terms, data = data, knots = knots,
-      model.matrix = TRUE, smooth.construct = TRUE, model = "mu",
-      scale.x = FALSE)$mu
+                              model.matrix = TRUE, smooth.construct = TRUE, model = "mu",
+                              scale.x = FALSE)$mu
     if(has_sterms(terms$dmu)) {
       i <- grep(timevar_mu, names(x$dmu$smooth.construct))
       x$dmu$smooth.construct <- x$dmu$smooth.construct[i]
@@ -171,11 +171,11 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
     }
     ntd <- c(ntd, "dmu")
   }
-
+  
   ## The basic setup.
   if(is.null(attr(x, "bamlss.engine.setup")))
     x <- bamlss.engine.setup(x, ...)
-
+  
   ## Remove intercept from lambda.
   if(!is.null(x$lambda$smooth.construct$model.matrix)) {
     cn <- colnames(x$lambda$smooth.construct$model.matrix$X)
@@ -186,12 +186,22 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
       x$lambda$terms <- drop.terms.bamlss(x$lambda$terms, pterms = FALSE, keep.intercept = FALSE)
     } else {
       x$lambda$smooth.construct$model.matrix$term <- gsub("(Intercept)+", "",
-        x$lambda$smooth.construct$model.matrix$term, fixed = TRUE)
+                                                          x$lambda$smooth.construct$model.matrix$term, fixed = TRUE)
       x$lambda$smooth.construct$model.matrix$state$parameters <- x$lambda$smooth.construct$model.matrix$state$parameters[-1]
       attr(x$lambda$terms, "intercept") <- 0
+      # additional changes to remove intercept
+      x$lambda$smooth.construct$model.matrix$label <- gsub("(Intercept)+", "",
+                                                           x$lambda$smooth.construct$model.matrix$label, fixed = TRUE)
+      x$lambda$smooth.construct$model.matrix$bs.dim <- as.integer(x$lambda$smooth.construct$model.matrix$bs.dim - 1)
+      pid <- !grepl("tau", names(x$lambda$smooth.construct$model.matrix$state$parameters)) &
+        !grepl("edf", names(x$lambda$smooth.construct$model.matrix$state$parameters))
+      x$lambda$smooth.construct$model.matrix$pid <- list("b" = which(pid), "tau2" = which(!pid))
+      if(!length(x$lambda$smooth.construct$model.matrix$pid$tau2))
+        x$lambda$smooth.construct$model.matrix$pid$tau2 <- NULL
+      x$lambda$smooth.construct$model.matrix$sparse.setup$matrix <- NULL
     }
   }
-
+  
   ## Set alpha/mu/sigma intercept starting value.
   if(!is.null(x$alpha$smooth.construct$model.matrix)) {
     if(alpha == 0)
@@ -211,17 +221,18 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
     x$sigma$smooth.construct$model.matrix$state$parameters[1] <- if(is.null(sigma)) log(sd(y[, "obs"], na.rm = TRUE)) else sigma
     x$sigma$smooth.construct$model.matrix$state$fitted.values <- x$sigma$smooth.construct$model.matrix$X %*% x$sigma$smooth.construct$model.matrix$state$parameters
   }
-
+  
   ## Shrink design and index matrices for survival part.
   ## Enforce sparse setup.
-  for(j in c("mu", if(dalpha) "dmu" else NULL)) {
-    for(sj in seq_along(x[[j]]$smooth.construct)) {
-      if(!is.null(x[[j]]$smooth.construct[[sj]]$sparse.setup$matrix)) {
-        x[[j]]$smooth.construct[[sj]]$sparse.setup[["mu.matrix"]] <- x[[j]]$smooth.construct[[sj]]$sparse.setup$matrix[take, , drop = FALSE]
-      }
-    }
-  }
-
+  #!# removed due to enlarged sparse_Matrix_setup2()
+  # for(j in c("mu", if(dalpha) "dmu" else NULL)) {
+  #   for(sj in seq_along(x[[j]]$smooth.construct)) {
+  #     if(!is.null(x[[j]]$smooth.construct[[sj]]$sparse.setup$matrix)) {
+  #       x[[j]]$smooth.construct[[sj]]$sparse.setup[["mu.matrix"]] <- x[[j]]$smooth.construct[[sj]]$sparse.setup$matrix[take, , drop = FALSE]
+  #     }
+  #   }
+  # }
+  
   ## Make fixed effects term the last term in mu.
   if(!is.null(x$mu$smooth.construct$model.matrix) & (length(x$mu$smooth.construct) > 1)) {
     nmu <- names(x$mu$smooth.construct)
@@ -235,18 +246,18 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
       }
     }
   }
-
+  
   ## Assign time grid predict functions.
   for(i in seq_along(ntd)) {
     if(has_pterms(x[[ntd[i]]]$terms)) {
       if(ntd[i]=="lambda") {
         x[[ntd[i]]]$smooth.construct$model.matrix <- param_time_transform2(x[[ntd[i]]]$smooth.construct$model.matrix,
-          drop.terms.bamlss(x[[ntd[i]]]$terms, sterms = FALSE, keep.response = FALSE), data, grid, yname,
-          timevar_mu, take, derivMat = (ntd[i] == "dmu"), timevar2 = timevar_mu, idvar = idvar)
+                                                                           drop.terms.bamlss(x[[ntd[i]]]$terms, sterms = FALSE, keep.response = FALSE), data, grid, yname,
+                                                                           timevar_mu, take, derivMat = (ntd[i] == "dmu"), timevar2 = timevar_mu, idvar = idvar)
       } else {
         x[[ntd[i]]]$smooth.construct$model.matrix <- param_time_transform(x[[ntd[i]]]$smooth.construct$model.matrix,
-          drop.terms.bamlss(x[[ntd[i]]]$terms, sterms = FALSE, keep.response = FALSE), data, grid, yname,
-          if(ntd[i] != "mu" & ntd[i] != "dmu") timevar else timevar_mu, take, derivMat = (ntd[i] == "dmu"))
+                                                                          drop.terms.bamlss(x[[ntd[i]]]$terms, sterms = FALSE, keep.response = FALSE), data, grid, yname,
+                                                                          if(ntd[i] != "mu" & ntd[i] != "dmu") timevar else timevar_mu, take, derivMat = (ntd[i] == "dmu"))
       }
     }
     if(length(x[[ntd[i]]]$smooth.construct)) {
@@ -255,22 +266,29 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
           xterm <- x[[ntd[i]]]$smooth.construct[[j]]$term
           by <- if(x[[ntd[i]]]$smooth.construct[[j]]$by != "NA") x[[ntd[i]]]$smooth.construct[[j]]$by else NULL
           x[[ntd[i]]]$smooth.construct[[j]] <- sm_time_transform(x[[ntd[i]]]$smooth.construct[[j]],
-            data[, unique(c(xterm, yname, by, timevar, timevar_mu, idvar)), drop = FALSE], grid, yname,
-            if(ntd[i] != "mu" & ntd[i] != "dmu") timevar else timevar_mu, take, derivMat = (ntd[i] == "dmu"))
+                                                                 data[, unique(c(xterm, yname, by, timevar, timevar_mu, idvar)), drop = FALSE], grid, yname,
+                                                                 if(ntd[i] != "mu" & ntd[i] != "dmu") timevar else timevar_mu, take, derivMat = (ntd[i] == "dmu"))
         }
       }
     }
   }
-
+  
   ## Sparse matrix setup for mu/dmu.
   for(j in c("mu", if(dalpha) "dmu" else NULL)) {
     for(sj in seq_along(x[[j]]$smooth.construct)) {
-      x[[j]]$smooth.construct[[sj]] <- sparse_Matrix_setup(x[[j]]$smooth.construct[[sj]], sparse = sparse)
+      x[[j]]$smooth.construct[[sj]] <- sparse_Matrix_setup2(x[[j]]$smooth.construct[[sj]], sparse = sparse, take = take)
     }
   }
 
+  ## Update prior/grad/hess functions
+  for(j in names(x)) {
+    for(sj in names(x[[j]]$smooth.construct)) {
+      x[[j]]$smooth.construct[[sj]] <- make.prior2(x[[j]]$smooth.construct[[sj]])
+    }
+  }
+  
   y0[[rn]] <- y
-
+  
   family$p2logLik <- function(par, logPost = FALSE, ...) {
     eta <- eta_timegrid <- list()
     lprior <- 0
@@ -315,10 +333,9 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
       logLik <- logLik + lprior
     return(drop(logLik))
   }
-
+  
   return(list("x" = x, "y" = y0, "family" = family, "terms" = terms, "formula" = formula))
 }
-
 
 sparse_Matrix_setup <- function(x, sparse = TRUE, force = FALSE)
 {
@@ -331,6 +348,20 @@ sparse_Matrix_setup <- function(x, sparse = TRUE, force = FALSE)
       x$update <- update_jm_mu_Matrix
       x$propose <- propose_jm_mu_Matrix
       x$prior <- make.prior(x)
+      # to be tested
+      x$hess <- function(score = NULL, parameters, full = FALSE) {
+        tau2 <- get.par(parameters, "tau2")
+        if(x$fixed | !length(tau2)) {
+          k <- length(get.par(parameters, "b"))
+          hx <- matrix(0, k, k)
+        } else {
+          hx <- 0
+          for(j in seq_along(tau2)) {
+            hx <- hx + (1 / tau2[j]) * if(is.function(x$S[[j]])) x$S[[j]](get.par(parameters, "b")) else x$S[[j]]
+          }
+        }
+        return(hx)
+      }
     } else {
       x$update <- update_jm_mu
       x$propose <- propose_jm_mu_simple
@@ -343,11 +374,181 @@ sparse_Matrix_setup <- function(x, sparse = TRUE, force = FALSE)
 }
 
 
+sparse_Matrix_setup2 <- function(x, sparse = TRUE, force = FALSE, take)
+{
+  if(sparse) {
+    if((ncol(x$sparse.setup$crossprod) < (ncol(x$X) * 0.5)) | force) {
+      x$X <- Matrix(x$X, sparse = TRUE)
+      x$XT <- Matrix(x$XT, sparse = TRUE)
+      for(j in seq_along(x$S))
+        x$S[[j]] <- Matrix(x$S[[j]], sparse = TRUE)
+      x$update <- update_jm_mu_Matrix
+      x$propose <- propose_jm_mu_Matrix
+    } else {
+      x$update <- update_jm_mu
+      x$propose <- propose_jm_mu_simple
+    }
+  } else {
+    x$update <- update_jm_mu
+    x$propose <- propose_jm_mu_simple
+  }
+  # sparse setup for (block-)diagonal sampling
+  if(!is.null(x$sparse.setup$matrix)) {
+    x$sparse.setup[["mu.matrix"]] <- x$sparse.setup$matrix[take, , drop = FALSE]
+    index.coeffs <- lapply(1:nrow(x$sparse.setup[["mu.matrix"]]), function(i){
+      tmp <- x$sparse.setup[["mu.matrix"]][i,]
+      tmp <- tmp[tmp > 0]})
+    x$sparse.setup$coeffs <- index.coeffs[lapply(index.coeffs, length) > 0]
+    if(any(duplicated(unlist(x$sparse.setup$coeffs)))){
+      x$sparse.setup$pattern <- "other"
+    } else {
+      x$sparse.setup$pattern <- if(all(lengths(x$sparse.setup$coeffs) == 1)) "diagonal" else "blocks" 
+    }
+  }
+  return(x)
+}
+
+## The prior function.
+make.prior2 <- function(x, sigma = 0.1) {
+
+  prior <- NULL
+  if(!is.null(x$xt$prior)) {
+    prior <- x$xt$prior
+    if(is.character(x$xt$prior)) {
+      prior <- tolower(prior)
+      if(!(prior %in% c("ig", "hc", "sd", "hn", "hn.lasso")))
+        stop(paste('smoothing variance prior "', prior, '" not supported!', sep = ''))
+    }
+  } else {
+    prior <- "ig"
+  }
+  if(!is.function(prior)) {
+    a <- if(is.null(x$xt[["a"]])) {
+      if(is.null(x[["a"]])) 1e-04 else x[["a"]]
+    } else x$xt[["a"]]
+    b <- if(is.null(x$xt[["b"]])) {
+      if(is.null(x[["b"]])) 1e-04 else x[["b"]]
+    } else x$xt[["b"]]
+    theta <- if(is.null(x$xt[["theta"]])) {
+      x[["theta"]]
+    } else x$xt[["theta"]]
+
+    if(is.null(theta)) {
+      theta <- switch(prior,
+                      "sd" = 0.00877812,
+                      "hc" = 0.01034553,
+                      "hn" = 0.1457644
+      )
+    }
+
+    fixed <- if(is.null(x$fixed)) FALSE else x$fixed
+
+    igs <- log((b^a)) - log(gamma(a))
+    var_prior_fun <- switch(prior,
+                            "ig" = function(tau2) { igs + (-a - 1) * log(tau2) - b / tau2 },
+                            "hc" = function(tau2) { -log(1 + tau2 / (theta^2)) - 0.5 * log(tau2) - log(theta^2) },
+                            "sd" = function(tau2) { -0.5 * log(tau2) + 0.5 * log(theta) - (tau2 / theta)^(0.5) },
+                            "hn" = function(tau2) { -0.5 * log(tau2) - tau2 / (2 * theta^2) },
+                            "hn.lasso0" = function(tau2) { -0.2257913 - log(sigma) - tau2^2/(2 * sigma^2) },
+                            "hn.lasso" = function(tau2) {
+                              theta <- sqrt(pi) / (sigma * sqrt(2))
+                              log(2 * theta / pi) - (tau2^2 * theta^2) / pi
+                            }
+    )
+    
+    x$prior <- function(parameters) {
+      if(is.null(x$pid)) {
+        if(!is.null(names(parameters))) {
+          gamma <- get.par(parameters, "b")
+          tau2 <- get.par(parameters, "tau2")
+        } else {
+          gamma <- parameters
+          tau2 <- numeric(0)
+        }
+      } else {
+        gamma <- parameters[x$pid$b]
+        tau2 <-  parameters[x$pid$tau2]
+      }
+      if(fixed | !length(tau2)) {
+        lp <- sum(dnorm(gamma, sd = 1000, log = TRUE))
+      } else {
+        if(length(tau2) < 2) {
+          K <- if(is.function(x$S[[1]])) x$S[[1]](gamma) else x$S[[1]]
+          if(is.null(x$rank))
+            x$rank <- qr(K)$rank
+          lp <- -log(tau2) * x$rank / 2 + drop(-0.5 / tau2 * t(gamma) %*% K %*% gamma) + var_prior_fun(tau2)
+        } else {
+          ld <- 0
+          P <- if(inherits(x$X, "Matrix")) Matrix(0, ncol(x$X), ncol(x$X)) else 0
+          for(j in seq_along(tau2)) {
+            P <- P + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](gamma) else x$S[[j]]
+            ld <- ld + var_prior_fun(tau2[j])
+          }
+          ##lp <- dmvnorm(gamma, sigma = matrix_inv(P), log = TRUE) + ld
+          dP <- determinant(P, logarithm = TRUE)
+          dP <- as.numeric(dP$modulus) * as.numeric(dP$sign)
+          lp <- 0.5 * dP - 0.5 * (t(gamma) %*% P %*% gamma) + ld
+        }
+      }
+      return(as.numeric(lp))
+    }
+
+    attr(x$prior, "var_prior") <- prior
+
+   x$grad <- function(score = NULL, parameters, full = TRUE) {
+      gamma <- get.par(parameters, "b")
+      tau2 <-  get.par(parameters, "tau2")
+      grad2 <- NULL
+      if(x$fixed | !length(tau2)) {
+        grad <- rep(0, length(gamma))
+      } else {
+        grad <- 0; grad2 <- NULL
+        for(j in seq_along(tau2)) {
+          tauS <- -1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](gamma) else x$S[[j]]
+          grad <- grad + tauS %*% gamma
+          if(full & !is.null(tau2[j])) {
+            grad2 <- c(grad2, drop(-x$rank[j] / (2 * tau2[j]) - 1 / (2 * tau2[j]^2) * (if(is.function(x$S[[j]])) x$S[[j]](gamma) else x$S[[j]]) %*% gamma + (-x$a - 1) / tau2[j] + x$b / (tau2[j]^2)))
+            x$X <- cbind(x$X, 0)
+          }
+          grad <- drop(grad)
+        }
+      }
+      if(!is.null(score)) {
+        grad <- if(!is.null(x$xbin.ind)) {
+          drop(crossprod(x$X[x$xbin.ind, , drop = FALSE], score)) + c(grad, grad2)
+        } else drop(crossprod(x$X, score)) + c(grad, grad2)
+      } else grad <- c(grad, grad2)
+      return(grad)
+    }
+
+    x$hess <- function(score = NULL, parameters, full = FALSE) {
+      tau2 <- get.par(parameters, "tau2")
+      if(x$fixed | !length(tau2)) {
+        k <- length(get.par(parameters, "b"))
+        hx <- matrix(0, k, k)
+      } else {
+        hx <- 0
+        for(j in seq_along(tau2)) {
+          hx <- hx + (1 / tau2[j]) * if(is.function(x$S[[j]])) x$S[[j]](get.par(parameters, "b")) else x$S[[j]]
+        }
+      }
+      return(hx)
+    }
+
+
+    return(x)
+  } else {
+    cat(x$label)
+  }
+}
+
+
+
 jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
-  criterion = c("AICc", "BIC", "AIC"), maxit = c(100, 1),
-  nu = c("lambda" = 0.1, "gamma" = 0.1, "mu" = 0.1, "sigma" = 0.1, "alpha" = 0.1, "dalpha" = 0.1),
-  update.nu = TRUE, eps = 0.0001, alpha.eps = 0.001, ic.eps = 1e-08, nback = 40,
-  verbose = TRUE, digits = 4, ...)
+                    criterion = c("AICc", "BIC", "AIC"), maxit = c(100, 1),
+                    nu = c("lambda" = 0.1, "gamma" = 0.1, "mu" = 0.1, "sigma" = 0.1, "alpha" = 0.1, "dalpha" = 0.1),
+                    update.nu = TRUE, eps = 0.0001, alpha.eps = 0.001, ic.eps = 1e-08, nback = 40,
+                    verbose = TRUE, digits = 4, ...)
 {
   ## Hard coded.
   fix.lambda <- FALSE
@@ -358,9 +559,9 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
   fix.dalpha <- FALSE
   nu.eps <- -Inf
   edf.eps <- Inf
-
+  
   dalpha <- has_pterms(x$dalpha$terms) | (length(x$dalpha$smooth.construct) > 0)
-
+  
   if(!is.null(start)) {
     if(is.matrix(start)) {
       if(any(i <- grepl("Mean", colnames(start))))
@@ -376,13 +577,13 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
     }
     x <- set.starting.values(x, start)
   }
-
+  
   criterion <- match.arg(criterion)
   ia <- interactive()
-
+  
   ## Names of parameters/predictors.
   nx <- names(x)
-
+  
   ## Extract y.
   y <- y[[1]]
   
@@ -409,12 +610,12 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
   
   ## Compute additive predictors.
   eta <- get.eta(x, expand = FALSE)
-
+  
   ## Correct gamma predictor if NULL.
   if(!length(x$gamma$smooth.construct)) {
     eta$gamma <- rep(0, length = nobs)
   }
-
+  
   nu <- rep(nu, length.out = 6)
   if(is.null(names(nu)))
     names(nu) <- c("lambda", "gamma", "mu", "sigma", "alpha", "dalpha")
@@ -447,7 +648,7 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
       x$lambda$smooth.construct[[j]]$state$nu <- nu["lambda"]
     }
   }
-
+  
   eta_timegrid_dmu <- eta_timegrid_dalpha <- 0
   if(dalpha) {
     if(length(x$dalpha$smooth.construct)) {
@@ -465,9 +666,9 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
       }
     }
   }
-
+  
   eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
-
+  
   for(k in c("gamma", "sigma")) {
     if(length(x[[k]]$smooth.construct)) {
       for(j in names(x[[k]]$smooth.construct)) {
@@ -475,7 +676,7 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
       }
     }
   }
-
+  
   ## Set edf to zero 4all terms.
   for(k in names(x)) {
     if(length(x[[k]]$smooth.construct)) {
@@ -484,7 +685,7 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
       }
     }
   }
-
+  
   ## Extract current value of the log-posterior.
   get_LogPost <- function(eta_timegrid, eta, log.priors) {
     eeta <- exp(eta_timegrid)
@@ -494,11 +695,11 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
     logPost <- as.numeric(logLik + log.priors)
     return(logPost)
   }
-
+  
   eps <- rep(eps, length.out = 2)
   if(length(maxit) < 2)
     maxit <- c(maxit, 1)
-
+  
   intercept_paths <- NULL
   
   ## Start the backfitting algorithm.
@@ -509,14 +710,14 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
   while((eps0 > eps[1]) & (iter < maxit[1])) {
     if(eps0 < nu.eps)
       update.nu <- FALSE
-
+    
     eta0_surv <- do.call("cbind", eta[c("lambda", "gamma")])
     eta0_long <- rowsum(do.call("cbind", eta[c("mu", "sigma")]), id)
     eta0_alpha <- if(is.null(dalpha)) eta$alpha else do.call("cbind", eta[c("alpha", "dalpha")])
-
+    
     if(max(c(eps0_surv, eps0_long)) < alpha.eps)
       ok.alpha <- TRUE
-
+    
     ################
     ## Alpha part ##
     ################
@@ -526,48 +727,48 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
       while(eps00 > eps[2] & iter00 < maxit[2]) {
         for(sj in seq_along(x$alpha$smooth.construct)) {
           state <- update_jm_alpha(x$alpha$smooth.construct[[sj]], eta, eta_timegrid,
-            eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
-            status, update.nu, width, criterion, get_LogPost, nobs, eps0_alpha < edf.eps, edf = edf, ...)
+                                   eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
+                                   status, update.nu, width, criterion, get_LogPost, nobs, eps0_alpha < edf.eps, edf = edf, ...)
           eta_timegrid_alpha <- eta_timegrid_alpha - x$alpha$smooth.construct[[sj]]$state$fitted_timegrid + state$fitted_timegrid
           eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
           eta$alpha <- eta$alpha - fitted(x$alpha$smooth.construct[[sj]]$state) + fitted(state)
           edf <- edf - x$alpha$smooth.construct[[sj]]$state$edf + state$edf
           x$alpha$smooth.construct[[sj]]$state <- state
         }
-
+        
         if(maxit[2] > 1) {
           eps00 <- mean(abs((eta$alpha - eta00) / eta$alpha), na.rm = TRUE)
           if(is.na(eps00) | !is.finite(eps00)) eps00 <- eps[2] + 1
         }
-
+        
         iter00 <- iter00 + 1
       }
     }
-
+    
     if(!fix.dalpha & dalpha & ok.alpha) {
       eps00 <- eps[2] + 1; iter00 <- 0
       eta00 <- eta$dalpha
       while(eps00 > eps[2] & iter00 < maxit[2]) {
         for(sj in seq_along(x$dalpha$smooth.construct)) {
           state <- update_jm_dalpha(x$dalpha$smooth.construct[[sj]], eta, eta_timegrid,
-            eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
-            status, update.nu, width, criterion, get_LogPost, nobs, eps0_alpha < edf.eps, edf = edf, ...)
+                                    eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
+                                    status, update.nu, width, criterion, get_LogPost, nobs, eps0_alpha < edf.eps, edf = edf, ...)
           eta_timegrid_dalpha <- eta_timegrid_dalpha - x$dalpha$smooth.construct[[sj]]$state$fitted_timegrid + state$fitted_timegrid
           eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
           eta$dalpha <- eta$dalpha - fitted(x$dalpha$smooth.construct[[sj]]$state) + fitted(state)
           edf <- edf - x$dalpha$smooth.construct[[sj]]$state$edf + state$edf
           x$dalpha$smooth.construct[[sj]]$state <- state
         }
-
+        
         if(maxit[2] > 1) {
           eps00 <- mean(abs((eta$dalpha - eta00) / eta$dalpha), na.rm = TRUE)
           if(is.na(eps00) | !is.finite(eps00)) eps00 <- eps[2] + 1
         }
-
+        
         iter00 <- iter00 + 1
       }
     }
-
+    
     #######################
     ## Longitudinal part ##
     #######################
@@ -577,15 +778,15 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
       if(!fix.mu) {
         for(sj in names(x$mu$smooth.construct)) {
           state <- x$mu$smooth.construct[[sj]]$update(x$mu$smooth.construct[[sj]], y, eta, eta_timegrid,
-            eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
-            status, update.nu, width, criterion, get_LogPost, nobs, eps0_long < edf.eps, edf = edf,
-            dx = if(dalpha) x$dmu$smooth.construct[[sj]] else NULL, ...)
+                                                      eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
+                                                      status, update.nu, width, criterion, get_LogPost, nobs, eps0_long < edf.eps, edf = edf,
+                                                      dx = if(dalpha) x$dmu$smooth.construct[[sj]] else NULL, ...)
           eta_timegrid_mu <- eta_timegrid_mu - x$mu$smooth.construct[[sj]]$state$fitted_timegrid + state$fitted_timegrid
           eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
           eta$mu <- eta$mu - fitted(x$mu$smooth.construct[[sj]]$state) + fitted(state)
           edf <- edf - x$mu$smooth.construct[[sj]]$state$edf + state$edf
           x$mu$smooth.construct[[sj]]$state <- state
-
+          
           if(dalpha & (sj %in% names(x$dmu$smooth.construct))) {
             state <- update_jm_dmu(x$dmu$smooth.construct[[sj]], x$mu$smooth.construct[[sj]])
             eta_timegrid_dmu <- eta_timegrid_dmu - x$dmu$smooth.construct[[sj]]$state$fitted_timegrid + state$fitted_timegrid
@@ -595,26 +796,26 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
           }
         }
       }
-
+      
       if(!fix.sigma) {
         for(sj in seq_along(x$sigma$smooth.construct)) {
           state <- update_jm_sigma(x$sigma$smooth.construct[[sj]], y, eta,
-            eta_timegrid, update.nu, criterion, get_LogPost, nobs, eps0_long < edf.eps, edf = edf, ...)
+                                   eta_timegrid, update.nu, criterion, get_LogPost, nobs, eps0_long < edf.eps, edf = edf, ...)
           eta$sigma <- eta$sigma - fitted(x$sigma$smooth.construct[[sj]]$state) + fitted(state)
           edf <- edf - x$sigma$smooth.construct[[sj]]$state$edf + state$edf
           x$sigma$smooth.construct[[sj]]$state <- state
         }
       }
-
+      
       if(maxit[2] > 1) {
         eps00 <- do.call("cbind", eta[c("mu", "sigma")])
         eps00 <- mean(abs((eps00 - eta00) / eps00), na.rm = TRUE)
         if(is.na(eps00) | !is.finite(eps00)) eps00 <- eps[2] + 1
       }
-
+      
       iter00 <- iter00 + 1
     }
-
+    
     eps00 <- eps[2] + 1; iter00 <- 0
     eta00 <- do.call("cbind", eta[c("lambda", "gamma")])
     while(eps00 > eps[2] & iter00 < maxit[2]) {
@@ -623,12 +824,12 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
       ###################
       eeta <- exp(eta_timegrid)
       int0 <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
-
+      
       if(!fix.lambda) {
         for(sj in seq_along(x$lambda$smooth.construct)) {
           state <- update_jm_lambda(x$lambda$smooth.construct[[sj]], eta, eta_timegrid,
-            eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
-            status, update.nu, width, criterion, get_LogPost, nobs, eps0_surv < edf.eps, edf = edf, ...)
+                                    eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
+                                    status, update.nu, width, criterion, get_LogPost, nobs, eps0_surv < edf.eps, edf = edf, ...)
           eta_timegrid_lambda <- eta_timegrid_lambda - x$lambda$smooth.construct[[sj]]$state$fitted_timegrid + state$fitted_timegrid
           eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
           eta$lambda <- eta$lambda - fitted(x$lambda$smooth.construct[[sj]]$state) + fitted(state)
@@ -636,32 +837,32 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
           x$lambda$smooth.construct[[sj]]$state <- state
         }
       }
-
+      
       if(!fix.gamma) {
         if(length(x$gamma$smooth.construct)) {
           for(sj in seq_along(x$gamma$smooth.construct)) {
             state <- update_jm_gamma(x$gamma$smooth.construct[[sj]], eta, eta_timegrid, int0,
-              status, update.nu, criterion, get_LogPost, nobs, eps0_surv < edf.eps, edf = edf, ...)
+                                     status, update.nu, criterion, get_LogPost, nobs, eps0_surv < edf.eps, edf = edf, ...)
             eta$gamma <- eta$gamma - fitted(x$gamma$smooth.construct[[sj]]$state) + fitted(state)
             edf <- edf - x$gamma$smooth.construct[[sj]]$state$edf + state$edf
             x$gamma$smooth.construct[[sj]]$state <- state
           }
         }
       }
-
+      
       if(maxit[2] > 1) {
         eps00 <- do.call("cbind", eta[c("lambda", "gamma")])
         eps00 <- mean(abs((eps00 - eta00) / eps00), na.rm = TRUE)
         if(is.na(eps00) | !is.finite(eps00)) eps00 <- eps[2] + 1
       }
-
+      
       iter00 <- iter00 + 1
     }
     
     eps0_surv <- do.call("cbind", eta[c("lambda", "gamma")])
     eps0_long <- rowsum(do.call("cbind", eta[c("mu", "sigma")]), id)
     eps0_alpha <- if(is.null(dalpha)) eta$alpha else do.call("cbind", eta[c("alpha", "dalpha")])
-
+    
     eps0_surv <- if(!(fix.lambda & fix.gamma)) {
       mean(abs((eps0_surv - eta0_surv) / eps0_surv), na.rm = TRUE)
     } else 0
@@ -673,10 +874,10 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
         mean(abs((eps0_alpha - eta0_alpha) / eps0_alpha), na.rm = TRUE)
       } else 1 + eps[1]
     } else 0
-
+    
     eps0 <- mean(c(eps0_surv, eps0_long, eps0_alpha))
     if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps[1] + 1
-
+    
     itcpts <- nitcpts <- NULL
     for(i in c("alpha", "gamma", "mu")) {
       if(!is.null(x[[i]]$smooth.construct$model.matrix)) {
@@ -690,21 +891,21 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
       names(itcpts) <- nitcpts
       intercept_paths <- rbind(intercept_paths, itcpts)
     }
-
+    
     eeta <- exp(eta_timegrid)
     int0 <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
     logLik <- sum((eta_timegrid[,ncol(eta_timegrid)] + eta$gamma) * status, na.rm = TRUE) -
-        exp(eta$gamma) %*% int0 + sum(dnorm(y[, "obs"], mean = eta$mu, sd = exp(eta$sigma), log = TRUE))
+      exp(eta$gamma) %*% int0 + sum(dnorm(y[, "obs"], mean = eta$mu, sd = exp(eta$sigma), log = TRUE))
     edf <- get.edf(x, type = 2)
     IC <- get.ic2(logLik, edf, length(eta$mu), criterion)
-
+    
     ic_contrib <- c(ic_contrib, IC)
     if(iter > nback) {
       adic <- abs(diff(tail(ic_contrib, nback))) / tail(ic_contrib, nback - 1)
       if(all(adic < ic.eps))
         eps0 <- 0
     }
-
+    
     iter <- iter + 1
     
     if(verbose) {
@@ -714,25 +915,25 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
         " logLik ", fmt(logLik, width = 8, digits = digits),
         " edf ", fmt(edf, width = 6, digits = digits),
         " eps ", paste(fmt(eps0, width = 6, digits = digits + 2), "|S",
-          fmt(eps0_surv, width = 6, digits = digits + 2), "|L",
-          fmt(eps0_long, width = 6, digits = digits + 2), "|A",
-          fmt(eps0_alpha, width = 6, digits = digits + 2), sep = ""),
+                       fmt(eps0_surv, width = 6, digits = digits + 2), "|L",
+                       fmt(eps0_long, width = 6, digits = digits + 2), "|A",
+                       fmt(eps0_alpha, width = 6, digits = digits + 2), sep = ""),
         " iteration ", formatC(iter, width = nchar(maxit[1])), sep = ""
       )
       cat(vtxt)
       if(.Platform$OS.type != "unix" & ia) flush.console()
     }
   }
-
+  
   elapsed <- c(proc.time() - ptm)[3]
-
+  
   if(verbose) {
     et <- if(elapsed > 60) {
       paste(formatC(format(round(elapsed / 60, 2), nsmall = 2), width = 5), "min", sep = "")
     } else paste(formatC(format(round(elapsed, 2), nsmall = 2), width = 5), "sec", sep = "")
     cat("\nelapsed time: ", et, "\n", sep = "")
   }
-
+  
   eeta <- exp(eta_timegrid)
   int0 <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
   logLik <- sum((eta_timegrid[,ncol(eta_timegrid)] + eta$gamma) * status, na.rm = TRUE) -
@@ -741,17 +942,17 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
   
   if(iter == maxit[1])
     warning("the backfitting algorithm did not converge, please check argument eps and maxit!")
-
+  
   return(list("fitted.values" = eta, "parameters" = get.all.par(x),
-    "logLik" = logLik, "logPost" = logPost, "hessian" = get.hessian(x),
-    "converged" = iter < maxit[1], "time" = elapsed, "intercept_paths" = intercept_paths,
-    "eta_timegrid" = eta_timegrid))
+              "logLik" = logLik, "logPost" = logPost, "hessian" = get.hessian(x),
+              "converged" = iter < maxit[1], "time" = elapsed, "intercept_paths" = intercept_paths,
+              "eta_timegrid" = eta_timegrid))
 }
 
 
 ### Backfitting updating functions.
 update_jm_gamma <- function(x, eta, eta_timegrid, int,
-  status, update.nu, criterion, get_LogPost, nobs, do.optim2, edf, ...)
+                            status, update.nu, criterion, get_LogPost, nobs, do.optim2, edf, ...)
 {
   ## Gradient and hessian.
   tint <- xhess0 <- 0
@@ -760,18 +961,18 @@ update_jm_gamma <- function(x, eta, eta_timegrid, int,
     xhess0 <- xhess0 + exp(eta$gamma[i]) * x$X[i, ] %*% t(x$X[i, ]) * int[i]
   }
   xgrad <- drop(t(status) %*% x$X - tint)
-
+  
   env <- new.env()
-
+  
   if((!(!x$state$do.optim | x$fixed | x$fxsp)) & do.optim2) {
     par <- x$state$parameters
-
+    
     edf0 <- if(is.null(edf)) {
       0
     } else {
       edf - x$state$edf
     }
-
+    
     objfun1 <- function(tau2) {
       par[x$pid$tau2] <- tau2
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
@@ -797,98 +998,98 @@ update_jm_gamma <- function(x, eta, eta_timegrid, int,
       eta$gamma <- eta$gamma - fitted(x$state) + fit
       edf1 <- sum_diag(xhess0 %*% Sigma)
       edf <- edf0 + edf1
-
+      
       logLik <- get_LogPost(eta_timegrid, eta, 0)
       ic <- get.ic2(logLik, edf, length(eta$mu), criterion)
       if(!is.null(env$ic_val)) {
         if((ic < env$ic_val) & (ic < env$ic00_val)) {
           par[x$pid$b] <- g2
           opt_state <- list("parameters" = par,
-            "fitted.values" = fit, "edf" = edf1, "hessian" = xhess,
-            "nu" = nu, "do.optim" = x$state$do.optim)
+                            "fitted.values" = fit, "edf" = edf1, "hessian" = xhess,
+                            "nu" = nu, "do.optim" = x$state$do.optim)
           assign("state", opt_state, envir = env)
           assign("ic_val", ic, envir = env)
         }
       } else assign("ic_val", ic, envir = env)
       return(ic)
     }
-
+    
     assign("ic00_val", objfun1(get.state(x, "tau2")), envir = env)
     tau2 <- tau2.optim(objfun1, start = get.state(x, "tau2"))
-
+    
     if(!is.null(env$state))
       return(env$state)
-
+    
     x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
   }
-
+  
   xgrad <- drop(xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE))
   xhess <- xhess0 + x$hess(score = NULL, x$state$parameters, full = FALSE)
-          
+  
   ## Compute the inverse of the hessian.
   Sigma <- matrix_inv(xhess, index = x$sparse.setup)
   Hs <- Sigma %*% xgrad
-        
+  
   ## Update regression coefficients.
   g <- get.state(x, "b")
-
+  
   if(update.nu) {
     objfun2 <- function(nu) {
       g2 <- drop(g + nu * Hs)
       names(g2) <- names(g)
       x$state$parameters <- set.par(x$state$parameters, g2, "b")
-        
+      
       ## Update additive predictors.
       fit <- x$fit.fun(x$X, g2)
       eta$gamma <- eta$gamma - fitted(x$state) + fit
       lp <- get_LogPost(eta_timegrid, eta, x$prior(x$state$parameters))
       return(-1 * lp)
     }
-
+    
     x$state$nu <- optimize(f = objfun2, interval = c(0, 1))$minimum
   }
-
+  
   g2 <- drop(g + x$state$nu * Hs)
   names(g2) <- names(g)
   x$state$parameters <- set.par(x$state$parameters, g2, "b")
-        
+  
   ## Update additive predictors.
   fit <- x$fit.fun(x$X, g2)
   x$state$fitted.values <- fit
   x$state$edf <- sum_diag(xhess0 %*% Sigma)
   x$state$hessian <- xhess
-
+  
   return(x$state)
 }
 
 
 update_jm_lambda <- function(x, eta, eta_timegrid,
-  eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
-  status, update.nu, width, criterion, get_LogPost, nobs, do.optim2, edf, ...)
+                             eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
+                             status, update.nu, width, criterion, get_LogPost, nobs, do.optim2, edf, ...)
 {
   ## The time-dependent design matrix for the grid.
   X <- x$fit.fun_timegrid(NULL)
-
+  
   ## Timegrid predictor.
   eeta <- exp(eta_timegrid)
-
+  
   ## Compute gradient and hessian integrals.
   # int <- survint(X, eeta, width, exp(eta$gamma), index = x$sparse.setup$matrix) # throws error with time-varying covariates
   int <- survint(X, eeta, width, exp(eta$gamma))
   
   xgrad <- drop(t(status) %*% x$XT - int$grad)
-
+  
   env <- new.env()
-
+  
   if((!(!x$state$do.optim | x$fixed | x$fxsp)) & do.optim2) {
     par <- x$state$parameters
-
+    
     edf0 <- if(is.null(edf)) {
       0
     } else {
       edf - x$state$edf
     }
-
+    
     objfun1 <- function(tau2) {
       par <- set.par(par, tau2, "tau2")
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
@@ -902,12 +1103,12 @@ update_jm_lambda <- function(x, eta, eta_timegrid,
           names(g2) <- names(g)
           x$state$parameters <- set.par(x$state$parameters, g2, "b")
           x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
-      
+          
           ## Update additive predictors.
           fit_timegrid <- x$fit.fun_timegrid(g2)
           eta_timegrid_lambda <- eta_timegrid_lambda - x$state$fitted_timegrid + fit_timegrid
           eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
-
+          
           lp <- get_LogPost(eta_timegrid, eta, x$prior(x$state$parameters))
           return(-1 * lp)
         }
@@ -929,35 +1130,35 @@ update_jm_lambda <- function(x, eta, eta_timegrid,
       if(!is.null(env$ic_val)) {
         if((ic < env$ic_val) & (ic < env$ic00_val)) {
           opt_state <- list("parameters" = set.par(par, g2, "b"),
-            "fitted.values" = fit, "fitted_timegrid" = fit_timegrid,
-            "edf" = edf1, "hessian" = xhess,
-            "nu" = nu, "do.optim" = x$state$do.optim)
+                            "fitted.values" = fit, "fitted_timegrid" = fit_timegrid,
+                            "edf" = edf1, "hessian" = xhess,
+                            "nu" = nu, "do.optim" = x$state$do.optim)
           assign("state", opt_state, envir = env)
           assign("ic_val", ic, envir = env)
         }
       } else assign("ic_val", ic, envir = env)
       return(ic)
     }
-
+    
     assign("ic00_val", objfun1(get.state(x, "tau2")), envir = env)
     tau2 <- tau2.optim(objfun1, start = get.state(x, "tau2"))
-
+    
     if(!is.null(env$state))
       return(env$state)
-
+    
     x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
   }
-
+  
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
-        
+  
   ## Compute the inverse of the hessian.
   Sigma <- matrix_inv(xhess, index = x$sparse.setup)
   Hs <- Sigma %*% xgrad
-      
+  
   ## Update regression coefficients.
   g <- get.state(x, "b")
-
+  
   if(update.nu) {
     objfun2 <- function(nu) {
       g2 <- drop(g + nu * Hs)
@@ -968,65 +1169,65 @@ update_jm_lambda <- function(x, eta, eta_timegrid,
       fit_timegrid <- x$fit.fun_timegrid(g2)
       eta_timegrid_lambda <- eta_timegrid_lambda - x$state$fitted_timegrid + fit_timegrid
       eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
-
+      
       lp <- get_LogPost(eta_timegrid, eta, x$prior(x$state$parameters))
       return(-1 * lp)
     }
     x$state$nu <- optimize(f = objfun2, interval = c(0, 1))$minimum
   }
-
+  
   g2 <- drop(g + x$state$nu * Hs)
   names(g2) <- names(g)
-
+  
   x$state$parameters <- set.par(x$state$parameters, g2, "b")
-      
+  
   ## Update additive predictors.
   x$state$fitted_timegrid <- x$fit.fun_timegrid(g2)
   x$state$fitted.values <- x$fit.fun(x$X, g2, expand = FALSE)
   x$state$edf <- sum_diag(int$hess %*% Sigma)
   x$state$hessian <- xhess
-
+  
   return(x$state)
 }
 
 
 update_jm_mu <- function(x, y, eta, eta_timegrid,
-  eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
-  status, update.nu, width, criterion, get_LogPost, nobs, do.optim2, edf, dx = NULL, ...)
+                         eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
+                         status, update.nu, width, criterion, get_LogPost, nobs, do.optim2, edf, dx = NULL, ...)
 {
   ## The time-dependent design matrix for the grid.
   X <- x$fit.fun_timegrid(NULL)
   dX <- if(!is.null(dx)) dx$fit.fun_timegrid(NULL) else NULL
- 
+  
   ## Timegrid predictor.
   eeta <- exp(eta_timegrid)
-
+  
   ## Compute gradient and hessian integrals.
   int <- survint(X, eeta * eta_timegrid_alpha, width, exp(eta$gamma),
-    eeta * eta_timegrid_alpha^2, index = x$sparse.setup[["mu.matrix"]],
-    dX, if(!is.null(dX)) eeta * eta_timegrid_dalpha else NULL,
-    if(!is.null(dX)) eeta * eta_timegrid_dalpha^2 else NULL)
-
+                 eeta * eta_timegrid_alpha^2, index = x$sparse.setup[["mu.matrix"]],
+                 dX, if(!is.null(dX)) eeta * eta_timegrid_dalpha else NULL,
+                 if(!is.null(dX)) eeta * eta_timegrid_dalpha^2 else NULL)
+  
   xgrad <- drop(t(x$X) %*% drop((y[, "obs"]  - eta$mu) / exp(eta$sigma)^2) +
-    t(x$XT) %*% drop(eta$alpha * status) - int$grad)
+                  t(x$XT) %*% drop(eta$alpha * status) - int$grad)
   if(!is.null(dx))
     xgrad <- drop(xgrad + t(dx$XT) %*% drop(eta$dalpha * status))
   XWX <- if(is.null(x$sparse.setup$matrix)) {
     crossprod(x$X * (1 / exp(eta$sigma)^2), x$X)
   } else do.XWX(x$X, exp(eta$sigma)^2, index = x$sparse.setup$matrix)
   xhess0 <- -1 * XWX - int$hess
-
+  
   env <- new.env()
-
+  
   if((!(!x$state$do.optim | x$fixed | x$fxsp)) & do.optim2) {
     par <- x$state$parameters
-
+    
     edf0 <- if(is.null(edf)) {
       0
     } else {
       edf - x$state$edf
     }
-
+    
     objfun1 <- function(tau2) {
       par <- set.par(par, tau2, "tau2")
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
@@ -1070,35 +1271,35 @@ update_jm_mu <- function(x, y, eta, eta_timegrid,
       if(!is.null(env$ic_val)) {
         if((ic < env$ic_val) & (ic < env$ic00_val)) {
           opt_state <- list("parameters" = set.par(par, g2, "b"),
-            "fitted.values" = fit, "fitted_timegrid" = fit_timegrid,
-            "edf" = edf1, "hessian" = -1 * xhess,
-            "nu" = nu, "do.optim" = x$state$do.optim)
+                            "fitted.values" = fit, "fitted_timegrid" = fit_timegrid,
+                            "edf" = edf1, "hessian" = -1 * xhess,
+                            "nu" = nu, "do.optim" = x$state$do.optim)
           assign("state", opt_state, envir = env)
           assign("ic_val", ic, envir = env)
         }
       } else assign("ic_val", ic, envir = env)
       return(ic)
     }
-
+    
     assign("ic00_val", objfun1(get.state(x, "tau2")), envir = env)
     tau2 <- tau2.optim(objfun1, start = get.state(x, "tau2"), maxit = 1)
-
+    
     if(!is.null(env$state))
       return(env$state)
-
+    
     x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
   }
-
+  
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   xhess <- xhess0 - x$hess(score = NULL, x$state$parameters, full = FALSE)
-
+  
   ## Compute the inverse of the hessian.
   Sigma <- matrix_inv(xhess, index = x$sparse.setup)
   Hs <- Sigma %*% xgrad
-
+  
   ## Update regression coefficients.
   g <- get.state(x, "b")
-
+  
   if(update.nu) {
     objfun2 <- function(nu) {
       g2 <- drop(g - nu * Hs)
@@ -1116,56 +1317,56 @@ update_jm_mu <- function(x, y, eta, eta_timegrid,
     }
     x$state$nu <- optimize(f = objfun2, interval = c(0, 1))$minimum
   }
-
+  
   g2 <- drop(g - x$state$nu * Hs)
   names(g2) <- names(g)
   x$state$parameters <- set.par(x$state$parameters, g2, "b")
-      
+  
   ## Update fitted values..
   x$state$fitted_timegrid <- x$fit.fun_timegrid(g2)
   x$state$fitted.values <- x$fit.fun(x$X, g2)
   x$state$edf <- sum_diag(xhess0 %*% Sigma)
   x$state$hessian <- -1 * xhess
-
+  
   return(x$state)
 }
 
 
 update_jm_mu_Matrix <- function(x, y, eta, eta_timegrid,
-  eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
-  status, update.nu, width, criterion, get_LogPost, nobs, do.optim2, edf, dx = NULL, ...)
+                                eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
+                                status, update.nu, width, criterion, get_LogPost, nobs, do.optim2, edf, dx = NULL, ...)
 {
   ## The time-dependent design matrix for the grid.
   X <- x$fit.fun_timegrid(NULL)
   dX <- if(!is.null(dx)) dx$fit.fun_timegrid(NULL) else NULL
- 
+  
   ## Timegrid predictor.
   eeta <- exp(eta_timegrid)
-
+  
   ## Compute gradient and hessian integrals.
   int <- survint(X, eeta * eta_timegrid_alpha, width, exp(eta$gamma),
-    eeta * eta_timegrid_alpha^2, index = x$sparse.setup[["mu.matrix"]],
-    dX, if(!is.null(dX)) eeta * eta_timegrid_dalpha else NULL,
-    if(!is.null(dX)) eeta * eta_timegrid_dalpha^2 else NULL)
-
+                 eeta * eta_timegrid_alpha^2, index = x$sparse.setup[["mu.matrix"]],
+                 dX, if(!is.null(dX)) eeta * eta_timegrid_dalpha else NULL,
+                 if(!is.null(dX)) eeta * eta_timegrid_dalpha^2 else NULL)
+  
   xgrad <- crossprod(x$X, drop((y[, "obs"]  - eta$mu) / exp(eta$sigma)^2)) +
     crossprod(x$XT,  drop(eta$alpha * status)) - int$grad
   if(!is.null(dx))
     xgrad <- xgrad + crossprod(dx$XT, drop(eta$dalpha * status))
   XWX <- crossprod(Diagonal(x = 1 / exp(eta$sigma)^2) %*% x$X, x$X)
   xhess0 <- -1 * XWX - int$hess
-
+  
   env <- new.env()
-
+  
   if((!(!x$state$do.optim | x$fixed | x$fxsp)) & do.optim2) {
     par <- x$state$parameters
-
+    
     edf0 <- if(is.null(edf)) {
       0
     } else {
       edf - x$state$edf
     }
-
+    
     objfun1 <- function(tau2) {
       par[x$pid$tau2] <- tau2
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
@@ -1207,35 +1408,35 @@ update_jm_mu_Matrix <- function(x, y, eta, eta_timegrid,
         if((ic < env$ic_val) & (ic < env$ic00_val)) {
           par[x$pid$b] <- g2
           opt_state <- list("parameters" = par,
-            "fitted.values" = fit, "fitted_timegrid" = fit_timegrid,
-            "edf" = edf1, "hessian" = -1 * xhess,
-            "nu" = nu, "do.optim" = x$state$do.optim)
+                            "fitted.values" = fit, "fitted_timegrid" = fit_timegrid,
+                            "edf" = edf1, "hessian" = -1 * xhess,
+                            "nu" = nu, "do.optim" = x$state$do.optim)
           assign("state", opt_state, envir = env)
           assign("ic_val", ic, envir = env)
         }
       } else assign("ic_val", ic, envir = env)
       return(ic)
     }
-
+    
     assign("ic00_val", objfun1(get.state(x, "tau2")), envir = env)
     tau2 <- tau2.optim(objfun1, start = get.state(x, "tau2"), maxit = 1)
-
+    
     if(!is.null(env$state))
       return(env$state)
-
+    
     x$state$parameters[x$pid$tau2] <- tau2
   }
-
+  
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   xhess <- xhess0 - x$hess(score = NULL, x$state$parameters, full = FALSE)
-
+  
   ## Compute the inverse of the hessian.
   Sigma <- -1 * matrix_inv(-1 * xhess, index = x$sparse.setup)
   Hs <- Sigma %*% xgrad
-
+  
   ## Update regression coefficients.
   g <- get.state(x, "b")
-
+  
   if(update.nu) {
     objfun2 <- function(nu) {
       g2 <- drop(g - nu * Hs)
@@ -1252,16 +1453,16 @@ update_jm_mu_Matrix <- function(x, y, eta, eta_timegrid,
     }
     x$state$nu <- optimize(f = objfun2, interval = c(0, 1))$minimum
   }
-
+  
   g2 <- drop(g - x$state$nu * Hs)
   x$state$parameters[x$pid$b] <- g2
-      
+  
   ## Update fitted values..
   x$state$fitted_timegrid <- x$fit.fun_timegrid(g2)
   x$state$fitted.values <- x$fit.fun(x$X, g2)
   x$state$edf <- sum_diag(xhess0 %*% Sigma)
   x$state$hessian <- -1 * xhess
-
+  
   return(x$state)
 }
 
@@ -1278,23 +1479,23 @@ update_jm_dmu <- function(dx, x)
 
 
 update_jm_sigma <- function(x, y, eta, eta_timegrid,
-  update.nu, criterion, get_LogPost, nobs, do.optim2, edf, ...)
+                            update.nu, criterion, get_LogPost, nobs, do.optim2, edf, ...)
 {
   xgrad <- crossprod(x$X, -1 + (y[, "obs"] - eta$mu)^2 / exp(eta$sigma)^2)
   xhess0 <- -2 * crossprod(x$X*drop((y[, "obs"] - eta$mu) / exp(eta$sigma)^2),
-    x$X*drop(y[, "obs"] - eta$mu))
-
+                           x$X*drop(y[, "obs"] - eta$mu))
+  
   if((!(!x$state$do.optim | x$fixed | x$fxsp)) & do.optim2) {
     par <- x$state$parameters
-
+    
     edf0 <- if(is.null(edf)) {
       0
     } else {
       edf - x$state$edf
     }
-
+    
     env <- new.env()
-
+    
     objfun1 <- function(tau2) {
       par <- set.par(par, tau2, "tau2")
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
@@ -1329,35 +1530,35 @@ update_jm_sigma <- function(x, y, eta, eta_timegrid,
         if((ic < env$ic_val) & (ic < env$ic00_val)) {
           par[x$pid$b] <- g2
           opt_state <- list("parameters" = par,
-            "fitted.values" = fit,
-            "edf" = edf1, "hessian" = -1 * xhess,
-            "nu" = nu, "do.optim" = x$state$do.optim)
+                            "fitted.values" = fit,
+                            "edf" = edf1, "hessian" = -1 * xhess,
+                            "nu" = nu, "do.optim" = x$state$do.optim)
           assign("state", opt_state, envir = env)
           assign("ic_val", ic, envir = env)
         }
       } else assign("ic_val", ic, envir = env)
       return(ic)
     }
-
+    
     assign("ic00_val", objfun1(get.state(x, "tau2")), envir = env)
     tau2 <- tau2.optim(objfun1, start = get.state(x, "tau2"), maxit = 1)
-
+    
     if(!is.null(env$state))
       return(env$state)
-
+    
     x$state$parameters[x$pid$tau2] <- tau2
   }
-     
+  
   xhess <- xhess0 - x$hess(score = NULL, x$state$parameters, full = FALSE)
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
-      
+  
   ## Compute the inverse of the hessian.
   Sigma <- -1 * matrix_inv(-1 * xhess, index = x$sparse.setup)
   Hs <- Sigma %*% xgrad
-      
+  
   ## Update regression coefficients.
   g <- get.state(x, "b")
-
+  
   if(update.nu) {
     objfun2 <- function(nu) {
       g2 <- drop(g - nu * Hs)
@@ -1368,50 +1569,50 @@ update_jm_sigma <- function(x, y, eta, eta_timegrid,
       lp <- get_LogPost(eta_timegrid, eta, x$prior(x$state$parameters))
       return(-1 * lp)
     }
-
+    
     x$state$nu <- optimize(f = objfun2, interval = c(0, 1))$minimum
   }
- 
-
+  
+  
   g2 <- drop(g - x$state$nu * Hs)
   names(g2) <- names(g)
   x$state$parameters <- set.par(x$state$parameters, g2, "b")
-      
+  
   ## Update fitted values.
   x$state$fitted.values <- x$fit.fun(x$X, g2)
   x$state$edf <- sum_diag(xhess0 %*% Sigma)
   x$state$hessian <- -1 * xhess
-
+  
   return(x$state)
 }
 
 
 update_jm_alpha <- function(x, eta, eta_timegrid,
-  eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
-  status, update.nu, width, criterion, get_LogPost, nobs, do.optim2, edf, ...)
+                            eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
+                            status, update.nu, width, criterion, get_LogPost, nobs, do.optim2, edf, ...)
 {
   ## The time-dependent design matrix for the grid.
   X <- x$fit.fun_timegrid(NULL)
-        
+  
   ## Timegrid predictor.
   eeta <- exp(eta_timegrid)
-        
+  
   ## Compute gradient and hessian integrals.
   int <- survint(X, eeta * eta_timegrid_mu, width, exp(eta$gamma),
-    eeta * (eta_timegrid_mu^2), index = x$sparse.setup$matrix)
+                 eeta * (eta_timegrid_mu^2), index = x$sparse.setup$matrix)
   xgrad <- t(x$XT) %*% drop(eta_timegrid_mu[, ncol(eeta)] * status) - int$grad
-
+  
   env <- new.env()
-
+  
   if((!(!x$state$do.optim | x$fixed | x$fxsp)) & do.optim2) {
     par <- x$state$parameters
-
+    
     edf0 <- if(is.null(edf)) {
       0
     } else {
       edf - x$state$edf
     }
-
+    
     objfun1 <- function(tau2) {
       par <- set.par(par, tau2, "tau2")
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
@@ -1449,35 +1650,35 @@ update_jm_alpha <- function(x, eta, eta_timegrid,
       if(!is.null(env$ic_val)) {
         if((ic < env$ic_val) & (ic < env$ic00_val)) {
           opt_state <- list("parameters" = set.par(par, g2, "b"),
-            "fitted.values" = fit, "fitted_timegrid" = fit_timegrid,
-            "edf" = edf1, "hessian" = xhess,
-            "nu" = nu, "do.optim" = x$state$do.optim)
+                            "fitted.values" = fit, "fitted_timegrid" = fit_timegrid,
+                            "edf" = edf1, "hessian" = xhess,
+                            "nu" = nu, "do.optim" = x$state$do.optim)
           assign("state", opt_state, envir = env)
           assign("ic_val", ic, envir = env)
         }
       } else assign("ic_val", ic, envir = env)
       return(ic)
     }
-
+    
     assign("ic00_val", objfun1(get.state(x, "tau2")), envir = env)
     tau2 <- tau2.optim(objfun1, start = get.state(x, "tau2"))
-
+    
     if(!is.null(env$state))
       return(env$state)
-
+    
     x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
   }
-
+  
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
-        
+  
   ## Compute the inverse of the hessian.
   Sigma <- matrix_inv(xhess, x$sparse.setup)
   Hs <- Sigma %*% xgrad
-
+  
   ## Update regression coefficients.
   g <- get.state(x, "b")
-
+  
   if(update.nu) {
     objfun2 <- function(nu) {
       g2 <- drop(g + nu * Hs)
@@ -1491,47 +1692,47 @@ update_jm_alpha <- function(x, eta, eta_timegrid,
     }
     x$state$nu <- optimize(f = objfun2, interval = c(0, 1))$minimum
   }
-
+  
   g2 <- drop(g + x$state$nu * Hs)        
   names(g2) <- names(g)
   x$state$parameters <- set.par(x$state$parameters, g2, "b")
-        
+  
   ## Update fitted values.
   x$state$fitted_timegrid <- x$fit.fun_timegrid(g2)
   x$state$fitted.values <- x$fit.fun(x$X, g2, expand = FALSE)
   x$state$edf <- sum_diag(int$hess %*% Sigma)
   x$state$hessian <- xhess
-
+  
   return(x$state)
 }
 
 
 update_jm_dalpha <- function(x, eta, eta_timegrid,
-  eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
-  status, update.nu, width, criterion, get_LogPost, nobs, do.optim2, edf, ...)
+                             eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
+                             status, update.nu, width, criterion, get_LogPost, nobs, do.optim2, edf, ...)
 {
   ## The time-dependent design matrix for the grid.
   X <- x$fit.fun_timegrid(NULL)
-        
+  
   ## Timegrid predictor.
   eeta <- exp(eta_timegrid)
-        
+  
   ## Compute gradient and hessian integrals.
   int <- survint(X, eeta * eta_timegrid_dmu, width, exp(eta$gamma),
-    eeta * (eta_timegrid_dmu^2), index = x$sparse.setup$matrix)
+                 eeta * (eta_timegrid_dmu^2), index = x$sparse.setup$matrix)
   xgrad <- t(x$XT) %*% drop(eta_timegrid_dmu[, ncol(eeta)] * status) - int$grad
-
+  
   env <- new.env()
-
+  
   if((!(!x$state$do.optim | x$fixed | x$fxsp)) & do.optim2) {
     par <- x$state$parameters
-
+    
     edf0 <- if(is.null(edf)) {
       0
     } else {
       edf - x$state$edf
     }
-
+    
     objfun1 <- function(tau2) {
       par <- set.par(par, tau2, "tau2")
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
@@ -1569,35 +1770,35 @@ update_jm_dalpha <- function(x, eta, eta_timegrid,
       if(!is.null(env$ic_val)) {
         if((ic < env$ic_val) & (ic < env$ic00_val)) {
           opt_state <- list("parameters" = set.par(par, g2, "b"),
-            "fitted.values" = fit, "fitted_timegrid" = fit_timegrid,
-            "edf" = edf1, "hessian" = xhess,
-            "nu" = nu, "do.optim" = x$state$do.optim)
+                            "fitted.values" = fit, "fitted_timegrid" = fit_timegrid,
+                            "edf" = edf1, "hessian" = xhess,
+                            "nu" = nu, "do.optim" = x$state$do.optim)
           assign("state", opt_state, envir = env)
           assign("ic_val", ic, envir = env)
         }
       } else assign("ic_val", ic, envir = env)
       return(ic)
     }
-
+    
     assign("ic00_val", objfun1(get.state(x, "tau2")), envir = env)
     tau2 <- tau2.optim(objfun1, start = get.state(x, "tau2"))
-
+    
     if(!is.null(env$state))
       return(env$state)
-
+    
     x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
   }
-
+  
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
-        
+  
   ## Compute the inverse of the hessian.
   Sigma <- matrix_inv(xhess, x$sparse.setup)
   Hs <- Sigma %*% xgrad
-
+  
   ## Update regression coefficients.
   g <- get.state(x, "b")
-
+  
   if(update.nu) {
     objfun2 <- function(nu) {
       g2 <- drop(g + nu * Hs)
@@ -1612,34 +1813,34 @@ update_jm_dalpha <- function(x, eta, eta_timegrid,
     x$state$nu <- optimize(f = objfun2, interval = c(0, 1))$minimum
   }
   nu <- x$state$nu
-
+  
   g2 <- drop(g + nu * Hs)
-        
+  
   names(g2) <- names(g)
   x$state$parameters <- set.par(x$state$parameters, g2, "b")
-        
+  
   ## Update fitted values.
   x$state$fitted_timegrid <- x$fit.fun_timegrid(g2)
   x$state$fitted.values <- x$fit.fun(x$X, g2, expand = FALSE)
   x$state$edf <- sum_diag(int$hess %*% Sigma)
   x$state$hessian <- xhess
-
+  
   return(x$state)
 }
 
 
 ## (5) Joint model MCMC.
 jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
-  n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE, digits = 4, step = 20, ...)
+                    n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE, digits = 4, step = 20, ...)
 {
   ## Hard coded.
   fixed <- NULL
   slice <- NULL
-
+  
   dalpha <- has_pterms(x$dalpha$terms) | (length(x$dalpha$smooth.construct) > 0)
-
+  
   nu <- 1
-
+  
   if(!is.null(start)) {
     if(is.matrix(start)) {
       if(any(i <- grepl("Mean", colnames(start))))
@@ -1655,10 +1856,10 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     }
     x <- set.starting.values(x, start)
   }
-
+  
   ## Names of parameters/predictors.
   nx <- names(x)
-
+  
   ## Extract y.
   y <- y[[1]]
   
@@ -1685,7 +1886,7 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   
   ## Compute additive predictors.
   eta <- get.eta(x, expand = FALSE)
-
+  
   ## Correct gamma predictor if NULL.
   if(!length(x$gamma$smooth.construct)) {
     eta$gamma <- rep(0, length = nobs)
@@ -1737,15 +1938,15 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       }
     }
   }
-
+  
   eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
-
+  
   ## Porcess iterations.
   if(burnin < 1) burnin <- 1
   if(burnin > n.iter) burnin <- floor(n.iter * 0.1)
   if(thin < 1) thin <- 1
   iterthin <- as.integer(seq(burnin, n.iter, by = thin))
-
+  
   ## Samples.
   samps <- list()
   for(i in nx) {
@@ -1761,7 +1962,7 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     }
   }
   logLik.samps <- logPost.samps <- rep(NA, length = length(iterthin))
-
+  
   foo <- function(x) {
     if(is.null(x)) return(0)
     if(is.na(x)) return(0)
@@ -1772,15 +1973,15 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       x <- 1
     x
   }
-
+  
   ## Integrals.
   eeta <- exp(eta_timegrid)
   int0 <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
-
+  
   ## Slice sampling?
   if(is.null(slice)) {
     slice <- c("lambda" = FALSE, "gamma" = FALSE, "mu" = FALSE,
-      "sigma" = FALSE, "alpha" = FALSE, "dmu" = FALSE, "dalpha" = FALSE)
+               "sigma" = FALSE, "alpha" = FALSE, "dmu" = FALSE, "dalpha" = FALSE)
   } else {
     if(is.null(names(slice))) {
       slice <- rep(slice, length.out = 7)
@@ -1799,49 +2000,50 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       }
     }
   }
-
+  
   nx2 <- if(dalpha) {
     c("lambda", "gamma", "mu", "sigma", "alpha", "dalpha")
   } else {
     c("lambda", "gamma", "mu", "sigma", "alpha")
   }
-
+  
   ## Start sampling.
   if(verbose) {
     cat2("Starting the sampler...")
     if(!interactive())
       cat("\n")
   }
-
+  
   nstep <- step
   step <- floor(n.iter / step)
-
+  
   ptm <- proc.time()
   for(iter in 1:n.iter) {
     if(save <- iter %in% iterthin)
       js <- which(iterthin == iter)
-
+    
     for(i in nx2) {
       if(i == "gamma") {
         eeta <- exp(eta_timegrid)
         int0 <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
       }
-
+      
       prop_fun <- get_jm_prop_fun(i, slice[i])
-
+      
       for(sj in names(x[[i]]$smooth.construct)) {
+        
         p.state <- prop_fun(x[[i]]$smooth.construct[[sj]],
-          y, eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
-          eta_timegrid_dmu, eta_timegrid_dalpha,
-          width, sub, nu, status, id = i, int0, nobs,
-          dx = if(dalpha & (i == "mu")) x[["dmu"]]$smooth.construct[[sj]] else NULL)
-
+                            y, eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
+                            eta_timegrid_dmu, eta_timegrid_dalpha,
+                            width, sub, nu, status, id = i, int0, nobs,
+                            dx = if(dalpha & (i == "mu")) x[["dmu"]]$smooth.construct[[sj]] else NULL)
+        
         ## If accepted, set current state to proposed state.
         accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
-
+        
         if(i %in% fixed)
           accepted <- FALSE
-
+        
         if(accepted) {
           if(i %in% c("lambda", "mu", "alpha", "dalpha")) {
             if(i == "lambda")
@@ -1864,7 +2066,7 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           eta[[i]] <- eta[[i]] - fitted(x[[i]]$smooth.construct[[sj]]$state) + fitted(p.state)
           x[[i]]$smooth.construct[[sj]]$state <- p.state 
         }
-
+        
         ## Save the samples and acceptance.
         if(save) {
           samps[[i]][[sj]]$samples[js, ] <- x[[i]]$smooth.construct[[sj]]$state$parameters
@@ -1880,18 +2082,18 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         }
       }
     }
-
+    
     if(save) {
       logLik.samps[js] <- sum((eta_timegrid[,ncol(eta_timegrid)] + eta$gamma) * status, na.rm = TRUE) -
         exp(eta$gamma) %*% int0 + sum(dnorm(y[, "obs"], mean = eta$mu, sd = exp(eta$sigma), log = TRUE))
       logPost.samps[js] <- as.numeric(logLik.samps[js] + get.log.prior(x))
     }
-
+    
     if(verbose) barfun(ptm, n.iter, iter, step, nstep)
   }
-
+  
   if(verbose) cat("\n")
-
+  
   for(i in names(samps)) {
     for(j in names(samps[[i]])) {
       samps[[i]][[j]] <- do.call("cbind", samps[[i]][[j]])
@@ -1907,7 +2109,7 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   samps$logLik <- logLik.samps
   samps$logPost <- logPost.samps
   samps <- do.call("cbind", samps)
-
+  
   ## Compute DIC. #
   dev <- -2 * logLik.samps
   mpar <- apply(samps, 2, mean, na.rm = TRUE)
@@ -1917,10 +2119,10 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   pd <- mean(dev) - mdev
   DIC <- mdev + 2 * pd
   samps <- cbind(samps,
-    "DIC" = rep(DIC, length.out = nrow(samps)),
-    "pd" = rep(pd, length.out = nrow(samps))
+                 "DIC" = rep(DIC, length.out = nrow(samps)),
+                 "pd" = rep(pd, length.out = nrow(samps))
   )
-
+  
   return(as.mcmc(samps))
 }
 
@@ -1946,9 +2148,9 @@ get_jm_prop_fun <- function(i, slice = FALSE) {
 
 ## JM proposal functions.
 uni.slice_beta_logPost <- function(g, x, family, y = NULL, eta = NULL, id,
-  eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
-  eta_timegrid_dmu, eta_timegrid_dalpha,
-  width, sub, status, dx = NULL, ...)
+                                   eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
+                                   eta_timegrid_dmu, eta_timegrid_dalpha,
+                                   width, sub, status, dx = NULL, ...)
 {
   if(id %in% c("lambda", "mu", "alpha", "dalpha")) {
     if(id == "lambda")
@@ -1965,16 +2167,16 @@ uni.slice_beta_logPost <- function(g, x, family, y = NULL, eta = NULL, id,
       eta_timegrid_dalpha <- eta_timegrid_dalpha - x$state$fitted_timegrid + x$fit.fun_timegrid(g)
     eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
   }
-
+  
   eta[[id]] <- eta[[id]] - fitted(x$state) + x$fit.fun(x$X, g, expand = FALSE)
-
+  
   eeta <- exp(eta_timegrid)
   int <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
-
+  
   ll <- sum((eta_timegrid[,ncol(eta_timegrid)] + eta$gamma) * status, na.rm = TRUE) -
     exp(eta$gamma) %*% int + sum(dnorm(y[, "obs"], mean = eta$mu, sd = exp(eta$sigma), log = TRUE))
   lp <- x$prior(g)
-
+  
   return(ll + lp)
 }
 
@@ -1987,27 +2189,27 @@ uni.slice_tau2_logPost <- function(g, x, family, y = NULL, eta = NULL, id, ll = 
 
 
 propose_jm_slice <- function(x, y,
-  eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
-  eta_timegrid_dmu, eta_timegrid_dalpha,
-  width, sub, nu, status, id, dx = NULL, ...)
+                             eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
+                             eta_timegrid_dmu, eta_timegrid_dalpha,
+                             width, sub, nu, status, id, dx = NULL, ...)
 {
   for(j in seq_along(get.par(x$state$parameters, "b"))) {
     x$state$parameters <- uni.slice(x$state$parameters, x, family, y,
-      eta, id = id, j, logPost = uni.slice_beta_logPost, eta_timegrid = eta_timegrid,
-      eta_timegrid_lambda = eta_timegrid_lambda, eta_timegrid_mu = eta_timegrid_mu,
-      eta_timegrid_alpha = eta_timegrid_alpha, eta_timegrid_dmu = eta_timegrid_dmu,
-      eta_timegrid_dalpha = eta_timegrid_dalpha, width = width, sub = sub, status = status,
-      dx = dx)
+                                    eta, id = id, j, logPost = uni.slice_beta_logPost, eta_timegrid = eta_timegrid,
+                                    eta_timegrid_lambda = eta_timegrid_lambda, eta_timegrid_mu = eta_timegrid_mu,
+                                    eta_timegrid_alpha = eta_timegrid_alpha, eta_timegrid_dmu = eta_timegrid_dmu,
+                                    eta_timegrid_dalpha = eta_timegrid_dalpha, width = width, sub = sub, status = status,
+                                    dx = dx)
   }
-
+  
   g <- get.par(x$state$parameters, "b")
   fit <- drop(x$X %*% g)
   eta[[id]] <- eta[[id]] - fitted(x$state) + fit
   x$state$fitted.values <- fit
-
+  
   if(id %in% c("lambda", "mu", "alpha", "dalpha"))
     x$state$fitted_timegrid <- x$fit.fun_timegrid(g)
-
+  
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
     if(length(x$S) < 2) {
@@ -2020,88 +2222,88 @@ propose_jm_slice <- function(x, y,
       i <- grep("tau2", names(x$state$parameters))
       for(j in i) {
         x$state$parameters <- uni.slice(x$state$parameters, x, NULL, NULL,
-          NULL, id = "mu", j, logPost = uni.slice_tau2_logPost, lower = 0, ll = 0)
+                                        NULL, id = "mu", j, logPost = uni.slice_tau2_logPost, lower = 0, ll = 0)
       }
     }
   }
-
+  
   ## Compute acceptance probablity.
   x$state$alpha <- 0
-
+  
   return(x$state)
 }
 
 
 propose_jm_lambda <- function(x, y,
-  eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
-  eta_timegrid_dmu, eta_timegrid_dalpha,
-  width, sub, nu, status, id, ...)
+                              eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
+                              eta_timegrid_dmu, eta_timegrid_dalpha,
+                              width, sub, nu, status, id, ...)
 {
   ## The time-dependent design matrix for the grid.
   X <- x$fit.fun_timegrid(NULL)
-
+  
   ## Timegrid predictor.
   eeta <- exp(eta_timegrid)
-
+  
   ## Old logLik and prior.
   int0 <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
   pibeta <- sum((eta_timegrid[,ncol(eta_timegrid)] + eta$gamma) * status, na.rm = TRUE) -
     exp(eta$gamma) %*% int0 + sum(dnorm(y[, "obs"], mean = eta$mu, sd = exp(eta$sigma), log = TRUE))
   p1 <- x$prior(x$state$parameters)
-
+  
   ## Compute gradient and hessian integrals.
   int <- survint(X, eeta, width, exp(eta$gamma), index = x$sparse.setup$matrix)
   xgrad <- drop(t(status) %*% x$XT - int$grad)
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
-        
+  
   ## Compute the inverse of the hessian.
   Sigma <- matrix_inv(xhess, index = x$sparse.setup)
-      
+  
   ## Save old coefficients.
   g0 <- get.state(x, "b")
-
+  
   ## Get new position.
   mu <- drop(g0 + nu * Sigma %*% xgrad)
-
+  
   ## Sample new parameters.
   g <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma, method="chol"))
   names(g) <- names(g0)
   x$state$parameters <- set.par(x$state$parameters, g, "b")
-
+  
   ## Compute log priors.
   p2 <- x$prior(x$state$parameters)
   qbetaprop <- dmvnorm(g, mean = mu, sigma = Sigma, log = TRUE)
-
+  
   ## Update additive predictors.
   fit_timegrid <- x$fit.fun_timegrid(g)
   eta_timegrid_lambda <- eta_timegrid_lambda - x$state$fitted_timegrid + fit_timegrid
   eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
   x$state$fitted_timegrid <- fit_timegrid
-      
+  
   fit <- drop(x$X %*% g)
   eta$lambda <- eta$lambda - fitted(x$state) + fit
   x$state$fitted.values <- fit
-
+  
   ## New logLik.
   eeta <- exp(eta_timegrid)
   int0 <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
   pibetaprop <- sum((eta_timegrid[,ncol(eta_timegrid)] + eta$gamma) * status, na.rm = TRUE) -
     exp(eta$gamma) %*% int0 + sum(dnorm(y[, "obs"], mean = eta$mu, sd = exp(eta$sigma), log = TRUE))
-
+  
   ## Prior prob.
   int <- survint(X, eeta, width, exp(eta$gamma), index = x$sparse.setup$matrix)
   xgrad <- drop(t(status) %*% x$XT - int$grad)
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
-
+  
   Sigma2 <- matrix_inv(xhess, index = x$sparse.setup)
   mu2 <- drop(g + nu * Sigma2 %*% xgrad)
   qbeta <- dmvnorm(g0, mean = mu2, sigma = Sigma2, log = TRUE)
-
+  
   ## Save edf.
   x$state$edf <- sum_diag(int$hess %*% Sigma2)
-
+  
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
     if(length(x$S) < 2) {
@@ -2114,14 +2316,14 @@ propose_jm_lambda <- function(x, y,
       i <- grep("tau2", names(x$state$parameters))
       for(j in i) {
         x$state$parameters <- uni.slice(x$state$parameters, x, NULL, NULL,
-          NULL, id = "mu", j, logPost = uni.slice_tau2_logPost, lower = 0, ll = 0)
+                                        NULL, id = "mu", j, logPost = uni.slice_tau2_logPost, lower = 0, ll = 0)
       }
     }
   }
-
+  
   ## Compute acceptance probablity.
   x$state$alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
-
+  
   return(x$state)
 }
 
@@ -2132,14 +2334,14 @@ propose_jm_mu <- function(x, ...)
 }
 
 propose_jm_mu_simple <- function(x, y,
-  eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
-  eta_timegrid_dmu, eta_timegrid_dalpha,
-  width, sub, nu, status, id, dx = NULL, ...)
+                                 eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
+                                 eta_timegrid_dmu, eta_timegrid_dalpha,
+                                 width, sub, nu, status, id, dx = NULL, ...)
 {
   ## The time-dependent design matrix for the grid.
   X <- x$fit.fun_timegrid(NULL)
   dX <- if(!is.null(dx)) dx$fit.fun_timegrid(NULL) else NULL
-
+  
   ## Timegrid lambda.
   eeta <- exp(eta_timegrid)
   
@@ -2151,12 +2353,12 @@ propose_jm_mu_simple <- function(x, y,
   
   ## Compute gradient and hessian integrals.
   int <- survint(X, eeta * eta_timegrid_alpha, width, exp(eta$gamma),
-    eeta * eta_timegrid_alpha^2, index = x$sparse.setup[["mu.matrix"]],
-    dX, if(!is.null(dX)) eeta * eta_timegrid_dalpha else NULL,
-    if(!is.null(dX)) eeta * eta_timegrid_dalpha^2 else NULL)
-
+                 eeta * eta_timegrid_alpha^2, index = x$sparse.setup[["mu.matrix"]],
+                 dX, if(!is.null(dX)) eeta * eta_timegrid_dalpha else NULL,
+                 if(!is.null(dX)) eeta * eta_timegrid_dalpha^2 else NULL)
+  
   xgrad <- drop(t(x$X) %*% drop((y[, "obs"]  - eta$mu) / exp(eta$sigma)^2) +
-    t(x$XT) %*% drop(eta$alpha * status) - int$grad)
+                  t(x$XT) %*% drop(eta$alpha * status) - int$grad)
   if(!is.null(dx))
     xgrad <- drop(xgrad + t(dx$XT) %*% drop(eta$dalpha * status))
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
@@ -2165,7 +2367,7 @@ propose_jm_mu_simple <- function(x, y,
   } else do.XWX(x$X, exp(eta$sigma)^2, index = x$sparse.setup$matrix)
   xhess <- -1 * XWX - int$hess
   xhess <- xhess - x$hess(score = NULL, x$state$parameters, full = FALSE)
-
+  
   ## Compute the inverse of the hessian.
   Sigma <- matrix_inv(xhess, index = x$sparse.setup)
   
@@ -2174,7 +2376,7 @@ propose_jm_mu_simple <- function(x, y,
   
   ## Get new position.
   mu <- drop(g0 - nu * Sigma %*% xgrad)
-
+  
   ## Sample new parameters.
   g <- drop(rmvnorm(n = 1, mean = mu, sigma = -1 * Sigma, method="chol"))
   names(g) <- names(g0)
@@ -2195,7 +2397,7 @@ propose_jm_mu_simple <- function(x, y,
   fit <- drop(x$X %*% g)
   eta$mu <- eta$mu - fitted(x$state) + fit
   x$state$fitted.values <- fit
-
+  
   ## New logLik.
   eeta <- exp(eta_timegrid)
   int0 <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
@@ -2204,12 +2406,12 @@ propose_jm_mu_simple <- function(x, y,
   
   ## Prior prob.
   int <- survint(X, eeta * eta_timegrid_alpha, width, exp(eta$gamma),
-    eeta * eta_timegrid_alpha^2, index = x$sparse.setup[["mu.matrix"]],
-    dX, if(!is.null(dX)) eeta * eta_timegrid_dalpha else NULL,
-    if(!is.null(dX)) eeta * eta_timegrid_dalpha^2 else NULL)
-
+                 eeta * eta_timegrid_alpha^2, index = x$sparse.setup[["mu.matrix"]],
+                 dX, if(!is.null(dX)) eeta * eta_timegrid_dalpha else NULL,
+                 if(!is.null(dX)) eeta * eta_timegrid_dalpha^2 else NULL)
+  
   xgrad <- drop(t(x$X) %*% drop((y[, "obs"]  - eta$mu) / exp(eta$sigma)^2) +
-    t(x$XT) %*% drop(eta$alpha * status) - int$grad)
+                  t(x$XT) %*% drop(eta$alpha * status) - int$grad)
   if(!is.null(dx))
     xgrad <- drop(xgrad + t(dx$XT) %*% drop(eta$dalpha * status))
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
@@ -2224,7 +2426,7 @@ propose_jm_mu_simple <- function(x, y,
   
   ## Save edf.
   x$state$edf <- sum_diag(int$hess %*% (-1 * Sigma2))
-
+  
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
     if(length(x$S) < 2) {
@@ -2237,7 +2439,7 @@ propose_jm_mu_simple <- function(x, y,
       i <- grep("tau2", names(x$state$parameters))
       for(j in i) {
         x$state$parameters <- uni.slice(x$state$parameters, x, NULL, NULL,
-          NULL, id = "mu", j, logPost = uni.slice_tau2_logPost, lower = 0, ll = 0)
+                                        NULL, id = "mu", j, logPost = uni.slice_tau2_logPost, lower = 0, ll = 0)
       }
     }
   }
@@ -2250,14 +2452,15 @@ propose_jm_mu_simple <- function(x, y,
 
 
 propose_jm_mu_Matrix <- function(x, y,
-  eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
-  eta_timegrid_dmu, eta_timegrid_dalpha,
-  width, sub, nu, status, id, dx = NULL, ...)
+                                 eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
+                                 eta_timegrid_dmu, eta_timegrid_dalpha,
+                                 width, sub, nu, status, id, dx = NULL, ...)
 {
+  
   ## The time-dependent design matrix for the grid.
   X <- x$fit.fun_timegrid(NULL)
   dX <- if(!is.null(dx)) dx$fit.fun_timegrid(NULL) else NULL
-
+  
   ## Timegrid lambda.
   eeta <- exp(eta_timegrid)
   
@@ -2269,10 +2472,10 @@ propose_jm_mu_Matrix <- function(x, y,
   
   ## Compute gradient and hessian integrals.
   int <- survint(X, eeta * eta_timegrid_alpha, width, exp(eta$gamma),
-    eeta * eta_timegrid_alpha^2, index = x$sparse.setup[["mu.matrix"]],
-    dX, if(!is.null(dX)) eeta * eta_timegrid_dalpha else NULL,
-    if(!is.null(dX)) eeta * eta_timegrid_dalpha^2 else NULL)
-
+                 eeta * eta_timegrid_alpha^2, index = x$sparse.setup[["mu.matrix"]],
+                 dX, if(!is.null(dX)) eeta * eta_timegrid_dalpha else NULL,
+                 if(!is.null(dX)) eeta * eta_timegrid_dalpha^2 else NULL)
+  
   xgrad <- crossprod(x$X, drop((y[, "obs"]  - eta$mu) / exp(eta$sigma)^2)) +
     crossprod(x$XT,  drop(eta$alpha * status)) - int$grad
   if(!is.null(dx))
@@ -2281,7 +2484,7 @@ propose_jm_mu_Matrix <- function(x, y,
   XWX <- crossprod(Diagonal(x = 1 / exp(eta$sigma)^2) %*% x$X, x$X)
   xhess0 <- -1 * XWX - int$hess
   xhess <- xhess0 - x$hess(score = NULL, x$state$parameters, full = FALSE)
-
+  
   ## Compute the inverse of the hessian.
   Sigma <- matrix_inv(-1 * xhess)
   
@@ -2290,18 +2493,18 @@ propose_jm_mu_Matrix <- function(x, y,
   
   ## Get new position.
   mu <- drop(g0 + Sigma %*% xgrad)
-
   Sigma <- as.matrix(Sigma)
 
   ## Sample new parameters using blickdiagonal structure.
-  if(!is.null(x$sparse.setup[["mu.matrix"]])){
-    lg <- lapply(1:nrow(x$sparse.setup[["mu.matrix"]]), function(i){
-      tmp <- x$sparse.setup[["mu.matrix"]][i,]
-      tmp <- tmp[tmp > 0]
-      if(length(tmp) == 1){
-        drop(rnorm(n = 1, mean = mu[tmp], sd = Sigma[tmp,tmp]))
+  if(x$sparse.setup$pattern != "other"){
+    lg <- lapply(1:length(x$sparse.setup$coeffs), function(i){
+      tmp <- x$sparse.setup$coeff[[i]]
+      if(x$sparse.setup$pattern == "diagonal"){
+        drop(rnorm(n = 1, mean = mu[tmp], sd = sqrt(Sigma[tmp,tmp])))
       } else{
-        if(length(tmp) > 1){
+        if(length(tmp) == 1){
+          drop(rnorm(n = 1, mean = mu[tmp], sd = sqrt(Sigma[tmp,tmp])))
+        } else {
           drop(rmvnorm(n = 1, mean = mu[tmp], sigma = Sigma[tmp,tmp], method="chol"))
         }
       } 
@@ -2310,25 +2513,26 @@ propose_jm_mu_Matrix <- function(x, y,
   } else {
     g <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma, method="chol"))
   }
-
+  
   if(all(is.na(g))) {
     x$state$alpha <- 1
     return(x$state)
   }
-
+  
   names(g) <- names(g0)
   x$state$parameters <- set.par(x$state$parameters, g, "b")
   
   ## Compute log priors using blockdiagonal structure.
   p2 <- x$prior(x$state$parameters)
-  if(!is.null(x$sparse.setup[["mu.matrix"]])){
-    lqbetaprop <- lapply(1:nrow(x$sparse.setup[["mu.matrix"]]), function(i){
-      tmp <- x$sparse.setup[["mu.matrix"]][i,]
-      tmp <- tmp[tmp > 0]
-      if(length(tmp) == 1){
-        drop(dnorm(g[tmp], mean = mu[tmp], sd = Sigma[tmp,tmp]))
+  if(x$sparse.setup$pattern != "other"){
+    lqbetaprop <- lapply(1:length(x$sparse.setup$coeffs), function(i){
+      tmp <- x$sparse.setup$coeff[[i]]
+      if(x$sparse.setup$pattern == "diagonal"){
+        drop(dnorm(g[tmp], mean = mu[tmp], sd = sqrt(Sigma[tmp,tmp]), log = TRUE))
       } else{
-        if(length(tmp) > 1){
+        if(length(tmp) == 1){
+          drop(dnorm(g[tmp], mean = mu[tmp], sd = sqrt(Sigma[tmp,tmp]), log = TRUE))
+        } else {
           dmvnorm(g[tmp], mean = mu[tmp], sigma = Sigma[tmp,tmp], log = TRUE)
         }
       } 
@@ -2337,7 +2541,7 @@ propose_jm_mu_Matrix <- function(x, y,
   } else {
     qbetaprop <- dmvnorm(g, mean = mu, sigma = Sigma, log = TRUE)
   }
-
+  
   ## Update additive predictors.
   fit_timegrid <- x$fit.fun_timegrid(g)
   eta_timegrid_mu <- eta_timegrid_mu - x$state$fitted_timegrid + fit_timegrid
@@ -2349,7 +2553,7 @@ propose_jm_mu_Matrix <- function(x, y,
   fit <- drop(x$X %*% g)
   eta$mu <- eta$mu - fitted(x$state) + fit
   x$state$fitted.values <- fit
-
+  
   ## New logLik.
   eeta <- exp(eta_timegrid)
   int0 <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
@@ -2358,10 +2562,10 @@ propose_jm_mu_Matrix <- function(x, y,
   
   ## Prior prob.
   int <- survint(X, eeta * eta_timegrid_alpha, width, exp(eta$gamma),
-    eeta * eta_timegrid_alpha^2, index = x$sparse.setup[["mu.matrix"]],
-    dX, if(!is.null(dX)) eeta * eta_timegrid_dalpha else NULL,
-    if(!is.null(dX)) eeta * eta_timegrid_dalpha^2 else NULL)
-
+                 eeta * eta_timegrid_alpha^2, index = x$sparse.setup[["mu.matrix"]],
+                 dX, if(!is.null(dX)) eeta * eta_timegrid_dalpha else NULL,
+                 if(!is.null(dX)) eeta * eta_timegrid_dalpha^2 else NULL)
+  
   xgrad <- crossprod(x$X, drop((y[, "obs"]  - eta$mu) / exp(eta$sigma)^2)) +
     crossprod(x$XT,  drop(eta$alpha * status)) - int$grad
   if(!is.null(dx))
@@ -2370,19 +2574,20 @@ propose_jm_mu_Matrix <- function(x, y,
   XWX <- crossprod(Diagonal(x = 1 / exp(eta$sigma)^2) %*% x$X, x$X)
   xhess0 <- -1 * XWX - int$hess
   xhess <- xhess0 - x$hess(score = NULL, x$state$parameters, full = FALSE)
-
+  
   Sigma2 <- matrix_inv(-1 * xhess)
   mu2 <- drop(g + nu * Sigma2 %*% xgrad)
   Sigma2 <- as.matrix(Sigma2) 
   
-  if(!is.null(x$sparse.setup[["mu.matrix"]])){
-    lqbeta <- lapply(1:nrow(x$sparse.setup[["mu.matrix"]]), function(i){
-      tmp <- x$sparse.setup[["mu.matrix"]][i,]
-      tmp <- tmp[tmp > 0]
-      if(length(tmp) == 1){
-        drop(dnorm(g0[tmp], mean = mu2[tmp], sd = Sigma2[tmp,tmp]))
+  if(x$sparse.setup$pattern != "other"){
+    lqbeta <- lapply(1:length(x$sparse.setup$coeffs), function(i){
+      tmp <- x$sparse.setup$coeff[[i]]
+      if(x$sparse.setup$pattern == "diagonal"){
+        drop(dnorm(g0[tmp], mean = mu2[tmp], sd = sqrt(Sigma2[tmp,tmp]), log = TRUE))
       } else{
-        if(length(tmp) > 1){
+        if(length(tmp) == 1){
+          drop(dnorm(g0[tmp], mean = mu2[tmp], sd = sqrt(Sigma2[tmp,tmp]), log = TRUE))
+        } else {
           dmvnorm(g0[tmp], mean = mu2[tmp], sigma = Sigma2[tmp,tmp], log = TRUE)
         }
       } 
@@ -2391,11 +2596,11 @@ propose_jm_mu_Matrix <- function(x, y,
   } else {
     qbeta <- dmvnorm(g0, mean = mu2, sigma = as.matrix(Sigma2), log = TRUE)
   }
-
+  
   
   ## Save edf.
   x$state$edf <- sum_diag(int$hess %*% Sigma2)
-
+  
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
     if(length(x$S) < 2) {
@@ -2408,7 +2613,7 @@ propose_jm_mu_Matrix <- function(x, y,
       i <- grep("tau2", names(x$state$parameters))
       for(j in i) {
         x$state$parameters <- uni.slice(x$state$parameters, x, NULL, NULL,
-          NULL, id = "mu", j, logPost = uni.slice_tau2_logPost, lower = 0, ll = 0)
+                                        NULL, id = "mu", j, logPost = uni.slice_tau2_logPost, lower = 0, ll = 0)
       }
     }
   }
@@ -2421,13 +2626,13 @@ propose_jm_mu_Matrix <- function(x, y,
 
 
 propose_jm_alpha <- function(x, y,
-  eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
-  eta_timegrid_dmu, eta_timegrid_dalpha,
-  width, sub, nu, status, id, ...)
+                             eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
+                             eta_timegrid_dmu, eta_timegrid_dalpha,
+                             width, sub, nu, status, id, ...)
 {
   ## The time-dependent design matrix for the grid.
   X <- x$fit.fun_timegrid(NULL)
-
+  
   ## Timegrid lambda.
   eeta <- exp(eta_timegrid)
   
@@ -2436,14 +2641,14 @@ propose_jm_alpha <- function(x, y,
   pibeta <- sum((eta_timegrid[,ncol(eta_timegrid)] + eta$gamma) * status, na.rm = TRUE) -
     exp(eta$gamma) %*% int0 + sum(dnorm(y[, "obs"], mean = eta$mu, sd = exp(eta$sigma), log = TRUE))
   p1 <- x$prior(x$state$parameters)
-
+  
   ## Compute gradient and hessian integrals.
   int <- survint(X, eeta * eta_timegrid_mu, width, exp(eta$gamma),
-    eeta * eta_timegrid_mu^2, index = x$sparse.setup$matrix)
+                 eeta * eta_timegrid_mu^2, index = x$sparse.setup$matrix)
   xgrad <- t(x$XT) %*% drop(eta_timegrid_mu[, ncol(eeta)] * status) - int$grad
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
-
+  
   ## Compute the inverse of the hessian.
   Sigma <- matrix_inv(xhess, index = x$sparse.setup)
   
@@ -2480,7 +2685,7 @@ propose_jm_alpha <- function(x, y,
   
   ## Prior prob.
   int <- survint(X, eeta * eta_timegrid_mu, width, exp(eta$gamma),
-    eeta * eta_timegrid_mu^2, index = x$sparse.setup$matrix)
+                 eeta * eta_timegrid_mu^2, index = x$sparse.setup$matrix)
   xgrad <- t(x$XT) %*% drop(eta_timegrid_mu[, ncol(eeta)] * status) - int$grad
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
@@ -2491,7 +2696,7 @@ propose_jm_alpha <- function(x, y,
   
   ## Save edf.
   x$state$edf <- sum_diag(int$hess %*% Sigma2)
-
+  
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
     if(length(x$S) < 2) {
@@ -2504,7 +2709,7 @@ propose_jm_alpha <- function(x, y,
       i <- grep("tau2", names(x$state$parameters))
       for(j in i) {
         x$state$parameters <- uni.slice(x$state$parameters, x, NULL, NULL,
-          NULL, id = "alpha", j, logPost = uni.slice_tau2_logPost, lower = 0, ll = 0)
+                                        NULL, id = "alpha", j, logPost = uni.slice_tau2_logPost, lower = 0, ll = 0)
       }
     }
   }
@@ -2516,13 +2721,13 @@ propose_jm_alpha <- function(x, y,
 
 
 propose_jm_dalpha <- function(x, y,
-  eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
-  eta_timegrid_dmu, eta_timegrid_dalpha,
-  width, sub, nu, status, id, ...)
+                              eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
+                              eta_timegrid_dmu, eta_timegrid_dalpha,
+                              width, sub, nu, status, id, ...)
 {
   ## The time-dependent design matrix for the grid.
   X <- x$fit.fun_timegrid(NULL)
-
+  
   ## Timegrid lambda.
   eeta <- exp(eta_timegrid)
   
@@ -2531,14 +2736,14 @@ propose_jm_dalpha <- function(x, y,
   pibeta <- sum((eta_timegrid[,ncol(eta_timegrid)] + eta$gamma) * status, na.rm = TRUE) -
     exp(eta$gamma) %*% int0 + sum(dnorm(y[, "obs"], mean = eta$mu, sd = exp(eta$sigma), log = TRUE))
   p1 <- x$prior(x$state$parameters)
-
+  
   ## Compute gradient and hessian integrals.
   int <- survint(X, eeta * eta_timegrid_dmu, width, exp(eta$gamma),
-    eeta * eta_timegrid_dmu^2, index = x$sparse.setup$matrix)
+                 eeta * eta_timegrid_dmu^2, index = x$sparse.setup$matrix)
   xgrad <- t(x$XT) %*% drop(eta_timegrid_dmu[, ncol(eeta)] * status) - int$grad
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
-
+  
   ## Compute the inverse of the hessian.
   Sigma <- matrix_inv(xhess, index = x$sparse.setup)
   
@@ -2575,7 +2780,7 @@ propose_jm_dalpha <- function(x, y,
   
   ## Prior prob.
   int <- survint(X, eeta * eta_timegrid_dmu, width, exp(eta$gamma),
-    eeta * eta_timegrid_dmu^2, index = x$sparse.setup$matrix)
+                 eeta * eta_timegrid_dmu^2, index = x$sparse.setup$matrix)
   xgrad <- t(x$XT) %*% drop(eta_timegrid_dmu[, ncol(eeta)] * status) - int$grad
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   xhess <- int$hess + x$hess(score = NULL, x$state$parameters, full = FALSE)
@@ -2586,7 +2791,7 @@ propose_jm_dalpha <- function(x, y,
   
   ## Save edf.
   x$state$edf <- sum_diag(int$hess %*% Sigma2)
-
+  
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
     if(length(x$S) < 2) {
@@ -2599,7 +2804,7 @@ propose_jm_dalpha <- function(x, y,
       i <- grep("tau2", names(x$state$parameters))
       for(j in i) {
         x$state$parameters <- uni.slice(x$state$parameters, x, NULL, NULL,
-          NULL, id = "alpha", j, logPost = uni.slice_tau2_logPost, lower = 0, ll = 0)
+                                        NULL, id = "alpha", j, logPost = uni.slice_tau2_logPost, lower = 0, ll = 0)
       }
     }
   }
@@ -2611,9 +2816,9 @@ propose_jm_dalpha <- function(x, y,
 
 
 propose_jm_gamma <- function(x, y,
-  eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
-  eta_timegrid_dmu, eta_timegrid_dalpha,
-  width, sub, nu, status, id, int, nobs, ...)
+                             eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
+                             eta_timegrid_dmu, eta_timegrid_dalpha,
+                             width, sub, nu, status, id, int, nobs, ...)
 {
   ## Timegrid lambda.
   eeta <- exp(eta_timegrid)
@@ -2622,7 +2827,7 @@ propose_jm_gamma <- function(x, y,
   pibeta <- sum((eta_timegrid[,ncol(eta_timegrid)] + eta$gamma) * status, na.rm = TRUE) -
     exp(eta$gamma) %*% int + sum(dnorm(y[, "obs"], mean = eta$mu, sd = exp(eta$sigma), log = TRUE))
   p1 <- x$prior(x$state$parameters)
-
+  
   ## Compute gradient and hessian integrals.
   tint <- xhess <- 0
   for(i in 1:nobs) {
@@ -2678,7 +2883,7 @@ propose_jm_gamma <- function(x, y,
   
   ## Save edf.
   x$state$edf <- sum_diag(xhess0 %*% Sigma2)
-
+  
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
     if(length(x$S) < 2) {
@@ -2691,7 +2896,7 @@ propose_jm_gamma <- function(x, y,
       i <- grep("tau2", names(x$state$parameters))
       for(j in i) {
         x$state$parameters <- uni.slice(x$state$parameters, x, NULL, NULL,
-          NULL, id = "gamma", j, logPost = uni.slice_tau2_logPost, lower = 0, ll = 0)
+                                        NULL, id = "gamma", j, logPost = uni.slice_tau2_logPost, lower = 0, ll = 0)
       }
     }
   }
@@ -2704,9 +2909,9 @@ propose_jm_gamma <- function(x, y,
 
 
 propose_jm_sigma <- function(x, y,
-  eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
-  eta_timegrid_dmu, eta_timegrid_dalpha,
-  width, sub, nu, status, id, int, ...)
+                             eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
+                             eta_timegrid_dmu, eta_timegrid_dalpha,
+                             width, sub, nu, status, id, int, ...)
 {
   ## Timegrid lambda.
   eeta <- exp(eta_timegrid)
@@ -2715,7 +2920,7 @@ propose_jm_sigma <- function(x, y,
   pibeta <- sum((eta_timegrid[,ncol(eta_timegrid)] + eta$gamma) * status, na.rm = TRUE) -
     exp(eta$gamma) %*% int + sum(dnorm(y[, "obs"], mean = eta$mu, sd = exp(eta$sigma), log = TRUE))
   p1 <- x$prior(x$state$parameters)
- 
+  
   ## Compute gradient and hessian integrals.
   xgrad <- crossprod(x$X, -1 + (y[, "obs"] - eta$mu)^2 / exp(eta$sigma)^2)
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
@@ -2765,7 +2970,7 @@ propose_jm_sigma <- function(x, y,
   
   ## Save edf.
   x$state$edf <- sum_diag(xhess0 %*% Sigma2)
-
+  
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
     if(length(x$S) < 2) {
@@ -2778,7 +2983,7 @@ propose_jm_sigma <- function(x, y,
       i <- grep("tau2", names(x$state$parameters))
       for(j in i) {
         x$state$parameters <- uni.slice(x$state$parameters, x, NULL, NULL,
-          NULL, id = "sigma", j, logPost = uni.slice_tau2_logPost, lower = 0, ll = 0)
+                                        NULL, id = "sigma", j, logPost = uni.slice_tau2_logPost, lower = 0, ll = 0)
       }
     }
   }
@@ -2798,9 +3003,9 @@ smooth.construct.Re.smooth.spec <- function(object, data, knots)
   if(object$bs.dim < 0)
     object$bs.dim <- 5
   xobj <- eval(as.call(c(as.symbol("s"),
-    as.symbol(object$term[!isf]),
-    k=object$bs.dim,xt=list(object$xt),
-    bs="ps")))
+                         as.symbol(object$term[!isf]),
+                         k=object$bs.dim,xt=list(object$xt),
+                         bs="ps")))
   xobj <- smoothCon(xobj, data, knots, absorb.cons = FALSE, n = length(id))[[1]]
   xl <- levels(id)
   object$X <- list()
@@ -2856,9 +3061,9 @@ smooth.construct.Re2.smooth.spec <- function(object, data, knots)
   if(object$bs.dim < 0)
     object$bs.dim <- 5
   xobj <- eval(as.call(c(as.symbol("s"),
-    as.symbol(object$term[!isf]),
-    k=object$bs.dim,xt=list(object$xt),
-    bs="ps")))
+                         as.symbol(object$term[!isf]),
+                         k=object$bs.dim,xt=list(object$xt),
+                         bs="ps")))
   xobj <- smoothCon(xobj, data, knots, absorb.cons = FALSE, n = length(id))[[1]]
   xl <- levels(id)
   object$X <- object$S <- object$Q2 <- list()
@@ -2922,7 +3127,7 @@ param_time_transform2 <- function (x, formula, data, grid, yname, timevar, take,
       temp <- lapply(1:length(idata), function(i){length(unique(idata[[i]])) > 1})
       if(any(unlist(temp))){
         tvar <- c(tvar, j)
-        print(tvar)
+        # print(tvar)
         # times <- split(data[[timevar2]], id)
         # extract unique time-varying values
         values <- lapply(1:length(idata), function(i){unique(idata[[i]])})
@@ -2961,7 +3166,6 @@ param_time_transform2 <- function (x, formula, data, grid, yname, timevar, take,
         df
       else cbind(X, df)
       Xn <- c(Xn, j)
-      print(Xn)
     }
   }
   if (!is.null(X)) 
@@ -3298,8 +3502,8 @@ rJM <- function(hazard, censoring, x, r,
 
 ## Prediction.
 jm.predict <- function(object, newdata, type = c("link", "parameter", "probabilities", "cumhaz"),
-  FUN = function(x) { mean(x, na.rm = TRUE) }, subdivisions = 100, cores = NULL,
-  chunks = 1, verbose = FALSE, ...)
+                       FUN = function(x) { mean(x, na.rm = TRUE) }, subdivisions = 100, cores = NULL,
+                       chunks = 1, verbose = FALSE, ...)
 {
   if(is.null(newdata))
     newdata <- model.frame(object)
@@ -3309,21 +3513,21 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
   if(!(type %in% c("probabilities", "cumhaz"))) {
     object$family$predict <- NULL
     return(predict.bamlss(object, newdata = newdata, type = type,
-      FUN = FUN, cores = cores, chunks = chunks, verbose = verbose, ...))
+                          FUN = FUN, cores = cores, chunks = chunks, verbose = verbose, ...))
   }
   if(object$family$family != "jm")
     stop("object must be a joint-model!")
-
+  
   dalpha <- has_pterms(object$x$dalpha$terms) | (length(object$x$dalpha$smooth.construct) > 0)
-
+  
   timevar <- attr(object$y[[1]], "timevar")
   idvar <- attr(object$y[[1]], "idvar")
-
+  
   ## Create the time grid.  
   grid <- function(upper, length) {
     seq(from = 0, to = upper, length = length)
   }
-
+  
   jm_probs <- function(data) {
     take <- !duplicated(data[, c(timevar["lambda"], idvar)])
     dsurv <- subset(data, take)
@@ -3333,50 +3537,50 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
     width <- rep(NA, nobs)
     for(i in 1:nobs)
       width[i] <- timegrid[[i]][2]
-
+    
     pred.setup <- predict.bamlss(object, data, type = "link",
-      get.bamlss.predict.setup = TRUE, ...)
+                                 get.bamlss.predict.setup = TRUE, ...)
     enames <- pred.setup$enames
-
+    
     pred_gamma <- with(pred.setup, .predict.bamlss("gamma",
-      object$x$gamma, samps, enames$gamma, intercept,
-      nsamps, dsurv, env))
-
+                                                   object$x$gamma, samps, enames$gamma, intercept,
+                                                   nsamps, dsurv, env))
+    
     pred_lambda <- with(pred.setup, .predict.bamlss.surv.td("lambda",
-      object$x$lambda$smooth.construct, samps, enames$lambda, intercept,
-      nsamps, dsurv, env, timevar["lambda"], timegrid,
-      drop.terms.bamlss(object$x$lambda$terms, sterms = FALSE, keep.response = FALSE),
-      type = 2))
-
+                                                            object$x$lambda$smooth.construct, samps, enames$lambda, intercept,
+                                                            nsamps, dsurv, env, timevar["lambda"], timegrid,
+                                                            drop.terms.bamlss(object$x$lambda$terms, sterms = FALSE, keep.response = FALSE),
+                                                            type = 2))
+    
     pred_alpha <- with(pred.setup, .predict.bamlss.surv.td("alpha",
-      object$x$alpha$smooth.construct, samps, enames$alpha, intercept,
-      nsamps, dsurv, env, timevar["lambda"], timegrid,
-      drop.terms.bamlss(object$x$alpha$terms, sterms = FALSE, keep.response = FALSE)))
-
+                                                           object$x$alpha$smooth.construct, samps, enames$alpha, intercept,
+                                                           nsamps, dsurv, env, timevar["lambda"], timegrid,
+                                                           drop.terms.bamlss(object$x$alpha$terms, sterms = FALSE, keep.response = FALSE)))
+    
     pred_mu <- with(pred.setup, .predict.bamlss.surv.td("mu",
-      object$x$mu$smooth.construct, samps, enames$mu, intercept,
-      nsamps, dsurv, env, timevar["mu"], timegrid,
-      drop.terms.bamlss(object$x$mu$terms, sterms = FALSE, keep.response = FALSE)))
-
+                                                        object$x$mu$smooth.construct, samps, enames$mu, intercept,
+                                                        nsamps, dsurv, env, timevar["mu"], timegrid,
+                                                        drop.terms.bamlss(object$x$mu$terms, sterms = FALSE, keep.response = FALSE)))
+    
     if(dalpha) {
       pred_dalpha <- with(pred.setup, .predict.bamlss.surv.td("dalpha",
-        object$x$dalpha$smooth.construct, samps, enames$dalpha, intercept,
-        nsamps, dsurv, env, timevar["lambda"], timegrid,
-        drop.terms.bamlss(object$x$dalpha$terms, sterms = FALSE, keep.response = FALSE)))
-
+                                                              object$x$dalpha$smooth.construct, samps, enames$dalpha, intercept,
+                                                              nsamps, dsurv, env, timevar["lambda"], timegrid,
+                                                              drop.terms.bamlss(object$x$dalpha$terms, sterms = FALSE, keep.response = FALSE)))
+      
       pred_dmu <- with(pred.setup, .predict.bamlss.surv.td("dmu",
-        object$x$dmu$smooth.construct, samps, enames$dmu, intercept,
-        nsamps, dsurv, env, timevar["mu"], timegrid,
-        drop.terms.bamlss(object$x$dmu$terms, sterms = FALSE, keep.response = FALSE),
-        derivMat = TRUE))
+                                                           object$x$dmu$smooth.construct, samps, enames$dmu, intercept,
+                                                           nsamps, dsurv, env, timevar["mu"], timegrid,
+                                                           drop.terms.bamlss(object$x$dmu$terms, sterms = FALSE, keep.response = FALSE),
+                                                           derivMat = TRUE))
     }
-
+    
     eta_timegrid <- if(dalpha) {
       pred_lambda + pred_alpha * pred_mu + pred_dalpha * pred_dmu
     } else {
       pred_lambda + pred_alpha * pred_mu
     }
-
+    
     probs <- NULL
     for(i in 1:ncol(eta_timegrid)) {
       eta <- matrix(eta_timegrid[, i], nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
@@ -3388,19 +3592,19 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
         cbind(probs, exp(pred_gamma[, i]) * int)
       }
     }
-
+    
     if(!is.null(FUN)) {
       if(is.matrix(probs)) {
         if(ncol(probs) > 1)
           probs <- apply(probs, 1, FUN)
       } 
     }
-
+    
     return(probs)
   }
-
+  
   ia <- interactive()
-
+  
   if(is.null(cores)) {
     if(chunks < 2) {
       probs <- jm_probs(newdata)
@@ -3450,47 +3654,47 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
       }
       return(pr)
     }
-
+    
     id <- sort(rep(1:cores, length.out = nrow(newdata)))
     newdata <- split(newdata, id)
     cores <- length(newdata)
     probs <- parallel::mclapply(1:cores, parallel_fun, mc.cores = cores)
-
+    
     probs <- if(is.matrix(probs[[1]])) {
       do.call("rbind", probs)
     } else {
       do.call("c", probs)
     }
   }
-
+  
   return(probs)
 }
 
 
 jm.survplot <- function(object, i = 1, maxtime = NULL,
-  grid = 10, points = TRUE, rug = !points)
+                        grid = 10, points = TRUE, rug = !points)
 {
   on.exit(par(par(no.readonly = TRUE)))
-
+  
   FUN <- function(x) { mean(x, na.rm = TRUE) }
   idvar <- attr(object$y[[1]], "idvar")
   timevar <- attr(object$y[[1]], "timevar")
   mf <- model.frame(object)
-
+  
   if(!is.character(i))
     i <- levels(mf[[idvar]])[i]
   ii <- mf[[idvar]] == i
-
+  
   tmax <- max(mf[[timevar["lambda"]]][ii])
   if(is.null(maxtime))
     maxtime <- 1.4 * tmax
   time <- seq(tmax, maxtime, length.out = grid)
-
+  
   if(all(time == time[1])) {
     stop(paste("Not enough time points available for individual ",
-      i, "!", sep = ""))
+               i, "!", sep = ""))
   }
-
+  
   nd <- data.frame(time, time)
   names(nd) <- timevar
   vars <- names(mf)[!(names(mf) %in% c(timevar, idvar))]
@@ -3504,32 +3708,32 @@ jm.survplot <- function(object, i = 1, maxtime = NULL,
     }
   }
   nd[[idvar]] <- factor(i, levels = levels(mf[[idvar]]))
-
+  
   p_surv <- t(predict(object, newdata = nd, type = "probabilities", FUN = c95))
-
+  
   time2 <- sort(c(tmax, seq(0, maxtime, length = grid - 1)))
   nd[[timevar["lambda"]]] <- nd[[timevar["mu"]]] <- time2
-
+  
   p_long <- predict(object, newdata = nd, model = "mu", FUN = c95)
-
+  
   s2.col <- rev(rgb(0, 0, 1, alpha = seq(0.1, 0.01, length = 50)))
-
+  
   par(mfrow = c(2, 1), mar = rep(0, 4),
-    oma = c(4.1, 4.1, 1.1, 4.1))
+      oma = c(4.1, 4.1, 1.1, 4.1))
   plot2d(p_surv ~ time, fill.select = c(0, 1, 0, 1),
-    scheme = 2, axes = FALSE, ylim = c(0, 1),
-    xlim = c(0, maxtime), s2.col = s2.col, xlab = "", ylab = "")
+         scheme = 2, axes = FALSE, ylim = c(0, 1),
+         xlim = c(0, maxtime), s2.col = s2.col, xlab = "", ylab = "")
   abline(v = tmax, lty = 2)
   axis(2)
   box()
   mtext("Prob(T > t)", side = 2, line = 2.5)
   plot2d(p_long[time2 <= tmax, ] ~ time2[time2 <= tmax], fill.select = c(0, 1, 0, 1),
-    scheme = 2, axes = FALSE, xlim = c(0, maxtime),
-    xlab = "", ylab = "",
-    ylim = if(points) range(c(p_long, object$y[[1]][ii, "obs"])) else range(p_long))
+         scheme = 2, axes = FALSE, xlim = c(0, maxtime),
+         xlab = "", ylab = "",
+         ylim = if(points) range(c(p_long, object$y[[1]][ii, "obs"])) else range(p_long))
   plot2d(p_long[time2 >= tmax, ] ~ time2[time2 >= tmax], fill.select = c(0, 1, 0, 1),
-    scheme = 2, axes = FALSE, add = TRUE, s2.col = s2.col,
-    xlab = "", ylab = "")
+         scheme = 2, axes = FALSE, add = TRUE, s2.col = s2.col,
+         xlab = "", ylab = "")
   abline(v = tmax, lty = 2)
   if(points)
     points(mf[[timevar["mu"]]][ii], object$y[[1]][ii, "obs"])
@@ -3540,7 +3744,7 @@ jm.survplot <- function(object, i = 1, maxtime = NULL,
   box()
   mtext("Effect of time", side = 4, line = 2.5)
   mtext("Time", side = 1, line = 2.5)
-
+  
   invisible(NULL)
 }
 
