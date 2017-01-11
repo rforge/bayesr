@@ -38,9 +38,9 @@ derivs_nn <- function(k = 1)
 }
 
 
-fit.nn <- function(x, y, k = 10, w = NULL,
+fit.nn <- function(x, y, k = 10, start = NULL,
   method = c("optim", "nr"), plot = FALSE,
-  control = list(...), ...)
+  lambda = .Machine$double.eps^0.5, control = list(...), ...)
 {
   method <- match.arg(method)
 
@@ -50,6 +50,9 @@ fit.nn <- function(x, y, k = 10, w = NULL,
     control$reltol <- 0.00001 #sqrt(.Machine$double.eps)
   if(is.null(control$verbose))
     control$verbose <- TRUE
+
+  if(!is.null(start))
+    k <- length(start)
 
   gnn <- derivs_nn(k = k)$grad
 
@@ -66,7 +69,13 @@ fit.nn <- function(x, y, k = 10, w = NULL,
 
   objfun_nn <- function(w) {
     w[is.na(w)] <- .Machine$double.eps
-    sum((y - fit_nn(w))^2)
+    fit <- fit_nn(w)
+    if(plot) {
+      plot(x, y, ylim = range(c(y, fit)))
+      ox <- order(x)
+      lines(fit[ox] ~ x[ox], lwd = 2)
+    }
+    sum((y - fit)^2) + lambda * sum(w^2)
   }
 
   grad_nn <- function(w) {
@@ -75,7 +84,7 @@ fit.nn <- function(x, y, k = 10, w = NULL,
     grad <- rep(0, length(w))
     for(i in seq_along(w))
       grad[i] <- sum(gnn[[i]](w) * dfdeta)
-    grad
+    grad + lambda * w
   }
 
   hess_nn <- function(w) {
@@ -85,16 +94,15 @@ fit.nn <- function(x, y, k = 10, w = NULL,
     for(i in 1:m) {
       for(j in 1:m) {
         if(j <= i) {
-          h[i, j] <- 2 * crossprod(gnn[[i]](w), gnn[[j]](w))
+          h[i, j] <- crossprod(gnn[[i]](w), gnn[[j]](w))
         }
         h[j, i] <- h[i, j]
       }
     }
-    h
+    h + lambda * diag(length(w))
   }
 
-  if(is.null(w))
-    w <- runif(k * 3 + 1, 0, 1)
+  w <- if(!is.null(start)) start else runif(k * 3 + 1, 0, 1)
 
   rval <- list()
   if(method == "optim") {
@@ -104,11 +112,6 @@ fit.nn <- function(x, y, k = 10, w = NULL,
     rval$hessian <- opt$hessian
     rval$fitted.values <- fit_nn(opt$par)
     rval$converged <- opt$convergence < 1
-    if(plot) {
-      plot(x, y, ylim = range(c(y, rval$fitted.values)))
-      ox <- order(x)
-      lines(rval$fitted.values[ox] ~ x[ox], lwd = 2)
-    }
   } else {
     eps <- control$reltol + 1
     iter <- 0
@@ -116,7 +119,7 @@ fit.nn <- function(x, y, k = 10, w = NULL,
     while(eps > control$reltol & iter < control$maxit) {
       fit0 <- fit
       g <- grad_nn(w)
-      h <- chol2inv(chol(hess_nn(w) + diag(0.000001, length(w))))
+      h <- chol2inv(chol(hess_nn(w) + diag(.Machine$double.eps^0.5, length(w))))
       foo <- function(nu) {
         sum((y - fit_nn(drop(w - nu * h %*% g)))^2)
       }
@@ -140,7 +143,7 @@ fit.nn <- function(x, y, k = 10, w = NULL,
     }
     if(control$verbose) cat("\n")
     rval$coefficients <- w
-    rval$hessian <- hess_nn(w) + diag(0.000001, length(w))
+    rval$hessian <- hess_nn(w) + diag(.Machine$double.eps^0.5, length(w))
     rval$fitted.values <- fit_nn(w)
   }
 
@@ -154,5 +157,5 @@ n <- 300
 x <- seq(0, 1, length = n)
 y <- 1.2 + f(x) + rnorm(n, sd = 0.1)
 
-b <- fit.nn(x, y, k = 30, method = "optim", plot = TRUE)
+b <- fit.nn(x, y, k = 10, method = "optim", plot = TRUE)
 
