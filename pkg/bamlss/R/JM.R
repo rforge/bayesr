@@ -221,18 +221,7 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
     x$sigma$smooth.construct$model.matrix$state$parameters[1] <- if(is.null(sigma)) log(sd(y[, "obs"], na.rm = TRUE)) else sigma
     x$sigma$smooth.construct$model.matrix$state$fitted.values <- x$sigma$smooth.construct$model.matrix$X %*% x$sigma$smooth.construct$model.matrix$state$parameters
   }
-  
-  ## Shrink design and index matrices for survival part.
-  ## Enforce sparse setup.
-  #!# removed due to enlarged sparse_Matrix_setup2()
-  # for(j in c("mu", if(dalpha) "dmu" else NULL)) {
-  #   for(sj in seq_along(x[[j]]$smooth.construct)) {
-  #     if(!is.null(x[[j]]$smooth.construct[[sj]]$sparse.setup$matrix)) {
-  #       x[[j]]$smooth.construct[[sj]]$sparse.setup[["mu.matrix"]] <- x[[j]]$smooth.construct[[sj]]$sparse.setup$matrix[take, , drop = FALSE]
-  #     }
-  #   }
-  # }
-  
+
   ## Make fixed effects term the last term in mu.
   if(!is.null(x$mu$smooth.construct$model.matrix) & (length(x$mu$smooth.construct) > 1)) {
     nmu <- names(x$mu$smooth.construct)
@@ -276,7 +265,7 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
   ## Sparse matrix setup for mu/dmu.
   for(j in c("mu", if(dalpha) "dmu" else NULL)) {
     for(sj in seq_along(x[[j]]$smooth.construct)) {
-      x[[j]]$smooth.construct[[sj]] <- sparse_Matrix_setup2(x[[j]]$smooth.construct[[sj]], sparse = sparse, take = take)
+      x[[j]]$smooth.construct[[sj]] <- sparse_Matrix_setup(x[[j]]$smooth.construct[[sj]], sparse = sparse, take = take)
     }
   }
 
@@ -337,44 +326,8 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
   return(list("x" = x, "y" = y0, "family" = family, "terms" = terms, "formula" = formula))
 }
 
-sparse_Matrix_setup <- function(x, sparse = TRUE, force = FALSE)
-{
-  if(sparse) {
-    if((ncol(x$sparse.setup$crossprod) < (ncol(x$X) * 0.5)) | force) {
-      x$X <- Matrix(x$X, sparse = TRUE)
-      x$XT <- Matrix(x$XT, sparse = TRUE)
-      for(j in seq_along(x$S))
-        x$S[[j]] <- Matrix(x$S[[j]], sparse = TRUE)
-      x$update <- update_jm_mu_Matrix
-      x$propose <- propose_jm_mu_Matrix
-      x$prior <- make.prior(x)
-      # to be tested
-      x$hess <- function(score = NULL, parameters, full = FALSE) {
-        tau2 <- get.par(parameters, "tau2")
-        if(x$fixed | !length(tau2)) {
-          k <- length(get.par(parameters, "b"))
-          hx <- matrix(0, k, k)
-        } else {
-          hx <- 0
-          for(j in seq_along(tau2)) {
-            hx <- hx + (1 / tau2[j]) * if(is.function(x$S[[j]])) x$S[[j]](get.par(parameters, "b")) else x$S[[j]]
-          }
-        }
-        return(hx)
-      }
-    } else {
-      x$update <- update_jm_mu
-      x$propose <- propose_jm_mu_simple
-    }
-  } else {
-    x$update <- update_jm_mu
-    x$propose <- propose_jm_mu_simple
-  }
-  return(x)
-}
 
-
-sparse_Matrix_setup2 <- function(x, sparse = TRUE, force = FALSE, take)
+sparse_Matrix_setup <- function(x, sparse = TRUE, force = FALSE, take)
 {
   if(sparse) {
     if((ncol(x$sparse.setup$crossprod) < (ncol(x$X) * 0.5)) | force) {
@@ -2495,7 +2448,13 @@ propose_jm_mu_Matrix <- function(x, y,
   mu <- drop(g0 + Sigma %*% xgrad)
   Sigma <- as.matrix(Sigma)
 
-  ## Sample new parameters using blickdiagonal structure.
+  ## Sample new parameters using blockdiagonal structure.
+  if(length(x$sparse.setup$coeffs) < 1){
+    stop("Please check your longitudinal time variable. 
+          In order to use the sparse setup in random slopes, no 0s are allowed in
+          the longitudinal time variable. See ?jm_bamlss for further information.")
+  }
+
   if(x$sparse.setup$pattern != "other"){
     lg <- lapply(1:length(x$sparse.setup$coeffs), function(i){
       tmp <- x$sparse.setup$coeff[[i]]

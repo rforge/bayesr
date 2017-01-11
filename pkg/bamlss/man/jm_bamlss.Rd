@@ -117,7 +117,7 @@ jm.survplot(object, i = 1, maxtime = NULL,
 }
 
 \details{
-We refer to the paper of Koehler, Umlauf, and Greven (2016) for details on the flexible
+We refer to the paper of Koehler et al. (2016) for details on the flexible
 additive joint model. In short, we model the hazard of subject \eqn{i} an event at time
 \eqn{t} as
 \deqn{h_{i}(t) = \exp [\eta_{\lambda i}(t) + \eta_{\gamma i}+\eta_{\alpha i}(t) \cdot \eta_{\mu i}(t)]}
@@ -136,7 +136,7 @@ include smooth time-varying, random or spatial effects. For the Bayesian estimat
 we specify corresponding priors: For linear or parametric terms we use vague normal priors, smooth
 and random effect terms are regularized by placing generic multivariate normal priors on the
 coefficients and for anisotropic smooths, when multiple smoothing variance parameters are involved,
-more complex prior are in place (cf. Koehler, Umlauf & Greven, 2016). We use inverse Gamma
+more complex prior are in place (cf. Koehler et al., 2016). We use inverse Gamma
 hyper-priors, i.e. IG(0.001, 0.001) to obtain an inverse Gamma full conditional for the variance
 parameters. We estimate the posterior mode by maximizing the log-posterior of the model using a
 Newton-Raphson procedure, the posterior mean is obtained via derivative-based Metropolis-Hastings
@@ -146,8 +146,12 @@ We approximate integration in the survival part of the likelihood using trapezoi
 posterior mode estimation.
 }
 
+\note{
+Please note that in order to make use of the sparse setup in fitting random slopes (cf. first example), no observation time should be exactly 0. 
+}
+
 \references{
-  Koehler N, Umlauf N, Beyerlein, A., Winkler, C. Ziegler, A.-G., Greven S (2016). Flexible Bayesian Additive Joint Models with an Application to Type 1 Diabetes Research. arXiv:1611.01485 [stat], http://arxiv.org/abs/1611.01485.
+  Koehler M, Umlauf N, Beyerlein, A., Winkler, C. Ziegler, A.-G., Greven S (2016). Flexible Bayesian Additive Joint Models with an Application to Type 1 Diabetes Research. arXiv:1611.01485 [stat], http://arxiv.org/abs/1611.01485.
   
   Umlauf N, Klein N, Zeileis A (2016). Bayesian Additive Models for Location
     Scale and Shape (and Beyond). \emph{(to appear)}
@@ -166,6 +170,9 @@ posterior mode estimation.
 d <- simJM(nsub = 200, long_setting = "linear", 
   alpha_setting = "constant",
   dalpha_setting = "zero", full = FALSE)
+  
+# remove 0s from the longitudinal time variable to allow sparse calculations
+d$obstime <- d$obstime - sqrt(.Machine$double.eps)
 
 ## Formula of the according joint model
 f <- list(
