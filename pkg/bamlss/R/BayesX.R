@@ -1021,7 +1021,7 @@ tx <- function(..., bs = "ps", k = NA,
   if((length(object$margin) < 2) & all(is.na(k)))
     object$margin[[1]]$bs.dim <- 10
   object$label <- gsub("te(", "tx(", object$label, fixed = TRUE)
-  object$special <- TRUE
+  #object$special <- TRUE
   class(object) <- "tensorX.smooth.spec"
   object
 }
@@ -1033,7 +1033,7 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
 
   object$np <- FALSE
   object$by.done <- TRUE
-  object$side.constrain <- FALSE
+  #object$side.constrain <- FALSE
   object <- smooth.construct.tensor.smooth.spec(object, data, knots)
   object$sx.S <- lapply(object$margin, function(x) { x$S[[1]] })
   object$sx.rank <- qr(do.call("+", object$S))$rank
@@ -1050,6 +1050,9 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
     if(length(object$margin) < 2) {
       p <- ncol(object$margin[[1]]$X)
       object$C <- matrix(1, ncol = p)
+      if(object$constraint == "main") {
+        object$C <- t(cbind(1, 1:p))
+      }
     } else {
       p1 <- ncol(object$margin[[2]]$X); p2 <- ncol(object$margin[[1]]$X)
       I1 <- diag(p1); I2 <- diag(p2)
@@ -1098,6 +1101,8 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
   if(object$by != "NA") {
     object$X <- data[[object$by]] * object$X
   }
+
+  attr(object$C, "always.apply") <- TRUE
   
   class(object) <- "tensorX.smooth"
   return(object)
