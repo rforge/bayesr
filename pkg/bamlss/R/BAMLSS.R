@@ -308,6 +308,10 @@ design.construct <- function(formula, data = NULL, knots = NULL,
         no.mgcv <- NULL
         smooth <- list()
         for(tsm in sterms) {
+          if(!is.null(tsm$special)) {
+            if(!tsm$special)
+              tsm$special <- NULL
+          }
           if(is.null(tsm$special)) {
             if(is.null(tsm$xt))
               tsm$xt <- list()
