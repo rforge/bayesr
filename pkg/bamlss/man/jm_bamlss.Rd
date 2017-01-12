@@ -11,7 +11,7 @@
 
 \description{
   Family object to fit a flexible additive joint model for longitudinal and survival
-  data under a Bayesian approach as presented in Koehler, Umlauf and Greven (2016). 
+  data under a Bayesian approach as presented in Koehler et al. (2016). 
   All parts of the joint model can be specified as structured additive predictors. 
   See the details and examples.
 }
@@ -197,7 +197,7 @@ plot(b)
 
 ## Predict event probabilities for two
 ## individuals.
-nd <- subset(d, id %in% c(192, 127))
+nd <- subset(d, id \%in\% c(192, 127))
 p <- predict(b, newdata = nd, type = "probabilities")
 print(p)
 
