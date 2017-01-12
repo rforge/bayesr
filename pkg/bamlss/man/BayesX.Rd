@@ -5,6 +5,8 @@
 \alias{tx}
 \alias{get_BayesXsrc}
 \alias{quant_bamlss}
+\alias{smooth.construct.tensorX.smooth.spec}
+\alias{Predict.matrix.tensorX.smooth}
 
 \title{
   Markov Chain Monte Carlo for BAMLSS using \pkg{BayesX}
@@ -32,8 +34,12 @@ sx(x, z = NULL, bs = "ps", by = NA, ...)
 
 ## Special BayesX tensor product smooth term constructor.
 tx(..., bs = "ps", k = NA,
-  constraint = c("center", "main", "both",
+  ctr = c("center", "main", "both",
     "none", "meanf", "meanfd", "meansimple"))
+
+## Smooth constructor and predict matrix.
+\method{smooth.construct}{tensorX.smooth.spec}(object, data, knots, ...)
+\method{Predict.matrix}{tensorX.smooth}(object, data) 
 
 ## Family object for quantile regression with BayesX.
 quant_bamlss(prob = 0.5)
@@ -56,7 +62,8 @@ get_BayesXsrc(dir = NULL, install = TRUE)
   \item{offset}{Can be used to supply model offsets for use in fitting,
     returned from function \code{\link{bamlss.frame}}.}
   \item{data}{The model frame that should be used for modeling. Note that argument \code{data} needs
-    not to be specified when the \code{BayesX()} sampler function is used with \code{\link{bamlss}}.}
+    not to be specified when the \code{BayesX()} sampler function is used with \code{\link{bamlss}}.
+    For the smooth constructor for \code{tx()} terms, see function \code{\link[mgcv]{smooth.construct}}.}
   \item{control}{List of control arguments to be send to \pkg{BayesX}. See below.}
   \item{n.iter}{Sets the number of MCMC iterations.}
   \item{thin}{Defines the thinning parameter for MCMC simulation. E.g., \code{thin = 10} means,
@@ -80,9 +87,10 @@ get_BayesXsrc(dir = NULL, install = TRUE)
     should be passed to \pkg{BayesX} for this model term can be specified here. For function
     \code{tx()}, all variables the smooth should be a function of are specified here. For function
     \code{BayesX()} all arguments that should be passed to \code{BayesX.control}.}
-  \item{constraint}{Specifies the type of constraints that should be applied. \code{"main"}, both
+  \item{ctr}{Specifies the type of constraints that should be applied. \code{"main"}, both
     main effects should be removed; \code{"both"}, both main effects and varying effects should
     be removed; \code{"none"}, no constraint should be applied.}
+  \item{object, knots}{See, function \code{\link[mgcv]{smooth.construct}}.}
   \item{prob}{Numeric, specifies the quantile to be modeled, see the examples.}
   \item{install}{Should package \pkg{BayesXsrc} be installed?}
 }
@@ -157,7 +165,7 @@ if(require("BayesXsrc")) {
   d <- GAMart()
 
   ## Estimate model with BayesX. Note
-  ## that BayesX computes staring values, so
+  ## that BayesX computes starting values, so
   ## these are not required by some optimizer function
   ## in bamlss()
   b1 <- bamlss(num ~ s(x1) + s(x2) + s(x3) + s(lon,lat),

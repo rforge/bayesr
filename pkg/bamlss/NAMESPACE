@@ -132,6 +132,8 @@ export(
   "tx",
   "rmf",
   "smooth.construct",
+  "smooth.construct.tensorX.smooth.spec",
+  "Predict.matrix.tensorX.smooth",
   "BUGSeta",
   "BUGSmodel",
   "neighbormatrix",

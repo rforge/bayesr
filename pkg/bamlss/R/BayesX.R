@@ -1014,14 +1014,13 @@ resplit <- function(x) {
 
 ## Special tensor constructor.
 tx <- function(..., bs = "ps", k = NA,
-  constraint = c("center", "main", "both", "none", "meanf", "meanfd", "meansimple"))
+  ctr = c("center", "main", "both", "none", "meanf", "meanfd", "meansimple"))
 {
   object <- te(..., bs = bs, k = k)
-  object$constraint <- match.arg(constraint)
+  object$constraint <- match.arg(ctr)
   if((length(object$margin) < 2) & all(is.na(k)))
     object$margin[[1]]$bs.dim <- 10
   object$label <- gsub("te(", "tx(", object$label, fixed = TRUE)
-  #object$special <- TRUE
   class(object) <- "tensorX.smooth.spec"
   object
 }
@@ -1033,7 +1032,6 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
 
   object$np <- FALSE
   object$by.done <- TRUE
-  #object$side.constrain <- FALSE
   object <- smooth.construct.tensor.smooth.spec(object, data, knots)
   object$sx.S <- lapply(object$margin, function(x) { x$S[[1]] })
   object$sx.rank <- qr(do.call("+", object$S))$rank
@@ -1102,7 +1100,8 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
     object$X <- data[[object$by]] * object$X
   }
 
-  attr(object$C, "always.apply") <- TRUE
+  if(!is.null(object$C))
+    attr(object$C, "always.apply") <- TRUE
   
   class(object) <- "tensorX.smooth"
   return(object)
