@@ -1014,13 +1014,15 @@ resplit <- function(x) {
 
 ## Special tensor constructor.
 tx <- function(..., bs = "ps", k = NA,
-  ctr = c("center", "main", "both", "none", "meanf", "meanfd", "meansimple"))
+  ctr = c("center", "main", "both", "none", "meanf", "meanfd", "meansimple"),
+  special = TRUE)
 {
   object <- te(..., bs = bs, k = k)
   object$constraint <- match.arg(ctr)
   if((length(object$margin) < 2) & all(is.na(k)))
     object$margin[[1]]$bs.dim <- 10
   object$label <- gsub("te(", "tx(", object$label, fixed = TRUE)
+  object$special <- special
   class(object) <- "tensorX.smooth.spec"
   object
 }

@@ -35,7 +35,8 @@ sx(x, z = NULL, bs = "ps", by = NA, ...)
 ## Special BayesX tensor product smooth term constructor.
 tx(..., bs = "ps", k = NA,
   ctr = c("center", "main", "both",
-    "none", "meanf", "meanfd", "meansimple"))
+    "none", "meanf", "meanfd", "meansimple"),
+  special = TRUE)
 
 ## Smooth constructor and predict matrix.
 \method{smooth.construct}{tensorX.smooth.spec}(object, data, knots, ...)
@@ -90,6 +91,9 @@ get_BayesXsrc(dir = NULL, install = TRUE)
   \item{ctr}{Specifies the type of constraints that should be applied. \code{"main"}, both
     main effects should be removed; \code{"both"}, both main effects and varying effects should
     be removed; \code{"none"}, no constraint should be applied.}
+  \item{special}{Should the \code{tx()} model term be treated as a special smooth. This must
+    be set to \code{TRUE} if using the \code{BayesX} sampler and should be set to \code{FALSE},
+    e.g., when using the \code{\link{GMCMC}} sampler.}
   \item{object, knots}{See, function \code{\link[mgcv]{smooth.construct}}.}
   \item{prob}{Numeric, specifies the quantile to be modeled, see the examples.}
   \item{install}{Should package \pkg{BayesXsrc} be installed?}
