@@ -197,7 +197,7 @@ plot(b)
 
 ## Predict event probabilities for two
 ## individuals.
-nd <- subset(d, id \%in\% c(192, 127))
+nd <- subset(d, id %in% c(192, 127))
 p <- predict(b, newdata = nd, type = "probabilities")
 print(p)
 

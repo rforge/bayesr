@@ -1301,6 +1301,8 @@ param_Xtimegrid <- function(formula, data, grid, yname, type = 1, derivMat = FAL
         if(has_intercept)
           X <- X[, colnames(X) != "(Intercept)", drop = FALSE]
         sn <- snames[grep2(paste(id, "p", j, sep = "."), snames, fixed = TRUE)]
+        if(!length(sn))
+          sn <- snames[grep2(paste(id, "p.model.matrix", j, sep = "."), snames, fixed = TRUE)]
         eta <- if(is.null(eta)) {
           fitted_matrix(X, samps[, sn, drop = FALSE])
         } else {
