@@ -3826,9 +3826,9 @@ blockstand <- function(x, n)
   decomp <- qr(x)
   if(decomp$rank < ncol(x))
     stop("block standardization cannot be computed, matrix is not of full rank!")
-  scale <- qr.R(decomp)
+  scale <- qr.R(decomp) * 1 / sqrt(n)
   x <- qr.Q(decomp) * sqrt(n)
-  attr(x, "blockscale") <- solve(scale) + 1 / sqrt(n)
+  attr(x, "blockscale") <- scale
   colnames(x) <- cn
   x
 }
