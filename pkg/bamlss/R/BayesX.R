@@ -1032,14 +1032,20 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
   if(length(object$margin) > 2)
     stop("more than two variables in tx() currently not supported!")
 
+  side.constrain <- if(object$special) FALSE else TRUE
+
   object$np <- FALSE
   object$by.done <- TRUE
+  if(is.null(object$inter))
+    object$inter <- FALSE
   object <- smooth.construct.tensor.smooth.spec(object, data, knots)
   object$sx.S <- lapply(object$margin, function(x) { x$S[[1]] })
   object$sx.rank <- qr(do.call("+", object$S))$rank
 
   if(object$by != "NA")
     object$label <- paste(object$label, object$by, sep = ":")
+
+  object$side.constrain <- side.constrain
 
   if(object$constraint %in% c("meanf", "meanfd", "meansimple", "none")) {
     if(object$constraint == "none")

@@ -2898,16 +2898,22 @@ lasso.coef <- function(x, ...) {
     for(j in names(x$x[[i]]$smooth.construct)) {
       if(inherits(x$x[[i]]$smooth.construct[[j]], "lasso.smooth")) {
         for(jj in names(x$x[[i]]$smooth.construct[[j]]$lasso$trans)) {
+          cid <- paste(i, ".s.", x$x[[i]]$smooth.construct[[j]]$label, ".",
+            x$x[[i]]$smooth.construct[[j]]$lasso$trans[[jj]]$colnames, sep = "")
           if(is.null(x$x[[i]]$smooth.construct[[j]]$lasso$trans[[jj]]$blockscale)) {
-            cid <- paste(i, ".s.", x$x[[i]]$smooth.construct[[j]]$label, ".",
-              x$x[[i]]$smooth.construct[[j]]$lasso$trans[[jj]]$colnames, sep = "")
             if(is.null(dim(cx))) {
               cx[cid] <- cx[cid] / x$x[[i]]$smooth.construct[[j]]$lasso$trans[[jj]]$scale
             } else {
-              cx[, cid] <- cx[, cid] / x$x[[i]]$smooth.construct[[j]]$lasso$trans[[jj]]$scale
+              cx[, cid] <- cx[, cid, drop = FALSE] / x$x[[i]]$smooth.construct[[j]]$lasso$trans[[jj]]$scale
             }
           } else {
-            stop("FIXME: retrans of blockstand missing!")
+            if(is.null(dim(cx))) {
+              cx[cid] <- solve(x$x[[i]]$smooth.construct[[j]]$lasso$trans[[jj]]$blockscale, cx[cid])
+            } else {
+              for(ii in 1:nrow(cx)) {
+                cx[ii, cid] <- solve(x$x[[i]]$smooth.construct[[j]]$lasso$trans[[jj]]$blockscale, cx[ii, cid])
+              }
+            }
           }
         }
       }
@@ -2917,7 +2923,8 @@ lasso.coef <- function(x, ...) {
 }
 
 
-lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, ...)
+lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, name = NULL,
+  mstop = NULL, retrans = FALSE, ...)
 {
   if(!is.character(which)) {
     which <- c("criterion", "parameters")[as.integer(which)]
@@ -2925,12 +2932,15 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, ...
     which <- tolower(which)
     which <- match.arg(which, several.ok = TRUE)
   }
-
-  par <- x$parameters
+  if(is.null(mstop))
+    mstop <- 1:nrow(x$parameters)
+  if(retrans)
+    x$parameters <- lasso.coef(x, mstop = mstop)
+  par <- x$parameters[mstop, , drop = FALSE]
   npar <- colnames(par)
   for(j in c("Intercept", ".edf", ".lambda", ".tau"))
     npar <- npar[!grepl(j, npar, fixed = TRUE)]
-  x$parameters <- x$parameters[, npar, drop = FALSE]
+  x$parameters <- x$parameters[mstop, npar, drop = FALSE]
   ic <- x$model.stats$optimizer$lasso.stats
   nic <- grep("ic", colnames(ic), value = TRUE, ignore.case = TRUE)
 
@@ -2958,6 +2968,10 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, ...
   if("parameters" %in% which) {
     if(spar)
       par(mar = c(5.1, 5.1, 4.1, 10.1))
+
+    if(!is.null(name)) {
+      x$parameters <- x$parameters[, grep(name, colnames(x$parameters), fixed = TRUE), drop = FALSE]
+    }
     xn <- sapply(strsplit(colnames(x$parameters), ".", fixed = TRUE), function(x) { x[1] })
     cols <- if(length(unique(xn)) < 2) "black" else rainbow_hcl(length(unique(xn)))
 
@@ -2968,7 +2982,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, ...
 #    }
 
     matplot(c(1:nrow(x$parameters)), x$parameters, type = "l", lty = 1, col = cols[as.factor(xn)],
-      axes = FALSE, xlab = expression(log(lambda)), ylab = expression(beta[j]))
+      axes = FALSE, xlab = expression(log(lambda)), ylab = expression(beta[j]), ...)
     axis(1, at = at, labels = round(log(ic[, "lambda"][at]), digits = 2))
     axis(2)
     axis(4, at = x$parameters[nrow(x$parameters), ],

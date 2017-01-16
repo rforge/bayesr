@@ -21,7 +21,8 @@ lasso(x, y, start = NULL, lower = 0.001, upper = 1000,
   flush = TRUE, nu = NULL, stop.nu = NULL, ...)
 
 ## Plotting function for lasso() optimizer.
-lasso.plot(x, which = c("criterion", "parameters"), spar = TRUE, ...)
+lasso.plot(x, which = c("criterion", "parameters"),
+  spar = TRUE, name = NULL, mstop = NULL, retrans = FALSE, ...)
 
 ## Extract optimum stopping iteration for lasso() optimizer.
 ## Based on the minimum of the information criterion.
@@ -55,6 +56,9 @@ lasso.stop(x)
     of the Lasso algorithm?}
   \item{which}{Which of the two provided plots should be created?}
   \item{spar}{Should graphical parameters be set by the plotting function?}
+  \item{name}{Character, the name of the coefficient group that should be plotted.}
+  \item{mstop}{Integer vector, defines the path length to be plotted.}
+  \item{retrans}{Logical, should coefficients be re-transformed before plotting?}
   \item{\dots}{Arguments passed to the subsequent smooth constructor function.
     \code{lambda} controls the starting value of the penalty parameter, \code{const} the constant
     that is added within the penalty approximation.

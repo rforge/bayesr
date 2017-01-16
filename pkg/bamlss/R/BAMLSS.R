@@ -308,11 +308,10 @@ design.construct <- function(formula, data = NULL, knots = NULL,
         no.mgcv <- NULL
         smooth <- list()
         for(tsm in sterms) {
-          if(!is.null(tsm$special)) {
-            if(!tsm$special)
-              tsm$special <- NULL
-          }
-          if(is.null(tsm$special)) {
+          special <- FALSE
+          if(!is.null(tsm$special))
+            special <- tsm$special
+          if(!special) {
             if(is.null(tsm$xt))
               tsm$xt <- list()
             if(is.null(tsm$xt$binning))
@@ -387,7 +386,10 @@ design.construct <- function(formula, data = NULL, knots = NULL,
             }
             if(inherits(smooth, "try-error")) {
               cat("---\n", smooth, "---\n")
-              stop("gam.side() produces an error when binning, try to set before = FALSE or set gam.side = FALSE!")
+              if(binning)
+                stop("gam.side() produces an error when binning, try to set before = FALSE or set gam.side = FALSE!")
+              else
+                stop("gam.side() produces an error, try to set gam.side = FALSE!")
             }
           }
           sme <- NULL
@@ -3874,7 +3876,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$S <- list()
   const <- object$xt$const
   if(is.null(const))
-    const <- 1e-5
+    const <- 1e-10
   if(object$type == "single") {
     object$S[[1]] <- function(parameters) {
       b <- get.par(parameters, "b")
@@ -5971,7 +5973,9 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
         }
       }
       rval$parameters <- pc
-    }     
+    }
+    if((ncol(rval$parameters) > 1) & !is.null(list(...)$mstop))
+      return(rval$parameters)
     colnames(rval$parameters) <- "parameters"
   }
   if(!length(rval)) return(NULL)
