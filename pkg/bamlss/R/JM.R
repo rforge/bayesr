@@ -3461,41 +3461,90 @@ rJM <- function(hazard, censoring, x, r,
 
 ## Prediction.
 jm.predict <- function(object, newdata, type = c("link", "parameter", "probabilities", "cumhaz"),
-                       FUN = function(x) { mean(x, na.rm = TRUE) }, subdivisions = 100, cores = NULL,
-                       chunks = 1, verbose = FALSE, ...)
+                       dt, steps, id, FUN = function(x) { mean(x, na.rm = TRUE) }, subdivisions = 100, cores = NULL,
+                       chunks = 1, verbose = FALSE,  ...)
 {
-  if(is.null(newdata))
-    newdata <- model.frame(object)
+  if(missing(dt)) dt <- 0
+  if(missing(steps)) steps <- 1
+  if(missing(id)) i <- NULL else i <- id
+  
   if(length(type) > 1)
     type <- type[1]
   type <- match.arg(type)
+  
+  if(type == "probabilities"){
+    if(!is.null(newdata)){
+      warning("The provided newdata will be ignored for the prediction of conditional survival probabilities.")
+      newdata <- NULL
+    }
+    if(dt == 0){
+      stop("Please specify a time window for the prediction of conditional survival probabilities.")
+    }
+  }
+  
+  if(type == "cumhaz" & !is.null(newdata) & dt > 0){
+    warning("The provided newdata will be ignored for the prediction of conditional survival t + dt.")
+    newdata <- NULL
+  }
+  
+  if(is.null(newdata)){
+    newdata <- model.frame(object) 
+  }
+  
   if(!(type %in% c("probabilities", "cumhaz"))) {
     object$family$predict <- NULL
     return(predict.bamlss(object, newdata = newdata, type = type,
                           FUN = FUN, cores = cores, chunks = chunks, verbose = verbose, ...))
   }
+  
   if(object$family$family != "jm")
     stop("object must be a joint-model!")
+  
+  
   
   dalpha <- has_pterms(object$x$dalpha$terms) | (length(object$x$dalpha$smooth.construct) > 0)
   
   timevar <- attr(object$y[[1]], "timevar")
+  tmax_model <- max(newdata[,timevar["lambda"]])
+  
+  
   idvar <- attr(object$y[[1]], "idvar")
+  if(!is.null(i)){
+    if(!is.character(i))
+      i <- levels(newdata[[idvar]])[i]
+    newdata <- subset(newdata, newdata[[idvar]] %in% i)
+  }
+  
+  tmax_pred <- max(newdata[,timevar["mu"]]) + dt
+  
+  if(tmax_pred > tmax_model){
+    warning("Predictions should not be made beyond the modelled time range. 
+            Please adjust the time window dt accordingly.")
+  }
+  
+  
   
   ## Create the time grid.  
-  grid <- function(upper, length) {
-    seq(from = 0, to = upper, length = length)
+  grid <- function(lower, upper, length) {
+    seq(from = lower, to = upper, length = length)
   }
   
   jm_probs <- function(data) {
-    take <- !duplicated(data[, c(timevar["lambda"], idvar)])
-    dsurv <- subset(data, take)
+    
+    if(dt == 0){
+      take <- !duplicated(data[, c(timevar["lambda"], idvar)])
+      dsurv <- subset(data, take)
+      timegrid <- lapply(dsurv[[timevar["lambda"]]], function(x){grid(0, x, subdivisions)})
+    } else {
+      take <- !duplicated(data[, c(timevar["lambda"], idvar)], fromLast = TRUE)
+      dsurv <- subset(data, take)
+      timegrid <- lapply(dsurv[[timevar["mu"]]], function(x){grid(x, x+dt, subdivisions)})
+    }
     nobs <- nrow(dsurv)
-    timegrid <- lapply(dsurv[[timevar["lambda"]]], grid, length = subdivisions)
     gdim <- c(length(timegrid), length(timegrid[[1]]))
     width <- rep(NA, nobs)
     for(i in 1:nobs)
-      width[i] <- timegrid[[i]][2]
+      width[i] <- timegrid[[i]][2] - timegrid[[i]][1]
     
     pred.setup <- predict.bamlss(object, data, type = "link",
                                  get.bamlss.predict.setup = TRUE, ...)
@@ -3540,24 +3589,57 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
       pred_lambda + pred_alpha * pred_mu
     }
     
-    probs <- NULL
-    for(i in 1:ncol(eta_timegrid)) {
-      eta <- matrix(eta_timegrid[, i], nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
-      eeta <- exp(eta)
-      int <- width * (0.5 * (eeta[, 1] + eeta[, subdivisions]) + apply(eeta[, 2:(subdivisions - 1), drop = FALSE], 1, sum))
-      probs <- if(type == "probabilities") {
-        cbind(probs, exp(-1 * exp(pred_gamma[, i]) * int))
-      } else {
-        cbind(probs, exp(pred_gamma[, i]) * int)
+    
+    if(dt == 0){
+      probs <- NULL
+      for(i in 1:ncol(eta_timegrid)) {
+        eta <- matrix(eta_timegrid[, i], nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
+        eeta <- exp(eta)
+        int <- width * (0.5 * (eeta[, 1] + eeta[, subdivisions]) + apply(eeta[, 2:(subdivisions - 1), drop = FALSE], 1, sum))
+        probs <- if(type == "probabilities") {
+          cbind(probs, exp(-1 * exp(pred_gamma[, i]) * int))
+        } else {
+          cbind(probs, exp(pred_gamma[, i]) * int)
+        }
       }
+      
+      if(!is.null(FUN)) {
+        if(is.matrix(probs)) {
+          if(ncol(probs) > 1)
+            probs <- apply(probs, 1, FUN)
+          probs <- t(probs) 
+        } 
+      }
+      
+    } else {
+      lprobs <- lapply(1:steps, function(x){
+        probs <- NULL
+        sub <- round(subdivisions/steps * x)
+        for(i in 1:ncol(eta_timegrid)) {
+          eta <- matrix(eta_timegrid[, i], nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
+          eeta <- exp(eta)
+          int <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1), drop = FALSE], 1, sum))
+          probs <- if(type == "probabilities") {
+            cbind(probs, exp(-1 * exp(pred_gamma[, i]) * int))
+          } else {
+            cbind(probs, exp(pred_gamma[, i]) * int)
+          }
+        }
+        
+        if(!is.null(FUN)) {
+          if(is.matrix(probs)) {
+            if(ncol(probs) > 1)
+              probs <- apply(probs, 1, FUN)
+            probs <- t(probs) 
+          } 
+        }
+        probs
+      }) 
+      
+      probs <- lprobs
+      names(probs) <- paste("Time after last longitudinal observation:", (1:steps)*dt/steps) 
     }
     
-    if(!is.null(FUN)) {
-      if(is.matrix(probs)) {
-        if(ncol(probs) > 1)
-          probs <- apply(probs, 1, FUN)
-      } 
-    }
     
     return(probs)
   }
@@ -3627,11 +3709,12 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
   }
   
   return(probs)
-}
+  }
 
 
-jm.survplot <- function(object, i = 1, maxtime = NULL,
-                        grid = 10, points = TRUE, rug = !points)
+
+jm.survplot <- function(object, id = 1, dt = NULL, steps = 10, 
+                        points = TRUE, rug = !points)
 {
   on.exit(par(par(no.readonly = TRUE)))
   
@@ -3639,22 +3722,30 @@ jm.survplot <- function(object, i = 1, maxtime = NULL,
   idvar <- attr(object$y[[1]], "idvar")
   timevar <- attr(object$y[[1]], "timevar")
   mf <- model.frame(object)
+  i <- id
   
   if(!is.character(i))
     i <- levels(mf[[idvar]])[i]
   ii <- mf[[idvar]] == i
   
-  tmax <- max(mf[[timevar["lambda"]]][ii])
-  if(is.null(maxtime))
-    maxtime <- 1.4 * tmax
-  time <- seq(tmax, maxtime, length.out = grid)
+  tmax <- max(mf[[timevar["mu"]]][ii])
+  if(is.null(dt))
+    dt <- 0.4 * tmax
+  maxtime <- tmax + dt
+  time <- seq(tmax, maxtime, length.out = steps)
   
   if(all(time == time[1])) {
     stop(paste("Not enough time points available for individual ",
                i, "!", sep = ""))
   }
   
-  nd <- data.frame(time, time)
+  p_surv <- predict(object, type = "probabilities", dt = dt, steps = steps-1, id = id, FUN = c95)
+  p_surv <- do.call(rbind, p_surv)
+  # fix the last observed longitudinal timepoint to p_surv = 1
+  p_surv <- rbind(c(1,1,1), p_surv)
+  
+  time2 <- sort(c(tmax, seq(0, maxtime, length = steps - 1)))
+  nd <- data.frame(time2, time2)
   names(nd) <- timevar
   vars <- names(mf)[!(names(mf) %in% c(timevar, idvar))]
   for(j in vars) {
@@ -3668,11 +3759,6 @@ jm.survplot <- function(object, i = 1, maxtime = NULL,
   }
   nd[[idvar]] <- factor(i, levels = levels(mf[[idvar]]))
   
-  p_surv <- t(predict(object, newdata = nd, type = "probabilities", FUN = c95))
-  
-  time2 <- sort(c(tmax, seq(0, maxtime, length = grid - 1)))
-  nd[[timevar["lambda"]]] <- nd[[timevar["mu"]]] <- time2
-  
   p_long <- predict(object, newdata = nd, model = "mu", FUN = c95)
   
   s2.col <- rev(rgb(0, 0, 1, alpha = seq(0.1, 0.01, length = 50)))
@@ -3680,18 +3766,18 @@ jm.survplot <- function(object, i = 1, maxtime = NULL,
   par(mfrow = c(2, 1), mar = rep(0, 4),
       oma = c(4.1, 4.1, 1.1, 4.1))
   plot2d(p_surv ~ time, fill.select = c(0, 1, 0, 1),
-         scheme = 2, axes = FALSE, ylim = c(0, 1),
+         scheme = 1, axes = FALSE, ylim = c(0, 1),
          xlim = c(0, maxtime), s2.col = s2.col, xlab = "", ylab = "")
   abline(v = tmax, lty = 2)
   axis(2)
   box()
-  mtext("Prob(T > t)", side = 2, line = 2.5)
+  mtext("Prob(T > t + dt |T > t)", side = 2, line = 2.5)
   plot2d(p_long[time2 <= tmax, ] ~ time2[time2 <= tmax], fill.select = c(0, 1, 0, 1),
-         scheme = 2, axes = FALSE, xlim = c(0, maxtime),
+         scheme = 1, axes = FALSE, xlim = c(0, maxtime),
          xlab = "", ylab = "",
          ylim = if(points) range(c(p_long, object$y[[1]][ii, "obs"])) else range(p_long))
   plot2d(p_long[time2 >= tmax, ] ~ time2[time2 >= tmax], fill.select = c(0, 1, 0, 1),
-         scheme = 2, axes = FALSE, add = TRUE, s2.col = s2.col,
+         scheme = 1, axes = FALSE, add = TRUE, s2.col = s2.col,
          xlab = "", ylab = "")
   abline(v = tmax, lty = 2)
   if(points)
@@ -3706,4 +3792,72 @@ jm.survplot <- function(object, i = 1, maxtime = NULL,
   
   invisible(NULL)
 }
+
+
+
+.predict.bamlss.jm.td <- function(id, x, samps, enames, intercept, nsamps, newdata, env,
+                                    yname, grid, formula, type = 1, derivMat = FALSE)
+{
+  snames <- colnames(samps)
+  enames <- gsub("p.Intercept", "p.(Intercept)", enames, fixed = TRUE)
+  has_intercept <- any(grepl(paste(id, "p", "(Intercept)", sep = "."), snames, fixed = TRUE))
+  if(!has_intercept)
+    has_intercept <- any(grepl(paste(id, "p.model.matrix", "(Intercept)", sep = "."), snames, fixed = TRUE))
+  if(intercept & has_intercept)
+    enames <- c("p.(Intercept)", enames)
+  enames <- unique(enames)
+  ec <- sapply(enames, function(x) {
+    paste(strsplit(x, "")[[1]][1:2], collapse = "")
+  })
+  enames2 <- sapply(enames, function(x) {
+    paste(strsplit(x, "")[[1]][-c(1:2)], collapse = "")
+  })
+  
+  eta <- 0
+  if(length(i <- grep("p.", ec))) {
+    for(j in enames2[i]) {
+      if(j != "(Intercept)") {
+        f <- as.formula(paste("~", if(has_intercept) "1" else "-1", "+", j), env = env)
+        X <- param_Xtimegrid(f, newdata, grid, yname, type = type, derivMat = derivMat)
+        if(has_intercept)
+          X <- X[, colnames(X) != "(Intercept)", drop = FALSE]
+        sn <- snames[grep2(paste(id, "p", j, sep = "."), snames, fixed = TRUE)]
+        if(!length(sn))
+          sn <- snames[grep2(paste(id, "p.model.matrix", j, sep = "."), snames, fixed = TRUE)]
+        eta <- if(is.null(eta)) {
+          fitted_matrix(X, samps[, sn, drop = FALSE])
+        } else {
+          eta + fitted_matrix(X, samps[, sn, drop = FALSE])
+        }
+      } else {
+        if(has_intercept) {
+          sn <- snames[grep2(paste(id, "p", j, sep = "."), snames, fixed = TRUE)]
+          if(!length(sn))
+            sn <- snames[grep2(paste(id, "p.model.matrix", j, sep = "."), snames, fixed = TRUE)]
+          eta <- eta + fitted_matrix(matrix(1, nrow = length(grid[[1]]) * nrow(newdata), ncol = 1),
+                                     samps[, sn, drop = FALSE])
+        }
+      }
+    }
+  }
+  if(length(i <- grep("s.", ec))) {
+    for(j in enames2[i]) {
+      if(!inherits(x[[j]], "no.mgcv") & !inherits(x[[j]], "special")) {
+        X <- sm_Xtimegrid(x[[j]], newdata, grid, yname, derivMat = derivMat)
+        sn <- snames[grep2(paste(id, "s", j, sep = "."), snames, fixed = TRUE)]
+        eta <- if(is.null(eta)) {
+          fitted_matrix(X, samps[, sn, drop = FALSE])
+        } else {
+          eta + fitted_matrix(X, samps[, sn, drop = FALSE])
+        }
+      } else {
+        stop("no predictions for special terms available yet!")
+      }
+    }
+  }
+  
+  eta
+}
+
+
 

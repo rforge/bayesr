@@ -41,10 +41,15 @@ jm.mode(x, y, start = NULL, weights = NULL,
 jm.mcmc(x, y, family, start = NULL, weights = NULL,
   offset = NULL, n.iter = 1200, burnin = 200, thin = 1,
   verbose = TRUE, digits = 4, step = 20, ...)
-
+  
+## predict function.
+jm.predict(object, newdata, type = c("link", "parameter", "probabilities", "cumhaz"),
+           dt, steps, id, FUN = function(x) { mean(x, na.rm = TRUE) }, 
+           subdivisions = 100, cores = NULL, chunks = 1, verbose = FALSE,  ...)
+  
 ## Survival plot.
-jm.survplot(object, i = 1, maxtime = NULL,
-  grid = 10, points = TRUE, rug = !points)
+jm.survplot(object, id = 1, dt = NULL, steps = 10, 
+            points = TRUE, rug = !points)
 }
 
 \arguments{
@@ -107,10 +112,13 @@ jm.survplot(object, i = 1, maxtime = NULL,
   \item{object}{A \code{"bamlss"} object processed with the JM optimizer function
     \code{jm.mode()} ans/or sampler function \code{jm.mcmc()} for which the survival plot
     should be created.}
-  \item{i}{Integer or character, specifies the individual for which the plot should be created.}
-  \item{maxtime}{The maximum time for which predictions should be computed. The default
-   is \code{1.4 * max(survtime)} and \code{survtime} is the individuals survival time.}
-  \item{grid}{Integer, the number of time points that should be used for predictions.}
+  \item{newdata}{Dataset for which to create predictions. Not needed for conditional survival probabilities.}
+  \item{type}{Character string indicating which type of predictions to compute. \code{link} returns estimates for all     predictors with the respective link functions applied, \code{parameter} returns the estimates for all pedictors,      \code{probabilities} returns the survival probabilities conditional on the survival up to the last longitudinal       measurement, and \code{cumhaz} return the cumulative hazard up to the survival time or for a time window after the     last longitudinal measurement.}
+  \item{id}{Integer or character, that specifies the individual for which the plot should be created.}
+  \item{dt}{The time window after the last observed measurement for which predictions should be computed. 
+    The default is \code{0.4 * max(obstime)} and \code{obstime} are the individual's longitudinal measurement times.}
+  \item{steps}{Integer, the number of steps for which to evaluate the conditional survival probability 
+    up to \code{dt}.}
   \item{points}{Should longitudinal observations be added to the plot.}
   \item{rug}{Should longitudinal observed time points be added on the x-axis to the plot.}
   \item{\dots}{Currently not used.}
@@ -195,17 +203,19 @@ b <- bamlss(f, data = d, family = "jm",
 ## Plot estimated effects.
 plot(b)
 
-## Predict event probabilities for two
-## individuals.
-nd <- subset(d, id %in% c(192, 127))
-p <- predict(b, newdata = nd, type = "probabilities")
+## Predict event probabilities for two individuals
+## at 12 time units after their last longitudinal measurement.
+## The event probability is conditional on their survival
+## up to their last observed measurement.
+nd <- subset(d, id \%in\% c(192, 127))
+p <- predict(b, type = "probabilities", dt = 12, FUN = c95)
 print(p)
 
 ## Plot of survival probabilities and
 ## corresponding longitudinal effects
-## for individual i.
-jm.survplot(b, i = 3)
-jm.survplot(b, i = 30)
+## for individual id.
+jm.survplot(b, id = 3)
+jm.survplot(b, id = 30)
 
 ## Simulate survival data
 ## with functional random intercepts and a nonlinear effect 
@@ -215,7 +225,7 @@ jm.survplot(b, i = 30)
 d <- simJM(nsub = 200, full = FALSE)
 
 ## Formula of the according joint model
-## umber of knots for the smooth nonlinear effect of time
+## number of knots for the smooth nonlinear effect of time
 klong <- 8
 f <- list(
   Surv2(survtime, event, obs = y) ~ s(survtime, bs = "ps"),
