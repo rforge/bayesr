@@ -3876,7 +3876,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$S <- list()
   const <- object$xt$const
   if(is.null(const))
-    const <- 1e-10
+    const <- 1e-20
   if(object$type == "single") {
     object$S[[1]] <- function(parameters) {
       b <- get.par(parameters, "b")
