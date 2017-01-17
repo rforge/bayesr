@@ -2866,14 +2866,18 @@ SEXP log_dmvnorm(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ)
 
 
 /* Boosting updater. */
-void boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
+SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
 {
   int i, j, k, nProtected = 0;
   int n = length(y);
   int fixed = LOGICAL(getListElement(x, "fixed"))[0];
   int *penFun = INTEGER(getListElement(x, "penaltyFunction"));
 
-  double *thetaptr = REAL(getListElement(getListElement(x, "state"), "parameters"));
+  SEXP state;
+  PROTECT(state = duplicate(getListElement(x, "state")));
+  ++nProtected;
+
+  double *thetaptr = REAL(getListElement(state, "parameters"));
 
   int S_ind = getListElement_index(x, "S");
   int ntau2;
@@ -2882,7 +2886,7 @@ void boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
   } else {
     ntau2 = length(VECTOR_ELT(x, S_ind));
   }
-  int nc = length(getListElement(getListElement(x, "state"), "parameters"));
+  int nc = length(getListElement(state, "parameters"));
   if(fixed < 1) {
     nc -= ntau2;
   }
@@ -2910,7 +2914,7 @@ void boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
 
   /* Handling fitted.values. */
   double *fitrptr = REAL(getListElement(x, "fit.reduced"));
-  double *fitptr = REAL(getListElement(getListElement(x, "state"), "fitted.values"));
+  double *fitptr = REAL(getListElement(state, "fitted.values"));
 
   /* Start. */
   xweightsptr[0] = 0.0;
@@ -2947,7 +2951,7 @@ void boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
   if(fixed < 1) {
     for(jj = 0; jj < ntau2; jj++) {
       if(penFun[jj] > 0) {
-        Sptr = REAL(get_S_mat(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj), getListElement(getListElement(x, "state"), "parameters"), rho));
+        Sptr = REAL(get_S_mat(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj), getListElement(state, "parameters"), rho));
       } else {
         Sptr = REAL(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj));
       }
@@ -3036,9 +3040,11 @@ void boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
     fitptr[i] = fitrptr[k];
     rss += pow(fitptr[i] - yptr[i], 2.0);
   }
-  REAL(getListElement(getListElement(x, "state"), "rss"))[0] = rss;
+  REAL(getListElement(state, "rss"))[0] = rss;
 
   UNPROTECT(nProtected);
+
+  return state;
 }
 
 

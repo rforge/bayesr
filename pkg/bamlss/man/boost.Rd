@@ -18,7 +18,7 @@ boost(x, y, family,
   nu = 0.1, df = 4, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL,
-  plot = TRUE, ...)
+  plot = TRUE, initialize = TRUE, ...)
 
 ## Boosting summary extractor:
 boost.summary(object, ...)
@@ -56,6 +56,7 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters"),
     the change in the log-likelihood of the last \code{nback} iterations is smaller or
     equal to \code{eps}. If \code{maxit = NULL} the maximum number of iterations is set to 10000.}
   \item{plot}{Should the boosting summary be printed and plotted?}
+  \item{initialize}{Logical, should intercepts be initialized?}
   \item{object}{A \code{\link{bamlss}} object that was fitted using \code{boost()}.}
   \item{summary}{Should the summary be printed?}
   \item{which}{Which of the three provided plots should be created?}

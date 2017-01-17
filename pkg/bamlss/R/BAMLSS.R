@@ -3836,6 +3836,26 @@ blockstand <- function(x, n)
 
 smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
 {
+  fuse <- if(is.null(object$xt[["fuse"]])) FALSE else object$xt[["fuse"]]
+  fuse_type <- "nominal"
+  if(is.logical(fuse)) {
+    if(fuse)
+      fuse <- "nominal"
+  }
+  if(!is.logical(fuse)) {
+    if(is.character(fuse)) {
+      fuse_type <- match.arg(fuse, c("nominal", "ordered"))
+    } else {
+      fuse_type <- switch(as.integer(fuse),
+        "1" = "nominal",
+        "2" = "ordered"
+      )
+    }
+    fuse <- TRUE
+  }
+  object$fuse <- fuse
+  object$fuse_type <- fuse_type
+  
   data <- as.data.frame(data)
   tl <- term.labels2(terms(object$formula), intercept = FALSE, list = FALSE)
   if(any(grepl("la(", tl, fixed = TRUE)))
@@ -3855,20 +3875,30 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
       j2 <- strsplit(j, "*")[[1]]
       is_f <- any(sapply(j2, function(i) is.factor(data[[i]])))
     }
-    if(!is_f) {
-      object$X[[j]] <- scale(object$X[[j]])
-      object$lasso$trans[[j]] <- list(
-        "center" = attr(object$X[[j]], "scaled:center"),
-        "scale" = attr(object$X[[j]], "scaled:scale")
-      )
-    } else {
-      object$X[[j]] <- blockstand(object$X[[j]], n = nrow(data))
-      object$lasso$trans[[j]] <- list("blockscale" = attr(object$X[[j]], "blockscale"))
+    if(!fuse) {
+      if(!is_f) {
+        object$X[[j]] <- scale(object$X[[j]])
+        object$lasso$trans[[j]] <- list(
+          "center" = attr(object$X[[j]], "scaled:center"),
+          "scale" = attr(object$X[[j]], "scaled:scale")
+        )
+      } else {
+        object$X[[j]] <- blockstand(object$X[[j]], n = nrow(data))
+        object$lasso$trans[[j]] <- list("blockscale" = attr(object$X[[j]], "blockscale"))
+      }
     }
     if(is.null(colnames(object$X[[j]])))
       colnames(object$X[[j]]) <- paste("X", 1:ncol(object$X[[j]]), sep = "")
-    object$lasso$trans[[j]]$colnames <- colnames(object$X[[j]])
-    df[[j]] <- sqrt(rep(ncol(object$X[[j]]), ncol(object$X[[j]])))
+    if(!fuse) {
+      object$lasso$trans[[j]]$colnames <- colnames(object$X[[j]])
+      df[[j]] <- sqrt(rep(ncol(object$X[[j]]), ncol(object$X[[j]])))
+    } else {
+      object$lasso$trans[[j]] <- list(
+        "center" = 0.0,
+        "scale" = 1.0
+      )
+      df[[j]] <- rep(1, ncol(object$X[[j]]))
+    }
   }
   df <- unlist(df)
   object$lasso$df <- df
@@ -3876,31 +3906,32 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$S <- list()
   const <- object$xt$const
   if(is.null(const))
-    const <- 1e-06
-  if(object$type == "single") {
-    object$S[[1]] <- function(parameters) {
-      b <- get.par(parameters, "b")
-      A <- if(length(b) > 1) {
-        diag(df / sqrt(b^2 + const))
-      } else matrix(df / sqrt(b^2 + const), 1, 1)
-      A
+    const <- 1e-07
+  if(fuse_type == "nominal") {
+    if(object$type == "single") {
+      object$S[[1]] <- function(parameters) {
+        b <- get.par(parameters, "b")
+        A <- if(length(b) > 1) {
+          diag(df / sqrt(b^2 + const))
+        } else matrix(df / sqrt(b^2 + const), 1, 1)
+        A
+      }
+      attr(object$S[[1]], "npar") <- ncol(object$X)
+    } else {
+      A <- list()
+      for(j in 1:ncol(object$X)) {
+        f <- c('function(parameters) {',
+          '  b <- get.par(parameters, "b")',
+          '  A <- diag(0, length(b))',
+          paste('  A[', j, ',', j, '] <- df[', j, '] / sqrt(b[', j, ']^2 + const)', sep = ''),
+          '  A',
+          '}')
+        A[[j]] <- eval(parse(text = paste(f, collapse = "\n")))
+        attr(A[[j]], "npar") <- ncol(object$X)
+      }
+      object$S <- A
     }
-    attr(object$S[[1]], "npar") <- ncol(object$X)
-  } else {
-    A <- list()
-    for(j in 1:ncol(object$X)) {
-      f <- c('function(parameters) {',
-        '  b <- get.par(parameters, "b")',
-        '  A <- diag(0, length(b))',
-        paste('  A[', j, ',', j, '] <- df[', j, '] / sqrt(b[', j, ']^2 + const)', sep = ''),
-        '  A',
-        '}')
-      A[[j]] <- eval(parse(text = paste(f, collapse = "\n")))
-      attr(A[[j]], "npar") <- ncol(object$X)
-    }
-    object$S <- A
   }
-  fuse <- if(is.null(object$xt[["fuse"]])) FALSE else object$xt[["fuse"]]
   if(fuse & ((k <- ncol(object$X)) > 1)) {
     k <- ncol(object$X)
     Af <- matrix(0, ncol = choose(k, 2), nrow = k)

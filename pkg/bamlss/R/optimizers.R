@@ -1991,7 +1991,8 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind, uind = NULL)
 boost <- function(x, y, family,
   nu = 0.1, df = 4, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
-  eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE, ...)
+  eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE,
+  initialize = TRUE, ...)
 {
   ## FIXME: hard coded.
   weights <- offset <- NULL
@@ -2025,7 +2026,7 @@ boost <- function(x, y, family,
   ## terms get an entry in $smooth.construct object.
   ## Intercepts are initalized.
   x <- boost.transform(x = x, y = y, df = NULL, family = family,
-    maxit = maxit, eps = eps, ...)
+    maxit = maxit, eps = eps, initialize = initialize, ...)
 
   ## Create a list() that saves the states for
   ## all parameters and model terms.
@@ -2052,7 +2053,7 @@ boost <- function(x, y, family,
   rho <- new.env()
 
   ## Start boosting.
-  eps0 <- 1; iter <- 1
+  eps0 <- 1; iter <- if(initialize) 2 else 1
   save.ll <- NULL
   ll <- family$loglik(y, family$map2par(eta))
   ptm <- proc.time()
@@ -2069,8 +2070,7 @@ boost <- function(x, y, family,
       ## Fit to gradient.
       for(j in names(x[[i]]$smooth.construct)) {
         ## Get updated parameters.
-        .Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu, rho)
-        states[[i]][[j]] <- x[[i]]$smooth.construct[[j]]$state
+        states[[i]][[j]] <- .Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu, rho)
 
         ## Get rss.
         rss[[i]][j] <- states[[i]][[j]]$rss
@@ -2100,7 +2100,6 @@ boost <- function(x, y, family,
 
     ## Save parameters.
     parm[[take[1]]][[take[2]]][iter, ] <- get.par(states[[take[1]]][[take[2]]]$parameters, "b")
-
     eps0 <- do.call("cbind", eta)
     eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
     if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
@@ -2156,7 +2155,7 @@ boost <- function(x, y, family,
 ## Boost setup.
 boost.transform <- function(x, y, df = NULL, family,
   weights = NULL, offset = NULL, maxit = 100,
-  eps = .Machine$double.eps^0.25, ...)
+  eps = .Machine$double.eps^0.25, initialize = TRUE, ...)
 {
   np <- length(x)
   nx <- names(x)
@@ -2233,38 +2232,40 @@ boost.transform <- function(x, y, df = NULL, family,
     }
   }
 
-  eta <- get.eta(x)
-  eta <- init.eta(eta, y, family, nobs)
-  nobs <- length(eta[[1]])
-  start <- unlist(lapply(eta, mean, na.rm = TRUE))
+  if(initialize) {
+    eta <- get.eta(x)
+    eta <- init.eta(eta, y, family, nobs)
+    nobs <- length(eta[[1]])
+    start <- unlist(lapply(eta, mean, na.rm = TRUE))
 
-  objfun <- function(par) {
-    eta <- list()
-    for(i in seq_along(nx))
-      eta[[nx[i]]] <- rep(par[i], length = nobs)
-    ll <- family$loglik(y, family$map2par(eta))
-    return(ll)
-  }
-
-  gradfun <- function(par) {
-    eta <- list()
-    for(i in seq_along(nx))
-      eta[[nx[i]]] <- rep(par[i], length = nobs)
-    peta <- family$map2par(eta)
-    grad <- par
-    for(j in nx) {
-      score <- process.derivs(family$score[[j]](y, peta, id = j), is.weight = FALSE)
-      grad[i] <- mean(score)
+    objfun <- function(par) {
+      eta <- list()
+      for(i in seq_along(nx))
+        eta[[nx[i]]] <- rep(par[i], length = nobs)
+      ll <- family$loglik(y, family$map2par(eta))
+      return(ll)
     }
-    return(grad)
-  }
 
-  opt <- optim(start, fn = objfun, gr = gradfun, method = "BFGS", control = list(fnscale = -1))
+    gradfun <- function(par) {
+      eta <- list()
+      for(i in seq_along(nx))
+        eta[[nx[i]]] <- rep(par[i], length = nobs)
+      peta <- family$map2par(eta)
+      grad <- par
+      for(j in nx) {
+        score <- process.derivs(family$score[[j]](y, peta, id = j), is.weight = FALSE)
+        grad[i] <- mean(score)
+      }
+      return(grad)
+    }
 
-  for(i in nx) {
-    if(!is.null(x[[i]]$smooth.construct[["(Intercept)"]])) {
-      x[[i]]$smooth.construct[["(Intercept)"]]$state$parameters[1] <- opt$par[i]
-      x[[i]]$smooth.construct[["(Intercept)"]]$state$fitted.values <- rep(opt$par[i], length = nobs)
+    opt <- optim(start, fn = objfun, gr = gradfun, method = "BFGS", control = list(fnscale = -1))
+
+    for(i in nx) {
+      if(!is.null(x[[i]]$smooth.construct[["(Intercept)"]])) {
+        x[[i]]$smooth.construct[["(Intercept)"]]$state$parameters[1] <- opt$par[i]
+        x[[i]]$smooth.construct[["(Intercept)"]]$state$fitted.values <- rep(opt$par[i], length = nobs)
+      }
     }
   }
 
