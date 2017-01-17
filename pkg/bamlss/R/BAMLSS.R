@@ -3857,6 +3857,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$fuse_type <- fuse_type
   
   data <- as.data.frame(data)
+  nobs <- nrow(data)
   tl <- term.labels2(terms(object$formula), intercept = FALSE, list = FALSE)
   if(any(grepl("la(", tl, fixed = TRUE)))
     tl <- object$term
@@ -3883,22 +3884,27 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
           "scale" = attr(object$X[[j]], "scaled:scale")
         )
       } else {
-        object$X[[j]] <- blockstand(object$X[[j]], n = nrow(data))
+        object$X[[j]] <- blockstand(object$X[[j]], n = nobs)
         object$lasso$trans[[j]] <- list("blockscale" = attr(object$X[[j]], "blockscale"))
       }
     }
     if(is.null(colnames(object$X[[j]])))
       colnames(object$X[[j]]) <- paste("X", 1:ncol(object$X[[j]]), sep = "")
     if(!fuse) {
-      object$lasso$trans[[j]]$colnames <- colnames(object$X[[j]])
       df[[j]] <- sqrt(rep(ncol(object$X[[j]]), ncol(object$X[[j]])))
     } else {
       object$lasso$trans[[j]] <- list(
         "center" = 0.0,
         "scale" = 1.0
       )
-      df[[j]] <- rep(1, ncol(object$X[[j]]))
+      if(is.factor(data[[j]])) {
+        df[[j]] <- colSums(object$X[[j]])
+      } else {
+        df[[j]] <- rep(nobs, ncol(object$X[[j]]))
+        names(df[[j]]) <- colnames(object$X[[j]])
+      }
     }
+    object$lasso$trans[[j]]$colnames <- colnames(object$X[[j]])
   }
   df <- unlist(df)
   object$lasso$df <- df
@@ -3906,8 +3912,8 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$S <- list()
   const <- object$xt$const
   if(is.null(const))
-    const <- 1e-07
-  if(fuse_type == "nominal") {
+    const <- 1e-08
+  if(!fuse) {
     if(object$type == "single") {
       object$S[[1]] <- function(parameters) {
         b <- get.par(parameters, "b")
@@ -3934,18 +3940,43 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   }
   if(fuse & ((k <- ncol(object$X)) > 1)) {
     k <- ncol(object$X)
-    Af <- matrix(0, ncol = choose(k, 2), nrow = k)
-    combis <- combn(k, 2)
-    for(ff in 1:ncol(combis)){
-      Af[combis[1, ff], ff] <- 1
-      Af[combis[2, ff], ff] <- -1
+    if(fuse_type == "nominal") {
+      Af <- matrix(0, ncol = choose(k, 2), nrow = k)
+      combis <- combn(k, 2)
+      for(ff in 1:ncol(combis)){
+        Af[combis[1, ff], ff] <- 1
+        Af[combis[2, ff], ff] <- -1
+      }
+      Af <- cbind(diag(k), Af)
+    } else {
+      Af <- diff(diag(k + 1))
+      Af <- Af[, -ncol(Af), drop = FALSE]
+      Af[1, 1] <- 1
+    }
+    w <- rep(0, length = ncol(Af))
+    for(ff in 1:ncol(Af)) {
+      ok <- which(Af[, ff] != 0)
+      nref <- nobs - sum(df)
+      w[ff] <- if(fuse_type == "nominal") {
+        if(length(ok) < 2) {
+          2 / (k + 1) * sqrt((df[ok[1]] + nref) / nobs)
+        } else {
+          2 / (k + 1) * sqrt((df[ok[1]] + df[ok[2]]) / nobs)
+        }
+      } else {
+        if(length(ok) < 2) {
+          sqrt((df[ok[1]] + nref) / nobs)
+        } else {
+          sqrt((df[ok[1]] + df[ok[2]]) / nobs)
+        }
+      }
     }
     object$S[[ls <- length(object$S) + 1]] <- function(parameters) {
       b <- get.par(parameters, "b")
       S <- 0
       for(k in 1:ncol(Af)) {
         d <- drop(t(Af[, k]) %*% b)
-        S <- S + 1 / sqrt(d^2 + const) * Af[, k] %*% t(Af[, k])
+        S <- S + w[k] / sqrt(d^2 + const) * Af[, k] %*% t(Af[, k])
       }
       df * S
     }
@@ -4010,6 +4041,8 @@ Predict.matrix.lasso.smooth <- function(object, data)
       j2 <- strsplit(j, "*")[[1]]
       is_f <- any(sapply(j2, function(i) is.factor(data[[i]])))
     }
+    if(is_f & is.null(object$lasso$trans[[j]]$blockscale))
+      is_f <- FALSE
     if(!is_f) {
       X[[j]] <- (X[[j]] - object$lasso$trans[[j]]$center) / object$lasso$trans[[j]]$scale
     } else {
