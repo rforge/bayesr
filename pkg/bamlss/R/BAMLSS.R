@@ -3954,9 +3954,9 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
       Af[1, 1] <- 1
     }
     w <- rep(0, length = ncol(Af))
+    nref <- nobs - sum(df)
     for(ff in 1:ncol(Af)) {
       ok <- which(Af[, ff] != 0)
-      nref <- nobs - sum(df)
       w[ff] <- if(fuse_type == "nominal") {
         if(length(ok) < 2) {
           2 / (k + 1) * sqrt((df[ok[1]] + nref) / nobs)
