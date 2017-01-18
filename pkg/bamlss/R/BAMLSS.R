@@ -3054,6 +3054,8 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
           sn <- snames[ok]
         } else {
           sn <- snames[grep2(paste(id, "p", j, sep = "."), snames, fixed = TRUE)]
+          sn2 <- paste(sn, ".", sep = "")
+          sn <- sn[grepl(paste(id, ".p.", j, ".", sep = ""), sn2, fixed = TRUE)]
           sn <- sn[!grepl(":", sn, fixed = TRUE)]
         }
         if(!length(sn)) {
