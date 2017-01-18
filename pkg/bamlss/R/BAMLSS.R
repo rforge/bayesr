@@ -3928,8 +3928,9 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
         b <- get.par(parameters, "b")
         A <- df / sqrt(b^2 + const)
         for(j in seq_along(group)) {
-          if(all(!is.na(group[[j]])))
-            A[group[[j]]] <- df / rep(sqrt(sum(b[group[[j]]]^2) + const), length(group[[j]]))
+          if(all(!is.na(group[[j]]))) {
+            A[group[[j]]] <- df[group[[j]]] / rep(sqrt(sum(b[group[[j]]]^2) + const), length(group[[j]]))
+          }
         }
         A <- if(length(A) < 2) matrix(A, 1, 1) else diag(A)
         A

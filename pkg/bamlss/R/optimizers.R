@@ -2971,7 +2971,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
       par(mar = c(5.1, 5.1, 4.1, 10.1))
 
     if(!is.null(name)) {
-      x$parameters <- x$parameters[, grep(name, colnames(x$parameters), fixed = TRUE), drop = FALSE]
+      x$parameters <- x$parameters[, grep(paste(".", name, sep = ""), colnames(x$parameters), fixed = TRUE), drop = FALSE]
     }
     xn <- sapply(strsplit(colnames(x$parameters), ".", fixed = TRUE), function(x) { x[1] })
     cols <- if(length(unique(xn)) < 2) "black" else rainbow_hcl(length(unique(xn)))
