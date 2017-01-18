@@ -33,6 +33,8 @@ if(!file.exists("rainmodel.rda")) {
       ti(day,lon,lat,bs=c("cc","tp"),d=c(1,2),k=c(8,30))
   )
 
+  set.seed(111)
+
   rainmodel <- bamlss(f, data = homstart, family = "cnorm",
     binning = TRUE, before = TRUE, gam.side = FALSE, samplestats = FALSE, results = FALSE,
     eps = 0.001, n.iter = 4000, burnin = 2000, thin = 10, cores = 8)
@@ -53,6 +55,8 @@ if(!file.exists("firemodel.rda")) {
     gamma ~ s(fsintens) + ti(daytime,bs="cc",k=30) + ti(lon,lat,k=80,d=2) +
       ti(daytime,lon,lat,bs=c("cc","cr"),d=c(1,2),k=c(10,30))
   )
+
+  set.seed(222)
 
   firemodel <- bamlss(f, data = LondonFire, family = "cox",
     subdivisions = 15, maxit = 1000,

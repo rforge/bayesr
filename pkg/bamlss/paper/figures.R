@@ -10,6 +10,8 @@ main <- function(text, side = 3, line = 0.5, cex = 1.2, ...) {
   mtext(text, side = side, line = line, cex = cex, ...)
 }
 
+set.seed(123)
+
 
 ##############################
 ## (1) Precipitation model. ##
