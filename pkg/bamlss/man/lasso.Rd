@@ -103,11 +103,12 @@ f <- list(rentsqm ~ la(fl), sigma ~ la(fl))
 ## Estimate Lasso model with
 ## single lambda parameter.
 b1 <- bamlss(f, data = rent99, sampler = FALSE, optimizer = lasso,
-  lower = 0.01, upper = 10, criterion = "BIC", nlambda = 400)
+  lower = 0.01, upper = 1000, criterion = "BIC", nlambda = 400)
 
 ## Plot information criterion and
 ## coefficient paths.
 lasso.plot(b1)
+lasso.plot(b1, which = 2, name = "district")
 
 ## Extract optimum lambda/iteration.
 lasso.stop(b1)
