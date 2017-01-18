@@ -27,11 +27,8 @@ if(!file.exists("figures/rainmodel-effects-predict.png")) {
   if(file.exists("homstart.rda")) {
     load("homstart.rda")
   } else {
-    dpath <- system.file(package = "bamlss", "data")
-    if(!file.exists(file <- file.path(dpath, "homstart.rda"))) {
-      homstart_data(dir = dirname(file), load = TRUE)
-    } else load(file)
-    file.copy(file, file.path(getwd(), "homstart.rda"))
+    homstart_data(load = TRUE)
+    save(homstart, file = "homstart.rda")
   }
 
   homstart$raw[homstart$raw < 0] <- 0
@@ -175,7 +172,7 @@ if(!file.exists("figures/rainmodel-effects-predict.png")) {
   y <- mf[["sqrt(raw)"]]
   hist(y, freq = FALSE, main = "", col = gray(0.9), breaks = 50,
     xlab = expression(paste("Daily ", sqrt(observations))), ylab = "Density")
-  ff <- bamlss:::gF2(cens, left = 0)
+  ff <- cnorm_bamlss()
   cr <- coef(rainmodel0)
   eta <- list(mu = cr[1], sigma = cr[2])
   y2 <- seq(min(y), max(y), length = 200)

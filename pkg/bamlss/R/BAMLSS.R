@@ -3985,6 +3985,8 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
         }
       }
     }
+    w <- rep(1, length = ncol(Af))
+    #w <- 1 / w
     object$S[[ls <- length(object$S) + 1]] <- function(parameters) {
       b <- get.par(parameters, "b")
       S <- 0

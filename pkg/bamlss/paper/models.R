@@ -19,11 +19,8 @@ if(!file.exists("rainmodel.rda")) {
   if(file.exists("homstart.rda")) {
     load("homstart.rda")
   } else {
-    dpath <- system.file(package = "bamlss", "data")
-    if(!file.exists(file <- file.path(dpath, "homstart.rda"))) {
-      homstart_data(dir = dirname(file), load = TRUE)
-    } else load(file)
-    file.copy(file, file.path("homstart.rda"))
+    homstart_data(load = TRUE)
+    save(homstart, file = "homstart.rda")
   }
 
   homstart$raw[homstart$raw < 0] <- 0
