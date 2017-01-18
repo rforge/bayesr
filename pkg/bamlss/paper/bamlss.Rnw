@@ -6,6 +6,7 @@
 \usepackage{algorithm}
 \usepackage{rotating}
 \usepackage{enumitem}
+\shortcites{bamlss:stan-software:2016}
 
 \definecolor{darkgray}{rgb}{0.1,0.1,0.1}
 \definecolor{heat1}{rgb}{0.8274510, 0.2470588, 0.4156863}
@@ -40,18 +41,23 @@
 
 \Abstract{
   Bayesian analysis provides a convenient setting for the estimation of complex generalized
-  additive regression models. Since computational power has tremendously increased in the past
+  additive regression models (GAMs). Since computational power has tremendously increased in the past
   decade it is now possible to tackle complicated inferential problems, e.g., with Markov chain
   Monte Carlo simulation, on virtually any modern computer. This is one of the reasons why
-  Bayesian methods have become quite popular and it has lead to a number of highly specialized and
-  optimized estimation engines. The paper exploits the quite general structures that arise
-  for the estimation of a variety of GAM-type models and proposes a unified modeling architecture
-  that can deal with a wide range of types of model terms. We show that within this framework
+  Bayesian methods have become increasingly popular, leading to a number of highly specialized and
+  optimized estimation engines and with attention shifting from conditional mean models to
+  probabilistic distributional models capturing location, scale, shape (and other aspects) of the
+  response distribution. In order to embed many different approaches suggested in literature
+  and software, a unified modeling architecture for distributional GAMs is established that
+  exploits the general structure of these models and encompasses many different response
+  distributions, estimation techniques (posterior mode or posterior mean), and model terms
+  (fixed, random, smooth, spatial, \dots). It is shown that within this framework
   implementing algorithms for complex regression problems, as well as the integration of already
-  existing software, is relatively straightforward. We further emphasize the usefulness with an
-  example of a very large climatology model for over $1.2$ million daily precipitation observations,
-  as well as on a computational demanding Cox model for continuous time with space-time interactions
-  on a data set with over five thousand ``individuals''.
+  existing software, is relatively straightforward. The usefulness is emphasized with two
+  complex and computationally demanding application case studies: a large daily precipitation
+  climatology based on more than 1.2 million observations from more than 50 meteorological stations,
+  as well as a Cox model for continuous time with space-time interactions on a data set with over
+  five thousand ``individuals''.
 }
 
 \Address{
@@ -119,13 +125,13 @@ situations where confidence intervals for corresponding maximum likelihood estim
 asymptotic properties fail. This is specifically the case in more complex models, e.g., with response
 distributions outside the exponential family or when multiple predictors contain several smooth
 effects \citep{bamlss:Klein+Kneib+Lang:2015}. In addition, extensions such as variable selection,
-non-standard priors for hyper-parameters or multilevel models are easily included.
-Probably for this reason and because computational power has tremendously increased in the past
-decade, the number of Bayesian estimation engines, but also frequentist, that can tackle complicated
-inferential problems has kept increasing. Existing estimation engines already provide infrastructures
+non-standard priors for hyper-parameters, or multilevel models are easily included.
+Due to this and due to the tremendous increase in computational power over the past decade,
+the number of both, Bayesian and frequentist, estimation engines for such complicated
+inferential problems has been receiving increasing attention. Existing estimation engines already provide infrastructures
 for a number of regression problems exceeding univariate responses, e.g., for multinomial,
-multivariate normal or mixed discrete-continuous distributed variables, and so forth. In addition,
-most of the engines support random effect estimation which in the end can in principle be utilized
+multivariate normal, censored, or truncated response variables, etc. In addition,
+most of the engines support random effect estimation which can in principle also be utilized
 for setting up complex models with additive predictors
 (see, e.g., \citealp{bamlss:Wood:2006}, \citealp{bamlss:Wood:2016b}).
 
@@ -140,32 +146,31 @@ bamlss:Belitz+Brezger+Kneib+Lang+Umlauf:2016}, \pkg{JAGS}~\citep{bamlss:Plummer:
 \pkg{WinBUGS}~\citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}; or even differences within the
 same environment, e.g., the \proglang{R} packages \pkg{mgcv}
 \citep{bamlss:Wood:2016}, \pkg{gamlss} \citep{bamlss:Stasinopoulos+Rigby:2016} and \pkg{VGAM}
-\citep{bamlss:Yee:2016, bamlss:Yee:2015} implement all model term infrastructures in their own fashion style. This is
+\citep{bamlss:Yee:2015} implement all model term infrastructures in their own fashion style. This is
 particularly problematic if all packages are loaded into \proglang{R}'s global environment, because
 some functions that are supposed to fulfill the same purpose have different interpretations.
 
-In this article we present a kind of unified conceptional ``Lego toolbox'' for complex
+In this article we present a unified conceptional ``Lego toolbox'' for complex
 regression models. We show that iterative estimation algorithms, e.g., for posterior mode or
 mean estimation based on MCMC simulation, exhibit very similar structures such that the process of
 model building becomes relatively straightforward, since the model architecture is only a
-combination of single ``bricks''. Moreover, the framework embeds very general model terms which are
-not necessarily a linear combination of a design matrix and regression coefficients. Hence,
-the concept supports more than the GAMLSS statistical model class, however, because of the great
-similarities with GAMLSS we call the conceptional framework Bayesian additive models for location,
-scale and shape (BAMLSS) and beyond. The concept can be exploited in three ways: First, to develop
-new models and algorithms, secondly, to compare algorithms and third to easily integrate existing
-implementations. A prove of concept is given in the corresponding \proglang{R} implementation
-\pkg{bamlss} \citep{bamlss:Umlauf+Klein+Zeileis:2016}.
+combination of single ``bricks''. Due to many parallels to the GAMLSS class, the conceptional
+framework is called BAMLSS (\emph{Bayesian additive models for location, scale and shape}). However,
+it also encompasses many more general model terms \emph{beyond} linear combinations in a design matrix
+with regression coefficients. The toolbox can be exploited in three ways: First, to quickly develop
+new models and algorithms, secondly, to compare existing algorithms and samplers,
+and third to easily integrate existing implementations. A proof of concept is given in the
+corresponding \proglang{R} implementation \pkg{bamlss} \citep{bamlss:Umlauf+Klein+Zeileis:2016}.
 
-The remainder of the paper is as follows. In Section~\ref{sec:model} the models supported by this
+The remainder of the paper is structured as follows. In Section~\ref{sec:model} the models supported by this
 framework are briefly introduced. Section~\ref{sec:legobox} presents the conceptional algorithm
 design used to estimate numerous (possibly) complex models. In Section~\ref{sec:legobricks} the
 details of the ``Lego bricks'' that form the estimation systems are presented. Then,
 Section~\ref{sec:strategies} describes computational strategies for the implementation of the
-framework. Finally, Section~\ref{sec:illustrations} further illustrated the concept on a very large
-model for daily precipitation observations, as well as on the computationally challenging Cox model
-for continuous time.
-
+framework. Finally, Section~\ref{sec:illustrations} illustrates the concept using two
+complex and computationally demanding illustrations: a large climatology model for daily precipitation
+observations using censored regression and a Cox model for continuous time with space-time
+interactions.
 
 %% \newpage
 
