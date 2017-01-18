@@ -38,6 +38,7 @@ if(!file.exists("rainmodel.rda")) {
     eps = 0.001, n.iter = 4000, burnin = 2000, thin = 10, cores = 8)
 
   save(rainmodel, file = "rainmodel.rda")
+  rm(rainmodel, homstart)
 }
 
 
@@ -58,11 +59,12 @@ if(!file.exists("firemodel.rda")) {
     n.iter = 4000, burnin = 2000, thin = 10, cores = 8)
 
   save(firemodel, file = "firemodel.rda")
+  rm(firemodel, LondonFire)
 }
 
 if(!file.exists("firemodel_plotdata.rda")) {
   load("firemodel.rda")
-  data("LondonFire")
+  data("LondonFire", package = "bamlss")
 
   predict_firemodel <- function(n = 30, target = 6, k = 20, cores = NULL, chunks = 100, ...)
   {

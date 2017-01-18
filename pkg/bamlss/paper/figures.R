@@ -34,7 +34,7 @@ if(!file.exists("figures/rainmodel-effects-predict.png")) {
   homstart$raw[homstart$raw < 0] <- 0
   homstart <- subset(homstart, year >= 1979)
 
-  data("Austria")
+  data("Austria", package = "bamlss")
   load("rainmodel.rda")
 
   nd <- as.data.frame(coordinates(AustriaTopo))
@@ -313,7 +313,7 @@ if(!file.exists("figures/firemodel-max-acf.png")) {
   library("maptools")
   library("rgeos")
 
-  data("LondonFire")
+  data("LondonFire", package = "bamlss")
   load("firemodel_plotdata.rda")
 
   plot.daytime <- function(x, daytime = 1, n = 30, range = NULL, lrange = NULL, main = NULL, cores = 4, chunks = 1, ...)
