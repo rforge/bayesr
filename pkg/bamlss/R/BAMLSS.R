@@ -3914,7 +3914,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$S <- list()
   const <- object$xt$const
   if(is.null(const))
-    const <- 1e-08
+    const <- 1e-05
   if(!fuse) {
     if(object$type == "single") {
       object$S[[1]] <- function(parameters) {
@@ -3980,7 +3980,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
         d <- drop(t(Af[, k]) %*% b)
         S <- S + w[k] / sqrt(d^2 + const) * Af[, k] %*% t(Af[, k])
       }
-      df * S
+      S
     }
     attr(object$S[[ls]], "npar") <- ncol(object$X)
   }
