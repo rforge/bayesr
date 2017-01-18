@@ -3863,13 +3863,20 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   tl <- term.labels2(terms(object$formula), intercept = FALSE, list = FALSE)
   if(any(grepl("la(", tl, fixed = TRUE)))
     tl <- object$term
-  object$X <- df <- list()
+  object$X <- df <- group <- list()
   object$lasso <- list("trans" = list())
+  k <- 1
   for(j in tl) {
     object$X[[j]] <- as.matrix(model.matrix(as.formula(paste("~", j)), data = data))
     if(length(i <- grep("Intercept", colnames(object$X[[j]]))))
       object$X[[j]] <- object$X[[j]][, -i, drop = FALSE]
     is_f <- is.factor(data[[j]])
+    if(is_f) {
+      group[[j]] <- k:(k + ncol(object$X[[j]]) - 1)
+    } else {
+      group[[j]] <- NA
+    }
+    k <- k + ncol(object$X[[j]])
     if(grepl(":", j, fixed = TRUE)) {
       j2 <- strsplit(j, ":")[[1]]
       is_f <- any(sapply(j2, function(i) is.factor(data[[i]])))
@@ -3919,9 +3926,12 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     if(object$type == "single") {
       object$S[[1]] <- function(parameters) {
         b <- get.par(parameters, "b")
-        A <- if(length(b) > 1) {
-          diag(df / sqrt(b^2 + const))
-        } else matrix(df / sqrt(b^2 + const), 1, 1)
+        A <- df / sqrt(b^2 + const)
+        for(j in seq_along(group)) {
+          if(all(!is.na(group[[j]])))
+            A[group[[j]]] <- df / rep(sqrt(sum(b[group[[j]]]^2) + const), length(group[[j]]))
+        }
+        A <- if(length(A) < 2) matrix(A, 1, 1) else diag(A)
         A
       }
       attr(object$S[[1]], "npar") <- ncol(object$X)
