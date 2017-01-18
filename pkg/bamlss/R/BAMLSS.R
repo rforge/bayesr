@@ -3914,7 +3914,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$S <- list()
   const <- object$xt$const
   if(is.null(const))
-    const <- 1e-10
+    const <- 1e-08
   if(!fuse) {
     if(object$type == "single") {
       object$S[[1]] <- function(parameters) {
@@ -3952,8 +3952,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
       Af <- cbind(diag(k), Af)
     } else {
       Af <- diff(diag(k + 1))
-      Af <- Af[, -ncol(Af), drop = FALSE]
-      Af[1, 1] <- 1
+      Af <- Af[, -1, drop = FALSE]
     }
     w <- rep(0, length = ncol(Af))
     nref <- nobs - sum(df)
