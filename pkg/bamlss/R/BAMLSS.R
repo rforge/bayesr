@@ -3921,7 +3921,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$S <- list()
   const <- object$xt$const
   if(is.null(const))
-    const <- 1e-08
+    const <- 1e-06
   if(!fuse) {
     if(object$type == "single") {
       object$S[[1]] <- function(parameters) {
@@ -3985,7 +3985,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
         }
       }
     }
-    w <- rep(1, length = ncol(Af))
+    #w <- rep(1, length = ncol(Af))
     #w <- 1 / w
     object$S[[ls <- length(object$S) + 1]] <- function(parameters) {
       b <- get.par(parameters, "b")

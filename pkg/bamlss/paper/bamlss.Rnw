@@ -266,20 +266,15 @@ $\tilde{\boldsymbol{\gamma}}_{jk}$ are not penalized (see, e.g.,
 \section{A conceptional Lego toolbox} \label{sec:legobox}
 
 
-\readme{Z: Maybe ``Response and posterior distribution''?}
-
-\subsection{Posterior distribution} \label{sec:posterior}
-
-\readme{Z: Possibly using $d_y$ instead of $d$ would be more consistent with the notation
-for the priors?}
+\subsection{Response and posterior distribution} \label{sec:posterior}
 
 The main building block of regression model algorithms is the probability density function
-$d(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$, or for
+$d_y(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$, or for
 computational reasons its logarithm. Estimation typically requires to evaluate the log-likelihood
 function
 \begin{equation*} \label{eqn:loglik}
 \ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X}) =
-  \sum_{i = 1}^n \log \, d(y_i ; \theta_{i1} = h_1^{-1}(\eta_{i1}(\mathbf{x}_i; \boldsymbol{\beta}_1)), \ldots,
+  \sum_{i = 1}^n \log \, d_y(y_i ; \theta_{i1} = h_1^{-1}(\eta_{i1}(\mathbf{x}_i; \boldsymbol{\beta}_1)), \ldots,
   \theta_{iK} = h_K^{-1}(\eta_{iK}(\mathbf{x}_i; \boldsymbol{\beta}_K)))
 \end{equation*}
 a number of times, where the vector
@@ -328,21 +323,15 @@ holds the so-called penalty matrices, amongst others.
 
 \subsection{Model fitting} \label{sec:modelfit}
 
-\readme{Z: Added ``either one of'' in the sentence below. OK?}
-
 Bayesian point estimates of $\boldsymbol{\beta}$ and $\boldsymbol{\tau}$ are typically
 obtained by either one of:
-\begin{enumerate}[label=(\alph*)]
-\item \label{item:a} Maximization of the log-posterior for posterior mode estimation.
-\item \label{item:b} Solving high-dimensional integrals, e.g., for posterior mean or median
+\begin{enumerate}[label=E\theenumi.,ref=E\theenumi]
+\item \label{E1} Maximization of the log-posterior for posterior mode estimation.
+\item \label{E2} Solving high-dimensional integrals, e.g., for posterior mean or median
   estimation.
 \end{enumerate}
-%
-\fixme{Z: My impression would be that using E1 and E2 for ``estimation'' than (a) and (b) would
-be easier to remember throughout the paper.}
-%
-For the possibly very complex models within the BAMLSS framework, problems \ref{item:a} and
-\ref{item:b} are commonly solved by computer intensive iterative algorithms, since analytical
+For the possibly very complex models within the BAMLSS framework, problems \ref{E1} and
+\ref{E2} are commonly solved by computer intensive iterative algorithms, since analytical
 solutions are available only in a few special cases. In either case, the algorithms perform an
 updating scheme of type
 \begin{equation} \label{eqn:updating}
@@ -350,12 +339,8 @@ updating scheme of type
   U(\boldsymbol{\beta}^{(t)}, \boldsymbol{\tau}^{(t)};
     \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha}),
 \end{equation}
-%
-\readme{Z: Maybe use ``u()'' rather than ``U()'' as most (or all?) functions in the manuscript are
-denoted with lower-case letters?}
-%
 where function $U( \cdot )$ is an updating function, e.g., for generating one Newton-Raphson step
-in \ref{item:a} or getting the next step in an MCMC simulation in \ref{item:b}, amongst others. The
+in \ref{E1} or getting the next step in an MCMC simulation in \ref{E2}, amongst others. The
 updating scheme can be partitioned into separate updating equations using leapfrog or zigzag
 iteration (see, e.g., \citealp{bamlss:Smyth:1996}). Now let
 \begin{eqnarray} \label{eqn:blockupdate}
@@ -384,9 +369,9 @@ fixed. Furthermore, this strategy can be applied for all terms within a paramete
 and $U_{jk}( \cdot )$ is an updating function for a single model term.
 
 The partitioned updating system allows for having different functions $U_{jk}( \cdot )$
-for different model terms, e.g., in problem \ref{item:a} some updating functions could be based on iteratively
+for different model terms, e.g., in problem \ref{E1} some updating functions could be based on iteratively
 weighted least squares (IWLS) and some on ordinary Newton-Raphson steps (see, e.g.,
-example Section~\ref{sec:coxreg}). In problem \ref{item:b} using MCMC simulation it is common to
+example Section~\ref{sec:coxreg}). In problem \ref{E2} using MCMC simulation it is common to
 mix between several sampling methods depending on the type of model term or distribution parameter.
 
 \fixme{Z: The reading flow for the verbal description of Algorithms 1, 2a, 2b could be improved.
@@ -397,7 +382,7 @@ Maybe add some more overview description (1--2 sentences) in the next paragraph?
 Using highly modular systems like (\ref{eqn:blockupdate}) and (\ref{eqn:blockblockupdate})
 it is possible to develop a generic estimation algorithm for numerous possibly very complex models,
 which is outlined in Algorithm~\ref{fig:algodesign}.
-\begin{algorithm}[!h]
+\begin{algorithm}[p!]
 \renewcommand\thealgorithm{A1}
 \caption{\label{fig:algodesign} Generic BAMLSS model fitting algorithm.}
 \begin{algorithmic}
@@ -424,16 +409,16 @@ which is outlined in Algorithm~\ref{fig:algodesign}.
 \ENDWHILE
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
 \ENSURE{Posterior mode estimates $\hat{\boldsymbol{\beta}} = \boldsymbol{\beta}^{(t)}$,
-  $\hat{\boldsymbol{\tau}} = \boldsymbol{\tau}^{(t)}$ for \ref{item:a}; \\
+  $\hat{\boldsymbol{\tau}} = \boldsymbol{\tau}^{(t)}$ for \ref{E1}; \\
   or MCMC samples $\boldsymbol{\beta}^{(t)}$, $\boldsymbol{\tau}^{(t)}$, $t = 1, \ldots, T$ for
-  \ref{item:b}.}
+  \ref{E2}.}
 \end{algorithmic}
 \end{algorithm}
 In practice, for full Bayesian inference the algorithm is applied twice, i.e.,
-first computing estimates for \ref{item:a} and then using these as starting values for solving
-\ref{item:b}.
+first computing estimates for \ref{E1} and then using these as starting values for solving
+\ref{E2}.
 
-Some more brief verbal comments about what the algorithm does and how it proceeds
+\readme{Some more brief verbal comments about what the algorithm does and how it proceeds
 would be useful in the reading flow. One or two sentences should suffice already, I guess.}
 
 Finding good starting values is especially important for complex model terms, e.g., for
@@ -441,7 +426,7 @@ multi-dimensional functions $f_{jk}( \cdot )$ that have multiple smoothing varia
 $p_{jk}( \cdot )$. Therefore, we propose to estimate parameters $\boldsymbol{\tau}_{jk}$
 using a goodness-of-fit criterion within the stepwise selection approach presented in
 Algorithm~\ref{fig:umode}, similar to \citet{bamlss:Belitz+Lang:2008}.
-\begin{algorithm}[!h]
+\begin{algorithm}[p!]
 \addtocounter{algorithm}{-1}
 \renewcommand\thealgorithm{A2\alph{algorithm}}
 \caption{\label{fig:umode} Posterior mode updating $U_{jk}( \cdot )$ with smoothing variance selection.}
@@ -472,7 +457,7 @@ $\tau_{ljk}$ is used.
 The MCMC updating functions usually either accept or reject samples of the parameters and smoothing
 variances are sampled after $\boldsymbol{\beta}_{jk}$. In Algorithm~\ref{fig:mcmc} the general
 sampling scheme is shown.
-\begin{algorithm}[!h]
+\begin{algorithm}[p!]
 \renewcommand\thealgorithm{A2\alph{algorithm}}
 \caption{\label{fig:mcmc} MCMC updating $U_{jk}( \cdot )$.}
 \begin{algorithmic}
@@ -504,7 +489,7 @@ Section~\ref{sec:bricksmodelfit}.
 
 \section{Lego bricks} \label{sec:legobricks}
 
-For computing parameter updates for either \ref{item:a} or \ref{item:b} using flexible partitioned
+For computing parameter updates for either \ref{E1} or \ref{E2} using flexible partitioned
 updating systems like (\ref{eqn:blockupdate}) and (\ref{eqn:blockblockupdate}), the following
 ``Lego bricks'' are repeatedly used in Algorithm~\ref{fig:algodesign}:
 \begin{enumerate}[label=B\theenumi.,ref=B\theenumi]
@@ -554,7 +539,7 @@ previously available building blocks.}
 As shown in the upcoming this is relatively straightforward in most cases since \ref{item:6a} and \ref{item:7a} can
 be simplified when fragmenting with the chain rule leading to updating functions that only require
 \ref{item:6b} and \ref{item:7b} to be implemented. Moreover, most parts that are used for solving
-\ref{item:a} can also be used for \ref{item:b}.
+\ref{E1} can also be used for \ref{E2}.
 
 The remainder of this section is as follows. Details about commonly used prior densities in
 GAM-type models are provided in the next section. In Section~\ref{sec:bricksmodelfit} we derive the
@@ -705,12 +690,12 @@ see~\citet{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}.
 
 \subsection{Model fitting} \label{sec:bricksmodelfit}
 
-The construction of suitable updating functions $U_{jk}( \cdot )$ for solving problem \ref{item:a}
-and \ref{item:b} can be carried out in many ways. In this respect, note again that algorithm
+The construction of suitable updating functions $U_{jk}( \cdot )$ for solving problem \ref{E1}
+and \ref{E2} can be carried out in many ways. In this respect, note again that algorithm
 \ref{fig:algodesign} is very general, i.e., does not restrict to a specific iterative procedure.
 In the following we describe commonly used quantities that can be used for estimation of BAMLSS.
 Moreover, this section highlights the ``Lego'' system character described above, that
-arises when using gradient-based updating schemes for \ref{item:a} and \ref{item:b}.
+arises when using gradient-based updating schemes for \ref{E1} and \ref{E2}.
 More precisely, we first describe posterior mode updating as used within Algorithm~\ref{fig:umode},
 before we introduce several MCMC sampling schemes that can be employed in the updating
 Algorithm~\ref{fig:mcmc}.
