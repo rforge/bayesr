@@ -3,6 +3,7 @@
 \alias{lasso}
 \alias{lasso.plot}
 \alias{lasso.stop}
+\alias{lasso.coef}
 
 \title{Lasso Smooth Constructor}
 
@@ -27,6 +28,9 @@ lasso.plot(x, which = c("criterion", "parameters"),
 ## Extract optimum stopping iteration for lasso() optimizer.
 ## Based on the minimum of the information criterion.
 lasso.stop(x)
+
+## Extract retransformed Lasso coefficients.
+lasso.coef(x, ...)
 }
 
 \arguments{
@@ -36,8 +40,8 @@ lasso.stop(x)
     covariate in \code{formula}.}
   \item{x}{For function \code{lasso()} the \code{x} list, as returned from function
     \code{\link{bamlss.frame}}, holding all model matrices and other information that is used for
-    fitting the model. For the plotting function and \code{lasso.stop()} the corresponding
-    \code{\link{bamlss}} object fitted with the \code{lasso()} optimizer.}
+    fitting the model. For the plotting function and \code{lasso.stop()}/\code{lasso.coef()} the
+    corresponding \code{\link{bamlss}} object fitted with the \code{lasso()} optimizer.}
   \item{y}{The model response, as returned from function \code{\link{bamlss.frame}}.}
   \item{start}{A vector of starting values. Note, Lasso smoothing parameters will be dropped.}
   \item{lower}{Numeric. The minimum lambda value.}
@@ -111,6 +115,9 @@ lasso.stop(b1)
 ## Extract coefficients for optimum
 ## Lasso parameter.
 parameters(b1, mstop = lasso.stop(b1))
+
+## Alternatively extract retransformed parameters.
+lasso.coef(b1, mstop = lasso.stop(b1))
 
 ## Predict with optimum Lasso parameter.
 p1 <- predict(b1, mstop = lasso.stop(b1))
