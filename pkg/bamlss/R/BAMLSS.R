@@ -3952,7 +3952,9 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
       Af <- cbind(diag(k), Af)
     } else {
       Af <- diff(diag(k + 1))
-      Af <- Af[, -1, drop = FALSE]
+      Af[1, 1] <- 1
+      Af <- Af[, -ncol(Af), drop = FALSE]
+      # Af <- Af[, -1, drop = FALSE]
     }
     w <- rep(0, length = ncol(Af))
     nref <- nobs - sum(df)
