@@ -17,7 +17,7 @@
 la(formula, type = c("single", "multiple"), ...)
 
 ## Single Lasso smoothing parameter optimizer.
-lasso(x, y, start = NULL, lower = 0.001, upper = 1000,
+lasso(x, y, start = NULL, adaptive = TRUE, lower = 0.001, upper = 1000,
   nlambda = 100, lambda = NULL, verbose = TRUE, digits = 4,
   flush = TRUE, nu = NULL, stop.nu = NULL, ...)
 
@@ -44,6 +44,7 @@ lasso.coef(x, ...)
     corresponding \code{\link{bamlss}} object fitted with the \code{lasso()} optimizer.}
   \item{y}{The model response, as returned from function \code{\link{bamlss.frame}}.}
   \item{start}{A vector of starting values. Note, Lasso smoothing parameters will be dropped.}
+  \item{adaptive}{Should adaptive weights be used for fused Lasso terms?}
   \item{lower}{Numeric. The minimum lambda value.}
   \item{upper}{Numeric. The maximum lambda value.}
   \item{nlambda}{Integer. The number of smoothing parameters for which coefficients should be
