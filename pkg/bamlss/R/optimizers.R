@@ -166,7 +166,7 @@ get.state <- function(x, what = NULL) {
     } else {
       if(what %in% "b") {
         p <- x$state$parameters
-        return(p[!grepl("tau", names(p)) & !grepl("edf", names(p))])
+        return(p[!grepl("tau", names(p)) & !grepl("edf", names(p)) & !grepl("lasso", names(p))])
       } else return(x$state[[what]])
     }
   }
@@ -178,7 +178,7 @@ get.par <- function(x, what = NULL) {
     return(x[grep("tau", names(x))])
   } else {
     if(what %in% "b") {
-      return(x[!grepl("tau", names(x)) & !grepl("edf", names(x))])
+      return(x[!grepl("tau", names(x)) & !grepl("edf", names(x)) & !grepl("lasso", names(x))])
     } else return(x[what])
   }
 }
@@ -190,10 +190,10 @@ set.par <- function(x, replacement, what) {
     x[grep("tau", names(x))] <- replacement
   } else {
     if(what %in% "b") {
-      if(as.integer(sum(!grepl("tau", names(x)) & !grepl("edf", names(x)))) != length(replacement)) {
+      if(as.integer(sum(!grepl("tau", names(x)) & !grepl("edf", names(x)) & !grepl("lasso", names(x)))) != length(replacement)) {
         stop("here")
       }
-      x[!grepl("tau", names(x)) & !grepl("edf", names(x))] <- replacement
+      x[!grepl("tau", names(x)) & !grepl("edf", names(x)) & !grepl("lasso", names(x))] <- replacement
     } else x[what] <- replacement
   }
   x
@@ -1282,7 +1282,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
       S <- 0
       tau2 <- get.state(x, "tau2")
       for(j in seq_along(x$S))
-        S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](g0) else x$S[[j]]
+        S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(g0, x$fixed.hyper)) else x$S[[j]]
       P <- matrix_inv(XWX + S, index = x$sparse.setup, all_diagonal = x$all_diagonal)
     }
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
@@ -1296,7 +1296,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
     objfun <- function(tau2, ...) {
       S <- 0
       for(j in seq_along(x$S))
-        S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](g0) else x$S[[j]]
+        S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(g0, x$fixed.hyper)) else x$S[[j]]
       P <- matrix_inv(XWX + S, index = x$sparse.setup, all_diagonal = x$all_diagonal)
       if(inherits(P, "try-error")) return(NA)
       g <- drop(P %*% crossprod(x$X, x$rres))
@@ -1333,7 +1333,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
     x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
     S <- 0
     for(j in seq_along(x$S))
-      S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](x$state$parameters) else x$S[[j]]
+      S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(x$state$parameters, x$fixed.hyper)) else x$S[[j]]
     P <- matrix_inv(XWX + S, index = x$sparse.setup, all_diagonal = x$all_diagonal)
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
   }
@@ -2786,8 +2786,9 @@ set.starting.values <- function(x, start)
 }
 
 
-lasso <- function(x, y, start = NULL, lower = 0.001, upper = 1000,
-  nlambda = 100, lambda = NULL, verbose = TRUE, digits = 4, flush = TRUE,
+lasso <- function(x, y, start = NULL, adaptive = TRUE,
+  lower = 0.001, upper = 1000,  nlambda = 100, lambda = NULL,
+  verbose = TRUE, digits = 4, flush = TRUE,
   nu = NULL, stop.nu = NULL, ...)
 {
   if(is.null(attr(x, "bamlss.engine.setup")))
@@ -2808,6 +2809,46 @@ lasso <- function(x, y, start = NULL, lower = 0.001, upper = 1000,
 
   ptm <- proc.time()
 
+  fuse <- NULL
+
+  for(i in names(x)) {
+    for(j in names(x[[i]]$smooth.construct)) {
+      if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth")) {
+        x[[i]]$smooth.construct[[j]]$state$do.optim <- FALSE
+        x[[i]]$smooth.construct[[j]]$fxsp <- TRUE
+        fuse <- c(fuse, x[[i]]$smooth.construct[[j]]$fuse)
+        if(adaptive & x[[i]]$smooth.construct[[j]]$fuse) {
+          tau2 <- get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "tau2")
+          tau2 <- rep(1/.Machine$double.eps, length.out = length(tau2))
+          x[[i]]$smooth.construct[[j]]$state$parameters <- set.par(x[[i]]$smooth.construct[[j]]$state$parameters, tau2, "tau2")
+        }
+      }
+    }
+  }
+
+  fuse <- if(is.null(fuse)) FALSE else any(fuse)
+
+  if(adaptive & fuse) {
+    if(verbose[2])
+      cat("estimating adaptive weights\n")
+    b <- bfit(x = x, y = y, start = start, verbose = verbose[2], nu = nu, stop.nu = stop.nu, ...)
+    beta <- b$parameters
+    for(i in names(x)) {
+      for(j in names(x[[i]]$smooth.construct)) {
+        if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth")) {
+          if(x[[i]]$smooth.construct[[j]]$fuse) {
+            beta <- get.par(b$parameters[[i]]$s[[j]], "b")
+            w <- rep(0, ncol(x[[i]]$smooth.construct[[j]]$Af))
+            for(ff in 1:ncol(x[[i]]$smooth.construct[[j]]$Af))
+              w[ff] <- 1 / abs(t(x[[i]]$smooth.construct[[j]]$Af[, ff]) %*% beta)
+            names(w) <- paste("lasso", 1:length(w), sep = "")
+            x[[i]]$smooth.construct[[j]]$fixed.hyper <- w
+          }
+        }
+      }
+    }
+  }
+
   for(l in seq_along(lambdas)) {
     if(l > 1)
       start <- unlist(par[[l - 1]])
@@ -2815,8 +2856,6 @@ lasso <- function(x, y, start = NULL, lower = 0.001, upper = 1000,
     for(i in names(x)) {
       for(j in names(x[[i]]$smooth.construct)) {
         if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth")) {
-          x[[i]]$smooth.construct[[j]]$state$do.optim <- FALSE
-          x[[i]]$smooth.construct[[j]]$fxsp <- TRUE
           tau2 <- get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "tau2")
           nt <- names(tau2)
           tau2 <- rep(1 / lambdas[l], length.out = length(tau2))

@@ -3965,7 +3965,6 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
       Af <- diff(diag(k + 1))
       Af[1, 1] <- 1
       Af <- Af[, -ncol(Af), drop = FALSE]
-      # Af <- Af[, -1, drop = FALSE]
     }
     beta <- object$xt$beta
     w <- rep(0, length = ncol(Af))
@@ -3990,14 +3989,16 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
         w[ff] <- 1 / abs(t(Af[, ff]) %*% beta)
       }
     }
-    #w <- rep(1, length = ncol(Af))
-    #w <- 1 / w
+    object$Af <- Af
     object$S[[ls <- length(object$S) + 1]] <- function(parameters) {
       b <- get.par(parameters, "b")
+      if(length(i <- grep("lasso", names(parameters))))
+        w <- parameters[i]
       S <- 0
       for(k in 1:ncol(Af)) {
-        d <- drop(t(Af[, k]) %*% b)
-        S <- S + w[k] / sqrt(d^2 + const) * Af[, k] %*% t(Af[, k])
+        tAf <- t(Af[, k])
+        d <- drop(tAf %*% b)
+        S <- S + w[k] / sqrt(d^2 + const) * Af[, k] %*% tAf
       }
       S
     }
