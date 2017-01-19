@@ -1913,6 +1913,26 @@ mvnorm_bamlss <- function(k = 2, ...)
     }
   )
 
+  mu_score_calls <- sigma_score_calls <- rho_score_calls <- NULL
+  for(j in seq_along(mu))
+    mu_score_calls <- c(mu_score_calls, paste("function(y, par, ...) {mu_score_mvnorm(y, par, j=",j,")}", sep=""))
+  for(j in seq_along(sigma))
+    sigma_score_calls <- c(sigma_score_calls, paste("function(y, par, ...) {sigma_score_mvnorm(y, par, j=",j,")}", sep=""))
+  for(i in 1:k) {
+    for(j in 1:k) {
+      if(i < j)  
+        rho_score_calls <- c(rho_score_calls, paste("function(y, par, ...) {rho_score_mvnorm(y, par, i=",i,", j=",j,")}", sep=""))
+    }
+  }
+  scores <- list()
+  for(j in seq_along(mu))
+    scores[[mu[j]]] <- eval(parse(text = mu_score_calls[j]))
+  for(j in seq_along(sigma))
+    scores[[sigma[j]]] <- eval(parse(text = sigma_score_calls[j]))
+  for(j in seq_along(rho))
+    scores[[rho[j]]] <- eval(parse(text = rho_score_calls[j]))
+  rval$score <- scores
+
   mu_calls <- sigma_calls <- rho_calls <- NULL
   for(j in seq_along(mu))
     mu_calls <- c(mu_calls, paste("function(y, ...) { (y[,", j, "] + mean(y[,", j , "])) / 2 }"))
@@ -1936,7 +1956,7 @@ mvnorm_bamlss <- function(k = 2, ...)
 
 log_dmvnorm <- function(y, par)
 {
-  par <- do.call("cbind", par)
+  par <- do.call("cbind", par)	
   y <- as.matrix(y)
   cn <- colnames(par)
   sj <- grep("sigma", cn)
@@ -1945,6 +1965,117 @@ log_dmvnorm <- function(y, par)
   return(.Call("log_dmvnorm", y, par, nrow(y), ncol(y), mj, sj, rj, PACKAGE = "bamlss"))
 }
 
+mu_score_mvnorm <- function(y, par, j)
+{
+  n <- nrow(y)
+  k <- ncol(y)
+  par <- do.call("cbind", par)
+  y <- as.matrix(y)
+  cn <- colnames(par)
+  sj <- grep("sigma", cn)
+  mj <- grep("mu", cn)
+  rj <- as.integer(min(grep("rho", cn)))
+
+  rval <- NULL
+  for (kk in seq(n)) {
+    ## Fill Sigma
+    Sigma <- matrix(NA, ncol=k, nrow=k)
+    l <- 0
+    for ( ii in seq(k) ) {
+      Sigma[ii,ii] <- par[kk,k+ii]
+      for ( jj in seq(k) ) {  
+        if ( ii<jj ) {
+          Sigma[ii,jj] <- par[kk,k+ii] * par[kk,k+jj] * par[kk,rj+l]
+          Sigma[jj,ii] <- Sigma[ii,jj]
+          l <- l + 1
+        }
+      }
+    }
+    ## invert Sigma
+    InvSig <- chol2inv(chol(Sigma))
+
+    m <- drop(y[kk,] - par[kk,mj])
+    rval[kk] <- sum( InvSig[j,] * m )
+  }
+
+  return(rval)
+}
+
+sigma_score_mvnorm <- function(y, par, j)
+{
+  n <- nrow(y)
+  k <- ncol(y)
+  par <- do.call("cbind", par)
+  y <- as.matrix(y)
+  cn <- colnames(par)
+  sj <- grep("sigma", cn)
+  mj <- grep("mu", cn)
+  rj <- as.integer(min(grep("rho", cn)))
+
+  rval <- NULL
+  for ( kk in seq(n) ) {
+    ## Fill Rho
+    Rho <- matrix(0, ncol=k, nrow=k)
+    l <- 0
+    for ( ii in seq(k) ) {
+      Rho[ii,ii] <- 1
+      for ( jj in seq(k) ) {  
+        if ( ii<jj ) {
+          Rho[ii,jj] <- par[kk,rj+l]
+          Rho[jj,ii] <- Rho[ii,jj]
+          l <- l + 1
+        }
+      }
+    }
+    ## invert Rho
+    InvRho <- chol2inv(chol(Rho))
+    
+    m <- drop((y[kk,] - par[kk,mj])/par[kk,sj])
+    rval[kk] <- -1 + m[j]*sum(m*InvRho[j,])    
+  }
+  return(rval)
+}
+
+rho_score_mvnorm <- function(y, par, i, j)
+{
+  n <- nrow(y)
+  k <- ncol(y)
+  par <- do.call("cbind", par)
+  y <- as.matrix(y)
+  cn <- colnames(par)
+  sj <- grep("sigma", cn)
+  mj <- grep("mu", cn)
+  rj <- as.integer(min(grep("rho", cn)))
+
+  rval <- NULL
+  for ( kk in seq(n) ) {
+    ## Fill Rho and InvD
+    Rho <- InvD <- matrix(0, ncol=k, nrow=k)
+    l <- 0
+    for ( ii in seq(k) ) {
+      InvD[ii,ii] <- 1/par[kk,k+ii]
+      Rho[ii,ii] <- 1
+      for ( jj in seq(k) ) {  
+        if ( ii==i & jj==j ) {
+          mu <- par[kk,rj+l]
+          eta <- mu / sqrt(1 - mu^2)
+          deriv <- 1 / (1 + eta^2)^1.5
+        }
+        if ( ii<jj ) {
+          Rho[ii,jj] <- par[kk,rj+l]
+          Rho[jj,ii] <- Rho[ii,jj]
+          l <- l + 1
+        }
+      }
+    }
+    ## invert Rho
+    InvRho <- chol2inv(chol(Rho))
+
+    m <- drop((y[kk,] - par[kk,mj])/par[kk,sj])
+    rval[kk] <- drop(-.5*InvRho[j,i] + .5*sum(InvRho[j,]*m)*sum(InvRho[,i]*m))*deriv
+  }
+  return(rval)
+}
 
 bivprobit_bamlss <- function(...)
 {

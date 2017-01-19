@@ -604,40 +604,39 @@ Here, the precision matrix $\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})$ is derived 
 prespecified so-called penalty matrices
 $\boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}} = \{\mathbf{K}_{1jk}, \ldots, \mathbf{K}_{Ljk}\}$,
 e.g., for tensor product smooths the precision matrix is
-$\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk}) = \sum_{l = 1}^{L_{jk}} \frac{1}{\tau_{ljk}^2}\mathbf{K}_{ljk}$.
+$\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk}) = \sum_{l = 1}^{L_{jk}} \frac{1}{\tau_{ljk}}\mathbf{K}_{ljk}$.
 Note that $\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})$ is often
 not of full rank, therefore, $d_{\boldsymbol{\beta}_{jk}}( \cdot )$ is partially improper.
-The variances $\tau_{ljk}^2$ account for the amount of smoothness (regularization) of the
+The variances $\tau_{ljk}$ account for the amount of smoothness (regularization) of the
 function and can be interpreted as the inverse smoothing parameters in the frequentist approach.
 A common choice for the prior for $\boldsymbol{\tau}_{jk}$ is based on inverse gamma distributions
 for each $\boldsymbol{\tau}_{jk} = (\tau_{1jk}, \ldots, \tau_{L_{jk}jk})^\top$
 \begin{equation} \label{eqn:igprior}
 d_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}) =
-  \prod_{l = 1}^{L_{jk}} \frac{b_{ljk}^{a_{ljk}}}{\Gamma(a_{ljk})} (\tau_{ljk}^2)^{-(a_{ljk} + 1)} \exp(-b_{ljk} / \tau_{ljk}^2),
+  \prod_{l = 1}^{L_{jk}} \frac{b_{ljk}^{a_{ljk}}}{\Gamma(a_{ljk})} \tau_{ljk}^{-(a_{ljk} + 1)} \exp(-b_{ljk} / \tau_{ljk}),
 \end{equation}
 with fixed parameters $\boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}} = \{ \mathbf{a}_{jk}, \mathbf{b}_{jk} \}$.
 Small values for $\mathbf{a}_{jk}$ and $\mathbf{b}_{jk}$ correspond to approximate flat priors for
-$\log(\tau_{ljk}^2)$. Setting $\mathbf{b}_{jk} = \mathbf{0}$ and
+$\log(\tau_{ljk})$. Setting $\mathbf{b}_{jk} = \mathbf{0}$ and
 $\mathbf{a}_{jk}=-\mathbf{1}$ or $\mathbf{a}_{jk} = -1/2 \cdot \mathbf{1}$ yields flat priors for
-$\tau_{ljk}^2$ and $\tau_{ljk}$, respectively.
+$\tau_{ljk}$ and $\tau_{ljk}^{0.5}$, respectively.
 However, the inverse gamma prior might be problematic if $\tau_{ljk}$ is close to zero, since the
 results a very sensitive to the choice of $\mathbf{a}_{jk}$ and $\mathbf{b}_{jk}$. Therefore,
 \citet{bamlss:Gelman:2006} proposes to use the half-Cauchy prior
 \begin{equation*} \label{eqn:hcauchy}
 d_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}) =
-  \prod_{l = 1}^{L_{jk}}\frac{2A_{ljk}}{\pi (\tau_{ljk}^2 + A_{ljk}^2)}, \quad A_{ljk} > 0,
+  \prod_{l = 1}^{L_{jk}}\frac{2A_{ljk}}{\pi (\tau_{ljk} + A_{ljk}^2)}, \quad A_{ljk} > 0,
 \end{equation*}
 with hyper-parameters $\boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}} = \{\mathbf{A}_{jk}\}$.
 For $A_{ljk} \rightarrow \infty$ the priors are uniform, hence large values
 (e.g., $A_{ljk} = 25$) result in weakly informative priors. A desirable property of the half-Cauchy
 is that for $\tau_{ljk} = 0$ the density is a nonzero constant, whereas the density of the inverse
-gamma for $\tau_{ljk} \rightarrow 0$ vanishes (see also \citealp{bamlss:Polson+Scott:2012}). Note
-that in our framework the priors for variances $\tau_{ljk}^2$ rather than $\tau_{ljk}$ are usually
-considered. Another question is the actual choice of hyper-parameters. A recent suggestion reducing
+gamma for $\tau_{ljk} \rightarrow 0$ vanishes (see also \citealp{bamlss:Polson+Scott:2012}). Another
+question is the actual choice of hyper-parameters. A recent suggestion reducing
 this issue to the choice of a scale parameter that is directly related to the functions
 $f_{jk}( \cdot )$ (and thus much better interpretable and accessible for the user) is given
-in~\citet{bamlss:Klein+Kneib:2016} for several different hyper-priors for $\tau_{ljk}^2$, such as
-resulting priors from half-Cauchy, half-normal or uniform priors for $\tau_{ljk}$ or resulting
+in~\citet{bamlss:Klein+Kneib:2016} for several different hyper-priors for $\tau_{ljk}$, such as
+resulting priors from half-Cauchy, half-normal or uniform priors for $\tau_{ljk}^{0.5}$ or resulting
 penalized complexity priors~\citep{bamlss:Simpson:Rue:Martins:Riebler:Sorbye:2015}, so-called
 scale-dependent priors.
 
@@ -653,7 +652,7 @@ a compound prior
 \boldsymbol{\beta}_{jk} = \tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})
   + \boldsymbol{\varepsilon}_{jk},
 \end{equation*}
-where $\boldsymbol{\varepsilon}_{jk} \sim \mathcal{N}(\mathbf{0}, \tilde{\tau}_{jk}^2\mathbf{I})$ is a vector
+where $\boldsymbol{\varepsilon}_{jk} \sim \mathcal{N}(\mathbf{0}, \tilde{\tau}_{jk}\mathbf{I})$ is a vector
 of i.i.d.\ Gaussian random effects and
 $\tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})$ represents a full
 predictor of nested covariates, e.g., including a discrete regional spatial
@@ -761,7 +760,7 @@ $\mathbf{H}_{ks}$ including $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$, 
   \, + \, \frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\eta}_k}
     \frac{\partial^2 \boldsymbol{\eta}_k}{\partial^2 \boldsymbol{\beta}_k}}_{\text{if } k = s},
 \end{equation}
-yielding a decomposition of building block \ref{item:7b} and \ref{item:5}. The second term on
+yielding a decomposition of building blocks \ref{item:7b} and \ref{item:5}. The second term on
 the right hand side cancels out if all functions (\ref{eqn:functions}) can be written as a matrix
 product of a design matrix and coefficients, e.g., when using a basis function approach. Within the
 first term, the second derivatives of the log-likelihood involving the predictors can be written as
@@ -806,9 +805,9 @@ for the moment and usually estimation cannot be done with maximization of the
 log-posterior (see also Section~\ref{sec:modchoice}). Typically, using a linear basis function
 representation of functions $f_{jk}( \cdot )$ and priors based on multivariate normal kernels
 (\ref{eqn:mvnormprior}) matrices $\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ are a simple product of
-smoothing variances and penalty matrices, e.g., with only one smoothing variance
-$\mathbf{G}_{jk}(\tau_{jk}) = \tau_{jk}^{-2}\mathbf{K}_{jk}$ with corresponding penalty matrix
-$\mathbf{K}_{jk}$.
+smoothing variances and penalty matrices, e.g., with only one smoothing variance building block
+\ref{item:8} becomes $\mathbf{G}_{jk}(\tau_{jk}) = \tau_{jk}^{-1}\mathbf{K}_{jk}$ with corresponding
+penalty matrix $\mathbf{K}_{jk}$.
 
 Similarly, the score vector is
 $$
@@ -832,7 +831,8 @@ The updates are based on an iteratively weighted least squares scheme given by
 \end{equation}
 with working observations
 $\mathbf{z}_k = \boldsymbol{\eta}_{k}^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$
-(in Appendix~\ref{appendix:pmodeiwls} the detailed derivations are presented).
+(in Appendix~\ref{appendix:pmodeiwls} the detailed derivations are presented), i.e., the algorithm
+only requires building blocks \ref{item:6b}, \ref{item:7b} and \ref{item:8}.
 Hence, this leads to a backfitting algorithm and cycling through (\ref{eqn:blockbackfit}) for
 terms $j = 1, \ldots, J_k$ and parameters $k = 1, \ldots, K$ approximates a single
 Newton-Raphson step in (\ref{eqn:newton}), since cross derivatives are not incorporated in the
@@ -855,7 +855,8 @@ is equivalent to updating function
   \left[\mathbf{J}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
     \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right), \nonumber
 \end{eqnarray}
-where matrix $\mathbf{J}_{kk}( \cdot )$ is the derivative matrix given in (\ref{eqn:hessian2}).
+where matrix $\mathbf{J}_{kk}( \cdot )$ is the derivative matrix given in (\ref{eqn:hessian2}),
+involving building blocks \ref{item:6a}, \ref{item:7a} and \ref{item:8}.
 
 For optimization, different strategies of the backfitting
 algorithm (\ref{eqn:blockbackfit}) can be applied. One alternative is a complete inner backfitting
@@ -935,7 +936,8 @@ derived by each of the following methods:
   \boldsymbol{\Sigma}_{jk} = -\left( \frac{\partial^2 \pi(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X})}{
     \partial \boldsymbol{\beta}_{jk}\boldsymbol{\beta}_{jk}^\top} \right)^{-1},
   $$
-  or its expectation, computed at the posterior mode estimate $\hat{\boldsymbol{\beta}}_{jk}$.
+  or its expectation, computed at the posterior mode estimate $\hat{\boldsymbol{\beta}}_{jk}$,
+  requiring building blocks \ref{item:7a} and \ref{item:8}.
   However, fixing $\boldsymbol{\Sigma}_{jk}$ during MCMC simulation might still lead to undesired
   behavior of the Markov chain especially when parameter samples move into regions with low
   probability mass of the posterior distribution. A solution with good mixing properties is to
@@ -959,8 +961,8 @@ derived by each of the following methods:
   \left[\mathbf{J}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
     \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right),
   \end{eqnarray*}
-  which is equivalent to the updating function given in (\ref{eqn:blockblocknewton}) and can be build
-  using blocks \ref{item:7a} and \ref{item:8}.
+  which is equivalent to the updating function given in (\ref{eqn:blockblocknewton}) and can again
+  be build using blocks \ref{item:7a} and \ref{item:8}.
   Hence, the mean is simply one Newton or Fisher scoring iteration towards the posterior mode at
   the current step.
   The proposal density for $\boldsymbol{\beta}_{jk}$ then is
@@ -979,7 +981,8 @@ derived by each of the following methods:
   $$
   with weights $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$, or the corresponding expectation,
-  again using building blocks \ref{item:7b} and \ref{item:8}. The mean can be written as
+  as in posterior mode updating using building blocks \ref{item:7b} and \ref{item:8}. The mean can
+  be written as
   \begin{equation*}
   \boldsymbol{\mu}_{jk}^{(t)} =
     \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left(\mathbf{z}_k  -
@@ -1033,6 +1036,9 @@ burden does most of the times not exceed possible benefits.
 
 
 \subsection{Model choice} \label{sec:modchoice}
+
+In the context of BAMLSS, model choice is usually based on the full distribution, i.e, the
+density
 
 \subsubsection{Diagnostics} \label{sec:diagnostics}
 
