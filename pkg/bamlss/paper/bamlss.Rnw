@@ -241,12 +241,6 @@ $$
   \mathbf{X}_{jk}\beta_{3} \right) \right).
 $$
 
-\readme{Z: The following last paragraph in this section seems to be more technical to me.
-While the other equations above are relatively straightforward and IMO close enough to
-``common knowledge'' for readers in the field, I'm not so sure about the next paragraph.
-The main idea is also straightforward but the spectral decomposition and null space etc.\
-were new to me. Maybe this can be simplified or the technical details deferred?}
-
 Note that using basis functions the individual model components
 $\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$ can be further
 decomposed into a mixed model representation given by
@@ -260,7 +254,9 @@ The design matrix $\mathbf{U}_{jk}$ is derived from a spectral decomposition of 
 $\mathbf{K}_{jk}$ and $\tilde{\mathbf{X}}_{jk}$ by finding a basis of the null space of $\mathbf{K}_{jk}$
 such that $\tilde{\mathbf{X}}_{jk}^{\top}\mathbf{K}_{jk} = \mathbf{0}$, i.e., parameters
 $\tilde{\boldsymbol{\gamma}}_{jk}$ are not penalized (see, e.g.,
-\citealp{bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003, bamlss:Fahrmeir+Kneib+Lang+Marx:2013}).
+\citealp{bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003, bamlss:Wood:2004, bamlss:Fahrmeir+Kneib+Lang+Marx:2013}).
+Such transformations can be used to estimate functions $f_{jk}( \cdot )$ using standard algorithms
+for random effects (see, e.g., \citealp{bamlss:Wood:2016b}).
 
 
 \section{A conceptional Lego toolbox} \label{sec:legobox}
@@ -1037,8 +1033,8 @@ burden does most of the times not exceed possible benefits.
 
 \subsection{Model choice} \label{sec:modchoice}
 
-In the context of BAMLSS, model choice is usually based on the full distribution, i.e, the
-density
+In the context of BAMLSS, model choice is usually based on the full response distribution. In the
+following commonly used methods used for model choice and variable selection are outlined.
 
 \subsubsection{Diagnostics} \label{sec:diagnostics}
 

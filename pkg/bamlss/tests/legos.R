@@ -391,15 +391,16 @@ for(i in 1:n) {
   V[3, 1] <- V[1, 3]
   V[3, 2] <- V[2, 3]
   mu <- c(f0(x0[i]) + f1(x1[i]), f2(x2[i]), f3(x3[i]))
+  mu <- rep(0, 3)
   y[i,] <- rmvn(1, mu, V)
 }
 
 dat <- data.frame(y0=y[,1],y1=y[,2],y2=y[,3],x0=x0,x1=x1,x2=x2,x3=x3)
 
 f <- list(
-  y0 ~ s(x0) + s(x1),
-  y1 ~ s(x2),
-  y2 ~ s(x3),
+  y0 ~ 1,
+  y1 ~ 1,
+  y2 ~ 1,
   sigma1 ~ s(x1),
   sigma2 ~ s(x2),
   sigma3 ~ 1,
@@ -408,5 +409,5 @@ f <- list(
   rho23 ~ s(x3)
 )
 
-b <- bamlss(f, family = gF(mvnorm, k = 3), data = dat, optimizer = boost, sampler = FALSE, maxit = 1000, nu = 0.1, scale.d = TRUE)
+b <- bamlss(f, family = gF("mvnorm", k = 3), data = dat, optimizer = boost, sampler = FALSE, maxit = 1000, nu = 0.1)
 

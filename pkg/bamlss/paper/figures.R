@@ -174,7 +174,7 @@ if(!file.exists("figures/rainmodel-effects-predict.png")) {
   y <- mf[["sqrt(raw)"]]
   hist(y, freq = FALSE, main = "", col = gray(0.9), breaks = 50,
     xlab = expression(paste("Daily ", sqrt(observations))), ylab = "Density")
-  ff <- cnorm_bamlss()
+  ff <- family(rainmodel0)
   cr <- coef(rainmodel0)
   eta <- list(mu = cr[1], sigma = cr[2])
   y2 <- seq(min(y), max(y), length = 200)
