@@ -374,14 +374,12 @@ weighted least squares (IWLS) and some on ordinary Newton-Raphson steps (see, e.
 example Section~\ref{sec:coxreg}). In problem \ref{E2} using MCMC simulation it is common to
 mix between several sampling methods depending on the type of model term or distribution parameter.
 
-\fixme{Z: The reading flow for the verbal description of Algorithms 1, 2a, 2b could be improved.
-Maybe add some more overview description (1--2 sentences) in the next paragraph?}
-
-\fixme{Z: Try to force Algorithms 1, 2a, and 2b onto the same page using p!}
-
 Using highly modular systems like (\ref{eqn:blockupdate}) and (\ref{eqn:blockblockupdate})
 it is possible to develop a generic estimation algorithm for numerous possibly very complex models,
-which is outlined in Algorithm~\ref{fig:algodesign}.
+which is outlined in Algorithm~\ref{fig:algodesign}. The algorithm starts by initializing all
+model parameters and predictors. Then an outer iteration loops over all distributional parameters
+performing an inner iteration updating all model terms of the respective parameter, i.e., the
+algorithm uses backfitting type updating schemes.
 \begin{algorithm}[p!]
 \renewcommand\thealgorithm{A1}
 \caption{\label{fig:algodesign} Generic BAMLSS model fitting algorithm.}
@@ -417,9 +415,6 @@ which is outlined in Algorithm~\ref{fig:algodesign}.
 In practice, for full Bayesian inference the algorithm is applied twice, i.e.,
 first computing estimates for \ref{E1} and then using these as starting values for solving
 \ref{E2}.
-
-\readme{Some more brief verbal comments about what the algorithm does and how it proceeds
-would be useful in the reading flow. One or two sentences should suffice already, I guess.}
 
 Finding good starting values is especially important for complex model terms, e.g., for
 multi-dimensional functions $f_{jk}( \cdot )$ that have multiple smoothing variances in prior densities
@@ -494,7 +489,7 @@ updating systems like (\ref{eqn:blockupdate}) and (\ref{eqn:blockblockupdate}), 
 ``Lego bricks'' are repeatedly used in Algorithm~\ref{fig:algodesign}:
 \begin{enumerate}[label=B\theenumi.,ref=B\theenumi]
 \item \label{item:1} The density
-  $d(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$ and respective
+  $d_y(\mathbf{y} | \boldsymbol{\theta}_1, \ldots, \boldsymbol{\theta}_K)$ and respective
   log-likelihood function $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$,
 \item \label{item:2} link functions $h_k( \cdot )$,
 \item \label{item:3} model terms $f_{jk}( \cdot )$ and corresponding prior densities
@@ -523,37 +518,26 @@ Moreover, in this section we derive the details for updating Algorithms~\ref{fig
 \item \label{item:8} derivatives for log-priors, e.g., $\frac{\partial \log \, p_{jk}(\boldsymbol{\beta}_{jk};
   \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})}{\partial \boldsymbol{\beta}_{jk}}$.
 \end{enumerate}
-Computationally, this leads to a ``Lego'' system with (usually) fixed bricks \ref{item:2},
-\ref{item:3}, \ref{item:4}, \ref{item:5} and \ref{item:8}; in which only components \ref{item:1},
-\ref{item:6a} and \ref{item:7a} need to be supplied for implementing a new model.
-
-\fixme{Z: The sentence above is the story that Klein/Kneib/Lang usually tell because they
-convey that all relevant links and model terms are already implemented. While I agree that this
-is often true, I don't think that it is really always true and hence I don't think we should
-pitch the story this way. Instead, we could say that extending the toolbox can be done in different
-directions, e.g.: For a new response distribution, only building block B1 and possibly B6b and
-B7b are necessary. For a new model term B3 and B5 are needed. And for a new link function
-B2 and B4. And then such new building blocks are straightforward to combine with other
-previously available building blocks.}
-
-As shown in the upcoming this is relatively straightforward in most cases since \ref{item:6a} and \ref{item:7a} can
-be simplified when fragmenting with the chain rule leading to updating functions that only require
-\ref{item:6b} and \ref{item:7b} to be implemented. Moreover, most parts that are used for solving
-\ref{E1} can also be used for \ref{E2}.
+Computationally, this leads to a ``Lego'' system and extending the toolbox can be done in different
+directions, e.g.: For a new response distribution, only building block \ref{item:1}, and possibly
+\ref{item:6b} and \ref{item:7b} are necessary, since in most cases \ref{item:6a} and \ref{item:7a}
+can be simplified when fragmenting with the chain rule. For a new model term \ref{item:3} and
+\ref{item:5} are needed. And for a new link function \ref{item:2} and \ref{item:4}. Then, the
+new building blocks are straightforward to combine with other previously available building blocks,
+moreover, most parts that are used for solving \ref{E1} can also be used for \ref{E2}.
 
 The remainder of this section is as follows. Details about commonly used prior densities in
-GAM-type models are provided in the next section. In Section~\ref{sec:bricksmodelfit} we derive the
-general parts that are needed for updating functions in Algorithm~\ref{fig:umode} and
-\ref{fig:mcmc}. In Section~\ref{sec:modchoice} and \ref{sec:infpred} we briefly discuss model
-choice, Bayesian inference and prediction. \fixme{Z: Within this last paragraph also try
-to highlight which B* building blocks are discussed subsequently. And then in the subsequent
-discussions refer back to the B* where appropriate.}
+GAM-type models, building block \ref{item:3}, are provided in the next section. In
+Section~\ref{sec:bricksmodelfit} we derive the general parts that are needed for updating functions
+in Algorithm~\ref{fig:umode} and \ref{fig:mcmc}, i.e., building blocks \ref{item:6a}, \ref{item:6b},
+\ref{item:7a} and \ref{item:7b}. In Section~\ref{sec:modchoice} and \ref{sec:infpred} we briefly
+discuss model choice, Bayesian inference and prediction.
 
 \subsection{Model terms and priors} \label{sec:priorsbricks}
 
 In the following we summarize commonly-used specifications for priors $p_{jk}( \cdot )$ used for
-estimating GAM-type models. In addition, Table~\ref{tab:mlegobricks} provides an overview of model
-terms and prior structures.
+estimating GAM-type models that can be used for building block \ref{item:3}. In addition,
+Table~\ref{tab:mlegobricks} provides an overview of model terms and prior structures.
 
 \begin{sidewaystable}
 \centering
@@ -582,17 +566,15 @@ Covariates & Effect types $f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$ & \multi
 \multirow{2}{*}{time variable $t$}& Space-time effect $f(s, t)$ & & \multirow{2}{*}{HN $\propto (\tau^2)^{1/2 -1} \exp(-\tau^2/(2a^2))$} \\
 & Functional random intercept $f_s(t)$ & & \\ \hline
 \end{tabular}
-\caption{\label{tab:mlegobricks} Commonly used ``Lego bricks'' for model terms in BAMLSS. Priors for
-  linear effects assume that the precision matrix $\mathbf{P}(\boldsymbol{\tau})$ is fixed. For smooth
-  effects, prior densities are: inverse gamma (IG), half-Cauchy (HC), scale-dependent (SD) and
-  half-normal (HN).}
+\caption{\label{tab:mlegobricks} Commonly used ``Lego bricks'', building block \ref{item:3}, for model
+  terms in BAMLSS. Priors for linear effects assume that the precision matrix $\mathbf{P}(\boldsymbol{\tau})$
+  is fixed. For smooth effects, prior densities are: inverse gamma (IG), half-Cauchy (HC),
+  scale-dependent (SD) and half-normal (HN).}
 \end{sidewaystable}
 
 \subsubsection{Linear effects}
 
-\fixme{Z: Spell out $f_{jk}( \cdot )$?}
-
-For simple linear effects a common choice for $p_{jk}( \cdot )$ is to use a non-informative
+For simple linear effects $f_{jk}( \cdot )$ a common choice for $p_{jk}( \cdot )$ is to use a non-informative
 (constant) flat prior. One of the simplest informative priors is a normal prior given by
 \begin{equation*} \label{eqn:linprior}
 p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) \propto
@@ -609,10 +591,8 @@ precision (see, e.g., \citealp{bamlss:Fahrmeir+Kneib+Lang+Marx:2013}).
 
 \subsubsection{Nonlinear effects} \label{sec:smootheffects}
 
-\fixme{Z: Spell out $f_{jk}( \cdot )$?}
-
-If the nonlinear functions in (\ref{eqn:addpred}) are modeled using a basis function approach
-the usual choice of prior $p_{jk}( \cdot )$ is based on a multivariate normal kernel for
+If the nonlinear functions $f_{jk}( \cdot )$ in (\ref{eqn:addpred}) are modeled using a basis
+function approach the usual choice of prior $p_{jk}( \cdot )$ is based on a multivariate normal kernel for
 $\boldsymbol{\beta}_{jk}$ given by
 \begin{equation} \label{eqn:mvnormprior}
 d_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \,
@@ -653,14 +633,13 @@ For $A_{ljk} \rightarrow \infty$ the priors are uniform, hence large values
 is that for $\tau_{ljk} = 0$ the density is a nonzero constant, whereas the density of the inverse
 gamma for $\tau_{ljk} \rightarrow 0$ vanishes (see also \citealp{bamlss:Polson+Scott:2012}). Note
 that in our framework the priors for variances $\tau_{ljk}^2$ rather than $\tau_{ljk}$ are usually
-considered. Hence, the corresponding priors have to be proposed. \fixme{Z: It is not clear to me what
-the sentence before means. Maybe rephrase?} Another question is the actual
-choice of hyper-parameters. A recent suggestion reducing this issue to the choice of a scale
-parameter that is directly related to the functions $f_{jk}( \cdot )$ (and thus much better
-interpretable and accessible for the user) is given in~\citet{bamlss:Klein+Kneib:2016} for several
-different hyper-priors for $\tau_{ljk}^2$, such as resulting priors from half-Cauchy, half-normal
-or uniform priors for $\tau_{ljk}$ or resulting penalized complexity
-priors~\citep{bamlss:Simpson:Rue:Martins:Riebler:Sorbye:2015}, so-called scale-dependent priors.
+considered. Another question is the actual choice of hyper-parameters. A recent suggestion reducing
+this issue to the choice of a scale parameter that is directly related to the functions
+$f_{jk}( \cdot )$ (and thus much better interpretable and accessible for the user) is given
+in~\citet{bamlss:Klein+Kneib:2016} for several different hyper-priors for $\tau_{ljk}^2$, such as
+resulting priors from half-Cauchy, half-normal or uniform priors for $\tau_{ljk}$ or resulting
+penalized complexity priors~\citep{bamlss:Simpson:Rue:Martins:Riebler:Sorbye:2015}, so-called
+scale-dependent priors.
 
 
 \subsubsection{Multilevel effects} \label{sec:multilevel}
@@ -767,11 +746,12 @@ the derivatives of the log-likelihood for the $k$-th parameter can be further de
   \frac{\partial \boldsymbol{\theta}_k}{\partial \boldsymbol{\eta}_k}
   \frac{\partial \boldsymbol{\eta}_k}{\partial \boldsymbol{\beta}_k},
 \end{equation*}
-including the derivatives of the log-likelihood with respect to parameters $\boldsymbol{\theta}_k$,
-the derivative of the inverse link functions and the derivative of the predictor
-$\boldsymbol{\eta}_k$ with respect to coefficients $\boldsymbol{\beta}_k$. Again by chain rule,
-the components of $\mathbf{H}_{ks}$ including $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$ can be
-written as
+including the derivatives of the log-likelihood with respect to
+$\boldsymbol{\eta}_k$ and $\boldsymbol{\theta}_k$, building block \ref{item:6a}, the derivative of the inverse
+link functions, component \ref{item:4}, and the derivative of the predictor $\boldsymbol{\eta}_k$
+with respect to coefficients $\boldsymbol{\beta}_k$, \ref{item:5}. Again by chain rule, the components of
+$\mathbf{H}_{ks}$ including $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$, building block
+\ref{item:7a}, can be written as
 \begin{equation} \label{eqn:hessian2}
 \mathbf{J}_{ks}(\boldsymbol{\beta}) = \frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top} =
 \left( \frac{\partial \boldsymbol{\eta}_s}{\partial \boldsymbol{\beta}_s} \right)^\top
@@ -781,10 +761,10 @@ written as
   \, + \, \frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\eta}_k}
     \frac{\partial^2 \boldsymbol{\eta}_k}{\partial^2 \boldsymbol{\beta}_k}}_{\text{if } k = s},
 \end{equation}
-where the second term on the right hand side cancels out if all functions (\ref{eqn:functions}) can
-be written as a matrix product of a design matrix and coefficients, e.g., when using a basis
-function approach. Within the first term, the second derivatives of the log-likelihood involving the
-predictors can be written as
+yielding a decomposition of building block \ref{item:7b} and \ref{item:5}. The second term on
+the right hand side cancels out if all functions (\ref{eqn:functions}) can be written as a matrix
+product of a design matrix and coefficients, e.g., when using a basis function approach. Within the
+first term, the second derivatives of the log-likelihood involving the predictors can be written as
 \begin{equation} \label{eqn:hessian3}
 \frac{\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\eta}_k\partial \boldsymbol{\eta}_s^\top} =
   \frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\theta}_k}
@@ -813,7 +793,8 @@ $$
 \end{pmatrix}^{(t)},
 $$
 with diagonal weight matrix $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
-\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and matrices
+\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and matrices forming building block
+\ref{item:8}
 \begin{equation} \label{eqn:gmatrix}
 \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}) = \frac{\partial^2 \log \,
   p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk},
@@ -877,23 +858,23 @@ is equivalent to updating function
 where matrix $\mathbf{J}_{kk}( \cdot )$ is the derivative matrix given in (\ref{eqn:hessian2}).
 
 For optimization, different strategies of the backfitting
-algorithm (\ref{eqn:blockbackfit}) can be applied. One alternative is an inner backfitting algorithm
-for each parameter $k$, i.e., the backfitting procedure updates
+algorithm (\ref{eqn:blockbackfit}) can be applied. One alternative is a complete inner backfitting
+algorithm for each parameter $k$, i.e., the backfitting procedure updates
 $\boldsymbol{\beta}_{jk}$, for $j = 1, \ldots, J_k$ until convergence, afterwards updates for
-parameters for the next $k$ are calculated again by an inner backfitting algorithm, and so forth
-(see also \citealp{bamlss:Rigby+Stasinopoulos:2005}).
+parameters for the next $k$ are calculated again by a complete inner backfitting algorithm, and so
+forth (see also \citealp{bamlss:Rigby+Stasinopoulos:2005}).
 
 Note that for numerical reasons it is oftentimes better to replace the Hessian by the expected
 Fisher information with weights
 $\mathbf{W}_{kk} = -\mathrm{diag}(E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top))$, see \cite{bamlss:Klein+Kneib+Lang:2015}.
 Moreover, to achieve convergence, algorithms for posterior mode usually initialize the parameter
-vectors $\boldsymbol{\theta}_k$. Then, after one inner backfitting iteration the algorithm
+vectors $\boldsymbol{\theta}_k$. Then, after one complete inner backfitting iteration the algorithm
 can proceed in a full zigzag fashion or again with inner iterations. For all updating schemes it
-might also be appropriate to vary the updating step length of parameter updates,
+might also be appropriate to vary the updating step length of parameter updates (half-stepping),
 possibly in each iteration. This is relatively straightforward to implement, because step length
-optimization is a one-dimensional problem, i.e., for each model term finding the step length that
-improves the log-posterior most.
+optimization is a one-dimensional problem, i.e., for each model term finding the
+step length that improves the log-posterior most.
 
 
 \subsubsection{Posterior mean} \label{sec:postmean}
@@ -978,7 +959,8 @@ derived by each of the following methods:
   \left[\mathbf{J}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
     \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right),
   \end{eqnarray*}
-  which is equivalent to the updating function given in (\ref{eqn:blockblocknewton}).
+  which is equivalent to the updating function given in (\ref{eqn:blockblocknewton}) and can be build
+  using blocks \ref{item:7a} and \ref{item:8}.
   Hence, the mean is simply one Newton or Fisher scoring iteration towards the posterior mode at
   the current step.
   The proposal density for $\boldsymbol{\beta}_{jk}$ then is
@@ -996,8 +978,8 @@ derived by each of the following methods:
     \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}),
   $$
   with weights $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
-\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$, or the corresponding expectation.
-  The mean can be written as
+\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$, or the corresponding expectation,
+  again using building blocks \ref{item:7b} and \ref{item:8}. The mean can be written as
   \begin{equation*}
   \boldsymbol{\mu}_{jk}^{(t)} =
     \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left(\mathbf{z}_k  -
