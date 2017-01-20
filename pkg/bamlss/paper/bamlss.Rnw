@@ -376,6 +376,10 @@ which is outlined in Algorithm~\ref{fig:algodesign}. The algorithm starts by ini
 model parameters and predictors. Then an outer iteration loops over all distributional parameters
 performing an inner iteration updating all model terms of the respective parameter, i.e., the
 algorithm uses backfitting type updating schemes.
+In practice, for full Bayesian inference the algorithm is applied twice, i.e.,
+first computing estimates for \ref{E1} and then using these as starting values for solving
+\ref{E2}.
+
 \begin{algorithm}[p!]
 \renewcommand\thealgorithm{A1}
 \caption{\label{fig:algodesign} Generic BAMLSS model fitting algorithm.}
@@ -408,15 +412,7 @@ algorithm uses backfitting type updating schemes.
   \ref{E2}.}
 \end{algorithmic}
 \end{algorithm}
-In practice, for full Bayesian inference the algorithm is applied twice, i.e.,
-first computing estimates for \ref{E1} and then using these as starting values for solving
-\ref{E2}.
 
-Finding good starting values is especially important for complex model terms, e.g., for
-multi-dimensional functions $f_{jk}( \cdot )$ that have multiple smoothing variances in prior densities
-$p_{jk}( \cdot )$. Therefore, we propose to estimate parameters $\boldsymbol{\tau}_{jk}$
-using a goodness-of-fit criterion within the stepwise selection approach presented in
-Algorithm~\ref{fig:umode}, similar to \citet{bamlss:Belitz+Lang:2008}.
 \begin{algorithm}[p!]
 \addtocounter{algorithm}{-1}
 \renewcommand\thealgorithm{A2\alph{algorithm}}
@@ -436,18 +432,7 @@ Algorithm~\ref{fig:umode}, similar to \citet{bamlss:Belitz+Lang:2008}.
 \ENSURE{Updates $\boldsymbol{\beta}_{jk}^{(t + 1)}$, $\boldsymbol{\tau}_{jk}^{(t + 1)}$.}
 \end{algorithmic}
 \end{algorithm}
-In each updating step in Algorithm~\ref{fig:algodesign} each
-$\boldsymbol{\tau}_{jk} = (\tau_{1jk}, \ldots, \tau_{L_{jk}jk})^\top$ is optimized one after the
-other using adaptive search intervals. Hence, the optimization problem is reduced to a
-one-dimensional search that is relative fast and straightforward to implement. The algorithm
-does not guarantee a global minimum given the goodness-of-fit criterion, however, the solution
-is at least close and serves as good starting points for full MCMC. Optimization speed can be
-further increased if for a given search interval only a grid of possible values for each
-$\tau_{ljk}$ is used.
 
-The MCMC updating functions usually either accept or reject samples of the parameters and smoothing
-variances are sampled after $\boldsymbol{\beta}_{jk}$. In Algorithm~\ref{fig:mcmc} the general
-sampling scheme is shown.
 \begin{algorithm}[p!]
 \renewcommand\thealgorithm{A2\alph{algorithm}}
 \caption{\label{fig:mcmc} MCMC updating $U_{jk}( \cdot )$.}
@@ -468,6 +453,24 @@ sampling scheme is shown.
 \ENSURE{Next state $\boldsymbol{\beta}_{jk}^{(t + 1)}$, $\boldsymbol{\tau}_{jk}^{(t + 1)}$.}
 \end{algorithmic}
 \end{algorithm}
+
+Finding good starting values is especially important for complex model terms, e.g., for
+multi-dimensional functions $f_{jk}( \cdot )$ that have multiple smoothing variances in prior densities
+$p_{jk}( \cdot )$. Therefore, we propose to estimate parameters $\boldsymbol{\tau}_{jk}$
+using a goodness-of-fit criterion within the stepwise selection approach presented in
+Algorithm~\ref{fig:umode}, similar to \citet{bamlss:Belitz+Lang:2008}.
+In each updating step in Algorithm~\ref{fig:algodesign} each
+$\boldsymbol{\tau}_{jk} = (\tau_{1jk}, \ldots, \tau_{L_{jk}jk})^\top$ is optimized one after the
+other using adaptive search intervals. Hence, the optimization problem is reduced to a
+one-dimensional search that is relative fast and straightforward to implement. The algorithm
+does not guarantee a global minimum given the goodness-of-fit criterion, however, the solution
+is at least close and serves as good starting points for full MCMC. Optimization speed can be
+further increased if for a given search interval only a grid of possible values for each
+$\tau_{ljk}$ is used.
+
+The MCMC updating functions usually either accept or reject samples of the parameters and smoothing
+variances are sampled after $\boldsymbol{\beta}_{jk}$. In Algorithm~\ref{fig:mcmc} the general
+sampling scheme is shown.
 Note again the general structure of sampling Algorithm~\ref{fig:mcmc}, i.e., the proposal functions
 $q_{jk}( \cdot )$ generate parameter samples
 $\boldsymbol{\beta}_{jk}^{(t + 1)}$, $\boldsymbol{\tau}_{jk}^{(t + 1)}$ using (possibly)
@@ -1201,8 +1204,8 @@ Figure~\ref{fig:blocks}.
 \put(2.5, 3.5){\fcolorbox{black}{heat4}{\framebox(2, 0.7)[c]{\footnotesize \texttt{model.frame}}}}
 \put(2.5, 2.5){\fcolorbox{black}{heat3}{\framebox(2, 0.7)[c]{\footnotesize \texttt{transformer}}}}
 \put(6, 3.5){\fcolorbox{black}{heat2}{\framebox(2, 0.7)[c]{\footnotesize \texttt{optimizer}}}}
-\put(8.2, 3.8){\footnotesize (e.g., \ref{fig:algodesign} \& \ref{fig:umode})}
-\put(8.2, 2.8){\footnotesize (e.g., \ref{fig:algodesign} \& \ref{fig:mcmc})}
+\put(8.2, 3.8){\footnotesize (e.g., \ref{fig:algodesign} + \ref{fig:umode})}
+\put(8.2, 2.8){\footnotesize (e.g., \ref{fig:algodesign} + \ref{fig:mcmc})}
 \put(6, 2.5){\fcolorbox{black}{heat1}{\framebox(2, 0.7)[c]{\footnotesize \texttt{sampler}}}}
 \put(6, 1.5){\fcolorbox{black}{heat2}{\framebox(2, 0.7)[c]{\footnotesize \texttt{results}}}}
 \put(1, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{summary}}}}
@@ -1479,7 +1482,7 @@ the variation of elevation of the meteorological stations used in this data set 
 This analysis is based on the article of \citet{bamlss:Taylor:2015} and contributes to the developed
 model by inclusion of complex space-time interactions using the BAMLSS framework.
 
-The \emph{London Fire Brigade} (LFB, \url{http://www.london-fire.gov.uk}) is one of the largest in
+The \emph{London Fire Brigade} (LFB, \url{http://www.london-fire.gov.uk/}) is one of the largest in
 the world. Each year, the LFB is
 called thousands of times, in most cases due to dwelling fires. Since the time it takes until a
 fire engine arrives at the scene after an emergency call has been received, an important question is

@@ -172,7 +172,7 @@ if(!file.exists("figures/rainmodel-effects-predict.png")) {
   par(mar = c(4.1, 4.1, 1.5, 1.5))
   mf <- model.frame(rainmodel0)
   y <- mf[["sqrt(raw)"]]
-  hist(y, freq = FALSE, main = "", col = gray(0.9), breaks = 50,
+  hist(y, freq = FALSE, main = "", col = gray(0.9), breaks = 0:16 - 0.5,
     xlab = expression(paste("Daily ", sqrt(observations))), ylab = "Density")
   ff <- family(rainmodel0)
   cr <- coef(rainmodel0)
