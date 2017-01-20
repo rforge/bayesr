@@ -37,7 +37,7 @@ if(!file.exists("rainmodel.rda")) {
 
   rainmodel <- bamlss(f, data = homstart, family = "cnorm",
     binning = TRUE, before = TRUE, gam.side = FALSE, samplestats = FALSE, results = FALSE,
-    eps = 0.001, n.iter = 4000, burnin = 2000, thin = 10, cores = 8)
+    eps = 0.001, n.iter = 6000, burnin = 3000, thin = 20, cores = 8)
 
   save(rainmodel, file = "rainmodel.rda")
   rm(rainmodel, homstart)
@@ -59,8 +59,8 @@ if(!file.exists("firemodel.rda")) {
   set.seed(222)
 
   firemodel <- bamlss(f, data = LondonFire, family = "cox",
-    subdivisions = 15, maxit = 1000,
-    n.iter = 4000, burnin = 2000, thin = 10, cores = 8)
+    subdivisions = 25, maxit = 1000,
+    n.iter = 6000, burnin = 3000, thin = 20, cores = 8)
 
   save(firemodel, file = "firemodel.rda")
   rm(firemodel, LondonFire)
