@@ -1635,12 +1635,12 @@ As a result, applying the generic algorithm presented in Algorithm~\ref{fig:algo
 of problem two specific difficulties need to be considered. First, the updating functions
 $U_{jk}( \cdot )$ for the time-varying predictor $\eta_{\lambda}(t)$ are different from the
 time-constant updating functions for $\eta_{\gamma}$. Secondly, a specific hurdle of the continuous
-time Cox-model is the computation of the integrals, because these do not have a closed form solution
+time Cox model is the computation of the integrals, because these do not have a closed form solution
 and need to be approximated numerically, e.g., by the trapezoidal rule or Gaussian quadrature.
 Moreover, it is inefficient to compute the integrals a new for every updating step, since for the
 time-constant part the integrals given in $\mathbf{P}$ do not change anymore.
 
-In order to reduce computing time we account for the idiosyncrasy of the Cox-model and
+In order to reduce computing time we account for the idiosyncrasy of the Cox model and
 implement an optimizer function \fct{cox.mode} for posterior mode estimation as well as
 the sampler function \fct{cox.mcmc} for MCMC simulation. The amount of work to implement this
 model using the \pkg{bamlss} infrastructures is moderate, because most of the code of the default
