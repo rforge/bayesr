@@ -1085,7 +1085,7 @@ total degrees of freedom used to fit the model are then estimated by
 $\sum_{k}\sum_{j} \mathrm{edf}_{jk}(\boldsymbol{\tau}_{jk})$. Note that the definition
 of EDF here is slightly more general and is usually defined as the
 trace of the smoother matrix (see, e.g., \citealp{bamlss:Hastie+Tibshirani:1990}) and can be applied
-even for more complex likelihood structures, e.g., in a flexible Cox-model \citep{bamlss:Hofner:2008}.
+even for more complex likelihood structures, e.g., in a flexible Cox model \citep{bamlss:Hofner:2008}.
 
 Instead of global optimization of smoothing variances, a fast strategy is the adaptive
 stepwise selection approach presented in Algorithm~\ref{fig:umode}.
@@ -1477,7 +1477,7 @@ the variation of elevation of the meteorological stations used in this data set 
 %% \newpage
 
 
-\subsection{Cox-model} \label{sec:coxreg}
+\subsection{Cox model} \label{sec:coxreg}
 
 This analysis is based on the article of \citet{bamlss:Taylor:2015} and contributes to the developed
 model by inclusion of complex space-time interactions using the BAMLSS framework.
@@ -1495,7 +1495,7 @@ area. This is viewed as an optimization problem in \citet{bamlss:Taylor:2015}, i
 the question of possible improvements of response times according to space in a probabilistic way.
 Therefore, he analyzes the effect of fire station closures in 2014 using a parametric proportional
 hazards model and identify regions of possible concern about the number of available fire stations.
-To contribute to the topic, we apply an extended complex Cox-model for continuous time on the
+To contribute to the topic, we apply an extended complex Cox model for continuous time on the
 2015 dwelling fire response time data of London and show how the generic framework presented
 in this paper can be utilized to set up new estimation algorithms for this type model.
 
@@ -1581,7 +1581,7 @@ which is of major interest in this analysis. Based on (\ref{eqn:surv}), for full
 the following ``Lego bricks'' need to be implemented for updating functions $U_{jk}( \cdot )$ using
 algorithms \ref{fig:algodesign}, \ref{fig:umode} and \ref{fig:mcmc}:
 \begin{enumerate}[leftmargin=*,align=left]
-\item[\ref{item:1}.] The log-likelihood function of the continuous time Cox-model is then given by
+\item[\ref{item:1}.] The log-likelihood function of the continuous time Cox model is then given by
   $$
   \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) =
    \sum_{i = 1}^n \left( \delta_i\eta_{i\gamma} - \int_0^{t_i} \exp( \eta_{i\lambda}(u)du ) \right).
