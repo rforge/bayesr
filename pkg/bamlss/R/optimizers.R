@@ -2839,8 +2839,9 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
           if(x[[i]]$smooth.construct[[j]]$fuse) {
             beta <- get.par(b$parameters[[i]]$s[[j]], "b")
             w <- rep(0, ncol(x[[i]]$smooth.construct[[j]]$Af))
-            for(ff in 1:ncol(x[[i]]$smooth.construct[[j]]$Af))
+            for(ff in 1:ncol(x[[i]]$smooth.construct[[j]]$Af)) {
               w[ff] <- 1 / abs(t(x[[i]]$smooth.construct[[j]]$Af[, ff]) %*% beta)
+            }
             names(w) <- paste("lasso", 1:length(w), sep = "")
             x[[i]]$smooth.construct[[j]]$fixed.hyper <- w
           }
