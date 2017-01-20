@@ -677,6 +677,8 @@ More precisely, we first describe posterior mode updating as used within Algorit
 before we introduce several MCMC sampling schemes that can be employed in the updating
 Algorithm~\ref{fig:mcmc}.
 
+\newpage
+
 \subsubsection{Posterior mode} \label{sec:postmode}
 
 The mode of the posterior distribution is the mode of the log-posterior (\ref{eqn:logpost}) given by
