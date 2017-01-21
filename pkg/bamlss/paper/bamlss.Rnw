@@ -33,11 +33,7 @@
         Achim Zeileis\\Universit\"at Innsbruck}
 \Plainauthor{Nikolaus Umlauf, Nadja Klein, Achim Zeileis}
 
-\title{BAMLSS: Bayesian additive models for location, scale and shape (and beyond)}
-\Plaintitle{BAMLSS: Bayesian additive models for location, scale and shape (and beyond)}
-
-\Keywords{GAMLSS, distributional regression, MCMC, \proglang{BUGS}, \proglang{R}, software}
-\Plainkeywords{GAMLSS, distributional regression, MCMC, BUGS, R, software}
+\title{BAMLSS: Bayesian Additive Models for Location, Scale and Shape (and Beyond)}
 
 \Abstract{
   Bayesian analysis provides a convenient setting for the estimation of complex generalized
@@ -60,6 +56,9 @@
   five thousand ``individuals''.
 }
 
+\Keywords{GAMLSS, distributional regression, MCMC, \proglang{BUGS}, \proglang{R}, software}
+\Plainkeywords{GAMLSS, distributional regression, MCMC, BUGS, R, software}
+
 \Address{
   Nikolaus Umlauf, Achim Zeileis\\
   Department of Statistics\\
@@ -68,8 +67,7 @@
   Universit\"atsstr.~15\\
   6020 Innsbruck, Austria\\
   E-mail: \email{Nikolaus.Umlauf@uibk.ac.at}, \email{Achim.Zeileis@R-project.org}\\
-  URL: \url{http://eeecon.uibk.ac.at/~umlauf/},\\
-  \phantom{URL: }\url{http://eeecon.uibk.ac.at/~zeileis/}\\
+  URL: \url{http://eeecon.uibk.ac.at/~umlauf/}, \url{http://eeecon.uibk.ac.at/~zeileis/}\\
 
   Nadja Klein\\
   Chairs of Statistics and Econometrics\\
@@ -77,8 +75,7 @@
   Humboldtallee 3\\
   37073 G\"ottingen, Germany\\
   E-mail: \email{nklein@uni-goettingen.de}\\
-  URL: \url{https://www.uni-goettingen.de/de/325353.html},\\
-  \phantom{URL: }\url{https://www.uni-goettingen.de/de/325353.html}
+  URL: \url{https://www.uni-goettingen.de/de/325353.html}
 }
 
 %% Sweave/vignette information and metadata
@@ -1140,76 +1137,66 @@ for each posterior sample $\boldsymbol{\beta}_k^{(t)}$; $k = 1, \dots, K$, $t = 
 
 \section{Strategies for implementation} \label{sec:strategies}
 
-This paper aims to contribute to the statistician's tool box by proposing very general iterative
-estimation algorithms that are virtually based on a system of ``Lego bricks''.  The ``Lego bricks''
-are part of a variety of different algorithms, i.e., they are not only useful for building (new)
-algorithms, but also for interfacing existing implementations. Moreover, the
-construction of algorithm \ref{fig:algodesign} allows for different updating functions
-$U_{jk}( \cdot )$, therefore, we propose an unified modeling architecture that can be used for
-numerous complex regression problems.
+An implementation of the conceptional framework proposed in the previous sections
+is provided in the \proglang{R} package \pkg{bamlss} \citep{bamlss:Umlauf+Klein+Zeileis:2016}.
+In this section, we outline the strategies that have been guiding this implementation but technical
+and \proglang{R}-specific details are kept brief. Instead we focus on how the flexible conceptual
+framework with its ``Lego bricks'' can be turned into an extensible and modular computational framework
+that readily allows to contruct estimation algorithms as well as interfaces to existing software packages such as
+\pkg{JAGS}~\citep{bamlss:Plummer:2013} or \pkg{BayesX}~\citep{bamlss:Belitz+Brezger+Kneib+Lang+Umlauf:2016}.
 
-In order to unify the multitude of possibilities, a general software system for BAMLSS and beyond
-adresses the following:
+To provide a common toolbox that allows to play with the Lego bricks introduced in the previous
+sections, a general BAMLSS software system can be set up as shown in Figure~\ref{fig:blocks}.
+This proceeds in the following steps:
 \begin{enumerate}
-\item Unified model description,
-\item a generic method for setting up model terms and corresponding prior structures,
-\item support of exchangeable updating functions or even model fitting engines,
-\item standard post modeling extractor functions.
+
+  \item A unified model description where a \code{formula} specifies how to set up the linear predictors
+    from the \code{data} and the \code{family} provides information about the Lego bricks B1--B8.
+
+  \item A generic method for setting up model terms and a \code{model.frame} along with the
+    corresponding prior structures. A \code{transformer} can optionally set up modified terms,
+    e.g., design and penalty matrices for smooth terms when using the mixed model representation
+    (\ref{eqn:mixed}).
+
+  \item Support for modular and exchangeable updating functions or complete model fitting engines
+    in order to optionally implement either \ref{E1} or \ref{E2}.
+    First, an (optional) \code{optimizer} function can be run, e.g., for computing posterior mode
+    estimates (\ref{E1}) using Algorithm~\ref{fig:algodesign} and \ref{fig:umode}. Second, a
+    \code{sampler} is employed for full Bayesian inference with MCMC using Algorithm~\ref{fig:algodesign}
+    in combination with \ref{fig:mcmc}, which uses the posterior mode estimates from the \code{optimizer}
+    as staring values. An additional step can be used for preparing the \code{results}.
+
+  \item Standard post-modeling extractor functions to create sampling statistics, visualizations,
+    predictions, etc.
+
 \end{enumerate}
-While points 2--4 are primarily software specific issues, the first point is more general.
+%
+The items above are then essentially just collected in the main model fitting function called \fct{bamlss}.
+The most important arguments are
+\begin{Code}
+  bamlss(formula, family = "gaussian", data = NULL,
+    weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
+    transform = NULL, optimizer = NULL, sampler = NULL, results = NULL,
+    start = NULL, ...)
+\end{Code}
+where the first two lines basically represent the standard model frame specifications
+\citep[see][]{bamlss:Chambers+Hastie:1992}.
 
-For setting up all necessary design and penalty matrices, as well as prior structures, a symbolic
-model definition is needed. Based on \citet{bamlss:Wilkinson+Rogers:1973} symbolic descriptions for
-specifying models have been implemented for various computer programs. The statistical environment
-\proglang{R} provides such a syntax (see also \citealp{bamlss:Chambers+Hastie:1992}), which is
-familiar to almost any common \proglang{R} user today. Adapting this syntax for BAMLSS models
-is relatively straightforward, e.g., by suppling a list of formulas to the model fitting function.
-For example, a typical linear regression model with a response variable \code{y} and covariates
-\code{x1} and \code{x2} is represented by
-\begin{center}
-\code{y} $\sim$ \code{x1 + x2}
-\end{center}
-Following the syntax of the recommended \proglang{R} package \pkg{mgcv} \citep{bamlss:Wood:2016},
-smooth model terms are denoted with \code{s()}. A model with two additional smooth terms
-of covariates \code{x3}, \code{x4} and \code{x5} is set up with
-\begin{center}
-\begin{tabular}{l}
-\code{y} $\sim$ \code{x1 + x2 + s(x3) + s(x4, x5)}
-\end{tabular}
-\end{center}
-For BAMLSS a convenient way to specify, e.g., the parameters of a normal model with
-$y~\sim~\mathcal{N}(\mu = \eta_{\mu}, \log(\sigma) = \eta_{\sigma})$ is then given by
-\begin{center}
-{ \renewcommand{\arraystretch}{1}
-\begin{tabular}{l}
-\code{list(} \\
-$\quad$ \code{y} $\sim$ \code{x1 + x2 + s(x3) + s(x4),} \\
-$\quad$ \code{sigma} $\sim$ \code{x1 + x2 + s(x3)} \\
-\code{)}
-\end{tabular}
-}
-\end{center}
-i.e., two formulas are provided where the first represents the description of the mean $\mu$
-and the second of the scale parameter $\sigma$. Hence, this type of formula can be extended to
-any number of parameters (model parts) that should be modeled by explanatory variables.
-
-Concerning points 2--4 a possible architecture for the BAMLSS framework is illustrated in
-Figure~\ref{fig:blocks}.
-\begin{figure}[ht!]
+\begin{figure}[t!]
 \centering
 \setlength{\unitlength}{1cm}
 \setlength{\fboxsep}{0pt}
 \begin{picture}(10.53, 5.7)(0, 0)
-\put(0, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{formula}}}}
-\put(2.5, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{family}}}}
-\put(5, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{data}}}}
-\put(2.5, 3.5){\fcolorbox{black}{heat4}{\framebox(2, 0.7)[c]{\footnotesize \texttt{model.frame}}}}
+\put(0, 5){\fcolorbox{black}{heat4}{\framebox(2, 0.7)[c]{\footnotesize \texttt{formula}}}}
+\put(2.5, 5){\fcolorbox{black}{heat4}{\framebox(2, 0.7)[c]{\footnotesize \texttt{family}}}}
+\put(5, 5){\fcolorbox{black}{heat4}{\framebox(2, 0.7)[c]{\footnotesize \texttt{data}}}}
+\put(2.5, 3.5){\fcolorbox{black}{heat3}{\framebox(2, 0.7)[c]{\footnotesize \texttt{model.frame}}}}
 \put(2.5, 2.5){\fcolorbox{black}{heat3}{\framebox(2, 0.7)[c]{\footnotesize \texttt{transformer}}}}
-\put(6, 3.5){\fcolorbox{black}{heat2}{\framebox(2, 0.7)[c]{\footnotesize \texttt{optimizer}}}}
+\put(6, 3.5){\fcolorbox{black}{heat1}{\framebox(2, 0.7)[c]{\footnotesize \texttt{optimizer}}}}
 \put(8.2, 3.8){\footnotesize (e.g., \ref{fig:algodesign} + \ref{fig:umode})}
 \put(8.2, 2.8){\footnotesize (e.g., \ref{fig:algodesign} + \ref{fig:mcmc})}
 \put(6, 2.5){\fcolorbox{black}{heat1}{\framebox(2, 0.7)[c]{\footnotesize \texttt{sampler}}}}
-\put(6, 1.5){\fcolorbox{black}{heat2}{\framebox(2, 0.7)[c]{\footnotesize \texttt{results}}}}
+\put(6, 1.5){\fcolorbox{black}{heat1}{\framebox(2, 0.7)[c]{\footnotesize \texttt{results}}}}
 \put(1, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{summary}}}}
 \put(3.5, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{plot}}}}
 \put(6, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{select}}}}
@@ -1232,62 +1219,48 @@ Figure~\ref{fig:blocks}.
 \end{picture}
 \caption{\label{fig:blocks} Flexible BAMLSS architecture.}
 \end{figure}
-The concept can be divided into three parts: First, functions that describe distribution families,
-formulas, together with the data that is used for modeling. Secondly, functions that actually
-compute estimates of parameters, and thirdly, functions for creating results like sampling
-statistics, visualization, prediction etc.
 
-To set up the necessary model frame, a parser function translates the model formula
-and the data and creates all necessary information that is
-needed for subsequent model fitting engines. For some algorithms a modified version of the
-model term setup is needed, e.g., when using the mixed model representation (\ref{eqn:mixed}) for
-smooth terms, design and penalty matrices are transformed. This can be done by an optional
-transformer function applied on the BAMLSS model frame.
+The \code{formula} combines the classic \citet{bamlss:Wilkinson+Rogers:1973} symbolic description
+-- used in most standard \proglang{R} regression functions \citep{bamlss:Chambers+Hastie:1992} --
+with the infrastructure for smooth model terms like \fct{s}, \fct{te}, \fct{ti}, etc.
+-- based on recommended \proglang{R} package \pkg{mgcv} \citep{bamlss:Wood:2016} --
+and handling multiple additive predictors -- utilizing the extended formula processing
+of \cite{bamlss:Zeileis+Croissant:2010}. Thus, a formula can be as simple as in a typical
+linear regression model with a response variable \code{y} and regressors \code{x1} and \code{x2}
+\begin{center}
+\code{y} $\sim$ \code{x1 + x2}
+\end{center}
+but also with smooth terms in further covariates \code{x3}, \code{x4}, and \code{x5}
+\begin{center}
+\begin{tabular}{l}
+\code{y} $\sim$ \code{x1 + x2 + s(x3) + s(x4, x5)}
+\end{tabular}
+\end{center}
+or even with different additive predictors for different model parameters, e.g.,
+\begin{center}
+{ \renewcommand{\arraystretch}{1}
+\begin{tabular}{l}
+\code{list(} \\
+$\quad$ \code{y} $\sim$ \code{x1 + x2 + s(x3) + s(x4),} \\
+$\quad$ \code{sigma} $\sim$ \code{x1 + x2 + s(x3)} \\
+\code{)}
+\end{tabular}
+}
+\end{center}
+in a normal model with $y~\sim~\mathcal{N}(\mu = \eta_{\mu}, \log(\sigma) = \eta_{\sigma})$.
 
-The estimation step has two parts. First, an (optional) optimizer function, for example computing
-posterior mode estimates using Algorithm~\ref{fig:algodesign} and \ref{fig:umode}. Secondly, a
-sampler function for full Bayesian inference with MCMC using Algorithm~\ref{fig:algodesign}
-in combination with \ref{fig:mcmc}, which uses posterior mode estimates as staring values. Note that
-each, the optimizer and the sampler function (and others), can be exchanged in this concept, i.e.,
-this way it is possible to write a number of different optimizer and sampler functions, e.g., for
-specific problems.
-
-An implementation of the conceptional framework is provided in the \proglang{R} package
-\pkg{bamlss} \citep{bamlss:Umlauf+Klein+Zeileis:2016}. More specifically, the \pkg{bamlss} package
-provides infrastructures that builds all necessary model matrices and information from which it is
-easy for the user to construct estimation algorithms or interfaces to existing software packages
-like \pkg{JAGS} or \pkg{BayesX}. Similarly, the user usually does not need (want) to take care about
-computing post-estimation results like effect plots, summaries, etc., however even this is possible.
-This way, solutions for new problems can be created relatively easy. Therefore, the
-\pkg{bamlss} package can also be seen as an harmonized framework for regression modeling.
-
-The main model fitting function is called \fct{bamlss}. The most important arguments are
-\begin{Code}
-  bamlss(formula, family = "gaussian", data = NULL,
-    weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
-    transform = NULL, optimizer = NULL, sampler = NULL, results = NULL,
-    start = NULL, ...)
-\end{Code}
-where the first two lines basically represent the standard model frame specifications
-\citep[see][]{bamlss:Chambers+Hastie:1992}.
-
-Argument \code{formula} is an extended model formula, i.e., the \code{formula} can be a list of
-formulas where each list entry specifies the details of one parameter of the modeled response
-distribution. For incorporating smooth terms, the \pkg{bamlss} package makes heavy use of package
-\pkg{mgcv} infrastructures and supports all model term constructors implemented in \pkg{mgcv},
-such as \fct{s}, \fct{te}, \fct{ti} and so forth.
-
-Similarly to other flexible model fitting functions the user can specify his own family functions.
-Moreover, the package supports family objects of the \pkg{gamlss} package
-\citep{bamlss:Stasinopoulos+Rigby:2016}.
+Similarly to other flexible model fitting functions users can specify their own \code{family}
+objects in order to plug in different Lego bricks for B1--B8. Family objects from the \pkg{gamlss} package
+\citep{bamlss:Stasinopoulos+Rigby:2016} are readily supported.
 
 Estimation is performed by an \code{optimizer} and/or \code{sampler} function, which can be provided by
 the user. The default optimizer function implements the IWLS backfitting algorithm (\ref{eqn:blockbackfit})
 with automatic smoothing variance selection, see also Algorithm~\ref{fig:umode}. The default sampler
 function implements derivative-based MCMC using IWLS proposals, smoothing variances are sampled
 using slice sampling, see also Section~\ref{sec:legobricks}. For writing new optimizer and sampler
-functions only a simple general format of function arguments and return values must be adhered, see
-also the documentation of \pkg{bamlss}.
+functions only a simple general format of function arguments and return values must be adhered to.
+
+More technical details are deferred to the documentation manual of package \pkg{bamlss}.
 
 
 \section{Illustrations} \label{sec:illustrations}
