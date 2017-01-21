@@ -1137,6 +1137,8 @@ for each posterior sample $\boldsymbol{\beta}_k^{(t)}$; $k = 1, \dots, K$, $t = 
 
 \section{Strategies for implementation} \label{sec:strategies}
 
+\readme{Z: Re-arranged and partially rewritten section, please check.}
+
 An implementation of the conceptional framework proposed in the previous sections
 is provided in the \proglang{R} package \pkg{bamlss} \citep{bamlss:Umlauf+Klein+Zeileis:2016}.
 In this section, we outline the strategies that have been guiding this implementation but technical
