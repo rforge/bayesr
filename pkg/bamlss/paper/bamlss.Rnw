@@ -1267,39 +1267,38 @@ More technical details are deferred to the documentation manual of package \pkg{
 
 \subsection{Precepitation climatolgy from daily observations} \label{sec:censreg}
 
+\readme{Z: Please re-read. Somewhat more compact intro, emphasizing the novel contribution, and then some rephrasing.}
+
 Climatology models are one important component of the meteorological tool set. The accurate
 and complete knowledge of precipitation climatologies is especially relevant for problems involving
 agriculture, risk assessment, water management, tourism etc. One particular challenge of such models
-is the prediction of precipitation into areas without measurement. This is usually accounted for
-by multi-step procedures using interpolation methods like Kriging \citep{bamlss:Krige:1951}.
-Precipitation climatology models commonly assume a normal distribution and are computed for
-monthly aggregated observations. However, because precipitation data is skewed and exhibits high
-density at zero observations the assumption of a normal distribution is critical and
-models for monthly data may have limited information value on finer temporal resolutions.
+is the prediction at high temporal and spatial resolutions, especially in areas without measurement.
+This is usually accounted for by simple averaging/smoothing at a coarse temporal scale (e.g.,
+monthly aggregations) combined with a second step using spatial interpolation methods like
+Kriging \citep{bamlss:Krige:1951}. However, such approaches may not work well enough at a daily
+resolution where precipitation data is skewed and exhibits high density at zero observations.
+To address these issues, \cite{bamlss:Stauffer+Mayr+Messner+Umlauf+Zeileis:2016} have recently
+suggested an additive regression model for daily precipitation observations based on a censored
+normal response distribution and various smooth spatio-temporal effects.
 
-To contribute to this topic we analyze precipitation data of Austria taken from the HOMSTART
-project
-({\small \url{http://www.zamg.ac.at/cms/de/forschung/klima/datensaetze/homstart/}}) \\
+Following the model of \cite{bamlss:Stauffer+Mayr+Messner+Umlauf+Zeileis:2016} for the province
+of Tyrol in Austria, we take their approach a step further and establish a daily precipitation
+climatology for all of Austria using a large and freely-available homogenized data source. The
+data are taken from the HOMSTART project
+({\small \url{http://www.zamg.ac.at/cms/de/forschung/klima/datensaetze/homstart/}})\linebreak
 conducted at the Zentralanstalt f\"ur Meteorologie und Geodynamik (ZAMG) and funded by the Austrian
-Climate Research Programme (ACRP)
-\citep{bamlss:Nemec+Chimani+Gruber:2011, bamlss:Nemec+Gruber+Chimani:2011}.
-\citet{bamlss:Umlauf+Mayr+Messner:2012} already investigated the
-question if it rains more frequently on weekends than during work days using the HOMSTART data.
-The data set consists of daily precipitation time series within 1948--2009. Time series that could
-not be homogenized, e.g., due to missing appropriate reference stations or other uncertainties, are
-left out of the analysis. Overall, a rather dense net of 57~stations is used for modeling.
-In Figure~\ref{fig:rainmodeldata}, left panel, the distribution of the final meteorological stations
-is shown.
+Climate Research Programme (ACRP,
+\citealp{bamlss:Nemec+Chimani+Gruber:2011, bamlss:Nemec+Gruber+Chimani:2011}). Homogenization
+was successfully carried out for daily precipitation time series within 1948--2009 from a rather
+dense net of 57~meteorological stations (see the left panel of Figure~\ref{fig:rainmodeldata}).
+\citet{bamlss:Umlauf+Mayr+Messner:2012} previously investigated the data based on a much simpler
+ordered probit model to answer the question whether it rains more frequently on weekends than
+during work days (it does not). Here, we reanalyze the data using a much more complex additive
+regression model with a normal response left-censored at zero. To make positive observations more
+``normal'', a commonly-used square-root transformation has been applied prior to regression modeling
+(see the right panel of Figure~\ref{fig:rainmodeldata}).
 
-As precipitation observations are limited to zero, a natural extension to the models that have been
-discussed for this type of data is censoring \citep{bamlss:Stauffer+Mayr+Messner+Umlauf+Zeileis:2016}.
-Censoring assumes that a certain quantity cannot be observed below or above some threshold value.
-Here, we assume a ``left-censored'' normal distribution with a threshold at zero. Moreover, to make
-positive observations more ``normal'', we carry out a square root transformation of the daily
-observations. The censored normal distribution seems to fit quite well to the data as shown in the
-right panel of Figure~\ref{fig:rainmodeldata}.
-
-The censored normal model with latent Gaussian variable $y^\star$ and
+Specifically, the censored normal model with latent Gaussian variable $y^\star$ and
 observed response $y$, the square root of daily precipitation observations, is given by
 \begin{eqnarray*}
 y^\star &\sim& \mathcal{N}(\mu, \sigma^2) \\
@@ -1382,24 +1381,24 @@ and
 \end{cases}
 \end{equation*}
 \end{enumerate}
-The first and second derivative functions have been implemented in the \pkg{bamlss} family
+The first and second derivative functions have been implemented in the \pkg{bamlss} family\linebreak
 \fct{cnorm\_bamlss}.
 
 
-Since the HOMSTART data set has over $1.2$ million observations, the resulting design matrices
-excessively demands the computer's storage as well as the CPU power. In order to prevent computational
-problems associated with very large data sets like HOMSTART, we make use of the fact that, e.g.,
-the effect of the day of
-year has $365$ unique observations, only. This is much smaller than the total number of observations
-of the data set, i.e., the corresponding design matrix has a lot of duplicated rows and is hence inefficient
-for the use within model fitting algorithms. Therefore, we implemented updating functions
+Since the HOMSTART data set has over $1.2$ million observations, the full storage of the
+resulting design matrices would lead to excessive demands concerning both computer storage
+as well as CPU power. In order to prevent computational problems associated with very large
+data sets like HOMSTART, we make use of the fact that the number of unique regressor observations
+is much smaller, e.g., only $365$ for the day-of-year effect. This is much smaller than the total number of observations
+of the data set and duplicated rows in the corresponding design matrix can be avoided within
+the model fitting algorithms. Therefore, we implemented updating functions
 $U_{jk}( \cdot )$ that support shrinkage of the design matrices based
-on unique covariate observations. To make the IWLS algorithms based on unique observations work a
-reduced form of the diagonal weight matrix $\mathbf{W}_{kk}$ and the reduced
-partial residual vector from $\mathbf{z}_k - \boldsymbol{\eta}^{(t)}_{k, -j}$ has to be computed
-additionally. For the computational details of this highly
-efficient algorithm see \citet{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}. For usage
-within \pkg{bamlss} see also the documentation of estimation engines \fct{bfit} and \fct{GMCMC} and
+on unique covariate observations, using the highly-efficient algorithm
+of \citet{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}. This essentially
+employs a reduced form of the diagonal weight matrix $\mathbf{W}_{kk}$ in
+the IWLS algorithm and computes the reduced partial residual vector from
+$\mathbf{z}_k - \boldsymbol{\eta}^{(t)}_{k, -j}$ separately.
+For usage within \pkg{bamlss} see also the documentation of estimation engines \fct{bfit} and \fct{GMCMC} and
 the corresponding updating functions \fct{bfit\_iwls} and \fct{GMCMC\_iwls}.
 
 With a total of 4000 iterations of the MCMC sampler, on a Linux system with 8
@@ -1419,18 +1418,20 @@ The uncertainty peak is shifting from the middle of summer to fall when going fr
 
 The second row of Figure~\ref{fig:rainmodeleffects} shows the resulting spatial trends.
 The spatial effect for parameter $\mu$ indicates that regions with positive effect accumulate in the
-north-west part of Austria. The overall importance of the spatial effect is similar to the seasonal
-effects, which is depicted by the range of the color legend that is used for plotting.
+north-west part of Austria. The overall importance of the spatial effect is somewhat smaller
+compared to the seasonal effects, which is highlighted by using the same range for y-axes in the
+first row and the color legends in the second row.
 The spatial effect for parameter $\sigma$ shows that model uncertainty is the highest within the
-southern regions and in Vorarlberg.
+southern regions (especially the province of Carinthia) and in the most western province (Vorarlberg).
 
 The bottom plot in Figure~\ref{fig:rainmodeleffects} is an example of the resulting precipitation
 climatology for January 10th. The predicted average precipitation is quite low all over Austria,
 ranging from $0$ to $1.1$mm. The map indicates that more precipitation can be expected in the
-northern parts of the Alps, especially in Vorarlberg and regions around Salzburg. The effect of
+northern parts of the Alps, especially in the west (Vorarlberg) and in the center (Salzburg). The effect of
 elevation is also visible since the valleys exhibit less precipitation than the alpine regions,
 however, the effect is not as pronounced as, e.g., the seasonal effect(s), most probably because
 the variation of elevation of the meteorological stations used in this data set is relatively small.
+
 \begin{figure}[t!]
 \centering
 \includegraphics[width=0.46\textwidth]{figures/rainmodel-data-stations}\includegraphics[width=0.46\textwidth]{figures/rainmodel-data-hist}
@@ -1438,7 +1439,7 @@ the variation of elevation of the meteorological stations used in this data set 
   daily precipitation values.}
 \end{figure}
 
-\begin{figure}[t!]
+\begin{figure}[p!]
 \centering
 \includegraphics[width=0.46\textwidth]{figures/rainmodel-effects-season-mu}\includegraphics[width=0.46\textwidth]{figures/rainmodel-effects-season-sigma} \\[0.5cm]
 \includegraphics[width=0.46\textwidth]{figures/rainmodel-effects-spatial-mu}\includegraphics[width=0.46\textwidth]{figures/rainmodel-effects-spatial-sigma} \\[0.5cm]
@@ -1447,9 +1448,6 @@ the variation of elevation of the meteorological stations used in this data set 
   predicted average precipitation of the censored mean computed using sampling from the fitted
   distribution for January 10th, bottom row.}
 \end{figure}
-
-
-%% \newpage
 
 
 \subsection{Cox model} \label{sec:coxreg}
@@ -1491,6 +1489,7 @@ some regions the percentage of fire response times greater than six minutes is r
 measured within each hexagon) especially at the borders of London, which is most probably due to the
 lower density of fire stations. Moreover, according the full distribution of fire response times in
 2015, see the lower right panel, about 30\% of the response times where greater than six minutes.
+
 \begin{figure}[t!]
 \centering
 \includegraphics[width=0.92\textwidth]{figures/firemodel-data}
@@ -1651,7 +1650,7 @@ areas. In summary, next to the baseline effect, the most important effects on th
 fire station intensity and the time-constant spatial effect which have an absolute range of about
 $4$ on the log-scale.
 
-\begin{figure}[t!]
+\begin{figure}[p!]
 \centering
 \includegraphics[width=0.46\textwidth]{figures/firemodel-effects-baseline}\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-prob} \\[0.5cm]
 \includegraphics[width=0.46\textwidth]{figures/firemodel-effects-fsintens}\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-spatial-td} \\[0.5cm]
