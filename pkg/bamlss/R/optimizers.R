@@ -2838,9 +2838,28 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
         if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth")) {
           if(x[[i]]$smooth.construct[[j]]$fuse) {
             beta <- get.par(b$parameters[[i]]$s[[j]], "b")
-            w <- rep(0, ncol(x[[i]]$smooth.construct[[j]]$Af))
-            for(ff in 1:ncol(x[[i]]$smooth.construct[[j]]$Af)) {
-              w[ff] <- 1 / abs(t(x[[i]]$smooth.construct[[j]]$Af[, ff]) %*% beta)
+            df <- x[[i]]$smooth.construct[[j]]$lasso$df
+            Af <- x[[i]]$smooth.construct[[j]]$Af
+            w <- rep(0, ncol(Af))
+            fuse_type <- x[[i]]$smooth.construct[[j]]$fuse_type
+            k <- ncol(x[[i]]$smooth.construct[[j]]$X)
+            nobs <- nrow(x$y)
+            for(ff in 1:ncol(Af)) {
+              ok <- which(Af[, ff] != 0)
+              w[ff] <- if(fuse_type == "nominal") {
+                if(length(ok) < 2) {
+                  2 / (k + 1) * sqrt((df[ok[1]] + nref) / nobs)
+                } else {
+                  2 / (k + 1) * sqrt((df[ok[1]] + df[ok[2]]) / nobs)
+                }
+              } else {
+                if(length(ok) < 2) {
+                  sqrt((df[ok[1]] + nref) / nobs)
+                } else {
+                  sqrt((df[ok[1]] + df[ok[2]]) / nobs)
+                }
+              }
+              w[ff] <- w[ff] * 1 / abs(t(Af[, ff]) %*% beta)
             }
             names(w) <- paste("lasso", 1:length(w), sep = "")
             x[[i]]$smooth.construct[[j]]$fixed.hyper <- w
