@@ -386,9 +386,9 @@ if(!file.exists("figures/firemodel-max-acf.png")) {
       ylim[1] <- ylim[1] - abs(diff(ylim)) * 0.1
       matplot(seq(0, 24, length = 100), data$daytime[, -1], type = "l", lty = 1,
         col = rgb(0.1, 0.1, 0,1, alpha = 0.01), xlab = "Time of day [h]",
-        ylab = "Effect of time of day", ylim = ylim, )
+        ylab = "Effect of time of day", ylim = ylim, axes = FALSE)
       plot2d(firemodel$results$gamma$s.effects[["ti(daytime)"]], c.select = c(1, 3),
-        col.lines = rainbow_hcl(1), add = TRUE, rug = FALSE, lwd = 2)
+        col.lines = rainbow_hcl(1), add = TRUE, rug = FALSE, lwd = 2, axes = FALSE)
       axis(1, at = c(0, 6, 12, 18, 24))
       axis(2)
       box()
