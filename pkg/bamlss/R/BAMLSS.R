@@ -3971,23 +3971,21 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     nref <- nobs - sum(df)
     for(ff in 1:ncol(Af)) {
       ok <- which(Af[, ff] != 0)
-      if(is.null(beta)) {
-        w[ff] <- if(fuse_type == "nominal") {
-          if(length(ok) < 2) {
-            2 / (k + 1) * sqrt((df[ok[1]] + nref) / nobs)
-          } else {
-            2 / (k + 1) * sqrt((df[ok[1]] + df[ok[2]]) / nobs)
-          }
+      w[ff] <- if(fuse_type == "nominal") {
+        if(length(ok) < 2) {
+          2 / (k + 1) * sqrt((df[ok[1]] + nref) / nobs)
         } else {
-          if(length(ok) < 2) {
-            sqrt((df[ok[1]] + nref) / nobs)
-          } else {
-            sqrt((df[ok[1]] + df[ok[2]]) / nobs)
-          }
+          2 / (k + 1) * sqrt((df[ok[1]] + df[ok[2]]) / nobs)
         }
       } else {
-        w[ff] <- 1 / abs(t(Af[, ff]) %*% beta)
+        if(length(ok) < 2) {
+          sqrt((df[ok[1]] + nref) / nobs)
+        } else {
+          sqrt((df[ok[1]] + df[ok[2]]) / nobs)
+        }
       }
+      if(!is.null(beta))
+        w[ff] <- w[ff] * 1 / abs(t(Af[, ff]) %*% beta)
     }
     object$Af <- Af
     object$S[[ls <- length(object$S) + 1]] <- function(parameters) {
