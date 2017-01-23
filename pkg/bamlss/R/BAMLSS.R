@@ -3990,7 +3990,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     object$Af <- Af
     object$S[[ls <- length(object$S) + 1]] <- function(parameters) {
       b <- get.par(parameters, "b")
-      if(length(i <- grep("lasso", names(parameters))) & fuse_type != "nominal")
+      if(length(i <- grep("lasso", names(parameters))))
         w <- parameters[i]
       S <- 0
       for(k in 1:ncol(Af)) {

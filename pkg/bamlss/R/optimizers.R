@@ -2843,7 +2843,8 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
             w <- rep(0, ncol(Af))
             fuse_type <- x[[i]]$smooth.construct[[j]]$fuse_type
             k <- ncol(x[[i]]$smooth.construct[[j]]$X)
-            nobs <- nrow(x$y)
+            nobs <- nrow(y)
+            nref <- nobs - sum(df)
             for(ff in 1:ncol(Af)) {
               ok <- which(Af[, ff] != 0)
               w[ff] <- if(fuse_type == "nominal") {
