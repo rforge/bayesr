@@ -1137,8 +1137,6 @@ for each posterior sample $\boldsymbol{\beta}_k^{(t)}$; $k = 1, \dots, K$, $t = 
 
 \section{Strategies for implementation} \label{sec:strategies}
 
-\readme{Z: Re-arranged and partially rewritten section, please check.}
-
 An implementation of the conceptional framework proposed in the previous sections
 is provided in the \proglang{R} package \pkg{bamlss} \citep{bamlss:Umlauf+Klein+Zeileis:2016}.
 In this section, we outline the strategies that have been guiding this implementation but technical
@@ -1153,7 +1151,7 @@ This proceeds in the following steps:
 \begin{enumerate}
 
   \item A unified model description where a \code{formula} specifies how to set up the linear predictors
-    from the \code{data} and the \code{family} provides information about the Lego bricks B1--B8.
+    from the \code{data} and the \code{family} provides information about the Lego bricks \ref{item:1}--\ref{item:8}.
 
   \item A generic method for setting up model terms and a \code{model.frame} along with the
     corresponding prior structures. A \code{transformer} can optionally set up modified terms,
@@ -1252,7 +1250,7 @@ $\quad$ \code{sigma} $\sim$ \code{x1 + x2 + s(x3)} \\
 in a normal model with $y~\sim~\mathcal{N}(\mu = \eta_{\mu}, \log(\sigma) = \eta_{\sigma})$.
 
 Similarly to other flexible model fitting functions users can specify their own \code{family}
-objects in order to plug in different Lego bricks for B1--B8. Family objects from the \pkg{gamlss} package
+objects in order to plug in different Lego bricks for \ref{item:1}--\ref{item:8}. Family objects from the \pkg{gamlss} package
 \citep{bamlss:Stasinopoulos+Rigby:2016} are readily supported.
 
 Estimation is performed by an \code{optimizer} and/or \code{sampler} function, which can be provided by
