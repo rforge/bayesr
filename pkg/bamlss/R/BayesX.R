@@ -1014,7 +1014,8 @@ resplit <- function(x) {
 
 ## Special tensor constructor.
 tx <- function(..., bs = "ps", k = NA,
-  ctr = c("center", "main", "both", "none", "meanf", "meanfd", "meansimple"),
+  ctr = c("center", "main", "both", "both1", "both2",
+    "none", "meanf", "meanfd", "meansimple"),
   special = TRUE)
 {
   object <- te(..., bs = bs, k = k)
@@ -1076,6 +1077,16 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
           ## Remove main effects and varying coefficients.
           A1 <- cbind(rep(1, p1), 1:p1)
           A2 <- cbind(rep(1, p2), 1:p2)
+        }
+        if(object$constraint == "both1") {
+          ## Remove main effects and varying coefficients.
+          A1 <- matrix(rep(1, p1), ncol = 1)
+          A2 <- cbind(rep(1, p2), 1:p2)
+        }
+        if(object$constraint == "both2") {
+          ## Remove main effects and varying coefficients.
+          A1 <- cbind(rep(1, p1), 1:p1)
+          A2 <- matrix(rep(1, p2), ncol = 1)
         }
 
         A <- cbind(I2 %x% A1, A2 %x% I1)

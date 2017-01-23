@@ -34,7 +34,7 @@ sx(x, z = NULL, bs = "ps", by = NA, ...)
 
 ## Special BayesX tensor product smooth term constructor.
 tx(..., bs = "ps", k = NA,
-  ctr = c("center", "main", "both",
+  ctr = c("center", "main", "both", "both1", "both2",
     "none", "meanf", "meanfd", "meansimple"),
   special = TRUE)
 
