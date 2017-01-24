@@ -2799,7 +2799,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
   nn <- names(newdata)
   nn <- all.vars(as.formula(paste("~", paste(nn, collapse = "+"))))
   rn <- response.name(object, keep.functions = TRUE)
-  nn <- nn[nn != rn]
+  nn <- nn[!(nn %in% rn)]
   tl <- term.labels2(object, model = model, intercept = intercept, type = 2)
   nx <- names(tl)
   if(!is.null(term)) {
