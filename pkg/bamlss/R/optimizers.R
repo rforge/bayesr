@@ -2985,7 +2985,7 @@ lasso.coef <- function(x, ...) {
 
 
 lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, name = NULL,
-  mstop = NULL, retrans = FALSE, ...)
+  mstop = NULL, retrans = FALSE, color = NULL, ...)
 {
   if(!is.character(which)) {
     which <- c("criterion", "parameters")[as.integer(which)]
@@ -3034,20 +3034,27 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
       x$parameters <- x$parameters[, grep(name, colnames(x$parameters), fixed = TRUE), drop = FALSE]
     }
     xn <- sapply(strsplit(colnames(x$parameters), ".", fixed = TRUE), function(x) { x[1] })
-    cols <- if(length(unique(xn)) < 2) "black" else rainbow_hcl(length(unique(xn)))
+    if(length(xn) < 2)
+      xn <- sapply(strsplit(colnames(x$parameters), ".", fixed = TRUE), function(x) { x[3] })
 
-#    stretcher <- function(x, stretch = 100, lower = floor(max(x) * 0.98), upper = max(x)) {
-#      x[x > upper] <- x[x > upper] + (stretch - 1) * (upper - lower)
-#      x[(x <= upper) & (x > lower)] <- (x[(x <= upper) & (x > lower)] - lower) * stretch + lower
-#      x
-#    }
+    cols <- if(is.null(color)) {
+      if(length(unique(xn)) < 2) "black" else rainbow_hcl(length(unique(xn)))
+    } else {
+      if(is.function(color)) {
+        color(length(unique(xn)))
+      } else {
+        rep(color, length.out = length(unique(xn)))
+      }
+    }
 
     matplot(c(1:nrow(x$parameters)), x$parameters, type = "l", lty = 1, col = cols[as.factor(xn)],
       axes = FALSE, xlab = expression(log(lambda)), ylab = expression(beta[j]), ...)
     axis(1, at = at, labels = round(log(ic[, "lambda"][at]), digits = 2))
     axis(2)
+    labs <- colnames(x$parameters)
+    labs <- gsub(name, "", labs, fixed = TRUE)
     axis(4, at = x$parameters[nrow(x$parameters), ],
-      labels = colnames(x$parameters), las = 1)
+      labels = labs, las = 1)
     i <- which.min(ic[, nic])
     abline(v = i, col = "lightgray", lwd = 2, lty = 2)
     val <- round(ic[i, "lambda"], 4)
