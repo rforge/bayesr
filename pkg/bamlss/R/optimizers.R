@@ -2797,7 +2797,7 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
   start2 <- start
 
   lambdas <- if(is.null(lambda)) {
-    scale2(-1 * log(1:nlambda), lower, upper)
+    exp(seq(log(upper), log(lower), length = nlambda))
   } else lambda
 
   if(length(verbose) < 2)
