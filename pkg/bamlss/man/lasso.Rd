@@ -23,7 +23,8 @@ lasso(x, y, start = NULL, adaptive = TRUE, lower = 0.001, upper = 1000,
 
 ## Plotting function for lasso() optimizer.
 lasso.plot(x, which = c("criterion", "parameters"),
-  spar = TRUE, name = NULL, mstop = NULL, retrans = FALSE, ...)
+  spar = TRUE, name = NULL, mstop = NULL, retrans = FALSE,
+  color = NULL, show.lambda = TRUE, labels = NULL, ...)
 
 ## Extract optimum stopping iteration for lasso() optimizer.
 ## Based on the minimum of the information criterion.
@@ -61,9 +62,13 @@ lasso.coef(x, ...)
     of the Lasso algorithm?}
   \item{which}{Which of the two provided plots should be created?}
   \item{spar}{Should graphical parameters be set by the plotting function?}
-  \item{name}{Character, the name of the coefficient group that should be plotted.}
+  \item{name}{Character, the name of the coefficient group that should be plotted. Note that
+    the string provided in \code{name} will be removed from the labels on the 4th axis.}
   \item{mstop}{Integer vector, defines the path length to be plotted.}
   \item{retrans}{Logical, should coefficients be re-transformed before plotting?}
+  \item{color}{Colors or function that creates colors for the group paths.}
+  \item{show.lambda}{Logical. Should the optimum value of the penalty parameter lambda be shown?}
+  \item{labels}{A character string of labels that should be used on the 4 axis.}
   \item{\dots}{Arguments passed to the subsequent smooth constructor function.
     \code{lambda} controls the starting value of the penalty parameter, \code{const} the constant
     that is added within the penalty approximation.

@@ -2985,7 +2985,7 @@ lasso.coef <- function(x, ...) {
 
 
 lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, name = NULL,
-  mstop = NULL, retrans = FALSE, color = NULL, ...)
+  mstop = NULL, retrans = FALSE, color = NULL, show.lambda = TRUE, labels = NULL, ...)
 {
   if(!is.character(which)) {
     which <- c("criterion", "parameters")[as.integer(which)]
@@ -3015,14 +3015,16 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
   at[at == 0] <- 1
 
   if("criterion" %in% which) {
-    plot(1:nrow(ic), ic[, nic], type = "l",
+    plot(mstop, ic[mstop, nic], type = "l",
       xlab = expression(log(lambda)), ylab = nic, axes = FALSE)
-    axis(1, at = at, labels = round(log(ic[, "lambda"][at]), digits = 2))
+    axis(1, at = at, labels = round(log(ic[mstop, "lambda"][at]), digits = 2))
     axis(2)
-    i <- which.min(ic[, nic])
-    abline(v = i, col = "lightgray", lwd = 2, lty = 2)
-    val <- round(ic[i, "lambda"], 4)
-    axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
+    if(show.lambda) {
+      i <- which.min(ic[, nic])
+      abline(v = i, col = "lightgray", lwd = 2, lty = 2)
+      val <- round(ic[i, "lambda"], 4)
+      axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
+    }
     box()
   }
 
@@ -3034,7 +3036,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
       x$parameters <- x$parameters[, grep(name, colnames(x$parameters), fixed = TRUE), drop = FALSE]
     }
     xn <- sapply(strsplit(colnames(x$parameters), ".", fixed = TRUE), function(x) { x[1] })
-    if(length(xn) < 2)
+    if(length(unique(xn)) < 2)
       xn <- sapply(strsplit(colnames(x$parameters), ".", fixed = TRUE), function(x) { x[3] })
 
     cols <- if(is.null(color)) {
@@ -3051,14 +3053,19 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
       axes = FALSE, xlab = expression(log(lambda)), ylab = expression(beta[j]), ...)
     axis(1, at = at, labels = round(log(ic[, "lambda"][at]), digits = 2))
     axis(2)
-    labs <- colnames(x$parameters)
-    labs <- gsub(name, "", labs, fixed = TRUE)
+    if(is.null(labels)) {
+      labs <- colnames(x$parameters)
+      if(!is.null(name))
+        labs <- gsub(name, "", labs, fixed = TRUE)
+    } else labs <- rep(labels, length.out = ncol(x$parameters))
     axis(4, at = x$parameters[nrow(x$parameters), ],
       labels = labs, las = 1)
-    i <- which.min(ic[, nic])
-    abline(v = i, col = "lightgray", lwd = 2, lty = 2)
-    val <- round(ic[i, "lambda"], 4)
-    axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
+    if(show.lambda) {
+      i <- which.min(ic[, nic])
+      abline(v = i, col = "lightgray", lwd = 2, lty = 2)
+      val <- round(ic[i, "lambda"], 4)
+      axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
+    }
     box()
   }
 
