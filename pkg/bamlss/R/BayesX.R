@@ -1013,18 +1013,25 @@ resplit <- function(x) {
 
 
 ## Special tensor constructor.
-tx <- function(..., bs = "ps", k = NA,
+tx <- function(..., bs = "ps", k = -1,
   ctr = c("center", "main", "both", "both1", "both2",
     "none", "meanf", "meanfd", "meansimple"),
   special = TRUE)
 {
+  if(k < 0)
+    k <- 10
   object <- te(..., bs = bs, k = k)
   object$constraint <- match.arg(ctr)
-  if((length(object$margin) < 2) & all(is.na(k)))
-    object$margin[[1]]$bs.dim <- 10
   object$label <- gsub("te(", "tx(", object$label, fixed = TRUE)
   object$special <- special
   class(object) <- "tensorX.smooth.spec"
+  object
+}
+
+tx2 <- function(...)
+{
+  object <- tx(..., special = FALSE)
+  object$label <- gsub("tx(", "tx2(", object$label, fixed = TRUE)
   object
 }
 
@@ -1063,7 +1070,6 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
     } else {
       p1 <- ncol(object$margin[[2]]$X); p2 <- ncol(object$margin[[1]]$X)
       I1 <- diag(p1); I2 <- diag(p2)
-      K <- object$margin[[2]]$S[[1]]%x%I2 + I1%x%object$margin[[1]]$S[[1]]
 
       if(object$constraint == "center") {
         object$C <- matrix(1, ncol = p1 * p2)

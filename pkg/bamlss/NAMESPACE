@@ -130,6 +130,7 @@ export(
   "continue",
   "homstart_data",
   "tx",
+  "tx2",
   "rmf",
   "smooth.construct",
   "smooth.construct.tensorX.smooth.spec",

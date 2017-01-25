@@ -3,6 +3,7 @@
 \alias{BayesX.control}
 \alias{sx}
 \alias{tx}
+\alias{tx2}
 \alias{get_BayesXsrc}
 \alias{quant_bamlss}
 \alias{smooth.construct.tensorX.smooth.spec}
@@ -33,10 +34,11 @@ BayesX.control(n.iter = 1200, thin = 1, burnin = 200,
 sx(x, z = NULL, bs = "ps", by = NA, ...)
 
 ## Special BayesX tensor product smooth term constructor.
-tx(..., bs = "ps", k = NA,
+tx(..., bs = "ps", k = -1,
   ctr = c("center", "main", "both", "both1", "both2",
     "none", "meanf", "meanfd", "meansimple"),
   special = TRUE)
+tx2(...)
 
 ## Smooth constructor and predict matrix.
 \method{smooth.construct}{tensorX.smooth.spec}(object, data, knots, ...)
@@ -124,7 +126,7 @@ get_BayesXsrc(dir = NULL, install = TRUE)
   Function \code{sx()} a \code{list} of class \code{"xx.smooth.spec"} and \code{"no.mgcv"}, where
   \code{"xx"} is a basis/type identifying code given by the \code{bs} argument.
 
-  Function \code{tx()} a \code{list} of class \code{tensorX.smooth.spec}.
+  Function \code{tx()} and \code{tx2()} a \code{list} of class \code{tensorX.smooth.spec}.
 }
 
 \note{
