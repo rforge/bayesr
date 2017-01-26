@@ -2868,53 +2868,50 @@ SEXP log_dmvnorm(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ)
 /* Boosting updater. */
 SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
 {
-  int i, j, k, nProtected = 0;
-  int n = length(y);
-  int fixed = LOGICAL(getListElement(x, "fixed"))[0];
+  int i, j, k;
+  int nProtected = 0;
+  int n          = length(y);
+  int fixed      = LOGICAL(getListElement(x, "fixed"))[0];
+
+  SEXP state       = PROTECT(duplicate(getListElement(x, "state")));           ++nProtected;
+  double *thetaptr = REAL(getListElement(state, "parameters"));
   int *penFun = INTEGER(getListElement(x, "penaltyFunction"));
 
-  SEXP state;
-  PROTECT(state = duplicate(getListElement(x, "state")));
-  ++nProtected;
-
-  double *thetaptr = REAL(getListElement(state, "parameters"));
-
-  int S_ind = getListElement_index(x, "S");
-  int ntau2;
-  if(fixed > 0) {
-    ntau2 = 0;
-  } else {
-    ntau2 = length(VECTOR_ELT(x, S_ind));
-  }
+  /* Reto: changes */
+  /* This was the main change: Reto 2017-01-24 */
+  int ntau2, S_ind;
   int nc = length(getListElement(state, "parameters"));
-  if(fixed < 1) {
-    nc -= ntau2;
+  if(fixed) {
+    /* ntau2 can be anything but 0 */
+    S_ind = 0;      ntau2 = 1;
+  } else {
+    S_ind = getListElement_index(x, "S");
+    ntau2 = length(PROTECT(VECTOR_ELT(x, S_ind))); ++nProtected;
+    nc   -= ntau2;
   }
-
-  SEXP tau2;
-  PROTECT(tau2 = allocVector(REALSXP, ntau2));
+  SEXP tau2       = PROTECT(allocVector(REALSXP,ntau2)); ++nProtected;
   double *tau2ptr = REAL(tau2);
-  ++nProtected;
 
   /* Create weighted matrix */
   int X_ind = getListElement_index(x, "X");
-  int nr = nrows(VECTOR_ELT(x, X_ind));
+  int nr = nrows(PROTECT(VECTOR_ELT(x, X_ind))); ++nProtected;
 
   /* More pointers needed. */
   double *eptr = REAL(y);
   double *xweightsptr = REAL(getListElement(x, "weights"));
-  double *xrresptr = REAL(getListElement(x, "rres"));
-  double *XWptr = REAL(getListElement(x, "XW"));
-  double *XWXptr = REAL(getListElement(x, "XWX"));
-  double *Xptr = REAL(VECTOR_ELT(x, X_ind));
-  double *Sptr;
-  int *idptr = INTEGER(getListElement(getListElement(x, "binning"), "match.index"));
-  int *indptr = INTEGER(getListElement(getListElement(x, "binning"), "sorted.index"));
-  int *orderptr = INTEGER(getListElement(getListElement(x, "binning"), "order"));
+  double *xrresptr    = REAL(getListElement(x, "rres"));
+  double *XWptr       = REAL(getListElement(x, "XW"));
+  double *XWXptr      = REAL(getListElement(x, "XWX"));
+  double *Xptr        = REAL(PROTECT(VECTOR_ELT(x, X_ind))); ++nProtected;
+  /* Reto: changes, setting empty pointer to 0 */
+  double *Sptr = 0;
+  int    *idptr       = INTEGER(getListElement(getListElement(x, "binning"), "match.index"));
+  int    *indptr      = INTEGER(getListElement(getListElement(x, "binning"), "sorted.index"));
+  int    *orderptr    = INTEGER(getListElement(getListElement(x, "binning"), "order"));
 
   /* Handling fitted.values. */
   double *fitrptr = REAL(getListElement(x, "fit.reduced"));
-  double *fitptr = REAL(getListElement(state, "fitted.values"));
+  double *fitptr  = REAL(getListElement(state, "fitted.values"));
 
   /* Start. */
   xweightsptr[0] = 0.0;
@@ -2922,6 +2919,7 @@ SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
 
   j = 0;
   int jj;
+
   for(i = 0; i < n; i++) {
     if(indptr[i] > (j + 1)) {
       for(jj = 0; jj < nc; jj++) {
@@ -2929,7 +2927,7 @@ SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
       }
       ++j;
       xweightsptr[j] = 0.0;
-      xrresptr[j] = 0.0;
+      xrresptr[j]    = 0.0;
     }
     k = orderptr[i] - 1;
 
@@ -2948,7 +2946,7 @@ SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
     XWptr, &nc, Xptr, &nr, &zero, XWXptr, &nc);
 
   /* Add penalty matrix and variance parameter. */
-  if(fixed < 1) {
+  if( ! fixed ) {
     for(jj = 0; jj < ntau2; jj++) {
       if(penFun[jj] > 0) {
         Sptr = REAL(get_S_mat(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj), getListElement(state, "parameters"), rho));
@@ -2965,10 +2963,8 @@ SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
   }
 
   /* Cholesky decompostion of XWX. */
-  SEXP L;
-  PROTECT(L = duplicate(getListElement(x, "XWX")));
+  SEXP L = PROTECT(duplicate(getListElement(x, "XWX"))); ++nProtected;
   double *Lptr = REAL(L);
-  ++nProtected;
 
   for(j = 0; j < nc; j++) { 	/* Zero the lower triangle. */
     for(i = j + 1; i < nc; i++) {
@@ -2980,17 +2976,13 @@ SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
   F77_CALL(dpotrf)("Upper", &nc, Lptr, &nc, &info);
 
   /* Compute the inverse precision matrix. */
-  SEXP PINV;
-  PROTECT(PINV = duplicate(L));
+  SEXP PINV = PROTECT(duplicate(L));  ++nProtected;
   double *PINVptr = REAL(PINV);
-  ++nProtected;
 
   F77_CALL(dpotri)("Upper", &nc, PINVptr, &nc, &info);
 
-  SEXP PINVL;
-  PROTECT(PINVL = duplicate(PINV));
+  SEXP PINVL = PROTECT(duplicate(PINV)); ++nProtected;
   double *PINVLptr = REAL(PINVL);
-  ++nProtected;
   F77_CALL(dpotrf)("Upper", &nc, PINVLptr, &nc, &info);
 
   for(j = 0; j < nc; j++) {
@@ -3000,15 +2992,11 @@ SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
   }
 
   /* Compute mu. */
-  SEXP mu0;
-  PROTECT(mu0 = allocVector(REALSXP, nc));
+  SEXP mu0 = PROTECT(allocVector(REALSXP, nc)); ++nProtected;
   double *mu0ptr = REAL(mu0);
-  ++nProtected;
 
-  SEXP mu1;
-  PROTECT(mu1 = allocVector(REALSXP, nc));
+  SEXP mu1 = PROTECT(allocVector(REALSXP, nc)); ++nProtected;
   double *mu1ptr = REAL(mu1);
-  ++nProtected;
 
   int k1 = 1;
   char *transa2 = "T";

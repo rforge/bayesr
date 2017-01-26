@@ -2182,12 +2182,6 @@ boost.transform <- function(x, y, df = NULL, family,
         model.matrix[[pj]]$label <- cn[pj]
         model.matrix[[pj]]$term <- cn[pj]
         model.matrix[[pj]]$X <- x[[nx[j]]]$smooth.construct[[ii]]$X[, pj, drop = FALSE]
-        if(cn[pj] != "(Intercept)") {
-          mx <- mean(model.matrix[[pj]]$X)
-          sdx <- sd(model.matrix[[pj]]$X)
-          model.matrix[[pj]]$X <- (model.matrix[[pj]]$X - mx) / sdx
-          model.matrix[[pj]]$boost.scale <- list("mean" = mx, "sd" = sdx)
-        }
         model.matrix[[pj]]$binning <- x[[nx[j]]]$smooth.construct[[ii]]$binning
         model.matrix[[pj]]$nobs <- x[[nx[j]]]$smooth.construct[[ii]]$nobs
         model.matrix[[pj]]$fixed <- TRUE
