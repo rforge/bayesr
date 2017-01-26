@@ -2198,6 +2198,8 @@ boost.transform <- function(x, y, df = NULL, family,
         model.matrix[[pj]]$fit.fun <- x[[nx[j]]]$smooth.construct[[ii]]$fit.fun
         model.matrix[[pj]]$state <- list("parameters" = g0[pj])
         model.matrix[[pj]]$state$fitted.values <- drop(model.matrix[[pj]]$X %*% g0[pj])
+        if(!is.null(model.matrix[[pj]]$binning$match.index))
+          model.matrix[[pj]]$state$fitted.values <- model.matrix[[pj]]$state$fitted.values[model.matrix[[pj]]$binning$match.index]
         model.matrix[[pj]]$state$edf <- 0
         model.matrix[[pj]]$state$rss <- 0
         model.matrix[[pj]]$state$do.optim <- FALSE
