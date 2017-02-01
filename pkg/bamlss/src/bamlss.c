@@ -2865,6 +2865,234 @@ SEXP log_dmvnorm(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ)
 }
 
 
+SEXP mu_score_mvnorm(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ, SEXP KJ)
+{
+  int i, j, jj, l;
+  int n = INTEGER(N)[0];
+  int k = INTEGER(K)[0];
+  int kj = INTEGER(KJ)[0];
+  int info;
+
+  SEXP Sigma;
+  PROTECT(Sigma = allocMatrix(REALSXP, k, k));
+  double *Sigmaptr = REAL(Sigma);
+  double *Pptr = REAL(PAR);
+
+  int *MJptr = INTEGER(MJ);
+  int *SJptr = INTEGER(SJ);
+  int rj = INTEGER(RJ)[0];
+
+  SEXP ymu;
+  PROTECT(ymu = allocVector(REALSXP, k));
+  double *ymuptr = REAL(ymu);
+  double *Yptr = REAL(Y);
+
+  SEXP d;
+  PROTECT(d = allocVector(REALSXP, n));
+  double *dptr = REAL(d);
+
+  double sum = 0.0;
+
+  for(j = 0; j < k; j++) {
+    for(i = 0; i < k; i++) {
+      Sigmaptr[i + k * j] = 0.0;
+    }
+  }
+
+  for(i = 0; i < n; i++) {
+    l = 0;
+    for(j = 0; j < k; j++) {
+      Sigmaptr[j + k * j] = pow(Pptr[i + n * (SJptr[j] - 1)], 2.0);
+      for(jj = j + 1; jj < k; jj++) {
+        Sigmaptr[jj + k * j] = Pptr[i + n * (rj + l - 1)] * Pptr[i + n * (SJptr[jj] - 1)] * Pptr[i + n * (SJptr[j] - 1)];
+        Sigmaptr[j + k * jj] = Sigmaptr[jj + k * j];
+        l = l + 1;
+      }
+      ymuptr[j] = Yptr[i + n * j] - Pptr[i + n * (MJptr[j] - 1)];
+    }
+
+    F77_CALL(dpotrf)("Upper", &k, Sigmaptr, &k, &info);
+    F77_CALL(dpotri)("Upper", &k, Sigmaptr, &k, &info);
+
+    sum = 0.0;
+    /* Fill lower part of row kj */
+    for(jj = 0; jj < kj; jj++)
+      Sigmaptr[kj + jj * k] = Sigmaptr[jj + kj * k];
+    /* sum over row kj */
+    for(jj = 0; jj < k; jj++)
+      sum += Sigmaptr[kj + jj * k] * ymuptr[jj];
+
+    dptr[i] = sum;
+  }
+
+  UNPROTECT(3);
+  return d;
+}
+
+SEXP sigma_score_mvnorm(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ, SEXP KJ)
+{
+  int i, j, jj, l;
+  int n = INTEGER(N)[0];
+  int k = INTEGER(K)[0];
+  int kj = INTEGER(KJ)[0];
+  int info;
+
+  SEXP Sigma;
+  PROTECT(Sigma = allocMatrix(REALSXP, k, k));
+  double *Sigmaptr = REAL(Sigma);
+  double *Pptr = REAL(PAR);
+
+  int *MJptr = INTEGER(MJ);
+  int *SJptr = INTEGER(SJ);
+  int rj = INTEGER(RJ)[0];
+
+  SEXP ymu;
+  PROTECT(ymu = allocVector(REALSXP, k));
+  double *ymuptr = REAL(ymu);
+  double *Yptr = REAL(Y);
+
+  SEXP d;
+  PROTECT(d = allocVector(REALSXP, n));
+  double *dptr = REAL(d);
+
+  double sum = 0.0;
+
+  /* Here Sigma is the correlation matrix */
+  for(j = 0; j < k; j++) {
+    for(i = 0; i < k; i++) {
+      Sigmaptr[i + k * j] = 0.0;
+    }
+  }
+
+  for(i = 0; i < n; i++) {
+    l = 0;
+    for(j = 0; j < k; j++) {
+      Sigmaptr[j + k * j] = 1.0;
+      for(jj = j + 1; jj < k; jj++) {
+        Sigmaptr[jj + k * j] = Pptr[i + n * (rj + l - 1)];
+        Sigmaptr[j + k * jj] = Sigmaptr[jj + k * j];
+        l = l + 1;
+      }
+      ymuptr[j] = (Yptr[i + n * j] - Pptr[i + n * (MJptr[j] - 1)]) / Pptr[i + n * (SJptr[j] - 1)];
+    }
+
+    F77_CALL(dpotrf)("Upper", &k, Sigmaptr, &k, &info);
+    F77_CALL(dpotri)("Upper", &k, Sigmaptr, &k, &info);
+
+
+    sum = 0.0;
+    /* Fill lower part of row kj */
+    for(jj = 0; jj < kj; jj++)
+      Sigmaptr[kj + jj * k] = Sigmaptr[jj + kj * k];
+    for(jj = 0; jj < k; jj++)
+      sum += Sigmaptr[kj + jj * k] * ymuptr[jj];
+
+    dptr[i] = ymuptr[kj] * sum - 1.0;
+  }
+
+  UNPROTECT(3);
+  return d;
+}
+
+SEXP rho_score_mvnorm(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ, SEXP KJ, SEXP LJ)
+{
+  int i, j, jj, l;
+  int n = INTEGER(N)[0];
+  int k = INTEGER(K)[0];
+  int kj = INTEGER(KJ)[0];
+  int lj = INTEGER(LJ)[0];
+  int info;
+
+  SEXP Sigma;
+  PROTECT(Sigma = allocMatrix(REALSXP, k, k));
+  double *Sigmaptr = REAL(Sigma);
+  double *Pptr = REAL(PAR);
+
+  int *MJptr = INTEGER(MJ);
+  int *SJptr = INTEGER(SJ);
+  int rj = INTEGER(RJ)[0];
+
+  SEXP ymu;
+  PROTECT(ymu = allocVector(REALSXP, k));
+  double *ymuptr = REAL(ymu);
+  double *Yptr = REAL(Y);
+
+  SEXP d;
+  PROTECT(d = allocVector(REALSXP, n));
+  double *dptr = REAL(d);
+
+  double sumkj = 0.0;
+  double sumlj = 0.0;
+  double mu = 0.0;
+  double eta = 0.0;
+  double mu2 = 0.0;
+  double eta2 = 0.0;
+  double base = 0.0;
+  double deriv = 0.0;
+
+  /* Here Sigma is the correlation matrix */
+  for(j = 0; j < k; j++) {
+    for(i = 0; i < k; i++) {
+      Sigmaptr[i + k * j] = 0.0;
+    }
+  }
+
+  for(i = 0; i < n; i++) {
+    l = 0;
+    for(j = 0; j < k; j++) {
+      Sigmaptr[j + k * j] = 1.0;
+      for(jj = j + 1; jj < k; jj++) {
+        Sigmaptr[jj + k * j] = Pptr[i + n * (rj + l - 1)];
+        Sigmaptr[j + k * jj] = Sigmaptr[jj + k * j];
+        l = l + 1;
+      }
+      ymuptr[j] = (Yptr[i + n * j] - Pptr[i + n * (MJptr[j] - 1)]) / Pptr[i + n * (SJptr[j] - 1)];
+    }
+
+    /*compute deriv*/
+    mu = Sigmaptr[kj + k * lj];
+    mu2 = pow(mu, 2.0);
+    base = 1.0 - mu2;
+    eta = mu / pow(base, 0.5);
+    eta2 = pow(eta, 2.0);
+    base = 1.0 + eta2;
+    deriv = 1.0 / pow(base, 1.5);
+
+    /* Inversion */
+    F77_CALL(dpotrf)("Upper", &k, Sigmaptr, &k, &info);
+    F77_CALL(dpotri)("Upper", &k, Sigmaptr, &k, &info);
+
+/*
+    Fill lower part of rows kj and lj
+    !! This was not working correctly.
+    for(jj = 0; jj < kj; jj++)
+      Sigmaptr[kj + jj * k] = Sigmaptr[jj + kj * k];
+    for(jj = 0; jj < lj; jj++)
+      Sigmaptr[lj + jj * k] = Sigmaptr[jj + jj * k];
+*/
+    /* Fill lower part of InvSigma */
+    for(j = 0; j < k; j++) {
+     for(jj = 0; jj < j; jj++) {
+      Sigmaptr[j + jj * k] = Sigmaptr[jj + j * k];
+     }
+    }
+
+    sumkj = 0.0;
+    sumlj = 0.0;
+    for(jj = 0; jj < k; jj++) {
+      sumkj += Sigmaptr[kj + jj * k] * ymuptr[jj];
+      sumlj += Sigmaptr[lj + jj * k] * ymuptr[jj];
+    }
+
+    dptr[i] = (sumkj * sumlj - Sigmaptr[kj + lj * k]) * 0.5 * deriv;
+  }
+
+  UNPROTECT(3);
+  return d;
+}
+
+
+
 /* Boosting updater. */
 SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
 {

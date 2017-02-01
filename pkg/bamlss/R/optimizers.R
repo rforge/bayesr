@@ -325,8 +325,8 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
         }
       }
       if(!is.null(score)) {
-        grad <- if(!is.null(x$xbin.ind)) {
-          drop(crossprod(x$X[x$xbin.ind, , drop = FALSE], score)) + c(grad, grad2)
+        grad <- if(!is.null(x$binning$match.index)) {
+          drop(crossprod(x$X[x$binning$match.index, , drop = FALSE], score)) + c(grad, grad2)
         } else drop(crossprod(x$X, score)) + c(grad, grad2)
       } else grad <- c(grad, grad2)
       return(grad)
@@ -2833,7 +2833,12 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
       for(j in names(x[[i]]$smooth.construct)) {
         if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth")) {
           if(x[[i]]$smooth.construct[[j]]$fuse) {
-            beta <- get.par(b$parameters[[i]]$s[[j]], "b")
+            if(is.list(b$parameters)) {
+              beta <- get.par(b$parameters[[i]]$s[[j]], "b")
+            } else {
+              beta <- grep(paste(i, ".s.", j, ".", sep = ""), names(b$parameters), fixed = TRUE)
+              beta <- get.par(b$parameters[beta], "b")
+            }
             df <- x[[i]]$smooth.construct[[j]]$lasso$df
             Af <- x[[i]]$smooth.construct[[j]]$Af
             w <- rep(0, ncol(Af))

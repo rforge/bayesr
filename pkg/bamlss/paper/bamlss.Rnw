@@ -1263,11 +1263,12 @@ functions only a simple general format of function arguments and return values m
 More technical details are deferred to the documentation manual of package \pkg{bamlss}.
 
 
+\newpage
+
+
 \section{Illustrations} \label{sec:illustrations}
 
 \subsection{Precepitation climatolgy from daily observations} \label{sec:censreg}
-
-\readme{Z: Please re-read. Somewhat more compact intro, emphasizing the novel contribution, and then some rephrasing.}
 
 Climatology models are one important component of the meteorological tool set. The accurate
 and complete knowledge of precipitation climatologies is especially relevant for problems involving

@@ -393,6 +393,9 @@ for(i in 1:n) {
   mu <- c(f0(x0[i]) + f1(x1[i]), f2(x2[i]), f3(x3[i]))
   mu <- rep(0, 3)
   y[i,] <- rmvn(1, mu, V)
+  #print(dmvnorm(y[i,], mu, V))
+  par <- list(mu1 = mu[1], mu2 = mu[2], mu3 = mu[3], sigma1 = s1[i], sigma2 = s2[i], rho12 = rho12[i], rho13 = rho13[i], rho23 = rho23[i])
+  log_dmvnorm(matrix(y[i,], nrow = 1), par)
 }
 
 dat <- data.frame(y0=y[,1],y1=y[,2],y2=y[,3],x0=x0,x1=x1,x2=x2,x3=x3)

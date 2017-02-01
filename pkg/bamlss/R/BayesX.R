@@ -1018,8 +1018,10 @@ tx <- function(..., bs = "ps", k = -1,
     "none", "meanf", "meanfd", "meansimple"),
   special = TRUE)
 {
-  if(k < 0)
-    k <- 10
+  if(length(k) < 2) {
+    if(k < 0)
+      k <- 10
+  }
   object <- te(..., bs = bs, k = k)
   object$constraint <- match.arg(ctr)
   object$label <- gsub("te(", "tx(", object$label, fixed = TRUE)
@@ -1055,6 +1057,13 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
 
   object$side.constrain <- side.constrain
 
+  ref <- sapply(object$margin, function(x) { inherits(x, "random.effect") })
+
+  if(length(ref) < 1) {
+    if(ref)
+      object$constraint <- "none"
+  }
+
   if(object$constraint %in% c("meanf", "meanfd", "meansimple", "none")) {
     if(object$constraint == "none")
       object$xt$nocenter <- TRUE
@@ -1076,13 +1085,13 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
       } else {
         if(object$constraint == "main") {
           ## Remove main effects only.
-          A1 <- matrix(rep(1, p1), ncol = 1)
-          A2 <- matrix(rep(1, p2), ncol = 1)
+          A1 <- matrix(rep(if(ref[1]) 0 else 1, p1), ncol = 1)
+          A2 <- matrix(rep(if(ref[2]) 0 else 1, p2), ncol = 1)
         }
         if(object$constraint == "both") {
           ## Remove main effects and varying coefficients.
-          A1 <- cbind(rep(1, p1), 1:p1)
-          A2 <- cbind(rep(1, p2), 1:p2)
+          A1 <- if(ref[1]) rep(0, p1) else cbind(rep(1, p1), 1:p1)
+          A2 <- if(ref[2]) rep(0, p2) else cbind(rep(1, p2), 1:p2)
         }
         if(object$constraint == "both1") {
           ## Remove main effects and varying coefficients.

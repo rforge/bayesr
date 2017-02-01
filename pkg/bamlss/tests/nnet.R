@@ -157,5 +157,5 @@ n <- 300
 x <- seq(0, 1, length = n)
 y <- 1.2 + f(x) + rnorm(n, sd = 0.1)
 
-b <- fit.nn(x, y, k = 10, method = "optim", plot = TRUE)
+b <- fit.nn(x, y, k = 12, method = "optim", plot = TRUE)
 
