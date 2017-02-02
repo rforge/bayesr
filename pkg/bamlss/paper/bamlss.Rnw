@@ -6,6 +6,7 @@
 \usepackage{algorithm}
 \usepackage{rotating}
 \usepackage{enumitem}
+\usepackage{natbib}
 \shortcites{bamlss:stan-software:2016}
 
 \definecolor{darkgray}{rgb}{0.1,0.1,0.1}
@@ -114,7 +115,7 @@ can be transformed into a mixed model representation
 \citep{bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003}. In a fully Bayesian setting this
 generality remains because priors on parameters can also be formalized in a general way, e.g.,
 by assigning normal priors to the regression coefficients of smooth terms
-\citep{bamlss:Fahrmeir+Kneib+Lang+Marx:2013, bamlss:Brezger+Lang:2006}.
+\citep{bamlss:Brezger+Lang:2006, bamlss:Fahrmeir+Kneib+Lang+Marx:2013}.
 
 The fully Bayesian approach using Markov chain Monte Carlo (MCMC) simulation techniques is particularly
 attractive since the inferential framework provides valid credible intervals for estimators in
@@ -137,8 +138,8 @@ formats, which makes it difficult for practitioners, e.g., to compare properties
 different algorithms or to select the appropriate distribution and variables, etc. The reasons are
 manifold: the use of different model specification languages like
 \proglang{BUGS}~\citep{bamlss:BUGS:2009} or \proglang{R}~\citep{bamlss:R}; different standalone
-statistical software packages like \pkg{BayesX}~\citep{bamlss:Umlauf+Adler+Kneib+Lang+Zeileis:2014,
-bamlss:Belitz+Brezger+Kneib+Lang+Umlauf:2016}, \pkg{JAGS}~\citep{bamlss:Plummer:2013},
+statistical software packages like \pkg{BayesX}~\citep{bamlss:Belitz+Brezger+Kneib+Lang+Umlauf:2017,
+bamlss:Umlauf+Adler+Kneib+Lang+Zeileis:2014}, \pkg{JAGS}~\citep{bamlss:Plummer:2013},
 \pkg{Stan}~\citep{bamlss:stan-software:2016} or
 \pkg{WinBUGS}~\citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}; or even differences within the
 same environment, e.g., the \proglang{R} packages \pkg{mgcv}
@@ -363,7 +364,7 @@ and $U_{jk}( \cdot )$ is an updating function for a single model term.
 
 The partitioned updating system allows for having different functions $U_{jk}( \cdot )$
 for different model terms, e.g., in problem \ref{E1} some updating functions could be based on iteratively
-weighted least squares (IWLS) and some on ordinary Newton-Raphson steps (see, e.g.,
+weighted least squares (IWLS, \citealp{bamlss:Gamerman:1997}) and some on ordinary Newton-Raphson steps (see, e.g.,
 example Section~\ref{sec:coxreg}). In problem \ref{E2} using MCMC simulation it is common to
 mix between several sampling methods depending on the type of model term or distribution parameter.
 
@@ -941,9 +942,10 @@ derived by each of the following methods:
   probability mass of the posterior distribution. A solution with good mixing properties is to
   construct approximate full conditionals $\pi(\boldsymbol{\beta}_{jk} | \cdot)$ that are based on a
   second order Taylor series expansion of the log-posterior centered at the last state 
-  \citep{bamlss:Gamerman:1997, bamlss:Brezger+Lang:2006, bamlss:Fahrmeir+Kneib+Lang:2004,
-  bamlss:Klein+Kneib+Klasen+Lang:2015, bamlss:Klein+Kneib+Lang+Sohn:2015}. The resulting proposal density is multivariate
-  normal (see Appendix~\ref{appendix:fullcond1} for a detailed derivation) with precision matrix
+  \citep{bamlss:Gamerman:1997, bamlss:Fahrmeir+Kneib+Lang:2004, bamlss:Brezger+Lang:2006,
+  bamlss:Klein+Kneib:2016b}.
+  The resulting proposal density is multivariate normal (see Appendix~\ref{appendix:fullcond1} for a
+  detailed derivation) with precision matrix
   $$
   \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = -\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)
   $$
@@ -1047,10 +1049,10 @@ $\mathbf{\mathcal{F}}( \cdot )$ denoting the cumulative distribution
 function (CDF) of the modeled distribution $\mathcal{D}( \cdot )$ with estimated
 parameters $\hat{\boldsymbol{\theta}}_{i} = (\hat{\theta}_{i1}, \ldots, \hat{\theta}_{iK})^\top$
 plugged in, should at least approximately be standard normally distributed if the correct model has
-been specified \citep{bamlss:Dunn:Smyth:1996}. Resulting residuals can be assessed graphically in
-terms of quantile-quantile-plots. Strong deviations from the diagonal line are then a sign for an
-inappropriate model fit. Instead of looking at residuals one can use the 
-probability integral transform (PIT) which considers
+been specified \citep{bamlss:Dunn:Smyth:1996, bamlss:Klein+Kneib+Lang:2015}. Resulting residuals can
+be assessed graphically in terms of quantile-quantile-plots. Strong deviations from the diagonal
+line are then a sign for an inappropriate model fit. Instead of looking at residuals one can use the 
+probability integral transform (PIT, \citealp{bamlss:Gneiting+Balabdaoui+Raftery:2007}) which considers
 $u_i = \mathbf{\mathcal{F}}(y_i | \, \hat{\boldsymbol{\theta}}_i)$ without applying the inverse
 standard normal CDF. If the estimated model is a good approximation to the true data generating 
 process, the $u_i$ will then approximately follow a uniform distribution on $[0, 1]$.
@@ -1143,7 +1145,7 @@ In this section, we outline the strategies that have been guiding this implement
 and \proglang{R}-specific details are kept brief. Instead we focus on how the flexible conceptual
 framework with its ``Lego bricks'' can be turned into an extensible and modular computational framework
 that readily allows to contruct estimation algorithms as well as interfaces to existing software packages such as
-\pkg{JAGS}~\citep{bamlss:Plummer:2013} or \pkg{BayesX}~\citep{bamlss:Belitz+Brezger+Kneib+Lang+Umlauf:2016}.
+\pkg{JAGS}~\citep{bamlss:Plummer:2013} or \pkg{BayesX}~\citep{bamlss:Belitz+Brezger+Kneib+Lang+Umlauf:2017}.
 
 To provide a common toolbox that allows to play with the Lego bricks introduced in the previous
 sections, a general BAMLSS software system can be set up as shown in Figure~\ref{fig:blocks}.
@@ -1611,7 +1613,8 @@ of problem two specific difficulties need to be considered. First, the updating 
 $U_{jk}( \cdot )$ for the time-varying predictor $\eta_{\lambda}(t)$ are different from the
 time-constant updating functions for $\eta_{\gamma}$. Secondly, a specific hurdle of the continuous
 time Cox model is the computation of the integrals, because these do not have a closed form solution
-and need to be approximated numerically, e.g., by the trapezoidal rule or Gaussian quadrature.
+and need to be approximated numerically, e.g., by the trapezoidal rule or Gaussian quadrature
+\citep{bamlss:Hofner:2008, bamlss:Waldmann+Taylor+Klein+Kneib+Pressler+Schmid+Mayr:2016}.
 Moreover, it is inefficient to compute the integrals a new for every updating step, since for the
 time-constant part the integrals given in $\mathbf{P}$ do not change anymore.
 
