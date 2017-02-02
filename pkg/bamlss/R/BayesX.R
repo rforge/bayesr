@@ -74,6 +74,12 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   if(is.null(data))
     stop("no data available for creating BayesX model term objects!")
 
+  for(j in names(data)) {
+    if(is.factor(data[[j]])) {
+      data <- cbind(data, as.data.frame(model.matrix(as.formula(paste("~ -1 +", j)), data = data)))
+    }
+  }
+
   cny <- colnames(y)
   for(j in seq_along(cny))
     cny[j] <- all.vars(as.formula(paste("~", cny[j])))
@@ -156,6 +162,15 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
             } else {
               sdata[[tlj]] <- match.index(data[, otl, drop = FALSE])$match.index
             }
+          }
+        }
+        if(x$smooth.construct[[j]]$by != "NA") {
+          if(is.factor(data[[x$smooth.construct[[j]]$by]])) {
+            mm <- model.matrix(as.formula(paste("~ -1 +", x$smooth.construct[[j]]$by)), data = data)
+            for(tlj in colnames(mm))
+              sdata[[tlj]] <- mm[, tlj]
+          } else {
+            sdata[[x$smooth.construct[[j]]$by]] <- data[[x$smooth.construct[[j]]$by]]
           }
         }
       }
@@ -311,18 +326,29 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           if((length(tl) > 1) & is.user(x[[i]]$smooth.construct[[j]]) & !is.tx(x[[i]]$smooth.construct[[j]]))
             tl <- paste(tl, collapse = "")
           term <- paste("_", paste(tl, collapse = "_"), "_", sep = "")
-          term <- paste("of", term, "sample", sep = "")
+          #term <- paste("of", term, "sample", sep = "")
           sf <- grepl(paste("_", i, "_", sep = ""), sfiles, fixed = TRUE) & grepl(term, sfiles, fixed = TRUE) & !grepl("_variance_", sfiles, fixed = TRUE)
           sf <- sfiles[sf]
+          if(inherits(x[[i]]$smooth.construct[[j]], "mrf.smooth"))
+            sf <- grep("_spatial_", sf, fixed = TRUE, value = TRUE)
+          if(inherits(x[[i]]$smooth.construct[[j]], "random.effect"))
+            sf <- grep("_random_", sf, fixed = TRUE, value = TRUE)
           if(any(grepl("anisotropy", sf)))
             sf <- sf[-grep("anisotropy", sf)]
           tj <- grep("tensor", sf, fixed = TRUE)
           if(length(tj))
             sf <- if(is.tx(x[[i]]$smooth.construct[[j]]) & (length(x[[i]]$smooth.construct[[j]]$term) > 1)) sf[tj] else sf[-tj]
+          if((x[[i]]$smooth.construct[[j]]$by != "NA") & !is.user(x[[i]]$smooth.construct[[j]]))
+            sf <- grep(x[[i]]$smooth.construct[[j]]$by, sf, fixed = TRUE, value = TRUE)
           samps <- as.matrix(read.table(file.path(dir, "output", sf), header = TRUE)[, -1, drop = FALSE])
           cn <- colnames(x[[i]]$smooth.construct[[j]]$X)
           if(is.null(cn))
             cn <- paste("b", 1:ncol(x[[i]]$smooth.construct[[j]]$X), sep = "")
+          if(length(cn) != ncol(samps)) {
+            cn <- paste("b", 1:ncol(samps), sep = "")
+            warning(paste("number of returned parameters from BayesX is different from number of columns in the design matrix for term ",
+              names(x[[i]]$smooth.construct)[j], "!", sep = ""))
+          }
           colnames(samps) <- paste(i, ".s.", x[[i]]$smooth.construct[[j]]$label, ".", cn, sep = "")
           sf <- grepl(paste("_", i, "_", sep = ""), sfiles, fixed = TRUE) & grepl(term, sfiles, fixed = TRUE) & grepl("_variance_", sfiles, fixed = TRUE)
           sf <- sfiles[sf]
@@ -335,6 +361,12 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
             tj <- grep("tensor", sf, fixed = TRUE)
             if(length(tj))
               sf <- if(is.tx(x[[i]]$smooth.construct[[j]]) & (length(x[[i]]$smooth.construct[[j]]$term) > 1)) sf[tj] else sf[-tj]
+            if(inherits(x[[i]]$smooth.construct[[j]], "mrf.smooth"))
+              sf <- grep("_spatial_", sf, fixed = TRUE, value = TRUE)
+            if(inherits(x[[i]]$smooth.construct[[j]], "random.effect"))
+              sf <- grep("_random_", sf, fixed = TRUE, value = TRUE)
+            if((x[[i]]$smooth.construct[[j]]$by != "NA") & !is.user(x[[i]]$smooth.construct[[j]]))
+              sf <- grep(x[[i]]$smooth.construct[[j]]$by, sf, fixed = TRUE, value = TRUE)
             vsamps <- as.matrix(read.table(file.path(dir, "output", sf), header = TRUE)[, -1, drop = FALSE])
             colnames(vsamps) <- paste(i, ".s.", x[[i]]$smooth.construct[[j]]$label, ".", paste("tau2", 1:ncol(vsamps), sep = ""), sep = "")
             samps <- cbind(samps, vsamps)

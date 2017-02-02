@@ -275,6 +275,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
       sid <- unlist(attr(tx, "specials"))
       if(!length(sid))
         sid <- NULL
+      smt <- NULL
       if(!is.null(sid)) {
         sterms <- sterm_labels <- attr(tx, "term.labels")[sid]
         sterms <- lapply(sterms, function(x) { eval(parse(text = x)) })
@@ -364,13 +365,30 @@ design.construct <- function(formula, data = NULL, knots = NULL,
                 tsm$xt$polys <- as.list(tsm$xt$map)
               }
             }
-            smt <- smooth.construct(tsm, data, knots)
-            if(inherits(tsm, "no.mgcv") | inherits(smt, "no.mgcv")) {
-              no.mgcv <- c(no.mgcv, list(smt))
-              next
+            if((tsm$by != "NA") & is.factor(data[[tsm$by]])) {
+              fm <- model.matrix(as.formula(paste("~ -1 +", tsm$by)), data = data)
+              tlab <- tsm$label
+              byvar <- tsm$by
+              for(jj in 1:ncol(fm)) {
+                tsm$by <- colnames(fm)[jj]
+                tsm$label <- gsub(byvar, colnames(fm)[jj], tlab, fixed = TRUE)
+                data[[colnames(fm)[jj]]] <- fm[, jj]
+                smt2 <- smooth.construct(tsm, data, knots)
+                if(inherits(tsm, "no.mgcv") | inherits(smt2, "no.mgcv")) {
+                  no.mgcv <- c(no.mgcv, list(smt2))
+                } else {
+                  class(smt2) <- c(class(smt2), "mgcv.smooth")
+                  smt <- list(smt2)
+                }
+              }
             } else {
-              class(smt) <- c(class(smt), "mgcv.smooth")
-              smt <- list(smt)
+              smt2 <- smooth.construct(tsm, data, knots)
+              if(inherits(tsm, "no.mgcv") | inherits(smt2, "no.mgcv")) {
+                no.mgcv <- c(no.mgcv, list(smt2))
+              } else {
+                class(smt2) <- c(class(smt2), "mgcv.smooth")
+                smt <- list(smt2)
+              }
             }
           }
           smooth <- c(smooth, smt)
@@ -422,6 +440,18 @@ design.construct <- function(formula, data = NULL, knots = NULL,
           }
         }
         sl <- c(sl, slj)
+      }
+      if(length(unique(sl)) < length(sl)) {
+        sld <- sl[duplicated(sl)]
+        for(j in seq_along(sld)) {
+          for(jj in which(sl == sld[j])) {
+            clj <- class(obj$smooth.construct[[jj]])
+            clj <- strsplit(clj, ".", fixed = TRUE)[[1]][1]
+            if(clj == "random")
+              clj <- "re"
+            sl[jj] <- paste(sl[jj], clj, sep = ":")
+          }
+        }
       }
       names(obj$smooth.construct) <- sl
     }
@@ -5675,6 +5705,9 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
     if(has_sterms(obj$terms)) {
       tl <- names(obj$smooth.construct)
       tl2 <- get_sterms_labels(obj$terms)
+      if(length(ib <- grep("by=", tl2, fixed = TRUE))) {
+        tl2[ib] <- gsub(")", "", tl2[ib], fixed = TRUE)
+      }
       tl <- tl[grep2(tl2, tl, fixed = TRUE)]
       sn <- paste(id, "s", tl, sep = ".")
       i <- grep2(sn, snames, fixed = TRUE)
@@ -5760,6 +5793,11 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
           tn <- c(obj$smooth.construct[[j]]$term, if(obj$smooth.construct[[j]]$by != "NA") {
             obj$smooth.construct[[j]]$by
           } else NULL)
+
+          if(!all(ii <- tn %in% names(mf))) {
+            ii <- tn[which(!ii)]
+            take <- NULL
+          }
 
           s.effects[[obj$smooth.construct[[j]]$label]] <- compute_s.effect(obj$smooth.construct[[j]],
             get.X = get.X, fit.fun = obj$smooth.construct[[j]]$fit.fun, psamples = psamples[, b, drop = FALSE],
