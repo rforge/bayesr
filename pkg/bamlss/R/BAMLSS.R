@@ -482,8 +482,12 @@ design.construct <- function(formula, data = NULL, knots = NULL,
             for(k in seq_along(formula[[i]][[j]]$smooth.construct)) {
               if(is.null(formula[[i]][[j]]$smooth.construct[[k]]$fit.fun))
                 formula[[i]][[j]]$smooth.construct[[k]]$fit.fun <- make.fit.fun(formula[[i]][[j]]$smooth.construct[[k]])
-              if(is.null(formula[[i]][[j]]$smooth.construct[[k]]$prior))
-                formula[[i]][[j]]$smooth.construct[[k]]$prior <- make.prior(formula[[i]][[j]]$smooth.construct[[k]])
+              if(is.null(formula[[i]][[j]]$smooth.construct[[k]]$prior)) {
+                priors <- make.prior(formula[[i]][[j]]$smooth.construct[[k]])
+                formula[[i]][[j]]$smooth.construct[[k]]$prior <- priors$prior
+                formula[[i]][[j]]$smooth.construct[[k]]$grad <- priors$grad
+                formula[[i]][[j]]$smooth.construct[[k]]$hesss <- priors$hess
+              }
             }
           }
         }
@@ -502,8 +506,12 @@ design.construct <- function(formula, data = NULL, knots = NULL,
             }
             if(is.null(formula[[i]]$smooth.construct[[j]]$fit.fun))
               formula[[i]]$smooth.construct[[j]]$fit.fun <- make.fit.fun(formula[[i]]$smooth.construct[[j]])
-            if(is.null(formula[[i]]$smooth.construct[[j]]$prior))
-              formula[[i]]$smooth.construct[[j]]$prior <- make.prior(formula[[i]]$smooth.construct[[j]])
+            if(is.null(formula[[i]]$smooth.construct[[j]]$prior)) {
+              priors <- make.prior(formula[[i]]$smooth.construct[[j]])
+              formula[[i]]$smooth.construct[[j]]$prior <- priors$prior
+              formula[[i]]$smooth.construct[[j]]$grad <- priors$grad
+              formula[[i]]$smooth.construct[[j]]$hess <- priors$hess
+            }
           }
         }
       }
@@ -523,8 +531,12 @@ design.construct <- function(formula, data = NULL, knots = NULL,
         }
         if(is.null(formula$smooth.construct[[j]]$fit.fun))
           formula$smooth.construct[[j]]$fit.fun <- make.fit.fun(formula$smooth.construct[[j]])
-        if(is.null(formula$smooth.construct[[j]]$prior))
-          formula$smooth.construct[[j]]$prior <- make.prior(formula$smooth.construct[[j]])
+        if(is.null(formula$smooth.construct[[j]]$prior)) {
+          priors <- make.prior(formula$smooth.construct[[j]])
+          formula$smooth.construct[[j]]$prior <- priors$prior
+          formula$smooth.construct[[j]]$grad <- priors$grad
+          formula$smooth.construct[[j]]$hess <- priors$hess
+        }
       }
     }
   }
@@ -746,7 +758,8 @@ make.fit.fun <- function(x, type = 1)
 
 
 ## The prior function.
-make.prior <- function(x, sigma = 0.1) {
+make.prior <- function(x, sigma = 0.1)
+{
   prior <- NULL
   if(!is.null(x$xt$prior)) {
     prior <- x$xt$prior
@@ -758,7 +771,10 @@ make.prior <- function(x, sigma = 0.1) {
   } else {
     prior <- "ig"
   }
+
   if(!is.function(prior)) {
+    rval <- list()
+
     a <- if(is.null(x$xt[["a"]])) {
       if(is.null(x[["a"]])) 1e-04 else x[["a"]]
     } else x$xt[["a"]]
@@ -780,7 +796,6 @@ make.prior <- function(x, sigma = 0.1) {
     fixed <- if(is.null(x$fixed)) FALSE else x$fixed
 
     igs <- log((b^a)) - log(gamma(a))
-
     var_prior_fun <- switch(prior,
       "ig" = function(tau2) { igs + (-a - 1) * log(tau2) - b / tau2 },
       "hc" = function(tau2) { -log(1 + tau2 / (theta^2)) - 0.5 * log(tau2) - log(theta^2) },
@@ -792,8 +807,8 @@ make.prior <- function(x, sigma = 0.1) {
         log(2 * theta / pi) - (tau2^2 * theta^2) / pi
       }
     )
-
-    prior_fun <- function(parameters) {
+    
+    rval$prior <- function(parameters) {
       if(is.null(x$pid)) {
         if(!is.null(names(parameters))) {
           gamma <- get.par(parameters, "b")
@@ -810,7 +825,7 @@ make.prior <- function(x, sigma = 0.1) {
         lp <- sum(dnorm(gamma, sd = 1000, log = TRUE))
       } else {
         if(length(tau2) < 2) {
-          K <- if(is.function(x$S[[1]])) x$S[[1]](gamma) else x$S[[1]]
+          K <- if(is.function(x$S[[1]])) x$S[[1]](c(parameters, x$fixed.hyper)) else x$S[[1]]
           if(is.null(x$rank))
             x$rank <- qr(K)$rank
           lp <- -log(tau2) * x$rank / 2 + drop(-0.5 / tau2 * t(gamma) %*% K %*% gamma) + var_prior_fun(tau2)
@@ -818,7 +833,7 @@ make.prior <- function(x, sigma = 0.1) {
           ld <- 0
           P <- if(inherits(x$X, "Matrix")) Matrix(0, ncol(x$X), ncol(x$X)) else 0
           for(j in seq_along(tau2)) {
-            P <- P + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](gamma) else x$S[[j]]
+            P <- P + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(parameters, x$fixed.hyper)) else x$S[[j]]
             ld <- ld + var_prior_fun(tau2[j])
           }
           ##lp <- dmvnorm(gamma, sigma = matrix_inv(P), log = TRUE) + ld
@@ -830,11 +845,51 @@ make.prior <- function(x, sigma = 0.1) {
       return(as.numeric(lp))
     }
 
-    attr(prior_fun, "var_prior") <- prior
+    attr(rval$prior, "var_prior") <- prior
 
-    return(prior_fun)
+    rval$grad <- function(score = NULL, parameters, full = TRUE) {
+      gamma <- get.par(parameters, "b")
+      tau2 <-  get.par(parameters, "tau2")
+      grad2 <- NULL
+      if(x$fixed | !length(tau2)) {
+        grad <- rep(0, length(gamma))
+      } else {
+        grad <- 0; grad2 <- NULL
+        for(j in seq_along(tau2)) {
+          tauS <- -1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(parameters, x$fixed.hyper)) else x$S[[j]]
+          grad <- grad + tauS %*% gamma
+          if(full & !is.null(tau2[j])) {
+            grad2 <- c(grad2, drop(-x$rank[j] / (2 * tau2[j]) - 1 / (2 * tau2[j]^2) * (if(is.function(x$S[[j]])) x$S[[j]](c(parameters, x$fixed.hyper)) else x$S[[j]]) %*% gamma + (-x$a - 1) / tau2[j] + x$b / (tau2[j]^2)))
+            x$X <- cbind(x$X, 0)
+          }
+          grad <- drop(grad)
+        }
+      }
+      if(!is.null(score)) {
+        grad <- if(!is.null(x$xbin.ind)) {
+          drop(crossprod(x$X[x$xbin.ind, , drop = FALSE], score)) + c(grad, grad2)
+        } else drop(crossprod(x$X, score)) + c(grad, grad2)
+      } else grad <- c(grad, grad2)
+      return(grad)
+    }
+
+    rval$hess <- function(score = NULL, parameters, full = FALSE) {
+      tau2 <- get.par(parameters, "tau2")
+      if(x$fixed | !length(tau2)) {
+        k <- length(get.par(parameters, "b"))
+        hx <- matrix(0, k, k)
+      } else {
+        hx <- 0
+        for(j in seq_along(tau2)) {
+          hx <- hx + (1 / tau2[j]) * if(is.function(x$S[[j]])) x$S[[j]](c(parameters, x$fixed.hyper)) else x$S[[j]]
+        }
+      }
+      return(hx)
+    }
+
+    return(rval)
   } else {
-    return(prior)
+    return(prior(x))
   }
 }
 
@@ -1231,6 +1286,36 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
 }
 
 
+par2list <- function(x)
+{
+  xl <- list()
+  nx <- names(x)
+  npl <- strsplit(nx, ".", fixed = TRUE)
+  np <- unique(sapply(npl, function(x) { x[1] }))
+  for(j in np) {
+    xl[[j]] <- list()
+    tmp <- grep(paste(j, ".", sep = ""), nx, value = TRUE)
+    tmp2 <- unique(sapply(strsplit(tmp, ".", fixed = TRUE), function(x) { x[2] }))
+    for(jj in tmp2) {
+      tmp3 <- grep(paste(j, jj, sep = "."), nx, fixed = TRUE, value = TRUE)
+      if(jj == "p") {
+        xl[[j]][[jj]] <- x[tmp3]
+        names(xl[[j]][[jj]]) <- gsub(paste(j, ".", jj, ".", sep = ""), "", names(xl[[j]][[jj]]), fixed = TRUE)
+      } else {
+        tmp4 <- grep(paste(j, jj, sep = "."), nx, fixed = TRUE, value = TRUE)
+        tmp4 <- unique(sapply(strsplit(tmp4, ".", fixed = TRUE), function(x) { x[3] }))
+        xl[[j]][[jj]] <- list()
+        for(jjj in tmp4) {
+          xl[[j]][[jj]][[jjj]] <- x[grep(paste(j, ".", jj, ".", jjj, ".", sep = ""), nx, fixed = TRUE)]
+          names(xl[[j]][[jj]][[jjj]]) <- gsub(paste(j, ".", jj, ".", jjj, ".", sep = ""), "", names(xl[[j]][[jj]][[jjj]]), fixed = TRUE)
+        }
+      }
+    }
+  }
+  xl
+}
+
+
 ## Main bamlss().
 bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knots = NULL,
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit, contrasts = NULL,
@@ -1402,11 +1487,11 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
       for(j in names(bf$x)) {
         if(length(bf$x[[j]]$smooth.construct)) {
           for(i in seq_along(bf$x[[j]]$smooth.construct)) {
-            bf$x[[j]]$smooth.construct[[i]][c("X", "S", "Xr", "Xf", "binning")] <- NULL
+            bf$x[[j]]$smooth.construct[[i]][c("X", "S", "Xr", "Xf", "binning", "prior", "grad", "hess")] <- NULL
             bf$x[[j]]$smooth.construct[[i]][["xt"]][["binning"]] <- NULL
             if(!is.null(bf$x[[j]]$smooth.construct[[i]][["margin"]])) {
               for(jj in seq_along(bf$x[[j]]$smooth.construct[[i]][["margin"]])) {
-                bf$x[[j]]$smooth.construct[[i]][["margin"]][[jj]][c("X", "S", "Xr", "Xf", "binning")] <- NULL
+                bf$x[[j]]$smooth.construct[[i]][["margin"]][[jj]][c("X", "S", "Xr", "Xf", "binning", "prior", "grad", "hess")] <- NULL
                 bf$x[[j]]$smooth.construct[[i]][["margin"]][[jj]][["xt"]][["binning"]] <- NULL
               }
             }
@@ -4045,7 +4130,10 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$xt[["b"]] <- 1e-4
   object$fixed <- if(is.null(object$xt[["fixed"]])) FALSE else object$xt[["fixed"]]
   object$fxsp <- FALSE
-  object$prior <- make.prior(object)
+  priors <- make.prior(object)
+  object$prior <- priors$prior
+  object$grad <- priors$grad
+  object$hess <- priors$hess
   if(is.null(object$xt$lambda))
     object$xt$lambda <- 0.0001
   object$xt$do.optim <- TRUE
@@ -5796,7 +5884,7 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
 
           if(!all(ii <- tn %in% names(mf))) {
             ii <- tn[which(!ii)]
-            take <- NULL
+            take <- NULL  ## FIXME: by dummies!
           }
 
           s.effects[[obj$smooth.construct[[j]]$label]] <- compute_s.effect(obj$smooth.construct[[j]],

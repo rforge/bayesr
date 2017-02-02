@@ -272,7 +272,10 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
   ## Update prior/grad/hess functions
   for(j in names(x)) {
     for(sj in names(x[[j]]$smooth.construct)) {
-      x[[j]]$smooth.construct[[sj]] <- make.prior2(x[[j]]$smooth.construct[[sj]])
+      priors <- make.prior(x[[j]]$smooth.construct[[sj]])
+      x[[j]]$smooth.construct[[sj]]$prior <- priors$prior
+      x[[j]]$smooth.construct[[sj]]$grad <- priors$grad
+      x[[j]]$smooth.construct[[sj]]$hess <- priors$hess
     }
   }
   
@@ -360,141 +363,6 @@ sparse_Matrix_setup <- function(x, sparse = TRUE, force = FALSE, take)
   }
   return(x)
 }
-
-## The prior function.
-make.prior2 <- function(x, sigma = 0.1) {
-
-  prior <- NULL
-  if(!is.null(x$xt$prior)) {
-    prior <- x$xt$prior
-    if(is.character(x$xt$prior)) {
-      prior <- tolower(prior)
-      if(!(prior %in% c("ig", "hc", "sd", "hn", "hn.lasso")))
-        stop(paste('smoothing variance prior "', prior, '" not supported!', sep = ''))
-    }
-  } else {
-    prior <- "ig"
-  }
-  if(!is.function(prior)) {
-    a <- if(is.null(x$xt[["a"]])) {
-      if(is.null(x[["a"]])) 1e-04 else x[["a"]]
-    } else x$xt[["a"]]
-    b <- if(is.null(x$xt[["b"]])) {
-      if(is.null(x[["b"]])) 1e-04 else x[["b"]]
-    } else x$xt[["b"]]
-    theta <- if(is.null(x$xt[["theta"]])) {
-      x[["theta"]]
-    } else x$xt[["theta"]]
-
-    if(is.null(theta)) {
-      theta <- switch(prior,
-                      "sd" = 0.00877812,
-                      "hc" = 0.01034553,
-                      "hn" = 0.1457644
-      )
-    }
-
-    fixed <- if(is.null(x$fixed)) FALSE else x$fixed
-
-    igs <- log((b^a)) - log(gamma(a))
-    var_prior_fun <- switch(prior,
-                            "ig" = function(tau2) { igs + (-a - 1) * log(tau2) - b / tau2 },
-                            "hc" = function(tau2) { -log(1 + tau2 / (theta^2)) - 0.5 * log(tau2) - log(theta^2) },
-                            "sd" = function(tau2) { -0.5 * log(tau2) + 0.5 * log(theta) - (tau2 / theta)^(0.5) },
-                            "hn" = function(tau2) { -0.5 * log(tau2) - tau2 / (2 * theta^2) },
-                            "hn.lasso0" = function(tau2) { -0.2257913 - log(sigma) - tau2^2/(2 * sigma^2) },
-                            "hn.lasso" = function(tau2) {
-                              theta <- sqrt(pi) / (sigma * sqrt(2))
-                              log(2 * theta / pi) - (tau2^2 * theta^2) / pi
-                            }
-    )
-    
-    x$prior <- function(parameters) {
-      if(is.null(x$pid)) {
-        if(!is.null(names(parameters))) {
-          gamma <- get.par(parameters, "b")
-          tau2 <- get.par(parameters, "tau2")
-        } else {
-          gamma <- parameters
-          tau2 <- numeric(0)
-        }
-      } else {
-        gamma <- parameters[x$pid$b]
-        tau2 <-  parameters[x$pid$tau2]
-      }
-      if(fixed | !length(tau2)) {
-        lp <- sum(dnorm(gamma, sd = 1000, log = TRUE))
-      } else {
-        if(length(tau2) < 2) {
-          K <- if(is.function(x$S[[1]])) x$S[[1]](gamma) else x$S[[1]]
-          if(is.null(x$rank))
-            x$rank <- qr(K)$rank
-          lp <- -log(tau2) * x$rank / 2 + drop(-0.5 / tau2 * t(gamma) %*% K %*% gamma) + var_prior_fun(tau2)
-        } else {
-          ld <- 0
-          P <- if(inherits(x$X, "Matrix")) Matrix(0, ncol(x$X), ncol(x$X)) else 0
-          for(j in seq_along(tau2)) {
-            P <- P + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](gamma) else x$S[[j]]
-            ld <- ld + var_prior_fun(tau2[j])
-          }
-          ##lp <- dmvnorm(gamma, sigma = matrix_inv(P), log = TRUE) + ld
-          dP <- determinant(P, logarithm = TRUE)
-          dP <- as.numeric(dP$modulus) * as.numeric(dP$sign)
-          lp <- 0.5 * dP - 0.5 * (t(gamma) %*% P %*% gamma) + ld
-        }
-      }
-      return(as.numeric(lp))
-    }
-
-    attr(x$prior, "var_prior") <- prior
-
-   x$grad <- function(score = NULL, parameters, full = TRUE) {
-      gamma <- get.par(parameters, "b")
-      tau2 <-  get.par(parameters, "tau2")
-      grad2 <- NULL
-      if(x$fixed | !length(tau2)) {
-        grad <- rep(0, length(gamma))
-      } else {
-        grad <- 0; grad2 <- NULL
-        for(j in seq_along(tau2)) {
-          tauS <- -1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](gamma) else x$S[[j]]
-          grad <- grad + tauS %*% gamma
-          if(full & !is.null(tau2[j])) {
-            grad2 <- c(grad2, drop(-x$rank[j] / (2 * tau2[j]) - 1 / (2 * tau2[j]^2) * (if(is.function(x$S[[j]])) x$S[[j]](gamma) else x$S[[j]]) %*% gamma + (-x$a - 1) / tau2[j] + x$b / (tau2[j]^2)))
-            x$X <- cbind(x$X, 0)
-          }
-          grad <- drop(grad)
-        }
-      }
-      if(!is.null(score)) {
-        grad <- if(!is.null(x$xbin.ind)) {
-          drop(crossprod(x$X[x$xbin.ind, , drop = FALSE], score)) + c(grad, grad2)
-        } else drop(crossprod(x$X, score)) + c(grad, grad2)
-      } else grad <- c(grad, grad2)
-      return(grad)
-    }
-
-    x$hess <- function(score = NULL, parameters, full = FALSE) {
-      tau2 <- get.par(parameters, "tau2")
-      if(x$fixed | !length(tau2)) {
-        k <- length(get.par(parameters, "b"))
-        hx <- matrix(0, k, k)
-      } else {
-        hx <- 0
-        for(j in seq_along(tau2)) {
-          hx <- hx + (1 / tau2[j]) * if(is.function(x$S[[j]])) x$S[[j]](get.par(parameters, "b")) else x$S[[j]]
-        }
-      }
-      return(hx)
-    }
-
-
-    return(x)
-  } else {
-    cat(x$label)
-  }
-}
-
 
 
 jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,

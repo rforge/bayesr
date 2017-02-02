@@ -305,54 +305,6 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
       return(edf)
     }
   }
-  if(is.null(x$grad)) {
-    x$grad <- function(score = NULL, parameters, full = TRUE) {
-      gamma <- get.par(parameters, "b")
-      tau2 <-  get.par(parameters, "tau2")
-      grad2 <- NULL
-      if(x$fixed | !length(tau2)) {
-        grad <- rep(0, length(gamma))
-      } else {
-        grad <- 0; grad2 <- NULL
-        for(j in seq_along(tau2)) {
-          tauS <- -1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](gamma) else x$S[[j]]
-          grad <- grad + tauS %*% gamma
-          if(full & !is.null(tau2[j])) {
-            grad2 <- c(grad2, drop(-x$rank[j] / (2 * tau2[j]) - 1 / (2 * tau2[j]^2) * (if(is.function(x$S[[j]])) x$S[[j]](gamma) else x$S[[j]]) %*% gamma + (-x$a - 1) / tau2[j] + x$b / (tau2[j]^2)))
-            x$X <- cbind(x$X, 0)
-          }
-          grad <- drop(grad)
-        }
-      }
-      if(!is.null(score)) {
-        grad <- if(!is.null(x$binning$match.index)) {
-          drop(crossprod(x$X[x$binning$match.index, , drop = FALSE], score)) + c(grad, grad2)
-        } else drop(crossprod(x$X, score)) + c(grad, grad2)
-      } else grad <- c(grad, grad2)
-      return(grad)
-    }
-  } else {
-    if(!is.function(x$grad))
-      x$grad <- NULL
-  }
-  if(is.null(x$hess)) {
-    x$hess <- function(score = NULL, parameters, full = FALSE) {
-      tau2 <- get.par(parameters, "tau2")
-      if(x$fixed | !length(tau2)) {
-        k <- length(get.par(parameters, "b"))
-        hx <- matrix(0, k, k)
-      } else {
-        hx <- 0
-        for(j in seq_along(tau2)) {
-          hx <- hx + (1 / tau2[j]) * if(is.function(x$S[[j]])) x$S[[j]](get.par(parameters, "b")) else x$S[[j]]
-        }
-      }
-      return(hx)
-    }
-  } else {
-    if(!is.function(x$hess))
-      x$hess <- NULL
-  }
   ng <- length(get.par(state$parameters, "b"))
   x$lower <- c(rep(-Inf, ng),
     if(is.list(state$interval)) {
@@ -407,7 +359,10 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
         x$S[[j]] <- Matrix(if(is.function(x$S[[j]])) x$S[[j]](c("b" = rep(0, attr(x$S[[j]], "npar")))) else x$S[[j]], sparse = TRUE)
       if(force.Matrix)
         x$update <- bfit_iwls_Matrix
-      x$prior <- make.prior(x)
+      priors <- make.prior(x)
+      x$prior <- priors$prior
+      x$grad <- priors$grad
+      x$hess <- priors$hess
     }
   }
 
@@ -437,7 +392,10 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
     if(!is.null(x$xt[["prior"]]))
       x$prior <- x$xt[["prior"]]
     if(is.null(x$prior) | !is.function(x$prior)) {
-      x$prior <- make.prior(x)
+      priors <- make.prior(x)
+      x$prior <- priors$prior
+      x$grad <- priors$grad
+      x$hess <- priors$hess
     }
   }
 
@@ -1686,7 +1644,7 @@ log_posterior <- function(par, x, y, family, verbose = TRUE, digits = 3, scale =
       x[[j]]$smooth.construct[[sj]]$state$fitted.values <- x[[j]]$smooth.construct[[sj]]$fit.fun(x[[j]]$smooth.construct[[sj]]$X,
         get.par(tpar, "b"))
       eta[[j]] <- eta[[j]] + fitted(x[[j]]$smooth.construct[[sj]]$state)
-      lprior <- lprior + x[[j]]$smooth.construct[[sj]]$prior(c(tpar, get.state(x[[j]]$smooth.construct[[sj]], "tau2")))
+      lprior <- lprior + x[[j]]$smooth.construct[[sj]]$prior(c(tpar, get.state(x[[j]]$smooth.construct[[sj]], "tau2"), x[[j]]$smooth.construct[[sj]]$fixed.hyper))
     }
   }
   ll <- family$loglik(y, family$map2par(eta))
@@ -1738,7 +1696,7 @@ grad_posterior <- function(par, x, y, family, ...)
   for(j in nx) {
     score <- family$score[[j]](y, family$map2par(eta), id = j)
     for(sj in names(x[[j]]$smooth.construct)) {
-      tgrad <- x[[j]]$smooth.construct[[sj]]$grad(score, x[[j]]$smooth.construct[[sj]]$state$parameters, full = FALSE)
+      tgrad <- x[[j]]$smooth.construct[[sj]]$grad(score, c(x[[j]]$smooth.construct[[sj]]$state$parameters, x[[j]]$smooth.construct[[sj]]$fixed.hyper), full = FALSE)
       grad <- c(grad, tgrad)
     }
   }
@@ -2787,6 +2745,10 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
   verbose = TRUE, digits = 4, flush = TRUE,
   nu = NULL, stop.nu = NULL, ...)
 {
+  method <- list(...)$method
+  if(is.null(method))
+    method <- 1
+
   if(is.null(attr(x, "bamlss.engine.setup")))
     x <- bamlss.engine.setup(x, update = bfit_iwls, ...)
 
@@ -2827,8 +2789,13 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
   if(adaptive & fuse) {
     if(verbose[2])
       cat("estimating adaptive weights\n")
-    b <- bfit(x = x, y = y, start = start, verbose = verbose[2], nu = nu, stop.nu = stop.nu, ...)
-    beta <- b$parameters
+    if(method == 1) {
+      b <- bfit(x = x, y = y, start = start, verbose = verbose[2], nu = nu, stop.nu = stop.nu, ...)
+      beta <- b$parameters
+    } else {
+      b <- opt(x = x, y = y, start = start, verbose = verbose[2], ...)
+      beta <- par2list(b$parameters)
+    }
     for(i in names(x)) {
       for(j in names(x[[i]]$smooth.construct)) {
         if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth")) {
@@ -2885,6 +2852,8 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
           if(!is.null(start) & (l > 1)) {
             if(all(names(tau2) %in% names(start))) {
               start[names(tau2)] <- tau2
+            } else {
+              start <- c(start, tau2)
             }
           } else {
             start <- c(start, tau2)
@@ -2898,8 +2867,17 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
       start <- start[!duplicated(names(start))]
     }
 
-    b <- bfit(x = x, y = y, start = start, verbose = verbose[2], nu = nu, stop.nu = stop.nu, ...)
+    if(method == 1) {
+      b <- bfit(x = x, y = y, start = start, verbose = verbose[2], nu = nu, stop.nu = stop.nu, ...)
+    } else {
+      b <- opt(x = x, y = y, start = start, verbose = verbose[2], ...)
+    }
 
+    nic <- grep("ic", names(b), value = TRUE, ignore.case = TRUE)
+    if(!length(nic)) {
+      b$edf <- sum(abs(unlist(b$parameters)) > .Machine$double.eps^0.25)
+      b$BIC <- -2 * b$logLik + b$edf * log(nrow(y))
+    }
     nic <- grep("ic", names(b), value = TRUE, ignore.case = TRUE)
     par[[l]] <- unlist(b$parameters)
     mstats <- c(b$logLik, b$logPost, b[[nic]], b[["edf"]])
