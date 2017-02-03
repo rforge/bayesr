@@ -2790,7 +2790,7 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
     if(verbose[2])
       cat("estimating adaptive weights\n")
     if(method == 1) {
-      b <- bfit(x = x, y = y, start = start, verbose = verbose[2], nu = nu, stop.nu = stop.nu, ...)
+      b <- bfit(x = x, y = y, start = start, verbose = verbose[2], nu = TRUE, ...)
       beta <- b$parameters
     } else {
       b <- opt(x = x, y = y, start = start, verbose = verbose[2], ...)
