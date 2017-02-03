@@ -429,6 +429,8 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
       k <- -1
       m <- NA
       xt <- list(...)
+      if("xt" %in% names(xt))
+        xt <- xt[["xt"]]
       if(is.null(xt$lambda))
         xt$lambda <- 100
       if("m" %in% names(xt))
