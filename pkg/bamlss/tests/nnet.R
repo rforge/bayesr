@@ -94,7 +94,7 @@ fit.nn <- function(x, y, k = 10, start = NULL,
     for(i in 1:m) {
       for(j in 1:m) {
         if(j <= i) {
-          h[i, j] <- crossprod(gnn[[i]](w), gnn[[j]](w))
+          h[i, j] <- crossprod(gnn[[i]](w), 2 * gnn[[j]](w))
         }
         h[j, i] <- h[i, j]
       }
@@ -151,11 +151,11 @@ fit.nn <- function(x, y, k = 10, start = NULL,
 }
 
 
-f <- bamlss:::simfun("complicated")
+f <- bamlss:::simfun("pick")
 
 n <- 300
 x <- seq(0, 1, length = n)
 y <- 1.2 + f(x) + rnorm(n, sd = 0.1)
 
-b <- fit.nn(x, y, k = 12, method = "optim", plot = TRUE)
+b <- fit.nn(x, y, k = 10, method = "nr", plot = TRUE)
 
