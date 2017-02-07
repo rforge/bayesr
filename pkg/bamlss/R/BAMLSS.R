@@ -2002,7 +2002,7 @@ as.list.Formula <- function(x)
 bamlss.formula <- function(formula, family = NULL, specials = NULL, ...)
 {
   if(is.null(specials))
-    specials <- c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "nnet")
+    specials <- c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n")
   if(inherits(formula, "bamlss.formula"))
     return(formula)
   if(!is.list(formula)) {
@@ -2229,7 +2229,7 @@ make_fFormula <- function(formula)
 all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, intercept = FALSE, type = 1)
 {
   env <- environment(formula)
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "nnet"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n"))
   tf <- terms(formula, specials = specials, keep.order = TRUE)
   ## sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
@@ -2279,7 +2279,7 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
 all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
 {
   env <- environment(formula)
-  specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "nnet", specials))
+  specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n", specials))
   tf <- terms(formula, specials = specials, keep.order = FALSE)
   ## sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
@@ -4204,20 +4204,20 @@ Predict.matrix.lasso.smooth <- function(object, data)
 
 
 ## Neural networks.
-nnet <- function(..., k = 10, xt = list(), id = NULL)
+n <- function(..., k = 10, xt = list(), id = NULL)
 {
   vars <- as.list(substitute(list(...)))[-1]
   d <- length(vars)
   term <- deparse(vars[[1]], backtick = TRUE, width.cutoff = 500)
   if(term[1] == ".") 
-    stop("nnet(.) not yet supported.")
+    stop("n(.) not yet supported.")
   if(d > 1) 
     for(i in 2:d) {
       term[i] <- deparse(vars[[i]], backtick = TRUE, width.cutoff = 500)
       if(term[i] == ".") 
-        stop("nnet(.) not yet supported.")
+        stop("n(.) not yet supported.")
     }
-  label <- paste("nnet(", paste(term, collapse = ","), if(!is.null(id)) paste(",id=", id, sep = "") else NULL, ")", sep = "")
+  label <- paste("n(", paste(term, collapse = ","), if(!is.null(id)) paste(",id=", id, sep = "") else NULL, ")", sep = "")
   ret <- list("term" = term, "label" = label, "k" = k, "xt" = xt, "special" = TRUE, "by" = "NA")
   class(ret) <- "nnet.smooth.spec"
   ret
@@ -4231,15 +4231,63 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     if(!is.null(names(b)))
       b <- get.par(b, "b")
     f <- X %*% b[-1]
-    f <- b[1] * 1 / (1 + exp(-f))
+    f <- b[1] / (1 + exp(-f))
     if(!is.null(object$xt$force.center))
       f <- f - mean(f, na.rm = TRUE)
     return(as.numeric(f))
   }
 
+  getU <- function(X, b) {
+    if(!is.null(names(b)))
+      b <- get.par(b, "b")
+    f <- -1 * (X %*% b[-1])
+    u1 <- 1/(1 + exp(f))
+    u2 <- b[1] * exp(f)/(1 + exp(f))^2
+    k <- ncol(X)
+    U <- matrix(0, nrow = length(u1), ncol = k - 1)
+    for(j in 2:k)
+      U[, j - 1] <- b[1] * (exp(f) * X[, j])/(1 + exp(f))^2
+    U <- cbind(u1, u2, U)
+    U[is.na(U)] <- 0.1
+    return(U)
+  }
+
+  update_nn <- function(x, family, y, eta, id, weights, criterion, ...)
+  {
+    peta <- family$map2par(eta)
+    hess <- process.derivs(family$hess[[id]](y, peta, id = id, ...), is.weight = TRUE)
+    score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
+
+    b0 <- get.state(x, "b")
+
+    U <- getU(x$X, b0)
+
+    UWU <- crossprod(U * (-1 * hess), U)
+    H <- matrix_inv(UWU)
+    s <- drop(colSums(U * score))
+
+    b1 <- drop(b0 - H %*% s)
+    names(b1) <- names(b0)
+
+    x$state$parameters <- set.par(x$state$parameters, b1, "b")
+    x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
+    x$state$edf <- sum_diag(UWU %*% H)
+
+    return(x$state)
+  }
+
   labels <- character(object$k)
   lab0 <- strsplit(object$label, "", fixed = TRUE)[[1]]
   lab0 <- lab0[-length(lab0)]
+
+  nr <- length(data[[1]])
+  binning <- list(
+    "match.index" = 1:nr,
+    "nodups" = 1:nr,
+    "order" = 1:nr,
+    "sorted.index" = 1:nr
+  )
+  nu <- length(binning$nodups)
 
   for(j in 1:object$k) {
     rval[[j]] <- list()
@@ -4254,9 +4302,13 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     rval[[j]]$special <- TRUE
     rval[[j]]$update <- bfit_optim
     rval[[j]]$propose <- GMCMC_slice
-    rval[[j]]$prior <- function(b) { sum(dnorm(get.par(b, "b"), sd = 1000, log = TRUE)) }
+    rval[[j]]$weights <- rep(0, length = nu)
+    rval[[j]]$rres <- rep(0, length = nu)
+    rval[[j]]$binning <- binning
+    rval[[j]]$fit.reduced <- rep(0, length = nu)
+    rval[[j]]$prior <- function(b) { .Machine$double.eps }
     rval[[j]]$state <- list()
-    rval[[j]]$state$parameters <- runif(ncol(rval[[j]]$X) + 1)
+    rval[[j]]$state$parameters <- runif(ncol(rval[[j]]$X) + 1, 0, 0.001)
     names(rval[[j]]$state$parameters) <- paste("b", 1:length(rval[[j]]$state$parameters), sep = "")
     rval[[j]]$state$fitted.values <- rval[[j]]$fit.fun(rval[[j]]$X, rval[[j]]$state$parameters)
     rval[[j]]$state$edf <- ncol(rval[[j]]$X) + 1
@@ -5547,7 +5599,7 @@ print.bamlss.formula <- function(x, ...) {
 drop.terms.bamlss <- function(f, pterms = TRUE, sterms = TRUE,
   specials = NULL, keep.response = TRUE, keep.intercept = TRUE, data = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "nnet"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n"))
   if(!inherits(f, "formula")) {
     if(!is.null(f$terms)) {
       f <- f$terms
@@ -5620,7 +5672,7 @@ terms.bamlss <- terms.bamlss.frame <- terms.bamlss.formula <- function(x, specia
   if(!inherits(x, "bamlss.formula"))
     x <- bamlss.formula(x, ...)
   env <- environment(x)
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "nnet"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n"))
   elmts <- c("formula", "fake.formula")
   if(!any(names(x) %in% elmts) & !inherits(x, "formula")) {
     if(!is.null(model)) {
@@ -5746,7 +5798,7 @@ has_response <- function(x)
 
 has_sterms <- function(x, specials = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "nnet"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n"))
   if(inherits(x, "formula"))
     x <- terms(x, specials = specials)
   if(!inherits(x, "terms"))
@@ -5756,7 +5808,7 @@ has_sterms <- function(x, specials = NULL)
 
 has_pterms <- function(x, specials = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "nnet"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n"))
   if(inherits(x, "formula"))
     x <- terms(x, specials = specials)
   if(!inherits(x, "terms"))
@@ -5769,7 +5821,7 @@ has_pterms <- function(x, specials = NULL)
 
 get_pterms_labels <- function(x, specials = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "nnet"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n"))
   tl <- if(has_pterms(x, specials)) {
     x <- drop.terms.bamlss(x, pterms = TRUE, sterms = FALSE,
       keep.response = FALSE, specials = specials)
@@ -5781,7 +5833,7 @@ get_pterms_labels <- function(x, specials = NULL)
 get_sterms_labels <- function(x, specials = NULL)
 {
   env <- environment(x)
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "nnet"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n"))
   if(has_sterms(x, specials)) {
     x <- drop.terms.bamlss(x, pterms = FALSE, sterms = TRUE,
       keep.response = FALSE, specials = specials)
@@ -5874,7 +5926,7 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
       if(length(ib <- grep("by=", tl2, fixed = TRUE))) {
         tl2[ib] <- gsub(")", "", tl2[ib], fixed = TRUE)
       }
-      if(length(nn <- grep("nnet(", tl2, fixed = TRUE))) {
+      if(length(nn <- grep("n(", tl2, fixed = TRUE))) {
         tl2[nn] <- sapply(strsplit(tl2[nn], ""), function(x) {
           paste(x[-length(x)], collapse = "")
         })

@@ -839,7 +839,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
           ## Compute working observations.
           z <- eta[[nx[j]]] + 1 / hess * score
-        } else z <- hess <- NULL
+        } else z <- hess <- score <- NULL
 
         if(iter < 2)
           eta[[nx[j]]] <- get.eta(x)[[nx[j]]]
@@ -848,7 +848,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         if(inner) {
           tbf <- inner_bf(x[[nx[j]]]$smooth.construct, y, eta, family,
             edf = edf, id = nx[j], z = z, hess = hess, weights = weights[[nx[j]]],
-            criterion = criterion, iteration = iter, nu = nu)
+            criterion = criterion, iteration = iter, nu = nu, score = score)
           x[[nx[j]]]$smooth.construct <- tbf$x
           edf <- tbf$edf
           eta <- tbf$eta
@@ -858,7 +858,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
             ## Get updated parameters.
             p.state <- x[[nx[j]]]$smooth.construct[[sj]]$update(x[[nx[j]]]$smooth.construct[[sj]],
               family, y, eta, nx[j], edf = edf, z = z, hess = hess, weights = weights[[nx[j]]],
-              iteration = iter, criterion = criterion)
+              iteration = iter, criterion = criterion, score = score)
 
             ## Compute equivalent degrees of freedom.
             edf <- edf - x[[nx[j]]]$smooth.construct[[sj]]$state$edf + p.state$edf
