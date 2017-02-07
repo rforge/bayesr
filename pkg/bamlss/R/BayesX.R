@@ -325,7 +325,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           }
           if((length(tl) > 1) & is.user(x[[i]]$smooth.construct[[j]]) & !is.tx(x[[i]]$smooth.construct[[j]]))
             tl <- paste(tl, collapse = "")
-          term <- paste("_", paste(tl, collapse = "_"), "_", sep = "")
+          term <- paste(if(is.user(x[[i]]$smooth.construct[[j]])) "of" else NULL, "_", paste(tl, collapse = "_"), "_", "sample", sep = "")
           #term <- paste("of", term, "sample", sep = "")
           sf <- grepl(paste("_", i, "_", sep = ""), sfiles, fixed = TRUE) & grepl(term, sfiles, fixed = TRUE) & !grepl("_variance_", sfiles, fixed = TRUE)
           sf <- sfiles[sf]
