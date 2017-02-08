@@ -2028,7 +2028,11 @@ boost <- function(x, y, family,
       ## Fit to gradient.
       for(j in names(x[[i]]$smooth.construct)) {
         ## Get updated parameters.
-        states[[i]][[j]] <- .Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu, rho)
+        states[[i]][[j]] <- if(is.null(x[[i]]$smooth.construct[[j]][["boost.fit"]])) {
+          .Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu, rho)
+        } else {
+          x[[i]]$smooth.construct[[j]][["boost.fit"]](x[[i]]$smooth.construct[[j]], grad, nu, rho)
+        }
 
         ## Get rss.
         rss[[i]][j] <- states[[i]][[j]]$rss
@@ -2039,7 +2043,14 @@ boost <- function(x, y, family,
 
       ## Compute likelihood contribution.
       eta[[i]] <- eta[[i]] + fitted(states[[i]][[select[i]]])
-      loglik[i] <- -1 * (ll - family$loglik(y, family$map2par(eta)))
+      llf <- family$loglik(y, family$map2par(eta))
+      loglik[i] <- -1 * (ll - llf)
+
+      if(loglik[i] > 40000) {
+        print(as.character(c(ll, llf)))
+        stop()
+      }
+
       eta[[i]] <- eta0[[i]]
     }
 
