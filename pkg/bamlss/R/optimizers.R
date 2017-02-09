@@ -901,7 +901,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
                 lpost1 <- family$loglik(y, family$map2par(eta2)) + lp + x[[nx[j]]]$smooth.construct[[sj]]$prior(p.state$parameters)
                 if(lpost1 < lpost0) {
                   p.state <- x[[nx[j]]]$smooth.construct[[sj]]$state
-                  warning(paste("logPost is decreasing updating term: ", nx[j], ", "
+                  warning(paste("logPost is decreasing updating term: ", nx[j], ", ",
                     x[[nx[j]]]$smooth.construct[[sj]]$label, "; not updated, diff:", lpost1 - lpost0, sep = ""))
                 }
               }
