@@ -702,6 +702,8 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
   criterion <- match.arg(criterion)
   np <- length(nx)
+  if(nu < 0)
+    nu <- NULL
 
   no_ff <- !inherits(y, "ffdf")
 
@@ -865,27 +867,43 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
             ## Update predictor and smooth fit.
             if(!is.null(nu)) {
-              if(!is.numeric(nu)) {
-                lp <- get.log.prior(x) - x[[nx[j]]]$smooth.construct[[sj]]$prior(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters)
-                objfun <- function(nu) {
-                  fit <- nu * p.state$fitted.values + (1 - nu) * x[[nx[j]]]$smooth.construct[[sj]]$state$fitted.values
-                  eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth.construct[[sj]]$state) + fit
-                  p.state$parameters <- set.par(p.state$parameters,
-                    nu * get.par(p.state$parameters, "b") +
-                    (1 - nu) * get.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, "b"), "b")
-                  lp <- family$loglik(y, family$map2par(eta)) + x[[nx[j]]]$smooth.construct[[sj]]$prior(p.state$parameters)
-                  -lp
+              lp0 <- get.log.prior(x)
+              lpost0 <- family$loglik(y, family$map2par(eta)) + lp0
+              lp <- lp0 - x[[nx[j]]]$smooth.construct[[sj]]$prior(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters)
+
+              eta2 <- eta
+              eta2[[nx[j]]] <- eta2[[nx[j]]] - x[[nx[j]]]$smooth.construct[[sj]]$state$fitted.values
+
+              b0 <- get.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, "b")
+              b1 <- get.par(p.state$parameters, "b")
+
+              objfun <- function(nu) {
+                p.state$parameters <- set.par(p.state$parameters, nu * b1 + (1 - nu) * b0, "b")
+                eta2[[nx[j]]] <- eta2[[nx[j]]] + x[[nx[j]]]$smooth.construct[[sj]]$fit.fun(x[[nx[j]]]$smooth.construct[[sj]]$X,
+                  get.par(p.state$parameters, "b"))
+                lp2 <- family$loglik(y, family$map2par(eta2)) + lp + x[[nx[j]]]$smooth.construct[[sj]]$prior(p.state$parameters)
+                -lp2
+              }
+
+              lpost1 <- objfun(1) * -1
+
+              if(lpost1 < lpost0) {
+                if(!is.numeric(nu)) {
+                  nuo <- optimize(f = objfun, interval = c(0, 1))$minimum
+                } else {
+                  nuo <- nu
                 }
-                nuo <- optimize(f = objfun, interval = c(0, 1))$minimum
-                p.state$fitted.values <- nuo * p.state$fitted.values + (1 - nuo) * x[[nx[j]]]$smooth.construct[[sj]]$state$fitted.values
-                p.state$parameters <- set.par(p.state$parameters,
-                  nuo * get.par(p.state$parameters, "b") +
-                  (1 - nuo) * get.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, "b"), "b")
-              } else {
-                p.state$fitted.values <- nu * p.state$fitted.values + (1 - nu) * x[[nx[j]]]$smooth.construct[[sj]]$state$fitted.values
-                p.state$parameters <- set.par(p.state$parameters,
-                  nu * get.par(p.state$parameters, "b") +
-                  (1 - nu) * get.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, "b"), "b")
+
+                p.state$parameters <- set.par(p.state$parameters, nuo * b1 + (1 - nuo) * b0, "b")
+                p.state$fitted.values <- x[[nx[j]]]$smooth.construct[[sj]]$fit.fun(x[[nx[j]]]$smooth.construct[[sj]]$X,
+                  get.par(p.state$parameters, "b"))
+                eta2[[nx[j]]] <- eta2[[nx[j]]] + p.state$fitted.values
+                lpost1 <- family$loglik(y, family$map2par(eta2)) + lp + x[[nx[j]]]$smooth.construct[[sj]]$prior(p.state$parameters)
+                if(lpost1 < lpost0) {
+                  p.state <- x[[nx[j]]]$smooth.construct[[sj]]$state
+                  warning(paste("logPost is decreasing updating term", nx[j],
+                    x[[nx[j]]]$smooth.construct[[sj]]$label, ", not updated, diff:", lpost1 - lpost0))
+                }
               }
             }
 
@@ -2797,14 +2815,19 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
 
   fuse <- if(is.null(fuse)) FALSE else any(fuse)
 
+  if(!is.null(nu))
+    nu <- rep(nu, length.out = 2)
+  if(!is.null(stop.nu))
+    stop.nu <- rep(stop.nu, length.out = 2)
+
   if(adaptive & fuse) {
-    if(verbose[2])
+    if(verbose[1])
       cat("estimating adaptive weights\n")
     if(method == 1) {
-      b <- bfit(x = x, y = y, start = start, verbose = verbose[2], nu = TRUE, ...)
+      b <- bfit(x = x, y = y, start = start, verbose = verbose[1], nu = nu[2], stop.nu = stop.nu[2], ...)
       beta <- b$parameters
     } else {
-      b <- opt(x = x, y = y, start = start, verbose = verbose[2], ...)
+      b <- opt(x = x, y = y, start = start, verbose = verbose[1], ...)
       beta <- par2list(b$parameters)
     }
     for(i in names(x)) {
@@ -2879,7 +2902,7 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
     }
 
     if(method == 1) {
-      b <- bfit(x = x, y = y, start = start, verbose = verbose[2], nu = nu, stop.nu = stop.nu, ...)
+      b <- bfit(x = x, y = y, start = start, verbose = verbose[2], nu = nu[2], stop.nu = stop.nu[2], ...)
     } else {
       b <- opt(x = x, y = y, start = start, verbose = verbose[2], ...)
     }

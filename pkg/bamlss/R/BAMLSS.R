@@ -4245,10 +4245,12 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     u2 <- b[1] * exp(f)/(1 + exp(f))^2
     k <- ncol(X)
     U <- matrix(0, nrow = length(u1), ncol = k - 1)
-    for(j in 2:k)
+    for(j in 2:k) {
       U[, j - 1] <- b[1] * (exp(f) * X[, j])/(1 + exp(f))^2
+    }
     U <- cbind(u1, u2, U)
-    U[is.na(U)] <- 0.1
+print(max(U))
+Sys.sleep(1)
     return(U)
   }
 
@@ -4268,6 +4270,8 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
     b1 <- drop(b0 - H %*% s)
     names(b1) <- names(b0)
+
+print(cbind(b0, b1))
 
     x$state$parameters <- set.par(x$state$parameters, b1, "b")
     x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
@@ -4293,6 +4297,13 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     rval[[j]] <- list()
     rval[[j]]$fixed <- TRUE
     rval[[j]]$X <- model.matrix(as.formula(paste("~ 1 +", paste(object$term, collapse = "+"))), data = data)
+    if(ncol(rval[[j]]$X) > 1) {
+      means <- apply(rval[[j]]$X[, -1, drop = FALSE], 2, mean)
+      sds <- apply(rval[[j]]$X[, -1, drop = FALSE], 2, sd)
+      for(i in 2:ncol(rval[[j]]$X))
+        rval[[j]]$X[, i] <- (rval[[j]]$X[, i] - means[i - 1]) / sds[i - 1]
+      rval[[j]]$scale <- list("mean" = means, "sd" = sds)
+    }
     colnames(rval[[j]]$X) <- NULL
     rval[[j]]$term <- object$term
     rval[[j]]$dim <- ncol(rval[[j]]$X) - 1L
@@ -4300,7 +4311,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     labels[j] <- rval[[j]]$label
     rval[[j]]$fit.fun <- fit_nn
     rval[[j]]$special <- TRUE
-    rval[[j]]$update <- bfit_optim
+    rval[[j]]$update <- update_nn
     rval[[j]]$propose <- GMCMC_slice
     rval[[j]]$weights <- rep(0, length = nu)
     rval[[j]]$rres <- rep(0, length = nu)
@@ -4324,7 +4335,12 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
 Predict.matrix.nnet.smooth <- function(object, data)
 {
-  model.matrix(as.formula(paste("~ 1 +", paste(object$term, collapse = "+"))), data = as.data.frame(data))
+  X <- model.matrix(as.formula(paste("~ 1 +", paste(object$term, collapse = "+"))), data = as.data.frame(data))
+  if(ncol(X) > 1) {
+    for(j in 2:ncol(X))
+      X[, j] <- (X[, j] - object$scale$mean[j - 1]) / object$scale$sd[j - 1]
+  }
+  X
 }
 
 
