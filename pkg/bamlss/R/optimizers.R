@@ -879,19 +879,24 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
                 eta2[[nx[j]]] <- eta2[[nx[j]]] + x[[nx[j]]]$smooth.construct[[sj]]$fit.fun(x[[nx[j]]]$smooth.construct[[sj]]$X,
                   get.par(p.state$parameters, "b"))
                 lp2 <- family$loglik(y, family$map2par(eta2)) + lp + x[[nx[j]]]$smooth.construct[[sj]]$prior(p.state$parameters)
-                if(diff)
+                if(diff) {
                   return(-1 * (lp2 - lpost0))
-                else
+                } else
                   return(lp2)
               }
 
               lpost1 <- objfun(1, diff = FALSE)
 
-              if(lpost1 < lpost0) {
+              if(lpost1 <= lpost0) {
                 if(!is.numeric(nu)) {
                   nuo <- optimize(f = objfun, interval = c(0, 1))$minimum
                 } else {
+                  nu.iter <- 0
                   nuo <- nu
+                  while((objfun(nuo, diff = FALSE) <= lpost0) & (nu.iter < 100)) {
+                    nuo <- nuo / 2
+                    nu.iter <- nu.iter + 1
+                  }
                 }
 
                 p.state$parameters <- set.par(p.state$parameters, nuo * b1 + (1 - nuo) * b0, "b")
@@ -899,7 +904,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
                   get.par(p.state$parameters, "b"))
                 eta2[[nx[j]]] <- eta2[[nx[j]]] + p.state$fitted.values
                 lpost1 <- family$loglik(y, family$map2par(eta2)) + lp + x[[nx[j]]]$smooth.construct[[sj]]$prior(p.state$parameters)
-                if(lpost1 < lpost0) { 
+                if(lpost1 < lpost0) {
                   p.state <- x[[nx[j]]]$smooth.construct[[sj]]$state
                   warning(paste("logPost is decreasing updating term: ", nx[j], ", ",
                     x[[nx[j]]]$smooth.construct[[sj]]$label, "; not updated, diff: ", lpost1 - lpost0, sep = ""))
@@ -2825,7 +2830,7 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
 
   if(adaptive & fuse) {
     if(verbose[1])
-      cat("estimating adaptive weights\n")
+      cat("Estimating adaptive weights\n---\n")
     if(method == 1) {
       b <- bfit(x = x, y = y, start = start, verbose = verbose[1], nu = nu[2], stop.nu = stop.nu[2], ...)
       beta <- b$parameters
