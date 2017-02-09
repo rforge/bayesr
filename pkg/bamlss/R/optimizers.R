@@ -877,15 +877,18 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
               b0 <- get.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, "b")
               b1 <- get.par(p.state$parameters, "b")
 
-              objfun <- function(nu) {
+              objfun <- function(nu, diff = TRUE) {
                 p.state$parameters <- set.par(p.state$parameters, nu * b1 + (1 - nu) * b0, "b")
                 eta2[[nx[j]]] <- eta2[[nx[j]]] + x[[nx[j]]]$smooth.construct[[sj]]$fit.fun(x[[nx[j]]]$smooth.construct[[sj]]$X,
                   get.par(p.state$parameters, "b"))
                 lp2 <- family$loglik(y, family$map2par(eta2)) + lp + x[[nx[j]]]$smooth.construct[[sj]]$prior(p.state$parameters)
-                -1 * (lp2 - lpost0)
+                if(diff)
+                  return(-1 * (lp2 - lpost0))
+                else
+                  return(lp2)
               }
 
-              lpost1 <- objfun(1) * -1
+              lpost1 <- objfun(1, diff = FALSE)
 
               if(lpost1 < lpost0) {
                 if(!is.numeric(nu)) {
