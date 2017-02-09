@@ -882,7 +882,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
                 eta2[[nx[j]]] <- eta2[[nx[j]]] + x[[nx[j]]]$smooth.construct[[sj]]$fit.fun(x[[nx[j]]]$smooth.construct[[sj]]$X,
                   get.par(p.state$parameters, "b"))
                 lp2 <- family$loglik(y, family$map2par(eta2)) + lp + x[[nx[j]]]$smooth.construct[[sj]]$prior(p.state$parameters)
-                -lp2
+                -1 * (lp2 - lpost0)
               }
 
               lpost1 <- objfun(1) * -1
@@ -899,7 +899,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
                   get.par(p.state$parameters, "b"))
                 eta2[[nx[j]]] <- eta2[[nx[j]]] + p.state$fitted.values
                 lpost1 <- family$loglik(y, family$map2par(eta2)) + lp + x[[nx[j]]]$smooth.construct[[sj]]$prior(p.state$parameters)
-                if(lpost1 < lpost0) {
+                if(lpost1 < lpost0) { 
                   p.state <- x[[nx[j]]]$smooth.construct[[sj]]$state
                   warning(paste("logPost is decreasing updating term: ", nx[j], ", ",
                     x[[nx[j]]]$smooth.construct[[sj]]$label, "; not updated, diff:", lpost1 - lpost0, sep = ""))
