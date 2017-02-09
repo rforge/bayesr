@@ -862,9 +862,6 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
               family, y, eta, nx[j], edf = edf, z = z, hess = hess, weights = weights[[nx[j]]],
               iteration = iter, criterion = criterion, score = score)
 
-            ## Compute equivalent degrees of freedom.
-            edf <- edf - x[[nx[j]]]$smooth.construct[[sj]]$state$edf + p.state$edf
-
             ## Update predictor and smooth fit.
             if(!is.null(nu)) {
               lp0 <- get.log.prior(x)
@@ -909,6 +906,9 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
                 }
               }
             }
+
+            ## Compute equivalent degrees of freedom.
+            edf <- edf - x[[nx[j]]]$smooth.construct[[sj]]$state$edf + p.state$edf
 
             eta[[nx[j]]] <- eta[[nx[j]]] - fitted(x[[nx[j]]]$smooth.construct[[sj]]$state) + fitted(p.state)
 
