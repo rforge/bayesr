@@ -702,8 +702,11 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
   criterion <- match.arg(criterion)
   np <- length(nx)
-  if(nu < 0)
-    nu <- NULL
+
+  if(!is.null(nu)) {
+    if(nu < 0)
+      nu <- NULL
+  }
 
   no_ff <- !inherits(y, "ffdf")
 
@@ -737,7 +740,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   }
 
   inner_bf <- if(!mgcv) {
-    function(x, y, eta, family, edf, id, nu, ...) {
+    function(x, y, eta, family, edf, id, nu, logprior, ...) {
       eps0 <- eps + 1; iter <- 1
       while(eps0 > eps & iter < maxit) {
         eta0 <- eta
@@ -745,8 +748,59 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           ## Get updated parameters.
           p.state <- x[[sj]]$update(x[[sj]], family, y, eta, id, edf = edf, ...)
 
+          if(!is.null(nu)) {
+            lpost0 <- family$loglik(y, family$map2par(eta)) + logprior
+            lp <- logprior - x[[sj]]$prior(x[[sj]]$state$parameters)
+
+            eta2 <- eta
+            eta2[[id]] <- eta2[[id]] - x[[sj]]$state$fitted.values
+
+            b0 <- get.par(x[[sj]]$state$parameters, "b")
+            b1 <- get.par(p.state$parameters, "b")
+
+            objfun <- function(nu, diff = TRUE) {
+              p.state$parameters <- set.par(p.state$parameters, nu * b1 + (1 - nu) * b0, "b")
+              eta2[[id]] <- eta2[[id]] + x[[sj]]$fit.fun(x[[sj]]$X,
+                get.par(p.state$parameters, "b"))
+              lp2 <- family$loglik(y, family$map2par(eta2)) + lp + x[[sj]]$prior(p.state$parameters)
+              if(diff) {
+                return(-1 * (lp2 - lpost0))
+              } else
+                return(lp2)
+            }
+
+            lpost1 <- objfun(1, diff = FALSE)
+
+            if(lpost1 < lpost0) {
+              if(!is.numeric(nu)) {
+                nuo <- optimize(f = objfun, interval = c(0, 1))$minimum
+              } else {
+                nu.iter <- 0
+                nuo <- nu
+                while((objfun(nuo, diff = FALSE) <= lpost0) & (nu.iter < 100)) {
+                  nuo <- nuo / 2
+                  nu.iter <- nu.iter + 1
+                }
+              }
+
+              p.state$parameters <- set.par(p.state$parameters, nuo * b1 + (1 - nuo) * b0, "b")
+              p.state$fitted.values <- x[[sj]]$fit.fun(x[[sj]]$X,
+                get.par(p.state$parameters, "b"))
+              eta2[[id]] <- eta2[[id]] + p.state$fitted.values
+              lpost1 <- family$loglik(y, family$map2par(eta2)) + lp + x[[sj]]$prior(p.state$parameters)
+              if(lpost1 < lpost0) {
+                p.state <- x[[sj]]$state
+                warning(paste("logPost is decreasing updating term: ", id, ", ",
+                  x[[sj]]$label, "; not updated, diff: ", lpost1 - lpost0, sep = ""))
+              }
+            }
+          }
+
           ## Compute equivalent degrees of freedom.
           edf <- edf - x[[sj]]$state$edf + p.state$edf
+
+          ## Update log priors.
+          logprior <- logprior - x[[sj]]$prior(x[[sj]]$state$parameters) + x[[sj]]$prior(p.state$parameters)
 
           ## Update predictor and smooth fit.
           eta[[id]] <- eta[[id]] - fitted(x[[sj]]$state) + fitted(p.state)
@@ -850,7 +904,8 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         if(inner) {
           tbf <- inner_bf(x[[nx[j]]]$smooth.construct, y, eta, family,
             edf = edf, id = nx[j], z = z, hess = hess, weights = weights[[nx[j]]],
-            criterion = criterion, iteration = iter, nu = nu, score = score)
+            criterion = criterion, iteration = iter, nu = nu, score = score,
+            logprior = get.log.prior(x))
           x[[nx[j]]]$smooth.construct <- tbf$x
           edf <- tbf$edf
           eta <- tbf$eta
@@ -887,7 +942,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
               lpost1 <- objfun(1, diff = FALSE)
 
-              if(lpost1 <= lpost0) {
+              if(lpost1 < lpost0) {
                 if(!is.numeric(nu)) {
                   nuo <- optimize(f = objfun, interval = c(0, 1))$minimum
                 } else {
