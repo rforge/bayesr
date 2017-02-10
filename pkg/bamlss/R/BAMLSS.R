@@ -349,11 +349,13 @@ design.construct <- function(formula, data = NULL, knots = NULL,
                 smt <- smoothCon(tsm, xdata,
                   knots, absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons,
                   sparse.cons = sparse.cons)
+                smooth <- c(smooth, smt)
               }
             } else {
               smt <- smoothCon(tsm, data, knots,
                 absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons,
                 sparse.cons = sparse.cons)
+              smooth <- c(smooth, smt)
             }
           } else {
             if(is.null(tsm$by))
@@ -381,6 +383,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
                 } else {
                   class(smt2) <- c(class(smt2), "mgcv.smooth")
                   smt <- list(smt2)
+                  smooth <- c(smooth, smt)
                 }
               }
             } else {
@@ -390,10 +393,10 @@ design.construct <- function(formula, data = NULL, knots = NULL,
               } else {
                 class(smt2) <- c(class(smt2), "mgcv.smooth")
                 smt <- if(!inherits(smt2, "smooth.list")) list(smt2) else smt2
+                smooth <- c(smooth, smt)
               }
             }
           }
-          smooth <- c(smooth, smt)
         }
         if(length(smooth) > 0) {
           if(gam.side) {
@@ -4204,142 +4207,114 @@ Predict.matrix.lasso.smooth <- function(object, data)
 
 
 ## Neural networks.
-n <- function(..., k = 10, xt = list(), id = NULL)
+n <- function(..., k = 10)
 {
-  vars <- as.list(substitute(list(...)))[-1]
-  d <- length(vars)
-  term <- deparse(vars[[1]], backtick = TRUE, width.cutoff = 500)
-  if(term[1] == ".") 
-    stop("n(.) not yet supported.")
-  if(d > 1) 
-    for(i in 2:d) {
-      term[i] <- deparse(vars[[i]], backtick = TRUE, width.cutoff = 500)
-      if(term[i] == ".") 
-        stop("n(.) not yet supported.")
-    }
-  label <- paste("n(", paste(term, collapse = ","), if(!is.null(id)) paste(",id=", id, sep = "") else NULL, ")", sep = "")
-  ret <- list("term" = term, "label" = label, "k" = k, "xt" = xt, "special" = TRUE, "by" = "NA")
+  ret <- la(..., k = k)
+  ret$label <- gsub("la(", "n(", ret$label, fixed = TRUE)
   class(ret) <- "nnet.smooth.spec"
   ret
 }
 
 smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 {
-  rval <- list()
+  object <- smooth.construct.la.smooth.spec(object, data, knots)
+  object[!(names(object) %in% c("formula", "term", "label", "dim", "X", "xt", "lasso"))] <- NULL
 
-  fit_nn <- function(X, b, ...) {
+  nodes <- object$xt$k
+  object$X <- cbind(1, object$X)
+  colnames(object$X) <- NULL
+  nc <- ncol(object$X) + 1
+  npar <- nodes * nc
+
+  nid <- split(1:npar, factor(sort(rep(1:nodes, times = nc))))
+
+  object$fit.fun <- function(X, b, ...) {
     if(!is.null(names(b)))
       b <- get.par(b, "b")
-    f <- X %*% b[-1]
-    f <- b[1] / (1 + exp(-f))
+    fit <- 0
+    for(j in seq_along(nid)) {
+      f <- X %*% b[nid[[j]]][-1]
+      fit <- fit + b[nid[[j]]][1] / (1 + exp(-f))
+    }
     if(!is.null(object$xt$force.center))
-      f <- f - mean(f, na.rm = TRUE)
-    return(as.numeric(f))
+      fit <- fit - mean(fit, na.rm = TRUE)
+    return(fit)
   }
+
+  object$fixed <- TRUE
+  object$state$parameters <- runif(npar, 0.00001, 0.0001)
+  names(object$state$parameters) <- paste("b", 1:npar, sep = "")
+  object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
+  object$state$edf <- npar
+  object$special.npar <- npar
+  object$prior <- function(b) { .Machine$double.eps }
 
   getU <- function(X, b) {
     if(!is.null(names(b)))
       b <- get.par(b, "b")
-    f <- -1 * (X %*% b[-1])
-    u1 <- 1/(1 + exp(f))
-    u2 <- b[1] * exp(f)/(1 + exp(f))^2
     k <- ncol(X)
-    U <- matrix(0, nrow = length(u1), ncol = k - 1)
-    for(j in 2:k) {
-      U[, j - 1] <- b[1] * (exp(f) * X[, j])/(1 + exp(f))^2
+    U <- matrix(0, nrow(X), length(b))
+    i <- 1
+    for(j in seq_along(nid)) {
+      f <- -1 * (X %*% b[nid[[j]]][-1])
+      U[, i] <- 1/(1 + exp(f))
+      i <- i + 1
+      U[, i] <- b[nid[[j]]][1] * exp(f)/(1 + exp(f))^2
+      i <- i + 1
+      for(jj in 2:k) {
+        U[, i] <- b[nid[[j]]][1] * (exp(f) * X[, jj])/(1 + exp(f))^2
+        i <- i + 1
+      }
     }
-    U <- cbind(u1, u2, U)
-print(max(U))
-Sys.sleep(1)
     return(U)
   }
 
   update_nn <- function(x, family, y, eta, id, weights, criterion, ...)
   {
+    args <- list(...)
+
     peta <- family$map2par(eta)
-    hess <- process.derivs(family$hess[[id]](y, peta, id = id, ...), is.weight = TRUE)
-    score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
+
+    hess <- if(is.null(args$hess)) {
+      process.derivs(family$hess[[id]](y, peta, id = id, ...), is.weight = TRUE)
+    } else args$hess
+
+    score <- if(is.null(args$score)) {
+      process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
+    } else args$score
+
+    if(!is.null(weights))
+      hess <- hess * weights
 
     b0 <- get.state(x, "b")
 
     U <- getU(x$X, b0)
 
-    UWU <- crossprod(U * (-1 * hess), U)
+    UWU <- -1 * crossprod(U * hess, U)
     H <- matrix_inv(UWU)
     s <- drop(colSums(U * score))
 
     b1 <- drop(b0 - H %*% s)
     names(b1) <- names(b0)
 
-print(cbind(b0, b1))
-
     x$state$parameters <- set.par(x$state$parameters, b1, "b")
     x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
-    x$state$edf <- sum_diag(UWU %*% H)
+    x$state$edf <- npar
 
     return(x$state)
   }
 
-  labels <- character(object$k)
-  lab0 <- strsplit(object$label, "", fixed = TRUE)[[1]]
-  lab0 <- lab0[-length(lab0)]
+  object$update <- update_nn # bfit_optim
 
-  nr <- length(data[[1]])
-  binning <- list(
-    "match.index" = 1:nr,
-    "nodups" = 1:nr,
-    "order" = 1:nr,
-    "sorted.index" = 1:nr
-  )
-  nu <- length(binning$nodups)
+  class(object) <- c("nnet.smooth", "no.mgcv", "special")
 
-  for(j in 1:object$k) {
-    rval[[j]] <- list()
-    rval[[j]]$fixed <- TRUE
-    rval[[j]]$X <- model.matrix(as.formula(paste("~ 1 +", paste(object$term, collapse = "+"))), data = data)
-    if(ncol(rval[[j]]$X) > 1) {
-      means <- apply(rval[[j]]$X[, -1, drop = FALSE], 2, mean)
-      sds <- apply(rval[[j]]$X[, -1, drop = FALSE], 2, sd)
-      for(i in 2:ncol(rval[[j]]$X))
-        rval[[j]]$X[, i] <- (rval[[j]]$X[, i] - means[i - 1]) / sds[i - 1]
-      rval[[j]]$scale <- list("mean" = means, "sd" = sds)
-    }
-    colnames(rval[[j]]$X) <- NULL
-    rval[[j]]$term <- object$term
-    rval[[j]]$dim <- ncol(rval[[j]]$X) - 1L
-    rval[[j]]$label <- paste(c(lab0, ",id=", j, ")"), collapse = "")
-    labels[j] <- rval[[j]]$label
-    rval[[j]]$fit.fun <- fit_nn
-    rval[[j]]$special <- TRUE
-    rval[[j]]$update <- update_nn
-    rval[[j]]$propose <- GMCMC_slice
-    rval[[j]]$weights <- rep(0, length = nu)
-    rval[[j]]$rres <- rep(0, length = nu)
-    rval[[j]]$binning <- binning
-    rval[[j]]$fit.reduced <- rep(0, length = nu)
-    rval[[j]]$prior <- function(b) { .Machine$double.eps }
-    rval[[j]]$state <- list()
-    rval[[j]]$state$parameters <- runif(ncol(rval[[j]]$X) + 1, 0, 0.001)
-    names(rval[[j]]$state$parameters) <- paste("b", 1:length(rval[[j]]$state$parameters), sep = "")
-    rval[[j]]$state$fitted.values <- rval[[j]]$fit.fun(rval[[j]]$X, rval[[j]]$state$parameters)
-    rval[[j]]$state$edf <- ncol(rval[[j]]$X) + 1
-    rval[[j]]$special.npar <- ncol(rval[[j]]$X) + 1 ## Important!
-    class(rval[[j]]) <- c("nnet.smooth", "no.mgcv", "special")
-  }
-
-  names(rval) <- labels
-  class(rval) <- c("no.mgcv", "special", "smooth.list")
-
-  rval
+  object
 }
 
 Predict.matrix.nnet.smooth <- function(object, data)
 {
-  X <- model.matrix(as.formula(paste("~ 1 +", paste(object$term, collapse = "+"))), data = as.data.frame(data))
-  if(ncol(X) > 1) {
-    for(j in 2:ncol(X))
-      X[, j] <- (X[, j] - object$scale$mean[j - 1]) / object$scale$sd[j - 1]
-  }
+  X <- cbind(1, Predict.matrix.lasso.smooth(object, data))
+  colnames(X) <- NULL
   X
 }
 
