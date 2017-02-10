@@ -19,7 +19,8 @@ la(formula, type = c("single", "multiple"), ...)
 ## Single Lasso smoothing parameter optimizer.
 lasso(x, y, start = NULL, adaptive = TRUE, lower = 0.001, upper = 1000,
   nlambda = 100, lambda = NULL, verbose = TRUE, digits = 4,
-  flush = TRUE, nu = NULL, stop.nu = NULL, ...)
+  flush = TRUE, nu = NULL, stop.nu = NULL,
+  ridge = .Machine$double.eps^0.25, ...)
 
 ## Plotting function for lasso() optimizer.
 lasso.plot(x, which = c("criterion", "parameters"),
@@ -60,6 +61,9 @@ lasso.coef(x, ...)
     parameter is optimized for each model term in each iteration of the backfitting algorithm.}
   \item{stop.nu}{Integer. Should step length reduction be stopped after \code{stop.nu} iterations
     of the Lasso algorithm?}
+  \item{ridge}{A ridge penalty parameter that should be used when finding adaptive weights, i.e.,
+    parameters from an unpenalized model. The ridge penalty is used to stabilize the estimation
+    in complex models.}
   \item{which}{Which of the two provided plots should be created?}
   \item{spar}{Should graphical parameters be set by the plotting function?}
   \item{name}{Character, the name of the coefficient group that should be plotted. Note that

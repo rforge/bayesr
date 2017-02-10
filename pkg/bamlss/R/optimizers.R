@@ -2835,7 +2835,7 @@ set.starting.values <- function(x, start)
 lasso <- function(x, y, start = NULL, adaptive = TRUE,
   lower = 0.001, upper = 1000,  nlambda = 100, lambda = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
-  nu = NULL, stop.nu = NULL, ...)
+  nu = NULL, stop.nu = NULL, ridge = .Machine$double.eps^0.25, ...)
 {
   method <- list(...)$method
   if(is.null(method))
@@ -2867,10 +2867,12 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
         x[[i]]$smooth.construct[[j]]$state$do.optim <- FALSE
         x[[i]]$smooth.construct[[j]]$fxsp <- TRUE
         fuse <- c(fuse, x[[i]]$smooth.construct[[j]]$fuse)
-        if(adaptive & x[[i]]$smooth.construct[[j]]$fuse) {
+        if(adaptive) {
           tau2 <- get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "tau2")
-          tau2 <- rep(1/.Machine$double.eps, length.out = length(tau2))
+          tau2 <- rep(1/ridge, length.out = length(tau2))
           x[[i]]$smooth.construct[[j]]$state$parameters <- set.par(x[[i]]$smooth.construct[[j]]$state$parameters, tau2, "tau2")
+          x[[i]]$smooth.construct[[j]]$LAPEN <- x[[i]]$smooth.construct[[j]]$S
+          x[[i]]$smooth.construct[[j]]$S <- list(diag(length(get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "b"))))
         }
       }
     }
@@ -2896,6 +2898,10 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
     for(i in names(x)) {
       for(j in names(x[[i]]$smooth.construct)) {
         if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth")) {
+          if(!is.null(x[[i]]$smooth.construct[[j]]$LAPEN)) {
+            x[[i]]$smooth.construct[[j]]$S <- x[[i]]$smooth.construct[[j]]$LAPEN
+            x[[i]]$smooth.construct[[j]]$LAPEN <- NULL
+          }
           if(x[[i]]$smooth.construct[[j]]$fuse) {
             if(is.list(b$parameters)) {
               beta <- get.par(b$parameters[[i]]$s[[j]], "b")
