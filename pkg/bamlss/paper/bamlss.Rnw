@@ -68,7 +68,7 @@
   Universit\"atsstr.~15\\
   6020 Innsbruck, Austria\\
   E-mail: \email{Nikolaus.Umlauf@uibk.ac.at}, \email{Achim.Zeileis@R-project.org}\\
-  URL: \url{http://eeecon.uibk.ac.at/~umlauf/}, \url{http://eeecon.uibk.ac.at/~zeileis/}\\
+  URL: \url{https://eeecon.uibk.ac.at/~umlauf/}, \url{https://eeecon.uibk.ac.at/~zeileis/}\\
 
   Nadja Klein\\
   Chairs of Statistics and Econometrics\\
@@ -167,10 +167,8 @@ details of the ``Lego bricks'' that form the estimation systems are presented. T
 Section~\ref{sec:strategies} describes computational strategies for the implementation of the
 framework. Finally, Section~\ref{sec:illustrations} illustrates the concept using two
 complex and computationally demanding illustrations: a large climatology model for daily precipitation
-observations using censored regression and a Cox model for continuous time with space-time
+observations using censored heteroscedastic regression and a Cox model for continuous time with space-time
 interactions.
-
-%% \newpage
 
 
 \section{Model structure} \label{sec:model}
@@ -311,8 +309,6 @@ $d_{\boldsymbol{\beta}_{jk}}( \cdot )$ and $d_{\boldsymbol{\tau}_{jk}}( \cdot )$
 beliefs about $\boldsymbol{\beta}_{jk}$, or for GAM-type models $\boldsymbol{\alpha}_{jk}$ usually
 holds the so-called penalty matrices, amongst others.
 
-
-%% \newpage
 
 
 \subsection{Model fitting} \label{sec:modelfit}
@@ -474,9 +470,6 @@ $q_{jk}( \cdot )$ generate parameter samples
 $\boldsymbol{\beta}_{jk}^{(t + 1)}$, $\boldsymbol{\tau}_{jk}^{(t + 1)}$ using (possibly)
 different sampling schemes like derivative-based Metropolis-Hastings and slice sampling, see
 Section~\ref{sec:bricksmodelfit}.
-
-
-%% \newpage
 
 
 \section{Lego bricks} \label{sec:legobricks}
@@ -675,7 +668,7 @@ More precisely, we first describe posterior mode updating as used within Algorit
 before we introduce several MCMC sampling schemes that can be employed in the updating
 Algorithm~\ref{fig:mcmc}.
 
-\newpage
+\pagebreak
 
 \subsubsection{Posterior mode} \label{sec:postmode}
 
@@ -1222,6 +1215,8 @@ where the first two lines basically represent the standard model frame specifica
 \caption{\label{fig:blocks} Flexible BAMLSS architecture.}
 \end{figure}
 
+\pagebreak
+
 The \code{formula} combines the classic \citet{bamlss:Wilkinson+Rogers:1973} symbolic description
 -- used in most standard \proglang{R} regression functions \citep{bamlss:Chambers+Hastie:1992} --
 with the infrastructure for smooth model terms like \fct{s}, \fct{te}, \fct{ti}, etc.
@@ -1265,12 +1260,9 @@ functions only a simple general format of function arguments and return values m
 More technical details are deferred to the documentation manual of package \pkg{bamlss}.
 
 
-\newpage
-
-
 \section{Illustrations} \label{sec:illustrations}
 
-\subsection{Precepitation climatolgy from daily observations} \label{sec:censreg}
+\subsection{Censored heteroscedastic precepitation climatolgy from daily data} \label{sec:censreg}
 
 Climatology models are one important component of the meteorological tool set. The accurate
 and complete knowledge of precipitation climatologies is especially relevant for problems involving
@@ -1453,72 +1445,68 @@ the variation of elevation of the meteorological stations used in this data set 
 \end{figure}
 
 
-\subsection{Cox model} \label{sec:coxreg}
+\subsection{Complex space-time interactions in a Cox model} \label{sec:coxreg}
+
+\readme{slightly rephrased section title and also many paragraphs}
 
 This analysis is based on the article of \citet{bamlss:Taylor:2015} and contributes to the developed
 model by inclusion of complex space-time interactions using the BAMLSS framework.
 
 The \emph{London Fire Brigade} (LFB, \url{http://www.london-fire.gov.uk/}) is one of the largest in
-the world. Each year, the LFB is
-called thousands of times, in most cases due to dwelling fires. Since the time it takes until a
-fire engine arrives at the scene after an emergency call has been received, an important question is
-how to reduce the response times in order to prevent further damage or fatal casualties. For this
-reason, the LFB's annual performance target is an average fire engine arrival time of six minutes at
-maximum. Clearly, it mostly depends on the distance of the responsible fire station to the site of
-how much damage can be prevented, besides, in some cases it may happen that fire engines are already
-in use at another fire scenery and therefore it also depends on the number of fire stations in the
-area. This is viewed as an optimization problem in \citet{bamlss:Taylor:2015}, i.e., he treats
-the question of possible improvements of response times according to space in a probabilistic way.
-Therefore, he analyzes the effect of fire station closures in 2014 using a parametric proportional
-hazards model and identify regions of possible concern about the number of available fire stations.
-To contribute to the topic, we apply an extended complex Cox model for continuous time on the
-2015 dwelling fire response time data of London and show how the generic framework presented
-in this paper can be utilized to set up new estimation algorithms for this type model.
+the world. Each year, the LFB is called thousands of times, in most cases due to dwelling fires.
+To prevent further damage or fatal casualties, a short arrival time is important, i.e., the
+time it takes until a fire engine arrives at the scene after an emergency call has been received.
+The LFB's annual performance target is an average fire engine arrival time of six minutes at maximum. 
+Clearly, this mostly depends on the distance between the site and the responsible fire station 
+but it may also depend on the number of fire stations in the area because fire engines may
+already be in use at another nearby fire scenery. Therefore, \citet{bamlss:Taylor:2015} analyzes
+the effect of fire station closures in 2014 using a parametric proportional hazards model to identify
+regions of possible concern about the number of available fire stations. To contribute to the topic,
+we apply an extended complex Cox model to the 2015 dwelling fire response time data and illustrate
+how the generic BAMLSS framework can be utilized to set up new estimation algorithms for this type
+of model.
 
-The data is freely available at the London DataStore (\url{http://data.london.gov.uk/}) with a UK
-Open Government Licence (OGL v2). The data set, also containing previous years, can be downloaded
-from
-\begin{center}
+The data is freely available from the London DataStore (\url{http://data.london.gov.uk/}) under the UK
+Open Government Licence (OGL v2). It can be downloaded from\linebreak
 \url{http://data.london.gov.uk/dataset/london-fire-brigade-incident-records}
-\end{center}
-A precompiled version of the 2015 data is available in the \pkg{bamlss} package.
+which\linebreak
+also contains previous year.
+%A precompiled version of the 2015 data is available in the \pkg{bamlss} package.
 
-The final 2015 dwelling fire data set consists of $5838$ fire events that have been received at
+The dwelling fire data for 2015 consists of $5838$ fire events that have been recorded at
 the $103$ fire stations. The distribution of dwelling fires and fire stations is shown in
-Figure~\ref{fig:londonfiredata}. The top left panel indicates that fire events are distributed
-all over London and have higher density in the city center, as shown in the lower left panel where
-the number of fires are counted within each of the hexagons. The top right panel then shows that for
-some regions the percentage of fire response times greater than six minutes is relatively high (again
-measured within each hexagon) especially at the borders of London, which is most probably due to the
-lower density of fire stations. Moreover, according the full distribution of fire response times in
-2015, see the lower right panel, about 30\% of the response times where greater than six minutes.
+Figure~\ref{fig:londonfiredata}. The top left panel indicates that both, fire stations and
+fire events, are spread all over London with a higher density in the city center which is
+brought out more clearly by the heatmap in the bottom left panel. The panels on the right-hand
+side pertain to the arrival time and show that overall about 30\% of these were
+greater than six minutes (bottom right) with most of these occuring at the borders of London
+(top right).
 
 \begin{figure}[t!]
 \centering
 \includegraphics[width=0.92\textwidth]{figures/firemodel-data}
-\caption{\label{fig:londonfiredata} Distribution of dwelling fires and fire stations in London (2015).}
+\caption{\label{fig:londonfiredata} Distribution of dwelling fires, fire stations, and arrival
+  times in London, 2015.}
 \end{figure}
 
-As mentioned above, \citet{bamlss:Taylor:2015} analyzes the response times within a
-survival context, which seems natural for this kind of time-to-event data. More precisely, he
-describes the hazard of an event (the fire engine arrives) at time $t$ with a relative risk model of
-the form
+\citet{bamlss:Taylor:2015} analyzes the response times within a survival context where the
+hazard of an event (fire engine arriving) at time $t$ with a relative risk model of the form
 $$
 \lambda(t) = \exp\left(\eta(t)\right) =  \exp\left( \eta_{\lambda}(t) + \eta_{\gamma} \right),
 $$
-i.e., a model for the instantaneous arrival rate conditional on the engine having not arrived before
+i.e., a model for the instantaneous arrival rate conditional on the engine not having arrived before
 time $t$. Here, the hazard function is assumed to depend on a time-varying predictor
 $\eta_{\lambda}(t)$ and a time-constant predictor $\eta_{\gamma}$. In most survival models, the
-time-varying part $\eta_{\lambda}(t)$ represents the so-called baseline hazard and is an univariate
-function of time $t$. Following \citet{bamlss:Taylor:2015}, we set up a similar but extended
-model with a time-constant predictor given by
+time-varying part $\eta_{\lambda}(t)$ represents the so-called baseline hazard and is a univariate
+function of time $t$. Compared to \citet{bamlss:Taylor:2015}, we set up a similar model
+but with the extended time-constant predictor
 $$
 \eta_{\gamma} = \beta_0 + f_1(\texttt{fsintens}) + f_2(\texttt{daytime}) +
   f_3(\texttt{lon}, \texttt{lat}) + f_4(\texttt{daytime}, \texttt{lon}, \texttt{lat}),
 $$
-where $\beta_0$ is an intercept and function $f_1$ is the effect of fire station intensity,
-variable \code{fsintens} computed with a kernel density estimate of all fire stations in London.
-I.e., this variable is a proxy for the distance to the next fire station(s), especially suited for
+where $\beta_0$ is an intercept and function $f_1$ is the effect of fire station intensity
+(\code{fsintens}, computed with a kernel density estimate of all fire stations in London).
+Thus, this variable is a proxy for the distance to the next fire station(s), especially suited for
 situations when the responsible fire station already send out all fire engines such that help needs
 to arrive from another station. Function $f_2$ accounts for the effect that it is more
 difficult for a fire engine to arrive at the scene in rush hours, i.e., the risk of waiting longer
@@ -1530,7 +1518,7 @@ peaks may have local hot spots that can be captured by this three-dimensional ef
 functions $f_1, \ldots, f_4$ are assumed to be possibly nonlinear and are modeled using penalized
 splines.
 
-In this example, we additionally relax the time-varying predictor $\eta_{\lambda}(t)$ to
+Moreover, we also relax the time-varying predictor $\eta_{\lambda}(t)$ to
 $$
 \eta_{\lambda}(t) = f_0(t) + \sum_{j = 1}^{J_{\lambda}} f_j(t, \mathbf{x}).
 $$
@@ -1542,10 +1530,10 @@ the location we use the following time-varying additive predictor
 $$
 \eta_{\lambda}(\texttt{arrivaltime}) = f_0(\texttt{arrivaltime}) + f_1(\texttt{arrivaltime}, \texttt{lon}, \texttt{lat}),
 $$
-where variable \code{arrivaltime} is the waiting time until the first fire engine arrives after the
-received emergency call and function $f_0(\texttt{arrivaltime})$ then represents the baseline
-hazard. Function $f_1(\texttt{arrivaltime}, \texttt{lon}, \texttt{lat})$ is a space-time varying
-effect modeling the deviations from the baseline, i.e., testing if the risk of waiting longer
+where $f_0$ is the baseline hazard for variable \code{arrivaltime}, the waiting time until the
+first fire engine arrives after the received emergency call. 
+Function $f_1(\texttt{arrivaltime}, \texttt{lon}, \texttt{lat})$ is a space-time varying
+effect modeling the deviations from the baseline which can capture whether the risk of waiting longer
 than six minutes is driven by other factors that are not available in this analysis. Both functions
 are modeled using penalized splines.
 
@@ -1554,11 +1542,11 @@ function
 \begin{equation} \label{eqn:surv}
 S(t) = \mathrm{Prob}(T > t) = \exp \, \left( -\int_0^t \lambda(u)du \right),
 \end{equation}
-which is of major interest in this analysis. Based on (\ref{eqn:surv}), for full Bayesian inference
+which is of prime interest in this analysis. Based on (\ref{eqn:surv}), for full Bayesian inference
 the following ``Lego bricks'' need to be implemented for updating functions $U_{jk}( \cdot )$ using
 algorithms \ref{fig:algodesign}, \ref{fig:umode} and \ref{fig:mcmc}:
 \begin{enumerate}[leftmargin=*,align=left]
-\item[\ref{item:1}.] The log-likelihood function of the continuous time Cox model is then given by
+\item[\ref{item:1}.] The log-likelihood function of the continuous time Cox model is given by
   $$
   \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) =
    \sum_{i = 1}^n \left( \delta_i\eta_{i\gamma} - \int_0^{t_i} \exp( \eta_{i\lambda}(u)du ) \right).
@@ -1580,15 +1568,16 @@ algorithms \ref{fig:algodesign}, \ref{fig:umode} and \ref{fig:mcmc}:
     \boldsymbol{x}_{i\lambda}(u)\boldsymbol{x}_{i\lambda}^{\top}(u)du.
   $$
   Note that the Hessian cannot be simplified further, i.e., in order to construct IWLS updating
-  functions. The reason is that for the IWLS updating scheme we need to compute the diagonal weight
+  functions \fixme{what do you mean here?}. The reason is that for the IWLS updating scheme we need to compute the diagonal weight
   matrix based on $\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
   \partial \boldsymbol{\eta}_{\lambda}(\mathbf{t}) \partial \boldsymbol{\eta}_{\lambda}(\mathbf{t})^\top$.
   This requires a functional derivative like the Hadamard derivative since the predictor depends on time
-  $t$. However, it turns out that the derivative forms martingale residuals
-  \citep[see, e.g.,][]{bamlss:Barlow+Prentice:1988} which are incapable for estimating time-varying
-  effects, see also \citet{bamlss:Hofner:2008} Section~5.2 for a detailed discussion. Therefore
+  $t$. \fixme{the following sentence is also not fully clear to me, maybe rephrase?} However, it turns
+  out that the derivative forms martingale residuals
+  \citep[see, e.g.,][]{bamlss:Barlow+Prentice:1988} which are incapable of estimating time-varying
+  effects, see also \citet[Section~5.2]{bamlss:Hofner:2008} for a detailed discussion. Therefore
   updating functions $U_{jk}( \cdot )$ for the time-varying predictor $\eta_{\lambda}(t)$ are based
-  on updating equation (\ref{eqn:blockblocknewton}) within Algorithm~\ref{fig:umode} and
+  on updating Equation~(\ref{eqn:blockblocknewton}) within Algorithm~\ref{fig:umode} and
   \ref{fig:mcmc}.
 \item[\ref{item:6b} \& \ref{item:7b}.] Constructing updating functions for the time-constant part
   $\eta_{\gamma}$ again yields an IWLS updating scheme, see Section~\ref{sec:legobricks}, with
@@ -1608,14 +1597,28 @@ algorithms \ref{fig:algodesign}, \ref{fig:umode} and \ref{fig:mcmc}:
   \citep{bamlss:Hennerfeind+Brezger+Fahrmeir:2006}
 \end{enumerate}
 
+\begin{figure}[p!]
+\centering
+\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-baseline}\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-prob} \\[0.5cm]
+\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-fsintens}\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-spatial-td} \\[0.5cm]
+\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-daytime-curves}\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-spatial-tc}
+\caption{\label{fig:londonfireeffects} Estimated effects of the fire emergency response times
+  survival model. Top left panel shows the mean baseline effect, red line, together with the
+  spatially-varying effects, black lines. The six minutes target waiting time is represented by
+  the blue dashed vertical line. The upper right panel shows the estimated probability
+  of waiting longer than six minutes until the first engine arrives at 8:30 am. The space-time varying
+  effect is illustrated at six minutes waiting time in the second row, right panel.
+  The time of day effect again shows the mean effect as red lines and spatial deviations by black lines.}
+\end{figure}
+
 As a result, applying the generic algorithm presented in Algorithm~\ref{fig:algodesign} to this type
 of problem two specific difficulties need to be considered. First, the updating functions
 $U_{jk}( \cdot )$ for the time-varying predictor $\eta_{\lambda}(t)$ are different from the
-time-constant updating functions for $\eta_{\gamma}$. Secondly, a specific hurdle of the continuous
-time Cox model is the computation of the integrals, because these do not have a closed form solution
+time-constant updating functions for $\eta_{\gamma}$. Secondly, a specific hurdle of the
+continuous-time Cox model is the computation of the integrals, because these do not have a closed form solution
 and need to be approximated numerically, e.g., by the trapezoidal rule or Gaussian quadrature
 \citep{bamlss:Hofner:2008, bamlss:Waldmann+Taylor+Klein+Kneib+Pressler+Schmid+Mayr:2016}.
-Moreover, it is inefficient to compute the integrals a new for every updating step, since for the
+Moreover, it is inefficient to compute the integrals anew for every updating step, since for the
 time-constant part the integrals given in $\mathbf{P}$ do not change anymore.
 
 In order to reduce computing time we account for the idiosyncrasy of the Cox model and
@@ -1625,7 +1628,7 @@ model using the \pkg{bamlss} infrastructures is moderate, because most of the co
 estimation engines can be reused and only need slight adaption. In this example, the
 the optimizer and sampler function are part of the corresponding \pkg{bamlss} family object
 \fct{cox\_bamlss}.
-
+%
 On a Linux system with 8 Intel i7-2600 3.40GHz processors estimation takes
 approximately 1.2 days. Note that function \fct{cox.mode} also applies an automated procedure for
 smoothing variances selection using information criteria, see also Algorithm~\ref{fig:umode}.
@@ -1637,8 +1640,8 @@ of the effect, especially until the six minutes target time it seems that the lo
 does not have a great influence on the relative risk. Only for waiting times above ${\sim}15$
 minutes, the space-time varying effect is more pronounced. The effect for fire station intensity is
 quite large and bounded, i.e., there is a natural limit for the benefit from opening new fire stations in the area.
-The effect of the time of the day then indicates that in the morning hours around $4$-$5$ am, as well
-as in the afternoon around $2$-$4$ pm, the risk of waiting longer for the fire engine to arrive
+The effect of the time of the day then indicates that in the morning hours around 4--5~am, as well
+as in the afternoon around 2--4~pm, the risk of waiting longer for the fire engine to arrive
 is only slightly increasing. In addition, the spatial deviations from the mean time of day effect are
 modest, similar in magnitude as the spatial varying baseline effects. The largest deviation seems
 to be at around $10$ am. In Figure~\ref{fig:londonfiredaytime} the spatial varying effect is
@@ -1654,20 +1657,8 @@ areas. In summary, next to the baseline effect, the most important effects on th
 fire station intensity and the time-constant spatial effect which have an absolute range of about
 $4$ on the log-scale.
 
-\begin{figure}[p!]
-\centering
-\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-baseline}\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-prob} \\[0.5cm]
-\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-fsintens}\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-spatial-td} \\[0.5cm]
-\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-daytime-curves}\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-spatial-tc}
-\caption{\label{fig:londonfireeffects} Estimated effects of the fire emergency response times
-  survival model. Top left panel shows the mean baseline effect, red line, together with the
-  spatially-varying effects, black lines. The six minutes target waiting time is represented by
-  the blue dashed vertical line. The upper right panel shows the estimated probability
-  of waiting longer than six minutes until the first engine arrives at 8:30 am. The space-time varying
-  effect is illustrated at six minutes waiting time in the second row, right panel.
-  The time of day effect again shows the mean effect as red lines and spatial deviations by black lines.}
-\end{figure}
-
+\fixme{Maybe try to conclude with saying more clearly what this analysis brought out that a classical
+analysis or a Taylor-style analysis couldn't have shown.}
 
 \begin{figure}[t!]
 \centering
@@ -1680,13 +1671,13 @@ $4$ on the log-scale.
 
 \section{Summary}\label{sec:conclusion}
 
-This paper summarizes frequently used algorithms for the estimation of flexible Bayesian
-distributional regression models, a.k.a.\ Bayesian additive models for location, scale and shape
+This paper combines frequently-used algorithms for the estimation of additive Bayesian models
+in a flexible framework for distributional regression, also termed Bayesian additive models for location, scale and shape
 (BAMLSS), and beyond. We highlight the similarities between optimization and sampling concepts and
-outline a generic architecture that utilizes repeated ``Lego bricks'' in order to facilitate solutions
-for new problems or the integration of existing code. An implementation of the conceptional framework
-is provided in the \proglang{R} package \pkg{bamlss} \citep{bamlss:Umlauf+Klein+Zeileis:2016}.
-The usefulness of the approach is illustrated by two complex, difficult to estimate, models.
+coalesce these in a generic toolbox of modular ``Lego bricks''. Two case studies illustrate
+how the framework can be leveraged to establish complex and difficult-to-estimate models
+based on the accompanying implementation in the \proglang{R} package \pkg{bamlss}
+\citep{bamlss:Umlauf+Klein+Zeileis:2016}.
 
 
 %% \section*{Acknowledgments}
@@ -1776,7 +1767,7 @@ Section~\ref{sec:bricksmodelfit}. Focusing on the $j$-th row of (\ref{eqn:blockn
 \end{eqnarray*}
 This yields the updating function $U_{jk}( \cdot )$ shown in (\ref{eqn:blockbackfit}).
 
-\newpage
+\pagebreak
 
 \section{Approximate full conditionals for derivative-based MCMC} \label{appendix:fullcond1}
 The following shows the steps to derive a multivariate normal jumping distribution based
