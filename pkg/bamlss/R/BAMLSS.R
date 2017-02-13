@@ -441,7 +441,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
         if(!is.null(obj$smooth.construct[[j]]$by)) {
           if(obj$smooth.construct[[j]]$by != "NA") {
             if(grepl(pat <- paste("):", obj$smooth.construct[[j]]$by, sep = ""), slj, fixed = TRUE)) {
-              slj <- gsub(pat, paste(",by=", obj$smooth.construct[[j]]$by, ")", sep = ""), slj, fixed = TRUE)
+              slj <- gsub(pat, paste(",by=", obj$smooth.construct[[j]]$by, "):", sep = ""), slj, fixed = TRUE)
               obj$smooth.construct[[j]]$label <- slj
             }
           }
@@ -6436,7 +6436,7 @@ term.labels <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
 }
 
 term.labels2 <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
-  intercept = TRUE, list = TRUE, type = 1, ...)
+  intercept = TRUE, list = TRUE, type = 1, rm.by = TRUE, ...)
 {
   stl <- NULL
   is.bamlss <- FALSE
@@ -6493,6 +6493,16 @@ term.labels2 <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
       rval[[j]] <- c(rval[[j]], stl[[j]])
   }
   names(rval) <- nx
+  if(rm.by) {
+    for(j in seq_along(rval)) {
+      if(any(by <- (grepl("by=", rval[[j]], fixed = TRUE) & grepl("):", rval[[j]], fixed = TRUE)))) {
+        for(i in which(by)) {
+          rval[[j]][i] <- paste(strsplit(rval[[j]][i], "):", fixed = TRUE)[[1]][1], ")", sep = "")
+        }
+      }
+      rval[[j]] <- unique(rval[[j]])
+    }
+  }
   if(!list) {
     rval2 <- NULL
     for(j in seq_along(nx)) {
