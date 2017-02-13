@@ -3968,6 +3968,7 @@ blockstand <- function(x, n)
 
 smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
 {
+  ridge <- if(is.null(object$xt[["ridge"]])) FALSE else object$xt[["ridge"]]
   fuse <- if(is.null(object$xt[["fuse"]])) FALSE else object$xt[["fuse"]]
   fuse_type <- "nominal"
   if(is.logical(fuse)) {
@@ -4136,16 +4137,22 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$xt[["prior"]] <- "ig"
   object$xt[["a"]] <- 1
   object$xt[["b"]] <- 1e-4
-  object$fixed <- if(is.null(object$xt[["fixed"]])) FALSE else object$xt[["fixed"]]
-  object$fxsp <- FALSE
+  object$fixed <- if(is.null(object$xt[["fx"]])) FALSE else object$xt[["fx"]]
   priors <- make.prior(object)
   object$prior <- priors$prior
   object$grad <- priors$grad
   object$hess <- priors$hess
-  if(is.null(object$xt$lambda))
-    object$xt$lambda <- 0.0001
+  if(is.null(object$xt$lambda)) {
+    object$xt$lambda <- if(is.null(object$xt[["sp"]])) 0.0001 else object$xt[["sp"]]
+  } else {
+    if(!is.null(object$xt[["sp"]]))
+      object$xt$lambda <- object$xt[["sp"]]
+  }
   object$xt$do.optim <- TRUE
   object$lasso$const <- const
+
+  if(ridge)
+    object$S <- list(diag(ncol(object$X)))
 
   XX <- crossprod(object$X)
   XX <- XX[!diag(nrow(XX))]
@@ -4163,7 +4170,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$propose <- if(object$all_diagonal) GMCMC_iwlsC_gp_diag_lasso else GMCMC_iwlsC_gp
   object$xt[["binning"]] <- TRUE
   if(is.null(object$xt[["df"]]))
-    object$xt[["df"]] <- ceiling(ncol(object$X) * 0.9)
+    object$xt[["df"]] <- if(!ridge) ceiling(ncol(object$X) * 0.9) else ceiling(ncol(object$X) * 0.3)
   object$ctype <- switch(object$type,
     "single" = 0,
     "multiple" = 1

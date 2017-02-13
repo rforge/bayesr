@@ -243,6 +243,12 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
       x$sp <- NULL
     }
   }
+  if(!is.null(x$xt[["sp"]])) {
+    x$sp <- x$xt[["sp"]]
+    for(j in seq_along(x$sp))
+      if(x$sp[j] == 0) x$sp[j] <- .Machine$double.eps^0.5
+    x$xt[["tau2"]] <- 1 / x$sp
+  }
   if(!is.null(x$sp)) {
     if(all(is.numeric(x$sp))) {
       x$sp <- rep(x$sp, length.out = ntau2)
@@ -440,6 +446,10 @@ assign.df <- function(x, df)
   tau2 <- get.par(x$state$parameters, "tau2")
   if(x$fixed | !length(tau2))
     return(x)
+  if(!is.null(x$fxsp)) {
+    if(x$fxsp)
+      return(x)
+  }
   df <- if(is.null(x$xt$df)) df else x$xt$df
   if(is.null(df)) {
     nc <- ncol(x$X)
@@ -789,9 +799,8 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
               eta2[[id]] <- eta2[[id]] + p.state$fitted.values
               lpost1 <- family$loglik(y, family$map2par(eta2)) + lp + x[[sj]]$prior(p.state$parameters)
               if(lpost1 < lpost0) {
-                p.state <- x[[sj]]$state
                 warning(paste("logPost is decreasing updating term: ", id, ", ",
-                  x[[sj]]$label, "; not updated, diff: ", lpost1 - lpost0, sep = ""))
+                  x[[sj]]$label, "; diff: ", lpost1 - lpost0, sep = ""))
               }
             }
           }
@@ -960,9 +969,8 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
                 eta2[[nx[j]]] <- eta2[[nx[j]]] + p.state$fitted.values
                 lpost1 <- family$loglik(y, family$map2par(eta2)) + lp + x[[nx[j]]]$smooth.construct[[sj]]$prior(p.state$parameters)
                 if(lpost1 < lpost0) {
-                  p.state <- x[[nx[j]]]$smooth.construct[[sj]]$state
                   warning(paste("logPost is decreasing updating term: ", nx[j], ", ",
-                    x[[nx[j]]]$smooth.construct[[sj]]$label, "; not updated, diff: ", lpost1 - lpost0, sep = ""))
+                    x[[nx[j]]]$smooth.construct[[sj]]$label, "; diff: ", lpost1 - lpost0, sep = ""))
                 }
               }
             }
@@ -1314,6 +1322,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
 
   ## Compute mean and precision.
   XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
+
   if(!x$state$do.optim | x$fixed | x$fxsp) {
     if(x$fixed) {
       P <- matrix_inv(XWX, index = x$sparse.setup, all_diagonal = x$all_diagonal)
@@ -2835,7 +2844,8 @@ set.starting.values <- function(x, start)
 lasso <- function(x, y, start = NULL, adaptive = TRUE,
   lower = 0.001, upper = 1000,  nlambda = 100, lambda = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
-  nu = NULL, stop.nu = NULL, ridge = .Machine$double.eps^0.25, ...)
+  nu = NULL, stop.nu = NULL, ridge = .Machine$double.eps^0.25,
+  zeromodel = NULL, ...)
 {
   method <- list(...)$method
   if(is.null(method))
@@ -2886,14 +2896,14 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
     stop.nu <- rep(stop.nu, length.out = 2)
 
   if(adaptive & fuse) {
-    if(verbose[1])
+    if(verbose[1] & is.null(zeromodel))
       cat("Estimating adaptive weights\n---\n")
-    if(method == 1) {
-      b <- bfit(x = x, y = y, start = start, verbose = verbose[1], nu = nu[2], stop.nu = stop.nu[2], ...)
-      beta <- b$parameters
-    } else {
-      b <- opt(x = x, y = y, start = start, verbose = verbose[1], ...)
-      beta <- par2list(b$parameters)
+    if(is.null(zeromodel)) {
+      if(method == 1) {
+        zeromodel <- bfit(x = x, y = y, start = start, verbose = verbose[1], nu = nu[2], stop.nu = stop.nu[2], ...)
+      } else {
+        zeromodel <- opt(x = x, y = y, start = start, verbose = verbose[1], ...)
+      }
     }
     for(i in names(x)) {
       for(j in names(x[[i]]$smooth.construct)) {
@@ -2903,11 +2913,11 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
             x[[i]]$smooth.construct[[j]]$LAPEN <- NULL
           }
           if(x[[i]]$smooth.construct[[j]]$fuse) {
-            if(is.list(b$parameters)) {
-              beta <- get.par(b$parameters[[i]]$s[[j]], "b")
+            if(is.list(zeromodel$parameters)) {
+              beta <- get.par(zeromodel$parameters[[i]]$s[[j]], "b")
             } else {
-              beta <- grep(paste(i, ".s.", j, ".", sep = ""), names(b$parameters), fixed = TRUE)
-              beta <- get.par(b$parameters[beta], "b")
+              beta <- grep(paste(i, ".s.", j, ".", sep = ""), names(zeromodel$parameters), fixed = TRUE)
+              beta <- get.par(zeromodel$parameters[beta], "b")
             }
             df <- x[[i]]$smooth.construct[[j]]$lasso$df
             Af <- x[[i]]$smooth.construct[[j]]$Af

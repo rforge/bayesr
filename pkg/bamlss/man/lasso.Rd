@@ -20,7 +20,7 @@ la(formula, type = c("single", "multiple"), ...)
 lasso(x, y, start = NULL, adaptive = TRUE, lower = 0.001, upper = 1000,
   nlambda = 100, lambda = NULL, verbose = TRUE, digits = 4,
   flush = TRUE, nu = NULL, stop.nu = NULL,
-  ridge = .Machine$double.eps^0.25, ...)
+  ridge = .Machine$double.eps^0.25, zeromodel = NULL, ...)
 
 ## Plotting function for lasso() optimizer.
 lasso.plot(x, which = c("criterion", "parameters"),
@@ -64,6 +64,10 @@ lasso.coef(x, ...)
   \item{ridge}{A ridge penalty parameter that should be used when finding adaptive weights, i.e.,
     parameters from an unpenalized model. The ridge penalty is used to stabilize the estimation
     in complex models.}
+  \item{zeromodel}{A model containing the unpenalized parameters, e.g., for each \code{la()}
+    terms one can place a simple ridge penalty with \code{la(x, ridge = TRUE, sp = 0.1)}. This
+    way it is possible to find the unpenalized parameters that can be used as asaptive
+    weights for fusion penalties.}
   \item{which}{Which of the two provided plots should be created?}
   \item{spar}{Should graphical parameters be set by the plotting function?}
   \item{name}{Character, the name of the coefficient group that should be plotted. Note that
