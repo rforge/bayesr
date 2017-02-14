@@ -3158,7 +3158,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
       par(mar = c(5.1, 5.1, 4.1, 10.1))
 
     if(!is.null(name)) {
-      x$parameters <- x$parameters[, grep(name, colnames(x$parameters), fixed = TRUE), drop = FALSE]
+      x$parameters <- x$parameters[, grep2(name, colnames(x$parameters), fixed = TRUE), drop = FALSE]
     }
     xn <- sapply(strsplit(colnames(x$parameters), ".", fixed = TRUE), function(x) { x[1] })
     if(length(unique(xn)) < 2)
@@ -3178,8 +3178,10 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
       xlab = expression(log(lambda)), ylab = expression(beta[j]), axes = FALSE, ...)
     if(is.null(labels)) {
       labs <- colnames(x$parameters)
-      if(!is.null(name))
-        labs <- gsub(name, "", labs, fixed = TRUE)
+      if(!is.null(name)) {
+        for(j in seq_along(name))
+          labs <- gsub(name[j], "", labs, fixed = TRUE)
+      }
     } else labs <- rep(labels, length.out = ncol(x$parameters))
     axis(4, at = x$parameters[nrow(x$parameters), ],
       labels = labs, las = 1)

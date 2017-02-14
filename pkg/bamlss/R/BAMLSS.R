@@ -4086,7 +4086,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
       object$S <- A
     }
   }
-  if(fuse & ((k <- ncol(object$X)) > 1)) {
+  if(fuse) {
     k <- ncol(object$X)
     if(fuse_type == "nominal") {
       Af <- matrix(0, ncol = choose(k, 2), nrow = k)
