@@ -2939,8 +2939,13 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
             if(is.list(zeromodel$parameters)) {
               beta <- get.par(zeromodel$parameters[[i]]$s[[j]], "b")
             } else {
-              beta <- grep(paste(i, ".s.", j, ".", sep = ""), names(zeromodel$parameters), fixed = TRUE)
-              beta <- get.par(zeromodel$parameters[beta], "b")
+              if(is.matrix(zeromodel$parameters)) {
+                beta <- grep(paste(i, ".s.", j, ".", sep = ""), colnames(zeromodel$parameters), fixed = TRUE)
+                beta <- get.par(zeromodel$parameters[nrow(zeromodel$parameters), beta], "b")
+              } else {
+                beta <- grep(paste(i, ".s.", j, ".", sep = ""), names(zeromodel$parameters), fixed = TRUE)
+                beta <- get.par(zeromodel$parameters[beta], "b")
+              }
             }
             df <- x[[i]]$smooth.construct[[j]]$lasso$df
             Af <- x[[i]]$smooth.construct[[j]]$Af
@@ -3118,6 +3123,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
     npar <- npar[!grepl(j, npar, fixed = TRUE)]
   x$parameters <- x$parameters[mstop, npar, drop = FALSE]
   ic <- x$model.stats$optimizer$lasso.stats
+  log_lambda <- log(rev(ic[, "lambda"]))
   nic <- grep("ic", colnames(ic), value = TRUE, ignore.case = TRUE)
 
   if(spar) {
@@ -3130,15 +3136,13 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
   at[at == 0] <- 1
 
   if("criterion" %in% which) {
-    plot(mstop, ic[mstop, nic], type = "l",
-      xlab = expression(log(lambda)), ylab = nic, axes = FALSE)
-    axis(1, at = at, labels = round(log(ic[mstop, "lambda"][at]), digits = 2))
-    axis(2)
+    plot(log_lambda[mstop], ic[mstop, nic], type = "l",
+      xlab = expression(log(lambda)), ylab = nic)
     if(show.lambda) {
       i <- which.min(ic[, nic])
-      abline(v = i, col = "lightgray", lwd = 2, lty = 2)
+      abline(v = log_lambda[i], col = "lightgray", lwd = 2, lty = 2)
       val <- round(ic[i, "lambda"], 4)
-      axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
+      axis(3, at = log_lambda[i], labels = substitute(paste(lambda, '=', val)))
     }
     box()
   }
@@ -3164,10 +3168,8 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
       }
     }
 
-    matplot(c(1:nrow(x$parameters)), x$parameters, type = "l", lty = 1, col = cols[as.factor(xn)],
-      axes = FALSE, xlab = expression(log(lambda)), ylab = expression(beta[j]), ...)
-    axis(1, at = at, labels = round(log(ic[, "lambda"][at]), digits = 2))
-    axis(2)
+    matplot(log_lambda[mstop], x$parameters, type = "l", lty = 1, col = cols[as.factor(xn)],
+      xlab = expression(log(lambda)), ylab = expression(beta[j]), ...)
     if(is.null(labels)) {
       labs <- colnames(x$parameters)
       if(!is.null(name))
@@ -3177,9 +3179,9 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
       labels = labs, las = 1)
     if(show.lambda) {
       i <- which.min(ic[, nic])
-      abline(v = i, col = "lightgray", lwd = 2, lty = 2)
+      abline(v = log_lambda[i], col = "lightgray", lwd = 2, lty = 2)
       val <- round(ic[i, "lambda"], 4)
-      axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
+      axis(3, at = log_lambda[i], labels = substitute(paste(lambda, '=', val)))
     }
     box()
   }

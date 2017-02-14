@@ -3971,6 +3971,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
 {
   ridge <- if(is.null(object$xt[["ridge"]])) FALSE else object$xt[["ridge"]]
   fuse <- if(is.null(object$xt[["fuse"]])) FALSE else object$xt[["fuse"]]
+  standardize <- if(is.null(object$xt[["standardize"]])) FALSE else object$xt[["standardize"]]
   fuse_type <- "nominal"
   if(is.logical(fuse)) {
     if(fuse)
@@ -3989,6 +3990,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   }
   object$fuse <- fuse
   object$fuse_type <- fuse_type
+  object$standardize <- standardize
   
   data <- as.data.frame(data)
   nobs <- nrow(data)
@@ -4017,7 +4019,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
       j2 <- strsplit(j, "*")[[1]]
       is_f <- any(sapply(j2, function(i) is.factor(data[[i]])))
     }
-    if(!fuse) {
+    if(!fuse | standardize) {
       if(!is_f) {
         object$X[[j]] <- scale(object$X[[j]])
         object$lasso$trans[[j]] <- list(
@@ -4031,7 +4033,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     }
     if(is.null(colnames(object$X[[j]])))
       colnames(object$X[[j]]) <- paste("X", 1:ncol(object$X[[j]]), sep = "")
-    if(!fuse) {
+    if(!fuse | standardize) {
       df[[j]] <- sqrt(rep(ncol(object$X[[j]]), ncol(object$X[[j]])))
     } else {
       object$lasso$trans[[j]] <- list(
