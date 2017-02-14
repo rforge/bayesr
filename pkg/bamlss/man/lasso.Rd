@@ -74,7 +74,7 @@ lasso.coef(x, ...)
     the string provided in \code{name} will be removed from the labels on the 4th axis.}
   \item{mstop}{Integer vector, defines the path length to be plotted.}
   \item{retrans}{Logical, should coefficients be re-transformed before plotting?}
-  \item{color}{Colors or function that creates colors for the group paths.}
+  \item{color}{Colors or color function that creates colors for the group paths.}
   \item{show.lambda}{Logical. Should the optimum value of the penalty parameter lambda be shown?}
   \item{labels}{A character string of labels that should be used on the 4 axis.}
   \item{\dots}{Arguments passed to the subsequent smooth constructor function.

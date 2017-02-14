@@ -25,7 +25,8 @@ boost.summary(object, ...)
 
 ## Plot all boosting paths.
 boost.plot(x, which = c("loglik", "loglik.contrib", "parameters"),
-  intercept = TRUE, spar = TRUE, mstop = NULL, ...)
+  intercept = TRUE, spar = TRUE, mstop = NULL, name = NULL,
+  labels = NULL, color = NULL...)
 
 ## Boosting summary printing and plotting:
 \method{print}{boost.summary}(x, summary = TRUE, plot = TRUE,
@@ -48,6 +49,10 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters"),
     labels, e.g., as provided in \code{\link{summary.bamlss}}.}
   \item{maxit}{Integer, the maximum number of boosting iterations.}
   \item{mstop}{For convenience, overwrites \code{maxit}.}
+  \item{name}{Character, the name of the coefficient (group) that should be plotted. Note that
+    the string provided in \code{name} will be removed from the labels on the 4th axis.}
+  \item{labels}{A character string of labels that should be used on the 4 axis.}
+  \item{color}{Colors or color function that creates colors for the (group) paths.}
   \item{verbose}{Print information during runtime of the algorithm.}
   \item{digits}{Set the digits for printing when \code{verbose = TRUE}.}
   \item{flush}{use \code{\link{flush.console}} for displaying the current output in the console.}

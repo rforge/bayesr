@@ -2724,7 +2724,7 @@ plot.boost.summary <- function(x, ...)
 }
 
 boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters"),
-  intercept = TRUE, spar = TRUE, mstop = NULL, ...)
+  intercept = TRUE, spar = TRUE, mstop = NULL, name = NULL, labels = NULL, color = NULL, ...)
 {
   if(!is.character(which)) {
     which <- c("loglik", "loglik.contrib", "parameters")[as.integer(which)]
@@ -2756,15 +2756,38 @@ boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters"),
     if(w == "parameters") {
       if(spar)
         par(mar = c(5.1, 4.1, 2.1, 10.1))
+      if(!is.null(name)) {
+        x$parameters <- x$parameters[, grep(name, colnames(x$parameters), fixed = TRUE), drop = FALSE]
+      }
+
       p <- x$parameters[1:mstop, , drop = FALSE]
       if(!intercept)
         p <- p[, -grep("(Intercept)", colnames(p), fixed = TRUE), drop = FALSE]
-      xn <- sapply(strsplit(colnames(p), ".", fixed = TRUE), function(x) { x[1] })
-      cols <- rainbow_hcl(length(unique(xn)))
+
+      xn <- sapply(strsplit(colnames(x$parameters), ".", fixed = TRUE), function(x) { x[1] })
+      if(length(unique(xn)) < 2)
+        xn <- sapply(strsplit(colnames(x$parameters), ".", fixed = TRUE), function(x) { x[3] })
+
+      cols <- if(is.null(color)) {
+        if(length(unique(xn)) < 2) "black" else rainbow_hcl(length(unique(xn)))
+      } else {
+        if(is.function(color)) {
+          color(length(unique(xn)))
+        } else {
+          rep(color, length.out = length(unique(xn)))
+        }
+      }
+
+      if(is.null(labels)) {
+        labs <- colnames(x$parameters)
+        if(!is.null(name))
+          labs <- gsub(name, "", labs, fixed = TRUE)
+      } else labs <- rep(labels, length.out = ncol(x$parameters))
+
       matplot(p, type = "l", lty = 1, col = cols[as.factor(xn)], xlab = "Iteration",
         ylab = "Value", ...)
       abline(v = mstop, lwd = 3, col = "lightgray")
-      axis(4, at = p[nrow(p), ], labels = colnames(p), las = 1)
+      axis(4, at = p[nrow(p), ], labels = labs, las = 1)
       axis(3, at = mstop, labels = paste("mstop =", mstop))
     }
   }
