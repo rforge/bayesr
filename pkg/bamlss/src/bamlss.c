@@ -3101,7 +3101,8 @@ SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
   int n          = length(y);
   int fixed      = LOGICAL(getListElement(x, "fixed"))[0];
 
-  SEXP state       = PROTECT(duplicate(getListElement(x, "state")));           ++nProtected;
+  SEXP state       = PROTECT(duplicate(getListElement(x, "state")));
+  ++nProtected;
   double *thetaptr = REAL(getListElement(state, "parameters"));
   int *penFun = INTEGER(getListElement(x, "penaltyFunction"));
 
@@ -3111,18 +3112,21 @@ SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
   int nc = length(getListElement(state, "parameters"));
   if(fixed) {
     /* ntau2 can be anything but 0 */
-    S_ind = 0;      ntau2 = 1;
+    S_ind = 0;
+    ntau2 = 1;
   } else {
     S_ind = getListElement_index(x, "S");
     ntau2 = length(PROTECT(VECTOR_ELT(x, S_ind))); ++nProtected;
     nc   -= ntau2;
   }
-  SEXP tau2       = PROTECT(allocVector(REALSXP,ntau2)); ++nProtected;
+  SEXP tau2       = PROTECT(allocVector(REALSXP,ntau2));
+  ++nProtected;
   double *tau2ptr = REAL(tau2);
 
   /* Create weighted matrix */
   int X_ind = getListElement_index(x, "X");
-  int nr = nrows(PROTECT(VECTOR_ELT(x, X_ind))); ++nProtected;
+  int nr = nrows(PROTECT(VECTOR_ELT(x, X_ind)));
+  ++nProtected;
 
   /* More pointers needed. */
   double *eptr = REAL(y);
@@ -3174,7 +3178,7 @@ SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
     XWptr, &nc, Xptr, &nr, &zero, XWXptr, &nc);
 
   /* Add penalty matrix and variance parameter. */
-  if( ! fixed ) {
+  if(!fixed) {
     for(jj = 0; jj < ntau2; jj++) {
       if(penFun[jj] > 0) {
         Sptr = REAL(get_S_mat(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj), getListElement(state, "parameters"), rho));
@@ -3191,7 +3195,8 @@ SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
   }
 
   /* Cholesky decompostion of XWX. */
-  SEXP L = PROTECT(duplicate(getListElement(x, "XWX"))); ++nProtected;
+  SEXP L = PROTECT(duplicate(getListElement(x, "XWX")));
+  ++nProtected;
   double *Lptr = REAL(L);
 
   for(j = 0; j < nc; j++) { 	/* Zero the lower triangle. */

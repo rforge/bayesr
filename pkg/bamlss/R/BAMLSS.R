@@ -4179,6 +4179,9 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$C <- matrix(nrow = 0, ncol = ncol(object$X))
   object$side.constrain <- FALSE
 
+  if(object$fixed)
+    object$S <- NULL
+
   class(object) <- "lasso.smooth"
 
   object
