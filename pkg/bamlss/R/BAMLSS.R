@@ -4066,6 +4066,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
             A[group[[j]]] <- df[group[[j]]] / rep(sqrt(sum(b[group[[j]]]^2) + const), length(group[[j]]))
           }
         }
+        ## FIXME: adaptive weights: A <- A * MLpen ## 1 / abs(beta)
         A <- if(length(A) < 2) matrix(A, 1, 1) else diag(A)
         A
       }
