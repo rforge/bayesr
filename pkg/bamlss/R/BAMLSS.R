@@ -4055,7 +4055,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$S <- list()
   const <- object$xt$const
   if(is.null(const))
-    const <- 1e-05
+    const <- 1e-08
   if(!fuse) {
     if(object$type == "single") {
       object$S[[1]] <- function(parameters) {
