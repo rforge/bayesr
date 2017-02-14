@@ -340,6 +340,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
               if(!inherits(data, "ffdf")) {
                 smt <- smoothCon(tsm, if(before) data[tsm$binning$nodups, term.names, drop = FALSE] else data,
                   knots, absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons, sparse.cons = sparse.cons)
+                smooth <- c(smooth, smt)
               } else {
                 xdata <- as.data.frame(data[tsm$binning$nodups, term.names, drop = FALSE])
                 if(!inherits(xdata, "data.frame")) {
