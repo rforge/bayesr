@@ -3123,7 +3123,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
     npar <- npar[!grepl(j, npar, fixed = TRUE)]
   x$parameters <- x$parameters[mstop, npar, drop = FALSE]
   ic <- x$model.stats$optimizer$lasso.stats
-  log_lambda <- log(rev(ic[, "lambda"]))
+  log_lambda <- log(ic[, "lambda"])
   nic <- grep("ic", colnames(ic), value = TRUE, ignore.case = TRUE)
 
   if(spar) {
@@ -3135,14 +3135,20 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
   at <- pretty(1:nrow(ic))
   at[at == 0] <- 1
 
+  fmt2 <- Vectorize(fmt)
+
   if("criterion" %in% which) {
-    plot(log_lambda[mstop], ic[mstop, nic], type = "l",
-      xlab = expression(log(lambda)), ylab = nic)
+    plot(ic[mstop, nic], type = "l",
+      xlab = expression(log(lambda)), ylab = nic, axes = FALSE)
+    at <- pretty(mstop)
+    at[at == 0] <- 1
+    axis(1, at = at, labels = fmt2(log_lambda[mstop][at], ...))
+    axis(2)
     if(show.lambda) {
       i <- which.min(ic[, nic])
-      abline(v = log_lambda[i], col = "lightgray", lwd = 2, lty = 2)
+      abline(v = i, col = "lightgray", lwd = 2, lty = 2)
       val <- round(ic[i, "lambda"], 4)
-      axis(3, at = log_lambda[i], labels = substitute(paste(lambda, '=', val)))
+      axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
     }
     box()
   }
@@ -3168,8 +3174,8 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
       }
     }
 
-    matplot(log_lambda[mstop], x$parameters, type = "l", lty = 1, col = cols[as.factor(xn)],
-      xlab = expression(log(lambda)), ylab = expression(beta[j]), ...)
+    matplot(x$parameters, type = "l", lty = 1, col = cols[as.factor(xn)],
+      xlab = expression(log(lambda)), ylab = expression(beta[j]), axes = FALSE, ...)
     if(is.null(labels)) {
       labs <- colnames(x$parameters)
       if(!is.null(name))
@@ -3177,11 +3183,15 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
     } else labs <- rep(labels, length.out = ncol(x$parameters))
     axis(4, at = x$parameters[nrow(x$parameters), ],
       labels = labs, las = 1)
+    at <- pretty(mstop)
+    at[at == 0] <- 1
+    axis(1, at = at, labels = fmt2(log_lambda[mstop][at], ...))
+    axis(2)
     if(show.lambda) {
       i <- which.min(ic[, nic])
-      abline(v = log_lambda[i], col = "lightgray", lwd = 2, lty = 2)
+      abline(v = i, col = "lightgray", lwd = 2, lty = 2)
       val <- round(ic[i, "lambda"], 4)
-      axis(3, at = log_lambda[i], labels = substitute(paste(lambda, '=', val)))
+      axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
     }
     box()
   }
