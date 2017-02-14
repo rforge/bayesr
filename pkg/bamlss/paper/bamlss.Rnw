@@ -1447,8 +1447,6 @@ the variation of elevation of the meteorological stations used in this data set 
 
 \subsection{Complex space-time interactions in a Cox model} \label{sec:coxreg}
 
-\readme{slightly rephrased section title and also many paragraphs}
-
 This analysis is based on the article of \citet{bamlss:Taylor:2015} and contributes to the developed
 model by inclusion of complex space-time interactions using the BAMLSS framework.
 
@@ -1567,13 +1565,12 @@ algorithms \ref{fig:algodesign}, \ref{fig:umode} and \ref{fig:mcmc}:
   -\sum_{i = 1}^{n} \exp\left( \eta_{i\gamma} \right) \int_{0}^{t_i} \exp( \eta_{i\lambda}(u) )
     \boldsymbol{x}_{i\lambda}(u)\boldsymbol{x}_{i\lambda}^{\top}(u)du.
   $$
-  Note that the Hessian cannot be simplified further, i.e., in order to construct IWLS updating
-  functions \fixme{what do you mean here?}. The reason is that for the IWLS updating scheme we need to compute the diagonal weight
-  matrix based on $\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
-  \partial \boldsymbol{\eta}_{\lambda}(\mathbf{t}) \partial \boldsymbol{\eta}_{\lambda}(\mathbf{t})^\top$.
-  This requires a functional derivative like the Hadamard derivative since the predictor depends on time
-  $t$. \fixme{the following sentence is also not fully clear to me, maybe rephrase?} However, it turns
-  out that the derivative forms martingale residuals
+  Note that the Hessian cannot be fragmented further to obtain building block \ref{item:7b} and
+  IWLS updating functions. The reason is that the diagonal weight
+  matrix based on \newline $\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
+  \partial \boldsymbol{\eta}_{\lambda}(\mathbf{t}) \partial \boldsymbol{\eta}_{\lambda}(\mathbf{t})^\top$
+  requires a functional derivative like the Hadamard derivative since the predictor depends on time
+  $t$. However, it turns out that this derivative forms martingale residuals in the IWLS step
   \citep[see, e.g.,][]{bamlss:Barlow+Prentice:1988} which are incapable of estimating time-varying
   effects, see also \citet[Section~5.2]{bamlss:Hofner:2008} for a detailed discussion. Therefore
   updating functions $U_{jk}( \cdot )$ for the time-varying predictor $\eta_{\lambda}(t)$ are based
@@ -1657,8 +1654,12 @@ areas. In summary, next to the baseline effect, the most important effects on th
 fire station intensity and the time-constant spatial effect which have an absolute range of about
 $4$ on the log-scale.
 
-\fixme{Maybe try to conclude with saying more clearly what this analysis brought out that a classical
-analysis or a Taylor-style analysis couldn't have shown.}
+To conclude, the proposed model including complex model terms beyond ``classical'' structures, like
+space-time interactions in both the time-constant and the time-varying part, is a considerable
+extension of this type of model and can gain more insight into potential risk factors that are
+probably not obvious. The presented modular framework facilitates the development of such complex
+algorithms essentially, e.g., \citet{bamlss:Koehler+Umlauf+Greven:2016} develop flexible joint
+models for longitudinal and time-to-event data using the modular BAMLSS framework.
 
 \begin{figure}[t!]
 \centering
