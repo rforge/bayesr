@@ -2763,7 +2763,7 @@ boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters"),
       if(spar)
         par(mar = c(5.1, 4.1, 2.1, 10.1))
       if(!is.null(name)) {
-        x$parameters <- x$parameters[, grep(name, colnames(x$parameters), fixed = TRUE), drop = FALSE]
+        x$parameters <- x$parameters[, grep2(name, colnames(x$parameters), fixed = TRUE), drop = FALSE]
       }
 
       p <- x$parameters[1:mstop, , drop = FALSE]
@@ -2786,8 +2786,10 @@ boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters"),
 
       if(is.null(labels)) {
         labs <- colnames(x$parameters)
-        if(!is.null(name))
-          labs <- gsub(name, "", labs, fixed = TRUE)
+        if(!is.null(name)) {
+          for(j in seq_along(name))
+            labs <- gsub(name[j], "", labs, fixed = TRUE)
+        }
       } else labs <- rep(labels, length.out = ncol(x$parameters))
 
       matplot(p, type = "l", lty = 1, col = cols[as.factor(xn)], xlab = "Iteration",

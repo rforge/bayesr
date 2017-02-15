@@ -4,6 +4,7 @@
 \alias{jm.mcmc}
 \alias{jm.transform}
 \alias{jm.survplot}
+\alias{jm.predict}
 
 \title{
   Fit Flexible Additive Joint Models
@@ -42,14 +43,16 @@ jm.mcmc(x, y, family, start = NULL, weights = NULL,
   offset = NULL, n.iter = 1200, burnin = 200, thin = 1,
   verbose = TRUE, digits = 4, step = 20, ...)
   
-## predict function.
-jm.predict(object, newdata, type = c("link", "parameter", "probabilities", "cumhaz"),
-           dt, steps, id, FUN = function(x) { mean(x, na.rm = TRUE) }, 
-           subdivisions = 100, cores = NULL, chunks = 1, verbose = FALSE,  ...)
+## Predict function, set to default in jm_bamlss().
+jm.predict(object, newdata,
+  type = c("link", "parameter", "probabilities", "cumhaz"),
+  dt, steps, id, FUN = function(x) { mean(x, na.rm = TRUE) }, 
+  subdivisions = 100, cores = NULL, chunks = 1,
+  verbose = FALSE,  ...)
   
 ## Survival plot.
 jm.survplot(object, id = 1, dt = NULL, steps = 10, 
-            points = TRUE, rug = !points)
+  points = TRUE, rug = !points)
 }
 
 \arguments{
@@ -113,12 +116,22 @@ jm.survplot(object, id = 1, dt = NULL, steps = 10,
     \code{jm.mode()} ans/or sampler function \code{jm.mcmc()} for which the survival plot
     should be created.}
   \item{newdata}{Dataset for which to create predictions. Not needed for conditional survival probabilities.}
-  \item{type}{Character string indicating which type of predictions to compute. \code{link} returns estimates for all     predictors with the respective link functions applied, \code{parameter} returns the estimates for all pedictors,      \code{probabilities} returns the survival probabilities conditional on the survival up to the last longitudinal       measurement, and \code{cumhaz} return the cumulative hazard up to the survival time or for a time window after the     last longitudinal measurement.}
+  \item{type}{Character string indicating which type of predictions to compute. \code{link} returns estimates
+    for all predictors with the respective link functions applied, \code{"parameter"} returns the estimates
+    for all pedictors, \code{"probabilities"} returns the survival probabilities conditional on the
+    survival up to the last longitudinal measurement, and \code{"cumhaz"} return the cumulative hazard
+    up to the survival time or for a time window after the last longitudinal measurement.}
   \item{id}{Integer or character, that specifies the individual for which the plot should be created.}
   \item{dt}{The time window after the last observed measurement for which predictions should be computed. 
     The default is \code{0.4 * max(obstime)} and \code{obstime} are the individual's longitudinal measurement times.}
   \item{steps}{Integer, the number of steps for which to evaluate the conditional survival probability 
     up to \code{dt}.}
+  \item{FUN}{A function that should be applied on the samples of predictors or
+    parameters, depending on argument \code{type}.}
+  \item{cores}{Specifies the number of cores that should be used for prediction. Note that
+    this functionality is based on the \code{\link[parallel]{parallel}} package.}
+  \item{chunks}{Should computations be split into \code{chunks}? Prediction is then processed
+    sequentially.}
   \item{points}{Should longitudinal observations be added to the plot.}
   \item{rug}{Should longitudinal observed time points be added on the x-axis to the plot.}
   \item{\dots}{Currently not used.}

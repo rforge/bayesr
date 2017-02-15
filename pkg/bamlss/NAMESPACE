@@ -117,6 +117,7 @@ export(
   "simJM",
   "rJM",
   "jm.survplot",
+  "jm.predict",
 
   ## others
   "GAMart",

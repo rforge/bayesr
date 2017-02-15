@@ -81,9 +81,11 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters"),
 }
 
 \section{WARNINGS}{
-  The function is currently experimental!
-  The function does not take care of variable scaling! This must be done by the user, e.g.,
-  one option is to use argument \code{scale.d} in function \code{\link{bamlss.frame}}.
+  The function does not take care of variable scaling for the linear parts! This must be done by the
+  user, e.g., one option is to use argument \code{scale.d} in function \code{\link{bamlss.frame}},
+  which uses \code{\link[base]{scale}}.
+
+  Function \code{boost()} does not select the optimum stopping iteration!
 }
 
 \seealso{
@@ -98,8 +100,10 @@ d <- GAMart()
 ## Estimate model.
 f <- num ~ x1 + x2 + x3 + lon + lat +
   s(x1) + s(x2) + s(x3) + s(lon) + s(lat) + te(lon,lat)
+
 b <- bamlss(f, data = d, optimizer = boost,
-  sampler = FALSE, scale.d = TRUE)
+  sampler = FALSE, scale.d = TRUE,
+  nu = 0.01, maxit = 1000)
 
 ## Plot estimated effects.
 plot(b)
@@ -107,6 +111,8 @@ plot(b)
 ## Print and plot the boosting summary.
 boost.summary(b)
 boost.plot(b)
+boost.plot(b, 2)
+boost.plot(b, 3, name = "mu.s.te(lon,lat).")
 
 ## Extract estimated parameters for certain
 ## boosting iterations.

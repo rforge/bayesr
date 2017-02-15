@@ -40,7 +40,7 @@
   \item{type}{If \code{type = "link"} the linear predictor of the corresponding \code{model}
     is returned. If \code{type = "parameter"} predictions on the distributional parameter scale
     are returned.}
-  \item{FUN}{A function that should be applied on the samples of linear predictors or
+  \item{FUN}{A function that should be applied on the samples of predictors or
     parameters, depending on argument \code{type}.}
   \item{trans}{A transformer function or named list of transformer functions that computes
     transformed predictions. If \code{trans} is a list, the list names must match the names
