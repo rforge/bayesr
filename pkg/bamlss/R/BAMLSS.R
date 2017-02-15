@@ -158,12 +158,14 @@ print.bamlss.frame <- function(x, ...)
 ## ff version for indexing.
 match.index.ff <- function(x)
 {
-  nodups <- ffwhich(x, !duplicated(x))
-  ind <- ffdfmatch(x, x[nodups, , drop = FALSE])
-  ord <- fforder(ind)
-  sindex <- ind[ord]
-  
-  return(list("match.index" = ind, "nodups" = nodups, "order" = ord, "sorted.index" = sindex, "uind" = ind[nodups]))
+#  nodups <- ffwhich(x, !duplicated(x))
+#  ind <- ffdfmatch(x, x[nodups, , drop = FALSE])
+#  ord <- fforder(ind)
+#  sindex <- ind[ord]
+#  
+#  return(list("match.index" = ind, "nodups" = nodups, "order" = ord, "sorted.index" = sindex, "uind" = ind[nodups]))
+## FIXME: ff support!
+  match.index(x)
 }
 
 
@@ -200,8 +202,10 @@ design.construct <- function(formula, data = NULL, knots = NULL,
       data <- as.data.frame(data)
   }
   if(is.character(data)) {
-    data <- read.table.ffdf(file = data,
-      na.strings = "", header = TRUE, sep = ",")
+    ## data <- read.table.ffdf(file = data,
+    ##   na.strings = "", header = TRUE, sep = ",")
+    ## FIXME: ff data.frames!
+    data <- read.table(file = data, header = TRUE, ...)
   }
   if(inherits(data, "ffdf")) {
     before <- TRUE
@@ -239,8 +243,11 @@ design.construct <- function(formula, data = NULL, knots = NULL,
           sterms = FALSE, keep.response = FALSE, data = NULL, specials = specials)
         mm_intercept <- attr(mm_terms, "intercept") > 0
         mm_vars <- all.vars.formula(mm_terms)
-        if(mm_intercept)
-          obj$model.matrix <- ffdf("Intercept" = ff(1, length = nrow(data)))
+        if(mm_intercept) {
+          ## FIXME: ff support!
+          ## obj$model.matrix <- ffdf("Intercept" = ff(1, length = nrow(data)))
+          obj$model.matrix <- cbind("Intercept" = rep(1, length = nrow(data)))
+        }
         if(!is.null(mm_vars)) {
           if(!all(mm_vars %in% colnames(data)))
             stop("variables missing in supplied data!")
@@ -752,7 +759,8 @@ make.fit.fun <- function(x, type = 1)
     }
     if(!is.null(x$binning$match.index) & expand) {
       if(inherits(x$binning$match.index, "ff")) {
-        f <- as.ff(f)
+        ## f <- as.ff(f)
+        ## FIXME: ff support!
         return(f[x$binning$match.index])
       }
       f <- f[x$binning$match.index]
@@ -1699,9 +1707,11 @@ bamlss.model.frame <- function(formula, data, family = gaussian_bamlss(),
   if(is.character(data)) {
     if(!file.exists(data))
       stop("data path is not existing!")
-    data <- read.table.ffdf(file = data,
-      na.strings = "", header = TRUE, sep = ",")
-    return(data)
+    ## data <- read.table.ffdf(file = data,
+    ##   na.strings = "", header = TRUE, sep = ",")
+    ## return(data)
+    ## FIXME: ff data.frames!
+    data <- read.table(file = data, header = TRUE, ...)
   }
 
   if(inherits(formula, "bamlss.frame") | inherits(formula, "bamlss")) {

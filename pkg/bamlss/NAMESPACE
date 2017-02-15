@@ -1,10 +1,11 @@
+## import("ffbase")
+## importFrom("ff", "read.table.ffdf", "ff", "ffdf", "fforder", "as.ff")
+
 import("coda")
 import("mgcv")
 import("Formula")
 import("colorspace")
-import("ffbase")
 
-importFrom("ff", "read.table.ffdf", "ff", "ffdf", "fforder", "as.ff")
 importFrom("parallel", "mclapply")
 importFrom("sp", "bbox", "point.in.polygon", "polygons",
   "coordinates", "Polygon", "Polygons", "SpatialPolygons", "SpatialPoints",

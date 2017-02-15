@@ -523,41 +523,47 @@ get.eta <- function(x, expand = TRUE)
 
 ffdf_eval <- function(x, FUN)
 {
-  res <- NULL
-  for(i in bit::chunk(x)) {
-    res <- ffappend(res, FUN(x[i, ]))
-  }
-  res
+#  res <- NULL
+#  for(i in bit::chunk(x)) {
+#    res <- ffappend(res, FUN(x[i, ]))
+#  }
+#  res
+## FIXME: ff support!
+  FUN(x)
 }
 
 ffdf_eval_sh <- function(y, par, FUN)
 {
-  res <- NULL
-  for(i in bit::chunk(y)) {
-    tpar <- list()
-    for(j in names(par))
-      tpar[[j]] <- par[[j]][i]
-    res <- ffappend(res, FUN(y[i, ], tpar))
-  }
-  res
+#  res <- NULL
+#  for(i in bit::chunk(y)) {
+#    tpar <- list()
+#    for(j in names(par))
+#      tpar[[j]] <- par[[j]][i]
+#    res <- ffappend(res, FUN(y[i, ], tpar))
+#  }
+#  res
+## FIXME: ff support!
+  FUN(y, par)
 }
 
 ff_eval <- function(x, FUN, lower = NULL, upper = NULL)
 {
-  res <- NULL
-  for(i in bit::chunk(x)) {
-    tres <- FUN(x[i])
-    if(!is.null(lower)) {
-      if(any(jj <- tres == lower[1]))
-        tres[jj] <- lower[2]
-    }
-    if(!is.null(upper)) {
-      if(any(jj <- tres == upper[1]))
-        tres[jj] <- upper[2]
-    }
-    res <- ffappend(res, tres)
-  }
-  res
+#  res <- NULL
+#  for(i in bit::chunk(x)) {
+#    tres <- FUN(x[i])
+#    if(!is.null(lower)) {
+#      if(any(jj <- tres == lower[1]))
+#        tres[jj] <- lower[2]
+#    }
+#    if(!is.null(upper)) {
+#      if(any(jj <- tres == upper[1]))
+#        tres[jj] <- upper[2]
+#    }
+#    res <- ffappend(res, tres)
+#  }
+#  res
+## FIXME: ff support!
+  FUN(x)
 }
 
 
