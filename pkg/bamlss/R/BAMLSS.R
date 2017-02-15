@@ -4143,7 +4143,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
         d <- drop(tAf %*% b)
         S <- S + w[k] / sqrt(d^2 + const) * Af[, k] %*% tAf
       }
-      S
+      S + diag(1e-06, ncol(S))
     }
     attr(object$S[[ls]], "npar") <- ncol(object$X)
   }
