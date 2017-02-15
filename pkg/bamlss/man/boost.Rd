@@ -26,7 +26,7 @@ boost.summary(object, ...)
 ## Plot all boosting paths.
 boost.plot(x, which = c("loglik", "loglik.contrib", "parameters"),
   intercept = TRUE, spar = TRUE, mstop = NULL, name = NULL,
-  labels = NULL, color = NULL...)
+  labels = NULL, color = NULL, ...)
 
 ## Boosting summary printing and plotting:
 \method{print}{boost.summary}(x, summary = TRUE, plot = TRUE,
