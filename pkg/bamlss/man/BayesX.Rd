@@ -188,11 +188,11 @@ if(require("BayesXsrc")) {
   ## Quantile regression.
   b3_0.1 <- bamlss(num ~ s(x1) + s(x2) + s(x3) + tx(lon,lat),
     data = d, optimizer = FALSE, sampler = BayesX,
-    family = gF(quant, prob = 0.1))
+    family = gF("quant", prob = 0.1))
 
   b3_0.9 <- bamlss(num ~ s(x1) + s(x2) + s(x3) + tx(lon,lat),
     data = d, optimizer = FALSE, sampler = BayesX,
-    family = gF(quant, prob = 0.9))
+    family = gF("quant", prob = 0.9))
 
   ## Predict quantiles.
   p_0.1 <- predict(b3_0.1, term = "s(x2)")

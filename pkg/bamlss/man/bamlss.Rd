@@ -224,11 +224,13 @@ plot(b, which = "samples")
 ## Use of optimizer and sampler functions:
 ## * first run optimizer,
 b1 <- bamlss(f, data = d, optimizer = bfit, sampler = FALSE)
-print.bamlss.frame(b1)
+print(b1)
+summary(b1)
 
 ## * afterwards, start sampler with staring values,
 b2 <- bamlss(f, data = d, start = coef(b1), optimizer = FALSE, sampler = GMCMC)
-print.bamlss.frame(b2)
+print(b2)
+summary(b2)
 
 ## Continue sampling.
 b3 <- continue(b2, n.iter = 12000, burnin = 0, thin = 10)

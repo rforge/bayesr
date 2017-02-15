@@ -958,6 +958,12 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
               lpost1 <- objfun(1, diff = FALSE)
 
               if(lpost1 < lpost0) {
+if(abs(lpost0 - lpost1) > 100) {
+  cat("\n----\n")
+  print(nx[j])
+  print(x[[nx[j]]]$smooth.construct[[sj]]$label)
+  cat("----\n")
+}
                 if(!is.numeric(nu)) {
                   nuo <- optimize(f = objfun, interval = c(0, 1))$minimum
                 } else {

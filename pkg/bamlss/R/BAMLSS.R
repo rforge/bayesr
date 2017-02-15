@@ -5454,7 +5454,8 @@ DIC.bamlss <- function(object, ..., samples = TRUE, nsamps = NULL)
 logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
 {
   Call <- match.call()
-  mn <- as.character(Call[c(-1L, -length(Call))])
+  Call <- Call[!(names(Call) %in% c("optimizer", "samples"))]
+  mn <- as.character(Call)[-1L]
   object <- list(object, ...)
   mstop <- object$mstop
   if(any(names(object) != "")) {
@@ -5468,9 +5469,24 @@ logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
     ll <- list()
   for(j in seq_along(object)) {
     if(samples) {
-      ll[[j]] <- mcmc(samplestats(object[[j]], logLik = TRUE),
-        start = start(object[[j]]$samples), end = end(object[[j]]$samples),
-        thin = thin(object[[j]]$samples))
+      if(is.null(object[[j]]$samples)) {
+        warning(paste("no samples available for object ", mn[j], ", cannot compute logLik!", sep = ""))
+        ll[[j]] <- as.mcmc(NA)
+      } else {
+        ll[[j]] <- mcmc(samplestats(object[[j]], logLik = TRUE),
+          start = start(object[[j]]$samples), end = end(object[[j]]$samples),
+          thin = thin(object[[j]]$samples))
+        samps <- process.chains(object[[j]]$samples, combine = TRUE, drop = TRUE)
+        sn <- sapply(strsplit(colnames(samps), ".", fixed = TRUE), function(x) { x[length(x)] })
+        if(any(i <- (sn == "edf"))) {
+          edf <- mcmc(apply(samps[, i, drop = FALSE], 1, sum, na.rm = TRUE),
+            start = start(object[[j]]$samples), end = end(object[[j]]$samples),
+            thin = thin(object[[j]]$samples))
+          ll[[j]] <- mcmc(cbind("logLik" = ll[[j]], "edf" = edf),
+            start = start(object[[j]]$samples), end = end(object[[j]]$samples),
+            thin = thin(object[[j]]$samples))
+        }
+      }
     } else {
       ms <- ms0 <- object[[j]]$model.stats
       ms <- if(is.null(ms$sampler) | optimizer) {
@@ -5511,7 +5527,10 @@ logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
   if(!is.null(ll)) {
     if(samples) {
       names(ll) <- mn[1:length(ll)]
-      rval <- as.mcmc.list(ll)
+      if(length(ll) > 1)
+        rval <- as.mcmc.list(ll)
+      else
+        rval <- ll[[1]]
     } else {
       rval <- cbind("logLik" = ll, "edf" = edf, "nobs" = nobs)
       row.names(rval) <- if(nrow(rval) > 1) mn[1:nrow(rval)] else ""
@@ -7138,34 +7157,74 @@ sum_diag2 <- function(x, y)
   .Call("sum_diag2", x, y, PACKAGE = "bamlss")
 }
 
-AIC.bamlss <- function(object, ..., k = 2, optimizer = FALSE, samples = FALSE)
+AIC.bamlss <- function(..., k = 2, optimizer = FALSE, samples = FALSE, FUN = mean)
 {
-  val <- lapply(list(object, ...), function(x) { logLik.bamlss(x, optimizer = optimizer, samples = samples) } )
+  val <- logLik.bamlss(..., optimizer = optimizer, samples = samples)
+  if(!is.list(val)) {
+    val <- list(val)
+  }
   val <- lapply(val, function(x) {
-    data.frame("AIC" = -2 * x[,"logLik"] + k * x[,"edf"], "edf" = x[,"edf"])
+    if(!("edf" %in% colnames(x)))
+      stop("cannot compute AIC, edf are missing!")
+    x <- as.data.frame(cbind("AIC" = -2 * x[,"logLik"] + k * x[,"edf"], "edf" = x[,"edf"]))
+    x
   })
-  val <- do.call("rbind", val)
+  if(samples) {
+    val <- lapply(val, function(x) {
+      xn <- colnames(x)
+      x <- apply(x, 2, FUN)
+      names(x) <- xn
+      x
+    })
+  }
   Call <- match.call()
   Call$k <- NULL
   Call$optimizer <- NULL
   Call$samples <- NULL
-  row.names(val) <- if(nrow(val) > 1) as.character(Call[-1L]) else ""
+  if(!samples) {
+    val <- val[[1]]
+    row.names(val) <- if(nrow(val) > 1) Call[-1L] else ""
+  } else {
+    names(val) <- rep(as.character(Call[-1L]), length.out = length(val))
+    val <- do.call("rbind", val)
+  }
   val
 }
 
-BIC.bamlss <- function(object, ..., k = 2)
+BIC.bamlss <- function(..., k = 2, optimizer = FALSE, samples = FALSE, FUN = mean)
 {
-  val <- lapply(c(object, ...), logLik.bamlss)
-  val <- lapply(val, function(x) {
-    data.frame("BIC" = -2 * x[,"logLik"] + x[,"edf"] * log(x[, "nobs"]), "edf" = x[,"edf"])
+  nobs <- sapply(list(...), function(x) { if(is.null(nrow(x$y[[1]]))) nrow(model.frame(x)) else nrow(x$y[[1]]) })
+  val <- logLik.bamlss(..., optimizer = optimizer, samples = samples)
+  if(!is.list(val)) {
+    val <- list(val)
+  }
+  val <- lapply(1:length(val), function(i) {
+    if(!("edf" %in% colnames(val[[i]])))
+      stop("cannot compute BIC, edf are missing!")
+    x <- as.data.frame(cbind("BIC" = -2 * val[[i]][,"logLik"] + val[[i]][,"edf"] * log(nobs[i]), "edf" = val[[i]][,"edf"]))
+    x
   })
-  val <- do.call("rbind", val)
+  if(samples) {
+    val <- lapply(val, function(x) {
+      xn <- colnames(x)
+      x <- apply(x, 2, FUN)
+      names(x) <- xn
+      x
+    })
+  }
   Call <- match.call()
   Call$k <- NULL
-  row.names(val) <- if(nrow(val) > 1) as.character(Call[-1L]) else ""
+  Call$optimizer <- NULL
+  Call$samples <- NULL
+  if(!samples) {
+    val <- val[[1]]
+    row.names(val) <- if(nrow(val) > 1) Call[-1L] else ""
+  } else {
+    names(val) <- rep(as.character(Call[-1L]), length.out = length(val))
+    val <- do.call("rbind", val)
+  }
   val
 }
-
 
 #.First.lib <- function(lib, pkg)
 #{
