@@ -74,9 +74,12 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
   \item{verbose}{Print information during runtime of the algorithm.}
   \item{digits}{Set the digits for printing when \code{verbose = TRUE}.}
   \item{flush}{use \code{\link{flush.console}} for displaying the current output in the console.}
-  \item{nu}{Numeric or logical. Defines the step length for parameter updating of a model term,
-    useful when the algorithm encounters convergence problems. If \code{nu = TRUE} the step length
-    parameter is optimized for each model term in each iteration of the backfitting algorithm.}
+  \item{nu}{Numeric or logical. Function \code{bfit} uses step length optimization of parameters when 
+    updating a model term, useful when the algorithm encounters convergence problems. If
+    \code{nu = TRUE} the step length parameter is optimized for each model term in each iteration of
+    the backfitting algorithm. If \code{nu} is numeric, e.g. \code{nu = 1}, then \code{nu} is
+    halfed until an improvement in the log-posterior is obtained or nu is smaller than
+    \code{.Machine$double.eps}.}
   \item{stop.nu}{Integer. Should step length reduction be stopped after \code{stop.nu} iterations
     of the backfitting algorithm?}
   \item{eta}{The current value of the predictors, provided as a named list, one list entry
