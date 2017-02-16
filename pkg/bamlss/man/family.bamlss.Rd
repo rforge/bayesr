@@ -166,7 +166,7 @@ f <- family(b)
 sum(f$d(y = d$num, par = f$map2par(fitted(b)), log = TRUE))
 
 ## For using JAGS() more details are needed.
-norm4JAGS.bamlss <- function(...) {
+norm4JAGS_bamlss <- function(...) {
   f <- normal_bamlss()
   f$bugs <- list(
     "dist" = "dnorm",
