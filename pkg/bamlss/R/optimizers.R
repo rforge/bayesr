@@ -792,7 +792,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
                 nuo <- optimize(f = objfun, interval = c(0, 1))$minimum
               } else {
                 nuo <- nu
-                while((objfun(nuo, diff = FALSE) <= lpost0) & (.Machine$double.eps <= nuo)) {
+                while((objfun(nuo, diff = FALSE) < lpost0) & (.Machine$double.eps < nuo)) {
                   nuo <- nuo / 2
                 }
               }
@@ -960,7 +960,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
                   nuo <- optimize(f = objfun, interval = c(0, 1))$minimum
                 } else {
                   nuo <- nu
-                  while((objfun(nuo, diff = FALSE) <= lpost0) & (.Machine$double.eps <= nuo)) {
+                  while((objfun(nuo, diff = FALSE) < lpost0) & (.Machine$double.eps < nuo)) {
                     nuo <- nuo / 2
                   }
                 }
