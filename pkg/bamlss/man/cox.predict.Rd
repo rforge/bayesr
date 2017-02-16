@@ -78,7 +78,7 @@ b <- bamlss(f, family = "cox", data = d)
 
 ## Predict survival probabilities P(T > t).
 p <- predict(b, type = "probabilities",
-  time = 3, subdivisions = 100, FUN = quantile)
+  time = 3, subdivisions = 100, FUN = c95)
 }
 }
 

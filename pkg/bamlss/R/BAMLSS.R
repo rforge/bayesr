@@ -450,6 +450,10 @@ design.construct <- function(formula, data = NULL, knots = NULL,
           if(obj$smooth.construct[[j]]$by != "NA") {
             if(grepl(pat <- paste("):", obj$smooth.construct[[j]]$by, sep = ""), slj, fixed = TRUE)) {
               slj <- gsub(pat, paste(",by=", obj$smooth.construct[[j]]$by, "):", sep = ""), slj, fixed = TRUE)
+              slj <- strsplit(slj, "", fixed = TRUE)[[1]]
+              if(slj[length(slj)] == ":")
+                slj <- slj[-length(slj)]
+              slj <- paste(slj, collapse = "")
               obj$smooth.construct[[j]]$label <- slj
             }
           }
