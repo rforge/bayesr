@@ -11,7 +11,7 @@
 }
 
 \usage{
-continue(object, cores = NULL, combine = FALSE,
+continue(object, cores = NULL, combine = TRUE,
   sleep = NULL, results = TRUE, ...)
 }
 
@@ -21,7 +21,9 @@ continue(object, cores = NULL, combine = FALSE,
     function. This is based on function \code{\link[parallel]{mclapply}} of the \pkg{parallel}
     package.}
   \item{combine}{Should the new samples be combined with the old samples into one
-    \code{\link[coda]{mcmc}} matrix?}
+    \code{\link[coda]{mcmc}} matrix? Note that if \code{combine = FALSE} and the number of
+    iterations differ from one sampling step to the other there will be an error since
+    the start and end points in the samples \code{\link[coda]{mcmc}} objects are different!}
   \item{sleep}{Time the system should sleep before the next core is started.}
   \item{results}{If a results function was used to create the \code{\link{bamlss}} object,
     should the results function be applied using the new samples?}

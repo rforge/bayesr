@@ -6209,7 +6209,7 @@ samples.bamlss <- samples.bamlss.frame <- function(object, model = NULL, term = 
 
 
 ## Continue sampling.
-continue <- function(object, cores = NULL, combine = FALSE,
+continue <- function(object, cores = NULL, combine = TRUE,
   sleep = NULL, results = TRUE, ...)
 {
   if(is.null(object$samples))
@@ -6246,7 +6246,7 @@ continue <- function(object, cores = NULL, combine = FALSE,
 
   ## Process samples.
   samples <- process.chains(samples, TRUE)
-  object$samples <- process.chains(as.mcmc.list(c(object$samples, samples)), combine = combine)
+  object$samples <- process.chains(c(object$samples, samples), combine = combine)
 
   ## Compute results.
   if(is.function(results))
