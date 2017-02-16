@@ -6278,18 +6278,18 @@ confint.bamlss <- function(object, parm, level = 0.95, model = NULL,
 ## Extract model coefficients.
 coef.bamlss <- function(object, model = NULL, term = NULL,
   FUN = NULL, parameters = NULL, pterms = TRUE, sterms = TRUE,
-  hyper.parameters = TRUE, list = FALSE, full.names = TRUE, ...)
+  hyper.parameters = TRUE, list = FALSE, full.names = TRUE, rescale = FALSE, ...)
 {
   .coef.bamlss(object, model = model, term = term,
     FUN = FUN, parameters = parameters, pterms = pterms, sterms = sterms,
     s.variances = TRUE, hyper.parameters = hyper.parameters,
-    summary = FALSE, list = list, full.names = full.names, ...)
+    summary = FALSE, list = list, full.names = full.names, rescale = rescale, ...)
 }
 
 .coef.bamlss <- function(object, model = NULL, term = NULL,
   FUN = NULL, parameters = NULL, pterms = TRUE, sterms = TRUE,
   s.variances = FALSE, hyper.parameters = FALSE, summary = FALSE,
-  list = FALSE, full.names = TRUE, ...)
+  list = FALSE, full.names = TRUE, rescale = FALSE, ...)
 {
   if(is.null(object$samples) & is.null(object$parameters))
     stop("no coefficients to extract!")
@@ -6407,6 +6407,23 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
       rn <- rownames(rval)
       rval <- rval[, 1]
       names(rval) <- rn
+    }
+  }
+  ## If data have been scaled (scale.d=TRUE)
+  if ( ! is.null(attr(object$model.frame,'scale')) & rescale) {
+    ## Get scaling
+    sc <- attr(object$model.frame,'scale')
+    for ( par in names(object$terms) ) {
+      for ( nam in names(sc$scale) ) {
+         # Descaling coefficients
+         idx <- which(grepl(sprintf("%s.p.%s",par,nam),names(rval)))
+         if ( length(idx) > 0 )
+            rval[idx] <- rval[idx] / sc$scale[nam]
+         # Descaling intercepts
+         idx <- which(grepl(sprintf("%s.p.\\(Intercept\\)",par),names(rval)))
+         if ( length(idx) > 0 & sprintf("%s.p.%s",par,nam) %in% names(rval) )
+            rval[idx] <- rval[idx] - sc$center[nam] * rval[sprintf('%s.p.%s',par,nam)]
+      }
     }
   }
   rval

@@ -19,7 +19,7 @@
   FUN = NULL, parameters = NULL,
   pterms = TRUE, sterms = TRUE,
   hyper.parameters = TRUE, list = FALSE,
-  full.names = TRUE, ...)
+  full.names = TRUE, rescale = FALSE, ...)
 
 \method{confint}{bamlss}(object, parm, level = 0.95,
   model = NULL, pterms = TRUE, sterms = FALSE,
@@ -40,6 +40,8 @@
   \item{list}{Should the returned object have a list structure for each distribution parameter?}
   \item{full.names}{Should full names be assigned, indicating whether a term is parametric "p" or
     smooth "s".}
+  \item{rescale}{Should parameters of the linear parts be rescaled if the \code{scale.d} argument
+    in \code{\link{bamlss.frame}} is set to \code{TRUE}.}
   \item{parm}{Character or integer. For which term should coefficients intervals be extracted?}
   \item{level}{The credible level which defines the lower and upper quantiles that should
     be computed from the samples.}
