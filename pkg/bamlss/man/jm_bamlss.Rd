@@ -265,7 +265,6 @@ b_mean <- bamlss(f, data = d, family = "jm",
 
 ## Plot effects.
 plot(b_mean, model = "alpha")
-plot(b_mean, model = "alpha", which = samples)
 }
 }
 
