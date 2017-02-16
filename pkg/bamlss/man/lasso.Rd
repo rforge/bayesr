@@ -25,7 +25,8 @@ lasso(x, y, start = NULL, adaptive = TRUE, lower = 0.001, upper = 1000,
 ## Plotting function for lasso() optimizer.
 lasso.plot(x, which = c("criterion", "parameters"),
   spar = TRUE, name = NULL, mstop = NULL, retrans = FALSE,
-  color = NULL, show.lambda = TRUE, labels = NULL, ...)
+  color = NULL, show.lambda = TRUE, labels = NULL,
+  digits = 2, ...)
 
 ## Extract optimum stopping iteration for lasso() optimizer.
 ## Based on the minimum of the information criterion.
@@ -77,6 +78,7 @@ lasso.coef(x, ...)
   \item{color}{Colors or color function that creates colors for the group paths.}
   \item{show.lambda}{Logical. Should the optimum value of the penalty parameter lambda be shown?}
   \item{labels}{A character string of labels that should be used on the 4 axis.}
+  \item{digits}{If the optimum lambda value is plotted, the number of decimal decimal places to be used.}
   \item{\dots}{Arguments passed to the subsequent smooth constructor function.
     \code{lambda} controls the starting value of the penalty parameter, \code{const} the constant
     that is added within the penalty approximation.

@@ -3109,7 +3109,8 @@ lasso.coef <- function(x, ...) {
 
 
 lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, name = NULL,
-  mstop = NULL, retrans = FALSE, color = NULL, show.lambda = TRUE, labels = NULL, ...)
+  mstop = NULL, retrans = FALSE, color = NULL, show.lambda = TRUE, labels = NULL,
+  digits = 2, ...)
 {
   if(!is.character(which)) {
     which <- c("criterion", "parameters")[as.integer(which)]
@@ -3146,7 +3147,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
       xlab = expression(log(lambda)), ylab = nic, axes = FALSE)
     at <- pretty(mstop)
     at[at == 0] <- 1
-    axis(1, at = at, labels = fmt2(log_lambda[mstop][at], ...))
+    axis(1, at = at, labels = fmt2(log_lambda[mstop][at], digits))
     axis(2)
     if(show.lambda) {
       i <- which.min(ic[, nic])
@@ -3191,7 +3192,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
       labels = labs, las = 1)
     at <- pretty(mstop)
     at[at == 0] <- 1
-    axis(1, at = at, labels = fmt2(log_lambda[mstop][at], ...))
+    axis(1, at = at, labels = fmt2(log_lambda[mstop][at], digits))
     axis(2)
     if(show.lambda) {
       i <- which.min(ic[, nic])
