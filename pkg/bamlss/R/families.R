@@ -1039,8 +1039,8 @@ cnorm_bamlss <- function(...)
 
 pcnorm_bamlss <- function(start = 2, update = FALSE, ...)
 {
-  ## ll <- "-0.918938533204673 - log(sigma) - 1/2 * (y^(1/exp(lambda)) - mu)^2/sigma^2 - lambda + (1 / exp(lambda) - 1) * log(y)"
-  ## derivs <- compute_derivatives(ll, "lambda")
+  ## ll_yp <- "-1/2*(log(2*pi) + 2*log(sigma) + (y^(1/exp(lambda)) - mu)^2/sigma^2"
+  ## derivs_yp <- compute_derivatives(ll, "lambda")
   f <- list(
     "family" = "pcnorm",
     "names" = c("mu", "sigma", "lambda"),
@@ -1058,8 +1058,9 @@ pcnorm_bamlss <- function(start = 2, update = FALSE, ...)
         as.integer(attr(y, "check")), PACKAGE = "bamlss")
     },
     "lambda" = function(y, par, ...) {
-      score <- 1/2 * (2 * (y^(1/par$lambda) * (log(y) * (1/par$lambda)) * (y^(1/par$lambda) - par$mu)))/sigma^2 -
-        1 - 1/par$lambda *  log(y)
+      lambda <- 1/par$lambda
+      yl <- y^lambda
+      score <- 1/2 * (2 * (yl * (log(y) * lambda) * (yl - par$mu)))/sigma^2 - 1 - lambda * log(y)
       ifelse(y <= 0, 0, score)
     }
   )
@@ -1078,11 +1079,11 @@ pcnorm_bamlss <- function(start = 2, update = FALSE, ...)
       hess <- 1/2 * (2 * ((y^(1/par$lambda) * (log(y) * (par$lambda/par$lambda^2 - 
         par$lambda * (2 * (par$lambda * par$lambda))/(par$lambda^2)^2)) - 
         y^(1/par$lambda) * (log(y) * (par$lambda/par$lambda^2)) * 
-        (log(y) * (par$lambda/par$lambda^2))) * (y^(1/par$lambda) - 
+          (log(y) * (par$lambda/par$lambda^2))) * (y^(1/par$lambda) - 
         par$mu) - y^(1/par$lambda) * (log(y) * (par$lambda/par$lambda^2)) * 
-        (y^(1/par$lambda) * (log(y) * (par$lambda/par$lambda^2)))))/sigma^2 - 
+        (y^(1/par$lambda) * (log(y) * (par$lambda/par$lambda^2)))))/par$sigma^2 - 
         (par$lambda/par$lambda^2 - par$lambda * (2 * (par$lambda * 
-        par$lambda))/(par$lambda^2)^2) * log(y)
+          par$lambda))/(par$lambda^2)^2) * log(y)
       ifelse(y <= 0, 0, -hess)
     }
   )
@@ -1092,9 +1093,8 @@ pcnorm_bamlss <- function(start = 2, update = FALSE, ...)
 #      as.integer(attr(y, "check")), PACKAGE = "bamlss")
 #  }
   f$d <- function(y, par, log = FALSE) {
-    dy <- ifelse(y <= 0, pnorm(0, par$mu, par$sigma, log.p = TRUE),
-      dnorm(y^(1 / par$lambda), par$mu, par$sigma, log = TRUE) -
-      log(par$lambda) + (1 / par$lambda - 1) * log(y))
+    dy <- ifelse(y <= 0, pnorm(-par$mu / par$sigma, log.p = log),
+      -0.918938533204673 - log(par$sigma) - 0.5 * (y^(1/par$lambda) - par$mu)^2/par$sigma^2)
     if(!log)
       dy <- exp(dy)
     dy

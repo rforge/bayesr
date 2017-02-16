@@ -255,7 +255,7 @@ f <- list(
 
 ## Estimating posterior mode only using jm.mode()
 b_mode <- bamlss(f, data = d, family = "jm",
-  timevar = "obstime", idvar = "id", sampler = MVNORM)
+  timevar = "obstime", idvar = "id", sampler = FALSE)
 
 ## Estimating posterior means using jm.mcmc() 
 ##  with starting values generated from posterior mode 
