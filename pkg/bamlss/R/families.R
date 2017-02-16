@@ -1039,34 +1039,13 @@ cnorm_bamlss <- function(...)
 
 pcnorm_bamlss <- function(start = 2, update = FALSE, ...)
 {
+  ## ll <- "-0.918938533204673 - log(sigma) - 1/2 * (y^(1/exp(lambda)) - mu)^2/sigma^2 - lambda + (1 / exp(lambda) - 1) * log(y)"
+  ## derivs <- compute_derivatives(ll, "lambda")
   f <- list(
     "family" = "pcnorm",
     "names" = c("mu", "sigma", "lambda"),
     "links" = c(mu = "identity", sigma = "log", lambda = "log")
   )
-  f$transform <- function(x, ...) {
-    attr(x$y[[1]], "check") <- as.integer(x$y[[1]] <= 0)
-
-    if(is.null(attr(x$x, "bamlss.engine.setup")))
-      x$x <- bamlss.engine.setup(x$x, ...)
-
-    if(!is.null(x$x$lambda$smooth.construct$model.matrix)) {
-      x$x$lambda$smooth.construct$model.matrix$state$parameters[1] <- log(start)
-      x$x$lambda$smooth.construct$model.matrix$state$fitted.values <- x$x$lambda$smooth.construct$model.matrix$fit.fun(x$x$lambda$smooth.construct$model.matrix$X, x$x$lambda$smooth.construct$model.matrix$state$parameters)
-      for(j in seq_along(x$x$lambda$smooth.construct)) {
-        x$x$lambda$smooth.construct[[j]]$propose <- GMCMC_slice
-        x$x$lambda$smooth.construct[[j]]$update <- if(update) {
-          bfit_optim
-        } else {
-          function(x, ...) {
-            return(x$state)
-          }
-        }
-      }
-    }
-
-    list("x" = x$x, "y" = x$y)
-  }
   f$score <- list(
     "mu" = function(y, par, ...) {
       .Call("cnorm_score_mu",
@@ -1077,6 +1056,11 @@ pcnorm_bamlss <- function(start = 2, update = FALSE, ...)
       .Call("cnorm_score_sigma",
         as.numeric(y^(1 / par$lambda)), as.numeric(par$mu), as.numeric(par$sigma),
         as.integer(attr(y, "check")), PACKAGE = "bamlss")
+    },
+    "lambda" = function(y, par, ...) {
+      score <- 1/2 * (2 * (y^(1/par$lambda) * (log(y) * (1/par$lambda)) * (y^(1/par$lambda) - par$mu)))/sigma^2 -
+        1 - 1/par$lambda *  log(y)
+      ifelse(y <= 0, 0, score)
     }
   )
   f$hess <- list(
@@ -1089,13 +1073,24 @@ pcnorm_bamlss <- function(start = 2, update = FALSE, ...)
       .Call("cnorm_hess_sigma",
         as.numeric(y^(1 / par$lambda)), as.numeric(par$mu), as.numeric(par$sigma),
         as.integer(attr(y, "check")), PACKAGE = "bamlss")
+    },
+    "lambda" = function(y, par, ...) {
+      hess <- 1/2 * (2 * ((y^(1/par$lambda) * (log(y) * (par$lambda/par$lambda^2 - 
+        par$lambda * (2 * (par$lambda * par$lambda))/(par$lambda^2)^2)) - 
+        y^(1/par$lambda) * (log(y) * (par$lambda/par$lambda^2)) * 
+        (log(y) * (par$lambda/par$lambda^2))) * (y^(1/par$lambda) - 
+        par$mu) - y^(1/par$lambda) * (log(y) * (par$lambda/par$lambda^2)) * 
+        (y^(1/par$lambda) * (log(y) * (par$lambda/par$lambda^2)))))/sigma^2 - 
+        (par$lambda/par$lambda^2 - par$lambda * (2 * (par$lambda * 
+        par$lambda))/(par$lambda^2)^2) * log(y)
+      ifelse(y <= 0, 0, -hess)
     }
   )
-  f$loglik <- function(y, par, ...) {
-    .Call("cnorm_power_loglik",
-      as.numeric(y), as.numeric(par$mu), as.numeric(par$sigma), as.numeric(par$lambda),
-      as.integer(attr(y, "check")), PACKAGE = "bamlss")
-  }
+#  f$loglik <- function(y, par, ...) {
+#    .Call("cnorm_power_loglik",
+#      as.numeric(y), as.numeric(par$mu), as.numeric(par$sigma), as.numeric(par$lambda),
+#      as.integer(attr(y, "check")), PACKAGE = "bamlss")
+#  }
   f$d <- function(y, par, log = FALSE) {
     dy <- ifelse(y <= 0, pnorm(0, par$mu, par$sigma, log.p = TRUE),
       dnorm(y^(1 / par$lambda), par$mu, par$sigma, log = TRUE) -
