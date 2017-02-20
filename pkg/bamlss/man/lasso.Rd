@@ -120,7 +120,7 @@ lasso.coef(x, ...)
 
 \examples{
 \dontrun{## Load data example.
-data(rent99, package = "gamlss.data")
+data("rent99", package = "gamlss.data")
 rent99$district <- as.factor(rent99$district)
 
 ## Change numeric to factor coding.
