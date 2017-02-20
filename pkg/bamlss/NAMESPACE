@@ -42,8 +42,6 @@ importFrom("utils", "download.file", "flush.console", "getS3method",
 import("spam")
 import("Matrix")
 
-useDynLib(bamlss)
-
 export(
   ## main user interface
   "bamlss",               
@@ -196,4 +194,6 @@ S3method("samples", "bamlss")
 S3method("samples", "bamlss.frame")
 S3method("model.frame", "bamlss")
 S3method("model.frame", "bamlss.frame")
+
+useDynLib(bamlss, .registration = TRUE)
 

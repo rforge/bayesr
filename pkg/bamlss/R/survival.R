@@ -1093,7 +1093,7 @@ Predict.matrix.deriv.smooth <- function(object, data)
 ## Extract the XT matrix.
 extract_XT <- function(X, tnr, tnc)
 {
-  .Call("extract_XT", X, as.integer(tnr), as.integer(tnc))
+  .Call("extract_XT", X, as.integer(tnr), as.integer(tnc), PACKAGE = "bamlss")
 }
 
 
@@ -1105,15 +1105,15 @@ survint <- function(X, eta, width, gamma, eta2 = NULL, index = NULL, dX = NULL, 
 
   int <- if(is.null(dX)) {
     if(is.null(index)) {
-      .Call("survint", X, eta, width, gamma, eta2, as.integer(check))
+      .Call("survint", X, eta, width, gamma, eta2, as.integer(check), PACKAGE = "bamlss")
     } else {
-      .Call("survint_index", X, eta, width, gamma, eta2, as.integer(check), index)
+      .Call("survint_index", X, eta, width, gamma, eta2, as.integer(check), index, PACKAGE = "bamlss")
     }
   } else {
     if(is.null(index)) {
-      .Call("dsurvint", X, eta, width, gamma, eta2, as.integer(check), dX, deta, deta2)
+      .Call("dsurvint", X, eta, width, gamma, eta2, as.integer(check), dX, deta, deta2, PACKAGE = "bamlss")
     } else {
-      .Call("dsurvint_index", X, eta, width, gamma, eta2, as.integer(check), index, dX, deta, deta2)
+      .Call("dsurvint_index", X, eta, width, gamma, eta2, as.integer(check), index, dX, deta, deta2, PACKAGE = "bamlss")
     }
   }
 
