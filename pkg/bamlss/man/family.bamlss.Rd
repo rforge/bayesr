@@ -22,7 +22,7 @@
 \description{
   Family objects in \pkg{bamlss} specify the information that is needed for using (different)
   model fitting engines, e.g., the parameter names and corresponding link functions, the
-  density function, derivatives of the log-likelihood w.r.t. the linear predictors, and so
+  density function, derivatives of the log-likelihood w.r.t. the predictors, and so
   forth. The optimizer or sampler functions that are called by \code{\link{bamlss}} must know how
   much information is needed to interpret the model since the family objects are simply
   passed through. Family objects are also used for computing post-modeling statistics, e.g., for
@@ -83,12 +83,12 @@ gpareto_bamlss(...)
 
   Similarly, for derivative based algorithms, e.g. using iteratively weighted least squares
   (IWLS, see function \code{\link{bfit}}, the family object holds derivative functions evaluating
-  derivatives of the log-likelihood w.r.t. the linear predictors (or expectations of derivatives).
+  derivatives of the log-likelihood w.r.t. the predictors (or expectations of derivatives).
   For each parameter, these functions also hold the following arguments:
  
   \code{score(y, par, ...)}
 
-  for computing the first derivative of the log-likelihood w.r.t. a linear predictor and
+  for computing the first derivative of the log-likelihood w.r.t. a predictor and
 
   \code{hess(y, par, ...)}
 

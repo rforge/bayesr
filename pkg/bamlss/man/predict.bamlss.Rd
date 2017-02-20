@@ -37,7 +37,7 @@
     Note that, e.g., \code{term = c("s(x1)", "x2")} will compute the combined prediction
     \code{s(x1) + x2}.}
   \item{intercept}{Should the intercept be included?}
-  \item{type}{If \code{type = "link"} the linear predictor of the corresponding \code{model}
+  \item{type}{If \code{type = "link"} the predictor of the corresponding \code{model}
     is returned. If \code{type = "parameter"} predictions on the distributional parameter scale
     are returned.}
   \item{FUN}{A function that should be applied on the samples of predictors or

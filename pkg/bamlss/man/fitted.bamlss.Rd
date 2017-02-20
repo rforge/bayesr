@@ -22,7 +22,7 @@
   \item{term}{Character or integer, specifies the model terms for which fitted values are required.
     Note that if \code{samples = TRUE}, e.g., \code{term = c("s(x1)", "x2")} will compute the
     combined fitted values \code{s(x1) + x2}.}
-  \item{type}{If \code{type = "link"} the linear predictor of the corresponding \code{model}
+  \item{type}{If \code{type = "link"} the predictor of the corresponding \code{model}
     is returned. If \code{type = "parameter"} fitted values on the distributional parameter scale
     are returned.}
   \item{samples}{Should fitted values be computed using samples of parameters or estimated parameters
@@ -30,7 +30,7 @@
     \code{"fitted.values"}). The former results in a call to \code{\link{predict.bamlss}}, the
     latter simply extracts the \code{"fitted.values"} of the \code{\link{bamlss}} object and
     is not model term specific.}
-  \item{FUN}{A function that should be applied on the samples of linear predictors or
+  \item{FUN}{A function that should be applied on the samples of predictors or
     parameters, depending on argument \code{type}.}
   \item{nsamps}{If the fitted \code{\link{bamlss}} object contains samples of parameters,
     computing fitted values may take quite some time. Therefore, to get a first feeling it can

@@ -101,10 +101,10 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
   a Newton-Raphson or Fisher scoring algorithm is applied, similar to
   Rigby~and~Stasinopoulos~(2005). The algorithm utilizes the chain rule for computing derivatives of
   the log-posterior w.r.t. regression coefficients, therefore, to compute the working observations
-  and weights only the derivatives of the log-likelihood w.r.t. the linear predictors are required.
+  and weights only the derivatives of the log-likelihood w.r.t. the predictors are required.
 
   It is assumed that the provided \code{family} object holds functions for computing the first
-  and second order derivatives of the log-likelihood w.r.t. the linear predictors. These Functions
+  and second order derivatives of the log-likelihood w.r.t. the predictors. These Functions
   are provided within the named lists \code{"score"} and \code{"hess"} within the \code{family}
   object. See the documentation of \code{\link{family.bamlss}} and the code of the provided
   families, e.g. \code{\link{gaussian_bamlss}}, for examples of the required structure.
