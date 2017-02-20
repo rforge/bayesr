@@ -1060,7 +1060,7 @@ pcnorm_bamlss <- function(start = 2, update = FALSE, ...)
     "lambda" = function(y, par, ...) {
       lambda <- 1/par$lambda
       yl <- y^lambda
-      score <- 1/2 * (2 * (yl * (log(y) * lambda) * (yl - par$mu)))/sigma^2 - 1 - lambda * log(y)
+      score <- 1/2 * (2 * (yl * (log(y) * lambda) * (yl - par$mu)))/par$sigma^2 - 1 - lambda * log(y)
       ifelse(y <= 0, 0, score)
     }
   )
