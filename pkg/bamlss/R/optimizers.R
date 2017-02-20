@@ -2121,7 +2121,7 @@ boost <- function(x, y, family,
       for(j in names(x[[i]]$smooth.construct)) {
         ## Get updated parameters.
         states[[i]][[j]] <- if(is.null(x[[i]]$smooth.construct[[j]][["boost.fit"]])) {
-          .Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu, rho)
+          .Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu, rho, PACKAGE = "bamlss")
         } else {
           x[[i]]$smooth.construct[[j]][["boost.fit"]](x[[i]]$smooth.construct[[j]], grad, nu, rho)
         }
