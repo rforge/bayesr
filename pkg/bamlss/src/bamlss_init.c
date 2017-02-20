@@ -2,7 +2,6 @@
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
 
-
 SEXP bivnorm_loglik(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP boost_fit(SEXP, SEXP, SEXP, SEXP);
 SEXP cnorm_hess_mu(SEXP, SEXP, SEXP, SEXP);
@@ -37,7 +36,6 @@ SEXP sum_diag2(SEXP, SEXP);
 SEXP survint(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP survint_index(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP xbin_fun(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-
 
 static R_CallMethodDef callMethods[] = {
   {"bivnorm_loglik", (DL_FUNC) &bivnorm_loglik, 7},
