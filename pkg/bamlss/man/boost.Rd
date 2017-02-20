@@ -110,9 +110,9 @@ plot(b)
 
 ## Print and plot the boosting summary.
 boost.summary(b)
-boost.plot(b)
-boost.plot(b, 2)
-boost.plot(b, 3, name = "mu.s.te(lon,lat).")
+boost.plot(b, which = 1)
+boost.plot(b, which = 2)
+boost.plot(b, which = 3, name = "mu.s.te(lon,lat).")
 
 ## Extract estimated parameters for certain
 ## boosting iterations.
