@@ -163,21 +163,6 @@ coef(b1, mstop = lasso.stop(b1))
 
 ## Predict with optimum Lasso parameter.
 p1 <- predict(b1, mstop = lasso.stop(b1))
-
-## With lambda parameters for each covariate, use model b1
-## coefficients as starting values together with lasso.transform()
-## setting the adaptive weights using model b0 coefficients.
-b2 <- bamlss(f, data = rent99, criterion = "BIC", sampler = FALSE,
-  transform = lasso.transform, zeromodel = b0, nobs = nrow(rent99),
-  start = coef(b1, mstop = lasso.stop(b1)))
-summary(b2)
-
-## With full MCMC.
-set.seed(123)
-b3 <- bamlss(f, data = rent99,
-  transform = lasso.transform, zeromodel = b0, nobs = nrow(rent99)
-  start = coef(b1, mstop = lasso.stop(b1)))
-summary(b3)
 }
 }
 

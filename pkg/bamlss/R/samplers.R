@@ -68,7 +68,7 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       fitfun[[i]][[j]] <- function(x, p) {
         attr(p, "fitted.values")
       }
-      x[[i]][[j]]$penaltyFunction <- as.integer(sapply(x[[i]][[j]]$S, is.function))   
+      x[[i]][[j]]$penaltyFunction <- as.integer(sapply(x[[i]][[j]]$S, is.function))
     }
     names(theta[[i]]) <- names(propose2[[i]]) <- names(fitfun[[i]]) <- names(x[[i]]) <- nt
   }
@@ -853,7 +853,7 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
     if((length(data$S) < 2) & (attr(data$prior, "var_prior") == "ig")) {
       g <- get.par(theta, "b")
       if(is.function(data$S[[1]])) {
-        K <- data$S[[1]](g)
+        K <- data$S[[1]](c(g, data$fixed.hyper))
         data$rank <- ncol(K)
       } else K <- data$S[[1]]
       a <- data$rank / 2 + data$a
@@ -889,7 +889,7 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
   } else {
     tau2 <- get.par(theta, "tau2")
     for(j in seq_along(data$S))
-      S <- S + 1 / tau2[j] * if(is.function(data$S[[j]])) data$S[[j]](theta) else data$S[[j]]
+      S <- S + 1 / tau2[j] * if(is.function(data$S[[j]])) data$S[[j]](c(theta, data$fixed.hyper)) else data$S[[j]]
     matrix_inv(XWX + S, data$sparse.setup, all_diagonal = data$all_diagonal)
   }
   P[P == Inf] <- 0
@@ -949,7 +949,7 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
   if(!data$fixed) {
     tau2 <- get.par(theta, "tau2")
     for(j in seq_along(data$S))
-      S <- S + 1 / tau2[j] * if(is.function(data$S[[j]])) data$S[[j]](g) else data$S[[j]]
+      S <- S + 1 / tau2[j] * if(is.function(data$S[[j]])) data$S[[j]](c(g, data$fixed.hyper)) else data$S[[j]]
   }
 
   ## Compute mean and precision.
