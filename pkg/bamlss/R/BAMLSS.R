@@ -2901,7 +2901,7 @@ c95 <- function(x)
 
 ## A prediction method for "bamlss" objects.
 ## Prediction can also be based on multiple chains.
-predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
+predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.names = TRUE,
   intercept = TRUE, type = c("link", "parameter"), FUN = function(x) { mean(x, na.rm = TRUE) },
   trans = NULL, what = c("samples", "parameters"), nsamps = NULL, verbose = FALSE, drop = TRUE,
   cores = NULL, chunks = 1, ...)
@@ -2958,7 +2958,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL,
             if("(Intercept)" %in% tl[[i]])
               enames[[i]] <- c(enames[[i]], "(Intercept)")
           } else {
-            k <- grep(j, tl[[i]], fixed = TRUE)
+            k <- if(match.names) grep(j, tl[[i]], fixed = TRUE) else which(tl[[i]] == j)
             if(length(k))
               enames[[i]] <- c(enames[[i]], tl[[i]][k])
           }

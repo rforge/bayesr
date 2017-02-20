@@ -19,7 +19,7 @@
 
 \usage{
 \method{predict}{bamlss}(object, newdata, model = NULL, term = NULL,
-  intercept = TRUE, type = c("link", "parameter"),
+  match.names = TRUE, intercept = TRUE, type = c("link", "parameter"),
   FUN = function(x) { mean(x, na.rm = TRUE) }, trans = NULL,
   what = c("samples", "parameters"), nsamps = NULL,
   verbose = FALSE, drop = TRUE,
@@ -36,6 +36,9 @@
   \item{term}{Character or integer, specifies the model terms for which predictions are required.
     Note that, e.g., \code{term = c("s(x1)", "x2")} will compute the combined prediction
     \code{s(x1) + x2}.}
+  \item{match.names}{Should partial string matching be used to select the \code{term}s for
+    prediction. Note that, e.g., \code{term = "x1"} will select all terms including \code{"x1"} if
+    \code{match.names = TRUE}.}
   \item{intercept}{Should the intercept be included?}
   \item{type}{If \code{type = "link"} the predictor of the corresponding \code{model}
     is returned. If \code{type = "parameter"} predictions on the distributional parameter scale
