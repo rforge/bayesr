@@ -13,14 +13,14 @@
 }
 
 \usage{
-## Gradient boosting optimizer:
+## Gradient boosting optimizer.
 boost(x, y, family,
   nu = 0.1, df = 4, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL,
   plot = TRUE, initialize = TRUE, ...)
 
-## Boosting summary extractor:
+## Boosting summary extractor.
 boost.summary(object, ...)
 
 ## Plot all boosting paths.
@@ -28,7 +28,7 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters"),
   intercept = TRUE, spar = TRUE, mstop = NULL, name = NULL,
   labels = NULL, color = NULL, ...)
 
-## Boosting summary printing and plotting:
+## Boosting summary printing and plotting.
 \method{print}{boost.summary}(x, summary = TRUE, plot = TRUE,
   which = c("loglik", "loglik.contrib"), intercept = TRUE,
   spar = TRUE, ...)
