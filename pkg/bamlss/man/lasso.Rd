@@ -61,7 +61,8 @@ lasso.coef(x, ...)
     \code{lower} to \code{upper} with length \code{nlambda}.}
   \item{lambda}{Numeric. A sequence/vector of lambda parameters that should be used.}
   \item{verbose}{Print information during runtime of the algorithm.}
-  \item{digits}{Set the digits for printing when \code{verbose = TRUE}.}
+  \item{digits}{Set the digits for printing when \code{verbose = TRUE}. If the optimum lambda value
+    is plotted, the number of decimal decimal places to be used within \code{lasso.plot()}.}
   \item{flush}{use \code{\link{flush.console}} for displaying the current output in the console.}
   \item{nu}{Numeric or logical. Defines the step length for parameter updating of a model term,
     useful when the algorithm encounters convergence problems. If \code{nu = TRUE} the step length
@@ -86,7 +87,6 @@ lasso.coef(x, ...)
   \item{color}{Colors or color function that creates colors for the group paths.}
   \item{show.lambda}{Logical. Should the optimum value of the penalty parameter lambda be shown?}
   \item{labels}{A character string of labels that should be used on the 4 axis.}
-  \item{digits}{If the optimum lambda value is plotted, the number of decimal decimal places to be used.}
   \item{\dots}{Arguments passed to the subsequent smooth constructor function.
     \code{lambda} controls the starting value of the penalty parameter, \code{const} the constant
     that is added within the penalty approximation. Moreover, \code{fuse = 1} enforces nominal
