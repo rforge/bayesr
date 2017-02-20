@@ -4069,7 +4069,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$S <- list()
   const <- object$xt$const
   if(is.null(const))
-    const <- 1e-08
+    const <- 1e-06
   if(!fuse) {
     if(object$type == "single") {
       object$S[[1]] <- function(parameters) {
@@ -4137,10 +4137,14 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
         w[ff] <- w[ff] * 1 / abs(t(Af[, ff]) %*% beta)
     }
     object$Af <- Af
-    object$S[[ls <- length(object$S) + 1]] <- function(parameters) {
+    object$S[[ls <- length(object$S) + 1]] <- function(parameters, fixed.hyper = NULL) {
       b <- get.par(parameters, "b")
-      if(length(i <- grep("lasso", names(parameters))))
-        w <- parameters[i]
+      if(!is.null(fixed.hyper)) {
+        w <- fixed.hyper
+      } else {
+        if(length(i <- grep("lasso", names(parameters))))
+          w <- parameters[i]
+      }
       S <- 0
       for(k in 1:ncol(Af)) {
         tAf <- t(Af[, k])
@@ -4170,7 +4174,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$lasso$const <- const
 
   if(ridge)
-    object$S <- list(diag(ncol(object$X)))
+    object$S <- list(diag(.Machine$double.eps, ncol(object$X)))
 
   XX <- crossprod(object$X)
   XX <- XX[!diag(nrow(XX))]
@@ -4185,7 +4189,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   S_is_diagonal <- isTRUE(all.equal(S, rep(0, length(S))))
 
   object$all_diagonal <- XX_is_diagonal & S_is_diagonal
-  object$propose <- if(object$all_diagonal) GMCMC_iwlsC_gp_diag_lasso else GMCMC_iwlsC_gp
+  object$propose <- if(object$all_diagonal & !fuse) GMCMC_iwlsC_gp_diag_lasso else GMCMC_iwlsC_gp
   object$xt[["binning"]] <- TRUE
   if(is.null(object$xt[["df"]]))
     object$xt[["df"]] <- if(!ridge) ceiling(ncol(object$X) * 0.9) else ceiling(ncol(object$X) * 0.3)

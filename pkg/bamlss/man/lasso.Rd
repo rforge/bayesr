@@ -4,6 +4,7 @@
 \alias{lasso.plot}
 \alias{lasso.stop}
 \alias{lasso.coef}
+\alias{lasso.transform}
 
 \title{Lasso Smooth Constructor}
 
@@ -21,6 +22,10 @@ lasso(x, y, start = NULL, adaptive = TRUE, lower = 0.001, upper = 1000,
   nlambda = 100, lambda = NULL, verbose = TRUE, digits = 4,
   flush = TRUE, nu = NULL, stop.nu = NULL,
   ridge = .Machine$double.eps^0.25, zeromodel = NULL, ...)
+
+## Lasso transformation function to set
+## adaptive weights from an unpenalized model.
+lasso.transform(x, zeromodel, nobs = NULL, ...)
 
 ## Plotting function for lasso() optimizer.
 lasso.plot(x, which = c("criterion", "parameters"),
@@ -41,9 +46,10 @@ lasso.coef(x, ...)
     penalized with Lasso.}
   \item{type}{Should one single penalty parameter be used or multiple parameters, one for each
     covariate in \code{formula}.}
-  \item{x}{For function \code{lasso()} the \code{x} list, as returned from function
-    \code{\link{bamlss.frame}}, holding all model matrices and other information that is used for
-    fitting the model. For the plotting function and \code{lasso.stop()}/\code{lasso.coef()} the
+  \item{x}{For function \code{lasso()} and \code{lasso.transform()} the \code{x} list, as returned
+    from function \code{\link{bamlss.frame}}, holding all model matrices and other information that
+    is used for fitting the model. For the plotting function and
+    \code{lasso.stop()}/\code{lasso.coef()} the
     corresponding \code{\link{bamlss}} object fitted with the \code{lasso()} optimizer.}
   \item{y}{The model response, as returned from function \code{\link{bamlss.frame}}.}
   \item{start}{A vector of starting values. Note, Lasso smoothing parameters will be dropped.}
@@ -67,9 +73,11 @@ lasso.coef(x, ...)
     in complex models.}
   \item{zeromodel}{A model containing the unpenalized parameters, e.g., for each \code{la()}
     terms one can place a simple ridge penalty with \code{la(x, ridge = TRUE, sp = 0.1)}. This
-    way it is possible to find the unpenalized parameters that can be used as asaptive
+    way it is possible to find the unpenalized parameters that can be used as adaptive
     weights for fusion penalties.}
-  \item{which}{Which of the two provided plots should be created?}
+  \item{nobs}{Integer, number of observations of the data used for modeling. If not supplied
+    \code{nobs} is taken from the number of rows from the model term design matrices.}
+  \item{which}{Which of the two provided plots should be created, character or integer \code{1} and \code{2}.}
   \item{spar}{Should graphical parameters be set by the plotting function?}
   \item{name}{Character, the name of the coefficient group that should be plotted. Note that
     the string provided in \code{name} will be removed from the labels on the 4th axis.}
@@ -81,7 +89,10 @@ lasso.coef(x, ...)
   \item{digits}{If the optimum lambda value is plotted, the number of decimal decimal places to be used.}
   \item{\dots}{Arguments passed to the subsequent smooth constructor function.
     \code{lambda} controls the starting value of the penalty parameter, \code{const} the constant
-    that is added within the penalty approximation.
+    that is added within the penalty approximation. Moreover, \code{fuse = 1} enforces nominal
+    fusion of categorical variables and \code{fuse = 2} ordered fusion within \code{la()} Note that
+    \code{la()} terms with and without fusion should not be mixed when using the \code{lasso()}
+    optimizer function.
     For the optimizer \code{lasso()} arguments passed to function \code{\link{bfit}}.}
 }
 
@@ -112,51 +123,61 @@ lasso.coef(x, ...)
 data(rent99, package = "gamlss.data")
 rent99$district <- as.factor(rent99$district)
 
+## Change numeric to factor coding.
+rent99$yearc <- as.factor(floor(rent99$yearc/10)*10)
+rent99$area <- cut(rent99$area,
+  breaks = seq(0, 120, by = 10),
+  include.lowest = TRUE, right = FALSE)
+
 ## Model formula.
-fl <- ~ area + yearc + location + bath + kitchen + cheating + district
-f <- list(rentsqm ~ la(fl), sigma ~ la(fl))
+f <- list(
+  rentsqm ~ la(area,fuse=2) + la(yearc,fuse=2),
+  sigma ~ la(area,fuse=2) + la(yearc,fuse=2)
+)
 
-## Estimate Lasso model with
-## single lambda parameter.
+## Estimate unpenalized model for obtaining adaptive
+## weights for fusion penalties using boosting optimizer.
+b0 <- bamlss(f, data = rent99,
+  sampler = FALSE, optimizer = boost,
+  maxit = 15000, nu = 0.3)
+
+## Estimate Lasso model with single lambda parameter.
 b1 <- bamlss(f, data = rent99, sampler = FALSE, optimizer = lasso,
-  lower = 0.01, upper = 1000, criterion = "BIC", nlambda = 400)
+  upper = 1000, lower = 0.001, criterion = "BIC", nlambda = 300,
+  zeromodel = b0)
 
-## Plot information criterion and
-## coefficient paths.
-lasso.plot(b1)
-lasso.plot(b1, which = 2, name = "district")
+## Plot information criterion and coefficient paths.
+lasso.plot(b1, which = 1)
+lasso.plot(b1, which = 2)
+lasso.plot(b1, which = 2, name = "mu.s.la(area).area")
+lasso.plot(b1, which = 2, name = "mu.s.la(yearc).yearc")
+lasso.plot(b1, which = 2, name = "sigma.s.la(area).area")
+lasso.plot(b1, which = 2, name = "sigma.s.la(yearc).yearc")
 
 ## Extract optimum lambda/iteration.
 lasso.stop(b1)
 
 ## Extract coefficients for optimum
 ## Lasso parameter.
-parameters(b1, mstop = lasso.stop(b1))
-
-## Alternatively extract retransformed parameters.
-lasso.coef(b1, mstop = lasso.stop(b1))
+coef(b1, mstop = lasso.stop(b1))
 
 ## Predict with optimum Lasso parameter.
 p1 <- predict(b1, mstop = lasso.stop(b1))
 
-## Now with different lambda for mu and sigma using
-## optimizer function bfit().
-b2 <- bamlss(f, data = rent99, criterion = "BIC", sampler = FALSE)
+## With lambda parameters for each covariate, use model b1
+## coefficients as starting values together with lasso.transform()
+## setting the adaptive weights using model b0 coefficients.
+b2 <- bamlss(f, data = rent99, criterion = "BIC", sampler = FALSE,
+  transform = lasso.transform, zeromodel = b0, nobs = nrow(rent99),
+  start = coef(b1, mstop = lasso.stop(b1)))
 summary(b2)
 
-## With lambda parameters for each covariate.
-f <- list(
-  rentsqm ~ la(area) + la(yearc) + la(location) +
-    la(bath) + la(kitchen) + la(cheating) + la(district),
-  sigma ~ la(area) + la(yearc) + la(location) +
-    la(bath) + la(kitchen) + la(cheating) + la(district)
-)
-b3 <- bamlss(f, data = rent99, criterion = "BIC", sampler = FALSE)
-summary(b3)
-
 ## With full MCMC.
-b4 <- bamlss(f, data = rent99, criterion = "BIC")
-summary(b4)
+set.seed(123)
+b3 <- bamlss(f, data = rent99,
+  transform = lasso.transform, zeromodel = b0, nobs = nrow(rent99)
+  start = coef(b1, mstop = lasso.stop(b1)))
+summary(b3)
 }
 }
 

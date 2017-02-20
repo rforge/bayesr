@@ -151,7 +151,8 @@ export(
   "lasso",
   "lasso.plot",
   "lasso.stop",
-  "lasso.coef"
+  "lasso.coef",
+  "lasso.transform"
 )
 
 S3method("plot", "bamlss")

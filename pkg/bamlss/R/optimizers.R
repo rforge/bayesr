@@ -2932,55 +2932,7 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
         zeromodel <- opt(x = x, y = y, start = start, verbose = verbose[1], ...)
       }
     }
-    for(i in names(x)) {
-      for(j in names(x[[i]]$smooth.construct)) {
-        if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth")) {
-          if(!is.null(x[[i]]$smooth.construct[[j]]$LAPEN)) {
-            x[[i]]$smooth.construct[[j]]$S <- x[[i]]$smooth.construct[[j]]$LAPEN
-            x[[i]]$smooth.construct[[j]]$LAPEN <- NULL
-          }
-          if(x[[i]]$smooth.construct[[j]]$fuse) {
-            if(is.list(zeromodel$parameters)) {
-              beta <- get.par(zeromodel$parameters[[i]]$s[[j]], "b")
-            } else {
-              if(is.matrix(zeromodel$parameters)) {
-                beta <- grep(paste(i, ".s.", j, ".", sep = ""), colnames(zeromodel$parameters), fixed = TRUE)
-                beta <- get.par(zeromodel$parameters[nrow(zeromodel$parameters), beta], "b")
-              } else {
-                beta <- grep(paste(i, ".s.", j, ".", sep = ""), names(zeromodel$parameters), fixed = TRUE)
-                beta <- get.par(zeromodel$parameters[beta], "b")
-              }
-            }
-            df <- x[[i]]$smooth.construct[[j]]$lasso$df
-            Af <- x[[i]]$smooth.construct[[j]]$Af
-            w <- rep(0, ncol(Af))
-            fuse_type <- x[[i]]$smooth.construct[[j]]$fuse_type
-            k <- ncol(x[[i]]$smooth.construct[[j]]$X)
-            nobs <- nrow(y)
-            nref <- nobs - sum(df)
-            for(ff in 1:ncol(Af)) {
-              ok <- which(Af[, ff] != 0)
-              w[ff] <- if(fuse_type == "nominal") {
-                if(length(ok) < 2) {
-                  2 / (k + 1) * sqrt((df[ok[1]] + nref) / nobs)
-                } else {
-                  2 / (k + 1) * sqrt((df[ok[1]] + df[ok[2]]) / nobs)
-                }
-              } else {
-                if(length(ok) < 2) {
-                  sqrt((df[ok[1]] + nref) / nobs)
-                } else {
-                  sqrt((df[ok[1]] + df[ok[2]]) / nobs)
-                }
-              }
-              w[ff] <- w[ff] * 1 / abs(t(Af[, ff]) %*% beta)
-            }
-            names(w) <- paste("lasso", 1:length(w), sep = "")
-            x[[i]]$smooth.construct[[j]]$fixed.hyper <- w
-          }
-        }
-      }
-    }
+    x <- lasso.transform(x, zeromodel, nobs = nrow(y))
   }
 
   for(l in seq_along(lambdas)) {
@@ -3029,6 +2981,10 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
     names(mstats) <- c("logLik", "logPost", nic, "edf")
     ic <- rbind(ic, mstats)
 
+    if(!is.null(list(...)$track)) {
+      plot(ic[, nic] ~ c(1:l), type = "l", xlab = "Iteration", ylab = nic)
+    }
+
     if(!is.null(stop.nu)) {
       if(l > stop.nu)
         nu <- NULL
@@ -3060,6 +3016,71 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
   class(ic) <- c("lasso.stats", "matrix")
 
   list("parameters" = do.call("rbind", par), "lasso.stats" = ic, "nobs" = nrow(y))
+}
+
+lasso.transform <- function(x, zeromodel, nobs = NULL, ...)
+{
+  if(bframe <- inherits(x, "bamlss.frame")) {
+    if(is.null(x$x))
+      stop("no 'x' object in 'bamlss.frame'!")
+    x <- x$x
+  }
+  for(i in names(x)) {
+    for(j in names(x[[i]]$smooth.construct)) {
+      if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth")) {
+        if(!is.null(x[[i]]$smooth.construct[[j]]$LAPEN)) {
+          x[[i]]$smooth.construct[[j]]$S <- x[[i]]$smooth.construct[[j]]$LAPEN
+          x[[i]]$smooth.construct[[j]]$LAPEN <- NULL
+        }
+        if(x[[i]]$smooth.construct[[j]]$fuse) {
+          if(is.list(zeromodel$parameters)) {
+            beta <- get.par(zeromodel$parameters[[i]]$s[[j]], "b")
+          } else {
+            if(is.matrix(zeromodel$parameters)) {
+              beta <- grep(paste(i, ".s.", j, ".", sep = ""), colnames(zeromodel$parameters), fixed = TRUE)
+              beta <- get.par(zeromodel$parameters[nrow(zeromodel$parameters), beta], "b")
+            } else {
+              beta <- grep(paste(i, ".s.", j, ".", sep = ""), names(zeromodel$parameters), fixed = TRUE)
+              beta <- get.par(zeromodel$parameters[beta], "b")
+            }
+          }
+          df <- x[[i]]$smooth.construct[[j]]$lasso$df
+          Af <- x[[i]]$smooth.construct[[j]]$Af
+          w <- rep(0, ncol(Af))
+          fuse_type <- x[[i]]$smooth.construct[[j]]$fuse_type
+          k <- ncol(x[[i]]$smooth.construct[[j]]$X)
+          if(is.null(nobs))
+            nobs <- nrow(x[[i]]$smooth.construct[[j]]$X)
+          nref <- nobs - sum(df)
+          for(ff in 1:ncol(Af)) {
+            ok <- which(Af[, ff] != 0)
+            w[ff] <- if(fuse_type == "nominal") {
+              if(length(ok) < 2) {
+                2 / (k + 1) * sqrt((df[ok[1]] + nref) / nobs)
+              } else {
+                2 / (k + 1) * sqrt((df[ok[1]] + df[ok[2]]) / nobs)
+              }
+            } else {
+              if(length(ok) < 2) {
+                sqrt((df[ok[1]] + nref) / nobs)
+              } else {
+                sqrt((df[ok[1]] + df[ok[2]]) / nobs)
+              }
+            }
+            w[ff] <- w[ff] * 1 / abs(t(Af[, ff]) %*% beta)
+          }
+          names(w) <- paste("lasso", 1:length(w), sep = "")
+          x[[i]]$smooth.construct[[j]]$fixed.hyper <- w
+        }
+      }
+    }
+  }
+
+  if(bframe) {
+    return(list("x" = x))
+  } else {
+    return(x)
+  }
 }
 
 print.lasso.stats <- function(x, digits = 4, ...)

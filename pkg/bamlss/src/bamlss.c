@@ -146,11 +146,14 @@ SEXP eval_prior(SEXP fun, SEXP theta, SEXP rho)
 }
 
 
-SEXP get_S_mat(SEXP fun, SEXP theta, SEXP rho)
+SEXP get_S_mat(SEXP fun, SEXP theta, SEXP hyper, SEXP rho)
 {
   SEXP R_fcall, rval;
 
-  PROTECT(R_fcall = lang2(fun, theta));
+  if(isNull(hyper))
+    PROTECT(R_fcall = lang2(fun, theta));
+  else
+    PROTECT(R_fcall = lang3(fun, theta, hyper));
   PROTECT(rval = eval(R_fcall, rho));
 
   UNPROTECT(2);
@@ -1142,7 +1145,7 @@ SEXP gmcmc_iwls_gp(SEXP family, SEXP theta, SEXP id,
   if(fixed < 1) {
     for(jj = 0; jj < ntau2; jj++) {
       if(penFun[jj] > 0) {
-        Sptr = REAL(get_S_mat(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj), theta2, rho));
+        Sptr = REAL(get_S_mat(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj), theta2, getListElement(x, "fixed.hyper"), rho));
       } else {
         Sptr = REAL(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj));
       }
@@ -1325,7 +1328,7 @@ SEXP gmcmc_iwls_gp(SEXP family, SEXP theta, SEXP id,
   if(fixed < 1) {
     for(jj = 0; jj < ntau2; jj++) {
       if(penFun[jj] > 0) {
-        Sptr = REAL(get_S_mat(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj), gamma1, rho));
+        Sptr = REAL(get_S_mat(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj), gamma1, getListElement(x, "fixed.hyper"), rho));
       } else {
         Sptr = REAL(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj));
       }
@@ -1601,7 +1604,7 @@ SEXP gmcmc_iwls_gp_diag_lasso(SEXP family, SEXP theta, SEXP id,
   if(ntau2 > 1) {
     for(j = 0; j < nc; j++) {
       edf1 = XWXptr[j + j * nc];
-      XWXptr[j + nc * j] += dfptr[j] / (thetaptr[nc + j] * pow(pow(thetaptr[j], 2.0) + 0.00001, 0.5));
+      XWXptr[j + nc * j] += dfptr[j] / (thetaptr[nc + j] * pow(pow(thetaptr[j], 2.0) + 0.000001, 0.5));
       XWXptr[j + nc * j] = 1.0 / XWXptr[j + nc * j];
       mu1ptr[j] = XWXptr[j + nc * j] * mu0ptr[j];
       gamma1ptr[j] = rnorm(mu1ptr[j], pow(XWXptr[j + j * nc], 0.5));
@@ -1611,7 +1614,7 @@ SEXP gmcmc_iwls_gp_diag_lasso(SEXP family, SEXP theta, SEXP id,
   } else {
     for(j = 0; j < nc; j++) {
       edf1 = XWXptr[j + j * nc];
-      XWXptr[j + nc * j] += dfptr[j] / (thetaptr[nc] * pow(pow(thetaptr[j], 2.0) + 0.00001, 0.5));
+      XWXptr[j + nc * j] += dfptr[j] / (thetaptr[nc] * pow(pow(thetaptr[j], 2.0) + 0.000001, 0.5));
       XWXptr[j + nc * j] = 1.0 / XWXptr[j + nc * j];
       mu1ptr[j] = XWXptr[j + nc * j] * mu0ptr[j];
       gamma1ptr[j] = rnorm(mu1ptr[j], pow(XWXptr[j + j * nc], 0.5));
@@ -1729,7 +1732,7 @@ SEXP gmcmc_iwls_gp_diag_lasso(SEXP family, SEXP theta, SEXP id,
   double qbeta = 0.0;
   if(ntau2 > 1) {
     for(j = 0; j < nc; j++) {
-      XWXptr[j + nc * j] += dfptr[j] / (thetaptr[nc + j] * pow(pow(thetaptr[j], 2.0) + 0.00001, 0.5));
+      XWXptr[j + nc * j] += dfptr[j] / (thetaptr[nc + j] * pow(pow(thetaptr[j], 2.0) + 0.000001, 0.5));
       XWXptr[j + nc * j] = 1.0 / XWXptr[j + nc * j];
       mu1ptr[j] = XWXptr[j + nc * j] * mu0ptr[j];
       qbeta += dnorm(thetaptr[j], mu1ptr[j], pow(XWXptr[j + nc * j], 0.5), 1);
@@ -1737,7 +1740,7 @@ SEXP gmcmc_iwls_gp_diag_lasso(SEXP family, SEXP theta, SEXP id,
     }
   } else {
     for(j = 0; j < nc; j++) {
-      XWXptr[j + nc * j] += dfptr[j] / (thetaptr[nc] * pow(pow(thetaptr[j], 2.0) + 0.00001, 0.5));
+      XWXptr[j + nc * j] += dfptr[j] / (thetaptr[nc] * pow(pow(thetaptr[j], 2.0) + 0.000001, 0.5));
       XWXptr[j + nc * j] = 1.0 / XWXptr[j + nc * j];
       mu1ptr[j] = XWXptr[j + nc * j] * mu0ptr[j];
       qbeta += dnorm(thetaptr[j], mu1ptr[j], pow(XWXptr[j + nc * j], 0.5), 1);
@@ -3181,7 +3184,8 @@ SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
   if(!fixed) {
     for(jj = 0; jj < ntau2; jj++) {
       if(penFun[jj] > 0) {
-        Sptr = REAL(get_S_mat(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj), getListElement(state, "parameters"), rho));
+        Sptr = REAL(get_S_mat(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj), getListElement(state, "parameters"),
+          getListElement(state, "fixed.hyper"), rho));
       } else {
         Sptr = REAL(VECTOR_ELT(VECTOR_ELT(x, S_ind), jj));
       }
