@@ -93,7 +93,7 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters"),
 }
 
 \examples{
-\dontrun{## Simulate data.
+\donttest{## Simulate data.
 set.seed(123)
 d <- GAMart()
 
@@ -102,14 +102,14 @@ f <- num ~ x1 + x2 + x3 + lon + lat +
   s(x1) + s(x2) + s(x3) + s(lon) + s(lat) + te(lon,lat)
 
 b <- bamlss(f, data = d, optimizer = boost,
-  sampler = FALSE, scale.d = TRUE,
-  nu = 0.01, maxit = 1000)
+  sampler = FALSE, scale.d = TRUE, nu = 0.01,
+  maxit = 1000, plot = FALSE)
 
 ## Plot estimated effects.
 plot(b)
 
 ## Print and plot the boosting summary.
-boost.summary(b)
+boost.summary(b, plot = FALSE)
 boost.plot(b, which = 1)
 boost.plot(b, which = 2)
 boost.plot(b, which = 3, name = "mu.s.te(lon,lat).")
