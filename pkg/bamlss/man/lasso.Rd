@@ -119,50 +119,52 @@ lasso.coef(x, ...)
 }
 
 \examples{
-\dontrun{## Load data example.
-data("rent99", package = "gamlss.data")
-rent99$district <- as.factor(rent99$district)
+\dontrun{## Simulated fusion Lasso example.
+bmu <- c(0,0,0,2,2,2,4,4,4)
+bsigma <- c(0,0,0,-2,-2,-2,-1,-1,-1)
+id <- factor(sort(rep(1:length(bmu), length.out = 300)))
 
-## Change numeric to factor coding.
-rent99$yearc <- as.factor(floor(rent99$yearc/10)*10)
-rent99$area <- cut(rent99$area,
-  breaks = seq(0, 120, by = 10),
-  include.lowest = TRUE, right = FALSE)
+## Response.
+set.seed(123)
+y <- bmu[id] + rnorm(length(id), sd = exp(bsigma[id]))
 
-## Model formula.
-f <- list(
-  rentsqm ~ la(area,fuse=2) + la(yearc,fuse=2),
-  sigma ~ la(area,fuse=2) + la(yearc,fuse=2)
-)
+## Estimate model:
+## fuse=1 -> nominal fusion,
+## fuse=2 -> ordinal fusion,
+## first, unpenalized model to be used for adaptive fusion weights.
+f <- list(y ~ la(id,fuse=2,fx=TRUE), sigma ~ la(id,fuse=1,fx=TRUE))
+b0 <- bamlss(f, sampler = FALSE)
 
-## Estimate unpenalized model for obtaining adaptive
-## weights for fusion penalties using boosting optimizer.
-b0 <- bamlss(f, data = rent99,
-  sampler = FALSE, optimizer = boost,
-  maxit = 15000, nu = 0.3)
-
-## Estimate Lasso model with single lambda parameter.
-b1 <- bamlss(f, data = rent99, sampler = FALSE, optimizer = lasso,
-  upper = 1000, lower = 0.001, criterion = "BIC", nlambda = 300,
-  zeromodel = b0)
+## Model with single lambda parameter.
+f <- list(y ~ la(id,fuse=2), sigma ~ la(id,fuse=1))
+b1 <- bamlss(f, sampler = FALSE, optimizer = lasso,
+  criterion = "BIC", zeromodel = b0)
 
 ## Plot information criterion and coefficient paths.
 lasso.plot(b1, which = 1)
 lasso.plot(b1, which = 2)
-lasso.plot(b1, which = 2, name = "mu.s.la(area).area")
-lasso.plot(b1, which = 2, name = "mu.s.la(yearc).yearc")
-lasso.plot(b1, which = 2, name = "sigma.s.la(area).area")
-lasso.plot(b1, which = 2, name = "sigma.s.la(yearc).yearc")
+lasso.plot(b1, which = 2, name = "mu.s.la(id).id")
+lasso.plot(b1, which = 2, name = "sigma.s.la(id).id")
 
-## Extract optimum lambda/iteration.
-lasso.stop(b1)
-
-## Extract coefficients for optimum
-## Lasso parameter.
+## Extract coefficients for optimum Lasso parameter.
 coef(b1, mstop = lasso.stop(b1))
 
 ## Predict with optimum Lasso parameter.
 p1 <- predict(b1, mstop = lasso.stop(b1))
+
+## Full MCMC, needs lasso.transform() to assign the
+## adaptive weights from unpenalized model b0.
+b2 <- bamlss(f, optimizer = FALSE, transform = lasso.transform,
+  zeromodel = b0, nobs = length(y), start = coef(b1, mstop = lasso.stop(b1)))
+summary(b2)
+plot(b2)
+
+ci <- confint(b2, model = "mu", pterms = FALSE, sterms = TRUE)
+lasso.plot(b1, which = 2, name = "mu.s.la(id).id", spar = FALSE)
+for(i in 1:8) {
+  abline(h = ci[i, 1], lty = 2, col = "red")
+  abline(h = ci[i, 2], lty = 2, col = "red")
+}
 }
 }
 

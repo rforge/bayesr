@@ -139,6 +139,14 @@ bamlss.engine.setup <- function(x, update = "iwls", propose = "iwlsC_gp",
         }
       }
     }
+    if(length(x$smooth.construct)) {
+      if("model.matrix" %in% names(x$smooth.construct)) {
+        if(length(nsc <- names(x$smooth.construct)) > 1) {
+          nsc <- c(nsc[nsc != "model.matrix"], "model.matrix")
+          x$smooth.construct <- x$smooth.construct[nsc]
+        }
+      }
+    }
     x
   }
 
