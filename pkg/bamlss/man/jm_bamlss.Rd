@@ -183,7 +183,7 @@ Please note that in order to make use of the sparse setup in fitting random slop
 }
 
 \examples{
-\donttest{set.seed(123)
+\dontrun{set.seed(123)
 
 ## Simulate survival data
 ## with random intercepts/slopes and a linear effect of time,

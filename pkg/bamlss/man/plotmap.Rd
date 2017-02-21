@@ -80,7 +80,7 @@ xt <- list("polys" = columb.polys)
 b <- bamlss(crime ~ s(district,bs="mrf",xt=xt) + s(income), data = columb)
 
 ## Plot effects.
-plot(b, map = columb.polys, pos = "topleft", digits = 0)
+plot(b, map = columb.polys, pos = "top")
 }}
 
 \keyword{hplot}

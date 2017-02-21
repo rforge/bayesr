@@ -93,7 +93,7 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters"),
 }
 
 \examples{
-\donttest{## Simulate data.
+\dontrun{## Simulate data.
 set.seed(123)
 d <- GAMart()
 
