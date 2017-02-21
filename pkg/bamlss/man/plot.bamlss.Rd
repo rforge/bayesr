@@ -65,7 +65,7 @@ b <- bamlss(f, data = d)
 ## Effect plots
 plot(b, ask = FALSE)
 plot(b, model = "mu")
-plot(b, model = "sigma", term = "te(lon,lat"))
+plot(b, model = "sigma", term = "te(lon,lat)")
 
 ## Trace plots.
 plot(b, which = "samples")
