@@ -28,7 +28,7 @@ BayesX(x, y, family, start = NULL, weights = NULL, offset = NULL,
 BayesX.control(n.iter = 1200, thin = 1, burnin = 200,
   seed = NULL, predict = "light", model.name = "bamlss",
   data.name = "d", prg.name = NULL, dir = NULL,
-  verbose = FALSE, show.prg = TRUE, ...)
+  verbose = FALSE, show.prg = TRUE, modeonly = FALSE, ...)
 
 ## Special BayesX smooth term constructor.
 sx(x, z = NULL, bs = "ps", by = NA, ...)
@@ -82,6 +82,8 @@ get_BayesXsrc(dir = NULL, install = TRUE)
     \code{get_BayesXsrc()}, the directory where \pkg{BayesXsrc} should be stored.}
   \item{verbose}{Print information during runtime of the algorithm.}
   \item{show.prg}{Show the \pkg{BayesX} \code{.prg} file.}
+  \item{modeonly}{Should only the posterior mode be compute, note that this is done using
+    fixed smoothing parameters/variances.}
   \item{bs}{A \code{\link{character}} string, specifying the basis/type which is used for
     this model term.}
   \item{by}{A by variable for varying coefficient model terms.}

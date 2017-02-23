@@ -3,7 +3,7 @@
 ######################
 BayesX.control <- function(n.iter = 1200, thin = 1, burnin = 200,
   seed = NULL, predict = "light", model.name = "bamlss", data.name = "d",
-  prg.name = NULL, dir = NULL, verbose = FALSE, show.prg = TRUE, ...)
+  prg.name = NULL, dir = NULL, verbose = FALSE, show.prg = TRUE, modeonly = FALSE, ...)
 {
   if(is.null(seed))
     seed <- '##seed##'
@@ -26,7 +26,7 @@ BayesX.control <- function(n.iter = 1200, thin = 1, burnin = 200,
   cvals <- list(
     "prg" = list(
       "iterations" = n.iter, "burnin" = burnin, "step" = thin,
-      "setseed" = seed, "predict" = predict
+      "setseed" = seed, "predict" = predict, "modeonly" = modeonly
     ),
     "setup" = list(
       "main" = c(rep(FALSE, 3), rep(TRUE, 2)), "model.name" = model.name, "data.name" = data.name,
@@ -212,6 +212,10 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   pcmd <- control$prg$predict
   control$prg$predict <- NULL
   control$prg$quantile <- family$bayesx$quantile
+  modeonly <- control$prg$modeonly
+  control$prg$modeonly <- NULL
+  if(modeonly)
+    control$prg <- control$prg[!(names(control$prg) %in% c("iterations", "burnin", "step"))]
 
   for(i in names(x)) {
     if(!all(c("fake.formula", "formula") %in% names(x[[i]]))) {
@@ -240,10 +244,11 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       teqn <- paste(model.name, ".hregress ", msp$eqn, ", family=", fbx[[i]][1],
         " equationtype=", fbx[[i]][2],
         if(n == length(x)) {
-          paste(" ", paste(names(control$prg), "=", control$prg, sep = "", collapse = " "))
+          paste(paste(" ", paste(names(control$prg), "=", control$prg, sep = "", collapse = " ")),
+            if(modeonly) " modeonly" else "", sep = "")
         } else NULL,
         if(main[n]) {
-          paste(" predict=", pcmd, sep = "")
+          if(modeonly) " modeonly" else paste(" predict=", pcmd, sep = "")
         } else NULL,
         if(!is.null(msp$dname)) paste(" using", msp$dname) else NULL, sep = "")
       eqn[[i]] <- teqn
@@ -256,7 +261,8 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   for(i in unlist(rev(eqn)))
     prg <- c(prg, i, "")
 
-  prg <- c(prg, paste(model.name, "getsample", sep = "."))
+  if(!modeonly)
+    prg <- c(prg, paste(model.name, "getsample", sep = "."))
   prg <- c(
     paste('%% BayesX program created by bamlss: ', as.character(Sys.time()), sep = ''),
     paste('%% usefile ', file.path(dir, prg.name), sep = ''), "",
@@ -1093,9 +1099,9 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
 
   ref <- sapply(object$margin, function(x) { inherits(x, "random.effect") })
 
-  if(length(ref) < 1) {
+  if(length(ref) < 2) {
     if(ref)
-      object$constraint <- "none"
+      object$constraint <- "center"
   }
 
   if(object$constraint %in% c("meanf", "meanfd", "meansimple", "none")) {
@@ -1119,8 +1125,8 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
       } else {
         if(object$constraint == "main") {
           ## Remove main effects only.
-          A1 <- matrix(rep(if(ref[1]) 0 else 1, p1), ncol = 1)
-          A2 <- matrix(rep(if(ref[2]) 0 else 1, p2), ncol = 1)
+          A1 <- matrix(rep(1, p1), ncol = 1)
+          A2 <- matrix(rep(1, p2), ncol = 1)
         }
         if(object$constraint == "both") {
           ## Remove main effects and varying coefficients.
@@ -1137,6 +1143,11 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
           A1 <- cbind(rep(1, p1), 1:p1)
           A2 <- matrix(rep(1, p2), ncol = 1)
         }
+
+        if(ref[1])
+          A1 <- matrix(rep(1, p1), ncol = 1)
+        if(ref[2])
+          A2 <- matrix(rep(1, p2), ncol = 1)
 
         A <- cbind(I2 %x% A1, A2 %x% I1)
 

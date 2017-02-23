@@ -212,6 +212,10 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
 {
   if(inherits(x, "special"))
     return(x)
+  if(!is.null(x$margin)) {
+    x$xt <- c(x$xt, x$margin[[1]]$xt)
+    x$xt <- x$xt[unique(names(x$xt))]
+  }
   if(is.null(x$binning) & !is.null(x$xt[["binning"]])) {
     x$binning <- match.index(x$X)
     x$binning$order <- order(x$binning$match.index)
@@ -346,6 +350,8 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
   args <- list(...)
 
   force.spam <- if(is.null(args$force.spam)) FALSE else args$force.spam
+  if(!is.null(x$xt$force.spam))
+    force.spam <- x$xt$force.spam
   if(!is.null(x$sparse.setup$crossprod)) {
     if((ncol(x$sparse.setup$crossprod) < ncol(x$X) * 0.5) & force.spam)
       spam <- TRUE
@@ -364,6 +370,8 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
   }
 
   force.Matrix <- if(is.null(args$force.Matrix)) FALSE else args$force.Matrix
+  if(!is.null(x$xt$force.Matrix))
+    force.Matrix <- x$xt$force.Matrix
   if(!is.null(x$sparse.setup$crossprod)) {
     if((ncol(x$sparse.setup$crossprod) < ncol(x$X) * 0.5) & force.Matrix)
       Matrix <- TRUE
