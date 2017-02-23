@@ -75,7 +75,7 @@
   Universit\"at G\"ottingen\\
   Humboldtallee 3\\
   37073 G\"ottingen, Germany\\
-  E-mail: \email{nklein@uni-goettingen.de}\\
+  E-mail: \email{n.klein@uni-goettingen.de}\\
   URL: \url{https://www.uni-goettingen.de/de/325353.html}
 }
 
