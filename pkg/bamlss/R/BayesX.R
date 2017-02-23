@@ -1089,7 +1089,8 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
   if(is.null(object$inter))
     object$inter <- FALSE
   object <- smooth.construct.tensor.smooth.spec(object, data, knots)
-  object$sx.S <- lapply(object$margin, function(x) { x$S[[1]] })
+  if(object$mp)
+    object$sx.S <- lapply(object$margin, function(x) { x$S[[1]] })
   object$sx.rank <- qr(do.call("+", object$S))$rank
 
   if(object$by != "NA")
@@ -1183,6 +1184,13 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
     attr(object$C, "always.apply") <- TRUE
   
   class(object) <- "tensorX.smooth"
+
+  if(length(object$margin) > 1) {
+    if(!object$mp) {
+      class(object) <- "tensor.smooth"
+    }
+  }
+
   return(object)
 }
 
