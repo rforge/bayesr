@@ -69,6 +69,9 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         attr(p, "fitted.values")
       }
       x[[i]][[j]]$penaltyFunction <- as.integer(sapply(x[[i]][[j]]$S, is.function))
+      if(!is.null(x[[i]][[j]]$sparse.setup$block.index) & FALSE) {
+        propose2[[i]][[j]] <- GMCMC_iwls
+      }
     }
     names(theta[[i]]) <- names(propose2[[i]]) <- names(fitfun[[i]]) <- names(x[[i]]) <- nt
   }
