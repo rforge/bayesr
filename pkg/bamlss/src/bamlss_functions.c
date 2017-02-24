@@ -25,10 +25,10 @@ SEXP getListElement(SEXP list, const char *str)
   PROTECT(names = getAttrib(list, R_NamesSymbol));
 
   for(int i = 0; i < length(list); i++) {
-	  if(strcmp(CHAR(STRING_ELT(names, i)), str) == 0) {
-	    elmt = VECTOR_ELT(list, i);
-	    break;
-	  }
+    if(strcmp(CHAR(STRING_ELT(names, i)), str) == 0) {
+      elmt = VECTOR_ELT(list, i);
+      break;
+    }
   }
 
   UNPROTECT(2);
@@ -63,6 +63,15 @@ void pvec(SEXP vec)
   double *vecptr = REAL(vec);
   for(i = 0; i < n; i++, vecptr++)
     Rprintf(" %g", *vecptr);
+  Rprintf("\n");
+}
+
+void pveci(SEXP vec)
+{
+  int i, n = length(vec);
+  int *vecptr = INTEGER(vec);
+  for(i = 0; i < n; i++, vecptr++)
+    Rprintf(" %d", *vecptr);
   Rprintf("\n");
 }
     
@@ -3392,5 +3401,68 @@ SEXP gpareto_hess_sigma(SEXP y, SEXP xi, SEXP sigma)
 
   UNPROTECT(1);
   return rval;
+}
+
+
+SEXP block_inverse(SEXP X, SEXP IND)
+{
+  int i, j, jj, k, ni, n = length(IND);
+  int nr = nrows(X);
+
+  double *Xptr = REAL(X);
+  SEXP Xi;
+
+  SEXP Xout;
+  PROTECT(Xout = duplicate(X));
+  double *Xoutptr = REAL(Xout);
+  double *Xiptr = 0;
+  double det = 0.0;
+  double tmp = 0.0;
+
+  int info;
+
+  for(i = 0; i < n; i++) {
+    ni = length(VECTOR_ELT(IND, i));
+    int *iptr = INTEGER(VECTOR_ELT(IND, i));
+    if(ni < 2) {
+      Xoutptr[iptr[0] + (iptr[0] - 1) * nr - 1] = 1.0 / Xptr[iptr[0] + (iptr[0] - 1) * nr - 1];
+    } else {
+      if(ni == 2) {
+        det = 1.0 / (Xptr[iptr[0] + (iptr[0] - 1) * nr - 1] * Xptr[iptr[1] + (iptr[1] - 1) * nr - 1] -
+          Xptr[iptr[0] + (iptr[1] - 1) * nr - 1] * Xptr[iptr[1] + (iptr[0] - 1) * nr - 1]);
+        tmp = Xoutptr[iptr[1] + (iptr[1] - 1) * nr - 1] * det;
+        Xoutptr[iptr[1] + (iptr[1] - 1) * nr - 1] = Xoutptr[iptr[0] + (iptr[0] - 1) * nr - 1] * det;
+        Xoutptr[iptr[0] + (iptr[0] - 1) * nr - 1] = tmp;
+        Xoutptr[iptr[1] + (iptr[0] - 1) * nr - 1] = Xoutptr[iptr[1] + (iptr[0] - 1) * nr - 1] * det * -1.0;
+        Xoutptr[iptr[0] + (iptr[1] - 1) * nr - 1] = Xoutptr[iptr[0] + (iptr[1] - 1) * nr - 1] * det * -1.0;
+      } else {
+        PROTECT(Xi = allocMatrix(REALSXP, ni, ni));
+        Xiptr = REAL(Xi);
+        for(j = 0; j < ni; j++) {
+          for(jj = 0; jj < ni; jj++) {
+            if(jj >= j)
+              Xiptr[j + ni * jj] = Xptr[iptr[j] + (iptr[jj] - 1) * nr - 1];
+            else
+              Xiptr[j + ni * jj] = 0.0;
+          }
+        }
+
+        F77_CALL(dpotrf)("Upper", &ni, Xiptr, &ni, &info);
+        F77_CALL(dpotri)("Upper", &ni, Xiptr, &ni, &info);
+
+        for(j = 0; j < ni; j++) {
+          for(jj = j; jj < ni; jj++) {
+            Xoutptr[iptr[j] + (iptr[jj] - 1) * nr - 1] = Xiptr[j + ni * jj];
+            Xoutptr[iptr[jj] + (iptr[j] - 1) * nr - 1] = Xoutptr[iptr[j] + (iptr[jj] - 1) * nr - 1];
+          }
+        }
+        UNPROTECT(1);
+      }
+    }
+  }
+
+  UNPROTECT(1);
+
+  return Xout;
 }
 

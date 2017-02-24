@@ -6948,6 +6948,21 @@ h_response <- function(x)
 }
 
 
+blockMatrixDiagonal<-function(...){  
+  matrixList<-list(...)
+  if(is.list(matrixList[[1]])) matrixList<-matrixList[[1]]
+ 
+  dimensions<-sapply(matrixList,FUN=function(x) dim(x)[1])
+  finalDimension<-sum(dimensions)
+  finalMatrix<-matrix(0,nrow=finalDimension,ncol=finalDimension)
+  index<-1
+  for(k in 1:length(dimensions)){
+    finalMatrix[index:(index+dimensions[k]-1),index:(index+dimensions[k]-1)]<-matrixList[[k]]
+    index<-index+dimensions[k]
+  }
+  finalMatrix
+}
+
 ## Create the inverse of a matrix.
 matrix_inv <- function(x, index = NULL, force = FALSE, all_diagonal = FALSE)
 {
@@ -6959,6 +6974,9 @@ matrix_inv <- function(x, index = NULL, force = FALSE, all_diagonal = FALSE)
       matrix(x, 1, 1)
     } else diag(x)
     return(x)
+  }
+  if(!is.null(index$block.index)) {
+    return(.Call("block_inverse", x, index$block.index))
   }
   if(inherits(x, "Matrix")) {
     if(!is.null(index$crossprod)) {

@@ -2,6 +2,7 @@
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
 
+SEXP block_inverse(SEXP, SEXP);
 SEXP bivnorm_loglik(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP boost_fit(SEXP, SEXP, SEXP, SEXP);
 SEXP cnorm_hess_mu(SEXP, SEXP, SEXP, SEXP);
@@ -38,6 +39,7 @@ SEXP survint_index(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP xbin_fun(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static R_CallMethodDef callMethods[] = {
+  {"block_inverse", (DL_FUNC) &block_inverse, 2},
   {"bivnorm_loglik", (DL_FUNC) &bivnorm_loglik, 7},
   {"boost_fit", (DL_FUNC) &boost_fit, 4},
   {"cnorm_hess_mu", (DL_FUNC) &cnorm_hess_mu, 4},

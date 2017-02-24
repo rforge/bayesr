@@ -1191,6 +1191,7 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
     }
   }
 
+
   return(object)
 }
 

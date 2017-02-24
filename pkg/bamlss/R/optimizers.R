@@ -438,6 +438,13 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
     x$all_diagonal <- XX_is_diagonal & (if(x$fixed) TRUE else S_is_diagonal)
   }
 
+  if(length(x$margin) > 1) {
+    if(any(sapply(x$margin, function(x) { inherits(x, "random.effect") } ))) {
+      sm <- sparse.setup(crossprod(x$X))$matrix
+      x$sparse.setup$block.index <- split(as.integer(1:nrow(sm)), factor(sm[, 1]))
+    }
+  }
+
   x
 }
 

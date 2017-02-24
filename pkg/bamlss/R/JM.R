@@ -3113,7 +3113,7 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
     
     coef <- matrix(rmvnorm(nsub*long_df, sigma = solve(P), method="chol"), ncol = long_df, nrow = nsub)
     colnames(coef) <- paste0("b", 1:long_df)
-    bt <- bs(times, df = long_df, intercept = FALSE)
+    bt <- splines::bs(times, df = long_df, intercept = FALSE)
     b_set <- list(knots = attr(bt, "knots"), Boundary.knots = attr(bt, "Boundary.knots"),
                   degree = attr(bt, "degree"), intercept = attr(bt, "intercept"))
     return(list(coef, b_set))
@@ -3126,8 +3126,8 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
     ex <- pmax(abs(x), 1)
     x1 <- x + eps * ex
     x2 <- x - eps * ex
-    bs.xeps1 <- suppressWarnings(bs(x1, df, knots, degree, intercept, Boundary.knots))
-    bs.xeps2 <- suppressWarnings(bs(x2, df, knots, degree, intercept, Boundary.knots))
+    bs.xeps1 <- suppressWarnings(splines::bs(x1, df, knots, degree, intercept, Boundary.knots))
+    bs.xeps2 <- suppressWarnings(splines::bs(x2, df, knots, degree, intercept, Boundary.knots))
     out <- (bs.xeps1 - bs.xeps2) / c(x1 - x2)
     out
   }
@@ -3152,7 +3152,7 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
            "linear" = (1.25 + r[, 1] + 0.6*sin(x) + (-0.01)*time + r[, 2]*0.02*time),
            "nonlinear" = (0.5 + r[, 1] + 0.6*sin(x) + 0.1*(time+2)*exp(-0.075*time)),
            "functional" = (0.5 + r[, 1] + 0.6*sin(x) + 0.1*(time+2)*exp(-0.075*time) + 
-                             apply(bs(time, long_df, b_set$knots, b_set$degree,
+                             apply(splines::bs(time, long_df, b_set$knots, b_set$degree,
                                       b_set$intercept, b_set$Boundary.knots) * beta, 1, sum)))
   }
   
