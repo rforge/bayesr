@@ -1055,7 +1055,7 @@ resplit <- function(x) {
 ## Special tensor constructor.
 tx <- function(..., bs = "ps", k = -1,
   ctr = c("center", "main", "both", "both1", "both2",
-    "none", "meanf", "meanfd", "meansimple"),
+    "none", "meanf", "meanfd", "meansimple", "nullspace"),
   special = TRUE)
 {
   if(length(k) < 2) {
@@ -1105,7 +1105,7 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
       object$constraint <- "center"
   }
 
-  if(object$constraint %in% c("meanf", "meanfd", "meansimple", "none")) {
+  if(object$constraint %in% c("meanf", "meanfd", "meansimple", "none", "nullspace")) {
     if(object$constraint == "none")
       object$xt$nocenter <- TRUE
     else
@@ -1151,7 +1151,6 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
           A2 <- matrix(rep(1, p2), ncol = 1)
 
         A <- cbind(I2 %x% A1, A2 %x% I1)
-
         i <- match.index(t(A))
         A <- A[, i$nodups, drop = FALSE]
 

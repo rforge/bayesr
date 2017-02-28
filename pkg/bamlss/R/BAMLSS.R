@@ -4633,7 +4633,8 @@ Predict.matrix.strandom.smooth <- function(object, data, knots)
 
 
 ## Smooth constructor for lag function.
-## (C) Viola Obermeier; Flexible Distributed Lag Models.
+## (C) Viola Obermeier; Flexible distributed lags for modelling earthquake data,
+##                      DOI: 10.1111/rssc.12077.
 smooth.construct.fdl.smooth.spec <- function(object, data, knots)
 {
   ## Modify object so that it's fitted as a p-spline signal regression term.
