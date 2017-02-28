@@ -2161,11 +2161,6 @@ boost <- function(x, y, family,
       llf <- family$loglik(y, family$map2par(eta))
       loglik[i] <- -1 * (ll - llf)
 
-      if(loglik[i] > 40000) {
-        print(as.character(c(ll, llf)))
-        stop()
-      }
-
       eta[[i]] <- eta0[[i]]
     }
 
