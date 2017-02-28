@@ -7278,3 +7278,42 @@ BIC.bamlss <- function(..., k = 2, optimizer = FALSE, samples = FALSE, FUN = mea
 #  library.dynam("bamlss", pkg, lib)
 #}
 
+
+## TS-Decomp.
+stg <- function(x, interp = FALSE, k = -1, ...)
+{
+  if(interp) {
+    x <- zoo::na.approx(x, rule = 2)
+  }
+
+  xf <- frequency(x)
+  xc <- cycle(x)
+  mf <- na.omit(data.frame("x" = as.numeric(x), "trend" = 1:NROW(x), "season" = as.integer(xc),
+    "xlag" = c(NA, as.numeric(x)[-length(x)])))
+
+  k <- rep(k, length.out = 3)
+  if(k[1] < 0)
+    k[1] <- floor(length(unique(mf$trend)) * 0.1)
+  if(k[2] < 0)
+    k[2] <- floor(length(unique(mf$season)) * 0.9)
+  if(k[3] < 0)
+    k[3] <- 10
+
+  b <- gam(x ~ s(trend,by=xlag,k=k[1]) + ti(trend,k=k[1],bs="cr") + ti(season,k=k[2],bs="cc") +
+    ti(trend,season,bs=c("cr","cc"),k=k[3]), data = mf, method = "REML")
+
+  plot(b, pages = 1)
+
+  p <- predict(b, type = "terms")
+
+  rval <- cbind("raw" = mf[["x"]], "fitted" = fitted(b),
+    "trend" = p[, "ti(trend)"] + coef(b)[1],
+    "seasonal" = p[, "ti(season)"] + p[, "ti(trend,season)"],
+    "lag1" = p[, "s(trend):xlag"] / mf$xlag,
+    "remainder" = residuals(b))
+
+  rval <- ts(rval, start = start(x), frequency = xf)
+
+  rval
+}
+
