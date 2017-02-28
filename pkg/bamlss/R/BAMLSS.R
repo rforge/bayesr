@@ -4633,7 +4633,7 @@ Predict.matrix.strandom.smooth <- function(object, data, knots)
 
 
 ## Smooth constructor for lag function.
-## (C) Viola Obermeier.
+## (C) Viola Obermeier; Flexible Distributed Lag Models.
 smooth.construct.fdl.smooth.spec <- function(object, data, knots)
 {
   ## Modify object so that it's fitted as a p-spline signal regression term.
@@ -4664,6 +4664,9 @@ smooth.construct.fdl.smooth.spec <- function(object, data, knots)
 
   return(object)
 }
+
+## gam1 <- gam(y ~ 1 + s(lags, K=15, by=X, bs="fdl",
+##   xt=list(ridge=TRUE), data=simul, family="poisson", method="REML")
 
 
 traceplot2 <- function(theta, n.plot=100, ylab = "", ...) {
