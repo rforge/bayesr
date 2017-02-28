@@ -1,9 +1,9 @@
 ## Source all functions in the package once more.
-sbayesr <- function(R2BayesX = FALSE, dir = NULL) {
+sbayesr <- function(R2BayesX = FALSE, dir = NULL, svn = "svn") {
   if(is.null(dir)) {
     dir <- if(!R2BayesX) {
-      "~/svn/bayesr/pkg/bamlss/R"
-    } else "~/svn/bayesr/pkg/bamlss/R"
+      paste("~/", svn, "/bayesr/pkg/bamlss/R", sep = "")
+    } else paste("~/", svn, "/bayesr/pkg/bamlss/R", sep = "")
   }
   dir <- path.expand(dir)
   f <- file.path(dir, list.files(dir))
@@ -15,7 +15,7 @@ sbayesr <- function(R2BayesX = FALSE, dir = NULL) {
 ## Open the test script.
 tscript <- function(file = NULL) {
   if(is.null(file))
-    file <- "~/svn/bayesr/pkg/bamlss/inst/tscript.R"
+    file <- "~/SVN/bayesr/pkg/bamlss/inst/tscript.R"
   file <- path.expand(file)
   system(paste(shQuote("gedit"), shQuote(file)), wait = FALSE)
   invisible(NULL)
@@ -23,11 +23,11 @@ tscript <- function(file = NULL) {
 
 
 ## Dynamic C code.
-compile <- function(dir = NULL, tdir = NULL)
+compile <- function(dir = NULL, tdir = NULL, svn = "svn")
 {
   hold <- getwd()
   on.exit(setwd(getwd()))
-  if(is.null(dir)) dir <- "~/svn/bayesr/pkg/bamlss/src"
+  if(is.null(dir)) dir <- paste("~/", svn, "/bayesr/pkg/bamlss/src", sep = "")
   dir <- path.expand(dir)
   if(is.null(tdir)) {
     dir.create(tdir <- tempfile())
