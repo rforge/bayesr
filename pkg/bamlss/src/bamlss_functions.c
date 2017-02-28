@@ -869,7 +869,6 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   ++nProtected;
 
   F77_CALL(dpotri)("Upper", &nc, PINVptr, &nc, &info);
-  F77_CALL(dpotrf)("Upper", &nc, PINVLptr, &nc, &info);
 
   sdiag0 = 0.0;
   for(j = 0; j < nc; j++) {
@@ -1000,7 +999,8 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 
 
 SEXP gmcmc_iwls_gp(SEXP family, SEXP theta, SEXP id,
-  SEXP eta, SEXP response, SEXP x, SEXP z, SEXP e, SEXP id2, SEXP W, SEXP rho)
+  SEXP eta, SEXP response, SEXP x, SEXP z, SEXP e, SEXP id2, SEXP W,
+  SEXP BLOCKS, SEXP rho)
 {
   int i, j, k, nProtected = 0;
   int n = INTEGER(getListElement(x, "nobs"))[0];
@@ -1168,39 +1168,107 @@ SEXP gmcmc_iwls_gp(SEXP family, SEXP theta, SEXP id,
   }
 
   /* Cholesky decompostion of XWX. */
-  SEXP L;
-  PROTECT(L = duplicate(getListElement(x, "XWX")));
-  double *Lptr = REAL(L);
-  ++nProtected;
-
-  for(j = 0; j < nc; j++) { 	/* Zero the lower triangle. */
-    for(i = j + 1; i < nc; i++) {
-      Lptr[i + nc * j] = 0.0;
-    }
-  }
+  SEXP PINV, PINVL, L;
+  double *PINVptr = 0;
+  double *PINVLptr = 0;
+  double *Lptr = 0;
 
   int info;
-  F77_CALL(dpotrf)("Upper", &nc, Lptr, &nc, &info);
+  if(!isNull(BLOCKS) & FALSE) {
+    SEXP Xi;
+    double *Xiptr = 0;
+    double det = 0.0;
+    double tmpb = 0.0;
+    int nblocks = length(BLOCKS);
+    int ni;
 
-  /* Compute the inverse precision matrix. */
-  SEXP PINV;
-  PROTECT(PINV = duplicate(L));
-  double *PINVptr = REAL(PINV);
-  ++nProtected;
+    PROTECT(PINV = duplicate(getListElement(x, "XWX")));
+    PINVptr = REAL(PINV);
+    ++nProtected;
 
-  F77_CALL(dpotri)("Upper", &nc, PINVptr, &nc, &info);
+    PROTECT(PINVL = duplicate(PINV));
+    PINVLptr = REAL(PINVL);
+    ++nProtected;
 
-  SEXP PINVL;
-  PROTECT(PINVL = duplicate(PINV));
-  double *PINVLptr = REAL(PINVL);
-  ++nProtected;
-  F77_CALL(dpotrf)("Upper", &nc, PINVLptr, &nc, &info);
+    for(i = 0; i < nblocks; i++) {
+      ni = length(VECTOR_ELT(BLOCKS, i));
+      int *iptr = INTEGER(VECTOR_ELT(BLOCKS, i));
+Rprintf("yes1\n");
+      if(ni < 2) {
+        PINVptr[iptr[0] + (iptr[0] - 1) * nr - 1] = 1.0 / PINVptr[iptr[0] + (iptr[0] - 1) * nr - 1];
+      } else {
+        if(ni == 2) {
+          det = 1.0 / (PINVptr[iptr[0] + (iptr[0] - 1) * nr - 1] * PINVptr[iptr[1] + (iptr[1] - 1) * nr - 1] -
+            PINVptr[iptr[0] + (iptr[1] - 1) * nr - 1] * PINVptr[iptr[1] + (iptr[0] - 1) * nr - 1]);
+          tmpb = PINVptr[iptr[1] + (iptr[1] - 1) * nr - 1] * det;
+          PINVptr[iptr[1] + (iptr[1] - 1) * nr - 1] = PINVptr[iptr[0] + (iptr[0] - 1) * nr - 1] * det;
+          PINVptr[iptr[0] + (iptr[0] - 1) * nr - 1] = tmpb;
+          PINVptr[iptr[1] + (iptr[0] - 1) * nr - 1] = PINVptr[iptr[1] + (iptr[0] - 1) * nr - 1] * det * -1.0;
+          PINVptr[iptr[0] + (iptr[1] - 1) * nr - 1] = PINVptr[iptr[0] + (iptr[1] - 1) * nr - 1] * det * -1.0;
+        } else {
+          PROTECT(Xi = allocMatrix(REALSXP, ni, ni));
+          Xiptr = REAL(Xi);
+          for(j = 0; j < ni; j++) {
+            for(jj = 0; jj < ni; jj++) {
+              if(jj >= j)
+                Xiptr[j + ni * jj] = PINVptr[iptr[j] + (iptr[jj] - 1) * nr - 1];
+              else
+                Xiptr[j + ni * jj] = 0.0;
+            }
+          }
 
-  for(j = 0; j < nc; j++) {
-    for(i = j + 1; i < nc; i++) {
-      PINVptr[i + j * nc] = PINVptr[j + i * nc];
+          F77_CALL(dpotrf)("Upper", &ni, Xiptr, &ni, &info);
+          F77_CALL(dpotri)("Upper", &ni, Xiptr, &ni, &info);
+
+Rprintf("yes2\n");
+
+          for(j = 0; j < ni; j++) {
+            for(jj = j; jj < ni; jj++) {
+              PINVptr[iptr[j] + (iptr[jj] - 1) * nr - 1] = Xiptr[j + ni * jj];
+              PINVptr[iptr[jj] + (iptr[j] - 1) * nr - 1] = PINVptr[iptr[j] + (iptr[jj] - 1) * nr - 1];
+              PINVLptr[iptr[jj] + (iptr[j] - 1) * nr - 1] = 0.0;
+            }
+          }
+
+Rprintf("yes3\n");
+
+          UNPROTECT(1);
+        }
+Rprintf("yes4\n");
+      }
+    }
+  } else {
+    PROTECT(L = duplicate(getListElement(x, "XWX")));
+    Lptr = REAL(L);
+    ++nProtected;
+
+    for(j = 0; j < nc; j++) { 	/* Zero the lower triangle. */
+      for(i = j + 1; i < nc; i++) {
+        Lptr[i + nc * j] = 0.0;
+      }
+    }
+
+    F77_CALL(dpotrf)("Upper", &nc, Lptr, &nc, &info);
+
+    /* Compute the inverse precision matrix. */
+    PROTECT(PINV = duplicate(L));
+    PINVptr = REAL(PINV);
+    ++nProtected;
+
+    F77_CALL(dpotri)("Upper", &nc, PINVptr, &nc, &info);
+
+    PROTECT(PINVL = duplicate(PINV));
+    PINVLptr = REAL(PINVL);
+    ++nProtected;
+
+    for(j = 0; j < nc; j++) {
+      for(i = j + 1; i < nc; i++) {
+        PINVptr[i + j * nc] = PINVptr[j + i * nc];
+      }
     }
   }
+
+  F77_CALL(dpotrf)("Upper", &nc, PINVLptr, &nc, &info);
 
   /* Compute mu. */
   SEXP mu0;
@@ -1370,7 +1438,6 @@ SEXP gmcmc_iwls_gp(SEXP family, SEXP theta, SEXP id,
   ++nProtected;
 
   F77_CALL(dpotri)("Upper", &nc, PINVptr, &nc, &info);
-  F77_CALL(dpotrf)("Upper", &nc, PINVLptr, &nc, &info);
 
   for(j = 0; j < nc; j++) {
     for(i = j + 1; i < nc; i++) {

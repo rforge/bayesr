@@ -4176,20 +4176,6 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   if(ridge)
     object$S <- list(diag(.Machine$double.eps, ncol(object$X)))
 
-  XX <- crossprod(object$X)
-  XX <- XX[!diag(nrow(XX))]
-  XX_is_diagonal <- isTRUE(all.equal(XX, rep(0, length(XX))))
-  b <- runif(ncol(object$X))
-  tau2 <- runif(length(object$S))
-  S <- 0
-  for(j in seq_along(tau2)) {
-    S <- S + 1 / tau2[j] * if(is.function(object$S[[j]])) object$S[[j]](c("b" = b, "tau2" = tau2)) else object$S[[j]]
-  }
-  S <- S[!diag(nrow(S))]
-  S_is_diagonal <- isTRUE(all.equal(S, rep(0, length(S))))
-
-  object$all_diagonal <- XX_is_diagonal & S_is_diagonal
-  object$propose <- if(object$all_diagonal & !fuse) GMCMC_iwlsC_gp_diag_lasso else GMCMC_iwlsC_gp
   object$xt[["binning"]] <- TRUE
   if(is.null(object$xt[["df"]]))
     object$xt[["df"]] <- if(!ridge) ceiling(ncol(object$X) * 0.9) else ceiling(ncol(object$X) * 0.3)
@@ -6968,17 +6954,8 @@ blockMatrixDiagonal<-function(...){
 }
 
 ## Create the inverse of a matrix.
-matrix_inv <- function(x, index = NULL, force = FALSE, all_diagonal = FALSE)
+matrix_inv <- function(x, index = NULL, force = FALSE)
 {
-  if(is.null(all_diagonal))
-    all_diagonal <- FALSE
-  if(all_diagonal) {
-    x <- 1 / diag(x)
-    x <- if(length(x) < 2) {
-      matrix(x, 1, 1)
-    } else diag(x)
-    return(x)
-  }
   if(!is.null(index$block.index)) {
     return(.Call("block_inverse", x, index$block.index))
   }

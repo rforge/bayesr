@@ -146,6 +146,10 @@ bamlss.engine.setup <- function(x, update = "iwls", propose = "iwlsC_gp",
           x$smooth.construct <- x$smooth.construct[nsc]
         }
       }
+      for(j in seq_along(x$smooth.construct)) {
+        sm <- sparse.setup(crossprod(x$smooth.construct[[j]]$X))$matrix
+        x$smooth.construct[[j]]$sparse.setup$block.index <- split(as.integer(1:nrow(sm)), factor(sm[, 1]))
+      }
     }
     x
   }
@@ -424,26 +428,6 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
   x$fit.fun <- make.fit.fun(x)
   x$state$fitted.values <- x$fit.fun(x$X, get.par(x$state$parameters, "b"))
   x$state$edf <- x$edf(x)
-
-  if(is.null(x$all_diagonal)) {
-    XX <- crossprod(x$X)
-    XX_is_diagonal <- all(XX[!diag(nrow(XX))] == 0)
-
-    b <- runif(length(get.par(x$state$parameters, "b")))
-    tau2 <- get.par(x$state$parameters, "tau2")
-    S <- 0
-    for(j in seq_along(tau2))
-       S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c("b" = b, "tau2" = tau2)) else x$S[[j]]
-    S_is_diagonal <- all(S[!diag(nrow(S))] == 0)
-    x$all_diagonal <- XX_is_diagonal & (if(x$fixed) TRUE else S_is_diagonal)
-  }
-
-  if(length(x$margin) > 1) {
-    if(any(sapply(x$margin, function(x) { inherits(x, "random.effect") } ))) {
-      sm <- sparse.setup(crossprod(x$X))$matrix
-      x$sparse.setup$block.index <- split(as.integer(1:nrow(sm)), factor(sm[, 1]))
-    }
-  }
 
   x
 }
@@ -1350,13 +1334,13 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
 
   if(!x$state$do.optim | x$fixed | x$fxsp) {
     if(x$fixed) {
-      P <- matrix_inv(XWX, index = x$sparse.setup, all_diagonal = x$all_diagonal)
+      P <- matrix_inv(XWX, index = x$sparse.setup)
     } else {
       S <- 0
       tau2 <- get.state(x, "tau2")
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(g0, x$fixed.hyper)) else x$S[[j]]
-      P <- matrix_inv(XWX + S, index = x$sparse.setup, all_diagonal = x$all_diagonal)
+      P <- matrix_inv(XWX + S, index = x$sparse.setup)
     }
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
   } else {
@@ -1370,7 +1354,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
       S <- 0
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(g0, x$fixed.hyper)) else x$S[[j]]
-      P <- matrix_inv(XWX + S, index = x$sparse.setup, all_diagonal = x$all_diagonal)
+      P <- matrix_inv(XWX + S, index = x$sparse.setup)
       if(inherits(P, "try-error")) return(NA)
       g <- drop(P %*% crossprod(x$X, x$rres))
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
@@ -1407,7 +1391,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
     S <- 0
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(x$state$parameters, x$fixed.hyper)) else x$S[[j]]
-    P <- matrix_inv(XWX + S, index = x$sparse.setup, all_diagonal = x$all_diagonal)
+    P <- matrix_inv(XWX + S, index = x$sparse.setup)
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
   }
 

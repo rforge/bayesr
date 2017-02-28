@@ -69,9 +69,9 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         attr(p, "fitted.values")
       }
       x[[i]][[j]]$penaltyFunction <- as.integer(sapply(x[[i]][[j]]$S, is.function))
-      if(!is.null(x[[i]][[j]]$sparse.setup$block.index)) {
-        propose2[[i]][[j]] <- GMCMC_iwls
-      }
+#      if(!is.null(x[[i]][[j]]$sparse.setup$block.index)) {
+#        propose2[[i]][[j]] <- GMCMC_iwls
+#      }
     }
     names(theta[[i]]) <- names(propose2[[i]]) <- names(fitfun[[i]]) <- names(x[[i]]) <- nt
   }
@@ -749,7 +749,7 @@ GMCMC_iwlsC_gp <- function(family, theta, id, eta, y, data,
 
   W <- if(is.null(weights[[id[1]]])) 1.0 else weights[[id[1]]]
   rval <- .Call("gmcmc_iwls_gp", family, theta, id, eta, y, data,
-    zworking, resids, id[1], W, rho, PACKAGE = "bamlss")
+    zworking, resids, id[1], W, data$sparse.setup$block.index, rho)
 
   ## Sample variance parameter.
   if(!data$fixed & !data$fxsp & length(data$S)) {
