@@ -1,4 +1,5 @@
 ## Source all functions in the package once more.
+if(FALSE) {
 sbayesr <- function(R2BayesX = FALSE, dir = NULL, svn = "svn") {
   if(is.null(dir)) {
     dir <- if(!R2BayesX) {
@@ -46,6 +47,7 @@ compile <- function(dir = NULL, tdir = NULL, svn = "svn")
     dyn.load(gsub(".c", ".so", j, fixed = TRUE))
   }
   setwd(hold)
+}
 }
 
 
