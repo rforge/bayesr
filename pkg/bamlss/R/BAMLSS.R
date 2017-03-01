@@ -4254,13 +4254,14 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
       f <- X %*% b[nid[[j]]][-1]
       fit <- fit + b[nid[[j]]][1] / (1 + exp(-f))
     }
-    if(!is.null(object$xt$force.center))
-      fit <- fit - mean(fit, na.rm = TRUE)
+    ##if(!is.null(object$xt$force.center))
+    fit <- fit - mean(fit, na.rm = TRUE)
     return(fit)
   }
 
   object$fixed <- TRUE
-  object$state$parameters <- runif(npar, 0.00001, 0.0001)
+  lim <- 0.001
+  object$state$parameters <- runif(npar, -lim, lim)
   names(object$state$parameters) <- paste("b", 1:npar, sep = "")
   object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
   object$state$edf <- npar
@@ -4274,13 +4275,36 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     U <- matrix(0, nrow(X), length(b))
     i <- 1
     for(j in seq_along(nid)) {
-      f <- -1 * (X %*% b[nid[[j]]][-1])
-      U[, i] <- 1/(1 + exp(f))
+      u <- X %*% b[nid[[j]]][-1]
+      o <- 1 / (1 + exp(-u))
+      U[, i] <- o
       i <- i + 1
-      U[, i] <- b[nid[[j]]][1] * exp(f)/(1 + exp(f))^2
+      o2 <- b[nid[[j]]][1] * o * (1 - o)
+      U[, i] <- o2
       i <- i + 1
       for(jj in 2:k) {
-        U[, i] <- b[nid[[j]]][1] * (exp(f) * X[, jj])/(1 + exp(f))^2
+        U[, i] <- o2 * X[, jj]
+        i <- i + 1
+      }
+    }
+    return(U)
+  }
+
+  getU2 <- function(X, b) {
+    if(!is.null(names(b)))
+      b <- get.par(b, "b")
+    k <- ncol(X)
+    U <- matrix(0, nrow(X), length(b))
+    i <- 1
+    for(j in seq_along(nid)) {
+      f <- -1 * (X %*% b[nid[[j]]][-1])
+      U[, i] <- 0
+      i <- i + 1
+      U[, i] <- -(b[nid[[j]]][1] * exp(f)/(1 + exp(f))^2 - b[nid[[j]]][1] * exp(f) * (2 * (exp(f) * (1 + exp(f))))/((1 + exp(f))^2)^2)
+      i <- i + 1
+      for(jj in 2:k) {
+        U[, i] <- -(b[nid[[j]]][1] * (exp(f) * X[, jj]^2)/(1 + exp(f))^2 - b[nid[[j]]][1] * (exp(f) * X[, jj]) *
+          (2 * (exp(f) * X[, jj] * (1 + exp(f))))/((1 + exp(f))^2)^2)
         i <- i + 1
       }
     }
@@ -4307,12 +4331,15 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     b0 <- get.state(x, "b")
 
     U <- getU(x$X, b0)
+    U2 <- getU2(x$X, b0)
 
-    UWU <- -1 * crossprod(U * hess, U)
+    UWU <- -1 * (crossprod(U * hess, U) + colSums(U2 * score))
     H <- matrix_inv(UWU)
     s <- drop(colSums(U * score))
 
-    b1 <- drop(b0 - H %*% s)
+    b1 <- drop(b0 + s)
+    if(any(is.na(b1)))
+      return(x$state)
     names(b1) <- names(b0)
 
     x$state$parameters <- set.par(x$state$parameters, b1, "b")
@@ -4322,7 +4349,28 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     return(x$state)
   }
 
-  object$update <- update_nn # bfit_optim
+  object$update <- update_nn
+  
+  object$boost.fit <- function(x, y, nu, ...)
+  {
+    b0 <- get.state(x, "b")
+    U <- getU(x$X, b0)
+    U2 <- getU2(x$X, b0)
+
+    UWU <- -1 * (crossprod(U, U) + colSums(U2 * y))
+    H <- matrix_inv(UWU)
+    s <- drop(colSums(U * y))
+
+    b1 <- nu * drop(b0 - H %*% s)
+    names(b1) <- names(b0)
+
+    ## Finalize.
+    x$state$parameters <- set.par(x$state$parameters, b1, "b")
+    x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
+    x$state$rss <- sum((x$state$fitted.values - y)^2)
+
+    return(x$state)
+  }
 
   class(object) <- c("nnet.smooth", "no.mgcv", "special")
 

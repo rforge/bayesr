@@ -147,7 +147,11 @@ bamlss.engine.setup <- function(x, update = "iwls", propose = "iwlsC_gp",
         }
       }
       for(j in seq_along(x$smooth.construct)) {
-        sm <- sparse.setup(XX <- crossprod(x$smooth.construct[[j]]$X) + do.call("+", x$smooth.construct[[j]]$S))$matrix
+        sm <- if(!is.null(x$smooth.construct[[j]]$S)) {
+          sparse.setup(XX <- crossprod(x$smooth.construct[[j]]$X) + do.call("+", x$smooth.construct[[j]]$S))$matrix
+        } else {
+          sparse.setup(XX <- crossprod(x$smooth.construct[[j]]$X))$matrix
+        }
         x$smooth.construct[[j]]$sparse.setup$block.index <- split(as.integer(1:nrow(sm)), factor(sm[, 1]))
         x$smooth.construct[[j]]$sparse.setup$is.diagonal <- all(sapply(x$smooth.construct[[j]]$sparse.setup$block.index, length) == 1)
       }
@@ -2229,10 +2233,12 @@ boost.transform <- function(x, y, df = NULL, family,
     for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
       if(!is.null(df))
         x[[nx[j]]]$smooth.construct[[sj]] <- assign.df(x[[nx[j]]]$smooth.construct[[sj]], df)
-      if(!x[[nx[j]]]$smooth.construct[[sj]]$fxsp & !x[[nx[j]]]$smooth.construct[[sj]]$fixed) {
-        x[[nx[j]]]$smooth.construct[[sj]]$old.optimize <- x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim
-        x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim <- FALSE
-        x[[nx[j]]]$smooth.construct[[sj]]$do.optim <- FALSE
+      if(!is.null(x[[nx[j]]]$smooth.construct[[sj]]$fxsp)) {
+        if(!x[[nx[j]]]$smooth.construct[[sj]]$fxsp & !x[[nx[j]]]$smooth.construct[[sj]]$fixed) {
+          x[[nx[j]]]$smooth.construct[[sj]]$old.optimize <- x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim
+          x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim <- FALSE
+          x[[nx[j]]]$smooth.construct[[sj]]$do.optim <- FALSE
+        }
       }
     }
     if(has_pterms(x[[nx[j]]]$terms)) {
@@ -2369,7 +2375,11 @@ make.par.list <- function(x, iter)
     rval <- list()
     if(!is.null(x$smooth.construct)) {
       for(j in names(x$smooth.construct)) {
-        rval[[j]] <- matrix(0, nrow = iter, ncol = ncol(x$smooth.construct[[j]]$X))
+        rval[[j]] <- if(is.null(x$smooth.construct[[j]]$special.npar)) {
+          matrix(0, nrow = iter, ncol = ncol(x$smooth.construct[[j]]$X))
+        } else {
+          matrix(0, nrow = iter, ncol = x$smooth.construct[[j]]$special.npar)
+        }
         colnames(rval[[j]]) <- names(get.par(x$smooth.construct[[j]]$state$parameters, "b"))
         rval[[j]][1, ] <- get.par(x$smooth.construct[[j]]$state$parameters, "b")
         if(!is.null(x$smooth.construct[[j]]$is.model.matrix))
