@@ -147,8 +147,9 @@ bamlss.engine.setup <- function(x, update = "iwls", propose = "iwlsC_gp",
         }
       }
       for(j in seq_along(x$smooth.construct)) {
-        sm <- sparse.setup(crossprod(x$smooth.construct[[j]]$X))$matrix
+        sm <- sparse.setup(XX <- crossprod(x$smooth.construct[[j]]$X) + do.call("+", x$smooth.construct[[j]]$S))$matrix
         x$smooth.construct[[j]]$sparse.setup$block.index <- split(as.integer(1:nrow(sm)), factor(sm[, 1]))
+        x$smooth.construct[[j]]$sparse.setup$is.diagonal <- all(sapply(x$smooth.construct[[j]]$sparse.setup$block.index, length) == 1)
       }
     }
     x

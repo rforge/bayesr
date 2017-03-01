@@ -456,6 +456,76 @@ SEXP sum_diag2(SEXP x, SEXP y)
 }
 
 
+/* Block diagonal inverse. */
+SEXP block_inverse(SEXP X, SEXP IND, SEXP DIAGONAL)
+{
+  int i;
+  int nr = nrows(X);
+  double *Xptr = REAL(X);
+  SEXP Xout;
+  PROTECT(Xout = duplicate(X));
+  double *Xoutptr = REAL(Xout);
+
+  if(LOGICAL(DIAGONAL)[0]) {
+    for(i = 0; i < nr; i++)
+      Xoutptr[i + nr * i] = 1.0 / Xptr[i + nr * i];
+  } else {
+    int j, jj, k, ni, n = length(IND);
+
+    SEXP Xi;
+    double *Xiptr = 0;
+    double det = 0.0;
+    double tmp = 0.0;
+
+    int info;
+
+    for(i = 0; i < n; i++) {
+      ni = length(VECTOR_ELT(IND, i));
+      int *iptr = INTEGER(VECTOR_ELT(IND, i));
+      if(ni < 2) {
+        Xoutptr[iptr[0] + (iptr[0] - 1) * nr - 1] = 1.0 / Xptr[iptr[0] + (iptr[0] - 1) * nr - 1];
+      } else {
+        if(ni == 2) {
+          det = 1.0 / (Xptr[iptr[0] + (iptr[0] - 1) * nr - 1] * Xptr[iptr[1] + (iptr[1] - 1) * nr - 1] -
+            Xptr[iptr[0] + (iptr[1] - 1) * nr - 1] * Xptr[iptr[1] + (iptr[0] - 1) * nr - 1]);
+          tmp = Xoutptr[iptr[1] + (iptr[1] - 1) * nr - 1] * det;
+          Xoutptr[iptr[1] + (iptr[1] - 1) * nr - 1] = Xoutptr[iptr[0] + (iptr[0] - 1) * nr - 1] * det;
+          Xoutptr[iptr[0] + (iptr[0] - 1) * nr - 1] = tmp;
+          Xoutptr[iptr[1] + (iptr[0] - 1) * nr - 1] = Xoutptr[iptr[1] + (iptr[0] - 1) * nr - 1] * det * -1.0;
+          Xoutptr[iptr[0] + (iptr[1] - 1) * nr - 1] = Xoutptr[iptr[0] + (iptr[1] - 1) * nr - 1] * det * -1.0;
+        } else {
+          PROTECT(Xi = allocMatrix(REALSXP, ni, ni));
+          Xiptr = REAL(Xi);
+          for(j = 0; j < ni; j++) {
+            for(jj = 0; jj < ni; jj++) {
+              if(jj >= j)
+                Xiptr[j + ni * jj] = Xptr[iptr[j] + (iptr[jj] - 1) * nr - 1];
+              else
+                Xiptr[j + ni * jj] = 0.0;
+            }
+          }
+
+          F77_CALL(dpotrf)("Upper", &ni, Xiptr, &ni, &info);
+          F77_CALL(dpotri)("Upper", &ni, Xiptr, &ni, &info);
+
+          for(j = 0; j < ni; j++) {
+            for(jj = j; jj < ni; jj++) {
+              Xoutptr[iptr[j] + (iptr[jj] - 1) * nr - 1] = Xiptr[j + ni * jj];
+              Xoutptr[iptr[jj] + (iptr[j] - 1) * nr - 1] = Xoutptr[iptr[j] + (iptr[jj] - 1) * nr - 1];
+            }
+          }
+          UNPROTECT(1);
+        }
+      }
+    }
+  }
+
+  UNPROTECT(1);
+
+  return Xout;
+}
+
+
 /* Efficient IWLS sampling. */
 SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   SEXP eta, SEXP response, SEXP x, SEXP z, SEXP e, SEXP id2, SEXP W, SEXP rho)
@@ -1000,7 +1070,7 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 
 SEXP gmcmc_iwls_gp(SEXP family, SEXP theta, SEXP id,
   SEXP eta, SEXP response, SEXP x, SEXP z, SEXP e, SEXP id2, SEXP W,
-  SEXP BLOCKS, SEXP rho)
+  SEXP BLOCKS, SEXP DIAGONAL, SEXP rho)
 {
   int i, j, k, nProtected = 0;
   int n = INTEGER(getListElement(x, "nobs"))[0];
@@ -1172,17 +1242,10 @@ SEXP gmcmc_iwls_gp(SEXP family, SEXP theta, SEXP id,
   double *PINVptr = 0;
   double *PINVLptr = 0;
   double *Lptr = 0;
-
   int info;
-  if(!isNull(BLOCKS) & FALSE) {
-    SEXP Xi;
-    double *Xiptr = 0;
-    double det = 0.0;
-    double tmpb = 0.0;
-    int nblocks = length(BLOCKS);
-    int ni;
 
-    PROTECT(PINV = duplicate(getListElement(x, "XWX")));
+  if(!isNull(BLOCKS)) {
+    PROTECT(PINV = block_inverse(getListElement(x, "XWX"), BLOCKS, DIAGONAL));
     PINVptr = REAL(PINV);
     ++nProtected;
 
@@ -1190,51 +1253,11 @@ SEXP gmcmc_iwls_gp(SEXP family, SEXP theta, SEXP id,
     PINVLptr = REAL(PINVL);
     ++nProtected;
 
-    for(i = 0; i < nblocks; i++) {
-      ni = length(VECTOR_ELT(BLOCKS, i));
-      int *iptr = INTEGER(VECTOR_ELT(BLOCKS, i));
-Rprintf("yes1\n");
-      if(ni < 2) {
-        PINVptr[iptr[0] + (iptr[0] - 1) * nr - 1] = 1.0 / PINVptr[iptr[0] + (iptr[0] - 1) * nr - 1];
-      } else {
-        if(ni == 2) {
-          det = 1.0 / (PINVptr[iptr[0] + (iptr[0] - 1) * nr - 1] * PINVptr[iptr[1] + (iptr[1] - 1) * nr - 1] -
-            PINVptr[iptr[0] + (iptr[1] - 1) * nr - 1] * PINVptr[iptr[1] + (iptr[0] - 1) * nr - 1]);
-          tmpb = PINVptr[iptr[1] + (iptr[1] - 1) * nr - 1] * det;
-          PINVptr[iptr[1] + (iptr[1] - 1) * nr - 1] = PINVptr[iptr[0] + (iptr[0] - 1) * nr - 1] * det;
-          PINVptr[iptr[0] + (iptr[0] - 1) * nr - 1] = tmpb;
-          PINVptr[iptr[1] + (iptr[0] - 1) * nr - 1] = PINVptr[iptr[1] + (iptr[0] - 1) * nr - 1] * det * -1.0;
-          PINVptr[iptr[0] + (iptr[1] - 1) * nr - 1] = PINVptr[iptr[0] + (iptr[1] - 1) * nr - 1] * det * -1.0;
-        } else {
-          PROTECT(Xi = allocMatrix(REALSXP, ni, ni));
-          Xiptr = REAL(Xi);
-          for(j = 0; j < ni; j++) {
-            for(jj = 0; jj < ni; jj++) {
-              if(jj >= j)
-                Xiptr[j + ni * jj] = PINVptr[iptr[j] + (iptr[jj] - 1) * nr - 1];
-              else
-                Xiptr[j + ni * jj] = 0.0;
-            }
-          }
-
-          F77_CALL(dpotrf)("Upper", &ni, Xiptr, &ni, &info);
-          F77_CALL(dpotri)("Upper", &ni, Xiptr, &ni, &info);
-
-Rprintf("yes2\n");
-
-          for(j = 0; j < ni; j++) {
-            for(jj = j; jj < ni; jj++) {
-              PINVptr[iptr[j] + (iptr[jj] - 1) * nr - 1] = Xiptr[j + ni * jj];
-              PINVptr[iptr[jj] + (iptr[j] - 1) * nr - 1] = PINVptr[iptr[j] + (iptr[jj] - 1) * nr - 1];
-              PINVLptr[iptr[jj] + (iptr[j] - 1) * nr - 1] = 0.0;
-            }
-          }
-
-Rprintf("yes3\n");
-
-          UNPROTECT(1);
+    if(!LOGICAL(DIAGONAL)[0]) {
+      for(j = 0; j < nc; j++) {
+        for(i = j + 1; i < nc; i++) {
+          PINVLptr[i + nc * j] = 0.0;
         }
-Rprintf("yes4\n");
       }
     }
   } else {
@@ -1418,30 +1441,35 @@ Rprintf("yes4\n");
   }
 
   /* Cholesky decompostion of XWX. */
-  SEXP L2;
-  PROTECT(L2 = duplicate(getListElement(x, "XWX")));
-  Lptr = REAL(L2);
-  ++nProtected;
+  SEXP L2, PINV2;
+  if(!isNull(BLOCKS)) {
+    PROTECT(PINV2 = block_inverse(getListElement(x, "XWX"), BLOCKS, DIAGONAL));
+    PINVptr = REAL(PINV2);
+    ++nProtected;
+  } else {
+    PROTECT(L2 = duplicate(getListElement(x, "XWX")));
+    Lptr = REAL(L2);
+    ++nProtected;
 
-  for(j = 0; j < nc; j++) { 	/* Zero the lower triangle. */
-    for(i = j + 1; i < nc; i++) {
-      Lptr[i + nc * j] = 0.0;
+    for(j = 0; j < nc; j++) { 	/* Zero the lower triangle. */
+      for(i = j + 1; i < nc; i++) {
+        Lptr[i + nc * j] = 0.0;
+      }
     }
-  }
 
-  F77_CALL(dpotrf)("Upper", &nc, Lptr, &nc, &info);
+    F77_CALL(dpotrf)("Upper", &nc, Lptr, &nc, &info);
 
-  /* Compute the inverse precision matrix. */
-  SEXP PINV2;
-  PROTECT(PINV2 = duplicate(L2));
-  PINVptr = REAL(PINV2);
-  ++nProtected;
+    /* Compute the inverse precision matrix. */
+    PROTECT(PINV2 = duplicate(L2));
+    PINVptr = REAL(PINV2);
+    ++nProtected;
 
-  F77_CALL(dpotri)("Upper", &nc, PINVptr, &nc, &info);
+    F77_CALL(dpotri)("Upper", &nc, PINVptr, &nc, &info);
 
-  for(j = 0; j < nc; j++) {
-    for(i = j + 1; i < nc; i++) {
-      PINVptr[i + j * nc] = PINVptr[j + i * nc];
+    for(j = 0; j < nc; j++) {
+      for(i = j + 1; i < nc; i++) {
+        PINVptr[i + j * nc] = PINVptr[j + i * nc];
+      }
     }
   }
 
@@ -3468,68 +3496,5 @@ SEXP gpareto_hess_sigma(SEXP y, SEXP xi, SEXP sigma)
 
   UNPROTECT(1);
   return rval;
-}
-
-
-SEXP block_inverse(SEXP X, SEXP IND)
-{
-  int i, j, jj, k, ni, n = length(IND);
-  int nr = nrows(X);
-
-  double *Xptr = REAL(X);
-  SEXP Xi;
-
-  SEXP Xout;
-  PROTECT(Xout = duplicate(X));
-  double *Xoutptr = REAL(Xout);
-  double *Xiptr = 0;
-  double det = 0.0;
-  double tmp = 0.0;
-
-  int info;
-
-  for(i = 0; i < n; i++) {
-    ni = length(VECTOR_ELT(IND, i));
-    int *iptr = INTEGER(VECTOR_ELT(IND, i));
-    if(ni < 2) {
-      Xoutptr[iptr[0] + (iptr[0] - 1) * nr - 1] = 1.0 / Xptr[iptr[0] + (iptr[0] - 1) * nr - 1];
-    } else {
-      if(ni == 2) {
-        det = 1.0 / (Xptr[iptr[0] + (iptr[0] - 1) * nr - 1] * Xptr[iptr[1] + (iptr[1] - 1) * nr - 1] -
-          Xptr[iptr[0] + (iptr[1] - 1) * nr - 1] * Xptr[iptr[1] + (iptr[0] - 1) * nr - 1]);
-        tmp = Xoutptr[iptr[1] + (iptr[1] - 1) * nr - 1] * det;
-        Xoutptr[iptr[1] + (iptr[1] - 1) * nr - 1] = Xoutptr[iptr[0] + (iptr[0] - 1) * nr - 1] * det;
-        Xoutptr[iptr[0] + (iptr[0] - 1) * nr - 1] = tmp;
-        Xoutptr[iptr[1] + (iptr[0] - 1) * nr - 1] = Xoutptr[iptr[1] + (iptr[0] - 1) * nr - 1] * det * -1.0;
-        Xoutptr[iptr[0] + (iptr[1] - 1) * nr - 1] = Xoutptr[iptr[0] + (iptr[1] - 1) * nr - 1] * det * -1.0;
-      } else {
-        PROTECT(Xi = allocMatrix(REALSXP, ni, ni));
-        Xiptr = REAL(Xi);
-        for(j = 0; j < ni; j++) {
-          for(jj = 0; jj < ni; jj++) {
-            if(jj >= j)
-              Xiptr[j + ni * jj] = Xptr[iptr[j] + (iptr[jj] - 1) * nr - 1];
-            else
-              Xiptr[j + ni * jj] = 0.0;
-          }
-        }
-
-        F77_CALL(dpotrf)("Upper", &ni, Xiptr, &ni, &info);
-        F77_CALL(dpotri)("Upper", &ni, Xiptr, &ni, &info);
-
-        for(j = 0; j < ni; j++) {
-          for(jj = j; jj < ni; jj++) {
-            Xoutptr[iptr[j] + (iptr[jj] - 1) * nr - 1] = Xiptr[j + ni * jj];
-            Xoutptr[iptr[jj] + (iptr[j] - 1) * nr - 1] = Xoutptr[iptr[j] + (iptr[jj] - 1) * nr - 1];
-          }
-        }
-        UNPROTECT(1);
-      }
-    }
-  }
-
-  UNPROTECT(1);
-
-  return Xout;
 }
 

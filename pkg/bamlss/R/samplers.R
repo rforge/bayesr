@@ -749,7 +749,7 @@ GMCMC_iwlsC_gp <- function(family, theta, id, eta, y, data,
 
   W <- if(is.null(weights[[id[1]]])) 1.0 else weights[[id[1]]]
   rval <- .Call("gmcmc_iwls_gp", family, theta, id, eta, y, data,
-    zworking, resids, id[1], W, data$sparse.setup$block.index, rho)
+    zworking, resids, id[1], W, data$sparse.setup$block.index, data$sparse.setup$is.diagonal, rho)
 
   ## Sample variance parameter.
   if(!data$fixed & !data$fxsp & length(data$S)) {
