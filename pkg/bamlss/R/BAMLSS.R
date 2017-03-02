@@ -4291,11 +4291,25 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     return(U)
   }
 
-  getU2 <- function(X, b) {
+  getU2 <- function(X, b, score) {
     if(!is.null(names(b)))
       b <- get.par(b, "b")
     k <- ncol(X)
-    U <- matrix(0, nrow(X), length(b))
+    i <- 1
+    U <- vector(mode = "list", length = length(nid))
+    for(j in seq_along(nid)) {
+      f <- drop(X %*% b[nid[[j]]][-1])
+      o0 <- 1 / (1 + exp(-f))
+      o0 <- o0 * (1 - o0)
+      u <- exp(f)
+      o <- b[nid[[j]]][1] * (-u * (u - 1) / (u + 1)^3)
+      U1j <- crossprod(X * o * score, X)
+      U2j <- rep(0, k)
+      for(jj in 1:k)
+        U2j[jj] <- sum(X[, jj] * o0 * score)
+      U[[j]] <- rbind(c(0, U2j), cbind(U2j, U1j))
+    }
+    U <- as.matrix(do.call("bdiag", U))
     return(U)
   }
 
@@ -4319,12 +4333,11 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     b0 <- get.state(x, "b")
 
     U <- getU(x$X, b0)
-    U2 <- getU2(x$X, b0)
+    U2 <- getU2(x$X, b0, score)
 
-    #UWU <- (crossprod(U * hess, U))
-    #H <- matrix_inv(UWU)
+    UWU <- crossprod(U * hess, U)
+    H <- matrix_inv(UWU)
     s <- drop(colSums(U * score))
-    H <- -1 * matrix_inv(s %*% t(s))
 
     b1 <- drop(b0 + s %*% H)
     if(any(is.na(b1)))
