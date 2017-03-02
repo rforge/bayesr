@@ -4260,8 +4260,9 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   }
 
   object$fixed <- TRUE
-  lim <- 0.001
+  lim <- 0.01
   object$state$parameters <- runif(npar, -lim, lim)
+  object$state$parameters[object$state$parameters == 0] <- 0.01
   names(object$state$parameters) <- paste("b", 1:npar, sep = "")
   object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
   object$state$edf <- npar
@@ -4295,19 +4296,6 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
       b <- get.par(b, "b")
     k <- ncol(X)
     U <- matrix(0, nrow(X), length(b))
-    i <- 1
-    for(j in seq_along(nid)) {
-      f <- -1 * (X %*% b[nid[[j]]][-1])
-      U[, i] <- 0
-      i <- i + 1
-      U[, i] <- -(b[nid[[j]]][1] * exp(f)/(1 + exp(f))^2 - b[nid[[j]]][1] * exp(f) * (2 * (exp(f) * (1 + exp(f))))/((1 + exp(f))^2)^2)
-      i <- i + 1
-      for(jj in 2:k) {
-        U[, i] <- -(b[nid[[j]]][1] * (exp(f) * X[, jj]^2)/(1 + exp(f))^2 - b[nid[[j]]][1] * (exp(f) * X[, jj]) *
-          (2 * (exp(f) * X[, jj] * (1 + exp(f))))/((1 + exp(f))^2)^2)
-        i <- i + 1
-      }
-    }
     return(U)
   }
 
@@ -4333,11 +4321,12 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     U <- getU(x$X, b0)
     U2 <- getU2(x$X, b0)
 
-    UWU <- -1 * (crossprod(U * hess, U) + colSums(U2 * score))
-    H <- matrix_inv(UWU)
+    #UWU <- (crossprod(U * hess, U))
+    #H <- matrix_inv(UWU)
     s <- drop(colSums(U * score))
+    H <- -1 * matrix_inv(s %*% t(s))
 
-    b1 <- drop(b0 + s)
+    b1 <- drop(b0 + s %*% H)
     if(any(is.na(b1)))
       return(x$state)
     names(b1) <- names(b0)
@@ -4355,13 +4344,13 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   {
     b0 <- get.state(x, "b")
     U <- getU(x$X, b0)
-    U2 <- getU2(x$X, b0)
 
-    UWU <- -1 * (crossprod(U, U) + colSums(U2 * y))
-    H <- matrix_inv(UWU)
     s <- drop(colSums(U * y))
+    UWU <- (crossprod(U, U))
+    H <- matrix_inv(UWU)
 
-    b1 <- nu * drop(b0 - H %*% s)
+    ## b1 <- nu * drop(b0 + s %*% H)
+    b1 <- nu * s %*% H
     names(b1) <- names(b0)
 
     ## Finalize.
