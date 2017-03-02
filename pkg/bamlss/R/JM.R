@@ -221,7 +221,7 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
     x$sigma$smooth.construct$model.matrix$state$parameters[1] <- if(is.null(sigma)) log(sd(y[, "obs"], na.rm = TRUE)) else sigma
     x$sigma$smooth.construct$model.matrix$state$fitted.values <- x$sigma$smooth.construct$model.matrix$X %*% x$sigma$smooth.construct$model.matrix$state$parameters
   }
-
+  
   ## Make fixed effects term the last term in mu.
   if(!is.null(x$mu$smooth.construct$model.matrix) & (length(x$mu$smooth.construct) > 1)) {
     nmu <- names(x$mu$smooth.construct)
@@ -268,7 +268,7 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
       x[[j]]$smooth.construct[[sj]] <- sparse_Matrix_setup(x[[j]]$smooth.construct[[sj]], sparse = sparse, take = take)
     }
   }
-
+  
   ## Update prior/grad/hess functions
   for(j in names(x)) {
     for(sj in names(x[[j]]$smooth.construct)) {
@@ -351,15 +351,6 @@ sparse_Matrix_setup <- function(x, sparse = TRUE, force = FALSE, take)
   # sparse setup for (block-)diagonal sampling
   if(!is.null(x$sparse.setup$matrix)) {
     x$sparse.setup[["mu.matrix"]] <- x$sparse.setup$matrix[take, , drop = FALSE]
-    index.coeffs <- lapply(1:nrow(x$sparse.setup[["mu.matrix"]]), function(i){
-      tmp <- x$sparse.setup[["mu.matrix"]][i,]
-      tmp <- tmp[tmp > 0]})
-    x$sparse.setup$coeffs <- index.coeffs[lapply(index.coeffs, length) > 0]
-    if(any(duplicated(unlist(x$sparse.setup$coeffs)))){
-      x$sparse.setup$pattern <- "other"
-    } else {
-      x$sparse.setup$pattern <- if(all(lengths(x$sparse.setup$coeffs) == 1)) "diagonal" else "blocks" 
-    }
   }
   return(x)
 }
@@ -2307,7 +2298,7 @@ propose_jm_mu_Matrix <- function(x, y,
   xhess <- xhess0 - x$hess(score = NULL, x$state$parameters, full = FALSE)
   
   ## Compute the inverse of the hessian.
-  Sigma <- matrix_inv(-1 * xhess)
+  Sigma <- matrix_inv(-1 * xhess, index = x$sparse.setup)
   
   ## Save old coefficients.
   g0 <- get.state(x, "b")
@@ -2315,18 +2306,12 @@ propose_jm_mu_Matrix <- function(x, y,
   ## Get new position.
   mu <- drop(g0 + Sigma %*% xgrad)
   Sigma <- as.matrix(Sigma)
-
+  
   ## Sample new parameters using blockdiagonal structure.
-  if(length(x$sparse.setup$coeffs) < 1){
-    stop("Please check your longitudinal time variable. 
-          In order to use the sparse setup in random slopes, no 0s are allowed in
-          the longitudinal time variable. See ?jm_bamlss for further information.")
-  }
-
-  if(x$sparse.setup$pattern != "other"){
-    lg <- lapply(1:length(x$sparse.setup$coeffs), function(i){
-      tmp <- x$sparse.setup$coeff[[i]]
-      if(x$sparse.setup$pattern == "diagonal"){
+  if(!is.null(x$sparse.setup$block.index)){
+    lg <- lapply(1:length(x$sparse.setup$block.index), function(i){
+      tmp <- x$sparse.setup$block.index[[i]]
+      if(x$sparse.setup$is.diagonal){
         drop(rnorm(n = 1, mean = mu[tmp], sd = sqrt(Sigma[tmp,tmp])))
       } else{
         if(length(tmp) == 1){
@@ -2351,10 +2336,10 @@ propose_jm_mu_Matrix <- function(x, y,
   
   ## Compute log priors using blockdiagonal structure.
   p2 <- x$prior(x$state$parameters)
-  if(x$sparse.setup$pattern != "other"){
-    lqbetaprop <- lapply(1:length(x$sparse.setup$coeffs), function(i){
-      tmp <- x$sparse.setup$coeff[[i]]
-      if(x$sparse.setup$pattern == "diagonal"){
+  if(!is.null(x$sparse.setup$block.index)){
+    lqbetaprop <- lapply(1:length(x$sparse.setup$block.index), function(i){
+      tmp <- x$sparse.setup$block.index[[i]]
+      if(x$sparse.setup$is.diagonal){
         drop(dnorm(g[tmp], mean = mu[tmp], sd = sqrt(Sigma[tmp,tmp]), log = TRUE))
       } else{
         if(length(tmp) == 1){
@@ -2402,14 +2387,14 @@ propose_jm_mu_Matrix <- function(x, y,
   xhess0 <- -1 * XWX - int$hess
   xhess <- xhess0 - x$hess(score = NULL, x$state$parameters, full = FALSE)
   
-  Sigma2 <- matrix_inv(-1 * xhess)
+  Sigma2 <- matrix_inv(-1 * xhess, index = x$sparse.setup)
   mu2 <- drop(g + nu * Sigma2 %*% xgrad)
   Sigma2 <- as.matrix(Sigma2) 
   
-  if(x$sparse.setup$pattern != "other"){
-    lqbeta <- lapply(1:length(x$sparse.setup$coeffs), function(i){
-      tmp <- x$sparse.setup$coeff[[i]]
-      if(x$sparse.setup$pattern == "diagonal"){
+  if(!is.null(x$sparse.setup$block.index)){
+    lqbeta <- lapply(1:length(x$sparse.setup$block.index), function(i){
+      tmp <- x$sparse.setup$block.index[[i]]
+      if(x$sparse.setup$is.diagonal){
         drop(dnorm(g0[tmp], mean = mu2[tmp], sd = sqrt(Sigma2[tmp,tmp]), log = TRUE))
       } else{
         if(length(tmp) == 1){
@@ -3153,7 +3138,7 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
            "nonlinear" = (0.5 + r[, 1] + 0.6*sin(x) + 0.1*(time+2)*exp(-0.075*time)),
            "functional" = (0.5 + r[, 1] + 0.6*sin(x) + 0.1*(time+2)*exp(-0.075*time) + 
                              apply(splines::bs(time, long_df, b_set$knots, b_set$degree,
-                                      b_set$intercept, b_set$Boundary.knots) * beta, 1, sum)))
+                                               b_set$intercept, b_set$Boundary.knots) * beta, 1, sum)))
   }
   
   ## derivative of individual longitudinal trajectories
@@ -3664,7 +3649,7 @@ jm.survplot <- function(object, id = 1, dt = NULL, steps = 10,
 
 
 .predict.bamlss.jm.td <- function(id, x, samps, enames, intercept, nsamps, newdata, env,
-                                    yname, grid, formula, type = 1, derivMat = FALSE)
+                                  yname, grid, formula, type = 1, derivMat = FALSE)
 {
   snames <- colnames(samps)
   enames <- gsub("p.Intercept", "p.(Intercept)", enames, fixed = TRUE)
@@ -3726,6 +3711,4 @@ jm.survplot <- function(object, id = 1, dt = NULL, steps = 10,
   
   eta
 }
-
-
 

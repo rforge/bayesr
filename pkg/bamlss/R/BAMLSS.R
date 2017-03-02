@@ -7007,6 +7007,7 @@ blockMatrixDiagonal<-function(...){
 matrix_inv <- function(x, index = NULL, force = FALSE)
 {
   if(!is.null(index$block.index)) {
+    if(!is.matrix(x)) x <- as.matrix(x)
     return(.Call("block_inverse", x, index$block.index, index$is.diagonal))
   }
   if(inherits(x, "Matrix")) {
