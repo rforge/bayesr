@@ -2294,11 +2294,22 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
 }
 
 
+terms.formula2 <- function(formula, specials, keep.order = TRUE, ...)
+{
+  tl <- as.character(formula)[2]
+  tl <- strsplit(tl, "+", fixed = TRUE)[[1]]
+  tl <- gsub(" ", "", tl)
+  tl <- gsub("(Intercept)", "Intercept", tl, fixed = TRUE)
+  attr(formula, "term.labels") <- tl
+  formula
+}
+
+
 all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
 {
   env <- environment(formula)
   specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n", specials))
-  tf <- terms(formula, specials = specials, keep.order = FALSE)
+  tf <- terms.formula2(formula, specials = specials, keep.order = FALSE)
   ## sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
   sid <- NULL
@@ -3194,7 +3205,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
           jt <- strsplit(j, ":", fixed = TRUE)[[1]]
           ok <- NULL
           for(jjt in jt)
-            ok <- cbind(ok, grepl(jjt, snames, fixed = TRUE), grepl(paste(id, "p", sep = "."), snames, fixed = TRUE) | grepl(paste(id, "p,model.matrix", sep = "."), snames, fixed = TRUE))
+            ok <- cbind(ok, grepl(jjt, snames, fixed = TRUE), grepl(paste(id, "p", sep = "."), snames, fixed = TRUE) | grepl(paste(id, "p.model.matrix", sep = "."), snames, fixed = TRUE))
           ok <- apply(ok, 1, all)
           sn <- snames[ok]
         } else {
