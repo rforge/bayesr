@@ -2296,12 +2296,14 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
 
 terms.formula2 <- function(formula, specials, keep.order = TRUE, ...)
 {
-  tl <- as.character(formula)[2]
+  f0 <- formula
+  formula <- as.character(as.formula(formula))
+  tl <- formula[length(formula)]
   tl <- strsplit(tl, "+", fixed = TRUE)[[1]]
   tl <- gsub(" ", "", tl)
   tl <- gsub("(Intercept)", "Intercept", tl, fixed = TRUE)
-  attr(formula, "term.labels") <- tl
-  formula
+  attr(f0, "term.labels") <- tl
+  f0
 }
 
 
