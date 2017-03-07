@@ -4347,10 +4347,10 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     U2 <- getU2(x$X, b0, score)
 
     UWU <- crossprod(U * hess, U)
-    H <- matrix_inv(UWU)
+    H <- matrix_inv(-1 * UWU)
     s <- drop(colSums(U * score))
 
-    b1 <- drop(b0 + s %*% H)
+    b1 <- drop(b0 - s %*% H)
     if(any(is.na(b1)))
       return(x$state)
     names(b1) <- names(b0)
