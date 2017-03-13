@@ -3498,3 +3498,236 @@ SEXP gpareto_hess_sigma(SEXP y, SEXP xi, SEXP sigma)
   return rval;
 }
 
+
+/* Multivariate Normal with AR1-cov */
+SEXP log_dmvnormAR1(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ)
+{
+  int i, j;
+  int n = INTEGER(N)[0];
+  int k = INTEGER(K)[0];
+
+  double *Pptr = REAL(PAR);
+
+  int *MJptr = INTEGER(MJ);
+  int *SJptr = INTEGER(SJ);
+  int rj = INTEGER(RJ)[0];
+
+  SEXP ymu;
+  PROTECT(ymu = allocVector(REALSXP, k));
+  double *ymuptr = REAL(ymu);
+  double *Yptr = REAL(Y);
+
+  SEXP d;
+  PROTECT(d = allocVector(REALSXP, n));
+  double *dptr = REAL(d);
+
+  double lpi = - 0.5 * k * log(2.0 * 3.14159265358979323846);
+  double detsig = 0.0;
+  double detrho = 0.0;
+  double subdet = 0.0;
+  double sum1 = 0.0;
+  double sum2 = 0.0;
+  double sum3 = 0.0;
+
+  for(i = 0; i < n; i++) {
+    detsig = 0.0;
+    for(j = 0; j < k; j++) {
+      detsig += log( Pptr[i + n * (SJptr[j] - 1)] );
+      ymuptr[j] = ( Yptr[i + n * j] - Pptr[i + n * (MJptr[j] - 1)] ) / Pptr[i + n * (SJptr[j] - 1)];
+    }
+
+    sum1 = 0.0;
+    for(j = 0; j < k; j++) {
+        sum1 += pow(ymuptr[j], 2.0);        
+    }
+    sum2 = 0.0;
+    for(j = 1; j < k; j++) {
+        sum2 += ymuptr[j] * ymuptr[j-1];        
+    }
+    sum3 = sum1 - pow(ymuptr[0], 2.0) - pow(ymuptr[k-1], 2.0);
+    
+    subdet = 1 - pow(Pptr[i + n * (rj - 1)], 2.0);
+    detrho = 0.5 * (k-1) * log( subdet );
+
+    dptr[i] = lpi - detsig - detrho - 0.5 * ( sum1 - 2 * Pptr[i + n * (rj - 1)] * sum2 + pow(Pptr[i + n * (rj - 1)], 2.0) * sum3 ) / subdet;
+  }
+
+  UNPROTECT(2);
+  return d;
+}
+
+SEXP mu_score_mvnormAR1(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ, SEXP KJ)
+{
+  int i, j;
+  int n = INTEGER(N)[0];
+  int k = INTEGER(K)[0];
+  int kj = INTEGER(KJ)[0];
+
+  double *Pptr = REAL(PAR);
+
+  int *MJptr = INTEGER(MJ);
+  int *SJptr = INTEGER(SJ);
+  int rj = INTEGER(RJ)[0];
+
+  SEXP ymu;
+  PROTECT(ymu = allocVector(REALSXP, k));
+  double *ymuptr = REAL(ymu);
+  double *Yptr = REAL(Y);
+
+  SEXP d;
+  PROTECT(d = allocVector(REALSXP, n));
+  double *dptr = REAL(d);
+
+  double lpi = - 0.5 * k * log(2.0 * 3.14159265358979323846);
+  double sum1 = 0.0;
+  double sum2 = 0.0;
+  double sum3 = 0.0;
+
+  for(i = 0; i < n; i++) {
+    for(j = 0; j < k; j++) {
+      ymuptr[j] = ( Yptr[i + n * j] - Pptr[i + n * (MJptr[j] - 1)] ) / Pptr[i + n * (SJptr[j] - 1)];
+    }
+
+    sum1 = 0.0;
+    if( kj != 0 ) {
+      sum1 = - Pptr[i + n * (rj - 1)] * ymuptr[kj-1];
+    }
+    sum2 = 0.0;
+    if( kj != (k-1) ) {
+      sum2 = - Pptr[i + n * (rj - 1)] * ymuptr[kj+1];
+    }
+    sum3 = 0.0;
+    if( (kj != 0) && (kj != (k-1)) ) {
+      sum3 = pow(Pptr[i + n * (rj - 1)], 2.0) * ymuptr[kj];
+    }
+
+    dptr[i] = ( ymuptr[kj] + sum1 + sum2 + sum3 ) / ( 1 - pow(Pptr[i + n * (rj - 1)], 2.0) ) / Pptr[i + n * (SJptr[kj] - 1)];
+  }
+
+  UNPROTECT(2);
+  return d;
+}
+
+SEXP sigma_score_mvnormAR1(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ, SEXP KJ)
+{
+  int i, j;
+  int n = INTEGER(N)[0];
+  int k = INTEGER(K)[0];
+  int kj = INTEGER(KJ)[0];
+
+  double *Pptr = REAL(PAR);
+
+  int *MJptr = INTEGER(MJ);
+  int *SJptr = INTEGER(SJ);
+  int rj = INTEGER(RJ)[0];
+
+  SEXP ymu;
+  PROTECT(ymu = allocVector(REALSXP, k));
+  double *ymuptr = REAL(ymu);
+  double *Yptr = REAL(Y);
+
+  SEXP d;
+  PROTECT(d = allocVector(REALSXP, n));
+  double *dptr = REAL(d);
+
+  double lpi = - 0.5 * k * log(2.0 * 3.14159265358979323846);
+  double sum1 = 0.0;
+  double sum2 = 0.0;
+  double sum3 = 0.0;
+
+  for(i = 0; i < n; i++) {
+    for(j = 0; j < k; j++) {
+      ymuptr[j] = ( Yptr[i + n * j] - Pptr[i + n * (MJptr[j] - 1)] ) / Pptr[i + n * (SJptr[j] - 1)];
+    }
+
+    sum1 = 0.0;
+    if( kj != 0 ) {
+      sum1 = - Pptr[i + n * (rj - 1)] * ymuptr[kj-1];
+    }
+    sum2 = 0.0;
+    if( kj != (k-1) ) {
+      sum2 = - Pptr[i + n * (rj - 1)] * ymuptr[kj+1];
+    }
+    sum3 = 0.0;
+    if( (kj != 0) && (kj != (k-1)) ) {
+      sum3 = pow(Pptr[i + n * (rj - 1)], 2.0) * ymuptr[kj];
+    }
+
+    dptr[i] = -1 + ymuptr[kj] * ( ymuptr[kj] + sum1 + sum2 + sum3 ) / ( 1 - pow(Pptr[i + n * (rj - 1)], 2.0) );
+  }
+
+  UNPROTECT(2);
+  return d;
+}
+
+SEXP rho_score_mvnormAR1(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ)
+{
+  int i, j;
+  int n = INTEGER(N)[0];
+  int k = INTEGER(K)[0];
+
+  double *Pptr = REAL(PAR);
+
+  int *MJptr = INTEGER(MJ);
+  int *SJptr = INTEGER(SJ);
+  int rj = INTEGER(RJ)[0];
+
+  SEXP ymu;
+  PROTECT(ymu = allocVector(REALSXP, k));
+  double *ymuptr = REAL(ymu);
+  double *Yptr = REAL(Y);
+
+  SEXP d;
+  PROTECT(d = allocVector(REALSXP, n));
+  double *dptr = REAL(d);
+
+  double lpi = - 0.5 * k * log(2.0 * 3.14159265358979323846);
+  double subdet = 0.0;
+  double sum1 = 0.0;
+  double sum2 = 0.0;
+  double sum3 = 0.0;
+  double term1 = 0.0;
+  double term2 = 0.0;
+  double term3 = 0.0;
+
+  double eta = 0.0;
+  double eta2 = 0.0;
+  double base = 0.0;
+  double deriv = 0.0;
+
+  for(i = 0; i < n; i++) {
+    for(j = 0; j < k; j++) {
+      ymuptr[j] = ( Yptr[i + n * j] - Pptr[i + n * (MJptr[j] - 1)] ) / Pptr[i + n * (SJptr[j] - 1)];
+    }
+
+    sum1 = 0.0;
+    for(j = 0; j < k; j++) {
+        sum1 += pow(ymuptr[j], 2.0);        
+    }
+    sum2 = 0.0;
+    for(j = 1; j < k; j++) {
+        sum2 += ymuptr[j] * ymuptr[j-1];        
+    }
+    sum3 = sum1 - pow(ymuptr[0], 2.0) - pow(ymuptr[k-1], 2.0);
+    
+    subdet = 1 - pow(Pptr[i + n * (rj - 1)], 2.0);
+
+    term1 = (k-1)*Pptr[i + n * (rj - 1)] / subdet;
+
+    term2 = ( sum2 - Pptr[i + n * (rj - 1)] * sum3 ) / subdet;
+
+    term3 = -Pptr[i + n * (rj - 1)] * ( sum1 - 2 * Pptr[i + n * (rj - 1)] * sum2 + pow(Pptr[i + n * (rj - 1)], 2.0) * sum3 ) / pow(subdet, 2.0);
+
+    /*compute deriv*/
+    eta = Pptr[i + n * (rj - 1)] / pow(subdet, 0.5);
+    eta2 = pow(eta, 2.0);
+    base = 1.0 + eta2;
+    deriv = 1.0 / pow(base, 1.5);
+
+    dptr[i] = ( term1 + term2 + term3 ) * deriv;
+  }
+
+  UNPROTECT(2);
+  return d;
+}
+

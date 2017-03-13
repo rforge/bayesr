@@ -2985,3 +2985,144 @@ gaussian5_bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
   rval
 }
 
+
+mvnormAR1_bamlss <- function(k = 2, ...)
+{
+  if(k == 1)
+    return(gaussian_bamlss())
+
+  mu <- paste("mu", 1:k, sep = "")
+  sigma <- paste("sigma", 1:k, sep = "")
+  rho <- "rho"
+  
+  links <- c(rep("identity", length(mu)), rep("log", length(sigma)), rep("rhogit", length(rho)))
+  names(links) <- c(mu, sigma, rho)
+
+  rval <- list(
+    "family" = ".mvnormAR1",
+    "names" = c(mu, sigma, rho),
+    "links" = links,
+    "d" = function(y, par, log = FALSE) {
+      d <- log_dmvnormAR1(y, par)
+      if(!log)
+        d <- exp(d)
+      return(d)
+    },
+    "p" = function(y, par, ...) {
+      p <- NULL
+      for(j in 1:k) {
+        p <- cbind(p, pnorm(y[, j],
+          mean = par[[paste("mu", j, sep = "")]],
+          sd = par[[paste("sigma", j , sep = "")]], ...))
+      }
+      colnames(p) <- colnames(y)
+      p
+    },
+    "mu" = function(y, par, ...) {
+      do.call("cbind", par[grep("mu", names(par))])
+    }
+  )
+
+  mu_score_calls <- sigma_score_calls <- NULL
+  for(j in seq_along(mu))
+    mu_score_calls <- c(mu_score_calls, paste("function(y, par, ...) {mu_score_mvnormAR1(y, par, j=",j,")}", sep=""))
+  for(j in seq_along(sigma))
+    sigma_score_calls <- c(sigma_score_calls, paste("function(y, par, ...) {sigma_score_mvnormAR1(y, par, j=",j,")}", sep=""))
+  scores <- list()
+  for(j in seq_along(mu))
+    scores[[mu[j]]] <- eval(parse(text = mu_score_calls[j]))
+  for(j in seq_along(sigma))
+    scores[[sigma[j]]] <- eval(parse(text = sigma_score_calls[j]))
+  scores[["rho"]] <- function(y, par, ...) { rho_score_mvnormAR1(y, par) }
+  rval$score <- scores
+
+  mu_calls <- sigma_calls <- NULL
+  for(j in seq_along(mu))
+    mu_calls <- c(mu_calls, paste("function(y, ...) { (y[,", j, "] + mean(y[,", j , "])) / 2 }"))
+  for(j in seq_along(sigma))
+    sigma_calls <- c(sigma_calls, paste("function(y, ...) { rep(sd(y[,", j , "]), length(y[,", j, "])) }"))
+  init <- list()
+  for(j in seq_along(mu))
+    init[[mu[j]]] <- eval(parse(text = mu_calls[j]))
+  for(j in seq_along(sigma))
+    init[[sigma[j]]] <- eval(parse(text = sigma_calls[j]))
+  init[["rho"]] <- function(y, ...) { rep(0, length(y[, 1])) }
+  rval$initialize <- init
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+log_dmvnormAR1 <- function(y, par)
+{
+  par <- do.call("cbind", par)	
+  y <- as.matrix(y)
+  cn <- colnames(par)
+  mj <- grep("mu", cn)
+  sj <- grep("sigma", cn)
+  rj <- as.integer(grep("rho", cn))
+  return(.Call("log_dmvnormAR1", y, par, nrow(y), ncol(y), mj, sj, rj, PACKAGE = "bamlss"))
+}
+
+log_dmvnormAR1_R <- function(y, par)
+{
+  par <- do.call("cbind", par)	
+  y <- as.matrix(y)
+  cn <- colnames(par)
+  mj <- grep("mu", cn)
+  sj <- grep("sigma", cn)
+  rj <- as.integer(grep("rho", cn))
+  k <- ncol(y)
+  n <- nrow(y)
+
+  rval <- NULL
+  for (kk in seq(n)) {
+    term1 <- - k/2 * log(2*pi)
+    term2 <- - sum( log( par[kk,sj] ))
+    term3 <- - (k-1)/2 * log( 1 - par[kk,rj]^2 )
+    ytilde <- ( y[kk,] - par[kk,mj] ) / par[kk,sj]
+    term4 <- - 1/( 1 - par[kk,rj]^2 ) * 1/2 *
+               ( sum(ytilde^2) - 2 * par[kk,rj] * sum( ytilde[-1]*ytilde[-k] ) +
+                 par[kk,rj]^2 * sum( ytilde[-c(1,k)]^2 ) )
+
+    rval[kk] <- term1 + term2 + term3 + term4
+  }
+
+  return(rval)
+}
+
+mu_score_mvnormAR1 <- function(y, par, j)
+{
+  par <- do.call("cbind", par)
+  y <- as.matrix(y)
+  cn <- colnames(par)
+  mj <- grep("mu", cn)
+  sj <- grep("sigma", cn)
+  rj <- as.integer(grep("rho", cn))
+  kj <- as.integer(j-1)
+  return(.Call("mu_score_mvnormAR1", y, par, nrow(y), ncol(y), mj, sj, rj, kj, PACKAGE = "bamlss"))
+}
+
+sigma_score_mvnormAR1 <- function(y, par, j)
+{
+  par <- do.call("cbind", par)
+  y <- as.matrix(y)
+  cn <- colnames(par)
+  sj <- grep("sigma", cn)
+  mj <- grep("mu", cn)
+  rj <- as.integer(grep("rho", cn))
+  kj <- as.integer(j-1)
+  return(.Call("sigma_score_mvnormAR1", y, par, nrow(y), ncol(y), mj, sj, rj, kj, PACKAGE = "bamlss"))
+}
+
+rho_score_mvnormAR1 <- function(y, par)
+{
+  par <- do.call("cbind", par)
+  y <- as.matrix(y)
+  cn <- colnames(par)
+  sj <- grep("sigma", cn)
+  mj <- grep("mu", cn)
+  rj <- as.integer(grep("rho", cn))
+  return(.Call("rho_score_mvnormAR1", y, par, nrow(y), ncol(y), mj, sj, rj, PACKAGE = "bamlss"))
+}
+
