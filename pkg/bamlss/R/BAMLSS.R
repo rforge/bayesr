@@ -2294,16 +2294,31 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
 }
 
 
+## From nlme.
+splitFormula <- function(form, sep = "+") 
+{
+  if(inherits(form, "formula") || mode(form) == "call" && 
+    form[[1]] == as.name("~")) 
+    return(splitFormula(form[[length(form)]], sep = sep))
+  if(mode(form) == "call" && form[[1]] == as.name(sep)) 
+    return(do.call("c", lapply(as.list(form[-1]), splitFormula, 
+      sep = sep)))
+  if(mode(form) == "(") 
+    return(splitFormula(form[[2]], sep = sep))
+  if(length(form) < 1) 
+    return(NULL)
+  list(stats::asOneSidedFormula(form))
+}
+
+
 terms.formula2 <- function(formula, specials, keep.order = TRUE, ...)
 {
-  f0 <- formula
-  formula <- as.character(as.formula(formula))
-  tl <- formula[length(formula)]
-  tl <- strsplit(tl, "+", fixed = TRUE)[[1]]
-  tl <- gsub(" ", "", tl)
-  tl <- gsub("(Intercept)", "Intercept", tl, fixed = TRUE)
-  attr(f0, "term.labels") <- tl
-  f0
+  fs <- splitFormula(formula, sep = "+")
+  tl <- rep("", length = length(fs))
+  for(j in seq_along(fs))
+    tl[j] <- attr(terms(fs[[j]], specials = specials), "term.labels")
+  attr(formula, "term.labels") <- tl
+  formula
 }
 
 

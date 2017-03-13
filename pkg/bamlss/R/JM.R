@@ -2024,7 +2024,7 @@ propose_jm_slice <- function(x, y,
   
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
-    if(length(x$S) < 2) {
+    if((length(x$S) < 2) & (attr(x$prior, "var_prior") == "ig")) {
       g <- get.par(x$state$parameters, "b")
       a <- x$rank / 2 + x$a
       b <- 0.5 * crossprod(g, x$S[[1]]) %*% g + x$b
@@ -2118,7 +2118,7 @@ propose_jm_lambda <- function(x, y,
   
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
-    if(length(x$S) < 2) {
+    if((length(x$S) < 2) & (attr(x$prior, "var_prior") == "ig")) {
       g <- get.par(x$state$parameters, "b")
       a <- x$rank / 2 + x$a
       b <- 0.5 * crossprod(g, x$S[[1]]) %*% g + x$b
@@ -2241,7 +2241,7 @@ propose_jm_mu_simple <- function(x, y,
   
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
-    if(length(x$S) < 2) {
+    if((length(x$S) < 2) & (attr(x$prior, "var_prior") == "ig")) {
       g <- get.par(x$state$parameters, "b")
       a <- x$rank / 2 + x$a
       b <- 0.5 * crossprod(g, x$S[[1]]) %*% g + x$b
@@ -2415,7 +2415,7 @@ propose_jm_mu_Matrix <- function(x, y,
   
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
-    if(length(x$S) < 2) {
+    if((length(x$S) < 2) & (attr(x$prior, "var_prior") == "ig")) {
       g <- get.par(x$state$parameters, "b")
       a <- x$rank / 2 + x$a
       b <- drop(0.5 * crossprod(g, x$S[[1]]) %*% g + x$b)
@@ -2511,7 +2511,7 @@ propose_jm_alpha <- function(x, y,
   
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
-    if(length(x$S) < 2) {
+    if((length(x$S) < 2) & (attr(x$prior, "var_prior") == "ig")) {
       g <- get.par(x$state$parameters, "b")
       a <- x$rank / 2 + x$a
       b <- 0.5 * crossprod(g, x$S[[1]]) %*% g + x$b
@@ -2606,7 +2606,7 @@ propose_jm_dalpha <- function(x, y,
   
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
-    if(length(x$S) < 2) {
+    if((length(x$S) < 2) & (attr(x$prior, "var_prior") == "ig")) {
       g <- get.par(x$state$parameters, "b")
       a <- x$rank / 2 + x$a
       b <- 0.5 * crossprod(g, x$S[[1]]) %*% g + x$b
@@ -2698,7 +2698,7 @@ propose_jm_gamma <- function(x, y,
   
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
-    if(length(x$S) < 2) {
+    if((length(x$S) < 2) & (attr(x$prior, "var_prior") == "ig")) {
       g <- get.par(x$state$parameters, "b")
       a <- x$rank / 2 + x$a
       b <- 0.5 * crossprod(g, x$S[[1]]) %*% g + x$b
@@ -2785,7 +2785,7 @@ propose_jm_sigma <- function(x, y,
   
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
-    if(length(x$S) < 2) {
+    if((length(x$S) < 2) & (attr(x$prior, "var_prior") == "ig")) {
       g <- get.par(x$state$parameters, "b")
       a <- x$rank / 2 + x$a
       b <- 0.5 * crossprod(g, x$S[[1]]) %*% g + x$b

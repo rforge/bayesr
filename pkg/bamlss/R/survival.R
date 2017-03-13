@@ -727,7 +727,7 @@ propose_surv_tc <- function(x, y, eta, int)
 ################################
 Surv2 <- function(..., obs = NULL)
 {
-  rval <- cbind(as.matrix(Surv(...)), "obs" = obs)
+  rval <- cbind(as.matrix(survival::Surv(...)), "obs" = obs)
   class(rval) <- c("matrix", "Surv2")
   rval
 }
