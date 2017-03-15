@@ -6132,6 +6132,12 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
             take <- NULL  ## FIXME: by dummies!
           }
 
+          if(!any(b %in% colnames(psamples))) {
+            b <- grep(paste(id, "s", j, "", sep = "."), colnames(psamples), fixed = TRUE, value = TRUE)
+            if(length(drop <- grep2(c("tau2", "edf", "alpha", "hyper"), colnames(psamples), fixed = TRUE)))
+              b <- b[-drop]
+          }
+
           s.effects[[obj$smooth.construct[[j]]$label]] <- compute_s.effect(obj$smooth.construct[[j]],
             get.X = get.X, fit.fun = obj$smooth.construct[[j]]$fit.fun, psamples = psamples[, b, drop = FALSE],
             FUN = NULL, snames = snames, data = mf[, tn, drop = FALSE], grid = grid)
