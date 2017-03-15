@@ -818,7 +818,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
               lpost1 <- family$loglik(y, family$map2par(eta2)) + lp + x[[sj]]$prior(p.state$parameters)
               if(lpost1 < lpost0) {
                 warning(paste("logPost is decreasing updating term: ", id, ", ",
-                              x[[sj]]$label, "; diff: ", lpost1 - lpost0, sep = ""))
+                  x[[sj]]$label, "; diff: ", lpost1 - lpost0, sep = ""))
               }
             }
           }
@@ -986,7 +986,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
                 lpost1 <- family$loglik(y, family$map2par(eta2)) + lp + x[[nx[j]]]$smooth.construct[[sj]]$prior(p.state$parameters)
                 if(lpost1 < lpost0) {
                   warning(paste("logPost is decreasing updating term: ", nx[j], ", ",
-                                x[[nx[j]]]$smooth.construct[[sj]]$label, "; diff: ", lpost1 - lpost0, sep = ""))
+                    x[[nx[j]]]$smooth.construct[[sj]]$label, "; diff: ", lpost1 - lpost0, sep = ""))
                 }
               }
             }

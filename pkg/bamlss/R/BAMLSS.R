@@ -4364,7 +4364,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     U2 <- getU2(x$X, b0, score)
 
     UWU <- crossprod(U * hess, U)
-    H <- matrix_inv(-1 * UWU)
+    H <- matrix_inv(UWU)
     s <- drop(colSums(U * score))
 
     b1 <- drop(b0 - s %*% H)
@@ -4379,7 +4379,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     return(x$state)
   }
 
-  object$update <- update_nn
+  object$update <- bfit_optim
   
   object$boost.fit <- function(x, y, nu, ...)
   {

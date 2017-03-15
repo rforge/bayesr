@@ -1197,12 +1197,28 @@ list2sp <- function(x)
   return(ret)
 }
 
+table2df <- function(x)
+{
+  if(!inherits(x, "table"))
+    return(x)
+  data.frame("id" = as.factor(names(x)), "x" = as.numeric(x))
+}
+
 
 plotmap <- function(map, x = NA, id = NULL, select = NULL,
   legend = TRUE, names = FALSE, values = FALSE, ...)
 {
   if(inherits(map, "bnd") | inherits(map, "list"))
     map <- list2sp(map)
+
+  if(!is.null(id) & inherits(x, "table")) {
+    if(length(id) == 1L) {
+      x <- data.frame(as.numeric(x), names(x), stringsAsFactors = FALSE)
+      names(x) <- c("plotmap_values", as.character(id))
+      select <- "plotmap_values"
+    }
+  }
+
   
   if(!inherits(map, "SpatialPolygons"))
     stop("please supply a 'SpatialPolygons' object to argument map!")
@@ -1218,7 +1234,10 @@ plotmap <- function(map, x = NA, id = NULL, select = NULL,
         stop("id variable must be part of data x!")
       if(!(id %in% names(map@data)))
         stop("id variable must be part of data in map!")
-      map@data <- merge(map@data, x, by = id)
+      map@data[[".sortID"]] <- 1:nrow(map@data)
+      map@data <- merge(map@data, x, by = id, all = TRUE)
+      map@data <- map@data[order(map@data[[".sortID"]]), , drop = FALSE]
+      map@data[[".sortID"]] <- NULL
       if(is.null(select)) {
         select <- names(x)
         select <- select[!(select %in% id)]
@@ -1249,7 +1268,6 @@ plotmap <- function(map, x = NA, id = NULL, select = NULL,
       pol_id <- as.factor(as.character(sapply(slot(map, "polygons"), function(x) {
         slot(x, "ID")
       })))
-
       if(!any(id %in% pol_id))
         stop("region identifier does not match with polygon ID!")
       if(all(pol_id %in% id)) {
@@ -1329,6 +1347,12 @@ plotmap <- function(map, x = NA, id = NULL, select = NULL,
 
   if(names) {
     co <- coordinates(map)
+    if(is.null(args$names_id)) {
+      if(length(id) == 1)
+        id <- as.character(map@data[[id]])
+    } else {
+      id <- as.character(map@data[[args$names_id]])
+    }
     text(co[, 1], co[, 2], id, cex = args$cex)
   }
 }
