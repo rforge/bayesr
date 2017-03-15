@@ -1219,7 +1219,6 @@ plotmap <- function(map, x = NA, id = NULL, select = NULL,
     }
   }
 
-  
   if(!inherits(map, "SpatialPolygons"))
     stop("please supply a 'SpatialPolygons' object to argument map!")
   if(!inherits(map, "SpatialPolygonsDataFrame"))

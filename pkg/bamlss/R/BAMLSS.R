@@ -2315,8 +2315,14 @@ terms.formula2 <- function(formula, specials, keep.order = TRUE, ...)
 {
   fs <- splitFormula(formula, sep = "+")
   tl <- rep("", length = length(fs))
-  for(j in seq_along(fs))
-    tl[j] <- attr(terms(fs[[j]], specials = specials), "term.labels")
+  for(j in seq_along(fs)) {
+    tlj <- attr(terms(fs[[j]], specials = specials), "term.labels")
+    if(length(tlj))
+      tl[j] <- tlj
+  }
+  tl <- tl[tl != ""]
+  if(!length(tl))
+    tl <- ""
   attr(formula, "term.labels") <- tl
   formula
 }
@@ -5112,6 +5118,8 @@ plot.bamlss.effect <- function(x, ...) {
 plot.bamlss.effect.default <- function(x, ...) {
   args <- list(...)
 
+  names(x) <- gsub("Mean", "50%", names(x), fixed = TRUE)
+
   if(attr(x, "specs")$dim > 1 & inherits(x, "rs.smooth")) {
     if(identical(x[, 1], x[, 2])) {
       cn <- colnames(x)[-2]
@@ -5179,11 +5187,19 @@ plot.bamlss.effect.default <- function(x, ...) {
         do.call("plot", delete.args(plot.density2, args, c("main", "xlim")))
       } else {
         if(!is.null(args$map)) {
-          args$x <- x[, grepl("50%", colnames(x), fixed = TRUE)]
-          args$id <- as.character(x[, 1])
+          args$x <- data.frame("x" = as.numeric(x[, grepl("50%", colnames(x), fixed = TRUE)]),
+            "ID" = as.character(x[, 1]), stringsAsFactors = FALSE)
+          idvar <- NULL
+          for(j in names(args$map@data)) {
+            if(any(args$x$ID %in% as.character(args$map@data[[j]])))
+              idvar <- j
+          }
+          if(!is.null(idvar))
+            names(args$x)[2] <- idvar
+          args$id <- if(!is.null(idvar)) idvar else as.character(x[, 1])
           args$xlim <- args$ylim <- NULL
           do.call("plotmap", delete.args("plotmap", args,
-            not = c("border", "lwd", "lty", names(formals("colorlegend")), "main")))
+            not = c("border", "lwd", "lty", names(formals("colorlegend")), "main", "names", "names_id")))
         } else {
           if(is.null(args$ylab))
             args$ylab <- attr(x, "specs")$label
