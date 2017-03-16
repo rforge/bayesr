@@ -7395,3 +7395,126 @@ stg <- function(x, interp = FALSE, k = -1, ...)
   rval
 }
 
+
+## Gc.
+smooth.construct.gc2.smooth.spec <- function(object, data, knots) 
+{
+  object$X <- matrix(as.numeric(data[[object$term]]), ncol = 1)
+  center <- if(!is.null(object$xt$center)) {
+    object$xt$center
+  } else FALSE
+  object$by.done <- TRUE
+  if(object$by != "NA")
+    stop("by variables not supported!")
+  object$fit.fun <- function(X, b, ...) {
+    if(!is.null(names(b)))
+      b <- get.par(b, "b")
+    f <- b[1] / (1 + exp(-(b[2] + b[3] * drop(X))))
+    if(center)
+      f <- f - mean(f)
+    f
+  }
+
+  object$update <- function(x, family, y, eta, id, weights, criterion, ...) {
+    args <- list(...)
+  
+    no_ff <- !inherits(y, "ff")
+    peta <- family$map2par(eta)
+  
+    if(is.null(args$hess)) {
+      hess <- process.derivs(family$hess[[id]](y, peta, id = id, ...), is.weight = TRUE)
+    } else hess <- args$hess
+  
+    if(!is.null(weights))
+      hess <- hess * weights
+  
+    if(is.null(args$z)) {
+      score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
+      z <- eta[[id]] + 1 / hess * score
+    } else z <- args$z
+  
+    ## Compute partial predictor.
+    eta[[id]] <- eta[[id]] - fitted(x$state)
+  
+    ## Compute reduced residuals.
+    e <- z - eta[[id]]
+
+    b0 <- get.state(x, "b")
+   
+    u <- b0[2] + b0[3] * x$X
+    o <- 1 / (1 + exp(-u))
+    o2 <- b0[1] * o * (1 - o)
+
+    U <- cbind(o, o2, o2 * x$X)
+    h0 <- x$fit.fun(x$X, b0) + U %*% b0
+
+print(head(U))
+print(b0)
+cat("....\n")
+
+    z0 <- e - h0
+    b1 <- drop(solve(t(U * hess) %*% U) %*% t(U * hess) %*% z0)
+
+print(b1)
+
+    names(b1) <- names(b0)
+
+    x$state$parameters <- set.par(x$state$parameters, b1, "b")
+    x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
+
+plot(d)
+plot2d(I(eta[[id]] + x$state$fitted.values) ~ d$x, add = TRUE)
+Sys.sleep(2)
+
+    return(x$state)    
+  }
+
+  #object$update <- bfit_optim
+  object$propose <- GMCMC_slice
+  object$prior <- function(b) { sum(dnorm(b, sd = 1000, log = TRUE)) }
+  object$fixed <- TRUE
+  object$state$parameters <- rep(0.1, 3)
+  names(object$state$parameters) <- paste("b", 1:3, sep = "")
+  object$state$fitted.values <- rep(0, length(object$X))
+  object$state$edf <- 3
+  object$special.npar <- 3 ## Important!
+  class(object) <- c("gc2.smooth", "no.mgcv", "special")
+  object
+}
+
+## Work around for the "prediction matrix" of a growth curve.
+Predict.matrix.gc2.smooth <- function(object, data, knots) 
+{
+  X <- matrix(as.numeric(data[[object$term]]), ncol = 1)
+  X
+}
+
+if(FALSE) {
+  f <- function(x, b = c(1.2, 1, -0.1, -0.5)) {
+    b[1] + b[2] / (1 + exp(-(b[3] + b[4] * x)))
+  }
+  curve(f, -10, 15)
+
+  x <- runif(100, -10, 15)
+  y <- f(x) + rnorm(100, sd = 0.1)
+  plot(x, y)
+
+  dF <- function(b) {
+    u <- b[3] + b[4] * x
+    o <- 1 / (1 + exp(-u))
+    o2 <- b[2] * o * (1 - o)
+    cbind(1, o, o2, o2 * x)
+  }
+
+  b <- rnorm(4, sd = 0.1)
+
+  for(i in 1:100) {
+    fit <- f(x, b)
+
+    plot(x, y, ylim = range(y, fit))
+    lines(fit[order(x)] ~ x[order(x)])
+
+    X <- dF(b)
+    b <- b + 0.1 * drop(solve(crossprod(X) + diag(0.00001, ncol(X))) %*% t(X) %*% (y - fit))
+  }
+}

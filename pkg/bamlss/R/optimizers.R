@@ -1683,8 +1683,8 @@ bfit_optim <- function(x, family, y, eta, id, weights, criterion, ...)
   } else NULL
   
   suppressWarnings(opt <- try(optim(get.par(tpar, "b"), fn = objfun, gr = grad,
-                                    method = "BFGS", control = list(), tau2 = get.par(tpar, "tau2"), hessian = TRUE),
-                              silent = TRUE))
+    method = "BFGS", control = list(), tau2 = get.par(tpar, "tau2"), hessian = TRUE),
+    silent = TRUE))
   
   if(!inherits(opt, "try-error")) {
     tpar <- set.par(tpar, opt$par, "b")
