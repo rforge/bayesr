@@ -285,7 +285,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
       smt <- NULL
       if(!is.null(sid)) {
         sterms <- sterm_labels <- attr(tx, "term.labels")[sid]
-        sterms <- lapply(sterms, function(x) { print(x); eval(parse(text = x)) })
+        sterms <- lapply(sterms, function(x) { eval(parse(text = x)) })
         nst <- NULL
         for(j in seq_along(sterms)) {
           sl <- sterms[[j]]$label
@@ -4305,7 +4305,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   }
 
   object$fixed <- TRUE
-  object$state$parameters <- rnorm(npar, sd = 0.1)
+  object$state$parameters <- rnorm(npar, sd = 0.001)
   names(object$state$parameters) <- paste("b", 1:npar, sep = "")
   object$state$parameters <- c(object$state$parameters, "tau21" = 1, "tau22" = 1)
   object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
