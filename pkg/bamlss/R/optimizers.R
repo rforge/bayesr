@@ -146,6 +146,11 @@ bamlss.engine.setup <- function(x, update = "iwls", propose = "iwlsC_gp",
           x$smooth.construct <- x$smooth.construct[nsc]
         }
       }
+      if(any(is.nnet <- sapply(x$smooth.construct, function(z) inherits(z, "nnet.smooth")))) {
+        nsc <- names(x$smooth.construct)
+        nsc <- c(nsc[-which(is.nnet)], nsc[which(is.nnet)])
+        x$smooth.construct <- x$smooth.construct[nsc]
+      }
       for(j in seq_along(x$smooth.construct)) {
         sm <- if(!is.null(x$smooth.construct[[j]]$S)) {
           sparse.setup(XX <- crossprod(x$smooth.construct[[j]]$X) + do.call("+", x$smooth.construct[[j]]$S))$matrix
@@ -718,10 +723,10 @@ fmt <- function(x, width = 8, digits = 2) {
 }
 
 bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
-                 update = "iwls", criterion = c("AICc", "BIC", "AIC"),
-                 eps = .Machine$double.eps^0.25, maxit = 400,
-                 outer = FALSE, inner = FALSE, mgcv = FALSE,
-                 verbose = TRUE, digits = 4, flush = TRUE, nu = NULL, stop.nu = NULL, ...)
+  update = "iwls", criterion = c("AICc", "BIC", "AIC"),
+  eps = .Machine$double.eps^0.25, maxit = 400,
+  outer = FALSE, inner = FALSE, mgcv = FALSE,
+  verbose = TRUE, digits = 4, flush = TRUE, nu = NULL, stop.nu = NULL, ...)
 {
   nx <- family$names
   if(!all(nx %in% names(x)))
@@ -930,9 +935,9 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         ## And all terms.
         if(inner) {
           tbf <- inner_bf(x[[nx[j]]]$smooth.construct, y, eta, family,
-                          edf = edf, id = nx[j], z = z, hess = hess, weights = weights[[nx[j]]],
-                          criterion = criterion, iteration = iter, nu = nu, score = score,
-                          logprior = get.log.prior(x))
+            edf = edf, id = nx[j], z = z, hess = hess, weights = weights[[nx[j]]],
+            criterion = criterion, iteration = iter, nu = nu, score = score,
+            logprior = get.log.prior(x))
           x[[nx[j]]]$smooth.construct <- tbf$x
           edf <- tbf$edf
           eta <- tbf$eta
@@ -941,8 +946,8 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
             ## Get updated parameters.
             p.state <- x[[nx[j]]]$smooth.construct[[sj]]$update(x[[nx[j]]]$smooth.construct[[sj]],
-                                                                family, y, eta, nx[j], edf = edf, z = z, hess = hess, weights = weights[[nx[j]]],
-                                                                iteration = iter, criterion = criterion, score = score)
+              family, y, eta, nx[j], edf = edf, z = z, hess = hess, weights = weights[[nx[j]]],
+              iteration = iter, criterion = criterion, score = score)
             
             ## Update predictor and smooth fit.
             if(!is.null(nu)) {

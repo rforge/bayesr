@@ -285,7 +285,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
       smt <- NULL
       if(!is.null(sid)) {
         sterms <- sterm_labels <- attr(tx, "term.labels")[sid]
-        sterms <- lapply(sterms, function(x) { eval(parse(text = x)) })
+        sterms <- lapply(sterms, function(x) { print(x); eval(parse(text = x)) })
         nst <- NULL
         for(j in seq_along(sterms)) {
           sl <- sterms[[j]]$label
@@ -790,6 +790,17 @@ make.prior <- function(x, sigma = 0.1)
     }
   } else {
     prior <- "ig"
+  }
+
+  if(!is.null(x$margin)) {
+    if(!is.null(x$margin[[1]]$xt)) {
+      xt <- x$margin[[1]]$xt
+      if(is.null(names(xt)) & (length(xt) == 1)) {
+        if(length(xt[[1]]) > 0)
+          xt <- xt[[1]]
+      }
+      x$xt <- c(x$xt, xt)
+    }
   }
 
   if(!is.function(prior)) {
@@ -4288,16 +4299,15 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
       f <- X %*% b[nid[[j]]][-1]
       fit <- fit + b[nid[[j]]][1] / (1 + exp(-f))
     }
-    ##if(!is.null(object$xt$force.center))
-    fit <- fit - mean(fit, na.rm = TRUE)
+    #if(!is.null(object$xt$force.center))
+    #fit <- fit - mean(fit, na.rm = TRUE)
     return(fit)
   }
 
   object$fixed <- TRUE
-  lim <- 0.01
-  object$state$parameters <- runif(npar, -lim, lim)
-  object$state$parameters[object$state$parameters == 0] <- 0.01
+  object$state$parameters <- rnorm(npar, sd = 0.1)
   names(object$state$parameters) <- paste("b", 1:npar, sep = "")
+  object$state$parameters <- c(object$state$parameters, "tau21" = 1, "tau22" = 1)
   object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
   object$state$edf <- npar
   object$special.npar <- npar
@@ -4325,79 +4335,71 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     return(U)
   }
 
-  getU2 <- function(X, b, score) {
-    if(!is.null(names(b)))
-      b <- get.par(b, "b")
-    k <- ncol(X)
-    i <- 1
-    U <- vector(mode = "list", length = length(nid))
-    for(j in seq_along(nid)) {
-      f <- drop(X %*% b[nid[[j]]][-1])
-      o0 <- 1 / (1 + exp(-f))
-      o0 <- o0 * (1 - o0)
-      u <- exp(f)
-      o <- b[nid[[j]]][1] * (-u * (u - 1) / (u + 1)^3)
-      U1j <- crossprod(X * o * score, X)
-      U2j <- rep(0, k)
-      for(jj in 1:k)
-        U2j[jj] <- sum(X[, jj] * o0 * score)
-      U[[j]] <- rbind(c(0, U2j), cbind(U2j, U1j))
-    }
-    U <- as.matrix(do.call("bdiag", U))
-    return(U)
-  }
-
   update_nn <- function(x, family, y, eta, id, weights, criterion, ...)
   {
     args <- list(...)
-
+  
     peta <- family$map2par(eta)
-
-    hess <- if(is.null(args$hess)) {
-      process.derivs(family$hess[[id]](y, peta, id = id, ...), is.weight = TRUE)
-    } else args$hess
-
-    score <- if(is.null(args$score)) {
-      process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
-    } else args$score
-
+  
+    if(is.null(args$hess)) {
+      hess <- process.derivs(family$hess[[id]](y, peta, id = id, ...), is.weight = TRUE)
+    } else hess <- args$hess
+  
     if(!is.null(weights))
       hess <- hess * weights
+  
+    if(is.null(args$z)) {
+      score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
+      z <- eta[[id]] + 1 / hess * score
+    } else z <- args$z
+  
+    eta[[id]] <- eta[[id]] - fitted(x$state)
 
     b0 <- get.state(x, "b")
+    nb <- names(b0)
 
     U <- getU(x$X, b0)
-    U2 <- getU2(x$X, b0, score)
+    fit <- x$fit.fun(x$X, b0)
+    e <- z - eta[[id]] - fit
 
-    UWU <- crossprod(U * hess, U)
-    H <- matrix_inv(UWU)
-    s <- drop(colSums(U * score))
+    UW <- U * (-1 * hess)
+    UWU <- crossprod(UW, U)
+    S <- diag(diag(UWU))
+    I <- diag(ncol(U))
 
-    b1 <- drop(b0 - s %*% H)
-    if(any(is.na(b1)))
-      return(x$state)
-    names(b1) <- names(b0)
+    objfun <- function(tau2) {
+      H <- matrix_inv(UWU + 1/tau2[1] * S)
+      b0 <- drop(b0 + H %*% t(UW) %*% e)
+      names(b0) <- nb
+      eta[[id]] <- eta[[id]] + x$fit.fun(x$X, b0)
+      lp <- family$loglik(y, family$map2par(eta)) + x$prior(b0)
+      -1 * lp
+    }
 
-    x$state$parameters <- set.par(x$state$parameters, b1, "b")
-    x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
-    x$state$edf <- npar
+    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
+
+    H <- matrix_inv(UWU + 1/tau2[1] * S)
+    b0 <- drop(b0 + H %*% t(UW) %*% e)
+    names(b0) <- nb
+
+    x$state$parameters <- set.par(x$state$parameters, b0, "b")
+    x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
+    x$state$fitted.values <- x$fit.fun(x$X, b0)
 
     return(x$state)
   }
 
-  object$update <- bfit_optim
+  object$update <- update_nn
   
   object$boost.fit <- function(x, y, nu, ...)
   {
     b0 <- get.state(x, "b")
     U <- getU(x$X, b0)
 
-    s <- drop(colSums(U * y))
-    UWU <- (crossprod(U, U))
-    H <- matrix_inv(UWU)
+    UU <- crossprod(U, U)
+    H <- matrix_inv(UU + 0.0001 * diag(diag(UU)))
 
-    ## b1 <- nu * drop(b0 + s %*% H)
-    b1 <- nu * s %*% H
+    b1 <- nu * (b0 + drop(H %*% t(U) %*% (y - x$state$fitted.values)))
     names(b1) <- names(b0)
 
     ## Finalize.
@@ -4418,6 +4420,22 @@ Predict.matrix.nnet.smooth <- function(object, data)
   X <- cbind(1, Predict.matrix.lasso.smooth(object, data))
   colnames(X) <- NULL
   X
+}
+
+
+if(FALSE) {
+  foo <- function(x, b = c(1, 0.1, 0.4, 1.1)) {
+    b[1] + b[2] / (1 + exp(-(b[3] + b[4] * x)))
+  }
+
+  set.seed(123)
+  nobs <- 500
+  x <- runif(nobs, -20, 20)
+  y <- sin(scale2(x, -3, 3)) + rnorm(nobs, sd = scale2(foo(x), 0.01, 0.3))
+  plot(x, y)
+
+  f <- list(y ~ s(x), sigma ~ n(x,k=1))
+  b <- bamlss(f, sampler = FALSE)
 }
 
 
@@ -7396,99 +7414,6 @@ stg <- function(x, interp = FALSE, k = -1, ...)
 }
 
 
-## Gc.
-smooth.construct.gc2.smooth.spec <- function(object, data, knots) 
-{
-  object$X <- matrix(as.numeric(data[[object$term]]), ncol = 1)
-  center <- if(!is.null(object$xt$center)) {
-    object$xt$center
-  } else FALSE
-  object$by.done <- TRUE
-  if(object$by != "NA")
-    stop("by variables not supported!")
-  object$fit.fun <- function(X, b, ...) {
-    if(!is.null(names(b)))
-      b <- get.par(b, "b")
-    f <- b[1] / (1 + exp(-(b[2] + b[3] * drop(X))))
-    if(center)
-      f <- f - mean(f)
-    f
-  }
-
-  object$update <- function(x, family, y, eta, id, weights, criterion, ...) {
-    args <- list(...)
-  
-    no_ff <- !inherits(y, "ff")
-    peta <- family$map2par(eta)
-  
-    if(is.null(args$hess)) {
-      hess <- process.derivs(family$hess[[id]](y, peta, id = id, ...), is.weight = TRUE)
-    } else hess <- args$hess
-  
-    if(!is.null(weights))
-      hess <- hess * weights
-  
-    if(is.null(args$z)) {
-      score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
-      z <- eta[[id]] + 1 / hess * score
-    } else z <- args$z
-  
-    ## Compute partial predictor.
-    eta[[id]] <- eta[[id]] - fitted(x$state)
-  
-    ## Compute reduced residuals.
-    e <- z - eta[[id]]
-
-    b0 <- get.state(x, "b")
-   
-    u <- b0[2] + b0[3] * x$X
-    o <- 1 / (1 + exp(-u))
-    o2 <- b0[1] * o * (1 - o)
-
-    U <- cbind(o, o2, o2 * x$X)
-    h0 <- x$fit.fun(x$X, b0) + U %*% b0
-
-print(head(U))
-print(b0)
-cat("....\n")
-
-    z0 <- e - h0
-    b1 <- drop(solve(t(U * hess) %*% U) %*% t(U * hess) %*% z0)
-
-print(b1)
-
-    names(b1) <- names(b0)
-
-    x$state$parameters <- set.par(x$state$parameters, b1, "b")
-    x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
-
-plot(d)
-plot2d(I(eta[[id]] + x$state$fitted.values) ~ d$x, add = TRUE)
-Sys.sleep(2)
-
-    return(x$state)    
-  }
-
-  #object$update <- bfit_optim
-  object$propose <- GMCMC_slice
-  object$prior <- function(b) { sum(dnorm(b, sd = 1000, log = TRUE)) }
-  object$fixed <- TRUE
-  object$state$parameters <- rep(0.1, 3)
-  names(object$state$parameters) <- paste("b", 1:3, sep = "")
-  object$state$fitted.values <- rep(0, length(object$X))
-  object$state$edf <- 3
-  object$special.npar <- 3 ## Important!
-  class(object) <- c("gc2.smooth", "no.mgcv", "special")
-  object
-}
-
-## Work around for the "prediction matrix" of a growth curve.
-Predict.matrix.gc2.smooth <- function(object, data, knots) 
-{
-  X <- matrix(as.numeric(data[[object$term]]), ncol = 1)
-  X
-}
-
 if(FALSE) {
   f <- function(x, b = c(1.2, 1, -0.1, -0.5)) {
     b[1] + b[2] / (1 + exp(-(b[3] + b[4] * x)))
@@ -7496,7 +7421,7 @@ if(FALSE) {
   curve(f, -10, 15)
 
   x <- runif(100, -10, 15)
-  y <- f(x) + rnorm(100, sd = 0.1)
+  y <- f(x) + rnorm(100, sd = 0.01)
   plot(x, y)
 
   dF <- function(b) {
