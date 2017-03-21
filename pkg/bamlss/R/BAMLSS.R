@@ -4309,7 +4309,6 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   names(object$state$parameters) <- paste("b", 1:npar, sep = "")
   object$state$parameters <- c(object$state$parameters, "tau21" = 1000, "tau22" = 1000)
   object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
-  object$state$edf <- npar
   object$special.npar <- npar
   object$prior <- function(b) { .Machine$double.eps }
 
@@ -4358,16 +4357,14 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
       z <- eta[[id]] + 1 / hess * score
     } else z <- args$z
   
+    e <- z - eta[[id]]
     eta[[id]] <- eta[[id]] - fitted(x$state)
 
     b0 <- get.state(x, "b")
     nb <- names(b0)
 
     U <- getU(x$X, b0)
-    fit <- x$fit.fun(x$X, b0)
-    e <- z - eta[[id]] - fit
-
-    UW <- U * (1 * hess)
+    UW <- U / hess
     UWU <- crossprod(UW, U)
 
     S <- diag(diag(UWU))
@@ -4393,6 +4390,112 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
     x$state$fitted.values <- x$fit.fun(x$X, b0)
     x$state$edf <- sum_diag(UWU %*% H)
+
+    return(x$state)
+  }
+
+  getU2 <- function(X, b) {
+    k <- ncol(X)
+    U <- matrix(0, nrow(X), length(b))
+    i <- 1
+    u <- X %*% b[-1]
+    o <- 1 / (1 + exp(-u))
+    U[, i] <- o
+    i <- i + 1
+    o2 <- b[1] * o * (1 - o)
+    U[, i] <- o2
+    i <- i + 1
+    for(jj in 2:k) {
+      U[, i] <- o2 * X[, jj]
+      i <- i + 1
+    }
+    return(U)
+  }
+
+  fit.fun2 <- function(X, b) {
+    f <- X %*% b[-1]
+    fit <- b[1] / (1 + exp(-f))
+    return(fit)
+  }
+
+  node.edf <- rep(0, nodes)
+  tau2 <- get.par(object$state$parameters, "tau2")
+  for(j in seq_along(nid)) {
+    bj <- object$state$parameters[nid[[j]]]
+    UU <- crossprod(getU2(object$X, bj))
+    H <- matrix_inv(UU + 1/tau2[1] * diag(ncol(UU)) + 1/tau2[2] * diag(diag(UU)))
+    node.edf[j] <- sum_diag(UU %*% H)
+  }
+  object$state$edf <- sum(node.edf)
+  object$state$node.edf <- node.edf
+
+  update_nn2 <- function(x, family, y, eta, id, weights, criterion, ...)
+  {
+    args <- list(...)
+  
+    peta <- family$map2par(eta)
+  
+    if(is.null(args$hess)) {
+      hess <- process.derivs(family$hess[[id]](y, peta, id = id, ...), is.weight = TRUE)
+    } else hess <- args$hess
+  
+    if(!is.null(weights))
+      hess <- hess * weights
+  
+    if(is.null(args$z)) {
+      score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
+      z <- eta[[id]] + 1 / hess * score
+    } else z <- args$z
+
+    fit <- fitted(x$state)
+    b0 <- get.state(x, "b")
+    nb <- names(b0)
+    node.edf <- x$state$node.edf
+    edf0 <- args$edf - sum(node.edf)
+
+    I <- diag(nc)
+
+    objfun <- function(tau2) {
+      for(j in seq_along(nid)) {
+        bj <- b0[nid[[j]]]
+        fit <- fit - fit.fun2(x$X, bj)
+        eta[[id]] - fit
+        e <- z - eta[[id]]
+        U <- getU2(x$X, bj)
+        UW <- U / hess
+        UWU <- crossprod(UW, U)
+        H <- matrix_inv(UWU + 1/tau2[1] * I + 1/tau2[2] * diag(diag(UWU)))
+        bj <- drop(bj + H %*% t(UW) %*% e)
+        b0[nid[[j]]] <- bj
+        fit <- fit + fit.fun2(x$X, bj)
+        eta[[id]] <- eta[[id]] + fit
+        node.edf[j] <- sum_diag(UWU %*% H)
+      }
+      ic <- get.ic(family, y, family$map2par(eta), edf0 + sum(node.edf), length(z), criterion)
+      ic
+    }
+
+    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
+
+    for(j in seq_along(nid)) {
+      bj <- b0[nid[[j]]]
+      fit <- fit - fit.fun2(x$X, bj)
+      e <- z - (eta[[id]] - fit)
+      U <- getU2(x$X, bj)
+      UW <- U / hess
+      UWU <- crossprod(UW, U)
+      H <- matrix_inv(UWU + 1/tau2[1] * I + 1/tau2[2] * diag(diag(UWU)))
+      bj <- drop(bj + H %*% t(UW) %*% e)
+      b0[nid[[j]]] <- bj
+      fit <- fit + fit.fun2(x$X, bj)
+      eta[[id]] <- eta[[id]] + fit
+      node.edf[j] <- sum_diag(UWU %*% H)
+    }
+
+    x$state$parameters <- set.par(x$state$parameters, b0, "b")
+    x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
+    x$state$fitted.values <- x$fit.fun(x$X, b0)
+    x$state$edf <- sum(node.edf)
 
     return(x$state)
   }
@@ -7423,31 +7526,9 @@ stg <- function(x, interp = FALSE, k = -1, ...)
 
 
 if(FALSE) {
-  f <- function(x, b = c(1.2, 1, -0.1, -0.5)) {
-    b[1] + b[2] / (1 + exp(-(b[3] + b[4] * x)))
-  }
-  curve(f, -10, 15)
-
-  x <- runif(100, -10, 15)
-  y <- f(x) + rnorm(100, sd = 0.01)
+  x <- runif(3000, -3, 3)
+  f <- bamlss:::simfun("pick")
+  y <- sin(x) + rnorm(3000, sd = scale2(f(scale2(x, 0, 1)), 0.01, 0.3))
   plot(x, y)
-
-  dF <- function(b) {
-    u <- b[3] + b[4] * x
-    o <- 1 / (1 + exp(-u))
-    o2 <- b[2] * o * (1 - o)
-    cbind(1, o, o2, o2 * x)
-  }
-
-  b <- rnorm(4, sd = 0.1)
-
-  for(i in 1:100) {
-    fit <- f(x, b)
-
-    plot(x, y, ylim = range(y, fit))
-    lines(fit[order(x)] ~ x[order(x)])
-
-    X <- dF(b)
-    b <- b + 0.1 * drop(solve(crossprod(X) + diag(0.00001, ncol(X))) %*% t(X) %*% (y - fit))
-  }
+  b <- bamlss(list(y ~ n(x), ~ n(x)), sampler = FALSE)
 }
