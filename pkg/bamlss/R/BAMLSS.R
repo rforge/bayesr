@@ -4305,9 +4305,9 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   }
 
   object$fixed <- TRUE
-  object$state$parameters <- rnorm(npar, sd = 0.001)
+  object$state$parameters <- rnorm(npar, sd = 0.1)
   names(object$state$parameters) <- paste("b", 1:npar, sep = "")
-  object$state$parameters <- c(object$state$parameters, "tau21" = 1, "tau22" = 1)
+  object$state$parameters <- c(object$state$parameters, "tau21" = 1000, "tau22" = 1000)
   object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
   object$state$edf <- npar
   object$special.npar <- npar
@@ -4334,6 +4334,11 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     }
     return(U)
   }
+
+  object$S <- list(diag(npar))
+  prior <- make.prior(object)
+  object[names(prior)] <- prior
+  object$sparse.setup <- FALSE
 
   update_nn <- function(x, family, y, eta, id, weights, criterion, ...)
   {
@@ -4362,29 +4367,32 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     fit <- x$fit.fun(x$X, b0)
     e <- z - eta[[id]] - fit
 
-    UW <- U * (-1 * hess)
+    UW <- U * (1 * hess)
     UWU <- crossprod(UW, U)
+
     S <- diag(diag(UWU))
-    I <- diag(ncol(U))
+    edf0 <- args$edf - x$state$edf
 
     objfun <- function(tau2) {
-      H <- matrix_inv(UWU + 1/tau2[1] * S)
+      H <- matrix_inv(UWU + 1/tau2[1] * x$S[[1]] + 1/tau2[2] * S)
       b0 <- drop(b0 + H %*% t(UW) %*% e)
       names(b0) <- nb
+      edf <- sum_diag(UWU %*% H)
       eta[[id]] <- eta[[id]] + x$fit.fun(x$X, b0)
-      lp <- family$loglik(y, family$map2par(eta)) + x$prior(b0)
-      -1 * lp
+      ic <- get.ic(family, y, family$map2par(eta), edf0 + edf, length(z), criterion)
+      ic
     }
 
     tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
 
-    H <- matrix_inv(UWU + 1/tau2[1] * S)
+    H <- matrix_inv(UWU + 1/tau2[1] * x$S[[1]] + 1/tau2[2] * S)
     b0 <- drop(b0 + H %*% t(UW) %*% e)
     names(b0) <- nb
 
     x$state$parameters <- set.par(x$state$parameters, b0, "b")
     x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
     x$state$fitted.values <- x$fit.fun(x$X, b0)
+    x$state$edf <- sum_diag(UWU %*% H)
 
     return(x$state)
   }

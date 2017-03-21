@@ -152,14 +152,21 @@ bamlss.engine.setup <- function(x, update = "iwls", propose = "iwlsC_gp",
         x$smooth.construct <- x$smooth.construct[nsc]
       }
       for(j in seq_along(x$smooth.construct)) {
-        sm <- if(!is.null(x$smooth.construct[[j]]$S)) {
-          sparse.setup(XX <- crossprod(x$smooth.construct[[j]]$X) + do.call("+", x$smooth.construct[[j]]$S))$matrix
-        } else {
-          sparse.setup(XX <- crossprod(x$smooth.construct[[j]]$X))$matrix
+        sps <- is.null(x$smooth.construct[[j]]$sparse.setup)
+        if(!sps) {
+          if(is.logical(x$smooth.construct[[j]]$sparse.setup))
+            sps <- x$smooth.construct[[j]]$sparse.setup
         }
-        if(length(unique(sm[, 1])) > 1){
-          x$smooth.construct[[j]]$sparse.setup$block.index <- split(as.integer(1:nrow(sm)), factor(sm[, 1]))
-          x$smooth.construct[[j]]$sparse.setup$is.diagonal <- all(sapply(x$smooth.construct[[j]]$sparse.setup$block.index, length) == 1)
+        if(sps) {
+          sm <- if(!is.null(x$smooth.construct[[j]]$S)) {
+            sparse.setup(XX <- crossprod(x$smooth.construct[[j]]$X) + do.call("+", x$smooth.construct[[j]]$S))$matrix
+          } else {
+            sparse.setup(XX <- crossprod(x$smooth.construct[[j]]$X))$matrix
+          }
+          if(length(unique(sm[, 1])) > 1){
+            x$smooth.construct[[j]]$sparse.setup$block.index <- split(as.integer(1:nrow(sm)), factor(sm[, 1]))
+            x$smooth.construct[[j]]$sparse.setup$is.diagonal <- all(sapply(x$smooth.construct[[j]]$sparse.setup$block.index, length) == 1)
+          }
         }
       }
     }
