@@ -4306,11 +4306,13 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
   object$fixed <- TRUE
   object$state$parameters <- rnorm(npar, sd = 0.5)
+  for(j in nid)
+    object$state$parameters[j[1]] <- rnorm(1, sd = 1e-10)
   names(object$state$parameters) <- paste("b", 1:npar, sep = "")
   object$state$parameters <- c(object$state$parameters, "tau21" = 1000, "tau22" = 1000)
   object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
   object$special.npar <- npar
-  object$prior <- function(b) { .Machine$double.eps }
+  object$prior <- function(b) { sum(dnorm(get.par(b, "b", sd = 1000, log = TRUE))) }
 
   getU <- function(X, b) {
     if(!is.null(names(b)))
@@ -4409,17 +4411,14 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   object$boost.fit <- function(x, y, nu, ...)
   {
     b0 <- get.state(x, "b")
+    tau2 <- get.state(x, "tau2")
+
     U <- getU(x$X, b0)
-
     UU <- crossprod(U, U)
-print(x$state$parameters)
-stop()
-    H <- matrix_inv(UU + 0.0001 * diag(diag(UU)))
-
-    b1 <- nu * (b0 + drop(H %*% t(U) %*% (y - x$state$fitted.values)))
+    H <- matrix_inv(UU + 1/tau2[1] * x$S[[1]] + 1/tau2[2] * diag(diag(UU)))
+    b1 <- nu * drop(b0 + H %*% t(U) %*% (y - x$state$fitted.values))
     names(b1) <- names(b0)
 
-    ## Finalize.
     x$state$parameters <- set.par(x$state$parameters, b1, "b")
     x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
     x$state$rss <- sum((x$state$fitted.values - y)^2)

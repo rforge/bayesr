@@ -2065,10 +2065,10 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind, uind = NULL)
 
 ## Gradient boosting.
 boost <- function(x, y, family,
-                  nu = 0.1, df = 4, maxit = 400, mstop = NULL,
-                  verbose = TRUE, digits = 4, flush = TRUE,
-                  eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE,
-                  initialize = TRUE, ...)
+  nu = 0.1, df = 4, maxit = 400, mstop = NULL,
+  verbose = TRUE, digits = 4, flush = TRUE,
+  eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE,
+  initialize = TRUE, ...)
 {
   ## FIXME: hard coded.
   weights <- offset <- NULL
