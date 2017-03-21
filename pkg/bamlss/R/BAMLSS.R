@@ -4394,111 +4394,15 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     return(x$state)
   }
 
-  getU2 <- function(X, b) {
-    k <- ncol(X)
-    U <- matrix(0, nrow(X), length(b))
-    i <- 1
-    u <- X %*% b[-1]
-    o <- 1 / (1 + exp(-u))
-    U[, i] <- o
-    i <- i + 1
-    o2 <- b[1] * o * (1 - o)
-    U[, i] <- o2
-    i <- i + 1
-    for(jj in 2:k) {
-      U[, i] <- o2 * X[, jj]
-      i <- i + 1
-    }
-    return(U)
-  }
+  df <- object$xt$df
+  if(is.null(df))
+    df <- floor(0.9 * npar)
 
-  fit.fun2 <- function(X, b) {
-    f <- X %*% b[-1]
-    fit <- b[1] / (1 + exp(-f))
-    return(fit)
-  }
-
-  node.edf <- rep(0, nodes)
   tau2 <- get.par(object$state$parameters, "tau2")
-  for(j in seq_along(nid)) {
-    bj <- object$state$parameters[nid[[j]]]
-    UU <- crossprod(getU2(object$X, bj))
-    H <- matrix_inv(UU + 1/tau2[1] * diag(ncol(UU)) + 1/tau2[2] * diag(diag(UU)))
-    node.edf[j] <- sum_diag(UU %*% H)
-  }
-  object$state$edf <- sum(node.edf)
-  object$state$node.edf <- node.edf
-
-  update_nn2 <- function(x, family, y, eta, id, weights, criterion, ...)
-  {
-    args <- list(...)
-  
-    peta <- family$map2par(eta)
-  
-    if(is.null(args$hess)) {
-      hess <- process.derivs(family$hess[[id]](y, peta, id = id, ...), is.weight = TRUE)
-    } else hess <- args$hess
-  
-    if(!is.null(weights))
-      hess <- hess * weights
-  
-    if(is.null(args$z)) {
-      score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
-      z <- eta[[id]] + 1 / hess * score
-    } else z <- args$z
-
-    fit <- fitted(x$state)
-    b0 <- get.state(x, "b")
-    nb <- names(b0)
-    node.edf <- x$state$node.edf
-    edf0 <- args$edf - sum(node.edf)
-
-    I <- diag(nc)
-
-    objfun <- function(tau2) {
-      for(j in seq_along(nid)) {
-        bj <- b0[nid[[j]]]
-        fit <- fit - fit.fun2(x$X, bj)
-        eta[[id]] - fit
-        e <- z - eta[[id]]
-        U <- getU2(x$X, bj)
-        UW <- U / hess
-        UWU <- crossprod(UW, U)
-        H <- matrix_inv(UWU + 1/tau2[1] * I + 1/tau2[2] * diag(diag(UWU)))
-        bj <- drop(bj + H %*% t(UW) %*% e)
-        b0[nid[[j]]] <- bj
-        fit <- fit + fit.fun2(x$X, bj)
-        eta[[id]] <- eta[[id]] + fit
-        node.edf[j] <- sum_diag(UWU %*% H)
-      }
-      ic <- get.ic(family, y, family$map2par(eta), edf0 + sum(node.edf), length(z), criterion)
-      ic
-    }
-
-    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
-
-    for(j in seq_along(nid)) {
-      bj <- b0[nid[[j]]]
-      fit <- fit - fit.fun2(x$X, bj)
-      e <- z - (eta[[id]] - fit)
-      U <- getU2(x$X, bj)
-      UW <- U / hess
-      UWU <- crossprod(UW, U)
-      H <- matrix_inv(UWU + 1/tau2[1] * I + 1/tau2[2] * diag(diag(UWU)))
-      bj <- drop(bj + H %*% t(UW) %*% e)
-      b0[nid[[j]]] <- bj
-      fit <- fit + fit.fun2(x$X, bj)
-      eta[[id]] <- eta[[id]] + fit
-      node.edf[j] <- sum_diag(UWU %*% H)
-    }
-
-    x$state$parameters <- set.par(x$state$parameters, b0, "b")
-    x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
-    x$state$fitted.values <- x$fit.fun(x$X, b0)
-    x$state$edf <- sum(node.edf)
-
-    return(x$state)
-  }
+  UU <- crossprod(getU(object$X, object$state$parameters))
+  H <- matrix_inv(UU + 1/tau2[1] * diag(ncol(UU)) + 1/tau2[2] * diag(diag(UU)))
+  edf <- sum_diag(UU %*% H)
+  object$state$edf <- edf
 
   object$update <- update_nn
   
@@ -4508,6 +4412,8 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     U <- getU(x$X, b0)
 
     UU <- crossprod(U, U)
+print(x$state$parameters)
+stop()
     H <- matrix_inv(UU + 0.0001 * diag(diag(UU)))
 
     b1 <- nu * (b0 + drop(H %*% t(U) %*% (y - x$state$fitted.values)))
