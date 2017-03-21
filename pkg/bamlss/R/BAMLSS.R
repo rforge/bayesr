@@ -4300,12 +4300,12 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
       fit <- fit + b[nid[[j]]][1] / (1 + exp(-f))
     }
     #if(!is.null(object$xt$force.center))
-    #fit <- fit - mean(fit, na.rm = TRUE)
+    fit <- fit - mean(fit, na.rm = TRUE)
     return(fit)
   }
 
   object$fixed <- TRUE
-  object$state$parameters <- rnorm(npar, sd = 0.1)
+  object$state$parameters <- rnorm(npar, sd = 0.5)
   names(object$state$parameters) <- paste("b", 1:npar, sep = "")
   object$state$parameters <- c(object$state$parameters, "tau21" = 1000, "tau22" = 1000)
   object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
