@@ -2102,7 +2102,7 @@ boost <- function(x, y, family,
   ## terms get an entry in $smooth.construct object.
   ## Intercepts are initalized.
   x <- boost.transform(x = x, y = y, df = NULL, family = family,
-                       maxit = maxit, eps = eps, initialize = initialize, ...)
+    maxit = maxit, eps = eps, initialize = initialize, ...)
   
   ## Create a list() that saves the states for
   ## all parameters and model terms.
@@ -2230,14 +2230,14 @@ boost <- function(x, y, family,
     plot.boost.summary(bsum)
   
   return(list("parameters" = parm2mat(parm, if(is.null(nback)) maxit else (iter - 1)),
-              "fitted.values" = get.eta(x), "nobs" = nobs, "boost.summary" = bsum, "runtime" = elapsed))
+    "fitted.values" = get.eta(x), "nobs" = nobs, "boost.summary" = bsum, "runtime" = elapsed))
 }
 
 
 ## Boost setup.
 boost.transform <- function(x, y, df = NULL, family,
-                            weights = NULL, offset = NULL, maxit = 100,
-                            eps = .Machine$double.eps^0.25, initialize = TRUE, ...)
+  weights = NULL, offset = NULL, maxit = 100,
+  eps = .Machine$double.eps^0.25, initialize = TRUE, ...)
 {
   np <- length(x)
   nx <- names(x)
@@ -2297,14 +2297,16 @@ boost.transform <- function(x, y, df = NULL, family,
   ## Save more info.
   for(j in 1:np) {
     for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
+      if(!inherits(x[[nx[j]]]$smooth.construct[[sj]], "nnet.smooth")) {
+        x[[nx[j]]]$smooth.construct[[sj]]$state$edf <- 0
+        nc <- ncol(x[[nx[j]]]$smooth.construct[[sj]]$X)
+        nr <- nrow(x[[nx[j]]]$smooth.construct[[sj]]$X)
+        x[[nx[j]]]$smooth.construct[[sj]]$XWX <- matrix(0, nc, nc)
+        x[[nx[j]]]$smooth.construct[[sj]]$XW <- matrix(0, nc, nr)
+      }
       x[[nx[j]]]$smooth.construct[[sj]]$selected <- rep(0, length = maxit)
       x[[nx[j]]]$smooth.construct[[sj]]$loglik <- rep(0, length = maxit)
-      x[[nx[j]]]$smooth.construct[[sj]]$state$edf <- 0
       x[[nx[j]]]$smooth.construct[[sj]]$state$rss <- 0
-      nc <- ncol(x[[nx[j]]]$smooth.construct[[sj]]$X)
-      nr <- nrow(x[[nx[j]]]$smooth.construct[[sj]]$X)
-      x[[nx[j]]]$smooth.construct[[sj]]$XWX <- matrix(0, nc, nc)
-      x[[nx[j]]]$smooth.construct[[sj]]$XW <- matrix(0, nc, nr)
       if(!is.null(x[[nx[j]]]$smooth.construct[[sj]]$S))
         x[[nx[j]]]$smooth.construct[[sj]]$penaltyFunction <- as.integer(sapply(x[[nx[j]]]$smooth.construct[[sj]]$S, is.function))
       else

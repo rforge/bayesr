@@ -4274,16 +4274,21 @@ n <- function(..., k = 10)
 {
   ret <- la(..., k = k)
   ret$label <- gsub("la(", "n(", ret$label, fixed = TRUE)
+  if(!is.null(node <- ret$xt$node)) {
+    lab <- strsplit(ret$label, "")[[1]]
+    lab <- paste(c(lab[-length(lab)], paste(',node="', node, '")', sep = '')), collapse = "", sep = "")
+    ret$label <- lab
+  }
   class(ret) <- "nnet.smooth.spec"
   ret
 }
 
 smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 {
+  split <- if(is.null(object$xt$split)) FALSE else object$xt$split
   object <- smooth.construct.la.smooth.spec(object, data, knots)
   object[!(names(object) %in% c("formula", "term", "label", "dim", "X", "xt", "lasso"))] <- NULL
-
-  nodes <- object$xt$k
+  nodes <- if(split) 1 else object$xt$k
   object$X <- cbind(1, object$X)
   colnames(object$X) <- NULL
   nc <- ncol(object$X) + 1
@@ -4299,8 +4304,8 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
       f <- X %*% b[nid[[j]]][-1]
       fit <- fit + b[nid[[j]]][1] / (1 + exp(-f))
     }
-    #if(!is.null(object$xt$force.center))
-    fit <- fit - mean(fit, na.rm = TRUE)
+    if(!split)
+      fit <- fit - mean(fit, na.rm = TRUE)
     return(fit)
   }
 
@@ -4366,14 +4371,17 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     nb <- names(b0)
 
     U <- getU(x$X, b0)
+
     UW <- U / hess
     UWU <- crossprod(UW, U)
 
-    S <- diag(diag(UWU))
+    df <- sqrt(length(z))
+    S <- diag(df/diag(UWU))
     edf0 <- args$edf - x$state$edf
+    I <- diag(df, ncol(S))
 
     objfun <- function(tau2) {
-      H <- matrix_inv(UWU + 1/tau2[1] * x$S[[1]] + 1/tau2[2] * S)
+      H <- matrix_inv(UWU + 1/tau2[1] * I + 1/tau2[2] * S)
       b0 <- drop(b0 + H %*% t(UW) %*% e)
       names(b0) <- nb
       edf <- sum_diag(UWU %*% H)
@@ -4384,7 +4392,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
     tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
 
-    H <- matrix_inv(UWU + 1/tau2[1] * x$S[[1]] + 1/tau2[2] * S)
+    H <- matrix_inv(UWU + 1/tau2[1] * I + 1/tau2[2] * S)
     b0 <- drop(b0 + H %*% t(UW) %*% e)
     names(b0) <- nb
 
@@ -4395,10 +4403,6 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
     return(x$state)
   }
-
-  df <- object$xt$df
-  if(is.null(df))
-    df <- floor(0.9 * npar)
 
   tau2 <- get.par(object$state$parameters, "tau2")
   UU <- crossprod(getU(object$X, object$state$parameters))
@@ -4415,18 +4419,52 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
     U <- getU(x$X, b0)
     UU <- crossprod(U, U)
-    H <- matrix_inv(UU + 1/tau2[1] * x$S[[1]] + 1/tau2[2] * diag(diag(UU)))
-    b1 <- nu * drop(b0 + H %*% t(U) %*% (y - x$state$fitted.values))
+    n <- length(y)
+
+    objfun <- function(tau2) {
+      H <- matrix_inv(UU + tau2[1] * x$S[[1]] + tau2[2] * diag(diag(UU)))
+      b1 <- nu * drop(H %*% t(U) %*% (y - x$state$fitted.values))
+      fit <- x$state$fitted.values + x$fit.fun(x$X, b1)
+      edf <- sum_diag(UU %*% H)
+      sum((y - fit)^2) + 2 * edf + (2 * edf * (edf + 1)) / (n - edf - 1)
+    }
+
+    tau2 <- tau2.optim(objfun, c(0.0001, 0.0001))
+
+    H <- matrix_inv(UU + tau2[1] * x$S[[1]] + tau2[2] * diag(diag(UU)))
+    b1 <- nu * drop(H %*% t(U) %*% (y - x$state$fitted.values))
+
     names(b1) <- names(b0)
 
     x$state$parameters <- set.par(x$state$parameters, b1, "b")
     x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
+
+plot((y + x$state$fitted.values) ~ d$x2)
+plot2d(x$state$fitted.values ~ d$x2, add = TRUE, col.lines = 2)
+
     x$state$rss <- sum((x$state$fitted.values - y)^2)
 
     return(x$state)
   }
 
   class(object) <- c("nnet.smooth", "no.mgcv", "special")
+
+  if(split) {
+    nodes <- object$xt$k
+    object <- rep(list(object), nodes)
+    for(j in seq_along(object)) {
+      b <- rnorm(length(get.par(object[[j]]$state$parameters, "b")), sd = 0.5)
+      b[1] <- rnorm(1, sd = 1e-10)
+      names(b) <- paste("b", 1:length(b), sep = "")
+      object[[j]]$state$parameters <- set.par(object[[j]]$state$parameters, b, "b")
+      object[[j]]$state$fitted.values <- object[[j]]$fit.fun(object[[j]]$X, object[[j]]$state$parameters)
+      object[[j]]$term_id <- object[[j]]$label
+      lab <- strsplit(object[[j]]$label, "")[[1]]
+      lab <- paste(c(lab[-length(lab)], paste(',node="', j, '")', sep = '')), collapse = "", sep = "")
+      object[[j]]$label <- lab
+    }
+    class(object) <- c("nnet.smooth", "no.mgcv", "special", "smooth.list")
+  }
 
   object
 }
