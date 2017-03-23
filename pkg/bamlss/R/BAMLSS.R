@@ -4312,7 +4312,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   object$fixed <- FALSE
   object$state$parameters <- rnorm(npar, sd = 0.5)
   for(j in nid)
-    object$state$parameters[j[1]] <- rnorm(1, sd = 0.0001)
+    object$state$parameters[j[1]] <- rnorm(1, sd = 1e-10)
   names(object$state$parameters) <- paste("b", 1:npar, sep = "")
   object$state$parameters <- c(object$state$parameters, "tau21" = 1000, "tau22" = 1000)
   object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
@@ -4413,9 +4413,24 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 #  }
 
   tau2 <- get.par(object$state$parameters, "tau2")
+
   UU <- crossprod(getU(object$state$parameters))
+  df <- min(c(length(object$state$parameters), 4))
+
+  S1 <- diag(ncol(UU))
+  S2 <- diag(diag(UU))
+
+  objfun <- function(tau2) {
+    H <- matrix_inv(UU + 1/tau2[1] * S1 + 1/tau2[2] * S2)
+    edf <- sum_diag(UU %*% H)
+    (df - edf)^2
+  }
+
+  opt <- optim(tau2, objfun, method = "L-BFGS-B", lower = rep(.Machine$double.eps^0.5, 2), upper = rep(Inf, 2))
+  tau2 <- opt$par
   H <- matrix_inv(UU + 1/tau2[1] * diag(ncol(UU)) + 1/tau2[2] * diag(diag(UU)))
   edf <- sum_diag(UU %*% H)
+  object$state$parameters <- set.par(object$state$parameters, tau2, "tau2")
   object$state$edf <- edf
   object$state$special <- object$state$parameters
 
@@ -4423,19 +4438,19 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
   object$boost.fit <- function(x, y, nu, ...)
   {
-    b <- get.par(x$state$special, "b")
+    b0 <- get.par(x$state$special, "b")
     tau2 <- get.par(x$state$parameters, "tau2")
-    nb <- names(b)
+    nb <- names(b0)
 
-    U <- getU(b)
+    U <- getU(b0)
     UU <- crossprod(U, U)
-    H <- matrix_inv(UU + 1/tau2[1] * x$S[[1]] + 1/tau2[2] * x$S[[2]](b))
-    b <- drop(b + nu * (H %*% t(U) %*% y))
+    H <- matrix_inv(UU + 1/1000000 * x$S[[1]] + 1/1000000 * x$S[[2]](b0))
+    b1 <- nu * drop(b0 + H %*% t(U) %*% (y - x$fit.fun(x$X, b0)))
 
-    names(b) <- nb
-    fit <- x$fit.fun(x$X, b)
+    names(b1) <- nb
+    fit <- x$fit.fun(x$X, b1)
 
-    x$state$parameters <- set.par(x$state$parameters, b, "b")
+    x$state$parameters <- set.par(x$state$parameters, b1, "b")
     x$state$fitted.values <- fit
     x$state$rss <- sum((y - fit)^2)
     x$state$special <- x$state$parameters
@@ -4450,7 +4465,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     object <- rep(list(object), nodes)
     for(j in seq_along(object)) {
       b <- rnorm(length(get.par(object[[j]]$state$parameters, "b")), sd = 0.5)
-      b[1] <- rnorm(1, sd = 0.0001)
+      b[1] <- rnorm(1, sd = 1e-10)
       names(b) <- paste("b", 1:length(b), sep = "")
       object[[j]]$state$parameters <- set.par(object[[j]]$state$parameters, b, "b")
       object[[j]]$state$fitted.values <- object[[j]]$fit.fun(object[[j]]$X, object[[j]]$state$parameters)
@@ -4473,12 +4488,71 @@ Predict.matrix.nnet.smooth <- function(object, data)
   X
 }
 
-fit_nn <- function(X, y, S = NULL, weights = NULL, start = NULL, nnodes = NULL)
+fit_nn <- function(X, y, weights = NULL, start = NULL,
+  nnodes = NULL, eps = .Machine$double.eps^0.25)
 {
+  if(is.null(nnodes))
+    nnodes <- 10
+
   if(is.vector(X))
     X <- matrix(X, ncol = 1)
   X <- cbind(1, X)
-  X
+  k <- ncol(X)
+  nr <- nrow(X)
+
+  if(is.null(weights))
+    weights <- rep(1, length(y))
+
+  nc <- k + 1
+  npar <- nc * nnodes
+  nid <- split(1:npar, factor(sort(rep(1:nnodes, times = nc))))
+  b <- rnorm(npar, sd = 0.5)
+  for(j in nid)
+    b[j[1]] <- rnorm(1, sd = 1e-10)
+  names(b) <- paste("b", 1:length(b), sep = "")
+
+  getU <- function(b) {
+    U <- matrix(0, nr, npar)
+    i <- 1
+    for(j in seq_along(nid)) {
+      u <- X %*% b[nid[[j]]][-1]
+      o <- 1 / (1 + exp(-u))
+      U[, i] <- o
+      i <- i + 1
+      o2 <- b[nid[[j]]][1] * o * (1 - o)
+      U[, i] <- o2
+      i <- i + 1
+      for(jj in 2:k) {
+        U[, i] <- o2 * X[, jj]
+        i <- i + 1
+      }
+    }
+    return(U)
+  }
+
+  fit.fun <- function(b) {
+    fit <- 0
+    for(j in seq_along(nid)) {
+      f <- X %*% b[nid[[j]]][-1]
+      fit <- fit + b[nid[[j]]][1] / (1 + exp(-f))
+    }
+    return(fit - mean(fit))
+  }
+
+  I <- diag(npar)
+  f0 <- fit.fun(b)
+
+  for(i in 1:1) {
+    U <- getU(b)
+    tUW <- t(U / weights)
+    UWU <- tUW %*% U
+    H <- matrix_inv(UWU + 1/10000000000 * I + 1/10000000000 * diag(diag(UWU)))
+    b <- drop(b + H %*% tUW %*% (y - fit.fun(b)))
+  }
+  
+  plot(y ~ x)
+  plot2d(fit.fun(b) ~ x, add = TRUE, col.lines = 2)
+  plot2d(f0 ~ x, add = TRUE, col.lines = 4)
 }
 
 
@@ -4489,7 +4563,7 @@ if(FALSE) {
   y <- sin(x) + rnorm(nobs, sd = 0.1)
   plot(x, y)
 
-  b <- bamlss(y ~ n(x), sampler = FALSE, optimizer = boost)
+  b <- fit_nn(x, y)
 }
 
 
