@@ -2636,8 +2636,10 @@ increase <- function(state0, state1)
   state0$fitted.values <- fitted(state0) + fitted(state1)
   state0$parameters <- set.par(state0$parameters, g, "b")
   state0$edf <- state1$edf
+  state0$parameters <- set.par(state0$parameters, get.par(state1$parameters, "tau2"), "tau2")
   attr(state0$parameters, "true.tau2") <- attr(state1$parameters, "true.tau2")
   attr(state0$parameters, "edf") <- attr(state1$parameters, "edf")
+  state0$special <- state1$special
   state0
 }
 

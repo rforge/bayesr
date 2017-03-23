@@ -4309,17 +4309,20 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     return(fit)
   }
 
-  object$fixed <- TRUE
+  object$fixed <- FALSE
   object$state$parameters <- rnorm(npar, sd = 0.5)
   for(j in nid)
-    object$state$parameters[j[1]] <- rnorm(1, sd = 1e-10)
+    object$state$parameters[j[1]] <- rnorm(1, sd = 0.0001)
   names(object$state$parameters) <- paste("b", 1:npar, sep = "")
   object$state$parameters <- c(object$state$parameters, "tau21" = 1000, "tau22" = 1000)
   object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
   object$special.npar <- npar
   object$prior <- function(b) { sum(dnorm(get.par(b, "b", sd = 1000, log = TRUE))) }
+  object$nnodes <- nodes
 
-  getU <- function(X, b) {
+  X <- object$X
+
+  getU <- function(b) {
     if(!is.null(names(b)))
       b <- get.par(b, "b")
     k <- ncol(X)
@@ -4341,7 +4344,12 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     return(U)
   }
 
-  object$S <- list(diag(npar))
+  object$S <- list()
+  object$S[[1]] <- diag(npar)
+  object$S[[2]] <- function(parameters) {
+    UU <- diag(crossprod(getU(parameters)))
+    diag(UU)
+  }
   prior <- make.prior(object)
   object[names(prior)] <- prior
   object$sparse.setup <- FALSE
@@ -4370,19 +4378,16 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     b0 <- get.state(x, "b")
     nb <- names(b0)
 
-    U <- getU(x$X, b0)
+    U <- getU(b0)
 
-    UW <- U / hess
-    UWU <- crossprod(UW, U)
+    tUW <- t(U / hess)
+    UWU <- tUW %*% U
 
-    df <- sqrt(length(z))
-    S <- diag(df/diag(UWU))
     edf0 <- args$edf - x$state$edf
-    I <- diag(df, ncol(S))
 
     objfun <- function(tau2) {
-      H <- matrix_inv(UWU + 1/tau2[1] * I + 1/tau2[2] * S)
-      b0 <- drop(b0 + H %*% t(UW) %*% e)
+      H <- matrix_inv(UWU + 1/tau2[1] * x$S[[1]] + 1/tau2[2] * x$S[[2]](b0))
+      b0 <- drop(b0 + H %*% tUW %*% e)
       names(b0) <- nb
       edf <- sum_diag(UWU %*% H)
       eta[[id]] <- eta[[id]] + x$fit.fun(x$X, b0)
@@ -4392,8 +4397,8 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
     tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
 
-    H <- matrix_inv(UWU + 1/tau2[1] * I + 1/tau2[2] * S)
-    b0 <- drop(b0 + H %*% t(UW) %*% e)
+    H <- matrix_inv(UWU + 1/tau2[1] * x$S[[1]] + 1/tau2[2] * x$S[[2]](b0))
+    b0 <- drop(b0 + H %*% tUW %*% e)
     names(b0) <- nb
 
     x$state$parameters <- set.par(x$state$parameters, b0, "b")
@@ -4404,45 +4409,36 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     return(x$state)
   }
 
+#  propose_nn <- function(family, theta, id, eta, y, data, weights = NULL, ...) {
+#  }
+
   tau2 <- get.par(object$state$parameters, "tau2")
-  UU <- crossprod(getU(object$X, object$state$parameters))
+  UU <- crossprod(getU(object$state$parameters))
   H <- matrix_inv(UU + 1/tau2[1] * diag(ncol(UU)) + 1/tau2[2] * diag(diag(UU)))
   edf <- sum_diag(UU %*% H)
   object$state$edf <- edf
+  object$state$special <- object$state$parameters
 
   object$update <- update_nn
-  
+
   object$boost.fit <- function(x, y, nu, ...)
   {
-    b0 <- get.state(x, "b")
-    tau2 <- get.state(x, "tau2")
+    b <- get.par(x$state$special, "b")
+    tau2 <- get.par(x$state$parameters, "tau2")
+    nb <- names(b)
 
-    U <- getU(x$X, b0)
+    U <- getU(b)
     UU <- crossprod(U, U)
-    n <- length(y)
+    H <- matrix_inv(UU + 1/tau2[1] * x$S[[1]] + 1/tau2[2] * x$S[[2]](b))
+    b <- drop(b + nu * (H %*% t(U) %*% y))
 
-    objfun <- function(tau2) {
-      H <- matrix_inv(UU + tau2[1] * x$S[[1]] + tau2[2] * diag(diag(UU)))
-      b1 <- nu * drop(H %*% t(U) %*% (y - x$state$fitted.values))
-      fit <- x$state$fitted.values + x$fit.fun(x$X, b1)
-      edf <- sum_diag(UU %*% H)
-      sum((y - fit)^2) + 2 * edf + (2 * edf * (edf + 1)) / (n - edf - 1)
-    }
+    names(b) <- nb
+    fit <- x$fit.fun(x$X, b)
 
-    tau2 <- tau2.optim(objfun, c(0.0001, 0.0001))
-
-    H <- matrix_inv(UU + tau2[1] * x$S[[1]] + tau2[2] * diag(diag(UU)))
-    b1 <- nu * drop(H %*% t(U) %*% (y - x$state$fitted.values))
-
-    names(b1) <- names(b0)
-
-    x$state$parameters <- set.par(x$state$parameters, b1, "b")
-    x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
-
-plot((y + x$state$fitted.values) ~ d$x2)
-plot2d(x$state$fitted.values ~ d$x2, add = TRUE, col.lines = 2)
-
-    x$state$rss <- sum((x$state$fitted.values - y)^2)
+    x$state$parameters <- set.par(x$state$parameters, b, "b")
+    x$state$fitted.values <- fit
+    x$state$rss <- sum((y - fit)^2)
+    x$state$special <- x$state$parameters
 
     return(x$state)
   }
@@ -4454,10 +4450,11 @@ plot2d(x$state$fitted.values ~ d$x2, add = TRUE, col.lines = 2)
     object <- rep(list(object), nodes)
     for(j in seq_along(object)) {
       b <- rnorm(length(get.par(object[[j]]$state$parameters, "b")), sd = 0.5)
-      b[1] <- rnorm(1, sd = 1e-10)
+      b[1] <- rnorm(1, sd = 0.0001)
       names(b) <- paste("b", 1:length(b), sep = "")
       object[[j]]$state$parameters <- set.par(object[[j]]$state$parameters, b, "b")
       object[[j]]$state$fitted.values <- object[[j]]$fit.fun(object[[j]]$X, object[[j]]$state$parameters)
+      object[[j]]$state$special <- object[[j]]$state$parameters
       object[[j]]$term_id <- object[[j]]$label
       lab <- strsplit(object[[j]]$label, "")[[1]]
       lab <- paste(c(lab[-length(lab)], paste(',node="', j, '")', sep = '')), collapse = "", sep = "")
@@ -4476,20 +4473,23 @@ Predict.matrix.nnet.smooth <- function(object, data)
   X
 }
 
+fit_nn <- function(X, y, S = NULL, weights = NULL, start = NULL, nnodes = NULL)
+{
+  if(is.vector(X))
+    X <- matrix(X, ncol = 1)
+  X <- cbind(1, X)
+  X
+}
+
 
 if(FALSE) {
-  foo <- function(x, b = c(1, 0.1, 0.4, 1.1)) {
-    b[1] + b[2] / (1 + exp(-(b[3] + b[4] * x)))
-  }
-
   set.seed(123)
   nobs <- 500
-  x <- runif(nobs, -20, 20)
-  y <- sin(scale2(x, -3, 3)) + rnorm(nobs, sd = scale2(foo(x), 0.01, 0.3))
+  x <- runif(nobs, -3, 3)
+  y <- sin(x) + rnorm(nobs, sd = 0.1)
   plot(x, y)
 
-  f <- list(y ~ s(x), sigma ~ n(x,k=1))
-  b <- bamlss(f, sampler = FALSE)
+  b <- bamlss(y ~ n(x), sampler = FALSE, optimizer = boost)
 }
 
 
