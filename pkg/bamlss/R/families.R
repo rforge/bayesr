@@ -502,6 +502,64 @@ cloglog_bamlss <- function(...)
   rval
 }
 
+
+coxph_bamlss <- function(...)
+{
+  rval <- list(
+    "family" = "coxph",
+    "names" = "gamma",
+    "links" = c(gamma = "identity"),
+    "transform" = function(x, ...) {
+      x <- x$x
+      if(is.null(attr(x, "bamlss.engine.setup")))
+        x <- bamlss.engine.setup(x, ...)
+      if(!is.null(x$gamma$smooth.construct$model.matrix)) {
+        cn <- colnames(x$gamma$smooth.construct$model.matrix$X)
+        if("(Intercept)" %in% cn)
+          x$gamma$smooth.construct$model.matrix$X <- x$gamma$smooth.construct$model.matrix$X[, cn != "(Intercept)", drop = FALSE]
+        if(ncol(x$gamma$smooth.construct$model.matrix$X) < 1) {
+          x$gamma$smooth.construct$model.matrix <- NULL
+          x$gamma$terms <- drop.terms.bamlss(x$gamma$terms, pterms = FALSE, keep.intercept = FALSE)
+        } else {
+          x$gamma$smooth.construct$model.matrix$term <- gsub("(Intercept)+", "",
+            x$gamma$smooth.construct$model.matrix$term, fixed = TRUE)
+          x$gamma$smooth.construct$model.matrix$state$parameters <- x$gamma$smooth.construct$model.matrix$state$parameters[-1]
+          x$gamma$terms <- drop.terms.bamlss(x$gamma$terms,
+            pterms = TRUE, sterms = TRUE, keep.intercept = FALSE)
+          prior <- make.prior(x$gamma$smooth.construct$model.matrix)
+          x$gamma$smooth.construct$model.matrix[names(prior)] <- prior
+        }
+      }
+      return(list("x" = x))
+    },
+    "d" = function(y, par, log = FALSE) {
+      n <- nrow(y)
+      risk <- rep(0, n)
+      eg <- exp(par$gamma)
+      for(i in 1:n)
+        risk[i] <- sum((y[, "time"] >= y[i, "time"]) * eg * y[, "status"])
+      d <- y[, "status"] * par$gamma - log(risk)
+      if(!log)
+        d <- exp(d)
+      d
+    },
+    "score" = list(
+      "gamma" = function(y, par, ...) {
+        n <- nrow(y)
+        risk <- rep(0, n)
+        eg <- exp(par$gamma)
+        for(i in 1:n)
+          risk[i] <- 1 / (sum((y[, "time"] >= y[i, "time"]) * eg * y[, "status"]))
+        y[, "status"] - eg * sum(risk)
+      }
+    )
+  )
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+
 gaussian_bamlss <- function(...)
 {
   links <- c(mu = "identity", sigma = "log")

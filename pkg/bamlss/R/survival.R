@@ -728,6 +728,8 @@ propose_surv_tc <- function(x, y, eta, int)
 Surv2 <- function(..., obs = NULL)
 {
   rval <- cbind(as.matrix(survival::Surv(...)), "obs" = obs)
+  if(all(c("start", "stop") %in% colnames(rval)))
+    rval <- cbind("time" = rval[, "stop"] - rval[, "start"], "status" = rval[, "status"], "obs" = obs)
   class(rval) <- c("matrix", "Surv2")
   rval
 }

@@ -2324,13 +2324,17 @@ splitFormula <- function(form, sep = "+")
 
 terms.formula2 <- function(formula, specials, keep.order = TRUE, ...)
 {
-  fs <- splitFormula(formula, sep = "+")
+  fs <- splitFormula(formula, sep = c("+", "-"))
   tl <- rep("", length = length(fs))
+  adds <- NULL
   for(j in seq_along(fs)) {
     tlj <- attr(terms(fs[[j]], specials = specials), "term.labels")
     if(length(tlj))
-      tl[j] <- tlj
+      tl[j] <- tlj[1]
+    if(length(tlj) > 1)
+      adds <- c(adds, tlj[-1])
   }
+  tl <- c(tl, adds)
   tl <- tl[tl != ""]
   if(!length(tl))
     tl <- ""
