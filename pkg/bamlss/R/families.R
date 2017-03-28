@@ -574,6 +574,7 @@ coxph_bamlss <- function(...)
         for(i in 1:length(time)) {
           risk[i] <- sum(1 * (time >= time[i]) * exp_gamma, na.rm = TRUE)
         }
+        ## Return negative second derivatives!
         -exp_gamma * sum(1 / risk[status > 0], na.rm = TRUE) + exp(2 * par$gamma) * sum(1 / risk[status > 0], na.rm = TRUE)^2
       }
     ),
@@ -595,7 +596,8 @@ if(FALSE) {
   col1$time <- col1$time + rnorm(nrow(col1), sd = 0.000001)
   col1 <- na.omit(col1[order(col1$time), ])
      
-  b <- bamlss(Surv(time, status) ~ perfor + rx + obstruct + adhere + sex + s(age,by=sex) + s(nodes), family = "coxph", data = col1, sampler = FALSE)
+  b1 <- bamlss(Surv(time, status) ~ perfor + rx + obstruct + adhere + sex + s(age,by=sex) + s(nodes), family = "coxph", data = col1, sampler = FALSE)
+  b2 <- gam(time ~ perfor + rx + obstruct + adhere + sex + s(age,by=sex) + s(nodes), family = cox.ph, data = col1)
 }
 
 
