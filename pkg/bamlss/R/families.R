@@ -509,7 +509,7 @@ coxph_bamlss <- function(...)
     "family" = "coxph",
     "names" = "gamma",
     "links" = c(gamma = "identity"),
-    "transform" = function(x, ...) {
+    "transform" = function(x, y, ...) {
       x <- x$x
       if(is.null(attr(x, "bamlss.engine.setup")))
         x <- bamlss.engine.setup(x, ...)
@@ -526,37 +526,75 @@ coxph_bamlss <- function(...)
           x$gamma$smooth.construct$model.matrix$state$parameters <- x$gamma$smooth.construct$model.matrix$state$parameters[-1]
           x$gamma$terms <- drop.terms.bamlss(x$gamma$terms,
             pterms = TRUE, sterms = TRUE, keep.intercept = FALSE)
+          x$gamma$smooth.construct$model.matrix$S <- list(diag(0, ncol(x$gamma$smooth.construct$model.matrix$X)))
+          pid <- !grepl("tau", names(x$gamma$smooth.construct$model.matrix$state$parameters)) & !grepl("edf", names(x$gamma$smooth.construct$model.matrix$state$parameters))
+          x$gamma$smooth.construct$model.matrix$pid <- list("b" = which(pid), "tau2" = which(!pid))
+          if(!length(x$gamma$smooth.construct$model.matrix$pid$tau2))
+            x$gamma$smooth.construct$model.matrix$pid$tau2 <- NULL
+          x$gamma$smooth.construct$model.matrix$sparse.setup <- sparse.setup(x$gamma$smooth.construct$model.matrix$X,
+            x$gamma$smooth.construct$model.matrix$S)
           prior <- make.prior(x$gamma$smooth.construct$model.matrix)
           x$gamma$smooth.construct$model.matrix[names(prior)] <- prior
+          x$gamma$smooth.construct$model.matrix$fit.fun <- make.fit.fun(x$gamma$smooth.construct$model.matrix)
         }
       }
       return(list("x" = x))
     },
     "d" = function(y, par, log = FALSE) {
-      n <- nrow(y)
-      risk <- rep(0, n)
-      eg <- exp(par$gamma)
-      for(i in 1:n)
-        risk[i] <- sum((y[, "time"] >= y[i, "time"]) * eg * y[, "status"])
-      d <- y[, "status"] * par$gamma - log(risk)
+      status <- y[, "status"]
+      time <- y[, "time"]
+      exp_gamma <- exp(par$gamma)
+      risk <- rep(0, length(time))
+      for(i in 1:length(time)) {
+        risk[i] <- sum(1 * (time >= time[i]) * exp_gamma, na.rm = TRUE)
+      }
+      d <- status * par$gamma - status * log(risk)
       if(!log)
         d <- exp(d)
       d
     },
     "score" = list(
       "gamma" = function(y, par, ...) {
-        n <- nrow(y)
-        risk <- rep(0, n)
-        eg <- exp(par$gamma)
-        for(i in 1:n)
-          risk[i] <- 1 / (sum((y[, "time"] >= y[i, "time"]) * eg * y[, "status"]))
-        y[, "status"] - eg * sum(risk)
+        status <- y[, "status"]
+        time <- y[, "time"]
+        exp_gamma <- exp(par$gamma)
+        risk <- rep(0, length(time))
+        for(i in 1:length(time)) {
+          risk[i] <- sum(1 * (time >= time[i]) * exp_gamma)
+        }
+        status - exp_gamma * sum(1 / risk[status > 0], na.rm = TRUE)
       }
+    ),
+    "hess" = list(
+      "gamma" = function(y, par, ...) {
+        status <- y[, "status"]
+        time <- y[, "time"]
+        exp_gamma <- exp(par$gamma)
+        risk <- rep(0, length(time))
+        for(i in 1:length(time)) {
+          risk[i] <- sum(1 * (time >= time[i]) * exp_gamma, na.rm = TRUE)
+        }
+        -exp_gamma * sum(1 / risk[status > 0], na.rm = TRUE) + exp(2 * par$gamma) * sum(1 / risk[status > 0], na.rm = TRUE)^2
+      }
+    ),
+    "initialize" = list(
+      "gamma" = function(y, ...) { rep(0, nrow(y)) }
     )
   )
 
   class(rval) <- "family.bamlss"
   rval
+}
+
+
+if(FALSE) {
+  library(survival)
+  col1 <- colon[colon$etype==1, ]
+  col1$differ <- as.factor(col1$differ)
+  col1$sex <- as.factor(col1$sex)
+     
+  b <- bamlss(Surv(time, status) ~ perfor + rx + obstruct + adhere + sex + s(age,by=sex) + s(nodes), family = "coxph", data = col1, sampler = FALSE)
+
 }
 
 

@@ -1403,8 +1403,8 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
     
     tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
     
-    if(!is.null(env$state))
-      return(env$state)
+    #if(!is.null(env$state))
+    #  return(env$state)
     
     x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
     S <- 0
