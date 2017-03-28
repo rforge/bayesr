@@ -592,9 +592,10 @@ if(FALSE) {
   col1 <- colon[colon$etype==1, ]
   col1$differ <- as.factor(col1$differ)
   col1$sex <- as.factor(col1$sex)
+  col1$time <- col1$time + rnorm(nrow(col1), sd = 0.000001)
+  col1 <- na.omit(col1[order(col1$time), ])
      
   b <- bamlss(Surv(time, status) ~ perfor + rx + obstruct + adhere + sex + s(age,by=sex) + s(nodes), family = "coxph", data = col1, sampler = FALSE)
-
 }
 
 
