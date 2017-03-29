@@ -1052,7 +1052,133 @@ resplit <- function(x) {
 }
 
 
-## Special tensor constructor.
+## Special tensor constructors.
+te2 <- function (..., k = NA, bs = "cr", m = NA, d = NA, by = NA, fx = FALSE, 
+  mp = TRUE, np = TRUE, xt = NULL, id = NULL, sp = NULL, pc = NULL) 
+{
+  vars <- as.list(substitute(list(...)))[-1]
+  dim <- length(vars)
+  by.var <- deparse(substitute(by), backtick = TRUE)
+  term <- deparse(vars[[1]], backtick = TRUE)
+  if(dim > 1) 
+    for(i in 2:dim) term[i] <- deparse(vars[[i]], backtick = TRUE)
+  for(i in 1:dim) term[i] <- attr(terms(reformulate(term[i])), 
+    "term.labels")
+  if(sum(is.na(d)) || is.null(d)) {
+    n.bases <- dim
+    d <- rep(1, dim)
+  }
+  else {
+    d <- round(d)
+    ok <- TRUE
+    if(sum(d <= 0)) 
+      ok <- FALSE
+    if(sum(d) != dim) 
+      ok <- FALSE
+    if(ok) 
+      n.bases <- length(d)
+    else {
+      warning("something wrong with argument d.")
+      n.bases <- dim
+      d <- rep(1, dim)
+    }
+  }
+  if(sum(is.na(k)) || is.null(k)) 
+    k <- 5^d
+  else {
+    k <- round(k)
+    ok <- TRUE
+    if(sum(k < 3)) {
+      ok <- FALSE
+      warning("one or more supplied k too small - reset to default")
+    }
+    if(length(k) == 1 && ok) 
+      k <- rep(k, n.bases)
+    else if(length(k) != n.bases) 
+      ok <- FALSE
+    if(!ok) 
+      k <- 5^d
+  }
+  if(sum(is.na(fx)) || is.null(fx)) 
+    fx <- rep(FALSE, n.bases)
+  else if(length(fx) == 1) 
+    fx <- rep(fx, n.bases)
+  else if(length(fx) != n.bases) {
+    warning("dimension of fx is wrong")
+    fx <- rep(FALSE, n.bases)
+  }
+  xtra <- list()
+  if(is.null(xt) || length(xt) == 1)
+    for(i in 1:n.bases) xtra[[i]] <- xt
+  else if(length(xt) == n.bases) 
+    xtra <- xt
+  else stop("xt argument is faulty.")
+  if(length(bs) == 1) 
+    bs <- rep(bs, n.bases)
+  if(length(bs) != n.bases) {
+    warning("bs wrong length and ignored.")
+    bs <- rep("cr", n.bases)
+  }
+  bs[d > 1 & (bs == "cr" | bs == "cs" | bs == "cp")] <- "tp"
+  if(!is.list(m) && length(m) == 1) 
+    m <- rep(m, n.bases)
+  if(length(m) != n.bases) {
+    warning("m wrong length and ignored.")
+    m <- rep(0, n.bases)
+  }
+  if(!is.list(m)) 
+    m[m < 0] <- 0
+  if(length(unique(term)) != dim) 
+    stop("Repeated variables as arguments of a smooth are not permitted")
+  j <- 1
+  margin <- list()
+  for(i in 1:n.bases) {
+    j1 <- j + d[i] - 1
+    if(is.null(xt)) 
+      xt1 <- NULL
+    else xt1 <- xtra[[i]]
+    stxt <- "s("
+    for(l in j:j1) stxt <- paste(stxt, term[l], ",", sep = "")
+    stxt <- paste(stxt, "k=", deparse(k[i], backtick = TRUE), 
+      ",bs=", deparse(bs[i], backtick = TRUE), ",m=", deparse(m[[i]], 
+        backtick = TRUE), ",xt=xt1", ")")
+    margin[[i]] <- eval(parse(text = stxt))
+    j <- j1 + 1
+  }
+  if(mp) 
+    mp <- TRUE
+  else mp <- FALSE
+  if(np) 
+    np <- TRUE
+  else np <- FALSE
+  full.call <- paste("te(", term[1], sep = "")
+  if(dim > 1) 
+    for(i in 2:dim) full.call <- paste(full.call, ",", term[i], 
+      sep = "")
+  label <- paste(full.call, ")", sep = "")
+  if(!is.null(id)) {
+    if(length(id) > 1) {
+      id <- id[1]
+      warning("only first element of `id' used")
+    }
+    id <- as.character(id)
+  }
+  ret <- list(margin = margin, term = term, by = by.var, fx = fx, 
+    label = label, dim = dim, mp = mp, np = np, id = id, 
+    sp = sp, inter = FALSE)
+  if(!is.null(pc)) {
+    if(length(pc) < d) 
+      stop("supply a value for each variable for a point constraint")
+    if(!is.list(pc)) 
+      pc <- as.list(pc)
+    if(is.null(names(pc))) 
+      names(pc) <- unlist(lapply(vars, all.vars))
+    ret$point.con <- pc
+  }
+  class(ret) <- "tensor.smooth.spec"
+  ret
+}
+
 tx <- function(..., bs = "ps", k = -1,
   ctr = c("center", "main", "both", "both1", "both2",
     "none", "meanf", "meanfd", "meansimple", "nullspace"),
@@ -1062,7 +1188,7 @@ tx <- function(..., bs = "ps", k = -1,
     if(k < 0)
       k <- 10
   }
-  object <- te(..., bs = bs, k = k)
+  object <- te2(..., bs = bs, k = k)
   object$constraint <- match.arg(ctr)
   object$label <- gsub("te(", "tx(", object$label, fixed = TRUE)
   object$special <- special
@@ -1108,7 +1234,7 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
       object$xt$nraniso <- 1
   }
 
-print(length(object$margin))
+print(object$margin[[2]]$X)
 stop()
 
   if(object$constraint %in% c("meanf", "meanfd", "meansimple", "none", "nullspace")) {
