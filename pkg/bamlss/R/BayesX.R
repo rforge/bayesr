@@ -1203,6 +1203,76 @@ tx2 <- function(...)
   object
 }
 
+tx3 <- function(..., k = c(10, 5), ctr = "main") {
+  vars <- unlist(as.list(substitute(list(...)))[-1])
+  if(length(vars) != 3L)
+    stop("3 variables are necessary for the space-time interaction term!")
+  k <- rep(k, length.out = 2)
+  ctr <- rep(ctr, length.out = 2)
+  o1 <- paste('tx(', vars[1], ',bs="ps",k=', k[1], ',ctr="', ctr[1],'")', sep = '')
+  o2 <- paste('tx(', vars[2], ',', vars[3], ',bs="ps",k=', k[2], ',ctr="', ctr[1],'")', sep = '')
+  object <- list(
+    "o1" = eval(parse(text = o1)),
+    "o2" = eval(parse(text = o2))
+  )
+  object$label <- paste("tx3(", paste(vars, collapse = ","), ")", sep = "")
+  object$term <- vars
+  class(object) <- "tensorX3.smooth.spec"
+  object
+}
+
+smooth.construct.tensorX3.smooth.spec <- function(object, data, knots, ...)
+{
+  o1 <- smooth.construct.tensorX.smooth.spec(object$o1, data, knots, ...)
+  o2 <- smooth.construct.tensorX.smooth.spec(object$o2, data, knots, ...)
+
+  object$margin <- list()
+  object$margin[[1]] <- o1$margin[[1]]
+  object$margin[[2]] <- o2[!(names(o2) %in% c("X", "S"))]
+  object$margin[[2]]$X <- tensor.prod.model.matrix(list(o2$margin[[1]]$X, o2$margin[[2]]$X))
+  object$margin[[2]]$S <- list(kronecker(diag(1, ncol(o2$margin[[1]]$S[[1]])), o2$margin[[1]]$S[[1]]) +
+      kronecker(o2$margin[[2]]$S[[1]], diag(1, ncol(o2$margin[[2]]$S[[1]]))))
+  object$X <- tensor.prod.model.matrix(list(object$margin[[1]]$X, object$margin[[2]]$X))
+  object$S <- tensor.prod.penalties(list(object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]]))
+
+  p1 <- ncol(object$margin[[1]]$X)
+  p2 <- ncol(object$margin[[2]]$X)
+  A1 <- matrix(rep(1, p1), ncol = 1)
+  A2 <- matrix(rep(1, p2), ncol = 1)
+  I1 <- diag(p1); I2 <- diag(p2)
+
+  A <- cbind(kronecker(A1, I2), kronecker(I1,A2))
+
+  i <- match.index(t(A))
+  A <- A[, i$nodups, drop = FALSE]
+
+  k <- 0
+  while((qr(A)$rank < ncol(A)) & (k < 100)) {
+    i <- sapply(1:ncol(A), function(d) { qr(A[, -d])$rank })
+    j <- which(i == qr(A)$rank)
+    if(length(j))
+      A <- A[, -j[1], drop = FALSE]
+    k <- k + 1
+  }
+  if(k == 100)
+    stop("rank problems with constraint matrix!")
+
+  object$C <- t(A)
+  attr(object$C, "always.apply") <- TRUE
+
+  class(object) <- "tensorX3.smooth"
+
+  object
+}
+
+Predict.matrix.tensorX3.smooth <- function(object, data) 
+{
+  tensor.prod.model.matrix(Predict.matrix(object$margin[[1]], data),
+    Predict.matrix(object$margin[[2]]$margin[[1]], data),
+    Predict.matrix(object$margin[[2]]$margin[[2]], data))
+}
+
+
 smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
 {
   if(length(object$margin) > 2)

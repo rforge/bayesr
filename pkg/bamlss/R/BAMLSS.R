@@ -2031,7 +2031,7 @@ as.list.Formula <- function(x)
 bamlss.formula <- function(formula, family = NULL, specials = NULL, ...)
 {
   if(is.null(specials))
-    specials <- c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n")
+    specials <- c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n")
   if(inherits(formula, "bamlss.formula"))
     return(formula)
   if(!is.list(formula)) {
@@ -2258,7 +2258,7 @@ make_fFormula <- function(formula)
 all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, intercept = FALSE, type = 1)
 {
   env <- environment(formula)
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n"))
   tf <- terms(formula, specials = specials, keep.order = TRUE)
   ## sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
@@ -2346,7 +2346,7 @@ terms.formula2 <- function(formula, specials, keep.order = TRUE, ...)
 all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
 {
   env <- environment(formula)
-  specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n", specials))
+  specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", specials))
   tf <- terms.formula2(formula, specials = specials, keep.order = FALSE)
   ## sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
@@ -5875,7 +5875,7 @@ print.bamlss.formula <- function(x, ...) {
 drop.terms.bamlss <- function(f, pterms = TRUE, sterms = TRUE,
   specials = NULL, keep.response = TRUE, keep.intercept = TRUE, data = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n"))
   if(!inherits(f, "formula")) {
     if(!is.null(f$terms)) {
       f <- f$terms
@@ -5948,7 +5948,7 @@ terms.bamlss <- terms.bamlss.frame <- terms.bamlss.formula <- function(x, specia
   if(!inherits(x, "bamlss.formula"))
     x <- bamlss.formula(x, ...)
   env <- environment(x)
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n"))
   elmts <- c("formula", "fake.formula")
   if(!any(names(x) %in% elmts) & !inherits(x, "formula")) {
     if(!is.null(model)) {
@@ -6074,7 +6074,7 @@ has_response <- function(x)
 
 has_sterms <- function(x, specials = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n"))
   if(inherits(x, "formula"))
     x <- terms(x, specials = specials)
   if(!inherits(x, "terms"))
@@ -6084,7 +6084,7 @@ has_sterms <- function(x, specials = NULL)
 
 has_pterms <- function(x, specials = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n"))
   if(inherits(x, "formula"))
     x <- terms(x, specials = specials)
   if(!inherits(x, "terms"))
@@ -6097,7 +6097,7 @@ has_pterms <- function(x, specials = NULL)
 
 get_pterms_labels <- function(x, specials = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n"))
   tl <- if(has_pterms(x, specials)) {
     x <- drop.terms.bamlss(x, pterms = TRUE, sterms = FALSE,
       keep.response = FALSE, specials = specials)
@@ -6109,7 +6109,7 @@ get_pterms_labels <- function(x, specials = NULL)
 get_sterms_labels <- function(x, specials = NULL)
 {
   env <- environment(x)
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "la", "n"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n"))
   if(has_sterms(x, specials)) {
     x <- drop.terms.bamlss(x, pterms = FALSE, sterms = TRUE,
       keep.response = FALSE, specials = specials)
