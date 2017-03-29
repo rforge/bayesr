@@ -1103,7 +1103,13 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
   if(length(ref) < 2) {
     if(ref)
       object$constraint <- "center"
+  } else {
+    if(any(ref))
+      object$xt$nraniso <- 1
   }
+
+print(length(object$margin))
+stop()
 
   if(object$constraint %in% c("meanf", "meanfd", "meansimple", "none", "nullspace")) {
     if(object$constraint == "none")
@@ -1150,7 +1156,8 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
         if(ref[2])
           A2 <- matrix(rep(1, p2), ncol = 1)
 
-        A <- cbind(I2 %x% A1, A2 %x% I1)
+        A <- cbind(kronecker(A1, I2), kronecker(I1,A2))
+
         i <- match.index(t(A))
         A <- A[, i$nodups, drop = FALSE]
 
@@ -1159,11 +1166,12 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
           i <- sapply(1:ncol(A), function(d) { qr(A[, -d])$rank })
           j <- which(i == qr(A)$rank)
           if(length(j))
-            A <- A[, -j[length(j)], drop = FALSE]
+            A <- A[, -j[1], drop = FALSE]
           k <- k + 1
         }
         if(k == 100)
           stop("rank problems with constraint matrix!")
+
         object$C <- t(A)
       }
     }

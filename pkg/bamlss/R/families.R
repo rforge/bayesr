@@ -562,7 +562,7 @@ coxph_bamlss <- function(...)
         for(i in 1:length(time)) {
           risk[i] <- sum(c(1 * (time >= time[i]) * exp_gamma))
         }
-        status - exp_gamma * sum(1 / risk[status > 0], na.rm = TRUE)
+        status - exp_gamma * sum(1 / risk, na.rm = TRUE)
       }
     ),
     "hess" = list(
@@ -575,7 +575,7 @@ coxph_bamlss <- function(...)
           risk[i] <- sum(c(1 * (time >= time[i]) * exp_gamma), na.rm = TRUE)
         }
         ## Return negative second derivatives!
-        exp_gamma * sum(1 / risk[status > 0], na.rm = TRUE) - exp(2 * par$gamma) * sum(1 / risk[status > 0]^2, na.rm = TRUE)
+        exp_gamma * sum(1 / risk, na.rm = TRUE) - exp(2 * par$gamma) * sum(1 / risk^2, na.rm = TRUE)
       }
     ),
     "initialize" = list(
