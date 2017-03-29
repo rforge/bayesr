@@ -1234,9 +1234,6 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
       object$xt$nraniso <- 1
   }
 
-print(object$margin[[2]]$X)
-stop()
-
   if(object$constraint %in% c("meanf", "meanfd", "meansimple", "none", "nullspace")) {
     if(object$constraint == "none")
       object$xt$nocenter <- TRUE
