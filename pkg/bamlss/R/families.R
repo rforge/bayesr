@@ -546,7 +546,7 @@ coxph_bamlss <- function(...)
       exp_gamma <- exp(par$gamma)
       risk <- rep(0, length(time))
       for(i in 1:length(time)) {
-        risk[i] <- sum(1 * (time >= time[i]) * exp_gamma, na.rm = TRUE)
+        risk[i] <- sum(c(1 * (time >= time[i]) * exp_gamma), na.rm = TRUE)
       }
       d <- status * par$gamma - status * log(risk)
       if(!log)
@@ -560,7 +560,7 @@ coxph_bamlss <- function(...)
         exp_gamma <- exp(par$gamma)
         risk <- rep(0, length(time))
         for(i in 1:length(time)) {
-          risk[i] <- sum(1 * (time >= time[i]) * exp_gamma)
+          risk[i] <- sum(c(1 * (time >= time[i]) * exp_gamma))
         }
         status - exp_gamma * sum(1 / risk[status > 0], na.rm = TRUE)
       }
@@ -572,10 +572,10 @@ coxph_bamlss <- function(...)
         exp_gamma <- exp(par$gamma)
         risk <- rep(0, length(time))
         for(i in 1:length(time)) {
-          risk[i] <- sum(1 * (time >= time[i]) * exp_gamma, na.rm = TRUE)
+          risk[i] <- sum(c(1 * (time >= time[i]) * exp_gamma), na.rm = TRUE)
         }
         ## Return negative second derivatives!
-        -exp_gamma * sum(1 / risk[status > 0], na.rm = TRUE) + exp(2 * par$gamma) * sum(1 / risk[status > 0], na.rm = TRUE)^2
+        exp_gamma * sum(1 / risk[status > 0], na.rm = TRUE) - exp(2 * par$gamma) * sum(1 / risk[status > 0]^2, na.rm = TRUE)
       }
     ),
     "initialize" = list(
