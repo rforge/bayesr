@@ -104,7 +104,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   }
 
   is.tx <- function(x) {
-    inherits(x, "tensorX.smooth")
+    inherits(x, "tensorX.smooth") | inherits(x, "tensorX3.smooth")
   }
 
   single_eqn <- function(x, y, id) {
@@ -583,7 +583,7 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
     object$S <- object$sx.S
   if(!is.null(object$sx.rank))
     object$rank <- object$sx.rank
-  is.tx <- inherits(object, "tensorX.smooth")
+  is.tx <- inherits(object, "tensorX.smooth") | inherits(object, "tensorX3.smooth")
   if(inherits(object, "tensor.smooth")) {
     S <- 0
     for(j in seq_along(object$S))
@@ -1203,35 +1203,40 @@ tx2 <- function(...)
   object
 }
 
-tx3 <- function(..., k = c(10, 5), ctr = "main") {
-  vars <- unlist(as.list(substitute(list(...)))[-1])
+tx3 <- function(..., k = c(10, 5), ctr = "main", special = TRUE) {
+  vars <- as.character(unlist(as.list(substitute(list(...)))[-1]))
   if(length(vars) != 3L)
     stop("3 variables are necessary for the space-time interaction term!")
   k <- rep(k, length.out = 2)
   ctr <- rep(ctr, length.out = 2)
-  o1 <- paste('tx(', vars[1], ',bs="ps",k=', k[1], ',ctr="', ctr[1],'")', sep = '')
-  o2 <- paste('tx(', vars[2], ',', vars[3], ',bs="ps",k=', k[2], ',ctr="', ctr[1],'")', sep = '')
-  object <- list(
-    "o1" = eval(parse(text = o1)),
-    "o2" = eval(parse(text = o2))
+  m1 <- paste('tx(', vars[1], ',bs="ps",k=', k[1], ',ctr="', ctr[1],'")', sep = '')
+  m2 <- paste('tx(', vars[2], ',', vars[3], ',bs="ps",k=', k[2], ',ctr="', ctr[1],'")', sep = '')
+  object <- list()
+  object$margin <- list(
+    eval(parse(text = m1)),
+    eval(parse(text = m2))
   )
-  object$label <- paste("tx3(", paste(vars, collapse = ","), ")", sep = "")
   object$term <- vars
+  object$by <- "NA"
+  object$fx <- FALSE
+  object$label <- paste("tx3(", paste(vars, collapse = ","), ")", sep = "")
+  object$dim <- 3
+  object$special <- special
   class(object) <- "tensorX3.smooth.spec"
   object
 }
 
 smooth.construct.tensorX3.smooth.spec <- function(object, data, knots, ...)
 {
-  o1 <- smooth.construct.tensorX.smooth.spec(object$o1, data, knots, ...)
-  o2 <- smooth.construct.tensorX.smooth.spec(object$o2, data, knots, ...)
+  object$margin[[1]] <- smooth.construct.tensorX.smooth.spec(object$margin[[1]], data, knots, ...)
+  object$margin[[2]] <- smooth.construct.tensorX.smooth.spec(object$margin[[2]], data, knots, ...)
 
-  object$margin <- list()
-  object$margin[[1]] <- o1$margin[[1]]
-  object$margin[[2]] <- o2[!(names(o2) %in% c("X", "S"))]
-  object$margin[[2]]$X <- tensor.prod.model.matrix(list(o2$margin[[1]]$X, o2$margin[[2]]$X))
-  object$margin[[2]]$S <- list(kronecker(diag(1, ncol(o2$margin[[1]]$S[[1]])), o2$margin[[1]]$S[[1]]) +
-      kronecker(o2$margin[[2]]$S[[1]], diag(1, ncol(o2$margin[[2]]$S[[1]]))))
+  object$margin[[1]]$S <- object$margin[[1]]$margin[[1]]$S
+  object$margin[[2]]$X <- tensor.prod.model.matrix(list(object$margin[[2]]$margin[[1]]$X, object$margin[[2]]$margin[[2]]$X))
+  object$margin[[2]]$S <- list(
+    kronecker(diag(1, ncol(object$margin[[2]]$margin[[1]]$S[[1]])), object$margin[[2]]$margin[[1]]$S[[1]]) +
+    kronecker(object$margin[[2]]$margin[[2]]$S[[1]], diag(1, ncol(object$margin[[2]]$margin[[2]]$S[[1]])))
+  )
   object$X <- tensor.prod.model.matrix(list(object$margin[[1]]$X, object$margin[[2]]$X))
   object$S <- tensor.prod.penalties(list(object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]]))
 
@@ -1260,6 +1265,10 @@ smooth.construct.tensorX3.smooth.spec <- function(object, data, knots, ...)
   object$C <- t(A)
   attr(object$C, "always.apply") <- TRUE
 
+  object$tx.term <- paste(object$term, collapse = "")
+  object$sx.S <- lapply(object$margin, function(x) { x$S[[1]] })
+  object$sx.rank <- qr(do.call("+", object$S))$rank
+
   class(object) <- "tensorX3.smooth"
 
   object
@@ -1267,9 +1276,9 @@ smooth.construct.tensorX3.smooth.spec <- function(object, data, knots, ...)
 
 Predict.matrix.tensorX3.smooth <- function(object, data) 
 {
-  tensor.prod.model.matrix(Predict.matrix(object$margin[[1]], data),
+  tensor.prod.model.matrix(list(Predict.matrix(object$margin[[1]], data),
     Predict.matrix(object$margin[[2]]$margin[[1]], data),
-    Predict.matrix(object$margin[[2]]$margin[[2]], data))
+    Predict.matrix(object$margin[[2]]$margin[[2]], data)))
 }
 
 
