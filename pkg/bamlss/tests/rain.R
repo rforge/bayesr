@@ -165,43 +165,29 @@ plot(b, which = 3:4)
 
 set.seed(111)
 
-n <- 6
-years <- 2
-co <- expand.grid("lon" = seq(0.001, 1, length = n), "lat" = seq(0.001, 1, length = n))
-d <- NULL
-for(j in 1:years) {
-  for(i in 1:nrow(co)) {
-    d <- rbind(d, data.frame(
-      "year" = j,
-      "time" = 1:365,
-      "lon" = co$lon[i],
-      "lat" = co$lat[i],
-      "id" = i
-    ))
+stData <- function(n = 6, years = 2, snr = 1) {
+  co <- expand.grid("lon" = seq(0.001, 1, length = n), "lat" = seq(0.001, 1, length = n))
+  d <- NULL
+  for(j in 1:years) {
+    for(i in 1:nrow(co)) {
+      d <- rbind(d, data.frame(
+        "year" = j,
+        "yday" = 1:365,
+        "lon" = co$lon[i],
+        "lat" = co$lat[i],
+        "id" = i
+      ))
+    }
   }
+  d$eta <- cos(scale2(d$yday, -pi, pi)) + sin(scale2(d$lon, 0, 3)) * scale2(d$lat, 1, 1.5) +
+    sin(scale2(d$yday, 0, pi)) * cos(scale2(d$lon, 0, 3))
+  sigma <- sqrt(var(d$eta) / snr)
+  d$y <- d$eta + rnorm(nrow(d), sd = sigma)
+  d
 }
 
-d$rain <- with(d, sin(scale2(time, -pi, pi)) * scale2(sin(lon), 0.3, 0.5) * scale2(lat, 0.1, 0.5))
-co <- unique(d[, c("lon", "lat")])
-plot(rain ~ time, data = d, type = "n")
-for(j in unique(d$id)) {
-  d2 <- subset(d, id == j)
-  lines(rain ~ time, data = d2)
-}
+d <- stData()
 
-d$rain <- d$rain + rnorm(n, sd = 0.3)
-d <- subset(d, rain > 0)
-
-b <- bamlss(rain ~ s2(lon,lat,year,time,bs="str"), data = d)
-
-
-
-f <- list(
-  rain ~ ti(time) + ti(time,lon,lat,bs=c("cc","tp"),d=c(1,2), k = c(5, 10)),
-  ~ 1
-)
-
-b <- bamlss(f, data = d, n.iter = 1200, burnin = 200, thin = 1,
-  binning = TRUE, before = TRUE, gam.side = FALSE, family = "cnorm")
+b <- bamlss(y ~ tx(yday,bs="cc") + tx(lon,lat) + tx3(yday,lon,lat,bs=c("cc","ps")), data = d, optimizer = FALSE, sampler = BayesX)
 
 

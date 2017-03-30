@@ -42,7 +42,9 @@ tx(..., bs = "ps", k = -1,
     "none", "meanf", "meanfd", "meansimple"),
   special = TRUE)
 tx2(...)
-tx3(..., k = c(10, 5), ctr = c("main", "center"), special = TRUE)
+tx3(..., bs = "ps", k = c(10, 5),
+  ctr = c("main", "center"),
+  special = TRUE)
 
 ## Smooth constructors and predict matrix.
 \method{smooth.construct}{tensorX.smooth.spec}(object, data, knots, ...)
@@ -209,7 +211,7 @@ if(require("BayesXsrc")) {
   p_0.9 <- predict(b3_0.9, term = "s(x2)")
 
   ## Plot.
-  plot2d(p_0.1 + p_0.9 ~ x2, data = d)
+  plot2d(p_0.1 + p_0.9 ~ x2, data = d)  
 }
 }
 }

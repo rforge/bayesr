@@ -1203,15 +1203,16 @@ tx2 <- function(...)
   object
 }
 
-tx3 <- function(..., k = c(10, 5), ctr = c("main", "center"), special = TRUE)
+tx3 <- function(..., bs = "ps", k = c(10, 5), ctr = c("main", "center"), special = TRUE)
 {
   vars <- as.character(unlist(as.list(substitute(list(...)))[-1]))
   if(length(vars) != 3L)
     stop("3 variables are necessary for the space-time interaction term!")
+  bs <- rep(bs, length.out = 2)
   k <- rep(k, length.out = 2)
   ctr <- rep(ctr, length.out = 2)
-  m1 <- paste('tx(', vars[1], ',bs="ps",k=', k[1], ',ctr="', ctr[1],'")', sep = '')
-  m2 <- paste('tx(', vars[2], ',', vars[3], ',bs="ps",k=', k[2], ',ctr="', ctr[1],'")', sep = '')
+  m1 <- paste('tx(', vars[1], ',bs="', bs[1], '",k=', k[1], ',ctr="', ctr[1],'")', sep = '')
+  m2 <- paste('tx(', vars[2], ',', vars[3], ',bs="', bs[2], '",k=', k[2], ',ctr="', ctr[2],'")', sep = '')
   object <- list()
   object$margin <- list(
     eval(parse(text = m1)),
@@ -1276,6 +1277,7 @@ smooth.construct.tensorX3.smooth.spec <- function(object, data, knots, ...)
   object$tx.term <- paste(object$term, collapse = "")
   object$sx.S <- lapply(object$margin, function(x) { x$S[[1]] })
   object$sx.rank <- qr(do.call("+", object$S))$rank
+  object$side.constrain <- if(object$special) FALSE else TRUE
 
   class(object) <- "tensorX3.smooth"
 
@@ -1316,9 +1318,6 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
   if(length(ref) < 2) {
     if(ref)
       object$constraint <- "center"
-  } else {
-    if(any(ref))
-      object$xt$nraniso <- 1
   }
 
   if(object$constraint %in% c("meanf", "meanfd", "meansimple", "none", "nullspace")) {
