@@ -4,10 +4,13 @@
 \alias{sx}
 \alias{tx}
 \alias{tx2}
+\alias{tx3}
 \alias{get_BayesXsrc}
 \alias{quant_bamlss}
 \alias{smooth.construct.tensorX.smooth.spec}
 \alias{Predict.matrix.tensorX.smooth}
+\alias{smooth.construct.tensorX3.smooth.spec}
+\alias{Predict.matrix.tensorX3.smooth}
 
 \title{
   Markov Chain Monte Carlo for BAMLSS using \pkg{BayesX}
@@ -39,10 +42,13 @@ tx(..., bs = "ps", k = -1,
     "none", "meanf", "meanfd", "meansimple"),
   special = TRUE)
 tx2(...)
+tx3(..., k = c(10, 5), ctr = c("main", "center"), special = TRUE)
 
-## Smooth constructor and predict matrix.
+## Smooth constructors and predict matrix.
 \method{smooth.construct}{tensorX.smooth.spec}(object, data, knots, ...)
 \method{Predict.matrix}{tensorX.smooth}(object, data) 
+\method{smooth.construct}{tensorX3.smooth.spec}(object, data, knots, ...)
+\method{Predict.matrix}{tensorX3.smooth}(object, data) 
 
 ## Family object for quantile regression with BayesX.
 quant_bamlss(prob = 0.5)
@@ -114,8 +120,10 @@ get_BayesXsrc(dir = NULL, install = TRUE)
   be used with the \code{BayesX()} sampler. When using \code{\link[mgcv]{te}} note that only
   one smoothing variance is estimated by \pkg{BayesX}.
 
-  For anisotropic penalties use function \code{tx()}, which currently supports smooth functions
-  of two variables, only!
+  For anisotropic penalties use function \code{tx()} and \code{tx3()}, the former currently
+  supports smooth functions of two variables, while \code{tx3()} is supposed to model space-time
+  interactions. Note that in \code{tx3()} the first variable represents time and the 2nd and 3rd
+  variable the coordinates in space.
 }
 
 \value{

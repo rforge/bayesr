@@ -1203,7 +1203,8 @@ tx2 <- function(...)
   object
 }
 
-tx3 <- function(..., k = c(10, 5), ctr = "main", special = TRUE) {
+tx3 <- function(..., k = c(10, 5), ctr = c("main", "center"), special = TRUE)
+{
   vars <- as.character(unlist(as.list(substitute(list(...)))[-1]))
   if(length(vars) != 3L)
     stop("3 variables are necessary for the space-time interaction term!")
@@ -1222,6 +1223,7 @@ tx3 <- function(..., k = c(10, 5), ctr = "main", special = TRUE) {
   object$label <- paste("tx3(", paste(vars, collapse = ","), ")", sep = "")
   object$dim <- 3
   object$special <- special
+  object$constraint <- match.arg(ctr)
   class(object) <- "tensorX3.smooth.spec"
   object
 }
@@ -1242,27 +1244,33 @@ smooth.construct.tensorX3.smooth.spec <- function(object, data, knots, ...)
 
   p1 <- ncol(object$margin[[1]]$X)
   p2 <- ncol(object$margin[[2]]$X)
-  A1 <- matrix(rep(1, p1), ncol = 1)
-  A2 <- matrix(rep(1, p2), ncol = 1)
-  I1 <- diag(p1); I2 <- diag(p2)
 
-  A <- cbind(kronecker(A1, I2), kronecker(I1,A2))
+  if(object$constraint == "main") {
+    A1 <- matrix(rep(1, p1), ncol = 1)
+    A2 <- matrix(rep(1, p2), ncol = 1)
+    I1 <- diag(p1); I2 <- diag(p2)
 
-  i <- match.index(t(A))
-  A <- A[, i$nodups, drop = FALSE]
+    A <- cbind(kronecker(A1, I2), kronecker(I1,A2))
 
-  k <- 0
-  while((qr(A)$rank < ncol(A)) & (k < 100)) {
-    i <- sapply(1:ncol(A), function(d) { qr(A[, -d])$rank })
-    j <- which(i == qr(A)$rank)
-    if(length(j))
-      A <- A[, -j[1], drop = FALSE]
-    k <- k + 1
+    i <- match.index(t(A))
+    A <- A[, i$nodups, drop = FALSE]
+
+    k <- 0
+    while((qr(A)$rank < ncol(A)) & (k < 100)) {
+      i <- sapply(1:ncol(A), function(d) { qr(A[, -d])$rank })
+      j <- which(i == qr(A)$rank)
+      if(length(j))
+        A <- A[, -j[1], drop = FALSE]
+      k <- k + 1
+    }
+    if(k == 100)
+      stop("rank problems with constraint matrix!")
+
+    object$C <- t(A)
+  } else {
+    object$C <- matrix(1, ncol = p1 * p2)
   }
-  if(k == 100)
-    stop("rank problems with constraint matrix!")
 
-  object$C <- t(A)
   attr(object$C, "always.apply") <- TRUE
 
   object$tx.term <- paste(object$term, collapse = "")
