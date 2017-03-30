@@ -1083,6 +1083,10 @@ cnorm_bamlss <- function(...)
     attr(x$y[[1]], "check") <- as.integer(x$y[[1]] <= 0)
     list("y" = x$y)
   }
+  f$bayesx = list(
+    "mu" =  c("cnormal", "mu"),
+    "sigma" = c("cnormal", "sigma")
+  )
   f$score <- list(
     "mu" = function(y, par, ...) {
       .Call("cnorm_score_mu",

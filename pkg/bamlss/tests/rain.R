@@ -165,8 +165,11 @@ plot(b, which = 3:4)
 
 set.seed(111)
 
-stData <- function(n = 6, years = 2, snr = 1) {
-  co <- expand.grid("lon" = seq(0.001, 1, length = n), "lat" = seq(0.001, 1, length = n))
+stData <- function(n = 10, years = 1, snr = 1) {
+  co <- expand.grid(
+    "lon" = jitter(seq(0.001, 1, length = n)),
+    "lat" = jitter(seq(0.001, 1, length = n))
+  )
   d <- NULL
   for(j in 1:years) {
     for(i in 1:nrow(co)) {
@@ -179,7 +182,7 @@ stData <- function(n = 6, years = 2, snr = 1) {
       ))
     }
   }
-  d$eta <- cos(scale2(d$yday, -pi, pi)) + sin(scale2(d$lon, 0, 3)) * scale2(d$lat, 1, 1.5) +
+  d$eta <- cos(scale2(d$yday, -pi, pi)) + sin(scale2(d$lon, -3, 3)) * sin(scale2(d$lat, -3, 3)) +
     sin(scale2(d$yday, 0, pi)) * cos(scale2(d$lon, 0, 3))
   sigma <- sqrt(var(d$eta) / snr)
   d$y <- d$eta + rnorm(nrow(d), sd = sigma)
@@ -188,6 +191,7 @@ stData <- function(n = 6, years = 2, snr = 1) {
 
 d <- stData()
 
-b <- bamlss(y ~ tx(yday,bs="cc") + tx(lon,lat) + tx3(yday,lon,lat,bs=c("cc","ps")), data = d, optimizer = FALSE, sampler = BayesX)
+b <- bamlss(y ~ tx(yday,bs="cc") + tx(lon,lat) + tx3(yday,lon,lat,bs=c("cc","ps")),
+  data = d, optimizer = FALSE, sampler = BayesX, verbose = TRUE)
 
 
