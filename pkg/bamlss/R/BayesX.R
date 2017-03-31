@@ -654,20 +654,20 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
     for(j in seq_along(object$S)) {
       if(!file.exists(file.path(dir, paste(Sn[j], ".raw", sep = "")))) {
         colnames(object$S[[j]]) <- rownames(object$S[[j]]) <- NULL
-        write.table(object$S[[j]], file = file.path(dir, paste(Sn[j], ".raw", sep = "")),
+        write.table(round(object$S[[j]], 5), file = file.path(dir, paste(Sn[j], ".raw", sep = "")),
           quote = FALSE, row.names = FALSE)
       } else exists <- c(exists, file.path(dir, paste(Sn[j], ".raw", sep = "")))
     }
     if(is.tx) {
       for(j in seq_along(object$S)) {
         if(!file.exists(file.path(dir, paste(Xn[j], ".raw", sep = "")))) {
-          write.table(object$margin[[j]]$X, file = file.path(dir, paste(Xn[j], ".raw", sep = "")),
+          write.table(round(object$margin[[j]]$X, 5), file = file.path(dir, paste(Xn[j], ".raw", sep = "")),
             quote = FALSE, row.names = FALSE)
         } else exists <- c(exists, file.path(dir, paste(Xn[j], ".raw", sep = "")))
       }
     } else {
       if(!file.exists(file.path(dir, paste(Xn, ".raw", sep = "")))) {
-        write.table(object$X, file = file.path(dir, paste(Xn, ".raw", sep = "")),
+        write.table(round(object$X, 5), file = file.path(dir, paste(Xn, ".raw", sep = "")),
           quote = FALSE, row.names = FALSE)
       } else exists <- c(exists, file.path(dir, paste(Xn, ".raw", sep = "")))
     }
