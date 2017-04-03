@@ -527,11 +527,12 @@ coxph_bamlss <- function(...)
       status <- y[, "status"]
       time <- y[, "time"]
       ties <- attr(y, "ties")
+      d <- sapply(ties, length)
       n <- length(time)
       d <- rep(0, n)
       for(i in 1:n) {
         if(status[i] > 0) {
-          d[i] <- sum(par$gamma[ties[[i]]]) - log(sum(exp(par$gamma[time >= time[i]]))^(length(ties[[i]])))
+          d[i] <- sum(par$gamma[ties[[i]]]) - log(sum(exp(par$gamma[time >= time[i]]))^d[i])
         }
       }
       if(!log)
@@ -540,6 +541,16 @@ coxph_bamlss <- function(...)
     },
     "score" = list(
       "gamma" = function(y, par, ...) {
+
+#eta <- X %*% b
+#haz <- as.numeric(exp(eta))   # w[i]
+#rsk <- rev(cumsum(rev(haz)))  # W[i]
+#P <- outer(haz, rsk,  / )
+#P[upper.tri(P)] <- 0
+#W <- -P %*% diag(d) %*% t(P)
+#diag(W) <- diag(P %*% diag(d) %*% t(1-P))
+#b <- solve(t(X)%*%W%*% X) %*% t(X) %*% (d - P%*%d) + b
+
         status <- y[, "status"]
         time <- y[, "time"]
         ties <- attr(y, "ties")
@@ -568,7 +579,7 @@ coxph_bamlss <- function(...)
 #          risk2[i] <- sum(d[i] / (sum(exp(par$gamma[C]))^2))
 #        }
 #        hess <- - exp(par$gamma) * risk + exp(2 * par$gamma) * risk2
-#        hess[hess == 0] <- .Machine$double.eps^0.5
+#        hess[hess == 0] <- -1
 #        -hess
 #      }
 #    ),
