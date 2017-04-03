@@ -541,16 +541,6 @@ coxph_bamlss <- function(...)
     },
     "score" = list(
       "gamma" = function(y, par, ...) {
-
-#eta <- X %*% b
-#haz <- as.numeric(exp(eta))   # w[i]
-#rsk <- rev(cumsum(rev(haz)))  # W[i]
-#P <- outer(haz, rsk,  / )
-#P[upper.tri(P)] <- 0
-#W <- -P %*% diag(d) %*% t(P)
-#diag(W) <- diag(P %*% diag(d) %*% t(1-P))
-#b <- solve(t(X)%*%W%*% X) %*% t(X) %*% (d - P%*%d) + b
-
         status <- y[, "status"]
         time <- y[, "time"]
         ties <- attr(y, "ties")
@@ -565,24 +555,23 @@ coxph_bamlss <- function(...)
         score
       }
     ),
-#    "hess" = list(
-#      "gamma" = function(y, par, ...) {
-#        status <- y[, "status"]
-#        time <- y[, "time"]
-#        ties <- attr(y, "ties")
-#        d <- sapply(ties, length)
-#        n <- length(time)
-#        risk <- risk2 <- rep(0, n)
-#        for(i in 1:n) {
-#          C <- which(time >= time[i])
-#          risk[i] <- sum(d[i] / sum(exp(par$gamma[C])))
-#          risk2[i] <- sum(d[i] / (sum(exp(par$gamma[C]))^2))
-#        }
-#        hess <- - exp(par$gamma) * risk + exp(2 * par$gamma) * risk2
-#        hess[hess == 0] <- -1
-#        -hess
-#      }
-#    ),
+    "hess" = list(
+      "gamma" = function(y, par, ...) {
+        status <- y[, "status"]
+        time <- y[, "time"]
+        ties <- attr(y, "ties")
+        d <- sapply(ties, length)
+        n <- length(time)
+        risk <- risk2 <- rep(0, n)
+        for(i in 1:n) {
+          C <- which(time >= time[i])
+          risk[i] <- sum(d[i] / sum(exp(par$gamma[C])))
+          risk2[i] <- sum(d[i] / (sum(exp(par$gamma[C]))^2))
+        }
+        hess <- - exp(par$gamma) * risk + exp(2 * par$gamma) * risk2
+        -hess
+      }
+    ),
     "initialize" = list(
       "gamma" = function(y, ...) { rep(0, nrow(y)) }
     )
