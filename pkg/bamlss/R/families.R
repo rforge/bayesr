@@ -547,10 +547,8 @@ coxph_bamlss <- function(...)
         n <- length(time)
         risk <- rep(0, n)
         for(i in 1:n) {
-          if(status[i] > 0) {
-            C <- which(time >= time[i])
-            risk[i] <- sum(d[C] / sum(exp(par$gamma[C])))
-          }
+          C <- which(time >= time[i])
+          risk[i] <- sum(d[C] / sum(exp(par$gamma[C])))
         }
         score <- status - exp(par$gamma) * risk
         score
@@ -565,11 +563,9 @@ coxph_bamlss <- function(...)
         n <- length(time)
         risk <- risk2 <- rep(0, n)
         for(i in 1:n) {
-          if(status[i] > 0) {
-            C <- which(time >= time[i])
-            risk[i] <- sum(d[C] / sum(exp(par$gamma[C])))
-            risk2[i] <- sum(d[C] / (sum(exp(par$gamma[C]))^2))
-          }
+          C <- which(time >= time[i])
+          risk[i] <- sum(d[C] / sum(exp(par$gamma[C])))
+          risk2[i] <- sum(d[C] / (sum(exp(par$gamma[C]))^2))
         }
         hess <- - exp(par$gamma) * risk + exp(2 * par$gamma) * risk2
         -hess
@@ -591,7 +587,8 @@ if(FALSE) {
   col1$differ <- as.factor(col1$differ)
   col1$sex <- as.factor(col1$sex)
      
-  b1 <- bamlss(Surv(time, status) ~ perfor + rx + obstruct + adhere + sex + s(age,by=sex) + s(nodes), family = "coxph", data = col1, sampler = FALSE)
+  b1 <- bamlss(Surv(time, status) ~ s(nodes), family = "coxph", data = col1, sampler = FALSE)
+
   b2 <- gam(time ~ perfor + rx + obstruct + adhere + sex + s(age,by=sex) + s(nodes), family = cox.ph, data = col1)
 }
 
