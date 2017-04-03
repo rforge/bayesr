@@ -360,6 +360,8 @@ void xbin_fun(SEXP ind, SEXP weights, SEXP e, SEXP xweights, SEXP xrres, SEXP or
       weightsptr[k] = 1.490116e-08;
     if(weightsptr[k] < 1e-10)
       weightsptr[k] = 1e-10;
+    if(weightsptr[k] == 0.0)
+      weightsptr[k] = 1.490116e-08;
     if(weightsptr[k] < 0.0)
       weightsptr[k] = -1.0 * weightsptr[k];
     if(weightsptr[k] > 1e+10)
@@ -390,6 +392,8 @@ SEXP process_derivs(SEXP x, SEXP w)
     if(xptr[i] > 1e+10)
       rvalptr[i] = 1e+10;
     if(LOGICAL(w)[0]) {
+      if(xptr[i] == 0.0)
+        rvalptr[i] = 1.490116e-08;
       if(xptr[i] < 0.0)
         rvalptr[i] = -1.0 * xptr[i];
     } else {
@@ -640,6 +644,8 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
 
     if(ISNA(weightsptr[k]))
       weightsptr[k] = 1.490116e-08;
+    if(weightsptr[k] == 0.0)
+      weightsptr[k] = 1.490116e-08;
     if(weightsptr[k] < 1e-10)
       weightsptr[k] = 1e-10;
     if(weightsptr[k] < 0.0)
@@ -874,6 +880,8 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
     k = orderptr[i] - 1;
 
     if(ISNA(weights2ptr[k]))
+      weights2ptr[k] = 1.490116e-08;
+    if(weights2ptr[k] == 0.0)
       weights2ptr[k] = 1.490116e-08;
     if(weights2ptr[k] < 1e-10)
       weights2ptr[k] = 1e-10;
@@ -1183,6 +1191,8 @@ SEXP gmcmc_iwls_gp(SEXP family, SEXP theta, SEXP id,
 
     if(ISNA(weightsptr[k]))
       weightsptr[k] = 1.490116e-08;
+    if(weightsptr[k] == 0.0)
+      weightsptr[k] = 1.490116e-08;
     if(weightsptr[k] < 0.0)
       weightsptr[k] = -1.0 * weightsptr[k];
     if(weightsptr[k] > 1e+10)
@@ -1394,6 +1404,8 @@ SEXP gmcmc_iwls_gp(SEXP family, SEXP theta, SEXP id,
     k = orderptr[i] - 1;
 
     if(ISNA(weights2ptr[k]))
+      weights2ptr[k] = 1.490116e-08;
+    if(weights2ptr[k] == 0.0)
       weights2ptr[k] = 1.490116e-08;
     if(weights2ptr[k] < 0.0)
       weights2ptr[k] = -1.0 * weights2ptr[k];
@@ -1667,6 +1679,8 @@ SEXP gmcmc_iwls_gp_diag_lasso(SEXP family, SEXP theta, SEXP id,
 
     if(ISNA(weightsptr[k]))
       weightsptr[k] = 1.490116e-08;
+    if(weightsptr[k] == 0.0)
+      weightsptr[k] = 1.490116e-08;
     if(weightsptr[k] < 0.0)
       weightsptr[k] = -1.0 * weightsptr[k];
     if(weightsptr[k] > 1e+10)
@@ -1799,6 +1813,8 @@ SEXP gmcmc_iwls_gp_diag_lasso(SEXP family, SEXP theta, SEXP id,
     k = orderptr[i] - 1;
 
     if(ISNA(weights2ptr[k]))
+      weights2ptr[k] = 1.490116e-08;
+    if(weights2ptr[k] == 0.0)
       weights2ptr[k] = 1.490116e-08;
     if(weights2ptr[k] < 0.0)
       weights2ptr[k] = -1.0 * weights2ptr[k];

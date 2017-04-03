@@ -548,29 +548,30 @@ coxph_bamlss <- function(...)
         risk <- rep(0, n)
         for(i in 1:n) {
           C <- which(time >= time[i])
-          risk[i] <- sum(d[C] / sum(exp(par$gamma[C])))
+          risk[i] <- sum(d[i] / sum(exp(par$gamma[C])))
         }
         score <- status - exp(par$gamma) * risk
         score
       }
     ),
-    "hess" = list(
-      "gamma" = function(y, par, ...) {
-        status <- y[, "status"]
-        time <- y[, "time"]
-        ties <- attr(y, "ties")
-        d <- sapply(ties, length)
-        n <- length(time)
-        risk <- risk2 <- rep(0, n)
-        for(i in 1:n) {
-          C <- which(time >= time[i])
-          risk[i] <- sum(d[C] / sum(exp(par$gamma[C])))
-          risk2[i] <- sum(d[C] / (sum(exp(par$gamma[C]))^2))
-        }
-        hess <- - exp(par$gamma) * risk + exp(2 * par$gamma) * risk2
-        -hess
-      }
-    ),
+#    "hess" = list(
+#      "gamma" = function(y, par, ...) {
+#        status <- y[, "status"]
+#        time <- y[, "time"]
+#        ties <- attr(y, "ties")
+#        d <- sapply(ties, length)
+#        n <- length(time)
+#        risk <- risk2 <- rep(0, n)
+#        for(i in 1:n) {
+#          C <- which(time >= time[i])
+#          risk[i] <- sum(d[i] / sum(exp(par$gamma[C])))
+#          risk2[i] <- sum(d[i] / (sum(exp(par$gamma[C]))^2))
+#        }
+#        hess <- - exp(par$gamma) * risk + exp(2 * par$gamma) * risk2
+#        hess[hess == 0] <- .Machine$double.eps^0.5
+#        -hess
+#      }
+#    ),
     "initialize" = list(
       "gamma" = function(y, ...) { rep(0, nrow(y)) }
     )
