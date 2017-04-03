@@ -512,8 +512,6 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
   if(length(maxit) < 2)
     maxit <- c(maxit, 1)
   
-  intercept_paths <- NULL
-  
   ## Start the backfitting algorithm.
   eps0 <- eps0_surv <- eps0_long <- eps0_alpha <- eps0_dalpha <- eps[1] + 1
   iter <- 0; ic_contrib <- NULL
@@ -690,20 +688,6 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
     eps0 <- mean(c(eps0_surv, eps0_long, eps0_alpha))
     if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps[1] + 1
     
-    itcpts <- nitcpts <- NULL
-    for(i in c("alpha", "gamma", "mu")) {
-      if(!is.null(x[[i]]$smooth.construct$model.matrix)) {
-        if(any(grepl("intercept", colnames(x[[i]]$smooth.construct$model.matrix$X), ignore.case = TRUE))) {
-          itcpts <- c(itcpts, x[[i]]$smooth.construct$model.matrix$state$parameters[1])
-          nitcpts <- c(nitcpts, i)
-        }
-      }
-    }
-    if(!is.null(itcpts)) {
-      names(itcpts) <- nitcpts
-      intercept_paths <- rbind(intercept_paths, itcpts)
-    }
-    
     eeta <- exp(eta_timegrid)
     int0 <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
     logLik <- sum((eta_timegrid[,ncol(eta_timegrid)] + eta$gamma) * status, na.rm = TRUE) -
@@ -757,8 +741,7 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
   
   return(list("fitted.values" = eta, "parameters" = get.all.par(x),
               "logLik" = logLik, "logPost" = logPost, "hessian" = get.hessian(x),
-              "converged" = iter < maxit[1], "time" = elapsed, "intercept_paths" = intercept_paths,
-              "eta_timegrid" = eta_timegrid))
+              "converged" = iter < maxit[1], "time" = elapsed))
 }
 
 
