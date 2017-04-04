@@ -1381,6 +1381,8 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
         if(k == 100)
           stop("rank problems with constraint matrix!")
 
+        ## object$xt$nraniso <- "11"
+
         object$C <- t(A)
       }
     }
