@@ -849,18 +849,20 @@ SEXP gmcmc_iwls(SEXP family, SEXP theta, SEXP id,
   }
 
   /* Evaluate loglik, weights and score vector. */
-  peta = map2par(getListElement(family, "map2par"), eta2, rho);
-  double pibetaprop = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, peta, id2, rho))[0];
+  SEXP peta2;
+  PROTECT(peta2 = map2par(getListElement(family, "map2par"), eta2, rho));
+  ++nProtected;
+  double pibetaprop = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, peta2, id2, rho))[0];
 
   SEXP weights2;
   PROTECT(weights2 = iwls_eval(getListElement(getListElement(family, "hess"),
-    CHAR(STRING_ELT(id, 0))), response, peta, id2, rho));
+    CHAR(STRING_ELT(id, 0))), response, peta2, id2, rho));
   double *weights2ptr = REAL(weights2);
   ++nProtected;
 
   SEXP score2;
   PROTECT(score2 = iwls_eval(getListElement(getListElement(family, "score"),
-    CHAR(STRING_ELT(id, 0))), response, peta, id2, rho));
+    CHAR(STRING_ELT(id, 0))), response, peta2, id2, rho));
   double *score2ptr = REAL(score2);
   ++nProtected;
 
@@ -1373,18 +1375,20 @@ SEXP gmcmc_iwls_gp(SEXP family, SEXP theta, SEXP id,
   }
 
   /* Evaluate loglik, weights and score vector. */
-  peta = map2par(getListElement(family, "map2par"), eta2, rho);
-  double pibetaprop = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, peta, id2, rho))[0];
+  SEXP peta2;
+  PROTECT(peta2 = map2par(getListElement(family, "map2par"), eta2, rho));
+  ++nProtected;
+  double pibetaprop = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, peta2, id2, rho))[0];
 
   SEXP weights2;
   PROTECT(weights2 = iwls_eval(getListElement(getListElement(family, "hess"),
-    CHAR(STRING_ELT(id, 0))), response, peta, id2, rho));
+    CHAR(STRING_ELT(id, 0))), response, peta2, id2, rho));
   double *weights2ptr = REAL(weights2);
   ++nProtected;
 
   SEXP score2;
   PROTECT(score2 = iwls_eval(getListElement(getListElement(family, "score"),
-    CHAR(STRING_ELT(id, 0))), response, peta, id2, rho));
+    CHAR(STRING_ELT(id, 0))), response, peta2, id2, rho));
   double *score2ptr = REAL(score2);
   ++nProtected;
 
@@ -1767,18 +1771,20 @@ SEXP gmcmc_iwls_gp_diag_lasso(SEXP family, SEXP theta, SEXP id,
     etaptr[i] += fitptr[i];
   }
 
-  peta = map2par(getListElement(family, "map2par"), eta2, rho);
-  double pibetaprop = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, peta, id2, rho))[0];
+  SEXP peta2;
+  PROTECT(peta2 = map2par(getListElement(family, "map2par"), eta2, rho));
+  ++nProtected;
+  double pibetaprop = REAL(iwls_eval(VECTOR_ELT(family, ll_ind), response, peta2, id2, rho))[0];
 
   SEXP weights2;
   PROTECT(weights2 = iwls_eval(getListElement(getListElement(family, "hess"),
-    CHAR(STRING_ELT(id, 0))), response, peta, id2, rho));
+    CHAR(STRING_ELT(id, 0))), response, peta2, id2, rho));
   double *weights2ptr = REAL(weights2);
   ++nProtected;
 
   SEXP score2;
   PROTECT(score2 = iwls_eval(getListElement(getListElement(family, "score"),
-    CHAR(STRING_ELT(id, 0))), response, peta, id2, rho));
+    CHAR(STRING_ELT(id, 0))), response, peta2, id2, rho));
   double *score2ptr = REAL(score2);
   ++nProtected;
 
