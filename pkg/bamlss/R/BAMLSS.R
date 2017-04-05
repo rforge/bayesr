@@ -10,7 +10,7 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
 
   ## Parse formula.
   if(!inherits(formula, "bamlss.formula"))
-    formula <- bamlss.formula(formula, family, specials)
+    formula <- bamlss.formula(formula, family, specials, env = parent.frame())
   if(!is.null(attr(formula, "orig.formula")))
     formula <- attr(formula, "orig.formula")
 
@@ -35,7 +35,7 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
       formula <- cf$formula
       if(ytype == "matrix") {
         if(is.factor(bf$model.frame[[rn[1]]])) {
-          f <- as.formula(paste("~ -1 +", rn[1]))
+          f <- as.formula(paste("~ -1 +", rn[1]), env = NULL)
           bf$y <- bf$model.frame[rn]
           bf$y[rn[1]] <- model.matrix(f, data = bf$model.frame)
           colnames(bf$y[[rn[1]]]) <- rmf(gsub(rn[1], "", colnames(bf$y[[rn[1]]])))
@@ -65,7 +65,7 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
       bf$y <- bf$model.frame[rn]
       for(j in rn) {
         if(is.factor(bf$y[[j]]) & (ytype == "matrix")) {
-          f <- as.formula(paste("~ -1 +", j))
+          f <- as.formula(paste("~ -1 +", j), env = NULL)
           bf$y[j] <- model.matrix(f, data = bf$model.frame)
         }
         if(is.factor(bf$y[[j]]) & (ytype == "integer")) {
@@ -955,7 +955,6 @@ model.frame.bamlss <- model.frame.bamlss.frame <- function(formula, ...)
     if(!is.null(attr(ft, "orig.formula"))) {
       fcall["formula"] <- parse(text = paste("attr(", fcall["formula"], ", 'orig.formula')", sep = ""))
     }
-
     nf <- names(fcall)
     nf <- nf[!(nf %in% names(formals(bamlss.model.frame)))]
     nf <- nf[nchar(nf) > 0]
@@ -1353,9 +1352,6 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
   reference = NULL, transform = NULL, optimizer = NULL, sampler = NULL, samplestats = NULL, results = NULL,
   cores = NULL, sleep = NULL, combine = TRUE, model = TRUE, x = TRUE, light = FALSE, ...)
 {
-  ## The environment.
-  env <- get_formula_envir(formula)
-
   ## Search for functions in family object.
   family <- bamlss.family(family, ...)
   if(!is.null(family$transform) & is.null(transform))
@@ -1384,7 +1380,7 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
   for(j in 1:length(foo)) {
     if(is.null(foo[[nf[j]]])) {
       foo[[nf[j]]] <- if(default_fun[j] != "no.transform") {
-        get(default_fun[j], envir = env)
+        get(default_fun[j], envir = asNamespace("bamlss"))
       } else FALSE
     }
     if(is.list(foo[[nf[j]]])) {
@@ -1401,7 +1397,7 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
         stop(paste("argument", nf[j], "is not a function!"))
       } else {
         if(functions[[nf[j]]]) {
-          functions[[nf[j]]] <- get(default_fun[j], envir = env)
+          functions[[nf[j]]] <- get(default_fun[j])
         }
       }
     }
@@ -1412,7 +1408,7 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
   bf[c("transform", "optimizer", "sampler", "samplestats",
     "results", "cores", "sleep", "combine", "model", "x")] <- NULL
   bf[[1]] <- as.name("bamlss.frame")
-  bf <- eval(bf, envir = env)
+  bf <- eval(bf, envir = parent.frame())
 
   ## Transform.
   if(is.function(functions$transform)) {
@@ -1512,7 +1508,7 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
   ## Save 'x' master object?
   if(!x)
     bf$x <- NULL
-
+## rm(list=ls(envir = attr(lm.object$terms, ".Environment")), envir = attr(lm.object$terms, ".Environment"))
   if(light) {
     if(!is.null(bf$x)) {
       for(j in names(bf$x)) {
@@ -1532,6 +1528,8 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
     }
     bf$y <- NULL
     bf$fitted.values <- NULL
+    attr(bf$formula, ".Environment") <- NULL
+    attr(bf$terms, ".Environment") <- NULL
   }
 
   bf$call <- match.call()
@@ -1719,16 +1717,17 @@ bamlss.model.frame <- function(formula, data, family = gaussian_bamlss(),
   weights = NULL, subset = NULL, offset = NULL, na.action = na.omit,
   specials = NULL, contrasts.arg = NULL, drop.unused.levels = TRUE, ...)
 {
-  if(is.character(data)) {
-    if(!file.exists(data))
-      stop("data path is not existing!")
-    ## data <- read.table.ffdf(file = data,
-    ##   na.strings = "", header = TRUE, sep = ",")
-    ## return(data)
-    ## FIXME: ff data.frames!
-    data <- read.table(file = data, header = TRUE, ...)
-  }
-
+  if(!missing(data)) {
+    if(is.character(data)) {
+      if(!file.exists(data))
+        stop("data path is not existing!")
+      ## data <- read.table.ffdf(file = data,
+      ##   na.strings = "", header = TRUE, sep = ",")
+      ## return(data)
+      ## FIXME: ff data.frames!
+      data <- read.table(file = data, header = TRUE, ...)
+    }
+  } else data <- NULL
   if(inherits(formula, "bamlss.frame") | inherits(formula, "bamlss")) {
     if(!is.null(formula$model.frame))
       return(formula$model.frame)
@@ -1740,8 +1739,7 @@ bamlss.model.frame <- function(formula, data, family = gaussian_bamlss(),
     return(eval(fcall, env))
   } else {
     family <- bamlss.family(family, ...)
-    formula <- bamlss.formula(formula, family, specials)
-    env <- environment(formula)
+    formula <- bamlss.formula(formula, family, specials, env = parent.frame())
   }
 
   if(is.null(na.action))
@@ -1754,6 +1752,7 @@ bamlss.model.frame <- function(formula, data, family = gaussian_bamlss(),
 
   ## Make fake "Formula" object.
   fF <- make_fFormula(formula)
+  attr(fF, ".Environment") <- environment(formula)
 
   ## Resulting terms object.
   mterms <- terms(formula(fF), data = data)
@@ -2020,6 +2019,7 @@ as.list.Formula <- function(x)
       as.call(c(as.symbol("~"), x[[i]]))
     } else as.call(c(as.symbol("~"), x[[i]][[2]]))
     formula[[i]] <- eval(f, envir = env)
+    attr(formula[[i]], ".Environment") <- NULL
   }
   environment(formula) <- env
   formula
@@ -2028,7 +2028,7 @@ as.list.Formula <- function(x)
 
 ## Special formula parser, can deal with multi parameter models
 ## and hierarchical structures.
-bamlss.formula <- function(formula, family = NULL, specials = NULL, ...)
+bamlss.formula <- function(formula, family = NULL, specials = NULL, env = NULL, ...)
 {
   if(is.null(specials))
     specials <- c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n")
@@ -2045,7 +2045,8 @@ bamlss.formula <- function(formula, family = NULL, specials = NULL, ...)
   if(!is.list(formula)) formula <- list(formula)
   if(!length(formula)) stop("formula is specified wrong!")
   
-  env <- get_formula_envir(formula)
+  if(is.null(env))
+    env <- get_formula_envir(formula)
 
   complete_formula <- function(formula) {
     if(!is.null(family)) {
@@ -2089,8 +2090,7 @@ bamlss.formula <- function(formula, family = NULL, specials = NULL, ...)
         names(formula)[i] <- family$names[i]
       for(j in family$names) {
         if(is.null(formula[[j]])) {
-          formula[[j]] <- as.formula(paste(j, "1", sep = " ~ "))
-          environment(formula[[j]]) <- env
+          formula[[j]] <- as.formula(paste(j, "1", sep = " ~ "), env = NULL)
         }
       }
     }
@@ -2098,12 +2098,14 @@ bamlss.formula <- function(formula, family = NULL, specials = NULL, ...)
       if(!inherits(formula[[j]], "formula")) {
         if(is.null(names(formula[[j]])))
           names(formula[[j]]) <- paste("h", 1:length(formula[[j]]), sep = "")
+      } else {
+        attr(formula[[j]], ".Environment") <- NULL
       }
     }
     formula
   }
-  formula <- formula_and(formula, env)
-  formula <- formula_at(formula, env)
+  formula <- formula_and(formula)
+  formula <- formula_at(formula)
   formula <- complete_formula(formula_hierarchical(formula))
   formula <- formula_extend(formula, family, specials)
 
@@ -2155,7 +2157,7 @@ bamlss.formula.cat <- function(formula, family, data, reference)
   if(is.factor(data[[rn2[1]]]) | cat) {
     if((nlevels(data[[rn2[1]]]) > 2) | cat) {
       if(!cat | is.factor(data[[rn2[1]]])) {
-        ft <- as.formula(paste("~ -1 +", rn2[1]))
+        ft <- as.formula(paste("~ -1 +", rn2[1]), env = NULL)
         y <- model.matrix(ft, data = data)
         colnames(y) <- rmf(gsub(rn2[1], "", colnames(y), fixed = TRUE))
         if(is.null(reference)) {
@@ -2185,7 +2187,7 @@ bamlss.formula.cat <- function(formula, family, data, reference)
           formula[[1]][[1]]$formula
         } else formula[[1]]$formula
         env <- environment(ft)
-        ft <- update(ft, as.formula(paste(colnames(y)[1], ".", sep = "~")))
+        ft <- update(ft, as.formula(paste(colnames(y)[1], ".", sep = "~"), env = NULL))
         environment(ft) <- env
         if(!inherits(formula[[1]]$formula, "formula")) {
           formula[[1]][[1]]$formula <- ft
@@ -2197,7 +2199,7 @@ bamlss.formula.cat <- function(formula, family, data, reference)
         ft <- if(!inherits(formula[[1]]$formula, "formula")) {
           formula[[1]][[1]]$fake.formula
         } else formula[[1]]$fake.formula
-        ft <- update(ft, as.formula(paste(colnames(y)[1], ".", sep = "~")))
+        ft <- update(ft, as.formula(paste(colnames(y)[1], ".", sep = "~"), env = NULL))
         if(!inherits(formula[[1]]$formula, "formula")) {
           formula[[1]][[1]]$fake.formula <- ft
         } else {
@@ -2213,7 +2215,7 @@ bamlss.formula.cat <- function(formula, family, data, reference)
             formula[[j]][[1]]$formula
           } else formula[[j]]$formula
           env <- environment(ft)
-          ft <- update(ft, as.formula(paste(ynot[k], "~ .")))
+          ft <- update(ft, as.formula(paste(ynot[k], "~ ."), env = NULL))
           environment(ft) <- env
           if(!inherits(formula[[j]]$formula, "formula")) {
             formula[[j]][[1]]$formula <- ft
@@ -2300,7 +2302,7 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
   }
   vars <- unique(vars)
   if(type == 1)
-    vars <- all.vars(as.formula(paste("~", paste(vars, collapse = "+"))))
+    vars <- all.vars(as.formula(paste("~", paste(vars, collapse = "+")), env = NULL))
   unique(vars)
 }
 
@@ -2401,7 +2403,7 @@ fake.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL)
     f <- paste(all.vars.formula(formula, lhs = TRUE, rhs = FALSE, type = 2), "~", if(!is.null(f)) f else 0)
   else
     f <- paste("~", if(!is.null(f)) f else 0)
-  f <- as.formula(f, env = environment(formula))
+  f <- as.formula(f, env = NULL)
   f
 }
 
@@ -2473,13 +2475,13 @@ response.name <- function(formula, hierarchical = TRUE, keep.functions = FALSE, 
 }
 
 ## Search and process "&"
-formula_and <- function(formula, env = parent.frame())
+formula_and <- function(formula)
 {
   if(nol <- !is.list(formula))
     formula <- list(formula)
   for(j in seq_along(formula)) {
     if(!inherits(formula[[j]], "formula")) {
-      formula[[j]] <- formula_and(formula[[j]], env)
+      formula[[j]] <- formula_and(formula[[j]])
     } else {
       ft <- deparse(formula[[j]])
       if(any(grep("&", ft, fixed = TRUE))) {
@@ -2487,7 +2489,7 @@ formula_and <- function(formula, env = parent.frame())
         for(i in seq_along(formula[[j]])) {
           if(!any(grepl("~", formula[[j]][[i]], fixed = TRUE)))
             formula[[j]][[i]] <- paste("~", formula[[j]][[i]])
-          formula[[j]][[i]] <- as.formula(formula[[j]][[i]], env = env)
+          formula[[j]][[i]] <- as.formula(formula[[j]][[i]], env = NULL)
         }
       }
     }
@@ -2501,19 +2503,19 @@ formula_and <- function(formula, env = parent.frame())
 }
 
 ## Search and process "@"
-formula_at <- function(formula, env = parent.frame())
+formula_at <- function(formula)
 {
   if(nol <- !is.list(formula))
     formula <- list(formula)
   for(j in seq_along(formula)) {
     if(!inherits(formula[[j]], "formula")) {
-      formula[[j]] <- formula_at(formula[[j]], env)
+      formula[[j]] <- formula_at(formula[[j]])
     } else {
       ft <- deparse(formula[[j]])
       if(any(grep("@", ft, fixed = TRUE))) {
         formula[[j]] <- strsplit(ft, "@", fixed = TRUE)[[1]]
         control <- formula[[j]][-1]
-        formula[[j]] <- as.formula(formula[[j]][1], env = env)
+        formula[[j]] <- as.formula(formula[[j]][1], env = NULL)
         control <- gsub(":", "=", control)
         if(any(grepl("+", control)))
           control <- strsplit(control, "+", fixed = TRUE)[[1]]
@@ -2531,22 +2533,22 @@ formula_at <- function(formula, env = parent.frame())
   formula
 }
 
-formula_rm_at <- function(formula, env = parent.frame())
+formula_rm_at <- function(formula)
 {
   ctr <- attr(formula, "control")
   attr(formula, "control") <- NULL
   if(isf <- !is.character(formula)) {
-    env <- environment(formula)
     formula <- deparse(formula)
   }
   if(any(grepl("@", formula)))
     formula <- strsplit(formula, "@")[[1]][1]
   if(!isf) {
-    formula <- as.formula(formula, env = env)
+    formula <- as.formula(formula, env = NULL)
     formula <- deparse(formula)
   }
-  if(isf)
-    formula <- as.formula(formula, env = env)
+  if(isf) {
+    formula <- as.formula(formula, env = NULL)
+  }
   if(!is.null(ctr)) attr(formula, "control") <- ctr
   formula
 }
@@ -2990,7 +2992,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
   if(!is.null(attr(object, "fixed.names")))
     names(newdata) <- rmf(names(newdata))
   nn <- names(newdata)
-  nn <- all.vars(as.formula(paste("~", paste(nn, collapse = "+"))))
+  nn <- all.vars(as.formula(paste("~", paste(nn, collapse = "+")), env = NULL))
   rn <- response.name(object, keep.functions = TRUE)
   nn <- nn[!(nn %in% rn)]
   tl <- term.labels2(object, model = model, intercept = intercept, type = 2)
@@ -3031,7 +3033,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
   })
   if(all(is.null(unlist(enames))))
     stop("argument term is specified wrong!")
-  ff <- as.formula(paste("~", paste(unique(unlist(enames)), collapse = "+")))
+  ff <- as.formula(paste("~", paste(unique(unlist(enames)), collapse = "+")), env = NULL)
   vars <- all.vars.formula(ff)
   if(!all(vars[vars != "Intercept"] %in% nn))
     stop("cannot compute prediction, variables missing in newdata!")
@@ -3065,7 +3067,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
 
   enames <- lapply(enames, function(x) {
     if(is.null(x)) return(NULL)
-    f <- as.formula(paste("~", paste(x, collapse = "+")), env = env)
+    f <- as.formula(paste("~", paste(x, collapse = "+")), env = NULL)
     all.labels.formula(f, full.names = TRUE)
   })
 
@@ -3122,14 +3124,14 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
           }
           if(j < 2) {
             pred[[i]] <- pred_fun(.predict.bamlss(i, object$x[[i]], samps,
-              enames[[i]], intercept, nsamps, newdata[[j]], env), id = i)
+              enames[[i]], intercept, nsamps, newdata[[j]]), id = i)
           } else {
             if(is.null(dim(pred[[i]]))) {
               pred[[i]] <- c(pred[[i]], pred_fun(.predict.bamlss(i, object$x[[i]], samps,
-                enames[[i]], intercept, nsamps, newdata[[j]], env), id = i))
+                enames[[i]], intercept, nsamps, newdata[[j]]), id = i))
             } else {
               pred[[i]] <- rbind(pred[[i]], pred_fun(.predict.bamlss(i, object$x[[i]], samps,
-                enames[[i]], intercept, nsamps, newdata[[j]], env), id = i))
+                enames[[i]], intercept, nsamps, newdata[[j]]), id = i))
             }
           }
         }
@@ -3138,7 +3140,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
     } else {
       for(i in nx) {
         pred[[i]] <- pred_fun(.predict.bamlss(i, object$x[[i]], samps,
-          enames[[i]], intercept, nsamps, newdata, env), id = i)
+          enames[[i]], intercept, nsamps, newdata), id = i)
       }
     }
   } else {
@@ -3155,14 +3157,14 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
 
             if(j < 2) {
               pred[[i]] <- pred_fun(.predict.bamlss(i, object$x[[i]], samps,
-                enames[[i]], intercept, nsamps, nd[[j]], env), id = i)
+                enames[[i]], intercept, nsamps, nd[[j]]), id = i)
             } else {
               if(is.null(dim(pred[[i]]))) {
                 pred[[i]] <- c(pred[[i]], pred_fun(.predict.bamlss(i, object$x[[i]], samps,
-                  enames[[i]], intercept, nsamps, nd[[j]], env), id = i))
+                  enames[[i]], intercept, nsamps, nd[[j]]), id = i))
               } else {
                 pred[[i]] <- rbind(pred[[i]], pred_fun(.predict.bamlss(i, object$x[[i]], samps,
-                  enames[[i]], intercept, nsamps, nd[[j]], env), id = i))
+                  enames[[i]], intercept, nsamps, nd[[j]]), id = i))
               }
             }
           }
@@ -3171,7 +3173,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
       } else {
         for(i in nx) {
           pred[[i]] <- pred_fun(.predict.bamlss(i, object$x[[i]], samps,
-            enames[[i]], intercept, nsamps, newdata[[k]], env), id = i)
+            enames[[i]], intercept, nsamps, newdata[[k]]), id = i)
         }
       }
       return(pred)
@@ -3205,7 +3207,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
 }
 
 
-.predict.bamlss <- function(id, x, samps, enames, intercept, nsamps, data, env)
+.predict.bamlss <- function(id, x, samps, enames, intercept, nsamps, data)
 {
   if("smooth.construct" %in% names(x))
     x <- x$smooth.construct
@@ -3235,7 +3237,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
   if(length(i <- grep("p.", ec))) {
     for(j in enames2[i]) {
       if(j != "(Intercept)") {
-        f <- as.formula(paste("~", if(has_intercept) "1" else "-1", "+", j), env = env)
+        f <- as.formula(paste("~", if(has_intercept) "1" else "-1", "+", j))
         X <- model.matrix(f, data = data)
         if(has_intercept)
           X <- X[, colnames(X) != "(Intercept)", drop = FALSE]
@@ -5904,7 +5906,7 @@ drop.terms.bamlss <- function(f, pterms = TRUE, sterms = TRUE,
   }
   if(!sterms & length(st)) {
     st <- paste("-", st, collapse = "")
-    st <- as.formula(paste(". ~ .", st))
+    st <- as.formula(paste(". ~ .", st), env = NULL)
     tx <- terms.formula(update(tx, st), specials = specials, keep.order = TRUE, data = data)
   }
   if(!pterms & length(pt)) {
@@ -5922,7 +5924,7 @@ drop.terms.bamlss <- function(f, pterms = TRUE, sterms = TRUE,
       pt <- tl
     }
     pt <- paste("-", pt, collapse = "")
-    pt <- as.formula(paste(". ~ .", pt))
+    pt <- as.formula(paste(". ~ .", pt), env = NULL)
     tx <- terms.formula(update(tx, pt), specials = specials, keep.order = TRUE, data = data)
   }
   class(tx) <- c("formula", "terms")
