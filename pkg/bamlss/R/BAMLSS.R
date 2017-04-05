@@ -1508,7 +1508,6 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
   ## Save 'x' master object?
   if(!x)
     bf$x <- NULL
-## rm(list=ls(envir = attr(lm.object$terms, ".Environment")), envir = attr(lm.object$terms, ".Environment"))
   if(light) {
     if(!is.null(bf$x)) {
       for(j in names(bf$x)) {
