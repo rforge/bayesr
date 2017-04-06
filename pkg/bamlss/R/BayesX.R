@@ -1277,11 +1277,9 @@ smooth.construct.tensorX3.smooth.spec <- function(object, data, knots, ...)
   object$tx.term <- paste(object$term, collapse = "")
   object$sx.S <- lapply(object$margin, function(x) { x$S[[1]] })
   object$sx.rank <- qr(do.call("+", object$S))$rank
-  if(object$constraint != "center")
+  if(!(object$constraint %in% c("center", "meanf", "meanfd", "meansimple", "none", "nullspace")))
     object$sx.rank <- object$sx.rank - nrow(object$C)
   object$side.constrain <- if(object$special) FALSE else TRUE
-  object$xt$a <- 0.1
-  object$xt$b <- 0.1
 
   class(object) <- "tensorX3.smooth"
 
@@ -1406,7 +1404,7 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
   class(object) <- "tensorX.smooth"
 
   if(length(object$margin) > 1) {
-    if(object$constraint != "center")
+    if(!(object$constraint %in% c("center", "meanf", "meanfd", "meansimple", "none", "nullspace")))
       object$sx.rank <- object$sx.rank - nrow(object$C)
     if(!object$mp) {
       class(object) <- "tensor.smooth"
