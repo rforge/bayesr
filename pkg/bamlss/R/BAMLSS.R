@@ -4322,7 +4322,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   object$state$parameters <- c(object$state$parameters, "tau21" = 1000, "tau22" = 1000)
   object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
   object$special.npar <- npar
-  object$prior <- function(b) { sum(dnorm(get.par(b, "b", sd = 1000, log = TRUE))) }
+  object$prior <- function(b) { sum(dnorm(get.par(b, "b"), sd = 1000, log = TRUE)) }
   object$nnodes <- nodes
 
   X <- object$X
@@ -7515,8 +7515,8 @@ stg <- function(x, interp = FALSE, k = -1, ...)
     x <- zoo::na.approx(x, rule = 2)
   }
 
-  xf <- frequency(x)
-  xc <- cycle(x)
+  xf <- stats::frequency(x)
+  xc <- stats::cycle(x)
   mf <- na.omit(data.frame("x" = as.numeric(x), "trend" = 1:NROW(x), "season" = as.integer(xc),
     "xlag" = c(NA, as.numeric(x)[-length(x)])))
 
@@ -7539,9 +7539,9 @@ stg <- function(x, interp = FALSE, k = -1, ...)
     "trend" = p[, "ti(trend)"] + coef(b)[1],
     "seasonal" = p[, "ti(season)"] + p[, "ti(trend,season)"],
     "lag1" = p[, "s(trend):xlag"] / mf$xlag,
-    "remainder" = residuals(b))
+    "remainder" = stats::residuals(b))
 
-  rval <- ts(rval, start = start(x), frequency = xf)
+  rval <- stats::ts(rval, start = start(x), frequency = xf)
 
   rval
 }

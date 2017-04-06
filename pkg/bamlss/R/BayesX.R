@@ -1062,7 +1062,7 @@ te2 <- function (..., k = NA, bs = "cr", m = NA, d = NA, by = NA, fx = FALSE,
   term <- deparse(vars[[1]], backtick = TRUE)
   if(dim > 1) 
     for(i in 2:dim) term[i] <- deparse(vars[[i]], backtick = TRUE)
-  for(i in 1:dim) term[i] <- attr(terms(reformulate(term[i])), 
+  for(i in 1:dim) term[i] <- attr(terms(stats::reformulate(term[i])), 
     "term.labels")
   if(sum(is.na(d)) || is.null(d)) {
     n.bases <- dim
@@ -1277,6 +1277,8 @@ smooth.construct.tensorX3.smooth.spec <- function(object, data, knots, ...)
   object$tx.term <- paste(object$term, collapse = "")
   object$sx.S <- lapply(object$margin, function(x) { x$S[[1]] })
   object$sx.rank <- qr(do.call("+", object$S))$rank
+  if(object$constraint != "center")
+    object$sx.rank <- object$sx.rank - nrow(object$C)
   object$side.constrain <- if(object$special) FALSE else TRUE
   object$xt$a <- 0.1
   object$xt$b <- 0.1
@@ -1404,8 +1406,8 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
   class(object) <- "tensorX.smooth"
 
   if(length(object$margin) > 1) {
-    object$xt$a <- 0.1
-    object$xt$b <- 0.1
+    if(object$constraint != "center")
+      object$sx.rank <- object$sx.rank - nrow(object$C)
     if(!object$mp) {
       class(object) <- "tensor.smooth"
     }

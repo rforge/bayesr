@@ -888,12 +888,12 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
   P <- if(data$fixed) {
     if((k <- ncol(data$X)) < 2) {
       1 / XWX
-    } else matrix_inv(XWX, data$sparse.setup, all_diagonal = data$all_diagonal)
+    } else matrix_inv(XWX, data$sparse.setup)
   } else {
     tau2 <- get.par(theta, "tau2")
     for(j in seq_along(data$S))
       S <- S + 1 / tau2[j] * if(is.function(data$S[[j]])) data$S[[j]](c(theta, data$fixed.hyper)) else data$S[[j]]
-    matrix_inv(XWX + S, data$sparse.setup, all_diagonal = data$all_diagonal)
+    matrix_inv(XWX + S, data$sparse.setup)
   }
   P[P == Inf] <- 0
   M <- P %*% crossprod(data$X, data$rres)
@@ -961,9 +961,9 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
   P2 <- if(data$fixed) {
     if(k < 2) {
       1 / (XWX)
-    } else matrix_inv(XWX, data$sparse.setup, all_diagonal = data$all_diagonal)
+    } else matrix_inv(XWX, data$sparse.setup)
   } else {
-    matrix_inv(XWX + S, data$sparse.setup, all_diagonal = data$all_diagonal)
+    matrix_inv(XWX + S, data$sparse.setup)
   }
   P2[P2 == Inf] <- 0
   M2 <- P2 %*% crossprod(data$X, data$rres)
