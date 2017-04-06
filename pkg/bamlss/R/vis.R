@@ -75,14 +75,14 @@ plot2d <- function(x, residuals = FALSE, rug = FALSE, jitter = TRUE,
     xnam <- colnames(x)[1L]
   if(is.null(xnam))
     xnam <- "x"
-  if(by[1L] != "NA"){
+  if(by[1L] != "NA") {
     if(any(by == 0))
       x <- x[by != 0,]
     if(length(xnam) > 1L)	
       byname <- xnam[length(xnam)]
     else
       byname <- by
-		xnam <- xnam[1L]
+    xnam <- xnam[1L]
   }
   if(length(xnam) > 1L)
     xnam <- xnam[1L]
@@ -112,10 +112,7 @@ plot2d <- function(x, residuals = FALSE, rug = FALSE, jitter = TRUE,
     attr(x, "residuals") <- pres
   }
   if(is.null(args$ylim)) {
-    ylim <- NULL
-    for(j in 2L:ncol(x))
-      if(j <= 7L)
-        ylim <- c(ylim, x[,j])
+    ylim <- range(x[, -1], na.rm = TRUE)
     if(residuals)
       args$ylim <- range(c(ylim, pres[,2L]), na.rm = TRUE)
     else

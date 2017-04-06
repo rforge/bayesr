@@ -5338,6 +5338,8 @@ plot.bamlss.effect.default <- function(x, ...) {
         do.call("plot", delete.args(plot.density2, args, c("main", "xlim")))
       } else {
         if(!is.null(args$map)) {
+          if(inherits(args$map, "bnd") | inherits(args$map, "list"))
+            args$map <- list2sp(args$map)
           args$x <- data.frame("x" = as.numeric(x[, grepl("50%", colnames(x), fixed = TRUE)]),
             "ID" = as.character(x[, 1]), stringsAsFactors = FALSE)
           idvar <- NULL
