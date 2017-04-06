@@ -3388,33 +3388,33 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
     
     pred_gamma <- with(pred.setup, .predict.bamlss("gamma",
                                                    object$x$gamma, samps, enames$gamma, intercept,
-                                                   nsamps, dsurv, env))
+                                                   nsamps, dsurv))
     
     pred_lambda <- with(pred.setup, .predict.bamlss.surv.td("lambda",
                                                             object$x$lambda$smooth.construct, samps, enames$lambda, intercept,
-                                                            nsamps, dsurv, env, timevar["lambda"], timegrid,
+                                                            nsamps, dsurv, timevar["lambda"], timegrid,
                                                             drop.terms.bamlss(object$x$lambda$terms, sterms = FALSE, keep.response = FALSE),
                                                             type = 2))
     
     pred_alpha <- with(pred.setup, .predict.bamlss.surv.td("alpha",
                                                            object$x$alpha$smooth.construct, samps, enames$alpha, intercept,
-                                                           nsamps, dsurv, env, timevar["lambda"], timegrid,
+                                                           nsamps, dsurv, timevar["lambda"], timegrid,
                                                            drop.terms.bamlss(object$x$alpha$terms, sterms = FALSE, keep.response = FALSE)))
     
     pred_mu <- with(pred.setup, .predict.bamlss.surv.td("mu",
                                                         object$x$mu$smooth.construct, samps, enames$mu, intercept,
-                                                        nsamps, dsurv, env, timevar["mu"], timegrid,
+                                                        nsamps, dsurv, timevar["mu"], timegrid,
                                                         drop.terms.bamlss(object$x$mu$terms, sterms = FALSE, keep.response = FALSE)))
     
     if(dalpha) {
       pred_dalpha <- with(pred.setup, .predict.bamlss.surv.td("dalpha",
                                                               object$x$dalpha$smooth.construct, samps, enames$dalpha, intercept,
-                                                              nsamps, dsurv, env, timevar["lambda"], timegrid,
+                                                              nsamps, dsurv, timevar["lambda"], timegrid,
                                                               drop.terms.bamlss(object$x$dalpha$terms, sterms = FALSE, keep.response = FALSE)))
       
       pred_dmu <- with(pred.setup, .predict.bamlss.surv.td("dmu",
                                                            object$x$dmu$smooth.construct, samps, enames$dmu, intercept,
-                                                           nsamps, dsurv, env, timevar["mu"], timegrid,
+                                                           nsamps, dsurv, timevar["mu"], timegrid,
                                                            drop.terms.bamlss(object$x$dmu$terms, sterms = FALSE, keep.response = FALSE),
                                                            derivMat = TRUE))
     }
@@ -3631,7 +3631,7 @@ jm.survplot <- function(object, id = 1, dt = NULL, steps = 10,
 
 
 
-.predict.bamlss.jm.td <- function(id, x, samps, enames, intercept, nsamps, newdata, env,
+.predict.bamlss.jm.td <- function(id, x, samps, enames, intercept, nsamps, newdata,
                                   yname, grid, formula, type = 1, derivMat = FALSE)
 {
   snames <- colnames(samps)
@@ -3653,7 +3653,7 @@ jm.survplot <- function(object, id = 1, dt = NULL, steps = 10,
   if(length(i <- grep("p.", ec))) {
     for(j in enames2[i]) {
       if(j != "(Intercept)") {
-        f <- as.formula(paste("~", if(has_intercept) "1" else "-1", "+", j), env = env)
+        f <- as.formula(paste("~", if(has_intercept) "1" else "-1", "+", j))
         X <- param_Xtimegrid(f, newdata, grid, yname, type = type, derivMat = derivMat)
         if(has_intercept)
           X <- X[, colnames(X) != "(Intercept)", drop = FALSE]
