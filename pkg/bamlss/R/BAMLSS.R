@@ -6803,6 +6803,7 @@ term.labels2 <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
         }
       }
       rval[[j]] <- unique(rval[[j]])
+      rval[[j]] <- rval[[j]][rval[[j]] != ""]
     }
   }
   if(!list) {
