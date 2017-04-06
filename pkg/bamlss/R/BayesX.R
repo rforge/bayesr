@@ -1383,10 +1383,6 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
         if(k == 100)
           stop("rank problems with constraint matrix!")
 
-        ## object$xt$nraniso <- "11"
-        object$xt$a <- 0.1
-        object$xt$b <- 0.1
-
         object$C <- t(A)
       }
     }
@@ -1408,11 +1404,12 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
   class(object) <- "tensorX.smooth"
 
   if(length(object$margin) > 1) {
+    object$xt$a <- 0.1
+    object$xt$b <- 0.1
     if(!object$mp) {
       class(object) <- "tensor.smooth"
     }
   }
-
 
   return(object)
 }
