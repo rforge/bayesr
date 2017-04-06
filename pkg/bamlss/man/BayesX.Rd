@@ -173,11 +173,10 @@ get_BayesXsrc(dir = NULL, install = TRUE)
 }
 
 \examples{
-\dontrun{## Get newest version of BayesXsrc.
+## Get newest version of BayesXsrc.
 ## Note: needs sh, svn and R build tools!
-get_BayesXsrc()
-
-if(require("BayesXsrc")) {
+## get_BayesXsrc()
+\dontrun{if(require("BayesXsrc")) {
   ## Simulate some data
   set.seed(123)
   d <- GAMart()
