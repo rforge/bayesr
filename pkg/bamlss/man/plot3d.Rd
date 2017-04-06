@@ -177,9 +177,9 @@ plot3d(sin(z) * cos(w) ~ z + w, col.surface = sequential_hcl, data = d)
 plot3d(sin(z) * cos(w) ~ z + w, 
   col.surface = rainbow_hcl(n = 99, c = 300, l = 80, start = 0, end = 100), 
   data = d)
-plot3d(sin(z) * cos(w) ~ z + w, 
-  col.surface = rainbow_hcl(n = 99, c = 300, l = 80, start = 0, end = 100), 
-  image = TRUE, grid = 200, data = d)
+# plot3d(sin(z) * cos(w) ~ z + w, 
+#  col.surface = rainbow_hcl(n = 99, c = 300, l = 80, start = 0, end = 100), 
+#  image = TRUE, grid = 200, data = d)
 }
 
 \keyword{hplot}
