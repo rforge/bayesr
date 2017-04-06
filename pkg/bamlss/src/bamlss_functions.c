@@ -474,7 +474,7 @@ SEXP block_inverse(SEXP X, SEXP IND, SEXP DIAGONAL)
     for(i = 0; i < nr; i++)
       Xoutptr[i + nr * i] = 1.0 / Xptr[i + nr * i];
   } else {
-    int j, jj, k, ni, n = length(IND);
+    int j, jj, ni, n = length(IND);
 
     SEXP Xi;
     double *Xiptr = 0;
@@ -3600,7 +3600,6 @@ SEXP mu_score_mvnormAR1(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP
   PROTECT(d = allocVector(REALSXP, n));
   double *dptr = REAL(d);
 
-  double lpi = - 0.5 * k * log(2.0 * 3.14159265358979323846);
   double sum1 = 0.0;
   double sum2 = 0.0;
   double sum3 = 0.0;
@@ -3652,7 +3651,6 @@ SEXP sigma_score_mvnormAR1(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, S
   PROTECT(d = allocVector(REALSXP, n));
   double *dptr = REAL(d);
 
-  double lpi = - 0.5 * k * log(2.0 * 3.14159265358979323846);
   double sum1 = 0.0;
   double sum2 = 0.0;
   double sum3 = 0.0;
@@ -3703,7 +3701,6 @@ SEXP rho_score_mvnormAR1(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEX
   PROTECT(d = allocVector(REALSXP, n));
   double *dptr = REAL(d);
 
-  double lpi = - 0.5 * k * log(2.0 * 3.14159265358979323846);
   double subdet = 0.0;
   double sum1 = 0.0;
   double sum2 = 0.0;
