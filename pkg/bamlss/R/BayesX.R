@@ -1322,6 +1322,11 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
       object$constraint <- "center"
   }
 
+  if(length(object$margin) > 1) {
+    if(!object$mp)
+      object$constraint <- "none"
+  }
+
   if(object$constraint %in% c("meanf", "meanfd", "meansimple", "none", "nullspace")) {
     if(object$constraint == "none")
       object$xt$nocenter <- TRUE
