@@ -720,14 +720,14 @@ get.hessian <- function(x)
 
 
 ## Formatting for printing.
-fmt <- function(x, width = 8, digits = 2) {
+fmt <- Vectorize(function(x, width = 8, digits = 2) {
   txt <- formatC(round(x, digits), format = "f", digits = digits , width = width)
   if(nchar(txt) > width) {
     txt <- strsplit(txt, "")[[1]]
     txt <- paste(txt[1:width], collapse = "", sep = "")
   }
   txt
-}
+})
 
 bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   update = "iwls", criterion = c("AICc", "BIC", "AIC"),
@@ -2900,10 +2900,10 @@ set.starting.values <- function(x, start)
 
 
 lasso <- function(x, y, start = NULL, adaptive = TRUE,
-                  lower = 0.001, upper = 1000,  nlambda = 100, lambda = NULL,
-                  verbose = TRUE, digits = 4, flush = TRUE,
-                  nu = NULL, stop.nu = NULL, ridge = .Machine$double.eps^0.25,
-                  zeromodel = NULL, ...)
+  lower = 0.001, upper = 1000,  nlambda = 100, lambda = NULL, multiple = FALSE,
+  verbose = TRUE, digits = 4, flush = TRUE,
+  nu = NULL, stop.nu = NULL, ridge = .Machine$double.eps^0.5,
+  zeromodel = NULL, ...)
 {
   method <- list(...)$method
   if(is.null(method))
@@ -2917,6 +2917,11 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
   lambdas <- if(is.null(lambda)) {
     exp(seq(log(upper), log(lower), length = nlambda))
   } else lambda
+
+  lambdas <- rep(list(lambdas), length = length(x))
+  names(lambdas) <- names(x)
+
+  lambdas <- as.matrix(do.call(if(multiple) "expand.grid" else "cbind", lambdas))
   
   if(length(verbose) < 2)
     verbose <- c(verbose, FALSE)
@@ -2966,7 +2971,7 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
     x <- lasso.transform(x, zeromodel, nobs = nrow(y))
   }
   
-  for(l in seq_along(lambdas)) {
+  for(l in 1:nrow(lambdas)) {
     if(l > 1)
       start <- unlist(par[[l - 1]])
     tau2 <- NULL
@@ -2975,7 +2980,7 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
         if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth")) {
           tau2 <- get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "tau2")
           nt <- names(tau2)
-          tau2 <- rep(1 / lambdas[l], length.out = length(tau2))
+          tau2 <- rep(1 / lambdas[l, i], length.out = length(tau2))
           names(tau2) <- paste(i, "s", x[[i]]$smooth.construct[[j]]$label, nt, sep = ".")
           if(!is.null(start) & (l > 1)) {
             if(all(names(tau2) %in% names(start))) {
@@ -3025,7 +3030,7 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
       cat(if(ia) "\r" else if(l > 1) "\n" else NULL)
       vtxt <- paste(nic, " ", fmt(b[[nic]], width = 8, digits = digits),
                     " edf ", fmt(mstats["edf"], width = 6, digits = digits),
-                    " lambda ", fmt(lambdas[l], width = 6, digits = digits),
+                    " lambda ", paste(fmt(lambdas[l, ], width = 6, digits = digits), collapse = ","),
                     " iteration ", formatC(l, width = nchar(nlambda)), sep = "")
       cat(vtxt)
       
@@ -3041,9 +3046,11 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
     } else paste(formatC(format(round(elapsed, 2), nsmall = 2), width = 5), "sec", sep = "")
     cat("\nelapsed time: ", et, "\n", sep = "")
   }
-  
+
+  colnames(lambdas) <- paste("lambda", names(x), sep = ".")
   ic <- cbind(ic, "lambda" = lambdas)
   rownames(ic) <- NULL
+  attr(ic, "multiple") <- multiple
   class(ic) <- c("lasso.stats", "matrix")
   
   list("parameters" = do.call("rbind", par), "lasso.stats" = ic, "nobs" = nrow(y))
@@ -3160,10 +3167,13 @@ lasso.coef <- function(x, ...) {
 }
 
 
-lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, name = NULL,
-                       mstop = NULL, retrans = FALSE, color = NULL, show.lambda = TRUE, labels = NULL,
-                       digits = 2, ...)
+lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, model = NULL, name = NULL,
+  mstop = NULL, retrans = FALSE, color = NULL, show.lambda = TRUE, labels = NULL,
+  digits = 2, ...)
 {
+  if(is.null(model))
+    model <- x$family$names
+  model <- rep(model, length.out = length(x$family$names))
   if(!is.character(which)) {
     which <- c("criterion", "parameters")[as.integer(which)]
   } else {
@@ -3180,13 +3190,14 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
     npar <- npar[!grepl(j, npar, fixed = TRUE)]
   x$parameters <- x$parameters[mstop, npar, drop = FALSE]
   ic <- x$model.stats$optimizer$lasso.stats
-  log_lambda <- log(ic[, "lambda"])
+  multiple <- attr(ic, "multiple")
+  log_lambda <- log(ic[, grep("lambda", colnames(ic))])
   nic <- grep("ic", colnames(ic), value = TRUE, ignore.case = TRUE)
   
   if(spar) {
     op <- par(no.readonly = TRUE)
     on.exit(par(op))
-    par(mfrow = c(1, length(which)), mar = c(5.1, 5.1, 4.1, 1.1))
+    par(mfrow = c(1, length(which) + length(model) - 1), mar = c(5.1, 5.1, 4.1, 1.1))
   }
   
   at <- pretty(1:nrow(ic))
@@ -3195,64 +3206,80 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, nam
   fmt2 <- Vectorize(fmt)
   
   if("criterion" %in% which) {
-    plot(ic[mstop, nic], type = "l",
-         xlab = expression(log(lambda)), ylab = nic, axes = FALSE)
-    at <- pretty(mstop)
-    at[at == 0] <- 1
-    axis(1, at = at, labels = fmt2(log_lambda[mstop][at], digits))
-    axis(2)
-    if(show.lambda) {
-      i <- which.min(ic[, nic])
-      abline(v = i, col = "lightgray", lwd = 2, lty = 2)
-      val <- round(ic[i, "lambda"], 4)
-      axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
+    if(!multiple) {
+      plot(ic[mstop, nic], type = "l",
+        xlab = expression(log(lambda[, 1])), ylab = nic, axes = FALSE)
+      at <- pretty(mstop)
+      at[at == 0] <- 1
+      axis(1, at = at, labels = fmt2(log_lambda[, 1][mstop][at], digits))
+      axis(2)
+      if(show.lambda) {
+        i <- which.min(ic[, nic])
+        abline(v = i, col = "lightgray", lwd = 2, lty = 2)
+        val <- round(ic[i, grep("lambda", colnames(ic))[1]], 4)
+        axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
+      }
+      box()
     }
-    box()
   }
   
   if("parameters" %in% which) {
-    if(spar)
-      par(mar = c(5.1, 5.1, 4.1, 10.1))
+    imin <- which.min(ic[, nic])
+    lambda_min <- ic[imin, grep("lambda", colnames(ic))]
+    for(m in model) {
+      if(spar)
+        par(mar = c(5.1, 5.1, 4.1, 10.1))
+
+      tpar <- x$parameters[, grep(m, colnames(x$parameters), fixed = TRUE), drop = FALSE]
+
+      tlambda <- names(lambda_min)
+      tlambda <- tlambda[!grepl(m, tlambda)]
+      take <- NULL
+      for(j in tlambda)
+        take <- cbind(take, ic[, j] == lambda_min[j])
+      take <- apply(take, 1, all)
+      tpar <- tpar[take, , drop = FALSE]
     
-    if(!is.null(name)) {
-      x$parameters <- x$parameters[, grep2(name, colnames(x$parameters), fixed = TRUE), drop = FALSE]
-    }
-    xn <- sapply(strsplit(colnames(x$parameters), ".", fixed = TRUE), function(x) { x[1] })
-    if(length(unique(xn)) < 2)
-      xn <- sapply(strsplit(colnames(x$parameters), ".", fixed = TRUE), function(x) { x[3] })
-    
-    cols <- if(is.null(color)) {
-      if(length(unique(xn)) < 2) "black" else rainbow_hcl(length(unique(xn)))
-    } else {
-      if(is.function(color)) {
-        color(length(unique(xn)))
-      } else {
-        rep(color, length.out = length(unique(xn)))
-      }
-    }
-    
-    matplot(x$parameters, type = "l", lty = 1, col = cols[as.factor(xn)],
-            xlab = expression(log(lambda)), ylab = expression(beta[j]), axes = FALSE, ...)
-    if(is.null(labels)) {
-      labs <- colnames(x$parameters)
       if(!is.null(name)) {
-        for(j in seq_along(name))
-          labs <- gsub(name[j], "", labs, fixed = TRUE)
+        tpar <- tpar[, grep2(name, colnames(tpar), fixed = TRUE), drop = FALSE]
       }
-    } else labs <- rep(labels, length.out = ncol(x$parameters))
-    axis(4, at = x$parameters[nrow(x$parameters), ],
-         labels = labs, las = 1)
-    at <- pretty(mstop)
-    at[at == 0] <- 1
-    axis(1, at = at, labels = fmt2(log_lambda[mstop][at], digits))
-    axis(2)
-    if(show.lambda) {
-      i <- which.min(ic[, nic])
-      abline(v = i, col = "lightgray", lwd = 2, lty = 2)
-      val <- round(ic[i, "lambda"], 4)
-      axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
+      xn <- sapply(strsplit(colnames(tpar), ".", fixed = TRUE), function(x) { x[1] })
+      if(length(unique(xn)) < 2)
+        xn <- sapply(strsplit(colnames(tpar), ".", fixed = TRUE), function(x) { x[3] })
+    
+      cols <- if(is.null(color)) {
+        if(length(unique(xn)) < 2) "black" else rainbow_hcl(length(unique(xn)))
+      } else {
+        if(is.function(color)) {
+          color(length(unique(xn)))
+        } else {
+          rep(color, length.out = length(unique(xn)))
+        }
+      }
+    
+      matplot(tpar, type = "l", lty = 1, col = cols[as.factor(xn)],
+        xlab = expression(log(lambda)), ylab = expression(beta[j]), axes = FALSE, ...)
+      if(is.null(labels)) {
+        labs <- colnames(tpar)
+        if(!is.null(name)) {
+          for(j in seq_along(name))
+            labs <- gsub(name[j], "", labs, fixed = TRUE)
+        }
+      } else labs <- rep(labels, length.out = ncol(tpar))
+      axis(4, at = tpar[nrow(tpar), ],
+        labels = labs, las = 1)
+      at <- pretty(mstop)
+      at[at == 0] <- 1
+      axis(1, at = at, labels = fmt2(log_lambda[mstop][at], digits))
+      axis(2)
+#      if(show.lambda) {
+#        i <- which.min(ic[, nic])
+#        abline(v = i, col = "lightgray", lwd = 2, lty = 2)
+#        val <- round(ic[i, "lambda"], 4)
+#        axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
+#      }
+      box()
     }
-    box()
   }
   
   return(invisible(NULL))
