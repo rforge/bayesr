@@ -29,9 +29,9 @@ lasso.transform(x, zeromodel, nobs = NULL, ...)
 
 ## Plotting function for lasso() optimizer.
 lasso.plot(x, which = c("criterion", "parameters"),
-  spar = TRUE, name = NULL, mstop = NULL, retrans = FALSE,
-  color = NULL, show.lambda = TRUE, labels = NULL,
-  digits = 2, ...)
+  spar = TRUE, model = NULL, name = NULL, mstop = NULL,
+  retrans = FALSE, color = NULL, show.lambda = TRUE,
+  labels = NULL, digits = 2, ...)
 
 ## Extract optimum stopping iteration for lasso() optimizer.
 ## Based on the minimum of the information criterion.
@@ -82,6 +82,7 @@ lasso.coef(x, ...)
     \code{nobs} is taken from the number of rows from the model term design matrices.}
   \item{which}{Which of the two provided plots should be created, character or integer \code{1} and \code{2}.}
   \item{spar}{Should graphical parameters be set by the plotting function?}
+  \item{model}{Character selecting for which model the plot shpuld be created.}
   \item{name}{Character, the name of the coefficient group that should be plotted. Note that
     the string provided in \code{name} will be removed from the labels on the 4th axis.}
   \item{mstop}{Integer vector, defines the path length to be plotted.}
