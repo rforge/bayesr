@@ -3125,8 +3125,8 @@ print.lasso.stats <- function(x, digits = 4, ...)
 {
   ls <- attr(lasso.stop(x), "stats")
   ic <- grep("ic", names(ls), ignore.case = TRUE, value = TRUE)
-  cat(ic, "=", ls[ic], "-> at lambda =", ls["lambda"], "\n")
-  ls <- ls[!(names(ls) %in% c("lambda", ic))]
+  cat(ic, "=", ls[ic], "-> at lambda =", ls[grep("lambda", names(ls))], "\n")
+  ls <- ls[!grepl("lambda", names(ls))]
   ls <- paste(names(ls), "=", round(ls, digits = digits), collapse = " ")
   cat(ls, "\n---\n")
   return(invisible(NULL))
