@@ -3030,7 +3030,7 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
       cat(if(ia) "\r" else if(l > 1) "\n" else NULL)
       vtxt <- paste(nic, " ", fmt(b[[nic]], width = 8, digits = digits),
                     " edf ", fmt(mstats["edf"], width = 6, digits = digits),
-                    " lambda ", paste(fmt(lambdas[l, ], width = 6, digits = digits), collapse = ","),
+                    " lambda ", paste(fmt(if(!multiple) lambdas[l, 1] else lambdas[l, ], width = 6, digits = digits), collapse = ","),
                     " iteration ", formatC(l, width = nchar(nlambda)), sep = "")
       cat(vtxt)
       
@@ -3213,7 +3213,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
         xlab = expression(log(lambda[, 1])), ylab = nic, axes = FALSE)
       at <- pretty(mstop)
       at[at == 0] <- 1
-      axis(1, at = at, labels = fmt(log_lambda[, 1][mstop][at], digits))
+      axis(1, at = at, labels = as.numeric(fmt(log_lambda[, 1][mstop][at], digits)))
       axis(2)
       if(show.lambda) {
         i <- which.min(ic[, nic])
@@ -3266,31 +3266,26 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
     main <- rep(main, length.out = length(model))
     imin <- which.min(ic[, nic])
     lambda_min <- ic[imin, grep("lambda", colnames(ic))]
-    name0 <- name
     k <- 1
     for(m in model) {
       if(spar)
         par(mar = c(5.1, 5.1, 4.1, 10.1))
 
-      tpar <- x$parameters[, grep(m, colnames(x$parameters), fixed = TRUE), drop = FALSE]
+      tpar <- x$parameters[, grep(paste(m, ".", sep = ""), colnames(x$parameters), fixed = TRUE), drop = FALSE]
 
-      tlambda <- names(lambda_min)
-      tlambda <- tlambda[!grepl(m, tlambda)]
-      take <- NULL
-      for(j in tlambda)
-        take <- cbind(take, ic[, j] == lambda_min[j])
-      take <- apply(take, 1, all)
-      tpar <- tpar[take, , drop = FALSE]
-      if(is.null(name)) {
-        name <- paste(m, ".", sep = "")
+      if(multiple) {
+        tlambda <- names(lambda_min)
+        tlambda <- tlambda[!grepl(m, tlambda)]
+        take <- NULL
+        for(j in tlambda)
+          take <- cbind(take, ic[, j] == lambda_min[j])
+        take <- apply(take, 1, all)
+        tpar <- tpar[take, , drop = FALSE]
       } else {
-        if(!grepl(paste(m, ".", sep = ""), name, fixed = TRUE))
-          name <- paste(m, ".", name, sep = "")
+        take <- 1:nrow(tpar)
       }
-    
-      if(!is.null(name)) {
+      if(!is.null(name))
         tpar <- tpar[, grep2(name, colnames(tpar), fixed = TRUE), drop = FALSE]
-      }
       xn <- sapply(strsplit(colnames(tpar), ".", fixed = TRUE), function(x) { x[1] })
       if(length(unique(xn)) < 2)
         xn <- sapply(strsplit(colnames(tpar), ".", fixed = TRUE), function(x) { x[3] })
@@ -3330,7 +3325,6 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
       if(main[k] != "")
         mtext(m, side = 3, line = 2.5, cex = 1.2, font = 2)
       k <- k + 1
-      name <- name0
     }
   }
   
