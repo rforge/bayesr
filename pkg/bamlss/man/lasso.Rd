@@ -21,7 +21,7 @@ la(formula, type = c("single", "multiple"), ...)
 lasso(x, y, start = NULL, adaptive = TRUE, lower = 0.001, upper = 1000,
   nlambda = 100, lambda = NULL,  multiple = FALSE, verbose = TRUE,
   digits = 4, flush = TRUE, nu = NULL, stop.nu = NULL,
-  ridge = .Machine$double.eps^0.25, zeromodel = NULL, ...)
+  ridge = .Machine$double.eps^0.5, zeromodel = NULL, ...)
 
 ## Lasso transformation function to set
 ## adaptive weights from an unpenalized model.
