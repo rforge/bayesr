@@ -721,7 +721,7 @@ get.hessian <- function(x)
 
 ## Formatting for printing.
 fmt <- Vectorize(function(x, width = 8, digits = 2) {
-  txt <- formatC(round(x, digits), format = "f", digits = digits , width = width)
+  txt <- formatC(round(x, digits), format = "f", digits = digits, width = width)
   if(nchar(txt) > width) {
     txt <- strsplit(txt, "")[[1]]
     txt <- paste(txt[1:width], collapse = "", sep = "")
@@ -3173,7 +3173,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
 {
   if(is.null(model))
     model <- x$family$names
-  model <- rep(model, length.out = length(x$family$names))
+  model <- x$family$names[pmatch(model, x$family$names)]
   if(!is.character(which)) {
     which <- c("criterion", "parameters")[as.integer(which)]
   } else {
@@ -3184,8 +3184,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
     mstop <- 1:nrow(x$parameters)
   if(retrans)
     x$parameters <- lasso.coef(x, mstop = mstop)
-  par <- x$parameters[mstop, , drop = FALSE]
-  npar <- colnames(par)
+  npar <- colnames(x$parameters)
   for(j in c("Intercept", ".edf", ".lambda", ".tau"))
     npar <- npar[!grepl(j, npar, fixed = TRUE)]
   x$parameters <- x$parameters[mstop, npar, drop = FALSE]
@@ -3197,21 +3196,24 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
   if(spar) {
     op <- par(no.readonly = TRUE)
     on.exit(par(op))
-    par(mfrow = c(1, length(which) + length(model) - 1), mar = c(5.1, 5.1, 4.1, 1.1))
+    n <- if("criterion" %in% which) {
+      if(multiple) length(model) else 1
+    } else 0
+    if("parameters" %in% which)
+      n <- n + length(model)
+    par(mfrow = n2mfrow(n), mar = c(5.1, 5.1, 4.1, 1.1))
   }
   
   at <- pretty(1:nrow(ic))
   at[at == 0] <- 1
   
-  fmt2 <- Vectorize(fmt)
-  
   if("criterion" %in% which) {
     if(!multiple) {
-      plot(ic[mstop, nic], type = "l",
+      plot(ic[, nic], type = "l",
         xlab = expression(log(lambda[, 1])), ylab = nic, axes = FALSE)
       at <- pretty(mstop)
       at[at == 0] <- 1
-      axis(1, at = at, labels = fmt2(log_lambda[, 1][mstop][at], digits))
+      axis(1, at = at, labels = fmt(log_lambda[, 1][mstop][at], digits))
       axis(2)
       if(show.lambda) {
         i <- which.min(ic[, nic])
@@ -3219,13 +3221,53 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
         val <- round(ic[i, grep("lambda", colnames(ic))[1]], 4)
         axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
       }
+      if(!is.null(main <- list(...)$main))
+        mtext(main, side = 3, line = 2.5, cex = 1.2, font = 2)
       box()
+    } else {
+      main <- list(...)$main
+      if(is.null(main))
+        main <- model
+      main <- rep(main, length.out = length(model))
+      k <- 1
+      for(m in model) {
+        imin <- which.min(ic[, nic])
+        lambda_min <- ic[imin, grep("lambda", colnames(ic))]
+        tlambda <- names(lambda_min)
+        tlambda <- tlambda[!grepl(m, tlambda)]
+        take <- NULL
+        for(j in tlambda)
+          take <- cbind(take, ic[, j] == lambda_min[j])
+        take <- apply(take, 1, all)
+        tic <- ic[take, nic]
+        plot(tic, type = "l", xlab = expression(log(lambda[, 1])), ylab = nic, axes = FALSE)
+        at <- pretty(1:length(tic))
+        at[at == 0] <- 1
+        axis(1, at = at, labels = as.numeric(fmt(log_lambda[take, paste("lambda", m, sep = ".")][at], digits)))
+        axis(2)
+        if(show.lambda) {
+          i <- which.min(tic)
+          abline(v = i, col = "lightgray", lwd = 2, lty = 2)
+          val <- lambda_min[paste("lambda", m, sep = ".")]
+          axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
+        }
+        box()
+        if(main[k] != "")
+          mtext(m, side = 3, line = 2.5, cex = 1.2, font = 2)
+        k <- k + 1
+      }
     }
   }
   
   if("parameters" %in% which) {
+    main <- list(...)$main
+    if(is.null(main))
+      main <- model
+    main <- rep(main, length.out = length(model))
     imin <- which.min(ic[, nic])
     lambda_min <- ic[imin, grep("lambda", colnames(ic))]
+    name0 <- name
+    k <- 1
     for(m in model) {
       if(spar)
         par(mar = c(5.1, 5.1, 4.1, 10.1))
@@ -3239,6 +3281,12 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
         take <- cbind(take, ic[, j] == lambda_min[j])
       take <- apply(take, 1, all)
       tpar <- tpar[take, , drop = FALSE]
+      if(is.null(name)) {
+        name <- paste(m, ".", sep = "")
+      } else {
+        if(!grepl(paste(m, ".", sep = ""), name, fixed = TRUE))
+          name <- paste(m, ".", name, sep = "")
+      }
     
       if(!is.null(name)) {
         tpar <- tpar[, grep2(name, colnames(tpar), fixed = TRUE), drop = FALSE]
@@ -3268,17 +3316,21 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
       } else labs <- rep(labels, length.out = ncol(tpar))
       axis(4, at = tpar[nrow(tpar), ],
         labels = labs, las = 1)
-      at <- pretty(mstop)
+      at <- pretty(1:nrow(tpar))
       at[at == 0] <- 1
-      axis(1, at = at, labels = fmt2(log_lambda[mstop][at], digits))
+      axis(1, at = at, labels = as.numeric(fmt(log_lambda[take, paste("lambda", m, sep = ".")][at], digits)))
       axis(2)
-#      if(show.lambda) {
-#        i <- which.min(ic[, nic])
-#        abline(v = i, col = "lightgray", lwd = 2, lty = 2)
-#        val <- round(ic[i, "lambda"], 4)
-#        axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
-#      }
+      if(show.lambda) {
+        i <- which.min(ic[take, nic])
+        abline(v = i, col = "lightgray", lwd = 2, lty = 2)
+        val <- lambda_min[paste("lambda", m, sep = ".")]
+        axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
+      }
       box()
+      if(main[k] != "")
+        mtext(m, side = 3, line = 2.5, cex = 1.2, font = 2)
+      k <- k + 1
+      name <- name0
     }
   }
   
