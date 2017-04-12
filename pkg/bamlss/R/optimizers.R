@@ -3337,8 +3337,13 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
       if(show.lambda) {
         i <- which.min(ic[take, nic])
         abline(v = i, col = "lightgray", lwd = 2, lty = 2)
-        val <- lambda_min[paste("lambda", m, sep = ".")]
-        axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
+        val <- round(lambda_min[paste("lambda", m, sep = ".")], digits)
+        if(multiple) {
+          lval <- parse(text = paste('paste(lambda[', m, '], "=", ', val, ')', sep = ''))
+          axis(3, at = i, labels = lval)
+        } else {
+          axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
+        }
       }
       box()
       if(!is.expression(main[k])) {
@@ -3353,6 +3358,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
   
   return(invisible(NULL))
 }
+
 
 lasso.stop <- function(x)
 {
