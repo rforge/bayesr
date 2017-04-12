@@ -3252,8 +3252,12 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
           axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
         }
         box()
-        if(main[k] != "")
-          mtext(m, side = 3, line = 2.5, cex = 1.2, font = 2)
+        if(!is.expression(main[k])) {
+          if(main[k] != "")
+            mtext(main[k], side = 3, line = 2.5, cex = 1.2, font = 2)
+        } else {
+          mtext(main[k], side = 3, line = 2.5, cex = 1.2, font = 2)
+        }
         k <- k + 1
       }
     }
@@ -3301,16 +3305,31 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
       }
     
       matplot(tpar, type = "l", lty = 1, col = cols[as.factor(xn)],
-        xlab = expression(log(lambda)), ylab = expression(beta[j]), axes = FALSE, ...)
+        xlab = expression(log(lambda)), ylab = expression(beta[j]), axes = FALSE)
       if(is.null(labels)) {
-        labs <- colnames(tpar)
+        labs <- labs0 <- colnames(tpar)
+        plab <- tpar[nrow(tpar), ]
+        o <- order(plab, decreasing = TRUE)
+        labs <- labs[o]
+        plab <- plab[o]
+        rplab <- diff(range(plab))
+        for(i in 1:(length(plab) - 1)) {
+          dp <- abs(plab[i] - plab[i + 1]) / rplab
+          if(dp <= 0.02) {
+            labs[i + 1] <- paste(c(labs[i], labs[i + 1]), collapse = ",")
+            labs[i] <- ""
+          }
+        }
+        labs <- labs[order(o)]
         if(!is.null(name)) {
           for(j in seq_along(name))
             labs <- gsub(name[j], "", labs, fixed = TRUE)
         }
       } else labs <- rep(labels, length.out = ncol(tpar))
-      axis(4, at = tpar[nrow(tpar), ],
-        labels = labs, las = 1)
+      at <- tpar[nrow(tpar), ]
+      at <- at[labs != ""]
+      labs <- labs[labs != ""]
+      axis(4, at = at, labels = labs, las = 1)
       at <- pretty(1:nrow(tpar))
       at[at == 0] <- 1
       axis(1, at = at, labels = as.numeric(fmt(log_lambda[take, paste("lambda", m, sep = ".")][at], digits)))
@@ -3322,8 +3341,12 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
         axis(3, at = i, labels = substitute(paste(lambda, '=', val)))
       }
       box()
-      if(main[k] != "")
-        mtext(m, side = 3, line = 2.5, cex = 1.2, font = 2)
+      if(!is.expression(main[k])) {
+        if(main[k] != "")
+          mtext(main[k], side = 3, line = 2.5, cex = 1.2, font = 2)
+      } else {
+        mtext(main[k], side = 3, line = 2.5, cex = 1.2, font = 2)
+      }
       k <- k + 1
     }
   }
