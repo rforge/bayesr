@@ -171,11 +171,11 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
     }
     ntd <- c(ntd, "dmu")
   }
-  
+
   ## The basic setup.
   if(is.null(attr(x, "bamlss.engine.setup")))
     x <- bamlss.engine.setup(x, ...)
-  
+
   ## Remove intercept from lambda.
   if(!is.null(x$lambda$smooth.construct$model.matrix)) {
     cn <- colnames(x$lambda$smooth.construct$model.matrix$X)

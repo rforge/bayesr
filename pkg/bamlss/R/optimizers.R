@@ -154,10 +154,6 @@ bamlss.engine.setup <- function(x, update = "iwls", propose = "iwlsC_gp",
       for(j in seq_along(x$smooth.construct)) {
         sps <- is.null(x$smooth.construct[[j]]$sparse.setup)
         if(!sps) {
-          if(is.logical(x$smooth.construct[[j]]$sparse.setup))
-            sps <- x$smooth.construct[[j]]$sparse.setup
-        }
-        if(sps) {
           sm <- if(!is.null(x$smooth.construct[[j]]$S)) {
             sparse.setup(XX <- crossprod(x$smooth.construct[[j]]$X) + do.call("+", x$smooth.construct[[j]]$S))$matrix
           } else {
