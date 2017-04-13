@@ -146,7 +146,8 @@ b1 <- bamlss(f, sampler = FALSE, optimizer = lasso,
 ## Plot information criterion and coefficient paths.
 lasso.plot(b1, which = 1)
 lasso.plot(b1, which = 2)
-lasso.plot(b1, which = 2, name = "s.la(id).id")
+lasso.plot(b1, which = 2, model = "mu", name = "mu.s.la(id).id")
+lasso.plot(b1, which = 2, model = "sigma", name = "sigma.s.la(id).id")
 
 ## Extract coefficients for optimum Lasso parameter.
 coef(b1, mstop = lasso.stop(b1))
