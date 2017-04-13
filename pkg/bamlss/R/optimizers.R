@@ -40,7 +40,7 @@
 ## state list, as this could vary for special terms. A default
 ## method is provided.
 bamlss.engine.setup <- function(x, update = "iwls", propose = "iwlsC_gp",
-                                do.optim = NULL, df = NULL, parametric2smooth = TRUE, ...)
+  do.optim = NULL, df = NULL, parametric2smooth = TRUE, ...)
 {
   if(!is.null(attr(x, "bamlss.engine.setup"))) return(x)
   
@@ -150,20 +150,6 @@ bamlss.engine.setup <- function(x, update = "iwls", propose = "iwlsC_gp",
         nsc <- names(x$smooth.construct)
         nsc <- c(nsc[-which(is.nnet)], nsc[which(is.nnet)])
         x$smooth.construct <- x$smooth.construct[nsc]
-      }
-      for(j in seq_along(x$smooth.construct)) {
-        sps <- is.null(x$smooth.construct[[j]]$sparse.setup)
-        if(!sps) {
-          sm <- if(!is.null(x$smooth.construct[[j]]$S)) {
-            sparse.setup(XX <- crossprod(x$smooth.construct[[j]]$X) + do.call("+", x$smooth.construct[[j]]$S))$matrix
-          } else {
-            sparse.setup(XX <- crossprod(x$smooth.construct[[j]]$X))$matrix
-          }
-          if(length(unique(sm[, 1])) > 1){
-            x$smooth.construct[[j]]$sparse.setup$block.index <- split(as.integer(1:nrow(sm)), factor(sm[, 1]))
-            x$smooth.construct[[j]]$sparse.setup$is.diagonal <- all(sapply(x$smooth.construct[[j]]$sparse.setup$block.index, length) == 1)
-          }
-        }
       }
     }
     x
@@ -364,7 +350,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
     x$state$do.optim <- x$xt[["do.optim"]]
   x$sparse.setup <- sparse.setup(x$X, S = x$S)
   x$added <- c("nobs", "weights", "rres", "state", "a", "b", "prior", "edf",
-               "grad", "hess", "lower", "upper")
+    "grad", "hess", "lower", "upper")
   
   args <- list(...)
   

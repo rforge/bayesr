@@ -630,6 +630,13 @@ sparse.setup <- function(x, S = NULL, ...)
     "matrix" = index.matrix,
     "crossprod" = index.crossprod
   )
+  if(!is.null(index.crossprod)) {
+    idf <- as.factor(apply(setup$crossprod, 1, paste, collapse = ","))
+    if((nlevels(idf) > 1) & (nlevels(idf) < nrow(setup$crossprod))) {
+      setup$block.index <- split(as.integer(1:nrow(setup$crossprod)), idf)
+      setup$is.diagonal <- all(sapply(setup$block.index, length) == 1)
+    }
+  }
   return(setup)
 }
 
