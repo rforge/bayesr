@@ -2158,7 +2158,13 @@ boost <- function(x, y, family,
     eta[[take[1]]] <- eta[[take[1]]] + states[[take[1]]][[take[2]]]$fitted.values
     
     ## Write to x.
-    x[[take[1]]]$smooth.construct[[take[2]]]$state <- increase(x[[take[1]]]$smooth.construct[[take[2]]]$state, states[[take[1]]][[take[2]]])
+    if(is.null(x[[take[1]]]$smooth.construct[[take[2]]][["increase"]])) {
+      x[[take[1]]]$smooth.construct[[take[2]]]$state <- increase(x[[take[1]]]$smooth.construct[[take[2]]]$state,
+        states[[take[1]]][[take[2]]])
+    } else {
+      x[[take[1]]]$smooth.construct[[take[2]]]$state <- x[[take[1]]]$smooth.construct[[take[2]]][["increase"]](x[[take[1]]]$smooth.construct[[take[2]]]$state,
+        states[[take[1]]][[take[2]]])
+    }
     x[[take[1]]]$smooth.construct[[take[2]]]$selected[iter] <- 1
     x[[take[1]]]$smooth.construct[[take[2]]]$loglik[iter] <- loglik[i]
     
@@ -2212,7 +2218,7 @@ boost <- function(x, y, family,
     plot.boost.summary(bsum)
   
   return(list("parameters" = parm2mat(parm, if(is.null(nback)) maxit else (iter - 1)),
-    "fitted.values" = get.eta(x), "nobs" = nobs, "boost.summary" = bsum, "runtime" = elapsed))
+    "fitted.values" = eta, "nobs" = nobs, "boost.summary" = bsum, "runtime" = elapsed))
 }
 
 
@@ -2285,6 +2291,12 @@ boost.transform <- function(x, y, df = NULL, family,
         nr <- nrow(x[[nx[j]]]$smooth.construct[[sj]]$X)
         x[[nx[j]]]$smooth.construct[[sj]]$XWX <- matrix(0, nc, nc)
         x[[nx[j]]]$smooth.construct[[sj]]$XW <- matrix(0, nc, nr)
+      } else {
+        b <- get.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, "b")
+        b <- rep(0, length(b))
+        x[[nx[j]]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, b, "b")
+        x[[nx[j]]]$smooth.construct[[sj]]$state$edf <- 0
+        x[[nx[j]]]$smooth.construct[[sj]]$state$fitted.values <- rep(0, length(x[[nx[j]]]$smooth.construct[[sj]]$state$fitted.values))
       }
       x[[nx[j]]]$smooth.construct[[sj]]$selected <- rep(0, length = maxit)
       x[[nx[j]]]$smooth.construct[[sj]]$loglik <- rep(0, length = maxit)
@@ -2382,6 +2394,8 @@ make.par.list <- function(x, iter)
         rval[[j]][1, ] <- get.par(x$smooth.construct[[j]]$state$parameters, "b")
         if(!is.null(x$smooth.construct[[j]]$is.model.matrix))
           attr(rval[[j]], "is.model.matrix") <- TRUE
+        if(inherits(x$smooth.construct[[j]], "nnet.smooth"))
+          attr(rval[[j]], "is.nnet") <- TRUE
       }
     }
   } else {
@@ -2402,7 +2416,11 @@ parm2mat <- function(x, mstop)
       if(!is.null(attr(x[[i]][[j]], "is.model.matrix")))
         is.mm <- c(is.mm, j)
       cn <- colnames(x[[i]][[j]])
-      x[[i]][[j]] <- apply(x[[i]][[j]][1:mstop, , drop = FALSE], 2, cumsum)
+      if(is.null(attr(x[[i]][[j]], "is.nnet"))) {
+        x[[i]][[j]] <- apply(x[[i]][[j]][1:mstop, , drop = FALSE], 2, cumsum)
+      } else {
+        x[[i]][[j]] <- x[[i]][[j]][1:mstop, , drop = FALSE]
+      }
       colnames(x[[i]][[j]]) <- cn
     }
     if(!is.null(is.mm)) {

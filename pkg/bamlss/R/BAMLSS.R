@@ -4298,9 +4298,10 @@ n <- function(..., k = 10)
 smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 {
   split <- if(is.null(object$xt$split)) FALSE else object$xt$split
+  nsplit <- if(is.null(object$xt$nsplit)) 5 else object$xt$nsplit
   object <- smooth.construct.la.smooth.spec(object, data, knots)
   object[!(names(object) %in% c("formula", "term", "label", "dim", "X", "xt", "lasso"))] <- NULL
-  nodes <- if(split) 1 else object$xt$k
+  nodes <- if(split) nsplit else object$xt$k
   object$X <- cbind(1, object$X)
   colnames(object$X) <- NULL
   nc <- ncol(object$X) + 1
@@ -4316,8 +4317,8 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
       f <- X %*% b[nid[[j]]][-1]
       fit <- fit + b[nid[[j]]][1] / (1 + exp(-f))
     }
-    if(!split)
-      fit <- fit - mean(fit, na.rm = TRUE)
+    #if(!split)
+    fit <- fit - mean(fit, na.rm = TRUE)
     return(fit)
   }
 
@@ -4416,6 +4417,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     x$state$parameters <- set.par(x$state$parameters, b0, "b")
     x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
     x$state$fitted.values <- x$fit.fun(x$X, b0)
+
     x$state$edf <- sum_diag(UWU %*% H)
 
     return(x$state)
@@ -4450,24 +4452,35 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
   object$boost.fit <- function(x, y, nu, ...)
   {
-    b0 <- get.par(x$state$special, "b")
+    b0 <- rnorm(npar, sd = 0.5)
+    for(j in nid)
+      b0[j[1]] <- rnorm(1, sd = 1e-10)
+
     tau2 <- get.par(x$state$parameters, "tau2")
     nb <- names(b0)
 
     U <- getU(b0)
     UU <- crossprod(U, U)
-    H <- matrix_inv(UU + 1/1000000 * x$S[[1]] + 1/1000000 * x$S[[2]](b0))
-    b1 <- nu * drop(b0 + H %*% t(U) %*% (y - x$fit.fun(x$X, b0)))
-
+    H <- matrix_inv(UU + 1/tau2[1] * x$S[[1]] + 1/tau2[2] * x$S[[2]](b0))
+    delta <- nu * H %*% t(U) %*% (y - x$fit.fun(x$X, b0))
+    b1 <- b0 + delta
     names(b1) <- nb
     fit <- x$fit.fun(x$X, b1)
 
     x$state$parameters <- set.par(x$state$parameters, b1, "b")
     x$state$fitted.values <- fit
     x$state$rss <- sum((y - fit)^2)
-    x$state$special <- x$state$parameters
 
     return(x$state)
+  }
+
+  object$increase <- function(state0, state1) {
+    g <- get.par(state1$parameters, "b")
+    state0$fitted.values <- fitted(state0) + fitted(state1)
+    state0$parameters <- set.par(state0$parameters, g, "b")
+    state0$edf <- state1$edf
+    state0$parameters <- set.par(state0$parameters, get.par(state1$parameters, "tau2"), "tau2")
+    state0
   }
 
   class(object) <- c("nnet.smooth", "no.mgcv", "special")
@@ -4486,6 +4499,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
       lab <- strsplit(object[[j]]$label, "")[[1]]
       lab <- paste(c(lab[-length(lab)], paste(',node="', j, '")', sep = '')), collapse = "", sep = "")
       object[[j]]$label <- lab
+      class(object) <- c("nnet.smooth", "no.mgcv", "special")
     }
     class(object) <- c("nnet.smooth", "no.mgcv", "special", "smooth.list")
   }
@@ -4501,7 +4515,7 @@ Predict.matrix.nnet.smooth <- function(object, data)
 }
 
 fit_nn <- function(X, y, weights = NULL, start = NULL,
-  nnodes = NULL, eps = .Machine$double.eps^0.25)
+  nnodes = NULL, eps = .Machine$double.eps^0.25, delta = 1, maxit = 10)
 {
   if(is.null(nnodes))
     nnodes <- 10
@@ -4552,19 +4566,18 @@ fit_nn <- function(X, y, weights = NULL, start = NULL,
   }
 
   I <- diag(npar)
-  f0 <- fit.fun(b)
 
-  for(i in 1:1) {
+  for(i in 1:maxit) {
     U <- getU(b)
     tUW <- t(U / weights)
     UWU <- tUW %*% U
-    H <- matrix_inv(UWU + 1/10000000000 * I + 1/10000000000 * diag(diag(UWU)))
-    b <- drop(b + H %*% tUW %*% (y - fit.fun(b)))
+    H <- matrix_inv(UWU + 1/100000 * I + 1/100000 * diag(diag(UWU)))
+    b <- drop(b + delta * H %*% tUW %*% (y - fit.fun(b)))
+    plot(y ~ x)
+    plot2d(fit.fun(b) ~ x, add = TRUE, col.lines = 2)
   }
   
-  plot(y ~ x)
-  plot2d(fit.fun(b) ~ x, add = TRUE, col.lines = 2)
-  plot2d(f0 ~ x, add = TRUE, col.lines = 4)
+  b
 }
 
 
@@ -4573,9 +4586,20 @@ if(FALSE) {
   nobs <- 500
   x <- runif(nobs, -3, 3)
   y <- sin(x) + rnorm(nobs, sd = 0.1)
-  plot(x, y)
+  d <- data.frame(y = y, x = x)
 
-  b <- fit_nn(x, y)
+  d <- GAMart()
+
+  b <- bamlss(num ~ n(~lon+lat,k=5,split=TRUE), data = d, sampler = FALSE, optimizer = boost, nu = 0.1, maxit = 3000)
+
+  plot3d(b$fitted.values$mu ~ d$lon + d$lat)
+
+
+  fit <- 0
+  for(i in 1:nrow(b$parameters)) {
+    fit <- fit + predict(b, model = "mu", term = "n(", mstop = i, intercept = FALSE)
+    plot2d(fit ~ d$x, col.lines = 4, add = TRUE)
+  }
 }
 
 
