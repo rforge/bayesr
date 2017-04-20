@@ -4327,7 +4327,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   for(j in nid)
     object$state$parameters[j[1]] <- rnorm(1, sd = 1e-10)
   names(object$state$parameters) <- paste("b", 1:npar, sep = "")
-  object$state$parameters <- c(object$state$parameters, "tau21" = 1000, "tau22" = 1000)
+  object$state$parameters <- c(object$state$parameters, "tau21" = 1000)
   object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
   object$special.npar <- npar
   object$prior <- function(b) { sum(dnorm(get.par(b, "b"), sd = 1000, log = TRUE)) }
@@ -4399,7 +4399,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     edf0 <- args$edf - x$state$edf
 
     objfun <- function(tau2) {
-      H <- matrix_inv(UWU + 1/tau2[1] * x$S[[1]] + 1/tau2[2] * x$S[[2]](b0))
+      H <- matrix_inv(UWU + 1/tau2 * x$S[[1]])
       b0 <- drop(b0 + H %*% tUW %*% e)
       names(b0) <- nb
       edf <- sum_diag(UWU %*% H)
@@ -4410,7 +4410,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
     tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
 
-    H <- matrix_inv(UWU + 1/tau2[1] * x$S[[1]] + 1/tau2[2] * x$S[[2]](b0))
+    H <- matrix_inv(UWU + 1/tau2 * x$S[[1]])
     b0 <- drop(b0 + H %*% tUW %*% e)
     names(b0) <- nb
 
@@ -4435,14 +4435,14 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   S2 <- diag(diag(UU))
 
   objfun <- function(tau2) {
-    H <- matrix_inv(UU + 1/tau2[1] * S1 + 1/tau2[2] * S2)
+    H <- matrix_inv(UU + 1/tau2[1] * S1)
     edf <- sum_diag(UU %*% H)
     (df - edf)^2
   }
 
-  opt <- optim(tau2, objfun, method = "L-BFGS-B", lower = rep(.Machine$double.eps^0.5, 2), upper = rep(Inf, 2))
+  opt <- optim(tau2, objfun, method = "L-BFGS-B", lower = rep(.Machine$double.eps^0.5, 1), upper = rep(Inf, 1))
   tau2 <- opt$par
-  H <- matrix_inv(UU + 1/tau2[1] * diag(ncol(UU)) + 1/tau2[2] * diag(diag(UU)))
+  H <- matrix_inv(UU + 1/tau2 * diag(ncol(UU)))
   edf <- sum_diag(UU %*% H)
   object$state$parameters <- set.par(object$state$parameters, tau2, "tau2")
   object$state$edf <- edf
@@ -4452,22 +4452,21 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
   object$boost.fit <- function(x, y, nu, ...)
   {
-    b0 <- rnorm(npar, sd = 0.5)
+    b0 <- rnorm(npar, sd = 1)
     for(j in nid)
       b0[j[1]] <- rnorm(1, sd = 1e-10)
 
-    tau2 <- get.par(x$state$parameters, "tau2")
     nb <- names(b0)
-
     U <- getU(b0)
     UU <- crossprod(U, U)
-    H <- matrix_inv(UU + 1/tau2[1] * x$S[[1]] + 1/tau2[2] * x$S[[2]](b0))
-    delta <- nu * H %*% t(U) %*% (y - x$fit.fun(x$X, b0))
-    b1 <- b0 + delta
+    tau2 <- get.par(x$state$parameters, "tau2")
+    H <- matrix_inv(UU + 1/tau2 * x$S[[1]])
+    b1 <- b0 + nu * H %*% t(U) %*% (y - x$fit.fun(x$X, b0))
     names(b1) <- nb
     fit <- x$fit.fun(x$X, b1)
 
     x$state$parameters <- set.par(x$state$parameters, b1, "b")
+    x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
     x$state$fitted.values <- fit
     x$state$rss <- sum((y - fit)^2)
 
@@ -4514,92 +4513,76 @@ Predict.matrix.nnet.smooth <- function(object, data)
   X
 }
 
-fit_nn <- function(X, y, weights = NULL, start = NULL,
-  nnodes = NULL, eps = .Machine$double.eps^0.25, delta = 1, maxit = 10)
+boost.nnet.predict <- function(object, ..., term = NULL, mstop = NULL)
 {
-  if(is.null(nnodes))
-    nnodes <- 10
-
-  if(is.vector(X))
-    X <- matrix(X, ncol = 1)
-  X <- cbind(1, X)
-  k <- ncol(X)
-  nr <- nrow(X)
-
-  if(is.null(weights))
-    weights <- rep(1, length(y))
-
-  nc <- k + 1
-  npar <- nc * nnodes
-  nid <- split(1:npar, factor(sort(rep(1:nnodes, times = nc))))
-  b <- rnorm(npar, sd = 0.5)
-  for(j in nid)
-    b[j[1]] <- rnorm(1, sd = 1e-10)
-  names(b) <- paste("b", 1:length(b), sep = "")
-
-  getU <- function(b) {
-    U <- matrix(0, nr, npar)
-    i <- 1
-    for(j in seq_along(nid)) {
-      u <- X %*% b[nid[[j]]][-1]
-      o <- 1 / (1 + exp(-u))
-      U[, i] <- o
-      i <- i + 1
-      o2 <- b[nid[[j]]][1] * o * (1 - o)
-      U[, i] <- o2
-      i <- i + 1
-      for(jj in 2:k) {
-        U[, i] <- o2 * X[, jj]
-        i <- i + 1
-      }
+  if(is.null(dim(object$parameters)))
+    stop("this is not a boosted object!")
+  if(is.null(mstop))
+    mstop <- nrow(object$parameters)
+  if(is.null(term))
+    term <- "n("
+  if(!any(grepl("n(", term, fixed = TRUE)))
+    stop("this function is used to predict the neural net components of the model only!")
+  for(i in 1:mstop) {
+    p <- predict.bamlss(object, ..., term = term, mstop = i, intercept = FALSE)
+    p <- as.data.frame(p)
+    if(i < 2) {
+      fit <- p
+    } else {
+      for(j in 1:ncol(p))
+        fit[[j]] <- fit[[j]] + p[[j]]
     }
-    return(U)
   }
-
-  fit.fun <- function(b) {
-    fit <- 0
-    for(j in seq_along(nid)) {
-      f <- X %*% b[nid[[j]]][-1]
-      fit <- fit + b[nid[[j]]][1] / (1 + exp(-f))
-    }
-    return(fit - mean(fit))
-  }
-
-  I <- diag(npar)
-
-  for(i in 1:maxit) {
-    U <- getU(b)
-    tUW <- t(U / weights)
-    UWU <- tUW %*% U
-    H <- matrix_inv(UWU + 1/100000 * I + 1/100000 * diag(diag(UWU)))
-    b <- drop(b + delta * H %*% tUW %*% (y - fit.fun(b)))
-    plot(y ~ x)
-    plot2d(fit.fun(b) ~ x, add = TRUE, col.lines = 2)
-  }
-  
-  b
+  if(ncol(fit) < 2)
+    fit <- fit[[1]]
+  return(fit)
 }
 
 
 if(FALSE) {
   set.seed(123)
-  nobs <- 500
-  x <- runif(nobs, -3, 3)
-  y <- sin(x) + rnorm(nobs, sd = 0.1)
-  d <- data.frame(y = y, x = x)
+
+  nobs <- 2000
+  d <- data.frame(
+    "x1" = runif(nobs, 0, pi),
+    "lon" = runif(nobs, -3, 3),
+    "lat" = runif(nobs, -3, 3),
+    "z1" = runif(nobs, 0, 1),
+    "z2" = runif(nobs, 0, 1),
+    "z3" = runif(nobs, 0, 1),
+    "z4" = runif(nobs, 0, 1),
+    "z5" = runif(nobs, 0, 1)
+  )
+
+  d$eta0 <- with(d, 10 * sin(x1) + 10 * cos(lon)*cos(lat))
+  d$eta1 <- with(d, 10 * sin(pi * z1 * z2) + 20 * (z3 - 0.5)^2 + 10 * z4 + 5 * z5)
+  d$eta1 <- d$eta1 - mean(d$eta1)
+
+  sigma <- sqrt(var(d$eta0 + d$eta1) / 5)
+
+  d$y <- d$eta0 + d$eta1 + rnorm(nobs, sd = sigma)
+
+  f <- y ~ s(x1,bs="cc") + s(lon,lat,k=30) + n(~z1+z2+z3+z4+z5,k=20,split=TRUE)
+
+  b <- bamlss(f, data = d, sampler = FALSE, optimizer = boost, nu = 0.1, maxit = 2000)
+
+  p <- boost.nnet.predict(b, model = "mu")
+
+  plot(p ~ d$eta1)
+  abline(a = 0, b = 1)
+
 
   d <- GAMart()
+  b <- bamlss(num ~ n(x1) + n(x2) + n(x3), data = d, sampler = FALSE, optimizer = boost, nu = 0.01)
 
-  b <- bamlss(num ~ n(~lon+lat,k=5,split=TRUE), data = d, sampler = FALSE, optimizer = boost, nu = 0.1, maxit = 3000)
+  p1 <- boost.nnet.predict(b, model = "mu", term = "n(x1)")
+  p2 <- boost.nnet.predict(b, model = "mu", term = "n(x2)")
+  p3 <- boost.nnet.predict(b, model = "mu", term = "n(x3)")
 
-  plot3d(b$fitted.values$mu ~ d$lon + d$lat)
-
-
-  fit <- 0
-  for(i in 1:nrow(b$parameters)) {
-    fit <- fit + predict(b, model = "mu", term = "n(", mstop = i, intercept = FALSE)
-    plot2d(fit ~ d$x, col.lines = 4, add = TRUE)
-  }
+  par(mfrow = c(1, 3))
+  plot2d(p1 ~ d$x1)
+  plot2d(p2 ~ d$x2)
+  plot2d(p3 ~ d$x3)
 }
 
 
