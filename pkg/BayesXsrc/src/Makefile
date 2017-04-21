@@ -107,6 +107,7 @@ STRUCTADD_OBJS = \
 	bayesxsrc/structadd/FC_hrandom_variance_vec_nmig.o\
 	bayesxsrc/structadd/FC_linear.o\
 	bayesxsrc/structadd/FC_mult.o\
+	bayesxsrc/structadd/FC_shared.o\
 	bayesxsrc/structadd/FC_nonp.o\
 	bayesxsrc/structadd/FC_nonp_variance.o\
 	bayesxsrc/structadd/FC_nonp_variance_vec.o\
