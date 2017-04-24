@@ -632,7 +632,7 @@ sparse.setup <- function(x, S = NULL, ...)
   )
   if(!is.null(index.crossprod)) {
     idf <- as.factor(apply(setup$crossprod, 1, paste, collapse = ","))
-    if((nlevels(idf) > 1) & (nlevels(idf) < nrow(setup$crossprod))) {
+    if((nlevels(idf) > 1) & (nlevels(idf) <= nrow(setup$crossprod))) {
       setup$block.index <- split(as.integer(1:nrow(setup$crossprod)), idf)
       setup$is.diagonal <- all(sapply(setup$block.index, length) == 1)
     }
@@ -860,7 +860,7 @@ make.prior <- function(x, sigma = 0.1)
         tau2 <-  parameters[x$pid$tau2]
       }
       if(fixed | !length(tau2)) {
-        lp <- sum(dnorm(gamma, sd = 1000, log = TRUE))
+        lp <- sum(dnorm(gamma, sd = 50, log = TRUE))
       } else {
         if(length(tau2) < 2) {
           K <- if(is.function(x$S[[1]])) x$S[[1]](c(parameters, x$fixed.hyper)) else x$S[[1]]
