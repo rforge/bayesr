@@ -756,6 +756,9 @@ sparse.matrix.fit.fun <- function(X, b, index = NULL)
 ## The model term fitting function.
 make.fit.fun <- function(x, type = 1)
 {
+  if(inherits(x, "nnet.smooth"))
+    return(x$fit.fun)
+
   ff <- function(X, b, expand = TRUE, no.sparse.setup = FALSE) {
     if(!is.null(names(b))) {
       b <- if(!is.null(x$pid)) b[x$pid$b] else get.par(b, "b")
@@ -2749,6 +2752,7 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
   FUN = NULL, snames, data, grid = -1, rug = TRUE)
 {
   nt <- length(x$term)
+
   if(nt > 2)
     return(NULL)
 
@@ -4309,7 +4313,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
   nid <- split(1:npar, factor(sort(rep(1:nodes, times = nc))))
 
-  object$fit.fun <- function(X, b, ...) {
+  object$fit.fun <- function(X, b, expand = FALSE, ...) {
     if(!is.null(names(b)))
       b <- get.par(b, "b")
     fit <- 0
@@ -4317,7 +4321,8 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
       f <- X %*% b[nid[[j]]][-1]
       fit <- fit + b[nid[[j]]][1] / (1 + exp(-f))
     }
-    #if(!split)
+    if(!is.null(object$binning$match.index) & expand)
+      f <- f[object$binning$match.index]
     fit <- fit - mean(fit, na.rm = TRUE)
     return(fit)
   }
