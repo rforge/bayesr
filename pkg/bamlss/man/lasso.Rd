@@ -157,6 +157,7 @@ p1 <- predict(b1, mstop = lasso.stop(b1))
 
 ## Full MCMC, needs lasso.transform() to assign the
 ## adaptive weights from unpenalized model b0.
+set.seed(123)
 b2 <- bamlss(f, optimizer = FALSE, transform = lasso.transform,
   zeromodel = b0, nobs = length(y), start = coef(b1, mstop = lasso.stop(b1)))
 summary(b2)
