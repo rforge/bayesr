@@ -611,7 +611,7 @@ sparse.matrix.ordering <- function(x, ...)
 }
 
 
-## Setup sparse indeces for various algorithms.
+## Setup sparse indices for various algorithms.
 sparse.setup <- function(x, S = NULL, ...)
 {
   symmetric <- nrow(x) == ncol(x)
@@ -631,10 +631,17 @@ sparse.setup <- function(x, S = NULL, ...)
     "crossprod" = index.crossprod
   )
   if(!is.null(index.crossprod)) {
-    idf <- as.factor(apply(setup$crossprod, 1, paste, collapse = ","))
-    if((nlevels(idf) > 1) & (nlevels(idf) <= nrow(setup$crossprod))) {
-      setup$block.index <- split(as.integer(1:nrow(setup$crossprod)), idf)
-      setup$is.diagonal <- all(sapply(setup$block.index, length) == 1)
+    # make block.index only if coefficients do not overlap
+    tmp <- setup$crossprod[!duplicated(setup$crossprod), , drop = FALSE]
+    l <- nrow(tmp)
+    if(any(unique(tmp[duplicated(tmp, MARGIN = 0)]) > 0)){
+      return(setup)
+    } else {
+      if((l > 1) & (l <= nrow(setup$crossprod))) {
+        setup$block.index <- split(tmp, 1:l)
+        setup$block.index <- lapply(1:l, function(i) setup$block.index[[i]][setup$block.index[[i]] > 0])
+        setup$is.diagonal <- all(sapply(setup$block.index, length) == 1)
+      }
     }
   }
   return(setup)
