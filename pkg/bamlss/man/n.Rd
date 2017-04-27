@@ -77,6 +77,35 @@ plot2d(fx1 ~ x1, data = d)
 plot2d(fx2 ~ x2, data = d)
 plot2d(fx3 ~ x3, data = d)
 plot3d(flonlat ~ lon + lat, data = d)
+
+## Second example.
+set.seed(222)
+n <- 500
+d <- data.frame("x1" = runif(n, 0, pi), "x2" = runif(n, 0, pi))
+d$y <- sin(d$x1) * sin(d$x2) + rnorm(n, sd = exp(-2 + sin(2 * d$x2)))
+
+f <- list(
+  y ~ n(~x1+x2),
+  sigma ~ n(x2)
+)
+
+b <- bamlss(f, data = d, sampler = FALSE, nu = 1)
+plot(b, ask = FALSE)
+
+## Boosted version.
+set.seed(333)
+b <- bamlss(f, data = d, sampler = FALSE, optimizer = boost,
+  stop.criterion = "BIC", nu = 0.01, maxit = 1000)
+
+## Prediction.
+d$fx1x2 <- boost.nnet.predict(b,
+  model = "mu", term = "n(~x1+x2)")
+d$fx2 <- boost.nnet.predict(b,
+  model = "sigma", term = "n(x2)")
+
+par(mfrow = c(1, 2))
+plot3d(fx1x2 ~ x1 + x2, data = d)
+plot2d(fx2 ~ x2, data = d)
 }
 }
 
