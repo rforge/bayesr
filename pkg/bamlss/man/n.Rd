@@ -58,21 +58,25 @@ plot(b)
 
 ## Boosted version.
 set.seed(111)
-b <- bamlss(f, data = d, sampler = FALSE, optimizer = boost, nu = 0.01, maxit = 1000)
+b <- bamlss(f, data = d, sampler = FALSE, optimizer = boost,
+  nu = 0.01, stop.criterion = "BIC")
 
-## Predict.
-nd <- unique(d[, c("lon", "lat")])
-for(i in c(10, 20, 100, 1000)) {
-  nd[[paste("p", i, sep = "")]] <- boost.nnet.predict(b, newdata = nd,
-    model = "mu", term = "n(~lon+lat)", mstop = i)
-}
+## Predict effects.
+d$fx1 <- boost.nnet.predict(b,
+  model = "mu", term = "n(x1)")
+d$fx2 <- boost.nnet.predict(b,
+  model = "mu", term = "n(x2)")
+d$fx3 <- boost.nnet.predict(b,
+  model = "mu", term = "n(x3)")
+d$flonlat <- boost.nnet.predict(b,
+  model = "mu", term = "n(~lon+lat)")
 
 ## Plot.
 par(mfrow = c(2, 2))
-plot3d(p10 ~ lon + lat, data = nd)
-plot3d(p20 ~ lon + lat, data = nd)
-plot3d(p100 ~ lon + lat, data = nd)
-plot3d(p1000 ~ lon + lat, data = nd)
+plot2d(fx1 ~ x1, data = d)
+plot2d(fx2 ~ x2, data = d)
+plot2d(fx3 ~ x3, data = d)
+plot3d(flonlat ~ lon + lat, data = d)
 }
 }
 

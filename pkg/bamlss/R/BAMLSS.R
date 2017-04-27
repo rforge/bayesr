@@ -4462,7 +4462,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
   object$update <- update_nn
 
-  object$boost.fit <- function(x, y, nu, ...)
+  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, ...)
   {
     b0 <- rnorm(npar, sd = 1)
     for(j in nid)
@@ -4481,6 +4481,8 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
     x$state$fitted.values <- fit
     x$state$rss <- sum((y - fit)^2)
+    if(hatmatrix)
+      x$state$hat <- nu * U %*% H %*% t(U)
 
     return(x$state)
   }
@@ -4491,6 +4493,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     state0$parameters <- set.par(state0$parameters, g, "b")
     state0$edf <- state1$edf
     state0$parameters <- set.par(state0$parameters, get.par(state1$parameters, "tau2"), "tau2")
+    state0$hat <- state1$hat
     state0
   }
 

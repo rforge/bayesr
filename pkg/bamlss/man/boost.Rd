@@ -18,15 +18,16 @@ boost(x, y, family,
   nu = 0.1, df = 4, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL,
-  plot = TRUE, initialize = TRUE, ...)
+  plot = TRUE, initialize = TRUE, stop.criterion = NULL,
+  hatmatrix = !is.null(stop.criterion), ...)
 
 ## Boosting summary extractor.
 boost.summary(object, ...)
 
 ## Plot all boosting paths.
-boost.plot(x, which = c("loglik", "loglik.contrib", "parameters"),
-  intercept = TRUE, spar = TRUE, mstop = NULL, name = NULL,
-  labels = NULL, color = NULL, ...)
+boost.plot(x, which = c("loglik", "loglik.contrib", "parameters",
+  "aic", "bic"), intercept = TRUE, spar = TRUE, mstop = NULL,
+  name = NULL, labels = NULL, color = NULL, ...)
 
 ## Boosting summary printing and plotting.
 \method{print}{boost.summary}(x, summary = TRUE, plot = TRUE,
@@ -62,6 +63,14 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters"),
     equal to \code{eps}. If \code{maxit = NULL} the maximum number of iterations is set to 10000.}
   \item{plot}{Should the boosting summary be printed and plotted?}
   \item{initialize}{Logical, should intercepts be initialized?}
+  \item{stop.criterion}{Character, selects the information criterion that should be used
+    to determine the optimum number of boosting iterations. Either \code{"AIC"} or \code{"BIC"},
+    is possible. Note that this feature requires to compute hat-matrices for each distributional
+    parameter, therefore, the routine may be slow and computer storage intensive.}
+  \item{hatmatrix}{Logical, if set to \code{TRUE} the hat-matrices for each distributional parameter
+    will be computed. The hat-matrices are used to determine the effective (equivalent) degrees of
+    freedom in each boosting iteration, i.e., it is possible to compute information criteria
+    like the AIC or BIC for selecting the optimum number of boosting iterations.}
   \item{object}{A \code{\link{bamlss}} object that was fitted using \code{boost()}.}
   \item{summary}{Should the summary be printed?}
   \item{which}{Which of the three provided plots should be created?}

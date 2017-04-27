@@ -2050,7 +2050,8 @@ boost <- function(x, y, family,
   nu = 0.1, df = 4, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE,
-  initialize = TRUE, ...)
+  initialize = TRUE, stop.criterion = NULL,
+  hatmatrix = !is.null(stop.criterion), ...)
 {
   ## FIXME: hard coded.
   weights <- offset <- NULL
@@ -2106,6 +2107,16 @@ boost <- function(x, y, family,
   
   ## Print stuff.
   ia <- if(flush) interactive() else FALSE
+ 
+  ## Hat matrix?
+  HatMat <- list()
+  if(hatmatrix) {
+    for(i in nx)
+      HatMat[[i]] <- diag(length(eta[[1]]))
+    edf <- rep(0, maxit)
+    if(!is.null(stop.criterion))
+      save.ic <- rep(NA, maxit)
+  }
   
   ## Env for C.
   rho <- new.env()
@@ -2129,9 +2140,14 @@ boost <- function(x, y, family,
       for(j in names(x[[i]]$smooth.construct)) {
         ## Get updated parameters.
         states[[i]][[j]] <- if(is.null(x[[i]]$smooth.construct[[j]][["boost.fit"]])) {
-          .Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu, rho, PACKAGE = "bamlss")
+          if(hatmatrix) {
+            boost_fit(x[[i]]$smooth.construct[[j]], grad, nu, hatmatrix = hatmatrix)
+          } else {
+            .Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu, hatmatrix, rho, PACKAGE = "bamlss")
+          }
         } else {
-          x[[i]]$smooth.construct[[j]][["boost.fit"]](x[[i]]$smooth.construct[[j]], grad, nu, rho)
+          x[[i]]$smooth.construct[[j]][["boost.fit"]](x = x[[i]]$smooth.construct[[j]],
+            y = grad, nu = nu, hatmatrix = hatmatrix, rho = rho)
         }
         
         ## Get rss.
@@ -2176,8 +2192,22 @@ boost <- function(x, y, family,
     
     peta <- family$map2par(eta)
     ll <- family$loglik(y, peta)
-    
     save.ll <- c(save.ll, ll)
+
+    if(hatmatrix) {
+      HatMat[[take[1]]] <- HatMat[[take[1]]] %*% (diag(length(eta[[1]])) - x[[take[1]]]$smooth.construct[[take[2]]]$state$hat)
+      for(i in nx)
+        edf[iter] <- edf[iter] + sum(diag(diag(length(eta[[1]])) - HatMat[[i]]))
+      if(!is.null(stop.criterion)) {
+        save.ic[iter] <- -2 * ll + edf[iter] * (if(tolower(stop.criterion) == "aic") 2 else log(length(eta[[1]])))
+        if(!is.na(save.ic[iter - 1])) {
+          if(save.ic[iter - 1] < save.ic[iter]) {
+            nback <- TRUE
+            break
+          }
+        }
+      }
+    }
     
     if(verbose) {
       cat(if(ia) "\r" else "\n")
@@ -2213,7 +2243,7 @@ boost <- function(x, y, family,
     cat("\n elapsed time: ", et, "\n", sep = "")
   }
   
-  bsum <- make.boost.summary(x, if(is.null(nback)) maxit else (iter - 1), save.ll)
+  bsum <- make.boost.summary(x, if(is.null(nback)) maxit else (iter - 1), save.ll, edf, hatmatrix, length(eta[[1]]))
   if(plot)
     plot.boost.summary(bsum)
   
@@ -2600,7 +2630,7 @@ boost_iwls <- function(x, hess, resids, nu)
 
 
 ## Boosting gradient fit.
-boost_fit <- function(x, y, nu)
+boost_fit <- function(x, y, nu, hatmatrix = TRUE)
 {
   ## Compute reduced residuals.
   xbin.fun(x$binning$sorted.index, rep(1, length = length(y)), y, x$weights, x$rres, x$binning$order)
@@ -2624,6 +2654,9 @@ boost_fit <- function(x, y, nu)
   x$state$parameters <- set.par(x$state$parameters, g, "b")
   x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
   x$state$rss <- sum((x$state$fitted.values - y)^2)
+
+  if(hatmatrix)
+    x$state$hat <- nu * x$X %*% P %*% t(x$X)
   
   return(x$state)
 }
@@ -2640,12 +2673,13 @@ increase <- function(state0, state1)
   attr(state0$parameters, "true.tau2") <- attr(state1$parameters, "true.tau2")
   attr(state0$parameters, "edf") <- attr(state1$parameters, "edf")
   state0$special <- state1$special
+  state0$hat <- state1$hat
   state0
 }
 
 
 ## Extract summary for boosting.
-make.boost.summary <- function(x, mstop, save.ic)
+make.boost.summary <- function(x, mstop, save.ic, edf, hatmatrix, nobs)
 {
   nx <- names(x)
   labels <- NULL
@@ -2670,7 +2704,13 @@ make.boost.summary <- function(x, mstop, save.ic)
   colnames(ll.contrib) <- labels
   names(bsum) <- nx
   bsum <- list("summary" = bsum, "mstop" = mstop,
-               "ic" = save.ic[1:mstop], "loglik" = ll.contrib)
+    "ic" = save.ic[1:mstop], "loglik" = ll.contrib)
+  if(hatmatrix) {
+    bsum$criterion <- list()
+    bsum$criterion$bic <- -2 * bsum$ic + edf[1:mstop] * log(nobs)
+    bsum$criterion$aic <- -2 * bsum$ic + edf[1:mstop] * 2
+    bsum$criterion$edf <- edf[1:mstop]
+  }
   class(bsum) <- "boost.summary"
   return(bsum)
 }
@@ -2686,8 +2726,8 @@ boost.summary <- function(object, ...)
 
 ## Smallish print function for boost summaries.
 print.boost.summary <- function(x, summary = TRUE, plot = TRUE,
-                                which = c("loglik", "loglik.contrib"), intercept = TRUE,
-                                spar = TRUE, ...)
+  which = c("loglik", "loglik.contrib"), intercept = TRUE,
+  spar = TRUE, ...)
 {
   if(inherits(x, "bamlss"))
     x <- x$model.stats$optimizer$boost.summary
@@ -2696,7 +2736,7 @@ print.boost.summary <- function(x, summary = TRUE, plot = TRUE,
   if(summary) {
     np <- length(x$summary)
     cat("\n")
-    cat("logLik. =", x$ic[x$mstop], "-> at mstop =", x$mstop, "\n---\n")
+    cat("logLik. =", if(is.na(x$ic[x$mstop])) x$ic[x$mstop - 1] else x$ic[x$mstop], "-> at mstop =", x$mstop, "\n---\n")
     for(j in 1:np) {
       if(length(x$summary[[j]]) < 2) {
         print(round(x$summary[[j]], digits = 4))
@@ -2709,10 +2749,10 @@ print.boost.summary <- function(x, summary = TRUE, plot = TRUE,
   
   if(plot) {
     if(!is.character(which)) {
-      which <- c("loglik", "loglik.contrib", "parameters")[as.integer(which)]
+      which <- c("loglik", "loglik.contrib", "parameters", "aic", "bic")[as.integer(which)]
     } else {
       which <- tolower(which)
-      which <- match.arg(which, several.ok = TRUE)
+      which <- match.arg(which, c("loglik", "loglik.contrib", "parameters", "aic", "bic"), several.ok = TRUE)
     }
     
     if(spar) {
@@ -2744,6 +2784,16 @@ print.boost.summary <- function(x, summary = TRUE, plot = TRUE,
         axis(4, at = x$loglik[nrow(x$loglik), ], labels = colnames(x$loglik), las = 1)
         axis(3, at = x$mstop, labels = paste("mstop =", x$mstop))
       }
+      if(w %in% c("aic", "bic")) {
+        if(!is.null(x$criterion)) {
+          if(spar)
+            par(mar = c(5.1, 4.1, 2.1, 2.1))
+          plot(x$criterion[[w]], type = "l", xlab = "Iteration", ylab = toupper(w), ...)
+          i <- which.min(x$criterion[[w]])
+          abline(v = i, lwd = 3, col = "lightgray")
+          axis(3, at = i, labels = paste("mstop = ", i, ", edf = ", round(x$criterion$edf[i], digits = 2), sep = ""))
+        }
+      }
     }
   }
   
@@ -2756,8 +2806,8 @@ plot.boost.summary <- function(x, ...)
   print.boost.summary(x, summary = FALSE, plot = TRUE, ...) 
 }
 
-boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters"),
-                       intercept = TRUE, spar = TRUE, mstop = NULL, name = NULL, labels = NULL, color = NULL, ...)
+boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters", "aic", "bic"),
+  intercept = TRUE, spar = TRUE, mstop = NULL, name = NULL, labels = NULL, color = NULL, ...)
 {
   if(!is.character(which)) {
     which <- c("loglik", "loglik.contrib", "parameters")[as.integer(which)]
@@ -2779,7 +2829,7 @@ boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters"),
   x$model.stats$optimizer$boost.summary$loglik <- x$model.stats$optimizer$boost.summary$loglik[1:mstop, , drop = FALSE]
   
   for(w in which) {
-    if(w %in% c("loglik", "loglik.contrib")) {
+    if(w %in% c("loglik", "loglik.contrib", "aic", "bic")) {
       if((w == "loglik") & spar)
         par(mar = c(5.1, 4.1, 2.1, 2.1))
       if((w == "loglik.contrib") & spar)
