@@ -337,8 +337,10 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           sf <- sfiles[sf]
           if(inherits(x[[i]]$smooth.construct[[j]], "mrf.smooth"))
             sf <- grep("_spatial_", sf, fixed = TRUE, value = TRUE)
-          if(inherits(x[[i]]$smooth.construct[[j]], "random.effect"))
-            sf <- grep("_random_", sf, fixed = TRUE, value = TRUE)
+          if(inherits(x[[i]]$smooth.construct[[j]], "random.effect")) {
+            if(!inherits(x[[i]]$smooth.construct[[j]], "mgcv.smooth"))
+              sf <- grep("_random_", sf, fixed = TRUE, value = TRUE)
+          }
           if(any(grepl("anisotropy", sf)))
             sf <- sf[-grep("anisotropy", sf)]
           tj <- grep("tensor", sf, fixed = TRUE)
@@ -369,8 +371,10 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
               sf <- if(is.tx(x[[i]]$smooth.construct[[j]]) & (length(x[[i]]$smooth.construct[[j]]$term) > 1)) sf[tj] else sf[-tj]
             if(inherits(x[[i]]$smooth.construct[[j]], "mrf.smooth"))
               sf <- grep("_spatial_", sf, fixed = TRUE, value = TRUE)
-            if(inherits(x[[i]]$smooth.construct[[j]], "random.effect"))
-              sf <- grep("_random_", sf, fixed = TRUE, value = TRUE)
+            if(inherits(x[[i]]$smooth.construct[[j]], "random.effect")) {
+              if(!inherits(x[[i]]$smooth.construct[[j]], "mgcv.smooth"))
+                sf <- grep("_random_", sf, fixed = TRUE, value = TRUE)
+            }
             if((x[[i]]$smooth.construct[[j]]$by != "NA") & !is.user(x[[i]]$smooth.construct[[j]]))
               sf <- grep(x[[i]]$smooth.construct[[j]]$by, sf, fixed = TRUE, value = TRUE)
             vsamps <- as.matrix(read.table(file.path(dir, "output", sf), header = TRUE)[, -1, drop = FALSE])
