@@ -4334,6 +4334,10 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     return(fit)
   }
 
+#  object$fit.fun <- function(X, b, ...) {
+#    .Call("nnet_fitfun", X, get.par(b, "b"), nid)
+#  }
+
   object$fixed <- FALSE
   object$state$parameters <- rnorm(npar, sd = 0.5)
   for(j in nid)

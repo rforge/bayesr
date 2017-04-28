@@ -3750,3 +3750,43 @@ SEXP rho_score_mvnormAR1(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEX
   return d;
 }
 
+/* Neural net fit fun. */
+/*SEXP nnet_fitun(SEXP X, SEXP b, SEXP nid)*/
+/*{*/
+/*  int i, j, jj, n = nrows(X);*/
+/*  int k = ncols(X);*/
+/*  int nodes = length(nid);*/
+
+/*  double *Xptr = REAL(X);*/
+/*  double *bptr = REAL(b);*/
+
+/*  SEXP fit;*/
+/*  PROTECT(fit = allocVector(REALSXP, n));*/
+/*  double *fitptr = REAL(fit);*/
+
+/*  double ftmp = 0.0;*/
+
+/*  for(j = 0; j < nodes; j++) {*/
+/*    id = INTEGER*/
+/*    for(i = 0; i < n; i++) {*/
+/*      ftmp = 0.0;*/
+/*      for(jj = 0; jj < k; jj++) {*/
+/*        ftmp += Xptr[i + jj * n] * bptr[]*/
+/*      }*/
+/*    }*/
+/*  }*/
+/*}*/
+
+/*    fit <- 0*/
+/*    for(j in seq_along(nid)) {*/
+/*      f <- X %*% b[nid[[j]]][-1]*/
+/*      fit <- fit + b[nid[[j]]][1] / (1 + exp(-f))*/
+/*    }*/
+/*    if(!is.null(object$binning$match.index) & expand)*/
+/*      f <- f[object$binning$match.index]*/
+/*    fit <- fit - mean(fit, na.rm = TRUE)*/
+
+
+
+
+

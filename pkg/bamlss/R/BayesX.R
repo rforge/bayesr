@@ -335,8 +335,10 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           #term <- paste("of", term, "sample", sep = "")
           sf <- grepl(paste("_", i, "_", sep = ""), sfiles, fixed = TRUE) & grepl(term, sfiles, fixed = TRUE) & !grepl("_variance_", sfiles, fixed = TRUE)
           sf <- sfiles[sf]
-          if(inherits(x[[i]]$smooth.construct[[j]], "mrf.smooth"))
-            sf <- grep("_spatial_", sf, fixed = TRUE, value = TRUE)
+          if(inherits(x[[i]]$smooth.construct[[j]], "mrf.smooth")) {
+            if(!inherits(x[[i]]$smooth.construct[[j]], "mgcv.smooth"))
+              sf <- grep("_spatial_", sf, fixed = TRUE, value = TRUE)
+          }
           if(inherits(x[[i]]$smooth.construct[[j]], "random.effect")) {
             if(!inherits(x[[i]]$smooth.construct[[j]], "mgcv.smooth"))
               sf <- grep("_random_", sf, fixed = TRUE, value = TRUE)
@@ -369,8 +371,10 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
             tj <- grep("tensor", sf, fixed = TRUE)
             if(length(tj))
               sf <- if(is.tx(x[[i]]$smooth.construct[[j]]) & (length(x[[i]]$smooth.construct[[j]]$term) > 1)) sf[tj] else sf[-tj]
-            if(inherits(x[[i]]$smooth.construct[[j]], "mrf.smooth"))
-              sf <- grep("_spatial_", sf, fixed = TRUE, value = TRUE)
+            if(inherits(x[[i]]$smooth.construct[[j]], "mrf.smooth")) {
+              if(!inherits(x[[i]]$smooth.construct[[j]], "mgcv.smooth"))
+                sf <- grep("_spatial_", sf, fixed = TRUE, value = TRUE)
+            }
             if(inherits(x[[i]]$smooth.construct[[j]], "random.effect")) {
               if(!inherits(x[[i]]$smooth.construct[[j]], "mgcv.smooth"))
                 sf <- grep("_random_", sf, fixed = TRUE, value = TRUE)
