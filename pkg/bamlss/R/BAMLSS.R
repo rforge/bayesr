@@ -5000,7 +5000,7 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
         samps <- samps[, snames, drop = FALSE]
         macf <- apply(samps, 2, function(x) { acf(x, plot = FALSE, ...) })
         acfx <- macf[[1]]
-        acfx$acf <- array(apply(do.call("rbind", lapply(macf, function(x) { x$acf })), 2, max), dim = c(length(acfx$acf), 1L, 1L))
+        acfx$acf <- array(apply(do.call("rbind", lapply(macf, function(x) { x$acf })), 2, max, na.rm = TRUE), dim = c(length(acfx$acf), 1L, 1L))
         args <- list(...)
         if(is.null(args$main))
           args$main <- "Maximum ACF of samples"
