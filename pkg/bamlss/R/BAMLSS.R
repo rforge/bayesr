@@ -870,7 +870,7 @@ make.prior <- function(x, sigma = 0.1)
         tau2 <-  parameters[x$pid$tau2]
       }
       if(fixed | !length(tau2)) {
-        lp <- sum(dnorm(gamma, sd = 50, log = TRUE))
+        lp <- sum(dnorm(gamma, sd = 1000, log = TRUE))
       } else {
         if(length(tau2) < 2) {
           K <- if(is.function(x$S[[1]])) x$S[[1]](c(parameters, x$fixed.hyper)) else x$S[[1]]
