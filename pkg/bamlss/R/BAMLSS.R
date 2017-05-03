@@ -1622,8 +1622,10 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL, logLik = FAL
         par <- rep(list(0), length = length(x))
         names(par) <- nx
         mpar <- par
-        for(i in nx)
-          par[[i]] <- make.link2(family$links[i])$linkinv(.fitted.bamlss(i, x[[i]], samples))
+        for(i in nx) {
+          par[[i]] <- .fitted.bamlss(i, x[[i]], samples)
+          par[[i]] <- apply(par[[i]], 1, make.link2(family$links[i])$linkinv)
+        }
         msamples <- matrix(apply(samples, 2, mean, na.rm = TRUE), nrow = 1)
         colnames(msamples) <- pn
         for(i in nx)
@@ -6410,7 +6412,7 @@ samples <- function(object, ...)
 }
 
 samples.bamlss <- samples.bamlss.frame <- function(object, model = NULL, term = NULL, combine = TRUE, drop = TRUE,
-  burnin = NULL, thin = NULL, ...)
+  burnin = NULL, thin = NULL, coef.only = FALSE, ...)
 {
   if(!inherits(object, "bamlss") & !inherits(object, "bamlss.frame"))
     stop("object is not a 'bamlss' object!")
@@ -6419,6 +6421,18 @@ samples.bamlss <- samples.bamlss.frame <- function(object, model = NULL, term = 
   tx <- terms(object, drop = FALSE)
   x <- object$samples
   x <- process.chains(x, combine, drop = FALSE)
+
+  if(coef.only) {
+    cdrop <- c(".accepted", ".alpha", "logLik", "logPost", "AIC", 
+      "BIC", "DIC", "pd", ".edf")
+    for(d in cdrop) {
+      for(k in seq_along(x)) {
+        if(length(j <- grep(d, colnames(x[[k]]), fixed = TRUE))) {
+          x[[k]] <- x[[k]][, -j, drop = FALSE]
+        }
+      }
+    }
+  }
 
   snames <- colnames(x[[1]])
   nx <- names(tx)
