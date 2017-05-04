@@ -7316,6 +7316,35 @@ matrix_inv <- function(x, index = NULL, force = FALSE)
 }
 
 
+if(FALSE) {
+  set.seed(1234)
+  a <- list()
+  sparse <- list()
+  for (i in 1:4){
+    a[[i]] <- crossprod(matrix(rnorm(i^2), nrow = i))
+  }
+
+  A <- as.matrix(do.call(bdiag, a))
+
+  sparse$block.index <- list(
+    1L,
+    2L:3L,
+    4L:6L,
+    7L:10L
+  )
+  sparse$is.diagonal <- FALSE
+
+  # calculate inverse
+  inv1 <- bamlss:::matrix_inv(A, sparse)
+  attr(inv1, "dimnames") <- NULL
+  inv2 <- bamlss:::matrix_inv(A)
+
+  all.equal(inv1, inv2)
+  inv1
+  inv2
+}
+
+
 ## Compute matching index for duplicates in data.
 match.index <- function(x)
 {

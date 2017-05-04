@@ -509,8 +509,8 @@ SEXP block_inverse(SEXP X, SEXP IND, SEXP DIAGONAL)
             }
           }
 
-          F77_CALL(dpotrf)("Upper", &ni, Xiptr, &ni, &info);
-          F77_CALL(dpotri)("Upper", &ni, Xiptr, &ni, &info);
+          F77_CALL(dpotrf)("U", &ni, Xiptr, &ni, &info);
+          F77_CALL(dpotri)("U", &ni, Xiptr, &ni, &info);
 
           for(j = 0; j < ni; j++) {
             for(jj = j; jj < ni; jj++) {
