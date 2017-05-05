@@ -3295,6 +3295,14 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
       for(jj in grep(j, names(x), fixed = TRUE, value = TRUE)) {
         sn <- snames[grep2(paste(id, "s", jj, sep = "."), snames, fixed = TRUE)]
         if(!inherits(x[[jj]], "no.mgcv") & !inherits(x[[jj]], "special")) {
+          if(is.null(x[[jj]]$mono))
+            x[[jj]]$mono <- 0
+          if(!is.null(x[[jj]]$margin)) {
+            for(mjj in seq_along(x[[jj]]$margin)) {
+              if(is.null(x[[jj]]$margin[[mjj]]$mono))
+                x[[jj]]$margin[[mjj]]$mono <- 0
+            }
+          }
           X <- PredictMat(x[[jj]], data)
           eta <- eta + fitted_matrix(X, samps[, sn, drop = FALSE])
         } else {
@@ -6280,6 +6288,14 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
             for(char in c("(", ")", "[", "]")) {
               obj$smooth.construct[[j]]$term <- gsub(char, ".", obj$smooth.construct[[j]]$term, fixed = TRUE)
               obj$smooth.construct[[j]]$by <- gsub(char, ".", obj$smooth.construct[[j]]$by, fixed = TRUE)
+            }
+            if(is.null(obj$smooth.construct[[j]]$mono))
+              obj$smooth.construct[[j]]$mono <- 0
+            if(!is.null(obj$smooth.construct[[j]]$margin)) {
+              for(mj in seq_along(obj$smooth.construct[[j]]$margin)) {
+                if(is.null(obj$smooth.construct[[j]]$margin[[mj]]$mono))
+                  obj$smooth.construct[[j]]$margin[[mj]]$mono <- 0
+              }
             }
             if(is.null(obj$smooth.construct[[j]]$PredictMat)) {
               X <- PredictMat(obj$smooth.construct[[j]], x)
