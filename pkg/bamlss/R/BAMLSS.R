@@ -4254,7 +4254,8 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   if(ridge)
     object$S <- list(diag(.Machine$double.eps, ncol(object$X)))
 
-  object$xt[["binning"]] <- TRUE
+  if(is.null(object$xt[["binning"]]))
+    object$xt[["binning"]] <- TRUE
   if(is.null(object$xt[["df"]]))
     object$xt[["df"]] <- if(!ridge) ceiling(ncol(object$X) * 0.9) else ceiling(ncol(object$X) * 0.3)
   object$ctype <- switch(object$type,

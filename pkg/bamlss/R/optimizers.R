@@ -222,10 +222,19 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
     x$xt <- x$xt[unique(names(x$xt))]
   }
   if(is.null(x$binning) & !is.null(x$xt[["binning"]])) {
-    x$binning <- match.index(x$X)
-    x$binning$order <- order(x$binning$match.index)
-    x$binning$sorted.index <- x$binning$match.index[x$binning$order]
-    x$X <- x$X[x$binning$nodups, , drop = FALSE]
+    if(is.logical(x$xt[["binning"]])) {
+      if(x$xt[["binning"]]) {
+        x$binning <- match.index(x$X)
+        x$binning$order <- order(x$binning$match.index)
+        x$binning$sorted.index <- x$binning$match.index[x$binning$order]
+        x$X <- x$X[x$binning$nodups, , drop = FALSE]
+      }
+    } else {
+      x$binning <- match.index(x$X)
+      x$binning$order <- order(x$binning$match.index)
+      x$binning$sorted.index <- x$binning$match.index[x$binning$order]
+      x$X <- x$X[x$binning$nodups, , drop = FALSE]
+    }
   }
   if(!is.null(x$binning)) {
     if(nrow(x$X) != length(x$binning$nodups))
