@@ -19,7 +19,7 @@ boost(x, y, family,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL,
   plot = TRUE, initialize = TRUE, stop.criterion = NULL,
-  hatmatrix = !is.null(stop.criterion), ...)
+  force.stop = TRUE, hatmatrix = !is.null(stop.criterion), ...)
 
 ## Boosting summary extractor.
 boost.summary(object, ...)
@@ -67,6 +67,7 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters",
     to determine the optimum number of boosting iterations. Either \code{"AIC"} or \code{"BIC"},
     is possible. Note that this feature requires to compute hat-matrices for each distributional
     parameter, therefore, the routine may be slow and computer storage intensive.}
+  \item{force.stop}{Logical, should the algorithm stop if the information criterion increases?}
   \item{hatmatrix}{Logical, if set to \code{TRUE} the hat-matrices for each distributional parameter
     will be computed. The hat-matrices are used to determine the effective (equivalent) degrees of
     freedom in each boosting iteration, i.e., it is possible to compute information criteria

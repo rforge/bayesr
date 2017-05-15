@@ -2059,7 +2059,7 @@ boost <- function(x, y, family,
   nu = 0.1, df = 4, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE,
-  initialize = TRUE, stop.criterion = NULL,
+  initialize = TRUE, stop.criterion = NULL, force.stop = TRUE,
   hatmatrix = !is.null(stop.criterion), ...)
 {
   ## FIXME: hard coded.
@@ -2119,6 +2119,7 @@ boost <- function(x, y, family,
  
   ## Hat matrix?
   HatMat <- list()
+  edf <- NULL
   if(hatmatrix) {
     for(i in nx)
       HatMat[[i]] <- diag(length(eta[[1]]))
@@ -2209,7 +2210,7 @@ boost <- function(x, y, family,
         edf[iter] <- edf[iter] + sum(diag(diag(length(eta[[1]])) - HatMat[[i]]))
       if(!is.null(stop.criterion)) {
         save.ic[iter] <- -2 * ll + edf[iter] * (if(tolower(stop.criterion) == "aic") 2 else log(length(eta[[1]])))
-        if(!is.na(save.ic[iter - 1])) {
+        if(!is.na(save.ic[iter - 1]) & force.stop) {
           if(save.ic[iter - 1] < save.ic[iter]) {
             nback <- TRUE
             break
@@ -2221,7 +2222,8 @@ boost <- function(x, y, family,
     if(verbose) {
       cat(if(ia) "\r" else "\n")
       vtxt <- paste(
-        " logLik ", fmt(ll, width = 8, digits = digits),
+        if(!is.null(stop.criterion)) paste(stop.criterion, " ", fmt(save.ic[iter], width = 8, digits = digits), " ", sep = "") else NULL,
+        "logLik ", fmt(ll, width = 8, digits = digits),
         " eps ", fmt(eps0, width = 6, digits = digits + 2),
         " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
       cat(vtxt)
