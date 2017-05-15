@@ -569,6 +569,11 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
           edf <- edf - x$dalpha$smooth.construct[[sj]]$state$edf + state$edf
           x$dalpha$smooth.construct[[sj]]$state <- state
         }
+        #!#
+        time <- matrix(unlist(attr(y, "grid")), ncol = sub, byrow = TRUE)
+        plot(time, eta_timegrid_dalpha, main=paste0("dalpha: iteration ", iter-1), pch = 20)
+        plot(time[, ncol(eta_timegrid)], eta$dalpha, main=paste0("dalpha: iteration ", iter-1), pch = 20)
+        #!#
         
         if(maxit[2] > 1) {
           eps00 <- mean(abs((eta$dalpha - eta00) / eta$dalpha), na.rm = TRUE)
@@ -605,6 +610,15 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
             x$dmu$smooth.construct[[sj]]$state <- state
           }
         }
+        #!#
+        par(mfrow = c(2, 2))
+        time <- unlist(attr(y, "grid"))
+        m <- as.vector(t(eta_timegrid_mu))
+        dm <- as.vector(t(eta_timegrid_dmu))
+        p1 <- xyplot(m ~ time, group = id, main=paste0("mu: iteration ", iter-1), type = "l")
+        p2 <- xyplot(dm ~ time, group = id, main=paste0("mu: iteration ", iter-1), type = "l")
+        grid.arrange(p1, p2, ncol = 2)
+        #!#
       }
       
       if(!fix.sigma) {
@@ -1010,6 +1024,7 @@ update_jm_mu <- function(x, y, eta, eta_timegrid,
   XWX <- if(is.null(x$sparse.setup$matrix)) {
     crossprod(x$X * (1 / exp(eta$sigma)^2), x$X)
   } else do.XWX(x$X, exp(eta$sigma)^2, index = x$sparse.setup$matrix)
+  ## negative Hessian
   xhess0 <- -1 * XWX - int$hess
   
   env <- new.env()
@@ -1027,12 +1042,12 @@ update_jm_mu <- function(x, y, eta, eta_timegrid,
       par <- set.par(par, tau2, "tau2")
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
       xhess <- xhess0 - x$hess(score = NULL, par, full = FALSE)
-      Sigma <- matrix_inv(xhess, index = x$sparse.setup)
+      Sigma <- matrix_inv(-1 * xhess, index = x$sparse.setup)
       Hs <- Sigma %*% xgrad
       g <- get.par(par, "b")
       if(update.nu) {
         objfun.nu <- function(nu) {
-          g2 <- drop(g - nu * Hs)
+          g2 <- drop(g + nu * Hs)
           names(g2) <- names(g)
           x$state$parameters <- set.par(x$state$parameters, g2, "b")
           x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
@@ -1050,7 +1065,7 @@ update_jm_mu <- function(x, y, eta, eta_timegrid,
       } else {
         nu <- x$state$nu
       }
-      g2 <- drop(g - nu * Hs)
+      g2 <- drop(g + nu * Hs)
       names(g2) <- names(g)
       fit <- x$fit.fun(x$X, g2)
       fit_timegrid <- x$fit.fun_timegrid(g2)
@@ -1059,7 +1074,7 @@ update_jm_mu <- function(x, y, eta, eta_timegrid,
       if(!is.null(dx))
         eta_timegrid_dmu <- eta_timegrid_dmu - dx$state$fitted_timegrid + dx$fit.fun_timegrid(g2)
       eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
-      edf1 <- sum_diag(xhess0 %*% Sigma)
+      edf1 <- sum_diag((-1 * xhess0) %*% Sigma)
       edf <- edf0 + edf1
       logLik <- get_LogPost(eta_timegrid, eta, 0)
       ic <- get.ic2(logLik, edf, length(eta$mu), criterion)
@@ -1089,7 +1104,7 @@ update_jm_mu <- function(x, y, eta, eta_timegrid,
   xhess <- xhess0 - x$hess(score = NULL, x$state$parameters, full = FALSE)
   
   ## Compute the inverse of the hessian.
-  Sigma <- matrix_inv(xhess, index = x$sparse.setup)
+  Sigma <- matrix_inv(-1 * xhess, index = x$sparse.setup)
   Hs <- Sigma %*% xgrad
   
   ## Update regression coefficients.
@@ -1097,7 +1112,7 @@ update_jm_mu <- function(x, y, eta, eta_timegrid,
   
   if(update.nu) {
     objfun2 <- function(nu) {
-      g2 <- drop(g - nu * Hs)
+      g2 <- drop(g + nu * Hs)
       names(g2) <- names(g)
       x$state$parameters <- set.par(x$state$parameters, g2, "b")
       fit_timegrid <- x$fit.fun_timegrid(g2)
@@ -1113,14 +1128,14 @@ update_jm_mu <- function(x, y, eta, eta_timegrid,
     x$state$nu <- optimize(f = objfun2, interval = c(0, 1))$minimum
   }
   
-  g2 <- drop(g - x$state$nu * Hs)
+  g2 <- drop(g + x$state$nu * Hs)
   names(g2) <- names(g)
   x$state$parameters <- set.par(x$state$parameters, g2, "b")
   
   ## Update fitted values..
   x$state$fitted_timegrid <- x$fit.fun_timegrid(g2)
   x$state$fitted.values <- x$fit.fun(x$X, g2)
-  x$state$edf <- sum_diag(xhess0 %*% Sigma)
+  x$state$edf <- sum_diag((-1 * xhess0) %*% Sigma)
   x$state$hessian <- -1 * xhess
   
   return(x$state)
@@ -1166,12 +1181,12 @@ update_jm_mu_Matrix <- function(x, y, eta, eta_timegrid,
       par[x$pid$tau2] <- tau2
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
       xhess <- xhess0 - x$hess(score = NULL, par, full = FALSE)
-      Sigma <- -1 * matrix_inv(-1 * xhess, index = x$sparse.setup)
+      Sigma <- matrix_inv(-1 * xhess, index = x$sparse.setup)
       Hs <- Sigma %*% xgrad
       g <- par[x$pid$b]
       if(update.nu) {
         objfun.nu <- function(nu) {
-          g2 <- drop(g - nu * Hs)
+          g2 <- drop(g + nu * Hs)
           par[x$pid$b] <- g2
           eta_timegrid_mu <- eta_timegrid_mu - x$state$fitted_timegrid + x$fit.fun_timegrid(g2)
           if(!is.null(dx))
@@ -1186,7 +1201,7 @@ update_jm_mu_Matrix <- function(x, y, eta, eta_timegrid,
       } else {
         nu <- x$state$nu
       }
-      g2 <- drop(g - nu * Hs)
+      g2 <- drop(g + nu * Hs)
       names(g2) <- names(g)
       fit <- x$fit.fun(x$X, g2)
       fit_timegrid <- x$fit.fun_timegrid(g2)
@@ -1195,7 +1210,7 @@ update_jm_mu_Matrix <- function(x, y, eta, eta_timegrid,
       if(!is.null(dx))
         eta_timegrid_dmu <- eta_timegrid_dmu - dx$state$fitted_timegrid + dx$fit.fun_timegrid(g2)
       eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
-      edf1 <- sum_diag(xhess0 %*% Sigma)
+      edf1 <- sum_diag((-1 * xhess0) %*% Sigma)
       edf <- edf0 + edf1
       logLik <- get_LogPost(eta_timegrid, eta, 0)
       ic <- get.ic2(logLik, edf, length(eta$mu), criterion)
@@ -1226,7 +1241,7 @@ update_jm_mu_Matrix <- function(x, y, eta, eta_timegrid,
   xhess <- xhess0 - x$hess(score = NULL, x$state$parameters, full = FALSE)
   
   ## Compute the inverse of the hessian.
-  Sigma <- -1 * matrix_inv(-1 * xhess, index = x$sparse.setup)
+  Sigma <- matrix_inv(-1 * xhess, index = x$sparse.setup)
   Hs <- Sigma %*% xgrad
   
   ## Update regression coefficients.
@@ -1234,7 +1249,7 @@ update_jm_mu_Matrix <- function(x, y, eta, eta_timegrid,
   
   if(update.nu) {
     objfun2 <- function(nu) {
-      g2 <- drop(g - nu * Hs)
+      g2 <- drop(g + nu * Hs)
       x$state$parameters[x$pid$b] <- g2
       fit_timegrid <- x$fit.fun_timegrid(g2)
       eta_timegrid_mu <- eta_timegrid_mu - x$state$fitted_timegrid + fit_timegrid
@@ -1249,13 +1264,13 @@ update_jm_mu_Matrix <- function(x, y, eta, eta_timegrid,
     x$state$nu <- optimize(f = objfun2, interval = c(0, 1))$minimum
   }
   
-  g2 <- drop(g - x$state$nu * Hs)
+  g2 <- drop(g + x$state$nu * Hs)
   x$state$parameters[x$pid$b] <- g2
   
   ## Update fitted values..
   x$state$fitted_timegrid <- x$fit.fun_timegrid(g2)
   x$state$fitted.values <- x$fit.fun(x$X, g2)
-  x$state$edf <- sum_diag(xhess0 %*% Sigma)
+  x$state$edf <- sum_diag((-1 * xhess0) %*% Sigma)
   x$state$hessian <- -1 * xhess
   
   return(x$state)
@@ -1277,6 +1292,7 @@ update_jm_sigma <- function(x, y, eta, eta_timegrid,
                             update.nu, criterion, get_LogPost, nobs, do.optim2, edf, ...)
 {
   xgrad <- crossprod(x$X, -1 + (y[, "obs"] - eta$mu)^2 / exp(eta$sigma)^2)
+  ## negative Hessian
   xhess0 <- -2 * crossprod(x$X*drop((y[, "obs"] - eta$mu) / exp(eta$sigma)^2),
                            x$X*drop(y[, "obs"] - eta$mu))
   
@@ -1295,12 +1311,12 @@ update_jm_sigma <- function(x, y, eta, eta_timegrid,
       par <- set.par(par, tau2, "tau2")
       xgrad <- xgrad + x$grad(score = NULL, par, full = FALSE)
       xhess <- xhess0 - x$hess(score = NULL, par, full = FALSE)
-      Sigma <- -1 * matrix_inv(-1 * xhess, index = x$sparse.setup)
+      Sigma <- matrix_inv(-1 * xhess, index = x$sparse.setup)
       Hs <- Sigma %*% xgrad
       g <- get.par(par, "b")
       if(update.nu) {
         objfun.nu <- function(nu) {
-          g2 <- drop(g - nu * Hs)
+          g2 <- drop(g + nu * Hs)
           names(g2) <- names(g)
           x$state$parameters <- set.par(x$state$parameters, g2, "b")
           x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
@@ -1313,11 +1329,11 @@ update_jm_sigma <- function(x, y, eta, eta_timegrid,
       } else {
         nu <- x$state$nu
       }
-      g2 <- drop(g - nu * Hs)
+      g2 <- drop(g + nu * Hs)
       names(g2) <- names(g)
       fit <- x$fit.fun(x$X, g2)
       eta$sigma <- eta$sigma - fitted(x$state) + fit
-      edf1 <- sum_diag(xhess0 %*% Sigma)
+      edf1 <- sum_diag((-1 * xhess0) %*% Sigma)
       edf <- edf0 + edf1
       logLik <- get_LogPost(eta_timegrid, eta, 0)
       ic <- get.ic2(logLik, edf, length(eta$mu), criterion)
@@ -1348,7 +1364,7 @@ update_jm_sigma <- function(x, y, eta, eta_timegrid,
   xgrad <- xgrad + x$grad(score = NULL, x$state$parameters, full = FALSE)
   
   ## Compute the inverse of the hessian.
-  Sigma <- -1 * matrix_inv(-1 * xhess, index = x$sparse.setup)
+  Sigma <- matrix_inv(-1 * xhess, index = x$sparse.setup)
   Hs <- Sigma %*% xgrad
   
   ## Update regression coefficients.
@@ -1356,7 +1372,7 @@ update_jm_sigma <- function(x, y, eta, eta_timegrid,
   
   if(update.nu) {
     objfun2 <- function(nu) {
-      g2 <- drop(g - nu * Hs)
+      g2 <- drop(g + nu * Hs)
       names(g2) <- names(g)
       x$state$parameters <- set.par(x$state$parameters, g2, "b")
       fit <- x$fit.fun(x$X, g2)
@@ -1369,13 +1385,13 @@ update_jm_sigma <- function(x, y, eta, eta_timegrid,
   }
   
   
-  g2 <- drop(g - x$state$nu * Hs)
+  g2 <- drop(g + x$state$nu * Hs)
   names(g2) <- names(g)
   x$state$parameters <- set.par(x$state$parameters, g2, "b")
   
   ## Update fitted values.
   x$state$fitted.values <- x$fit.fun(x$X, g2)
-  x$state$edf <- sum_diag(xhess0 %*% Sigma)
+  x$state$edf <- sum_diag((-1 * xhess0) %*% Sigma)
   x$state$hessian <- -1 * xhess
   
   return(x$state)
@@ -2164,22 +2180,22 @@ propose_jm_mu_simple <- function(x, y,
   xhess <- xhess - x$hess(score = NULL, x$state$parameters, full = FALSE)
   
   ## Compute the inverse of the hessian.
-  Sigma <- matrix_inv(xhess, index = x$sparse.setup)
+  Sigma <- matrix_inv(-1 * xhess, index = x$sparse.setup)
   
   ## Save old coefficients.
   g0 <- get.state(x, "b")
   
   ## Get new position.
-  mu <- drop(g0 - nu * Sigma %*% xgrad)
+  mu <- drop(g0 + nu * Sigma %*% xgrad)
   
   ## Sample new parameters.
-  g <- drop(rmvnorm(n = 1, mean = mu, sigma = -1 * Sigma, method="chol"))
+  g <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma, method="chol"))
   names(g) <- names(g0)
   x$state$parameters <- set.par(x$state$parameters, g, "b")
   
   ## Compute log priors.
   p2 <- x$prior(x$state$parameters)
-  qbetaprop <- dmvnorm(g, mean = mu, sigma = -1 * Sigma, log = TRUE)
+  qbetaprop <- dmvnorm(g, mean = mu, sigma = Sigma, log = TRUE)
   
   ## Update additive predictors.
   fit_timegrid <- x$fit.fun_timegrid(g)
@@ -2215,12 +2231,12 @@ propose_jm_mu_simple <- function(x, y,
   } else do.XWX(x$X, exp(eta$sigma)^2, index = x$sparse.setup$matrix)
   xhess <- -1 * XWX - int$hess
   xhess <- xhess - x$hess(score = NULL, x$state$parameters, full = FALSE)
-  Sigma2 <- matrix_inv(xhess, index = x$sparse.setup)
-  mu2 <- drop(g - nu * Sigma2 %*% xgrad)
-  qbeta <- dmvnorm(g0, mean = mu2, sigma = -1 * Sigma2, log = TRUE)
+  Sigma2 <- matrix_inv(-1 * xhess, index = x$sparse.setup)
+  mu2 <- drop(g + nu * Sigma2 %*% xgrad)
+  qbeta <- dmvnorm(g0, mean = mu2, sigma = Sigma2, log = TRUE)
   
   ## Save edf.
-  x$state$edf <- sum_diag(int$hess %*% (-1 * Sigma2))
+  x$state$edf <- sum_diag(int$hess %*% Sigma2)
   
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
@@ -2295,9 +2311,11 @@ propose_jm_mu_Matrix <- function(x, y,
     lg <- lapply(1:length(x$sparse.setup$block.index), function(i){
       tmp <- x$sparse.setup$block.index[[i]]
       if(x$sparse.setup$is.diagonal){
+        if(Sigma[tmp,tmp] < 0) Sigma[tmp,tmp] <- -1 * Sigma[tmp,tmp]
         drop(rnorm(n = 1, mean = mu[tmp], sd = sqrt(Sigma[tmp,tmp])))
       } else{
         if(length(tmp) == 1){
+          if(Sigma[tmp,tmp] < 0) Sigma[tmp,tmp] <- -1 * Sigma[tmp,tmp]
           drop(rnorm(n = 1, mean = mu[tmp], sd = sqrt(Sigma[tmp,tmp])))
         } else {
           drop(rmvnorm(n = 1, mean = mu[tmp], sigma = Sigma[tmp,tmp], method="chol"))
@@ -2323,9 +2341,11 @@ propose_jm_mu_Matrix <- function(x, y,
     lqbetaprop <- lapply(1:length(x$sparse.setup$block.index), function(i){
       tmp <- x$sparse.setup$block.index[[i]]
       if(x$sparse.setup$is.diagonal){
+        if(Sigma[tmp,tmp] < 0) Sigma[tmp,tmp] <- -1 * Sigma[tmp,tmp]
         drop(dnorm(g[tmp], mean = mu[tmp], sd = sqrt(Sigma[tmp,tmp]), log = TRUE))
       } else{
         if(length(tmp) == 1){
+          if(Sigma[tmp,tmp] < 0) Sigma[tmp,tmp] <- -1 * Sigma[tmp,tmp]
           drop(dnorm(g[tmp], mean = mu[tmp], sd = sqrt(Sigma[tmp,tmp]), log = TRUE))
         } else {
           dmvnorm(g[tmp], mean = mu[tmp], sigma = Sigma[tmp,tmp], log = TRUE)
@@ -2378,9 +2398,11 @@ propose_jm_mu_Matrix <- function(x, y,
     lqbeta <- lapply(1:length(x$sparse.setup$block.index), function(i){
       tmp <- x$sparse.setup$block.index[[i]]
       if(x$sparse.setup$is.diagonal){
+        if(Sigma2[tmp,tmp] < 0) Sigma2[tmp,tmp] <- -1 * Sigma2[tmp,tmp]
         drop(dnorm(g0[tmp], mean = mu2[tmp], sd = sqrt(Sigma2[tmp,tmp]), log = TRUE))
       } else{
         if(length(tmp) == 1){
+          if(Sigma2[tmp,tmp] < 0) Sigma2[tmp,tmp] <- -1 * Sigma2[tmp,tmp]
           drop(dnorm(g0[tmp], mean = mu2[tmp], sd = sqrt(Sigma2[tmp,tmp]), log = TRUE))
         } else {
           dmvnorm(g0[tmp], mean = mu2[tmp], sigma = Sigma2[tmp,tmp], log = TRUE)
@@ -2394,7 +2416,7 @@ propose_jm_mu_Matrix <- function(x, y,
   
   
   ## Save edf.
-  x$state$edf <- sum_diag(int$hess %*% Sigma2)
+  x$state$edf <- sum_diag((-1 * int$hess) %*% Sigma2)
   
   ## Sample variance parameter.
   if(!x$fixed & is.null(x$sp) & length(x$S)) {
@@ -2725,22 +2747,22 @@ propose_jm_sigma <- function(x, y,
   xhess <- xhess - x$hess(score = NULL, x$state$parameters, full = FALSE)
   
   ## Compute the inverse of the hessian.
-  Sigma <- matrix_inv(xhess, index = x$sparse.setup)
+  Sigma <- matrix_inv(-1 * xhess, index = x$sparse.setup)
   
   ## Save old coefficients.
   g0 <- get.state(x, "b")
   
   ## Get new position.
-  mu <- drop(g0 - nu * Sigma %*% xgrad)
+  mu <- drop(g0 + nu * Sigma %*% xgrad)
   
   ## Sample new parameters.
-  g <- drop(rmvnorm(n = 1, mean = mu, sigma = -1 * Sigma, method="chol"))
+  g <- drop(rmvnorm(n = 1, mean = mu, sigma = Sigma, method="chol"))
   names(g) <- names(g0)
   x$state$parameters <- set.par(x$state$parameters, g, "b")
   
   ## Compute log priors.
   p2 <- x$prior(x$state$parameters)
-  qbetaprop <- dmvnorm(g, mean = mu, sigma = -1 * Sigma, log = TRUE)
+  qbetaprop <- dmvnorm(g, mean = mu, sigma = Sigma, log = TRUE)
   
   ## Update additive predictors.
   fit <- x$fit.fun(x$X, g, expand = FALSE)
@@ -2759,8 +2781,8 @@ propose_jm_sigma <- function(x, y,
                                   x$X*drop(y[, "obs"] - eta$mu))  
   xhess <- xhess - x$hess(score = NULL, x$state$parameters, full = FALSE)
   
-  Sigma2 <- matrix_inv(xhess, index = x$sparse.setup)
-  mu2 <- drop(g - nu * Sigma2 %*% xgrad)
+  Sigma2 <- matrix_inv(-1 * xhess, index = x$sparse.setup)
+  mu2 <- drop(g + nu * Sigma2 %*% xgrad)
   qbeta <- dmvnorm(g0, mean = mu2, sigma = -1 * Sigma2, log = TRUE)
   
   ## Save edf.
