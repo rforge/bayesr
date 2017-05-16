@@ -3270,7 +3270,12 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
         } else {
           sn <- snames[grep2(paste(id, "p", j, sep = "."), snames, fixed = TRUE)]
           sn2 <- paste(sn, ".", sep = "")
-          sn <- sn[grepl(paste(id, ".p.", j, ".", sep = ""), sn2, fixed = TRUE)]
+          if(is.factor(data[[j]])) {
+            xlev <- colnames(X)
+            sn <- sn[grep2(paste(id, ".p.", xlev, ".", sep = ""), sn2, fixed = TRUE)]
+          } else {
+            sn <- sn[grepl(paste(id, ".p.", j, ".", sep = ""), sn2, fixed = TRUE)]
+          }
           sn <- sn[!grepl(":", sn, fixed = TRUE)]
         }
         if(!length(sn)) {
@@ -4264,6 +4269,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   )
   object$C <- matrix(nrow = 0, ncol = ncol(object$X))
   object$side.constrain <- FALSE
+  object$boost.fit <- boost_fit
 
   if(object$fixed)
     object$S <- NULL

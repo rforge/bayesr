@@ -460,6 +460,10 @@ assign.df <- function(x, df)
 {
   if(inherits(x, "special"))
     return(x)
+  if(!is.null(x$is.model.matrix)) {
+    if(x$is.model.matrix)
+      return(x)
+  }
   tau2 <- get.par(x$state$parameters, "tau2")
   if(x$fixed | !length(tau2))
     return(x)
@@ -2642,7 +2646,7 @@ boost_iwls <- function(x, hess, resids, nu)
 
 
 ## Boosting gradient fit.
-boost_fit <- function(x, y, nu, hatmatrix = TRUE)
+boost_fit <- function(x, y, nu, hatmatrix = TRUE, ...)
 {
   ## Compute reduced residuals.
   xbin.fun(x$binning$sorted.index, rep(1, length = length(y)), y, x$weights, x$rres, x$binning$order)
@@ -2655,7 +2659,7 @@ boost_fit <- function(x, y, nu, hatmatrix = TRUE)
     S <- 0
     tau2 <- get.state(x, "tau2")
     for(j in seq_along(x$S))
-      S <- S + 1 / tau2[j] * x$S[[j]]
+      S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](x$state$parameters) else x$S[[j]]
     P <- matrix_inv(XWX + S, index = x$sparse.setup)
   }
   
