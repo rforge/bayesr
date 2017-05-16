@@ -4240,8 +4240,8 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   }
 
   object$xt[["prior"]] <- "ig"
-  object$xt[["a"]] <- 1e-4
-  object$xt[["b"]] <- 1e-4
+  object$xt[["a"]] <- 10
+  object$xt[["b"]] <- 1e-5
   object$fixed <- if(is.null(object$xt[["fx"]])) FALSE else object$xt[["fx"]]
   priors <- make.prior(object)
   object$prior <- priors$prior
@@ -4257,7 +4257,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$lasso$const <- const
 
   if(ridge)
-    object$S <- list(diag(.Machine$double.eps, ncol(object$X)))
+    object$S <- list(diag(1, ncol(object$X)))
 
   if(is.null(object$xt[["binning"]]))
     object$xt[["binning"]] <- TRUE

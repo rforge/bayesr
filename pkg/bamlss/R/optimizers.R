@@ -464,6 +464,8 @@ assign.df <- function(x, df)
     if(x$is.model.matrix)
       return(x)
   }
+  if(is.null(x$S))
+    return(x)
   tau2 <- get.par(x$state$parameters, "tau2")
   if(x$fixed | !length(tau2))
     return(x)
@@ -2214,10 +2216,12 @@ boost <- function(x, y, family,
         edf[iter] <- edf[iter] + sum(diag(diag(length(eta[[1]])) - HatMat[[i]]))
       if(!is.null(stop.criterion)) {
         save.ic[iter] <- -2 * ll + edf[iter] * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
-        if(!is.na(save.ic[iter - 1]) & force.stop) {
-          if(save.ic[iter - 1] < save.ic[iter]) {
-            nback <- TRUE
-            break
+        if(iter > 1) {
+          if(!is.na(save.ic[iter - 1]) & force.stop) {
+            if(save.ic[iter - 1] < save.ic[iter]) {
+              nback <- TRUE
+              break
+            }
           }
         }
       }
