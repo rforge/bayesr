@@ -173,13 +173,13 @@ get.state <- function(x, what = NULL) {
   if(what %in% c("par", "parameters")) {
     return(x$state$parameters)
   } else {
-    if(what %in% c("tau2", "tau", "lambda")) {
+    if(what %in% c("tau2", "lambda")) {
       p <- x$state$parameters
-      return(p[grep("tau", names(p))])
+      return(p[grep("tau2", names(p))])
     } else {
       if(what %in% "b") {
         p <- x$state$parameters
-        return(p[!grepl("tau", names(p)) & !grepl("edf", names(p)) & !grepl("lasso", names(p))])
+        return(p[!grepl("tau2", names(p)) & !grepl("edf", names(p)) & !grepl("lasso", names(p))])
       } else return(x$state[[what]])
     }
   }
@@ -199,14 +199,14 @@ get.par <- function(x, what = NULL) {
 set.par <- function(x, replacement, what) {
   if(is.null(replacement))
     return(x)
-  if(what %in% c("tau2", "tau", "lambda")) {
-    x[grep("tau", names(x))] <- replacement
+  if(what %in% c("tau2", "lambda")) {
+    x[grep("tau2", names(x))] <- replacement
   } else {
     if(what %in% "b") {
-      if(as.integer(sum(!grepl("tau", names(x)) & !grepl("edf", names(x)) & !grepl("lasso", names(x)))) != length(replacement)) {
+      if(as.integer(sum(!grepl("tau2", names(x)) & !grepl("edf", names(x)) & !grepl("lasso", names(x)))) != length(replacement)) {
         stop("here")
       }
-      x[!grepl("tau", names(x)) & !grepl("edf", names(x)) & !grepl("lasso", names(x))] <- replacement
+      x[!grepl("tau2", names(x)) & !grepl("edf", names(x)) & !grepl("lasso", names(x))] <- replacement
     } else x[what] <- replacement
   }
   x
