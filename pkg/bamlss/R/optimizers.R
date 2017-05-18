@@ -420,7 +420,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
       x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
     }
   }
-  pid <- !grepl("tau", names(x$state$parameters)) & !grepl("edf", names(x$state$parameters))
+  pid <- !grepl("tau2", names(x$state$parameters)) & !grepl("edf", names(x$state$parameters))
   x$pid <- list("b" = which(pid), "tau2" = which(!pid))
   if(!length(x$pid$tau2))
     x$pid$tau2 <- NULL

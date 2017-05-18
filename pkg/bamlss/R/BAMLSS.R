@@ -2850,10 +2850,16 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
       FUN <- c95
     }
     if(nt < 2) {
-      fsamples <- apply(psamples, 1, function(g) {
+      fsamples <- try(apply(psamples, 1, function(g) {
         f <- fit.fun(X, g, expand = FALSE, no.sparse.setup = (nrow(psamples) < 2))
         f
-      })
+      }), silent = TRUE)
+      if(inherits(fsamples, "try-error")) {
+        fsamples <- apply(psamples, 1, function(g) {
+          f <- X %*% g
+          f
+        })
+      }
       smf <- t(apply(fsamples, 1, FUN))
     } else {
       smf <- 0
