@@ -2855,10 +2855,10 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
         f
       }), silent = TRUE)
       if(inherits(fsamples, "try-error")) {
-        fsamples <- apply(psamples, 1, function(g) {
+        fsamples <- try(apply(psamples, 1, function(g) {
           f <- X %*% g
           f
-        })
+        }), silent = TRUE)
       }
       smf <- t(apply(fsamples, 1, FUN))
     } else {
