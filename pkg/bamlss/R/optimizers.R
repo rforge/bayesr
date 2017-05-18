@@ -187,11 +187,11 @@ get.state <- function(x, what = NULL) {
 
 get.par <- function(x, what = NULL) {
   if(is.null(what) | is.null(names(x))) return(x)
-  if(what %in% c("tau2", "tau", "lambda")) {
-    return(x[grep("tau", names(x))])
+  if(what %in% c("tau2", "lambda")) {
+    return(x[grep("tau2", names(x))])
   } else {
     if(what %in% "b") {
-      return(x[!grepl("tau", names(x)) & !grepl("edf", names(x)) & !grepl("lasso", names(x))])
+      return(x[!grepl("tau2", names(x)) & !grepl("edf", names(x)) & !grepl("lasso", names(x))])
     } else return(x[what])
   }
 }
