@@ -1624,7 +1624,7 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL, logLik = FAL
         mpar <- par
         for(i in nx) {
           par[[i]] <- .fitted.bamlss(i, x[[i]], samples)
-          par[[i]] <- apply(par[[i]], 1, make.link2(family$links[i])$linkinv)
+          par[[i]] <- make.link2(family$links[i])$linkinv(par[[i]])
         }
         msamples <- matrix(apply(samples, 2, mean, na.rm = TRUE), nrow = 1)
         colnames(msamples) <- pn
@@ -5719,28 +5719,34 @@ DIC.bamlss <- function(object, ..., samples = TRUE, nsamps = NULL)
     }
   } else {
     for(i in 1:length(object)) {
-      family <- attr(object[[i]], "family")
-      if(is.null(family$d)) stop("no d() function available in model family object!")
+      family <- family(object[[i]])
+      if(is.null(family$d))
+        stop("no d() function available in model family object!", drop = FALSE)
+      samps <- process.chains(object[[i]]$samples)
+      if(is.null(samps))
+        stop("samples are missing in object!")
       y <- model.response2(object[[i]])
-      d0 <- -2 * sum(family$d(y, family$map2par(fitted.bamlss(object[[i]], type = "link")), log = TRUE), na.rm = TRUE)
-      eta <- fitted.bamlss(object[[i]], type = "link",
-        samples = TRUE, nsamps = nsamps,
-        FUN = function(x) { x })
-      iter <- ncol(eta[[1]])
-      d1 <- NULL
-      for(j in 1:iter) {
-        teta <- NULL
-        for(ii in 1:length(eta))
-          teta <- cbind(teta, eta[[ii]][, j])
-        teta <- as.data.frame(teta)
-        names(teta) <- names(eta)
-        d1 <- c(d1, -2 * sum(family$d(y, family$map2par(teta), log = TRUE), na.rm = TRUE))
+      msamps <- matrix(apply(samps[[1]], 2, mean, na.rm = TRUE), nrow = 1)
+      colnames(msamps) <- colnames(samps[[1]])
+      msamps <- as.mcmc.list(list(mcmc(msamps, start = 1, end = 1, thin = 1)))
+      object[[i]]$samples <- msamps
+      mpar <- predict.bamlss(object[[i]], type = "parameter", FUN = mean, nsamps = nsamps)
+      mdev <- -2 * sum(family$d(y, mpar, log = TRUE), na.rm = TRUE)
+      object[[i]]$samples <- samps
+      rm("samps")
+      par <- predict.bamlss(object[[i]], type = "parameter", FUN = function(x) { x }, nsamps = nsamps)
+      iter <- if(is.list(par)) ncol(par[[1]]) else ncol(par)
+      dev <- rep(NA, iter)
+      tpar <- mpar
+      for(i in 1:iter) {
+        for(j in seq_along(tpar))
+          tpar[[j]] <- par[[j]][, i]
+        dev[i] <- -2 * sum(family$d(y, tpar, log = TRUE), na.rm = TRUE)
       }
-      md1 <- mean(d1)
-      pd <- md1 - d0
-      dic <- md1 + pd
+      pd <- mean(dev, na.rm = TRUE) - mdev
+      DIC <- mdev + 2 * pd
       rval <- rbind(rval, data.frame(
-        "DIC" = dic,
+        "DIC" = DIC,
         "pd" = pd
       ))
     }
@@ -7173,6 +7179,11 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid"), spar =
   nc <- ncol(x)
   cn <- colnames(x)
 
+  if(nc > 10) {
+    nc <- 1
+    cn <- NULL
+  }
+
   if(spar) {
     op <- par(no.readonly = TRUE)
     on.exit(par(op))
@@ -7180,17 +7191,16 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid"), spar =
   }
 
   type <- attr(x, "type")
-  x <- x[is.finite(x)]
 
   for(j in 1:nc) {
     for(w in which) {
       args <- list(...)
       if(w == "hist-resid") {
-        rdens <- density(x)
-        rh <- hist(x, plot = FALSE)
+        rdens <- density(as.numeric(x))
+        rh <- hist(as.numeric(x), plot = FALSE)
         args$ylim <- c(0, max(c(rh$density, rdens$y)))
         args$freq <- FALSE
-        args$x <- x
+        args$x <- as.numeric(x)
         args <- delete.args("hist.default", args, package = "graphics")
         if(is.null(args$xlab))
           args$xlab <- if(is.null(type)) "Residuals" else paste(type, "residuals")
@@ -7204,14 +7214,48 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid"), spar =
         box()
       }
       if(w == "qq-resid") {
-        args$y <- x
-        args$x <- NULL
-        args <- delete.args("qqnorm.default", args, package = "stats", not = c("col", "pch"))
-        if(is.null(args$main))
-          args$main <- paste("Normal Q-Q Plot", if(!is.null(cn[j])) paste(":", cn[j]) else NULL)
-        ok <- try(do.call(qqnorm, args))
-        if(!inherits(ok, "try-error"))
-          qqline(args$y) ## abline(0,1)
+        if(ncol(x) > 10) {
+          x <- t(apply(x, 1, c95))
+
+          args$x <- NULL
+          args$plot.it <- FALSE
+          args <- delete.args("qqnorm.default", args, package = "stats", not = c("col", "pch"))
+          if(is.null(args$main))
+            args$main <- paste("Normal Q-Q Plot", if(!is.null(cn[j])) paste(":", cn[j]) else NULL)
+
+          args$y <- x[, "Mean"]
+          mean <- do.call(qqnorm, args)
+          args$y <- x[, "2.5%"]
+          lower <- do.call(qqnorm, args)
+          args$y <- x[, "97.5%"]
+          upper <- do.call(qqnorm, args)
+
+          ylim <- range(c(mean$y, lower$y, upper$y))
+          args$plot.it <- TRUE
+          args$ylim <- ylim
+          args$y <- x[, "Mean"]
+          mean <- do.call(qqnorm, args)
+
+          if(is.null(args$ci.col))
+            args$ci.col <- "blue"
+          if(is.null(args$ci.lty))
+            args$ci.lty <- 2
+
+          lines(lower$x[order(lower$x)], lower$y[order(lower$x)], lty = args$ci.lty, col = args$ci.col)
+          lines(upper$x[order(upper$x)], upper$y[order(upper$x)], lty = args$ci.lty, col = args$ci.col)
+
+          args$y <- x[, "Mean"]
+          qqline(args$y)
+        } else {
+          args$y <- x
+          args$x <- NULL
+          args <- delete.args("qqnorm.default", args, package = "stats", not = c("col", "pch"))
+          if(is.null(args$main))
+            args$main <- paste("Normal Q-Q Plot", if(!is.null(cn[j])) paste(":", cn[j]) else NULL)
+          ok <- try(do.call(qqnorm, args))
+          if(!inherits(ok, "try-error"))
+            qqline(args$y) ## abline(0,1)
+        }
       }
     }
   }
