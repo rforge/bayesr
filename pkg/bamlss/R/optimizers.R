@@ -2125,13 +2125,14 @@ boost <- function(x, y, family,
  
   ## Hat matrix?
   HatMat <- list()
-  edf <- NULL
+  edf <- Imat <- NULL
   if(hatmatrix) {
     for(i in nx)
       HatMat[[i]] <- diag(length(eta[[1]]))
     edf <- rep(0, maxit)
     if(!is.null(stop.criterion))
       save.ic <- rep(NA, maxit)
+    Imat <- diag(nobs)
   }
   
   ## Env for C.
@@ -2175,11 +2176,11 @@ boost <- function(x, y, family,
           tll <- family$loglik(y, family$map2par(teta))
 
           tHatMat <- HatMat
-          tHatMat[[i]] <- tHatMat[[i]] %*% (diag(nobs) - states[[i]][[j]]$hat)
+          tHatMat[[i]] <- tHatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)
 
           tedf <- 0
           for(ii in nx)
-            tedf <- tedf + sum(diag(diag(nobs) - tHatMat[[ii]]))
+            tedf <- tedf + sum(diag(Imat - tHatMat[[ii]]))
 
           rss[[i]][[j]] <- -2 * tll + tedf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
         }
@@ -2230,9 +2231,9 @@ boost <- function(x, y, family,
     save.ll <- c(save.ll, ll)
 
     if(hatmatrix) {
-      HatMat[[take[1]]] <- HatMat[[take[1]]] %*% (diag(nobs) - x[[take[1]]]$smooth.construct[[take[2]]]$state$hat)
+      HatMat[[take[1]]] <- HatMat[[take[1]]] %*% (Imat - x[[take[1]]]$smooth.construct[[take[2]]]$state$hat)
       for(i in nx)
-        edf[iter] <- edf[iter] + sum(diag(diag(nobs) - HatMat[[i]]))
+        edf[iter] <- edf[iter] + sum(diag(Imat - HatMat[[i]]))
       if(!is.null(stop.criterion)) {
         save.ic[iter] <- -2 * ll + edf[iter] * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
         if(iter > 1) {
