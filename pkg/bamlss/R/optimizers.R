@@ -2167,7 +2167,22 @@ boost <- function(x, y, family,
         }
         
         ## Get rss.
-        rss[[i]][j] <- states[[i]][[j]]$rss
+        if(is.null(stop.criterion)) {
+          rss[[i]][j] <- states[[i]][[j]]$rss
+        } else {
+          teta <- eta
+          teta[[i]] <- teta[[i]] + fitted(states[[i]][[j]])
+          tll <- family$loglik(y, family$map2par(teta))
+
+          tHatMat <- HatMat
+          tHatMat[[i]] <- tHatMat[[i]] %*% (diag(nobs) - states[[i]][[j]]$hat)
+
+          tedf <- 0
+          for(ii in nx)
+            tedf <- tedf + sum(diag(diag(nobs) - tHatMat[[ii]]))
+
+          rss[[i]][[j]] <- -2 * tll + tedf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
+        }
       }
       
       ## Which one is best?
@@ -2180,8 +2195,12 @@ boost <- function(x, y, family,
       
       eta[[i]] <- eta0[[i]]
     }
-    
-    i <- which.max(loglik)
+
+    if(is.null(stop.criterion)) {
+      i <- which.max(loglik)
+    } else {
+      i <- which.min(sapply(rss, function(x) { min(x) }))
+    }
     
     ## Which term to update.
     take <- c(nx[i], names(rss[[i]])[select[i]])
@@ -2211,9 +2230,9 @@ boost <- function(x, y, family,
     save.ll <- c(save.ll, ll)
 
     if(hatmatrix) {
-      HatMat[[take[1]]] <- HatMat[[take[1]]] %*% (diag(length(eta[[1]])) - x[[take[1]]]$smooth.construct[[take[2]]]$state$hat)
+      HatMat[[take[1]]] <- HatMat[[take[1]]] %*% (diag(nobs) - x[[take[1]]]$smooth.construct[[take[2]]]$state$hat)
       for(i in nx)
-        edf[iter] <- edf[iter] + sum(diag(diag(length(eta[[1]])) - HatMat[[i]]))
+        edf[iter] <- edf[iter] + sum(diag(diag(nobs) - HatMat[[i]]))
       if(!is.null(stop.criterion)) {
         save.ic[iter] <- -2 * ll + edf[iter] * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
         if(iter > 1) {
