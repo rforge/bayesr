@@ -3787,6 +3787,37 @@ SEXP rho_score_mvnormAR1(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEX
 /*    fit <- fit - mean(fit, na.rm = TRUE)*/
 
 
+// sum(diag(Imat - HatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)))
 
+/* Fast hat-matrix trace. */
+SEXP hatmat_trace(SEXP H0, SEXP H1)
+{
+  int i, n = nrows(H1);
+  double *h0ptr = REAL(H0);
+  double *h1ptr = REAL(H1);
+  double sum = 0.0;
+  for(i = 0; i < n; i++) {
+    sum += (1.0 - h0ptr[i + n * i] * (1.0 - h1ptr[i + n * i]));
+  }
+  SEXP trace;
+  PROTECT(trace = allocVector(REALSXP, 1));
+  REAL(trace)[0] = sum;
+  UNPROTECT(1);
+  return trace;
+}
 
+SEXP hatmat_sumdiag(SEXP H)
+{
+  int i, n = nrows(H);
+  double *hptr = REAL(H);
+  double sum = 0.0;
+  for(i = 0; i < n; i++) {
+    sum += (1.0 - hptr[i + n * i]);
+  }
+  SEXP trace;
+  PROTECT(trace = allocVector(REALSXP, 1));
+  REAL(trace)[0] = sum;
+  UNPROTECT(1);
+  return trace;
+}
 

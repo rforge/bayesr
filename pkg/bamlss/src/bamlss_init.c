@@ -24,6 +24,8 @@ SEXP gpareto_hess_sigma(SEXP, SEXP, SEXP);
 SEXP gpareto_hess_xi(SEXP, SEXP, SEXP);
 SEXP gpareto_score_sigma(SEXP, SEXP, SEXP);
 SEXP gpareto_score_xi(SEXP, SEXP, SEXP);
+SEXP hatmat_trace(SEXP, SEXP);
+SEXP hatmat_sumdiag(SEXP);
 SEXP log_dmvnorm(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP mu_score_mvnorm(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP process_derivs(SEXP, SEXP);
@@ -66,6 +68,8 @@ static R_CallMethodDef callMethods[] = {
   {"gpareto_hess_xi", (DL_FUNC) &gpareto_hess_xi, 3},
   {"gpareto_score_sigma", (DL_FUNC) &gpareto_score_sigma, 3},
   {"gpareto_score_xi", (DL_FUNC) &gpareto_score_xi, 3},
+  {"hatmat_trace", (DL_FUNC) &hatmat_trace, 2},
+  {"hatmat_sumdiag", (DL_FUNC) &hatmat_sumdiag, 1},
   {"log_dmvnorm", (DL_FUNC) &log_dmvnorm, 7},
   {"mu_score_mvnorm", (DL_FUNC) &mu_score_mvnorm, 8},
   {"process_derivs", (DL_FUNC) &process_derivs, 2},

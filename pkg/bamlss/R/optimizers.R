@@ -1903,7 +1903,7 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind, uind = NULL)
   } else {
     .Call("xbin_fun", as.integer(ind), as.numeric(weights), 
           as.numeric(e), as.numeric(xweights), as.numeric(xrres),
-          as.integer(oind))
+          as.integer(oind), PACKAGE = "bamlss")
   }
   invisible(NULL)
 }
@@ -2174,10 +2174,11 @@ boost <- function(x, y, family,
           teta <- eta
           teta[[i]] <- teta[[i]] + fitted(states[[i]][[j]])
           tll <- family$loglik(y, family$map2par(teta))
-          tedf <- sum(diag(Imat - HatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)))
+          ##tedf <- sum(diag(Imat - HatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)))
+          tedf <- hatmat_trace(HatMat[[i]], states[[i]][[j]]$hat)
           if(length(nxr <- nx[nx != i])) {
             for(ii in nxr)
-              tedf <- tedf + sum(diag(Imat - HatMat[[i]]))
+              tedf <- tedf + hatmat_sumdiag(HatMat[[i]])
           }
           rss[[i]][j] <- -2 * tll + tedf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
         }
@@ -2230,7 +2231,7 @@ boost <- function(x, y, family,
     if(hatmatrix) {
       HatMat[[take[1]]] <- HatMat[[take[1]]] %*% (Imat - x[[take[1]]]$smooth.construct[[take[2]]]$state$hat)
       for(i in nx)
-        edf[iter] <- edf[iter] + sum(diag(Imat - HatMat[[i]]))
+        edf[iter] <- edf[iter] + hatmat_sumdiag(HatMat[[i]])
       if(!is.null(stop.criterion)) {
         save.ic[iter] <- -2 * ll + edf[iter] * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
         if(iter > 1) {
@@ -2286,6 +2287,18 @@ boost <- function(x, y, family,
   
   return(list("parameters" = parm2mat(parm, if(is.null(nback)) maxit else (iter - 1)),
     "fitted.values" = eta, "nobs" = nobs, "boost.summary" = bsum, "runtime" = elapsed))
+}
+
+
+## Updating the hat-matrix.
+hatmat_trace <- function(H0, H1)
+{
+  .Call("hatmat_trace", H0, H1, PACKAGE = "bamlss")
+}
+
+hatmat_sumdiag <- function(H)
+{
+  .Call("hatmat_sumdiag", H, PACKAGE = "bamlss")
 }
 
 
