@@ -2174,7 +2174,7 @@ boost <- function(x, y, family,
           teta <- eta
           teta[[i]] <- teta[[i]] + fitted(states[[i]][[j]])
           tll <- family$loglik(y, family$map2par(teta))
-          ##tedf <- sum(diag(Imat - HatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)))
+          ## tedf0 <- sum(diag(Imat - HatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)))
           tedf <- hatmat_trace(HatMat[[i]], states[[i]][[j]]$hat)
           if(length(nxr <- nx[nx != i])) {
             for(ii in nxr)
