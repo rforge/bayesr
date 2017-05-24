@@ -2174,15 +2174,12 @@ boost <- function(x, y, family,
           teta <- eta
           teta[[i]] <- teta[[i]] + fitted(states[[i]][[j]])
           tll <- family$loglik(y, family$map2par(teta))
-
-          tHatMat <- HatMat
-          tHatMat[[i]] <- tHatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)
-
-          tedf <- 0
-          for(ii in nx)
-            tedf <- tedf + sum(diag(Imat - tHatMat[[ii]]))
-
-          rss[[i]][[j]] <- -2 * tll + tedf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
+          tedf <- sum(diag(Imat - HatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)))
+          if(length(nxr <- nx[nx != i])) {
+            for(ii in nxr)
+              tedf <- tedf + sum(diag(Imat - HatMat[[i]]))
+          }
+          rss[[i]][j] <- -2 * tll + tedf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
         }
       }
       
