@@ -2826,10 +2826,14 @@ print.boost.summary <- function(x, summary = TRUE, plot = TRUE,
           j <- grep("(Intercept)", colnames(x$loglik), fixed = TRUE)
           x$loglik <- x$loglik[, -j]
         }
+        args <- list(...)
+        if(!is.null(args$name)) {
+          x$loglik <- x$loglik[, grep2(args$name, colnames(x$loglik), fixed = TRUE), drop = FALSE]
+        }
         xn <- sapply(strsplit(colnames(x$loglik), ".", fixed = TRUE), function(x) { x[length(x)] })
         cols <- rainbow_hcl(length(unique(xn)))
         matplot(x$loglik, type = "l", lty = 1,
-                xlab = "Iteration", ylab = "LogLik contribution", col = cols[as.factor(xn)], ...)
+                xlab = "Iteration", ylab = "LogLik contribution", col = cols[as.factor(xn)])
         abline(v = x$mstop, lwd = 3, col = "lightgray")
         axis(4, at = x$loglik[nrow(x$loglik), ], labels = colnames(x$loglik), las = 1)
         axis(3, at = x$mstop, labels = paste("mstop =", x$mstop))
@@ -2884,7 +2888,7 @@ boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters", "a
         par(mar = c(5.1, 4.1, 2.1, 2.1))
       if((w == "loglik.contrib") & spar)
         par(mar = c(5.1, 4.1, 2.1, 10.1))
-      plot.boost.summary(x, which = w, spar = FALSE, intercept = intercept, ...)
+      plot.boost.summary(x, which = w, spar = FALSE, intercept = intercept, name = name, ...)
     }
     if(w == "parameters") {
       if(spar)

@@ -4159,7 +4159,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   const <- object$xt$const
   if(is.null(const))
     const <- 1e-05
-  if(!fuse) {
+  if(!fuse & !ridge) {
     if(object$type == "single") {
       object$S[[1]] <- function(parameters) {
         b <- get.par(parameters, "b")
@@ -4189,7 +4189,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
       object$S <- A
     }
   }
-  if(fuse) {
+  if(fuse & !ridge) {
     k <- ncol(object$X)
     if(fuse_type == "nominal") {
       Af <- matrix(0, ncol = choose(k, 2), nrow = k)
