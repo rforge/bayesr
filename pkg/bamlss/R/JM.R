@@ -611,13 +611,13 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
           }
         }
         #!#
-        par(mfrow = c(2, 2))
-        time <- unlist(attr(y, "grid"))
-        m <- as.vector(t(eta_timegrid_mu))
-        dm <- as.vector(t(eta_timegrid_dmu))
-        p1 <- xyplot(m ~ time, group = id, main=paste0("mu: iteration ", iter-1), type = "l")
-        p2 <- xyplot(dm ~ time, group = id, main=paste0("mu: iteration ", iter-1), type = "l")
-        grid.arrange(p1, p2, ncol = 2)
+#        par(mfrow = c(2, 2))
+#        time <- unlist(attr(y, "grid"))
+#        m <- as.vector(t(eta_timegrid_mu))
+#        dm <- as.vector(t(eta_timegrid_dmu))
+#        p1 <- xyplot(m ~ time, group = id, main=paste0("mu: iteration ", iter-1), type = "l")
+#        p2 <- xyplot(dm ~ time, group = id, main=paste0("mu: iteration ", iter-1), type = "l")
+#        grid.arrange(p1, p2, ncol = 2)
         #!#
       }
       
