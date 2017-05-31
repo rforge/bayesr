@@ -2066,7 +2066,7 @@ boost <- function(x, y, family,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE,
   initialize = TRUE, stop.criterion = NULL, force.stop = TRUE,
-  hatmatrix = !is.null(stop.criterion), ...)
+  hatmatrix = !is.null(stop.criterion), selectfun = NULL, ...)
 {
   ## FIXME: hard coded.
   weights <- offset <- NULL
@@ -2125,7 +2125,7 @@ boost <- function(x, y, family,
  
   ## Hat matrix?
   HatMat <- list()
-  edf <- Imat <- NULL
+  edf <- Imat <- save.ic <- NULL
   if(hatmatrix) {
     for(i in nx)
       HatMat[[i]] <- diag(length(eta[[1]]))
@@ -2134,6 +2134,8 @@ boost <- function(x, y, family,
       save.ic <- rep(NA, maxit)
     Imat <- diag(nobs)
   }
+  if(!is.null(selectfun))
+    save.ic <- rep(NA, maxit)
   
   ## Env for C.
   rho <- new.env()
@@ -2168,19 +2170,23 @@ boost <- function(x, y, family,
         }
         
         ## Get rss.
-        if(is.null(stop.criterion)) {
-          rss[[i]][j] <- states[[i]][[j]]$rss
-        } else {
-          teta <- eta
-          teta[[i]] <- teta[[i]] + fitted(states[[i]][[j]])
-          tll <- family$loglik(y, family$map2par(teta))
-          ## tedf0 <- sum(diag(Imat - HatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)))
-          tedf <- hatmat_trace(HatMat[[i]], states[[i]][[j]]$hat)
-          if(length(nxr <- nx[nx != i])) {
-            for(ii in nxr)
-              tedf <- tedf + hatmat_sumdiag(HatMat[[i]])
+        if(is.null(selectfun)) {
+          if(is.null(stop.criterion)) {
+            rss[[i]][j] <- states[[i]][[j]]$rss
+          } else {
+            teta <- eta
+            teta[[i]] <- teta[[i]] + fitted(states[[i]][[j]])
+            tll <- family$loglik(y, family$map2par(teta))
+            ## tedf0 <- sum(diag(Imat - HatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)))
+            tedf <- hatmat_trace(HatMat[[i]], states[[i]][[j]]$hat)
+            if(length(nxr <- nx[nx != i])) {
+              for(ii in nxr)
+                tedf <- tedf + hatmat_sumdiag(HatMat[[i]])
+            }
+            rss[[i]][j] <- -2 * tll + tedf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
           }
-          rss[[i]][j] <- -2 * tll + tedf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
+        } else {
+          rss[[i]][j] <- selectfun(state = states[[i]][[j]], x = x, family = family, ...)
         }
       }
       
@@ -2195,7 +2201,7 @@ boost <- function(x, y, family,
       eta[[i]] <- eta0[[i]]
     }
 
-    if(is.null(stop.criterion)) {
+    if(is.null(stop.criterion) & is.null(selectfun)) {
       i <- which.max(loglik)
     } else {
       i <- which.min(sapply(rss, function(x) { min(x) }))
@@ -2243,6 +2249,10 @@ boost <- function(x, y, family,
           }
         }
       }
+    }
+
+    if(!is.null(selectfun)) {
+
     }
     
     if(verbose) {
