@@ -2066,7 +2066,7 @@ boost <- function(x, y, family,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE,
   initialize = TRUE, stop.criterion = NULL, force.stop = TRUE,
-  hatmatrix = !is.null(stop.criterion), selectfun = NULL, ...)
+  hatmatrix = !is.null(stop.criterion), ...)
 {
   ## FIXME: hard coded.
   weights <- offset <- NULL
@@ -2134,6 +2134,7 @@ boost <- function(x, y, family,
       save.ic <- rep(NA, maxit)
     Imat <- diag(nobs)
   }
+  selectfun <- list(...)$selectfun
   if(!is.null(selectfun))
     save.ic <- rep(NA, maxit)
   
