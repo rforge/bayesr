@@ -4293,7 +4293,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
         S <- 0
         tau2 <- 1000 ## get.state(x, "tau2")
         for(j in seq_along(x$S))
-          S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](x$state$parameters, x$fixed.hyper) else x$S[[j]]
+          S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(x$state$parameters, x$fixed.hyper)) else x$S[[j]]
         P <- matrix_inv(XWX + S, index = x$sparse.setup)
       }
   
