@@ -7232,9 +7232,13 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid"), spar =
         rdens <- density(as.numeric(x))
         rh <- hist(as.numeric(x), plot = FALSE)
         args$ylim <- c(0, max(c(rh$density, rdens$y)))
+        if(is.null(args$xlim)) {
+          args$xlim <- range(x[is.finite(x)], na.rm = TRUE)
+          args$xlim <- c(-1, 1) * max(args$xlim)
+        }
         args$freq <- FALSE
         args$x <- as.numeric(x)
-        args <- delete.args("hist.default", args, package = "graphics")
+        args <- delete.args("hist.default", args, package = "graphics", not = c("xlim", "ylim"))
         if(is.null(args$xlab))
           args$xlab <- if(is.null(type)) "Residuals" else paste(type, "residuals")
         if(is.null(args$ylab))
@@ -7263,7 +7267,7 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid"), spar =
           args$y <- x[, "97.5%"]
           upper <- do.call(qqnorm, args)
 
-          ylim <- range(c(mean$y, lower$y, upper$y))
+          ylim <- range(c(mean$y, lower$y, upper$y), na.rm = TRUE)
           args$plot.it <- TRUE
           args$ylim <- ylim
           args$y <- x[, "Mean"]
@@ -7281,8 +7285,16 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid"), spar =
           qqline(args$y)
         } else {
           args$y <- x
+          if(is.null(args$ylim)) {
+            args$ylim <- range(x[is.finite(x)], na.rm = TRUE)
+            args$ylim <- c(-1, 1) * max(args$ylim)
+          }
+          if(is.null(args$xlim)) {
+            args$xlim <- range(x[is.finite(x)], na.rm = TRUE)
+            args$xlim <- c(-1, 1) * max(args$xlim)
+          }
           args$x <- NULL
-          args <- delete.args("qqnorm.default", args, package = "stats", not = c("col", "pch"))
+          args <- delete.args("qqnorm.default", args, package = "stats", not = c("col", "pch", "xlim", "ylim"))
           if(is.null(args$main))
             args$main <- paste("Normal Q-Q Plot", if(!is.null(cn[j])) paste(":", cn[j]) else NULL)
           ok <- try(do.call(qqnorm, args))

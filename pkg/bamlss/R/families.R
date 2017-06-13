@@ -698,11 +698,15 @@ gpareto_bamlss <- function(...)
       par$sigma / (1 - par$xi)
     },
     "p" = function(y, par, ...) {
-      p <- 1 - (1 + par$xi * y / par$sigma)^(-1 / par$xi)
+      ##p <- 1 - (1 + par$xi * y / par$sigma)^(-1 / par$xi)
+      y <- pmax(y, 0) / par$sigma
+      p <- pmax(1 + par$xi * y, 0)
+      p <- 1 - p^(-1 / par$xi)
       p
     },
-    "q" = function(y, par, ...) {
-      (par$sigma / par$xi) * ((1 - y)^(-par$xi) - 1)
+    "q" = function(p, par, ...) {
+      ##(par$sigma / par$xi) * ((1 - p)^(-par$xi) - 1)
+      par$sigma * ((1 - p)^(-par$xi) - 1) / par$xi
     }
   )
 
@@ -2826,11 +2830,11 @@ tF <- function(x, ...)
 
   dc <- parse(text = paste('dfun(y,', paste(paste(nx, 'par$', sep = "="),
     nx, sep = '', collapse = ','), ',log=log,...)', sep = ""))
-  pc <- parse(text = paste('pfun(y,', paste(paste(nx, 'par$', sep = "="),
+  pc <- parse(text = paste('pfun(q,', paste(paste(nx, 'par$', sep = "="),
     nx, sep = '', collapse = ','), ',log=log,...)', sep = ""))
-  qc <- parse(text = paste('qfun(y,', paste(paste(nx, 'par$', sep = "="),
+  qc <- parse(text = paste('qfun(p,', paste(paste(nx, 'par$', sep = "="),
     nx, sep = '', collapse = ','), ',log=log,...)', sep = ""))
-  rc <- parse(text = paste('rfun(y,', paste(paste(nx, 'par$', sep = "="),
+  rc <- parse(text = paste('rfun(n,', paste(paste(nx, 'par$', sep = "="),
     nx, sep = '', collapse = ','), ',...)', sep = ""))
 
   rval <- list(
@@ -2840,9 +2844,9 @@ tF <- function(x, ...)
     "score" = score,
     "hess" = hess,
     "d" = function(y, par, log = FALSE, ...) { eval(dc) },
-    "p" = if(!inherits(pfun, "try-error")) function(y, par, log = FALSE, ...) { eval(pc) } else NULL,
-    "q" = if(!inherits(qfun, "try-error")) function(y, par, log = FALSE, ...) { eval(qc) } else NULL,
-    "r" = if(!inherits(rfun, "try-error")) function(y, par, ...) { eval(rc) } else NULL
+    "p" = if(!inherits(pfun, "try-error")) function(q, par, log = FALSE, ...) { eval(pc) } else NULL,
+    "q" = if(!inherits(qfun, "try-error")) function(p, par, log = FALSE, ...) { eval(qc) } else NULL,
+    "r" = if(!inherits(rfun, "try-error")) function(n, par, ...) { eval(rc) } else NULL
   )
   names(rval$links) <- nx
   rval$valid.response <- x$y.valid
