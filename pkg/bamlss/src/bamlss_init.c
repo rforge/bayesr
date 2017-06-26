@@ -28,6 +28,7 @@ SEXP hatmat_trace(SEXP, SEXP);
 SEXP hatmat_sumdiag(SEXP);
 SEXP log_dmvnorm(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP mu_score_mvnorm(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP nnet_fitfun(SEXP, SEXP, SEXP);
 SEXP process_derivs(SEXP, SEXP);
 SEXP quick_quantiles(SEXP, SEXP);
 SEXP rho_score_mvnorm(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -72,6 +73,7 @@ static R_CallMethodDef callMethods[] = {
   {"hatmat_sumdiag", (DL_FUNC) &hatmat_sumdiag, 1},
   {"log_dmvnorm", (DL_FUNC) &log_dmvnorm, 7},
   {"mu_score_mvnorm", (DL_FUNC) &mu_score_mvnorm, 8},
+  {"nnet_fitfun", (DL_FUNC) &nnet_fitfun, 3},
   {"process_derivs", (DL_FUNC) &process_derivs, 2},
   {"quick_quantiles", (DL_FUNC) &quick_quantiles, 2},
   {"rho_score_mvnorm", (DL_FUNC) &rho_score_mvnorm, 9},

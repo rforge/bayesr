@@ -14,7 +14,7 @@
 
 \usage{
 ## Gradient boosting optimizer.
-boost(x, y, family,
+boost(x, y, family, offset = NULL,
   nu = 0.1, df = 4, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL,
@@ -43,6 +43,8 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters",
     fitted with the \code{boost()} optimizer.}
   \item{y}{The model response, as returned from function \code{\link{bamlss.frame}}.}
   \item{family}{A \pkg{bamlss} family object, see \code{\link{family.bamlss}}.}
+  \item{offset}{Can be used to supply model offsets for use in fitting,
+    returned from function \code{\link{bamlss.frame}}.}
   \item{nu}{Numeric, between [0, 1], controls the step size, i.e., the amount
     that should be added to model term parameters.}
   \item{df}{Integer, defines the initial degrees of freedom that should be assigned

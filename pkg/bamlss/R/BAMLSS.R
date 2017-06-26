@@ -4373,7 +4373,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   nsplit <- if(is.null(object$xt$nsplit)) 5 else object$xt$nsplit
   object <- smooth.construct.la.smooth.spec(object, data, knots)
   object[!(names(object) %in% c("formula", "term", "label", "dim", "X", "xt", "lasso"))] <- NULL
-  nodes <- if(split) nsplit else object$xt$k
+  nodes <- as.integer(if(split) nsplit else object$xt$k)
   object$X <- cbind(1, object$X)
   colnames(object$X) <- NULL
   nc <- ncol(object$X) + 1
@@ -4381,23 +4381,26 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
   nid <- split(1:npar, factor(sort(rep(1:nodes, times = nc))))
 
+#  fit.fun0 <- function(X, b, expand = FALSE, ...) {
+#    if(!is.null(names(b)))
+#      b <- get.par(b, "b")
+#    fit <- 0
+#    for(j in seq_along(nid)) {
+#      f <- X %*% b[nid[[j]]][-1]
+#      fit <- fit + b[nid[[j]]][1] / (1 + exp(-f))
+#    }
+#    if(!is.null(object$binning$match.index) & expand)
+#      f <- f[object$binning$match.index]
+#    fit <- fit - mean(fit, na.rm = TRUE)
+#    return(fit)
+#  }
+
   object$fit.fun <- function(X, b, expand = FALSE, ...) {
-    if(!is.null(names(b)))
-      b <- get.par(b, "b")
-    fit <- 0
-    for(j in seq_along(nid)) {
-      f <- X %*% b[nid[[j]]][-1]
-      fit <- fit + b[nid[[j]]][1] / (1 + exp(-f))
-    }
+    f <- .Call("nnet_fitfun", X, get.par(b, "b"), nodes, PACKAGE = "bamlss")
     if(!is.null(object$binning$match.index) & expand)
       f <- f[object$binning$match.index]
-    fit <- fit - mean(fit, na.rm = TRUE)
-    return(fit)
+    f
   }
-
-#  object$fit.fun <- function(X, b, ...) {
-#    .Call("nnet_fitfun", X, get.par(b, "b"), nid)
-#  }
 
   object$fixed <- FALSE
   object$state$parameters <- rnorm(npar, sd = 0.5)

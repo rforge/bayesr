@@ -2062,7 +2062,7 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind, uind = NULL)
 
 
 ## Gradient boosting.
-boost <- function(x, y, family,
+boost <- function(x, y, family, offset = NULL,
   nu = 0.1, df = 4, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE,
@@ -2101,7 +2101,7 @@ boost <- function(x, y, family,
   ## terms get an entry in $smooth.construct object.
   ## Intercepts are initalized.
   x <- boost.transform(x = x, y = y, df = NULL, family = family,
-    maxit = maxit, eps = eps, initialize = initialize, ...)
+    maxit = maxit, eps = eps, initialize = initialize, offset = offset, ...)
   
   ## Create a list() that saves the states for
   ## all parameters and model terms.
@@ -2120,6 +2120,14 @@ boost <- function(x, y, family,
   
   ## Extract actual predictor.
   eta <- get.eta(x)
+
+  if(!is.null(offset)) {
+    offset <- as.data.frame(offset)
+    for(j in nx) {
+      if(!is.null(offset[[j]]))
+        eta[[j]] <- eta[[j]] + offset[[j]]
+    }
+  }
   
   ## Print stuff.
   ia <- if(flush) interactive() else FALSE
@@ -2403,6 +2411,13 @@ boost.transform <- function(x, y, df = NULL, family,
   if(initialize) {
     eta <- get.eta(x)
     eta <- init.eta(eta, y, family, nobs)
+    if(!is.null(offset)) {
+      offset <- as.data.frame(offset)
+      for(j in nx) {
+        if(!is.null(offset[[j]]))
+          eta[[j]] <- eta[[j]] + offset[[j]]
+      }
+    }
     nobs <- length(eta[[1]])
     start <- unlist(lapply(eta, mean, na.rm = TRUE))
     

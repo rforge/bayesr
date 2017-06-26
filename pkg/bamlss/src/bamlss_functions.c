@@ -3751,31 +3751,46 @@ SEXP rho_score_mvnormAR1(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEX
 }
 
 /* Neural net fit fun. */
-/*SEXP nnet_fitun(SEXP X, SEXP b, SEXP nid)*/
-/*{*/
-/*  int i, j, jj, n = nrows(X);*/
-/*  int k = ncols(X);*/
-/*  int nodes = length(nid);*/
+SEXP nnet_fitfun(SEXP X, SEXP b, SEXP NODES)
+{
+  int i, j, jj, n = nrows(X);
+  int k = ncols(X);
+  int nodes = INTEGER(NODES)[0];
 
-/*  double *Xptr = REAL(X);*/
-/*  double *bptr = REAL(b);*/
+  double *Xptr = REAL(X);
+  double *bptr = REAL(b);
 
-/*  SEXP fit;*/
-/*  PROTECT(fit = allocVector(REALSXP, n));*/
-/*  double *fitptr = REAL(fit);*/
+  SEXP fit;
+  PROTECT(fit = allocVector(REALSXP, n));
+  double *fitptr = REAL(fit);
 
-/*  double ftmp = 0.0;*/
+  int l = 0;
+  double ftmp = 0.0;
+  double fmean = 0.0;
 
-/*  for(j = 0; j < nodes; j++) {*/
-/*    id = INTEGER*/
-/*    for(i = 0; i < n; i++) {*/
-/*      ftmp = 0.0;*/
-/*      for(jj = 0; jj < k; jj++) {*/
-/*        ftmp += Xptr[i + jj * n] * bptr[]*/
-/*      }*/
-/*    }*/
-/*  }*/
-/*}*/
+  for(i = 0; i < n; i++) {
+    fitptr[i] = 0.0;
+    for(j = 0; j < nodes; j++) {
+      ftmp = 0.0;
+      l = 0;
+      for(jj = (j * (k + 1) + 1); jj < (j * (k + 1) + k + 1); jj++) {
+        ftmp += Xptr[i + l * n] * bptr[jj];
+        l = l + 1;
+      }
+      fitptr[i] += bptr[j * (k + 1)] / (1.0 + exp(-ftmp));
+    }
+    fmean += fitptr[i];
+  }
+
+  fmean = fmean / n;
+
+  for(i = 0; i < n; i++) {
+    fitptr[i] = fitptr[i] - fmean;
+  }
+
+  UNPROTECT(1);
+  return(fit);
+}
 
 /*    fit <- 0*/
 /*    for(j in seq_along(nid)) {*/
@@ -3786,9 +3801,6 @@ SEXP rho_score_mvnormAR1(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEX
 /*      f <- f[object$binning$match.index]*/
 /*    fit <- fit - mean(fit, na.rm = TRUE)*/
 
-
-// sum(diag(Imat - HatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)))
-// Imat - HatMat[[i]] + HatMat[[i]] %*% states[[i]][[j]]$hat
 
 /* Fast hat-matrix trace. */
 SEXP hatmat_trace(SEXP H0, SEXP H1)
