@@ -3314,16 +3314,15 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
   if(is.null(mstop))
     mstop <- 1:nrow(x$parameters)
   if(retrans)
-    x$parameters <- lasso.coef(x, mstop = mstop)
+    x$parameters <- lasso.coef(x)
   npar <- colnames(x$parameters)
   for(j in c("Intercept", ".edf", ".lambda", ".tau"))
     npar <- npar[!grepl(j, npar, fixed = TRUE)]
-  x$parameters <- x$parameters[mstop, npar, drop = FALSE]
+  x$parameters <- x$parameters[, npar, drop = FALSE]
   ic <- x$model.stats$optimizer$lasso.stats
   multiple <- attr(ic, "multiple")
   log_lambda <- log(ic[, grep("lambda", colnames(ic))])
   nic <- grep("ic", colnames(ic), value = TRUE, ignore.case = TRUE)
-  
   if(spar) {
     op <- par(no.readonly = TRUE)
     on.exit(par(op))
@@ -3334,7 +3333,6 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
       n <- n + length(model)
     par(mfrow = n2mfrow(n), mar = c(5.1, 5.1, 4.1, 1.1))
   }
-  
   at <- pretty(1:nrow(ic))
   at[at == 0] <- 1
   
@@ -3416,11 +3414,10 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
           take <- cbind(take, ic[, j] == lambda_min[j])
         take <- apply(take, 1, all)
         tpar <- tpar[take, , drop = FALSE]
-      } else {
-        take <- 1:nrow(tpar)
       }
       if(!is.null(name))
         tpar <- tpar[, grep2(name, colnames(tpar), fixed = TRUE), drop = FALSE]
+      tpar <- tpar[mstop, , drop = FALSE]
       xn <- sapply(strsplit(colnames(tpar), ".", fixed = TRUE), function(x) { x[1] })
       if(length(unique(xn)) < 2)
         xn <- sapply(strsplit(colnames(tpar), ".", fixed = TRUE), function(x) { x[3] })
