@@ -3414,6 +3414,8 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
           take <- cbind(take, ic[, j] == lambda_min[j])
         take <- apply(take, 1, all)
         tpar <- tpar[take, , drop = FALSE]
+      } else {
+        take <- 1:nrow(tpar)
       }
       if(!is.null(name))
         tpar <- tpar[, grep2(name, colnames(tpar), fixed = TRUE), drop = FALSE]

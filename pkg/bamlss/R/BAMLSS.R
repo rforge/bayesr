@@ -4119,6 +4119,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
       group[[j]] <- NA
     }
     k <- k + ncol(object$X[[j]])
+    j2 <- NULL
     if(grepl(":", j, fixed = TRUE)) {
       j2 <- strsplit(j, ":")[[1]]
       is_f <- any(sapply(j2, function(i) is.factor(data[[i]])))
@@ -4151,7 +4152,11 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
       if(is.factor(data[[j]])) {
         df[[j]] <- colSums(object$X[[j]])
       } else {
-        df[[j]] <- rep(nobs, ncol(object$X[[j]]))
+        if(is.null(j2)) {
+          df[[j]] <- rep(nobs, ncol(object$X[[j]]))
+        } else {
+          df[[j]] <- colSums(object$X[[j]] > 0)
+        }
         names(df[[j]]) <- colnames(object$X[[j]])
       }
     }
