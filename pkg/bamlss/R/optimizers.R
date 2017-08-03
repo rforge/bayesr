@@ -220,6 +220,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
   if(!is.null(x$margin)) {
     x$xt <- c(x$xt, x$margin[[1]]$xt)
     x$xt <- x$xt[unique(names(x$xt))]
+    x$fixed <- x$margn[[1]]$fixed
   }
   if(is.null(x$binning) & !is.null(x$xt[["binning"]])) {
     if(is.logical(x$xt[["binning"]])) {

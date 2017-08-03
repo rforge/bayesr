@@ -280,10 +280,15 @@ design.construct <- function(formula, data = NULL, knots = NULL,
       tx <- drop.terms.bamlss(obj$terms,
         pterms = FALSE, keep.response = FALSE, data = data, specials = specials)
       sid <- unlist(attr(tx, "specials"))
+      smt <- NULL
+      fterms <- NULL
+      if(any(fj <- names(sid) %in% c("lf", "af",  "lf.vd", "re", "peer", "fpc"))) {
+        fterms <- attr(tx, "term.labels")[sid[fj]]
+        sid <- sid[!fj]
+      }
       if(!length(sid))
         sid <- NULL
-      smt <- NULL
-      if(!is.null(sid)) {
+      if(!is.null(sid) | !is.null(fterms)) {
         sterms <- sterm_labels <- attr(tx, "term.labels")[sid]
         sterms <- lapply(sterms, function(x) { eval(parse(text = x)) })
         nst <- NULL
@@ -404,6 +409,32 @@ design.construct <- function(formula, data = NULL, knots = NULL,
                 smooth <- c(smooth, smt)
               }
             }
+          }
+        }
+        if(!is.null(fterms)) {
+          for(j in seq_along(fterms)) {
+            nenv <- new.env()
+            for(nd in names(data))
+              assign(nd, data[[nd]], envir = nenv)
+            vars <- all.vars(as.formula(paste("~", fterms[j])))
+            if(length(vars) > 1) {
+              for(vj in vars[-1]) {
+                tmp <- get(vj, envir = .GlobalEnv)
+                assign(vj, tmp, envir = nenv)
+              }
+            }
+            tfm <- eval(parse(text = fterms[j]), envir = nenv)
+            rm(nenv)
+            tfme <- eval(tfm$call, envir = tfm$data)
+            smt <- smoothCon(tfme, data = tfm$data, n = nrow(tfm$data[[1L]]),
+              knots = knots, absorb.cons = TRUE)
+            lab <- all.labels.formula(as.formula(paste("~", fterms[j])))
+            for(jj in seq_along(smt)) {
+              smt[[jj]]$model.frame <- tfm$data
+              smt[[jj]]$orig.label <- smt[[jj]]$label
+              smt[[jj]]$label <- lab
+            }
+            smooth <- c(smooth, smt)
           }
         }
         if(length(smooth) > 0) {
@@ -1391,6 +1422,7 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
   ## Setup all processing functions.
   foo <- list("transform" = transform, "optimizer" = optimizer,
     "sampler" = sampler, "samplestats" = samplestats, "results" = results)
+
   nf <- names(foo)
   default_fun <- c("no.transform", "bfit", "GMCMC", "samplestats", "results.bamlss.default")
   functions <- list()
@@ -2054,7 +2086,7 @@ as.list.Formula <- function(x)
 bamlss.formula <- function(formula, family = NULL, specials = NULL, env = NULL, ...)
 {
   if(is.null(specials))
-    specials <- c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n")
+    specials <- c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "lf", "af", "lf.vd", "re", "peer", "fpc")
   if(inherits(formula, "bamlss.formula"))
     return(formula)
   if(!is.list(formula)) {
@@ -2283,7 +2315,7 @@ make_fFormula <- function(formula)
 all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, intercept = FALSE, type = 1)
 {
   env <- environment(formula)
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "lf", "af", "lf.vd", "re", "peer", "fpc"))
   tf <- terms(formula, specials = specials, keep.order = TRUE)
   ## sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
@@ -2299,13 +2331,17 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
       if(!length(vars))
         vars <- NULL
       for(j in tl[sid]) {
-        tcall <- parse(text = j)[[1]]
-        tcall[c("k","fx","bs","m","xt","id","sp","pc","d","mp","np")] <- NULL
-        tcall <- eval(tcall)
-        vars <- c(vars, tcall$term)
-        if(!is.null(tcall$by)) {
-          if(tcall$by != "NA")
-            vars <- c(vars, tcall$by)
+        if(any(grep2(paste0(c("af",  "lf.vd", "re", "peer", "fpc"), "("), j, fixed = TRUE)) ) {
+          vars <- c(vars, all.vars(as.formula(paste("~", j)))[1])
+        } else {
+          tcall <- parse(text = j)[[1]]
+          tcall[c("k","fx","bs","m","xt","id","sp","pc","d","mp","np")] <- NULL
+          tcall <- eval(tcall)
+          vars <- c(vars, tcall$term)
+          if(!is.null(tcall$by)) {
+            if(tcall$by != "NA")
+              vars <- c(vars, tcall$by)
+          }
         }
       }
     } else {
@@ -2371,7 +2407,7 @@ terms.formula2 <- function(formula, specials, keep.order = TRUE, ...)
 all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
 {
   env <- environment(formula)
-  specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", specials))
+  specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "lf", "af", "lf.vd", "re", "peer", "fpc", specials))
   tf <- terms.formula2(formula, specials = specials, keep.order = FALSE)
   ## sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
@@ -2392,16 +2428,25 @@ all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
       tl[-sid] <- labs
     tl[sid] <- gsub(" ", "", tl[sid])
     for(j in sid) {
-      tcall <- parse(text = tl[j])[[1]]
-      tcall[c("k","fx","bs","m","xt","sp","pc","d","mp","np")] <- NULL
-      tcall <- eval(tcall)
-      tl[j] <- gsub(" ", "", tcall$label)
-      if(!is.null(tcall$by)) {
-        if(tcall$by != "NA") {
-          if(!grepl("by=", tl[j], fixed = TRUE)) {
-            tlt <- strsplit(tl[j], "")[[1]]
-            tlt <- paste(tlt[1:(length(tlt) - 1)], collapse = "")
-            tl[j] <- paste(tlt, ",by=", tcall$by, ")", sep = "")
+      if(length(i <- grep2(paste0(c("af",  "lf.vd", "re", "peer", "fpc"), "("), tl[j], fixed = TRUE)) ) {
+        tl[j] <- paste0(c("af",  "lf.vd", "re", "peer", "fpc")[i], "(",
+          all.vars(as.formula(paste("~", tl[j])))[1], ")")
+      } else {
+        tcall <- parse(text = tl[j])[[1]]
+        tcall[c("k","fx","bs","m","xt","sp","pc","d","mp","np")] <- NULL
+        tcall <- eval(tcall)
+        if(is.null(tcall$label)) {
+          if(!is.null(tcall$call))
+            tcall <- eval(tcall$call)
+        }
+        tl[j] <- gsub(" ", "", tcall$label)
+        if(!is.null(tcall$by)) {
+          if(tcall$by != "NA") {
+            if(!grepl("by=", tl[j], fixed = TRUE)) {
+              tlt <- strsplit(tl[j], "")[[1]]
+              tlt <- paste(tlt[1:(length(tlt) - 1)], collapse = "")
+              tl[j] <- paste(tlt, ",by=", tcall$by, ")", sep = "")
+            }
           }
         }
       }
@@ -2767,6 +2812,14 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
 {
   nt <- length(x$term)
 
+  for(j in seq_along(data)) {
+    if(is.matrix(data[[j]])) {
+      data[[j]] <- if(is.numeric(data[[j]])) as.numeric(data[[j]]) else drop(data[[j]])
+    }
+  }
+  if(is.list(data))
+    data <- as.data.frame(data)
+
   if(nt > 2)
     return(NULL)
 
@@ -2790,9 +2843,11 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
     tterms <- c(tterms, tterm)
   }
 
-  for(char in c("(", ")", "[", "]")) {
-    colnames(data) <- gsub(char, ".", colnames(data), fixed = TRUE)
-    x$by <- gsub(char, ".", x$by, fixed = TRUE)
+  if(!is.list(data)) {
+    for(char in c("(", ")", "[", "]")) {
+      colnames(data) <- gsub(char, ".", colnames(data), fixed = TRUE)
+      x$by <- gsub(char, ".", x$by, fixed = TRUE)
+    }
   }
 
   ## Data for rug plotting.
@@ -2829,14 +2884,16 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
       data <- nd
     } else xsmall <- FALSE
   } else {
-    data0 <- data[, c(tterms, if(x$by != "NA") x$by else NULL), drop = FALSE]
-    if(nt < 2) {
-      if(x$by != "NA") {
-        if(!is.factor(data[[x$by]]))
-          data <- unique(data0)
-      } else data <- unique(data0)
-    }
-    xsmall <- if((nrow(data) != nrow(data0)) & (nt < 2)) TRUE else FALSE
+    if(!is.list(data)) {
+      data0 <- data[, c(tterms, if(x$by != "NA") x$by else NULL), drop = FALSE]
+      if(nt < 2) {
+        if(x$by != "NA") {
+          if(!is.factor(data[[x$by]]))
+            data <- unique(data0)
+        } else data <- unique(data0)
+      }
+      xsmall <- if((nrow(data) != nrow(data0)) & (nt < 2)) TRUE else FALSE
+    } else xsmall <- FALSE
   }
   if(is.null(x$special)) {
     X <- get.X(data)
@@ -2879,7 +2936,10 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
   cnames <- colnames(smf)
   smf <- as.data.frame(smf)
   for(l in 1:nt) {
-    smf <- cbind(data[[tterms[l]]], smf)
+    if(is.matrix(data[[tterms[l]]]))
+      smf <- cbind(as.numeric(data[[tterms[l]]]), smf)
+    else
+      smf <- cbind(drop(data[[tterms[l]]]), smf)
   }
   names(smf) <- c(x$term, cnames)
 
@@ -2889,7 +2949,7 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
 
   if(x$by != "NA") { ## FIXME: hard coded fix for plotting varying coefficient terms!
     if(!is.factor(data[[x$by]])) {
-      X <- X / data[[x$by]]
+      X <- X / as.numeric(data[[x$by]])
 
       fsamples <- apply(psamples, 1, function(g) {
         fit.fun(X, g, expand = FALSE)
@@ -2900,7 +2960,11 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
       cnames <- colnames(smf)
       smf <- as.data.frame(smf)
       for(l in 1:nt) {
-        smf <- cbind(data[[tterms[l]]], smf)
+        if(is.matrix(data[[tterms[l]]])) {
+          smf <- cbind(as.numeric(data[[tterms[l]]]), smf)
+        } else {
+          smf <- cbind(data[[tterms[l]]], smf)
+        }
       }
       names(smf) <- c(x$term, cnames)
     }
@@ -2920,7 +2984,13 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
   attr(x, "qrc") <- NULL
   attr(smf, "specs") <- x
   class(attr(smf, "specs")) <- class(x)
-  attr(smf, "x") <- if(xsmall & nt < 2) data0[, tterms] else data[, tterms]
+  if(!is.list(data)) {
+    attr(smf, "x") <- if(xsmall & nt < 2) data0[, tterms] else data[, tterms]
+  } else {
+    for(t in tterms)
+      data[[t]] <- if(is.matrix(data[[t]])) as.numeric(data[[t]]) else drop(data[[t]])
+    attr(smf, "x") <- as.data.frame(data)[, tterms]
+  }
   attr(smf, "by.drop") <- by.drop
   attr(smf, "rug") <- rugp
 
@@ -5401,9 +5471,9 @@ plot.bamlss.effect.default <- function(x, ...) {
   limNULL <- FALSE
   if(is.null(args[[lim]])) {
     limNULL <- TRUE
-    if(all(c("2.5%", "97.5%") %in% names(x)))
+    if(all(c("2.5%", "97.5%") %in% names(x)) & (attr(x, "specs")$dim < 2)) {
       args[[lim]] <- range(x[, c("2.5%", "97.5%")], na.rm = TRUE)
-    else {
+    } else {
       if(all("50%" %in% names(x))) {
         args[[lim]] <- range(x[, "50%"], na.rm = TRUE)
       }
@@ -5986,7 +6056,7 @@ print.bamlss.formula <- function(x, ...) {
 drop.terms.bamlss <- function(f, pterms = TRUE, sterms = TRUE,
   specials = NULL, keep.response = TRUE, keep.intercept = TRUE, data = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "lf", "af", "lf.vd", "re", "peer", "fpc"))
   if(!inherits(f, "formula")) {
     if(!is.null(f$terms)) {
       f <- f$terms
@@ -6059,7 +6129,7 @@ terms.bamlss <- terms.bamlss.frame <- terms.bamlss.formula <- function(x, specia
   if(!inherits(x, "bamlss.formula"))
     x <- bamlss.formula(x, ...)
   env <- environment(x)
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "lf", "af", "lf.vd", "re", "peer", "fpc"))
   elmts <- c("formula", "fake.formula")
   if(!any(names(x) %in% elmts) & !inherits(x, "formula")) {
     if(!is.null(model)) {
@@ -6185,7 +6255,7 @@ has_response <- function(x)
 
 has_sterms <- function(x, specials = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "lf", "af", "lf.vd", "re", "peer", "fpc"))
   if(inherits(x, "formula"))
     x <- terms(x, specials = specials)
   if(!inherits(x, "terms"))
@@ -6195,7 +6265,7 @@ has_sterms <- function(x, specials = NULL)
 
 has_pterms <- function(x, specials = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "lf", "af", "lf.vd", "re", "peer", "fpc"))
   if(inherits(x, "formula"))
     x <- terms(x, specials = specials)
   if(!inherits(x, "terms"))
@@ -6208,7 +6278,7 @@ has_pterms <- function(x, specials = NULL)
 
 get_pterms_labels <- function(x, specials = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "lf", "af", "lf.vd", "re", "peer", "fpc"))
   tl <- if(has_pterms(x, specials)) {
     x <- drop.terms.bamlss(x, pterms = TRUE, sterms = FALSE,
       keep.response = FALSE, specials = specials)
@@ -6220,7 +6290,7 @@ get_pterms_labels <- function(x, specials = NULL)
 get_sterms_labels <- function(x, specials = NULL)
 {
   env <- environment(x)
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "lf", "af", "lf.vd", "re", "peer", "fpc"))
   if(has_sterms(x, specials)) {
     x <- drop.terms.bamlss(x, pterms = FALSE, sterms = TRUE,
       keep.response = FALSE, specials = specials)
@@ -6351,8 +6421,8 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
           ## Prediction matrix.
           get.X <- function(x) { ## FIXME: time(x)
             for(char in c("(", ")", "[", "]")) {
-              obj$smooth.construct[[j]]$term <- gsub(char, ".", obj$smooth.construct[[j]]$term, fixed = TRUE)
-              obj$smooth.construct[[j]]$by <- gsub(char, ".", obj$smooth.construct[[j]]$by, fixed = TRUE)
+                obj$smooth.construct[[j]]$term <- gsub(char, ".", obj$smooth.construct[[j]]$term, fixed = TRUE)
+                obj$smooth.construct[[j]]$by <- gsub(char, ".", obj$smooth.construct[[j]]$by, fixed = TRUE)
             }
             if(is.null(obj$smooth.construct[[j]]$mono))
               obj$smooth.construct[[j]]$mono <- 0
@@ -6425,7 +6495,9 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
 
           s.effects[[obj$smooth.construct[[j]]$label]] <- compute_s.effect(obj$smooth.construct[[j]],
             get.X = get.X, fit.fun = obj$smooth.construct[[j]]$fit.fun, psamples = psamples[, b, drop = FALSE],
-            FUN = NULL, snames = snames, data = mf[, tn, drop = FALSE], grid = grid)
+            FUN = NULL, snames = snames, data = if(!is.null(obj$smooth.construct[[j]]$model.frame)) {
+              obj$smooth.construct[[j]]$model.frame
+            } else mf[, tn, drop = FALSE], grid = grid)
         }
       }
     }
