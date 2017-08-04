@@ -1279,10 +1279,10 @@ boostLL_fit <- function(x, grad, hess, nu, ...)
   xhess <- XWX + hess0
 
   Sigma <- matrix_inv(xhess, index = x$sparse.setup)
-  b1 <- drop(b0 + nu * Sigma %*% xgrad)
+  b1 <- drop(nu * Sigma %*% xgrad)
     
   x$state$parameters <- set.par(x$state$parameters, b1, "b")
-  x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
+  x$state$fitted.values <- x$state$fitted.values + x$fit.fun(x$X, b1)
   x$state$hessian <- Sigma
   x$state$edf <- sum_diag(XWX %*% Sigma)
   
@@ -1955,6 +1955,9 @@ boostLL <- function(x, y, family, offset = NULL,
   
   if(!is.null(mstop))
     maxit <- mstop
+
+  if(!is.null(stop.criterion))
+    stop.criterion <- toupper(stop.criterion)
   
   if(is.null(maxit))
     stop("please set either argument 'maxit' or 'mstop'!")
@@ -1986,9 +1989,12 @@ boostLL <- function(x, y, family, offset = NULL,
   select <- rep(NA, length = length(nx))
   names(select) <- nx
   loglik <- select
+
+  ## Criterion used.
+  sic <- if(is.null(stop.criterion)) "BIC" else stop.criterion
   
-  ## Save rss in list().
-  rss <- make.state.list(x, type = 2)
+  ## Save criterion in list().
+  crit <- ll.contrib <- make.state.list(x, type = 2)
   
   ## Extract actual predictor.
   eta <- get.eta(x)
@@ -2012,63 +2018,64 @@ boostLL <- function(x, y, family, offset = NULL,
   
   ## Start boosting.
   eps0 <- 1; iter <- if(initialize) 2 else 1
-  save.ll <- NULL
+  save.ll <- NULL; stopped <- FALSE
   ll <- family$loglik(y, family$map2par(eta))
   medf <- if(initialize) length(nx) else 0
-  ic0 <- -2 * ll + medf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
+  ic0 <- -2 * ll + medf * (if(tolower(sic) == "aic") 2 else log(nobs))
   ptm <- proc.time()
   while(iter <= maxit) {
     eta0 <- eta
+
+    ## Actual parameters.
+    peta <- family$map2par(eta)
     
-    ## Cycle through all parameters
+    ## Cycle through all parameters and terms.
     for(i in nx) {
-      peta <- family$map2par(eta)
-      
       ## Actual gradient.
       grad <- process.derivs(family$score[[i]](y, peta, id = i), is.weight = FALSE)
 
       ## Actual hessian.
       hess <- process.derivs(family$score[[i]](y, peta, id = i), is.weight = FALSE)
-      
-      ## Fit to gradient.
+ 
       for(j in names(x[[i]]$smooth.construct)) {
-        ## Get updated parameters.
-        states[[i]][[j]] <- boostLL_fit(x[[i]]$smooth.construct[[j]], grad, hess, nu, ...)
+        ## Get update.
+        states[[i]][[j]] <- boostLL_fit(x[[i]]$smooth.construct[[j]], grad, hess, nu, stop.criterion, family, y, eta, ...)
         
-        ## Get likelihood contribution.
+        ## Get contribution.
         eta[[i]] <- eta[[i]] - fitted(x[[i]]$smooth.construct[[j]]$state) + fitted(states[[i]][[j]])
         tll <- family$loglik(y, family$map2par(eta))
         if(is.null(stop.criterion)) {
-          rss[[i]][j] <- -1 * (ll - tll)
+          crit[[i]][j] <- tll - ll
         } else {
-          tedf <- medf + states[[i]][[j]]$edf
+          tedf <- medf - x[[i]]$smooth.construct[[j]]$state$edf + states[[i]][[j]]$edf
           ic1 <- -2 * tll + tedf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
-          rss[[i]][j] <- ic0 - ic1
+          crit[[i]][j] <- ic0 - ic1
         }
+        ll.contrib[[i]][j] <- tll - ll
         eta[[i]] <- eta0[[i]]
       }
       
       ## Which one is best?
-      select[i] <- which.max(rss[[i]])
+      select[i] <- which.max(crit[[i]])
     }
 
-    i <- which.max(sapply(rss, function(x) { max(x) }))
+    i <- which.max(sapply(crit, function(x) { max(x) }))
     
     ## Which term to update.
-    take <- c(nx[i], names(rss[[i]])[select[i]])
+    take <- c(nx[i], names(crit[[i]])[select[i]])
 
-    ## Update selected base learner.
-    eta[[take[1]]] <- eta[[take[1]]] - fitted(x[[take[1]]]$smooth.construct[[take[2]]]$state) +  states[[take[1]]][[take[2]]]$fitted.values
+    ## Update selected term.
+    eta[[take[1]]] <- eta[[take[1]]] - fitted(x[[take[1]]]$smooth.construct[[take[2]]]$state) + fitted(states[[take[1]]][[take[2]]])
 
     ## Save parameters.
-    parm[[take[1]]][[take[2]]][iter, ] <- get.par(states[[take[1]]][[take[2]]]$parameters, "b") - get.par(x[[take[1]]]$smooth.construct[[take[2]]]$state$parameters, "b")
+    parm[[take[1]]][[take[2]]][iter, ] <- get.par(states[[take[1]]][[take[2]]]$parameters, "b")
     medf <- medf - x[[take[1]]]$smooth.construct[[take[2]]]$state$edf + states[[take[1]]][[take[2]]]$edf
     edf[iter] <- medf
-    
+
     ## Write to x.
     x[[take[1]]]$smooth.construct[[take[2]]]$state <- states[[take[1]]][[take[2]]]
     x[[take[1]]]$smooth.construct[[take[2]]]$selected[iter] <- 1
-    x[[take[1]]]$smooth.construct[[take[2]]]$loglik[iter] <- rss[[i]][select[i]]
+    x[[take[1]]]$smooth.construct[[take[2]]]$loglik[iter] <- ll.contrib[[take[1]]][take[2]]
     
     ## Change.
     eps0 <- do.call("cbind", eta)
@@ -2076,27 +2083,38 @@ boostLL <- function(x, y, family, offset = NULL,
     if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
     
     ll <- family$loglik(y, family$map2par(eta))
-    save.ll <- c(save.ll, ll)
+    ic0 <- -2 * ll + medf * (if(tolower(sic) == "aic") 2 else log(nobs))
 
-    sic <- if(is.null(stop.criterion)) "BIC" else stop.criterion
-    save.ic[iter] <- -1 * (-2 * ll + medf * (if(tolower(sic) == "aic") 2 else log(nobs)))
+    save.ll <- c(save.ll, ll)
+    save.ic[iter] <- ic0
     
     if(verbose) {
       cat(if(ia) "\r" else "\n")
       vtxt <- paste(
-        paste(sic, " ", fmt(ll, width = 8, digits = digits), " ", sep = ""),
-        "edf ", fmt(edf[iter], width = 4, digits = digits), " ",
+        paste(sic, " ", fmt(save.ic[iter], width = 8, digits = digits), " ", sep = ""),
         "logLik ", fmt(ll, width = 8, digits = digits),
+        " edf ", fmt(edf[iter], width = 4, digits = digits), " ",
         " eps ", fmt(eps0, width = 6, digits = digits + 2),
         " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
       cat(vtxt)
       
       if(.Platform$OS.type != "unix" & ia) flush.console()
     }
+
+    if(!is.null(stop.criterion)) {
+      if(iter > 2) {
+        if(!is.na(save.ic[iter - 1]) & force.stop) {
+          if(save.ic[iter - 1] < save.ic[iter]) {
+            stopped <- TRUE
+            break
+          }
+        }
+      }
+    }
     
     iter <- iter + 1
   }
-  
+
   elapsed <- c(proc.time() - ptm)[3]
   
   if(verbose) {
@@ -2107,11 +2125,16 @@ boostLL <- function(x, y, family, offset = NULL,
     cat("\n elapsed time: ", et, "\n", sep = "")
   }
   
-  bsum <- make.boost.summary(x, maxit, save.ll, edf, FALSE, length(eta[[1]]))
+  bsum <- make.boost.summary(x, if(!stopped) maxit else (iter - 1), save.ll, edf, FALSE, nobs)
+  bsum$criterion <- list(
+    "bic" = -2 * save.ic + edf[1:maxit] * log(nobs),
+    "aic" = -2 * save.ic + edf[1:maxit] * 2,
+    "edf" = edf[1:maxit]
+  )
   if(plot)
     plot.boost.summary(bsum)
   
-  return(list("parameters" = parm2mat(parm, maxit),
+  return(list("parameters" = parm2mat(parm, if(!stopped) maxit else (iter - 1)),
     "fitted.values" = eta, "nobs" = nobs, "boost.summary" = bsum, "runtime" = elapsed))
 }
 
@@ -2324,8 +2347,8 @@ boost <- function(x, y, family, offset = NULL,
       cat(if(ia) "\r" else "\n")
       vtxt <- paste(
         if(!is.null(stop.criterion)) paste(stop.criterion, " ", fmt(save.ic[iter], width = 8, digits = digits), " ", sep = "") else NULL,
-        if(!is.null(stop.criterion)) paste("edf ", fmt(edf[iter], width = 4, digits = digits), " ", sep = "") else NULL,
         "logLik ", fmt(ll, width = 8, digits = digits),
+        if(hatmatrix) paste(" edf ", fmt(edf[iter], width = 4, digits = digits), " ", sep = "") else NULL,
         " eps ", fmt(eps0, width = 6, digits = digits + 2),
         " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
       cat(vtxt)
