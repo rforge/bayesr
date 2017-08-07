@@ -1962,7 +1962,7 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind, uind = NULL)
 }
 
 
-## Likelihood based boosting.
+## Modified likelihood based boosting.
 boostLL <- function(x, y, family, offset = NULL,
   nu = 0.05, df = 4, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
