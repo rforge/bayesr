@@ -1262,27 +1262,49 @@ bfit_newton <- function(x, family, y, eta, id, ...)
 }
 
 
-boostLL_fit <- function(x, grad, hess, nu, ...)
+boostLL_fit <- function(x, grad, hess, nu, stop.criterion, family, y, eta, edf, id, do.optim, ...)
 {
   b0 <- get.par(x$state$parameters, "b")
-
-  hess0 <- if(x$fixed) {
-    k <- length(b0)
-    matrix(0, k, k)
-  } else x$hess(score = NULL, x$state$parameters, full = FALSE)
-
-  xgrad <- t(x$X) %*% grad - hess0 %*% b0
 
   xbin.fun(x$binning$sorted.index, hess, rep(0, length(grad)),
     x$weights, x$rres, x$binning$order, x$binning$uind)
   XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
-  xhess <- XWX + hess0
 
+  if(x$fixed) {
+    k <- length(b0)
+    hess0 <- matrix(0, k, k)
+  } else {
+    if(do.optim) {
+      tpar <- x$state$parameters
+      edf <- edf - x$state$edf
+
+      objfun <- function(tau2) {
+        tpar2 <- set.par(tpar, tau2, "tau2")
+        hess0 <- x$hess(score = NULL, tpar2, full = FALSE)
+        xgrad <- t(x$X) %*% grad - hess0 %*% b0
+        xhess <- XWX + hess0
+        Sigma <- matrix_inv(xhess, index = x$sparse.setup)
+        b1 <- drop(nu * Sigma %*% xgrad)
+        eta[[id]] <- eta[[id]] + x$fit.fun(x$X, b1)
+        edf <- edf + sum_diag(XWX %*% Sigma)
+        return(get.ic(family, y, family$map2par(eta), edf, length(eta[[1]]), type = stop.criterion))
+      }
+
+      tau2 <- get.par(x$state$parameters, "tau2")
+      tau2 <- tau2 - nu * (tau2 - tau2.optim(objfun, start = tau2))
+      x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
+    }
+
+    hess0 <- x$hess(score = NULL, x$state$parameters, full = FALSE)
+  }
+
+  xgrad <- t(x$X) %*% grad - hess0 %*% b0
+  xhess <- XWX + hess0
   Sigma <- matrix_inv(xhess, index = x$sparse.setup)
   b1 <- drop(nu * Sigma %*% xgrad)
     
   x$state$parameters <- set.par(x$state$parameters, b1, "b")
-  x$state$fitted.values <- x$state$fitted.values + x$fit.fun(x$X, b1)
+  x$state$fitted.values <- x$fit.fun(x$X, b1)
   x$state$hessian <- Sigma
   x$state$edf <- sum_diag(XWX %*% Sigma)
   
@@ -1944,7 +1966,8 @@ boostLL <- function(x, y, family, offset = NULL,
   nu = 0.1, df = 4, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, plot = TRUE,
-  initialize = TRUE, stop.criterion = NULL, force.stop = TRUE, ...)
+  initialize = TRUE, stop.criterion = NULL, force.stop = TRUE,
+  do.optim = TRUE, ...)
 {
   ## FIXME: hard coded.
   weights <- offset <- NULL
@@ -1963,7 +1986,7 @@ boostLL <- function(x, y, family, offset = NULL,
     stop("please set either argument 'maxit' or 'mstop'!")
   
   if(is.null(attr(x, "bamlss.engine.setup")))
-    x <- bamlss.engine.setup(x, df = df, ...)
+    x <- bamlss.engine.setup(x, df = NULL, ...)
   
   np <- length(nx)
   nobs <- nrow(y)
@@ -1975,7 +1998,7 @@ boostLL <- function(x, y, family, offset = NULL,
   ## Setup boosting structure, i.e, all parametric
   ## terms get an entry in $smooth.construct object.
   ## Intercepts are initalized.
-  x <- boost.transform(x = x, y = y, df = NULL, family = family,
+  x <- boost.transform(x = x, y = y, df = df, family = family,
     maxit = maxit, eps = eps, initialize = initialize, offset = offset, ...)
   
   ## Create a list() that saves the states for
@@ -2039,13 +2062,14 @@ boostLL <- function(x, y, family, offset = NULL,
  
       for(j in names(x[[i]]$smooth.construct)) {
         ## Get update.
-        states[[i]][[j]] <- boostLL_fit(x[[i]]$smooth.construct[[j]], grad, hess, nu, stop.criterion, family, y, eta, ...)
+        states[[i]][[j]] <- boostLL_fit(x[[i]]$smooth.construct[[j]], grad, hess, nu, stop.criterion,
+          family, y, eta, medf, id = i, do.optim = do.optim, ...)
         
         ## Get contribution.
-        eta[[i]] <- eta[[i]] - fitted(x[[i]]$smooth.construct[[j]]$state) + fitted(states[[i]][[j]])
+        eta[[i]] <- eta[[i]] + fitted(states[[i]][[j]])
         tll <- family$loglik(y, family$map2par(eta))
         if(is.null(stop.criterion)) {
-          crit[[i]][j] <- tll - ll
+          crit[[i]][j] <- -1 * (ll - tll)
         } else {
           tedf <- medf - x[[i]]$smooth.construct[[j]]$state$edf + states[[i]][[j]]$edf
           ic1 <- -2 * tll + tedf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
@@ -2065,10 +2089,10 @@ boostLL <- function(x, y, family, offset = NULL,
     take <- c(nx[i], names(crit[[i]])[select[i]])
 
     ## Update selected term.
-    eta[[take[1]]] <- eta[[take[1]]] - fitted(x[[take[1]]]$smooth.construct[[take[2]]]$state) + fitted(states[[take[1]]][[take[2]]])
+    eta[[take[1]]] <- eta[[take[1]]] + fitted(states[[take[1]]][[take[2]]])
 
     ## Save parameters.
-    parm[[take[1]]][[take[2]]][iter, ] <- get.par(states[[take[1]]][[take[2]]]$parameters, "b")
+    parm[[take[1]]][[take[2]]][iter, ] <- get.par(states[[take[1]]][[take[2]]]$parameters, "b") ##- get.par(x[[take[1]]]$smooth.construct[[take[2]]]$state$parameters, "b")
     medf <- medf - x[[take[1]]]$smooth.construct[[take[2]]]$state$edf + states[[take[1]]][[take[2]]]$edf
     edf[iter] <- medf
 
@@ -2127,8 +2151,8 @@ boostLL <- function(x, y, family, offset = NULL,
   
   bsum <- make.boost.summary(x, if(!stopped) maxit else (iter - 1), save.ll, edf, FALSE, nobs)
   bsum$criterion <- list(
-    "bic" = -2 * save.ic + edf[1:maxit] * log(nobs),
-    "aic" = -2 * save.ic + edf[1:maxit] * 2,
+    "bic" = -2 * save.ll[1:maxit] + edf[1:maxit] * log(nobs),
+    "aic" = -2 * save.ll[1:maxit] + edf[1:maxit] * 2,
     "edf" = edf[1:maxit]
   )
   if(plot)
@@ -2407,12 +2431,13 @@ boost.transform <- function(x, y, df = NULL, family,
 {
   np <- length(x)
   nx <- names(x)
-  
+
   ## Initialize select indicator and intercepts.
   for(j in 1:np) {
     for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-      if(!is.null(df))
+      if(!is.null(df)) {
         x[[nx[j]]]$smooth.construct[[sj]] <- assign.df(x[[nx[j]]]$smooth.construct[[sj]], df)
+      }
       if(!is.null(x[[nx[j]]]$smooth.construct[[sj]]$fxsp)) {
         if(!x[[nx[j]]]$smooth.construct[[sj]]$fxsp & !x[[nx[j]]]$smooth.construct[[sj]]$fixed) {
           x[[nx[j]]]$smooth.construct[[sj]]$old.optimize <- x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim
