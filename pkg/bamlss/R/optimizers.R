@@ -457,7 +457,7 @@ tau2interval <- function(x, lower = .Machine$double.eps^0.8, upper = 1e+10)
 
 
 ## Assign degrees of freedom.
-assign.df <- function(x, df)
+assign.df <- function(x, df, do.part = FALSE)
 {
   if(inherits(x, "special"))
     return(x)
@@ -490,22 +490,17 @@ assign.df <- function(x, df)
     XX <- crossprod(x$X)
   }
   if(length(tau2) > 1) {
-    if(FALSE) {
-      df.part <- df / length(tau2)
-      for(j in seq_along(tau2)) {
-        objfun <- function(val) {
-          tau2[j] <- val
-          S <- 0
-          for(i in seq_along(x$S))
-            S <- S + 1 / tau2[i] * (if(is.function(x$S[[i]])) x$S[[i]](c("b" = rep(0, attr(x$S[[i]], "npar")))) else x$S[[i]])
-          edf <- sum_diag(XX %*% matrix_inv(XX + S, index = x$sparse.setup))
-          return((df - edf)^2)
-        }
-        opt <- try(optimize(objfun, int)$minimum, silent = TRUE)
-        if(!inherits(opt, "try-error"))
-          tau2[j] <- opt
+    if(do.part) {
+      objfun <- function(tau2) {
+        S <- 0
+        for(i in seq_along(x$S))
+          S <- S + 1 / tau2[i] * (if(is.function(x$S[[i]])) x$S[[i]](c("b" = rep(0, attr(x$S[[i]], "npar")))) else x$S[[i]])
+        edf <- sum_diag(XX %*% matrix_inv(XX + S, index = x$sparse.setup))
+        return((df - edf)^2)
       }
-      tau2 <- rep(1000, length(tau2))
+      opt <- tau2.optim(objfun, start = tau2, maxit = 1000, scale = 100)
+      if(!inherits(opt, "try-error"))
+        tau2 <- opt
     }
   } else {
     objfun <- function(tau2) {
@@ -1272,7 +1267,7 @@ boostLL_fit <- function(x, grad, hess, nu, stop.criterion, family, y, eta, edf, 
 
   if(x$fixed) {
     k <- length(b0)
-    hess0 <- matrix(0, k, k)
+    S <- matrix(0, k, k)
   } else {
     if(do.optim) {
       tpar <- x$state$parameters
@@ -1280,9 +1275,11 @@ boostLL_fit <- function(x, grad, hess, nu, stop.criterion, family, y, eta, edf, 
 
       objfun <- function(tau2) {
         tpar2 <- set.par(tpar, tau2, "tau2")
-        hess0 <- x$hess(score = NULL, tpar2, full = FALSE)
-        xgrad <- t(x$X) %*% grad - hess0 %*% b0
-        xhess <- XWX + hess0
+        S <- 0
+        for(j in seq_along(tau2))
+          S <- S + (1 / tau2[j]) * if(is.function(x$S[[j]])) x$S[[j]](c(tpar2, x$fixed.hyper)) else x$S[[j]]
+        xgrad <- t(x$X) %*% grad - S %*% b0
+        xhess <- XWX + S
         Sigma <- matrix_inv(xhess, index = x$sparse.setup)
         b1 <- drop(nu * Sigma %*% xgrad)
         eta[[id]] <- eta[[id]] + x$fit.fun(x$X, b1)
@@ -1295,15 +1292,19 @@ boostLL_fit <- function(x, grad, hess, nu, stop.criterion, family, y, eta, edf, 
       x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
     }
 
-    hess0 <- x$hess(score = NULL, x$state$parameters, full = FALSE)
+    tau2 <- get.par(x$state$parameters, "tau2")
+
+    S <- 0
+    for(j in seq_along(tau2))
+      S <- S + (1 / tau2[j]) * if(is.function(x$S[[j]])) x$S[[j]](c(x$state$parameters, x$fixed.hyper)) else x$S[[j]]
   }
 
-  xgrad <- t(x$X) %*% grad - hess0 %*% b0
-  xhess <- XWX + hess0
+  xgrad <- t(x$X) %*% grad - S %*% b0
+  xhess <- XWX + S
   Sigma <- matrix_inv(xhess, index = x$sparse.setup)
   b1 <- drop(nu * Sigma %*% xgrad)
     
-  x$state$parameters <- set.par(x$state$parameters, b1, "b")
+  x$state$parameters <- set.par(x$state$parameters, b0 + b1, "b")
   x$state$fitted.values <- x$fit.fun(x$X, b1)
   x$state$hessian <- Sigma
   x$state$edf <- sum_diag(XWX %*% Sigma)
@@ -2059,6 +2060,9 @@ boostLL <- function(x, y, family, offset = NULL,
 
       ## Actual hessian.
       hess <- process.derivs(family$score[[i]](y, peta, id = i), is.weight = FALSE)
+
+      ## Working response.
+      z <- eta[[i]] + 1 / hess * grad
  
       for(j in names(x[[i]]$smooth.construct)) {
         ## Get update.
@@ -2092,7 +2096,7 @@ boostLL <- function(x, y, family, offset = NULL,
     eta[[take[1]]] <- eta[[take[1]]] + fitted(states[[take[1]]][[take[2]]])
 
     ## Save parameters.
-    parm[[take[1]]][[take[2]]][iter, ] <- get.par(states[[take[1]]][[take[2]]]$parameters, "b") ##- get.par(x[[take[1]]]$smooth.construct[[take[2]]]$state$parameters, "b")
+    parm[[take[1]]][[take[2]]][iter, ] <- get.par(states[[take[1]]][[take[2]]]$parameters, "b") - get.par(x[[take[1]]]$smooth.construct[[take[2]]]$state$parameters, "b")
     medf <- medf - x[[take[1]]]$smooth.construct[[take[2]]]$state$edf + states[[take[1]]][[take[2]]]$edf
     edf[iter] <- medf
 
@@ -2436,7 +2440,7 @@ boost.transform <- function(x, y, df = NULL, family,
   for(j in 1:np) {
     for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
       if(!is.null(df)) {
-        x[[nx[j]]]$smooth.construct[[sj]] <- assign.df(x[[nx[j]]]$smooth.construct[[sj]], df)
+        x[[nx[j]]]$smooth.construct[[sj]] <- assign.df(x[[nx[j]]]$smooth.construct[[sj]], df, do.part = TRUE)
       }
       if(!is.null(x[[nx[j]]]$smooth.construct[[sj]]$fxsp)) {
         if(!x[[nx[j]]]$smooth.construct[[sj]]$fxsp & !x[[nx[j]]]$smooth.construct[[sj]]$fixed) {
