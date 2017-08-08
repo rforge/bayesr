@@ -1257,7 +1257,7 @@ bfit_newton <- function(x, family, y, eta, id, ...)
 }
 
 
-boostLL_fit <- function(x, grad, hess, nu, stop.criterion, family, y, eta, edf, id, do.optim, ...)
+boostm_fit <- function(x, grad, hess, nu, stop.criterion, family, y, eta, edf, id, do.optim, ...)
 {
   b0 <- get.par(x$state$parameters, "b")
 
@@ -1287,8 +1287,7 @@ boostLL_fit <- function(x, grad, hess, nu, stop.criterion, family, y, eta, edf, 
         return(get.ic(family, y, family$map2par(eta), edf, length(eta[[1]]), type = stop.criterion))
       }
 
-      tau2 <- get.par(x$state$parameters, "tau2")
-      tau2 <- tau2 - nu * (tau2 - tau2.optim(objfun, start = tau2))
+      tau2 <- tau2.optim(objfun, start = get.par(x$state$parameters, "tau2"), scale = 10)
       x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
     }
 
@@ -1963,7 +1962,7 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind, uind = NULL)
 
 
 ## Modified likelihood based boosting.
-boostLL <- function(x, y, family, offset = NULL,
+boostm <- function(x, y, family, offset = NULL,
   nu = 0.05, df = 4, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, plot = TRUE,
@@ -2066,8 +2065,15 @@ boostLL <- function(x, y, family, offset = NULL,
  
       for(j in names(x[[i]]$smooth.construct)) {
         ## Get update.
-        states[[i]][[j]] <- boostLL_fit(x[[i]]$smooth.construct[[j]], grad, hess, nu, stop.criterion,
-          family, y, eta, medf, id = i, do.optim = do.optim, ...)
+        states[[i]][[j]] <- if(is.null(x[[i]]$smooth.construct[[j]][["boostm.fit"]])) {
+          boostm_fit(x[[i]]$smooth.construct[[j]], grad, hess, nu, stop.criterion,
+            family, y, eta, medf, id = i, do.optim = do.optim, ...)
+        } else {
+          x[[i]]$smooth.construct[[j]][["boostm.fit"]](x[[i]]$smooth.construct[[j]],
+            grad = grad, hess = hess, nu = nu, criterion = stop.criterion,
+            family = family, y = y, eta = eta, edf = medf, id = i,
+            do.optim = do.optim, ...)
+        }
         
         ## Get contribution.
         eta[[i]] <- eta[[i]] + fitted(states[[i]][[j]])
