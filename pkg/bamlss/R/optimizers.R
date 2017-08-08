@@ -2169,7 +2169,7 @@ boostLL <- function(x, y, family, offset = NULL,
 
 ## Gradient boosting.
 boost <- function(x, y, family, offset = NULL,
-  nu = 0.1, df = 4, maxit = 400, mstop = NULL,
+  nu = 0.1, df = 4, maxit = 400, mstop = NULL, maxq = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE,
   initialize = TRUE, stop.criterion = NULL, force.stop = TRUE,
@@ -2255,13 +2255,17 @@ boost <- function(x, y, family, offset = NULL,
   
   ## Env for C.
   rho <- new.env()
+
+  if(is.null(maxq))
+    maxq <- get.maxq(x)
+  qsel <- 0
   
   ## Start boosting.
   eps0 <- 1; iter <- if(initialize) 2 else 1
   save.ll <- NULL
   ll <- family$loglik(y, family$map2par(eta))
   ptm <- proc.time()
-  while(iter <= maxit) {
+  while(iter <= maxit & qsel < maxq) {
     eta0 <- eta
     
     ## Cycle through all parameters
@@ -2370,6 +2374,9 @@ boost <- function(x, y, family, offset = NULL,
     if(!is.null(selectfun)) {
 
     }
+
+    ## Compute number of selected base learners.
+    qsel <- get.qsel(x, iter)
     
     if(verbose) {
       cat(if(ia) "\r" else "\n")
@@ -2378,7 +2385,8 @@ boost <- function(x, y, family, offset = NULL,
         "logLik ", fmt(ll, width = 8, digits = digits),
         if(hatmatrix) paste(" edf ", fmt(edf[iter], width = 4, digits = digits), " ", sep = "") else NULL,
         " eps ", fmt(eps0, width = 6, digits = digits + 2),
-        " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
+        " iteration ", formatC(iter, width = nchar(maxit)),
+        " qsel ", qsel, sep = "")
       cat(vtxt)
       
       if(.Platform$OS.type != "unix" & ia) flush.console()
@@ -2859,6 +2867,28 @@ increase <- function(state0, state1)
   state0$special <- state1$special
   state0$hat <- state1$hat
   state0
+}
+
+
+## Extract number of selected base learners
+get.qsel <- function(x, iter)
+{
+  rval <- 0
+  for(i in names(x)) {
+    for(j in names(x[[i]]$smooth.construct)) {
+      rval <- rval + 1 * any(x[[i]]$smooth.construct[[j]]$selected[1:iter] > 0)
+    }
+  }
+  rval
+}
+
+get.maxq <- function(x)
+{
+  rval <- 0
+  for(i in names(x)) {
+    rval <- rval + length(names(x[[i]]$smooth.construct))
+  }
+  rval
 }
 
 

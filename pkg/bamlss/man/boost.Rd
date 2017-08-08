@@ -16,7 +16,7 @@
 ## Gradient boosting optimizer.
 boost(x, y, family, offset = NULL,
   nu = 0.1, df = 4, maxit = 400, mstop = NULL,
-  verbose = TRUE, digits = 4, flush = TRUE,
+  maxq = NULL, verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL,
   plot = TRUE, initialize = TRUE, stop.criterion = NULL,
   force.stop = TRUE, hatmatrix = !is.null(stop.criterion), ...)
@@ -52,6 +52,8 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters",
     labels, e.g., as provided in \code{\link{summary.bamlss}}.}
   \item{maxit}{Integer, the maximum number of boosting iterations.}
   \item{mstop}{For convenience, overwrites \code{maxit}.}
+  \item{maxq}{Integer, defines the maximum number of selected base-learners. The algorithm stops
+    if this numer is exceeded.}
   \item{name}{Character, the name of the coefficient (group) that should be plotted. Note that
     the string provided in \code{name} will be removed from the labels on the 4th axis.}
   \item{labels}{A character string of labels that should be used on the 4 axis.}
