@@ -146,6 +146,7 @@ export(
   
   ## boosting/lasso
   "boost",
+  "boostm",
   "boost.summary",
   "boost.plot",
   "la",

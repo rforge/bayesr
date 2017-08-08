@@ -1,5 +1,6 @@
 \name{boost}
 \alias{boost}
+\alias{boostm}
 \alias{boost.summary}
 \alias{boost.plot}
 \alias{print.boost.summary}
@@ -20,6 +21,14 @@ boost(x, y, family, offset = NULL,
   eps = .Machine$double.eps^0.25, nback = NULL,
   plot = TRUE, initialize = TRUE, stop.criterion = NULL,
   force.stop = TRUE, hatmatrix = !is.null(stop.criterion), ...)
+
+## Modified likelihood based boosting.
+boostm(x, y, family, offset = NULL,
+  nu = 0.05, df = 4, maxit = 400, mstop = NULL,
+  verbose = TRUE, digits = 4, flush = TRUE,
+  eps = .Machine$double.eps^0.25, plot = TRUE,
+  initialize = TRUE, stop.criterion = "AIC", force.stop = TRUE,
+  do.optim = TRUE, ...)
 
 ## Boosting summary extractor.
 boost.summary(object, ...)
@@ -87,7 +96,7 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters",
 
 \value{
   For function \code{boost.summary()} a list containing information on selection frequencies etc.
-  For function \code{boost()} a list containing the following objects:
+  For function \code{boost()} and \code{boostm()} a list containing the following objects:
   \item{fitted.values}{A named list of the fitted values based on the last boosting iteration
     of the modeled parameters of the selected distribution.}
   \item{parameters}{A matrix, each row corresponds to the parameter values of one boosting iteration.}
@@ -99,7 +108,8 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters",
   user, e.g., one option is to use argument \code{scale.d} in function \code{\link{bamlss.frame}},
   which uses \code{\link[base]{scale}}.
 
-  Function \code{boost()} does not select the optimum stopping iteration!
+  Function \code{boost()} does not select the optimum stopping iteration! The modified likelihood
+  based algorithm implemented in function \code{boostm()} is still experimental!
 }
 
 \seealso{
