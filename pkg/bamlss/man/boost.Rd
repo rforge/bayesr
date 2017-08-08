@@ -6,11 +6,12 @@
 \alias{print.boost.summary}
 \alias{plot.boost.summary}
 
-\title{Gradient Boosting BAMLSS}
+\title{Boosting BAMLSS}
 
 \description{
-  Optimizer function for gradient boosting with \code{\link{bamlss}}. In each boosting iteration
-  the function selects the model term with the largest contribution to the log-likelihood.
+  Optimizer functions for gradient and likelihood boosting with \code{\link{bamlss}}. In each
+  boosting iteration the function selects the model term with the largest contribution to the
+  log-likelihood, AIC or BIC.
 }
 
 \usage{
