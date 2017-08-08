@@ -2194,7 +2194,7 @@ boost <- function(x, y, family, offset = NULL,
     stop("please set either argument 'maxit' or 'mstop'!")
   
   if(is.null(attr(x, "bamlss.engine.setup")))
-    x <- bamlss.engine.setup(x, df = df, ...)
+    x <- bamlss.engine.setup(x, df = NULL, ...)
   
   np <- length(nx)
   nobs <- nrow(y)
@@ -2206,7 +2206,7 @@ boost <- function(x, y, family, offset = NULL,
   ## Setup boosting structure, i.e, all parametric
   ## terms get an entry in $smooth.construct object.
   ## Intercepts are initalized.
-  x <- boost.transform(x = x, y = y, df = NULL, family = family,
+  x <- boost.transform(x = x, y = y, df = df, family = family,
     maxit = maxit, eps = eps, initialize = initialize, offset = offset, ...)
   
   ## Create a list() that saves the states for
