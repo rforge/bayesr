@@ -2094,6 +2094,12 @@ boostm <- function(x, y, family, offset = NULL,
     }
 
     i <- which.max(sapply(crit, function(x) { max(x) }))
+
+    if(all(unlist(crit) <= 0)) {
+      warning("criterion is decreasing!")
+      if(force.stop)
+        break
+    }
     
     ## Which term to update.
     take <- c(nx[i], names(crit[[i]])[select[i]])

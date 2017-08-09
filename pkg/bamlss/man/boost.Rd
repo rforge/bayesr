@@ -147,6 +147,21 @@ parameters(b, mstop = 100)
 ## Also works with predict().
 head(do.call("cbind", predict(b, mstop = 1)))
 head(do.call("cbind", predict(b, mstop = 100)))
+
+## Another example using the modified liklihood
+## bootsing algorithm.
+f <- list(
+  num ~ x1 + x2 + x3 + lon + lat +
+    s(x1) + s(x2) + s(x3) + s(lon) + s(lat) + te(lon,lat),
+  sigma ~ x1 + x2 + x3 + lon + lat +
+    s(x1) + s(x2) + s(x3) + s(lon) + s(lat) + te(lon,lat)
+)
+
+b <- bamlss(f, data = d, optimizer = boostm,
+  sampler = FALSE, scale.d = TRUE, nu = 0.01,
+  maxit = 1000)
+
+plot(b)
 }
 }
 
