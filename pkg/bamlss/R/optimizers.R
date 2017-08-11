@@ -2212,6 +2212,9 @@ boost <- function(x, y, family, offset = NULL,
   
   np <- length(nx)
   nobs <- nrow(y)
+
+  yname <- names(y)
+
   if(is.data.frame(y)) {
     if(ncol(y) < 2)
       y <- y[[1]]
@@ -2266,6 +2269,9 @@ boost <- function(x, y, family, offset = NULL,
   selectfun <- list(...)$selectfun
   if(!is.null(selectfun))
     save.ic <- rep(NA, maxit)
+
+  if(!is.null(selectfun))
+    stop.criterion <- "userIC"
   
   ## Env for C.
   rho <- new.env()
@@ -2320,7 +2326,8 @@ boost <- function(x, y, family, offset = NULL,
             rss[[i]][j] <- -2 * tll + tedf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
           }
         } else {
-          rss[[i]][j] <- selectfun(state = states[[i]][[j]], x = x, family = family, ...)
+          rss[[i]][j] <- selfun(iter = iter, i = i, j = j, state = states[[i]][[j]],
+            parm = parm, x = x, family = family, sfun = selectfun, yname = yname)
         }
       }
       
@@ -2386,7 +2393,13 @@ boost <- function(x, y, family, offset = NULL,
     }
 
     if(!is.null(selectfun)) {
-
+      save.ic[iter] <- min(unlist(rss))
+      if(force.stop & (iter > (if(initialize) 2 else 1))) {
+        if(save.ic[iter - 1] < save.ic[iter]) {
+          nback <- TRUE
+          break
+        }
+      }
     }
 
     ## Compute number of selected base learners.
@@ -2435,6 +2448,22 @@ boost <- function(x, y, family, offset = NULL,
   
   return(list("parameters" = parm2mat(parm, if(is.null(nback)) maxit else (iter - 1)),
     "fitted.values" = eta, "nobs" = nobs, "boost.summary" = bsum, "runtime" = elapsed))
+}
+
+
+selfun <- function(iter, i, j, state, parm, x, family, sfun, yname)
+{
+  parm[[i]][[j]][iter, ] <- get.par(state$parameters, "b")
+  parm <- parm2mat(parm, mstop = iter, fixed = iter)
+  formula <- list()
+  for(i in names(x))
+    formula[[i]] <- x[[i]][c("formula", "fake.formula")]
+  class(formula) <- c("bamlss.formula", "list")
+  environment(formula) <- environment(formula[[1]]$formula)
+  attr(formula, "response.name") <- yname
+  m <- list("formula" = formula, "x" = x, "family" = family, "parameters" = parm)
+  class(m) <- c("bamlss", "bamlss.frame", "list")
+  sfun(m)
 }
 
 
@@ -2645,7 +2674,7 @@ make.par.list <- function(x, iter)
   return(rval)
 }
 
-parm2mat <- function(x, mstop)
+parm2mat <- function(x, mstop, fixed = NULL)
 {
   nx <- names(x)
   for(i in seq_along(x)) {
@@ -2686,6 +2715,8 @@ parm2mat <- function(x, mstop)
     x[[i]] <- do.call("cbind", x[[i]])
   }
   x <- do.call("cbind", x)
+  if(!is.null(fixed))
+    x <- x[fixed, ]
   return(x)
 }
 
