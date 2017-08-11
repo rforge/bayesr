@@ -4471,7 +4471,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 #  }
 
   object$fit.fun <- function(X, b, expand = FALSE, ...) {
-    f <- .Call("nnet_fitfun", X, get.par(b, "b"), nodes, PACKAGE = "bamlss")
+    f <- .Call("nnet_fitfun", X, get.par(b, "b"), as.integer(nodes), PACKAGE = "bamlss")
     if(!is.null(object$binning$match.index) & expand)
       f <- f[object$binning$match.index]
     f
@@ -4595,8 +4595,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     (df - edf)^2
   }
 
-  opt <- optim(tau2, objfun, method = "L-BFGS-B", lower = rep(.Machine$double.eps^0.5, 1), upper = rep(Inf, 1))
-  tau2 <- opt$par
+  tau2 <- tau2.optim(objfun, tau2, maxit = 100)
   H <- matrix_inv(UU + 1/tau2 * diag(ncol(UU)))
   edf <- sum_diag(UU %*% H)
   object$state$parameters <- set.par(object$state$parameters, tau2, "tau2")
@@ -4630,6 +4629,50 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     return(x$state)
   }
 
+  object$boostm.fit <- function(x, grad, hess, nu, criterion,
+    family, y, eta, edf, id, do.optim, iteration, ...)
+  {
+    z <- eta[[id]] + 1 / hess * grad
+  
+    e <- z - eta[[id]]
+    eta[[id]] <- eta[[id]] - fitted(x$state)
+
+    b0 <- get.state(x, "b")
+
+    nb <- names(b0)
+
+    U <- getU(b0)
+
+    tUW <- t(U / hess)
+    UWU <- tUW %*% U
+
+    edf <- edf - x$state$edf
+
+    objfun <- function(tau2) {
+      H <- matrix_inv(UWU + 1/tau2 * x$S[[1]])
+      b0 <- drop(b0 + nu * H %*% tUW %*% e)
+      names(b0) <- nb
+      edf <- sum_diag(UWU %*% H)
+      eta[[id]] <- eta[[id]] + x$fit.fun(x$X, b0)
+      ic <- get.ic(family, y, family$map2par(eta), edf, length(z), criterion)
+      ic
+    }
+
+    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
+
+    H <- matrix_inv(UWU + 1/tau2 * x$S[[1]])
+    b0 <- drop(b0 + nu * H %*% tUW %*% e)
+    names(b0) <- nb
+
+    x$state$parameters <- set.par(x$state$parameters, b0, "b")
+    x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
+    x$state$fitted.values <- x$fit.fun(x$X, b0)
+
+    x$state$edf <- sum_diag(UWU %*% H)
+  
+    return(x$state)
+  }
+
   object$increase <- function(state0, state1) {
     g <- get.par(state1$parameters, "b")
     state0$fitted.values <- fitted(state0) + fitted(state1)
@@ -4643,7 +4686,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   class(object) <- c("nnet.smooth", "no.mgcv", "special")
 
   if(split) {
-    nodes <- object$xt$k
+    nodes <- as.integer(object$xt$k)
     object <- rep(list(object), nodes)
     for(j in seq_along(object)) {
       b <- rnorm(length(get.par(object[[j]]$state$parameters, "b")), sd = 0.5)

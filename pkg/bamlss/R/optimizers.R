@@ -754,8 +754,6 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   if(!is.null(start))
     x <- set.starting.values(x, start)
   eta <- get.eta(x)
-  if(is.null(start))
-    eta <- init.eta(eta, y, family, nobs)
   
   if(!is.null(weights))
     weights <- as.data.frame(weights)
@@ -765,6 +763,9 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       if(!is.null(offset[[j]]))
         eta[[j]] <- eta[[j]] + offset[[j]]
     }
+  } else {
+    if(is.null(start))
+      eta <- init.eta(eta, y, family, nobs)
   }
   
   ia <- if(flush) interactive() else FALSE
@@ -1010,7 +1011,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         if(iter > stop.nu)
           nu <- NULL
       }
-      
+
       eps0 <- do.call("cbind", eta)
       eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
       if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
@@ -1999,7 +2000,8 @@ boostm <- function(x, y, family, offset = NULL,
   ## terms get an entry in $smooth.construct object.
   ## Intercepts are initalized.
   x <- boost.transform(x = x, y = y, df = df, family = family,
-    maxit = maxit, eps = eps, initialize = initialize, offset = offset, ...)
+    maxit = maxit, eps = eps, initialize = initialize, offset = offset,
+    set.nnet = FALSE, ...)
   
   ## Create a list() that saves the states for
   ## all parameters and model terms.
@@ -2043,7 +2045,7 @@ boostm <- function(x, y, family, offset = NULL,
   eps0 <- 1; iter <- if(initialize) 2 else 1
   save.ll <- NULL; stopped <- FALSE
   ll <- family$loglik(y, family$map2par(eta))
-  medf <- if(initialize) length(nx) else 0
+  medf <- get.edf(x, type = 2) + if(initialize) length(nx) else 0
   ic0 <- -2 * ll + medf * (if(tolower(sic) == "aic") 2 else log(nobs))
   ptm <- proc.time()
   while(iter <= maxit) {
@@ -2072,7 +2074,7 @@ boostm <- function(x, y, family, offset = NULL,
           x[[i]]$smooth.construct[[j]][["boostm.fit"]](x[[i]]$smooth.construct[[j]],
             grad = grad, hess = hess, nu = nu, criterion = stop.criterion,
             family = family, y = y, eta = eta, edf = medf, id = i,
-            do.optim = do.optim, ...)
+            do.optim = do.optim, iteration = iter, ...)
         }
         
         ## Get contribution.
@@ -2097,7 +2099,7 @@ boostm <- function(x, y, family, offset = NULL,
 
     if(all(unlist(crit) <= 0)) {
       warning("criterion is decreasing!")
-      if(force.stop)
+      if(force.stop & (iter > 2))
         break
     }
     
@@ -2277,7 +2279,7 @@ boost <- function(x, y, family, offset = NULL,
   save.ll <- NULL
   ll <- family$loglik(y, family$map2par(eta))
   ptm <- proc.time()
-  while(iter <= maxit & qsel < maxq) {
+  while(iter <= maxit & qsel <= maxq) {
     eta0 <- eta
     
     ## Cycle through all parameters
@@ -2372,7 +2374,7 @@ boost <- function(x, y, family, offset = NULL,
         edf[iter] <- edf[iter] + hatmat_sumdiag(HatMat[[i]])
       if(!is.null(stop.criterion)) {
         save.ic[iter] <- -2 * ll + edf[iter] * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
-        if(iter > 1) {
+        if(iter > (if(initialize) 2 else 1)) {
           if(!is.na(save.ic[iter - 1]) & force.stop) {
             if(save.ic[iter - 1] < save.ic[iter]) {
               nback <- TRUE
@@ -2451,7 +2453,7 @@ hatmat_sumdiag <- function(H)
 ## Boost setup.
 boost.transform <- function(x, y, df = NULL, family,
   weights = NULL, offset = NULL, maxit = 100,
-  eps = .Machine$double.eps^0.25, initialize = TRUE, ...)
+  eps = .Machine$double.eps^0.25, initialize = TRUE, set.nnet = TRUE, ...)
 {
   np <- length(x)
   nx <- names(x)
@@ -2519,11 +2521,13 @@ boost.transform <- function(x, y, df = NULL, family,
         x[[nx[j]]]$smooth.construct[[sj]]$XWX <- matrix(0, nc, nc)
         x[[nx[j]]]$smooth.construct[[sj]]$XW <- matrix(0, nc, nr)
       } else {
-        b <- get.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, "b")
-        b <- rep(0, length(b))
-        x[[nx[j]]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, b, "b")
-        x[[nx[j]]]$smooth.construct[[sj]]$state$edf <- 0
-        x[[nx[j]]]$smooth.construct[[sj]]$state$fitted.values <- rep(0, length(x[[nx[j]]]$smooth.construct[[sj]]$state$fitted.values))
+        if(set.nnet) {
+          b <- get.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, "b")
+          b <- rep(0, length(b))
+          x[[nx[j]]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, b, "b")
+          x[[nx[j]]]$smooth.construct[[sj]]$state$edf <- 0
+          x[[nx[j]]]$smooth.construct[[sj]]$state$fitted.values <- rep(0, length(x[[nx[j]]]$smooth.construct[[sj]]$state$fitted.values))
+        }
       }
       x[[nx[j]]]$smooth.construct[[sj]]$selected <- rep(0, length = maxit)
       x[[nx[j]]]$smooth.construct[[sj]]$loglik <- rep(0, length = maxit)
