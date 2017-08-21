@@ -87,7 +87,7 @@ bamlss.engine.setup <- function(x, update = "iwls", propose = "iwlsC_gp",
                 tdf <- df[x$smooth.construct[[j]]$label]
             } else tdf <- df[1]
           }
-          x$smooth.construct[[j]] <- assign.df(x$smooth.construct[[j]], tdf)
+          x$smooth.construct[[j]] <- assign.df(x$smooth.construct[[j]], tdf, do.part = TRUE)
           if(!is.null(x$smooth.construct[[j]]$xt[["update"]]))
             x$smooth.construct[[j]]$update <- x$smooth.construct[[j]]$xt[["update"]]
           if(is.null(x$smooth.construct[[j]]$update)) {
@@ -474,6 +474,7 @@ assign.df <- function(x, df, do.part = FALSE)
     if(x$fxsp)
       return(x)
   }
+
   df <- if(is.null(x$xt$df)) df else x$xt$df
   if(is.null(df)) {
     nc <- ncol(x$X)
@@ -483,38 +484,46 @@ assign.df <- function(x, df, do.part = FALSE)
     df <- ncol(x$X)
   if(df < 1)
     df <- 1
-  int <- c(.Machine$double.eps^0.25, 1e+10)
   if(inherits(x$X, "spam")) {
     XX <- crossprod.spam(x$X)
   } else {
     XX <- crossprod(x$X)
   }
   if(length(tau2) > 1) {
-    if(do.part) {
-      objfun <- function(tau2) {
-        S <- 0
-        for(i in seq_along(x$S))
-          S <- S + 1 / tau2[i] * (if(is.function(x$S[[i]])) x$S[[i]](c("b" = rep(0, attr(x$S[[i]], "npar")))) else x$S[[i]])
-        edf <- sum_diag(XX %*% matrix_inv(XX + S, index = x$sparse.setup))
+    objfun <- function(tau2, ret.edf = FALSE) {
+      S <- 0
+      for(i in seq_along(x$S))
+        S <- S + 1 / tau2[i] * (if(is.function(x$S[[i]])) x$S[[i]](c("b" = rep(0, attr(x$S[[i]], "npar")))) else x$S[[i]])
+      edf <- sum_diag(XX %*% matrix_inv(XX + S, index = x$sparse.setup))
+      if(ret.edf)
+        return(edf)
+      else
         return((df - edf)^2)
-      }
-      opt <- tau2.optim(objfun, start = tau2, maxit = 1000, scale = 100)
+    }
+    if(do.part) {
+      opt <- tau2.optim(objfun, start = tau2, maxit = 1000, scale = 100,
+        add = FALSE, force.stop = FALSE, eps = .Machine$double.eps^0.8)
       if(!inherits(opt, "try-error"))
         tau2 <- opt
     }
   } else {
-    objfun <- function(tau2) {
+    objfun <- function(tau2, ret.edf = FALSE) {
       edf <- sum_diag(XX %*% matrix_inv(XX + 1 / tau2 * (if(is.function(x$S[[1]])) {
         x$S[[1]](c("b" = rep(0, attr(x$S[[1]], "npar"))))
       } else x$S[[1]]), index = x$sparse.setup))
-      return((df - edf)^2)
+      if(ret.edf)
+        return(edf)
+      else
+        return((df - edf)^2)
     }
-    tau2 <- try(optimize(objfun, int)$minimum, silent = TRUE)
+    tau2 <- tau2.optim(objfun, start = tau2, maxit = 1000, scale = 100,
+      add = FALSE, force.stop = FALSE, eps = .Machine$double.eps^0.8)
     if(inherits(tau2, "try-error"))
       return(x)
   }
   x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
-  x$state$edf <- df
+  x$state$edf <- objfun(tau2, ret.edf = TRUE)
+
   return(x)
 }
 
@@ -1127,7 +1136,7 @@ cround <- function(x, digits = 2)
 
 
 ## Naive smoothing parameter optimization.
-tau2.optim <- function(f, start, ..., scale = 10, eps = 0.0001, maxit = 1)
+tau2.optim <- function(f, start, ..., scale = 10, eps = .Machine$double.eps^0.5, maxit = 1, add = TRUE, force.stop = TRUE)
 {
   foo <- function(par, start, k) {
     start[k] <- cround(par)
@@ -1141,19 +1150,21 @@ tau2.optim <- function(f, start, ..., scale = 10, eps = 0.0001, maxit = 1)
   while((eps0 > eps) & (iter < maxit)) {
     start0 <- start
     for(k in seq_along(start)) {
-      xr <- c(start[k] / scale, start[k] * scale + 1)
-      tpar <- try(optimize(foo, interval = xr, start = start, k = k), silent = TRUE)
+      xr <- c(start[k] / scale, start[k] * scale + if(add) 1 else 0)
+      tpar <- try(optimize(foo, interval = xr, start = start, k = k, tol = eps), silent = TRUE)
       if(!inherits(tpar, "try-error")) {
         if(tpar$objective < ic0) {
-          start[k] <- cround(tpar$minimum)
+          start[k] <- tpar$minimum
           ic0 <- tpar$objective
         }
       }
     }
-    if(length(start) < 2)
+
+    if((length(start) < 2) & force.stop)
       break
     
     eps0 <- mean(abs((start - start0) / start0))
+
     iter <- iter + 1
   }
   
@@ -1270,9 +1281,11 @@ boostm_fit <- function(x, grad, hess, nu, stop.criterion, family, y, eta, edf, i
     k <- length(b0)
     S <- matrix(0, k, k)
   } else {
-    if(do.optim) {
+    if(do.optim & FALSE) {
       tpar <- x$state$parameters
       edf <- edf - x$state$edf
+
+      eta[[id]] <- eta[[id]] - fitted(x$state)
 
       objfun <- function(tau2) {
         tpar2 <- set.par(tpar, tau2, "tau2")
@@ -1282,13 +1295,13 @@ boostm_fit <- function(x, grad, hess, nu, stop.criterion, family, y, eta, edf, i
         xgrad <- t(x$X) %*% grad - S %*% b0
         xhess <- XWX + S
         Sigma <- matrix_inv(xhess, index = x$sparse.setup)
-        b1 <- drop(nu * Sigma %*% xgrad)
+        b1 <- b0 + drop(nu * Sigma %*% xgrad)
         eta[[id]] <- eta[[id]] + x$fit.fun(x$X, b1)
         edf <- edf + sum_diag(XWX %*% Sigma)
         return(get.ic(family, y, family$map2par(eta), edf, length(eta[[1]]), type = stop.criterion))
       }
 
-      tau2 <- tau2.optim(objfun, start = get.par(x$state$parameters, "tau2"), scale = 10)
+      tau2 <- tau2.optim(objfun, start = get.par(x$state$parameters, "tau2"), scale = 10, maxit = 1)
       x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
     }
 
@@ -1302,9 +1315,9 @@ boostm_fit <- function(x, grad, hess, nu, stop.criterion, family, y, eta, edf, i
   xgrad <- t(x$X) %*% grad - S %*% b0
   xhess <- XWX + S
   Sigma <- matrix_inv(xhess, index = x$sparse.setup)
-  b1 <- drop(nu * Sigma %*% xgrad)
+  b1 <- b0 + drop(nu * Sigma %*% xgrad)
     
-  x$state$parameters <- set.par(x$state$parameters, b0 + b1, "b")
+  x$state$parameters <- set.par(x$state$parameters, b1, "b")
   x$state$fitted.values <- x$fit.fun(x$X, b1)
   x$state$hessian <- Sigma
   x$state$edf <- sum_diag(XWX %*% Sigma)
@@ -1964,10 +1977,10 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind, uind = NULL)
 
 ## Modified likelihood based boosting.
 boostm <- function(x, y, family, offset = NULL,
-  nu = 0.05, df = 4, maxit = 400, mstop = NULL,
+  nu = 0.1, df = 3, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, plot = TRUE,
-  initialize = TRUE, stop.criterion = "AIC", force.stop = TRUE,
+  initialize = TRUE, stop.criterion = NULL, force.stop = !is.null(stop.criterion),
   do.optim = TRUE, ...)
 {
   ## FIXME: hard coded.
@@ -2078,7 +2091,7 @@ boostm <- function(x, y, family, offset = NULL,
         }
         
         ## Get contribution.
-        eta[[i]] <- eta[[i]] + fitted(states[[i]][[j]])
+        eta[[i]] <- eta[[i]] + fitted(states[[i]][[j]]) - fitted(x[[i]]$smooth.construct[[j]]$state)
         tll <- family$loglik(y, family$map2par(eta))
         if(is.null(stop.criterion)) {
           crit[[i]][j] <- -1 * (ll - tll)
@@ -2107,7 +2120,7 @@ boostm <- function(x, y, family, offset = NULL,
     take <- c(nx[i], names(crit[[i]])[select[i]])
 
     ## Update selected term.
-    eta[[take[1]]] <- eta[[take[1]]] + fitted(states[[take[1]]][[take[2]]])
+    eta[[take[1]]] <- eta[[take[1]]] + fitted(states[[take[1]]][[take[2]]]) - fitted(x[[take[1]]]$smooth.construct[[take[2]]]$state)
 
     ## Save parameters.
     parm[[take[1]]][[take[2]]][iter, ] <- get.par(states[[take[1]]][[take[2]]]$parameters, "b") - get.par(x[[take[1]]]$smooth.construct[[take[2]]]$state$parameters, "b")
