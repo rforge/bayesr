@@ -433,6 +433,8 @@ design.construct <- function(formula, data = NULL, knots = NULL,
               smt[[jj]]$model.frame <- tfm$data
               smt[[jj]]$orig.label <- smt[[jj]]$label
               smt[[jj]]$label <- lab
+              smt[[jj]]$is.refund <- TRUE
+              smt[[jj]]$refund.call <- fterms[j]
             }
             smooth <- c(smooth, smt)
           }
@@ -3389,7 +3391,17 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
                 x[[jj]]$margin[[mjj]]$mono <- 0
             }
           }
-          X <- PredictMat(x[[jj]], data)
+          if(!is.null(x[[jj]]$is.refund)) {
+            rfcall <- x[[jj]]$refund.call
+            tfm <- eval(parse(text = rfcall), envir = data)
+            tfme <- eval(tfm$call, envir = tfm$data)
+            X <- smoothCon(tfme, data = tfm$data, n = nrow(tfm$data[[1L]]),
+              knots = NULL, absorb.cons = TRUE)[[1]]$X
+            rm(tfm)
+            rm(tfme)
+          } else {
+            X <- PredictMat(x[[jj]], data)
+          }
           eta <- eta + fitted_matrix(X, samps[, sn, drop = FALSE])
         } else {
           if(is.null(x[[jj]]$PredictMat)) {
