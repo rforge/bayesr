@@ -1269,7 +1269,7 @@ bfit_newton <- function(x, family, y, eta, id, ...)
 }
 
 
-boostm_fit <- function(x, grad, hess, nu, stop.criterion, family, y, eta, edf, id, do.optim, ...)
+boostm_fit0 <- function(x, grad, hess, z, nu, stop.criterion, family, y, eta, edf, id, do.optim, ...)
 {
   b0 <- get.par(x$state$parameters, "b")
 
@@ -1281,7 +1281,7 @@ boostm_fit <- function(x, grad, hess, nu, stop.criterion, family, y, eta, edf, i
     k <- length(b0)
     S <- matrix(0, k, k)
   } else {
-    if(do.optim & FALSE) {
+    if(do.optim) {
       tpar <- x$state$parameters
       edf <- edf - x$state$edf
 
@@ -1292,7 +1292,7 @@ boostm_fit <- function(x, grad, hess, nu, stop.criterion, family, y, eta, edf, i
         S <- 0
         for(j in seq_along(tau2))
           S <- S + (1 / tau2[j]) * if(is.function(x$S[[j]])) x$S[[j]](c(tpar2, x$fixed.hyper)) else x$S[[j]]
-        xgrad <- t(x$X) %*% grad - S %*% b0
+        xgrad <- t(x$X) %*% grad + S %*% b0
         xhess <- XWX + S
         Sigma <- matrix_inv(xhess, index = x$sparse.setup)
         b1 <- b0 + drop(nu * Sigma %*% xgrad)
@@ -1301,7 +1301,7 @@ boostm_fit <- function(x, grad, hess, nu, stop.criterion, family, y, eta, edf, i
         return(get.ic(family, y, family$map2par(eta), edf, length(eta[[1]]), type = stop.criterion))
       }
 
-      tau2 <- tau2.optim(objfun, start = get.par(x$state$parameters, "tau2"), scale = 10, maxit = 1)
+      tau2 <- tau2.optim(objfun, start = get.par(x$state$parameters, "tau2"), scale = 10, maxit = 10, force.stop = FALSE, add = FALSE)
       x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
     }
 
@@ -1312,7 +1312,7 @@ boostm_fit <- function(x, grad, hess, nu, stop.criterion, family, y, eta, edf, i
       S <- S + (1 / tau2[j]) * if(is.function(x$S[[j]])) x$S[[j]](c(x$state$parameters, x$fixed.hyper)) else x$S[[j]]
   }
 
-  xgrad <- t(x$X) %*% grad - S %*% b0
+  xgrad <- t(x$X) %*% grad + S %*% b0
   xhess <- XWX + S
   Sigma <- matrix_inv(xhess, index = x$sparse.setup)
   b1 <- b0 + drop(nu * Sigma %*% xgrad)
@@ -1323,6 +1323,19 @@ boostm_fit <- function(x, grad, hess, nu, stop.criterion, family, y, eta, edf, i
   x$state$edf <- sum_diag(XWX %*% Sigma)
   
   return(x$state)
+}
+
+
+boostm_fit <- function(x, grad, hess, z, nu, stop.criterion, family, y, eta, edf, id, do.optim, ...)
+{
+  x$state$do.optim <- do.optim
+  b0 <- get.par(x$state$parameters, "b")
+  state <- bfit_iwls(x = x, family = family, y = y, eta = eta, id = id, criterion = stop.criterion,
+    grad = grad, hess = hess, z = z, edf = edf, ...)
+  b1 <- get.par(state$parameters, "b")
+  state$parameters <- set.par(state$parameters, nu * b1 + (1 - nu) * b0, "b")
+  state$fitted.values <- x$fit.fun(x$X, get.par(state$parameters, "b"))
+  return(state)
 }
 
 
@@ -2081,11 +2094,11 @@ boostm <- function(x, y, family, offset = NULL,
       for(j in names(x[[i]]$smooth.construct)) {
         ## Get update.
         states[[i]][[j]] <- if(is.null(x[[i]]$smooth.construct[[j]][["boostm.fit"]])) {
-          boostm_fit(x[[i]]$smooth.construct[[j]], grad, hess, nu, stop.criterion,
+          boostm_fit(x[[i]]$smooth.construct[[j]], grad, hess, z, nu, stop.criterion,
             family, y, eta, medf, id = i, do.optim = do.optim, ...)
         } else {
           x[[i]]$smooth.construct[[j]][["boostm.fit"]](x[[i]]$smooth.construct[[j]],
-            grad = grad, hess = hess, nu = nu, criterion = stop.criterion,
+            grad = grad, hess = hess, z = z, nu = nu, criterion = stop.criterion,
             family = family, y = y, eta = eta, edf = medf, id = i,
             do.optim = do.optim, iteration = iter, ...)
         }
