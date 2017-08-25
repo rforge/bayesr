@@ -86,7 +86,7 @@ source("figures.R")
 
 
 \begin{document}
-\SweaveOpts{concordance=TRUE}
+%%\SweaveOpts{concordance=TRUE}
 
 \section{Introduction} \label{sec:intro}
 
@@ -1512,15 +1512,15 @@ Table~\ref{tab:distributions} are already provided within the \pkg{bamlss} packa
 \centering
 \begin{tabular}{ll}
 Function & Distribution \\ \hline
-\fct{beta.bamlss} & Beta distribution \\
-\fct{binomial.bamlss} & Binomial distribution \\
-\fct{cnorm.bamlss} & Censored normal distribution \\
-\fct{cox.bamlss} & Continuous time Cox-model \\
-\fct{gaussian.bamlss} & Gaussian distribution \\
-\fct{gamma.bamlss} & Gamma distribution \\
-\fct{multinomial.bamlss} & Multinomial distribution \\
-\fct{mvn.bamlss} & Multivariate normal distribution \\
-\fct{poisson.bamlss} & Poisson distribution \\ \hline
+\fct{beta\_bamlss} & Beta distribution \\
+\fct{binomial\_bamlss} & Binomial distribution \\
+\fct{cnorm\_bamlss} & Censored normal distribution \\
+\fct{cox\_bamlss} & Continuous time Cox-model \\
+\fct{gaussian\_bamlss} & Gaussian distribution \\
+\fct{gamma\_bamlss} & Gamma distribution \\
+\fct{multinomial\_bamlss} & Multinomial distribution \\
+\fct{mvn\_bamlss} & Multivariate normal distribution \\
+\fct{poisson\_bamlss} & Poisson distribution \\ \hline
 \end{tabular}
 \caption{\label{tab:distributions} Available distributions in package \pkg{bamlss}.}
 \end{table}
@@ -1939,9 +1939,9 @@ the sampler function \fct{cox.mcmc} for MCMC simulation. The amount of work to i
 model using the \pkg{bamlss} infrastructures is moderate, because most of the code of functions
 \fct{bfit} and \fct{GMCMC} can be reused and only need slight adaption. In this example, the
 the optimizer and sampler function are part of the corresponding bamlss family object
-\fct{cox.bamlss}
+\fct{cox\_bamlss}
 <<>>=
-print(cox.bamlss())
+print(cox_bamlss())
 @
 Additionally, the family object holds a transformer function that sets up the infrastructures for
 computing the integrals for the score vectors, Hessian matrices and the log-likelihood function. 
