@@ -25,10 +25,11 @@ boost(x, y, family, offset = NULL,
 
 ## Modified likelihood based boosting.
 boostm(x, y, family, offset = NULL,
-  nu = 0.05, df = 4, maxit = 400, mstop = NULL,
+  nu = 0.1, df = 3, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, plot = TRUE,
-  initialize = TRUE, stop.criterion = "AIC", force.stop = TRUE,
+  initialize = TRUE, stop.criterion = NULL,
+  force.stop = !is.null(stop.criterion),
   do.optim = TRUE, ...)
 
 ## Boosting summary extractor.
