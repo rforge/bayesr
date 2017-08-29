@@ -225,6 +225,15 @@ if(!file.exists("figures/rainmodel-effects-predict.png")) {
   main(expression(paste("Seasonal ", sigma, " effect")), line = 0.3)
   dev.off()
 
+  addRegions <- function(...) {
+    lines(rep(9.922238, 2), 47.223673 + c(0, 0.6))
+    text(9.922238 + 0.28, 47.223673 + 0.5, "Vorarlberg", pos = 3, cex = 0.8)
+    lines(rep(13.053682, 2), 47.809015 + c(0, 0.6))
+    text(13.053682 - 0.42, 47.809015 + 0.5, "Salzburg", pos = 3, cex = 0.8)
+    lines(rep(13.959537, 2), 46.737263 - c(0, 0.6))
+    text(13.959537, 46.737263 - 0.5, "Carinthia", pos = 1, cex = 0.8)
+  }
+
   epng("figures/rainmodel-effects-spatial-mu.png", width = 4.5, height = 3.5)
   par(mar = c(4.1, 4.1, 1.5, 1.5))
   plot(Austria, xlab = "Longitude [deg]", ylab = "Latitude [deg]", lwd = 0.3)
@@ -237,6 +246,7 @@ if(!file.exists("figures/rainmodel-effects-predict.png")) {
   axis(1)
   axis(2)
   main(expression(paste("Spatial ", mu, " effect")), line = 0.3)
+  addRegions()
   dev.off()
 
   epng("figures/rainmodel-effects-spatial-sigma.png", width = 4.5, height = 3.5)
@@ -252,7 +262,16 @@ if(!file.exists("figures/rainmodel-effects-predict.png")) {
   axis(2)
   box()
   main(expression(paste("Spatial ", sigma, " effect")), line = 0.3)
+  addRegions()
   dev.off()
+
+  addRegions2 <- function(...) {
+    lines(rep(9.922238, 2), 47.223673 + c(0, 0.7))
+    text(9.922238, 47.223673 + 0.7, "Vorarlberg", pos = 3)
+    lines(rep(13.053682, 2), 47.809015 + c(0, 0.7))
+    text(13.053682 - 0.2, 47.809015 + 0.7, "Salzburg", pos = 3)
+    text(13.959537, 46.737263 - 0.1, "Carinthia", pos = 3)
+  }
 
   epng("figures/rainmodel-effects-predict.png", width = 9, height = 5, res = 200)
   par(mar = c(4.1, 4.1, 1.5, 1.5))
@@ -268,6 +287,7 @@ if(!file.exists("figures/rainmodel-effects-predict.png")) {
   axis(2)
   box()
   main("Mean precipitation [mm] January 10th")
+  addRegions2()
   dev.off()
 
   plot.mean.fit <- function(stations = 1, raw = TRUE, mean = TRUE, map = FALSE,
