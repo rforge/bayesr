@@ -75,10 +75,13 @@ set.seed(1090)
 \begin{document}
 %%\SweaveOpts{concordance=TRUE}
 
-\section{Score vectors and Hessian of the left censored Gaussian distribution}
+\section{``Lego bricks'' for the censored Gaussian distribution}
 
+The following presents the ``Lego bricks'' of example Section~6.1 in the main manuscript that are
+used for the construction of iteratively weighted least squares (IWLS) updating functions
+$U_{jk}( \cdot )$ of the Gaussian model left censored at zero.  
 \begin{enumerate}[leftmargin=*,align=left]
-\item[B1.] The density function of a left censored Gaussian distribution with the threshold at zero is given by
+\item[B1.] The density function of a Gaussian distribution left censored at zero is given by
 \begin{equation}
   f(y; \, \mu = \eta_{\mu}, \, \log(\sigma) = \eta_{\sigma}) = \begin{cases} 
     \frac{1}{\sigma} \phi\left(\frac{y-\mu}{\sigma} \right) & y > 0 \\
