@@ -163,7 +163,7 @@ for setting up complex models with additive predictors
 (see, e.g., \citealp{bamlss:Wood:2006}, \citealp{bamlss:Wood:2016b}).
 
 However, the majority of engines use different model setups and output 
-formats, which makes it difficult for practitioners, e.g., to compare properties of
+formats, which makes it difficult, e.g., to compare properties of
 different algorithms or to select the appropriate distribution and variables, etc. The reasons are
 manifold: the use of different model specification languages like
 \proglang{BUGS}~\citep{bamlss:BUGS:2009} or \proglang{R}~\citep{bamlss:R}; different standalone
