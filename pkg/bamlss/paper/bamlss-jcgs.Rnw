@@ -559,40 +559,8 @@ discuss model choice, Bayesian inference and prediction.
 
 In the following we summarize commonly-used specifications for priors $p_{jk}( \cdot )$ used for
 estimating GAM-type models that can be used for building block \ref{item:3}. In addition,
-Table~\ref{tab:mlegobricks} provides an overview of model terms and prior structures.
-
-\begin{sidewaystable}
-\centering
-\begin{tabular}{llll}
-\hline
-Covariates & Effect types $f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$ & \multicolumn{2}{l}{Prior densities $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$} \\
-& &
-  $d_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \, \boldsymbol{\tau}_{jk};
-     \boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}})$ &
-  $d_{\tau_{ljk}}(\tau_{ljk} | \, \boldsymbol{\alpha}_{\tau_{ljk}})$ \\ \hline
-\multirow{6}{*}{Scalar covariates} & Intercept $\beta$ & \multirow{2}{*}{$\propto$ constant} & \multirow{3}{*}{$\emptyset$} \\
-& Linear effect $x \cdot \beta$ &
-  \multirow{2}{*}{$\propto \exp \left(- \frac{1}{2}(\boldsymbol{\beta} -
-    \mathbf{m})^{\top}\mathbf {P}(\boldsymbol{\tau})(\boldsymbol{\beta} -
-    \mathbf{m})\right)$}
-                      & \\
-& Linear interaction $x_1 \cdot x_2 \cdot \beta$ & & \\ \cline{2-4}
-& Smooth effect $f(x)$ & \multirow{8}{*}{$\propto |\mathbf{P}(\boldsymbol{\tau})|^{\frac{1}{2}} \exp\left(
-    -\frac{1}{2}\boldsymbol{\beta}^\top\mathbf{P}(\boldsymbol{\tau})\boldsymbol{\beta}\right)$} &
-    \multirow{2}{*}{IG $\propto \tau^{-(a + 1)} \exp(-b / \tau)$} \\
-& Varying coefficient $f(x_2) \cdot x_1$  & & \\
-& Smooth effect $f(x_1, \ldots, x_L)$  & & \multirow{2}{*}{HC $\propto (1 + \tau/a^2)^{-1}(\tau/a^2)^{-1/2}$} \\ \cline{1-1}
-\multirow{2}{*}{Grouping variable $s$} & Random intercept $\beta_s$ & &  \\
-& Spatial effect $f(s)$ & & \multirow{2}{*}{SD $\propto (\tau/\sqrt{\tau})^{-1/2} \exp(-(\tau/a)^{1/2})$} \\ \cline{1-1}
-\multirow{2}{*}{Grouping and scalar,} & Random slope $x \cdot \beta_s$ & & \\
-\multirow{2}{*}{time variable $t$}& Space-time effect $f(s, t)$ & & \multirow{2}{*}{HN $\propto \tau^{1/2 -1} \exp(-\tau/(2a^2))$} \\
-& Functional random intercept $f_s(t)$ & & \\ \hline
-\end{tabular}
-\caption{\label{tab:mlegobricks} Commonly used ``Lego bricks'', building block \ref{item:3}, for model
-  terms in BAMLSS. Priors for linear effects assume that the precision matrix $\mathbf{P}(\boldsymbol{\tau})$
-  is fixed. For smooth effects, prior densities are: inverse gamma (IG), half-Cauchy (HC),
-  scale-dependent (SD) and half-normal (HN).}
-\end{sidewaystable}
+Table~1 of the supplemental material provides a more detailed overview of model terms and prior
+structures.
 
 \subsubsection{Linear effects}
 
@@ -854,7 +822,7 @@ The updates are based on an iteratively weighted least squares scheme given by
 \end{equation}
 with working observations
 $\mathbf{z}_k = \boldsymbol{\eta}_{k}^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$
-(in Appendix~\ref{appendix:pmodeiwls} the detailed derivations are presented), i.e., the algorithm
+(in the supplemental material Section~3 the detailed derivations are presented), i.e., the algorithm
 only requires building blocks \ref{item:6b}, \ref{item:7b} and \ref{item:8}.
 Hence, this leads to a backfitting algorithm and cycling through (\ref{eqn:blockbackfit}) for
 terms $j = 1, \ldots, J_k$ and parameters $k = 1, \ldots, K$ approximates a single
@@ -870,16 +838,15 @@ can be further generalized to
 i.e., theoretically any updating function applied on the ``partial residuals''
 $\mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}$ can be used. Note also that this result
 is equivalent to updating function
-\begin{eqnarray} \label{eqn:blockblocknewton}
-\boldsymbol{\beta}_{jk}^{(t + 1)} &=& U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \, \cdot \,) \nonumber \\
- &=& \boldsymbol{\beta}_{jk}^{(t)} -
-  \mathbf{H}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right)^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) \\
- &=& \boldsymbol{\beta}_{jk}^{(t)} -
+\begin{equation} \label{eqn:blockblocknewton}
+\boldsymbol{\beta}_{jk}^{(t + 1)} = U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \, \cdot \,)
+ = \boldsymbol{\beta}_{jk}^{(t)} -
   \left[\mathbf{J}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
-    \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right), \nonumber
-\end{eqnarray}
+    \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right)
+\end{equation}
 where matrix $\mathbf{J}_{kk}( \cdot )$ is the derivative matrix given in (\ref{eqn:hessian2}),
-involving building blocks \ref{item:6a}, \ref{item:7a} and \ref{item:8}.
+involving building blocks \ref{item:6a}, \ref{item:7a} and \ref{item:8} (see also the
+supplemental material Section~3 the detailed derivations).
 
 For optimization, different strategies of the backfitting
 algorithm (\ref{eqn:blockbackfit}) can be applied. One alternative is a complete inner backfitting
@@ -923,7 +890,7 @@ the next step in a Markov chain.
 
 Note that for some models there exist full conditionals that can be derived in closed form from the
 log-posterior (\ref{eqn:logpost}). However, we especially focus on situations were this is not
-generally the case. MCMC samples for the regression coefficients $\boldsymbol{\beta}_{jk}$ can be
+generally the case MCMC samples for the regression coefficients $\boldsymbol{\beta}_{jk}$ can be
 derived by each of the following methods:
 \begin{itemize}
 \item \emph{Random-walk Metropolis}: \label{sec:rwm} \\
@@ -968,23 +935,14 @@ derived by each of the following methods:
   second order Taylor series expansion of the log-posterior centered at the last state 
   \citep{bamlss:Gamerman:1997, bamlss:Fahrmeir+Kneib+Lang:2004, bamlss:Brezger+Lang:2006,
   bamlss:Klein+Kneib:2016b}.
-  The resulting proposal density is multivariate normal (see Appendix~\ref{appendix:fullcond1} for a
-  detailed derivation) with precision matrix
+  The resulting proposal density is multivariate normal (see supplemental material Section~4 for a
+  detailed derivation) with precision matrix and mean given by
   $$
-  \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = -\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)
-  $$
-  and mean
-  \begin{eqnarray*}
-  \boldsymbol{\mu}_{jk}^{(t)} &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left[
-    s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) -
-    \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)} \right] \\
-  &=& \boldsymbol{\beta}_{jk}^{(t)} -
-    \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)^{-1}
-    \mathbf{s}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) \\
- &=& \boldsymbol{\beta}_{jk}^{(t)} -
+  \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = -\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) \qquad
+  \boldsymbol{\mu}_{jk}^{(t)} =  \boldsymbol{\beta}_{jk}^{(t)} -
   \left[\mathbf{J}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
     \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right),
-  \end{eqnarray*}
+  $$
   which is equivalent to the updating function given in (\ref{eqn:blockblocknewton}) and can again
   be build using blocks \ref{item:7a} and \ref{item:8}.
   Hence, the mean is simply one Newton or Fisher scoring iteration towards the posterior mode at
@@ -1288,9 +1246,52 @@ function implements derivative-based MCMC using IWLS proposals, smoothing varian
 using slice sampling, see also Section~\ref{sec:legobricks}. For writing new optimizer and sampler
 functions only a simple general format of function arguments and return values must be adhered to.
 
+To give a brief insight how we use \pkg{bamlss} we illustrate the basic steps on a small toy
+example using the well-known simulated motorcycle accident data \citep{bamlss:Silverman:1985}, which
+was used to test crash helmets. The data set contains measurements of the head acceleration
+(in $g$, variable \code{accel}) in a simulated motorcycle accident, recorded in milliseconds after impact (variable \code{times}). To estimate a Gaussian location-scale model with
+$\texttt{accel} \sim \mathcal{N}(\mu = f(\texttt{times}), \log(\sigma) = f(\texttt{times}))$
+we use the following model formula
+<<>>=
+f <- list(accel ~ s(times,k=20), sigma ~ s(times,k=20))
+@
+where function \fct{s} is the smooth term constructor of the \pkg{mgcv} package. The model is
+then fitted by
+<<toymodel, eval=FALSE>>=
+data("mcycle", package = "MASS")
+b <- bamlss(f, data = mcycle, family = "gaussian")
+@
+<<cache-toymodel, echo=FALSE, eval=TRUE, results=hide>>=
+data("mcycle", package = "MASS")
+if(!file.exists("toymodel.rda")) {
+<<toymodel>>
+save(b, file = "toymodel.rda")
+} else {
+load("toymodel.rda")
+}
+@
+The returned object is of class \code{"bamlss"} for which generic extractor functions like
+\fct{summary}, \fct{plot}, \fct{predict}, etc., are provided. E.g., predictions based on MCMC 
+samples for parameter $\mu$ can be computed by
+<<>>=
+p <- predict(b, model = "mu", FUN = c95)
+@
+\begin{figure}[!t]
+\setkeys{Gin}{width=0.46\textwidth}
+\centering
+<<echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1))
+plot(b, model = "mu", term = "s(times)", spar = FALSE)
+@
+<<echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1))
+plot(b, model = "sigma", term = "s(times)", spar = FALSE)
+@
+\caption{\label{fig:toymodel} Estimated effects of the Gaussian location-scale model using the
+  simulated motorcycle accident data.}
+\end{figure}
+
 More technical details are deferred to the documentation manual of package \pkg{bamlss}.
-
-
 \section{Illustrations} \label{sec:illustrations}
 
 \subsection{Censored heteroscedastic precepitation climatolgy from daily data} \label{sec:censreg}

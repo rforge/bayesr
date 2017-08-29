@@ -90,6 +90,44 @@
 \spacingset{1.45} % DON'T change the spacing!
 
 
+\section{``Lego brick'' B3, prior structures in BAMLSS}
+
+Table~\ref{tab:mlegobricks} provides an overview of commonly used ``Lego bricks'' for GAM-type
+prior structures used within building block B3 in Section~4.
+\begin{sidewaystable}
+\small
+\centering
+\begin{tabular}{llll}
+\hline
+Covariates & Effect types $f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$ & \multicolumn{2}{l}{Prior densities $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$} \\
+& &
+  $d_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \, \boldsymbol{\tau}_{jk};
+     \boldsymbol{\alpha}_{\boldsymbol{\beta}_{jk}})$ &
+  $d_{\tau_{ljk}}(\tau_{ljk} | \, \boldsymbol{\alpha}_{\tau_{ljk}})$ \\ \hline
+\multirow{6}{*}{Scalar covariates} & Intercept $\beta$ & \multirow{2}{*}{$\propto$ constant} & \multirow{3}{*}{$\emptyset$} \\
+& Linear effect $x \cdot \beta$ &
+  \multirow{2}{*}{$\propto \exp \left(- \frac{1}{2}(\boldsymbol{\beta} -
+    \mathbf{m})^{\top}\mathbf {P}(\boldsymbol{\tau})(\boldsymbol{\beta} -
+    \mathbf{m})\right)$}
+                      & \\
+& Linear interaction $x_1 \cdot x_2 \cdot \beta$ & & \\ \cline{2-4}
+& Smooth effect $f(x)$ & \multirow{8}{*}{$\propto |\mathbf{P}(\boldsymbol{\tau})|^{\frac{1}{2}} \exp\left(
+    -\frac{1}{2}\boldsymbol{\beta}^\top\mathbf{P}(\boldsymbol{\tau})\boldsymbol{\beta}\right)$} &
+    \multirow{2}{*}{IG $\propto \tau^{-(a + 1)} \exp(-b / \tau)$} \\
+& Varying coefficient $f(x_2) \cdot x_1$  & & \\
+& Smooth effect $f(x_1, \ldots, x_L)$  & & \multirow{2}{*}{HC $\propto (1 + \tau/a^2)^{-1}(\tau/a^2)^{-1/2}$} \\ \cline{1-1}
+\multirow{2}{*}{Grouping variable $s$} & Random intercept $\beta_s$ & &  \\
+& Spatial effect $f(s)$ & & \multirow{2}{*}{SD $\propto (\tau/\sqrt{\tau})^{-1/2} \exp(-(\tau/a)^{1/2})$} \\ \cline{1-1}
+\multirow{2}{*}{Grouping and scalar,} & Random slope $x \cdot \beta_s$ & & \\
+\multirow{2}{*}{time variable $t$}& Space-time effect $f(s, t)$ & & \multirow{2}{*}{HN $\propto \tau^{1/2 -1} \exp(-\tau/(2a^2))$} \\
+& Functional random intercept $f_s(t)$ & & \\ \hline
+\end{tabular}
+\caption{\label{tab:mlegobricks} Commonly used ``Lego bricks'', building block \ref{item:3}, for model
+  terms in BAMLSS. Priors for linear effects assume that the precision matrix $\mathbf{P}(\boldsymbol{\tau})$
+  is fixed. For smooth effects, prior densities are: inverse gamma (IG), half-Cauchy (HC),
+  scale-dependent (SD) and half-normal (HN).}
+\end{sidewaystable}
+
 \section{``Lego bricks'' for the censored Gaussian distribution}
 
 The following presents the ``Lego bricks'' of example Section~6.1 in the main manuscript that are
