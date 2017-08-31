@@ -890,37 +890,20 @@ the next step in a Markov chain.
 
 Note that for some models there exist full conditionals that can be derived in closed form from the
 log-posterior (\ref{eqn:logpost}). However, we especially focus on situations were this is not
-generally the case MCMC samples for the regression coefficients $\boldsymbol{\beta}_{jk}$ can be
+generally the case. MCMC samples for the regression coefficients $\boldsymbol{\beta}_{jk}$ can be
 derived by each of the following methods:
 \begin{itemize}
-\item \emph{Random-walk Metropolis}: \label{sec:rwm} \\
-  Probably the most important algorithm, because of its generality and ease of implementation, is
-  random-walk Metropolis. The sampler
-  proceeds by drawing a candidate $\boldsymbol{\beta}_{jk}^{\star}$ from a symmetric jumping
-  distribution $q(\boldsymbol{\beta}_{jk}^{\star}| \, \boldsymbol{\beta}_{jk}^{(t)})$, the
-  candidate is then accepted as the new state of the Markov chain with probability
-  $$
-  \alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \, \boldsymbol{\beta}_{jk}^{(t)}\right) =
-  \text{min} \left[ \frac{\pi(\boldsymbol{\beta}_{jk}^{\star} | \, \cdot)}{
-    \pi(\boldsymbol{\beta}_{jk}^{(t)} | \, \cdot)}, 1 \right]
-  $$
-  with the log-posterior $\pi(\boldsymbol{\beta}_{jk} | \, \cdot)$ evaluated at the proposed and
-  current value.
-  Commonly, the jumping distribution is a normal distribution $\mathcal{N}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk})$ centered at the current iterate and fixed covariance matrix. Although this algorithm
-  is theoretically working for any distribution, the actual sampling performance depends heavily on
-  starting values and the scaling of $\boldsymbol{\Sigma}_{jk}$. Therefore, numerous methods that
-  try to optimize the behavior of the Markov chain in an adaptive phase (burnin phase) have been
-  developed. In the seminal paper of \citet{bamlss:Gelman+Roberts+Gilks:1996}, strategies that
-  optimize the acceptance rate to roughly $1/4$ are suggested to obtain a good mixing (see also
-  \citealp{bamlss:Gareth+Roberts+Jeffrey+Rosenthal:2009}). Similarly,
-  within the presented modeling framework and a basis function approach with multivariate normal
-  prior (\ref{eqn:mvnormprior}), a convenient way is to set
-  $\boldsymbol{\Sigma}_{jk} = \sigma_{jk}\mathbf{P}_{jk}(\boldsymbol{\tau}_{jk})^{-1}$ and optimize
-  $\sigma_{jk}$ to the desired properties in the adaptive phase.
-
 \item \emph{Derivative-based Metropolis-Hastings}: \label{sec:dmh} \\
-  A commonly used alternative for the covariance matrix of the jumping distribution
-  $\mathcal{N}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk})$ is to use the local curvature
+  Probably the most important algorithm, because of its generality and ease of implementation, is
+  random-walk Metropolis. The sampler proceeds by drawing a candidate
+  $\boldsymbol{\beta}_{jk}^{\star}$ from a symmetric jumping
+  distribution $q(\boldsymbol{\beta}_{jk}^{\star}| \, \boldsymbol{\beta}_{jk}^{(t)})$ which is 
+  commonly a normal distribution
+  $\mathcal{N}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk})$ centered at the current 
+  iterate. However, in complex settings this sampling scheme is usually not efficient and tuning
+  the covariance matrix $\boldsymbol{\Sigma}_{jk}$ in an adaptive phase is difficult and does not
+  necessarily result in i.i.d.\ behavior of the Markov chain. Therefore, a commonly used
+  alternative for the covariance matrix of the jumping distribution is to use the local curvature
   information
   $$
   \boldsymbol{\Sigma}_{jk} = -\left( \frac{\partial^2 \pi(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X})}{
@@ -956,23 +939,22 @@ derived by each of the following methods:
   \text{min} \left[ \frac{\pi(\boldsymbol{\beta}_{jk}^{\star} | \, \cdot)q(\boldsymbol{\beta}_{jk}^{(t)} | \, \boldsymbol{\beta}_{jk}^\star)}{
     \pi(\boldsymbol{\beta}_{jk}^{(t)} | \, \cdot)q(\boldsymbol{\beta}_{jk}^\star | \, \boldsymbol{\beta}_{jk}^{(t)})  }, 1 \right].
   $$
-  Again, assuming a basis function approach for functions $f_{jk}( \cdot )$ the precision matrix is
+  Again, assuming a basis function approach for functions $f_{jk}( \cdot )$ the precision matrix 
+  and mean can be written as
   $$
   \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} =
-    \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}),
-  $$
-  with weights $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
-\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$, or the corresponding expectation,
-  as in posterior mode updating using building blocks \ref{item:7b} and \ref{item:8}. The mean can
-  be written as
-  \begin{equation*}
+    \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})
+  \qquad
   \boldsymbol{\mu}_{jk}^{(t)} =
     \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left(\mathbf{z}_k  -
       \boldsymbol{\eta}^{(t)}_{k,-j}\right)
-  \end{equation*}
-  with working observations
+  $$
+  with weights $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
+\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$, or the corresponding expectation,
+  as in posterior mode updating using building blocks \ref{item:7b} and \ref{item:8}, with
+  working observations
   $\mathbf{z}_k = \boldsymbol{\eta}_k^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$
-  (see again Appendix~\ref{appendix:fullcond1} for a detailed derivation). Note again,
+  (see also the supplemental material Section~4 for a detailed derivation). Note again,
   the computation of the mean is equivalent to a full Newton step as given in updating function
   (\ref{eqn:blockblocknewton}), or Fisher scoring when using
   $-E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
@@ -1168,23 +1150,23 @@ where the first two lines basically represent the standard model frame specifica
 
 \begin{figure}[t!]
 \centering
-\setlength{\unitlength}{1cm}
+\setlength{\unitlength}{0.9cm}
 \setlength{\fboxsep}{0pt}
 \begin{picture}(10.53, 5.7)(0, 0)
-\put(0, 5){\fcolorbox{black}{heat4}{\framebox(2, 0.7)[c]{\footnotesize \texttt{formula}}}}
-\put(2.5, 5){\fcolorbox{black}{heat4}{\framebox(2, 0.7)[c]{\footnotesize \texttt{family}}}}
-\put(5, 5){\fcolorbox{black}{heat4}{\framebox(2, 0.7)[c]{\footnotesize \texttt{data}}}}
-\put(2.5, 3.5){\fcolorbox{black}{heat3}{\framebox(2, 0.7)[c]{\footnotesize \texttt{model.frame}}}}
-\put(2.5, 2.5){\fcolorbox{black}{heat3}{\framebox(2, 0.7)[c]{\footnotesize \texttt{transformer}}}}
-\put(6, 3.5){\fcolorbox{black}{heat1}{\framebox(2, 0.7)[c]{\footnotesize \texttt{optimizer}}}}
+\put(0, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\scriptsize \texttt{formula}}}}
+\put(2.5, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\scriptsize \texttt{family}}}}
+\put(5, 5){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\scriptsize \texttt{data}}}}
+\put(2.5, 3.5){\fcolorbox{black}{heat4}{\framebox(2, 0.7)[c]{\scriptsize \texttt{model.frame}}}}
+\put(2.5, 2.5){\fcolorbox{black}{heat3}{\framebox(2, 0.7)[c]{\scriptsize \texttt{transformer}}}}
+\put(6, 3.5){\fcolorbox{black}{heat2}{\framebox(2, 0.7)[c]{\scriptsize \texttt{optimizer}}}}
 \put(8.2, 3.8){\footnotesize (e.g., \ref{fig:algodesign} + \ref{fig:umode})}
 \put(8.2, 2.8){\footnotesize (e.g., \ref{fig:algodesign} + \ref{fig:mcmc})}
-\put(6, 2.5){\fcolorbox{black}{heat1}{\framebox(2, 0.7)[c]{\footnotesize \texttt{sampler}}}}
-\put(6, 1.5){\fcolorbox{black}{heat1}{\framebox(2, 0.7)[c]{\footnotesize \texttt{results}}}}
-\put(1, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{summary}}}}
-\put(3.5, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{plot}}}}
-\put(6, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{select}}}}
-\put(8.5, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\footnotesize \texttt{predict}}}}
+\put(6, 2.5){\fcolorbox{black}{heat1}{\framebox(2, 0.7)[c]{\scriptsize \texttt{sampler}}}}
+\put(6, 1.5){\fcolorbox{black}{heat2}{\framebox(2, 0.7)[c]{\scriptsize \texttt{results}}}}
+\put(1, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\scriptsize \texttt{summary}}}}
+\put(3.5, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\scriptsize \texttt{plot}}}}
+\put(6, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\scriptsize \texttt{select}}}}
+\put(8.5, 0){\fcolorbox{black}{heat5}{\framebox(2, 0.7)[c]{\scriptsize \texttt{predict}}}}
 \put(3.5, 4.2){\line(0, 1){0.8}}
 \put(1, 5){\line(0, -1){0.4}}
 \put(6, 5){\line(0, -1){0.4}}
@@ -1226,10 +1208,8 @@ or even with different additive predictors for different model parameters, e.g.,
 \begin{center}
 { \renewcommand{\arraystretch}{1}
 \begin{tabular}{l}
-\code{list(} \\
-$\quad$ \code{y} $\sim$ \code{x1 + x2 + s(x3) + s(x4),} \\
-$\quad$ \code{sigma} $\sim$ \code{x1 + x2 + s(x3)} \\
-\code{)}
+\code{list(}$\,$\code{y} $\sim$ \code{x1 + x2 + s(x3) + s(x4),}
+$\,$ \code{sigma} $\sim$ \code{x1 + x2 + s(x3)}$\,$\code{)}
 \end{tabular}
 }
 \end{center}
@@ -1245,8 +1225,9 @@ with automatic smoothing variance selection, see also Algorithm~\ref{fig:umode}.
 function implements derivative-based MCMC using IWLS proposals, smoothing variances are sampled
 using slice sampling, see also Section~\ref{sec:legobricks}. For writing new optimizer and sampler
 functions only a simple general format of function arguments and return values must be adhered to.
+More technical details are deferred to the documentation manual of package \pkg{bamlss}.
 
-To give a brief insight how we use \pkg{bamlss} we illustrate the basic steps on a small toy
+To give a brief insight how to use \pkg{bamlss} we illustrate the basic steps on a small toy
 example using the well-known simulated motorcycle accident data \citep{bamlss:Silverman:1985}, which
 was used to test crash helmets. The data set contains measurements of the head acceleration
 (in $g$, variable \code{accel}) in a simulated motorcycle accident, recorded in milliseconds after impact (variable \code{times}). To estimate a Gaussian location-scale model with
@@ -1257,41 +1238,64 @@ f <- list(accel ~ s(times,k=20), sigma ~ s(times,k=20))
 @
 where function \fct{s} is the smooth term constructor of the \pkg{mgcv} package. The model is
 then fitted by
-<<toymodel, eval=FALSE>>=
+<<eval=FALSE>>=
 data("mcycle", package = "MASS")
 b <- bamlss(f, data = mcycle, family = "gaussian")
 @
 <<cache-toymodel, echo=FALSE, eval=TRUE, results=hide>>=
 data("mcycle", package = "MASS")
 if(!file.exists("toymodel.rda")) {
-<<toymodel>>
-save(b, file = "toymodel.rda")
+set.seed(123)
+b <- bamlss(f, data = mcycle, family = "gaussian",
+  n.iter = 12000, burnin = 2000, thin = 10)
+b0 <- bamlss(accel ~ s(times,k=20), data = mcycle, family = "gaussian",
+  n.iter = 12000, burnin = 2000, thin = 10)
+save(b0, b, file = "toymodel.rda")
 } else {
 load("toymodel.rda")
 }
 @
 The returned object is of class \code{"bamlss"} for which generic extractor functions like
-\fct{summary}, \fct{plot}, \fct{predict}, etc., are provided. E.g., predictions based on MCMC 
+\fct{summary}, \fct{plot}, \fct{predict}, etc., are provided. E.g., the posterior mean based on MCMC 
 samples for parameter $\mu$ can be computed by
-<<>>=
-p <- predict(b, model = "mu", FUN = c95)
+<<eval=FALSE>>=
+p <- predict(b, model = "mu", FUN = mean)
 @
 \begin{figure}[!t]
-\setkeys{Gin}{width=0.46\textwidth}
+\setkeys{Gin}{width=0.32\textwidth}
 \centering
 <<echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(b, model = "mu", term = "s(times)", spar = FALSE)
+p <- predict(b0, model = "mu", FUN = c95)
+plot2d(p ~ mcycle$times, fill.select = c(0, 1, 0, 1), scheme = 2, grid = 100,
+  xlab = "times", ylab = expression(paste("Effect on ", mu)))
+points(mcycle)
 @
 <<echo=FALSE, fig=TRUE, width=5, height=4>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(b, model = "sigma", term = "s(times)", spar = FALSE)
+p <- predict(b, model = "mu", FUN = c95)
+plot2d(p ~ mcycle$times, fill.select = c(0, 1, 0, 1), scheme = 2, grid = 100,
+  xlab = "times", ylab = expression(paste("Effect on ", mu)))
+points(mcycle)
+@
+<<echo=FALSE, fig=TRUE, width=5, height=4>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1))
+plot(b, model = "sigma", term = "s(times)", spar = FALSE, scheme = 2, grid = 100,
+  ylab = expression(paste("Effect on ", log(sigma))))
 @
 \caption{\label{fig:toymodel} Estimated effects of the Gaussian location-scale model using the
   simulated motorcycle accident data.}
 \end{figure}
+where argument \code{FUN} can be any function, e.g., a function computing credible intervals from
+the empirical quantiles of the MCMC samples. In Figure~\ref{fig:toymodel} the estimated function
+for a Gaussian model with constant scale $\log(\sigma) = \beta_0$ is shown in the left panel.
+Although the mean
+function seems to modeled appropriately, the plot shows that the $95\%$ credible bands are too wide
+in the beginning and the end of the experiment. The middle panel shows the estimated function
+of the heteroskedastic model from above. Here, the credible bands follow much better the
+distribution of the data driven by the estimated variance function shown in the right panel. Uncertainty is low in the beginning and goes up until about $35$ milliseconds and slightly
+decreases afterwards. 
 
-More technical details are deferred to the documentation manual of package \pkg{bamlss}.
 \section{Illustrations} \label{sec:illustrations}
 
 \subsection{Censored heteroscedastic precepitation climatolgy from daily data} \label{sec:censreg}
