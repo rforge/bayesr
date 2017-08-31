@@ -49,6 +49,7 @@
 \DefineVerbatimEnvironment{Code}{Verbatim}{fontshape=sl}
 \DeclareMathOperator{\diag}{diag}
 
+\date{}
 
 \begin{document}
 
@@ -122,7 +123,7 @@ Covariates & Effect types $f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$ & \multi
 \multirow{2}{*}{time variable $t$}& Space-time effect $f(s, t)$ & & \multirow{2}{*}{HN $\propto \tau^{1/2 -1} \exp(-\tau/(2a^2))$} \\
 & Functional random intercept $f_s(t)$ & & \\ \hline
 \end{tabular}
-\caption{\label{tab:mlegobricks} Commonly used ``Lego bricks'', building block \ref{item:3}, for model
+\caption{\label{tab:mlegobricks} Commonly used ``Lego bricks'', building block B3, for model
   terms in BAMLSS. Priors for linear effects assume that the precision matrix $\mathbf{P}(\boldsymbol{\tau})$
   is fixed. For smooth effects, prior densities are: inverse gamma (IG), half-Cauchy (HC),
   scale-dependent (SD) and half-normal (HN).}
@@ -190,6 +191,66 @@ and
     {\Phi\left(\frac{-\mu}{\sigma} \right)^2} & \mbox{else.}
 \end{cases}
 \end{equation*}
+\end{enumerate}
+
+
+\section{``Lego bricks'' for the Cox model}
+
+Based on the usrvival function
+$$
+S(t) = \mathrm{Prob}(T > t) = \exp \, \left( -\int_0^t \lambda(u)du \right),
+$$
+for full Bayesian inference the following ``Lego bricks'' need to be implemented for updating
+functions $U_{jk}( \cdot )$ using algorithms A1, A2a and A2b (algorithms are presented in
+Section~3.2 in the main manuscript):
+\begin{enumerate}[leftmargin=*,align=left]
+\item[B1.] The log-likelihood function of the continuous time Cox model is given by
+  $$
+  \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) =
+   \sum_{i = 1}^n \left( \delta_i\eta_{i\gamma} - \int_0^{t_i} \exp( \eta_{i\lambda}(u)du ) \right).
+  $$
+  where $\delta_i$ is the usual censoring indicator, which equals to $\delta_i = 1$ in this example,
+  because we focus on real fire events.
+\item[B6a.] For derivative-based estimation using Algorithm~A2a and for MCMC simulation with
+  Algorithm~A2b, the score vectors and Hessian need to be computed.
+  Assuming a basis function approach, the score vector of the regression coefficients for the
+  time-varying part $\eta_{\lambda}(t)$ is
+  $$
+  \mathbf{s}\left(\boldsymbol{\beta}_{\lambda}\right) = \boldsymbol{\delta}^{\top}\mathbf{X}_{\lambda}(\mathbf{t}) -
+    \sum_{i = 1}^n \exp(\eta_{i\gamma})\left( \int_0^{t_i} \exp( \eta_{i\lambda}(u) )\mathbf{x}_i(u)du \right).
+  $$
+\item[B7a.] The elements of the Hessian w.r.t.\ $\boldsymbol{\beta}_{\lambda}$ are
+  $$
+  \mathbf{H}\left(\boldsymbol{\beta}_{\lambda}\right) =
+  -\sum_{i = 1}^{n} \exp\left( \eta_{i\gamma} \right) \int_{0}^{t_i} \exp( \eta_{i\lambda}(u) )
+    \boldsymbol{x}_{i\lambda}(u)\boldsymbol{x}_{i\lambda}^{\top}(u)du.
+  $$
+  Note that the Hessian cannot be fragmented further to obtain building block B7b and
+  IWLS updating functions. The reason is that the diagonal weight
+  matrix based on \newline $\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
+  \partial \boldsymbol{\eta}_{\lambda}(\mathbf{t}) \partial \boldsymbol{\eta}_{\lambda}(\mathbf{t})^\top$
+  requires a functional derivative like the Hadamard derivative since the predictor depends on time
+  $t$. However, it turns out that this derivative forms martingale residuals in the IWLS step
+  \citep[see, e.g.,][]{bamlss:Barlow+Prentice:1988} which are incapable of estimating time-varying
+  effects, see also \citet[Section~5.2]{bamlss:Hofner:2008} for a detailed discussion. Therefore
+  updating functions $U_{jk}( \cdot )$ for the time-varying predictor $\eta_{\lambda}(t)$ are based
+  on updating Equation~(17) within Algorithm~A2a and A2b.
+\item[B6b \& B7b.] Constructing updating functions for the time-constant part
+  $\eta_{\gamma}$ again yields an IWLS updating scheme, see Section~4, with
+  working observations given by
+  $$
+  \mathbf{z} = \boldsymbol{\eta}_{\gamma} + \mathbf{W}^{-1}\mathbf{u},
+  $$
+  with the weight matrix
+  $$
+  \mathbf{W} = \mathrm{diag}(\mathbf{P}\exp( \boldsymbol{\eta}_{\gamma})),
+  $$
+  where $\mathbf{P}$ is a diagonal matrix with elements $p_{ii} = \int_0^{t_i}
+  \exp( \eta_{i\lambda}(u)du )$. The score vector is
+  $$
+  \mathbf{u} = \boldsymbol{\delta} - \mathbf{P}\exp(\boldsymbol{\eta}_{\gamma}).
+  $$
+  \citep{bamlss:Hennerfeind+Brezger+Fahrmeir:2006}
 \end{enumerate}
 
 
@@ -267,9 +328,7 @@ Section~4.2. Focusing on the $j$-th row of (14) gives
     \boldsymbol{\eta}_{k}^{(t)} -
     \boldsymbol{\eta}_{k, -j}^{(t+1)})
 \end{eqnarray*}
-This yields the updating function $U_{jk}( \cdot )$ shown in (\ref{eqn:blockbackfit}).
-
-\pagebreak
+This yields the updating function $U_{jk}( \cdot )$ shown in (16) in the main manuscript.
 
 \section{Approximate full conditionals for derivative-based MCMC} \label{appendix:fullcond1}
 The following shows the steps to derive a multivariate normal jumping distribution based
@@ -339,6 +398,11 @@ with weights $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta
 \end{eqnarray*}
 with working observations
 $\mathbf{z}_k = \boldsymbol{\eta}_k^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$.
+
+
+\bibliographystyle{chicago}
+
+\bibliography{bamlss}
 
 
 \end{document}

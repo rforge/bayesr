@@ -1234,7 +1234,7 @@ was used to test crash helmets. The data set contains measurements of the head a
 $\texttt{accel} \sim \mathcal{N}(\mu = f(\texttt{times}), \log(\sigma) = f(\texttt{times}))$
 we use the following model formula
 <<>>=
-f <- list(accel ~ s(times,k=20), sigma ~ s(times,k=20))
+f <- list(accel ~ s(times, k = 20), sigma ~ s(times, k = 20))
 @
 where function \fct{s} is the smooth term constructor of the \pkg{mgcv} package. The model is
 then fitted by
@@ -1256,35 +1256,39 @@ load("toymodel.rda")
 }
 @
 The returned object is of class \code{"bamlss"} for which generic extractor functions like
-\fct{summary}, \fct{plot}, \fct{predict}, etc., are provided. E.g., the posterior mean based on MCMC 
-samples for parameter $\mu$ can be computed by
+\fct{summary}, \fct{plot}, \fct{predict}, etc., are provided. E.g., the posterior mean function
+based on MCMC samples for parameter $\mu$ can be computed by
 <<eval=FALSE>>=
 p <- predict(b, model = "mu", FUN = mean)
 @
 \begin{figure}[!t]
 \setkeys{Gin}{width=0.32\textwidth}
 \centering
-<<echo=FALSE, fig=TRUE, width=5, height=4>>=
+<<echo=FALSE, fig=TRUE, width=3, height=2.8>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 p <- predict(b0, model = "mu", FUN = c95)
 plot2d(p ~ mcycle$times, fill.select = c(0, 1, 0, 1), scheme = 2, grid = 100,
   xlab = "times", ylab = expression(paste("Effect on ", mu)))
-points(mcycle)
+points(mcycle, cex = 0.6)
 @
-<<echo=FALSE, fig=TRUE, width=5, height=4>>=
+<<echo=FALSE, fig=TRUE, width=3, height=2.8>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 p <- predict(b, model = "mu", FUN = c95)
 plot2d(p ~ mcycle$times, fill.select = c(0, 1, 0, 1), scheme = 2, grid = 100,
   xlab = "times", ylab = expression(paste("Effect on ", mu)))
-points(mcycle)
+points(mcycle, cex = 0.6)
 @
-<<echo=FALSE, fig=TRUE, width=5, height=4>>=
+<<echo=FALSE, fig=TRUE, width=3, height=2.8>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b, model = "sigma", term = "s(times)", spar = FALSE, scheme = 2, grid = 100,
   ylab = expression(paste("Effect on ", log(sigma))))
 @
 \caption{\label{fig:toymodel} Estimated effects of the Gaussian location-scale model using the
-  simulated motorcycle accident data.}
+  simulated motorcycle accident data together with $95\%$ credible bands computed from the empirical 
+  quantiles of the MCMC samples (gray shaded areas). The left panel shows the estimated function
+  for parameter $\mu$ using a constant scale parameter $\log(\sigma) = \beta_0$. The middle panel
+  shows the estimated function for parameter $\mu$ using $\log(\sigma) = f(\texttt{times})$.
+  The right panel shows the corresponding estimated effect on $\log(\sigma)$.}
 \end{figure}
 where argument \code{FUN} can be any function, e.g., a function computing credible intervals from
 the empirical quantiles of the MCMC samples. In Figure~\ref{fig:toymodel} the estimated function
@@ -1331,12 +1335,10 @@ regression model with a normal response left-censored at zero. To make positive 
 
 Specifically, the censored normal model with latent Gaussian variable $y^\star$ and
 observed response $y$, the square root of daily precipitation observations, is given by
-\begin{eqnarray*}
-y^\star &\sim& \mathcal{N}(\mu, \sigma^2) \\
-\mu &=& \eta_{\mu} \\
-\log(\sigma) &=& \eta_{\sigma} \\
-y &=& \max(0, y^\star).
-\end{eqnarray*}
+$$
+y^\star \sim \mathcal{N}(\mu, \sigma^2),\,\, \mu = \eta_{\mu},\,\,
+  \log(\sigma) = \eta_{\sigma},\,\, y = \max(0, y^\star).
+$$
 Because precipitation in the Alps is driven by the season and local characteristics, e.g.,
 differing altitude form north to south, we use the following additive predictor for parameter
 $\mu$ and $\sigma$:
@@ -1353,64 +1355,14 @@ each day of the year, i.e., this can be viewed as a functional ANOVA decompositi
 For full Bayesian estimation with Algorithm~\ref{fig:algodesign}, \ref{fig:umode} and
 \ref{fig:mcmc}, we construct updating functions $U_{jk}( \cdot )$ based on IWLS structures. Hence,
 as shown in Section~\ref{sec:legobricks} this only requires the following ``Lego bricks'' to be
-implemented:
+implemented (the detailed expressions are provided in the supplemental material Section~2):
 \begin{enumerate}[leftmargin=*,align=left]
-\item[\ref{item:1}.] The density function of a left censored Gaussian distribution with the threshold at zero is given by
-\begin{equation}
-  f(y; \, \mu = \eta_{\mu}, \, \log(\sigma) = \eta_{\sigma}) = \begin{cases} 
-    \frac{1}{\sigma} \phi\left(\frac{y-\mu}{\sigma} \right) & y > 0 \\
-    \Phi\left(\frac{-\mu}{\sigma} \right) & \mbox{else,}
-  \end{cases}
-\end{equation}
-where $\phi$ is the probability density and $\Phi$ the cumulative distribution function of the
-standard normal distribution.
-
-\item[\ref{item:6b}.] Score vectors $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
-\partial \boldsymbol{\eta}_k$ are computed with
-\begin{equation*}
-\frac{\partial \ell(\boldsymbol{\beta}; y, \mathbf{x})}{
-\partial \eta_{\mu}} = \begin{cases}
-  \frac{y - \mu}{\sigma^2} & y > 0 \\
-  -\frac{1}{\sigma} \frac{\phi\left(\frac{-\mu}{\sigma} \right)}
-    {\Phi\left(\frac{-\mu}{\sigma} \right)} & \mbox{else,}
-\end{cases}
-\end{equation*}
-and
-\begin{equation*}
-\frac{\partial \ell(\boldsymbol{\beta}; y, \mathbf{x})}{
-\partial \eta_{\sigma}} = \begin{cases} 
-  -1 + \frac{(y - \mu)^2}{\sigma^2} & y > 0 \\ 
-  -\frac{-\mu}{\sigma} \frac{\phi\left(\frac{-\mu}{\sigma} \right)}
-    {\Phi\left(\frac{-\mu}{\sigma} \right)} & \mbox{else.}
-\end{cases}
-\end{equation*}
+\item[\ref{item:1}.] The density function of a Gaussian distribution left censored at zero.
+\item[\ref{item:6b}.] Score vectors $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta}; \mathbf{y}, 
+  \mathbf{X}) / \partial \boldsymbol{\eta}_k$.
 \item[\ref{item:7b}.] The diagonal elements of the weight matrix
-$\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
-\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ are derived using
-\begin{equation*}
-\frac{\partial^2 \ell(\boldsymbol{\beta}; y, \mathbf{x})}{
-\partial \eta_{\mu}^2} = \begin{cases} 
-  -\frac{1}{\sigma^2} & y > 0 \\
-  -\frac{-\mu}{\sigma^3}\frac{\phi\left(\frac{-\mu}{\sigma} \right)}
-    {\Phi\left(\frac{-\mu}{\sigma} \right)}-\frac{1}{\sigma^2}
-    \frac{\phi\left(\frac{-\mu}{\sigma} \right)^2}
-    {\Phi\left(\frac{-\mu}{\sigma} \right)^2}
-  & \mbox{else,}
-\end{cases}
-\end{equation*}
-and
-\begin{equation*}
-\frac{\partial^2 \ell(\boldsymbol{\beta}; y, \mathbf{x})}{
-\partial \eta_{\sigma}^2} = \begin{cases} 
-  - 2 \frac{(y-\mu)^2}{\sigma^2} & y > 0 \\
-  - \frac{-\mu}{\sigma}\frac{\phi\left(\frac{-\mu}{\sigma} \right)}
-    {\Phi\left(\frac{-\mu}{\sigma} \right)} - \frac{(-\mu)^3}{\sigma^3}
-    \frac{\phi\left(\frac{-\mu}{\sigma} \right)}
-    {\Phi\left(\frac{-\mu}{\sigma} \right)} - \frac{(-\mu)^2}{\sigma^2}
-    \frac{\phi\left(\frac{-\mu}{\sigma} \right)^2}
-    {\Phi\left(\frac{-\mu}{\sigma} \right)^2} & \mbox{else.}
-\end{cases}
-\end{equation*}
+  $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
+  \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$.
 \end{enumerate}
 The first and second derivative functions have been implemented in the \pkg{bamlss} family\linebreak
 \fct{cnorm\_bamlss}.
@@ -1578,56 +1530,18 @@ S(t) = \mathrm{Prob}(T > t) = \exp \, \left( -\int_0^t \lambda(u)du \right),
 \end{equation}
 which is of prime interest in this analysis. Based on (\ref{eqn:surv}), for full Bayesian inference
 the following ``Lego bricks'' need to be implemented for updating functions $U_{jk}( \cdot )$ using
-algorithms \ref{fig:algodesign}, \ref{fig:umode} and \ref{fig:mcmc}:
+algorithms \ref{fig:algodesign}, \ref{fig:umode} and \ref{fig:mcmc}
+(the detailed expressions are provided in the supplemental material Section~3):
 \begin{enumerate}[leftmargin=*,align=left]
-\item[\ref{item:1}.] The log-likelihood function of the continuous time Cox model is given by
-  $$
-  \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) =
-   \sum_{i = 1}^n \left( \delta_i\eta_{i\gamma} - \int_0^{t_i} \exp( \eta_{i\lambda}(u)du ) \right).
-  $$
-  where $\delta_i$ is the usual censoring indicator, which equals to $\delta_i = 1$ in this example,
-  because we focus on real fire events.
-\item[\ref{item:6a}.] For derivative-based estimation using Algorithm~\ref{fig:umode} and for MCMC simulation with
-  Algorithm~\ref{fig:mcmc}, the score vectors and Hessian need to be computed.
-  Assuming a basis function approach, the score vector of the regression coefficients for the
-  time-varying part $\eta_{\lambda}(t)$ is
-  $$
-  \mathbf{s}\left(\boldsymbol{\beta}_{\lambda}\right) = \boldsymbol{\delta}^{\top}\mathbf{X}_{\lambda}(\mathbf{t}) -
-    \sum_{i = 1}^n \exp(\eta_{i\gamma})\left( \int_0^{t_i} \exp( \eta_{i\lambda}(u) )\mathbf{x}_i(u)du \right).
-  $$
-\item[\ref{item:7a}.] The elements of the Hessian w.r.t.\ $\boldsymbol{\beta}_{\lambda}$ are
-  $$
-  \mathbf{H}\left(\boldsymbol{\beta}_{\lambda}\right) =
-  -\sum_{i = 1}^{n} \exp\left( \eta_{i\gamma} \right) \int_{0}^{t_i} \exp( \eta_{i\lambda}(u) )
-    \boldsymbol{x}_{i\lambda}(u)\boldsymbol{x}_{i\lambda}^{\top}(u)du.
-  $$
-  Note that the Hessian cannot be fragmented further to obtain building block \ref{item:7b} and
-  IWLS updating functions. The reason is that the diagonal weight
-  matrix based on \newline $\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
-  \partial \boldsymbol{\eta}_{\lambda}(\mathbf{t}) \partial \boldsymbol{\eta}_{\lambda}(\mathbf{t})^\top$
-  requires a functional derivative like the Hadamard derivative since the predictor depends on time
-  $t$. However, it turns out that this derivative forms martingale residuals in the IWLS step
-  \citep[see, e.g.,][]{bamlss:Barlow+Prentice:1988} which are incapable of estimating time-varying
-  effects, see also \citet[Section~5.2]{bamlss:Hofner:2008} for a detailed discussion. Therefore
-  updating functions $U_{jk}( \cdot )$ for the time-varying predictor $\eta_{\lambda}(t)$ are based
-  on updating Equation~(\ref{eqn:blockblocknewton}) within Algorithm~\ref{fig:umode} and
-  \ref{fig:mcmc}.
-\item[\ref{item:6b} \& \ref{item:7b}.] Constructing updating functions for the time-constant part
-  $\eta_{\gamma}$ again yields an IWLS updating scheme, see Section~\ref{sec:legobricks}, with
-  working observations given by
-  $$
-  \mathbf{z} = \boldsymbol{\eta}_{\gamma} + \mathbf{W}^{-1}\mathbf{u},
-  $$
-  with the weight matrix
-  $$
-  \mathbf{W} = \mathrm{diag}(\mathbf{P}\exp( \boldsymbol{\eta}_{\gamma})),
-  $$
-  where $\mathbf{P}$ is a diagonal matrix with elements $p_{ii} = \int_0^{t_i}
-  \exp( \eta_{i\lambda}(u)du )$. The score vector is
-  $$
-  \mathbf{u} = \boldsymbol{\delta} - \mathbf{P}\exp(\boldsymbol{\eta}_{\gamma}).
-  $$
-  \citep{bamlss:Hennerfeind+Brezger+Fahrmeir:2006}
+\item[\ref{item:1}.] The log-likelihood function of the continuous time Cox model.
+\item[\ref{item:6a}.] For derivative-based estimation using Algorithm~\ref{fig:umode} and for
+  MCMC simulation with Algorithm~\ref{fig:mcmc}, the score vectors and Hessian need to be computed.
+\item[\ref{item:7a}.] The elements of the Hessian w.r.t.\ $\boldsymbol{\beta}_{\lambda}$. Note that
+  these cannot be computed by fragmenting with the chain rule to obtain building block
+  \ref{item:7b} and IWLS updating functions, see the supplemental material Section~3 for details.
+\item[\ref{item:6b} \& \ref{item:7b}.] However, constructing updating functions for the
+  time-constant part
+  $\eta_{\gamma}$ again yields an IWLS updating scheme based on building block \ref{item:7b}.
 \end{enumerate}
 
 \begin{figure}[p!]
@@ -1740,159 +1654,5 @@ based on the accompanying implementation in the \proglang{R} package \pkg{bamlss
 
 \bibliography{bamlss}
 
-
-\clearpage
-
-
-\begin{appendix}
-
-\section{Posterior mode updating based on IWLS} \label{appendix:pmodeiwls}
-
-The following shows the steps needed to derive the iterative updating scheme based on IWLS in
-Section~\ref{sec:bricksmodelfit}. Focusing on the $j$-th row of (\ref{eqn:blocknewton}) gives
-\begin{eqnarray*}
-(\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))\boldsymbol{\beta}_{jk}^{(t+1)} +
-\ldots + \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t + 1)} - \\
-(\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))\boldsymbol{\beta}_{jk}^{(t)} -
-\ldots - \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t)}
-  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\boldsymbol{\beta}_{jk}^{(t)}
-\end{eqnarray*}
-\begin{eqnarray*}
-\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})(\boldsymbol{\beta}_{jk}^{(t+1)} - \boldsymbol{\beta}_{jk}^{(t)}) +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} + \ldots +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t+1)} - \\
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t)} - \ldots -
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t)}
-  \,\,\, = \,\,\, \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\boldsymbol{\beta}_{jk}^{(t)} &&
-\end{eqnarray*}
-\begin{eqnarray*}
-\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\boldsymbol{\beta}_{jk}^{(t)} +
-  \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})(\boldsymbol{\beta}_{jk}^{(t+1)} - \boldsymbol{\beta}_{jk}^{(t)}) +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} + \ldots +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t+1)} - \\
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t)} - \ldots -
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t)}
-  \,\,\,=\,\,\, \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} &&
-\end{eqnarray*}
-\begin{eqnarray*}
-\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\boldsymbol{\beta}_{jk}^{(t+1)} +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} + \ldots +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t+1)} - \\
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t)} - \ldots -
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{J_kk}\boldsymbol{\beta}_{J_kk}^{(t)}
-  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)}
-\end{eqnarray*}
-\begin{eqnarray*}
-\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\boldsymbol{\beta}_{jk}^{(t+1)} +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t+1)} + 
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)} -
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)}
-  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)}
-\end{eqnarray*}
-\begin{eqnarray*}
-(\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))\boldsymbol{\beta}_{jk}^{(t+1)}
-  &=& \mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} + \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
-    \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)}
-\end{eqnarray*}
-\begin{eqnarray*}
-  \boldsymbol{\beta}_{jk}^{(t+1)}
-  &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))^{-1}(\mathbf{X}_{jk}^\top \mathbf{u}_k^{(t)} +
-    \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
-    \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)})
-\end{eqnarray*}
-\begin{eqnarray*}
-  \boldsymbol{\beta}_{jk}^{(t+1)}
-  &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))^{-1}\mathbf{X}_{jk}^\top(\mathbf{u}_k^{(t)} +
-    \mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
-    \mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)})
-\end{eqnarray*}
-\begin{eqnarray*}
-  \boldsymbol{\beta}_{jk}^{(t+1)}
-  &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))^{-1}\mathbf{X}_{jk}^\top(
-    \mathbf{W}_{kk}\mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)} +
-    \mathbf{W}_{kk}\boldsymbol{\eta}_{k}^{(t)} -
-    \mathbf{W}_{kk}\boldsymbol{\eta}_{k, -j}^{(t+1)})
-\end{eqnarray*}
-\begin{eqnarray*}
-  \boldsymbol{\beta}_{jk}^{(t+1)}
-  &=& (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))^{-1}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}(
-    \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)} +
-    \boldsymbol{\eta}_{k}^{(t)} -
-    \boldsymbol{\eta}_{k, -j}^{(t+1)})
-\end{eqnarray*}
-This yields the updating function $U_{jk}( \cdot )$ shown in (\ref{eqn:blockbackfit}).
-
-\pagebreak
-
-\section{Approximate full conditionals for derivative-based MCMC} \label{appendix:fullcond1}
-The following shows the steps to derive a multivariate normal jumping distribution based
-on a second order Taylor series expansion of the log-posterior centered at the last state of
-$\boldsymbol{\beta}_{jk}$.
-\begin{eqnarray*}
-  \pi(\boldsymbol{\beta}_{jk}^\star | \cdot) &\propto& \exp\left[
-    \log\,\pi\left(\boldsymbol{\beta}_{jk}^{(t)} | \cdot\right) +
-    \left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)^\top \mathbf{s}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) + \right.\\
-  && \left. \qquad\qquad \frac{1}{2}\left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)^\top
-    \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)
-    \left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)\right] \\
-  &\propto& \exp\left[(\boldsymbol{\beta}_{jk}^\star)^\top \mathbf{s}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) +
-    \left(\frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) - \right.\right. \\
-  && \qquad\qquad\left.\left. \frac{1}{2}(\boldsymbol{\beta}_{jk}^{(t)})^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) \right)\left(\boldsymbol{\beta}_{jk}^\star - \boldsymbol{\beta}_{jk}^{(t)}\right)\right] \\
-  &\propto& \exp\left[(\boldsymbol{\beta}_{jk}^\star)^\top \mathbf{s}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) +
-    \frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^\star - \right. \\
-  && \left. \qquad\qquad\, \frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)} -
-    \frac{1}{2}(\boldsymbol{\beta}_{jk}^{(t)})^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^\star \right] \\
-  &=& \exp\left[
-    \frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^\star +
-    (\boldsymbol{\beta}_{jk}^\star)^\top \mathbf{s}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) -
-    (\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)} \right] \\
-  &=& \exp\left[
-    -\frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top-\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^\star +
-    (\boldsymbol{\beta}_{jk}^\star)^\top \left(\mathbf{s}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) - \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)}\right) \right]
-\end{eqnarray*}
-Which leads to the proposal density
-$q(\boldsymbol{\beta}_{jk}^\star | \, \boldsymbol{\beta}_{jk}^{(t)}) =
-  \mathcal{N}(\boldsymbol{\mu}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk}^{(t)})$ with precision matrix
-$$
-\left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = -\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)
-$$
-and mean
-\begin{eqnarray*}
-\boldsymbol{\mu}_{jk}^{(t)} &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left[
-  s\left(\boldsymbol{\beta}_{jk}^{(t)}\right) -
-  \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)\boldsymbol{\beta}_{jk}^{(t)} \right] \\
-&=& \boldsymbol{\beta}_{jk}^{(t)} -
-  \mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right)^{-1}
-  \mathbf{s}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) \\
- &=& \boldsymbol{\beta}_{jk}^{(t)} -
-  \left[\mathbf{J}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
-    \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right).
-\end{eqnarray*}
-Using a basis function representation of functions $f_{jk}( \cdot )$ the precision matrix is
-$$
-\left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}),
-$$
-with weights $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
-\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$ and the mean can be written as
-\begin{eqnarray*}
-  \boldsymbol{\mu}_{jk}^{(t)} &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left[
-  \mathbf{X}_{jk}^\top\mathbf{u}_k^{(t)} - \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\boldsymbol{\beta}_{jk}^{(t)} +
-  (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))\boldsymbol{\beta}_{jk}^{(t)}\right] \\
-  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left[
-  \mathbf{X}_{jk}^\top\mathbf{u}_k^{(t)} +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}^{(t)}\right] \\
-  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\left[
-  \mathbf{X}_{jk}^\top\mathbf{u}_k^{(t)} +
-  \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left(\boldsymbol{\eta}_k^{(t)} - \boldsymbol{\eta}^{(t)}_{k,-j}\right)\right] \\
-  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\left[
-  \mathbf{u}_k^{(t)} + \mathbf{W}_{kk}\left(\boldsymbol{\eta}_k^{(t)} - \boldsymbol{\eta}^{(t)}_{k,-j}\right)\right] \\
-  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left[
-  \boldsymbol{\eta}_k^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}  - \boldsymbol{\eta}^{(t)}_{k,-j}\right] \\
-  &=& \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left[\mathbf{z}_k  - \boldsymbol{\eta}^{(t)}_{k,-j}\right]
-\end{eqnarray*}
-with working observations
-$\mathbf{z}_k = \boldsymbol{\eta}_k^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$.
-
-\end{appendix}
 \end{document}
 
