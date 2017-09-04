@@ -3515,6 +3515,13 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
   if(is.null(model))
     model <- x$family$names
   model <- x$family$names[pmatch(model, x$family$names)]
+  if(any(is.na(model))) {
+    model <- model[!is.na(model)]
+    if(!length(model))
+      stop("argument model is spcified wrong")
+    else
+      warning("argument model is spcified wrong")
+  }
   if(!is.character(which)) {
     which <- c("criterion", "parameters")[as.integer(which)]
   } else {
