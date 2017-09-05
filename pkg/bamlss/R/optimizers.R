@@ -2357,7 +2357,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
             if(is.null(W))
               tll <- family$loglik(y, family$map2par(teta))
             else
-              tll <- sum(family$d(y, family$map2par(teta)) * W)
+              tll <- sum(family$d(y, family$map2par(teta), log = TRUE) * W)
             ## tedf0 <- sum(diag(Imat - HatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)))
             tedf <- hatmat_trace(HatMat[[i]], states[[i]][[j]]$hat)
             if(length(nxr <- nx[nx != i])) {
@@ -2380,7 +2380,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       llf <- if(is.null(W)) {
         family$loglik(y, family$map2par(eta))
       } else {
-        sum(family$d(y, family$map2par(eta)) * W)
+        sum(family$d(y, family$map2par(eta), log = TRUE) * W)
       }
       loglik[i] <- -1 * (ll - llf)
       
@@ -2420,7 +2420,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     ll <- if(is.null(W)) {
       family$loglik(y, peta)
     } else {
-      sum(family$d(y, peta) * W)
+      sum(family$d(y, peta, log = TRUE) * W)
     }
     save.ll <- c(save.ll, ll)
 
@@ -2641,7 +2641,7 @@ boost.transform <- function(x, y, df = NULL, family,
       for(i in seq_along(nx))
         eta[[nx[i]]] <- rep(par[i], length = nobs)
       if(!is.null(W))
-        ll <- sum(family$d(y, family$map2par(eta)) * W, na.rm = TRUE)
+        ll <- sum(family$d(y, family$map2par(eta), log = TRUE) * W, na.rm = TRUE)
       else
         ll <- family$loglik(y, family$map2par(eta))
       return(ll)
