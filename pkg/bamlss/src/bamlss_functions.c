@@ -3223,7 +3223,7 @@ SEXP rho_score_mvnorm(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP R
 
 
 /* Boosting updater. */
-SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
+SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP W, SEXP rho)
 {
   int i, j, k;
   int nProtected = 0;
@@ -3234,6 +3234,13 @@ SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
   ++nProtected;
   double *thetaptr = REAL(getListElement(state, "parameters"));
   int *penFun = INTEGER(getListElement(x, "penaltyFunction"));
+
+  int nW = length(W);
+  if(nW > 1) {
+    if(nW != n)
+      nW = 1;
+  }
+  double *Wptr = REAL(W);
 
   /* Reto: changes */
   /* This was the main change: Reto 2017-01-24 */
@@ -3288,12 +3295,17 @@ SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
       }
       ++j;
       xweightsptr[j] = 0.0;
-      xrresptr[j]    = 0.0;
+      xrresptr[j] = 0.0;
     }
     k = orderptr[i] - 1;
 
-    xweightsptr[j] += 1.0;
-    xrresptr[j] += eptr[k];
+    if(nW > 0) {
+      xweightsptr[j] += Wptr[k];
+      xrresptr[j] += eptr[k] * Wptr[k];
+    } else {
+      xweightsptr[j] += 1.0;
+      xrresptr[j] += eptr[k];
+    }
   }
 
   for(jj = 0; jj < nc; jj++) {
@@ -3389,7 +3401,11 @@ SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
   for(i = 0; i < n; i++) {
     k = idptr[i] - 1;
     fitptr[i] = fitrptr[k];
-    rss += pow(fitptr[i] - yptr[i], 2.0);
+    if(nW > 0) {
+      rss += (pow(fitptr[i] - yptr[i], 2.0) * Wptr[i]);
+    } else {
+      rss += pow(fitptr[i] - yptr[i], 2.0);
+    }
   }
   REAL(getListElement(state, "rss"))[0] = rss;
 

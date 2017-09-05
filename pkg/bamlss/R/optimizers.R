@@ -2333,11 +2333,12 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       for(j in names(x[[i]]$smooth.construct)) {
         ## Get updated parameters.
         states[[i]][[j]] <- if(is.null(x[[i]]$smooth.construct[[j]][["boost.fit"]])) {
-          if(hatmatrix | !is.null(weights)) {
+          if(hatmatrix) {
             boost_fit(x[[i]]$smooth.construct[[j]], grad, nu,
               hatmatrix = hatmatrix, weights = if(!is.null(weights)) weights[, i] else NULL)
           } else {
-            .Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu, hatmatrix, rho, PACKAGE = "bamlss")
+            .Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu,
+              if(!is.null(weights)) as.numeric(weights[, i]) else numeric(0), rho, PACKAGE = "bamlss")
           }
         } else {
           x[[i]]$smooth.construct[[j]][["boost.fit"]](x = x[[i]]$smooth.construct[[j]],
