@@ -1995,10 +1995,10 @@ boostm <- function(x, y, family, offset = NULL,
   eps = .Machine$double.eps^0.25, plot = TRUE,
   initialize = TRUE, stop.criterion = NULL, force.stop = !is.null(stop.criterion),
   do.optim = TRUE, ...)
-{
-  ## FIXME: hard coded.
-  weights <- offset <- NULL
-  
+{  
+  ## FIXME: hard coded!
+  offset <- weights <- NULL
+
   nx <- family$names
   if(!all(nx %in% names(x)))
     stop("parameter names mismatch with family names!")
@@ -2027,7 +2027,7 @@ boostm <- function(x, y, family, offset = NULL,
   ## Intercepts are initalized.
   x <- boost.transform(x = x, y = y, df = df, family = family,
     maxit = maxit, eps = eps, initialize = initialize, offset = offset,
-    set.nnet = FALSE, ...)
+    weights = weights, set.nnet = FALSE, ...)
   
   ## Create a list() that saves the states for
   ## all parameters and model terms.
@@ -2208,16 +2208,13 @@ boostm <- function(x, y, family, offset = NULL,
 
 
 ## Gradient boosting.
-boost <- function(x, y, family, offset = NULL,
+boost <- function(x, y, family, weights = NULL, offset = NULL,
   nu = 0.1, df = 4, maxit = 400, mstop = NULL, maxq = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE,
   initialize = TRUE, stop.criterion = NULL, force.stop = TRUE,
   hatmatrix = !is.null(stop.criterion), ...)
-{
-  ## FIXME: hard coded.
-  weights <- offset <- NULL
-  
+{ 
   nx <- family$names
   if(!all(nx %in% names(x)))
     stop("parameter names mismatch with family names!")
@@ -2250,7 +2247,8 @@ boost <- function(x, y, family, offset = NULL,
   ## terms get an entry in $smooth.construct object.
   ## Intercepts are initalized.
   x <- boost.transform(x = x, y = y, df = df, family = family,
-    maxit = maxit, eps = eps, initialize = initialize, offset = offset, ...)
+    maxit = maxit, eps = eps, initialize = initialize, offset = offset,
+    weights = weights, ...)
   
   ## Create a list() that saves the states for
   ## all parameters and model terms.
@@ -2276,6 +2274,12 @@ boost <- function(x, y, family, offset = NULL,
       if(!is.null(offset[[j]]))
         eta[[j]] <- eta[[j]] + offset[[j]]
     }
+  }
+
+  W <- NULL
+  if(!is.null(weights)) {
+    if(attr(weights, "identical"))
+      W <- as.numeric(weights[, 1])
   }
   
   ## Print stuff.
@@ -2309,7 +2313,11 @@ boost <- function(x, y, family, offset = NULL,
   ## Start boosting.
   eps0 <- 1; iter <- if(initialize) 2 else 1
   save.ll <- NULL
-  ll <- family$loglik(y, family$map2par(eta))
+  ll <- if(is.null(W)) {
+    family$loglik(y, family$map2par(eta))
+  } else {
+    sum(family$d(y, family$map2par(eta)) * W)
+  }
   ptm <- proc.time()
   while(iter <= maxit & qsel <= maxq) {
     eta0 <- eta
@@ -2325,14 +2333,17 @@ boost <- function(x, y, family, offset = NULL,
       for(j in names(x[[i]]$smooth.construct)) {
         ## Get updated parameters.
         states[[i]][[j]] <- if(is.null(x[[i]]$smooth.construct[[j]][["boost.fit"]])) {
-          if(hatmatrix) {
-            boost_fit(x[[i]]$smooth.construct[[j]], grad, nu, hatmatrix = hatmatrix)
+          if(hatmatrix | !is.null(weights)) {
+            boost_fit(x[[i]]$smooth.construct[[j]], grad, nu,
+              hatmatrix = hatmatrix, weights = if(!is.null(weights)) weights[, i] else NULL)
           } else {
             .Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu, hatmatrix, rho, PACKAGE = "bamlss")
           }
         } else {
           x[[i]]$smooth.construct[[j]][["boost.fit"]](x = x[[i]]$smooth.construct[[j]],
-            y = grad, nu = nu, hatmatrix = hatmatrix, rho = rho)
+            y = grad, nu = nu, hatmatrix = hatmatrix,
+            weights = if(!is.null(weights)) weights[, i] else NULL,
+            rho = rho)
         }
         
         ## Get rss.
@@ -2342,7 +2353,10 @@ boost <- function(x, y, family, offset = NULL,
           } else {
             teta <- eta
             teta[[i]] <- teta[[i]] + fitted(states[[i]][[j]])
-            tll <- family$loglik(y, family$map2par(teta))
+            if(is.null(W))
+              tll <- family$loglik(y, family$map2par(teta))
+            else
+              tll <- sum(family$d(y, family$map2par(teta)) * W)
             ## tedf0 <- sum(diag(Imat - HatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)))
             tedf <- hatmat_trace(HatMat[[i]], states[[i]][[j]]$hat)
             if(length(nxr <- nx[nx != i])) {
@@ -2353,7 +2367,7 @@ boost <- function(x, y, family, offset = NULL,
           }
         } else {
           rss[[i]][j] <- selfun(iter = iter, i = i, j = j, state = states[[i]][[j]],
-            parm = parm, x = x, family = family, sfun = selectfun, yname = yname)
+            parm = parm, x = x, family = family, sfun = selectfun, yname = yname, weights = weights)
         }
       }
       
@@ -2362,7 +2376,11 @@ boost <- function(x, y, family, offset = NULL,
       
       ## Compute likelihood contribution.
       eta[[i]] <- eta[[i]] + fitted(states[[i]][[select[i]]])
-      llf <- family$loglik(y, family$map2par(eta))
+      llf <- if(is.null(W)) {
+        family$loglik(y, family$map2par(eta))
+      } else {
+        sum(family$d(y, family$map2par(eta)) * W)
+      }
       loglik[i] <- -1 * (ll - llf)
       
       eta[[i]] <- eta0[[i]]
@@ -2398,7 +2416,11 @@ boost <- function(x, y, family, offset = NULL,
     if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
     
     peta <- family$map2par(eta)
-    ll <- family$loglik(y, peta)
+    ll <- if(is.null(W)) {
+      family$loglik(y, peta)
+    } else {
+      sum(family$d(y, peta) * W)
+    }
     save.ll <- c(save.ll, ll)
 
     if(hatmatrix) {
@@ -2606,12 +2628,21 @@ boost.transform <- function(x, y, df = NULL, family,
     }
     nobs <- length(eta[[1]])
     start <- unlist(lapply(eta, mean, na.rm = TRUE))
-    
+
+    W <- NULL
+    if(!is.null(weights)) {
+      if(attr(weights, "identical"))
+        W <- as.numeric(weights[, 1])
+    }
+
     objfun <- function(par) {
       eta <- list()
       for(i in seq_along(nx))
         eta[[nx[i]]] <- rep(par[i], length = nobs)
-      ll <- family$loglik(y, family$map2par(eta))
+      if(!is.null(W))
+        ll <- sum(family$d(y, family$map2par(eta)) * W, na.rm = TRUE)
+      else
+        ll <- family$loglik(y, family$map2par(eta))
       return(ll)
     }
     
@@ -2895,10 +2926,14 @@ boost_iwls <- function(x, hess, resids, nu)
 
 
 ## Boosting gradient fit.
-boost_fit <- function(x, y, nu, hatmatrix = TRUE, ...)
+boost_fit <- function(x, y, nu, hatmatrix = TRUE, weights = NULL, ...)
 {
+  ## process weights.
+  if(is.null(weights))
+    weights <- rep(1, length = length(y))
+
   ## Compute reduced residuals.
-  xbin.fun(x$binning$sorted.index, rep(1, length = length(y)), y, x$weights, x$rres, x$binning$order)
+  xbin.fun(x$binning$sorted.index, weights, y, x$weights, x$rres, x$binning$order)
   
   ## Compute mean and precision.
   XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
@@ -2918,7 +2953,7 @@ boost_fit <- function(x, y, nu, hatmatrix = TRUE, ...)
   ## Finalize.
   x$state$parameters <- set.par(x$state$parameters, g, "b")
   x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
-  x$state$rss <- sum((x$state$fitted.values - y)^2)
+  x$state$rss <- sum((x$state$fitted.values - y)^2 * weights)
 
   if(hatmatrix)
     x$state$hat <- nu * x$X %*% P %*% t(x$X)

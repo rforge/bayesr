@@ -1854,9 +1854,11 @@ bamlss.model.frame <- function(formula, data, family = gaussian_bamlss(),
 
   ## Process weights and offset.
   if(!is.null(weights)) {
+    wident <- FALSE
     if(!is.list(weights)) {
       weights <- rep(list(weights), length = length(family$names))
       names(weights) <- family$names
+      wident <- TRUE
     }
     weights <- do.call("cbind", weights)
     colnames(weights) <- names(formula)[1:ncol(weights)]
@@ -1869,6 +1871,7 @@ bamlss.model.frame <- function(formula, data, family = gaussian_bamlss(),
       weights <- do.call(rbind, replicate(nrow(data), weights, simplify = FALSE))
     for(j in 1:ncol(weights))
       weights[weights[, j] == 0, j] <- .Machine$double.eps
+    attr(weights, "identical") <- wident
     data[["(weights)"]] <- weights
   }
   if(!is.null(offset)) {
