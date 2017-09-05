@@ -3227,10 +3227,10 @@ SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
 {
   int i, j, k;
   int nProtected = 0;
-  int n          = length(y);
-  int fixed      = LOGICAL(getListElement(x, "fixed"))[0];
+  int n = length(y);
+  int fixed = LOGICAL(getListElement(x, "fixed"))[0];
 
-  SEXP state       = PROTECT(duplicate(getListElement(x, "state")));
+  SEXP state = PROTECT(duplicate(getListElement(x, "state")));
   ++nProtected;
   double *thetaptr = REAL(getListElement(state, "parameters"));
   int *penFun = INTEGER(getListElement(x, "penaltyFunction"));
@@ -3260,19 +3260,19 @@ SEXP boost_fit(SEXP x, SEXP y, SEXP nu, SEXP rho)
   /* More pointers needed. */
   double *eptr = REAL(y);
   double *xweightsptr = REAL(getListElement(x, "weights"));
-  double *xrresptr    = REAL(getListElement(x, "rres"));
-  double *XWptr       = REAL(getListElement(x, "XW"));
-  double *XWXptr      = REAL(getListElement(x, "XWX"));
-  double *Xptr        = REAL(PROTECT(VECTOR_ELT(x, X_ind))); ++nProtected;
+  double *xrresptr = REAL(getListElement(x, "rres"));
+  double *XWptr = REAL(getListElement(x, "XW"));
+  double *XWXptr = REAL(getListElement(x, "XWX"));
+  double *Xptr = REAL(PROTECT(VECTOR_ELT(x, X_ind))); ++nProtected;
   /* Reto: changes, setting empty pointer to 0 */
   double *Sptr = 0;
-  int    *idptr       = INTEGER(getListElement(getListElement(x, "binning"), "match.index"));
-  int    *indptr      = INTEGER(getListElement(getListElement(x, "binning"), "sorted.index"));
-  int    *orderptr    = INTEGER(getListElement(getListElement(x, "binning"), "order"));
+  int    *idptr = INTEGER(getListElement(getListElement(x, "binning"), "match.index"));
+  int    *indptr = INTEGER(getListElement(getListElement(x, "binning"), "sorted.index"));
+  int    *orderptr = INTEGER(getListElement(getListElement(x, "binning"), "order"));
 
   /* Handling fitted.values. */
   double *fitrptr = REAL(getListElement(x, "fit.reduced"));
-  double *fitptr  = REAL(getListElement(state, "fitted.values"));
+  double *fitptr = REAL(getListElement(state, "fitted.values"));
 
   /* Start. */
   xweightsptr[0] = 0.0;

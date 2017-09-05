@@ -1512,6 +1512,7 @@ update_jm_alpha <- function(x, eta, eta_timegrid,
   x$state$fitted_timegrid <- x$fit.fun_timegrid(g2)
   x$state$fitted.values <- x$fit.fun(x$X, g2, expand = FALSE)
   x$state$edf <- sum_diag(int$hess %*% Sigma)
+
   x$state$hessian <- xhess
   
   return(x$state)
