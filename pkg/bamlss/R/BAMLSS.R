@@ -4185,6 +4185,10 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$fuse_type <- fuse_type
   object$standardize <- standardize
   
+  contr <- object$xt$contrast.arg
+  if(is.null(contr))
+    contr <- "contr.sum"
+  
   data <- as.data.frame(data)
   nobs <- nrow(data)
   tl <- term.labels2(terms(object$formula), intercept = FALSE, list = FALSE)
@@ -4194,7 +4198,10 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$lasso <- list("trans" = list())
   k <- 1
   for(j in tl) {
-    object$X[[j]] <- as.matrix(model.matrix(as.formula(paste("~", j)), data = data))
+    contr.list <- list()
+    contr.list[[j]] <- contr
+    object$X[[j]] <- as.matrix(model.matrix(as.formula(paste("~", j)), data = data,
+      contrasts = contr.list))
     if(length(i <- grep("Intercept", colnames(object$X[[j]]))))
       object$X[[j]] <- object$X[[j]][, -i, drop = FALSE]
     is_f <- is.factor(data[[j]])
@@ -4235,12 +4242,12 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
         "scale" = 1.0
       )
       if(is.factor(data[[j]])) {
-        df[[j]] <- colSums(object$X[[j]])
+        df[[j]] <- colSums(object$X[[j]] == 1)
       } else {
         if(is.null(j2)) {
           df[[j]] <- rep(nobs, ncol(object$X[[j]]))
         } else {
-          df[[j]] <- colSums(object$X[[j]] > 0)
+          df[[j]] <- colSums(object$X[[j]] == 1)
         }
         names(df[[j]]) <- colnames(object$X[[j]])
       }
