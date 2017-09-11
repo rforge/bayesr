@@ -255,16 +255,12 @@ a typical GAM-type or so-called structured additive predictor
 we relax this assumption and let $f_{jk}(\cdot)$ be an unspecified composition of covariate data
 $\mathbf{x}$ and regression coefficients $\boldsymbol{\beta}_{jk}$ ($q_{jk} \times 1$).
 In the case where it is derived through a basis function approach, it can be written as
-$$
-\mathbf{f}_{jk} = \mathbf{X}_{jk}\boldsymbol{\beta}_{jk},
-$$
-But more general and complex terms are also allowed in the BAMLSS framework. A simple
+$\mathbf{f}_{jk} = \mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$,
+but more general and complex terms are also allowed in the BAMLSS framework. A simple
 example for a $f_{jk}( \cdot )$ that is nonlinear in the parameters $\boldsymbol{\beta}_{jk}$
 would be a Gompertz growth curve
-$$
-\mathbf{f}_{jk} = \beta_{1} \cdot \exp \left( -\exp\left( \beta_{2} +
-  \mathbf{X}_{jk}\beta_{3} \right) \right).
-$$
+$\mathbf{f}_{jk} = \beta_{1} \cdot \exp \left( -\exp\left( \beta_{2} +
+  \mathbf{X}_{jk}\beta_{3} \right) \right)$.
 
 Note that using basis functions the individual model components
 $\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$ can be further
@@ -638,10 +634,8 @@ different resolutions. For example, spatial data that is measured within differe
 which additional regional covariates are available. Whenever there is such a nested structure
 in the data, it is possible to model the complex (spatial) heterogeneity effects using
 a compound prior
-\begin{equation*} \label{eqn:compoundprior}
-\boldsymbol{\beta}_{jk} = \tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})
-  + \boldsymbol{\varepsilon}_{jk},
-\end{equation*}
+$\boldsymbol{\beta}_{jk} = \tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})
+  + \boldsymbol{\varepsilon}_{jk}$,
 where $\boldsymbol{\varepsilon}_{jk} \sim \mathcal{N}(\mathbf{0}, \tilde{\tau}_{jk}\mathbf{I})$ is a vector
 of i.i.d.\ Gaussian random effects and
 $\tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})$ represents a full
@@ -831,10 +825,8 @@ updating scheme.
 Note that this yields the ingredients of the \emph{RS}-algorithm developed in
 \citet{bamlss:Rigby+Stasinopoulos:2005} Appendix~B.2. The updating scheme (\ref{eqn:blockbackfit})
 can be further generalized to
-\begin{equation*} \label{eqn:gbackfit}
-\boldsymbol{\beta}_{jk}^{(t + 1)} = U_{jk}\left(\boldsymbol{\beta}_{jk}^{(t)},
-  \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}, \, \cdot \,\right)
-\end{equation*}
+$\boldsymbol{\beta}_{jk}^{(t + 1)} = U_{jk}\left(\boldsymbol{\beta}_{jk}^{(t)},
+  \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}, \, \cdot \,\right)$,
 i.e., theoretically any updating function applied on the ``partial residuals''
 $\mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}$ can be used. Note also that this result
 is equivalent to updating function
@@ -1075,10 +1067,8 @@ D(\overline{\boldsymbol{\beta}})$ is an effective parameter count.
 
 Under suitable regularity conditions inference for parameters $\boldsymbol{\beta}_{jk}$ can be based
 on the asymptotic normality of the posterior distribution
-$$ \label{eqn:asynorm}
-\boldsymbol{\beta}_{jk} \, | \, \mathbf{y} \overset{a}{\sim} \mathcal{N}\left(\hat{\boldsymbol{\beta}}_{jk},
-  \mathbf{H}(\hat{\boldsymbol{\beta}}_{jk})^{-1}\right),
-$$
+$\boldsymbol{\beta}_{jk} \, | \, \mathbf{y} \overset{a}{\sim} \mathcal{N}\left(\hat{\boldsymbol{\beta}}_{jk},
+  \mathbf{H}(\hat{\boldsymbol{\beta}}_{jk})^{-1}\right)$,
 with $\hat{\boldsymbol{\beta}}_{jk}$ as the posterior mode estimate. However, this approach is
 problematic since it does not take into account the uncertainty of estimated smoothing parameters.
 Moreover, from a computational perspective it can be difficult to derive the full Hessian
@@ -1638,11 +1628,8 @@ based on the accompanying implementation in the \proglang{R} package \pkg{bamlss
 
 \begin{description}
 
-\item[\proglang{R}-package:] \proglang{R}-package \pkg{bamlss} for reproducing the illustrations is available
-  at \linebreak \url{http://CRAN.R-project.org/package=bamlss}.
-
-\item[Data-sets:] Data sets used in the illustrations are provided withing the \proglang{R} package
-  \pkg{bamlss} \url{http://CRAN.R-project.org/package=bamlss}.
+\item[\proglang{R}-package:] \proglang{R}-package \pkg{bamlss}, including the data sets, for
+  reproducing the illustrations is available at \url{http://CRAN.R-project.org/package=bamlss}.
 
 \item[Code:] The \proglang{R} code for reproducing the models is provided in the script
   \code{models.R}, for reproducing all figures in the script \code{figures.R}.
