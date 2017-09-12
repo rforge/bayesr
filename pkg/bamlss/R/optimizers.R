@@ -2500,7 +2500,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
 }
 
 
-selfun <- function(iter, i, j, state, parm, x, family, sfun, yname)
+selfun <- function(iter, i, j, state, parm, x, family, sfun, yname, weights)
 {
   parm[[i]][[j]][iter, ] <- get.par(state$parameters, "b")
   parm <- parm2mat(parm, mstop = iter, fixed = iter)
