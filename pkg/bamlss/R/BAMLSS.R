@@ -3394,6 +3394,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
                 x[[jj]]$margin[[mjj]]$mono <- 0
             }
           }
+          random <- FALSE
           if(!is.null(x[[jj]]$is.refund)) {
             rfcall <- x[[jj]]$refund.call
             tfm <- eval(parse(text = rfcall), envir = data)
@@ -3404,8 +3405,16 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
             rm(tfme)
           } else {
             X <- PredictMat(x[[jj]], data)
+            random <- if(!is.null(x[[jj]]$margin)) {
+              any(sapply(x[[jj]]$margin, function(z) { inherits(z, "random.effect") }))
+            } else inherits(x[[jj]], "random.effect")
           }
-          eta <- eta + fitted_matrix(X, samps[, sn, drop = FALSE])
+          if(random) {
+            if(ncol(X) == length(samps[, sn, drop = FALSE]))
+              eta <- eta + fitted_matrix(X, samps[, sn, drop = FALSE])
+          } else {
+            eta <- eta + fitted_matrix(X, samps[, sn, drop = FALSE])
+          }
         } else {
           if(is.null(x[[jj]]$PredictMat)) {
             X <- PredictMat(x[[jj]], data)
