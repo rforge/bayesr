@@ -45,7 +45,7 @@ jm.mcmc(x, y, family, start = NULL, weights = NULL,
   
 ## Predict function, set to default in jm_bamlss().
 jm.predict(object, newdata,
-  type = c("link", "parameter", "probabilities", "cumhaz"),
+  type = c("link", "parameter", "probabilities", "cumhaz", "loglik"),
   dt, steps, id, FUN = function(x) { mean(x, na.rm = TRUE) }, 
   subdivisions = 100, cores = NULL, chunks = 1,
   verbose = FALSE,  ...)
@@ -120,7 +120,8 @@ jm.survplot(object, id = 1, dt = NULL, steps = 10,
     for all predictors with the respective link functions applied, \code{"parameter"} returns the estimates
     for all pedictors, \code{"probabilities"} returns the survival probabilities conditional on the
     survival up to the last longitudinal measurement, and \code{"cumhaz"} return the cumulative hazard
-    up to the survival time or for a time window after the last longitudinal measurement.}
+    up to the survival time or for a time window after the last longitudinal measurement. If \code{type}
+    is set to \code{"loglik"}, the log-likelihood of the joint model is returned.}
   \item{id}{Integer or character, that specifies the individual for which the plot should be created.}
   \item{dt}{The time window after the last observed measurement for which predictions should be computed. 
     The default is \code{0.4 * max(obstime)} and \code{obstime} are the individual's longitudinal measurement times.}

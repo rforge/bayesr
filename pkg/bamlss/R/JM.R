@@ -3319,7 +3319,7 @@ rJM <- function(hazard, censoring, x, r,
 
 
 ## Prediction.
-jm.predict <- function(object, newdata, type = c("link", "parameter", "probabilities", "cumhaz"),
+jm.predict <- function(object, newdata, type = c("link", "parameter", "probabilities", "cumhaz", "loglik"),
                        dt, steps, id, FUN = function(x) { mean(x, na.rm = TRUE) }, subdivisions = 100, cores = NULL,
                        chunks = 1, verbose = FALSE,  ...)
 {
@@ -3330,6 +3330,11 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
   if(length(type) > 1)
     type <- type[1]
   type <- match.arg(type)
+  loglik <- type == "loglik"
+  if(loglik) {
+    type <- "cumhaz"
+    dt <- 0
+  }
   
   if(type == "probabilities"){
     if(!is.null(newdata)){
@@ -3359,9 +3364,11 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
   if(object$family$family != "jm")
     stop("object must be a joint-model!")
   
-  
-  
-  dalpha <- has_pterms(object$x$dalpha$terms) | (length(object$x$dalpha$smooth.construct) > 0)
+  if(!is.null(object$x$dalpha)) {
+    dalpha <- has_pterms(object$x$dalpha$terms) | (length(object$x$dalpha$smooth.construct) > 0)
+  } else {
+    dalpha <- FALSE
+  }
   
   timevar <- attr(object$y[[1]], "timevar")
   tmax_model <- max(newdata[,timevar["lambda"]])
@@ -3407,6 +3414,7 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
     
     pred.setup <- predict.bamlss(object, data, type = "link",
                                  get.bamlss.predict.setup = TRUE, ...)
+
     enames <- pred.setup$enames
     
     pred_gamma <- with(pred.setup, .predict.bamlss("gamma",
@@ -3447,7 +3455,20 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
     } else {
       pred_lambda + pred_alpha * pred_mu
     }
-    
+
+    if(loglik) {
+      eta_gamma <- predict.bamlss(object, data[take, , drop = FALSE], model = "gamma")
+      eta_mu <- predict.bamlss(object, data, model = "mu")
+      eta_sigma <- predict.bamlss(object, data, model = "sigma")
+      mf <- model.frame(object, data = data)
+      y <- mf[, grep("Surv", names(mf), fixed = TRUE)]
+      eta_timegrid <- matrix(eta_timegrid, nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
+      eeta <- exp(eta_timegrid)
+      int <- width * (0.5 * (eeta[, 1] + eeta[, subdivisions]) + apply(eeta[, 2:(subdivisions - 1)], 1, sum))
+      ll <- sum((eta_timegrid[, ncol(eta_timegrid)] + eta_gamma) * y[take, "status"], na.rm = TRUE) -
+        exp(eta_gamma) %*% int + sum(dnorm(y[, "obs"], mean = eta_mu, sd = exp(eta_sigma), log = TRUE))
+      return(drop(ll))
+    }
     
     if(dt == 0){
       probs <- NULL
