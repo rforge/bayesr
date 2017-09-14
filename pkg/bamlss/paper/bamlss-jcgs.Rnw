@@ -149,18 +149,14 @@ by assigning normal priors to the regression coefficients of smooth terms
 The fully Bayesian approach using Markov chain Monte Carlo (MCMC) simulation techniques is particularly
 attractive since the inferential framework provides valid credible intervals for estimators in
 situations where confidence intervals for corresponding maximum likelihood estimators based on
-asymptotic properties fail. This is specifically the case in more complex models, e.g., with response
-distributions outside the exponential family or when multiple predictors contain several smooth
-effects \citep{bamlss:Klein+Kneib+Lang:2015}. In addition, extensions such as variable selection,
+asymptotic properties fail. This is specifically the case in more complex GAMLSS models
+\citep{bamlss:Klein+Kneib+Lang:2015}. In addition, extensions such as variable selection,
 non-standard priors for hyper-parameters, or multilevel models are easily included.
 Due to this and due to the tremendous increase in computational power over the past decade,
 the number of both, Bayesian and frequentist, estimation engines for such complicated
-inferential problems has been receiving increasing attention. Existing estimation engines already provide infrastructures
-for a number of regression problems exceeding univariate responses, e.g., for multinomial,
-multivariate normal, censored, or truncated response variables, etc. In addition,
-most of the engines support random effect estimation which can in principle also be utilized
-for setting up complex models with additive predictors
-(see, e.g., \citealp{bamlss:Wood:2006}, \citealp{bamlss:Wood:2016b}).
+inferential problems has been receiving increasing attention. Existing estimation engines already
+provide infrastructures for a number of regression problems exceeding univariate responses, e.g.,
+for multinomial, multivariate normal, censored, or truncated response variables, etc.
 
 However, the majority of engines use different model setups and output 
 formats, which makes it difficult, e.g., to compare properties of
@@ -170,12 +166,7 @@ manifold: the use of different model specification languages like
 statistical software packages like \pkg{BayesX}~\citep{bamlss:Belitz+Brezger+Kneib+Lang+Umlauf:2017,
 bamlss:Umlauf+Adler+Kneib+Lang+Zeileis:2014}, \pkg{JAGS}~\citep{bamlss:Plummer:2013},
 \pkg{Stan}~\citep{bamlss:stan-software:2016} or
-\pkg{WinBUGS}~\citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}; or even differences within the
-same environment, e.g., the \proglang{R} packages \pkg{mgcv}
-\citep{bamlss:Wood:2016}, \pkg{gamlss} \citep{bamlss:Stasinopoulos+Rigby:2016} and \pkg{VGAM}
-\citep{bamlss:Yee:2015} implement all model term infrastructures in their own fashion style. This is
-particularly problematic if all packages are loaded into \proglang{R}'s global environment, because
-some functions that are supposed to fulfill the same purpose have different interpretations.
+\pkg{WinBUGS}~\citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}; etc.
 
 In this article we present a unified conceptional ``Lego toolbox'' for complex
 regression models. We show that iterative estimation algorithms, e.g., for posterior mode or
