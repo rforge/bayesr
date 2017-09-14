@@ -2213,7 +2213,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE,
   initialize = TRUE, stop.criterion = NULL, force.stop = TRUE,
-  hatmatrix = !is.null(stop.criterion), ...)
+  hatmatrix = !is.null(stop.criterion), always = FALSE, ...)
 { 
   nx <- family$names
   if(!all(nx %in% names(x)))
@@ -2331,6 +2331,13 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       
       ## Fit to gradient.
       for(j in names(x[[i]]$smooth.construct)) {
+        if(always) {
+          if(j == "(Intercept)") {
+            rss[[i]][j] <- Inf
+            next
+          }
+        }
+
         ## Get updated parameters.
         states[[i]][[j]] <- if(is.null(x[[i]]$smooth.construct[[j]][["boost.fit"]])) {
           if(hatmatrix) {
@@ -2373,6 +2380,10 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       }
       
       ## Which one is best?
+      if(always & (length(rss[[i]]) < 2)) {
+        if(names(rss[[i]]) == "(Intercept)")
+          next
+      }
       select[i] <- which.min(rss[[i]])
       
       ## Compute likelihood contribution.
@@ -2412,6 +2423,38 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     
     ## Save parameters.
     parm[[take[1]]][[take[2]]][iter, ] <- get.par(states[[take[1]]][[take[2]]]$parameters, "b")
+
+    ## Intercept updating.
+    if(always) {
+      ll <- if(is.null(W)) {
+        family$loglik(y, family$map2par(eta))
+      } else {
+        sum(family$d(y, family$map2par(eta), log = TRUE) * W)
+      }
+      for(ii in nx) {
+        if("(Intercept)" %in% names(x[[ii]]$smooth.construct)) {
+          peta <- family$map2par(eta)
+      
+          ## Actual gradient.
+          grad <- process.derivs(family$score[[ii]](y, peta, id = ii), is.weight = FALSE)
+
+          ## Update.
+          states[[ii]][["(Intercept)"]] <- if(hatmatrix) {
+            boost_fit(x[[ii]]$smooth.construct[["(Intercept)"]], grad, nu,
+              hatmatrix = hatmatrix, weights = if(!is.null(weights)) weights[, ii] else NULL)
+          } else {
+            .Call("boost_fit", x[[ii]]$smooth.construct[["(Intercept)"]], grad, nu,
+              if(!is.null(weights)) as.numeric(weights[, ii]) else numeric(0), rho, PACKAGE = "bamlss")
+          }
+          eta[[ii]] <- eta[[ii]] + fitted(states[[ii]][["(Intercept)"]])
+          x[[ii]]$smooth.construct[["(Intercept)"]]$state <- increase(x[[ii]]$smooth.construct[["(Intercept)"]]$state,
+            states[[ii]][["(Intercept)"]])
+          x[[ii]]$smooth.construct[["(Intercept)"]]$selected[iter] <- 1
+          x[[ii]]$smooth.construct[["(Intercept)"]]$loglik[iter] <- -1 * (ll - family$loglik(y, family$map2par(eta)))
+        }
+      }
+    }
+
     eps0 <- do.call("cbind", eta)
     eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
     if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1

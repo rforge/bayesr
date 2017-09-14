@@ -16,12 +16,14 @@
 
 \usage{
 ## Gradient boosting optimizer.
-boost(x, y, family, offset = NULL,
-  nu = 0.1, df = 4, maxit = 400, mstop = NULL,
-  maxq = NULL, verbose = TRUE, digits = 4, flush = TRUE,
-  eps = .Machine$double.eps^0.25, nback = NULL,
-  plot = TRUE, initialize = TRUE, stop.criterion = NULL,
-  force.stop = TRUE, hatmatrix = !is.null(stop.criterion), ...)
+boost(x, y, family, weights = NULL,
+  offset = NULL, nu = 0.1, df = 4, maxit = 400,
+  mstop = NULL, maxq = NULL, verbose = TRUE,
+  digits = 4, flush = TRUE, eps = .Machine$double.eps^0.25,
+  nback = NULL, plot = TRUE, initialize = TRUE,
+  stop.criterion = NULL, force.stop = TRUE,
+  hatmatrix = !is.null(stop.criterion),
+  always = FALSE, ...)
 
 ## Modified likelihood based boosting.
 boostm(x, y, family, offset = NULL,
@@ -54,6 +56,7 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters",
     fitted with the \code{boost()} optimizer.}
   \item{y}{The model response, as returned from function \code{\link{bamlss.frame}}.}
   \item{family}{A \pkg{bamlss} family object, see \code{\link{family.bamlss}}.}
+  \item{weights}{Prior weights on the data, as returned from function \code{\link{bamlss.frame}}.}
   \item{offset}{Can be used to supply model offsets for use in fitting,
     returned from function \code{\link{bamlss.frame}}.}
   \item{nu}{Numeric, between [0, 1], controls the step size, i.e., the amount
@@ -83,10 +86,12 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters",
     is possible. Note that this feature requires to compute hat-matrices for each distributional
     parameter, therefore, the routine may be slow and computer storage intensive.}
   \item{force.stop}{Logical, should the algorithm stop if the information criterion increases?}
+  \item{do.optim}{Logical. Should smoothing parameters be optimized in each boosting iteration?}
   \item{hatmatrix}{Logical, if set to \code{TRUE} the hat-matrices for each distributional parameter
     will be computed. The hat-matrices are used to determine the effective (equivalent) degrees of
     freedom in each boosting iteration, i.e., it is possible to compute information criteria
     like the AIC or BIC for selecting the optimum number of boosting iterations.}
+  \item{always}{Logical. Should the intercepts forced to be updated in each boosting iteration?}
   \item{object}{A \code{\link{bamlss}} object that was fitted using \code{boost()}.}
   \item{summary}{Should the summary be printed?}
   \item{which}{Which of the three provided plots should be created?}
