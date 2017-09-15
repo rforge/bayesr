@@ -1282,7 +1282,7 @@ decreases afterwards.
 
 \section{Illustrations} \label{sec:illustrations}
 
-\subsection{Censored heteroscedastic precepitation climatolgy from daily data} \label{sec:censreg}
+\subsection{Censored heteroscedastic precepitation climatology} \label{sec:censreg}
 
 Climatology models are one important component of the meteorological tool set. The accurate
 and complete knowledge of precipitation climatologies is especially relevant for problems involving
