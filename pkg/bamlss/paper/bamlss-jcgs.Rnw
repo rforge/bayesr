@@ -125,7 +125,7 @@ source("figures.R")
 \vfill
 
 \newpage
-\spacingset{1.45} % DON'T change the spacing!
+%\spacingset{1.45} % DON'T change the spacing!
 
 \section{Introduction} \label{sec:intro}
 
@@ -1611,9 +1611,16 @@ coalesce these in a generic toolbox of modular ``Lego bricks''. Two case studies
 how the framework can be leveraged to establish complex and difficult-to-estimate models
 based on the accompanying implementation in the \proglang{R} package \pkg{bamlss}
 \citep{bamlss:Umlauf+Klein+Zeileis:2016}.
-One drawback of our framework when using a MCMC engine with highly complex predictor structures in the distribution parameters and big data sets are a possibly long computing time.  To overcome this problem one may either resort to parallel computing facilities -- if available -- or approximative, faster methods like integrated nested laplace approximations (ADD REF). The latter however, is currently restricted to distributions with only one predictor and hence not usable for for instance a heteroscedastic Gaussian model.
+One drawback of our framework when using a MCMC engine with highly complex predictor structures in
+the distribution parameters and big data sets are a possibly long computing time.  To overcome this
+problem one may either resort to parallel computing facilities -- if available -- or approximative,
+faster methods like integrated nested Laplace approximations \citep{bamlss:Rue+Martino+Chopin:2009}.
+The latter however, is currently restricted to distributions with only one predictor and hence not
+usable for for instance a heteroscedastic Gaussian model.
 
-Interesting extensions in the future include efficient matrix transformations for additional effect types like based on Gaussian processes (ADD REF). Straight forward is to include further model types like state-space models (ADD REF).
+Interesting extensions in the future include efficient matrix transformations for additional effect
+types based on Gaussian processes (ADD REF). Straight forward is to include further model
+types like state-space models (ADD REF).
 
 \bigskip
 
@@ -1623,8 +1630,8 @@ Interesting extensions in the future include efficient matrix transformations fo
 
 \begin{description}
 
-\item[\proglang{R}-package:] \proglang{R}-package \pkg{bamlss}, including the data sets, for
-  reproducing the illustrations is available at \url{http://CRAN.R-project.org/package=bamlss}.
+\item[\proglang{R}-package:] \proglang{R}-package \pkg{bamlss}, including the data sets for
+  reproducing the illustrations, is available at \url{http://CRAN.R-project.org/package=bamlss}.
 
 \item[Code:] The \proglang{R} code for reproducing the models is provided in the script
   \code{models.R}, for reproducing all figures in the script \code{figures.R}.
