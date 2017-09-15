@@ -1163,7 +1163,9 @@ where the first two lines basically represent the standard model frame specifica
 \put(7, 2.2){\line(0, 1){0.3}}
 \put(7, 3.2){\line(0, 1){0.3}}
 \end{picture}
-\caption{\label{fig:blocks} Flexible BAMLSS architecture.}
+\caption{\label{fig:blocks} Flexible functional BAMLSS architecture. Each building block in the
+  middle part can be exchanged by the user. Usually only the \code{optimizer} and \code{sampler}
+  function is adapted for implementing new models.}
 \end{figure}
 
 \pagebreak
@@ -1242,7 +1244,7 @@ based on MCMC samples for parameter $\mu$ can be computed by
 p <- predict(b, model = "mu", FUN = mean)
 @
 \begin{figure}[!t]
-\setkeys{Gin}{width=0.32\textwidth}
+\setkeys{Gin}{width=0.27\textwidth}
 \centering
 <<echo=FALSE, fig=TRUE, width=3, height=2.8>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
@@ -1397,17 +1399,18 @@ the variation of elevation of the meteorological stations used in this data set 
 
 \begin{figure}[t!]
 \centering
-\includegraphics[width=0.46\textwidth]{figures/rainmodel-data-stations}\includegraphics[width=0.46\textwidth]{figures/rainmodel-data-hist}
-\caption{\label{fig:rainmodeldata} Distribution of available meteorological stations and
-  daily precipitation values.}
+\includegraphics[width=0.36\textwidth]{figures/rainmodel-data-stations}\includegraphics[width=0.36\textwidth]{figures/rainmodel-data-hist}
+\caption{\label{fig:rainmodeldata} Distribution of available meteorological stations, left panel,
+  and daily square root transformed precipitation values, right panel.}
 \end{figure}
 
 \begin{figure}[p!]
 \centering
-\includegraphics[width=0.46\textwidth]{figures/rainmodel-effects-season-mu}\includegraphics[width=0.46\textwidth]{figures/rainmodel-effects-season-sigma} \\[0.5cm]
-\includegraphics[width=0.46\textwidth]{figures/rainmodel-effects-spatial-mu}\includegraphics[width=0.46\textwidth]{figures/rainmodel-effects-spatial-sigma} \\[0.5cm]
-\includegraphics[width=0.92\textwidth]{figures/rainmodel-effects-predict}
-\caption{\label{fig:rainmodeleffects} Estimated effects of the precipitation model, 1st and 2nd row,
+\includegraphics[width=0.36\textwidth]{figures/rainmodel-effects-season-mu}\includegraphics[width=0.36\textwidth]{figures/rainmodel-effects-season-sigma} \\[0.5cm]
+\includegraphics[width=0.36\textwidth]{figures/rainmodel-effects-spatial-mu}\includegraphics[width=0.36\textwidth]{figures/rainmodel-effects-spatial-sigma} \\[0.5cm]
+\includegraphics[width=0.72\textwidth]{figures/rainmodel-effects-predict}
+\caption{\label{fig:rainmodeleffects} Estimated effects of the precipitation model showing the spatial
+  variation of the seasonal effects together with the spatial main effects, 1st and 2nd row,
   predicted average precipitation of the censored mean computed using sampling from the fitted
   distribution for January 10th, bottom row.}
 \end{figure}
@@ -1450,9 +1453,11 @@ greater than six minutes (bottom right) with most of these occuring at the borde
 
 \begin{figure}[t!]
 \centering
-\includegraphics[width=0.92\textwidth]{figures/firemodel-data}
+\includegraphics[width=0.72\textwidth]{figures/firemodel-data}
 \caption{\label{fig:londonfiredata} Distribution of dwelling fires, fire stations, and arrival
-  times in London, 2015.}
+  times in London, 2015. The upper right panel shows that the percentage rate of arrival times
+  $> 6$ minutes is higher close to the borders of London, besides, most fires occur in the city
+  center illustrated in the lower left panel.}
 \end{figure}
 
 \citet{bamlss:Taylor:2015} analyzes the response times within a survival context where the
@@ -1526,9 +1531,9 @@ algorithms \ref{fig:algodesign}, \ref{fig:umode} and \ref{fig:mcmc}
 
 \begin{figure}[p!]
 \centering
-\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-baseline}\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-prob} \\[0.5cm]
-\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-fsintens}\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-spatial-td} \\[0.5cm]
-\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-daytime-curves}\includegraphics[width=0.46\textwidth]{figures/firemodel-effects-spatial-tc}
+\includegraphics[width=0.36\textwidth]{figures/firemodel-effects-baseline}\includegraphics[width=0.36\textwidth]{figures/firemodel-effects-prob} \\[0.5cm]
+\includegraphics[width=0.36\textwidth]{figures/firemodel-effects-fsintens}\includegraphics[width=0.36\textwidth]{figures/firemodel-effects-spatial-td} \\[0.5cm]
+\includegraphics[width=0.36\textwidth]{figures/firemodel-effects-daytime-curves}\includegraphics[width=0.36\textwidth]{figures/firemodel-effects-spatial-tc}
 \caption{\label{fig:londonfireeffects} Estimated effects of the fire emergency response times
   survival model. Top left panel shows the mean baseline effect, red line, together with the
   spatially-varying effects, black lines. The six minutes target waiting time is represented by
@@ -1593,10 +1598,13 @@ models for longitudinal and time-to-event data using the modular BAMLSS framewor
 
 \begin{figure}[t!]
 \centering
-\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t1}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t2}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t3} \\[0.5cm]
-\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t4}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t5}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t6} \\[0.5cm]
-\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t7}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t8}\includegraphics[width=0.32\textwidth]{figures/firemodel-daytime-t9}
-\caption{\label{fig:londonfiredaytime} Estimated spatial varying time-of-the-day effect.}
+\includegraphics[width=0.27\textwidth]{figures/firemodel-daytime-t1}\includegraphics[width=0.27\textwidth]{figures/firemodel-daytime-t2}\includegraphics[width=0.27\textwidth]{figures/firemodel-daytime-t3} \\[0.5cm]
+\includegraphics[width=0.27\textwidth]{figures/firemodel-daytime-t4}\includegraphics[width=0.27\textwidth]{figures/firemodel-daytime-t5}\includegraphics[width=0.27\textwidth]{figures/firemodel-daytime-t6} \\[0.5cm]
+\includegraphics[width=0.27\textwidth]{figures/firemodel-daytime-t7}\includegraphics[width=0.27\textwidth]{figures/firemodel-daytime-t8}\includegraphics[width=0.27\textwidth]{figures/firemodel-daytime-t9}
+\caption{\label{fig:londonfiredaytime} Estimated spatial varying time-of-the-day effect. The figure shows
+  that in the early morning hours, as well as in the afternoon, the effect on the probability that
+  an engine arrives are negative in certain areas, however, relatively small compared to the other
+  estimated effects.}
 \end{figure}
 
 
