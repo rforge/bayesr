@@ -125,7 +125,7 @@ source("figures.R")
 \vfill
 
 \newpage
-%\spacingset{1.45} % DON'T change the spacing!
+\spacingset{1.45} % DON'T change the spacing!
 
 \section{Introduction} \label{sec:intro}
 
@@ -1017,11 +1017,9 @@ $\boldsymbol{\tau}_{jk}$ represents smoothing variances.
 
 Therefore, goodness-of-fit criteria like the Akaike information criterion (AIC), or the corrected AIC,
 as well as the Bayesian information criterion (BIC), amongst others, are commonly used for selecting
-the smoothing variances $\boldsymbol{\tau}_{jk}$. These criteria try to penalize overly complex models,
-i.e., are trying to prevent over-fitting. For models using a basis function approach,
+the smoothing variances $\boldsymbol{\tau}_{jk}$. For models using a basis function approach,
 estimating model complexity using (possibly) nonlinear functions is based on the so-called
-equivalent degrees of freedom (EDF). For each model component the EDF used to estimate the function
-are calculated by
+equivalent degrees of freedom (EDF), calculated by
 $$
 \mathrm{edf}_{jk}(\boldsymbol{\tau}_{jk}) := \mathrm{trace}\left[
   \mathbf{J}_{kk}(\boldsymbol{\beta}_{jk})(
