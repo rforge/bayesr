@@ -65,6 +65,7 @@ source("figures.R")
 
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 
 %\bibliographystyle{natbib}
 
@@ -1601,7 +1602,7 @@ models for longitudinal and time-to-event data using the modular BAMLSS framewor
 \end{figure}
 
 
-\section{Summary}\label{sec:conclusion}
+\section{Summary and Discussion}\label{sec:conclusion}
 
 This paper combines frequently-used algorithms for the estimation of additive Bayesian models
 in a flexible framework for distributional regression, also termed Bayesian additive models for location, scale and shape
@@ -1610,6 +1611,9 @@ coalesce these in a generic toolbox of modular ``Lego bricks''. Two case studies
 how the framework can be leveraged to establish complex and difficult-to-estimate models
 based on the accompanying implementation in the \proglang{R} package \pkg{bamlss}
 \citep{bamlss:Umlauf+Klein+Zeileis:2016}.
+One drawback of our framework when using a MCMC engine with highly complex predictor structures in the distribution parameters and big data sets are a possibly long computing time.  To overcome this problem one may either resort to parallel computing facilities -- if available -- or approximative, faster methods like integrated nested laplace approximations (ADD REF). The latter however, is currently restricted to distributions with only one predictor and hence not usable for for instance a heteroscedastic Gaussian model.
+
+Interesting extensions in the future include efficient matrix transformations for additional effect types like based on Gaussian processes (ADD REF). Straight forward is to include further model types like state-space models (ADD REF).
 
 \bigskip
 
