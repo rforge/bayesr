@@ -969,11 +969,9 @@ approach and only one smoothing variance $\tau_{jk}$ is assigned. Then, by using
 inverse gamma prior (\ref{eqn:igprior}) for $\tau_{jk}$ in combination with the normal prior
 (\ref{eqn:mvnormprior}) for $\boldsymbol{\beta}_{jk}$ the full-conditional $\pi(\tau_{jk} | \, \cdot)$
 is again an inverse gamma distribution with
-$$
-\tilde{a}_{jk} = \frac{1}{2}rk(\mathbf{K}_{jk}) + a_{jk}, \qquad
-  \tilde{b}_{jk} = \frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{K}_{jk}
-  \boldsymbol{\beta}_{jk}^\star + b_{jk},
-$$
+$\tilde{a}_{jk} = \frac{1}{2}rk(\mathbf{K}_{jk}) + a_{jk}$,
+$\tilde{b}_{jk} = \frac{1}{2}(\boldsymbol{\beta}_{jk}^\star)^\top\mathbf{K}_{jk}
+  \boldsymbol{\beta}_{jk}^\star + b_{jk}$
 and matrix $\mathbf{K}_{jk}$ is again a penalty matrix that depends on the type of model term.
 As mentioned in Section \ref{sec:priorsbricks}, other priors than the inverse gamma might be
 desirable. Then,  Metropolis-Hastings steps also for the variances can be constructed,
