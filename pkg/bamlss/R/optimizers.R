@@ -3800,11 +3800,13 @@ lasso.stop <- function(x)
 
 
 ## Deep learning bamlss.
-dl.bamlss <- function(object, scale = TRUE, offset = NULL, weights = NULL,
+dl.bamlss <- function(object, offset = NULL, weights = NULL,
   eps = .Machine$double.eps^0.25, maxit = 100, force.stop = TRUE,
   epochs = 30, optimizer = c("adam", "sgd", "rmsprop", "adagrad", "adadelta", "adamax", "nadam"),
   batch_size = NULL, keras.model = NULL, verbose = TRUE, digits = 4, ...)
 {
+  stopifnot(requireNamespace("keras"))
+
   if(!inherits(object, "bamlss")) {
     object <- bamlss.frame(object, smooth.construct = FALSE, model.matrix = FALSE, ...)
   } else {
@@ -3848,9 +3850,8 @@ dl.bamlss <- function(object, scale = TRUE, offset = NULL, weights = NULL,
           } else {
             offset[[j]] <- offset[[j]][, 1]
           }
-        } else {
-          eta[[j]] <- eta[[j]] + offset[[j]]
         }
+        eta[[j]] <- eta[[j]] + offset[[j]]
       }
     }
   }
@@ -3860,16 +3861,15 @@ dl.bamlss <- function(object, scale = TRUE, offset = NULL, weights = NULL,
     optimizer <- match.arg(optimizer)
     for(j in nx) {
       if(ncol(X[[j]]) > 0) {
-        kmt <- keras_model_sequential()
-        kmt %>% 
-          layer_dense(units = 100, activation = 'relu', input_shape = c(ncol(X[[j]]))) %>% 
-          layer_dropout(rate = 0.1) %>% 
-          layer_dense(units = 100, activation = 'relu') %>% 
-          layer_dropout(rate = 0.1) %>%
-          layer_dense(units = 100, activation = 'relu') %>% 
-          layer_dropout(rate = 0.1) %>%
-          layer_dense(units = 1, activation = 'linear') %>% 
-          keras::compile(
+        kmt <- keras::keras_model_sequential()
+        kmt <- keras::layer_dense(kmt, units = 100, activation = 'relu', input_shape = c(ncol(X[[j]])))
+        kmt <- keras::layer_dropout(kmt, rate = 0.3)
+        kmt <- keras::layer_dense(kmt, units = 100, activation = 'relu')
+        kmt <- keras::layer_dropout(kmt, rate = 0.3)
+        kmt <- keras::layer_dense(kmt, units = 100, activation = 'relu')
+        kmt <- keras::layer_dropout(kmt, rate = 0.3)
+        kmt <- keras::layer_dense(kmt, units = 1, activation = 'linear')
+        kmt <- keras::compile(kmt,
             loss = 'mse',
             optimizer = optimizer,
             metrics = 'mse'
@@ -3895,6 +3895,11 @@ dl.bamlss <- function(object, scale = TRUE, offset = NULL, weights = NULL,
 
       ## Compute weights.
       hess <- process.derivs(family$hess[[j]](y, peta, id = j), is.weight = TRUE)
+
+      if(!is.null(weights)) {
+        if(!is.null(weights[[j]]))
+          hess <- hess * weights[[j]]
+      }
             
       ## Score.
       score <- process.derivs(family$score[[j]](y, peta, id = j), is.weight = FALSE)
@@ -3904,7 +3909,7 @@ dl.bamlss <- function(object, scale = TRUE, offset = NULL, weights = NULL,
 
       ## Fit with keras.
       if(ncol(X[[j]]) > 0) {
-        keras_model[[j]] %>% keras::fit(X[[j]],
+        keras_model[[j]]$stop_training <- keras::fit(keras_model[[j]], X[[j]],
           matrix(if(!is.null(offset[[j]])) z - eta[[j]] else z, ncol = 1),
           epochs = epochs, batch_size = batch_size, verbose = 0)
         fit <- as.numeric(predict(keras_model[[j]], X[[j]]))
@@ -3956,6 +3961,7 @@ dl.bamlss <- function(object, scale = TRUE, offset = NULL, weights = NULL,
     "intercepts" = itcpt
   )
   class(object) <- "dl.bamlss"
+
   return(object)
 }
 
@@ -3991,6 +3997,12 @@ predict.dl.bamlss <- function(object, newdata, model = NULL, drop = TRUE, ...)
   }
 
   nx <- names(object$formula)
+  if(!is.null(model)) {
+    if(is.character(model))
+      nx <- nx[grep(model, nx)[1]]
+    else
+      nx <- nx[as.integer(model)]
+  }
   pred <- list()
   for(i in nx) {
     ff <- formula(as.Formula(object$formula[[i]]$fake.formula), lhs = FALSE)

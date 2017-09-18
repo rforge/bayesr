@@ -158,7 +158,9 @@ export(
 
   ## neural nets
   "n",
-  "boost.nnet.predict"
+  "boost.nnet.predict",
+  "dl.bamlss",
+  "predict.dl.bamlss"
 )
 
 S3method("plot", "bamlss")
@@ -209,6 +211,9 @@ S3method("samples", "bamlss")
 S3method("samples", "bamlss.frame")
 S3method("model.frame", "bamlss")
 S3method("model.frame", "bamlss.frame")
+S3method("predict", "dl.bamlss")
+S3method("fitted", "dl.bamlss")
+S3method("residuals", "dl.bamlss")
 
 useDynLib(bamlss, .registration = TRUE)
 
