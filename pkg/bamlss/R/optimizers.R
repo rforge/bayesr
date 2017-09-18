@@ -3798,3 +3798,215 @@ lasso.stop <- function(x)
   i
 }
 
+
+## Deep learning bamlss.
+dl.bamlss <- function(object, scale = TRUE, offset = NULL, weights = NULL,
+  eps = .Machine$double.eps^0.25, maxit = 100, force.stop = TRUE,
+  epochs = 30, optimizer = c("adam", "sgd", "rmsprop", "adagrad", "adadelta", "adamax", "nadam"),
+  batch_size = NULL, keras.model = NULL, verbose = TRUE, digits = 4, ...)
+{
+  if(!inherits(object, "bamlss")) {
+    object <- bamlss.frame(object, smooth.construct = FALSE, model.matrix = FALSE, ...)
+  } else {
+    if(is.null(offset))
+      offset <- predict(object, drop = FALSE, FUN = mean)
+  }
+  if(is.null(offset))
+    offset <- model.offset(object$model.frame)
+  if(is.null(weights))
+    weights <- model.weights(object$model.frame)
+
+  y <- object$y
+  nobs <- nrow(y)
+  if(is.data.frame(y)) {
+    if(ncol(y) < 2)
+      y <- y[[1]]
+  }
+
+  nx <- names(object$formula)
+  X <- eta <- itcpt <- fits <- list()
+  for(i in nx) {
+    ff <- formula(as.Formula(object$formula[[i]]$fake.formula), lhs = FALSE)
+    X[[i]] <- model.matrix(ff, data = object$model.frame)
+    if(length(j <- grep("(Intercept)", colnames(X[[i]]), fixed = TRUE)))
+      X[[i]] <- X[[i]][, -j, drop = FALSE]
+    eta[[i]] <- fits[[i]] <- rep(0, nobs)
+    if(ncol(X[[i]]) < 1)
+      itcpt[[i]] <- 0
+  }
+
+  family <- family(object)
+  
+  if(!is.null(weights))
+    weights <- as.data.frame(weights)
+  if(!is.null(offset)) {
+    for(j in nx) {
+      if(!is.null(offset[[j]])) {
+        if(!is.null(dim(offset[[j]]))) {
+          if(length(mj <- grep("mean", tolower(colnames(offset[[j]])), fixed = TRUE))) {
+            offset[[j]] <- offset[[j]][, mj[1]]
+          } else {
+            offset[[j]] <- offset[[j]][, 1]
+          }
+        } else {
+          eta[[j]] <- eta[[j]] + offset[[j]]
+        }
+      }
+    }
+  }
+
+  if(is.null(keras.model)) {
+    keras_model <- list()
+    optimizer <- match.arg(optimizer)
+    for(j in nx) {
+      if(ncol(X[[j]]) > 0) {
+        kmt <- keras_model_sequential()
+        kmt %>% 
+          layer_dense(units = 100, activation = 'relu', input_shape = c(ncol(X[[j]]))) %>% 
+          layer_dropout(rate = 0.1) %>% 
+          layer_dense(units = 100, activation = 'relu') %>% 
+          layer_dropout(rate = 0.1) %>%
+          layer_dense(units = 100, activation = 'relu') %>% 
+          layer_dropout(rate = 0.1) %>%
+          layer_dense(units = 1, activation = 'linear') %>% 
+          keras::compile(
+            loss = 'mse',
+            optimizer = optimizer,
+            metrics = 'mse'
+        )
+        keras_model[[j]] <- kmt
+      }
+    }
+  } else {
+    keras_model <- rep(list(keras_model), length.out = length(nx))
+    names(keras_model) <- nx
+  }
+
+  ia <- interactive()
+  I <- rep(1, nobs)
+  iter <- 0
+  eps0 <- eps + 1
+  ll <- family$loglik(y, family$map2par(eta))
+  ptm <- proc.time()
+  while((eps0 > eps) & (iter < maxit)) {
+    eta0 <- eta
+    for(j in nx) {
+      peta <- family$map2par(eta)
+
+      ## Compute weights.
+      hess <- process.derivs(family$hess[[j]](y, peta, id = j), is.weight = TRUE)
+            
+      ## Score.
+      score <- process.derivs(family$score[[j]](y, peta, id = j), is.weight = FALSE)
+
+      ## Working response.
+      z <- eta[[j]] + 1 / hess * score
+
+      ## Fit with keras.
+      if(ncol(X[[j]]) > 0) {
+        keras_model[[j]] %>% keras::fit(X[[j]],
+          matrix(if(!is.null(offset[[j]])) z - eta[[j]] else z, ncol = 1),
+          epochs = epochs, batch_size = batch_size, verbose = 0)
+        fit <- as.numeric(predict(keras_model[[j]], X[[j]]))
+        eta2 <- eta
+        eta2[[j]] <- eta2[[j]] - fits[[j]] + fit
+        ll2 <- family$loglik(y, family$map2par(eta2))
+        if(ll2 > ll) {
+          fits[[j]] <- fit
+          eta[[j]] <- eta2[[j]]
+        }
+      } else {
+        itcpt[[j]] <- as.numeric((1 / (t(I / hess) %*% I)) %*% t(I / hess) %*% (z - eta[[j]]))
+        eta[[j]] <- eta[[j]] - fits[[j]] + itcpt[[j]]
+        fits[[j]] <- itcpt[[j]]
+      }
+    }
+    eps0 <- do.call("cbind", eta)
+    eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
+    iter <- iter + 1
+    ll <- family$loglik(y, family$map2par(eta))
+    if(verbose) {
+      cat(if(ia) "\r" else if(iter > 1) "\n" else NULL)
+      vtxt <- paste(
+        "logLik ", fmt(ll, width = 8, digits = digits),
+        " eps ", fmt(eps0, width = 6, digits = digits + 2),
+        " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
+      cat(vtxt)
+        
+      if(.Platform$OS.type != "unix" & ia) flush.console()
+    }
+
+    if(!force.stop)
+      eps0 <- eps + 1
+  }
+
+  elapsed <- c(proc.time() - ptm)[3]
+  
+  if(verbose) {
+    cat("\n")
+    et <- if(elapsed > 60) {
+      paste(formatC(format(round(elapsed / 60, 2), nsmall = 2), width = 5), "min", sep = "")
+    } else paste(formatC(format(round(elapsed, 2), nsmall = 2), width = 5), "sec", sep = "")
+    cat("\n elapsed time: ", et, "\n", sep = "")
+  }
+
+  object$deepnet <- list(
+    "fitted.values" = fits,
+    "model" = keras_model,
+    "intercepts" = itcpt
+  )
+  class(object) <- "dl.bamlss"
+  return(object)
+}
+
+
+## Extractor functions.
+fitted.dl.bamlss <- function(object, ...) { object$deepnet$fitted.values }
+family.dl.bamlss <- function(object) { object$family }
+residuals.dl.bamlss <- residuals.bamlss
+
+
+## Predict function.
+predict.dl.bamlss <- function(object, newdata, model = NULL, drop = TRUE, ...)
+{
+  ## If data have been scaled (scale.d = TRUE)
+  if (!missing(newdata) & ! is.null(attr(object$model.frame,'scale')) ) {
+    sc <- attr(object$model.frame, 'scale')
+    for ( name in unique(unlist(lapply(sc,names))) ) {
+      newdata[,name] <- (newdata[,name] - sc$center[name] ) / sc$scale[name]
+    }
+  }
+  if(missing(newdata))
+    newdata <- NULL
+  if(is.null(newdata)) {
+    newdata <- model.frame.bamlss.frame(object)
+  } else {
+    if(is.character(newdata)) {
+      if(file.exists(newdata <- path.expand(newdata)))
+        newdata <- read.table(newdata, header = TRUE, ...)
+      else stop("cannot find newdata")
+    }
+    if(is.matrix(newdata) || is.list(newdata))
+      newdata <- as.data.frame(newdata)
+  }
+
+  nx <- names(object$formula)
+  pred <- list()
+  for(i in nx) {
+    ff <- formula(as.Formula(object$formula[[i]]$fake.formula), lhs = FALSE)
+    X <- model.matrix(ff, data = newdata)
+    if(length(j <- grep("(Intercept)", colnames(X), fixed = TRUE)))
+      X <- X[, -j, drop = FALSE]
+    if(ncol(X) > 0) {
+      pred[[i]] <- predict(object$deepnet$model[[i]], X)
+    } else {
+      pred[[i]] <- object$deepnet$intercepts[[i]]
+    }
+  }
+
+  if((length(pred) < 2) & drop)
+    pred <- pred[[1L]]
+
+  return(pred)
+}
+

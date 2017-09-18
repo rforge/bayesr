@@ -3063,8 +3063,8 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
   cores = NULL, chunks = 1, ...)
 {
   ## If data have been scaled (scale.d=TRUE)
-  if ( ! missing(newdata) & ! is.null(attr(object$model.frame,'scale')) ) {
-    sc <- attr(object$model.frame,'scale')
+  if (!missing(newdata) & ! is.null(attr(object$model.frame,'scale')) ) {
+    sc <- attr(object$model.frame, 'scale')
     for ( name in unique(unlist(lapply(sc,names))) ) {
       newdata[,name] <- (newdata[,name] - sc$center[name] ) / sc$scale[name]
     }
