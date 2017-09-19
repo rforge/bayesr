@@ -3802,7 +3802,7 @@ lasso.stop <- function(x)
 ## Deep learning bamlss.
 dl.bamlss <- function(object, offset = NULL, weights = NULL,
   eps = .Machine$double.eps^0.25, maxit = 100, force.stop = TRUE,
-  epochs = 30, optimizer = c("adam", "sgd", "rmsprop", "adagrad", "adadelta", "adamax", "nadam"),
+  epochs = 30, optimizer = NULL,
   batch_size = NULL, keras.model = NULL, verbose = TRUE, digits = 4, ...)
 {
   stopifnot(requireNamespace("keras"))
@@ -3858,16 +3858,20 @@ dl.bamlss <- function(object, offset = NULL, weights = NULL,
 
   if(is.null(keras.model)) {
     keras_model <- list()
-    optimizer <- match.arg(optimizer)
+    if(is.null(optimizer))
+      optimizer <- optimizer_rmsprop(lr = 0.0001)
+    if(is.character(optimizer)) {
+      optimizer <- match.arg(optimizer, c("adam", "sgd", "rmsprop", "adagrad", "adadelta", "adamax", "nadam"))
+    }
     for(j in nx) {
       if(ncol(X[[j]]) > 0) {
         kmt <- keras::keras_model_sequential()
         kmt <- keras::layer_dense(kmt, units = 100, activation = 'relu', input_shape = c(ncol(X[[j]])))
-        kmt <- keras::layer_dropout(kmt, rate = 0.3)
+        kmt <- keras::layer_dropout(kmt, rate = 0.1)
         kmt <- keras::layer_dense(kmt, units = 100, activation = 'relu')
-        kmt <- keras::layer_dropout(kmt, rate = 0.3)
+        kmt <- keras::layer_dropout(kmt, rate = 0.1)
         kmt <- keras::layer_dense(kmt, units = 100, activation = 'relu')
-        kmt <- keras::layer_dropout(kmt, rate = 0.3)
+        kmt <- keras::layer_dropout(kmt, rate = 0.1)
         kmt <- keras::layer_dense(kmt, units = 1, activation = 'linear')
         kmt <- keras::compile(kmt,
             loss = 'mse',

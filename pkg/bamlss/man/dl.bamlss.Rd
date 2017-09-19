@@ -15,8 +15,7 @@
 ## Deep learning bamlss.
 dl.bamlss(object, offset = NULL, weights = NULL,
   eps = .Machine$double.eps^0.25, maxit = 100,
-  force.stop = TRUE, epochs = 30, optimizer = c("adam",
-    "sgd", "rmsprop", "adagrad", "adadelta", "adamax", "nadam"),
+  force.stop = TRUE, epochs = 30, optimizer = NULL,
   batch_size = NULL, keras.model = NULL,
   verbose = TRUE, digits = 4, ...)
 
@@ -35,7 +34,10 @@ dl.bamlss(object, offset = NULL, weights = NULL,
     \code{eps}.}
   \item{epochs}{Number of times to iterate over the training data arrays, see
     \code{\link[keras]{fit}}.}
-  \item{optimizer}{Character. Optimizer to be used within \code{\link[keras]{fit}}.}
+  \item{optimizer}{Character or call to optimizer functions to be used within \code{\link[keras]{fit}}.
+    For character, options are: \code{"adam"} \code{"sgd"}, \code{"rmsprop"}, \code{"adagrad"},
+    \code{"adadelta"}, \code{"adamax"}, \code{"nadam"}. The default is
+    \code{\link[keras]{optimizer_rmsprop}} with learning rate set to \code{1e-04}.}
   \item{batch_size}{Number of samples per gradient update, see \code{\link[keras]{fit}}.}
   \item{keras.model}{A compiled model using \pkg{keras}, e.g., using
     \code{\link[keras]{keras_model_sequential}} and \code{\link[keras]{compile}}. Note
@@ -53,7 +55,7 @@ dl.bamlss(object, offset = NULL, weights = NULL,
 \details{
   The default \pkg{keras} model is a sequential model with two hidden layers with \code{"relu"}
   activation function and 100 units in each layer. Between each layer is a dropout layer with
-  0.3 dropout rate.
+  0.1 dropout rate.
 }
 
 \value{
