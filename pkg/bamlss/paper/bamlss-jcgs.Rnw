@@ -225,11 +225,7 @@ function evaluations $\mathbf{f}_{jk} = (f_{jk}(\mathbf{x}_{1}; \boldsymbol{\bet
   f_{jk}(\mathbf{x}_{n}; \boldsymbol{\beta}_{jk}))^{\top}$ of the
 $i = 1, \ldots, n$ observations is then given by
 \begin{equation} \label{eqn:functions}
-\mathbf{f}_{jk} = \begin{pmatrix}
-f_{jk}(\mathbf{x}_{1}; \boldsymbol{\beta}_{jk}) \\
-\vdots \\
-f_{jk}(\mathbf{x}_{n}; \boldsymbol{\beta}_{jk})
-\end{pmatrix} = f_{jk}(\mathbf{X}_{jk}; \boldsymbol{\beta}_{jk}),
+\mathbf{f}_{jk} = f_{jk}(\mathbf{X}_{jk}; \boldsymbol{\beta}_{jk}),
 \end{equation}
 where $\mathbf{X}_{jk}$ ($n \times m_{jk}$) is a design matrix and the structure of $\mathbf{X}_{jk}$
 only depends on the type of covariate(s) and prior assumptions about $f_{jk}( \cdot )$.
@@ -857,9 +853,9 @@ step length that improves the log-posterior most.
 The mean of the posterior distribution is
 \begin{equation*} \label{eqn:postmean}
 E(\boldsymbol{\beta}, \boldsymbol{\tau} | \, \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha}) =
-  \int \begin{pmatrix} \boldsymbol{\beta} \\ \boldsymbol{\tau} \end{pmatrix}
+  \int\int (\boldsymbol{\beta}, \boldsymbol{\tau})^\top
   \pi(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})
-  d\begin{pmatrix} \boldsymbol{\beta} \\ \boldsymbol{\tau} \end{pmatrix}.
+  d(\boldsymbol{\beta}, \boldsymbol{\tau}).
 \end{equation*}
 Clearly, the problem in deriving the expectation, and other quantities like the posterior median,
 relies on the computation of usually high-dimensional integrals, which can be rarely solved
@@ -877,7 +873,7 @@ log-posterior (\ref{eqn:logpost}). However, we especially focus on situations we
 generally the case. MCMC samples for the regression coefficients $\boldsymbol{\beta}_{jk}$ can be
 derived by each of the following methods:
 \begin{itemize}
-\item \emph{Derivative-based Metropolis-Hastings}: \label{sec:dmh} \\
+\item \emph{Derivative-based Metropolis-Hastings}: \label{sec:dmh}
   Probably the most important algorithm, because of its generality and ease of implementation, is
   random-walk Metropolis. The sampler proceeds by drawing a candidate
   $\boldsymbol{\beta}_{jk}^{\star}$ from a symmetric jumping
@@ -947,7 +943,7 @@ derived by each of the following methods:
   the computation of the weights $\mathbf{W}_{kk}$ is expensive, one simple strategy is to update
   $\mathbf{W}_{kk}$ only after samples of all parameters of $\boldsymbol{\theta}_k$ are drawn.
 
-\item \emph{Slice sampling}: \label{sec:smcmc} \\
+\item \emph{Slice sampling}: \label{sec:smcmc}
   Slice sampling \citep{bamlss:Neal:2003} is a gradient free MCMC sampling scheme that produces
   samples with $100\%$ acceptance rate. Therefore, and because of the simplicity of the algorithm,
   slice sampling is especially useful for automated general purpose MCMC implementations that allow
@@ -1623,8 +1619,8 @@ The latter however, is currently restricted to distributions with only one predi
 usable for instance a heteroscedastic Gaussian model.
 
 Interesting extensions in the future include efficient matrix transformations for additional effect
-types based on Gaussian processes (ADD REF). Straight forward is to include further model
-types like state-space models (ADD REF).
+types based on Gaussian processes \citep{bamlss:Paciorek:2007}. Straight forward is to include
+further model types like state-space models \citep{bamlss:Carter+Kohn:1994}.
 
 \bigskip
 
