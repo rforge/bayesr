@@ -843,9 +843,7 @@ Moreover, to achieve convergence, algorithms for posterior mode usually initiali
 vectors $\boldsymbol{\theta}_k$. Then, after one complete inner backfitting iteration the algorithm
 can proceed in a full zigzag fashion or again with inner iterations. For all updating schemes it
 might also be appropriate to vary the updating step length of parameter updates (half-stepping),
-possibly in each iteration. This is relatively straightforward to implement, because step length
-optimization is a one-dimensional problem, i.e., for each model term finding the
-step length that improves the log-posterior most.
+possibly in each iteration.
 
 
 \subsubsection{Posterior mean} \label{sec:postmean}
@@ -1429,20 +1427,13 @@ we apply an extended complex Cox model to the 2015 dwelling fire response time d
 how the generic BAMLSS framework can be utilized to set up new estimation algorithms for this type
 of model.
 
-The data is freely available from the London DataStore (\url{http://data.london.gov.uk/}) under the UK
-Open Government Licence (OGL v2). It can be downloaded from\linebreak
-\url{http://data.london.gov.uk/dataset/london-fire-brigade-incident-records}
-which\linebreak
-also contains previous year.
-%A precompiled version of the 2015 data is available in the \pkg{bamlss} package.
-
-The dwelling fire data for 2015 consists of $5838$ fire events that have been recorded at
-the $103$ fire stations. The distribution of dwelling fires and fire stations is shown in
-Figure~\ref{fig:londonfiredata}. The top left panel indicates that both, fire stations and
-fire events, are spread all over London with a higher density in the city center which is
-brought out more clearly by the heatmap in the bottom left panel. The panels on the right-hand
-side pertain to the arrival time and show that overall about 30\% of these were
-greater than six minutes (bottom right) with most of these occuring at the borders of London
+The distribution of the $5838$ dwelling fires in 2015 together with the
+fire stations is shown in Figure~\ref{fig:londonfiredata} (a precompiled version of the data is
+available in the \pkg{bamlss} package). The top left panel indicates that both,
+fire stations and fire events, are spread all over London with a higher density in the city center
+which is brought out more clearly by the heatmap in the bottom left panel. The panels on the
+right-hand side pertain to the arrival time and show that overall about 30\% of these were
+greater than six minutes (bottom right) with most of these occurring at the borders of London
 (top right).
 
 \begin{figure}[t!]
@@ -1483,10 +1474,8 @@ peaks may have local hot spots that can be captured by this three-dimensional ef
 functions $f_1, \ldots, f_4$ are assumed to be possibly nonlinear and are modeled using penalized
 splines.
 
-Moreover, we also relax the time-varying predictor $\eta_{\lambda}(t)$ to
-$$
-\eta_{\lambda}(t) = f_0(t) + \sum_{j = 1}^{J_{\lambda}} f_j(t, \mathbf{x}).
-$$
+Moreover, we also relax the time-varying predictor to
+$\eta_{\lambda}(t) = f_0(t) + \sum_{j = 1}^{J_{\lambda}} f_j(t, \mathbf{x})$.
 Here, the baseline hazard is represented by $f_0(t)$ and all functions $f_j(t, \mathbf{x})$
 are time-varying possibly nonlinear functions of covariates. Hence, our model is a complex
 Cox-type additive model as introduced by \citet{bamlss:Kneib+Fahrmeir:2007}. To further investigate
@@ -1504,10 +1493,8 @@ are modeled using penalized splines.
 
 The probability that the engine will arrive on the scene after time $t$ is described by the survival
 function
-\begin{equation} \label{eqn:surv}
-S(t) = \mathrm{Prob}(T > t) = \exp \, \left( -\int_0^t \lambda(u)du \right),
-\end{equation}
-which is of prime interest in this analysis. Based on (\ref{eqn:surv}), for full Bayesian inference
+$S(t) = \mathrm{Prob}(T > t) = \exp \, \left( -\int_0^t \lambda(u)du \right)$,
+which is of prime interest in this analysis. For full Bayesian inference
 the following ``Lego bricks'' need to be implemented for updating functions $U_{jk}( \cdot )$ using
 algorithms \ref{fig:algodesign}, \ref{fig:umode} and \ref{fig:mcmc}
 (the detailed expressions are provided in the supplemental material Section~3):
@@ -1549,11 +1536,8 @@ time-constant part the integrals given in $\mathbf{P}$ do not change anymore.
 
 In order to reduce computing time we account for the idiosyncrasy of the Cox model and
 implement an optimizer function \fct{cox.mode} for posterior mode estimation as well as
-the sampler function \fct{cox.mcmc} for MCMC simulation. The amount of work to implement this
-model using the \pkg{bamlss} infrastructures is moderate, because most of the code of the default
-estimation engines can be reused and only need slight adaption. In this example, the
-the optimizer and sampler function are part of the corresponding \pkg{bamlss} family object
-\fct{cox\_bamlss}.
+the sampler function \fct{cox.mcmc} for MCMC simulation (which are part of the corresponding
+\pkg{bamlss} family object \fct{cox\_bamlss}).
 %
 On a Linux system with 8 Intel i7-2600 3.40GHz processors estimation takes
 approximately 1.2 days. Note that function \fct{cox.mode} also applies an automated procedure for
