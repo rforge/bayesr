@@ -59,8 +59,8 @@ set.seed(1090)
 
 library("bamlss")
 library("survival")
-source("models.R")
-source("figures.R")
+# source("models.R")
+# source("figures.R")
 @
 
 
@@ -910,13 +910,8 @@ derived by each of the following methods:
   the current step.
   The proposal density for $\boldsymbol{\beta}_{jk}$ then is
   $q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)}) =
-    \mathcal{N}(\boldsymbol{\mu}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk}^{(t)})$ and the acceptance probability
-  of the candidate is computed by
-  $$
-  \alpha\left( \boldsymbol{\beta}_{jk}^{\star} | \, \boldsymbol{\beta}_{jk}^{(t)}\right) =
-  \text{min} \left[ \frac{\pi(\boldsymbol{\beta}_{jk}^{\star} | \, \cdot)q(\boldsymbol{\beta}_{jk}^{(t)} | \, \boldsymbol{\beta}_{jk}^\star)}{
-    \pi(\boldsymbol{\beta}_{jk}^{(t)} | \, \cdot)q(\boldsymbol{\beta}_{jk}^\star | \, \boldsymbol{\beta}_{jk}^{(t)})  }, 1 \right].
-  $$
+    \mathcal{N}(\boldsymbol{\mu}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk}^{(t)})$ which is used to compute the usual acceptance probability.
+
   Again, assuming a basis function approach for functions $f_{jk}( \cdot )$ the precision matrix 
   and mean can be written as
   $$
@@ -977,8 +972,8 @@ burden does most of the times not exceed possible benefits.
 
 \subsection{Model choice} \label{sec:modchoice}
 
-In the context of BAMLSS, model choice is usually based on the full response distribution. In the
-following commonly used methods used for model choice and variable selection are outlined.
+In the
+following commonly used methods used for model choice and variable selection based on the complete response distribution are outlined.
 
 \subsubsection{Diagnostics} \label{sec:diagnostics}
 
@@ -1066,10 +1061,10 @@ too.
 The posterior predictive distribution is approximated similarly. Random samples for response
 observations given new covariate values $\mathbf{x}^\star$ are computed by drawing samples
 from the response distribution
-\begin{equation*} \label{eqn:pdist}
+$
 y^\star \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{1}) = \eta_1(\mathbf{x}^\star; \boldsymbol{\beta}_1^{(t)}),
   \,\, \dots, \,\, h_{K}(\theta_{K}) = \eta_K(\mathbf{x}^\star; \boldsymbol{\beta}_K^{(t)})\right)
-\end{equation*}
+$
 for each posterior sample $\boldsymbol{\beta}_k^{(t)}$; $k = 1, \dots, K$, $t = 1, \ldots, T$.
 
 
@@ -1169,24 +1164,12 @@ with the infrastructure for smooth model terms like \fct{s}, \fct{te}, \fct{ti},
 and handling multiple additive predictors -- utilizing the extended formula processing
 of \cite{bamlss:Zeileis+Croissant:2010}. Thus, a formula can be as simple as in a typical
 linear regression model with a response variable \code{y} and regressors \code{x1} and \code{x2}
-\begin{center}
 \code{y} $\sim$ \code{x1 + x2}
-\end{center}
 but also with smooth terms in further covariates \code{x3}, \code{x4}, and \code{x5}
-\begin{center}
-\begin{tabular}{l}
 \code{y} $\sim$ \code{x1 + x2 + s(x3) + s(x4, x5)}
-\end{tabular}
-\end{center}
 or even with different additive predictors for different model parameters, e.g.,
-\begin{center}
-{ \renewcommand{\arraystretch}{1}
-\begin{tabular}{l}
 \code{list(}$\,$\code{y} $\sim$ \code{x1 + x2 + s(x3) + s(x4),}
 $\,$ \code{sigma} $\sim$ \code{x1 + x2 + s(x3)}$\,$\code{)}
-\end{tabular}
-}
-\end{center}
 in a normal model with $y~\sim~\mathcal{N}(\mu = \eta_{\mu}, \log(\sigma) = \eta_{\sigma})$.
 
 Similarly to other flexible model fitting functions users can specify their own \code{family}
