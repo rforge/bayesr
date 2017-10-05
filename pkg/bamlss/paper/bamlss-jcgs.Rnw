@@ -63,6 +63,13 @@ library("survival")
 # source("figures.R")
 @
 
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{0.5\baselineskip}{0.5\baselineskip}
+\titlespacing*{\subsection}{0pt}{0.5\baselineskip}{0.3\baselineskip}
+\titlespacing*{\subsubsection}{0pt}{0.5\baselineskip}{0.3\baselineskip}
+
+%\renewenvironment{itemize}[1]{\begin{compactitem}#1}{\end{compactitem}}
+%\renewenvironment{enumerate}[1]{\begin{compactenum}#1}{\end{compactenum}}
 
 \begin{document}
 \SweaveOpts{concordance=TRUE}
@@ -111,8 +118,7 @@ library("survival")
   probabilistic distributional models capturing location, scale, shape (and other aspects) of the
   response distribution. In order to embed many different approaches suggested in literature
   and software, a unified modeling architecture for distributional GAMs is established that
-  exploits the general structure of these models and encompasses many different response
-  distributions, estimation techniques (posterior mode or posterior mean), and model terms
+dunn  distributions, estimation techniques (posterior mode or posterior mean), and model terms
   (fixed, random, smooth, spatial, \dots). It is shown that within this framework
   implementing algorithms for complex regression problems, as well as the integration of already
   existing software, is relatively straightforward. The usefulness is emphasized with two
@@ -142,10 +148,10 @@ established generalized additive model (GAM,~\citealp{bamlss:Hastie+Tibshirani:1
 The terms of an additive predictor are most commonly represented by basis function approaches. This
 leads to a very generic model structure and can be further exploited because each term
 can be transformed into a mixed model representation
-\citep{bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003}. In a fully Bayesian setting this
+\citep{bamlss:Ruppert+Wand+Carrol:2003}. In a fully Bayesian setting this
 generality remains because priors on parameters can also be formalized in a general way, e.g.,
 by assigning normal priors to the regression coefficients of smooth terms
-\citep{bamlss:Brezger+Lang:2006, bamlss:Fahrmeir+Kneib+Lang+Marx:2013}.
+\citep{bamlss:Fahrmeir+Kneib+Lang:2004, bamlss:Fahrmeir+Kneib+Lang+Marx:2013}.
 
 The fully Bayesian approach using Markov chain Monte Carlo (MCMC) simulation techniques is particularly
 attractive since the inferential framework provides valid credible intervals for estimators in
@@ -239,7 +245,7 @@ matrix for the $k$-th parameter.
 
 While functions $f_{jk}(\cdot)$ are usually based on a basis function approach, where $\eta_k$ then is
 a typical GAM-type or so-called structured additive predictor
-(STAR,~\citealp{bamlss:Fahrmeir+Kneib+Lang:2004, bamlss:Brezger+Lang:2006}), in this paper
+(STAR,~\citealp{bamlss:Fahrmeir+Kneib+Lang:2004}), in this paper
 we relax this assumption and let $f_{jk}(\cdot)$ be an unspecified composition of covariate data
 $\mathbf{x}$ and regression coefficients $\boldsymbol{\beta}_{jk}$ ($q_{jk} \times 1$).
 In the case where it is derived through a basis function approach, it can be written as
@@ -263,7 +269,7 @@ The design matrix $\mathbf{U}_{jk}$ is derived from a spectral decomposition of 
 $\mathbf{K}_{jk}$ and $\tilde{\mathbf{X}}_{jk}$ by finding a basis of the null space of $\mathbf{K}_{jk}$
 such that $\tilde{\mathbf{X}}_{jk}^{\top}\mathbf{K}_{jk} = \mathbf{0}$, i.e., parameters
 $\tilde{\boldsymbol{\gamma}}_{jk}$ are not penalized (see, e.g.,
-\citealp{bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wand:2003, bamlss:Wood:2004, bamlss:Fahrmeir+Kneib+Lang+Marx:2013}).
+\citealp{bamlss:Ruppert+Wand+Carrol:2003, bamlss:Wood:2004, bamlss:Fahrmeir+Kneib+Lang+Marx:2013}).
 Such transformations can be used to estimate functions $f_{jk}( \cdot )$ using standard algorithms
 for random effects (see, e.g., \citealp{bamlss:Wood:2016b}).
 
@@ -886,8 +892,7 @@ derived by each of the following methods:
   probability mass of the posterior distribution. A solution with good mixing properties is to
   construct approximate full conditionals $\pi(\boldsymbol{\beta}_{jk} | \cdot)$ that are based on a
   second order Taylor series expansion of the log-posterior centered at the last state 
-  \citep{bamlss:Gamerman:1997, bamlss:Fahrmeir+Kneib+Lang:2004, bamlss:Brezger+Lang:2006,
-  bamlss:Klein+Kneib:2016b}.
+  \citep{bamlss:Gamerman:1997, Klein+Kneib+Lang:2015}.
   The resulting proposal density is multivariate normal (see supplemental material Section~4 for a
   detailed derivation) with precision matrix and mean given by
   $$
@@ -973,7 +978,7 @@ cumulative distribution function (CDF) of a standard normal distribution $\Phi^{
 $\mathbf{\mathcal{F}}( \cdot )$ the CDF of the modeled distribution $\mathcal{D}( \cdot )$ with estimated
 parameters $\hat{\boldsymbol{\theta}}_{i} = (\hat{\theta}_{i1}, \ldots, \hat{\theta}_{iK})^\top$
 plugged in, should at least approximately be standard normally distributed if the correct model has
-been specified \citep{bamlss:Dunn:Smyth:1996, bamlss:Klein+Kneib+Lang:2015}. Resulting residuals can
+been specified. Resulting residuals can
 be assessed by quantile-quantile-plots or
 probability integral transforms which consider
 $u_i = \mathbf{\mathcal{F}}(y_i | \, \hat{\boldsymbol{\theta}}_i)$. If the estimated model is a good approximation to the true data generating 
@@ -1146,7 +1151,7 @@ where the first two lines basically represent the standard model frame specifica
 The \code{formula} combines the classic \citet{bamlss:Wilkinson+Rogers:1973} symbolic description
 -- used in most standard \proglang{R} regression functions \citep{bamlss:Chambers+Hastie:1992} --
 with the infrastructure for smooth model terms like \fct{s}, \fct{te}, \fct{ti}, etc.
--- based on recommended \proglang{R} package \pkg{mgcv} \citep{bamlss:Wood:2016} --
+-- based on recommended \proglang{R} package \pkg{mgcv} --
 and handling multiple additive predictors -- utilizing the extended formula processing
 of \cite{bamlss:Zeileis+Croissant:2010}. Thus, a formula can be as simple as in a typical
 linear regression model with a response variable \code{y} and regressors \code{x1} and \code{x2}
@@ -1159,8 +1164,7 @@ $\,$ \code{sigma} $\sim$ \code{x1 + x2 + s(x3)}$\,$\code{)}
 in a normal model with $y~\sim~\mathcal{N}(\mu = \eta_{\mu}, \log(\sigma) = \eta_{\sigma})$.
 
 Similarly to other flexible model fitting functions users can specify their own \code{family}
-objects in order to plug in different Lego bricks for \ref{item:1}--\ref{item:8}. Family objects from the \pkg{gamlss} package
-\citep{bamlss:Stasinopoulos+Rigby:2016} are readily supported.
+objects in order to plug in different Lego bricks for \ref{item:1}--\ref{item:8}. Family objects from the \pkg{gamlss} package are readily supported.
 
 Estimation is performed by an \code{optimizer} and/or \code{sampler} function, which can be provided by
 the user. The default optimizer function implements the IWLS backfitting algorithm (\ref{eqn:blockbackfit})
