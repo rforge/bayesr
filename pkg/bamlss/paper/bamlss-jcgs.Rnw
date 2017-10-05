@@ -983,7 +983,7 @@ parameters $\hat{\boldsymbol{\theta}}_{i} = (\hat{\theta}_{i1}, \ldots, \hat{\th
 plugged in, should at least approximately be standard normally distributed if the correct model has
 been specified \citep{bamlss:Dunn:Smyth:1996, bamlss:Klein+Kneib+Lang:2015}. Resulting residuals can
 be assessed by quantile-quantile-plots or
-probability integral transforms (PIT, \citealp{bamlss:Gneiting+Balabdaoui+Raftery:2007}) which considers
+probability integral transforms which consider
 $u_i = \mathbf{\mathcal{F}}(y_i | \, \hat{\boldsymbol{\theta}}_i)$. If the estimated model is a good approximation to the true data generating 
 process, the $u_i$ will then approximately follow a uniform distribution on $[0, 1]$.
 Graphically, histograms of the $u_i$ can be used for this purpose.
