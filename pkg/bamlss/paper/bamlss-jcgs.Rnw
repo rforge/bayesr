@@ -972,24 +972,19 @@ burden does most of the times not exceed possible benefits.
 
 \subsection{Model choice} \label{sec:modchoice}
 
-In the
-following commonly used methods used for model choice and variable selection based on the complete response distribution are outlined.
 
 \subsubsection{Diagnostics} \label{sec:diagnostics}
 
 Quantile residuals defined as
 $\hat{r}_i = \Phi^{-1}(\mathbf{\mathcal{F}}(y_i | \, \hat{\boldsymbol{\theta}}_{i}))$ with the inverse 
-cumulative distribution function of a standard normal distribution $\Phi^{-1}$ and
-$\mathbf{\mathcal{F}}( \cdot )$ denoting the cumulative distribution
-function (CDF) of the modeled distribution $\mathcal{D}( \cdot )$ with estimated
+cumulative distribution function (CDF) of a standard normal distribution $\Phi^{-1}$ and
+$\mathbf{\mathcal{F}}( \cdot )$ the CDF of the modeled distribution $\mathcal{D}( \cdot )$ with estimated
 parameters $\hat{\boldsymbol{\theta}}_{i} = (\hat{\theta}_{i1}, \ldots, \hat{\theta}_{iK})^\top$
 plugged in, should at least approximately be standard normally distributed if the correct model has
 been specified \citep{bamlss:Dunn:Smyth:1996, bamlss:Klein+Kneib+Lang:2015}. Resulting residuals can
-be assessed graphically in terms of quantile-quantile-plots. Strong deviations from the diagonal
-line are then a sign for an inappropriate model fit. Instead of looking at residuals one can use the 
-probability integral transform (PIT, \citealp{bamlss:Gneiting+Balabdaoui+Raftery:2007}) which considers
-$u_i = \mathbf{\mathcal{F}}(y_i | \, \hat{\boldsymbol{\theta}}_i)$ without applying the inverse
-standard normal CDF. If the estimated model is a good approximation to the true data generating 
+be assessed by quantile-quantile-plots or
+probability integral transforms (PIT, \citealp{bamlss:Gneiting+Balabdaoui+Raftery:2007}) which considers
+$u_i = \mathbf{\mathcal{F}}(y_i | \, \hat{\boldsymbol{\theta}}_i)$. If the estimated model is a good approximation to the true data generating 
 process, the $u_i$ will then approximately follow a uniform distribution on $[0, 1]$.
 Graphically, histograms of the $u_i$ can be used for this purpose.
 
@@ -1002,16 +997,15 @@ log-posterior (\ref{eqn:logpost}). For example, this is the case for GAM-type mo
 combination with priors based on multivariate normal kernels (\ref{eqn:mvnormprior}) where
 $\boldsymbol{\tau}_{jk}$ represents smoothing variances.
 
-Therefore, goodness-of-fit criteria like the Akaike information criterion (AIC), or the corrected AIC,
+Then, goodness-of-fit criteria like the Akaike information criterion (AIC), or the corrected AIC,
 as well as the Bayesian information criterion (BIC), amongst others, are commonly used for selecting
-the smoothing variances $\boldsymbol{\tau}_{jk}$. For models using a basis function approach,
-estimating model complexity using (possibly) nonlinear functions is based on the so-called
+the smoothing variances. Estimation of model complexity is based on the so-called
 equivalent degrees of freedom (EDF), calculated by
-$$
+$
 \mathrm{edf}_{jk}(\boldsymbol{\tau}_{jk}) := \mathrm{trace}\left[
   \mathbf{J}_{kk}(\boldsymbol{\beta}_{jk})(
   \mathbf{J}_{kk}(\boldsymbol{\beta}_{jk}) + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))^{-1} \right],
-$$
+$
 where $\mathbf{J}_{kk}( \cdot )$ is the derivative matrix given in (\ref{eqn:hessian2}) and
 matrix $\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ is the prior
 derivative matrix as given in (\ref{eqn:gmatrix}). The
@@ -1019,7 +1013,7 @@ total degrees of freedom used to fit the model are then estimated by
 $\sum_{k}\sum_{j} \mathrm{edf}_{jk}(\boldsymbol{\tau}_{jk})$. Note that the definition
 of EDF here is slightly more general and is usually defined as the
 trace of the smoother matrix (see, e.g., \citealp{bamlss:Hastie+Tibshirani:1990}) and can be applied
-even for more complex likelihood structures, e.g., in a flexible Cox model \citep{bamlss:Hofner:2008}.
+even for more complex likelihood structures.
 
 Instead of global optimization of smoothing variances, a fast strategy is the adaptive
 stepwise selection approach presented in Algorithm~\ref{fig:umode}.
@@ -1048,7 +1042,7 @@ $\boldsymbol{\beta}_{jk} \, | \, \mathbf{y} \overset{a}{\sim} \mathcal{N}\left(\
   \mathbf{H}(\hat{\boldsymbol{\beta}}_{jk})^{-1}\right)$,
 with $\hat{\boldsymbol{\beta}}_{jk}$ as the posterior mode estimate. However, this approach is
 problematic since it does not take into account the uncertainty of estimated smoothing parameters.
-Moreover, from a computational perspective it can be difficult to derive the full Hessian
+From a computational perspective it can be difficult to derive the full Hessian
 information, because this might involve complex cross derivatives of the parameters and there
 are cases where standard numerical techniques cannot be applied (see Section~\ref{sec:coxreg}).
 
