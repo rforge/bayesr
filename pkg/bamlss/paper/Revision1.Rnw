@@ -1,0 +1,114 @@
+\documentclass[a4paper]{article}
+
+\usepackage{amsmath,amssymb,amsfonts,thumbpdf,url}
+\usepackage[utf8]{inputenc}
+\usepackage{multirow,longtable}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{a4wide}
+\usepackage{verbatim}
+\usepackage{fancyvrb}
+\usepackage{Sweave}
+\usepackage{natbib}
+\usepackage{sfmath, amsmath}
+
+%% additional commands
+\newcommand{\squote}[1]{`{#1}'}
+\newcommand{\dquote}[1]{``{#1}''}
+\newcommand{\fct}[1]{{\texttt{#1()}\index{#1@\texttt{#1()}}}}
+\newcommand{\class}[1]{\dquote{\texttt{#1}}}
+
+%% for internal use
+\newcommand{\fixme}[1]{\emph{\marginpar{FIXME} (#1)}}
+\newcommand{\readme}[1]{\emph{\marginpar{README} (#1)}}
+
+%% jss stuff
+\let\proglang=\textsf
+\newcommand{\pkg}[1]{{\fontseries{b}\selectfont #1}}
+\bibliographystyle{jss}
+\makeatletter
+\newcommand\code{\bgroup\@makeother\_\@makeother\~\@makeother\$\@codex}
+\def\@codex#1{{\normalfont\ttfamily\hyphenchar\font=-1 #1}\egroup}
+\makeatother
+\DefineVerbatimEnvironment{Sinput}{Verbatim}{fontshape=sl}
+
+%% other settings
+\SweaveOpts{engine = R, eps = FALSE, pdf = FALSE, png = TRUE, resolution = 120, keep.source = TRUE}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+
+<<preliminaries, echo=FALSE, results=hide>>=
+options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
+  SweaveHooks = list(fig = function() par(mar = c(4.1, 4.1, 0.1, 0.1))))
+@
+
+\renewcommand{\sfdefault}{phv}
+\IfFileExists{sfmath.sty}{
+  \RequirePackage{sfmath}
+  \renewcommand{\rmdefault}{phv}
+}{}
+
+\pagestyle{empty}
+
+
+\begin{document}
+
+\textbf{\Large Reviewer 1}
+
+\begin{itemize}
+
+\item \emph{The manuscript is well written, however, in my opinion the authors sometimes provide too
+  many details on each of the necessary steps and their “lego bricks”, so that the reader
+  sometimes has problems to follow the bigger picture (and loses interest to start playing with
+  them). For example, in Section 6.1. the authors present their first data example (climatology
+  model on precipitation) with the homstart-data - I did really like this application: However, the
+  authors start this part more or less with providing score vectors and also deriving the second
+  derivative of the likelihood: This is of course correct and highly accurate, but I am not terribly
+  convinced that it really helps to illustrate the capabilities of \pkg{bamlss}.}
+
+\item \emph{The manuscript is clearly too long. It’s perfectly understandable that the authors want to
+  highlight the different aspects of their framework and to emphasize the details of the
+  underlying methodology. However, Section 4, in my point could still be presented in much a
+  more concise fashion.}
+
+\item \emph{The illustration examples highlight the enormous and versatile capabilities of the bamlss
+  framework and are nicely presented. However, I guess an additional smaller and faster toy
+  example (perhaps in Section 5 with a few lines of R-code) could help to illustrate how to apply
+  \pkg{bamlss} and how to start using it.}
+
+\item \emph{I think it is good practice to highlight also the limitations of the approach (e.g.\
+  in the Summary) and for which type of data settings other estimation schemes might be more
+  suitable.}
+
+\item \emph{p3, l7 (Introduction): Not only for practitioners.}
+
+  We have changed this now and dropped practitioners.
+
+\item \emph{Section 6.1. The authors mention different particular regions in Austria, perhaps
+  these could be also made visible in Figure 3 for readers that are not familiar with them.}
+
+  Yes, nice suggestion. We have now added the region names to the corresponding images.
+
+\item \emph{Notation is obviously a mess for this huge framework of different model classes: However,
+  just wondering, for example in Equation (1): shouldn’t that be capital letter X?}
+
+  \fixme{Achim, any good suggestion?}
+
+\end{itemize}
+
+\textbf{\Large Editor's Comments to Author}
+
+\begin{itemize}
+
+\item \emph{The paper is too long. It needs to be reduced to 30 pages, by shifting some material to
+  supplementary. I can't advise you on what to split out. The paper itself needs to read fluently,
+  and retain the examples, but details that a reader may want to look up secondarily would be
+  suitable for shifting.}
+
+\item \emph{In your figure captions, add a sentence telling the reader the most important thing to
+  learn by looking at the plot.}
+
+\end{itemize}
+
+\end{document}
+

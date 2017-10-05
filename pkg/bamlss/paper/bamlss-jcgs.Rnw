@@ -596,17 +596,10 @@ $\mathbf{a}_{jk}=-\mathbf{1}$ or $\mathbf{a}_{jk} = -1/2 \cdot \mathbf{1}$ yield
 $\tau_{ljk}$ and $\tau_{ljk}^{0.5}$, respectively.
 However, the inverse gamma prior might be problematic if $\tau_{ljk}$ is close to zero, since the
 results a very sensitive to the choice of $\mathbf{a}_{jk}$ and $\mathbf{b}_{jk}$. Therefore,
-\citet{bamlss:Gelman:2006} proposes to use the half-Cauchy prior
-\begin{equation*} \label{eqn:hcauchy}
-d_{\boldsymbol{\tau}_{jk}}(\boldsymbol{\tau}_{jk} | \, \boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}}) =
-  \prod_{l = 1}^{L_{jk}}\frac{2A_{ljk}}{\pi (\tau_{ljk} + A_{ljk}^2)}, \quad A_{ljk} > 0,
-\end{equation*}
-with hyper-parameters $\boldsymbol{\alpha}_{\boldsymbol{\tau}_{jk}} = \{\mathbf{A}_{jk}\}$.
-For $A_{ljk} \rightarrow \infty$ the priors are uniform, hence large values
-(e.g., $A_{ljk} = 25$) result in weakly informative priors. A desirable property of the half-Cauchy
-is that for $\tau_{ljk} = 0$ the density is a nonzero constant, whereas the density of the inverse
-gamma for $\tau_{ljk} \rightarrow 0$ vanishes (see also \citealp{bamlss:Polson+Scott:2012}). Another
-question is the actual choice of hyper-parameters. A recent suggestion reducing
+\citet{bamlss:Gelman:2006} proposes to use the half-Cauchy prior which has the desirable property
+that for $\tau_{ljk} = 0$ the density is a nonzero constant, whereas the density of the inverse
+gamma for $\tau_{ljk} \rightarrow 0$ vanishes (see also \citealp{bamlss:Polson+Scott:2012}).
+Another question is the actual choice of hyper-parameters. A recent suggestion reducing
 this issue to the choice of a scale parameter that is directly related to the functions
 $f_{jk}( \cdot )$ (and thus much better interpretable and accessible for the user) is given
 in~\citet{bamlss:Klein+Kneib:2016} for several different hyper-priors for $\tau_{ljk}$, such as
@@ -618,8 +611,7 @@ scale-dependent priors.
 \subsubsection{Multilevel effects} \label{sec:multilevel}
 
 In numerous applications geographical information and spatial covariates are given at
-different resolutions. For example, spatial data that is measured within different regions, for
-which additional regional covariates are available. Whenever there is such a nested structure
+different resolutions. Whenever there is such a nested structure
 in the data, it is possible to model the complex (spatial) heterogeneity effects using
 a compound prior
 $\boldsymbol{\beta}_{jk} = \tilde{\boldsymbol{\eta}}_{jk}(\mathbf{x}; \tilde{\boldsymbol{\beta}}_{jk})
