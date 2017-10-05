@@ -52,6 +52,7 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
 
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 
 \textbf{\Large Reviewer 1}
 
@@ -75,10 +76,14 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
   framework and are nicely presented. However, I guess an additional smaller and faster toy
   example (perhaps in Section 5 with a few lines of R-code) could help to illustrate how to apply
   \pkg{bamlss} and how to start using it.}
+  
+  Thank you very much for this comment. We liked the idea of a smaller toy example and added the simple illustration of the popular motorcycle data \texttt{mcycle} from the \texttt{MASS} package in R. This data set with measurements of head acceleration in a simulated motorcycle accident is well suited to demonstrate the benefits of a location-scale model with the bamlss framework. As suggested, we are explicit with lines of code in R and some explanations in Section 5.
 
 \item \emph{I think it is good practice to highlight also the limitations of the approach (e.g.\
   in the Summary) and for which type of data settings other estimation schemes might be more
   suitable.}
+  
+  You are completely right that some critics, placement in a wider context and directions of future research are good practice at the end of the paper. We had some careful thoughts and added possible remedies for problems that require even faster (possible approximative) methods but we also discuss several extensions and directions to broaden the available model class of bamlss in the near future.
 
 \item \emph{p3, l7 (Introduction): Not only for practitioners.}
 
